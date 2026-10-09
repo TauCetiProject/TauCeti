@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Trace.Reflection
 public import TauCeti.Analysis.Sobolev.W1p.Extension
+import TauCeti.Analysis.Normed.Lp.ProdLp
 
 /-!
 # Extension by reflection from a half-space, and the half-space trace
@@ -161,18 +162,6 @@ private theorem coeFn_extendJetL (a : ℝ)
   simp only [Function.comp_apply] at h4
   rw [h4]
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-private theorem indicator_apply_fst {s : Set (WithLp 2 (ℝ × E))}
-    (J : WithLp 2 (ℝ × E) → Sobolev1Jet (WithLp 2 (ℝ × E))) (x : WithLp 2 (ℝ × E)) :
-    (s.indicator J x).fst = s.indicator (fun y => (J y).fst) x :=
-  (congr_fun (indicator_comp_of_zero (g := WithLp.fst) WithLp.zero_fst) x).symm
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-private theorem indicator_apply_snd {s : Set (WithLp 2 (ℝ × E))}
-    (J : WithLp 2 (ℝ × E) → Sobolev1Jet (WithLp 2 (ℝ × E))) (x : WithLp 2 (ℝ × E)) :
-    (s.indicator J x).snd = s.indicator (fun y => (J y).snd) x :=
-  (congr_fun (indicator_comp_of_zero (g := WithLp.snd) WithLp.zero_snd) x).symm
-
 /-- The extended jet of a Sobolev function on the half-space is a Sobolev jet on the whole
 space. -/
 private theorem extendJetL_mem_w1pSubmodule (a : ℝ)
@@ -207,11 +196,11 @@ private theorem extendJetL_mem_w1pSubmodule (a : ℝ)
   rw [mem_w1pSubmodule_iff_hasWeakFDerivOn]
   refine (hcore.congr_ae ?_).congr_ae_deriv ?_
   · filter_upwards [Sobolev1JetLp.value_apply_ae (extendJetL a J), hJ] with x h1 h2
-    rw [h1, h2, WithLp.add_fst, jetFlip_fst, indicator_apply_fst, indicator_apply_fst]
+    rw [h1, h2, WithLp.add_fst, jetFlip_fst, WithLp.fst_indicator, WithLp.fst_indicator]
   · filter_upwards [Sobolev1JetLp.gradient_apply_ae (extendJetL a J), hJ] with x h1 h2
     refine ContinuousLinearMap.ext fun v => ?_
     rw [Sobolev1JetLp.candidateWeakFDeriv_apply, innerSL_apply_apply, real_inner_comm, h1, h2,
-      WithLp.add_snd, jetFlip_snd, indicator_apply_snd, indicator_apply_snd]
+      WithLp.add_snd, jetFlip_snd, WithLp.snd_indicator, WithLp.snd_indicator]
 
 /-- **Extension by reflection** from the half-space `{x | a < x.fst}` to the whole space: a
 Sobolev function `u` on the half-space is sent to its even reflection, equal to `u` on the
@@ -269,8 +258,8 @@ theorem W1p.value_extendByReflectionL_ae (a : ℝ)
     (WithLp 2 (ℝ × E))) (normalHalfSpace a) p),
     ae_indicator_eq_and_comp_normalReflection a (W1p.value_apply_ae u)]
     with x h1 h2 ⟨h3, h3ρ⟩
-  rw [h1, coe_extendByReflectionL, h2, WithLp.add_fst, jetFlip_fst, indicator_apply_fst,
-    indicator_apply_fst, ← h3, ← h3ρ]
+  rw [h1, coe_extendByReflectionL, h2, WithLp.add_fst, jetFlip_fst, WithLp.fst_indicator,
+    WithLp.fst_indicator, ← h3, ← h3ρ]
 
 /-- The weak gradient of the reflection extension is `∇u` on the half-space and the reflected
 gradient `R (∇u ∘ ρ)` on the other side, almost everywhere, where `R` negates the normal
@@ -287,8 +276,8 @@ theorem W1p.gradient_extendByReflectionL_ae (a : ℝ)
     (WithLp 2 (ℝ × E))) (normalHalfSpace a) p),
     ae_indicator_eq_and_comp_normalReflection a (W1p.gradient_apply_ae u)]
     with x h1 h2 ⟨h3, h3ρ⟩
-  rw [h1, coe_extendByReflectionL, h2, WithLp.add_snd, jetFlip_snd, indicator_apply_snd,
-    indicator_apply_snd, ← h3, ← h3ρ]
+  rw [h1, coe_extendByReflectionL, h2, WithLp.add_snd, jetFlip_snd, WithLp.snd_indicator,
+    WithLp.snd_indicator, ← h3, ← h3ρ]
 
 /-- Restricting the reflection extension back to the half-space recovers the original function. -/
 theorem W1p.restrictL_extendByReflectionL (a : ℝ)

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.LinearMap
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 import Mathlib.MeasureTheory.Group.Measure
 import Mathlib.Topology.Separation.Regular
@@ -22,7 +23,10 @@ inside the original domain.
 
 A function locally integrable on a null-measurable set `s`, vanishing almost everywhere on `s` off
 a null-measurable compact `K ⊆ s`, is integrable on the whole space after extension by zero. This
-is the step that turns a local hypothesis plus compact support into a global one. Both sets are
+is the step that turns a local hypothesis plus compact support into a global one.
+
+Pairing a locally integrable function with a fixed vector in an inner product space gives a
+locally integrable scalar function, as Mathlib records for `Integrable` and `MemLp`. Both sets are
 asked to be null-measurable explicitly because nothing here ties the topology on `X` to its
 measurable space -- there is no `OpensMeasurableSpace` or `BorelSpace` assumption, so neither
 compactness nor closedness of `K` carries any measurability with it. (Absent a separation axiom
@@ -36,6 +40,8 @@ compactness nor closedness of `K` carries any measurability with it. (Absent a s
   compact open subdomains.
 * `MeasureTheory.LocallyIntegrableOn.integrable_indicator_of_isCompact`: integrability of the
   extension by zero of a locally integrable function supported in a null-measurable compact subset.
+* `MeasureTheory.LocallyIntegrable.inner_const`: pairing with a fixed vector preserves local
+  integrability.
 
 ## Attribution
 
@@ -134,3 +140,18 @@ theorem integrable_indicator_of_isCompact (hloc : LocallyIntegrableOn f s μ)
 end ExtendByZero
 
 end MeasureTheory.LocallyIntegrableOn
+
+namespace MeasureTheory.LocallyIntegrable
+
+variable {X 𝕜 E : Type*} [MeasurableSpace X] [TopologicalSpace X] {μ : Measure X} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] {f : X → E}
+
+/-- Pairing a locally integrable function with a fixed vector preserves local integrability, the
+analogue of Mathlib's `MeasureTheory.Integrable.inner_const`. -/
+theorem inner_const (hf : LocallyIntegrable f μ) (c : E) :
+    LocallyIntegrable (fun x => inner 𝕜 (f x) c) μ := by
+  simpa only [Function.comp_def, innerSLFlip_apply_apply] using
+    locallyIntegrableOn_univ.1
+      ((innerSLFlip 𝕜 c).locallyIntegrableOn_comp (hf.locallyIntegrableOn univ))
+
+end MeasureTheory.LocallyIntegrable

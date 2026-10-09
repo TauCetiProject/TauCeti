@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.Trace.HalfSpace
 public import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Even reflection across a hyperplane preserves weak differentiability
@@ -151,9 +152,11 @@ theorem normalReflection_mem_normalHalfSpace_iff (a : ℝ) (x : WithLp 2 (ℝ ×
   simp only [mem_normalHalfSpace, normalReflection_apply]
   constructor <;> intro h <;> linarith
 
-private theorem normalReflection_eq_add (a : ℝ) :
+/-- The normal reflection in `{a} × E` is its linear part `TauCeti.normalLinearReflection`
+followed by the translation by `(2a, 0)`. -/
+theorem normalReflection_eq_add (a : ℝ) :
     (normalReflection E a : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)) =
-      fun y => (normalLinearReflection E).toContinuousLinearEquiv y + WithLp.toLp 2 (2 * a, 0) := by
+      fun y => normalLinearReflection E y + WithLp.toLp 2 (2 * a, 0) := by
   funext y
   simp [normalReflection, vadd_eq_add, add_comm]
 
@@ -179,6 +182,21 @@ theorem measurePreserving_normalReflection (a : ℝ) :
   rw [normalReflection_eq_add]
   exact (measurePreserving_add_right (volume : Measure (WithLp 2 (ℝ × E)))
     (WithLp.toLp 2 (2 * a, 0))).comp (normalLinearReflection E).measurePreserving
+
+/-- Change of variables by the normal reflection: integrals against Lebesgue measure are
+invariant under it. -/
+theorem integral_comp_normalReflection (a : ℝ) {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] (g : WithLp 2 (ℝ × E) → F) :
+    ∫ x, g (normalReflection E a x) = ∫ x, g x :=
+  (measurePreserving_normalReflection a).integral_comp
+    (normalReflection E a).toHomeomorph.measurableEmbedding g
+
+/-- Precomposition with the normal reflection preserves local integrability. -/
+theorem locallyIntegrable_comp_normalReflection (a : ℝ) {F : Type*}
+    [NormedAddCommGroup F] {g : WithLp 2 (ℝ × E) → F} (hg : LocallyIntegrable g) :
+    LocallyIntegrable fun x => g (normalReflection E a x) :=
+  (locallyIntegrable_map_homeomorph (normalReflection E a).toHomeomorph).1 <| by
+    rwa [AffineIsometryEquiv.coe_toHomeomorph, (measurePreserving_normalReflection a).map_eq]
 
 end Reflection
 
@@ -426,12 +444,6 @@ private theorem integral_fderiv_mul_eq_neg_of_halfSpace {a : ℝ} {v : WithLp 2 
   rw [add_zero] at hlim
   exact tendsto_nhds_unique (hlim.congr key) h3.neg
 
-/-- Change of variables by the normal reflection. -/
-private theorem integral_comp_normalReflection (a : ℝ) (g : WithLp 2 (ℝ × E) → ℝ) :
-    ∫ x, g (normalReflection E a x) = ∫ x, g x :=
-  (measurePreserving_normalReflection a).integral_comp
-    (normalReflection E a).toHomeomorph.measurableEmbedding g
-
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- The chain rule for precomposition with the normal reflection. -/
 private theorem fderiv_comp_normalReflection_apply (a : ℝ) {φ : WithLp 2 (ℝ × E) → ℝ}
@@ -442,20 +454,6 @@ private theorem fderiv_comp_normalReflection_apply (a : ℝ) {φ : WithLp 2 (ℝ
     (hφ (normalReflection E a y)).hasFDerivAt.comp y (hasFDerivAt_normalReflection a y)
   rw [h.fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
     LinearIsometryEquiv.coe_toContinuousLinearEquiv]
-
-/-- The local integrability of `w`, `G` and their composites with the reflection. -/
-private theorem locallyIntegrable_comp_normalReflection (a : ℝ) {F : Type*}
-    [NormedAddCommGroup F] {g : WithLp 2 (ℝ × E) → F} (hg : LocallyIntegrable g) :
-    LocallyIntegrable fun x => g (normalReflection E a x) :=
-  (locallyIntegrable_map_homeomorph (normalReflection E a).toHomeomorph).1 <| by
-    rwa [AffineIsometryEquiv.coe_toHomeomorph, (measurePreserving_normalReflection a).map_eq]
-
-private theorem locallyIntegrable_inner_const {F : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)}
-    (hF : LocallyIntegrable F) (d : WithLp 2 (ℝ × E)) :
-    LocallyIntegrable fun x => inner ℝ (F x) d := by
-  simpa only [Function.comp_def, innerSLFlip_apply_apply] using
-    locallyIntegrableOn_univ.1
-      ((innerSLFlip ℝ d).locallyIntegrableOn_comp (hF.locallyIntegrableOn univ))
 
 /-- The integral identity behind `hasWeakLineDerivOn_add_comp_normalReflection_of_eq_smul`, for
 a single test function `φ`. Changing variables by the reflection turns both sides into pairings
@@ -475,9 +473,9 @@ private theorem integral_lineDeriv_smul_add_comp_normalReflection {a : ℝ}
   have hρρ (x : WithLp 2 (ℝ × E)) : ρ (ρ x) = x := normalReflection_normalReflection a x
   have hεε : ε * ε = 1 := by rcases hε with rfl | rfl <;> norm_num
   have hwρ : LocallyIntegrable fun x => w (ρ x) := locallyIntegrable_comp_normalReflection a hwl
-  have hGd := locallyIntegrable_inner_const hGl d
+  have hGd := hGl.inner_const (𝕜 := ℝ) d
   have hGρd : LocallyIntegrable fun x => inner ℝ (G (ρ x)) d :=
-    locallyIntegrable_inner_const (locallyIntegrable_comp_normalReflection a hGl) d
+    (locallyIntegrable_comp_normalReflection a hGl).inner_const d
   have hinner (x : WithLp 2 (ℝ × E)) :
       inner ℝ (G x + normalLinearReflection E (G (ρ x))) d =
         inner ℝ (G x) d + ε * inner ℝ (G (ρ x)) d := by
@@ -581,7 +579,7 @@ private theorem hasWeakLineDerivOn_add_comp_normalReflection_of_eq_smul {a : ℝ
   have hderiv : LocallyIntegrable
       (fun x => inner ℝ (G x + normalLinearReflection E (G (normalReflection E a x))) d) := by
     simpa only [Pi.add_apply, Function.comp_apply, ContinuousLinearEquiv.coe_coe,
-      LinearIsometryEquiv.coe_toContinuousLinearEquiv] using locallyIntegrable_inner_const (hGl.add
+      LinearIsometryEquiv.coe_toContinuousLinearEquiv] using LocallyIntegrable.inner_const (hGl.add
         (locallyIntegrableOn_univ.1 <|
           ((normalLinearReflection E).toContinuousLinearEquiv : WithLp 2 (ℝ × E) →L[ℝ] _)
             |>.locallyIntegrableOn_comp
