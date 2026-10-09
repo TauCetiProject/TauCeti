@@ -22,7 +22,8 @@ Commutativity holds over any commutative ring and for all point representatives:
 `add Q P` are equivalent, because each coordinate of `addXYZ` changes sign when `P` and `Q` are
 swapped. Associativity is the one of Mathlib's group, for nonsingular point representatives over a
 field. Over a field, the group law also commutes with a change of variables `C`: the homogeneous
-coordinate map `P ↦ C.toMatrix *ᵥ P` from `C • W` to `W` carries `add P Q` to a representative of
+coordinate map `P ↦ C.toMatrix *ᵥ P` from `C • W` to `W` carries `add P Q`, for nonsingular point
+representatives `P` and `Q` of `C • W`, to a representative of
 `add (C.toMatrix *ᵥ P) (C.toMatrix *ᵥ Q)`. This is read off the affine point groups, where the
 change of variables is the group isomorphism `WeierstrassCurve.Affine.Point.addEquivVariableChange`.
 
