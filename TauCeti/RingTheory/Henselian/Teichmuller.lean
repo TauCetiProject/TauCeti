@@ -40,6 +40,7 @@ fields.
 * `TauCeti.teichmuller_eq_iff`: the characterization of its values.
 * `TauCeti.eq_teichmuller`: it is the only multiplicative section of reduction.
 * `TauCeti.range_teichmuller`: its image is exactly `μ_{q-1}(R)`.
+* `TauCeti.teichmuller_neg_one`: for odd `q` it sends `-1` to `-1`.
 * `TauCeti.unitsMap_teichmuller`: it is natural along local homomorphisms.
 * `TauCeti.rootsOfUnityMulEquivUnitsResidueField`: reduction is an isomorphism `μ_{q-1}(R) ≃* kˣ`.
 * `TauCeti.isComplement'_rootsOfUnity_ker_unitsMap_residue`,
@@ -170,6 +171,13 @@ theorem card_rootsOfUnity :
     Nat.card (rootsOfUnity (Nat.card (ResidueField R) - 1) R) =
       Nat.card (ResidueField R) - 1 := by
   rw [Nat.card_congr (rootsOfUnityMulEquivUnitsResidueField R).toEquiv, Nat.card_units]
+
+/-- For odd `q`, the Teichmüller lift of `-1` is `-1`. (For even `q` the residue `-1` is `1`,
+whose lift is `1`.) -/
+@[simp]
+theorem teichmuller_neg_one (hq : Odd (Nat.card (ResidueField R))) :
+    teichmuller R (-1) = -1 :=
+  (teichmuller_eq_iff R).2 ⟨(Nat.Odd.sub_odd hq odd_one).neg_one_pow, by simp⟩
 
 section Naturality
 

@@ -179,8 +179,9 @@ theorem teichmullerLift_unique (f : 𝓀[K] →*₀ 𝒪[K])
 characteristic `2` the residue `-1` is `1`, whose lift is `1`.) -/
 @[simp]
 theorem teichmullerLift_neg_one (hq : Odd (Nat.card 𝓀[K])) :
-    teichmullerLift K (-1) = -1 :=
-  ((eq_teichmullerLift_iff K).2 ⟨by simp, hq.neg_one_pow⟩).symm
+    teichmullerLift K (-1) = -1 := by
+  simpa [coe_teichmuller_apply] using
+    congrArg Units.val (TauCeti.teichmuller_neg_one 𝒪[K] hq)
 
 section Automorphism
 
@@ -222,7 +223,7 @@ theorem algebraMap_teichmullerLift (a : 𝓀[K]) :
   · simp
   have hmap : ResidueField.map (algebraMap 𝒪[K] 𝒪[L]) a = algebraMap 𝓀[K] 𝓀[L] a := by
     obtain ⟨b, rfl⟩ := residue_surjective a
-    rfl
+    rw [ResidueField.map_residue, ResidueField.algebraMap_residue]
   simpa only [Units.coe_map, MonoidHom.coe_ofClass, coe_teichmuller_apply, Units.val_mk0,
     hmap] using congrArg Units.val (unitsMap_teichmuller (algebraMap 𝒪[K] 𝒪[L]) (Units.mk0 a ha))
 

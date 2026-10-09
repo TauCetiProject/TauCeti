@@ -46,6 +46,7 @@ open IsLocalRing ValuativeRel
 namespace TauCeti.Padic
 
 /-- The Teichmüller section of `ℚ_2` is trivial, since `𝔽_2ˣ` is trivial. -/
+@[simp]
 theorem teichmuller_padic_two : TauCeti.teichmuller 𝒪[ℚ_[2]] = 1 := by
   have h : Nat.card 𝓀[ℚ_[2]]ˣ = 1 := by rw [Nat.card_units, Padic.natCard_residueField]
   have := (Nat.card_eq_one_iff_unique.1 h).1
@@ -53,6 +54,7 @@ theorem teichmuller_padic_two : TauCeti.teichmuller 𝒪[ℚ_[2]] = 1 := by
   rw [Subsingleton.elim x 1, map_one, MonoidHom.one_apply]
 
 /-- Every nonzero residue class of `ℤ_2` has Teichmüller representative `1`. -/
+@[simp]
 theorem teichmullerLift_padic_two_of_ne_zero {a : 𝓀[ℚ_[2]]} (ha : a ≠ 0) :
     teichmullerLift ℚ_[2] a = 1 := by
   rw [← Units.val_mk0 ha, ← coe_teichmuller_apply, teichmuller_padic_two, MonoidHom.one_apply,
@@ -69,17 +71,20 @@ private theorem four_eq_neg_one : (4 : 𝓀[ℚ_[5]]) = -1 := by
   linear_combination h5
 
 /-- In `ℚ_5`, the Teichmüller representative of `4` is `-1`. -/
+@[simp]
 theorem teichmullerLift_padic_five_four : teichmullerLift ℚ_[5] 4 = -1 := by
   rw [four_eq_neg_one, teichmullerLift_neg_one]
   rw [Padic.natCard_residueField]
   decide
 
 /-- In `ℚ_5`, the Teichmüller representative of `2` is a square root of `-1`. -/
+@[simp]
 theorem teichmullerLift_padic_five_two_sq : teichmullerLift ℚ_[5] 2 ^ 2 = -1 := by
   rw [← map_pow, ← teichmullerLift_padic_five_four]
   norm_num
 
 /-- In `ℚ_5`, the Teichmüller representative of `3` is the negative of that of `2`. -/
+@[simp]
 theorem teichmullerLift_padic_five_three :
     teichmullerLift ℚ_[5] 3 = -teichmullerLift ℚ_[5] 2 := by
   rw [neg_eq_neg_one_mul, ← teichmullerLift_padic_five_four, ← map_mul]
