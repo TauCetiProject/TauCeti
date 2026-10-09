@@ -26,7 +26,14 @@ the normalized absolute value of the order of `A`,
 φ_F(A) = ‖#A‖_F = |#A|_p ^ [F : ℚ_p] = p ^ (-[F : ℚ_p] v_p(#A)),
 ```
 
-so that Tate's local Euler characteristic formula reads `χ_F = φ_F`.
+so that Tate's local Euler characteristic formula reads `χ_F = φ_F`. Unwinding the two positive
+rationals turns that equality into the usual cardinality formula
+
+```text
+#H¹ = #H⁰ · #H² · p ^ ([F : ℚ_p] v_p(#A)),
+```
+
+and, for `𝔽_p`-coefficients, into `dim H¹ = dim H⁰ + dim H² + [F : ℚ_p] dim A`.
 
 ## Main results
 
@@ -36,6 +43,15 @@ so that Tate's local Euler characteristic formula reads `χ_F = φ_F`.
 * `TauCeti.ClassFieldTheory.localCardNorm`: the normalized absolute value `φ_F(A)` of the order.
 * `TauCeti.ClassFieldTheory.localCardNorm_congr`: invariance under isomorphism.
 * `TauCeti.ClassFieldTheory.localCardNorm_mul_of_exact`: multiplicativity in short exact sequences.
+* `natCard_continuousCohomology_one_eq_mul_of_localEulerCharacteristic_eq_localCardNorm`:
+  `χ_F(A) = φ_F(A)` gives `#H¹ = #H⁰ · #H² · p ^ ([F : ℚ_p] v_p(#A))`.
+* `finrank_continuousCohomology_one_eq_add_of_localEulerCharacteristic_eq_localCardNorm`:
+  its dimension form for `𝔽_p`-coefficients.
+
+## References
+
+* J. Neukirch, A. Schmidt and K. Wingberg, *Cohomology of Number Fields*, (7.3.1).
+* J. S. Milne, *Arithmetic Duality Theorems*, second edition, I, Theorem 2.8.
 -/
 
 public noncomputable section
@@ -156,5 +172,69 @@ theorem localCardNorm_mul_of_exact {A B C : GalRep n F} [Finite B.V]
     padicNorm.mul, mul_pow]
 
 end CardNorm
+
+section Formula
+
+variable (p : ℕ) [Fact p.Prime]
+  {F : Type} [Field F] [CharZero F] [ValuativeRel F] [TopologicalSpace F]
+  [IsNonarchimedeanLocalField F] [FinitePadicExtension F p]
+
+/-- **The cardinality form of the local Euler characteristic formula.** Equality of the local
+Euler characteristic and the normalized absolute value of the coefficient order implies
+`#H¹ = #H⁰ · #H² · p ^ ([F : ℚ_p] v_p(#A))`. -/
+theorem natCard_continuousCohomology_one_eq_mul_of_localEulerCharacteristic_eq_localCardNorm
+    [NeZero n] (A : GalRep n F) [Finite A.V] [Fact (IsSmoothDiscrete (ZMod n) A)]
+    (h : localEulerCharacteristic (Nat.cast_ne_zero.2 (NeZero.ne n)) A = localCardNorm p A) :
+    Nat.card (continuousCohomology 1 A) =
+      Nat.card (continuousCohomology 0 A) * Nat.card (continuousCohomology 2 A) *
+        p ^ (Module.finrank ℚ_[p] F * padicValNat p (Nat.card A.V)) := by
+  have h₁ : Finite (continuousCohomology 1 A) :=
+    finite_H (Nat.cast_ne_zero.2 (NeZero.ne n)) A Fact.out (by omega)
+  have hcard₁ : 0 < Nat.card (continuousCohomology 1 A) := Nat.card_pos
+  have hA : 0 < Nat.card A.V := Nat.card_pos
+  have hq := congrArg (fun x : Units.posSubgroup ℚ ↦ ((x.1 : ℚ))) h
+  simp only [localEulerCharacteristic_coe, localCardNorm_coe] at hq
+  rw [padicNorm.eq_zpow_of_nonzero (by exact_mod_cast hA.ne'),
+    ← padicValRat_of_nat] at hq
+  norm_num [zpow_neg, zpow_natCast] at hq
+  field_simp [hcard₁.ne', (Fact.out : p.Prime).ne_zero] at hq
+  have hq' :
+      (Nat.card (continuousCohomology 1 A) : ℚ) =
+        Nat.card (continuousCohomology 0 A) * Nat.card (continuousCohomology 2 A) *
+          (p : ℚ) ^ (Module.finrank ℚ_[p] F * padicValNat p (Nat.card A.V)) := by
+    rw [mul_comm (Module.finrank ℚ_[p] F) (padicValNat p (Nat.card A.V)), pow_mul]
+    exact hq.symm
+  exact_mod_cast hq'
+
+/-- **The `𝔽_p`-dimension form of the local Euler characteristic formula.** Equality of the local
+Euler characteristic and the normalized absolute value of the coefficient order implies
+`dim H¹ = dim H⁰ + dim H² + [F : ℚ_p] dim A`. -/
+theorem finrank_continuousCohomology_one_eq_add_of_localEulerCharacteristic_eq_localCardNorm
+    (A : GalRep p F) [Finite A.V] [Fact (IsSmoothDiscrete (ZMod p) A)]
+    (h : localEulerCharacteristic (Nat.cast_ne_zero.2 (NeZero.ne p)) A = localCardNorm p A) :
+    Module.finrank (ZMod p) (continuousCohomology 1 A) =
+      Module.finrank (ZMod p) (continuousCohomology 0 A) +
+        Module.finrank (ZMod p) (continuousCohomology 2 A) +
+          Module.finrank ℚ_[p] F * Module.finrank (ZMod p) A.V := by
+  have h₀ : Finite (continuousCohomology 0 A) :=
+    finite_H (Nat.cast_ne_zero.2 (NeZero.ne p)) A Fact.out (by omega)
+  have h₁ : Finite (continuousCohomology 1 A) :=
+    finite_H (Nat.cast_ne_zero.2 (NeZero.ne p)) A Fact.out (by omega)
+  have h₂ : Finite (continuousCohomology 2 A) :=
+    finite_H (Nat.cast_ne_zero.2 (NeZero.ne p)) A Fact.out (by omega)
+  have : Module.Finite (ZMod p) A.V := Module.Finite.of_finite
+  have : Module.Finite (ZMod p) (continuousCohomology 0 A) := Module.Finite.of_finite
+  have : Module.Finite (ZMod p) (continuousCohomology 1 A) := Module.Finite.of_finite
+  have : Module.Finite (ZMod p) (continuousCohomology 2 A) := Module.Finite.of_finite
+  have hcard :=
+    natCard_continuousCohomology_one_eq_mul_of_localEulerCharacteristic_eq_localCardNorm p A h
+  rw [Module.natCard_eq_pow_finrank (K := ZMod p),
+    Module.natCard_eq_pow_finrank (K := ZMod p) (V := continuousCohomology 0 A),
+    Module.natCard_eq_pow_finrank (K := ZMod p) (V := continuousCohomology 2 A),
+    Module.natCard_eq_pow_finrank (K := ZMod p) (V := A.V), Nat.card_zmod,
+    padicValNat.prime_pow, ← pow_add, ← pow_add] at hcard
+  exact Nat.pow_right_injective (Fact.out : p.Prime).two_le hcard
+
+end Formula
 
 end TauCeti.ClassFieldTheory
