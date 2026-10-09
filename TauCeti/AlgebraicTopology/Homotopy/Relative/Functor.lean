@@ -167,6 +167,8 @@ theorem toAbelianization_eq_toAbelianization_iff {a b : RelHomotopyGroup N X} :
   Additive.ofMul.injective.eq_iff.trans <| by
     rw [← div_eq_one, ← map_div, ← MonoidHom.mem_ker, Abelianization.ker_of, div_eq_mul_inv]
 
+/-- The quotient map onto the abelianization is surjective: every element of the abelianization
+of `π_{n+1}(X, A, a₀)` is represented by an element of `π_{n+1}(X, A, a₀)`. -/
 theorem toAbelianization_surjective :
     Function.Surjective (toAbelianization : RelHomotopyGroup N X → _) :=
   Additive.ofMul.surjective.comp QuotientGroup.mk_surjective
