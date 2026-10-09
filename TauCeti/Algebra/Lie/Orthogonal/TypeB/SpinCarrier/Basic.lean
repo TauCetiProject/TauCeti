@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Lie.Sl2
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.GeneratorRelations
 public import TauCeti.RepresentationTheory.Spin.Polarization.Split.Odd
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.KostantLattice
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.B.SpinWeight
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.KostantForm
 public import
   TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
@@ -62,17 +60,14 @@ subgroups is separate from this carrier construction.
 
 public section
 
-open scoped Matrix
-
 universe v
 
 namespace TauCeti.TypeBSpinCarrier
 
 open AlgebraicGeometry CategoryTheory
 open TauCeti.UniversalEnvelopingAlgebra
-open scoped CategoryTheory.MonObj TensorProduct
+open scoped CategoryTheory.MonObj
 
-attribute [local instance] TauCeti.moduleNNRat
 attribute [local instance 100] LieRing.ofAssociativeRing
 attribute [local instance high] Algebra.toModule
 
@@ -89,7 +84,9 @@ noncomputable abbrev polarizationBasis := TauCeti.splitOddBasis ℚ (n + 1)
 /-- The distinguished norm-one vector in the orthogonal remainder. -/
 noncomputable abbrev remainderOne := TauCeti.splitOddRemainderOne ℚ (n + 1)
 
-/-- The rational spin representation of the numbered type-`Bₙ₊₁` generators. -/
+/-- The rational spin representation of the split type-`Bₙ₊₁` matrix Lie algebra
+`LieAlgebra.Orthogonal.typeB (Fin (n + 1)) ℚ`, extended to its universal enveloping algebra. It
+acts on the exterior algebra of the first isotropic summand of the split polarization. -/
 noncomputable abbrev rep :=
   (polarization n).typeBSpinRep (polarizationBasis n) (remainderOne n)
     (TauCeti.splitOddForm_remainderOne ℚ (n + 1))
@@ -181,7 +178,7 @@ theorem nilpotencyClass_rep_rootGenerator_le_two (k : Fin (n + 1) ⊕ Fin (n + 1
     nilpotencyClass (rep n
       (_root_.UniversalEnvelopingAlgebra.ι ℚ
         (TauCeti.typeBSimpleRootGeneratorFamily k))) ≤ 2 :=
-  Nat.sInf_le (pow_two_rep_rootGenerator_eq_zero n k)
+  nilpotencyClass_le_of_pow_eq_zero (pow_two_rep_rootGenerator_eq_zero n k)
 
 /-- The simple-generator type-`B` Kostant form preserves the exterior coordinate lattice. -/
 theorem rep_kostantForm_mem_lattice
@@ -510,7 +507,9 @@ instance isClosedImmersion_weightTorus :
   isClosedImmersion_kostantWeightTorusToToral _ _ _ _ _ _ _ _
     (span_range_basisWeight_eq_top n)
 
-/-- Morphisms out of the carrier agree on its root subgroups and weight torus. -/
+/-- Two morphisms from the type-`Bₙ₊₁` spin carrier to the affine group scheme of a commutative
+Hopf `ℤ`-algebra agree when they agree on every numbered root subgroup of the carrier and on its
+weight torus. -/
 @[ext]
 theorem groupScheme_hom_ext {Y : _root_.CommHopfAlgCat.{0} ℤ}
     (f g : groupScheme n ⟶

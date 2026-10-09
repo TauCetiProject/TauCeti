@@ -116,15 +116,7 @@ variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)} [mu.Is
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
   {c : EuclideanSpace ℝ ι → ℝ} {C : ℝ}
 
-/-- Shortcut normed group instance on `H¹₀(Ω)`, the separated form of the seminorm; the
-inner-product shortcut below needs it and does not find it on its own. -/
-noncomputable local instance instNormedAddCommGroupH1Zero :
-    NormedAddCommGroup (W1p0 mu Omega 2) := inferInstance
-
-/-- Shortcut inner-product instance on `H¹₀(Ω)`: the Hilbert structure Lax--Milgram runs on,
-inherited from the `L²` jet space through the same two closed subspaces. -/
-noncomputable local instance instInnerProductSpaceH1Zero :
-    InnerProductSpace ℝ (W1p0 mu Omega 2) := inferInstance
+attribute [local instance] W1p0.instNormedAddCommGroup W1p0.instInnerProductSpace
 
 /-! ### The forcing functional -/
 

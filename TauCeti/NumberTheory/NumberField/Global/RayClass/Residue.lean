@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Basic
 public import Mathlib.LinearAlgebra.FreeModule.IdealQuotient
 
+import TauCeti.RingTheory.Ideal.Quotient.DedekindDomain
 import TauCeti.RingTheory.Ideal.Quotient.Representative
 
 /-!
@@ -51,12 +52,13 @@ class.
   functorial in finite-part divisibility.
 * `TauCeti.GlobalNumberFields.finiteUnitsMap_residueHom`: reduction commutes with changing the
   modulus.
+* `TauCeti.GlobalNumberFields.finiteUnitsMap_surjective`: every residue unit lifts to a larger
+  finite modulus.
 
 ## References
 
 * J. Neukirch, *Algebraic Number Theory*, Chapter VI, §1.
 * S. Lang, *Algebraic Number Theory*, Chapter VI, §1.
-* `TauCetiRoadmap/GlobalNumberFields/Suggested.lean` (`GlobalNumberFields.finiteUnitsMap`).
 -/
 
 public section
@@ -349,6 +351,12 @@ theorem coe_finiteUnitsMap {𝔪 𝔫 : Modulus K} (h : 𝔪.finitePart ∣ 𝔫
       Ideal.Quotient.factor (Ideal.le_of_dvd h)
         (x : (𝓞 K) ⧸ 𝔫.finitePart) := by
   rfl
+
+/-- Every residue unit modulo the smaller finite part lifts to a residue unit modulo the larger
+finite part. The lift need not be the reduction of a global integer unit. -/
+theorem finiteUnitsMap_surjective {𝔪 𝔫 : Modulus K} (h : 𝔪.finitePart ∣ 𝔫.finitePart) :
+    Function.Surjective (finiteUnitsMap h) :=
+  units_map_quotient_factor_surjective (Ideal.le_of_dvd h) 𝔫.finitePart_ne_bot
 
 /-- Changing the finite part along reflexivity gives the identity map. -/
 @[simp]

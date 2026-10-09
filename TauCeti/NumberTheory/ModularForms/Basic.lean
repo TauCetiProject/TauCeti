@@ -16,10 +16,9 @@ Small generic lemmas extending `Mathlib/NumberTheory/ModularForms/Basic.lean` an
 actions: the conjugation `σ` is trivial on `SL(2, ℤ)`-matrices — a special case of
 `UpperHalfPlane.σ_eq_refl_of_det_pos`, which lives with `σ` itself in
 `TauCeti/Analysis/Complex/UpperHalfPlane/MoebiusAction.lean` — the `CuspForm`
-translation equations Mathlib does not yet provide (`CuspForm.mcast_apply` and the
-`GL(2, ℝ)`-level `CuspForm.coe_translate_gl`), and the weight-`k` slash action of `-I`
-(`ModularForm.slash_neg_one`), the source of every parity constraint on weights and
-nebentypus characters.
+cast equation Mathlib does not yet provide (`CuspForm.mcast_apply`), and the weight-`k`
+slash action of `-I` (`ModularForm.slash_neg_one`), the source of every parity constraint on
+weights and nebentypus characters.
 
 It also records how modular and cusp forms move between two nested groups `Γ' ≤ Γ`. Shrinking
 the group is unconditional (`ModularForm.ofLe`): slash invariance restricts, and every cusp of
@@ -158,13 +157,6 @@ lemma slash_zpow_mul_mul_zpow_eq_smul (k : ℤ) (f : ℍ → ℂ) {δ γ : GL (F
 analogue of Mathlib's `ModularForm.mcast_apply`, which Mathlib does not yet provide. -/
 lemma _root_.CuspForm.mcast_apply {a b : ℤ} {Γ Γ' : Subgroup (GL (Fin 2) ℝ)} (h : a = b)
     (f : CuspForm Γ a) (hΓ : Γ' = Γ := by rfl) (z : ℍ) : CuspForm.mcast h f hΓ z = f z := (rfl)
-
-/-- `GL(2, ℝ)`-level coercion lemma for `CuspForm.translate`; Mathlib's
-`CuspForm.coe_translate` is specialized to `SL(2, ℤ)` arguments. -/
-@[simp]
-lemma _root_.CuspForm.coe_translate_gl {F : Type*} [FunLike F UpperHalfPlane ℂ] {k : ℤ}
-    {Γ : Subgroup (GL (Fin 2) ℝ)} [CuspFormClass F Γ k] (f : F) (g : GL (Fin 2) ℝ) :
-    ⇑(CuspForm.translate f g) = ⇑f ∣[k] g := (rfl)
 
 /-- The weight-`k` slash action of `-I` is multiplication by `(-1) ^ k`: `-I` acts trivially
 on `ℍ` and has determinant `1`, so the only surviving factor is its automorphy factor

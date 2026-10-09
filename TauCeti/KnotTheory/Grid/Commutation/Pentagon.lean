@@ -548,6 +548,32 @@ theorem pentagonWeight_eq_monomial {x y : GridState n}
   rw [pentagonWeight, MvPolynomial.monomial_sum_one]
   simp only [← MvPolynomial.X_pow_eq_monomial, pow_one]
 
+/-- Renamed back by the column swap, the weight of a pentagon is the product, over the squares it
+covers, of the variable of the square's column in `G` at the `O`-marked squares and of `1`
+elsewhere: the weight a rectangle covering the same squares would have in `G`. -/
+theorem rename_pentagonWeight {x y : GridState n} (C : ColumnCommutationData G)
+    (P : GridPentagonBetween C.column C.turnRow x y) :
+    MvPolynomial.rename (Equiv.swap C.column (finRotate n C.column)) (G.pentagonWeight R C P) =
+      ∏ p ∈ P.coveredSquares,
+        if p ∈ G.OSet then MvPolynomial.X p.1 else (1 : MvPolynomial (Fin n) R) := by
+  rw [pentagonWeight_eq_prod_coveredSquares, map_prod]
+  refine Finset.prod_congr rfl fun p _ => ?_
+  split_ifs <;> simp
+
+/-- The weight of a pentagon of the reverse commutation, which turns at the opposite intersection
+and is counted in the commuted diagram, is the product, over the squares it covers read in `G` by
+exchanging the two commuted columns, of the variable of the square's column at the `O`-marked
+squares of `G` and of `1` elsewhere. -/
+theorem pentagonWeight_reverse {y z : GridState n} (C : ColumnCommutationData G)
+    (Q : GridPentagonBetween C.reverse.column C.reverse.turnRow y z) :
+    (G.swapColumns C.column (finRotate n C.column)).pentagonWeight R C.reverse Q =
+      ∏ p ∈ Q.coveredSquares.map
+          ((Equiv.swap C.column (finRotate n C.column)).prodCongr (Equiv.refl (Fin n))).toEmbedding,
+        if p ∈ G.OSet then MvPolynomial.X p.1 else (1 : MvPolynomial (Fin n) R) := by
+  rw [pentagonWeight_eq_prod_coveredSquares, Finset.prod_map]
+  refine Finset.prod_congr rfl fun p _ => ?_
+  simp [ColumnCommutationData.reverse_column]
+
 /-! ### The pentagon map -/
 
 /-- The matrix coefficient of the pentagon map from `x` to `y`: the sum of the weights of the
