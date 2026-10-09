@@ -87,8 +87,8 @@ private theorem toMatrix_map_mulVec_eq {C C' : VariableChange R} (h : C • W = 
     [CommRing S] {g : R →+* S} {P : Fin 3 → S} (hP : ((C • W).toProjective.map g).Equation P)
     (hi : IsUnit (P 2)) : (C.map g).toMatrix *ᵥ P = (C'.map g).toMatrix *ᵥ P := by
   -- a change of variables fixes the third homogeneous coordinate
-  have hZ (D : VariableChange R) : ((D.map g).toMatrix *ᵥ P) 2 = P 2 := by
-    simp [VariableChange.toMatrix_def, mulVec, dotProduct, Fin.sum_univ_three]
+  have hZ (D : VariableChange R) : ((D.map g).toMatrix *ᵥ P) 2 = P 2 :=
+    (D.map g).toMatrix_mulVec_two P
   have hj (D : VariableChange R) : IsUnit (((D.map g).toMatrix *ᵥ P) 2) := by rwa [hZ D]
   -- both isomorphisms send the point with coordinates `P` to the same point of `projModel W`
   have key := projModelPoint_projModelVariableChangeIso_hom (hP := hP) hi (hj C)

@@ -21,13 +21,14 @@ Weak directional derivatives agree with the distributional derivatives of the as
 tempered distribution, connecting the weak-gradient and Bessel-potential descriptions.
 
 Use `TauCeti.HasWeakFDerivOn.memSobolev_one h` for the weak-to-Bessel inclusion and
-`MeasureTheory.Lp.memSobolev_one_iff_exists_w1p_value_eq u` for the whole-space equivalence.
+`MeasureTheory.Lp.memSobolev_natCast_iff_exists_wkp_value_eq 1 u` for the whole-space equivalence.
 
 ## References
 
 * L. C. Evans, *Partial Differential Equations*, Chapter 5, §5.8.
 * M. Taylor, *Partial Differential Equations I*, Chapter 4.
-* `MeasureTheory.Lp.exists_w1p_value_eq_of_memSobolev_one` (Bessel-to-weak inclusion).
+* `MeasureTheory.Lp.memSobolev_natCast_iff_exists_wkp_value_eq`
+  (agreement at every natural order).
 * `TauCeti.hasWeakLineDerivOn_iff_lineDerivOp_toTemperedDistribution_ofReal_eq`
   (agreement of weak and distributional directional derivatives).
 -/

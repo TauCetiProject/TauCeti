@@ -7,7 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Differential.Cotrace
 public import TauCeti.FieldTheory.FunctionField.Differential.Kaehler
-public import TauCeti.FieldTheory.FunctionField.Differential.RatFunc
+public import TauCeti.FieldTheory.FunctionField.Differential.RatFunc.Basic
 
 /-!
 # Comparing Kähler and Weil differentials
