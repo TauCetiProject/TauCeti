@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.PID
 public import TauCeti.Algebra.MonoidAlgebra.Basis
 public import TauCeti.RepresentationTheory.FDRep
 public import TauCeti.RepresentationTheory.Subrepresentation
+public import TauCeti.RepresentationTheory.Rep.TensorShortExact
 
 /-!
 # The augmentation subrepresentation of a free-module action
@@ -18,6 +19,10 @@ whose coefficients sum to zero. For a group action on finite `X`, the sum of the
 vectors spans an invariant subrepresentation, called the invariant line. Both constructions are
 defined over any semiring. If `X` is nonempty, the invariant line is equivalent to the trivial
 representation on `k`: every coordinate of a vector in the line is its scalar coefficient.
+
+Over a ring, the coefficient sum is a morphism from the permutation representation to the
+trivial representation. When `X` is nonempty its kernel inclusion gives the short exact sequence
+`0 → ker(sum) → k[X] → k → 0`, whether or not it splits equivariantly.
 
 For finite `X` over a ring satisfying the strong rank condition, the augmentation subrepresentation
 has rank `|X| - 1`.
@@ -34,6 +39,9 @@ These constructions underlie the standard representation of the symmetric group.
 ## Main definitions and results
 
 * `TauCeti.augmentationSubrepresentation`: the kernel of the coefficient sum.
+* `TauCeti.permutationAugmentation`: the coefficient sum as a representation morphism.
+* `TauCeti.permutationAugmentationSequence_shortExact`: the augmentation sequence is short exact
+  when the permutation set is nonempty.
 * `TauCeti.permutationSum` and `TauCeti.invariantLine`: the sum of the standard basis and its span.
 * `TauCeti.invariantLineEquivTrivial`: the invariant line as the trivial representation on `k`.
 * `TauCeti.MonoidAlgebra.ker_sumCoords_basis_eq_span`: the augmentation kernel is spanned by
@@ -59,6 +67,8 @@ The two maps agree when `X` is a monoid: both send `single x a` to `a`.
 public section
 
 namespace TauCeti
+
+open CategoryTheory
 
 /-! ### The augmentation subrepresentation -/
 
@@ -102,6 +112,31 @@ theorem mem_augmentationSubrepresentation_iff {v : MonoidAlgebra k X} :
 
 end Subrep
 
+section AugmentationMap
+
+universe u
+
+variable (k : Type u) [Ring k] (G : Type*) (X : Type u) [Monoid G] [MulAction G X]
+
+/-- The coefficient sum as a morphism from the permutation representation to the trivial
+representation on the scalars. -/
+noncomputable def permutationAugmentation :
+    Rep.ofMulAction k G X ⟶ Rep.trivial k G k :=
+  Rep.ofHom <| LinearMap.intertwiningMap_of_isIntertwiningMap _ _
+    (MonoidAlgebra.basis X k).sumCoords fun g v => sumCoords_basis_ofMulAction k G X g v
+
+/-- The permutation augmentation evaluates to the sum of the coefficients. -/
+@[simp]
+theorem permutationAugmentation_apply (v : MonoidAlgebra k X) :
+    (permutationAugmentation k G X).hom v = (MonoidAlgebra.basis X k).sumCoords v :=
+  (rfl)
+
+/-- For a nonempty permutation set, augmentation is surjective. -/
+instance permutationAugmentation_epi [Nonempty X] : Epi (permutationAugmentation k G X) :=
+  (Rep.epi_iff_surjective _).2 (MonoidAlgebra.sumCoords_basis_surjective (k := k) (X := X))
+
+end AugmentationMap
+
 section SubrepRing
 
 variable {k : Type*} [Ring k] {G X : Type*} [Monoid G] [MulAction G X]
@@ -127,6 +162,51 @@ instance [Finite X] :
     exact Module.Finite.span_of_finite k (Set.finite_range _)
 
 end SubrepRing
+
+/-! ### The augmentation sequence -/
+
+section Sequence
+
+universe u
+
+variable (k : Type u) [Ring k] (G : Type*) (X : Type u) [Monoid G] [MulAction G X]
+
+/-- The permutation augmentation sequence `ker(sum) → k[X] → k`. -/
+noncomputable def permutationAugmentationSequence : ShortComplex (Rep k G) :=
+  ShortComplex.mk (Rep.ofHom (augmentationSubrepresentation k G X).subtype)
+    (permutationAugmentation k G X) (by
+      ext v
+      simpa [permutationAugmentation_apply k G X] using
+        (mem_augmentationSubrepresentation_iff (k := k) (G := G)).mp v.2)
+
+/-- The permutation augmentation sequence consists of the inclusion and coefficient sum. -/
+theorem permutationAugmentationSequence_def :
+    permutationAugmentationSequence k G X =
+      ShortComplex.mk (Rep.ofHom (augmentationSubrepresentation k G X).subtype)
+        (permutationAugmentation k G X) (by
+          ext v
+          simpa [permutationAugmentation_apply k G X] using
+            (mem_augmentationSubrepresentation_iff (k := k) (G := G)).mp v.2) :=
+  (rfl)
+
+/-- The augmentation sequence on a nonempty permutation set is short exact. It need not
+split equivariantly when the cardinality of the set is not invertible. -/
+theorem permutationAugmentationSequence_shortExact [Nonempty X] :
+    (permutationAugmentationSequence k G X).ShortExact := by
+  rw [permutationAugmentationSequence_def]
+  refine ShortComplex.ShortExact.mk' ((Rep.exact_iff_function_exact _).2 ?_)
+    ((Rep.mono_iff_injective _).2 (augmentationSubrepresentation k G X).subtype_injective)
+    (permutationAugmentation_epi k G X)
+  intro v
+  -- `Function.Exact` hides the range predicate; spell it out to use the kernel membership API.
+  change (permutationAugmentation k G X).hom v = 0 ↔
+    ∃ w, (augmentationSubrepresentation k G X).subtype w = v
+  rw [permutationAugmentation_apply]
+  simp only [Subrepresentation.coe_subtype]
+  exact ⟨fun hv => ⟨⟨v, mem_augmentationSubrepresentation_iff.mpr hv⟩, rfl⟩,
+    fun ⟨w, hw⟩ => hw ▸ (mem_augmentationSubrepresentation_iff (G := G)).mp w.2⟩
+
+end Sequence
 
 /-! ### The invariant line -/
 
