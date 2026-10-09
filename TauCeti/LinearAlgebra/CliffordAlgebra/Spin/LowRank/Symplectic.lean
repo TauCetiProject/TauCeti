@@ -5,11 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.IsSepClosed
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.Five
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Symplectic
 import Mathlib.LinearAlgebra.ExteriorPower.Basis
+import TauCeti.Algebra.CentralSimple.SeparablyClosed
 import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector
+import TauCeti.LinearAlgebra.CliffordAlgebra.CentralSimple.Even
 import TauCeti.LinearAlgebra.Matrix.Involution
+import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 
 /-!
 # Spin in dimension five as a symplectic group
@@ -20,7 +24,14 @@ not two, the even Clifford algebra `C₀` is central simple of degree four
 reverse-unitary elements (`CliffordAlgebra.range_spinGroup_toUnits_eq_evenUnitaryGroup`). The
 canonical involution is `σ = reverse`. When `C₀` splits, `C₀ ≃ M₄(K)`, this file shows that `σ`
 is **symplectic**: the isomorphism can be chosen to carry `σ` to the standard symplectic adjoint
-`X ↦ J⁻¹ Xᵀ J = -(J Xᵀ J)`, and hence `Spin(Q) ≅ Sp₄(K)`. The nonsplit case is not treated here.
+`X ↦ J⁻¹ Xᵀ J = -(J Xᵀ J)`, and hence `Spin(Q) ≅ Sp₄(K)`.
+
+Without a splitting hypothesis, `σ` is still symplectic in the sense of involutions of central
+simple algebras: over any separably closed extension `L / K` the even Clifford algebra of the
+extended form splits, `C₀ ⊗ L ≃ M₄(L)`, because it is central simple of degree four, and the split
+case then carries the extended reversal to the symplectic adjoint. Consequently `Spin(Q)` embeds in
+`Sp₄(L)`, and its image is exactly the set of symplectic matrices whose preimage in `C₀ ⊗ L`
+comes from `C₀`: `Spin(Q)` is the group `Sp(C₀, σ)` of `K`-points of a twisted form of `Sp₄`.
 
 The argument transports `σ` to an involutive anti-automorphism of `M₄(K)`, which is the adjoint
 involution `X ↦ C⁻¹ Xᵀ C` of an invertible `C` with `Cᵀ = ±C`
@@ -43,6 +54,12 @@ symplectic basis for it conjugates `σ` to the standard symplectic adjoint
   splitting `C₀ ≃ M₄(K)` can be replaced by one carrying `σ` to the symplectic adjoint.
 * `CliffordAlgebra.exists_spinGroupEquivSymplecticGroup_of_finrank_eq_five`: if `C₀` splits in
   dimension five, then `Spin(Q) ≅ Sp₄(K)`.
+* `CliffordAlgebra.exists_algEquiv_reverseEven_baseChange_eq_neg_J_mul_transpose_mul_J`: in
+  dimension five, over every separably closed extension `L`, reversal on `C₀ ⊗ L` is the
+  symplectic adjoint for a suitable splitting `C₀ ⊗ L ≃ M₄(L)`.
+* `CliffordAlgebra.exists_injective_spinGroup_symplecticGroup_of_finrank_eq_five`: in dimension
+  five, `Spin(Q)` is the subgroup of `Sp₄(L)` of matrices whose preimage under such a splitting is
+  defined over `K`.
 
 ## References
 
@@ -53,6 +70,8 @@ symplectic basis for it conjugates `σ` to the standard symplectic adjoint
 public section
 
 open Matrix Module
+
+open scoped TensorProduct
 
 namespace CliffordAlgebra
 
@@ -164,5 +183,68 @@ theorem exists_spinGroupEquivSymplecticGroup_of_finrank_eq_five (Q : QuadraticFo
   obtain ⟨e⟩ := hsplit
   obtain ⟨e', he'⟩ := exists_algEquiv_reverseEven_eq_neg_J_mul_transpose_mul_J Q hV e
   exact ⟨spinGroupEquivSymplecticGroup Q hQ (by omega) hV.le e' he'⟩
+
+section BaseChange
+
+variable (L : Type*) [Field L] [Algebra K L] [IsSepClosed L]
+
+/-- **Reversal is a symplectic involution in dimension five**, with no splitting hypothesis. For
+a nondegenerate quadratic form on a five-dimensional space and any separably closed extension
+`L / K`, the even Clifford algebra of the extended form is isomorphic to `M₄(L)` by an isomorphism
+carrying reversal to the standard symplectic adjoint `X ↦ J⁻¹ Xᵀ J = -(J Xᵀ J)`. -/
+theorem exists_algEquiv_reverseEven_baseChange_eq_neg_J_mul_transpose_mul_J
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hV : finrank K V = 5) :
+    ∃ e : even (Q.baseChange L) ≃ₐ[L] Matrix (Fin 2 ⊕ Fin 2) (Fin 2 ⊕ Fin 2) L,
+      ∀ x, e (reverseEven (Q.baseChange L) x) =
+        -(J (Fin 2) L * (e x)ᵀ * J (Fin 2) L) := by
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
+  let _ : Invertible (2 : L) := (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
+  have : NeZero (2 : L) := ⟨Invertible.ne_zero 2⟩
+  have hVL : finrank L (L ⊗[K] V) = 5 := by rw [Module.finrank_baseChange, hV]
+  have hodd : Odd (finrank L (L ⊗[K] V)) := by rw [hVL]; decide
+  have hQL : (Q.baseChange L).Nondegenerate := QuadraticForm.Nondegenerate.baseChange (L := L) hQ
+  -- The even Clifford algebra of the extended form is central simple of degree four, so it
+  -- splits over the separably closed field `L`.
+  have := TauCeti.CliffordAlgebra.isCentral_even_of_odd_finrank hQL hodd
+  have := TauCeti.CliffordAlgebra.isSimpleRing_even_of_odd_finrank hQL hodd
+  obtain ⟨n, -, hn, ⟨e⟩⟩ := TauCeti.IsSimpleRing.exists_algEquiv_matrix_of_isSepClosed L
+    (even (Q.baseChange L))
+  obtain rfl : n = 4 := by
+    rw [← TauCeti.Algebra.deg_eq_of_finrank_eq_sq hn,
+      TauCeti.CliffordAlgebra.deg_even_of_finrank_eq_five hVL]
+  exact exists_algEquiv_reverseEven_eq_neg_J_mul_transpose_mul_J (Q.baseChange L) hVL e
+
+/-- **`Spin₅` is a twisted form of `Sp₄`.** For a nondegenerate quadratic form on a
+five-dimensional space and any separably closed extension `L / K`, there are a splitting
+`e : C₀ ⊗ L ≃ M₄(L)` carrying reversal to the symplectic adjoint and an injective homomorphism
+`f : Spin(Q) → Sp₄(L)` with `e⁻¹ (f s)` the scalar extension of `s`. Its image consists of exactly
+those symplectic matrices `g` for which `e⁻¹ g` comes from `C₀`, so `Spin(Q)` is the group
+`Sp(C₀, σ)` of `K`-rational points of `Sp₄(L)` for the `K`-structure `C₀ ⊆ C₀ ⊗ L`. -/
+theorem exists_injective_spinGroup_symplecticGroup_of_finrank_eq_five
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hV : finrank K V = 5) :
+    ∃ (e : even (Q.baseChange L) ≃ₐ[L] Matrix (Fin 2 ⊕ Fin 2) (Fin 2 ⊕ Fin 2) L)
+      (f : spinGroup Q →* symplecticGroup (Fin 2) L), Function.Injective f ∧
+      (∀ s : spinGroup Q,
+        (e.symm (f s) : CliffordAlgebra (Q.baseChange L)) = ofBaseChangeAux L Q s) ∧
+      ∀ g, g ∈ f.range ↔
+        ∃ y ∈ even Q, ofBaseChangeAux L Q y = (e.symm g : CliffordAlgebra (Q.baseChange L)) := by
+  obtain ⟨e, he⟩ := exists_algEquiv_reverseEven_baseChange_eq_neg_J_mul_transpose_mul_J L Q hQ hV
+  let φ := evenUnitaryGroupToSymplecticGroup Q e he
+  refine ⟨e, φ.comp (spinGroupToEvenUnitary Q),
+    (evenUnitaryGroupToSymplecticGroup_injective Q e he).comp (spinGroupToEvenUnitary_injective Q),
+    fun s => by simp [φ], fun g => ?_⟩
+  rw [← mem_range_evenUnitaryGroupToSymplecticGroup_iff Q e he, MonoidHom.range_comp]
+  -- In dimension five every even unitary element is a Spin element.
+  have hsurj : (spinGroupToEvenUnitary Q).range = ⊤ := by
+    rw [eq_top_iff]
+    rintro x -
+    obtain ⟨s, hs⟩ : (x : (CliffordAlgebra Q)ˣ) ∈
+        (spinGroup.toUnits : spinGroup Q →* (CliffordAlgebra Q)ˣ).range := by
+      rw [range_spinGroup_toUnits_eq_evenUnitaryGroup Q hQ (by omega) hV.le]
+      exact x.2
+    exact ⟨s, Subtype.ext (Units.ext (by rw [coe_spinGroupToEvenUnitary_apply, ← hs]))⟩
+  rw [hsurj, ← MonoidHom.range_eq_map]
+
+end BaseChange
 
 end CliffordAlgebra

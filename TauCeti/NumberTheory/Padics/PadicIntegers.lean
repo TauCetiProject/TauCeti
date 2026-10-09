@@ -42,6 +42,8 @@ This is the shape in which the exponent vector of a relator of a free pro-`p` gr
 * `PadicInt.range_units_val`: the units of `ℤ_[p]` are the elements of norm `1`.
 * `Padic.exists_eq_zpow_valuation_mul`: every nonzero `x : ℚ_[p]` is `p ^ v(x)` times a unit of
   `ℤ_[p]`.
+* `Padic.inv_natCast_le_norm_natCast`: the `p`-adic norm of a positive integer `m` is at least
+  `1 / m`.
 * `PadicInt.compactSpace_units`, `PadicInt.totallyDisconnectedSpace_units`: `ℤ_[p]ˣ` is a
   profinite group.
 -/
@@ -136,5 +138,13 @@ theorem exists_eq_zpow_valuation_mul {x : ℚ_[p]} (hx : x ≠ 0) :
       neg_neg, ← zpow_add₀ hp', neg_add_cancel, zpow_zero]
   refine ⟨PadicInt.mkUnits hy, ?_⟩
   rw [PadicInt.mkUnits_eq, mul_left_comm, ← zpow_add₀ hp, add_neg_cancel, zpow_zero, mul_one]
+
+/-- The `p`-adic norm of a positive integer `m` is at least `1 / m`. -/
+theorem inv_natCast_le_norm_natCast (m : ℕ) [NeZero m] : (m : ℝ)⁻¹ ≤ ‖(m : ℚ_[p])‖ := by
+  rw [Padic.norm_eq_zpow_neg_valuation (Nat.cast_ne_zero.mpr (NeZero.ne m)),
+    Padic.valuation_natCast, zpow_neg, zpow_natCast]
+  gcongr
+  · exact pow_pos (by exact_mod_cast (Fact.out : p.Prime).pos) _
+  · exact_mod_cast Nat.le_of_dvd (Nat.pos_of_ne_zero (NeZero.ne m)) pow_padicValNat_dvd
 
 end Padic
