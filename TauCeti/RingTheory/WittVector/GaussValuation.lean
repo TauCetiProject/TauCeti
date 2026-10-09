@@ -218,7 +218,9 @@ private theorem pow_dvd_mul_sub_sum (x y : 𝕎 O) (n : ℕ) :
     exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by
       rw [map_mul, pow_add]
       ring
-  rw [hXY, show x * y - X * Y = x * (y - Y) + (x - X) * Y by ring]
+  -- Split the difference of products into differences of factors.
+  have hsplit : x * y - X * Y = x * (y - Y) + (x - X) * Y := by ring
+  rw [hXY, hsplit]
   exact dvd_add (hy.mul_left x) (hx.mul_right Y)
 
 /-- The weighted valuation of the product term `[xᵢ yⱼ] p ^ (i + j)`. -/
@@ -333,9 +335,12 @@ private theorem gaussSup_mul_le_gaussSup_mul (hv : v.Integers O) (hρ : ρ < 1) 
     rw [gaussTrunc_teichmuller_mul_pow]
     split_ifs with hle
     · rw [gaussTerm_mul_gaussTerm]
-      rcases (show ij.1 < i₀ ∨ ij.2 < j₀ by
+      -- A non-leading index pair within `Iic n ×ˢ Iic n`, where `n = i₀ + j₀`, has a coordinate
+      -- before the corresponding first maximiser.
+      have hidx : ij.1 < i₀ ∨ ij.2 < j₀ := by
         by_contra! h
-        exact hne (Prod.ext (by omega) (by omega))) with h | h
+        exact hne (Prod.ext (by omega) (by omega))
+      rcases hidx with h | h
       · exact (mul_le_mul' le_rfl (hj₀ _)).trans_lt (mul_lt_mul_of_pos_right (hi₀' _ h) hy₀)
       · exact (mul_le_mul' (hi₀ _) le_rfl).trans_lt (mul_lt_mul_of_pos_left (hj₀' _ h) hx₀)
     · exact hM
@@ -399,6 +404,7 @@ theorem gaussValuation_p (hv : v.Integers O) (hρ : ρ < 1) :
   simpa using gaussValuation_teichmuller_mul_pow (p := p) hv hρ 1 1
 
 /-- For `0 < ρ`, the Gauss valuation vanishes only at zero. -/
+@[simp]
 theorem gaussValuation_eq_zero_iff (hv : v.Integers O) (hρ₀ : 0 < ρ) (hρ : ρ < 1) {x : 𝕎 O} :
     gaussValuation p hv ρ hρ x = 0 ↔ x = 0 := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ map_zero _⟩

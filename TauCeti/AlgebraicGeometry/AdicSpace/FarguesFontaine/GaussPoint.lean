@@ -107,16 +107,19 @@ theorem spaY_nonempty [TopologicalSpace (WittVector p O)] {ϖ : O}
     (hϖ₀ : ϖ ≠ 0) (hϖ : v (algebraMap O K ϖ) < 1) : (spaY p ϖ).Nonempty :=
   ⟨_, gaussPoint_mem_spaY (ρ := 2⁻¹) hI hv (by norm_num) (by norm_num) hϖ₀ hϖ⟩
 
-/-- **The radius of a Gauss point, from below.** The lower radius bound `q ≤ κ(η_ρ)` holds exactly
-when `v(ϖ) ^ b ≤ ρ ^ a` for `q = a / b` in lowest terms; so `κ(η_ρ) = log v(ϖ) / log ρ`. -/
+/-- **The radius of a Gauss point, from below.** For `q = a / b` in lowest terms, the predicate
+`IsRadiusLowerBound p ϖ q η_ρ` holds exactly when `v(ϖ) ^ b ≤ ρ ^ a`. This holds for all `ρ < 1`
+and `ϖ`; when moreover `0 < ρ` and `0 < v(ϖ) < 1`, it says that `q ≤ log v(ϖ) / log ρ`, so the
+radius `κ(η_ρ)` is `log v(ϖ) / log ρ`. -/
 theorem isRadiusLowerBound_gaussPoint_iff (hv : v.Integers O) (hρ : ρ < 1) (ϖ : O) (q : ℚ≥0) :
     IsRadiusLowerBound p ϖ q (gaussPoint p hv ρ hρ) ↔
       v (algebraMap O K ϖ) ^ q.den ≤ ρ ^ q.num := by
   rw [isRadiusLowerBound_iff_of_eq_div q.den_ne_zero (NNRat.num_div_den q).symm]
   simp
 
-/-- **The radius of a Gauss point, from above.** The upper radius bound `κ(η_ρ) ≤ q` holds exactly
-when `ρ ^ a ≤ v(ϖ) ^ b` for `q = a / b` in lowest terms. -/
+/-- **The radius of a Gauss point, from above.** For `q = a / b` in lowest terms, the predicate
+`IsRadiusUpperBound p ϖ q η_ρ` holds exactly when `ρ ^ a ≤ v(ϖ) ^ b`. This holds for all `ρ < 1`
+and `ϖ`; when moreover `0 < ρ` and `0 < v(ϖ) < 1`, it says that `log v(ϖ) / log ρ ≤ q`. -/
 theorem isRadiusUpperBound_gaussPoint_iff (hv : v.Integers O) (hρ : ρ < 1) (ϖ : O) (q : ℚ≥0) :
     IsRadiusUpperBound p ϖ q (gaussPoint p hv ρ hρ) ↔
       ρ ^ q.num ≤ v (algebraMap O K ϖ) ^ q.den := by
