@@ -149,11 +149,7 @@ private theorem quotientSubobject_ker_eq_mk
   let I : HopfIdeal R H := HopfIdeal.kerOfSurjective f.hom hf
   let F := AlgebraicGeometry.hopfSpec (CommRingCat.of R)
   let qIso : quotient H I ≅ K := quotientKerOfSurjectiveIso f hf
-  have hq : mkQuotient H I ≫ qIso.hom = f :=
-    mkQuotient_comp_quotientKerOfSurjectiveIso_hom f hf
-  have hqInv : f ≫ qIso.inv = mkQuotient H I := by
-    rw [← hq]
-    simp
+  have hqInv : f ≫ qIso.inv = mkQuotient H I := comp_quotientKerOfSurjectiveIso_inv f hf
   let qSpecIso : quotientSpec H I ≅ X := (F.mapIso qIso.op).symm ≪≫ e
   apply Subobject.mk_eq_mk_of_comm (quotientSpecι H I) i qSpecIso
   -- The hom of this composite is the spectrum map of the opposite inverse of `qIso`, followed

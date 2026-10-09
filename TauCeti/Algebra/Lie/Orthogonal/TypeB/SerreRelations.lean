@@ -13,7 +13,7 @@ public import TauCeti.Algebra.Lie.Presentation.Serre
 # Serre relations in the standard split Lie algebra of type B
 
 The Bourbaki-numbered matrices in
-`TauCeti.Algebra.Lie.Orthogonal.TypeB.RootGenerators` give explicit positive-root,
+`TauCeti.Algebra.Lie.Orthogonal.TypeB.Root.Generators` give explicit positive-root,
 negative-root, and coroot generators for the standard integral split orthogonal Lie algebra of
 type `B`. This file proves the two families of Serre relations not supplied by the Cartan-action
 computations:

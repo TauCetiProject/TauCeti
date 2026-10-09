@@ -80,9 +80,6 @@ private theorem chartRingToCoordinateRing_mk (p : MvPolynomial (Fin 3) R) :
         Affine.CoordinateRing.mk W.toAffine Polynomial.X, 1] p :=
   rfl
 
-private theorem mk_X_two : (Ideal.Quotient.mk _ (X 2) : W.toProjective.ChartRing 2) = 1 :=
-  (Ideal.Quotient.mk_eq_one_iff_sub_mem _).mpr (Ideal.subset_span ⟨1, by simp⟩)
-
 private noncomputable def coordinateRingToChartRing :
     W.toAffine.CoordinateRing →ₐ[R] W.toProjective.ChartRing 2 :=
   -- homogenization on the chart `D₊(Z)`: the map from the affine coordinate ring to the chart
@@ -91,7 +88,7 @@ private noncomputable def coordinateRingToChartRing :
     (Projective.equation_some (Ideal.Quotient.mk _ (X 0)) (Ideal.Quotient.mk _ (X 1))).mp <| by
       -- the homogeneous Weierstrass equation, with `Z = 1`
       rw [Projective.Equation, Affine.baseChange, WeierstrassCurve.baseChange,
-        Projective.map_polynomial, eval_map, ← aeval_def, ← mk_X_two,
+        Projective.map_polynomial, eval_map, ← aeval_def, ← W.toProjective.chartRing_mk_X_self 2,
         ← Projective.chartRelation_zero _ 2, ← Ideal.Quotient.mk_span_range _ 0]
       -- evaluation at the classes of `X`, `Y`, `Z` is the quotient map
       exact DFunLike.congr_fun (algHom_ext fun i ↦ by fin_cases i <;> simp :
@@ -105,7 +102,7 @@ private noncomputable def awayEquivCoordinateRing :
     AlgEquiv.ofAlgHom W.chartRingToCoordinateRing W.coordinateRingToChartRing
       (by ext <;> simp [coordinateRingToChartRing, chartRingToCoordinateRing_mk])
       (Ideal.Quotient.algHom_ext R <| algHom_ext fun j ↦ by
-        fin_cases j <;> simp [chartRingToCoordinateRing_mk, coordinateRingToChartRing, mk_X_two])
+        fin_cases j <;> simp [chartRingToCoordinateRing_mk, coordinateRingToChartRing])
 
 private noncomputable def chartSectionsEquivCoordinateRing :
     Γ(W.projModel, Proj.basicOpen W.toProjective.grading (W.toProjective.coord 2)) ≃+*

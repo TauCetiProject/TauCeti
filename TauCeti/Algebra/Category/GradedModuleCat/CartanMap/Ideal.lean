@@ -20,7 +20,7 @@ defined, and so it has a class `[Af]` in `K₀^gr(proj A)`.
 
 This file records that membership only; it needs neither a base field nor finite-dimensionality
 of `A`, which enter later when the graded Cartan map is read in idempotent coordinates
-(`TauCeti.Algebra.Category.GradedModuleCat.CartanMap.IdempotentCoordinate`).
+(`TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Coordinate`).
 
 ## Main results
 

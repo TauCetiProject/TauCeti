@@ -25,8 +25,16 @@ Mathlib's `Scheme.IdealSheafData.comapIso`. By `isEffectiveCartier_iff_exists_is
 the local equations may also be given on affine schemes openly immersed in `X`, such as the
 charts `Spec (A ⊗[R] B)` of a fibre product.
 
+Restriction between affine opens is flat, so a nonzerodivisor on an affine open `U` remains a
+nonzerodivisor on every open subset of `U`, affine or not (`IsAffineOpen.isSMulRegular_map`). In
+particular, local equations can be shrunk into any neighbourhood
+(`IsEffectiveCartier.exists_eq_span_singleton_le`).
+
 The empty closed subscheme is an effective Cartier divisor, with equation `1`. Equations
 need not generate proper ideals; a zero equation is permitted only on the empty scheme.
+Sums, nonnegative multiples, and finite sums are effective Cartier
+(`TauCeti.isEffectiveCartier_mul`, `TauCeti.isEffectiveCartier_pow`, and
+`TauCeti.isEffectiveCartier_prod`).
 
 ## References
 
@@ -40,6 +48,40 @@ public section
 open CategoryTheory TopologicalSpace
 
 universe u
+
+namespace AlgebraicGeometry
+
+variable {X : Scheme.{u}}
+
+/-- A nonzerodivisor on an affine open `U` restricts to a nonzerodivisor on every open subset
+`V ⊆ U`, affine or not. -/
+theorem IsAffineOpen.isSMulRegular_map {U V : X.Opens} (hU : IsAffineOpen U) (hVU : V ≤ U)
+    {a : Γ(X, U)} (ha : IsSMulRegular Γ(X, U) a) :
+    IsSMulRegular Γ(X, V) (X.presheaf.map (homOfLE hVU).op a) := by
+  intro t₁ t₂ h
+  refine X.IsSheaf.section_ext fun x hx ↦ ?_
+  obtain ⟨_, ⟨W, hW, rfl⟩, hxW, hWV⟩ :=
+    X.isBasis_affineOpens.exists_subset_of_mem_open hx V.isOpen
+  replace hWV : W ≤ V := hWV
+  refine ⟨W, hWV, hxW, ?_⟩
+  -- The restriction `Γ(X, U) ⟶ Γ(X, W)` between affine opens is flat, so `a` stays regular on `W`.
+  have hWU : W ≤ (𝟙 X : X ⟶ X) ⁻¹ᵁ U := hWV.trans hVU
+  let φ : Γ(X, U) ⟶ Γ(X, W) := (𝟙 X : X ⟶ X).appLE U W hWU
+  let := φ.hom.toAlgebra
+  have : Module.Flat Γ(X, U) Γ(X, W) := Scheme.Hom.flat_appLE (𝟙 X) hU hW hWU
+  have hφ (b : Γ(X, U)) : algebraMap Γ(X, U) Γ(X, W) b =
+      X.presheaf.map (homOfLE (hWV.trans hVU)).op b := by
+    simp only [RingHom.algebraMap_toAlgebra, φ, Scheme.Hom.appLE, Scheme.Hom.id_app]
+    -- `appLE` of the identity is the restriction along `W ≤ 𝟙 X ⁻¹ᵁ U`, and `𝟙 X ⁻¹ᵁ U = U`
+    -- holds by definition.
+    rfl
+  refine ha.of_flat (S := Γ(X, W)) ?_
+  have hres := congrArg (X.presheaf.map (homOfLE hWV).op) h
+  simp only [smul_eq_mul, map_mul] at hres
+  simp only [← ConcreteCategory.comp_apply, ← Functor.map_comp, ← op_comp, homOfLE_comp] at hres
+  simpa only [smul_eq_mul, hφ] using hres
+
+end AlgebraicGeometry
 
 namespace AlgebraicGeometry.Scheme.IdealSheafData
 
@@ -66,24 +108,12 @@ theorem IsEffectiveCartier.exists_eq_span_singleton_le {I : X.IdealSheafData}
   obtain ⟨_, ⟨V, hV, rfl⟩, hxV, hVU⟩ :=
     X.isBasis_affineOpens.exists_subset_of_mem_open (⟨hx, hxU⟩ : x ∈ W ⊓ U.1)
       (W ⊓ U.1).isOpen
-  let V' : X.affineOpens := ⟨V, hV⟩
-  have hVU' : V'.1 ≤ U.1 := hVU.trans inf_le_right
-  have h : V'.1 ≤ (𝟙 X : X ⟶ X) ⁻¹ᵁ U.1 := by simpa using hVU'
-  let φ : Γ(X, U) ⟶ Γ(X, V') := (𝟙 X : X ⟶ X).appLE U.1 V'.1 h
-  have hφ : φ.hom.Flat := Scheme.Hom.flat_appLE (𝟙 X : X ⟶ X) U.2 hV h
-  let := φ.hom.toAlgebra
-  have : Module.Flat Γ(X, U) Γ(X, V) := hφ
-  -- The identity component identifies appLE with the presheaf restriction map.
-  have hφ_eq : φ = X.presheaf.map (homOfLE hVU').op := by
-    dsimp only [φ, Scheme.Hom.appLE]
-    rw [Scheme.Hom.id_app]
-    change 𝟙 Γ(X, U) ≫ X.presheaf.map (homOfLE hVU').op = _
-    rw [Category.id_comp]
-  refine ⟨⟨V, hV⟩, hVU.trans inf_le_left, hxV, φ a, ha.of_flat, ?_⟩
-  rw [← I.map_ideal (U := ⟨V, hV⟩) (V := U) (hVU.trans inf_le_right),
-    hUa, Ideal.map_span, Set.image_singleton]
-  change Ideal.span {X.presheaf.map (homOfLE hVU').op a} = Ideal.span {φ a}
-  rw [hφ_eq]
+  have hVU' : V ≤ U.1 := hVU.trans inf_le_right
+  refine ⟨⟨V, hV⟩, hVU.trans inf_le_left, hxV, X.presheaf.map (homOfLE hVU').op a,
+    U.2.isSMulRegular_map hVU' ha, ?_⟩
+  rw [← I.map_ideal (U := ⟨V, hV⟩) (V := U) hVU', hUa, Ideal.map_span, Set.image_singleton]
+  -- `Ideal.map` applies the underlying ring hom, the goal its `ConcreteCategory` coercion.
+  rfl
 
 /-- The empty closed subscheme is an effective Cartier divisor on every scheme. -/
 @[simp]
@@ -188,3 +218,46 @@ theorem IsEffectiveCartier.comap {I : Y.IdealSheafData} (hI : I.IsEffectiveCarti
       rw [comap_ofIdealTop, Ideal.map_span, Set.image_singleton]
 
 end AlgebraicGeometry.Scheme.IdealSheafData
+
+namespace TauCeti
+
+open AlgebraicGeometry AlgebraicGeometry.Scheme.IdealSheafData
+
+variable {X : Scheme.{u}}
+
+/-- The sum of two effective Cartier divisors, represented by multiplication of their ideals,
+is effective Cartier. The divisors need not be disjoint. -/
+theorem isEffectiveCartier_mul {I J : X.IdealSheafData}
+    (hI : I.IsEffectiveCartier) (hJ : J.IsEffectiveCartier) :
+    (I * J).IsEffectiveCartier := by
+  rw [isEffectiveCartier_iff]
+  intro x
+  obtain ⟨U, hxU, a, ha, hIa⟩ := (isEffectiveCartier_iff I).mp hI x
+  obtain ⟨V, hVU, hxV, b, hb, hJb⟩ := hJ.exists_eq_span_singleton_le U.1 hxU
+  let a' := X.presheaf.map (homOfLE hVU).op a
+  have ha' : IsSMulRegular Γ(X, V) a' := U.2.isSMulRegular_map hVU ha
+  have hIa' : I.ideal V = Ideal.span {a'} := by
+    rw [← I.map_ideal hVU, hIa, Ideal.map_span, Set.image_singleton]
+    rfl
+  exact ⟨V, hxV, a' * b, ha'.mul hb, by
+    simp only [ideal_mul, Pi.mul_apply, hIa', hJb, Ideal.span_singleton_mul_span_singleton]⟩
+
+/-- Every nonnegative multiple of an effective Cartier divisor is effective Cartier. -/
+theorem isEffectiveCartier_pow {I : X.IdealSheafData} (hI : I.IsEffectiveCartier) (n : ℕ) :
+    (I ^ n).IsEffectiveCartier := by
+  induction n with
+  | zero => simp
+  | succ n hn => simpa only [pow_succ] using isEffectiveCartier_mul hn hI
+
+/-- A finite sum of effective Cartier divisors is effective Cartier. -/
+theorem isEffectiveCartier_prod {ι : Type*} {s : Finset ι} {I : ι → X.IdealSheafData}
+    (hI : ∀ i ∈ s, (I i).IsEffectiveCartier) : (∏ i ∈ s, I i).IsEffectiveCartier := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | @insert i s hi hs =>
+    rw [Finset.prod_insert hi]
+    exact isEffectiveCartier_mul (hI i (Finset.mem_insert_self i s))
+      (hs fun j hj ↦ hI j (Finset.mem_insert_of_mem hj))
+
+end TauCeti

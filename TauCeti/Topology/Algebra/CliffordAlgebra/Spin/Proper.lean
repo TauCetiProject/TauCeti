@@ -76,7 +76,8 @@ invertible, the Spin group is not a compact subset of the Clifford algebra. -/
 theorem not_isCompact_spinGroup (hQ : Q.Nondegenerate) (hiso : ¬Q.Anisotropic) :
     ¬IsCompact (spinGroup Q : Set (CliffordAlgebra Q)) := by
   intro hcpt
-  obtain ⟨u, v, -, hu, hv, huv⟩ := hQ.exists_isotropic_pair hiso
+  obtain ⟨u, v, -, hu, hv, huv⟩ :=
+    _root_.QuadraticMap.exists_isotropic_pair_of_radical_eq_bot hQ.radical_eq_bot hiso
   have : CompactSpace (spinGroup Q) := isCompact_iff_compactSpace.mp hcpt
   refine QuadraticMap.not_isCompact_of_hyperbolicPairTorus_sq_mem Q hu hv huv
     (S := range fun x => ((spinToOrthogonal Q x : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V))

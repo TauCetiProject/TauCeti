@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.FundamentalGroup.VanKampen
+public import TauCeti.AlgebraicTopology.FundamentalGroup.VanKampen.Basic
 public import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
 public import TauCeti.GroupTheory.CoprodI
 public import TauCeti.Topology.WedgeSum

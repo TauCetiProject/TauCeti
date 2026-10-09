@@ -9,6 +9,8 @@ public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Extension
 public import TauCeti.FieldTheory.Galois.Quotient
 public import TauCeti.FieldTheory.Galois.Restriction
+-- Proof-only: a `K`-algebra of dimension two has no subalgebras but `⊥` and `⊤`.
+import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
 /-!
 # The absolute Galois group of a finite separable extension as an open subgroup
@@ -60,7 +62,8 @@ isomorphism `G_K ⧸ Gal(Kˢ/σ(L)) ≃* Gal(L/K)`. This part uses normality but
 * `TauCeti.quotientFixingSubgroupFieldRangeEquiv K L σ`: for a normal `L/K`, the isomorphism
   `G_K ⧸ Gal(Kˢ/σ(L)) ≃* Gal(L/K)` induced by restriction `σ.restrictNormalHom`.
 * `TauCeti.galoisOpenNormalSubgroup K L σ`: for a finite normal `L/K`, the subgroup fixing
-  `σ(L)` as an open normal subgroup of `G_K`.
+  `σ(L)` as an open normal subgroup of `G_K`; for such `L/K`, `galoisSubgroup K L σ` is normal
+  (`TauCeti.normal_galoisSubgroup`).
 * `TauCeti.fixingOpenNormalSubgroup K L`: for a finite `L/K`, the open normal subgroup of `G_K`
   fixing the normal closure of `L` in `Kˢ`, with no embedding chosen.
 * `TauCeti.absoluteGaloisGroupExtend K L σ`: the injective continuous homomorphism
@@ -69,6 +72,9 @@ isomorphism `G_K ⧸ Gal(Kˢ/σ(L)) ≃* Gal(L/K)`. This part uses normality but
 
 ## Main results
 
+* `TauCeti.mem_galoisSubgroup_iff_apply_eq_of_adjoin_eq_top`,
+  `TauCeti.mem_galoisSubgroup_iff_apply_eq_of_finrank_eq_two`: when `x` generates `L`, for instance
+  any `x ∉ K` in a quadratic `L`, membership in `galoisSubgroup K L σ` is fixing `σ x`.
 * `TauCeti.galoisSubgroup_index`: the index of `galoisSubgroup K L σ` in `G_K` is `[L : K]`, so
   the subgroup fixing `σ(L)` has finite index
   (`TauCeti.finiteIndex_fixingSubgroup_fieldRange`, `TauCeti.finiteIndex_galoisSubgroup`).
@@ -76,6 +82,10 @@ isomorphism `G_K ⧸ Gal(Kˢ/σ(L)) ≃* Gal(L/K)`. This part uses normality but
   actions of `G_L` on `Lˢ` and of `G_K` on `Kˢ` through `separableClosureRingEquiv K L σ`.
 * `TauCeti.absoluteGaloisGroupExtend_apply_separableClosureRingEquiv`: the embedding of Mathlib's
   absolute Galois groups intertwines the actions on the identified separable closures.
+* `TauCeti.mem_range_absoluteGaloisGroupExtend_iff`,
+  `TauCeti.isOpen_range_absoluteGaloisGroupExtend`,
+  `TauCeti.index_range_absoluteGaloisGroupExtend`: the image of `G_L` in Mathlib's `G_K` is the
+  open subgroup `galoisSubgroup K L σ`, of index `[L : K]`.
 * `TauCeti.quotientFixingSubgroupFieldRangeEquiv_mk`: the isomorphism sends the class of `g`
   to `σ.restrictNormalHom g`.
 * `TauCeti.exists_galoisOpenNormalSubgroup_eq`: every open normal subgroup of `G_K` is
@@ -128,6 +138,25 @@ theorem mem_galoisSubgroup_iff {g : AbsoluteGaloisGroup K} :
   rw [← OpenSubgroup.mem_toSubgroup, galoisSubgroup_toSubgroup,
     IntermediateField.mem_fixingSubgroup_iff]
   simp
+
+/-- If `x` generates `L` as a `K`-algebra, an automorphism of `Kˢ` lies in
+`galoisSubgroup K L σ` exactly when it fixes `σ x`. -/
+theorem mem_galoisSubgroup_iff_apply_eq_of_adjoin_eq_top {x : L}
+    (hx : Algebra.adjoin K {x} = ⊤) {g : AbsoluteGaloisGroup K} :
+    g ∈ galoisSubgroup K L σ ↔ g (σ x) = σ x := by
+  refine ⟨fun hg => (mem_galoisSubgroup_iff K L σ).1 hg x, fun hg => ?_⟩
+  have h : (g : SeparableClosure K →ₐ[K] SeparableClosure K).comp σ = σ :=
+    AlgHom.ext_of_adjoin_eq_top hx (Set.eqOn_singleton.2 hg)
+  exact (mem_galoisSubgroup_iff K L σ).2 fun y => DFunLike.congr_fun h y
+
+/-- **In a quadratic extension `L/K`**, an automorphism of `Kˢ` lies in `galoisSubgroup K L σ`
+exactly when it fixes `σ x`, for any `x ∈ L` not in `K`: such an `x` generates `L`. -/
+theorem mem_galoisSubgroup_iff_apply_eq_of_finrank_eq_two (hdeg : Module.finrank K L = 2) {x : L}
+    (hx : x ∉ Set.range (algebraMap K L)) {g : AbsoluteGaloisGroup K} :
+    g ∈ galoisSubgroup K L σ ↔ g (σ x) = σ x :=
+  mem_galoisSubgroup_iff_apply_eq_of_adjoin_eq_top K L σ <|
+    ((Subalgebra.isSimpleOrder_of_finrank hdeg).eq_bot_or_eq_top _).resolve_left fun h =>
+      hx (Algebra.mem_bot.1 (h ▸ Algebra.self_mem_adjoin_singleton K x))
 
 /-- **The index of `galoisSubgroup K L σ` is the degree `[L : K]`.** -/
 theorem galoisSubgroup_index : (galoisSubgroup K L σ).toSubgroup.index = Module.finrank K L := by
@@ -239,6 +268,40 @@ theorem injective_absoluteGaloisGroupExtend :
       (galoisSubgroupEquiv K L σ).injective.comp
         (absoluteGaloisGroupRestrictEquiv L).injective
 
+/-- **The image of `G_L` in `G_K`** is the open subgroup `galoisSubgroup K L σ` fixing `σ(L)`,
+read in Mathlib's absolute Galois group through `absoluteGaloisGroupRestrictEquiv K`. -/
+theorem mem_range_absoluteGaloisGroupExtend_iff {g : Field.absoluteGaloisGroup K} :
+    g ∈ (absoluteGaloisGroupExtend K L σ).range ↔
+      absoluteGaloisGroupRestrictEquiv K g ∈ galoisSubgroup K L σ := by
+  refine ⟨?_, fun hg ↦ ?_⟩
+  · rintro ⟨τ, rfl⟩
+    rw [absoluteGaloisGroupRestrictEquiv_absoluteGaloisGroupExtend]
+    exact (galoisSubgroupEquiv K L σ _).2
+  · refine ⟨(absoluteGaloisGroupRestrictEquiv L).symm
+      ((galoisSubgroupEquiv K L σ).symm ⟨absoluteGaloisGroupRestrictEquiv K g, hg⟩),
+      (absoluteGaloisGroupRestrictEquiv K).injective ?_⟩
+    rw [absoluteGaloisGroupRestrictEquiv_absoluteGaloisGroupExtend,
+      ContinuousMulEquiv.apply_symm_apply, ContinuousMulEquiv.apply_symm_apply]
+
+/-- The image of `G_L` in `G_K` is open. -/
+theorem isOpen_range_absoluteGaloisGroupExtend :
+    IsOpen ((absoluteGaloisGroupExtend K L σ).range : Set (Field.absoluteGaloisGroup K)) := by
+  have h : ((absoluteGaloisGroupExtend K L σ).range : Set (Field.absoluteGaloisGroup K)) =
+      absoluteGaloisGroupRestrictEquiv K ⁻¹' (galoisSubgroup K L σ : Set (AbsoluteGaloisGroup K)) :=
+    Set.ext fun _ ↦ mem_range_absoluteGaloisGroupExtend_iff K L σ
+  rw [h]
+  exact (galoisSubgroup K L σ).isOpen.preimage (absoluteGaloisGroupRestrictEquiv K).continuous
+
+/-- **The image of `G_L` in `G_K` has index `[L : K]`.** -/
+theorem index_range_absoluteGaloisGroupExtend :
+    (absoluteGaloisGroupExtend K L σ).range.index = Module.finrank K L := by
+  have h : (absoluteGaloisGroupExtend K L σ).range =
+      (galoisSubgroup K L σ).toSubgroup.comap
+        (absoluteGaloisGroupRestrictEquiv K).toMulEquiv.toMonoidHom :=
+    Subgroup.ext fun _ ↦ mem_range_absoluteGaloisGroupExtend_iff K L σ
+  rw [h, Subgroup.index_comap_of_surjective _ (absoluteGaloisGroupRestrictEquiv K).surjective,
+    galoisSubgroup_index]
+
 /-! ### Normal extensions: the quotient by the open subgroup -/
 
 section Normal
@@ -314,6 +377,11 @@ the domain of `quotientFixingSubgroupFieldRangeEquiv K L σ`. -/
 theorem galoisOpenNormalSubgroup_toSubgroup :
     (galoisOpenNormalSubgroup K L σ).toSubgroup = σ.fieldRange.fixingSubgroup :=
   (rfl)
+
+/-- **For a finite normal extension `L/K`, `galoisSubgroup K L σ` is normal in `G_K`**: its
+underlying subgroup is the fixing subgroup of the normal intermediate field `σ(L)`. -/
+instance normal_galoisSubgroup : (galoisSubgroup K L σ).toSubgroup.Normal :=
+  inferInstanceAs (σ.fieldRange.fixingSubgroup : Subgroup (AbsoluteGaloisGroup K)).Normal
 
 end OpenNormal
 

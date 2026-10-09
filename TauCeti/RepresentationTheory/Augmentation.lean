@@ -113,6 +113,19 @@ theorem single_sub_single_mem_augmentationSubrepresentation (x y : X) :
   rw [mem_augmentationSubrepresentation_iff, map_sub]
   simp
 
+/-- The augmentation subrepresentation on a finite set is finitely generated over any ring. -/
+instance [Finite X] :
+    Module.Finite k (augmentationSubrepresentation k G X).toSubmodule := by
+  rcases isEmpty_or_nonempty X with hX | hX
+  · have hbot : (augmentationSubrepresentation k G X).toSubmodule = ⊥ :=
+      Submodule.eq_bot_iff _ |>.mpr fun v _ =>
+        MonoidAlgebra.coeff_eq_zero.mp (Finsupp.ext fun x => isEmptyElim x)
+    rw [hbot]
+    infer_instance
+  · rw [toSubmodule_augmentationSubrepresentation,
+      MonoidAlgebra.ker_sumCoords_basis_eq_span k X (Classical.arbitrary X)]
+    exact Module.Finite.span_of_finite k (Set.finite_range _)
+
 end SubrepRing
 
 /-! ### The invariant line -/

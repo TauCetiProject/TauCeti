@@ -29,6 +29,8 @@ for noncompact submanifolds the radius has to be a positive continuous function 
 * `TauCeti.normalSubspace I f x`: the orthogonal complement in `V` of the range of the
   differential of `f` at `x`.
 * `TauCeti.normalTube I f ε`: the normal vectors of length less than `ε`, as a subset of `M × V`.
+* `TauCeti.normalTubeOfRadius I f r`: the normal vectors shorter than a radius `r` depending on
+  their base point.
 
 ## Main results
 
@@ -131,8 +133,8 @@ private theorem exists_injOn_isOpen_image_normal {g : E → V} {u₀ : E}
     obtain ⟨hu₁, -, hAu, hRu⟩ := hss hu
     refine ⟨hst ⟨hu₁, hδt (mem_ball_zero_iff.mpr hvδ)⟩, ?_⟩
     refine Submodule.starProjection_inverse_apply ?_ hRu hv
-    rw [ContinuousLinearMap.finrank_orthogonal_range_of_injective hinj,
-      ContinuousLinearMap.finrank_orthogonal_range_of_injective hAu]
+    rw [LinearMap.finrank_orthogonal_range_of_injective hinj,
+      LinearMap.finrank_orthogonal_range_of_injective hAu]
   have hΨρ : ∀ p : E × V, Q p.1 (ρ p).2 = p.2 → h (ρ p) = g p.1 + p.2 := by
     intro p hp
     rw [hΨh]
@@ -206,8 +208,8 @@ theorem finrank_normalSubspace {f : M → V} {x : M}
     (himm : Injective (mfderiv I 𝓘(ℝ, V) f x)) :
     Module.finrank ℝ (normalSubspace I f x) = Module.finrank ℝ V - Module.finrank ℝ E := by
   unfold normalSubspace
-  exact ContinuousLinearMap.finrank_orthogonal_range_of_injective (E := E) (V := V)
-    (A := (mfderiv I 𝓘(ℝ, V) f x : E →L[ℝ] V)) himm
+  exact LinearMap.finrank_orthogonal_range_of_injective (V := V)
+    (A := (mfderiv I 𝓘(ℝ, V) f x : E →L[ℝ] V).toLinearMap) himm
 
 omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
 /-- A vector is normal to `f` at `x` exactly when it is orthogonal to every value of the
@@ -229,6 +231,46 @@ theorem mem_normalTube {f : M → V} {ε : ℝ} {p : M × V} :
     p ∈ normalTube I f ε ↔ p.2 ∈ normalSubspace I f p.1 ∧ ‖p.2‖ < ε :=
   Iff.rfl
 
+variable (I) in
+/-- The normal vectors along `f` shorter than a radius depending on their base point. -/
+def normalTubeOfRadius (f : M → V) (r : M → ℝ) : Set (M × V) :=
+  {p | p.2 ∈ normalSubspace I f p.1 ∧ ‖p.2‖ < r p.1}
+
+omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
+@[simp]
+theorem mem_normalTubeOfRadius {f : M → V} {r : M → ℝ} {p : M × V} :
+    p ∈ normalTubeOfRadius I f r ↔ p.2 ∈ normalSubspace I f p.1 ∧ ‖p.2‖ < r p.1 :=
+  Iff.rfl
+
+omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
+/-- A constant radius gives the usual normal tube. -/
+@[simp]
+theorem normalTubeOfRadius_const (f : M → V) (ε : ℝ) :
+    normalTubeOfRadius I f (fun _ => ε) = normalTube I f ε := by
+  ext p
+  simp
+
+omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
+/-- Shrinking a variable normal tube to a smaller continuous radius preserves the open
+embedding of normal addition. No regularity of the original radius is needed. -/
+theorem isOpenEmbedding_normalTubeOfRadius_of_le {f : M → V} {r R : M → ℝ}
+    (hr : Continuous r) (hrR : ∀ x, r x ≤ R x)
+    (h : IsOpenEmbedding ((normalTubeOfRadius I f R).domRestrict
+      fun p : M × V => f p.1 + p.2)) :
+    IsOpenEmbedding ((normalTubeOfRadius I f r).domRestrict
+      fun p : M × V => f p.1 + p.2) := by
+  have hsub : normalTubeOfRadius I f r ⊆ normalTubeOfRadius I f R := fun p hp =>
+    mem_normalTubeOfRadius.mpr ⟨(mem_normalTubeOfRadius.mp hp).1,
+      (mem_normalTubeOfRadius.mp hp).2.trans_le (hrR p.1)⟩
+  apply h.comp (IsOpenEmbedding.inclusion hsub ?_)
+  convert isOpen_lt ((continuous_norm.comp continuous_snd).comp
+    (continuous_subtype_val : Continuous
+      (Subtype.val : normalTubeOfRadius I f R → M × V)))
+    ((hr.comp continuous_fst).comp continuous_subtype_val) using 1
+  ext p
+  simp only [mem_preimage, mem_normalTubeOfRadius, mem_ofPred_eq, Function.comp_apply]
+  exact and_iff_right (mem_normalTubeOfRadius.mp p.2).1
+
 omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
 /-- At a point `y` of the source of a chart, the normal space of `f` is the orthogonal complement
 of the range of the derivative of the coordinate expression of `f`. -/
@@ -244,7 +286,7 @@ theorem normalSubspace_eq_of_mem_source [IsManifold I 1 M] {f : M → V} {x y : 
 /-- The local tubular neighbourhood theorem on `M`: around every point there is an open set `W`
 and a radius `δ` such that the normal map is injective, and sends relatively open sets to open
 sets, on the normal vectors of length less than `δ` at points of `W`. -/
-private theorem exists_injOn_isOpen_image_normalTube [I.Boundaryless] [IsManifold I 2 M]
+theorem exists_injOn_isOpen_image_normalTube [I.Boundaryless] [IsManifold I 2 M]
     {f : M → V} (hf : ContMDiff I 𝓘(ℝ, V) 2 f) (himm : ∀ x, Injective (mfderiv I 𝓘(ℝ, V) f x))
     (x₀ : M) :
     ∃ W : Set M, IsOpen W ∧ x₀ ∈ W ∧ ∃ δ > 0,

@@ -10,7 +10,7 @@ public import TauCeti.Probability.Exchangeability.ConditionallyIID.Const
 public import TauCeti.Probability.Exchangeability.Recurrence.Excursion
 public import TauCeti.Probability.Process.MarkovChain
 -- Non-public: the reconstruction of a path from its excursions is used only inside a proof.
-import TauCeti.Probability.Exchangeability.Recurrence.Reconstruction
+import TauCeti.Probability.Process.Excursion.Reconstruction
 
 /-!
 # The excursions of a recurrent Markov chain are i.i.d.
@@ -208,7 +208,8 @@ space being countable and discrete. -/
 theorem excursionLaw_apply (A : Set (List α)) :
     excursionLaw κ a₀ A =
       markovChainLaw (Measure.dirac a₀) κ {x | excursion x a₀ 0 ∈ A} :=
-  Measure.map_apply (measurable_excursion a₀ 0) (MeasurableSet.of_discrete)
+  Measure.map_apply (measurable_excursion a₀ 0 (measurableSet_singleton a₀))
+    (MeasurableSet.of_discrete)
 
 /-- **An excursion never visits its base state**, so the excursion law charges no word through
 `a₀`. -/
@@ -251,7 +252,8 @@ omit [Countable α] [IsMarkovKernel κ] in
 /-- A.e. measurability of the excursions of the coordinate process on path space. -/
 private theorem aemeasurable_excursionProcess_eval (μ : Measure (ℕ → α)) (a₀ : α) (k : ℕ) :
     AEMeasurable (excursionProcess (fun n (x : ℕ → α) => x n) a₀ k) μ :=
-  aemeasurable_excursionProcess (fun i => (measurable_pi_apply i).aemeasurable) a₀ k
+  aemeasurable_excursionProcess (fun i => (measurable_pi_apply i).aemeasurable) a₀
+    (measurableSet_singleton a₀) k
 
 omit [Countable α] [IsMarkovKernel κ] in
 /-- A.e. measurability of the whole excursion sequence of the coordinate process. -/
@@ -413,7 +415,7 @@ theorem markovChainLaw_eq_map_pathOfExcursions
     exact Measure.map_id
   have h := pathLaw_eq_map_pathOfExcursions (μ := markovChainLaw (Measure.dirac a₀) κ)
     (X := fun n (x : ℕ → α) => x n) (a₀ := a₀)
-    (fun i => (measurable_pi_apply i).aemeasurable) hret
+    (fun i => (measurable_pi_apply i).aemeasurable) (measurableSet_singleton a₀) hret
     (markovChainLaw_dirac_ae_apply_zero κ a₀)
   rw [hpath, pathLaw_excursionProcess_eq_infinitePi hret] at h
   exact h

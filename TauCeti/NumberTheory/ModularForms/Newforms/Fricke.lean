@@ -6,15 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.Fricke.OldSpace
+public import TauCeti.NumberTheory.ModularForms.Newforms.Conjugate
 public import TauCeti.NumberTheory.ModularForms.Newforms.MultiplicityOne
 public import TauCeti.NumberTheory.ModularForms.Newforms.Newform
 import TauCeti.NumberTheory.ModularForms.AtkinLehner.Hecke
+import TauCeti.NumberTheory.ModularForms.Fricke.Hecke
+import TauCeti.NumberTheory.ModularForms.Newforms.PeterssonAdjoint
+import TauCeti.NumberTheory.ModularForms.Newforms.RingEigenvalue
 import TauCeti.NumberTheory.ModularForms.Parity
+import TauCeti.NumberTheory.ModularForms.Petersson.Conjugate
 import TauCeti.NumberTheory.ModularForms.Petersson.AtkinLehner
 import TauCeti.NumberTheory.ModularForms.TrivialNebentypus
 
 /-!
-# The Fricke sign of a newform of trivial nebentypus
+# The Fricke sign and the Fricke pseudo-eigenvalue of a newform
 
 For a newform `f` of level `N`, weight `k` and trivial nebentypus, the normalized Fricke
 operator `𝒲_N f = (√N) ^ (2 - k) • (f ∣[k] !![0, -1; N, 0])` is `ε_N · f` for a sign
@@ -40,8 +45,14 @@ The argument has three inputs.
   since `(-1) ^ k = 1` by the parity lemma when `f ≠ 0` has trivial nebentypus.
 
 For a nontrivial nebentypus `χ` the operator `𝒲_N` carries `S_k(N, χ)` to `S_k(N, χ⁻¹)`, and a
-newform goes to a multiple of its conjugate form, not of itself. So the sign statement is
-specific to trivial nebentypus.
+newform goes to a multiple of its conjugate newform `f_ρ`, not of itself (Miyake,
+Theorem 4.6.15(2)): `𝒲_N f = λ_N(f) • f_ρ`, the scalar `λ_N(f)` being the **Fricke
+pseudo-eigenvalue** of Atkin and Li. The argument is the same multiplicity-one step, now in
+`S_k(N, χ⁻¹)`: Fricke multiplies the good eigenvalue `λ_p` by `χ(p)⁻¹`
+(`TauCeti.heckeTCuspNat_normalizedFrickeOperatorCusp_eq_smul_iff_heckeTCuspNat_eq_smul`), and
+`χ(p)⁻¹ λ_p = conj λ_p` is the eigenvalue of `f_ρ` at `p`. Unitarity of `𝒲_N` and of
+`f ↦ f_ρ` for the Petersson product gives `|λ_N(f)| = 1`. For trivial nebentypus `f_ρ = f`, and
+the pseudo-eigenvalue is the Fricke sign.
 
 ## Main results
 
@@ -55,10 +66,21 @@ specific to trivial nebentypus.
   `𝒲_N f = ε • f` with `ε = 1` or `ε = -1`.
 * `HeckeRing.GL2.Newform.frickeSign`: the canonical Fricke sign of a newform of trivial
   nebentypus, together with its eigenvalue equation and sign law.
+* `HeckeRing.GL2.Newform.exists_normalizedFrickeOperatorCusp_eq_smul_conj`: `𝒲_N f` is a
+  multiple of the conjugate newform `f_ρ`, for every nebentypus.
+* `HeckeRing.GL2.Newform.frickePseudoEigenvalue`: the Fricke pseudo-eigenvalue `λ_N(f)`, with
+  its equation `𝒲_N f = λ_N(f) • f_ρ`, its uniqueness, and
+  `HeckeRing.GL2.Newform.norm_frickePseudoEigenvalue`: `|λ_N(f)| = 1`.
+* `HeckeRing.GL2.Newform.frickePseudoEigenvalue_conj`: the pseudo-eigenvalue of `f_ρ` is
+  `(-1) ^ k · conj λ_N(f)`.
+* `HeckeRing.GL2.Newform.frickePseudoEigenvalue_eq_frickeSign`: for trivial nebentypus the
+  pseudo-eigenvalue is the Fricke sign.
 
 ## References
 
 * A. O. L. Atkin and J. Lehner, *Hecke operators on `Γ₀(m)`*, Math. Ann. 185 (1970), 134–160.
+* A. O. L. Atkin and W.-C. W. Li, *Twists of newforms and pseudo-eigenvalues of `W`-operators*,
+  Invent. Math. **48** (1978), 221–243.
 * [T. Miyake, *Modular forms*][miyake1989], Theorem 4.6.15.
 * [F. Diamond and J. Shurman, *A first course in modular forms*][diamondshurman2005], §5.10.
 -/
@@ -226,5 +248,103 @@ theorem Newform.frickeSign_eq_of_normalizedFrickeOperatorCusp_eq_smul
     f.frickeSign hχ = ε :=
   smul_left_injective ℂ f.ne_zero
     ((f.normalizedFrickeOperatorCusp_eq_frickeSign_smul hχ).symm.trans hε)
+
+/-! ### The Fricke pseudo-eigenvalue -/
+
+/-- **The Fricke involution sends a newform to a multiple of its conjugate newform** (Miyake,
+Theorem 4.6.15(2)): `𝒲_N f = c • f_ρ` for a newform `f` of any nebentypus `χ`, where `f_ρ` is
+the conjugate newform `HeckeRing.GL2.Newform.conj`. The scalar is
+`HeckeRing.GL2.Newform.frickePseudoEigenvalue`. -/
+theorem Newform.exists_normalizedFrickeOperatorCusp_eq_smul_conj (f : Newform N k) :
+    ∃ c : ℂ, normalizedFrickeOperatorCusp k f.toCuspForm = c • f.conj.toCuspForm := by
+  -- Both `𝒲_N f` and `f_ρ` lie in the new part of `S_k(N, χ⁻¹)` and are good Hecke
+  -- eigenvectors with eigenvalue `conj λ_p` at every prime `p ∤ N`, so multiplicity one on the
+  -- new part makes them proportional.
+  let F : cuspFormCharSpace k f.χ⁻¹ :=
+    ⟨_, normalizedFrickeOperatorCusp_mem_cuspFormCharSpace k f.χ f.mem_charSpace⟩
+  let G : cuspFormCharSpace k f.χ⁻¹ := ⟨_, f.χ_conj ▸ f.conj.mem_charSpace⟩
+  refine exists_eq_smul_of_forall_prime_heckeRingHomCusp_of_mem_cuspFormsNew (f := G) (g := F)
+    (fun p hp hpN ↦ ?_) f.conj.isNew (normalizedFrickeOperatorCusp_mem_cuspFormsNew f.isNew)
+    f.conj.ne_zero
+  have : NeZero p := ⟨hp.ne_zero⟩
+  -- the Fricke operator multiplies `λ_p` by `χ(p)⁻¹`, and `χ(p)⁻¹ λ_p = conj λ_p`
+  have hev : (f.χ (ZMod.unitOfCoprime p hpN) : ℂ)⁻¹ * f.eigenvalue ⟨p, hp.pos⟩ hpN =
+      starRingEnd ℂ (f.eigenvalue ⟨p, hp.pos⟩ hpN) := by
+    conv_lhs => rw [f.toEigenformAwayFromLevel.eigenvalue_eq_mul_conj hp hpN]
+    exact inv_mul_cancel_left₀ (Units.ne_zero _) _
+  refine ⟨starRingEnd ℂ (f.eigenvalue ⟨p, hp.pos⟩ hpN),
+    heckeRingHomCuspCharSpace_heckeTCompositeGamma0_eq_smul_of_heckeTCuspNat_eq_smul hp ?_,
+    heckeRingHomCuspCharSpace_heckeTCompositeGamma0_eq_smul_of_heckeTCuspNat_eq_smul hp ?_⟩
+  · exact (f.conj.heckeTCuspNat_eq_eigenvalue_smul hp hpN).trans
+      (congrArg (· • f.conj.toCuspForm) (f.eigenvalue_conj ⟨p, hp.pos⟩ hpN))
+  · rw [← hev]
+    exact (heckeTCuspNat_normalizedFrickeOperatorCusp_eq_smul_iff_heckeTCuspNat_eq_smul hpN
+      f.mem_charSpace _).mpr (f.heckeTCuspNat_eq_eigenvalue_smul hp hpN)
+
+/-- **The Fricke pseudo-eigenvalue** `λ_N(f)` of a newform `f` (Atkin–Li): the scalar with
+`𝒲_N f = λ_N(f) • f_ρ`, where `f_ρ` is the conjugate newform. It has absolute value `1`
+(`HeckeRing.GL2.Newform.norm_frickePseudoEigenvalue`), and for trivial nebentypus it is the
+Fricke sign (`HeckeRing.GL2.Newform.frickePseudoEigenvalue_eq_frickeSign`). -/
+noncomputable def Newform.frickePseudoEigenvalue (f : Newform N k) : ℂ :=
+  f.exists_normalizedFrickeOperatorCusp_eq_smul_conj.choose
+
+/-- The normalized Fricke operator sends a newform to its pseudo-eigenvalue times its conjugate
+newform. -/
+theorem Newform.normalizedFrickeOperatorCusp_eq_frickePseudoEigenvalue_smul (f : Newform N k) :
+    normalizedFrickeOperatorCusp k f.toCuspForm = f.frickePseudoEigenvalue • f.conj.toCuspForm :=
+  f.exists_normalizedFrickeOperatorCusp_eq_smul_conj.choose_spec
+
+/-- A scalar satisfying the equation `𝒲_N f = c • f_ρ` is the Fricke pseudo-eigenvalue. -/
+theorem Newform.frickePseudoEigenvalue_eq_of_normalizedFrickeOperatorCusp_eq_smul
+    (f : Newform N k) {c : ℂ}
+    (hc : normalizedFrickeOperatorCusp k f.toCuspForm = c • f.conj.toCuspForm) :
+    f.frickePseudoEigenvalue = c :=
+  smul_left_injective ℂ f.conj.ne_zero
+    ((f.normalizedFrickeOperatorCusp_eq_frickePseudoEigenvalue_smul).symm.trans hc)
+
+/-- **The Fricke pseudo-eigenvalue has absolute value `1`.** -/
+theorem Newform.norm_frickePseudoEigenvalue (f : Newform N k) :
+    ‖f.frickePseudoEigenvalue‖ = 1 := by
+  -- `𝒲_N` is Petersson-unitary and conjugation preserves the Petersson norm, so
+  -- `⟪f, f⟫ = |λ_N(f)|² ⟪f_ρ, f_ρ⟫ = |λ_N(f)|² ⟪f, f⟫`.
+  have h := peterssonInnerCosets_normalizedFrickeOperatorCusp k f.toCuspForm f.toCuspForm
+  -- `⟪c • f_ρ, c • f_ρ⟫ = |c|² ⟪f_ρ, f_ρ⟫` and `⟪f_ρ, f_ρ⟫ = conj ⟪f, f⟫ = ⟪f, f⟫`
+  rw [f.normalizedFrickeOperatorCusp_eq_frickePseudoEigenvalue_smul, toCuspForm_conj] at h
+  simp only [CuspForm.peterssonInnerCosets_smul_left, CuspForm.peterssonInnerCosets_smul_right,
+    CuspForm.peterssonInnerCosets_conj_conj, CuspForm.peterssonInnerCosets_conj_symm, ← mul_assoc,
+    Complex.mul_conj'] at h
+  have hP : CuspForm.peterssonInnerCosets f.toCuspForm f.toCuspForm ≠ 0 :=
+    mt (CuspForm.peterssonInnerCosets_self_eq_zero _).mp f.ne_zero
+  have hsq : ‖f.frickePseudoEigenvalue‖ ^ 2 = 1 := by
+    exact_mod_cast mul_right_cancel₀ hP (h.trans (one_mul _).symm)
+  exact (pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero).mp hsq
+
+/-- **The pseudo-eigenvalues of a newform and of its conjugate multiply to `(-1) ^ k`**:
+`λ_N(f) λ_N(f_ρ) = (-1) ^ k`, because `𝒲_N f = λ_N(f) • f_ρ`, `𝒲_N f_ρ = λ_N(f_ρ) • f` and
+`𝒲_N ∘ 𝒲_N = (-1) ^ k`. -/
+theorem Newform.frickePseudoEigenvalue_mul_frickePseudoEigenvalue_conj (f : Newform N k) :
+    f.frickePseudoEigenvalue * f.conj.frickePseudoEigenvalue = (-1 : ℂ) ^ k := by
+  have h := normalizedFrickeOperatorCusp_normalizedFrickeOperatorCusp_apply k f.toCuspForm
+  rw [f.normalizedFrickeOperatorCusp_eq_frickePseudoEigenvalue_smul, map_smul,
+    f.conj.normalizedFrickeOperatorCusp_eq_frickePseudoEigenvalue_smul, conj_conj,
+    smul_smul] at h
+  exact smul_left_injective ℂ f.ne_zero h
+
+/-- **The pseudo-eigenvalue of the conjugate newform**: `λ_N(f_ρ) = (-1) ^ k · conj λ_N(f)`. Since
+`|λ_N(f)| = 1`, its inverse is its complex conjugate. -/
+theorem Newform.frickePseudoEigenvalue_conj (f : Newform N k) :
+    f.conj.frickePseudoEigenvalue = (-1 : ℂ) ^ k * starRingEnd ℂ f.frickePseudoEigenvalue := by
+  have hnorm : starRingEnd ℂ f.frickePseudoEigenvalue * f.frickePseudoEigenvalue = 1 := by
+    rw [mul_comm, Complex.mul_conj', f.norm_frickePseudoEigenvalue, Complex.ofReal_one, one_pow]
+  linear_combination (-f.conj.frickePseudoEigenvalue) * hnorm + starRingEnd ℂ
+    f.frickePseudoEigenvalue * f.frickePseudoEigenvalue_mul_frickePseudoEigenvalue_conj
+
+/-- **For trivial nebentypus the pseudo-eigenvalue is the Fricke sign**: such a newform is its own
+conjugate (`HeckeRing.GL2.Newform.conj_eq_self_of_χ_eq_one`), so `𝒲_N f = λ_N(f) • f`. -/
+theorem Newform.frickePseudoEigenvalue_eq_frickeSign (f : Newform N k) (hχ : f.χ = 1) :
+    f.frickePseudoEigenvalue = f.frickeSign hχ := by
+  refine (f.frickeSign_eq_of_normalizedFrickeOperatorCusp_eq_smul hχ ?_).symm
+  rw [f.normalizedFrickeOperatorCusp_eq_frickePseudoEigenvalue_smul,
+    f.conj_eq_self_of_χ_eq_one hχ]
 
 end HeckeRing.GL2
