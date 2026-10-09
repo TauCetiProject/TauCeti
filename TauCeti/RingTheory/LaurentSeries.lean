@@ -112,7 +112,6 @@ theorem derivative_single_mul (m : ℤ) (c : R) (f : R⸨X⸩) :
   ring
 
 /-- **The product rule** for the derivative of Laurent series: `(f * g)' = f' * g + f * g'`. -/
-@[simp]
 theorem derivative_mul (f g : R⸨X⸩) :
     derivative R (f * g) = derivative R f * g + f * derivative R g := by
   -- Write `f = X ^ a * φ` and `g = X ^ b * ψ` with power series `φ` and `ψ`, so that
