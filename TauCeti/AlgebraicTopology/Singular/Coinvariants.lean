@@ -8,13 +8,14 @@ module
 public import TauCeti.AlgebraicTopology.Singular.Transfer
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coproduct
 public import TauCeti.CategoryTheory.Limits.Shapes.SingleObj
+public import TauCeti.Topology.Category.TopCat.Action
 
 /-!
 # Singular chains of a quotient covering are coinvariants
 
 Let a group `G` act on a space `E` so that `p : E ⟶ B` is the quotient covering map of the action,
-in the sense of Mathlib's `IsQuotientCoveringMap`. The action is a functor
-`hG.actionFunctor : SingleObj G ⥤ TopCat` sending the unique object to `E`, and `p` is a cocone
+in the sense of Mathlib's `IsQuotientCoveringMap`. The action is the functor
+`E.actionFunctor G : SingleObj G ⥤ TopCat` sending the unique object to `E`, and `p` is a cocone
 `hG.cocone` over it. This file shows that the singular simplicial set, and the singular chain
 complex with any coefficients, of `B` are the coinvariants of those of `E`:
 
@@ -58,27 +59,9 @@ namespace IsQuotientCoveringMap
 variable {E B : TopCat.{w}} {p : E ⟶ B} {G : Type*} [Group G] [MulAction G E]
   (hG : IsQuotientCoveringMap p G)
 
-/-- The action of `G` on the total space `E` of a quotient covering map, as the functor
-`SingleObj G ⥤ TopCat` sending `g` to the homeomorphism `g • ·`. -/
-@[expose]
-def actionFunctor : SingleObj G ⥤ TopCat.{w} :=
-  SingleObj.functor
-    { toFun g := TopCat.ofHom ⟨(g • ·), hG.continuous_const_smul g⟩
-      map_one' := ConcreteCategory.hom_ext _ _ fun e ↦ one_smul G e
-      map_mul' g h := ConcreteCategory.hom_ext _ _ fun e ↦ mul_smul g h e }
-
-@[simp]
-lemma actionFunctor_obj (X : SingleObj G) : hG.actionFunctor.obj X = E :=
-  (rfl)
-
-@[simp]
-lemma actionFunctor_map_apply (g : G) (e : E) :
-    hG.actionFunctor.map (X := SingleObj.star G) (Y := SingleObj.star G) g e = g • e :=
-  (rfl)
-
 /-- The quotient covering map `p : E ⟶ B`, as a cocone over the action of `G` on `E`. -/
 @[expose, simps]
-def cocone : Cocone hG.actionFunctor where
+def cocone : Cocone (@TopCat.actionFunctor E G _ _ hG.toContinuousConstSMul) where
   pt := B
   ι :=
     { app _ := p
@@ -106,9 +89,10 @@ def isColimitMapCoconeToSSet : IsColimit (TopCat.toSSet.mapCocone hG.cocone) :=
           (j := SingleObj.star G) (j' := SingleObj.star G) g τ'
       · -- The `SingleObj` action is `g • τ' = (toSSet.map (actionFunctor.map g)).app n τ'`, so
         -- `g` acts on singular simplices by postcomposition with `g • ·` (`simplexMap_app`).
-        change simplexMap ((TopCat.toSSet.map (hG.actionFunctor.map g)).app n τ') x = _
+        have := hG.toContinuousConstSMul
+        change simplexMap ((TopCat.toSSet.map ((E.actionFunctor G).map g)).app n τ') x = _
         rw [simplexMap_app, ContinuousMap.comp_apply]
-        exact (hG.actionFunctor_map_apply g _).trans hg
+        exact (TopCat.actionFunctor_map_apply ..).trans hg
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C] (R : C)
 
@@ -125,19 +109,26 @@ which multiplication by `|G|` is invertible, `Hₙ(B; R)` is the colimit `Hₙ(E
 of `G` on `Hₙ(E; R)`, with legs `p_*`. -/
 def isColimitMapCoconeSingularHomology [Fintype G] [CategoryWithHomology C] (n : ℕ)
     [IsIso (Fintype.card G • 𝟙 R)] :
-    IsColimit (((singularHomologyFunctor C n).obj R).mapCocone hG.cocone) :=
-  have : IsIso (Fintype.card G • 𝟙
-      ((hG.actionFunctor ⋙ (singularChainComplexFunctor C).obj R).obj (SingleObj.star G))) :=
+    IsColimit (((singularHomologyFunctor C n).obj R).mapCocone hG.cocone) := by
+  have := hG.toContinuousConstSMul
+  let F := (singularChainComplexFunctor C).obj R
+  -- Singular chains are additive in the coefficients, so `|G|` stays invertible on `C(E; R)` and
+  -- `C(B; R)`. By `TopCat.actionFunctor_obj` and `cocone_pt` (both `rfl`), these are the acted-on
+  -- object and the cocone point of `F.mapCocone hG.cocone`.
+  have : IsIso (Fintype.card G • 𝟙 ((E.actionFunctor G ⋙ F).obj (SingleObj.star G))) :=
     (singularChainComplexFunctor C ⋙ (evaluation _ _).obj E).isIso_nsmul_id_obj _ R
-  have : IsIso (Fintype.card G •
-      𝟙 (((singularChainComplexFunctor C).obj R).mapCocone hG.cocone).pt) :=
+  have : IsIso (Fintype.card G • 𝟙 (F.mapCocone hG.cocone).pt) :=
     (singularChainComplexFunctor C ⋙ (evaluation _ _).obj B).isIso_nsmul_id_obj _ R
-  SingleObj.isColimitMapCoconeOfTransfer
-    (((singularChainComplexFunctor C).obj R).mapCocone hG.cocone)
-    (hG.isCoveringMap.singularTransfer hG.finite_fiber R) (HomologicalComplex.homologyFunctor C _ n)
-    (hG.isCoveringMap.singularTransfer_comp_chainComplexMap hG.finite_fiber R fun b ↦ by
+  refine SingleObj.isColimitMapCoconeOfTransfer (F.mapCocone hG.cocone)
+    (hG.isCoveringMap.singularTransfer hG.finite_fiber R)
+    (HomologicalComplex.homologyFunctor C _ n) ?_ ?_
+  -- The leg of `F.mapCocone hG.cocone` is `F.map p`, which is `p_*` by
+  -- `singularChainComplexFunctor_obj_map` (`rfl`).
+  · exact hG.isCoveringMap.singularTransfer_comp_chainComplexMap hG.finite_fiber R fun b ↦ by
       obtain ⟨e, he⟩ := hG.surjective b
-      rw [Nat.card_congr (hG.fiberEquivGroup ⟨e, he⟩), Nat.card_eq_fintype_card])
-    (hG.chainComplexMap_comp_singularTransfer R)
+      rw [Nat.card_congr (hG.fiberEquivGroup ⟨e, he⟩), Nat.card_eq_fintype_card]
+  -- `F` sends the action of `g` to `(g • ·)_*`.
+  · simp only [Functor.comp_map, TopCat.actionFunctor_map]
+    exact hG.chainComplexMap_comp_singularTransfer R
 
 end IsQuotientCoveringMap

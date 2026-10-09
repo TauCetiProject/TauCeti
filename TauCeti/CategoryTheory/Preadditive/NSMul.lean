@@ -30,8 +30,8 @@ namespace Preadditive
 /-- The inverse of multiplication by a natural number commutes with every morphism. -/
 lemma comp_inv_nsmul_id {X Y : C} (f : X ⟶ Y) (d : ℕ) [IsIso (d • 𝟙 X)] [IsIso (d • 𝟙 Y)] :
     f ≫ inv (d • 𝟙 Y) = inv (d • 𝟙 X) ≫ f := by
-  rw [IsIso.eq_inv_comp, ← Category.assoc, IsIso.comp_inv_eq, Preadditive.nsmul_comp,
-    Preadditive.comp_nsmul, Category.id_comp, Category.comp_id]
+  rw [IsIso.eq_inv_comp, ← Category.assoc, IsIso.comp_inv_eq]
+  simp [Preadditive.nsmul_comp, Preadditive.comp_nsmul]
 
 end Preadditive
 
