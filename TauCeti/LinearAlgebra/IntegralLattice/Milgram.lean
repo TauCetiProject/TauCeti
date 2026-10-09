@@ -98,6 +98,22 @@ private theorem gaussSum_rankOne_of_pos (hm : 0 < m) :
   push_cast
   ring_nf
 
+omit [NeZero m] in
+/-- `√2 · e^{2πi/8} = 1 + i`. -/
+private theorem sqrt_two_mul_expCircle_toRatAddCircle_eight_one :
+    ((√2 : ℝ) : ℂ) * expCircle (ZMod.toRatAddCircle 8 1) = 1 + I := by
+  have h8 : ZMod.toRatAddCircle 8 1 = ((1 / 8 : ℚ) : AddCircle (1 : ℚ)) := by
+    simpa using ZMod.toRatAddCircle_natCast 8 1
+  have hexp : 2 * (π : ℂ) * I * ((1 / 8 : ℚ) : ℂ) = (π / 4 : ℝ) * I := by
+    push_cast
+    ring
+  have h2 : ((√2 : ℝ) : ℂ) ^ 2 = 2 := by
+    rw [← ofReal_pow, Real.sq_sqrt zero_le_two, ofReal_ofNat]
+  rw [h8, expCircle_coe, hexp, exp_mul_I, ← ofReal_cos, ← ofReal_sin, Real.cos_pi_div_four,
+    Real.sin_pi_div_four]
+  push_cast
+  linear_combination (1 + I) / 2 * h2
+
 /-- For `0 < m`, the discriminant form of `⟨2m⟩` has Gauss-sum invariant `1`:
 `(1 + i) √m = √(2m) · e^{2πi/8}`. -/
 private theorem gaussSign_rankOne_of_pos (hm : 0 < m) :
@@ -107,19 +123,11 @@ private theorem gaussSign_rankOne_of_pos (hm : 0 < m) :
       (2 * m).natAbs :=
     natCard_rankOne_discriminantGroup m
   obtain ⟨M, rfl⟩ : ∃ M : ℕ, m = M := ⟨m.toNat, (Int.toNat_of_nonneg hm.le).symm⟩
-  have h8 : ZMod.toRatAddCircle 8 1 = ((1 / 8 : ℚ) : AddCircle (1 : ℚ)) := by
-    simpa using ZMod.toRatAddCircle_natCast 8 1
-  have hexp : 2 * (π : ℂ) * I * ((1 / 8 : ℚ) : ℂ) = (π / 4 : ℝ) * I := by
-    push_cast
-    ring
-  have h2 : ((√2 : ℝ) : ℂ) ^ 2 = 2 := by
-    rw [← ofReal_pow, Real.sq_sqrt zero_le_two, ofReal_ofNat]
-  rw [gaussSum_rankOne_of_pos _ hm, hcard, show (2 * (M : ℤ)).natAbs = 2 * M by omega, h8,
-    expCircle_coe, hexp, exp_mul_I, ← ofReal_cos, ← ofReal_sin, Real.cos_pi_div_four,
-    Real.sin_pi_div_four, Nat.cast_mul, Nat.cast_ofNat, Real.sqrt_mul zero_le_two,
-    Int.cast_natCast]
+  rw [gaussSum_rankOne_of_pos _ hm, hcard, show (2 * (M : ℤ)).natAbs = 2 * M by omega,
+    Nat.cast_mul, Nat.cast_ofNat, Real.sqrt_mul zero_le_two, Int.cast_natCast,
+    ← sqrt_two_mul_expCircle_toRatAddCircle_eight_one]
   push_cast
-  linear_combination (-(1 + I) * (√(M : ℝ) : ℂ) / 2) * h2
+  ring
 
 omit [NeZero m] in
 /-- `⟨2m⟩` is the negative of `⟨-2m⟩`. -/

@@ -527,6 +527,7 @@ theorem gaussSign_neg : A.neg.gaussSign = -A.gaussSign := by
     rw [gaussSign, gaussSign, dite_eq_right h, dite_eq_right h', neg_zero]
 
 /-- The zero module has Gauss sum `1 = √1` and hence Gauss-sum invariant `0`. -/
+@[simp]
 theorem gaussSign_eq_zero_of_subsingleton [Subsingleton A] : A.gaussSign = 0 := by
   refine gaussSign_eq_of_gaussSum_eq A ?_
   obtain ⟨_⟩ := nonempty_fintype A
