@@ -59,13 +59,11 @@ theorem exists_isCompact_forall_exists_sub_algebraMap_mem :
   let b := mixedEmbedding.latticeBasis K
   let P : Set (mixedEmbedding.mixedSpace K) := b.parallelepiped
   let e := InfiniteAdeleRing.ringEquiv_mixedSpace K
-  let D : Set 𝔸[K] := (e.symm '' P) ×ˢ
-    {a : 𝔸ᶠ[K] | ∀ v, a v ∈ v.adicCompletionIntegers K}
+  let D : Set 𝔸[K] := (e.symm '' P) ×ˢ (FiniteAdeleRing.integralAdeles (𝓞 K) K : Set 𝔸ᶠ[K])
   have he : Continuous e.symm :=
     InfiniteAdeleRing.continuous_ringEquiv_mixedSpace_symm K
   have hD : IsCompact D :=
-    (b.parallelepiped.isCompact.image he).prod
-      (FiniteAdeleRing.coe_integralAdeles (𝓞 K) K ▸ FiniteAdeleRing.isCompact_integralAdeles)
+    (b.parallelepiped.isCompact.image he).prod FiniteAdeleRing.isCompact_integralAdeles
   refine ⟨D, hD, ?_⟩
   intro a
   -- Expose the product representation of the adele ring for the componentwise construction.
@@ -95,7 +93,8 @@ theorem exists_isCompact_forall_exists_sub_algebraMap_mem :
       exact sub_mem (hx v) (v.coe_mem_adicCompletionIntegers y)⟩
   let d : 𝔸[K] :=
     (e.symm p, FiniteAdeleRing.integralEmbedding (R := 𝓞 K) (K := K) u)
-  have hd : d ∈ D := ⟨⟨p, hp, rfl⟩, fun v ↦ by simp [d]⟩
+  have hd : d ∈ D :=
+    ⟨⟨p, hp, rfl⟩, FiniteAdeleRing.mem_integralAdeles.mpr fun v ↦ by simp [d]⟩
   -- Thus `d` is obtained from `a` by subtracting the principal adele of `x + y`.
   have hd_eq : d = a - algebraMap K 𝔸[K] (x + algebraMap (𝓞 K) K y) := by
     -- `AdeleRing` is a type synonym for this product; exposing it lets the two components be

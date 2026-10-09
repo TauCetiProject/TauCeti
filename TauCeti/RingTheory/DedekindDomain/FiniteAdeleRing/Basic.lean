@@ -305,8 +305,7 @@ adele integral at every place, with `v`-adic valuation at most `exp (-n v)` at e
 the neighbourhood. -/
 theorem exists_finset_forall_mem_of_mem_nhds_zero {U : Set (FiniteAdeleRing R K)} (hU : U ∈ 𝓝 0) :
     ∃ (I : Finset (HeightOneSpectrum R)) (n : HeightOneSpectrum R → ℕ),
-      ∀ a : FiniteAdeleRing R K, (∀ v, a v ∈ v.adicCompletionIntegers K) →
-        (∀ v ∈ I, Valued.v (a v) ≤ exp (-(n v : ℤ))) → a ∈ U := by
+      ∀ a ∈ integralAdeles R K, (∀ v ∈ I, Valued.v (a v) ≤ exp (-(n v : ℤ))) → a ∈ U := by
   have hopen (v : HeightOneSpectrum R) :
       IsOpen (v.adicCompletionIntegers K : Set (v.adicCompletion K)) :=
     Valued.isOpen_valuationSubring _
@@ -319,7 +318,8 @@ theorem exists_finset_forall_mem_of_mem_nhds_zero {U : Set (FiniteAdeleRing R K)
   obtain ⟨I, hI, t, ht, hIt⟩ := hU1
   choose n hn using fun v ↦ exists_maximalIdeal_pow_subset_of_mem_nhds v (ht v)
   refine ⟨hI.toFinset, n, fun a ha hav ↦ ?_⟩
-  let w : ∀ v : HeightOneSpectrum R, v.adicCompletionIntegers K := fun v ↦ ⟨a v, ha v⟩
+  let w : ∀ v : HeightOneSpectrum R, v.adicCompletionIntegers K := fun v ↦
+    ⟨a v, mem_integralAdeles.mp ha v⟩
   have hw : w ∈ I.pi t := fun v hv ↦
     hn v ((mem_maximalIdeal_pow_iff v).mpr (hav v (hI.mem_toFinset.mpr hv)))
   have heq : integralEmbedding (R := R) (K := K) w = a := by
@@ -384,7 +384,7 @@ embedding of `K` induces an isomorphism of `R`-modules `K / R ≃ 𝔸ᶠ / ∏_
 by strong approximation, and injective because the integral finite adeles meet `K` in `R`. -/
 noncomputable def quotientEquivQuotientIntegralAdeles :
     (K ⧸ (1 : Submodule R K)) ≃ₗ[R]
-      FiniteAdeleRing R K ⧸ Subalgebra.toSubmodule (integralAdeles R K) := by
+      FiniteAdeleRing R K ⧸ Subalgebra.toSubmodule (integralAdeles R K) :=
   let f : K →ₗ[R] FiniteAdeleRing R K ⧸ Subalgebra.toSubmodule (integralAdeles R K) :=
     (Subalgebra.toSubmodule (integralAdeles R K)).mkQ ∘ₗ
       (Algebra.linearMap K (FiniteAdeleRing R K)).restrictScalars R
@@ -399,15 +399,17 @@ noncomputable def quotientEquivQuotientIntegralAdeles :
       LinearMap.coe_restrictScalars, Algebra.linearMap_apply, Submodule.mkQ_apply,
       Submodule.Quotient.mk_eq_zero, Subalgebra.mem_toSubmodule,
       algebraMap_mem_integralAdeles_iff, Submodule.mem_one, RingHom.mem_range]
-  exact (Submodule.quotEquivOfEq _ _ hker.symm).trans (f.quotKerEquivOfSurjective hf)
+  (Submodule.quotEquivOfEq _ _ hker.symm).trans (f.quotKerEquivOfSurjective hf)
 
 /-- The isomorphism `K / R ≃ 𝔸ᶠ / ∏_v 𝒪_v` sends the class of `x` to the class of its diagonal
 image. -/
 @[simp]
 theorem quotientEquivQuotientIntegralAdeles_mk (x : K) :
     quotientEquivQuotientIntegralAdeles R K (Submodule.Quotient.mk x) =
-      Submodule.Quotient.mk (algebraMap K (FiniteAdeleRing R K) x) :=
-  (rfl)
+      Submodule.Quotient.mk (algebraMap K (FiniteAdeleRing R K) x) := by
+  simp only [quotientEquivQuotientIntegralAdeles, LinearEquiv.trans_apply,
+    Submodule.quotEquivOfEq_mk]
+  exact LinearMap.quotKerEquivOfSurjective_apply_mk _ _ x
 
 end FiniteAdeleRing
 
