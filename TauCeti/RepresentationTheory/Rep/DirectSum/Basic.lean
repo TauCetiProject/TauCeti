@@ -27,7 +27,6 @@ namespace Representation
 
 /-- The finite direct-sum action becomes the componentwise action under the natural
 identification with the dependent product. -/
-@[simp]
 theorem conj_directSum_linearEquivFunOnFintype
     {k G ι : Type*} [CommSemiring k] [Monoid G] [Fintype ι]
     {V : ι → Type*} [∀ i, AddCommMonoid (V i)] [∀ i, Module k (V i)]
