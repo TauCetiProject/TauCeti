@@ -28,7 +28,8 @@ claim about its rational-point groups fails in dimension two.
 
 ## Main declaration
 
-* `TauCeti.GeneralLinear.derivedDefiningIdeal_eq_specialLinear`: the equality of defining ideals.
+* `TauCeti.GeneralLinear.derivedDefiningIdeal_eq_specialLinear_definingHopfIdeal`: the equality of
+  defining ideals.
 
 ## References
 
@@ -72,7 +73,7 @@ The equality is in the ambient coordinate Hopf algebra and therefore identifies 
 subgroup schemes, rather than just their rational points. No perfection or characteristic
 assumption is required. -/
 @[simp]
-theorem derivedDefiningIdeal_eq_specialLinear (k : Type u) [Field k] (n : ℕ) :
+theorem derivedDefiningIdeal_eq_specialLinear_definingHopfIdeal (k : Type u) [Field k] (n : ℕ) :
     CommHopfAlgCat.derivedDefiningIdeal (coordinateHopfAlgebra k n) =
       SpecialLinear.definingHopfIdeal k n := by
   classical
