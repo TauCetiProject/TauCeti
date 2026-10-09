@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Ideal.Span
 public import TauCeti.LinearAlgebra.Multilinear.Span
 import TauCeti.LinearAlgebra.BilinearForm.Multilinear
 import Mathlib.LinearAlgebra.SpecialLinearGroup
+import Mathlib.LinearAlgebra.Matrix.SchurComplement
 
 /-!
 # Determinant transformation laws, evaluation, and determinants of updated rows
@@ -38,6 +39,9 @@ alongside Mathlib's `Matrix.det_updateRow_add` and `Matrix.det_updateRow_smul`: 
 in row form, that rescaling one row entry by entry along a fixed vector of factors and summing the
 results over the rows multiplies the determinant by the total of the factors.
 
+Finally, it records the Weinstein–Aronszajn identity `det (1 + X ∘ₗ Y) = det (1 + Y ∘ₗ X)` for
+linear maps `X` and `Y` between two free modules of finite rank, possibly of different ranks.
+
 ## Main results
 
 * `AlternatingMap.eq_basis_det_smulRight`: `ω = b.det.smulRight (ω b)` for `ω` of top degree.
@@ -59,6 +63,8 @@ results over the rows multiplies the determinant by the total of the factors.
 * `Matrix.sum_det_updateRow_mul_row`: Jacobi's formula for a determinant, in row form.
 * `Matrix.det_mul_column_intCast`: scaling every row `i` of an integer matrix by `d i`
   multiplies the determinant by `∏ i, d i`, over any commutative ring.
+* `LinearMap.det_one_add_comp_comm`: the Weinstein–Aronszajn identity
+  `det (1 + X ∘ₗ Y) = det (1 + Y ∘ₗ X)` for linear maps between free modules of finite rank.
 * `LinearEquiv.det_ker_eq_bot_of_finrank_le_one`: the determinant kernel is trivial in
   dimension at most one.
 
@@ -193,6 +199,20 @@ theorem det_eq_of_compl₁₂_self_eq_smul_of_separatingLeft (b : Basis (Fin 2) 
     simpa using congr($hd (b 0) y)
   rw [← sub_eq_zero]
   simpa using congr(b.repr $hb 0)
+
+/-- The **Weinstein–Aronszajn identity** for linear maps: for linear maps `X : F' →ₗ[R] F` and
+`Y : F →ₗ[R] F'` between free modules of finite rank, `det (1 + X ∘ₗ Y) = det (1 + Y ∘ₗ X)`. This
+is Mathlib's `Matrix.det_one_add_mul_comm`, read through the matrices of `X` and `Y` in bases. -/
+theorem det_one_add_comp_comm {F F' : Type*} [AddCommGroup F] [Module R F] [Module.Free R F]
+    [Module.Finite R F] [AddCommGroup F'] [Module R F'] [Module.Free R F'] [Module.Finite R F']
+    (X : F' →ₗ[R] F) (Y : F →ₗ[R] F') :
+    LinearMap.det (1 + X ∘ₗ Y) = LinearMap.det (1 + Y ∘ₗ X) := by
+  classical
+  let b := Free.chooseBasis R F
+  let b' := Free.chooseBasis R F'
+  rw [← det_toMatrix b, ← det_toMatrix b', map_add, map_add, toMatrix_one, toMatrix_one,
+    toMatrix_comp b b' b, toMatrix_comp b' b b']
+  exact Matrix.det_one_add_mul_comm _ _
 
 end LinearMap
 
