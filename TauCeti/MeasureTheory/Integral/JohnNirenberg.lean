@@ -394,7 +394,8 @@ private theorem cubeEquiv_apply (hr : 0 < r) (y : ι → ℝ) :
 private theorem map_cubeEquiv (hr : 0 < r) :
     (volume : Measure (ι → ℝ)).map (cubeEquiv c hr) =
       ENNReal.ofReal ((2 * r) ^ Fintype.card ι)⁻¹ • volume := by
-  have h : ⇑(cubeEquiv c hr) = (· + (c - fun _ => r)) ∘ ((2 * r) • ·) := rfl
+  have h : ⇑(cubeEquiv c hr) = (· + (c - fun _ => r)) ∘ ((2 * r) • ·) :=
+    funext (cubeEquiv_apply hr)
   rw [h, ← Measure.map_map (measurable_add_const _) (measurable_const_smul _),
     Measure.map_addHaar_smul _ (by positivity), Measure.map_smul, map_add_right_eq_self,
     Module.finrank_fintype_fun_eq_card, abs_of_pos (by positivity)]
