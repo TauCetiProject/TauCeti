@@ -55,7 +55,7 @@ def pullbackInternalHomComparison :
 /-- Evaluation after the base-change comparison is the pullback of evaluation, preceded by
 the inverse canonical tensor comparison. This characterizes the base-change map. -/
 @[reassoc (attr := simp)]
-theorem pullbackInternalHomComparison_ev (F : Y.Modules) :
+theorem whiskerLeft_pullbackInternalHomComparison_app_comp_ev (F : Y.Modules) :
     (Scheme.Modules.pullback f).obj M ◁ (pullbackInternalHomComparison M f).app F ≫
         (ihom.ev ((Scheme.Modules.pullback f).obj M)).app
           ((Scheme.Modules.pullback f).obj F) =
@@ -88,7 +88,7 @@ theorem pullbackInternalHomComparison_app_eq_curry (F : Y.Modules) :
       curry (inv (δ (Scheme.Modules.pullback f) M ((ihom M).obj F)) ≫
         (Scheme.Modules.pullback f).map ((ihom.ev M).app F)) := by
   exact (curry_uncurry _).symm.trans
-    (congrArg curry (pullbackInternalHomComparison_ev M f F))
+    (congrArg curry (whiskerLeft_pullbackInternalHomComparison_app_comp_ev M f F))
 
 /-- The canonical internal-Hom base-change comparison is invertible for every scheme morphism
 when its quasicoherent source has a quasicoherent left dual, without any condition on the target. -/
@@ -158,7 +158,7 @@ theorem isIso_pullbackInternalHomComparison_of_exactPairing
     apply NatTrans.ext
     funext F
     apply uncurry_injective
-    exact (pullbackInternalHomComparison_ev M f F).trans (hi F).symm
+    exact (whiskerLeft_pullbackInternalHomComparison_app_comp_ev M f F).trans (hi F).symm
   rw [h]
   infer_instance
 
