@@ -73,9 +73,9 @@ is asserted here.
   the numbered generators.
 * `TauCeti.SpStd.lie_cartanGenerator_rootGenerator`: the numbered Cartan generators act on the
   root generators through the rows of the type-`C` Cartan matrix.
-* `TauCeti.SpStd.isNilpotent_rep_rootGenerator` and
-  `TauCeti.SpStd.nilpotencyClass_rep_rootGenerator`: each numbered root generator squares to zero
-  on the standard module, and has nilpotency class exactly two.
+* `TauCeti.SpStd.rootGenerator_mul_self_eq_zero`, `TauCeti.SpStd.isNilpotent_rep_rootGenerator`
+  and `TauCeti.SpStd.nilpotencyClass_rep_rootGenerator`: each numbered root generator squares to
+  zero as a matrix, hence on the standard module, and has nilpotency class exactly two.
 * `TauCeti.SpStd.intCast_latticeBasis_repr`: the coordinate-basis coefficients of a lattice vector
   are its rational coordinates.
 * `TauCeti.SpStd.rep_kostantForm_mem_lattice`: the Kostant `ℤ`-form preserves the standard
@@ -647,24 +647,31 @@ theorem rep_rootGenerator_apply (k : Fin (n + 1) ⊕ Fin (n + 1))
           sub_mulVec, single_mulVec_eq,
           single_mulVec_eq, one_mul, one_mul]
 
+/-- Every numbered root generator squares to zero as a matrix. -/
+theorem rootGenerator_mul_self_eq_zero (k : Fin (n + 1) ⊕ Fin (n + 1)) :
+    (rootGenerator n k : Matrix (Fin (n + 1) ⊕ Fin (n + 1)) (Fin (n + 1) ⊕ Fin (n + 1)) ℚ) *
+      (rootGenerator n k : Matrix _ _ ℚ) = 0 := by
+  cases k with
+  | inl i =>
+      by_cases hi : i = Fin.last n
+      · subst hi
+        simp [positiveRootMatrix_last]
+      · simp [positiveRootMatrix_of_ne_last n i hi, sub_mul, mul_sub, single_mul_single_of_ne,
+          (Order.lt_succ_iff_ne_top.2 hi).ne, (Order.lt_succ_iff_ne_top.2 hi).ne']
+  | inr i =>
+      by_cases hi : i = Fin.last n
+      · subst hi
+        simp [negativeRootMatrix_last]
+      · simp [negativeRootMatrix_of_ne_last n i hi, sub_mul, mul_sub, single_mul_single_of_ne,
+          (Order.lt_succ_iff_ne_top.2 hi).ne, (Order.lt_succ_iff_ne_top.2 hi).ne']
+
 /-- Applying a numbered root generator twice in the standard representation gives zero. -/
 theorem rep_rootGenerator_rep_rootGenerator_eq_zero
     (k : Fin (n + 1) ⊕ Fin (n + 1))
     (v : (Fin (n + 1) ⊕ Fin (n + 1)) → ℚ) :
     rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ (rootGenerator n k))
       (rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ (rootGenerator n k)) v) = 0 := by
-  rw [rep_rootGenerator_apply, rep_rootGenerator_apply]
-  cases k with
-  | inl i =>
-      by_cases hi : i = Fin.last n
-      · subst hi
-        simp
-      · simp [hi, (Order.lt_succ_iff_ne_top.2 hi).ne, (Order.lt_succ_iff_ne_top.2 hi).ne']
-  | inr i =>
-      by_cases hi : i = Fin.last n
-      · subst hi
-        simp
-      · simp [hi, (Order.lt_succ_iff_ne_top.2 hi).ne, (Order.lt_succ_iff_ne_top.2 hi).ne']
+  rw [rep_ι_apply, rep_ι_apply, mulVec_mulVec, rootGenerator_mul_self_eq_zero, zero_mulVec]
 
 /-- Every numbered root generator squares to zero in the standard representation. -/
 theorem pow_two_rep_rootGenerator_eq_zero (k : Fin (n + 1) ⊕ Fin (n + 1)) :
