@@ -22,11 +22,11 @@ For fixed `u`, this continuity descends through the quotient topology on `u⊥ /
 additive homomorphism `QuadraticMap.transvectionHom Q hu` is a continuous homomorphism into the
 special orthogonal group.
 
-Over a normed field, such as `ℝ` or `ℚ_p`, a nonzero parameter class `w` gives a one-parameter
-family `t ↦ E_{u,t w}` that leaves every compact set of linear automorphisms, since a suitable
-matrix coefficient of `E_{u,t w}` is an affine function of `t` with nonzero slope. Consequently,
-over a nontrivially normed field, the Eichler root subgroup of `u` is compact exactly when its
-parameter space `u^⊥ / K ∙ u` is trivial. For a nonzero isotropic vector of a nondegenerate form
+Over a nontrivially normed field, such as `ℝ` or `ℚ_p`, a nonzero parameter class `w` gives a
+one-parameter family `t ↦ E_{u,t w}` that leaves every compact set of linear automorphisms, since a
+suitable matrix coefficient of `E_{u,t w}` is an affine function of `t` with nonzero slope.
+Consequently, the Eichler root subgroup of `u` is compact exactly when its parameter space
+`u^⊥ / K ∙ u` is trivial. For a nonzero isotropic vector of a nondegenerate form
 that parameter space has dimension `dim V - 2`, so the root subgroups are noncompact exactly in
 dimension at least three. In dimension two they are trivial, and noncompactness of an isotropic
 orthogonal group is witnessed by the split torus instead
@@ -128,14 +128,16 @@ section Unbounded
 
 open Filter Bornology TauCeti.QuadraticMap
 
-section NormedField
+section NontriviallyNormedField
 
-variable {K : Type u} [NormedField K] {V : Type v} [AddCommGroup V] [Module K V]
+variable {K : Type u} [NontriviallyNormedField K] {V : Type v} [AddCommGroup V] [Module K V]
   {Q : QuadraticForm K V} {u w : V}
 
 /-- **Eichler transvections are unbounded.** For an isotropic vector `u` outside the polar radical
 and a vector `w` orthogonal to `u` but not a multiple of it, the Eichler transvections `E_{u,t w}`
-eventually leave every compact set of linear automorphisms as `t` tends to infinity in `K`. -/
+eventually leave every compact set of linear automorphisms as `t` tends to infinity in `K`.
+The field is nontrivially normed so that `cobounded K` is a nontrivial filter: over a trivially
+normed field it is `⊥` and the statement would hold vacuously. -/
 theorem tendsto_transvection_smul_cocompact (hu : Q u = 0) (huw : polar Q u w = 0)
     (hpolar : Q.polarBilin u ≠ 0) (hw : w ∉ K ∙ u) :
     Tendsto (fun t : K ↦ transvection Q hu (w := t • w)
@@ -181,13 +183,6 @@ theorem tendsto_transvectionHom_smul_cocompact (hu : Q u = 0) (hpolar : Q.polarB
   refine (tendsto_transvection_smul_cocompact hu huw hpolar hwu).congr fun t ↦ ?_
   rw [Function.comp_apply, ← Submodule.Quotient.mk_smul]
   exact (coe_transvectionHom_mk hu _).symm
-
-end NormedField
-
-section NontriviallyNormedField
-
-variable {K : Type u} [NontriviallyNormedField K] {V : Type v} [AddCommGroup V] [Module K V]
-  {Q : QuadraticForm K V} {u : V}
 
 /-- **Compactness of an Eichler root subgroup.** For an isotropic vector `u` outside the polar
 radical, the image of the root-subgroup homomorphism `u^⊥ / K ∙ u → SO(Q)` is compact exactly when
