@@ -107,13 +107,6 @@ private theorem semilocalEquiv_finiteIdeleSemilocalHom (a : (FiniteAdeleRing (�
     semilocalEquiv L v (finiteIdeleSemilocalHom L v a) w = (a : FiniteAdeleRing (𝒪 L) L) w.1 := by
   rw [coe_finiteIdeleSemilocalHom, semilocalEquiv_finiteAdeleSemilocalHom]
 
-omit [NumberField K] [NumberField L] in
-/-- A place of `L` lying over the place `v` of `K` contracts to `v`. -/
-private theorem under_eq_of_liesOver {w : HeightOneSpectrum (𝒪 L)}
-    (hw : w.asIdeal.LiesOver v.asIdeal) :
-    w.under (𝒪 K) = v :=
-  asIdeal_injective hw.over.symm
-
 /-- **A finite idele is determined by its semi-local components.** -/
 theorem eq_of_forall_finiteIdeleSemilocalHom_eq {a b : (FiniteAdeleRing (𝒪 L) L)ˣ}
     (h : ∀ v : HeightOneSpectrum (𝒪 K),
@@ -137,10 +130,8 @@ theorem finiteIdeleSemilocalHom_map_finiteAdeleGaloisAction (σ : L ≃ₐ[K] L)
       Algebra.TensorProduct.map (AlgHom.id _ _) (σ : L →ₐ[K] L) :=
     Algebra.TensorProduct.ext' fun _ _ ↦ by simp
   ext : 1
-  rw [coe_finiteIdeleSemilocalHom, Units.coe_map, Units.coe_map, coe_finiteIdeleSemilocalHom,
-    MonoidHom.coe_ofClass, GlobalNumberFields.finiteAdeleGaloisAction_apply,
-    finiteAdeleSemilocalHom_finiteAdeleEquiv]
-  exact (DFunLike.congr_fun h _).symm
+  simpa [GlobalNumberFields.finiteAdeleGaloisAction_apply,
+    finiteAdeleSemilocalHom_finiteAdeleEquiv] using (DFunLike.congr_fun h _).symm
 
 /-- **The finite idele with prescribed semi-local components.** A family of units
 `y v ∈ (K_v ⊗[K] L)ˣ`, integral in every component for all but finitely many `v`, assembles to a
@@ -158,6 +149,18 @@ def finiteIdeleOfSemilocalUnits (y : ∀ v : HeightOneSpectrum (𝒪 K), (v.adic
       exact adicCompletionIntegers.mem_units_iff_valued_eq_one.2
         ((mem_semilocalIntegralUnits_iff _ _).1 hw ⟨w, inferInstance⟩))
 
+/-- The component of `finiteIdeleOfSemilocalUnits y hy` at a place `w` of `L` is the component
+at `w` of the prescribed unit `y v`, for `v` the place of `K` below `w`. -/
+theorem coe_finiteIdeleOfSemilocalUnits_apply
+    (y : ∀ v : HeightOneSpectrum (𝒪 K), (v.adicCompletion K ⊗[K] L)ˣ)
+    (hy : ∀ᶠ v in Filter.cofinite, y v ∈ semilocalIntegralUnits L v)
+    (w : HeightOneSpectrum (𝒪 L)) :
+    (finiteIdeleOfSemilocalUnits y hy : FiniteAdeleRing (𝒪 L) L) w =
+      semilocalEquiv L (w.under (𝒪 K)) (y (w.under (𝒪 K))) ⟨w, inferInstance⟩ :=
+  -- `rfl` deliberately unfolds `RestrictedProduct.mkUnit`, `Units.map` and `Pi.evalMonoidHom`
+  -- in the definition of `finiteIdeleOfSemilocalUnits`
+  (rfl)
+
 /-- The semi-local components of `finiteIdeleOfSemilocalUnits y hy` are the prescribed units
 `y v`. -/
 @[simp]
@@ -169,7 +172,7 @@ theorem finiteIdeleSemilocalHom_finiteIdeleOfSemilocalUnits
   rw [semilocalEquiv_finiteIdeleSemilocalHom]
   obtain ⟨w, hw⟩ := w
   obtain rfl := under_eq_of_liesOver hw
-  rfl
+  exact coe_finiteIdeleOfSemilocalUnits_apply y hy w
 
 end SemilocalComponent
 
@@ -297,16 +300,20 @@ private theorem finiteSIdelesPiHom_apply_inr (a : finiteSIdeles L S)
 private theorem finiteSIdelesPiHom_injective :
     Function.Injective (finiteSIdelesPiHom L S).hom := by
   intro x y h
-  obtain ⟨a, rfl⟩ : ∃ a : finiteSIdeles L S, Additive.ofMul a = x := ⟨x.toMul, rfl⟩
-  obtain ⟨b, rfl⟩ : ∃ b : finiteSIdeles L S, Additive.ofMul b = y := ⟨y.toMul, rfl⟩
+  obtain ⟨a, rfl⟩ : ∃ a : finiteSIdeles L S, Additive.ofMul (α := finiteSIdelesRep L S) a = x :=
+    ⟨x.toMul, rfl⟩
+  obtain ⟨b, rfl⟩ : ∃ b : finiteSIdeles L S, Additive.ofMul (α := finiteSIdelesRep L S) b = y :=
+    ⟨y.toMul, rfl⟩
   refine congrArg Additive.ofMul
     (Subtype.ext (eq_of_forall_finiteIdeleSemilocalHom_eq (K := K) fun v ↦ ?_))
   by_cases hv : v ∈ S
-  · exact Additive.ofMul.injective ((finiteSIdelesPiHom_apply_inl L S a ⟨v, hv⟩).symm.trans
-      ((congrFun h (Sum.inl ⟨v, hv⟩)).trans (finiteSIdelesPiHom_apply_inl L S b ⟨v, hv⟩)))
-  · exact congrArg Subtype.val (Additive.ofMul.injective
-      ((finiteSIdelesPiHom_apply_inr L S a ⟨v, hv⟩).symm.trans
-        ((congrFun h (Sum.inr ⟨v, hv⟩)).trans (finiteSIdelesPiHom_apply_inr L S b ⟨v, hv⟩))))
+  -- in each case, compare the components of `finiteSIdelesPiHom` at the place `v`
+  · have h := congrFun h (Sum.inl ⟨v, hv⟩)
+    rw [finiteSIdelesPiHom_apply_inl, finiteSIdelesPiHom_apply_inl] at h
+    exact Additive.ofMul.injective h
+  · have h := congrFun h (Sum.inr ⟨v, hv⟩)
+    rw [finiteSIdelesPiHom_apply_inr, finiteSIdelesPiHom_apply_inr] at h
+    exact congrArg Subtype.val (Additive.ofMul.injective h)
 
 private theorem finiteSIdelesPiHom_surjective :
     Function.Surjective (finiteSIdelesPiHom L S).hom := by
