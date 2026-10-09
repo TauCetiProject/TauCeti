@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Homotopy.HomotopyGroup
 public import Mathlib.Topology.Connected.PathConnected
+public import TauCeti.Topology.PiCurry
 
 /-!
 # The cube and its boundary
@@ -28,7 +29,8 @@ It also records how the boundary of a cube with one extra direction splits, mirr
 `Cube.boundary_sum_iff`: a point of `I^(Option N)` is on the boundary exactly when its `none`
 coordinate is `0` or `1` or its remaining coordinates are on the boundary of `I^N`
 (`Cube.boundary_option_iff`). This is how a cube `I × I^N` with a distinguished first direction,
-as used for relative homotopy groups, is compared with the absolute cube `I^(Option N)`.
+as used for relative homotopy groups, is compared with the absolute cube `I^(Option N)` along
+`TauCeti.piOptionEquivProdHomeomorph` (`TauCeti.piOptionEquivProdHomeomorph_symm_mem_boundary`).
 
 The resulting path-connectedness declarations expose `JoinedIn` witnesses through their
 `.joinedIn` methods, so callers can use the generic connectedness API directly.
@@ -47,6 +49,9 @@ at `0` while releasing the first.
 * `TauCeti.isPathConnected_cubeBoundary`: for `[Nontrivial N]`, `Cube.boundary N` is path
   connected.
 * `Cube.boundary_option_iff`: the boundary of `I^(Option N)`.
+* `TauCeti.piOptionEquivProdHomeomorph_symm_mem_boundary`: a point of `I × I^N` whose first
+  coordinate is `0` or `1`, or whose second lies on the boundary of `I^N`, is sent to the boundary
+  of `I^(Option N)`.
 -/
 
 public section
@@ -69,6 +74,13 @@ open scoped Topology
 open unitInterval
 
 variable {N : Type*}
+
+/-- A point `(s, t)` of `I × I^N` whose first coordinate is `0` or `1`, or whose second coordinate
+lies on the boundary of `I^N`, corresponds to a point on the boundary of `I^(Option N)`. -/
+theorem piOptionEquivProdHomeomorph_symm_mem_boundary {s : I} {t : I^N}
+    (h : (s = 0 ∨ s = 1) ∨ t ∈ Cube.boundary N) :
+    (piOptionEquivProdHomeomorph fun _ : Option N => I).symm (s, t) ∈ Cube.boundary (Option N) :=
+  Cube.boundary_option_iff.2 (by simpa using h)
 
 /-- The straight-line path in the unit interval `I` from `a` to `0`, given by `t ↦ a * σ t`
 where `σ` is the interval symmetry `t ↦ 1 - t`. -/

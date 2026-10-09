@@ -78,11 +78,6 @@ namespace RelGenLoop
 
 /-! ### Absolute cubes as relative cubes -/
 
-private theorem piOptionEquivProdHomeomorph_symm_mem_boundary {s : I} {t : I^N}
-    (h : (s = 0 ∨ s = 1) ∨ t ∈ Cube.boundary N) :
-    (piOptionEquivProdHomeomorph fun _ : Option N => I).symm (s, t) ∈ Cube.boundary (Option N) :=
-  Cube.boundary_option_iff.2 (by simpa using h)
-
 /-- An absolute generalized loop `I^(Option N) → X` at the basepoint, regarded as a relative cube
 `I × I^N → X` with the coordinate `none` as the distinguished first direction. Its face
 `{0} × I^N` is constant at the basepoint. -/
