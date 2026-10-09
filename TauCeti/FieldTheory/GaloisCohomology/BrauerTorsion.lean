@@ -102,6 +102,19 @@ theorem explicitCoeff2_kummerShortExact_proj (x : H2 (AbsoluteGaloisGroup K) (Un
     refine (cocyclesMap2_apply _ _ _ _ _ _ _ _ c p.1 p.2).trans ?_
     simp [unitsCoeffPow_eq_nsmul]
 
+/-- The explicit coefficient map of the Kummer sequence's inclusion is the compatible-pair
+map of the roots-of-unity coefficient inclusion along the identity Galois map. -/
+theorem explicitCoeff2_kummerShortExact_incl :
+    explicitCoeff2 _ _ (kummerShortExact K n hn).inclDistribMulActionHom
+      continuous_of_discreteTopology =
+      explicitMap2 (AbsoluteGaloisGroup K) (KummerCoeff K n)
+        (AbsoluteGaloisGroup K) (UnitsCoeff K) (ContinuousMonoidHom.id _)
+        (kummerCoeffIncl K n) continuous_of_discreteTopology
+        (fun g x ↦ by simpa only [ContinuousMonoidHom.coe_id, id_eq]
+          using kummerCoeffIncl_equivariant K n g x) := by
+  simp only [explicitCoeff2_eq_explicitMap2,
+    DiscreteShortExact.coe_addMonoidHom_inclDistribMulActionHom, kummerShortExact_incl]
+
 /-- **`H²(G_K, μₙ) → H²(G_K, (Kˢ)ˣ)` is injective**, on the explicit model. -/
 theorem explicitCoeff2_kummerShortExact_incl_injective :
     Function.Injective (explicitCoeff2 _ _ (kummerShortExact K n hn).inclDistribMulActionHom
@@ -269,8 +282,7 @@ theorem h2KummerToUnits_injective (hn : IsUnit (n : K)) :
     h2KummerToUnits_explicitH2AddEquivContinuousCohomology] at hxy
   apply congrArg _
   apply explicitCoeff2_kummerShortExact_incl_injective K hn
-  simpa only [explicitCoeff2_eq_explicitMap2,
-    DiscreteShortExact.coe_addMonoidHom_inclDistribMulActionHom, kummerShortExact_incl] using
+  simpa only [explicitCoeff2_kummerShortExact_incl] using
     (explicitH2AddEquivContinuousCohomology _ _).injective hxy
 
 /-- **The image of `H²(G_K, μₙ)` in `H²(G_K, (Kˢ)ˣ)` is the `n`-torsion** for `n` invertible in
@@ -283,8 +295,7 @@ theorem h2KummerToUnits_range (hn : IsUnit (n : K))
   obtain ⟨x, rfl⟩ := (explicitH2AddEquivContinuousCohomology _ _).surjective x
   rw [← map_nsmul, EmbeddingLike.map_eq_zero_iff,
     ← mem_range_explicitCoeff2_kummerShortExact_incl_iff K hn]
-  simp only [explicitCoeff2_eq_explicitMap2,
-    DiscreteShortExact.coe_addMonoidHom_inclDistribMulActionHom, kummerShortExact_incl]
+  rw [explicitCoeff2_kummerShortExact_incl]
   constructor
   · rintro ⟨y, hy⟩
     obtain ⟨y, rfl⟩ := (explicitH2AddEquivContinuousCohomology _ _).surjective y

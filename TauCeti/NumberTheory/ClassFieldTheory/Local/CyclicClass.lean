@@ -84,6 +84,8 @@ private theorem exists_h2MuToBr_cup_kummerClass
     QuotientAddGroup.mk'_apply, QuotientAddGroup.mk'_apply, explicitCup11_mk, explicitMap2_mk]
   refine ⟨_, rfl, fun g k ↦ ?_⟩
   refine (cocyclesMap2_apply _ _ _ _ _ _ _ _ _ g k).trans ?_
+  -- The identity Galois map and the subtype coercions of the cup cocycle and chosen
+  -- Kummer cocycles reduce to the cochain formula exposed by `explicitCup11_mk`.
   rfl
 
 /-! ### Exponents of roots of unity with respect to `ζ` -/
@@ -92,44 +94,13 @@ section Log
 
 variable [NeZero n] {ζ : K} (hζ : IsPrimitiveRoot ζ n)
 
-/-- The exponent in `[0, n)` of an `n`-th root of unity of `Kˢ` with respect to `ζ`. -/
-private def kummerLog (x : KummerCoeff K n) : ℕ :=
-  ((hζ.map_of_injective (algebraMap K (SeparableClosure K)).injective).isUnit_unit
-    (NeZero.ne n)).zmodEquivRootsOfUnity.symm x |>.val
-
-private theorem kummerLog_lt (x : KummerCoeff K n) : kummerLog hζ x < n :=
-  ZMod.val_lt _
-
-private theorem coe_toMul_eq_pow_kummerLog (x : KummerCoeff K n) :
-    ((x.toMul : (SeparableClosure K)ˣ) : SeparableClosure K) =
-      algebraMap K (SeparableClosure K) ζ ^ kummerLog hζ x := by
-  set hζs := (hζ.map_of_injective (algebraMap K (SeparableClosure K)).injective).isUnit_unit
-    (NeZero.ne n)
-  have h := hζs.coe_zmodEquivRootsOfUnity_apply_natCast (kummerLog hζ x)
-  rw [kummerLog, ZMod.natCast_zmod_val, AddEquiv.apply_symm_apply] at h
-  rw [h, Units.val_pow_eq_pow_val, IsUnit.unit_spec]
-  rfl
-
-private theorem kummerLog_eq {x : KummerCoeff K n} {m : ℕ} (hm : m < n)
-    (hx : ((x.toMul : (SeparableClosure K)ˣ) : SeparableClosure K) =
-      algebraMap K (SeparableClosure K) ζ ^ m) :
-    kummerLog hζ x = m :=
-  (hζ.map_of_injective (algebraMap K (SeparableClosure K)).injective).pow_inj
-    (kummerLog_lt hζ x) hm ((coe_toMul_eq_pow_kummerLog hζ x).symm.trans hx)
-
-private theorem kummerLog_add (x y : KummerCoeff K n) :
-    kummerLog hζ (x + y) = (kummerLog hζ x + kummerLog hζ y) % n := by
-  rw [kummerLog, map_add, ZMod.val_add]
-  rfl
-
 /-- On the Kummer coefficients, the pairing of `ζ` is `(x, y) ↦ y ^ i` for `x = ζ ^ i`. -/
 private theorem kummerCoeffPairing_kummerCupPairing (x y : KummerCoeff K n) :
     kummerCoeffPairing (kummerCupPairing ζ hζ) x y = kummerLog hζ x • y := by
-  apply (kummerCoeffEquivMuNRep n K).injective
-  rw [kummerCoeffEquivMuNRep_kummerCoeffPairing, kummerCupPairing_bil_apply ζ hζ
+  rw [kummerCoeffPairing_kummerCupPairing_of_eq_pow ζ hζ
     (i := (kummerLog hζ x : ℤ)) (by
-      rw [AddEquiv.symm_apply_apply, zpow_natCast]
-      exact coe_toMul_eq_pow_kummerLog hζ x), map_nsmul, natCast_zsmul]
+      rw [zpow_natCast]
+      exact coe_toMul_eq_pow_kummerLog hζ x), natCast_zsmul]
 
 /-- **The Kummer character of `b` on `G_K`.** If `ι : L → Kˢ` sends `s` to `β`, with
 `g s = ζ ^ m • s`, then an element of `G_K` restricting to `g ^ p` on `L` moves `β` by `ζ ^ (m p)`;

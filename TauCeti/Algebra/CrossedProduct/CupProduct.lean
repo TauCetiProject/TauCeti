@@ -130,8 +130,7 @@ private theorem h2MuToUnits_explicitH2
           (explicitCoeff2 _ _
             (kummerShortExact K 2 (isUnit_of_invertible _)).inclDistribMulActionHom
             continuous_of_discreteTopology x) := by
-    simpa only [explicitCoeff2_eq_explicitMap2,
-      DiscreteShortExact.coe_addMonoidHom_inclDistribMulActionHom, kummerShortExact_incl] using
+    simpa only [explicitCoeff2_kummerShortExact_incl] using
       h2KummerToUnits_explicitH2AddEquivContinuousCohomology x
   rw [h2MuToUnits_def, ← TauCeti.ContinuousCohomology.coeffMap_eqToHom, ← hcomparison,
     ← explicitH2AddEquivContinuousCohomology_coeffMap, ← eqToHom_comp_kummerCoeffIsoTrivialF2_inv,

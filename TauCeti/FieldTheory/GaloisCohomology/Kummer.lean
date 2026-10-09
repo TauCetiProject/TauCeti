@@ -724,7 +724,7 @@ theorem explicitMap1_kummerCocycleClass {a : Kˣ} {α : (SeparableClosure K)ˣ}
     explicitMap1 (AbsoluteGaloisGroup K) (KummerCoeff K n) (AbsoluteGaloisGroup L)
       (KummerCoeff L n) (absoluteGaloisGroupMap τ) (kummerCoeffBaseChange n τ)
       continuous_of_discreteTopology (kummerCoeffBaseChange_smul n τ)
-      (kummerCocycleClass hα) = kummerCocycleClass (a := Units.map (algebraMap K L).toMonoidHom a)
+      (kummerCocycleClass hα) = kummerCocycleClass (a := Units.map (algebraMap K L : K →* L) a)
         (α := Units.map (τ : SeparableClosure K →* SeparableClosure L) α) (by
           rw [← map_pow, hα]
           apply Units.ext
@@ -751,7 +751,6 @@ theorem explicitMap1_kummerMap (hn : IsUnit (n : K)) (a : Kˣ) :
   obtain ⟨α, hα⟩ := exists_pow_eq_units_map hn a
   rw [kummerMap_eq_kummerCocycleClass hn hα, explicitMap1_kummerCocycleClass n τ hα,
     ← kummerMap_eq_kummerCocycleClass hnL]
-  rfl
 
 end BaseChange
 

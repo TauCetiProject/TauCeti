@@ -72,16 +72,11 @@ theorem kummerCoeffBaseChange_kummerCoeffPairing {n : ℕ} [NeZero n]
         (kummerCupPairing (algebraMap K L ζ) (hζ.map_of_injective (algebraMap K L).injective))
         (kummerCoeffBaseChange n τ x) (kummerCoeffBaseChange n τ y) := by
   let hζL := hζ.map_of_injective (algebraMap K L).injective
-  obtain ⟨c, hc⟩ := (muNRepEquivZMod ζ hζ).symm.surjective (kummerCoeffEquivMuNRep n K x)
-  obtain ⟨i, rfl⟩ := ZMod.natCast_zmod_surjective c
-  have hx : ((x.toMul : (SeparableClosure K)ˣ) : SeparableClosure K) =
-      algebraMap K (SeparableClosure K) ζ ^ i := by
-    have h := coe_kummerCoeffEquivMuNRep_symm_muNRepEquivTrivialFp_symm_natCast n K hζ i
-    rw [← muNRepEquivZMod_symm_apply, hc, AddEquiv.symm_apply_apply] at h
-    exact h
+  let i := kummerLog hζ x
+  have hx := coe_toMul_eq_pow_kummerLog hζ x
   have hxL : (((kummerCoeffBaseChange n τ x).toMul : (SeparableClosure L)ˣ) :
       SeparableClosure L) = algebraMap L (SeparableClosure L) (algebraMap K L ζ) ^ i := by
-    simp [hx, ← IsScalarTower.algebraMap_apply]
+    simp [hx, i, ← IsScalarTower.algebraMap_apply]
   rw [kummerCoeffPairing_kummerCupPairing_of_eq_pow ζ hζ (i := (i : ℤ))
       (by simpa only [zpow_natCast] using hx), map_zsmul,
     kummerCoeffPairing_kummerCupPairing_of_eq_pow _ hζL (i := (i : ℤ))
