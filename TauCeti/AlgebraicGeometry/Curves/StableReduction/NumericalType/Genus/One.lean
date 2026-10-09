@@ -45,10 +45,9 @@ With two or three components the minimal types of genus one are listed explicitl
 `aᵢⱼ = wᵢα = wⱼβ` for two components that meet. Dividing the fibre relation `∑ⱼ aᵢⱼmⱼ = 0` at a
 `(-2)`-index `i` by `wᵢ` turns it into a linear relation between the multiplicities with these
 quotients as coefficients. With two components `i` and `j` the two relations force `αβ = 4`. With
-three components forming a chain `i - j - k` they force `αβ + γδ = 4`, where `aⱼₖ = wⱼγ = wₖδ`,
-while negative definiteness on `{i, j}` and on `{j, k}` gives `αβ < 4` and `γδ < 4`. The few
-solutions of these equations are the listed types. Three components that pairwise meet form a
-cycle, to which the description above applies.
+three components forming a chain `i - j - k` they force `αβ + γδ = 4`, where `aⱼₖ = wⱼγ = wₖδ`.
+The few positive integer solutions of these equations are the listed types. Three components that
+pairwise meet form a cycle, to which the description above applies.
 
 ## Main results
 
@@ -70,6 +69,9 @@ cycle, to which the description above applies.
 * `TauCeti.NumericalType.isMinimal_and_arithmeticGenus_eq_one_iff_of_card_eq_two` and
   `TauCeti.NumericalType.isMinimal_and_arithmeticGenus_eq_one_iff_of_card_eq_three`: the minimal
   numerical types of genus one with two and with three components.
+* `TauCeti.NumericalType.IsGenusOnePairShape` and `TauCeti.NumericalType.IsGenusOneChainShape`:
+  the shapes of the minimal numerical types of genus one with two components, and with three
+  components forming a chain.
 * `TauCeti.NumericalType.exists_weight_multiplicity_intersection_eq_of_card_eq_two` and
   `TauCeti.NumericalType.exists_weight_multiplicity_intersection_eq_of_card_eq_three`: the shapes
   of a numerical type with two components, or with three components forming a chain, all of
@@ -336,7 +338,29 @@ theorem topologicalGenus_le_one : T.topologicalGenus ≤ 1 := by
 
 end Cycle
 
+/-- Two components that meet have intersection number `aᵢⱼ = wᵢα = wⱼβ` for positive integers `α`
+and `β`. -/
+private lemma exists_intersection_eq_weight_mul {i j : T.Component}
+    (h : 0 < T.intersection i j) : ∃ α β : ℤ, 0 < α ∧ 0 < β ∧
+      T.intersection i j = T.weight i * α ∧ T.intersection i j = T.weight j * β := by
+  obtain ⟨α, hα⟩ := T.weight_dvd i j
+  obtain ⟨β, hβ⟩ := T.weight_dvd j i
+  rw [T.intersection_comm j i] at hβ
+  exact ⟨α, β, pos_of_mul_pos_right (hα ▸ h) (by positivity),
+    pos_of_mul_pos_right (hβ ▸ h) (by positivity), hα, hβ⟩
+
 /-! ### Two components -/
+
+variable (T) in
+/-- Two components `x` and `y` of a numerical type have one of the two shapes of the minimal types
+of genus one with two components, the types (2) and (3) of
+[Stacks, Lemma 55.6.2](https://stacks.math.columbia.edu/tag/0C8T): either `w_y = w_x`,
+`m_y = m_x` and `a_{xy} = 2w_x`, or `w_y = 4w_x`, `m_x = 2m_y` and `a_{xy} = 4w_x`. -/
+def IsGenusOnePairShape (x y : T.Component) : Prop :=
+  ((T.weight y : ℤ) = T.weight x ∧ (T.multiplicity y : ℤ) = T.multiplicity x ∧
+      T.intersection x y = 2 * T.weight x) ∨
+    ((T.weight y : ℤ) = 4 * T.weight x ∧ (T.multiplicity x : ℤ) = 2 * T.multiplicity y ∧
+      T.intersection x y = 4 * T.weight x)
 
 /-- The fibre relation at a component `l` of a numerical type whose components are `i` and
 `j`. -/
@@ -347,17 +371,13 @@ private lemma fiber_relation_of_univ_eq_pair {i j : T.Component} (hij : i ≠ j)
   rwa [hu, sum_pair hij] at h
 
 /-- If a numerical type has exactly two components `i` and `j`, each of self-intersection `-2w`,
-then, writing `x` and `y` for `i` and `j` in a suitable order, either `w_y = w_x`, `m_y = m_x`
-and `a_{xy} = 2w_x`, or `w_y = 4w_x`, `m_x = 2m_y` and `a_{xy} = 4w_x`. -/
+then, writing `x` and `y` for `i` and `j` in a suitable order, they have one of the two shapes of
+`TauCeti.NumericalType.IsGenusOnePairShape`. -/
 theorem exists_weight_multiplicity_intersection_eq_of_card_eq_two
     (hcard : Fintype.card T.Component = 2) {i j : T.Component} (hij : i ≠ j)
     (hi : T.intersection i i = -(2 * (T.weight i : ℤ)))
     (hj : T.intersection j j = -(2 * (T.weight j : ℤ))) :
-    ∃ x y, (x = i ∧ y = j ∨ x = j ∧ y = i) ∧
-      (((T.weight y : ℤ) = T.weight x ∧ (T.multiplicity y : ℤ) = T.multiplicity x ∧
-          T.intersection x y = 2 * T.weight x) ∨
-        ((T.weight y : ℤ) = 4 * T.weight x ∧ (T.multiplicity x : ℤ) = 2 * T.multiplicity y ∧
-          T.intersection x y = 4 * T.weight x)) := by
+    ∃ x y, (x = i ∧ y = j ∨ x = j ∧ y = i) ∧ T.IsGenusOnePairShape x y := by
   have hu : (univ : Finset T.Component) = {i, j} :=
     (eq_univ_of_card _ (by rw [card_pair hij, hcard])).symm
   have ri := fiber_relation_of_univ_eq_pair hij hu i
@@ -369,9 +389,8 @@ theorem exists_weight_multiplicity_intersection_eq_of_card_eq_two
   have hmi : (0 : ℤ) < T.multiplicity i := Int.natCast_pos.mpr (T.multiplicity i).pos
   have hmj : (0 : ℤ) < T.multiplicity j := Int.natCast_pos.mpr (T.multiplicity j).pos
   -- Write `aᵢⱼ = wᵢα = wⱼβ`; the fibre relations become `mⱼα = 2mᵢ` and `mᵢβ = 2mⱼ`.
-  obtain ⟨α, hα⟩ := T.weight_dvd i j
-  obtain ⟨β, hβ⟩ := T.weight_dvd j i
-  rw [T.intersection_comm j i] at hβ
+  obtain ⟨α, β, hα₀, hβ₀, hα, hβ⟩ := exists_intersection_eq_weight_mul
+    (pos_of_mul_pos_right (by linarith [mul_pos hmi hwi]) hmj.le)
   have e₁ : (T.multiplicity j : ℤ) * α = 2 * T.multiplicity i :=
     mul_left_cancel₀ hwi.ne' (by rw [hα] at ri; linear_combination ri)
   have e₂ : (T.multiplicity i : ℤ) * β = 2 * T.multiplicity j :=
@@ -380,10 +399,9 @@ theorem exists_weight_multiplicity_intersection_eq_of_card_eq_two
     have h : (α * β - 4) * (T.multiplicity i * T.multiplicity j) = 0 := by
       linear_combination (α * T.multiplicity j) * e₂ + 2 * T.multiplicity j * e₁
     exact sub_eq_zero.mp ((mul_eq_zero.mp h).resolve_right (mul_pos hmi hmj).ne')
-  have hα₀ : 0 < α := by nlinarith
-  have hβ₀ : 0 < β := by nlinarith
   have hα₄ : α ≤ 4 := by nlinarith
   have hβ₄ : β ≤ 4 := by nlinarith
+  simp only [IsGenusOnePairShape]
   interval_cases α <;> interval_cases β <;>
     first
     | omega
@@ -391,14 +409,10 @@ theorem exists_weight_multiplicity_intersection_eq_of_card_eq_two
     | exact ⟨j, i, .inr ⟨rfl, rfl⟩, by rw [T.intersection_comm j i]; omega⟩
 
 /-- In a numerical type with exactly two components `x` and `y` of one of the two shapes of
-`TauCeti.NumericalType.exists_weight_multiplicity_intersection_eq_of_card_eq_two`, the fibre
-relation forces both self-intersections to be `-2w`. -/
+`TauCeti.NumericalType.IsGenusOnePairShape`, the fibre relation forces both self-intersections to
+be `-2w`. -/
 private lemma intersection_self_eq_of_card_eq_two {x y : T.Component} (hxy : x ≠ y)
-    (hu : (univ : Finset T.Component) = {x, y})
-    (hpat : ((T.weight y : ℤ) = T.weight x ∧ (T.multiplicity y : ℤ) = T.multiplicity x ∧
-          T.intersection x y = 2 * T.weight x) ∨
-        ((T.weight y : ℤ) = 4 * T.weight x ∧ (T.multiplicity x : ℤ) = 2 * T.multiplicity y ∧
-          T.intersection x y = 4 * T.weight x)) :
+    (hu : (univ : Finset T.Component) = {x, y}) (hpat : T.IsGenusOnePairShape x y) :
     T.intersection x x = -(2 * (T.weight x : ℤ)) ∧
       T.intersection y y = -(2 * (T.weight y : ℤ)) := by
   have rx := fiber_relation_of_univ_eq_pair hxy hu x
@@ -406,6 +420,7 @@ private lemma intersection_self_eq_of_card_eq_two {x y : T.Component} (hxy : x �
   rw [T.intersection_comm y x] at ry
   have hm (l : T.Component) : (T.multiplicity l : ℤ) ≠ 0 :=
     (Int.natCast_pos.mpr (T.multiplicity l).pos).ne'
+  unfold IsGenusOnePairShape at hpat
   -- Rewrite every datum in terms of `w_x` and one multiplicity, then cancel the multiplicity.
   constructor <;> [apply mul_left_cancel₀ (hm x); apply mul_left_cancel₀ (hm y)] <;>
     rcases hpat with ⟨h₁, h₂, h₃⟩ | ⟨h₁, h₂, h₃⟩ <;> simp only [h₁, h₂, h₃] at rx ry ⊢
@@ -414,18 +429,13 @@ private lemma intersection_self_eq_of_card_eq_two {x y : T.Component} (hxy : x �
 
 /-- A numerical type with exactly two components `i` and `j` is minimal of genus one exactly when
 both components have genus zero and, writing `x` and `y` for `i` and `j` in a suitable order,
-either `w_y = w_x`, `m_y = m_x` and `a_{xy} = 2w_x`, or `w_y = 4w_x`, `m_x = 2m_y` and
-`a_{xy} = 4w_x`. These are the types (2) and (3) of
-[Stacks, Lemma 55.6.2](https://stacks.math.columbia.edu/tag/0C8T); the self-intersections are then
-`-2w_x` and `-2w_y`. -/
+they have one of the two shapes of `TauCeti.NumericalType.IsGenusOnePairShape`. These are the
+types (2) and (3) of [Stacks, Lemma 55.6.2](https://stacks.math.columbia.edu/tag/0C8T); the
+self-intersections are then `-2w_x` and `-2w_y`. -/
 theorem isMinimal_and_arithmeticGenus_eq_one_iff_of_card_eq_two
     (hcard : Fintype.card T.Component = 2) {i j : T.Component} (hij : i ≠ j) :
     T.IsMinimal ∧ T.arithmeticGenus = 1 ↔ T.genus i = 0 ∧ T.genus j = 0 ∧
-      ∃ x y, (x = i ∧ y = j ∨ x = j ∧ y = i) ∧
-        (((T.weight y : ℤ) = T.weight x ∧ (T.multiplicity y : ℤ) = T.multiplicity x ∧
-            T.intersection x y = 2 * T.weight x) ∨
-          ((T.weight y : ℤ) = 4 * T.weight x ∧ (T.multiplicity x : ℤ) = 2 * T.multiplicity y ∧
-            T.intersection x y = 4 * T.weight x)) := by
+      ∃ x y, (x = i ∧ y = j ∨ x = j ∧ y = i) ∧ T.IsGenusOnePairShape x y := by
   have hu : (univ : Finset T.Component) = {i, j} :=
     (eq_univ_of_card _ (by rw [card_pair hij, hcard])).symm
   rw [isMinimal_and_arithmeticGenus_eq_one_iff (by omega)]
@@ -446,6 +456,41 @@ theorem isMinimal_and_arithmeticGenus_eq_one_iff_of_card_eq_two
 
 /-! ### Three components -/
 
+variable (T) in
+/-- Three components `x`, `j` and `z` of a numerical type have, along the chain `x - j - z`, one of
+the five shapes of the minimal types of genus one whose three components form a chain, the types
+(5) to (9) of [Stacks, Lemma 55.6.2](https://stacks.math.columbia.edu/tag/0C8T). Listing data in
+the order `(x, j, z)` and writing `w` and `m` for a weight and a multiplicity, these are:
+
+* weights `(w, w, 3w)`, multiplicities `(m, 2m, m)`, `a_{xj} = w` and `a_{jz} = 3w`;
+* weights `(3w, 3w, w)`, multiplicities `(m, 2m, 3m)`, `a_{xj} = a_{jz} = 3w`;
+* weights `(w, 2w, 4w)`, multiplicities `(2m, 2m, m)`, `a_{xj} = 2w` and `a_{jz} = 4w`;
+* weights `(w, 2w, w)`, multiplicities `(m, m, m)`, `a_{xj} = a_{jz} = 2w`;
+* weights `(2w, w, 2w)`, multiplicities `(m, 2m, m)`, `a_{xj} = a_{jz} = 2w`.
+
+The predicate does not record `a_{xz}`. -/
+def IsGenusOneChainShape (x j z : T.Component) : Prop :=
+  ((T.weight j : ℤ) = T.weight x ∧ (T.weight z : ℤ) = 3 * T.weight x ∧
+      (T.multiplicity j : ℤ) = 2 * T.multiplicity x ∧
+      (T.multiplicity z : ℤ) = T.multiplicity x ∧
+      T.intersection x j = T.weight x ∧ T.intersection j z = 3 * T.weight x) ∨
+    ((T.weight x : ℤ) = 3 * T.weight z ∧ (T.weight j : ℤ) = 3 * T.weight z ∧
+      (T.multiplicity j : ℤ) = 2 * T.multiplicity x ∧
+      (T.multiplicity z : ℤ) = 3 * T.multiplicity x ∧
+      T.intersection x j = 3 * T.weight z ∧ T.intersection j z = 3 * T.weight z) ∨
+    ((T.weight j : ℤ) = 2 * T.weight x ∧ (T.weight z : ℤ) = 4 * T.weight x ∧
+      (T.multiplicity j : ℤ) = T.multiplicity x ∧
+      (T.multiplicity x : ℤ) = 2 * T.multiplicity z ∧
+      T.intersection x j = 2 * T.weight x ∧ T.intersection j z = 4 * T.weight x) ∨
+    ((T.weight j : ℤ) = 2 * T.weight x ∧ (T.weight z : ℤ) = T.weight x ∧
+      (T.multiplicity j : ℤ) = T.multiplicity x ∧
+      (T.multiplicity z : ℤ) = T.multiplicity x ∧
+      T.intersection x j = 2 * T.weight x ∧ T.intersection j z = 2 * T.weight x) ∨
+    ((T.weight x : ℤ) = 2 * T.weight j ∧ (T.weight z : ℤ) = 2 * T.weight j ∧
+      (T.multiplicity j : ℤ) = 2 * T.multiplicity x ∧
+      (T.multiplicity z : ℤ) = T.multiplicity x ∧
+      T.intersection x j = 2 * T.weight j ∧ T.intersection j z = 2 * T.weight j)
+
 /-- The fibre relation at a component `l` of a numerical type whose components are `i`, `j` and
 `k`. -/
 private lemma fiber_relation_of_univ_eq_triple {i j k : T.Component} (hij : i ≠ j) (hik : i ≠ k)
@@ -455,9 +500,9 @@ private lemma fiber_relation_of_univ_eq_triple {i j k : T.Component} (hij : i �
   have h := T.fiber_relation l
   rwa [hu, sum_insert (by simp [hij, hik]), sum_pair hjk, ← add_assoc] at h
 
-/-- The positive integer solutions of `αβ + γδ = 4` with `αβ < 4` and `γδ < 4`. -/
+/-- The positive integer solutions of `αβ + γδ = 4`. -/
 private lemma cases_of_mul_add_mul_eq_four {α β γ δ : ℤ} (hα : 0 < α) (hβ : 0 < β) (hγ : 0 < γ)
-    (hδ : 0 < δ) (hαβ : α * β < 4) (hγδ : γ * δ < 4) (hsum : α * β + γ * δ = 4) :
+    (hδ : 0 < δ) (hsum : α * β + γ * δ = 4) :
     α = 1 ∧ β = 1 ∧ (γ = 1 ∧ δ = 3 ∨ γ = 3 ∧ δ = 1) ∨
       (α = 1 ∧ β = 3 ∨ α = 3 ∧ β = 1) ∧ γ = 1 ∧ δ = 1 ∨
       (α = 1 ∧ β = 2 ∨ α = 2 ∧ β = 1) ∧ (γ = 1 ∧ δ = 2 ∨ γ = 2 ∧ δ = 1) := by
@@ -469,40 +514,14 @@ private lemma cases_of_mul_add_mul_eq_four {α β γ δ : ℤ} (hα : 0 < α) (h
 
 /-- If a numerical type has exactly three components `i`, `j` and `k`, each of self-intersection
 `-2w`, and `i` and `k` do not meet, then the components form a chain `x - j - z`, where `x` and
-`z` are `i` and `k` in a suitable order, of one of five shapes. Listing data in the order
-`(x, j, z)` and writing `w` and `m` for a weight and a multiplicity, these are:
-
-* weights `(w, w, 3w)`, multiplicities `(m, 2m, m)`, `a_{xj} = w` and `a_{jz} = 3w`;
-* weights `(3w, 3w, w)`, multiplicities `(m, 2m, 3m)`, `a_{xj} = a_{jz} = 3w`;
-* weights `(w, 2w, 4w)`, multiplicities `(2m, 2m, m)`, `a_{xj} = 2w` and `a_{jz} = 4w`;
-* weights `(w, 2w, w)`, multiplicities `(m, m, m)`, `a_{xj} = a_{jz} = 2w`;
-* weights `(2w, w, 2w)`, multiplicities `(m, 2m, m)`, `a_{xj} = a_{jz} = 2w`. -/
+`z` are `i` and `k` in a suitable order, of one of the five shapes of
+`TauCeti.NumericalType.IsGenusOneChainShape`. -/
 theorem exists_weight_multiplicity_intersection_eq_of_card_eq_three
     (hcard : Fintype.card T.Component = 3) {i j k : T.Component} (hij : i ≠ j) (hik : i ≠ k)
     (hjk : j ≠ k) (hi : T.intersection i i = -(2 * (T.weight i : ℤ)))
     (hj : T.intersection j j = -(2 * (T.weight j : ℤ)))
     (hk : T.intersection k k = -(2 * (T.weight k : ℤ))) (hik₀ : T.intersection i k = 0) :
-    ∃ x z, (x = i ∧ z = k ∨ x = k ∧ z = i) ∧
-      (((T.weight j : ℤ) = T.weight x ∧ (T.weight z : ℤ) = 3 * T.weight x ∧
-          (T.multiplicity j : ℤ) = 2 * T.multiplicity x ∧
-          (T.multiplicity z : ℤ) = T.multiplicity x ∧
-          T.intersection x j = T.weight x ∧ T.intersection j z = 3 * T.weight x) ∨
-        ((T.weight x : ℤ) = 3 * T.weight z ∧ (T.weight j : ℤ) = 3 * T.weight z ∧
-          (T.multiplicity j : ℤ) = 2 * T.multiplicity x ∧
-          (T.multiplicity z : ℤ) = 3 * T.multiplicity x ∧
-          T.intersection x j = 3 * T.weight z ∧ T.intersection j z = 3 * T.weight z) ∨
-        ((T.weight j : ℤ) = 2 * T.weight x ∧ (T.weight z : ℤ) = 4 * T.weight x ∧
-          (T.multiplicity j : ℤ) = T.multiplicity x ∧
-          (T.multiplicity x : ℤ) = 2 * T.multiplicity z ∧
-          T.intersection x j = 2 * T.weight x ∧ T.intersection j z = 4 * T.weight x) ∨
-        ((T.weight j : ℤ) = 2 * T.weight x ∧ (T.weight z : ℤ) = T.weight x ∧
-          (T.multiplicity j : ℤ) = T.multiplicity x ∧
-          (T.multiplicity z : ℤ) = T.multiplicity x ∧
-          T.intersection x j = 2 * T.weight x ∧ T.intersection j z = 2 * T.weight x) ∨
-        ((T.weight x : ℤ) = 2 * T.weight j ∧ (T.weight z : ℤ) = 2 * T.weight j ∧
-          (T.multiplicity j : ℤ) = 2 * T.multiplicity x ∧
-          (T.multiplicity z : ℤ) = T.multiplicity x ∧
-          T.intersection x j = 2 * T.weight j ∧ T.intersection j z = 2 * T.weight j)) := by
+    ∃ x z, (x = i ∧ z = k ∨ x = k ∧ z = i) ∧ T.IsGenusOneChainShape x j z := by
   have hu : (univ : Finset T.Component) = {i, j, k} :=
     (eq_univ_of_card _ (by
       rw [card_insert_of_notMem (by simp [hij, hik]), card_pair hjk, hcard])).symm
@@ -520,12 +539,10 @@ theorem exists_weight_multiplicity_intersection_eq_of_card_eq_three
   have hmk : (0 : ℤ) < T.multiplicity k := Int.natCast_pos.mpr (T.multiplicity k).pos
   -- Write `aᵢⱼ = wᵢα = wⱼβ` and `aⱼₖ = wⱼγ = wₖδ`. The fibre relations become `mⱼα = 2mᵢ`,
   -- `mᵢβ + mₖγ = 2mⱼ` and `mⱼδ = 2mₖ`, whence `αβ + γδ = 4`.
-  obtain ⟨α, hα⟩ := T.weight_dvd i j
-  obtain ⟨β, hβ⟩ := T.weight_dvd j i
-  obtain ⟨γ, hγ⟩ := T.weight_dvd j k
-  obtain ⟨δ, hδ⟩ := T.weight_dvd k j
-  rw [T.intersection_comm j i] at hβ
-  rw [T.intersection_comm k j] at hδ
+  obtain ⟨α, β, hα₀, hβ₀, hα, hβ⟩ := exists_intersection_eq_weight_mul (i := i) (j := j)
+    (pos_of_mul_pos_right (by linarith [mul_pos hmi hwi]) hmj.le)
+  obtain ⟨γ, δ, hγ₀, hδ₀, hγ, hδ⟩ := exists_intersection_eq_weight_mul (i := j) (j := k)
+    (pos_of_mul_pos_right (by linarith [mul_pos hmk hwk]) hmj.le)
   have e₁ : (T.multiplicity j : ℤ) * α = 2 * T.multiplicity i :=
     mul_left_cancel₀ hwi.ne' (by rw [hα] at ri; linear_combination ri)
   have e₂ : (T.multiplicity i : ℤ) * β + T.multiplicity k * γ = 2 * T.multiplicity j :=
@@ -536,26 +553,10 @@ theorem exists_weight_multiplicity_intersection_eq_of_card_eq_three
     have h : (α * β + γ * δ - 4) * T.multiplicity j = 0 := by
       linear_combination β * e₁ + γ * e₃ + 2 * e₂
     exact sub_eq_zero.mp ((mul_eq_zero.mp h).resolve_right hmj.ne')
-  -- Negative definiteness on `{i, j}` and on `{j, k}` gives `αβ < 4` and `γδ < 4`.
-  have hαβ : α * β < 4 := by
-    have h := T.intersection_sq_lt_intersection_mul_intersection (by omega) hij
-    rw [hi, hj, sq] at h
-    nth_rewrite 1 [hα] at h
-    rw [hβ] at h
-    nlinarith [mul_pos hwi hwj]
-  have hγδ : γ * δ < 4 := by
-    have h := T.intersection_sq_lt_intersection_mul_intersection (by omega) hjk
-    rw [hj, hk, sq] at h
-    nth_rewrite 1 [hγ] at h
-    rw [hδ] at h
-    nlinarith [mul_pos hwj hwk]
-  have hα₀ : 0 < α := pos_of_mul_pos_right (by rw [e₁]; linarith) hmj.le
-  have hδ₀ : 0 < δ := pos_of_mul_pos_right (by rw [e₃]; linarith) hmj.le
-  have hβ₀ : 0 < β := pos_of_mul_pos_right (by rw [← hβ, hα]; exact mul_pos hwi hα₀) hwj.le
-  have hγ₀ : 0 < γ := pos_of_mul_pos_right (by rw [← hγ, hδ]; exact mul_pos hwk hδ₀) hwj.le
   clear ri rj rk hu
+  unfold IsGenusOneChainShape
   -- In each case, read off the shape; for the last four the chain runs from `k` to `i`.
-  rcases cases_of_mul_add_mul_eq_four hα₀ hβ₀ hγ₀ hδ₀ hαβ hγδ hsum with
+  rcases cases_of_mul_add_mul_eq_four hα₀ hβ₀ hγ₀ hδ₀ hsum with
     ⟨rfl, rfl, ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩⟩ | ⟨⟨rfl, rfl⟩ | ⟨rfl, rfl⟩, rfl, rfl⟩ |
       ⟨⟨rfl, rfl⟩ | ⟨rfl, rfl⟩, ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩⟩
   · exact ⟨i, k, .inl ⟨rfl, rfl⟩, .inr <| .inl <| by
@@ -578,31 +579,11 @@ theorem exists_weight_multiplicity_intersection_eq_of_card_eq_three
       refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩ <;> omega⟩
 
 /-- In a numerical type whose components form a chain `x - j - z` of one of the five shapes of
-`TauCeti.NumericalType.exists_weight_multiplicity_intersection_eq_of_card_eq_three`, the fibre
-relation forces all three self-intersections to be `-2w`. -/
+`TauCeti.NumericalType.IsGenusOneChainShape`, the fibre relation forces all three
+self-intersections to be `-2w`. -/
 private lemma intersection_self_eq_of_card_eq_three {x j z : T.Component} (hxj : x ≠ j)
     (hxz : x ≠ z) (hjz : j ≠ z) (hu : (univ : Finset T.Component) = {x, j, z})
-    (hxz₀ : T.intersection x z = 0)
-    (hpat : ((T.weight j : ℤ) = T.weight x ∧ (T.weight z : ℤ) = 3 * T.weight x ∧
-          (T.multiplicity j : ℤ) = 2 * T.multiplicity x ∧
-          (T.multiplicity z : ℤ) = T.multiplicity x ∧
-          T.intersection x j = T.weight x ∧ T.intersection j z = 3 * T.weight x) ∨
-        ((T.weight x : ℤ) = 3 * T.weight z ∧ (T.weight j : ℤ) = 3 * T.weight z ∧
-          (T.multiplicity j : ℤ) = 2 * T.multiplicity x ∧
-          (T.multiplicity z : ℤ) = 3 * T.multiplicity x ∧
-          T.intersection x j = 3 * T.weight z ∧ T.intersection j z = 3 * T.weight z) ∨
-        ((T.weight j : ℤ) = 2 * T.weight x ∧ (T.weight z : ℤ) = 4 * T.weight x ∧
-          (T.multiplicity j : ℤ) = T.multiplicity x ∧
-          (T.multiplicity x : ℤ) = 2 * T.multiplicity z ∧
-          T.intersection x j = 2 * T.weight x ∧ T.intersection j z = 4 * T.weight x) ∨
-        ((T.weight j : ℤ) = 2 * T.weight x ∧ (T.weight z : ℤ) = T.weight x ∧
-          (T.multiplicity j : ℤ) = T.multiplicity x ∧
-          (T.multiplicity z : ℤ) = T.multiplicity x ∧
-          T.intersection x j = 2 * T.weight x ∧ T.intersection j z = 2 * T.weight x) ∨
-        ((T.weight x : ℤ) = 2 * T.weight j ∧ (T.weight z : ℤ) = 2 * T.weight j ∧
-          (T.multiplicity j : ℤ) = 2 * T.multiplicity x ∧
-          (T.multiplicity z : ℤ) = T.multiplicity x ∧
-          T.intersection x j = 2 * T.weight j ∧ T.intersection j z = 2 * T.weight j)) :
+    (hxz₀ : T.intersection x z = 0) (hpat : T.IsGenusOneChainShape x j z) :
     ∀ l, T.intersection l l = -(2 * (T.weight l : ℤ)) := by
   have rx := fiber_relation_of_univ_eq_triple hxj hxz hjz hu x
   have rj := fiber_relation_of_univ_eq_triple hxj hxz hjz hu j
@@ -612,6 +593,7 @@ private lemma intersection_self_eq_of_card_eq_three {x j z : T.Component} (hxj :
   rw [T.intersection_comm z x, hxz₀, T.intersection_comm z j] at rz
   have hm (l : T.Component) : (T.multiplicity l : ℤ) ≠ 0 :=
     (Int.natCast_pos.mpr (T.multiplicity l).pos).ne'
+  unfold IsGenusOneChainShape at hpat
   intro l
   rcases (by simpa [hu] using mem_univ l : l = x ∨ l = j ∨ l = z) with rfl | rfl | rfl <;>
     apply mul_left_cancel₀ (hm l) <;>
@@ -632,8 +614,8 @@ component has genus zero and either
   number `w`: the cycle of type (4) of
   [Stacks, Lemma 55.6.2](https://stacks.math.columbia.edu/tag/0C8T); or
 * the components form a chain `x - j - z` of one of the five shapes of
-  `TauCeti.NumericalType.exists_weight_multiplicity_intersection_eq_of_card_eq_three`, the types
-  (5) to (9) of [Stacks, Lemma 55.6.2](https://stacks.math.columbia.edu/tag/0C8T).
+  `TauCeti.NumericalType.IsGenusOneChainShape`, the types (5) to (9) of
+  [Stacks, Lemma 55.6.2](https://stacks.math.columbia.edu/tag/0C8T).
 
 In both cases every self-intersection is then `-2w`. -/
 theorem isMinimal_and_arithmeticGenus_eq_one_iff_of_card_eq_three
@@ -642,26 +624,7 @@ theorem isMinimal_and_arithmeticGenus_eq_one_iff_of_card_eq_three
       ((∀ l l', (T.weight l' : ℤ) = T.weight l ∧ (T.multiplicity l' : ℤ) = T.multiplicity l ∧
           (l ≠ l' → T.intersection l l' = T.weight l)) ∨
         ∃ x j z, x ≠ j ∧ x ≠ z ∧ j ≠ z ∧ T.intersection x z = 0 ∧
-          (((T.weight j : ℤ) = T.weight x ∧ (T.weight z : ℤ) = 3 * T.weight x ∧
-              (T.multiplicity j : ℤ) = 2 * T.multiplicity x ∧
-              (T.multiplicity z : ℤ) = T.multiplicity x ∧
-              T.intersection x j = T.weight x ∧ T.intersection j z = 3 * T.weight x) ∨
-            ((T.weight x : ℤ) = 3 * T.weight z ∧ (T.weight j : ℤ) = 3 * T.weight z ∧
-              (T.multiplicity j : ℤ) = 2 * T.multiplicity x ∧
-              (T.multiplicity z : ℤ) = 3 * T.multiplicity x ∧
-              T.intersection x j = 3 * T.weight z ∧ T.intersection j z = 3 * T.weight z) ∨
-            ((T.weight j : ℤ) = 2 * T.weight x ∧ (T.weight z : ℤ) = 4 * T.weight x ∧
-              (T.multiplicity j : ℤ) = T.multiplicity x ∧
-              (T.multiplicity x : ℤ) = 2 * T.multiplicity z ∧
-              T.intersection x j = 2 * T.weight x ∧ T.intersection j z = 4 * T.weight x) ∨
-            ((T.weight j : ℤ) = 2 * T.weight x ∧ (T.weight z : ℤ) = T.weight x ∧
-              (T.multiplicity j : ℤ) = T.multiplicity x ∧
-              (T.multiplicity z : ℤ) = T.multiplicity x ∧
-              T.intersection x j = 2 * T.weight x ∧ T.intersection j z = 2 * T.weight x) ∨
-            ((T.weight x : ℤ) = 2 * T.weight j ∧ (T.weight z : ℤ) = 2 * T.weight j ∧
-              (T.multiplicity j : ℤ) = 2 * T.multiplicity x ∧
-              (T.multiplicity z : ℤ) = T.multiplicity x ∧
-              T.intersection x j = 2 * T.weight j ∧ T.intersection j z = 2 * T.weight j))) := by
+          T.IsGenusOneChainShape x j z) := by
   rw [isMinimal_and_arithmeticGenus_eq_one_iff (by omega)]
   simp only [isMinusTwoIndex_iff]
   constructor
@@ -672,7 +635,7 @@ theorem isMinimal_and_arithmeticGenus_eq_one_iff_of_card_eq_three
       left
       obtain ⟨a, b, c, hab, hac, hbc, -⟩ :=
         card_eq_three.mp (show #(univ : Finset T.Component) = 3 by rw [card_univ, hcard])
-      have htop := T.topologicalGenus_pos_of_adj (T.adj_iff.mpr ⟨hab, hadj a b hab⟩)
+      have htop := T.topologicalGenus_pos_of_adj_of_adj_of_adj (T.adj_iff.mpr ⟨hab, hadj a b hab⟩)
         (T.adj_iff.mpr ⟨hac, hadj a c hac⟩) (T.adj_iff.mpr ⟨hbc, hadj b c hbc⟩)
       have hself (l : T.Component) : -(2 * (T.weight l : ℤ)) ≤ T.intersection l l :=
         (h l).2.ge
