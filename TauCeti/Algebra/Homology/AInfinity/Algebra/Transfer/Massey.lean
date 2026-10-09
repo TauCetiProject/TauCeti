@@ -54,25 +54,6 @@ universe uK uA
 variable {K : Type uK} {A : Type uA} [Field K] [AddCommGroup A] [Module K A]
   (𝒜 : AInfinityAlgebra K A)
 
-/-- The inclusion of the cohomology contraction has degree zero, so it commutes with the Koszul
-twist. -/
-private theorem cohomologyContraction_incl_koszulTwist (x : 𝒜.Cohomology) :
-    𝒜.cohomologyContraction.incl (𝒜.cohomologyGrading.koszulTwist 1 x) =
-      𝒜.grading.koszulTwist 1 (𝒜.cohomologyContraction.incl x) := by
-  simpa using
-    (LinearMap.congr_fun (𝒜.isHomogeneous_cohomologyContraction_incl.koszulTwist_comp 1) x).symm
-
-/-- The homotopy of the cohomology contraction bounds every cycle with vanishing class. -/
-private theorem m_one_cohomologyContraction_homotopy {w : A} (hw : w ∈ 𝒜.cycles)
-    (h₀ : 𝒜.cohomologyClass hw = 0) :
-    𝒜.m 1 ![𝒜.cohomologyContraction.homotopy w] = w := by
-  have h := LinearMap.congr_fun 𝒜.cohomologyContraction.dM_comp_homotopy_add_homotopy_comp_dM w
-  have hd : 𝒜.differential w = 0 := by rw [differential_apply, ← mem_cycles]; exact hw
-  simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.sub_apply, LinearMap.id_apply,
-    hd, map_zero, add_zero, 𝒜.cohomologyContraction_proj_of_mem_cycles hw, h₀,
-    sub_zero] at h
-  rwa [differential_apply] at h
-
 /-- **The ternary operation of the minimal model lies in the triple Massey product.**  If
 `x y = 0` and `y z = 0`, then `m₃^H (x, y, z)` is the value of the defining system formed by the
 chosen representatives `i x`, `i y`, `i z` and the cochains `h m₂ (i x, i y)`, `h m₂ (i y, i z)`. -/

@@ -456,6 +456,25 @@ theorem isHomogeneous_cohomologyContraction_homotopy :
         𝒜.isHomogeneous_cohomologyContraction_incl.map_mem
           (𝒜.isHomogeneous_cohomologyContraction_proj.map_mem hx)
 
+/-- The inclusion of the cohomology contraction has degree zero, so it commutes with the Koszul
+twist. -/
+theorem cohomologyContraction_incl_koszulTwist (x : 𝒜.Cohomology) :
+    𝒜.cohomologyContraction.incl (𝒜.cohomologyGrading.koszulTwist 1 x) =
+      𝒜.grading.koszulTwist 1 (𝒜.cohomologyContraction.incl x) := by
+  simpa using
+    (LinearMap.congr_fun (𝒜.isHomogeneous_cohomologyContraction_incl.koszulTwist_comp 1) x).symm
+
+/-- The homotopy of the cohomology contraction bounds every cycle with vanishing class. -/
+theorem m_one_cohomologyContraction_homotopy {w : A} (hw : w ∈ 𝒜.cycles)
+    (h₀ : 𝒜.cohomologyClass hw = 0) :
+    𝒜.m 1 ![𝒜.cohomologyContraction.homotopy w] = w := by
+  have h := LinearMap.congr_fun 𝒜.cohomologyContraction.dM_comp_homotopy_add_homotopy_comp_dM w
+  have hd : 𝒜.differential w = 0 := by rw [differential_apply, ← mem_cycles]; exact hw
+  simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.sub_apply, LinearMap.id_apply,
+    hd, map_zero, add_zero, 𝒜.cohomologyContraction_proj_of_mem_cycles hw, h₀,
+    sub_zero] at h
+  rwa [differential_apply] at h
+
 /-- The minimal `A∞` model on cohomology obtained by homogeneous transfer. -/
 noncomputable def minimalModel : AInfinityAlgebra K 𝒜.Cohomology :=
   𝒜.transfer 𝒜.cohomologyContraction 𝒜.isHomogeneous_cohomologyContraction_homotopy

@@ -237,6 +237,14 @@ theorem cohomologyClass_add (𝒜 : AInfinityAlgebra R A) {x y : A}
       𝒜.cohomologyClass hx + 𝒜.cohomologyClass hy := by
   exact 𝒜.cohomologyClassLinearMap.map_add ⟨x, hx⟩ ⟨y, hy⟩
 
+/-- The class of a cycle written as a sum of three cycles is the sum of their classes. -/
+theorem cohomologyClass_eq_add_add (𝒜 : AInfinityAlgebra R A) {X Y Z W : A} (hX : X ∈ 𝒜.cycles)
+    (hY : Y ∈ 𝒜.cycles) (hZ : Z ∈ 𝒜.cycles) (hW : W ∈ 𝒜.cycles) (h : W = X + (Y + Z)) :
+    𝒜.cohomologyClass hW =
+      𝒜.cohomologyClass hX + (𝒜.cohomologyClass hY + 𝒜.cohomologyClass hZ) := by
+  subst h
+  rw [← cohomologyClass_add, ← cohomologyClass_add]
+
 /-- The class of a scalar multiple of a cycle is the scalar multiple of its class. -/
 @[simp]
 theorem cohomologyClass_smul (𝒜 : AInfinityAlgebra R A) (r : R) {x : A}

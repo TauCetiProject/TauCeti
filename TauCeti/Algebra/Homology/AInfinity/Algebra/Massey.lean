@@ -84,47 +84,6 @@ universe uR uA
 variable {R : Type uR} {A : Type uA} [CommRing R] [AddCommGroup A] [Module R A]
   (𝒜 : AInfinityAlgebra R A)
 
-/-- The binary operation vanishes on a zero left input. -/
-private theorem m_two_zero_left (y : A) : 𝒜.m 2 ![0, y] = 0 := (𝒜.m 2).map_coord_zero 0 rfl
-
-/-- The binary operation vanishes on a zero right input. -/
-private theorem m_two_zero_right (x : A) : 𝒜.m 2 ![x, 0] = 0 := (𝒜.m 2).map_coord_zero 1 rfl
-
-/-- The ternary operation vanishes on a zero first input. -/
-private theorem m_three_zero₀ (y z : A) : 𝒜.m 3 ![0, y, z] = 0 := (𝒜.m 3).map_coord_zero 0 rfl
-
-/-- The ternary operation vanishes on a zero second input. -/
-private theorem m_three_zero₁ (x z : A) : 𝒜.m 3 ![x, 0, z] = 0 := (𝒜.m 3).map_coord_zero 1 rfl
-
-/-- The ternary operation vanishes on a zero third input. -/
-private theorem m_three_zero₂ (x y : A) : 𝒜.m 3 ![x, y, 0] = 0 := (𝒜.m 3).map_coord_zero 2 rfl
-
-/-- The ternary operation is additive in its first input. -/
-private theorem m_three_add₀ (x x' y z : A) :
-    𝒜.m 3 ![x + x', y, z] = 𝒜.m 3 ![x, y, z] + 𝒜.m 3 ![x', y, z] := by
-  convert (𝒜.m 3).map_update_add ![x, y, z] 0 x x' using 2 <;>
-    congr 1 <;> funext i <;> fin_cases i <;> rfl
-
-/-- The ternary operation is additive in its second input. -/
-private theorem m_three_add₁ (x y y' z : A) :
-    𝒜.m 3 ![x, y + y', z] = 𝒜.m 3 ![x, y, z] + 𝒜.m 3 ![x, y', z] := by
-  convert (𝒜.m 3).map_update_add ![x, y, z] 1 y y' using 2 <;>
-    congr 1 <;> funext i <;> fin_cases i <;> rfl
-
-/-- The ternary operation is additive in its third input. -/
-private theorem m_three_add₂ (x y z z' : A) :
-    𝒜.m 3 ![x, y, z + z'] = 𝒜.m 3 ![x, y, z] + 𝒜.m 3 ![x, y, z'] := by
-  convert (𝒜.m 3).map_update_add ![x, y, z] 2 z z' using 2 <;>
-    congr 1 <;> funext i <;> fin_cases i <;> rfl
-
-/-- The class of a cycle written as a sum of three cycles is the sum of their classes. -/
-private theorem cohomologyClass_eq_add_add {X Y Z W : A} (hX : X ∈ 𝒜.cycles)
-    (hY : Y ∈ 𝒜.cycles) (hZ : Z ∈ 𝒜.cycles) (hW : W ∈ 𝒜.cycles) (h : W = X + (Y + Z)) :
-    𝒜.cohomologyClass hW =
-      𝒜.cohomologyClass hX + (𝒜.cohomologyClass hY + 𝒜.cohomologyClass hZ) := by
-  subst h
-  rw [← cohomologyClass_add, ← cohomologyClass_add]
-
 /-! ### Defining systems -/
 
 /-- A **defining system** for the triple Massey product `⟨x, y, z⟩`: cycles `a`, `b`, `c`
@@ -436,12 +395,12 @@ private theorem value_sub_value_mem (S' : 𝒜.TripleMasseyDefiningSystem x y z)
 
 end TripleMasseyDefiningSystem
 
-/-- **Two elements of the Massey product differ by an element of the indeterminacy.**  Any two
-defining systems are connected by changing the representatives of `x`, `y`, `z` by boundaries,
-which does not change the value, and then changing the bounding cochains by cycles. -/
+/-- **Two elements of the Massey product differ by an element of the indeterminacy.** -/
 theorem sub_mem_tripleMasseyIndeterminacy {w w' : 𝒜.Cohomology}
     (hw : w ∈ 𝒜.tripleMasseyProduct x y z) (hw' : w' ∈ 𝒜.tripleMasseyProduct x y z) :
     w' - w ∈ 𝒜.tripleMasseyIndeterminacy x z := by
+  -- Connect the two defining systems by changing the representatives of `x`, `y`, `z` by
+  -- boundaries, which does not change the value, and then the bounding cochains by cycles.
   obtain ⟨S, rfl⟩ := hw
   obtain ⟨S', rfl⟩ := hw'
   obtain ⟨T₁, ha₁, hb₁, hc₁, hv₁⟩ := S.exists_a_eq S'.a_mem_cycles S'.cohomologyClass_a
@@ -506,10 +465,7 @@ end TripleMasseyDefiningSystem
 open _root_.DirectSum in
 /-- **May's triple Massey product is the homogeneous part of `⟨x, y, z⟩`**: for classes of degrees
 `p`, `q`, `r`, the values of the defining systems homogeneous of degrees `p`, `q`, `r` are exactly
-the elements of `⟨x, y, z⟩` of degree `p + q + r - 1`.  Given any defining system with value of
-that degree, choose homogeneous representatives and replace `u`, `v` by their components of degrees
-`p + q - 1`, `q + r - 1`; the new Massey cycle is the degree-`(p + q + r - 1)` component of the
-old one. -/
+the elements of `⟨x, y, z⟩` of degree `p + q + r - 1`. -/
 theorem exists_isHomogeneous_value_eq_iff {p q r : ℤ} (hx : x ∈ 𝒜.cohomologyGrading.piece p)
     (hy : y ∈ 𝒜.cohomologyGrading.piece q) (hz : z ∈ 𝒜.cohomologyGrading.piece r)
     {w : 𝒜.Cohomology} :
@@ -517,6 +473,9 @@ theorem exists_isHomogeneous_value_eq_iff {p q r : ℤ} (hx : x ∈ 𝒜.cohomol
       w ∈ 𝒜.tripleMasseyProduct x y z ∧ w ∈ 𝒜.cohomologyGrading.piece (p + q + r - 1) := by
   refine ⟨fun ⟨S, hS, hw⟩ ↦ hw ▸ ⟨S.value_mem, hS.value_mem_piece⟩, ?_⟩
   rintro ⟨⟨S, rfl⟩, hw⟩
+  -- Given a defining system with value of degree `p + q + r - 1`, choose homogeneous
+  -- representatives and replace `u`, `v` by their components of degrees `p + q - 1`,
+  -- `q + r - 1`; the new Massey cycle is the degree-`(p + q + r - 1)` component of the old one.
   -- First make the representatives homogeneous, without changing the value.
   obtain ⟨a, ha, hap, hax⟩ := 𝒜.mem_cohomologyGrading_piece_iff.1 hx
   obtain ⟨b, hb, hbq, hby⟩ := 𝒜.mem_cohomologyGrading_piece_iff.1 hy
