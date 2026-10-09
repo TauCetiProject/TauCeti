@@ -27,11 +27,11 @@ public section
 open UniformSpace
 
 /-- **The completion of a seminormed ring with a power-multiplicative norm has a
-power-multiplicative norm.** Both sides of `‖x ^ n‖ = ‖x‖ ^ n` are continuous in `x` and agree on
-the dense image of the ring. -/
+power-multiplicative norm.** -/
 theorem IsPowMul.completion {R : Type*} [SeminormedRing R] (h : IsPowMul (‖·‖ : R → ℝ)) :
     IsPowMul (‖·‖ : Completion R → ℝ) := by
   intro x n hn
+  -- Both sides of `‖x ^ n‖ = ‖x‖ ^ n` are continuous in `x` and agree on the dense image of `R`.
   induction x using Completion.induction_on with
   | hp => exact isClosed_eq (continuous_pow n).norm (continuous_norm.pow n)
   | ih a =>
