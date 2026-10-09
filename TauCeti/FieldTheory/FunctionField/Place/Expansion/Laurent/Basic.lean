@@ -65,12 +65,23 @@ theorem laurentSeriesExpansion_apply (z : F) :
     P.laurentSeriesExpansion hP ht z =
       P.completionEquivLaurentSeries hP ht (P.completionEmbedding z) := (rfl)
 
+/-- The `n`-th Laurent coefficient of a function at the rational place, with respect to `t`. -/
+noncomputable def laurentCoeff (n : ℤ) : F →ₗ[k] k :=
+  (P.completionLaurentCoeff hP ht n).comp P.completionEmbedding.toLinearMap
+
+/-- The Laurent coefficient is the corresponding coefficient of the Laurent expansion. -/
+@[simp]
+theorem laurentCoeff_apply (n : ℤ) (z : F) :
+    P.laurentCoeff hP ht n z = (P.laurentSeriesExpansion hP ht z).coeff n := by
+  change P.completionLaurentCoeff hP ht n (P.completionEmbedding z) = _
+  rw [completionLaurentCoeff_apply, laurentSeriesExpansion_apply]
+
 /-- Completion preserves the Laurent coefficients of a function. -/
 -- Not `@[simp]`: `completionLaurentCoeff_apply` already simplifies the left-hand side.
 theorem completionLaurentCoeff_completionEmbedding (n : ℤ) (z : F) :
     P.completionLaurentCoeff hP ht n (P.completionEmbedding z) =
-      (P.laurentSeriesExpansion hP ht z).coeff n := by
-  rw [completionLaurentCoeff_apply, laurentSeriesExpansion_apply]
+      P.laurentCoeff hP ht n z :=
+  (rfl)
 
 /-- The Laurent expansion of an integral function is its power-series expansion. -/
 @[simp]
@@ -153,20 +164,16 @@ theorem coeff_laurentSeriesExpansion_eq_coeff_powerSeriesExpansion (n : ℤ) {z 
 
 /-- Functions are equal exactly when all coefficients of their Laurent expansions at a rational
 place agree. -/
-theorem laurentSeriesExpansion_ext_iff {x y : F} :
-    x = y ↔ ∀ n : ℤ,
-      (P.laurentSeriesExpansion hP ht x).coeff n =
-        (P.laurentSeriesExpansion hP ht y).coeff n := by
+theorem laurentCoeff_ext_iff {x y : F} :
+    x = y ↔ ∀ n : ℤ, P.laurentCoeff hP ht n x = P.laurentCoeff hP ht n y := by
   constructor
   · rintro rfl n
     rfl
   · intro h
     apply P.completionEmbedding.injective
-    apply (P.completionEquivLaurentSeries hP ht).injective
-    apply HahnSeries.ext
-    funext n
-    simpa only [laurentSeriesExpansion_apply, AlgHom.toRingHom_eq_coe,
-      AlgHom.coe_toRingHom] using h n
+    apply (P.completionLaurentCoeff_ext_iff hP ht).2
+    intro n
+    simpa only [completionLaurentCoeff_completionEmbedding] using h n
 
 /-! ### Residues -/
 
@@ -174,18 +181,13 @@ theorem laurentSeriesExpansion_ext_iff {x y : F} :
 uniformizer: the coefficient of `t⁻¹` in its Laurent expansion (Stichtenoth,
 Definition 4.2.8). It is `k`-linear. -/
 noncomputable def residue : F →ₗ[k] k :=
-  -- Use the coefficientwise Hahn-series module structure expected by `coeff.linearMap`.
-  (HahnSeries.coeff.linearMap (-1)).comp
-    ({ toFun := P.laurentSeriesExpansion hP ht
-       map_add' := (P.laurentSeriesExpansion hP ht).map_add
-       map_smul' := fun c z => by
-         rw [Algebra.smul_def, map_mul, AlgHom.commutes, HahnSeries.algebraMap_apply',
-           PowerSeries.algebraMap_eq, HahnSeries.ofPowerSeries_C, HahnSeries.C_mul_eq_smul,
-           RingHom.id_apply] } : F →ₗ[k] LaurentSeries k)
+  (P.completionResidue hP ht).comp P.completionEmbedding.toLinearMap
 
 /-- The residue is the coefficient of `T⁻¹` in the Laurent expansion. -/
 theorem residue_apply (z : F) :
-    P.residue hP ht z = (P.laurentSeriesExpansion hP ht z).coeff (-1) := (rfl)
+    P.residue hP ht z = (P.laurentSeriesExpansion hP ht z).coeff (-1) := by
+  change P.completionResidue hP ht (P.completionEmbedding z) = _
+  rw [completionResidue_apply, laurentSeriesExpansion_apply]
 
 /-- Completion preserves the residue of a function at the chosen uniformizer. -/
 -- Not `@[simp]`: `completionResidue_apply` already simplifies the left-hand side.
