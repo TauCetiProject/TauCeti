@@ -50,6 +50,9 @@ up to a scalar there. At `Q = N` the Fricke matrix gives the Fricke operator of
 
 * `TauCeti.Gamma1_map_inv_conjAct_atkinLehnerGL_eq`: `W` normalizes the image of `Γ₁(N)` in
   `GL (Fin 2) ℝ`.
+* `TauCeti.atkinLehnerOperatorGamma1_injective`,
+  `TauCeti.atkinLehnerOperatorGamma1Cusp_injective`: `W_Q` is injective, slashing by `W⁻¹` being
+  its inverse on functions.
 * `TauCeti.atkinLehnerOperatorGamma1_diamondOp`,
   `TauCeti.atkinLehnerOperatorGamma1Cusp_diamondOpCusp`: the diamond shift
   `W_Q ∘ ⟨d⟩ = ⟨ι_Q d⟩ ∘ W_Q`.
@@ -204,6 +207,26 @@ theorem atkinLehnerOperatorGamma1_coe_cuspForm (hQ : 0 < Q) (hQN : Q ∣ N)
   DFunLike.coe_injective <| by
     rw [coe_atkinLehnerOperatorGamma1, ModularFormClass.coe_modularForm,
       ModularFormClass.coe_modularForm, coe_atkinLehnerOperatorGamma1Cusp]
+
+/-- **The Atkin–Lehner operator on `M_k(Γ₁(N))` is injective**: slashing by `W⁻¹` undoes it. -/
+theorem atkinLehnerOperatorGamma1_injective (hQ : 0 < Q) (hQN : Q ∣ N)
+    (h : IsAtkinLehnerMatrix N Q M) (k : ℤ) :
+    Function.Injective (atkinLehnerOperatorGamma1 hQ hQN h k) := fun f g hfg ↦
+  DFunLike.coe_injective <| by
+    simpa only [coe_atkinLehnerOperatorGamma1, ← SlashAction.slash_mul, mul_inv_cancel,
+      SlashAction.slash_one] using
+      congrArg (fun F : ModularForm ((Gamma1 N).map (mapGL ℝ)) k ↦
+        ⇑F ∣[k] (atkinLehnerGL hQ h)⁻¹) hfg
+
+/-- **The Atkin–Lehner operator on `S_k(Γ₁(N))` is injective**: slashing by `W⁻¹` undoes it. -/
+theorem atkinLehnerOperatorGamma1Cusp_injective (hQ : 0 < Q) (hQN : Q ∣ N)
+    (h : IsAtkinLehnerMatrix N Q M) (k : ℤ) :
+    Function.Injective (atkinLehnerOperatorGamma1Cusp hQ hQN h k) := fun f g hfg ↦
+  DFunLike.coe_injective <| by
+    simpa only [coe_atkinLehnerOperatorGamma1Cusp, ← SlashAction.slash_mul, mul_inv_cancel,
+      SlashAction.slash_one] using
+      congrArg (fun F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k ↦
+        ⇑F ∣[k] (atkinLehnerGL hQ h)⁻¹) hfg
 
 /-- **The diamond shift** `W_Q ∘ ⟨d⟩ = ⟨ι_Q d⟩ ∘ W_Q` on `M_k(Γ₁(N))`, where `ι_Q` inverts the
 residue of `d` modulo `Q` and keeps its residue modulo `N / Q`. -/

@@ -1,0 +1,184 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
+-- Proof-only: the monomial basis of the coordinate ring.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.CoordinateRing.Basis
+-- Proof-only: `equation_X_root`, the equation satisfied by the coordinate functions.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Eval
+-- Proof-only: the Weierstrass equation under a change of variables.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange
+
+/-!
+# Changes of variables and the coordinate functions of a Weierstrass curve
+
+Let `W` be a Weierstrass curve over a commutative ring `R`, and let `x` and `y` be the coordinate
+functions of its affine coordinate ring `R[W] = R[X, Y] ⧸ (W(X, Y))`. The pair `(x, y)` satisfies
+the Weierstrass equation of `W`, and of no other Weierstrass curve over `R`. This file is about
+the pairs of the shape `(αx + β, γy + δx + ε)`, with coefficients in `R`, that satisfy the
+Weierstrass equation of a second curve `W'` over `R`. For a change of variables `C = (u, r, s, t)`
+the pair `(u²x + r, u³y + u²sx + t)` does so exactly when `C • W' = W`, by the transformation law
+`WeierstrassCurve.Affine.baseChange_variableChange_equation`. Conversely, if
+`(αx + β, γy + δx + ε)` satisfies the equation of `W'` then `γ² = α³`, and if moreover `α` is a
+unit then the pair is `(u²x + r, u³y + u²sx + t)` for a change of variables `C` with `C • W' = W`.
+No hypothesis on `W`, on `W'` or on `R` is needed.
+
+The coordinate ring is free over `R` on the monomials `xⁱ` and `xⁱy`
+(`WeierstrassCurve.Affine.CoordinateRing.basisMonomials`). Once `y²` is eliminated by the equation
+of `W`, the equation of `W'` at such a pair is an `R`-linear relation among the six monomials `1`,
+`x`, `x²`, `x³`, `y` and `xy`, so its six coefficients vanish. For the pair `(x, y)` the coefficient
+of `x³` is zero and the other five are, up to sign, the differences of the coefficients of the two
+curves. For the pair `(αx + β, γy + δx + ε)` the coefficient of `x³` is `γ² - α³`. When `α` is a
+unit, `u = γ / α` is then a unit with `u² = α` and `u³ = γ`, which puts the pair in the shape
+`(u²x + r, u³y + u²sx + t)`, and that case is reduced to the pair `(x, y)` by the transformation
+law `WeierstrassCurve.Affine.baseChange_variableChange_equation`.
+
+## Main results
+
+* `WeierstrassCurve.Affine.CoordinateRing.equation_X_root_iff`: the pair `(x, y)` satisfies
+  the equation of `V` over `R[W]` exactly when `V = W`.
+* `WeierstrassCurve.Affine.CoordinateRing.sq_eq_pow_three_of_equation`: if the pair
+  `(αx + β, γy + δx + ε)` satisfies the equation of `W'` over `R[W]`, then `γ² = α³`.
+* `WeierstrassCurve.Affine.CoordinateRing.exists_variableChange_of_equation`: if moreover `α` is
+  a unit, there is a change of variables `C` with `C • W' = W`, `u² = α`, `u³ = γ`, `r = β`,
+  `u²s = δ` and `t = ε`.
+
+## References
+
+* [J. H. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], III.1 (the change of
+  variables) and the proof of III.3.1(b).
+* N. M. Katz and B. Mazur, *Arithmetic Moduli of Elliptic Curves*, 2.2.
+
+## Provenance
+
+Adapted from AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0) at commit
+`c3415f32a313e19ace43e05479aeaa0d56ca287a`, directory
+`projects/ModularCurves/ModularCurves/EllipticCurve`. The results come from
+`exists_variableChange_of_filtration` in `ComparisonCoefficients.lean` and its private helpers
+`six_ext` and `exists_unit_sq_cube`. That theorem takes an isomorphism `R[W'] ≃ₐ[R] R[W]` preserving
+a filtration of the coordinate rings by spans of monomials, extracts `α`, `β`, `γ`, `δ`, `ε` from it
+with `α` and `γ` units, and treats the zero ring separately. Here no isomorphism and no filtration
+appear: the hypothesis is the equation satisfied by the pair `(αx + β, γy + δx + ε)`, only `α` is
+assumed to be a unit, and there is no case distinction on `R`. What is kept is the comparison of the
+coefficients of `1`, `x`, `x²`, `x³`, `y` and `xy` after eliminating `y²` (the source's `six_ext`,
+which is proved there for a nontrivial ring from Mathlib's basis `{1, y}` over `R[X]` and is deduced
+here from the monomial basis), and the unit `u = γ / α` (`exists_unit_sq_cube`). The source then
+solves the five other coefficient equations for the coefficients of `C • W'`; here only the
+coefficient of `x³` of that relation is used, and `C • W' = W` follows from the transformation law
+`WeierstrassCurve.Affine.baseChange_variableChange_equation` and from `equation_X_root_iff`, in
+which the other five coefficients are compared for the pair `(x, y)` only. The equation satisfied
+by the pair `(x, y)`, `equation_X_root`, is used in the source as `coordY_mul_coordY`
+(`PoleFiltration.lean`), a formula for `y²`. `equation_X_root_iff` is not in the source.
+-/
+
+public section
+
+open Polynomial
+
+namespace WeierstrassCurve.Affine.CoordinateRing
+
+variable {R : Type*} [CommRing R]
+
+-- An `R`-linear relation among the monomials `1`, `x`, `x²`, `x³`, `y` and `xy` of `R[W]` has
+-- zero coefficients: these monomials are members of the monomial basis.
+private theorem coeff_eq_zero_of_relation (W : Affine R) {c₀ c₁ c₂ c₃ d₀ d₁ : R}
+    (h : algebraMap R W.CoordinateRing c₀ + algebraMap R _ c₁ * AdjoinRoot.of W.polynomial X
+      + algebraMap R _ c₂ * AdjoinRoot.of W.polynomial X ^ 2
+      + algebraMap R _ c₃ * AdjoinRoot.of W.polynomial X ^ 3
+      + algebraMap R _ d₀ * AdjoinRoot.root W.polynomial
+      + algebraMap R _ d₁ * (AdjoinRoot.of W.polynomial X * AdjoinRoot.root W.polynomial) = 0) :
+    c₀ = 0 ∧ c₁ = 0 ∧ c₂ = 0 ∧ c₃ = 0 ∧ d₀ = 0 ∧ d₁ = 0 := by
+  have hli := (CoordinateRing.basisMonomials W).linearIndependent.comp
+    ![(0, 0), (1, 0), (2, 0), (3, 0), (0, 1), (1, 1)] (by decide)
+  -- evaluating the two families at the six indices turns the relation into `h`
+  have key := Fintype.linearIndependent_iff.mp hli ![c₀, c₁, c₂, c₃, d₀, d₁]
+    (by simpa only [Fin.sum_univ_six, Function.comp_apply, Matrix.cons_val, basisMonomials_apply,
+      Fin.val_zero, Fin.val_one, pow_zero, pow_one, mul_one, one_mul, Algebra.smul_def] using h)
+  exact ⟨key 0, key 1, key 2, key 3, key 4, key 5⟩
+
+variable {W W' V : WeierstrassCurve R}
+
+/-- **A Weierstrass curve is determined by the coordinate functions of its coordinate ring.** For
+Weierstrass curves `W` and `V` over `R`, the pair `(x, y)` of coordinate functions of `R[W]`
+satisfies the Weierstrass equation of the base change of `V` to `R[W]` if and only if `V = W`. -/
+@[simp]
+theorem equation_X_root_iff :
+    (V⁄W.toAffine.CoordinateRing).toAffine.Equation (AdjoinRoot.of W.toAffine.polynomial X)
+      (AdjoinRoot.root W.toAffine.polynomial) ↔ V = W := by
+  have hW := equation_X_root W
+  refine ⟨fun h ↦ ?_, fun h ↦ by rwa [h]⟩
+  rw [equation_iff'] at h hW
+  simp only [baseChange_a₁, baseChange_a₂, baseChange_a₃, baseChange_a₄, baseChange_a₆] at h hW
+  -- the difference of the two equations is a linear relation among `1`, `x`, `x²`, `y` and `xy`;
+  -- `algebra` normalises in the `R`-algebra `R[W]`, keeping the coefficients in `R`
+  obtain ⟨h₆, h₄, h₂, -, h₃, h₁⟩ := coeff_eq_zero_of_relation W.toAffine (c₀ := W.a₆ - V.a₆)
+    (c₁ := W.a₄ - V.a₄) (c₂ := W.a₂ - V.a₂) (c₃ := 0) (d₀ := V.a₃ - W.a₃) (d₁ := V.a₁ - W.a₁)
+    (by linear_combination (norm := algebra) h - hW)
+  exact WeierstrassCurve.ext (sub_eq_zero.mp h₁) (sub_eq_zero.mp h₂).symm (sub_eq_zero.mp h₃)
+    (sub_eq_zero.mp h₄).symm (sub_eq_zero.mp h₆).symm
+
+/-- If a pair `(αx + β, γy + δx + ε)` of elements of the coordinate ring `R[W]`, with `α`, `β`,
+`γ`, `δ` and `ε` in `R`, satisfies the Weierstrass equation of the base change of `W'` to `R[W]`,
+then `γ² = α³`. -/
+theorem sq_eq_pow_three_of_equation {α β γ δ ε : R}
+    (h : (W'⁄W.toAffine.CoordinateRing).toAffine.Equation
+      (algebraMap R W.toAffine.CoordinateRing α * AdjoinRoot.of W.toAffine.polynomial X
+        + algebraMap R _ β)
+      (algebraMap R W.toAffine.CoordinateRing γ * AdjoinRoot.root W.toAffine.polynomial
+        + algebraMap R _ δ * AdjoinRoot.of W.toAffine.polynomial X + algebraMap R _ ε)) :
+    γ ^ 2 = α ^ 3 := by
+  have hW := equation_X_root W
+  rw [equation_iff'] at h hW
+  simp only [baseChange_a₁, baseChange_a₂, baseChange_a₃, baseChange_a₄, baseChange_a₆] at h hW
+  -- eliminating `y²` leaves a linear relation among `1`, `x`, `x²`, `x³`, `y` and `xy`
+  obtain ⟨-, -, -, h₃, -, -⟩ := coeff_eq_zero_of_relation W.toAffine
+    (c₀ := ε ^ 2 + W'.a₁ * β * ε + W'.a₃ * ε - (β ^ 3 + W'.a₂ * β ^ 2 + W'.a₄ * β + W'.a₆)
+      + γ ^ 2 * W.a₆)
+    (c₁ := 2 * δ * ε + W'.a₁ * (α * ε + β * δ) + W'.a₃ * δ
+      - (3 * α * β ^ 2 + 2 * W'.a₂ * α * β + W'.a₄ * α) + γ ^ 2 * W.a₄)
+    (c₂ := δ ^ 2 + W'.a₁ * α * δ - (3 * α ^ 2 * β + W'.a₂ * α ^ 2) + γ ^ 2 * W.a₂)
+    (c₃ := γ ^ 2 - α ^ 3)
+    (d₀ := 2 * γ * ε + W'.a₁ * β * γ + W'.a₃ * γ - γ ^ 2 * W.a₃)
+    (d₁ := 2 * γ * δ + W'.a₁ * α * γ - γ ^ 2 * W.a₁)
+    (by linear_combination (norm := algebra) h - algebraMap R _ γ ^ 2 * hW)
+  exact sub_eq_zero.mp h₃
+
+/-- **A solution of Weierstrass shape over the coordinate ring comes from a change of variables.**
+If a pair `(αx + β, γy + δx + ε)` of elements of the coordinate ring `R[W]`, with `α`, `β`, `γ`,
+`δ` and `ε` in `R` and `α` a unit, satisfies the Weierstrass equation of the base change of `W'`
+to `R[W]`, then there is a change of variables `C = (u, r, s, t)` over `R` with `C • W' = W`,
+`u² = α`, `u³ = γ`, `r = β`, `u²s = δ` and `t = ε`; that is, the pair is
+`(u²x + r, u³y + u²sx + t)`. -/
+theorem exists_variableChange_of_equation {α β γ δ ε : R} (hα : IsUnit α)
+    (h : (W'⁄W.toAffine.CoordinateRing).toAffine.Equation
+      (algebraMap R W.toAffine.CoordinateRing α * AdjoinRoot.of W.toAffine.polynomial X
+        + algebraMap R _ β)
+      (algebraMap R W.toAffine.CoordinateRing γ * AdjoinRoot.root W.toAffine.polynomial
+        + algebraMap R _ δ * AdjoinRoot.of W.toAffine.polynomial X + algebraMap R _ ε)) :
+    ∃ C : VariableChange R, C • W' = W ∧ (C.u : R) ^ 2 = α ∧ (C.u : R) ^ 3 = γ ∧ C.r = β ∧
+      (C.u : R) ^ 2 * C.s = δ ∧ C.t = ε := by
+  have hγα := sq_eq_pow_three_of_equation h
+  -- `u = γ / α` is a unit, with inverse `γ / α²`, and `u² = α`, `u³ = γ`
+  obtain ⟨v, hv⟩ := hα.exists_right_inv
+  obtain ⟨u, rfl, rfl⟩ : ∃ u : Rˣ, (u : R) ^ 2 = α ∧ (u : R) ^ 3 = γ := by
+    refine ⟨Units.mkOfMulEqOne (γ * v) (γ * v ^ 2) ?_, ?_, ?_⟩
+    · linear_combination v ^ 3 * hγα + (α ^ 2 * v ^ 2 + α * v + 1) * hv
+    · rw [Units.val_mkOfMulEqOne]
+      linear_combination v ^ 2 * hγα + α * (α * v + 1) * hv
+    · rw [Units.val_mkOfMulEqOne]
+      linear_combination γ * v ^ 3 * hγα + γ * (α ^ 2 * v ^ 2 + α * v + 1) * hv
+  obtain ⟨s, rfl⟩ : (u : R) ^ 2 ∣ δ := (u.isUnit.pow 2).dvd
+  -- the pair is now `(u²x + β, u³y + u²sx + ε)`: by the transformation law, `(x, y)` satisfies
+  -- the equation of `C • W'` for `C = (u, β, s, ε)`
+  simp only [map_mul, map_pow] at h
+  exact ⟨⟨u, β, s, ε⟩,
+    equation_X_root_iff.mp ((baseChange_variableChange_equation W' ⟨u, β, s, ε⟩ _ _).mp h),
+    rfl, rfl, rfl, rfl, rfl⟩
+
+end WeierstrassCurve.Affine.CoordinateRing
+
+end

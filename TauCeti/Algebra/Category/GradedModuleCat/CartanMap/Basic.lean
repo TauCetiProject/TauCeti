@@ -335,16 +335,20 @@ private noncomputable abbrev gradedModuleExactStructure (𝒜 : ℤ → Submodul
     GradedExactStructure (GradedModuleCat.{uA} 𝒜) :=
   GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)
 
-private theorem isExtensionClosed_gradedFiniteModules' :
-    (gradedModuleExactStructure 𝒜).toExactStructure.IsExtensionClosed
+/-- Finite graded modules are extension closed for the graded abelian exact structure of the
+grading shift. -/
+theorem isExtensionClosed_gradedFiniteModules_gradedAbelian :
+    (GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)).toExactStructure.IsExtensionClosed
       (gradedFiniteModules 𝒜) := by
-  rw [gradedModuleExactStructure, GradedExactStructure.abelian_toExactStructure]
+  rw [GradedExactStructure.abelian_toExactStructure]
   exact isExtensionClosed_gradedFiniteModules
 
-private theorem isExtensionClosed_gradedFiniteProjectiveModules' :
-    (gradedModuleExactStructure 𝒜).toExactStructure.IsExtensionClosed
+/-- Finite graded modules with projective underlying module are extension closed for the graded
+abelian exact structure of the grading shift. -/
+theorem isExtensionClosed_gradedFiniteProjectiveModules_gradedAbelian :
+    (GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)).toExactStructure.IsExtensionClosed
       (gradedFiniteProjectiveModules 𝒜) := by
-  rw [gradedModuleExactStructure, GradedExactStructure.abelian_toExactStructure]
+  rw [GradedExactStructure.abelian_toExactStructure]
   exact isExtensionClosed_gradedFiniteProjectiveModules
 
 /-- Finite graded modules are stable under the grading shift. -/
@@ -362,32 +366,40 @@ theorem gradedFiniteProjectiveModules_shift :
   ext M
   rfl
 
-private theorem gradedFiniteModules_shift' :
-    (gradedFiniteModules 𝒜).inverseImage (gradedModuleExactStructure 𝒜).shift.functor =
+/-- Finite graded modules are stable under the shift of the graded abelian exact structure. -/
+theorem gradedFiniteModules_gradedAbelian_shift :
+    (gradedFiniteModules 𝒜).inverseImage
+        (GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)).shift.functor =
       gradedFiniteModules 𝒜 := by
-  rw [gradedModuleExactStructure, GradedExactStructure.abelian_shift]
+  rw [GradedExactStructure.abelian_shift]
   exact gradedFiniteModules_shift
 
-private theorem gradedFiniteProjectiveModules_shift' :
+/-- Finite graded modules with projective underlying module are stable under the shift of the
+graded abelian exact structure. -/
+theorem gradedFiniteProjectiveModules_gradedAbelian_shift :
     (gradedFiniteProjectiveModules 𝒜).inverseImage
-        (gradedModuleExactStructure 𝒜).shift.functor =
+        (GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)).shift.functor =
       gradedFiniteProjectiveModules 𝒜 := by
-  rw [gradedModuleExactStructure, GradedExactStructure.abelian_shift]
+  rw [GradedExactStructure.abelian_shift]
   exact gradedFiniteProjectiveModules_shift
 
-/-- The induced graded exact structure on finite graded modules. -/
-noncomputable def gradedFiniteModulesExactStructure (𝒜 : ℤ → Submodule k A) :
+/-- The induced graded exact structure on finite graded modules: the full-subcategory exact
+structure of the graded abelian exact structure for the grading shift. Its Laurent Grothendieck
+group is the graded Grothendieck group `G₀^gr(mod A)` of finite graded modules. -/
+@[expose] noncomputable def gradedFiniteModulesExactStructure (𝒜 : ℤ → Submodule k A) :
     GradedExactStructure (gradedFiniteModules 𝒜).FullSubcategory :=
-  (gradedModuleExactStructure 𝒜).fullSubcategory _
-    isExtensionClosed_gradedFiniteModules' gradedFiniteModules_shift'
+  (GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)).fullSubcategory _
+    isExtensionClosed_gradedFiniteModules_gradedAbelian
+      gradedFiniteModules_gradedAbelian_shift
 
 /-- The induced graded exact structure on finite graded modules with projective underlying
 module. When `𝒜` is a decomposition of `A`, it is the split exact structure, by
 `TauCeti.gradedFiniteProjectiveModulesExactStructure_eq_split`. -/
-noncomputable def gradedFiniteProjectiveModulesExactStructure (𝒜 : ℤ → Submodule k A) :
+@[expose] noncomputable def gradedFiniteProjectiveModulesExactStructure (𝒜 : ℤ → Submodule k A) :
     GradedExactStructure (gradedFiniteProjectiveModules 𝒜).FullSubcategory :=
-  (gradedModuleExactStructure 𝒜).fullSubcategory _
-    isExtensionClosed_gradedFiniteProjectiveModules' gradedFiniteProjectiveModules_shift'
+  (GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)).fullSubcategory _
+    isExtensionClosed_gradedFiniteProjectiveModules_gradedAbelian
+      gradedFiniteProjectiveModules_gradedAbelian_shift
 
 /-- The graded exact structure on finite graded modules is the one induced from the canonical
 graded exact structure on all graded modules, for any proofs of the side conditions. -/
@@ -421,7 +433,7 @@ noncomputable def gradedFiniteModulesExactStructureShiftFunctorCompιIso :
       (gradedFiniteModules 𝒜).ι ⋙ (GradedModuleCat.shift 𝒜).functor := by
   rw [gradedFiniteModulesExactStructure, GradedExactStructure.fullSubcategory_shift]
   let e := (gradedModuleExactStructure 𝒜).fullSubcategoryShiftFunctorCompιIso
-    (gradedFiniteModules 𝒜) gradedFiniteModules_shift'
+    (gradedFiniteModules 𝒜) gradedFiniteModules_gradedAbelian_shift
   rw [GradedExactStructure.abelian_shift] at e
   exact e
 
@@ -433,7 +445,7 @@ noncomputable def gradedFiniteProjectiveModulesExactStructureShiftFunctorCompιI
       (gradedFiniteProjectiveModules 𝒜).ι ⋙ (GradedModuleCat.shift 𝒜).functor := by
   rw [gradedFiniteProjectiveModulesExactStructure, GradedExactStructure.fullSubcategory_shift]
   let e := (gradedModuleExactStructure 𝒜).fullSubcategoryShiftFunctorCompιIso
-    (gradedFiniteProjectiveModules 𝒜) gradedFiniteProjectiveModules_shift'
+    (gradedFiniteProjectiveModules 𝒜) gradedFiniteProjectiveModules_gradedAbelian_shift
   rw [GradedExactStructure.abelian_shift] at e
   exact e
 
@@ -445,8 +457,7 @@ theorem gradedFiniteModulesExactStructure_conflation_iff
     (gradedFiniteModulesExactStructure 𝒜).Conflation S ↔
       (S.map (gradedFiniteModules 𝒜).ι).ShortExact := by
   rw [gradedFiniteModulesExactStructure, GradedExactStructure.fullSubcategory_conflation_iff,
-    gradedModuleExactStructure, GradedExactStructure.abelian_toExactStructure,
-    ExactStructure.abelian_conflation]
+    GradedExactStructure.abelian_toExactStructure, ExactStructure.abelian_conflation]
 
 /-- The conflations of finite graded modules with projective underlying module are the short
 exact sequences of graded modules whose three terms are of this kind. -/
@@ -456,7 +467,7 @@ theorem gradedFiniteProjectiveModulesExactStructure_conflation_iff
     (gradedFiniteProjectiveModulesExactStructure 𝒜).Conflation S ↔
       (S.map (gradedFiniteProjectiveModules 𝒜).ι).ShortExact := by
   rw [gradedFiniteProjectiveModulesExactStructure,
-    GradedExactStructure.fullSubcategory_conflation_iff, gradedModuleExactStructure,
+    GradedExactStructure.fullSubcategory_conflation_iff,
     GradedExactStructure.abelian_toExactStructure, ExactStructure.abelian_conflation]
 
 /-! ### Classes of shifted modules -/
@@ -566,9 +577,10 @@ noncomputable def gradedCartanMap (𝒜 : ℤ → Submodule k A) :
         gradedFiniteModulesExactStructure]
       exact GradedConflationExact.ιOfLE (gradedModuleExactStructure 𝒜)
         (gradedFiniteProjectiveModules 𝒜)
-        isExtensionClosed_gradedFiniteProjectiveModules'
-        isExtensionClosed_gradedFiniteModules'
-        gradedFiniteProjectiveModules_shift' gradedFiniteModules_shift'
+        isExtensionClosed_gradedFiniteProjectiveModules_gradedAbelian
+        isExtensionClosed_gradedFiniteModules_gradedAbelian
+        gradedFiniteProjectiveModules_gradedAbelian_shift
+        gradedFiniteModules_gradedAbelian_shift
         gradedFiniteProjectiveModules_le_finiteModules
     exact LaurentK0.map.{uA, uA} h
 

@@ -42,9 +42,10 @@ one about the image alone.
 The norm subgroups of `Kˣ` are the preimages of the open subgroups of `G_K^ab`: every open
 subgroup of `G_K^ab` is cut out by some finite Galois extension `L/K`, and its preimage under
 `artinMap K` is the norm group `N_{L/K}(Lˣ)` (`exists_artinMap_mem_iff`), the kernel of the finite
-local Artin map. Since norm groups of finite separable extensions are open, `artinMap K` is
-continuous (`continuous_artinMap`), and its kernel is the intersection of all norm subgroups
-(`ker_artinMap_eq_iInf`).
+local Artin map. Conversely every norm subgroup is such a preimage
+(`exists_openSubgroup_artinMap_mem_iff`). Since norm groups of finite separable extensions are
+open, `artinMap K` is continuous (`continuous_artinMap`), and its kernel is the intersection of
+all norm subgroups (`ker_artinMap_eq_iInf`).
 
 The absolute Artin map is functorial for the norm (`artinMap_norm`). For a finite extension `L/K`
 embedded in `Kˢ` by `iota`, `TauCeti.absoluteGaloisGroupExtend K L iota` embeds `G_L` in `G_K` as
@@ -75,6 +76,8 @@ for instance from a completion of a number field to a concrete model such as `�
 * `TauCeti.ClassFieldTheory.denseRange_artinMap`: the absolute local Artin map has dense image.
 * `TauCeti.ClassFieldTheory.exists_artinMap_mem_iff`: the preimage of an open subgroup of
   `G_K^ab` is a norm subgroup.
+* `TauCeti.ClassFieldTheory.exists_openSubgroup_artinMap_mem_iff`: every norm subgroup is the
+  preimage of an open subgroup of `G_K^ab`.
 * `TauCeti.ClassFieldTheory.continuous_artinMap`: the absolute local Artin map is continuous.
 * `TauCeti.ClassFieldTheory.ker_artinMap_eq_iInf`: its kernel is the intersection of all norm
   subgroups.
@@ -208,6 +211,35 @@ theorem exists_artinMap_mem_iff
   refine ⟨V, fun x ↦ ?_⟩
   rw [← localGroundEquiv_mem_normSubgroup_iff, ← groundEquivOfOpenNormal_unitsLevelEquiv, ← hV,
     OpenSubgroup.mem_comap, MonoidHom.coe_ofClass, artinMap_apply]
+
+/-- **Every local norm subgroup is the preimage of an open subgroup under the absolute local Artin
+map.** For every open normal subgroup `V` of `G_K` there is an open subgroup `U` of `G_K^ab`, the
+kernel of the projection `G_K^ab → Gal(classField K V/K)^ab`, such that the Artin symbol of
+`x ∈ Kˣ` lies in `U` exactly when `x` is a norm from `classField K V`. This is the converse of
+`exists_artinMap_mem_iff`. -/
+theorem exists_openSubgroup_artinMap_mem_iff (V : OpenNormalSubgroup (AbsoluteGaloisGroup K)) :
+    ∃ U : OpenSubgroup (Field.absoluteGaloisGroupAbelianization K), ∀ x : Kˣ,
+      artinMap K x ∈ U ↔ x ∈ localNormSubgroup K V := by
+  set e := (absoluteGaloisGroupRestrictEquiv K).symm.topologicalAbelianizationCongr
+  -- the kernel of the projection onto `(G_K/V)^ab` contains the open image of `V`
+  let ρ := MonoidHom.toAdditive.symm (abelianizationRestrict V)
+  have hmem (y : TopologicalAbelianization (AbsoluteGaloisGroup K)) :
+      y ∈ ρ.ker ↔ abelianizationRestrict V (Additive.ofMul y) = 0 :=
+    MonoidHom.mem_ker.trans toMul_eq_one
+  have hρ : IsOpen (ρ.ker : Set (TopologicalAbelianization (AbsoluteGaloisGroup K))) := by
+    refine Subgroup.isOpen_mono (H₁ := V.toSubgroup.map (QuotientGroup.mk' _)) ?_
+      (QuotientGroup.isOpenMap_coe _ V.isOpen)
+    rintro _ ⟨g, hgV, rfl⟩
+    have hg : g ∈ (ofOpenNormal V).ground := by simp
+    rw [QuotientGroup.mk'_apply, hmem, abelianizationRestrict_mk V ⟨g, hg⟩, ofMul_eq_zero,
+      (QuotientGroup.eq_one_iff _).mpr (Subgroup.mem_subgroupOf.mpr (by simpa using hgV)),
+      map_one]
+  refine ⟨(⟨ρ.ker, hρ⟩ : OpenSubgroup _).comap (e.symm : _ →* _) (map_continuous e.symm),
+    fun x ↦ ?_⟩
+  rw [OpenSubgroup.mem_comap, ← OpenSubgroup.mem_toSubgroup, MonoidHom.coe_ofClass,
+    artinMap_apply, ContinuousMulEquiv.symm_apply_apply, hmem, ofMul_toMul,
+    (localClassFormation K).abelianizationRestrict_absoluteArtinMap_eq_zero_iff,
+    groundEquivOfOpenNormal_unitsLevelEquiv, localGroundEquiv_mem_normSubgroup_iff]
 
 /-- **The absolute local Artin map is continuous.** The preimage of an open subgroup of `G_K^ab`
 is a norm subgroup (`exists_artinMap_mem_iff`), and norm subgroups of finite separable extensions

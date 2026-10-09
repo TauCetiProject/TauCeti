@@ -8,10 +8,8 @@ module
 public import TauCeti.NumberTheory.LocalField.Different.Herbrand
 public import TauCeti.NumberTheory.LocalField.Herbrand.Tower
 public import TauCeti.NumberTheory.LocalField.Norm.Basic
-import TauCeti.GroupTheory.Solvable
-import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
+import TauCeti.NumberTheory.LocalField.FiniteExtension.GaloisInduction
 import TauCeti.NumberTheory.LocalField.Norm.PrimeDegree
-import TauCeti.NumberTheory.LocalField.Solvable
 
 /-!
 # The norm on the unit filtration, with the Herbrand shift
@@ -131,36 +129,24 @@ private theorem normShift_of_forall_finrank_lt
       rw [← natCard_lowerRamificationGroup_zero K L,
         Subgroup.eq_bot_of_subsingleton (lowerRamificationGroup K L 0), Subgroup.card_bot]
     simpa [hψ, he] using map_normUnits_unitFiltration_le K L (n + 1)
-  · obtain ⟨H, hH, hp⟩ := Group.IsSolvable.exists_normal_index_prime (L ≃ₐ[K] L)
-    let F := IntermediateField.fixedField H
+  · obtain ⟨F, hGalois, hp, hlt⟩ := exists_prime_degree_intermediateField K L
     let _ := finiteIntermediateFieldValuativeRel K L F
     let _ := finiteIntermediateFieldTopology K L F
     have := finiteIntermediateField_isNonarchimedeanLocalField K L F
     have := finiteIntermediateField_valuativeExtension K L F
+    have := hGalois
     have := IsGalois.tower_top_of_isGalois K F L
-    have hF : finrank K F = H.index := by
-      rw [IntermediateField.finrank_eq_fixingSubgroup_index,
-        IntermediateField.fixingSubgroup_fixedField]
-    have hlt : finrank F L < finrank K L := by
-      rw [← Module.finrank_mul_finrank K F L, hF]
-      have := hp.two_le
-      have := Module.finrank_pos (R := F) (M := L)
-      nlinarith
-    exact NormShift.trans (normShift_of_finrank_prime (hF ▸ hp)) (ih F hlt)
+    exact NormShift.trans (normShift_of_finrank_prime hp) (ih F hlt)
 
 /-- The Herbrand-shifted inclusion for every finite Galois extension `L/F` with `F` in the
 universe of `L` and `[L : F] ≤ d`, by induction on `d`. -/
 private theorem normShift_of_finrank_le (d : ℕ) :
     ∀ (F : Type v) [Field F] [ValuativeRel F] [TopologicalSpace F]
       [IsNonarchimedeanLocalField F] [Algebra F L] [ValuativeExtension F L] [Module.Finite F L]
-      [IsGalois F L], finrank F L ≤ d → NormShift F L := by
-  induction d with
-  | zero =>
-    intro F _ _ _ _ _ _ _ _ h
-    exact absurd h (Nat.not_le.2 Module.finrank_pos)
-  | succ d ih =>
-    intro F _ _ _ _ _ _ _ _ h
-    exact normShift_of_forall_finrank_lt fun F' _ _ _ _ _ _ _ _ h' ↦ ih F' (by omega)
+      [IsGalois F L], finrank F L ≤ d → NormShift F L :=
+  finiteGaloisLocalField_induction_finrank_le L
+    (fun F _ _ _ _ _ _ _ _ ↦ NormShift F L)
+    (fun F _ _ _ _ _ _ _ _ ↦ normShift_of_forall_finrank_lt (K := F)) d
 
 variable (K L) in
 /-- **The norm on the unit filtration, with the Herbrand shift.** For a finite Galois extension

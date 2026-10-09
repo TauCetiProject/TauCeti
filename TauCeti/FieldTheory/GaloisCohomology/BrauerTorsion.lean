@@ -100,7 +100,7 @@ theorem explicitCoeff2_kummerShortExact_proj (x : H2 (AbsoluteGaloisGroup K) (Un
     rw [explicitCoeff2_mk, ← QuotientAddGroup.mk_nsmul]
     refine congrArg _ (Subtype.ext (funext fun p => ?_))
     refine (cocyclesMap2_apply _ _ _ _ _ _ _ _ c p.1 p.2).trans ?_
-    simp [DiscreteShortExact.projDistribMulActionHom_apply, unitsCoeffPow_eq_nsmul]
+    simp [unitsCoeffPow_eq_nsmul]
 
 /-- **`H²(G_K, μₙ) → H²(G_K, (Kˢ)ˣ)` is injective**, on the explicit model. -/
 theorem explicitCoeff2_kummerShortExact_incl_injective :
@@ -182,19 +182,8 @@ theorem explicitCor2_kummerCoeff_bijective_of_unitsCoeff_bijective [U.FiniteInde
   have hj : Function.Injective j :=
     explicitCoeff2_kummerShortExact_restrict_incl_injective K hn U (U.isClosed_of_isOpen hU)
   have hcomm (x : H2 U (KummerCoeff K n)) : c (j x) = i (d x) := by
-    have hi' : (S.inclDistribMulActionHom : KummerCoeff K n →+ UnitsCoeff K) = S.incl := by
-      apply AddMonoidHom.ext
-      intro m
-      exact DiscreteShortExact.inclDistribMulActionHom_apply S m
-    have hj' : ((S.restrict U).inclDistribMulActionHom :
-        KummerCoeff K n →+ UnitsCoeff K) = S.incl := by
-      apply AddMonoidHom.ext
-      intro m
-      -- Retype evaluation through the additive-hom coercion so the public restriction lemmas
-      -- apply; the short exact sequence itself remains opaque.
-      change (S.restrict U).inclDistribMulActionHom m = S.incl m
-      rw [DiscreteShortExact.inclDistribMulActionHom_apply, DiscreteShortExact.restrict_incl]
-    simp only [c, j, i, d, explicitCoeff2_eq_explicitMap2, hi', hj']
+    simp only [c, j, i, d, explicitCoeff2_eq_explicitMap2,
+      DiscreteShortExact.coe_addMonoidHom_inclDistribMulActionHom, DiscreteShortExact.restrict_incl]
     exact explicitCor2_explicitMap2_id (AbsoluteGaloisGroup K) (KummerCoeff K n) U hU
       S.incl continuous_of_discreteTopology S.incl_equivariant x
   refine ⟨fun x y h => hj (hc.1 (by rw [hcomm, hcomm, h])), fun y => ?_⟩
