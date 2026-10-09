@@ -39,8 +39,9 @@ general case reduces to it through Frobenius, as in the proof of Silverman III.6
 the exponential characteristic of `F` and `p ^ r` the inseparable degree of `φ`. Then
 `φ = φₛ ∘ F^r` with `F^r : W₁ → W₁⁽ᵖʳ⁾` the `r`-fold relative Frobenius and `φₛ` separable
 (Silverman II.2.12, `TauCeti.Isogeny.exists_isSeparable_comp_iterateRelativeFrobeniusIsogeny_eq`).
-Since `[p]` is inseparable, `p ^ r` divides the inseparable degree of `[p ^ r] = [p] ^ r`, so
-`[p ^ r]` factors through `F^r` as `V ∘ F^r`. With `φ̂ₛ ∘ φₛ = [deg φₛ]` and
+Then `p ^ r` divides the inseparable degree of `[p ^ r] = [p] ^ r`: when `p > 1` this is because
+`[p]` is inseparable, and when `p = 1` (characteristic zero) it is trivial, with `r = 0` and
+`F^0` the identity. So `[p ^ r]` factors through `F^r` as `V ∘ F^r`. With `φ̂ₛ ∘ φₛ = [deg φₛ]` and
 `[deg φₛ] ∘ F^r = F^r ∘ [deg φₛ]`,
 `V ∘ φ̂ₛ ∘ φ = V ∘ F^r ∘ [deg φₛ] = [p ^ r · deg φₛ] = [deg φ]`.
 
