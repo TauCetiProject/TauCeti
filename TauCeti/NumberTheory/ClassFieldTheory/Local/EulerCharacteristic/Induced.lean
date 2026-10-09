@@ -8,6 +8,7 @@ module
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.FiniteExtension
 public import TauCeti.NumberTheory.ClassFieldTheory.FiniteQuotient
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.EulerCharacteristic.Basic
+public import TauCeti.NumberTheory.ClassFieldTheory.Local.EulerCharacteristic.Shapiro
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ContinuousMulEquiv
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Shapiro.FiniteQuotient
 public import TauCeti.RepresentationTheory.Induction.FiniteDimensional.Basic
@@ -111,12 +112,6 @@ instance : Fact (IsSmoothDiscrete (ZMod n) (shapiroGalRep σ n hσ B)) :=
 
 /-! ### Shapiro's lemma for the two invariants -/
 
-include hσ in
-/-- The image of `G_L` in `G_K` has index `[L : K]`, so `C` has index `[L : K]` in `G_K ⧸ V`. -/
-theorem index_eq_finrank_of_range_eq : C.index = Module.finrank K L := by
-  rw [← C.index_comap_of_surjective (QuotientGroup.mk'_surjective V.toSubgroup), ← hσ,
-    index_range_absoluteGaloisGroupExtend]
-
 /-- **Shapiro's lemma for the local Euler characteristic.** For `L` the fixed field of
 `C ≤ G_K ⧸ V`, the Euler characteristic over `K` of the inflation of `Ind_C^{G_K ⧸ V} B` is the
 Euler characteristic over `L` of `B`: `χ_K(Ind B) = χ_L(B)`. -/
@@ -149,7 +144,8 @@ theorem localCardNorm_galRepOfQuotient_ind (p : ℕ) [Fact p.Prime]
       localCardNorm p (shapiroGalRep σ n hσ B) := by
   have hcard : Nat.card ((galRepOfQuotient n K V).obj (Rep.ind C.subtype B)).V =
       Nat.card B.V ^ Module.finrank K L := by
-    rw [galRepOfQuotient_obj_V, Rep.natCard_ind, index_eq_finrank_of_range_eq σ hσ]
+    rw [galRepOfQuotient_obj_V, Rep.natCard_ind,
+      index_eq_finrank_of_range_absoluteGaloisGroupExtend_eq_comap hσ]
   have hcard' : Nat.card (shapiroGalRep σ n hσ B).V = Nat.card B.V :=
     Nat.card_congr (shapiroGalRepLinearEquiv σ n hσ B).toEquiv
   -- The tower formula, stated over an arbitrary base field: elaborating it at `ℚ_[p]` directly
