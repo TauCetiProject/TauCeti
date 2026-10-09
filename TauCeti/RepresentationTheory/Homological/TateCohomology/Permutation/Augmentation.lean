@@ -7,6 +7,7 @@ module
 
 import Mathlib.Algebra.Group.TypeTags.Finite
 import Mathlib.GroupTheory.Abelianization.Finite
+import TauCeti.RepresentationTheory.Homological.TateCohomology.Finite
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Permutation.Basic
 public import TauCeti.RepresentationTheory.Augmentation
 
@@ -54,14 +55,12 @@ instance finite_tateCohomology_negOne_augmentationSubrepresentation :
     infer_instance
   · have hS := permutationAugmentationSequence_shortExact ℤ G X
     rw [permutationAugmentationSequence_def] at hS
-    have hT := _root_.TateCohomology.map_tateComplexFunctor_shortExact hS
     have hzero : IsZero (tateCohomology (Rep.ofMulAction ℤ G X) (-1)) :=
       ModuleCat.isZero_of_subsingleton _
-    have hepi := hT.epi_δ (-2) (-1) (by decide) hzero
     have : Finite (tateCohomology (Rep.trivial ℤ G ℤ) (-2)) :=
       Finite.of_equiv _ HNegTwoAddEquivAbelianization.toEquiv.symm
-    exact Finite.of_surjective (_root_.TateCohomology.δ hS (-2))
-      ((ModuleCat.epi_iff_surjective _).1 hepi)
+    apply finite_tateCohomology_X₁_of_shortExact_of_isZero_X₂ hS (-2)
+    simpa only [Int.reduceNeg, Int.reduceAdd] using hzero
 
 /-- For a finite cyclic group acting on a nonempty set, the integral sum-zero permutation module's
 Herbrand quotient is that of the integral permutation module divided by the order of the group. -/
