@@ -227,9 +227,9 @@ theorem d4SpinPlusBlockEquiv_exteriorBasis
 exterior-basis vector carrying the same spin weight. -/
 @[simp]
 theorem d4SpinPlusBlockEquiv_symm_single
-    (s : {s : Finset (Fin 4) // Even s.card}) :
-    (P.d4SpinPlusBlockEquiv b).symm (Pi.single (d4SpinPlusIndexEquiv s) 1) =
-      P.d4SpinPlusExteriorBasis b s := by
+    (a : {a : Fin 24 // d4TripledSummand a = 2}) :
+    (P.d4SpinPlusBlockEquiv b).symm (Pi.single a 1) =
+      P.d4SpinPlusExteriorBasis b (d4SpinPlusIndexEquiv.symm a) := by
   apply (P.d4SpinPlusBlockEquiv b).injective
   simp
 
@@ -263,9 +263,9 @@ theorem d4SpinMinusBlockEquiv_exteriorBasis
 exterior-basis vector carrying the same spin weight. -/
 @[simp]
 theorem d4SpinMinusBlockEquiv_symm_single
-    (s : {s : Finset (Fin 4) // Odd s.card}) :
-    (P.d4SpinMinusBlockEquiv b).symm (Pi.single (d4SpinMinusIndexEquiv s) 1) =
-      P.d4SpinMinusExteriorBasis b s := by
+    (a : {a : Fin 24 // d4TripledSummand a = 1}) :
+    (P.d4SpinMinusBlockEquiv b).symm (Pi.single a 1) =
+      P.d4SpinMinusExteriorBasis b (d4SpinMinusIndexEquiv.symm a) := by
   apply (P.d4SpinMinusBlockEquiv b).injective
   simp
 
