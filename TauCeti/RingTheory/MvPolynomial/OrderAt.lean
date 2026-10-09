@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.MvPolynomial.Equiv
 public import Mathlib.Algebra.MvPolynomial.PDeriv
 public import Mathlib.Algebra.Polynomial.Taylor
+public import Mathlib.FieldTheory.Separable
 public import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 public import TauCeti.Algebra.MvPolynomial.Equiv
 public import TauCeti.RingTheory.MvPowerSeries.Derivative
@@ -460,13 +461,44 @@ section Derivative
 
 variable [CommRing R] [IsAddTorsionFree R] {p : MvPolynomial σ R} {a : σ → R}
 
-/-- Over a ring without additive torsion, `p` has order at least `n + 1` at `a` if and only if
-`p` vanishes at `a` and every partial derivative of `p` has order at least `n` at `a`. -/
-theorem succ_le_orderAt_iff {n : ℕ} :
-    ((n + 1 : ℕ) : ℕ∞) ≤ p.orderAt a ↔
-      eval a p = 0 ∧ ∀ i, (n : ℕ∞) ≤ (pderiv i p).orderAt a := by
+/-- Over a ring without additive torsion, `p` has order at least `n + 1` at `a`, for `n : ℕ∞`,
+if and only if `p` vanishes at `a` and every partial derivative has order at least `n` there. -/
+theorem succ_le_orderAt_iff {n : ℕ∞} :
+    n + 1 ≤ p.orderAt a ↔
+      eval a p = 0 ∧ ∀ i, n ≤ (pderiv i p).orderAt a := by
   rw [orderAt_def, MvPowerSeries.succ_le_order_iff, constantCoeff_coe, constantCoeff_taylor]
   simp only [orderAt_def, MvPowerSeries.pderiv_coe, pderiv_taylor]
+
+/-- A zero at which some partial derivative is nonzero has ambient order one. -/
+theorem orderAt_eq_one_of_eval_pderiv_ne_zero (hp : eval a p = 0) {i : σ}
+    (hi : eval a (pderiv i p) ≠ 0) : p.orderAt a = 1 := by
+  apply le_antisymm
+  · apply ENat.lt_two_iff.mp
+    apply lt_of_not_ge
+    intro h
+    have hder := (succ_le_orderAt_iff (n := 1)).mp h
+    have hpos := hder.2 i
+    rw [Order.one_le_iff_pos, orderAt_pos_iff] at hpos
+    exact hi hpos
+  · simpa only [Order.one_le_iff_pos, orderAt_pos_iff] using hp
+
+open Classical in
+/-- If the fiber through a point is separable, its ambient order is one at a zero
+and zero otherwise. No degree preservation in nearby fibers is needed. -/
+@[simp]
+theorem orderAt_eq_ite_of_separable_map_finSuccEquiv [Nontrivial R] {n : ℕ}
+    (p : MvPolynomial (Fin (n + 1)) R) (a : Fin (n + 1) → R)
+    (hsep : ((finSuccEquiv R n p).map (eval (Fin.tail a))).Separable) :
+    p.orderAt a = if eval a p = 0 then 1 else 0 := by
+  classical
+  split_ifs with hp
+  · apply orderAt_eq_one_of_eval_pderiv_ne_zero hp (i := 0)
+    rw [← Fin.cons_self_tail a, eval_eq_eval_mv_eval', ← finSuccEquiv'_zero,
+      finSuccEquiv'_pderiv, finSuccEquiv'_zero, ← Polynomial.derivative_map]
+    have hroot : ((finSuccEquiv R n p).map (eval (Fin.tail a))).eval (a 0) = 0 := by
+      rwa [← eval_eq_eval_mv_eval', Fin.cons_self_tail]
+    simpa using hsep.eval₂_derivative_ne_zero (RingHom.id R) hroot
+  · exact orderAt_eq_zero_iff.mpr hp
 
 /-- Over a ring without additive torsion, `p` has order at least `n` at `a` if and only if, for
 every list `l` of fewer than `n` variables, the iterated partial derivative of `p` along `l`
@@ -477,7 +509,7 @@ theorem le_orderAt_iff_eval_foldl_pderiv {n : ℕ} :
   induction n generalizing p with
   | zero => simp
   | succ n ih =>
-    simp only [succ_le_orderAt_iff, ih]
+    simp only [Nat.cast_add, Nat.cast_one, succ_le_orderAt_iff, ih]
     refine ⟨fun ⟨h0, h⟩ l hl ↦ ?_, fun h ↦ ⟨h [] (by simp), fun i l hl ↦
       h (i :: l) (by simpa using hl)⟩⟩
     cases l with

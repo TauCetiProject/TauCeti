@@ -621,4 +621,13 @@ theorem psiNat_eq_add_card_mul_sub {t v : ℕ}
   simp only [Nat.add_sub_cancel_left]
   ring
 
+/-- At a natural number `n`, the upper ramification group is the lower ramification group at the
+natural number `ψℕ_{L/K}(n)`: `G^n = G_{ψ(n)}`. -/
+@[simp]
+theorem upperRamificationGroup_natCast (n : ℕ) :
+    upperRamificationGroup K L ⟨n, Nat.cast_mem_ramificationIndexDomain n⟩ =
+      lowerRamificationGroup K L (psiNat K L n) := by
+  rw [upperRamificationGroup_def, ← coe_psiNat, ← Int.cast_natCast,
+    lowerRamificationGroupReal_intCast]
+
 end TauCeti.LocalFieldsRamification

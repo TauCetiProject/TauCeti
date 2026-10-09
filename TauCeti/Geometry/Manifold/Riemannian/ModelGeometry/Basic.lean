@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.UpperHalfSpace
+public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.UpperHalfSpace.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Euclidean
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Prod
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Sphere.Basic

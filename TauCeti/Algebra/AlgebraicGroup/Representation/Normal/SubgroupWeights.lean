@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Conjugation
 public import TauCeti.Algebra.AlgebraicGroup.Representation.PointConjugation
 public import TauCeti.Algebra.Bialgebra.GroupLike.Map
+public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Comul
 public import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
 public import TauCeti.Algebra.Coalgebra.Comodule.Weight.Space
 public import TauCeti.Algebra.Coalgebra.Subcomodule.PointSeparation
@@ -20,7 +21,8 @@ Let `H` be the coordinate Hopf algebra of an affine group `G`, let the Hopf idea
 closed subgroup `N`, and let `V` be a representation of `G`. A character of `N` is a group-like
 element `χ` of `H ⧸ I`, and the `χ`-weight space of `V` consists of the vectors on which `N` acts
 through `χ`: those whose coaction, restricted to `N`, is `v ↦ v ⊗ χ`. Characters and weight spaces
-are scheme-theoretic, so nonreduced subgroups such as `μ_p` are allowed.
+are scheme-theoretic, so nonreduced subgroups such as `μ_p` are allowed. Matrix coefficients
+of a weight vector are right semi-invariants with the same character.
 
 A rational point `g` of `G` normalizing `N` restricts to an automorphism of `N`, whose coordinate
 map is a bialgebra endomorphism of `H ⧸ I`. Acting by `g` carries the `χ`-weight space into the
@@ -92,6 +94,21 @@ theorem mem_weightSpace {χ : GroupLike R (H ⧸ I.toIdeal)} {v : V} :
   letI : Comodule R (H ⧸ I.toIdeal) V :=
     Comodule.Corestrict (Bialgebra.Quotient.mkBialgHom I.toIdeal).toCoalgHom
   _root_.GroupLike.mem_weightSpace
+
+/-- A matrix coefficient of a subgroup weight vector is a right semi-invariant, with the
+same subgroup character. -/
+theorem map_comul_matrixCoefficient_of_mem_weightSpace
+    (I : HopfIdeal R H) (χ : GroupLike R (H ⧸ I.toIdeal))
+    {m : V} (hm : m ∈ I.weightSpace V χ) (φ : Module.Dual R V) :
+    TensorProduct.map LinearMap.id (Ideal.Quotient.mkₐ R I.toIdeal).toLinearMap
+        (Coalgebra.comul (R := R) (Comodule.matrixCoefficient (C := H) φ m)) =
+      Comodule.matrixCoefficient (C := H) φ m ⊗ₜ[R] χ.val := by
+  rw [Comodule.comul_matrixCoefficient]
+  have h := congrArg
+    (TensorProduct.map (Comodule.matrixCoefficientLinear (C := H) φ) LinearMap.id)
+    (mem_weightSpace.mp hm)
+  simpa only [TensorProduct.map_map, LinearMap.id_comp, LinearMap.comp_id,
+    TensorProduct.map_tmul, LinearMap.id_apply, Comodule.matrixCoefficientLinear_apply] using h
 
 /-- A weight vector of a closed subgroup is detected by the universal point of the subgroup, the
 quotient map `H → H ⧸ I`, even over a nonreduced base ring. -/

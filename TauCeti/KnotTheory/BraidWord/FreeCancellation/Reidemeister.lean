@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.BraidWord.FreeCancellation.Basic
-public import TauCeti.KnotTheory.BraidWord.DoubleCrossing
+public import TauCeti.KnotTheory.BraidWord.DoubleCrossing.Basic
 
 /-!
 # Crossing data for free cancellation in braid closures
