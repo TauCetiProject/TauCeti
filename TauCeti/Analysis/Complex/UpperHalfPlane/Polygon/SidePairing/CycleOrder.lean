@@ -41,6 +41,7 @@ variable {n : ℕ} [NeZero n] {P : ConvexPolygon n} (σ : P.SidePairing)
 
 /-- The derivative of a cycle transformation at a finite vertex is the unit complex number
 whose counterclockwise angle is the cycle angle sum. -/
+@[simp]
 theorem smulDeriv_cycleMap {j : Fin n} {z : ℍ} (hz : P.vertex j = .inl z) :
     smulDeriv (σ.cycleMap j) z = Complex.exp (σ.cycleAngleSum j * Complex.I) := by
   have hfix : σ.cycleMap j • z = z := by

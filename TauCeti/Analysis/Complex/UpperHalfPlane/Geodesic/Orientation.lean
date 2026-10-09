@@ -136,9 +136,11 @@ theorem orientedAngle_smul_right_of_smul_eq_self {q : PSL(2, ℝ)} {A B : ℍ}
     orientedAngle A B (q • B) = (smulDeriv q A).arg := by
   have hg : geodesicBetween A (q • B) = q * geodesicBetween A B := by
     simpa only [hA] using geodesicBetween_smul q hAB
-  rw [orientedAngle_def, hg, velocity_mul, geodesicLine_geodesicBetween_zero,
-    Complex.oangle, mul_left_comm, Complex.conj_mul', ← Complex.ofReal_pow,
-    Complex.arg_mul_real (by positivity [velocity_ne_zero (geodesicBetween A B) 0])]
+  rw [orientedAngle_def, hg, velocity_mul, geodesicLine_geodesicBetween_zero]
+  -- Compare both velocities to the unit vector, so multiplication adds arguments.
+  rw [← Complex.orientation.oangle_sub_left (one_ne_zero : (1 : ℂ) ≠ 0)
+    (velocity_ne_zero _ _) (mul_ne_zero (smulDeriv_ne_zero q A) (velocity_ne_zero _ _))]
+  simp [Complex.arg_mul_coe_angle (smulDeriv_ne_zero q A) (velocity_ne_zero _ _)]
 
 /-- The geodesic line from `I` to a point at positive parameter on the imaginary axis rotated by
 `θ` is that rotated axis (compare `geodesicBetween_I_geodesicLine_one`). -/
