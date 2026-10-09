@@ -47,6 +47,24 @@ namespace CochainComplex.IsTotallyAcyclic
 variable {A : Type u} [Ring A]
   {S : ShortComplex (CochainComplex (ModuleCat.{v} A) ℤ)}
 
+private lemma comp_section_comp_projection_eq_of_comp_inclusion_eq_zero
+    {T : ShortComplex (ModuleCat.{v} A)} (s : T.Splitting) (ρ : T.X₂ →ₗ[A] A)
+    (hρ : ρ.comp T.f.hom = 0) : (ρ.comp s.s.hom).comp T.g.hom = ρ := by
+  apply LinearMap.ext
+  intro x
+  have hid := congrArg ModuleCat.Hom.hom s.id
+  have hidx := LinearMap.congr_fun hid x
+  have hidx' : T.f.hom (s.r.hom x) + s.s.hom (T.g.hom x) = x := by
+    simpa only [ModuleCat.hom_add, ModuleCat.hom_comp, ModuleCat.hom_id,
+      LinearMap.add_apply, LinearMap.comp_apply, LinearMap.id_apply] using hidx
+  have hzero := LinearMap.congr_fun hρ (s.r.hom x)
+  simp only [LinearMap.comp_apply, LinearMap.zero_apply] at hzero ⊢
+  calc
+    ρ (s.s.hom (T.g.hom x)) = 0 + ρ (s.s.hom (T.g.hom x)) := by simp
+    _ = ρ (T.f.hom (s.r.hom x)) + ρ (s.s.hom (T.g.hom x)) := by rw [hzero]
+    _ = ρ (T.f.hom (s.r.hom x) + s.s.hom (T.g.hom x)) := (map_add ρ _ _).symm
+    _ = ρ x := congrArg ρ hidx'
+
 /-- The middle complex in a degreewise split extension of totally acyclic complexes is totally
 acyclic. The chosen splittings need not commute with the differentials. -/
 theorem of_degreewise_split (h₁ : S.X₁.IsTotallyAcyclic) (h₃ : S.X₃.IsTotallyAcyclic)
@@ -72,11 +90,10 @@ theorem of_degreewise_split (h₁ : S.X₁.IsTotallyAcyclic) (h₃ : S.X₃.IsTo
     let sₖ := s k
     have f_r (n : ℤ) : S.f.f n ≫ (s n).r = 𝟙 _ := (s n).f_r
     have s_g (n : ℤ) : (s n).s ≫ S.g.f n = 𝟙 _ := (s n).s_g
-    have split_id (n : ℤ) :
-        (s n).r ≫ S.f.f n + S.g.f n ≫ (s n).s = 𝟙 _ := (s n).id
     intro φ
     constructor
     · intro hφ
+      -- Extend the left primitive across the split inclusion.
       let φ₁ : S.X₁.X j →ₗ[A] A := φ.comp (S.f.f j).hom
       have hφ₁ : φ₁.comp (S.X₁.d i j).hom = 0 := by
         ext x
@@ -89,6 +106,7 @@ theorem of_degreewise_split (h₁ : S.X₁.IsTotallyAcyclic) (h₃ : S.X₃.IsTo
         rw [← hx, hz]
       obtain ⟨ψ₁, hψ₁⟩ := (h₁.exact_dual i j k hij hjk φ₁).mp hφ₁
       let ψ₀ : S.X₂.X k →ₗ[A] A := ψ₁.comp sₖ.r.hom
+      -- Descend the residual functional through the split projection.
       let ρ : S.X₂.X j →ₗ[A] A := φ - ψ₀.comp (S.X₂.d j k).hom
       have hρf : ρ.comp (S.f.f j).hom = 0 := by
         ext x
@@ -108,24 +126,7 @@ theorem of_degreewise_split (h₁ : S.X₁.IsTotallyAcyclic) (h₃ : S.X₃.IsTo
         simp
       let ρ₃ : S.X₃.X j →ₗ[A] A := ρ.comp sⱼ.s.hom
       have hρ_eq : ρ₃.comp (S.g.f j).hom = ρ := by
-        apply LinearMap.ext
-        intro x
-        have hid := congrArg ModuleCat.Hom.hom (split_id j)
-        have hidx := LinearMap.congr_fun hid x
-        have hidx' : (S.f.f j).hom (sⱼ.r.hom x) +
-            sⱼ.s.hom ((S.g.f j).hom x) = x := by
-          simpa only [ModuleCat.hom_add, ModuleCat.hom_comp, ModuleCat.hom_id,
-            LinearMap.add_apply, LinearMap.comp_apply, LinearMap.id_apply] using hidx
-        have hzero := LinearMap.congr_fun hρf (sⱼ.r.hom x)
-        simp only [ρ₃, LinearMap.comp_apply, LinearMap.zero_apply] at hzero ⊢
-        calc
-          ρ (sⱼ.s.hom ((S.g.f j).hom x)) =
-              0 + ρ (sⱼ.s.hom ((S.g.f j).hom x)) := by simp
-          _ = ρ ((S.f.f j).hom (sⱼ.r.hom x)) +
-              ρ (sⱼ.s.hom ((S.g.f j).hom x)) := by rw [hzero]
-          _ = ρ ((S.f.f j).hom (sⱼ.r.hom x) +
-              sⱼ.s.hom ((S.g.f j).hom x)) := (map_add ρ _ _).symm
-          _ = ρ x := congrArg ρ hidx'
+        exact comp_section_comp_projection_eq_of_comp_inclusion_eq_zero sⱼ ρ hρf
       have hρ : ρ.comp (S.X₂.d i j).hom = 0 := by
         ext x
         have hd := congrArg ModuleCat.Hom.hom (S.X₂.d_comp_d i j k)
@@ -155,6 +156,7 @@ theorem of_degreewise_split (h₁ : S.X₁.IsTotallyAcyclic) (h₃ : S.X₃.IsTo
         have hρ_eqx := LinearMap.congr_fun hρ_eq
           ((S.X₂.d i j).hom (sᵢ.s.hom x))
         simpa only [ρ₃, LinearMap.comp_apply] using hρ_eqx.trans hz
+      -- Lift the right primitive and combine it with the extended left primitive.
       obtain ⟨ψ₃, hψ₃⟩ := (h₃.exact_dual i j k hij hjk ρ₃).mp hρ₃
       refine ⟨ψ₀ + ψ₃.comp (S.g.f k).hom, ?_⟩
       apply LinearMap.ext
