@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Basic
 public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.RingTheory.Finiteness.Projective
 import Mathlib.LinearAlgebra.StdBasis
+import Mathlib.RingTheory.Finiteness.Finsupp
 
 /-!
 # Evaluation from the balanced tensor product of an opposite dual
@@ -16,7 +17,9 @@ import Mathlib.LinearAlgebra.StdBasis
 For a left module `P` over a possibly noncommutative `k`-algebra `A`, evaluation gives
 `Hom_A(P,A) ⊗_A N → Hom_A(P,N)`, sending `φ ⊗ n` to `x ↦ φ(x) • n`.
 This map is an isomorphism when `P` is finitely generated projective. It is natural
-contravariantly in `P` and covariantly in `N`.
+contravariantly in `P` and covariantly in `N`. If `P` is merely finitely generated,
+every map from `P` factoring through a projective module belongs to its image,
+even when that intermediate projective is not finitely generated.
 
 The right action on `Hom_A(P,A)` is Mathlib's opposite-scalar action on the codomain.
 The tensor product is the existing balanced quotient over `k`; neither `A` nor its
@@ -163,3 +166,37 @@ theorem balancedDualTensorHom_balancedDualTensorHomEquiv_symm
   (balancedDualTensorHomEquiv k A P N).apply_symm_apply F
 
 end TauCeti
+
+namespace LinearMap
+
+open TauCeti
+
+variable {k A M P N : Type*} [CommRing k] [Ring A] [Algebra k A]
+  [AddCommMonoid M] [Module A M] [Module.Finite A M]
+  [AddCommGroup P] [Module A P] [Module.Projective A P]
+  [AddCommGroup N] [Module A N] [Module k N] [IsScalarTower k A N]
+
+/-- A map from a finitely generated module that factors through a projective module
+lies in the image of balanced tensor evaluation. The projective intermediate module
+need not be finitely generated. -/
+theorem comp_mem_range_balancedDualTensorHom (f : M →ₗ[A] P) (g : P →ₗ[A] N) :
+    g.comp f ∈ range (balancedDualTensorHom k A M N) := by
+  classical
+  obtain ⟨s, hs⟩ := (Module.projective_def (R := A) (P := P)).mp inferInstance
+  obtain ⟨φ, hφ⟩ := (finsuppLinearMap_bijective_of_moduleFinite A M A P k).surjective
+    (s.comp f)
+  refine ⟨φ.sum (fun p ψ ↦ BalancedTensorProduct.tmul k A ψ (g p)), ?_⟩
+  ext x
+  -- Mathlib's map to finitely supported functions evaluates each coordinate functional.
+  have hφx : Finsupp.mapRange (fun ψ : M →ₗ[A] A ↦ ψ x) (by simp) φ = s (f x) :=
+    LinearMap.congr_fun hφ x
+  have hsum : φ.sum (fun p ψ ↦ ψ x • p) = f x := by
+    have hx := hs (f x)
+    rw [← hφx, Finsupp.linearCombination_apply] at hx
+    simp only [_root_.id_eq] at hx
+    rw [Finsupp.sum_mapRange_index (h := fun (p : P) (a : A) ↦ a • p)
+      (fun p ↦ zero_smul A p)] at hx
+    exact hx
+  simpa [Finsupp.sum, map_sum, map_smul] using congrArg g hsum
+
+end LinearMap

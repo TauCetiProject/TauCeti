@@ -37,6 +37,8 @@ of paths which begin at `i`.
 
 ## Main results
 
+* `TauCeti.completeOrthogonalIdempotents_zigzagVertexIdempotent`: the vertex idempotents are a
+  complete family of orthogonal idempotents.
 * `TauCeti.zigzagProjective_projective`: `Z e_i` is projective as a left `Z`-module.
 * `TauCeti.isIndecomposableModule_zigzagProjective`: `Z e_i` is indecomposable.
 * `TauCeti.finrank_zigzagProjective`: `dim_k Z e_i = 2 + deg(i)`.
@@ -71,6 +73,16 @@ noncomputable abbrev zigzagVertexIdempotent (i : V) : nonisolatedZigzagQuotient 
 theorem isIdempotentElem_zigzagVertexIdempotent (i : V) :
     IsIdempotentElem (zigzagVertexIdempotent k G i) :=
   zigzagMk_vertexIdempotent_mul_self k G i
+
+/-- **The vertex idempotents of the zigzag relation quotient are a complete orthogonal family of
+idempotents**: they are idempotent, pairwise orthogonal, and sum to `1`. -/
+theorem completeOrthogonalIdempotents_zigzagVertexIdempotent [Fintype V] :
+    CompleteOrthogonalIdempotents (zigzagVertexIdempotent k G) := by
+  convert (CompleteOrthogonalIdempotents.equiv (vertexEquiv G)).2
+    ((completeOrthogonalIdempotents_vertexIdempotent k (DoubledQuiver G)).map
+      (zigzagMk k G).toRingHom) using 1
+  funext i
+  simp
 
 /-- The left projective of the zigzag relation quotient at `i`, namely the principal left ideal
 `Z e_i`. -/

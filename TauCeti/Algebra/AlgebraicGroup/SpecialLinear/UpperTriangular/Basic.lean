@@ -102,11 +102,6 @@ noncomputable abbrev coordinateMap :
     SpecialLinear.coordinateHopfAlgebra R n ⟶ coordinateHopfAlgebra R n :=
   CommHopfAlgCat.mkQuotient (SpecialLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n)
 
-/-- The upper-triangular special-linear coordinate Hopf algebra is finite type. -/
-instance instAlgebraFiniteTypeCoordinateHopfAlgebra :
-    Algebra.FiniteType R (coordinateHopfAlgebra R n) :=
-  Algebra.FiniteType.quotient R (definingHopfIdeal R n).toIdeal
-
 section Points
 
 variable {A : Type w} [CommRing A] [Algebra R A]

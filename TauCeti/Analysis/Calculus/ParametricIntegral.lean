@@ -52,26 +52,6 @@ universe u v
 variable {E : Type u} {F : Type v} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-omit [NormedSpace ℝ F] in
-private theorem exists_eventually_norm_le_on_Icc
-    {X : Type*} [TopologicalSpace X]
-    (h : X → ℝ → F) (hh : Continuous h.uncurry) (x₀ : X) :
-    ∃ C : ℝ, ∀ᶠ x in nhds x₀, ∀ t ∈ Set.Icc (0 : ℝ) 1, ‖h x t‖ ≤ C := by
-  have hfiber : Continuous (fun t : ℝ ↦ ‖h x₀ t‖) :=
-    hh.norm.comp (continuous_const.prodMk continuous_id)
-  obtain ⟨C, hC⟩ := (isCompact_Icc : IsCompact (Set.Icc (0 : ℝ) 1)).bddAbove_image
-    hfiber.continuousOn
-  refine ⟨C + 1, ?_⟩
-  apply isCompact_Icc.eventually_forall_of_forall_eventually
-  intro t ht
-  have hlt : ‖h x₀ t‖ < C + 1 :=
-    lt_of_le_of_lt (hC (Set.mem_image_of_mem (fun t : ℝ ↦ ‖h x₀ t‖) ht))
-      (lt_add_of_pos_right C zero_lt_one)
-  have hn : {z : X × ℝ | ‖h.uncurry z‖ < C + 1} ∈ nhds (x₀, t) :=
-    (isOpen_lt hh.norm continuous_const).mem_nhds hlt
-  filter_upwards [hn] with z hz
-  exact hz.le
-
 /-- Differentiation under an integral over the compact unit interval for a continuously
 differentiable parameterized function. -/
 theorem hasFDerivAt_integral_Icc_of_contDiff
@@ -85,7 +65,10 @@ theorem hasFDerivAt_integral_Icc_of_contDiff
     have hd : Continuous (fderiv ℝ h.uncurry) :=
       (hh.fderiv_right (m := 0) (by norm_num)).continuous
     fun_prop
-  obtain ⟨C, hC⟩ := exists_eventually_norm_le_on_Icc h' hh' x₀
+  obtain ⟨C, hC⟩ := (isCompact_Icc : IsCompact (Set.Icc (0 : ℝ) 1)).exists_eventually_norm_le
+    (F := h'.uncurry) (x₀ := x₀) isOpen_univ (fun _ _ ↦ hh'.continuousAt)
+    (fun _ _ ↦ Set.mem_univ _)
+  simp only [Set.mem_univ, true_and] at hC
   let s : Set E := {x | ∀ t ∈ Set.Icc (0 : ℝ) 1, ‖h' x t‖ ≤ C}
   apply hasFDerivAt_integral_of_dominated_of_fderiv_le
     (μ := volume.restrict (Set.Icc (0 : ℝ) 1)) (F := h) (F' := h')
@@ -250,7 +233,10 @@ theorem continuousAt_integral_smul_of_continuousOn {G : Type*} [NormedAddCommGro
     [NormedSpace ℝ G] {F : E × P → G} (hg : Integrable g μ) (hι : Continuous ι) (hW : IsOpen W)
     (hF : ContinuousOn F W) {x₀ : E} (hx₀ : ∀ y, (x₀, ι y) ∈ W) :
     ContinuousAt (fun x ↦ ∫ y, g y • F (x, ι y) ∂μ) x₀ := by
-  obtain ⟨C, hC⟩ := exists_eventually_norm_le_compact_family hι hW hF hx₀
+  have hmem : ∀ y ∈ Set.range ι, (x₀, y) ∈ W := Set.forall_mem_range.mpr hx₀
+  obtain ⟨C, hC⟩ := (isCompact_range hι).exists_eventually_norm_le hW
+    (fun y hy ↦ hF.continuousAt (hW.mem_nhds (hmem y hy))) hmem
+  simp only [Set.forall_mem_range] at hC
   refine continuousAt_of_dominated (bound := fun y ↦ ‖g y‖ * C) ?_ ?_ (hg.norm.mul_const C)
     (ae_of_all _ fun y ↦ ?_)
   · filter_upwards [hC] with x hx
@@ -277,7 +263,10 @@ theorem hasFDerivAt_integral_smul_of_contDiffOn {G : Type*} [NormedAddCommGroup 
   have hdiff : ∀ p ∈ W, HasFDerivAt (fun x ↦ F (x, p.2)) (D p) p.1 := fun p hp ↦
     (((hF.contDiffAt (hW.mem_nhds hp)).differentiableAt one_ne_zero).comp p.1
       (differentiableAt_id.prodMk (differentiableAt_const p.2))).hasFDerivAt
-  obtain ⟨C, hC⟩ := exists_eventually_norm_le_compact_family hι hW hD hx₀
+  have hmem : ∀ y ∈ Set.range ι, (x₀, y) ∈ W := Set.forall_mem_range.mpr hx₀
+  obtain ⟨C, hC⟩ := (isCompact_range hι).exists_eventually_norm_le hW
+    (fun y hy ↦ hD.continuousAt (hW.mem_nhds (hmem y hy))) hmem
+  simp only [Set.forall_mem_range] at hC
   refine hasFDerivAt_integral_of_dominated_of_fderiv_le (F' := fun x y ↦ g y • D (x, ι y))
     (bound := fun y ↦ ‖g y‖ * C) hC ?_
     (integrable_smul_of_continuousOn hg hι hF.continuousOn hx₀)
