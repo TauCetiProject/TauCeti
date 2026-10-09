@@ -11,6 +11,7 @@ import TauCeti.Algebra.Coalgebra.Subcomodule.Comap
 import TauCeti.Algebra.Coalgebra.Subcomodule.Quotient
 import TauCeti.Algebra.Coalgebra.Comodule.Weight.Vector
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+import TauCeti.LinearAlgebra.Submodule.Quotient
 
 /-!
 # Invariant Lagrangians for connected solvable groups
@@ -86,23 +87,19 @@ private theorem exists_isotropic_extension {B : BilinForm k M} (hB : B.IsAlt)
     exact ⟨⟨x, hx⟩ ⊗ₜ[k] c, by simp⟩
   let U := (L.comap K.mkQ).map O.subtype
   have hU : U.toSubmodule = N.toSubmodule ⊔ k ∙ (v : M) := by
-    rw [Subcomodule.map_toSubmodule, Subcomodule.comap_toSubmodule,
-      Subcomodule.mkQ_toLinearMap]
-    -- The weight line is the image of the span of the chosen lift.
     have hv' : K.toSubmodule.mkQ v = q := by
       simpa only [Subcomodule.mkQ_apply, Submodule.mkQ_apply] using hv
-    have hL : L.toSubmodule = (k ∙ v).map K.toSubmodule.mkQ := by
-      rw [Submodule.map_span, Set.image_singleton, hv']
+    have hL : L.toSubmodule = k ∙ K.toSubmodule.mkQ v := by
+      rw [hv']
       rfl
-    have hrange : LinearMap.range O.subtype.toLinearMap = O.toSubmodule := by
-      ext m
-      simp only [LinearMap.mem_range, Comodule.Hom.coe_toLinearMap, Subcomodule.subtype_apply,
-        Subcomodule.mem_toSubmodule, Subtype.exists, exists_prop, exists_eq_right]
-    rw [hL, Submodule.comap_map_mkQ, Submodule.map_sup,
-      Subcomodule.comap_toSubmodule, Submodule.map_comap_eq, hrange,
-      inf_comm, inf_eq_left.mpr (hO.symm ▸ hN),
-      Submodule.map_span, Set.image_singleton, Comodule.Hom.coe_toLinearMap,
-      Subcomodule.subtype_apply]
+    rw [Subcomodule.map_toSubmodule, Subcomodule.comap_toSubmodule, hL,
+      Subcomodule.mkQ_toLinearMap, Submodule.map_comap_mkQ_span_singleton]
+    have hKN : K.toSubmodule.map O.subtype.toLinearMap = N.toSubmodule := by
+      rw [Subcomodule.comap_toSubmodule, Subcomodule.subtype_toLinearMap]
+      exact (Submodule.map_comap_subtype O.toSubmodule N.toSubmodule).trans
+        (inf_eq_right.mpr (hO.symm ▸ hN))
+    rw [hKN]
+    simp only [Comodule.Hom.coe_toLinearMap, Subcomodule.subtype_apply]
   have hiso : U.toSubmodule ≤ B.orthogonal U.toSubmodule := by
     rw [hU]
     apply hB.sup_span_singleton_le_orthogonal hN
