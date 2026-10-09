@@ -28,7 +28,8 @@ quantitative approximation results for finite exchangeable processes.
 If no injective selection exists, sampling without replacement is the zero measure. Sampling
 with replacement is also zero when the population index is empty and the sample index is not.
 Probability preservation is therefore stated with an embedding into the population index for
-sampling without replacement, and with a nonempty population index for sampling with replacement.
+sampling without replacement, and with a nonempty selection space `ι → κ` for sampling with
+replacement, including when both index types are empty.
 
 ## Main declarations
 
@@ -148,11 +149,12 @@ instance isFiniteMeasure_sampleWithReplacement [Fintype ι] [Finite κ] (ρ : Me
   rw [sampleWithReplacement_def]
   infer_instance
 
-/-- Sampling with replacement from a random population preserves probability mass. -/
-theorem isProbabilityMeasure_sampleWithReplacement [Fintype ι] [Finite κ] [Nonempty κ]
+/-- Sampling with replacement from a random population preserves probability mass whenever a
+selection exists. -/
+theorem isProbabilityMeasure_sampleWithReplacement [Fintype ι] [Finite κ] [Nonempty (ι → κ)]
     (ρ : Measure (κ → α)) [IsProbabilityMeasure ρ] :
     IsProbabilityMeasure (sampleWithReplacement (ι := ι) ρ) := by
-  rw [sampleWithReplacement_def]
+  rw [sampleWithReplacement_eq_samplePopulation_uniformOn]
   infer_instance
 
 /-- Sampling with replacement is the mixture of the finite product measures of the populations'
