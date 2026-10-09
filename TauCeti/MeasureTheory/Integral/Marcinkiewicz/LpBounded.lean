@@ -31,6 +31,9 @@ where `‖f‖ ≤ t`, which is controlled by Chebyshev's inequality and the `L^
 hypothesis of the distributional form `TauCeti.lintegral_rpow_le_of_meas_ofReal_lt_le` with
 exponents `p₀` and `q`.
 
+The low part is controlled by `ContinuousLinearMap.rpow_mul_meas_lt_enorm_le`: every bounded
+operator on `L^q`, `q < ∞`, is of weak type `(q, q)` with constant `‖T‖ ^ q`.
+
 The theorem bounds `T` on the subspace `L^p ∩ L^q` of `L^p`; extending `T` to `L^p` is a
 separate step.
 
@@ -54,7 +57,7 @@ variable {α β E F : Type*} [MeasurableSpace α] [MeasurableSpace β] {μ : Mea
 
 /-- **Chebyshev's inequality for a bounded operator on `L^q`**: such an operator is of weak type
 `(q, q)` with constant `‖T‖ ^ q`. -/
-private theorem rpow_mul_meas_lt_enorm_le (T : Lp E q μ →L[ℝ] Lp F q ν) (hq : q ≠ ∞)
+theorem rpow_mul_meas_lt_enorm_le (T : Lp E q μ →L[ℝ] Lp F q ν) (hq : q ≠ ∞)
     (g : Lp E q μ) (t : ℝ≥0∞) :
     t ^ q.toReal * ν {x | t < ‖T g x‖ₑ} ≤ ‖T‖ₑ ^ q.toReal * ∫⁻ x, ‖g x‖ₑ ^ q.toReal ∂μ := by
   have hq₀ : q ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'

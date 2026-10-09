@@ -29,8 +29,9 @@ holds for an operator given off the support of `b` by a kernel satisfying Hörma
 
 The factor `p / (p - 1)` must blow up as `p → 1`, since a Calderón–Zygmund operator need not be
 bounded on `L¹`. The blow-up of `p / (2 - p)` as `p → 2` is an artifact of the interpolation
-method only, as `T` is bounded on `L²` by hypothesis. The range `2 < p < ∞` follows from this one
-by duality, applied to the adjoint of `T`, and is not treated here.
+method only, as `T` is bounded on `L²` by hypothesis. When the adjoint of `T` also satisfies the
+cancellation condition, as it does for a kernel satisfying Hörmander's condition in both
+variables, the range `2 < p < ∞` follows from this one by duality; it is not treated here.
 
 ## References
 
