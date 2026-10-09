@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Perm.Cycle.Type
+import Mathlib.Data.ZMod.QuotientGroup
 import Mathlib.GroupTheory.Perm.Cycle.PossibleTypes
 import Mathlib.GroupTheory.Perm.Fin
 
@@ -54,6 +55,8 @@ the API that a comparison with a multiset of factor degrees needs, on that multi
   sizes, read through any function whose fibres are the orbits.
 * `Equiv.Perm.fullCycleType_eq_sum_subtypePerm`: the full cycle type is additive over the fibres
   of any function that `σ` preserves.
+* `Equiv.Perm.ncard_setOf_sameCycle`: the cycle through `x` has `Function.minimalPeriod σ x`
+  points.
 * `Equiv.Perm.orbitQuotientEquivCycleFactorsSumFixedPoints`: the classes of `Equiv.Perm.SameCycle`
   are the nontrivial cycle factors together with the fixed points, via the point-level map
   `Equiv.Perm.cycleFactorOrFixedPoint`.
@@ -596,6 +599,17 @@ theorem orbit_zpowers_eq_singleton {x : α} (hx : σ x = x) :
     exact zpow_apply_eq_self_of_apply_eq_self hx i
   · rintro rfl
     exact SameCycle.refl σ y
+
+omit [Fintype α] [DecidableEq α] in
+/-- **The length of a cycle is the minimal period of its points.** The cycle of `σ` through `x`
+has `Function.minimalPeriod σ x` points; a fixed point is a cycle of length one. -/
+theorem ncard_setOf_sameCycle [Finite α] (x : α) :
+    {y | σ.SameCycle x y}.ncard = Function.minimalPeriod σ x := by
+  classical
+  have := Fintype.ofFinite α
+  simp_rw [sameCycle_iff_mem_orbit_zpowers, Set.ofPred_mem_eq, ← Nat.card_coe_set_eq,
+    Nat.card_eq_fintype_card]
+  exact (minimalPeriod_eq_card (a := σ) (b := x)).symm
 
 /-- The fixed points of a permutation are the complement of its support. -/
 theorem card_subtype_apply_eq :

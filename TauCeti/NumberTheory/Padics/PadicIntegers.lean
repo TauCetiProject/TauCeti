@@ -60,6 +60,19 @@ theorem isUnit_one_add_of_dvd {x : ℤ_[p]} (hx : (p : ℤ_[p]) ∣ x) : IsUnit 
     rw [sub_add_cancel_left, mem_nonunits, norm_neg]
     exact (norm_lt_one_iff_dvd x).mpr hx
 
+/-- A natural number prime to `p` is a unit in `ℤ_p`. -/
+theorem isUnit_natCast_of_coprime {n : ℕ} (h : p.Coprime n) : IsUnit (n : ℤ_[p]) :=
+  isUnit_iff.mpr (norm_natCast_eq_one_iff.mpr h)
+
+/-- Every prime number `ℓ` is a unit in `ℤ_p` or generates a maximal ideal of `ℤ_p`: it is a unit
+for `ℓ ≠ p` and generates the maximal ideal for `ℓ = p`. -/
+theorem isUnit_natCast_or_isMaximal_span {ℓ : ℕ} (hℓ : ℓ.Prime) :
+    IsUnit (ℓ : ℤ_[p]) ∨ (Ideal.span {(ℓ : ℤ_[p])}).IsMaximal := by
+  by_cases h : ℓ = p
+  · subst h
+    exact .inr (maximalIdeal_eq_span_p (p := ℓ) ▸ IsLocalRing.maximalIdeal.isMaximal _)
+  · exact .inl (isUnit_natCast_of_coprime ((Nat.coprime_primes Fact.out hℓ).mpr (Ne.symm h)))
+
 /-- `2` is a unit in `ℤ_p` for every odd prime `p`. -/
 theorem isUnit_two (hp : p ≠ 2) : IsUnit (2 : ℤ_[p]) :=
   isUnit_iff.mpr <| by

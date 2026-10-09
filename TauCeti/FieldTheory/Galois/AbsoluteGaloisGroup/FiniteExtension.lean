@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Extension
 public import TauCeti.FieldTheory.Galois.Quotient
 public import TauCeti.FieldTheory.Galois.Restriction
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 -- Proof-only: a `K`-algebra of dimension two has no subalgebras but `⊥` and `⊤`.
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
@@ -69,6 +70,9 @@ isomorphism `G_K ⧸ Gal(Kˢ/σ(L)) ≃* Gal(L/K)`. This part uses normality but
 * `TauCeti.absoluteGaloisGroupExtend K L σ`: the injective continuous homomorphism
   `Field.absoluteGaloisGroup L →* Field.absoluteGaloisGroup K` between Mathlib's absolute Galois
   groups, `galoisSubgroupEquiv K L σ` followed by the inclusion of `galoisSubgroup K L σ`.
+* `TauCeti.absoluteGaloisGroupExtendEquiv K L σ hU`: for a subgroup `U` of
+  `Field.absoluteGaloisGroup K` that is the image of `absoluteGaloisGroupExtend K L σ`, the
+  isomorphism of topological groups `Field.absoluteGaloisGroup L ≃ₜ* U`.
 
 ## Main results
 
@@ -301,6 +305,29 @@ theorem index_range_absoluteGaloisGroupExtend :
     Subgroup.ext fun _ ↦ mem_range_absoluteGaloisGroupExtend_iff K L σ
   rw [h, Subgroup.index_comap_of_surjective _ (absoluteGaloisGroupRestrictEquiv K).surjective,
     galoisSubgroup_index]
+
+/-- **`G_L` as a subgroup of `G_K`.** The embedding `absoluteGaloisGroupExtend K L σ` is an
+isomorphism of topological groups onto any subgroup `U` of `G_K` that is its image: it is a
+continuous injection from a compact group to a Hausdorff one. -/
+def absoluteGaloisGroupExtendEquiv {U : Subgroup (Field.absoluteGaloisGroup K)}
+    (hU : (absoluteGaloisGroupExtend K L σ).range = U) : Field.absoluteGaloisGroup L ≃ₜ* U :=
+  haveI : T2Space (Field.absoluteGaloisGroup K) := krullTopology_t2
+  let f : Field.absoluteGaloisGroup L →ₜ* Field.absoluteGaloisGroup K :=
+    ⟨absoluteGaloisGroupExtend K L σ, continuous_absoluteGaloisGroupExtend K L σ⟩
+  have hf : (f : Field.absoluteGaloisGroup L →* Field.absoluteGaloisGroup K).range = U := hU
+  hf ▸ f.equivRangeOfIsEmbedding ((continuous_absoluteGaloisGroupExtend K L σ).isClosedEmbedding
+    (injective_absoluteGaloisGroupExtend K L σ)).isEmbedding
+
+/-- `absoluteGaloisGroupExtendEquiv` is `absoluteGaloisGroupExtend` with its codomain restricted
+to the image. -/
+@[simp]
+theorem coe_absoluteGaloisGroupExtendEquiv_apply {U : Subgroup (Field.absoluteGaloisGroup K)}
+    (hU : (absoluteGaloisGroupExtend K L σ).range = U) (g : Field.absoluteGaloisGroup L) :
+    (absoluteGaloisGroupExtendEquiv K L σ hU g : Field.absoluteGaloisGroup K) =
+      absoluteGaloisGroupExtend K L σ g := by
+  subst hU
+  unfold absoluteGaloisGroupExtendEquiv
+  exact congrArg Subtype.val (ContinuousMonoidHom.equivRangeOfIsEmbedding_apply _ _ g)
 
 /-! ### Normal extensions: the quotient by the open subgroup -/
 

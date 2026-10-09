@@ -8,6 +8,11 @@ module
 public import Mathlib.FieldTheory.RatFunc.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.CoordinateRingMap
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GenericPoint.Basic
+-- Proof-only: `CoordinateRing.map` keeps `F`-linearly independent elements `K`-linearly
+-- independent.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.ScalarExtension
+-- Proof-only: clearing the denominators of finitely many fractions.
+import Mathlib.RingTheory.Localization.Integer
 
 /-!
 # The function field along a homomorphism of the base field
@@ -65,6 +70,9 @@ statements here. A single map covers both readings, and neither is built in.
   `map_comp_map`: functoriality in `f`.
 * `WeierstrassCurve.Affine.FunctionField.map_map_algebraMap`: the commuting square above, at the
   level of a second curve base-changed to the function field.
+* `WeierstrassCurve.Affine.FunctionField.linearIndependent_map`: `F(W)` and `K` are linearly
+  disjoint over `F` inside `K(W.map f)`, that is, `F`-linearly independent functions stay
+  `K`-linearly independent. This is what makes base change preserve degrees of isogenies.
 
 ## Roadmap
 
@@ -183,6 +191,47 @@ theorem map_comp_map (g : K →+* L) :
 theorem map_map (g : K →+* L) (z : W.FunctionField) :
     map (W.map f) g (map W f z) = map W (g.comp f) z :=
   RingHom.congr_fun (map_comp_map W f g) z
+
+/-- **`F(W)` and `K` are linearly disjoint over `F` in `K(W.map f)`**: `FunctionField.map` sends
+`F`-linearly independent functions to `K`-linearly independent functions. -/
+theorem linearIndependent_map {ι : Type*} {v : ι → W.FunctionField}
+    (hv : LinearIndependent F v) : LinearIndependent K (map W f ∘ v) := by
+  -- Clearing denominators reduces this to the coordinate ring, where it is
+  -- `CoordinateRing.linearIndependent_map`.
+  classical
+  rw [linearIndependent_iff']
+  intro s g hg i hi
+  -- clear the denominators of the finitely many `v i` with `i ∈ s`: `d • v i = a i`
+  obtain ⟨d, hd⟩ := IsLocalization.exist_integer_multiples W.CoordinateRing⁰ s v
+  choose a ha using hd
+  have hd0 : algebraMap W.CoordinateRing W.FunctionField d ≠ 0 :=
+    IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors d.2
+  -- the numerators `a i` are linearly independent over `F`
+  have hav : LinearIndependent F fun j : s ↦ a j j.2 := by
+    refine LinearIndependent.of_comp
+      (IsScalarTower.toAlgHom F W.CoordinateRing W.FunctionField).toLinearMap ?_
+    have : (fun j : s ↦ algebraMap W.CoordinateRing W.FunctionField (a j j.2)) =
+        fun j : s ↦ algebraMap W.CoordinateRing W.FunctionField d * v j := by
+      ext j
+      rw [ha j j.2, Algebra.smul_def]
+    simp only [Function.comp_def, AlgHom.toLinearMap_apply, IsScalarTower.coe_toAlgHom', this]
+    exact (hv.comp _ Subtype.val_injective).map' (LinearMap.mulLeft F _)
+      (LinearMap.ker_eq_bot.2 (mul_right_injective₀ hd0))
+  -- the relation, multiplied by the image of `d`, is a relation among the images of the `a i`
+  have hrel : ∑ j : s, g j • CoordinateRing.map W f (a j j.2) = 0 := by
+    apply FaithfulSMul.algebraMap_injective (W.map f).CoordinateRing (W.map f).FunctionField
+    have := congrArg (map W f (algebraMap W.CoordinateRing W.FunctionField d) * ·) hg
+    simp only [mul_zero, Finset.mul_sum] at this
+    rw [map_zero, map_sum, ← this, ← Finset.sum_coe_sort s]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    rw [Algebra.smul_def, map_mul, ← map_algebraMap_coordinateRing, ha j j.2, Algebra.smul_def,
+      map_mul, Function.comp_apply, Algebra.smul_def, ← IsScalarTower.algebraMap_apply]
+    ring
+  have hf : f.Flat := by
+    algebraize [f]
+    exact inferInstanceAs (Module.Flat F K)
+  exact Fintype.linearIndependent_iff.1 (CoordinateRing.linearIndependent_map W f hf hav) _ hrel
+    ⟨i, hi⟩
 
 variable (W₂ : WeierstrassCurve.Affine F)
 

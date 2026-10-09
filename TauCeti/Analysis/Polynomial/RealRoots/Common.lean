@@ -138,7 +138,7 @@ theorem exists_continuous_ordered_common_roots_of_preconnectedSpace [Finite ι]
     exists_continuous_ordered_roots_of_preconnectedSpace (F := fun x => ∏ k, F k x)
       (d := ∑ k, d k)
       (fun i _ => continuous_iff_continuousAt.2 fun x =>
-        continuousAt_coeff_prod _ (fun k _ i => (hF' k i).continuousAt) i)
+        continuousAt_coeff_prod _ (fun k _ i _ => (hF' k i).continuousAt))
       (fun x => by rw [degree_prod, Nat.cast_sum]; exact Finset.sum_congr rfl fun k _ => hdeg k x)
       (fun x₀ => (eventually_card_aroots_prod_eq (fun k i hi => (hF k i hi).continuousAt)
         (fun k => Eventually.of_forall (hdeg k)) (fun k => hcard k x₀)
