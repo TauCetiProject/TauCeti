@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RepresentationTheory.ClassicalGroups.Symplectic
 public import TauCeti.RepresentationTheory.Spin.Representation
-public import Mathlib.RepresentationTheory.Intertwining
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.Symplectic
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InnerAut
 import TauCeti.RepresentationTheory.Spin.OddStructure
@@ -55,37 +54,6 @@ private noncomputable def spinFiveEquivMatrix
   (P.evenCliffordEquivEnd (hV ▸ by decide)).trans
     (LinearMap.toMatrixAlgEquiv (spinFiveExteriorBasis P b))
 
-private theorem spinFiveEquivMatrix_intertwines
-    [NeZero (2 : K)] [FiniteDimensional K V]
-    (P : SpinPolarizationData Q) (b : Basis (Fin 2) K P.W)
-    (hV : finrank K V = 5) (g : spinGroup Q) :
-    (spinFiveExteriorBasis P b).equivFun.toLinearMap.comp (spinRep Q P g) =
-      (Matrix.mulVecLin (spinFiveEquivMatrix P b hV (spinGroupToEven Q g))).comp
-        (spinFiveExteriorBasis P b).equivFun.toLinearMap := by
-  apply LinearMap.ext
-  intro s
-  simp only [LinearMap.comp_apply, spinRep_apply, Matrix.mulVecLin_apply]
-  rw [spinFiveEquivMatrix, AlgEquiv.trans_apply, P.evenCliffordEquivEnd_apply,
-    coe_spinGroupToEven_apply]
-  have hmatrix :
-      LinearMap.toMatrixAlgEquiv (spinFiveExteriorBasis P b) (spinAction Q P g) =
-        LinearMap.toMatrix (spinFiveExteriorBasis P b) (spinFiveExteriorBasis P b)
-          (spinAction Q P g) := by
-    ext i j
-    rw [LinearMap.toMatrixAlgEquiv_apply, LinearMap.toMatrix_apply]
-  rw [hmatrix]
-  calc
-    (spinFiveExteriorBasis P b).equivFun ((spinAction Q P) g s) =
-        (spinFiveExteriorBasis P b).repr ((spinAction Q P) g s) :=
-      (spinFiveExteriorBasis P b).equivFun_apply _
-    _ = (LinearMap.toMatrix (spinFiveExteriorBasis P b) (spinFiveExteriorBasis P b)
-          (spinAction Q P g)).mulVec ((spinFiveExteriorBasis P b).repr s) :=
-      (LinearMap.toMatrix_mulVec_repr (spinFiveExteriorBasis P b)
-        (spinFiveExteriorBasis P b) (spinAction Q P g) s).symm
-    _ = (LinearMap.toMatrix (spinFiveExteriorBasis P b) (spinFiveExteriorBasis P b)
-          (spinAction Q P g)).mulVec ((spinFiveExteriorBasis P b).equivFun s) := by
-      rw [(spinFiveExteriorBasis P b).equivFun_apply]
-
 /-- For a five-dimensional quadratic space with polarization data over a field with `2 ≠ 0`,
 there is an equivalence from its Spin group to `Sp₄` under which the spin representation is the
 standard four-dimensional representation. -/
@@ -123,13 +91,16 @@ theorem
   intro s
   apply LinearMap.ext
   intro x
-  have haction := LinearMap.congr_fun (spinFiveEquivMatrix_intertwines P b hV s) x
+  have haction := LinearMap.congr_fun
+    (P.evenCliffordEquivEnd_toMatrix_intertwines_spinRep
+      (hV ▸ by decide) (spinFiveExteriorBasis P b) s) x
   simp only [LinearMap.comp_apply] at haction
   have haction' :
       (spinFiveExteriorBasis P b).equivFun ((spinRep Q P) s x) =
         Matrix.mulVec (eFock (spinGroupToEven Q s))
           ((spinFiveExteriorBasis P b).equivFun x) := by
-    simpa only [eFock, Matrix.mulVecLin_apply, LinearEquiv.coe_toLinearMap] using haction
+    simpa only [eFock, spinFiveEquivMatrix, Matrix.mulVecLin_apply,
+      LinearEquiv.coe_toLinearMap] using haction
   have hfmatrix :
       (f s : Matrix (Fin 2 ⊕ Fin 2) (Fin 2 ⊕ Fin 2) K) =
         e (spinGroupToEven Q s) := by
