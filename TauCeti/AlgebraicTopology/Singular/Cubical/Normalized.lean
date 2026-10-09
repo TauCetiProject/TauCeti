@@ -32,6 +32,7 @@ to the quotient and the normalized chains are functorial.
 ## Main results
 
 * `TauCeti.CubicalChain.boundary_mem_degenerate`: the boundary of a degenerate chain is degenerate.
+* `TauCeti.CubicalChain.degenerate_zero`: there are no degenerate `0`-chains.
 * `TauCeti.NormalizedCubicalChain.boundary_boundary`: `∂ ∘ ∂ = 0` on normalized chains.
 * `TauCeti.NormalizedCubicalChain.map_boundary`: the boundary is natural.
 
@@ -90,6 +91,12 @@ theorem boundary_mem_degenerate {n : ℕ} {f : CubicalChain X R (n + 1)}
   | add f g _ _ hf hg => rw [map_add]; exact Submodule.add_mem _ hf hg
   | smul a f _ hf => rw [map_smul]; exact Submodule.smul_mem _ a hf
 
+/-- There are no degenerate `0`-chains: a `0`-cube is a point. -/
+theorem degenerate_zero : degenerate X R 0 = ⊥ := by
+  rw [degenerate, Submodule.span_eq_bot]
+  rintro f ⟨c, hc, rfl⟩
+  exact (not_isDegenerate_zero c hc).elim
+
 theorem degenerate_le_comap_boundary (n : ℕ) :
     degenerate X R (n + 1) ≤ (degenerate X R n).comap (boundary X R n) :=
   fun _ hf ↦ boundary_mem_degenerate R hf
@@ -126,6 +133,10 @@ variable (X) in
 /-- The class of a singular cube in the normalized chains. -/
 def ofCube {n : ℕ} (c : SingularCube X n) : NormalizedCubicalChain X R n :=
   Submodule.Quotient.mk (single c 1)
+
+theorem ofCube_eq_mk {n : ℕ} (c : SingularCube X n) :
+    ofCube X R c = Submodule.Quotient.mk (single c 1) := by
+  rw [ofCube]
 
 theorem ofCube_eq_zero {n : ℕ} {c : SingularCube X n} (hc : SingularCube.IsDegenerate c) :
     ofCube X R c = 0 :=
