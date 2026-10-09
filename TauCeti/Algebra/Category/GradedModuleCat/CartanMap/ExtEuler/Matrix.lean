@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.ExtEuler
+public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.ExtEuler.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Matrix
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Matrix
 
@@ -15,7 +15,8 @@ public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Matri
 Let `A` be a finite-dimensional algebra over a field `k`, graded by `𝒜 : ℤ → Submodule k A`. The
 q-Euler form `χ_q` pairs `K₀^gr(proj A)` with `G₀^gr(mod A)`, and, when every pair of finite graded
 modules is graded Euler-admissible, it also pairs `G₀^gr(mod A)` with itself. The two forms are
-related by the graded Cartan map `c`: `χ_q(c x, y) = χ_q(x, y)`.
+related by the graded Cartan map `c`: `χ_q(c x, y) = χ_q(x, y)`
+(`TauCeti.gradedExtEulerSesquilinear_gradedCartanMap`).
 
 In matrices this reads as follows. Write `C` for the graded Cartan matrix, whose `(l, i)` entry is
 the `l`th coordinate of `c [Pᵢ]`, and `E` for the matrix of `χ_q` on `G₀^gr(mod A)`. Since `χ_q` is
@@ -39,13 +40,13 @@ modules is not graded Euler-admissible.
 
 ## Main results
 
-* `TauCeti.gradedExtEulerSesquilinear_gradedCartanMap`: `χ_q(c x, y) = χ_q(x, y)`.
 * `TauCeti.gradedCartanMatrix_map_invert_transpose_mul_gradedExtEulerMatrix`: in arbitrary bases,
   `Cᴴ * E` is the matrix of the projective/module q-Euler form.
 * `TauCeti.gradedExtEulerMatrix_gradedSimpleClassBasis_eq_one`: the classes `[A eᵢ]` and the graded
   simple-class basis have identity pairing matrix.
 * `TauCeti.gradedCartanMatrix_map_invert_transpose_mul_gradedExtEulerMatrix_eq_one`: `Cᴴ * E = 1`.
-* `TauCeti.gradedExtEulerMatrix_eq_inv`: `E = (Cᴴ)⁻¹`.
+* `TauCeti.gradedExtEulerMatrix_eq_inv_gradedCartanMatrix_map_invert_transpose`:
+  `E = (Cᴴ)⁻¹`.
 * `TauCeti.gradedExtEuler_eq_inv_gradedCartanMatrix`: `χ_q(Sᵢ, Sⱼ)` is the `(i, j)` entry of
   `(Cᴴ)⁻¹`.
 * `TauCeti.isUnit_det_gradedCartanMatrix`: the graded Cartan matrix has unit determinant.
@@ -76,43 +77,26 @@ variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
   {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜] [Module.Finite k A]
   [HasExt.{uA} (GradedModuleCat.{uA} 𝒜)]
 
-/-! ### The q-Euler form along the graded Cartan map -/
-
-/-- **The q-Euler form is compatible with the graded Cartan map**: if every pair of finite graded
-modules is graded Euler-admissible, then pairing the image of a projective class `x` under the
-graded Cartan map against `y` gives the projective/module q-Euler form `χ_q(x, y)`. -/
-@[simp]
-theorem gradedExtEulerSesquilinear_gradedCartanMap
-    (h : IsGradedEulerAdmissibleOn.{uA} (k := k) (e := GradedModuleCat.shift 𝒜)
-      (gradedFiniteModules 𝒜) (gradedFiniteModules 𝒜))
-    (x : LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜))
-    (y : LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜)) :
-    gradedExtEulerSesquilinear isExtensionClosed_gradedFiniteModules_gradedAbelian
-        isExtensionClosed_gradedFiniteModules_gradedAbelian gradedFiniteModules_gradedAbelian_shift
-        gradedFiniteModules_gradedAbelian_shift h (gradedCartanMap 𝒜 x) y =
-      gradedProjectiveExtEuler 𝒜 x y := by
-  have hcomp := gradedExtEulerSesquilinear_unique (k := k)
-    isExtensionClosed_gradedFiniteProjectiveModules_gradedAbelian
-    isExtensionClosed_gradedFiniteModules_gradedAbelian
-    gradedFiniteProjectiveModules_gradedAbelian_shift gradedFiniteModules_gradedAbelian_shift
-    isGradedEulerAdmissibleOn_gradedFiniteProjectiveModules_gradedFiniteModules
-    ((gradedExtEulerSesquilinear isExtensionClosed_gradedFiniteModules_gradedAbelian
-        isExtensionClosed_gradedFiniteModules_gradedAbelian gradedFiniteModules_gradedAbelian_shift
-        gradedFiniteModules_gradedAbelian_shift h).comp (gradedCartanMap 𝒜))
-    fun X Y ↦ (congrArg (fun z ↦ gradedExtEulerSesquilinear
-        isExtensionClosed_gradedFiniteModules_gradedAbelian
-        isExtensionClosed_gradedFiniteModules_gradedAbelian gradedFiniteModules_gradedAbelian_shift
-        gradedFiniteModules_gradedAbelian_shift h z (LaurentK0.of _ Y))
-      (gradedCartanMap_of X.property)).trans
-      (gradedExtEulerSesquilinear_of_of _ _ _ _ h _ Y)
-  rw [gradedProjectiveExtEuler_def, ← hcomp]
-  -- `LinearMap.comp_apply` does not fire here: the composite is typed on the full-subcategory
-  -- structure that `gradedFiniteModulesExactStructure 𝒜` unfolds to. It unfolds by `rfl`.
-  rfl
-
 /-! ### Matrices -/
 
 variable {I : Type uI} {J : Type uJ} {J' : Type uJ'} [Fintype I] [Fintype J]
+
+omit [Fintype I] in
+/-- An entry of the projective/module q-Euler matrix is the projective/module q-Euler form of the
+corresponding basis vectors. -/
+theorem gradedExtEulerMatrix_apply_eq_gradedProjectiveExtEuler
+    (bP : Module.Basis I (LaurentPolynomial ℤ)
+      (LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)))
+    (bM : Module.Basis J' (LaurentPolynomial ℤ)
+      (LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜))) (i : I) (j : J') :
+    gradedExtEulerMatrix (GradedModuleCat.shift 𝒜) (gradedFiniteProjectiveModules 𝒜)
+        (gradedFiniteModules 𝒜) isExtensionClosed_gradedFiniteProjectiveModules_gradedAbelian
+        isExtensionClosed_gradedFiniteModules_gradedAbelian
+        gradedFiniteProjectiveModules_gradedAbelian_shift gradedFiniteModules_gradedAbelian_shift
+        isGradedEulerAdmissibleOn_gradedFiniteProjectiveModules_gradedFiniteModules bP bM i j =
+      gradedProjectiveExtEuler 𝒜 (bP i) (bM j) := by
+  rw [gradedProjectiveExtEuler_def]
+  exact gradedExtEulerMatrix_apply _ _ _ _ _ _ _ _ bP bM i j
 
 /-- **The conjugate-transposed graded Cartan matrix times the q-Euler matrix is the
 projective/module q-Euler matrix.** For bases `bP` of `K₀^gr(proj A)` and `bM`, `bM'` of
@@ -139,7 +123,7 @@ theorem gradedCartanMatrix_map_invert_transpose_mul_gradedExtEulerMatrix
         gradedFiniteProjectiveModules_gradedAbelian_shift gradedFiniteModules_gradedAbelian_shift
         isGradedEulerAdmissibleOn_gradedFiniteProjectiveModules_gradedFiniteModules bP bM' := by
   refine Matrix.ext fun i j ↦ ?_
-  -- The entry lemma is applied through `have`s: the two sides type the Grothendieck groups as
+  -- The entry lemma is applied through a `have`: the two sides type the Grothendieck groups as
   -- `gradedFiniteModulesExactStructure 𝒜` and as the full-subcategory structure it unfolds to,
   -- which `rw` does not identify.
   have hE (l : J) : gradedExtEulerMatrix (GradedModuleCat.shift 𝒜) (gradedFiniteModules 𝒜)
@@ -150,32 +134,22 @@ theorem gradedCartanMatrix_map_invert_transpose_mul_gradedExtEulerMatrix
         isExtensionClosed_gradedFiniteModules_gradedAbelian gradedFiniteModules_gradedAbelian_shift
         gradedFiniteModules_gradedAbelian_shift h (bM l) (bM' j) :=
     gradedExtEulerMatrix_apply _ _ _ _ _ _ _ h bM bM' l j
-  have hEP : gradedExtEulerMatrix (GradedModuleCat.shift 𝒜) (gradedFiniteProjectiveModules 𝒜)
-      (gradedFiniteModules 𝒜) isExtensionClosed_gradedFiniteProjectiveModules_gradedAbelian
-      isExtensionClosed_gradedFiniteModules_gradedAbelian
-      gradedFiniteProjectiveModules_gradedAbelian_shift gradedFiniteModules_gradedAbelian_shift
-      isGradedEulerAdmissibleOn_gradedFiniteProjectiveModules_gradedFiniteModules bP bM' i j =
-      gradedProjectiveExtEuler 𝒜 (bP i) (bM' j) := by
-    rw [gradedProjectiveExtEuler_def]
-    exact gradedExtEulerMatrix_apply _ _ _ _ _ _ _ _ bP bM' i j
-  -- Expanding the first argument in the basis `bM` uses q-antilinearity.
-  have hexpand (B : LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜)
+  rw [Matrix.mul_apply, gradedExtEulerMatrix_apply_eq_gradedProjectiveExtEuler,
+    ← gradedExtEulerSesquilinear_gradedCartanMap h, gradedCartanMap_basis_apply_eq_sum 𝒜 bP bM i]
+  -- Retype the form on `gradedFiniteModulesExactStructure 𝒜`, so that `map_sum` applies.
+  let B : LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜)
       →ₛₗ[(LaurentPolynomial.invert (R := ℤ)).toRingEquiv.toRingHom]
       LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜) →ₗ[LaurentPolynomial ℤ]
-        LaurentPolynomial ℤ) (x y) :
-      B x y = ∑ l, LaurentPolynomial.invert (bM.repr x l) * B (bM l) y := by
-    conv_lhs => rw [← bM.sum_repr x, map_sum, LinearMap.sum_apply]
-    refine Finset.sum_congr rfl fun l _ ↦ ?_
-    rw [map_smulₛₗ, LinearMap.smul_apply, smul_eq_mul]
-    -- The scalar is `invert.toRingEquiv.toRingHom` applied to the coordinate, which is `invert`.
-    rfl
-  rw [Matrix.mul_apply, hEP, ← gradedExtEulerSesquilinear_gradedCartanMap h]
-  refine (Finset.sum_congr rfl fun l _ ↦ ?_).trans (hexpand (gradedExtEulerSesquilinear.{uA}
-    isExtensionClosed_gradedFiniteModules_gradedAbelian
-    isExtensionClosed_gradedFiniteModules_gradedAbelian gradedFiniteModules_gradedAbelian_shift
-    gradedFiniteModules_gradedAbelian_shift h) _ _).symm
-  rw [hE, Matrix.transpose_apply, Matrix.map_apply, gradedCartanMatrix_apply]
-  -- Both sides apply the same form, typed on the two presentations of `G₀^gr(mod A)`.
+        LaurentPolynomial ℤ :=
+    gradedExtEulerSesquilinear.{uA} isExtensionClosed_gradedFiniteModules_gradedAbelian
+      isExtensionClosed_gradedFiniteModules_gradedAbelian gradedFiniteModules_gradedAbelian_shift
+      gradedFiniteModules_gradedAbelian_shift h
+  change _ = B _ _
+  rw [map_sum, LinearMap.sum_apply]
+  refine Finset.sum_congr rfl fun l _ ↦ ?_
+  rw [map_smulₛₗ, LinearMap.smul_apply, smul_eq_mul, hE, Matrix.transpose_apply, Matrix.map_apply]
+  simp only [RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, AlgEquiv.coe_toRingEquiv]
+  -- `B` is the form on the right, typed on the other presentation of `G₀^gr(mod A)`.
   rfl
 
 section Simple
@@ -205,17 +179,8 @@ theorem gradedExtEulerMatrix_gradedSimpleClassBasis_eq_one :
         isGradedEulerAdmissibleOn_gradedFiniteProjectiveModules_gradedFiniteModules bP
         (gradedSimpleClassBasis S he he₀ hne hself hS) = 1 := by
   refine Matrix.ext fun i j ↦ ?_
-  have hEP : gradedExtEulerMatrix (GradedModuleCat.shift 𝒜) (gradedFiniteProjectiveModules 𝒜)
-      (gradedFiniteModules 𝒜) isExtensionClosed_gradedFiniteProjectiveModules_gradedAbelian
-      isExtensionClosed_gradedFiniteModules_gradedAbelian
-      gradedFiniteProjectiveModules_gradedAbelian_shift gradedFiniteModules_gradedAbelian_shift
-      isGradedEulerAdmissibleOn_gradedFiniteProjectiveModules_gradedFiniteModules bP
-      (gradedSimpleClassBasis S he he₀ hne hself hS) i j =
-      gradedProjectiveExtEuler 𝒜 (bP i) (gradedSimpleClassBasis S he he₀ hne hself hS j) := by
-    rw [gradedProjectiveExtEuler_def]
-    exact gradedExtEulerMatrix_apply _ _ _ _ _ _ _ _ bP _ i j
-  rw [hEP, hbP, gradedSimpleClassBasis_apply, gradedProjectiveExtEuler_basis S he he₀ hI hne hself,
-    Matrix.one_apply]
+  rw [gradedExtEulerMatrix_apply_eq_gradedProjectiveExtEuler, hbP, gradedSimpleClassBasis_apply,
+    gradedProjectiveExtEuler_basis S he he₀ hI hne hself, Matrix.one_apply]
 
 include hbP in
 /-- **The conjugate-transposed graded Cartan matrix inverts the q-Euler matrix of the graded
@@ -241,7 +206,7 @@ include hbP in
 /-- **The q-Euler matrix of the graded simples is the inverse of the conjugate-transposed graded
 Cartan matrix**: `E = ((C.map invert)ᵀ)⁻¹`, in the bases of
 `TauCeti.gradedCartanMatrix_map_invert_transpose_mul_gradedExtEulerMatrix_eq_one`. -/
-theorem gradedExtEulerMatrix_eq_inv
+theorem gradedExtEulerMatrix_eq_inv_gradedCartanMatrix_map_invert_transpose
     (h : IsGradedEulerAdmissibleOn.{uA} (k := k) (e := GradedModuleCat.shift 𝒜)
       (gradedFiniteModules 𝒜) (gradedFiniteModules 𝒜)) :
     gradedExtEulerMatrix (GradedModuleCat.shift 𝒜) (gradedFiniteModules 𝒜)
@@ -268,7 +233,8 @@ theorem gradedExtEuler_eq_inv_gradedCartanMatrix
         (h.isGradedEulerAdmissible (S i).property (S j).property) =
       ((gradedCartanMatrix 𝒜 bP (gradedSimpleClassBasis S he he₀ hne hself hS)).map
         (LaurentPolynomial.invert (R := ℤ)))ᵀ⁻¹ i j := by
-  rw [← gradedExtEulerMatrix_eq_inv S he he₀ hI hne hself hS bP hbP h,
+  rw [← gradedExtEulerMatrix_eq_inv_gradedCartanMatrix_map_invert_transpose S he he₀ hI hne hself hS
+      bP hbP h,
     gradedExtEulerMatrix_of_of (X := S i) (Y := S j) (hi := gradedSimpleClassBasis_apply ..)
       (hj := gradedSimpleClassBasis_apply ..)]
 

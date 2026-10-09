@@ -45,6 +45,8 @@ projective covers and simples.
 * `TauCeti.gradedExtEuler_ofIdeal_span_singleton`: `χ_q(Af, M) = ∑ₚ dim_k(f • Mₚ) qᵖ`.
 * `TauCeti.gradedProjectiveExtEuler_ofIdeal_span_singleton`: pairing against `[Af]` is the
   idempotent coordinate of `f`.
+* `TauCeti.gradedExtEulerSesquilinear_gradedCartanMap`: when every pair of finite graded modules is
+  graded Euler-admissible, `χ_q(c x, y) = χ_q(x, y)` for the graded Cartan map `c`.
 * `TauCeti.gradedProjectiveExtEuler_basis`: `χ_q([A eᵢ], [Sⱼ]) = δᵢⱼ`.
 * `TauCeti.gradedProjectiveExtEuler_ofIdeal_span_singleton_eq_repr`: pairing against `[A eᵢ]` is
   the `i`th coordinate in the graded simple-class basis.
@@ -162,6 +164,38 @@ theorem gradedProjectiveExtEuler_ofIdeal_span_singleton {f : A} (hf : IsIdempote
   refine LaurentK0.hom_ext _ fun M ↦ ?_
   rw [gradedProjectiveExtEuler_of_of, gradedIdempotentCoordinate_of]
   exact gradedExtEuler_ofIdeal_span_singleton hf hf₀ hI M.obj _
+
+/-- **The q-Euler form is compatible with the graded Cartan map**: if every pair of finite graded
+modules is graded Euler-admissible, then pairing the image of a projective class `x` under the
+graded Cartan map against `y` gives the projective/module q-Euler form `χ_q(x, y)`. -/
+@[simp]
+theorem gradedExtEulerSesquilinear_gradedCartanMap
+    (h : IsGradedEulerAdmissibleOn.{uA} (k := k) (e := GradedModuleCat.shift 𝒜)
+      (gradedFiniteModules 𝒜) (gradedFiniteModules 𝒜))
+    (x : LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜))
+    (y : LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜)) :
+    gradedExtEulerSesquilinear isExtensionClosed_gradedFiniteModules_gradedAbelian
+        isExtensionClosed_gradedFiniteModules_gradedAbelian gradedFiniteModules_gradedAbelian_shift
+        gradedFiniteModules_gradedAbelian_shift h (gradedCartanMap 𝒜 x) y =
+      gradedProjectiveExtEuler 𝒜 x y := by
+  have hcomp := gradedExtEulerSesquilinear_unique (k := k)
+    isExtensionClosed_gradedFiniteProjectiveModules_gradedAbelian
+    isExtensionClosed_gradedFiniteModules_gradedAbelian
+    gradedFiniteProjectiveModules_gradedAbelian_shift gradedFiniteModules_gradedAbelian_shift
+    isGradedEulerAdmissibleOn_gradedFiniteProjectiveModules_gradedFiniteModules
+    ((gradedExtEulerSesquilinear isExtensionClosed_gradedFiniteModules_gradedAbelian
+        isExtensionClosed_gradedFiniteModules_gradedAbelian gradedFiniteModules_gradedAbelian_shift
+        gradedFiniteModules_gradedAbelian_shift h).comp (gradedCartanMap 𝒜))
+    fun X Y ↦ (congrArg (fun z ↦ gradedExtEulerSesquilinear
+        isExtensionClosed_gradedFiniteModules_gradedAbelian
+        isExtensionClosed_gradedFiniteModules_gradedAbelian gradedFiniteModules_gradedAbelian_shift
+        gradedFiniteModules_gradedAbelian_shift h z (LaurentK0.of _ Y))
+      (gradedCartanMap_of X.property)).trans
+      (gradedExtEulerSesquilinear_of_of _ _ _ _ h _ Y)
+  rw [gradedProjectiveExtEuler_def, ← hcomp]
+  -- `LinearMap.comp_apply` does not fire here: the composite is typed on the full-subcategory
+  -- structure that `gradedFiniteModulesExactStructure 𝒜` unfolds to. It unfolds by `rfl`.
+  rfl
 
 /-! ### Duality with graded simples -/
 
