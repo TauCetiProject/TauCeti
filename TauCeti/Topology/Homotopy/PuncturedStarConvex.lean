@@ -241,6 +241,14 @@ theorem coe_complSingletonHomotopyEquivSphere_apply (y : E) (z : ({y}ᶜ : Set E
   -- `Homeomorph.setCongr` has no evaluation lemma; it does not move points.
   rfl
 
+/-- The homotopy inverse of `TauCeti.complSingletonHomotopyEquivSphere` is translation by `y`,
+carrying the unit sphere onto `sphere y 1 ⊆ E ∖ {y}`. -/
+@[simp]
+theorem coe_complSingletonHomotopyEquivSphere_symm_apply (y : E) (z : sphere (0 : E) 1) :
+    ((complSingletonHomotopyEquivSphere y).symm z : E) = z + y := by
+  simp [complSingletonHomotopyEquivSphere]
+  rfl
+
 end NormedSpace
 
 section Complex
