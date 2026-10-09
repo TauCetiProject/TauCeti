@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Basic
+public import TauCeti.KnotTheory.Grid.TwoStepDecomposition
 
 /-!
 # Composite domains in the grid-commutation homotopy equation
@@ -22,8 +23,8 @@ pairing of juxtaposed domains in the proof of commutation invariance.
 
 The two kinds of hexagon and pentagon are represented by sum types. This retains the distinction
 between the two turn sides while avoiding four parallel decomposition types. All three composite
-domain families specialize one generic two-step decomposition, whose counted finite families have
-membership characterizations.
+domain families specialize the generic two-step decomposition `TauCeti.GridTwoStepDecomposition`,
+whose counted finite families have membership characterizations.
 
 ## Main results
 
@@ -46,8 +47,12 @@ public section
 
 namespace TauCeti
 
-/-- A commutation hexagon is either a hexagon turning on its terminal side or one turning on its
-initial side. -/
+/-- A commutation hexagon for column `a`, turn row `s` and opposite turn row `s'` is either a
+hexagon turning on its terminal side or one turning on its initial side.
+
+The two row parameters play opposite roles in the two cases: the terminal-side hexagon
+`GridHexagonBetween a s' s` cuts away the bigon from `s'` up to `s`, while the initial-side hexagon
+`GridInitialHexagonBetween a s s'` cuts away the bigon from `s` up to `s'`. -/
 abbrev GridCommutationHexagonBetween {n : ℕ} (a s s' : Fin n) (x y : GridState n) :=
   GridHexagonBetween a s' s x y ⊕ GridInitialHexagonBetween a s s' x y
 
@@ -55,68 +60,6 @@ abbrev GridCommutationHexagonBetween {n : ℕ} (a s s' : Fin n) (x y : GridState
 initial side. -/
 abbrev GridCommutationPentagonBetween {n : ℕ} (a s : Fin n) (x y : GridState n) :=
   GridPentagonBetween a s x y ⊕ GridInitialPentagonBetween a s x y
-
-/-- A pair of composable domains through an intermediate grid state. -/
-structure GridTwoStepDecomposition {n : ℕ}
-    (A B : GridState n → GridState n → Type*) (x z : GridState n) where
-  /-- The grid state at which the two domains meet. -/
-  middle : GridState n
-  /-- The first domain, from the source to the intermediate state. -/
-  first : A x middle
-  /-- The second domain, from the intermediate state to the target. -/
-  second : B middle z
-
-namespace GridTwoStepDecomposition
-
-variable {n : ℕ} {A B : GridState n → GridState n → Type*} {x z : GridState n}
-
-/-- Two two-step decompositions are equal when their intermediate states and domains agree. -/
-@[ext]
-theorem ext {D E : GridTwoStepDecomposition A B x z}
-    (hmiddle : D.middle = E.middle) (hfirst : HEq D.first E.first)
-    (hsecond : HEq D.second E.second) : D = E := by
-  cases D
-  cases E
-  simp_all
-
-private def sigmaEquiv :
-    GridTwoStepDecomposition A B x z ≃ Σ y : GridState n, Σ _first : A x y, B y z where
-  toFun D := ⟨D.middle, D.first, D.second⟩
-  invFun D := ⟨D.1, D.2.1, D.2.2⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-
-/-- The finite family of two-step decompositions selected by prescribed domain families. -/
-noncomputable def decompositionsOf
-    (first : ∀ u v : GridState n, Finset (A u v))
-    (second : ∀ u v : GridState n, Finset (B u v))
-    (x z : GridState n) : Finset (GridTwoStepDecomposition A B x z) := by
-  classical
-  exact ((Finset.univ.sigma fun y => (first x y).sigma fun _ => second y z).map
-    (sigmaEquiv (A := A) (B := B) (x := x) (z := z)).symm.toEmbedding)
-
-/-- Membership in `decompositionsOf` is membership of both constituent domains. -/
-@[simp]
-theorem mem_decompositionsOf
-    (first : ∀ u v : GridState n, Finset (A u v))
-    (second : ∀ u v : GridState n, Finset (B u v))
-    (D : GridTwoStepDecomposition A B x z) :
-    D ∈ decompositionsOf first second x z ↔
-      D.first ∈ first x D.middle ∧ D.second ∈ second D.middle z := by
-  classical
-  simp [decompositionsOf, sigmaEquiv]
-
-/-- A sum over selected two-step decompositions is the corresponding iterated sum. -/
-theorem sum_decompositionsOf {M : Type*} [AddCommMonoid M]
-    (first : ∀ u v : GridState n, Finset (A u v))
-    (second : ∀ u v : GridState n, Finset (B u v))
-    (w : ∀ y, A x y → B y z → M) :
-    ∑ D ∈ decompositionsOf first second x z, w D.middle D.first D.second =
-      ∑ y, ∑ P ∈ first x y, ∑ Q ∈ second y z, w y P Q := by
-  classical
-  simp [decompositionsOf, sigmaEquiv, Finset.sum_sigma']
-
-end GridTwoStepDecomposition
 
 /-- A two-step domain consisting of a commutation hexagon followed by a rectangle. -/
 abbrev GridHexagonRectangleDecomposition {n : ℕ} (a s s' : Fin n)
