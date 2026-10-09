@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.GradedAlgebra.HomogeneousLocalization
+public import TauCeti.RingTheory.Regular.RegularSequence
 
 /-!
 # Coefficients and lifts for homogeneous localizations
@@ -22,8 +23,9 @@ coefficient algebra structure, and fractions with a fixed homogeneous denominato
 linearly on their numerator. This permits scalar extension of the homogeneous affine charts.
 
 The file also records that the restriction map `A_{(f)} →+* A_{(fg)}` is injective when `g` is a
-nonzerodivisor of `A`, and that a homogeneous localization is reduced whenever the corresponding
-localization is.
+nonzerodivisor of `A`, that an element of `A_{(f)}` whose restriction to `A_{(fg)}` extends to
+`A_{(g)}` lies in the degree-zero part `𝒜 0` when `[f, g]` is a regular sequence, and that a
+homogeneous localization is reduced whenever the corresponding localization is.
 
 ## Main definitions
 
@@ -43,6 +45,11 @@ localization is.
   so that `ψ a = cⁿ φ a` on the degree-`n` part, does not change `lift`.
 * `HomogeneousLocalization.awayMap_injective`: the restriction `awayMap` from `A_{(f)}` to
   `A_{(fg)}` is injective when `g` is a nonzerodivisor of `A`.
+* `HomogeneousLocalization.fromZeroRingHom_injective`: the degree-zero part `𝒜 0` embeds in a
+  homogeneous localization at nonzerodivisors.
+* `HomogeneousLocalization.Away.mem_range_fromZeroRingHom_of_awayMap_eq`: for a regular sequence
+  `[f, g]` of homogeneous elements, elements of `A_{(f)}` and `A_{(g)}` with the same image in
+  `A_{(fg)}` come from `𝒜 0`.
 * `HomogeneousLocalization.isReduced`: a homogeneous localization is reduced whenever the
   corresponding localization is, in particular for any reduced graded ring.
 
@@ -191,6 +198,16 @@ theorem val_fromZeroRingHom {ι A σ : Type*} [AddCommMonoid ι] [DecidableEq ι
     (fromZeroRingHom 𝒜 P a).val = algebraMap A (Localization P) a :=
   Localization.mk_one_eq_algebraMap _
 
+/-- The degree-zero coefficient map `𝒜 0 → A_{(P)}` is injective when `P` consists of
+nonzerodivisors. -/
+theorem fromZeroRingHom_injective {ι A σ : Type*} [AddCommMonoid ι] [DecidableEq ι]
+    [CommRing A] [SetLike σ A] [AddSubgroupClass σ A] (𝒜 : ι → σ) [GradedRing 𝒜]
+    {P : Submonoid A} (hP : P ≤ nonZeroDivisors A) :
+    Function.Injective (fromZeroRingHom 𝒜 P) := fun a b hab ↦ by
+  have := congr(val $hab)
+  rw [val_fromZeroRingHom, val_fromZeroRingHom] at this
+  exact Subtype.val_injective (IsLocalization.injective _ hP this)
+
 variable {ι R A : Type*} [AddCommMonoid ι] [DecidableEq ι]
   [CommRing R] [CommRing A] [Algebra R A]
   (𝒜 : ι → Submodule R A) [GradedAlgebra 𝒜] (P : Submonoid A)
@@ -246,5 +263,48 @@ noncomputable def Away.mkLinearMap {f : A} {d : ι} (hf : f ∈ 𝒜 d) (n : ℕ
 @[simp]
 theorem Away.mkLinearMap_apply {f : A} {d : ι} (hf : f ∈ 𝒜 d) (n : ℕ)
     (a : 𝒜 (n • d)) : Away.mkLinearMap (𝒜 := 𝒜) hf n a = Away.mk 𝒜 hf n a a.2 := (rfl)
+
+end HomogeneousLocalization
+
+namespace HomogeneousLocalization
+
+variable {ι A σ : Type*} [CommRing A] [SetLike σ A] [AddSubgroupClass σ A]
+  [AddCancelCommMonoid ι] [DecidableEq ι] (𝒜 : ι → σ) [GradedRing 𝒜]
+
+/-- Let `f` and `g` be homogeneous elements forming a regular sequence `[f, g]` in `A`. If
+`z ∈ A_{(f)}` and `w ∈ A_{(g)}` have the same image in `A_{(fg)}`, then `z` lies in the degree-zero
+part `𝒜 0`.
+
+Geometrically, a section of `Proj A` over `D₊(f) ∪ D₊(g)` comes from `𝒜 0`. -/
+theorem Away.mem_range_fromZeroRingHom_of_awayMap_eq {d e : ι} {f g : A} (hf : f ∈ 𝒜 d)
+    (hg : g ∈ 𝒜 e) (hfg : RingTheory.Sequence.IsWeaklyRegular A [f, g]) {z : Away 𝒜 f}
+    {w : Away 𝒜 g} (h : awayMap 𝒜 hg rfl z = awayMap 𝒜 hf (mul_comm f g) w) :
+    z ∈ (fromZeroRingHom 𝒜 (.powers f)).range := by
+  obtain ⟨n, a, ha, rfl⟩ := Away.mk_surjective 𝒜 hf z
+  obtain ⟨k, b, hb, rfl⟩ := Away.mk_surjective 𝒜 hg w
+  have hf₀ := (RingTheory.Sequence.isWeaklyRegular_pair_iff.mp hfg).1
+  -- in `A_{fg}`, `a gⁿ / (fg)ⁿ = b fᵏ / (fg)ᵏ`, so `(fg)ᴺ (fg)ᵏ a gⁿ = (fg)ᴺ (fg)ⁿ b fᵏ` for
+  -- some `N`
+  have h' := congr(val $h)
+  rw [awayMap_mk, awayMap_mk, Away.val_mk, Away.val_mk, Localization.mk_eq_mk_iff,
+    Localization.r_iff_exists] at h'
+  obtain ⟨⟨_, N, rfl⟩, hN⟩ := h'
+  -- cancelling `fᴺ⁺ᵏ`, `gᴺ⁺ᵏ⁺ⁿ a = fⁿ gᴺ⁺ⁿ b`, so `fⁿ` divides `a`
+  have hdvd : f ^ n ∣ g ^ (N + k + n) * a := by
+    refine ⟨g ^ (N + n) * b, sub_eq_zero.mp
+      ((mem_nonZeroDivisors_iff_right.mp (pow_mem hf₀ (N + k))) _ ?_)⟩
+    rw [sub_mul, sub_eq_zero]
+    calc _ = (f * g) ^ N * ((f * g) ^ k * (a * g ^ n)) := by ring
+      _ = (f * g) ^ N * ((f * g) ^ n * (b * f ^ k)) := hN
+      _ = _ := by ring
+  obtain ⟨c, hc⟩ := hfg.pow_dvd_of_pow_dvd_pow_mul hdvd
+  -- comparing the components of degree `n • d`, `a = fⁿ c₀` for the degree-zero part `c₀` of `c`
+  have hc₀ : a = f ^ n * (DirectSum.decompose 𝒜 c 0 : A) := by
+    rw [← DirectSum.coe_decompose_mul_add_of_left_mem 𝒜 (SetLike.pow_mem_graded n hf), add_zero,
+      ← hc, DirectSum.decompose_of_mem_same 𝒜 ha]
+  refine ⟨DirectSum.decompose 𝒜 c 0, val_injective _ ?_⟩
+  rw [val_fromZeroRingHom, Away.val_mk, hc₀, ← Localization.mk_one_eq_algebraMap,
+    Localization.mk_eq_mk_iff, Localization.r_iff_exists]
+  exact ⟨1, by simp⟩
 
 end HomogeneousLocalization
