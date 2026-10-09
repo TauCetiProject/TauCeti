@@ -156,11 +156,6 @@ along `Spec φ` is the zero section `[0 : 1 : 0]` of the projective model of `W.
 theorem zero_ofWeierstrassBaseChangeIso_hom :
     ((ofWeierstrass W).baseChange (Spec.map (CommRingCat.ofHom φ))).zero ≫
       (ofWeierstrassBaseChangeIso W φ).hom = (W.map φ).projModelZero := by
-  apply (W.isPullback_projModelBaseChange φ).hom_ext
-  · -- on the projection to `W.projModel`, both sides are `Spec φ ≫ W.projModelZero`
-    rw [Category.assoc, ofWeierstrassBaseChangeIso_hom_projModelBaseChange,
-      WeierstrassCurve.projModelZero_projModelBaseChange, zero_baseChangeIso_hom_assoc,
-      pullbackSection_fst_assoc, Category.assoc, zero_ofWeierstrassIso_hom]
-  · simp
+  apply (W.isPullback_projModelBaseChange φ).hom_ext <;> simp
 
 end TauCeti.AlgebraicGeometry.EllipticCurveGeom
