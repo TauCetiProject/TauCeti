@@ -85,7 +85,9 @@ private theorem toRight_union_mem_of_mem_link {ρ : Finset (α ⊕ β)}
     · exact Or.inr (by rw [he, empty_union]; exact ht)
   · exact Or.inr (mem_link.mp hr).2.2
 
-/- The link of a disjoint sum of componentwise faces is the join of the links of its projections. -/
+/-- The link of a disjoint sum of componentwise faces is the join of the links of its projections.
+
+The left or right component face may be empty. -/
 @[simp]
 theorem link_join (hs : s = ∅ ∨ s ∈ K) (ht : t = ∅ ∨ t ∈ L) :
     link (join K L) (s.disjSum t) = join (link K s) (link L t) := by
