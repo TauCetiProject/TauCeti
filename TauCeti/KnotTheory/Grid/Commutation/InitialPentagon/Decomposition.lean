@@ -395,6 +395,29 @@ theorem initialPentagonRectangleWeight_eq_of_val_add_val_eq {x z : GridState n}
   simp only [← swapSquareWeight_def, Finset.prod_eq_multiset_prod, ← Multiset.prod_add,
     ← Multiset.map_add, h]
 
+/-- A rectangle followed by an initial-side pentagon is counted when its two domains are empty and
+its composite domain covers, with multiplicity, the squares of a counted rectangle followed by an
+initial-side pentagon: every square it covers then avoids the `X`-markings. -/
+theorem mem_rectangleInitialPentagonDecompositions_of_val_add_val_eq {x z : GridState n}
+    {D : GridRectangleInitialPentagonDecomposition C.column C.turnRow x z}
+    (hD : D ∈ G.rectangleInitialPentagonDecompositions C x z)
+    {E : GridRectangleInitialPentagonDecomposition C.column C.turnRow x z}
+    (hfirst : E.first.IsEmpty) (hpentagon : E.pentagon.IsEmpty)
+    (h : E.first.toGridRectangle.coveredSquares.val + E.pentagon.coveredSquares.val =
+      D.first.toGridRectangle.coveredSquares.val + D.pentagon.coveredSquares.val) :
+    E ∈ G.rectangleInitialPentagonDecompositions C x z := by
+  rw [mem_rectangleInitialPentagonDecompositions, mem_unblockedRectangles,
+    mem_initialPentagons] at hD ⊢
+  -- A square of the new domain is a square of the original domain, which avoids `X`.
+  have hX (p : Fin n × Fin n) (hp : p ∈ E.first.toGridRectangle.coveredSquares.val +
+      E.pentagon.coveredSquares.val) : p ∉ G.XSet := fun hpX => by
+    rw [h] at hp
+    rcases Multiset.mem_add.mp hp with hp' | hp'
+    · exact Finset.disjoint_left.mp hD.1.2 hp' hpX
+    · exact Finset.disjoint_left.mp hD.2.2 hp' hpX
+  exact ⟨⟨hfirst, Finset.disjoint_left.mpr fun p hp => hX p (Multiset.mem_add.mpr (Or.inl hp))⟩,
+    hpentagon, Finset.disjoint_left.mpr fun p hp => hX p (Multiset.mem_add.mpr (Or.inr hp))⟩
+
 /-- An initial-side pentagon followed by a rectangle of the commuted diagram is counted when its
 two underlying rectangles are empty and its composite domain covers, with multiplicity, the
 squares of a counted rectangle followed by an initial-side pentagon, the rectangle of the commuted

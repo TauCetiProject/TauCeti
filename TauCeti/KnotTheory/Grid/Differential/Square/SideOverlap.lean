@@ -465,6 +465,28 @@ theorem not_hasDisjointSides_of_hasOneCommonSide (D : GridRectangleDecomposition
   rw [HasOneCommonSide] at h
   omega
 
+/-- Off the diagonal, the two rectangles fail to have disjoint sides exactly when they share
+exactly one side column. -/
+theorem not_hasDisjointSides_iff_hasOneCommonSide (D : GridRectangleDecomposition x z)
+    (hzx : z ≠ x) : ¬D.HasDisjointSides ↔ D.HasOneCommonSide :=
+  ⟨(D.hasDisjointSides_or_hasOneCommonSide_of_ne hzx).resolve_left,
+    D.not_hasDisjointSides_of_hasOneCommonSide⟩
+
+/-- Off the diagonal, the two rectangles share exactly one side column exactly when some side of
+the first rectangle is a side of the second. -/
+theorem hasOneCommonSide_iff_side_eq (D : GridRectangleDecomposition x z) (hzx : z ≠ x) :
+    D.HasOneCommonSide ↔ D.first.left = D.second.left ∨ D.first.left = D.second.right ∨
+      D.first.right = D.second.left ∨ D.first.right = D.second.right := by
+  constructor
+  · intro h
+    rcases D.side_eq_cases_of_hasOneCommonSide h with ⟨h, -⟩ | ⟨h, -⟩ | ⟨h, -⟩ | ⟨h, -⟩ <;>
+      simp only [h, true_or, or_true]
+  · rintro (h | h | h | h)
+    · exact D.hasOneCommonSide_of_mem_commonSideColumns (c := D.first.left) (by simp [h]) hzx
+    · exact D.hasOneCommonSide_of_mem_commonSideColumns (c := D.first.left) (by simp [h]) hzx
+    · exact D.hasOneCommonSide_of_mem_commonSideColumns (c := D.first.right) (by simp [h]) hzx
+    · exact D.hasOneCommonSide_of_mem_commonSideColumns (c := D.first.right) (by simp [h]) hzx
+
 end GridRectangleDecomposition
 
 end TauCeti

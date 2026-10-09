@@ -309,28 +309,12 @@ theorem recutInitialSelf_mem_rectangleInitialPentagonDecompositions
     (hfirst : D.first.IsEmpty) (hsecond : D.pentagon.IsEmpty)
     (hD : D ∈ G.rectangleInitialPentagonDecompositions C x z) :
     D.recutInitialSelf hcommon hcol hfirst hsecond ∈
-      G.rectangleInitialPentagonDecompositions C x z := by
-  classical
-  let E := D.recutInitialSelf hcommon hcol hfirst hsecond
-  obtain ⟨hR, hP⟩ := (G.mem_rectangleInitialPentagonDecompositions C D).1 hD
-  have hRX := ((G.mem_unblockedRectangles _).1 hR).2
-  have hPX := ((G.mem_initialPentagons _).1 hP).2
-  have hunion := congrArg Multiset.toFinset
-    (D.coveredSquares_val_add_recutInitialSelf hcommon hcol hfirst hsecond)
-  simp only [Multiset.toFinset_add, Finset.val_toFinset] at hunion
-  have hnew : Disjoint (E.first.toGridRectangle.coveredSquares ∪ E.pentagon.coveredSquares)
-      G.XSet := by
-    rw [hunion]
-    exact Finset.disjoint_union_left.mpr ⟨hRX, hPX⟩
-  obtain ⟨hER, hEP⟩ := Finset.disjoint_union_left.mp hnew
+      G.rectangleInitialPentagonDecompositions C x z :=
   have hrecut := D.isRecut_recutInitialSelf hcommon hcol hfirst hsecond
-  exact (G.mem_rectangleInitialPentagonDecompositions C E).2
-    ⟨(G.mem_unblockedRectangles _).2 ⟨hrecut.isEmpty_first, hER⟩,
-    (G.mem_initialPentagons _).2 ⟨by
-        have hs := hrecut.isEmpty_second
-        rw [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor] at hs ⊢
-        simpa only [E.pentagon_toGridRectangleBetween] using hs,
-      hEP⟩⟩
+  G.mem_rectangleInitialPentagonDecompositions_of_val_add_val_eq C hD hrecut.isEmpty_first
+    (by simpa only [GridRectangleInitialPentagonDecomposition.pentagon_toGridRectangleBetween]
+      using hrecut.isEmpty_second)
+    (D.coveredSquares_val_add_recutInitialSelf hcommon hcol hfirst hsecond)
 
 /-- The same-sum initial-side recut preserves the monomial contribution over any commutative
 semiring. -/

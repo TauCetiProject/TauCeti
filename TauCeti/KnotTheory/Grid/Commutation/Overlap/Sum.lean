@@ -83,27 +83,14 @@ private theorem overlap_side_facts
   have hone : D.toRectangleDecomposition.HasOneCommonSide ↔ D.rectangle.left = D.pentagon.left ∨
       D.rectangle.left = D.pentagon.right ∨ D.rectangle.right = D.pentagon.left ∨
         D.rectangle.right = D.pentagon.right := by
-    constructor
-    · intro hone
-      rcases D.toRectangleDecomposition.side_eq_cases_of_hasOneCommonSide hone with
-        ⟨h, -⟩ | ⟨h, -⟩ | ⟨h, -⟩ | ⟨h, -⟩ <;>
-        simp only [GridRectanglePentagonDecomposition.toRectangleDecomposition_first_left,
-          GridRectanglePentagonDecomposition.toRectangleDecomposition_first_right,
-          GridRectanglePentagonDecomposition.toRectangleDecomposition_second_left,
-          GridRectanglePentagonDecomposition.toRectangleDecomposition_second_right] at h <;>
-        simp only [h, true_or, or_true]
-    · intro h
-      obtain ⟨c, hc⟩ : ∃ c, c ∈ D.toRectangleDecomposition.commonSideColumns := by
-        rcases h with h | h | h | h
-        · exact ⟨D.rectangle.left, by simp [GridRectangleBetween.mem_sideColumns, h]⟩
-        · exact ⟨D.rectangle.left, by simp [GridRectangleBetween.mem_sideColumns, h]⟩
-        · exact ⟨D.rectangle.right, by simp [GridRectangleBetween.mem_sideColumns, h]⟩
-        · exact ⟨D.rectangle.right, by simp [GridRectangleBetween.mem_sideColumns, h]⟩
-      exact D.toRectangleDecomposition.hasOneCommonSide_of_mem_commonSideColumns hc hzx
+    simpa only [GridRectanglePentagonDecomposition.toRectangleDecomposition_first_left,
+      GridRectanglePentagonDecomposition.toRectangleDecomposition_first_right,
+      GridRectanglePentagonDecomposition.toRectangleDecomposition_second_left,
+      GridRectanglePentagonDecomposition.toRectangleDecomposition_second_right] using
+      D.toRectangleDecomposition.hasOneCommonSide_iff_side_eq hzx
   have hdisjoint : ¬D.HasDisjointSides ↔ D.toRectangleDecomposition.HasOneCommonSide := by
     rw [D.hasDisjointSides_def]
-    exact ⟨(D.toRectangleDecomposition.hasDisjointSides_or_hasOneCommonSide_of_ne hzx).resolve_left,
-      D.toRectangleDecomposition.not_hasDisjointSides_of_hasOneCommonSide⟩
+    exact D.toRectangleDecomposition.not_hasDisjointSides_iff_hasOneCommonSide hzx
   refine ⟨hdisjoint.trans hone, hone, fun ⟨h₁, h₂⟩ => ?_, fun ⟨h₁, h₂⟩ => ?_⟩
   · exact D.toRectangleDecomposition.sideColumns_ne_of_hasOneCommonSide (hone.2 (Or.inl h₁))
       (by simp [GridRectangleBetween.sideColumns, h₁, h₂])
