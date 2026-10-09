@@ -101,6 +101,7 @@ theorem map_mem (F : AInfinityStrictFunctor 𝒞 𝒟) (X Y : C) {p : ℤ}
   F.map_mem' X Y hf
 
 /-- A strict functor preserves operations on composable strings of arbitrary morphisms. -/
+@[simp]
 theorem map_m (F : AInfinityStrictFunctor 𝒞 𝒟) {n : ℕ}
     (X : Fin (n + 1) → C)
     (f : ∀ i : Fin n, homModule (R := R) (X i.rev.castSucc) (X i.rev.succ)) :
