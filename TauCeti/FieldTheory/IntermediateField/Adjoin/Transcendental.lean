@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
+public import Mathlib.FieldTheory.RatFunc.AsPolynomial
 public import Mathlib.RingTheory.Algebraic.Basic
 public import Mathlib.RingTheory.AlgebraTower
 public import Mathlib.RingTheory.AlgebraicIndependent.TranscendenceBasis
@@ -22,6 +23,10 @@ Combined with the tower rule for linear independence, a family that is linearly 
 the simple extension `k⟮x⟯` stays linearly independent over `k` after multiplying by arbitrary
 powers of a transcendental element `x`.
 
+A simple transcendental extension is also free on its generator: `k⟮x⟯` maps to any field
+over `k` by sending `x` to any transcendental element. Translating `x` by a constant keeps it
+transcendental, so `x ↦ x + c` is an example.
+
 The finite-power statement is the source of dimension growth in the theory of algebraic function
 fields: multiplying a basis of `F / k⟮x⟯` by the powers `1, x, …, xⁿ` exhibits `(n + 1) [F : k(x)]`
 functions that are independent over `k` and whose poles are controlled by those of `x`.
@@ -34,6 +39,9 @@ functions that are independent over `k` and whose poles are controlled by those 
   `F`, multiplied by the powers of a transcendental `x`, is `k`-linearly independent.
 * `Transcendental.linearIndependent_mul_pow_fin`: the finite-power restriction used in
   dimension estimates.
+* `Transcendental.add_algebraMap`: `x + c` is transcendental for a constant `c`.
+* `Transcendental.algHomAdjoin`: the `k`-algebra map `k⟮x⟯ → E` sending `x` to a transcendental
+  element `z`, with `Transcendental.algHomAdjoin_gen` its value on the generator.
 -/
 
 public section
@@ -88,5 +96,23 @@ theorem _root_.Transcendental.linearIndependent_mul_pow_fin (hx : _root_.Transce
       simp only [Prod.mk.injEq, Fin.val_inj] at hpq
       exact Prod.ext hpq.1 hpq.2)
   simpa [Function.comp_def] using h
+
+/-- Translating a transcendental element by a constant keeps it transcendental. -/
+theorem _root_.Transcendental.add_algebraMap (hx : Transcendental k x) (c : k) :
+    Transcendental k (x + algebraMap k F c) := fun halg ↦
+  hx (by simpa using halg.sub (isAlgebraic_algebraMap (R := k) (A := F) c))
+
+/-- The `k`-algebra map `k⟮x⟯ → E` sending a transcendental `x` to a transcendental `z`: both
+`k⟮x⟯` and `k⟮z⟯` are identified with the rational function field `k(X)`. -/
+noncomputable def _root_.Transcendental.algHomAdjoin (hx : Transcendental k x) {E : Type*}
+    [Field E] [Algebra k E] {z : E} (hz : Transcendental k z) : k⟮x⟯ →ₐ[k] E :=
+  (IntermediateField.val _).comp ((RatFunc.algEquivOfTranscendental z hz).toAlgHom.comp
+    (RatFunc.algEquivOfTranscendental x hx).symm.toAlgHom)
+
+@[simp]
+theorem _root_.Transcendental.algHomAdjoin_gen (hx : Transcendental k x) {E : Type*} [Field E]
+    [Algebra k E] {z : E} (hz : Transcendental k z) :
+    hx.algHomAdjoin hz (IntermediateField.AdjoinSimple.gen k x) = z := by
+  simp [Transcendental.algHomAdjoin]
 
 end TauCeti
