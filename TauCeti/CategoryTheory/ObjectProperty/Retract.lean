@@ -20,15 +20,13 @@ endomorphisms.
 
 ## Main results
 
-* `TauCeti.isIdempotentComplete_fullSubcategory`: the full subcategory of a property stable under
-  retracts in an idempotent-complete category is idempotent complete.
+* `CategoryTheory.ObjectProperty.isIdempotentComplete_fullSubcategory`: the full subcategory of a
+  property stable under retracts in an idempotent-complete category is idempotent complete.
 -/
 
 public section
 
-namespace TauCeti
-
-open CategoryTheory
+namespace CategoryTheory.ObjectProperty
 
 /-- **A full subcategory stable under retracts of an idempotent-complete category is idempotent
 complete**: an idempotent splits in the ambient category through a retract of its object, which
@@ -37,8 +35,8 @@ instance isIdempotentComplete_fullSubcategory {C : Type*} [Category* C] [IsIdemp
     (P : ObjectProperty C) [P.IsStableUnderRetracts] : IsIdempotentComplete P.FullSubcategory where
   idempotents_split X p hp := by
     obtain ⟨Y, i, e, h₁, h₂⟩ := IsIdempotentComplete.idempotents_split X.obj p.hom
-      (by rw [← ObjectProperty.FullSubcategory.comp_hom, hp])
-    exact ⟨⟨Y, P.prop_of_retract ⟨i, e, h₁⟩ X.property⟩, ObjectProperty.homMk i,
-      ObjectProperty.homMk e, ObjectProperty.hom_ext _ h₁, ObjectProperty.hom_ext _ h₂⟩
+      (by rw [← FullSubcategory.comp_hom, hp])
+    exact ⟨⟨Y, P.prop_of_retract ⟨i, e, h₁⟩ X.property⟩, homMk i, homMk e,
+      hom_ext _ h₁, hom_ext _ h₂⟩
 
-end TauCeti
+end CategoryTheory.ObjectProperty

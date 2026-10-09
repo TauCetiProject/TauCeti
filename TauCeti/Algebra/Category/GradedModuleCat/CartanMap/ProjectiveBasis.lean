@@ -45,6 +45,10 @@ category of finite graded projectives.
   graded projectives up to shift spans the Laurent Grothendieck group.
 * `TauCeti.linearIndependent_laurentK0_projective`: indecomposable graded projectives which are
   pairwise non-isomorphic up to shift have linearly independent classes over `ℤ[q,q⁻¹]`.
+* `TauCeti.indecomposable_shiftObj`: an internal shift of an indecomposable finite graded
+  projective is indecomposable.
+* The instance `Module.Finite k (X ⟶ Y)`: over a finite-dimensional algebra, graded maps between
+  finite graded projectives form a finite-dimensional space.
 
 ## References
 
@@ -186,9 +190,9 @@ section Independence
 variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
   {𝒜 : ℤ → Submodule k A} {I : Type uI}
 
-/-- A shift of an indecomposable finite graded projective is indecomposable: graded endomorphisms
-of `X` and of `X{d}` are the same `A`-linear maps. -/
-private theorem indecomposable_shiftObj {X : (gradedFiniteProjectiveModules 𝒜).FullSubcategory}
+/-- **A shift of an indecomposable finite graded projective is indecomposable**: graded
+endomorphisms of `X` and of `X{d}` are the same `A`-linear maps. -/
+theorem indecomposable_shiftObj {X : (gradedFiniteProjectiveModules 𝒜).FullSubcategory}
     (hX : Indecomposable X) (d : ℤ) :
     Indecomposable (⟨X.obj.shiftObj d, gradedFiniteProjectiveModules_shiftObj X.property d⟩ :
       (gradedFiniteProjectiveModules 𝒜).FullSubcategory) := by
@@ -211,9 +215,9 @@ private theorem indecomposable_shiftObj {X : (gradedFiniteProjectiveModules 𝒜
 
 variable [Module.Finite k A]
 
-/-- Graded maps between finite graded projectives over a finite-dimensional algebra form a
-finite-dimensional space. -/
-private theorem finite_hom (X Y : (gradedFiniteProjectiveModules 𝒜).FullSubcategory) :
+/-- **Graded maps between finite graded projectives over a finite-dimensional algebra form a
+finite-dimensional space**, as graded maps between finite-dimensional graded modules. -/
+instance (X Y : (gradedFiniteProjectiveModules 𝒜).FullSubcategory) :
     Module.Finite k (X ⟶ Y) := by
   have : Module.Finite k X.obj := Module.Finite.trans A X.obj
   have : Module.Finite k Y.obj := Module.Finite.trans A Y.obj
@@ -222,7 +226,6 @@ private theorem finite_hom (X Y : (gradedFiniteProjectiveModules 𝒜).FullSubca
 /-- An indecomposable finite graded projective has a local endomorphism ring. -/
 private theorem isLocalRing_end {X : (gradedFiniteProjectiveModules 𝒜).FullSubcategory}
     (hX : Indecomposable X) : IsLocalRing (End X) :=
-  have := finite_hom X X
   isLocalRing_end_of_indecomposable (k := k) hX
 
 /-- A nonzero finite graded projective is not isomorphic to a nontrivial shift of itself
@@ -249,8 +252,6 @@ private noncomputable def radicalInvariant (Y : (gradedFiniteProjectiveModules �
     rw [gradedFiniteProjectiveModulesExactStructure_eq_split, ExactStructure.split_conflation]
       at hS
     obtain ⟨σ⟩ := hS
-    have := finite_hom (k := k) S.X₁ Y
-    have := finite_hom (k := k) S.X₃ Y
     rw [finrank_quotient_jacobsonRadicalSubmodule_congr k σ.isoBinaryBiproduct (Iso.refl Y),
       finrank_quotient_jacobsonRadicalSubmodule_biprod, Nat.cast_add]
 
@@ -322,7 +323,6 @@ theorem linearIndependent_laurentK0_projective (hind : ∀ i, Indecomposable (P 
   simp only [Finset.smul_sum, smul_smul, map_sum, smul_zero, map_zero,
     radicalCoordinate_smul_of (k := k) P hind hnoniso, Finset.sum_ite_eq', hi, ite_true] at h
   have := isLocalRing_end (k := k) (hind i)
-  have := finite_hom (k := k) (P i) (P i)
   have hpos := finrank_quotient_jacobsonRadicalSubmodule_self_pos k (P i)
   rw [LaurentPolynomial.T, AddMonoidAlgebra.coeff_single_mul_eq_mul_coeff e fun _ _ ↦ by omega,
     one_mul] at h
