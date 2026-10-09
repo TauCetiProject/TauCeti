@@ -36,6 +36,9 @@ nontriviality or positive-rank assumption.
 * `TauCeti.GeneralLinear.generalLinearToPoint`: the point obtained by matrix evaluation.
 * `TauCeti.GeneralLinear.pointsMulEquiv`: the group equivalence between convolution points and
   invertible matrices.
+* `TauCeti.GeneralLinear.pointToGeneralLinear_mapValue` and
+  `TauCeti.GeneralLinear.pointsMulEquiv_mapValue`: the point identification and the bundled
+  equivalence are natural in the value algebra.
 * `TauCeti.GeneralLinear.generalLinearFunctor`: the group-valued functor of invertible matrices.
 * `TauCeti.GeneralLinear.pointsNatIso`: the natural isomorphism between the two functors.
 
@@ -43,8 +46,7 @@ nontriviality or positive-rank assumption.
 
 * J. S. Milne, *Algebraic Groups* (2017), §2.8 and §§3.2--3.6.
 * The Stacks Project, Tags
-  [022W](https://stacks.math.columbia.edu/tag/022W),
-  [022X](https://stacks.math.columbia.edu/tag/022X), and
+  [022W](https://stacks.math.columbia.edu/tag/022W) and
   [00CM](https://stacks.math.columbia.edu/tag/00CM).
 -/
 
@@ -278,7 +280,7 @@ section Functor
 
 /-- The group-valued functor sending a commutative `R`-algebra to its general linear group, before
 the universe lift used by `generalLinearFunctor`. -/
-private noncomputable abbrev generalLinearFunctorUnlifted :
+private abbrev generalLinearFunctorUnlifted :
     CommAlgCat.{w} R ⥤ GrpCat.{w} where
   obj A := GrpCat.of (Matrix.GeneralLinearGroup (Fin n) (A : Type w))
   map phi := GrpCat.ofHom (Matrix.GeneralLinearGroup.map phi.hom.toRingHom)
@@ -288,7 +290,7 @@ private noncomputable abbrev generalLinearFunctorUnlifted :
 /-- The group-valued functor sending a commutative `R`-algebra to its general linear group and
 a value-algebra morphism to entrywise application. Its values are universe-lifted so that its
 codomain agrees with the generic Hopf-algebra points functor. -/
-noncomputable def generalLinearFunctor :
+def generalLinearFunctor :
     CommAlgCat.{w} R ⥤ GrpCat.{max u w} :=
   generalLinearFunctorUnlifted (R := R) n ⋙ GrpCat.uliftFunctor.{u, w}
 
@@ -313,7 +315,7 @@ theorem generalLinearFunctor_map {A B : CommAlgCat.{w} R} (phi : A ⟶ B) :
   (rfl)
 
 /-- Entrywise computation of the value-algebra map on the general linear functor. -/
-@[simp]
+-- Not `@[simp]`: `simp` never matches the `eqToHom` applied to an element; use `rw`.
 theorem generalLinearFunctor_map_apply_apply {A B : CommAlgCat.{w} R} (phi : A ⟶ B)
     (g : ULift.{u, w} (Matrix.GeneralLinearGroup (Fin n) A)) (i j : Fin n) :
     (eqToHom (generalLinearFunctor_obj (R := R) n B)
@@ -338,7 +340,7 @@ noncomputable def pointsNatIso :
 
 /-- After transport along `generalLinearFunctor_obj`, the forward component of `pointsNatIso` is
 the pointwise general-linear equivalence. -/
-@[simp]
+-- Not `@[simp]`: `simp` never matches the `eqToHom` applied to an element; use `rw`.
 theorem pointsNatIso_hom_app_apply (A : CommAlgCat.{w} R)
     (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n) A) :
     (eqToHom (generalLinearFunctor_obj (R := R) n A)
@@ -347,7 +349,7 @@ theorem pointsNatIso_hom_app_apply (A : CommAlgCat.{w} R)
 
 /-- After transport back along `generalLinearFunctor_obj`, the inverse component of `pointsNatIso`
 is evaluation at an invertible matrix. -/
-@[simp]
+-- Not `@[simp]`: `simp` never matches the `eqToHom` applied to an element; use `rw`.
 theorem pointsNatIso_inv_app_apply (A : CommAlgCat.{w} R)
     (g : ULift.{u, w} (Matrix.GeneralLinearGroup (Fin n) A)) :
     (pointsNatIso (R := R) n).inv.app A

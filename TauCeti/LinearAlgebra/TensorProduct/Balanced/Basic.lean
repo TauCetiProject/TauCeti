@@ -43,8 +43,15 @@ def balancedTensorRelations : Submodule k (M ⊗[k] N) :=
   Submodule.span k {z | ∃ (a : A) (m : M) (n : N),
     z = (op a • m) ⊗ₜ[k] n - m ⊗ₜ[k] (a • n)}
 
+/-- The balancing submodule is spanned by the elementary balancing relations. -/
+theorem balancedTensorRelations_def : balancedTensorRelations k A M N =
+    Submodule.span k {z | ∃ (a : A) (m : M) (n : N),
+      z = (op a • m) ⊗ₜ[k] n - m ⊗ₜ[k] (a • n)} := (rfl)
+
 /-- The tensor product of a right `A`-module and a left `A`-module, balanced over `A`
 and linear over `k`. Compatible scalar actions give the usual algebra-relative tensor product. -/
+-- Expose the quotient carrier so inherited gradings can use the canonical quotient instances.
+@[expose]
 def BalancedTensorProduct := (M ⊗[k] N) ⧸ balancedTensorRelations k A M N
 
 namespace BalancedTensorProduct
@@ -61,9 +68,17 @@ variable {M N}
 def mkQ : M ⊗[k] N →ₗ[k] BalancedTensorProduct k A M N :=
   (balancedTensorRelations k A M N).mkQ
 
+/-- The balanced quotient map is the submodule quotient map. -/
+theorem mkQ_def : mkQ k A (M := M) (N := N) =
+    (balancedTensorRelations k A M N).mkQ := (rfl)
+
 /-- The canonical bilinear map to the balanced tensor product. -/
 def mk : M →ₗ[k] N →ₗ[k] BalancedTensorProduct k A M N :=
   (TensorProduct.mk k M N).compr₂ (mkQ k A)
+
+/-- The canonical bilinear map is the ground-ring tensor map followed by the quotient. -/
+theorem mk_def : mk k A (M := M) (N := N) =
+    (TensorProduct.mk k M N).compr₂ (mkQ k A) := (rfl)
 
 /-- A pure tensor in the balanced tensor product. -/
 def tmul (m : M) (n : N) : BalancedTensorProduct k A M N := mk k A m n

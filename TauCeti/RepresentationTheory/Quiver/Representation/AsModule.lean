@@ -121,12 +121,6 @@ forward direction is identified with that model by
 
 ## References
 
-This is the essential-surjectivity half of `quiverRepEquivalence`, Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, which asks for the
-equivalence "sending a module `M` to the representation `v ↦ eᵥ M`, with an arrow acting by left
-multiplication, and inverting through the idempotent decomposition `M = ⨁ᵥ eᵥ M`"; the fully
-faithful half is `TauCeti.quiverRepFunctorFullyFaithful`.
-
 The plan of the file follows Mathlib's group-algebra analogue: the type synonym carrying a module
 structure through `Module.compHom`, the equivalence with the underlying type and the shape of the
 final `≌ ModuleCat (algebra)` statement are those of `Representation.asModule`,
@@ -280,7 +274,7 @@ reconciled: the public identification is its `k`-linear upgrade
 private def asModuleAddEquiv : asModule k Q M ≃+ DirectSum Q (vertexSpace k Q M) := AddEquiv.refl _
 
 /-- The defining action, read through the identity additive equivalence; the public form is
-`TauCeti.QuiverRep.smul_asModule_def`. -/
+`TauCeti.QuiverRep.asModuleEquiv_map_smul`. -/
 private theorem asModuleAddEquiv_smul_pathAlgebra (f : pathAlgebra k Q) (x : asModule k Q M) :
     asModuleAddEquiv k Q M (f • x) = toEnd k Q M f (asModuleAddEquiv k Q M x) := (rfl)
 
@@ -299,10 +293,13 @@ This is the identification consumers should go through, the `k`-action on
 noncomputable def asModuleEquiv : asModule k Q M ≃ₗ[k] DirectSum Q (vertexSpace k Q M) :=
   { asModuleAddEquiv k Q M with map_smul' := asModuleAddEquiv_smul k Q M }
 
-/-- The defining action on `TauCeti.QuiverRep.asModule`: an element of the path algebra acts
-through `TauCeti.QuiverRep.toEnd`. -/
-theorem smul_asModule_def (f : pathAlgebra k Q) (x : asModule k Q M) :
-    f • x = toEnd k Q M f (asModuleEquiv k Q M x) := (rfl)
+/-- The defining action on `TauCeti.QuiverRep.asModule`: read through
+`TauCeti.QuiverRep.asModuleEquiv`, an element of the path algebra acts through
+`TauCeti.QuiverRep.toEnd`. The statement and its name follow Mathlib's
+`Representation.asModuleEquiv_map_smul` for the group algebra. -/
+@[simp]
+theorem asModuleEquiv_map_smul (f : pathAlgebra k Q) (x : asModule k Q M) :
+    asModuleEquiv k Q M (f • x) = toEnd k Q M f (asModuleEquiv k Q M x) := (rfl)
 
 /-- The inclusion of a vertex space into the module carried by a representation. -/
 noncomputable def ofVertex (v : Q) : vertexSpace k Q M v →ₗ[k] asModule k Q M :=
@@ -355,10 +352,9 @@ theorem sum_ofVertex_toVertex [Fintype Q] (x : asModule k Q M) :
 theorem ofVertex_injective (v : Q) : Function.Injective (ofVertex k Q M v) :=
   Function.LeftInverse.injective (toVertex_ofVertex k Q M v)
 
--- Not `@[simp]`: the specialized `TauCeti.QuiverRep.smul_ofVertex` and
--- `TauCeti.QuiverRep.vertexIdempotent_smul` are the simp-normal forms of the action, this one
--- being stated on an arbitrary element and so introducing `TauCeti.QuiverRep.toVertex` where they
--- do not.
+-- Not `@[simp]`: on an arbitrary element this introduces `TauCeti.QuiverRep.toVertex`, and as a
+-- simp lemma it would make the specialized `TauCeti.QuiverRep.smul_ofVertex`, the simp-normal form
+-- of the action on a vertex component, provable by `simp`.
 /-- **A basis path acts by transporting the component at its source**: it reads off that
 component, applies the structure map, and puts the result in the component at its target. This is
 `TauCeti.QuiverRep.pathEnd` read on `TauCeti.QuiverRep.asModule`. -/
@@ -366,9 +362,8 @@ theorem smul_ofPath {a b : Q} (p : _root_.Quiver.Path a b) (x : asModule k Q M) 
     (ofPath ⟨a, b, p⟩ : pathAlgebra k Q) • x
       = ofVertex k Q M b (mapₗ k Q M p (toVertex k Q M a x)) := by
   apply (asModuleEquiv k Q M).injective
-  rw [smul_asModule_def, toEnd_ofPath, pathEnd_mk_apply, asModuleEquiv_ofVertex, toVertex_apply]
-  -- what is left is the outer `TauCeti.QuiverRep.asModuleEquiv`, which is the identity map
-  rfl
+  rw [asModuleEquiv_map_smul, toEnd_ofPath, pathEnd_mk_apply, asModuleEquiv_ofVertex,
+    toVertex_apply]
 
 /-- **A path acts on the image of its source through the structure map**: this is the naturality
 that makes `TauCeti.QuiverRep.asModuleIso` a morphism of representations. -/

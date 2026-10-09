@@ -5,12 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Exact.Basic
 public import TauCeti.Algebra.GroupAction.QuotientAddGroup
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
 public import TauCeti.Topology.Algebra.Group.Quotient.Basic
-public import TauCeti.Topology.Algebra.GroupAction.InternalHom.DoubleDual
+public import TauCeti.Topology.Algebra.GroupAction.InternalHom.Basic
 import TauCeti.Topology.Discrete
 
 /-!
@@ -223,6 +222,16 @@ theorem inclDistribMulActionHom_apply (a : A) : S.inclDistribMulActionHom a = S.
 
 @[simp]
 theorem projDistribMulActionHom_apply (b : B) : S.projDistribMulActionHom b = S.proj b := (rfl)
+
+/-- The additive homomorphism underlying the bundled inclusion is `incl`. -/
+@[simp]
+theorem coe_addMonoidHom_inclDistribMulActionHom :
+    (S.inclDistribMulActionHom : A →+ B) = S.incl := (rfl)
+
+/-- The additive homomorphism underlying the bundled projection is `proj`. -/
+@[simp]
+theorem coe_addMonoidHom_projDistribMulActionHom :
+    (S.projDistribMulActionHom : B →+ C) = S.proj := (rfl)
 
 /-- The bundled inclusion is injective, as `incl` is. -/
 theorem inclDistribMulActionHom_injective : Function.Injective S.inclDistribMulActionHom :=
@@ -438,28 +447,6 @@ of the original sequence. -/
 theorem dual_projDistribMulActionHom :
     (S.dual N hsurj).projDistribMulActionHom = InternalHom.precomp G S.inclDistribMulActionHom :=
   DistribMulActionHom.ext fun _ => rfl
-
-/-- **Evaluation is a morphism from a sequence to its double dual, on the inclusions.** The
-inclusion of the double dual sequence `0 → A^{∨∨} → B^{∨∨} → C^{∨∨} → 0` carries the evaluation
-class of `a : A` to the evaluation class of `S.incl a`. -/
-theorem dual_dual_incl_eval
-    (hsurj' : Function.Surjective
-      (InternalHom.precomp G (S.dual N hsurj).inclDistribMulActionHom (N := N))) (a : A) :
-    ((S.dual N hsurj).dual N hsurj').incl (InternalHom.eval G A N a) =
-      InternalHom.eval G B N (S.incl a) := by
-  rw [dual_incl, dual_projDistribMulActionHom]
-  exact InternalHom.precomp_precomp_eval S.inclDistribMulActionHom a
-
-/-- **Evaluation is a morphism from a sequence to its double dual, on the projections.** The
-projection of the double dual sequence `0 → A^{∨∨} → B^{∨∨} → C^{∨∨} → 0` carries the evaluation
-class of `b : B` to the evaluation class of `S.proj b`. -/
-theorem dual_dual_proj_eval
-    (hsurj' : Function.Surjective
-      (InternalHom.precomp G (S.dual N hsurj).inclDistribMulActionHom (N := N))) (b : B) :
-    ((S.dual N hsurj).dual N hsurj').proj (InternalHom.eval G B N b) =
-      InternalHom.eval G C N (S.proj b) := by
-  rw [dual_proj, dual_inclDistribMulActionHom]
-  exact InternalHom.precomp_precomp_eval S.projDistribMulActionHom b
 
 end Dual
 
@@ -858,7 +845,6 @@ private noncomputable def delta1Class {e : G → B} (hc : Continuous e)
   H2pi G A ⟨S.delta1Cochain e, delta1Cochain_mem_Z2 hc (fun _ => rfl) hf⟩
 
 /-- The class attached to a lift is represented by its `δ¹` cochain. -/
-@[simp]
 private theorem delta1Class_def {e : G → B} (hc : Continuous e)
     (hf : groupCohomology.IsCocycle₁ fun g => S.proj (e g)) :
     S.delta1Class hc hf =
@@ -918,7 +904,6 @@ private noncomputable def delta1Hom : Z1 G C →+ H2 G A :=
       exact delta1Class_add _ _ (S.isCocycle₁_proj_liftCochain f) (S.isCocycle₁_proj_liftCochain f')
 
 /-- Before descent to `H¹`, `δ¹` is the class of the cochain obtained from the canonical lift. -/
-@[simp]
 private theorem delta1Hom_apply (f : Z1 G C) :
     S.delta1Hom f =
       S.delta1Class (S.continuous_liftCochain_coe f) (S.isCocycle₁_proj_liftCochain f) := (rfl)
@@ -1008,7 +993,7 @@ variable {G : Type*} [Monoid G]
 /-- A short exact sequence of discrete `G`-modules as a short complex of canonical coefficient
 objects in `TopRep ℤ G`. -/
 @[expose, simps]
-noncomputable def toShortComplex : ShortComplex (TopRep.{uS} ℤ G) where
+def toShortComplex : ShortComplex (TopRep.{uS} ℤ G) where
   f := ofDiscreteModuleMap S.incl.toIntLinearMap S.incl_equivariant
   g := ofDiscreteModuleMap S.proj.toIntLinearMap S.proj_equivariant
   zero := TopRep.hom_ext <| DFunLike.ext _ _ fun a : A ↦ S.proj_incl a

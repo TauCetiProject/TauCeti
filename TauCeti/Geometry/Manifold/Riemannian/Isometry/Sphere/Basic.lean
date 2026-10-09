@@ -119,6 +119,18 @@ theorem unitSphereRiemannianIsometry_trans {G : Type*} [NormedAddCommGroup G]
       unitSphereRiemannianIsometry (e.trans e') :=
   TauCeti.RiemannianIsometry.ext fun x ↦ Subtype.ext (by simp)
 
+/-- An ambient linear isometry is determined by its restriction as a round-sphere isometry. -/
+theorem unitSphereRiemannianIsometry_injective :
+    Function.Injective (unitSphereRiemannianIsometry (E := E) (F := F) (n := n) (k := k)) := by
+  intro f g h
+  have hlin : f.toLinearMap = g.toLinearMap :=
+    TauCeti.LinearMap.eq_of_eqOn_unitSphere fun x hx => by
+      have hval := congrArg (fun Φ => (Φ ⟨x, hx⟩ : F)) h
+      simpa only [LinearEquiv.coe_toLinearMap, coe_toLinearEquiv,
+        coe_unitSphereRiemannianIsometry_apply] using hval
+  ext x
+  exact LinearMap.congr_fun hlin x
+
 /-- The homomorphism from the linear isometry group `O(E)` to the isometry group of the round unit
 sphere of `E`, restricting a linear isometry to the sphere. -/
 def unitSphereIsomHom : (E ≃ₗᵢ[ℝ] E) →* TauCeti.Isom (𝓡 n) (sphere (0 : E) 1) where
@@ -150,8 +162,8 @@ values on the unit sphere. -/
 theorem unitSphereIsomHom_injective :
     Function.Injective (unitSphereIsomHom (E := E) (n := n)) := by
   intro e e' h
-  apply unitSphereDiffHom_injective (m := ∞) (n := n)
-  rw [← toDiff_comp_unitSphereIsomHom, MonoidHom.comp_apply, MonoidHom.comp_apply, h]
+  apply unitSphereRiemannianIsometry_injective (n := n) (k := n)
+  simpa only [unitSphereIsomHom_apply] using h
 
 end LinearIsometryEquiv
 

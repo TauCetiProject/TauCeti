@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Basic
-public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Extension
+public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Congr
 
 /-!
 # Transporting the cohomological Brauer group along a field isomorphism
@@ -33,34 +33,9 @@ namespace TauCeti.ClassFieldTheory
 /-- An isomorphism of fields supplies an additive equivalence of their cohomological Brauer
 groups, using a chosen identification of separable closures. -/
 def brCongr {K L : Type*} [Field K] [Field L] (e : K ≃+* L) : Br K ≃+ Br L := by
-  letI : Algebra K L := e.toRingHom.toAlgebra
-  let eA : K ≃ₐ[K] L := { e with commutes' := fun _ => rfl }
-  let σ : L →ₐ[K] SeparableClosure K :=
-    (Algebra.ofId K (SeparableClosure K)).comp eA.symm.toAlgHom
-  have hrange : σ.fieldRange = ⊥ := by
-    ext x
-    constructor
-    · rintro ⟨y, rfl⟩
-      exact IntermediateField.mem_bot.mpr ⟨e.symm y, rfl⟩
-    · intro hx
-      obtain ⟨y, rfl⟩ := IntermediateField.mem_bot.mp hx
-      exact ⟨e y, congrArg (algebraMap K (SeparableClosure K)) (eA.symm_apply_apply y)⟩
-  let ψ := absoluteGaloisGroupEquivFixingSubgroup K L σ
-  have htop : σ.fieldRange.fixingSubgroup = ⊤ := by simp [hrange]
-  let f : AbsoluteGaloisGroup L →* AbsoluteGaloisGroup K :=
-    σ.fieldRange.fixingSubgroup.subtype.comp ψ.toMonoidHom
-  have hf : Function.Bijective f := by
-    refine ⟨fun a b h => ψ.injective (Subtype.ext h), fun g => ?_⟩
-    have hg : g ∈ σ.fieldRange.fixingSubgroup := by rw [htop]; trivial
-    exact ⟨ψ.symm ⟨g, hg⟩, by simp [f]⟩
-  let φ₀ := MulEquiv.ofBijective f hf
-  have hcont : Continuous φ₀ := continuous_subtype_val.comp ψ.continuous
-  let φ : AbsoluteGaloisGroup L ≃ₜ* AbsoluteGaloisGroup K :=
-    { φ₀ with
-      continuous_toFun := hcont
-      continuous_invFun := (Continuous.homeoOfEquivCompactToT2 hcont).symm.continuous }
+  let φ : AbsoluteGaloisGroup L ≃ₜ* AbsoluteGaloisGroup K := e.absoluteGaloisGroupCongr
   let c : UnitsCoeff L ≃+ UnitsCoeff K :=
-    (Units.mapEquiv (separableClosureRingEquiv K L σ).toMulEquiv).toAdditive
+    (Units.mapEquiv e.separableClosureCongr.toMulEquiv).toAdditive
   have hc (g : AbsoluteGaloisGroup L) (x : UnitsCoeff K) :
       c.symm (φ g • x) = g • c.symm x := by
     apply c.injective
@@ -70,9 +45,8 @@ def brCongr {K L : Type*} [Field K] [Field L] (e : K ≃+* L) : Br K ≃+ Br L :
     -- The coefficient actions are evaluation by field automorphisms; taking values exposes
     -- the conjugation formula supplied by the absolute-Galois-group equivalence.
     change (φ g) (x.toMul : SeparableClosure K) =
-      separableClosureRingEquiv K L σ
-        (g ((separableClosureRingEquiv K L σ).symm (x.toMul : SeparableClosure K)))
-    exact absoluteGaloisGroupEquivFixingSubgroup_apply K L σ g _
+      e.separableClosureCongr (g (e.separableClosureCongr.symm (x.toMul : SeparableClosure K)))
+    exact e.absoluteGaloisGroupCongr_apply g _
   exact (unitsRepH2Equiv K).symm.trans
     ((ContCohomology.explicitMap2Equiv (AbsoluteGaloisGroup K) (UnitsCoeff K)
       (AbsoluteGaloisGroup L) (UnitsCoeff L) φ c.symm

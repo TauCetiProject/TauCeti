@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.TestFunctionLp
+import TauCeti.Analysis.Normed.Lp.ProdLp
 import TauCeti.MeasureTheory.Function.Lp.Norm
 public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.MeasureTheory.Function.L2Space
@@ -76,8 +77,8 @@ noncomputable section
 
 namespace TauCeti
 
-open MeasureTheory Set TopologicalSpace
-open scoped ContDiff Distributions ENNReal InnerProductSpace
+open MeasureTheory TopologicalSpace
+open scoped Distributions InnerProductSpace
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E]
 variable {mu : Measure E} {Omega : Opens E} {p : ENNReal}
@@ -174,8 +175,10 @@ theorem Sobolev1JetLp.gradient_apply_ae (J : Sobolev1JetLp mu Omega p) :
     (WithLp.sndL 2 ℝ ℝ E).compLp J x = (WithLp.sndL 2 ℝ ℝ E) (J x)
   exact (WithLp.sndL 2 ℝ ℝ E).coeFn_compLp J
 
+-- `Sobolev1JetLp` abbreviates an `Lp` space, and Mathlib's `MeasureTheory.Lp.ext` is `@[ext high]`;
+-- the priority puts this lemma before it.
 /-- Two Sobolev jets are equal when their value and gradient components are equal. -/
-@[ext]
+@[ext high + 1]
 theorem Sobolev1JetLp.ext {J K : Sobolev1JetLp mu Omega p}
     (hvalue : Sobolev1JetLp.value J = Sobolev1JetLp.value K)
     (hgradient : Sobolev1JetLp.gradient J = Sobolev1JetLp.gradient K) : J = K := by
@@ -195,22 +198,34 @@ theorem Sobolev1JetLp.ext {J K : Sobolev1JetLp mu Omega p}
   · simpa only [WithLp.prodContinuousLinearEquiv_apply, WithLp.snd, hJgradient, hKgradient]
       using hgradient
 
-/-- The norm of the value component is bounded by the norm of the ambient Sobolev jet. -/
-private theorem norm_value_le_ambient (J : Sobolev1JetLp mu Omega p) :
+/-- The norm of the value component of a Sobolev jet is at most the norm of the jet. -/
+theorem Sobolev1JetLp.norm_value_le (J : Sobolev1JetLp mu Omega p) :
     ‖Sobolev1JetLp.value J‖ ≤ ‖J‖ :=
   Lp.norm_le_norm_of_ae_le <| (Sobolev1JetLp.value_apply_ae J).mono fun x hx ↦ by
     rw [hx]
     exact WithLp.norm_fst_le ℝ (J x)
 
-/-- The norm of the gradient component is bounded by the norm of the ambient Sobolev jet. -/
-private theorem norm_gradient_le_ambient (J : Sobolev1JetLp mu Omega p) :
+/-- The norm of the gradient component of a Sobolev jet is at most the norm of the jet. -/
+theorem Sobolev1JetLp.norm_gradient_le (J : Sobolev1JetLp mu Omega p) :
     ‖Sobolev1JetLp.gradient J‖ ≤ ‖J‖ :=
   Lp.norm_le_norm_of_ae_le <| (Sobolev1JetLp.gradient_apply_ae J).mono fun x hx ↦ by
     rw [hx]
     exact WithLp.norm_snd_le ℝ (J x)
 
+/-- The norm of a Sobolev jet is at most the sum of the norms of its value and gradient
+components. -/
+theorem Sobolev1JetLp.norm_le_norm_value_add_norm_gradient (J : Sobolev1JetLp mu Omega p) :
+    ‖J‖ ≤ ‖Sobolev1JetLp.value J‖ + ‖Sobolev1JetLp.gradient J‖ := by
+  have hle : ∀ᵐ x ∂mu.restrict Omega,
+      ‖J x‖ ≤ 1 * ‖Sobolev1JetLp.value J x‖ + 1 * ‖Sobolev1JetLp.gradient J x‖ := by
+    filter_upwards [Sobolev1JetLp.value_apply_ae J, Sobolev1JetLp.gradient_apply_ae J]
+      with x hv hg
+    rw [one_mul, one_mul, hv, hg]
+    exact WithLp.prod_norm_le_norm_fst_add_norm_snd (J x)
+  simpa using Lp.norm_le_add_of_ae_norm_le zero_le_one zero_le_one hle
+
 /-- At exponent two, the Sobolev jet norm is the Hilbert graph norm of its components. -/
-private theorem norm_sq_eq_norm_value_sq_add_norm_gradient_sq_ambient
+theorem Sobolev1JetLp.norm_sq_eq_norm_value_sq_add_norm_gradient_sq
     (J : Sobolev1JetLp mu Omega 2) :
     ‖J‖ ^ 2 = ‖Sobolev1JetLp.value J‖ ^ 2 + ‖Sobolev1JetLp.gradient J‖ ^ 2 := by
   rw [← real_inner_self_eq_norm_sq J,
@@ -425,16 +440,22 @@ theorem W1p.ext {u v : W1p mu Omega p}
 
 /-- The norm of a Sobolev function controls the norm of its value component. -/
 theorem W1p.norm_value_le (u : W1p mu Omega p) : ‖W1p.value u‖ ≤ ‖u‖ :=
-  norm_value_le_ambient u.1
+  Sobolev1JetLp.norm_value_le u.1
 
 /-- The norm of a Sobolev function controls the norm of its weak gradient. -/
 theorem W1p.norm_gradient_le (u : W1p mu Omega p) : ‖W1p.gradient u‖ ≤ ‖u‖ :=
-  norm_gradient_le_ambient u.1
+  Sobolev1JetLp.norm_gradient_le u.1
+
+/-- The norm of a Sobolev function is at most the sum of the norms of its value and its weak
+gradient. -/
+theorem W1p.norm_le_norm_value_add_norm_gradient (u : W1p mu Omega p) :
+    ‖u‖ ≤ ‖W1p.value u‖ + ‖W1p.gradient u‖ :=
+  Sobolev1JetLp.norm_le_norm_value_add_norm_gradient u.1
 
 /-- At exponent two, the norm on `W1p` is the Hilbert graph norm. -/
 theorem W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq (u : W1p mu Omega 2) :
     ‖u‖ ^ 2 = ‖W1p.value u‖ ^ 2 + ‖W1p.gradient u‖ ^ 2 :=
-  norm_sq_eq_norm_value_sq_add_norm_gradient_sq_ambient u.1
+  Sobolev1JetLp.norm_sq_eq_norm_value_sq_add_norm_gradient_sq u.1
 
 /-- The squared pointwise norm of a Sobolev gradient is integrable. -/
 theorem W1p.integrable_norm_gradient_sq (u : W1p mu Omega 2) :
@@ -473,36 +494,12 @@ theorem W1p.tendsto_iff_value_gradient {I : Type*} {l : Filter I}
     Filter.Tendsto v l (nhds u) ↔
       Filter.Tendsto (fun i => W1p.value (v i)) l (nhds (W1p.value u)) ∧
       Filter.Tendsto (fun i => W1p.gradient (v i)) l (nhds (W1p.gradient u)) := by
-  constructor
-  · intro h
-    exact ⟨(W1p.valueL.continuous.tendsto u).comp h,
-      (W1p.gradientL.continuous.tendsto u).comp h⟩
-  · rintro ⟨hv, hg⟩
-    let a : ℝ →L[ℝ] Sobolev1Jet E :=
-      (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.toContinuousLinearMap.comp
-        (ContinuousLinearMap.inl ℝ ℝ E)
-    let b : E →L[ℝ] Sobolev1Jet E :=
-      (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.toContinuousLinearMap.comp
-        (ContinuousLinearMap.inr ℝ ℝ E)
-    have heq (w : W1p mu Omega p) :
-        w.1 = a.compLpL p (mu.restrict Omega) (W1p.value w) +
-          b.compLpL p (mu.restrict Omega) (W1p.gradient w) := by
-      apply Lp.ext
-      filter_upwards [a.coeFn_compLpL (W1p.value w), b.coeFn_compLpL (W1p.gradient w),
-        Lp.coeFn_add (a.compLpL p (mu.restrict Omega) (W1p.value w))
-          (b.compLpL p (mu.restrict Omega) (W1p.gradient w)),
-        W1p.value_apply_ae w, W1p.gradient_apply_ae w] with x ha hb hab hval hgrad
-      rw [hab, Pi.add_apply, ha, hb]
-      apply (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).injective
-      simp only [WithLp.prodContinuousLinearEquiv_apply, ContinuousLinearMap.comp_apply,
-        ContinuousLinearMap.inl_apply, ContinuousLinearEquiv.coe_coe,
-        WithLp.prodContinuousLinearEquiv_symm_apply, ContinuousLinearMap.inr_apply,
-        WithLp.ofLp_add, Prod.mk_add_mk, add_zero, zero_add, a, b]
-      exact Prod.ext hval.symm hgrad.symm
-    rw [tendsto_subtype_rng]
-    simp_rw [heq]
-    exact ((a.compLpL p (mu.restrict Omega)).continuous.tendsto _ |>.comp hv).add
-      ((b.compLpL p (mu.restrict Omega)).continuous.tendsto _ |>.comp hg)
+  refine ⟨fun h => ⟨(W1p.valueL.continuous.tendsto u).comp h,
+    (W1p.gradientL.continuous.tendsto u).comp h⟩, fun ⟨hv, hg⟩ => ?_⟩
+  rw [tendsto_iff_norm_sub_tendsto_zero] at hv hg ⊢
+  refine squeeze_zero (fun _ => norm_nonneg _) (fun i => ?_) (by simpa using hv.add hg)
+  simpa only [← W1p.valueL_apply, ← W1p.gradientL_apply, map_sub] using
+    W1p.norm_le_norm_value_add_norm_gradient (v i - u)
 
 /-! ### Identification with weak Fréchet derivatives -/
 

@@ -66,27 +66,7 @@ namespace TauCeti
 /-- The discriminant of `X⁵ - 5X - 12` is `8000² = 2¹² · 5⁶`. -/
 theorem discr_X_pow_five_sub_five_mul_X_sub_twelve :
     (X ^ 5 - 5 * X - 12 : ℤ[X]).discr = 8000 ^ 2 := by
-  let f : ℤ[X] := X ^ 5 - 5 * X - 12
-  let g : ℤ[X] := X ^ 4 - 1
-  have hf : f.Monic := by dsimp [f]; monicity!
-  have hdeg : f.natDegree = 5 := by dsimp [f]; compute_degree!
-  have hgdeg : g.natDegree = 4 := by dsimp [g]; compute_degree!
-  have hder : f.derivative = C 5 * g := by
-    simp [f, g]
-    ring
-  have hres := resultant_deriv (f := f) (natDegree_pos_iff_degree_pos.mp (by omega))
-  rw [hdeg, hf.leadingCoeff, hder] at hres
-  norm_num at hres
-  -- Removing a multiple of the quartic leaves a linear polynomial in the resultant.
-  have hred : f = C (-4) * (X - C (-3)) + g * X := by simp [f, g]; ring
-  have hresult : f.resultant g 5 4 = (-4) ^ 4 * 80 := by
-    rw [hred, resultant_add_mul_left _ _ _ 5 4 (by simp) (by omega)]
-    rw [resultant_add_left_deg _ _ 1 4 4 (by compute_degree!)]
-    rw [resultant_C_mul_left, resultant_X_sub_C_left _ _ _ (by omega)]
-    norm_num [g, coeff_one]
-  rw [resultant_C_mul_right, hresult] at hres
-  norm_num at hres
-  exact hres.symm
+  simpa [sub_eq_add_neg] using discr_X_pow_five_add_C_mul_X_add_C (-5 : ℤ) (-12)
 
 /-- The integer `40` is a root of the resolvent sextic of `X⁵ - 5X - 12`, and that sextic has
 nonzero discriminant: its reduction modulo `7` is already separable. -/

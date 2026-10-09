@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.Equiv
+public import Mathlib.Algebra.MvPolynomial.PDeriv
+public import Mathlib.Algebra.Polynomial.Derivative
 public import TauCeti.Data.Finsupp.Fin
 
 /-!
@@ -122,6 +124,18 @@ theorem polynomial_eval_finSuccEquiv' (p : Fin (n + 1)) (a : MvPolynomial (Fin n
 /-- Singling out the variable `X 0` is `MvPolynomial.finSuccEquiv`. -/
 theorem finSuccEquiv'_zero : finSuccEquiv' R (0 : Fin (n + 1)) = finSuccEquiv R n := by
   rw [finSuccEquiv', finSuccEquiv, _root_.finSuccEquiv'_zero]
+
+/-- Singling out a variable takes its partial derivative to the univariate derivative. -/
+@[simp]
+theorem finSuccEquiv'_pderiv (f : MvPolynomial (Fin (n + 1)) R) (p : Fin (n + 1)) :
+    finSuccEquiv' R p (pderiv p f) = (finSuccEquiv' R p f).derivative := by
+  induction f using MvPolynomial.induction_on with
+  | C r => simp [finSuccEquiv'_C]
+  | add f g hf hg => simp [hf, hg]
+  | mul_X f i hf =>
+    obtain rfl | ⟨i, rfl⟩ := Fin.eq_self_or_eq_succAbove p i <;>
+      simp [Derivation.leibniz, smul_eq_mul, pderiv_X, hf, Polynomial.derivative_mul,
+        mul_comm]
 
 section Map
 

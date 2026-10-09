@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Lie.Sl2
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.GeneratorRelations
 public import TauCeti.RepresentationTheory.Spin.Polarization.Split.Odd
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.KostantLattice
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.B.SpinWeight
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.KostantForm
 public import
   TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
@@ -62,17 +60,14 @@ subgroups is separate from this carrier construction.
 
 public section
 
-open scoped Matrix
-
 universe v
 
 namespace TauCeti.TypeBSpinCarrier
 
 open AlgebraicGeometry CategoryTheory
 open TauCeti.UniversalEnvelopingAlgebra
-open scoped CategoryTheory.MonObj TensorProduct
+open scoped CategoryTheory.MonObj
 
-attribute [local instance] TauCeti.moduleNNRat
 attribute [local instance 100] LieRing.ofAssociativeRing
 attribute [local instance high] Algebra.toModule
 
@@ -89,7 +84,9 @@ noncomputable abbrev polarizationBasis := TauCeti.splitOddBasis ℚ (n + 1)
 /-- The distinguished norm-one vector in the orthogonal remainder. -/
 noncomputable abbrev remainderOne := TauCeti.splitOddRemainderOne ℚ (n + 1)
 
-/-- The rational spin representation of the numbered type-`Bₙ₊₁` generators. -/
+/-- The rational spin representation of the split type-`Bₙ₊₁` matrix Lie algebra
+`LieAlgebra.Orthogonal.typeB (Fin (n + 1)) ℚ`, extended to its universal enveloping algebra. It
+acts on the exterior algebra of the first isotropic summand of the split polarization. -/
 noncomputable abbrev rep :=
   (polarization n).typeBSpinRep (polarizationBasis n) (remainderOne n)
     (TauCeti.splitOddForm_remainderOne ℚ (n + 1))
@@ -181,7 +178,7 @@ theorem nilpotencyClass_rep_rootGenerator_le_two (k : Fin (n + 1) ⊕ Fin (n + 1
     nilpotencyClass (rep n
       (_root_.UniversalEnvelopingAlgebra.ι ℚ
         (TauCeti.typeBSimpleRootGeneratorFamily k))) ≤ 2 :=
-  Nat.sInf_le (pow_two_rep_rootGenerator_eq_zero n k)
+  nilpotencyClass_le_of_pow_eq_zero (pow_two_rep_rootGenerator_eq_zero n k)
 
 /-- The simple-generator type-`B` Kostant form preserves the exterior coordinate lattice. -/
 theorem rep_kostantForm_mem_lattice
@@ -203,7 +200,7 @@ theorem rep_rootGenerator_inl_castSucc (j : Fin n) (x : ExteriorAlgebra ℚ (pol
         (TauCeti.typeBSimpleRootGeneratorFamily (.inl j.castSucc))) x =
       ExteriorAlgebra.ι ℚ (polarizationBasis n j.castSucc) *
         CliffordAlgebra.contractLeft ((polarizationBasis n).coord j.succ) x := by
-  rw [TauCeti.typeBSimpleRootGeneratorFamily_inl, TauCeti.typeBSimpleRootGenerator_castSucc]
+  simp only [TauCeti.typeBSimpleRootGeneratorFamily_inl, TauCeti.typeBSimpleRootGenerator_castSucc]
   exact SpinPolarizationData.typeBSpinRep_differenceRootGenerator_apply _ _ _ _ _ _ _ x
 
 /-- A nonterminal lowering generator contracts its own exterior coordinate and creates the next
@@ -213,7 +210,7 @@ theorem rep_rootGenerator_inr_castSucc (j : Fin n) (x : ExteriorAlgebra ℚ (pol
         (TauCeti.typeBSimpleRootGeneratorFamily (.inr j.castSucc))) x =
       ExteriorAlgebra.ι ℚ (polarizationBasis n j.succ) *
         CliffordAlgebra.contractLeft ((polarizationBasis n).coord j.castSucc) x := by
-  rw [TauCeti.typeBSimpleRootGeneratorFamily_inr,
+  simp only [TauCeti.typeBSimpleRootGeneratorFamily_inr,
     TauCeti.typeBSimpleNegativeRootGenerator_castSucc]
   exact SpinPolarizationData.typeBSpinRep_differenceRootGenerator_apply _ _ _ _ _ _ _ x
 
@@ -223,11 +220,11 @@ theorem rep_rootGenerator_inl_last (x : ExteriorAlgebra ℚ (polarization n).W) 
     rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
         (TauCeti.typeBSimpleRootGeneratorFamily (.inl (Fin.last n)))) x =
       ExteriorAlgebra.ι ℚ (polarizationBasis n (Fin.last n)) * CliffordAlgebra.involute x := by
-  rw [TauCeti.typeBSimpleRootGeneratorFamily_inl, TauCeti.typeBSimpleRootGenerator_last]
+  simp only [TauCeti.typeBSimpleRootGeneratorFamily_inl, TauCeti.typeBSimpleRootGenerator_last]
   have h := SpinPolarizationData.typeBSpinRep_shortRootGenerator_apply (polarization n)
     (polarizationBasis n) (remainderOne n) (TauCeti.splitOddForm_remainderOne ℚ (n + 1))
     (Fin.last n) x
-  rwa [splitOddPolarization_lineCoordinate_remainderOne, one_smul] at h
+  simpa only [splitOddPolarization_lineCoordinate_remainderOne, one_smul] using h
 
 /-- The terminal lowering generator contracts the final exterior coordinate and applies the grade
 involution. -/
@@ -243,7 +240,7 @@ theorem rep_rootGenerator_inr_last (x : ExteriorAlgebra ℚ (polarization n).W) 
   have h := SpinPolarizationData.typeBSpinRep_shortNegativeRootGenerator_apply (polarization n)
     (polarizationBasis n) (remainderOne n) (TauCeti.splitOddForm_remainderOne ℚ (n + 1))
     (Fin.last n) x
-  rwa [splitOddPolarization_lineCoordinate_remainderOne, one_smul] at h
+  simpa only [splitOddPolarization_lineCoordinate_remainderOne, one_smul] using h
 
 /-- A positive numbered simple root generator moves an exterior basis vector whose spin weight
 pairs to `-1` with the simple coroot to the basis vector of the reflected sign set, up to sign. -/
@@ -338,7 +335,7 @@ private theorem rep_coroot_ne_zero (i : Fin (n + 1)) :
   have hweight :=
     (isCartanWeightVector_iff (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n)).1
       (isCartanWeightVector_latticeBasis n (Fintype.equivFin (Finset (Fin (n + 1))) {i})) i
-  rw [hzero, LinearMap.zero_apply, coe_latticeBasis] at hweight
+  simp only [hzero, LinearMap.zero_apply, coe_latticeBasis] at hweight
   simp only [basisWeight, signSet, Equiv.symm_apply_apply] at hweight
   have hone : TauCeti.DynkinType.typeBSpinWeight ({i} : Finset (Fin (n + 1))) i = 1 := by
     rw [TauCeti.DynkinType.typeBSpinWeight_apply]
@@ -368,8 +365,8 @@ theorem isSl2Triple_rep_rootGenerator (i : Fin (n + 1)) :
     (TauCeti.splitOddForm_remainderOne ℚ (n + 1))
   have hrep (x : LieAlgebra.Orthogonal.typeB (Fin (n + 1)) ℚ) :
       rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ x) = φ x := by
-    rw [_root_.UniversalEnvelopingAlgebra.ι_apply, rep, SpinPolarizationData.typeBSpinRep_ι,
-      SpinPolarizationData.typeBSpinLieRep_apply]
+    simp only [_root_.UniversalEnvelopingAlgebra.ι_apply, rep, SpinPolarizationData.typeBSpinRep_ι,
+      SpinPolarizationData.typeBSpinLieRep_apply, φ]
   have hh : φ (TauCeti.typeBSimpleCorootGenerator (K := ℚ) i) ≠ 0 := by
     rw [← hrep]
     exact rep_coroot_ne_zero n i
@@ -471,8 +468,8 @@ theorem rootSubgroup_comp_carrierι (k : Fin (n + 1) ⊕ Fin (n + 1)) :
         (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
         (rep_kostantForm_mem_lattice n) k (isNilpotent_rep_rootGenerator n k)
         (latticeBasis n) := by
-  rw [rootSubgroup_def, carrierι]
-  exact kostantRootSubgroupToToral_comp_ι _ _ _ _ _ _ _ _ k
+  simp only [rootSubgroup_def, carrierι, Category.assoc, eqToHom_trans_assoc, eqToHom_refl,
+    Category.id_comp, kostantRootSubgroupToToral_comp_ι]
 
 /-- The represented split weight torus in the type-`Bₙ₊₁` spin carrier. -/
 noncomputable def weightTorus :
@@ -501,8 +498,8 @@ theorem weightTorus_def :
 theorem weightTorus_comp_carrierι :
     weightTorus n ≫ carrierι n =
       TauCeti.GeneralLinear.weightTorus (R := ℤ) (basisWeight n) := by
-  rw [weightTorus_def, carrierι]
-  exact kostantWeightTorusToToral_comp_ι _ _ _ _ _ _ _ _
+  simp only [weightTorus_def, carrierι, Category.assoc, eqToHom_trans_assoc, eqToHom_refl,
+    Category.id_comp, kostantWeightTorusToToral_comp_ι]
 
 /-- The full spin weights make the represented torus a closed subgroup scheme. -/
 instance isClosedImmersion_weightTorus :
@@ -510,7 +507,9 @@ instance isClosedImmersion_weightTorus :
   isClosedImmersion_kostantWeightTorusToToral _ _ _ _ _ _ _ _
     (span_range_basisWeight_eq_top n)
 
-/-- Morphisms out of the carrier agree on its root subgroups and weight torus. -/
+/-- Two morphisms from the type-`Bₙ₊₁` spin carrier to the affine group scheme of a commutative
+Hopf `ℤ`-algebra agree when they agree on every numbered root subgroup of the carrier and on its
+weight torus. -/
 @[ext]
 theorem groupScheme_hom_ext {Y : _root_.CommHopfAlgCat.{0} ℤ}
     (f g : groupScheme n ⟶
