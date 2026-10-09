@@ -88,7 +88,9 @@ discrete case below is proved through it.
   weight family — and is not what this serves.
 
 * `TauCeti.Huber.IsStronglyNoetherian.quotient`: for the same `A`, the quotient `A ⧸ J` by a
-  closed ideal, with the quotient topology, is strongly noetherian.
+  closed ideal, with the quotient topology, is strongly noetherian. In particular
+  `A⟨X₁, …, Xₖ⟩ ⧸ (Xᵢ²)` is strongly noetherian over a complete Hausdorff strongly noetherian
+  Tate ring (`TauCeti.Huber.isStronglyNoetherian_quotient_span_weightedX_sq`).
 
 * `TauCeti.Huber.isStronglyNoetherian_congr`: strong noetherianness is invariant under a
   bicontinuous ring isomorphism. Layer 4.1 takes `IsStronglyNoetherian A` as a hypothesis while
@@ -365,5 +367,20 @@ theorem IsStronglyNoetherian.quotient [IsStronglyNoetherian A] (J : Ideal A)
   exact (QuotientRing.isOpenQuotientMap_mk J).isStronglyNoetherian
 
 end Quotient
+
+section QuotientRestricted
+
+variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
+  [IsTateRing A] [IsStronglyNoetherian A] [CompleteSpace A] [T0Space A] {k : ℕ}
+
+/-- **`A⟨X₁, …, Xₖ⟩ ⧸ (Xᵢ²)` is strongly noetherian** over a complete Hausdorff strongly
+noetherian Tate ring `A`, since every ideal of `A⟨X₁, …, Xₖ⟩` is closed. -/
+theorem isStronglyNoetherian_quotient_span_weightedX_sq (i : Fin k) :
+    IsStronglyNoetherian (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
+      isWeightFamily_one_weight ⧸
+        Ideal.span {weightedX (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight i ^ 2}) :=
+  IsStronglyNoetherian.quotient _ (Ideal.isClosed_weightedRestrictedSubring_one_weight _)
+
+end QuotientRestricted
 
 end TauCeti.Huber
