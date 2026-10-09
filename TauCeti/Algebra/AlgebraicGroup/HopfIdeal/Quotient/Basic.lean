@@ -184,12 +184,6 @@ lemma mkQuotient_comp_liftQuotient (I : HopfIdeal R H) (f : H ⟶ K)
   exact BialgHom.congr_fun
     (Bialgebra.Quotient.liftBialgHom_comp_mkBialgHom I.toIdeal f.hom hf) h
 
-/-- The quotient lift evaluates on images of the quotient morphism as the original morphism. -/
-lemma liftQuotient_mkQuotient_apply (I : HopfIdeal R H) (f : H ⟶ K)
-    (hf : I.toIdeal ≤ RingHom.ker f.hom.toAlgHom.toRingHom) (h : H) :
-    (liftQuotient I f hf).hom ((mkQuotient H I).hom h) = f.hom h := by
-  rw [← _root_.CommHopfAlgCat.comp_apply, mkQuotient_comp_liftQuotient]
-
 /-- A morphism out of the quotient object is determined by its precomposition with the
 quotient morphism. -/
 lemma liftQuotient_unique (I : HopfIdeal R H) (f : H ⟶ K)

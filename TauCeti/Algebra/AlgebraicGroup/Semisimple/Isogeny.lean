@@ -230,8 +230,8 @@ private theorem geometricallySolvablePoints_quotient_of_map_le {Q G : _root_.Com
     have hy' : (mkQuotient Q J).hom y ∈ HopfIdeal.augmentation k (quotient Q J) := by
       rw [HopfIdeal.mem_augmentation, CoalgHomClass.counit_comp_apply]
       exact (HopfIdeal.mem_augmentation k Q).mp (HopfIdeal.mem_toIdeal.mp hy)
-    have hcomp : (mkQuotient G I).hom (f.hom y) = h.hom ((mkQuotient Q J).hom y) :=
-      (liftQuotient_mkQuotient_apply J _ hJ' y).symm
+    have hcomp : (mkQuotient G I).hom (f.hom y) = h.hom ((mkQuotient Q J).hom y) := by
+      rw [mkQuotient_apply Q J, liftQuotient_mk, _root_.CommHopfAlgCat.comp_apply]
     simp only [Ideal.mem_comap, RingHom.mem_ker, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
       BialgHom.coe_toAlgHom, _root_.CommHopfAlgCat.hom_comp, BialgHom.comp_apply]
     rw [hcomp, mkQuotient_eq_zero_iff, kernelHopfIdeal_def]
@@ -275,7 +275,8 @@ private theorem eq_augmentation_of_moduleFinite_reducedQuotient
     rw [injective_iff_map_eq_zero]
     intro z hz
     obtain ⟨y, rfl⟩ := CommHopfAlgCat.mkQuotient_surjective Q.obj J z
-    rw [CommHopfAlgCat.liftQuotient_mkQuotient_apply, CommHopfAlgCat.comp_apply,
+    rw [CommHopfAlgCat.mkQuotient_apply, CommHopfAlgCat.liftQuotient_mk,
+      CommHopfAlgCat.comp_apply,
       HopfIdeal.toReducedQuotient_eq_zero_iff] at hz
     obtain ⟨n, hn⟩ := hz
     rw [← map_pow, ← map_pow, CommHopfAlgCat.mkQuotient_eq_zero_iff] at hn
