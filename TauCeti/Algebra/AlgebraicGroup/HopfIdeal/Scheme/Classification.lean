@@ -9,7 +9,7 @@ public import Mathlib.Order.Hom.Basic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.CommonKernel.Basic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Scheme.Basic
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Kernel
-public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup
+public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Basic
 public import TauCeti.CategoryTheory.Subobject.FactorThru
 
 /-!

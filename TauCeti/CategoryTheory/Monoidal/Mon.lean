@@ -16,6 +16,7 @@ This file provides general-purpose facts about commutative monoid objects.
 ## Main declarations
 
 * `TauCeti.isCommMonObj_of_grp_iso`: commutativity of a group object is preserved by isomorphism.
+* `TauCeti.isCommMonObj_of_mono`: a monoid subobject of a commutative monoid object is commutative.
 -/
 
 public section
@@ -25,7 +26,7 @@ open scoped CategoryTheory.MonObj
 
 namespace TauCeti
 
-universe u
+universe u v
 
 /-- Commutativity of a group object is preserved under isomorphism. -/
 theorem isCommMonObj_of_grp_iso
@@ -37,5 +38,15 @@ theorem isCommMonObj_of_grp_iso
   simp only [Category.assoc, IsMonHom.mul_hom]
   rw [← Category.assoc, ← BraidedCategory.braiding_naturality]
   simp only [Category.assoc, IsCommMonObj.mul_comm]
+
+/-- A subobject of a commutative monoid object is commutative whenever its inclusion is a
+homomorphism. -/
+theorem isCommMonObj_of_mono
+    {C : Type u} [Category.{v} C] [MonoidalCategory C] [BraidedCategory C]
+    {A B : C} [MonObj A] [MonObj B] [IsCommMonObj B]
+    (i : A ⟶ B) [Mono i] [IsMonHom i] : IsCommMonObj A where
+  mul_comm := by
+    apply (cancel_mono i).1
+    simp [IsMonHom.mul_hom, ← BraidedCategory.braiding_naturality_assoc]
 
 end TauCeti
