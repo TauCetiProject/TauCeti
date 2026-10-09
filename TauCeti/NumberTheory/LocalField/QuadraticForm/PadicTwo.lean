@@ -48,7 +48,7 @@ full `8 × 8` table of the symbol over `ℚ_2`, the check that pins the dyadic s
   square-class group of `ℚ_2`.
 * `TauCeti.hilbertSymbolOnSquareClasses_padicTwo`: the symbol on square classes in the coordinates
   of that basis, that is its Gram matrix.
-* `TauCeti.bijective_squareClass_padicTwoSquareClassRep`: `1, -1, 5, -5, 2, -2, 10, -10` represent
+* `TauCeti.squareClass_padicTwoSquareClassRep_bijective`: `1, -1, 5, -5, 2, -2, 10, -10` represent
   each square class of `ℚ_2` exactly once.
 * `TauCeti.hilbertSymbol_padicTwoSquareClassRep`: the `8 × 8` table of the symbol on these
   representatives.
@@ -72,18 +72,21 @@ private theorem two_ne_zero_padicTwo : (2 : ℚ_[2]) ≠ 0 := two_ne_zero
 
 private noncomputable instance : Invertible (2 : ℚ_[2]) := invertibleOfNonzero two_ne_zero_padicTwo
 
-/-- A unit of `ℤ_2`, read in `ℚ_2ˣ`, is `(-1) ^ ε(u) 5 ^ ω(u)` times a square. -/
-private theorem exists_eq_neg_one_zpow_mul_unitFive_zpow_mul_sq {a : ℚ_[2]ˣ} {u : ℤ_[2]ˣ}
-    (ha : (a : ℚ_[2]) = u) :
-    ∃ w : ℚ_[2]ˣ,
-      a = (-1) ^ ((serreEps u).val : ℤ) * unitFive ^ ((serreOmega u).val : ℤ) * w ^ 2 := by
+/-- An element `a = 2 ^ β u` of `ℚ_2ˣ`, with `u` a unit of `ℤ_2`, is `2 ^ β (-1) ^ ε(u) 5 ^ ω(u)`
+times a square. -/
+private theorem exists_eq_two_zpow_mul_neg_one_zpow_mul_unitFive_zpow_mul_sq {a : ℚ_[2]ˣ} {β : ℤ}
+    {u : ℤ_[2]ˣ} (ha : (a : ℚ_[2]) = 2 ^ β * u) :
+    ∃ w : ℚ_[2]ˣ, a = unitTwo ^ β * (-1) ^ ((serreEps u).val : ℤ) *
+      unitFive ^ ((serreOmega u).val : ℤ) * w ^ 2 := by
   obtain ⟨w, hw⟩ := exists_eq_neg_one_pow_mul_five_pow_mul_sq u
   have hw0 : ((w : ℤ_[2]) : ℚ_[2]) ≠ 0 := PadicInt.coe_ne_zero.mpr w.ne_zero
   refine ⟨Units.mk0 _ hw0, Units.ext ?_⟩
   rw [ha, hw]
-  simp only [Units.val_mul, zpow_natCast, Units.val_pow_eq_pow_val,
+  simp only [Units.val_mul, zpow_natCast, Units.val_pow_eq_pow_val, Units.val_zpow_eq_zpow_val,
     Units.val_neg, Units.val_one, Units.val_mk0]
-  norm_cast
+  have h5 : ((5 : ℤ_[2]) : ℚ_[2]) = 5 := by norm_cast
+  push_cast [h5]
+  ring
 
 /-- Expansion of the symbol in its second argument along the generators `2`, `-1`, `5`. -/
 private theorem hilbertSymbol_eq_of_eq_two_zpow_mul (c b : ℚ_[2]ˣ) {β : ℤ} {v : ℤ_[2]ˣ}
@@ -91,10 +94,8 @@ private theorem hilbertSymbol_eq_of_eq_two_zpow_mul (c b : ℚ_[2]ˣ) {β : ℤ}
     hilbertSymbol c b = hilbertSymbol c unitTwo ^ β *
       hilbertSymbol c (-1) ^ ((serreEps v).val : ℤ) *
         hilbertSymbol c unitFive ^ ((serreOmega v).val : ℤ) := by
-  have hv0 : ((v : ℤ_[2]) : ℚ_[2]) ≠ 0 := PadicInt.coe_ne_zero.mpr v.ne_zero
-  obtain ⟨w, hw⟩ := exists_eq_neg_one_zpow_mul_unitFive_zpow_mul_sq (a := Units.mk0 _ hv0) rfl
-  have hb' : b = unitTwo ^ β * Units.mk0 _ hv0 := Units.ext (by simp [hb])
-  rw [hb', hw, hilbertSymbol_mul_right two_ne_zero_padicTwo, hilbertSymbol_mul_sq_right]
+  obtain ⟨w, hw⟩ := exists_eq_two_zpow_mul_neg_one_zpow_mul_unitFive_zpow_mul_sq hb
+  rw [hw, hilbertSymbol_mul_sq_right]
   simp only [hilbertSymbol_mul_right two_ne_zero_padicTwo,
     hilbertSymbol_zpow_right two_ne_zero_padicTwo, mul_assoc]
 
@@ -190,10 +191,6 @@ theorem hilbertSymbol_padicTwo {a b : ℚ_[2]ˣ} {α β : ℤ} {u v : ℤ_[2]ˣ}
 
 /-! ### The symbol on a basis of the square classes, and the `8 × 8` table -/
 
-private theorem isUnit_five_padicInt : IsUnit (5 : ℤ_[2]) := by
-  rw [PadicInt.isUnit_iff]
-  exact_mod_cast PadicInt.norm_natCast_eq_one_iff.mpr (by norm_num)
-
 /-- The unit `(-1) ^ c₀ 5 ^ c₂` of `ℤ_2`. -/
 private noncomputable def unitPart (c : Fin 3 → ZMod 2) : ℤ_[2]ˣ :=
   (-1) ^ (c 0).val * isUnit_five_padicInt.unit ^ (c 2).val
@@ -204,16 +201,12 @@ private noncomputable def basisProd (c : Fin 3 → ZMod 2) : ℚ_[2]ˣ :=
   (-1) ^ (c 0).val * unitTwo ^ (c 1).val * unitFive ^ (c 2).val
 
 private theorem serreEps_unitPart (c : Fin 3 → ZMod 2) : serreEps (unitPart c) = c 0 := by
-  have h5 : serreEps isUnit_five_padicInt.unit = 0 := serreEps_eq_zero_of_coe_eq_five rfl
-  rw [unitPart, serreEps_mul]
-  have h01 : ∀ t : ZMod 2, t = 0 ∨ t = 1 := by decide
-  rcases h01 (c 0) with h | h <;> rcases h01 (c 2) with h' | h' <;> simp [h, h', h5, ZMod.val_one]
+  simp [unitPart, serreEps_mul, serreEps_pow,
+    serreEps_eq_zero_of_coe_eq_five isUnit_five_padicInt.unit_spec]
 
 private theorem serreOmega_unitPart (c : Fin 3 → ZMod 2) : serreOmega (unitPart c) = c 2 := by
-  have h5 : serreOmega isUnit_five_padicInt.unit = 1 := serreOmega_eq_one_of_coe_eq_five rfl
-  rw [unitPart, serreOmega_mul]
-  have h01 : ∀ t : ZMod 2, t = 0 ∨ t = 1 := by decide
-  rcases h01 (c 0) with h | h <;> rcases h01 (c 2) with h' | h' <;> simp [h, h', h5, ZMod.val_one]
+  simp [unitPart, serreOmega_mul, serreOmega_pow,
+    serreOmega_eq_one_of_coe_eq_five isUnit_five_padicInt.unit_spec]
 
 private theorem coe_basisProd (c : Fin 3 → ZMod 2) :
     (basisProd c : ℚ_[2]) = 2 ^ ((c 1).val : ℤ) * ((unitPart c : ℤ_[2]) : ℚ_[2]) := by
@@ -263,15 +256,13 @@ private theorem linearIndependent_basisClass : LinearIndependent (ZMod 2) basisC
 private theorem squareClass_mem_span_basisClass (a : ℚ_[2]ˣ) :
     squareClass a ∈ Submodule.span (ZMod 2) (Set.range basisClass) := by
   obtain ⟨β, v, hv⟩ := exists_eq_two_zpow_mul a
-  have hv0 : ((v : ℤ_[2]) : ℚ_[2]) ≠ 0 := PadicInt.coe_ne_zero.mpr v.ne_zero
-  obtain ⟨w, hw⟩ := exists_eq_neg_one_zpow_mul_unitFive_zpow_mul_sq (a := Units.mk0 _ hv0) rfl
-  have ha : a = unitTwo ^ β * Units.mk0 _ hv0 := Units.ext (by simp [hv])
+  obtain ⟨w, hw⟩ := exists_eq_two_zpow_mul_neg_one_zpow_mul_unitFive_zpow_mul_sq hv
   rw [Submodule.mem_span_range_iff_exists_fun]
   refine ⟨![serreEps v, (β : ZMod 2), serreOmega v], ?_⟩
   have hw2 : squareClass (w ^ 2) = 0 := (squareClass_eq_zero_iff _).mpr (IsSquare.sq w)
   have hz (n : ℤ) (x : SquareClassGroup ℚ_[2]) : n • x = (n : ZMod 2) • x :=
     (Int.cast_smul_eq_zsmul (ZMod 2) n x).symm
-  rw [ha, hw]
+  rw [hw]
   simp only [Fin.sum_univ_three, squareClass_mul, hw2, squareClass_zpow, hz, Int.cast_natCast,
     ZMod.natCast_zmod_val, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
     Matrix.head_cons, Matrix.tail_cons]
@@ -342,7 +333,7 @@ private theorem padicTwoSquareClassRep_eq_basisProd (i : Fin 8) :
   fin_cases i <;> simp [basisProd, repCoords, ZMod.val_one] <;> norm_num
 
 /-- `1, -1, 5, -5, 2, -2, 10, -10` represent each square class of `ℚ_2` exactly once. -/
-theorem bijective_squareClass_padicTwoSquareClassRep :
+theorem squareClass_padicTwoSquareClassRep_bijective :
     Function.Bijective fun i ↦ squareClass (padicTwoSquareClassRep i) := by
   have hc : Function.Bijective repCoords := by decide
   have h : (fun i ↦ squareClass (padicTwoSquareClassRep i)) =
