@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.WeakType
-public import TauCeti.MeasureTheory.Integral.Marcinkiewicz.L2Bounded
+public import TauCeti.MeasureTheory.Integral.Marcinkiewicz.LpBounded
 
 /-!
 # Singular integral operators of strong type `(p, p)` for `1 < p < 2`
@@ -16,19 +16,21 @@ condition: for every `b ∈ L²` vanishing off a closed ball `closedBall y r` wi
 `∫_{ℝⁿ \ closedBall y (2r)} ‖T b‖ ≤ B ‖b‖₁`. Such an operator is of weak type `(1, 1)`
 (`ContinuousLinearMap.mul_volume_lt_enorm_le_of_setLIntegral_compl_closedBall_le`), and
 Marcinkiewicz interpolation between this endpoint and the `L²` bound
-(`ContinuousLinearMap.lintegral_rpow_enorm_le_of_mul_meas_lt_le`) shows that it is of strong type
-`(p, p)` for every `1 < p < 2`: for every `f ∈ L²`,
+(`ContinuousLinearMap.lintegral_rpow_enorm_le_of_rpow_mul_meas_lt_le`) shows that it is of strong
+type `(p, p)` for every `1 < p < 2`: for every `f ∈ L²`,
 
 `∫ ‖T f‖ ^ p ≤ (p / (p - 1) · 2 A + p / (2 - p) · 4 ‖T‖²) ∫ ‖f‖ ^ p`,
 
-where `A = 2ⁿ (4 ‖T‖² + 1) + 4 B` is the weak-type constant
-(`ContinuousLinearMap.lintegral_rpow_enorm_le_of_setLIntegral_compl_closedBall_le`). The same
+where `A = 2ⁿ (4 ‖T‖² + 1) + 4 B` is the weak-type constant of
+`ContinuousLinearMap.mul_volume_lt_enorm_le_of_setLIntegral_compl_closedBall_le`. This is
+`ContinuousLinearMap.lintegral_rpow_enorm_le_of_setLIntegral_compl_closedBall_le`. The same
 holds for an operator given off the support of `b` by a kernel satisfying Hörmander's condition
 (`ContinuousLinearMap.lintegral_rpow_enorm_le_of_hormander`).
 
-Both constants blow up at the endpoints, as they must: a Calderón–Zygmund operator need not be
-bounded on `L¹`. The range `2 < p < ∞` follows from this one by duality, applied to the adjoint
-of `T`, and is not treated here.
+The factor `p / (p - 1)` must blow up as `p → 1`, since a Calderón–Zygmund operator need not be
+bounded on `L¹`. The blow-up of `p / (2 - p)` as `p → 2` is an artifact of the interpolation
+method only, as `T` is bounded on `L²` by hypothesis. The range `2 < p < ∞` follows from this one
+by duality, applied to the adjoint of `T`, and is not treated here.
 
 ## References
 
@@ -63,9 +65,11 @@ theorem lintegral_rpow_enorm_le_of_setLIntegral_compl_closedBall_le
     ∫⁻ x, ‖T f x‖ₑ ^ p ≤
       (ENNReal.ofReal (p / (p - 1)) *
           (2 * (2 ^ Fintype.card ι * (4 * ‖T‖ₑ ^ 2 + 1) + 4 * B)) +
-        ENNReal.ofReal (p / (2 - p)) * (4 * ‖T‖ₑ ^ 2)) * ∫⁻ x, ‖f x‖ₑ ^ p :=
-  T.lintegral_rpow_enorm_le_of_mul_meas_lt_le
-    (mul_volume_lt_enorm_le_of_setLIntegral_compl_closedBall_le T hT) hp hp' f
+        ENNReal.ofReal (p / (2 - p)) * (4 * ‖T‖ₑ ^ 2)) * ∫⁻ x, ‖f x‖ₑ ^ p := by
+  have h := T.lintegral_rpow_enorm_le_of_rpow_mul_meas_lt_le
+    (fun f t => by simpa using mul_volume_lt_enorm_le_of_setLIntegral_compl_closedBall_le T hT f t)
+    one_pos hp (by simpa using hp') f
+  convert h using 4 <;> norm_num
 
 /-- **The Calderón–Zygmund theorem** for an operator given by a kernel, strong type `(p, p)` for
 `1 < p < 2`. Let `T` be a bounded linear operator on `L²(ℝⁿ)` such that `T b x = ∫ K x y (b y) dy`
@@ -85,8 +89,10 @@ theorem lintegral_rpow_enorm_le_of_hormander [CompleteSpace F]
     ∫⁻ x, ‖T f x‖ₑ ^ p ≤
       (ENNReal.ofReal (p / (p - 1)) *
           (2 * (2 ^ Fintype.card ι * (4 * ‖T‖ₑ ^ 2 + 1) + 4 * B)) +
-        ENNReal.ofReal (p / (2 - p)) * (4 * ‖T‖ₑ ^ 2)) * ∫⁻ x, ‖f x‖ₑ ^ p :=
-  T.lintegral_rpow_enorm_le_of_mul_meas_lt_le
-    (mul_volume_lt_enorm_le_of_hormander T hK hB hrep) hp hp' f
+        ENNReal.ofReal (p / (2 - p)) * (4 * ‖T‖ₑ ^ 2)) * ∫⁻ x, ‖f x‖ₑ ^ p := by
+  have h := T.lintegral_rpow_enorm_le_of_rpow_mul_meas_lt_le
+    (fun f t => by simpa using mul_volume_lt_enorm_le_of_hormander T hK hB hrep f t)
+    one_pos hp (by simpa using hp') f
+  convert h using 4 <;> norm_num
 
 end ContinuousLinearMap
