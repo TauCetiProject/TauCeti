@@ -265,13 +265,9 @@ theorem isRegularCone_hull_image_basis (hi : IsIntegralLattice i) {κ : Type*}
   have _ := hi.finite
   have _ : Finite κ := Module.Finite.finite_basis b
   let _ : Fintype κ := Fintype.ofFinite κ
-  -- The images of the basis vectors form a real basis of `V`.
-  have hB (j : κ) : hi.isBaseChange.basis b j = i (b j) := by
-    simpa using hi.isBaseChange.basis_apply b j
   let w : A → V := fun a ↦ i (b a)
-  have hw : LinearIndependent ℝ w := by
-    have h := (hi.isBaseChange.basis b).linearIndependent.comp ((↑) : A → κ) Subtype.val_injective
-    simpa only [Function.comp_def, hB] using h
+  have hw : LinearIndependent ℝ w :=
+    (hi.linearIndependent_basis b).comp ((↑) : A → κ) Subtype.val_injective
   have hrange : i '' (b '' A) = Set.range w := by
     rw [Set.image_image, Set.image_eq_range]
   have hcone : PointedCone.hull ℝ (i '' (b '' A)) = PointedCone.hull ℝ (Set.range w) := by

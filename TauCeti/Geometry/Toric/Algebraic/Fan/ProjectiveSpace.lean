@@ -83,15 +83,6 @@ private theorem sum_smul_projectiveSpaceGenerator (c : Option ι → ℝ) :
     map_neg, map_sum, smul_neg, Finset.smul_sum, sub_smul, Finset.sum_sub_distrib]
   abel
 
-omit [Fintype ι] in
-/-- The images of the vectors of an integral basis of an integral lattice are linearly
-independent over the reals. -/
-private theorem linearIndependent_of_isIntegralLattice (hi : IsIntegralLattice i) :
-    LinearIndependent ℝ fun j ↦ i (b j) := by
-  have hB (j : ι) : hi.isBaseChange.basis b j = i (b j) := by
-    simpa using hi.isBaseChange.basis_apply b j
-  exact funext hB ▸ (hi.isBaseChange.basis b).linearIndependent
-
 /-- Two linear combinations of the real ray generators agree only if their coefficients differ by
 a constant: the generators span the real space with the single relation that they sum to zero. -/
 private theorem sub_eq_sub_of_sum_smul_eq (hli : LinearIndependent ℝ fun j ↦ i (b j))
@@ -302,7 +293,7 @@ def projectiveSpace (hi : IsIntegralLattice i) : Fan i where
       exact ⟨_, ⟨k, ⟨hkS, hkτ⟩, rfl⟩, rfl⟩
   inf_isFaceOf_left := by
     rintro _ _ ⟨S, hS, rfl⟩ ⟨T, hT, rfl⟩
-    have hb := linearIndependent_of_isIntegralLattice b hi
+    have hb := hi.linearIndependent_basis b
     rw [projectiveSpaceCone_inf b hb hS hT, projectiveSpaceCone_eq_hull,
       projectiveSpaceCone_eq_hull]
     -- Inside the cone of `S`, the generators indexed by `S ∩ T` span a face.
