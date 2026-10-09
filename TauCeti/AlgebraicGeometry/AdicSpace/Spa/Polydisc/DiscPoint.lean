@@ -48,6 +48,10 @@ classical point.
   norms of radius `r` of `f(T + a)` and `g(T + a)`.
 * `TauCeti.ValuationSpectrum.discPoint_zero`: about the origin, `η_{0,r}` is the Gauss point
   `η_r`.
+* `TauCeti.ValuationSpectrum.comap_translateHom_discPoint`: pulling `η_{c,r}` back along the
+  translation `T ↦ T + b` gives `η_{c+b,r}`.
+* `TauCeti.ValuationSpectrum.discPoint_eq_gaussPoint_iff`: `η_{a,r} = η_s` if and only if `r = s`
+  and `‖a‖ ≤ r`.
 * `TauCeti.ValuationSpectrum.discPoint_eq_discPoint_iff`: `η_{a,r} = η_{b,s}` if and only if
   `r = s` and `‖a - b‖ ≤ r`.
 * `TauCeti.ValuationSpectrum.discPoint_radius_one`: at radius one every centre gives the Gauss
@@ -173,9 +177,20 @@ theorem discPoint_zero (ha : ‖(0 : K)‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r ≤
     translateHom_zero
   exact Subtype.ext (by rw [discPoint_val, h0, comap_id, id])
 
+/-- **Translating recentres `η_{c,r}`**: pulling `η_{c,r}` back along the translation
+`T ↦ T + b` gives `η_{c+b,r}`, since translations compose additively. -/
+theorem comap_translateHom_discPoint {b c : K} (hb : ‖b‖ ≤ 1) (hc : ‖c‖ ≤ 1) (hcb : ‖c + b‖ ≤ 1)
+    (hr₀ : 0 < r) (hr₁ : r ≤ 1) :
+    comap (translateHom (fun _ ↦ b) fun _ ↦ isPowerBounded_iff_norm_le_one.mpr hb)
+        (discPoint c hc hr₀ hr₁).1 = (discPoint (c + b) hcb hr₀ hr₁).1 := by
+  rw [discPoint_val, discPoint_val, ← Function.comp_apply (f := comap _), ← comap_comp,
+    translateHom_comp_translateHom]
+  -- the tuple `(fun _ ↦ c) + (fun _ ↦ b)` is `fun _ ↦ c + b` by definition of `Pi.add`
+  rfl
+
 /-- **Recentring within the disc**: `η_{a,r} = η_r` whenever `‖a‖ ≤ r`, by translation invariance
 of the Gauss norm of radius `r`. -/
-private theorem discPoint_eq_gaussPoint_of_norm_le {a : K} (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r)
+theorem discPoint_eq_gaussPoint_of_norm_le {a : K} (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r)
     (hr₁ : r ≤ 1) (har : ‖a‖ ≤ r) : discPoint a ha hr₀ hr₁ = gaussPoint hr₀ hr₁ :=
   Subtype.ext <| ext' fun f g ↦ by
     rw [discPoint_vle_iff, gaussPoint_vle_iff, closedDiscGaussValuation_translateHom _ _ _ _ har,
@@ -184,7 +199,7 @@ private theorem discPoint_eq_gaussPoint_of_norm_le {a : K} (ha : ‖a‖ ≤ 1) 
 /-- **`η_{a,r}` is the Gauss point `η_s` exactly when `r = s` and `‖a‖ ≤ r`.** If `‖a‖ > r`, then
 `η_{a,r}` finds `T - a` strictly smaller than the constant `a`, while every Gauss point about the
 origin finds it at least as large. -/
-private theorem discPoint_eq_gaussPoint_iff {a : K} (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r ≤ 1)
+theorem discPoint_eq_gaussPoint_iff {a : K} (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r ≤ 1)
     (hs₀ : 0 < s) (hs₁ : s ≤ 1) :
     discPoint a ha hr₀ hr₁ = gaussPoint hs₀ hs₁ ↔ r = s ∧ ‖a‖ ≤ r := by
   constructor
@@ -219,22 +234,17 @@ and `‖a - b‖ ≤ r`, that is, the radii agree and each centre lies in the ot
 theorem discPoint_eq_discPoint_iff {a b : K} (ha : ‖a‖ ≤ 1) (hb : ‖b‖ ≤ 1) (hr₀ : 0 < r)
     (hr₁ : r ≤ 1) (hs₀ : 0 < s) (hs₁ : s ≤ 1) :
     discPoint a ha hr₀ hr₁ = discPoint b hb hs₀ hs₁ ↔ r = s ∧ ‖a - b‖ ≤ r := by
-  have hab : ‖a - b‖ ≤ 1 := by
-    simpa only [sub_eq_add_neg] using
-      (IsUltrametricDist.norm_add_le_max a (-b)).trans (max_le ha (by rwa [norm_neg]))
+  have hb' : ‖-b‖ ≤ 1 := by rwa [norm_neg]
+  have hab : ‖a + -b‖ ≤ 1 :=
+    (IsUltrametricDist.norm_add_le_max a (-b)).trans (max_le ha hb')
+  rw [← sub_eq_add_neg] at hab
   -- pulling back along translation by `-b` is injective, and carries `η_{c,t}` to `η_{c - b,t}`
-  let τ := translateHom (-fun _ : Fin 1 ↦ b) fun _ ↦ (isPowerBounded_iff_norm_le_one.mpr hb).neg
-  have hshift (c : K) (hc : ‖c‖ ≤ 1) (hcb : ‖c - b‖ ≤ 1) {t : ℝ} (ht₀ : 0 < t) (ht₁ : t ≤ 1) :
-      comap τ (discPoint c hc ht₀ ht₁).1 = (discPoint (c - b) hcb ht₀ ht₁).1 := by
-    rw [discPoint_val, discPoint_val, ← Function.comp_apply (f := comap τ), ← comap_comp,
-      translateHom_comp_translateHom]
-    congr 2
-    exact funext fun _ ↦ (sub_eq_add_neg c b).symm
-  have hbb : ∀ hbb : ‖b - b‖ ≤ 1, discPoint (b - b) hbb hs₀ hs₁ = gaussPoint hs₀ hs₁ := by
-    simp only [sub_self, discPoint_zero, implies_true]
   rw [← discPoint_eq_gaussPoint_iff hab hr₀ hr₁ hs₀ hs₁, Subtype.ext_iff, Subtype.ext_iff,
-    ← (comap_injective (translateHom_surjective _ _ : Function.Surjective τ)).eq_iff,
-    hshift a ha hab hr₀ hr₁, hshift b hb (by simp) hs₀ hs₁, hbb]
+    ← (comap_injective (translateHom_surjective (fun _ : Fin 1 ↦ -b)
+      fun _ ↦ isPowerBounded_iff_norm_le_one.mpr hb')).eq_iff,
+    comap_translateHom_discPoint hb' ha (by rwa [← sub_eq_add_neg]),
+    comap_translateHom_discPoint hb' hb (by simp), ← Subtype.ext_iff, ← Subtype.ext_iff]
+  simp only [← sub_eq_add_neg, sub_self, discPoint_zero]
 
 /-- **At radius one every centre gives the Gauss point of the disc**: `D(a, 1)` is the whole
 closed unit disc. -/
