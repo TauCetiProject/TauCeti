@@ -53,12 +53,7 @@ theorem isCentralIsogeny_coinvariantsι_centerDefiningIdeal
         (CommHopfAlgCat.isCentral_centerDefiningIdeal H.obj).isNormal) := by
   let _ : Algebra.Smooth k H := hH.smooth
   let _ : Algebra.IsGeometricallyReduced k H := isGeometricallyReduced_of_smooth k H
-  have hseq := CommHopfAlgCat.isShortExact_coinvariantsι_mkQuotient
-    (CommHopfAlgCat.isCentral_centerDefiningIdeal H.obj).isNormal
-  have hisog := hseq.isIsogeny_iff_moduleFinite.mpr hH.moduleFinite_centerCoordinate
-  rw [CommHopfAlgCat.isCentralIsogeny_iff]
-  refine ⟨hisog.finite, hisog.faithfullyFlat, ?_⟩
-  rw [CommHopfAlgCat.kernelHopfIdeal_coinvariantsι_eq]
-  exact CommHopfAlgCat.isCentral_centerDefiningIdeal H.obj
+  exact CommHopfAlgCat.isCentralIsogeny_coinvariantsι
+    (CommHopfAlgCat.isCentral_centerDefiningIdeal H.obj) hH.moduleFinite_centerCoordinate
 
 end TauCeti.semisimpleCommHopfAlgProperty
