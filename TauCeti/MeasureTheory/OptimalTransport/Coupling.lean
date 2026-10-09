@@ -174,6 +174,30 @@ theorem integral_comp_snd (hπ : IsCoupling π μ ν) {f : Y → E}
   rw [← hπ.measurePreserving_snd.map_eq] at hf ⊢
   exact (integral_map measurable_snd.aemeasurable hf).symm
 
+/-- **Integrability from upper bounds and a nonnegative split sum.** Let `f` and `g` be bounded
+above almost everywhere by integrable functions of the two marginals. If `f x + g y ≥ 0` for
+`π`-almost every `(x, y)`, then `f` and `g` are both integrable. -/
+theorem integrable_and_integrable_of_ae_add_nonneg (hπ : IsCoupling π μ ν) {f : X → ℝ}
+    {g : Y → ℝ} (hf : AEStronglyMeasurable f μ) (hg : AEStronglyMeasurable g ν) {U : X → ℝ}
+    {V : Y → ℝ} (hU : Integrable U μ) (hV : Integrable V ν) (hfU : ∀ᵐ x ∂μ, f x ≤ U x)
+    (hgV : ∀ᵐ y ∂ν, g y ≤ V y) (hfg : ∀ᵐ z ∂π, 0 ≤ f z.1 + g z.2) :
+    Integrable f μ ∧ Integrable g ν := by
+  have hG := hπ.integrable_add_split hU.abs hV.abs
+  have hbound : ∀ᵐ z ∂π, |f z.1| ≤ |U z.1| + |V z.2| ∧ |g z.2| ≤ |U z.1| + |V z.2| := by
+    filter_upwards [hπ.measurePreserving_fst.quasiMeasurePreserving.ae hfU,
+      hπ.measurePreserving_snd.quasiMeasurePreserving.ae hgV, hfg] with z hzU hzV hz
+    have := le_abs_self (U z.1)
+    have := le_abs_self (V z.2)
+    have := abs_nonneg (U z.1)
+    have := abs_nonneg (V z.2)
+    exact ⟨abs_le.2 ⟨by linarith, by linarith⟩, abs_le.2 ⟨by linarith, by linarith⟩⟩
+  exact ⟨(hπ.measurePreserving_fst.integrable_comp hf).1 <|
+      hG.mono' (hf.comp_measurePreserving hπ.measurePreserving_fst) <|
+        hbound.mono fun _ hz ↦ by simpa [Real.norm_eq_abs] using hz.1,
+    (hπ.measurePreserving_snd.integrable_comp hg).1 <|
+      hG.mono' (hg.comp_measurePreserving hπ.measurePreserving_snd) <|
+        hbound.mono fun _ hz ↦ by simpa [Real.norm_eq_abs] using hz.2⟩
+
 end Integral
 
 /-- A coupling gives the measurable cylinder `s ×ˢ univ` the source mass of `s`. -/
