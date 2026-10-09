@@ -41,6 +41,8 @@ The construction follows the family modules it imports.
   the parameter to the odd half-Frobenius exponent.
 * `TauCeti.ValidLieTypeIndex.steinberg_steinberg_of_usesHalfFrobenius`: on half-Frobenius
   families, the Steinberg endomorphism squares to the `q`-power Frobenius.
+* `TauCeti.ValidLieTypeIndex.FixedPoints_eq_of_not_usesHalfFrobenius`: on ordinary and
+  graph-twisted families, the fixed group agrees with `GraphTwistedIndex.FixedPoints`.
 * `TauCeti.ValidLieTypeIndex.Group_eq_of_not_usesHalfFrobenius`: on ordinary and graph-twisted
   families, the candidate group agrees with `GraphTwistedIndex.Group`.
 
@@ -70,6 +72,26 @@ def steinberg : (d : ValidLieTypeIndex) → d.AmbientGroup →* d.AmbientGroup
   | ⟨.F4 _, hv⟩ | ⟨.G2 _, hv⟩ | ⟨.twistedE6 _, hv⟩
   | ⟨.trialityD4 _, hv⟩ =>
       GraphTwistedIndex.steinberg ⟨⟨_, hv⟩, by simp⟩
+
+/-- On a Suzuki index the assembled Steinberg map is that of the family. -/
+theorem steinberg_suzuki {m : ℕ} (hv : (LieTypeIndex.suzuki m).Valid) :
+    steinberg ⟨_, hv⟩ = SuzukiLieIndex.steinberg ⟨⟨_, hv⟩, by simp⟩ := by
+  rfl
+
+/-- On a Ree `G₂` index the assembled Steinberg map is that of the family. -/
+theorem steinberg_reeG2 {m : ℕ} (hv : (LieTypeIndex.reeG2 m).Valid) :
+    steinberg ⟨_, hv⟩ = (ReeG2LieIndex.of m hv).steinberg := by
+  rfl
+
+/-- On a Ree `F₄` index the assembled Steinberg map is that of the family. -/
+theorem steinberg_reeF4 {m : ℕ} (hv : (LieTypeIndex.reeF4 m).Valid) :
+    steinberg ⟨_, hv⟩ = (ReeF4LieIndex.of m hv).steinberg := by
+  rfl
+
+/-- On the Tits index the assembled Steinberg map is that of the Tits construction. -/
+theorem steinberg_tits (hv : LieTypeIndex.tits.Valid) :
+    steinberg ⟨_, hv⟩ = TitsLieIndex.of.steinberg := by
+  rfl
 
 /-- On ordinary and graph-twisted indices the assembled map has the recorded diagram action
 and field-order exponent. -/
@@ -127,6 +149,16 @@ theorem steinberg_steinberg_of_usesHalfFrobenius (d : ValidLieTypeIndex)
 
 /-- The fixed subgroup of the family's Steinberg endomorphism. -/
 abbrev FixedPoints (d : ValidLieTypeIndex) : Type := ↥(fixedSubgroup d.steinberg)
+
+/-- On the thirteen ordinary or graph-twisted families, the assembled fixed group is the
+existing graph-twisted assembly's fixed group. -/
+theorem FixedPoints_eq_of_not_usesHalfFrobenius (d : ValidLieTypeIndex)
+    (h : ¬ d.1.UsesHalfFrobenius) : d.FixedPoints = GraphTwistedIndex.FixedPoints ⟨d, h⟩ := by
+  obtain ⟨d, hv⟩ := d
+  cases d
+  all_goals first
+  | rfl
+  | exact absurd (by simp [LieTypeIndex.usesHalfFrobenius_iff]) h
 
 /-- The Lie-type candidate is the derived subgroup of the fixed points modulo its own centre.
 No finiteness or simplicity instance is assumed or supplied. -/
