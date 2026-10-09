@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
+public import TauCeti.Topology.Algebra.Module.Quotient
 
 /-!
 # Normal spaces of smooth embeddings
@@ -54,7 +55,8 @@ theorem mem_tangentRange_iff (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠
 
 /-- The normal space of a smooth embedding at `x`: ambient tangent vectors modulo vectors
 tangent to the embedded submanifold. -/
-noncomputable def NormalSpace (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) : Type _ :=
+noncomputable def NormalSpace
+    (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) : Type _ :=
   TangentSpace J (f x) ⧸ f.tangentRange x hn
 
 /-- The tangent range is closed because the differential of an immersion has a continuous
@@ -164,6 +166,41 @@ theorem normalLiftL_comp_normalClassL (f : SmoothEmbedding I J n M N) (x : M) (h
 theorem normalClass_surjective (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
     Function.Surjective (f.normalClass x hn) :=
   (f.tangentRange x hn).mkQ_surjective
+
+section Equiv
+
+variable {E' F' : Type*}
+  [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+  {H' G' : Type*} [TopologicalSpace H'] [TopologicalSpace G']
+  {I' : ModelWithCorners 𝕜 E' H'} {J' : ModelWithCorners 𝕜 F' G'}
+  {M' N' : Type*}
+  [TopologicalSpace M'] [ChartedSpace H' M']
+  [TopologicalSpace N'] [ChartedSpace G' N']
+  {m : ℕ∞ω}
+  (f : SmoothEmbedding I J n M N) (g : SmoothEmbedding I' J' m M' N')
+  (x : M) (y : M') (hn : n ≠ 0) (hm : m ≠ 0)
+
+/-- An ambient tangent equivalence carrying one embedding's tangent range onto the other's
+induces an equivalence of their intrinsic normal spaces. -/
+noncomputable def normalSpaceEquivOfMapTangentRange
+    (e : TangentSpace J (f x) ≃L[𝕜] TangentSpace J' (g y))
+    (h : (f.tangentRange x hn).map e.toLinearMap = g.tangentRange y hm) :
+    f.NormalSpace x hn ≃L[𝕜] g.NormalSpace y hm :=
+  e.quotientEquiv (f.tangentRange x hn) (g.tangentRange y hm) h
+
+/-- The normal-space equivalence induced by an ambient tangent equivalence applies it to
+representatives. -/
+@[simp]
+theorem normalSpaceEquivOfMapTangentRange_normalClass
+    (e : TangentSpace J (f x) ≃L[𝕜] TangentSpace J' (g y))
+    (h : (f.tangentRange x hn).map e.toLinearMap = g.tangentRange y hm)
+    (w : TangentSpace J (f x)) :
+    f.normalSpaceEquivOfMapTangentRange g x y hn hm e h (f.normalClass x hn w) =
+      g.normalClass y hm (e w) := by
+  exact e.quotientEquiv_mk (f.tangentRange x hn) (g.tangentRange y hm) h w
+
+end Equiv
 
 /-- An ambient tangent vector has zero normal class precisely when it is tangent to the image. -/
 @[simp]

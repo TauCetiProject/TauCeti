@@ -13,6 +13,7 @@ import Mathlib.Topology.Algebra.Module.Equiv.Prod
 import TauCeti.Analysis.Convex.Between
 import TauCeti.Analysis.LocallyConvex.Separation
 import TauCeti.Analysis.Normed.Affine.Ray
+import TauCeti.Topology.Algebra.Affine.Ray
 import TauCeti.Topology.Algebra.Affine.Coordinate
 
 /-!
@@ -87,7 +88,8 @@ theorem IsSimple.exists_isSliceChart {n : ℕ} [NeZero n] {poly : Polygon P n}
     (by simp)
   obtain ⟨Φ, hΦ⟩ := e.exists_homeomorph_fst_eq ℓ hℓ z
   -- Near `z` the polygon is the union of the rays along `d₁` and `d₂`, a graph over `ℓ`.
-  obtain ⟨g, hg, hℓg, hrange⟩ := exists_continuous_range_eq_rays ℓ h₁ h₂ z
+  obtain ⟨g, hg, hℓg, hrange⟩ := ℓ.toLinearMap.exists_continuous_range_eq_rays h₁ h₂ z
+  simp only [ContinuousLinearMap.coe_coe] at hℓg
   obtain ⟨r, hr, hrU⟩ := Metric.mem_nhds_iff.1 hU
   set ρ := min r (min ‖d₁‖ ‖d₂‖)
   have hρ : 0 < ρ := lt_min hr (lt_min hd₁ hd₂)

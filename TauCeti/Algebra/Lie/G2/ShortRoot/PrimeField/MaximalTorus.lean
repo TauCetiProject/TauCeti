@@ -323,6 +323,14 @@ theorem splitMaximalTorus_coordinateMap :
     splitMaximalTorus.coordinateMap = splitMaximalTorusCoordinateMap := by
   rfl
 
+/-- The chosen split maximal torus is cut out by the weight-torus ideal. -/
+@[simp]
+theorem splitMaximalTorus_definingIdeal :
+    splitMaximalTorus.definingIdeal = weightTorusDefiningIdeal := by
+  ext x
+  rw [SplitMaximalTorus.mem_definingIdeal, splitMaximalTorus_coordinateMap,
+    ← ker_splitMaximalTorusCoordinateMap, HopfIdeal.mem_kerOfSurjective]
+
 end
 
 end TauCeti.G2ShortRoot.PrimeField

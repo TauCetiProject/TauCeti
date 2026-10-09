@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.Basic
+public import Mathlib.Analysis.Normed.MulAction
+public import Mathlib.Analysis.Normed.Ring.Lemmas
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 
 import Mathlib.Algebra.Order.Archimedean.Basic
@@ -15,8 +16,8 @@ import Mathlib.Topology.Algebra.Group.Units
 /-!
 # No small subgroups in the units of a normed ring
 
-Let `A` be a normed ring whose additive group is a real normed space, such as `ℝ`, `ℂ`, or an
-algebra of bounded operators. An element `z ≠ 1` of `A` has a power at distance more than
+Let `A` be a normed ring with `‖n • a‖ = ‖n‖ * ‖a‖` for integers `n`, such as `ℤ`, `ℝ`, `ℂ`,
+or an algebra of bounded operators. An element `z ≠ 1` of `A` has a power at distance more than
 `1 / 2` from `1`: as long as `w` stays within `1 / 2` of `1`, the identity
 `w² - 1 = 2 • (w - 1) + (w - 1)²` shows that squaring multiplies
 the distance to `1` by at least `3 / 2`. Hence the only subgroup of `Aˣ` inside the closed ball
@@ -24,8 +25,15 @@ of radius `1 / 2` around `1` is trivial. For the unit circle alone,
 Mathlib's `Circle.eq_one_of_forall_pow_mem_centeredArc_pi_div_two` is the analogous statement; the
 version here applies to characters with values in `ℂˣ` that need not be unitary.
 
-The hypotheses use `NormedSpace ℝ A` for the additive structure, so no `NormedAlgebra ℝ A`
-instance is required.
+Integer norm homogeneity is expressed by `NormSMulClass ℤ A`. It holds in every real normed
+space, but also permits rings without a real scalar action. For a generic real normed space,
+the instance can be supplied locally using `norm_zsmul` from
+`Mathlib.Analysis.Normed.Module.Basic`:
+
+```lean
+have : NormSMulClass ℤ A :=
+  ⟨fun n a ↦ by simpa only [Int.norm_cast_real] using norm_zsmul ℝ n a⟩
+```
 
 For a continuous homomorphism `f` from a topological group `G` to `Aˣ`, the preimage of that ball
 is a neighbourhood of `1`, and every subgroup of `G` inside it lies in the kernel of `f`. This is
@@ -50,26 +58,26 @@ namespace TauCeti
 
 section
 
-variable {A : Type*} [SeminormedRing A] [NormedSpace ℝ A]
+variable {A : Type*} [SeminormedRing A] [NormSMulClass ℤ A]
 
 /-- **Squaring pushes an element near `1` away from `1`.** If `‖w - 1‖ ≤ 1 / 2`, then
-`‖w ^ 2 - 1‖ ≥ 3 / 2 * ‖w - 1‖`. The ring may be seminormed; its additive group only needs
-the structure of a real seminormed space. -/
+`‖w ^ 2 - 1‖ ≥ 3 / 2 * ‖w - 1‖`. The ring may be seminormed; its norm is homogeneous
+under integer scalar multiplication. -/
 theorem three_div_two_mul_norm_sub_one_le_norm_sq_sub_one {w : A} (hw : ‖w - 1‖ ≤ 1 / 2) :
     3 / 2 * ‖w - 1‖ ≤ ‖w ^ 2 - 1‖ := by
-  have hsq : w ^ 2 - 1 = (2 : ℝ) • (w - 1) + (w - 1) * (w - 1) := by
+  have hsq : w ^ 2 - 1 = (2 : ℤ) • (w - 1) + (w - 1) * (w - 1) := by
     rw [two_smul]
     noncomm_ring
-  have h := norm_sub_norm_le ((2 : ℝ) • (w - 1)) (-((w - 1) * (w - 1)))
-  simp only [norm_smul, Real.norm_ofNat, norm_neg, sub_neg_eq_add, ← hsq] at h
+  have h := norm_sub_norm_le ((2 : ℤ) • (w - 1)) (-((w - 1) * (w - 1)))
+  norm_num only [norm_smul, Int.norm_eq_abs, norm_neg, sub_neg_eq_add, ← hsq] at h
   nlinarith [norm_mul_le (w - 1) (w - 1), norm_nonneg (w - 1)]
 
 end
 
-variable {A : Type*} [NormedRing A] [NormedSpace ℝ A]
+variable {A : Type*} [NormedRing A] [NormSMulClass ℤ A]
 
-/-- **No small subgroups.** In a normed ring whose additive group is a real normed space,
-an element all of whose powers lie within `1 / 2` of `1` is `1` itself. -/
+/-- **No small subgroups.** In a normed ring whose norm is homogeneous under integer scalar
+multiplication, an element all of whose powers lie within `1 / 2` of `1` is `1` itself. -/
 theorem eq_one_of_forall_norm_pow_sub_one_le {z : A} (h : ∀ n : ℕ, ‖z ^ n - 1‖ ≤ 1 / 2) :
     z = 1 := by
   by_contra hz
@@ -92,12 +100,12 @@ end TauCeti
 
 namespace ContinuousMonoidHom
 
-variable {G A : Type*} [Group G] [TopologicalSpace G] [NormedRing A] [NormedSpace ℝ A]
+variable {G A : Type*} [Group G] [TopologicalSpace G] [NormedRing A] [NormSMulClass ℤ A]
 
 /-- **A continuous homomorphism into `Aˣ` kills every small subgroup.** For a continuous
-homomorphism `f` from a group with a topology to the units of a normed ring whose additive group
-is a real normed space, there is a neighbourhood `N` of `1` such that every subgroup contained
-in `N` lies in the kernel of `f`. -/
+homomorphism `f` from a group with a topology to the units of a normed ring whose norm is
+homogeneous under integer scalar multiplication, there is a neighbourhood `N` of `1` such
+that every subgroup contained in `N` lies in the kernel of `f`. -/
 theorem exists_mem_nhds_one_forall_le_ker (f : G →ₜ* Aˣ) :
     ∃ N ∈ 𝓝 (1 : G), ∀ H : Subgroup G, (H : Set G) ⊆ N → H ≤ f.ker := by
   -- Take for `N` the preimage of the open ball of radius `1 / 2` around `1`.

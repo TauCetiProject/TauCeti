@@ -58,10 +58,9 @@ finite cokernel, so the two lattices have the same lattice defect
 
 public section
 
-namespace TauCeti
+open scoped TensorProduct
 
-open Function TensorProduct
-open scoped Pointwise
+namespace TauCeti
 
 attribute [local instance high] Submodule.module Submodule.Quotient.module TensorProduct.instModule
 
@@ -71,39 +70,18 @@ section CommRing
 
 variable (k G : Type u) [CommRing k] [Monoid G] (ℓ : ℕ)
 
-/-- **The lattice defect of a lattice is its reduction class**: in characteristic `ℓ`, a finitely
-generated `G`-module `V` without `ℓ`-torsion has defect `[k ⊗_ℤ V]`. Since `ℓ = 0` in `k`, the
-reduction `k ⊗_ℤ V → k ⊗_ℤ (V ⧸ ℓV)` of the quotient map is bijective. -/
+/-- **The lattice defect of a lattice is its reduction class**: in characteristic `ℓ`, a `G`-module
+`V` with `V ⧸ ℓV` finite and without `ℓ`-torsion has defect `[k ⊗_ℤ V]`. Since `ℓ = 0` in `k`, the
+reduction of `V ⧸ ℓV` is that of `V` (`TauCeti.reductionK0_quotSMulTop`). -/
 theorem latticeDefect_eq_reductionK0 [CharP k ℓ] (V : Type u) [AddCommGroup V]
-    [DistribMulAction G V] [Module.Finite ℤ V] [Finite (QuotSMulTop (ℓ : ℤ) V)]
+    [DistribMulAction G V] [Finite (QuotSMulTop (ℓ : ℤ) V)]
     [Subsingleton (Submodule.torsionBy ℤ V ℓ)] :
+    haveI := finite_baseChange_of_finite_quotSMulTop k ℓ V
     latticeDefect k G ℓ V = reductionK0 k (Representation.ofDistribMulAction ℤ G V) := by
   have := AddMonoid.FG.to_moduleFinite_int (G := QuotSMulTop (ℓ : ℤ) V)
   let ρ := Representation.ofDistribMulAction ℤ G V
-  -- the quotient map `V → V ⧸ ℓV` is equivariant, and becomes bijective after `k ⊗_ℤ -`
-  let q : Representation.IntertwiningMap ρ (ρ.quotSMulTop ℓ) :=
-    { toLinearMap := ((ℓ : ℤ) • ⊤ : Submodule ℤ V).mkQ
-      isIntertwining' g := LinearMap.ext fun x ↦ (ρ.quotSMulTop_apply_mk ℓ g x).symm }
-  have hq : Bijective (q.baseChange k) := by
-    have hcoe : ⇑(q.baseChange k) = ⇑(q.toLinearMap.lTensor k) := by
-      -- an intertwining map coerces to a function through its linear map
-      change ⇑(q.baseChange k).toLinearMap = _
-      rw [Representation.IntertwiningMap.toLinearMap_baseChange, LinearMap.baseChange_eq_ltensor]
-    have hsurj := Submodule.mkQ_surjective ((ℓ : ℤ) • ⊤ : Submodule ℤ V)
-    rw [hcoe]
-    refine ⟨(injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_, LinearMap.lTensor_surjective k hsurj⟩
-    obtain ⟨y, rfl⟩ := (lTensor_exact k (LinearMap.exact_subtype_mkQ _) hsurj x).mp hx
-    -- every `a ⊗ ℓv` vanishes, since `ℓ = 0` in `k`
-    clear hx
-    induction y using TensorProduct.inductionOn with
-    | tmul a v =>
-      obtain ⟨w, -, hw⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp v.2
-      rw [LinearMap.lTensor_tmul, Submodule.subtype_apply, ← hw, tmul_smul, smul_tmul',
-        zsmul_eq_mul, Int.cast_natCast, CharP.cast_eq_zero, zero_mul, zero_tmul]
-    | add y z hy hz => rw [map_add, hy, hz, add_zero]
-  let e := ((q.baseChange k).ofBijective hq).symm
-  rw [latticeDefect_def, reductionK0_eq_zero_of_subsingleton k (ρ.torsionBy ℓ), sub_zero]
-  exact reductionK0_congr_baseChange k e
+  rw [latticeDefect_def, reductionK0_eq_zero_of_subsingleton k (ρ.torsionBy ℓ), sub_zero,
+    reductionK0_quotSMulTop k ℓ]
 
 /-- **Lattices with equivalent rationalizations have the same reduction class** in
 characteristic `ℓ`: for finitely generated torsion-free `G`-modules `V` and `W` with
