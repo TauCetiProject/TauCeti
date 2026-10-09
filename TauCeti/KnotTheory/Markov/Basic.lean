@@ -104,6 +104,10 @@ structure MarkovBraid where
   /-- The braid itself, on `predStrands + 1` strands. -/
   braid : BraidGroup (predStrands + 1)
 
+/-- The components of a braid closure are the orbits of its strand permutation. -/
+abbrev MarkovBraid.Components (β : MarkovBraid) :=
+  Quotient (Equiv.Perm.SameCycle.setoid (permHom (β.predStrands + 1) β.braid))
+
 /-- A framed oriented braid-closure presentation. The braid direction supplies the orientation.
 A framing of an oriented link in `S³`, relative to the Seifert framing, is specified by one
 integer coefficient on each component; the components of a braid closure are the orbits of its
@@ -113,8 +117,7 @@ structure FramedMarkovBraid where
   /-- Forget the framing coefficients, retaining the underlying braid and its strand count. -/
   forgetFraming : MarkovBraid
   /-- The framing coefficient of each component, relative to its Seifert framing. -/
-  framing : Quotient (Equiv.Perm.SameCycle.setoid
-    (permHom (forgetFraming.predStrands + 1) forgetFraming.braid)) → ℤ
+  framing : forgetFraming.Components → ℤ
 
 namespace MarkovBraid
 
