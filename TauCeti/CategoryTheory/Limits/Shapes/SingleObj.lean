@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Limits.Shapes.SingleObj
-public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
+public import TauCeti.CategoryTheory.Preadditive.NSMul
 
 /-!
 # Recognising colimits of shape `SingleObj G`
@@ -52,14 +52,15 @@ theorem nonempty_isColimit_iff :
     Nonempty (IsColimit c) ↔ Function.Surjective (c.ι.app (SingleObj.star G)) ∧
       ∀ x y, c.ι.app (SingleObj.star G) x = c.ι.app (SingleObj.star G) y ↔
         x ∈ MulAction.orbit G y := by
-  let π := c.ι.app (SingleObj.star G)
-  have hle : MulAction.orbitRel G (J.obj (SingleObj.star G)) ≤ Setoid.ker π := by
+  have hle : MulAction.orbitRel G (J.obj (SingleObj.star G)) ≤
+      Setoid.ker (c.ι.app (SingleObj.star G)) := by
     rintro x y ⟨g, rfl⟩
     exact c.w_apply (j := SingleObj.star G) (j' := SingleObj.star G) g y
   -- Through Mathlib's identification of the colimit type with the orbit quotient, the canonical
-  -- map out of the colimit type becomes the map induced by `π` on the orbit quotient.
+  -- map out of the colimit type becomes the map induced by the leg on the orbit quotient.
   have hdesc : J.descColimitType (J.coconeTypesEquiv.symm c) ∘
-      (colimitTypeRelEquivOrbitRelQuotient J).symm = Quotient.lift π hle := by
+      (colimitTypeRelEquivOrbitRelQuotient J).symm =
+        Quotient.lift (c.ι.app (SingleObj.star G)) hle := by
     ext q
     induction q using Quotient.inductionOn
     rfl
@@ -70,7 +71,10 @@ theorem nonempty_isColimit_iff :
     ← Equiv.bijective_comp (colimitTypeRelEquivOrbitRelQuotient J).symm, hdesc]
   refine ((Setoid.lift_injective_iff_ker_eq_of_le hle).and (Quot.surjective_lift _)).trans ?_
   rw [and_comm, Setoid.ext_iff]
-  exact Iff.rfl
+  simp only [Setoid.ker_def, MulAction.orbitRel_apply]
+  -- The two sides now differ only in how the codomain of the leg is written, as
+  -- `(J.coconeTypesEquiv.symm c).pt` or as `((Functor.const _).obj c.pt).obj _`; both are `c.pt`.
+  rfl
 
 /-- A cocone over `J : SingleObj G ⥤ Type u` whose leg is surjective, and identifies two elements
 only when they lie in the same orbit of the action of `G`, is a colimit. -/
@@ -88,14 +92,6 @@ section Preadditive
 variable {C : Type*} [Category C] [Preadditive C] {G : Type*} [Group G] [Fintype G]
   {J : SingleObj G ⥤ C} (c : Cocone J) (t : c.pt ⟶ J.obj (SingleObj.star G))
 
-omit [Fintype G] in
-/-- The inverse of multiplication by a natural number commutes with every morphism. -/
-private lemma comp_inv_nsmul_id {X Y : C} (f : X ⟶ Y) (d : ℕ) [IsIso (d • 𝟙 X)]
-    [IsIso (d • 𝟙 Y)] :
-    f ≫ inv (d • 𝟙 Y) = inv (d • 𝟙 X) ≫ f := by
-  rw [IsIso.eq_inv_comp, ← Category.assoc, IsIso.comp_inv_eq, Preadditive.nsmul_comp,
-    Preadditive.comp_nsmul, Category.id_comp, Category.comp_id]
-
 /-- Let `G` be a finite group acting on an object of a preadditive category, and let `c` be a
 cocone over the action whose leg `π` has a *transfer* `t`: `t ≫ π = |G| • 𝟙` and
 `π ≫ t = ∑_{g ∈ G} J.map g`. If multiplication by `|G|` is invertible on the acted-on object and on
@@ -108,13 +104,12 @@ noncomputable def isColimitOfTransfer
   desc s := t ≫ inv (Fintype.card G • 𝟙 _) ≫ s.ι.app (SingleObj.star G)
   fac s j := by
     obtain rfl : j = SingleObj.star G := rfl
-    rw [← Category.assoc, ht', reassoc_of% comp_inv_nsmul_id, IsIso.inv_comp_eq,
-      Preadditive.sum_comp, Preadditive.nsmul_comp, Category.id_comp]
-    simp only [s.w, Finset.sum_const, Finset.card_univ]
+    rw [← Category.assoc, ht', reassoc_of% Preadditive.comp_inv_nsmul_id, IsIso.inv_comp_eq]
+    simp [Preadditive.sum_comp, Preadditive.nsmul_comp, s.w]
   uniq s m hm := by
     have key : inv (Fintype.card G • 𝟙 _) ≫ c.ι.app (SingleObj.star G) =
         c.ι.app (SingleObj.star G) ≫ inv (Fintype.card G • 𝟙 c.pt) :=
-      (comp_inv_nsmul_id (Y := c.pt) _ _).symm
+      (Preadditive.comp_inv_nsmul_id (Y := c.pt) _ _).symm
     conv_rhs => rw [← hm (SingleObj.star G), reassoc_of% key, reassoc_of% ht,
       IsIso.hom_inv_id_assoc]
 
@@ -126,11 +121,9 @@ noncomputable def isColimitMapCoconeOfTransfer {D : Type*} [Category D] [Preaddi
     (ht' : c.ι.app (SingleObj.star G) ≫ t = ∑ g : G, J.map g)
     [IsIso (Fintype.card G • 𝟙 (J.obj (SingleObj.star G)))] [IsIso (Fintype.card G • 𝟙 c.pt)] :
     IsColimit (F.mapCocone c) :=
-  have hF (X : C) [IsIso (Fintype.card G • 𝟙 X)] : IsIso (Fintype.card G • 𝟙 (F.obj X)) := by
-    rw [← F.map_id, ← F.map_nsmul]
-    infer_instance
-  have : IsIso (Fintype.card G • 𝟙 ((J ⋙ F).obj (SingleObj.star G))) := hF (J.obj _)
-  have : IsIso (Fintype.card G • 𝟙 (F.mapCocone c).pt) := hF c.pt
+  have : IsIso (Fintype.card G • 𝟙 ((J ⋙ F).obj (SingleObj.star G))) :=
+    F.isIso_nsmul_id_obj _ (J.obj _)
+  have : IsIso (Fintype.card G • 𝟙 (F.mapCocone c).pt) := F.isIso_nsmul_id_obj _ c.pt
   isColimitOfTransfer (F.mapCocone c) (F.map t)
     (by simp only [Functor.mapCocone_pt, Functor.mapCocone_ι_app, ← F.map_comp, ht,
       F.map_nsmul, F.map_id])

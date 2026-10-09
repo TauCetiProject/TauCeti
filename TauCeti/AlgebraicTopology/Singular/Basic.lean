@@ -11,8 +11,7 @@ public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 # Singular chain complexes
 
 This module relates the singular-chain functor to the chain map induced by a map of singular
-simplicial sets, and records that multiplication by a natural number is invertible on singular
-chains whenever it is invertible on the coefficients.
+simplicial sets.
 -/
 
 public section
@@ -41,14 +40,5 @@ lemma singularChainComplexFunctor_map_app {R R' : C} (g : R ⟶ R') (X : TopCat.
     ((AlgebraicTopology.singularChainComplexFunctor C).map g).app X =
       ((SSet.chainComplexFunctor C).map g).app (TopCat.toSSet.obj X) :=
   (rfl)
-
-/-- If multiplication by `d` is invertible on the coefficient object `R`, then it is invertible on
-the singular chain complex with coefficients in `R` of every space. -/
-lemma isIso_nsmul_id_singularChainComplex (d : ℕ) [IsIso (d • 𝟙 R)] (X : TopCat.{w}) :
-    IsIso (d • 𝟙 (((AlgebraicTopology.singularChainComplexFunctor C).obj R).obj X)) := by
-  have : ((AlgebraicTopology.singularChainComplexFunctor C).map (d • 𝟙 R)).app X = d • 𝟙 _ := by
-    rw [Functor.map_nsmul, CategoryTheory.Functor.map_id, NatTrans.app_nsmul, NatTrans.id_app]
-  rw [← this]
-  infer_instance
 
 end TauCeti

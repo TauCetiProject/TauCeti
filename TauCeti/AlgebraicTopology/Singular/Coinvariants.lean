@@ -38,8 +38,9 @@ invertible on `R`: the transfer `t` of the finite covering `p` satisfies `t ≫ 
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
-  Section 3.G, for the transfer and the identification of the homology of the base with the
-  coinvariants when `|G|` is invertible.
+  Section 3.G (Proposition 3G.1), for the transfer and the averaging argument, stated there for
+  cohomology with field coefficients and invariants; the homology and coinvariant form here is
+  its dual.
 * K. S. Brown, *Cohomology of Groups*, Springer GTM 87, Chapter VII, for the Cartan–Leray
   spectral sequence, which starts from the identification `C(E)_G = C(B)`.
 -/
@@ -103,8 +104,11 @@ def isColimitMapCoconeToSSet : IsColimit (TopCat.toSSet.mapCocone hG.cocone) :=
       · exact (((evaluation _ _).obj n).mapCocone
           (TopCat.toSSet.mapCocone hG.cocone)).w_apply
           (j := SingleObj.star G) (j' := SingleObj.star G) g τ'
-      · -- `g` acts on singular simplices by postcomposition with `g • ·` (`simplexMap_app`).
-        exact hg
+      · -- The `SingleObj` action is `g • τ' = (toSSet.map (actionFunctor.map g)).app n τ'`, so
+        -- `g` acts on singular simplices by postcomposition with `g • ·` (`simplexMap_app`).
+        change simplexMap ((TopCat.toSSet.map (hG.actionFunctor.map g)).app n τ') x = _
+        rw [simplexMap_app, ContinuousMap.comp_apply]
+        exact (hG.actionFunctor_map_apply g _).trans hg
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C] (R : C)
 
@@ -124,10 +128,10 @@ def isColimitMapCoconeSingularHomology [Fintype G] [CategoryWithHomology C] (n :
     IsColimit (((singularHomologyFunctor C n).obj R).mapCocone hG.cocone) :=
   have : IsIso (Fintype.card G • 𝟙
       ((hG.actionFunctor ⋙ (singularChainComplexFunctor C).obj R).obj (SingleObj.star G))) :=
-    TauCeti.isIso_nsmul_id_singularChainComplex R (Fintype.card G) E
+    (singularChainComplexFunctor C ⋙ (evaluation _ _).obj E).isIso_nsmul_id_obj _ R
   have : IsIso (Fintype.card G •
       𝟙 (((singularChainComplexFunctor C).obj R).mapCocone hG.cocone).pt) :=
-    TauCeti.isIso_nsmul_id_singularChainComplex R (Fintype.card G) B
+    (singularChainComplexFunctor C ⋙ (evaluation _ _).obj B).isIso_nsmul_id_obj _ R
   SingleObj.isColimitMapCoconeOfTransfer
     (((singularChainComplexFunctor C).obj R).mapCocone hG.cocone)
     (hG.isCoveringMap.singularTransfer hG.finite_fiber R) (HomologicalComplex.homologyFunctor C _ n)
