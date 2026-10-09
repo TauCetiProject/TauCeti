@@ -101,6 +101,12 @@ def kummerField (Δ : Subgroup Kˣ) : IntermediateField K E :=
 
 variable {E n} {Δ : Subgroup Kˣ}
 
+/-- `K(Δ^{1/n})` is the subfield of `E` generated over `K` by the `n`-th roots of the elements of
+`Δ`. -/
+theorem kummerField_def :
+    kummerField E n Δ = adjoin K {x : E | ∃ a ∈ Δ, x ^ n = algebraMap K E a} :=
+  (rfl)
+
 /-- An `n`-th root of an element of `Δ` lies in `K(Δ^{1/n})`. -/
 theorem mem_kummerField_of_pow_eq {x : E} {a : Kˣ} (ha : a ∈ Δ)
     (hx : x ^ n = algebraMap K E a) : x ∈ kummerField E n Δ :=
@@ -109,7 +115,7 @@ theorem mem_kummerField_of_pow_eq {x : E} {a : Kˣ} (ha : a ∈ Δ)
 /-- `K(Δ^{1/n})` is the smallest subfield containing the `n`-th roots of the elements of `Δ`. -/
 theorem kummerField_le_iff {F : IntermediateField K E} :
     kummerField E n Δ ≤ F ↔ ∀ a ∈ Δ, ∀ x : E, x ^ n = algebraMap K E a → x ∈ F := by
-  rw [kummerField, adjoin_le_iff]
+  rw [kummerField_def, adjoin_le_iff]
   exact ⟨fun h a ha x hx ↦ h ⟨a, ha, hx⟩, fun h _ ⟨a, ha, hx⟩ ↦ h a ha _ hx⟩
 
 /-- `K(Δ^{1/n})` is monotone in `Δ`. -/
@@ -233,7 +239,7 @@ instance isAbelianGalois_kummerField : IsAbelianGalois K (kummerField E n Δ) :=
     simp only [AlgEquiv.mul_apply, hz, hw, map_mul, AlgEquiv.commutes]
     ring
   exact { is_comm := ⟨fun σ τ ↦ AlgEquiv.coe_toAlgHom_injective <|
-    algHom_ext_of_eq_adjoin K rfl fun x ⟨a, ha, hx⟩ ↦ hcomm σ τ _ (hgen ha hx)⟩ }
+    algHom_ext_of_eq_adjoin K kummerField_def fun x ⟨a, ha, hx⟩ ↦ hcomm σ τ _ (hgen ha hx)⟩ }
 
 /-- In the Galois group of `K(Δ^{1/n})/K`, an automorphism is determined by how it moves one
 chosen `n`-th root `r a` of each `a ∈ Δ`. -/
@@ -241,7 +247,7 @@ private theorem algEquiv_ext_of_apply_div_self_eq {r : Δ → kummerField E n Δ
     (hr : ∀ a, r a ^ n = algebraMap K _ ((a : Kˣ) : K)) {σ τ : kummerField E n Δ ≃ₐ[K] _}
     (h : ∀ a, σ (r a) / r a = τ (r a) / r a) : σ = τ := by
   refine AlgEquiv.coe_toAlgHom_injective <|
-    algHom_ext_of_eq_adjoin K rfl fun x ⟨a, ha, hx⟩ ↦ ?_
+    algHom_ext_of_eq_adjoin K kummerField_def fun x ⟨a, ha, hx⟩ ↦ ?_
   have hy : (⟨x, mem_kummerField_of_pow_eq ha hx⟩ : kummerField E n Δ) ^ n = algebraMap K _ a :=
     Subtype.ext (by simpa using hx)
   have hpow := hy.trans (hr ⟨a, ha⟩).symm
