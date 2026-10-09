@@ -8,7 +8,7 @@ module
 public import TauCeti.MeasureTheory.Measure.FrechetMean.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Rearrangement
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
-import TauCeti.Algebra.BigOperators.Finset.WeightedVariance
+import TauCeti.Analysis.Normed.Group.WeightedVariance
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Borel
 
 /-!
@@ -68,21 +68,6 @@ open scoped ENNReal NNReal
 namespace TauCeti
 
 variable {ι : Type*} [Fintype ι]
-
-/-- The weighted variance identity in `ℝ≥0∞` form. -/
-private theorem sum_mul_enorm_sub_sq_eq (w : ι → ℝ≥0) (hw : ∑ i, w i = 1) (a : ℝ) (b : ι → ℝ) :
-    ∑ i, (w i : ℝ≥0∞) * ‖a - b i‖ₑ ^ 2 =
-      ‖a - ∑ i, (w i : ℝ) * b i‖ₑ ^ 2 + ∑ i, (w i : ℝ≥0∞) * ‖∑ j, (w j : ℝ) * b j - b i‖ₑ ^ 2 := by
-  have hsq (r : ℝ) : ‖r‖ₑ ^ 2 = ENNReal.ofReal (r ^ 2) := by
-    rw [Real.enorm_eq_ofReal_abs, ← ENNReal.ofReal_pow (abs_nonneg r), sq_abs]
-  have hmul (c : ℝ≥0) (r : ℝ) : (c : ℝ≥0∞) * ‖r‖ₑ ^ 2 = ENNReal.ofReal (c * r ^ 2) := by
-    rw [hsq, ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul c.coe_nonneg]
-  simp only [hmul]
-  simp only [hsq]
-  rw [← ENNReal.ofReal_sum_of_nonneg fun i _ ↦ by positivity,
-    ← ENNReal.ofReal_sum_of_nonneg fun i _ ↦ by positivity,
-    ← ENNReal.ofReal_add (sq_nonneg _) (Finset.sum_nonneg fun i _ ↦ by positivity),
-    Finset.sum_mul_sub_sq_eq _ (w := fun i ↦ (w i : ℝ)) (by exact_mod_cast hw)]
 
 /-- The **quantile barycenter** of the laws `μ i` with weights `w i`: the law of
 `∑ i, w i * (μ i).quantile U` for `U` uniform on the open unit interval. When the weights sum to
@@ -153,7 +138,7 @@ theorem sum_mul_wassersteinEDist_sq_eq_add (ν : Measure ℝ) [IsProbabilityMeas
   have hbar' (i : ι) := hbar fun t x ↦ x - (μ i).quantile t
   simp only [wassersteinEDist_two_sq, hbar fun t x ↦ ν.quantile t - x, hbar']
   have hpt := lintegral_congr (μ := volume.restrict (Ioo (0 : ℝ) 1)) fun t ↦
-    sum_mul_enorm_sub_sq_eq w hw (ν.quantile t) fun i ↦ (μ i).quantile t
+    Finset.univ.sum_mul_enorm_sub_sq_eq hw (ν.quantile t) fun i ↦ (μ i).quantile t
   rw [lintegral_finsetSum' _ fun i _ ↦ by fun_prop, lintegral_add_left' (by fun_prop),
     lintegral_finsetSum' _ fun i _ ↦ by fun_prop] at hpt
   simpa only [lintegral_const_mul' _ _ ENNReal.coe_ne_top] using hpt
