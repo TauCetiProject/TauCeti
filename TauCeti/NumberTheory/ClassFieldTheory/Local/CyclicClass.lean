@@ -7,8 +7,7 @@ module
 
 public import TauCeti.FieldTheory.GaloisCohomology.Cyclic
 public import TauCeti.FieldTheory.Kummer.Cyclic
-public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Torsion
-public import TauCeti.NumberTheory.ClassFieldTheory.Local.Symbol
+public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Kummer.Basic
 
 /-!
 # Cup products of Kummer classes and cyclic classes
@@ -80,15 +79,12 @@ private theorem exists_h2MuToBr_cup_kummerClass
           (g • kummerCocycle hβ k)) := by
   rw [kummerClass_eq_muNRepH1Equiv_kummerCocycleClass K hn hα,
     kummerClass_eq_muNRepH1Equiv_kummerCocycleClass K hn hβ, cup_muNRepH1Equiv,
-    h2MuToBr_muNRepH2Equiv, h2KummerToUnits_explicitH2AddEquivContinuousCohomology hn,
+    h2MuToBr_muNRepH2Equiv, h2KummerToUnits_explicitH2AddEquivContinuousCohomology,
     AddEquiv.symm_apply_apply, kummerCocycleClass_def, kummerCocycleClass_def,
-    QuotientAddGroup.mk'_apply, QuotientAddGroup.mk'_apply, explicitCup11_mk, explicitCoeff2_mk]
+    QuotientAddGroup.mk'_apply, QuotientAddGroup.mk'_apply, explicitCup11_mk, explicitMap2_mk]
   refine ⟨_, rfl, fun g k ↦ ?_⟩
-  -- `rw [cocyclesMap2_apply]` cannot reach the value: the equivariance argument of the
-  -- coefficient map is not type-correct at reducible transparency.
   refine (cocyclesMap2_apply _ _ _ _ _ _ _ _ _ g k).trans ?_
-  exact (DiscreteShortExact.inclDistribMulActionHom_apply _ _).trans
-    (congrFun (congrArg DFunLike.coe (kummerShortExact_incl K n hn)) _)
+  rfl
 
 /-! ### Exponents of roots of unity with respect to `ζ` -/
 
@@ -201,8 +197,10 @@ theorem h2MuToBr_cup_kummerClass (a b : Kˣ) {s : L} (hs : s ^ n = algebraMap K 
     {g : L ≃ₐ[K] L} (hg : ∀ σ, σ ∈ Subgroup.zpowers g) (hd : finrank K L ∣ n)
     (hgs : g s = algebraMap K L (ζ ^ (n / finrank K L)) * s)
     (ι : L →ₐ[K] SeparableClosure K) :
-    h2MuToBr n K ((kummerCupPairing ζ hζ).cup 1 1 (kummerClass K hn a) (kummerClass K hn b)) =
+    kummerBrauerClass ζ hζ a b =
       -relBrInfl K L ι (cyclicClass hg (Additive.ofMul a)) := by
+  have hn : IsUnit (n : K) := hζ.neZero'.out.isUnit
+  rw [kummerBrauerClass_def]
   set d := finrank K L
   set m := n / d
   have hmd : m * d = n := Nat.div_mul_cancel hd
@@ -302,7 +300,7 @@ theorem localSymbol_eq_zero_iff_mem_normGroup (a b : Kˣ) {s : L}
   obtain ⟨g, hg, hd, hgs⟩ := exists_forall_mem_zpowers_apply_eq hζ b.ne_zero hs hgen
   let ι : L →ₐ[K] SeparableClosure K := IsSepClosed.lift
   rw [localSymbol_apply, AddEquiv.map_eq_zero_iff, ← map_eq_zero_iff _ (h2MuToBr_injective n K hn),
-    h2MuToBr_cup_kummerClass hζ hn a b hs hg hd hgs ι, neg_eq_zero,
+    ← kummerBrauerClass_def ζ hζ, h2MuToBr_cup_kummerClass hζ a b hs hg hd hgs ι, neg_eq_zero,
     map_eq_zero_iff _ (relBrInfl_injective K L ι), cyclicClass_eq_zero_iff]
 
 end TauCeti.ClassFieldTheory

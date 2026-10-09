@@ -232,22 +232,32 @@ variable {K n}
 
 /-- The comparison with the explicit model carries the explicit coefficient map of `μₙ ⊆ (Kˢ)ˣ` to
 `h2KummerToUnits`. -/
-theorem h2KummerToUnits_explicitH2AddEquivContinuousCohomology (hn : IsUnit (n : K))
+theorem h2KummerToUnits_explicitH2AddEquivContinuousCohomology
     (x : H2 (AbsoluteGaloisGroup K) (KummerCoeff K n)) :
     (h2KummerToUnits K n).hom (explicitH2AddEquivContinuousCohomology _ _ x) =
       explicitH2AddEquivContinuousCohomology _ _
-        (explicitCoeff2 _ _ (kummerShortExact K n hn).inclDistribMulActionHom
-          continuous_of_discreteTopology x) := by
+        (explicitMap2 (AbsoluteGaloisGroup K) (KummerCoeff K n)
+          (AbsoluteGaloisGroup K) (UnitsCoeff K) (ContinuousMonoidHom.id _)
+          (kummerCoeffIncl K n) continuous_of_discreteTopology
+          (fun g x ↦ by simpa only [ContinuousMonoidHom.coe_id, id_eq]
+            using kummerCoeffIncl_equivariant K n g x) x) := by
+  let f : KummerCoeff K n →+[AbsoluteGaloisGroup K] UnitsCoeff K :=
+    { toFun := kummerCoeffIncl K n
+      map_smul' := kummerCoeffIncl_equivariant K n
+      map_zero' := map_zero _
+      map_add' := map_add _ }
   have hmap : kummerCoeffToUnits K n =
-      ofDiscreteModuleMap
-        (kummerShortExact K n hn).inclDistribMulActionHom.toAddMonoidHom.toIntLinearMap
-        fun g m ↦ map_smul (kummerShortExact K n hn).inclDistribMulActionHom g m := by
-    rw [kummerCoeffToUnits, DiscreteShortExact.ofDiscreteModuleMap_inclDistribMulActionHom]
-    congr 1
-    exact congrArg AddMonoidHom.toIntLinearMap (kummerShortExact_incl K n hn).symm
+      ofDiscreteModuleMap f.toAddMonoidHom.toIntLinearMap (fun g x ↦ map_smul f g x) := by
+    ext x
+    exact kummerCoeffToUnits_hom_apply K n x
   rw [h2KummerToUnits, hmap]
-  exact explicitH2AddEquivContinuousCohomology_coeffMap _ _ _
-    (kummerShortExact K n hn).inclDistribMulActionHom x
+  have h := explicitH2AddEquivContinuousCohomology_coeffMap
+    (AbsoluteGaloisGroup K) (KummerCoeff K n) (UnitsCoeff K) f x
+  rw [explicitCoeff2_eq_explicitMap2] at h
+  rw [h]
+  -- The homomorphism underlying `f` is the coefficient inclusion; equivariance witnesses
+  -- agree by proof irrelevance.
+  rfl
 
 /-- **`H²(G_K, μₙ) → H²(G_K, (Kˢ)ˣ)` is injective** for `n` invertible in `K`. -/
 theorem h2KummerToUnits_injective (hn : IsUnit (n : K)) :
@@ -255,10 +265,13 @@ theorem h2KummerToUnits_injective (hn : IsUnit (n : K)) :
   intro x y hxy
   obtain ⟨x, rfl⟩ := (explicitH2AddEquivContinuousCohomology _ _).surjective x
   obtain ⟨y, rfl⟩ := (explicitH2AddEquivContinuousCohomology _ _).surjective y
-  rw [h2KummerToUnits_explicitH2AddEquivContinuousCohomology hn,
-    h2KummerToUnits_explicitH2AddEquivContinuousCohomology hn] at hxy
-  exact congrArg _ (explicitCoeff2_kummerShortExact_incl_injective K hn
-    ((explicitH2AddEquivContinuousCohomology _ _).injective hxy))
+  rw [h2KummerToUnits_explicitH2AddEquivContinuousCohomology,
+    h2KummerToUnits_explicitH2AddEquivContinuousCohomology] at hxy
+  apply congrArg _
+  apply explicitCoeff2_kummerShortExact_incl_injective K hn
+  simpa only [explicitCoeff2_eq_explicitMap2,
+    DiscreteShortExact.coe_addMonoidHom_inclDistribMulActionHom, kummerShortExact_incl] using
+    (explicitH2AddEquivContinuousCohomology _ _).injective hxy
 
 /-- **The image of `H²(G_K, μₙ)` in `H²(G_K, (Kˢ)ˣ)` is the `n`-torsion** for `n` invertible in
 `K`. -/
@@ -270,12 +283,14 @@ theorem h2KummerToUnits_range (hn : IsUnit (n : K))
   obtain ⟨x, rfl⟩ := (explicitH2AddEquivContinuousCohomology _ _).surjective x
   rw [← map_nsmul, EmbeddingLike.map_eq_zero_iff,
     ← mem_range_explicitCoeff2_kummerShortExact_incl_iff K hn]
+  simp only [explicitCoeff2_eq_explicitMap2,
+    DiscreteShortExact.coe_addMonoidHom_inclDistribMulActionHom, kummerShortExact_incl]
   constructor
   · rintro ⟨y, hy⟩
     obtain ⟨y, rfl⟩ := (explicitH2AddEquivContinuousCohomology _ _).surjective y
-    rw [h2KummerToUnits_explicitH2AddEquivContinuousCohomology hn] at hy
+    rw [h2KummerToUnits_explicitH2AddEquivContinuousCohomology] at hy
     exact ⟨y, (explicitH2AddEquivContinuousCohomology _ _).injective hy⟩
   · rintro ⟨y, rfl⟩
-    exact ⟨_, h2KummerToUnits_explicitH2AddEquivContinuousCohomology hn y⟩
+    exact ⟨_, h2KummerToUnits_explicitH2AddEquivContinuousCohomology y⟩
 
 end TauCeti

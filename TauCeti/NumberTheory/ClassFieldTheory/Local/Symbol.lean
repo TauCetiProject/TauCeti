@@ -201,6 +201,15 @@ theorem kummerCupPairing_bil_apply {x : (muNRep n F).V} {i : ℤ}
   simp only [kummerCupPairing, LinearMap.mk₂_apply]
   rw [hi, Int.cast_smul_eq_zsmul]
 
+/-- On explicit Kummer coefficients, pairing a power `ζ ^ i` with `y` multiplies `y` by `i`. -/
+theorem kummerCoeffPairing_kummerCupPairing_of_eq_pow {x : KummerCoeff F n} {i : ℤ}
+    (hx : ((x.toMul : (SeparableClosure F)ˣ) : SeparableClosure F) =
+      algebraMap F (SeparableClosure F) ζ ^ i) (y : KummerCoeff F n) :
+    kummerCoeffPairing (kummerCupPairing ζ hζ) x y = i • y := by
+  apply (kummerCoeffEquivMuNRep n F).injective
+  rw [kummerCoeffEquivMuNRep_kummerCoeffPairing, map_zsmul]
+  exact kummerCupPairing_bil_apply ζ hζ (by simpa only [AddEquiv.symm_apply_apply] using hx) _
+
 /-- The Kummer coefficient pairing is scalar multiplication by the chosen-root coordinate. -/
 @[simp]
 theorem kummerCupPairing_bil (x y : (muNRep n F).V) :
