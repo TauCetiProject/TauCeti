@@ -81,4 +81,14 @@ theorem lieEquivProjHom_symm_apply_lieMap
   rw [← lieEquivProjHom_apply]
   exact (lieEquivProjHom I G).symm_apply_apply X
 
+/-- The Lie map of the universal covering projection sends the inverse Lie-algebra equivalence of a
+derivation back to that derivation. -/
+@[simp]
+theorem lieMap_projHom_lieEquivProjHom_symm_apply (Y : LeftInvariantDerivation I G) :
+    lieMap ((projHom : UniversalCover (1 : G) →ₜ* G).toContMDiffMonoidMorphism I I)
+        ((lieEquivProjHom I G).symm Y) =
+      Y := by
+  rw [← lieEquivProjHom_apply]
+  exact (lieEquivProjHom I G).apply_symm_apply Y
+
 end TauCeti.UniversalCover
