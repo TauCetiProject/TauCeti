@@ -57,7 +57,7 @@ explicit.
 * `TauCeti.Huber.Pair.Hom.IsQuotientMapping.of_comp`: `g` is a quotient mapping when `g ∘ f` is
   one and `f` is surjective.
 * `TauCeti.Huber.Pair.Hom.IsQuotientMapping.plus_eq_map`: an injective quotient mapping carries
-  `A⁺` onto `B⁺`, so it is an isomorphism of Huber pairs.
+  `A⁺` onto `B⁺`.
 
 ## Provenance
 
@@ -420,11 +420,7 @@ protected theorem Hom.IsQuotientMapping.id (S : Pair A) : (Hom.id S).IsQuotientM
       rw [toRingHom_id, Subring.map_id]
       exact algebraMap_mem (integralClosure S.plus A) ⟨a, ha⟩⟩
 
-/-- A quotient mapping of Huber pairs with injective underlying map carries `A⁺` onto `B⁺`; as it
-is also a homeomorphism, it is an isomorphism of Huber pairs. Applied to the factorisation of a
-quotient mapping through the quotient pair by its kernel, which is again a quotient mapping
-(`Hom.isQuotientMapping_quotientLift_iff`), this identifies every quotient mapping with a quotient
-pair up to isomorphism. -/
+/-- A quotient mapping of Huber pairs with injective underlying map carries `A⁺` onto `B⁺`. -/
 theorem Hom.IsQuotientMapping.plus_eq_map {S : Pair A} {T : Pair B} {f : Hom S T}
     (hf : f.IsQuotientMapping) (hinj : Function.Injective f.toRingHom) :
     T.plus = S.plus.map f.toRingHom := by
@@ -449,7 +445,7 @@ theorem Hom.IsQuotientMapping.comp {S : Pair A} {T : Pair B} {U : Pair C} {g : H
   -- image under `g` is integral over `g(f(A⁺))`.
   rw [hg.plus_eq, hf.plus_eq, toRingHom_comp, ← Subring.map_map]
   exact Subring.integralClosure_subring_le_iff.mpr
-    (Subring.map_integralClosure_le g.toRingHom (S.plus.map f.toRingHom))
+    (RingHom.map_integralClosure_le g.toRingHom (S.plus.map f.toRingHom))
 
 /-- If a composite `g ∘ f` of morphisms of Huber pairs is a quotient mapping and `f` is
 surjective, then `g` is a quotient mapping. -/
@@ -468,6 +464,7 @@ theorem Hom.IsQuotientMapping.of_comp {S : Pair A} {T : Pair B} {U : Pair C} {g 
 
 /-- Precomposing with a quotient mapping `f` neither creates nor destroys quotient mappings:
 `g ∘ f` is a quotient mapping exactly when `g` is. -/
+@[simp]
 theorem Hom.isQuotientMapping_comp_iff {S : Pair A} {T : Pair B} {U : Pair C} {g : Hom T U}
     {f : Hom S T} (hf : f.IsQuotientMapping) :
     (g.comp f).IsQuotientMapping ↔ g.IsQuotientMapping :=

@@ -25,7 +25,7 @@ integral closure of `g(S)`; no algebra structure over a common base is needed fo
 * `AlgHom.mapIntegralClosure_injective`: it preserves injectivity.
 * `Ideal.exists_isPrime_comap_mapIntegralClosure_eq`: a prime of the integral closure in `A` is
   the contraction of a prime of the integral closure in `B` along an injective `f`.
-* `Subring.map_integralClosure_le`: a ring homomorphism `g` carries the integral closure of a
+* `RingHom.map_integralClosure_le`: a ring homomorphism `g` carries the integral closure of a
   subring `S` into the integral closure of `g(S)`.
 -/
 
@@ -68,7 +68,7 @@ theorem Ideal.exists_isPrime_comap_mapIntegralClosure_eq (P : Ideal (integralClo
 
 /-- A ring homomorphism `g : B →+* C` carries the integral closure of a subring `S` of `B` into
 the integral closure of the image `g(S)` in `C`. -/
-theorem Subring.map_integralClosure_le (g : B →+* C) (S : Subring B) :
+theorem RingHom.map_integralClosure_le (g : B →+* C) (S : Subring B) :
     (integralClosure S B).toSubring.map g ≤ (integralClosure (S.map g) C).toSubring := by
   rintro _ ⟨x, hx, rfl⟩
   exact IsIntegral.map_of_comp_eq (g.restrict S (S.map g) fun y hy ↦ ⟨y, hy, rfl⟩) g
