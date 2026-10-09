@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.GelfandTriple
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
-import Mathlib.Analysis.Convolution
 import TauCeti.Analysis.Convolution
 import TauCeti.Analysis.Sobolev.Mollification.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Limit
@@ -38,18 +37,6 @@ The case of interest is a Gelfand triple `V ↪ H ↪ V*` given by `ι : V →L[
 (`TauCeti.HasWeakLineDerivOn.norm_sq_of_gelfandDual`). For `E = ℝ` and `v = 1` this is the
 identity `d/dt ‖u(t)‖²_H = 2 ⟨u'(t), u(t)⟩` for `u ∈ L²(0, T; V)` with `u' ∈ L²(0, T; V*)`, the
 energy identity behind existence and uniqueness for linear parabolic equations.
-
-## Proof
-
-Mollify `u`: with `ρ` a normalized smooth bump, `g = ρ ⋆ u` is smooth, and `B ∘ g = ρ ⋆ (B ∘ u)`
-has classical derivative `ρ ⋆ u'` in the direction `v` wherever the support of the kernel stays
-inside `Ω` (`TauCeti.HasWeakLineDerivOn.hasLineDerivAt_convolution_right`). The classical product
-rule and the symmetry of `B` then give `∂_v B(g, g) = 2 (ρ ⋆ u')(g)`. As the bumps shrink,
-`ρ ⋆ u → u` in `L²(V)` and `ρ ⋆ u' → u'` in `L²(V*)` (`TauCeti.tendsto_normedBumpLp`), so both
-`B(g, g)` and `2 (ρ ⋆ u')(g)` converge in `L¹`, and weak derivatives pass to `L¹` limits
-(`TauCeti.hasWeakLineDerivOn_of_tendsto_lintegral_enorm_sub`). The support condition is met on
-each relatively compact subdomain once the bumps are small, and a weak derivative is detected on
-such subdomains (`TauCeti.hasWeakLineDerivOn_iff_forall_isCompact_closure`).
 
 ## Main declarations
 

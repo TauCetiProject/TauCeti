@@ -27,28 +27,15 @@ Neither `u` nor `ι ∘ u` is assumed to have any continuity in time. This file 
   `sup_t ‖w t‖` by the norms of `u` in `L²(a, b; V)` and of `u'` in `L²(a, b; V*)`
   (`TauCeti.HasWeakLineDerivOn.norm_sq_le_of_gelfandDual`).
 
-Together these say that `L²(a, b; V) ∩ H¹(a, b; V*)` embeds in `C([a, b]; H)`.
+Together these are the analytic content of the embedding `L²(a, b; V) ∩ H¹(a, b; V*) ↪
+C([a, b]; H)`: a continuous representative exists, and its supremum norm is controlled by the
+norms of `u` and `u'`. They are stated for pointwise representatives `u`, `u'`; packaging the
+domain as a normed space and the representative as a bounded linear map is not done here.
 
 This is the setting of linear parabolic equations: a weak solution of `u' + A u = f` lies in
 `L²(0, T; H¹₀(Ω))` with `u' ∈ L²(0, T; H⁻¹(Ω))`, so it has a representative in
 `C([0, T]; L²(Ω))`, which gives meaning to the initial condition `u(0) = u₀`, and its energy
 identity yields uniqueness.
-
-## Proof
-
-By the weak product rule (`TauCeti.HasWeakLineDerivOn.norm_sq_of_gelfandDual`) and the
-fundamental theorem of calculus for weak derivatives
-(`TauCeti.HasWeakLineDerivOn.exists_ae_eq_add_intervalIntegral`), outside a null set `N` both
-`‖ι u‖²` and the `V*`-valued function `ι.gelfandDual ∘ ι ∘ u` are primitives of `2 u'(u)` and
-`u'` respectively, up to constants. For `s, s'` outside `N`, expanding the square and pairing
-`ι.gelfandDual (ι (u s))` with `u s'` gives
-
-`‖ι u s - ι u s'‖² = 2 ∫_{s'}^{s} u'(r)(u r - u s') dr ≤ ∫_J (‖u'‖² + 2 ‖u‖²) + 2 |J| ‖u s'‖²`
-
-for any interval `J ⊆ (a, b)` containing `s, s'`. Choosing `s'` with `|J| ‖u s'‖² ≤ ∫_J ‖u‖²`
-bounds the oscillation of `ι ∘ u` on `J \ N` by `2 (∫_J (‖u'‖² + 4 ‖u‖²))^{1/2}`, which is small
-for short `J`. So `ι ∘ u` restricted to the complement of `N` has a limit at every point of
-`[a, b]`, and its extension (`extendFrom`) is the continuous representative.
 
 ## References
 
