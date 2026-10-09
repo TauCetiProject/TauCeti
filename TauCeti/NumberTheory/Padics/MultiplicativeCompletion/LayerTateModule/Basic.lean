@@ -18,17 +18,18 @@ import TauCeti.NumberTheory.Padics.RingHoms
 # The Tate module of a finite layer
 
 Let `L/K` be a finite Galois extension of `p`-adic fields with group `G = Gal(L/K)`, and let
-`A(L) = lim_m Lˣ/(Lˣ)^(p^m)` be the `p`-adic completion of `Lˣ`, a `ℤ_p[G]`-module. The **Tate
-module** of the layer is the module `Y = I_{G_K} / I_{G_L} I_{G_K}` of NSW (5.6.5): a finitely
-generated `ℤ_p[G]`-module of projective dimension at most one which is an extension
+`A(L) = lim_m Lˣ/(Lˣ)^(p^m)` be the `p`-adic completion of `Lˣ`, a `ℤ_p[G]`-module. The module
+`Y = I_{G_K} / I_{G_L} I_{G_K}` of NSW (5.6.5) is a finitely generated `ℤ_p[G]`-module of
+projective dimension at most one which is an extension
 
 `0 → A(L) → Y → I_G → 0`
 
 of the augmentation ideal `I_G` of `ℤ_p[G]` by `A(L)`. The integral decomposition
 `Y ≃ M₀ ⊕ ℤ_p[G]^N` of the proof of NSW (7.4.1)
-(`TauCeti.nonempty_linearEquiv_tameFrameModule_prod`) uses only these properties, so
-`TauCeti.LayerTateModule` packages exactly them. (The name `TauCeti.TateModule` is the `p`-adic
-Tate module `lim_n A[p^n]` of an abelian group.)
+(`TauCeti.nonempty_linearEquiv_tameFrameModule_prod`) uses only these properties, so a **Tate
+module** of the layer, `TauCeti.LayerTateModule`, is any module with exactly them; it is not
+identified here with the quotient `I_{G_K} / I_{G_L} I_{G_K}`. (The name `TauCeti.TateModule` is
+the `p`-adic Tate module `lim_n A[p^n]` of an abelian group.)
 
 Projective dimension at most one is the theorem of Nakayama and Rim
 (`Rep.projective_ker_of_isZero_res`): a cohomologically trivial representation has a projective
@@ -67,11 +68,11 @@ namespace TauCeti
 
 variable (p : ℕ) [Fact p.Prime] (L : Type u) [Field L] (K : Type u) [Field K] [Algebra K L]
 
-/-- **The Tate module of a layer** `L/K`: the module `Y = I_{G_K}/I_{G_L} I_{G_K}` of NSW (5.6.5)
-and the proof of (7.4.1), packaged by the properties the integral decomposition consumes. It is a
-finitely generated `ℤ_p[Gal(L/K)]`-module of projective dimension at most one, together with an
-extension `0 → A(L) → Y → I_G → 0` of the augmentation ideal `I_G` by the `p`-adic completion
-`A(L)` of `Lˣ`. -/
+/-- **A Tate module of a layer** `L/K`: the properties of the module `Y = I_{G_K}/I_{G_L} I_{G_K}`
+of NSW (5.6.5) that the integral decomposition in the proof of (7.4.1) consumes, without an
+identification with that quotient. It is a finitely generated `ℤ_p[Gal(L/K)]`-module of
+projective dimension at most one, together with an extension `0 → A(L) → Y → I_G → 0` of the
+augmentation ideal `I_G` by the `p`-adic completion `A(L)` of `Lˣ`. -/
 structure LayerTateModule where
   /-- The carrier `Y`. -/
   carrier : Type u
@@ -153,7 +154,8 @@ a finite extension of `ℚ_p` and `K` a subfield with `Gal(L/K)` finite, and let
 `H²(S, A(L))` has order `#S`. Then the splitting module of `u`, an extension
 `0 → A(L) → Y → I_G → 0`, is cohomologically trivial
 (`TauCeti.TateCohomology.isZero_res_splittingModule`; on `ℓ`-subgroups for `ℓ ≠ p` all
-cohomology of a `ℤ_p`-module vanishes), so it is a Tate module of the layer. -/
+positive-degree group cohomology of a `ℤ_p`-module vanishes), so it is a Tate module of the
+layer. -/
 theorem nonempty_of_tateHypotheses {L K : Type} [Field L] [Field K] [Algebra K L]
     [Algebra ℚ_[p] L] [Module.Finite ℚ_[p] L] [Finite (L ≃ₐ[K] L)]
     (u : groupCohomology (Rep.of (padicCompletionUnitsRepresentation p L K)) 2)
