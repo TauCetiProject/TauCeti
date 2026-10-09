@@ -93,7 +93,7 @@ theorem StrictCohomologicalDimensionLE.of_continuousMulEquiv (e : G ≃ₜ* H) {
   -- the map `Hⁱ(H, M) → Hⁱ(G, M)` along `e` and the identity of `M` is an additive bijection
   have hF := map_ofDiscreteModulePair_bijective_of_continuousMulEquiv e (LinearEquiv.refl ℤ M)
     (fun g m => by
-      rw [LinearEquiv.refl_apply, LinearEquiv.refl_apply, MulAction.compHom_smul_def]
+      change e.symm (e g) • m = g • m
       simp) i
   refine (AddSubgroup.eq_bot_iff_forall _).2 fun x ⟨k, hk⟩ => ?_
   obtain ⟨y, rfl⟩ := hF.2 x

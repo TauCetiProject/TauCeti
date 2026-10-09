@@ -307,8 +307,7 @@ private theorem map_ofDiscreteModulePair_symm_comp_map_ofDiscreteModulePair
 variable {R G} in
 /-- **Continuous cohomology is invariant under a topological group isomorphism**: for
 `e : H ≃ₜ* G` and an `R`-linear isomorphism `f : M ≃ₗ[R] N` with `f (e h • m) = h • f m`, the map
-`Hⁿ(G, M) → Hⁿ(H, N)` along `e` and `f` is bijective, with inverse the map along `e⁻¹` and
-`f⁻¹`. -/
+`Hⁿ(G, M) → Hⁿ(H, N)` along `e` and `f` is bijective. -/
 theorem map_ofDiscreteModulePair_bijective_of_continuousMulEquiv
     {H : Type v} [Group H] [TopologicalSpace H] [IsTopologicalGroup H] (e : H ≃ₜ* G)
     {M N : Type (max v w)} [AddCommGroup M] [Module R M] [TopologicalSpace M] [DiscreteTopology M]
