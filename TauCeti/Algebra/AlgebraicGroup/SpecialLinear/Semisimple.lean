@@ -12,7 +12,6 @@ import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Reductive.Basic
 import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Smooth
 import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Connected
-import TauCeti.Algebra.AlgebraicGroup.Representation.ClosedSubgroup
 import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
 /-!
