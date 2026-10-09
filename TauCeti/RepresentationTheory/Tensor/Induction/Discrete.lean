@@ -107,7 +107,9 @@ formulas on pure tensors. -/
 /-- Discrete tensor induction uses the algebraic tensor-induced action. -/
 theorem tensorInduced_ρ_apply (A : DiscreteRep.{u, v, w} R U) (g : G)
     (z : ⨂[R] _ : G ⧸ U, A.V) :
-    (tensorInduced U hU s A).ρ g z = U.tensorInducedRepresentation s A.ρ g z := (rfl)
+    (tensorInduced U hU s A).ρ g z = U.tensorInducedRepresentation s A.ρ g z := by
+  -- `ofDistribMulAction` recovers the representation used by `DistribMulAction.compHom`.
+  rfl
 
 /-- On a pure tensor, the coordinate at a coset is acted on by its transversal word and the
 coordinates are translated by `g⁻¹`. -/
@@ -117,44 +119,6 @@ coordinates are translated by `g⁻¹`. -/
       PiTensorProduct.tprod R fun i ↦ (U.monomialHom s g).left i • m (g⁻¹ • i) :=
   U.tensorInducedRepresentation_apply_tprod s A.ρ g m
 
-/-- A morphism of discrete modules induces a morphism of tensor-induced modules by applying it
-in each factor. -/
-noncomputable def tensorInducedMap {A B : DiscreteRep.{u, v, w} R U} (f : A ⟶ B) :
-    tensorInduced U hU s A ⟶ tensorInduced U hU s B :=
-  f.tensorInduced s
-
-/-- The underlying linear map of a discrete tensor-induced morphism is the tensor of the
-original linear map.
-
-This is an explicit rewrite lemma so that `tensorInducedMap_apply_tprod` remains the simp
-normal form for evaluation on pure tensors. -/
-theorem tensorInducedMap_toLinearMap {A B : DiscreteRep.{u, v, w} R U} (f : A ⟶ B) :
-    (tensorInducedMap U hU s f).toLinearMap = PiTensorProduct.map fun _ ↦ f.toLinearMap :=
-  Representation.IntertwiningMap.tensorInduced_toLinearMap f s
-
-/-- The tensor-induced morphism acts factorwise on pure tensors. -/
-@[simp] theorem tensorInducedMap_apply_tprod {A B : DiscreteRep.{u, v, w} R U} (f : A ⟶ B)
-    (m : G ⧸ U → A.V) :
-    (tensorInducedMap U hU s f).toLinearMap (PiTensorProduct.tprod R m) =
-      PiTensorProduct.tprod R fun i ↦ f.toLinearMap (m i) := by
-  rw [tensorInducedMap_toLinearMap]
-  exact PiTensorProduct.map_tprod _ _
-
-/-- Tensor induction preserves the identity morphism. -/
-@[simp] theorem tensorInducedMap_id (A : DiscreteRep.{u, v, w} R U) :
-    tensorInducedMap U hU s (𝟙 A) = 𝟙 (tensorInduced U hU s A) := by
-  apply Representation.IntertwiningMap.ext
-  rw [tensorInducedMap_toLinearMap, DiscreteRep.id_toLinearMap, DiscreteRep.id_toLinearMap]
-  exact PiTensorProduct.map_id
-
-/-- Tensor induction preserves composition of morphisms. -/
-@[simp] theorem tensorInducedMap_comp {A B C : DiscreteRep.{u, v, w} R U}
-    (f : A ⟶ B) (g : B ⟶ C) :
-    tensorInducedMap U hU s (f ≫ g) = tensorInducedMap U hU s f ≫ tensorInducedMap U hU s g := by
-  apply Representation.IntertwiningMap.ext
-  simp only [tensorInducedMap_toLinearMap, DiscreteRep.comp_toLinearMap]
-  exact PiTensorProduct.map_comp _ _
-
 /-- Tensor induction for discrete continuous representations along an open finite-index
 subgroup. Composing with `toSmoothDiscrete` gives smooth discrete coefficients for continuous
 cohomology. The object map is exposed so the morphism formula can be stated without
@@ -162,9 +126,11 @@ transports between the opaque functor's objects and the named tensor-induced obj
 @[expose] noncomputable def tensorInductionFunctor :
     DiscreteRep.{u, v, w} R U ⥤ DiscreteRep.{u, v, max u v w} R G where
   obj A := tensorInduced U hU s A
-  map f := tensorInducedMap U hU s f
-  map_id A := tensorInducedMap_id U hU s A
-  map_comp f g := tensorInducedMap_comp U hU s f g
+  -- The action obtained by `ofDistribMulAction` from `DistribMulAction.compHom` is
+  -- definitionally the original tensor-induced representation, so the hom types agree.
+  map f := f.tensorInduced s
+  map_id A := Representation.IntertwiningMap.tensorInduced_id (ρ := A.ρ) s
+  map_comp f g := Representation.IntertwiningMap.tensorInduced_comp g f s
 
 /-- The tensor induction functor has the named tensor-induced object map. -/
 @[simp] theorem tensorInductionFunctor_obj (A : DiscreteRep.{u, v, w} R U) :
@@ -172,7 +138,7 @@ transports between the opaque functor's objects and the named tensor-induced obj
 
 /-- The tensor induction functor has the factorwise tensor-induced morphism map. -/
 @[simp] theorem tensorInductionFunctor_map {A B : DiscreteRep.{u, v, w} R U} (f : A ⟶ B) :
-    (tensorInductionFunctor U hU s).map f = tensorInducedMap U hU s f := (rfl)
+    (tensorInductionFunctor U hU s).map f = f.tensorInduced s := (rfl)
 
 end TauCeti.DiscreteRep
 
@@ -205,6 +171,7 @@ example {G : Type v} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
       simp [e, z, M]
     exact one_ne_zero (congrArg ULift.down (hez.symm.trans hz'))
   · rw [DiscreteRep.tensorInduced_ρ_apply_tprod]
+    -- The `compHom` action of the trivial representation reduces to the identity.
     congr 1
 
 end TauCeti

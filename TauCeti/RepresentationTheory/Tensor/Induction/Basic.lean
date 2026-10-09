@@ -284,4 +284,30 @@ noncomputable def tensorInduced (f : ρ.IntertwiningMap τ) (s : U.LeftTransvers
 @[simp] theorem tensorInduced_toLinearMap (f : ρ.IntertwiningMap τ) (s : U.LeftTransversal) :
     (f.tensorInduced s).toLinearMap = PiTensorProduct.map fun _ ↦ f.toLinearMap := (rfl)
 
+/-- The tensor-induced intertwining map acts factorwise on pure tensors. -/
+@[simp] theorem tensorInduced_apply_tprod (f : ρ.IntertwiningMap τ) (s : U.LeftTransversal)
+    (m : G ⧸ U → M) :
+    f.tensorInduced s (PiTensorProduct.tprod R m) =
+      PiTensorProduct.tprod R fun i ↦ f (m i) :=
+  f.wreathTensor_apply_tprod (G ⧸ U) m
+
+/-- Tensor induction of the identity intertwining map is the identity map. -/
+@[simp] theorem tensorInduced_id (s : U.LeftTransversal) :
+    (IntertwiningMap.id ρ).tensorInduced s =
+      IntertwiningMap.id (U.tensorInducedRepresentation s ρ) := by
+  apply IntertwiningMap.ext
+  have h := congrArg IntertwiningMap.toLinearMap
+    (IntertwiningMap.wreathTensor_id (ρ := ρ) (G ⧸ U))
+  exact h
+
+/-- Tensor induction of a composite intertwining map is the composite of the induced maps. -/
+@[simp] theorem tensorInduced_comp {P : Type z} [AddCommMonoid P] [Module R P]
+    {υ : Representation R U P} (g : τ.IntertwiningMap υ) (f : ρ.IntertwiningMap τ)
+    (s : U.LeftTransversal) :
+    (g.comp f).tensorInduced s = (g.tensorInduced s).comp (f.tensorInduced s) := by
+  apply IntertwiningMap.ext
+  have h := congrArg IntertwiningMap.toLinearMap
+    (IntertwiningMap.wreathTensor_comp g f (G ⧸ U))
+  exact h
+
 end Representation.IntertwiningMap
