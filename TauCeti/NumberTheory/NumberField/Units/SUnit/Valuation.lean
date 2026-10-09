@@ -121,12 +121,9 @@ def sUnitValuation : sUnitRep S ⟶ Rep.ofMulAction ℤ (L ≃ₐ[K] L) S :=
         apply MonoidAlgebra.ext
         apply Finsupp.ext
         intro v
-        -- Unpack composition and the S-unit representation's local action instance.
-        change (valuationVector S (Additive.ofMul (g • u.toMul))).coeff v =
-          ((Representation.ofMulAction ℤ (L ≃ₐ[K] L) S g) (valuationVector S u)).coeff v
+        simp only [LinearMap.comp_apply, Representation.ofMulDistribMulAction_apply_apply]
         rw [Representation.coeff_ofMulAction, valuationVector_coeff, valuationVector_coeff]
-        -- The subtype action has the same underlying unit as the ambient action.
-        change Multiplicative.toAdd (v.val.valuationOfNeZero (g • u.toMul.val)) = _
+        rw [toMul_ofMul, sUnitAction_smul_val]
         apply congrArg Multiplicative.toAdd
         rw [HeightOneSpectrum.valuationOfNeZero_eq_iff,
           HeightOneSpectrum.valuationOfNeZero_eq]
@@ -163,18 +160,16 @@ def sUnitInclusion : Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (𝓞 L)ˣ ⟶ sU
         let := sUnitAction S
         apply LinearMap.ext
         intro u
-        -- Both representations are additive versions of multiplicative unit groups.
-        change Additive.ofMul (unitInclusion S (g • u.toMul)) =
-          Additive.ofMul (g • unitInclusion S u.toMul)
+        simp only [LinearMap.comp_apply, Representation.ofMulDistribMulAction_apply_apply,
+          AddMonoidHom.coe_toIntLinearMap, MonoidHom.coe_toAdditive, Function.comp_apply,
+          toMul_ofMul]
         apply congrArg Additive.ofMul
         apply Subtype.ext
         rw [unitInclusion_val]
         -- Reduce equivariance of units to equivariance of the ring-of-integers embedding.
         apply Units.ext
-        change algebraMap (𝓞 L) L (g • (u.toMul : 𝓞 L)) =
-          g ((unitInclusion S u.toMul).val : L)
-        rw [unitInclusion_val, Units.coe_map]
-        exact algebraMap_smul_eq_apply g (u.toMul : 𝓞 L) }
+        simp only [sUnitAction_smul_val, Units.coe_smul, unitInclusion_val, AlgEquiv.smul_units_def,
+          Units.coe_map, MonoidHom.coe_ofClass, algebraMap_smul_eq_apply] }
 
 omit [Finite S] in
 /-- The inclusion has the same underlying field element as the ring-of-integers embedding. -/
@@ -186,8 +181,6 @@ theorem sUnitInclusion_val (u : Additive (𝓞 L)ˣ) :
 omit [Finite S] in
 /-- Ordinary units embed injectively into the S-unit representation. -/
 theorem sUnitInclusion_injective : Function.Injective (sUnitInclusion S).hom := by
-  -- The source carrier is the additive version of the ordinary unit group.
-  change Function.Injective (fun u : Additive (𝓞 L)ˣ => (sUnitInclusion S).hom u)
   intro u v h
   apply Additive.toMul.injective
   apply (Set.unitEmptyEquivUnits (R := 𝓞 L) L).symm.injective
@@ -200,18 +193,17 @@ theorem range_sUnitInclusion_eq_ker_sUnitValuation :
     (sUnitInclusion S).hom.toLinearMap.range = (sUnitValuation S).hom.toLinearMap.ker := by
   ext u
   rw [LinearMap.mem_range, LinearMap.mem_ker]
-  -- `Rep.Hom` and its underlying linear map have the same evaluation.
-  change (∃ y : Additive (𝓞 L)ˣ, (sUnitInclusion S).hom y = u) ↔
-    (sUnitValuation S).hom u = 0
+  simp only [Representation.IntertwiningMap.toLinearMap_apply]
   have hzero : (sUnitValuation S).hom u = 0 ↔
       u.toMul ∈ (Set.unitValuation (S : Set (HeightOneSpectrum (𝓞 L))) L).ker := by
     -- The coordinate equivalence is injective; only the valuation tuple can vanish.
     change TauCeti.funMultiplicativeIntLinearEquiv S
       ((Set.unitValuation (S : Set (HeightOneSpectrum (𝓞 L))) L).toAdditive u) = 0 ↔ _
     rw [LinearEquiv.map_eq_zero_iff]
-    rfl
+    exact toMul_eq_one.symm.trans MonoidHom.mem_ker.symm
   rw [hzero, Set.unitValuation_ker]
-  -- Membership in a subgroup of S-units is membership of the underlying field unit.
+  -- The opaque `sUnitRep` carrier prevents rewriting `Subgroup.mem_subgroupOf` here;
+  -- identify its underlying S-unit explicitly before eliminating the subgroup membership.
   change (∃ y : Additive (𝓞 L)ˣ, (sUnitInclusion S).hom y = u) ↔ u.toMul.val ∈
     (∅ : Set (HeightOneSpectrum (𝓞 L))).unit L
   constructor
@@ -263,8 +255,9 @@ theorem sUnitInclusion_comp_sUnitValuation : sUnitInclusion S ≫ sUnitValuation
   apply Representation.IntertwiningMap.ext
   apply LinearMap.ext
   intro u
-  -- Evaluate the categorical composite through its underlying intertwining and linear maps.
-  change (sUnitValuation S).hom ((sUnitInclusion S).hom u) = 0
+  simp only [Rep.hom_comp, Representation.IntertwiningMap.comp_toLinearMap,
+    LinearMap.comp_apply, Rep.zero_hom, Representation.IntertwiningMap.zero_toLinearMap,
+    LinearMap.zero_apply]
   exact (LinearMap.mem_ker.mp <| range_sUnitInclusion_eq_ker_sUnitValuation S ▸
     LinearMap.mem_range_self (sUnitInclusion S).hom.toLinearMap u)
 
