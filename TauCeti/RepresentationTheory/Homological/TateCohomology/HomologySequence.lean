@@ -114,8 +114,8 @@ theorem isZero_X₁_of_isZero_X₃_of_isZero_X₂ (m n : ℤ) (hmn : m + 1 = n)
   subst hmn
   exact (_root_.TateCohomology.exact₁ hS m).isZero_of_both_isZero h₃ h₂
 
-/-- If `Ĥⁿ(G, X₂) = 0` and `Ĥⁿ⁺¹(G, X₂) = 0`, the connecting map
-`Ĥⁿ(G, X₃) ⟶ Ĥⁿ⁺¹(G, X₁)` is bijective. -/
+/-- If `Ĥⁿ(G, X₂) = 0` and `Ĥⁿ⁺¹(G, X₂) = 0`, the connecting map
+`Ĥⁿ(G, X₃) ⟶ Ĥⁿ⁺¹(G, X₁)` is bijective. -/
 theorem δ_bijective_of_isZero_X₂ (n : ℤ) (h₀ : IsZero (tateCohomology S.X₂ n))
     (h₁ : IsZero (tateCohomology S.X₂ (n + 1))) :
     Function.Bijective (_root_.TateCohomology.δ hS n) :=
