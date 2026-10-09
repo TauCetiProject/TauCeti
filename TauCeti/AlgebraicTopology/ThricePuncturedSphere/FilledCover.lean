@@ -11,8 +11,10 @@ public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
 public import TauCeti.Topology.Covering.PuncturedDisc
 public import TauCeti.Topology.PunctureFilling
 
+import TauCeti.AlgebraicTopology.ThricePuncturedSphere.ComponentCharts
 import TauCeti.Topology.Covering.Clopen
 import TauCeti.Topology.IsLocalHomeomorph
+import TauCeti.Topology.SeparatedMap
 
 /-!
 # Filling the punctures of a finite cover of the thrice-punctured sphere
@@ -20,7 +22,8 @@ import TauCeti.Topology.IsLocalHomeomorph
 Let `p : E → ℂ ∖ {0, 1}` be a covering map with finite fibres. Over the standard punctured
 neighbourhood `D_q*` of each puncture `q ∈ {0, 1, ∞}`, every connected component `C` of
 `p ⁻¹' D_q*` is a finite connected cover of a punctured disc, hence isomorphic over `D_q*` to the
-power map `w ↦ w ^ e` on the punctured unit disc `𝔻*` for some `e ≠ 0`. The **filled cover**
+power map `w ↦ w ^ e` on the punctured unit disc `𝔻*`, where `e ≠ 0` is the local degree
+`FilledCover.degree p i` of the component. The **filled cover**
 `FilledCover p` adds one point to `E` for each such component, the centre of the disc
 parametrising it: it is the puncture filling `TauCeti.PunctureFilling` of `E` along the
 parametrisations `FilledCover.chart p i : 𝔻* → E` of the components `i`, one of which is chosen
@@ -31,20 +34,27 @@ The filled cover is a compact Hausdorff space containing `E` as an open dense su
 (`TauCeti.PunctureFilling.isOpenEmbedding_incl`, `TauCeti.PunctureFilling.denseRange_incl`); it is
 connected when `E` is (`TauCeti.PunctureFilling.connectedSpace`). When the fibre over `1/2` is
 numbered, the added points are the cycles of the three permutations of the monodromy triple, so
-there are `c(σ0) + c(σ1) + c(σinf)` of them, counting fixed points as cycles. This is the
+there are `c(σ0) + c(σ1) + c(σinf)` of them, counting fixed points as cycles, and the local degree
+of each component is the length of its cycle. This is the
 topological space underlying the branched cover of the Riemann sphere attached to `p`.
 
 ## Main declarations
 
 * `TauCeti.FilledCover.Index p`: the components of `p ⁻¹' D_q*`, for the three punctures `q`.
+* `TauCeti.FilledCover.degree p i`: the local degree of the component `i`.
 * `TauCeti.FilledCover.chart p i`: the chosen parametrisation of the component `i` by `𝔻*`, under
-  which `p` is `w ↦ w ^ e` in the standard coordinate of `D_q*`
+  which `p` is `w ↦ w ^ degree p i` in the standard coordinate of `D_q*`
   (`TauCeti.FilledCover.exists_homeomorph_chart_eq`).
 * `TauCeti.FilledCover p`: the cover `E` with the punctures of its components filled in.
 * `TauCeti.FilledCover.t2Space`, `TauCeti.FilledCover.compactSpace`,
   `TauCeti.FilledCover.secondCountableTopology`: the filled cover is Hausdorff and compact, and
   second countable when `E` is.
+* `TauCeti.FilledCover.finite_index`: a finite cover has finitely many added points.
 * `TauCeti.FilledCover.indexEquiv`: the added points are the cycles of `σ0`, `σ1` and `σinf`.
+* `TauCeti.FilledCover.degree_indexEquiv_symm_inl`,
+  `TauCeti.FilledCover.degree_indexEquiv_symm_inr_inl`,
+  `TauCeti.FilledCover.degree_indexEquiv_symm_inr_inr`: the local degree of the component of a
+  cycle is its length.
 * `TauCeti.FilledCover.card_range_center`: there are `c(σ0) + c(σ1) + c(σinf)` added points.
 
 ## References
@@ -86,18 +96,31 @@ theorem mem_component_iff {i : Index p} {y : p ⁻¹' i.1.neighborhood} :
     y ∈ component p i ↔ ConnectedComponents.mk y = i.2 :=
   Iff.rfl
 
-/-- The **filling chart** of the component `i` of `p ⁻¹' D_q*`: a parametrisation `𝔻* → E` of
-that component under which `p` is `w ↦ w ^ e` in the standard coordinate of `D_q*`, for some
-`e ≠ 0`. One is chosen for each component. Such a parametrisation exists when `p` is a covering
-map with finite fibres (`FilledCover.exists_homeomorph_chart_eq`); otherwise the chart is an
-unspecified map. -/
-def chart (i : Index p) : 𝔻* → E :=
-  haveI : Nonempty (𝔻* → E) :=
-    (ConnectedComponents.surjective_coe i.2).elim fun x _ ↦ ⟨fun _ ↦ x⟩
-  Classical.epsilon fun φ ↦ ∃ (e : ℕ) (he : e ≠ 0) (h : component p i ≃ₜ 𝔻*),
+/-- The **local degree** of the component `i` of `p ⁻¹' D_q*`: the number of its points over the
+basepoint of `𝔻*` in the standard coordinate of `D_q*`. When `p` is a covering map with finite
+fibres, it is nonzero (`FilledCover.degree_ne_zero`), `p` is `w ↦ w ^ degree p i` along the
+filling chart (`FilledCover.exists_homeomorph_chart_eq`), and it is the length of the cycle of the
+monodromy labelling `i` (`FilledCover.degree_indexEquiv_symm_inl` and its analogues). -/
+def degree (i : Index p) : ℕ :=
+  Nat.card ((component p i).domRestrict (i.1.coord ∘ i.1.neighborhood.restrictPreimage p) ⁻¹'
+    {puncturedDiscBasepoint})
+
+/-- `φ` parametrises the component `i` of `p ⁻¹' D_q*` by `𝔻*`, with `p` becoming the power map
+`w ↦ w ^ degree p i` in the standard coordinate of `D_q*`. -/
+private def IsFillingChart (i : Index p) (φ : 𝔻* → E) : Prop :=
+  ∃ (he : degree p i ≠ 0) (h : component p i ≃ₜ 𝔻*),
     puncturedDiscPow he ∘ h =
         (component p i).domRestrict (i.1.coord ∘ i.1.neighborhood.restrictPreimage p) ∧
       φ = fun w ↦ ((h.symm w : p ⁻¹' i.1.neighborhood) : E)
+
+/-- The **filling chart** of the component `i` of `p ⁻¹' D_q*`: a parametrisation `𝔻* → E` of
+that component under which `p` is `w ↦ w ^ degree p i` in the standard coordinate of `D_q*`. One
+is chosen for each component. Such a parametrisation exists when `p` is a covering map with finite
+fibres (`FilledCover.exists_homeomorph_chart_eq`); otherwise the chart is an unspecified map. -/
+def chart (i : Index p) : 𝔻* → E :=
+  haveI : Nonempty (𝔻* → E) :=
+    (ConnectedComponents.surjective_coe i.2).elim fun x _ ↦ ⟨fun _ ↦ x⟩
+  Classical.epsilon (IsFillingChart p i)
 
 end FilledCover
 
@@ -113,25 +136,28 @@ namespace FilledCover
 
 variable {p}
 
+/-- Each component of the preimage of a standard punctured neighbourhood is the connected
+component of any of its points. -/
+private theorem exists_component_eq (i : Index p) : ∃ x, component p i = connectedComponent x := by
+  obtain ⟨x, hx⟩ := ConnectedComponents.surjective_coe i.2
+  exact ⟨x, by rw [component, ← hx, connectedComponents_preimage_singleton]⟩
+
 /-- The components of the preimage of a standard punctured neighbourhood are open and closed. -/
 private theorem isClopen_component (hp : IsCoveringMap p) (i : Index p) :
     IsClopen (component p i) := by
   have := hp.isLocalHomeomorph.locallyPathConnectedSpace
   have : LocallyPathConnectedSpace (p ⁻¹' i.1.neighborhood) :=
     (i.1.isOpen_neighborhood.preimage hp.continuous).locallyPathConnectedSpace
-  obtain ⟨x, hx⟩ := ConnectedComponents.surjective_coe i.2
-  rw [component, ← hx, connectedComponents_preimage_singleton]
+  obtain ⟨x, hx⟩ := exists_component_eq i
+  rw [hx]
   exact isClopen_connectedComponent
 
 variable (hp : IsCoveringMap p) {z₀ : ThricePuncturedSphere} (hfin : Finite (p ⁻¹' {z₀}))
 include hp hfin
 
-/-- Each component of the preimage of a standard punctured neighbourhood is isomorphic over `𝔻*`
-to a power map: it is a finite connected cover of the punctured disc. -/
-private theorem exists_homeomorph_puncturedDiscPow (i : Index p) :
-    ∃ (e : ℕ) (he : e ≠ 0) (h : component p i ≃ₜ 𝔻*),
-      puncturedDiscPow he ∘ h =
-        (component p i).domRestrict (i.1.coord ∘ i.1.neighborhood.restrictPreimage p) := by
+/-- Each component of the preimage of a standard punctured neighbourhood has a filling chart: it
+is a finite connected cover of the punctured disc, so isomorphic over `𝔻*` to a power map. -/
+private theorem exists_isFillingChart (i : Index p) : ∃ φ, IsFillingChart p i φ := by
   let f := i.1.coord ∘ i.1.neighborhood.restrictPreimage p
   have hf : IsCoveringMap f := (hp.restrictPreimage _).homeomorph_comp i.1.coord
   -- The fibres of `f` are finite, being contained in fibres of `p`.
@@ -142,41 +168,43 @@ private theorem exists_homeomorph_puncturedDiscPow (i : Index p) :
     exact congrArg Subtype.val (i.1.coord.eq_symm_apply.2 hz)
   have hcov : IsCoveringMap ((component p i).domRestrict f) :=
     hf.domRestrict_of_isClopen hffin (isClopen_component hp i)
-  obtain ⟨x, hx⟩ := ConnectedComponents.surjective_coe i.2
+  obtain ⟨x, hx⟩ := exists_component_eq i
   have : ConnectedSpace (component p i) := isConnected_iff_connectedSpace.1 <| by
-    rw [component, ← hx, connectedComponents_preimage_singleton]
+    rw [hx]
     exact isConnected_connectedComponent
-  have : Nonempty (component p i) := ⟨⟨x, hx⟩⟩
+  have : Nonempty (component p i) := ⟨⟨x, hx ▸ mem_connectedComponent⟩⟩
   have hfinC : Finite ((component p i).domRestrict f ⁻¹' {puncturedDiscBasepoint}) :=
     ((hffin _).preimage Subtype.val_injective.injOn).to_subtype
   have := pathConnectedSpace_ball_diff_singleton (0 : ℂ) one_pos
   obtain ⟨y, hy⟩ := hcov.surjective puncturedDiscBasepoint
-  have he : Nat.card ((component p i).domRestrict f ⁻¹' {puncturedDiscBasepoint}) ≠ 0 :=
-    Nat.card_ne_zero.2 ⟨⟨⟨y, hy⟩⟩, hfinC⟩
-  exact ⟨_, he, (hcov.exists_homeomorph_puncturedDiscPow_comp_eq_iff he _).2 rfl⟩
+  have he : degree p i ≠ 0 := Nat.card_ne_zero.2 ⟨⟨⟨y, hy⟩⟩, hfinC⟩
+  obtain ⟨h, hh⟩ := (hcov.exists_homeomorph_puncturedDiscPow_comp_eq_iff he _).2 rfl
+  exact ⟨_, he, h, hh, rfl⟩
+
+/-- The local degree of each component of the preimage of a standard punctured neighbourhood is
+nonzero. -/
+theorem degree_ne_zero (i : Index p) : degree p i ≠ 0 := by
+  obtain ⟨_, he, -⟩ := exists_isFillingChart hp hfin i
+  exact he
 
 /-- **The filling charts.** The filling chart of the component `i` of `p ⁻¹' D_q*` is the inverse
 of a homeomorphism `h` from that component onto `𝔻*` under which `p` becomes the power map
-`w ↦ w ^ e`, for some `e ≠ 0`, in the standard coordinate `q.coord` of `D_q*`. -/
+`w ↦ w ^ degree p i` in the standard coordinate `q.coord` of `D_q*`. -/
 theorem exists_homeomorph_chart_eq (i : Index p) :
-    ∃ (e : ℕ) (he : e ≠ 0) (h : component p i ≃ₜ 𝔻*),
-      puncturedDiscPow he ∘ h =
+    ∃ h : component p i ≃ₜ 𝔻*,
+      puncturedDiscPow (degree_ne_zero hp hfin i) ∘ h =
           (component p i).domRestrict (i.1.coord ∘ i.1.neighborhood.restrictPreimage p) ∧
         chart p i = fun w ↦ ((h.symm w : p ⁻¹' i.1.neighborhood) : E) := by
-  obtain ⟨e, he, h, hh⟩ := exists_homeomorph_puncturedDiscPow hp hfin i
-  exact Classical.epsilon_spec (p := fun φ ↦ ∃ (e : ℕ) (he : e ≠ 0) (h : component p i ≃ₜ 𝔻*),
-    puncturedDiscPow he ∘ h =
-        (component p i).domRestrict (i.1.coord ∘ i.1.neighborhood.restrictPreimage p) ∧
-      φ = fun w ↦ ((h.symm w : p ⁻¹' i.1.neighborhood) : E)) ⟨_, e, he, h, hh, rfl⟩
+  obtain ⟨_, h, hh, hchart⟩ := Classical.epsilon_spec (exists_isFillingChart hp hfin i)
+  exact ⟨h, hh, hchart⟩
 
-/-- In the standard coordinate of `D_q*`, the cover `p` is the power map `w ↦ w ^ e` along the
-filling chart of each component over `q`, for some `e ≠ 0`. -/
-theorem exists_coe_coord_chart_eq_pow (i : Index p) :
-    ∃ e ≠ 0, ∀ w : 𝔻*, ∃ hw : p (chart p i w) ∈ i.1.neighborhood,
+/-- In the standard coordinate of `D_q*`, the cover `p` is the power map `w ↦ w ^ degree p i`
+along the filling chart of each component `i` over `q`. -/
+theorem exists_coe_coord_chart_eq_pow (i : Index p) (w : 𝔻*) :
+    ∃ hw : p (chart p i w) ∈ i.1.neighborhood,
       ConnectedComponents.mk (⟨chart p i w, hw⟩ : p ⁻¹' i.1.neighborhood) = i.2 ∧
-        (i.1.coord ⟨p (chart p i w), hw⟩ : ℂ) = (w : ℂ) ^ e := by
-  obtain ⟨e, he, h, hh, hchart⟩ := exists_homeomorph_chart_eq hp hfin i
-  refine ⟨e, he, fun w ↦ ?_⟩
+        (i.1.coord ⟨p (chart p i w), hw⟩ : ℂ) = (w : ℂ) ^ degree p i := by
+  obtain ⟨h, hh, hchart⟩ := exists_homeomorph_chart_eq hp hfin i
   rw [hchart]
   refine ⟨(h.symm w : p ⁻¹' i.1.neighborhood).2, (h.symm w).2, ?_⟩
   have := congrArg Subtype.val (congr_fun hh (h.symm w))
@@ -188,7 +216,7 @@ that component. -/
 theorem range_chart (i : Index p) :
     range (chart p i) =
       {y | ∃ hy : p y ∈ i.1.neighborhood, ConnectedComponents.mk ⟨y, hy⟩ = i.2} := by
-  obtain ⟨-, -, h, -, hchart⟩ := exists_homeomorph_chart_eq hp hfin i
+  obtain ⟨h, -, hchart⟩ := exists_homeomorph_chart_eq hp hfin i
   ext y
   rw [hchart]
   constructor
@@ -199,7 +227,7 @@ theorem range_chart (i : Index p) :
 
 /-- The filling charts are open embeddings. -/
 theorem isOpenEmbedding_chart (i : Index p) : IsOpenEmbedding (chart p i) := by
-  obtain ⟨-, -, h, -, hchart⟩ := exists_homeomorph_chart_eq hp hfin i
+  obtain ⟨h, -, hchart⟩ := exists_homeomorph_chart_eq hp hfin i
   rw [hchart]
   exact (i.1.isOpen_neighborhood.preimage hp.continuous).isOpenEmbedding_subtypeVal.comp
     ((isClopen_component hp i).isOpen.isOpenEmbedding_subtypeVal.comp
@@ -208,19 +236,15 @@ theorem isOpenEmbedding_chart (i : Index p) : IsOpenEmbedding (chart p i) := by
 /-- Approaching the puncture of a filling chart, a point goes to infinity in `ℂ ∖ {0, 1}`. -/
 private theorem tendsto_comp_chart_cocompact (i : Index p) :
     Tendsto (p ∘ chart p i) (comap (↑) (𝓝 (0 : ℂ))) (cocompact ThricePuncturedSphere) := by
-  obtain ⟨e, he, hpow⟩ := exists_coe_coord_chart_eq_pow hp hfin i
   refine ThricePuncturedSphere.hasBasis_cocompact.tendsto_right_iff.2 fun ρ hρ ↦ ?_
-  set ρ' := min ρ (1 / 2)
-  have hρ' : 0 < ρ' := lt_min hρ one_half_pos
-  filter_upwards [preimage_mem_comap (ball_mem_nhds (0 : ℂ) (mul_pos two_pos hρ'))] with w hw
-  obtain ⟨hw', -, hcoord⟩ := hpow w
+  filter_upwards [preimage_mem_comap (ball_mem_nhds (0 : ℂ) (mul_pos two_pos hρ))] with w hw
+  obtain ⟨hw', -, hcoord⟩ := exists_coe_coord_chart_eq_pow hp hfin i w
   intro hcore
-  have h2ρ := (i.1.mem_compactCore_iff hρ' (min_le_right _ _) hw').1
-    (compactCore_subset_compactCore hρ' (min_le_left _ _) hcore)
+  have h2ρ := (i.1.mem_compactCore_iff hρ hw').1 hcore
   rw [hcoord, norm_pow] at h2ρ
   rw [mem_preimage, mem_ball_zero_iff] at hw
-  have hle : ‖(w : ℂ)‖ ^ e ≤ ‖(w : ℂ)‖ :=
-    pow_le_of_le_one (norm_nonneg _) (mem_ball_zero_iff.1 w.2.1).le he
+  have hle : ‖(w : ℂ)‖ ^ degree p i ≤ ‖(w : ℂ)‖ :=
+    pow_le_of_le_one (norm_nonneg _) (mem_ball_zero_iff.1 w.2.1).le (degree_ne_zero hp hfin i)
   linarith
 
 /-- The filling charts of distinct components have disjoint ranges. -/
@@ -236,14 +260,7 @@ private theorem disjoint_range_chart {i j : Index p} (hij : i ≠ j) :
 
 /-- **The filled cover is Hausdorff.** -/
 theorem t2Space : T2Space (FilledCover p) := by
-  -- The total space of a cover of a Hausdorff space is Hausdorff.
-  have : T2Space E := by
-    rw [t2Space_iff_disjoint_nhds]
-    intro x y hxy
-    by_cases h : p x = p y
-    · exact isSeparatedMap_iff_disjoint_nhds.1 hp.isSeparatedMap x y h hxy
-    · exact disjoint_of_map ((disjoint_nhds_nhds.2 h).mono (hp.continuous.tendsto x)
-        (hp.continuous.tendsto y))
+  have : T2Space E := hp.isSeparatedMap.t2Space hp.continuous
   have : LocallyCompactSpace ThricePuncturedSphere := isOpenEmbedding_coe.locallyCompactSpace
   refine PunctureFilling.t2Space (isOpenEmbedding_chart hp hfin) (fun i x ↦ ?_) fun i j hij ↦ ?_
   · -- A point of `E` lies over a point of `ℂ ∖ {0, 1}`, while the ends of the charts go to
@@ -278,6 +295,26 @@ def indexEquiv {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin n) :
 
 omit hfin in
 @[simp]
+theorem indexEquiv_zero {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin n) (c) :
+    indexEquiv hp ν ⟨.zero, c⟩ = .inl ((hp.sameCycleQuotientσ0EquivConnectedComponents ν).symm c) :=
+  (rfl)
+
+omit hfin in
+@[simp]
+theorem indexEquiv_one {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin n) (c) :
+    indexEquiv hp ν ⟨.one, c⟩ =
+      .inr (.inl ((hp.sameCycleQuotientσ1EquivConnectedComponents ν).symm c)) :=
+  (rfl)
+
+omit hfin in
+@[simp]
+theorem indexEquiv_inf {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin n) (c) :
+    indexEquiv hp ν ⟨.inf, c⟩ =
+      .inr (.inr ((hp.sameCycleQuotientσinfEquivConnectedComponents ν).symm c)) :=
+  (rfl)
+
+omit hfin in
+@[simp]
 theorem indexEquiv_symm_inl {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin n) (a) :
     (indexEquiv hp ν).symm (.inl a) = ⟨.zero, hp.sameCycleQuotientσ0EquivConnectedComponents ν a⟩ :=
   (rfl)
@@ -296,8 +333,48 @@ theorem indexEquiv_symm_inr_inr {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin n) (a)
       ⟨.inf, hp.sameCycleQuotientσinfEquivConnectedComponents ν a⟩ :=
   (rfl)
 
-/-- A finite cover has finitely many components over the three punctured neighbourhoods. -/
-private theorem finite_index : Finite (Index p) := by
+omit hfin in
+/-- **The local degree over `0` is the cycle length.** The component of `p ⁻¹' D₀*` labelled by
+the cycle of the sheet `j` under `σ0` has local degree the length of that cycle. -/
+theorem degree_indexEquiv_symm_inl {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin n) (j : Fin n) :
+    degree p ((indexEquiv hp ν).symm (.inl (Quotient.mk _ j))) =
+      minimalPeriod (hp.monodromyTriple ν).σ0 j := by
+  have hfin : Finite (p ⁻¹' {basePt}) := .of_equiv _ ν.symm
+  rw [indexEquiv_symm_inl, hp.sameCycleQuotientσ0EquivConnectedComponents_mk]
+  refine ((hp.exists_homeomorph_puncturedDiscPow_iff_minimalPeriod_σ0 ν j
+    (degree_ne_zero hp hfin _)).1 ?_).symm
+  rw [← connectedComponents_preimage_singleton, ← Puncture.coord_zero]
+  exact (exists_homeomorph_chart_eq hp hfin ⟨.zero, _⟩).imp fun _ h ↦ h.1
+
+omit hfin in
+/-- **The local degree over `1` is the cycle length.** The component of `p ⁻¹' D₁*` labelled by
+the cycle of the sheet `j` under `σ1` has local degree the length of that cycle. -/
+theorem degree_indexEquiv_symm_inr_inl {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin n) (j : Fin n) :
+    degree p ((indexEquiv hp ν).symm (.inr (.inl (Quotient.mk _ j)))) =
+      minimalPeriod (hp.monodromyTriple ν).σ1 j := by
+  have hfin : Finite (p ⁻¹' {basePt}) := .of_equiv _ ν.symm
+  rw [indexEquiv_symm_inr_inl, hp.sameCycleQuotientσ1EquivConnectedComponents_mk]
+  refine ((hp.exists_homeomorph_puncturedDiscPow_iff_minimalPeriod_σ1 ν j
+    (degree_ne_zero hp hfin _)).1 ?_).symm
+  rw [← connectedComponents_preimage_singleton, ← Puncture.coord_one]
+  exact (exists_homeomorph_chart_eq hp hfin ⟨.one, _⟩).imp fun _ h ↦ h.1
+
+omit hfin in
+/-- **The local degree over `∞` is the cycle length.** The component of `p ⁻¹' D∞*` labelled by
+the cycle of the sheet `j` under `σinf` has local degree the length of that cycle. -/
+theorem degree_indexEquiv_symm_inr_inr {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin n) (j : Fin n) :
+    degree p ((indexEquiv hp ν).symm (.inr (.inr (Quotient.mk _ j)))) =
+      minimalPeriod (hp.monodromyTriple ν).σinf j := by
+  have hfin : Finite (p ⁻¹' {basePt}) := .of_equiv _ ν.symm
+  rw [indexEquiv_symm_inr_inr, hp.sameCycleQuotientσinfEquivConnectedComponents_mk]
+  refine ((hp.exists_homeomorph_puncturedDiscPow_iff_minimalPeriod_σinf ν j
+    (degree_ne_zero hp hfin _)).1 ?_).symm
+  rw [← connectedComponents_preimage_singleton, ← Puncture.coord_inf]
+  exact (exists_homeomorph_chart_eq hp hfin ⟨.inf, _⟩).imp fun _ h ↦ h.1
+
+/-- A finite cover has finitely many components over the three punctured neighbourhoods, so its
+filled cover has finitely many added points. -/
+theorem finite_index : Finite (Index p) := by
   have := finite_fiber_of_finite_fiber hp hfin basePt
   exact Finite.of_equiv _ (indexEquiv hp (Finite.equivFin _)).symm
 
@@ -306,8 +383,8 @@ filling charts, a finite cover lies over a compact core of `ℂ ∖ {0, 1}`. -/
 theorem compactSpace : CompactSpace (FilledCover p) := by
   have := finite_index hp hfin
   refine PunctureFilling.compactSpace (r := 1 / 2) (by norm_num) ?_
-  choose e he hpow using exists_coe_coord_chart_eq_pow hp hfin
-  have hK : IsCompact (p ⁻¹' compactCore (1 / 2) ∪ ⋃ i, p ⁻¹' compactCore ((1 / 2) ^ e i / 2)) :=
+  have hK : IsCompact
+      (p ⁻¹' compactCore (1 / 2) ∪ ⋃ i, p ⁻¹' compactCore ((1 / 2) ^ degree p i / 2)) :=
     (hp.isCompact_preimage_compactCore hfin _).union
       (isCompact_iUnion fun _ ↦ hp.isCompact_preimage_compactCore hfin _)
   refine hK.of_isClosed_subset (isOpen_iUnion fun i ↦ (isOpenEmbedding_chart hp hfin i).isOpenMap _
@@ -321,14 +398,11 @@ theorem compactSpace : CompactSpace (FilledCover p) := by
       rw [range_chart hp hfin]
       exact ⟨hq, rfl⟩
     have hwr : 1 / 2 ≤ ‖(w : ℂ)‖ := not_lt.1 fun h ↦ hy (mem_iUnion.2 ⟨i, w, h, hwy⟩)
-    obtain ⟨hw, -, hcoord⟩ := hpow i w
+    obtain ⟨hw, -, hcoord⟩ := exists_coe_coord_chart_eq_pow hp hfin i w
     refine Or.inr (mem_iUnion.2 ⟨i, ?_⟩)
-    have hpos : (0 : ℝ) < (1 / 2) ^ e i / 2 := by positivity
-    have hle : (1 / 2 : ℝ) ^ e i / 2 ≤ 1 / 2 := by
-      have := pow_le_one₀ (n := e i) (by norm_num : (0 : ℝ) ≤ 1 / 2) (by norm_num)
-      linarith
-    rw [mem_preimage, ← hwy, i.1.mem_compactCore_iff hpos hle hw, hcoord, norm_pow]
-    linarith [pow_le_pow_left₀ (by norm_num) hwr (e i)]
+    have hpos : (0 : ℝ) < (1 / 2) ^ degree p i / 2 := by positivity
+    rw [mem_preimage, ← hwy, i.1.mem_compactCore_iff hpos hw, hcoord, norm_pow]
+    linarith [pow_le_pow_left₀ (by norm_num) hwr (degree p i)]
   · -- A point over none of the three punctured neighbourhoods lies over the compact core of
     -- radius `1 / 2`.
     rw [not_exists] at hD

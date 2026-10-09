@@ -328,6 +328,7 @@ inductive Puncture : Type
   | zero
   | one
   | inf
+  deriving DecidableEq
 
 namespace Puncture
 
@@ -376,6 +377,21 @@ noncomputable def coord : (q : Puncture) → q.neighborhood ≃ₜ ↥(Metric.ba
       puncturedDiscOneHalfHomeomorphPuncturedDisc
   | inf => puncturedNeighborhoodInfHomeomorphPuncturedDiscOneHalf.trans
       puncturedDiscOneHalfHomeomorphPuncturedDisc
+
+theorem coord_zero :
+    zero.coord = puncturedNeighborhoodZeroHomeomorphPuncturedDiscOneHalf.trans
+      puncturedDiscOneHalfHomeomorphPuncturedDisc :=
+  (rfl)
+
+theorem coord_one :
+    one.coord = puncturedNeighborhoodOneHomeomorphPuncturedDiscOneHalf.trans
+      puncturedDiscOneHalfHomeomorphPuncturedDisc :=
+  (rfl)
+
+theorem coord_inf :
+    inf.coord = puncturedNeighborhoodInfHomeomorphPuncturedDiscOneHalf.trans
+      puncturedDiscOneHalfHomeomorphPuncturedDisc :=
+  (rfl)
 
 @[simp]
 theorem coe_coord_zero (z : zero.neighborhood) :

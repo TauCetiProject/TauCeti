@@ -45,7 +45,7 @@ added.
 * `TauCeti.ThricePuncturedSphere.compactCore_one_half`: the compact core of radius `1 / 2` is the
   complement of the three standard punctured neighbourhoods.
 * `TauCeti.ThricePuncturedSphere.Puncture.mem_compactCore_iff`: on the standard punctured
-  neighbourhood of a puncture, the compact core of radius `ρ ≤ 1 / 2` is cut out by the standard
+  neighbourhood of a puncture, the compact core of radius `ρ > 0` is cut out by the standard
   coordinate having norm at least `2 * ρ`.
 * `IsCoveringMap.isCompact_preimage_compactCore`: a covering map of `ℂ ∖ {0, 1}` with one finite
   fibre has compact preimage over every compact core.
@@ -131,21 +131,15 @@ theorem hasBasis_cocompact :
     (fun _ hK ↦ (exists_subset_compactCore hK).imp fun _ h ↦ ⟨h.1, compl_subset_compl.mpr h.2⟩)
     fun ρ _ ↦ ⟨_, isCompact_compactCore ρ, subset_rfl⟩
 
-/-- The compact cores shrink as their radius grows. -/
-theorem compactCore_subset_compactCore {ρ ρ' : ℝ} (hρ : 0 < ρ) (h : ρ ≤ ρ') :
-    compactCore ρ' ⊆ compactCore ρ := fun _ hz ↦
-  ⟨h.trans hz.1, h.trans hz.2.1, hz.2.2.trans (inv_anti₀ hρ h)⟩
-
-/-- On the standard punctured neighbourhood of a puncture, the compact core of radius
-`ρ ∈ (0, 1 / 2]` consists of the points whose standard coordinate has norm at least `2 * ρ`: the
-cores are the complements of the punctured discs of radius `2 * ρ` about the three punctures in
-these coordinates. -/
-theorem Puncture.mem_compactCore_iff (q : Puncture) {ρ : ℝ} (hρ : 0 < ρ) (hρ' : ρ ≤ 1 / 2)
+/-- On the standard punctured neighbourhood of a puncture, the compact core of radius `ρ > 0`
+consists of the points whose standard coordinate has norm at least `2 * ρ`: the cores are the
+complements of the punctured discs of radius `2 * ρ` about the three punctures in these
+coordinates. -/
+theorem Puncture.mem_compactCore_iff (q : Puncture) {ρ : ℝ} (hρ : 0 < ρ)
     {z : ThricePuncturedSphere} (hz : z ∈ q.neighborhood) :
     z ∈ compactCore ρ ↔ 2 * ρ ≤ ‖(q.coord ⟨z, hz⟩ : ℂ)‖ := by
-  have hinv : 2 ≤ ρ⁻¹ := by
-    rw [le_inv_comm₀ two_pos hρ]
-    linarith
+  have hinv : ρ ≤ 1 / 2 ↔ 2 ≤ ρ⁻¹ := by
+    rw [le_inv_comm₀ two_pos hρ, one_div]
   have h0 : 0 < ‖(z : ℂ)‖ := norm_pos_iff.2 z.ne_zero
   have h1 := norm_sub_norm_le (z : ℂ) 1
   have h1' := norm_sub_norm_le 1 (z : ℂ)
@@ -156,16 +150,25 @@ theorem Puncture.mem_compactCore_iff (q : Puncture) {ρ : ℝ} (hρ : 0 < ρ) (h
   | zero =>
     rw [Puncture.neighborhood_zero, mem_puncturedNeighborhoodZero] at hz'
     rw [mem_compactCore, Puncture.coe_coord_zero, norm_mul, Complex.norm_two]
-    exact ⟨fun h ↦ by linarith [h.1], fun h ↦ ⟨by linarith, by linarith, by linarith⟩⟩
+    refine ⟨fun h ↦ by linarith [h.1], fun h ↦ ?_⟩
+    have := hinv.1 (by linarith)
+    exact ⟨by linarith, by linarith, by linarith⟩
   | one =>
     rw [Puncture.neighborhood_one, mem_puncturedNeighborhoodOne] at hz'
     rw [mem_compactCore, Puncture.coe_coord_one, norm_mul, Complex.norm_two, norm_sub_rev]
-    exact ⟨fun h ↦ by linarith [h.2.1], fun h ↦ ⟨by linarith, by linarith, by linarith⟩⟩
+    refine ⟨fun h ↦ by linarith [h.2.1], fun h ↦ ?_⟩
+    have : ρ ≤ ‖(z : ℂ) - 1‖ := by rw [norm_sub_rev]; linarith
+    have := hinv.1 (by linarith)
+    exact ⟨by linarith, by linarith, by linarith⟩
   | inf =>
     rw [Puncture.neighborhood_inf, mem_puncturedNeighborhoodInf] at hz'
-    rw [mem_compactCore, Puncture.coe_coord_inf, norm_div, Complex.norm_two, le_div_iff₀ h0,
-      le_inv_comm₀ h0 hρ, inv_eq_one_div, le_div_iff₀ h0]
-    exact ⟨fun h ↦ by linarith [h.2.2], fun h ↦ ⟨by linarith, by linarith, by linarith⟩⟩
+    have key : 2 * ρ ≤ 2 / ‖(z : ℂ)‖ ↔ ‖(z : ℂ)‖ ≤ ρ⁻¹ := by
+      rw [le_div_iff₀ h0, ← one_div, le_div_iff₀' hρ]
+      constructor <;> intro <;> linarith
+    rw [mem_compactCore, Puncture.coe_coord_inf, norm_div, Complex.norm_two, key]
+    refine ⟨fun h ↦ h.2.2, fun h ↦ ?_⟩
+    have := hinv.2 (by linarith)
+    exact ⟨by linarith, by linarith, h⟩
 
 /-- The compact core of radius `1 / 2` is the complement of the three standard punctured
 neighbourhoods of `0`, `1` and `∞`. -/
