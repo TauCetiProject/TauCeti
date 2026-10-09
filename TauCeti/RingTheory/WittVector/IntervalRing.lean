@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Analysis.Normed.Module.Completion
 public import Mathlib.Analysis.Normed.Unbundled.RingSeminorm
-public import Mathlib.RingTheory.Valuation.ExtendToLocalization
 public import TauCeti.RingTheory.Huber.Completion
 public import TauCeti.RingTheory.Huber.Normed
+public import TauCeti.RingTheory.Valuation.ExtendToLocalization
 public import TauCeti.RingTheory.WittVector.GaussValuation
 
 /-!
@@ -86,14 +86,11 @@ section Away
 
 variable {p} [CharP O p] [PerfectRing O p]
 
-/-- For `0 < ρ < 1` and `ϖ ≠ 0`, the Gauss valuation `λ_ρ` vanishes at no power of `p [ϖ]`. -/
-theorem powers_le_primeCompl_supp_gaussValuation (hv : v.Integers O) (hϖ : ϖ ≠ 0) {ρ : ℝ≥0}
-    (hρ : ρ ∈ Set.Ioo 0 1) :
-    Submonoid.powers ((p : 𝕎 O) * teichmuller p ϖ) ≤
-      (gaussValuation p hv ρ hρ.2).supp.primeCompl := by
-  rintro _ ⟨n, rfl⟩
-  simp [Ideal.mem_primeCompl_iff, Valuation.mem_supp_iff, hρ.1.ne',
-    map_eq_zero_iff _ hv.hom_inj, hϖ]
+/-- For `0 < ρ < 1` and `ϖ ≠ 0`, the Gauss valuation `λ_ρ` does not vanish at `p [ϖ]`. -/
+theorem gaussValuation_natCast_mul_teichmuller_ne_zero (hv : v.Integers O) (hϖ : ϖ ≠ 0)
+    {ρ : ℝ≥0} (hρ : ρ ∈ Set.Ioo 0 1) :
+    gaussValuation p hv ρ hρ.2 ((p : 𝕎 O) * teichmuller p ϖ) ≠ 0 := by
+  simp [hρ.1.ne', map_eq_zero_iff _ hv.hom_inj, hϖ]
 
 variable {B : Type*} [CommRing B] [Algebra (_root_.WittVector p O) B]
   [IsLocalization.Away ((p : _root_.WittVector p O) * teichmuller p ϖ) B]
@@ -105,7 +102,8 @@ noncomputable def gaussValuationAway (hv : v.Integers O) (hϖ : ϖ ≠ 0) (ρ : 
     (hρ : ρ ∈ Set.Ioo 0 1) (B : Type*) [CommRing B] [Algebra (𝕎 O) B]
     [IsLocalization.Away ((p : 𝕎 O) * teichmuller p ϖ) B] : Valuation B ℝ≥0 :=
   (gaussValuation p hv ρ hρ.2).extendToLocalization
-    (powers_le_primeCompl_supp_gaussValuation hv hϖ hρ) B
+    (Valuation.powers_le_supp_primeCompl
+      (gaussValuation_natCast_mul_teichmuller_ne_zero hv hϖ hρ)) B
 
 /-- The extended Gauss valuation agrees with `λ_ρ` on `𝕎 O`. -/
 @[simp]
@@ -131,7 +129,8 @@ theorem gaussValuationAway_eq_zero_iff (hv : v.Integers O) (hϖ : ϖ ≠ 0) {ρ 
     (Submonoid.powers ((p : 𝕎 O) * teichmuller p ϖ)) x
   dsimp only at hx ⊢
   have hs : gaussValuation p hv ρ hρ.2 s ≠ 0 :=
-    powers_le_primeCompl_supp_gaussValuation hv hϖ hρ s.2
+    Valuation.powers_le_supp_primeCompl
+      (gaussValuation_natCast_mul_teichmuller_ne_zero hv hϖ hρ) s.2
   rw [gaussValuationAway_mk', mul_eq_zero, inv_eq_zero, gaussValuation_eq_zero_iff hv hρ.1,
     or_iff_left hs] at hx
   rw [hx, IsLocalization.mk'_zero]
@@ -248,12 +247,15 @@ theorem norm_natCast : ‖(p : IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂)
   rw [← map_natCast (algebraMap (𝕎 O) (IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂)), norm_algebraMap,
     gaussValuation_p, gaussValuation_p]
 
+/-- The interval norm of `p` is less than one. -/
+theorem norm_natCast_lt_one : ‖(p : IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂)‖ < 1 := by
+  rw [norm_natCast]
+  exact_mod_cast max_lt hρ₁.2 hρ₂.2
+
 /-- **`𝕎 O[1/(p [ϖ])]` with the interval norm is a Tate ring**, with pseudouniformiser `p`. -/
 instance instIsTateRing : IsTateRing (IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂) :=
-  IsTateRing.of_isUnit_norm_lt_one (R := IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂)
-    (isUnit_natCast p hv hϖ hϖ' hρ₁ hρ₂) <| by
-    rw [norm_natCast]
-    exact_mod_cast max_lt hρ₁.2 hρ₂.2
+  IsTateRing.of_isUnit_norm_lt_one (isUnit_natCast p hv hϖ hϖ' hρ₁ hρ₂)
+    (norm_natCast_lt_one p hv hϖ hϖ' hρ₁ hρ₂)
 
 /-- Scalar multiplication by `𝕎 O` is uniformly continuous, so that the `𝕎 O`-algebra structure
 extends to the completion `B^I`. -/
@@ -281,21 +283,26 @@ theorem norm_algebraMap_intervalRing (x : 𝕎 O) :
 theorem algebraMap_intervalRing_injective :
     Function.Injective (algebraMap (𝕎 O) (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)) := by
   refine (injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_
-  have h := norm_algebraMap_intervalRing p hv hϖ hϖ' hρ₁ hρ₂ x
-  rw [hx, norm_zero, eq_comm, ← NNReal.coe_max, NNReal.coe_eq_zero] at h
-  exact (gaussValuation_eq_zero_iff hv hρ₁.1 hρ₁.2).mp
-    (nonpos_iff_eq_zero.mp ((le_max_left _ _).trans_eq h))
+  rw [Completion.algebraMap_def, Completion.coe_eq_zero_iff] at hx
+  rw [← gaussValuation_eq_zero_iff hv hρ₁.1 hρ₁.2, ← gaussValuationAway_algebraMap hv hϖ hρ₁ x
+    (B := IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂), hx, map_zero]
+
+/-- The norm of `p` in `B^I` is `max(ρ₁, ρ₂)`. -/
+theorem norm_natCast_intervalRing :
+    ‖(p : IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)‖ = max (ρ₁ : ℝ) ρ₂ := by
+  rw [← map_natCast (Completion.coeRingHom :
+    IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂ →+* IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)]
+  exact (Completion.norm_coe _).trans (IntervalLocalization.norm_natCast p hv hϖ hϖ' hρ₁ hρ₂)
 
 /-- **`p` is a pseudouniformiser of `B^I`**: it is a unit of norm `max(ρ₁, ρ₂) < 1`. -/
 theorem isPseudoUniformizer_natCast_intervalRing :
     IsPseudoUniformizer (p : IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) := by
-  refine IsPseudoUniformizer.of_norm_lt_one ?_ ?_
-  · rw [← map_natCast (Completion.coeRingHom :
-      IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂ →+* IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)]
-    exact (IntervalLocalization.isUnit_natCast p hv hϖ hϖ' hρ₁ hρ₂).map _
-  · rw [← map_natCast (algebraMap (𝕎 O) (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)),
-      norm_algebraMap_intervalRing, gaussValuation_p, gaussValuation_p]
-    exact_mod_cast max_lt hρ₁.2 hρ₂.2
+  rw [← map_natCast (Completion.coeRingHom :
+    IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂ →+* IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)]
+  exact IsPseudoUniformizer.of_norm_lt_one
+    ((IntervalLocalization.isUnit_natCast p hv hϖ hϖ' hρ₁ hρ₂).map _)
+    ((Completion.norm_coe _).trans_lt
+      (IntervalLocalization.norm_natCast_lt_one p hv hϖ hϖ' hρ₁ hρ₂))
 
 /-- The Teichmüller lift `[ϖ]` of the pseudouniformiser `ϖ` is a unit of `B^I`. -/
 theorem isUnit_algebraMap_teichmuller_intervalRing :

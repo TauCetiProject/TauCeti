@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.Uniform
+public import Mathlib.Analysis.Normed.Field.UnitBall
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.SpecificLimits.Normed
 
@@ -26,6 +27,8 @@ the adic spectra of the Tate algebras `K⟨X₁, …, Xₙ⟩`.
 
 ## Main results
 
+* `Subring.unitClosedBall`: the closed unit ball of an ultrametric seminormed ring with
+  `‖1‖ = 1`, an open subring.
 * `TauCeti.Huber.isBounded_closedBall_zero`: closed balls about zero are bounded.
 * `TauCeti.Huber.isPowerBounded_iff_norm_le_one`: in a normed division ring an element is
   power-bounded exactly when its norm is at most one.
@@ -49,6 +52,35 @@ the adic spectra of the Tate algebras `K⟨X₁, …, Xₙ⟩`.
 public section
 
 open Filter Topology
+
+section UnitClosedBall
+
+variable (R : Type*) [SeminormedRing R] [IsUltrametricDist R] [NormOneClass R]
+
+/-- **The closed unit ball of an ultrametric seminormed ring with `‖1‖ = 1` is a subring**: it is
+the submonoid `Submonoid.unitClosedBall` and the open additive subgroup
+`IsUltrametricDist.closedBall_openAddSubgroup`. -/
+def Subring.unitClosedBall : Subring R :=
+  { Submonoid.unitClosedBall R,
+    (IsUltrametricDist.closedBall_openAddSubgroup R one_pos : AddSubgroup R) with }
+
+variable {R} in
+/-- An element lies in the closed unit ball exactly when its norm is at most one. -/
+@[simp]
+theorem Subring.mem_unitClosedBall {x : R} : x ∈ Subring.unitClosedBall R ↔ ‖x‖ ≤ 1 :=
+  Submonoid.mem_unitClosedBall R
+
+/-- The carrier of `Subring.unitClosedBall R` is `Metric.closedBall 0 1`. -/
+theorem Subring.coe_unitClosedBall :
+    (Subring.unitClosedBall R : Set R) = Metric.closedBall 0 1 := by
+  ext
+  simp
+
+/-- The closed unit ball of an ultrametric seminormed ring is open. -/
+theorem Subring.isOpen_unitClosedBall : IsOpen (Subring.unitClosedBall R : Set R) :=
+  (IsUltrametricDist.closedBall_openAddSubgroup R one_pos).isOpen'
+
+end UnitClosedBall
 
 namespace TauCeti.Huber
 
@@ -139,24 +171,14 @@ theorem coe_powerBoundedSubring_eq_closedBall :
 end Ultrametric
 
 /-- **An ultrametric seminormed commutative ring with `‖1‖ = 1` and a unit of norm less than one
-is a Tate ring.** The closed unit ball is a subring, open because the norm is ultrametric and
-bounded because it is a ball, and the unit is a pseudouniformiser
+is a Tate ring.** The closed unit ball `Subring.unitClosedBall` is open because the norm is
+ultrametric and bounded because it is a ball, and the unit is a pseudouniformiser
 (`IsPseudoUniformizer.of_norm_lt_one`). -/
 theorem IsTateRing.of_isUnit_norm_lt_one {R : Type*} [SeminormedCommRing R] [IsUltrametricDist R]
-    [NormOneClass R] {ϖ : R} (hϖ : IsUnit ϖ) (hϖ1 : ‖ϖ‖ < 1) : IsTateRing R := by
-  let R₀ : Subring R :=
-    { carrier := Metric.closedBall 0 1
-      mul_mem' := fun {a b} ha hb ↦ by
-        rw [mem_closedBall_zero_iff] at ha hb ⊢
-        nlinarith [norm_mul_le a b, norm_nonneg a, norm_nonneg b]
-      one_mem' := by simp
-      add_mem' := fun {a b} ha hb ↦ by
-        rw [mem_closedBall_zero_iff] at ha hb ⊢
-        exact (IsUltrametricDist.norm_add_le_max a b).trans (max_le ha hb)
-      zero_mem' := by simp
-      neg_mem' := fun {a} ha ↦ by simpa using ha }
-  exact IsTateRing.of_isOpen_isBounded R₀ (IsUltrametricDist.isOpen_closedBall 0 one_ne_zero)
-    (isBounded_closedBall_zero 1) (IsPseudoUniformizer.of_norm_lt_one hϖ hϖ1)
+    [NormOneClass R] {ϖ : R} (hϖ : IsUnit ϖ) (hϖ1 : ‖ϖ‖ < 1) : IsTateRing R :=
+  IsTateRing.of_isOpen_isBounded (Subring.unitClosedBall R) (Subring.isOpen_unitClosedBall R)
+    (Subring.coe_unitClosedBall R ▸ isBounded_closedBall_zero 1)
+    (IsPseudoUniformizer.of_norm_lt_one hϖ hϖ1)
 
 /-- **A nontrivially normed field with an ultrametric norm is a Tate ring**, by
 `IsTateRing.of_isUnit_norm_lt_one` applied to any `ϖ` with `0 < ‖ϖ‖ < 1`. Its ring of integers
