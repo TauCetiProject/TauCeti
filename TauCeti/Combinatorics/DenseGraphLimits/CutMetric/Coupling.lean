@@ -6,7 +6,7 @@ Authors: Claude
 module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.Graphon.Basic
-public import TauCeti.MeasureTheory.Measure.Coupling.Basic
+public import TauCeti.MeasureTheory.OptimalTransport.Coupling
 
 /-!
 # The overlaid difference of two graphons
@@ -14,8 +14,8 @@ public import TauCeti.MeasureTheory.Measure.Coupling.Basic
 Given a coupling of two probability spaces, two graphons living on *different* carriers can be
 compared: read `U` through the first coordinate, read `W` through the second, and subtract. The
 result is the **overlaid difference kernel** `overlayDiff U W π`, a symmetric kernel on the coupled
-space `(Ω₁ × Ω₂, π)`. The carrier-independent coupling API lives in
-`TauCeti.MeasureTheory.Measure.Coupling.Basic`.
+space `(Ω₁ × Ω₂, π)`. The carrier-independent coupling relation `TauCeti.IsCoupling π μ₁ μ₂` and
+its API live in `TauCeti.MeasureTheory.OptimalTransport.Coupling`.
 
 These two objects are what makes the cut distance of the dense graph limit theory cross-carrier.
 `cutDist U W` is the infimum, over all couplings `π`, of the cut norm of `overlayDiff U W π`; the
@@ -53,8 +53,8 @@ hypotheses at all.
   `overlayDiff` and `overlayDiff_apply`, the ingredients of the coupling-primary cross-carrier
   `cutDist`. The cut norm, `cutDist` itself, its triangle inequality, and the `GraphonSpace`
   quotient are separate targets and are not built here. The signatures follow
-  `TauCetiRoadmap/DenseGraphLimits/Suggested.lean`, which pins `IsCoupling` as a `Prop` (not a
-  structure or class) for the reason recorded above.
+  `TauCetiRoadmap/DenseGraphLimits/Suggested.lean`, which pins `IsCoupling` as a `Prop` rather
+  than a class, since a coupling of two given marginals is not canonical.
 * S. Janson, *Graphons, cut norm and distance, couplings and rearrangements*, NYJM Monographs 4
   (2013), §6 — cut distance via couplings.
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), §8.2.
@@ -135,17 +135,17 @@ theorem comap_overlayDiff_prodMk {Ω : Type*} [MeasurableSpace Ω] (U : Graphon 
 /-- On a common carrier, the overlaid difference of `U` and `W` along the diagonal coupling pulls
 back along the diagonal `x ↦ (x, x)` to their plain difference as kernels.
 
-`TauCeti.MeasureTheory.diagonalCoupling μ` is the pushforward of `μ` along that same diagonal, and
-by `TauCeti.MeasureTheory.isCoupling_diagonalCoupling` it is one of the couplings the cross-carrier
+`diagonalCoupling μ` is the pushforward of `μ` along that same diagonal, and
+by `TauCeti.isCoupling_diagonalCoupling` it is one of the couplings the cross-carrier
 cut distance takes an infimum over. This identity computes the kernel it contributes; recognizing
 the resulting value as the same-carrier cut norm `‖U - W‖□` additionally needs the invariance of
 the cut norm under measure-preserving pullback, and is `cutNorm_overlayDiff_diagonalCoupling` in
 `TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Distance`. -/
 theorem comap_overlayDiff_diagonalCoupling {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
     [IsProbabilityMeasure μ] (U W : Graphon Ω μ) :
-    (overlayDiff U W (TauCeti.MeasureTheory.diagonalCoupling μ)).comap (fun x => (x, x))
+    (overlayDiff U W (diagonalCoupling μ)).comap (fun x => (x, x))
         (measurable_id'.prodMk measurable_id') μ = U.toSymmKernel - W.toSymmKernel := by
-  rw [comap_overlayDiff_prodMk U W (TauCeti.MeasureTheory.diagonalCoupling μ)
+  rw [comap_overlayDiff_prodMk U W (diagonalCoupling μ)
     measurable_id' measurable_id' μ]
   ext x y
   simp

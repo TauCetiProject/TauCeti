@@ -85,7 +85,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory TauCeti.MeasureTheory
+open MeasureTheory
 
 namespace TauCeti
 
@@ -100,13 +100,13 @@ two carriers. The cut distance is its infimum.
 Nonempty by `couplingCutNorms_nonempty` and bounded below by `0` through
 `nonneg_of_mem_couplingCutNorms`, which is what makes that infimum meaningful in `ℝ`. -/
 private def couplingCutNorms (U : Graphon Ω₁ μ₁) (W : Graphon Ω₂ μ₂) : Set ℝ :=
-  {r | ∃ (π : Measure (Ω₁ × Ω₂)) (hπ : IsCoupling μ₁ μ₂ π),
+  {r | ∃ (π : Measure (Ω₁ × Ω₂)) (hπ : IsCoupling π μ₁ μ₂),
     @cutNorm _ _ π hπ.isFiniteMeasure (overlayDiff U W π) = r}
 
 /-- Every coupling contributes its overlaid cut norm to `couplingCutNorms`. -/
 private theorem mem_couplingCutNorms (U : Graphon Ω₁ μ₁) (W : Graphon Ω₂ μ₂)
     {π : Measure (Ω₁ × Ω₂)}
-    [IsProbabilityMeasure π] (hπ : IsCoupling μ₁ μ₂ π) :
+    [IsProbabilityMeasure π] (hπ : IsCoupling π μ₁ μ₂) :
     cutNorm π (overlayDiff U W π) ∈ couplingCutNorms U W :=
   ⟨π, hπ, rfl⟩
 
@@ -137,14 +137,14 @@ def cutDist (U : Graphon Ω₁ μ₁) (W : Graphon Ω₂ μ₂) : ℝ := sInf (c
 /-- The cut distance is at most the overlaid cut norm along any coupling: the introduction rule
 for the infimum. -/
 theorem cutDist_le (U : Graphon Ω₁ μ₁) (W : Graphon Ω₂ μ₂) {π : Measure (Ω₁ × Ω₂)}
-    (hπ : IsCoupling μ₁ μ₂ π) :
+    (hπ : IsCoupling π μ₁ μ₂) :
     cutDist U W ≤ @cutNorm _ _ π hπ.isFiniteMeasure (overlayDiff U W π) :=
   csInf_le (bddBelow_couplingCutNorms U W) ⟨π, hπ, rfl⟩
 
 /-- To bound the cut distance from below it suffices to bound every overlaid cut norm from below:
 the elimination rule for the infimum. -/
 theorem le_cutDist {c : ℝ} (U : Graphon Ω₁ μ₁) (W : Graphon Ω₂ μ₂)
-    (h : ∀ (π : Measure (Ω₁ × Ω₂)) (hπ : IsCoupling μ₁ μ₂ π),
+    (h : ∀ (π : Measure (Ω₁ × Ω₂)) (hπ : IsCoupling π μ₁ μ₂),
       c ≤ @cutNorm _ _ π hπ.isFiniteMeasure (overlayDiff U W π)) :
     c ≤ cutDist U W :=
   le_csInf (couplingCutNorms_nonempty U W) (by
@@ -155,7 +155,7 @@ theorem le_cutDist {c : ℝ} (U : Graphon Ω₁ μ₁) (W : Graphon Ω₂ μ₂)
 which a cut-distance hypothesis is used: it turns an infimum into an explicit coupling. -/
 theorem exists_isCoupling_cutNorm_lt (U : Graphon Ω₁ μ₁) (W : Graphon Ω₂ μ₂) {c : ℝ}
     (h : cutDist U W < c) :
-    ∃ (π : Measure (Ω₁ × Ω₂)) (hπ : IsCoupling μ₁ μ₂ π),
+    ∃ (π : Measure (Ω₁ × Ω₂)) (hπ : IsCoupling π μ₁ μ₂),
       @cutNorm _ _ π hπ.isFiniteMeasure (overlayDiff U W π) < c := by
   rw [cutDist] at h
   obtain ⟨r, ⟨π, hπ, rfl⟩, hlt⟩ := exists_lt_of_csInf_lt (couplingCutNorms_nonempty U W) h
@@ -225,17 +225,17 @@ norm of the difference of the two pullbacks.
 
 This is the inequality that makes the measure-preserving-map picture an upper bound for the
 coupling-primary one: the graph of `(f, g)` pushes `μ` forward to a coupling
-(`isCoupling_map_prodMk`), and the overlaid difference along it pulls back to the plain difference
-of the pullback kernels. That the infimum over such pairs is *equal* to the cut distance is a
-separate, later target, and needs standard Borel carriers. -/
+(`isCoupling_map_prodMk_of_measurePreserving`), and the overlaid difference along it pulls back to
+the plain difference of the pullback kernels. That the infimum over such pairs is *equal* to the
+cut distance is a separate, later target, and needs standard Borel carriers. -/
 theorem cutDist_le_cutNorm_sub_of_measurePreserving [IsFiniteMeasure μ]
     (U : Graphon Ω₁ μ₁) (W : Graphon Ω₂ μ₂)
     {f : Ω → Ω₁} {g : Ω → Ω₂} (hf : MeasurePreserving f μ μ₁) (hg : MeasurePreserving g μ μ₂) :
     cutDist U W ≤
       cutNorm μ
         (U.toSymmKernel.comap f hf.measurable μ - W.toSymmKernel.comap g hg.measurable μ) := by
-  let _ := (isCoupling_map_prodMk hf hg).isProbabilityMeasure
-  exact (cutDist_le U W (isCoupling_map_prodMk hf hg)).trans_eq
+  let _ := (isCoupling_map_prodMk_of_measurePreserving hf hg).isProbabilityMeasure
+  exact (cutDist_le U W (isCoupling_map_prodMk_of_measurePreserving hf hg)).trans_eq
     (cutNorm_overlayDiff_map_prodMk U W hf.measurable hg.measurable
       ⟨hf.measurable.prodMk hg.measurable, rfl⟩)
 
@@ -255,8 +255,9 @@ theorem cutDist_le_cutDist_comap_right
   let _ := hπ.isProbabilityMeasure
   have hg : Measurable fun p : Ω₁ × Ω₂' => f p.2 := hf.measurable.comp measurable_snd
   let ρ : Measure (Ω₁ × Ω₂) := π.map fun p => (p.1, f p.2)
-  have hρ : IsCoupling μ₁ μ₂ ρ :=
-    isCoupling_map_prodMk hπ.measurePreserving_fst (hf.comp hπ.measurePreserving_snd)
+  have hρ : IsCoupling ρ μ₁ μ₂ :=
+    isCoupling_map_prodMk_of_measurePreserving hπ.measurePreserving_fst
+      (hf.comp hπ.measurePreserving_snd)
   let _ := hρ.isProbabilityMeasure
   have hmp : MeasurePreserving (fun p : Ω₁ × Ω₂' => (p.1, f p.2)) π ρ :=
     ⟨measurable_fst.prodMk hg, rfl⟩
@@ -294,10 +295,10 @@ theorem cutDist_le_cutNorm_sub (U W : Graphon Ω μ) :
 distance takes an infimum over, the diagonal one contributes exactly `‖U - W‖□`. -/
 @[simp]
 theorem cutNorm_overlayDiff_diagonalCoupling (U W : Graphon Ω μ) :
-    cutNorm (TauCeti.MeasureTheory.diagonalCoupling μ)
-        (overlayDiff U W (TauCeti.MeasureTheory.diagonalCoupling μ)) =
+    cutNorm (diagonalCoupling μ)
+        (overlayDiff U W (diagonalCoupling μ)) =
       cutNorm μ (U.toSymmKernel - W.toSymmKernel) := by
-  rw [← cutNorm_comap (TauCeti.MeasureTheory.measurePreserving_diagonal μ),
+  rw [← cutNorm_comap (measurePreserving_diagonal μ),
     comap_overlayDiff_diagonalCoupling]
 
 /-- The cut distance of a graphon to itself is zero. -/
