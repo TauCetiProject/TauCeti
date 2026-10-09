@@ -35,6 +35,8 @@ vanish; that identification is not made here.
   of them is linearly independent.
 * `TauCeti.Toric.projectiveSpaceCone_inf`: the intersection of two cones omitting a generator is
   the cone of the intersection of their index sets.
+* `TauCeti.Toric.projectiveSpaceCone_le_iff` and `TauCeti.Toric.projectiveSpaceCone_inj`: a cone
+  omitting a generator determines its index set.
 * `TauCeti.Toric.isRegularCone_projectiveSpaceCone`: each cone omitting a generator is regular.
 * `TauCeti.Toric.Fan.projectiveSpace`: the fan of projective space.
 * `TauCeti.Toric.Fan.isRegular_projectiveSpace` and
@@ -81,16 +83,22 @@ private theorem sum_smul_projectiveSpaceGenerator (c : Option ι → ℝ) :
     map_neg, map_sum, smul_neg, Finset.smul_sum, sub_smul, Finset.sum_sub_distrib]
   abel
 
+omit [Fintype ι] in
+/-- The images of the vectors of an integral basis of an integral lattice are linearly
+independent over the reals. -/
+private theorem linearIndependent_of_isIntegralLattice (hi : IsIntegralLattice i) :
+    LinearIndependent ℝ fun j ↦ i (b j) := by
+  have hB (j : ι) : hi.isBaseChange.basis b j = i (b j) := by
+    simpa using hi.isBaseChange.basis_apply b j
+  exact funext hB ▸ (hi.isBaseChange.basis b).linearIndependent
+
 /-- Two linear combinations of the real ray generators agree only if their coefficients differ by
 a constant: the generators span the real space with the single relation that they sum to zero. -/
-private theorem sub_eq_sub_of_sum_smul_eq (hi : IsIntegralLattice i) {c d : Option ι → ℝ}
+private theorem sub_eq_sub_of_sum_smul_eq (hli : LinearIndependent ℝ fun j ↦ i (b j))
+    {c d : Option ι → ℝ}
     (h : ∑ k, c k • i (projectiveSpaceGenerator b k) =
       ∑ k, d k • i (projectiveSpaceGenerator b k)) (k : Option ι) :
     c k - d k = c none - d none := by
-  have hB (j : ι) : hi.isBaseChange.basis b j = i (b j) := by
-    simpa using hi.isBaseChange.basis_apply b j
-  have hli : LinearIndependent ℝ fun j ↦ i (b j) :=
-    funext hB ▸ (hi.isBaseChange.basis b).linearIndependent
   rw [sum_smul_projectiveSpaceGenerator, sum_smul_projectiveSpaceGenerator] at h
   cases k with
   | none => rfl
@@ -100,14 +108,15 @@ private theorem sub_eq_sub_of_sum_smul_eq (hi : IsIntegralLattice i) {c d : Opti
 
 /-- Any family of ray generators of the fan of projective space omitting one of them is linearly
 independent over the reals. -/
-theorem linearIndepOn_projectiveSpaceGenerator (hi : IsIntegralLattice i) {S : Set (Option ι)}
-    (hS : S ≠ univ) : LinearIndepOn ℝ (fun k ↦ i (projectiveSpaceGenerator b k)) S := by
+theorem linearIndepOn_projectiveSpaceGenerator (hli : LinearIndependent ℝ fun j ↦ i (b j))
+    {S : Set (Option ι)} (hS : S ≠ univ) :
+    LinearIndepOn ℝ (fun k ↦ i (projectiveSpaceGenerator b k)) S := by
   rw [linearIndepOn_iff]
   intro l hlS hl
   rw [Finsupp.mem_supported'] at hlS
   obtain ⟨k, hk⟩ := (ne_univ_iff_exists_notMem S).1 hS
   have h (m : Option ι) : l m - 0 = l none - 0 :=
-    sub_eq_sub_of_sum_smul_eq b hi (c := l) (d := 0) (by
+    sub_eq_sub_of_sum_smul_eq b hli (c := l) (d := 0) (by
       simp only [Pi.zero_apply, zero_smul, Finset.sum_const_zero]
       rw [← hl, Finsupp.linearCombination_apply,
         Finsupp.sum_fintype _ _ fun m ↦ zero_smul ℝ (i (projectiveSpaceGenerator b m))]) m
@@ -156,15 +165,15 @@ theorem projectiveSpaceCone_mono {S T : Set (Option ι)} (h : S ⊆ T) :
 
 /-- Two cones of the fan of projective space, each omitting some generator, meet in the cone of
 the intersection of their index sets. -/
-theorem projectiveSpaceCone_inf (hi : IsIntegralLattice i) {S T : Set (Option ι)}
-    (hS : S ≠ univ) (hT : T ≠ univ) :
+theorem projectiveSpaceCone_inf (hli : LinearIndependent ℝ fun j ↦ i (b j))
+    {S T : Set (Option ι)} (hS : S ≠ univ) (hT : T ≠ univ) :
     projectiveSpaceCone b i S ⊓ projectiveSpaceCone b i T = projectiveSpaceCone b i (S ∩ T) := by
   refine le_antisymm (fun x ⟨hxS, hxT⟩ ↦ ?_)
     (le_inf (projectiveSpaceCone_mono b inter_subset_left)
       (projectiveSpaceCone_mono b inter_subset_right))
   obtain ⟨c, hcS, hc0, hc⟩ := (mem_projectiveSpaceCone_iff b).1 hxS
   obtain ⟨d, hdT, hd0, hd⟩ := (mem_projectiveSpaceCone_iff b).1 hxT
-  have hcd := sub_eq_sub_of_sum_smul_eq b hi (hc.trans hd.symm)
+  have hcd := sub_eq_sub_of_sum_smul_eq b hli (hc.trans hd.symm)
   -- The common difference is `≤ 0` at a generator omitted by `S`, and `≥ 0` at one omitted by `T`.
   obtain ⟨k, hk⟩ := (ne_univ_iff_exists_notMem S).1 hS
   obtain ⟨l, hl⟩ := (ne_univ_iff_exists_notMem T).1 hT
@@ -178,6 +187,36 @@ theorem projectiveSpaceCone_inf (hi : IsIntegralLattice i) {S T : Set (Option ι
   · exact hcS m hm
   · rw [← hdc m]
     exact hdT m hm
+
+/-- The cone of the fan of projective space indexed by a set `S` omitting some generator lies in
+the cone indexed by `T` exactly when `S ⊆ T`. -/
+theorem projectiveSpaceCone_le_iff (hli : LinearIndependent ℝ fun j ↦ i (b j))
+    {S T : Set (Option ι)} (hS : S ≠ univ) :
+    projectiveSpaceCone b i S ≤ projectiveSpaceCone b i T ↔ S ⊆ T := by
+  classical
+  refine ⟨fun h k hkS ↦ ?_, projectiveSpaceCone_mono b⟩
+  by_contra hkT
+  -- Writing the generator at `k` with coefficients supported on `T` would need a negative one.
+  obtain ⟨d, hdT, hd0, hd⟩ := (mem_projectiveSpaceCone_iff b).1
+    (h (PointedCone.subset_hull (mem_image_of_mem i (mem_image_of_mem _ hkS))))
+  have hcd := sub_eq_sub_of_sum_smul_eq b hli (c := fun m ↦ if m = k then 1 else 0)
+    (by simp [hd, ite_smul]) (d := d)
+  obtain ⟨l, hl⟩ := (ne_univ_iff_exists_notMem S).1 hS
+  have hlk : l ≠ k := fun h ↦ hl (h ▸ hkS)
+  have hk' := hcd k
+  have hl' := hcd l
+  simp only [↓reduceIte, hdT k hkT] at hk'
+  simp only [hlk, ↓reduceIte] at hl'
+  linarith [hd0 l]
+
+/-- Two cones of the fan of projective space, each omitting some generator, coincide exactly when
+their index sets do. -/
+@[simp]
+theorem projectiveSpaceCone_inj (hli : LinearIndependent ℝ fun j ↦ i (b j))
+    {S T : Set (Option ι)} (hS : S ≠ univ) (hT : T ≠ univ) :
+    projectiveSpaceCone b i S = projectiveSpaceCone b i T ↔ S = T := by
+  rw [le_antisymm_iff, projectiveSpaceCone_le_iff b hli hS, projectiveSpaceCone_le_iff b hli hT,
+    subset_antisymm_iff]
 
 /-- For every index `k` there is an integral basis consisting of the ray generators other than
 the one indexed by `k`. -/
@@ -263,10 +302,11 @@ def projectiveSpace (hi : IsIntegralLattice i) : Fan i where
       exact ⟨_, ⟨k, ⟨hkS, hkτ⟩, rfl⟩, rfl⟩
   inf_isFaceOf_left := by
     rintro _ _ ⟨S, hS, rfl⟩ ⟨T, hT, rfl⟩
-    rw [projectiveSpaceCone_inf b hi hS hT, projectiveSpaceCone_eq_hull,
+    have hb := linearIndependent_of_isIntegralLattice b hi
+    rw [projectiveSpaceCone_inf b hb hS hT, projectiveSpaceCone_eq_hull,
       projectiveSpaceCone_eq_hull]
     -- Inside the cone of `S`, the generators indexed by `S ∩ T` span a face.
-    have hli := linearIndepOn_projectiveSpaceGenerator b hi hS
+    have hli := linearIndepOn_projectiveSpaceGenerator b hb hS
     have h := PointedCone.isFaceOf_hull_image hli
       (C := PointedCone.hull ℝ ((fun k ↦ i (projectiveSpaceGenerator b k)) '' S))
       (by rw [image_eq_range]) {k : S | k.1 ∈ T}
