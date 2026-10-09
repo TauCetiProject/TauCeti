@@ -272,18 +272,6 @@ theorem typeBShortNegativeRootMatrix_lie_differenceRootMatrix (i k l : ι) (hkl 
   · simp [typeBShortNegativeRootMatrix_def, typeBDifferenceRootMatrix_def, mul_sub, sub_mul,
       Matrix.single_mul_single_of_ne, hik, Ne.symm hik]
 
-/-- The bracket of a difference-root matrix with a positive short type-`B` root matrix. -/
-theorem typeBDifferenceRootMatrix_lie_shortRootMatrix (i k l : ι) (hkl : k ≠ l) :
-    ⁅typeBDifferenceRootMatrix (K := K) k l hkl, typeBShortRootMatrix (K := K) i⁆ =
-      if i = l then typeBShortRootMatrix (K := K) k else 0 := by
-  rw [← lie_skew, typeBShortRootMatrix_lie_differenceRootMatrix, neg_neg]
-
-/-- The bracket of a difference-root matrix with a negative short type-`B` root matrix. -/
-theorem typeBDifferenceRootMatrix_lie_shortNegativeRootMatrix (i k l : ι) (hkl : k ≠ l) :
-    ⁅typeBDifferenceRootMatrix (K := K) k l hkl, typeBShortNegativeRootMatrix (K := K) i⁆ =
-      -(if i = k then typeBShortNegativeRootMatrix (K := K) l else 0) := by
-  rw [← lie_skew, typeBShortNegativeRootMatrix_lie_differenceRootMatrix]
-
 /-- The positive short-root matrix is skew-adjoint for the split odd orthogonal form. -/
 theorem typeBShortRootMatrix_mem_typeB (i : ι) :
     typeBShortRootMatrix (K := K) i ∈ LieAlgebra.Orthogonal.typeB ι K := by

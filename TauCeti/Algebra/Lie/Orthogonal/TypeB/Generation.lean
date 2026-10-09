@@ -148,7 +148,7 @@ private theorem lie_typeBDifferenceRootGenerator_shortRootGenerator
     coe_typeBShortRootGenerator] using show
       ⁅typeBDifferenceRootMatrix (K := K) i j hij, typeBShortRootMatrix (K := K) j⁆ =
         typeBShortRootMatrix i from by
-          rw [typeBDifferenceRootMatrix_lie_shortRootMatrix]
+          rw [(lie_skew _ _).symm, typeBShortRootMatrix_lie_differenceRootMatrix]
           simp
 
 private theorem lie_typeBShortNegativeRootGenerator_differenceRootGenerator

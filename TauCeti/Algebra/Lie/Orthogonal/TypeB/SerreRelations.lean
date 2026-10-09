@@ -80,7 +80,7 @@ private theorem lie_typeBSimpleRootMatrix_typeBSimpleNegativeRootMatrix_of_ne
       induction j using Fin.lastCases with
       | last =>
           simp only [typeBSimpleRootMatrix_castSucc, typeBSimpleNegativeRootMatrix_last]
-          rw [typeBDifferenceRootMatrix_lie_shortNegativeRootMatrix]
+          rw [← lie_skew, typeBShortNegativeRootMatrix_lie_differenceRootMatrix]
           simp only [neg_eq_zero]
           split_ifs with h
           · exact (hij h.symm).elim
@@ -249,10 +249,10 @@ private theorem lie_lie_typeBSimpleRootMatrix_castSucc_last
         typeBSimpleRootMatrix (K := K) (Fin.last n)⁆ =
           typeBShortRootMatrix i.castSucc := by
     simp only [typeBSimpleRootMatrix_castSucc, typeBSimpleRootMatrix_last]
-    rw [typeBDifferenceRootMatrix_lie_shortRootMatrix, ite_eq_left hlast]
+    rw [← lie_skew, typeBShortRootMatrix_lie_differenceRootMatrix, ite_eq_left hlast, neg_neg]
   rw [hinner]
   simp only [typeBSimpleRootMatrix_castSucc]
-  rw [typeBDifferenceRootMatrix_lie_shortRootMatrix]
+  rw [← lie_skew, typeBShortRootMatrix_lie_differenceRootMatrix]
   simp [hne]
 
 /- The four `Fin.lastCases` branches separate ordinary long-root nodes from the terminal short-root
