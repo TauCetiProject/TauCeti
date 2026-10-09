@@ -85,8 +85,9 @@ noncomputable def descendSection (s' : S' ⟶ pullback g p)
 @[reassoc (attr := simp)]
 theorem comp_descendSection (s' : S' ⟶ pullback g p)
     (h : pullback.fst p p ≫ s' ≫ pullback.fst g p = pullback.snd p p ≫ s' ≫ pullback.fst g p) :
-    p ≫ descendSection p g s' h = s' ≫ pullback.fst g p :=
-  Cofork.IsColimit.π_desc' (isColimitCoforkOfEffectiveEpi p _ (pullback.isLimit p p)) _ h
+    p ≫ descendSection p g s' h = s' ≫ pullback.fst g p := by
+  simpa [descendSection, Cofork.π_ofπ] using
+    Cofork.IsColimit.π_desc' (isColimitCoforkOfEffectiveEpi p _ (pullback.isLimit p p)) _ h
 
 /-- The descent of a section of `Y ×_S S' ⟶ S'` is a section of `g`. -/
 @[reassoc (attr := simp)]
@@ -148,6 +149,28 @@ variable {X Y : Over S}
 
 variable [EffectiveEpi (pullback.fst X.hom p)]
 
+/-- The morphism `X ⟶ Y` underlying `descendHom`, descended from `φ` along the coequalizer
+`X ×_S S' ⟶ X` of `pr₁^*, pr₂^*`. -/
+private noncomputable def descendHomLeft
+    (φ : (Over.pullback p).obj X ⟶ (Over.pullback p).obj Y)
+    (h : pullback.mapSnd X.hom p _ (pullback.fst p p) rfl ≫ φ.left ≫ pullback.fst Y.hom p =
+      pullback.mapSnd X.hom p _ (pullback.snd p p) pullback.condition.symm ≫ φ.left ≫
+        pullback.fst Y.hom p) :
+    X.left ⟶ Y.left :=
+  Cofork.IsColimit.desc ((EffectiveEpi.getStruct _).isColimitCoforkOfIsPullback
+    (pullback.isKernelPair_mapSnd X.hom p)) (φ.left ≫ pullback.fst Y.hom p) h
+
+@[reassoc]
+private theorem fst_comp_descendHomLeft
+    (φ : (Over.pullback p).obj X ⟶ (Over.pullback p).obj Y)
+    (h : pullback.mapSnd X.hom p _ (pullback.fst p p) rfl ≫ φ.left ≫ pullback.fst Y.hom p =
+      pullback.mapSnd X.hom p _ (pullback.snd p p) pullback.condition.symm ≫ φ.left ≫
+        pullback.fst Y.hom p) :
+    pullback.fst X.hom p ≫ descendHomLeft p φ h = φ.left ≫ pullback.fst Y.hom p := by
+  simpa [descendHomLeft, Cofork.π_ofπ] using
+    Cofork.IsColimit.π_desc' ((EffectiveEpi.getStruct _).isColimitCoforkOfIsPullback
+      (pullback.isKernelPair_mapSnd X.hom p)) _ h
+
 /-- **Descent of a morphism.** A morphism `φ : X ×_S S' ⟶ Y ×_S S'` over `S'`, whose two pullbacks
 to `S' ×_S S'` agree, descends to a morphism `X ⟶ Y` over `S`, provided that the base change
 `X ×_S S' ⟶ X` of `p` is an effective epimorphism. Its base change is `φ`
@@ -157,12 +180,8 @@ noncomputable def descendHom (φ : (Over.pullback p).obj X ⟶ (Over.pullback p)
       pullback.mapSnd X.hom p _ (pullback.snd p p) pullback.condition.symm ≫ φ.left ≫
         pullback.fst Y.hom p) :
     X ⟶ Y :=
-  Over.homMk (Cofork.IsColimit.desc ((EffectiveEpi.getStruct _).isColimitCoforkOfIsPullback
-      (pullback.isKernelPair_mapSnd X.hom p)) (φ.left ≫ pullback.fst Y.hom p) h) <| by
-    have hπ := Cofork.IsColimit.π_desc' ((EffectiveEpi.getStruct _).isColimitCoforkOfIsPullback
-      (pullback.isKernelPair_mapSnd X.hom p)) _ h
-    rw [Cofork.π_ofπ] at hπ
-    rw [← cancel_epi (pullback.fst X.hom p), reassoc_of% hπ, pullback.condition]
+  Over.homMk (descendHomLeft p φ h) <| by
+    rw [← cancel_epi (pullback.fst X.hom p), fst_comp_descendHomLeft_assoc, pullback.condition]
     simpa using (Over.w φ =≫ p).trans pullback.condition.symm
 
 /-- The descended morphism, composed with the projection `X ×_S S' ⟶ X`, is `φ` followed by
@@ -172,9 +191,8 @@ theorem fst_comp_descendHom_left (φ : (Over.pullback p).obj X ⟶ (Over.pullbac
     (h : pullback.mapSnd X.hom p _ (pullback.fst p p) rfl ≫ φ.left ≫ pullback.fst Y.hom p =
       pullback.mapSnd X.hom p _ (pullback.snd p p) pullback.condition.symm ≫ φ.left ≫
         pullback.fst Y.hom p) :
-    pullback.fst X.hom p ≫ (descendHom p φ h).left = φ.left ≫ pullback.fst Y.hom p :=
-  Cofork.IsColimit.π_desc' ((EffectiveEpi.getStruct _).isColimitCoforkOfIsPullback
-    (pullback.isKernelPair_mapSnd X.hom p)) _ h
+    pullback.fst X.hom p ≫ (descendHom p φ h).left = φ.left ≫ pullback.fst Y.hom p := by
+  simp only [descendHom, Over.homMk_left, fst_comp_descendHomLeft]
 
 /-- **Uniqueness of descended morphisms.** A morphism `X ⟶ Y` over `S` whose composite with the
 projection `X ×_S S' ⟶ X` is `φ` followed by the projection `Y ×_S S' ⟶ Y` is the descended
