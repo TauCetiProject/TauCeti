@@ -58,6 +58,7 @@ theorem coe_unitBallOpens : (unitBallOpens F : Set F) = ball 0 1 := by
 
 variable {F} in
 /-- A point lies in the open unit ball exactly when its norm is less than `1`. -/
+@[simp]
 theorem mem_unitBallOpens {v : F} : v ∈ unitBallOpens F ↔ ‖v‖ < 1 := by
   rw [← SetLike.mem_coe, coe_unitBallOpens, mem_ball_zero_iff]
 
