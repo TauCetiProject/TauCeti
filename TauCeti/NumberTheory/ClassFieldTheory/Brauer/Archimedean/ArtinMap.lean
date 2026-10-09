@@ -161,13 +161,6 @@ section Real
 variable (w : InfinitePlace K) (hw : w.IsReal)
 include hw
 
-/-- At a real place every element of `G_{K_w}^ab` squares to `1`, since `G_{K_w}` has order two. -/
-private theorem sq_eq_one_of_isReal (y : Field.absoluteGaloisGroupAbelianization w.Completion) :
-    y ^ 2 = 1 := by
-  obtain ⟨σ, rfl⟩ := QuotientGroup.mk_surjective y
-  rw [← QuotientGroup.mk_pow, ← natCard_fieldAbsoluteGaloisGroup_of_isReal w hw,
-    pow_card_eq_one', QuotientGroup.mk_one]
-
 open scoped IsMulCommutative in
 /-- At a real place some element has nontrivial Artin symbol: the Artin map of the quadratic layer
 is surjective onto the abelianization of a group of order two. -/
@@ -185,21 +178,6 @@ private theorem exists_infiniteArtinAt_ne_one_of_isReal :
   obtain ⟨a, ha⟩ := (infiniteClassFormation w).surjective_artinMap (ofOpenNormal V) y
   obtain ⟨x, rfl⟩ := (localGroundEquiv w.Completion V).surjective a
   exact ⟨x.toMul, fun hx ↦ hy (ha ▸ artinMap_eq_zero_of_infiniteArtinAt_eq_one w V hx)⟩
-
-/-- At a real place any two nontrivial elements of `G_{K_w}^ab` are equal, since `G_{K_w}` has
-order two. -/
-private theorem eq_of_ne_one_of_isReal
-    {a b : Field.absoluteGaloisGroupAbelianization w.Completion} (ha : a ≠ 1) (hb : b ≠ 1) :
-    a = b := by
-  obtain ⟨σ, rfl⟩ := QuotientGroup.mk_surjective a
-  obtain ⟨τ, rfl⟩ := QuotientGroup.mk_surjective b
-  have hσ : σ ≠ 1 := by
-    rintro rfl
-    exact ha (QuotientGroup.mk_one _)
-  have hτ : τ ≠ 1 := by
-    rintro rfl
-    exact hb (QuotientGroup.mk_one _)
-  rw [((Nat.card_eq_two_iff' 1).mp (natCard_fieldAbsoluteGaloisGroup_of_isReal w hw)).unique hσ hτ]
 
 /-- **The kernel of the real Artin map is `ℝ_{>0}`**: at a real place, `Art_w(x)` is trivial
 exactly when the image of `x` in `ℝ` is positive, so that the kernel is the norm group of

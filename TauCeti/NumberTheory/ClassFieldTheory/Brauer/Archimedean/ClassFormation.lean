@@ -44,6 +44,9 @@ invariants, rather than merely providing abstract class formations on the same c
   `TauCeti.ClassFieldTheory.natCard_fieldAbsoluteGaloisGroup_of_isReal`: Mathlib's absolute Galois
   group `Gal(AlgebraicClosure K_w/K_w)` is trivial at a complex place and of order two at a real
   place.
+* `TauCeti.ClassFieldTheory.sq_eq_one_of_isReal`,
+  `TauCeti.ClassFieldTheory.eq_of_ne_one_of_isReal`: at a real place every element of
+  `G_{K_w}^ab` squares to `1`, and any two nontrivial elements of it are equal.
 * `TauCeti.ClassFieldTheory.apply_eq_inv_of_isReal`: at a real place the nontrivial automorphism of
   `AlgebraicClosure K_w` inverts every root of unity.
 
@@ -449,6 +452,28 @@ theorem eq_one_of_mk_eq_one_of_isReal {σ : Field.absoluteGaloisGroup w.Completi
     exact le_bot_iff.mp (Subgroup.topologicalClosure_minimal _ le_rfl isClosed_singleton)
   have hmem := (QuotientGroup.eq_one_iff σ).mp hσ
   rwa [hclosure, Subgroup.mem_bot] at hmem
+
+/-- At a real place every element of `G_{K_w}^ab` squares to `1`, since `G_{K_w}` has order two. -/
+theorem sq_eq_one_of_isReal (y : Field.absoluteGaloisGroupAbelianization w.Completion) :
+    y ^ 2 = 1 := by
+  obtain ⟨σ, rfl⟩ := QuotientGroup.mk_surjective y
+  rw [← QuotientGroup.mk_pow, ← natCard_fieldAbsoluteGaloisGroup_of_isReal w hw,
+    pow_card_eq_one', QuotientGroup.mk_one]
+
+/-- At a real place any two nontrivial elements of `G_{K_w}^ab` are equal, since `G_{K_w}` has
+order two. -/
+theorem eq_of_ne_one_of_isReal
+    {a b : Field.absoluteGaloisGroupAbelianization w.Completion} (ha : a ≠ 1) (hb : b ≠ 1) :
+    a = b := by
+  obtain ⟨σ, rfl⟩ := QuotientGroup.mk_surjective a
+  obtain ⟨τ, rfl⟩ := QuotientGroup.mk_surjective b
+  have hσ : σ ≠ 1 := by
+    rintro rfl
+    exact ha (QuotientGroup.mk_one _)
+  have hτ : τ ≠ 1 := by
+    rintro rfl
+    exact hb (QuotientGroup.mk_one _)
+  rw [((Nat.card_eq_two_iff' 1).mp (natCard_fieldAbsoluteGaloisGroup_of_isReal w hw)).unique hσ hτ]
 
 /-- At a real place an element of `AlgebraicClosure K_w` fixed by a nontrivial automorphism lies in
 `K_w`: that automorphism and the identity are all of `G_{K_w}`, which has order two. -/
