@@ -13,23 +13,9 @@ public import TauCeti.RepresentationTheory.Quiver.Preprojective.Opposite
 # Finite-dimensional preprojective algebras are self-injective
 
 Let `Q` be a finite quiver and `Π = Π_k(Q)` its preprojective algebra over a field `k`. This file
-proves that **if `Π` is finite-dimensional, then it is self-injective**, on both sides. No basis,
-dimension count or Frobenius form is needed: the only input is the exactness of the Koszul complex
-of a vertex module at its middle term (`TauCeti.sum_preprojectiveMk_ofArrow_mul_eq_zero_iff`).
-
-The proof checks Baer's criterion one vertex at a time. Let `N` be a left ideal of `Π`, let
-`g : N → Π` be a map of left modules, and let `m ∈ e_v Π` be an element outside `N` which every
-arrow `c` leaving `v` moves into `N`. The tuple `(g (c m))_c` is killed by the second map of the
-Koszul complex, because `∑_b ε_b b b* m = ρ_v m = 0`. By exactness at the middle term it is
-therefore `(c y)_c` for a single `y ∈ e_v Π`, and `g` extends to `N + Π m` by `m ↦ y`. The extension
-is well defined because every element of `Π e_v` is a scalar multiple of `e_v` plus a combination of
-the paths leaving `v`, and on `m` the latter act through the arrows `c`.
-
-When `Π` is finite-dimensional such an `m` exists outside every proper left ideal `N`: a path
-class outside `N` of maximal length works, since the graded pieces of `Π` vanish in all large
-degrees. As the left ideals of `Π` satisfy the ascending chain condition, finitely many such
-extensions reach all of `Π`, so `Π` is left self-injective. Right self-injectivity follows by
-transport along the isomorphism `Π ≃ Πᵐᵒᵖ` reversing paths (`TauCeti.preprojectiveOpAlgEquiv`).
+proves that **if `Π` is finite-dimensional, then it is self-injective**, on both sides, over every
+field. In particular this applies to the preprojective algebra of every orientation of a finite
+simply-laced Dynkin diagram.
 
 ## Main results
 
@@ -61,16 +47,33 @@ variable (k : Type w) [Field k] {Q : Type u} [Quiver.{v} Q] [Fintype Q]
 local notation "Π" => preprojectiveAlgebra k Q
 local notation "π" => preprojectiveMk k Q
 
+/- Proof outline. No basis, dimension count or Frobenius form is needed: the only input is the
+exactness of the Koszul complex of a vertex module at its middle term
+(`TauCeti.sum_preprojectiveMk_ofArrow_mul_eq_zero_iff`). The proof checks Baer's criterion one
+vertex at a time. Let `N` be a left ideal of `Π`, let `g : N → Π` be a map of left modules, and let
+`m ∈ e_v Π` be an element outside `N` which every arrow `c` leaving `v` moves into `N`. The tuple
+`(g (c m))_c` is killed by the second map of the Koszul complex, because
+`∑_b ε_b b b* m = ρ_v m = 0`. By exactness at the middle term it is therefore `(c y)_c` for a single
+`y ∈ e_v Π`, and `g` extends to `N + Π m` by `m ↦ y`. The extension is well defined because every
+element of `Π e_v` is a scalar multiple of `e_v` plus a combination of the paths leaving `v`, and on
+`m` the latter act through the arrows `c`.
+
+When `Π` is finite-dimensional such an `m` exists outside every proper left ideal `N`: a path class
+outside `N` of maximal length works, since the graded pieces of `Π` vanish in all large degrees. As
+the left ideals of `Π` satisfy the ascending chain condition, finitely many such extensions reach
+all of `Π`, so `Π` is left self-injective. Right self-injectivity follows by transport along the
+isomorphism `Π ≃ Πᵐᵒᵖ` reversing paths (`TauCeti.preprojectiveOpAlgEquiv`). -/
+
 /-- **The value at a new generator.** Let every arrow `c` leaving `v` move `m` into the left ideal
 `N`, and let `g : N → Π` be a map of left modules. Then there is one `y ∈ e_v Π` with
-`g (c m) = c y` for every such `c`: the tuple `(g (c m))_c` is killed by the second map of the
-Koszul complex, since `∑_b ε_b b b* m = ρ_v m = 0`, so it comes from `e_v Π` by exactness at the
-middle term. -/
+`g (c m) = c y` for every such `c`. -/
 private theorem exists_value_of_forall_ofArrow_mul_mem (N : Submodule Π Π) (g : N →ₗ[Π] Π)
     {v : Q} {m : Π}
     (hc : ∀ (w : Symmetrify Q) (c : Symmetrify.of.obj v ⟶ w), π (ofArrow c) * m ∈ N) :
     ∃ y, π (doubledVertexIdempotent k v) * y = y ∧ ∀ (w : Symmetrify Q)
       (c : Symmetrify.of.obj v ⟶ w), g ⟨π (ofArrow c) * m, hc w c⟩ = π (ofArrow c) * y := by
+  -- The tuple `(g (c m))_c` is killed by the second map of the Koszul complex, since
+  -- `∑_b ε_b b b* m = ρ_v m = 0`, so it comes from `e_v Π` by exactness at the middle term.
   have hg_eq {x x' : Π} (hx : x ∈ N) (hx' : x' ∈ N) (h : x = x') : g ⟨x, hx⟩ = g ⟨x', hx'⟩ := by
     subst h; rfl
   have hz (i : Symmetrify Q) (b : i ⟶ Symmetrify.of.obj v) :
@@ -100,9 +103,7 @@ private theorem exists_value_of_forall_ofArrow_mul_mem (N : Submodule Π Π) (g 
 
 /-- **The one-vertex extension is well defined.** Let `m ∈ e_v Π` lie outside the left ideal `N`,
 let every arrow `c` leaving `v` move `m` into `N`, and let `y ∈ e_v Π` satisfy `g (c m) = c y`
-for all of them. If `n + a m = 0` with `n ∈ N`, then `g n + a y = 0`. Indeed, every element of
-`Π e_v` is a multiple of `e_v` plus a combination of paths leaving `v`, which act on `m` through
-the arrows leaving `v`; the multiple of `e_v` vanishes since `m ∉ N`. -/
+for all of them. If `n + a m = 0` with `n ∈ N`, then `g n + a y = 0`. -/
 private theorem add_mul_eq_zero_of_add_mul_eq_zero (N : Submodule Π Π) (g : N →ₗ[Π] Π) {v : Q}
     {m y : Π} (hm : π (doubledVertexIdempotent k v) * m = m) (hmN : m ∉ N)
     (hc : ∀ (w : Symmetrify Q) (c : Symmetrify.of.obj v ⟶ w), π (ofArrow c) * m ∈ N)
@@ -110,6 +111,8 @@ private theorem add_mul_eq_zero_of_add_mul_eq_zero (N : Submodule Π Π) (g : N 
     (hgy : ∀ (w : Symmetrify Q) (c : Symmetrify.of.obj v ⟶ w),
       g ⟨π (ofArrow c) * m, hc w c⟩ = π (ofArrow c) * y)
     (n : N) (a : Π) (hna : (n : Π) + a * m = 0) : g n + a * y = 0 := by
+  -- Every element of `Π e_v` is a multiple of `e_v` plus a combination of paths leaving `v`, which
+  -- act on `m` through the arrows leaving `v`; the multiple of `e_v` vanishes since `m ∉ N`.
   have hg_eq {x x' : Π} (hx : x ∈ N) (hx' : x' ∈ N) (h : x = x') : g ⟨x, hx⟩ = g ⟨x', hx'⟩ := by
     subst h; rfl
   -- The left ideal of the elements `a` with `a m ∈ N` and `g (a m) = a y`.
@@ -138,8 +141,7 @@ private theorem add_mul_eq_zero_of_add_mul_eq_zero (N : Submodule Π Π) (g : N 
       rcases Nat.eq_zero_or_pos p'.length with h0 | hpos
       · obtain rfl := Path.eq_of_length_zero p' h0
         obtain rfl := Path.eq_nil_of_length_zero p' h0
-        rw [show (ofPath ⟨_, _, Path.nil.cons c⟩ : pathAlgebra k (Symmetrify Q)) = ofArrow c from
-          (ofArrow_eq_ofPath c).symm]
+        rw [← Path.comp_toPath_eq_cons, Path.nil_comp, ← ofArrow_eq_ofPath]
         exact hS.2 ⟨hc _ c, hgy _ c⟩
       · rw [← ofArrow_mul_ofPath, map_mul]
         exact S.smul_mem _ (ih hpos)
@@ -219,12 +221,12 @@ private theorem exists_extension_sup_span_singleton (N : Submodule Π Π) (g : N
   exact ((LinearPMap.left_le_sup _ s hcompat).2 (x := x) rfl).symm
 
 /-- If `Π` is finite-dimensional, then outside every proper left ideal `N` there is an element of
-some `e_v Π` which every arrow leaving `v` moves into `N`: the class of a path of maximal length
-among those whose classes lie outside `N`. -/
+some `e_v Π` which every arrow leaving `v` moves into `N`. -/
 private theorem exists_notMem_of_ne_top [FiniteDimensional k Π] {N : Submodule Π Π}
     (hN : N ≠ ⊤) :
     ∃ (v : Q) (m : Π), π (doubledVertexIdempotent k v) * m = m ∧ m ∉ N ∧
       ∀ (w : Symmetrify Q) (c : Symmetrify.of.obj v ⟶ w), π (ofArrow c) * m ∈ N := by
+  -- Take the class of a path of maximal length among those whose classes lie outside `N`.
   classical
   let L : Set ℕ := {l | ∃ x : Quiver.TotalPath (Symmetrify Q), x.2.2.length = l ∧ π (ofPath x) ∉ N}
   have hL_fin : L.Finite := by
@@ -258,10 +260,10 @@ private theorem exists_notMem_of_ne_top [FiniteDimensional k Π] {N : Submodule 
     simp only [Path.length_cons] at hle
     omega
 
-/-- A finite-dimensional preprojective algebra satisfies Baer's criterion: starting from a left
-ideal, the one-vertex extension step reaches the whole algebra, by the ascending chain condition
-on left ideals. -/
+/-- A finite-dimensional preprojective algebra satisfies Baer's criterion. -/
 private theorem moduleBaer_preprojectiveAlgebra [FiniteDimensional k Π] : Module.Baer Π Π := by
+  -- Starting from a left ideal, the one-vertex extension step reaches the whole algebra, by the
+  -- ascending chain condition on left ideals.
   intro I g
   have : IsNoetherian Π Π := isNoetherian_of_tower k inferInstance
   suffices H : ∀ N : Submodule Π Π, I ≤ N → ∀ h : N →ₗ[Π] Π,
@@ -294,11 +296,11 @@ theorem moduleInjective_preprojectiveAlgebra_of_finiteDimensional [FiniteDimensi
   (moduleBaer_preprojectiveAlgebra k).injective
 
 attribute [local instance] RingHomInvPair.of_ringEquiv in
-/-- **A finite-dimensional preprojective algebra is right self-injective**, over every field. The
-right regular module is the left regular one transported along the isomorphism `Π ≃ Πᵐᵒᵖ`
-reversing paths. -/
+/-- **A finite-dimensional preprojective algebra is right self-injective**, over every field.
+This applies to every orientation of a finite simply-laced Dynkin diagram. -/
 theorem moduleInjective_op_preprojectiveAlgebra_of_finiteDimensional [FiniteDimensional k Π] :
     Module.Injective Πᵐᵒᵖ Π :=
+  -- Transport the left regular module along the isomorphism `Π ≃ Πᵐᵒᵖ` reversing paths.
   have := moduleInjective_preprojectiveAlgebra_of_finiteDimensional k (Q := Q)
   .of_ringEquiv (preprojectiveOpAlgEquiv k Q).toRingEquiv
     { (preprojectiveOpAlgEquiv k Q).toRingEquiv.toAddEquiv.trans opAddEquiv.symm with
