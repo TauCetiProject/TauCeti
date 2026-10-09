@@ -79,10 +79,6 @@ end CommRing
 
 variable {K : Type*} [Field K] [Invertible (2 : K)]
 
-private theorem nondegenerate_weightedSumSquares_one :
-    (weightedSumSquares K ![(1 : K), 1, 1]).Nondegenerate :=
-  nondegenerate_weightedSumSquares fun i ↦ by fin_cases i <;> exact isRegular_one
-
 section Ternary
 
 variable {V : Type*} [AddCommGroup V] [Module K V]
@@ -110,9 +106,7 @@ theorem mem_ker_quaternionUnitaryToSpecialOrthogonal_iff [FiniteDimensional K V]
   let E := spinGroupEquivQuaternionUnitary Q hQ hV e he
   have hE : E.symm (-1) = spinGroup.negOne Q hQ.ne_zero := Subtype.ext <| by
     simp [E, coe_spinGroupEquivQuaternionUnitary_symm_apply, Unitary.coe_neg]
-  rw [MonoidHom.mem_ker, quaternionUnitaryToSpecialOrthogonal_apply, ← MonoidHom.mem_ker,
-    mem_ker_spinToSpecialOrthogonal_iff Q hQ, ← hE, E.symm.injective.eq_iff, ← map_one E.symm,
-    E.symm.injective.eq_iff]
+  exact (mem_ker_spinToSpecialOrthogonal_iff Q hQ (E.symm q)).trans (by simp [← hE])
 
 /-- **Norm-one quaternions cover the spinor kernel in dimension three.** The image of the
 norm-one quaternions in `SO(Q)` is the kernel of the spinor norm. -/
@@ -135,7 +129,7 @@ theorem spinToSpecialOrthogonal_weightedSumSquares_one_surjective_iff :
   have h1 : (1 : Kˣ) ∈ unitValueSet (weightedSumSquares K ![(1 : K), 1, 1]) :=
     mem_unitValueSet.2 ((represents_iff _ _).2 ⟨![1, 0, 0], by simp [happ]⟩)
   rw [spinToSpecialOrthogonal_surjective_iff_isSquare_of_one_mem _
-    nondegenerate_weightedSumSquares_one h1]
+    (nondegenerate_weightedSumSquares fun i ↦ by fin_cases i <;> exact isRegular_one) h1]
   constructor
   · intro h x y z hs
     have := h (Units.mk0 _ hs) (mem_unitValueSet.2 ((represents_iff _ _).2 ⟨![x, y, z], by
@@ -166,7 +160,8 @@ theorem exists_quaternionUnitaryHom_range_ne_top_rat :
         (∀ hQ, f.range = (spinorNorm (weightedSumSquares ℚ ![(1 : ℚ), 1, 1]) hQ).ker) ∧
           f.range ≠ ⊤ := by
   obtain ⟨e, he⟩ := exists_evenQuaternionEquiv_weightedSumSquares_one (R := ℚ)
-  have hQ := nondegenerate_weightedSumSquares_one (K := ℚ)
+  have hQ : (weightedSumSquares ℚ ![(1 : ℚ), 1, 1]).Nondegenerate :=
+    nondegenerate_weightedSumSquares fun i ↦ by fin_cases i <;> exact isRegular_one
   let f := quaternionUnitaryToSpecialOrthogonal _ hQ (Module.finrank_fin_fun ℚ) e he
   have hrange : f.range = (spinorNorm _ hQ).ker := range_quaternionUnitaryToSpecialOrthogonal ..
   refine ⟨f, fun q ↦ mem_ker_quaternionUnitaryToSpecialOrthogonal_iff .., fun _ ↦ hrange, fun htop ↦
