@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational.Topology
-public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.KanExtension
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.SheafyRing
 
 import TauCeti.Topology.Algebra.Ring.Ideal
@@ -19,13 +18,13 @@ presentation-limit structure presheaf of `Spa(A, A⁺)` is a sheaf of complete s
 rings. This is Wedhorn's Theorem 8.28(b) for the pair `(A, A⁺)`; `A` itself need not be complete
 or Hausdorff.
 
-Gluing for rational covers of rational opens, including the empty cover, holds both for sections
-(`isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq`) and for continuous ring homomorphisms out of
-an arbitrary topological commutative ring
-(`isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_topCommRingCat`). Intersections of rational
-opens are rational, so either form is the sheaf condition on the basis of rational opens
-(`isSheaf_rational_comp_of_isSheafFor_ofArrows`), and it extends to all opens because the presheaf
-is the limit of its values on that basis.
+Strong noetherianness satisfies `ContinuousLaurentGluing`
+(`continuousLaurentGluing_isStronglyNoetherian`): it passes to completed rational localisations,
+and two-piece Laurent covers of rational subsets glue, with the topology on sections induced by
+restriction to the two pieces. Wedhorn's reduction of Lemma 8.34 to Laurent covers therefore gives
+gluing for rational covers of rational opens, both for sections and for continuous ring
+homomorphisms, and hence the sheaf property
+(`isSheaf_presentationLimitPresheaf_of_continuousLaurentGluing`).
 
 ## Main results
 
@@ -78,16 +77,16 @@ of definition lies in `A⁺`, and `A⁺` a subring of power-bounded elements. Th
 presentation-limit structure presheaf of `Spa(A, A⁺)` is a sheaf of complete separated topological
 rings on all opens.
 
-`A` itself need not be complete or Hausdorff. -/
+`A` itself need not be complete or Hausdorff. This is
+`isSheaf_presentationLimitPresheaf_of_continuousLaurentGluing` for strong noetherianness
+(`continuousLaurentGluing_isStronglyNoetherian`). -/
 theorem isSheaf_presentationLimitPresheaf_of_isStronglyNoetherian
     (hP : P.ringOfDefinition ≤ Aplus) (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) :
     Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Aplus))
-      (presentationLimitPresheaf P Aplus) := by
-  refine isSheaf_presentationLimitPresheaf_of_isSheaf_rational <|
-    Presheaf.isSheaf_of_isSheaf_comp _ _ TopCommRingCat.isCompleteSeparated.ι fun E ↦ ?_
-  -- a sheaf of topological rings is one whose continuous homomorphisms out of each `E` glue
-  exact isSheaf_rational_comp_of_isSheafFor_ofArrows P _ fun hW hU hcov ↦
-    isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_topCommRingCat P hP hAplus hW hU hcov E
+      (presentationLimitPresheaf P Aplus) :=
+  isSheaf_presentationLimitPresheaf_of_continuousLaurentGluing P
+    continuousLaurentGluing_isStronglyNoetherian (inferInstanceAs (IsStronglyNoetherian A)) hP
+    hAplus
 
 end TauCeti.ValuationSpectrum
 
