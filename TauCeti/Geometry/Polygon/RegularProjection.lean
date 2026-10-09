@@ -22,18 +22,20 @@ point. This is the regular position of Crowell and Fox (Chapter I).
 This file defines the regularity condition, `Polygon.IsRegularProjection R poly π`, for an
 arbitrary map `π` out of the ambient affine space of a polygon `poly : Polygon P n` (Mathlib's
 `Polygon`), and proves that regular projections are generic. Projecting along a direction
-`d : V` is the quotient map `V → V ⧸ ℝ ∙ d`, after choosing an origin `p₀ : P`; its fibres are the
-lines parallel to `d`. For a polygon in a three-dimensional real affine space, the directions `d`
-along which the projection is regular form a dense subset of `V`
-(`Polygon.dense_setOf_isRegularProjection`). In particular every polygon, and so every polygonal
-knot in `ℝ³`, has a regular projection along a nonzero direction
-(`Polygon.exists_ne_zero_isRegularProjection`). Regularity of a projection depends only on its
-fibres on the polygon (`Polygon.isRegularProjection_congr`), so the quotient map may be replaced
-by any projection onto a plane with the same fibres, such as a coordinate projection. Projecting
-along a nondegenerate edge is never regular (`Polygon.not_isRegularProjection_edge`).
+`d : V`, `Polygon.projAlong R p₀ d`, is the quotient map `V → V ⧸ R ∙ d`, after choosing an origin
+`p₀ : P`; its fibres are the lines parallel to `d` (`Polygon.projAlong_eq_projAlong_iff`). For a
+polygon in a three-dimensional real affine space, the directions `d` along which the projection is
+regular form a dense subset of `V` (`Polygon.dense_setOf_isRegularProjection`). In particular
+every polygon, and so every polygonal knot in `ℝ³`, has a regular projection along a nonzero
+direction (`Polygon.exists_ne_zero_isRegularProjection`). Regularity of a projection depends only
+on its fibres on the polygon (`Polygon.isRegularProjection_congr`), so the quotient map may be
+replaced by any projection onto a plane with the same fibres, such as a coordinate projection.
+Projecting along a nondegenerate edge is never regular (`Polygon.not_isRegularProjection_edge`).
 
 ## Main definitions
 
+* `Polygon.projAlong R p₀ d`: the projection `P → V ⧸ R ∙ d` along the direction `d`, with
+  origin `p₀`.
 * `Polygon.IsRegularProjection R poly π`: no three distinct points of the polygon have the same
   image under `π`, and no vertex has the same image as another point of the polygon.
 
@@ -79,6 +81,31 @@ namespace Polygon
 
 variable {R V P Q Q' : Type*} {n : ℕ}
 
+section ProjAlong
+
+variable [Ring R] [AddCommGroup V] [Module R V] [AddTorsor V P]
+
+variable (R) in
+/-- The **projection along `d`** with origin `p₀`: the map `P → V ⧸ R ∙ d` sending `p` to the
+class of `p -ᵥ p₀`. Its fibres are the lines parallel to `d` (`projAlong_eq_projAlong_iff`). -/
+@[expose] def projAlong (p₀ : P) (d : V) (p : P) : V ⧸ R ∙ d :=
+  Submodule.Quotient.mk (p -ᵥ p₀)
+
+/-- The projection along `d` sends `p` to the class of `p -ᵥ p₀`. -/
+theorem projAlong_apply (p₀ : P) (d : V) (p : P) :
+    projAlong R p₀ d p = Submodule.Quotient.mk (p -ᵥ p₀) :=
+  rfl
+
+/-- Two points have the same projection along `d` exactly when they lie on a line parallel
+to `d`. -/
+@[simp]
+theorem projAlong_eq_projAlong_iff {p₀ : P} {d : V} {x y : P} :
+    projAlong R p₀ d x = projAlong R p₀ d y ↔ ∃ a : R, a • d = x -ᵥ y := by
+  rw [projAlong_apply, projAlong_apply, Submodule.Quotient.eq, vsub_sub_vsub_cancel_right,
+    Submodule.mem_span_singleton]
+
+end ProjAlong
+
 section Defs
 
 variable [Ring R] [PartialOrder R] [AddCommGroup V] [Module R V] [AddTorsor V P]
@@ -111,13 +138,11 @@ theorem isRegularProjection_congr {π : P → Q} {π' : P → Q'}
 /-- Projecting along a nondegenerate edge of a polygon is not a regular projection: both endpoints
 of the edge have the same image. -/
 theorem not_isRegularProjection_edge (p₀ : P) {i : Fin n} (hi : poly i ≠ poly (finRotate n i)) :
-    ¬poly.IsRegularProjection R fun p ↦
-      (Submodule.Quotient.mk (p -ᵥ p₀) : V ⧸ R ∙ (poly (finRotate n i) -ᵥ poly i)) := by
+    ¬poly.IsRegularProjection R (projAlong R p₀ (poly (finRotate n i) -ᵥ poly i)) := by
   intro h
   refine hi (h.eq_vertex_of_apply_eq i
     (mem_iUnion.2 ⟨i, poly.apply_finRotate_mem_edgeSet R i⟩) ?_).symm
-  rw [Submodule.Quotient.eq, vsub_sub_vsub_cancel_right]
-  exact Submodule.mem_span_singleton_self _
+  exact projAlong_eq_projAlong_iff.2 ⟨1, one_smul R _⟩
 
 end Defs
 
@@ -272,12 +297,11 @@ private theorem mem_irregularCover_of_triple {poly : Polygon P n} (e : V ≃L[�
   rw [mul_smul, ← smul_add, ← hzx, smul_smul, inv_mul_cancel₀ (neg_ne_zero.2 hγ0), one_smul]
 
 /-- **Regular projections of a polygon are dense.** For a polygon in a three-dimensional real
-affine space, the directions `d` for which projecting along `d`, the quotient map onto `V ⧸ ℝ ∙ d`
-after choosing an origin `p₀`, is a regular projection of the polygon form a dense subset of
-`V`. -/
+affine space, the directions `d` for which projecting along `d`, the quotient map
+`projAlong ℝ p₀ d` onto `V ⧸ ℝ ∙ d` after choosing an origin `p₀`, is a regular projection of
+the polygon form a dense subset of `V`. -/
 theorem dense_setOf_isRegularProjection (hV : finrank ℝ V = 3) (poly : Polygon P n) (p₀ : P) :
-    Dense {d : V | poly.IsRegularProjection ℝ
-      fun p ↦ (Submodule.Quotient.mk (p -ᵥ p₀) : V ⧸ ℝ ∙ d)} := by
+    Dense {d : V | poly.IsRegularProjection ℝ (projAlong ℝ p₀ d)} := by
   have : FiniteDimensional ℝ V := Module.finite_of_finrank_eq_succ hV
   let e : V ≃L[ℝ] (Fin 3 → ℝ) :=
     (LinearEquiv.ofFinrankEq V (Fin 3 → ℝ) (by simp [hV])).toContinuousLinearEquiv
@@ -285,24 +309,19 @@ theorem dense_setOf_isRegularProjection (hV : finrank ℝ V = 3) (poly : Polygon
     ((dimH_irregularCover_le poly e).trans_lt ?_)).mono fun d hd ↦ ?_
   · rw [hV]
     norm_num
-  -- the fibres of the projection along `d` are the lines parallel to `d`
-  have hfib {x y : P} (h : (Submodule.Quotient.mk (x -ᵥ p₀) : V ⧸ ℝ ∙ d) =
-      Submodule.Quotient.mk (y -ᵥ p₀)) : ∃ a : ℝ, a • d = x -ᵥ y := by
-    rwa [Submodule.Quotient.eq, vsub_sub_vsub_cancel_right, Submodule.mem_span_singleton] at h
   refine ⟨fun x y z hx hy hz hxy hxz ↦ ?_, fun i x hx h ↦ ?_⟩
-  · obtain ⟨α, hα⟩ := hfib hxy
-    obtain ⟨γ, hγ⟩ := hfib hxz
+  · obtain ⟨α, hα⟩ := projAlong_eq_projAlong_iff.1 hxy
+    obtain ⟨γ, hγ⟩ := projAlong_eq_projAlong_iff.1 hxz
     by_contra! hne
     exact hd (mem_irregularCover_of_triple e hx hy hz hα hγ hne.1 hne.2.1 hne.2.2)
-  · obtain ⟨a, ha⟩ := hfib h
+  · obtain ⟨a, ha⟩ := projAlong_eq_projAlong_iff.1 h
     by_contra hne
     exact hd (mem_irregularCover_of_vertex e hx ha hne)
 
 /-- Every polygon in a three-dimensional real affine space has a regular projection along some
 nonzero direction `d`. -/
 theorem exists_ne_zero_isRegularProjection (hV : finrank ℝ V = 3) (poly : Polygon P n)
-    (p₀ : P) : ∃ d : V, d ≠ 0 ∧ poly.IsRegularProjection ℝ
-      fun p ↦ (Submodule.Quotient.mk (p -ᵥ p₀) : V ⧸ ℝ ∙ d) := by
+    (p₀ : P) : ∃ d : V, d ≠ 0 ∧ poly.IsRegularProjection ℝ (projAlong ℝ p₀ d) := by
   have : Nontrivial V := Module.nontrivial_of_finrank_eq_succ hV
   obtain ⟨v, hv⟩ := exists_ne (0 : V)
   obtain ⟨d, hd0, hd⟩ := (dense_setOf_isRegularProjection hV poly p₀).inter_open_nonempty
