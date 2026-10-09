@@ -60,14 +60,14 @@ theorem exists_map_succAbove_of_map_succAbove_eq {n : ℕ} {j k : Fin (n + 2)} (
       Fin.succAbove_pred_of_lt _ _ hjk, h, weights_map_succAbove_self]
   obtain ⟨w, rfl⟩ := (mem_range_map_succAbove_iff _ y).2 hy
   refine ⟨w, rfl, map_injective (R := R) Fin.succAbove_right_injective (f := k.succAbove) ?_⟩
+  -- The simplicial identity `SimplexCategory.δ_comp_δ`, in Mathlib's `Fin.succAbove` form.
   have hcomp : k.succAbove ∘ (j.castPred (Fin.ne_last_of_lt hjk)).succAbove =
       j.succAbove ∘ (k.pred (Fin.ne_zero_of_lt hjk)).succAbove := by
     funext m
-    ext
-    have := Fin.lt_def.1 hjk
-    simp only [Function.comp_apply, Fin.succAbove, Fin.lt_def, Fin.val_castSucc,
-      apply_ite Fin.val, Fin.val_succ, Fin.coe_castPred, Fin.val_pred]
-    split_ifs <;> omega
+    have hle : j ≤ (k.pred (Fin.ne_zero_of_lt hjk)).castSucc := by
+      rwa [Fin.le_castSucc_iff, Fin.succ_pred]
+    have := Fin.succAbove_succAbove_succAbove_predAbove j (k.pred (Fin.ne_zero_of_lt hjk)) m
+    rwa [Fin.succAbove_pred_of_lt _ _ hjk, Fin.predAbove_of_le_castSucc _ _ hle] at this
   rw [← h, ← map_comp, ← hcomp, map_comp]
 
 end Convexity.StdSimplex
