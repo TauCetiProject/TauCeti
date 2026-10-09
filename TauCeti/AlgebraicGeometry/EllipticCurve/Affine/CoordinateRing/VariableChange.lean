@@ -12,6 +12,9 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.CoordinateRing.Basis
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Eval
 -- Proof-only: the Weierstrass equation under a change of variables.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange
+-- Proof-only: `VariableChange.toMatrix_injective`, a change of variables is determined by its
+-- matrix.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.VariableChange
 
 /-!
 # Changes of variables and the coordinate functions of a Weierstrass curve
@@ -312,28 +315,13 @@ theorem variableChangeEquiv_inj (h : C • W' = W) (h' : C' • W' = W) :
   have hY := congr($he (AdjoinRoot.root W'.toAffine.polynomial))
   rw [variableChangeEquiv_of_X, variableChangeEquiv_of_X] at hX
   rw [variableChangeEquiv_root, variableChangeEquiv_root] at hY
-  -- read off the coefficients of `x`, `y` and `1` from the two coordinate identities
-  have hli := Fintype.linearIndependent_iff.mp (linearIndependent_X_root_one (W := W.toAffine))
-  have hX' := hli ![(C.u : R) ^ 2 - (C'.u : R) ^ 2, 0, C.r - C'.r] (by
-    simp only [Fin.sum_univ_three, Matrix.cons_val, Algebra.smul_def, map_sub, map_pow, map_zero]
-    linear_combination hX)
-  have hY' := hli ![(C.u : R) ^ 2 * C.s - (C'.u : R) ^ 2 * C'.s, (C.u : R) ^ 3 - (C'.u : R) ^ 3,
-    C.t - C'.t] (by
-    simp only [Fin.sum_univ_three, Matrix.cons_val, Algebra.smul_def, map_sub, map_pow, map_mul]
-    linear_combination hY)
-  have hu2 : (C.u : R) ^ 2 = (C'.u : R) ^ 2 := sub_eq_zero.mp (hX' 0)
-  have hu3 : (C.u : R) ^ 3 = (C'.u : R) ^ 3 := sub_eq_zero.mp (hY' 1)
-  -- `u = u³ / u²`, so `u` is determined, and then so is `s`
-  have hu : C.u = C'.u := by
-    have hu2' : C.u ^ 2 = C'.u ^ 2 := Units.ext (by simpa using hu2)
-    have hu3' : C.u ^ 3 = C'.u ^ 3 := Units.ext (by simpa using hu3)
-    calc C.u = C.u ^ 3 * (C.u ^ 2)⁻¹ := by group
-      _ = C'.u ^ 3 * (C'.u ^ 2)⁻¹ := by rw [hu2', hu3']
-      _ = C'.u := by group
-  have hus : (C.u : R) ^ 2 * C.s = (C'.u : R) ^ 2 * C'.s := sub_eq_zero.mp (hY' 0)
-  have hs : C.s = C'.s :=
-    (C.u.isUnit.pow 2).mul_left_cancel (by linear_combination hus - C'.s * hu2)
-  exact VariableChange.ext hu (sub_eq_zero.mp (hX' 2)) hs (sub_eq_zero.mp (hY' 2))
+  -- `x`, `y` and `1` are linearly independent over `R`, so the images of `x'` and `y'` determine
+  -- the first two rows of the matrices of `C` and `C'`; both third rows are `(0, 0, 1)`
+  have hli := linearIndependent_X_root_one (W := W.toAffine)
+  refine VariableChange.toMatrix_injective (Matrix.ext fun i ↦ hli.eq_coords_of_eq ?_)
+  fin_cases i <;> simp [VariableChange.toMatrix_def, Fin.sum_univ_three, Algebra.smul_def]
+  · linear_combination hX
+  · linear_combination hY
 
 end VariableChangeEquiv
 
