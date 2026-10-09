@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Nilpotent.GeometricallyReduced
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Basic
 import Mathlib.Algebra.Field.ULift
+import Mathlib.RingTheory.Flat.Basic
 
 /-!
 # Geometric reducedness of commutative Hopf algebras
@@ -27,6 +28,8 @@ as a TODO. The all-extension condition used here implies Mathlib's existing alge
 * `TauCeti.geometricallyReducedCommHopfAlgProperty.isGeometricallyReduced`: comparison with
   Mathlib's algebra predicate.
 * `TauCeti.geometricallyReducedCommHopfAlgProperty.isReduced`: reducedness over the base field.
+* `TauCeti.geometricallyReducedCommHopfAlgProperty.of_injective`: descent along injective
+  coordinate maps.
 * The `ObjectProperty.IsClosedUnderIsomorphisms` instance records invariance under Hopf-algebra
   isomorphisms.
 
@@ -90,6 +93,19 @@ theorem geometricallyReducedCommHopfAlgProperty.isReduced
     IsReduced H := by
   let _ : Algebra.IsGeometricallyReduced k H := hH.isGeometricallyReduced
   exact Algebra.isReduced_of_isGeometricallyReduced k
+
+/-- Geometric reducedness descends along an injective algebra homomorphism of coordinate rings.
+Contravariantly, the target of a schematically dominant homomorphism from a geometrically reduced
+affine group is geometrically reduced. -/
+theorem geometricallyReducedCommHopfAlgProperty.of_injective
+    {k : Type u} [Field k] {H H' : CommHopfAlgCat.{v} k}
+    (f : (H : Type v) →ₐ[k] (H' : Type v)) (hf : Function.Injective f)
+    (h : geometricallyReducedCommHopfAlgProperty k H') :
+    geometricallyReducedCommHopfAlgProperty k H := by
+  intro K _ _
+  let _ := h K
+  exact isReduced_of_injective (Algebra.TensorProduct.map f (AlgHom.id k K)).toRingHom
+    (Module.Flat.rTensor_preserves_injective_linearMap f.toLinearMap hf)
 
 /-- Geometric reducedness is invariant under isomorphisms of commutative Hopf algebras. -/
 instance (k : Type u) [Field k] :
