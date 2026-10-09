@@ -211,38 +211,39 @@ private theorem evaluateParameterRing_symmetric :
   · simp [min_eq_left hij, max_eq_right hij]
   · simp [min_eq_right hji, max_eq_left hji, (genericSymmetric_isSymm R m).apply i j]
 
-private theorem evaluateParameterRing_point :
-    GLSymplecticFin.IsotropicFlag.map m (evaluateParameterRing R m).toRingHom
-      (parameterPoint R m) = genericPoint R m := by
-  let Q := Matrix.GeneralLinearGroup.map (evaluateParameterRing R m).toRingHom
-    (parameterLevi R m)
-  have hQ : (Q : Matrix (Fin m) (Fin m) _) = (genericMatrix R m).toBlocks₁₁ :=
-    evaluateParameterRing_levi R m
+/-- Reconstruct the universal matrix from its Levi and symmetric blocks. -/
+private theorem genericMatrix_reconstruction
+    (Q : GL (Fin m) (coordinateHopfAlgebra R m))
+    (hQ : (Q : Matrix (Fin m) (Fin m) _) = (genericMatrix R m).toBlocks₁₁) :
+    Matrix.fromBlocks (Q : Matrix (Fin m) (Fin m) _) 0 0
+        ((Q⁻¹ : GL (Fin m) (coordinateHopfAlgebra R m)) : Matrix (Fin m) (Fin m) _)ᵀ *
+      Matrix.fromBlocks 1 (genericSymmetric R m) 0 1 = genericMatrix R m := by
   have hinv :
       ((Q⁻¹ : GL (Fin m) (coordinateHopfAlgebra R m)) : Matrix (Fin m) (Fin m) _) =
         (genericMatrix R m).toBlocks₂₂ᵀ := by
     apply Units.inv_eq_of_mul_eq_one_right
     rw [hQ]
     exact (genericMatrix_inverse R m).2
-  dsimp only [Q] at hQ hinv
+  rw [Matrix.fromBlocks_multiply]
+  apply Matrix.ext_iff_blocks.mpr
+  simp [hQ, hinv, genericSymmetric, ← mul_assoc,
+    (genericMatrix_inverse R m).2, genericMatrix_lowerLeft R m]
+
+private theorem evaluateParameterRing_point :
+    GLSymplecticFin.IsotropicFlag.map m (evaluateParameterRing R m).toRingHom
+      (parameterPoint R m) = genericPoint R m := by
   apply Subtype.ext
   apply (GLSymplecticFin.mulEquivGLSymplectic m _).injective
   apply Subtype.ext
   apply Units.ext
-  rw [GLSymplecticFin.IsotropicFlag.coe_map]
-  simp only [parameterPoint, map_mul, GLSymplecticFin.map_leviHom,
+  simpa only [GLSymplecticFin.IsotropicFlag.coe_map, parameterPoint, map_mul,
+    GLSymplecticFin.map_leviHom,
     GLSymplecticFin.map_upperUnipotent, GLSymplecticFin.mulEquivGLSymplectic_leviHom,
     Subgroup.coe_mul, Units.val_mul, GLSymplectic.coe_leviHom,
-    GLSymplecticFin.coe_mulEquivGLSymplectic]
-  rw [GLSymplecticFin.coe_mulEquivGLSymplectic_upperUnipotent,
-    GLSymplectic.coe_ofSymplecticGroup]
-  dsimp only
-  rw [evaluateParameterRing_symmetric, Matrix.fromBlocks_multiply]
-  simp only [Matrix.mul_one, Matrix.mul_zero, Matrix.zero_mul,
-    add_zero, zero_add, hQ, hinv, Matrix.transpose_transpose]
-  rw [genericSymmetric, ← mul_assoc, (genericMatrix_inverse R m).2, one_mul,
-    ← genericMatrix_lowerLeft, Matrix.fromBlocks_toBlocks]
-  simp only [genericMatrix, GLSymplecticFin.coe_mulEquivGLSymplectic]
+    GLSymplecticFin.coe_mulEquivGLSymplectic,
+    GLSymplecticFin.coe_mulEquivGLSymplectic_upperUnipotent,
+    GLSymplectic.coe_ofSymplecticGroup, evaluateParameterRing_symmetric R m, genericMatrix] using
+    genericMatrix_reconstruction R m _ (evaluateParameterRing_levi R m)
 
 private theorem evaluateParameterRing_comp_parameterAlgHom :
     (evaluateParameterRing R m).comp (parameterAlgHom R m) =
