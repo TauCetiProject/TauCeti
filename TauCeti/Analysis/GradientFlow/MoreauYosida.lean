@@ -331,7 +331,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {τ : ℝ�
 completed: its minimum value `‖x‖² / (2 (1 + τ))` plus `(1 + τ) / (2τ)` times the squared
 distance from `y` to the minimizer `x / (1 + τ)`. This is
 `TauCeti.norm_sq_div_two_add_norm_sub_sq_div` with the penalty read in `EReal`. -/
-private theorem half_norm_sq_add_edist_sq_div (hτ : 0 < τ) (x y : E) :
+theorem half_norm_sq_add_edist_sq_div (hτ : 0 < τ) (x y : E) :
     ((‖y‖ ^ 2 / 2 : ℝ) : EReal) + (edist x y ^ 2 / (2 * τ) : ℝ≥0∞) =
       ((‖x‖ ^ 2 / (2 * (1 + τ)) + (1 + τ) / (2 * τ) * ‖y - (1 + (τ : ℝ))⁻¹ • x‖ ^ 2 : ℝ) :
         EReal) := by
