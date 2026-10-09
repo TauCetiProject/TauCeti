@@ -64,11 +64,8 @@ variable {S X : Scheme.{u}} {f : X ⟶ S}
 
 /-- The graph of a `T`-point of a separated morphism is a closed immersion. -/
 instance [IsSeparated f] {T : Over S} (x : T ⟶ Over.mk f) :
-    IsClosedImmersion (graphSection x) := by
-  have : IsClosedImmersion (graphSection x ≫ pullback.fst T.hom f) := by
-    rw [graphSection_fst]
-    infer_instance
-  exact IsClosedImmersion.of_comp _ (pullback.fst T.hom f)
+    IsClosedImmersion (graphSection x) :=
+  (graphSection x).isClosedImmersion_of_comp_eq_id (graphSection_fst x)
 
 /-- **The ideal sheaf of a graph commutes with base change.** For a separated morphism `f`, the
 ideal sheaf of the graph of the base change `φ ≫ x` of a `T`-point `x` along `φ : T' ⟶ T` is the
@@ -79,9 +76,10 @@ lemma ker_graphSection_comp [IsSeparated f] {T' T : Over S} (φ : T' ⟶ T) (x :
 
 /-- **A point is determined by the ideal sheaf of its graph**: for a separated `f`, two
 `T`-points of `X` over `S` are equal exactly when their graphs have the same ideal sheaf. -/
+@[simp]
 lemma ker_graphSection_inj [IsSeparated f] {T : Over S} {x y : T ⟶ Over.mk f} :
     (graphSection x).ker = (graphSection y).ker ↔ x = y := by
-  rw [Scheme.Hom.ker_eq_ker_iff_of_comp_eq_id (graphSection_fst x) (graphSection_fst y)]
+  rw [Scheme.Hom.ker_eq_ker_iff_of_comp_eq_id _ _ (graphSection_fst x) (graphSection_fst y)]
   refine ⟨fun h ↦ Over.OverMorphism.ext ?_, fun h ↦ h ▸ rfl⟩
   rw [← graphSection_snd x, ← graphSection_snd y, h]
 

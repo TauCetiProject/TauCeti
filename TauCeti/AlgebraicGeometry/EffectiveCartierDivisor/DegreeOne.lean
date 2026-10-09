@@ -19,9 +19,9 @@ of `D ⟶ S`, is `1` at every point of `S`. When `f` is moreover separated, `D` 
 `AlgebraicGeometry.Scheme.IdealSheafData.sectionOfIsIso` cut out by `D`. Conversely, the divisor
 of a section of a separated `f` has degree one.
 
-Applied to the base changes `X_T = T ×_S X ⟶ T` of a proper `f`, this identifies the `T`-points
-of `X` over `S` with the relative effective Cartier divisors of degree one on `X_T` over `T`, a
-point `x` corresponding to its graph `Γₓ`
+Applied to the base changes `X_T = T ×_S X ⟶ T` of a proper `f`, this shows that a relative
+effective Cartier divisor on `X_T` over `T` has degree one exactly when it is the graph `Γₓ` of a
+`T`-point `x` of `X` over `S`, and `x` is then unique
 (`TauCeti.AlgebraicGeometry.exists_ker_graphSection_eq_iff_finrank_eq_one`).
 When `f` is smooth of relative dimension one, every graph is a relative effective Cartier divisor,
 and this is the statement that the graph divisor `TauCeti.AlgebraicGeometry.graphDivisor` is
@@ -41,8 +41,8 @@ In the namespace `AlgebraicGeometry.Scheme.IdealSheafData`:
 
 In the namespace `TauCeti.AlgebraicGeometry`:
 
-* `exists_ker_graphSection_eq_iff_finrank_eq_one`: the graphs of the `T`-points of `X` over `S`
-  are exactly the relative effective Cartier divisors of degree one on `X_T` over `T`.
+* `exists_ker_graphSection_eq_iff_finrank_eq_one`: a relative effective Cartier divisor on `X_T`
+  over `T` is the graph of a `T`-point of `X` over `S` exactly when it has degree one.
 
 ## References
 

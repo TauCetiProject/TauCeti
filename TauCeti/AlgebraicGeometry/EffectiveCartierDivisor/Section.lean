@@ -163,7 +163,7 @@ theorem isRelativeEffectiveCartier_ker_of_comp_eq_id (hs : s ≫ f = 𝟙 S) [Is
   rw [IdealSheafData.isRelativeEffectiveCartier_iff]
   refine ⟨isEffectiveCartier_ker_of_comp_eq_id s hs U hU, ?_⟩
   -- The closed subscheme of `s.ker` maps isomorphically to `S`.
-  have := isIso_ker_subschemeι_comp hs
+  have := isIso_ker_subschemeι_comp s hs
   infer_instance
 
 /-- A section of a separated morphism `f : X ⟶ S` that is smooth of relative dimension one is a
@@ -171,9 +171,7 @@ relative effective Cartier divisor. -/
 theorem isRelativeEffectiveCartier_ker_of_smoothOfRelativeDimension (hs : s ≫ f = 𝟙 S)
     [IsSeparated f] [SmoothOfRelativeDimension 1 f] :
     s.ker.IsRelativeEffectiveCartier f := by
-  -- A section of a separated morphism is a closed immersion.
-  have : IsClosedImmersion (s ≫ f) := hs ▸ inferInstance
-  have := IsClosedImmersion.of_comp s f
+  have := s.isClosedImmersion_of_comp_eq_id hs
   have : SmoothOfRelativeDimension 1 ((⊤ : X.Opens).ι ≫ f) :=
     inferInstanceAs (SmoothOfRelativeDimension (0 + 1) _)
   exact isRelativeEffectiveCartier_ker_of_comp_eq_id s hs ⊤ (Set.subset_univ _)
