@@ -60,6 +60,10 @@ def cornerSubmodule (e f : A) : Submodule k A :=
 theorem cornerSubmodule_def (e f : A) :
     cornerSubmodule k e f = LinearMap.range (LinearMap.mulLeftRight k (e, f)) := (rfl)
 
+/-- Cutting an element down by `e` on the left and `f` on the right lands in the corner `eAf`. -/
+theorem mul_mul_mem_cornerSubmodule (e f x : A) : e * x * f ∈ cornerSubmodule k e f :=
+  ⟨x, by simp only [LinearMap.mulLeftRight_apply]⟩
+
 /-- For idempotents `e` and `f`, an element belongs to the corner `eAf` exactly when multiplying it
 by `e` on the left and by `f` on the right fixes it. -/
 @[simp]
