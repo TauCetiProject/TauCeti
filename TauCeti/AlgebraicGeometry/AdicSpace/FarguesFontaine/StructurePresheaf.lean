@@ -56,6 +56,9 @@ rational subsets covering `𝒴`, it suffices to know that `𝒪` is a sheaf on 
 
 ## Main results
 
+* `TauCeti.FarguesFontaine.isIso_spaYPresheafFrobenius_app` : each component
+  `𝒪_𝒴(V) → 𝒪_𝒴(φ⁻¹V)` of Frobenius is an isomorphism, since `𝒴` is stable under Frobenius in
+  both directions (`TauCeti.FarguesFontaine.functor_obj_map_frobeniusTopHom`).
 * `TauCeti.FarguesFontaine.isLimitSpaXPresheafFork` : `𝒪_𝒳` is the equalizer of the identity and
   Frobenius on `q_* 𝒪_𝒴`.
 * `TauCeti.FarguesFontaine.isClosedEmbedding_spaXPresheafι_app` and
@@ -162,6 +165,24 @@ theorem functor_obj_map_frobeniusTopHom_le (V : Opens (spaY p ϖ)) :
     simp only [ConcreteCategory.hom_ofHom, ContinuousMap.coe_mk, spaComap_val]
     exact frobeniusHomeomorph_apply_val hI v)⟩
 
+/-- The image in `Spa(𝕎 R, 𝕎 R)` of `φ⁻¹V` is the preimage under Frobenius of the image of `V`:
+`𝒴` is stable under Frobenius in both directions. -/
+theorem functor_obj_map_frobeniusTopHom (V : Opens (spaY p ϖ)) :
+    (isOpenEmbedding_spaYInclusion p ϖ).functor.obj
+        ((Opens.map (frobeniusTopHom hI)).obj V) =
+      (Opens.map (spaComapTopHom frobenius (TauCeti.WittVector.continuous_frobenius hI)
+        (fun _ _ ↦ Subring.mem_top _))).obj
+        ((isOpenEmbedding_spaYInclusion p ϖ).functor.obj V) := by
+  refine le_antisymm (functor_obj_map_frobeniusTopHom_le hI V) ?_
+  rintro w ⟨v, hv, hvw⟩
+  have hvw' : v.val = comap frobenius w.val := by
+    simpa [spaYInclusion_apply_val ϖ v] using congrArg Subtype.val hvw
+  have hw : w.val ∈ spaY p ϖ := (comap_frobenius_mem_spaY_iff hI _).mp (hvw' ▸ v.2)
+  refine ⟨⟨w.val, hw⟩, ?_, Subtype.ext (spaYInclusion_apply_val ϖ _)⟩
+  have : frobeniusHomeomorph hI ⟨w.val, hw⟩ = v :=
+    Subtype.ext ((frobeniusHomeomorph_apply_val hI _).trans hvw'.symm)
+  exact Opens.mem_map.mpr (this ▸ hv)
+
 end TopHom
 
 section Frobenius
@@ -211,6 +232,15 @@ theorem spaYPresheafFrobenius_app (V : (Opens (spaY p ϖ))ᵒᵖ) :
           (homOfLE (functor_obj_map_frobeniusTopHom_le hI V.unop)).op ≫
         eqToHom (spaYPresheaf_obj P ϖ (op ((Opens.map (frobeniusTopHom hI)).obj V.unop))).symm :=
   (rfl)
+
+/-- **Frobenius acts on the sections of `𝒪_𝒴` by isomorphisms**: each component `𝒪_𝒴(V) → 𝒪_𝒴(φ⁻¹V)`
+of `spaYPresheafFrobenius` is an isomorphism of complete separated topological rings. -/
+instance isIso_spaYPresheafFrobenius_app (V : (Opens (spaY p ϖ))ᵒᵖ) :
+    IsIso ((spaYPresheafFrobenius P hI).app V) := by
+  rw [spaYPresheafFrobenius_app,
+    Subsingleton.elim (homOfLE (functor_obj_map_frobeniusTopHom_le hI V.unop))
+      (eqToHom (functor_obj_map_frobeniusTopHom hI V.unop)), eqToHom_op, eqToHom_map]
+  infer_instance
 
 /-- **Frobenius acting on `q_* 𝒪_𝒴`**: the pushforward along `q : 𝒴 → 𝒳` of
 `spaYPresheafFrobenius`, an endomorphism because `q ∘ φ = q`. Its component on an open `U ⊆ 𝒳` is

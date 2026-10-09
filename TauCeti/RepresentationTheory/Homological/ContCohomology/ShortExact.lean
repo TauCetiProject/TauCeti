@@ -80,8 +80,8 @@ here is about the same sequence and has to name the same two coefficient maps.
 * `TauCeti.ContCohomology.DiscreteShortExact.explicitDelta0_apply` and
   `explicitDelta1_apply`: the two connecting maps evaluated on representatives, in the shape of
   Mathlib's discrete `groupCohomology.δ₀_apply` and `δ₁_apply`. They hold for an *arbitrary*
-  preimage and an arbitrary representing cocycle, so they are also the public form of the
-  well-definedness of the two maps. Their cocycle hypotheses are discharged by
+  preimage and an arbitrary representing cochain, so they are also the public form of the
+  well-definedness of the two maps. The cocycle proofs in their conclusions are
   `TauCeti.ContCohomology.DiscreteShortExact.mem_Z1_of_incl_comp_eq_d0` and
   `mem_Z2_of_incl_comp_eq_d1`, which need no cocycle input of their own.
 
@@ -653,8 +653,8 @@ variable {G : Type u} [Monoid G] [TopologicalSpace G]
 variable (S) in
 /-- **A cochain on `A` lying over a coboundary of `B` is a continuous `1`-cocycle.** No cocycle
 hypothesis is needed, a coboundary being a continuous cocycle already; this is the case
-`e = d⁰ b` of `TauCeti.ContCohomology.DiscreteShortExact.mem_Z1_of_incl_comp_mem_Z1`. It is what
-discharges the hypothesis `ha` of
+`e = d⁰ b` of `TauCeti.ContCohomology.DiscreteShortExact.mem_Z1_of_incl_comp_mem_Z1`. It is the
+cocycle proof in the conclusion of
 `TauCeti.ContCohomology.DiscreteShortExact.explicitDelta0_apply`, whose `hab` it takes verbatim. -/
 theorem mem_Z1_of_incl_comp_eq_d0 {b : B} {a : G → A}
     (hab : ∀ g : G, S.incl (a g) = g • b - b) : a ∈ Z1 G A :=
@@ -713,13 +713,13 @@ noncomputable def explicitDelta0 : H0 G C →+ H1 G A :=
       rw [Function.surjInv_eq S.proj_surjective, map_add, Function.surjInv_eq S.proj_surjective,
         Function.surjInv_eq S.proj_surjective, AddSubgroup.coe_add])
 
-/-- **`δ⁰` on representatives.** For *any* preimage `b` of an invariant `c` and any continuous
-`1`-cocycle `a` with `incl ∘ a = d⁰ b`, the class of `a` is `δ⁰ c`. This mirrors the shape of
-Mathlib's discrete `groupCohomology.δ₀_apply`. The hypothesis `ha` is discharged from `hab` by
-`TauCeti.ContCohomology.DiscreteShortExact.mem_Z1_of_incl_comp_eq_d0`. -/
+/-- **`δ⁰` on representatives.** For *any* preimage `b` of an invariant `c` and any `a : G → A`
+with `incl ∘ a = d⁰ b`, `a` is a continuous `1`-cocycle
+(`TauCeti.ContCohomology.DiscreteShortExact.mem_Z1_of_incl_comp_eq_d0`) and its class is `δ⁰ c`.
+This mirrors the shape of Mathlib's discrete `groupCohomology.δ₀_apply`. -/
 theorem explicitDelta0_apply (c : H0 G C) {b : B} (hb : S.proj b = (c : C)) {a : G → A}
-    (ha : a ∈ Z1 G A) (hab : ∀ g : G, S.incl (a g) = g • b - b) :
-    S.explicitDelta0 c = H1pi G A ⟨a, ha⟩ := by
+    (hab : ∀ g : G, S.incl (a g) = g • b - b) :
+    S.explicitDelta0 c = H1pi G A ⟨a, S.mem_Z1_of_incl_comp_eq_d0 hab⟩ := by
   have hbinv : S.proj b ∈ H0 G C := by
     rw [hb]
     exact c.2
@@ -818,8 +818,8 @@ variable (S) in
 /-- **A cochain on `A` lying over a coboundary of `B` is a continuous `2`-cocycle.** No cocycle
 hypothesis on `e` is needed, a continuous coboundary being a continuous cocycle already; this is
 the case `z = d¹ e` of
-`TauCeti.ContCohomology.DiscreteShortExact.mem_Z2_of_incl_comp_mem_Z2`. It is what discharges the
-hypothesis `ha` of
+`TauCeti.ContCohomology.DiscreteShortExact.mem_Z2_of_incl_comp_mem_Z2`. It is the cocycle proof
+in the conclusion of
 `TauCeti.ContCohomology.DiscreteShortExact.explicitDelta1_apply`, whose `hae` it takes verbatim. -/
 theorem mem_Z2_of_incl_comp_eq_d1 {e : G → B} (hc : Continuous e) {a : G × G → A}
     (hae : ∀ g h : G, S.incl (a (g, h)) = g • e h - e (g * h) + e g) : a ∈ Z2 G A :=
@@ -950,14 +950,13 @@ private theorem explicitDelta1_H1pi (f : Z1 G C) :
 
 variable (S) in
 /-- **`δ¹` on representatives.** For *any* continuous lift `e` of a continuous `1`-cocycle `f` on
-`C` and any continuous `2`-cocycle `a` with `incl ∘ a = d¹ e`, the class of `a` is `δ¹` of the
-class of `f`. This mirrors the shape of Mathlib's discrete `groupCohomology.δ₁_apply`. The
-hypothesis `ha` is discharged from `hae` by
-`TauCeti.ContCohomology.DiscreteShortExact.mem_Z2_of_incl_comp_eq_d1`. -/
+`C` and any `a : G × G → A` with `incl ∘ a = d¹ e`, `a` is a continuous `2`-cocycle
+(`TauCeti.ContCohomology.DiscreteShortExact.mem_Z2_of_incl_comp_eq_d1`) and its class is `δ¹` of
+the class of `f`. This mirrors the shape of Mathlib's discrete `groupCohomology.δ₁_apply`. -/
 theorem explicitDelta1_apply (f : Z1 G C) {e : G → B} (hc : Continuous e)
-    (he : ∀ g, S.proj (e g) = (f : G → C) g) {a : G × G → A} (ha : a ∈ Z2 G A)
+    (he : ∀ g, S.proj (e g) = (f : G → C) g) {a : G × G → A}
     (hae : ∀ g h : G, S.incl (a (g, h)) = g • e h - e (g * h) + e g) :
-    S.explicitDelta1 (H1pi G C f) = H2pi G A ⟨a, ha⟩ := by
+    S.explicitDelta1 (H1pi G C f) = H2pi G A ⟨a, S.mem_Z2_of_incl_comp_eq_d1 hc hae⟩ := by
   have hcochain : a = S.delta1Cochain e := funext fun p => by
     obtain ⟨g, h⟩ := p
     exact S.incl_injective (((hae g h).trans (d1_apply e g h).symm).trans
