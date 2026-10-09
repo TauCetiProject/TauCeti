@@ -44,8 +44,8 @@ only along a null frontier, is itself a fundamental domain.
   `g₂ • D` of an `H`-fundamental domain are a.e. disjoint whenever `g₁ ≠ g₂` and
   `g₁⁻¹ * g₂ ∈ H` (needing only quasi-measure-preservation of the one translation).
 * `MeasureTheory.IsFundamentalDomain.of_disjoint_smul_interior`: a null-measurable set with null
-  frontier, whose translates cover almost everything and have pairwise disjoint interiors, is a
-  fundamental domain for an invariant measure. This is how a closed tile of a tessellation, such
+  translated frontiers, whose translates cover almost everything and have pairwise disjoint
+  interiors, is a fundamental domain. This is how a closed tile of a tessellation, such
   as a fundamental polygon, becomes a measurable fundamental domain.
 * `MeasureTheory.covolume_pos`, `MeasureTheory.covolume_conjAct_smul`,
   `MeasureTheory.covolume_eq_card_mul_covolume`: for an invariant measure the covolume is
@@ -301,17 +301,19 @@ theorem IsFundamentalDomain.iUnion_mul_out_inv_smul {G α : Type*} [Group G] [Me
 
 
 /-- **A tile with disjoint interiors and null frontier is a fundamental domain.** Let `s` be a
-null-measurable set whose translates cover almost every point, whose frontier is null, and whose
-interior is disjoint from its translates by nonidentity elements. Then `s` is a fundamental domain
-for any measure invariant under the action. No continuity of the action is needed. -/
+null-measurable set whose translates cover almost every point, all of whose translated frontiers
+are null, and whose interior is disjoint from its translates by nonidentity elements. Then `s` is
+a fundamental domain. Neither invariance of the measure nor continuity of the action is needed;
+for an invariant measure the frontier hypothesis follows from `μ (frontier s) = 0` by
+`measure_smul_null`. -/
 @[to_additive /-- **A tile with disjoint interiors and null frontier is an additive fundamental
-domain.** Let `s` be a null-measurable set whose translates cover almost every point, whose
-frontier is null, and whose interior is disjoint from its translates by nonzero elements. Then `s`
-is a fundamental domain for any measure invariant under the action. -/]
+domain.** Let `s` be a null-measurable set whose translates cover almost every point, all of whose
+translated frontiers are null, and whose interior is disjoint from its translates by nonzero
+elements. Then `s` is an additive fundamental domain. -/]
 theorem IsFundamentalDomain.of_disjoint_smul_interior {G α : Type*} [Group G] [MulAction G α]
-    [TopologicalSpace α] [MeasurableSpace α] {μ : Measure α} [SMulInvariantMeasure G α μ]
+    [TopologicalSpace α] [MeasurableSpace α] {μ : Measure α}
     {s : Set α} (h_meas : NullMeasurableSet s μ) (h_ae_covers : ∀ᵐ x ∂μ, ∃ g : G, g • x ∈ s)
-    (h_frontier : μ (frontier s) = 0)
+    (h_frontier : ∀ g : G, μ (g • frontier s) = 0)
     (h_disj : ∀ g : G, g ≠ 1 → Disjoint (g • interior s) (interior s)) :
     IsFundamentalDomain G s μ where
   nullMeasurableSet := h_meas
@@ -331,8 +333,7 @@ theorem IsFundamentalDomain.of_disjoint_smul_interior {G α : Type*} [Group G] [
         ?_ (hint hxh hx.2)
       rw [mem_smul_set_iff_inv_smul_mem, mul_inv_rev, inv_inv, mul_smul, smul_inv_smul]
       exact hint hxg hx.1
-    exact measure_mono_null hsub (measure_union_null (measure_smul_null h_frontier g)
-      (measure_smul_null h_frontier h))
+    exact measure_mono_null hsub (measure_union_null (h_frontier g) (h_frontier h))
 
 /-- **Covolume is positive**: a countable group acting with a fundamental domain for a nonzero
 invariant measure has positive covolume. -/

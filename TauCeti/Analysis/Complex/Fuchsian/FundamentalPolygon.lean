@@ -59,7 +59,7 @@ theorem isFundamentalDomain_carrier (hmap : ∀ i, σ.map i ∈ Γ)
       Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier)) :
     IsFundamentalDomain Γ P.carrier := by
   refine .of_disjoint_smul_interior P.measurableSet_carrier.nullMeasurableSet
-    (.of_forall fun z ↦ ?_) P.volume_frontier_carrier hdisj
+    (.of_forall fun z ↦ ?_) (measure_smul_null P.volume_frontier_carrier) hdisj
   obtain ⟨γ, hγ⟩ := mem_iUnion.1 (σ.iUnion_smul_carrier_eq_univ hmap hlf ▸ mem_univ z)
   exact ⟨γ⁻¹, mem_smul_set_iff_inv_smul_mem.1 hγ⟩
 
