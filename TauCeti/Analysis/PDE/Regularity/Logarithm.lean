@@ -5,13 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Caccioppoli.Basic
+public import TauCeti.Analysis.PDE.Caccioppoli.Power
 public import TauCeti.Analysis.Sobolev.W1p.ChainRule
 public import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.W1p
-import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Convex.Integral
 import Mathlib.Analysis.Convex.Mul
-import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
 # The logarithm of a positive weak supersolution
@@ -45,9 +43,10 @@ the weak Harnack inequality, John–Nirenberg turns it into the crossover estima
 `⨍_B u^p · ⨍_B u^{-p} ≤ C` for a small `p > 0`, which links bounds on negative powers of a
 supersolution to bounds on positive ones.
 
-The inequalities are proved by testing the supersolution inequality against `ψ² u⁻¹`, whose
-gradient is `-ψ² u⁻² ∇u + 2ψ u⁻¹ ∇ψ`: ellipticity bounds `ψ² ⟨a ∇u, ∇u⟩ / u²` below by
-`λ ψ² ‖∇ log u‖²`, and Young's inequality absorbs the cross term.
+The logarithmic Caccioppoli inequality is the case `p = 0` of the Caccioppoli inequality for
+powers of `u`
+(`TauCeti.PDE.UniformlyEllipticOn.setIntegral_sq_mul_rpow_mul_norm_gradient_sq_le`), which tests
+the supersolution inequality against `ψ² u^{p-1}`, here `ψ² u⁻¹`.
 
 ## Main declarations
 
@@ -81,78 +80,6 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpac
   [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)}
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
 
-/-- The pointwise form of the logarithmic Caccioppoli inequality. At a point where `u` has value
-`U > 0` and gradient `G`, and the cutoff has value `z` and gradient `q`, the test function `ψ² u⁻¹`
-has gradient `-z² U⁻² G + 2 z U⁻¹ q`. Pairing it with `G` through a matrix `A` that is
-elliptic and bounded with constants `λ, Λ` controls `z² ‖G / U‖²`, the integrand of
-`∫ ψ² ‖∇ log u‖²`, up to the error `‖q‖²`. -/
-private theorem mul_sq_mul_div_sq_le_neg_matrixBilinearForm_add {A : Matrix ι ι ℝ}
-    (hlam : 0 < lam) (hlower : ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
-    (hupper : ∀ η ξ : EuclideanSpace ℝ ι, |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖)
-    {U : ℝ} (hU : 0 < U) (z : ℝ) (G q : EuclideanSpace ℝ ι) :
-    lam * (z ^ 2 * (‖G‖ / U) ^ 2) ≤
-      -matrixBilinearForm A ((-(z ^ 2 * (U ^ 2)⁻¹)) • G + (2 * z * U⁻¹) • q) G
-        + lam / 2 * (z ^ 2 * (‖G‖ / U) ^ 2) + 2 * Lam ^ 2 / lam * ‖q‖ ^ 2 := by
-  -- In terms of `g = U⁻¹ G`, the gradient of `log u`, this is the absorption estimate
-  -- `mul_sq_mul_norm_sq_le_matrixBilinearForm_add` with the weight `-1`.
-  set g : EuclideanSpace ℝ ι := U⁻¹ • G
-  have hg : ‖g‖ = ‖G‖ / U := by
-    rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hU, inv_mul_eq_div]
-  have key := mul_sq_mul_norm_sq_le_matrixBilinearForm_add hlam z (-1) g q (hlower g)
-    (hupper q g)
-  set X := z • (z • g + (-1 : ℝ) • q) + (z * -1) • q
-  have hη : (-(z ^ 2 * (U ^ 2)⁻¹)) • G + (2 * z * U⁻¹) • q = (-U⁻¹) • X := by
-    simp only [X, g]
-    module
-  have hGU : G = U • g := by
-    simp only [g, smul_smul, mul_inv_cancel₀ hU.ne', one_smul]
-  have hB : matrixBilinearForm A ((-U⁻¹) • X) (U • g) = -matrixBilinearForm A X g := by
-    simp only [map_smul, _root_.smul_apply, smul_eq_mul]
-    field_simp
-  rw [hη, ← hg, hGU, hB, neg_neg]
-  rw [neg_one_sq, mul_one] at key
-  linarith
-
-omit [DecidableEq ι] in
-/-- The test function `ψ² u⁻¹` of the logarithmic Caccioppoli inequality. If `u ∈ H¹(Ω)` is
-bounded below by a positive constant and `ψ` is smooth and compactly supported in `Ω`, then
-`ψ² u⁻¹ ∈ H¹₀(Ω)`, with weak gradient `-ψ² u⁻² ∇u + 2 ψ u⁻¹ ∇ψ`. -/
-private theorem exists_w1p0_value_gradient_ae_eq_sq_mul_inv {u : W1p mu Omega 2} {ε : ℝ}
-    (hε : 0 < ε) (hεu : ∀ᵐ x ∂mu.restrict Omega, ε ≤ W1p.value u x)
-    {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hcpt : HasCompactSupport ψ)
-    (hts : tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι))) :
-    ∃ v : W1p0 mu Omega 2,
-      (∀ᵐ x ∂mu.restrict Omega,
-        W1p.value (v : W1p mu Omega 2) x = ψ x ^ 2 * (W1p.value u x)⁻¹) ∧
-      ∀ᵐ x ∂mu.restrict Omega, W1p.gradient (v : W1p mu Omega 2) x =
-        (-(ψ x ^ 2 * (W1p.value u x ^ 2)⁻¹)) • W1p.gradient u x +
-          (2 * ψ x * (W1p.value u x)⁻¹) • ∇ ψ x := by
-  -- The Sobolev function `u⁻¹`, with weak gradient `-u⁻² ∇u`.
-  obtain ⟨w, hwv, hwg⟩ := W1p.exists_value_gradient_ae_eq_comp_of_le (φ := fun t : ℝ => t⁻¹)
-    (by simp) hε (contDiffOn_inv ℝ |>.mono fun t ht => ne_of_gt ht) hε (M := (ε ^ 2)⁻¹)
-    (fun t ht => by
-      have ht0 : 0 < t := hε.trans_le ht
-      rw [deriv_inv, abs_neg, abs_of_pos (by positivity)]
-      gcongr) hεu
-  obtain ⟨M, hM, hψM, hgradM⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hcpt
-  have hψM' : ∀ x ∈ Omega, |ψ x| ≤ M := fun x _ => hψM x
-  have hgradM' : ∀ x ∈ Omega, ‖∇ ψ x‖ ≤ M := fun x _ => hgradM x
-  -- `ψ² u⁻¹ = ψ (ψ u⁻¹)`, by the Leibniz rule twice.
-  set w₁ := W1p.contDiffSMul ψ hψ hM hψM' hgradM' w
-  set v := W1p.contDiffSMul ψ hψ hM hψM' hgradM' w₁
-  refine ⟨⟨v, W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport (by simp) hψ hM hψM'
-    hgradM' hcpt hts w₁⟩, ?_, ?_⟩
-  · filter_upwards [W1p.value_contDiffSMul_ae hψ hM hψM' hgradM' w₁,
-      W1p.value_contDiffSMul_ae hψ hM hψM' hgradM' w, hwv] with x h1 h2 h3
-    rw [h1, h2, h3, smul_eq_mul, smul_eq_mul]
-    ring
-  · filter_upwards [hwv, hwg, W1p.gradient_contDiffSMul_ae hψ hM hψM' hgradM' w₁,
-      W1p.gradient_contDiffSMul_ae hψ hM hψM' hgradM' w,
-      W1p.value_contDiffSMul_ae hψ hM hψM' hgradM' w] with x hwvx hwgx hg1 hg2 hv2
-    rw [hg1, hg2, hv2, hwgx, hwvx, deriv_inv]
-    simp only [smul_eq_mul]
-    module
-
 /-- **The logarithmic Caccioppoli inequality.** Let `a` be measurable and uniformly elliptic on
 `Ω` with constants `0 < λ ≤ Λ`, and let `u ∈ H¹(Ω)` be a weak supersolution of
 `-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`, with `u ≥ ε`
@@ -173,69 +100,15 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_div_value_sq_le
     (hts : tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι))) :
     ∫ x in Omega, ψ x ^ 2 * (‖W1p.gradient u x‖ / W1p.value u x) ^ 2 ∂mu ≤
       (2 * Lam / lam) ^ 2 * ∫ x in Omega, ‖∇ ψ x‖ ^ 2 ∂mu := by
-  have hlam := h.pos
-  -- Test the inequality against `v = ψ² u⁻¹ ≥ 0`.
-  obtain ⟨v, hvv, hvg⟩ := exists_w1p0_value_gradient_ae_eq_sq_mul_inv hε hεu hψ hcpt hts
-  have hpos := hu v (by
-    filter_upwards [hvv, hεu] with x h1 h2
-    rw [h1]
-    exact mul_nonneg (sq_nonneg _) (inv_nonneg.2 (hε.le.trans h2)))
-  rw [energyFormH1_def] at hpos
-  have hmem : ∀ᵐ x ∂mu.restrict Omega, x ∈ (Omega : Set (EuclideanSpace ℝ ι)) :=
-    ae_restrict_mem Omega.isOpen.measurableSet
-  have hE := h.integrable_energyIntegrand_jetField (b := 0) (c := 0) (beta := 0) (gamma := 0)
-    ha aestronglyMeasurable_const aestronglyMeasurable_const (fun _ _ => by simp)
-    (fun _ _ => by simp) u (v : W1p mu Omega 2)
-  -- The pointwise estimate.
-  have hpt : ∀ᵐ x ∂mu.restrict Omega,
-      lam * (ψ x ^ 2 * (‖W1p.gradient u x‖ / W1p.value u x) ^ 2) ≤
-        -energyIntegrand (a x) ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x)
-            ((0 : EuclideanSpace ℝ ι → ℝ) x) (jetField u x) (jetField (v : W1p mu Omega 2) x)
-          + lam / 2 * (ψ x ^ 2 * (‖W1p.gradient u x‖ / W1p.value u x) ^ 2)
-          + 2 * Lam ^ 2 / lam * ‖∇ ψ x‖ ^ 2 := by
-    filter_upwards [hmem, hεu, hvg] with x hx hux hgx
-    rw [energyIntegrand_apply, jetField_apply, jetField_apply, hgx]
-    simp only [Pi.zero_apply, driftForm_apply, massForm_apply, inner_zero_left, zero_mul,
-      add_zero]
-    exact mul_sq_mul_div_sq_le_neg_matrixBilinearForm_add hlam (h.lower_bound hx)
-      (h.upper_bound hx) (hε.trans_le hux) (ψ x) (W1p.gradient u x) (∇ ψ x)
-  -- Integrability of the three terms.
-  obtain ⟨M, hM, hψM, hgradM⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hcpt
-  have hF : Integrable (fun x => ψ x ^ 2 * (‖W1p.gradient u x‖ / W1p.value u x) ^ 2)
-      (mu.restrict Omega) :=
-    (W1p.integrable_norm_gradient_div_value_sq hε hεu).bdd_mul
-      (hψ.continuous.pow 2).aestronglyMeasurable (c := M ^ 2) (Filter.Eventually.of_forall
-        fun x => by
-          rw [Real.norm_eq_abs, abs_pow]
-          exact pow_le_pow_left₀ (abs_nonneg _) (hψM x) 2)
-  have hY : Integrable (fun x => ‖∇ ψ x‖ ^ 2) (mu.restrict Omega) := by
-    have hs : HasCompactSupport (fun x => ‖∇ ψ x‖ ^ 2) := hcpt.mono' fun x hx => by
-      by_contra hxt
-      have hfd : fderiv ℝ ψ x = 0 :=
-        Function.notMem_support.1 fun h' => hxt (support_fderiv_subset ℝ h')
-      simp [_root_.gradient, hfd] at hx
-    exact (((ContDiff.continuous_gradient hψ).norm.pow 2).integrable_of_hasCompactSupport
-      hs).restrict
-  -- Integrate the pointwise estimate and absorb half of the left side.
-  have hI : ∫ x in Omega, lam * (ψ x ^ 2 * (‖W1p.gradient u x‖ / W1p.value u x) ^ 2) ∂mu ≤
-      ∫ x in Omega, (-energyIntegrand (a x) ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x)
-            ((0 : EuclideanSpace ℝ ι → ℝ) x) (jetField u x) (jetField (v : W1p mu Omega 2) x)
-          + lam / 2 * (ψ x ^ 2 * (‖W1p.gradient u x‖ / W1p.value u x) ^ 2)
-          + 2 * Lam ^ 2 / lam * ‖∇ ψ x‖ ^ 2) ∂mu :=
-    integral_mono_ae (hF.const_mul lam) ((hE.neg.add (hF.const_mul _)).add (hY.const_mul _)) hpt
-  rw [integral_const_mul, integral_add, integral_add, integral_neg, integral_const_mul,
-    integral_const_mul] at hI
-  rotate_left
-  · exact hE.neg
-  · exact hF.const_mul _
-  · exact hE.neg.add (hF.const_mul _)
-  · exact hY.const_mul _
-  set X := ∫ x in Omega, ψ x ^ 2 * (‖W1p.gradient u x‖ / W1p.value u x) ^ 2 ∂mu
-  set Y := ∫ x in Omega, ‖∇ ψ x‖ ^ 2 ∂mu
-  have hhalf : lam / 2 * X ≤ 2 * Lam ^ 2 / lam * Y := by linarith
-  calc X = 2 / lam * (lam / 2 * X) := by field_simp
-    _ ≤ 2 / lam * (2 * Lam ^ 2 / lam * Y) := by gcongr
-    _ = (2 * Lam / lam) ^ 2 * Y := by field_simp
+  -- This is the case `p = 0` of the Caccioppoli inequality for powers.
+  have hc := h.setIntegral_sq_mul_rpow_mul_norm_gradient_sq_le ha hu hε hεu zero_lt_one hψ hcpt hts
+  rw [sub_zero, one_mul] at hc
+  convert hc using 1
+  · refine integral_congr_ae ?_
+    filter_upwards [hεu] with x hx
+    rw [zero_sub, Real.rpow_neg (hε.le.trans hx), div_pow, Real.rpow_two]
+    ring
+  · simp only [Real.rpow_zero, mul_one]
 
 /-- **The gradient of `log u` on balls.** There is a constant `C ≥ 0`, depending only on the
 dimension, with the following property. Let `a` be measurable and uniformly elliptic on `Ω` with
