@@ -52,7 +52,8 @@ theorem coeff_pow_T_add_C_mul_T_neg_add_C_of_le (r s : R) (n : ℕ) (k : ℤ)
       have h₁ : k - -1 ≠ (n : ℤ) := by omega
       have h₂ : k ≠ (n : ℤ) := by omega
       simp only [h₁, h₂, ↓reduceIte, mul_zero, add_zero, Nat.cast_succ]
-      simp only [show k - 1 = (n : ℤ) ↔ k = n + 1 by omega]
+      have h₃ : k - 1 = (n : ℤ) ↔ k = n + 1 := by omega
+      simp only [h₃]
 
 /-- Substitution of `T + r T⁻¹ + s` preserves the coefficient at the polynomial's
 highest exponent. This holds over rings with zero divisors. -/

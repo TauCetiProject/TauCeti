@@ -44,11 +44,11 @@ variable {R : Type*} [CommRing R] {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 /-- The canonical Conway polynomial of an even-size matrix. For a knot Seifert matrix
 this is the even polynomial satisfying `∇(s⁻¹ - s) = Δ(s²)`. -/
-def conwayPolynomial (V : Matrix ι ι R) (h : Even (Fintype.card ι)) : R[X] :=
-  (V.exists_polynomial_eval₂_eq_alexander
-    (show Fintype.card ι = 2 * (Fintype.card ι / 2) from by
-      obtain ⟨g, hg⟩ := h
-      omega)).choose.comp (Polynomial.X ^ 2)
+def conwayPolynomial (V : Matrix ι ι R) (h : Even (Fintype.card ι)) : R[X] := by
+  have hcard : Fintype.card ι = 2 * (Fintype.card ι / 2) := by
+    obtain ⟨g, hg⟩ := h
+    omega
+  exact (V.exists_polynomial_eval₂_eq_alexander hcard).choose.comp (Polynomial.X ^ 2)
 
 /-- Substituting the Conway variable in the canonical polynomial gives the normalized
 Alexander polynomial at the square of the unit parameter, after any coefficient map. -/
