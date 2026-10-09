@@ -151,17 +151,24 @@ theorem map_surjective (f : G →* H) (hf : Continuous f) (hsurj : Function.Surj
 
 /-- **A criterion for injectivity on topological abelianizations.** Let `f : G →* H` be a
 continuous homomorphism with dense range, and let `i : J →* G` be a continuous homomorphism such
-that `f ∘ i` is inducing. Suppose that the range of `i` contains the commutator subgroup of `G`,
-and also every element that `f` sends into the closed commutator subgroup of `H`. Then the map
-`G^{ab} → H^{ab}` induced by `f` is injective.
+that `f ∘ i` is inducing. Suppose that the range of `i` contains every element that `f` sends
+into the closed commutator subgroup of `H`. Then the map `G^{ab} → H^{ab}` induced by `f` is
+injective.
 
 For example, `G` can be a group carrying a topology finer than the one induced from a dense
 embedding into `H`, where `i` is the inclusion of a subgroup on which the two topologies agree. -/
 theorem map_injective_of_isInducing {J : Type*} [Group J] [TopologicalSpace J] (f : G →* H)
     (hf : Continuous f) (hd : DenseRange f) (i : J →* G) (hi : Continuous i)
-    (hfi : Topology.IsInducing (f ∘ i)) (hcomm : commutator G ≤ i.range)
+    (hfi : Topology.IsInducing (f ∘ i))
     (hrange : (commutator H).topologicalClosure.comap f ≤ i.range) :
     Function.Injective (map f hf) := by
+  -- `f` sends commutators to commutators, so the range of `i` contains the commutator subgroup.
+  have hmap : (commutator G).map f ≤ commutator H := by
+    rw [map_commutator_eq]
+    exact Subgroup.commutator_mono le_top le_top
+  have hcomm : commutator G ≤ i.range :=
+    ((Subgroup.map_le_iff_le_comap.1 hmap).trans
+      (Subgroup.comap_mono (Subgroup.le_topologicalClosure _))).trans hrange
   refine (injective_iff_map_eq_one _).2 fun x hx ↦ ?_
   induction x using QuotientGroup.induction_on with | H g => ?_
   rw [map_mk, QuotientGroup.eq_one_iff] at hx

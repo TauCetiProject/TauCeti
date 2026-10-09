@@ -179,16 +179,13 @@ theorem surjective_weilToIntegralUnramified :
 `W_K^{ab} → G_K^{ab}` induced by the inclusion `W_K → G_K` is injective. -/
 theorem injective_weilToAbsoluteAbelianization :
     Function.Injective (weilToAbsoluteAbelianization K) := by
-  -- `W_K` is dense in `G_K`; inertia carries the same topology in `W_K` and in `G_K`; and the
-  -- commutators of `W_K` lie in inertia, the kernel of the degree.
+  -- `W_K` is dense in `G_K`, and inertia carries the same topology in `W_K` and in `G_K`.
   refine TopologicalAbelianization.map_injective_of_isInducing (weilToAbsolute K)
     (continuous_weilToAbsolute K) (denseRange_weilToAbsolute K) (inertiaToWeil K)
-    (isOpenEmbedding_inertiaToWeil K).continuous ?_ ?_ ?_
+    (isOpenEmbedding_inertiaToWeil K).continuous ?_ ?_
   · have : weilToAbsolute K ∘ inertiaToWeil K = Subtype.val := funext weilToAbsolute_inertiaToWeil
     rw [this]
     exact .subtypeVal
-  · rw [range_inertiaToWeil, ← ker_weilDegree]
-    exact Abelianization.commutator_subset_ker _
   · -- An element dying in `G_K^{ab}` has trivial unramified coordinate, so it lies in inertia.
     intro w hw
     rw [range_inertiaToWeil, Subgroup.mem_comap, ← unramifiedCoordinate_mk_eq_one_iff,
