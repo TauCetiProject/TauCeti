@@ -278,28 +278,13 @@ def sUnitShortComplex : ShortComplex (Rep ℤ (L ≃ₐ[K] L)) where
   g := factorThruImage (sUnitValuation S)
   zero := comp_factorThruImage_eq_zero (sUnitInclusion_comp_sUnitValuation S)
 
-/-- The first object of the S-unit sequence is the ordinary-unit representation. -/
+/-- The S-unit sequence consists of the ordinary-unit inclusion and the canonical valuation
+image factorization. This equality also identifies its objects and arrows. -/
 @[simp]
-theorem sUnitShortComplex_X₁ :
-    (sUnitShortComplex S).X₁ = Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (𝓞 L)ˣ := (rfl)
-
-/-- The middle object of the S-unit sequence is the S-unit representation. -/
-@[simp]
-theorem sUnitShortComplex_X₂ : (sUnitShortComplex S).X₂ = sUnitRep S := (rfl)
-
-/-- The last object of the S-unit sequence is the categorical valuation image. -/
-@[simp]
-theorem sUnitShortComplex_X₃ :
-    (sUnitShortComplex S).X₃ = image (sUnitValuation S) := (rfl)
-
-/-- The first arrow of the S-unit sequence is the ordinary-unit inclusion. -/
-@[simp]
-theorem sUnitShortComplex_f : HEq (sUnitShortComplex S).f (sUnitInclusion S) := (HEq.rfl)
-
-/-- The last arrow of the S-unit sequence is the canonical valuation image factorization. -/
-@[simp]
-theorem sUnitShortComplex_g :
-    HEq (sUnitShortComplex S).g (factorThruImage (sUnitValuation S)) := (HEq.rfl)
+theorem sUnitShortComplex_eq_mk :
+    sUnitShortComplex S = ShortComplex.mk (sUnitInclusion S)
+      (factorThruImage (sUnitValuation S))
+      (comp_factorThruImage_eq_zero (sUnitInclusion_comp_sUnitValuation S)) := (rfl)
 
 /-- Ordinary units, S-units, and the valuation image form a short exact sequence. -/
 theorem sUnitShortComplex_shortExact : (sUnitShortComplex S).ShortExact := by
