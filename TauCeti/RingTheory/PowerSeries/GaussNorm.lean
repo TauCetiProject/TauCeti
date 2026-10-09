@@ -369,12 +369,8 @@ end LowestDominant
 /-- A monomial `a Xⁿ` with `a ≠ 0` is distinguished of degree `n` at a positive radius. -/
 theorem isDistinguished_monomial (hc : 0 < c) {a : R} (ha : a ≠ 0) (n : ℕ) :
     IsDistinguished c n (PowerSeries.monomial n a) := by
-  have hnorm : (PowerSeries.monomial n a).gaussNorm norm c = ‖a‖ * c ^ n := by
-    refine (gaussNorm_eq_of_forall_le (s := n) fun m ↦ ?_).trans (by simp)
-    rw [PowerSeries.coeff_monomial]
-    split_ifs with hm
-    · rw [hm, PowerSeries.coeff_monomial_same]
-    · simpa using mul_nonneg (norm_nonneg a) (pow_nonneg hc.le n)
+  have hnorm : (PowerSeries.monomial n a).gaussNorm norm c = ‖a‖ * c ^ n :=
+    PowerSeries.gaussNorm_monomial (v := normRingSeminorm R) (r := a) hc.le n
   refine ⟨by rw [PowerSeries.coeff_monomial_same, hnorm], fun m hm ↦ ?_⟩
   simp only [PowerSeries.coeff_monomial, hm.ne', ite_false, norm_zero, zero_mul, hnorm]
   exact mul_pos (norm_pos_iff.mpr ha) (pow_pos hc n)
