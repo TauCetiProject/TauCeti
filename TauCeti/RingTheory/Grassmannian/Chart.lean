@@ -7,12 +7,9 @@ module
 
 public import Mathlib.CategoryTheory.Subfunctor.Basic
 public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basic
-public import Mathlib.RingTheory.Grassmannian
 public import TauCeti.LinearAlgebra.Finsupp.LinearCombination
+public import TauCeti.RingTheory.Grassmannian.Basic
 public import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
-
--- Proof-only: the body of `Module.Grassmannian.baseChangeMkQ` is not exposed.
-import all Mathlib.RingTheory.Grassmannian
 
 /-!
 # Standard affine charts of the Grassmannian
@@ -43,8 +40,6 @@ are open subfunctors and that they cover the Grassmannian functor are not proved
 
 ## Main definitions
 
-* `Module.Grassmannian.ofSurjective`: the kernel of a surjection onto a finite projective module
-  of constant rank `k`, as a point of `G(k, M; R)`.
 * `Module.Grassmannian.chart R x`: the chart of `G(k, M; R)` at `x : Fin k → M`.
 * `Module.Grassmannian.chartEquiv R x`: the chart at `x` is in bijection with the linear maps
   `φ : M → R^k` with `φ (x i) = eᵢ`.
@@ -67,9 +62,6 @@ are open subfunctors and that they cover the Grassmannian functor are not proved
 * A. Grothendieck, J. Dieudonné, *Éléments de géométrie algébrique I* (Springer, 1971), 9.7.
 * [The Stacks Project, Tag 089R](https://stacks.math.columbia.edu/tag/089R), for the Grassmannian
   functor.
-
-The chart construction follows the plan recorded in the TODO list of Mathlib's
-`Mathlib/RingTheory/Grassmannian.lean`.
 -/
 
 public section
@@ -82,29 +74,6 @@ namespace Module.Grassmannian
 
 variable {R : Type u} [CommRing R] {M : Type v} [AddCommGroup M] [Module R M] {k : ℕ}
 
-section OfSurjective
-
-variable {P : Type*} [AddCommGroup P] [Module R P] [Module.Finite R P] [Module.Projective R P]
-
-/-- The kernel of a surjection `φ : M → P` onto a finite projective module `P` of constant rank
-`k`, as a point of `G(k, M; R)`. -/
-noncomputable def ofSurjective (φ : M →ₗ[R] P) (hφ : Function.Surjective φ)
-    (hP : ∀ p, rankAtStalk (R := R) P p = k) : G(k, M; R) where
-  toSubmodule := LinearMap.ker φ
-  finite_quotient := Module.Finite.equiv (φ.quotKerEquivOfSurjective hφ).symm
-  projective_quotient := Module.Projective.of_equiv (φ.quotKerEquivOfSurjective hφ).symm
-  rankAtStalk_eq p := by
-    rw [rankAtStalk_eq_of_equiv (φ.quotKerEquivOfSurjective hφ)]
-    exact hP p
-
-@[simp]
-theorem toSubmodule_ofSurjective (φ : M →ₗ[R] P) (hφ : Function.Surjective φ)
-    (hP : ∀ p, rankAtStalk (R := R) P p = k) :
-    (ofSurjective φ hφ hP).toSubmodule = LinearMap.ker φ :=
-  (rfl)
-
-end OfSurjective
-
 section Chart
 
 variable (R) in
@@ -113,6 +82,7 @@ variable (R) in
 def chart (x : Fin k → M) : Set G(k, M; R) :=
   {N | Function.Bijective (N.toSubmodule.mkQ ∘ₗ Fintype.linearCombination R x)}
 
+@[simp]
 theorem mem_chart_iff {x : Fin k → M} {N : G(k, M; R)} :
     N ∈ chart R x ↔ Function.Bijective (N.toSubmodule.mkQ ∘ₗ Fintype.linearCombination R x) :=
   (Iff.rfl)
@@ -181,12 +151,6 @@ section BaseChange
 
 variable {A B : Type w} [CommRing A] [Algebra R A] [CommRing B] [Algebra R B]
 
-@[simp]
-theorem baseChangeMkQ_tmul [Algebra A B] [IsScalarTower R A B] (N : Submodule A (A ⊗[R] M))
-    (b : B) (m : M) :
-    baseChangeMkQ B N (b ⊗ₜ m) = b ⊗ₜ Submodule.Quotient.mk (1 ⊗ₜ m) := by
-  simp [baseChangeMkQ]
-
 -- For `B` an `A`-algebra and `ψ : M → A^k` whose base change `φ : A ⊗[R] M → A^k` is surjective,
 -- the map `B ⊗[R] M → B ⊗[A] ((A ⊗[R] M) ⧸ ker φ)` underlying `Grassmannian.map`, followed by
 -- `B ⊗[A] ((A ⊗[R] M) ⧸ ker φ) ≃ B ⊗[A] A^k ≃ B^k`, is the base change of `M → A^k → B^k`.
@@ -201,7 +165,7 @@ private lemma piScalarRight_comp_baseChangeMkQ [Algebra A B] [IsScalarTower R A 
 
 /-- If the base change `A ⊗[R] M → A^k` of `ψ : M → A^k` is surjective, then so is the base change
 `B ⊗[R] M → B^k` of `f ∘ ψ`, for every algebra map `f : A → B`. -/
-theorem surjective_liftBaseChange_compLeft (f : A →ₐ[R] B) (ψ : M →ₗ[R] Fin k → A)
+theorem liftBaseChange_compLeft_surjective (f : A →ₐ[R] B) (ψ : M →ₗ[R] Fin k → A)
     (hψ : Function.Surjective (ψ.liftBaseChange A)) :
     Function.Surjective ((f.toLinearMap.compLeft (Fin k) ∘ₗ ψ).liftBaseChange B) := by
   algebraize [f.toRingHom]
@@ -218,7 +182,7 @@ theorem map_ofSurjective_liftBaseChange (f : A →ₐ[R] B) (ψ : M →ₗ[R] Fi
     (hψ : Function.Surjective (ψ.liftBaseChange A)) :
     map f (ofSurjective (ψ.liftBaseChange A) hψ (rankAtStalk_fin_fun k)) =
       ofSurjective ((f.toLinearMap.compLeft (Fin k) ∘ₗ ψ).liftBaseChange B)
-        (surjective_liftBaseChange_compLeft f ψ hψ) (rankAtStalk_fin_fun k) := by
+        (liftBaseChange_compLeft_surjective f ψ hψ) (rankAtStalk_fin_fun k) := by
   algebraize [f.toRingHom]
   have hf : IsScalarTower.toAlgHom R A B = f := AlgHom.ext fun a ↦ by
     simp [RingHom.algebraMap_toAlgebra]
@@ -413,7 +377,8 @@ theorem chartHomEquiv_comp (x : Fin k → M) {A B : Type w} [CommRing A] [Algebr
     (chartHomEquiv R x B (f.comp g)).1 = map f (chartHomEquiv R x A g).1 := by
   simp only [chartHomEquiv, Equiv.trans_apply, map_chartBaseChangeEquiv_symm]
   -- both points come from the linear map `m ↦ f ∘ g ∘ (universal point at m)`
-  congr 2
+  exact congrArg (fun ψ ↦ ((chartBaseChangeEquiv R B x).symm ψ).1) <|
+    Subtype.ext <| LinearMap.ext fun m ↦ funext fun j ↦ by simp
 
 /-- The chart subfunctor at `x` is corepresented by `ChartAlgebra R x`. -/
 noncomputable def chartCorepresentableBy (x : Fin k → M) :

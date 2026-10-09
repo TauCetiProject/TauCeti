@@ -19,12 +19,12 @@ module, Mathlib's openness of the free locus therefore gives an open neighbourho
 minimal primes where it is locally free.
 
 A module with an exhaustive increasing filtration is free at every prime where all the
-subquotients of the filtration are free.
-
-The rank of `R^k` at every prime is `k`, with no nontriviality hypothesis on `R`: a ring with a
-prime ideal is nontrivial. No finiteness is assumed, so this applies to modules
+subquotients of the filtration are free. No finiteness is assumed, so this applies to modules
 that are not finitely generated over the base, as in the proof of generic freeness in
 `TauCeti.RingTheory.Spectrum.Prime.GenericFreeness`.
+
+The rank of `R^k` at every prime is `k`, with no nontriviality hypothesis on `R`: a ring with a
+prime ideal is nontrivial.
 
 ## Main declarations
 
