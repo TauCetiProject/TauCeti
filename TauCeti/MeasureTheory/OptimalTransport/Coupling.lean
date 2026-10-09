@@ -31,7 +31,8 @@ measures, and the probability case is packaged separately as a subtype of
   `MeasureTheory.ProbabilityMeasure (X × Y)`;
 * `TauCeti.Coupling.prod` — the independent coupling, and with it
   `TauCeti.Coupling.instNonempty`;
-* `TauCeti.diagonalCoupling μ` — the pushforward of `μ` along the diagonal `x ↦ (x, x)`.
+* `MeasureTheory.Measure.diagonalCoupling μ` — the pushforward of `μ` along the diagonal
+  `x ↦ (x, x)`.
 
 ## Main statements
 
@@ -59,7 +60,8 @@ measures, and the probability case is packaged separately as a subtype of
   two factors;
 * `TauCeti.isCoupling_map_prodMk_of_measurePreserving` — two measure-preserving maps out of a
   common space induce a coupling of their targets;
-* `TauCeti.isCoupling_diagonalCoupling` — the diagonal coupling couples a measure with itself;
+* `MeasureTheory.Measure.isCoupling_diagonalCoupling` — the diagonal coupling couples a measure
+  with itself;
 * `TauCeti.isCoupling_toMeasure_iff` — the coupling condition on bundled probability measures,
   as the pair of equations for the two marginal pushforwards;
 * `TauCeti.IsCoupling.eq_map_prodMk` — a coupling out of a Dirac measure is the
@@ -80,7 +82,9 @@ The declarations sit in the bare `TauCeti` namespace rather than in `TauCeti.Mea
 `scripts/lint-dot-notation.py` rejects a new declaration under `TauCeti.<Mathlib type
 namespace>` that takes an explicit argument of that type, because `π.IsCoupling μ ν` would not
 elaborate there anyway. Dot notation on `hπ` works under either namespace; the bare namespace is
-forced by the lint rule and matches `TauCeti.MultiCoupling`.
+forced by the lint rule and matches `TauCeti.MultiCoupling`. The diagonal coupling and its
+lemmas are constructions on a single measure `μ`, so they live in the root
+`MeasureTheory.Measure` namespace instead, where `μ.diagonalCoupling` elaborates.
 
 `IsCoupling` is a `Prop`, never a typeclass: a coupling of two given marginals is not canonical,
 and consumers such as transport costs and cut distances minimise over all of them, so instance
@@ -120,12 +124,13 @@ section Diagonal
 
 /-- The **diagonal coupling** of a measure with itself: the pushforward of `μ` along
 `x ↦ (x, x)`. -/
-def diagonalCoupling (μ : Measure X) : Measure (X × X) := μ.map fun x ↦ (x, x)
+def _root_.MeasureTheory.Measure.diagonalCoupling (μ : Measure X) : Measure (X × X) :=
+  μ.map fun x ↦ (x, x)
 
 /-- The diagonal coupling of a measurable set is the measure of its diagonal slice. -/
-theorem diagonalCoupling_apply (μ : Measure X) {s : Set (X × X)} (hs : MeasurableSet s) :
-    diagonalCoupling μ s = μ {x | (x, x) ∈ s} := by
-  rw [diagonalCoupling, Measure.map_apply (measurable_id'.prodMk measurable_id') hs]
+theorem _root_.MeasureTheory.Measure.diagonalCoupling_apply (μ : Measure X) {s : Set (X × X)}
+    (hs : MeasurableSet s) : μ.diagonalCoupling s = μ {x | (x, x) ∈ s} := by
+  rw [Measure.diagonalCoupling, Measure.map_apply (measurable_id'.prodMk measurable_id') hs]
   rfl
 
 /-- The diagonal is measure preserving onto the diagonal coupling.
@@ -133,19 +138,20 @@ theorem diagonalCoupling_apply (μ : Measure X) {s : Set (X × X)} (hs : Measura
 This is the defining pushforward, packaged for the transport lemmas that ask for a
 `MeasurePreserving` hypothesis. It is stated here because `diagonalCoupling` is not reducible
 outside this module, so a caller cannot supply the pushforward identity by `rfl`. -/
-theorem measurePreserving_diagonal (μ : Measure X) :
-    MeasurePreserving (fun x ↦ (x, x)) μ (diagonalCoupling μ) :=
+theorem _root_.MeasureTheory.Measure.measurePreserving_diagonal (μ : Measure X) :
+    MeasurePreserving (fun x ↦ (x, x)) μ μ.diagonalCoupling :=
   (measurable_id'.prodMk measurable_id').measurePreserving μ
 
 /-- The diagonal coupling couples a measure with itself. -/
-theorem isCoupling_diagonalCoupling (μ : Measure X) : IsCoupling (diagonalCoupling μ) μ μ :=
+theorem _root_.MeasureTheory.Measure.isCoupling_diagonalCoupling (μ : Measure X) :
+    IsCoupling μ.diagonalCoupling μ μ :=
   ⟨(Measure.fst_map_prodMk measurable_id' measurable_id').trans Measure.map_id,
     (Measure.snd_map_prodMk measurable_id' measurable_id').trans Measure.map_id⟩
 
 /-- The diagonal coupling of a probability measure is a probability measure. -/
-instance instIsProbabilityMeasureDiagonalCoupling (μ : Measure X) [IsProbabilityMeasure μ] :
-    IsProbabilityMeasure (diagonalCoupling μ) :=
-  by rw [diagonalCoupling]; infer_instance
+instance _root_.MeasureTheory.Measure.instIsProbabilityMeasureDiagonalCoupling (μ : Measure X)
+    [IsProbabilityMeasure μ] : IsProbabilityMeasure μ.diagonalCoupling :=
+  by rw [Measure.diagonalCoupling]; infer_instance
 
 end Diagonal
 
@@ -383,13 +389,13 @@ protected theorem map_prod {H : Type*} [MeasurableSpace H] (hπ : IsCoupling π 
     IsCoupling ((π.prod η).map fun w ↦ (f (w.1.1, w.2), g (w.1.2, w.2)))
       ((μ.prod η).map f) ((ν.prod η).map g) := by
   -- Pair `π` with the diagonal plan of `η`, rearrange, and push forward coordinatewise.
-  let _ : SFinite (diagonalCoupling η) := by
-    rw [← (measurePreserving_diagonal η).map_eq]
+  let _ : SFinite η.diagonalCoupling := by
+    rw [← η.measurePreserving_diagonal.map_eq]
     infer_instance
-  have h := (hπ.prodProdProdComm (isCoupling_diagonalCoupling η)).map hf hg
-  have hprod : π.prod (diagonalCoupling η) =
+  have h := (hπ.prodProdProdComm η.isCoupling_diagonalCoupling).map hf hg
+  have hprod : π.prod η.diagonalCoupling =
       (π.prod η).map (Prod.map id fun z ↦ (z, z)) :=
-    ((MeasurePreserving.id π).prod (measurePreserving_diagonal η)).map_eq.symm
+    ((MeasurePreserving.id π).prod η.measurePreserving_diagonal).map_eq.symm
   rwa [hprod, Measure.map_map (by fun_prop) (by fun_prop),
     Measure.map_map (by fun_prop) (by fun_prop)] at h
 

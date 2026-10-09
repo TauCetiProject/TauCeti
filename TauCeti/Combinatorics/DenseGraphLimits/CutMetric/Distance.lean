@@ -295,10 +295,10 @@ theorem cutDist_le_cutNorm_sub (U W : Graphon Ω μ) :
 distance takes an infimum over, the diagonal one contributes exactly `‖U - W‖□`. -/
 @[simp]
 theorem cutNorm_overlayDiff_diagonalCoupling (U W : Graphon Ω μ) :
-    cutNorm (diagonalCoupling μ)
-        (overlayDiff U W (diagonalCoupling μ)) =
+    cutNorm μ.diagonalCoupling
+        (overlayDiff U W μ.diagonalCoupling) =
       cutNorm μ (U.toSymmKernel - W.toSymmKernel) := by
-  rw [← cutNorm_comap (measurePreserving_diagonal μ),
+  rw [← cutNorm_comap μ.measurePreserving_diagonal,
     comap_overlayDiff_diagonalCoupling]
 
 /-- The cut distance of a graphon to itself is zero. -/
