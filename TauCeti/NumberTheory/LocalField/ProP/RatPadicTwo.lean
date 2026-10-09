@@ -58,7 +58,7 @@ namespace TauCeti
 
 /-- Instance search for `Nontrivial ℚ_[2]` times out through the Henselian-ring instances; the
 degree computations below need it. -/
-local instance : Nontrivial ℚ_[2] := DivisionRing.toNontrivial
+local instance instNontrivialRatPadicTwo : Nontrivial ℚ_[2] := DivisionRing.toNontrivial
 
 /-- `ℚ₂` contains the primitive square root of unity `-1`. -/
 theorem ratPadicTwo_hasPrimitiveRoot : ∃ ζ : ℚ_[2], IsPrimitiveRoot ζ 2 :=
