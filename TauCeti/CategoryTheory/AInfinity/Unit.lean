@@ -71,6 +71,7 @@ structure StrictUnit (𝒞 : AInfinityCategory R C)
 attribute [simp] StrictUnit.binary_left StrictUnit.binary_right
 
 /-- An `A∞` category is strictly unital when it admits a family of strict identities. -/
+@[expose]
 def StrictlyUnital (𝒞 : AInfinityCategory R C) : Prop :=
   ∃ e : ∀ X : C, homModule (R := R) X X, 𝒞.StrictUnit e
 
