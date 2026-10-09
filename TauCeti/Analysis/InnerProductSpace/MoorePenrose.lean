@@ -5,20 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.SingularValues
+public import TauCeti.Analysis.InnerProductSpace.SingularValues
 
 /-!
 # The Moore–Penrose inverse
 
 For linear maps `A : E → F` and `B : F → E` between inner product spaces, `B` is a
-*Moore–Penrose inverse* of `A` when the four Penrose equations hold:
+*Moore–Penrose inverse* of `A` when the four Penrose conditions hold:
 
 ```text
-A B A = A     B A B = B     (A B)† = A B     (B A)† = B A
+A B A = A     B A B = B     A B is symmetric     B A is symmetric
 ```
 
-The last two equations say that the idempotents `A B` and `B A` are symmetric, so they are the
-orthogonal projections onto the ranges of `A` and of `B`.
+Here symmetric means `LinearMap.IsSymmetric`, that is `⟪A B x, y⟫ = ⟪x, A B y⟫` for all `x` and
+`y`, which makes sense without assuming that adjoints exist. When the spaces are
+finite-dimensional, the last two conditions are the usual Penrose equations `(A B)† = A B` and
+`(B A)† = B A`. The symmetric idempotents `A B` and `B A` are the orthogonal projections onto the
+ranges of `A` and of `B`.
 This file records the relation as the predicate `LinearMap.IsMoorePenroseInverse`, shows that it
 determines `B` uniquely, that it is symmetric in `A` and `B`, and that it is compatible with
 adjoints. For maps between finite-dimensional spaces, `LinearMap.moorePenroseInverse A` is the
@@ -36,7 +39,7 @@ equivalence.
 
 ## Main definitions
 
-* `LinearMap.IsMoorePenroseInverse A B`: the four Penrose equations.
+* `LinearMap.IsMoorePenroseInverse A B`: the four Penrose conditions.
 * `LinearMap.moorePenroseInverse A`: the Moore–Penrose inverse of a map between
   finite-dimensional inner product spaces, built from its singular system.
 
@@ -75,8 +78,9 @@ variable [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
   [SeminormedAddCommGroup F] [InnerProductSpace 𝕜 F]
 
 /-- `IsMoorePenroseInverse A B` states that `B` is a Moore–Penrose inverse of `A`: the four
-Penrose equations `A B A = A`, `B A B = B`, `(A B)† = A B`, and `(B A)† = B A` hold, with the
-last two expressed through `LinearMap.IsSymmetric`. -/
+Penrose conditions hold, namely `A B A = A`, `B A B = B`, and the compositions `A B` and `B A`
+are symmetric in the sense of `LinearMap.IsSymmetric`. In finite dimension the last two
+conditions are the adjoint equations `(A B)† = A B` and `(B A)† = B A`. -/
 structure IsMoorePenroseInverse (A : E →ₗ[𝕜] F) (B : F →ₗ[𝕜] E) : Prop where
   /-- `B` is a generalized inverse of `A`. -/
   comp_comp_self : A ∘ₗ B ∘ₗ A = A
@@ -214,33 +218,6 @@ theorem moorePenroseInverse_apply (A : E →ₗ[𝕜] F) (y : F) :
   simp [moorePenroseInverse]
 
 variable (A : E →ₗ[𝕜] F)
-
-/-- The right singular vectors are eigenvectors of `A† A` for the squared singular values. -/
-private theorem adjoint_comp_self_eigenvectorBasis (i : Fin (finrank 𝕜 E)) :
-    (A.adjoint ∘ₗ A) (A.isSymmetric_adjoint_comp_self.eigenvectorBasis rfl i) =
-      ((A.singularValues i ^ 2 : ℝ) : 𝕜) •
-        A.isSymmetric_adjoint_comp_self.eigenvectorBasis rfl i := by
-  rw [A.sq_singularValues_fin rfl]
-  exact A.isSymmetric_adjoint_comp_self.apply_eigenvectorBasis rfl i
-
-private theorem inner_apply_eigenvectorBasis (i : Fin (finrank 𝕜 E)) (x : E) :
-    ⟪A (A.isSymmetric_adjoint_comp_self.eigenvectorBasis rfl i), A x⟫ =
-      ((A.singularValues i ^ 2 : ℝ) : 𝕜) *
-        ⟪A.isSymmetric_adjoint_comp_self.eigenvectorBasis rfl i, x⟫ := by
-  rw [← adjoint_inner_left, ← comp_apply, adjoint_comp_self_eigenvectorBasis, inner_smul_left,
-    RCLike.conj_ofReal]
-
-/-- A right singular vector with singular value zero lies in the kernel, so it is fixed by the
-scalar `σᵢ⁻² σᵢ²` after applying `A`. -/
-private theorem inv_mul_smul_apply_eigenvectorBasis (i : Fin (finrank 𝕜 E)) :
-    (((A.singularValues i ^ 2 : ℝ) : 𝕜)⁻¹ * ((A.singularValues i ^ 2 : ℝ) : 𝕜)) •
-      A (A.isSymmetric_adjoint_comp_self.eigenvectorBasis rfl i) =
-      A (A.isSymmetric_adjoint_comp_self.eigenvectorBasis rfl i) := by
-  by_cases hc : ((A.singularValues i ^ 2 : ℝ) : 𝕜) = 0
-  · have h : A (A.isSymmetric_adjoint_comp_self.eigenvectorBasis rfl i) = 0 := by
-      rw [← inner_self_eq_zero (𝕜 := 𝕜), inner_apply_eigenvectorBasis, hc, zero_mul]
-    rw [h, smul_zero]
-  · rw [inv_mul_cancel₀ hc, one_smul]
 
 private theorem moorePenroseInverse_apply_apply (x : E) :
     A.moorePenroseInverse (A x) = ∑ i : Fin (finrank 𝕜 E),
