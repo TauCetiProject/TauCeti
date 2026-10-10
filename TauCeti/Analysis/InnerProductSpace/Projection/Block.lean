@@ -207,7 +207,7 @@ theorem commute_starProjection_diagBlock (A : E →L[𝕜] E) :
   -- Both products reduce to `P A P`, since `P (1 - P) = (1 - P) P = 0`.
   have hPP (B : E →L[𝕜] E) : P * (P * B) = P * B := by rw [← mul_assoc, hP.eq]
   have h0' (B : E →L[𝕜] E) : P * ((1 - P) * B) = 0 := by rw [← mul_assoc, h0, zero_mul]
-  change P * _ = _ * P
+  rw [commute_iff_eq]
   simp only [mul_add, add_mul, mul_assoc, hP.eq, h1, hPP, h0', mul_zero, add_zero]
 
 /-- The diagonal part of the diagonal part of `A` is the diagonal part of `A`. -/
