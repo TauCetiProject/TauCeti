@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Basic
+public import Mathlib.Topology.Homeomorph.Lemmas
 
 /-!
 # Cross products of singular cubes
@@ -16,8 +17,9 @@ chains. Faces in either block are the cross products with the corresponding face
 Degeneracy in a coordinate is equivalent to degeneracy of the corresponding factor, so this
 operation preserves Massey's degenerate cubes in both variables.
 
-Associativity and units hold as equalities, after the canonical reindexing of finite coordinates
-and reassociation of Cartesian products. No homotopy or shuffle correction is involved.
+Associativity holds as an equality after the canonical reindexing of finite coordinates and
+reassociation of Cartesian products. For zero-dimensional factors, the formulas retain the
+chosen point in the product. No homotopy or shuffle correction is involved.
 
 ## References
 
@@ -37,16 +39,15 @@ variable {X Y Z W : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 
 /-- The cross product of singular cubes, with the coordinates of the first factor first. -/
 def crossProduct (c : SingularCube X p) (d : SingularCube Y q) :
-    SingularCube (X × Y) (p + q) where
-  toFun x := (c (fun i ↦ x (i.castAdd q)), d (fun j ↦ x (j.natAdd p)))
-  continuous_toFun := by fun_prop
+    SingularCube (X × Y) (p + q) :=
+  (c.prodMap d).comp (Fin.appendHomeomorph (X := I) p q).symm
 
 -- Simplify before the factors, whose continuous-map types carry the dimensions.
 @[simp↓]
 theorem crossProduct_apply (c : SingularCube X p) (d : SingularCube Y q)
     (x : Fin (p + q) → I) :
-    crossProduct c d x = (c (fun i ↦ x (i.castAdd q)), d (fun j ↦ x (j.natAdd p))) :=
-  (rfl)
+    crossProduct c d x = (c (fun i ↦ x (i.castAdd q)), d (fun j ↦ x (j.natAdd p))) := by
+  simp [crossProduct]
 
 /-- The cross product is natural in both spaces. -/
 theorem crossProduct_comp (f : C(X, Z)) (g : C(Y, W))
@@ -56,10 +57,14 @@ theorem crossProduct_comp (f : C(X, Z)) (g : C(Y, W))
 
 /-- Cross products are associative after the canonical coordinate and product identifications. -/
 theorem crossProduct_assoc (c : SingularCube X p) (d : SingularCube Y q)
-    (e : SingularCube Z r) (x : Fin ((p + q) + r) → I) :
-    crossProduct c (crossProduct d e) (x ∘ Fin.cast (Nat.add_assoc p q r).symm) =
-      (Equiv.prodAssoc X Y Z) (crossProduct (crossProduct c d) e x) := by
-  simp only [crossProduct_apply, Function.comp_apply, Equiv.prodAssoc_apply]
+    (e : SingularCube Z r) :
+    cast (Nat.add_assoc p q r).symm (crossProduct c (crossProduct d e)) =
+      (Homeomorph.prodAssoc X Y Z : C((X × Y) × Z, X × Y × Z)).comp
+        (crossProduct (crossProduct c d) e) := by
+  apply ContinuousMap.ext
+  intro x
+  simp only [cast_apply, ContinuousMap.comp_apply, toContinuousMap, Homeomorph.prodAssoc,
+    crossProduct_apply, Function.comp_apply]
   congr 2
   congr 1
   funext i
@@ -68,7 +73,7 @@ theorem crossProduct_assoc (c : SingularCube X p) (d : SingularCube Y q)
   simp
   omega
 
-/-- A zero-dimensional cube acts as a left unit, with its point retained in the product. -/
+/-- The cross product with a zero-dimensional left factor retains its point in the product. -/
 -- Not a simp lemma: `crossProduct_apply` already expands the left-hand side.
 theorem crossProduct_zero_left (c : SingularCube X 0) (d : SingularCube Y q)
     (x : Fin (0 + q) → I) :
@@ -80,7 +85,7 @@ theorem crossProduct_zero_left (c : SingularCube X 0) (d : SingularCube Y q)
     funext i
     exact congrArg x (Fin.ext (by simp))
 
-/-- A zero-dimensional cube acts as a right unit, with its point retained in the product. -/
+/-- The cross product with a zero-dimensional right factor retains its point in the product. -/
 -- Not a simp lemma: `crossProduct_apply` already expands the left-hand side.
 theorem crossProduct_zero_right (c : SingularCube X p) (d : SingularCube Y 0)
     (x : Fin (p + 0) → I) :
