@@ -11,6 +11,8 @@ public import TauCeti.LinearAlgebra.Finsupp.LinearCombination
 public import TauCeti.RingTheory.Grassmannian.Basic
 public import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
 
+import Mathlib.RingTheory.Flat.LocallyFree
+
 /-!
 # Standard affine charts of the Grassmannian
 
@@ -35,8 +37,9 @@ subfunctor `Module.Grassmannian.chartFunctor R x` of the Grassmannian functor, c
 `ChartAlgebra R x` (`Module.Grassmannian.chartHomEquiv`, natural by
 `Module.Grassmannian.chartHomEquiv_comp`).
 
-These charts are the affine pieces from which the Grassmannian scheme is glued; that the charts
-are open subfunctors and that they cover the Grassmannian functor are not proved here.
+These charts are the affine pieces from which the Grassmannian scheme is glued. That they are open
+subfunctors and cover the Grassmannian functor is proved in
+`TauCeti.RingTheory.Grassmannian.ChartLocus`.
 
 ## Main definitions
 
@@ -51,6 +54,8 @@ are open subfunctors and that they cover the Grassmannian functor are not proved
 
 ## Main results
 
+* `Module.Grassmannian.mem_chart_iff_sup_eq_top`: `N` lies in the chart at `x` exactly when the
+  images of the `x i` generate `M ⧸ N`.
 * `Module.Grassmannian.map_ofSurjective_liftBaseChange`: base change along `A → B` sends the
   kernel of a surjection `A ⊗[R] M → A^k` to the kernel of its base change `B ⊗[R] M → B^k`.
 * `Module.Grassmannian.chartHomEquiv_comp`: `chartHomEquiv` is natural in the algebra.
@@ -86,6 +91,15 @@ def chart (x : Fin k → M) : Set G(k, M; R) :=
 theorem mem_chart_iff {x : Fin k → M} {N : G(k, M; R)} :
     N ∈ chart R x ↔ Function.Bijective (N.toSubmodule.mkQ ∘ₗ Fintype.linearCombination R x) :=
   (Iff.rfl)
+
+/-- `N` lies in the chart at `x` exactly when `N` and the `x i` together span `M`, that is, when the
+images of the `x i` generate `M ⧸ N`. -/
+theorem mem_chart_iff_sup_eq_top {x : Fin k → M} {N : G(k, M; R)} :
+    N ∈ chart R x ↔ N.toSubmodule ⊔ Submodule.span R (Set.range x) = ⊤ := by
+  rw [mem_chart_iff, ← Submodule.map_mkQ_eq_top, ← Fintype.range_linearCombination,
+    ← LinearMap.range_comp, LinearMap.range_eq_top]
+  exact ⟨Function.Bijective.surjective, fun h ↦ bijective_of_surjective_of_rankAtStalk_eq h
+    fun m _ ↦ by rw [rankAtStalk_fin_fun, N.rankAtStalk_eq]⟩
 
 /-- The kernel of a linear map `φ : M → R^k` with `φ (x i) = eᵢ` lies in the chart at `x`. -/
 theorem ofSurjective_mem_chart {x : Fin k → M} {φ : M →ₗ[R] Fin k → R}
