@@ -29,7 +29,8 @@ nose (`twistedDifferential_twistedDifferential_single_x`).  The cancellation is 
 produced by the right action of `b` on `a`, and `∂c = -ab`; the products `ab` and `ba` are distinct
 basis paths (`gen_a_mul_gen_b_ne`), so it depends on the order in which the construction
 multiplies the coefficients.  The literal right-free reading of the same coefficients,
-`d e_x = Σ_y e_y m x y` with the coefficient to the left of the module element, is recorded as
+`d e_x = Σ_y e_y m x y`, in which the twisting coefficient multiplies the coordinate `f x` on the
+left, is recorded as
 `rightFreeDifferential`: it gives `d² e_x = e_y (ba - ab) ≠ 0`
 (`rightFreeDifferential_rightFreeDifferential_single_x_ne_zero`), which is the reason for the
 variance convention of the twisted complex.
@@ -242,12 +243,13 @@ theorem gen_a_mul_gen_b_ne : gen .a * gen .b ≠ gen .b * gen .a := by
 /-! ### The literal right-free reading
 
 Reading the coefficients as a differential on a free right module, `d e_x = Σ_y e_y m x y`, puts
-the coefficient to the left of the module element: on `Fin 3 → ℚ⟨a, b, c⟩`,
-`(d f) y = ∂ (f y) + Σ_x m x y * f x`.  Its square does not vanish. -/
+the twisting coefficient between the basis vector and its coordinate: on `Fin 3 → ℚ⟨a, b, c⟩`,
+`(d f) y = ∂ (f y) + Σ_x m x y * f x`, so `m x y` multiplies the coordinate `f x` on the left.  Its
+square does not vanish. -/
 
 /-- The literal right-free reading of the coefficients of `threeCocycle`:
-`(d f) y = ∂ (f y) + Σ_x m x y * f x`, with the coefficient to the left of the module element.
-Recorded for comparison with `twistedDifferential`, which multiplies on the right. -/
+`(d f) y = ∂ (f y) + Σ_x m x y * f x`, the twisting coefficient multiplying the coordinate `f x` on
+the left.  Recorded for comparison with `twistedDifferential`, where it multiplies on the right. -/
 noncomputable def rightFreeDifferential :
     (Fin 3 → pathAlgebra ℚ (SingleObj ThreeArrow)) →ₗ[ℚ]
       (Fin 3 → pathAlgebra ℚ (SingleObj ThreeArrow)) :=
