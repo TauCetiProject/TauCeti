@@ -61,6 +61,7 @@ def schwarzChristoffelSphereBoundary (a e : ι → ℝ) (z₀ : UpperHalfPlane) 
   schwarzChristoffelSphereExtension a e z₀ ∘ OnePoint.map Complex.ofReal
 
 /-- The sphere boundary evaluates the sphere extension on the compactified real axis. -/
+@[simp low]
 theorem schwarzChristoffelSphereBoundary_apply (a e : ι → ℝ) (z₀ : UpperHalfPlane)
     (x : OnePoint ℝ) :
     schwarzChristoffelSphereBoundary a e z₀ x =
