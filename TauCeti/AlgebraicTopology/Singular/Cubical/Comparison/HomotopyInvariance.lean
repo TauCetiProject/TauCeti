@@ -59,6 +59,20 @@ def singularCubicalHomologyIso (X : TopCat.{u}) (n : ℕ) :
     ((singularChains k).obj X).homology n ≅ ((normalizedCubicalChainComplex k).obj X).homology n :=
   (cubicalSingularHomotopyEquiv k X).toHomologyIso n
 
+@[simp]
+theorem singularCubicalHomologyIso_hom (X : TopCat.{u}) (n : ℕ) :
+    (singularCubicalHomologyIso k X n).hom =
+      HomologicalComplex.homologyMap ((singularToCubical k).app X) n := by
+  rw [← cubicalSingularHomotopyEquiv_hom]
+  rfl
+
+@[simp]
+theorem singularCubicalHomologyIso_inv (X : TopCat.{u}) (n : ℕ) :
+    (singularCubicalHomologyIso k X n).inv =
+      HomologicalComplex.homologyMap ((cubicalToSingular k).app X) n := by
+  rw [← cubicalSingularHomotopyEquiv_inv]
+  rfl
+
 end TauCeti
 
 namespace TopCat.Homotopy
