@@ -637,14 +637,18 @@ private lemma reducedSingularHomologyFunctor_map_list_prod_reflection {n : ℕ}
           TopCat.ofHom ⟨(ℝ ∙ v)ᗮ.reflection.toLinearIsometry.unitSphereMap,
             (ℝ ∙ v)ᗮ.reflection.toLinearIsometry.continuous_unitSphereMap⟩ := by
       ext; simp
-    have hdet : ((ℝ ∙ v)ᗮ.reflection * φ).toLinearIsometry.toLinearMap =
-        (ℝ ∙ v)ᗮ.reflection.toLinearMap ∘ₗ φ.toLinearIsometry.toLinearMap := by
-      ext; simp
+    have hdet : (SignType.sign (LinearMap.det
+        ((ℝ ∙ v)ᗮ.reflection * φ).toLinearIsometry.toLinearMap) : ℤ) =
+        -SignType.sign (LinearMap.det φ.toLinearIsometry.toLinearMap) := by
+      have : ((ℝ ∙ v)ᗮ.reflection * φ).toLinearIsometry.toLinearMap =
+          (ℝ ∙ v)ᗮ.reflection.toLinearMap ∘ₗ φ.toLinearIsometry.toLinearMap := by
+        ext; simp
+      rw [this, LinearMap.det_comp, Submodule.det_reflection, Submodule.orthogonal_orthogonal,
+        finrank_span_singleton hv]
+      simp [Left.sign_neg]
     rw [hcomp, Functor.map_comp, ih,
-      reducedSingularHomologyFunctor_map_reflection_unitSphereMap R hE hv, hdet,
-      LinearMap.det_comp, Submodule.det_reflection, Submodule.orthogonal_orthogonal,
-      finrank_span_singleton hv]
-    simp [Left.sign_neg]
+      reducedSingularHomologyFunctor_map_reflection_unitSphereMap R hE hv, hdet]
+    simp
 
 /-- **A linear isometry acts on the homology of a sphere by the sign of its determinant.**  For a
 real inner product space `E` of dimension `n + 1` and a linear isometry `f : E →ₗᵢ[ℝ] E`, the
@@ -672,10 +676,10 @@ theorem reducedSingularHomologySphereIso_hom_eq_sign_det_smul {n : ℕ}
   -- The linear isometry `f` carrying `b` to `c` has determinant `det_b c`.
   let f := b.equiv c (Equiv.refl _)
   have hf : ∀ i, f (b i) = c i := by simp [f]
+  have hfb : f.toLinearIsometry.toLinearMap ∘ b.toBasis = c := funext fun i ↦ by simp [hf]
   have hdet : LinearMap.det f.toLinearIsometry.toLinearMap = b.toBasis.det c := by
     have := b.toBasis.det_comp f.toLinearIsometry.toLinearMap b.toBasis
-    rwa [Basis.det_self, mul_one, show (f.toLinearIsometry.toLinearMap ∘ b.toBasis) = c from
-      funext fun i ↦ by simp [hf], eq_comm] at this
+    rwa [Basis.det_self, mul_one, hfb, eq_comm] at this
   have hsq : (SignType.sign (b.toBasis.det c) : ℤ) * SignType.sign (b.toBasis.det c) = 1 := by
     rcases b.det_to_matrix_orthonormalBasis_real c with h | h <;> simp [h]
   have := reducedSingularHomologySphereIso_hom_naturality R b c f.toLinearIsometry hf
