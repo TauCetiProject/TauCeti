@@ -106,11 +106,21 @@ theorem mdifferentiable {U : (Opens (TopCat.of X))ᵒᵖ}
     (f : (holomorphicStructureSheaf I X).obj.obj U) : MDifferentiable I 𝓘(ℂ) f :=
   (contMDiff f).mdifferentiable (by simp)
 
+/-- Complex analytic functions give sections of the structure sheaf for any complex model. -/
+def ofContMDiff {U : Opens (TopCat.of X)} (f : U → ℂ)
+    (hf : ContMDiff I 𝓘(ℂ) ω f) :
+    (holomorphicStructureSheaf I X).obj.obj (op U) := ⟨f, hf⟩
+
+@[simp]
+theorem ofContMDiff_apply {U : Opens (TopCat.of X)} (f : U → ℂ)
+    (hf : ContMDiff I 𝓘(ℂ) ω f) (x : U) :
+    ofContMDiff f hf x = f x := (rfl)
+
 /-- Holomorphic functions on a complex curve give sections of its structure sheaf. -/
 def ofMDifferentiable {X : Type} [TopologicalSpace X] [ChartedSpace ℂ X]
     [IsManifold 𝓘(ℂ) 1 X] {U : Opens (TopCat.of X)} (f : U → ℂ)
     (hf : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f) :
-    (holomorphicStructureSheaf 𝓘(ℂ) X).obj.obj (op U) := ⟨f, hf.contMDiff⟩
+    (holomorphicStructureSheaf 𝓘(ℂ) X).obj.obj (op U) := ofContMDiff f hf.contMDiff
 
 @[simp]
 theorem ofMDifferentiable_apply {X : Type} [TopologicalSpace X] [ChartedSpace ℂ X]
