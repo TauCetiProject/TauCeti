@@ -37,12 +37,13 @@ cube `Option κ → ℝ`, where the coordinate `none` is time.  By compactness (
 lemma), every sufficiently small box of the cube is sent by `H` into the base set of a single
 trivialization.  Over such a box the lifting problem is solved by hand: its lower faces are a
 retract of the box (push a point down along the diagonal until it meets one of them), and in the
-trivialization `e` the lift sends `x` to `e.symm (H x, (e (g (r x))).2)`, where `g` is the given
-lift on the lower faces and `r` is the retraction.  Cutting a box in two along one coordinate, a
-lifting problem relative to some lower faces of the box is solved first on the lower half, then on
-the upper half relative to one more lower face (the cut), and the two solutions glue.  Induction
-on the number of cuts needed to make the boxes small solves the lifting problem on the whole cube
-relative to its bottom face, which is the homotopy lifting property.
+trivialization `e` the lift sends `x` to `e.lift (g (r x)) (H x)`, that is,
+`e.symm (H x, (e (g (r x))).2)`, where `g` is the given lift on the lower faces and `r` is the
+retraction.  Cutting a box in two along one coordinate, a lifting problem relative to some lower
+faces of the box is solved first on the lower half, then on the upper half relative to one more
+lower face (the cut), and the two solutions glue.  Induction on the number of cuts needed to make
+the boxes small solves the lifting problem on the whole cube relative to its bottom face, which is
+the homotopy lifting property.
 
 ## References
 
@@ -127,8 +128,8 @@ private lemma lowerRetract_eq_self [DecidableEq ι] {a b x : ι → ℝ} {T : Fi
   simp [lowerRetract, h0]
 
 /-- Over a box sent into the base set of a trivialization `e`, a lift on some lower faces extends
-to the box: in the trivialization, keep the fibre coordinate of the lift at the image of the
-point under the retraction onto those faces. -/
+to the box: lift `H` through `e` to the leaf of the given lift at the image of the point under the
+retraction onto those faces. -/
 private lemma boxLifts_of_mapsTo [TopologicalSpace B] [TopologicalSpace F]
     (e : Trivialization F p) {H : (ι → ℝ) → B} (hH : Continuous H)
     {a b : ι → ℝ} {T : Finset ι} (hT : T.Nonempty) (hab : MapsTo H (Icc a b) e.baseSet) :
@@ -140,18 +141,18 @@ private lemma boxLifts_of_mapsTo [TopologicalSpace B] [TopologicalSpace F]
   have hsrc : MapsTo (fun x ↦ g (lowerRetract a hT x)) (Icc a b) e.source := fun x hx ↦ by
     rw [e.mem_source, hgH _ (hr hx)]
     exact hab (mem_lowerFaces.1 (hr hx)).1
-  have htgt : ∀ x ∈ Icc a b, (H x, (e (g (lowerRetract a hT x))).2) ∈ e.target :=
-    fun x hx ↦ e.mem_target.2 (hab hx)
-  refine ⟨fun x ↦ e.toOpenPartialHomeomorph.symm (H x, (e (g (lowerRetract a hT x))).2),
-    ?_, fun x hx ↦ e.proj_symm_apply (htgt x hx), fun x hx ↦ ?_⟩
-  · refine e.toOpenPartialHomeomorph.continuousOn_symm.comp (hH.continuousOn.prodMk ?_) htgt
+  refine ⟨fun x ↦ e.lift (g (lowerRetract a hT x)) (H x), ?_,
+    fun x hx ↦ e.proj_lift (hab hx), fun x hx ↦ ?_⟩
+  · unfold Trivialization.lift
+    refine e.toOpenPartialHomeomorph.continuousOn_symm.comp (hH.continuousOn.prodMk ?_)
+      fun x hx ↦ e.mem_target.2 (hab hx)
     exact continuous_snd.comp_continuousOn <| e.toOpenPartialHomeomorph.continuousOn.comp
       (hg.comp (continuous_lowerRetract a hT).continuousOn hr) hsrc
-  · have hsx : g x ∈ e.source := by
-      rw [e.mem_source, hgH x hx]
+  · have hpx : p (g x) ∈ e.baseSet := by
+      rw [hgH x hx]
       exact hab (mem_lowerFaces.1 hx).1
     simp only [lowerRetract_eq_self hT hx, ← hgH x hx]
-    exact e.symm_apply_mk_proj hsx
+    exact e.lift_self hpx
 
 private lemma lowerFaces_insert [DecidableEq ι] (a b : ι → ℝ) (T : Finset ι) (i : ι) :
     lowerFaces a b (insert i T) = lowerFaces a b {i} ∪ lowerFaces a b (T.erase i) := by
