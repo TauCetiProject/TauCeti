@@ -52,7 +52,8 @@ Huber namespace, alongside `TauCeti/RingTheory/Localization/DenIdeal.lean`.
 * `TauCeti.Localization.awayLift_divBy`: the comparison map to a localisation at a multiple
   `w = u * r` rescales fractions by the cofactor, sending `a/u` to `(a · r)/w`.
 * `RingHom.awayMap_divBy`: the map induced on localisations by a ring homomorphism
-  `f` pushes fractions along `f`, sending `a/u` to `f(a)/f(u)`.
+  `f` pushes fractions along `f`, sending `a/u` to `f(a)/f(u)`; `RingHom.awayMap_algebraMap`
+  is the same for the image of an element.
 
 ## Provenance
 
@@ -303,6 +304,17 @@ theorem _root_.RingHom.awayMap_divBy {B : Type*} [CommSemiring B]
     [IsLocalization.Away (f u) W] (a : A) :
     IsLocalization.Away.map V W f u (divBy a u : V) = (divBy (f a) (f u) : W) :=
   IsLocalization.map_mk' _ _ _
+
+/-- **The induced map is compatible with the structure maps**: the map `A_u → B_{f(u)}` that
+`IsLocalization.Away.map` builds from `f : A →+* B` sends the image of `a` to the image of
+`f(a)`. This is Mathlib's `IsLocalization.map_eq`, stated for `IsLocalization.Away.map`. -/
+@[simp]
+theorem _root_.RingHom.awayMap_algebraMap {B : Type*} [CommSemiring B]
+    {V W : Type*} [CommSemiring V] [CommSemiring W]
+    [Algebra A V] [Algebra B W] (f : A →+* B) (u : A) [IsLocalization.Away u V]
+    [IsLocalization.Away (f u) W] (a : A) :
+    IsLocalization.Away.map V W f u (algebraMap A V a) = algebraMap B W (f a) :=
+  IsLocalization.map_eq _ _
 
 /-! ### The fractions generate
 
