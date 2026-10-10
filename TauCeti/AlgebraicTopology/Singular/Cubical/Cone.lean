@@ -203,14 +203,13 @@ theorem boundary_cone_add_cone_boundary
   | zero => simp
   | add f g hf hg =>
     simp only [map_add]
-    rw [← sub_add_sub_comm, ← hf, ← hg]
+    rw [add_add_add_comm, hf, hg]
     abel
   | single c a =>
+    -- The face of the cone in coordinate `0` gives `[v] - c`; the faces in the other
+    -- coordinates are the cones on the faces of `c`, with the opposite sign.
     rw [cone_single, boundary_single, Fin.sum_univ_succ, boundary_single, map_sum]
-    simp only [Fin.val_zero, pow_zero, one_smul, face_zero_one_cone, face_succ_cone, Fin.val_succ,
-      map_smul, map_sub, cone_single, coneBase_single]
-    rw [add_assoc, ← Finset.sum_add_distrib, add_eq_left]
-    exact Finset.sum_eq_zero fun i _ ↦ by rw [pow_succ, mul_neg_one, neg_smul, neg_add_cancel]
+    simp [pow_succ]
 
 end CubicalChain
 
@@ -245,10 +244,11 @@ theorem boundary_cone_add_cone_boundary
     boundary X R (n + 1) (cone R H (n + 1) f) + cone R H n (boundary X R n f) = -f := by
   induction f using Submodule.Quotient.induction_on with
   | H f =>
+    -- In positive degrees the constant cubes at `v` are degenerate, hence zero.
     rw [cone_mk, boundary_mk, boundary_mk, cone_mk, ← Submodule.Quotient.mk_add,
       CubicalChain.boundary_cone_add_cone_boundary, ← Submodule.Quotient.mk_neg,
-      Submodule.Quotient.eq, sub_neg_eq_add, sub_add_cancel]
-    exact coneBase_mem_degenerate R H f
+      Submodule.Quotient.eq]
+    simpa using coneBase_mem_degenerate R H f
 
 /-- The cone in degree zero: `∂ (cone f) = ε(f) • [v] - f`. -/
 theorem boundary_cone_zero (H : (ContinuousMap.const X v).Homotopy (ContinuousMap.id X))
@@ -267,8 +267,7 @@ theorem boundary_cone_zero (H : (ContinuousMap.const X v).Homotopy (ContinuousMa
         smul_single_one]
       congr 2
       ext x
-      rw [SingularCube.point_apply]
-      exact SingularCube.face_zero_zero_cone_apply H c x
+      simp
 
 /-- **Acyclicity in positive degrees**: a cycle of positive degree in the normalized cubical
 chains of a contractible space is a boundary. -/
@@ -277,16 +276,16 @@ theorem exists_boundary_eq_of_boundary_eq_zero [ContractibleSpace X] {n : ℕ}
     ∃ g, boundary X R (n + 1) g = f := by
   obtain ⟨v, ⟨H⟩⟩ := (contractible_iff_id_nullhomotopic X).1 ‹_›
   refine ⟨-cone R H.symm (n + 1) f, ?_⟩
-  rw [map_neg, neg_eq_iff_eq_neg, ← boundary_cone_add_cone_boundary R H.symm f, hf, map_zero,
-    add_zero]
+  have := boundary_cone_add_cone_boundary R H.symm f
+  simp only [hf, map_zero, add_zero] at this
+  simp [this]
 
 /-- **Acyclicity in degree zero**: a `0`-chain of augmentation zero in the normalized cubical
 chains of a contractible space is a boundary. -/
 theorem exists_boundary_eq_of_augment_eq_zero [ContractibleSpace X]
     {f : NormalizedCubicalChain X R 0} (hf : augment X R f = 0) : ∃ g, boundary X R 0 g = f := by
   obtain ⟨v, ⟨H⟩⟩ := (contractible_iff_id_nullhomotopic X).1 ‹_›
-  exact ⟨-cone R H.symm 0 f, by
-    rw [map_neg, boundary_cone_zero R H.symm, hf, zero_smul, zero_sub, neg_neg]⟩
+  exact ⟨-cone R H.symm 0 f, by simp [boundary_cone_zero R H.symm, hf]⟩
 
 end NormalizedCubicalChain
 
