@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Group.Pointwise
+public import Mathlib.Topology.Maps.Proper.Basic
 
 /-!
-# Closures and pointwise quotients
+# Closures, closed images, and pointwise quotients
 
 Mathlib relates `closure` to a pointwise product when one factor is *open* — `IsOpen.mul_closure`
 and its neighbours in `Mathlib/Topology/Algebra/Group/Pointwise.lean` — and to a pointwise scalar
@@ -19,15 +20,21 @@ It is what a Baire argument needs. Such an argument produces a set whose *closur
 and the step from there to a neighbourhood of the identity runs through `D / D` for that closure
 `D`; without this containment there is no way back from `closure s / closure t` to a closure.
 
+Multiplication and addition carry a closed relation to a closed set if its second coordinate
+lies in a compact set. This applies to bounded displacements in proper normed spaces, even when
+the first coordinate ranges over a noncompact set.
+
 ## Main results
 
 * `TauCeti.closure_div_closure_subset`, with its additive form
   `TauCeti.closure_sub_closure_subset`.
+* `IsClosed.image_mul_of_snd_subset`, with its additive form
+  `IsClosed.image_add_of_snd_subset`.
 -/
 
 public section
 
-open Pointwise
+open Set Pointwise
 
 namespace TauCeti
 
@@ -49,5 +56,28 @@ theorem closure_div_closure_subset (s t : Set G) : closure s / closure t ⊆ clo
     _ = closure (s / t) := by rw [Set.image_prod, Set.image2_div]
 
 end TauCeti
+
+/-- The products of a closed relation form a closed set if the second coordinate is contained
+in a compact set. -/
+@[to_additive /-- The sums of a closed relation form a closed set if the second coordinate is
+contained in a compact set. -/]
+theorem IsClosed.image_mul_of_snd_subset {G : Type*} [TopologicalSpace G]
+    [Group G] [IsTopologicalGroup G] {s : Set (G × G)} (hs : IsClosed s)
+    {C : Set G} (hC : IsCompact C) (hsub : Prod.snd '' s ⊆ C) :
+    IsClosed ((fun p : G × G => p.1 * p.2) '' s) := by
+  have : CompactSpace C := isCompact_iff_compactSpace.mp hC
+  have hc : Continuous (fun p : G × C => (p.1 / p.2, (p.2 : G))) :=
+    (continuous_fst.div' (continuous_subtype_val.comp continuous_snd)).prodMk
+      (continuous_subtype_val.comp continuous_snd)
+  have heq : (fun p : G × G => p.1 * p.2) '' s =
+      Prod.fst '' ((fun p : G × C => (p.1 / p.2, (p.2 : G))) ⁻¹' s) := by
+    ext z
+    constructor
+    · rintro ⟨p, hp, rfl⟩
+      exact ⟨(p.1 * p.2, ⟨p.2, hsub ⟨p, hp, rfl⟩⟩), by simpa, rfl⟩
+    · rintro ⟨p, hp, rfl⟩
+      exact ⟨(p.1 / p.2, p.2), hp, by simp⟩
+  rw [heq]
+  exact isClosedMap_fst_of_compactSpace _ (hs.preimage hc)
 
 end
