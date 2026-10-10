@@ -24,6 +24,10 @@ groups.
 
 * `TauCeti.ValuationSpectrum.presentationLimitAddCommGrpPresheaf`: the presentation-limit
   presheaf on the opens contained in `W`, as a presheaf of abelian groups.
+* `TauCeti.ValuationSpectrum.presentationLimitAddCommGrpPresheafObjEquiv`: its sections over `V`
+  are the additive group of `presentationLimit Aplus V`; under this identification its restriction
+  maps are the `presentationLimitMap`s
+  (`TauCeti.ValuationSpectrum.presentationLimitAddCommGrpPresheafObjEquiv_map_apply`).
 -/
 
 public section
@@ -41,9 +45,7 @@ variable {A : Type v} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
 abelian groups: its value at `V ≤ W` is the additive group of `presentationLimit Aplus V` and its
 restriction maps are the `presentationLimitMap`s, as for `presentationLimitPresheaf`. Its Čech
 complexes for families in `Set.Iic W` are those of covers of `W`. -/
--- The body is exposed so that the sections over `V` are, definitionally, the elements of
--- `presentationLimit Aplus V`: statements may then pass elements between the two.
-@[expose] noncomputable def presentationLimitAddCommGrpPresheaf (W : Opens ↥(spa Aplus)) :
+noncomputable def presentationLimitAddCommGrpPresheaf (W : Opens ↥(spa Aplus)) :
     (Set.Iic W)ᵒᵖ ⥤ AddCommGrpCat.{v} where
   obj V := AddCommGrpCat.of (presentationLimit (P := P) Aplus V.unop.1)
   map h := AddCommGrpCat.ofHom
@@ -61,15 +63,26 @@ complexes for families in `Set.Iic W` are those of covers of `W`. -/
 theorem presentationLimitAddCommGrpPresheaf_obj (W : Opens ↥(spa Aplus)) (V : (Set.Iic W)ᵒᵖ) :
     (presentationLimitAddCommGrpPresheaf P Aplus W).obj V =
       AddCommGrpCat.of (presentationLimit (P := P) Aplus V.unop.1) :=
-  rfl
+  (rfl)
 
-/-- The restriction maps of `presentationLimitAddCommGrpPresheaf` are the
-`presentationLimitMap`s. -/
+/-- The sections of `presentationLimitAddCommGrpPresheaf` over `V`, identified with the additive
+group of `presentationLimit Aplus V`. -/
+noncomputable def presentationLimitAddCommGrpPresheafObjEquiv {W : Opens ↥(spa Aplus)}
+    (V : Set.Iic W) :
+    (presentationLimitAddCommGrpPresheaf P Aplus W).obj (op V) ≃+
+      presentationLimit (P := P) Aplus V.1 :=
+  AddEquiv.refl _
+
+/-- Under `presentationLimitAddCommGrpPresheafObjEquiv`, the restriction maps of
+`presentationLimitAddCommGrpPresheaf` are the `presentationLimitMap`s. -/
 @[simp]
-theorem presentationLimitAddCommGrpPresheaf_map_apply {W : Opens ↥(spa Aplus)} {V V' : Set.Iic W}
-    (h : V' ⟶ V) (x : presentationLimit (P := P) Aplus V.1) :
-    (presentationLimitAddCommGrpPresheaf P Aplus W).map h.op x =
-      (presentationLimitMap (P := P) (Subtype.coe_le_coe.mpr (leOfHom h))).hom.1 x :=
-  rfl
+theorem presentationLimitAddCommGrpPresheafObjEquiv_map_apply {W : Opens ↥(spa Aplus)}
+    {V V' : Set.Iic W} (h : V' ⟶ V)
+    (x : (presentationLimitAddCommGrpPresheaf P Aplus W).obj (op V)) :
+    presentationLimitAddCommGrpPresheafObjEquiv P Aplus V'
+        ((presentationLimitAddCommGrpPresheaf P Aplus W).map h.op x) =
+      (presentationLimitMap (P := P) (Subtype.coe_le_coe.mpr (leOfHom h))).hom.1
+        (presentationLimitAddCommGrpPresheafObjEquiv P Aplus V x) :=
+  (rfl)
 
 end TauCeti.ValuationSpectrum

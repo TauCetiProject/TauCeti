@@ -73,21 +73,38 @@ theorem quasiIso_cechAugmentation_inf_laurentCoverOpen
   obtain ⟨T, s, hT, rfl⟩ := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp hW
   rw [quasiIso_cechAugmentation_fin_two_iff_isSheafFor_and_surjective,
     Presieve.isSheafFor_arrows_iff]
+  -- the sections of `presentationLimitAddCommGrpPresheaf` over `V` are the elements of
+  -- `presentationLimit Aplus V` under `e`, which takes its restriction maps to the
+  -- `presentationLimitMap`s, so Lemma 8.33 applies to them after transport along `e`
+  set e := presentationLimitAddCommGrpPresheafObjEquiv P Aplus (W := spaBasicOpen Aplus T s)
   refine ⟨fun x hx ↦ ?_, fun z ↦ ?_⟩
-  -- the sections of `presentationLimitAddCommGrpPresheaf` over `V` are by definition the elements
-  -- of `presentationLimit Aplus V`, and its restriction maps are the `presentationLimitMap`s
-  -- (`presentationLimitAddCommGrpPresheaf_map_apply`), so Lemma 8.33 applies to them directly
   · -- a compatible family is one agreeing on the overlap of the two pieces, so it glues
-    have h01 := (Presieve.Arrows.compatible_homOfLE_iff (fun _ ↦ le_top) x).1 hx 0 1
+    have h01 := congrArg (e _) <|
+      (Presieve.Arrows.compatible_homOfLE_iff (fun _ ↦ le_top) x).1 hx 0 1
+    simp only [Functor.comp_map, TypeCat.ofHom_apply,
+      presentationLimitAddCommGrpPresheafObjEquiv_map_apply, e] at h01
     obtain ⟨a, ha⟩ := exists_presentationLimitMap_eq_of_inf_laurentCoverOpen P hAplus hT f
-      (fun | true => x 0 | false => x 1) h01
-    refine ⟨a, fun i ↦ ?_, fun a' ha' ↦
-      injective_presentationLimitMap_inf_laurentCoverOpen P hAplus hT f (funext fun b ↦ ?_)⟩
-    · fin_cases i
+      (fun | true => e _ (x 0) | false => e _ (x 1)) h01
+    obtain ⟨a, rfl⟩ := (e ⊤).surjective a
+    refine ⟨a, fun i ↦ (e _).injective ?_, fun a' ha' ↦ (e ⊤).injective
+      (injective_presentationLimitMap_inf_laurentCoverOpen P hAplus hT f (funext fun b ↦ ?_))⟩
+    · simp only [Functor.comp_map, TypeCat.ofHom_apply,
+        presentationLimitAddCommGrpPresheafObjEquiv_map_apply, e]
+      fin_cases i
       exacts [ha true, ha false]
-    · cases b
-      exacts [(ha' 1).trans (ha false).symm, (ha' 0).trans (ha true).symm]
-  · exact surjective_presentationLimitMap_sub_inf_laurentCoverOpen P hAplus hT f z
+    · have h0 := congrArg (e _) (ha' 0)
+      have h1 := congrArg (e _) (ha' 1)
+      simp only [Functor.comp_map, TypeCat.ofHom_apply,
+        presentationLimitAddCommGrpPresheafObjEquiv_map_apply, e] at h0 h1
+      cases b
+      exacts [h1.trans (ha false).symm, h0.trans (ha true).symm]
+  · obtain ⟨⟨a, b⟩, hab⟩ :=
+      surjective_presentationLimitMap_sub_inf_laurentCoverOpen P hAplus hT f (e _ z)
+    refine ⟨((e _).symm a, (e _).symm b), (e _).injective ?_⟩
+    simp only [map_sub, presentationLimitAddCommGrpPresheafObjEquiv_map_apply, e] at hab ⊢
+    rw [← hab]
+    exact congrArg₂ (· - ·) (congrArg _ (AddEquiv.apply_symm_apply _ _))
+      (congrArg _ (AddEquiv.apply_symm_apply _ _))
 
 end Rational
 
