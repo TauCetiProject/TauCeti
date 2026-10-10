@@ -23,14 +23,14 @@ On Polish Borel factors, convergent marginal sequences automatically supply tigh
 results give weakly convergent subsequences. The reference need not be normalized, and the optimal
 values may be infinite.
 
-The upper bound requires entropy approximation by couplings with the exact varying marginals
-and an entropy `limsup` bound, explicit in
+The upper bound requires approximation of each finite-entropy limiting coupling by couplings
+with the exact varying marginals and an entropy `limsup` bound, explicit in
 `tendsto_schroedingerValue_of_entropy_approximation`. Weak convergence of the data alone does not
 supply it. Under the resulting upper bound every weak
 cluster point of minimizers is optimal. A finite limiting value then gives uniqueness and
 convergence of the full optimizer sequence.
-For fixed marginals and reference, the constant sequence of each coupling supplies the entropy
-approximation condition.
+For fixed marginals and reference, the constant sequence of each finite-entropy coupling supplies
+the entropy approximation condition.
 
 For the static Schrödinger problem and joint weak lower semicontinuity of entropy, see M. Nutz,
 [*Introduction to Entropic Optimal Transport*][nutz], §2 and Lemma 1.3.
@@ -52,11 +52,12 @@ variable {ι X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
   {Rs : ι → FiniteMeasure (X × Y)} {μ : ProbabilityMeasure X} {ν : ProbabilityMeasure Y}
   {R : FiniteMeasure (X × Y)}
 
-/-- Entropy approximation of each limiting coupling by plans with the exact moving marginals
-gives the upper bound on Schrödinger values along any filter. Only feasibility and the entropy
-bound are needed; weak convergence of the approximating plans is not required. -/
+/-- Entropy approximation of each finite-entropy limiting coupling by plans with the exact moving
+marginals gives the upper bound on Schrödinger values along any filter. Only feasibility and the
+entropy bound are needed; weak convergence of the approximating plans is not required. -/
 theorem limsup_schroedingerValue_le_schroedingerValue_of_entropy_approximation
     (happrox : ∀ π : ProbabilityMeasure (X × Y), IsCoupling π.toMeasure μ.toMeasure ν.toMeasure →
+      klDiv π.toMeasure R.toMeasure ≠ ∞ →
       ∃ πs : ι → ProbabilityMeasure (X × Y),
         (∀ᶠ n in l, IsCoupling (πs n).toMeasure (μs n).toMeasure (νs n).toMeasure) ∧
           limsup (fun n ↦ klDiv (πs n).toMeasure (Rs n).toMeasure) l ≤
@@ -64,7 +65,10 @@ theorem limsup_schroedingerValue_le_schroedingerValue_of_entropy_approximation
     limsup (fun n ↦ schroedingerValue (Rs n).toMeasure (μs n).toMeasure (νs n).toMeasure) l ≤
       schroedingerValue R.toMeasure μ.toMeasure ν.toMeasure := by
   refine le_schroedingerValue fun π hcoup ↦ ?_
-  obtain ⟨πs, hfeas, hcost⟩ := happrox ⟨π, hcoup.isProbabilityMeasure⟩ hcoup
+  by_cases hfin : klDiv π R.toMeasure = ∞
+  · rw [hfin]
+    exact le_top
+  obtain ⟨πs, hfeas, hcost⟩ := happrox ⟨π, hcoup.isProbabilityMeasure⟩ hcoup hfin
   exact (limsup_le_limsup
     (hfeas.mono fun n hn ↦ schroedingerValue_le_klDiv hn (Rs n).toMeasure)).trans hcost
 
@@ -145,8 +149,8 @@ theorem exists_isCoupling_tendsto_klDiv_le_liminf_of_isTightMeasureSet [T2Space 
   exact (lowerSemicontinuous_klDiv_finiteMeasure.le_liminf (π.toFiniteMeasure, R)).trans
     hweak.liminf_le_liminf_comp
 
-/-- Eventual marginal tightness and entropy approximation by couplings of the exact moving
-marginals imply convergence of Schrödinger values along any filter.
+/-- Eventual marginal tightness and approximation of each finite-entropy limiting coupling by
+couplings of the exact moving marginals imply convergence of Schrödinger values along any filter.
 The limiting value may be infinite. -/
 theorem tendsto_schroedingerValue_of_entropy_approximation_of_isTightMeasureSet
     [T2Space (X × Y)]
@@ -154,6 +158,7 @@ theorem tendsto_schroedingerValue_of_entropy_approximation_of_isTightMeasureSet
     (hνt : ∃ s ∈ l, IsTightMeasureSet ((fun i ↦ (νs i).toMeasure) '' s))
     (hμ : Tendsto μs l (𝓝 μ)) (hν : Tendsto νs l (𝓝 ν)) (hR : Tendsto Rs l (𝓝 R))
     (happrox : ∀ π : ProbabilityMeasure (X × Y), IsCoupling π.toMeasure μ.toMeasure ν.toMeasure →
+      klDiv π.toMeasure R.toMeasure ≠ ∞ →
       ∃ πs : ι → ProbabilityMeasure (X × Y),
         (∀ᶠ i in l, IsCoupling (πs i).toMeasure (μs i).toMeasure (νs i).toMeasure) ∧
           limsup (fun i ↦ klDiv (πs i).toMeasure (Rs i).toMeasure) l ≤
@@ -260,13 +265,14 @@ theorem exists_isCoupling_tendsto_klDiv_le_liminf
   exact (lowerSemicontinuous_klDiv_finiteMeasure.le_liminf (π.toFiniteMeasure, R)).trans
     hweak.liminf_le_liminf_comp
 
-/-- With entropy approximation by couplings of the exact moving marginals, the Schrödinger
-values converge.
+/-- With approximation of each finite-entropy limiting coupling by couplings of the exact moving
+marginals, the Schrödinger values converge.
 The limiting value may be infinite. -/
 theorem tendsto_schroedingerValue_of_entropy_approximation
     (hμ : Tendsto μs atTop (𝓝 μ)) (hν : Tendsto νs atTop (𝓝 ν))
     (hR : Tendsto Rs atTop (𝓝 R))
     (happrox : ∀ π : ProbabilityMeasure (X × Y), IsCoupling π.toMeasure μ.toMeasure ν.toMeasure →
+      klDiv π.toMeasure R.toMeasure ≠ ∞ →
       ∃ πs : ℕ → ProbabilityMeasure (X × Y),
         (∀ᶠ n in atTop, IsCoupling (πs n).toMeasure (μs n).toMeasure (νs n).toMeasure) ∧
           limsup (fun n ↦ klDiv (πs n).toMeasure (Rs n).toMeasure) atTop ≤
