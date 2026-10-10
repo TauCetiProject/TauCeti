@@ -85,17 +85,18 @@ section BlockApproximation
 
 variable {ι κ : Type*} [MeasurableSpace ι] [MeasurableSpace κ] {p : X → ι} {q : Y → κ}
 
-/-- **The block approximation is a coupling.** Let `π` couple finite measures `μ` and `ν`, and let
-`p` and `q` be measurable maps to the cell labels. If the cell masses of `π` are absolutely
+/-- **The block approximation is a coupling.** Let `π` couple measures `μ` and `ν`, and let `p`
+and `q` be measurable maps to the cell labels along which `μ` and `ν` push forward to σ-finite
+measures (for instance, `μ` and `ν` finite). If the cell masses of `π` are absolutely
 continuous with respect to those of `μ ⊗ ν`, the relative-entropy projection of `μ ⊗ ν` onto the
 measures with the cell masses of `π` is again a coupling of `μ` and `ν`. On each cell it is
 `μ ⊗ ν` rescaled to the mass that `π` gives the cell. -/
-theorem IsCoupling.isCoupling_fitLaw_prodMap [IsFiniteMeasure μ] (hπ : IsCoupling π μ ν)
-    (hp : Measurable p) (hq : Measurable q)
+theorem IsCoupling.isCoupling_fitLaw_prodMap [SigmaFinite (μ.map p)] [SigmaFinite (ν.map q)]
+    (hπ : IsCoupling π μ ν) (hp : Measurable p) (hq : Measurable q)
     (hac : π.map (Prod.map p q) ≪ (μ.prod ν).map (Prod.map p q)) :
     IsCoupling ((μ.prod ν).fitLaw (Prod.map p q) (π.map (Prod.map p q))) μ ν := by
-  have := hπ.isFiniteMeasure
-  have : IsFiniteMeasure ν := hπ.snd_eq ▸ inferInstance
+  have : SigmaFinite μ := .of_map μ hp.aemeasurable inferInstance
+  have : SigmaFinite ν := .of_map ν hq.aemeasurable inferInstance
   have hQ : Measurable (Prod.map p q) := hp.prodMap hq
   have hn : (μ.prod ν).map (Prod.map p q) = (μ.map p).prod (ν.map q) :=
     (Measure.map_prod_map μ ν hp hq).symm

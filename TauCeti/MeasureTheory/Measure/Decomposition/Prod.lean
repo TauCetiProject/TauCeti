@@ -32,12 +32,14 @@ open scoped ENNReal
 namespace MeasureTheory.Measure
 
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] {μ : Measure α} {ν : Measure β}
-  {m : Measure (α × β)} [SigmaFinite μ] [SigmaFinite ν] [SigmaFinite m]
+  {m : Measure (α × β)} [SigmaFinite μ] [SigmaFinite ν]
 
 /-- If `m ≪ μ ⊗ ν` has first marginal `μ`, then for `μ`-almost every `x` the density of `m` against
 `μ ⊗ ν` integrates to `1` in the second variable. -/
 theorem ae_lintegral_rnDeriv_prod_right_eq_one (hm : m.fst = μ) (hac : m ≪ μ.prod ν) :
     ∀ᵐ x ∂μ, ∫⁻ y, m.rnDeriv (μ.prod ν) (x, y) ∂ν = 1 := by
+  have : SigmaFinite m :=
+    .of_map m measurable_fst.aemeasurable (by rw [← Measure.fst, hm]; infer_instance)
   have hd := measurable_rnDeriv m (μ.prod ν)
   refine ae_eq_of_forall_setLIntegral_eq_of_sigmaFinite hd.lintegral_prod_right' measurable_const
     fun s hs _ ↦ ?_
@@ -51,6 +53,8 @@ theorem ae_lintegral_rnDeriv_prod_right_eq_one (hm : m.fst = μ) (hac : m ≪ μ
 against `μ ⊗ ν` integrates to `1` in the first variable. -/
 theorem ae_lintegral_rnDeriv_prod_left_eq_one (hm : m.snd = ν) (hac : m ≪ μ.prod ν) :
     ∀ᵐ y ∂ν, ∫⁻ x, m.rnDeriv (μ.prod ν) (x, y) ∂μ = 1 := by
+  have : SigmaFinite m :=
+    .of_map m measurable_snd.aemeasurable (by rw [← Measure.snd, hm]; infer_instance)
   have hd := measurable_rnDeriv m (μ.prod ν)
   refine ae_eq_of_forall_setLIntegral_eq_of_sigmaFinite hd.lintegral_prod_left' measurable_const
     fun t ht _ ↦ ?_
