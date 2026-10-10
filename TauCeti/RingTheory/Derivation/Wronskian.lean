@@ -18,6 +18,9 @@ constant field of the derivation. The constant-field hypothesis is explicit: eve
 killed by the derivation must come from the scalar field. No characteristic assumption is
 needed with this hypothesis.
 
+Scalar changes of generators multiply the Wronskian by the determinant of the coefficient
+matrix, so an invertible change of basis preserves its nonvanishing.
+
 This criterion supplies the nonvanishing required to define ramification divisors of linear
 series by Wronskians. The differential-field argument follows the Wronskian method in
 D. M. Goldschmidt, *Algebraic Functions and Projective Curves*, GTM 215, Springer, 2003.
@@ -60,7 +63,41 @@ theorem wronskian_singleton (D : Derivation k F F) (f : Fin 1 → F) :
 
 end
 
+section
+
+variable [CommRing k] [CommRing F] [Algebra k F]
+
+/-- A scalar change of generators multiplies the Wronskian by the determinant of its
+coefficient matrix. The columns of `A` give the coefficients of the new family. -/
+theorem wronskian_sum_smul (D : Derivation k F F) {n : ℕ} (f : Fin n → F)
+    (A : Matrix (Fin n) (Fin n) k) :
+    D.wronskian (fun j ↦ ∑ i, A i j • f i) =
+      D.wronskian f * algebraMap k F A.det := by
+  classical
+  have hmatrix :
+      (Matrix.of fun i j : Fin n ↦ (D : F → F)^[i.val] (∑ l, A l j • f l)) =
+        (Matrix.of fun i j : Fin n ↦ (D : F → F)^[i.val] (f j)) *
+          (algebraMap k F).mapMatrix A := by
+    ext i j
+    -- Use the bundled endomorphism so its powers supply sum and scalar linearity.
+    change (D.toLinearMap : Module.End k F)^[i.val] (∑ l, A l j • f l) = _
+    rw [← Module.End.pow_apply, map_sum]
+    simp only [LinearMap.map_smul]
+    simp [Module.End.pow_apply, Matrix.mul_apply, Algebra.smul_def,
+      mul_comm]
+  rw [wronskian_def, hmatrix, Matrix.det_mul, ← RingHom.map_det, ← wronskian_def]
+
+end
+
 variable [Field k] [Field F] [Algebra k F]
+
+/-- An invertible scalar change of generators preserves nonvanishing of the Wronskian.
+This does not require the scalar field to contain every constant of the derivation. -/
+theorem wronskian_sum_smul_ne_zero_iff (D : Derivation k F F) {n : ℕ} (f : Fin n → F)
+    (A : Matrix (Fin n) (Fin n) k) (hA : A.det ≠ 0) :
+    D.wronskian (fun j ↦ ∑ i, A i j • f i) ≠ 0 ↔ D.wronskian f ≠ 0 := by
+  rw [D.wronskian_sum_smul, mul_ne_zero_iff]
+  simp [hA]
 
 /-- A linearly independent family over the constant field has nonzero Wronskian. -/
 theorem wronskian_ne_zero_of_linearIndependent (D : Derivation k F F)
