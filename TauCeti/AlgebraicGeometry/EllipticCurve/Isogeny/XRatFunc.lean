@@ -126,6 +126,7 @@ noncomputable def xRatFunc (φ : Isogeny W₁ W₂) : RatFunc F :=
   ((mem_ratFuncRange W₁).mp φ.fieldPullback_genericX_mem_ratFuncRange).choose
 
 /-- **`x ∘ φ = r(x)`** for the rational function `r = φ.xRatFunc`. -/
+@[simp]
 theorem algebraMap_xRatFunc (φ : Isogeny W₁ W₂) :
     algebraMap (RatFunc F) W₁.FunctionField φ.xRatFunc = φ.fieldPullback (genericX W₂) := by
   rw [← IsScalarTower.toAlgHom_apply F]
@@ -221,6 +222,7 @@ variable [DecidableEq F]
 
 /-- **`φ` sends `(x₀, y₀)` to the point at infinity exactly when the denominator of its
 `x`-coordinate vanishes at `x₀`.** -/
+@[simp]
 theorem pointMap_ofIsogeny_some_eq_zero_iff (h : W₁.Nonsingular x y) :
     (Hom.ofIsogeny φ).pointMap (.some x y h) = 0 ↔ φ.xRatFunc.denom.eval x = 0 := by
   rw [Hom.pointMap_eq_iff, map_zero, map_zero, sub_zero, mem_polePoints_iff,
@@ -233,6 +235,7 @@ theorem pointMap_ofIsogeny_some_eq_zero_iff (h : W₁.Nonsingular x y) :
 
 /-- **Away from the poles, the image of `(x₀, y₀)` under `φ` has `x`-coordinate `r(x₀)`**, for
 `r = φ.xRatFunc`. -/
+@[simp]
 theorem xCoord_pointMap_ofIsogeny_some (h : W₁.Nonsingular x y)
     (hd : φ.xRatFunc.denom.eval x ≠ 0) :
     Point.xCoord ((Hom.ofIsogeny φ).pointMap (.some x y h)) =

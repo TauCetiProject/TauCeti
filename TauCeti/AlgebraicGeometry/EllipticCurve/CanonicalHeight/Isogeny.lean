@@ -110,6 +110,7 @@ private theorem canonicalHeight_pointMap_le (f : Hom W₁ W₂) (P : W₁.Point)
 /-- **The canonical height scales by the degree along a morphism**:
 `canonicalHeight (f P) = deg f · canonicalHeight P`. This includes the zero morphism, which has
 degree `0` and sends every point to `O`. -/
+@[simp]
 theorem canonicalHeight_pointMap (f : Hom W₁ W₂) (P : W₁.Point) :
     (f.pointMap P).canonicalHeight = f.degree * P.canonicalHeight := by
   have h₁ := canonicalHeight_pointMap_le f P
