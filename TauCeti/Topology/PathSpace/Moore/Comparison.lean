@@ -308,8 +308,7 @@ def _root_.Path.toMoorePath (p : Path x y) : MoorePath X :=
   MoorePath.ofUnitPath p.toContinuousMap
 
 @[simp]
-theorem _root_.Path.toMoorePath_apply (p : Path x y) (t : ℝ≥0) :
-    p.toMoorePath t = p (projIcc 0 1 zero_le_one t) :=
+theorem _root_.Path.toMoorePath_apply (p : Path x y) (t : ℝ≥0) : p.toMoorePath t = p.extend t :=
   (rfl)
 
 @[simp]
@@ -348,7 +347,7 @@ theorem _root_.Path.toPath_toMoorePath (p : Path x y) :
     p.toMoorePath.toPath = p.cast (Path.source_toMoorePath p) (Path.target_toMoorePath p) := by
   ext s
   rw [toPath_apply, Path.cast_coe, Path.length_toMoorePath, one_mul, Path.toMoorePath_apply]
-  exact congr_arg p (projIcc_val zero_le_one s)
+  exact p.extend_extends' s
 
 end MoorePath
 
@@ -387,7 +386,7 @@ theorem _root_.Path.toPath_toMooreLoop (p : Path x x) : p.toMooreLoop.toPath = p
   ext s
   rw [toPath_apply, Path.toMoorePath_toMooreLoop, Path.length_toMoorePath, one_mul,
     Path.toMoorePath_apply]
-  exact congr_arg p (projIcc_val zero_le_one s)
+  exact p.extend_extends' s
 
 /-- The composite `Path.toMooreLoop ∘ toPath`, bundled: a Moore loop reparametrized to length
 one. -/
