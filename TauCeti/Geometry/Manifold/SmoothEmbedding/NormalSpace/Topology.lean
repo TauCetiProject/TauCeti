@@ -17,9 +17,10 @@ tangent bundle pulled back along the embedding. This construction uses no metric
 complement, and applies to embeddings in arbitrary ambient manifolds. Its projection and
 zero section are continuous.
 
-A smooth commuting square induces a continuous map of these total spaces: the ambient
-tangent map descends through the quotient. This is the topological compatibility needed
-to express normal-bundle coordinates in different ambient manifold charts.
+A commuting square with differentiable base map and C¹ ambient map induces a continuous
+map of these total spaces: the ambient tangent map descends through the quotient. This is
+the topological compatibility needed to express normal-bundle coordinates in different
+ambient manifold charts.
 
 Reference: J. M. Lee, *Introduction to Smooth Manifolds*, second edition, the normal-bundle
 construction preceding Theorem 6.24. The fibre maps are the existing `SmoothEmbedding.normalMap`.
@@ -110,73 +111,22 @@ variable {E' F' H' G' M' N' K' : Type*}
   [TopologicalSpace N'] [ChartedSpace G' N'] {m : ℕ∞ω}
 
 omit [IsManifold J 1 N] in
-/-- A differentiable commuting square induces a map of intrinsic normal total spaces.
-On each fibre it is the normal map induced by the ambient differential. -/
-def normalBundleMap (f : SmoothEmbedding I J n M N) (g : SmoothEmbedding I' J' m M' N')
-    (hn : n ≠ 0) (hm : m ≠ 0) {u : M → M'} {v : N → N'}
-    (hu : MDifferentiable I I' u) (hv : MDifferentiable J J' v)
-    (h : v ∘ f = g ∘ u) (p : TotalSpace K (fun x => f.NormalSpace x hn)) :
-    TotalSpace K' (fun x => g.NormalSpace x hm) :=
-  ⟨u p.proj, f.normalMap g hn hm (hu p.proj) (hv (f p.proj))
-    (Filter.EventuallyEq.of_eq h) p.2⟩
-
-omit [IsManifold J 1 N] in
-/-- The induced total map applies the normal map in each fibre. -/
-@[simp] theorem normalBundleMap_apply
+/-- On an ambient tangent representative, the induced normal-bundle map takes the normal
+class of the ambient differential of the representative. -/
+theorem normalBundleMap_normalQuotientMap
     (f : SmoothEmbedding I J n M N) (g : SmoothEmbedding I' J' m M' N')
     (hn : n ≠ 0) (hm : m ≠ 0) {u : M → M'} {v : N → N'}
     (hu : MDifferentiable I I' u) (hv : MDifferentiable J J' v)
-    (h : v ∘ f = g ∘ u) (p : TotalSpace K (fun x => f.NormalSpace x hn)) :
-    f.normalBundleMap (K' := K') g hn hm hu hv h p =
-      ⟨u p.proj, f.normalMap g hn hm (hu p.proj) (hv (f p.proj))
-        (Filter.EventuallyEq.of_eq h) p.2⟩ := (rfl)
+    (h : v ∘ f = g ∘ u) (p : TotalSpace F ((f : M → N) *ᵖ (TangentSpace J))) :
+    f.normalBundleMap (K := K) (K' := K') g hn hm hu hv h (f.normalQuotientMap hn p) =
+      g.normalQuotientMap hm (⟨u p.proj, tangentSpaceCast J' (v (f p.proj)) (g (u p.proj))
+        (mfderiv J J' v (f p.proj) p.2)⟩ : TotalSpace F' ((g : M' → N') *ᵖ (TangentSpace J'))) := by
+  rw [normalBundleMap_apply]
+  exact congrArg (TotalSpace.mk (u p.proj))
+    (f.normalMap_normalClass g hn hm (hu p.proj) (hv (f p.proj)) (Filter.EventuallyEq.of_eq h) p.2)
 
-omit [IsManifold J 1 N] in
-/-- The identity square induces the identity of the normal bundle. -/
-@[simp] theorem normalBundleMap_id (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) :
-    f.normalBundleMap (K := K) (K' := K) f hn hn (u := _root_.id) (v := _root_.id)
-      mdifferentiable_id mdifferentiable_id rfl =
-      _root_.id := by
-  funext p
-  simp only [normalBundleMap_apply, normalMap_id, ContinuousLinearMap.id_apply]
-  rfl
-
-section Composition
-
-variable {E'' F'' H'' G'' M'' N'' K'' : Type*}
-  [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
-  [NormedAddCommGroup F''] [NormedSpace 𝕜 F'']
-  [TopologicalSpace H''] [TopologicalSpace G'']
-  {I'' : ModelWithCorners 𝕜 E'' H''} {J'' : ModelWithCorners 𝕜 F'' G''}
-  [TopologicalSpace M''] [ChartedSpace H'' M'']
-  [TopologicalSpace N''] [ChartedSpace G'' N''] {r : ℕ∞ω}
-
-omit [IsManifold J 1 N] in
-/-- Composing commuting squares composes their induced maps on normal total spaces. -/
-theorem normalBundleMap_comp
-    (f : SmoothEmbedding I J n M N) (g : SmoothEmbedding I' J' m M' N')
-    (q : SmoothEmbedding I'' J'' r M'' N'') (hn : n ≠ 0) (hm : m ≠ 0) (hr : r ≠ 0)
-    {u : M → M'} {v : N → N'} {u' : M' → M''} {v' : N' → N''}
-    (hu : MDifferentiable I I' u) (hv : MDifferentiable J J' v)
-    (hu' : MDifferentiable I' I'' u') (hv' : MDifferentiable J' J'' v')
-    (h : v ∘ f = g ∘ u) (h' : v' ∘ g = q ∘ u') :
-    f.normalBundleMap (K := K) (K' := K'') q hn hr (hu'.comp hu) (hv'.comp hv)
-        (by
-          funext x
-          exact (congrArg v' (congrFun h x)).trans (congrFun h' (u x))) =
-      g.normalBundleMap (K := K') (K' := K'') q hm hr hu' hv' h' ∘
-        f.normalBundleMap g hn hm hu hv h := by
-  funext p
-  simp only [Function.comp_apply, normalBundleMap_apply]
-  have hc := f.normalMap_comp g q hn hm hr (hu p.proj) (hv (f p.proj))
-    (hu' (u p.proj)) (hv' (g (u p.proj)))
-    (Filter.EventuallyEq.of_eq h) (Filter.EventuallyEq.of_eq h')
-  exact congrArg (TotalSpace.mk (u' (u p.proj))) (congrArg (fun L => L p.2) hc)
-
-end Composition
-
-/-- A smooth commuting square induces a continuous map of intrinsic normal bundles.
-Only first derivatives of the ambient map are needed. -/
+/-- A commuting square with differentiable base map and C¹ ambient map induces a continuous
+map of intrinsic normal bundles. -/
 theorem continuous_normalBundleMap
     [IsManifold J' 1 N']
     (f : SmoothEmbedding I J n M N) (g : SmoothEmbedding I' J' m M' N')
@@ -208,11 +158,7 @@ theorem continuous_normalBundleMap
   rw [f.continuous_normalBundle_iff hn]
   convert (g.isQuotientMap_normalQuotientMap (K := K') hm).continuous.comp hT using 1
   funext p
-  simp only [Function.comp_apply, normalBundleMap_apply, normalQuotientMap_apply,
-    T]
-  exact congrArg (TotalSpace.mk (u p.proj))
-    (f.normalMap_normalClass g hn hm (hu p.proj)
-      (hv.mdifferentiable (by simp) (f p.proj)) (Filter.EventuallyEq.of_eq h) p.2)
+  exact f.normalBundleMap_normalQuotientMap g hn hm hu _ h p
 
 end Map
 

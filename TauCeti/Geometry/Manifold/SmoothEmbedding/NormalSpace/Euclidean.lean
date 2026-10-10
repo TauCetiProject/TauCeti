@@ -14,7 +14,8 @@ public import TauCeti.Geometry.Manifold.TubularNeighborhood.NormalFrame
 The intrinsic normal fibre of an embedding is a quotient of the ambient tangent space.
 For an embedding into a real Hilbert space, orthogonal projection selects a unique normal
 representative. The quotient topology on the total space, induced by taking normal classes
-in `M × V`, agrees with the subspace topology on the orthogonal normal bundle.
+in the pullback of the ambient tangent bundle (whose total space is identified with `M × V`),
+agrees with the subspace topology on the orthogonal normal bundle.
 
 `SmoothEmbedding.normalBundleHomeomorphOrthogonal` establishes this agreement for an embedding
 of positive regularity from a finite-dimensional boundaryless manifold. It preserves base points,
