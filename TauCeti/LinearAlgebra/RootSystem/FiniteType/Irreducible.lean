@@ -87,16 +87,13 @@ private theorem adj_fork_D {n : ℕ} (hn : 4 ≤ n) (i : Fin n)
 confines each family to its canonical rank range, which is nonempty and is what the proof uses. -/
 theorem connected_diagramGraph_cartanMatrix {t : DynkinType} (ht : t.Valid) :
     (diagramGraph t.cartanMatrix).Connected := by
-  -- The classical series contain every successor edge, hence the path graph.
+  -- The `A`, `B` and `C` diagrams contain every successor edge, hence the path graph.
   have path {n : ℕ} (hn : 0 < n) {G : _root_.SimpleGraph (Fin n)}
       (h : ∀ (i : Fin n) (hi : (i : ℕ) + 1 < n), G.Adj i ⟨(i : ℕ) + 1, hi⟩) : G.Connected :=
     have : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp hn
     SimpleGraph.connected_of_pathGraph_le (SimpleGraph.pathGraph_le_of_adj_succ h)
   -- An exceptional diagram is checked by deciding reachability from one node: the branch node `3`
   -- of `E₆`, `E₇`, `E₈`, and the end node `0` of `F₄` and `G₂`.
-  have connected_of_reachable_from {m : ℕ} (G : _root_.SimpleGraph (Fin m)) (c : Fin m)
-      (h : ∀ w, G.Reachable c w) : G.Connected :=
-    (_root_.SimpleGraph.connected_iff_exists_forall_reachable G).2 ⟨c, h⟩
   cases t with
   | A n =>
       simpa only [rank_A, cartanMatrix_A] using path (valid_A.mp ht) fun i hi ↦ by
@@ -124,21 +121,21 @@ theorem connected_diagramGraph_cartanMatrix {t : DynkinType} (ht : t.Valid) :
             omega
           exact ⟨j, by simp [j]; omega, hji ▸ adj_succ_D hn j (by simp [j]; omega)⟩
       simpa only [rank_D, cartanMatrix_D] using hconn
-  | E6 =>
-      simpa only [rank_E6, cartanMatrix_E6] using
-        connected_of_reachable_from (diagramGraph (CartanMatrix.E 6)) 3 (by decide)
-  | E7 =>
-      simpa only [rank_E7, cartanMatrix_E7] using
-        connected_of_reachable_from (diagramGraph (CartanMatrix.E 7)) 3 (by decide)
-  | E8 =>
-      simpa only [rank_E8, cartanMatrix_E8] using
-        connected_of_reachable_from (diagramGraph (CartanMatrix.E 8)) 3 (by decide)
-  | F4 =>
-      simpa only [rank_F4, cartanMatrix_F4] using
-        connected_of_reachable_from (diagramGraph CartanMatrix.F₄) 0 (by decide)
-  | G2 =>
-      simpa only [rank_G2, cartanMatrix_G2] using
-        connected_of_reachable_from (diagramGraph CartanMatrix.G₂.transpose) 0 (by decide)
+  | E6 => simpa only [rank_E6, cartanMatrix_E6] using
+      (SimpleGraph.connected_iff_exists_forall_reachable
+        (diagramGraph (CartanMatrix.E 6))).2 ⟨3, by decide⟩
+  | E7 => simpa only [rank_E7, cartanMatrix_E7] using
+      (SimpleGraph.connected_iff_exists_forall_reachable
+        (diagramGraph (CartanMatrix.E 7))).2 ⟨3, by decide⟩
+  | E8 => simpa only [rank_E8, cartanMatrix_E8] using
+      (SimpleGraph.connected_iff_exists_forall_reachable
+        (diagramGraph (CartanMatrix.E 8))).2 ⟨3, by decide⟩
+  | F4 => simpa only [rank_F4, cartanMatrix_F4] using
+      (SimpleGraph.connected_iff_exists_forall_reachable
+        (diagramGraph CartanMatrix.F₄)).2 ⟨0, by decide⟩
+  | G2 => simpa only [rank_G2, cartanMatrix_G2] using
+      (SimpleGraph.connected_iff_exists_forall_reachable
+        (diagramGraph CartanMatrix.G₂.transpose)).2 ⟨0, by decide⟩
 
 end DynkinType
 
