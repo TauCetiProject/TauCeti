@@ -285,17 +285,8 @@ theorem not_oppositeFork (hr : T.IsSelfIntersectionMinusTwoFork t c right)
       hl.branch_intersection_eq_zero (i := t - 1 - i) (by omega) hreverse_ne
   have hchainEntry (i j : ℕ) (hi : i < t) (hj : j < t) :
       T.intersection (c i) (c j) =
-        if i = j then -(2 * (w : ℤ)) else if i + 1 = j ∨ j + 1 = i then w else 0 := by
-    split_ifs with hij hadj
-    · subst j
-      rw [hr.intersection_self i hi, hw i hi]
-    · rcases hadj with hadj | hadj
-      · subst j
-        exact hedge i hj
-      · subst i
-        rw [T.intersection_comm]
-        exact hedge j hi
-    · exact hr.intersection_eq_zero hchainCard hi hj hij (by omega) (by omega)
+        if i = j then -(2 * (w : ℤ)) else if i + 1 = j ∨ j + 1 = i then w else 0 :=
+    hr.intersection_eq_ite hchainCard hw hedge hi hj
   have hrightEntry (i : ℕ) (hi : i < t) :
       T.intersection (c i) right = if i = t - 2 then (w : ℤ) else 0 := by
     split_ifs with hit

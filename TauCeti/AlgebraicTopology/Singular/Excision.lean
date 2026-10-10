@@ -17,7 +17,10 @@ cover `X`.  The inclusion of pairs `(A, A ∩ B) ⟶ (X, B)` induces an isomorph
 singular homology in every degree, with coefficients in any object of an abelian category with
 coproducts (`TopPair.isIso_singularHomologyMap_excisionMap`).  Equivalently, excising a set `Z`
 whose closure lies in the interior of `B` does not change relative homology
-(`TopPair.isIso_singularHomologyMap_excisionMap_compl`).
+(`TopPair.isIso_singularHomologyMap_excisionMap_compl`).  In particular, relative homology modulo
+the complement of a closed set `K` may be computed in any open neighbourhood `U` of `K`:
+`(U, U ∖ K) ⟶ (X, X ∖ K)` induces isomorphisms
+(`TopPair.isIso_singularHomologyMap_excisionMap_of_isClosed_subset`).
 
 Both follow from a statement about an arbitrary map of topological pairs `f : P ⟶ P'` whose map
 on ambient spaces is an embedding and whose subspace is the full preimage of the subspace of `P'`:
@@ -212,6 +215,16 @@ theorem isIso_singularHomologyMap_excisionMap_compl (Z : Set X) (h : closure Z �
   by_cases hx : x ∈ closure Z
   · exact Or.inr (h hx)
   · exact Or.inl hx
+
+/-- **Excision onto a neighbourhood.** If `U` is open and contains the closed set `K`, the
+inclusion of pairs `(U, U ∖ K) ⟶ (X, X ∖ K)` induces isomorphisms on relative singular
+homology. -/
+theorem isIso_singularHomologyMap_excisionMap_of_isClosed_subset {U K : Set X} (hU : IsOpen U)
+    (hK : IsClosed K) (hKU : K ⊆ U) (n : ℕ) :
+    IsIso (TopPair.singularHomologyMap (excisionMap U Kᶜ) R n) := by
+  refine isIso_singularHomologyMap_excisionMap R U Kᶜ ?_ n
+  rw [hU.interior_eq, hK.isOpen_compl.interior_eq]
+  exact Set.eq_univ_of_subset (Set.union_subset_union_left _ hKU) (Set.union_compl_self K)
 
 variable {A B} {Y : TopCat.{w}} (g : X ⟶ Y) {A' B' : Set Y}
   (hA : Set.MapsTo g A A') (hB : Set.MapsTo g B B')
