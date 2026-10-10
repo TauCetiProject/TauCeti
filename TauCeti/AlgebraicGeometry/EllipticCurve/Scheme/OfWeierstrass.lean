@@ -15,24 +15,24 @@ Let `W` be an elliptic Weierstrass curve over a commutative ring `R`. Its projec
 `W.projModel`, with structure morphism `W.projModelOver` and zero section `[0 : 1 : 0]`, is smooth
 of relative dimension one and proper over `Spec R`, and it is its own pointed Weierstrass chart
 over the whole base. It is therefore an elliptic curve over `Spec R` in the sense of
-`EllipticCurveGeom`: `W.ofWeierstrass`. By definition, every elliptic curve over a scheme is,
+`EllipticCurveGeom`: `W.toEllipticCurveGeom`. By definition, every elliptic curve over a scheme is,
 Zariski-locally on the base, isomorphic to one of these.
 
-The total space of `ofWeierstrass W` is identified with `W.projModel` by `ofWeierstrassIso`,
-compatibly with the structure morphisms and the zero sections. Base change along
-`Spec φ : Spec R' ⟶ Spec R` for a ring homomorphism `φ : R →+* R'` corresponds to extending the
-coefficients of `W` along `φ`: the total space of `(ofWeierstrass W).baseChange (Spec φ)` is
-identified with `(W.map φ).projModel` by `ofWeierstrassBaseChangeIso`, again compatibly with the
-structure morphisms and the zero sections, and with the projections to `W.projModel`.
+The total space of `toEllipticCurveGeom W` is identified with `W.projModel` by
+`toEllipticCurveGeomIso`, compatibly with the structure morphisms and the zero sections. Base change
+along `Spec φ : Spec R' ⟶ Spec R` for a ring homomorphism `φ : R →+* R'` corresponds to extending
+the coefficients of `W` along `φ`: the total space of `(toEllipticCurveGeom W).baseChange (Spec φ)`
+is identified with `(W.map φ).projModel` by `toEllipticCurveGeomBaseChangeIso`, again compatibly
+with the structure morphisms and the zero sections, and with the projections to `W.projModel`.
 
 ## Main definitions
 
-* `WeierstrassCurve.ofWeierstrass W`: the projective model of an elliptic Weierstrass curve `W`
-  over `R`, as an elliptic curve over `Spec R`.
-* `WeierstrassCurve.ofWeierstrassIso W`: the identification of the total space of
-  `ofWeierstrass W` with `W.projModel`.
-* `WeierstrassCurve.ofWeierstrassBaseChangeIso W φ`: the identification of the total space of the
-  base change of `ofWeierstrass W` along `Spec φ` with `(W.map φ).projModel`.
+* `WeierstrassCurve.toEllipticCurveGeom W`: the projective model of an elliptic Weierstrass curve
+  `W` over `R`, as an elliptic curve over `Spec R`.
+* `WeierstrassCurve.toEllipticCurveGeomIso W`: the identification of the total space of
+  `toEllipticCurveGeom W` with `W.projModel`.
+* `WeierstrassCurve.toEllipticCurveGeomBaseChangeIso W φ`: the identification of the total space of
+  the base change of `toEllipticCurveGeom W` along `Spec φ` with `(W.map φ).projModel`.
 
 ## References
 
@@ -56,8 +56,8 @@ variable {R : Type u} [CommRing R] (W : WeierstrassCurve R) [W.IsElliptic]
 projective model `W.projModel`, with structure morphism `W.projModelOver` and zero section the
 point `[0 : 1 : 0]` (`W.projModelZero`). Its pointed Weierstrass atlas consists of a single chart
 over the whole base, whose isomorphism with the projective model is the identity. The total space
-is identified with `W.projModel` by `ofWeierstrassIso`. -/
-noncomputable def ofWeierstrass : EllipticCurveGeom (Spec (.of R)) where
+is identified with `W.projModel` by `toEllipticCurveGeomIso`. -/
+noncomputable def toEllipticCurveGeom : EllipticCurveGeom (Spec (.of R)) where
   carrier := W.projModel
   structureMap := W.projModelOver
   zero := W.projModelZero
@@ -86,75 +86,79 @@ noncomputable def ofWeierstrass : EllipticCurveGeom (Spec (.of R)) where
       modelIso_zero := by simp }
     covers s := ⟨PUnit.unit, s, rfl⟩ }⟩
 
-/-- The isomorphism identifying the total space of `ofWeierstrass W` with the projective model
-`W.projModel`. Under it, the structure morphism of `ofWeierstrass W` is `W.projModelOver`
-(`ofWeierstrassIso_hom_projModelOver`) and its zero section is `W.projModelZero`
-(`zero_ofWeierstrassIso_hom`). -/
-noncomputable def ofWeierstrassIso : (ofWeierstrass W).carrier ≅ W.projModel :=
+/-- The isomorphism identifying the total space of `toEllipticCurveGeom W` with the projective model
+`W.projModel`. Under it, the structure morphism of `toEllipticCurveGeom W` is `W.projModelOver`
+(`toEllipticCurveGeomIso_hom_projModelOver`) and its zero section is `W.projModelZero`
+(`zero_toEllipticCurveGeomIso_hom`). -/
+noncomputable def toEllipticCurveGeomIso : (toEllipticCurveGeom W).carrier ≅ W.projModel :=
   Iso.refl _
 
-/-- Under `ofWeierstrassIso`, the structure morphism of `ofWeierstrass W` is `W.projModelOver`. -/
+/-- Under `toEllipticCurveGeomIso`, the structure morphism of `toEllipticCurveGeom W` is
+`W.projModelOver`. -/
 @[reassoc (attr := simp)]
-theorem ofWeierstrassIso_hom_projModelOver :
-    (ofWeierstrassIso W).hom ≫ W.projModelOver = (ofWeierstrass W).structureMap := by
-  simp [ofWeierstrassIso, ofWeierstrass]
+theorem toEllipticCurveGeomIso_hom_projModelOver :
+    (toEllipticCurveGeomIso W).hom ≫ W.projModelOver = (toEllipticCurveGeom W).structureMap := by
+  simp [toEllipticCurveGeomIso, toEllipticCurveGeom]
 
-/-- Under `ofWeierstrassIso`, the zero section of `ofWeierstrass W` is the zero section
+/-- Under `toEllipticCurveGeomIso`, the zero section of `toEllipticCurveGeom W` is the zero section
 `[0 : 1 : 0]` of the projective model. -/
 @[reassoc (attr := simp)]
-theorem zero_ofWeierstrassIso_hom :
-    (ofWeierstrass W).zero ≫ (ofWeierstrassIso W).hom = W.projModelZero := by
-  simp [ofWeierstrassIso, ofWeierstrass]
+theorem zero_toEllipticCurveGeomIso_hom :
+    (toEllipticCurveGeom W).zero ≫ (toEllipticCurveGeomIso W).hom = W.projModelZero := by
+  simp [toEllipticCurveGeomIso, toEllipticCurveGeom]
 
 /-! ### Base change along a ring homomorphism -/
 
 variable {R' : Type u} [CommRing R'] (φ : R →+* R')
 
--- The projective model of `W.map φ` is a pullback of the structure morphism of `ofWeierstrass W`
--- along `Spec φ`.
-private theorem isPullback_projModelBaseChange_comp_ofWeierstrassIso_inv :
-    IsPullback (W.projModelBaseChange φ ≫ (ofWeierstrassIso W).inv) (W.map φ).projModelOver
-      (ofWeierstrass W).structureMap (Spec.map (CommRingCat.ofHom φ)) :=
-  (W.isPullback_projModelBaseChange φ).of_iso (.refl _) (ofWeierstrassIso W).symm (.refl _)
+-- The projective model of `W.map φ` is a pullback of the structure morphism of
+-- `toEllipticCurveGeom W` along `Spec φ`.
+private theorem isPullback_projModelBaseChange_comp_toEllipticCurveGeomIso_inv :
+    IsPullback (W.projModelBaseChange φ ≫ (toEllipticCurveGeomIso W).inv) (W.map φ).projModelOver
+      (toEllipticCurveGeom W).structureMap (Spec.map (CommRingCat.ofHom φ)) :=
+  (W.isPullback_projModelBaseChange φ).of_iso (.refl _) (toEllipticCurveGeomIso W).symm (.refl _)
     (.refl _) (by simp) (by simp) (by simp [Iso.eq_inv_comp]) (by simp)
 
-/-- The isomorphism identifying the total space of the base change of `ofWeierstrass W` along
+/-- The isomorphism identifying the total space of the base change of `toEllipticCurveGeom W` along
 `Spec φ : Spec R' ⟶ Spec R` with the projective model of `W.map φ`. Under it, the structure
 morphism of the base change is `(W.map φ).projModelOver`
-(`ofWeierstrassBaseChangeIso_hom_projModelOver`), its zero section is `(W.map φ).projModelZero`
-(`zero_ofWeierstrassBaseChangeIso_hom`), and its projection to `ofWeierstrass W` is the base change
-morphism `W.projModelBaseChange φ` (`ofWeierstrassBaseChangeIso_hom_projModelBaseChange`). -/
-noncomputable def ofWeierstrassBaseChangeIso :
-    ((ofWeierstrass W).baseChange (Spec.map (CommRingCat.ofHom φ))).carrier ≅
+(`toEllipticCurveGeomBaseChangeIso_hom_projModelOver`), its zero section is
+`(W.map φ).projModelZero` (`zero_toEllipticCurveGeomBaseChangeIso_hom`), and its projection to
+`toEllipticCurveGeom W` is the base change morphism `W.projModelBaseChange φ`
+(`toEllipticCurveGeomBaseChangeIso_hom_projModelBaseChange`). -/
+noncomputable def toEllipticCurveGeomBaseChangeIso :
+    ((toEllipticCurveGeom W).baseChange (Spec.map (CommRingCat.ofHom φ))).carrier ≅
       (W.map φ).projModel :=
-  ((ofWeierstrass W).isPullback_baseChange _).isoIsPullback _ _
-    (isPullback_projModelBaseChange_comp_ofWeierstrassIso_inv W φ)
+  ((toEllipticCurveGeom W).isPullback_baseChange _).isoIsPullback _ _
+    (isPullback_projModelBaseChange_comp_toEllipticCurveGeomIso_inv W φ)
 
-/-- Under `ofWeierstrassBaseChangeIso`, the structure morphism of the base change of
-`ofWeierstrass W` along `Spec φ` is `(W.map φ).projModelOver`. -/
+/-- Under `toEllipticCurveGeomBaseChangeIso`, the structure morphism of the base change of
+`toEllipticCurveGeom W` along `Spec φ` is `(W.map φ).projModelOver`. -/
 @[reassoc (attr := simp)]
-theorem ofWeierstrassBaseChangeIso_hom_projModelOver :
-    (ofWeierstrassBaseChangeIso W φ).hom ≫ (W.map φ).projModelOver =
-      ((ofWeierstrass W).baseChange (Spec.map (CommRingCat.ofHom φ))).structureMap :=
+theorem toEllipticCurveGeomBaseChangeIso_hom_projModelOver :
+    (toEllipticCurveGeomBaseChangeIso W φ).hom ≫ (W.map φ).projModelOver =
+      ((toEllipticCurveGeom W).baseChange (Spec.map (CommRingCat.ofHom φ))).structureMap :=
   IsPullback.isoIsPullback_hom_snd ..
 
-/-- Under `ofWeierstrassBaseChangeIso` and `ofWeierstrassIso`, the projection from the base change
-of `ofWeierstrass W` along `Spec φ` to `ofWeierstrass W` is the base change morphism
-`W.projModelBaseChange φ : (W.map φ).projModel ⟶ W.projModel`. -/
+/-- Under `toEllipticCurveGeomBaseChangeIso` and `toEllipticCurveGeomIso`, the projection from the
+base change of `toEllipticCurveGeom W` along `Spec φ` to `toEllipticCurveGeom W` is the base change
+morphism `W.projModelBaseChange φ : (W.map φ).projModel ⟶ W.projModel`. -/
 @[reassoc (attr := simp)]
-theorem ofWeierstrassBaseChangeIso_hom_projModelBaseChange :
-    (ofWeierstrassBaseChangeIso W φ).hom ≫ W.projModelBaseChange φ =
-      ((ofWeierstrass W).baseChangeIso _).hom ≫ pullback.fst _ _ ≫ (ofWeierstrassIso W).hom := by
-  rw [← cancel_mono (ofWeierstrassIso W).inv]
+theorem toEllipticCurveGeomBaseChangeIso_hom_projModelBaseChange :
+    (toEllipticCurveGeomBaseChangeIso W φ).hom ≫ W.projModelBaseChange φ =
+      ((toEllipticCurveGeom W).baseChangeIso _).hom ≫ pullback.fst _ _ ≫
+        (toEllipticCurveGeomIso W).hom := by
+  rw [← cancel_mono (toEllipticCurveGeomIso W).inv]
   simp only [Category.assoc, Iso.hom_inv_id, Category.comp_id]
   exact IsPullback.isoIsPullback_hom_fst ..
 
-/-- Under `ofWeierstrassBaseChangeIso`, the zero section of the base change of `ofWeierstrass W`
-along `Spec φ` is the zero section `[0 : 1 : 0]` of the projective model of `W.map φ`. -/
+/-- Under `toEllipticCurveGeomBaseChangeIso`, the zero section of the base change of
+`toEllipticCurveGeom W` along `Spec φ` is the zero section `[0 : 1 : 0]` of the projective model of
+`W.map φ`. -/
 @[reassoc (attr := simp)]
-theorem zero_ofWeierstrassBaseChangeIso_hom :
-    ((ofWeierstrass W).baseChange (Spec.map (CommRingCat.ofHom φ))).zero ≫
-      (ofWeierstrassBaseChangeIso W φ).hom = (W.map φ).projModelZero := by
+theorem zero_toEllipticCurveGeomBaseChangeIso_hom :
+    ((toEllipticCurveGeom W).baseChange (Spec.map (CommRingCat.ofHom φ))).zero ≫
+      (toEllipticCurveGeomBaseChangeIso W φ).hom = (W.map φ).projModelZero := by
   apply (W.isPullback_projModelBaseChange φ).hom_ext <;> simp
 
 end WeierstrassCurve
