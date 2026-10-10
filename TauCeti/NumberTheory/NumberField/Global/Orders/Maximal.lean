@@ -5,41 +5,39 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.ClassGroup.Equiv
 public import TauCeti.NumberTheory.NumberField.Global.Orders.NarrowPic
 public import TauCeti.NumberTheory.NumberField.NarrowClassGroup.Basic
-public import TauCeti.NumberTheory.ClassGroup.Equiv
 
 /-!
 # The Picard groups of the maximal order
 
-The maximal order `maximalNumberFieldOrder K` has the ring of integers as its underlying ring, but
-as a subalgebra of `K` rather than as the type `𝓞 K`. Its wide and narrow Picard groups are
-therefore quotients of a different, though canonically isomorphic, group of fractional ideals than
-Mathlib's `ClassGroup (𝓞 K)` and the narrow class group `NarrowClassGroup K`.
+The maximal order `maximalNumberFieldOrder K` of a number field `K` has the same elements as the
+ring of integers `𝓞 K`, but it is a different type: the order-theoretic API (`Pic`, `NarrowPic`,
+`NumberFieldOrder.narrowToPic`) is stated for its subalgebra, while the classical API
+(`ClassGroup (𝓞 K)`, `NumberField.NarrowClassGroup K`) is stated for `𝓞 K`. This file transports
+fractional ideals across that identification and specializes the Picard groups of an order to
+the class groups of the maximal order:
 
-This file supplies the canonical identifications of the Picard groups of the maximal order with
-these classical groups. Both come from the ring isomorphism between the maximal order and `𝓞 K`
-given by `IsIntegralClosure.equiv`: the wide one is Mathlib's `ClassGroup.mulEquiv` of that
-isomorphism, and the narrow one is the quotient of the same transport of fractional ideals.
+* `Pic (maximalNumberFieldOrder K) ≃* ClassGroup (𝓞 K)`,
+* `NarrowPic (maximalNumberFieldOrder K) ≃* NumberField.NarrowClassGroup K`,
 
-Under these identifications, the forgetful map `narrowToPic` from the narrow to the wide Picard
-group becomes the forgetful map `NarrowClassGroup.toClassGroup` from the narrow class group to the
-class group. Statements proved for the Picard groups of an arbitrary order thereby specialize to
-the class groups of `K`.
+compatibly with the forgetful maps `NarrowPic O → Pic O` and `Cl⁺(K) → Cl(K)`. Both equivalences
+send the class of a fractional ideal to the class of the fractional ideal with the same elements.
 
-## Main definitions
+## Main definitions and results
 
-* `TauCeti.GlobalNumberFields.maximalOrderFractionalIdealEquiv`: fractional ideals of the maximal
-  order are fractional ideals of `𝓞 K` with the same elements.
-* `TauCeti.GlobalNumberFields.maximalOrderPicEquiv`: the Picard group of the maximal order is the
-  class group of `𝓞 K`.
+* `TauCeti.GlobalNumberFields.maximalOrderRingEquiv`: the maximal order is the ring of integers.
+* `TauCeti.GlobalNumberFields.maximalOrderFractionalIdealEquiv`: the induced identification of
+  fractional ideals, with `mem_maximalOrderFractionalIdealEquiv`, and its restriction
+  `maximalOrderUnitsEquiv` to invertible ideals, which preserves principal ideals
+  (`maximalOrderUnitsEquiv_toPrincipalIdeal`).
+* `TauCeti.GlobalNumberFields.maximalOrderPicEquiv`: the wide Picard group of the maximal order
+  is the class group of `𝓞 K`, via Mathlib's `ClassGroup.mulEquiv`.
 * `TauCeti.GlobalNumberFields.maximalOrderNarrowPicEquiv`: the narrow Picard group of the maximal
   order is the narrow class group of `K`.
-
-## Main results
-
-* `TauCeti.GlobalNumberFields.maximalOrderPicEquiv_comp_narrowToPic`: the narrow-to-wide map of
-  the maximal order is the forgetful map from the narrow class group to the class group.
+* `TauCeti.GlobalNumberFields.toClassGroup_comp_maximalOrderNarrowPicEquiv`: under these
+  equivalences, `NumberFieldOrder.narrowToPic` becomes `NumberField.NarrowClassGroup.toClassGroup`.
 
 ## References
 
@@ -50,186 +48,171 @@ public section
 noncomputable section
 
 open NumberField
+open scoped nonZeroDivisors
 
 namespace TauCeti.GlobalNumberFields
 
-variable (K : Type*) [Field K] [NumberField K]
+variable {K : Type*} [Field K] [NumberField K]
 
-/-- The canonical ring isomorphism from the maximal order to `𝓞 K`. -/
-private abbrev maximalOrderRingEquiv : (maximalNumberFieldOrder K).toSubalgebra ≃+* 𝓞 K :=
-  (IsIntegralClosure.equiv ℤ (maximalNumberFieldOrder K).toSubalgebra K (𝓞 K)).toRingEquiv
+variable (K) in
+/-- The maximal order of `K` is the ring of integers `𝓞 K`: the two rings have the same elements
+of `K`. -/
+def maximalOrderRingEquiv : (maximalNumberFieldOrder K).toSubalgebra ≃+* 𝓞 K :=
+  (Subalgebra.equivOfEq _ _ (maximalNumberFieldOrder_toSubalgebra K)).toRingEquiv
 
-/-- The isomorphism `maximalOrderRingEquiv` induces the identity of `K`, since it does not move
-elements of `K`. -/
-private theorem ringEquivOfRingEquiv_maximalOrderRingEquiv_apply (x : K) :
-    IsFractionRing.ringEquivOfRingEquiv (K := K) (L := K) (maximalOrderRingEquiv K) x = x := by
-  refine RingHom.congr_fun (IsLocalization.ringHom_ext
-    (nonZeroDivisors (maximalNumberFieldOrder K).toSubalgebra)
-    (j := (IsFractionRing.ringEquivOfRingEquiv (K := K) (L := K) (maximalOrderRingEquiv K) :
-      K →+* K))
-    (k := RingHom.id K) (RingHom.ext fun a ↦ ?_)) x
-  simp only [RingHom.coe_comp, RingHom.coe_coe, Function.comp_apply,
-    IsFractionRing.ringEquivOfRingEquiv_algebraMap, RingHom.id_apply]
-  exact IsIntegralClosure.algebraMap_equiv ℤ _ K (𝓞 K) a
+/-- The identification of the maximal order with `𝓞 K` is compatible with the inclusions into
+`K`. -/
+@[simp]
+theorem algebraMap_maximalOrderRingEquiv (x : (maximalNumberFieldOrder K).toSubalgebra) :
+    algebraMap (𝓞 K) K (maximalOrderRingEquiv K x) = algebraMap _ K x := (rfl)
 
-/-- Fractional ideals of the maximal order are fractional ideals of `𝓞 K`: the two carriers have
-the same elements of `K`, by `mem_maximalOrderFractionalIdealEquiv_iff`. -/
+variable (K) in
+/-- The automorphism of the fraction field induced by `maximalOrderRingEquiv` is the identity. -/
+@[simp]
+theorem ringEquivOfRingEquiv_maximalOrderRingEquiv :
+    IsFractionRing.ringEquivOfRingEquiv (K := K) (L := K) (maximalOrderRingEquiv K) =
+      RingEquiv.refl K := by
+  refine RingEquiv.toRingHom_injective (IsLocalization.ringHom_ext
+    (maximalNumberFieldOrder K).toSubalgebra⁰ (RingHom.ext fun a => ?_))
+  simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
+    IsFractionRing.ringEquivOfRingEquiv_algebraMap, RingEquiv.refl_apply]
+  exact algebraMap_maximalOrderRingEquiv a
+
+variable (K) in
+/-- Fractional ideals of the maximal order are fractional ideals of `𝓞 K`, transported along
+`maximalOrderRingEquiv`. A fractional ideal and its transport have the same elements
+(`mem_maximalOrderFractionalIdealEquiv`). -/
 def maximalOrderFractionalIdealEquiv :
-    FractionalIdeal (nonZeroDivisors (maximalNumberFieldOrder K).toSubalgebra) K ≃+*
-      FractionalIdeal (nonZeroDivisors (𝓞 K)) K :=
+    FractionalIdeal (maximalNumberFieldOrder K).toSubalgebra⁰ K ≃+* FractionalIdeal (𝓞 K)⁰ K :=
   FractionalIdeal.ringEquivOfRingEquiv K K (maximalOrderRingEquiv K)
 
-variable {K}
-
-/-- A fractional ideal of the maximal order and the corresponding fractional ideal of `𝓞 K` have
-the same elements. -/
+/-- A fractional ideal of the maximal order and its transport to `𝓞 K` have the same elements. -/
 @[simp]
-theorem mem_maximalOrderFractionalIdealEquiv_iff
-    {I : FractionalIdeal (nonZeroDivisors (maximalNumberFieldOrder K).toSubalgebra) K} {x : K} :
+theorem mem_maximalOrderFractionalIdealEquiv
+    {I : FractionalIdeal (maximalNumberFieldOrder K).toSubalgebra⁰ K} {x : K} :
     x ∈ maximalOrderFractionalIdealEquiv K I ↔ x ∈ I := by
-  have hI := FractionalIdeal.ringEquivOfRingEquiv_apply_val K K (maximalOrderRingEquiv K) I
-  rw [FractionalIdeal.val_eq_coe, FractionalIdeal.val_eq_coe] at hI
-  rw [maximalOrderFractionalIdealEquiv, ← FractionalIdeal.mem_coe, hI, Submodule.mem_map]
-  -- `erw` aligns the inverse-map instance carried by the semilinear equivalence with the one
-  -- `LinearEquiv.coe_toLinearMap` infers.
-  erw [LinearEquiv.coe_toLinearMap]
-  simp only [IsFractionRing.semilinearEquivOfRingEquiv_apply,
-    ringEquivOfRingEquiv_maximalOrderRingEquiv_apply, exists_eq_right, FractionalIdeal.mem_coe]
+  have h (y : K) : IsFractionRing.ringEquivOfRingEquiv (K := K) (L := K)
+      (maximalOrderRingEquiv K) y = y := by
+    rw [ringEquivOfRingEquiv_maximalOrderRingEquiv, RingEquiv.refl_apply]
+  rw [← FractionalIdeal.mem_coe, maximalOrderFractionalIdealEquiv,
+    FractionalIdeal.ringEquivOfRingEquiv_apply, FractionalIdeal.coe_mk]
+  simp only [Submodule.mem_map, FractionalIdeal.val_eq_coe, FractionalIdeal.mem_coe]
+  -- The semilinear equivalence underlying the transport applies
+  -- `IsFractionRing.ringEquivOfRingEquiv` (`IsFractionRing.semilinearEquivOfRingEquiv_apply`).
+  refine ⟨fun ⟨y, hy, hyx⟩ => ?_, fun hx => ⟨x, hx, h x⟩⟩
+  obtain rfl : y = x := (h y).symm.trans hyx
+  exact hy
 
-/-- A fractional ideal of `𝓞 K` and the corresponding fractional ideal of the maximal order have
-the same elements. -/
-@[simp]
-theorem mem_maximalOrderFractionalIdealEquiv_symm_iff
-    {J : FractionalIdeal (nonZeroDivisors (𝓞 K)) K} {x : K} :
-    x ∈ (maximalOrderFractionalIdealEquiv K).symm J ↔ x ∈ J := by
-  rw [← mem_maximalOrderFractionalIdealEquiv_iff, RingEquiv.apply_symm_apply]
-
-/-- The principal fractional ideal of the maximal order generated by `x` corresponds to the
-principal fractional ideal of `𝓞 K` generated by `x`. -/
+/-- The transport of a principal fractional ideal is generated by the same element. -/
 @[simp]
 theorem maximalOrderFractionalIdealEquiv_spanSingleton (x : K) :
     maximalOrderFractionalIdealEquiv K
-        (FractionalIdeal.spanSingleton (nonZeroDivisors (maximalNumberFieldOrder K).toSubalgebra)
-          x) =
-      FractionalIdeal.spanSingleton (nonZeroDivisors (𝓞 K)) x := by
+        (FractionalIdeal.spanSingleton (maximalNumberFieldOrder K).toSubalgebra⁰ x) =
+      FractionalIdeal.spanSingleton (𝓞 K)⁰ x := by
   rw [maximalOrderFractionalIdealEquiv, FractionalIdeal.ringEquivOfRingEquiv_spanSingleton,
-    ringEquivOfRingEquiv_maximalOrderRingEquiv_apply]
+    ringEquivOfRingEquiv_maximalOrderRingEquiv, RingEquiv.refl_apply]
 
-/-- The principal fractional ideals of the maximal order correspond to those of `𝓞 K`. -/
+variable (K) in
+/-- The invertible fractional ideals of the maximal order are the invertible fractional ideals of
+`𝓞 K`, via `maximalOrderFractionalIdealEquiv`. -/
+def maximalOrderUnitsEquiv :
+    (maximalNumberFieldOrder K).invertibleProperFractionalIdeals ≃* (FractionalIdeal (𝓞 K)⁰ K)ˣ :=
+  Units.mapEquiv (maximalOrderFractionalIdealEquiv K).toMulEquiv
+
+/-- The underlying fractional ideal of `maximalOrderUnitsEquiv K I` is the transport of `I`. -/
 @[simp]
-theorem mapEquiv_maximalOrderFractionalIdealEquiv_toPrincipalIdeal (x : Kˣ) :
-    Units.mapEquiv (maximalOrderFractionalIdealEquiv K : _ ≃* _)
-        (toPrincipalIdeal (maximalNumberFieldOrder K).toSubalgebra K x) =
+theorem coe_maximalOrderUnitsEquiv
+    (I : (maximalNumberFieldOrder K).invertibleProperFractionalIdeals) :
+    (maximalOrderUnitsEquiv K I : FractionalIdeal (𝓞 K)⁰ K) =
+      maximalOrderFractionalIdealEquiv K I := (rfl)
+
+/-- Transport of fractional ideals sends the principal fractional ideal of `x` over the maximal
+order to the principal fractional ideal of `x` over `𝓞 K`. -/
+@[simp]
+theorem maximalOrderUnitsEquiv_toPrincipalIdeal (x : Kˣ) :
+    maximalOrderUnitsEquiv K (toPrincipalIdeal (maximalNumberFieldOrder K).toSubalgebra K x) =
       toPrincipalIdeal (𝓞 K) K x := by
   ext : 1
   simp [coe_toPrincipalIdeal]
 
-/-- The principal fractional ideals of `𝓞 K` correspond to those of the maximal order. -/
-@[simp]
-theorem mapEquiv_maximalOrderFractionalIdealEquiv_symm_toPrincipalIdeal (x : Kˣ) :
-    Units.mapEquiv (maximalOrderFractionalIdealEquiv K : _ ≃* _).symm
-        (toPrincipalIdeal (𝓞 K) K x) =
-      toPrincipalIdeal (maximalNumberFieldOrder K).toSubalgebra K x := by
-  rw [← Units.mapEquiv_symm, MulEquiv.symm_apply_eq,
-    mapEquiv_maximalOrderFractionalIdealEquiv_toPrincipalIdeal]
-
-variable (K)
-
-/-- **The Picard group of the maximal order is the class group of `𝓞 K`.** The class of an
-invertible fractional ideal of the maximal order goes to the class of the fractional ideal of
-`𝓞 K` with the same elements. -/
+variable (K) in
+/-- **The wide Picard group of the maximal order is the class group of `𝓞 K`.** It is Mathlib's
+`ClassGroup.mulEquiv` for `maximalOrderRingEquiv`. -/
 def maximalOrderPicEquiv : Pic (maximalNumberFieldOrder K) ≃* ClassGroup (𝓞 K) :=
   ClassGroup.mulEquiv (maximalOrderRingEquiv K)
 
-/-- **The narrow Picard group of the maximal order is the narrow class group of `K`.** The narrow
-class of an invertible fractional ideal of the maximal order goes to the narrow class of the
-fractional ideal of `𝓞 K` with the same elements. -/
-def maximalOrderNarrowPicEquiv : NarrowPic (maximalNumberFieldOrder K) ≃* NarrowClassGroup K :=
-  MonoidHom.toMulEquiv
-    (NarrowPic.lift _
-      (NarrowClassGroup.mk.comp
-        (Units.mapEquiv (maximalOrderFractionalIdealEquiv K : _ ≃* _)).toMonoidHom)
-      fun I hI ↦ by
-        obtain ⟨x, hx, rfl⟩ := (NumberFieldOrder.mem_narrowPrincipal_iff _).mp hI
-        rw [MonoidHom.mem_ker, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-          mapEquiv_maximalOrderFractionalIdealEquiv_toPrincipalIdeal,
-          ← NarrowClassGroup.mkPrincipal_apply]
-        exact NarrowClassGroup.mkPrincipal_eq_one_of_isTotallyPositive hx)
-    (NarrowClassGroup.lift
-      ((NarrowPic.mk _).comp
-        (Units.mapEquiv (maximalOrderFractionalIdealEquiv K : _ ≃* _).symm).toMonoidHom)
-      fun J hJ ↦ by
-        obtain ⟨x, hx, rfl⟩ := mem_narrowPrincipalSubgroup.mp hJ
-        rw [MonoidHom.mem_ker, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-          mapEquiv_maximalOrderFractionalIdealEquiv_symm_toPrincipalIdeal,
-          ← NarrowPic.mkPrincipal_apply]
-        exact NarrowPic.mkPrincipal_eq_one_of_isTotallyPositive _ hx)
-    (MonoidHom.ext fun c ↦ by
-      obtain ⟨I, rfl⟩ := NarrowPic.mk_surjective _ c
-      rw [MonoidHom.comp_apply, NarrowPic.lift_mk, MonoidHom.comp_apply, NarrowClassGroup.lift_mk,
-        MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulEquiv.coe_toMonoidHom,
-        ← Units.mapEquiv_symm, MulEquiv.symm_apply_apply, MonoidHom.id_apply])
-    (MonoidHom.ext fun c ↦ by
-      obtain ⟨J, rfl⟩ := NarrowClassGroup.mk_surjective c
-      rw [MonoidHom.comp_apply, NarrowClassGroup.lift_mk, MonoidHom.comp_apply, NarrowPic.lift_mk,
-        MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulEquiv.coe_toMonoidHom,
-        ← Units.mapEquiv_symm, MulEquiv.apply_symm_apply, MonoidHom.id_apply])
-
-variable {K}
-
-/-- The Picard class of an invertible fractional ideal of the maximal order goes to the ideal
-class of the fractional ideal of `𝓞 K` with the same elements. -/
+/-- `maximalOrderPicEquiv` sends the Picard class of an invertible fractional ideal of the maximal
+order to the ideal class of the fractional ideal of `𝓞 K` with the same elements. -/
 @[simp]
 theorem maximalOrderPicEquiv_mkPic
     (I : (maximalNumberFieldOrder K).invertibleProperFractionalIdeals) :
     maximalOrderPicEquiv K ((maximalNumberFieldOrder K).mkPic I) =
-      ClassGroup.mk K (Units.mapEquiv (maximalOrderFractionalIdealEquiv K : _ ≃* _) I) :=
-  ClassGroup.mulEquiv_mk K (maximalOrderRingEquiv K) I
+      ClassGroup.mk K (maximalOrderUnitsEquiv K I) :=
+  ClassGroup.mulEquiv_mk K _ I
 
-/-- The inverse of `maximalOrderPicEquiv` sends the ideal class of a fractional ideal of `𝓞 K` to
-the Picard class of the fractional ideal of the maximal order with the same elements. -/
-@[simp]
-theorem maximalOrderPicEquiv_symm_mk (J : (FractionalIdeal (nonZeroDivisors (𝓞 K)) K)ˣ) :
-    (maximalOrderPicEquiv K).symm (ClassGroup.mk K J) =
-      (maximalNumberFieldOrder K).mkPic
-        ((Units.mapEquiv (maximalOrderFractionalIdealEquiv K : _ ≃* _)).symm J) := by
-  rw [MulEquiv.symm_apply_eq, maximalOrderPicEquiv_mkPic, MulEquiv.apply_symm_apply]
+private theorem maximalOrderUnitsEquiv_mem_narrowPrincipalSubgroup_iff
+    {I : (maximalNumberFieldOrder K).invertibleProperFractionalIdeals} :
+    maximalOrderUnitsEquiv K I ∈ narrowPrincipalSubgroup K ↔
+      I ∈ (maximalNumberFieldOrder K).narrowPrincipal := by
+  rw [mem_narrowPrincipalSubgroup, NumberFieldOrder.mem_narrowPrincipal_iff]
+  simp only [← maximalOrderUnitsEquiv_toPrincipalIdeal, EmbeddingLike.apply_eq_iff_eq]
 
-/-- The narrow Picard class of an invertible fractional ideal of the maximal order goes to the
-narrow class of the fractional ideal of `𝓞 K` with the same elements. -/
+variable (K) in
+/-- **The narrow Picard group of the maximal order is the narrow class group of `K`.** -/
+def maximalOrderNarrowPicEquiv : NarrowPic (maximalNumberFieldOrder K) ≃* NarrowClassGroup K :=
+  MonoidHom.toMulEquiv
+    (NarrowPic.lift _ (NarrowClassGroup.mk.comp (maximalOrderUnitsEquiv K).toMonoidHom)
+      fun I hI => by
+        rw [MonoidHom.mem_ker, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+          NarrowClassGroup.mk_eq_one_iff, maximalOrderUnitsEquiv_mem_narrowPrincipalSubgroup_iff]
+        exact hI)
+    (NarrowClassGroup.lift
+      ((NarrowPic.mk _).comp (maximalOrderUnitsEquiv K).symm.toMonoidHom) fun J hJ => by
+        obtain ⟨I, rfl⟩ := (maximalOrderUnitsEquiv K).surjective J
+        rw [MonoidHom.mem_ker, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+          MulEquiv.symm_apply_apply, NarrowPic.mk_eq_one_iff,
+          ← maximalOrderUnitsEquiv_mem_narrowPrincipalSubgroup_iff]
+        exact hJ)
+    (MonoidHom.ext fun c => by
+      obtain ⟨I, rfl⟩ := NarrowPic.mk_surjective _ c
+      simp)
+    (MonoidHom.ext fun c => by
+      obtain ⟨J, rfl⟩ := NarrowClassGroup.mk_surjective c
+      simp)
+
+/-- `maximalOrderNarrowPicEquiv` sends the narrow Picard class of an invertible fractional ideal of
+the maximal order to the narrow class of the fractional ideal of `𝓞 K` with the same elements. -/
 @[simp]
 theorem maximalOrderNarrowPicEquiv_mk
     (I : (maximalNumberFieldOrder K).invertibleProperFractionalIdeals) :
     maximalOrderNarrowPicEquiv K (NarrowPic.mk (maximalNumberFieldOrder K) I) =
-      NarrowClassGroup.mk (Units.mapEquiv (maximalOrderFractionalIdealEquiv K : _ ≃* _) I) :=
-  NarrowPic.lift_mk _ _ _ I
+      NarrowClassGroup.mk (maximalOrderUnitsEquiv K I) := by
+  simp [maximalOrderNarrowPicEquiv]
 
-/-- The inverse of `maximalOrderNarrowPicEquiv` sends the narrow class of a fractional ideal of
-`𝓞 K` to the narrow Picard class of the fractional ideal of the maximal order with the same
-elements. -/
-@[simp]
-theorem maximalOrderNarrowPicEquiv_symm_mk (J : (FractionalIdeal (nonZeroDivisors (𝓞 K)) K)ˣ) :
-    (maximalOrderNarrowPicEquiv K).symm (NarrowClassGroup.mk J) =
-      NarrowPic.mk (maximalNumberFieldOrder K)
-        ((Units.mapEquiv (maximalOrderFractionalIdealEquiv K : _ ≃* _)).symm J) := by
-  rw [MulEquiv.symm_apply_eq, maximalOrderNarrowPicEquiv_mk, MulEquiv.apply_symm_apply]
+/-- `maximalOrderNarrowPicEquiv` sends the narrow principal class of `x` to the narrow principal
+class of `x`. -/
+theorem maximalOrderNarrowPicEquiv_mkPrincipal (x : Kˣ) :
+    maximalOrderNarrowPicEquiv K (NarrowPic.mkPrincipal (maximalNumberFieldOrder K) x) =
+      NarrowClassGroup.mkPrincipal x := by
+  rw [NarrowPic.mkPrincipal_apply, maximalOrderNarrowPicEquiv_mk,
+    maximalOrderUnitsEquiv_toPrincipalIdeal, NarrowClassGroup.mkPrincipal_apply]
 
-/-- **The narrow-to-wide map of the maximal order is the forgetful map from the narrow class
-group to the class group**, read through `maximalOrderNarrowPicEquiv` and
-`maximalOrderPicEquiv`. -/
-@[simp]
-theorem maximalOrderPicEquiv_narrowToPic (c : NarrowPic (maximalNumberFieldOrder K)) :
-    maximalOrderPicEquiv K ((maximalNumberFieldOrder K).narrowToPic c) =
-      NarrowClassGroup.toClassGroup (maximalOrderNarrowPicEquiv K c) := by
+variable (K) in
+/-- **The forgetful maps agree on the maximal order.** Under `maximalOrderNarrowPicEquiv` and
+`maximalOrderPicEquiv`, the map `NarrowPic O → Pic O` of the maximal order is the map
+`Cl⁺(K) → Cl(K)` forgetting positivity of generators. -/
+theorem toClassGroup_comp_maximalOrderNarrowPicEquiv :
+    (NarrowClassGroup.toClassGroup (K := K)).comp (maximalOrderNarrowPicEquiv K).toMonoidHom =
+      (maximalOrderPicEquiv K).toMonoidHom.comp (maximalNumberFieldOrder K).narrowToPic := by
+  refine MonoidHom.ext fun c => ?_
   obtain ⟨I, rfl⟩ := NarrowPic.mk_surjective _ c
   simp
 
-variable (K) in
-/-- The commuting square identifying the narrow-to-wide map of the maximal order with the
-forgetful map `NarrowClassGroup.toClassGroup` from the narrow class group to the class group. -/
-theorem maximalOrderPicEquiv_comp_narrowToPic :
-    (maximalOrderPicEquiv K).toMonoidHom.comp (maximalNumberFieldOrder K).narrowToPic =
-      NarrowClassGroup.toClassGroup.comp (maximalOrderNarrowPicEquiv K).toMonoidHom :=
-  MonoidHom.ext maximalOrderPicEquiv_narrowToPic
+/-- Elementwise form of `toClassGroup_comp_maximalOrderNarrowPicEquiv`. -/
+@[simp]
+theorem toClassGroup_maximalOrderNarrowPicEquiv (c : NarrowPic (maximalNumberFieldOrder K)) :
+    NarrowClassGroup.toClassGroup (maximalOrderNarrowPicEquiv K c) =
+      maximalOrderPicEquiv K ((maximalNumberFieldOrder K).narrowToPic c) :=
+  DFunLike.congr_fun (toClassGroup_comp_maximalOrderNarrowPicEquiv K) c
 
 end TauCeti.GlobalNumberFields

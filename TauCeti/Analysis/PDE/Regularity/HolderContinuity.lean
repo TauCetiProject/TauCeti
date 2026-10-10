@@ -101,7 +101,6 @@ theorem exists_holderOnWith_preciseRepresentative {pstar : ℝ≥0∞}
     (ball_subset_thickening hx R).trans ((thickening_subset_cthickening R K).trans hRK)
   -- The scaled `L²` norm of `u` on such a ball is at most `N`, its scaled `L²` norm on `Ω`.
   set N := R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ y in Omega, W1p.value u y ^ 2 ∂mu)
-  have hN0 : 0 ≤ N := by positivity
   have hN : ∀ x ∈ K, R ^ (-(Fintype.card ι : ℝ) / 2) *
       √(∫ y in ball x R, W1p.value u y ^ 2 ∂mu) ≤ N := fun x hx =>
     mul_le_mul_of_nonneg_left (Real.sqrt_le_sqrt (setIntegral_mono_set (s := ball x R)
@@ -136,7 +135,6 @@ theorem exists_holderOnWith_preciseRepresentative {pstar : ℝ≥0∞}
     gcongr
     exact hN x hx
   · -- The constant: `2 C = C₀ N R^(-α)` and `2 M / ρ^α = 2^(1+α) D N R^(-α) ≤ 4 D N R^(-α)`.
-    have hRα : 0 < R ^ (α : ℝ) := Real.rpow_pos_of_pos hR _
     have h2α : (2 : ℝ) ^ (α : ℝ) ≤ 2 := by
       simpa using Real.rpow_le_rpow_of_exponent_le one_le_two hα1
     rw [Real.le_toNNReal_iff_coe_le (by positivity)]

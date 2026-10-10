@@ -112,7 +112,7 @@ theorem condExp_blockIndicatorProd_ae_eq_prod_of_iCondIndepFun_tailProcess
   have hfactor : ∀ i, (μ⟦X (k i) ⁻¹' C i | tailProcess X⟧)
       =ᵐ[μ] fun ω => (directingMeasure μ X ω).real (C i) := by
     intro i
-    have hind : (X (k i) ⁻¹' C i).indicator (fun ω => (1 : ℝ))
+    have hind : (X (k i) ⁻¹' C i).indicator (fun _ => (1 : ℝ))
         = Set.indicator (C i) (fun _ => (1 : ℝ)) ∘ X (k i) := by
       funext ω; by_cases h : X (k i) ω ∈ C i <;> simp [Set.indicator, Set.mem_preimage, h]
     rw [hind]

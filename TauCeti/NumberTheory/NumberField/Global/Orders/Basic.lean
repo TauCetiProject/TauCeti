@@ -241,10 +241,4 @@ theorem maximalNumberFieldOrder_toSubalgebra
     (K : Type u) [Field K] [NumberField K] :
     (maximalNumberFieldOrder K).toSubalgebra = integralClosure ℤ K := (rfl)
 
-/-- The maximal order is an integral closure of `ℤ` in `K`. -/
-instance (K : Type u) [Field K] [NumberField K] :
-    IsIntegralClosure (maximalNumberFieldOrder K).toSubalgebra ℤ K := by
-  rw [maximalNumberFieldOrder_toSubalgebra]
-  infer_instance
-
 end TauCeti.GlobalNumberFields

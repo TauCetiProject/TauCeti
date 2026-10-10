@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
+import TauCeti.Data.ZMod.Pow
 
 /-!
 # Twisted boundaries of matrix-valued Galois cochains
@@ -37,6 +38,8 @@ the one needed for the descent cocycles of transferred quadratic forms.
   matrix.
 * `TauCeti.twistedBoundary_conj_of_eq_scalar`: a scalar boundary is invariant under twisted
   conjugation.
+* `TauCeti.twistedBoundary_conj_eq_iff`: conjugation preserves a boundary commuting with the frame.
+* `TauCeti.twistedBoundary_neg_one_pow_mul`: a sign twist changes the boundary by a coboundary.
 
 ## References
 
@@ -190,5 +193,49 @@ theorem twistedBoundary_conj_of_eq_scalar
     twistedBoundary (fun j ↦ Q⁻¹ * x j * Q.map j) (g, h) = a • 1 := by
   rw [twistedBoundary_conj x Q hQ g h, hx, Matrix.mul_smul, Matrix.smul_mul,
     Matrix.mul_one, Matrix.nonsing_inv_mul Q hQ]
+
+/-- **A change of frame does not change a twisted boundary commuting with it:** for an invertible
+matrix `Q` and a matrix `S` commuting with `Q` (for instance a scalar such as a sign `(−1)^n`), the
+twisted boundary of `g ↦ Q⁻¹ · x(g) · g(Q)` is `S` exactly where that of `x` is. -/
+theorem twistedBoundary_conj_eq_iff
+    (x : AbsoluteGaloisGroup K → Matrix n n (SeparableClosure K))
+    {Q S : Matrix n n (SeparableClosure K)} (hQ : IsUnit Q.det) (hS : Commute S Q)
+    (q : AbsoluteGaloisGroup K × AbsoluteGaloisGroup K) :
+    twistedBoundary (fun g => Q⁻¹ * x g * Q.map g) q = S ↔ twistedBoundary x q = S := by
+  have hc := hS.eq
+  rw [twistedBoundary_conj x Q hQ q.1 q.2]
+  refine ⟨fun h => ?_, fun h => ?_⟩
+  · calc twistedBoundary x q
+        _ = Q * (Q⁻¹ * twistedBoundary x q * Q) * Q⁻¹ := by
+          simp only [Matrix.mul_assoc, Matrix.mul_nonsing_inv _ hQ, Matrix.mul_one,
+            Matrix.mul_nonsing_inv_cancel_left _ _ hQ]
+        _ = S := by
+          rw [h, ← hc, Matrix.mul_assoc, Matrix.mul_nonsing_inv _ hQ, Matrix.mul_one]
+  · rw [h, Matrix.mul_assoc, hc, ← Matrix.mul_assoc, Matrix.nonsing_inv_mul _ hQ, Matrix.one_mul]
+
+/-- **A sign twist changes the twisted boundary by a coboundary:** multiplying a cochain `x` by
+the signs `(−1)^{ψ(g)}` multiplies its twisted boundary by `(−1)^{∂ψ}`, where
+`∂ψ(g, h) = ψ(h) − ψ(g h) + ψ(g)` is the coboundary of `ψ : G_K → 𝔽₂`. -/
+theorem twistedBoundary_neg_one_pow_mul
+    (x : AbsoluteGaloisGroup K → Matrix n n (SeparableClosure K))
+    (ψ : AbsoluteGaloisGroup K → ZMod 2) (g h : AbsoluteGaloisGroup K) :
+    twistedBoundary (fun g => (-1) ^ (ψ g).val * x g) (g, h) =
+      (-1) ^ (ψ h - ψ (g * h) + ψ g).val * twistedBoundary x (g, h) := by
+  have hsq : (-1 : Matrix n n (SeparableClosure K)) ^ 2 = 1 := by simp
+  -- The signs are central, are their own inverses, and are scalars.
+  have hc (k : ℕ) (M : Matrix n n (SeparableClosure K)) : Commute ((-1) ^ k) M :=
+    (Commute.neg_one_left M).pow_left k
+  have hinv (k : ℕ) : ((-1 : Matrix n n (SeparableClosure K)) ^ k)⁻¹ = (-1) ^ k :=
+    inv_eq_left_inv (by rw [← pow_add, ← two_mul, pow_mul, hsq, one_pow])
+  have hs (k : ℕ) (M : Matrix n n (SeparableClosure K)) :
+      (-1) ^ k * M = ((-1 : SeparableClosure K) ^ k) • M := by
+    rw [Algebra.smul_def, map_pow, map_neg, map_one]
+  have hsq' : (-1 : SeparableClosure K) ^ 2 = 1 := by simp
+  rw [twistedBoundary_apply, twistedBoundary_apply, ← AlgEquiv.mapMatrix_apply, map_mul, map_pow,
+    map_neg, map_one, AlgEquiv.mapMatrix_apply, Matrix.mul_inv_rev, hinv,
+    ← (hc _ (x (g * h))⁻¹).eq, sub_eq_add_neg, ZMod.neg_eq_self_mod_two]
+  simp only [hs, Matrix.mul_smul, Matrix.smul_mul, smul_smul, Matrix.mul_assoc, pow_val_add hsq']
+  congr 1
+  ring
 
 end TauCeti

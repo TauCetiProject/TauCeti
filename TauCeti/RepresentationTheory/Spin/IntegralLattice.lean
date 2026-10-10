@@ -86,7 +86,7 @@ def integralSpinActionSubring : Subring (CliffordAlgebra Q) where
   carrier := {c | Set.MapsTo (spinAction Q P c)
     (TauCeti.ExteriorAlgebra.integralLattice b)
     (TauCeti.ExteriorAlgebra.integralLattice b)}
-  zero_mem' x hx := by
+  zero_mem' x _ := by
     rw [map_zero, LinearMap.zero_apply]
     exact zero_mem _
   one_mem' x hx := by

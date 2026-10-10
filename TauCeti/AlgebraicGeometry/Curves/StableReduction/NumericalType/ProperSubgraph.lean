@@ -253,7 +253,6 @@ private lemma intersection_eq_zero_and_exists_factors (hcard : 3 < Fintype.card 
     · -- Were `i` and `k` to meet, each of the four summands would be at least one.
       exfalso
       have hp₃1 : 1 ≤ p₃ := by have := pos_of_mul_pos_right (hp₃ ▸ hpos) hwi.le; omega
-      have hq₃1 : 1 ≤ q₃ := by have := pos_of_mul_pos_right (hq₃ ▸ hpos) hwk.le; omega
       have h₃ : 1 ≤ p₃ * q₃ := by nlinarith
       have h₄ : 1 ≤ q₁ * q₂ := by nlinarith
       have h₅ : 1 ≤ q₁ * q₂ * p₃ := by nlinarith
@@ -554,33 +553,9 @@ theorem exists_weight_intersection_star_four_eq (hcard : 4 < Fintype.card T.Comp
     (by omega) hj hi hl hjl (T.intersection_comm i j ▸ hij) hil
   have hkl0 := T.intersection_eq_zero_of_intersection_pos_of_intersection_pos
     (by omega) hk hi hl hkl (T.intersection_comm i k ▸ hik) hil
-  obtain ⟨p₁, hp₁⟩ := T.weight_dvd i j
-  obtain ⟨q₁, hq₁⟩ : (T.weight j : ℤ) ∣ T.intersection i j :=
-    T.intersection_comm j i ▸ T.weight_dvd j i
-  obtain ⟨p₂, hp₂⟩ := T.weight_dvd i k
-  obtain ⟨q₂, hq₂⟩ : (T.weight k : ℤ) ∣ T.intersection i k :=
-    T.intersection_comm k i ▸ T.weight_dvd k i
-  obtain ⟨p₃, hp₃⟩ := T.weight_dvd i l
-  obtain ⟨q₃, hq₃⟩ : (T.weight l : ℤ) ∣ T.intersection i l :=
-    T.intersection_comm l i ▸ T.weight_dvd l i
-  have hp₁1 : 1 ≤ p₁ := by
-    have := pos_of_mul_pos_right (hp₁ ▸ hij) (by positivity : (0 : ℤ) ≤ T.weight i)
-    omega
-  have hq₁1 : 1 ≤ q₁ := by
-    have := pos_of_mul_pos_right (hq₁ ▸ hij) (by positivity : (0 : ℤ) ≤ T.weight j)
-    omega
-  have hp₂1 : 1 ≤ p₂ := by
-    have := pos_of_mul_pos_right (hp₂ ▸ hik) (by positivity : (0 : ℤ) ≤ T.weight i)
-    omega
-  have hq₂1 : 1 ≤ q₂ := by
-    have := pos_of_mul_pos_right (hq₂ ▸ hik) (by positivity : (0 : ℤ) ≤ T.weight k)
-    omega
-  have hp₃1 : 1 ≤ p₃ := by
-    have := pos_of_mul_pos_right (hp₃ ▸ hil) (by positivity : (0 : ℤ) ≤ T.weight i)
-    omega
-  have hq₃1 : 1 ≤ q₃ := by
-    have := pos_of_mul_pos_right (hq₃ ▸ hil) (by positivity : (0 : ℤ) ≤ T.weight l)
-    omega
+  obtain ⟨p₁, q₁, hp₁0, hq₁0, hp₁, hq₁⟩ := T.exists_intersection_eq_weight_mul hij
+  obtain ⟨p₂, q₂, hp₂0, hq₂0, hp₂, hq₂⟩ := T.exists_intersection_eq_weight_mul hik
+  obtain ⟨p₃, q₃, hp₃0, hq₃0, hp₃, hq₃⟩ := T.exists_intersection_eq_weight_mul hil
   have hdet := T.intersection_det_four_pos hcard hij' hik' hil' hjk hjl hkl
   -- With the three leaf-to-leaf intersections zero, positivity of the determinant says that
   -- the sum of the three positive integral normalized edge ratios is less than four.
@@ -602,25 +577,17 @@ theorem exists_weight_intersection_star_four_eq (hcard : 4 < Fintype.card T.Comp
       (mul_pos (mul_pos (mul_pos hwi hwj) hwk) hwl).le
     ring_nf at hdet ⊢
     omega
-  have hpq₁pos : 0 < p₁ * q₁ := mul_pos (by omega) (by omega)
-  have hpq₂pos : 0 < p₂ * q₂ := mul_pos (by omega) (by omega)
-  have hpq₃pos : 0 < p₃ * q₃ := mul_pos (by omega) (by omega)
-  have hpq₁ : p₁ * q₁ = 1 := by omega
-  have hpq₂ : p₂ * q₂ = 1 := by omega
-  have hpq₃ : p₃ * q₃ = 1 := by omega
-  have hp₁le : p₁ ≤ p₁ * q₁ := le_mul_of_one_le_right (by omega) hq₁1
-  have hq₁le : q₁ ≤ p₁ * q₁ := le_mul_of_one_le_left (by omega) hp₁1
-  have hp₂le : p₂ ≤ p₂ * q₂ := le_mul_of_one_le_right (by omega) hq₂1
-  have hq₂le : q₂ ≤ p₂ * q₂ := le_mul_of_one_le_left (by omega) hp₂1
-  have hp₃le : p₃ ≤ p₃ * q₃ := le_mul_of_one_le_right (by omega) hq₃1
-  have hq₃le : q₃ ≤ p₃ * q₃ := le_mul_of_one_le_left (by omega) hp₃1
-  have hp₁eq : p₁ = 1 := by omega
-  have hq₁eq : q₁ = 1 := by omega
-  have hp₂eq : p₂ = 1 := by omega
-  have hq₂eq : q₂ = 1 := by omega
-  have hp₃eq : p₃ = 1 := by omega
-  have hq₃eq : q₃ = 1 := by omega
-  simp only [hp₁eq, hq₁eq, hp₂eq, hq₂eq, hp₃eq, hq₃eq, mul_one] at hp₁ hq₁ hp₂ hq₂ hp₃ hq₃
+  -- Each ratio product is at least one and their sum is below four, so every ratio is one.
+  have hpq (p q : ℤ) (hp : 0 < p) (hq : 0 < q) (h : p * q < 2) : p = 1 ∧ q = 1 := by
+    have hpq1 : p * q = 1 := by have := mul_pos hp hq; omega
+    exact ⟨Int.eq_one_of_mul_eq_one_right hp.le hpq1, Int.eq_one_of_mul_eq_one_left hq.le hpq1⟩
+  have h₁ := mul_pos hp₁0 hq₁0
+  have h₂ := mul_pos hp₂0 hq₂0
+  have h₃ := mul_pos hp₃0 hq₃0
+  obtain ⟨rfl, rfl⟩ := hpq p₁ q₁ hp₁0 hq₁0 (by omega)
+  obtain ⟨rfl, rfl⟩ := hpq p₂ q₂ hp₂0 hq₂0 (by omega)
+  obtain ⟨rfl, rfl⟩ := hpq p₃ q₃ hp₃0 hq₃0 (by omega)
+  simp only [mul_one] at hp₁ hq₁ hp₂ hq₂ hp₃ hq₃
   refine ⟨T.weight i, ?_⟩
   omega
 
@@ -855,11 +822,11 @@ theorem intersection_eq_zero_of_chain_five (hcard : 5 < Fintype.card T.Component
   have hkl' : k ≠ l := by rintro rfl; linarith
   -- The chain now closes up into a pentagon. Reading the simply-laced middle of three rotations
   -- of it shows that all five weights agree and that each of its five edges has that weight.
-  obtain ⟨e₂i, e₂j, e₃j, e₃k⟩ := T.intersection_eq_weight_of_chain_five hcard hh hi hj hk hl
+  obtain ⟨e₂i, -, e₃j, -⟩ := T.intersection_eq_weight_of_chain_five hcard hh hi hj hk hl
     hhj hhk hhl hik hil hjl hhi hij hjk hkl
-  obtain ⟨e₄k, e₄l, e₅l, e₅h⟩ := T.intersection_eq_weight_of_chain_five hcard hj hk hl hh hi
+  obtain ⟨e₄k, -, e₅l, -⟩ := T.intersection_eq_weight_of_chain_five hcard hj hk hl hh hi
     hjl hhj.symm hij'.symm hhk.symm hik.symm hil.symm hjk hkl hlh0 hhi
-  obtain ⟨e₁h, e₁i, -, -⟩ := T.intersection_eq_weight_of_chain_five hcard hl hh hi hj hk
+  obtain ⟨e₁h, -, -, -⟩ := T.intersection_eq_weight_of_chain_five hcard hl hh hi hj hk
     hil.symm hjl.symm hkl'.symm hhj hhk hik hlh0 hhi hij hjk
   have hcomm : T.intersection h l = T.intersection l h := T.intersection_comm h l
   linarith [T.chain_five_form_neg hcard hhi' hhj hhk hhl hij' hik hil hjk' hjl hkl'
@@ -895,7 +862,6 @@ theorem intersection_eq_zero_of_star_five (hcard : 5 < Fintype.card T.Component)
     T.exists_weight_intersection_star_four_eq (by omega) h₁ h₂ h₃ h₅ h₂₃ h₂₅ h₃₅ e₁₂ e₁₃ e₁₅
   obtain ⟨-, -, -, -, -, -, -, -, -, -, z₄₅⟩ :=
     T.exists_weight_intersection_star_four_eq (by omega) h₁ h₂ h₄ h₅ h₂₄ h₂₅ h₄₅ e₁₂ e₁₄ e₁₅
-  have hww : (w : ℤ) = w' := by omega
   -- The vector taking the value two at the centre and one at each leg is isotropic.
   have hneg := T.intersection_five_neg hcard h₁₂ h₁₃ h₁₄ h₁₅ h₂₃ h₂₄ h₂₅ h₃₄ h₃₅ h₄₅
     (y₁ := 2) (y₂ := 1) (y₃ := 1) (y₄ := 1) (y₅ := 1) (by omega)
@@ -971,22 +937,9 @@ theorem exists_weight_intersection_fork_five_eq (hcard : 5 < Fintype.card T.Comp
       -- The two orientations of ratio two are affine. Their displayed vectors span the kernels
       -- of the corresponding intersection matrices, contradicting negative definiteness.
       rcases hpq_cases with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-      · have hwh : (T.weight h : ℤ) = 2 * w := by
-          rw [hwi] at aq₁
-          omega
-        have ahi : T.intersection h i = 2 * w := by
-          rw [hwi] at aq₁
-          rw [mul_comm]
-          exact aq₁
-        linarith [T.fork_five_form_neg hcard hhi' hhj hhk hhl hij' hik hil hjk' hjl' hkl
+      · linarith [T.fork_five_form_neg hcard hhi' hhj hhk hhl hij' hik hil hjk' hjl' hkl
           zhj zhk zhl zik zil zkl 1 2 2 1 1 one_ne_zero]
-      · have hwh : 2 * (T.weight h : ℤ) = w := by
-          rw [hwi] at aq₁
-          omega
-        have ahi : T.intersection h i = w := by
-          rw [hwi, mul_one] at aq₁
-          exact aq₁
-        linarith [T.fork_five_form_neg hcard hhi' hhj hhk hhl hij' hik hil hjk' hjl' hkl
+      · linarith [T.fork_five_form_neg hcard hhi' hhj hhk hhl hij' hik hil hjk' hjl' hkl
           zhj zhk zhl zik zil zkl 2 2 2 1 1 (by omega)]
     · have hpqpos : 0 < p₁ * q₁ := mul_pos (by omega) (by omega)
       omega
@@ -1040,20 +993,20 @@ private theorem chain_six_factors (hcard : 6 < Fintype.card T.Component)
   obtain ⟨zgi, zgj, zgk, zhj, zhk, zik⟩ :=
     T.intersection_eq_zero_of_chain_five (by omega) hg hh hi hj hk hgi hgj hgk hhj hhk hik
       egh ehi eij ejk
-  obtain ⟨zhj', zhk', zhl, zik', zil, zjl⟩ :=
+  obtain ⟨-, -, zhl, -, zil, zjl⟩ :=
     T.intersection_eq_zero_of_chain_five (by omega) hh hi hj hk hl hhj hhk hhl hik hil hjl
       ehi eij ejk ekl
   have zgl : T.intersection g l = 0 := by
     by_contra hne
     have egl : 0 < T.intersection g l := (T.offDiagonal_nonneg g l hgl).lt_of_ne (Ne.symm hne)
     have elg : 0 < T.intersection l g := T.intersection_comm g l ▸ egl
-    obtain ⟨ahi, wh, aij, wi⟩ := T.intersection_eq_weight_of_chain_five (by omega)
+    obtain ⟨ahi, -, aij, -⟩ := T.intersection_eq_weight_of_chain_five (by omega)
       hg hh hi hj hk hgi hgj hgk hhj hhk hik egh ehi eij ejk
-    obtain ⟨aij', wi', ajk, wj⟩ := T.intersection_eq_weight_of_chain_five (by omega)
+    obtain ⟨-, -, ajk, -⟩ := T.intersection_eq_weight_of_chain_five (by omega)
       hh hi hj hk hl hhj hhk hhl hik hil hjl ehi eij ejk ekl
-    obtain ⟨akl, wk, alg, wl⟩ := T.intersection_eq_weight_of_chain_five (by omega)
+    obtain ⟨akl, -, alg, -⟩ := T.intersection_eq_weight_of_chain_five (by omega)
       hj hk hl hg hh hjl hgj.symm hhj.symm hgk.symm hhk.symm hhl.symm ejk ekl elg egh
-    obtain ⟨alg', wl', agh, wg⟩ := T.intersection_eq_weight_of_chain_five (by omega)
+    obtain ⟨-, -, agh, -⟩ := T.intersection_eq_weight_of_chain_five (by omega)
       hk hl hg hh hi hgk.symm hhk.symm hik.symm hhl.symm hil.symm hgi ekl elg egh ehi
     have agl : T.intersection g l = (T.weight l : ℤ) := T.intersection_comm l g ▸ alg
     have hform := T.intersection_six_neg hcard hgh hgi hgj hgk hgl hhi hhj hhk hhl hij hik

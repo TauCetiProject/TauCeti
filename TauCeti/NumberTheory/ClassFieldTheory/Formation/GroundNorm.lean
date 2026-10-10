@@ -38,6 +38,8 @@ The ground-level norm of a restriction is its instance `W = U`, `W' = U'`.
   the sum of the translates by representatives of the cosets in `G`.
 * `TauCeti.ClassFieldTheory.Formation.levelNorm_trans`: norms between levels compose along a
   tower of open subgroups.
+* `TauCeti.ClassFieldTheory.NormalLayer.toAddMonoidHom_norm`: the norm of a layer is the norm
+  `Formation.levelNorm` between its top and ground levels.
 * `TauCeti.ClassFieldTheory.LayerRestriction.groundNorm_apply_coe`: the norm is the sum of the
   translates by coset representatives.
 * `TauCeti.ClassFieldTheory.LayerRestriction.groundNorm_groundInclusion`: the norm of an element of
@@ -148,6 +150,26 @@ theorem levelNorm_trans {W'' : OpenSubgroup G} (h : W' ≤ W) (h' : W'' ≤ W') 
       (OpenSubgroup.toSubgroup_le.2 h), AddMonoidHom.comp_apply]
 
 end Formation
+
+/-! ### The norm of a layer as a level norm -/
+
+namespace NormalLayer
+
+variable (L : NormalLayer G) (F : Formation G)
+
+/-- The norm `N_{U/V} : A^V → A^U` of a layer is the norm `Formation.levelNorm` between its top
+and ground levels. -/
+theorem toAddMonoidHom_norm : (L.norm F).toAddMonoidHom = F.levelNorm L.top_le_ground := by
+  ext x
+  rw [LinearMap.toAddMonoidHom_coe, norm_apply_coe, Formation.levelNorm_apply_coe,
+    finsum_eq_sum_of_fintype]
+  -- Both sides sum over the cosets `U ⧸ V`, which is the Galois group of the layer; the term of a
+  -- coset is the action of any of its representatives.
+  refine Fintype.sum_equiv (Equiv.refl _) _ _ fun γ ↦ ?_
+  conv_lhs => rw [← QuotientGroup.out_eq' γ]
+  rw [Equiv.refl_apply, NormalLayer.rep_ρ_mk_apply_coe]
+
+end NormalLayer
 
 /-! ### The norm between the ground levels of a restriction -/
 

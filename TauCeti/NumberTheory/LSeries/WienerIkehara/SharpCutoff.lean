@@ -101,7 +101,6 @@ private lemma term_mul_expWeight (a : ℕ → ℂ) (hΨ0 : Ψ 0 = 0) {x : ℝ} (
       (x : ℂ)⁻¹ * (a n * Ψ (n / x)) := by
   rcases eq_or_ne n 0 with rfl | hn
   · simp [hΨ0]
-  have hn' : (0 : ℝ) < n := by positivity
   have hexp : Real.exp (2 * π * (1 / (2 * π) * Real.log (n / x))) = n / x := by
     rw [← mul_assoc, mul_one_div_cancel (by positivity), one_mul, Real.exp_log (by positivity)]
   rw [_root_.LSeries.term_of_ne_zero hn, expWeight, hexp, cpow_one, Complex.real_smul]

@@ -125,7 +125,7 @@ private theorem lSeriesConverges_of_sum_isBigO_aux (hf : f 0 = 0) {r : ℝ}
   have hnorm_g : ∀ t : ℝ, 0 < t → ‖g t‖ = t ^ (-s.re) := fun t ht ↦ by
     rw [hg, Complex.norm_cpow_eq_rpow_re_of_pos ht, Complex.neg_re]
   -- A nonnegative constant in the hypothesis on the partial sums.
-  obtain ⟨C, hC0, hCw⟩ := hO.exists_nonneg
+  obtain ⟨C, _, hCw⟩ := hO.exists_nonneg
   have hC : ∀ᶠ n : ℕ in atTop, ‖∑ k ∈ Icc 0 n, f k‖ ≤ C * (n : ℝ) ^ r := by
     filter_upwards [hCw.bound] with n hn
     rwa [Real.norm_of_nonneg (Real.rpow_nonneg (Nat.cast_nonneg n) r)] at hn

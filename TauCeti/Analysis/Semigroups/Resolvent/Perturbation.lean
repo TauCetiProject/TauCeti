@@ -76,7 +76,6 @@ theorem norm_resolvent_generator_vadd_le (S : StronglyContinuousSemigroup X)
     (r := M / (lambda - omega)) (by simpa using S.norm_generator_resolvent_pow_le hb homega 1)
     hsmall).trans_eq ?_
   have hne : lambda - omega ≠ 0 := ne_of_gt hpos
-  have hden : (1 : ℝ) - ‖B‖ * (M / (lambda - omega)) ≠ 0 := ne_of_gt (by linarith)
   have hd : lambda - omega - M * ‖B‖ ≠ 0 := ne_of_gt (by linarith)
   field_simp
 
