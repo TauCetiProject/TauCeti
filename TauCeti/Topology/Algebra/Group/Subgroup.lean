@@ -93,11 +93,12 @@ series of a profinite group.
   generate a dense subgroup.
 * `TauCeti.discreteTopology_of_conjAct_smul_eq`: a conjugate `g H g⁻¹` of a discrete
   subgroup `H` is discrete.
-* `MonoidHom.discreteTopology_range_of_finite_preimage`: a homomorphism into a `T1` topological
-  group has discrete range when some neighbourhood of the identity has finite preimage.
-* `MonoidHom.isEmbedding_of_isCompact_preimage`: a continuous injective homomorphism into a
-  Hausdorff topological group is an embedding when some neighbourhood of the identity has compact
+* `MonoidHom.discreteTopology_range_of_finite_preimage`: a homomorphism into a `T1` group with
+  continuous translations has discrete range when some neighbourhood of the identity has finite
   preimage.
+* `MonoidHom.isEmbedding_of_isCompact_preimage`: a continuous injective homomorphism from a
+  topological group into a Hausdorff group with continuous translations is an embedding when some
+  neighbourhood of the identity has compact preimage.
 -/
 
 public section
@@ -159,7 +160,7 @@ and `U` is an open subgroup of `G`, then the preimage of `U` has the same index 
 in `G`: the range of `f` meets every coset of `U`, since the cosets are open.
 
 The proof is adapted from Mathlib's `Subgroup.index_comap_of_surjective`. -/
-theorem index_comap_of_denseRange [ContinuousMul G] {G' : Type*} [Group G'] {f : G' →* G}
+theorem index_comap_of_denseRange [SeparatelyContinuousMul G] {G' : Type*} [Group G'] {f : G' →* G}
     (hf : DenseRange f) {U : Subgroup G} (hU : IsOpen (U : Set G)) :
     (U.comap f).index = U.index := by
   have key (x y : G') :
@@ -552,13 +553,15 @@ theorem discreteTopology_of_conjAct_smul_eq {G : Type*} [Group G] [TopologicalSp
 end Conj
 
 open scoped Topology in
-/-- A homomorphism into a `T1` topological group has discrete range as soon as some neighbourhood
-of the identity has finite preimage. -/
-@[to_additive /-- A homomorphism into a `T1` additive topological group has discrete range as soon
-as some neighbourhood of zero has finite preimage. -/]
+/-- A homomorphism into a `T1` group with continuous translations has discrete range as soon as
+some neighbourhood of the identity has finite preimage. -/
+@[to_additive /-- A homomorphism into a `T1` additive group with continuous translations has
+discrete range as soon as some neighbourhood of zero has finite preimage. -/]
 theorem _root_.MonoidHom.discreteTopology_range_of_finite_preimage {G H : Type*} [Group G]
-    [Group H] [TopologicalSpace H] [IsTopologicalGroup H] [T1Space H] (f : G →* H) {W : Set H}
+    [Group H] [TopologicalSpace H] [SeparatelyContinuousMul H] [T1Space H] (f : G →* H) {W : Set H}
     (hW : W ∈ 𝓝 1) (hfin : (f ⁻¹' W).Finite) : DiscreteTopology f.range := by
+  have : SeparatelyContinuousMul f.range :=
+    Topology.IsInducing.subtypeVal.separatelyContinuousMul f.range.subtype
   refine discreteTopology_of_isOpen_singleton_one
     (isOpen_singleton_of_finite_mem_nhds _ (s := Subtype.val ⁻¹' W)
       (continuous_subtype_val.continuousAt.preimage_mem_nhds hW) ?_)
@@ -567,31 +570,44 @@ theorem _root_.MonoidHom.discreteTopology_range_of_finite_preimage {G H : Type*}
   exact ⟨g, hg, Subtype.ext rfl⟩
 
 open scoped Topology in
-/-- A continuous injective homomorphism into a Hausdorff topological group is a topological
-embedding as soon as some neighbourhood of the identity has compact preimage. -/
-@[to_additive /-- A continuous injective homomorphism into a Hausdorff additive topological group
-is a topological embedding as soon as some neighbourhood of zero has compact preimage. -/]
+/-- A continuous injective homomorphism from a topological group into a Hausdorff group with
+continuous translations is a topological embedding as soon as some neighbourhood of the identity
+has compact preimage. -/
+@[to_additive /-- A continuous injective homomorphism from an additive topological group into a
+Hausdorff additive group with continuous translations is a topological embedding as soon as some
+neighbourhood of zero has compact preimage. -/]
 theorem _root_.MonoidHom.isEmbedding_of_isCompact_preimage {G H : Type*} [Group G]
     [TopologicalSpace G] [IsTopologicalGroup G] [Group H] [TopologicalSpace H]
-    [IsTopologicalGroup H] [T2Space H] (f : G →* H) (hf : Continuous f)
+    [SeparatelyContinuousMul H] [T2Space H] (f : G →* H) (hf : Continuous f)
     (hinj : Function.Injective f) {W : Set H} (hW : W ∈ 𝓝 1) (hc : IsCompact (f ⁻¹' W)) :
     Topology.IsEmbedding f := by
-  refine ⟨IsTopologicalGroup.isInducing_iff_nhds_one.2 (le_antisymm ?_ ?_), hinj⟩
-  · exact (hf.tendsto' 1 1 (map_one f)).le_comap
-  -- On the compact set `f ⁻¹' W` the map is a continuous injection into a Hausdorff space, hence
-  -- inducing; and a neighbourhood of `1` in `H` can be shrunk into `W`.
-  have : CompactSpace (f ⁻¹' W) := isCompact_iff_compactSpace.1 hc
-  have hind : Topology.IsInducing (f ∘ Subtype.val : f ⁻¹' W → H) :=
-    ((hf.comp continuous_subtype_val).isClosedEmbedding
-      (hinj.comp Subtype.val_injective)).isInducing
-  intro s hs
-  have h1 : (1 : G) ∈ f ⁻¹' W := by simpa using mem_of_mem_nhds hW
-  have hs' : (Subtype.val : f ⁻¹' W → G) ⁻¹' s ∈ 𝓝 ⟨1, h1⟩ :=
-    continuous_subtype_val.continuousAt.preimage_mem_nhds hs
-  rw [hind.nhds_eq_comap, Filter.mem_comap] at hs'
-  obtain ⟨t, ht, hts⟩ := hs'
-  refine Filter.mem_comap.2 ⟨t ∩ W, Filter.inter_mem (by simpa using ht) hW, ?_⟩
-  rintro x ⟨hxt, hxW⟩
-  exact @hts ⟨x, hxW⟩ hxt
+  have hone : 𝓝 (1 : G) = (𝓝 (1 : H)).comap f := by
+    refine le_antisymm (hf.tendsto' 1 1 (map_one f)).le_comap ?_
+    -- On the compact set `f ⁻¹' W` the map is a continuous injection into a Hausdorff space, hence
+    -- inducing; and a neighbourhood of `1` in `H` can be shrunk into `W`.
+    have : CompactSpace (f ⁻¹' W) := isCompact_iff_compactSpace.1 hc
+    have hind : Topology.IsInducing (f ∘ Subtype.val : f ⁻¹' W → H) :=
+      ((hf.comp continuous_subtype_val).isClosedEmbedding
+        (hinj.comp Subtype.val_injective)).isInducing
+    intro s hs
+    have h1 : (1 : G) ∈ f ⁻¹' W := by simpa using mem_of_mem_nhds hW
+    have hs' : (Subtype.val : f ⁻¹' W → G) ⁻¹' s ∈ 𝓝 ⟨1, h1⟩ :=
+      continuous_subtype_val.continuousAt.preimage_mem_nhds hs
+    rw [hind.nhds_eq_comap, Filter.mem_comap] at hs'
+    obtain ⟨t, ht, hts⟩ := hs'
+    refine Filter.mem_comap.2 ⟨t ∩ W, Filter.inter_mem (by simpa using ht) hW, ?_⟩
+    rintro x ⟨hxt, hxW⟩
+    exact @hts ⟨x, hxW⟩ hxt
+  -- As in `IsTopologicalGroup.isInducing_iff_nhds_one`, translation homeomorphisms transport
+  -- the inducing property at `1` to every point, using only continuous translations in `H`.
+  refine ⟨Topology.isInducing_iff_nhds.2 (fun x ↦ ?_), hinj⟩
+  have hG : 𝓝 x = Filter.comap (· * x⁻¹) (𝓝 (1 : G)) :=
+    (nhds_translation_mul_inv x).symm
+  have hH : 𝓝 (f x) = Filter.comap (· * (f x)⁻¹) (𝓝 (1 : H)) := by
+    simpa using (Homeomorph.mulRight (f x)⁻¹).isInducing.nhds_eq_comap (f x)
+  rw [hG, hH, Filter.comap_comap, hone, Filter.comap_comap]
+  congr 1
+  ext y
+  simp
 
 end TauCeti
