@@ -482,7 +482,6 @@ private theorem inverseHerbrand_natCast_eq_floor (n : ℕ) :
     eq_div_iff (by exact_mod_cast Nat.card_pos.ne')] at hφ
   set g : ℤ → ℕ := fun i ↦ Nat.card (lowerRamificationGroup K L i)
   -- `hφ` restated through the abbreviation `g`.
-  have hφ' : (n : ℝ) * g 0 = ∑ i ∈ Finset.Icc 1 m, (g i : ℝ) + (u - m) * g (m + 1 : ℕ) := hφ
   -- `#G_{m+1}` divides `n #G_0 - (#G_1 + ⋯ + #G_m)`.
   have hdvd : ∀ i : ℤ, i ≤ (m + 1 : ℕ) → g (m + 1 : ℕ) ∣ g i := fun i hi ↦
     Subgroup.card_dvd_of_le (lowerRamificationGroup_antitone K L hi)

@@ -38,8 +38,15 @@ between them has a scaling factor of valuation `1`, and they have the same `c₄
   variables have equal `v (Δ)`.
 * `WeierstrassCurve.isMinimal_of_valuation_Δ_eq_of_isMinimal_smul`: conversely, an integral model
   attaining that valuation is minimal.
-* `WeierstrassCurve.isMinimal_baseChange_smul`: a change of variables defined over `R` carries a
-  minimal model to a minimal model.
+* `WeierstrassCurve.valuation_Δ_baseChange_smul` and
+  `WeierstrassCurve.valuation_c₄_baseChange_smul`: a change of variables defined over `R` preserves
+  the valuations of `Δ` and `c₄`.
+* `WeierstrassCurve.isMinimal_baseChange_smul`: so it carries a minimal model to a minimal model.
+* `WeierstrassCurve.reduction_baseChange_smul`: and its residue transforms the reduction.
+* `WeierstrassCurve.hasMultiplicativeReduction_baseChange_smul_iff`,
+  `WeierstrassCurve.hasAdditiveReduction_baseChange_smul_iff` and
+  `WeierstrassCurve.hasSplitMultiplicativeReduction_baseChange_smul_iff`: the reduction types are
+  invariant under it.
 * `WeierstrassCurve.valuation_u_eq_one_of_isMinimal_smul`: for an elliptic curve, the scaling
   factor of such a change of variables satisfies `v (u) = 1`.
 * `WeierstrassCurve.valuation_c₄_eq_of_isMinimal_smul`: hence the two minimal models have equal
@@ -221,23 +228,73 @@ theorem isMinimal_of_valuation_Δ_eq_of_isMinimal_smul {W₁ W₂ : WeierstrassC
     valuation_Δ_aux_eq_of_isIntegral R W₂, h]
   exact valuation_Δ_le_of_isMinimal_smul R (C * D) hCD
 
+/-- The scaling factor of a change of variables defined over `R` is a unit of `R`, so its inverse
+has valuation `1` in `K`. -/
+private theorem valuation_baseChange_u_inv (C : VariableChange R) :
+    valuation K (maximalIdeal R) ↑(C.baseChange K).u⁻¹ = 1 := by
+  simp [VariableChange.baseChange, VariableChange.map, valuation_of_algebraMap,
+    (intValuation_eq_one_iff (v := maximalIdeal R)).2
+      (IsLocalRing.notMem_maximalIdeal.2 C.u.isUnit)]
+
+/-- **A change of variables defined over `R` preserves the valuation of the discriminant**, which
+it scales by `u⁻¹²` with `u` a unit of `R`. -/
+@[simp]
+theorem valuation_Δ_baseChange_smul (W : WeierstrassCurve K) (C : VariableChange R) :
+    valuation K (maximalIdeal R) (C.baseChange K • W).Δ = valuation K (maximalIdeal R) W.Δ := by
+  rw [variableChange_Δ, map_mul, map_pow, valuation_baseChange_u_inv, one_pow, one_mul]
+
+/-- **A change of variables defined over `R` preserves the valuation of `c₄`**, which it scales
+by `u⁻⁴` with `u` a unit of `R`. -/
+@[simp]
+theorem valuation_c₄_baseChange_smul (W : WeierstrassCurve K) (C : VariableChange R) :
+    valuation K (maximalIdeal R) (C.baseChange K • W).c₄ = valuation K (maximalIdeal R) W.c₄ := by
+  rw [variableChange_c₄, map_mul, map_pow, valuation_baseChange_u_inv, one_pow, one_mul]
+
 /-- **A change of variables defined over `R` preserves minimality**: if `W` is minimal over `R`
 and `C` is a change of variables with coefficients in `R`, then `C • W` is minimal over `R`. With
 `valuation_u_eq_one_of_isMinimal_smul` and
 `VariableChange.exists_baseChange_eq_of_smul_eq` in the other direction, the changes of variables
 between minimal models of an elliptic curve are exactly those defined over `R`. -/
-theorem isMinimal_baseChange_smul (W : WeierstrassCurve K) [IsMinimal R W]
-    (C : VariableChange R) : IsMinimal R (C.baseChange K • W) := by
-  have hW : (C • W.integralModel R).baseChange K = C.baseChange K • W := by
-    rw [baseChange, ← map_variableChange, ← baseChange, baseChange_integralModel_eq R W]
-    rfl
-  have : IsIntegral R (C.baseChange K • W) := ⟨⟨C • W.integralModel R, hW.symm⟩⟩
-  refine isMinimal_of_valuation_Δ_eq_of_isMinimal_smul R (C.baseChange K) rfl ?_
-  have hu : valuation K (maximalIdeal R) (algebraMap R K ↑C.u) = 1 := by
-    rw [valuation_of_algebraMap, intValuation_eq_one_iff_mem_primeCompl]
-    exact (IsLocalRing.notMem_maximalIdeal).2 (Units.isUnit _)
-  rw [variableChange_Δ, map_mul, map_pow]
-  simp [VariableChange.baseChange, hu]
+instance isMinimal_baseChange_smul (W : WeierstrassCurve K) [IsMinimal R W]
+    (C : VariableChange R) : IsMinimal R (C.baseChange K • W) :=
+  isMinimal_of_valuation_Δ_eq_of_isMinimal_smul R (C.baseChange K) rfl
+    (valuation_Δ_baseChange_smul R W C)
+
+/-- **Reduction commutes with a change of variables defined over `R`**: the reduction of `C • W`
+is the reduction of `W` transformed by the residue of `C`. -/
+theorem reduction_baseChange_smul (W : WeierstrassCurve K) [IsMinimal R W]
+    (C : VariableChange R) :
+    (C.baseChange K • W).reduction R = C.map (IsLocalRing.residue R) • W.reduction R := by
+  rw [reduction, reduction, integralModel_baseChange_smul, map_variableChange]
+
+/-- **Multiplicative reduction is invariant under a change of variables defined over `R`.** -/
+@[simp]
+theorem hasMultiplicativeReduction_baseChange_smul_iff (W : WeierstrassCurve K) [IsMinimal R W]
+    (C : VariableChange R) :
+    (C.baseChange K • W).HasMultiplicativeReduction R ↔ W.HasMultiplicativeReduction R := by
+  simp only [hasMultiplicativeReduction_iff, valuation_Δ_baseChange_smul,
+    valuation_c₄_baseChange_smul, isMinimal_baseChange_smul, ‹IsMinimal R W›, true_and]
+
+/-- **Additive reduction is invariant under a change of variables defined over `R`.** -/
+@[simp]
+theorem hasAdditiveReduction_baseChange_smul_iff (W : WeierstrassCurve K) [IsMinimal R W]
+    (C : VariableChange R) :
+    (C.baseChange K • W).HasAdditiveReduction R ↔ W.HasAdditiveReduction R := by
+  simp only [hasAdditiveReduction_iff, valuation_Δ_baseChange_smul,
+    valuation_c₄_baseChange_smul, isMinimal_baseChange_smul, ‹IsMinimal R W›, true_and]
+
+/-- **Split multiplicative reduction is invariant under a change of variables defined over `R`**:
+the node polynomial of the integral model changes by an affine substitution and a unit scalar, so
+it splits over the residue field for both equations or for neither. Unlike
+`HasSplitMultiplicativeReduction.of_isMinimal_smul`, this needs no ellipticity. -/
+@[simp]
+theorem hasSplitMultiplicativeReduction_baseChange_smul_iff (W : WeierstrassCurve K)
+    [IsMinimal R W] (C : VariableChange R) :
+    (C.baseChange K • W).HasSplitMultiplicativeReduction R ↔
+      W.HasSplitMultiplicativeReduction R := by
+  simp only [hasSplitMultiplicativeReduction_iff, hasMultiplicativeReduction_baseChange_smul_iff,
+    integralModel_baseChange_smul, ← nodePolynomial_def,
+    splits_variableChange_nodePolynomial_map_iff]
 
 /-- **The scaling factor of a change of variables between two minimal models of an elliptic curve
 has valuation `1`.** Over a discrete valuation ring that says `u` is a **unit**: it and its inverse

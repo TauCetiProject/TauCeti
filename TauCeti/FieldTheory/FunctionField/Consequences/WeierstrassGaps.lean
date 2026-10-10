@@ -220,7 +220,6 @@ theorem card_gapNumbersUpTo_add_dim (hF : IsFunctionField k F)
         ext i
         simp
         omega
-      have hnmem : n + 1 ∉ Finset.Icc 1 n := by simp
       have hdim_le := P.dim_succ_zsmul_ofPoint_le hF hP n
       have hdim_mono :
           Divisor.dim ((n : ℤ) • WeilDivisor.ofPoint P) ≤

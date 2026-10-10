@@ -207,7 +207,7 @@ theorem wishartGramMeasure_of_not_posSemidef (ν : ℕ) (hS : ¬ S.PosSemidef) :
   exact congrArg _ (Subtype.ext (by simp))
 
 /-- **The Gram sum of an independent centred Gaussian family is Gaussian-Gram Wishart.** -/
-theorem hasLaw_wishartGram_gaussian {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
+theorem hasLaw_wishartGram_gaussian {Ω : Type*} {_ : MeasurableSpace Ω} {P : Measure Ω}
     {X : Fin ν → Ω → EuclideanSpace ℝ (Fin p)}
     (hX : ∀ r, HasLaw (X r) (multivariateGaussian 0 S) P) (hindep : iIndepFun X P) :
     HasLaw (fun ω ↦ wishartGram fun r ↦ X r ω) (wishartGramMeasure ν S) P :=

@@ -16,9 +16,9 @@ when it and all its first directional derivatives lie in `H^s`. One direction is
 This file proves the other direction, which needs the derivatives only along an orthonormal
 basis.
 
-The proof writes the Bessel potential of order `2` as `1 - (2π)⁻² Δ`, with `Δ` the sum of the
-second derivatives along the basis, and applies the Bessel potential of order `-1` to both
-sides. The `2π` comes from Mathlib's normalisation of the Fourier transform.
+Use the regularity criteria to characterize Sobolev membership through directional derivatives,
+either in all directions or along an orthonormal basis. The order-two operator identity relates
+the Bessel potential to the Laplacian, with the factor `2π` from Mathlib's Fourier normalization.
 
 ## Main declarations
 

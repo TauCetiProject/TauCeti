@@ -163,7 +163,7 @@ theorem isJordanCurve_range_union_range_of_inter_eq_pair {y : X} {γ δ : Path x
       have h2 : 1 - (2 * (t : ℝ) - 1) = 0 := congrArg Subtype.val hb
       exact Or.inr (Or.inl ⟨Subtype.ext (show (s : ℝ) = 0 by linarith),
         Subtype.ext (show (t : ℝ) = 1 by linarith)⟩)
-    · have h1 : (2 : ℝ) * s = 1 := congrArg Subtype.val h.1
+    · have _ : (2 : ℝ) * s = 1 := congrArg Subtype.val h.1
       have h2 : 1 - (2 * (t : ℝ) - 1) = 1 := congrArg Subtype.val h.2
       exact Or.inl (Subtype.ext (show (s : ℝ) = (t : ℝ) by linarith))
   · -- The mirror image of the previous case.
@@ -174,7 +174,7 @@ theorem isJordanCurve_range_union_range_of_inter_eq_pair {y : X} {γ δ : Path x
       have h2 : 1 - (2 * (s : ℝ) - 1) = 0 := congrArg Subtype.val hb
       exact Or.inr (Or.inr ⟨Subtype.ext (show (s : ℝ) = 1 by linarith),
         Subtype.ext (show (t : ℝ) = 0 by linarith)⟩)
-    · have h1 : (2 : ℝ) * t = 1 := congrArg Subtype.val h.1
+    · have _ : (2 : ℝ) * t = 1 := congrArg Subtype.val h.1
       have h2 : 1 - (2 * (s : ℝ) - 1) = 1 := congrArg Subtype.val h.2
       exact Or.inl (Subtype.ext (show (s : ℝ) = (t : ℝ) by linarith))
   · -- Both parameters on the second half: injectivity of `δ` read backwards.

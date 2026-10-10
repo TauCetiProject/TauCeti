@@ -101,6 +101,9 @@ isomorphism `G_K ⧸ Gal(Kˢ/σ(L)) ≃* Gal(L/K)`. This part uses normality but
 * `TauCeti.toSubgroup_eq_fixingSubgroup_of_fixedField_eq`: an open subgroup of `G_K` is the
   subgroup fixing its fixed field; `TauCeti.fixedField_toSubgroup_top`: the fixed field of `G_K`
   is `K`.
+* `TauCeti.prod_restrictNormal_out`: if the fixed field `E` of an open subgroup `U` is normal over
+  `K`, then a product over `G_K ⧸ U` of a function of the restricted coset representatives is the
+  product over `Gal(E/K)`.
 * `TauCeti.exists_galoisOpenNormalSubgroup_eq`: every open normal subgroup of `G_K` is
   `galoisOpenNormalSubgroup K E E.val` for a finite Galois intermediate field `E` of `Kˢ/K`.
 * `TauCeti.fixingOpenNormalSubgroup_eq_galoisOpenNormalSubgroup`: for a finite Galois `L/K`,
@@ -494,6 +497,26 @@ theorem toSubgroup_eq_fixingSubgroup_of_fixedField_eq {U : OpenSubgroup (Absolut
     U.toSubgroup = E.fixingSubgroup := by
   rw [← hU]
   exact (InfiniteGalois.fixingSubgroup_fixedField ⟨U.toSubgroup, U.isClosed⟩).symm
+
+variable {K} in
+/-- **Products over `G_K ⧸ U` are products over `Gal(E/K)`**: if the fixed field of the open
+subgroup `U` is a normal intermediate field `E` of `Kˢ/K`, then restricting coset representatives
+to `E` is a bijection `G_K ⧸ U → Gal(E/K)`. So a product over the cosets of `U` of a function of
+the restricted representatives is the product of that function over `Gal(E/K)`. -/
+theorem prod_restrictNormal_out {M : Type*} [CommMonoid M]
+    {U : OpenSubgroup (AbsoluteGaloisGroup K)} {E : IntermediateField K (SeparableClosure K)}
+    [Normal K E] (hU : fixedField U.toSubgroup = E)
+    [Fintype (AbsoluteGaloisGroup K ⧸ U.toSubgroup)] [Fintype Gal(E/K)] (f : Gal(E/K) → M) :
+    ∏ q : AbsoluteGaloisGroup K ⧸ U.toSubgroup,
+        f ((q.out : AbsoluteGaloisGroup K).restrictNormal E) = ∏ σ, f σ := by
+  let e : AbsoluteGaloisGroup K ⧸ U.toSubgroup ≃ Gal(E/K) :=
+    (Subgroup.quotientEquivOfEq (toSubgroup_eq_fixingSubgroup_of_fixedField_eq hU)).trans
+      (quotientFixingSubgroupEquiv K (SeparableClosure K) E).toEquiv
+  refine Fintype.prod_equiv e _ _ fun q ↦ congrArg f ?_
+  -- `e` sends the class of `q.out`, which is `q`, to the restriction of `q.out`.
+  conv_rhs => rw [← QuotientGroup.out_eq' q]
+  rw [Equiv.trans_apply, Subgroup.quotientEquivOfEq_mk]
+  exact (quotientFixingSubgroupEquiv_mk _).symm
 
 /-- **The fixed field of `G_K` is `K`**: the whole of `G_K`, as an open subgroup, has fixed field
 the bottom intermediate field of `Kˢ/K`. -/

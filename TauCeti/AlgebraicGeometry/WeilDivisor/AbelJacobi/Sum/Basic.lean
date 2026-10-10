@@ -125,7 +125,7 @@ lemma weightedAbelJacobiDivisorClass_eq_sum (w : X → ℤ) (h : S.IsWeightedDeg
       rw [S.weightedAbelJacobiDivisorClass_add w h hx₀, Finsupp.sum_add_index, hD, hE]
       · intro x
         simp
-      · intro x a b
+      · intro x _ b
         simp [add_zsmul]
 
 /-- Equality of weighted Abel-Jacobi sums is equality of the corresponding degree-corrected

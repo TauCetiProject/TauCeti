@@ -471,6 +471,26 @@ theorem exists_isCoupling_iff [IsFiniteMeasure μ] :
     (∃ π : Measure (X × Y), IsCoupling π μ ν) ↔ μ univ = ν univ :=
   ⟨fun ⟨_, hπ⟩ ↦ hπ.measure_univ_eq, fun h ↦ ⟨_, isCoupling_inv_smul_prod h⟩⟩
 
+/-- **Complete a partial plan.** A measure whose marginals are dominated by finite measures of
+equal mass can be completed to a coupling by adding a coupling of the residual marginals.
+The added mass is exactly the missing mass. -/
+theorem exists_isCoupling_add_of_le_marginals [IsFiniteMeasure μ]
+    (hmass : μ univ = ν univ) (hfst : π.fst ≤ μ) (hsnd : π.snd ≤ ν) :
+    ∃ ρ : Measure (X × Y), IsCoupling ρ (μ - π.fst) (ν - π.snd) ∧
+      IsCoupling (π + ρ) μ ν ∧ ρ univ = μ univ - π univ := by
+  have : IsFiniteMeasure π.fst := isFiniteMeasure_of_le μ hfst
+  have : IsFiniteMeasure ν := ⟨by rw [← hmass]; exact measure_lt_top μ univ⟩
+  have : IsFiniteMeasure π.snd := isFiniteMeasure_of_le ν hsnd
+  have hres : (μ - π.fst) univ = (ν - π.snd) univ := by
+    rw [Measure.sub_apply MeasurableSet.univ hfst,
+      Measure.sub_apply MeasurableSet.univ hsnd, Measure.fst_univ, Measure.snd_univ, hmass]
+  obtain ⟨ρ, hρ⟩ := exists_isCoupling_iff.2 hres
+  refine ⟨ρ, hρ, ?_, ?_⟩
+  · have h := (IsCoupling.mk rfl rfl : IsCoupling π π.fst π.snd).add hρ
+    rwa [add_comm π.fst, add_comm π.snd, Measure.sub_add_cancel_of_le hfst,
+      Measure.sub_add_cancel_of_le hsnd] at h
+  · rw [← hρ.measure_univ_left, Measure.sub_apply MeasurableSet.univ hfst, Measure.fst_univ]
+
 /-- Draw independent samples `w i ∼ ρ i` of pairs and pair the source of `w i` with the target of
 `w (σ i)`. Summed over `i`, the laws of these permuted pairs have the same two marginals as
 `∑ i, ρ i`. -/

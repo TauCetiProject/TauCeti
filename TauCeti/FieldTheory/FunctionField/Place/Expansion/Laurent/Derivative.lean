@@ -36,6 +36,11 @@ Over a perfect field every prime element of a place is separating
 differential at a rational place needs no choice of uniformizer at all:
 `TauCeti.Place.kaehlerResidueOfPerfectField` computes it with any prime element.
 
+The compatibility with expansions also gives the order of a derivative:
+if `z` vanishes to order at least `m` at `P`, then `dz/dt ≡ m z / t` modulo functions vanishing to
+order at least `m`, and iterating, `dⁱz/dtⁱ` is congruent to `m (m - 1) ⋯ (m - i + 1) z / tⁱ`.
+This is the local input for computing orders of Wronskians at rational places.
+
 ## Main definitions
 
 * `TauCeti.Place.kaehlerResidue`: the residue `res_P(ω)` of a Kähler differential `ω` at a
@@ -50,6 +55,8 @@ differential at a rational place needs no choice of uniformizer at all:
 * `TauCeti.Place.residue_eq_residue_mul_derivativeOfSeparating`: **the transformation formula**
   `res_{P,s}(z) = res_{P,t}(z · ds/dt)`.
 * `TauCeti.Place.residue_derivativeOfSeparating`: `res_{P,t}(dy/dt) = 0`.
+* `TauCeti.Place.iterate_derivativeOfSeparating_sub_zsmul_mem_filtration`: if `z` vanishes to
+  order at least `m`, then `dⁱz/dtⁱ ≡ m (m - 1) ⋯ (m - i + 1) z / tⁱ` modulo order `m - i + 1`.
 * `TauCeti.Place.kaehlerResidue_eq_kaehlerResidue`: the residue of a differential is independent
   of the uniformizer used to compute it.
 * `TauCeti.Place.kaehlerResidue_D`: exact differentials have residue zero.
@@ -127,6 +134,80 @@ theorem residue_derivativeOfSeparating (y : F) :
   rw [residue_apply, laurentSeriesExpansion_derivativeOfSeparating, LaurentSeries.derivative_apply,
     LaurentSeries.hasseDeriv_coeff]
   simp
+
+/-! ### Orders of derivatives -/
+
+include hP ht in
+/-- **The leading term of a derivative.** If `z` vanishes to order at least `m` at `P`, then
+`dz/dt ≡ m z / t` modulo functions vanishing to order at least `m`. This holds in every
+characteristic. -/
+theorem derivativeOfSeparating_sub_zsmul_mem_filtration {m : ℤ} {z : F}
+    (hz : z ∈ P.filtration m) :
+    derivativeOfSeparating htr z - m • (t⁻¹ * z) ∈ P.filtration m := by
+  have hinv : (HahnSeries.single (1 : ℤ) (1 : k))⁻¹ = HahnSeries.single (-1) 1 :=
+    inv_eq_of_mul_eq_one_right (by simp [HahnSeries.single_mul_single])
+  rw [mem_filtration_iff, ← P.valuation_laurentSeriesExpansion hP ht, map_sub, map_zsmul,
+    map_mul, map_inv₀, laurentSeriesExpansion_uniformizer,
+    laurentSeriesExpansion_derivativeOfSeparating, hinv]
+  apply LaurentSeries.valuation_derivative_sub_zsmul_single_mul_le
+  rw [valuation_laurentSeriesExpansion]
+  exact (P.mem_filtration_iff).mp hz
+
+include hP ht in
+/-- Differentiation with respect to a prime element lowers the order at `P` by at most one. -/
+theorem derivativeOfSeparating_mem_filtration {m : ℤ} {z : F} (hz : z ∈ P.filtration m) :
+    derivativeOfSeparating htr z ∈ P.filtration (m - 1) := by
+  have ht' : t⁻¹ ∈ P.filtration (-1) := by
+    simpa [ht] using P.mem_filtration_ord t⁻¹
+  have h : m • (t⁻¹ * z) ∈ P.filtration (m - 1) :=
+    zsmul_mem (by simpa [neg_add_eq_sub] using P.mul_mem_filtration ht' hz) m
+  simpa using add_mem (P.filtration_antitone (by omega)
+    (P.derivativeOfSeparating_sub_zsmul_mem_filtration hP ht htr hz)) h
+
+include hP ht in
+/-- The `i`-th derivative with respect to a prime element lowers the order at `P` by at most
+`i`. -/
+theorem iterate_derivativeOfSeparating_mem_filtration {m : ℤ} {z : F}
+    (hz : z ∈ P.filtration m) (i : ℕ) :
+    (⇑(derivativeOfSeparating htr))^[i] z ∈ P.filtration (m - i) := by
+  induction i with
+  | zero => simpa using hz
+  | succ i ih =>
+    rw [Function.iterate_succ_apply']
+    simpa [sub_sub] using P.derivativeOfSeparating_mem_filtration hP ht htr ih
+
+include hP ht in
+/-- **The leading term of an iterated derivative.** If `z` vanishes to order at least `m` at `P`,
+then `dⁱz/dtⁱ ≡ m (m - 1) ⋯ (m - i + 1) z / tⁱ` modulo functions vanishing to order at least
+`m - i + 1`. The coefficient is the descending Pochhammer symbol evaluated at `m`. -/
+theorem iterate_derivativeOfSeparating_sub_zsmul_mem_filtration {m : ℤ} {z : F}
+    (hz : z ∈ P.filtration m) (i : ℕ) :
+    (⇑(derivativeOfSeparating htr))^[i] z - (descPochhammer ℤ i).eval m • (t⁻¹ ^ i * z) ∈
+      P.filtration (m - i + 1) := by
+  induction i with
+  | zero => simp
+  | succ i ih =>
+    have hti : t⁻¹ ^ i ∈ P.filtration (-i) := by
+      simpa [ht] using P.mem_filtration_ord (t⁻¹ ^ i)
+    have hw : t⁻¹ ^ i * z ∈ P.filtration (m - i) := by
+      convert P.mul_mem_filtration hti hz using 2
+      ring
+    have h1 := P.derivativeOfSeparating_mem_filtration hP ht htr ih
+    have h2 := zsmul_mem (P.derivativeOfSeparating_sub_zsmul_mem_filtration hP ht htr hw)
+      ((descPochhammer ℤ i).eval m)
+    -- Differentiate the `i`-th congruence, and use the leading term of `d(t⁻ⁱ z)/dt`.
+    have key : (⇑(derivativeOfSeparating htr))^[i + 1] z -
+          (descPochhammer ℤ (i + 1)).eval m • (t⁻¹ ^ (i + 1) * z) =
+        derivativeOfSeparating htr ((⇑(derivativeOfSeparating htr))^[i] z -
+            (descPochhammer ℤ i).eval m • (t⁻¹ ^ i * z)) +
+          (descPochhammer ℤ i).eval m • (derivativeOfSeparating htr (t⁻¹ ^ i * z) -
+            (m - i : ℤ) • (t⁻¹ * (t⁻¹ ^ i * z))) := by
+      rw [Function.iterate_succ_apply', descPochhammer_succ_eval, map_sub, map_zsmul]
+      simp only [zsmul_eq_mul]
+      push_cast
+      ring
+    rw [key]
+    refine add_mem (P.filtration_antitone ?_ h1) (P.filtration_antitone ?_ h2) <;> omega
 
 end Expansion
 

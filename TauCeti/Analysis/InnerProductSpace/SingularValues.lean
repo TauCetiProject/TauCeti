@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.SingularValues
+public import TauCeti.Analysis.InnerProductSpace.CourantFischer
 public import TauCeti.Data.Finsupp.Antitone
 public import TauCeti.LinearAlgebra.Eigenspace.Comp
 
@@ -51,11 +52,23 @@ of `A` run over the whole basis without splitting off the kernel.
 * `LinearMap.adjoint_leftSingularVector`: `A† uᵢ = σᵢ vᵢ`.
 * `LinearMap.self_comp_adjoint_leftSingularVector`: `A A† uᵢ = σᵢ² uᵢ`.
 * `LinearMap.orthonormal_leftSingularVector`: the `uᵢ` with `σᵢ ≠ 0` are orthonormal.
+* `LinearMap.sum_norm_inner_leftSingularVector_sq_le`: Bessel's inequality for the whole family
+  `(uᵢ)`, zero vectors included.
 * `LinearMap.apply_eq_sum_singularValues_smul`: `A x = ∑ᵢ σᵢ ⟪vᵢ, x⟫ uᵢ`.
 * `LinearMap.eq_sum_singularValues_smul_rankOne`: `A = ∑ᵢ σᵢ uᵢ ⊗ vᵢ`, the singular value
   decomposition in rank-one form.
 * `LinearMap.exists_orthonormalBasis_apply_eq_leftSingularVector`: the nonzero left singular
   vectors extend, index by index, to an orthonormal basis of the codomain.
+
+## Comparison of singular values
+
+The last section compares the singular values of two maps with the same source through the
+Courant–Fischer min–max principle for their source Gram operators.
+
+* `LinearMap.singularValues_le_mul_of_norm_apply_le`: if `‖B x‖ ≤ c ‖A x‖` for every `x`, then
+  `σᵢ(B) ≤ c σᵢ(A)` for every `i`.
+* `LinearMap.singularValues_comp_le`: if `‖C y‖ ≤ c ‖y‖` for every `y`, then
+  `σᵢ(C A) ≤ c σᵢ(A)` for every `i`.
 
 ## Source
 
@@ -68,6 +81,8 @@ Original copyright (c) 2026 Kitware, Inc.; Apache-2.0.
 
 * R. A. Horn and C. R. Johnson, *Matrix Analysis*, second edition, Cambridge University Press,
   2013, Theorem 1.3.22, Theorem 2.6.3 and Section 7.3.
+* R. A. Horn and C. R. Johnson, *Topics in Matrix Analysis*, Cambridge University Press, 1991,
+  Section 3.3.
 -/
 
 public section
@@ -257,6 +272,27 @@ theorem leftSingularVector_eq_zero_iff {i : Fin (finrank 𝕜 E)} :
   rw [← inner_self_eq_zero (𝕜 := 𝕜), inner_leftSingularVector]
   simp
 
+/-- A left singular vector has norm at most one: it is a unit vector when its singular value is
+nonzero and zero otherwise. -/
+theorem norm_leftSingularVector_le_one (i : Fin (finrank 𝕜 E)) : ‖A.leftSingularVector i‖ ≤ 1 := by
+  by_cases hσ : A.singularValues i = 0
+  · simp [(A.leftSingularVector_eq_zero_iff).mpr hσ]
+  · exact (A.orthonormal_leftSingularVector.1 ⟨i, hσ⟩).le
+
+/-- **Bessel's inequality** for the left singular vectors: `∑ᵢ ‖⟪uᵢ, x⟫‖² ≤ ‖x‖²`. The vectors at
+the vanishing singular values are zero, so the orthonormal subfamily carries the whole sum. -/
+theorem sum_norm_inner_leftSingularVector_sq_le (x : F) :
+    ∑ i, ‖⟪A.leftSingularVector i, x⟫‖ ^ 2 ≤ ‖x‖ ^ 2 := by
+  classical
+  calc ∑ i, ‖⟪A.leftSingularVector i, x⟫‖ ^ 2
+      = ∑ i : {i : Fin (finrank 𝕜 E) // A.singularValues i ≠ 0},
+          ‖⟪A.leftSingularVector i, x⟫‖ ^ 2 := by
+        rw [← Finset.sum_filter_of_ne (s := Finset.univ) (p := fun i ↦ A.singularValues i ≠ 0)
+          (f := fun i ↦ ‖⟪A.leftSingularVector i, x⟫‖ ^ 2) fun i _ h hσ ↦ h (by
+            simp [(A.leftSingularVector_eq_zero_iff).mpr hσ])]
+        exact Finset.sum_subtype _ (by simp) _
+    _ ≤ ‖x‖ ^ 2 := A.orthonormal_leftSingularVector.sum_inner_products_le x
+
 /-- The adjoint singular relation `A† uᵢ = σᵢ vᵢ`, valid at every index, including those with
 `σᵢ = 0`. -/
 @[simp]
@@ -319,5 +355,48 @@ theorem exists_orthonormalBasis_apply_eq_leftSingularVector :
   simp [u, ← hij]
 
 end SingularSystem
+
+section Comparison
+
+variable {G : Type*} [NormedAddCommGroup G] [InnerProductSpace 𝕜 G] [FiniteDimensional 𝕜 G]
+
+/-- If `‖B x‖ ≤ c * ‖A x‖` for every `x`, then every singular value of `B` is at most `c` times the
+corresponding singular value of `A`. -/
+theorem singularValues_le_mul_of_norm_apply_le {A : E →ₗ[𝕜] F} {B : E →ₗ[𝕜] G} {c : ℝ}
+    (h : ∀ x, ‖B x‖ ≤ c * ‖A x‖) (i : ℕ) :
+    B.singularValues i ≤ c * A.singularValues i := by
+  rcases lt_or_ge c 0 with hc | hc
+  · -- A negative constant forces `A = 0` and `B = 0`.
+    have hA : A = 0 := ext fun x ↦ norm_le_zero_iff.mp <|
+      nonpos_of_mul_nonneg_right ((norm_nonneg _).trans (h x)) hc
+    have hB : B = 0 := ext fun x ↦ norm_le_zero_iff.mp <| by simpa [hA] using h x
+    simp [hA, hB]
+  rcases lt_or_ge i (finrank 𝕜 E) with hi | hi
+  swap
+  · simp [B.singularValues_of_finrank_le hi, A.singularValues_of_finrank_le hi]
+  -- Courant–Fischer: on an `(i + 1)`-dimensional subspace where the Rayleigh quotient of `B† B` is
+  -- at least `σᵢ(B)²`, find a unit vector where that of `A† A` is at most `σᵢ(A)²`.
+  obtain ⟨V, hV, hBV⟩ :=
+    B.isSymmetric_adjoint_comp_self.exists_submodule_forall_unit_eigenvalue_le_re_inner rfl ⟨i, hi⟩
+  obtain ⟨x, hxV, hx, hAx⟩ :=
+    A.isSymmetric_adjoint_comp_self.exists_unit_vector_re_inner_le_eigenvalue rfl ⟨i, hi⟩ V hV
+  have hBx := hBV x hxV hx
+  simp only [comp_apply, adjoint_inner_left, inner_self_eq_norm_sq] at hAx hBx
+  have hsq : B.singularValues i ^ 2 ≤ (c * A.singularValues i) ^ 2 := by
+    rw [mul_pow, B.sq_singularValues_of_lt rfl hi, A.sq_singularValues_of_lt rfl hi]
+    calc _ ≤ ‖B x‖ ^ 2 := hBx
+      _ ≤ (c * ‖A x‖) ^ 2 := pow_le_pow_left₀ (norm_nonneg _) (h x) 2
+      _ ≤ _ := by rw [mul_pow]; exact mul_le_mul_of_nonneg_left hAx (sq_nonneg c)
+  exact (pow_le_pow_iff_left₀ (B.singularValues_nonneg i)
+    (mul_nonneg hc (A.singularValues_nonneg i)) two_ne_zero).mp hsq
+
+/-- **Bounded-factor domination.** If `‖C y‖ ≤ c * ‖y‖` for every `y` (for `c ≥ 0`: if `C` has
+operator norm at most `c`), then `σᵢ(C A) ≤ c σᵢ(A)` for every `i`. -/
+theorem singularValues_comp_le (C : F →ₗ[𝕜] G) (A : E →ₗ[𝕜] F) {c : ℝ}
+    (hC : ∀ y, ‖C y‖ ≤ c * ‖y‖) (i : ℕ) :
+    (C ∘ₗ A).singularValues i ≤ c * A.singularValues i :=
+  singularValues_le_mul_of_norm_apply_le (fun x ↦ hC (A x)) i
+
+end Comparison
 
 end LinearMap

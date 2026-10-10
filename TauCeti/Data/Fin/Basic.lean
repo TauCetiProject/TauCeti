@@ -56,6 +56,8 @@ range, so the value is a `dite` rather than a plain application.
   `open Fin.NatCast`) is nonzero.
 * `Fin.insertNth_insertNth`: two insertions into a tuple commute, up to reindexing by `succAbove`
   and `predAbove`; the dual of Mathlib's `Fin.removeNth_removeNth_eq_swap`.
+* `Fin.insertNth_append_castAdd` and `Fin.insertNth_append_natAdd`: insertion into either block
+  of an appended tuple, used to compute faces of cross products of cubes.
 * `Fin.predAbove_succ_succAbove`: `Fin.predAbove p` inverts `p.succ.succAbove`, the
   counterpart of Mathlib's `Fin.predAbove_succAbove` for `p.castSucc.succAbove`.
 * `Fin.val_succAbove`: the value of `p.succAbove i`, read off the comparison of `i` with `p`.
@@ -366,6 +368,57 @@ theorem insertNth_insertNth {n : ℕ} {β : Sort*} (i : Fin (n + 2)) (j : Fin (n
   rcases eq_self_or_eq_succAbove (j.predAbove i) k with rfl | ⟨k, rfl⟩
   · simp only [removeNth, succAbove_succAbove_predAbove, insertNth_apply_same]
   · simp only [removeNth, succAbove_succAbove_succAbove_predAbove, insertNth_apply_succAbove]
+
+/-- Inserting in the first block of an appended tuple is insertion in its first factor. -/
+theorem insertNth_append_castAdd {n m : ℕ} {β : Sort*} (i : Fin (n + 1)) (a : β)
+    (x : Fin n → β) (y : Fin m → β) :
+    (Fin.cast (by omega : (n + 1) + m = (n + m) + 1) (i.castAdd m)).insertNth a
+        (append x y) =
+      append (i.insertNth a x) y ∘ Fin.cast (by omega) := by
+  symm
+  rw [eq_insertNth_iff]
+  refine ⟨by simp, ?_⟩
+  funext k
+  induction k using Fin.addCases with
+  | left k =>
+      have hk : Fin.cast (by omega : (n + m) + 1 = (n + 1) + m)
+          ((Fin.cast (by omega) (i.castAdd m)).succAbove (k.castAdd m)) =
+          (i.succAbove k).castAdd m := by
+        apply Fin.ext
+        simp only [val_cast, val_succAbove, val_castAdd]
+      simp [removeNth, Function.comp_apply, hk]
+  | right k =>
+      have hk : Fin.cast (by omega : (n + m) + 1 = (n + 1) + m)
+          ((Fin.cast (by omega) (i.castAdd m)).succAbove (k.natAdd n)) =
+          k.natAdd (n + 1) := by
+        apply Fin.ext
+        simp only [val_cast, val_succAbove, val_castAdd, val_natAdd]
+        have := i.isLt
+        split_ifs <;> omega
+      simp [removeNth, Function.comp_apply, hk]
+
+/-- Inserting in the second block of an appended tuple is insertion in its second factor. -/
+theorem insertNth_append_natAdd {n m : ℕ} {β : Sort*} (i : Fin (m + 1)) (a : β)
+    (x : Fin n → β) (y : Fin m → β) :
+    (i.natAdd n).insertNth a (append x y) = append x (i.insertNth a y) := by
+  symm
+  rw [eq_insertNth_iff]
+  refine ⟨by simp, ?_⟩
+  funext k
+  induction k using Fin.addCases with
+  | left k =>
+      have hk : (i.natAdd n).succAbove (k.castAdd m) = k.castAdd (m + 1) := by
+        apply Fin.ext
+        simp only [val_succAbove, val_castAdd, val_natAdd]
+        have := k.isLt
+        split_ifs <;> omega
+      simp [removeNth, hk]
+  | right k =>
+      have hk : (i.natAdd n).succAbove (k.natAdd n) = (i.succAbove k).natAdd n := by
+        apply Fin.ext
+        simp only [val_succAbove, val_natAdd]
+        split_ifs <;> omega
+      simp [removeNth, hk]
 
 /-! ### Inserting an entry into a tuple indexed by a sum of two blocks -/
 
