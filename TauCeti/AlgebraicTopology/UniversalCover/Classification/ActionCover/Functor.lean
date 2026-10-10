@@ -96,6 +96,9 @@ def actionCoveringSpaceFunctorCompFiberIso :
     actionCoveringSpaceFunctor x₀ ⋙ CoveringSpace.fiberActionFunctor x₀ ≅ 𝟭 _ :=
   NatIso.ofComponents (actionCoveringSpaceFiberIso x₀) fun {A B} f => by
     ext e
+    -- Extensionality leaves `e` in the composite functor's wrapped fibre type. Rewriting the
+    -- object equality would transport `e` and its dependent occurrences; instead, normalize
+    -- its definitionally equal concrete fibre type and the composed morphism applications.
     change ⇑(actionCoveringSpace x₀ A.V).proj ⁻¹' {x₀} at e
     change (actionCoveringSpaceFiberIso x₀ _).hom.hom
         (((CoveringSpace.fiberActionFunctor x₀).map
@@ -103,6 +106,8 @@ def actionCoveringSpaceFunctorCompFiberIso :
             congrArg (fun k => k a) (f.comm g)))).hom e) =
       f.hom ((actionCoveringSpaceFiberIso x₀ _).hom.hom e)
     rw [CoveringSpace.fiberActionFunctor_map_hom]
+    -- The map lemma leaves `TypeCat.ofHom` and `Action.mkIso` wrappers around the fibre map
+    -- and fibre equivalence. Reducing their applications exposes the existing fibre-map API.
     change actionCoveringSpaceFiberEquiv x₀ B.V
         (Function.fiberMap (actionCoveringSpaceMap x₀ f.hom _).hom.left.hom
           (CoveringSpace.proj_hom_comp_hom_left_hom _) x₀ e) =
