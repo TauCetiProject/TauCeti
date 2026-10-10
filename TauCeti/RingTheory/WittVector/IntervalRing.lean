@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.Completion
 public import Mathlib.Analysis.Normed.Unbundled.RingSeminorm
 public import TauCeti.Analysis.Normed.Ring.Completion
-public import TauCeti.RingTheory.Huber.Completion
+public import TauCeti.RingTheory.Huber.Completion.Basic
 public import TauCeti.RingTheory.Huber.Normed
 public import TauCeti.RingTheory.Valuation.ExtendToLocalization
 public import TauCeti.RingTheory.WittVector.GaussValuation
