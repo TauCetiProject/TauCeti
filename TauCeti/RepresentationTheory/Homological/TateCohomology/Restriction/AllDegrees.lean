@@ -8,14 +8,17 @@ module
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.Positive
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.Trans
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Corestriction
+import TauCeti.RepresentationTheory.Homological.TateCohomology.Coinduced
 
 /-!
 # Restriction and corestriction in every Tate degree
 
 For a subgroup `H` of a finite group `G`, the separate constructions of restriction and
 corestriction in positive, zero, minus one, and lower negative degrees assemble into maps in
-every integer degree. Their composite is multiplication by the index `[G : H]`. These uniform
-maps are the group-change operations used in the restriction law for the Tate cup product.
+every integer degree. Their composite is multiplication by the index `[G : H]`; for the trivial
+subgroup, whose Tate cohomology vanishes, this shows that every Tate cohomology group of `G` is
+killed by `|G|` (`natCard_nsmul_eq_zero`). These uniform maps are the group-change operations
+used in the restriction law for the Tate cup product.
 Restriction is natural in the coefficient representation in every degree (`res_natural`).
 Tower composition for class-field-theory layers is provided by
 `ClassFieldTheory.LayerRestriction.tateRes_trans` and
@@ -189,5 +192,18 @@ theorem res_comp_cor (M : Rep.{u} R G) (H : Subgroup G) (r : ℤ) :
     cases n with
     | zero => exact HNegOneRes_comp_HNegOneCor M H
     | succ n => exact negSuccRes_comp_negSuccCor M H (n + 1)
+
+/-- **Tate cohomology of a finite group is killed by the order of the group**: every class in
+every degree is annihilated by `Nat.card G`. -/
+theorem natCard_nsmul_eq_zero {A : Rep.{u} R G} {n : ℤ} (x : tateCohomology A n) :
+    Nat.card G • x = 0 := by
+  -- Restriction to the trivial subgroup followed by corestriction is multiplication by `|G|`, and
+  -- the Tate cohomology of the trivial group vanishes.
+  -- The identity of the restriction of `A` to the trivial subgroup is its own norm. The explicit
+  -- instance `Subgroup.fintypeOfFinite` is the one `res` and `cor` are stated with.
+  have hbot := @isZero_of_forall_eq_sum R (⊥ : Subgroup G) _ _ (Subgroup.fintypeOfFinite ⊥)
+    (Rep.res (⊥ : Subgroup G).subtype A) LinearMap.id (fun x ↦ by simp) n
+  rw [← Subgroup.index_bot, ← res_comp_cor_apply,
+    (ModuleCat.subsingleton_of_isZero hbot).elim (res A ⊥ n x) 0, map_zero]
 
 end TauCeti.TateCohomology
