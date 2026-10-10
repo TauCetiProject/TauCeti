@@ -350,3 +350,21 @@ theorem card_translationFixingSubgroup_eq_finrank_iff_isGalois_and_forall_exists
   exact ⟨P, hP⟩
 
 end WeierstrassCurve.Affine
+
+namespace TauCeti
+
+open WeierstrassCurve WeierstrassCurve.Affine
+
+variable {F : Type*} [Field F] [DecidableEq F] (W : Affine F) [W.IsElliptic]
+  (Φ : AddSubgroup (W⁄F).toAffine.Point) [Finite Φ]
+
+attribute [local instance] Fintype.ofFinite
+
+/-- Translation by a point of a finite subgroup fixes the sum of its translates of a function. -/
+theorem _root_.WeierstrassCurve.Affine.translation_sum (P : Φ) (f : W.FunctionField) :
+    translation W P (∑ Q : Φ, translation W Q f) = ∑ Q : Φ, translation W Q f := by
+  rw [map_sum]
+  refine Fintype.sum_equiv (Equiv.addRight P) _ _ fun Q ↦ ?_
+  simp only [Equiv.coe_addRight, AddSubgroup.coe_add, translation_add, AlgEquiv.trans_apply]
+
+end TauCeti

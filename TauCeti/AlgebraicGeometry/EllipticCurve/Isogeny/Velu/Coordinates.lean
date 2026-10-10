@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Translation.FixedField
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Translation.Place
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Translation.Automorphism
 
 /-!
 # Vélu's quotient coordinates
@@ -69,12 +68,6 @@ theorem _root_.WeierstrassCurve.Affine.veluY_def :
       algebraMap F W.FunctionField (∑ Q : Φ, Point.yCoord (Q : (W⁄F).toAffine.Point)) := by
   simp only [veluY, Finset.sum_sub_distrib, map_sum]
 
-private theorem translation_sum (P : Φ) (f : W.FunctionField) :
-    translation W P (∑ Q : Φ, translation W Q f) = ∑ Q : Φ, translation W Q f := by
-  rw [map_sum]
-  refine Fintype.sum_equiv (Equiv.addRight P) _ _ fun Q ↦ ?_
-  simp only [Equiv.coe_addRight, AddSubgroup.coe_add, translation_add, AlgEquiv.trans_apply]
-
 /-- Every translation by a point of `Φ` fixes Vélu's `x`-coordinate. -/
 @[simp]
 theorem _root_.WeierstrassCurve.Affine.translation_veluX (P : Φ) :
@@ -98,26 +91,6 @@ theorem _root_.WeierstrassCurve.Affine.veluY_mem_translationFixedField :
     veluY W Φ ∈ translationFixedField W Φ := by
   rw [mem_translationFixedField_iff]
   exact fun P hP ↦ translation_veluY W Φ ⟨P, hP⟩
-
--- At infinity every nonidentity translate of a coordinate-ring function is regular.
-private theorem valuation_translation_le_one {P : (W⁄F).toAffine.Point} (hP : P ≠ 0)
-    (r : W.CoordinateRing) :
-    W.infinityPlace (translation W P (algebraMap W.CoordinateRing W.FunctionField r)) ≤ 1 := by
-  let Q := (Point.equivBaseChangeSelf W).symm P
-  have hQ : Q ≠ 0 := by
-    intro h
-    have := congrArg (Point.equivBaseChangeSelf W) h
-    exact hP (by simpa [Q] using this)
-  -- The inverse translation carries infinity to the place of the nonzero point `Q`.
-  have hplace : (translation W P)⁻¹ • Place.infinity W ≠ Place.infinity W := by
-    rw [← translation_neg, ← (Point.equivBaseChangeSelf W).apply_symm_apply P, ← map_neg,
-      translation_smul_infinity, neg_neg, ← coe_pointEquivDegreeOnePlace_zero, ← Point.zero_def]
-    intro h
-    have := (pointEquivDegreeOnePlace W).injective (Subtype.ext h)
-    exact hQ (by simpa [Q] using this)
-  simpa only [Place.valuation_smul, AlgEquiv.aut_inv, AlgEquiv.symm_symm,
-    Place.valuation_infinity] using
-    Place.valuation_algebraMap_le_one_of_ne_infinity hplace r
 
 private theorem valuation_normalized_sum (r : W.CoordinateRing) (c : F)
     (hr : 1 < W.infinityPlace (algebraMap W.CoordinateRing W.FunctionField r)) :

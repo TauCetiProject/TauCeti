@@ -69,4 +69,34 @@ theorem translation_smul_pointEquivDegreeOnePlace (P Q : W.Point) :
 
 end WeierstrassCurve.Affine
 
+namespace TauCeti
+
+open WeierstrassCurve WeierstrassCurve.Affine
+
+variable {F : Type*} [Field F] [DecidableEq F] (W : Affine F) [W.IsElliptic]
+
+/-- Every nonidentity translate of a coordinate-ring function is regular at infinity. -/
+theorem _root_.WeierstrassCurve.Affine.valuation_translation_le_one
+    {P : (W⁄F).toAffine.Point} (hP : P ≠ 0)
+    (r : W.CoordinateRing) :
+    W.infinityPlace (translation W P (algebraMap W.CoordinateRing W.FunctionField r)) ≤ 1 := by
+  let Q := (Point.equivBaseChangeSelf W).symm P
+  have hQ : Q ≠ 0 := by
+    intro h
+    have := congrArg (Point.equivBaseChangeSelf W) h
+    exact hP (by simpa [Q] using this)
+  -- The inverse translation carries infinity to the place of the nonzero point `Q`.
+  have hplace : (translation W P)⁻¹ • Place.infinity W ≠ Place.infinity W := by
+    rw [← translation_neg, ← (Point.equivBaseChangeSelf W).apply_symm_apply P, ← map_neg,
+      ← coe_pointEquivDegreeOnePlace_zero, ← Point.zero_def,
+      translation_smul_pointEquivDegreeOnePlace, zero_sub, neg_neg]
+    intro h
+    have := (pointEquivDegreeOnePlace W).injective (Subtype.ext h)
+    exact hQ (by simpa [Q] using this)
+  simpa only [Place.valuation_smul, AlgEquiv.aut_inv, AlgEquiv.symm_symm,
+    Place.valuation_infinity] using
+    Place.valuation_algebraMap_le_one_of_ne_infinity hplace r
+
+end TauCeti
+
 end
