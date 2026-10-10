@@ -424,7 +424,8 @@ theorem reverseRowInsert_rowInsert (x : α) {rows : List (List α)} (hne : [] �
         reverseRowBump_rowBump_of_sortedLE x y (hs row mem_cons_self) hb]
 
 /-- At a corner of the first row, a first row with a single entry is the whole tableau. -/
-private theorem eq_nil_of_dropLast_eq_nil {row : List α} {rows : List (List α)}
+private theorem eq_nil_of_dropLast_eq_nil {α : Type*} [Preorder α]
+    {row : List α} {rows : List (List α)}
     (h : (row :: rows).IsTableauRows)
     (hk : ((row :: rows).getD 1 []).length < ((row :: rows).getD 0 []).length)
     (hd : row.dropLast = []) : rows = [] := by
@@ -489,38 +490,49 @@ private theorem reverseStep_reverseRowBump {U L L' : List α} {c : ℕ} {hc : c 
       · exact hUd ▸ hxy
       · exact hUd ▸ hxy.trans_le (hpost j h₂ (by omega))
 
-/-- The invariant of reverse insertion from a corner, proved by induction on the rows: the
-letter returned was ejected from some column `c` of the first row, the result is a tableau, and
-its first row is related to the old first row by `ReverseStep`. -/
+/-- The invariant of reverse insertion from a corner: the letter returned was ejected from
+some column `c` of the first row, the result is a tableau, and its first row satisfies
+`ReverseStep`. Reinserting the returned letter recovers the tableau and the chosen corner. -/
 private theorem exists_reverseRowInsert_of_isTableauRows {k : ℕ} {rows : List (List α)}
     (h : rows.IsTableauRows)
     (hk : (rows.getD (k + 1) []).length < (rows.getD k []).length) :
     ∃ c, ∃ hc : c < (rows.headD []).length,
       (reverseRowInsert k rows).2 = some (rows.headD [])[c] ∧
         (reverseRowInsert k rows).1.IsTableauRows ∧
-        ReverseStep (rows.headD []) ((reverseRowInsert k rows).1.headD []) c hc := by
+        ReverseStep (rows.headD []) ((reverseRowInsert k rows).1.headD []) c hc ∧
+        rowInsert (rows.headD [])[c] (reverseRowInsert k rows).1 = rows ∧
+        rowInsertIndex (rows.headD [])[c] (reverseRowInsert k rows).1 = k := by
   induction rows generalizing k with
   | nil => simp at hk
   | cons row rows ih =>
     obtain ⟨hne, hs, habove, hrows⟩ := isTableauRows_cons.mp h
+    simp only [headD_cons]
     cases k with
     | zero =>
       -- remove the last entry of the first row
       have hlen : 0 < row.length := length_pos_iff.mpr hne
-      refine ⟨row.length - 1, by simp; omega, ?_⟩
+      have hlast : row.dropLast ++ [row[row.length - 1]] = row := by
+        simpa only [getLast_eq_getElem] using dropLast_concat_getLast hne
+      have hle : ∀ z ∈ row.dropLast, z ≤ row[row.length - 1] := by
+        have hs' := hs
+        rw [← hlast, sortedLE_append] at hs'
+        exact fun z hz => hs'.2.2 z hz _ mem_cons_self
+      refine ⟨row.length - 1, by omega, ?_⟩
       by_cases hd : row.dropLast = []
       · -- a one-cell first row at a corner is the whole tableau
         obtain rfl := eq_nil_of_dropLast_eq_nil h hk hd
-        refine ⟨?_, ?_, ?_⟩
+        refine ⟨?_, ?_, ?_, ?_, ?_⟩
         · simp [reverseRowInsert_zero_cons, getLast?_eq_getElem?]
         · simp [reverseRowInsert_zero_cons, hd]
         · simp only [reverseRowInsert_zero_cons, ite_eq_left hd, headD_nil]
           exact ⟨by simp, fun _ _ h₂ => absurd h₂ (by simp), fun _ h₂ _ => absurd h₂ (by simp)⟩
+        · simpa [reverseRowInsert_zero_cons, hd] using congrArg (fun r => [r]) hlast
+        · simp [reverseRowInsert_zero_cons, hd]
       · have hk' : (rows.headD []).length ≤ row.dropLast.length := by
           cases rows with
           | nil => simp
           | cons lower rows => simp at hk ⊢; omega
-        refine ⟨?_, ?_, ?_⟩
+        refine ⟨?_, ?_, ?_, ?_, ?_⟩
         · simp [reverseRowInsert_zero_cons, getLast?_eq_getElem?]
         · rw [reverseRowInsert_zero_cons, ite_eq_right hd]
           refine isTableauRows_cons.mpr ⟨hd, sortedLE_iff_pairwise.mpr
@@ -532,17 +544,26 @@ private theorem exists_reverseRowInsert_of_isTableauRows {k : ℕ} {rows : List 
           refine ⟨by simp, fun j h₁ h₂ => ?_, fun j h₂ hj => ?_⟩
           · simp [getElem_dropLast]
           · simp at h₂; omega
+        · simp only [reverseRowInsert_zero_cons, ite_eq_right hd]
+          rw [rowInsert_cons_of_eq_none rows ((rowBump_snd_eq_none_iff _ _).mpr hle),
+            rowBump_of_forall_le _ _ hle, hlast]
+        · simp only [reverseRowInsert_zero_cons, ite_eq_right hd]
+          exact rowInsertIndex_cons_of_eq_none rows ((rowBump_snd_eq_none_iff _ _).mpr hle)
     | succ k =>
-      obtain ⟨c, hc, hret, htab, hstep⟩ := ih hrows (by simpa using hk)
+      obtain ⟨c, hc, hret, htab, hstep, hins, hidx⟩ := ih hrows (by simpa using hk)
       obtain ⟨d, hd, hx, hU, hstep'⟩ := reverseStep_reverseRowBump habove hstep
+      -- Recover the first row by the local inverse, and the remaining rows by induction.
+      have hb := rowBump_reverseRowBump_of_sortedLE _ _ hs hx
       rw [reverseRowInsert_succ_cons_of_eq_some row hret]
-      refine ⟨d, hd, hx, isTableauRows_cons.mpr ⟨?_, ?_, hU, htab⟩, hstep'⟩
+      refine ⟨d, hd, hx, isTableauRows_cons.mpr ⟨?_, ?_, hU, htab⟩, hstep', ?_, ?_⟩
       · intro h0
         have := length_reverseRowBump (rows.headD [])[c] row
         rw [h0, hx] at this
         simp only [length_nil, Option.toList_some, length_singleton, Nat.zero_add] at this
         exact hne (length_eq_zero_iff.mp (by omega))
       · exact sortedLE_reverseRowBump _ hs
+      · rw [rowInsert_cons_of_eq_some _ (by rw [hb]), hb, hins]
+      · rw [rowInsertIndex_cons_of_eq_some _ (by rw [hb]), hidx]
 
 /-- **Reverse insertion preserves tableaux at corners**: reverse inserting from the end of a
 row `k` of a tableau whose next row is strictly shorter yields a tableau. -/
@@ -561,43 +582,8 @@ theorem rowInsert_reverseRowInsert {k : ℕ} {rows : List (List α)} (h : rows.I
     ∃ x, (reverseRowInsert k rows).2 = some x ∧
       rowInsert x (reverseRowInsert k rows).1 = rows ∧
         rowInsertIndex x (reverseRowInsert k rows).1 = k := by
-  induction rows generalizing k with
-  | nil => simp at hk
-  | cons row rows ih =>
-    obtain ⟨hne, hs, -, hrows⟩ := isTableauRows_cons.mp h
-    cases k with
-    | zero =>
-      have hlast : row.dropLast ++ [row.getLast hne] = row := dropLast_concat_getLast hne
-      refine ⟨row.getLast hne,
-        by simp [reverseRowInsert_zero_cons, getLast?_eq_some_getLast hne], ?_⟩
-      have hle : ∀ z ∈ row.dropLast, z ≤ row.getLast hne := by
-        have hs' := hs
-        rw [← hlast, sortedLE_append] at hs'
-        exact fun z hz => hs'.2.2 z hz _ mem_cons_self
-      by_cases hd : row.dropLast = []
-      · -- a one-cell first row at a corner is the whole tableau
-        have hrows0 := eq_nil_of_dropLast_eq_nil h hk hd
-        rw [hd, nil_append] at hlast
-        simp only [reverseRowInsert_zero_cons, ite_eq_left hd, hrows0, rowInsert_nil,
-          rowInsertIndex_nil, and_true]
-        exact congrArg (fun r => [r]) hlast
-      · simp only [reverseRowInsert_zero_cons, ite_eq_right hd]
-        have hb : (rowBump (row.getLast hne) row.dropLast).2 = none :=
-          (rowBump_snd_eq_none_iff _ _).mpr hle
-        rw [rowInsert_cons_of_eq_none rows hb, rowInsertIndex_cons_of_eq_none rows hb,
-          rowBump_of_forall_le _ _ hle, hlast]
-        exact ⟨rfl, rfl⟩
-    | succ k =>
-      have hk' : (rows.getD (k + 1) []).length < (rows.getD k []).length := by simpa using hk
-      obtain ⟨y, hy, hins, hidx⟩ := ih hrows hk'
-      obtain ⟨_, _, hret, -, -⟩ := exists_reverseRowInsert_of_isTableauRows h hk
-      rw [reverseRowInsert_succ_cons_of_eq_some row hy] at hret ⊢
-      dsimp only at hret
-      refine ⟨_, hret, ?_⟩
-      have hb := rowBump_reverseRowBump_of_sortedLE _ y hs hret
-      rw [rowInsert_cons_of_eq_some _ (by rw [hb]), rowInsertIndex_cons_of_eq_some _ (by rw [hb]),
-        hb, hins, hidx]
-      exact ⟨rfl, rfl⟩
+  obtain ⟨c, hc, hret, -, -, hins, hidx⟩ := exists_reverseRowInsert_of_isTableauRows h hk
+  exact ⟨_, hret, hins, hidx⟩
 
 /-! ### Insertion as a bijection -/
 
