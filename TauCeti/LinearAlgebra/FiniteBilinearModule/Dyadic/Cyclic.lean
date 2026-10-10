@@ -33,6 +33,10 @@ and proves it nondegenerate exactly for odd `θ` (Nikulin, Proposition 1.8.1).
   when `θ` is odd.
 * `TauCeti.FiniteQuadraticModule.dyadicCyclicBilinearIsometryOfModEq`: coefficient congruence
   modulo `2^k` gives a bilinear isometry.
+* `TauCeti.FiniteQuadraticModule.dyadicCyclicOneBilinearIsometry`: all odd coefficients at
+  exponent one give the same bilinear form.
+* `TauCeti.FiniteQuadraticModule.dyadicCyclicTwoBilinearIsometryFiveMul`: multiplication by
+  five preserves the bilinear form at exponent two.
 
 ## References
 
@@ -170,5 +174,54 @@ noncomputable def dyadicCyclicBilinearIsometryOfModEq {k : ℕ} [NeZero k] {θ �
         push_cast
         rw [(ZMod.intCast_eq_intCast_iff η θ (2 ^ k)).mpr h.symm] }
   exact g.toIsometry (by exact Function.bijective_id)
+
+/-- The coefficient-congruence bilinear isometry acts as the identity on the cyclic group. -/
+@[simp]
+theorem dyadicCyclicBilinearIsometryOfModEq_apply {k : ℕ} [NeZero k] {θ η : ℤ}
+    (h : θ ≡ η [ZMOD (2 ^ k : ℕ)]) (x : ZMod (2 ^ k)) :
+    dyadicCyclicBilinearIsometryOfModEq h x = x := by
+  unfold dyadicCyclicBilinearIsometryOfModEq
+  erw [FiniteBilinearModule.Hom.toIsometry_apply,
+    ← FiniteBilinearModule.Hom.coe_toAddMonoidHom, AddMonoidHom.id_apply]
+
+/-- All odd cyclic coefficients give isometric bilinear forms of order two,
+as in Nikulin's relation 1.8.2(j). -/
+noncomputable def dyadicCyclicOneBilinearIsometry {θ η : ℤ} (hθ : Odd θ) (hη : Odd η) :
+    FiniteBilinearModule.Isometry (dyadicCyclic 1 θ).toFiniteBilinearModule
+      (dyadicCyclic 1 η).toFiniteBilinearModule := by
+  apply dyadicCyclicBilinearIsometryOfModEq
+  -- The generic construction uses modulus `2^1`, which reduces to `2`.
+  change θ ≡ η [ZMOD 2]
+  obtain ⟨a, rfl⟩ := hθ
+  obtain ⟨b, rfl⟩ := hη
+  exact Int.modEq_iff_dvd.mpr ⟨b - a, by ring⟩
+
+/-- Multiplication by five preserves the cyclic bilinear form of order four.
+This is Nikulin's relation 1.8.2(j) for odd coefficients, and also holds for even ones. -/
+noncomputable def dyadicCyclicTwoBilinearIsometryFiveMul (θ : ℤ) :
+    FiniteBilinearModule.Isometry (dyadicCyclic 2 θ).toFiniteBilinearModule
+      (dyadicCyclic 2 (5 * θ)).toFiniteBilinearModule := by
+  apply dyadicCyclicBilinearIsometryOfModEq
+  -- The generic construction uses modulus `2^2`, which reduces to `4`.
+  change θ ≡ 5 * θ [ZMOD 4]
+  exact Int.modEq_iff_dvd.mpr ⟨θ, by ring⟩
+
+/-- The odd-coefficient bilinear isometry at exponent one fixes every element.
+Heterogeneous equality accommodates the two bundled carrier types. -/
+@[simp]
+theorem dyadicCyclicOneBilinearIsometry_apply {θ η : ℤ} (hθ : Odd θ) (hη : Odd η)
+    (x : dyadicCyclic 1 θ) : HEq (dyadicCyclicOneBilinearIsometry hθ hη x) x := by
+  unfold dyadicCyclicOneBilinearIsometry
+  erw [dyadicCyclicBilinearIsometryOfModEq_apply]
+  rfl
+
+/-- The coefficient-five bilinear isometry at exponent two fixes every element.
+Heterogeneous equality accommodates the two bundled carrier types. -/
+@[simp]
+theorem dyadicCyclicTwoBilinearIsometryFiveMul_apply (θ : ℤ) (x : dyadicCyclic 2 θ) :
+    HEq (dyadicCyclicTwoBilinearIsometryFiveMul θ x) x := by
+  unfold dyadicCyclicTwoBilinearIsometryFiveMul
+  erw [dyadicCyclicBilinearIsometryOfModEq_apply]
+  rfl
 
 end TauCeti.FiniteQuadraticModule

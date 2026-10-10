@@ -39,30 +39,12 @@ noncomputable def dyadicCyclicOneIsometryFiveMul (θ : ℤ) :
   Classical.choice <| by
     rw [nonempty_isometry_dyadicCyclic_iff]
     refine ⟨1, ?_⟩
+    -- The unit `1` has integer representative `1`; its doubled denominator is `4`.
     rw [show (1 : (ZMod (2 ^ 1))ˣ).val.val = 1 by decide]
     change (θ : ZMod 4) = ((5 * θ * (1 : ℤ) ^ 2 : ℤ) : ZMod 4)
+    -- Reducing the integer cast modulo four identifies the coefficient `5` with `1`.
     rw [one_pow, mul_one, Int.cast_mul, Int.cast_ofNat,
       show (5 : ZMod 4) = 1 by decide, one_mul]
-
-/-- All odd cyclic coefficients give isometric bilinear forms of order two,
-as in Nikulin's relation 1.8.2(j). -/
-noncomputable def dyadicCyclicOneBilinearIsometry {θ η : ℤ} (hθ : Odd θ) (hη : Odd η) :
-    FiniteBilinearModule.Isometry (dyadicCyclic 1 θ).toFiniteBilinearModule
-      (dyadicCyclic 1 η).toFiniteBilinearModule := by
-  apply dyadicCyclicBilinearIsometryOfModEq
-  change θ ≡ η [ZMOD 2]
-  obtain ⟨a, rfl⟩ := hθ
-  obtain ⟨b, rfl⟩ := hη
-  exact Int.modEq_iff_dvd.mpr ⟨b - a, by ring⟩
-
-/-- Multiplication by five preserves the cyclic bilinear form of order four.
-This is Nikulin's relation 1.8.2(j) for odd coefficients, and also holds for even ones. -/
-noncomputable def dyadicCyclicTwoBilinearIsometryFiveMul (θ : ℤ) :
-    FiniteBilinearModule.Isometry (dyadicCyclic 2 θ).toFiniteBilinearModule
-      (dyadicCyclic 2 (5 * θ)).toFiniteBilinearModule := by
-  apply dyadicCyclicBilinearIsometryOfModEq
-  change θ ≡ 5 * θ [ZMOD 4]
-  exact Int.modEq_iff_dvd.mpr ⟨θ, by ring⟩
 
 /-- The dyadic rank-two generators at exponent one have isometric polar pairings,
 as in Nikulin's relation 1.8.2(j). -/
@@ -77,7 +59,16 @@ noncomputable def dyadicUOneBilinearIsometryDyadicVOne :
         change (dyadicV 1).toFiniteBilinearModule.pairing x y =
           (dyadicU 1).toFiniteBilinearModule.pairing x y
         erw [dyadicV_pairing, dyadicU_pairing]
+        -- The diagonal terms vanish because `2 = 0` in the coordinate ring `ZMod 2`.
         simp only [show (2 : ZMod (2 ^ 1)) = 0 by decide, zero_mul, zero_add, add_zero] }
   exact g.toIsometry (by exact Function.bijective_id)
+
+/-- The bilinear isometry between the order-two rank-two generators fixes the coordinates. -/
+@[simp]
+theorem dyadicUOneBilinearIsometryDyadicVOne_apply (x : ZMod 2 × ZMod 2) :
+    dyadicUOneBilinearIsometryDyadicVOne x = x := by
+  unfold dyadicUOneBilinearIsometryDyadicVOne
+  erw [FiniteBilinearModule.Hom.toIsometry_apply,
+    ← FiniteBilinearModule.Hom.coe_toAddMonoidHom, AddMonoidHom.id_apply]
 
 end TauCeti.FiniteQuadraticModule
