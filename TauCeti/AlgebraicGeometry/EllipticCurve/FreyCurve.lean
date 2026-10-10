@@ -35,8 +35,8 @@ and `Δ` by `2¹²`, and gives the equation `freyCurveModel α β`, where `A = 4
 whose `c₄` is `A² + A B + B²` and whose discriminant is `(A β (A + B))² = A² B² (A + B)² / 2⁸`.
 If moreover `A` and `B` are coprime, these two are coprime, so at every prime one of them is a
 unit: the model is globally minimal and every reduction is good or multiplicative. Over a Dedekind
-domain `O` with fraction field `F`, the Frey curve is therefore semistable, with minimal
-discriminant ideal `(A² B² (A + B)² / 2⁸)`.
+domain `O` with fraction field `F`, when the Frey curve is elliptic over `F`, it is therefore
+semistable, with minimal discriminant ideal `(A² B² (A + B)² / 2⁸)`.
 
 For Fermat's equation, the hypotheses on `A` and `B` can always be arranged. Exactly one of `a`,
 `b`, `c` is even, and permuting the triple puts it in the `b` position; the other two have `p`-th
@@ -60,15 +60,17 @@ the odd entries if necessary puts it in the `a` position. Then `A = aᵖ ≡ -1 
 * `TauCeti.smul_freyCurve_eq_freyCurveModel`: the change of variables `x = 4 x'`,
   `y = 8 y' + 4 x'` carries `freyCurve (4 α - 1) (16 β)` to `freyCurveModel α β`.
 * `TauCeti.isGlobalMinimal_baseChange_freyCurveModel`: for coprime `A` and `B`, this model is
-  globally minimal over a Dedekind domain.
+  globally minimal over a Dedekind domain, when it is elliptic over the fraction field.
 * `TauCeti.isSemistable_freyCurve` and `TauCeti.minimalDiscriminantIdeal_freyCurve`: if `A` and
-  `B` are coprime, `A ≡ -1 (mod 4)` and `16 ∣ B`, the Frey curve is semistable with minimal
-  discriminant ideal `(A² B² (A + B)² / 2⁸)`.
+  `B` are coprime, `A ≡ -1 (mod 4)`, `16 ∣ B` and the Frey curve is elliptic over the fraction
+  field, it is semistable with minimal discriminant ideal `(A² B² (A + B)² / 2⁸)`.
+* `TauCeti.pow_modEq_neg_one_or_pow_modEq_neg_one`: if `xᵖ + eᵖ + yᵖ = 0` with `e` even, `x`
+  coprime to `e` and `p ≥ 2`, then `xᵖ` or `yᵖ` is `-1` modulo `4`.
 * `TauCeti.exists_perm_two_dvd_and_pow_modEq_neg_one`: a solution of `aᵖ + bᵖ + cᵖ = 0` with
   `a` and `b` coprime and `p ≥ 2` can be permuted so that `b` is even and `aᵖ ≡ -1 (mod 4)`.
 * `TauCeti.isSemistable_freyCurve_pow` and `TauCeti.minimalDiscriminantIdeal_freyCurve_pow`: for
-  such a normalised solution with `p ≥ 4`, the Frey curve of `(aᵖ, bᵖ)` is semistable over `ℤ`
-  with minimal discriminant `(a b c)^(2 p) / 2⁸`.
+  such a normalised solution with `p ≥ 4`, if the Frey curve of `(aᵖ, bᵖ)` is elliptic over `ℚ`,
+  it is semistable over `ℤ` with minimal discriminant `(a b c)^(2 p) / 2⁸`.
 
 ## References
 
@@ -126,16 +128,19 @@ theorem freyCurve_b₈ : (freyCurve A B).b₈ = -(A ^ 2 * B ^ 2) := by
   simp [b₈]
   ring
 
+/-- The `c₄` of the Frey curve is `16 (A² + A B + B²)`. -/
 @[simp]
 theorem freyCurve_c₄ : (freyCurve A B).c₄ = 16 * (A ^ 2 + A * B + B ^ 2) := by
   simp [c₄]
   ring
 
+/-- The `c₆` of the Frey curve is `-32 (B - A) (2 A + B) (A + 2 B)`. -/
 @[simp]
 theorem freyCurve_c₆ : (freyCurve A B).c₆ = -32 * (B - A) * (2 * A + B) * (A + 2 * B) := by
   simp [c₆]
   ring
 
+/-- The discriminant of the Frey curve is `16 A² B² (A + B)²`. -/
 @[simp]
 theorem freyCurve_Δ : (freyCurve A B).Δ = 16 * A ^ 2 * B ^ 2 * (A + B) ^ 2 := by
   simp [Δ]
@@ -173,12 +178,17 @@ variable (α β : R)
 @[simp] theorem freyCurveModel_a₄ : (freyCurveModel α β).a₄ = -((4 * α - 1) * β) := (rfl)
 @[simp] theorem freyCurveModel_a₆ : (freyCurveModel α β).a₆ = 0 := (rfl)
 
+/-- The `c₄` of `freyCurveModel α β` is `A² + A B + B²`, where `A = 4 α - 1` and `B = 16 β`;
+this is the `c₄` of `freyCurve A B` divided by `2⁴`. -/
 @[simp]
 theorem freyCurveModel_c₄ : (freyCurveModel α β).c₄ =
     (4 * α - 1) ^ 2 + (4 * α - 1) * (16 * β) + (16 * β) ^ 2 := by
   simp [c₄, b₂, b₄]
   ring
 
+/-- The discriminant of `freyCurveModel α β` is `(A β (A + B))²`, where `A = 4 α - 1` and
+`B = 16 β`; this is the discriminant `A² B² (A + B)²` of `freyCurve A B` divided by `2¹²`.
+-/
 @[simp]
 theorem freyCurveModel_Δ : (freyCurveModel α β).Δ =
     ((4 * α - 1) * β * (4 * α - 1 + 16 * β)) ^ 2 := by
@@ -260,19 +270,19 @@ private theorem baseChange_freyCurveModel_eq_smul {α β : O}
       C • (freyCurve (4 * α - 1) (16 * β)).baseChange F = (freyCurveModel α β).baseChange F := by
   have h2 : (2 : F) ≠ 0 := two_ne_zero_of_isElliptic_baseChange (A := 4 * α - 1) (B := 16 * β)
   refine ⟨⟨Units.mk0 2 h2, 0, 1, 0⟩, ?_⟩
-  rw [baseChange, baseChange, map_freyCurve, map_freyCurveModel, map_sub, map_mul, map_mul,
-    map_ofNat, map_ofNat, map_one]
-  exact smul_freyCurve_eq_freyCurveModel h2 _ _
+  simpa [baseChange, map_ofNat] using smul_freyCurve_eq_freyCurveModel h2 _ _
 
-/-- **For coprime `4 α - 1` and `16 β`, the model `freyCurveModel α β` is globally minimal.** -/
+/-- **For coprime `4 α - 1` and `16 β`, the model `freyCurveModel α β` is globally minimal**,
+when it is elliptic over the fraction field `F`. -/
 theorem isGlobalMinimal_baseChange_freyCurveModel {α β : O}
     [((freyCurveModel α β).baseChange F).IsElliptic] (h : IsCoprime (4 * α - 1) (16 * β)) :
     IsGlobalMinimal O ((freyCurveModel α β).baseChange F) :=
   isGlobalMinimal_baseChange_of_isCoprime _ (isCoprime_freyCurveModel_Δ_c₄ h)
 
-/-- **The Frey curve is semistable** over a Dedekind domain `O` when `A` and `B` are coprime,
-`A ≡ -1 (mod 4)` and `16 ∣ B`: its model at `2` has coprime discriminant and `c₄`, so the
-reduction at every height-one prime is good or multiplicative. -/
+/-- **The Frey curve is semistable** over a Dedekind domain `O` when it is elliptic over the
+fraction field `F`, `A` and `B` are coprime, `A ≡ -1 (mod 4)` and `16 ∣ B`: its model at `2` has
+coprime discriminant and `c₄`, so the reduction at every height-one prime is good or
+multiplicative. -/
 theorem isSemistable_freyCurve {A B : O} (hA : 4 ∣ A + 1) (hB : 16 ∣ B) (hAB : IsCoprime A B)
     [((freyCurve A B).baseChange F).IsElliptic] :
     IsSemistable O ((freyCurve A B).baseChange F) := by
@@ -286,9 +296,10 @@ theorem isSemistable_freyCurve {A B : O} (hA : 4 ∣ A + 1) (hB : 16 ∣ B) (hAB
   -- `hC` identifies the two curves; their ellipticity instances agree by proof irrelevance
   convert hs using 2
 
-/-- **The minimal discriminant ideal of the Frey curve is `(A² B² (A + B)² / 2⁸)`** when `A` and
-`B` are coprime, `A ≡ -1 (mod 4)` and `16 ∣ B`. The quotient by `2⁸` is the element `d` with
-`2⁸ d = A² B² (A + B)²`; it is the discriminant of the globally minimal model at `2`. -/
+/-- **The minimal discriminant ideal of the Frey curve is `(A² B² (A + B)² / 2⁸)`** when it is
+elliptic over the fraction field `F`, `A` and `B` are coprime, `A ≡ -1 (mod 4)` and `16 ∣ B`.
+The quotient by `2⁸` is the element `d` with `2⁸ d = A² B² (A + B)²`; it is the discriminant of
+the globally minimal model at `2`. -/
 theorem minimalDiscriminantIdeal_freyCurve {A B d : O} (hA : 4 ∣ A + 1) (hB : 16 ∣ B)
     (hAB : IsCoprime A B) (hd : 2 ^ 8 * d = A ^ 2 * B ^ 2 * (A + B) ^ 2)
     [((freyCurve A B).baseChange F).IsElliptic] :
@@ -318,7 +329,7 @@ section Fermat
 
 /-- If `x` is coprime to an even `e`, and `xᵖ + eᵖ + yᵖ = 0` with `p ≥ 2`, then `xᵖ` or `yᵖ` is
 `-1` modulo `4`: both are odd and `xᵖ + yᵖ ≡ 0 (mod 4)`. -/
-private theorem pow_modEq_neg_one_or_pow_modEq_neg_one {p : ℕ} (hp : 2 ≤ p) {x e y : ℤ}
+theorem pow_modEq_neg_one_or_pow_modEq_neg_one {p : ℕ} (hp : 2 ≤ p) {x e y : ℤ}
     (he : 2 ∣ e) (hx : IsCoprime x e) (h : x ^ p + e ^ p + y ^ p = 0) :
     x ^ p ≡ -1 [ZMOD 4] ∨ y ^ p ≡ -1 [ZMOD 4] := by
   have hxodd : Odd (x ^ p) := by
@@ -371,8 +382,8 @@ theorem exists_perm_two_dvd_and_pow_modEq_neg_one {p : ℕ} (hp : 2 ≤ p) {a b 
   · exact ⟨b, c, a, List.rotate_perm [a, b, c] 1, hc, h'⟩
 
 /-- **The Frey curve of a normalised Fermat triple is semistable.** If `a` and `b` are coprime,
-`b` is even, `aᵖ ≡ -1 (mod 4)` and `p ≥ 4`, then `y² = x (x - aᵖ) (x + bᵖ)` is semistable over
-`ℤ`. -/
+`b` is even, `aᵖ ≡ -1 (mod 4)`, `p ≥ 4` and `y² = x (x - aᵖ) (x + bᵖ)` is elliptic over `ℚ`, then
+it is semistable over `ℤ`. -/
 theorem isSemistable_freyCurve_pow {p : ℕ} (hp : 4 ≤ p) {a b : ℤ} (hab : IsCoprime a b)
     (hb : 2 ∣ b) (ha : a ^ p ≡ -1 [ZMOD 4])
     [((freyCurve (a ^ p) (b ^ p)).baseChange ℚ).IsElliptic] :
@@ -381,8 +392,9 @@ theorem isSemistable_freyCurve_pow {p : ℕ} (hp : 4 ≤ p) {a b : ℤ} (hab : I
     (by simpa using (pow_dvd_pow_of_dvd hb 4).trans (pow_dvd_pow b hp)) hab.pow
 
 /-- **The minimal discriminant of the Frey curve of a Fermat triple is `(a b c)^(2 p) / 2⁸`.** If
-`aᵖ + bᵖ + cᵖ = 0` with `a` and `b` coprime, `b` even, `aᵖ ≡ -1 (mod 4)` and `p ≥ 4`, the minimal
-discriminant ideal of `y² = x (x - aᵖ) (x + bᵖ)` over `ℤ` is generated by `(a b c)^(2 p) / 2⁸`. -/
+`aᵖ + bᵖ + cᵖ = 0` with `a` and `b` coprime, `b` even, `aᵖ ≡ -1 (mod 4)` and `p ≥ 4`, and
+`y² = x (x - aᵖ) (x + bᵖ)` is elliptic over `ℚ`, its minimal discriminant ideal over `ℤ` is
+generated by `(a b c)^(2 p) / 2⁸`. -/
 theorem minimalDiscriminantIdeal_freyCurve_pow {p : ℕ} (hp : 4 ≤ p) {a b c : ℤ}
     (hab : IsCoprime a b) (h : a ^ p + b ^ p + c ^ p = 0) (hb : 2 ∣ b) (ha : a ^ p ≡ -1 [ZMOD 4])
     [((freyCurve (a ^ p) (b ^ p)).baseChange ℚ).IsElliptic] :

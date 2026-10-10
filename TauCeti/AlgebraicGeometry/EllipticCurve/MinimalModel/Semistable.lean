@@ -247,7 +247,7 @@ theorem isSemistable_baseChange_of_isCoprime (W : WeierstrassCurve O)
     (not_hasAdditiveReduction_minimal_iff_exists_isUnit _ _).mpr
       ⟨W.map (algebraMap O (Localization.AtPrime v.asIdeal)), 1, by
         rw [map_Δ, map_c₄]
-        exact TauCeti.IsLocalRing.isUnit_or_isUnit_of_isCoprime (h.map _), by
+        exact (h.map _).isUnit_or_isUnit, by
         rw [one_smul, baseChange, baseChange, map_map, ← IsScalarTower.algebraMap_eq]⟩
 
 variable (O' : Type*) [CommRing O'] [IsDedekindDomain O'] {L : Type*} [Field L] [Algebra O' L]

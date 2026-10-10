@@ -28,8 +28,8 @@ characteristic two the idempotent criterion identifies the zeros of the Artin–
   when `t = 0` or `t = 1`.
 * `TauCeti.IsLocalRing.isUnit_natCast_of_not_dvd`: if the prime `p` is not a unit, every natural
   number prime to `p` is a unit.
-* `TauCeti.IsLocalRing.isUnit_or_isUnit_of_isCoprime`: of two coprime elements of a commutative
-  local ring, one is a unit.
+* `IsCoprime.isUnit_or_isUnit`: of two coprime elements of a commutative local ring, one is a
+  unit.
 -/
 
 public section
@@ -88,12 +88,12 @@ theorem IsLocalRing.isUnit_natCast_of_not_dvd {R : Type*} [Ring R] [IsLocalRing 
   · exact (((Nat.cast_commute m _).isUnit_mul_iff).mp h).1
   · exact absurd (((Nat.cast_commute p _).isUnit_mul_iff).mp h).1 hpR
 
+end TauCeti
+
 /-- Of two coprime elements of a commutative local ring, one is a unit: a relation
 `u * a + v * b = 1` makes one of the two summands a unit. -/
-theorem IsLocalRing.isUnit_or_isUnit_of_isCoprime {R : Type*} [CommSemiring R] [IsLocalRing R]
-    {a b : R} (h : IsCoprime a b) : IsUnit a ∨ IsUnit b := by
+theorem IsCoprime.isUnit_or_isUnit {R : Type*} [CommSemiring R] [IsLocalRing R] {a b : R}
+    (h : IsCoprime a b) : IsUnit a ∨ IsUnit b := by
   obtain ⟨u, v, huv⟩ := h
   exact (IsLocalRing.isUnit_or_isUnit_of_add_one huv).imp isUnit_of_mul_isUnit_right
     isUnit_of_mul_isUnit_right
-
-end TauCeti

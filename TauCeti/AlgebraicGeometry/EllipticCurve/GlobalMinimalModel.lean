@@ -215,7 +215,7 @@ theorem isGlobalMinimal_baseChange_of_isCoprime (W : WeierstrassCurve O)
     rw [← hW]
     refine isMinimal_baseChange_of_isUnit_Δ_or_isUnit_c₄ _ _ ?_
     rw [map_Δ, map_c₄]
-    exact TauCeti.IsLocalRing.isUnit_or_isUnit_of_isCoprime (h.map _)
+    exact (h.map _).isUnit_or_isUnit
 
 /-! ### Changes of variables between globally minimal equations -/
 
