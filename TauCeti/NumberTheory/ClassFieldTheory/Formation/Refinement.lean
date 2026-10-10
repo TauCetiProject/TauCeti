@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Rep.Res
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Basic
+public import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
 
 /-!
 # Refinements of a finite normal layer, and inflation
@@ -68,6 +69,13 @@ compared across refinements.
 * `TauCeti.ClassFieldTheory.LayerRefinement.galHom_surjective` and
   `TauCeti.ClassFieldTheory.LayerRefinement.galHom_mk_eq_one_iff`: the map of Galois groups is the
   quotient by `V/V'`.
+* `TauCeti.ClassFieldTheory.LayerRefinement.mk_mem_ker_galHom_ofOpenNormal_iff`: for nested
+  open normal subgroups, a quotient class lies in the kernel exactly when its representative
+  lies in the larger subgroup.
+* `TauCeti.ClassFieldTheory.LayerRefinement.ker_galHom_le_ker_galHom_iff`: for refinements of a
+  common layer, inclusion of quotient kernels reflects inclusion of the old top subgroups.
+  `TauCeti.ClassFieldTheory.LayerRefinement.ker_galHom_ofOpenNormal_le_ker_galHom_ofOpenNormal_iff`
+  specializes this to open normal subgroups above a common subgroup.
 * `TauCeti.ClassFieldTheory.LayerRefinement.degree_mul_relativeDegree`:
   `[U : V] * [V : V'] = [U : V']`.
 * `TauCeti.ClassFieldTheory.LayerRefinement.relativeDegree_trans`,
@@ -189,6 +197,25 @@ theorem galHom_mk_eq_one_iff (T : LayerRefinement old new) (w : new.ground) :
   rw [galHom_mk, QuotientGroup.eq_one_iff (N := old.relativeTop), Subgroup.mem_subgroupOf,
     Subgroup.coe_inclusion, OpenSubgroup.mem_toSubgroup]
 
+/-- For refinements of a common layer, inclusion of the kernels of the quotient maps is
+equivalent to inclusion of the old top subgroups. -/
+theorem ker_galHom_le_ker_galHom_iff {old₁ old₂ : NormalLayer G}
+    (T₁ : LayerRefinement old₁ new) (T₂ : LayerRefinement old₂ new) :
+    T₁.galHom.ker ≤ T₂.galHom.ker ↔ old₁.top ≤ old₂.top := by
+  constructor
+  · intro h σ hσ
+    let w : new.ground := ⟨σ, T₁.same_ground ▸ old₁.top_le_ground hσ⟩
+    have hw : (QuotientGroup.mk w : new.Gal) ∈ T₁.galHom.ker := by
+      rw [MonoidHom.mem_ker, T₁.galHom_mk_eq_one_iff]
+      exact hσ
+    exact (T₂.galHom_mk_eq_one_iff w).1 (MonoidHom.mem_ker.mp (h hw))
+  · intro h γ hγ
+    induction γ using QuotientGroup.induction_on with
+    | H w =>
+      rw [MonoidHom.mem_ker, T₁.galHom_mk_eq_one_iff] at hγ
+      rw [MonoidHom.mem_ker, T₂.galHom_mk_eq_one_iff]
+      exact h hγ
+
 /-- The old top level sits inside the new one: a smaller subgroup fixes more elements. -/
 theorem level_top_le (T : LayerRefinement old new) (F : Formation G) :
     F.level old.top ≤ F.level new.top :=
@@ -245,6 +272,25 @@ theorem ofOpenNormal {V V' : OpenNormalSubgroup G} (h : V' ≤ V) :
   · rw [NormalLayer.ground_ofOpenNormal, NormalLayer.ground_ofOpenNormal]
   · rw [NormalLayer.top_ofOpenNormal, NormalLayer.top_ofOpenNormal]
     exact h
+
+/-- For open normal subgroups `U ≤ V`, the class of `w` in `G/U` lies in the kernel of the
+quotient map to `G/V` exactly when `w ∈ V`. -/
+theorem mk_mem_ker_galHom_ofOpenNormal_iff {U V : OpenNormalSubgroup G} (h : U ≤ V)
+    (w : (NormalLayer.ofOpenNormal U).ground) :
+    (QuotientGroup.mk w : (NormalLayer.ofOpenNormal U).Gal) ∈ (ofOpenNormal h).galHom.ker ↔
+      (w : G) ∈ V := by
+  rw [MonoidHom.mem_ker, galHom_mk_eq_one_iff, NormalLayer.top_ofOpenNormal]
+  -- Membership in an open normal subgroup is membership in its underlying open subgroup.
+  exact Iff.rfl
+
+/-- For open normal subgroups above a common `U`, inclusion of the kernels of the quotient
+maps from `G/U` is equivalent to inclusion of the subgroups. -/
+theorem ker_galHom_ofOpenNormal_le_ker_galHom_ofOpenNormal_iff {U V W : OpenNormalSubgroup G}
+    (hUV : U ≤ V) (hUW : U ≤ W) :
+    (ofOpenNormal hUV).galHom.ker ≤ (ofOpenNormal hUW).galHom.ker ↔ V ≤ W := by
+  simpa only [NormalLayer.top_ofOpenNormal, ← OpenSubgroup.toSubgroup_le,
+    OpenNormalSubgroup.toSubgroup_le] using
+    ker_galHom_le_ker_galHom_iff (ofOpenNormal hUV) (ofOpenNormal hUW)
 
 /-! ### Towers of refinements -/
 

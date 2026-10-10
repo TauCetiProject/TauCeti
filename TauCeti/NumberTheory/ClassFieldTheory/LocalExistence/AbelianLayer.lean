@@ -162,21 +162,13 @@ theorem localNormSubgroup_eq_comap_ker (hU : U.IsAbelianClassFieldLayer) (h : U 
     ← groundEquiv_localGroundEquiv K h, ← ClassFormation.artinMap_quotient,
     ClassFormation.artinMap_eq_zero_iff, localGroundEquiv_mem_normSubgroup_iff]
 
-omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
-/-- The class of `w ∈ G_K` in the Galois group of the layer of `U` dies in that of `V` exactly when
-`w ∈ V`. -/
-private theorem mk_mem_ker_galHom_iff (h : U ≤ V) (w : (ofOpenNormal U).ground) :
-    (QuotientGroup.mk w : (ofOpenNormal U).Gal) ∈ (LayerRefinement.ofOpenNormal h).galHom.ker ↔
-      (w : AbsoluteGaloisGroup K) ∈ V := by
-  rw [MonoidHom.mem_ker, LayerRefinement.galHom_mk_eq_one_iff, top_ofOpenNormal]
-  -- Membership in an open normal subgroup is membership in its underlying open subgroup.
-  exact Iff.rfl
-
 end Refinement
 
 /-! ### Composita and intersections -/
 
 section Lattice
+
+open LayerRefinement (mk_mem_ker_galHom_ofOpenNormal_iff)
 
 variable {K} {V W : OpenNormalSubgroup (AbsoluteGaloisGroup K)}
 
@@ -196,8 +188,8 @@ theorem localNormSubgroup_inf_of_isAbelian (hV : V.IsAbelianClassFieldLayer)
   ext g
   induction g using QuotientGroup.induction_on with
   | H w =>
-    rw [Subgroup.mem_inf, mk_mem_ker_galHom_iff le_rfl, mk_mem_ker_galHom_iff hUV,
-      mk_mem_ker_galHom_iff hUW]
+    rw [Subgroup.mem_inf, mk_mem_ker_galHom_ofOpenNormal_iff le_rfl,
+      mk_mem_ker_galHom_ofOpenNormal_iff hUV, mk_mem_ker_galHom_ofOpenNormal_iff hUW]
     -- Membership in an open normal subgroup is membership in its underlying subgroup.
     exact (SetLike.ext_iff.1 (OpenNormalSubgroup.toSubgroup_inf V W) _).trans Subgroup.mem_inf
 
@@ -216,7 +208,7 @@ private theorem localNormSubgroup_sup_of_isAbelian (hV : V.IsAbelianClassFieldLa
   refine le_antisymm (fun g hg ↦ ?_) (sup_le (fun g hg ↦ ?_) fun g hg ↦ ?_)
   · induction g using QuotientGroup.induction_on with
     | H w =>
-      rw [mk_mem_ker_galHom_iff hUVW] at hg
+      rw [mk_mem_ker_galHom_ofOpenNormal_iff hUVW] at hg
       have hg' : (w : AbsoluteGaloisGroup K) ∈ V.toSubgroup ⊔ W.toSubgroup := by
         -- Membership in an open normal subgroup is membership in its underlying subgroup.
         rw [← OpenNormalSubgroup.toSubgroup_sup]
@@ -227,17 +219,17 @@ private theorem localNormSubgroup_sup_of_isAbelian (hV : V.IsAbelianClassFieldLa
         rw [← QuotientGroup.mk_mul]
         exact congrArg QuotientGroup.mk (Subtype.ext hvv'.symm)
       rw [hmk]
-      exact Subgroup.mul_mem_sup ((mk_mem_ker_galHom_iff hUV _).2 hv)
-        ((mk_mem_ker_galHom_iff hUW _).2 hv')
+      exact Subgroup.mul_mem_sup ((mk_mem_ker_galHom_ofOpenNormal_iff hUV _).2 hv)
+        ((mk_mem_ker_galHom_ofOpenNormal_iff hUW _).2 hv')
   · induction g using QuotientGroup.induction_on with
     | H w =>
-      rw [mk_mem_ker_galHom_iff hUV] at hg
-      rw [mk_mem_ker_galHom_iff hUVW]
+      rw [mk_mem_ker_galHom_ofOpenNormal_iff hUV] at hg
+      rw [mk_mem_ker_galHom_ofOpenNormal_iff hUVW]
       exact Subgroup.mem_sup_left hg
   · induction g using QuotientGroup.induction_on with
     | H w =>
-      rw [mk_mem_ker_galHom_iff hUW] at hg
-      rw [mk_mem_ker_galHom_iff hUVW]
+      rw [mk_mem_ker_galHom_ofOpenNormal_iff hUW] at hg
+      rw [mk_mem_ker_galHom_ofOpenNormal_iff hUVW]
       exact Subgroup.mem_sup_right hg
 
 /-- **Intersections.** The norm subgroup of the intersection of the finite Galois extensions cut
