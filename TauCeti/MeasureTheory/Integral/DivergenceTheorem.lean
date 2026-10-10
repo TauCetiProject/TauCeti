@@ -9,7 +9,6 @@ public import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 import TauCeti.MeasureTheory.Integral.PolarCoord
-import Mathlib.Tactic.Module
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import TauCeti.Analysis.Calculus.Bilinear
 
@@ -111,42 +110,6 @@ theorem _root_.ContinuousLinearMap.integral_bilinear_fderiv_sub_prod_Icc
   rw [hgreen, intervalIntegral.integral_neg, intervalIntegral.integral_neg]
   abel
 
-private lemma polar_hasFDerivAt (p : ℝ × ℝ) (z₀ : ℂ) :
-  HasFDerivAt (fun p ↦ z₀ + Complex.polarCoord.symm p)
-    (Complex.equivRealProdCLM.symm.toContinuousLinearMap.comp (fderivPolarCoordSymm p)) p := by
-  exact (Complex.equivRealProdCLM.symm.hasFDerivAt.comp p
-    (hasFDerivAt_polarCoord_symm p)).const_add z₀
-
-private lemma polar_radial (p : ℝ × ℝ) :
-    Complex.equivRealProdCLM.symm (fderivPolarCoordSymm p (1, 0)) =
-      Complex.exp (p.2 * I) := by
-  simp [fderivPolarCoordSymm, Matrix.toLin_finTwoProd_toContinuousLinearMap,
-    Complex.equivRealProdCLM_symm_apply, Complex.exp_mul_I]
-
-private lemma polar_angular (p : ℝ × ℝ) :
-    Complex.equivRealProdCLM.symm (fderivPolarCoordSymm p (0, 1)) =
-      circleMap 0 p.1 p.2 * I := by
-  simp [fderivPolarCoordSymm, Matrix.toLin_finTwoProd_toContinuousLinearMap,
-    Complex.equivRealProdCLM_symm_apply, Complex.exp_mul_I, circleMap]
-  ring_nf
-  simp [I_sq]
-
-private lemma polar_bilinear (B : V →L[ℝ] V →L[ℝ] W) (L : ℂ →L[ℝ] V) (r θ : ℝ) :
-    B (L (Complex.exp (θ * I))) (L (circleMap 0 r θ * I)) -
-        B (L (circleMap 0 r θ * I)) (L (Complex.exp (θ * I))) =
-      r • (B (L 1) (L I) - B (L I) (L 1)) := by
-  have he : Complex.exp (θ * I) = Real.cos θ • (1 : ℂ) + Real.sin θ • I := by
-    simp [Complex.exp_mul_I, real_smul]
-  have hI : circleMap 0 r θ * I = (-r * Real.sin θ) • (1 : ℂ) +
-      (r * Real.cos θ) • I := by
-    simp [circleMap, he, real_smul]
-    ring_nf
-    simp [I_sq, sub_eq_add_neg]
-  rw [he, hI]
-  simp only [map_add, map_smul, add_apply, smul_apply]
-  have htrig := Real.sin_sq_add_cos_sq θ
-  match_scalars <;> nlinarith [congrArg (r * ·) htrig]
-
 /-- **Green's formula on a closed annulus.** For a `C²` map near the annulus of positive radii
 `a ≤ b`, the integral of the alternating part of a bilinear pairing of its derivatives equals
 the outer circle integral of `B u du` minus the inner circle integral. Both circles are
@@ -184,17 +147,17 @@ theorem _root_.ContinuousLinearMap.integral_bilinear_fderiv_sub_annulus
       (fderiv ℝ u (P p)).comp
         (Complex.equivRealProdCLM.symm.toContinuousLinearMap.comp (fderivPolarCoordSymm p)) :=
     fun p hp ↦ ((hu _ (hmem p hp)).differentiableAt (by norm_num)).hasFDerivAt.comp p
-      (polar_hasFDerivAt p z₀) |>.fderiv
+      (hasFDerivAt_add_polarCoord_symm p z₀) |>.fderiv
   have hdr : ∀ p ∈ Icc (a, -π) (b, π), fderiv ℝ v p (1, 0) =
       fderiv ℝ u (P p) (Complex.exp (p.2 * I)) := by
     intro p hp
     simp only [hd p hp, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-      polar_radial]
+      equivRealProd_symm_fderivPolarCoordSymm_apply_one_zero]
   have hdt : ∀ p ∈ Icc (a, -π) (b, π), fderiv ℝ v p (0, 1) =
       fderiv ℝ u (P p) (circleMap 0 p.1 p.2 * I) := by
     intro p hp
     simp only [hd p hp, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-      polar_angular]
+      equivRealProd_symm_fderivPolarCoordSymm_apply_zero_one]
   -- The alternating pairing has exactly the radial Jacobian of polar integration.
   have harea : (∫ p in Icc (a, -π) (b, π),
       B (fderiv ℝ v p (1, 0)) (fderiv ℝ v p (0, 1)) -
@@ -204,7 +167,7 @@ theorem _root_.ContinuousLinearMap.integral_bilinear_fderiv_sub_annulus
     rw [← Complex.integral_comp_polarCoord_symm_Icc _ z₀ ha]
     exact setIntegral_congr_fun measurableSet_Icc fun p hp ↦ by
       rw [hdr p hp, hdt p hp]
-      exact polar_bilinear B (fderiv ℝ u (P p)) p.1 p.2
+      exact B.apply_exp_circleMap_sub_swap (fderiv ℝ u (P p)) p.1 p.2
   have hPc (r θ : ℝ) : P (r, θ) = circleMap z₀ r θ := by
     simp [P, Complex.polarCoord_symm_apply, circleMap, Complex.exp_mul_I]
   -- The radial edges of the rectangle give the two circle integrals.

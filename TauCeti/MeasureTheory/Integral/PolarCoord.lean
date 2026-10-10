@@ -6,22 +6,86 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.PolarCoord
+public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 import Mathlib.MeasureTheory.Group.Integral
+import Mathlib.Analysis.Calculus.FDeriv.Add
+import Mathlib.Analysis.Calculus.FDeriv.Comp
+import Mathlib.Analysis.Calculus.FDeriv.Equiv
+import Mathlib.Tactic.Module
 
 /-!
-# Polar integration over a closed annulus
+# Polar-coordinate derivatives and integration over a closed annulus
 
 The polar-coordinate change of variables for a translated closed annulus is the integral on
 `[a, b] × [-π, π]` with radial Jacobian `r`, when `a > 0`. The two angular endpoints have
 measure zero, so the closed polar rectangle gives the same integral as the slit-plane chart.
 This form of Mathlib's `Complex.integral_comp_polarCoord_symm` is suitable for combining polar
 integration with Green's formula on a rectangle, without extending a map across the inner disc.
+
+The derivative formulas describe the radial and angular vectors of the inverse complex polar
+map. Evaluating the alternating part of a bilinear pairing on those vectors gives its value on
+`1` and `Complex.I`, multiplied by the radial Jacobian.
 -/
 
 public section
 
 open MeasureTheory Set
 open scoped Real
+
+namespace TauCeti
+
+open Complex
+
+variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+  [NormedAddCommGroup W] [NormedSpace ℝ W]
+
+/-- The derivative of the translated inverse complex polar-coordinate map at any `(r, θ)`.
+No restriction to the positive-radius chart is needed for this derivative formula. -/
+theorem hasFDerivAt_add_polarCoord_symm (p : ℝ × ℝ) (z₀ : ℂ) :
+  HasFDerivAt (fun p ↦ z₀ + Complex.polarCoord.symm p)
+    (Complex.equivRealProdCLM.symm.toContinuousLinearMap.comp (fderivPolarCoordSymm p)) p := by
+  exact (Complex.equivRealProdCLM.symm.hasFDerivAt.comp p
+    (hasFDerivAt_polarCoord_symm p)).const_add z₀
+
+/-- The radial derivative of the inverse polar-coordinate map, expressed as a complex number,
+is the unit vector at the given angle. -/
+theorem equivRealProd_symm_fderivPolarCoordSymm_apply_one_zero (p : ℝ × ℝ) :
+    Complex.equivRealProdCLM.symm (fderivPolarCoordSymm p (1, 0)) =
+      Complex.exp (p.2 * I) := by
+  simp [fderivPolarCoordSymm, Matrix.toLin_finTwoProd_toContinuousLinearMap,
+    Complex.equivRealProdCLM_symm_apply, Complex.exp_mul_I]
+
+/-- The angular derivative of the inverse polar-coordinate map, expressed as a complex number,
+is the tangent vector to the circle with the given radius and angle. -/
+theorem equivRealProd_symm_fderivPolarCoordSymm_apply_zero_one (p : ℝ × ℝ) :
+    Complex.equivRealProdCLM.symm (fderivPolarCoordSymm p (0, 1)) =
+      circleMap 0 p.1 p.2 * I := by
+  simp [fderivPolarCoordSymm, Matrix.toLin_finTwoProd_toContinuousLinearMap,
+    Complex.equivRealProdCLM_symm_apply, Complex.exp_mul_I, circleMap]
+  ring_nf
+  simp [I_sq]
+
+/-- The alternating part of a continuous bilinear map, after a real-linear map `L`, evaluated
+on the radial and angular polar-coordinate vectors is the radius times its value on `1` and `I`.
+The identity holds for every real radius, including zero and negative radii. -/
+theorem _root_.ContinuousLinearMap.apply_exp_circleMap_sub_swap
+    (B : V →L[ℝ] V →L[ℝ] W) (L : ℂ →L[ℝ] V) (r θ : ℝ) :
+    B (L (Complex.exp (θ * I))) (L (circleMap 0 r θ * I)) -
+        B (L (circleMap 0 r θ * I)) (L (Complex.exp (θ * I))) =
+      r • (B (L 1) (L I) - B (L I) (L 1)) := by
+  have he : Complex.exp (θ * I) = Real.cos θ • (1 : ℂ) + Real.sin θ • I := by
+    simp [Complex.exp_mul_I, real_smul]
+  have hI : circleMap 0 r θ * I = (-r * Real.sin θ) • (1 : ℂ) +
+      (r * Real.cos θ) • I := by
+    simp [circleMap, he, real_smul]
+    ring_nf
+    simp [I_sq, sub_eq_add_neg]
+  rw [he, hI]
+  simp only [map_add, map_smul, add_apply, smul_apply]
+  have htrig := Real.sin_sq_add_cos_sq θ
+  match_scalars <;> nlinarith [congrArg (r * ·) htrig]
+
+end TauCeti
 
 namespace Complex
 
