@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.PermutationTriple.Orders
 public import TauCeti.GroupTheory.TriangleGroup.Hyperbolic
+import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.GroupTheory.TriangleGroup.Cyclic
 import TauCeti.GroupTheory.TriangleGroup.Dihedral
 import TauCeti.GroupTheory.TriangleGroup.Polyhedral
@@ -268,14 +269,6 @@ private theorem first_le_three_of_one_le_reciprocal_sum {a b c : ℕ} (ha : (0 :
   have h3' : (1 : ℚ) ≤ 3 / (a : ℚ) := by simpa only [div_eq_mul_inv, one_mul] using h3
   have hlt : (a : ℚ) ≤ 3 := by linarith [(le_div_iff₀ ha).mp h3']
   exact_mod_cast hlt
-
-/-- For sorted positive parameters `b ≤ c`, the reciprocal sum `1/b + 1/c` is at most `2/b`. Both
-classifications below bound the second parameter with it. -/
-private theorem one_div_add_one_div_le_two_div {b c : ℕ} (hb : (0 : ℚ) < b) (h₃ : (b : ℚ) ≤ c) :
-    1 / (b : ℚ) + 1 / (c : ℚ) ≤ 2 / b := by
-  have hcb : 1 / (c : ℚ) ≤ 1 / (b : ℚ) := one_div_le_one_div_of_le hb h₃
-  rw [div_eq_mul_one_div (2 : ℚ)]
-  linarith
 
 /-- **The spherical classification, on presentation parameters.** For a sorted positive
 signature the orbifold Euler characteristic is positive exactly when the parameters are a row of
