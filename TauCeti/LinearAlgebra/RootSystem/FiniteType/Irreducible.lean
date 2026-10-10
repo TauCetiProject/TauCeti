@@ -92,8 +92,8 @@ theorem connected_diagramGraph_cartanMatrix {t : DynkinType} (ht : t.Valid) :
       (h : ∀ (i : Fin n) (hi : (i : ℕ) + 1 < n), G.Adj i ⟨(i : ℕ) + 1, hi⟩) : G.Connected :=
     have : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp hn
     SimpleGraph.connected_of_pathGraph_le (SimpleGraph.pathGraph_le_of_adj_succ h)
-  -- An exceptional diagram is checked by deciding reachability from one node: the branch node `3`
-  -- of `E₆`, `E₇`, `E₈`, and the end node `0` of `F₄` and `G₂`.
+  -- In `E₆`, `E₇`, `E₈` node `1` hangs off the branch node `3`, so not every node has a smaller
+  -- neighbour; their connectivity is decided by reachability from node `3`.
   cases t with
   | A n =>
       simpa only [rank_A, cartanMatrix_A] using path (valid_A.mp ht) fun i hi ↦ by
@@ -131,11 +131,11 @@ theorem connected_diagramGraph_cartanMatrix {t : DynkinType} (ht : t.Valid) :
       (SimpleGraph.connected_iff_exists_forall_reachable
         (diagramGraph (CartanMatrix.E 8))).2 ⟨3, by decide⟩
   | F4 => simpa only [rank_F4, cartanMatrix_F4] using
-      (SimpleGraph.connected_iff_exists_forall_reachable
-        (diagramGraph CartanMatrix.F₄)).2 ⟨0, by decide⟩
+      (SimpleGraph.connected_fin_of_exists_adj_lt (by decide) (by decide) :
+        (diagramGraph CartanMatrix.F₄).Connected)
   | G2 => simpa only [rank_G2, cartanMatrix_G2] using
-      (SimpleGraph.connected_iff_exists_forall_reachable
-        (diagramGraph CartanMatrix.G₂.transpose)).2 ⟨0, by decide⟩
+      (SimpleGraph.connected_fin_of_exists_adj_lt (by decide) (by decide) :
+        (diagramGraph CartanMatrix.G₂.transpose).Connected)
 
 end DynkinType
 
