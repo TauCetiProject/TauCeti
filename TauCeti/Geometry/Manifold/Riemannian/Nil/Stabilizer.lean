@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Nil.Curvature
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Ext
-import TauCeti.Geometry.Manifold.Riemannian.Isometry.LeviCivita
 -- Nil uses the model-space atlas; read vector-field regularity in that atlas.
 import all TauCeti.Geometry.Manifold.Riemannian.Nil.Basic
 
@@ -79,25 +78,23 @@ private theorem pullback_central_locally (Φ : Isom J Nil) (p : Nil) :
     nlinarith
   refine ⟨c p, hsq p, ?_⟩
   have hconst : ∀ᶠ q in 𝓝 p, c q = c p := by
-    rcases sq_eq_one_iff.mp (hsq p) with hp | hp
-    · have hpos : ∀ᶠ q in 𝓝 p, 0 < c q :=
-        hc.continuousAt.eventually (lt_mem_nhds (by rw [hp]; norm_num : (0 : ℝ) < c p))
-      filter_upwards [hpos] with q hq
-      rcases sq_eq_one_iff.mp (hsq q) with h | h
-      · exact h.trans hp.symm
-      · exfalso; linarith
-    · have hneg : ∀ᶠ q in 𝓝 p, c q < 0 :=
-        hc.continuousAt.eventually (gt_mem_nhds (by rw [hp]; norm_num : c p < (0 : ℝ)))
-      filter_upwards [hneg] with q hq
-      rcases sq_eq_one_iff.mp (hsq q) with h | h
-      · exfalso; linarith
-      · exact h.trans hp.symm
+    have hglobal := isPreconnected_univ.eq_of_sq_eq hc.continuousOn
+      (continuous_const.continuousOn (f := fun _ : Nil => c p))
+      (fun q _ => (hsq q).trans (hsq p).symm)
+      (fun _ => by intro h; have hp := hsq p; simp [h] at hp) (mem_univ p) rfl
+    exact Eventually.of_forall fun q => hglobal (mem_univ q)
   filter_upwards [hconst] with q hq
   exact (heq q).trans (by rw [hq])
 
 private def differential (Φ : Isom J Nil) : P →L[ℝ] P :=
   (tangentSpaceCastModel J (Φ 1)).toContinuousLinearMap ∘L
     mfderiv J J Φ 1 ∘L (tangentSpaceCastModel J (1 : Nil)).symm.toContinuousLinearMap
+
+private theorem differential_symm_apply (Φ : Isom J Nil) (u : P) :
+    (tangentSpaceCastModel J (Φ 1)).symm (differential Φ u) =
+      mfderiv J J Φ 1 ((tangentSpaceCastModel J (1 : Nil)).symm u) := by
+  simp only [differential, ContinuousLinearMap.coe_comp, Function.comp_apply,
+    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_apply]
 
 private def rotation (u : P) : P := (u.2.1 / 2, -u.1 / 2, 0)
 
@@ -137,12 +134,9 @@ private theorem differential_rotation (Φ : Isom J Nil) (hΦ : Φ 1 = 1) :
     apply (tangentSpaceCastModel J (1 : Nil)).injective
     simpa only [rotation, ContinuousLinearEquiv.apply_symm_apply] using hleft
   rw [hl] at hs
-  -- Tangent spaces have the model carrier; the casts in `differential` express the
-  -- same vector before and after normalizing the base point with `hΦ`.
+  rw [differential_symm_apply] at hright
   simpa only [differential, rotation, ContinuousLinearMap.coe_comp,
-    Function.comp_apply, ContinuousLinearEquiv.coe_coe, map_smul] using hs.trans (by
-      simpa only [differential, ContinuousLinearMap.coe_comp, Function.comp_apply,
-        ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_apply] using hright)
+    Function.comp_apply, ContinuousLinearEquiv.coe_coe, map_smul] using hs.trans hright
 
 private theorem differential_inner (Φ : Isom J Nil) (hΦ : Φ 1 = 1) (u v : P) :
     (differential Φ u).1 * (differential Φ v).1 +
@@ -231,13 +225,16 @@ theorem range_orthogonalToIsom_eq_stabilizer :
   apply (tangentSpaceCastModel J (Φ 1)).injective
   have h := tangentSpaceCastModel_mfderiv_orthogonalToIsom_one g v
   dsimp only at h
-  -- Nil inherits the model-space atlas: both coordinate casts are the identity
-  -- on the model carrier, even though their normed-space instances differ.
   have heq := hg (tangentSpaceCastModel J (1 : Nil) v)
   have hfull := heq.trans h.symm
-  dsimp only [differential, ContinuousLinearMap.coe_comp, Function.comp_apply,
-    ContinuousLinearEquiv.coe_coe] at hfull
-  convert hfull using 1 <;> rfl
+  simp only [differential, ContinuousLinearMap.coe_comp, Function.comp_apply,
+    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_apply] at hfull
+  have hcast {p q : Nil} (hp : p = q) (w : TangentSpace J p) :
+      tangentSpaceCastModel J p w = tangentSpaceCastModel J q w := by
+    subst q
+    rfl
+  rw [hcast (hgfix.trans hfix.symm)] at hfull
+  exact hfull
 
 /-- Every Riemannian isometry of Nil is a left translation followed by an
 orthogonal automorphism. Equivalently, the canonical semidirect-product action is surjective. -/
@@ -277,5 +274,19 @@ theorem semidirectProductIsomMulEquiv_symm_apply_left (Φ : Isom J Nil) :
     (semidirectProductIsomMulEquiv.apply_symm_apply Φ)
   simpa only [semidirectProductIsomMulEquiv_apply, semidirectProductToIsom_apply,
     map_one, mul_one] using h
+
+/-- The orthogonal part recovered from an arbitrary isometry is obtained by removing
+its translation by the image of the identity. -/
+@[simp]
+theorem orthogonalToIsom_semidirectProductIsomMulEquiv_symm_apply_right (Φ : Isom J Nil) :
+    orthogonalToIsom (semidirectProductIsomMulEquiv.symm Φ).right = (toIsom (Φ 1))⁻¹ * Φ := by
+  have h := semidirectProductIsomMulEquiv.apply_symm_apply Φ
+  apply RiemannianIsometry.ext
+  intro p
+  have hp := DFunLike.congr_fun h p
+  rw [semidirectProductIsomMulEquiv_apply, semidirectProductToIsom_apply,
+    semidirectProductIsomMulEquiv_symm_apply_left] at hp
+  simpa [RiemannianIsometry.mul_apply, ← map_inv] using
+    congrArg (fun q : Nil => (Φ 1)⁻¹ * q) hp
 
 end TauCeti.Nil
