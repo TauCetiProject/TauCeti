@@ -8,7 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Symmetric.Standard
 public import TauCeti.RepresentationTheory.Symmetric.SignCharacter
 public import TauCeti.RepresentationTheory.LinearCharacter.Basic
-public import TauCeti.GroupTheory.Perm.FinThree.Basic
+import TauCeti.GroupTheory.Perm.FinThree.Basic
 
 /-!
 # The standard representation of S₃ in characteristic three
