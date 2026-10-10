@@ -29,7 +29,8 @@ define concatenation, loops, or the comparison with `Path`.
 ## Main definitions
 
 * `TauCeti.MoorePath X`: Moore paths in `X`, with `length`, `source` and `target`.
-* `TauCeti.MoorePath.const x`: the constant path of duration `0` at `x`.
+* `TauCeti.MoorePath.const x`: the constant path of duration `0` at `x`, and
+  `TauCeti.MoorePath.constOfLength x L` of duration `L`.
 * `TauCeti.MoorePath.pathsBetween A B`: the paths starting in `A` and ending in `B`.
 
 ## Main results
@@ -212,6 +213,36 @@ theorem target_const (x : X) : (const x).target = x :=
 
 theorem continuous_const : Continuous (const : X → MoorePath X) :=
   continuous_iff.2 ⟨_root_.continuous_const, continuous_fst⟩
+
+/-- The constant Moore path at `x` of duration `L`. -/
+def constOfLength (x : X) (L : ℝ≥0) : MoorePath X where
+  toFun _ := x
+  length := L
+  stopped' _ _ := rfl
+
+@[simp]
+theorem constOfLength_apply (x : X) (L t : ℝ≥0) : constOfLength x L t = x :=
+  (rfl)
+
+@[simp]
+theorem length_constOfLength (x : X) (L : ℝ≥0) : (constOfLength x L).length = L :=
+  (rfl)
+
+@[simp]
+theorem source_constOfLength (x : X) (L : ℝ≥0) : (constOfLength x L).source = x :=
+  (rfl)
+
+@[simp]
+theorem target_constOfLength (x : X) (L : ℝ≥0) : (constOfLength x L).target = x :=
+  (rfl)
+
+@[simp]
+theorem constOfLength_zero (x : X) : constOfLength x 0 = const x :=
+  (rfl)
+
+/-- The constant paths of all durations form a continuous family. -/
+theorem continuous_constOfLength : Continuous fun p : X × ℝ≥0 ↦ constOfLength p.1 p.2 :=
+  continuous_iff.2 ⟨continuous_snd, continuous_fst.comp continuous_fst⟩
 
 /-- A Moore path of duration `0` is constant. -/
 theorem eq_const_of_length_eq_zero {γ : MoorePath X} (h : γ.length = 0) : γ = const γ.source :=
