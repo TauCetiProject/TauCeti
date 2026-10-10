@@ -34,7 +34,7 @@ Peter–Weyl density then forces every map from the model to land in its own blo
   algebraic isotypic component under left translation.
 * `TauCeti.mem_peterWeylBlock_iff_mem_isotypicComponent` and
   `TauCeti.restrictScalars_isotypicComponent_eq_peterWeylBlock`: membership and scalar-restriction
-  forms of the identification, extending the finite-group results.
+  forms of the identification, for an arbitrary compact group.
 
 ## References
 
@@ -69,30 +69,6 @@ theorem mem_leftRegularPeterWeylBlock (model : IrrepModel 𝕜 G)
     (f : Lp 𝕜 2 (haarProb G)) :
     f ∈ leftRegularPeterWeylBlock model ↔ f ∈ peterWeylBlock model := (Iff.rfl)
 
-private noncomputable def coefficientIntertwiner (model : IrrepModel 𝕜 G)
-    (v : EuclideanSpace 𝕜 (Fin model.dim)) :
-    ContIntertwiningMap model.rep (leftRegularLp 𝕜 G) where
-  __ := LinearMap.toContinuousLinearMap
-    (_root_.ContRepresentation.matrixCoeffLpₛₗ model.rep model.continuous_rep v)
-  isIntertwining' g := by
-    apply ContinuousLinearMap.ext
-    intro w
-    simp only [ContinuousLinearMap.comp_apply, LinearMap.coe_toContinuousLinearMap',
-      _root_.ContRepresentation.matrixCoeffLpₛₗ_apply_apply]
-    rw [← _root_.ContRepresentation.traceCoeffLp_rankOne model.rep model.continuous_rep
-        model.isUnitary v w,
-      _root_.ContRepresentation.leftRegularLp_traceCoeffLp,
-      InnerProductSpace.comp_rankOne,
-      _root_.ContRepresentation.traceCoeffLp_rankOne model.rep model.continuous_rep
-        model.isUnitary]
-
-@[simp]
-private theorem coefficientIntertwiner_apply (model : IrrepModel 𝕜 G)
-    (v w : EuclideanSpace 𝕜 (Fin model.dim)) :
-    coefficientIntertwiner model v w =
-      _root_.ContRepresentation.matrixCoeffLp model.rep model.continuous_rep v w :=
-  _root_.ContRepresentation.matrixCoeffLpₛₗ_apply_apply model.rep model.continuous_rep v w
-
 /-- Every matrix coefficient of an irreducible model lies in its algebraic isotypic
 component in the left regular representation. -/
 theorem matrixCoeffLp_mem_isotypicComponent (model : IrrepModel 𝕜 G)
@@ -101,15 +77,15 @@ theorem matrixCoeffLp_mem_isotypicComponent (model : IrrepModel 𝕜 G)
       (_root_.ContRepresentation.matrixCoeffLp model.rep model.continuous_rep v w) ∈
       isotypicComponent 𝕜[G] (leftRegularLp 𝕜 G).toRepresentation.asModule
         model.rep.toRepresentation.asModule := by
-  have : IsSimpleModule 𝕜[G] model.rep.toRepresentation.asModule :=
-    (Representation.irreducible_iff_isSimpleModule_asModule _).mp model.isIrreducible
   let f := Representation.IntertwiningMap.equivLinearMapAsModule _ _
-    (coefficientIntertwiner model v).toIntertwiningMap
+    (_root_.ContRepresentation.matrixCoeffLpIntertwiner model.rep model.continuous_rep
+      model.isUnitary v).toIntertwiningMap
   have hf := f.apply_mem_isotypicComponent
     (model.rep.toRepresentation.asModuleEquiv.symm w)
   rw [Representation.IntertwiningMap.equivLinearMapAsModule_apply] at hf
   simpa only [Representation.asModuleEquiv_symm_apply,
-    ContIntertwiningMap.toIntertwiningMap_apply, coefficientIntertwiner_apply] using hf
+    ContIntertwiningMap.toIntertwiningMap_apply,
+    _root_.ContRepresentation.matrixCoeffLpIntertwiner_apply] using hf
 
 /-- Every vector in a Peter–Weyl block belongs to the algebraic isotypic component of
 its model under left translation, even for an infinite compact group. -/
@@ -133,21 +109,24 @@ theorem mem_isotypicComponent_of_mem_peterWeylBlock (model : IrrepModel 𝕜 G)
     rw [map_smul]
     exact (C.restrictScalars 𝕜).smul_mem c hx
 
+/-- The left regular Peter–Weyl block is contained in its model's algebraic isotypic component. -/
+theorem leftRegularPeterWeylBlock_asSubmodule_le_isotypicComponent (model : IrrepModel 𝕜 G) :
+    (leftRegularPeterWeylBlock model).asSubmodule ≤
+      isotypicComponent 𝕜[G] (leftRegularLp 𝕜 G).toRepresentation.asModule
+        model.rep.toRepresentation.asModule := by
+  intro x hx
+  have hx' : (leftRegularLp 𝕜 G).toRepresentation.asModuleEquiv x ∈ peterWeylBlock model :=
+    (mem_leftRegularPeterWeylBlock model _).mp
+      (Subrepresentation.mem_asSubmodule_iff.mp hx)
+  simpa only [LinearEquiv.symm_apply_apply] using
+    mem_isotypicComponent_of_mem_peterWeylBlock model hx'
+
 /-- Under left translation a Peter–Weyl block is algebraically isotypic of its model's
 type. No algebraic closedness or skeleton of irreducibles is needed. -/
 theorem isIsotypicOfType_leftRegularPeterWeylBlock (model : IrrepModel 𝕜 G) :
     IsIsotypicOfType 𝕜[G] (leftRegularPeterWeylBlock model).asSubmodule
       model.rep.toRepresentation.asModule := by
-  have : IsSimpleModule 𝕜[G] model.rep.toRepresentation.asModule :=
-    (Representation.irreducible_iff_isSimpleModule_asModule _).mp model.isIrreducible
-  have hle : (leftRegularPeterWeylBlock model).asSubmodule ≤
-      isotypicComponent 𝕜[G] (leftRegularLp 𝕜 G).toRepresentation.asModule
-        model.rep.toRepresentation.asModule := by
-    intro x hx
-    have hx' : (leftRegularLp 𝕜 G).toRepresentation.asModuleEquiv x ∈ peterWeylBlock model :=
-      by exact hx
-    simpa only [LinearEquiv.symm_apply_apply] using
-      mem_isotypicComponent_of_mem_peterWeylBlock model hx'
+  have hle := leftRegularPeterWeylBlock_asSubmodule_le_isotypicComponent model
   exact (IsIsotypicOfType.isotypicComponent 𝕜[G]
     (leftRegularLp 𝕜 G).toRepresentation.asModule model.rep.toRepresentation.asModule).of_injective
       (Submodule.inclusion hle) (Submodule.inclusion_injective hle)
@@ -176,8 +155,6 @@ private theorem blockProjection_comp_eq_zero {ι : Type*} {models : ι → Irrep
     (f : (models i).rep.toRepresentation.asModule →ₗ[𝕜[G]]
       (leftRegularLp 𝕜 G).toRepresentation.asModule) :
     (blockProjection h j).comp f = 0 := by
-  have : IsSimpleModule 𝕜[G] (models i).rep.toRepresentation.asModule :=
-    (Representation.irreducible_iff_isSimpleModule_asModule _).mp (models i).isIrreducible
   apply (isIsotypicOfType_leftRegularPeterWeylBlock (models j)).linearMap_eq_zero
   intro he
   have he' := ContRepresentation.nonempty_equiv_iff.mpr
@@ -227,23 +204,19 @@ theorem leftRegularPeterWeylBlock_asSubmodule_eq_isotypicComponent [IsAlgClosed 
     (leftRegularPeterWeylBlock (models i)).asSubmodule =
       isotypicComponent 𝕜[G] (leftRegularLp 𝕜 G).toRepresentation.asModule
         (models i).rep.toRepresentation.asModule := by
-  apply le_antisymm
-  · intro x hx
-    have hx' : (leftRegularLp 𝕜 G).toRepresentation.asModuleEquiv x ∈
-        peterWeylBlock (models i) := hx
-    simpa only [LinearEquiv.symm_apply_apply] using
-      mem_isotypicComponent_of_mem_peterWeylBlock (models i) hx'
-  · rw [isotypicComponent]
-    refine sSup_le fun S hS => ?_
-    obtain ⟨e⟩ := hS
-    intro x hx
-    -- `asSubmodule` uses the group-algebra type synonym; read membership in the original L² space.
-    change (leftRegularLp 𝕜 G).toRepresentation.asModuleEquiv x ∈
-      peterWeylBlock (models i)
-    let f := S.subtype.comp e.symm.toLinearMap
-    have hf := linearMap_apply_mem_peterWeylBlock h i f (e ⟨x, hx⟩)
-    simpa only [f, LinearMap.comp_apply, LinearEquiv.coe_coe,
-      LinearEquiv.symm_apply_apply, Submodule.subtype_apply] using hf
+  refine le_antisymm (leftRegularPeterWeylBlock_asSubmodule_le_isotypicComponent _) ?_
+  rw [isotypicComponent]
+  refine sSup_le fun S hS => ?_
+  obtain ⟨e⟩ := hS
+  intro x hx
+  refine (Subrepresentation.mem_asSubmodule_iff
+    (σ := leftRegularPeterWeylBlock (models i))
+    (v := (leftRegularLp 𝕜 G).toRepresentation.asModuleEquiv x)).mpr ?_
+  apply (mem_leftRegularPeterWeylBlock (models i) _).mpr
+  let f := S.subtype.comp e.symm.toLinearMap
+  have hf := linearMap_apply_mem_peterWeylBlock h i f (e ⟨x, hx⟩)
+  simpa only [f, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    LinearEquiv.symm_apply_apply, Submodule.subtype_apply] using hf
 
 /-- Membership in a Peter–Weyl block is membership in the corresponding algebraic
 isotypic component of the left regular representation. -/
@@ -253,8 +226,8 @@ theorem mem_peterWeylBlock_iff_mem_isotypicComponent [IsAlgClosed 𝕜]
     f ∈ peterWeylBlock (models i) ↔
       f ∈ isotypicComponent 𝕜[G] (leftRegularLp 𝕜 G).toRepresentation.asModule
         (models i).rep.toRepresentation.asModule := by
-  rw [← leftRegularPeterWeylBlock_asSubmodule_eq_isotypicComponent h i]
-  rfl
+  rw [← leftRegularPeterWeylBlock_asSubmodule_eq_isotypicComponent h i,
+    Subrepresentation.mem_asSubmodule_iff, mem_leftRegularPeterWeylBlock]
 
 /-- Restricting scalars on the algebraic isotypic component of the left regular
 representation gives the Peter–Weyl block, for arbitrary compact groups. -/
