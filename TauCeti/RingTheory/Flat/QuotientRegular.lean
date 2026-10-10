@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Flat.Tensor
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
-import Mathlib.RingTheory.Flat.Equalizer
+import TauCeti.RingTheory.Flat.Extensions
 
 /-!
 # Flat quotients by universally regular elements
@@ -61,9 +61,10 @@ injectivity of `g` on `(R ⧸ I) ⊗ B` shows that `w` comes from `I ⊗ B`, so 
 times an element of `I ⊗ B` and dies in `I ⊗ (B ⧸ (g))`. Flatness of `B` enters twice: as
 exactness of `I ⊗ B → R ⊗ B → (R ⧸ I) ⊗ B`, and as injectivity of `I ⊗ B → R ⊗ B`.
 
-The product criterion `TauCeti.flat_quotient_span_singleton_mul` applies this to sums of
-relative effective Cartier divisors: multiplying two regular equations with flat quotients again
-gives a flat quotient.
+The product criterion `TauCeti.flat_quotient_span_singleton_mul` applies flatness of extensions to
+sums of relative effective Cartier divisors: if `B ⧸ (a)` and `B ⧸ (b)` are flat over `R` and `b`
+is a nonzerodivisor, then `B ⧸ (a * b)` is flat over `R`. Neither flatness of `B` nor regularity of
+`a` is required.
 
 ## References
 
@@ -200,20 +201,53 @@ end Module.Flat
 
 namespace TauCeti
 
-open Module.Flat
-
 variable {R B : Type*} [CommRing R] [CommRing B] [Algebra R B]
 
-/-- In a flat algebra, the product of two regular equations with flat quotients again has a
-flat quotient. Geometrically, this is closure of relative effective Cartier divisors under sums. -/
-theorem flat_quotient_span_singleton_mul [Module.Flat R B] {a b : B}
-    (ha : IsSMulRegular B a) (hb : IsSMulRegular B b)
+/-- If `B ⧸ (a)` and `B ⧸ (b)` are flat over `R` and `b` is a nonzerodivisor on `B`, then
+`B ⧸ (a * b)` is flat over `R`. Geometrically, this gives closure of relative effective Cartier
+divisors under sums over an arbitrary base, without flatness of the ambient scheme. -/
+theorem flat_quotient_span_singleton_mul {a b : B} (hb : IsSMulRegular B b)
     [Module.Flat R (B ⧸ Ideal.span {a})] [Module.Flat R (B ⧸ Ideal.span {b})] :
     Module.Flat R (B ⧸ Ideal.span {a * b}) := by
-  apply quotient_span_singleton_of_lTensor_mulLeft_injective
-  intro I _
-  rw [LinearMap.mulLeft_mul, LinearMap.lTensor_comp]
-  exact (lTensor_mulLeft_injective_of_quotient_span_singleton ha (R ⧸ I)).comp
-    (lTensor_mulLeft_injective_of_quotient_span_singleton hb (R ⧸ I))
+  -- Multiplication by `b` and the quotient map give `0 → B/(a) → B/(a*b) → B/(b) → 0`.
+  have hab : Ideal.span {a * b} ≤ Ideal.span {b} := by
+    rw [Ideal.span_singleton_le_iff_mem, Ideal.mem_span_singleton]
+    exact ⟨a, mul_comm _ _⟩
+  have hi : Ideal.span {a} ≤ Submodule.comap (LinearMap.mulLeft B b) (Ideal.span {a * b}) := by
+    intro x hx
+    obtain ⟨c, rfl⟩ := Ideal.mem_span_singleton'.mp hx
+    exact Ideal.mem_span_singleton'.mpr ⟨c, by simp [mul_comm, mul_left_comm]⟩
+  let i := (Submodule.mapQ (Ideal.span {a}) (Ideal.span {a * b})
+    (LinearMap.mulLeft B b) hi).restrictScalars R
+  let j := (Ideal.Quotient.factorₐ R hab).toLinearMap
+  have hi_apply (x : B) : i (Ideal.Quotient.mk _ x) = Ideal.Quotient.mk _ (b * x) := by
+    simpa only [i, LinearMap.restrictScalars_apply, Ideal.Quotient.mk_eq_mk,
+      LinearMap.mulLeft_apply] using
+      (Submodule.mapQ_apply (Ideal.span {a}) (Ideal.span {a * b}) (LinearMap.mulLeft B b)
+        (h := hi) x)
+  have hinj : Function.Injective i := by
+    rw [injective_iff_map_eq_zero]
+    intro x hx
+    obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
+    rw [hi_apply, Ideal.Quotient.eq_zero_iff_mem] at hx
+    obtain ⟨c, hc⟩ := Ideal.mem_span_singleton'.mp hx
+    have heq : b * (c * a) = b * x := by
+      simpa [mul_comm, mul_left_comm, mul_assoc] using hc
+    exact Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton'.mpr ⟨c, hb heq⟩)
+  have hexact : Function.Exact i j := by
+    intro x
+    obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
+    simp only [j, AlgHom.toLinearMap_apply, Ideal.Quotient.factorₐ_apply_mk,
+      Ideal.Quotient.eq_zero_iff_mem]
+    constructor
+    · intro hx
+      obtain ⟨c, rfl⟩ := Ideal.mem_span_singleton'.mp hx
+      exact ⟨Ideal.Quotient.mk _ c, by simp only [hi_apply, mul_comm]⟩
+    · rintro ⟨y, hy⟩
+      obtain ⟨y, rfl⟩ := Ideal.Quotient.mk_surjective y
+      have h := congrArg j hy
+      rw [hi_apply] at h
+      simpa [j, ← Ideal.Quotient.eq_zero_iff_mem] using h.symm
+  exact hexact.flat_of_injective_of_surjective hinj (Ideal.Quotient.factor_surjective hab)
 
 end TauCeti
