@@ -88,7 +88,7 @@ theorem map_mem_degenerate (f : C(X, Y)) {n : ℕ} {g : CubicalChain X R n}
   | add g h _ _ hg hh => rw [map_add]; exact Submodule.add_mem _ hg hh
   | smul a g _ hg => rw [map_smul]; exact Submodule.smul_mem _ a hg
 
-theorem degenerate_le_comap_map (f : C(X, Y)) (n : ℕ) :
+private theorem degenerate_le_comap_map (f : C(X, Y)) (n : ℕ) :
     degenerate X R n ≤ (degenerate Y R n).comap (map R f n) :=
   fun _ hg ↦ map_mem_degenerate R f hg
 
@@ -123,7 +123,7 @@ theorem boundary_mem_degenerate {n : ℕ} {f : CubicalChain X R (n + 1)}
   | add f g _ _ hf hg => rw [map_add]; exact Submodule.add_mem _ hf hg
   | smul a f _ hf => rw [map_smul]; exact Submodule.smul_mem _ a hf
 
-theorem degenerate_le_comap_boundary (n : ℕ) :
+private theorem degenerate_le_comap_boundary (n : ℕ) :
     degenerate X R (n + 1) ≤ (degenerate X R n).comap (boundary X R n) :=
   fun _ hf ↦ boundary_mem_degenerate R hf
 
