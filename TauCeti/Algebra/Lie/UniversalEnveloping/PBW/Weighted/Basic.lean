@@ -49,6 +49,11 @@ open TauCeti.UniversalEnvelopingAlgebra
 noncomputable def weightedPBWFiltration (N : ℕ) : Submodule R U :=
   Submodule.span R (b.pbwBasis '' {n | N ≤ Finsupp.weight w n})
 
+/-- The weighted PBW filtration is the span of the monomials at or above the cutoff. -/
+theorem weightedPBWFiltration_def (N : ℕ) :
+    b.weightedPBWFiltration w N =
+      Submodule.span R (b.pbwBasis '' {n | N ≤ Finsupp.weight w n}) := (rfl)
+
 /-- Membership is equivalent to vanishing of all PBW coefficients of weight below the cutoff. -/
 @[simp]
 theorem mem_weightedPBWFiltration_iff (N : ℕ) (a : U) :
