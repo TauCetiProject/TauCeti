@@ -21,8 +21,8 @@ property is used to prove algebraic closedness of the complexification.
 ## Main results
 
 * `QuadraticAlgebra.sqrt` constructs a square root in `R[i]` over an ordered real closed field,
-  deriving the scalar root existence it needs. `sq_sqrt`, `sqrt_coordinates`, and the sign lemmas
-  characterize this root.
+  deriving the scalar root existence it needs. `sq_sqrt`, `sqrt_coordinates`, `sqrt_unique`, and
+  the sign lemmas characterize this root.
 * `QuadraticAlgebra.isSquare` shows every element of `R[i]` is a square when `R` is real closed,
   without choosing an order.
 * `QuadraticAlgebra.equivComplex` identifies `ℝ[i]` with `ℂ`, and
@@ -118,8 +118,11 @@ theorem _root_.QuadraticAlgebra.sqrt_coordinates
         2 * s * -q = -(2 * s * q) := by ring
         _ = -|b| := by rw [hprod]
         _ = b := by simp [abs_of_neg hbneg]
-  change s ^ 2 - (if 0 ≤ b then q else -q) ^ 2 = a ∧
-    2 * s * (if 0 ≤ b then q else -q) = b
+  have ha_def : a = z.re := rfl
+  have hb_def : b = z.im := rfl
+  have hs_def : s = complex_sqrt_real_part a b := rfl
+  have hq_def : q = complex_sqrt_imag_part a b := rfl
+  simp only [QuadraticAlgebra.sqrt, ← ha_def, ← hb_def, ← hs_def, ← hq_def]
   constructor
   · by_cases hb : 0 ≤ b <;> simp [hb, hreal]
   · exact himag
@@ -184,6 +187,41 @@ theorem _root_.QuadraticAlgebra.im_sqrt_nonpos_of_im_neg
     (QuadraticAlgebra.sqrt z).im ≤ 0 := by
   simpa only [QuadraticAlgebra.sqrt, ite_eq_right (not_le_of_gt hz), complex_sqrt_imag_part] using
     (neg_nonpos.mpr (nonnegSqrt_nonneg (complex_sqrt_radicands_nonneg z.re z.im).2))
+
+/-- A square root with nonnegative real part and the chosen imaginary-part sign is `sqrt z`. -/
+theorem _root_.QuadraticAlgebra.sqrt_unique
+    (z w : QuadraticAlgebra R (-1) 0) (hw_sq : w ^ 2 = z) (hw_re : 0 ≤ w.re)
+    (hw_im_sign : if 0 ≤ z.im then 0 ≤ w.im else w.im ≤ 0) :
+    w = QuadraticAlgebra.sqrt z := by
+  let v := QuadraticAlgebra.sqrt z
+  change w = v
+  have hv_sq : v ^ 2 = z := by
+    simp [v]
+  have hfactor : (w - v) * (w + v) = 0 := by
+    linear_combination (norm := ring_nf) hw_sq - hv_sq
+  rcases mul_eq_zero.mp hfactor with h | h
+  · exact sub_eq_zero.mp h
+  · have hwv : w = -v := eq_neg_of_add_eq_zero_left h
+    have hsum_re : w.re + v.re = 0 := by
+      simpa using congrArg QuadraticAlgebra.re h
+    have hv_re_nonneg : 0 ≤ v.re := QuadraticAlgebra.re_sqrt_nonneg z
+    have hv_re_zero : v.re = 0 := by nlinarith
+    have hv_im_eq : 2 * v.re * v.im = z.im := by
+      simpa [v] using (QuadraticAlgebra.sqrt_coordinates z).2
+    have hz_im_zero : z.im = 0 := by rw [← hv_im_eq, hv_re_zero]; ring
+    have hz_im_nonneg : 0 ≤ z.im := by rw [hz_im_zero]
+    have hw_im_nonneg' : 0 ≤ w.im := by simpa [hz_im_nonneg] using hw_im_sign
+    have hv_im_nonneg : 0 ≤ v.im :=
+      QuadraticAlgebra.im_sqrt_nonneg_of_im_nonneg z (by rw [hz_im_zero])
+    have hsum_im : w.im + v.im = 0 := by
+      simpa using congrArg QuadraticAlgebra.im h
+    have hv_im_zero : v.im = 0 := by nlinarith
+    have hv_zero : v = 0 := by
+      apply QuadraticAlgebra.ext
+      · exact hv_re_zero
+      · exact hv_im_zero
+    rw [hwv, hv_zero]
+    simp
 
 /-- The canonical real-algebra equivalence from `ℝ[i]` to `ℂ`. -/
 noncomputable def _root_.QuadraticAlgebra.equivComplex :

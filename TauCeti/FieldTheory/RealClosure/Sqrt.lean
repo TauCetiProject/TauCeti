@@ -27,6 +27,20 @@ public section
 
 namespace TauCeti.RealClosure
 
+section
+
+variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
+
+/-- Two nonnegative square roots of the same element are equal. -/
+theorem nonnegSqrt_unique {a r s : R} (hr0 : 0 ≤ r) (hr : r ^ 2 = a)
+    (hs0 : 0 ≤ s) (hs : s ^ 2 = a) : r = s := by
+  apply (sq_eq_sq₀ hr0 hs0).mp
+  rw [hr, hs]
+
+end
+
+section
+
 variable {R : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R]
 
 /-- Every nonnegative element of an ordered real closed field has a nonnegative square root. -/
@@ -53,12 +67,6 @@ theorem sq_nonnegSqrt
     (nonnegSqrt ha) ^ 2 = a :=
   (Classical.choose_spec (exists_nonneg_sq ha)).2
 
-/-- Two nonnegative square roots of the same element are equal. -/
-theorem nonnegSqrt_unique {a r s : R} (hr0 : 0 ≤ r) (hr : r ^ 2 = a)
-    (hs0 : 0 ≤ s) (hs : s ^ 2 = a) : r = s := by
-  apply (sq_eq_sq₀ hr0 hs0).mp
-  rw [hr, hs]
-
 /-- The chosen nonnegative square root on `ℝ` agrees with `Real.sqrt`. -/
 theorem nonnegSqrt_real_eq_sqrt
     {a : ℝ} (ha : 0 ≤ a) : nonnegSqrt ha = Real.sqrt a := by
@@ -67,5 +75,7 @@ theorem nonnegSqrt_real_eq_sqrt
   · exact sq_nonnegSqrt ha
   · exact Real.sqrt_nonneg a
   · exact Real.sq_sqrt ha
+
+end
 
 end TauCeti.RealClosure
