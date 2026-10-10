@@ -216,6 +216,11 @@ when `x.fst ≥ a + 2 / c`, so it is supported a positive distance inside the ha
 def normalCutoff (a c : ℝ) (x : WithLp 2 (ℝ × E)) : ℝ :=
   Real.smoothTransition (c * (x.fst - a) - 1)
 
+/-- The defining formula of the boundary-layer cutoff. -/
+theorem normalCutoff_def (a c : ℝ) (x : WithLp 2 (ℝ × E)) :
+    normalCutoff a c x = Real.smoothTransition (c * (x.fst - a) - 1) :=
+  normalCutoff.eq_1 a c x
+
 /-- The boundary-layer cutoff is nonnegative. -/
 theorem normalCutoff_nonneg (a c : ℝ) (x : WithLp 2 (ℝ × E)) : 0 ≤ normalCutoff a c x :=
   Real.smoothTransition.nonneg _
