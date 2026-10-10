@@ -147,13 +147,13 @@ variable {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A}
 
 omit [IsScalarTower R Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M] [DirectSum.Decomposition ℳ] [Fintype P]
   [Fintype Q] in
-/-- A homogeneous element `α` of degree `q`, multiplied by `ν x y` of degree `indQ y - ind x`,
-has degree `q + (indQ y - ind x)`. -/
-theorem op_smul_mem_of_mem_graded (hν : ∀ x y, ν x y ∈ 𝒜 (indQ y - ind x)) (x : P) (y : Q)
-    {q : ℤ} {α : M} (hα : α ∈ ℳ q) : op (ν x y) • α ∈ ℳ (q + (indQ y - ind x)) := by
-  have hop : op (ν x y) ∈ (InternalGrading.ofDecomposition 𝒜).opposite.piece (indQ y - ind x) := by
+/-- A homogeneous element `α` of degree `q`, acted on by a homogeneous `a` of degree `e`, has
+degree `q + e`. -/
+theorem op_smul_mem_of_mem_graded {e : ℤ} {a : A} (ha : a ∈ 𝒜 e) {q : ℤ} {α : M}
+    (hα : α ∈ ℳ q) : op a • α ∈ ℳ (q + e) := by
+  have hop : op a ∈ (InternalGrading.ofDecomposition 𝒜).opposite.piece e := by
     rw [InternalGrading.op_mem_opposite_piece_iff, InternalGrading.ofDecomposition_piece]
-    exact hν x y
+    exact ha
   have := SetLike.GradedSMul.smul_mem hop hα
   rwa [vadd_eq_add, add_comm] at this
 
@@ -167,7 +167,7 @@ theorem continuationMap_mem_twistedTotalGrading (hν : ∀ x y, ν x y ∈ 𝒜 
   intro y
   rw [continuationMap_apply]
   refine Submodule.sum_mem _ fun x _ ↦ ?_
-  have := op_smul_mem_of_mem_graded ν hν x y (hf x)
+  have := op_smul_mem_of_mem_graded (hν x y) (hf x)
   convert this using 2
   ring
 
@@ -207,7 +207,7 @@ theorem continuationMap_twistedDifferential (hν : ∀ x y, ν x y ∈ 𝒜 (ind
       (op (ν x w) • dM α + q.negOnePow • (op (d (ν x w)) • α)) +
         ∑ y, (q + (indQ y - ind x)).negOnePow • (op (mQ y w) • (op (ν x y) • α)) := by
     rw [continuationMap_single, map_sum, Finset.sum_apply]
-    simp only [twistedDifferential_single_apply mQ dM _ w (op_smul_mem_of_mem_graded ν hν x _ hα)]
+    simp only [twistedDifferential_single_apply mQ dM _ w (op_smul_mem_of_mem_graded (hν x _) hα)]
     rw [Finset.sum_add_distrib, ← hM.leibniz hα]
     congr 1
     simp only [Pi.single_apply, Finset.sum_ite_eq, Finset.mem_univ, ite_true]
@@ -225,13 +225,10 @@ theorem continuationMap_twistedDifferential (hν : ∀ x y, ν x y ∈ 𝒜 (ind
       ∑ y, (q + (indQ y - ind x)).negOnePow • (op (mQ y w) • (op (ν x y) • α)) = 0 := by
     rw [Finset.op_sum, Finset.sum_smul, Finset.smul_sum, ← Finset.sum_add_distrib]
     refine Finset.sum_eq_zero fun z _ ↦ ?_
-    have hexp : q + (ind x - indQ z - 1) =
-        (q + (indQ z - ind x)) + 1 + 2 * (ind x - indQ z - 1) := by
-      ring
     have hsign : q.negOnePow * (ind x - indQ z - 1).negOnePow =
         -(q + (indQ z - ind x)).negOnePow := by
-      rw [← Int.negOnePow_add, hexp, Int.negOnePow_add, Int.negOnePow_succ, Int.negOnePow_two_mul,
-        mul_one]
+      rw [← Int.negOnePow_succ]
+      exact negOnePow_mul_negOnePow_of_even ⟨ind x - indQ z - 1, by ring⟩
     rw [op_smul, smul_assoc, smul_smul, hsign, op_mul, mul_smul, Units.neg_smul, neg_add_cancel]
   rw [h₁, add_assoc, h₂, add_zero]
 
@@ -319,9 +316,7 @@ theorem continuation_matMul (h : IsDGAlgebra 𝒜 d) (m₁ : P → P → A) (m�
     refine Finset.sum_eq_zero fun z _ ↦ ?_
     rw [← Finset.sum_add_distrib]
     refine Finset.sum_eq_zero fun w _ ↦ ?_
-    have hexp : ind x - indQ z - 1 = (indQ z - ind x) + 1 + 2 * (ind x - indQ z - 1) := by ring
-    rw [hexp, Int.negOnePow_add, Int.negOnePow_succ, Int.negOnePow_two_mul, mul_one,
-      Units.neg_smul, neg_add_cancel]
+    rw [negOnePow_sub_sub_one, Units.neg_smul, neg_add_cancel]
   -- The `m₃` terms agree: `(-1) ^ (indQ z - ind x) (-1) ^ (indQ z - indS w - 1)` is
   -- `(-1) ^ (ind x - indS w - 1)`.
   have hD : (∑ x₁ : Q, ∑ x₂ : S, ((indQ x₁ - ind x).negOnePow * (indQ x₁ - indS x₂ - 1).negOnePow) •
@@ -329,10 +324,7 @@ theorem continuation_matMul (h : IsDGAlgebra 𝒜 d) (m₁ : P → P → A) (m�
       ∑ x₁ : S, ∑ x₂ : Q, (ind x - indS x₁ - 1).negOnePow • (ν₁ x x₂ * (ν₂ x₂ x₁ * m₃ x₁ y)) := by
     rw [Finset.sum_comm]
     refine Finset.sum_congr rfl fun w _ ↦ Finset.sum_congr rfl fun z _ ↦ ?_
-    have hexp : (indQ z - ind x) + (indQ z - indS w - 1) =
-        (ind x - indS w - 1) + 2 * (indQ z - ind x) := by
-      ring
-    rw [← Int.negOnePow_add, hexp, Int.negOnePow_add, Int.negOnePow_two_mul, mul_one]
+    rw [negOnePow_mul_negOnePow_of_even (c := ind x - indS w - 1) ⟨indQ z - ind x, by ring⟩]
   rw [hA, hD, add_assoc, ← add_assoc _ _ (∑ x₁ : S, ∑ x₂ : Q,
     (ind x - indS x₁ - 1).negOnePow • (ν₁ x x₂ * (ν₂ x₂ x₁ * m₃ x₁ y))), hBC, zero_add]
 
