@@ -77,7 +77,6 @@ of the target and `V` of the source. -/
 def twoSidedUnitaryOrbit (C : E →ₗ[𝕜] F) : Set (E →ₗ[𝕜] F) :=
   {X | ∃ (U : F ≃ₗᵢ[𝕜] F) (V : E ≃ₗᵢ[𝕜] E), (U : F →ₗ[𝕜] F) ∘ₗ C ∘ₗ (V : E →ₗ[𝕜] E) = X}
 
-@[simp]
 theorem mem_twoSidedUnitaryOrbit {C X : E →ₗ[𝕜] F} :
     X ∈ C.twoSidedUnitaryOrbit ↔
       ∃ (U : F ≃ₗᵢ[𝕜] F) (V : E ≃ₗᵢ[𝕜] E), (U : F →ₗ[𝕜] F) ∘ₗ C ∘ₗ (V : E →ₗ[𝕜] E) = X :=
