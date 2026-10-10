@@ -93,12 +93,7 @@ theorem IsRationalRep.existsUnique_forall_apply_scalar_eq_zpow_smul
     ∃! d : ℤ, ∀ (z : ℂˣ) (v : W),
       ρ (GeneralLinearGroup.scalar (Fin n) z) v = ((z ^ d : ℂˣ) : ℂ) • v := by
   have := (inferInstance : ρ.IsIrreducible).nontrivial
-  have hweight : ∃ l : Fin n → ℤ, weightSpace ρ l ≠ ⊥ := by
-    by_contra! hbot
-    have htop := h.iSup_weightSpace_eq_top
-    simp only [hbot, iSup_bot] at htop
-    exact bot_ne_top htop
-  obtain ⟨l, hl⟩ := hweight
+  obtain ⟨l, hl⟩ := h.exists_weightSpace_ne_bot
   refine ⟨∑ i, l i,
     apply_scalar_eq_zpow_smul_of_weightSpace_ne_bot hl,
     fun d hd ↦ ?_⟩

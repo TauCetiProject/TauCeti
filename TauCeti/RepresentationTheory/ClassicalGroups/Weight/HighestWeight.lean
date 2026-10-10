@@ -291,17 +291,7 @@ theorem IsRationalRep.exists_highestWeightVector [Nontrivial W] (h : IsRationalR
   classical
   have _ : Module.Finite ℂ W := h.finite
   have hfin := finite_setOf_weightSpace_ne_bot weightChar_injective ρ
-  have hne : {l : Fin n → ℤ | weightSpace ρ l ≠ ⊥}.Nonempty := by
-    by_contra hemp
-    rw [Set.not_nonempty_iff_eq_empty] at hemp
-    have htop : (⊤ : Submodule ℂ W) = ⊥ := by
-      rw [← h.iSup_weightSpace_eq_top]
-      refine iSup_eq_bot.mpr fun l ↦ ?_
-      by_contra hl
-      have hmem : l ∈ {l : Fin n → ℤ | weightSpace ρ l ≠ ⊥} := hl
-      rw [hemp] at hmem
-      exact Set.notMem_empty l hmem
-    exact absurd htop top_ne_bot
+  have hne : {l : Fin n → ℤ | weightSpace ρ l ≠ ⊥}.Nonempty := h.exists_weightSpace_ne_bot
   obtain ⟨l0, hl0mem, hl0max⟩ := Finset.exists_max_image hfin.toFinset weightHeight
     (by simpa [Set.Finite.toFinset_nonempty] using hne)
   rw [Set.Finite.mem_toFinset] at hl0mem
