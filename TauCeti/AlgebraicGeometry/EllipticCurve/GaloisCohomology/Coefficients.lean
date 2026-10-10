@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Galois
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Surjective
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ShortExact
+public import TauCeti.Topology.Algebra.GroupAction.ForcedDiscrete
 public import TauCeti.Topology.Algebra.GroupAction.QuotientAddGroup
 
 /-!
@@ -22,9 +23,10 @@ in two discrete `G_K`-modules, fixed here once and for all:
 W.PointCoeff = E(Kˢ),      W.TorsionCoeff m = E(Kˢ)[m],
 ```
 
-with `G_K` acting on the coordinates of points. The first is a type synonym for the points of the
-base change `W⁄Kˢ`, carrying the **discrete** topology by definition rather than by an instance on
-the point type itself. Both modules are discrete `G_K`-modules in the sense continuous cohomology
+with `G_K` acting on the coordinates of points. The first is a type synonym of
+`TauCeti.ForcedDiscrete` applied to the points of the base change `W⁄Kˢ`, so it carries the
+**discrete** topology imposed by that wrapper rather than by an instance on the point type
+itself. Both modules are discrete `G_K`-modules in the sense continuous cohomology
 asks for: the stabilizer of a point is open, because its coordinates lie in `Kˢ`, which is
 algebraic over `K` (`WeierstrassCurve.PointCoeff.instContinuousSMul`).
 
@@ -88,22 +90,25 @@ variable {K : Type*} [Field K] (W : WeierstrassCurve K)
 /-! ### The points over the separable closure -/
 
 /-- **The points of `W` over a separable closure `Kˢ` of `K`**, as the coefficient module of the
-Galois cohomology of `W`. It is a type synonym for `(W⁄Kˢ).toAffine.Point`, so that the discrete
-topology and the action of `G_K` live on it and not on the point type. -/
-def PointCoeff : Type _ := (W⁄(SeparableClosure K)).toAffine.Point
+Galois cohomology of `W`. It is a type synonym for `ForcedDiscrete (W⁄Kˢ).toAffine.Point`, so that
+the discrete topology is the one imposed by `TauCeti.ForcedDiscrete`, and the action of `G_K` lives
+on it and not on the point type. -/
+def PointCoeff : Type _ := ForcedDiscrete (W⁄(SeparableClosure K)).toAffine.Point
 
 open scoped Classical in
 instance : AddCommGroup W.PointCoeff :=
-  inferInstanceAs (AddCommGroup (W⁄(SeparableClosure K)).toAffine.Point)
+  inferInstanceAs (AddCommGroup (ForcedDiscrete (W⁄(SeparableClosure K)).toAffine.Point))
 
-instance : TopologicalSpace W.PointCoeff := ⊥
+instance : TopologicalSpace W.PointCoeff :=
+  inferInstanceAs (TopologicalSpace (ForcedDiscrete (W⁄(SeparableClosure K)).toAffine.Point))
 
-instance : DiscreteTopology W.PointCoeff := ⟨rfl⟩
+instance : DiscreteTopology W.PointCoeff :=
+  inferInstanceAs (DiscreteTopology (ForcedDiscrete (W⁄(SeparableClosure K)).toAffine.Point))
 
 open scoped Classical in
 /-- The identification of `W.PointCoeff` with the points of `W` over `Kˢ`. -/
 def pointCoeffEquiv : (W⁄(SeparableClosure K)).toAffine.Point ≃+ W.PointCoeff :=
-  AddEquiv.refl _
+  ForcedDiscrete.addEquiv _
 
 /-! ### The Galois action -/
 
