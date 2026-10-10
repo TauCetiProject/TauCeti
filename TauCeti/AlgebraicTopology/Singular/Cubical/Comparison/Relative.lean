@@ -232,6 +232,12 @@ def singularCubicalHomologyIso (P : TopPair.{u}) (n : ℕ) :
     P.singularHomology (ModuleCat.of k k) n ≅ (P.cubicalChainComplex k).homology n :=
   asIso (HomologicalComplex.homologyMap (singularToCubicalRel k P) n)
 
+@[simp]
+theorem singularCubicalHomologyIso_hom (P : TopPair.{u}) (n : ℕ) :
+    (singularCubicalHomologyIso k P n).hom =
+      HomologicalComplex.homologyMap (singularToCubicalRel k P) n :=
+  (rfl)
+
 /-- The relative comparison isomorphism on homology is natural in the pair. -/
 @[reassoc]
 theorem singularCubicalHomologyIso_hom_naturality {P P' : TopPair.{u}} (f : P ⟶ P') (n : ℕ) :
