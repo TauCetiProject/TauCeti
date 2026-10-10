@@ -142,6 +142,35 @@ theorem ext {p q : SL2Tilde} (hx : p.x = q.x) (hy : p.y = q.y) (hz : p.z = q.z) 
 @[simp]
 theorem mk_x_y_z (p : SL2Tilde) : mk p.x p.y p.z = p := (rfl)
 
+/-- The global horocyclic coordinates as a smooth diffeomorphism. -/
+def toProdDiffeomorph : SL2Tilde ≃ₘ⟮𝓘(ℝ, ℝ × ℝ × ℝ), 𝓘(ℝ, ℝ × ℝ × ℝ)⟯
+    ℝ × ℝ × ℝ where
+  toEquiv := toProd
+  contMDiff_toFun := contDiff_id.contMDiff
+  contMDiff_invFun := contDiff_id.contMDiff
+
+/-- The coordinate diffeomorphism has the existing coordinate map as its forward map. -/
+@[simp] theorem coe_toProdDiffeomorph : ⇑toProdDiffeomorph = toProd := (rfl)
+
+/-- Inverse global coordinates agree with the inverse coordinate equivalence. -/
+@[simp] theorem coe_toProdDiffeomorph_symm : ⇑toProdDiffeomorph.symm = toProd.symm := (rfl)
+
+/-- The differential of global coordinates reads the tangent vector in the model space. -/
+@[simp] theorem mfderiv_toProd_apply (p : SL2Tilde)
+    (v : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) :
+    mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) toProd p v =
+      tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) p v := by
+  exact congrArg (fun L => L v)
+    (ContinuousLinearMap.id ℝ (ℝ × ℝ × ℝ)).hasFDerivAt.hasMFDerivAt.mfderiv
+
+/-- The differential of inverse global coordinates retains the model vector. -/
+@[simp] theorem tangentSpaceCastModel_mfderiv_toProd_symm (r : ℝ × ℝ × ℝ)
+    (v : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) r) :
+    tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) (toProd.symm r)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) toProd.symm r v) = v := by
+  exact congrArg (fun L => L v)
+    (ContinuousLinearMap.id ℝ (ℝ × ℝ × ℝ)).hasFDerivAt.hasMFDerivAt.mfderiv
+
 /-! ### The metric -/
 
 /-- The coordinate functional `x`. -/

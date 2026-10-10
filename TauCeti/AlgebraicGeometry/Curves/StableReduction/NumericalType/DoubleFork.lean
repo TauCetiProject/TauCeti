@@ -59,72 +59,21 @@ private lemma doubleForkEmbedding_injective
     (ht : 3 < t) (hleftRight : left ≠ right)
     (hleft_ne_chain : ∀ i < t, left ≠ c i) :
     Function.Injective (doubleForkEmbedding t c left right) := by
-  have hmiddle_lt (i : Fin (t - 4 + 2)) : (i : ℕ) + 1 < t := by
-    have hi := i.isLt
-    omega
   intro i j hij
-  rcases i with i | i | i <;> rcases j with j | j | j
-  · fin_cases i <;> fin_cases j
-    · rfl
-    · exact (hleft_ne_chain 0 (by omega)
-        (by simpa [doubleForkEmbedding] using hij.symm)).elim
-    · exact (hleft_ne_chain 0 (by omega)
-        (by simpa [doubleForkEmbedding] using hij)).elim
-    · rfl
-  · exfalso
-    fin_cases i
-    · exact (hr.ne (i := 0) (j := j + 1) (by omega) (hmiddle_lt j) (by omega)
-        (by simpa [doubleForkEmbedding] using hij)).elim
-    · exact (hleft_ne_chain (j + 1) (hmiddle_lt j)
-        (by simpa [doubleForkEmbedding] using hij)).elim
-  · exfalso
-    fin_cases i <;> fin_cases j
-    · exact (hr.ne (i := 0) (j := t - 1) (by omega) (by omega) (by omega)
-        (by simpa [doubleForkEmbedding] using hij)).elim
-    · exact (hr.branch_ne 0 (by omega)
-        (by simpa [doubleForkEmbedding] using hij.symm)).elim
-    · exact (hleft_ne_chain (t - 1) (by omega)
-        (by simpa [doubleForkEmbedding] using hij)).elim
-    · exact (hleftRight (by simpa [doubleForkEmbedding] using hij)).elim
-  · exfalso
-    fin_cases j
-    · exact (hr.ne (i := i + 1) (j := 0) (hmiddle_lt i) (by omega) (by omega)
-        (by simpa [doubleForkEmbedding] using hij)).elim
-    · exact (hleft_ne_chain (i + 1) (hmiddle_lt i)
-        (by simpa [doubleForkEmbedding] using hij.symm)).elim
-  · apply congrArg (Sum.inr ∘ Sum.inl)
-    apply Fin.ext
-    have := hr.injOn (i + 1) (hmiddle_lt i) (j + 1) (hmiddle_lt j)
-      (by simpa [doubleForkEmbedding] using hij)
-    omega
-  · exfalso
-    fin_cases j
-    · exact (hr.ne (i := i + 1) (j := t - 1) (hmiddle_lt i) (by omega) (by omega)
-        (by simpa [doubleForkEmbedding] using hij)).elim
-    · exact (hr.branch_ne (i + 1) (hmiddle_lt i)
-        (by simpa [doubleForkEmbedding] using hij.symm)).elim
-  · exfalso
-    fin_cases i <;> fin_cases j
-    · exact (hr.ne (i := t - 1) (j := 0) (by omega) (by omega) (by omega)
-        (by simpa [doubleForkEmbedding] using hij)).elim
-    · exact (hleft_ne_chain (t - 1) (by omega)
-        (by simpa [doubleForkEmbedding] using hij.symm)).elim
-    · exact (hr.branch_ne 0 (by omega)
-        (by simpa [doubleForkEmbedding] using hij)).elim
-    · exact (hleftRight (by simpa [doubleForkEmbedding] using hij.symm)).elim
-  · exfalso
-    fin_cases i
-    · exact (hr.ne (i := t - 1) (j := j + 1) (by omega) (hmiddle_lt j) (by omega)
-        (by simpa [doubleForkEmbedding] using hij)).elim
-    · exact (hr.branch_ne (j + 1) (hmiddle_lt j)
-        (by simpa [doubleForkEmbedding] using hij)).elim
-  · fin_cases i <;> fin_cases j
-    · rfl
-    · exact (hr.branch_ne (t - 1) (by omega)
-        (by simpa [doubleForkEmbedding] using hij.symm)).elim
-    · exact (hr.branch_ne (t - 1) (by omega)
-        (by simpa [doubleForkEmbedding] using hij)).elim
-    · rfl
+  -- In each case `hij` equates two of `c 0`, `c (k + 1)`, `c (t - 1)`, `left` and `right`.
+  rcases i with i | i | i <;> rcases j with j | j | j <;> (try fin_cases i) <;>
+    (try fin_cases j) <;>
+    simp only [doubleForkEmbedding, Fin.zero_eta, Fin.isValue, Fin.mk_one, one_ne_zero,
+      zero_ne_one, ↓reduceIte, Sum.inl.injEq, Sum.inr.injEq, reduceCtorEq] at hij ⊢
+  all_goals first
+    | exact absurd hij (hleft_ne_chain _ (by omega))
+    | exact absurd hij.symm (hleft_ne_chain _ (by omega))
+    | exact absurd hij (hr.branch_ne _ (by omega))
+    | exact absurd hij.symm (hr.branch_ne _ (by omega))
+    | exact absurd hij hleftRight
+    | exact absurd hij.symm hleftRight
+    -- two chain components: `injOn` equates their positions, which settles the case
+    | (have := hr.injOn _ (by omega) _ (by omega) hij; omega)
 
 private lemma intersection_doubleForkEmbedding_eq
     (hr : T.IsSelfIntersectionMinusTwoFork t c right)

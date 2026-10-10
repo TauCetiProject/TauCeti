@@ -47,6 +47,7 @@ actions, as does the degree-two cohomology carrier `H2`.
 ## Main results
 
 * `TauCeti.ContCohomology.intCast_characterCarry`: `⌊χ'(g) + χ'(h)⌋ = χ'(g) + χ'(h) - χ'(gh)`.
+* `TauCeti.ContCohomology.characterCarry_mul_add`: the carry is an integer `2`-cocycle.
 * `TauCeti.ContCohomology.characterCarry_eq_ite`: if `χ(g)` and `χ(h)` are the classes of
   `i / n` and `j / n` with `i, j < n`, the carry is `1` if `n ≤ i + j` and `0` otherwise.
 * `TauCeti.ContCohomology.cocyclesMap2_characterCarryCocycle`: pulling back the carry cocycle of
@@ -128,6 +129,19 @@ theorem characterCarry_comp {H : Type*} [Group H] (χ : Additive G →+ AddCircl
     characterCarry (χ.comp φ.toAdditive) h k = characterCarry χ (φ h) (φ k) := by
   simp [characterCarry]
 
+/-- **The carry is an integer `2`-cocycle**: `c(gh, j) + c(g, h) = c(h, j) + c(g, hj)` for the
+carry `c` of a character. In `ℚ` both sides telescope to `χ'(g) + χ'(h) + χ'(j) - χ'(ghj)`. -/
+theorem characterCarry_mul_add (χ : Additive G →+ AddCircle (1 : ℚ)) (g h j : G) :
+    characterCarry χ (g * h) j + characterCarry χ g h =
+      characterCarry χ h j + characterCarry χ g (h * j) := by
+  have h₁ := intCast_characterCarry χ (g * h) j
+  have h₂ := intCast_characterCarry χ g h
+  have h₃ := intCast_characterCarry χ h j
+  have h₄ := intCast_characterCarry χ g (h * j)
+  rw [mul_assoc] at h₁
+  exact_mod_cast (by linarith : (characterCarry χ (g * h) j + characterCarry χ g h : ℚ) =
+    characterCarry χ h j + characterCarry χ g (h * j))
+
 end Carry
 
 variable {G : Type u} [Group G] [TopologicalSpace G]
@@ -156,17 +170,7 @@ private theorem characterCarry_smul_mem_Z2 {χ : Additive G →+ AddCircle (1 : 
     ⟨((isLocallyConstant_characterCarry hχ).comp fun k : ℤ ↦ k • (a : M)).continuous,
       fun g h j ↦ ?_⟩
   have hfix : g • (a : M) = a := (FixedPoints.mem_addSubgroup G M a).1 a.2 g
-  -- The integer identity behind the cocycle condition, checked in `ℚ` by telescoping.
-  have hcarry : characterCarry χ (g * h) j + characterCarry χ g h =
-      characterCarry χ h j + characterCarry χ g (h * j) := by
-    have h₁ := intCast_characterCarry χ (g * h) j
-    have h₂ := intCast_characterCarry χ g h
-    have h₃ := intCast_characterCarry χ h j
-    have h₄ := intCast_characterCarry χ g (h * j)
-    rw [mul_assoc] at h₁
-    exact_mod_cast (by linarith : (characterCarry χ (g * h) j + characterCarry χ g h : ℚ) =
-      characterCarry χ h j + characterCarry χ g (h * j))
-  simp only [smul_comm g _ (a : M), hfix, ← add_smul, hcarry]
+  simp only [smul_comm g _ (a : M), hfix, ← add_smul, characterCarry_mul_add]
 
 /-- **The carry cocycle of a character** `χ : G → ℚ/ℤ` with open kernel and an invariant
 `a ∈ M^G`: the continuous `2`-cocycle `(g, h) ↦ ⌊χ'(g) + χ'(h)⌋ • a`, where `χ'(x) ∈ [0, 1)`

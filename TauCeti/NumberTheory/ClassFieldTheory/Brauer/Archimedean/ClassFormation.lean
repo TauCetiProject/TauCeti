@@ -40,6 +40,8 @@ invariants, rather than merely providing abstract class formations on the same c
   archimedean Brauer invariant after inflation.
 * `TauCeti.ClassFieldTheory.infiniteClassFormationOfIsComplex_artinMap`: every finite-layer Artin
   map at a complex place is zero.
+* `TauCeti.ClassFieldTheory.finite_absoluteGaloisGroup`: the absolute Galois group of every
+  infinite completion is finite.
 * `TauCeti.ClassFieldTheory.subsingleton_fieldAbsoluteGaloisGroup_of_isComplex`,
   `TauCeti.ClassFieldTheory.natCard_fieldAbsoluteGaloisGroup_of_isReal`: Mathlib's absolute Galois
   group `Gal(AlgebraicClosure K_w/K_w)` is trivial at a complex place and of order two at a real
@@ -348,6 +350,15 @@ theorem subsingleton_absoluteGaloisGroup_of_isComplex (w : InfinitePlace K) (hw 
     IsAlgClosed.of_ringEquiv ℂ w.Completion
       (Completion.ringEquivComplexOfIsComplex hw).symm
   infer_instance
+
+/-- The absolute Galois group of an infinite completion is finite: it has order two at a real
+place and is trivial at a complex place. -/
+instance finite_absoluteGaloisGroup (w : InfinitePlace K) :
+    Finite (AbsoluteGaloisGroup w.Completion) := by
+  rcases w.isReal_or_isComplex with hw | hw
+  · exact Nat.finite_of_card_ne_zero (by rw [natCard_absoluteGaloisGroup_of_isReal w hw]; decide)
+  · let _ := subsingleton_absoluteGaloisGroup_of_isComplex w hw
+    infer_instance
 
 /-- **The class formation at a complex place.** The absolute Galois group of the completion is
 trivial, so the units formation carries the canonical class formation with zero invariant maps. -/

@@ -9,7 +9,7 @@ public import TauCeti.FieldTheory.FunctionField.Consequences.Nonspecial
 public import TauCeti.FieldTheory.FunctionField.Consequences.RiemannInequality
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.IntegralBasis.AlmostEverywhere
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Kummer
-public import TauCeti.FieldTheory.FunctionField.Place.Extension.Splitting
+public import TauCeti.FieldTheory.FunctionField.Place.Extension.Splitting.Basic
 public import TauCeti.FieldTheory.IntermediateField.Adjoin.PrimitiveElement
 
 /-!

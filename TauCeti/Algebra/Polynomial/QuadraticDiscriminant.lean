@@ -35,6 +35,8 @@ Over a field, with `a ≠ 0`:
   `discrim a b c` is a square;
 * `Polynomial.splits_quadratic_of_discrim_eq_zero`: over a perfect field, splits as soon as
   `discrim a b c = 0`;
+* `Polynomial.exists_quadratic_eq_zero_and_two_mul_add_eq_zero_of_discrim_eq_zero`: over a perfect
+  field, if `discrim a b c = 0` then some `x` is a root of the quadratic and of its derivative;
 * `Polynomial.card_rootSet_quadratic_of_discrim_eq_zero`: if it splits and `discrim a b c = 0`, it
   has exactly one root;
 * `Polynomial.splits_quadratic_iff_exists_artinSchreier_of_two_eq_zero`: in characteristic two,
@@ -202,6 +204,19 @@ theorem splits_quadratic_of_discrim_eq_zero {k : Type*} [Field k] [PerfectField 
     ((irreducible_iff_roots_eq_zero_of_degree_le_three (by omega) (by omega)).2 h0))
   obtain ⟨x, hx⟩ := Multiset.exists_mem_of_ne_zero hroots
   exact Splits.of_natDegree_eq_two hdeg (mem_roots'.1 hx).2
+
+/-- Over a perfect field, a quadratic `a X² + b X + c` (with `a ≠ 0`) whose discriminant vanishes
+has a double root: some `x` is a root of the quadratic and of its derivative `2 a X + b`. Away from
+characteristic two this is `x = -b / (2 a)`; in characteristic two `b = 0` and `x` is the square
+root of `c / a`, which is where perfectness is needed. -/
+theorem exists_quadratic_eq_zero_and_two_mul_add_eq_zero_of_discrim_eq_zero {k : Type*} [Field k]
+    [PerfectField k] {a b c : k} (ha : a ≠ 0) (hd : discrim a b c = 0) :
+    ∃ x, a * x ^ 2 + b * x + c = 0 ∧ 2 * a * x + b = 0 := by
+  obtain ⟨x, hx⟩ := (splits_quadratic_iff_exists_root ha).1
+    (splits_quadratic_of_discrim_eq_zero ha hd)
+  refine ⟨x, hx, pow_eq_zero_iff two_ne_zero |>.1 ?_⟩
+  rw [← discrim_eq_sq_of_quadratic_eq_zero (a := a) (b := b) (c := c) (by linear_combination hx),
+    hd]
 
 /-- A split quadratic `a X² + b X + c` (with `a ≠ 0`) whose discriminant vanishes has exactly one
 root. -/
