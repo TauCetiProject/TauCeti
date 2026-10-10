@@ -5,12 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.Padics.LocalField
 public import TauCeti.Algebra.QuadraticAlgebra.NormTrace
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.CupPadicTwo
 public import TauCeti.FieldTheory.GaloisCohomology.MuTwo.Transfer
 public import TauCeti.FieldTheory.QuadraticForm.StiefelWhitney.Evens.Kummer.Value
-public import TauCeti.NumberTheory.Padics.Basic
 
 /-!
 # A nonzero Evens norm over `ℚ_2(i)`
