@@ -249,7 +249,7 @@ theorem degree_le_two_of_reachable_of_apply_mul_apply_eq_two (h : IsFiniteType A
   rcases h.isAcyclic_diagramGraph.dist_eq_dist_add_one_of_adj_of_reachable
       c huvAdj hreach with hdist | hdist
   · rcases eq_neg_one_and_eq_neg_two_or_of_mul_eq_two (h.apply_le_zero_of_ne huvNe) huv with
-      ⟨huvEntry, hvuEntry⟩ | ⟨huvEntry, hvuEntry⟩
+      ⟨_, hvuEntry⟩ | ⟨huvEntry, _⟩
     · exact false_of_degree_eq_three_of_dist_eq_add_one_of_apply_eq_neg_two
         (c := c) (near := v) (far := u) h hreachV hc huvAdj.symm hdist hvuEntry
     · exact false_of_degree_eq_three_of_dist_eq_add_one_of_apply_eq_neg_two
@@ -258,7 +258,7 @@ theorem degree_le_two_of_reachable_of_apply_mul_apply_eq_two (h : IsFiniteType A
         (by rw [hgraph]; exact huvAdj.symm) (by rw [hgraph]; exact hdist)
         (by simpa using huvEntry)
   · rcases eq_neg_one_and_eq_neg_two_or_of_mul_eq_two (h.apply_le_zero_of_ne huvNe) huv with
-      ⟨huvEntry, hvuEntry⟩ | ⟨huvEntry, hvuEntry⟩
+      ⟨_, hvuEntry⟩ | ⟨huvEntry, _⟩
     · exact false_of_degree_eq_three_of_dist_eq_add_one_of_apply_eq_neg_two h.transpose
         (c := c) (near := u) (far := v)
         (by rw [hgraph]; exact hreach) (by rw [hdegree]; exact hc)

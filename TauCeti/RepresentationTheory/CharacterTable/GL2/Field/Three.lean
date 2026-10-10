@@ -175,8 +175,6 @@ theorem bijective_gl2FieldThreeClassIndex (hF : Fintype.card F = 3) :
     Function.Bijective (gl2FieldThreeClassIndex F) := by
   obtain ⟨h3, h1, -, -⟩ := fieldThree_facts hF
   have h2 : (2 : F) = -1 := by linear_combination h3
-  have hm2 : (-2 : F) = 1 := by linear_combination -h3
-  have h0 : (0 : F) ≠ -1 := (neg_ne_zero.mpr one_ne_zero).symm
   refine Function.Injective.bijective_of_nat_card_le (fun i j h => ?_) ?_
   · fin_cases i <;> fin_cases j <;> simp_all [Units.ext_iff]
   · simp [Nat.card_units, hF]

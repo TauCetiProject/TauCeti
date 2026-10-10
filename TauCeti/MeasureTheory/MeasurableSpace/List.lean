@@ -84,11 +84,11 @@ theorem measurable_list_ofFn {n : ℕ} :
 /-- List length is measurable for the length-indexed measurable structure. -/
 theorem measurable_list_length : Measurable (List.length : List α → ℕ) := by
   have h : Measurable (fun v : Σ n, Fin n → α => v.1) := by
-    intro s hs
+    intro s _
     apply MeasurableSpace.measurableSet_iInf.2
     intro n
     -- The sigma measurable space tests the preimage separately on each fixed-length stratum.
-    change MeasurableSet {f : Fin n → α | n ∈ s}
+    change MeasurableSet {_f : Fin n → α | n ∈ s}
     by_cases hn : n ∈ s <;> simp [hn]
   exact h.comp (comap_measurable List.equivSigmaTuple)
 

@@ -104,7 +104,7 @@ theorem MemLp.eLpNorm_le_of_forall_enorm_integral_mul_le_of_ne_top {q q' : ℝ�
     eLpNorm h q μ ≤ C := by
   have hq1 : 1 ≤ q := hqq.one_le
   have hq0 : q ≠ 0 := hqq.ne_zero
-  set r := q.toReal with hr_def
+  set r := q.toReal
   have hr1 : 1 ≤ r := by simpa using ENNReal.toReal_mono hq hq1
   refine ENNReal.le_of_forall_pos_le_add fun ε hε _ => ?_
   have hε2 : (ε : ℝ≥0∞) / 2 ≠ 0 := by simp [hε.ne']

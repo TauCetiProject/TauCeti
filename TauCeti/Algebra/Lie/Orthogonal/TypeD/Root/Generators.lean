@@ -471,7 +471,7 @@ private theorem lie_typeDDiagonalMatrix_raisingMatrix_of_fork {K : Type*} [CommR
   · simp [typeDDiagonalMatrix_lie_apply, Matrix.fromBlocks]
   · by_cases h₁ : forkLeft n hn = a ∧ forkRight n hn = b
     · have h₂ : ¬(forkRight n hn = a ∧ forkLeft n hn = b) := by
-        rintro ⟨hra, hlb⟩
+        rintro ⟨hra, _⟩
         exact forkLeft_ne_forkRight n hn (h₁.1.trans hra.symm)
       rcases h₁ with ⟨rfl, rfl⟩
       simpa [typeDDiagonalMatrix_lie_apply, Matrix.fromBlocks, Matrix.single_apply, hne]
@@ -644,16 +644,16 @@ private theorem lie_raisingMatrix_loweringMatrix_of_ne {K : Type*} [CommRing K]
     · exfalso
       apply hij
       apply Fin.ext
-      have hi' := i.isLt
-      have hj' := j.isLt
+      have := i.isLt
+      have := j.isLt
       omega
 
 private theorem lie_raisingMatrix_raisingMatrix_chain_chain_of_cartan_eq_zero
     {K : Type*} [CommRing K] (i j : Fin n) (hi : (i : ℕ) + 1 < n)
     (hj : (j : ℕ) + 1 < n) (hij : CartanMatrix.D n i j = 0) :
     ⁅raisingMatrix (K := K) n hn i, raisingMatrix (K := K) n hn j⁆ = 0 := by
-  have hi' := i.isLt
-  have hj' := j.isLt
+  have := i.isLt
+  have := j.isLt
   have hforward : chainNext n i hi ≠ j := by
     intro h
     have hval := congrArg Fin.val h
@@ -676,8 +676,8 @@ private theorem lie_raisingMatrix_raisingMatrix_chain_fork_of_cartan_eq_zero
     {K : Type*} [CommRing K] (i j : Fin n) (hi : (i : ℕ) + 1 < n)
     (hj : ¬(j : ℕ) + 1 < n) (hij : CartanMatrix.D n i j = 0) :
     ⁅raisingMatrix (K := K) n hn i, raisingMatrix (K := K) n hn j⁆ = 0 := by
-  have hi' := i.isLt
-  have hj' := j.isLt
+  have := i.isLt
+  have := j.isLt
   have hne := forkLeft_ne_forkRight n hn
   have hjfork : j = forkRight n hn := by
     apply Fin.ext
@@ -729,8 +729,8 @@ private theorem lie_raisingMatrix_raisingMatrix_of_cartan_eq_zero
         neg_zero]
     · have heq : i = j := by
         apply Fin.ext
-        have hi' := i.isLt
-        have hj' := j.isLt
+        have := i.isLt
+        have := j.isLt
         omega
       subst j
       simp [CartanMatrix.D] at hij

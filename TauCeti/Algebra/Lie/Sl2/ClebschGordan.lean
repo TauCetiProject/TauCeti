@@ -315,7 +315,7 @@ theorem isInternal_cgSummand :
         (M := fun k : Fin (min m n + 1) ↦ ↥((cgSummand K m n k).toSubmodule))).symm
   -- The same instance again for `Π₀`, the form the injectivity statement below is phrased in;
   -- instance search does not unfold `DirectSum` to `DFinsupp` on its own.
-  have hfin' : FiniteDimensional K
+  have _ : FiniteDimensional K
       (Π₀ k : Fin (min m n + 1), ↥((cgSummand K m n k).toSubmodule)) := hfin
   have hrank : finrank K (⨁ k : Fin (min m n + 1), ↥((cgSummand K m n k).toSubmodule))
       = finrank K (Sl2Std K m ⊗[K] Sl2Std K n) := by

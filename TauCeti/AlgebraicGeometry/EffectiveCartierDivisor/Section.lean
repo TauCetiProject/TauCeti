@@ -88,7 +88,6 @@ private lemma exists_ker_ideal_eq_span_singleton (hs : s ≫ f = 𝟙 S) [QuasiC
     (by simpa [hsf] using e₂ hxV₂)
   set W := S.basicOpen c
   set V := X.basicOpen (f.appLE W₂ V₂ e₂ c)
-  have hWa : IsAffineOpen W := W₂.2.basicOpen c
   have hVa : IsAffineOpen V := V₂.2.basicOpen _
   have hV : V = V₂.1 ⊓ f ⁻¹ᵁ W := Scheme.basicOpen_appLE f V₂ W₂ e₂ c
   have e : V ≤ f ⁻¹ᵁ W := hV ▸ inf_le_right

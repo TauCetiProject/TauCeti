@@ -107,8 +107,8 @@ private theorem exists_abs_two_mul_add_le {a m x₀ z : ℤ} (ha : 0 < a) (hm : 
   -- take the member nearest the value that would make `2 a x + z` vanish: the rounding error is
   -- at most a half, and the progression's gap scales it by `2 a m`
   have ham : (0 : ℚ) < 2 * (a : ℚ) * (m : ℚ) := by
-    have h1 : (0 : ℚ) < (a : ℚ) := by exact_mod_cast ha
-    have h2 : (0 : ℚ) < (m : ℚ) := by exact_mod_cast hm
+    have _ : (0 : ℚ) < (a : ℚ) := by exact_mod_cast ha
+    have _ : (0 : ℚ) < (m : ℚ) := by exact_mod_cast hm
     positivity
   set t : ℚ := (-(z : ℚ) - 2 * (a : ℚ) * (x₀ : ℚ)) / (2 * (a : ℚ) * (m : ℚ)) with htdef
   refine ⟨round t, ?_⟩
@@ -138,7 +138,7 @@ private theorem discrim_le_zero_of_pos_of_nonneg_on_progression {a b c m x₀ y 
   by_contra! hcon
   rw [discrim] at hcon
   obtain ⟨k, hxa⟩ := exists_abs_two_mul_add_le (x₀ := x₀) (z := b * y) ha hm
-  set x : ℤ := x₀ + m * k with hxdef
+  set x : ℤ := x₀ + m * k
   have hsq : (2 * a * x + b * y) ^ 2 ≤ (a * m) ^ 2 := by
     have habs := abs_le.mp hxa
     nlinarith [habs.1, habs.2]
@@ -156,7 +156,7 @@ private theorem not_forall_nonneg_on_progression_of_neg {a b c m x₀ y : ℤ} (
     ¬ ∀ k : ℤ, 0 ≤ a * (x₀ + m * k) ^ 2 + b * (x₀ + m * k) * y + c * y ^ 2 := fun h => by
   have hA0 : 0 ≤ |b * y| := abs_nonneg _
   have hB0 : 0 ≤ |c * y ^ 2| := abs_nonneg _
-  set M : ℤ := |b * y| + |c * y ^ 2| + 1 with hM
+  set M : ℤ := |b * y| + |c * y ^ 2| + 1
   have hM1 : 1 ≤ M := by omega
   -- The progression reaches past `M`, and there the square already dominates the rest.
   set k : ℤ := M + |x₀| with hk
@@ -186,7 +186,7 @@ private theorem eq_zero_of_forall_nonneg_on_progression_of_ne {b c m x₀ y : �
   have hC0 : 0 ≤ |C| := abs_nonneg _
   have hCle : C ≤ |C| := le_abs_self _
   have hpos : 0 < (b * y * m) ^ 2 := by positivity
-  have hs1 : 1 ≤ (b * y * m) ^ 2 := by omega
+  have _ : 1 ≤ (b * y * m) ^ 2 := by omega
   -- At this `k` the linear term is `-(|C| + 1) * (b y m)²`, which the constant cannot offset.
   have hx := h (-((|C| + 1) * (b * y * m)))
   rw [hid] at hx

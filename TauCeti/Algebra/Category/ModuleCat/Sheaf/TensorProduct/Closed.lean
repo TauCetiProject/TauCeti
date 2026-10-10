@@ -128,7 +128,7 @@ theorem _root_.SheafOfModules.dualIso_inv
     {M N : _root_.SheafOfModules.{u} (ringCatSheaf R)} (e : M ≅ N) :
     (_root_.SheafOfModules.dualIso e).inv =
       (pre e.hom).app (_root_.SheafOfModules.unit (ringCatSheaf R)) := by
-  have hpre : IsIso (pre e.inv) := by
+  have _ : IsIso (pre e.inv) := by
     unfold pre
     infer_instance
   rw [_root_.SheafOfModules.dualIso, asIso_inv]

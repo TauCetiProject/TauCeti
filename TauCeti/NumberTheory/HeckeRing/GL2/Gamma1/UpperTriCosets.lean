@@ -272,8 +272,8 @@ theorem op_upperTriRep_smul_injective {G : Subgroup SL(2, ℤ)} :
     exact_mod_cast hQ
   have hdvd : (p : ℤ) ∣ (j₂ : ℤ) - (j₁ : ℤ) := ⟨σ 0 1, by rw [key]; ring⟩
   have habs : |(j₂ : ℤ) - (j₁ : ℤ)| < (p : ℤ) := by
-    have h1 := j₁.isLt
-    have h2 := j₂.isLt
+    have _ := j₁.isLt
+    have _ := j₂.isLt
     rw [abs_lt]
     omega
   have := Int.eq_zero_of_abs_lt_dvd hdvd habs

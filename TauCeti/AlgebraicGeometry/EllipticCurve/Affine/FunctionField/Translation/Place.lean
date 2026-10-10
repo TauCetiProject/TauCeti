@@ -58,7 +58,7 @@ theorem translation_smul_pointEquivDegreeOnePlace (P Q : W.Point) :
     rw [map_translation_translatedGenericPoint, neg_add_cancel,
       translatedGenericPoint_zero]
   -- the reduction depends on the place only, not on the proof that it has degree one
-  have hred : ∀ {w₁ w₂ : Place F W.FunctionField} (h : w₁ = w₂) (h₁ : w₁.degree = 1)
+  have hred : ∀ {w₁ w₂ : Place F W.FunctionField} (_ : w₁ = w₂) (h₁ : w₁.degree = 1)
       (h₂ : w₂.degree = 1), reductionOfDegreeEqOne W h₁ = reductionOfDegreeEqOne W h₂ := by
     rintro _ _ rfl _ _
     rfl

@@ -70,7 +70,7 @@ lemma exists_integrable_tendsto_ae_condExp_of_antitone
   have hL1_bdd : ∀ n, eLpNorm (μ[f | 𝔽 n]) 1 μ ≤ eLpNorm f 1 μ :=
     fun n => eLpNorm_condExp_le_eLpNorm _ le_rfl
   have hf_Lp_ne_top : eLpNorm f 1 μ ≠ ⊤ := (memLp_one_iff_integrable.2 hf).eLpNorm_ne_top
-  set R := (eLpNorm f 1 μ).toNNReal with hR_def
+  set R := (eLpNorm f 1 μ).toNNReal with _
   have hR : eLpNorm f 1 μ = ↑R := (ENNReal.coe_toNNReal hf_Lp_ne_top).symm
   -- Step 1: the liminf of the norms is a.e. finite.
   have hbdd_liminf : ∀ᵐ ω ∂μ, (liminf (fun n => ENorm.enorm (μ[f | 𝔽 n] ω)) atTop) < ⊤ := by

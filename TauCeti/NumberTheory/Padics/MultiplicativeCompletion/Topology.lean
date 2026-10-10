@@ -79,7 +79,7 @@ private theorem padicCompletionUnits_apply_eq_mk_of_le
     (hu : x.1 m = QuotientGroup.mk' _ u) : x.1 n = QuotientGroup.mk' _ u := by
   induction m, hnm using Nat.le_induction with
   | base => exact hu
-  | succ m hnm ih =>
+  | succ m _ ih =>
       apply ih
       rw [← (mem_padicCompletionUnits_iff p L x.1).mp x.2 m, hu]
       exact padicCompletionTransition_mk p L m u

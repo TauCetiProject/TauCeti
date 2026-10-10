@@ -250,7 +250,7 @@ private theorem infinitePi_uniformMeasure_setOf_restrictFin_eq (W : Graphon Ω �
     (Measure.infinitePi fun _ : Sym2 ℕ => Probability.uniformMeasure 0 1)
         {u : Sym2 ℕ → ℝ | SimpleGraph.restrictFin (infiniteSampleGraph W x u) n = H} =
       ENNReal.ofReal (sampleIntegrand W H fun i : Fin n => x (i : ℕ)) := by
-  set y : Fin n → Ω := fun i : Fin n => x (i : ℕ) with hy
+  let y : Fin n → Ω := fun i : Fin n => x (i : ℕ)
   have hnonneg : ∀ e ∈ (⊤ : SimpleGraph (Fin n)).edgeFinset,
       0 ≤ (if e ∈ H.edgeFinset then edgeFactor W y e else 1 - edgeFactor W y e) := by
     intro e _

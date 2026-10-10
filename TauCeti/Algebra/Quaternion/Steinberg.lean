@@ -114,7 +114,7 @@ private theorem steinbergPreimage_toMatrix (q : ℍ[K,a,0,1 - a]) :
     steinbergPreimage a (steinbergToMatrix a q) = q := by
   rw [steinbergToMatrix_apply]
   have h2 := invOf_mul_self (2 : K)
-  have ha := invOf_mul_self a
+  have _ := invOf_mul_self a
   have hb := invOf_mul_self (1 - a)
   ext <;> simp [steinbergPreimage] <;> grind
 

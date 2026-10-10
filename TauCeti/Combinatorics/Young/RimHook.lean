@@ -351,7 +351,6 @@ theorem IsRimHook.exists_isCorner_of_card_succ (h : IsRimHook μ ν) (hcard : ν
   have hanti := μ.rowLen_anti a b hle
   have hba : a = b := by omega
   subst hba
-  have hstep : μ.rowLen a = ν.rowLen a + 1 := by omega
   have hnext : ν.rowLen (a + 1) = μ.rowLen (a + 1) :=
     rowLen_eq_of_notMem_rimHookRows h.le (by
       rw [hab]; simp only [Finset.mem_Icc, not_and, not_le]; omega)
@@ -551,10 +550,10 @@ theorem exists_isRimHook_rimHookRows_eq_Icc {s : ℕ} (hν : ν.colLen 0 ≤ r) 
   classical
   have hs : 0 < s :=
     Nat.pos_of_ne_zero fun hs => hfree j hjr (by rw [hs, Nat.add_zero])
-  set v := ν.betaNumber r j + s with hv
+  set v := ν.betaNumber r j + s
   have hex : ∃ i, ν.betaNumber r i < v := ⟨j, by omega⟩
   -- The moved bead lands at the first row `a` whose beta-number is smaller than `v`.
-  set a := Nat.find hex with ha
+  set a := Nat.find hex
   have hav : ν.betaNumber r a < v := Nat.find_spec hex
   have haj : a ≤ j := Nat.find_min' hex (by omega)
   have hbefore : ∀ i < a, v < ν.betaNumber r i := fun i hi =>

@@ -54,7 +54,7 @@ theorem sum_range_mul_le_sum_range_mul {f g w : ℕ → R} {N : ℕ}
   simp only [smul_eq_mul] at hparts
   rw [hparts, sub_nonneg]
   calc ∑ i ∈ range (N - 1), (w (i + 1) - w i) * ∑ j ∈ range (i + 1), d j
-      ≤ ∑ i ∈ range (N - 1), (0 : R) := by
+      ≤ ∑ _ ∈ range (N - 1), (0 : R) := by
         refine sum_le_sum fun i hi ↦ ?_
         rw [mem_range] at hi
         rw [← neg_sub (w i) (w (i + 1)), neg_mul]
