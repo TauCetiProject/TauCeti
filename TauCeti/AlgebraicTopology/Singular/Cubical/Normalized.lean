@@ -32,6 +32,8 @@ to the quotient and the normalized chains are functorial.
 
 ## Main results
 
+* `TauCeti.CubicalChain.degenerate_def`, `TauCeti.CubicalChain.degenerate_induction`: the
+  degenerate chains as a span, and induction on them.
 * `TauCeti.CubicalChain.boundary_mem_degenerate`: the boundary of a degenerate chain is degenerate.
 * `TauCeti.CubicalChain.degenerate_zero`: there are no degenerate `0`-chains.
 * `TauCeti.NormalizedCubicalChain.boundary_boundary`: `∂ ∘ ∂ = 0` on normalized chains.
@@ -62,8 +64,30 @@ variable (R : Type*) [Semiring R]
 
 variable (X) in
 /-- The **degenerate `n`-chains**: the span of the degenerate singular `n`-cubes. -/
-@[expose] def degenerate (n : ℕ) : Submodule R (CubicalChain X R n) :=
+def degenerate (n : ℕ) : Submodule R (CubicalChain X R n) :=
   Submodule.span R {f | ∃ c : SingularCube X n, IsDegenerate c ∧ f = single c 1}
+
+variable (X) in
+/-- The degenerate `n`-chains are the span of the chains of the degenerate `n`-cubes. -/
+theorem degenerate_def (n : ℕ) : degenerate X R n =
+    Submodule.span R {f | ∃ c : SingularCube X n, IsDegenerate c ∧ f = single c 1} :=
+  (rfl)
+
+/-- **Induction on degenerate chains**: a property of chains which holds for `0` and for the chain
+of each degenerate cube, and is stable under sums and scalar multiples, holds for every degenerate
+chain. -/
+theorem degenerate_induction {n : ℕ} {P : CubicalChain X R n → Prop} (zero : P 0)
+    (hsingle : ∀ c : SingularCube X n, IsDegenerate c → P (single c 1))
+    (hadd : ∀ f g, P f → P g → P (f + g)) (hsmul : ∀ (r : R) f, P f → P (r • f))
+    {g : CubicalChain X R n} (hg : g ∈ degenerate X R n) : P g := by
+  rw [degenerate_def] at hg
+  induction hg using Submodule.span_induction with
+  | mem f hf =>
+    obtain ⟨c, hc, rfl⟩ := hf
+    exact hsingle c hc
+  | zero => exact zero
+  | add f g _ _ hf hg => exact hadd f g hf hg
+  | smul r f _ hf => exact hsmul r f hf
 
 theorem single_mem_degenerate {n : ℕ} {c : SingularCube X n} (hc : IsDegenerate c) (a : R) :
     single c a ∈ degenerate X R n := by
