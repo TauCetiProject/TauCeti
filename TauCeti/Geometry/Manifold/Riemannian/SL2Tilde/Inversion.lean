@@ -164,9 +164,11 @@ private theorem inner_mfderiv_inversionFun (p : SL2Tilde)
       using congrArg Inv.inv h
   have h2 : exp (-2 * (inversionFun p).y) =
       (denominator (toProd p) / exp p.y) ^ 2 := by
+    -- Expose the exponent as two equal summands so `exp_add` can use `h1`.
     rw [show -2 * (inversionFun p).y = -(inversionFun p).y + -(inversionFun p).y by ring,
       exp_add, h1, pow_two]
   have h0 : exp (-2 * p.y) = (exp p.y)⁻¹ ^ 2 := by
+    -- Again expose two equal summands for `exp_add`, then apply `exp_neg`.
     rw [show -2 * p.y = -p.y + -p.y by ring, exp_add, exp_neg, pow_two]
   rw [inner_def, inner_def, tangentSpaceCastModel_mfderiv_inversionFun,
     tangentSpaceCastModel_mfderiv_inversionFun, h1, h2, h0, exp_neg]
@@ -242,7 +244,7 @@ theorem tangentSpaceCastModel_mfderiv_inversion (p : SL2Tilde)
     inversion_inversion p
 
 /-- The lifted inversion commutes with translations along the fibres. -/
-theorem inversion_mul_translate_fibre (c : ℝ) :
+@[simp] theorem inversion_mul_translate_fibre (c : ℝ) :
     inversion * translate 0 0 c = translate 0 0 c * inversion := by
   apply RiemannianIsometry.ext
   intro p
