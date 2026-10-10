@@ -56,7 +56,7 @@ lemma weightedAbelJacobiDivisorClass_ofFinsupp (w : X → ℤ) (h : S.IsWeighted
     S.weightedAbelJacobiDivisorClass w h hx₀ (ofFinsupp m) =
       ∑ x ∈ m.support, (m x : ℤ) • S.weightedAbelJacobiClass w h hx₀ x := by
   rw [ofFinsupp_eq_sum, map_sum]
-  refine Finset.sum_congr rfl fun x hx => ?_
+  refine Finset.sum_congr rfl fun x _ => ?_
   rw [map_zsmul, S.weightedAbelJacobiDivisorClass_ofPoint w h hx₀ x]
 
 /-- The weighted Abel-Jacobi sum of a finite-set divisor with multiplicities is the finite sum
@@ -67,7 +67,7 @@ lemma weightedAbelJacobiDivisorClass_ofFinsetWithMultiplicity (w : X → ℤ)
     S.weightedAbelJacobiDivisorClass w h hx₀ (ofFinsetWithMultiplicity s m) =
       ∑ x ∈ s, (m x : ℤ) • S.weightedAbelJacobiClass w h hx₀ x := by
   rw [ofFinsetWithMultiplicity_eq_sum, map_sum]
-  refine Finset.sum_congr rfl fun x hx => ?_
+  refine Finset.sum_congr rfl fun x _ => ?_
   rw [map_zsmul, S.weightedAbelJacobiDivisorClass_ofPoint w h hx₀ x]
 
 /-- The weighted Abel-Jacobi sum of a coefficient-one finite-set divisor is the sum of the
@@ -78,7 +78,7 @@ lemma weightedAbelJacobiDivisorClass_ofFinset (w : X → ℤ) (h : S.IsWeightedD
     S.weightedAbelJacobiDivisorClass w h hx₀ (ofFinset s) =
       ∑ x ∈ s, S.weightedAbelJacobiClass w h hx₀ x := by
   rw [ofFinset_eq_sum, map_sum]
-  refine Finset.sum_congr rfl fun x hx => ?_
+  refine Finset.sum_congr rfl fun x _ => ?_
   rw [S.weightedAbelJacobiDivisorClass_ofPoint w h hx₀ x]
 
 end OrderSystem

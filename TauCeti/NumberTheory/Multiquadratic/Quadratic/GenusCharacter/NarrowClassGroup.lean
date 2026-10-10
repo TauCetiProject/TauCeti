@@ -107,10 +107,10 @@ theorem genusCharFunCoprimeIdealHom_eq_of_mk0_eq
     change NumberField.NarrowClassGroup.mk0 (J.1 * A'.1) = 1
     rw [map_mul, ← hIJ, hAC']
     simp
-  obtain ⟨a, ha, hapos, hIAspan⟩ :=
-    (NumberField.NarrowClassGroup.mk0_eq_one_iff.mp hIA)
-  obtain ⟨b, hb, hbpos, hJAspan⟩ :=
-    (NumberField.NarrowClassGroup.mk0_eq_one_iff.mp hJA)
+  obtain ⟨a, _, hapos, hIAspan⟩ :=
+    NumberField.NarrowClassGroup.mk0_eq_one_iff.mp hIA
+  obtain ⟨b, _, hbpos, hJAspan⟩ :=
+    NumberField.NarrowClassGroup.mk0_eq_one_iff.mp hJA
   have hcharIA := genusCharFunCoprimeIdealHom_eq_one_of_eq_span_singleton
     hs heven hprod hmin hgen hsf hts (I := IA) hapos hIAspan
   have hcharJA := genusCharFunCoprimeIdealHom_eq_one_of_eq_span_singleton

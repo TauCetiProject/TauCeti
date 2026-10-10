@@ -320,7 +320,6 @@ theorem tendsto_schwarzChristoffelPrimitive_div_cpow_atInfinity_of_neg_one_lt_su
       (fun z => schwarzChristoffelPrimitive a e z₀ z / z ^ (α : ℂ)) := by
     filter_upwards [mem_inf_of_right (mem_principal_self upperHalfPlaneSet)] with z hz
     have hz0 : z ≠ 0 := fun h ↦ by simp [h] at hz
-    have hp0 : z ^ (α : ℂ) ≠ 0 := Complex.cpow_ne_zero_iff.mpr (Or.inl hz0)
     dsimp [Q, schwarzChristoffelPowerRemainder]
     have hcast : (α : ℂ) = (((∑ i, e i) + 1 : ℝ) : ℂ) := by simp [α, S]
     rw [hcast]

@@ -414,7 +414,7 @@ theorem natCard_tateCohomology_negOne_dvd_of_shortExact {S : ShortComplex (Rep R
     (hS : S.ShortExact) :
     Nat.card (tateCohomology S.X₂ (-1)) ∣
       Nat.card (tateCohomology S.X₁ (-1)) * Nat.card (tateCohomology S.X₃ (-1)) := by
-  obtain ⟨r₁, r₂, s₁, s₂, t₁, t₂, h₁, h₂, h₃, h₄, h₅, h₆⟩ := exists_hexagon_natCard_of_isCyclic hS
+  obtain ⟨r₁, r₂, s₁, s₂, t₁, t₂, _, h₂, _, h₄, _, h₆⟩ := exists_hexagon_natCard_of_isCyclic hS
   exact ⟨t₂ * t₁, by rw [h₂, h₄, h₆]; ring⟩
 
 /-- **The Herbrand quotient is multiplicative in a short exact sequence.** For a short exact

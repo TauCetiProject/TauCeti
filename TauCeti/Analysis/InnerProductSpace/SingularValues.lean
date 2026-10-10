@@ -51,6 +51,8 @@ of `A` run over the whole basis without splitting off the kernel.
 * `LinearMap.adjoint_leftSingularVector`: `A† uᵢ = σᵢ vᵢ`.
 * `LinearMap.self_comp_adjoint_leftSingularVector`: `A A† uᵢ = σᵢ² uᵢ`.
 * `LinearMap.orthonormal_leftSingularVector`: the `uᵢ` with `σᵢ ≠ 0` are orthonormal.
+* `LinearMap.sum_norm_inner_leftSingularVector_sq_le`: Bessel's inequality for the whole family
+  `(uᵢ)`, zero vectors included.
 * `LinearMap.apply_eq_sum_singularValues_smul`: `A x = ∑ᵢ σᵢ ⟪vᵢ, x⟫ uᵢ`.
 * `LinearMap.eq_sum_singularValues_smul_rankOne`: `A = ∑ᵢ σᵢ uᵢ ⊗ vᵢ`, the singular value
   decomposition in rank-one form.
@@ -256,6 +258,27 @@ theorem leftSingularVector_eq_zero_iff {i : Fin (finrank 𝕜 E)} :
     A.leftSingularVector i = 0 ↔ A.singularValues i = 0 := by
   rw [← inner_self_eq_zero (𝕜 := 𝕜), inner_leftSingularVector]
   simp
+
+/-- A left singular vector has norm at most one: it is a unit vector when its singular value is
+nonzero and zero otherwise. -/
+theorem norm_leftSingularVector_le_one (i : Fin (finrank 𝕜 E)) : ‖A.leftSingularVector i‖ ≤ 1 := by
+  by_cases hσ : A.singularValues i = 0
+  · simp [(A.leftSingularVector_eq_zero_iff).mpr hσ]
+  · exact (A.orthonormal_leftSingularVector.1 ⟨i, hσ⟩).le
+
+/-- **Bessel's inequality** for the left singular vectors: `∑ᵢ ‖⟪uᵢ, x⟫‖² ≤ ‖x‖²`. The vectors at
+the vanishing singular values are zero, so the orthonormal subfamily carries the whole sum. -/
+theorem sum_norm_inner_leftSingularVector_sq_le (x : F) :
+    ∑ i, ‖⟪A.leftSingularVector i, x⟫‖ ^ 2 ≤ ‖x‖ ^ 2 := by
+  classical
+  calc ∑ i, ‖⟪A.leftSingularVector i, x⟫‖ ^ 2
+      = ∑ i : {i : Fin (finrank 𝕜 E) // A.singularValues i ≠ 0},
+          ‖⟪A.leftSingularVector i, x⟫‖ ^ 2 := by
+        rw [← Finset.sum_filter_of_ne (s := Finset.univ) (p := fun i ↦ A.singularValues i ≠ 0)
+          (f := fun i ↦ ‖⟪A.leftSingularVector i, x⟫‖ ^ 2) fun i _ h hσ ↦ h (by
+            simp [(A.leftSingularVector_eq_zero_iff).mpr hσ])]
+        exact Finset.sum_subtype _ (by simp) _
+    _ ≤ ‖x‖ ^ 2 := A.orthonormal_leftSingularVector.sum_inner_products_le x
 
 /-- The adjoint singular relation `A† uᵢ = σᵢ vᵢ`, valid at every index, including those with
 `σᵢ = 0`. -/

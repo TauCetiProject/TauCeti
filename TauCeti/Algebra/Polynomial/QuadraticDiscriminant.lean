@@ -105,7 +105,7 @@ identity `sq_derivative_quadratic_sub_mul_eq_C_discrim` writes `1` as an `R[X]`-
 polynomial and its derivative. -/
 theorem separable_quadratic_of_isUnit_discrim {R : Type*} [CommRing R] {a b c : R}
     (h : IsUnit (discrim a b c)) : (C a * X ^ 2 + C b * X + C c).Separable := by
-  set P := C a * X ^ 2 + C b * X + C c with hP
+  set P := C a * X ^ 2 + C b * X + C c
   have hid : derivative P ^ 2 - 4 * C a * P = C (discrim a b c) :=
     sq_derivative_quadratic_sub_mul_eq_C_discrim a b c
   have hinv : C ((h.unit⁻¹ : Rˣ) : R) * C (discrim a b c) = 1 := by
@@ -193,7 +193,7 @@ splits. Perfectness is needed in characteristic two, where `X² - c` can have va
 discriminant without a root. -/
 theorem splits_quadratic_of_discrim_eq_zero {k : Type*} [Field k] [PerfectField k] {a b c : k}
     (ha : a ≠ 0) (hd : discrim a b c = 0) : (C a * X ^ 2 + C b * X + C c).Splits := by
-  set p := C a * X ^ 2 + C b * X + C c with hp
+  set p := C a * X ^ 2 + C b * X + C c
   have hdeg : p.natDegree = 2 := natDegree_quadratic ha
   have hsep : ¬ p.Separable := by
     rw [separable_quadratic_iff_discrim_ne_zero ha, not_not]
@@ -208,7 +208,7 @@ root. -/
 theorem card_rootSet_quadratic_of_discrim_eq_zero {k : Type*} [Field k] {a b c : k} (ha : a ≠ 0)
     (hs : (C a * X ^ 2 + C b * X + C c).Splits) (hd : discrim a b c = 0) :
     Fintype.card ((C a * X ^ 2 + C b * X + C c).rootSet k) = 1 := by
-  set p := C a * X ^ 2 + C b * X + C c with hp
+  set p := C a * X ^ 2 + C b * X + C c
   have hdeg : p.natDegree = 2 := natDegree_quadratic ha
   have hp0 : p ≠ 0 := ne_zero_of_natDegree_gt (n := 0) (by omega)
   have hs' : (p.map (algebraMap k k)).Splits := by rwa [Algebra.algebraMap_self, map_id]

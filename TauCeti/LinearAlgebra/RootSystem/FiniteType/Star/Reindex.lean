@@ -58,9 +58,6 @@ private theorem exists_iso_pathGraph_apply_eq_zero {V : Type*} [Fintype V]
     ∃ e : G ≃g pathGraph (Nat.card V), (e u : ℕ) = 0 := by
   classical
   obtain ⟨e⟩ := hiso
-  have hcard : 0 < Nat.card V := by
-    rw [Nat.card_eq_fintype_card]
-    exact Fintype.card_pos_iff.mpr ⟨u⟩
   have hend : (e u : ℕ) = 0 ∨ (e u : ℕ) + 1 = Nat.card V := by
     by_contra h
     push Not at h

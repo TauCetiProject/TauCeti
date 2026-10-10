@@ -270,10 +270,6 @@ private theorem card_filter_lt_X_lt_O : (Finset.univ.filter fun p : Fin (n + 2) 
       have hne : p.1 ≠ Fin.last (n + 1) := Fin.ne_of_lt (h1.trans_le (Fin.le_last p.2))
       refine ⟨hne, ?_⟩
       have hval : (finRotate (n + 2) p.1 : ℕ) = (p.1 : ℕ) + 1 := coe_finRotate_of_ne_last hne
-      have h3 : (p.2 : ℕ) ≤ (p.1 : ℕ) + 1 := by
-        rw [← hval]
-        exact Fin.not_lt.mp h2
-      have h4 : (p.1 : ℕ) < (p.2 : ℕ) := h1
       exact Fin.ext (by omega)
     · rintro ⟨h1, h2⟩
       rw [h2]
@@ -329,7 +325,6 @@ private theorem card_filter_le_O_le_X :
     rw [unknot_O_apply, unknot_X_apply]
     constructor
     · rintro ⟨h1, h2⟩
-      have h1' : (p.1 : ℕ) ≤ (p.2 : ℕ) := Fin.le_def.mp h1
       have h2' : (finRotate (n + 2) p.2 : ℕ) < (p.1 : ℕ) := Fin.not_le.mp h2
       have hlast : p.2 = Fin.last (n + 1) := by
         by_contra hne
@@ -364,7 +359,6 @@ private theorem card_filter_le_X_le_O :
     rw [unknot_O_apply, unknot_X_apply]
     constructor
     · rintro ⟨h1, h2⟩
-      have h1' : (p.1 : ℕ) ≤ (p.2 : ℕ) := Fin.le_def.mp h1
       have h2' : (p.2 : ℕ) < (finRotate (n + 2) p.1 : ℕ) := Fin.not_le.mp h2
       have hne : p.1 ≠ Fin.last (n + 1) := by
         intro hlast

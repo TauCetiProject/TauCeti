@@ -50,7 +50,6 @@ private theorem hammingNorm_encoding_labels (a b c : Fin 4) :
   let := Fintype.ofFinite F
   let := charP_of_card_eq_prime_pow (p := 2) (f := 2)
     (by simpa only [Nat.card_eq_fintype_card, Nat.reducePow] using hF)
-  have htwo : (2 : F) = 0 := CharTwo.two_eq_zero
   have h0 : ω ≠ 0 := by rintro rfl; simp at hω
   have h1 : ω ≠ 1 := by intro h; grind
   fin_cases a <;> fin_cases b <;> fin_cases c <;>

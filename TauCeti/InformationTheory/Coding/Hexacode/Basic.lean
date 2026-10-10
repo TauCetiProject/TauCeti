@@ -167,7 +167,7 @@ include hω
 /-- The generator has zero Hermitian Gram matrix. -/
 theorem generatorMatrix_mul_map_frobenius_transpose_eq_zero :
     generatorMatrix ω * ((generatorMatrix ω).map (frobenius F 2))ᵀ = 0 := by
-  have htwo : (2 : F) = 0 := CharTwo.two_eq_zero
+  have _ : (2 : F) = 0 := CharTwo.two_eq_zero
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp [generatorMatrix_def, Matrix.mul_apply, Fin.sum_univ_succ, frobenius_def] <;> grind
@@ -176,7 +176,7 @@ theorem generatorMatrix_mul_map_frobenius_transpose_eq_zero :
 ordinary dot product, unlike the Hermitian form. -/
 theorem generatorMatrix_mul_transpose_ne_zero :
     generatorMatrix ω * (generatorMatrix ω)ᵀ ≠ 0 := by
-  have htwo : (2 : F) = 0 := CharTwo.two_eq_zero
+  have _ : (2 : F) = 0 := CharTwo.two_eq_zero
   have h01 : (generatorMatrix ω * (generatorMatrix ω)ᵀ) 0 1 = ω ^ 2 := by
     simp [generatorMatrix_def, Matrix.mul_apply, Fin.sum_univ_succ]
     grind
@@ -244,7 +244,6 @@ theorem map_code_sq_conjugatePerm [CharP F 2] {ω : F} (hω : ω ^ 2 + ω + 1 = 
   simp only [LinearEquiv.funCongrLeft_apply, mem_code, Fin.isValue, LinearMap.funLeft_apply,
     conjugatePerm_symm_apply, Nat.succ_eq_add_one, Nat.reduceAdd, cons_val, cons_val_zero,
     cons_val_one]
-  have htwo : (2 : F) = 0 := CharTwo.two_eq_zero
   constructor <;> rintro ⟨h3, h4, h5⟩ <;> constructor
   all_goals grind
 
@@ -259,9 +258,8 @@ theorem isPermutationEquivalent_code_sq [CharP F 2] {ω : F}
 theorem mem_code_inf_code_sq [CharP F 2] {ω : F} (hω : ω ^ 2 + ω + 1 = 0)
     (x : Fin 6 → F) : x ∈ code ω ⊓ code (ω ^ 2) ↔ ∀ i, x i = x 0 := by
   rw [Submodule.mem_inf, mem_code, mem_code]
-  have htwo : (2 : F) = 0 := CharTwo.two_eq_zero
   constructor
-  · rintro ⟨⟨h3, h4, h5⟩, ⟨k3, k4, k5⟩⟩ i
+  · rintro ⟨⟨h3, h4, h5⟩, ⟨k3, k4, _⟩⟩ i
     fin_cases i <;> grind
   · intro hx
     simp only [hx]

@@ -72,7 +72,7 @@ theorem evenUnitaryGroup_le_lipschitzGroup_of_finrank_eq_five (Q : QuadraticForm
   obtain ⟨l, hl, hlen, hspan, haniso⟩ := hQ.exists_list_pairwise_isOrtho
   rw [hV] at hlen
   -- The volume element `ω` of the basis is central with nonzero scalar square.
-  set ω : CliffordAlgebra Q := (l.map (ι Q)).prod with hω
+  set ω : CliffordAlgebra Q := (l.map (ι Q)).prod
   have hcenter : ∀ z, Commute ω z := fun z =>
     (Subalgebra.mem_center_iff.mp
       (prod_map_ι_mem_center_of_odd_length hl (by rw [hlen]; decide) hspan) z).symm

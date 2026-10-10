@@ -477,7 +477,7 @@ private theorem exists_aeval_eq_of_forall_coeff_mem
   let S : AddSubgroup (MvPolynomial (Fin m) A) :=
     { carrier := {q | ∀ μ, q.coeff μ ∈ U}
       add_mem' := fun ha hb μ ↦ by simpa using U.add_mem (ha μ) (hb μ)
-      zero_mem' := fun μ ↦ by simp
+      zero_mem' := fun _ ↦ by simp
       neg_mem' := fun ha μ ↦ by simpa using U.neg_mem (ha μ) }
   let Q := S.map (MvPolynomial.aeval
     (fun j ↦ MvPolynomial.C (t j) * MvPolynomial.X (idx j))).toAddMonoidHom

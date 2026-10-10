@@ -28,7 +28,12 @@ On the regular module `A` with its right action, the twisted differential sends 
 nose (`twistedDifferential_twistedDifferential_single_x`).  The cancellation is between `ab`,
 produced by the right action of `b` on `a`, and `∂c = -ab`; the products `ab` and `ba` are distinct
 basis paths (`gen_a_mul_gen_b_ne`), so it depends on the order in which the construction
-multiplies the coefficients.
+multiplies the coefficients.  The literal right-free reading of the same coefficients,
+`d e_x = Σ_y e_y m x y`, in which the twisting coefficient multiplies the coordinate `f x` on the
+left, is recorded as
+`rightFreeOperator`: it gives `d² e_x = e_y (ba - ab) ≠ 0`
+(`rightFreeOperator_rightFreeOperator_single_x_ne_zero`), which is the reason for the
+variance convention of the twisted complex.
 
 ## Main definitions and results
 
@@ -42,6 +47,9 @@ multiplies the coefficients.
 * `TauCeti.TwistedExamples.twistedDifferential_twistedDifferential_single_x`: `D² (1 ⊗ x) = 0`,
   computed term by term.
 * `TauCeti.TwistedExamples.gen_a_mul_gen_b_ne`: `ab ≠ ba` in the path algebra.
+* `TauCeti.TwistedExamples.rightFreeOperator`: the literal right-free reading of the
+  coefficients, with `rightFreeOperator_rightFreeOperator_single_x_ne_zero`: its square
+  does not vanish on `e_x`, so it is not a differential.
 
 ## References
 
@@ -231,6 +239,53 @@ theorem gen_a_mul_gen_b_ne : gen .a * gen .b ≠ gen .b * gen .a := by
     ⟨SingleObj.star ThreeArrow, SingleObj.star ThreeArrow,
       (SingleObj.toHom ThreeArrow.b).toPath.comp (SingleObj.toHom ThreeArrow.a).toPath⟩) h
   simp [pathAlgebraBasis_repr_single, Quiver.Hom.toPath, Quiver.Path.comp] at this
+
+/-! ### The literal right-free reading
+
+Reading the coefficients as a differential on a free right module, `d e_x = Σ_y e_y m x y`, puts
+the twisting coefficient between the basis vector and its coordinate: on `Fin 3 → ℚ⟨a, b, c⟩`,
+`(d f) y = ∂ (f y) + Σ_x m x y * f x`, so `m x y` multiplies the coordinate `f x` on the left.  Its
+square does not vanish. -/
+
+/-- The literal right-free reading of the coefficients of `threeCocycle`:
+`(d f) y = ∂ (f y) + Σ_x m x y * f x`, the twisting coefficient multiplying the coordinate `f x` on
+the left.  Recorded for comparison with `twistedDifferential`, where it multiplies on the right. -/
+noncomputable def rightFreeOperator :
+    (Fin 3 → pathAlgebra ℚ (SingleObj ThreeArrow)) →ₗ[ℚ]
+      (Fin 3 → pathAlgebra ℚ (SingleObj ThreeArrow)) :=
+  LinearMap.pi fun y ↦ threeDifferential ∘ₗ LinearMap.proj y +
+    ∑ x, LinearMap.mulLeft ℚ (threeMatrix x y) ∘ₗ LinearMap.proj x
+
+/-- The components of the right-free reading. -/
+@[simp]
+theorem rightFreeOperator_apply (f : Fin 3 → pathAlgebra ℚ (SingleObj ThreeArrow)) (y : Fin 3) :
+    rightFreeOperator f y = threeDifferential (f y) + ∑ x, threeMatrix x y * f x := by
+  simp [rightFreeOperator, LinearMap.pi_apply, LinearMap.sum_apply]
+
+/-- In the right-free reading, `d e_x = e_z a + e_y c`. -/
+theorem rightFreeOperator_single_x :
+    rightFreeOperator (Pi.single 0 1) = Pi.single 1 (gen .a) + Pi.single 2 (gen .c) := by
+  funext y
+  fin_cases y <;> simp [rightFreeOperator_apply, Fin.sum_univ_three, threeMatrix,
+    isDGAlgebra_threeDifferential.map_one_eq_zero]
+
+/-- In the right-free reading, `d² e_x = e_y (ba - ab)`. -/
+theorem rightFreeOperator_rightFreeOperator_single_x :
+    rightFreeOperator (rightFreeOperator (Pi.single 0 1)) =
+      Pi.single 2 (gen .b * gen .a - gen .a * gen .b) := by
+  rw [rightFreeOperator_single_x]
+  funext y
+  fin_cases y <;> simp [rightFreeOperator_apply, Fin.sum_univ_three, threeMatrix,
+    sub_eq_neg_add, add_comm]
+
+/-- **The right-free reading is not a complex**: `d² e_x = e_y (ba - ab) ≠ 0`. -/
+theorem rightFreeOperator_rightFreeOperator_single_x_ne_zero :
+    rightFreeOperator (rightFreeOperator (Pi.single 0 1)) ≠ 0 := by
+  rw [rightFreeOperator_rightFreeOperator_single_x]
+  intro h
+  have := congrFun h 2
+  rw [Pi.single_eq_same, Pi.zero_apply, sub_eq_zero] at this
+  exact gen_a_mul_gen_b_ne this.symm
 
 end TwistedExamples
 

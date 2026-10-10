@@ -209,7 +209,7 @@ theorem isRightAlmostSplit_op_iff : IsRightAlmostSplit f.op ↔ IsLeftAlmostSpli
     exact ⟨h.unop, Quiver.Hom.op_inj (by simpa using hh)⟩
   · refine fun hf ↦ ⟨fun hs ↦ hf.not_isSplitMono (isSplitMono_of_isSplitEpi_op f),
       fun Z g hg ↦ ?_⟩
-    have hg' : ¬ IsSplitMono g.unop := fun hs ↦ hg (inferInstanceAs (IsSplitEpi g.unop.op))
+    have hg' : ¬ IsSplitMono g.unop := fun _ ↦ hg (inferInstanceAs (IsSplitEpi g.unop.op))
     obtain ⟨h, hh⟩ := hf.factors Z.unop g.unop hg'
     exact ⟨h.op, Quiver.Hom.unop_inj (by simpa using hh)⟩
 
@@ -223,7 +223,7 @@ theorem isLeftAlmostSplit_op_iff : IsLeftAlmostSplit f.op ↔ IsRightAlmostSplit
     exact ⟨h.unop, Quiver.Hom.op_inj (by simpa using hh)⟩
   · refine fun hf ↦ ⟨fun hs ↦ hf.not_isSplitEpi (isSplitEpi_of_isSplitMono_op f),
       fun Z g hg ↦ ?_⟩
-    have hg' : ¬ IsSplitEpi g.unop := fun hs ↦ hg (inferInstanceAs (IsSplitMono g.unop.op))
+    have hg' : ¬ IsSplitEpi g.unop := fun _ ↦ hg (inferInstanceAs (IsSplitMono g.unop.op))
     obtain ⟨h, hh⟩ := hf.factors Z.unop g.unop hg'
     exact ⟨h.op, Quiver.Hom.unop_inj (by simpa using hh)⟩
 
