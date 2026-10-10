@@ -81,12 +81,10 @@ private theorem exists_h2MuToBr_cup_kummerClass
     kummerClass_eq_muNRepH1Equiv_kummerCocycleClass K hn hβ, cup_muNRepH1Equiv,
     h2MuToBr_muNRepH2Equiv, h2KummerToUnits_explicitH2AddEquivContinuousCohomology,
     AddEquiv.symm_apply_apply, kummerCocycleClass_def, kummerCocycleClass_def,
-    QuotientAddGroup.mk'_apply, QuotientAddGroup.mk'_apply, explicitCup11_mk, explicitMap2_mk]
+    QuotientAddGroup.mk'_apply, QuotientAddGroup.mk'_apply, explicitCup11_mk, explicitCoeff2_mk]
   refine ⟨_, rfl, fun g k ↦ ?_⟩
   refine (cocyclesMap2_apply _ _ _ _ _ _ _ _ _ g k).trans ?_
-  -- The identity Galois map and the subtype coercions of the cup cocycle and chosen
-  -- Kummer cocycles reduce to the cochain formula exposed by `explicitCup11_mk`.
-  rfl
+  simp only [ContinuousMonoidHom.coe_id, id_eq, AddMonoidHom.coe_ofClass, kummerCoeffInclHom_apply]
 
 /-! ### Exponents of roots of unity with respect to `ζ` -/
 

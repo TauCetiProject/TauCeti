@@ -49,19 +49,27 @@ theorem brBaseChange_h2MuToBr_muNRepH2Equiv
         (explicitMap2 (AbsoluteGaloisGroup K) (KummerCoeff K n) (AbsoluteGaloisGroup L)
           (KummerCoeff L n) (absoluteGaloisGroupMap τ) (kummerCoeffBaseChange n τ)
           continuous_of_discreteTopology (kummerCoeffBaseChange_smul n τ) x)) := by
-  rw [h2MuToBr_muNRepH2Equiv_eq_explicitMap2, h2MuToBr_muNRepH2Equiv_eq_explicitMap2,
+  rw [h2MuToBr_muNRepH2Equiv_eq_explicitCoeff2, h2MuToBr_muNRepH2Equiv_eq_explicitCoeff2,
     brBaseChange_apply K L τ, AddEquiv.symm_apply_apply]
   apply congrArg (unitsRepH2Equiv L)
   induction x using QuotientAddGroup.induction_on with
   | H c =>
-    rw [explicitMap2_mk, explicitMap2_mk, explicitMap2_mk, explicitMap2_mk]
+    simp only [explicitCoeff2_mk, explicitMap2_mk]
     congr 1
     apply Subtype.ext
     funext ⟨g, h⟩
+    -- Apply the evaluation lemmas as terms where rewriting would abstract the
+    -- equivariance witness across the hidden coefficient homomorphism.
+    refine (cocyclesMap2_apply _ _ _ _ _ _ _ _ _ g h).trans ?_
+    refine Eq.trans ?_ (cocyclesMap2_apply _ _ _ _ _ _ _ _ _ g h).symm
+    rw [cocyclesMap2_apply]
+    refine (congrArg (unitsCoeffBaseChange τ)
+      (cocyclesMap2_apply _ _ _ _ _ _ _ _ c
+        (absoluteGaloisGroupMap τ g) (absoluteGaloisGroupMap τ h))).trans ?_
     apply Additive.toMul.injective
     apply Units.ext
-    simp [cochainsMap2_apply, toMul_unitsCoeffBaseChange, toMul_kummerCoeffIncl,
-      toMul_kummerCoeffBaseChange]
+    simp [AddMonoidHom.coe_ofClass, kummerCoeffInclHom_apply,
+      toMul_unitsCoeffBaseChange, toMul_kummerCoeffIncl, toMul_kummerCoeffBaseChange]
 
 /-- Transporting roots of unity preserves the coefficient pairing selected by a primitive root,
 provided that root is transported along the field map as well. -/
@@ -98,10 +106,10 @@ theorem brBaseChange_kummerBrauerClass (a b : Kˣ) :
     (G := AbsoluteGaloisGroup K) (M := KummerCoeff K n) (N := KummerCoeff K n)
     (P := KummerCoeff K n) (H := AbsoluteGaloisGroup L) (M' := KummerCoeff L n)
     (N' := KummerCoeff L n) (P' := KummerCoeff L n) (φ := absoluteGaloisGroupMap τ)
+    (hcM := continuous_of_discreteTopology) (hcN := continuous_of_discreteTopology)
+    (hcP := continuous_of_discreteTopology) (hfM := kummerCoeffBaseChange_smul n τ)
+    (hfN := kummerCoeffBaseChange_smul n τ) (hfP := kummerCoeffBaseChange_smul n τ)
     (hpair := kummerCoeffBaseChange_kummerCoeffPairing τ ζ hζ),
     explicitMap1_kummerMap n τ, explicitMap1_kummerMap n τ]
-  all_goals first
-    | exact continuous_of_discreteTopology
-    | exact kummerCoeffBaseChange_smul n τ
 
 end TauCeti.ClassFieldTheory
