@@ -103,9 +103,10 @@ theorem ofGramMatrix_singleton_eq_rankOne (a : ℤ) {c : ℤ} (hc : c = a)
     (h : (Matrix.of fun (_ _ : Fin 1) ↦ c).IsSymm) :
     ofGramMatrix (Basis.singleton (Fin 1) ℚ) (Matrix.of fun _ _ ↦ c) h = rankOne a := by
   subst c
-  -- `Matrix.of` is definitionally the identity, so its constant matrix is `rankOneMatrix a`;
-  -- proof irrelevance identifies the symmetry witnesses.
-  rfl
+  have hmatrix : (Matrix.of fun (_ _ : Fin 1) ↦ a) = rankOneMatrix a := by
+    ext i j
+    simp only [Matrix.of_apply, rankOneMatrix]
+  simp only [rankOne, hmatrix]
 
 /-- `⟨a⟩` is the negative of `⟨-a⟩`. -/
 theorem rankOne_eq_neg_rankOne_neg (a : ℤ) : rankOne a = -rankOne (-a) := by
