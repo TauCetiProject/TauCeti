@@ -51,7 +51,8 @@ theorem _root_.LinearPMap.mem_resolventSet_of_surjective_of_norm_le
     exact ⟨x, by rw [smulSub_apply]; exact hx⟩
   let e := LinearEquiv.ofBijective (A.smulSub z) ⟨hinj, hsurj'⟩
   let J : E →ₗ[𝕜] E := A.domain.subtype.comp e.symm.toLinearMap
-  have hJ (y : E) : J y = (e.symm y : E) := (rfl)
+  have hJ (y : E) : J y = (e.symm y : E) := by
+    simp only [J, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, Submodule.subtype_apply]
   have hright (y : E) : z • (e.symm y : E) - A (e.symm y) = y := by
     rw [← smulSub_apply]
     exact e.apply_symm_apply y
