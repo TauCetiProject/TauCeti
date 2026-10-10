@@ -135,6 +135,41 @@ theorem nsmulSeries_mul (m n : ℕ) :
     · rfl
     · exact (PowerSeries.subst_X hn).symm
 
+/-- Substituting power series without constant term preserves the constant coefficient. -/
+private theorem constantCoeff_subst_of_constantCoeff_zero {a : Fin 2 → PowerSeries R}
+    (ha : HasSubst a) (ha' : ∀ i, PowerSeries.constantCoeff (a i) = 0)
+    (G : MvPowerSeries (Fin 2) R) :
+    PowerSeries.constantCoeff (subst a G) = constantCoeff G := by
+  rw [PowerSeries.constantCoeff_eq, constantCoeff_subst ha, finsum_eq_single _ 0]
+  · simp [coeff_zero_eq_constantCoeff_apply]
+  · intro d hd
+    obtain ⟨i, hi⟩ : ∃ i, d i ≠ 0 := by
+      by_contra! hc
+      exact hd <| Finsupp.ext hc
+    -- the monomial `aᵈ` has a factor `a i` without constant term
+    have : constantCoeff (d.prod fun s e ↦ a s ^ e) = 0 := by
+      rw [Finsupp.prod, map_prod]
+      exact Finset.prod_eq_zero (Finsupp.mem_support_iff.mpr hi) (by
+        rw [map_pow, ← PowerSeries.constantCoeff_eq, ha', zero_pow hi])
+    rw [this, smul_zero]
+
+/-- The chain rule for `[n + 1]_F(T) = F([n]_F(T), T)`. -/
+private theorem derivative_nsmulSeries_succ (n : ℕ) :
+    PowerSeries.derivative (F.nsmulSeries (n + 1)) =
+      subst ![F.nsmulSeries n, PowerSeries.X] (pderiv 0 F.toPowerSeries) *
+          PowerSeries.derivative (F.nsmulSeries n) +
+        subst ![F.nsmulSeries n, PowerSeries.X] (pderiv 1 F.toPowerSeries) := by
+  have ha : HasSubst ![F.nsmulSeries n, PowerSeries.X] :=
+    hasSubst_of_constantCoeff_zero fun s ↦ by
+      fin_cases s
+      · exact F.constantCoeff_nsmulSeries n
+      · exact PowerSeries.constantCoeff_X
+  rw [nsmulSeries_succ]
+  -- `PowerSeries.derivative` is by definition the partial derivative in the unique variable
+  change pderiv () (subst _ F.toPowerSeries) = _
+  rw [pderiv_subst ha, Fin.sum_univ_two]
+  simp [PowerSeries.derivative, PowerSeries.X]
+
 /-- **Multiplication by `n` multiplies the invariant differential by `n`** (Silverman IV.4.3):
 `P([n]_F(T)) · [n]_F'(T) = n · P(T)` for a commutative formal group law `F`. -/
 theorem subst_nsmulSeries_invariantDifferential_mul_derivative [F.IsComm] (n : ℕ) :
@@ -150,19 +185,11 @@ theorem subst_nsmulSeries_invariantDifferential_mul_derivative [F.IsComm] (n : �
       fin_cases s
       · exact F.constantCoeff_nsmulSeries n
       · exact PowerSeries.constantCoeff_X
-    -- the chain rule for `[n + 1]_F(T) = F([n]_F(T), T)`
-    have hd : PowerSeries.derivative (subst a F.toPowerSeries) =
-        subst a (pderiv 0 F.toPowerSeries) * PowerSeries.derivative (F.nsmulSeries n) +
-          subst a (pderiv 1 F.toPowerSeries) := by
-      -- `PowerSeries.derivative` is by definition the partial derivative in the unique variable
-      change pderiv () (subst a F.toPowerSeries) = _
-      rw [pderiv_subst ha, Fin.sum_univ_two]
-      simp [a, PowerSeries.derivative, PowerSeries.X]
     have hP (i : Fin 2) : subst a (PowerSeries.subst (X (R := R) i) F.invariantDifferential) =
         PowerSeries.subst (a i) F.invariantDifferential := by
       rw [subst_powerSeriesSubst ha (PowerSeries.HasSubst.X i), subst_X ha]
-    rw [nsmulSeries_succ, ← subst_powerSeriesSubst ha hF, hd, mul_add, ← mul_assoc,
-      ← subst_mul ha, ← subst_mul ha, subst_invariantDifferential_mul_pderiv,
+    rw [derivative_nsmulSeries_succ, nsmulSeries_succ, ← subst_powerSeriesSubst ha hF, mul_add,
+      ← mul_assoc, ← subst_mul ha, ← subst_mul ha, subst_invariantDifferential_mul_pderiv,
       subst_invariantDifferential_mul_pderiv_one, hP, hP]
     simp only [a, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
     rw [ih, PowerSeries.X_subst]
@@ -178,15 +205,26 @@ theorem isUnit_subst_nsmulSeries_invariantDifferential (n : ℕ) :
 
 /-- **`[n]_F(T)` has linear coefficient `n`**: `[n]_F(T) = n T + ⋯`. -/
 @[simp]
-theorem coeff_one_nsmulSeries [F.IsComm] (n : ℕ) :
+theorem coeff_one_nsmulSeries (n : ℕ) :
     PowerSeries.coeff 1 (F.nsmulSeries n) = n := by
-  have h := congrArg PowerSeries.constantCoeff
-    (F.subst_nsmulSeries_invariantDifferential_mul_derivative n)
-  rw [map_mul, map_mul, PowerSeries.constantCoeff_eq,
-    PowerSeries.constantCoeff_subst_of_constantCoeff_zero
-    (F.constantCoeff_nsmulSeries n), ← PowerSeries.coeff_zero_eq_constantCoeff_apply
-    (PowerSeries.derivative _), PowerSeries.coeff_derivative] at h
-  simpa using h
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    have ha' : ∀ s, PowerSeries.constantCoeff
+        ((![F.nsmulSeries n, PowerSeries.X] : Fin 2 → PowerSeries R) s) = 0 := fun s ↦ by
+      fin_cases s
+      · exact F.constantCoeff_nsmulSeries n
+      · exact PowerSeries.constantCoeff_X
+    have ha := hasSubst_of_constantCoeff_zero ha'
+    -- the constant coefficient of the chain rule: the linear coefficients of `F` are `1`
+    have h := congrArg PowerSeries.constantCoeff (F.derivative_nsmulSeries_succ n)
+    rw [map_add, map_mul, constantCoeff_subst_of_constantCoeff_zero ha ha',
+      constantCoeff_subst_of_constantCoeff_zero ha ha', ← coeff_zero_eq_constantCoeff_apply,
+      ← coeff_zero_eq_constantCoeff_apply, coeff_pderiv, coeff_pderiv,
+      ← PowerSeries.coeff_zero_eq_constantCoeff_apply,
+      ← PowerSeries.coeff_zero_eq_constantCoeff_apply, PowerSeries.coeff_derivative,
+      PowerSeries.coeff_derivative, ih] at h
+    simpa [F.lin_coeff_X, F.lin_coeff_Y] using h
 
 /-- **The derivative of `[n]_F` is divisible by `n`**, for a commutative formal group law `F`. -/
 theorem natCast_dvd_derivative_nsmulSeries [F.IsComm] (n : ℕ) :
