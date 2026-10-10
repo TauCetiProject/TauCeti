@@ -44,17 +44,6 @@ private theorem monic_polynomial (u : K) : (X ^ p - X - C u : K[X]).Monic := by
   convert monic_X_pow_sub h using 1
   ring
 
-private theorem exists_zmod_cast_of_pow_eq_self [CharP L p] {x : L} (hx : x ^ p = x) :
-    ∃ c : ZMod p, (ZMod.cast c : L) = x := by
-  rw [← Subfield.mem_bot_iff_pow_eq_self L p, ← ZMod.fieldRange_castHom_eq_bot p] at hx
-  exact hx
-
-omit [Fact p.Prime] in
-private theorem gal_fixes_zmod_cast [NeZero p] (σ : Gal(L/K)) (c : ZMod p) :
-    σ (ZMod.cast c : L) = (ZMod.cast c : L) := by
-  rw [ZMod.cast_eq_val]
-  exact map_natCast σ c.val
-
 -- `y` is a root of `X ^ p - X - u` in `L`, a field extension of `K`.
 variable {y : L} (hy : y ^ p - y = algebraMap K L u)
 include hy
@@ -82,7 +71,8 @@ private theorem exists_translation (σ : Gal(L/K)) : ∃ c : ZMod p, (ZMod.cast 
   have : CharP L p := charP_of_injective_algebraMap (algebraMap K L).injective p
   have hp : (σ y - y) ^ p = σ y - y := by
     rw [sub_pow_char, ← map_pow, sub_eq_sub_iff_sub_eq_sub, ← map_sub, hy, AlgEquiv.commutes]
-  exact exists_zmod_cast_of_pow_eq_self hp
+  rw [← Subfield.mem_bot_iff_pow_eq_self L p, ← ZMod.fieldRange_castHom_eq_bot p] at hp
+  exact hp
 
 private noncomputable def translation (σ : Gal(L/K)) : ZMod p := (exists_translation hy σ).choose
 
@@ -105,8 +95,8 @@ noncomputable def translationHom : Gal(L/K) →* Multiplicative (ZMod p) where
     apply congrArg Multiplicative.ofAdd
     apply (ZMod.castHom (m := p) dvd_rfl L).injective
     simp only [map_add, ZMod.castHom_apply, toAdd_ofAdd, translation_spec]
-    have hfix := gal_fixes_zmod_cast σ (translation hy τ)
-    rw [translation_spec] at hfix
+    have hfix := map_natCast σ (translation hy τ).val
+    rw [← ZMod.cast_eq_val, translation_spec] at hfix
     simp only [AlgEquiv.mul_apply, map_sub] at hfix ⊢
     linear_combination hfix
 
@@ -122,12 +112,15 @@ theorem translationHom_eq_of_same_u {z : L} (hz : z ^ p - z = algebraMap K L u) 
   have hpow : (y - z) ^ p = y - z := by
     rw [sub_pow_char]
     linear_combination hy - hz
-  obtain ⟨c, hc⟩ := exists_zmod_cast_of_pow_eq_self hpow
+  rw [← Subfield.mem_bot_iff_pow_eq_self L p, ← ZMod.fieldRange_castHom_eq_bot p] at hpow
+  obtain ⟨c, hc⟩ := hpow
+  rw [ZMod.castHom_apply] at hc
   ext σ
-  have h := gal_fixes_zmod_cast σ c
+  have h := map_natCast σ c.val
+  rw [← ZMod.cast_eq_val, hc, map_sub, aut_apply_eq_add_translationHom hy σ,
+    aut_apply_eq_add_translationHom hz σ] at h
   apply (ZMod.castHom dvd_rfl L).injective
   simp only [ZMod.castHom_apply]
-  rw [hc, map_sub, aut_apply_eq_add_translationHom hy σ, aut_apply_eq_add_translationHom hz σ] at h
   linear_combination h
 
 variable (hgen : K⟮y⟯ = ⊤)
