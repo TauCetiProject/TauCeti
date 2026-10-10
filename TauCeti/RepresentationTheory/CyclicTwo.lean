@@ -161,8 +161,8 @@ theorem ofLinearCharacter_cyclicTwoSign_eq_trivial [CharP R 2] :
   simp [Representation.ofLinearCharacter_apply, cyclicTwoSign_apply, CharTwo.neg_eq]
 
 /-- The regular representation of `C₂` is never a trivial two-dimensional representation
-over a nonzero coefficient ring, including characteristic two. -/
-theorem cyclicTwoRegular_not_equiv_trivial [Nontrivial R] :
+over a nonzero coefficient semiring, including characteristic two. -/
+theorem cyclicTwoRegular_not_equiv_trivial {R : Type*} [Semiring R] [Nontrivial R] :
     ¬ Nonempty ((Representation.ofMulAction R (Multiplicative (ZMod 2))
       (Multiplicative (ZMod 2))).Equiv
         (Representation.trivial R (Multiplicative (ZMod 2)) (R × R))) := by
@@ -175,7 +175,7 @@ theorem cyclicTwoRegular_not_equiv_trivial [Nontrivial R] :
   have := congrArg (fun x ↦ x.coeff 1) heq
   simp [MonoidAlgebra.coeff_single, one_ne_ofAdd_one.symm] at this
 
-variable {k : Type} [CommRing k]
+variable {k : Type} [Ring k]
 
 /-- In characteristic two, augmentation of the regular representation of `C₂` has no
 equivariant right inverse. -/
