@@ -10,9 +10,7 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Formation
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Character
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.FieldArtinMap
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.ArtinMap
-public import TauCeti.NumberTheory.ClassFieldTheory.LocalExistence.NormSubgroup
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CarryCocycle
-public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.CharacterCarry
 import TauCeti.NumberTheory.ClassFieldTheory.Formation.ArtinMap
 import TauCeti.NumberTheory.ClassFieldTheory.Local.ClassFormation
 
@@ -41,8 +39,8 @@ The proof compares the carry class with the class `a₀ ∪ δχ` in the charact
 `ClassFormation.character_artinMap` of a finite layer. On the layer `V ◁ G_K` of an open normal
 subgroup `V` on which `χ` vanishes, the cup product `a₀ ∪ δχ` is represented by the carry cocycle
 of the character of `G_K / V` induced by `χ`
-(`TauCeti.TateCohomology.cup_characterConnectingClass_eq_H2π`), whose inflation to `G_K` is the
-carry cocycle of `χ` (`brInfl_artinCharacterCup`).
+(`TauCeti.ClassFieldTheory.NormalLayer.artinCharacterCup_groundLevelEquiv_eq_H2π`), whose
+inflation to `G_K` is the carry cocycle of `χ` (`brInfl_artinCharacterCup`).
 
 These are the local factors of a sum of local invariants of a global carry class: the global class
 localizes to the carry classes of the restricted characters
@@ -56,8 +54,6 @@ symbols.
   the inflation of `a₀ ∪ δχ` is the carry class of the character read on `G_K`.
 * `TauCeti.ClassFieldTheory.ClassFormation.apply_characterCarryCocycle_of_mk_eq_fieldArtinMap`:
   the character formula on carry classes for a class formation on the units formation.
-* `TauCeti.ClassFieldTheory.NormalLayer.artinCharacterCup_groundLevelEquiv_eq_H2π`: on any layer
-  of any formation, `a₀ ∪ δχ` is the class of the carry cocycle of `χ` and `a`.
 * `TauCeti.ClassFieldTheory.invMap_characterCarryCocycle_of_mk_eq_artinMap`: the local character
   formula `inv_K (a ∪ δχ) = χ (Art_K a)`.
 * `TauCeti.ClassFieldTheory.infiniteInvMap_characterCarryCocycle_of_mk_eq_infiniteArtinAt`: the
@@ -78,23 +74,6 @@ namespace TauCeti.ClassFieldTheory
 open CategoryTheory MonoidalCategory NormalLayer ContCohomology
 
 variable {K : Type} [Field K]
-
-/-! ### The character cup of a layer on cocycles -/
-
-/-- **The Artin character cup is the carry class.** For a layer `V ◁ U` of a formation, an
-invariant `x` of its coefficient module and a character `χ` of its abelianized Galois group, the
-class `a₀ ∪ δχ ∈ H²(U/V, A^V)` of the character formula, for the ground-level element `a`
-corresponding to `x`, is the class of the carry cocycle `(g, h) ↦ ⌊χ'(g) + χ'(h)⌋ • x`. -/
-theorem NormalLayer.artinCharacterCup_groundLevelEquiv_eq_H2π {G : Type} [Group G]
-    [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
-    (L : NormalLayer G) (F : Formation G) (x : (L.rep F).ρ.invariants)
-    (χ : Additive (Abelianization L.Gal) →+ AddCircle (1 : ℚ)) :
-    L.artinCharacterCup F (L.groundLevelEquiv F x) χ =
-      groupCohomology.H2π (L.rep F) (TauCeti.groupCohomology.characterCarryCocycles₂
-        (χ.comp Abelianization.of.toAdditive) (L.rep F) x) := by
-  rw [artinCharacterCup_apply, zeroTateClass_groundLevelEquiv, characterConnectingClass_def,
-    TateCohomology.cup_characterConnectingClass_eq_H2π, ← Iso.app_inv, ← tateHIsoH_def]
-  exact (L.tateHIsoH F 2).inv_hom_id_apply _
 
 /-! ### The carry class on a layer of the units formation -/
 
@@ -220,22 +199,22 @@ theorem invMap_characterCarryCocycle_of_mk_eq_artinMap [ValuativeRel K] [Topolog
     (hσ.trans ((artinMap_apply K a).trans ((localClassFormation K).fieldArtinMap_apply a).symm))
 
 /-- **The archimedean character formula** `inv_w (a ∪ δχ) = χ (Art_w a)`. For an infinite place
-`w` of a field `K`, a character `χ : G_{K_w} → ℚ/ℤ` with open kernel and `a ∈ K_wˣ`, if
+`w` of a field `K`, a character `χ : G_{K_w} → ℚ/ℤ` and `a ∈ K_wˣ`, if
 `σ ∈ Gal(AlgebraicClosure K_w/K_w)` represents the archimedean Artin symbol `infiniteArtinAt w a`,
-then the archimedean invariant of the Brauer class of the carry cocycle of `χ` and `a` is `χ(σ)`. -/
+then the archimedean invariant of the Brauer class of the carry cocycle of `χ` and `a` is `χ(σ)`.
+No hypothesis on `χ` is needed: `G_{K_w}` is finite, so the kernel of `χ` is open. -/
 theorem infiniteInvMap_characterCarryCocycle_of_mk_eq_infiniteArtinAt
     (w : NumberField.InfinitePlace K)
     (χ : Additive (AbsoluteGaloisGroup w.Completion) →+ AddCircle (1 : ℚ))
-    (hχ : IsOpen (χ.ker : Set (Additive (AbsoluteGaloisGroup w.Completion))))
     (a : w.Completionˣ) (σ : Field.absoluteGaloisGroup w.Completion)
     (hσ : (σ : Field.absoluteGaloisGroupAbelianization w.Completion) = infiniteArtinAt w a) :
-    infiniteInvMap w (unitsRepH2Equiv w.Completion (characterCarryCocycle χ hχ
+    infiniteInvMap w (unitsRepH2Equiv w.Completion (characterCarryCocycle χ (isOpen_discrete _)
         (baseUnitsEquivInvariants w.Completion (.ofMul a)) :
           H2 (AbsoluteGaloisGroup w.Completion) (UnitsCoeff w.Completion))) =
       χ (.ofMul (absoluteGaloisGroupRestrictEquiv w.Completion σ :
         AbsoluteGaloisGroup w.Completion)) :=
   (infiniteClassFormation w).apply_characterCarryCocycle_of_mk_eq_fieldArtinMap
-    (infiniteInvMap w) (infiniteClassFormation_inv w) χ hχ a σ
+    (infiniteInvMap w) (infiniteClassFormation_inv w) χ (isOpen_discrete _) a σ
     (hσ.trans ((infiniteArtinAt_apply w a).trans
       ((infiniteClassFormation w).fieldArtinMap_apply a).symm))
 
