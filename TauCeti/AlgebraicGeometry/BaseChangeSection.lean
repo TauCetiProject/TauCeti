@@ -95,6 +95,11 @@ variable (f x₀)
 def baseChangeSection (T : Over S) : T.left ⟶ pullback T.hom f :=
   graphSection (basePoint hx₀ T)
 
+/-- The graph of the base point `T ⟶ S ⟶ X` is the base-changed section. -/
+lemma graphSection_basePoint (T : Over S) :
+    graphSection (basePoint hx₀ T) = baseChangeSection f x₀ hx₀ T :=
+  (rfl)
+
 /-- The base-changed section is a section of the projection `T ×_S X ⟶ T`. -/
 @[reassoc (attr := simp)]
 lemma baseChangeSection_fst (T : Over S) :

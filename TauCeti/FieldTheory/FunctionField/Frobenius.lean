@@ -29,6 +29,10 @@ equal `F^p`.
 * `TauCeti.IsFunctionField.finrank_fieldRange_frobenius`: `[F : F^p] = p`.
 * `TauCeti.IsFunctionField.D_eq_zero_iff_mem_fieldRange_frobenius`: the kernel of the universal
   derivation is exactly `F^p`.
+* `TauCeti.IsFunctionField.isSeparable_adjoin_iff_notMem_fieldRange_frobenius`: `x` is separating
+  exactly when it lies outside `F^p`.
+* `TauCeti.IsFunctionField.exists_pow_eq_and_adjoin_eq_top_of_finrank_prime_of_not_isSeparable`:
+  an inseparable subextension `F / k(x)` of prime degree has `x = y ^ p` with `F = k(y)`.
 * `TauCeti.IsFunctionField.transcendental_and_isSeparable_adjoin_of_not_dvd_ord`: the
   valuation-order criterion.
 * `TauCeti.Place.transcendental_and_isSeparable_adjoin_of_not_dvd_ord`: its form for places, in
@@ -192,6 +196,43 @@ theorem D_eq_zero_iff_mem_fieldRange_frobenius [PerfectField k]
       exact hK_ne_top (IntermediateField.finrank_eq_one_iff_eq_top.mp hfin)
   have hKC : K ≤ C := IntermediateField.relfinrank_eq_one_iff.mp hrel
   exact ⟨fun h ↦ (hmemC x).mp (hKC ((hmemK x).mpr h)), fun h ↦ (hmemK x).mp (hCK ((hmemC x).mpr h))⟩
+
+/-- **Separating elements are the elements outside `F^p`** (Stichtenoth, Proposition 3.10.2(a)):
+in a one-variable function field over a perfect field of characteristic `p`, `F / k(x)` is
+separable exactly when `x` is not a `p`-th power in `F`. -/
+theorem isSeparable_adjoin_iff_notMem_fieldRange_frobenius [PerfectField k]
+    (hF : TauCeti.IsFunctionField k F) (p : ℕ) [ExpChar F p] [Fact p.Prime] (x : F) :
+    Algebra.IsSeparable k⟮x⟯ F ↔ x ∉ (frobenius F p).fieldRange := by
+  rw [hF.isSeparable_adjoin_iff_D_ne_zero, ne_eq, hF.D_eq_zero_iff_mem_fieldRange_frobenius p x]
+
+/-- **An inseparable subextension of prime degree comes from a `p`-th root.** Over a perfect
+field of exponential characteristic `p`, if `x` is transcendental, `[F : k(x)]` is prime and
+`F / k(x)` is not separable, then `x = y ^ p` for an element `y` that generates `F` over `k`. So
+`F` is then a rational function field, and `[F : k(x)] = p`. In characteristic zero the
+hypotheses are contradictory. -/
+theorem exists_pow_eq_and_adjoin_eq_top_of_finrank_prime_of_not_isSeparable [PerfectField k]
+    (hF : TauCeti.IsFunctionField k F) (p : ℕ) [ExpChar F p] {x : F} (hx : Transcendental k x)
+    (hprime : (Module.finrank k⟮x⟯ F).Prime) (hsep : ¬ Algebra.IsSeparable k⟮x⟯ F) :
+    ∃ y : F, y ^ p = x ∧ k⟮y⟯ = ⊤ := by
+  have : FiniteDimensional k⟮x⟯ F := hF.finiteDimensional_adjoin hx
+  cases (inferInstance : ExpChar F p) with
+  | zero => exact (hsep inferInstance).elim
+  | prime hp =>
+    let _ : Fact p.Prime := ⟨hp⟩
+    -- `x` is a `p`-th power `y ^ p`, and `[k(y) : k(y ^ p)] = p` is a factor of the prime
+    -- `[F : k(x)]`, so the complementary factor `[F : k(y)]` is one.
+    obtain ⟨y, rfl⟩ : x ∈ (frobenius F p).fieldRange :=
+      not_not.mp ((hF.isSeparable_adjoin_iff_notMem_fieldRange_frobenius p x).not.mp hsep)
+    rw [frobenius_def] at hx hprime ⊢
+    have hy : Transcendental k y := fun h ↦ hx (h.isIntegral.pow p).isAlgebraic
+    have hle : k⟮y ^ p⟯ ≤ k⟮y⟯ := IntermediateField.adjoin_simple_le_iff.mpr
+      (pow_mem (IntermediateField.mem_adjoin_simple_self k y) p)
+    rw [← IntermediateField.relfinrank_mul_finrank_top hle, relfinrank_adjoin_pow_adjoin hy p,
+      Nat.prime_mul_iff] at hprime
+    refine ⟨y, rfl, IntermediateField.finrank_eq_one_iff_eq_top.mp ?_⟩
+    rcases hprime with ⟨-, h⟩ | ⟨-, h⟩
+    · exact h
+    · exact (hp.ne_one h).elim
 
 /-- **The valuation-order criterion for a separating element** (Stichtenoth, Proposition
 3.10.2): if the order of `x` at a discrete valuation is not divisible by the exponential

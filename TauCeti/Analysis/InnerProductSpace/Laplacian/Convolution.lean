@@ -25,11 +25,14 @@ orthonormal basis (`TauCeti.laplacian_eq_sum_fderiv_fderiv_apply`).
 
 This is how a convolution against a fundamental solution, such as the Newtonian potential, is
 shown to solve Poisson's equation: the Laplacian moves onto the smooth compactly supported
-factor, where the distributional identity for the kernel applies.
+factor, where the distributional identity for the kernel applies
+(`TauCeti.laplacian_convolution_eq_neg_of_integral_laplacian_mul`).
 
 ## Main declarations
 
 * `HasCompactSupport.laplacian_convolution_right`: `Δ (f ⋆[L, μ] g) = f ⋆[L, μ] Δ g`.
+* `TauCeti.laplacian_convolution_eq_neg_of_integral_laplacian_mul`: if `-ΔK = δ` in the sense of
+  distributions, then `-Δ (K ⋆ f) = f` for every `C²` function `f` with compact support.
 -/
 
 public section
@@ -72,3 +75,40 @@ theorem HasCompactSupport.laplacian_convolution_right (L : E₀ →L[ℝ] E' →
   congr 1 with t
   rw [TauCeti.laplacian_eq_sum_fderiv_fderiv_apply b
     ((hg.fderiv_right (m := 1) (by norm_num)).differentiable one_ne_zero (x - t)), map_sum]
+
+namespace TauCeti
+
+/-- **Convolution with a fundamental solution solves Poisson's equation.** Let `K` be locally
+integrable with `-ΔK = δ` in the sense of distributions, tested against real `C²` functions with
+compact support: `∫ Δφ(y) K(x - y) dy = -φ x` for every such `φ` and every `x`. Then for every
+`f` of class `C²` with compact support, `Δ (K ⋆ f) = -f`. -/
+theorem laplacian_convolution_eq_neg_of_integral_laplacian_mul [μ.IsNegInvariant]
+    [CompleteSpace F] {K : E → ℝ} {f : E → F} (hK : LocallyIntegrable K μ)
+    (hKΔ : ∀ φ : E → ℝ, ContDiff ℝ 2 φ → HasCompactSupport φ → ∀ x,
+      ∫ y, Δ φ y * K (x - y) ∂μ = -φ x)
+    (hf : ContDiff ℝ 2 f) (hc : HasCompactSupport f) : Δ (K ⋆[lsmul ℝ ℝ, μ] f) = -f := by
+  rw [hc.laplacian_convolution_right _ hK hf]
+  funext x
+  have hΔc : HasCompactSupport (Δ f) :=
+    hc.mono' ((subset_tsupport _).trans (tsupport_laplacian_subset f))
+  have hΔcont : Continuous (Δ f) := by
+    rw [laplacian_eq_iteratedFDeriv_stdOrthonormalBasis]
+    have := hf.continuous_iteratedFDeriv (m := 2) le_rfl
+    fun_prop
+  have hint := hΔc.convolutionExists_right (lsmul ℝ ℝ) hK hΔcont x
+  -- Test against every continuous linear functional `φ`, which reduces to real values.
+  refine (SeparatingDual.eq_iff_forall_dual_eq (R := ℝ)).2 fun φ => ?_
+  have hφf : ContDiff ℝ 2 (φ ∘ f) := φ.contDiff.comp hf
+  calc φ ((K ⋆[lsmul ℝ ℝ, μ] Δ f) x)
+      = ∫ t, K t * φ (Δ f (x - t)) ∂μ := by
+        rw [convolution_def, ← φ.integral_comp_comm hint]
+        simp
+    _ = ∫ y, Δ (φ ∘ f) y * K (x - y) ∂μ := by
+        rw [← integral_sub_left_eq_self _ μ x]
+        congr 1 with y
+        rw [sub_sub_cancel, hf.contDiffAt.laplacian_CLM_comp_left, Function.comp_apply, mul_comm]
+    _ = φ ((-f) x) := by
+        rw [hKΔ _ hφf (hc.comp_left φ.map_zero) x]
+        simp
+
+end TauCeti

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.FundamentalSolution.Planar
+public import TauCeti.Analysis.PDE.FundamentalSolution.Planar.Basic
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 
@@ -22,8 +22,8 @@ pole at an arbitrary point.  These inverse-distance estimates are the pointwise 
 forming and differentiating planar Newtonian potentials.
 
 The calculation uses Mathlib's derivative of the squared norm and the Fréchet chain rule for the
-real logarithm.  It complements `FundamentalSolution.Flux`, which computes only the derivative in
-the radial direction needed for the circle flux.
+real logarithm.  It complements `FundamentalSolution.Planar.Flux`, which computes only the
+derivative in the radial direction needed for the circle flux.
 
 The normalization and inverse-distance gradient formula follow Evans, *Partial Differential
 Equations*, Section 2.2.

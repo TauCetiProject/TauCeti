@@ -343,12 +343,12 @@ variable (K L : Type*) [Field K] [LieRing L] [LieAlgebra K L]
 
 /-- A finite-dimensional nilpotent Lie algebra admits a weighted PBW truncation which is
 finite-dimensional, preserves the canonical Lie generators injectively, and makes their powers
-vanish uniformly. The weights and the cutoff are part of the conclusion. -/
+vanish uniformly. The positive weights and positive cutoff are part of the conclusion. -/
 theorem exists_weightedPBWIdeal_of_isNilpotent :
     ∃ (N : ℕ) (b : Basis (Fin (Module.finrank K L)) K L)
       (w : Fin (Module.finrank K L) → ℕ)
       (hbracket : ∀ i j k, w k < w i + w j → b.repr ⁅b i, b j⁆ k = 0),
-      (∀ i, 0 < w i ∧ w i < N) ∧
+      0 < N ∧ (∀ i, 0 < w i ∧ w i < N) ∧
       Module.Finite K (_root_.UniversalEnvelopingAlgebra K L ⧸
         b.weightedPBWIdeal w hbracket N) ∧
       Function.Injective (fun x : L ↦ Ideal.Quotient.mk (b.weightedPBWIdeal w hbracket N)
@@ -358,7 +358,7 @@ theorem exists_weightedPBWIdeal_of_isNilpotent :
   obtain ⟨N, b, w, hweight, _, hbracket⟩ := exists_basis_weight_lowerCentralSeries (K := K) (L := L)
   have hpos := fun i ↦ (hweight i).1
   have hN : ∀ i, w i < N + 1 := fun i ↦ Nat.lt_succ_of_le (hweight i).2
-  exact ⟨N + 1, b, w, hbracket, fun i ↦ ⟨hpos i, hN i⟩,
+  exact ⟨N + 1, b, w, hbracket, Nat.zero_lt_succ N, fun i ↦ ⟨hpos i, hN i⟩,
     b.moduleFinite_quotient_weightedPBWIdeal w hbracket hpos _,
     b.quotient_weightedPBWIdeal_ι_injective w hbracket _ hN,
     b.quotient_weightedPBWIdeal_ι_pow_eq_zero w hbracket hpos _⟩

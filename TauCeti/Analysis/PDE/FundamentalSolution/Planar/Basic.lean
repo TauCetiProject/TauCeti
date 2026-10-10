@@ -16,8 +16,8 @@ This file introduces the logarithmic kernel for the negative Laplacian on the co
 
 and establishes its classical pointwise properties away from the pole.  In particular, `G` and
 each translate `z ↦ G (z - a)` are harmonic away from their poles.  The distributional identity
-`-Δ G = δ₀`, which fixes the normalization by computing the flux through a circle, is deliberately
-left to the later distributional development of the fundamental solution.
+`-Δ G = δ₀` is `TauCeti.integral_laplacian_mul_planarNewtonianKernel`, in
+`TauCeti.Analysis.PDE.FundamentalSolution.Planar.DistributionalLaplacian`.
 
 The harmonicity proof consumes Mathlib's `AnalyticAt.harmonicAt_log_norm`, applied to the identity
 or to `z ↦ z - a`.  The remaining results record the translation, symmetry, and scaling API used

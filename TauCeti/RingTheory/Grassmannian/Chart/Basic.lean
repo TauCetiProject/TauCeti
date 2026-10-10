@@ -11,6 +11,8 @@ public import TauCeti.LinearAlgebra.Finsupp.LinearCombination
 public import TauCeti.RingTheory.Grassmannian.Basic
 public import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
 
+import Mathlib.RingTheory.Flat.LocallyFree
+
 /-!
 # Standard affine charts of the Grassmannian
 
@@ -35,8 +37,10 @@ subfunctor `Module.Grassmannian.chartFunctor R x` of the Grassmannian functor, c
 `ChartAlgebra R x` (`Module.Grassmannian.chartHomEquiv`, natural by
 `Module.Grassmannian.chartHomEquiv_comp`).
 
-These charts are the affine pieces from which the Grassmannian scheme is glued; that the charts
-are open subfunctors and that they cover the Grassmannian functor are not proved here.
+These charts are the affine pieces from which the Grassmannian scheme is glued. That they are open
+subfunctors and cover the Grassmannian functor is proved in
+`TauCeti.RingTheory.Grassmannian.Chart.Locus`, and the transition maps between them are constructed
+in `TauCeti.RingTheory.Grassmannian.Chart.Transition`.
 
 ## Main definitions
 
@@ -51,6 +55,8 @@ are open subfunctors and that they cover the Grassmannian functor are not proved
 
 ## Main results
 
+* `Module.Grassmannian.mem_chart_iff_sup_eq_top`: `N` lies in the chart at `x` exactly when the
+  images of the `x i` generate `M ⧸ N`.
 * `Module.Grassmannian.map_ofSurjective_liftBaseChange`: base change along `A → B` sends the
   kernel of a surjection `A ⊗[R] M → A^k` to the kernel of its base change `B ⊗[R] M → B^k`.
 * `Module.Grassmannian.chartHomEquiv_comp`: `chartHomEquiv` is natural in the algebra.
@@ -86,6 +92,15 @@ def chart (x : Fin k → M) : Set G(k, M; R) :=
 theorem mem_chart_iff {x : Fin k → M} {N : G(k, M; R)} :
     N ∈ chart R x ↔ Function.Bijective (N.toSubmodule.mkQ ∘ₗ Fintype.linearCombination R x) :=
   (Iff.rfl)
+
+/-- `N` lies in the chart at `x` exactly when `N` and the `x i` together span `M`, that is, when the
+images of the `x i` generate `M ⧸ N`. -/
+theorem mem_chart_iff_sup_eq_top {x : Fin k → M} {N : G(k, M; R)} :
+    N ∈ chart R x ↔ N.toSubmodule ⊔ Submodule.span R (Set.range x) = ⊤ := by
+  rw [mem_chart_iff, ← Submodule.map_mkQ_eq_top, ← Fintype.range_linearCombination,
+    ← LinearMap.range_comp, LinearMap.range_eq_top]
+  exact ⟨Function.Bijective.surjective, fun h ↦ bijective_of_surjective_of_rankAtStalk_eq h
+    fun m _ ↦ by rw [rankAtStalk_fin_fun, N.rankAtStalk_eq]⟩
 
 /-- The kernel of a linear map `φ : M → R^k` with `φ (x i) = eᵢ` lies in the chart at `x`. -/
 theorem ofSurjective_mem_chart {x : Fin k → M} {φ : M →ₗ[R] Fin k → R}
@@ -140,6 +155,12 @@ theorem toSubmodule_chartEquiv_symm_apply (x : Fin k → M)
 theorem chartEquiv_apply_apply_self (x : Fin k → M) (N : chart R x) (i : Fin k) :
     (chartEquiv R x N).1 (x i) = Pi.single i 1 :=
   (chartEquiv R x N).2 i
+
+/-- The linear map `M → R^k` attached to a point `N` of the chart at `x`, followed by
+`R^k ≃ M ⧸ N`, is the projection `M → M ⧸ N`. -/
+theorem chartQuotEquiv_chartEquiv_apply (x : Fin k → M) (N : chart R x) (m : M) :
+    chartQuotEquiv N ((chartEquiv R x N).1 m) = Submodule.Quotient.mk m := by
+  simp [chartEquiv]
 
 @[simp]
 theorem ker_chartEquiv_apply (x : Fin k → M) (N : chart R x) :
@@ -370,6 +391,16 @@ theorem chartHomEquiv_symm_apply_universalLinearMap (x : Fin k → M) {A : Type 
     (chartHomEquiv R x A).symm N (ChartAlgebra.universalLinearMap R x m j) =
       (chartEquiv A _ N).1 (1 ⊗ₜ m) j := by
   simp [chartHomEquiv]
+
+/-- The linear map `A ⊗[R] M → A^k` attached to the point of the chart at `x` classified by
+`g : ChartAlgebra R x →ₐ[R] A` sends `1 ⊗ₜ m` to the image under `g` of the universal point at
+`m`. -/
+@[simp]
+theorem chartEquiv_chartHomEquiv_apply_tmul (x : Fin k → M) {A : Type w} [CommRing A]
+    [Algebra R A] (g : ChartAlgebra R x →ₐ[R] A) (m : M) (j : Fin k) :
+    (chartEquiv A _ (chartHomEquiv R x A g)).1 (1 ⊗ₜ m) j =
+      g (ChartAlgebra.universalLinearMap R x m j) := by
+  rw [← chartHomEquiv_symm_apply_universalLinearMap, Equiv.symm_apply_apply]
 
 /-- `chartHomEquiv` is natural: composing with `f : A → B` corresponds to base change of points
 along `f`. -/
