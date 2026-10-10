@@ -62,7 +62,7 @@ namespace TauCeti.ClassFieldTheory
 
 open CategoryTheory ContCohomology Module
 
-attribute [local instance] TopRep.distribMulAction trivialZModAction
+attribute [local instance] TopRep.distribMulAction trivialZModAction continuousSMulTrivialZMod
 
 -- Instance diamond: over `ZMod ℓ` with `Fact ℓ.Prime`, instance search first derives
 -- `AddCommGroup (ZMod ℓ)` from Mathlib's `[IsSimpleAddGroup G] [AddGroup.IsNilpotent G]`
@@ -72,10 +72,6 @@ attribute [local instance] TopRep.distribMulAction trivialZModAction
 -- `H¹(V, ZMod ℓ)`. The statements below are elaborated with it, so importers applying them do not
 -- need this attribute.
 attribute [local instance 2000] Ring.toAddCommGroup
-
-/-- `ZMod n`, with the discrete topology and the trivial action, is a continuous module. -/
-local instance {n : ℕ} {H : Type*} [Monoid H] [TopologicalSpace H] :
-    ContinuousSMul H (ZMod n) := ⟨continuous_snd⟩
 
 variable {F : Type} [Field F] {V : OpenNormalSubgroup (Field.absoluteGaloisGroup F)}
 
