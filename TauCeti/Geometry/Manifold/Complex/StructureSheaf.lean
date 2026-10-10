@@ -155,7 +155,7 @@ variable [I.Boundaryless] [IsManifold I 1 X] [CompactSpace X] [PreconnectedSpace
 
 /-- On a nonempty compact connected complex manifold, every global holomorphic section
 is a unique constant section. -/
-theorem bijective_algebraMap :
+theorem algebraMap_bijective :
     Function.Bijective (algebraMap ℂ ((holomorphicStructureSheaf I X).obj.obj (op ⊤))) := by
   constructor
   · intro c d h
@@ -172,11 +172,14 @@ theorem bijective_algebraMap :
 /-- Constants identify the global sections of the holomorphic structure sheaf with `ℂ`. -/
 def globalSectionsEquiv :
     ℂ ≃ₐ[ℂ] ((holomorphicStructureSheaf I X).obj.obj (op ⊤)) :=
-  AlgEquiv.ofBijective (Algebra.ofId ℂ _) (bijective_algebraMap I X)
+  AlgEquiv.ofBijective (Algebra.ofId ℂ _) (algebraMap_bijective I X)
 
 @[simp]
 theorem globalSectionsEquiv_apply (c : ℂ) (x : X) :
-    globalSectionsEquiv I X c ⟨x, trivial⟩ = c := (rfl)
+    globalSectionsEquiv I X c ⟨x, trivial⟩ = c := by
+  simpa only [Algebra.algebraMap_self_apply, algebraMap_apply] using
+    congrArg (fun f : (holomorphicStructureSheaf I X).obj.obj (op ⊤) ↦ f ⟨x, trivial⟩)
+      ((globalSectionsEquiv I X).commutes c)
 
 /-- Evaluation at any point is the inverse of the constant-section isomorphism. -/
 @[simp]
@@ -192,6 +195,7 @@ instance : FiniteDimensional ℂ ((holomorphicStructureSheaf I X).obj.obj (op �
 
 /-- The space of global holomorphic sections on a nonempty compact connected complex
 manifold is one-dimensional over `ℂ`. -/
+@[simp]
 theorem finrank_globalSections :
     Module.finrank ℂ ((holomorphicStructureSheaf I X).obj.obj (op ⊤)) = 1 := by
   rw [← (globalSectionsEquiv I X).toLinearEquiv.finrank_eq]
