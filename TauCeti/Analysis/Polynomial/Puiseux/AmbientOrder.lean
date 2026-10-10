@@ -8,29 +8,45 @@ module
 public import TauCeti.Analysis.Polynomial.Puiseux.Discriminant
 public import TauCeti.Analysis.Polynomial.Puiseux.SectionOrder
 public import TauCeti.Topology.Algebra.MvPolynomial.FiniteOrder
+import Mathlib.Topology.Algebra.MvPolynomial
+import TauCeti.Analysis.Polynomial.Reverse.Order
 import TauCeti.RingTheory.MvPolynomial.TransverseOrder
+import TauCeti.RingTheory.Polynomial.Resultant.RootCoordinates
 
 /-!
 # Constant ambient order on root sections from discriminant order
 
-Let `p` be a monic polynomial in a distinguished variable whose coefficients are real
-polynomials in `n` variables, and suppose its formal discriminant has constant finite ambient
-order along a real analytic parametrization of the base. Then along every real root of the
-fibers which is continuous at a point, the ambient order of `p`, as a polynomial in all `n + 1`
-variables, is locally constant. This is the order-invariance of `p` on root sections in
-McCallum's local discriminant theorem; fiber root multiplicity is not substituted for ambient
-order.
+Let `p` be a polynomial in a distinguished variable whose coefficients are real polynomials in
+`n` variables, with nonzero fiber at a point of a real analytic parametrization of the base, and
+suppose its formal discriminant has constant finite ambient order along the parametrization.
+Then along every real root of the fibers which is continuous at that point, the ambient order of
+`p`, as a polynomial in all `n + 1` variables, is locally constant. This is the order-invariance
+of `p` on root sections in McCallum's local discriminant theorem; fiber root multiplicity is not
+substituted for ambient order. The formal leading coefficient may vanish, so the fiber degree
+may drop.
 
-The argument works in transverse planes, which keep the root coordinate and move the base
-along an affine line. For every real direction in an open dense set, the discriminant becomes
-a power of the line parameter times a unit after complexification, and the fibers split into
-analytic branches after a ramified substitution
+For monic `p` the argument works in transverse planes, which keep the root coordinate and move
+the base along an affine line. For every real direction in an open dense set, the discriminant
+becomes a power of the line parameter times a unit after complexification, and the fibers split
+into analytic branches after a ramified substitution
 (`Polynomial.exists_analyticAt_prod_X_sub_C_of_orderAt_discr_eq`). The plane order of `p` at
 each branch on the base is then locally constant (`TauCeti.eventually_orderAt_root_eq_of_puiseux`).
 A real root which is continuous at the central point eventually meets only branches through its
 central value, so its plane orders are locally constant too. Finitely many directions in the
 open set detect ambient order (`TauCeti.eventually_orderAt_eq_of_transverse`), which gives the
 conclusion.
+
+The general case reduces to the monic one in normalized reciprocal coordinates centered at a
+nonroot `τ` of the central fiber. The normalized reversal of `p` is monic, its discriminant has
+the same ambient order near the point
+(`Polynomial.discr_integralNormalization_reverse_comp_X_add_C`), and the coordinate change
+preserves ambient order away from `τ`
+(`Polynomial.orderAt_integralNormalization_reverse_comp_X_add_C`).
+
+## Main results
+
+* `Polynomial.eventually_orderAt_root_eq_of_orderAt_discr_eq`: constant finite ambient order of
+  the formal discriminant gives locally constant ambient order along continuous real roots.
 
 ## References
 
@@ -49,13 +65,9 @@ namespace TauCeti
 
 variable {n : ℕ} {ι : Type*} [Fintype ι]
 
-/-- **Constant ambient order on root sections.** Let `p` be a monic polynomial whose
-coefficients are real polynomials in `n` variables, specialized along a real analytic
-parametrization `φ`, and suppose its formal discriminant has constant finite ambient order
-near `a`. Along a real root `θ` of the fibers which is continuous at `a`, the ambient order of
-`p`, viewed as a polynomial in `n + 1` variables with the root coordinate first, is constant
-near `a`. The fibers may have multiple roots, and distinct real roots may meet at `a`. -/
-theorem _root_.Polynomial.Monic.eventually_orderAt_root_eq_of_orderAt_discr_eq
+/-- Constant ambient order on root sections for a monic polynomial whose formal discriminant has
+constant finite ambient order along a real analytic parametrization. -/
+private theorem _root_.Polynomial.Monic.eventually_orderAt_root_eq_of_orderAt_discr_eq
     {p : Polynomial (MvPolynomial (Fin n) ℝ)} (hp : p.Monic)
     {φ : (ι → ℝ) → Fin n → ℝ} {θ : (ι → ℝ) → ℝ} {a : ι → ℝ} {m : ℕ}
     (hφ : AnalyticAt ℝ φ a) (hm : ∀ᶠ x in 𝓝 a, p.discr.orderAt (φ x) = m)
@@ -139,5 +151,65 @@ theorem _root_.Polynomial.Monic.eventually_orderAt_root_eq_of_orderAt_discr_eq
   filter_upwards [hPreal, hψ.eventually horder, hbranch, hnear] with x hx hox hbx hnx
   obtain ⟨i, hi⟩ := hbx
   rw [← hx, ← hPreal.self_of_nhds, ← hi, hox i, hnx i hi, ← hi₀]
+
+/-- **Constant ambient order on root sections.** Let `p` be a polynomial whose coefficients
+are real polynomials in `n` variables, specialized along a real analytic parametrization `φ`,
+with nonzero fiber at `a`, and suppose its formal discriminant has constant finite ambient
+order near `a`. Along a real root `θ` of the fibers which is continuous at `a`, the ambient
+order of `p`, viewed as a polynomial in `n + 1` variables with the root coordinate first, is
+constant near `a`.
+
+The formal leading coefficient of `p` may vanish at `a`, so the fiber degree may be smaller
+than the formal degree at which the discriminant is taken. The fibers may have multiple roots,
+and distinct real roots may meet at `a`. -/
+theorem _root_.Polynomial.eventually_orderAt_root_eq_of_orderAt_discr_eq
+    {p : Polynomial (MvPolynomial (Fin n) ℝ)}
+    {φ : (ι → ℝ) → Fin n → ℝ} {θ : (ι → ℝ) → ℝ} {a : ι → ℝ} {m : ℕ}
+    (hφ : AnalyticAt ℝ φ a) (hp : p.map (MvPolynomial.eval (φ a)) ≠ 0)
+    (hm : ∀ᶠ x in 𝓝 a, p.discr.orderAt (φ x) = m) (hθ : ContinuousAt θ a)
+    (hroot : ∀ᶠ x in 𝓝 a, (p.map (MvPolynomial.eval (φ x))).IsRoot (θ x)) :
+    ∀ᶠ x in 𝓝 a, ((MvPolynomial.finSuccEquiv ℝ n).symm p).orderAt (Fin.cons (θ x) (φ x)) =
+      ((MvPolynomial.finSuccEquiv ℝ n).symm p).orderAt (Fin.cons (θ a) (φ a)) := by
+  have hisRoot (q : Polynomial (MvPolynomial (Fin n) ℝ)) (y : Fin n → ℝ) (t : ℝ) :
+      (q.map (MvPolynomial.eval y)).IsRoot t ↔
+        0 < ((MvPolynomial.finSuccEquiv ℝ n).symm q).orderAt (Fin.cons t y) := by
+    rw [MvPolynomial.orderAt_pos_iff, MvPolynomial.eval_eq_eval_mv_eval',
+      AlgEquiv.apply_symm_apply, IsRoot.def]
+  -- Center reciprocal coordinates at a point `τ` which is not a root of the central fiber.
+  obtain ⟨τ, hτ⟩ := Infinite.exists_notMem_finset (p.map (MvPolynomial.eval (φ a))).roots.toFinset
+  have hτ0 : (p.map (MvPolynomial.eval (φ a))).eval τ ≠ 0 :=
+    fun h ↦ hτ (Multiset.mem_toFinset.2 ((mem_roots hp).2 h))
+  let c : MvPolynomial (Fin n) ℝ := p.eval (MvPolynomial.C τ)
+  have hevc (y : Fin n → ℝ) : MvPolynomial.eval y c = (p.map (MvPolynomial.eval y)).eval τ := by
+    rw [eval_map, ← eval₂_hom, MvPolynomial.eval_C]
+  have hcont : ContinuousAt (fun x ↦ MvPolynomial.eval (φ x) c) a :=
+    (MvPolynomial.continuous_eval c).continuousAt.comp hφ.continuousAt
+  have hca : MvPolynomial.eval (φ a) c ≠ 0 := by rwa [hevc]
+  have hc : c ≠ 0 := fun h ↦ hca (by rw [h, map_zero])
+  have hθτ : θ a ≠ τ := fun h ↦ hτ0 (h ▸ hroot.self_of_nhds)
+  -- The normalized reversal is monic, and its discriminant has the same order near `a`.
+  let P := (p.comp (X + C (MvPolynomial.C τ))).reverse.integralNormalization
+  have hP : P.Monic := monic_integralNormalization fun h ↦ hc <|
+    (p.leadingCoeff_reverse_comp_X_add_C hc).symm.trans (by rw [h, leadingCoeff_zero])
+  have hPm : ∀ᶠ x in 𝓝 a, P.discr.orderAt (φ x) = m := by
+    filter_upwards [hm, hcont.eventually_ne hca] with x hx hxc
+    rw [p.discr_integralNormalization_reverse_comp_X_add_C hc, MvPolynomial.orderAt_mul,
+      MvPolynomial.orderAt_pow, MvPolynomial.orderAt_eq_zero_iff.2 hxc, smul_zero, zero_add, hx]
+  -- In these coordinates the root `θ` becomes `c / (θ - τ)`, with the same ambient orders.
+  let θ' : (ι → ℝ) → ℝ := fun x ↦ MvPolynomial.eval (φ x) c * (θ x - τ)⁻¹
+  have hθ' : ContinuousAt θ' a :=
+    hcont.mul ((hθ.sub continuousAt_const).inv₀ (sub_ne_zero.2 hθτ))
+  have horder : ∀ᶠ x in 𝓝 a,
+      ((MvPolynomial.finSuccEquiv ℝ n).symm P).orderAt (Fin.cons (θ' x) (φ x)) =
+        ((MvPolynomial.finSuccEquiv ℝ n).symm p).orderAt (Fin.cons (θ x) (φ x)) := by
+    filter_upwards [hcont.eventually_ne hca, hθ.eventually_ne hθτ] with x hxc hxθ
+    exact p.orderAt_integralNormalization_reverse_comp_X_add_C hxc hxθ
+  have hroot' : ∀ᶠ x in 𝓝 a, (P.map (MvPolynomial.eval (φ x))).IsRoot (θ' x) := by
+    filter_upwards [horder, hroot] with x hx hxr
+    rw [hisRoot, hx, ← hisRoot]
+    exact hxr
+  filter_upwards [horder, hP.eventually_orderAt_root_eq_of_orderAt_discr_eq hφ hPm hθ' hroot']
+    with x hx hxP
+  rw [← hx, hxP, horder.self_of_nhds]
 
 end TauCeti
