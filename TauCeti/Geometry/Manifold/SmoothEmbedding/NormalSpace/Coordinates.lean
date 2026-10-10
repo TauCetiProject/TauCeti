@@ -107,16 +107,4 @@ theorem normalSpaceEquivInTangentCoordinates_symm_mk
     (((trivializationAt F (TangentSpace J) (f x₀)).continuousLinearEquivAt 𝕜 (f x)
       (by simpa using hy)).apply_symm_apply v).symm
 
-/-- The coordinate differential of an embedding remains split-injective on the overlap
-of its tangent charts, including for infinite-dimensional models. -/
-theorem hasLeftInverse_inTangentCoordinates_mfderiv (f : SmoothEmbedding I J n M N)
-    (hn : n ≠ 0) {x₀ x : M} (hx : x ∈ (chartAt H x₀).source)
-    (hy : f x ∈ (chartAt G (f x₀)).source) :
-    (inTangentCoordinates I J _root_.id (f : M → N)
-      (mfderiv I J (f : M → N)) x₀ x).HasLeftInverse := by
-  rw [inTangentCoordinates,
-    ContinuousLinearMap.inCoordinates_eq (by simpa using hx) (by simpa using hy)]
-  exact ((isDiffImmersionAt_iff.mp (f.isImmersion.isDiffImmersionAt hn x)).comp
-    (ContinuousLinearEquiv.hasLeftInverse _)).continuousLinearEquivalence_comp
-
 end TauCeti.SmoothEmbedding
