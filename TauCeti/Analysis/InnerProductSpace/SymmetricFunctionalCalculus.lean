@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Spectrum
+public import Mathlib.Analysis.InnerProductSpace.Positive
 
 /-!
 # The functional calculus of a symmetric operator in finite dimension
@@ -23,9 +23,9 @@ operators. In particular `f(T)` commutes with every endomorphism commuting with 
 
 No continuity of `f` is required, and the construction works uniformly over `RCLike` scalars, so
 it applies to real inner product spaces, where Mathlib's continuous functional calculus for
-self-adjoint operators is not available. For a positive operator, whose eigenvalues are
-nonnegative, `cfc_mul`, `cfc_congr` and `cfc_id` show that applying it to `Real.sqrt` gives a
-square root.
+self-adjoint operators is not available. A function that is nonnegative on the spectrum gives a
+positive operator; applied to `Real.sqrt` on a positive operator, this yields the positive square
+root `LinearMap.IsPositive.sqrt`.
 
 The name follows `Matrix.IsHermitian.cfc`, Mathlib's eigenbasis construction of the functional
 calculus of a Hermitian matrix.
@@ -40,6 +40,8 @@ calculus of a Hermitian matrix.
 * `LinearMap.IsSymmetric.isSymmetric_cfc`, `LinearMap.IsSymmetric.cfc_congr`,
   `LinearMap.IsSymmetric.cfc_id`, `LinearMap.IsSymmetric.cfc_mul`,
   `LinearMap.IsSymmetric.cfc_comp`: the algebraic laws of the calculus.
+* `LinearMap.IsSymmetric.isPositive_cfc`: `f(T)` is positive when `f` is nonnegative at the
+  eigenvalues of `T`.
 * `LinearMap.IsSymmetric.comp_cfc_eq_cfc_comp` and `LinearMap.IsSymmetric.commute_cfc`:
   intertwiners of symmetric operators intertwine their functional calculi; in particular the
   commutant of `T` commutes with `f(T)`.
@@ -207,5 +209,16 @@ theorem comp_cfc_eq_cfc_comp (hT : T.IsSymmetric) {T' : F →ₗ[𝕜] F} (hT' :
 theorem commute_cfc (hT : T.IsSymmetric) {S : E →ₗ[𝕜] E} (hS : Commute S T) (f : ℝ → ℝ) :
     Commute S (hT.cfc f) :=
   hT.comp_cfc_eq_cfc_comp hT hS.eq f
+
+/-- **Positivity.** If `f` is nonnegative at every eigenvalue of `T`, then `f(T)` is positive. -/
+theorem isPositive_cfc (hT : T.IsSymmetric) {f : ℝ → ℝ}
+    (hf : ∀ μ : ℝ, HasEigenvalue T (μ : 𝕜) → 0 ≤ f μ) : (hT.cfc f).IsPositive := by
+  -- `f(T) = R * R` for the symmetric operator `R = (√f)(T)`.
+  have hR : hT.cfc f = hT.cfc (fun μ ↦ √(f μ)) * hT.cfc (fun μ ↦ √(f μ)) := by
+    rw [← cfc_mul]
+    exact hT.cfc_congr fun μ hμ ↦ (Real.mul_self_sqrt (hf μ hμ)).symm
+  refine ⟨hT.isSymmetric_cfc f, fun x ↦ ?_⟩
+  rw [hR, Module.End.mul_apply, hT.isSymmetric_cfc _ _ x]
+  exact inner_self_nonneg
 
 end LinearMap.IsSymmetric
