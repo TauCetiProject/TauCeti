@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.CoordinateRing.VariableChange
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.VariableChange
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Aut
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Differential
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Neg
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.TautologicalPoint
@@ -32,7 +33,8 @@ the substitution `x₁ = u²x₂ + r`, `y₁ = u³y₂ + u²sx₂ + t` identifie
 (`WeierstrassCurve.Affine.CoordinateRing.variableChangeEquiv`). Read contravariantly, this is a
 coordinate pullback `R(W₂) → K(W₁)`, and it maps the point at infinity to the point at infinity
 because every function on `W₁` is already a pullback. So a change of variables is an isogeny
-`W₁ ⟶ W₂` of degree one, and changes of variables compose as their isogenies do.
+`W₁ ⟶ W₂` of degree one, and changes of variables compose as their isogenies do. It pulls the
+invariant differential of `W₂` back to `u` times that of `W₁`.
 
 Conversely, between elliptic curves every isogeny of degree one comes from a change of variables
 (Silverman III.3.1(b)). Such an isogeny `φ` has an inverse, and both pull coordinate rings back
@@ -67,6 +69,8 @@ one of them: `W.autGroup ≃* (Hom W W)ˣ`.
 * `TauCeti.Isogeny.variableChangeIsogeny_inj`: a change of variables is determined by its isogeny.
 * `TauCeti.Isogeny.variableChangeIsogeny_negVariableChange`: the change of variables `[-1]` gives
   the negation isogeny.
+* `TauCeti.Isogeny.pullbackDifferential_variableChangeIsogeny_invariantDifferential`: a change of
+  variables `C` pulls the invariant differential back to `C.u` times the invariant differential.
 * `TauCeti.Isogeny.exists_algebraMap_eq_pullback_of_degree_eq_one`: an isogeny of degree one out
   of a curve with integrally closed coordinate ring (for instance an elliptic curve) pulls the
   coordinate ring back into the coordinate ring.
@@ -199,6 +203,47 @@ theorem variableChangeIsogeny_negVariableChange (h : W₁.negVariableChange • 
   · simp [variableChangeEquiv_symm_root, conj_mk_Y, Affine.negPolynomial,
       IsScalarTower.algebraMap_apply F (Polynomial F) W₁.CoordinateRing]
     ring
+
+open _root_.WeierstrassCurve.Affine in
+/-- **A change of variables `C = (u, r, s, t)` pulls the invariant differential back to `u` times
+the invariant differential**: the substitution `x₂ = u⁻²(x₁ - r)` scales `dx` by `u⁻²` and the
+denominator `2y + a₁x + a₃` by `u⁻³` (Silverman III.1.3). -/
+theorem pullbackDifferential_variableChangeIsogeny_invariantDifferential (h : C • W₁ = W₂) :
+    (variableChangeIsogeny C h).pullbackDifferential (invariantDifferential W₂) =
+      (C.u : F) • invariantDifferential W₁ := by
+  subst h
+  have hx : (variableChangeIsogeny C rfl).fieldPullback (genericX (C • W₁)) =
+      algebraMap F W₁.FunctionField (↑C.u⁻¹ ^ 2) * genericX W₁ +
+        algebraMap F W₁.FunctionField (-C.r * ↑C.u⁻¹ ^ 2) := by
+    simp only [genericX_def, fieldPullback_algebraMap, variableChangeIsogeny_pullback,
+      variableChangePullback_apply, CoordinateRing.mk, AdjoinRoot.mk_C,
+      variableChangeEquiv_symm_of_X]
+    simp [VariableChange.inv_def, ← IsScalarTower.algebraMap_apply]
+  have hy : (variableChangeIsogeny C rfl).fieldPullback (genericY (C • W₁)) =
+      algebraMap F W₁.FunctionField (↑C.u⁻¹ ^ 3) * genericY W₁ +
+        algebraMap F W₁.FunctionField (↑C.u⁻¹ ^ 2 * (-C.s * ↑C.u⁻¹)) * genericX W₁ +
+        algebraMap F W₁.FunctionField ((C.r * C.s - C.t) * ↑C.u⁻¹ ^ 3) := by
+    simp only [genericY_def, genericX_def, fieldPullback_algebraMap,
+      variableChangeIsogeny_pullback, variableChangePullback_apply, CoordinateRing.mk,
+      AdjoinRoot.mk_X, variableChangeEquiv_symm_root]
+    simp [VariableChange.inv_def, ← IsScalarTower.algebraMap_apply]
+  -- the denominator `2y + a₁x + a₃` pulls back to `u⁻³` times the denominator
+  have hd : (variableChangeIsogeny C rfl).fieldPullback (invariantDifferentialDenom (C • W₁)) =
+      algebraMap F W₁.FunctionField (↑C.u⁻¹ ^ 3) * invariantDifferentialDenom W₁ := by
+    rw [invariantDifferentialDenom_def, invariantDifferentialDenom_def]
+    simp only [map_add, map_mul, map_ofNat, AlgHom.commutes, hx, hy, variableChange_a₁,
+      variableChange_a₃, map_neg, map_sub, map_pow]
+    ring
+  have hu : ((↑C.u⁻¹ ^ 3 : F))⁻¹ * ↑C.u⁻¹ ^ 2 = C.u := by
+    rw [← Units.val_pow_eq_pow_val, ← Units.val_pow_eq_pow_val, ← Units.val_inv_eq_inv_val,
+      ← Units.val_mul]
+    congr 1
+    group
+  rw [invariantDifferential_def, invariantDifferential_def, pullbackDifferential_smul,
+    pullbackDifferential_D, map_inv₀, hd, hx, map_add, Derivation.leibniz,
+    Derivation.map_algebraMap, Derivation.map_algebraMap, smul_zero, add_zero, add_zero,
+    ← algebraMap_smul W₁.FunctionField (C.u : F), smul_smul, smul_smul, mul_inv, mul_right_comm,
+    ← map_inv₀, ← map_mul, hu]
 
 /-! ### Every isomorphism is a change of variables -/
 
