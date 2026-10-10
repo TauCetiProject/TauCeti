@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Vandermonde
 public import TauCeti.FieldTheory.FunctionField.Differential.Kaehler
 public import TauCeti.FieldTheory.FunctionField.Place.Expansion.Laurent.Derivative
 public import TauCeti.RingTheory.Derivation.Wronskian.Rescale
+import Mathlib.LinearAlgebra.Vandermonde
 
 /-!
 # Wronskians in function fields
