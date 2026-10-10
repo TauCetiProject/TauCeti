@@ -185,6 +185,23 @@ lemma chainComplexMap_comp_singularChainComplexπ :
   rw [← toSSetPair_obj_hom]
   exact (toSSetPair.obj P).chainComplex_condition R
 
+variable {P P'} in
+/-- A map of pairs `f : (X, A) ⟶ (X', A')` whose map of ambient spaces factors through the
+subspace `A'` induces the zero map on relative singular chains. -/
+lemma singularChainComplexMap_eq_zero_of_fac (g : P.fst ⟶ P'.snd) (hg : g ≫ P'.map = Hom.fst f) :
+    singularChainComplexMap f R = 0 := by
+  have h : SSet.chainComplexMap (TopCat.toSSet.map (Hom.fst f)) R =
+      SSet.chainComplexMap (TopCat.toSSet.map g) R ≫
+        SSet.chainComplexMap (TopCat.toSSet.map P'.map) R := by
+    rw [← hg, Functor.map_comp]
+    exact Functor.map_comp _ _ _
+  rw [← cancel_epi (P.singularChainComplexπ R), comp_zero,
+    ← singularChainComplexπ_pair_naturality, h]
+  -- `rw [Category.assoc]` fails here: the ambient chain complex of `P'` appears both as
+  -- `(toSSetPair.obj P').right.chainComplex R` and as `(TopCat.toSSet.obj P'.fst).chainComplex R`.
+  exact (Category.assoc _ _ _).trans
+    ((congrArg (_ ≫ ·) (chainComplexMap_comp_singularChainComplexπ P' R)).trans comp_zero)
+
 /-- The cokernel cofork presenting the relative singular chain complex as the quotient of the
 ambient singular chains by the subspace singular chains. -/
 noncomputable abbrev cokernelCoforkSingularChainComplex :
@@ -242,6 +259,15 @@ lemma singularHomologyMap_comp {P'' : TopPair.{w}} (g : P' ⟶ P'') (n : ℕ) :
     P.singularHomologyMap (f ≫ g) R n =
       P.singularHomologyMap f R n ≫ P'.singularHomologyMap g R n := by
   rw [TopPair.singularHomologyMap, Functor.map_comp, SSetPair.homologyMap_comp]
+
+variable {P P'} in
+/-- A map of pairs `f : (X, A) ⟶ (X', A')` whose map of ambient spaces factors through the
+subspace `A'` induces the zero map on relative singular homology. -/
+lemma singularHomologyMap_eq_zero_of_fac (g : P.fst ⟶ P'.snd) (hg : g ≫ P'.map = Hom.fst f)
+    (n : ℕ) : P.singularHomologyMap f R n = 0 := by
+  rw [TopPair.singularHomologyMap, SSetPair.homologyMap,
+    ← singularChainComplexMap, singularChainComplexMap_eq_zero_of_fac f R g hg,
+    HomologicalComplex.homologyMap_zero]
 
 /-- Relative singular homology as a functor on topological pairs. -/
 @[no_expose]

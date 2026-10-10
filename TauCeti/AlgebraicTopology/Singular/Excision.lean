@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Excision
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Relative
+public import TauCeti.AlgebraicTopology.Singular.Triple
 public import TauCeti.Topology.Category.TopPair
 
 /-!
@@ -42,6 +43,11 @@ square with the excision maps (`TopPair.interPairMap_comp_excisionMap`), so the 
 isomorphisms are natural in the data.
 Compatibility with the connecting morphism of the pair is `TopPair.singularHomologyδ_naturality`
 applied to the excision map.
+
+Combined with the long exact sequence of the triple `(X, A, A ∩ B)`, excision shows that when the
+interiors of `A` and `B` cover `X`, a morphism into `Hₙ(X, A ∩ B)` is determined by its images in
+`Hₙ(X, A)` and `Hₙ(X, B)` (`TopPair.singularHomology_inter_hom_ext`): a morphism vanishing in
+`Hₙ(X, A)` comes from `Hₙ(A, A ∩ B)`, which excision identifies with `Hₙ(X, B)`.
 
 ## References
 
@@ -259,5 +265,112 @@ lemma interPairMap_comp_excisionMap :
   · exact (interPairMap_fst_apply g hA hB _).trans (ofSubsetMap_fst_apply g hB _).symm
 
 end Subsets
+
+section Inter
+
+open TauCeti
+
+variable {X : TopCat.{w}} (U V : Set X)
+
+/-- The triple `(X, U, U ∩ V)`, with `U ∩ V` realised as the preimage of `V` in the subspace `U`,
+so that its inner pair is `TopPair.interPair U V`. -/
+private abbrev interTriple : TopTriple.{w} :=
+  TopTriple.of (B := TopCat.of (Subtype.val ⁻¹' V : Set U)) (A := TopCat.of U) (X := X)
+    (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩)
+    (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩) IsEmbedding.subtypeVal
+    IsEmbedding.subtypeVal
+
+/-- The inner pair of `TopPair.interTriple U V` is `TopPair.interPair U V`. -/
+private def interPairToInner : interPair U V ⟶ TopTriple.innerPair.obj (interTriple U V) :=
+  TopPair.ofHom (𝟙 _) (𝟙 _) rfl
+
+/-- The outer pair of `TopPair.interTriple U V` is `(X, U)`. -/
+private def subsetToOuter : ofSubset U ⟶ TopTriple.outerPair.obj (interTriple U V) :=
+  TopPair.ofHom (𝟙 _) (𝟙 _) rfl
+
+/-- The identification of `(X, U ∩ V)` with the total pair of `TopPair.interTriple U V`. -/
+private def interToTotal : ofSubset (U ∩ V) ⟶ TopTriple.totalPair.obj (interTriple U V) :=
+  TopPair.ofHom (𝟙 X) (TopCat.ofHom ⟨fun y ↦ ⟨⟨y.1, y.2.1⟩, y.2.2⟩, by fun_prop⟩) (by ext; rfl)
+
+private instance : IsIso (interToTotal U V) :=
+  have : IsIso (Hom.fst (interToTotal U V)) := inferInstanceAs (IsIso (𝟙 X))
+  isIso_of_isIso_fst_of_surjective_snd _ fun y ↦ ⟨⟨y.1.1, y.1.2, y.2⟩, rfl⟩
+
+private instance : IsIso (interPairToInner U V) :=
+  have : IsIso (Hom.fst (interPairToInner U V)) := inferInstanceAs (IsIso (𝟙 (TopCat.of U)))
+  isIso_of_isIso_fst_of_surjective_snd _ fun y ↦ ⟨y, rfl⟩
+
+/-- The map from the total pair `(X, U ∩ V)` of `TopPair.interTriple U V` to the pair `(X, V)`. -/
+private def totalToSubset : TopTriple.totalPair.obj (interTriple U V) ⟶ ofSubset V :=
+  TopPair.ofHom (𝟙 X) (TopCat.ofHom ⟨fun y ↦ ⟨y.1.1, y.2⟩, by fun_prop⟩) (by ext; rfl)
+
+private lemma interPairToInner_comp_innerToTotal_comp_totalToSubset :
+    interPairToInner U V ≫ TopTriple.innerToTotal.app (interTriple U V) ≫ totalToSubset U V =
+      excisionMap U V := by
+  ext x : 2
+  · refine Subtype.ext (Eq.trans ?_ (excisionMap_snd_apply U V x).symm)
+    exact congrArg (fun g ↦ (g x).1.1) (TopTriple.innerToTotal_app_snd (T := interTriple U V))
+  · refine Eq.trans ?_ (excisionMap_fst_apply U V x).symm
+    exact congrArg (fun g ↦ g x) (TopTriple.innerToTotal_app_fst (T := interTriple U V))
+
+variable {U V}
+
+private lemma interToTotal_comp_totalToOuter (hU : Set.MapsTo (𝟙 X) (U ∩ V) U) :
+    interToTotal U V ≫ TopTriple.totalToOuter.app (interTriple U V) =
+      ofSubsetMap (𝟙 X) hU ≫ subsetToOuter U V := by
+  ext x : 2
+  · refine Subtype.ext (Eq.trans ?_ (ofSubsetMap_snd_apply (𝟙 X) hU x).symm)
+    exact congrArg (fun g ↦ (g (Hom.snd (interToTotal U V) x)).1)
+      (TopTriple.totalToOuter_app_snd (T := interTriple U V))
+  · refine Eq.trans ?_ (ofSubsetMap_fst_apply (𝟙 X) hU x).symm
+    exact congrArg (fun g ↦ g x) (TopTriple.totalToOuter_app_fst (T := interTriple U V))
+
+private lemma interToTotal_comp_totalToSubset (hV : Set.MapsTo (𝟙 X) (U ∩ V) V) :
+    interToTotal U V ≫ totalToSubset U V = ofSubsetMap (𝟙 X) hV := by
+  ext x : 2
+  · exact Subtype.ext (ofSubsetMap_snd_apply (𝟙 X) hV x).symm
+  · exact (ofSubsetMap_fst_apply (𝟙 X) hV x).symm
+
+/-- **Relative homology of `(X, U ∩ V)` is detected on `(X, U)` and `(X, V)`** when the interiors
+of `U` and `V` cover `X`: two morphisms into `Hₙ(X, U ∩ V)` agree as soon as their images in
+`Hₙ(X, U)` and in `Hₙ(X, V)` agree.  By the long exact sequence of the triple `(X, U, U ∩ V)`, a
+morphism vanishing in `Hₙ(X, U)` comes from `Hₙ(U, U ∩ V)`, which excision identifies with
+`Hₙ(X, V)`.  As for `TopPair.ofSubsetMap_id`, the inclusions `hU` and `hV` are arguments, so that
+the maps of pairs in the hypotheses match those of the caller. -/
+theorem singularHomology_inter_hom_ext (h : interior U ∪ interior V = Set.univ)
+    (hU : Set.MapsTo (𝟙 X) (U ∩ V) U) (hV : Set.MapsTo (𝟙 X) (U ∩ V) V) (n : ℕ) {M : A}
+    {u v : M ⟶ (ofSubset (U ∩ V)).singularHomology R n}
+    (hu : u ≫ TopPair.singularHomologyMap (ofSubsetMap (𝟙 X) hU) R n =
+      v ≫ TopPair.singularHomologyMap (ofSubsetMap (𝟙 X) hU) R n)
+    (hv : u ≫ TopPair.singularHomologyMap (ofSubsetMap (𝟙 X) hV) R n =
+      v ≫ TopPair.singularHomologyMap (ofSubsetMap (𝟙 X) hV) R n) :
+    u = v := by
+  let T := interTriple U V
+  rw [← sub_eq_zero, ← cancel_mono (TopPair.singularHomologyMap (interToTotal U V) R n), zero_comp]
+  set w := (u - v) ≫ TopPair.singularHomologyMap (interToTotal U V) R n with hw
+  have hw₁ : w ≫ TopPair.singularHomologyMap (TopTriple.totalToOuter.app T) R n = 0 := by
+    rw [hw, Category.assoc, ← TopPair.singularHomologyMap_comp,
+      interToTotal_comp_totalToOuter hU, TopPair.singularHomologyMap_comp, ← Category.assoc,
+      Preadditive.sub_comp, hu, sub_self, zero_comp]
+  have hw₂ : w ≫ TopPair.singularHomologyMap (totalToSubset U V) R n = 0 := by
+    rw [hw, Category.assoc, ← TopPair.singularHomologyMap_comp,
+      interToTotal_comp_totalToSubset hV, Preadditive.sub_comp, hv, sub_self]
+  -- The map `Hₙ(U, U ∩ V) ⟶ Hₙ(X, U ∩ V)` followed by `Hₙ(X, U ∩ V) ⟶ Hₙ(X, V)` is excision.
+  have hiso : IsIso (TopPair.singularHomologyMap (TopTriple.innerToTotal.app T) R n ≫
+      TopPair.singularHomologyMap (totalToSubset U V) R n) := by
+    have := isIso_singularHomologyMap_excisionMap R U V h n
+    rw [← interPairToInner_comp_innerToTotal_comp_totalToSubset, TopPair.singularHomologyMap_comp,
+      TopPair.singularHomologyMap_comp] at this
+    exact IsIso.of_isIso_comp_left (TopPair.singularHomologyMap (interPairToInner U V) R n) _
+  have := mono_of_mono (TopPair.singularHomologyMap (TopTriple.innerToTotal.app T) R n)
+    (TopPair.singularHomologyMap (totalToSubset U V) R n)
+  obtain ⟨l, hl⟩ := (T.singularHomology_exact_total R n).lift' w hw₁
+  have hl₀ : l = 0 := by
+    rw [← cancel_mono (TopPair.singularHomologyMap (TopTriple.innerToTotal.app T) R n ≫
+      TopPair.singularHomologyMap (totalToSubset U V) R n), zero_comp, ← Category.assoc]
+    exact hl ▸ hw₂
+  rw [← hl, hl₀, zero_comp]
+
+end Inter
 
 end TopPair
