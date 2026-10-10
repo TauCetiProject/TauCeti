@@ -197,6 +197,26 @@ theorem schwarzChristoffelSphereBoundary_eq_coe_compactifiedBoundary
     simp [schwarzChristoffelSphereBoundary_coe_of_exponent_sum_gt_neg_one a e z₀ p
       (lt_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite p)]
 
+/-- When finite prevertices are integrable and the parameter at infinity maps to infinity,
+the finite spherical boundary values are exactly the ordinary boundary values. -/
+theorem preimage_range_schwarzChristoffelSphereBoundary_of_neg_one_le_sum
+    (a e : ι → ℝ) (z₀ : UpperHalfPlane)
+    (hfinite : ∀ j, -1 < ∑ i with a i = a j, e i) (hsum : -1 ≤ ∑ i, e i) :
+    ((↑) : ℂ → OnePoint ℂ) ⁻¹' range (schwarzChristoffelSphereBoundary a e z₀) =
+      range (schwarzChristoffelBoundary a e z₀) := by
+  ext w
+  constructor
+  · rintro ⟨x, hx⟩
+    induction x using OnePoint.rec with
+    | infty => simp [not_lt.mpr hsum] at hx
+    | coe p =>
+      exact ⟨p, OnePoint.coe_injective (by
+        simpa only [schwarzChristoffelSphereBoundary_coe_of_exponent_sum_gt_neg_one a e z₀ p
+          (lt_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite p)] using hx)⟩
+  · rintro ⟨p, rfl⟩
+    exact ⟨p, schwarzChristoffelSphereBoundary_coe_of_exponent_sum_gt_neg_one a e z₀ p
+      (lt_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite p)⟩
+
 /-- The primitive approaches the sphere boundary from the whole upper half-plane, including
 at logarithmic ends. -/
 theorem tendsto_schwarzChristoffelPrimitive_sphereBoundary (a e : ι → ℝ)

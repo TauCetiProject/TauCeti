@@ -23,9 +23,6 @@ the image is mapped onto bijectively. This is the covering criterion for polygon
 with several logarithmic ends. It does not assume boundary simplicity, impose a bound on
 the total exponent, or assert that the image avoids its boundary values automatically.
 
-The proof uses `schwarzChristoffelSphereExtension` and the existing local-homeomorphism
-criterion for the primitive, rather than separate estimates near each end.
-
 ## References
 
 * L. Ahlfors, *Complex Analysis*, Chapter 6, Section 2.
@@ -90,7 +87,8 @@ theorem closure_coe_image_schwarzChristoffelPrimitive (a e : ι → ℝ)
 
 /-- Compact sets avoiding the finite spherical boundary values have compact preimages in
 the upper half-plane, even when finite prevertices are logarithmic ends. -/
-theorem isCompact_upperHalfPlaneSet_inter_preimage_schwarzChristoffelPrimitive_of_le_prevertex_sum
+theorem
+  isCompact_upperHalfPlaneSet_inter_preimage_schwarzChristoffelPrimitive_of_neg_one_le_prevertex_sum
     (a e : ι → ℝ) (z₀ : UpperHalfPlane)
     (hfinite : ∀ j, -1 ≤ ∑ i with a i = a j, e i) {K : Set ℂ} (hK : IsCompact K)
     (hKB : Disjoint (((↑) : ℂ → OnePoint ℂ) '' K)
@@ -135,7 +133,7 @@ theorem isCompact_upperHalfPlaneSet_inter_preimage_schwarzChristoffelPrimitive_o
 /-- The primitive is a covering map over the complement of the finite spherical boundary
 values. Every finite prevertex may be integrable or logarithmic, and the total exponent is
 unrestricted. -/
-theorem isCoveringMapOn_schwarzChristoffelPrimitive_of_le_prevertex_sum
+theorem isCoveringMapOn_schwarzChristoffelPrimitive_of_neg_one_le_prevertex_sum
     (a e : ι → ℝ) (z₀ : UpperHalfPlane)
     (hfinite : ∀ j, -1 ≤ ∑ i with a i = a j, e i) :
     IsCoveringMapOn (fun τ : ℍ => schwarzChristoffelPrimitive a e z₀ τ)
@@ -145,7 +143,8 @@ theorem isCoveringMapOn_schwarzChristoffelPrimitive_of_le_prevertex_sum
   apply isCoveringMapOn_schwarzChristoffelPrimitive_of_isCompact_preimage a e z₀
     (hB.preimage OnePoint.continuous_coe).isOpen_compl
   intro K hKB hK
-  apply isCompact_upperHalfPlaneSet_inter_preimage_schwarzChristoffelPrimitive_of_le_prevertex_sum
+  apply
+  isCompact_upperHalfPlaneSet_inter_preimage_schwarzChristoffelPrimitive_of_neg_one_le_prevertex_sum
     a e z₀ hfinite hK
   rw [disjoint_left]
   rintro _ ⟨w, hw, rfl⟩ hwB
@@ -153,7 +152,7 @@ theorem isCoveringMapOn_schwarzChristoffelPrimitive_of_le_prevertex_sum
 
 /-- A preconnected region avoiding the finite spherical boundary values and containing the
 image is exactly the image, including for data with several logarithmic ends. -/
-theorem image_schwarzChristoffelPrimitive_eq_of_subset_of_le_prevertex_sum
+theorem image_schwarzChristoffelPrimitive_eq_of_subset_of_neg_one_le_prevertex_sum
     (a e : ι → ℝ) (z₀ : UpperHalfPlane)
     (hfinite : ∀ j, -1 ≤ ∑ i with a i = a j, e i) {W : Set ℂ} (hW : IsPreconnected W)
     (hWB : Disjoint (((↑) : ℂ → OnePoint ℂ) '' W)
@@ -178,17 +177,18 @@ theorem image_schwarzChristoffelPrimitive_eq_of_subset_of_le_prevertex_sum
 connected region avoiding the finite spherical boundary values, the Schwarz--Christoffel
 primitive maps the upper half-plane bijectively onto that region. Boundary injectivity is
 not assumed. -/
-theorem bijOn_schwarzChristoffelPrimitive_of_subset_of_le_prevertex_sum
+theorem bijOn_schwarzChristoffelPrimitive_of_subset_of_neg_one_le_prevertex_sum
     (a e : ι → ℝ) (z₀ : UpperHalfPlane)
     (hfinite : ∀ j, -1 ≤ ∑ i with a i = a j, e i) {W : Set ℂ} [SimplyConnectedSpace W]
     (hWB : Disjoint (((↑) : ℂ → OnePoint ℂ) '' W)
       (range (schwarzChristoffelSphereBoundary a e z₀)))
     (hFW : schwarzChristoffelPrimitive a e z₀ '' upperHalfPlaneSet ⊆ W) :
     BijOn (schwarzChristoffelPrimitive a e z₀) upperHalfPlaneSet W := by
-  have himage := image_schwarzChristoffelPrimitive_eq_of_subset_of_le_prevertex_sum a e z₀
+  have himage := image_schwarzChristoffelPrimitive_eq_of_subset_of_neg_one_le_prevertex_sum a e z₀
     hfinite (isPreconnected_iff_preconnectedSpace.mpr inferInstance) hWB hFW
   refine ⟨himage ▸ mapsTo_image _ _, fun z hz w hw hzw => ?_, himage ▸ surjOn_image _ _⟩
-  have hcov := isCoveringMapOn_schwarzChristoffelPrimitive_of_le_prevertex_sum a e z₀ hfinite
+  have hcov :=
+    isCoveringMapOn_schwarzChristoffelPrimitive_of_neg_one_le_prevertex_sum a e z₀ hfinite
   exact congrArg ((↑) : ℍ → ℂ) <|
     hcov.injective_of_range_subset
       (fun w hwW hwB => disjoint_left.mp hWB (mem_image_of_mem _ hwW) hwB)
