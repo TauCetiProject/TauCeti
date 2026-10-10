@@ -65,6 +65,8 @@ Unlike a bound on the exponent, the condition is elementwise: for prime `p`,
   annihilated by one power of `p`.
 * `TauCeti.exists_mem_primaryComponent_apply_eq`: for prime `p`, a `p`-primary image of an element
   of finite order is already the image of a `p`-primary element.
+* `TauCeti.primaryComponent_eq_bot_of_injective_nsmul`: a group on which multiplication by `p` is
+  injective has trivial `p`-primary component.
 -/
 
 public section
@@ -284,5 +286,15 @@ theorem exists_mem_primaryComponent_apply_eq {F : Type*} [FunLike F M N] [AddMon
   · rw [smul_comm, smul_smul, ← hord, addOrderOf_nsmul_eq_zero, smul_zero]
   · rw [map_zsmul, map_nsmul]
     simpa [hk] using hij (f m)
+
+/-- If multiplication by `p` is injective on `M`, the `p`-primary component of `M` is trivial. -/
+theorem primaryComponent_eq_bot_of_injective_nsmul (h : Function.Injective fun m : M ↦ p • m) :
+    AddCommGroup.primaryComponent M p = ⊥ := by
+  suffices ∀ (k : ℕ) (m : M), p ^ k • m = 0 → m = 0 from
+    (AddSubgroup.eq_bot_iff_forall _).2 fun m ⟨k, hk⟩ ↦ this k m hk
+  intro k
+  induction k with
+  | zero => simp
+  | succ k ih => exact fun m hm ↦ ih m (h (by simpa [pow_succ, mul_nsmul] using hm))
 
 end TauCeti
