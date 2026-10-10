@@ -12,17 +12,14 @@ public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 
 For submodules `U` and `V` of an inner product space admitting orthogonal projections `P_U` and
 `P_V`, the *gap* between `U` and `V` is the operator norm `‖P_U - P_V‖`, and the *directed gap*
-from `U` to `V` is `‖P_{Vᗮ} P_U‖`, which measures how far unit vectors of `U` can stick out of
-`V`. The gap is symmetric, bounded by `1`, and vanishes exactly when `U = V`; it is the quantity
-in which perturbation bounds for spectral subspaces are stated.
+from `U` to `V` is `‖P_{Vᗮ} P_U‖`, which measures how far vectors of `U` of norm at most one can
+stick out of `V`. The gap is symmetric, bounded by `1`, and vanishes exactly when `U = V`; it is
+the quantity in which perturbation bounds for spectral subspaces are stated.
 
 The main result is the sharp identity
 `‖P_U - P_V‖ = max ‖P_{Vᗮ} P_U‖ ‖P_{Uᗮ} P_V‖`, with no completeness or dimension hypothesis.
-Writing `P_U - P_V = P_{Vᗮ} P_U - P_V P_{Uᗮ}`, the two terms take values in the orthogonal
-subspaces `Vᗮ` and `V`, and act on the orthogonal components `P_U x` and `P_{Uᗮ} x`, so the
-Pythagorean theorem gives the upper bound; each directed term is a compression of `P_U - P_V`,
-which gives the lower bound. The adjoint-free identity `‖P_U P_V‖ = ‖P_V P_U‖` handles the second
-term.
+It reduces gap estimates to estimates of the two directed gaps, and identifies the gap as a
+measure of how far each subspace sticks out of the other.
 
 ## Main definitions
 
@@ -57,10 +54,11 @@ open scoped InnerProductSpace
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 variable (U V : Submodule 𝕜 E) [U.HasOrthogonalProjection] [V.HasOrthogonalProjection]
 
-/-- One half of `norm_starProjection_comp_starProjection_comm`. For `y = P_U P_V x`,
-`‖y‖² = Re ⟪x, P_V P_U y⟫` because both projections are symmetric and `P_U y = y`. -/
+/-- One half of `norm_starProjection_comp_starProjection_comm`. -/
 private theorem norm_starProjection_comp_starProjection_le :
     ‖U.starProjection ∘L V.starProjection‖ ≤ ‖V.starProjection ∘L U.starProjection‖ := by
+  -- For `y = P_U P_V x`, `‖y‖² = Re ⟪x, P_V P_U y⟫` because both projections are symmetric and
+  -- `P_U y = y`.
   refine opNorm_le_bound _ (norm_nonneg _) fun x => ?_
   set y := U.starProjection (V.starProjection x)
   have hy : U.starProjection y = y := starProjection_eq_self_iff.mpr (U.starProjection_apply_mem _)
@@ -83,8 +81,8 @@ private theorem norm_starProjection_comp_starProjection_le :
     positivity
   · exact le_of_mul_le_mul_right key h
 
-/-- The two products of a pair of orthogonal projections have the same operator norm. This is
-`‖T‖ = ‖T†‖` for `T = P_U P_V`, proved without adjoints and hence without completeness. -/
+/-- The two products of a pair of orthogonal projections have the same operator norm, that is,
+`‖T‖ = ‖T†‖` for `T = P_U P_V`. No completeness of `E` is assumed. -/
 theorem norm_starProjection_comp_starProjection_comm :
     ‖U.starProjection ∘L V.starProjection‖ = ‖V.starProjection ∘L U.starProjection‖ :=
   (norm_starProjection_comp_starProjection_le U V).antisymm
@@ -94,8 +92,8 @@ theorem norm_starProjection_comp_starProjection_comm :
 def projectionGap : ℝ :=
   ‖U.starProjection - V.starProjection‖
 
-/-- The directed gap `‖P_{Vᗮ} P_U‖` from `U` to `V`: the largest norm of the component
-orthogonal to `V` of a unit vector of `U`. -/
+/-- The directed gap `‖P_{Vᗮ} P_U‖` from `U` to `V`: the supremum of the norm of the component
+orthogonal to `V` of a vector of `U` with norm at most one. -/
 def directedProjectionGap : ℝ :=
   ‖Vᗮ.starProjection ∘L U.starProjection‖
 
@@ -132,9 +130,10 @@ theorem directedProjectionGap_orthogonal :
   rw [directedProjectionGap, directedProjectionGap, starProjection_orthogonal' Uᗮ,
     starProjection_orthogonal' U, sub_sub_cancel, norm_starProjection_comp_starProjection_comm]
 
-/-- The directed gap from `U` to `V` is at most the gap: `P_{Vᗮ} P_U = P_{Vᗮ} (P_U - P_V)`. -/
+/-- The directed gap from `U` to `V` is at most the gap. -/
 theorem directedProjectionGap_le_projectionGap :
     directedProjectionGap U V ≤ projectionGap U V := by
+  -- `P_{Vᗮ} P_U = P_{Vᗮ} (P_U - P_V)`, and `P_{Vᗮ}` has norm at most one.
   have h : Vᗮ.starProjection ∘L U.starProjection =
       Vᗮ.starProjection ∘L (U.starProjection - V.starProjection) := by
     rw [comp_sub, (isOrtho_orthogonal_left V).starProjection_comp_starProjection, sub_zero]
@@ -142,6 +141,7 @@ theorem directedProjectionGap_le_projectionGap :
   exact (opNorm_comp_le _ _).trans
     (mul_le_of_le_one_left (norm_nonneg _) (starProjection_norm_le _))
 
+/-- The directed gap from `U` to `V` is at most `1`. -/
 theorem directedProjectionGap_le_one : directedProjectionGap U V ≤ 1 :=
   (opNorm_comp_le _ _).trans <| (mul_le_mul (starProjection_norm_le _)
     (starProjection_norm_le _) (norm_nonneg _) zero_le_one).trans_eq (mul_one 1)
@@ -150,6 +150,11 @@ theorem directedProjectionGap_le_one : directedProjectionGap U V ≤ 1 :=
 directed gaps, `‖P_U - P_V‖ = max ‖P_{Vᗮ} P_U‖ ‖P_{Uᗮ} P_V‖`. -/
 theorem projectionGap_eq_max :
     projectionGap U V = max (directedProjectionGap U V) (directedProjectionGap V U) := by
+  -- Each directed term is a compression of `P_U - P_V`, which gives the lower bound. For the
+  -- upper bound, `P_U - P_V = P_{Vᗮ} P_U - P_V P_{Uᗮ}`, where the two terms take values in the
+  -- orthogonal subspaces `Vᗮ` and `V` and act on the orthogonal components `P_U x` and
+  -- `P_{Uᗮ} x`, so the Pythagorean theorem applies; the adjoint-free identity
+  -- `‖P_U P_V‖ = ‖P_V P_U‖` handles the second term.
   refine le_antisymm ?_ (max_le (directedProjectionGap_le_projectionGap U V)
     (projectionGap_comm U V ▸ directedProjectionGap_le_projectionGap V U))
   set m := max (directedProjectionGap U V) (directedProjectionGap V U)
@@ -188,6 +193,7 @@ theorem projectionGap_eq_max :
           rw [mul_pow, mul_pow, mul_pow, ← mul_add, ← norm_sq_eq_add_norm_sq_starProjection]
   exact (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).mp hsq
 
+/-- The gap between two subspaces is at most `1`. -/
 theorem projectionGap_le_one : projectionGap U V ≤ 1 := by
   rw [projectionGap_eq_max]
   exact max_le (directedProjectionGap_le_one U V) (directedProjectionGap_le_one V U)

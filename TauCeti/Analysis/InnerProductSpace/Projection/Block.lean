@@ -60,6 +60,41 @@ orthogonal decomposition `E = U ⊕ Uᗮ`. -/
 def offDiagBlock (A : E →L[𝕜] E) : E →L[𝕜] E :=
   U.starProjection ∘L A ∘L Uᗮ.starProjection + Uᗮ.starProjection ∘L A ∘L U.starProjection
 
+theorem diagBlock_def (A : E →L[𝕜] E) :
+    U.diagBlock A =
+      U.starProjection ∘L A ∘L U.starProjection + Uᗮ.starProjection ∘L A ∘L Uᗮ.starProjection :=
+  (rfl)
+
+theorem offDiagBlock_def (A : E →L[𝕜] E) :
+    U.offDiagBlock A =
+      U.starProjection ∘L A ∘L Uᗮ.starProjection + Uᗮ.starProjection ∘L A ∘L U.starProjection :=
+  (rfl)
+
+/-- Taking the diagonal part is additive. -/
+@[simp]
+theorem diagBlock_add (A B : E →L[𝕜] E) :
+    U.diagBlock (A + B) = U.diagBlock A + U.diagBlock B := by
+  simp only [diagBlock, ContinuousLinearMap.add_comp, ContinuousLinearMap.comp_add]
+  abel
+
+/-- Taking the diagonal part commutes with scalar multiplication. -/
+@[simp]
+theorem diagBlock_smul (c : 𝕜) (A : E →L[𝕜] E) : U.diagBlock (c • A) = c • U.diagBlock A := by
+  simp only [diagBlock, ContinuousLinearMap.smul_comp, ContinuousLinearMap.comp_smul, smul_add]
+
+/-- Taking the off-diagonal part is additive. -/
+@[simp]
+theorem offDiagBlock_add (A B : E →L[𝕜] E) :
+    U.offDiagBlock (A + B) = U.offDiagBlock A + U.offDiagBlock B := by
+  simp only [offDiagBlock, ContinuousLinearMap.add_comp, ContinuousLinearMap.comp_add]
+  abel
+
+/-- Taking the off-diagonal part commutes with scalar multiplication. -/
+@[simp]
+theorem offDiagBlock_smul (c : 𝕜) (A : E →L[𝕜] E) :
+    U.offDiagBlock (c • A) = c • U.offDiagBlock A := by
+  simp only [offDiagBlock, ContinuousLinearMap.smul_comp, ContinuousLinearMap.comp_smul, smul_add]
+
 /-- The reflection across `U`, as a bounded operator, is `2 P_U - 1`. -/
 theorem coe_reflection :
     (U.reflection : E →L[𝕜] E) = 2 • U.starProjection - 1 := by
@@ -101,6 +136,7 @@ theorem commute_reflection_iff {A : E →L[𝕜] E} :
 
 /-- The off-diagonal part of `A` vanishes exactly when `A` commutes with the orthogonal
 projection onto `U`, that is, when `A` is block diagonal relative to `U ⊕ Uᗮ`. -/
+@[simp]
 theorem offDiagBlock_eq_zero_iff {A : E →L[𝕜] E} :
     U.offDiagBlock A = 0 ↔ Commute U.starProjection A := by
   simp only [offDiagBlock, starProjection_orthogonal', ← ContinuousLinearMap.mul_def]
@@ -127,6 +163,7 @@ theorem offDiagBlock_eq_zero_iff {A : E →L[𝕜] E} :
 
 /-- An operator equals its diagonal part exactly when it commutes with the orthogonal projection
 onto `U`. -/
+@[simp]
 theorem diagBlock_eq_self_iff {A : E →L[𝕜] E} :
     U.diagBlock A = A ↔ Commute U.starProjection A := by
   rw [← offDiagBlock_eq_zero_iff, ← add_eq_left (a := U.diagBlock A),
