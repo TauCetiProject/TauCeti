@@ -30,19 +30,16 @@ public section
 
 open Matrix
 
-namespace Representation.IsIrreducible
-
-open TauCeti
+namespace TauCeti
 
 variable {K W : Type*} [Field K] [AddCommGroup W] [Module K W] {n : ℕ}
   {ρ : Representation K (GL (Fin n) K) W}
 
 /-- A scalar matrix acts on an irreducible representation by the scalar raised to the
 coordinate sum of any occurring torus weight. -/
-theorem apply_scalar_eq_zpow_smul_of_weightSpace_ne_bot (hρ : ρ.IsIrreducible)
+theorem apply_scalar_eq_zpow_smul_of_weightSpace_ne_bot [ρ.IsIrreducible]
     {l : Fin n → ℤ} (hl : weightSpace ρ l ≠ ⊥) (z : Kˣ) (v : W) :
     ρ (GeneralLinearGroup.scalar (Fin n) z) v = ((z ^ (∑ i, l i) : Kˣ) : K) • v := by
-  have := hρ
   obtain ⟨w, hw, hw0⟩ := (Submodule.ne_bot_iff _).mp hl
   let a : K := ((z ^ (∑ i, l i) : Kˣ) : K)
   let f : Module.End K W := ρ (GeneralLinearGroup.scalar (Fin n) z) - a • LinearMap.id
@@ -52,21 +49,12 @@ theorem apply_scalar_eq_zpow_smul_of_weightSpace_ne_bot (hρ : ρ.IsIrreducible)
     simpa [f, map_mul, Module.End.mul_apply] using hc
   let F := f.intertwiningMap_of_isIntertwiningMap ρ ρ hf
   have hwf : F w = 0 := by
-    have he := apply_of_mem_weightSpace hw (fun _ ↦ z)
-    rw [weightChar_apply, torusCharacter_def, Finset.prod_zpow_eq_zpow_sum,
-      diagGL_const] at he
+    have he := apply_scalar_of_mem_weightSpace hw z
     simpa [F, f, a] using sub_eq_zero.mpr he
-  have hF : F = 0 := (injective_or_eq_zero F).resolve_left fun hinj ↦
+  have hF : F = 0 := (Representation.IsIrreducible.injective_or_eq_zero F).resolve_left fun hinj ↦
     hw0 (hinj (hwf.trans (map_zero F).symm))
   have hv := DFunLike.congr_fun hF v
   simpa [F, f, a, sub_eq_zero] using hv
-
-end Representation.IsIrreducible
-
-namespace TauCeti
-
-variable {K W : Type*} [Field K] [AddCommGroup W] [Module K W] {n : ℕ}
-  {ρ : Representation K (GL (Fin n) K) W}
 
 /-- An occurring weight determines the exponent of a scalar action over an infinite field.
 Irreducibility is not needed when the scalar action is already known. -/
@@ -80,10 +68,7 @@ theorem sum_eq_of_forall_apply_scalar_eq_zpow_smul [Infinite K]
     intro z
     apply Units.ext
     apply smul_left_injective K hw0
-    have h := apply_of_mem_weightSpace hw (fun _ ↦ z)
-    rw [weightChar_apply, torusCharacter_def, Finset.prod_zpow_eq_zpow_sum,
-      diagGL_const] at h
-    exact h.symm.trans (hd z w)
+    exact (apply_scalar_of_mem_weightSpace hw z).symm.trans (hd z w)
   have hchar : weightChar K (fun _ : Fin 1 ↦ ∑ i, l i) =
       weightChar K (fun _ : Fin 1 ↦ d) := by
     apply MonoidHom.ext
@@ -97,10 +82,11 @@ theorem sum_eq_sum_of_weightSpace_ne_bot [Infinite K] [ρ.IsIrreducible]
     {l m : Fin n → ℤ} (hl : weightSpace ρ l ≠ ⊥) (hm : weightSpace ρ m ≠ ⊥) :
     ∑ i, l i = ∑ i, m i :=
   sum_eq_of_forall_apply_scalar_eq_zpow_smul hl
-    ((inferInstance : ρ.IsIrreducible).apply_scalar_eq_zpow_smul_of_weightSpace_ne_bot hm)
+    (apply_scalar_eq_zpow_smul_of_weightSpace_ne_bot hm)
 
 /-- Scalar matrices act on a rational irreducible representation of `GL n ℂ` by a unique
-integer power. Its exponent is the coordinate sum of every occurring torus weight. -/
+integer power. The exponent is identified with the coordinate sum of every occurring torus
+weight by `sum_eq_of_forall_apply_scalar_eq_zpow_smul`. -/
 theorem IsRationalRep.existsUnique_forall_apply_scalar_eq_zpow_smul
     {W : Type*} [AddCommGroup W] [Module ℂ W]
     {ρ : Representation ℂ (GL (Fin n) ℂ) W} [ρ.IsIrreducible] (h : IsRationalRep ρ) :
@@ -114,7 +100,7 @@ theorem IsRationalRep.existsUnique_forall_apply_scalar_eq_zpow_smul
     exact bot_ne_top htop
   obtain ⟨l, hl⟩ := hweight
   refine ⟨∑ i, l i,
-    (inferInstance : ρ.IsIrreducible).apply_scalar_eq_zpow_smul_of_weightSpace_ne_bot hl,
+    apply_scalar_eq_zpow_smul_of_weightSpace_ne_bot hl,
     fun d hd ↦ ?_⟩
   exact (sum_eq_of_forall_apply_scalar_eq_zpow_smul hl hd).symm
 
