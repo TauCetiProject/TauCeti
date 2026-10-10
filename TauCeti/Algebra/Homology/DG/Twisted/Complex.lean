@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.DG.Twisted.Cocycle
 public import TauCeti.Algebra.Homology.DG.Module.Right.Defs
 public import TauCeti.Algebra.Homology.GradedCochainComplex
+import TauCeti.Algebra.Ring.NegOnePow
 
 /-!
 # The twisted complex of a twisting cocycle
@@ -101,13 +102,17 @@ noncomputable def twistedDifferential (m : P → P → A) (ℳ : ℤ → Submodu
 variable (m : P → P → A) {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ] (dM : M →ₗ[R] M)
 
 omit [Fintype P] [Module Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M] in
-/-- The Koszul twist of parameter one of `ℳ`, on an element of degree `q`. -/
+/-- The Koszul twist of parameter one of `ℳ`, on an element of degree `q`, as the `ℤˣ`-scalar
+`q.negOnePow` of `TauCeti.IsDGRightModule.leibniz`. -/
 private theorem koszulTwist_one_apply {q : ℤ} {α : M} (hα : α ∈ ℳ q) :
-    (InternalGrading.ofDecomposition ℳ).koszulTwist 1 α = q.negOnePow • α :=
-  InternalGrading.koszulTwist_one_apply_of_mem_negOnePow_smul _
-    (by rwa [InternalGrading.ofDecomposition_piece])
+    (InternalGrading.ofDecomposition ℳ).koszulTwist 1 α = q.negOnePow • α := by
+  rw [InternalGrading.koszulTwist_one_apply_of_mem _
+    (show α ∈ (InternalGrading.ofDecomposition ℳ).piece q by
+      rwa [InternalGrading.ofDecomposition_piece]),
+    negOnePow_smul_eq_negOnePowCast_smul (R := R), negOnePowCast_eq_intCast]
 
 omit [Algebra R A] [IsScalarTower R Aᵐᵒᵖ M] in
+@[simp]
 theorem twistedDifferential_apply (f : P → M) (y : P) :
     twistedDifferential m ℳ dM f y =
       dM (f y) + ∑ x, op (m x y) • (InternalGrading.ofDecomposition ℳ).koszulTwist 1 (f x) := by
