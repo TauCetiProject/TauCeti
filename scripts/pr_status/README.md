@@ -84,6 +84,13 @@ reconciles two independent, mutually-exclusive reaction groups from `core.derive
 | | merged | `:merge:` |
 | | closed, not merged | `:closed-pr:` |
 
+Bors squash batches fast-forward `main` and then close their PRs, so GitHub can
+report `merged=false` even for landed work. For Zulip presentation, a closed PR
+whose title starts with `[Merged by Bors] - ` receives `:merge:`. That prefix is
+removed from the displayed title. This does not change merge readiness or
+GitHub's PR metadata. Run `zulip-pr-backfill.yml` with `bors_only=true` and
+`dry_run=false` to repair existing affected posts and reactions in place.
+
 Each message includes the PR's author and the area from every `roadmap/...`
 label (with `unlabelled` distinct from the deliberate `roadmap/none`). A later
 label change edits the existing message in place, so a roadmap label added after

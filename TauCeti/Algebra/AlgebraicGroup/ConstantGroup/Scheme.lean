@@ -83,7 +83,6 @@ theorem groupScheme_X_left :
 
 /-- The structural morphism of the constant group scheme is induced by the scalar inclusion into
 its function algebra. -/
-@[simp]
 theorem groupScheme_X_hom :
     (groupScheme R G).X.hom =
       eqToHom (groupScheme_X_left R G) ≫

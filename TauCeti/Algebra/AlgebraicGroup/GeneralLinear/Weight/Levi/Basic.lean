@@ -125,11 +125,6 @@ instance isClosedImmersion_weightLeviInclusion (w : Fin N → ℤ) :
   rw [weightLeviInclusion]
   infer_instance
 
-/-- The weight-Levi group scheme is locally of finite type over the base. -/
-instance locallyOfFiniteType_weightLeviGroupScheme (w : Fin N → ℤ) :
-    LocallyOfFiniteType (weightLeviGroupScheme R w).X.hom := by
-  infer_instance
-
 /-- The subgroup cut out by the weight-Levi ideal consists exactly of matrices preserving every
 weight space: entries between distinct weights vanish. -/
 @[simp]

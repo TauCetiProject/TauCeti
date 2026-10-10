@@ -109,11 +109,6 @@ noncomputable abbrev derivedGroupSchemeι (H : _root_.CommHopfAlgCat.{u} R) :
       (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj (Opposite.op H) :=
   quotientSpecι H (derivedDefiningIdeal H)
 
-/-- The inclusion of the derived group scheme is a closed immersion. -/
-instance isClosedImmersion_derivedGroupSchemeι (H : _root_.CommHopfAlgCat.{u} R) :
-    AlgebraicGeometry.IsClosedImmersion (derivedGroupSchemeι H).hom.hom.left :=
-  inferInstance
-
 /-- Every commutator of algebra-valued points lies in the derived subgroup. -/
 theorem commutator_mem_derivedPointsSubgroup (H : _root_.CommHopfAlgCat.{v} R)
     (A : CommAlgCat.{w} R) (g h : HopfAlgebra.points (R := R) (H := H) A) :

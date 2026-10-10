@@ -5,12 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Exact.Basic
 public import TauCeti.Algebra.GroupAction.QuotientAddGroup
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
 public import TauCeti.Topology.Algebra.Group.Quotient.Basic
-public import TauCeti.Topology.Algebra.GroupAction.InternalHom.DoubleDual
+public import TauCeti.Topology.Algebra.GroupAction.InternalHom.Basic
 import TauCeti.Topology.Discrete
 
 /-!
@@ -81,8 +80,8 @@ here is about the same sequence and has to name the same two coefficient maps.
 * `TauCeti.ContCohomology.DiscreteShortExact.explicitDelta0_apply` and
   `explicitDelta1_apply`: the two connecting maps evaluated on representatives, in the shape of
   Mathlib's discrete `groupCohomology.δ₀_apply` and `δ₁_apply`. They hold for an *arbitrary*
-  preimage and an arbitrary representing cocycle, so they are also the public form of the
-  well-definedness of the two maps. Their cocycle hypotheses are discharged by
+  preimage and an arbitrary representing cochain, so they are also the public form of the
+  well-definedness of the two maps. The cocycle proofs in their conclusions are
   `TauCeti.ContCohomology.DiscreteShortExact.mem_Z1_of_incl_comp_eq_d0` and
   `mem_Z2_of_incl_comp_eq_d1`, which need no cocycle input of their own.
 
@@ -223,6 +222,16 @@ theorem inclDistribMulActionHom_apply (a : A) : S.inclDistribMulActionHom a = S.
 
 @[simp]
 theorem projDistribMulActionHom_apply (b : B) : S.projDistribMulActionHom b = S.proj b := (rfl)
+
+/-- The additive homomorphism underlying the bundled inclusion is `incl`. -/
+@[simp]
+theorem coe_addMonoidHom_inclDistribMulActionHom :
+    (S.inclDistribMulActionHom : A →+ B) = S.incl := (rfl)
+
+/-- The additive homomorphism underlying the bundled projection is `proj`. -/
+@[simp]
+theorem coe_addMonoidHom_projDistribMulActionHom :
+    (S.projDistribMulActionHom : B →+ C) = S.proj := (rfl)
 
 /-- The bundled inclusion is injective, as `incl` is. -/
 theorem inclDistribMulActionHom_injective : Function.Injective S.inclDistribMulActionHom :=
@@ -439,28 +448,6 @@ theorem dual_projDistribMulActionHom :
     (S.dual N hsurj).projDistribMulActionHom = InternalHom.precomp G S.inclDistribMulActionHom :=
   DistribMulActionHom.ext fun _ => rfl
 
-/-- **Evaluation is a morphism from a sequence to its double dual, on the inclusions.** The
-inclusion of the double dual sequence `0 → A^{∨∨} → B^{∨∨} → C^{∨∨} → 0` carries the evaluation
-class of `a : A` to the evaluation class of `S.incl a`. -/
-theorem dual_dual_incl_eval
-    (hsurj' : Function.Surjective
-      (InternalHom.precomp G (S.dual N hsurj).inclDistribMulActionHom (N := N))) (a : A) :
-    ((S.dual N hsurj).dual N hsurj').incl (InternalHom.eval G A N a) =
-      InternalHom.eval G B N (S.incl a) := by
-  rw [dual_incl, dual_projDistribMulActionHom]
-  exact InternalHom.precomp_precomp_eval S.inclDistribMulActionHom a
-
-/-- **Evaluation is a morphism from a sequence to its double dual, on the projections.** The
-projection of the double dual sequence `0 → A^{∨∨} → B^{∨∨} → C^{∨∨} → 0` carries the evaluation
-class of `b : B` to the evaluation class of `S.proj b`. -/
-theorem dual_dual_proj_eval
-    (hsurj' : Function.Surjective
-      (InternalHom.precomp G (S.dual N hsurj).inclDistribMulActionHom (N := N))) (b : B) :
-    ((S.dual N hsurj).dual N hsurj').proj (InternalHom.eval G B N b) =
-      InternalHom.eval G C N (S.proj b) := by
-  rw [dual_proj, dual_inclDistribMulActionHom]
-  exact InternalHom.precomp_precomp_eval S.projDistribMulActionHom b
-
 end Dual
 
 section Retract
@@ -666,8 +653,8 @@ variable {G : Type u} [Monoid G] [TopologicalSpace G]
 variable (S) in
 /-- **A cochain on `A` lying over a coboundary of `B` is a continuous `1`-cocycle.** No cocycle
 hypothesis is needed, a coboundary being a continuous cocycle already; this is the case
-`e = d⁰ b` of `TauCeti.ContCohomology.DiscreteShortExact.mem_Z1_of_incl_comp_mem_Z1`. It is what
-discharges the hypothesis `ha` of
+`e = d⁰ b` of `TauCeti.ContCohomology.DiscreteShortExact.mem_Z1_of_incl_comp_mem_Z1`. It is the
+cocycle proof in the conclusion of
 `TauCeti.ContCohomology.DiscreteShortExact.explicitDelta0_apply`, whose `hab` it takes verbatim. -/
 theorem mem_Z1_of_incl_comp_eq_d0 {b : B} {a : G → A}
     (hab : ∀ g : G, S.incl (a g) = g • b - b) : a ∈ Z1 G A :=
@@ -726,13 +713,13 @@ noncomputable def explicitDelta0 : H0 G C →+ H1 G A :=
       rw [Function.surjInv_eq S.proj_surjective, map_add, Function.surjInv_eq S.proj_surjective,
         Function.surjInv_eq S.proj_surjective, AddSubgroup.coe_add])
 
-/-- **`δ⁰` on representatives.** For *any* preimage `b` of an invariant `c` and any continuous
-`1`-cocycle `a` with `incl ∘ a = d⁰ b`, the class of `a` is `δ⁰ c`. This mirrors the shape of
-Mathlib's discrete `groupCohomology.δ₀_apply`. The hypothesis `ha` is discharged from `hab` by
-`TauCeti.ContCohomology.DiscreteShortExact.mem_Z1_of_incl_comp_eq_d0`. -/
+/-- **`δ⁰` on representatives.** For *any* preimage `b` of an invariant `c` and any `a : G → A`
+with `incl ∘ a = d⁰ b`, `a` is a continuous `1`-cocycle
+(`TauCeti.ContCohomology.DiscreteShortExact.mem_Z1_of_incl_comp_eq_d0`) and its class is `δ⁰ c`.
+This mirrors the shape of Mathlib's discrete `groupCohomology.δ₀_apply`. -/
 theorem explicitDelta0_apply (c : H0 G C) {b : B} (hb : S.proj b = (c : C)) {a : G → A}
-    (ha : a ∈ Z1 G A) (hab : ∀ g : G, S.incl (a g) = g • b - b) :
-    S.explicitDelta0 c = H1pi G A ⟨a, ha⟩ := by
+    (hab : ∀ g : G, S.incl (a g) = g • b - b) :
+    S.explicitDelta0 c = H1pi G A ⟨a, S.mem_Z1_of_incl_comp_eq_d0 hab⟩ := by
   have hbinv : S.proj b ∈ H0 G C := by
     rw [hb]
     exact c.2
@@ -831,8 +818,8 @@ variable (S) in
 /-- **A cochain on `A` lying over a coboundary of `B` is a continuous `2`-cocycle.** No cocycle
 hypothesis on `e` is needed, a continuous coboundary being a continuous cocycle already; this is
 the case `z = d¹ e` of
-`TauCeti.ContCohomology.DiscreteShortExact.mem_Z2_of_incl_comp_mem_Z2`. It is what discharges the
-hypothesis `ha` of
+`TauCeti.ContCohomology.DiscreteShortExact.mem_Z2_of_incl_comp_mem_Z2`. It is the cocycle proof
+in the conclusion of
 `TauCeti.ContCohomology.DiscreteShortExact.explicitDelta1_apply`, whose `hae` it takes verbatim. -/
 theorem mem_Z2_of_incl_comp_eq_d1 {e : G → B} (hc : Continuous e) {a : G × G → A}
     (hae : ∀ g h : G, S.incl (a (g, h)) = g • e h - e (g * h) + e g) : a ∈ Z2 G A :=
@@ -858,7 +845,6 @@ private noncomputable def delta1Class {e : G → B} (hc : Continuous e)
   H2pi G A ⟨S.delta1Cochain e, delta1Cochain_mem_Z2 hc (fun _ => rfl) hf⟩
 
 /-- The class attached to a lift is represented by its `δ¹` cochain. -/
-@[simp]
 private theorem delta1Class_def {e : G → B} (hc : Continuous e)
     (hf : groupCohomology.IsCocycle₁ fun g => S.proj (e g)) :
     S.delta1Class hc hf =
@@ -918,10 +904,22 @@ private noncomputable def delta1Hom : Z1 G C →+ H2 G A :=
       exact delta1Class_add _ _ (S.isCocycle₁_proj_liftCochain f) (S.isCocycle₁_proj_liftCochain f')
 
 /-- Before descent to `H¹`, `δ¹` is the class of the cochain obtained from the canonical lift. -/
-@[simp]
 private theorem delta1Hom_apply (f : Z1 G C) :
     S.delta1Hom f =
       S.delta1Class (S.continuous_liftCochain_coe f) (S.isCocycle₁_proj_liftCochain f) := (rfl)
+
+/-- Before descent to `H¹`, `δ¹` is the class of the cochain of *any* continuous lift. -/
+private theorem delta1Hom_eq_of_lift (f : Z1 G C) {e : G → B} (hc : Continuous e)
+    (he : ∀ g, S.proj (e g) = (f : G → C) g) :
+    S.delta1Hom f =
+      H2pi G A ⟨S.delta1Cochain e, delta1Cochain_mem_Z2 hc he (mem_Z1_iff.1 f.2).2⟩ := by
+  have he' : groupCohomology.IsCocycle₁ fun g => S.proj (e g) := by
+    simpa only [he] using (mem_Z1_iff.1 f.2).2
+  have hproj : (fun g => S.proj (liftCochain S.proj_surjective (f : G → C) g)) =
+      fun g => S.proj (e g) := funext fun g => by
+    rw [apply_liftCochain S.proj_surjective, he]
+  rw [delta1Hom_apply, delta1Class_congr _ hc (S.isCocycle₁_proj_liftCochain f) he' hproj,
+    delta1Class_def]
 
 /-- `δ¹` before descent to cohomology kills the `1`-coboundaries. -/
 private theorem delta1Hom_eq_zero_of_mem_B1 (f : Z1 G C) (hf : (f : G → C) ∈ B1 G C) :
@@ -933,20 +931,8 @@ private theorem delta1Hom_eq_zero_of_mem_B1 (f : Z1 G C) (hf : (f : G → C) ∈
   have hzero : S.delta1Cochain (d0 G B b) = 0 := funext fun p => by
     rw [delta1Cochain_apply, congrFun (d1_comp_d0_apply (G := G) b) p]
     exact S.retract_zero
-  have hsubtype :
-      (⟨S.delta1Cochain (d0 G B b),
-          delta1Cochain_mem_Z2 (continuous_d0_apply (G := G) b) he
-            (mem_Z1_iff.1 f.2).2⟩ :
-        Z2 G A) = 0 :=
-    Subtype.ext hzero
-  have hd0 : groupCohomology.IsCocycle₁ fun g => S.proj (d0 G B b g) := by
-    simpa only [he] using (mem_Z1_iff.1 f.2).2
-  have hproj : (fun g => S.proj (liftCochain S.proj_surjective (f : G → C) g)) =
-      fun g => S.proj (d0 G B b g) := funext fun g => by
-    rw [apply_liftCochain S.proj_surjective, he]
-  rw [delta1Hom_apply, delta1Class_congr _ (continuous_d0_apply (G := G) b)
-      (S.isCocycle₁_proj_liftCochain f) hd0 hproj, delta1Class_def, hsubtype]
-  exact map_zero _
+  rw [delta1Hom_eq_of_lift f (continuous_d0_apply (G := G) b) he]
+  exact (congrArg (H2pi G A) (Subtype.ext hzero)).trans (map_zero _)
 
 variable [ContinuousSMul G C]
 
@@ -965,25 +951,18 @@ private theorem explicitDelta1_H1pi (f : Z1 G C) :
 
 variable (S) in
 /-- **`δ¹` on representatives.** For *any* continuous lift `e` of a continuous `1`-cocycle `f` on
-`C` and any continuous `2`-cocycle `a` with `incl ∘ a = d¹ e`, the class of `a` is `δ¹` of the
-class of `f`. This mirrors the shape of Mathlib's discrete `groupCohomology.δ₁_apply`. The
-hypothesis `ha` is discharged from `hae` by
-`TauCeti.ContCohomology.DiscreteShortExact.mem_Z2_of_incl_comp_eq_d1`. -/
+`C` and any `a : G × G → A` with `incl ∘ a = d¹ e`, `a` is a continuous `2`-cocycle
+(`TauCeti.ContCohomology.DiscreteShortExact.mem_Z2_of_incl_comp_eq_d1`) and its class is `δ¹` of
+the class of `f`. This mirrors the shape of Mathlib's discrete `groupCohomology.δ₁_apply`. -/
 theorem explicitDelta1_apply (f : Z1 G C) {e : G → B} (hc : Continuous e)
-    (he : ∀ g, S.proj (e g) = (f : G → C) g) {a : G × G → A} (ha : a ∈ Z2 G A)
+    (he : ∀ g, S.proj (e g) = (f : G → C) g) {a : G × G → A}
     (hae : ∀ g h : G, S.incl (a (g, h)) = g • e h - e (g * h) + e g) :
-    S.explicitDelta1 (H1pi G C f) = H2pi G A ⟨a, ha⟩ := by
+    S.explicitDelta1 (H1pi G C f) = H2pi G A ⟨a, S.mem_Z2_of_incl_comp_eq_d1 hc hae⟩ := by
   have hcochain : a = S.delta1Cochain e := funext fun p => by
     obtain ⟨g, h⟩ := p
     exact S.incl_injective (((hae g h).trans (d1_apply e g h).symm).trans
       (incl_delta1Cochain he (mem_Z1_iff.1 f.2).2 (g, h)).symm)
-  have he' : groupCohomology.IsCocycle₁ fun g => S.proj (e g) := by
-    simpa only [he] using (mem_Z1_iff.1 f.2).2
-  have hproj : (fun g => S.proj (liftCochain S.proj_surjective (f : G → C) g)) =
-      fun g => S.proj (e g) := funext fun g => by
-    rw [apply_liftCochain S.proj_surjective, he]
-  rw [explicitDelta1_H1pi, delta1Hom_apply,
-    delta1Class_congr _ hc (S.isCocycle₁_proj_liftCochain f) he' hproj, delta1Class_def]
+  rw [explicitDelta1_H1pi, delta1Hom_eq_of_lift f hc he]
   exact congrArg (H2pi G A) (Subtype.ext hcochain.symm)
 
 end Delta1
@@ -1008,7 +987,7 @@ variable {G : Type*} [Monoid G]
 /-- A short exact sequence of discrete `G`-modules as a short complex of canonical coefficient
 objects in `TopRep ℤ G`. -/
 @[expose, simps]
-noncomputable def toShortComplex : ShortComplex (TopRep.{uS} ℤ G) where
+def toShortComplex : ShortComplex (TopRep.{uS} ℤ G) where
   f := ofDiscreteModuleMap S.incl.toIntLinearMap S.incl_equivariant
   g := ofDiscreteModuleMap S.proj.toIntLinearMap S.proj_equivariant
   zero := TopRep.hom_ext <| DFunLike.ext _ _ fun a : A ↦ S.proj_incl a

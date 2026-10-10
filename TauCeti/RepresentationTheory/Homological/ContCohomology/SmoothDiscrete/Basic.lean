@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Action.Continuous
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.RepresentationTheory.Continuous.TopRep
+public import Mathlib.Topology.Algebra.OpenSubgroup
 public import Mathlib.Topology.Instances.ZMod
 
 /-!
@@ -294,6 +295,19 @@ lemma IsSmoothDiscrete.res {H : Type*} [Monoid H] [TopologicalSpace H] {φ : H �
   rw [hpre]
   exact (hX.stabilizer_isOpen x).preimage hφ
 
+/-- Smoothness passes to the source of an injective morphism: a continuous injection into a
+discrete space has discrete source, and by equivariance the stabilizer of `x` is the stabilizer
+of `f x`. -/
+lemma IsSmoothDiscrete.of_injective {X Y : TopRep R G} (f : X ⟶ Y)
+    (hf : Function.Injective f.hom) (hY : IsSmoothDiscrete R Y) : IsSmoothDiscrete R X := by
+  have := hY.discreteTopology
+  refine ⟨.of_continuous_injective f.hom.continuous hf, fun x ↦ ?_⟩
+  have hstab : {g : G | X.ρ g x = x} = {g : G | Y.ρ g (f.hom x) = f.hom x} := by
+    ext g
+    simp only [Set.mem_ofPred_eq, ← f.hom.isIntertwining g x, hf.eq_iff]
+  rw [hstab]
+  exact hY.stabilizer_isOpen _
+
 omit [TopologicalSpace G] in
 /-- A discrete object is the image of its own underlying module under the dictionary; openness of
 the stabilizers plays no part, and a smooth discrete object supplies the discreteness through
@@ -352,6 +366,27 @@ lemma IsSmoothDiscrete.continuousSMul {X : TopRep R G} (hX : IsSmoothDiscrete R 
     ContinuousSMul G X.V :=
   haveI := hX.discreteTopology
   (isSmoothDiscrete_iff_continuousSMul X).1 hX
+
+omit [IsTopologicalGroup G] in
+/-- Smoothness passes to the target of a surjective morphism with discrete target: the stabilizer
+of `f x` is a subgroup containing the open stabilizer of `x`, hence open since `G` has separately
+continuous multiplication. That continuity cannot be dropped: for `G` cyclic of order four with
+only `{1}` open among its proper nonempty subsets, `ℤ[i]` with a generator acting by `i` is smooth
+discrete, but in its quotient `ℤ[i]/2` the stabilizer of `1` is `{1, g²}`, which is not open.
+Discreteness of the target is a hypothesis because the topology of `Y` is part of its data. -/
+lemma IsSmoothDiscrete.of_surjective [SeparatelyContinuousMul G] {X Y : TopRep R G}
+    [DiscreteTopology Y.V] (f : X ⟶ Y)
+    (hf : Function.Surjective f.hom) (hX : IsSmoothDiscrete R X) : IsSmoothDiscrete R Y := by
+  let := X.distribMulAction
+  let := Y.distribMulAction
+  refine ⟨‹_›, fun y ↦ ?_⟩
+  obtain ⟨x, rfl⟩ := hf y
+  rw [← TopRep.coe_stabilizer]
+  apply Subgroup.isOpen_mono (H₁ := MulAction.stabilizer G x)
+  · intro g hg
+    simp only [MulAction.mem_stabilizer_iff, TopRep.distribMulAction_smul] at hg ⊢
+    rw [← f.hom.isIntertwining, hg]
+  · simpa only [TopRep.coe_stabilizer] using hX.stabilizer_isOpen x
 
 /-- Smoothness is Mathlib's continuity condition on the corresponding object of
 `Action (TopModuleCat R) G`, transported along `TopRep.toActionTopModFunc`: the two conditions of
@@ -451,8 +486,15 @@ def ofDiscreteModuleIso (e : M ≃ₗ[R] N) (he : ∀ (g : G) (m : M), e (g • 
     (he : ∀ (g : G) (m : M), e (g • m) = g • e m) :
     (ofDiscreteModuleIso e he).hom = ofDiscreteModuleMap e.toLinearMap he := (rfl)
 
+/-- The inverse direction of `ofDiscreteModuleIso e he` is `ofDiscreteModuleMap` of `e.symm`. -/
+@[simp] lemma ofDiscreteModuleIso_inv (e : M ≃ₗ[R] N)
+    (he : ∀ (g : G) (m : M), e (g • m) = g • e m) :
+    (ofDiscreteModuleIso e he).inv = ofDiscreteModuleMap e.symm.toLinearMap
+      (fun g n ↦ e.injective (by rw [he]; simp)) := (rfl)
+
 /-- The inverse direction of `ofDiscreteModuleIso e he` acts on underlying modules as `e.symm`. -/
-@[simp] lemma ofDiscreteModuleIso_inv_hom_apply (e : M ≃ₗ[R] N)
+-- Not `@[simp]`: `ofDiscreteModuleIso_inv` rewrites the inverse in its left-hand side first.
+lemma ofDiscreteModuleIso_inv_hom_apply (e : M ≃ₗ[R] N)
     (he : ∀ (g : G) (m : M), e (g • m) = g • e m) (n : N) :
     (ofDiscreteModuleIso e he).inv.hom n = e.symm n := (rfl)
 
@@ -858,20 +900,19 @@ end CoefficientEquivalence
 
 section NotSmooth
 
-/-- The group of the non-example below carries the indiscrete topology, whose only open sets are
-`∅` and the whole group. -/
-local instance instTopologicalSpaceUnitsZModThree : TopologicalSpace (ZMod 3)ˣ := ⊤
-
 /-- An object of `TopRep R G` whose underlying module is discrete need not be smooth. Here the
 two-element group `(ZMod 3)ˣ` acts on the discrete module `ZMod 3` by multiplication, so the
-stabilizer of `1` is the singleton `{1}`; giving the group the indiscrete topology makes that
-singleton non-open. This is why the dictionary above has the discrete `G`-modules *with continuous
-`G`-action* as its source, and it is what the hypothesis `ContinuousSMul G M` of
-`TauCeti.ofDiscreteModule_isSmoothDiscrete` rules out. Stating it needs `TauCeti.ofDiscreteModule`
-to be available without that hypothesis, which is why the hypothesis sits on the results that use
-it rather than on the construction. -/
+stabilizer of `1` is the singleton `{1}`; giving the group the indiscrete topology `⊤`, whose only
+open sets are `∅` and the whole group, makes that singleton non-open. The statement names that
+topology explicitly: it is not the topology `(ZMod 3)ˣ` has as the unit group of the discrete ring
+`ZMod 3`, for which the same object is smooth. This is why the dictionary above has the discrete
+`G`-modules *with continuous `G`-action* as its source, and it is what the hypothesis
+`ContinuousSMul G M` of `TauCeti.ofDiscreteModule_isSmoothDiscrete` rules out. Stating it needs
+`TauCeti.ofDiscreteModule` to be available without that hypothesis, which is why the hypothesis
+sits on the results that use it rather than on the construction. -/
 lemma not_isSmoothDiscrete_ofDiscreteModule_units_zmod :
-    ¬ IsSmoothDiscrete ℤ (ofDiscreteModule ℤ (ZMod 3)ˣ (ZMod 3)) := by
+    ¬ @IsSmoothDiscrete ℤ _ _ (ZMod 3)ˣ _ ⊤ (ofDiscreteModule ℤ (ZMod 3)ˣ (ZMod 3)) := by
+  let : TopologicalSpace (ZMod 3)ˣ := ⊤
   intro h
   have hopen := h.stabilizer_isOpen (1 : ZMod 3)
   simp only [ofDiscreteModule_ρ_apply_apply] at hopen

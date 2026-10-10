@@ -50,6 +50,9 @@ subspace under a suitable geometric hypothesis but not on all of `W^{1,p}(Ω)`.
 * `TauCeti.w1p0Submodule_subset_of_isClosed`: a closed set containing every test-function jet
   contains `W^{1,p}_0(Ω)`, which is how a property is extended from test functions to the whole
   space.
+* `TauCeti.W1p0.instNormedAddCommGroup` and `TauCeti.W1p0.instInnerProductSpace`: shortcut
+  instances for the normed group structure of `W^{1,p}_0(Ω)` and the Hilbert space structure of
+  `W^{1,2}_0(Ω)`. They are `local`: a file that needs them registers them.
 
 ## References
 
@@ -245,5 +248,23 @@ theorem W1p0.valueL_ne_zero (hOmega : (Omega : Set E).Nonempty) :
 /-- `W^{1,p}_0(Ω)` is complete: it is a closed subspace of the complete space `W^{1,p}(Ω)`. -/
 instance : CompleteSpace (W1p0 mu Omega p) :=
   (w1p0Submodule mu Omega p).isClosed.completeSpace_coe
+
+/-! ### Shortcut instances for the Hilbert space `W^{1,2}_0(Ω)`
+
+The two instances below are `local`, so they take part in instance search only in a file that
+registers them with `attribute [local instance]`. -/
+
+/-- Shortcut instance for the normed group structure of `W^{1,p}_0(Ω)`, the separated form of
+`instSeminormedAddCommGroupW1p0`. Instance search finds this structure when the measure and the
+open set are known, but it can time out while they are still metavariables, as happens when an
+argument of an abstract Hilbert space lemma is elaborated. -/
+noncomputable local instance W1p0.instNormedAddCommGroup :
+    NormedAddCommGroup (W1p0 mu Omega p) := inferInstance
+
+/-- Shortcut instance for the Hilbert space structure of `W^{1,2}_0(Ω)`, inherited from the `L²`
+jet space through the two nested closed subspaces. A file that applies abstract Hilbert space
+results to `W^{1,2}_0(Ω)` registers it together with `W1p0.instNormedAddCommGroup`. -/
+noncomputable local instance W1p0.instInnerProductSpace :
+    InnerProductSpace ℝ (W1p0 mu Omega 2) := inferInstance
 
 end TauCeti

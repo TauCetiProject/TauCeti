@@ -57,6 +57,34 @@ namespace TauCeti.InternalGrading
 
 variable {R M : Type*}
 
+section Span
+
+variable [Semiring R] [AddCommMonoid M] [Module R M]
+
+/-- A submodule spanned by homogeneous elements is homogeneous. -/
+theorem isHomogeneous_span (G : InternalGrading R M) (s : Set M)
+    (hs : ∀ x ∈ s, ∃ p, x ∈ G.piece p) :
+    SetLike.IsHomogeneous G.piece (Submodule.span R s) := by
+  classical
+  intro q x hx
+  induction hx using Submodule.span_induction with
+  | mem x hx =>
+    obtain ⟨p, hp⟩ := hs x hx
+    by_cases hpq : p = q
+    · subst q
+      rw [decompose_of_mem_same G.piece hp]
+      exact Submodule.subset_span hx
+    · rw [decompose_of_mem_ne G.piece hp hpq]
+      exact Submodule.zero_mem _
+  | zero => simp
+  | add x y hx hy ihx ihy =>
+    simpa using Submodule.add_mem _ ihx ihy
+  | smul r x hx ih =>
+    simpa only [decompose_smul, DirectSum.smul_apply, SetLike.val_smul] using
+      Submodule.smul_mem _ r ih
+
+end Span
+
 section Submodule
 
 variable [Semiring R] [AddCommMonoid M] [Module R M] (G : InternalGrading R M)

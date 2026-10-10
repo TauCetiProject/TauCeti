@@ -21,14 +21,17 @@ exactly when `f x + f⋆ y = ⟪x, y⟫`, where `f⋆` is the Legendre–Fenchel
 equality is symmetric in `(f, x)` and `(f⋆, y)` up to the biconjugate, it gives the
 *conjugate-subgradient reciprocity*: `y ∈ ∂f(x)` implies `x ∈ ∂f⋆(y)` (for the transposed
 pairing), and the converse holds at every point where `f⋆⋆ x = f x`, which is in particular the
-case whenever `∂f(x)` is nonempty. Nothing here needs `f` convex: the subdifferential of an
-arbitrary extended-real function is defined by the same inequality, and it is a closed convex
-subset of `F` for any topology in which the functionals `B x` are continuous.
+case whenever `∂f(x)` is nonempty. Almost nothing here needs `f` convex: the subdifferential of
+an arbitrary extended-real function is defined by the same inequality, it is a closed convex
+subset of `F` for any topology in which the functionals `B x` are continuous, and it is monotone.
+Convexity of `f` enters only to make the set of points at which a fixed `y` is a subgradient
+convex.
 
 ## Main definitions
 
 * `TauCeti.subdifferential B f x` — the set of `y : F` with `f x` finite and
   `f x + B (x' - x) y ≤ f x'` for every `x'`.
+* `TauCeti.subgradientImage B f s` — the subgradient image `⋃ x ∈ s, ∂f(x)` of a set `s`.
 
 ## Main statements
 
@@ -36,9 +39,14 @@ subset of `F` for any topology in which the functionals `B x` are continuous.
   maximises `x' ↦ B x' y - f x'`, and `TauCeti.mem_subdifferential_iff_add_fenchelConjugate_eq` —
   **the Fenchel–Young equality characterisation** `y ∈ ∂f(x) ↔ f x + f⋆ y = B x y`;
 * `TauCeti.mem_subdifferential_coe_iff` — for a real-valued `f` the finiteness condition is
-  automatic and membership is the subgradient inequality;
+  automatic and membership is the subgradient inequality, and
+  `TauCeti.mem_subdifferential_iff_forall_toReal_add_le` is the same statement between real
+  representatives for an `f` that is never `⊥`;
+* `TauCeti.apply_le_apply_of_mem_subdifferential` — the subdifferential is monotone;
 * `TauCeti.convex_subdifferential` and `TauCeti.isClosed_subdifferential` — the subdifferential
   is convex, and closed for a topology making every `B x` continuous;
+* `TauCeti.convex_setOf_mem_subdifferential` — for a convex `f`, the points at which a fixed `y`
+  is a subgradient form a convex set;
 * `TauCeti.mem_subdifferential_fenchelConjugate_of_mem_subdifferential` — **conjugate-subgradient
   reciprocity**: `y ∈ ∂f(x)` implies `x ∈ ∂f⋆(y)`;
 * `TauCeti.fenchelConjugate_flip_fenchelConjugate_eq_of_mem_subdifferential` — `f⋆⋆ x = f x`
@@ -116,6 +124,78 @@ theorem mem_subdifferential_coe_iff (f : E → ℝ) :
     y ∈ subdifferential B (fun x => (f x : EReal)) x ↔ ∀ x', f x + B (x' - x) y ≤ f x' := by
   simp only [mem_subdifferential_iff, ne_eq, EReal.coe_ne_bot, EReal.coe_ne_top,
     not_false_eq_true, true_and, ← EReal.coe_add, EReal.coe_le_coe_iff]
+
+/-- If `f` never takes the value `⊥` and is finite at `x`, then `y` is a subgradient at `x` exactly
+when the subgradient inequality holds between real representatives at every point of the
+effective domain. -/
+theorem mem_subdifferential_iff_forall_toReal_add_le (hbot : ∀ x', f x' ≠ ⊥) (hx : f x ≠ ⊤) :
+    y ∈ subdifferential B f x ↔
+      ∀ x', f x' ≠ ⊤ → (f x).toReal + B (x' - x) y ≤ (f x').toReal := by
+  have key : ∀ x', f x' ≠ ⊤ →
+      (f x + B (x' - x) y ≤ f x' ↔ (f x).toReal + B (x' - x) y ≤ (f x').toReal) := fun x' hx' => by
+    conv_lhs => rw [← EReal.coe_toReal hx (hbot x), ← EReal.coe_toReal hx' (hbot x')]
+    rw [← EReal.coe_add, EReal.coe_le_coe_iff]
+  rw [mem_subdifferential_iff]
+  refine ⟨fun h x' hx' => (key x' hx').1 (h.2.2 x'), fun h => ⟨hbot x, hx, fun x' => ?_⟩⟩
+  rcases eq_or_ne (f x') ⊤ with hx' | hx'
+  · rw [hx']
+    exact le_top
+  exact (key x' hx').2 (h x' hx')
+
+/-- **Subgradients are monotone.** If `y₁ ∈ ∂f(x₁)` and `y₂ ∈ ∂f(x₂)`, then
+`B (x₂ - x₁) y₁ ≤ B (x₂ - x₁) y₂`; for the inner product this is the monotonicity
+`⟪x₂ - x₁, y₂ - y₁⟫ ≥ 0` of the subdifferential. -/
+theorem apply_le_apply_of_mem_subdifferential {x₁ x₂ : E} {y₁ y₂ : F}
+    (h₁ : y₁ ∈ subdifferential B f x₁) (h₂ : y₂ ∈ subdifferential B f x₂) :
+    B (x₂ - x₁) y₁ ≤ B (x₂ - x₁) y₂ := by
+  have hbot := apply_ne_bot_of_mem_subdifferential B h₁
+  have e₁ := (mem_subdifferential_iff_forall_toReal_add_le B hbot
+    (ne_top_of_mem_subdifferential B h₁)).1 h₁ x₂ (ne_top_of_mem_subdifferential B h₂)
+  have e₂ := (mem_subdifferential_iff_forall_toReal_add_le B hbot
+    (ne_top_of_mem_subdifferential B h₂)).1 h₂ x₁ (ne_top_of_mem_subdifferential B h₁)
+  rw [← neg_sub x₂ x₁, map_neg, LinearMap.neg_apply] at e₂
+  linarith
+
+/-! ### Subgradient images -/
+
+/-- The *subgradient image* `∂f(s) = ⋃ x ∈ s, ∂f(x)` of a set `s` with respect to the pairing
+`B`: the set of all subgradients of `f` at points of `s`. -/
+def subgradientImage (f : E → EReal) (s : Set E) : Set F :=
+  ⋃ x ∈ s, subdifferential B f x
+
+/-- A point of the subgradient image is a subgradient at some point of the set. -/
+@[simp]
+theorem mem_subgradientImage_iff {s : Set E} :
+    y ∈ subgradientImage B f s ↔ ∃ x ∈ s, y ∈ subdifferential B f x := by
+  simp only [subgradientImage, Set.mem_iUnion, exists_prop]
+
+/-- The subgradient image is monotone in the set. -/
+@[gcongr]
+theorem subgradientImage_mono {s t : Set E} (h : s ⊆ t) :
+    subgradientImage B f s ⊆ subgradientImage B f t :=
+  Set.biUnion_subset_biUnion_left h
+
+/-- The subgradient image of the empty set is empty. -/
+@[simp]
+theorem subgradientImage_empty : subgradientImage B f ∅ = ∅ :=
+  Set.biUnion_empty _
+
+/-- The subgradient image of a singleton is the subdifferential at that point. -/
+@[simp]
+theorem subgradientImage_singleton (x : E) : subgradientImage B f {x} = subdifferential B f x :=
+  Set.biUnion_singleton _ _
+
+/-- The subgradient image of a union is the union of the subgradient images. -/
+@[simp]
+theorem subgradientImage_union (s t : Set E) :
+    subgradientImage B f (s ∪ t) = subgradientImage B f s ∪ subgradientImage B f t :=
+  Set.biUnion_union s t _
+
+/-- The subgradient image of an indexed union is the union of the subgradient images. -/
+@[simp]
+theorem subgradientImage_iUnion {ι : Sort*} (s : ι → Set E) :
+    subgradientImage B f (⋃ i, s i) = ⋃ i, subgradientImage B f (s i) :=
+  Set.biUnion_iUnion s _
 
 /-! ### Subgradients and the conjugate -/
 
@@ -203,6 +283,38 @@ theorem convex_subdifferential (f : E → EReal) (x : E) : Convex ℝ (subdiffer
   | top =>
     simp only [le_top, Set.ofPred_true]
     exact convex_univ
+
+/-- For a convex `f`, the set of points at which `y` is a subgradient is convex: it is the set
+of minimisers of the convex function `x ↦ f x - B x y`. -/
+theorem convex_setOf_mem_subdifferential (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) (y : F) :
+    Convex ℝ {x | y ∈ subdifferential B f x} := by
+  intro x₁ h₁ x₂ h₂ a b ha hb hab
+  simp only [Set.mem_ofPred_eq] at h₁ h₂ ⊢
+  have hbot := apply_ne_bot_of_mem_subdifferential B h₁
+  have ht₁ := ne_top_of_mem_subdifferential B h₁
+  have ht₂ := ne_top_of_mem_subdifferential B h₂
+  -- By convexity, `f` lies below the chord at the convex combination.
+  have hz : f (a • x₁ + b • x₂) ≤ ((a * (f x₁).toReal + b * (f x₂).toReal : ℝ) : EReal) := by
+    simpa using hf (x := (x₁, (f x₁).toReal)) (y := (x₂, (f x₂).toReal))
+      (by simp [EReal.coe_toReal ht₁ (hbot x₁)]) (by simp [EReal.coe_toReal ht₂ (hbot x₂)])
+      ha hb hab
+  have hzt : f (a • x₁ + b • x₂) ≠ ⊤ := ne_top_of_le_ne_top (EReal.coe_ne_top _) hz
+  have hzr := EReal.toReal_le_toReal hz (hbot _) (EReal.coe_ne_top _)
+  rw [EReal.toReal_coe] at hzr
+  -- The subgradient inequality at the combination is the combination of those at `x₁`, `x₂`.
+  refine (mem_subdifferential_iff_forall_toReal_add_le B hbot hzt).2 fun x' hx' => ?_
+  have e₁ := (mem_subdifferential_iff_forall_toReal_add_le B hbot ht₁).1 h₁ x' hx'
+  have e₂ := (mem_subdifferential_iff_forall_toReal_add_le B hbot ht₂).1 h₂ x' hx'
+  have hlin : B (x' - (a • x₁ + b • x₂)) y = a * B (x' - x₁) y + b * B (x' - x₂) y := by
+    have : x' - (a • x₁ + b • x₂) = a • (x' - x₁) + b • (x' - x₂) := by
+      conv_lhs => rw [← one_smul ℝ x', ← hab, add_smul]
+      simp only [smul_sub]
+      abel
+    simp [this]
+  have hsplit : (f x').toReal = a * (f x').toReal + b * (f x').toReal := by
+    rw [← add_mul, hab, one_mul]
+  rw [hlin]
+  nlinarith [mul_le_mul_of_nonneg_left e₁ ha, mul_le_mul_of_nonneg_left e₂ hb]
 
 /-- The subdifferential is closed for every topology on `F` in which each functional `B x` is
 continuous: it is an intersection of closed half-spaces, or empty. -/

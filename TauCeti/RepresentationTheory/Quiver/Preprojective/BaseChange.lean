@@ -56,16 +56,14 @@ variable {k : Type w} {l : Type z} {Q : Type u}
 
 private noncomputable def preprojectiveBaseChangeAlgHom (f : k →+* l) :
     letI : Algebra k (preprojectiveAlgebra l Q) :=
-      ((algebraMap l (preprojectiveAlgebra l Q)).comp f).toAlgebra'
-        (fun c x => Algebra.commutes (R := l) (A := preprojectiveAlgebra l Q) (f c) x)
+      Algebra.compHom (preprojectiveAlgebra l Q) f
     preprojectiveAlgebra k Q →ₐ[k] preprojectiveAlgebra l Q := by
   let _ : Algebra k (preprojectiveAlgebra l Q) :=
-    ((algebraMap l (preprojectiveAlgebra l Q)).comp f).toAlgebra'
-      (fun c x => Algebra.commutes (R := l) (A := preprojectiveAlgebra l Q) (f c) x)
-  refine preprojectiveLift (PathAlgebra.baseChangeAlgHom f (preprojectiveMk l Q)) ?_
+    Algebra.compHom (preprojectiveAlgebra l Q) f
+  refine preprojectiveLift (RingHom.pathAlgebraBaseChangeAlgHom f (preprojectiveMk l Q)) ?_
   rw [preprojectiveRelator_def]
   simp only [map_sum, map_sub, headBacktrackElem_def, tailBacktrackElem_def,
-    PathAlgebra.baseChangeAlgHom_ofPath]
+    RingHom.pathAlgebraBaseChangeAlgHom_ofPath]
   simpa only [preprojectiveRelator_def, headBacktrackElem_def, tailBacktrackElem_def,
     map_sum, map_sub] using preprojectiveMk_preprojectiveRelator l Q
 
@@ -79,8 +77,7 @@ recorded by `RingHom.preprojectiveBaseChange_algebraMap`. -/
 noncomputable def preprojectiveBaseChange (f : k →+* l) :
     preprojectiveAlgebra k Q →+* preprojectiveAlgebra l Q := by
   let _ : Algebra k (preprojectiveAlgebra l Q) :=
-    ((algebraMap l (preprojectiveAlgebra l Q)).comp f).toAlgebra'
-      (fun c x => Algebra.commutes (R := l) (A := preprojectiveAlgebra l Q) (f c) x)
+    Algebra.compHom (preprojectiveAlgebra l Q) f
   exact (preprojectiveBaseChangeAlgHom f).toRingHom
 
 /-- The base-change map sends the quotient class of every path to the quotient class of the same
@@ -91,12 +88,11 @@ theorem preprojectiveBaseChange_preprojectiveMk_ofPath (f : k →+* l)
     preprojectiveBaseChange f (preprojectiveMk k Q (ofPath x)) =
       preprojectiveMk l Q (ofPath x) := by
   let _ : Algebra k (preprojectiveAlgebra l Q) :=
-    ((algebraMap l (preprojectiveAlgebra l Q)).comp f).toAlgebra'
-      (fun c x => Algebra.commutes (R := l) (A := preprojectiveAlgebra l Q) (f c) x)
+    Algebra.compHom (preprojectiveAlgebra l Q) f
   -- The public map is the underlying ring map of the quotient lift; expose that lift here.
   change preprojectiveBaseChangeAlgHom f (preprojectiveMk k Q (ofPath x)) = _
   rw [preprojectiveBaseChangeAlgHom, preprojectiveLift_preprojectiveMk,
-    PathAlgebra.baseChangeAlgHom_ofPath]
+    RingHom.pathAlgebraBaseChangeAlgHom_ofPath]
 
 /-- The map on preprojective algebras carries the source scalar action to the target scalar action
 through the coefficient homomorphism. -/
@@ -105,8 +101,7 @@ theorem preprojectiveBaseChange_algebraMap (f : k →+* l) (r : k) :
     preprojectiveBaseChange f (algebraMap k (preprojectiveAlgebra k Q) r) =
       algebraMap l (preprojectiveAlgebra l Q) (f r) := by
   let _ : Algebra k (preprojectiveAlgebra l Q) :=
-    ((algebraMap l (preprojectiveAlgebra l Q)).comp f).toAlgebra'
-      (fun c x => Algebra.commutes (R := l) (A := preprojectiveAlgebra l Q) (f c) x)
+    Algebra.compHom (preprojectiveAlgebra l Q) f
   -- The target is a `k`-algebra via the composite coefficient map.
   change preprojectiveBaseChangeAlgHom f (algebraMap k (preprojectiveAlgebra k Q) r) =
     ((algebraMap l (preprojectiveAlgebra l Q)).comp f) r

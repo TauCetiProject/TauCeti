@@ -10,6 +10,7 @@ public import Mathlib.Data.FinEnum
 import Mathlib.Data.List.NodupEquivFin
 import TauCeti.Data.Array.OfFn
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.CentralCharacterCount
+public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.Rows
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Cyclotomic.PowerMap
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Lift
 
@@ -106,10 +107,7 @@ private def modularCentralRowsList (q : DixonPrimeData G) :
     List (Fin d.numClasses → ZMod q.p) :=
   letI : FinEnum (ZMod q.p) :=
     FinEnum.ofEquiv (Fin q.p) (ZMod.finEquiv q.p).symm.toEquiv
-  let searchedRows : Finset (Fin d.numClasses → ZMod q.p) :=
-    d.centralCharacterSearch
-  (FinEnum.toList (Fin d.numClasses → ZMod q.p)).filter fun row ↦
-    decide (row ∈ searchedRows)
+  d.centralCharacterRows
 
 /-- Membership in the executable row list is membership in the modular search. -/
 @[simp]
@@ -126,8 +124,7 @@ private theorem length_modularCentralRowsList (q : DixonPrimeData G) :
   let _ : FinEnum (ZMod q.p) :=
     FinEnum.ofEquiv (Fin q.p) (ZMod.finEquiv q.p).symm.toEquiv
   have hnodup : (d.modularCentralRowsList q).Nodup := by
-    rw [modularCentralRowsList]
-    exact FinEnum.nodup_toList.filter _
+    exact d.nodup_centralCharacterRows
   rw [← List.toFinset_card_of_nodup hnodup]
   have hrows : (d.modularCentralRowsList q).toFinset =
       d.centralCharacterSearch := by
@@ -142,7 +139,7 @@ private def modularCentralRowsEquiv (q : DixonPrimeData G) :
   letI : FinEnum (ZMod q.p) :=
     FinEnum.ofEquiv (Fin q.p) (ZMod.finEquiv q.p).symm.toEquiv
   (finCongr (length_modularCentralRowsList d q).symm).trans
-    (((FinEnum.nodup_toList.filter _).getEquiv (d.modularCentralRowsList q)).trans
+    (((d.nodup_centralCharacterRows).getEquiv (d.modularCentralRowsList q)).trans
       (Equiv.subtypeEquivRight fun _ ↦ mem_modularCentralRowsList d q))
 
 /-- The canonical numbering of the modular central-character rows.  The default branch of

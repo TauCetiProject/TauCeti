@@ -32,7 +32,7 @@ identification of the points with the corresponding matrix group. This file supp
 those specializations share: the relation matrix, the Hopf ideal with its three closure
 conditions, the quotient, the group scheme with its closed immersion into `GLₙ`, and the
 ambient membership criterion `M C Mᵀ = C`; local finite type comes from the generic
-`GeneralLinear.locallyOfFiniteType_hopfIdealQuotientSpec` instance, which applies to the
+`CommHopfAlgCat.locallyOfFiniteType_quotientSpec` instance, which applies to the
 reducible `groupScheme` directly.
 
 The three Hopf-ideal closure conditions are proved by matrix algebra rather than coordinate by
@@ -330,8 +330,8 @@ theorem coordinateMap_relationMatrix (i j : Fin n) :
     (coordinateMap R n C).hom (relationMatrix R n C i j) = 0 := by
   rw [coordinateMap_def]
   exact (CommHopfAlgCat.mkQuotient_eq_zero_iff _ _ _).mpr
-    (definingHopfIdeal_toIdeal R n C ▸
-      Ideal.subset_span (relationMatrix_mem_relationSet R n C i j))
+    (HopfIdeal.mem_toIdeal.mp (definingHopfIdeal_toIdeal R n C ▸
+      Ideal.subset_span (relationMatrix_mem_relationSet R n C i j)))
 
 /-! ### The group scheme and its closed immersion -/
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Covering.IsFiniteCover
-public import TauCeti.Topology.MappingTorus
+public import TauCeti.Topology.MappingTorus.Basic
 
 /-!
 # Virtually fibered spaces

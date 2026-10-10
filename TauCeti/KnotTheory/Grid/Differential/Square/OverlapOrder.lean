@@ -55,6 +55,12 @@ namespace GridRectangleDecomposition
 
 variable {n : ℕ} {x z : GridState n}
 
+/-- When two rectangles share their initial side, the second rectangle's bottom row is the first
+rectangle's top row. -/
+theorem second_bottom_eq_first_top_of_left_eq_left (D : GridRectangleDecomposition x z)
+    (hleft : D.first.left = D.second.left) : D.second.bottom = D.first.top := by
+  rw [GridRectangleBetween.bottom_def, GridRectangleBetween.top_def, ← hleft, D.first.map_left]
+
 /-- Suppose the two empty rectangles in a decomposition share their initial side column and no
 other side. Then their two terminal sides occur in one of the two possible cyclic orders around
 the common side, while the row of the common corner lies strictly between the other two corner
@@ -71,9 +77,7 @@ theorem cyclicOrder_of_isEmpty_of_left_eq_left (D : GridRectangleDecomposition x
       D.first.top ∈ Grid.cIoo D.first.bottom D.second.top := by
   have hsecondRight_ne_firstLeft : D.second.right ≠ D.first.left :=
     fun h => D.second.left_ne_right (hleft.symm.trans h.symm)
-  have hbottom : D.second.bottom = D.first.top := by
-    rw [GridRectangleBetween.bottom_def, GridRectangleBetween.top_def, ← hleft]
-    exact D.first.map_left
+  have hbottom := D.second_bottom_eq_first_top_of_left_eq_left hleft
   have htop_ne_firstBottom : D.second.top ≠ D.first.bottom := by
     intro h
     apply hright
