@@ -141,6 +141,14 @@ theorem logSinkhornPlan_apply (L : Matrix ι κ ℝ) (a : ι → ℝ) (b : κ �
       L.logSinkhornStep a b u i + L i j + Lᵀ.logSinkhornUpdate b u j :=
   (rfl)
 
+/-- Adding a constant to the input potential leaves the log-domain plan unchanged. -/
+theorem logSinkhornPlan_add_const (L : Matrix ι κ ℝ) (a : ι → ℝ) (b : κ → ℝ)
+    (u : ι → ℝ) (c : ℝ) :
+    L.logSinkhornPlan a b (fun i ↦ u i + c) = L.logSinkhornPlan a b u := by
+  ext i j
+  simp only [logSinkhornPlan_apply, logSinkhornStep_add_const, logSinkhornUpdate_add_const]
+  ring
+
 /-- Exponentiating the log-domain plan gives exactly the ordinary Sinkhorn plan. -/
 theorem exp_logSinkhornPlan (L : Matrix ι κ ℝ) {a : ι → ℝ} (ha : ∀ i, 0 < a i)
     {b : κ → ℝ} (hb : ∀ j, 0 < b j) (u : ι → ℝ) :
