@@ -54,7 +54,7 @@ variable [FiniteDimensional ℝ V]
 
 /-- A positive definite real quadratic form is isometric to the standard sum-of-squares form
 in its dimension. -/
-theorem QuadraticForm.PosDef.nonempty_isometryEquiv_toQuadraticForm'_one (hQ : Q.PosDef) :
+theorem nonempty_isometryEquiv_toQuadraticForm'_one_of_posDef (hQ : Q.PosDef) :
     Nonempty (Q.IsometryEquiv
       (Matrix.toQuadraticForm' (1 : Matrix (Fin (Module.finrank ℝ V))
         (Fin (Module.finrank ℝ V)) ℝ))) := by
@@ -85,11 +85,11 @@ theorem nonempty_orthogonalGroupContinuousMulEquivMatrix_of_definite
     Nonempty (QuadraticMap.orthogonalGroup Q ≃ₜ*
       Matrix.orthogonalGroup (Fin (Module.finrank ℝ V)) ℝ) := by
   rcases hQ with hQ | hQ
-  · obtain ⟨e⟩ := QuadraticForm.PosDef.nonempty_isometryEquiv_toQuadraticForm'_one hQ
+  · obtain ⟨e⟩ := nonempty_isometryEquiv_toQuadraticForm'_one_of_posDef hQ
     exact ⟨orthogonalGroupContinuousMulEquivMatrix
       ((isUnit_of_invertible (2 : ℝ)).isSMulRegular ℝ) e⟩
-  · obtain ⟨e⟩ := QuadraticForm.PosDef.nonempty_isometryEquiv_toQuadraticForm'_one hQ
-    rw [← QuadraticMap.orthogonalGroup_neg Q]
+  · obtain ⟨e⟩ := nonempty_isometryEquiv_toQuadraticForm'_one_of_posDef hQ
+    rw [← orthogonalGroup_neg Q]
     exact ⟨orthogonalGroupContinuousMulEquivMatrix
       ((isUnit_of_invertible (2 : ℝ)).isSMulRegular ℝ) e⟩
 
