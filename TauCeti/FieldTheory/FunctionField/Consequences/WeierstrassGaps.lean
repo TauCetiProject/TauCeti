@@ -49,6 +49,9 @@ place thus lies between `0` and `g (g - 1) / 2`. It is `0` exactly when the gaps
 * `TauCeti.Place.card_weierstrassGaps`: the Weierstrass gap theorem: a rational place of a
   function field with integrally closed constants and genus `g` has exactly `g` gaps.
 * `TauCeti.Place.one_mem_weierstrassGaps`: the first gap is `1`.
+* `TauCeti.Place.isGap_iff_exists_mem_riemannRochSpace_ord_eq`: for a divisor `W` satisfying the
+  Riemann--Roch identity, `n` is a gap at a rational place `P` exactly when some nonzero section of
+  `L(W)` has order `n - 1 - W(P)` at `P`.
 * `TauCeti.Place.IsGap.sub_one_le_two_mul_card_gapNumbersUpTo`: below a gap `n` at least
   `(n - 1) / 2` numbers are gaps, so the `j`-th gap is at most `2j - 1`.
 * `TauCeti.Place.weierstrassWeight_le_genus_choose_two`: the weight of a rational place is at most
@@ -63,7 +66,8 @@ place thus lies between `0` and `g (g - 1) / 2`. It is `0` exactly when the gaps
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
   Theorem 1.6.8.
 * H. M. Farkas and I. Kra, *Riemann Surfaces*, 2nd ed., GTM 71, Springer, 1992, Section III.5,
-  for the Weierstrass weight and its bound `g (g - 1) / 2`.
+  for the Weierstrass weight, its bound `g (g - 1) / 2`, and gaps as orders of regular
+  differentials.
 * G. Li, `vaca22/riemann-roch-function-fields`, a separate Lean formalization of Weierstrass
   gaps along the same function-field route.
 -/
@@ -329,6 +333,78 @@ theorem one_mem_weierstrassGaps (hF : IsFunctionField k F)
   have hcard := P.card_weierstrassGaps hF hex hP
   rw [hempty, Finset.card_empty] at hcard
   omega
+
+/-! ### Gaps and the canonical divisor -/
+
+/-- **Gaps are the jumps of the canonical filtration**: if `W` satisfies the Riemann--Roch
+identity, then a positive integer `n` is a gap at a rational place `P` exactly when
+`ℓ(W - nP) < ℓ(W - (n - 1)P)`. -/
+theorem isGap_iff_dim_sub_lt (hF : IsFunctionField k F) {W : Divisor k F} {g₀ : ℕ}
+    (hW : W.IsRiemannRochDivisor g₀) {P : Place k F} (hP : P.degree = 1) {n : ℕ}
+    (hn : 0 < n) :
+    P.IsGap n ↔
+      Divisor.dim (W - (n : ℤ) • WeilDivisor.ofPoint P) <
+        Divisor.dim (W - ((n - 1 : ℕ) : ℤ) • WeilDivisor.ofPoint P) := by
+  have h₁ := Divisor.isRiemannRochDivisor_iff.mp hW ((n : ℤ) • WeilDivisor.ofPoint P)
+  have h₂ := Divisor.isRiemannRochDivisor_iff.mp hW (((n - 1 : ℕ) : ℤ) • WeilDivisor.ofPoint P)
+  simp only [Divisor.degree_zsmul, Divisor.degree_ofPoint, hP, Nat.cast_one, mul_one] at h₁ h₂
+  have hmono :
+      Divisor.dim (((n - 1 : ℕ) : ℤ) • WeilDivisor.ofPoint P) ≤
+        Divisor.dim ((n : ℤ) • WeilDivisor.ofPoint P) :=
+    Divisor.dim_mono hF (zsmul_le_zsmul_left
+      (WeilDivisor.isEffective_iff_zero_le.mp (WeilDivisor.isEffective_ofPoint P)) (by omega))
+  rw [P.isGap_iff_dim_eq hF hn]
+  omega
+
+/-- **Gaps are the orders of canonical sections** (Farkas--Kra, Section III.5, in the
+divisor language of `L(W)`): if `W` satisfies the Riemann--Roch identity, then a positive integer
+`n` is a gap at a rational place `P` exactly when some nonzero `f ∈ L(W)` has order
+`n - 1 - W(P)` at `P`. For `W` the divisor of a Weil differential `ω`, these `f` correspond to
+the regular differentials `f ω` with a zero of order `n - 1` at `P`. -/
+theorem isGap_iff_exists_mem_riemannRochSpace_ord_eq (hF : IsFunctionField k F)
+    {W : Divisor k F} {g₀ : ℕ} (hW : W.IsRiemannRochDivisor g₀) {P : Place k F}
+    (hP : P.degree = 1) {n : ℕ} (hn : 0 < n) :
+    P.IsGap n ↔ ∃ f ∈ riemannRochSpace W, f ≠ 0 ∧ P.ord f = n - 1 - W.coeff P := by
+  set E : Divisor k F := W - ((n - 1 : ℕ) : ℤ) • WeilDivisor.ofPoint P with hE
+  have hP0 : (0 : Divisor k F) ≤ WeilDivisor.ofPoint P :=
+    WeilDivisor.isEffective_iff_zero_le.mp (WeilDivisor.isEffective_ofPoint P)
+  have hsub : W - (n : ℤ) • WeilDivisor.ofPoint P = E - WeilDivisor.ofPoint P := by
+    rw [hE, Nat.cast_sub hn, Nat.cast_one, sub_smul, one_smul]
+    abel
+  have hEP : E.coeff P = W.coeff P - (n - 1) := by
+    simp only [hE, WeilDivisor.coeff_sub, WeilDivisor.coeff_zsmul,
+      WeilDivisor.coeff_ofPoint_self, mul_one]
+    omega
+  have hEQ : ∀ Q, Q ≠ P → E.coeff Q = W.coeff Q := fun Q hQP ↦ by
+    simp [hE, WeilDivisor.coeff_ofPoint_of_ne hQP]
+  have hle : riemannRochSpace (E - WeilDivisor.ofPoint P) ≤ riemannRochSpace E :=
+    riemannRochSpace_mono (sub_le_self _ hP0)
+  have := finiteDimensional_riemannRochSpace hF E
+  rw [P.isGap_iff_dim_sub_lt hF hW hP hn, hsub, Divisor.dim_def, Divisor.dim_def]
+  constructor
+  · intro hlt
+    obtain ⟨f, hfE, hfnot⟩ :=
+      IsConcreteLE.exists_of_lt (Submodule.lt_of_le_of_finrank_lt_finrank hle hlt)
+    refine ⟨f, riemannRochSpace_mono (sub_le_self _ (zsmul_nonneg hP0 (by omega))) hfE, ?_, ?_⟩
+    · rintro rfl
+      exact hfnot (Submodule.zero_mem _)
+    · rw [Divisor.ord_eq_neg_coeff_of_not_mem_sub_ofPoint hfE hfnot, hEP]
+      ring
+  · rintro ⟨f, hfW, hf0, hford⟩
+    have hfW' := (mem_riemannRochSpace_iff_neg_le_ord hf0).mp hfW
+    have hfE : f ∈ riemannRochSpace E := by
+      refine (mem_riemannRochSpace_iff_neg_le_ord hf0).mpr fun Q ↦ ?_
+      rcases eq_or_ne Q P with rfl | hQP
+      · rw [hEP, hford]
+        omega
+      · rw [hEQ Q hQP]
+        exact hfW' Q
+    have hfnot : f ∉ riemannRochSpace (E - WeilDivisor.ofPoint P) := fun h ↦ by
+      have hPord := (mem_riemannRochSpace_iff_neg_le_ord hf0).mp h P
+      rw [WeilDivisor.coeff_sub, WeilDivisor.coeff_ofPoint_self, hEP, hford] at hPord
+      omega
+    exact Submodule.finrank_lt_finrank_of_lt
+      (IsConcreteLE.lt_iff_le_and_exists.mpr ⟨hle, f, hfE, hfnot⟩)
 
 /-! ### Gaps below a gap -/
 
