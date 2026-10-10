@@ -36,6 +36,39 @@ namespace PreAbstractSimplicialComplex
 variable {ι : Type*} {K L : PreAbstractSimplicialComplex ι}
   {A : AbstractSimplicialComplex ι}
 
+/-- Transport the elementary deformation from its nested target subtype to the flat
+target polyhedron, expressing the fixed subset as the range of its inclusion. -/
+private theorem ElementaryCollapsesTo.exists_strong_deformation_retraction_flat
+    (h : ElementaryCollapsesTo K L)
+    (hK : K ≤ A.toPreAbstractSimplicialComplex) :
+    let X : Set (Realization A) := {x | x.1.support ∈ K}
+    let Y : Set (Realization A) := {x | x.1.support ∈ L}
+    let i : C(Y, X) := ContinuousMap.inclusion (fun _ hx => h.le hx)
+    ∃ r : C(X, Y), LeftInverse r i ∧
+      (ContinuousMap.id X).HomotopicRel (i.comp r) (range i) := by
+  obtain ⟨r, hr, ⟨H⟩⟩ := h.exists_strong_deformation_retraction hK
+  let X : Set (Realization A) := {x | x.1.support ∈ K}
+  let Y : Set (Realization A) := {x | x.1.support ∈ L}
+  let i : C(Y, X) := ContinuousMap.inclusion (fun _ hx => h.le hx)
+  -- The nested target stores both K- and L-membership. Flatten it by retaining
+  -- the ambient point and L-membership; continuity follows from the two projections.
+  let r' : C(X, Y) :=
+    ⟨fun x => ⟨(r x).1.1, (r x).2⟩,
+      (continuous_subtype_val.comp
+        (continuous_subtype_val.comp r.continuous)).subtype_mk _⟩
+  refine ⟨r', ?_, ⟨?_⟩⟩
+  · intro x
+    exact congrArg (fun y => (⟨y.1.1, y.2⟩ : Y))
+      (hr ⟨i x, x.2⟩)
+  · refine { toHomotopy := H.toHomotopy.cast rfl ?_, prop' := ?_ }
+    · -- Both endpoint maps return the same point of X; Subtype.ext discards
+      -- the differing membership proofs introduced by flattening and inclusion.
+      ext x
+      rfl
+    · -- A point in range i has L-membership, so H already fixes it.
+      rintro t x ⟨y, rfl⟩
+      exact H.eq_fst t y.2
+
 /-- A finite collapse strongly deformation retracts the original polyhedron onto its
 terminal polyhedron. The retraction is a left inverse of the actual subspace inclusion,
 and the homotopy fixes the image of that inclusion throughout. -/
@@ -49,25 +82,11 @@ theorem CollapsesTo.exists_strong_deformation_retraction (h : CollapsesTo K L)
   induction h using CollapsesTo.trans_induction_on with
   | refl K =>
     refine ⟨ContinuousMap.id _, fun _ => rfl, ?_⟩
+    -- Self-inclusion composed with id preserves every underlying point;
+    -- extensionality identifies its endpoint with id regardless of membership proofs.
     exact ⟨(ContinuousMap.HomotopyRel.refl _ _).cast rfl (by ext x; rfl)⟩
   | @single K L h =>
-    obtain ⟨r, hr, ⟨H⟩⟩ := h.exists_strong_deformation_retraction hK
-    let X : Set (Realization A) := {x | x.1.support ∈ K}
-    let Y : Set (Realization A) := {x | x.1.support ∈ L}
-    let i : C(Y, X) := ContinuousMap.inclusion (fun _ hx => h.le hx)
-    let r' : C(X, Y) :=
-      ⟨fun x => ⟨(r x).1.1, (r x).2⟩,
-        (continuous_subtype_val.comp
-          (continuous_subtype_val.comp r.continuous)).subtype_mk _⟩
-    refine ⟨r', ?_, ⟨?_⟩⟩
-    · intro x
-      exact congrArg (fun y => (⟨y.1.1, y.2⟩ : Y))
-        (hr ⟨i x, x.2⟩)
-    · refine { toHomotopy := H.toHomotopy.cast rfl ?_, prop' := ?_ }
-      · ext x
-        rfl
-      · rintro t x ⟨y, rfl⟩
-        exact H.eq_fst t y.2
+    exact h.exists_strong_deformation_retraction_flat hK
   | @trans K P L hKP hPL ihKP ihPL =>
     obtain ⟨r, hr, hR⟩ := ihKP hK
     obtain ⟨s, hs, hS⟩ := ihPL (hKP.le.trans hK)
@@ -89,7 +108,7 @@ theorem CollapsesTo.exists_strong_deformation_retraction (h : CollapsesTo K L)
       simpa only [hi] using hR.comp_retractions hS hr
 
 /-- A collapsible polyhedron is contractible, with the subspace topology from any
-containing weak realization. Its contraction ends at the terminal vertex of the collapse. -/
+containing weak realization. -/
 theorem Collapsible.contractibleSpace (h : Collapsible K)
     (hK : K ≤ A.toPreAbstractSimplicialComplex) :
     ContractibleSpace {x : Realization A // x.1.support ∈ K} := by
