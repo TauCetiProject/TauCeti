@@ -21,11 +21,10 @@ following Massey, *Singular Homology Theory*, Chapter II, and it satisfies `∂ 
 push forward along continuous maps, and the boundary is natural.
 
 Chains are modelled concretely, as finitely supported functions on a type, rather than as a chain
-complex in an abstract preadditive category.  The normalized cubical chains, the quotient by the
-degenerate cubes built on top of this file, carry a cross product which is bilinear on these
-carriers, and the normalized chains of a topological monoid are a differential graded algebra on
-a type.  The coefficient ring need not be commutative: only the central signs `(-1) ^ i` enter the
-boundary.
+complex in an abstract preadditive category: the normalized cubical chains built on top of this
+file are the quotient of this module by the degenerate cubes, and the constructions on them
+(products, actions) are maps between such carriers.  The coefficient ring need not be commutative:
+only the central signs `(-1) ^ i` enter the boundary.
 
 ## Main definitions
 
@@ -38,6 +37,13 @@ boundary.
 
 * `TauCeti.CubicalChain.boundary_boundary`: `∂ ∘ ∂ = 0`.
 * `TauCeti.CubicalChain.map_boundary`: the boundary is natural.
+
+## Implementation notes
+
+The concrete model and the proof of `boundary_boundary` follow
+`TauCeti.AlgebraicTopology.Singular.Subdivision.AffineChain`, whose `boundary` is also a
+`Finsupp.linearCombination` of signed faces and whose `boundary_boundary` is also a
+`Finset.sum_involution` over pairs of face indices.
 
 ## References
 
