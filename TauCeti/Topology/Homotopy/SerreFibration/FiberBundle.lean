@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.FiberBundle.Basic
 public import TauCeti.Topology.Homotopy.SerreFibration.Basic
+import TauCeti.Order.Interval.Set.Pi
 
 /-!
 # Fibre bundles are Serre fibrations
@@ -143,11 +144,10 @@ private lemma boxLifts_of_mapsTo [TopologicalSpace B] [TopologicalSpace F]
     exact hab (mem_lowerFaces.1 (hr hx)).1
   refine ⟨fun x ↦ e.lift (g (lowerRetract a hT x)) (H x), ?_,
     fun x hx ↦ e.proj_lift (hab hx), fun x hx ↦ ?_⟩
-  · unfold Trivialization.lift
-    refine e.toOpenPartialHomeomorph.continuousOn_symm.comp (hH.continuousOn.prodMk ?_)
-      fun x hx ↦ e.mem_target.2 (hab hx)
-    exact continuous_snd.comp_continuousOn <| e.toOpenPartialHomeomorph.continuousOn.comp
-      (hg.comp (continuous_lowerRetract a hT).continuousOn hr) hsrc
+  · rw [continuousOn_iff_continuous_domRestrict]
+    exact continuous_subtype_val.comp <| e.liftCM.continuous.comp <|
+      ((hg.comp (continuous_lowerRetract a hT).continuousOn hr).mapsToRestrict hsrc).prodMk
+        (hH.continuousOn.mapsToRestrict hab)
   · have hpx : p (g x) ∈ e.baseSet := by
       rw [hgH x hx]
       exact hab (mem_lowerFaces.1 hx).1
@@ -160,14 +160,6 @@ private lemma lowerFaces_insert [DecidableEq ι] (a b : ι → ℝ) (T : Finset 
   simp only [mem_union, mem_lowerFaces, Finset.mem_insert, Finset.mem_singleton,
     Finset.mem_erase]
   grind
-
-private lemma mem_Icc_update_right [DecidableEq ι] {a b x : ι → ℝ} {i : ι} {s : ℝ}
-    (hx : x ∈ Icc a b) (hxs : x i ≤ s) : x ∈ Icc a (Function.update b i s) :=
-  ⟨hx.1, le_update_iff.2 ⟨hxs, fun j _ ↦ hx.2 j⟩⟩
-
-private lemma mem_Icc_update_left [DecidableEq ι] {a b x : ι → ℝ} {i : ι} {s : ℝ}
-    (hx : x ∈ Icc a b) (hsx : s ≤ x i) : x ∈ Icc (Function.update a i s) b :=
-  ⟨update_le_iff.2 ⟨hsx, fun j _ ↦ hx.1 j⟩, hx.2⟩
 
 /-- Cutting a box along the coordinate `i` at `s`: a lifting problem relative to the lower faces
 in the directions `T` is solved on the lower half, then on the upper half relative to the lower
