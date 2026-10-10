@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Homotopy.HurewiczFibration
-public import TauCeti.Topology.PathSpace.Moore.Truncate
+public import TauCeti.Topology.PathSpace.Moore
 
 /-!
 # Lifting functions on Moore paths
@@ -77,15 +77,15 @@ instance : TopologicalSpace (MooreReplacement p) :=
   inferInstanceAs (TopologicalSpace {x : E × MoorePath B // x.2.source = p x.1})
 
 /-- The pair `(e, γ)`, for a Moore path `γ` starting at `p e`. -/
-@[expose] def mk (e : E) (γ : MoorePath B) (h : γ.source = p e) : MooreReplacement p :=
+def mk (e : E) (γ : MoorePath B) (h : γ.source = p e) : MooreReplacement p :=
   ⟨(e, γ), h⟩
 
 /-- The point of `E` of a pair `(e, γ)`. -/
-@[expose] def point (x : MooreReplacement p) : E :=
+def point (x : MooreReplacement p) : E :=
   x.1.1
 
 /-- The Moore path of a pair `(e, γ)`. -/
-@[expose] def path (x : MooreReplacement p) : MoorePath B :=
+def path (x : MooreReplacement p) : MoorePath B :=
   x.1.2
 
 @[simp]
@@ -140,8 +140,16 @@ namespace MooreLiftingFunction
 
 variable {p : C(E, B)} (Φ : MooreLiftingFunction p)
 
+/-- Two lifting functions are equal when their underlying continuous maps are. -/
+@[ext]
+theorem ext {Φ Ψ : MooreLiftingFunction p} (h : Φ.toContinuousMap = Ψ.toContinuousMap) :
+    Φ = Ψ := by
+  cases Φ
+  cases Ψ
+  congr
+
 /-- The lift of a Moore path `γ` starting at `p e`, from `e`. -/
-@[expose] def lift (e : E) (γ : MoorePath B) (h : γ.source = p e) : MoorePath E :=
+def lift (e : E) (γ : MoorePath B) (h : γ.source = p e) : MoorePath E :=
   Φ.toContinuousMap (.mk e γ h)
 
 theorem lift_def (e : E) (γ : MoorePath B) (h : γ.source = p e) :
@@ -184,12 +192,11 @@ theorem continuous_lift {Y : Type*} [TopologicalSpace Y] {f : Y → E} {g : Y �
     Continuous fun y ↦ Φ.lift (f y) (g y) (h y) :=
   Φ.toContinuousMap.continuous.comp (MooreReplacement.continuous_mk hf hg h)
 
-/-- A lifting function is **transitive** when it lifts the constant paths of length zero to
-constant paths, and lifts a concatenation `γ · δ` from `e` to the lift of `γ` from `e` followed by
-the lift of `δ` from the end point of the first lift. -/
+/-- A lifting function is **transitive** when it lifts a concatenation `γ · δ` from `e` to the lift
+of `γ` from `e` followed by the lift of `δ` from the end point of the first lift.  (Constant
+paths of length zero lift to constant paths for every lifting function,
+`MooreLiftingFunction.lift_eq_refl_of_length_eq_zero`.) -/
 structure IsTransitive : Prop where
-  /-- The constant path of length zero lifts to the constant path. -/
-  lift_refl : ∀ e, Φ.lift e (.refl (p e)) (MoorePath.source_refl _) = .refl e
   /-- A concatenation lifts to the concatenation of the lifts. -/
   lift_trans : ∀ (e : E) (γ δ : MoorePath B) (hγ : γ.source = p e) (h : γ.target = δ.source),
     Φ.lift e (γ.trans δ h) (by rw [MoorePath.source_trans, hγ]) =
@@ -208,14 +215,19 @@ private theorem continuous_toI : Continuous toI :=
 private theorem toI_toNNReal (s : I) : toI (toNNReal s) = s :=
   Set.projIcc_val zero_le_one s
 
+private theorem toI_zero : toI 0 = 0 :=
+  Set.projIcc_left zero_le_one
+
+private theorem toI_of_one_le {t : ℝ≥0} (ht : 1 ≤ t) : toI t = 1 :=
+  Set.projIcc_of_right_le zero_le_one (NNReal.one_le_coe.2 ht)
+
 /-- The Moore path of length one `t ↦ H (min t 1, a)` traced by a homotopy at the point `a`. -/
 private def unitPath {A : Type w} [TopologicalSpace A] (H : C(I × A, B)) (a : A) : MoorePath B where
   toFun t := H (toI t, a)
   continuous_toFun := H.continuous.comp (continuous_toI.prodMk continuous_const)
   length := 1
   apply_of_length_le' t ht := by
-    simp only [toI, Set.projIcc_of_right_le zero_le_one (show (1 : ℝ) ≤ t from ht),
-      NNReal.coe_one, Set.projIcc_right]
+    simp only [toI_of_one_le ht, toI_of_one_le le_rfl]
 
 private theorem unitPath_apply {A : Type w} [TopologicalSpace A] (H : C(I × A, B)) (a : A)
     (t : ℝ≥0) : unitPath H a t = H (toI t, a) :=
@@ -231,8 +243,7 @@ Moore paths of length one, and their lifts from the initial lift form the lifted
 theorem isHurewiczFibration (Φ : MooreLiftingFunction p) : IsHurewiczFibration.{w} p := by
   refine isHurewiczFibration_iff.2 ⟨p.continuous, fun A _ f H hH ↦ ?_⟩
   have h₀ : ∀ a, (unitPath H a).source = p (f a) := fun a ↦ by
-    rw [MoorePath.source_def, unitPath_apply, show toI 0 = 0 from
-      Set.projIcc_left zero_le_one, hH a]
+    rw [MoorePath.source_def, unitPath_apply, toI_zero, hH a]
   refine ⟨⟨fun x ↦ Φ.lift (f x.2) (unitPath H x.2) (h₀ x.2) (toNNReal x.1), ?_⟩, funext fun x ↦ ?_,
     fun a ↦ ?_⟩
   · exact (Φ.continuous_lift (f.continuous.comp continuous_snd)
@@ -251,7 +262,7 @@ variable (F : Type*) [TopologicalSpace F]
 
 /-- The lifting function of the projection `B × F → B`: the lift of `γ` from `(b, f)` is `γ`
 paired with the constant path at `f`. -/
-@[expose] def fst : MooreLiftingFunction (ContinuousMap.fst : C(B × F, B)) where
+def fst : MooreLiftingFunction (ContinuousMap.fst : C(B × F, B)) where
   toContinuousMap :=
     { toFun x :=
         { toFun t := (x.path t, x.point.2)
@@ -286,8 +297,6 @@ theorem fst_lift_length (e : B × F) (γ : MoorePath B)
 
 /-- The lifting function of a product projection is transitive. -/
 theorem isTransitive_fst : (fst F).IsTransitive (B := B) where
-  lift_refl e := MoorePath.ext (by simp [MoorePath.length_refl]) fun t ↦ by
-    simp [MoorePath.refl_apply]
   lift_trans e γ δ hγ h := by
     refine MoorePath.ext (by simp [MoorePath.length_trans]) fun t ↦ ?_
     rw [fst_lift_apply, MoorePath.trans_apply, MoorePath.trans_apply, fst_lift_length]
