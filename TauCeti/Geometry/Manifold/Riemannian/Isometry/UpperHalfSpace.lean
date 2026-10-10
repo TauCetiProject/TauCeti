@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Reflection
 public import TauCeti.Analysis.Normed.Lp.ProdLp
 public import TauCeti.Geometry.Euclidean.Inversion
 public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.UpperHalfSpace.Basic
@@ -70,12 +69,6 @@ noncomputable section
 namespace TauCeti.UpperHalfSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-omit [InnerProductSpace ℝ E] in
-/-- A point of the upper half-space is not a point `(a, 0)` of its boundary hyperplane. -/
-private theorem coe_ne_toLp (x : UpperHalfSpace E) (a : E) :
-    (x : WithLp 2 (E × ℝ)) ≠ WithLp.toLp 2 (a, 0) := fun h ↦
-  (height_pos x).ne' (by simpa [← snd_coe] using congrArg WithLp.snd h)
 
 omit [InnerProductSpace ℝ E] in
 /-- The scale factor `(R / ‖x - (a, 0)‖) ^ 2` of the inversion in the sphere of radius `|R|` about
@@ -254,6 +247,23 @@ private theorem inner_mfderivBase {Φ : Isom 𝓘(ℝ, WithLp 2 (E × ℝ)) (Upp
     one_pow, div_one, div_one] at h
   rw [mfderivBase_apply, mfderivBase_apply]
   exact h
+
+/-- For a unit vector `u` of height less than `1`, the reflection in the hyperplane orthogonal to
+`(0, 1) - (a, 0)`, with `a = (1 - u.snd)⁻¹ • u.fst`, sends `u` to the vertical vector `(0, 1)`. -/
+private theorem reflection_apply_eq_toLp_zero_one {u : WithLp 2 (E × ℝ)} (hnorm : ‖u‖ = 1)
+    (hs : u.snd < 1) :
+    (ℝ ∙ (WithLp.toLp 2 ((0 : E), (1 : ℝ)) -
+      WithLp.toLp 2 ((1 - u.snd)⁻¹ • u.fst, 0)))ᗮ.reflection u = WithLp.toLp 2 (0, 1) := by
+  have hs1 : u.snd - 1 ≠ 0 := sub_ne_zero.2 hs.ne
+  have hdir : WithLp.toLp 2 ((0 : E), (1 : ℝ)) - WithLp.toLp 2 ((1 - u.snd)⁻¹ • u.fst, 0) =
+      (u.snd - 1)⁻¹ • (u - WithLp.toLp 2 (0, 1)) :=
+    (WithLp.ext_iff 2).2 (Prod.ext (by simp [← neg_smul, ← inv_neg])
+      (by simp [inv_mul_cancel₀ hs1]))
+  have hspan : (ℝ ∙ (WithLp.toLp 2 ((0 : E), (1 : ℝ)) -
+      WithLp.toLp 2 ((1 - u.snd)⁻¹ • u.fst, 0))) = ℝ ∙ (u - WithLp.toLp 2 (0, 1)) := by
+    rw [hdir, Submodule.span_singleton_smul_eq (IsUnit.mk0 _ (inv_ne_zero hs1))]
+  simp only [hspan]
+  exact Submodule.reflection_sub (by simp [hnorm])
 
 variable [FiniteDimensional ℝ E]
 
