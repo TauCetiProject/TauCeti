@@ -78,6 +78,19 @@ variable (R : Type*) [Semiring R]
 def map (f : C(X, Y)) (n : ℕ) : CubicalChain X R n →ₗ[R] CubicalChain Y R n :=
   lmapDomain R R f.comp
 
+theorem map_def (f : C(X, Y)) (n : ℕ) : map R f n = lmapDomain R R f.comp :=
+  (rfl)
+
+/-- An injective map of spaces preserves the coefficient of each cube at its image. -/
+theorem map_apply_comp_of_injective (f : C(X, Y)) (hf : Function.Injective f)
+    {n : ℕ} (g : CubicalChain X R n) (c : SingularCube X n) :
+    map R f n g (f.comp c) = g c := by
+  have hinj : Function.Injective (fun d : SingularCube X n ↦ f.comp d) := by
+    intro d e h
+    ext x
+    exact hf (ContinuousMap.congr_fun h x)
+  rw [map_def, lmapDomain_apply, mapDomain_apply_of_injective hinj]
+
 @[simp]
 theorem map_single (f : C(X, Y)) {n : ℕ} (c : SingularCube X n) (a : R) :
     map R f n (single c a) = single (f.comp c) a := by

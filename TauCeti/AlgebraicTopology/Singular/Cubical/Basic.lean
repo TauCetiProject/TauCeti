@@ -170,6 +170,18 @@ theorem IsDegenerate.comp {n : ℕ} {c : SingularCube X n} (h : IsDegenerate c) 
     IsDegenerate (f.comp c) :=
   h.elim fun i hi ↦ ⟨i, hi.comp f⟩
 
+/-- An injective continuous map reflects degeneracy in each coordinate. -/
+theorem isDegenerateAt_comp_iff_of_injective {n : ℕ} (f : C(X, Y))
+    (hf : Function.Injective f) (c : SingularCube X n) (i : Fin n) :
+    IsDegenerateAt (f.comp c) i ↔ IsDegenerateAt c i :=
+  ⟨fun h x t ↦ hf (h x t), fun h ↦ h.comp f⟩
+
+/-- An injective continuous map preserves and reflects degeneracy. -/
+theorem isDegenerate_comp_iff_of_injective {n : ℕ} (f : C(X, Y))
+    (hf : Function.Injective f) (c : SingularCube X n) :
+    IsDegenerate (f.comp c) ↔ IsDegenerate c := by
+  simp only [isDegenerate_iff, isDegenerateAt_comp_iff_of_injective f hf]
+
 /-- The two faces of a cube in a coordinate it does not depend on coincide. -/
 theorem face_eq_of_isDegenerateAt {n : ℕ} {c : SingularCube X (n + 1)} {i : Fin (n + 1)}
     (h : IsDegenerateAt c i) (t t' : I) : face i t c = face i t' c := by
