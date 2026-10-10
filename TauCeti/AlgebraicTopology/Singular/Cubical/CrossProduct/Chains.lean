@@ -96,7 +96,7 @@ theorem map_crossProduct (f : C(X, Z)) (g : C(Y, W)) (a : CubicalChain X R p)
 /-- The cross product of a degenerate chain with any chain is degenerate. -/
 theorem crossProduct_left_mem_degenerate {a : CubicalChain X R p} (ha : a ∈ degenerate X R p)
     (b : CubicalChain Y R q) : crossProduct X Y R p q a b ∈ degenerate (X × Y) R (p + q) := by
-  rw [degenerate_def] at ha
+  rw [degenerate] at ha
   induction ha using Submodule.span_induction with
   | mem f hf =>
     obtain ⟨c, hc, rfl⟩ := hf
@@ -114,7 +114,7 @@ theorem crossProduct_left_mem_degenerate {a : CubicalChain X R p} (ha : a ∈ de
 /-- The cross product of any chain with a degenerate chain is degenerate. -/
 theorem crossProduct_right_mem_degenerate (a : CubicalChain X R p) {b : CubicalChain Y R q}
     (hb : b ∈ degenerate Y R q) : crossProduct X Y R p q a b ∈ degenerate (X × Y) R (p + q) := by
-  rw [degenerate_def] at hb
+  rw [degenerate] at hb
   induction hb using Submodule.span_induction with
   | mem f hf =>
     obtain ⟨d, hd, rfl⟩ := hf
