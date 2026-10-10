@@ -158,9 +158,8 @@ theorem natCard_groupCohomology_two_dvd_natCard_of_prime_index [Finite G] (A : R
     exact natCard_groupCohomology_two_res_dvd_of_isPGroup A h1 h2 p _ (P p).isPGroup'
       (P p : Subgroup G).subtype Subtype.val_injective
   calc Nat.card (groupCohomology A 2)
-      = Nat.card Φ.range := Nat.card_congr (AddMonoidHom.ofInjective hΦ).toEquiv
-    _ ∣ Nat.card (∀ p, groupCohomology (res (P p : Subgroup G).subtype A) 2) :=
-      Φ.range.card_addSubgroup_dvd_card
+      ∣ Nat.card (∀ p, groupCohomology (res (P p : Subgroup G).subtype A) 2) :=
+      AddSubgroup.card_dvd_of_injective Φ hΦ
     _ = ∏ p, Nat.card (groupCohomology (res (P p : Subgroup G).subtype A) 2) := Nat.card_pi
     _ ∣ ∏ p, Nat.card (P p) := Finset.prod_dvd_prod_of_dvd _ _ fun p _ => hP p
     _ = Nat.card G := by
