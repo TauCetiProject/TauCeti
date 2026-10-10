@@ -15,10 +15,11 @@ such paths can be concatenated when the target of the second is the source of th
 partial operation `TauCeti.Quiver.TotalPath.mul?` records this condition with an `Option` result,
 using the later-factor-first order: `x.mul? y` traces `y` and then `x`.
 
-Concatenation adds path lengths and keeps the source of its later factor, so it is the trivial path
-at a vertex exactly when both its factors are. It is associative as a partial operation, and
-trivial paths are left and right units at the appropriate endpoints. These operations supply the
-path index and multiplication of the path algebra, independently of any coefficient semiring.
+Concatenation adds path lengths and keeps the source of the factor written second — the one traced
+first — so it is the trivial path at a vertex exactly when both its factors are. It is associative
+as a partial operation, and trivial paths are left and right units at the appropriate endpoints.
+These operations supply the path index and multiplication of the path algebra, independently of any
+coefficient semiring.
 
 ## Main definitions
 
@@ -33,7 +34,7 @@ path index and multiplication of the path algebra, independently of any coeffici
   endpoints do not meet.
 * `TauCeti.Quiver.TotalPath.length_eq_add_of_mul?_eq_some` and
   `TauCeti.Quiver.TotalPath.fst_of_mul?_eq_some`: concatenation adds lengths and keeps the source
-  of its later factor.
+  of the factor written second, which is traced first.
 * `TauCeti.Quiver.TotalPath.eq_nil_iff_of_mul?_eq_some`: a concatenation is the trivial path at a
   vertex exactly when both its factors are.
 * `TauCeti.Quiver.TotalPath.mul?_nil_left`, `TauCeti.Quiver.TotalPath.mul?_nil_right`, and
@@ -115,8 +116,8 @@ theorem length_eq_add_of_mul?_eq_some {x y z : TotalPath Q} (h : mul? x y = some
   · rw [mul?_eq_none hda] at h
     exact absurd h.symm (Option.some_ne_none z)
 
-/-- **Concatenation keeps the source**: a path produced by `mul?` starts where its later factor,
-written second, starts. -/
+/-- **Concatenation keeps the source**: a path produced by `mul?` starts where the factor written
+second, which is traced first, starts. -/
 theorem fst_of_mul?_eq_some {x y z : TotalPath Q} (h : mul? x y = some z) : z.1 = y.1 := by
   obtain ⟨a, b, p⟩ := x
   obtain ⟨c, d, q⟩ := y
@@ -129,8 +130,8 @@ theorem fst_of_mul?_eq_some {x y z : TotalPath Q} (h : mul? x y = some z) : z.1 
     exact absurd h.symm (Option.some_ne_none z)
 
 /-- **A concatenation is the trivial path at `v` exactly when both its factors are.** Lengths add
-under `mul?`, so both factors have length zero, and the concatenation starts where its later factor
-does, so that common endpoint is `v`. -/
+under `mul?`, so both factors have length zero, and the concatenation starts where the factor
+written second does, so that common endpoint is `v`. -/
 theorem eq_nil_iff_of_mul?_eq_some {v : Q} {x y z : TotalPath Q} (h : mul? x y = some z) :
     z = ⟨v, v, _root_.Quiver.Path.nil⟩ ↔
       x = ⟨v, v, _root_.Quiver.Path.nil⟩ ∧ y = ⟨v, v, _root_.Quiver.Path.nil⟩ := by
