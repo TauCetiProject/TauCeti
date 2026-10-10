@@ -267,7 +267,7 @@ def splitMaximalTorusCoordinateMap : carrierAlgebra ⟶
 
 /-- In the ambient matrix coordinates, the standard-coordinate torus has the original
 short-root weights, indexed by the lifted node type. -/
-theorem splitMaximalTorusCoordinateMap_comp_mkQuotient :
+theorem mkQuotient_comp_splitMaximalTorusCoordinateMap :
     CommHopfAlgCat.mkQuotient _ (CommHopfAlgCat.commonKernelHopfIdeal generator) ≫
         splitMaximalTorusCoordinateMap =
       GeneralLinear.weightTorusCoordinateMap

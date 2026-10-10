@@ -50,31 +50,6 @@ open DynkinType
 
 noncomputable section
 
-/-- The numbered positive simple-root character in the lifted coordinates of the chosen split
-maximal torus. Its underlying root is the corresponding Bourbaki root of the simply connected
-`G₂` datum. -/
-def simpleRootCharacter (i : Fin 2) : ULift.{0} (Fin 2) →₀ ℤ :=
-  Finsupp.equivFunOnFinite.symm fun j =>
-    (G2.simplyConnectedRootDatum valid_G2).root (G2.simpleIndex valid_G2 i) j.down
-
-/-- The numbered root character evaluates as the corresponding root of the named datum. -/
-@[simp]
-theorem simpleRootCharacter_apply (i : Fin 2) (j : ULift.{0} (Fin 2)) :
-    simpleRootCharacter i j =
-      (G2.simplyConnectedRootDatum valid_G2).root (G2.simpleIndex valid_G2 i) j.down := by
-  simp [simpleRootCharacter]
-
-private theorem ofAdd_simpleRootCharacter (i : Fin 2) :
-    Multiplicative.ofAdd (simpleRootCharacter i) =
-      SplitTorus.weightCharacter (fun j : ULift.{0} (Fin 2) =>
-        G2.rootGeneratorWeight valid_G2 (.inl i) j.down) := by
-  have hroot : G2.rootGeneratorWeight valid_G2 (.inl i) =
-      (G2.simplyConnectedRootDatum valid_G2).root (G2.simpleIndex valid_G2 i) := by
-    simpa only [rank_G2] using G2.rootGeneratorWeight_inl_eq_root_simpleIndex valid_G2 i
-  apply Multiplicative.toAdd.injective
-  ext j
-  simp only [toAdd_ofAdd, simpleRootCharacter_apply, SplitTorus.toAdd_weightCharacter, hroot]
-
 private theorem simpleRootCharacter_height (i : Fin 2) :
     3 * simpleRootCharacter i (ULift.up 0) +
       5 * simpleRootCharacter i (ULift.up 1) = 1 := by
@@ -86,7 +61,7 @@ private theorem simpleRootCharacter_height (i : Fin 2) :
 
 /-- The differential of a numbered raising subgroup belongs to the tangent Lie algebra of the
 positive subgroup. -/
-theorem rootVector_inl_mem_positiveDefiningIdeal_lieSubalgebra (i : Fin 2) :
+theorem cotangentLinearEquiv_rootVector_inl_mem_positiveDefiningIdeal_lieSubalgebra (i : Fin 2) :
     Derivation.cotangentLinearEquiv (B := ZMod 3) (rootVector (.inl i)) ∈
       positiveDefiningIdeal.lieSubalgebra := by
   have hcomp : positiveRestriction ≫
@@ -103,20 +78,6 @@ theorem rootVector_inl_mem_positiveDefiningIdeal_lieSubalgebra (i : Fin 2) :
       (mem_positiveDefiningIdeal x).mp hx, map_zero]
   simp [derivationComp_apply, hz]
   rfl
-
-private theorem adjointWeightSpace_simpleRootCharacter_eq_span (i : Fin 2) :
-    Derivation.adjointWeightSpace splitMaximalTorus.coordinateMap.hom
-        (Multiplicative.ofAdd (simpleRootCharacter i)) = (ZMod 3) ∙ rootVector (.inl i) := by
-  calc
-    _ = Derivation.adjointWeightSpace splitMaximalTorus.coordinateMap.hom
-        (SplitTorus.weightCharacter (fun j : ULift.{0} (Fin 2) =>
-          G2.rootGeneratorWeight valid_G2 (.inl i) j.down)) :=
-      congrArg (Derivation.adjointWeightSpace splitMaximalTorus.coordinateMap.hom)
-        (ofAdd_simpleRootCharacter i)
-    _ = Derivation.adjointWeightSpace weightTorusCoordinateMap.hom
-        (SplitTorus.weightCharacter (G2.rootGeneratorWeight valid_G2 (.inl i))) :=
-      adjointWeightSpace_splitMaximalTorus_weightCharacter_eq_weightTorus _
-    _ = _ := adjointWeightSpace_rootGeneratorWeight_eq_span (.inl i)
 
 /-- Each numbered raising root is an intrinsic positive root for the chosen torus and positive
 subgroup. -/
@@ -139,7 +100,7 @@ theorem isPositiveRoot_simpleRootCharacter (i : Fin 2) :
     obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hx
     rw [map_smul]
     exact positiveDefiningIdeal.lieSubalgebra.smul_mem c
-      (rootVector_inl_mem_positiveDefiningIdeal_lieSubalgebra i)
+      (cotangentLinearEquiv_rootVector_inl_mem_positiveDefiningIdeal_lieSubalgebra i)
 
 private theorem tangentMatrix_lower_eq_zero
     (x : Module.Dual (ZMod 3) (Bialgebra.CotangentSpace (ZMod 3) carrierAlgebra))
