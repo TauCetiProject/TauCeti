@@ -50,11 +50,14 @@ open Finsupp unitInterval
 namespace TauCeti
 
 variable {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
-  (R : Type*) [CommRing R]
 
 namespace CubicalChain
 
 open SingularCube
+
+section Semiring
+
+variable (R : Type*) [Semiring R]
 
 variable (X) in
 /-- The **degenerate `n`-chains**: the span of the degenerate singular `n`-cubes. -/
@@ -65,6 +68,34 @@ theorem single_mem_degenerate {n : ℕ} {c : SingularCube X n} (hc : IsDegenerat
     single c a ∈ degenerate X R n := by
   rw [← smul_single_one]
   exact Submodule.smul_mem _ a (Submodule.subset_span ⟨c, hc, rfl⟩)
+
+/-- There are no degenerate `0`-chains: a `0`-cube is a point. -/
+theorem degenerate_zero : degenerate X R 0 = ⊥ := by
+  rw [degenerate, Submodule.span_eq_bot]
+  rintro f ⟨c, hc, rfl⟩
+  exact (not_isDegenerate_zero c hc).elim
+
+/-- The push-forward of a degenerate chain is degenerate. -/
+theorem map_mem_degenerate (f : C(X, Y)) {n : ℕ} {g : CubicalChain X R n}
+    (hg : g ∈ degenerate X R n) : map R f n g ∈ degenerate Y R n := by
+  induction hg using Submodule.span_induction with
+  | mem g hg =>
+    obtain ⟨c, hc, rfl⟩ := hg
+    rw [map_single]
+    exact single_mem_degenerate R (hc.comp f) 1
+  | zero => simp
+  | add g h _ _ hg hh => rw [map_add]; exact Submodule.add_mem _ hg hh
+  | smul a g _ hg => rw [map_smul]; exact Submodule.smul_mem _ a hg
+
+theorem degenerate_le_comap_map (f : C(X, Y)) (n : ℕ) :
+    degenerate X R n ≤ (degenerate Y R n).comap (map R f n) :=
+  fun _ hg ↦ map_mem_degenerate R f hg
+
+end Semiring
+
+section Ring
+
+variable (R : Type*) [Ring R]
 
 /-- The boundary of a degenerate cube is a degenerate chain: the two terms of the degenerate
 coordinate cancel, and every other face is degenerate. -/
@@ -91,43 +122,25 @@ theorem boundary_mem_degenerate {n : ℕ} {f : CubicalChain X R (n + 1)}
   | add f g _ _ hf hg => rw [map_add]; exact Submodule.add_mem _ hf hg
   | smul a f _ hf => rw [map_smul]; exact Submodule.smul_mem _ a hf
 
-/-- There are no degenerate `0`-chains: a `0`-cube is a point. -/
-theorem degenerate_zero : degenerate X R 0 = ⊥ := by
-  rw [degenerate, Submodule.span_eq_bot]
-  rintro f ⟨c, hc, rfl⟩
-  exact (not_isDegenerate_zero c hc).elim
-
 theorem degenerate_le_comap_boundary (n : ℕ) :
     degenerate X R (n + 1) ≤ (degenerate X R n).comap (boundary X R n) :=
   fun _ hf ↦ boundary_mem_degenerate R hf
 
-/-- The push-forward of a degenerate chain is degenerate. -/
-theorem map_mem_degenerate (f : C(X, Y)) {n : ℕ} {g : CubicalChain X R n}
-    (hg : g ∈ degenerate X R n) : map R f n g ∈ degenerate Y R n := by
-  induction hg using Submodule.span_induction with
-  | mem g hg =>
-    obtain ⟨c, hc, rfl⟩ := hg
-    rw [map_single]
-    exact single_mem_degenerate R (hc.comp f) 1
-  | zero => simp
-  | add g h _ _ hg hh => rw [map_add]; exact Submodule.add_mem _ hg hh
-  | smul a g _ hg => rw [map_smul]; exact Submodule.smul_mem _ a hg
-
-theorem degenerate_le_comap_map (f : C(X, Y)) (n : ℕ) :
-    degenerate X R n ≤ (degenerate Y R n).comap (map R f n) :=
-  fun _ hg ↦ map_mem_degenerate R f hg
+end Ring
 
 end CubicalChain
 
 /-- The **normalized cubical `n`-chains** of `X` with coefficients in `R`: the unnormalized chains
 modulo the degenerate ones. -/
-abbrev NormalizedCubicalChain (X : Type*) [TopologicalSpace X] (R : Type*) [CommRing R]
+abbrev NormalizedCubicalChain (X : Type*) [TopologicalSpace X] (R : Type*) [Ring R]
     (n : ℕ) : Type _ :=
   CubicalChain X R n ⧸ CubicalChain.degenerate X R n
 
 namespace NormalizedCubicalChain
 
 open CubicalChain
+
+variable (R : Type*) [Ring R]
 
 variable (X) in
 /-- The class of a singular cube in the normalized chains. -/
@@ -170,6 +183,7 @@ theorem map_mk (f : C(X, Y)) {n : ℕ} (g : CubicalChain X R n) :
     map R f n (Submodule.Quotient.mk g) = Submodule.Quotient.mk (CubicalChain.map R f n g) :=
   Submodule.mapQ_apply _ _ _ g
 
+@[simp]
 theorem map_id (n : ℕ) : map R (ContinuousMap.id X) n = LinearMap.id := by
   refine LinearMap.ext ((Submodule.Quotient.mk_surjective _).forall.2 fun g ↦ ?_)
   rw [map_mk, CubicalChain.map_id, LinearMap.id_apply, LinearMap.id_apply]
