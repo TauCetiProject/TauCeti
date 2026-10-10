@@ -277,7 +277,7 @@ theorem exists_integralIdealsAway_div (S : Finset (HeightOneSpectrum (𝓞 K)))
         mem_integralIdealsAway_iff_isPrimeTo.mpr (Ideal.isPrimeTo_asIdeal_iff.mpr hv)
       refine ⟨⟨v.asIdeal, hv'⟩, 1, ?_⟩
       apply Units.ext
-      simpa using hval
+      simpa only [map_one, Subgroup.coe_one, div_one, coe_integralIdealsAwayHom] using hval
     | one => exact ⟨1, 1, by simp⟩
     | mul x y hx hy ihx ihy =>
       obtain ⟨A, B, rfl⟩ := ihx

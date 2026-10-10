@@ -102,6 +102,12 @@ private def fractionalLocalizationMap :
         obtain ⟨A, B, h⟩ := O.exists_integralIdealsAwayConductor_div I
         exact ⟨A, B, Submonoid.mem_top _, h⟩
 
+/-- The localization map is the canonical integral-to-fractional ideal map. -/
+@[simp]
+private theorem fractionalLocalizationMap_apply (I : O.integralIdealsAwayConductor) :
+    O.fractionalLocalizationMap I = O.integralIdealsAwayConductorHom I :=
+  (rfl)
+
 /-- **Extension and contraction of invertible fractional ideals away from the conductor.**
 On quotients of integral ideals, extension extends numerator and denominator; the inverse
 contracts both separately. -/
@@ -121,8 +127,8 @@ theorem fractionalIdealsAwayConductorEquiv_integralIdealsAwayConductorHom
       NumberFieldArithmetic.integralIdealsAwayHom O.conductorModulus.support
         (O.integralIdealsAwayConductorEquiv I) := by
   rw [fractionalIdealsAwayConductorEquiv]
-  have h : O.fractionalLocalizationMap I = O.integralIdealsAwayConductorHom I := (rfl)
-  simpa only [h, NumberFieldArithmetic.integralIdealsAwayLocalizationMap_apply] using
+  simpa only [fractionalLocalizationMap_apply,
+    NumberFieldArithmetic.integralIdealsAwayLocalizationMap_apply] using
     O.fractionalLocalizationMap.mulEquivOfMulEquiv_eq
       (k := NumberFieldArithmetic.integralIdealsAwayLocalizationMap O.conductorModulus.support)
       (j := O.integralIdealsAwayConductorEquiv) (by simp) I
