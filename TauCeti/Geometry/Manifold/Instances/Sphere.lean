@@ -22,9 +22,10 @@ linear isometries
 
 Mathlib charts the unit sphere of an `(n + 1)`-dimensional real inner product space by
 stereographic projection, the preferred chart at `v` projecting from the antipode `-v`
-(`EuclideanSpace.instChartedSpaceSphere`). This file records the two facts about these charts
+(`EuclideanSpace.instChartedSpaceSphere`). This file records the facts about these charts
 that computations in a chart at a chosen point use: which stereographic projection the preferred
-chart is, and that the extended chart at `v` sends `v` to the origin of the model space.
+chart is, that the extended chart at `v` sends `v` to the origin of the model space, and that the
+inverse of a stereographic chart is a smooth embedding of the model space into the sphere.
 
 It then uses the charts to show that a linear isometry `ι : F →ₗᵢ[ℝ] E` restricts to a smooth
 embedding of unit spheres, `LinearIsometry.unitSphereMap`. Stereographic projection is defined
@@ -45,6 +46,8 @@ at least two omits a point, allowing the entire loop to be read in one stereogra
 
 * `TauCeti.chartAt_sphere`: the preferred chart at `v` is `stereographic' n (-v)`.
 * `TauCeti.extChartAt_sphere_apply_self`: the preferred extended chart at `v` sends `v` to `0`.
+* `TauCeti.isSmoothEmbedding_stereographic'_symm`: the inverse of a stereographic chart is a
+  smooth embedding of the model space into the sphere.
 * `LinearIsometry.stereographic'_unitSphereMap`: the stereographic charts read a linear isometry
   of unit spheres as a linear isometry of the model spaces.
 * `LinearIsometry.isSmoothEmbedding_unitSphereMap`: the restriction of a linear isometry to the
@@ -80,6 +83,21 @@ theorem extChartAt_sphere_apply_self (v : sphere (0 : E) 1) : extChartAt (𝓡 n
   rw [extChartAt_coe, modelWithCornersSelf_coe, id_comp, chartAt_sphere, stereographic',
     OpenPartialHomeomorph.trans_apply, stereographic_neg_apply,
     Homeomorph.toOpenPartialHomeomorph_apply, LinearIsometryEquiv.coe_toHomeomorph, map_zero]
+
+/-- The inverse of a stereographic chart is a smooth embedding of the model Euclidean space into
+the sphere, onto the complement of the centre of projection: read in that same chart it is the
+identity. -/
+theorem isSmoothEmbedding_stereographic'_symm (v : sphere (0 : E) 1) {k : ℕ∞ω} :
+    IsSmoothEmbedding (𝓡 n) (𝓡 n) k (stereographic' n v).symm := by
+  refine ⟨IsImmersionOfComplement.isImmersion (F := PUnit.{1}) fun w ↦ ?_,
+    ((stereographic' n v).symm.isOpenEmbedding (by simp)).isEmbedding⟩
+  refine IsImmersionAtOfComplement.mk_of_charts (ContinuousLinearEquiv.prodUnique ℝ _ _)
+    (OpenPartialHomeomorph.refl _) (stereographic' n v) (mem_univ w)
+    ((stereographic' n v).map_target (by simp))
+    (IsManifold.chart_mem_maximalAtlas (I := 𝓡 n) (n := k) w)
+    (IsManifold.subset_maximalAtlas ⟨v, rfl⟩)
+    (fun u _ ↦ (stereographic' n v).map_target (by simp)) fun u _ ↦ ?_
+  simp
 
 end TauCeti
 
