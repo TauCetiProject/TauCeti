@@ -15,8 +15,8 @@ Let `W` be an elliptic Weierstrass curve over a commutative ring `R`. Its projec
 `W.projModel`, with structure morphism `W.projModelOver` and zero section `[0 : 1 : 0]`, is smooth
 of relative dimension one and proper over `Spec R`, and it is its own pointed Weierstrass chart
 over the whole base. It is therefore an elliptic curve over `Spec R` in the sense of
-`EllipticCurveGeom`: `EllipticCurveGeom.ofWeierstrass W`. By definition, every elliptic curve over
-a scheme is, Zariski-locally on the base, isomorphic to one of these.
+`EllipticCurveGeom`: `W.ofWeierstrass`. By definition, every elliptic curve over a scheme is,
+Zariski-locally on the base, isomorphic to one of these.
 
 The total space of `ofWeierstrass W` is identified with `W.projModel` by `ofWeierstrassIso`,
 compatibly with the structure morphisms and the zero sections. Base change along
@@ -27,13 +27,12 @@ structure morphisms and the zero sections, and with the projections to `W.projMo
 
 ## Main definitions
 
-* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.ofWeierstrass W`: the projective model of an
-  elliptic Weierstrass curve `W` over `R`, as an elliptic curve over `Spec R`.
-* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.ofWeierstrassIso W`: the identification of the
-  total space of `ofWeierstrass W` with `W.projModel`.
-* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.ofWeierstrassBaseChangeIso W φ`: the identification
-  of the total space of the base change of `ofWeierstrass W` along `Spec φ` with
-  `(W.map φ).projModel`.
+* `WeierstrassCurve.ofWeierstrass W`: the projective model of an elliptic Weierstrass curve `W`
+  over `R`, as an elliptic curve over `Spec R`.
+* `WeierstrassCurve.ofWeierstrassIso W`: the identification of the total space of
+  `ofWeierstrass W` with `W.projModel`.
+* `WeierstrassCurve.ofWeierstrassBaseChangeIso W φ`: the identification of the total space of the
+  base change of `ofWeierstrass W` along `Spec φ` with `(W.map φ).projModel`.
 
 ## References
 
@@ -43,11 +42,11 @@ structure morphisms and the zero sections, and with the projections to `W.projMo
 
 public section
 
-open CategoryTheory CategoryTheory.Limits AlgebraicGeometry
+open CategoryTheory CategoryTheory.Limits AlgebraicGeometry TauCeti.AlgebraicGeometry
 
 universe u
 
-namespace TauCeti.AlgebraicGeometry.EllipticCurveGeom
+namespace WeierstrassCurve
 
 variable {R : Type u} [CommRing R] (W : WeierstrassCurve R) [W.IsElliptic]
 
@@ -158,4 +157,4 @@ theorem zero_ofWeierstrassBaseChangeIso_hom :
       (ofWeierstrassBaseChangeIso W φ).hom = (W.map φ).projModelZero := by
   apply (W.isPullback_projModelBaseChange φ).hom_ext <;> simp
 
-end TauCeti.AlgebraicGeometry.EllipticCurveGeom
+end WeierstrassCurve
