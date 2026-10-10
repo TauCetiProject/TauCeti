@@ -63,7 +63,7 @@ theorem boundary_mem_supportedIn {A : Set X} {n : ℕ} {g : NormalizedCubicalCha
   refine ⟨boundary A R n h, ?_⟩
   rw [← LinearMap.comp_apply, map_boundary, LinearMap.comp_apply]
 
-theorem supportedIn_le_comap_boundary (A : Set X) (n : ℕ) :
+private theorem supportedIn_le_comap_boundary (A : Set X) (n : ℕ) :
     supportedIn R A (n + 1) ≤ (supportedIn R A n).comap (boundary X R n) :=
   fun _ hg ↦ boundary_mem_supportedIn R hg
 
