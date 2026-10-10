@@ -10,7 +10,7 @@ public import TauCeti.RingTheory.WeilRestriction
 import TauCeti.Algebra.Coalgebra.BaseChange
 
 /-!
-# The scheme of homomorphisms into a finite locally free monoid scheme
+# The scheme of homomorphisms from a finite locally free monoid scheme
 
 Let `R` be a commutative ring, `G` a commutative `R`-bialgebra that is finitely generated and
 projective as an `R`-module, and `H` a commutative `R`-bialgebra of finite presentation. Thus
