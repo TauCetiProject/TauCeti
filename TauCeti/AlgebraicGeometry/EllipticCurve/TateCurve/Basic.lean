@@ -154,10 +154,10 @@ theorem constantCoeff_tateCurve_a₆ : constantCoeff tateCurve.a₆ = 0 := by
   simp only [ArithmeticFunction.map_zero, coeff_zero_eq_constantCoeff_apply] at h
   omega
 
-/-- `c₄` is `1` at `q = 0`, so it is a unit of `ℤ⟦q⟧`. -/
-@[simp]
+/-- `c₄` is `1` at `q = 0`, so it is a unit of `ℤ⟦q⟧`. Not a simp lemma: `simp` already proves it
+from `tateCurve_c₄` and `constantCoeff_divisorSumSeries`. -/
 theorem constantCoeff_tateCurve_c₄ : constantCoeff tateCurve.c₄ = 1 := by
-  simp [tateCurve_c₄, constantCoeff_divisorSumSeries]
+  simp
 
 private theorem coeff_tateCurve_Δ :
     constantCoeff tateCurve.Δ = 0 ∧ coeff 1 tateCurve.Δ = 1 ∧ coeff 2 tateCurve.Δ = -24 := by
