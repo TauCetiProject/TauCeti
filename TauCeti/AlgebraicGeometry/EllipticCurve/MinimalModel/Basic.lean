@@ -119,32 +119,10 @@ exclusion of the reduction types and never compares two minimal models.
 Statements are taken unchanged except for `of_isMinimal_smul`, which drops the source's
 `[IsMinimal R W₁]`: that instance is already implied by its `h₁`, since
 `HasSplitMultiplicativeReduction` extends `HasMultiplicativeReduction` extends `IsMinimal`. The
-proofs diverge in six places:
-
-* the section's variable block is restated here, and the `open`s are narrowed to those of Mathlib's
-  own `Minimal` section (`IsLocalRing` is left closed, since opening it makes `maximalIdeal`
-  ambiguous — `ResidueField` is written qualified instead);
-* `valuation_Δ_aux_smul_le` is restated here as `valuation_Δ_le_of_isMinimal_smul`, through the
-  ordinary valuation of two models related by a change of variables rather than through the
-  internal `valuation_Δ_aux` and the orbit of one equation; `valuation_Δ_eq_of_isMinimal_smul` is
-  then two applications of it, and `isMinimal_of_valuation_Δ_eq_of_isMinimal_smul` — its converse,
-  which the source does not have — is a third;
-* the source's `exists_algebraMap_unit_eq_of_valuation_eq_one` — a separate shim of its own, in
-  `FLT/Mathlib/RingTheory/Valuation/Discrete/IsDiscreteValuationRing.lean` — is **not ported**.
-  Mathlib has since acquired that file, and with it `associated_of_valuation_eq`, which the three
-  lines below call directly. The source obtains the unit in the orientation `u • x = 1` and then
-  inverts it; taking `associated_of_valuation_eq 1 ↑D.u` instead lands on `algebraMap R K u = D.u`
-  with no inversion at all;
-* the source's `exists_variableChange_baseChange_eq_of_smul_eq` is this repository's
-  `WeierstrassCurve.VariableChange.exists_baseChange_eq_of_smul_eq`, which is stated over
-  `IsIntegrallyClosedIn R K` rather than a discrete valuation ring. The descended change of
-  variables, together with the comparison of the two integral models, is stated separately as
-  `VariableChange.exists_baseChange_eq_and_smul_integralModel_eq_of_isMinimal_smul`;
-* the source's `nodePoly_map_splits_smul_iff` is this repository's existing
-  `splits_variableChange_nodePolynomial_map_iff`, and the node polynomial reaches Mathlib's class
-  field through `nodePolynomial_def`, since the definition's body is not exposed across the module
-  boundary;
-* the `⁄K` notation is written `baseChange`.
+source's `valuation_Δ_aux_smul_le` is restated as `valuation_Δ_le_of_isMinimal_smul`, comparing
+the discriminant valuations of two models related by a change of variables, and
+`isMinimal_of_valuation_Δ_eq_of_isMinimal_smul` adds its converse, which the source does not have.
+The `⁄K` notation is written `baseChange`.
 -/
 
 public section
