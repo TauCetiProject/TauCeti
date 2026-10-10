@@ -183,18 +183,20 @@ private theorem laurentExpansion_basisMonomials (p : ℕ × Fin 2) :
       single (-(weight p : ℤ)) ((-1) ^ (p.2 : ℕ)) *
         ofPowerSeries ℤ R ((formalU W).invOfUnit 1 ^ (p.1 + p.2)) := by
   obtain ⟨i, j⟩ := p
+  -- the exponent produced by `single_pow` and `single_mul_single`, rewritten as a weight
+  have hw : i • (-2 : ℤ) + (j : ℕ) • (-3 : ℤ) = -(weight (i, j) : ℤ) := by
+    push_cast [weight, nsmul_eq_mul]; ring
   rw [basisMonomials_apply, map_mul, map_pow, map_pow, laurentExpansion_of_X,
     laurentExpansion_root, mul_pow, mul_pow, single_pow, single_pow, mul_mul_mul_comm,
-    single_mul_single, ← map_pow, ← map_pow, ← map_mul, ← pow_add, one_pow, one_mul,
-    show i • (-2 : ℤ) + (j : ℕ) • (-3 : ℤ) = -(weight (i, j) : ℤ) by
-      push_cast [weight, nsmul_eq_mul]; ring]
+    single_mul_single, ← map_pow, ← map_pow, ← map_mul, ← pow_add, one_pow, one_mul, hw]
 
 -- The Laurent expansion of `xⁱyʲ` has no terms below `z^(-(2i + 3j))`.
 private theorem coeff_laurentExpansion_basisMonomials_of_lt (p : ℕ × Fin 2) {m : ℤ}
     (hm : m < -(weight p : ℤ)) :
     (W.laurentExpansion (Affine.CoordinateRing.basisMonomials W.toAffine p)).coeff m = 0 := by
   rw [laurentExpansion_basisMonomials, coeff_single_mul, PowerSeries.coeff_coe]
-  simp only [show m - -(weight p : ℤ) < 0 by omega, ↓reduceIte, mul_zero]
+  have hm' : m - -(weight p : ℤ) < 0 := by omega
+  simp only [hm', ↓reduceIte, mul_zero]
 
 -- The coefficient of `z^(-(2i + 3j))` in the Laurent expansion of `xⁱyʲ` is `(-1)ʲ`.
 private theorem coeff_laurentExpansion_basisMonomials_self (p : ℕ × Fin 2) :

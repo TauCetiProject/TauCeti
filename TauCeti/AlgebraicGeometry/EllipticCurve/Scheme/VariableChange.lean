@@ -466,9 +466,10 @@ private theorem exists_laurentExpansion_eq_of_iso (e : W.projModel ≅ W'.projMo
   · calc W.laurentExpansion (Q 0) = Y * v * W.laurentExpansion (Q 0) := by rw [hYv, one_mul]
       _ = Y * ofPowerSeries ℤ R (-(X * c)) := by rw [mul_assoc, ← h0']
       _ = single (-2) 1 * ofPowerSeries ℤ R (↑Eu⁻¹ * -c) := by
-        rw [mul_neg, map_neg, map_mul, ofPowerSeries_X, mul_neg, map_neg, map_mul,
-          show (-2 : ℤ) = -3 + 1 by norm_num, ← one_mul (1 : R), ← single_mul_single, hY_def,
-          one_mul]
+        -- split `z⁻²` as `z⁻³ * z` to match `Y * X`
+        have h23 : (-2 : ℤ) = -3 + 1 := by norm_num
+        rw [mul_neg, map_neg, map_mul, ofPowerSeries_X, mul_neg, map_neg, map_mul, h23,
+          ← one_mul (1 : R), ← single_mul_single, hY_def, one_mul]
         ring
 
 open HahnSeries in
@@ -494,7 +495,8 @@ theorem existsUnique_eq_eqToHom_comp_projModelVariableChangeIso_hom
   have hcoeff (H : R⟦X⟧) {k m : ℤ} (hm : m < k) :
       (single k (1 : R) * ofPowerSeries ℤ R H).coeff m = 0 := by
     rw [coeff_single_mul, PowerSeries.coeff_coe]
-    simp [show m - k < 0 by omega]
+    have hmk : m - k < 0 := by omega
+    simp [hmk]
   obtain ⟨β, hβ⟩ := W.exists_eq_of_coeff_laurentExpansion_eq_zero_of_lt_neg_two
     (g := Q 0) fun m hm ↦ hX' ▸ hcoeff F hm
   obtain ⟨δ, ε, hδε⟩ := W.exists_eq_of_coeff_laurentExpansion_eq_zero_of_lt_neg_three
