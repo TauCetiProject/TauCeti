@@ -51,10 +51,6 @@ private theorem stellarSubdivisionCoordinateMap_on_equiv [Finite ι] (x : ι →
   ext i
   simp [stellarSubdivisionCoordinateMap, Finset.stellarSubdivisionLinearMap_apply, eq_comm]
 
-private theorem coord_single [Finite ι] (i : ι) :
-    Finsupp.equivFunOnFinite (Finsupp.single i (1 : ℝ)) = Pi.single i 1 := by
-  exact Finsupp.equivFunOnFinite_single i 1
-
 /-- The affine inverse formula for a stellar simplex in function coordinates. -/
 private def stellarSubdivisionCoordinateInverseMap (σ : Finset ι) (v a : ι) :
     (ι → ℝ) →L[ℝ] (ι → ℝ) :=
@@ -97,13 +93,19 @@ private theorem mem_convexHull_finsupp_single [Finite ι]
     ext z
     constructor
     · rintro ⟨y, ⟨i, hi, rfl⟩, rfl⟩
-      exact ⟨i, hi, by ext j; simp [e]⟩
+      have hi_single : e.symm (Pi.single i 1) = Finsupp.single i 1 :=
+        Finsupp.linearEquivFunOnFinite_symm_single ℝ ℝ ι i 1
+      exact ⟨i, hi, by simpa using hi_single.symm⟩
     · rintro ⟨i, hi, rfl⟩
-      exact ⟨Pi.single (i : ι) 1, ⟨i, hi, rfl⟩, by ext j; simp [e]⟩
+      have hi_single : e.symm (Pi.single i 1) = Finsupp.single i 1 :=
+        Finsupp.linearEquivFunOnFinite_symm_single ℝ ℝ ι i 1
+      exact ⟨Pi.single (i : ι) 1, ⟨i, hi, rfl⟩, by simpa using hi_single⟩
   have hxf₁ : e.symm x ∈ convexHull ℝ
       ((Finsupp.single · (1 : ℝ)) '' (τ : Set ι)) := by
     convert hxf₀ using 1
     exact congrArg (convexHull ℝ) himage.symm
+  -- `e` is the canonical finite-coordinate linear equivalence; its underlying equivalence is
+  -- definitionally `Finsupp.equivFunOnFinite`, which is the representation used by the APIs below.
   simpa only [show e.symm x = Finsupp.equivFunOnFinite.symm x by rfl] using hxf₁
 
 private theorem coord_mem_source [Finite ι]
@@ -136,7 +138,7 @@ theorem exists_isPLOn_stellarSubdivisionLeftInverse
     (V : Finset ι) (hVσ : σ ⊆ V)
     (hV : ∀ τ ∈ K.stellarSubdivision σ v, τ ⊆ V)
     (hσ : σ ∈ K)
-    (hv : ({v} : Finset ι) ∉ K) :
+    (hvσ : v ∉ σ) :
     let κ := {i : ι // i ∈ V}
     ∃ g : (κ → ℝ) → (κ → ℝ),
       TauCeti.IsPLOn g
@@ -155,7 +157,6 @@ theorem exists_isPLOn_stellarSubdivisionLeftInverse
   classical
   dsimp
   have hVv : v ∈ V := hV {v} (singleton_mem_stellarSubdivision_iff.mpr hσ) (by simp)
-  have hvσ : v ∉ σ := notMem_of_singleton_notMem hv hσ
   let κ := {i : ι // i ∈ V}
   let _ : Fintype κ := Fintype.ofFinset V (fun _ => Iff.rfl)
   let e : κ ↪ ι := ⟨Subtype.val, Subtype.val_injective⟩
@@ -341,7 +342,7 @@ theorem exists_isPLOn_stellarSubdivisionLeftInverse
             (Finsupp.single (i : κ) 1))) := by
         funext i
         dsimp [F, S]
-        rw [← coord_single, stellarSubdivisionCoordinateMap_on_equiv]
+        rw [← Finsupp.equivFunOnFinite_single, stellarSubdivisionCoordinateMap_on_equiv]
         rfl
       rw [heqfun]
       exact hm'
