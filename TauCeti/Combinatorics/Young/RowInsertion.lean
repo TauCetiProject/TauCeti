@@ -221,6 +221,22 @@ theorem rowBump_bumped_le_of_le {x x' y y' : α} {row : List α} (hrow : row.Sor
     exact hsecond
   exact hrow.2.1.1 y' (mem_of_rowBump_snd_eq_some hbump)
 
+/-- Inserting a strictly smaller letter after `x` always bumps a letter at most `x`.
+No ordering hypothesis on the original row is needed. -/
+theorem exists_rowBump_snd_eq_some_le_of_lt {x x' : α} (hxx' : x' < x)
+    (row : List α) :
+    ∃ y, (rowBump x' (rowBump x row).1).2 = some y ∧ y ≤ x := by
+  induction row with
+  | nil => exact ⟨x, by simp [rowBump_cons_of_lt [] hxx'], le_rfl⟩
+  | cons z row ih =>
+    by_cases hxz : x < z
+    · exact ⟨x, by simp [rowBump_cons_of_lt row hxz,
+        rowBump_cons_of_lt row hxx'], le_rfl⟩
+    · rw [rowBump_cons_of_le row (not_lt.mp hxz)]
+      by_cases hx'z : x' < z
+      · exact ⟨z, by simp [rowBump_cons_of_lt _ hx'z], not_lt.mp hxz⟩
+      · simpa only [rowBump_cons_of_le _ (not_lt.mp hx'z)] using ih
+
 /-- Reverse insert a letter by replacing and returning the rightmost strictly smaller entry.
 If no entry is smaller, prepend the letter and return `none`. The row is returned in its
 original orientation. -/
