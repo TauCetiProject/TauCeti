@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.EulerCharacteristic.Basic
+import TauCeti.NumberTheory.Padics.PadicNorm
 
 /-!
 # Numerical forms of the local Euler characteristic formula
@@ -74,25 +75,6 @@ theorem natCard_continuousCohomology_one_eq_mul_of_localEulerCharacteristic_eq_l
     exact hq.symm
   exact_mod_cast hq'
 
-/-- The arithmetic behind the dimension form of `χ_F(A) = φ_F(A)` over `𝔽_ℓ`: for a prime `ℓ`,
-`ℓ ^ a · ℓ ^ c / ℓ ^ b = |ℓ ^ d|_p ^ f` holds exactly when `b = a + c + f v_p(ℓ ^ d)`. -/
-private theorem pow_mul_pow_div_pow_eq_padicNorm_pow_iff {ℓ : ℕ} (hℓ : ℓ.Prime) (a b c d f : ℕ) :
-    (ℓ : ℚ) ^ a * ℓ ^ c / ℓ ^ b = padicNorm p ((ℓ : ℚ) ^ d) ^ f ↔
-      b = a + c + f * padicValNat p (ℓ ^ d) := by
-  have hℓ1 : (1 : ℚ) < ℓ := by exact_mod_cast hℓ.one_lt
-  have hl : (ℓ : ℚ) ^ a * ℓ ^ c / ℓ ^ b = (ℓ : ℚ) ^ ((a + c : ℕ) - (b : ℤ)) := by
-    rw [zpow_sub₀ (by positivity), zpow_natCast, zpow_natCast, pow_add]
-  rw [hl, ← Nat.cast_pow, padicNorm.eq_zpow_of_nonzero (by exact_mod_cast (pow_pos hℓ.pos d).ne'),
-    padicValRat.of_nat, ← zpow_natCast, ← zpow_mul]
-  rcases eq_or_ne ℓ p with rfl | hne
-  · rw [zpow_right_inj₀ (by positivity) hℓ1.ne']
-    zify
-    constructor <;> intro h <;> linarith
-  · rw [padicValNat.eq_zero_of_not_dvd fun h ↦ hne ((Nat.prime_dvd_prime_iff_eq Fact.out hℓ).1
-      ((Fact.out : p.Prime).dvd_of_dvd_pow h)).symm]
-    simp [zpow_eq_one_iff_right₀ (by positivity : (0 : ℚ) ≤ ℓ) hℓ1.ne']
-    omega
-
 /-- **The `𝔽_ℓ`-dimension form of the local Euler characteristic formula.** For a prime `ℓ` and
 a finite smooth discrete representation `A` over `𝔽_ℓ`, `χ_F(A) = φ_F(A)` holds exactly when
 `dim H¹ = dim H⁰ + dim H² + [F : ℚ_p] v_p(#A)`. For `ℓ ≠ p` the last term is zero. -/
@@ -116,7 +98,16 @@ theorem localEulerCharacteristic_eq_localCardNorm_iff_finrank (ℓ : ℕ) [Fact 
   rw [Subtype.ext_iff, Units.ext_iff, localEulerCharacteristic_coe, localCardNorm_coe]
   simp only [Module.natCard_eq_pow_finrank (K := ZMod ℓ) (V := continuousCohomology _ A),
     Module.natCard_eq_pow_finrank (K := ZMod ℓ) (V := A.V), Nat.card_zmod, Nat.cast_pow]
-  exact pow_mul_pow_div_pow_eq_padicNorm_pow_iff p Fact.out ..
+  rw [padicNorm.prime_pow p Fact.out]
+  generalize Module.finrank (ZMod ℓ) (continuousCohomology 0 A) = a
+  generalize Module.finrank (ZMod ℓ) (continuousCohomology 1 A) = b
+  generalize Module.finrank (ZMod ℓ) (continuousCohomology 2 A) = c
+  generalize padicValNat p _ = v
+  have hℓ1 : (1 : ℚ) < ℓ := by exact_mod_cast (Fact.out : ℓ.Prime).one_lt
+  rw [← zpow_natCast _ (Module.finrank _ _), ← zpow_mul, ← pow_add, ← zpow_natCast,
+    ← zpow_natCast _ b, ← zpow_sub₀ (by positivity), zpow_right_inj₀ (by positivity) hℓ1.ne']
+  zify
+  constructor <;> intro h <;> linarith
 
 /-- **The `𝔽_p`-dimension form of the local Euler characteristic formula.** Equality of the local
 Euler characteristic and the normalized absolute value of the coefficient order implies
