@@ -74,17 +74,6 @@ instance abelianizationProPExtensionKernel_normal :
 /-- The total group of the extension with kernel `Vᵃᵇ(p)`. -/
 abbrev abelianizationProPExtensionGroup := G ⧸ abelianizationProPExtensionKernel p G V
 
-/-- The projection of the extension onto `G/V`. -/
-def abelianizationProPExtensionRightHom : abelianizationProPExtensionGroup p G V →* G ⧸ V :=
-  QuotientGroup.lift _ (QuotientGroup.mk' V) (by
-    rw [QuotientGroup.ker_mk']
-    exact abelianizationProPExtensionKernel_le p G V)
-
-@[simp]
-theorem abelianizationProPExtensionRightHom_mk (g : G) :
-    abelianizationProPExtensionRightHom p G V (QuotientGroup.mk g) = QuotientGroup.mk g :=
-  (rfl)
-
 /-- The inclusion of the class module into the total group, induced by `V ↪ G`. -/
 def abelianizationProPExtensionInl :
     abelianizationProP p G V →* abelianizationProPExtensionGroup p G V :=
@@ -115,31 +104,21 @@ theorem abelianizationProPExtensionInl_injective :
 /-- The inclusion has precisely the kernel of the projection as its range. -/
 theorem range_abelianizationProPExtensionInl :
     (abelianizationProPExtensionInl p G V).range =
-      (abelianizationProPExtensionRightHom p G V).ker := by
+      (QuotientGroup.mapOfLE (abelianizationProPExtensionKernel_le p G V)).ker := by
+  rw [QuotientGroup.ker_mapOfLE]
   ext x
-  induction x using QuotientGroup.induction_on with
-  | H g =>
-    constructor
-    · rintro ⟨a, ha⟩
-      rw [← ha]
-      obtain ⟨v, rfl⟩ := abelianizationProPMk_surjective p G V a
-      simp only [MonoidHom.mem_ker, abelianizationProPExtensionInl_mk,
-        abelianizationProPExtensionRightHom_mk]
-      exact (QuotientGroup.eq_one_iff (v : G)).mpr v.2
-    · intro hg
-      have hv : g ∈ V := by
-        simpa [MonoidHom.mem_ker, QuotientGroup.eq_one_iff] using hg
-      exact ⟨abelianizationProPMk p G V ⟨g, hv⟩, abelianizationProPExtensionInl_mk p G V _⟩
-
-/-- The projection onto `G/V` is surjective. -/
-theorem abelianizationProPExtensionRightHom_surjective :
-    Function.Surjective (abelianizationProPExtensionRightHom p G V) :=
-  QuotientGroup.lift_surjective_of_surjective _ _ (QuotientGroup.mk'_surjective V) _
+  constructor
+  · rintro ⟨a, rfl⟩
+    obtain ⟨v, rfl⟩ := abelianizationProPMk_surjective p G V a
+    exact Subgroup.mem_map.mpr ⟨v, v.2, (abelianizationProPExtensionInl_mk p G V v).symm⟩
+  · rintro ⟨g, hg, rfl⟩
+    exact ⟨abelianizationProPMk p G V ⟨g, hg⟩, abelianizationProPExtensionInl_mk p G V _⟩
 
 /-- The quotient group is an extension of `G/V` by its pro-p class module. -/
 def abelianizationProPExtension :
     GroupExtension (abelianizationProP p G V) (abelianizationProPExtensionGroup p G V) (G ⧸ V) :=
-  GroupExtension.ofMulEquivKer (abelianizationProPExtensionRightHom_surjective p G V)
+  GroupExtension.ofMulEquivKer
+    (QuotientGroup.mapOfLE_surjective (abelianizationProPExtensionKernel_le p G V))
     ((MonoidHom.ofInjective (abelianizationProPExtensionInl_injective p G V)).trans
       (MulEquiv.subgroupCongr (range_abelianizationProPExtensionInl p G V)))
 
@@ -155,7 +134,8 @@ theorem abelianizationProPExtension_inl :
 /-- The projection in the exact sequence is induced by `G → G/V`. -/
 @[simp]
 theorem abelianizationProPExtension_rightHom :
-    (abelianizationProPExtension p G V).rightHom = abelianizationProPExtensionRightHom p G V := by
+    (abelianizationProPExtension p G V).rightHom =
+      QuotientGroup.mapOfLE (abelianizationProPExtensionKernel_le p G V) := by
   simp [abelianizationProPExtension]
 
 /-- The section of the class-module extension given by the representatives `Quotient.out`. -/
@@ -214,12 +194,6 @@ theorem continuous_abelianizationProPExtensionInl :
   exact (QuotientGroup.continuous_mk.comp continuous_subtype_val).congr fun v ↦
     (abelianizationProPExtensionInl_mk p G V v).symm
 
-omit [CompactSpace G] [IsClosed (V : Set G)] in
-/-- The projection of the class-module extension is continuous. -/
-theorem continuous_abelianizationProPExtensionRightHom :
-    Continuous (abelianizationProPExtensionRightHom p G V) :=
-  (QuotientGroup.isQuotientMap_mk _).continuous_iff.mpr QuotientGroup.continuous_mk
-
 variable [TotallyDisconnectedSpace G]
 
 /-- The class-module extension as a profinite group extension with the canonical action. -/
@@ -228,7 +202,8 @@ abbrev abelianizationProPProfiniteExtension :
   E := abelianizationProPExtensionGroup p G V
   toGroupExtension := abelianizationProPExtension p G V
   continuous_inl := by simpa using continuous_abelianizationProPExtensionInl p G V
-  continuous_rightHom := by simpa using continuous_abelianizationProPExtensionRightHom p G V
+  continuous_rightHom := by
+    simpa using QuotientGroup.continuous_mapOfLE (abelianizationProPExtensionKernel_le p G V)
   inducesAction := abelianizationProPExtension_inducesAction p G V
 
 /-- Bundling the topology retains the canonical exact sequence. -/
