@@ -27,6 +27,11 @@ to ideals generating open ideals. The first is part of the data of the definitio
 holds for every homomorphism topologically of finite type
 (`TauCeti.Huber.IsTopologicallyFiniteType.isOpen_map`).
 
+The formalization follows the pattern of `TauCeti.PreAdicSpace.IsClosedImmersion`
+(`TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.ClosedImmersion`): the shape of the definition
+through presentations by adic spectra, and the isomorphism-invariance proofs
+(`iso_hom_comp`, `comp_iso_hom`, `respectsIso`), are adapted from there.
+
 ## Main definitions
 
 * `TauCeti.PreAdicSpace.LocallyOfFiniteType`: Wedhorn Definition 8.48(1).
