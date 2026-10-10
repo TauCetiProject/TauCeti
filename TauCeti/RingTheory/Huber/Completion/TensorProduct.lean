@@ -167,7 +167,7 @@ theorem exists_eq_tmul_one_add_one_tmul (P : PairOfDefinition A)
     exact ⟨a + c, b + d, by simp [TensorProduct.add_tmul, TensorProduct.tmul_add]; abel⟩
 
 /-- The canonical base-change comparison to the completion is surjective. -/
-theorem surjective_completionTensorMap (P : PairOfDefinition A) :
+theorem completionTensorMap_surjective (P : PairOfDefinition A) :
     Function.Surjective P.completionTensorMap := by
   intro x
   obtain ⟨a, ha⟩ := P.exists_coe_sub_mem_completionIdealImage 0 x
@@ -193,7 +193,7 @@ theorem surjective_completionTensorMap (P : PairOfDefinition A) :
   abel
 
 /-- The canonical base-change comparison to the completion is injective. -/
-theorem injective_completionTensorMap (P : PairOfDefinition A) :
+theorem completionTensorMap_injective (P : PairOfDefinition A) :
     Function.Injective P.completionTensorMap := by
   refine (injective_iff_map_eq_zero P.completionTensorMap).mpr fun x hx ↦ ?_
   obtain ⟨a, b, rfl⟩ := P.exists_eq_tmul_one_add_one_tmul x
@@ -231,7 +231,7 @@ definition (Wedhorn, Proposition 6.9(1)). -/
 noncomputable def completionTensorEquiv (P : PairOfDefinition A) :
     A ⊗[P.ringOfDefinition] Completion P.ringOfDefinition ≃ₐ[P.ringOfDefinition] Completion A :=
   AlgEquiv.ofBijective P.completionTensorMap
-    ⟨P.injective_completionTensorMap, P.surjective_completionTensorMap⟩
+    ⟨P.completionTensorMap_injective, P.completionTensorMap_surjective⟩
 
 /-- The base-change equivalence has the canonical comparison as its underlying map. -/
 theorem completionTensorEquiv_toAlgHom (P : PairOfDefinition A) :

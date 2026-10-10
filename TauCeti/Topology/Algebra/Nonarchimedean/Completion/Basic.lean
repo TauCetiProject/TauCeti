@@ -294,12 +294,12 @@ noncomputable def completionEquivClosure (G : Subring A) :
         exact ⟨y, Subtype.ext hy⟩⟩
 
 /-- The closure comparison agrees with the completed inclusion. -/
-theorem coe_completionEquivClosure (G : Subring A) (x : Completion G) :
+@[simp] theorem coe_completionEquivClosure (G : Subring A) (x : Completion G) :
     (G.completionEquivClosure x : Completion A) =
       Completion.mapRingHom G.subtype (by fun_prop) x := (rfl)
 
 /-- On the original subring, the closure comparison is the ambient completion map. -/
-@[simp] theorem coe_completionEquivClosure_coe (G : Subring A) (b : G) :
+@[simp↓] theorem coe_completionEquivClosure_coe (G : Subring A) (b : G) :
     (G.completionEquivClosure (b : Completion G) : Completion A) = ((b : A) : Completion A) := by
   rw [G.coe_completionEquivClosure, Completion.mapRingHom_coe]
   rfl
