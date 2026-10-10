@@ -60,7 +60,7 @@ order of the decomposition group, and the decomposition field — is in
 ## Main results
 
 * `TauCeti.Place.ker_residueAut`: the kernel of `TauCeti.Place.residueAut` is the inertia group,
-  restated elementwise as `TauCeti.Place.mem_inertiaSubgroup_iff`.
+  restated elementwise as `ValuationSubring.mem_inertiaSubgroup_iff`.
 * `TauCeti.Place.residueAut_surjective`: **the decomposition group surjects onto the automorphism
   group of the residue extension**.
 * `TauCeti.Place.card_inertiaSubgroup_mul_card_residueFieldAut`: the order of the inertia group
@@ -149,19 +149,6 @@ theorem residueAut_residue (g : P.integers.decompositionSubgroup F) (x : P.integ
   rw [residueAut, MulSemiringAction.toAlgAut_apply, MulSemiringAction.toAlgEquiv_apply,
     IsLocalRing.ResidueField.residue_smul]
 
-omit [Algebra k F] [IsScalarTower k F F'] [Algebra.IsIntegral F F'] in
-/-- **The inertia group, elementwise** (Stichtenoth, Definition 3.8.1): an automorphism fixing `P`
-lies in the inertia group exactly when it acts trivially on the residue field. -/
-@[simp]
-theorem mem_inertiaSubgroup_iff (g : P.integers.decompositionSubgroup F) :
-    g ∈ P.integers.inertiaSubgroup F ↔
-      ∀ x : P.integers, IsLocalRing.residue P.integers (g • x) =
-        IsLocalRing.residue P.integers x := by
-  rw [ValuationSubring.inertiaSubgroup, MonoidHom.mem_ker, RingEquiv.ext_iff]
-  refine ⟨fun h x ↦ by simpa using h (IsLocalRing.residue P.integers x), fun h z ↦ ?_⟩
-  obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective (R := P.integers) z
-  simpa using h x
-
 /-- **The inertia group is the kernel of the residue action** (Stichtenoth, Theorem 3.8.2): this
 identifies Mathlib's `ValuationSubring.inertiaSubgroup`, defined as the kernel of the action on
 the residue field, with the kernel of `TauCeti.Place.residueAut`, which records that the action
@@ -169,7 +156,7 @@ is by automorphisms over the residue field of the place below. -/
 @[simp]
 theorem ker_residueAut : (residueAut F P).ker = P.integers.inertiaSubgroup F := by
   ext g
-  rw [MonoidHom.mem_ker, mem_inertiaSubgroup_iff]
+  rw [MonoidHom.mem_ker, ValuationSubring.mem_inertiaSubgroup_iff]
   constructor
   · intro hg x
     rw [← residueAut_residue]
@@ -560,13 +547,13 @@ automorphism of `F'` over the inertia field acts trivially on the residue field 
 @[simp]
 theorem inertiaSubgroup_inertiaField_eq_top :
     P.integers.inertiaSubgroup (inertiaField F P) = ⊤ := by
-  refine top_unique fun g _ ↦ (mem_inertiaSubgroup_iff _ P g).mpr fun x ↦ ?_
+  refine top_unique fun g _ ↦ (ValuationSubring.mem_inertiaSubgroup_iff _ g).mpr fun x ↦ ?_
   obtain ⟨h, hh, hgh⟩ := exists_mem_inertiaSubgroup_coe_eq_restrictScalars F P g
   have hx : g • x = h • x := Subtype.ext <| by
     rw [ValuationSubring.coe_decompositionSubgroup_smul,
       ValuationSubring.coe_decompositionSubgroup_smul, hgh, AlgEquiv.restrictScalars_apply]
   rw [hx]
-  exact (mem_inertiaSubgroup_iff F P h).mp hh x
+  exact (ValuationSubring.mem_inertiaSubgroup_iff _ h).mp hh x
 
 /-- **A place is the only place of `F'` above its restriction to its inertia field**. -/
 theorem eq_of_restrict_inertiaField_eq {Q : Place k F'}
