@@ -59,8 +59,6 @@ representatives of their partial sums converge almost everywhere on `Ω` to `f -
 * `TauCeti.Wkp.exists_contDiffOn_approximation`: every `u ∈ W^{k,p}(Ω)` is a Sobolev-norm limit of
   elements with representatives smooth on `Ω`.
 * `TauCeti.Wkp.dense_contDiffOn_representatives`: those elements are dense in `W^{k,p}(Ω)`.
-* `TauCeti.W1p.exists_contDiffOn_approximation`, `TauCeti.W1p.dense_contDiffOn_representatives`:
-  the first-order statements, for `TauCeti.W1p`.
 
 ## References
 
@@ -298,36 +296,3 @@ theorem dense_contDiffOn_representatives (hp : p ≠ ⊤) (k : ℕ) :
   exact mem_closure_of_tendsto hv (Eventually.of_forall fun j => ⟨f j, hf j, hae j⟩)
 
 end TauCeti.Wkp
-
-namespace TauCeti.W1p
-
-variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
-  {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
-
-/-- **Meyers–Serrin approximation in `W^{1,p}(Ω)`.** For `1 ≤ p < ∞` and an arbitrary open set
-`Ω`, every `u ∈ W^{1,p}(Ω)` is a limit, in the full Sobolev norm, of elements whose values are
-represented by functions smooth on `Ω`. This is the order-one case of
-`TauCeti.Wkp.exists_contDiffOn_approximation`. -/
-theorem exists_contDiffOn_approximation (hp : p ≠ ⊤) (u : W1p mu Omega p) :
-    ∃ (v : ℕ → W1p mu Omega p) (f : ℕ → E → ℝ),
-      (∀ j, ContDiffOn ℝ ∞ (f j) Omega) ∧
-      (∀ j, (W1p.value (v j) : E → ℝ) =ᵐ[mu.restrict Omega] f j) ∧
-      Tendsto v atTop (𝓝 u) := by
-  -- `Wkp mu Omega p 1` is `W1p mu Omega p` by definition, but not reducibly.
-  obtain ⟨v, f, hf, hae, hv⟩ := Wkp.exists_contDiffOn_approximation hp 1 u
-  exact ⟨v, f, hf, fun j => by simpa only [Wkp.value_one] using hae j, hv⟩
-
-/-- **Meyers–Serrin: `H = W` in `W^{1,p}(Ω)`.** For `1 ≤ p < ∞` and an arbitrary open set `Ω`,
-the elements of `W^{1,p}(Ω)` represented by functions smooth on `Ω` are dense in `W^{1,p}(Ω)`,
-in the full Sobolev norm. This is the order-one case of
-`TauCeti.Wkp.dense_contDiffOn_representatives`. -/
-theorem dense_contDiffOn_representatives (hp : p ≠ ⊤) :
-    Dense {u : W1p mu Omega p | ∃ f : E → ℝ, ContDiffOn ℝ ∞ f Omega ∧
-      (W1p.value u : E → ℝ) =ᵐ[mu.restrict Omega] f} := by
-  -- `Wkp mu Omega p 1` is `W1p mu Omega p` by definition, but not reducibly.
-  have h := Wkp.dense_contDiffOn_representatives (mu := mu) (Omega := Omega) hp 1
-  simp only [Wkp.value_one] at h
-  exact h
-
-end TauCeti.W1p
