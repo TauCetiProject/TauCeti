@@ -191,7 +191,7 @@ theorem denseRange_repartitionToFiniteAdeles :
       (Place.ofPrime_injective k F), Finsupp.indicator_apply]
   obtain ⟨b, -, hb⟩ := exists_finite_support_repartition_valuation_sub_le a D
   have hmem := hIn (repartitionToFiniteAdeles R b - a)
-    (fun p ↦ by
+    (FiniteAdeleRing.mem_integralAdeles.mpr fun p ↦ by
       rw [HeightOneSpectrum.mem_adicCompletionIntegers, FiniteAdeleRing.sub_apply]
       exact (hb p).trans (exp_le_one_iff.mpr (by rw [hD]; split <;> omega)))
     (fun p hp ↦ by

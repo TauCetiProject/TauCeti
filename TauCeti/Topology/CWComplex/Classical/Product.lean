@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Order.Antidiag.Prod
 public import Mathlib.Topology.MetricSpace.Isometry
 public import TauCeti.Topology.CWComplex.Classical.FiniteCWType
+public import TauCeti.Topology.PiCurry
 
 /-!
 # The product of two finite CW complexes
@@ -36,6 +37,7 @@ condition is automatic (`Topology.CWComplex.mkFinite`).
 * `TauCeti.nat_card_cell_prod`: `C ×ˢ D` has `∑_{p + q = n} #(p-cells of C) · #(q-cells of D)`
   cells of dimension `n`.
 * `TauCeti.FiniteCWType.prod`: a product of two spaces of finite CW type has finite CW type.
+* `TauCeti.FiniteCWType.pi`: a finite product of spaces of finite CW type has finite CW type.
 
 For infinite complexes the product topology can be strictly coarser than the weak topology of the
 product cells (Hatcher, Theorem A.6, gives conditions under which they agree); this file treats
@@ -274,5 +276,14 @@ instance FiniteCWType.prod [hX : FiniteCWType X] [hY : FiniteCWType Y] :
   obtain ⟨X', _, _, C, _, _, ⟨e⟩⟩ := hX.exists_homotopyEquiv
   obtain ⟨Y', _, _, D, _, _, ⟨f⟩⟩ := hY.exists_homotopyEquiv
   exact ((e.prodCongr f).trans (Homeomorph.Set.prod C D).symm.toHomotopyEquiv).finiteCWType
+
+/-- A finite product of spaces of finite CW type has finite CW type.  The index type lives in the
+universe of the factors, where `FiniteCWType` looks for its finite CW models. -/
+instance FiniteCWType.pi {ι : Type u} [Finite ι] (X : ι → Type u) [∀ i, TopologicalSpace (X i)]
+    [∀ i, FiniteCWType (X i)] : FiniteCWType (∀ i, X i) := by
+  induction ι using Finite.induction_empty_option with
+  | of_equiv e ih => exact (Homeomorph.piCongrLeft (Y := X) e).symm.finiteCWType
+  | h_empty => infer_instance
+  | h_option ih => exact (piOptionEquivProdHomeomorph X).finiteCWType
 
 end TauCeti

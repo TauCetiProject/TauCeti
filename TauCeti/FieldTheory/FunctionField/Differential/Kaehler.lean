@@ -43,6 +43,8 @@ differentials are free of rank one on `d X`, and `F/k(x)` is separable, hence fo
   `d y = (dy/dx) · dx` and `TauCeti.eq_derivativeOfSeparating` its uniqueness.
 * `TauCeti.derivativeOfSeparating_eq_zero_iff`: differentiation kills exactly the constants of
   an exact characteristic-zero function field.
+* `Derivation.apply_eq_derivativeOfSeparating_smul`: the chain rule `D y = (dy/dx) • D x` for
+  every derivation `D` of `F` over `k`.
 * `TauCeti.IsFunctionField.isSeparable_adjoin_iff_D_ne_zero`: the differential criterion for a
   fixed parameter over a perfect field.
 
@@ -147,6 +149,12 @@ theorem derivativeOfSeparating_smul_D (y : F) :
     derivativeOfSeparating hx y • D k F x = D k F y := by
   simpa [derivativeOfSeparating] using (kaehlerBasisOfSeparating hx).sum_repr (D k F y)
 
+/-- The coordinate of `d y` in the basis `d x` is `dy/dx`. -/
+@[simp]
+theorem kaehlerBasisOfSeparating_repr_D (y : F) :
+    (kaehlerBasisOfSeparating hx).repr (D k F y) () = derivativeOfSeparating hx y := by
+  simp [derivativeOfSeparating]
+
 /-- `dy/dx` is the only scalar taking `d x` to `d y`. -/
 theorem eq_derivativeOfSeparating (y c : F) (hc : c • D k F x = D k F y) :
     c = derivativeOfSeparating hx y :=
@@ -156,6 +164,15 @@ theorem eq_derivativeOfSeparating (y c : F) (hc : c • D k F x = D k F y) :
 @[simp]
 theorem derivativeOfSeparating_self : derivativeOfSeparating hx x = 1 :=
   (eq_derivativeOfSeparating hx x 1 (one_smul _ _)).symm
+
+/-- **The chain rule for a separating element**: every `k`-derivation `D` of `F` into an
+`F`-module satisfies `D y = (dy/dx) • D x`. In particular a derivation is determined by its value
+at `x`. -/
+theorem _root_.Derivation.apply_eq_derivativeOfSeparating_smul {M : Type*} [AddCommGroup M]
+    [Module F M] [Module k M] [IsScalarTower k F M] (D : Derivation k F M) (y : F) :
+    D y = derivativeOfSeparating hx y • D x := by
+  rw [← D.liftKaehlerDifferential_comp_D, ← derivativeOfSeparating_smul_D hx y,
+    LinearMap.map_smul, D.liftKaehlerDifferential_comp_D]
 
 end Separating
 

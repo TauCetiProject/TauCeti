@@ -147,6 +147,58 @@ def relabelingHomeomorph
   continuous_toFun := continuous_relabelingForward P f hK hL
   continuous_invFun := continuous_relabelingBackward P f hK hL
 
+/-- Every precomplex is contained in the top abstract simplicial complex. -/
+theorem le_top (Q : PreAbstractSimplicialComplex ι) :
+    Q ≤ (⊤ : AbstractSimplicialComplex ι).toPreAbstractSimplicialComplex :=
+  fun _ hσ => TauCeti.AbstractSimplicialComplex.mem_top_iff.mpr
+    (Q.isRelLowerSet_faces.prop_of_mem hσ)
+
+/-- Changing the ambient abstract complex does not change the polyhedron of a precomplex. -/
+noncomputable def topRealizationHomeomorph
+    (P : PreAbstractSimplicialComplex ι)
+    {A : AbstractSimplicialComplex ι}
+    (hA : P ≤ A.toPreAbstractSimplicialComplex) :
+    {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ P} ≃ₜ
+      {x : Realization A // x.1.support ∈ P} := by
+  classical
+  have hid : P.map (Function.Embedding.refl ι) = P := by
+    simpa only [Function.Embedding.coe_refl] using (map_id (K := P))
+  exact (P.relabelingHomeomorph (Function.Embedding.refl ι) (le_top P)
+    (by rw [hid]; exact hA)).trans
+    (Homeomorph.setCongr (by rw [hid]))
+
+/-- A finite precomplex on `V` has the realization of its model on `Fin m` as a homeomorphic
+polyhedron. The witness is existential because the finite enumeration of `V` is noncanonical. -/
+theorem nonempty_finsetRelabelingHomeomorph
+    {ι : Type*} {A : AbstractSimplicialComplex ι} {V : Finset ι} {m : ℕ}
+    {K : AbstractSimplicialComplex (Fin m)}
+    {P : PreAbstractSimplicialComplex (Fin m)} {R : PreAbstractSimplicialComplex ι}
+    [DecidableEq ι]
+    (hV : V.card = m)
+    (hmap : ∀ (f : Fin m ↪ ι), (Finset.univ : Finset (Fin m)).image f = V → P.map f = R)
+    (hP : P = K.toPreAbstractSimplicialComplex)
+    (hR : R ≤ A.toPreAbstractSimplicialComplex) :
+    Nonempty ({x : Realization A // x.1.support ∈ R} ≃ₜ Realization K) := by
+  classical
+  let e := (Finset.equivFinOfCardEq hV).symm
+  let f : Fin m ↪ ι := e.toEmbedding.trans (Function.Embedding.subtype (· ∈ V))
+  have himage : (Finset.univ : Finset (Fin m)).image f = V := by
+    ext v
+    simp only [Finset.mem_image, Finset.mem_univ, true_and]
+    constructor
+    · rintro ⟨i, rfl⟩
+      exact (e i).2
+    · intro hv
+      exact ⟨e.symm ⟨v, hv⟩, congrArg Subtype.val (e.apply_symm_apply _)⟩
+  have hmap' : P.map f = R := hmap f himage
+  let r := P.relabelingHomeomorph f hP.le (by rw [hmap']; exact hR)
+  let s : {x : Realization K // x.1.support ∈ P} ≃ₜ Realization K :=
+    (Homeomorph.setCongr (Set.eq_univ_of_forall fun x => by
+      rw [hP]
+      exact AbstractSimplicialComplex.support_mem _ x)).trans
+      (Homeomorph.Set.univ _)
+  exact ⟨(Homeomorph.setCongr (by rw [hmap'])).trans (r.symm.trans s)⟩
+
 /-- Relabeling pushes forward the finitely supported barycentric coordinate vector. -/
 @[simp]
 theorem relabelingHomeomorph_val

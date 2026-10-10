@@ -49,49 +49,6 @@ universe uk uA
 variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
   (𝒜 : ℤ → Submodule k A) [DirectSum.Decomposition 𝒜]
 
-/-- The canonical exact structure on graded modules, graded by the internal shift. -/
-noncomputable abbrev gradedModuleCanonicalExactStructure :
-    GradedExactStructure (GradedModuleCat.{uA} 𝒜) :=
-  GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)
-
-private theorem finiteProjective_le_projective :
-    gradedFiniteProjectiveModules 𝒜 ≤
-      (gradedModuleCanonicalExactStructure 𝒜).isProjective := by
-  simpa only [gradedModuleCanonicalExactStructure,
-    GradedExactStructure.abelian_toExactStructure] using
-      (gradedFiniteProjectiveModules_le_isProjective (𝒜 := 𝒜))
-
-omit [DirectSum.Decomposition 𝒜] in
-private theorem finiteProjective_shift :
-    (gradedFiniteProjectiveModules 𝒜).inverseImage
-        (gradedModuleCanonicalExactStructure 𝒜).shift.functor =
-      gradedFiniteProjectiveModules 𝒜 := by
-  simpa only [gradedModuleCanonicalExactStructure, GradedExactStructure.abelian_shift] using
-    (gradedFiniteProjectiveModules_shift (𝒜 := 𝒜))
-
-omit [DirectSum.Decomposition 𝒜] in
-private theorem finiteModules_shift :
-    (gradedFiniteModules 𝒜).inverseImage
-        (gradedModuleCanonicalExactStructure 𝒜).shift.functor = gradedFiniteModules 𝒜 := by
-  simpa only [gradedModuleCanonicalExactStructure, GradedExactStructure.abelian_shift] using
-    (gradedFiniteModules_shift (𝒜 := 𝒜))
-
-omit [DirectSum.Decomposition 𝒜] in
-private theorem finiteModules_extensionClosed :
-    (gradedModuleCanonicalExactStructure 𝒜).toExactStructure.IsExtensionClosed
-      (gradedFiniteModules 𝒜) := by
-  simpa only [gradedModuleCanonicalExactStructure,
-    GradedExactStructure.abelian_toExactStructure] using
-      (isExtensionClosed_gradedFiniteModules (𝒜 := 𝒜))
-
-omit [DirectSum.Decomposition 𝒜] in
-private theorem finiteProjective_extensionClosed :
-    (gradedModuleCanonicalExactStructure 𝒜).toExactStructure.IsExtensionClosed
-      (gradedFiniteProjectiveModules 𝒜) := by
-  simpa only [gradedModuleCanonicalExactStructure,
-    GradedExactStructure.abelian_toExactStructure] using
-      (isExtensionClosed_gradedFiniteProjectiveModules (𝒜 := 𝒜))
-
 omit [DirectSum.Decomposition 𝒜] in
 /-- The identity identifies the graded exact structure on finite graded projectives with the one
 induced from the canonical structure, by
@@ -99,20 +56,24 @@ induced from the canonical structure, by
 private noncomputable def finiteProjectiveExactEquiv :
     GradedExactEquiv (gradedFiniteProjectiveModulesExactStructure 𝒜)
       ((gradedModuleCanonicalExactStructure 𝒜).fullSubcategory _
-        (finiteProjective_extensionClosed 𝒜) (finiteProjective_shift 𝒜)) where
+        isExtensionClosed_gradedFiniteProjectiveModules_gradedAbelian
+        gradedFiniteProjectiveModules_gradedAbelian_shift) where
   equiv := CategoryTheory.Equivalence.refl
   functor_additive := inferInstanceAs (𝟭 (gradedFiniteProjectiveModules 𝒜).FullSubcategory).Additive
   isConflationExact := by
     rw [gradedFiniteProjectiveModulesExactStructure_eq_fullSubcategory
-      (finiteProjective_extensionClosed 𝒜) (finiteProjective_shift 𝒜)]
+      isExtensionClosed_gradedFiniteProjectiveModules_gradedAbelian
+      gradedFiniteProjectiveModules_gradedAbelian_shift]
     exact ExactStructure.IsConflationExact.id
   inverse_isConflationExact := by
     rw [gradedFiniteProjectiveModulesExactStructure_eq_fullSubcategory
-      (finiteProjective_extensionClosed 𝒜) (finiteProjective_shift 𝒜)]
+      isExtensionClosed_gradedFiniteProjectiveModules_gradedAbelian
+      gradedFiniteProjectiveModules_gradedAbelian_shift]
     exact ExactStructure.IsConflationExact.id
   commShift := by
     rw [gradedFiniteProjectiveModulesExactStructure_eq_fullSubcategory
-      (finiteProjective_extensionClosed 𝒜) (finiteProjective_shift 𝒜)]
+      isExtensionClosed_gradedFiniteProjectiveModules_gradedAbelian
+      gradedFiniteProjectiveModules_gradedAbelian_shift]
     exact Functor.rightUnitor _ ≪≫ (Functor.leftUnitor _).symm
 
 omit [DirectSum.Decomposition 𝒜] in
@@ -122,20 +83,21 @@ induced from the canonical structure, by
 private noncomputable def finiteModulesExactEquiv :
     GradedExactEquiv (gradedFiniteModulesExactStructure 𝒜)
       ((gradedModuleCanonicalExactStructure 𝒜).fullSubcategory _
-        (finiteModules_extensionClosed 𝒜) (finiteModules_shift 𝒜)) where
+        isExtensionClosed_gradedFiniteModules_gradedAbelian
+        gradedFiniteModules_gradedAbelian_shift) where
   equiv := CategoryTheory.Equivalence.refl
   functor_additive := inferInstanceAs (𝟭 (gradedFiniteModules 𝒜).FullSubcategory).Additive
   isConflationExact := by
     rw [gradedFiniteModulesExactStructure_eq_fullSubcategory
-      (finiteModules_extensionClosed 𝒜) (finiteModules_shift 𝒜)]
+      isExtensionClosed_gradedFiniteModules_gradedAbelian gradedFiniteModules_gradedAbelian_shift]
     exact ExactStructure.IsConflationExact.id
   inverse_isConflationExact := by
     rw [gradedFiniteModulesExactStructure_eq_fullSubcategory
-      (finiteModules_extensionClosed 𝒜) (finiteModules_shift 𝒜)]
+      isExtensionClosed_gradedFiniteModules_gradedAbelian gradedFiniteModules_gradedAbelian_shift]
     exact ExactStructure.IsConflationExact.id
   commShift := by
     rw [gradedFiniteModulesExactStructure_eq_fullSubcategory
-      (finiteModules_extensionClosed 𝒜) (finiteModules_shift 𝒜)]
+      isExtensionClosed_gradedFiniteModules_gradedAbelian gradedFiniteModules_gradedAbelian_shift]
     exact Functor.rightUnitor _ ≪≫ (Functor.leftUnitor _).symm
 
 omit [DirectSum.Decomposition 𝒜] in
@@ -169,9 +131,9 @@ noncomputable def gradedFiniteProjectiveResolutionExactStructure :
         (gradedFiniteProjectiveModules 𝒜)).FullSubcategory :=
   (gradedModuleCanonicalExactStructure 𝒜).fullSubcategory _
     ((gradedModuleCanonicalExactStructure 𝒜).isExtensionClosed_admitsFiniteResolution
-      (finiteProjective_le_projective 𝒜))
+      gradedFiniteProjectiveModules_le_isProjective_gradedAbelian)
     ((gradedModuleCanonicalExactStructure 𝒜).admitsFiniteResolution_inverseImage_shift
-      (finiteProjective_shift 𝒜))
+      gradedFiniteProjectiveModules_gradedAbelian_shift)
 
 /-- The graded resolution theorem for modules admitting finite resolutions by finite graded
 projectives. -/
@@ -180,7 +142,8 @@ noncomputable def gradedModuleResolutionEquiv :
       LaurentK0.{uA} (gradedFiniteProjectiveResolutionExactStructure 𝒜) :=
   (LaurentK0.mapEquiv.{uA, uA} (finiteProjectiveExactEquiv 𝒜)).trans
     (GradedExactStructure.laurentResolutionEquiv.{uA} (gradedModuleCanonicalExactStructure 𝒜)
-      (finiteProjective_le_projective 𝒜) (finiteProjective_shift 𝒜))
+      gradedFiniteProjectiveModules_le_isProjective_gradedAbelian
+      gradedFiniteProjectiveModules_gradedAbelian_shift)
 
 /-- The graded resolution equivalence sends the class of a finite graded projective to its class
 among modules admitting finite graded-projective resolutions. -/
@@ -195,28 +158,30 @@ theorem gradedModuleResolutionEquiv_of
   -- The transport `finiteProjectiveExactEquiv` is the identity on objects.
   exact (congrArg (GradedExactStructure.laurentResolutionEquiv.{uA}
       (gradedModuleCanonicalExactStructure 𝒜)
-      (finiteProjective_le_projective 𝒜) (finiteProjective_shift 𝒜))
+      gradedFiniteProjectiveModules_le_isProjective_gradedAbelian
+      gradedFiniteProjectiveModules_gradedAbelian_shift)
       (LaurentK0.mapEquiv_of.{uA, uA} (finiteProjectiveExactEquiv 𝒜) M)).trans
     (GradedExactStructure.laurentResolutionEquiv_of.{uA}
       (gradedModuleCanonicalExactStructure 𝒜)
-      (finiteProjective_le_projective 𝒜) (finiteProjective_shift 𝒜) M)
+      gradedFiniteProjectiveModules_le_isProjective_gradedAbelian
+      gradedFiniteProjectiveModules_gradedAbelian_shift M)
 
 private noncomputable def finiteResolutionToFiniteFunctor :
     GradedConflationExact
       (gradedFiniteProjectiveResolutionExactStructure 𝒜)
       ((gradedModuleCanonicalExactStructure 𝒜).fullSubcategory _
-        (finiteModules_extensionClosed 𝒜) (finiteModules_shift 𝒜))
+        isExtensionClosed_gradedFiniteModules_gradedAbelian gradedFiniteModules_gradedAbelian_shift)
       (ObjectProperty.ιOfLE
         (gradedAdmitsFiniteProjectiveResolution_le_finiteModules 𝒜)) :=
   GradedConflationExact.ιOfLE (gradedModuleCanonicalExactStructure 𝒜)
     ((gradedModuleCanonicalExactStructure 𝒜).admitsFiniteResolution
       (gradedFiniteProjectiveModules 𝒜))
     ((gradedModuleCanonicalExactStructure 𝒜).isExtensionClosed_admitsFiniteResolution
-      (finiteProjective_le_projective 𝒜))
-    (finiteModules_extensionClosed 𝒜)
+      gradedFiniteProjectiveModules_le_isProjective_gradedAbelian)
+    isExtensionClosed_gradedFiniteModules_gradedAbelian
     ((gradedModuleCanonicalExactStructure 𝒜).admitsFiniteResolution_inverseImage_shift
-      (finiteProjective_shift 𝒜))
-    (finiteModules_shift 𝒜)
+      gradedFiniteProjectiveModules_gradedAbelian_shift)
+    gradedFiniteModules_gradedAbelian_shift
     (gradedAdmitsFiniteProjectiveResolution_le_finiteModules 𝒜)
 
 /-- The comparison from modules admitting finite graded-projective resolutions to all finite
@@ -266,16 +231,16 @@ variable (h : gradedFiniteModules 𝒜 ≤
 private noncomputable def finiteToFiniteResolutionFunctor :
     GradedConflationExact
       ((gradedModuleCanonicalExactStructure 𝒜).fullSubcategory _
-        (finiteModules_extensionClosed 𝒜) (finiteModules_shift 𝒜))
+        isExtensionClosed_gradedFiniteModules_gradedAbelian gradedFiniteModules_gradedAbelian_shift)
       (gradedFiniteProjectiveResolutionExactStructure 𝒜)
       (ObjectProperty.ιOfLE h) :=
   GradedConflationExact.ιOfLE (gradedModuleCanonicalExactStructure 𝒜)
-    (gradedFiniteModules 𝒜) (finiteModules_extensionClosed 𝒜)
+    (gradedFiniteModules 𝒜) isExtensionClosed_gradedFiniteModules_gradedAbelian
     ((gradedModuleCanonicalExactStructure 𝒜).isExtensionClosed_admitsFiniteResolution
-      (finiteProjective_le_projective 𝒜))
-    (finiteModules_shift 𝒜)
+      gradedFiniteProjectiveModules_le_isProjective_gradedAbelian)
+    gradedFiniteModules_gradedAbelian_shift
     ((gradedModuleCanonicalExactStructure 𝒜).admitsFiniteResolution_inverseImage_shift
-      (finiteProjective_shift 𝒜)) h
+      gradedFiniteProjectiveModules_gradedAbelian_shift) h
 
 /-- Under finite graded-projective dimension, compare all finite graded modules with the
 subcategory of modules admitting finite graded-projective resolutions. -/
@@ -348,7 +313,8 @@ theorem gradedCartanInverse_of_eq_foldAlternating
   refine (congrArg (LaurentK0.mapEquiv.{uA, uA} (finiteProjectiveExactEquiv 𝒜)).symm
     (GradedExactStructure.laurentResolutionEquiv_symm_of.{uA}
       (gradedModuleCanonicalExactStructure 𝒜)
-      (finiteProjective_le_projective 𝒜) (finiteProjective_shift 𝒜) (h M hM) r)).trans ?_
+      gradedFiniteProjectiveModules_le_isProjective_gradedAbelian
+      gradedFiniteProjectiveModules_gradedAbelian_shift (h M hM) r)).trans ?_
   clear hM
   -- `finiteProjectiveExactEquiv` is the identity on objects, so each term is transported to the
   -- class of the same module.
