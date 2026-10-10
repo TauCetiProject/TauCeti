@@ -109,7 +109,7 @@ variable {G' : Type*} [TopologicalSpace G'] [AddCommGroup G'] [Module R G']
 
 /-- Changing complementary representatives preserves all quotient coordinates.
 This identifies the transition from the `B` coordinates to the `C` coordinates. -/
-theorem quotientRangeCoordinate_comp_quotientRangeCoordinate
+@[simp] theorem quotientRangeCoordinate_comp_quotientRangeCoordinate
     (hB : (A.coprod B).IsInvertible) (hC : (A.coprod C).IsInvertible) :
     (A.quotientRangeCoordinate C ∘L B) ∘L A.quotientRangeCoordinate B =
       A.quotientRangeCoordinate C := by

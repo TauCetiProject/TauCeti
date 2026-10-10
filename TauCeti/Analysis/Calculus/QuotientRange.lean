@@ -10,17 +10,17 @@ public import TauCeti.Analysis.Normed.Operator.QuotientRange
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 /-!
-# Smooth coordinates for quotients by varying ranges
+# Differentiability of coordinates for quotients by varying ranges
 
 A continuous family of split injections admits a single complementary subspace
 on a neighbourhood of each parameter. In these coordinates, the quotient by the
 moving range has a fixed model fibre, and its coordinate operator has the same
-differentiability as the original family. Coordinate changes are smooth as well.
+differentiability as the original family. Coordinate changes inherit this regularity as well.
 
 Applied to the differential of an immersion in manifold charts, this supplies
 local models for intrinsic normal fibres without choosing a Riemannian metric.
-The fibre equivalence is `ContinuousLinearMap.quotientRangeEquiv`; smoothness is
-expressed on ambient representatives so it does not presuppose a smooth structure
+The fibre equivalence is `ContinuousLinearMap.quotientRangeEquiv`; differentiability is
+expressed on ambient representatives so it does not presuppose a differentiable structure
 on the total quotient bundle.
 
 Reference: J. M. Lee, *Introduction to Smooth Manifolds*, second edition,
@@ -54,7 +54,7 @@ theorem ContDiffWithinAt.quotientRangeCoordinate [CompleteSpace (E × G)]
     (contDiffWithinAt_const (c := ContinuousLinearMap.snd 𝕜 E G)).clm_comp
       (h.contDiffAt_map_inverse.comp_contDiffWithinAt x hcop)
 
-/-- Complementary coordinate operators are smooth at valid parameters. -/
+/-- Complementary coordinate operators are `C^n` at valid parameters for a `C^n` family. -/
 theorem ContDiffAt.quotientRangeCoordinate [CompleteSpace (E × G)]
     (hA : ContDiffAt 𝕜 n A x) (B : G →L[𝕜] F)
     (h : ((A x).coprod B).IsInvertible) :
@@ -62,14 +62,14 @@ theorem ContDiffAt.quotientRangeCoordinate [CompleteSpace (E × G)]
   rw [← contDiffWithinAt_univ] at hA ⊢
   exact hA.quotientRangeCoordinate B h
 
-/-- Complementary coordinates are smooth throughout an invertibility domain. -/
+/-- Complementary coordinates are `C^n` throughout an invertibility domain for a `C^n` family. -/
 theorem ContDiffOn.quotientRangeCoordinate [CompleteSpace (E × G)]
     (hA : ContDiffOn 𝕜 n A s) (B : G →L[𝕜] F)
     (h : ∀ x ∈ s, ((A x).coprod B).IsInvertible) :
     ContDiffOn 𝕜 n (fun y => (A y).quotientRangeCoordinate B) s :=
   fun x hx => (hA x hx).quotientRangeCoordinate B (h x hx)
 
-/-- A smooth family of operators which is split injective at one parameter admits smooth
+/-- A `C^n` family of operators which is split injective at one parameter admits `C^n`
 quotient coordinates with a fixed closed model fibre near that parameter. The neighbourhood
 is contained in the original open parameter domain. -/
 theorem ContDiffOn.exists_contDiffOn_quotientRangeCoordinate
