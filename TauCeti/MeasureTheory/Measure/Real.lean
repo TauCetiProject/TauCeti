@@ -118,7 +118,7 @@ theorem _root_.MeasureTheory.Measure.eq_of_map_sq_eq_of_map_neg_eq_self (μ ν :
     linarith
   -- For negative `x`, the squared law fixes `(x, -x)`.  Symmetry equates the two closed
   -- complementary tails, of which `Iic x` is one.
-  · have hx' : x < 0 := lt_of_not_ge hx
+  · have _ : x < 0 := lt_of_not_ge hx
     have hsq_preimage : (fun y : ℝ ↦ y ^ 2) ⁻¹' Iio (x ^ 2) = Ioo x (-x) := by
       ext y
       simp only [mem_preimage, mem_Iio, mem_Ioo]

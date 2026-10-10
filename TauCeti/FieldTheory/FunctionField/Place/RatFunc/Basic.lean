@@ -446,7 +446,7 @@ theorem eq_infty_or_exists_eq_adicOfIrreducible_X_sub_C {P : Place k (RatFunc k)
     P = infty k ∨ ∃ a : k, P = adicOfIrreducible (irreducible_X_sub_C a) := by
   rcases eq_infty_or_exists_eq_ofPrime P with rfl | ⟨p, rfl⟩
   · exact Or.inl rfl
-  obtain ⟨q, ⟨hqm, hqi, hspan⟩, -⟩ := p.existsUnique_monic_irreducible_span
+  obtain ⟨q, ⟨hqm, _, hspan⟩, -⟩ := p.existsUnique_monic_irreducible_span
   have hq1 : q.natDegree = 1 := (degree_ofPrime_eq_natDegree p hspan).symm.trans hP
   have hqeq : (X - C (-q.coeff 0) : k[X]) = q := by
     rw [map_neg, sub_neg_eq_add]

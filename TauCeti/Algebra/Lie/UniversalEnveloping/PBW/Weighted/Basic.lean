@@ -135,14 +135,14 @@ private theorem perm_sub_mem (N d : ℕ)
       b.weightedPBWFiltration w N := by
   induction h generalizing p with
   | nil => simp
-  | cons i h ihperm =>
+  | cons i _ ihperm =>
     simpa [List.append_assoc] using ihperm (p ++ [i])
       (by simpa [List.append_assoc] using hlen) (by simpa [List.append_assoc] using hw)
   | swap i j l =>
     simpa only [List.append_assoc, List.cons_append] using
       b.swap_mem w hbracket N d ih p (l ++ t) j i
       (by simpa [List.append_assoc] using hlen) (by simpa [List.append_assoc] using hw)
-  | @trans l₁ l₂ l₃ h₁ h₂ ih₁ ih₂ =>
+  | @trans l₁ l₂ l₃ h₁ _ ih₁ ih₂ =>
     have hlen₂ : (p ++ l₂ ++ t).length ≤ d := by simpa [← h₁.length_eq] using hlen
     have hw₂ : N ≤ ((p ++ l₂ ++ t).map w).sum := by
       simpa only [List.map_append, List.sum_append, (h₁.map w).sum_eq] using hw

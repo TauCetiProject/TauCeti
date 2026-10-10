@@ -71,7 +71,7 @@ theorem exists_real_lp_lineDeriv_of_memSobolev_zero {p : ENNReal} [Fact (1 ≤ p
   let u' : Lp ℝ p (volume : Measure E) := Complex.reCLM.compLp z
   refine ⟨u', ?_⟩
   apply temperedDistribution_ext_real
-  intro phi hphi
+  intro phi _
   have hderiv : ∀ x, ∂_{v} (phi.postcompCLM Complex.ofRealCLM) x =
       Complex.ofReal (lineDeriv ℝ (phi : E → ℝ) x v) := by
     intro x

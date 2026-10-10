@@ -229,7 +229,7 @@ theorem nonempty_splitting_of_surjective_homDifferential
     {k : Type u} {Q : Type v} [Field k] [Quiver.{w} Q]
     {S : ShortComplex (QuiverRep.{u, v, w, t} k Q)} (hS : S.ShortExact)
     (hsurj : Function.Surjective (homDifferential S.X₃ S.X₁)) : Nonempty S.Splitting := by
-  obtain ⟨c, e, hf, hg⟩ := exists_arrowExtension_iso_fixing_ends hS
+  obtain ⟨c, e, _, hg⟩ := exists_arrowExtension_iso_fixing_ends hS
   obtain ⟨sp⟩ := (nonempty_splitting_arrowExtensionComplex_iff S.X₃ S.X₁ c).mpr
     (LinearMap.mem_range.mpr (hsurj c))
   let s : S.X₃ ⟶ arrowExtension S.X₃ S.X₁ c := sp.s

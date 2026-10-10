@@ -187,7 +187,7 @@ private theorem isCoercive_form (t : ℝ) : IsCoercive (form t) := by
     (mul_self_le_mul_self (norm_nonneg v) hv).trans (Real.mul_self_sqrt (by positivity)).le
   -- With `u = e^{-t} v₁`, the form is `u² + v₂² + (v₃ + u)²`, which is at least
   -- `(u² + v₂² + v₃²) / 3` because `5 u² + 6 u v₃ + 2 v₃² ≥ 0`.
-  set u := exp (-t) * v.1 with hu
+  set u := exp (-t) * v.1
   have key : (exp (-2 * t) * v.1 ^ 2 + v.2.1 ^ 2 + v.2.2 ^ 2) / 3 ≤ form t v v := by
     rw [form_apply, h₃]
     nlinarith [sq_nonneg (5 * u + 3 * v.2.2), sq_nonneg v.2.2, sq_nonneg v.2.1]

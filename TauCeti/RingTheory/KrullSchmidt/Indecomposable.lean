@@ -212,7 +212,7 @@ theorem IsIndecomposableModule.bijective_of_bijective_comp {N P : Type*}
     [AddCommGroup N] [Module A N] [AddCommGroup P] [Module A P] [Nontrivial N]
     (hP : IsIndecomposableModule A P) {f : N →ₗ[A] P} {g : P →ₗ[A] N}
     (h : Function.Bijective (g ∘ₗ f)) : Function.Bijective f := by
-  set u : N ≃ₗ[A] N := LinearEquiv.ofBijective (g ∘ₗ f) h with hu
+  set u : N ≃ₗ[A] N := LinearEquiv.ofBijective (g ∘ₗ f) h with _
   have hgf : ∀ x : N, u.symm (g (f x)) = x := fun x ↦ u.symm_apply_apply x
   set e : Module.End A P := f ∘ₗ (u.symm : N →ₗ[A] N) ∘ₗ g with he
   have hidem : IsIdempotentElem e := by

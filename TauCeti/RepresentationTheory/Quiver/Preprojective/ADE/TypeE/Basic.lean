@@ -660,7 +660,7 @@ instance instFiniteDimensionalPreprojectiveAlgebraE7
       (preprojectiveAlgebra k (OrientedQuiver (diagramGraph DynkinType.E7.cartanMatrix) o)) := by
   let c := fun i : OrientedQuiver (diagramGraph DynkinType.E7.cartanMatrix) o =>
     e7Coloring ((OrientedQuiver.vertexEquiv _ o).symm i)
-  have hc : ∀ ⦃i j⦄ (a : i ⟶ j), c i ≠ c j := fun _ _ a => e7Coloring.valid a.1
+  have hc : ∀ ⦃i j⦄ (_ : i ⟶ j), c i ≠ c j := fun _ _ a => e7Coloring.valid a.1
   exact ((orientationSignlessPreprojectiveAlgebraEquiv o k).trans
     (symmetrifySignlessPreprojectiveAlgebraEquiv k hc)).toLinearEquiv.finiteDimensional
 

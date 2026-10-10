@@ -138,9 +138,8 @@ theorem IsManifoldNondegenerateCriticalPoint.nonempty_morseChart
   replace hf : ContMDiffOn 𝓘(ℝ, E) 𝓘(ℝ) ∞ f s := fun y hy ↦ (hfs y hy).contMDiffWithinAt
   set c := chartAt E x with hc
   set g : E → ℝ := f ∘ (extChartAt 𝓘(ℝ, E) x).symm with hgdef
-  set a : E := extChartAt 𝓘(ℝ, E) x x with hadef
+  set a : E := extChartAt 𝓘(ℝ, E) x x
   set U := (extChartAt 𝓘(ℝ, E) x).target ∩ (extChartAt 𝓘(ℝ, E) x).symm ⁻¹' interior s
-    with hUdef
   have hU : IsOpen U := (continuousOn_extChartAt_symm x).isOpen_inter_preimage
     (isOpen_extChartAt_target x) isOpen_interior
   have haU : a ∈ U := ⟨mem_extChartAt_target x, by

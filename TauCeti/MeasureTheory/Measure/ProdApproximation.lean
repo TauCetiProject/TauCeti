@@ -156,7 +156,7 @@ theorem exists_finset_prod_symmetric_measure_symmDiff_lt (μ : Measure X) [IsFin
   let C : Set (Set (X × X)) :=
     Set.image2 (· ×ˢ ·) {a : Set X | MeasurableSet a} {b : Set X | MeasurableSet b}
   have hC : IsSetSemiring C := isSetSemiring_measurable_prod
-  obtain ⟨I, hIrect, hIdis, hIempty, hIapprox⟩ :=
+  obtain ⟨I, hIrect, _, _, hIapprox⟩ :=
     exists_finset_prod_measure_symmDiff_lt (μ.prod μ) hs (ENNReal.half_pos hε.ne')
   let u : Set (X × X) := ⋃₀ (I : Set (Set (X × X)))
   let J : Finset (Set (X × X)) := I.image fun r => Prod.swap ⁻¹' r

@@ -267,8 +267,8 @@ theorem exists_restrict_eq_of_irreducible_map_residue (hF : IsFunctionField k F)
       (g.map (IsLocalRing.residue P.integers)).natDegree ≤ relativeDegree k F P' := by
   classical
   have hφ : φ.Monic := monic_of_map_eq_minpoly (F' := F') hmin
-  set res := IsLocalRing.residue P.integers with hresdef
-  set γ := g.map res with hγdef
+  set res := IsLocalRing.residue P.integers
+  set γ := g.map res
   set ev := P.integersEval (F' := F') y with hevdef
   -- The reduction map to the field `F_P[X] / (γ)`; its kernel `K` contains `φ` and `g`.
   have hspan : Ideal.span {γ} ≠ ⊤ := fun h ↦ hirr.not_isUnit (Ideal.span_singleton_eq_top.mp h)

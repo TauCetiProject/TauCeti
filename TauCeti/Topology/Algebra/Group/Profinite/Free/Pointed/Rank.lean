@@ -98,7 +98,7 @@ private noncomputable def restrictAddMonoidHom :
       (Additive.toMul φ (of (finiteGroupClassP.{u} p) x₀ x)),
       continuous_toAdd.comp ((Additive.toMul φ).continuous.comp (continuous_of _ x₀))⟩,
     by simp [LinearMap.mem_ker, of_basePoint]⟩
-  map_zero' := Subtype.ext <| ContinuousMap.ext fun x ↦ by simp
+  map_zero' := Subtype.ext <| ContinuousMap.ext fun _ ↦ by simp
   map_add' φ ψ := Subtype.ext <| ContinuousMap.ext fun x ↦ by simp [toMul_add]
 
 /-- **The continuous `𝔽_p`-dual of the free pro-`p` group on a pointed space** is the space of

@@ -61,7 +61,7 @@ theorem Smooth.irreducibleSpace_of_connectedSpace {X S : Scheme.{u}} (f : X ⟶ 
 /-- If `f : X ⟶ Spec K` is smooth and the base change of `X` to `AlgebraicClosure K` is connected,
 then that base change is irreducible. -/
 theorem Smooth.irreducibleSpace_baseChange_algebraicClosure_of_connectedSpace {K : Type u} [Field K]
-    {X : Scheme.{u}} (f : X ⟶ Spec (.of K)) [Smooth f] (hconn : ConnectedSpace
+    {X : Scheme.{u}} (f : X ⟶ Spec (.of K)) [Smooth f] (_ : ConnectedSpace
       ↥(pullback f (Spec.map (CommRingCat.ofHom (algebraMap K (AlgebraicClosure K)))))) :
     IrreducibleSpace
       ↥(pullback f (Spec.map (CommRingCat.ofHom (algebraMap K (AlgebraicClosure K))))) :=
