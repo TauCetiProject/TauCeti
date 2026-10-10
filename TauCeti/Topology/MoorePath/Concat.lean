@@ -101,18 +101,18 @@ theorem target_trans (h : γ.target = δ.source) : (γ.trans δ h).target = δ.t
   rw [target_eq_apply, length_trans, trans_apply_of_length_le h le_self_add, add_tsub_cancel_left,
     target_eq_apply]
 
-/-- Concatenation is strictly associative. -/
-theorem trans_assoc (h₁ : γ.target = δ.source) (h₂ : δ.target = ε.source)
-    (h₁₂ : (γ.trans δ h₁).target = ε.source) (h₂₃ : γ.target = (δ.trans ε h₂).source) :
-    (γ.trans δ h₁).trans ε h₁₂ = γ.trans (δ.trans ε h₂) h₂₃ := by
+/-- Concatenation is strictly associative.  The composability of the outer concatenations follows
+from that of the inner ones, through `target_trans` and `source_trans`. -/
+theorem trans_assoc (h₁ : γ.target = δ.source) (h₂ : δ.target = ε.source) :
+    (γ.trans δ h₁).trans ε (by simpa using h₂) = γ.trans (δ.trans ε h₂) (by simpa using h₁) := by
   refine ext (by simp [add_assoc]) fun t _ ↦ ?_
   rcases le_or_gt t γ.length with ht₁ | ht₁
-  · rw [trans_apply_of_le h₁₂ (by simpa using ht₁.trans le_self_add), trans_apply_of_le h₁ ht₁,
-      trans_apply_of_le h₂₃ ht₁]
+  · rw [trans_apply_of_le _ (by simpa using ht₁.trans le_self_add), trans_apply_of_le h₁ ht₁,
+      trans_apply_of_le _ ht₁]
   rcases le_or_gt t (γ.length + δ.length) with ht₂ | ht₂
-  · rw [trans_apply_of_le h₁₂ (by simpa using ht₂), trans_apply_of_length_le h₁ ht₁.le,
-      trans_apply_of_length_le h₂₃ ht₁.le, trans_apply_of_le h₂ (tsub_le_iff_left.2 ht₂)]
-  · rw [trans_apply_of_length_le h₁₂ (by simpa using ht₂.le), trans_apply_of_length_le h₂₃ ht₁.le,
+  · rw [trans_apply_of_le _ (by simpa using ht₂), trans_apply_of_length_le h₁ ht₁.le,
+      trans_apply_of_length_le _ ht₁.le, trans_apply_of_le h₂ (tsub_le_iff_left.2 ht₂)]
+  · rw [trans_apply_of_length_le _ (by simpa using ht₂.le), trans_apply_of_length_le _ ht₁.le,
       trans_apply_of_length_le h₂ (le_tsub_of_add_le_left ht₂.le), length_trans, tsub_tsub]
 
 /-- The constant path is a strict left unit. -/
