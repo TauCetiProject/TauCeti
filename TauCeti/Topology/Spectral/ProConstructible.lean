@@ -55,15 +55,17 @@ Recall that Mathlib orders topologies by *reverse* inclusion of their open sets,
   spectral map; `TauCeti.IsProConstructible.prod` and `.pi` — and under products when the ambient
   factors complementary to each projection are quasi-compact.
 * `TauCeti.IsProConstructible.isCompact` — a pro-constructible subset of a compact, quasi-sober,
-  quasi-separated prespectral space is quasi-compact. The subspace is also prespectral
-  and quasi-separated; none of these results needs T₀.
+  quasi-separated prespectral space is quasi-compact.
+* `TauCeti.IsProConstructible.isSpectralMap_subtypeVal`, `.prespectralSpace`,
+  `.quasiSeparatedSpace` — in a quasi-sober, quasi-separated prespectral space, a
+  pro-constructible subspace has a spectral inclusion and is prespectral and quasi-separated.
+  Ambient compactness and T₀ are not needed.
 * `TauCeti.IsProConstructible.mem_of_isGenericPoint` — in any topological space, every generic
   point of the closure of a pro-constructible subset belongs to that subset.
 * `TauCeti.IsProConstructible.quasiSober` — a pro-constructible subspace of a quasi-sober
   space is quasi-sober.
 * `TauCeti.IsProConstructible.spectralSpace` — **a pro-constructible subspace of a spectral space
-  is spectral**, together with `TauCeti.IsProConstructible.isSpectralMap_subtypeVal`: its
-  inclusion is a spectral map. `IsClosed.spectralSpace` is the closed special case, the
+  is spectral**. `IsClosed.spectralSpace` is the closed special case, the
   counterpart of Mathlib's `Topology.IsOpenEmbedding.spectralSpace`.
 
 ## References
@@ -198,37 +200,47 @@ theorem IsProConstructible.mem_of_isGenericPoint {s : Set X} (hs : IsProConstruc
 
 section
 
-variable [CompactSpace X] [QuasiSober X] [PrespectralSpace X] [QuasiSeparatedSpace X]
-  {s : Set X}
+variable [QuasiSober X] [PrespectralSpace X] [QuasiSeparatedSpace X] {s : Set X}
 
 /-- A pro-constructible subset of a compact, quasi-sober, quasi-separated prespectral space
 is quasi-compact. In particular, no T₀ hypothesis is needed. -/
-theorem IsProConstructible.isCompact (hs : IsProConstructible s) : IsCompact s := by
+theorem IsProConstructible.isCompact [CompactSpace X] (hs : IsProConstructible s) :
+    IsCompact s := by
   have h : IsCompact (WithTopology.ofTopology ⁻¹' s : Set (WithConstructibleTopology X)) :=
     IsClosed.isCompact hs
   have h' := h.image (continuous_ofTopology_withConstructibleTopology X)
   rwa [Set.image_preimage_eq _ (WithTopology.ofTopology_surjective _)] at h'
 
-/-- The inclusion of a pro-constructible subset of a compact, quasi-sober, quasi-separated
+/-- A pro-constructible subspace of a compact, quasi-sober, quasi-separated prespectral space
+is quasi-compact. -/
+theorem IsProConstructible.compactSpace [CompactSpace X] (hs : IsProConstructible s) :
+    CompactSpace s :=
+  isCompact_iff_compactSpace.1 hs.isCompact
+
+/-- The inclusion of a pro-constructible subset of a quasi-sober, quasi-separated
 prespectral space is a spectral map. -/
 theorem IsProConstructible.isSpectralMap_subtypeVal (hs : IsProConstructible s) :
     IsSpectralMap ((↑) : s → X) where
   toContinuous := continuous_subtype_val
-  isCompact_preimage_of_isOpen := fun _ hUo hUc ↦ by
+  isCompact_preimage_of_isOpen := fun U hUo hUc ↦ by
+    -- Restrict to the compact open `U`, where the constructible topology is compact.
+    let : CompactSpace U := isCompact_iff_compactSpace.1 hUc
+    let : QuasiSober U := hUo.isOpenEmbedding_subtypeVal.quasiSober
+    let : PrespectralSpace U := hUo.isOpenEmbedding_subtypeVal.prespectralSpace
+    let : QuasiSeparatedSpace U := hUo.isOpenEmbedding_subtypeVal.quasiSeparatedSpace
+    have hU : IsSpectralMap ((↑) : U → X) :=
+      IsRetrocompact_iff_isSpectralMap_subtypeVal.1 (hUc.isRetrocompact hUo)
+    have hcomp := (hs.preimage hU).isCompact
     rw [Subtype.isCompact_iff, Subtype.image_preimage_coe]
-    exact IsProConstructible.isCompact (hs.inter (hUc.isProConstructible hUo))
+    rw [Subtype.isCompact_iff, Subtype.image_preimage_coe, Set.inter_comm] at hcomp
+    exact hcomp
 
-/-- A pro-constructible subspace of a compact, quasi-sober, quasi-separated prespectral space
-is quasi-compact. -/
-theorem IsProConstructible.compactSpace (hs : IsProConstructible s) : CompactSpace s :=
-  isCompact_iff_compactSpace.1 hs.isCompact
-
-/-- A pro-constructible subspace of a compact, quasi-sober, quasi-separated prespectral space
+/-- A pro-constructible subspace of a quasi-sober, quasi-separated prespectral space
 has a basis of quasi-compact opens. -/
 theorem IsProConstructible.prespectralSpace (hs : IsProConstructible s) : PrespectralSpace s :=
   .of_isInducing _ IsEmbedding.subtypeVal.isInducing hs.isSpectralMap_subtypeVal
 
-/-- A pro-constructible subspace of a compact, quasi-sober, quasi-separated prespectral space
+/-- A pro-constructible subspace of a quasi-sober, quasi-separated prespectral space
 is quasi-separated. -/
 theorem IsProConstructible.quasiSeparatedSpace (hs : IsProConstructible s) :
     QuasiSeparatedSpace s := by

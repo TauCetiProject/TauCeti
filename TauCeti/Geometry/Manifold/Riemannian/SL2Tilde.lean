@@ -62,7 +62,7 @@ transitively, so `SL₂ℝ~` is a homogeneous Riemannian manifold.
   (the geometry `SL₂ℝ~` as the unit tangent bundle of the hyperbolic plane).
 * The formal structure of this file (the coordinate type synonym, its charts, the metric built with
   `TauCeti.coerciveRiemannianMetric`, the explicit isometries and the transitivity instance)
-  follows `TauCeti.Geometry.Manifold.Riemannian.Sol`.
+  follows `TauCeti.Geometry.Manifold.Riemannian.Sol.Basic`.
 -/
 
 public section

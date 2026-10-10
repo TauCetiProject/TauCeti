@@ -21,6 +21,11 @@ is `0` by convention.
 The average of a function over a set `s` is also controlled by its average over a larger set
 `t ⊇ s`, at the cost of the ratio `μ t / μ s` of their measures.
 
+Averages are unchanged by a change of variables that rescales the measure by a constant factor,
+such as an affine homothety of a finite-dimensional space with its Haar measure: if a measurable
+equivalence `e` pushes `μ` forward to `a • ν` with `0 < a < ∞`, then the average of `f ∘ e` over
+`e ⁻¹' s` with respect to `μ` is the average of `f` over `s` with respect to `ν`.
+
 ## Main results
 
 * `TauCeti.enorm_setAverage_le_setLAverage`: the extended norm of an average over a set is at most
@@ -29,6 +34,11 @@ The average of a function over a set `s` is also controlled by its average over 
   average over it is at most the integral of the extended norm over it.
 * `TauCeti.norm_setAverage_sub_le_of_subset`: the average over a subset `s ⊆ t`
   differs from a constant `c` by at most `μ t / μ s` times the average of `‖f - c‖` over `t`.
+* `TauCeti.setLIntegral_comp_preimage_of_map_eq_smul`,
+  `TauCeti.setIntegral_comp_preimage_of_map_eq_smul`,
+  `TauCeti.setLAverage_comp_preimage_of_map_eq_smul`,
+  `TauCeti.setAverage_comp_preimage_of_map_eq_smul`: integrals and averages under a measurable
+  equivalence that rescales the measure by a constant.
 -/
 
 public section
@@ -94,5 +104,46 @@ theorem norm_setAverage_sub_le_of_subset (hst : s ⊆ t) (hs : μ s ≠ 0) (ht :
         field_simp
 
 end Subset
+
+section ChangeOfVariables
+
+variable {X Y F : Type*} [MeasurableSpace X] [MeasurableSpace Y] {μ : Measure X} {ν : Measure Y}
+  [NormedAddCommGroup F] [NormedSpace ℝ F] {e : X ≃ᵐ Y} {a : ℝ≥0∞}
+
+/-- If a measurable equivalence `e` pushes `μ` forward to `a • ν`, then the lower integral of
+`g ∘ e` over `e ⁻¹' s` with respect to `μ` is `a` times the lower integral of `g` over `s` with
+respect to `ν`. -/
+theorem setLIntegral_comp_preimage_of_map_eq_smul (he : μ.map e = a • ν) (g : Y → ℝ≥0∞)
+    (s : Set Y) : ∫⁻ x in e ⁻¹' s, g (e x) ∂μ = a * ∫⁻ y in s, g y ∂ν := by
+  rw [← lintegral_map_equiv, ← e.measurableEmbedding.restrict_map, he, Measure.restrict_smul,
+    lintegral_smul_measure, smul_eq_mul]
+
+/-- Averages of nonnegative functions are invariant under a measurable equivalence `e` that pushes
+`μ` forward to a positive finite multiple of `ν`. -/
+theorem setLAverage_comp_preimage_of_map_eq_smul (he : μ.map e = a • ν) (ha : a ≠ 0)
+    (ha' : a ≠ ∞) (g : Y → ℝ≥0∞) (s : Set Y) :
+    ⨍⁻ x in e ⁻¹' s, g (e x) ∂μ = ⨍⁻ y in s, g y ∂ν := by
+  rw [setLAverage_eq, setLAverage_eq, setLIntegral_comp_preimage_of_map_eq_smul he,
+    ← e.map_apply, he, Measure.smul_apply, smul_eq_mul, ENNReal.mul_div_mul_left _ _ ha ha']
+
+/-- If a measurable equivalence `e` pushes `μ` forward to `a • ν`, then the integral of `f ∘ e`
+over `e ⁻¹' s` with respect to `μ` is `a.toReal` times the integral of `f` over `s` with respect
+to `ν`. -/
+theorem setIntegral_comp_preimage_of_map_eq_smul (he : μ.map e = a • ν) (f : Y → F) (s : Set Y) :
+    ∫ x in e ⁻¹' s, f (e x) ∂μ = a.toReal • ∫ y in s, f y ∂ν := by
+  rw [← setIntegral_map_equiv, he, Measure.restrict_smul, integral_smul_measure]
+
+/-- Averages are invariant under a measurable equivalence `e` that pushes `μ` forward to a
+positive finite multiple of `ν`. -/
+theorem setAverage_comp_preimage_of_map_eq_smul (he : μ.map e = a • ν) (ha : a ≠ 0)
+    (ha' : a ≠ ∞) (f : Y → F) (s : Set Y) :
+    ⨍ x in e ⁻¹' s, f (e x) ∂μ = ⨍ y in s, f y ∂ν := by
+  have hmeas : μ.real (e ⁻¹' s) = a.toReal * ν.real s := by
+    rw [measureReal_def, ← e.map_apply, he, Measure.smul_apply, smul_eq_mul, ENNReal.toReal_mul,
+      measureReal_def]
+  rw [setAverage_eq, setAverage_eq, setIntegral_comp_preimage_of_map_eq_smul he, hmeas,
+    smul_smul, mul_inv_rev, inv_mul_cancel_right₀ (ENNReal.toReal_ne_zero.2 ⟨ha, ha'⟩)]
+
+end ChangeOfVariables
 
 end TauCeti

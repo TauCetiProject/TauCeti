@@ -36,6 +36,8 @@ We define the valuation spectrum `Spv A` following Wedhorn, *Adic Spaces*
   rational open presented by the images of its numerators and denominator.
 * `TauCeti.ValuationSpectrum.isClosed_setOfPred_forall_vlt_one` : the sub-unit locus of a set
   of ring elements is closed — the closedness behind Wedhorn's Corollary 7.12.
+* `TauCeti.ValuationSpectrum.specializes_of_forall_mem_basicOpen` : a point specializes to every
+  point whose basic open neighbourhoods all contain it.
 * `TauCeti.ValuationSpectrum.quotientLift 𝔞 h` : Lift the implicitly inferred point `v` with
   `𝔞 ≤ supp v` to `Spv (A ⧸ 𝔞)`.
 * `TauCeti.ValuationSpectrum.localizationComapSection S B v hS` : Lift `v` to a localization
@@ -155,6 +157,16 @@ instance). -/
 lemma instTopologicalSpace_eq_generateFrom :
     (instTopologicalSpace : TopologicalSpace (Spv A))
       = TopologicalSpace.generateFrom {U | ∃ f s : A, U = basicOpen f s} := (rfl)
+
+/-- **Specialization from basic opens.** `v` specializes to `w` (that is, `w` lies in the
+closure of `v`) as soon as every basic open containing `w` contains `v`, since the basic opens
+generate the topology. -/
+lemma specializes_of_forall_mem_basicOpen {v w : Spv A}
+    (h : ∀ f s : A, w ∈ basicOpen f s → v ∈ basicOpen f s) : v ⤳ w := by
+  simp only [Specializes, TopologicalSpace.nhds_generateFrom]
+  refine biInf_mono ?_
+  rintro U ⟨hwU, f, s, rfl⟩
+  exact ⟨h f s hwU, f, s, rfl⟩
 
 /-- The valuative relation of a point is determined by its basic opens: `v(f) ≤ v(s)` holds
 iff `v` lies in `basicOpen f s`, or `s` and `f` both lie in the support — the latter being
