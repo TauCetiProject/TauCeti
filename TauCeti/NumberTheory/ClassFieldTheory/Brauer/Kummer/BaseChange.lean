@@ -52,23 +52,28 @@ theorem brBaseChange_h2MuToBr_muNRepH2Equiv
   rw [h2MuToBr_muNRepH2Equiv_eq_explicitCoeff2, h2MuToBr_muNRepH2Equiv_eq_explicitCoeff2,
     brBaseChange_apply K L τ, AddEquiv.symm_apply_apply]
   apply congrArg (unitsRepH2Equiv L)
-  induction x using QuotientAddGroup.induction_on with
-  | H c =>
-    simp only [explicitCoeff2_mk, explicitMap2_mk]
-    congr 1
-    apply Subtype.ext
-    funext ⟨g, h⟩
-    -- Apply the evaluation lemmas as terms where rewriting would abstract the
-    -- equivariance witness across the hidden coefficient homomorphism.
-    refine (cocyclesMap2_apply _ _ _ _ _ _ _ _ _ g h).trans ?_
-    refine Eq.trans ?_ (cocyclesMap2_apply _ _ _ _ _ _ _ _ _ g h).symm
-    rw [cocyclesMap2_apply]
-    refine (congrArg (unitsCoeffBaseChange τ)
-      (cocyclesMap2_apply _ _ _ _ _ _ _ _ c
-        (absoluteGaloisGroupMap τ g) (absoluteGaloisGroupMap τ h))).trans ?_
+  -- Use composition as a term to preserve the equivariance proofs of the bundled inclusions.
+  have hleft := explicitMap2_comp (AbsoluteGaloisGroup K) (KummerCoeff K n)
+    (AbsoluteGaloisGroup K) (UnitsCoeff K) (ContinuousMonoidHom.id _)
+    (kummerCoeffInclHom K n).toAddMonoidHom continuous_of_discreteTopology
+    (fun g m ↦ (kummerCoeffInclHom K n).map_smul g m)
+    (AbsoluteGaloisGroup L) (UnitsCoeff L) (absoluteGaloisGroupMap τ)
+    (unitsCoeffBaseChange τ) continuous_of_discreteTopology (unitsCoeffBaseChange_smul τ)
+  have hright := explicitMap2_comp (AbsoluteGaloisGroup K) (KummerCoeff K n)
+    (AbsoluteGaloisGroup L) (KummerCoeff L n) (absoluteGaloisGroupMap τ)
+    (kummerCoeffBaseChange n τ) continuous_of_discreteTopology (kummerCoeffBaseChange_smul n τ)
+    (AbsoluteGaloisGroup L) (UnitsCoeff L) (ContinuousMonoidHom.id _)
+    (kummerCoeffInclHom L n).toAddMonoidHom continuous_of_discreteTopology
+    (fun g m ↦ (kummerCoeffInclHom L n).map_smul g m)
+  rw [explicitCoeff2_eq_explicitMap2, explicitCoeff2_eq_explicitMap2]
+  refine DFunLike.congr_fun (hleft.symm.trans ((explicitMap2_congr_of_eq
+    (AbsoluteGaloisGroup K) (KummerCoeff K n) (AbsoluteGaloisGroup L) (UnitsCoeff L)
+    _ _ _ _ ?_ ?_).trans hright)) x
+  · ext g
+    simp only [ContinuousMonoidHom.comp_toFun, ContinuousMonoidHom.coe_id, id_eq]
+  · refine AddMonoidHom.ext fun y ↦ ?_
     apply Additive.toMul.injective
-    apply Units.ext
-    simp [AddMonoidHom.coe_ofClass, kummerCoeffInclHom_apply,
+    simp only [AddMonoidHom.comp_apply, kummerCoeffInclHom_toAddMonoidHom,
       toMul_unitsCoeffBaseChange, toMul_kummerCoeffIncl, toMul_kummerCoeffBaseChange]
 
 /-- Transporting roots of unity preserves the coefficient pairing selected by a primitive root,
