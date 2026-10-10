@@ -7,6 +7,11 @@ module
 
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth
 public import TauCeti.AlgebraicTopology.Singular.CrossProduct
+public import TauCeti.Algebra.Homology.PrincipalIdealRing
+public import Mathlib.LinearAlgebra.DirectSum.Basis
+public import Mathlib.LinearAlgebra.DirectSum.Finite
+public import Mathlib.RingTheory.TensorProduct.Finite
+public import Mathlib.LinearAlgebra.Dimension.Constructions
 
 /-!
 # The Künneth theorem for singular homology over a field and with projective homology
@@ -48,6 +53,10 @@ The splitting hypotheses hold in two standard situations.
   `SSet.projective_chainComplex_X`), and this covers spaces whose homology is free, as for
   products of spheres.
 
+Over a principal ideal domain, with projective coefficients, it follows that `Hₙ(X × Y; M ⊗ N)`
+is free whenever the homology modules of `X` and `Y` are, of finite rank
+`∑_{p + q = n} rank Hₚ(X; M) · rank H_q(Y; N)` when the factors have finite rank.
+
 ## Main definitions and results
 
 * `TopCat.singularHomologyKunneth`: the Künneth map, characterized on summands by
@@ -63,6 +72,8 @@ The splitting hypotheses hold in two standard situations.
   off and the homology is projective.
 * `TopCat.singularHomologyKunnethUnitIso`: its form `⨁ Hₚ(X; k) ⊗ H_q(Y; k) ≅ Hₙ(X × Y; k)`
   with coefficients in the ring itself.
+* `TopCat.free_singularHomology_tensor` and `TopCat.finrank_singularHomology_tensor`: the
+  homology of a product of spaces with free homology, over a principal ideal domain.
 
 ## References
 
@@ -253,8 +264,7 @@ complexes `C(X; M)` and `C(Y; N)` split off their terms and the singular homolog
 `Hₚ(X; M)` and `H_q(Y; N)` are all projective, the Künneth map
 `⨁_{p + q = n} Hₚ(X; M) ⊗ H_q(Y; N) ⟶ Hₙ(X × Y; M ⊗ N)` is an isomorphism.  Over a principal
 ideal domain, with projective `M` and `N`, the `IsSplitMono` hypotheses on the cycles are found by
-instance search (`HomologicalComplex.isSplitMono_iCycles_of_isPrincipalIdealRing`), once
-`TauCeti.Algebra.Homology.PrincipalIdealRing` is imported. -/
+instance search (`HomologicalComplex.isSplitMono_iCycles_of_isPrincipalIdealRing`). -/
 theorem isIso_singularHomologyKunneth_of_projective (X Y : TopCat.{w}) (M N : ModuleCat.{w} k)
     [∀ p, IsSplitMono (((toSSet.obj X).chainComplex M).iCycles p)]
     [hX : ∀ p, Projective (((singularHomologyFunctor _ p).obj M).obj X)]
@@ -293,5 +303,63 @@ lemma ι_singularHomologyKunnethUnitIso_hom (X Y : TopCat.{w}) (p q n : ℕ) (h 
   simp [singularHomologyKunnethUnitIso]
 
 end Split
+
+section Free
+
+variable {k : Type w} [CommRing k] [IsDomain k] [IsPrincipalIdealRing k]
+  (X Y : TopCat.{w}) (M N : ModuleCat.{w} k) [Module.Projective k M] [Module.Projective k N]
+  [∀ p, Module.Free k (((singularHomologyFunctor (ModuleCat.{w} k) p).obj M).obj X)]
+  [∀ q, Module.Free k (((singularHomologyFunctor (ModuleCat.{w} k) q).obj N).obj Y)]
+
+/-- Over a principal ideal domain, when the homology of `X` and `Y` is free, the Künneth map
+identifies `Hₙ(X × Y; M ⊗ N)` with the direct sum of the `Hₚ(X; M) ⊗ H_q(Y; N)` with
+`p + q = n`. -/
+private def singularHomologyKunnethDirectSumIso (n : ℕ) :
+    ModuleCat.of k (DirectSum ((fun x : ℕ × ℕ ↦ x.1 + x.2) ⁻¹' {n}) fun i ↦
+      TensorProduct k (((singularHomologyFunctor (ModuleCat.{w} k) i.1.1).obj M).obj X)
+        (((singularHomologyFunctor (ModuleCat.{w} k) i.1.2).obj N).obj Y)) ≅
+      ((singularHomologyFunctor (ModuleCat.{w} k) n).obj (M ⊗ N)).obj (X ⊗ Y) :=
+  -- The source of the Künneth map is by definition the coproduct of the summands.
+  (ModuleCat.coprodIsoDirectSum fun i : ((fun x : ℕ × ℕ ↦ x.1 + x.2) ⁻¹' {n}) ↦
+    ((singularHomologyFunctor (ModuleCat.{w} k) i.1.1).obj M).obj X ⊗
+      ((singularHomologyFunctor (ModuleCat.{w} k) i.1.2).obj N).obj Y).symm ≪≫
+    -- `TopCat.isIso_singularHomologyKunneth_of_projective` is a theorem rather than an instance,
+    -- so it is supplied to `asIso` explicitly.
+    @asIso _ _ _ _ (singularHomologyKunneth X Y M N n)
+      (isIso_singularHomologyKunneth_of_projective X Y M N n)
+
+/-- Over a principal ideal domain, with projective coefficients, the singular homology of a
+product of spaces with free homology is free. -/
+instance free_singularHomology_tensor (n : ℕ) :
+    Module.Free k (((singularHomologyFunctor (ModuleCat.{w} k) n).obj (M ⊗ N)).obj (X ⊗ Y)) :=
+  .of_equiv (singularHomologyKunnethDirectSumIso X Y M N n).toLinearEquiv
+
+variable [∀ p, Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) p).obj M).obj X)]
+  [∀ q, Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) q).obj N).obj Y)]
+
+/-- Over a principal ideal domain, with projective coefficients, the singular homology of a
+product of spaces with free homology of finite rank has finite rank. -/
+instance finite_singularHomology_tensor (n : ℕ) :
+    Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) n).obj (M ⊗ N)).obj (X ⊗ Y)) :=
+  have : Finite ((fun x : ℕ × ℕ ↦ x.1 + x.2) ⁻¹' {n}) :=
+    (Finset.antidiagonal n).finite_toSet.subset fun x hx ↦ by simpa using hx
+  .equiv (singularHomologyKunnethDirectSumIso X Y M N n).toLinearEquiv
+
+/-- **The ranks of the homology of a product.**  Over a principal ideal domain, with projective
+coefficients, if `X` and `Y` have free homology of finite rank, then
+`rank Hₙ(X × Y; M ⊗ N) = ∑_{p + q = n} rank Hₚ(X; M) · rank H_q(Y; N)`, by the Künneth theorem. -/
+theorem finrank_singularHomology_tensor (n : ℕ) :
+    Module.finrank k (((singularHomologyFunctor (ModuleCat.{w} k) n).obj (M ⊗ N)).obj (X ⊗ Y)) =
+      ∑ x ∈ Finset.antidiagonal n,
+        Module.finrank k (((singularHomologyFunctor (ModuleCat.{w} k) x.1).obj M).obj X) *
+          Module.finrank k (((singularHomologyFunctor (ModuleCat.{w} k) x.2).obj N).obj Y) := by
+  let e : ((fun x : ℕ × ℕ ↦ x.1 + x.2) ⁻¹' {n}) ≃ Finset.antidiagonal n :=
+    Equiv.subtypeEquivRight fun x ↦ by simp
+  have := Fintype.ofEquiv _ e.symm
+  rw [← (singularHomologyKunnethDirectSumIso X Y M N n).toLinearEquiv.finrank_eq,
+    Module.finrank_directSum, ← Finset.sum_coe_sort (Finset.antidiagonal n)]
+  exact Fintype.sum_equiv e _ _ fun x ↦ Module.finrank_tensorProduct
+
+end Free
 
 end TopCat
