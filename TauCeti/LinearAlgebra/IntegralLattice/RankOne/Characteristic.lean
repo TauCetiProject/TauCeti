@@ -27,21 +27,6 @@ public section
 
 namespace TauCeti.IntegralLattice
 
-/-- Evaluate the integral restriction using integer representatives of actual carrier vectors. -/
-private theorem integralForm_rankOne_eq {a : ℤ} (w x : rankOne a) {k l : ℤ}
-    (hw : (w : ℚ) = k) (hx : (x : ℚ) = l) :
-    (rankOne a).integralForm w x = a * k * l := by
-  have h : ((rankOne a).integralForm w x : ℚ) = (a * k * l : ℤ) := by
-    rw [integralForm_cast, rankOne_form_apply, hw, hx]
-    push_cast
-    rfl
-  exact_mod_cast h
-
-/-- Evaluate the integral norm using an integer representative in the actual carrier. -/
-private theorem integralNorm_rankOne_eq {a : ℤ} (w : rankOne a) {k : ℤ}
-    (hw : (w : ℚ) = k) : (rankOne a).integralNorm w = a * k ^ 2 := by
-  rw [integralNorm_apply, integralForm_rankOne_eq w w hw hw, pow_two, mul_assoc]
-
 /-- The characteristic vectors of `⟨1⟩` are exactly its odd integer vectors. -/
 theorem isCharacteristicVector_rankOne_one_iff (w : rankOne 1) :
     (rankOne 1).IsCharacteristicVector w ↔ ∃ k : ℤ, Odd k ∧ (k : ℚ) = w := by
