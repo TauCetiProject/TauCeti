@@ -10,12 +10,12 @@ public import Mathlib.LinearAlgebra.Dimension.Finrank
 import Mathlib.FieldTheory.PurelyInseparable.Tower
 
 /-!
-# Separable and inseparable degrees under a surjective base change
+# Separable and inseparable degrees
 
 In a tower `K → E → L` of fields whose lower map `algebraMap K E` is onto, `E` carries no more
 information over `K` than `K` itself does, so the degree of `L` is the same whichever of the two
-it is measured over. This file records that for the separable and inseparable degrees, alongside
-`Module.finrank`, for which Mathlib already has the statement.
+it is measured over. This file records these facts for separable and inseparable degrees, alongside
+`Module.finrank` where useful.
 
 The hypothesis is surjectivity rather than bijectivity because a map of fields is automatically
 injective; and it is stated for an arbitrary tower rather than for a specific construction, so
