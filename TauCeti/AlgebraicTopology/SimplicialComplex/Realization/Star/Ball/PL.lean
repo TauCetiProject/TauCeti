@@ -103,10 +103,9 @@ theorem exists_isPLOn_closedStarHomeomorphClosedBall
 
 /-- A PL link-to-sphere map extends to a PL formula for the compact closed-star ball model.
 
-The explicit compactness hypothesis is reusable for any finite ambient vertex type, whose closed
-stars are compact by `isCompact_closedStarRealization_of_finite`. -/
+For a finite ambient vertex type, the closed-star compactness needed by the construction is
+provided internally by `isCompact_closedStarRealization_of_finite`. -/
 theorem exists_isPLOn_closedStarHomeomorphClosedBall_of_isPLOn [Finite ι]
-    (hK : IsCompact (closedStarRealization K {v}))
     (e : geometricLink K v ≃ₜ Metric.sphere (0 : E) 1)
     (F : (ι → ℝ) → E)
     (hF : ∀ y : geometricLink K v, F (y.1.1 : ι → ℝ) = e y)
@@ -114,7 +113,11 @@ theorem exists_isPLOn_closedStarHomeomorphClosedBall_of_isPLOn [Finite ι]
     ∃ G : (ι → ℝ) → E,
       IsPLOn G (range (fun x : closedStarRealization K {v} => (x.1.1 : ι → ℝ))) ∧
       ∀ x : closedStarRealization K {v},
-        G (x.1.1 : ι → ℝ) = (closedStarHomeomorphClosedBall hK e x : E) := by
+        G (x.1.1 : ι → ℝ) =
+          (closedStarHomeomorphClosedBall
+            (K.isCompact_closedStarRealization_of_finite v) e x : E) := by
+  let hK : IsCompact (closedStarRealization K {v}) :=
+    K.isCompact_closedStarRealization_of_finite v
   have hlink : IsCompact (range (fun y : geometricLink K v => (y.1.1 : ι → ℝ))) := by
     have hcompact : IsCompact (geometricLink K v) := by
       simpa only [Set.inter_def, Set.mem_ofPred_eq, Function.comp_apply,
@@ -124,7 +127,7 @@ theorem exists_isPLOn_closedStarHomeomorphClosedBall_of_isPLOn [Finite ι]
             (continuous_const (y := (0 : ℝ))))
     let : CompactSpace (geometricLink K v) := isCompact_iff_compactSpace.mp hcompact
     exact isCompact_range ((continuous_realization_coe K).comp continuous_subtype_val)
-  exact exists_isPLOn_closedStarHomeomorphClosedBall hK e F hF
+  simpa only [hK] using exists_isPLOn_closedStarHomeomorphClosedBall hK e F hF
     (hf.isPiecewiseAffineOn_of_isCompact hlink)
 
 end AbstractSimplicialComplex
