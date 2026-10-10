@@ -261,7 +261,7 @@ section Cyclic
 variable [IsCyclic L.Gal]
 
 /-- The norm quotient of a cyclic layer has as many elements as its second cohomology:
-`A^U / N(A^V) ≃ Ĥ⁰ ≅ Ĥ² ≅ H²`. -/
+`A^U / N(A^V) ≃ \hat{H}^0 ≅ \hat{H}^2 ≅ H²`. -/
 theorem natCard_normQuotient_eq_natCard_H2 :
     Nat.card (L.NormQuotient F) = Nat.card (L.H F 2) :=
   (Nat.card_congr (L.tateHZeroEquivNormQuotient F).toEquiv).symm.trans <|
