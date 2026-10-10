@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.Reduced
 public import TauCeti.AlgebraicTopology.Sphere.Equator
 public import TauCeti.AlgebraicTopology.Sphere.Puncture
 public import TauCeti.AlgebraicTopology.Sphere.Zero
+public import Mathlib.Analysis.InnerProductSpace.Orientation
 public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 public import TauCeti.AlgebraicTopology.Disk
 public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
@@ -39,6 +40,15 @@ the zero-sphere `{b 0, -b 0}` with generator `[-b 0] - [b 0]`.  The suspension i
 natural under linear isometries carrying one pole to the other, so a linear isometry carrying the
 basis `b` to a basis `c` carries the generator determined by `b` to the generator determined by
 `c`.
+
+The generator depends on `b` only through its orientation.  A linear isometry negating `b 0` and
+fixing the other basis vectors fixes the last one, so it commutes with the suspension isomorphisms
+and acts by `-1`, as it swaps the two points of the zero-sphere `{b 0, -b 0}`.  Every reflection
+has this form for a suitable basis, so it acts by `-1` on `H_redₙ(S)`; by the Cartan–Dieudonné
+theorem every linear isometry is a product of reflections, so it acts by the sign of its
+determinant.  Applied to the isometry carrying one orthonormal basis to another, this shows that
+bases of the same orientation determine the same generator and bases of opposite orientations
+determine opposite generators.  In particular the antipodal map acts by `(-1) ^ (n + 1)`.
 
 Mathlib's `TopCat.sphere n` is the universe lift of the unit sphere of
 `EuclideanSpace ℝ (Fin (n + 1))`; through `TauCeti.diskBoundaryHomeomorph` it is homeomorphic to
@@ -83,6 +93,16 @@ Coefficients are an object `R` of an abelian category with coproducts.
 * `TauCeti.reducedSingularHomologySphereIso_hom_naturality`: a linear isometry matching two
   orthonormal bases carries the generator determined by one to the generator determined by the
   other.
+* `TauCeti.reducedSingularHomologyFunctor_map_reflection_unitSphereMap` and
+  `TauCeti.reducedSingularHomologyFunctor_map_unitSphereMap`: a reflection acts on `H_redₙ(S)` by
+  `-1`, and a linear isometry by the sign of its determinant.
+* `TauCeti.reducedSingularHomologySphereIso_hom_eq_sign_det_smul`,
+  `TauCeti.reducedSingularHomologySphereIso_eq_of_orientation_eq` and
+  `TauCeti.reducedSingularHomologySphereIso_hom_eq_neg_of_orientation_ne`: the generator determined
+  by an orthonormal basis depends only on its orientation, and reversing the orientation negates
+  it.
+* `TauCeti.reducedSingularHomologyFunctor_map_sphere_neg`: the antipodal map acts on `H_redₙ(S)`
+  by `(-1) ^ (n + 1)`.
 * `TauCeti.isZero_reducedSingularHomologyFunctor_topCatSphere_of_ne` and
   `TauCeti.reducedSingularHomologyTopCatSphereIso`: the same for Mathlib's `TopCat.sphere n`, with
   the standard generator determined by the standard basis.
@@ -94,6 +114,8 @@ Coefficients are an object `R` of an abelian category with coproducts.
   `Sⁿ⁻¹`, there neighbourhoods of the two hemispheres and here the complements of two antipodal
   points, and the resulting induction on dimension.  The computed groups are those of Section 2.1,
   Corollary 2.14.
+* A. Hatcher, *Algebraic Topology*, Section 2.2, properties (e) and (f) of degree: a reflection of
+  `Sⁿ` has degree `-1`, and the antipodal map has degree `(-1) ^ (n + 1)`.
 -/
 
 public section
@@ -508,6 +530,200 @@ theorem reducedSingularHomologySphereIso_hom_naturality {F : Type w} [NormedAddC
     exact ih _ _ _ fun i ↦ Subtype.ext (by simp [hf])
 
 end Dimension
+
+section Orientation
+
+/-- A linear isometry negating the first vector of an orthonormal basis `b` and fixing the others
+acts by `-1` on the generator determined by `b`. -/
+private lemma reducedSingularHomologySphereIso_hom_neg_zero {F : Type w} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] {n : ℕ} (b : OrthonormalBasis (Fin (n + 1)) ℝ F) (f : F →ₗᵢ[ℝ] F)
+    (h₀ : f (b 0) = -b 0) (h : ∀ i ≠ 0, f (b i) = b i) :
+    (reducedSingularHomologyFunctor R n).map
+          (TopCat.ofHom ⟨f.unitSphereMap, f.continuous_unitSphereMap⟩) ≫
+        (reducedSingularHomologySphereIso R b).hom =
+      -(reducedSingularHomologySphereIso R b).hom := by
+  induction n generalizing F with
+  | zero =>
+    suffices (reducedSingularHomologySphereIso R b).inv ≫
+        (reducedSingularHomologyFunctor R 0).map
+          (TopCat.ofHom ⟨f.unitSphereMap, f.continuous_unitSphereMap⟩) =
+        -(reducedSingularHomologySphereIso R b).inv by
+      rw [← cancel_epi (reducedSingularHomologySphereIso R b).inv, reassoc_of% this]
+      simp
+    -- `f` carries the class `[-b 0] - [b 0]` to `[b 0] - [-b 0]`.
+    rw [← cancel_mono ((reducedSingularHomologyι R 0).app _), Category.assoc,
+      (reducedSingularHomologyι R 0).naturality, reducedSingularHomologySphereIso_inv_ι_assoc,
+      Preadditive.neg_comp, reducedSingularHomologySphereIso_inv_ι, Preadditive.sub_comp, neg_sub]
+    simp only [singularHomology₀Section_naturality]
+    congr 2 <;> ext <;> simp [h₀]
+  | succ n ih =>
+    -- `f` fixes the last basis vector, so it commutes with the suspension isomorphism there, and
+    -- its restriction to the equator negates the first vector of `b.orthogonalLast`.
+    have hlast : f (b (Fin.last _)) = b (Fin.last _) := h _ Fin.last_pos.ne'
+    rw [reducedSingularHomologySphereIso_succ, Iso.trans_hom,
+      reducedSingularHomologySphereSuccIso_hom_naturality_assoc R ⟨b (Fin.last _), by simp⟩ f
+        ⟨b (Fin.last _), by simp⟩ hlast,
+      ih _ _ ?_ ?_, Preadditive.comp_neg]
+    · apply Subtype.ext
+      rw [LinearIsometry.coe_orthogonalComplementSingletonMap_apply, Submodule.coe_neg,
+        OrthonormalBasis.coe_orthogonalLast_apply, Fin.castSucc_zero, h₀]
+    · intro i hi
+      apply Subtype.ext
+      rw [LinearIsometry.coe_orthogonalComplementSingletonMap_apply,
+        OrthonormalBasis.coe_orthogonalLast_apply]
+      exact h _ (by rwa [ne_eq, Fin.castSucc_eq_zero_iff])
+
+/-- **A reflection acts by `-1` on the homology of a sphere.**  For a real inner product space `E`
+of dimension `n + 1` and a nonzero vector `v`, the reflection of `E` in the hyperplane `(ℝ ∙ v)ᗮ`
+induces `-1` on the reduced homology `H_redₙ(S)` of the unit sphere `S` of `E`. -/
+theorem reducedSingularHomologyFunctor_map_reflection_unitSphereMap {n : ℕ}
+    (hE : finrank ℝ E = n + 1) {v : E} (hv : v ≠ 0) :
+    (reducedSingularHomologyFunctor R n).map (TopCat.ofHom
+        ⟨(ℝ ∙ v)ᗮ.reflection.toLinearIsometry.unitSphereMap,
+          (ℝ ∙ v)ᗮ.reflection.toLinearIsometry.continuous_unitSphereMap⟩) = -𝟙 _ := by
+  have : FiniteDimensional ℝ E := Module.finite_of_finrank_eq_succ hE
+  -- Extend the unit vector `‖v‖⁻¹ • v` to an orthonormal basis `b` with `b 0 = ‖v‖⁻¹ • v`.
+  obtain ⟨b, hb⟩ := Orthonormal.exists_orthonormalBasis_extension_of_card_eq (𝕜 := ℝ)
+    (ι := Fin (n + 1)) (by simpa using hE) (v := fun _ ↦ ‖v‖⁻¹ • v) (s := {0})
+    (orthonormal_iff_ite.2 fun i j ↦ by
+      rw [Subsingleton.elim i j]
+      simp [hv])
+  have hb₀ : b 0 = ‖v‖⁻¹ • v := hb 0 rfl
+  rw [← cancel_mono (reducedSingularHomologySphereIso R b).hom, Preadditive.neg_comp,
+    Category.id_comp]
+  refine reducedSingularHomologySphereIso_hom_neg_zero R b _ ?_ fun i hi ↦ ?_
+  · simp [hb₀, Submodule.reflection_orthogonalComplement_singleton_eq_neg]
+  · refine Submodule.reflection_mem_subspace_eq_self
+      (Submodule.mem_orthogonal_singleton_iff_inner_right.2 ?_)
+    have : inner ℝ (b 0) (b i) = 0 := b.orthonormal.2 hi.symm
+    rw [hb₀, real_inner_smul_left] at this
+    simpa [hv] using this
+
+/-- The case of `TauCeti.reducedSingularHomologyFunctor_map_unitSphereMap` for a product of
+reflections, by induction on the number of factors. -/
+private lemma reducedSingularHomologyFunctor_map_list_prod_reflection {n : ℕ}
+    (hE : finrank ℝ E = n + 1) (l : List E) :
+    (reducedSingularHomologyFunctor R n).map (TopCat.ofHom
+        ⟨(l.map fun v ↦ (ℝ ∙ v)ᗮ.reflection).prod.toLinearIsometry.unitSphereMap,
+          (l.map fun v ↦ (ℝ ∙ v)ᗮ.reflection).prod.toLinearIsometry.continuous_unitSphereMap⟩) =
+      (SignType.sign (LinearMap.det
+        (l.map fun v ↦ (ℝ ∙ v)ᗮ.reflection).prod.toLinearIsometry.toLinearMap) : ℤ) • 𝟙 _ := by
+  have : FiniteDimensional ℝ E := Module.finite_of_finrank_eq_succ hE
+  induction l with
+  | nil =>
+    -- The empty product is the identity, of determinant one.
+    have h₁ : TopCat.ofHom ⟨(1 : E ≃ₗᵢ[ℝ] E).toLinearIsometry.unitSphereMap,
+        (1 : E ≃ₗᵢ[ℝ] E).toLinearIsometry.continuous_unitSphereMap⟩ =
+        𝟙 (TopCat.of (sphere (0 : E) 1)) := by
+      ext; simp
+    have h₂ : (1 : E ≃ₗᵢ[ℝ] E).toLinearIsometry.toLinearMap = LinearMap.id := by
+      ext; simp
+    simp [h₁, h₂]
+  | cons v l ih =>
+    rw [List.map_cons, List.prod_cons]
+    set φ := (l.map fun v ↦ (ℝ ∙ v)ᗮ.reflection).prod
+    rcases eq_or_ne v 0 with rfl | hv
+    · -- The reflection in `(ℝ ∙ 0)ᗮ = ⊤` is the identity.
+      have h₁ : (ℝ ∙ (0 : E))ᗮ.reflection = 1 := LinearIsometryEquiv.ext fun x ↦
+        Submodule.reflection_mem_subspace_eq_self (by simp)
+      rw [h₁, one_mul]
+      exact ih
+    -- Otherwise the reflection acts by `-1` and has determinant `(-1) ^ finrank (ℝ ∙ v) = -1`.
+    have hcomp : TopCat.ofHom ⟨((ℝ ∙ v)ᗮ.reflection * φ).toLinearIsometry.unitSphereMap,
+        ((ℝ ∙ v)ᗮ.reflection * φ).toLinearIsometry.continuous_unitSphereMap⟩ =
+        TopCat.ofHom ⟨φ.toLinearIsometry.unitSphereMap,
+            φ.toLinearIsometry.continuous_unitSphereMap⟩ ≫
+          TopCat.ofHom ⟨(ℝ ∙ v)ᗮ.reflection.toLinearIsometry.unitSphereMap,
+            (ℝ ∙ v)ᗮ.reflection.toLinearIsometry.continuous_unitSphereMap⟩ := by
+      ext; simp
+    have hdet : ((ℝ ∙ v)ᗮ.reflection * φ).toLinearIsometry.toLinearMap =
+        (ℝ ∙ v)ᗮ.reflection.toLinearMap ∘ₗ φ.toLinearIsometry.toLinearMap := by
+      ext; simp
+    rw [hcomp, Functor.map_comp, ih,
+      reducedSingularHomologyFunctor_map_reflection_unitSphereMap R hE hv, hdet,
+      LinearMap.det_comp, sign_mul, Submodule.det_reflection, Submodule.orthogonal_orthogonal,
+      finrank_span_singleton hv]
+    simp
+
+/-- **A linear isometry acts on the homology of a sphere by the sign of its determinant.**  For a
+real inner product space `E` of dimension `n + 1` and a linear isometry `f : E →ₗᵢ[ℝ] E`, the
+restriction of `f` to the unit sphere `S` induces multiplication by `sign (det f) = ±1` on
+`H_redₙ(S)`. -/
+theorem reducedSingularHomologyFunctor_map_unitSphereMap {n : ℕ} (hE : finrank ℝ E = n + 1)
+    (f : E →ₗᵢ[ℝ] E) :
+    (reducedSingularHomologyFunctor R n).map
+        (TopCat.ofHom ⟨f.unitSphereMap, f.continuous_unitSphereMap⟩) =
+      (SignType.sign (LinearMap.det f.toLinearMap) : ℤ) • 𝟙 _ := by
+  have : FiniteDimensional ℝ E := Module.finite_of_finrank_eq_succ hE
+  -- By the Cartan–Dieudonné theorem, `f` is a product of reflections.
+  obtain ⟨l, -, hl⟩ := (f.toLinearIsometryEquiv rfl).reflections_generate_dim
+  obtain rfl : f = (l.map fun v ↦ (ℝ ∙ v)ᗮ.reflection).prod.toLinearIsometry :=
+    LinearIsometry.ext fun x ↦ by simp [← hl]
+  exact reducedSingularHomologyFunctor_map_list_prod_reflection R hE l
+
+/-- **Change of basis for the generators of the homology of spheres.**  For two orthonormal bases
+`b` and `c` of a real inner product space, indexed by `Fin (n + 1)`, the generator of `H_redₙ(S)`
+determined by `c` is `sign (det_b c) = ±1` times the generator determined by `b`. -/
+theorem reducedSingularHomologySphereIso_hom_eq_sign_det_smul {n : ℕ}
+    (b c : OrthonormalBasis (Fin (n + 1)) ℝ E) :
+    (reducedSingularHomologySphereIso R c).hom =
+      (SignType.sign (b.toBasis.det c) : ℤ) • (reducedSingularHomologySphereIso R b).hom := by
+  -- The linear isometry `f` carrying `b` to `c` has determinant `det_b c`.
+  let f := b.equiv c (Equiv.refl _)
+  have hf : ∀ i, f (b i) = c i := by simp [f]
+  have hdet : LinearMap.det f.toLinearIsometry.toLinearMap = b.toBasis.det c := by
+    have := b.toBasis.det_comp f.toLinearIsometry.toLinearMap b.toBasis
+    rwa [Basis.det_self, mul_one, show (f.toLinearIsometry.toLinearMap ∘ b.toBasis) = c from
+      funext fun i ↦ by simp [hf], eq_comm] at this
+  have hsq : (SignType.sign (b.toBasis.det c) : ℤ) * SignType.sign (b.toBasis.det c) = 1 := by
+    rcases b.det_to_matrix_orthonormalBasis_real c with h | h <;> simp [h]
+  have := reducedSingularHomologySphereIso_hom_naturality R b c f.toLinearIsometry hf
+  rw [reducedSingularHomologyFunctor_map_unitSphereMap R
+      (by simp [finrank_eq_card_basis b.toBasis]),
+    hdet, Preadditive.zsmul_comp, Category.id_comp] at this
+  rw [← this, smul_smul, hsq, one_smul]
+
+/-- **The generator of the homology of a sphere depends only on the orientation.**  Two
+orthonormal bases of a real inner product space with the same orientation determine the same
+isomorphism `H_redₙ(S) ≅ R`. -/
+theorem reducedSingularHomologySphereIso_eq_of_orientation_eq {n : ℕ}
+    {b c : OrthonormalBasis (Fin (n + 1)) ℝ E}
+    (h : b.toBasis.orientation = c.toBasis.orientation) :
+    reducedSingularHomologySphereIso R b = reducedSingularHomologySphereIso R c := by
+  ext
+  simp [reducedSingularHomologySphereIso_hom_eq_sign_det_smul R b c,
+    b.det_to_matrix_orthonormalBasis_of_same_orientation c h]
+
+/-- **Reversing the orientation negates the generator of the homology of a sphere.**  Two
+orthonormal bases of a real inner product space with opposite orientations determine
+isomorphisms `H_redₙ(S) ≅ R` differing by a sign. -/
+theorem reducedSingularHomologySphereIso_hom_eq_neg_of_orientation_ne {n : ℕ}
+    {b c : OrthonormalBasis (Fin (n + 1)) ℝ E}
+    (h : b.toBasis.orientation ≠ c.toBasis.orientation) :
+    (reducedSingularHomologySphereIso R c).hom = -(reducedSingularHomologySphereIso R b).hom := by
+  simp [reducedSingularHomologySphereIso_hom_eq_sign_det_smul R b c,
+    b.det_to_matrix_orthonormalBasis_of_opposite_orientation c h]
+
+/-- **The antipodal map acts by `(-1) ^ (n + 1)` on the homology of a sphere.**  For a real inner
+product space `E` of dimension `n + 1`, the antipodal map `x ↦ -x` of the unit sphere `S` of `E`
+induces multiplication by `(-1) ^ (n + 1)` on `H_redₙ(S)`, the determinant of `-1` on `E`. -/
+theorem reducedSingularHomologyFunctor_map_sphere_neg {n : ℕ} (hE : finrank ℝ E = n + 1) :
+    (reducedSingularHomologyFunctor R n).map
+        (TopCat.ofHom ⟨Neg.neg, continuous_neg⟩ : TopCat.of (sphere (0 : E) 1) ⟶ _) =
+      (-1 : ℤ) ^ (n + 1) • 𝟙 _ := by
+  have : FiniteDimensional ℝ E := Module.finite_of_finrank_eq_succ hE
+  have h : (TopCat.ofHom ⟨Neg.neg, continuous_neg⟩ : TopCat.of (sphere (0 : E) 1) ⟶ _) =
+      TopCat.ofHom ⟨(LinearIsometryEquiv.neg ℝ).toLinearIsometry.unitSphereMap,
+        (LinearIsometryEquiv.neg ℝ).toLinearIsometry.continuous_unitSphereMap⟩ := by
+    ext; simp
+  have hdet : (LinearIsometryEquiv.neg ℝ (E := E)).toLinearIsometry.toLinearMap =
+      (-1 : ℝ) • LinearMap.id := by
+    ext; simp
+  rw [h, reducedSingularHomologyFunctor_map_unitSphereMap R hE, hdet, LinearMap.det_smul,
+    LinearMap.det_id, mul_one, hE, sign_pow]
+  simp
+
+end Orientation
 
 section TopCatSphere
 
