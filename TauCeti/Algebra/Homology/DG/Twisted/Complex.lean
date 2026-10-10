@@ -63,9 +63,9 @@ namespace TauCeti
 
 universe uR uA uM uP
 
-variable {R : Type uR} {A : Type uA} {M : Type uM}
-  [CommRing R] [Ring A] [Algebra R A]
-  [AddCommGroup M] [Module R M]
+section TotalGrading
+
+variable {R : Type uR} {M : Type uM} [Semiring R] [AddCommMonoid M] [Module R M]
   {P : Type uP} {ind : P → ℤ}
 
 /-- The twisted complex `ℳ ⊗ ⟨P⟩`, identified with `P → M`, is graded in total degree `n` by
@@ -78,6 +78,13 @@ theorem mem_twistedTotalGrading_iff {ℳ : ℤ → Submodule R M} {n : ℤ} {f :
     f ∈ twistedTotalGrading ℳ ind n ↔ ∀ x, f x ∈ ℳ (n + ind x) := by
   rw [twistedTotalGrading, Submodule.mem_pi]
   simp only [Set.mem_univ, true_implies]
+
+end TotalGrading
+
+variable {R : Type uR} {A : Type uA} {M : Type uM}
+  [CommRing R] [Ring A] [Algebra R A]
+  [AddCommGroup M] [Module R M]
+  {P : Type uP} {ind : P → ℤ}
 
 variable [Fintype P] [Module Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M]
 
@@ -106,9 +113,10 @@ omit [Fintype P] [Module Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M] [SMulCommC
 `q.negOnePow` of `TauCeti.IsDGRightModule.leibniz`. -/
 private theorem koszulTwist_one_apply {q : ℤ} {α : M} (hα : α ∈ ℳ q) :
     (InternalGrading.ofDecomposition ℳ).koszulTwist 1 α = q.negOnePow • α := by
-  rw [InternalGrading.koszulTwist_one_apply_of_mem _
-    (show α ∈ (InternalGrading.ofDecomposition ℳ).piece q by
-      rwa [InternalGrading.ofDecomposition_piece]),
+  -- The pieces of `ofDecomposition ℳ` are those of `ℳ`.
+  have hα' : α ∈ (InternalGrading.ofDecomposition ℳ).piece q := by
+    rwa [InternalGrading.ofDecomposition_piece]
+  rw [InternalGrading.koszulTwist_one_apply_of_mem _ hα',
     negOnePow_smul_eq_negOnePowCast_smul (R := R), negOnePowCast_eq_intCast]
 
 omit [Algebra R A] [IsScalarTower R Aᵐᵒᵖ M] in
