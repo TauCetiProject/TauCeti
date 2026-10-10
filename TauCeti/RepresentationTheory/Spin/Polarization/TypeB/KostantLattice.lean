@@ -37,9 +37,9 @@ indexed by `s` they are the coordinates of the simply connected type-`B` spin we
 `TauCeti.DynkinType.typeBSpinWeight s`, so over `ℚ` the exterior basis is a Cartan weight basis for
 the numbered simple coroots.
 
-The nilpotence and eigenvalue computations are stated over an arbitrary field in which `2` is
-invertible, which is all the underlying Clifford comparison needs; only the lattice statements
-are specific to `ℚ`, where the coordinate lattice lives.
+The eigenvalue computation is stated over an arbitrary field in which `2` is invertible, which is
+all the underlying Clifford comparison needs; only the lattice statements are specific to `ℚ`, where
+the coordinate lattice lives.
 
 This is a step towards the admissible lattice for the full-weight simply connected type-`B`
 Chevalley carrier in Layer 9 of the ReductiveGroups roadmap. That carrier is consumed by the
@@ -47,8 +47,6 @@ Chevalley carrier in Layer 9 of the ReductiveGroups roadmap. That carrier is con
 
 ## Main declarations
 
-* `TauCeti.SpinPolarizationData.typeBSpinRep_simpleRootGenerator_sq`: the represented
-  simple-root operators are square-zero.
 * `TauCeti.SpinPolarizationData.spinAction_typeBQuadraticEquiv_typeBSimpleCorootGenerator_basis`:
   the numbered simple coroots act on the exterior basis through the integral spin weight
   `TauCeti.DynkinType.typeBSpinWeight` of the index set.
@@ -83,82 +81,6 @@ variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
   {Q : QuadraticForm K V} (P : SpinPolarizationData Q) {n : ℕ}
   (b : Module.Basis (Fin (n + 1)) K P.W) (z : P.line) (hz : Q (z : V) = 1)
   [Invertible (2 : K)]
-
-/-! ## Root operators -/
-
-private theorem typeBQuadraticEquiv_typeBSimpleRootGenerator_mul_self
-    (i : Fin (n + 1)) :
-    (P.typeBQuadraticEquiv b z hz (typeBSimpleRootGenerator i) : CliffordAlgebra Q) ^ 2 = 0 := by
-  refine Fin.lastCases ?_ (fun j ↦ ?_) i
-  · rw [typeBSimpleRootGenerator_last, pow_two]
-    exact P.typeBQuadraticEquiv_typeBShortRootGenerator_mul_self b z hz (Fin.last n)
-  · rw [typeBSimpleRootGenerator_castSucc, pow_two]
-    exact P.typeBQuadraticEquiv_typeBDifferenceRootGenerator_mul_self b z hz
-      j.castSucc j.succ (ne_of_lt j.castSucc_lt_succ)
-
-private theorem typeBQuadraticEquiv_typeBSimpleNegativeRootGenerator_mul_self
-    (i : Fin (n + 1)) :
-    (P.typeBQuadraticEquiv b z hz
-      (typeBSimpleNegativeRootGenerator i) : CliffordAlgebra Q) ^ 2 = 0 := by
-  refine Fin.lastCases ?_ (fun j ↦ ?_) i
-  · rw [typeBSimpleNegativeRootGenerator_last, pow_two]
-    exact P.typeBQuadraticEquiv_typeBShortNegativeRootGenerator_mul_self b z hz (Fin.last n)
-  · rw [typeBSimpleNegativeRootGenerator_castSucc, pow_two]
-    exact P.typeBQuadraticEquiv_typeBDifferenceRootGenerator_mul_self b z hz
-      j.succ j.castSucc (ne_of_gt j.castSucc_lt_succ)
-
-/-- Every represented positive or negative simple-root vector is square-zero. -/
-theorem typeBSpinRep_simpleRootGenerator_sq (k : Fin (n + 1) ⊕ Fin (n + 1)) :
-    P.typeBSpinRep b z hz
-        (_root_.UniversalEnvelopingAlgebra.ι K (typeBSimpleRootGeneratorFamily k)) ^ 2 = 0 := by
-  rw [_root_.UniversalEnvelopingAlgebra.ι_apply, P.typeBSpinRep_ι b z hz, pow_two, ← map_mul]
-  cases k with
-  | inl i =>
-      rw [typeBSimpleRootGeneratorFamily_inl, ← pow_two,
-        P.typeBQuadraticEquiv_typeBSimpleRootGenerator_mul_self b z hz i, map_zero]
-  | inr i =>
-      rw [typeBSimpleRootGeneratorFamily_inr, ← pow_two,
-        P.typeBQuadraticEquiv_typeBSimpleNegativeRootGenerator_mul_self b z hz i, map_zero]
-
-/-- The difference-root operator indexed by distinct coordinates `i` and `j` contracts the `j`-th
-exterior coordinate and then creates the `i`-th one. -/
-theorem typeBSpinRep_differenceRootGenerator_apply (i j : Fin (n + 1)) (hij : i ≠ j)
-    (x : ExteriorAlgebra K P.W) :
-    P.typeBSpinRep b z hz
-        (_root_.UniversalEnvelopingAlgebra.ι K (typeBDifferenceRootGenerator i j hij)) x =
-      ExteriorAlgebra.ι K (b i) *
-        CliffordAlgebra.contractLeft (b.coord j) x := by
-  rw [_root_.UniversalEnvelopingAlgebra.ι_apply, P.typeBSpinRep_ι b z hz,
-    P.typeBQuadraticEquiv_typeBDifferenceRootGenerator b z hz,
-    bivector_eq_ι_mul_ι_of_isOrtho Q (P.isOrtho_basis_dualVector b hij), map_mul,
-    Module.End.mul_apply, spinAction_ι_wedge, spinAction_ι_contract,
-    P.pairingEquiv_dualVector]
-
-/-- A nonterminal positive simple-root operator moves the next exterior singleton one coordinate
-to the left. -/
-theorem typeBSpinRep_simpleRootGenerator_castSucc_exteriorBasis_singleton (j : Fin n) :
-    P.typeBSpinRep b z hz
-        (_root_.UniversalEnvelopingAlgebra.ι K
-          (typeBSimpleRootGeneratorFamily (.inl j.castSucc)))
-        (b.ExteriorAlgebra {j.succ}) =
-      b.ExteriorAlgebra {j.castSucc} := by
-  rw [typeBSimpleRootGeneratorFamily_inl, typeBSimpleRootGenerator_castSucc,
-    P.typeBSpinRep_differenceRootGenerator_apply b z hz,
-    TauCeti.ExteriorAlgebra.basis_singleton, CliffordAlgebra.contractLeft_ι]
-  simp [TauCeti.ExteriorAlgebra.basis_singleton]
-
-/-- A nonterminal negative simple-root operator moves an exterior singleton one coordinate to the
-right. -/
-theorem typeBSpinRep_simpleNegativeRootGenerator_castSucc_exteriorBasis_singleton (j : Fin n) :
-    P.typeBSpinRep b z hz
-        (_root_.UniversalEnvelopingAlgebra.ι K
-          (typeBSimpleRootGeneratorFamily (.inr j.castSucc)))
-        (b.ExteriorAlgebra {j.castSucc}) =
-      b.ExteriorAlgebra {j.succ} := by
-  rw [typeBSimpleRootGeneratorFamily_inr, typeBSimpleNegativeRootGenerator_castSucc,
-    P.typeBSpinRep_differenceRootGenerator_apply b z hz,
-    TauCeti.ExteriorAlgebra.basis_singleton, CliffordAlgebra.contractLeft_ι]
-  simp [TauCeti.ExteriorAlgebra.basis_singleton]
 
 /-! ## The weights of the simple coroots -/
 
