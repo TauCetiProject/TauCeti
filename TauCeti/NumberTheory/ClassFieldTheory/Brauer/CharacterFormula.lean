@@ -107,19 +107,25 @@ is the Brauer class of the carry cocycle of `ψ` and `a`. -/
 theorem brInfl_artinCharacterCup
     (χ : Additive (Abelianization (ofOpenNormal V).Gal) →+ AddCircle (1 : ℚ))
     (ψ : Additive (AbsoluteGaloisGroup K) →+ AddCircle (1 : ℚ))
-    (hψ : IsOpen (ψ.ker : Set (Additive (AbsoluteGaloisGroup K))))
     (hχψ : ∀ g : AbsoluteGaloisGroup K, ψ (.ofMul g) =
       χ (.ofMul (Abelianization.of
         ((galOfOpenNormalEquiv V).symm (g : AbsoluteGaloisGroup K ⧸ V.toSubgroup)))))
     (a : Kˣ) :
     brInfl V ((ofOpenNormal V).artinCharacterCup (unitsFormation K)
         (localGroundEquiv K V (.ofMul a)) χ) =
-      unitsRepH2Equiv K (characterCarryCocycle ψ hψ (baseUnitsEquivInvariants K (.ofMul a)) :
-        H2 (AbsoluteGaloisGroup K) (UnitsCoeff K)) := by
+      -- `ψ` vanishes on the open subgroup `V`, so its kernel is open.
+      unitsRepH2Equiv K (characterCarryCocycle ψ
+        (AddSubgroup.isOpen_mono (H₁ := V.toSubgroup.toAddSubgroup)
+          (fun g hg ↦ by
+            rw [AddMonoidHom.mem_ker, ← ofMul_toMul g, hχψ,
+              (QuotientGroup.eq_one_iff g.toMul).2 hg]
+            simp)
+          (V.isOpen.preimage continuous_toMul))
+        (baseUnitsEquivInvariants K (.ofMul a)) : H2 (AbsoluteGaloisGroup K) (UnitsCoeff K)) := by
   rw [← LinearEquiv.apply_symm_apply ((ofOpenNormal V).groundLevelEquiv (unitsFormation K))
       (localGroundEquiv K V (.ofMul a)),
     artinCharacterCup_groundLevelEquiv_eq_H2π (ofOpenNormal V) (unitsFormation K)]
-  refine brInfl_H2π V _ (characterCarryCocycle ψ hψ (baseUnitsEquivInvariants K (.ofMul a)))
+  refine brInfl_H2π V _ (characterCarryCocycle ψ _ (baseUnitsEquivInvariants K (.ofMul a)))
     fun g h ↦ ?_
   simp only [characterCarryCocycle_apply, TauCeti.groupCohomology.characterCarryCocycles₂_apply,
     characterCarry_galOfOpenNormalEquiv_symm V χ ψ hχψ g h, AddSubgroupClass.coe_zsmul,
@@ -174,7 +180,7 @@ theorem apply_characterCarryCocycle_of_mk_eq_fieldArtinMap
       (absoluteGaloisGroupRestrictEquiv K σ : AbsoluteGaloisGroup K ⧸ V.toSubgroup) =
       ((⟨_, hmem⟩ : (ofOpenNormal V).ground) : (ofOpenNormal V).Gal) := by
     rw [MulEquiv.symm_apply_eq, galOfOpenNormalEquiv_mk]
-  rw [← brInfl_artinCharacterCup V χbar χ hχ hχbar a, ← hι, character_artinMap,
+  rw [← brInfl_artinCharacterCup V χbar χ hχbar a, ← hι, character_artinMap,
     ← groundEquivOfOpenNormal_unitsLevelEquiv, ← abelianizationRestrict_absoluteArtinMap,
     absoluteArtinMap_eq_of_mk_eq_fieldArtinMap cf a σ hσ, abelianizationRestrict_mk V ⟨_, hmem⟩,
     ← hsymm, ← hχbar]
