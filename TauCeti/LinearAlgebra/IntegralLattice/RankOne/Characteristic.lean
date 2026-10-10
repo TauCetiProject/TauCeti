@@ -10,7 +10,7 @@ public import TauCeti.LinearAlgebra.IntegralLattice.RankOne.Basic
 import Mathlib.Algebra.Ring.Int.Parity
 
 /-!
-# Characteristic vectors of the rank-one acceptance lattices
+# Characteristic vectors of two rank-one lattices
 
 In the odd unimodular lattice `⟨1⟩`, characteristic vectors are exactly the odd integers
 in its actual carrier, and their integral norms are one modulo eight. In `⟨2⟩`, every
@@ -21,7 +21,6 @@ unimodularity is required in van der Blij's theorem.
 ## References
 
 * J. Milnor and D. Husemoller, *Symmetric Bilinear Forms*, Appendix 4.
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layer 1L and its rank-one acceptance cases.
 -/
 
 public section
@@ -78,6 +77,7 @@ theorem integralNorm_rankOne_one_modEq_one (w : rankOne 1)
   simpa only [neg_sub] using dvd_neg.mpr (Int.eight_dvd_sq_sub_one_of_odd hk)
 
 /-- Every vector of `⟨2⟩` is characteristic, since all its integral pairings are even. -/
+@[simp]
 theorem isCharacteristicVector_rankOne_two (w : rankOne 2) :
     (rankOne 2).IsCharacteristicVector w := by
   rw [(rankOne 2).isCharacteristicVector_iff]
@@ -90,6 +90,7 @@ theorem isCharacteristicVector_rankOne_two (w : rankOne 2) :
 
 /-- No vector of `⟨2⟩` satisfies van der Blij's signature congruence: every norm is even,
 whereas the signature difference is one. This includes every characteristic vector. -/
+@[simp]
 theorem not_integralNorm_rankOne_two_modEq_signature (w : rankOne 2) :
     ¬ (rankOne 2).integralNorm w ≡
       ((rankOne 2).sigPos : ℤ) - (rankOne 2).sigNeg [ZMOD 8] := by
