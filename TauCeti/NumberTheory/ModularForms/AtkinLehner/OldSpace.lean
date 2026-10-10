@@ -46,6 +46,8 @@ old subspace, without imposing a nebentypus condition.
   old.
 * `TauCeti.atkinLehnerOperatorGamma1Cusp_mem_cuspFormsOld`: for an arbitrary cusp form on
   `Γ₁(N)`, its image under any choice of the operator `W_Q` is old whenever it is old.
+* `TauCeti.normalizedAtkinLehnerOperatorGamma1Cusp_mem_cuspFormsOld`: the corresponding
+  statement for the normalized operator.
 
 ## References
 
@@ -274,6 +276,15 @@ theorem atkinLehnerOperatorGamma1Cusp_mem_cuspFormsOld [NeZero N]
     · exact atkinLehnerOperatorGamma1Cusp_levelRaise_mem_cuspFormsOld
         (d₁ := 1) (e₁ := 1) (d₂ := p) (e₂ := 1) h h₁ hW (by ring)
         (by rw [hN]; ring) hR' (by rw [hd, one_mul]) hMne hdvd g
+
+/-- **A normalized Atkin–Lehner operator on `S_k(Γ₁(N))` preserves the old subspace.** -/
+theorem normalizedAtkinLehnerOperatorGamma1Cusp_mem_cuspFormsOld [NeZero N]
+    {W : Matrix (Fin 2) (Fin 2) ℤ} (h : Q ∥ N) (hW : IsAtkinLehnerMatrix N Q W)
+    {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ cuspFormsOld N k) :
+    normalizedAtkinLehnerOperatorGamma1Cusp h.pos h.dvd hW k f ∈ cuspFormsOld N k := by
+  rw [normalizedAtkinLehnerOperatorGamma1Cusp_def, LinearMap.smul_apply]
+  exact Submodule.smul_mem _ _
+    (atkinLehnerOperatorGamma1Cusp_mem_cuspFormsOld h.pos h.dvd hW hf)
 
 end OldSpace
 
