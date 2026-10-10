@@ -111,7 +111,7 @@ theorem finrank_ker_one_add_S [CharZero K] (hw : Even w) :
   obtain ⟨m, rfl⟩ := hw
   have hs : (dickson 2 (1 : K) (m + m)).eval 0 = (-1) ^ m := by
     rw [← two_mul]
-    exact dickson_two_one_eval_zero_two_mul m
+    exact dickson_two_eval_zero_two_mul 1 m
   rw [hs] at h
   -- `2 d = w + 1 - (-1) ^ (w / 2)`, according to the parity of `w / 2`
   rcases Nat.even_or_odd m with ⟨i, rfl⟩ | ⟨i, rfl⟩

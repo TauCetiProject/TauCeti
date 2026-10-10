@@ -8,6 +8,8 @@ module
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RingTheory.LocalRing.Defs
 
+import TauCeti.LinearAlgebra.Trace.Exchange
+
 import Mathlib.LinearAlgebra.PID
 
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
@@ -39,6 +41,11 @@ maximal ideal.
 * `TauCeti.LinearMap.trace_mul_eq_mul_trace_restrict_range`: if `c * c = a • c` and `f` commutes
   with `c`, then `trace (c * f) = a * trace (f|range c)`. Taking `c` to be the action of a
   quasi-idempotent of a group algebra computes the character of its image.
+* `TauCeti.LinearMap.trace_mul_add_mul_trace_restrict_ker`: the complementary kernel character
+  formula `trace (c * f) + a * trace (f|ker c) = a * trace f`, including `a = 0`.
+* `TauCeti.LinearMap.two_mul_trace_restrict_ker_one_add`,
+  `TauCeti.LinearMap.three_mul_trace_restrict_ker_one_add_add_sq`: character formulas for the
+  kernels of the order-two and order-three averaging operators.
 * `TauCeti.LinearMap.trace_eq_mul_finrank_range`: if `f * f = a • f`, then
   `trace f = a * finrank (range f)`, the case `f = 1` of the previous statement.
 * `LinearMap.trace_eq_finrank_range_of_isIdempotentElem`: over a local ring, the trace of
@@ -91,6 +98,76 @@ theorem LinearMap.trace_mul_eq_mul_trace_restrict_range {c f : Module.End K M} {
     rw [hres, smul_mul_assoc, map_smul, smul_eq_mul] at htrace
     rw [htrace, ← mul_assoc, mul_inv_cancel₀ ha, one_mul]
 
+/-- If `c² = a c` and `c` commutes with `f`, then `tr(c f) + a tr(f|ker c) = a tr(f)`.
+This computes the character of the kernel of a scaled projection without choosing a complement.
+The identity also holds when `a = 0`. -/
+theorem LinearMap.trace_mul_add_mul_trace_restrict_ker {c f : Module.End K M} {a : K}
+    (hc : c * c = a • c) (hcf : Commute c f)
+    (hf : ∀ x ∈ _root_.LinearMap.ker c, f x ∈ _root_.LinearMap.ker c := fun x hx ↦ by
+      rw [_root_.LinearMap.mem_ker] at hx ⊢
+      rw [← Module.End.mul_apply, hcf.eq, Module.End.mul_apply, hx, map_zero]) :
+    _root_.LinearMap.trace K M (c * f) +
+      a * _root_.LinearMap.trace K (_root_.LinearMap.ker c) (f.restrict hf) =
+        a * _root_.LinearMap.trace K M f := by
+  rcases eq_or_ne a 0 with rfl | ha
+  · simpa using trace_mul_eq_mul_trace_restrict_range hc hcf
+  let d := a • (1 : Module.End K M) - c
+  have hd : d * d = a • d := by
+    dsimp [d]
+    simp only [sub_mul, mul_sub, smul_mul_assoc, mul_smul_comm, one_mul, mul_one,
+      hc, smul_sub, smul_smul]
+    abel
+  have hdf : Commute d f := (Commute.one_left f).smul_left a |>.sub_left hcf
+  have hr : _root_.LinearMap.range d = _root_.LinearMap.ker c := by
+    apply le_antisymm
+    · rw [_root_.LinearMap.range_le_ker_iff]
+      dsimp [d]
+      rw [← Module.End.mul_eq_comp, mul_sub, mul_smul_comm, mul_one, hc, sub_self]
+    · intro x hx
+      refine ⟨a⁻¹ • x, ?_⟩
+      simp [d, _root_.LinearMap.mem_ker.mp hx, smul_smul, ha]
+  have h := trace_mul_eq_mul_trace_restrict_range hd hdf
+  rw [_root_.LinearMap.trace_restrict_congr hr _ _ hf] at h
+  dsimp [d] at h
+  rw [sub_mul, smul_mul_assoc, one_mul, map_sub, map_smul, smul_eq_mul] at h
+  linear_combination -h
+
+/-- For an involution `σ` commuting with `f`, twice the trace of `f` on its negative eigenspace
+equals `tr f - tr(σ f)`. -/
+theorem LinearMap.two_mul_trace_restrict_ker_one_add {σ f : End K M} (hσ : σ ^ 2 = 1)
+    (hσf : Commute σ f)
+    (hf : ∀ x ∈ _root_.LinearMap.ker (1 + σ), f x ∈ _root_.LinearMap.ker (1 + σ) :=
+      fun x hx ↦ by
+        rw [_root_.LinearMap.mem_ker] at hx ⊢
+        rw [← Module.End.mul_apply, ((Commute.one_left f).add_left hσf).eq,
+          Module.End.mul_apply, hx, map_zero]) :
+    2 * _root_.LinearMap.trace K (_root_.LinearMap.ker (1 + σ)) (f.restrict hf) =
+      _root_.LinearMap.trace K M f - _root_.LinearMap.trace K M (σ * f) := by
+  have hc : (1 + σ) * (1 + σ) = (2 : K) • (1 + σ) := by
+    rw [Algebra.smul_def, map_ofNat]
+    linear_combination (norm := noncomm_ring) hσ
+  have h := trace_mul_add_mul_trace_restrict_ker hc ((Commute.one_left f).add_left hσf) hf
+  rw [add_mul, one_mul, map_add] at h
+  linear_combination h
+
+/-- If the order-three averaging operator `1 + υ + υ²` commutes with `f`, three times the trace
+of `f` on its kernel equals `2 tr f - tr(υ f) - tr(υ² f)`. -/
+theorem LinearMap.three_mul_trace_restrict_ker_one_add_add_sq {υ f : End K M}
+    (hυ : υ ^ 3 = 1) (hcf : Commute (1 + υ + υ ^ 2) f)
+    (hf : ∀ x ∈ _root_.LinearMap.ker (1 + υ + υ ^ 2), f x ∈
+      _root_.LinearMap.ker (1 + υ + υ ^ 2) := fun x hx ↦ by
+        rw [_root_.LinearMap.mem_ker] at hx ⊢
+        rw [← Module.End.mul_apply, hcf.eq, Module.End.mul_apply, hx, map_zero]) :
+    3 * _root_.LinearMap.trace K (_root_.LinearMap.ker (1 + υ + υ ^ 2)) (f.restrict hf) =
+      2 * _root_.LinearMap.trace K M f - _root_.LinearMap.trace K M (υ * f) -
+        _root_.LinearMap.trace K M (υ ^ 2 * f) := by
+  have hc : (1 + υ + υ ^ 2) * (1 + υ + υ ^ 2) = (3 : K) • (1 + υ + υ ^ 2) := by
+    rw [Algebra.smul_def, map_ofNat]
+    linear_combination (norm := noncomm_ring) 2 * hυ + υ * hυ
+  have h := trace_mul_add_mul_trace_restrict_ker hc hcf hf
+  rw [add_mul, add_mul, one_mul, map_add, map_add] at h
+  linear_combination h
+
 /-- **The trace of an essentially idempotent endomorphism.** If the square of `f` is `a • f`,
 then the trace of `f` is `a` times the dimension of the range of `f`.
 
@@ -110,15 +187,10 @@ theorem LinearMap.trace_eq_mul_finrank_range {f : M →ₗ[K] M} {a : K} (hf : f
 theorem LinearMap.two_mul_finrank_ker_one_add_of_sq_eq_one {σ : End K M} (hσ : σ ^ 2 = 1) :
     2 * (finrank K (_root_.LinearMap.ker (1 + σ)) : K) =
       finrank K M - _root_.LinearMap.trace K M σ := by
-  -- `f = 1 + σ` has `f * f = 2 • f`, so its trace is twice its rank
-  have hsq : (1 + σ) * (1 + σ) = (2 : K) • (1 + σ) := by
-    rw [Algebra.smul_def, map_ofNat]
-    linear_combination (norm := noncomm_ring) hσ
-  have htr := trace_eq_mul_finrank_range hsq
-  rw [map_add, _root_.LinearMap.trace_one] at htr
-  have hnull := congrArg (Nat.cast : ℕ → K) (1 + σ).finrank_range_add_finrank_ker
-  push_cast at hnull
-  linear_combination 2 * hnull + htr
+  have h := two_mul_trace_restrict_ker_one_add hσ (Commute.one_right σ) (fun _ hx ↦ hx)
+  have hres : (1 : End K M).restrict (fun _ hx ↦ hx) =
+      (1 : End K (_root_.LinearMap.ker (1 + σ))) := rfl
+  simpa only [hres, _root_.LinearMap.trace_one, mul_one] using h
 
 /-- **The traces of an order-three map determine the kernel of `1 + υ + υ²`**: if `υ ^ 3 = 1`,
 then `3 dim ker (1 + υ + υ²) = 2 dim M - tr υ - tr υ²` in `K`. -/
@@ -126,15 +198,11 @@ theorem LinearMap.three_mul_finrank_ker_one_add_add_sq_of_pow_three_eq_one {υ :
     (hυ : υ ^ 3 = 1) :
     3 * (finrank K (_root_.LinearMap.ker (1 + υ + υ ^ 2)) : K) =
       2 * finrank K M - _root_.LinearMap.trace K M υ - _root_.LinearMap.trace K M (υ ^ 2) := by
-  -- `f = 1 + υ + υ²` has `f * f = 3 • f`, so its trace is three times its rank
-  have hsq : (1 + υ + υ ^ 2) * (1 + υ + υ ^ 2) = (3 : K) • (1 + υ + υ ^ 2) := by
-    rw [Algebra.smul_def, map_ofNat]
-    linear_combination (norm := noncomm_ring) 2 * hυ + υ * hυ
-  have htr := trace_eq_mul_finrank_range hsq
-  rw [map_add, map_add, _root_.LinearMap.trace_one] at htr
-  have hnull := congrArg (Nat.cast : ℕ → K) (1 + υ + υ ^ 2).finrank_range_add_finrank_ker
-  push_cast at hnull
-  linear_combination 3 * hnull + htr
+  have h := three_mul_trace_restrict_ker_one_add_add_sq hυ
+    (Commute.one_right _) (fun _ hx ↦ hx)
+  have hres : (1 : End K M).restrict (fun _ hx ↦ hx) =
+      (1 : End K (_root_.LinearMap.ker (1 + υ + υ ^ 2))) := rfl
+  simpa only [hres, _root_.LinearMap.trace_one, mul_one] using h
 
 end TauCeti
 

@@ -35,7 +35,8 @@ on homogeneous polynomials of degree `n`.
   of `P_k(t, s²) = s ^ (k - 2) * U_{k-2}(t / (2 s))`.
 * `Polynomial.mk_dickson_two_eval_mul_one_sub_add_eq_one`: the generating function
   `(∑ₙ (dickson 2 a n).eval t * Xⁿ) * (1 - t X + a X²) = 1`.
-* `Polynomial.dickson_two_one_eval_zero_two_mul`, `Polynomial.dickson_two_one_eval_one_add_three`,
+* `Polynomial.dickson_two_eval_zero_two_mul`: `(dickson 2 a (2 * m)).eval 0 = (-a) ^ m`.
+* `Polynomial.dickson_two_one_eval_one_add_three`,
   `Polynomial.dickson_two_one_eval_neg_one_add_three`: the weights `P_{n+2}(t, 1)` at the traces
   `t = 0, 1, -1` of the elliptic elements of `SL(2, ℤ)`, which have periods `4`, `6` and `3` in `n`
   (`Polynomial.dickson_two_one_eval_one_six_mul_add`,
@@ -153,15 +154,16 @@ The elliptic elements `S = !![0, -1; 1, 0]`, `U = !![1, -1; 1, 0]` and `U² = !!
 weights `P_{n+2}(0, 1)`, `P_{n+2}(1, 1)` and `P_{n+2}(-1, 1)`. With parameter `1` the recurrence
 makes these periodic in `n`. -/
 
-/-- `P_{2m+2}(0, 1) = (-1) ^ m`. -/
+/-- At trace zero, the even-degree Dickson weight is `P_{2m+2}(0, a) = (-a)^m`. -/
 @[simp]
-theorem dickson_two_one_eval_zero_two_mul (m : ℕ) :
-    (dickson 2 (1 : R) (2 * m)).eval 0 = (-1) ^ m := by
+theorem dickson_two_eval_zero_two_mul (a : R) (m : ℕ) :
+    (dickson 2 a (2 * m)).eval 0 = (-a) ^ m := by
   induction m with
   | zero => norm_num
   | succ m ih =>
     rw [mul_add, mul_one, dickson_add_two]
-    simp [ih, pow_succ]
+    simp only [eval_sub, eval_mul, eval_X, eval_C, zero_mul, ih, zero_sub, pow_succ]
+    ring
 
 /-- `P_{n+5}(1, 1) = -P_{n+2}(1, 1)`, so `n ↦ P_{n+2}(1, 1)` has period `6`. -/
 theorem dickson_two_one_eval_one_add_three (n : ℕ) :

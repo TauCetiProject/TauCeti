@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.Adjugate
 public import TauCeti.RingTheory.MvPolynomial.Finrank
 public import TauCeti.RingTheory.MvPolynomial.Trace
 import Mathlib.Algebra.MvPolynomial.Funext
+import TauCeti.RingTheory.Polynomial.Dickson
 
 /-!
 # The action of integral matrices on binary forms
@@ -44,6 +45,8 @@ action of `M` on `D φ` is the adjugate action on `φ`, transposed. Applied to t
 * `TauCeti.mapHomogeneousSubmodule_binaryFormRep`: changing coefficients commutes with the action.
 * `TauCeti.trace_binaryFormRep_eq_dickson_eval`: the trace is the Dickson weight polynomial
   evaluated at the matrix trace and determinant.
+* `TauCeti.trace_binaryFormRep_eq_one_of_trace_eq_zero_det_eq_neg_one`: reflections have trace
+  one in even degree over every commutative coefficient ring.
 * `TauCeti.binaryFormRep_adjugate_linearFormPow`: `(xY - yX)ʷ ∣ adj M = (x'Y - y'X)ʷ` for
   `(x', y') = M (x, y)`.
 * `TauCeti.eval_binaryFormDual`: `D φ` takes the value `φ ((xY - yX)ʷ)` at `(x, y)`.
@@ -92,6 +95,15 @@ theorem trace_binaryFormRep_eq_dickson_eval {K : Type*} [CommRing K] (w : ℕ)
   rw [binaryFormRep_op]
   simpa only [hd, ht] using
     trace_linearSubstRep_eq_dickson_eval w (M.map (Int.castRingHom K))
+
+/-- A trace-zero integral matrix of determinant `-1` has trace `1` on binary forms of even
+degree, over any commutative coefficient ring. -/
+theorem trace_binaryFormRep_eq_one_of_trace_eq_zero_det_eq_neg_one
+    {M : Matrix (Fin 2) (Fin 2) ℤ} (ht : M.trace = 0) (hd : M.det = -1) (hw : Even w) :
+    LinearMap.trace R (homogeneousSubmodule (Fin 2) R w) (binaryFormRep R w (op M)) = 1 := by
+  obtain ⟨m, rfl⟩ := hw
+  rw [trace_binaryFormRep_eq_dickson_eval, ht, hd]
+  simpa [two_mul] using Polynomial.dickson_two_eval_zero_two_mul (-1 : R) m
 
 @[simp]
 theorem coe_binaryFormRep_apply (M : Matrix (Fin 2) (Fin 2) ℤ)
