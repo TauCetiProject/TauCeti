@@ -45,6 +45,8 @@ hyperelliptic.
 * `TauCeti.Place.weierstrassWeight_eq_genus_choose_two_iff_one_lt_ramificationIdx` and
   `TauCeti.Place.weierstrassWeight_eq_zero_of_ramificationIdx_eq_one`: ramified rational places
   have weight `g (g - 1) / 2`, unramified ones weight `0`.
+* `TauCeti.weierstrassWeight_eq_genus_choose_two_of_isHyperellipticFunctionField`: the rational
+  Weierstrass points of a hyperelliptic function field all have weight `g (g - 1) / 2`.
 * `TauCeti.isHyperellipticFunctionField_of_isPoleNumber_two` and
   `TauCeti.isHyperellipticFunctionField_of_isPoleNumber_two_of_perfectField`: a rational place at
   which `2` is a pole number makes a function field of genus at least two hyperelliptic, away from
@@ -291,6 +293,22 @@ theorem weierstrassWeight_eq_zero_of_ramificationIdx_eq_one {P : Place k F} (hP 
     (weierstrassGaps_eq_Icc_of_ramificationIdx_eq_one hF hex hx hdeg hP hram)
 
 end Place
+
+/-- **Every rational Weierstrass point of a hyperelliptic function field has the maximal weight
+`g (g - 1) / 2`**: a rational place ramified over the index-two rational subfield has that weight,
+and an unramified one has weight zero. -/
+theorem weierstrassWeight_eq_genus_choose_two_of_isHyperellipticFunctionField
+    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
+    (hhyp : IsHyperellipticFunctionField k F) {P : Place k F} (hP₁ : P.degree = 1)
+    (hP : P.weierstrassWeight ≠ 0) : P.weierstrassWeight = (genus k F).choose 2 := by
+  obtain ⟨x, hx, hdeg, -⟩ := hhyp.exists_separable_finrank_adjoin_eq_two
+  have : FiniteDimensional k⟮x⟯ F := Module.finite_of_finrank_pos (by omega)
+  by_cases hram : 1 < Place.ramificationIdx k⟮x⟯ P
+  · exact (Place.weierstrassWeight_eq_genus_choose_two_iff_one_lt_ramificationIdx hF hex hx hdeg
+      hhyp.two_le_genus hP₁).mpr hram
+  · have := Place.ramificationIdx_pos k⟮x⟯ P
+    exact absurd (Place.weierstrassWeight_eq_zero_of_ramificationIdx_eq_one hF hex hx hdeg hP₁
+      (by omega)) hP
 
 /-- If `2` is a pole number at `P`, then `ℓ(2P) ≥ 2`: `ℓ(P) < ℓ(2P)` and `ℓ(P) ≥ ℓ(0) = 1`. -/
 private theorem two_le_dim_two_zsmul_ofPoint_of_isPoleNumber_two (hF : IsFunctionField k F)
