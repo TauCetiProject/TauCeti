@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.Commutator.Basic
 public import Mathlib.Topology.Algebra.Group.Subgroup
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
+public import TauCeti.Topology.Algebra.Group.Neighborhood
 import Mathlib.Algebra.Ring.Int.Parity
 
 /-!
@@ -96,8 +97,8 @@ series of a profinite group.
 * `MonoidHom.discreteTopology_range_of_finite_preimage`: a homomorphism into a `T1` group with
   continuous translations has discrete range when some neighbourhood of the identity has finite
   preimage.
-* `MonoidHom.isEmbedding_of_isCompact_preimage`: a continuous injective homomorphism from a
-  topological group into a Hausdorff group with continuous translations is an embedding when some
+* `MonoidHom.isEmbedding_of_isCompact_preimage`: a continuous injective homomorphism between
+  groups with continuous left translations, with Hausdorff target, is an embedding when some
   neighbourhood of the identity has compact preimage.
 -/
 
@@ -570,15 +571,15 @@ theorem _root_.MonoidHom.discreteTopology_range_of_finite_preimage {G H : Type*}
   exact ⟨g, hg, Subtype.ext rfl⟩
 
 open scoped Topology in
-/-- A continuous injective homomorphism from a topological group into a Hausdorff group with
-continuous translations is a topological embedding as soon as some neighbourhood of the identity
-has compact preimage. -/
-@[to_additive /-- A continuous injective homomorphism from an additive topological group into a
-Hausdorff additive group with continuous translations is a topological embedding as soon as some
-neighbourhood of zero has compact preimage. -/]
+/-- A continuous injective homomorphism between groups with continuous left translations, with
+Hausdorff target, is a topological embedding as soon as some neighbourhood of the identity has
+compact preimage. -/
+@[to_additive /-- A continuous injective homomorphism between additive groups with continuous left
+translations, with Hausdorff target, is a topological embedding as soon as some neighbourhood of
+zero has compact preimage. -/]
 theorem _root_.MonoidHom.isEmbedding_of_isCompact_preimage {G H : Type*} [Group G]
-    [TopologicalSpace G] [IsTopologicalGroup G] [Group H] [TopologicalSpace H]
-    [SeparatelyContinuousMul H] [T2Space H] (f : G →* H) (hf : Continuous f)
+    [TopologicalSpace G] [ContinuousConstSMul G G] [Group H] [TopologicalSpace H]
+    [ContinuousConstSMul H H] [T2Space H] (f : G →* H) (hf : Continuous f)
     (hinj : Function.Injective f) {W : Set H} (hW : W ∈ 𝓝 1) (hc : IsCompact (f ⁻¹' W)) :
     Topology.IsEmbedding f := by
   have hone : 𝓝 (1 : G) = (𝓝 (1 : H)).comap f := by
@@ -598,16 +599,6 @@ theorem _root_.MonoidHom.isEmbedding_of_isCompact_preimage {G H : Type*} [Group 
     refine Filter.mem_comap.2 ⟨t ∩ W, Filter.inter_mem (by simpa using ht) hW, ?_⟩
     rintro x ⟨hxt, hxW⟩
     exact @hts ⟨x, hxW⟩ hxt
-  -- As in `IsTopologicalGroup.isInducing_iff_nhds_one`, translation homeomorphisms transport
-  -- the inducing property at `1` to every point, using only continuous translations in `H`.
-  refine ⟨Topology.isInducing_iff_nhds.2 (fun x ↦ ?_), hinj⟩
-  have hG : 𝓝 x = Filter.comap (· * x⁻¹) (𝓝 (1 : G)) :=
-    (nhds_translation_mul_inv x).symm
-  have hH : 𝓝 (f x) = Filter.comap (· * (f x)⁻¹) (𝓝 (1 : H)) := by
-    simpa using (Homeomorph.mulRight (f x)⁻¹).isInducing.nhds_eq_comap (f x)
-  rw [hG, hH, Filter.comap_comap, hone, Filter.comap_comap]
-  congr 1
-  ext y
-  simp
+  exact ⟨isInducing_iff_nhds_one.2 hone, hinj⟩
 
 end TauCeti
