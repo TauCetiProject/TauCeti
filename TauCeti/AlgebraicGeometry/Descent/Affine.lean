@@ -487,12 +487,12 @@ theorem exists_isAffine_baseChange_hom_isIso [Module.Flat R S] {X : Over (Spec (
     ∃ X₀ : Over (Spec (.of R)), IsAffine X₀.left ∧
       ∃ f : Hom (baseChange (Spec.algebraMap R S) X₀) D, IsIso f.hom := by
   -- Present `X` as `Spec B ⟶ Spec S` for `B = Γ(X, ⊤)`, an `S`-algebra through `X.hom`.
-  let φ : S →+* Γ(X.left, ⊤) := ((Scheme.ΓSpecIso (.of S)).inv ≫ X.hom.appTop).hom
-  let _ : Algebra S Γ(X.left, ⊤) := φ.toAlgebra
-  let _ : Algebra R Γ(X.left, ⊤) := (φ.comp (algebraMap R S)).toAlgebra
+  let φ : CommRingCat.of S ⟶ Γ(X.left, ⊤) := (Scheme.ΓSpecIso (.of S)).inv ≫ X.hom.appTop
+  let _ : Algebra S Γ(X.left, ⊤) := φ.hom.toAlgebra
+  let _ : Algebra R Γ(X.left, ⊤) := (φ.hom.comp (algebraMap R S)).toAlgebra
   have : IsScalarTower R S Γ(X.left, ⊤) := .of_algebraMap_eq fun _ ↦ rfl
   let e : Over.mk (Spec.algebraMap S Γ(X.left, ⊤)) ≅ X := (Over.isoMk X.left.isoSpec <| by
-    change X.left.isoSpec.hom ≫ Spec.map ((Scheme.ΓSpecIso (.of S)).inv ≫ X.hom.appTop) = X.hom
+    simp only [Over.mk_hom, Spec.algebraMap, RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom]
     rw [Spec.map_comp, Scheme.isoSpec_hom_naturality_assoc, Scheme.isoSpec_Spec_hom,
       ← Spec.map_comp, Iso.inv_hom_id, Spec.map_id, Category.comp_id]).symm
   obtain ⟨E, g, hg⟩ : ∃ (E : Algebra.DescentDatum R S Γ(X.left, ⊤)) (g : Hom E.spec D),

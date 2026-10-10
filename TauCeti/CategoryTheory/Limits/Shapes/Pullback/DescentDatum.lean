@@ -39,8 +39,8 @@ construct.
 ## Main definitions
 
 * `TauCeti.DescentDatum p X`: a descent datum on `X : Over S'` relative to `p : S' ⟶ S`.
-* `TauCeti.DescentDatum.Hom`: a morphism over `S'` intertwining the actions, with `Hom.id` and
-  `Hom.comp`.
+* `TauCeti.DescentDatum.Hom`: a morphism over `S'` intertwining the actions, with `Hom.id`,
+  `Hom.comp`, and the inverse `Hom.inv` of a morphism which is an isomorphism over `S'`.
 * `TauCeti.DescentDatum.transport e E`: the descent datum transported from `E` along an
   isomorphism `e : X ≅ Y` over `S'`, with the isomorphism `transportHom e E` to `E`.
 * `TauCeti.DescentDatum.baseChange p X`: the canonical descent datum on the base change
@@ -137,6 +137,54 @@ variable {D} in
 @[simp]
 theorem Hom.comp_hom (g : Hom E F) (f : Hom D E) : (g.comp f).hom = f.hom ≫ g.hom :=
   (rfl)
+
+variable {D} in
+@[simp]
+theorem Hom.id_comp (f : Hom D E) : (Hom.id E).comp f = f :=
+  Hom.ext (Category.comp_id _)
+
+variable {D} in
+@[simp]
+theorem Hom.comp_id (f : Hom D E) : f.comp (Hom.id D) = f :=
+  Hom.ext (Category.id_comp _)
+
+variable {D} in
+@[simp]
+theorem Hom.comp_assoc {W : Over S'} {G : DescentDatum p W} (h : Hom F G) (g : Hom E F)
+    (f : Hom D E) : (h.comp g).comp f = h.comp (g.comp f) :=
+  Hom.ext (Category.assoc _ _ _).symm
+
+section Inv
+
+variable {D} (f : Hom D E) [IsIso f.hom]
+
+/-- The inverse of a morphism of descent data whose underlying morphism over `S'` is an
+isomorphism. -/
+noncomputable def Hom.inv : Hom E D where
+  hom := CategoryTheory.inv f.hom
+  map_act := by
+    rw [← cancel_mono f.hom.left, Category.assoc, Category.assoc, ← Over.comp_left,
+      IsIso.inv_hom_id, Over.id_left, Category.comp_id, ← f.map_act, ← Category.assoc]
+    convert Category.id_comp E.act using 2
+    ext <;> simp [← Over.comp_left]
+
+@[simp]
+theorem Hom.inv_hom : f.inv.hom = CategoryTheory.inv f.hom :=
+  (rfl)
+
+instance Hom.isIso_inv_hom : IsIso f.inv.hom := by
+  rw [Hom.inv_hom]
+  infer_instance
+
+@[simp]
+theorem Hom.inv_comp_self : f.inv.comp f = Hom.id D :=
+  Hom.ext (IsIso.hom_inv_id _)
+
+@[simp]
+theorem Hom.comp_inv_self : f.comp f.inv = Hom.id E :=
+  Hom.ext (IsIso.inv_hom_id _)
+
+end Inv
 
 /-- The descent datum on `X` transported from a descent datum on `Y` along an isomorphism
 `e : X ≅ Y` over `S'`: a point `s` of `S'` acts by `s · x = e⁻¹ (s · e x)`. -/
