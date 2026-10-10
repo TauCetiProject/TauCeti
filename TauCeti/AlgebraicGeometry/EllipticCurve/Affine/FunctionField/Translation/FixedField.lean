@@ -361,6 +361,7 @@ variable {F : Type*} [Field F] [DecidableEq F] (W : Affine F) [W.IsElliptic]
 attribute [local instance] Fintype.ofFinite
 
 /-- Translation by a point of a finite subgroup fixes the sum of its translates of a function. -/
+@[simp 1100]
 theorem _root_.WeierstrassCurve.Affine.translation_sum (P : Φ) (f : W.FunctionField) :
     translation W P (∑ Q : Φ, translation W Q f) = ∑ Q : Φ, translation W Q f := by
   rw [map_sum]

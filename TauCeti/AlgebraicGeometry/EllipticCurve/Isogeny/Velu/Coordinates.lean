@@ -81,12 +81,14 @@ theorem _root_.WeierstrassCurve.Affine.translation_veluY (P : Φ) :
   rw [veluY_def, map_sub, translation_sum, AlgEquiv.commutes]
 
 /-- Vélu's `x`-coordinate belongs to the translation fixed field. -/
+@[simp 1100]
 theorem _root_.WeierstrassCurve.Affine.veluX_mem_translationFixedField :
     veluX W Φ ∈ translationFixedField W Φ := by
   rw [mem_translationFixedField_iff]
   exact fun P hP ↦ translation_veluX W Φ ⟨P, hP⟩
 
 /-- Vélu's `y`-coordinate belongs to the translation fixed field. -/
+@[simp 1100]
 theorem _root_.WeierstrassCurve.Affine.veluY_mem_translationFixedField :
     veluY W Φ ∈ translationFixedField W Φ := by
   rw [mem_translationFixedField_iff]
