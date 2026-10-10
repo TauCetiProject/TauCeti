@@ -83,7 +83,9 @@ instance : Algebra.IsSeparable ℚ_[2] DyadicSqrtNegOne := by
   let : PerfectField ℚ_[2] := PerfectField.ofCharZero
   exact Algebra.IsAlgebraic.isSeparable_of_perfectField
 
-local instance : Invertible (2 : ℚ_[2]) := invertibleOfNonzero (by norm_num)
+/-- Two is invertible in the dyadic field `ℚ_2`. -/
+local instance instInvertibleTwoPadicTwo : Invertible (2 : ℚ_[2]) :=
+  invertibleOfNonzero (by norm_num)
 
 /-- **A nonzero dyadic Evens norm.** Along every embedding of `ℚ_2(i)` in a separable
 closure, the Evens norm of the class of `1 + 2i` is `(2) ∪ (5)`. -/

@@ -33,7 +33,9 @@ noncomputable section
 
 namespace TauCeti
 
-local instance : Invertible (2 : ℚ_[2]) := invertibleOfNonzero (by norm_num)
+/-- Two is invertible in the dyadic field `ℚ_2`. -/
+local instance instInvertibleTwoPadicTwo : Invertible (2 : ℚ_[2]) :=
+  invertibleOfNonzero (by norm_num)
 
 /-- The cup `(2) ∪ (5)` over `ℚ_2` is nonzero, since `(2,5)_{ℚ_2} = -1`. -/
 theorem cup_kummerClass_two_five_ne_zero_padicTwo :
