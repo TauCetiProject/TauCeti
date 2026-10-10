@@ -37,9 +37,8 @@ theorem spanFinrank_eq_sup_primaryComponents (A : Type*) [AddCommGroup A] [Finit
     fun p ↦ _root_.AddCommGroup.primaryComponent A p.1
   have hcop : Pairwise fun p q ↦ (Nat.card (M p)).Coprime (Nat.card (M q)) := by
     intro p q hpq
-    rw [show M p = _root_.AddCommGroup.primaryComponent A p.1 from rfl,
-      show M q = _root_.AddCommGroup.primaryComponent A q.1 from rfl,
-      natCard_primaryComponent A p, natCard_primaryComponent A q]
+    dsimp only [M]
+    rw [natCard_primaryComponent A p, natCard_primaryComponent A q]
     exact ((Nat.coprime_primes (Nat.prime_of_mem_primeFactors p.2)
       (Nat.prime_of_mem_primeFactors q.2)).mpr (by simpa using hpq)).pow _ _
   let e : (∀ p, M p) ≃ₗ[ℤ] A := (primaryDecomposition A).toIntLinearEquiv
