@@ -65,17 +65,27 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [CompactSpace M] [T2Space M]
   {f : M → ℝ} {x : M} {X : (x : M) → TangentSpace 𝓘(ℝ, E) x}
 
-/-- A time `T` for which `e^{-T} a < δ`. -/
-private theorem exp_neg_log_mul_lt {δ a : ℝ} (hδ : 0 < δ) (ha : 0 ≤ a) :
-    Real.exp (-Real.log (1 + a / δ)) * a < δ := by
-  have h1 : 0 < 1 + a / δ := by positivity
-  rw [Real.exp_neg, Real.exp_log h1, inv_mul_lt_iff₀ h1, add_mul, one_mul,
-    div_mul_cancel₀ _ hδ.ne']
-  linarith
-
 namespace MorseChart
 
 variable (φ : MorseChart E f x)
+
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
+/-- The time `log (1 + ‖v‖ / δ)` used by the parametrization of the stable manifold is admissible:
+it brings `v` into the ball of radius `δ`. -/
+theorem exp_neg_log_mul_norm_lt {δ : ℝ} (hδ : 0 < δ) (v : φ.stableSubspace) :
+    Real.exp (-Real.log (1 + ‖v‖ / δ)) * ‖v‖ < δ := by
+  have h1 : 0 < 1 + ‖v‖ / δ := by positivity
+  rw [Real.exp_neg, Real.exp_log h1, inv_mul_lt_iff₀ h1, add_mul, one_mul,
+    div_mul_cancel₀ _ hδ.ne']
+  linarith [norm_nonneg v]
+
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
+/-- The time `log (1 + ‖v‖ / δ)` used by the parametrization of the stable manifold brings `v`
+into the ball of radius `δ`, in norm form. -/
+theorem norm_exp_neg_log_smul_lt {δ : ℝ} (hδ : 0 < δ) (v : φ.stableSubspace) :
+    ‖Real.exp (-Real.log (1 + ‖v‖ / δ)) • v‖ < δ := by
+  rw [norm_smul_of_nonneg (Real.exp_pos _).le]
+  exact φ.exp_neg_log_mul_norm_lt hδ v
 
 omit [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
 /-- The small cube of a Morse chart, where the coordinates and the chart value are small, is
@@ -138,23 +148,32 @@ theorem toChart_symm_mem_stableSet {w : φ.stableSubspace} (hw : ‖w‖ < δ) :
   · exact hδr w hw
   · exact φ.mem_stableSubspace.1 w.2
 
+/-- **Flowing along the stable subspace adds times.** If `e^{-T} ‖v‖ < δ`, the flow for a time
+`s ≥ 0` moves `φ⁻¹ (e^{-T} v)` to `φ⁻¹ (e^{-(T + s)} v)`. -/
+theorem flow_toChart_symm_exp_smul {v : φ.stableSubspace} {T s : ℝ}
+    (hT : Real.exp (-T) * ‖v‖ < δ) (hs : 0 ≤ s) :
+    hX.flow s (φ.toChart.symm (Real.exp (-T) • (v : E))) =
+      φ.toChart.symm (Real.exp (-(T + s)) • (v : E)) := by
+  have hw : ‖Real.exp (-T) • v‖ < δ := by
+    rwa [norm_smul_of_nonneg (Real.exp_pos _).le]
+  rw [← Submodule.coe_smul, hX.flow_toChart_symm_stableSubspace φ hφ hrT hδr hw hs,
+    Submodule.coe_smul, smul_smul, ← Real.exp_add, neg_add, add_comm]
+
 /-- Two admissible times give the same point. -/
 theorem flow_neg_toChart_symm_eq {v : φ.stableSubspace} {T T' : ℝ} (hTT' : T ≤ T')
     (hT : Real.exp (-T) * ‖v‖ < δ) :
     hX.flow (-T) (φ.toChart.symm (Real.exp (-T) • (v : E))) =
       hX.flow (-T') (φ.toChart.symm (Real.exp (-T') • (v : E))) := by
-  have hw : ‖Real.exp (-T) • v‖ < δ := by
-    rwa [norm_smul_of_nonneg (Real.exp_pos _).le]
-  have h := hX.flow_toChart_symm_stableSubspace φ hφ hrT hδr hw (sub_nonneg.2 hTT')
-  rw [Submodule.coe_smul, smul_smul, ← Real.exp_add, show -(T' - T) + -T = -T' by ring] at h
-  rw [← h, ← Flow.map_add, show -T' + (T' - T) = -T by ring]
+  have h := hX.flow_toChart_symm_exp_smul φ hφ hrT hδr hT (sub_nonneg.2 hTT')
+  rw [add_sub_cancel] at h
+  rw [← h, ← Flow.map_add, neg_add_eq_sub, sub_sub_cancel_left]
 
 /-- **The parametrization does not depend on the time.** For every time `T` with
 `e^{-T} ‖v‖ < δ`, the parametrization of `v` is `Φ_{-T} (φ⁻¹ (e^{-T} v))`. -/
 theorem stableParam_eq (hδ : 0 < δ) {v : φ.stableSubspace} {T : ℝ}
     (hT : Real.exp (-T) * ‖v‖ < δ) :
     hX.stableParam φ δ v = hX.flow (-T) (φ.toChart.symm (Real.exp (-T) • (v : E))) := by
-  have hτ := exp_neg_log_mul_lt hδ (norm_nonneg v)
+  have hτ := φ.exp_neg_log_mul_norm_lt hδ v
   rw [stableParam]
   rcases le_total T (Real.log (1 + ‖v‖ / δ)) with h | h
   · exact (hX.flow_neg_toChart_symm_eq φ hφ hrT hδr h hT).symm
@@ -193,22 +212,21 @@ image by the time-`s` map of the flow. -/
 theorem stableParam_smul (hδ : 0 < δ) (v : φ.stableSubspace) (s : ℝ) :
     hX.stableParam φ δ (Real.exp (-s) • v) = hX.flow s (hX.stableParam φ δ v) := by
   set τ := Real.log (1 + ‖v‖ / δ)
-  have hτ : Real.exp (-τ) * ‖v‖ < δ := exp_neg_log_mul_lt hδ (norm_nonneg v)
+  have hτ : Real.exp (-τ) * ‖v‖ < δ := φ.exp_neg_log_mul_norm_lt hδ v
+  -- Rescaling `v` by `e^{-s}` shifts the admissible time from `τ` to `τ - s`.
+  have hexp : Real.exp (-(τ - s)) * Real.exp (-s) = Real.exp (-τ) := by
+    rw [← Real.exp_add]; ring_nf
   have hτs : Real.exp (-(τ - s)) * ‖Real.exp (-s) • v‖ < δ := by
-    rwa [norm_smul_of_nonneg (Real.exp_pos _).le, ← mul_assoc, ← Real.exp_add,
-      show -(τ - s) + -s = -τ by ring]
+    rwa [norm_smul_of_nonneg (Real.exp_pos _).le, ← mul_assoc, hexp]
   rw [hX.stableParam_eq φ hφ hrT hδr hδ hτs, hX.stableParam_eq φ hφ hrT hδr hδ hτ,
-    ← Flow.map_add, Submodule.coe_smul, smul_smul, ← Real.exp_add,
-    show -(τ - s) + -s = -τ by ring, show s + -τ = -(τ - s) by ring]
+    ← Flow.map_add, Submodule.coe_smul, smul_smul, hexp, neg_sub, sub_eq_add_neg]
 
 /-- The parametrization takes values in the stable manifold. -/
 theorem stableParam_mem_stableSet (hδ : 0 < δ) (v : φ.stableSubspace) :
     hX.stableParam φ δ v ∈ hX.flow.stableSet x := by
-  have hτ := exp_neg_log_mul_lt hδ (norm_nonneg v)
-  have hw : ‖Real.exp (-Real.log (1 + ‖v‖ / δ)) • v‖ < δ := by
-    rwa [norm_smul_of_nonneg (Real.exp_pos _).le]
-  rw [hX.stableParam_eq φ hφ hrT hδr hδ hτ, Flow.apply_mem_stableSet_iff, ← Submodule.coe_smul]
-  exact hX.toChart_symm_mem_stableSet φ hφ hrT hδr hw
+  rw [hX.stableParam_eq φ hφ hrT hδr hδ (φ.exp_neg_log_mul_norm_lt hδ v),
+    Flow.apply_mem_stableSet_iff, ← Submodule.coe_smul]
+  exact hX.toChart_symm_mem_stableSet φ hφ hrT hδr (φ.norm_exp_neg_log_smul_lt hδ v)
 
 /-- The parametrization is injective. -/
 theorem stableParam_injective (hδ : 0 < δ) : Injective (hX.stableParam φ δ) := by
@@ -217,8 +235,8 @@ theorem stableParam_injective (hδ : 0 < δ) : Injective (hX.stableParam φ δ) 
   have hle {a : ℝ} (ha : a ≤ T) (w : φ.stableSubspace) :
       Real.exp (-T) * ‖w‖ ≤ Real.exp (-a) * ‖w‖ := by
     gcongr
-  have hT := (hle (le_max_left _ _) v).trans_lt (exp_neg_log_mul_lt hδ (norm_nonneg v))
-  have hT' := (hle (le_max_right _ _) v').trans_lt (exp_neg_log_mul_lt hδ (norm_nonneg v'))
+  have hT := (hle (le_max_left _ _) v).trans_lt (φ.exp_neg_log_mul_norm_lt hδ v)
+  have hT' := (hle (le_max_right _ _) v').trans_lt (φ.exp_neg_log_mul_norm_lt hδ v')
   have hsmall {w : φ.stableSubspace} (hw : Real.exp (-T) * ‖w‖ < δ) :
       ‖Real.exp (-T) • w‖ < δ := by
     rwa [norm_smul_of_nonneg (Real.exp_pos _).le]
@@ -245,10 +263,10 @@ theorem exists_eq_stableParam {ε : ℝ}
     φ.mem_stableSubspace.2 (hε _ hTs hTε ((Flow.apply_mem_stableSet_iff _ _).2 hy))
   refine ⟨⟨_, hu⟩, rfl, ?_⟩
   have hT : Real.exp (-T) * ‖Real.exp T • (⟨_, hu⟩ : φ.stableSubspace)‖ < δ := by
-    rwa [norm_smul_of_nonneg (Real.exp_pos _).le, ← mul_assoc, ← Real.exp_add,
-      neg_add_cancel, Real.exp_zero, one_mul]
-  rw [hX.stableParam_eq φ hφ hrT hδr hδ hT, Submodule.coe_smul, smul_smul, ← Real.exp_add,
-    neg_add_cancel, Real.exp_zero, one_smul, Submodule.coe_mk, φ.toChart.left_inv hTs,
+    rwa [norm_smul_of_nonneg (Real.exp_pos _).le, Real.exp_neg,
+      inv_mul_cancel_left₀ (Real.exp_ne_zero T)]
+  rw [hX.stableParam_eq φ hφ hrT hδr hδ hT, Submodule.coe_smul, Real.exp_neg,
+    inv_smul_smul₀ (Real.exp_ne_zero T), Submodule.coe_mk, φ.toChart.left_inv hTs,
     ← Flow.map_add, neg_add_cancel, Flow.map_zero_apply]
 
 /-- **The parametrization covers the stable manifold.** Its image is `W^s(x)`. -/
@@ -302,9 +320,7 @@ theorem isImmersion_stableParam (hδ : 0 < δ) :
     rw [comp_apply, comp_apply, he, hX.stableParam_smul φ hφ hrT hδr hδ, flowDiffeomorph_apply,
       ← Flow.map_add, neg_add_cancel, Flow.map_zero_apply]
   rw [hcomp, isImmersionAt_diffeomorph_comp_iff, isImmersionAt_comp_diffeomorph_iff, he]
-  refine hX.isImmersionAt_stableParam_of_norm_lt φ hφ hrT hδr ?_
-  rw [norm_smul_of_nonneg (Real.exp_pos _).le]
-  exact exp_neg_log_mul_lt hδ (norm_nonneg v)
+  exact hX.isImmersionAt_stableParam_of_norm_lt φ hφ hrT hδr (φ.norm_exp_neg_log_smul_lt hδ v)
 
 /-- **The parametrization is a topological embedding.** -/
 theorem isEmbedding_stableParam (hδ : 0 < δ) {ε : ℝ} (hεδ : ∀ w : φ.stableSubspace, ‖w‖ < δ →
@@ -317,9 +333,7 @@ theorem isEmbedding_stableParam (hδ : 0 < δ) {ε : ℝ} (hεδ : ∀ w : φ.st
   refine ⟨isInducing_iff_nhds.2 fun v ↦ le_antisymm (hcont.tendsto v).le_comap ?_,
     hX.stableParam_injective φ hφ hrT hδr hδ⟩
   set T := Real.log (1 + ‖v‖ / δ)
-  have hw₀ : ‖Real.exp (-T) • v‖ < δ := by
-    rw [norm_smul_of_nonneg (Real.exp_pos _).le]
-    exact exp_neg_log_mul_lt hδ (norm_nonneg v)
+  have hw₀ : ‖Real.exp (-T) • v‖ < δ := φ.norm_exp_neg_log_smul_lt hδ v
   have ht := φ.coe_mem_target_of_norm_lt hrT hδr hw₀
   have hy₀ : hX.flow T (hX.stableParam φ δ v) =
       φ.toChart.symm (Real.exp (-T) • v : φ.stableSubspace) := by
@@ -337,8 +351,7 @@ theorem isEmbedding_stableParam (hδ : 0 < δ) {ε : ℝ} (hεδ : ∀ w : φ.st
   set h : M → E := fun y ↦ Real.exp T • φ.toChart (hX.flow T y)
   have hh : Tendsto h (𝓝 (hX.stableParam φ δ v)) (𝓝 (v : E)) := by
     have hv : (v : E) = h (hX.stableParam φ δ v) := by
-      simp only [h, hchart, Submodule.coe_smul, smul_smul, ← Real.exp_add, add_neg_cancel,
-        Real.exp_zero, one_smul]
+      simp only [h, hchart, Submodule.coe_smul, Real.exp_neg, smul_inv_smul₀ (Real.exp_ne_zero T)]
     rw [hv]
     exact (((φ.toChart.continuousAt hsrc).comp
       (hX.flow.continuous_toFun T).continuousAt).const_smul (Real.exp T)).tendsto
