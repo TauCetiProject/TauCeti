@@ -207,11 +207,17 @@ theorem continuous_refl : Continuous (refl : X → MoorePath X) :=
 private def transFun (γ δ : MoorePath X) (t : ℝ≥0) : X :=
   if t ≤ γ.length then γ t else δ (t - γ.length)
 
+/-- Two Moore paths with `γ.target = δ.source` agree where a concatenation joins them. -/
+private theorem apply_length_eq_apply_tsub_self {γ δ : MoorePath X} (h : γ.target = δ.source) :
+    γ γ.length = δ (γ.length - γ.length) := by
+  rw [tsub_self, ← target_def, h, source_def]
+
 private theorem transFun_of_length_le {γ δ : MoorePath X} (h : γ.target = δ.source) {t : ℝ≥0}
     (ht : γ.length ≤ t) : transFun γ δ t = δ (t - γ.length) := by
   rw [transFun]
   split_ifs with ht'
-  · rw [le_antisymm ht' ht, tsub_self, ← target_def, h, source_def]
+  · rw [le_antisymm ht' ht]
+    exact apply_length_eq_apply_tsub_self h
   · rfl
 
 /-- The **concatenation** of two Moore paths with `γ.target = δ.source`: the lengths add, and the
@@ -221,7 +227,8 @@ def trans (γ δ : MoorePath X) (h : γ.target = δ.source) : MoorePath X where
   continuous_toFun := by
     refine Continuous.if_le γ.continuous (δ.continuous.comp (continuous_id.sub continuous_const))
       continuous_id continuous_const fun t ht ↦ ?_
-    rw [ht, tsub_self, ← target_def, h, source_def]
+    rw [ht]
+    exact apply_length_eq_apply_tsub_self h
   length := γ.length + δ.length
   apply_of_length_le' t ht := by
     have hγ : γ.length ≤ γ.length + δ.length := le_self_add
@@ -302,7 +309,8 @@ theorem _root_.Continuous.moorePath_trans {X Y : Type*} [TopologicalSpace X] [To
   refine MoorePath.continuous_iff.2 ⟨by simp only [MoorePath.length_trans]; fun_prop, ?_⟩
   simp only [MoorePath.trans_apply]
   refine Continuous.if_le (by fun_prop) (by fun_prop) continuous_snd (by fun_prop) fun p hp ↦ ?_
-  rw [hp, tsub_self, ← MoorePath.target_def, h, MoorePath.source_def]
+  rw [hp]
+  exact MoorePath.apply_length_eq_apply_tsub_self (h p.1)
 
 namespace MoorePath
 
@@ -439,13 +447,14 @@ theorem toMoorePath_map (f : C(X, Y)) (hf : f x = y) (γ : MooreLoopSpace X x) :
   (rfl)
 
 @[simp]
-theorem map_id : map (.id X) rfl = ContinuousMonoidHom.id (MooreLoopSpace X x) :=
-  (rfl)
+theorem map_id :
+    map (.id X) (ContinuousMap.id_apply x) = ContinuousMonoidHom.id (MooreLoopSpace X x) :=
+  ContinuousMonoidHom.ext fun _ ↦ ext <| by simp
 
 theorem map_comp {Z : Type*} [TopologicalSpace Z] {z : Z} (g : C(Y, Z)) (f : C(X, Y))
     (hg : g y = z) (hf : f x = y) :
     map (g.comp f) (by rw [ContinuousMap.comp_apply, hf, hg]) = (map g hg).comp (map f hf) :=
-  (rfl)
+  ContinuousMonoidHom.ext fun _ ↦ ext <| by simp [MoorePath.map_map]
 
 end MooreLoopSpace
 
