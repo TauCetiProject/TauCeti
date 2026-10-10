@@ -84,7 +84,6 @@ theorem evenSublattice_carrier_le : L.evenSublattice.carrier ≤ L.carrier := by
   exact L.carrier.map_subtype_le _
 
 /-- Viewed in the original carrier, the even sublattice is exactly the norm-parity kernel. -/
-@[simp]
 theorem evenSublattice_carrier_submoduleOf :
     L.evenSublattice.carrier.submoduleOf L.carrier = L.evenSubmodule := by
   rw [evenSublattice_carrier, Submodule.submoduleOf,
@@ -92,7 +91,6 @@ theorem evenSublattice_carrier_submoduleOf :
 
 /-- A vector of the original lattice belongs to the even sublattice exactly when its norm
 is even. -/
-@[simp]
 theorem mem_evenSublattice_carrier_iff (x : L) :
     (x : V) ∈ L.evenSublattice.carrier ↔ Even (L.integralNorm x) := by
   rw [evenSublattice_carrier, Submodule.mem_map]
