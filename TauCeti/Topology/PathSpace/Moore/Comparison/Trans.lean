@@ -5,18 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.PathSpace.Moore.Comparison
+public import TauCeti.Topology.PathSpace.Moore.Comparison.Basic
 
 /-!
 # Concatenation under the comparison with the unit interval
 
-The comparison `Path.toMoorePath` of `TauCeti.Topology.PathSpace.Moore.Comparison` does not take
-the concatenation `p.trans q` of two paths on the unit interval to the concatenation of their Moore
-paths: the first runs through both paths at double speed in length one, the second runs through
-them at unit speed in length two.  The two differ by a reparametrization, and this file records
-that they are homotopic through a homotopy that is continuous in the pair of paths and preserves
-the end points: `p.toMoorePath.trans q.toMoorePath` is `(p.trans q).toMoorePath.rescale 2`
-(`Path.transMoorePath_eq_rescale`), and `MoorePath.rescale` from length `1` to length `2` is the
+The comparison `Path.toMoorePath` of `TauCeti.Topology.PathSpace.Moore.Comparison.Basic` does not
+take the concatenation `p.trans q` of two paths on the unit interval to the concatenation of their
+Moore paths: the first runs through both paths at double speed in length one, the second runs
+through them at unit speed in length two.  The two differ by a reparametrization, and this file
+records that they are homotopic through a homotopy that is continuous in the pair of paths and
+preserves the end points: `p.toMoorePath.trans q.toMoorePath` is `(p.trans q).toMoorePath.rescale
+2` (`Path.transMoorePath_eq_rescale`), and `MoorePath.rescale` from length `1` to length `2` is the
 homotopy (`Path.transMoorePathHomotopy`).  This is the compatibility of the comparison with the
 concatenation actions of the loop spaces on the path spaces.
 
@@ -67,14 +67,16 @@ theorem _root_.Path.transMoorePath_eq_rescale (p : Path x y) (q : Path y z) :
     have h2 : (t : ℝ) / 2 ≤ 1 / 2 := by
       rw [div_le_div_iff_of_pos_right two_pos]
       exact_mod_cast ht
-    rw [MoorePath.trans_apply_of_le _ _ _ ht', Path.extend_trans_of_le_half _ _ h2,
-      show (2 : ℝ) * (t / 2) = t by ring, Path.toMoorePath_apply]
+    have h3 : (2 : ℝ) * (t / 2) = t := by ring
+    rw [MoorePath.trans_apply_of_le _ _ _ ht', Path.extend_trans_of_le_half _ _ h2, h3,
+      Path.toMoorePath_apply]
   · have ht' : p.toMoorePath.length ≤ t := by rwa [Path.length_toMoorePath]
     have h2 : (1 : ℝ) / 2 ≤ t / 2 := by
       rw [div_le_div_iff_of_pos_right two_pos]
       exact_mod_cast ht
-    rw [MoorePath.trans_apply_of_length_le _ _ _ ht', Path.extend_trans_of_half_le _ _ h2,
-      show (2 : ℝ) * (t / 2) - 1 = t - 1 by ring, Path.toMoorePath_apply,
+    have h3 : (2 : ℝ) * (t / 2) - 1 = t - 1 := by ring
+    rw [MoorePath.trans_apply_of_length_le _ _ _ ht', Path.extend_trans_of_half_le _ _ h2, h3,
+      Path.toMoorePath_apply,
       Path.length_toMoorePath, NNReal.coe_sub ht, NNReal.coe_one]
 
 end TauCeti
@@ -230,6 +232,10 @@ private def mulToLengthOneToPath (x : X) :
     continuous_toPath.comp (((toLengthOne (X := X) (x := x)).continuous.comp continuous_fst).mul
       ((toLengthOne (X := X) (x := x)).continuous.comp continuous_snd))⟩
 
+private theorem mulToLengthOneToPath_apply (γδ : MooreLoopSpace X x × MooreLoopSpace X x) :
+    mulToLengthOneToPath x γδ = (toLengthOne γδ.1 * toLengthOne γδ.2).toPath :=
+  (rfl)
+
 /-- The first half of `mulToPathHomotopy`: `Path.transMooreLoopHomotopy` on the two loops on the
 unit interval, read back through `toPath`. -/
 private def transToPathHomotopy (x : X) :
@@ -242,9 +248,8 @@ private def transToPathHomotopy (x : X) :
     rw [(Path.transMooreLoopHomotopy x).apply_zero, Path.mooreLoopTrans_apply,
       Path.toPath_toMooreLoop, transToPath_apply]
   map_one_left γδ := by
-    rw [(Path.transMooreLoopHomotopy x).apply_one, Path.mulMooreLoop_apply]
-    change _ = (toLengthOne γδ.1 * toLengthOne γδ.2).toPath
-    rw [toLengthOne_apply, toLengthOne_apply]
+    rw [(Path.transMooreLoopHomotopy x).apply_one, Path.mulMooreLoop_apply,
+      mulToLengthOneToPath_apply, toLengthOne_apply, toLengthOne_apply]
 
 /-- The second half of `mulToPathHomotopy`: `unitHomotopy` on both factors, under `mulToPath`. -/
 private def mulUnitHomotopy (x : X) :
