@@ -62,9 +62,10 @@ def orthogonalGroupContinuousMulEquivMatrix (h2 : IsSMulRegular R (2 : R))
   have hD (A : Matrix.orthogonalGroup n R) :
       D (Matrix.toLin' (A : Matrix n n R)) = (E.symm A : Module.End R V) := by
     ext x
-    simp [D, E, LinearEquiv.conjAlgEquiv_apply, Matrix.toLin'_apply]
-    -- The double inverse of the underlying linear equivalence is definitionally `e`.
-    rfl
+    simp only [D, AlgEquiv.toLinearMap_apply, E, MulEquiv.symm_trans_apply,
+      _root_.QuadraticMap.IsometryEquiv.coe_orthogonalGroupCongr_symm_apply,
+      standardOrthogonalGroupEquiv_symm_apply, LinearEquiv.conjAlgEquiv_apply,
+      LinearEquiv.symm_symm, LinearMap.comp_apply, LinearEquiv.coe_coe, Matrix.toLin'_apply]
   have hback : Continuous fun A : Matrix.orthogonalGroup n R ↦
       (E.symm A : Module.End R V) := by
     exact ((IsModuleTopology.continuous_of_linearMap D).comp
@@ -101,8 +102,9 @@ theorem orthogonalGroupContinuousMulEquivMatrix_symm_apply (h2 : IsSMulRegular R
   simpa using h.symm
 
 /-- The coordinate comparison preserves the determinant, so it also identifies the
-determinant-one subgroups. This is a named rewrite rather than a simp rule: the simplifier
-already expands its left-hand side into the determinant of a conjugated endomorphism. -/
+determinant-one subgroups. -/
+-- This is a named rewrite because simp already expands the left-hand side into the
+-- determinant of a conjugated endomorphism.
 theorem det_orthogonalGroupContinuousMulEquivMatrix (h2 : IsSMulRegular R (2 : R))
     (e : Q.IsometryEquiv (Matrix.toQuadraticForm' (1 : Matrix n n R)))
     (g : QuadraticMap.orthogonalGroup Q) :
