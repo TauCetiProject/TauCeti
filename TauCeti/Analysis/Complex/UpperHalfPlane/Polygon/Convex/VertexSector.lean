@@ -189,6 +189,34 @@ theorem eventuallyEq_carrier_vertexSector_atImInfty {j : Fin n} (hj : P.vertex j
   rw [hj, inr_mem_extLeftHalfPlane_iff] at hi
   exact eventually_mem_leftHalfPlane_of_infty_mem_boundaryLeftHalfPlane hi
 
+/-- The interior of a polygon with a vertex at infinity meets every horodisc at infinity. -/
+theorem exists_mem_interior_carrier_im_gt_of_vertex_eq_inr_infty {j : Fin n}
+    (hj : P.vertex j = .inr ∞) (A : ℝ) :
+    ∃ z ∈ interior P.carrier, A < z.im := by
+  obtain ⟨B, hB⟩ := (atImInfty_mem _).1
+    (P.eventuallyEq_carrier_vertexSector_atImInfty hj).mem_iff
+  let t : ℝ := max (max A B) 0 + 1
+  have ht : 0 < t := by dsimp [t]; linarith [le_max_right (max A B) 0]
+  let w : ℍ := ⟨(toComplex (P.vertex (j + 1))).re + t * Complex.I, by simpa using ht⟩
+  have hwim : w.im = t := by simp [w]
+  have hwA : A < w.im := by
+    rw [hwim]
+    dsimp [t]
+    linarith [le_max_left A B, le_max_left (max A B) 0]
+  have hwB : B ≤ w.im := by
+    rw [hwim]
+    dsimp [t]
+    linarith [le_max_right A B, le_max_left (max A B) 0]
+  have hwP : w ∈ P.carrier := (hB w hwB).2
+    ((P.mem_vertexSector_iff_of_vertex_eq_inr_infty hj w).2
+      ⟨by simp [w], by simpa [w] using
+        (P.re_toComplex_vertex_add_one_lt_of_vertex_eq_inr_infty hj).le⟩)
+  -- The closed strip gives a point of the tile; the open horodisc also meets its interior.
+  rw [← P.closure_interior_carrier] at hwP
+  obtain ⟨z, hzA, hzP⟩ := mem_closure_iff.1 hwP {z : ℍ | A < z.im}
+    (isOpen_lt continuous_const UpperHalfPlane.continuous_im) hwA
+  exact ⟨z, hzP, hzA⟩
+
 /-! ### The sector in angular coordinates -/
 
 variable {P}

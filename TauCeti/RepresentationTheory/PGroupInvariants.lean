@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Invariants
 public import Mathlib.RepresentationTheory.Irreducible
+public import Mathlib.GroupTheory.PGroup
 -- Non-public: `Representation.IsIrreducible.eq_trivial_of_invariants_ne_bot` and its dimension form
 -- are what the irreducible corollaries apply, and `Representation.IsIrreducible.nontrivial`
 -- supplies the nontriviality they need.
@@ -15,8 +16,6 @@ import TauCeti.RepresentationTheory.Irreducible
 -- Non-public: `AddCommGroup.zmodModule` makes a `p`-torsion abelian group a `ZMod p`-module, used
 -- only to build a finite invariant set inside a proof.
 import Mathlib.Algebra.Module.ZMod
--- Non-public: `IsPGroup.exists_fixed_point_of_prime_dvd_card_of_fixed_point` is the orbit count.
-import Mathlib.GroupTheory.PGroup
 -- Non-public: `Module.finite_of_finite`, `Module.natCard_eq_pow_finrank` and the field structure of
 -- `ZMod p` are what make that set finite and count it.
 import Mathlib.RingTheory.Finiteness.Cardinality
@@ -36,9 +35,15 @@ say that such a representation is irreducible only if it is the trivial represen
 Equivalently: over a field of characteristic `p`, the trivial module is the only irreducible
 module of a finite `p`-group.
 
-The group is assumed finite. For an infinite group the analogous statement is Kolchin's theorem,
-which fixes a vector of a *finite-dimensional* vector space under a group of unipotent operators;
-that theorem is not proved here, and no statement about an infinite group is claimed.
+A finite normal `p`-subgroup of an arbitrary group acts trivially on every irreducible
+representation in characteristic `p`: its nonzero invariant subspace is stable under the
+whole group and must be the entire representation. This reduces the classification of simple
+representations to the quotient by such a subgroup.
+
+The whole-group invariant-vector statements assume the acting group is finite. For an infinite
+group, the analogous statement is Kolchin's theorem, which fixes a vector of a
+*finite-dimensional* vector space under a group of unipotent operators. The normal-subgroup
+corollary here requires finiteness only of the subgroup.
 
 ## Main results
 
@@ -49,6 +54,8 @@ that theorem is not proved here, and no statement about an infinite group is cla
 * `Representation.IsIrreducible.eq_trivial_of_forall_pow_eq_one`: over a field, such a
   representation is irreducible only if it is the trivial representation, and
   `Representation.IsIrreducible.finrank_eq_one_of_forall_pow_eq_one`: only if it is a line.
+* `Representation.IsIrreducible.comp_eq_trivial_of_isPGroup`: a finite normal `p`-subgroup
+  acts trivially on an irreducible representation in characteristic `p`.
 
 ## References
 
@@ -188,5 +195,33 @@ theorem IsIrreducible.finrank_eq_one_of_forall_pow_eq_one {ρ : Representation k
   h.finrank_eq_one_of_invariants_ne_bot (ρ.invariants_ne_bot_of_forall_pow_eq_one p hρ)
 
 end Field
+
+section NormalSubgroup
+
+variable {k : Type u} {G : Type v} {V : Type w} [Field k] [Group G]
+  [AddCommGroup V] [Module k V] (p : ℕ) [Fact p.Prime] [CharP k p]
+
+/-- A finite normal `p`-subgroup acts trivially on every irreducible representation in
+characteristic `p`. The ambient group and the representation need not be finite. -/
+theorem IsIrreducible.comp_eq_trivial_of_isPGroup {ρ : Representation k G V}
+    (hρ : ρ.IsIrreducible) (N : Subgroup G) [N.Normal] [Finite N]
+    (hN : IsPGroup p N) : ρ.comp N.subtype = trivial k N V := by
+  have := hρ.nontrivial
+  let W : Subrepresentation ρ :=
+    ⟨Representation.invariants (ρ.comp N.subtype), ρ.le_comap_invariants N⟩
+  have hW : W ≠ ⊥ := by
+    intro h
+    apply invariants_ne_bot_of_forall_pow_eq_one p (ρ.comp N.subtype)
+      (fun g ↦ by
+        obtain ⟨n, hn⟩ := hN g
+        exact ⟨n, by rw [← map_pow, hn, map_one]⟩)
+    exact congrArg Subrepresentation.toSubmodule h
+  let := hρ
+  have htop : W = ⊤ := (IsSimpleOrder.eq_bot_or_eq_top W).resolve_left hW
+  ext g v
+  have hv : v ∈ W.toSubmodule := by rw [htop]; trivial
+  exact hv g
+
+end NormalSubgroup
 
 end Representation

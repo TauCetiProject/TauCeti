@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Addition.Morphism
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Glue
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Addition.Pointed
 
 /-!
@@ -33,7 +33,8 @@ every chart restricts to the addition of each of its restrictions to affine open
 mapping into `U_d`.
 
 The parts `E_U ×_U E_U` of `E ×_S E` over the bases of all pointed Weierstrass charts form an open
-cover, and the additions of the charts glue along it to `EllipticCurveGeom.addition`. Its
+cover, and the additions of the charts glue along it (`EllipticCurveGeom.glueMorphisms`) to
+`EllipticCurveGeom.addition`. Its
 restriction to every chart is the addition of the chart (`EllipticCurveGeom.pullbackMap_addition`),
 and this characterises it among all morphisms `E ×_S E ⟶ E`, already on the charts of any one atlas
 (`EllipticCurveGeom.eq_addition_of_atlas`). In particular the addition morphism does not depend on
@@ -128,24 +129,17 @@ addition morphism commutes with it (`WeierstrassCurve.additionMorphism_comp_of_i
 theorem addition_pullbackCarrierMap : k.addition ≫ pullbackCarrierMap hh =
     pullback.map _ _ _ _ (pullbackCarrierMap hh) (pullbackCarrierMap hh) h (by simp) (by simp) ≫
       c.addition := by
-  -- the comparison `F` of the projective models of the two equations, over `ψ`
-  let F := k.modelIso.inv ≫ pullbackCarrierMap hh ≫ c.modelIso.hom
-  let ψ := k.baseIso.inv ≫ h ≫ c.baseIso.hom
-  have hF : IsPullback F k.equation.projModelOver c.equation.projModelOver ψ :=
-    (isPullback_pullbackCarrierMap hh).of_iso k.modelIso c.modelIso k.baseIso c.baseIso
-      (by simp [F]) k.modelIso_over.symm c.modelIso_over.symm (by simp [ψ])
-  have h0 : k.equation.projModelZero ≫ F = ψ ≫ c.equation.projModelZero := by
-    rw [← cancel_epi k.baseIso.hom, ← k.modelIso_zero_assoc]
-    simp [F, ψ]
+  -- the comparison `projModelMap hh` of the projective models of the two equations
   have hk : k.addition ≫ pullbackCarrierMap hh ≫ c.modelIso.hom =
       pullback.map _ _ _ _ k.modelIso.hom k.modelIso.hom k.baseIso.hom k.modelIso_over.symm
-        k.modelIso_over.symm ≫ k.equation.additionMorphism ≫ F := by
-    simp [addition, F]
+        k.modelIso_over.symm ≫ k.equation.additionMorphism ≫ projModelMap hh := by
+    rw [← modelIso_hom_projModelMap, addition_modelIso_hom_assoc]
   rw [← cancel_mono c.modelIso.hom, Category.assoc, Category.assoc, addition_modelIso_hom, hk,
-    WeierstrassCurve.additionMorphism_comp_of_isPullback hF h0]
+    WeierstrassCurve.additionMorphism_comp_of_isPullback (isPullback_projModelMap hh)
+      (projModelZero_projModelMap hh)]
   simp only [← Category.assoc]
   congr 1
-  apply pullback.hom_ext <;> simp [F]
+  apply pullback.hom_ext <;> simp
 
 end Lift
 
@@ -161,30 +155,6 @@ variable {S : Scheme.{u}} (E : EllipticCurveGeom S)
 
 -- The morphism `E ×_S E ⟶ S`.
 local notation "p" => pullback.fst E.structureMap E.structureMap ≫ E.structureMap
-
--- The parts of `E ×_S E` over the bases of a family of charts covering `S` cover `E ×_S E`: the
--- pullback along `E ×_S E ⟶ S` of the open cover of `S` by the bases of the charts.
-private noncomputable def pieceCover {ι : Type*}
-    (c : ι → PointedWeierstrassChart E.structureMap E.zero)
-    (hc : ∀ s : S, ∃ i, ∃ b : (c i).base, (c i).baseMap b = s) :
-    (pullback E.structureMap E.structureMap).OpenCover :=
-  (Scheme.Cover.mkOfCovers ι (fun i ↦ (c i).base) (fun i ↦ (c i).baseMap) hc).pullback₁ p
-
--- The parts of `E ×_S E` over the bases of all pointed Weierstrass charts cover `E ×_S E`.
-private noncomputable def chartCover : (pullback E.structureMap E.structureMap).OpenCover :=
-  pieceCover E id fun s ↦ by
-    obtain ⟨A⟩ := E.localModel
-    obtain ⟨i, b, hb⟩ := A.covers s
-    exact ⟨A.chart i, b, hb⟩
-
--- Morphisms out of `E ×_S E` agreeing on the parts over the bases of a family of charts covering
--- `S` are equal.
-private theorem hom_ext_of_covers {ι : Type*}
-    (c : ι → PointedWeierstrassChart E.structureMap E.zero)
-    (hc : ∀ s : S, ∃ i, ∃ b : (c i).base, (c i).baseMap b = s) {Y : Scheme.{u}}
-    (f g : pullback E.structureMap E.structureMap ⟶ Y)
-    (h : ∀ i, pullback.fst p (c i).baseMap ≫ f = pullback.fst p (c i).baseMap ≫ g) : f = g :=
-  (pieceCover E c hc).hom_ext f g h
 
 -- A point of the part of `E ×_S E` over the base of a chart is a pair of points of the
 -- restriction of `E` to that base.
@@ -222,71 +192,19 @@ private theorem map_pieceAddition {k c : PointedWeierstrassChart E.structureMap 
   simp only [pieceAddition, reassoc_of% this, ← addition_pullbackCarrierMap_assoc,
     pullbackCarrierMap_toTotal]
 
--- The additions of two charts agree on the part of `E ×_S E` over the intersection of their
--- bases: near every point, both restrict to the addition of a restriction of the first chart to an
--- affine open whose image lies in the base of the second chart.
-private theorem pieceAddition_agree (c d : PointedWeierstrassChart E.structureMap E.zero) :
-    pullback.fst (pullback.fst p c.baseMap) (pullback.fst p d.baseMap) ≫ pieceAddition E c =
-      pullback.snd _ _ ≫ pieceAddition E d := by
-  refine Scheme.hom_ext_of_forall _ _ fun x ↦ ?_
-  -- the part of the intersection over the base of `c`
-  let q := pullback.fst (pullback.fst p c.baseMap) (pullback.fst p d.baseMap) ≫ pullback.snd _ _
-  have hq : q ≫ c.baseMap =
-      (pullback.snd (pullback.fst p c.baseMap) (pullback.fst p d.baseMap) ≫ pullback.snd _ _) ≫
-        d.baseMap := by
-    simp only [q, Category.assoc, ← pullback.condition, pullback.condition_assoc]
-  -- an affine open `V` of the base of `c`, around the image of `x`, mapping into the base of `d`
-  have hx : q x ∈ c.baseMap ⁻¹ᵁ d.baseMap.opensRange :=
-    ⟨_, by rw [← Scheme.Hom.comp_apply, ← hq, Scheme.Hom.comp_apply]⟩
-  obtain ⟨V, hV, hxV, hVd⟩ := exists_isAffineOpen_mem_and_subset hx
-  let V' : c.base.affineOpens := ⟨V, hV⟩
-  have hr (y : (c.restrict V').base) : c.restrictι V' y ∈ V :=
-    (c.range_restrictι V').subset ⟨y, rfl⟩
-  have hkd : Set.range (c.restrict V').baseMap ⊆ Set.range d.baseMap := by
-    rintro _ ⟨y, rfl⟩
-    rw [← restrictι_baseMap, Scheme.Hom.comp_apply]
-    exact hVd (hr y)
-  -- the part `U` of the intersection over `V` maps to the part of `E ×_S E` over the base of the
-  -- restriction of `c` to `V`
-  refine ⟨q ⁻¹ᵁ V, hxV, ?_⟩
-  have hU : Set.range ((q ⁻¹ᵁ V).ι ≫ q) ⊆ Set.range (c.restrictι V') := by
-    rintro _ ⟨y, rfl⟩
-    rw [range_restrictι, Scheme.Hom.comp_apply]
-    exact y.2
-  have hℓ : ((q ⁻¹ᵁ V).ι ≫ pullback.fst _ _ ≫ pullback.fst _ _) ≫ p =
-      IsOpenImmersion.lift (c.restrictι V') _ hU ≫ (c.restrict V').baseMap := by
-    rw [← restrictι_baseMap, IsOpenImmersion.lift_fac_assoc]
-    simp only [q, Category.assoc, ← pullback.condition]
-  let ℓ := pullback.lift _ _ hℓ
-  have hc : (q ⁻¹ᵁ V).ι ≫ pullback.fst _ _ = ℓ ≫ pullback.map p (c.restrict V').baseMap p
-      c.baseMap (𝟙 _) (c.restrictι V') (𝟙 _) (by simp) (by simp) := by
-    apply pullback.hom_ext
-    · simp [ℓ]
-    · simp [ℓ, q]
-  have hd : (q ⁻¹ᵁ V).ι ≫ pullback.snd _ _ = ℓ ≫ pullback.map p (c.restrict V').baseMap p
-      d.baseMap (𝟙 _) (IsOpenImmersion.lift d.baseMap _ hkd) (𝟙 _) (by simp) (by simp) := by
-    apply pullback.hom_ext
-    · simp [ℓ, pullback.condition]
-    · rw [← cancel_mono d.baseMap]
-      have h' := (q ⁻¹ᵁ V).ι ≫= hq
-      simp only [Category.assoc] at h'
-      simp [ℓ, ← restrictι_baseMap, ← h']
-  rw [reassoc_of% hc, reassoc_of% hd, map_pieceAddition E (restrictι_baseMap c V'),
-    map_pieceAddition E (IsOpenImmersion.lift_fac _ _ hkd)]
-
 /-- The **addition morphism** `E ×_S E ⟶ E` of an elliptic curve `E` over a scheme `S`: the
 morphism whose restriction to the base `U` of every pointed Weierstrass chart is the Bosma–Lenstra
 addition morphism of the equation of the chart (`pullbackMap_addition`). It is glued from these
 local addition morphisms, which agree where they overlap, and it lies over `S`
 (`addition_structureMap`). -/
 noncomputable def addition : pullback E.structureMap E.structureMap ⟶ E.carrier :=
-  (chartCover E).glueMorphisms (pieceAddition E) (pieceAddition_agree E)
+  glueMorphisms (pieceAddition E) (map_pieceAddition E)
 
 -- On the part of `E ×_S E` over the base of a chart, the addition morphism is the addition of the
 -- chart.
 private theorem fst_addition (c : PointedWeierstrassChart E.structureMap E.zero) :
     pullback.fst p c.baseMap ≫ E.addition = pieceAddition E c :=
-  (chartCover E).ι_glueMorphisms (pieceAddition E) (pieceAddition_agree E) c
+  fst_glueMorphisms _ _ c
 
 /-- **The addition morphism on a chart.** On the restriction of `E ×_S E` to the base of a pointed
 Weierstrass chart `c`, the addition morphism of `E` is the addition of the chart, the Bosma–Lenstra
@@ -310,7 +228,7 @@ theorem pullbackMap_addition (c : PointedWeierstrassChart E.structureMap E.zero)
 theorem addition_structureMap : E.addition ≫ E.structureMap =
     pullback.fst E.structureMap E.structureMap ≫ E.structureMap := by
   obtain ⟨A⟩ := E.localModel
-  refine hom_ext_of_covers E A.chart A.covers _ _ fun i ↦ ?_
+  refine A.hom_ext p _ _ fun i ↦ ?_
   rw [← toPair_map]
   simp [(A.chart i).isPullback.w]
 
@@ -323,7 +241,7 @@ theorem eq_addition_of_atlas (A : PointedWeierstrassAtlas E.structureMap E.zero)
       (A.chart i).isPullback.w.symm (A.chart i).isPullback.w.symm ≫ μ =
         (A.chart i).addition ≫ (A.chart i).toTotal) :
     μ = E.addition :=
-  hom_ext_of_covers E A.chart A.covers _ _ fun i ↦ by
+  A.hom_ext p _ _ fun i ↦ by
     rw [← toPair_map, Category.assoc, Category.assoc, hμ, pullbackMap_addition]
 
 end EllipticCurveGeom

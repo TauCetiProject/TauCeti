@@ -32,6 +32,8 @@ Smoothness of relative dimension one, properness and the local-model condition
 
 * `TauCeti.AlgebraicGeometry.IsLocallyWeierstrass.baseChange`: the local-model condition for a
   morphism with a section is stable under base change.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isPullback_baseChange`: the base change of `E` along
+  `f` is a pullback of the structure morphism of `E` along `f`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.baseChangeMap_id` and
   `TauCeti.AlgebraicGeometry.EllipticCurveGeom.baseChangeMap_comp`: the canonical morphisms between
   base changes preserve identities and composition.
@@ -145,6 +147,15 @@ induced by `f ≫ E.zero`. -/
 theorem zero_baseChangeIso_hom : (E.baseChange f).zero ≫ (E.baseChangeIso f).hom =
     pullbackSection E.structureMap f (f ≫ E.zero) (by simp) := by
   simp [baseChangeIso, baseChange]
+
+/-- The base change `E.baseChange f` is a pullback of the structure morphism of `E` along `f`: the
+square formed by the projection `(E.baseChangeIso f).hom ≫ pullback.fst _ _` to `E`, the two
+structure morphisms and `f` is a pullback square. -/
+theorem isPullback_baseChange :
+    IsPullback ((E.baseChangeIso f).hom ≫ pullback.fst E.structureMap f)
+      (E.baseChange f).structureMap E.structureMap f :=
+  (IsPullback.of_hasPullback _ _).of_iso (E.baseChangeIso f).symm (.refl _) (.refl _) (.refl _)
+    (by simp) (by simp [Iso.eq_inv_comp]) (by simp) (by simp)
 
 variable {T' T'' : Scheme.{u}} {f : T ⟶ S} {f' : T' ⟶ S} {f'' : T'' ⟶ S}
 
