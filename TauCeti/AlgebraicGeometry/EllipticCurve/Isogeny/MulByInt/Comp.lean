@@ -83,7 +83,7 @@ theorem mulByIntIsogeny_comp_mulByIntIsogeny {m n : ℤ}
 
 /-- **`[m] ∘ [n] = [m n]` for nonzero `m` and `n`**, the non-vanishing hypotheses discharged from
 the discriminant as in `mulByIntIsogenyOfNeZero`. -/
-@[simp↓]
+@[simp]
 theorem mulByIntIsogenyOfNeZero_comp_mulByIntIsogenyOfNeZero {m n : ℤ} (hm : m ≠ 0) (hn : n ≠ 0) :
     (mulByIntIsogenyOfNeZero W hm).comp (mulByIntIsogenyOfNeZero W hn) =
       mulByIntIsogenyOfNeZero W (mul_ne_zero hm hn) :=
@@ -118,7 +118,7 @@ theorem negIsogeny_comp_mulByIntIsogeny {n : ℤ} (hn : psiFunctionField W n ≠
 
 /-- **`[-n]` is `[n]` followed by negation, for nonzero `n`**, the non-vanishing hypotheses
 discharged from the discriminant as in `mulByIntIsogenyOfNeZero`. -/
-@[simp↓]
+@[simp]
 theorem negIsogeny_comp_mulByIntIsogenyOfNeZero {n : ℤ} (hn : n ≠ 0) :
     (negIsogeny W).comp (mulByIntIsogenyOfNeZero W hn) =
       mulByIntIsogenyOfNeZero W (neg_ne_zero.2 hn) :=

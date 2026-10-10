@@ -156,9 +156,7 @@ theorem _root_.TauCeti.cup_kummerClass_two_five_eq_neg_one_neg_one_padicTwo :
       (kummerClass (Units.mk0 (5 : ℚ_[2]) (by norm_num))) =
     (trivialF2TopPairing (AbsoluteGaloisGroup ℚ_[2])).cup 1 1
       (kummerClass (-1)) (kummerClass (-1)) := by
-  apply h2MuToUnits_injective ℚ_[2]
-  rw [← brauerCohomologyEquiv_quaternionClass, ← brauerCohomologyEquiv_quaternionClass]
-  congr 2
+  apply (cup_kummerClass_eq_cup_kummerClass_iff_quaternionClass_eq _ _ _ _).2
   exact (BrauerGroup.quaternionClass_eq_iff_hilbertSymbol_eq _ _ _ _).2
     (hilbertSymbol_two_five_padicTwo.trans hilbertSymbol_neg_one_neg_one_padicTwo.symm)
 
