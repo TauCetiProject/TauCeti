@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Homotopy.HurewiczFibration
-public import TauCeti.Topology.PathSpace.Moore
+public import TauCeti.Topology.PathSpace.Moore.Comparison.Basic
 
 /-!
 # Lifting functions on Moore paths
@@ -205,51 +205,21 @@ structure IsTransitive : Prop where
 
 /-! ### A lifting function makes a Hurewicz fibration -/
 
-/-- The parameter `min t 1` of the unit interval, for a time `t ≥ 0`. -/
-private def toI (t : ℝ≥0) : I :=
-  Set.projIcc 0 1 zero_le_one t
-
-private theorem continuous_toI : Continuous toI :=
-  continuous_projIcc.comp NNReal.continuous_coe
-
-private theorem toI_toNNReal (s : I) : toI (toNNReal s) = s :=
-  Set.projIcc_val zero_le_one s
-
-private theorem toI_zero : toI 0 = 0 :=
-  Set.projIcc_left zero_le_one
-
-private theorem toI_of_one_le {t : ℝ≥0} (ht : 1 ≤ t) : toI t = 1 :=
-  Set.projIcc_of_right_le zero_le_one (NNReal.one_le_coe.2 ht)
-
-/-- The Moore path of length one `t ↦ H (min t 1, a)` traced by a homotopy at the point `a`. -/
-private def unitPath {A : Type w} [TopologicalSpace A] (H : C(I × A, B)) (a : A) : MoorePath B where
-  toFun t := H (toI t, a)
-  continuous_toFun := H.continuous.comp (continuous_toI.prodMk continuous_const)
-  length := 1
-  apply_of_length_le' t ht := by
-    simp only [toI_of_one_le ht, toI_of_one_le le_rfl]
-
-private theorem unitPath_apply {A : Type w} [TopologicalSpace A] (H : C(I × A, B)) (a : A)
-    (t : ℝ≥0) : unitPath H a t = H (toI t, a) :=
-  (rfl)
-
-private theorem continuous_unitPath {A : Type w} [TopologicalSpace A] (H : C(I × A, B)) :
-    Continuous (unitPath H) :=
-  MoorePath.continuous_iff.2 ⟨continuous_const,
-    H.continuous.comp ((continuous_toI.comp continuous_snd).prodMk continuous_fst)⟩
-
 /-- A map with a lifting function on Moore paths is a Hurewicz fibration: a homotopy is a family of
 Moore paths of length one, and their lifts from the initial lift form the lifted homotopy. -/
 theorem isHurewiczFibration (Φ : MooreLiftingFunction p) : IsHurewiczFibration.{w} p := by
   refine isHurewiczFibration_iff.2 ⟨p.continuous, fun A _ f H hH ↦ ?_⟩
-  have h₀ : ∀ a, (unitPath H a).source = p (f a) := fun a ↦ by
-    rw [MoorePath.source_def, unitPath_apply, toI_zero, hH a]
-  refine ⟨⟨fun x ↦ Φ.lift (f x.2) (unitPath H x.2) (h₀ x.2) (toNNReal x.1), ?_⟩, funext fun x ↦ ?_,
-    fun a ↦ ?_⟩
+  -- The homotopy at `a`, as a Moore path of length one.
+  let γ : C(A, C(I, B)) := (H.comp ContinuousMap.prodSwap).curry
+  have h₀ : ∀ a, (MoorePath.ofUnitPath (γ a)).source = p (f a) := fun a ↦ by
+    rw [MoorePath.source_ofUnitPath]
+    exact hH a
+  refine ⟨⟨fun x ↦ Φ.lift (f x.2) (.ofUnitPath (γ x.2)) (h₀ x.2) (toNNReal x.1), ?_⟩,
+    funext fun x ↦ ?_, fun a ↦ ?_⟩
   · exact (Φ.continuous_lift (f.continuous.comp continuous_snd)
-      ((continuous_unitPath H).comp continuous_snd) fun x ↦ h₀ x.2).moorePath_eval
-      (toNNReal_continuous.comp continuous_fst)
-  · simp only [Function.comp_apply, ContinuousMap.coe_mk, apply_lift, unitPath_apply, toI_toNNReal]
+      (MoorePath.continuous_ofUnitPath.comp (γ.continuous.comp continuous_snd))
+      fun x ↦ h₀ x.2).moorePath_eval (toNNReal_continuous.comp continuous_fst)
+  · simp [γ]
   · simp only [ContinuousMap.coe_mk]
     rw [toNNReal_zero, ← MoorePath.source_def, source_lift]
 
