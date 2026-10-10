@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.NormedField
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.DiscPoint
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basis
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
@@ -52,9 +51,8 @@ equal exactly when their radii agree and each centre lies in the other disc. If
   `TauCeti.ValuationSpectrum.isOpen_closedSubdisc` and
   `TauCeti.ValuationSpectrum.isCompact_closedSubdisc`: `D(a, |c|)` is the rational subset
   `R({T - a, c} / c)`, hence open and, for `c` a unit, quasi-compact.
-* `TauCeti.ValuationSpectrum.closedSubdisc_zero_one`: `D(0, 1)` is the whole closed unit disc.
-* `TauCeti.ValuationSpectrum.closedPolydisc_vle_weightedC_iff`: points of the closed polydisc
-  compare constants by their norms.
+* `TauCeti.ValuationSpectrum.closedSubdisc_zero_one`: `D(0, 1)` is the whole closed unit disc,
+  and `TauCeti.ValuationSpectrum.closedSubdisc_zero_right`: `D(a, |0|)` is empty.
 * `TauCeti.ValuationSpectrum.classicalPoint_mem_closedSubdisc_iff`,
   `TauCeti.ValuationSpectrum.gaussPoint_mem_closedSubdisc_iff`,
   `TauCeti.ValuationSpectrum.discPoint_mem_closedSubdisc_iff`,
@@ -120,7 +118,7 @@ theorem closedSubdisc_eq_rationalSubset (a c : K) :
   have hv : v.1 ∈ spa (powerBoundedSubring (𝒯 K)) := closedPolydisc_def 1 K ▸ v.2
   simp [hv]
 
-/-- Discs with unit radius parameter `c` are quasi-compact over a Huber ring. -/
+/-- `D(a, |c|)` is quasi-compact over a Huber ring when `c` is a unit. -/
 theorem isCompact_closedSubdisc [IsHuberRing K] (a : K) {c : K} (hc : IsUnit c) :
     IsCompact (closedSubdisc a c) := by
   classical
@@ -143,26 +141,19 @@ theorem closedSubdisc_zero_one : closedSubdisc (0 : K) 1 = Set.univ := by
   · rw [map_one]
     exact v.1.toValuativeRel.not_vle_one_zero
 
+/-- **`D(a, |0|)` is empty**: no point has `v(0) ≠ 0`. -/
+@[simp]
+theorem closedSubdisc_zero_right (a : K) : closedSubdisc a 0 = ∅ := by
+  ext v
+  simp
+
 end TopologicalRing
 
-/-! ### Comparing constants by their norms -/
+/-! ### Discs over a normed field -/
 
 section NormedField
 
 variable {K : Type*} [NormedField K] [IsUltrametricDist K] [NonarchimedeanRing K]
-
-/-- **Every point of the closed polydisc compares constants by their norms**: its pullback along
-the constant embedding `K → K⟨T⟩` is a point of `Spa (K, K°)`. -/
-theorem closedPolydisc_vle_weightedC_iff {k : ℕ} (v : closedPolydisc k K) (x y : K) :
-    v.1.toValuativeRel.vle (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x)
-        (weightedC _ isWeightFamily_one_weight y) ↔ ‖x‖ ≤ ‖y‖ := by
-  have hv : v.1 ∈ spa (powerBoundedSubring (weightedRestrictedSubring
-      (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight)) := closedPolydisc_def k K ▸ v.2
-  have hv' := comap_mem_spa (continuous_weightedC isWeightFamily_one_weight)
-    (Aplus := powerBoundedSubring K)
-    (fun _ ha ↦ mem_powerBoundedSubring.mpr
-      (isPowerBounded_weightedC _ (mem_powerBoundedSubring.mp ha))) hv
-  rw [← vle_iff_norm_le_of_mem_spa hv', comap_vle]
 
 /-- **Nested discs**: `D(a, |c|) ⊆ D(b, |d|)` whenever `‖a - b‖ ≤ ‖d‖` and `‖c‖ ≤ ‖d‖`. -/
 theorem closedSubdisc_subset_closedSubdisc {a b c d : K} (hab : ‖a - b‖ ≤ ‖d‖)
@@ -204,6 +195,15 @@ theorem disjoint_closedSubdisc {a b c d : K} (h : max ‖c‖ ‖d‖ < ‖a - b
     exact (h.trans_le hc).not_ge (le_max_left _ _)
   · rw [valuation_le_iff, closedPolydisc_vle_weightedC_iff] at hd
     exact (h.trans_le hd).not_ge (le_max_right _ _)
+
+/-- **A classical point `x_b` lies in `D(a, |c|)` exactly when `‖b - a‖ ≤ ‖c‖` and `c ≠ 0`**,
+whichever point `x` of `Spa (K, K°)` it is built from. -/
+theorem classicalPoint_mem_closedSubdisc_iff [CompleteSpace K] (x : spa (powerBoundedSubring K))
+    (b : Fin 1 → K) (hb : ∀ i, IsPowerBounded (b i)) (a c : K) :
+    classicalPoint x b hb ∈ closedSubdisc a c ↔ ‖b 0 - a‖ ≤ ‖c‖ ∧ c ≠ 0 := by
+  rw [mem_closedSubdisc, classicalPoint_vle, classicalPoint_vle, map_sub, evalAtHom_weightedX,
+    evalAtHom_weightedC, evalAtHom_weightedC, map_zero, vle_iff_norm_le_of_mem_spa x.2,
+    vle_iff_norm_le_of_mem_spa x.2, norm_zero, norm_le_zero_iff]
 
 end NormedField
 
@@ -278,15 +278,6 @@ theorem discPoint_mem_closedSubdisc_iff (b : K) (hb : ‖b‖ ≤ 1) (hr₀ : 0 
     map_eq_zero_iff _ (weightedC_injective _ isWeightFamily_one_weight)]
   exact ⟨fun h ↦ ⟨h.1.2, h.1.1⟩, fun h ↦
     ⟨⟨h.2, h.1⟩, fun hc ↦ hr₀.not_ge (h.2.trans (by rw [hc, norm_zero]))⟩⟩
-
-/-- **A classical point `x_b` lies in `D(a, |c|)` exactly when `‖b - a‖ ≤ ‖c‖` and `c ≠ 0`**,
-whichever point `x` of `Spa (K, K°)` it is built from. -/
-theorem classicalPoint_mem_closedSubdisc_iff (x : spa (powerBoundedSubring K)) (b : Fin 1 → K)
-    (hb : ∀ i, IsPowerBounded (b i)) (a c : K) :
-    classicalPoint x b hb ∈ closedSubdisc a c ↔ ‖b 0 - a‖ ≤ ‖c‖ ∧ c ≠ 0 := by
-  rw [mem_closedSubdisc, classicalPoint_vle, classicalPoint_vle, map_sub, evalAtHom_weightedX,
-    evalAtHom_weightedC, evalAtHom_weightedC, map_zero, vle_iff_norm_le_of_mem_spa x.2,
-    vle_iff_norm_le_of_mem_spa x.2, norm_zero, norm_le_zero_iff]
 
 /-- **Inclusion of discs**: for `‖a‖ ≤ 1` and `0 < ‖c‖ ≤ 1`, `D(a, |c|) ⊆ D(b, |d|)` exactly
 when `‖a - b‖ ≤ ‖d‖` and `‖c‖ ≤ ‖d‖`. The point `η_{a,‖c‖}`
