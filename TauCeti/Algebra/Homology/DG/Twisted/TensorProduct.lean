@@ -147,7 +147,10 @@ theorem piRight_mem_twistedTotalGrading {n : ℤ} {z : BalancedTensorProduct R A
     ((InternalGrading.ofDecomposition 𝒜).op_mem_opposite_piece_iff _ _).2
       (by simpa only [InternalGrading.ofDecomposition_piece] using hg y)
   have := SetLike.GradedSMul.smul_mem hop hβ
-  rwa [vadd_eq_add, show n - q + ind y + q = n + ind y by ring] at this
+  rw [vadd_eq_add] at this
+  -- `op (g y) • β` has degree `(n - q + ind y) + q`, which is `n + ind y`.
+  convert this using 2
+  ring
 
 omit m in
 /-- The inverse of `piRight` carries a function of total degree `n` to a tensor of total
