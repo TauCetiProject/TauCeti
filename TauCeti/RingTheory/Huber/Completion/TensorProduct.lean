@@ -40,7 +40,7 @@ variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopo
 /-- The canonical map obtained by extending the completion map on `A` along the completion
 of its ring of definition. -/
 noncomputable def completionTensorMap (P : PairOfDefinition A) :
-    A ⊗[P.ringOfDefinition] Completion P.ringOfDefinition →ₐ[P.ringOfDefinition] Completion A :=
+    A ⊗[P.ringOfDefinition] Completion P.ringOfDefinition →ₐ[A] Completion A :=
   Algebra.TensorProduct.lift
     { __ := Completion.coeRingHom
       commutes' := fun _ ↦ rfl }
@@ -229,7 +229,7 @@ theorem completionTensorMap_injective (P : PairOfDefinition A) :
 /-- Completion of a Huber ring is extension of scalars from the completion of any ring of
 definition (Wedhorn, Proposition 6.9(1)). -/
 noncomputable def completionTensorEquiv (P : PairOfDefinition A) :
-    A ⊗[P.ringOfDefinition] Completion P.ringOfDefinition ≃ₐ[P.ringOfDefinition] Completion A :=
+    A ⊗[P.ringOfDefinition] Completion P.ringOfDefinition ≃ₐ[A] Completion A :=
   AlgEquiv.ofBijective P.completionTensorMap
     ⟨P.completionTensorMap_injective, P.completionTensorMap_surjective⟩
 
