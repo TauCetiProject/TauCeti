@@ -39,7 +39,7 @@ subfunctor `Module.Grassmannian.chartFunctor R x` of the Grassmannian functor, c
 
 These charts are the affine pieces from which the Grassmannian scheme is glued. That they are open
 subfunctors and cover the Grassmannian functor is proved in
-`TauCeti.RingTheory.Grassmannian.ChartLocus`.
+`TauCeti.RingTheory.Grassmannian.Chart.Locus`.
 
 ## Main definitions
 

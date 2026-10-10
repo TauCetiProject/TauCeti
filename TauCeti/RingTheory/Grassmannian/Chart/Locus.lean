@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.FittingIdeal.Basic
-public import TauCeti.RingTheory.Grassmannian.Chart
+public import TauCeti.RingTheory.Grassmannian.Chart.Basic
 
 import TauCeti.LinearAlgebra.TensorProduct.Quotient
 import TauCeti.RingTheory.FittingIdeal.BaseChange
