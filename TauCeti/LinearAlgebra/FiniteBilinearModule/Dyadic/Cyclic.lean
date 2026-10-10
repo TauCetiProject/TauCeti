@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AddCircle
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Cyclic
+import TauCeti.Data.ZMod.UnitSquare
 
 /-!
 # The dyadic cyclic generators `q_θ^{(2)}(2^k)`
@@ -37,6 +38,9 @@ and proves it nondegenerate exactly for odd `θ` (Nikulin, Proposition 1.8.1).
   exponent one give the same bilinear form.
 * `TauCeti.FiniteQuadraticModule.dyadicCyclicTwoBilinearIsometryFiveMul`: multiplication by
   five preserves the bilinear form at exponent two.
+
+* `TauCeti.FiniteQuadraticModule.dyadicCyclicIsometryOfModEqEight`: odd coefficients
+  congruent modulo eight give isometric quadratic forms.
 
 ## References
 
@@ -223,5 +227,58 @@ theorem dyadicCyclicTwoBilinearIsometryFiveMul_apply (θ : ℤ) (x : dyadicCycli
   unfold dyadicCyclicTwoBilinearIsometryFiveMul
   erw [dyadicCyclicBilinearIsometryOfModEq_apply]
   rfl
+
+private theorem dyadicCyclic_quadratic_intCast_toRatAddCircle (k : ℕ) [NeZero k]
+    (θ x : ℤ) :
+    (dyadicCyclic k θ).quadratic (x : ZMod (2 ^ k)) =
+      ZMod.toRatAddCircle (2 ^ (k + 1))
+        ((θ * x ^ 2 : ℤ) : ZMod (2 ^ (k + 1))) := by
+  rw [dyadicCyclic_quadratic_intCast, ZMod.toRatAddCircle_intCast]
+  push_cast
+  rfl
+
+private theorem dyadicCyclic_smul_quadratic (k : ℕ) [NeZero k] (θ η a : ℤ)
+    (ha : (η : ZMod (2 ^ (k + 1))) * (a : ZMod (2 ^ (k + 1))) ^ 2 = θ)
+    (x : ZMod (2 ^ k)) :
+    (dyadicCyclic k η).quadratic (a • x) = (dyadicCyclic k θ).quadratic x := by
+  obtain ⟨m, rfl⟩ := ZMod.intCast_surjective x
+  have hmul : a • (m : ZMod (2 ^ k)) = ((a * m : ℤ) : ZMod (2 ^ k)) := by
+    simp only [zsmul_eq_mul, Int.cast_mul]
+  erw [hmul, dyadicCyclic_quadratic_intCast_toRatAddCircle,
+    dyadicCyclic_quadratic_intCast_toRatAddCircle]
+  congr 1
+  push_cast
+  calc
+    (η : ZMod (2 ^ (k + 1))) * ((a : ZMod (2 ^ (k + 1))) * m) ^ 2 =
+        ((η : ZMod (2 ^ (k + 1))) * a ^ 2) * m ^ 2 := by ring
+    _ = (θ : ZMod (2 ^ (k + 1))) * m ^ 2 := by rw [ha]
+
+/-- Odd coefficients congruent modulo eight give isometric cyclic dyadic quadratic forms
+at every positive exponent. -/
+noncomputable def dyadicCyclicIsometryOfModEqEight (k : ℕ) [NeZero k] {θ η : ℤ}
+    (hθ : Odd θ) (h : θ ≡ η [ZMOD 8]) : Isometry (dyadicCyclic k θ) (dyadicCyclic k η) :=
+  Classical.choice <| by
+    have hη : Odd η := by
+      obtain ⟨d, hd⟩ := Int.modEq_iff_dvd.mp h
+      obtain ⟨s, hs⟩ := hθ
+      refine ⟨s + 4 * d, ?_⟩
+      omega
+    obtain ⟨u, hu⟩ := ZMod.exists_unit_sq_mul_intCast_eq_of_modEq_eight k hη h
+    let a : ℤ := u.val.val
+    have ha : (a : ZMod (2 ^ (k + 1))) = u.val := by simp [a]
+    have hcoef : (η : ZMod (2 ^ (k + 1))) * (a : ZMod (2 ^ (k + 1))) ^ 2 = θ := by
+      rw [ha]
+      exact hu
+    let g : Hom (dyadicCyclic k θ) (dyadicCyclic k η) :=
+      { toLinearMap := a • (LinearMap.id : ZMod (2 ^ k) →ₗ[ℤ] ZMod (2 ^ k))
+        map_app' := fun x ↦ by
+          change (dyadicCyclic k η).quadratic (a • x) = (dyadicCyclic k θ).quadratic x
+          exact dyadicCyclic_smul_quadratic k θ η a hcoef x }
+    have hinj : Function.Injective g := fun x y hxy ↦
+      FiniteBilinearModule.Hom.injective g.toFiniteBilinearModule
+        ((isNondegenerate_dyadicCyclic_iff k θ).mpr hθ)
+        ((Hom.toFiniteBilinearModule_apply g x).trans
+          (hxy.trans (Hom.toFiniteBilinearModule_apply g y).symm))
+    exact ⟨g.toIsometry ((Nat.bijective_iff_injective_and_card g).mpr ⟨hinj, rfl⟩)⟩
 
 end TauCeti.FiniteQuadraticModule
