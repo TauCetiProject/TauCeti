@@ -43,7 +43,7 @@ The construction follows that of the Kummer map of the multiplicative group,
 `TauCeti.kummerMap`. That map is surjective by Hilbert 90; here the cokernel `H¹(G_K, E)[m]` is
 the `m`-torsion of the Weil–Châtelet group `H¹(G_K, E)`, which is not zero in general. Over a
 number field, local conditions cut the `m`-Selmer group out of the middle term `H¹(G_K, E[m])`
-and the `m`-torsion `Ш[m]` of the Shafarevich–Tate group out of the right-hand term
+and the `m`-torsion of the Shafarevich–Tate group out of the right-hand term
 `H¹(G_K, E)[m]`.
 
 ## Main definitions
