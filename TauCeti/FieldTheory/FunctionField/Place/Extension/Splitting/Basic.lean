@@ -229,6 +229,17 @@ theorem isSplitCompletely_iff_decompositionSubgroup_eq_bot (P' : Place k F') :
 
 end Galois
 
+variable {L : Type*} [Field L] [Algebra k L] [Algebra F L] [IsScalarTower k F L]
+  [Algebra.IsIntegral F L]
+
+/-- Above a completely split rational place, every place is rational. -/
+theorem IsSplitCompletely.degree_eq_one {P : Place k F}
+    (hsplit : P.IsSplitCompletely (k' := k) (F' := L)) (hP : P.degree = 1)
+    {Q : Place k L} (hQ : Q.restrict k F = P) : Q.degree = 1 := by
+  have := hsplit.1
+  rw [degree_eq_degree_restrict_mul_relativeDegree k F Q, hQ, hP,
+    hsplit.relativeDegree_eq_one hQ, mul_one]
+
 end Place
 
 end TauCeti
