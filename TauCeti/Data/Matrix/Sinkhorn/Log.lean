@@ -151,14 +151,16 @@ theorem exp_logSinkhornPlan (L : Matrix ι κ ℝ) {a : ι → ℝ} (ha : ∀ i,
   simp only [Function.comp_apply, transpose_map] at hrow hcol
   simp only [map_apply, logSinkhornPlan_apply, exp_add, sinkhornPlan_apply, hrow, hcol]
 
-/-- The exponentiated log-domain plan has the prescribed row sums. -/
+/-- The exponentiated log-domain plan has the prescribed sum in every row whose target
+is positive. No positivity assumption on the other row targets or column targets is needed. -/
 theorem sum_exp_logSinkhornPlan_apply (L : Matrix ι κ ℝ) {a : ι → ℝ}
-    (ha : ∀ i, 0 < a i) {b : κ → ℝ} (hb : ∀ j, 0 < b j) (u : ι → ℝ) (i : ι) :
+    (b : κ → ℝ) (u : ι → ℝ) (i : ι) (ha : 0 < a i) :
     ∑ j, exp (L.logSinkhornPlan a b u i j) = a i := by
-  have h := sum_sinkhornPlan_apply (K := L.map exp) (u := exp ∘ u)
-    (fun i j ↦ exp_pos (L i j)) a hb (fun i ↦ exp_pos (u i)) i
-  rw [← exp_logSinkhornPlan L ha hb u] at h
-  exact h
+  have hsum : 0 < ∑ j, exp (L i j + Lᵀ.logSinkhornUpdate b u j) :=
+    Finset.sum_pos (fun j _ ↦ exp_pos _) Finset.univ_nonempty
+  simp_rw [logSinkhornPlan_apply, add_assoc, exp_add, ← Finset.mul_sum, ← exp_add]
+  rw [logSinkhornStep_def, logSinkhornUpdate_apply, exp_sub, exp_log ha, exp_log hsum]
+  exact div_mul_cancel₀ _ hsum.ne'
 
 /-- The plans from the stabilized iteration converge to any positive diagonal scaling with
 the prescribed marginals, by exact agreement with the ordinary Sinkhorn iteration. -/
