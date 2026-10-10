@@ -996,7 +996,7 @@ theorem mul_norm_sq_le_energyFormH1_self_of_subset_slab
     (lam ^ 2 - beta ^ 2 * (t - s) ^ 2) / (2 * lam * ((t - s) ^ 2 + 1)) * ‖u‖ ^ 2
       ≤ energyFormH1 a b c u u :=
   mul_norm_sq_le_energyFormH1_self_of_poincare h ha hb hc hb_bound hc_bound hc_nonneg
-    (W1p.norm_value_le_mul_norm_gradient_of_subset_slab (ENNReal.ofNat_ne_top) hst hslab hu)
+    (W1p.norm_value_le_mul_norm_gradient_of_subset_slab hst hslab hu)
 
 /-- **An energy-form lower bound on `H¹₀(Ω)` for a domain inside a ball.** For
 `Ω ⊆ B(z, R) ⊆ ℝ^{n+1}` every `u ∈ W^{1,2}_0(Ω)` satisfies
@@ -1020,7 +1020,7 @@ theorem mul_norm_sq_le_energyFormH1_self_of_subset_ball
     (lam ^ 2 - beta ^ 2 * (2 * R) ^ 2) / (2 * lam * ((2 * R) ^ 2 + 1)) * ‖u‖ ^ 2
       ≤ energyFormH1 a b c u u :=
   mul_norm_sq_le_energyFormH1_self_of_poincare h ha hb hc hb_bound hc_bound hc_nonneg
-    (W1p.norm_value_le_mul_norm_gradient_of_subset_ball (ENNReal.ofNat_ne_top) hball hu)
+    (W1p.norm_value_le_mul_norm_gradient_of_subset_ball hball hu)
 
 end UniformlyEllipticOn
 

@@ -386,7 +386,7 @@ theorem UniformlyEllipticOn.value_nonpos_of_small_drift_of_subset_ball
   apply h.value_nonpos_of_small_drift_of_poincare ha hb hc hb_bound hc_bound
     hc_nonneg hbeta (by positivity : 0 ≤ 2 * R)
     (fun w ↦ W1p.norm_value_le_mul_norm_gradient_of_subset_ball
-      (by norm_num) hOmega w.property) hsmall hboundary hu
+      hOmega w.property) hsmall hboundary hu
 
 /-- For `-div(a ∇u) + b · ∇u + cu` on `Ω ⊆ B(z, R)` with uniformly elliptic,
 bounded measurable coefficients, `c ≥ 0`, and `β(2R) < λ`, a weak subsolution with
@@ -412,7 +412,7 @@ theorem UniformlyEllipticOn.value_le_const_of_small_drift_of_subset_ball
   apply h.value_le_const_of_small_drift_of_poincare ha hb hc hb_bound hc_bound
     hc_nonneg hbeta (by positivity : 0 ≤ 2 * R)
     (fun w ↦ W1p.norm_value_le_mul_norm_gradient_of_subset_ball
-      (by norm_num) hOmega w.property) hsmall hk hboundary hu
+      hOmega w.property) hsmall hk hboundary hu
 
 /-- For `-div(a ∇u) + b · ∇u + cu` on `Ω ⊆ B(z, R)` with uniformly elliptic,
 bounded measurable coefficients, `c ≥ 0`, and `β(2R) < λ`, ordered weak operator values
@@ -439,7 +439,7 @@ theorem UniformlyEllipticOn.value_le_of_small_drift_of_subset_ball
   apply h.value_le_of_small_drift_of_poincare ha hb hc hb_bound hc_bound
     hc_nonneg hbeta (by positivity : 0 ≤ 2 * R)
     (fun w ↦ W1p.norm_value_le_mul_norm_gradient_of_subset_ball
-      (by norm_num) hOmega w.property) hsmall hboundary huv
+      hOmega w.property) hsmall hboundary huv
 
 end Euclidean
 
