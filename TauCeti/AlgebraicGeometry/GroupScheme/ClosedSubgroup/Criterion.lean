@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion
 public import TauCeti.CategoryTheory.Monoidal.Grp.Subobject
-public import TauCeti.CategoryTheory.Monoidal.Mon
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Over
 
 /-!
