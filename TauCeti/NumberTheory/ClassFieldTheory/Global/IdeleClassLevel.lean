@@ -73,31 +73,16 @@ variable {K : Type} [Field K] [NumberField K]
 
 local notation "Ω" => FiniteGaloisIntermediateField K (SeparableClosure K)
 
-/-- The open subgroup with fixed field `E` is the subgroup of `G_K` fixing `E`. -/
-private theorem toSubgroup_eq_fixingSubgroup (E : Ω) {U : OpenSubgroup (AbsoluteGaloisGroup K)}
-    (hU : fixedField U.toSubgroup = E) :
-    U.toSubgroup = (E : IntermediateField K (SeparableClosure K)).fixingSubgroup := by
-  rw [← hU]
-  exact (InfiniteGalois.fixingSubgroup_fixedField ⟨U.toSubgroup, U.isClosed⟩).symm
-
-/-- The class of an idele of `E`, regarded as an idele of `Kˢ`, lies in the level of the
-idele-class formation at an open subgroup with fixed field `E`. -/
-private theorem ideleClassMk_ideleCoeffOf_mem_level (E : Ω)
-    {U : OpenSubgroup (AbsoluteGaloisGroup K)} (hU : fixedField U.toSubgroup = E)
-    (a : IdeleGroup (𝓞 E) E) :
-    ideleClassCoeffEquivGlobalFormation K (ideleClassMk K (ideleCoeffOf K E (.ofMul a))) ∈
-      (globalFormation K).level U := by
-  refine (globalFormation K).mem_level.2 fun u hu ↦ ?_
-  rw [← ideleClassCoeffEquivGlobalFormation_smul, ← map_smul,
-    smul_ideleCoeffOf_of_mem_fixingSubgroup (toSubgroup_eq_fixingSubgroup E hU ▸ hu)]
-
-/-- The additive map `I_E → (C_{Kˢ})^U`, sending an idele of `E` to its idele class in `Kˢ`. -/
+/-- The additive map `I_E → (C_{Kˢ})^U`, sending an idele of `E` to its idele class in `Kˢ`. It
+lands in the level because `ideleClassHom` preserves levels. -/
 private def ideleToClassLevel (E : Ω) {U : OpenSubgroup (AbsoluteGaloisGroup K)}
     (hU : fixedField U.toSubgroup = E) :
     Additive (IdeleGroup (𝓞 E) E) →+ (globalFormation K).level U :=
   AddMonoidHom.codRestrict ((ideleClassCoeffEquivGlobalFormation K).toAddMonoidHom.comp
       ((ideleClassMk K).toAddMonoidHom.comp (ideleCoeffOf K E)))
-    _ fun a ↦ ideleClassMk_ideleCoeffOf_mem_level E hU a.toMul
+    _ fun a ↦ by
+      have := Formation.map_mem_level (ideleClassHom K) (ideleLevelEquiv E hU a).2
+      rwa [ideleLevelEquiv_apply_coe, ideleClassHom_hom_apply] at this
 
 private theorem coe_ideleToClassLevel (E : Ω) {U : OpenSubgroup (AbsoluteGaloisGroup K)}
     (hU : fixedField U.toSubgroup = E) (a : Additive (IdeleGroup (𝓞 E) E)) :
@@ -117,8 +102,8 @@ private theorem mem_principalSubgroup_of_ideleClassMk_eq_zero (E : Ω)
     refine (unitsFormation K).mem_level.2 fun u hu ↦ ?_
     rw [← unitsCoeffEquivUnitsFormation_smul]
     refine congrArg _ (principalIdele_injective ?_)
-    rw [map_smul, hy,
-      smul_ideleCoeffOf_of_mem_fixingSubgroup (toSubgroup_eq_fixingSubgroup E hU ▸ hu)]
+    rw [map_smul, hy, smul_ideleCoeffOf_of_mem_fixingSubgroup
+      (toSubgroup_eq_fixingSubgroup_of_fixedField_eq hU ▸ hu)]
   rw [mem_level_unitsFormation_iff, hU] at hyU
   set e : E := ⟨_, hyU⟩
   have he : e ≠ 0 := fun h ↦ y.toMul.ne_zero (congrArg Subtype.val h)
@@ -126,18 +111,21 @@ private theorem mem_principalSubgroup_of_ideleClassMk_eq_zero (E : Ω)
   rw [← principalIdele_ofMul_map_algebraMap, ← hy]
   exact congrArg _ (Additive.toMul.injective (Units.ext rfl))
 
+private theorem ideleToClassLevel_eq_zero_iff (E : Ω) {U : OpenSubgroup (AbsoluteGaloisGroup K)}
+    (hU : fixedField U.toSubgroup = E) {a : IdeleGroup (𝓞 E) E} :
+    ideleToClassLevel E hU (.ofMul a) = 0 ↔ a ∈ IdeleGroup.principalSubgroup (𝓞 E) E := by
+  rw [← ZeroMemClass.coe_eq_zero, coe_ideleToClassLevel, AddEquiv.map_eq_zero_iff]
+  refine ⟨mem_principalSubgroup_of_ideleClassMk_eq_zero E hU, ?_⟩
+  rintro ⟨u, rfl⟩
+  rw [ideleClassMk_eq_zero_iff, ← principalIdele_ofMul_map_algebraMap]
+  exact ⟨_, rfl⟩
+
 private theorem ker_ideleToClassLevel (E : Ω) {U : OpenSubgroup (AbsoluteGaloisGroup K)}
     (hU : fixedField U.toSubgroup = E) :
     (AddMonoidHom.toMultiplicativeRight (ideleToClassLevel E hU)).ker =
       IdeleGroup.principalSubgroup (𝓞 E) E := by
   ext a
-  rw [MonoidHom.mem_ker, AddMonoidHom.coe_toMultiplicativeRight, Function.comp_apply,
-    Function.comp_apply, ofAdd_eq_one, ← Subtype.coe_inj, coe_ideleToClassLevel,
-    ZeroMemClass.coe_zero, AddEquiv.map_eq_zero_iff]
-  refine ⟨mem_principalSubgroup_of_ideleClassMk_eq_zero E hU, ?_⟩
-  rintro ⟨u, rfl⟩
-  rw [ideleClassMk_eq_zero_iff, ← principalIdele_ofMul_map_algebraMap]
-  exact ⟨_, rfl⟩
+  exact MonoidHom.mem_ker.trans (ofAdd_eq_one.trans (ideleToClassLevel_eq_zero_iff E hU))
 
 private theorem surjective_ideleToClassLevel (E : Ω) {U : OpenSubgroup (AbsoluteGaloisGroup K)}
     (hU : fixedField U.toSubgroup = E) : Function.Surjective (ideleToClassLevel E hU) := by
@@ -147,8 +135,8 @@ private theorem surjective_ideleToClassLevel (E : Ω) {U : OpenSubgroup (Absolut
     fun u hu ↦ (ideleClassCoeffEquivGlobalFormation K).injective <| by
       rw [ideleClassCoeffEquivGlobalFormation_smul]
       exact (globalFormation K).mem_level.1 hz u hu
-  obtain ⟨a, rfl⟩ := mem_range_ideleCoeffOf_iff.2 fun g hg ↦
-    hx g (toSubgroup_eq_fixingSubgroup E hU ▸ hg)
+  obtain ⟨a, rfl⟩ := (mem_level_ideleFormation_iff E hU).1 <|
+    (ideleFormation K).mem_level.2 fun u hu ↦ by rw [← ideleCoeffEquivIdeleFormation_smul, hx u hu]
   exact ⟨a, rfl⟩
 
 /-- **The level of the idele-class formation is the idele class group of the fixed field**: if
@@ -201,51 +189,16 @@ section Ground
 
 variable (K)
 
-/-- The whole of `G_K` has fixed field the bottom subextension `K` of `Kˢ/K`. -/
-private theorem fixedField_top :
-    fixedField (⊤ : OpenSubgroup (AbsoluteGaloisGroup K)).toSubgroup =
-      ((⊥ : Ω) : IntermediateField K (SeparableClosure K)) := by
-  rw [OpenSubgroup.toSubgroup_top]
-  exact InfiniteGalois.fixedField_bot
-
-/-- Extension of idele classes from `K` to its image `⊥` in `Kˢ` is bijective. -/
-private theorem bijective_ideleClassExtension_bot :
-    Function.Bijective (GlobalNumberFields.ideleClassExtension K
-      ((⊥ : Ω) : IntermediateField K (SeparableClosure K))) := by
-  set B := ((⊥ : Ω) : IntermediateField K (SeparableClosure K))
-  have hB (x : B) : ∃ c : K, algebraMap K B c = x := by
-    obtain ⟨c, hc⟩ := IntermediateField.mem_bot.1 x.2
-    exact ⟨c, Subtype.ext hc⟩
-  refine ⟨(injective_iff_map_eq_one _).2 fun x hx ↦ ?_, fun x ↦ ?_⟩
-  · -- A principal idele of `B` extended from `K` is the extension of a principal idele of `K`.
-    induction x using QuotientGroup.induction_on with | H a => ?_
-    rw [GlobalNumberFields.ideleClassExtension_mk, QuotientGroup.eq_one_iff] at hx
-    obtain ⟨y, hy⟩ := hx
-    obtain ⟨c, hc⟩ := hB y
-    have hc0 : c ≠ 0 := by
-      rintro rfl
-      exact y.ne_zero (by rw [← hc, map_zero])
-    rw [QuotientGroup.eq_one_iff]
-    refine ⟨Units.mk0 c hc0, GlobalNumberFields.ideleExtension_injective K B ?_⟩
-    rw [GlobalNumberFields.ideleExtension_unitEmbedding, ← hy]
-    exact congrArg _ (Units.ext hc)
-  · -- Every idele of `B` is fixed by the trivial group `Gal(B/K)`, so it descends to `K`.
-    induction x using QuotientGroup.induction_on with | H a => ?_
-    have hσ (σ : B ≃ₐ[K] B) : σ = 1 := AlgEquiv.ext fun x ↦ by
-      obtain ⟨c, rfl⟩ := hB x
-      exact σ.commutes c
-    obtain ⟨b, hb⟩ := (GlobalNumberFields.mem_range_ideleExtension_iff K B (a := a)).2 fun σ ↦ by
-      rw [hσ σ, map_one, RingAut.one_apply]
-    exact ⟨b, by rw [GlobalNumberFields.ideleClassExtension_mk, hb]⟩
-
 /-- **The ground level of the idele-class formation is the idele class group of `K`**: extension
 of ideles from `K` to `Kˢ` identifies `C_K` with the level `(C_{Kˢ})^{G_K}` of `globalFormation K`.
 It is `ideleClassLevelEquiv` at the bottom subextension, read on `C_K` through the identification
 of `K` with its image in `Kˢ`. -/
 def globalGroundEquiv :
     Additive (IdeleClassGroup (𝓞 K) K) ≃+ (globalFormation K).level ⊤ :=
-  (MulEquiv.ofBijective _ (bijective_ideleClassExtension_bot K)).toAdditive.trans
-    (ideleClassLevelEquiv ⊥ (fixedField_top K))
+  (MulEquiv.ofBijective _ (GlobalNumberFields.ideleClassExtension_bijective K
+      ((⊥ : Ω) : IntermediateField K (SeparableClosure K))
+      fun x ↦ (mem_bot.1 x.2).imp fun _ hc ↦ Subtype.ext hc)).toAdditive.trans
+    (ideleClassLevelEquiv ⊥ (fixedField_toSubgroup_top K))
 
 /-- `globalGroundEquiv K` sends the class of an idele of `K` to the class of its extension to
 `Kˢ`. -/
