@@ -98,43 +98,45 @@ theorem spinSixWedgeBasis_inr (i : Fin 3) :
 private noncomputable def splitSixBasis : Basis (Fin 3 ⊕ Fin 3) K (SplitEvenSpace K 3) :=
   (Pi.basisFun K (Fin 3)).dualBasis.prod (Pi.basisFun K (Fin 3))
 
+private theorem spinSixWedgeForm_basis (i j : Fin 3 ⊕ Fin 3) :
+    spinSixWedgeForm K (spinSixWedgeBasis K i) (spinSixWedgeBasis K j) =
+      Matrix.fromBlocks (0 : Matrix (Fin 3) (Fin 3) K) 1 1 0 i j := by
+  -- Compute the full Gram matrix once from the determinant formula for pure wedges.
+  simp only [spinSixWedgeBasis_apply, map_smul, LinearMap.smul_apply, smul_eq_mul,
+    spinSixWedgeForm_ιMulti]
+  rw [Matrix.det_succ_row_zero]
+  rcases i with i | i <;> rcases j with j | j <;>
+    fin_cases i <;> fin_cases j <;>
+    simp [wedgePairSign, wedgePairIndices, Matrix.det_fin_three,
+      Matrix.submatrix_apply, Fin.succAbove, Fin.append, Fin.addCases, Pi.single_apply]
+
 /-- The first half of the hyperbolic wedge basis is totally isotropic for the wedge pairing. -/
 @[simp↓]
 theorem spinSixWedgeForm_basis_inl_inl (i j : Fin 3) :
     spinSixWedgeForm K (spinSixWedgeBasis K (Sum.inl i))
       (spinSixWedgeBasis K (Sum.inl j)) = 0 := by
-  fin_cases i <;> fin_cases j <;>
-    simp [spinSixWedgeBasis_apply, wedgePairSign, wedgePairIndices,
-      spinSixWedgeForm_ιMulti, Matrix.det_succ_row_zero, Fin.sum_univ_succ,
-      Matrix.submatrix_apply, Fin.succAbove, Fin.append, Fin.addCases, Pi.single_apply]
+  simpa using spinSixWedgeForm_basis K (Sum.inl i) (Sum.inl j)
 
 /-- The second half of the hyperbolic wedge basis is totally isotropic for the wedge pairing. -/
 @[simp↓]
 theorem spinSixWedgeForm_basis_inr_inr (i j : Fin 3) :
     spinSixWedgeForm K (spinSixWedgeBasis K (Sum.inr i))
       (spinSixWedgeBasis K (Sum.inr j)) = 0 := by
-  fin_cases i <;> fin_cases j <;>
-    simp [spinSixWedgeBasis_apply, wedgePairSign, wedgePairIndices,
-      spinSixWedgeForm_ιMulti, Matrix.det_succ_row_zero, Fin.sum_univ_succ,
-      Matrix.submatrix_apply, Fin.succAbove, Fin.append, Fin.addCases, Pi.single_apply]
+  simpa using spinSixWedgeForm_basis K (Sum.inr i) (Sum.inr j)
 
 /-- The two halves of the hyperbolic wedge basis are dual for the wedge pairing. -/
 @[simp↓]
 theorem spinSixWedgeForm_basis_inl_inr (i j : Fin 3) :
     spinSixWedgeForm K (spinSixWedgeBasis K (Sum.inl i))
       (spinSixWedgeBasis K (Sum.inr j)) = if i = j then 1 else 0 := by
-  fin_cases i <;> fin_cases j <;>
-    simp [spinSixWedgeBasis_apply, wedgePairSign, wedgePairIndices,
-      spinSixWedgeForm_ιMulti, Matrix.det_succ_row_zero, Fin.sum_univ_succ,
-      Matrix.submatrix_apply, Fin.succAbove, Fin.append, Fin.addCases, Pi.single_apply]
+  simpa [Matrix.one_apply] using spinSixWedgeForm_basis K (Sum.inl i) (Sum.inr j)
 
 /-- The reverse mixed pairing is the same Kronecker delta. -/
 @[simp↓]
 theorem spinSixWedgeForm_basis_inr_inl (i j : Fin 3) :
     spinSixWedgeForm K (spinSixWedgeBasis K (Sum.inr i))
       (spinSixWedgeBasis K (Sum.inl j)) = if i = j then 1 else 0 := by
-  rw [(spinSixWedgeForm_isSymm K).eq]
-  simp [eq_comm]
+  simpa [Matrix.one_apply] using spinSixWedgeForm_basis K (Sum.inr i) (Sum.inl j)
 
 private theorem spinSixWedgeBasis_pairing (i j : Fin 3 ⊕ Fin 3) :
     spinSixWedgeForm K (spinSixWedgeBasis K i) (spinSixWedgeBasis K j) =
@@ -192,7 +194,8 @@ theorem spinSixWedgeIsometryEquivPolarSplit_symm_apply_inr (i : Fin 3) :
 variable [Invertible (2 : K)]
 
 /-- The quadratic form whose un-halved polar form is the volume pairing on `⋀²(K⁴)`.
-The factor `⅟2` is necessary: the wedge pairing is a bilinear form, not a quadratic form. -/
+It is half the diagonal of the wedge pairing; the factor `⅟2` makes its un-halved polar form
+equal to `spinSixWedgeForm` (see `polarBilin_spinSixWedgeQuadraticForm`). -/
 noncomputable def spinSixWedgeQuadraticForm : QuadraticForm K (⋀[K]^2 (Fin 4 → K)) :=
   ⅟(2 : K) • (spinSixWedgeForm K).toQuadraticMap
 
