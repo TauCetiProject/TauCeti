@@ -116,13 +116,11 @@ FLT's current head (`9deae05a`), which drops that development entirely; the pinn
 is the record of it. It is absent from Mathlib too, whose `IsMinimal` API stops at the pairwise
 exclusion of the reduction types and never compares two minimal models.
 
-Statements are taken unchanged except for `of_isMinimal_smul`, which drops the source's
-`[IsMinimal R W₁]`: that instance is already implied by its `h₁`, since
-`HasSplitMultiplicativeReduction` extends `HasMultiplicativeReduction` extends `IsMinimal`. The
-source's `valuation_Δ_aux_smul_le` is restated as `valuation_Δ_le_of_isMinimal_smul`, comparing
-the discriminant valuations of two models related by a change of variables, and
-`isMinimal_of_valuation_Δ_eq_of_isMinimal_smul` adds its converse, which the source does not have.
-The `⁄K` notation is written `baseChange`.
+`valuation_Δ_le_of_isMinimal_smul` compares the discriminant valuations of two models related by
+a change of variables. `of_isMinimal_smul` drops the source's `[IsMinimal R W₁]`, which its `h₁`
+already implies, since `HasSplitMultiplicativeReduction` extends `HasMultiplicativeReduction`
+extends `IsMinimal`. The other statements are unchanged. The converse
+`isMinimal_of_valuation_Δ_eq_of_isMinimal_smul` is not in the source.
 -/
 
 public section
