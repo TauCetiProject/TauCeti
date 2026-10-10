@@ -59,8 +59,11 @@ theorem pairShortComplex_g (n : ℕ) :
 coefficient ring. -/
 theorem shortExact_pairShortComplex (n : ℕ) : (pairShortComplex R A n).ShortExact :=
   ModuleCat.shortComplex_shortExact _
-    (LinearMap.exact_iff.mpr (by
-      simp only [ModuleCat.hom_ofHom, Submodule.ker_mkQ, supportedIn_def]))
+    (by
+      -- Normalize the ModuleCat coercions so rewriting the quotient's submodule is type correct.
+      change Function.Exact (map R (ContinuousMap.subtypeVal A) n) (supportedIn R A n).mkQ
+      rw [supportedIn_def]
+      exact (map R (ContinuousMap.subtypeVal A) n).exact_map_mkQ_range)
     (map_injective R (ContinuousMap.subtypeVal A) Subtype.val_injective n)
     (Submodule.mkQ_surjective _)
 

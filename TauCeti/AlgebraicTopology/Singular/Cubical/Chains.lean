@@ -78,9 +78,6 @@ variable (R : Type*) [Semiring R]
 def map (f : C(X, Y)) (n : ℕ) : CubicalChain X R n →ₗ[R] CubicalChain Y R n :=
   lmapDomain R R f.comp
 
-theorem map_def (f : C(X, Y)) (n : ℕ) : map R f n = lmapDomain R R f.comp :=
-  (rfl)
-
 /-- An injective map of spaces preserves the coefficient of each cube at its image. -/
 theorem map_apply_comp_of_injective (f : C(X, Y)) (hf : Function.Injective f)
     {n : ℕ} (g : CubicalChain X R n) (c : SingularCube X n) :
@@ -89,7 +86,15 @@ theorem map_apply_comp_of_injective (f : C(X, Y)) (hf : Function.Injective f)
     intro d e h
     ext x
     exact hf (ContinuousMap.congr_fun h x)
-  rw [map_def, lmapDomain_apply, mapDomain_apply_of_injective hinj]
+  rw [map, lmapDomain_apply, mapDomain_apply_of_injective hinj]
+
+/-- An injective continuous map induces an injective push-forward on cubical chains. -/
+theorem map_injective (f : C(X, Y)) (hf : Function.Injective f) (n : ℕ) :
+    Function.Injective (map R f n) := by
+  intro g h hgh
+  ext c
+  rw [← map_apply_comp_of_injective R f hf g c,
+    ← map_apply_comp_of_injective R f hf h c, hgh]
 
 @[simp]
 theorem map_single (f : C(X, Y)) {n : ℕ} (c : SingularCube X n) (a : R) :

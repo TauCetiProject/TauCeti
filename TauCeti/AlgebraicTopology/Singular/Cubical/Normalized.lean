@@ -86,6 +86,7 @@ theorem degenerate_eq_supported (n : ℕ) :
   simp only [Set.mem_ofPred_eq, Set.mem_image, eq_comm]
 
 /-- A chain is degenerate exactly when its coefficient at every nondegenerate cube vanishes. -/
+@[simp]
 theorem mem_degenerate_iff {n : ℕ} (g : CubicalChain X R n) :
     g ∈ degenerate X R n ↔ ∀ c, ¬ IsDegenerate c → g c = 0 := by
   rw [degenerate_eq_supported, Finsupp.mem_supported']
