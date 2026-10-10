@@ -23,7 +23,10 @@ the primitive-idempotent decomposition of `1 = ∑ᵥ eᵥ`
 No hypothesis is placed on the paths at `v`: oriented cycles through `v` are allowed. For the
 quiver with a single vertex and a single loop at it, where `kQ` is the polynomial ring `k[X]`
 (`TauCeti.PathAlgebra.oneLoopAlgEquiv`) and the one vertex idempotent is `1`, the statement is that
-`k[X]` has no idempotent other than `0` and `1`.
+`1` is primitive in `k[X]`. Over a coefficient *ring*, where every idempotent has a complement,
+that in turn says that `k[X]` has no idempotent other than `0` and `1`
+(`TauCeti.isPrimitiveIdempotent_one_iff`); over a semiring it is the weaker statement that `1`
+admits no splitting into two nonzero orthogonal idempotents.
 
 What replaces that hypothesis is the length filtration of the path algebra (`TauCeti.pathSpan`),
 which is where the two coordinate facts this file rests on come from. Reading the coordinate on the
