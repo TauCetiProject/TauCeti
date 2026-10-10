@@ -169,8 +169,8 @@ theorem twistedDifferential_mem_twistedTotalGrading
       rw [InternalGrading.ofDecomposition_piece]
       exact hf x
     have hα : (InternalGrading.ofDecomposition ℳ).koszulTwist 1 (f x) ∈ ℳ (n + ind x) := by
-      rw [InternalGrading.koszulTwist_one_apply_of_mem _ hfx]
-      exact Submodule.smul_mem _ _ (hf x)
+      have := InternalGrading.koszulTwist_mem_piece _ hfx 1
+      rwa [InternalGrading.ofDecomposition_piece] at this
     have hmxy : op (m x y) ∈
         (InternalGrading.ofDecomposition 𝒜).opposite.piece (ind y - ind x + 1) := by
       rw [InternalGrading.op_mem_opposite_piece_iff, InternalGrading.ofDecomposition_piece]
