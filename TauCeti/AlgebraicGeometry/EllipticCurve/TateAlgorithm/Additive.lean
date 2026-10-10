@@ -7,8 +7,8 @@ module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Reduction
 public import Mathlib.FieldTheory.Perfect
-import TauCeti.Algebra.Polynomial.QuadraticDiscriminant
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
+import TauCeti.RingTheory.LocalRing.QuadraticDoubleRoot
 
 /-!
 # Tate's algorithm: the additive normal form and the non-minimality test
@@ -30,9 +30,9 @@ which is the normal form from which the cubic `T³ + (a₂/ϖ) T² + (a₄/ϖ²)
 read. This file proves that Step 6 succeeds, with a change of variables `y ↦ y + s x + t` fixing
 `x`. Each of its two halves completes a square modulo `ϖ`: first `T² + a₁ T − a₂`, whose
 discriminant is `b₂`, then `T² + (a₃/ϖ) T − a₆/ϖ²`, whose discriminant is `b₆/ϖ²`. A quadratic with
-vanishing discriminant over the perfect field `k` has a double root in `k`
-(`Polynomial.exists_quadratic_eq_zero_and_two_mul_add_eq_zero_of_discrim_eq_zero`); in
-characteristic `2` this is a square root, which is where perfectness enters. The conditions on
+vanishing discriminant over the perfect field `k` has a double root in `k`, which lifts to `R`
+(`TauCeti.IsLocalRing.exists_add_two_mul_mem_maximalIdeal_and_sub_mul_sub_sq_mem_maximalIdeal`);
+in characteristic `2` this is a square root, which is where perfectness enters. The conditions on
 `a₃` and `a₄` that Step 2 provides are not needed as hypotheses: `ϖ ∣ a₃` follows from
 `b₆ = a₃² + 4 a₆`, and `ϖ² ∣ a₄` in the normal form from `b₈ ≡ −a₄² (mod ϖ³)`.
 
@@ -61,30 +61,9 @@ public section
 
 namespace WeierstrassCurve
 
-open IsLocalRing Polynomial
+open IsLocalRing
 
 variable {R : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R] {ϖ : R}
-
-/-- A double root of `T² + a T − b` modulo `ϖ`, lifted from the residue field: if `ϖ` divides the
-discriminant `a² + 4 b`, some `s ∈ R` has `ϖ ∣ a + 2 s` and `ϖ ∣ b − s a − s²`. For a Weierstrass
-equation these are the new `a₁` and `a₂` after `y ↦ y + s x`. -/
-private theorem exists_dvd_add_two_mul_and_dvd_sub_mul_sub_sq [PerfectField (ResidueField R)]
-    (hϖ : Irreducible ϖ) {a b : R} (h : ϖ ∣ a ^ 2 + 4 * b) :
-    ∃ s : R, ϖ ∣ a + 2 * s ∧ ϖ ∣ b - s * a - s ^ 2 := by
-  have key (x : R) : residue R x = 0 ↔ ϖ ∣ x := by
-    rw [residue_eq_zero_iff, hϖ.maximalIdeal_eq, Ideal.mem_span_singleton]
-  have hd : discrim 1 (residue R a) (-residue R b) = 0 := by
-    rw [discrim, ← (key _).2 h]
-    simp only [map_add, map_pow, map_mul, map_ofNat]
-    ring
-  obtain ⟨x, hx, hx'⟩ :=
-    exists_quadratic_eq_zero_and_two_mul_add_eq_zero_of_discrim_eq_zero one_ne_zero hd
-  obtain ⟨s, rfl⟩ := residue_surjective x
-  refine ⟨s, (key _).1 ?_, (key _).1 ?_⟩
-  · simp only [map_add, map_mul, map_ofNat]
-    linear_combination hx'
-  · simp only [map_sub, map_mul, map_pow]
-    linear_combination -hx
 
 /-- **Tate's algorithm, Step 6.** Over a discrete valuation ring with uniformiser `ϖ` and perfect
 residue field, let `W` be a Weierstrass equation over `R` on which Steps 3–5 do not stop:
@@ -99,9 +78,13 @@ theorem exists_variableChange_dvd_a₁_a₂_a₃_a₄_a₆ [PerfectField (Residu
       ϖ ^ 2 ∣ (VariableChange.mk 1 0 s t • W).a₃ ∧ ϖ ^ 2 ∣ (VariableChange.mk 1 0 s t • W).a₄ ∧
       ϖ ^ 3 ∣ (VariableChange.mk 1 0 s t • W).a₆ := by
   have hp : Prime ϖ := hϖ.prime
+  have key (x : R) : x ∈ maximalIdeal R ↔ ϖ ∣ x := by
+    rw [hϖ.maximalIdeal_eq, Ideal.mem_span_singleton]
   -- First half: `s` clears `a₁` and `a₂` modulo `ϖ`, since `b₂ = a₁² + 4 a₂`.
-  obtain ⟨s, hs₁, hs₂⟩ := exists_dvd_add_two_mul_and_dvd_sub_mul_sub_sq hϖ (a := W.a₁) (b := W.a₂)
-    (by rwa [b₂] at hb₂)
+  obtain ⟨s, hs₁, hs₂⟩ :=
+    TauCeti.IsLocalRing.exists_add_two_mul_mem_maximalIdeal_and_sub_mul_sub_sq_mem_maximalIdeal
+      (a := W.a₁) (b := W.a₂) ((key _).2 (by rwa [b₂] at hb₂))
+  rw [key] at hs₁ hs₂
   -- `b₆ = a₃² + 4 a₆` and `ϖ² ∣ a₆` give `ϖ ∣ a₃`; write `a₃ = ϖ α` and `a₆ = ϖ² β`.
   obtain ⟨α, hα⟩ : ϖ ∣ W.a₃ := hp.dvd_of_dvd_pow (n := 2) <| by
     have : W.a₃ ^ 2 = W.b₆ - 4 * W.a₆ := by rw [b₆]; ring
@@ -117,7 +100,10 @@ theorem exists_variableChange_dvd_a₁_a₂_a₃_a₄_a₆ [PerfectField (Residu
       rw [b₆, hα, hβ]
       ring
     rwa [mul_dvd_mul_iff_left (pow_ne_zero 2 hp.ne_zero)] at h
-  obtain ⟨τ, hτ₁, hτ₂⟩ := exists_dvd_add_two_mul_and_dvd_sub_mul_sub_sq hϖ hαβ
+  obtain ⟨τ, hτ₁, hτ₂⟩ :=
+    TauCeti.IsLocalRing.exists_add_two_mul_mem_maximalIdeal_and_sub_mul_sub_sq_mem_maximalIdeal
+      ((key _).2 hαβ)
+  rw [key] at hτ₁ hτ₂
   refine ⟨s, ϖ * τ, ?_⟩
   set V := VariableChange.mk 1 0 s (ϖ * τ) • W with hV
   have hV₁ : V.a₁ = W.a₁ + 2 * s := by simp [hV, variableChange_a₁]
