@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Galois.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Translation.Basic
+import Mathlib.Algebra.Group.Translate
 -- Proof-only: the Galois correspondence for a finite group of automorphisms, with no finiteness
 -- hypothesis on the ambient extension.
 import TauCeti.FieldTheory.Galois.FixedField
@@ -365,7 +366,7 @@ attribute [local instance] Fintype.ofFinite
 theorem _root_.WeierstrassCurve.Affine.translation_sum (P : Φ) (f : W.FunctionField) :
     translation W P (∑ Q : Φ, translation W Q f) = ∑ Q : Φ, translation W Q f := by
   rw [map_sum]
-  refine Fintype.sum_equiv (Equiv.addRight P) _ _ fun Q ↦ ?_
-  simp only [Equiv.coe_addRight, AddSubgroup.coe_add, translation_add, AlgEquiv.trans_apply]
+  simpa only [translate_apply, sub_neg_eq_add, AddSubgroup.coe_add, translation_add,
+    AlgEquiv.trans_apply] using sum_translate (-P) (fun Q : Φ ↦ translation W Q f)
 
 end TauCeti
