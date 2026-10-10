@@ -112,9 +112,8 @@ theorem toRatAddCircle_finiteHilbertInvariantAt (v : HeightOneSpectrum (𝓞 K))
 
 /-- The finite Hilbert invariant is the local invariant of one global Kummer-cup Brauer class.
 This identifies the finite terms of Hilbert reciprocity with Brauer localization. -/
-theorem finiteInvAt_kummerBrauerClass (v : HeightOneSpectrum (𝓞 K)) (a b : Kˣ)
-    (hζ : IsPrimitiveRoot (-1 : K) 2) :
-    finiteInvAt K v (kummerBrauerClass (-1) hζ a b) =
+theorem finiteInvAt_kummerBrauerClass (v : HeightOneSpectrum (𝓞 K)) (a b : Kˣ) :
+    finiteInvAt K v (kummerBrauerClass (-1) (.neg_one 0 (by decide)) a b) =
       ZMod.toRatAddCircle 2 (finiteHilbertInvariantAt K v a b) := by
   have hζv : IsPrimitiveRoot (-1 : v.adicCompletion K) 2 := .neg_one 0 (by decide)
   have h2v : IsUnit (2 : v.adicCompletion K) := hζv.neZero'.out.isUnit
