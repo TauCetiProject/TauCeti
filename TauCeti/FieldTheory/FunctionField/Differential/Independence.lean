@@ -8,11 +8,11 @@ module
 public import TauCeti.FieldTheory.FunctionField.Differential.Residue
 public import TauCeti.FieldTheory.FunctionField.Place.Expansion.Laurent.Derivative
 import TauCeti.FieldTheory.FunctionField.Differential.LocalNonvanishing
-import TauCeti.FieldTheory.FunctionField.Different.Divisor
+import TauCeti.FieldTheory.FunctionField.Different.Separating
 import TauCeti.FieldTheory.FunctionField.Place.Existence
 
 /-!
-# The Weil differential `dx` does not depend on the separating element
+# The chain rule for Weil differentials and independence of the Kähler–Weil comparison
 
 Let `F / k` be an algebraic function field with exact constants, and let `x` and `y` be separating
 elements. The Weil differentials `dx` and `dy` (`TauCeti.weilDifferentialOfSeparating`) are the
@@ -32,9 +32,10 @@ prime elements, the local components are residues
 `res_{P,x-a} (u · dy/dx)`, which is the local component of `(dy/dx) · dx`. Over an exact constant
 field one local component determines a Weil differential
 (`TauCeti.repartitionDualComponent_inj`). Such a place exists as soon as `F` has infinitely many
-rational places, for instance over an algebraically closed field: at all but finitely many
-rational places `P`, the function `x - x(P)` is a prime element, since only finitely many places
-ramify over `k(x)`.
+rational places, for instance over an algebraically closed field
+(`TauCeti.Place.infinite_setOf_degree_eq_one`): at all but finitely many rational places `P`, the
+function `x - x(P)` is a prime element, since only finitely many places ramify over `k(x)`
+(`TauCeti.Place.finite_setOf_forall_ord_sub_algebraMap_ne_one`).
 
 Consequently the Kähler–Weil comparison
 `TauCeti.kaehlerDifferentialEquivWeilDifferentialOfSeparating` does not depend on the separating
@@ -44,10 +45,6 @@ separating prime element (Stichtenoth, Theorem 4.3.2(d)).
 
 ## Main results
 
-* `TauCeti.Place.finite_setOf_forall_ord_sub_algebraMap_ne_one`: at all but finitely many rational
-  places that are not poles of a separating `x`, some `x - a` is a prime element.
-* `TauCeti.Place.infinite_setOf_degree_eq_one`: over an algebraically closed field there are
-  infinitely many rational places.
 * `TauCeti.weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul_of_ord_eq_one`:
   `dy = (dy/dx) · dx`, given a rational place at which `x - a` and `y - b` are prime elements.
 * `TauCeti.weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul`: **the chain rule
@@ -72,46 +69,6 @@ open KaehlerDifferential
 namespace TauCeti
 
 variable {k F : Type*} [Field k] [Field F] [Algebra k F]
-
-namespace Place
-
-/-- **Almost every rational place has a translate of `x` as a prime element**: for a separating
-element `x`, only finitely many rational places `P` with `ord_P x ≥ 0` admit no constant `a` with
-`ord_P (x - a) = 1`. -/
-theorem finite_setOf_forall_ord_sub_algebraMap_ne_one (hF : IsFunctionField k F) {x : F}
-    (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F] :
-    {P : Place k F | P.degree = 1 ∧ 0 ≤ P.ord x ∧
-      ∀ a : k, P.ord (x - algebraMap k F a) ≠ 1}.Finite := by
-  let _ := ratFuncAlgebraOfTranscendental hx
-  let _ := isScalarTower_ratFuncAlgebraOfTranscendental hx
-  let _ := isFunctionField_iff_functionField.mp hF
-  let _ := isSeparable_ratFuncAlgebraOfTranscendental hx
-  have hX := algebraMap_ratFuncAlgebraOfTranscendental_X hx
-  refine (finite_setOf_differentExponent_ne_zero (k' := k) (F' := F) k (RatFunc k)
-    (IsFunctionField.ratFunc k)).subset fun P ⟨hP, hx0, hne⟩ ↦ ?_
-  refine (differentExponent_pos_of_one_lt_ramificationIdx k (RatFunc k) P ?_).ne'
-  refine lt_of_le_of_ne (ramificationIdx_pos (RatFunc k) P) fun he ↦ ?_
-  rcases eq_infty_or_exists_eq_adicOfIrreducible_X_sub_C (Nat.eq_one_of_mul_eq_one_right
-    (hP ▸ degree_eq_degree_restrict_mul_relativeDegree k (RatFunc k) P).symm) with h | ⟨a, h⟩
-  · -- `x` would have a pole at `P`, lying over the pole of `X`.
-    rw [← hX, ord_algebraMap_restrict k (RatFunc k) P, h, ord_infty, RatFunc.intDegree_X,
-      ← he] at hx0
-    omega
-  · -- `x - a` is a prime element at `P`, lying unramified over the zero of `X - a`.
-    refine hne a ?_
-    rw [← hX, IsScalarTower.algebraMap_apply k (RatFunc k) F, RatFunc.algebraMap_eq_C, ← map_sub,
-      ord_algebraMap_restrict k (RatFunc k) P, h, ord_adicOfIrreducible_X_sub_C_self, ← he,
-      Nat.cast_one, mul_one]
-
-/-- Over an algebraically closed constant field, an algebraic function field has infinitely many
-rational places. -/
-theorem infinite_setOf_degree_eq_one [IsAlgClosed k] (hF : IsFunctionField k F) :
-    {P : Place k F | P.degree = 1}.Infinite := by
-  have := infinite hF
-  simpa [degree_eq_one_of_isAlgClosed_of_isFunctionField _ hF] using
-    Set.infinite_univ (α := Place k F)
-
-end Place
 
 /-- **The chain rule for Weil differentials, at a common rational place** (Stichtenoth,
 Theorem 4.3.2(a)): over an exact constant field, if `x - a` and `y - b` are prime elements at the
