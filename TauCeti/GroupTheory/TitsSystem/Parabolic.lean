@@ -173,10 +173,10 @@ theorem mem_standardParabolic_iff_of_mem_bruhatCell {J : Set T.simple}
     exact T.eq_of_mem_bruhatCell_of_mem hgv hg ▸ hv
   · exact fun hw ↦ ⟨w, hw, hg⟩
 
-/-- A normalizer element belongs to `P_J` exactly when its Weyl class belongs to `W_J`. Thus
+/-- An element of `N` belongs to `P_J` exactly when its Weyl class belongs to `W_J`. Thus
 `P_J ∩ N` is the inverse image of `W_J` under `N → W`. -/
 @[simp]
-theorem mem_standardParabolic_normalizer_iff (J : Set T.simple) (n : T.subgroupN) :
+theorem coe_mem_standardParabolic_iff (J : Set T.simple) (n : T.subgroupN) :
     (n : G) ∈ T.standardParabolic J ↔
       QuotientGroup.mk n ∈ Subgroup.closure (Subtype.val '' J) := by
   apply T.mem_standardParabolic_iff_of_mem_bruhatCell
