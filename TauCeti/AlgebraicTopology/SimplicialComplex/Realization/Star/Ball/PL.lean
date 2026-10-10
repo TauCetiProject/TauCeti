@@ -119,12 +119,7 @@ theorem exists_isPLOn_closedStarHomeomorphClosedBall_of_isPLOn [Finite ι]
   let hK : IsCompact (closedStarRealization K {v}) :=
     K.isCompact_closedStarRealization_of_finite v
   have hlink : IsCompact (range (fun y : geometricLink K v => (y.1.1 : ι → ℝ))) := by
-    have hcompact : IsCompact (geometricLink K v) := by
-      simpa only [Set.inter_def, Set.mem_ofPred_eq, Function.comp_apply,
-        ← mem_geometricLink, Set.ofPred_mem_eq] using
-        hK.inter_left
-          (isClosed_eq ((continuous_apply v).comp (continuous_realization_coe K))
-            (continuous_const (y := (0 : ℝ))))
+    have hcompact := K.isCompact_geometricLink v hK
     let : CompactSpace (geometricLink K v) := isCompact_iff_compactSpace.mp hcompact
     exact isCompact_range ((continuous_realization_coe K).comp continuous_subtype_val)
   simpa only [hK] using exists_isPLOn_closedStarHomeomorphClosedBall hK e F hF
