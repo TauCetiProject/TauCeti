@@ -146,6 +146,8 @@ theorem simpleWeylPoint_conj_weightTorusPoints (i : Fin r) (A : Type v) [CommRin
 theorem simpleWeylPoint_mem_normalizer (i : Fin r) (A : Type v) [CommRing A] :
     simpleWeylPoint r i A ∈ Subgroup.normalizer
       (((weightTorusPoints r A).range : Subgroup (points r A)) : Set (points r A)) := by
+  -- As in `TauCeti.DynkinType.geckSimpleWeylPoint_mem_normalizer_geckWeightTorusPoints`: the
+  -- conjugation formula maps torus points to torus points, and the reflection is an involution.
   refine Subgroup.mem_normalizer_iff.2 fun x ↦ ⟨?_, ?_⟩
   · rintro ⟨s, rfl⟩
     exact ⟨_, (simpleWeylPoint_conj_weightTorusPoints r i A s).symm⟩
