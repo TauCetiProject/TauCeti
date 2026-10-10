@@ -76,7 +76,7 @@ theorem target_constOfLength (x : X) (L : ℝ≥0) : (constOfLength x L).target 
 
 @[simp]
 theorem constOfLength_zero (x : X) : constOfLength x 0 = const x :=
-  ext (by simp) fun _ ↦ by simp
+  ext (by simp) fun _ _ ↦ by simp
 
 theorem continuous_constOfLength : Continuous fun p : X × ℝ≥0 ↦ constOfLength p.1 p.2 :=
   continuous_iff.2 ⟨continuous_snd, continuous_fst.comp continuous_fst⟩
@@ -200,7 +200,7 @@ space of a point is `[0, ∞)`, not a point. -/
 def lengthHomeomorph [Subsingleton X] : MooreLoop X b ≃ₜ ℝ≥0 where
   toFun := length
   invFun := constOfLength
-  left_inv γ := ext (MoorePath.ext (by simp) fun _ ↦ Subsingleton.elim _ _)
+  left_inv γ := ext (MoorePath.ext (by simp) fun _ _ ↦ Subsingleton.elim _ _)
   right_inv _ := rfl
   continuous_toFun := continuous_length
   continuous_invFun := continuous_constOfLength
