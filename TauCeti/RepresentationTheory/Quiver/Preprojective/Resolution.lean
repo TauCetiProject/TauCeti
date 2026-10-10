@@ -83,6 +83,8 @@ instance (i : Symmetrify Q) : Module.Projective Πᵐᵒᵖ (preprojectiveRightP
 abbrev preprojectiveKoszulMiddle (v : Q) :=
   (i : Symmetrify Q) → (i ⟶ Symmetrify.of.obj v) → preprojectiveRightProjective k i
 
+/-- The middle Koszul term is projective as a finite direct sum of right vertex projectives,
+represented by a dependent function space. -/
 instance (v : Q) : Module.Projective Πᵐᵒᵖ (preprojectiveKoszulMiddle k v) := by
   let (i : Symmetrify Q) :
       Module.Projective Πᵐᵒᵖ ((i ⟶ Symmetrify.of.obj v) → preprojectiveRightProjective k i) :=
@@ -170,6 +172,11 @@ noncomputable def preprojectiveVertexAugmentation (v : Q) :
       preprojectiveVertexModule k v :=
   (LinearMap.range (preprojectiveKoszulRight k v)).mkQ
 
+/-- The vertex augmentation sends each element to its quotient class. -/
+theorem preprojectiveVertexAugmentation_apply (v : Q)
+    (x : preprojectiveRightProjective k (Symmetrify.of.obj v)) :
+    preprojectiveVertexAugmentation k v x = Submodule.Quotient.mk x := (rfl)
+
 /-- The augmentation kills exactly the elements of positive path degree. -/
 @[simp]
 theorem preprojectiveVertexAugmentation_eq_zero_iff (v : Q)
@@ -189,6 +196,7 @@ theorem preprojectiveVertexAugmentation_eq_zero_iff (v : Q)
     exact ⟨fun i b => ⟨z i b, (mem_preprojectiveRightProjective_iff k i _).2 (hz i b)⟩,
       Subtype.ext hxz.symm⟩
 
+/-- The vertex augmentation kernel is the range of the incoming-arrow differential. -/
 @[simp]
 theorem ker_preprojectiveVertexAugmentation (v : Q) :
     LinearMap.ker (preprojectiveVertexAugmentation k v) =
