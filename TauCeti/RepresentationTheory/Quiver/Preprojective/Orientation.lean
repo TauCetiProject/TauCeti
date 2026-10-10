@@ -66,6 +66,8 @@ obtained from the same proof.
 * `TauCeti.reorientPreprojectiveAlgebraEquiv_preprojectiveMk`: the isomorphism, computed on an
   arbitrary quotient representative, as the doubled-quiver identification followed by the rescaling
   by `-1` of the turned-around arrows.
+* `TauCeti.reorientPreprojectiveAlgebraEquiv_preprojectiveMk_doubledVertexIdempotent`: the
+  isomorphism matches the vertex idempotents.
 * `TauCeti.reorientPreprojectiveAlgebraEquiv_preprojectiveMk_ofArrow_keep` and its three
   companions: the isomorphism, computed on each of the four kinds of generator. An arrow `σ` leaves
   alone and its formal reverse are fixed, a turned-around arrow is carried to a formal reverse, and
@@ -401,6 +403,17 @@ theorem reorientPreprojectiveAlgebraEquiv_preprojectiveMk
     reorientPreprojectiveAlgebraEquivGauged_preprojectiveMk,
     preprojectiveAlgebraEquivGauged_symm_gaugedPreprojectiveMk]
   simp only [reorientSignUnit_inv, ← reorientSign_eq_coe_reorientSignUnit]
+
+/-- **The orientation-independence isomorphism matches the vertex idempotents.** Deliberately not
+a `simp` lemma, `TauCeti.reorientPreprojectiveAlgebraEquiv_preprojectiveMk` already rewriting its
+left-hand side. -/
+theorem reorientPreprojectiveAlgebraEquiv_preprojectiveMk_doubledVertexIdempotent (v : Q) :
+    reorientPreprojectiveAlgebraEquiv k σ (preprojectiveMk k (Reorient Q σ)
+        (doubledVertexIdempotent k (reorientVertex σ v)))
+      = preprojectiveMk k Q (doubledVertexIdempotent k v) := by
+  rw [reorientPreprojectiveAlgebraEquiv_preprojectiveMk,
+    reorientDoubledEquiv_doubledVertexIdempotent, doubledVertexIdempotent_def,
+    rescale_vertexIdempotent]
 
 /-! The four equations below compute the isomorphism on the generators of the reoriented algebra,
 which are the arrows of `Symmetrify (Reorient Q σ)`. They are deliberately not `simp` lemmas,
