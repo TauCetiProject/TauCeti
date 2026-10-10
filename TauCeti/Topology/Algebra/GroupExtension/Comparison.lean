@@ -75,6 +75,7 @@ theorem continuous_equivariantKernelMap [CompactSpace N] :
   exact (φ.continuous.comp X.continuous_inl).congr
     (fun m ↦ (X.inl_equivariantKernelMap Y φ hright m).symm)
 
+-- Explicit H² and its coefficient maps require topological group structures on both kernels.
 variable [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
   [IsTopologicalGroup M] [ContinuousSMul G M] [CompactSpace M]
   [IsTopologicalGroup N] [ContinuousSMul G N] [CompactSpace N]
