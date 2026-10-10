@@ -151,15 +151,10 @@ private theorem kummerCoeffIncl_subgroupKummerRatio (hα : ∀ h ∈ N, h • α
 subgroup fixing `σ(L)` and for `αⁿ = σ b`, its class is the Kummer class of `b ∈ Lˣ`
 (`fixingSubgroupKummerEquiv_ofMul_mk`). -/
 def subgroupKummerCocycle (hα : ∀ h ∈ N, h • α ^ n = α ^ n) : Z1 N (KummerCoeff K n) :=
-  ⟨subgroupKummerRatio hα, mem_Z1_iff.2
-    ⟨continuous_of_injective_comp (kummerCoeffIncl_injective K n) <| by
-      simpa only [Function.comp_def, kummerCoeffIncl_subgroupKummerRatio] using
-        continuous_d0_apply (G := N) (Additive.ofMul α : UnitsCoeff K),
-    fun g h => kummerCoeffIncl_injective K n <| by
-      rw [map_add, Subgroup.smul_def, kummerCoeffIncl_equivariant, ← Subgroup.smul_def,
-        kummerCoeffIncl_subgroupKummerRatio, kummerCoeffIncl_subgroupKummerRatio,
-        kummerCoeffIncl_subgroupKummerRatio, d0_apply, d0_apply, d0_apply, smul_sub, smul_smul]
-      abel⟩⟩
+  ⟨subgroupKummerRatio hα, ContCohomology.mem_Z1_of_injective_comp_eq_d0
+    (kummerCoeffIncl_injective K n)
+    (fun h x => by rw [Subgroup.smul_def, kummerCoeffIncl_equivariant, ← Subgroup.smul_def])
+    (fun h => (kummerCoeffIncl_subgroupKummerRatio hα h).trans (d0_apply _ h))⟩
 
 /-- The value of `subgroupKummerCocycle` at `h` is the ratio `h α / α`. -/
 @[simp]
