@@ -87,6 +87,12 @@ theorem simplex_singleton (v : ι) : simplex {v} = point v := by
   · rintro rfl
     exact ⟨Finset.singleton_nonempty v, Or.inr rfl⟩
 
+/-- A zero-simplex has exactly its singleton vertex as a face, using its point normal form. -/
+@[simp]
+theorem faces_simplex_singleton (v : ι) : (point v).faces = {{v}} := by
+  ext σ
+  exact mem_point
+
 /-- `K` collapses to `L` when a finite, possibly empty, sequence of elementary collapses takes
 `K` to `L`. -/
 def CollapsesTo (K L : _root_.PreAbstractSimplicialComplex ι) : Prop :=
