@@ -180,6 +180,31 @@ theorem weightSpace_toRepresentation_eq_bot_iff {ρ : Representation k (GL (Fin 
 
 end Subrepresentation
 
+namespace Representation.IntertwiningMap
+
+open TauCeti
+
+/-- Integer weight spaces spanning a representation also span any equivariant quotient. -/
+theorem iSup_weightSpace_eq_top_of_surjective {k : Type u} [CommRing k] {n : ℕ}
+    {V W : Type*} [AddCommGroup V] [Module k V] [AddCommGroup W] [Module k W]
+    {ρ : Representation k (GL (Fin n) k) V} {σ : Representation k (GL (Fin n) k) W}
+    (f : IntertwiningMap ρ σ) (hf : Function.Surjective f)
+    (hρ : ⨆ l : Fin n → ℤ, weightSpace ρ l = ⊤) :
+    ⨆ l : Fin n → ℤ, weightSpace σ l = ⊤ := by
+  have hmap (l : Fin n → ℤ) : (weightSpace ρ l).map f.toLinearMap ≤ weightSpace σ l := by
+    rintro _ ⟨v, hv, rfl⟩
+    rw [mem_weightSpace_iff]
+    intro t
+    rw [f.toLinearMap_apply, ← f.isIntertwining, apply_of_mem_weightSpace hv, map_smul]
+  apply top_le_iff.mp
+  calc
+    ⊤ = (⨆ l : Fin n → ℤ, weightSpace ρ l).map f.toLinearMap := by
+      rw [hρ, Submodule.map_top, LinearMap.range_eq_top.mpr hf]
+    _ = ⨆ l : Fin n → ℤ, (weightSpace ρ l).map f.toLinearMap := Submodule.map_iSup _ _
+    _ ≤ ⨆ l : Fin n → ℤ, weightSpace σ l := iSup_mono hmap
+
+end Representation.IntertwiningMap
+
 namespace TauCeti
 
 section CommRing
