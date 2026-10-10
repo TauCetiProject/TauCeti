@@ -34,8 +34,6 @@ the entropy approximation condition.
 
 For the static Schrödinger problem and joint weak lower semicontinuity of entropy, see M. Nutz,
 [*Introduction to Entropic Optimal Transport*][nutz], §2 and Lemma 1.3.
-The proofs use `lowerSemicontinuous_klDiv_finiteMeasure` and the moving-marginal compactness API in
-`TauCeti.MeasureTheory.OptimalTransport.Compactness`.
 
 [nutz]: https://www.math.columbia.edu/~mnutz/docs/EOT_lecture_notes.pdf
 -/
