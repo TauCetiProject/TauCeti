@@ -55,6 +55,11 @@ def closingHalfEdge (v : BraidWord n) (p : Fin n) (h : v.crossingsAt p ≠ []) :
   v.closure.crossing ((v.crossingsAt p).getLast h)
     (v.outgoingSlot ((v.crossingsAt p).getLast h) p)
 
+/-- The closing endpoint is the outgoing slot at the last crossing on its position. -/
+theorem closingHalfEdge_def (v : BraidWord n) (p : Fin n) (h : v.crossingsAt p ≠ []) :
+    v.closingHalfEdge p h = v.closure.crossing ((v.crossingsAt p).getLast h)
+      (v.outgoingSlot ((v.crossingsAt p).getLast h) p) := (rfl)
+
 /-- The successor of the last crossing on a strand position is its first crossing, through the
 closing arc. -/
 @[simp]
