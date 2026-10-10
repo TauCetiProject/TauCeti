@@ -240,9 +240,7 @@ theorem lowerOrderL_contDiffSMulL (k : ℕ) {psi : E → ℝ}
   have heq : (T : Wkp0 mu Omega p (k + 1) → Wkp0 mu Omega p k) = S := by
     apply (Wkp0.denseRange_ofTestFunctionₗ (k + 1)).equalizer T.continuous S.continuous
     funext phi
-    change lowerOrderL k (contDiffSMulL (k + 1) hpsi hM hbound
-        (Wkp0.ofTestFunctionₗ (k + 1) phi)) =
-      contDiffSMulL k hpsi hM _ (lowerOrderL k (Wkp0.ofTestFunctionₗ (k + 1) phi))
+    simp only [T, S, Function.comp_apply, ContinuousLinearMap.comp_apply]
     rw [contDiffSMulL_apply_ofTestFunction, lowerOrderL_ofTestFunctionₗ,
       lowerOrderL_ofTestFunctionₗ, contDiffSMulL_apply_ofTestFunction]
   exact congrFun heq u
