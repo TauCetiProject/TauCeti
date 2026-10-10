@@ -81,6 +81,7 @@ theorem kyFanSum_def (A : E →ₗ[𝕜] F) (k : ℕ) :
 theorem kyFanSum_zero_right (A : E →ₗ[𝕜] F) : A.kyFanSum 0 = 0 := by
   simp [kyFanSum_def]
 
+@[simp]
 theorem kyFanSum_succ (A : E →ₗ[𝕜] F) (k : ℕ) :
     A.kyFanSum (k + 1) = A.kyFanSum k + A.singularValues k := by
   simp [kyFanSum_def, sum_range_succ]
@@ -98,12 +99,15 @@ theorem kyFanSum_mono (A : E →ₗ[𝕜] F) : Monotone A.kyFanSum := fun _ _ h 
 
 /-- Only the first `rank A` singular values can be nonzero, so the Ky Fan sums stop growing at the
 rank. -/
+@[simp]
 theorem kyFanSum_min_finrank_range (A : E →ₗ[𝕜] F) (k : ℕ) :
     A.kyFanSum (min k (finrank 𝕜 (range A))) = A.kyFanSum k := by
   refine sum_subset (Finset.range_subset_range.mpr (min_le_left _ _)) fun i hik hi ↦ ?_
   simp only [Finset.mem_range, lt_min_iff, not_and, not_lt] at hik hi
   exact A.singularValues_eq_zero_iff_le_finrank_range.mpr (hi hik)
 
+/-- Taking the adjoint preserves every Ky Fan sum, since `A` and `adjoint A` have the same
+singular values. -/
 @[simp]
 theorem kyFanSum_adjoint (A : E →ₗ[𝕜] F) (k : ℕ) : (adjoint A).kyFanSum k = A.kyFanSum k := by
   simp [kyFanSum_def]
@@ -232,6 +236,7 @@ theorem kyFanSum_add_le (A B : E →ₗ[𝕜] F) (k : ℕ) :
     (add_le_add (hA.trans (A.kyFanSum_mono hm)) (hB.trans (B.kyFanSum_mono hm)))
 
 /-- The Ky Fan sums are absolutely homogeneous: `Kₖ(c • A) = ‖c‖ Kₖ(A)`. -/
+@[simp]
 theorem kyFanSum_smul (c : 𝕜) (A : E →ₗ[𝕜] F) (k : ℕ) :
     (c • A).kyFanSum k = ‖c‖ * A.kyFanSum k := by
   have hle (c : 𝕜) (A : E →ₗ[𝕜] F) : (c • A).kyFanSum k ≤ ‖c‖ * A.kyFanSum k := by
