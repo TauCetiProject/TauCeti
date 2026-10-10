@@ -117,6 +117,23 @@ lemma baseChangeSection_comp_pullback_map {T' T : Over S} (φ : T' ⟶ T) :
   rw [baseChangeSection, baseChangeSection, ← comp_basePoint hx₀ φ]
   exact graphSection_comp_pullback_map φ (basePoint hx₀ T)
 
+/-- The morphism between two base changes induced by a morphism of `S`-schemes forms a pullback
+square with their first projections. -/
+lemma isPullback_over_pullback_map_left {T T' : Over S} (φ : T' ⟶ T) :
+    IsPullback ((Over.pullback f).map φ).left (pullback.fst T'.hom f)
+      (pullback.fst T.hom f) φ.left := by
+  refine IsPullback.of_right ?_ (by simp) (IsPullback.of_hasPullback T.hom f).flip
+  simpa using (IsPullback.of_hasPullback T'.hom f).flip
+
+/-- The base-changed section over `T'` is the pullback of the base-changed section over `T`
+along a morphism `T' ⟶ T` of schemes over `S`. -/
+lemma isPullback_baseChangeSection {T' T : Over S} (φ : T' ⟶ T) :
+    IsPullback (baseChangeSection f x₀ hx₀ T') φ.left
+      ((Over.pullback f).map φ).left (baseChangeSection f x₀ hx₀ T) :=
+  IsPullback.of_right
+    (by simpa only [baseChangeSection_fst] using IsPullback.id_horiz φ.left)
+    (baseChangeSection_comp_pullback_map f x₀ hx₀ φ) (isPullback_over_pullback_map_left f φ).flip
+
 end
 
 end AlgebraicGeometry
