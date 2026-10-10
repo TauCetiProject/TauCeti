@@ -142,14 +142,7 @@ column interval, share exactly one side column. -/
 theorem hasOneCommonSide_of_left_eq_left_of_mem_cIoo (D : GridRectangleDecomposition x z)
     (hcommon : D.first.left = D.second.left)
     (hcol : D.second.right ∈ Grid.cIoo D.first.left D.first.right) : D.HasOneCommonSide := by
-  apply D.hasOneCommonSide_iff_existsUnique.mpr
-  refine ⟨D.first.left, ?_, ?_⟩
-  · simp [GridRectangleBetween.mem_sideColumns, hcommon]
-  · intro c hc
-    simp only [GridRectangleBetween.mem_sideColumns, ← hcommon] at hc
-    have hne := Grid.ne_right_of_mem_cIoo hcol
-    have := D.first.left_ne_right
-    grind
+  exact D.hasOneCommonSide_of_left_eq_left hcommon (Grid.ne_right_of_mem_cIoo hcol).symm
 
 /-- Two rectangles, the first ending where the second starts, whose other sides differ share
 exactly one side column. -/
