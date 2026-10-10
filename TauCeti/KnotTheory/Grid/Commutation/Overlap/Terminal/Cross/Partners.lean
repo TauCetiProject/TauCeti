@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Terminal.CrossSum
+public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Terminal.Cross.Sum
 
 /-!
 # Geometric characterization of terminal cross-overlap partners
@@ -16,18 +16,10 @@ pentagon's rows, and the turn row lies below that bottom row. This characterizat
 require finding a source domain. It supplies the terminal cross-overlap part of the partition
 of pentagon--rectangle contributions to the commutation chain-map equation.
 
-The converse recuts the underlying empty rectangles and promotes the second piece to a
-pentagon. The resulting rectangle--pentagon domain shares its terminal side; recutting it
-returns the original domain. Equality of the corrected covered-square multisets transfers
-marking avoidance, rather than assuming that the inverse domain is counted.
-
 ## References
 
 Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Section 5.1, and
 Manolescu--Ozsváth--Szabó--Thurston, *On combinatorial link Floer homology*, Section 3.1.
-The inverse promotion follows the formal recut argument in
-`TauCeti.KnotTheory.Grid.Commutation.Overlap.PentagonTerminal.Mixed`, with the turn row in
-the complementary interval.
 -/
 
 public section
@@ -81,6 +73,10 @@ private theorem crossRecut_geometry (E : GridPentagonRectangleDecomposition a s 
       exact htop.trans hb.symm
     exact ⟨hfirstRight, hsecondRight, hDfb, hDft, hDsb, hDst⟩
 
+/- The inverse promotion follows the formal recut argument in
+`TauCeti.KnotTheory.Grid.Commutation.Overlap.PentagonTerminal.Mixed`, with the turn row in
+the complementary interval. -/
+
 /-- Promote the second recut piece, which contains the turn row. -/
 private noncomputable def crossRecut (E : GridPentagonRectangleDecomposition a s x z)
     (hcommon : E.rectangle.right = E.pentagon.left)
@@ -111,11 +107,108 @@ private theorem crossRecut_toRectangleDecomposition
   apply GridRectangleDecomposition.ext <;>
     simp [crossRecut, (E.crossRecut_geometry hcommon hone hf hs hrow).2.1]
 
+/-- The inverse cross-recut shares its terminal side, with the pentagon starting inside the
+rectangle's column interval. -/
+private theorem crossRecut_terminal_overlap
+    (E : GridPentagonRectangleDecomposition a s x z)
+    (hcommon : E.rectangle.right = E.pentagon.left)
+    (hone : E.toRectangleDecomposition.HasOneCommonSide)
+    (hf : E.toRectangleDecomposition.first.IsEmpty)
+    (hs : E.toRectangleDecomposition.second.IsEmpty)
+    (hrow : E.rectangle.bottom ∈ Grid.cIoo E.pentagon.bottom E.pentagon.top)
+    (hturn : s ∈ Grid.cIco E.pentagon.bottom E.rectangle.bottom) :
+    let D := E.crossRecut hcommon hone hf hs hrow hturn
+    D.rectangle.right = D.pentagon.right ∧
+      D.pentagon.left ∈ Grid.cIoo D.rectangle.left D.pentagon.right := by
+  intro D
+  have hDrect := E.crossRecut_toRectangleDecomposition hcommon hone hf hs hrow hturn
+  have hrecut : E.toRectangleDecomposition.IsRecut D.toRectangleDecomposition := by
+    rw [hDrect]
+    exact E.toRectangleDecomposition.isRecut_recut hone hf hs
+  have hback := hrecut.symm hone hf hs
+  have hDone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hback
+    (E.toRectangleDecomposition.target_ne_source_of_hasOneCommonSide hone)
+  obtain ⟨hfr, hsr, -, -, -, -⟩ := E.crossRecut_geometry hcommon hone hf hs hrow
+  rw [← hDrect] at hfr hsr
+  have hDcommon : D.rectangle.right = D.pentagon.right := by
+    simpa only [GridRectanglePentagonDecomposition.toRectangleDecomposition_first_right,
+      GridRectanglePentagonDecomposition.toRectangleDecomposition_second_right] using
+      hfr.trans hsr.symm
+  refine ⟨hDcommon, ?_⟩
+  rcases hback.orientation with h | h | h | h
+  · refine absurd ?_ (D.toRectangleDecomposition.sideColumns_ne_of_hasOneCommonSide hDone)
+    rw [GridRectangleBetween.sideColumns, GridRectangleBetween.sideColumns, h.side_eq, hfr, hsr]
+  · rcases h.recut_branch with ⟨-, -, hright, -⟩ | ⟨hcol, -⟩
+    · rw [GridPentagonRectangleDecomposition.toRectangleDecomposition_first_right,
+        E.pentagon.right_eq] at hright
+      exact absurd (hright.symm.trans hfr.symm)
+        D.toRectangleDecomposition.first.left_ne_right
+    · simpa only [GridRectanglePentagonDecomposition.toRectangleDecomposition_first_left,
+        GridRectanglePentagonDecomposition.toRectangleDecomposition_second_left,
+        GridRectanglePentagonDecomposition.toRectangleDecomposition_first_right, hDcommon]
+        using hcol
+  · exact (D.toRectangleDecomposition.first.left_ne_right
+      ((h.side_eq.trans hsr).trans hfr.symm)).elim
+  · exact (D.toRectangleDecomposition.second.left_ne_right
+      ((h.side_eq.symm.trans hfr).trans hsr.symm)).elim
+
 end TauCeti.GridPentagonRectangleDecomposition
 
 namespace TauCeti.GridDiagram
 
 variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G) {x z : GridState n}
+
+/-- The inverse cross-recut of a counted partner is counted in the original diagram. -/
+private theorem crossRecut_mem_rectanglePentagonDecompositions
+    (E : GridPentagonRectangleDecomposition C.column C.turnRow x z)
+    (hE : E ∈ G.pentagonRectangleDecompositions C x z)
+    (hcommon : E.rectangle.right = E.pentagon.left)
+    (hone : E.toRectangleDecomposition.HasOneCommonSide)
+    (hf : E.toRectangleDecomposition.first.IsEmpty)
+    (hs : E.toRectangleDecomposition.second.IsEmpty)
+    (hrow : E.rectangle.bottom ∈ Grid.cIoo E.pentagon.bottom E.pentagon.top)
+    (hturn : C.turnRow ∈ Grid.cIco E.pentagon.bottom E.rectangle.bottom) :
+    let D := E.crossRecut hcommon hone hf hs hrow hturn
+    D.rectangle.right = D.pentagon.right →
+      D.toRectangleDecomposition.HasOneCommonSide →
+        D.rectangle.IsEmpty → D.pentagon.IsEmpty →
+          D.toRectangleDecomposition.IsRecut E.toRectangleDecomposition →
+            D ∈ G.rectanglePentagonDecompositions C x z := by
+  intro D hDcommon hDone hr hp hback
+  have hDrect := E.crossRecut_toRectangleDecomposition hcommon hone hf hs hrow hturn
+  -- The first promotion of the inverse domain is `E`; check its corrected square multiset.
+  obtain ⟨hfirst, hpromote⟩ :=
+    D.exists_recutRightEqRightFirst_eq_of_isRecut E hDcommon hDone hr hp hback
+  obtain ⟨-, -, -, -, hcols, ha, -⟩ :=
+    D.recutRightEqRightFirst_rectangle_geometry hDcommon hDone hr hp hfirst
+  rw [hpromote] at hcols ha
+  have hb : finRotate n C.column ∉ E.rectangle.toGridRectangle.coveredColumns := fun hb =>
+    Grid.right_notMem_cIco D.rectangle.left (finRotate n C.column) (by
+      simpa only [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
+        GridRectangleBetween.toGridRectangle_right, hDcommon, D.pentagon.right_eq] using hcols hb)
+  have hbottom : D.pentagon.bottom = E.pentagon.bottom := by
+    have h := (E.crossRecut_geometry hcommon hone hf hs hrow).2.2.2.2.1
+    rw [← hDrect] at h
+    simpa only [GridRectangleBetween.bottom_def,
+      GridRectanglePentagonDecomposition.toRectangleDecomposition_middle,
+      GridRectanglePentagonDecomposition.toRectangleDecomposition_second_left] using h
+  have hcovered := D.coveredSquares_val_add_val_eq_of_isRepartition E hback.isRepartition
+    (fun t => by
+      simp only [GridRectangle.mem_coveredSquares, ha, hb, hbottom, false_and, ↓reduceIte])
+  -- Read the composite domain in the original diagram, including the column swap on `E`.
+  rw [mem_pentagonRectangleDecompositions, mem_pentagons,
+    (G.swapColumns C.column (finRotate n C.column)).mem_unblockedRectangles,
+    ← G.disjoint_map_swapColumns_XSet_iff] at hE
+  rw [mem_rectanglePentagonDecompositions, mem_unblockedRectangles, mem_pentagons]
+  have hX (p : Fin n × Fin n)
+      (hp : p ∈ D.rectangle.toGridRectangle.coveredSquares.val + D.pentagon.coveredSquares.val) :
+      p ∉ G.XSet := by
+    rw [← hcovered] at hp
+    rcases Multiset.mem_add.mp hp with hp | hp
+    · exact Finset.disjoint_left.mp hE.1.2 hp
+    · exact Finset.disjoint_left.mp hE.2.2 hp
+  exact ⟨⟨hr, Finset.disjoint_left.mpr fun p hp => hX p (Multiset.mem_add.mpr (Or.inl hp))⟩,
+    hp, Finset.disjoint_left.mpr fun p hp => hX p (Multiset.mem_add.mpr (Or.inr hp))⟩
 
 /-- A counted mixed overlap with the turn row below the rectangle's bottom row is the recut of
  a counted terminal cross-overlap source. -/
@@ -147,65 +240,11 @@ theorem mem_terminalCrossOverlapPartners_of_right_eq_left
   have hback := hrecut.symm hone hf hs
   have hDone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hback
     (E.toRectangleDecomposition.target_ne_source_of_hasOneCommonSide hone)
-  obtain ⟨hfr, hsr, -, -, -, -⟩ := E.crossRecut_geometry hcommon hone hf hs hrow
-  rw [← hDrect] at hfr hsr
-  have hDcommon : D.rectangle.right = D.pentagon.right := by
-    simpa only [GridRectanglePentagonDecomposition.toRectangleDecomposition_first_right,
-      GridRectanglePentagonDecomposition.toRectangleDecomposition_second_right] using
-      hfr.trans hsr.symm
-  have hDcol : D.pentagon.left ∈ Grid.cIoo D.rectangle.left D.pentagon.right := by
-    rcases hback.orientation with h | h | h | h
-    · refine absurd ?_ (D.toRectangleDecomposition.sideColumns_ne_of_hasOneCommonSide hDone)
-      rw [GridRectangleBetween.sideColumns, GridRectangleBetween.sideColumns, h.side_eq, hfr, hsr]
-    · rcases h.recut_branch with ⟨-, -, hright, -⟩ | ⟨hcol, -⟩
-      · rw [GridPentagonRectangleDecomposition.toRectangleDecomposition_first_right,
-          E.pentagon.right_eq] at hright
-        exact absurd (hright.symm.trans hfr.symm)
-          D.toRectangleDecomposition.first.left_ne_right
-      · simpa only [GridRectanglePentagonDecomposition.toRectangleDecomposition_first_left,
-          GridRectanglePentagonDecomposition.toRectangleDecomposition_second_left,
-          GridRectanglePentagonDecomposition.toRectangleDecomposition_first_right, hDcommon]
-          using hcol
-    · exact (D.toRectangleDecomposition.first.left_ne_right
-        ((h.side_eq.trans hsr).trans hfr.symm)).elim
-    · exact (D.toRectangleDecomposition.second.left_ne_right
-        ((h.side_eq.symm.trans hfr).trans hsr.symm)).elim
+  obtain ⟨hDcommon, hDcol⟩ := E.crossRecut_terminal_overlap hcommon hone hf hs hrow hturn
   have hr := D.isEmpty_rectangle_of_isRecut hrecut
   have hp := D.isEmpty_pentagon_of_isRecut hrecut
-  -- The first promotion of the inverse domain is `E`; check its corrected square multiset.
-  obtain ⟨hfirst, hpromote⟩ :=
-    D.exists_recutRightEqRightFirst_eq_of_isRecut E hDcommon hDone hr hp hback
-  obtain ⟨-, -, -, -, hcols, ha, -⟩ :=
-    D.recutRightEqRightFirst_rectangle_geometry hDcommon hDone hr hp hfirst
-  rw [hpromote] at hcols ha
-  have hb : finRotate n C.column ∉ E.rectangle.toGridRectangle.coveredColumns := fun hb =>
-    Grid.right_notMem_cIco D.rectangle.left (finRotate n C.column) (by
-      simpa only [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
-        GridRectangleBetween.toGridRectangle_right, hDcommon, D.pentagon.right_eq] using hcols hb)
-  have hbottom : D.pentagon.bottom = E.pentagon.bottom := by
-    have h := (E.crossRecut_geometry hcommon hone hf hs hrow).2.2.2.2.1
-    rw [← hDrect] at h
-    simpa only [GridRectangleBetween.bottom_def,
-      GridRectanglePentagonDecomposition.toRectangleDecomposition_middle,
-      GridRectanglePentagonDecomposition.toRectangleDecomposition_second_left] using h
-  have hcovered := D.coveredSquares_val_add_val_eq_of_isRepartition E hback.isRepartition
-    (fun t => by
-      simp only [GridRectangle.mem_coveredSquares, ha, hb, hbottom, false_and, ↓reduceIte])
-  have hcounted : D ∈ G.rectanglePentagonDecompositions C x z := by
-    -- Read the composite domain in the original diagram, including the column swap on `E`.
-    rw [mem_pentagonRectangleDecompositions, mem_pentagons,
-      (G.swapColumns C.column (finRotate n C.column)).mem_unblockedRectangles,
-      ← G.disjoint_map_swapColumns_XSet_iff] at hE
-    rw [mem_rectanglePentagonDecompositions, mem_unblockedRectangles, mem_pentagons]
-    have hX (p : Fin n × Fin n)
-        (hp : p ∈ D.rectangle.toGridRectangle.coveredSquares.val + D.pentagon.coveredSquares.val) :
-        p ∉ G.XSet := by
-      rw [← hcovered] at hp
-      rcases Multiset.mem_add.mp hp with hp | hp
-      · exact Finset.disjoint_left.mp hE.1.2 hp
-      · exact Finset.disjoint_left.mp hE.2.2 hp
-    exact ⟨⟨hr, Finset.disjoint_left.mpr fun p hp => hX p (Multiset.mem_add.mpr (Or.inl hp))⟩,
-      hp, Finset.disjoint_left.mpr fun p hp => hX p (Multiset.mem_add.mpr (Or.inr hp))⟩
+  have hcounted := G.crossRecut_mem_rectanglePentagonDecompositions C E hE
+    hcommon hone hf hs hrow hturn hDcommon hDone hr hp hback
   exact (G.mem_terminalCrossOverlapPartners C E).2 ⟨D,
     (G.mem_terminalCrossOverlapSources C D).2 ⟨hcounted, hDcommon, hDcol⟩, hback⟩
 
