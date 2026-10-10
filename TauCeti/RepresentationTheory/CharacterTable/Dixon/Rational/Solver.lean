@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.Rows
+public import TauCeti.RepresentationTheory.CharacterTable.Dixon.DegreeRecovery
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.IntegerChecker
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Rational.Basic
 
@@ -14,8 +15,8 @@ public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Rational.Basic
 
 This file assembles the integer-valued stage of the Burnside--Dixon--Schneider character-table
 algorithm. Given executable conjugacy-class data and a prime, it performs the
-modular common-eigenrow search, lifts the rows by signed least representatives, searches the
-possible positive character degrees dividing the group order, and computes candidate integer
+modular common-eigenrow search, lifts the rows by signed least representatives, recovers each
+positive character degree from its central-character row, and computes candidate integer
 quotients for the ordinary table from the central-character table. The exact integer checker then
 verifies the corresponding division-free equality, so the conversion is exact for accepted outputs.
 
@@ -99,9 +100,9 @@ private theorem mem_liftedCentralRowsList (p : ℕ) [Fact p.Prime] [FinEnum (ZMo
   rw [← List.mem_toFinset, liftedCentralRowsList_toFinset]
 
 /-- Enumerate the candidate data inspected by the rational Dixon--Schneider solver: every
-injective numbering of the lifted central rows, paired with every degree vector whose positive
-entries divide `|G|` and whose squares sum to `|G|`. Ordinary-table entries are candidate integer
-quotients; the checker later verifies that no truncation occurred. -/
+injective numbering of the lifted central rows, with the degrees recovered independently from
+those rows. Ordinary-table entries are candidate integer quotients; the checker later verifies
+that no truncation occurred. -/
 private def dixonRationalCharacterTableCandidates (p : ℕ) [Fact p.Prime] :
     List d.IntegerCharacterTableData :=
   letI : FinEnum (ZMod p) :=
@@ -110,50 +111,44 @@ private def dixonRationalCharacterTableCandidates (p : ℕ) [Fact p.Prime] :
   let rowAssignments :=
     (FinEnum.toList (Fin d.numClasses → {row // row ∈ liftedRows})).filter fun rows =>
       decide (Function.Injective rows)
-  let Degree := {n : Fin (Fintype.card G + 1) // n ≠ 0 ∧ (n : ℕ) ∣ Fintype.card G}
-  let degreeAssignments :=
-    (FinEnum.toList (Fin d.numClasses → Degree)).filter fun degree =>
-      decide (∑ i, (degree i : ℕ) ^ 2 = Fintype.card G)
-  rowAssignments.flatMap fun rows => degreeAssignments.map fun degrees =>
-    let omega : Matrix (Fin d.numClasses) (Fin d.numClasses) ℤ :=
-      fun i => rows i
-    let degree : Fin d.numClasses → ℕ := fun i => degrees i
-    { omega := omega
-      degree := degree
-      table := fun i j =>
-        (degree i : ℤ) * omega i j / (d.classFinset j).card }
+  rowAssignments.flatMap fun rows =>
+    let omega : Matrix (Fin d.numClasses) (Fin d.numClasses) ℤ := fun i => rows i
+    let degreeAssignments :=
+      (List.pi (FinEnum.toList (Fin d.numClasses)) fun i =>
+        (d.recoverCharacterDegree? (RingHom.id ℤ) (omega i)).toList).filter fun degrees =>
+          decide (∑ i, degrees i (FinEnum.mem_toList i) ^ 2 = Fintype.card G)
+    degreeAssignments.map fun degrees =>
+      let degree : Fin d.numClasses → ℕ := fun i => degrees i (FinEnum.mem_toList i)
+      { omega := omega
+        degree := degree
+        table := fun i j =>
+          (degree i : ℤ) * omega i j / (d.classFinset j).card }
 
-/-- **Characterization of the candidates inspected by the rational solver.** Candidate data is
-enumerated exactly when its rows are an injective numbering of the lifted central rows, its degrees
-are positive divisors of `|G|` whose squares sum to `|G|`, and its table is the integer quotient
-computed from the central-character table. -/
+/-- Candidates are injective numberings of lifted rows with their recovered degrees and the
+ordinary table computed by integer quotients. -/
 private theorem mem_dixonRationalCharacterTableCandidates_iff (p : ℕ) [Fact p.Prime]
     {output : d.IntegerCharacterTableData} :
     output ∈ d.dixonRationalCharacterTableCandidates p ↔
       (∀ i, output.omega i ∈ d.liftedCentralRows p) ∧ Function.Injective output.omega ∧
-        (∀ i, 0 < output.degree i) ∧ (∀ i, output.degree i ∣ Fintype.card G) ∧
+        (∀ i, d.recoverCharacterDegree? (RingHom.id ℤ) (output.omega i) =
+          some (output.degree i)) ∧
         ∑ i, output.degree i ^ 2 = Fintype.card G ∧
         ∀ i j, output.table i j =
           (output.degree i : ℤ) * output.omega i j / ((d.classFinset j).card : ℤ) := by
-  -- the enumeration instance must be the one the definition installs, not a synthesized one
+  -- Use the enumeration instance installed by the executable definition.
   let _ : FinEnum (ZMod p) := FinEnum.ofEquiv (Fin p) (ZMod.finEquiv p).symm.toEquiv
   simp only [dixonRationalCharacterTableCandidates, List.mem_flatMap, List.mem_map,
-    List.mem_filter, FinEnum.mem_toList, true_and, decide_eq_true_eq]
+    List.mem_filter, FinEnum.mem_toList, true_and, decide_eq_true_eq,
+    List.mem_pi, Option.mem_toList]
   constructor
-  · rintro ⟨rows, hrows, degrees, hdegrees, rfl⟩
-    refine ⟨fun i => (mem_liftedCentralRowsList d p).mp (rows i).2, ?_, ?_, ?_, ?_, ?_⟩
-    · exact fun i j hij => hrows (Subtype.ext hij)
-    · exact fun i => Nat.pos_of_ne_zero fun h => (degrees i).2.1 (Fin.val_eq_zero_iff.mp h)
-    · exact fun i => (degrees i).2.2
-    · exact hdegrees
-    · exact fun i j => rfl
-  · rintro ⟨hrow, hinj, hpos, hdvd, hsum, htable⟩
-    have hlt : ∀ i, output.degree i < Fintype.card G + 1 := fun i =>
-      Nat.lt_succ_of_le (Nat.le_of_dvd Fintype.card_pos (hdvd i))
+  · rintro ⟨rows, hrows, degrees, ⟨hdegrees, hsum⟩, rfl⟩
+    exact ⟨fun i => (mem_liftedCentralRowsList d p).mp (rows i).2,
+      fun i j hij => hrows (Subtype.ext hij), (fun i => hdegrees i trivial),
+      hsum, fun i j => rfl⟩
+  · rintro ⟨hrow, hinj, hdegrees, hsum, htable⟩
     refine ⟨fun i => ⟨output.omega i, (mem_liftedCentralRowsList d p).mpr (hrow i)⟩,
-      fun i j hij => hinj (congrArg Subtype.val hij),
-      fun i => ⟨⟨output.degree i, hlt i⟩, Fin.val_ne_zero_iff.mp (hpos i).ne', hdvd i⟩,
-      hsum, ?_⟩
+      fun i j hij => hinj (congrArg Subtype.val hij), (fun i _ => output.degree i),
+      ⟨(fun i _ => hdegrees i), hsum⟩, ?_⟩
     ext
     · rfl
     · exact (htable _ _).symm
@@ -171,8 +166,8 @@ private theorem IsIntegerCharacterTableSpec.table_eq_integerQuotient
 /-- Run the integer-valued stage of the Dixon--Schneider character-table algorithm.
 
 The modular search and signed lift determine an unordered finite set of candidate central-character
-rows. The solver enumerates its injective row numberings and the degree vectors whose positive
-entries divide `|G|` and whose squares sum to `|G|`; for each pair, the ordinary table is obtained
+rows. The solver enumerates their injective row numberings, recovers each row's degree from its
+weighted norm, and checks the degree-square sum. For each numbering, the ordinary table is obtained
 by integer quotient computation. `TauCeti.ClassData.integerCharacterTableChecker` verifies the
 division-free conversion equality, making the quotient exact for every accepted output.
 
@@ -200,7 +195,7 @@ theorem isSome_dixonRationalCharacterTable_iff (p : ℕ) [Fact p.Prime] :
     have hinjective : Function.Injective output.omega := by
       simpa using hspec.map_central_injective (RingHom.id ℤ)
         (by exact_mod_cast Fintype.card_pos.ne')
-    exact ⟨hrows, hinjective, hspec.degree_pos, hspec.degree_dvd,
+    exact ⟨hrows, hinjective, hspec.recoverCharacterDegree?_eq_some (RingHom.id ℤ),
       hspec.sum_degree_sq, hspec.table_eq_integerQuotient⟩
 
 /-- The rows of a successful rational Dixon--Schneider output are lifted central-character rows,
