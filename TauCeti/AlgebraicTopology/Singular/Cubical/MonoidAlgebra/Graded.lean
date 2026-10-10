@@ -5,26 +5,26 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra
+public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Basic
 public import Mathlib.Algebra.DirectSum.Algebra
 
 /-!
 # The graded algebra of normalized cubical chains of a topological monoid
 
 For a topological monoid `G`, the Pontryagin product of
-`TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra` makes the family
+`TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Basic` makes the family
 `n ↦ C^□_n(G; R)` of normalized cubical chains a graded `R`-algebra, in the sense of Mathlib's
 `DirectSum.GAlgebra`: the product of a `p`-chain and a `q`-chain is a `(p + q)`-chain, the unit
 is the `0`-cube at `1`, and the scalars act through `r ↦ r • 1`.  The strict associativity and
 unit laws hold up to the reindexings of `NormalizedCubicalChain.cast`, which are the equalities of
 graded components `HEq` required by `GradedMonoid.GMonoid`.
 
-Hence `⨁ n : ℕ, C^□_n(G; R)` is an `R`-algebra, `TauCeti.cubicalChainAlgebra G R`, and the product
-of homogeneous elements is the Pontryagin product (`TauCeti.cubicalChain_of_mul_of`).
+Hence `⨁ n : ℕ, C^□_n(G; R)` is an `R`-algebra, `TauCeti.normalizedCubicalChainAlgebra G R`, in
+which the product of homogeneous elements is their Pontryagin product (`DirectSum.of_mul_of`).
 
 ## Main definitions
 
-* `TauCeti.cubicalChainAlgebra G R`: the graded algebra `⨁ n, C^□_n(G; R)`.
+* `TauCeti.normalizedCubicalChainAlgebra G R`: the graded algebra `⨁ n, C^□_n(G; R)`.
 * `TauCeti.NormalizedCubicalChain.gMonoid`, `.gRing`, `.gAlgebra`: the graded structures.
 
 ## References
@@ -42,15 +42,15 @@ namespace TauCeti
 
 namespace NormalizedCubicalChain
 
-variable {G : Type*} [Monoid G] [TopologicalSpace G] [ContinuousMul G] {R : Type*} [CommRing R]
-
 /-- Equal after reindexing implies heterogeneously equal. -/
-theorem heq_of_cast_eq {X : Type*} [TopologicalSpace X] {n m : ℕ} (h : n = m)
-    {x : NormalizedCubicalChain X R n} {y : NormalizedCubicalChain X R m}
+theorem heq_of_cast_eq {X : Type*} [TopologicalSpace X] {R : Type*} [Ring R] {n m : ℕ}
+    (h : n = m) {x : NormalizedCubicalChain X R n} {y : NormalizedCubicalChain X R m}
     (hxy : cast R h x = y) : HEq x y := by
   subst h
   rw [cast_rfl] at hxy
   exact heq_of_eq hxy
+
+variable {G : Type*} [Monoid G] [TopologicalSpace G] [ContinuousMul G] {R : Type*} [CommRing R]
 
 variable (G R) in
 /-- The unit of the graded structure. -/
@@ -112,6 +112,8 @@ instance gAlgebra : DirectSum.GAlgebra R fun n : ℕ ↦ NormalizedCubicalChain 
   map_one := one_smul R (one G R)
   map_mul r s := by
     refine congrArg (GradedMonoid.mk 0) ?_
+    -- The graded product of `gMul` in degrees `0, 0` is `mul G R 0 0` by definition, and
+    -- `GradedMonoid.GMul.mul` exposes no other lemma to rewrite with, so the goal is restated.
     change (r * s) • one G R = mul G R 0 0 (r • one G R) (s • one G R)
     have h1 : mul G R 0 0 (one G R) (one G R) = one G R := by
       simpa using one_mul (one G R)
@@ -130,16 +132,7 @@ variable (G : Type*) [Monoid G] [TopologicalSpace G] [ContinuousMul G] (R : Type
 
 /-- The **graded algebra of normalized cubical chains** of a topological monoid `G`:
 `⨁ n, C^□_n(G; R)` with the Pontryagin product. -/
-abbrev cubicalChainAlgebra : Type _ := ⨁ n : ℕ, NormalizedCubicalChain G R n
-
-/-- The product of homogeneous chains in `cubicalChainAlgebra` is their Pontryagin product. -/
-theorem cubicalChain_of_mul_of {p q : ℕ} (a : NormalizedCubicalChain G R p)
-    (b : NormalizedCubicalChain G R q) :
-    DirectSum.of (fun n ↦ NormalizedCubicalChain G R n) p a *
-        DirectSum.of (fun n ↦ NormalizedCubicalChain G R n) q b =
-      DirectSum.of (fun n ↦ NormalizedCubicalChain G R n) (p + q)
-        (NormalizedCubicalChain.mul G R p q a b) :=
-  DirectSum.of_mul_of a b
+abbrev normalizedCubicalChainAlgebra : Type _ := ⨁ n : ℕ, NormalizedCubicalChain G R n
 
 end TauCeti
 
