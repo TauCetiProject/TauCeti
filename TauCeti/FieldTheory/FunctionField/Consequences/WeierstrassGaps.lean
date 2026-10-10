@@ -370,28 +370,15 @@ private theorem gapNumbersUpTo_zero (P : Place k F) : P.gapNumbersUpTo 0 = ∅ :
 
 private theorem gapNumbersUpTo_succ_of_isGap {P : Place k F} {N : ℕ} (h : P.IsGap (N + 1)) :
     P.gapNumbersUpTo (N + 1) = insert (N + 1) (P.gapNumbersUpTo N) := by
-  ext m
-  simp only [Finset.mem_insert, mem_gapNumbersUpTo_iff]
-  constructor
-  · rintro ⟨h1, h2, h3⟩
-    rcases eq_or_lt_of_le h2 with rfl | hlt
-    · exact Or.inl rfl
-    · exact Or.inr ⟨h1, by omega, h3⟩
-  · rintro (rfl | ⟨h1, h2, h3⟩)
-    · exact ⟨by omega, le_rfl, h⟩
-    · exact ⟨h1, by omega, h3⟩
+  rw [gapNumbersUpTo, gapNumbersUpTo, ← Finset.insert_Icc_right_eq_Icc_add_one (by omega),
+    Finset.filter_insert]
+  exact ite_eq_left h
 
 private theorem gapNumbersUpTo_succ_of_not_isGap {P : Place k F} {N : ℕ}
     (h : ¬ P.IsGap (N + 1)) : P.gapNumbersUpTo (N + 1) = P.gapNumbersUpTo N := by
-  ext m
-  simp only [mem_gapNumbersUpTo_iff]
-  constructor
-  · rintro ⟨h1, h2, h3⟩
-    rcases eq_or_lt_of_le h2 with rfl | hlt
-    · exact absurd h3 h
-    · exact ⟨h1, by omega, h3⟩
-  · rintro ⟨h1, h2, h3⟩
-    exact ⟨h1, by omega, h3⟩
+  rw [gapNumbersUpTo, gapNumbersUpTo, ← Finset.insert_Icc_right_eq_Icc_add_one (by omega),
+    Finset.filter_insert]
+  exact ite_eq_right h
 
 private theorem succ_notMem_gapNumbersUpTo (P : Place k F) (N : ℕ) :
     N + 1 ∉ P.gapNumbersUpTo N := by
@@ -521,23 +508,26 @@ theorem weierstrassWeight_le_genus_choose_two (hF : IsFunctionField k F)
     P.weierstrassWeight ≤ (genus k F).choose 2 :=
   P.card_weierstrassGaps hF hex hP ▸ P.weierstrassWeight_le_card_choose_two
 
+/-- **A place has Weierstrass weight zero exactly when its gaps are `1, …, c`**, for the number
+`c` of gaps. -/
+theorem weierstrassWeight_eq_zero_iff_card (P : Place k F) :
+    P.weierstrassWeight = 0 ↔ P.weierstrassGaps = Finset.Icc 1 P.weierstrassGaps.card := by
+  have hadd := P.weierstrassWeight_add_card_add_one_choose_two
+  constructor
+  · intro hw
+    exact P.gapNumbersUpTo_eq_Icc_of_sum_eq (2 * genus k F - 1) (by rw [← weierstrassGaps]; omega)
+  · intro hgaps
+    rw [hgaps, Nat.card_Icc, Nat.add_sub_cancel] at hadd
+    have hsum := Nat.sum_Icc_choose P.weierstrassGaps.card 1
+    simp only [Nat.choose_one_right, Nat.reduceAdd] at hsum
+    omega
+
 /-- **A rational place has Weierstrass weight zero exactly when its gaps are `1, …, g`**, for a
 function field of genus `g` with exact constants. -/
 theorem weierstrassWeight_eq_zero_iff (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) {P : Place k F} (hP : P.degree = 1) :
     P.weierstrassWeight = 0 ↔ P.weierstrassGaps = Finset.Icc 1 (genus k F) := by
-  have hadd := P.weierstrassWeight_add_card_add_one_choose_two
-  rw [P.card_weierstrassGaps hF hex hP] at hadd
-  constructor
-  · intro hw
-    have h := P.gapNumbersUpTo_eq_Icc_of_sum_eq (2 * genus k F - 1)
-    rw [← weierstrassGaps, P.card_weierstrassGaps hF hex hP] at h
-    exact h (by omega)
-  · intro hgaps
-    rw [hgaps] at hadd
-    have hsum := Nat.sum_Icc_choose (genus k F) 1
-    simp only [Nat.choose_one_right, Nat.reduceAdd] at hsum
-    omega
+  rw [weierstrassWeight_eq_zero_iff_card, P.card_weierstrassGaps hF hex hP]
 
 /-- **The gaps at a rational place where `2` is a pole number are `1, 3, …, 2g - 1`**, for a
 function field of genus `g` with exact constants: every even number is then a pole number, and the
