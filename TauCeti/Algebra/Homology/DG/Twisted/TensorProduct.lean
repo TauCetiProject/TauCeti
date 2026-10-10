@@ -31,8 +31,8 @@ right module is `𝓕 ⊗_A K_m`.
 
 * `TauCeti.BalancedTensorProduct.piRight_differential`: `piRight` intertwines the tensor
   differential of `ℳ ⊗_A K_m` with the twisted differential on `P → M`, for any matrix `m` for
-  which `K_m` is a differential graded left module; `TauCeti.TwistingCocycle.piRight_differential`
-  is the case of a twisting cocycle.
+  which `K_m` is a differential graded left module; for a twisting cocycle `m`, apply it to
+  `m.isDGLeftModule_twistedDifferential`.
 * `TauCeti.BalancedTensorProduct.piRight_mem_twistedTotalGrading`,
   `TauCeti.BalancedTensorProduct.piRight_symm_mem_grading`,
   `TauCeti.BalancedTensorProduct.map_grading_piece_eq_twistedTotalGrading`: `piRight` carries the
@@ -191,19 +191,5 @@ theorem map_grading_piece_eq_twistedTotalGrading (n : ℤ) :
 end Grading
 
 end BalancedTensorProduct
-
-namespace TwistingCocycle
-
-/-- **The twisted complex of a twisting cocycle is the tensor product `ℳ ⊗_A K_m`**: under
-`α ⊗ g ↦ fun y ↦ α · g y`, the tensor differential of the right module `(ℳ, dM)` with the complex
-`K_m` of free left modules is the twisted differential. -/
-theorem piRight_differential (m : TwistingCocycle 𝒜 dA P ind) (hM : IsDGRightModule hA ℳ dM)
-    (z : BalancedTensorProduct R A M (P → A)) :
-    BalancedTensorProduct.piRight R A M P
-        (BalancedTensorProduct.differential hM m.isDGLeftModule_twistedDifferential z) =
-      twistedDifferential m.m ℳ dM (BalancedTensorProduct.piRight R A M P z) :=
-  BalancedTensorProduct.piRight_differential m.m hM m.isDGLeftModule_twistedDifferential z
-
-end TwistingCocycle
 
 end TauCeti
