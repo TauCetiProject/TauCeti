@@ -56,18 +56,20 @@ private theorem piRightBilinear_balanced (a : A) (m : M) (g : P → A) :
   ext y
   simp only [piRightBilinear_apply, Pi.smul_apply, smul_eq_mul, op_mul, mul_smul]
 
-variable [Fintype P] [DecidableEq P]
+variable [Fintype P]
 
 /-- The inverse of `piRight`: `f ↦ ∑ x, f x ⊗ e_x`, with `e_x` the coordinate functions. -/
-private noncomputable def piRightInv : (P → M) →ₗ[k] BalancedTensorProduct k A M (P → A) :=
+private noncomputable def piRightInv [DecidableEq P] :
+    (P → M) →ₗ[k] BalancedTensorProduct k A M (P → A) :=
   ∑ x : P, ((mk k A).flip (Pi.single x 1)).comp (LinearMap.proj x)
 
 omit [IsScalarTower k Aᵐᵒᵖ M] in
-private theorem piRightInv_apply (f : P → M) :
+private theorem piRightInv_apply [DecidableEq P] (f : P → M) :
     piRightInv k A M P f = ∑ x : P, tmul k A (f x) (Pi.single x 1) := by
   simp only [piRightInv, LinearMap.sum_apply, LinearMap.comp_apply, LinearMap.proj_apply,
     LinearMap.flip_apply, mk_apply]
 
+open scoped Classical in
 /-- **Tensoring a right module with a finite free left module gives the functions into it**:
 `m ⊗ g ↦ fun y ↦ m · g y`, with inverse `f ↦ ∑ x, f x ⊗ e_x`.  This is
 `TauCeti.BalancedTensorProduct.rid` with a finite set of coordinates. -/
@@ -91,6 +93,7 @@ noncomputable def piRight : BalancedTensorProduct k A M (P → A) ≃ₗ[k] (P �
       simp_rw [balance, hsingle, ← mk_apply]
       rw [← map_sum, Finset.univ_sum_single])
 
+/-- A pure tensor `m ⊗ g` goes to the function `y ↦ m · g y`. -/
 @[simp]
 theorem piRight_tmul (m : M) (g : P → A) :
     piRight k A M P (tmul k A m g) = fun y ↦ op (g y) • m := by
@@ -99,7 +102,7 @@ theorem piRight_tmul (m : M) (g : P → A) :
 
 /-- A tensor with a coordinate function is the function supported at that coordinate.  Not a
 `simp` lemma: `piRight_tmul` already normalizes its left-hand side. -/
-theorem piRight_tmul_single (x : P) (m : M) :
+theorem piRight_tmul_single [DecidableEq P] (x : P) (m : M) :
     piRight k A M P (tmul k A m (Pi.single x 1)) = Pi.single x m := by
   ext y
   rw [piRight_tmul]
@@ -108,9 +111,13 @@ theorem piRight_tmul_single (x : P) (m : M) :
     simp
   · simp [Pi.single_eq_of_ne hy]
 
+/-- The inverse of `piRight` sends `f` to the sum `∑ x, f x ⊗ e_x` over the coordinate
+functions. -/
 @[simp]
-theorem piRight_symm_apply (f : P → M) :
+theorem piRight_symm_apply [DecidableEq P] (f : P → M) :
     (piRight k A M P).symm f = ∑ x : P, tmul k A (f x) (Pi.single x 1) := by
-  simp [piRight, piRightInv_apply]
+  rw [LinearEquiv.symm_apply_eq, map_sum]
+  simp only [piRight_tmul_single]
+  exact (Finset.univ_sum_single f).symm
 
 end TauCeti.BalancedTensorProduct
