@@ -206,6 +206,11 @@ theorem lengthHomeomorph_apply [Subsingleton X] (γ : MooreLoop X b) :
     lengthHomeomorph γ = γ.length :=
   (rfl)
 
+@[simp]
+theorem lengthHomeomorph_symm_apply [Subsingleton X] (L : ℝ≥0) :
+    (lengthHomeomorph (b := b)).symm L = constOfLength L :=
+  (rfl)
+
 end MooreLoop
 
 /-- The **free Moore loops**: the Moore paths whose end points agree. -/
