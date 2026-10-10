@@ -87,9 +87,12 @@ theorem explicitRes1_mem_conjInvariants (x : H1 G M) :
     explicitRes1 G M N x ∈ H1ConjInvariants G M N := by
   rw [mem_H1ConjInvariants_iff]
   intro g
-  rw [explicitConj1_eq_explicitMap1]
-  exact explicitMap1_explicitRes1_of_conj G M N N g (N.inverseConjugationHom g)
-    (by simp) (DistribSMul.toAddMonoidHom M g) (fun _ => rfl) x
+  induction x using QuotientAddGroup.induction_on with
+  | _ c =>
+    rw [explicitRes1_mk, explicitConj1_apply_eq_smul, smul_mk]
+    simpa only [explicitRes1_mk, explicitMap1_mk] using
+      explicitMap1_explicitRes1_of_conj G M N N g (N.inverseConjugationHom g)
+        (by simp) (DistribSMul.toAddMonoidHom M g) (fun _ => rfl) (c : H1 G M)
 
 /-- Restriction in degree one, with codomain restricted to the conjugation-invariant subgroup.
 This is the third arrow in the inflation-restriction-transgression five-term sequence. -/

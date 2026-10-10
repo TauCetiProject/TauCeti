@@ -151,13 +151,6 @@ noncomputable def explicitConj1 (N : Subgroup G) [N.Normal] (g : G) : H1 N M →
   explicitMap1 N M N M (inverseConjugationHom N g) (DistribSMul.toAddMonoidHom M g)
     ((continuous_const_smul g).congr fun _ => rfl) (inverseConjugationHom_smul N g)
 
-/-- The conjugation map is the explicit map of its conjugation/coefficient compatible pair. -/
-theorem explicitConj1_eq_explicitMap1 (N : Subgroup G) [N.Normal] (g : G) :
-    explicitConj1 (M := M) N g =
-      explicitMap1 N M N M (inverseConjugationHom N g) (DistribSMul.toAddMonoidHom M g)
-        ((continuous_const_smul g).congr fun _ => rfl) (inverseConjugationHom_smul N g) :=
-  by rfl
-
 /-- The conjugation/coefficient action on explicit first cohomology, defined by
 `explicitConj1`. -/
 noncomputable instance (N : Subgroup G) [N.Normal] : SMul G (H1 N M) where
