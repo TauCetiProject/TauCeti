@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.SingularValues
+public import TauCeti.Analysis.InnerProductSpace.CourantFischer
 public import TauCeti.Data.Finsupp.Antitone
 public import TauCeti.LinearAlgebra.Eigenspace.Comp
 
@@ -59,6 +60,16 @@ of `A` run over the whole basis without splitting off the kernel.
 * `LinearMap.exists_orthonormalBasis_apply_eq_leftSingularVector`: the nonzero left singular
   vectors extend, index by index, to an orthonormal basis of the codomain.
 
+## Comparison of singular values
+
+The last section compares the singular values of two maps with the same source through the
+Courant–Fischer min–max principle for their source Gram operators.
+
+* `LinearMap.singularValues_le_mul_of_norm_apply_le`: if `‖B x‖ ≤ c ‖A x‖` for every `x`, then
+  `σᵢ(B) ≤ c σᵢ(A)` for every `i`.
+* `LinearMap.singularValues_comp_le`: if `‖C y‖ ≤ c ‖y‖` for every `y`, then
+  `σᵢ(C A) ≤ c σᵢ(A)` for every `i`.
+
 ## Source
 
 The singular-system definitions `LinearMap.rightSingularBasis` and
@@ -70,6 +81,8 @@ Original copyright (c) 2026 Kitware, Inc.; Apache-2.0.
 
 * R. A. Horn and C. R. Johnson, *Matrix Analysis*, second edition, Cambridge University Press,
   2013, Theorem 1.3.22, Theorem 2.6.3 and Section 7.3.
+* R. A. Horn and C. R. Johnson, *Topics in Matrix Analysis*, Cambridge University Press, 1991,
+  Section 3.3.
 -/
 
 public section
@@ -342,5 +355,48 @@ theorem exists_orthonormalBasis_apply_eq_leftSingularVector :
   simp [u, ← hij]
 
 end SingularSystem
+
+section Comparison
+
+variable {G : Type*} [NormedAddCommGroup G] [InnerProductSpace 𝕜 G] [FiniteDimensional 𝕜 G]
+
+/-- If `‖B x‖ ≤ c * ‖A x‖` for every `x`, then every singular value of `B` is at most `c` times the
+corresponding singular value of `A`. -/
+theorem singularValues_le_mul_of_norm_apply_le {A : E →ₗ[𝕜] F} {B : E →ₗ[𝕜] G} {c : ℝ}
+    (h : ∀ x, ‖B x‖ ≤ c * ‖A x‖) (i : ℕ) :
+    B.singularValues i ≤ c * A.singularValues i := by
+  rcases lt_or_ge c 0 with hc | hc
+  · -- A negative constant forces `A = 0` and `B = 0`.
+    have hA : A = 0 := ext fun x ↦ norm_le_zero_iff.mp <|
+      nonpos_of_mul_nonneg_right ((norm_nonneg _).trans (h x)) hc
+    have hB : B = 0 := ext fun x ↦ norm_le_zero_iff.mp <| by simpa [hA] using h x
+    simp [hA, hB]
+  rcases lt_or_ge i (finrank 𝕜 E) with hi | hi
+  swap
+  · simp [B.singularValues_of_finrank_le hi, A.singularValues_of_finrank_le hi]
+  -- Courant–Fischer: on an `(i + 1)`-dimensional subspace where the Rayleigh quotient of `B† B` is
+  -- at least `σᵢ(B)²`, find a unit vector where that of `A† A` is at most `σᵢ(A)²`.
+  obtain ⟨V, hV, hBV⟩ :=
+    B.isSymmetric_adjoint_comp_self.exists_submodule_forall_unit_eigenvalue_le_re_inner rfl ⟨i, hi⟩
+  obtain ⟨x, hxV, hx, hAx⟩ :=
+    A.isSymmetric_adjoint_comp_self.exists_unit_vector_re_inner_le_eigenvalue rfl ⟨i, hi⟩ V hV
+  have hBx := hBV x hxV hx
+  simp only [comp_apply, adjoint_inner_left, inner_self_eq_norm_sq] at hAx hBx
+  have hsq : B.singularValues i ^ 2 ≤ (c * A.singularValues i) ^ 2 := by
+    rw [mul_pow, B.sq_singularValues_of_lt rfl hi, A.sq_singularValues_of_lt rfl hi]
+    calc _ ≤ ‖B x‖ ^ 2 := hBx
+      _ ≤ (c * ‖A x‖) ^ 2 := pow_le_pow_left₀ (norm_nonneg _) (h x) 2
+      _ ≤ _ := by rw [mul_pow]; exact mul_le_mul_of_nonneg_left hAx (sq_nonneg c)
+  exact (pow_le_pow_iff_left₀ (B.singularValues_nonneg i)
+    (mul_nonneg hc (A.singularValues_nonneg i)) two_ne_zero).mp hsq
+
+/-- **Bounded-factor domination.** If `‖C y‖ ≤ c * ‖y‖` for every `y` (for `c ≥ 0`: if `C` has
+operator norm at most `c`), then `σᵢ(C A) ≤ c σᵢ(A)` for every `i`. -/
+theorem singularValues_comp_le (C : F →ₗ[𝕜] G) (A : E →ₗ[𝕜] F) {c : ℝ}
+    (hC : ∀ y, ‖C y‖ ≤ c * ‖y‖) (i : ℕ) :
+    (C ∘ₗ A).singularValues i ≤ c * A.singularValues i :=
+  singularValues_le_mul_of_norm_apply_le (fun x ↦ hC (A x)) i
+
+end Comparison
 
 end LinearMap
