@@ -255,7 +255,7 @@ noncomputable def affineRayZeroFacePointHomeomorph :
 
 /-- The punctured-line coordinate is evaluation of the standard Laurent character. -/
 @[simp]
-theorem affineRayZeroFacePointHomeomorph_apply
+theorem val_affineRayZeroFacePointHomeomorph_apply
     (x : AffineSemigroupComplexPoint
       (dualSemigroup (isIntegralLattice_intCast 1) (⊥ : PointedCone ℝ (Fin 1 → ℝ)))) :
     (affineRayZeroFacePointHomeomorph g₀ x : ℂ) =
@@ -273,7 +273,7 @@ theorem affineRayZeroFacePointHomeomorph_symm_apply_single (z : ℂˣ) :
     ((affineRayZeroFacePointHomeomorph g₀).symm z)
       (MonoidAlgebra.single (ofAdd affineRayZeroFaceCharacter) 1) = (z : ℂ) := by
   let _ := affinePointTopology g₀
-  rw [← affineRayZeroFacePointHomeomorph_apply]
+  rw [← val_affineRayZeroFacePointHomeomorph_apply]
   exact congrArg (fun w : ℂˣ ↦ (w : ℂ))
     ((affineRayZeroFacePointHomeomorph g₀).apply_symm_apply z)
 
@@ -290,7 +290,7 @@ theorem affineRayZeroFacePointHomeomorph_symm_apply
   have h : Units.mk0 (x (MonoidAlgebra.single (ofAdd affineRayZeroFaceCharacter) 1)) hx =
       affineRayZeroFacePointHomeomorph g₀ x := by
     apply Units.ext
-    exact (affineRayZeroFacePointHomeomorph_apply g₀ x).symm
+    exact (val_affineRayZeroFacePointHomeomorph_apply g₀ x).symm
   rw [h]
   exact (affineRayZeroFacePointHomeomorph g₀).symm_apply_apply x
 
@@ -328,7 +328,7 @@ private theorem zeroFaceModelEquiv_coneChartAmbient
     zeroFaceModelEquiv (coneChartAmbient (isIntegralLattice_intCast 1) (isToricCone_bot _)
       zeroFaceBasis_extends zeroFaceNumbering x) =
       (affineRayZeroFacePointHomeomorph g₀ x : ℂ) := by
-  rw [affineRayZeroFacePointHomeomorph_apply]
+  rw [val_affineRayZeroFacePointHomeomorph_apply]
   simpa only [zeroFaceModelEquiv, ContinuousLinearEquiv.trans_apply,
     ContinuousLinearEquiv.uniqueProd_apply, ContinuousLinearEquiv.piUnique_apply,
     coneChartAmbient_snd_apply, Subsingleton.elim (default : Fin 1) (0 : Fin 1),
@@ -351,7 +351,7 @@ noncomputable def affineRayZeroFacePointDiffeomorph (n : ℕ∞ω) :
   · apply ContMDiff.of_comp_isOpenEmbedding Units.isOpenEmbedding_val
     exact (contMDiff_apply_single (isIntegralLattice_intCast 1) (isToricCone_bot _)
       zeroFaceBasis_extends zeroFaceNumbering g₀ affineRayZeroFaceCharacter n).congr
-        fun x ↦ affineRayZeroFacePointHomeomorph_apply g₀ x
+        fun x ↦ val_affineRayZeroFacePointHomeomorph_apply g₀ x
   · apply (contMDiff_coneChartAmbient_comp_iff (isIntegralLattice_intCast 1)
       (isToricCone_bot _) zeroFaceBasis_extends zeroFaceNumbering g₀).1
     refine (zeroFaceModelEquiv.symm.toContinuousLinearMap.contMDiff.comp
@@ -385,7 +385,7 @@ theorem val_affineRayZeroFacePointDiffeomorph_apply (n : ℕ∞ω)
       x (MonoidAlgebra.single (ofAdd affineRayZeroFaceCharacter) 1) := by
   let _ := affinePointTopology g₀
   let _ := affineRayZeroFaceChartedSpace g₀
-  exact affineRayZeroFacePointHomeomorph_apply g₀ x
+  exact val_affineRayZeroFacePointHomeomorph_apply g₀ x
 
 /-- The inverse biholomorphic coordinate reconstructs a point from its Laurent character unit. -/
 @[simp]
@@ -410,7 +410,7 @@ theorem affineRayPointHomeomorph_faceAffinePointMap
         isRegularCone_affineRayCone.salient.bot_isFaceOf x) =
       (affineRayZeroFacePointHomeomorph g₀ x : ℂ) := by
   rw [affineRayPointHomeomorph_apply, faceAffinePointMap_apply_single,
-    affineRayZeroFacePointHomeomorph_apply]
+    val_affineRayZeroFacePointHomeomorph_apply]
   apply congrArg x
   apply congrArg (fun m ↦ MonoidAlgebra.single (ofAdd m) 1)
   apply Subtype.ext
