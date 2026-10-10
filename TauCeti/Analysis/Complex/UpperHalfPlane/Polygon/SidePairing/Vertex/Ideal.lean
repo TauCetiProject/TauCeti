@@ -28,6 +28,10 @@ followed by an integer power of the cycle transformation. It comes from the horo
 the cycle tiles: the interior of any tile incident to the vertex meets that horodisc, and
 interior disjointness identifies it with one of the cycle tiles.
 
+The stabilizer membership and orbit equivalences can be used with `simp only` after supplying
+their polygon hypotheses explicitly. They are not global simplification rules: their left-hand
+sides do not determine the polygon, side pairing, or vertex indices.
+
 ## References
 
 * Alan Beardon, *The Geometry of Discrete Groups*, Chapter 9 (vertex cycles of fundamental
