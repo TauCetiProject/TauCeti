@@ -1312,10 +1312,16 @@ jobs:
   # The merge queue's required `build` status is posted only here. In a configured installation,
   # green therefore means both that the combined commit passed every sandboxed audit and that a
   # fresh checkout can fetch its exact output map from the public cache before GitHub lands it.
+  #
+  # It runs on the same Namespace labels as `sandboxed-build`. A GitHub-hosted job that is never
+  # acquired posts no status at all, and the merge queue then waits out its check timeout (bors,
+  # its `timeout_sec`) on a batch nobody will report on; a failure status ends that wait at once.
   finalize-merge-group-build:
     needs: [sandboxed-build, publish-merge-group-cache]
     if: ${{ always() && (github.event_name == 'merge_group' || github.event_name == 'repository_dispatch') }}
-    runs-on: ubuntu-latest
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-8x16-with-features
+      - namespace-features:container.privileged=true
     permissions:
       statuses: write
     env:
