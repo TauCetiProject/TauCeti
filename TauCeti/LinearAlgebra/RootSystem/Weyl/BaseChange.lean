@@ -21,14 +21,12 @@ lattice. In particular, it connects their explicit Weyl-group computations to th
 rational root systems, where classification by Cartan matrices applies. Neither finiteness
 of the root index set nor reducedness or crystallographicity is required.
 
-The construction uses Mathlib's `RootPairing.weylGroup.induction` to match products of
-reflections through their actions on weight vectors. Injectivity of the algebra map and
-spanning by the images of the standard basis make this match unique in both directions;
-no spanning hypothesis on the roots or coroots is required.
+No spanning hypothesis on the roots or coroots is required.
 
 ## References
 
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Chapter VI, §1.
+* Formal infrastructure: Mathlib's `RootPairing.weylGroup.induction`.
 -/
 
 public section
@@ -114,10 +112,18 @@ noncomputable def weylGroupBaseChangeEquiv : P.weylGroup ≃* (Q).weylGroup :=
   MulEquiv.ofBijective (weylGroupBaseChangeHom S P hP) (weylGroupBaseChangeHom_bijective S P hP)
 
 /-- Entrywise scalar extension intertwines the Weyl-group actions on weight vectors. -/
+@[simp]
 theorem weylGroupBaseChangeEquiv_smul (w : P.weylGroup) (x : κ → R) :
     weylGroupBaseChangeEquiv S P hP w • A x = A (w • x) := by
   rw [weylGroupBaseChangeEquiv, MulEquiv.ofBijective_apply]
   exact weylGroupBaseChangeHom_smul S P hP w x
+
+/-- The inverse comparison intertwines the Weyl-group actions on weight vectors. -/
+@[simp low]
+theorem weylGroupBaseChangeEquiv_symm_smul (w : (Q).weylGroup) (x : κ → R) :
+    w • A x = A ((weylGroupBaseChangeEquiv S P hP).symm w • x) := by
+  simpa only [MulEquiv.apply_symm_apply] using
+    weylGroupBaseChangeEquiv_smul S P hP ((weylGroupBaseChangeEquiv S P hP).symm w) x
 
 /-- The base-change comparison leaves the root-index permutation unchanged.
 This is a rewrite rule, not a simp rule: `weylGroupToPerm` simplifies to `indexEquiv`. -/
