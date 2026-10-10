@@ -664,6 +664,14 @@ def KirkLivingstonMutationTheorem : Prop :=
   ∃ K K' : SmoothCircleEmbedding (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1),
     IsConwayMutant K K' ∧ ¬ SmoothEmbedding.Concordant K K'
 
+/-- The Kirk–Livingston theorem spelled out: some knot in `S³` is not smoothly concordant to
+one of its Conway mutants. -/
+theorem kirkLivingstonMutationTheorem_iff :
+    KirkLivingstonMutationTheorem ↔
+      ∃ K K' : SmoothCircleEmbedding (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1),
+        IsConwayMutant K K' ∧ ¬ SmoothEmbedding.Concordant K K' :=
+  Iff.rfl
+
 /-- By the Kirk–Livingston theorem, smooth concordance of knots in `S³` is not invariant under
 Conway mutation. -/
 theorem KirkLivingstonMutationTheorem.not_forall_concordant (h : KirkLivingstonMutationTheorem) :
