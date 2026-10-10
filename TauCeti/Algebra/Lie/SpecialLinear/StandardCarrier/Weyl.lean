@@ -146,39 +146,14 @@ theorem simpleWeylPoint_conj_weightTorusPoints (i : Fin r) (A : Type v) [CommRin
 theorem simpleWeylPoint_mem_normalizer (i : Fin r) (A : Type v) [CommRing A] :
     simpleWeylPoint r i A ∈ Subgroup.normalizer
       (((weightTorusPoints r A).range : Subgroup (points r A)) : Set (points r A)) := by
-  let carrierEquiv : points r A ≃*
-      kostantToralPointsSubgroup (rootGenerator r) (cartanGenerator r) (rep r)
-        (lattice r).toAddSubgroup (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
-        (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) A :=
-    MulEquiv.subgroupCongr (points_eq_kostantToralPointsSubgroup r A)
-  have htorusPoint (s : Fin r → Aˣ) :
-      carrierEquiv (weightTorusPoints r A s) =
-        kostantToralWeightTorusPoints (rootGenerator r) (cartanGenerator r) (rep r)
-          (lattice r).toAddSubgroup (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
-          (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) A s := by
-    apply Subtype.ext
-    simp only [carrierEquiv, MulEquiv.subgroupCongr_apply]
-    rw [coe_weightTorusPoints, coe_kostantToralWeightTorusPoints]
-  have htorus : (weightTorusPoints r A).range.map carrierEquiv.toMonoidHom =
-      (kostantToralWeightTorusPoints (rootGenerator r) (cartanGenerator r) (rep r)
-        (lattice r).toAddSubgroup (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
-        (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) A).range := by
-    ext x
-    constructor
-    · rintro ⟨_, ⟨s, rfl⟩, rfl⟩
-      exact ⟨s, (htorusPoint s).symm⟩
-    · rintro ⟨s, rfl⟩
-      exact ⟨weightTorusPoints r A s, ⟨s, rfl⟩, htorusPoint s⟩
-  rw [← Subgroup.mem_map_iff_mem (f := carrierEquiv.toMonoidHom) carrierEquiv.injective,
-    Subgroup.map_equiv_normalizer_eq, htorus]
-  simpa [simpleWeylPoint, carrierEquiv] using
-    (kostantToralWeylPoint_mem_normalizer_weightTorusPoints (i := .inl i) (j := .inr i)
-      (c := i) (α := rootGeneratorWeight r (.inl i)) (rootGenerator r) (cartanGenerator r)
-      (rep r) (lattice r).toAddSubgroup (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
-      (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r)
-      (isSl2Triple_rep_rootGenerator r i)
-      (fun q => lie_cartanGenerator_rootGenerator r (.inl i) q)
-      (lie_cartanGenerator_rootGenerator_inr r i) (isCartanWeightVector_latticeBasis r) A)
+  refine Subgroup.mem_normalizer_iff.2 fun x ↦ ⟨?_, ?_⟩
+  · rintro ⟨s, rfl⟩
+    exact ⟨_, (simpleWeylPoint_conj_weightTorusPoints r i A s).symm⟩
+  · rintro ⟨s, hs⟩
+    have h := simpleWeylPoint_conj_weightTorusPoints r i A
+      (weylReflectTorusPoint (rootGeneratorWeight r (.inl i)) i s)
+    rw [weylReflectTorusPoint_weylReflectTorusPoint _ (by simp [CartanMatrix.A]), hs] at h
+    exact ⟨_, mul_left_cancel (mul_right_cancel h)⟩
 
 /-! ## The matrix of the Weyl representative -/
 
