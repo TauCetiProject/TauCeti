@@ -81,16 +81,12 @@ private theorem negY_curve11a3 (x y : ℚ) :
 def curve11a3Point : (curve11a3.baseChange ℚ).toAffine.Point :=
   .some 0 0 (nonsingular_curve11a3 (by norm_num))
 
-theorem curve11a3Point_def :
-    curve11a3Point = .some 0 0 (nonsingular_curve11a3 (by norm_num)) :=
-  (rfl)
-
 /-- On 11.a3, `2 • (0, 0) = (1, -1)`. -/
 theorem two_nsmul_curve11a3Point :
     2 • curve11a3Point = .some 1 (-1) (nonsingular_curve11a3 (by norm_num)) := by
   have hy : (0 : ℚ) ≠ (curve11a3.baseChange ℚ).toAffine.negY 0 0 := by
     rw [negY_curve11a3]; norm_num
-  rw [two_nsmul, curve11a3Point_def, Point.add_self_of_Y_ne hy, Point.some.injEq, addY, negAddY,
+  rw [two_nsmul, curve11a3Point, Point.add_self_of_Y_ne hy, Point.some.injEq, addY, negAddY,
     addX, slope_of_Y_ne rfl hy, negY]
   constructor <;> simp [WeierstrassCurve.baseChange]
 
@@ -99,14 +95,14 @@ theorem three_nsmul_curve11a3Point :
     3 • curve11a3Point = .some 1 0 (nonsingular_curve11a3 (by norm_num)) := by
   have hx : (0 : ℚ) ≠ 1 := by norm_num
   rw [(by norm_num : (3 : ℕ) = 1 + 2), add_nsmul, one_nsmul, two_nsmul_curve11a3Point,
-    curve11a3Point_def, Point.add_of_X_ne hx, Point.some.injEq, addY, negAddY, addX,
+    curve11a3Point, Point.add_of_X_ne hx, Point.some.injEq, addY, negAddY, addX,
     slope_of_X_ne hx, negY]
   constructor <;> simp [WeierstrassCurve.baseChange]
 
 /-- On 11.a3, `-(0, 0) = (0, -1)`. -/
 theorem neg_curve11a3Point :
     -curve11a3Point = .some 0 (-1) (nonsingular_curve11a3 (by norm_num)) := by
-  simp [curve11a3Point_def]
+  simp [curve11a3Point]
 
 /-- On 11.a3, `5 • (0, 0) = 0`, since `3 • (0, 0) = (1, 0)` is the negative of
 `2 • (0, 0) = (1, -1)`. -/
