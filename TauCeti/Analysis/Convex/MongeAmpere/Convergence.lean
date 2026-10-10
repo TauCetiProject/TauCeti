@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Convex.FunctionTopology
 public import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
 import Mathlib.Analysis.Convex.Continuous
 import Mathlib.Analysis.Convex.Extrema
-import Mathlib.Topology.MetricSpace.Thickening
+import Mathlib.MeasureTheory.Measure.Portmanteau
 
 /-!
 # Weak continuity of the Monge–Ampère measure
@@ -21,7 +21,7 @@ Let `Ω` be an open subset of a finite-dimensional real inner product space `E`,
 `MA_{F k}` (of `F k` extended by `⊤` off `Ω`) converge to `MA_u` in the weak sense:
 
 * for a compact `K ⊆ Ω`, `limsup MA_{F k}(K) ≤ MA_u(K)`;
-* for an open `U` with compact closure inside `Ω`, `MA_u(U) ≤ liminf MA_{F k}(U)`;
+* for an open `U ⊆ Ω`, `MA_u(U) ≤ liminf MA_{F k}(U)`;
 * consequently, `MA_{F k}(s) → MA_u(s)` for every bounded `s` with closure inside `Ω` and
   `MA_u(frontier s) = 0`.
 
@@ -31,23 +31,27 @@ additive Haar measure (outer regular for the bounds on compact sets), so the wei
 convergence is the limiting step when the Dirichlet problem for the Monge–Ampère equation is
 solved by approximation.
 
-The bound on compact sets follows from the upper semicontinuity of subgradient images: every
-open neighbourhood `V` of `∂u(K)` eventually contains `∂F_k(K)`. Otherwise one finds subgradients
-of `F k` at points of `K` outside `V`; they are bounded, and a compactness argument over the
-finitely many subgradient inequalities that separate them from `∂u(K)` gives a contradiction.
-Outer regularity of `μ` then bounds `limsup μ(∂F_k(K))` by `μ(∂u(K))`.
+The bound on compact sets follows from the upper semicontinuity of subgradient images
+(`TauCeti.eventually_biUnion_subset_of_tendstoLocallyUniformlyOn`): every open neighbourhood `V`
+of `∂u(K)` eventually contains `∂F_k(K)`. Outer regularity of `μ` then bounds
+`limsup μ(∂F_k(K))` by `μ(∂u(K))`.
 
-For the bound on open sets, almost every `y ∈ ∂u(U)` is a subgradient of `u` at a single point
-`x₀ ∈ U` (`TauCeti.measure_setOf_exists_ne_mem_subdifferential_eq_zero`). For such `y` the convex
+For the bound on open sets, first let `U` be bounded with closure inside `Ω`. Almost every
+`y ∈ ∂u(U)` is a subgradient of `u` at a single point `x₀ ∈ U`
+(`TauCeti.measure_setOf_exists_ne_mem_subdifferential_eq_zero`). For such `y` the convex
 function `u - ⟪·, y⟫` exceeds its value at `x₀` by some `η > 0` on a small sphere about `x₀`.
 Once `|F k - u| < η / 2` on the closure of `U`, the function `F k - ⟪·, y⟫` attains its minimum
 over the closed ball inside the ball, so `y ∈ ∂F_k(U)`. Sorting such `y` by `η` gives an
-increasing sequence of sets, each eventually contained in `∂F_k(U)`.
+increasing sequence of sets, each eventually contained in `∂F_k(U)`. A general open `U ⊆ Ω` is
+the increasing union of bounded open sets with closure inside `U`.
+
+The convergence on continuity sets then follows from both bounds by Mathlib's
+`MeasureTheory.tendsto_measure_of_le_liminf_measure_of_limsup_measure_le`.
 
 ## Main statements
 
 * `TauCeti.limsup_mongeAmpereMeasure_le` — the bound on compact sets;
-* `TauCeti.mongeAmpereMeasure_le_liminf` — the bound on relatively compact open sets;
+* `TauCeti.mongeAmpereMeasure_le_liminf` — the bound on open sets;
 * `TauCeti.tendsto_mongeAmpereMeasure` — convergence on relatively compact continuity sets.
 
 ## References
@@ -68,84 +72,6 @@ open scoped Topology ENNReal
 
 variable {E ι : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {Ω : Set E} {l : Filter ι} {F : ι → E → ℝ} {u : E → ℝ}
-
-/-- **Subgradients are eventually locally bounded.** Let `F k → u` locally uniformly on an open set
-`Ω`, with `u` continuous on `Ω`, and let `K ⊆ Ω` be compact. Then the subgradients of `F k`
-relative to `Ω` at points of `K` are eventually bounded, uniformly in `k`. -/
-private theorem exists_eventually_norm_le (hΩ : IsOpen Ω) (hu : ContinuousOn u Ω)
-    (hFu : TendstoLocallyUniformlyOn F u l Ω) {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
-    ∃ R, ∀ᶠ k in l, ∀ x ∈ K, ∀ y, (∀ x' ∈ Ω, F k x + inner ℝ (x' - x) y ≤ F k x') →
-      ‖y‖ ≤ R := by
-  -- `F k` is eventually bounded by `M + 1` on a compact thickening of `K` inside `Ω`.
-  obtain ⟨δ, hδ, hKδ⟩ := hK.exists_cthickening_subset_open hΩ hKΩ
-  obtain ⟨M, hM⟩ := hK.cthickening.exists_bound_of_continuousOn (hu.mono hKδ)
-  refine ⟨2 * (M + 1) / δ, ?_⟩
-  filter_upwards [Metric.tendstoUniformlyOn_iff.1
-    ((tendstoLocallyUniformlyOn_iff_forall_isCompact hΩ).1 hFu _ hKδ hK.cthickening) 1 one_pos]
-    with k hk x hx y hy
-  rw [le_div_iff₀ hδ, mul_comm]
-  refine mul_norm_le_of_forall_add_inner_le hδ.le
-    ((closedBall_subset_cthickening hx δ).trans hKδ) (fun z hz => ?_) hy
-  have hz' := closedBall_subset_cthickening hx δ hz
-  have h₁ := hk z hz'
-  have h₂ := hM z hz'
-  rw [Real.dist_eq] at h₁
-  rw [Real.norm_eq_abs] at h₂
-  linarith [abs_sub_abs_le_abs_sub (F k z) (u z), abs_sub_comm (u z) (F k z)]
-
-/-- **Upper semicontinuity of subgradient images.** Let `F k → u` locally uniformly on an open set
-`Ω`, with `u` continuous on `Ω`, and let `K ⊆ Ω` be compact. Then every open set `V` containing
-the subgradients of `u` relative to `Ω` at points of `K` eventually contains the subgradients of
-`F k` relative to `Ω` at points of `K`. -/
-private theorem eventually_biUnion_subset (hΩ : IsOpen Ω) (hu : ContinuousOn u Ω)
-    (hFu : TendstoLocallyUniformlyOn F u l Ω) {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Ω)
-    {V : Set E} (hV : IsOpen V)
-    (hKV : ⋃ x ∈ K, {y | ∀ x' ∈ Ω, u x + inner ℝ (x' - x) y ≤ u x'} ⊆ V) :
-    ∀ᶠ k in l, ⋃ x ∈ K, {y | ∀ x' ∈ Ω, F k x + inner ℝ (x' - x) y ≤ F k x'} ⊆ V := by
-  obtain ⟨R, hbd⟩ := exists_eventually_norm_le hΩ hu hFu hK hKΩ
-  -- A pair `(x, y)` with `x ∈ K`, `‖y‖ ≤ R` and `y ∉ V` violates one of the relaxed subgradient
-  -- inequalities `u x + ⟪x' - x, y⟫ ≤ u x' + η`; by compactness, finitely many of them suffice.
-  set Z : Ω × Ioi (0 : ℝ) → Set (E × E) := fun i =>
-    {p | p.1 ∈ K ∧ u p.1 + inner ℝ ((i.1 : E) - p.1) p.2 ≤ u i.1 + i.2}
-  have hZ : ∀ i, IsClosed (Z i) := fun i => by
-    have : Z i = (K ×ˢ univ) ∩
-        (fun p : E × E => u p.1 + inner ℝ ((i.1 : E) - p.1) p.2) ⁻¹' Iic (u i.1 + i.2) := by
-      ext p
-      simp [Z]
-    rw [this]
-    refine ContinuousOn.preimage_isClosed_of_isClosed ?_ (hK.isClosed.prod isClosed_univ)
-      isClosed_Iic
-    exact ((hu.mono hKΩ).comp continuousOn_fst fun p hp => hp.1).add
-      ((continuous_const.sub continuous_fst).inner continuous_snd).continuousOn
-  have hempty : Disjoint (K ×ˢ (closedBall (0 : E) R \ V)) (⋂ i, Z i) := by
-    refine disjoint_left.2 ?_
-    rintro p ⟨hpK, -, hpV⟩ hpZ
-    refine hpV (hKV ?_)
-    refine mem_biUnion hpK fun x' hx' => le_of_forall_pos_le_add fun η hη => ?_
-    exact (mem_iInter.1 hpZ ⟨⟨x', hx'⟩, ⟨η, hη⟩⟩).2
-  obtain ⟨t, ht⟩ := (hK.prod ((isCompact_closedBall _ _).diff hV)).elim_finite_subfamily_closed
-    Z hZ hempty
-  -- Eventually `|F k - u| < η / 2` on `K` and at `x'` for each of these finitely many `(x', η)`.
-  have hclose : ∀ᶠ k in l, ∀ i ∈ t, |F k i.1 - u i.1| < (i.2 : ℝ) / 2 ∧
-      ∀ x ∈ K, |F k x - u x| < (i.2 : ℝ) / 2 := by
-    refine (eventually_all_finset t).2 fun i _ => ?_
-    have hi : 0 < (i.2 : ℝ) / 2 := half_pos i.2.2
-    filter_upwards [Metric.tendsto_nhds.1 (hFu.tendsto_at i.1.2) _ hi,
-      Metric.tendstoUniformlyOn_iff.1
-        ((tendstoLocallyUniformlyOn_iff_forall_isCompact hΩ).1 hFu K hKΩ hK) _ hi] with k h₁ h₂
-    refine ⟨by rwa [Real.dist_eq] at h₁, fun x hx => ?_⟩
-    have := h₂ x hx
-    rwa [Real.dist_eq, abs_sub_comm] at this
-  filter_upwards [hbd, hclose] with k hk hk' y hy
-  obtain ⟨x, hx, hxy⟩ := mem_iUnion₂.1 hy
-  by_contra hyV
-  have hmem : (x, y) ∈ K ×ˢ (closedBall (0 : E) R \ V) :=
-    ⟨hx, mem_closedBall_zero_iff.2 (hk x hx y hxy), hyV⟩
-  refine disjoint_left.1 ht hmem (mem_iInter₂.2 fun i hi => ⟨hx, ?_⟩)
-  obtain ⟨h₁, h₂⟩ := hk' i hi
-  have h₃ := hxy i.1 i.1.2
-  dsimp only
-  linarith [(abs_lt.1 h₁).2, (abs_lt.1 (h₂ x hx)).1]
 
 /-- Let `g` be convex on an open set `Ω ⊇ U`, and let the closed ball of radius `r > 0` about `x₀`
 lie in `U`. If `u - ⟪·, y⟫` exceeds its value at `x₀` by at least `η` on the sphere of radius `r`
@@ -232,17 +158,14 @@ theorem limsup_mongeAmpereMeasure_le [μ.OuterRegular] (hμ : μ ≪ ν) (hΩ : 
   rw [mongeAmpereMeasure_ite_apply μ hΩ hu hμ hK.measurableSet, inter_eq_left.2 hKΩ,
     Set.measure_eq_iInf_isOpen]
   refine le_iInf₂ fun V hKV => le_iInf fun hV => limsup_le_of_le (by isBoundedDefault) ?_
-  filter_upwards [hF, eventually_biUnion_subset hΩ (hu.continuousOn hΩ) hFu hK hKΩ hV hKV]
-    with k hk hkV
+  filter_upwards [hF, eventually_biUnion_subset_of_tendstoLocallyUniformlyOn hΩ
+    (hu.continuousOn hΩ) hFu hK hKΩ hV hKV] with k hk hkV
   rw [mongeAmpereMeasure_ite_apply μ hΩ hk hμ hK.measurableSet, inter_eq_left.2 hKΩ]
   exact measure_mono hkV
 
-/-- **Lower semicontinuity of the Monge–Ampère measure on open sets.** Let `F k → u` locally
-uniformly on an open set `Ω`, where the `F k` are eventually convex on `Ω`. For every bounded open
-`U` whose closure lies in `Ω`, `MA_u(U) ≤ liminf MA_{F k}(U)`, for the Monge–Ampère measures of
-`F k` and `u` (extended by `⊤` off `Ω`) with respect to any measure `μ` absolutely continuous
-with respect to an additive Haar measure. -/
-theorem mongeAmpereMeasure_le_liminf (hμ : μ ≪ ν) (hΩ : IsOpen Ω)
+/-- The lower bound `MA_u(U) ≤ liminf MA_{F k}(U)` for a bounded open `U` whose closure lies in
+`Ω`. -/
+private theorem mongeAmpereMeasure_le_liminf_of_isBounded (hμ : μ ≪ ν) (hΩ : IsOpen Ω)
     (hF : ∀ᶠ k in l, ConvexOn ℝ Ω (F k)) (hFu : TendstoLocallyUniformlyOn F u l Ω)
     {U : Set E} (hU : IsOpen U) (hUb : Bornology.IsBounded U) (hUΩ : closure U ⊆ Ω) :
     mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤) U ≤
@@ -264,14 +187,12 @@ theorem mongeAmpereMeasure_le_liminf (hμ : μ ≪ ν) (hΩ : IsOpen Ω)
       mongeAmpereMeasure μ (fun x => if x ∈ Ω then (F k x : EReal) else ⊤) U) l := fun n => by
     refine le_liminf_of_le (by isBoundedDefault) ?_
     have hη : 0 < 1 / ((n : ℝ) + 1) := Nat.one_div_pos_of_nat
-    filter_upwards [hF, Metric.tendstoUniformlyOn_iff.1
-      ((tendstoLocallyUniformlyOn_iff_forall_isCompact hΩ).1 hFu _ hUΩ hUb.isCompact_closure)
-      _ (half_pos hη)] with k hk hk'
+    filter_upwards [hF, hFu.eventually_forall_abs_sub_lt hUb.isCompact_closure hUΩ
+      (half_pos hη)] with k hk hk'
     rw [mongeAmpereMeasure_ite_apply μ hΩ hk hμ hU.measurableSet]
-    refine measure_mono fun y ⟨x₀, r, hr, hball, hyη⟩ =>
-      mem_biUnion_of_forall_sphere hΩ hk hUΩ' hr hball hyη fun z hz => ?_
-    have := hk' z (subset_closure (hball hz))
-    rwa [Real.dist_eq, abs_sub_comm] at this
+    exact measure_mono fun y ⟨x₀, r, hr, hball, hyη⟩ =>
+      mem_biUnion_of_forall_sphere hΩ hk hUΩ' hr hball hyη fun z hz =>
+        hk' z (subset_closure (hball hz))
   -- Up to the null set of slopes that are subgradients at two distinct points, every subgradient
   -- of `u` at a point of `U` lies in some `A n`.
   set N := {y | ∃ x₁ x₂, x₁ ≠ x₂ ∧
@@ -296,6 +217,50 @@ theorem mongeAmpereMeasure_le_liminf (hμ : μ ≪ ν) (hΩ : IsOpen Ω)
     _ = ⨆ n, μ (A n) := hAmono.measure_iUnion
     _ ≤ _ := iSup_le hA
 
+/-- **Lower semicontinuity of the Monge–Ampère measure on open sets.** Let `F k → u` locally
+uniformly on an open set `Ω`, where the `F k` are eventually convex on `Ω`. For every open
+`U ⊆ Ω`, `MA_u(U) ≤ liminf MA_{F k}(U)`, for the Monge–Ampère measures of `F k` and `u` (extended
+by `⊤` off `Ω`) with respect to any measure `μ` absolutely continuous with respect to an additive
+Haar measure. -/
+theorem mongeAmpereMeasure_le_liminf (hμ : μ ≪ ν) (hΩ : IsOpen Ω)
+    (hF : ∀ᶠ k in l, ConvexOn ℝ Ω (F k)) (hFu : TendstoLocallyUniformlyOn F u l Ω)
+    {U : Set E} (hU : IsOpen U) (hUΩ : U ⊆ Ω) :
+    mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤) U ≤
+      liminf (fun k => mongeAmpereMeasure μ (fun x => if x ∈ Ω then (F k x : EReal) else ⊤) U)
+        l := by
+  -- Exhaust `U` by the bounded open sets `V n` of points of norm `< n` at distance
+  -- `> 1 / (n + 1)` from the complement of `U`; their closures lie in `U`.
+  set V : ℕ → Set E := fun n => ball 0 n ∩ (fun x => infEDist x Uᶜ) ⁻¹' Ioi ((n : ℝ≥0∞) + 1)⁻¹
+  have hVmono : Monotone V := fun n m hnm => inter_subset_inter
+    (ball_subset_ball (by exact_mod_cast hnm)) fun x hx => by
+      refine lt_of_le_of_lt ?_ (show ((n : ℝ≥0∞) + 1)⁻¹ < infEDist x Uᶜ from hx)
+      gcongr
+  have hVU : ∀ n, closure (V n) ⊆ U := fun n x hx => by
+    by_contra hxU
+    have := closure_lt_subset_le continuous_const continuous_infEDist
+      (closure_mono inter_subset_right hx)
+    rw [mem_ofPred_eq, infEDist_zero_of_mem hxU] at this
+    simp at this
+  have hUV : ⋃ n, V n = U := by
+    refine Subset.antisymm (iUnion_subset fun n => subset_closure.trans (hVU n)) fun x hx => ?_
+    have hd : infEDist x Uᶜ ≠ 0 := by
+      rw [← pos_iff_ne_zero, infEDist_pos_iff_notMem_closure, hU.isClosed_compl.closure_eq]
+      exact not_not.2 hx
+    obtain ⟨N, hN⟩ := ENNReal.exists_inv_nat_lt hd
+    obtain ⟨M, hM⟩ := exists_nat_gt ‖x‖
+    refine mem_iUnion.2 ⟨max N M, mem_ball_zero_iff.2 (hM.trans_le ?_), lt_of_le_of_lt ?_ hN⟩
+    · exact_mod_cast le_max_right N M
+    · gcongr
+      exact_mod_cast (le_max_left N M).trans (Nat.le_succ _)
+  calc mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤) U
+      = ⨆ n, mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤) (V n) := by
+        rw [← hVmono.measure_iUnion, hUV]
+    _ ≤ _ := iSup_le fun n => (mongeAmpereMeasure_le_liminf_of_isBounded μ hμ hΩ hF hFu
+        ((isOpen_ball).inter (isOpen_Ioi.preimage continuous_infEDist))
+        (isBounded_ball.subset inter_subset_left) ((hVU n).trans hUΩ)).trans
+      (liminf_le_liminf (Eventually.of_forall fun k =>
+        measure_mono (subset_closure.trans (hVU n))))
+
 /-- **Weak continuity of the Monge–Ampère measure.** Let `F k → u` locally uniformly on an open set
 `Ω`, where the `F k` are eventually convex on `Ω`. For every bounded set `s` whose closure lies in
 `Ω` and whose frontier is `MA_u`-null, `MA_{F k}(s) → MA_u(s)`, for the Monge–Ampère measures of
@@ -306,26 +271,10 @@ theorem tendsto_mongeAmpereMeasure [μ.OuterRegular] (hμ : μ ≪ ν) (hΩ : Is
     {s : Set E} (hsb : Bornology.IsBounded s) (hsΩ : closure s ⊆ Ω)
     (hfr : mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤) (frontier s) = 0) :
     Tendsto (fun k => mongeAmpereMeasure μ (fun x => if x ∈ Ω then (F k x : EReal) else ⊤) s) l
-      (𝓝 (mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤) s)) := by
-  set MA := mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤)
-  set MAk := fun k => mongeAmpereMeasure μ (fun x => if x ∈ Ω then (F k x : EReal) else ⊤)
-  -- The closure and the interior of `s` carry the same `MA_u`-mass.
-  have hcl : MA (closure s) ≤ MA (interior s) := by
-    rw [closure_eq_interior_union_frontier]
-    exact (measure_union_le _ _).trans (by rw [hfr, add_zero])
-  have hint := mongeAmpereMeasure_le_liminf μ hμ hΩ hF hFu isOpen_interior
-    (hsb.subset interior_subset) ((closure_mono interior_subset).trans hsΩ)
-  have hclo := limsup_mongeAmpereMeasure_le μ hμ hΩ hF hFu hsb.isCompact_closure hsΩ
-  refine tendsto_of_le_liminf_of_limsup_le ?_ ?_
-  · calc MA s ≤ MA (closure s) := measure_mono subset_closure
-      _ ≤ MA (interior s) := hcl
-      _ ≤ liminf (fun k => MAk k (interior s)) l := hint
-      _ ≤ liminf (fun k => MAk k s) l :=
-        liminf_le_liminf (Eventually.of_forall fun k => measure_mono interior_subset)
-  · calc limsup (fun k => MAk k s) l ≤ limsup (fun k => MAk k (closure s)) l :=
-          limsup_le_limsup (Eventually.of_forall fun k => measure_mono subset_closure)
-      _ ≤ MA (closure s) := hclo
-      _ ≤ MA (interior s) := hcl
-      _ ≤ MA s := measure_mono interior_subset
+      (𝓝 (mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤) s)) :=
+  tendsto_measure_of_le_liminf_measure_of_limsup_measure_le interior_subset subset_closure hfr
+    (mongeAmpereMeasure_le_liminf μ hμ hΩ hF hFu isOpen_interior
+      (interior_subset.trans (subset_closure.trans hsΩ)))
+    (limsup_mongeAmpereMeasure_le μ hμ hΩ hF hFu hsb.isCompact_closure hsΩ)
 
 end TauCeti
