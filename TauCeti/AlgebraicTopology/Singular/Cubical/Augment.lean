@@ -108,6 +108,7 @@ theorem augment_map (f : C(X, Y)) : augment Y R ∘ₗ map R f 0 = augment X R :
     CubicalChain.augment_map]
 
 /-- On 0-chains, a constant map multiplies the class of its value by the augmentation. -/
+@[simp]
 theorem map_const_zero (y : Y) (c : NormalizedCubicalChain X R 0) :
     map R (ContinuousMap.const X y) 0 c = augment X R c • ofCube Y R (SingularCube.point y) := by
   induction c using Submodule.Quotient.induction_on with
