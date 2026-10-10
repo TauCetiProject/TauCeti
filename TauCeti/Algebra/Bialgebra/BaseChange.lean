@@ -83,7 +83,7 @@ private theorem baseChangeTowerAlgEquiv_map_comp_comul :
         AlgEquiv.coe_toAlgHom,
         TauCeti.Algebra.TensorProduct.baseChangeTowerAlgEquiv_tmul,
         TauCeti.Coalgebra.baseChange_comul_tmul]
-      exact TauCeti.Algebra.TensorProduct.map_baseChangeTowerAlgEquiv_distribBaseChange
+      exact _root_.Algebra.TensorProduct.map_baseChangeTowerAlgEquiv_distribBaseChange
         k L H H K s l
         (Coalgebra.comul (R := k) h)
 

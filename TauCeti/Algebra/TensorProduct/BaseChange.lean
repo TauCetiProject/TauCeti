@@ -172,7 +172,8 @@ theorem baseChangeTowerAlgEquiv_symm_tmul (m : M) (a : A) :
 
 /-- Collapsing a scalar-extension tower in both tensor factors commutes with distributing
 scalar extension over their tensor product. -/
-theorem map_baseChangeTowerAlgEquiv_distribBaseChange (m : M) (l : L) (x : A ⊗[K] B) :
+theorem _root_.Algebra.TensorProduct.map_baseChangeTowerAlgEquiv_distribBaseChange
+    (m : M) (l : L) (x : A ⊗[K] B) :
     Algebra.TensorProduct.map
         (baseChangeTowerAlgEquiv K L A M).toAlgHom
         (baseChangeTowerAlgEquiv K L B M).toAlgHom
