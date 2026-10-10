@@ -121,6 +121,86 @@ private theorem coord_mem_source [Finite ι]
       simp [hzero] at hsum
     simpa using hface
 
+private theorem stellarSubdivision_face_relabel
+    {ι κ : Type*} [DecidableEq ι] [DecidableEq κ]
+    {K : PreAbstractSimplicialComplex ι} {σ : Finset ι} {v : ι}
+    {Kκ : PreAbstractSimplicialComplex κ} {σ' : Finset κ} {v' : κ}
+    (e : κ ↪ ι)
+    (face' : (K.stellarSubdivision σ v).faces → Finset κ)
+    (hKκ : ∀ q : Finset κ, q ∈ Kκ ↔ q.image e ∈ K)
+    (hσ_spec : ∀ i : κ, i ∈ σ' ↔ e i ∈ σ)
+    (hface_spec : ∀ (τ : (K.stellarSubdivision σ v).faces) (i : κ),
+      i ∈ face' τ ↔ e i ∈ τ.1)
+    (hσ_range : ∀ i ∈ σ, ∃ j : κ, e j = i)
+    (hface_range : ∀ (τ : (K.stellarSubdivision σ v).faces) (i : ι),
+      i ∈ τ.1 → ∃ j : κ, e j = i)
+    (hev : e v' = v) :
+    σ'.image e = σ ∧ ({v'} : Finset κ).image e = {v} ∧
+      ∀ τ : (K.stellarSubdivision σ v).faces,
+        face' τ ∈ Kκ.stellarSubdivision σ' v' ∧
+          (face' τ).image e = τ.1 ∧
+            ((face' τ).erase v').image e = τ.1.erase v := by
+  have hσimage : σ'.image e = σ := by
+    apply Finset.ext
+    intro i
+    constructor
+    · intro hi
+      rw [Finset.mem_image] at hi
+      obtain ⟨j, hj, rfl⟩ := hi
+      exact (hσ_spec j).mp hj
+    · intro hi
+      obtain ⟨j, hj⟩ := hσ_range i hi
+      have hjσ : e j ∈ σ := by simpa [hj] using hi
+      exact Finset.mem_image.mpr ⟨j, (hσ_spec j).mpr hjσ, hj⟩
+  have hvimage : ({v'} : Finset κ).image e = {v} := by
+    ext i
+    simp [hev]
+  refine ⟨hσimage, hvimage, ?_⟩
+  intro τ
+  have hτVimage : (face' τ).image e = τ.1 := by
+    apply Finset.ext
+    intro i
+    constructor
+    · intro hi
+      rw [Finset.mem_image] at hi
+      obtain ⟨j, hj, rfl⟩ := hi
+      exact (hface_spec τ j).mp hj
+    · intro hi
+      obtain ⟨j, hj⟩ := hface_range τ i hi
+      have hjτ : e j ∈ τ.1 := by simpa [hj] using hi
+      exact Finset.mem_image.mpr ⟨j, (hface_spec τ j).mpr hjτ, hj⟩
+  have herase : ((face' τ).erase v').image e = τ.1.erase v := by
+    rw [Finset.image_erase e.injective, hτVimage]
+    simp [hev]
+  have hτL : τ.1 ∈ K.stellarSubdivision σ v := τ.2
+  rw [mem_stellarSubdivision_iff] at hτL
+  rw [mem_stellarSubdivision_iff]
+  refine ⟨?_, hτVimage, herase⟩
+  rcases hτL with ⟨hvτ, hτK, hτσ⟩ | ⟨hvτ, hτσ, hτK⟩
+  · left
+    refine ⟨?_, ?_, ?_⟩
+    · intro hvτ'
+      apply hvτ
+      rw [← hτVimage]
+      exact Finset.mem_image.mpr ⟨v', hvτ', hev⟩
+    · apply (hKκ _).2
+      rw [hτVimage]
+      exact hτK
+    · intro hsub
+      apply hτσ
+      rw [← hτVimage, ← hσimage]
+      exact Finset.image_subset_image hsub
+  · right
+    refine ⟨?_, ?_, ?_⟩
+    · exact (hface_spec τ v').2 (by simpa [hev] using hvτ)
+    · intro hsub
+      apply hτσ
+      rw [← herase, ← hσimage]
+      exact Finset.image_subset_image hsub
+    · apply (hKκ _).2
+      rw [Finset.image_union, herase, hσimage]
+      exact hτK
+
 /-- The inverse barycentric map is piecewise linear on finite active coordinates.
 
 `V` is an explicit finite set of active vertices. It must contain the starred face, the new
@@ -130,14 +210,14 @@ even when the original complex has an infinite ambient vertex type.
 theorem exists_isPLOn_stellarSubdivisionLeftInverse
     (V : Finset ι) (hVσ : σ ⊆ V)
     (hV : ∀ τ ∈ K.stellarSubdivision σ v, τ ⊆ V)
-    (hσ : σ ∈ K)
+    (hVv : v ∈ V)
     (hvσ : v ∉ σ) :
     let κ := {i : ι // i ∈ V}
     ∃ g : (κ → ℝ) → (κ → ℝ),
       TauCeti.IsPLOn g
           (stellarSubdivisionCoordinateMap
               (σ.preimage (fun i : κ => (i : ι)) Subtype.val_injective.injOn)
-              ⟨v, hV {v} (singleton_mem_stellarSubdivision_iff.mpr hσ) (by simp)⟩ ''
+              ⟨v, hVv⟩ ''
             (⋃ τ : (K.stellarSubdivision σ v).faces,
               convexHull ℝ ((Pi.single · (1 : ℝ)) ''
                 (τ.1.preimage (fun i : κ => (i : ι)) Subtype.val_injective.injOn : Set κ)))) ∧
@@ -146,10 +226,9 @@ theorem exists_isPLOn_stellarSubdivisionLeftInverse
               (τ.1.preimage (fun i : κ => (i : ι)) Subtype.val_injective.injOn : Set κ))),
           g (stellarSubdivisionCoordinateMap
               (σ.preimage (fun i : κ => (i : ι)) Subtype.val_injective.injOn)
-              ⟨v, hV {v} (singleton_mem_stellarSubdivision_iff.mpr hσ) (by simp)⟩ x) = x := by
+              ⟨v, hVv⟩ x) = x := by
   classical
   dsimp
-  have hVv : v ∈ V := hV {v} (singleton_mem_stellarSubdivision_iff.mpr hσ) (by simp)
   let κ := {i : ι // i ∈ V}
   let _ : Fintype κ := Fintype.ofFinset V (fun _ => Iff.rfl)
   let _ : DecidableEq κ := stellarSubdivisionDecidableEq κ
@@ -180,66 +259,22 @@ theorem exists_isPLOn_stellarSubdivisionLeftInverse
     intro h
     have : v ∈ σ := Finset.mem_preimage.mp h
     exact hvσ this
-  have hfaceκ (τ : L.faces) : face' τ ∈ Kκ.stellarSubdivision σ' v' := by
-    have hτV : τ.1 ⊆ V := hV τ.1 τ.2
-    have himage : (face' τ).image e = τ.1 := by
-      apply Finset.ext
-      intro i
-      constructor
-      · intro hi
-        rw [Finset.mem_image] at hi
-        obtain ⟨j, hj, rfl⟩ := hi
-        exact Finset.mem_preimage.mp hj
-      · intro hi
-        exact Finset.mem_image.mpr ⟨⟨i, hτV hi⟩, Finset.mem_preimage.mpr hi, rfl⟩
-    have hσimage : σ'.image e = σ := by
-      apply Finset.ext
-      intro i
-      constructor
-      · intro hi
-        rw [Finset.mem_image] at hi
-        obtain ⟨j, hj, rfl⟩ := hi
-        exact Finset.mem_preimage.mp hj
-      · intro hi
-        exact Finset.mem_image.mpr ⟨⟨i, hVσ hi⟩, Finset.mem_preimage.mpr hi, rfl⟩
-    have hvimage : ({v'} : Finset κ).image e = ({v} : Finset ι) := by
-      simp [v', e]
-    have hτL : τ.1 ∈ K.stellarSubdivision σ v := τ.2
-    rw [mem_stellarSubdivision_iff] at hτL
-    rw [mem_stellarSubdivision_iff]
-    rcases hτL with ⟨hvτ, hτK, hτσ⟩ | ⟨hvτ, hτσ, hτK⟩
-    · left
-      refine ⟨?_, ?_, ?_⟩
-      · intro hvτ'
-        apply hvτ
-        rw [← himage]
-        exact Finset.mem_image.mpr ⟨v', hvτ', rfl⟩
-      -- `face'` and `Kκ` are local wrappers around the image construction;
-      -- this change exposes the defining membership proposition for `rw [himage]`.
-      · change (face' τ).image e ∈ K
-        rw [himage]
-        exact hτK
-      · intro hsub
-        apply hτσ
-        rw [← himage, ← hσimage]
-        exact Finset.image_subset_image hsub
-    · right
-      have herase : ((face' τ).erase v').image e = τ.1.erase v := by
-        rw [Finset.image_erase e.injective, himage]
-        simp [v', e]
-      refine ⟨?_, ?_, ?_⟩
-      · have hvτ' : v' ∈ face' τ := by
-          simpa [face', v', e] using hvτ
-        exact hvτ'
-      · intro hsub
-        apply hτσ
-        rw [← herase, ← hσimage]
-        exact Finset.image_subset_image hsub
-      -- As above, unfold the local face and complex wrappers before rewriting
-      -- the image of the union back to the original stellar face.
-      · change ((face' τ).erase v' ∪ σ').image e ∈ K
-        rw [Finset.image_union, herase, hσimage]
-        exact hτK
+  -- Relabel finite-coordinate faces, then use injectivity and the finite-simplex criterion.
+  have hfaceκ_data : σ'.image e = σ ∧ ({v'} : Finset κ).image e = {v} ∧
+      ∀ τ : L.faces, face' τ ∈ Kκ.stellarSubdivision σ' v' ∧
+        (face' τ).image e = τ.1 ∧ ((face' τ).erase v').image e = τ.1.erase v := by
+    apply stellarSubdivision_face_relabel e face' (by intro q; rfl)
+    · intro i
+      simp [σ', e]
+    · intro τ i
+      simp [face', e]
+    · intro i hi
+      exact ⟨⟨i, hVσ hi⟩, rfl⟩
+    · intro τ i hi
+      exact ⟨⟨i, hV τ.1 τ.2 hi⟩, rfl⟩
+    · rfl
+  have hfaceκ (τ : L.faces) : face' τ ∈ Kκ.stellarSubdivision σ' v' :=
+    (hfaceκ_data.2.2 τ).1
   have hSinj : Set.InjOn S U := by
     intro x hx y hy hxy
     obtain ⟨τ, hxτ⟩ := mem_iUnion.mp hx
@@ -344,7 +379,7 @@ theorem exists_isPLOn_stellarSubdivisionLeftInverse
   have hSeq :
       stellarSubdivisionCoordinateMap
           (σ.preimage (fun i : κ => (i : ι)) Subtype.val_injective.injOn)
-          ⟨v, hV {v} (singleton_mem_stellarSubdivision_iff.mpr hσ) (by simp)⟩ = S := by
+          ⟨v, hVv⟩ = S := by
     rw [hσ'eq]
   refine ⟨g, ?_, ?_⟩
   · convert hPA.isPLOn using 1
