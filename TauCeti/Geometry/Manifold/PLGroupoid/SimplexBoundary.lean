@@ -226,13 +226,13 @@ theorem coe_coordinateSimplexBoundaryChart_symm_apply (v : Option (Option ι)) {
   simp only [coordinateSimplexBoundaryChart, ← OpenPartialHomeomorph.invFun_eq_coe, dite_eq_left hy]
 
 /-- The origin of the origin-vertex chart lifts to the origin vertex. -/
-@[simp] theorem coe_coordinateSimplexBoundaryChart_symm_zero_none :
+@[simp] theorem coe_coordinateSimplexBoundaryChart_symm_apply_zero_none :
     ((coordinateSimplexBoundaryChart (ι := ι) none).symm 0).1 = 0 := by
   rw [coe_coordinateSimplexBoundaryChart_symm_apply none (by simp)]
   simp
 
 /-- The origin of a coordinate-vertex chart lifts to its indexing coordinate vertex. -/
-@[simp] theorem coe_coordinateSimplexBoundaryChart_symm_zero_some [DecidableEq ι]
+@[simp] theorem coe_coordinateSimplexBoundaryChart_symm_apply_zero_some [DecidableEq ι]
     (j : Option ι) :
     ((coordinateSimplexBoundaryChart (some j)).symm 0).1 = Pi.single j 1 := by
   rw [coe_coordinateSimplexBoundaryChart_symm_apply (some j) (by simp)]
@@ -267,6 +267,20 @@ theorem isPiecewiseAffineOn_coordinateSimplexBoundaryChart_transition (v w : Opt
 @[simp] theorem coordinateSimplexBoundaryChartedSpace_atlas :
     @atlas (ι → ℝ) _ (frontier (coordinateSimplex (Option ι))) _
       coordinateSimplexBoundaryChartedSpace = range coordinateSimplexBoundaryChart := (rfl)
+
+/-- The preferred chart at a simplex boundary point is a vertex chart whose source contains
+that point. -/
+theorem exists_chartAt_coordinateSimplexBoundary_eq
+    (x : frontier (coordinateSimplex (Option ι))) :
+    letI := coordinateSimplexBoundaryChartedSpace (ι := ι)
+    ∃ v, x ∈ coordinateSimplexBoundaryChartSource v ∧
+      chartAt (ι → ℝ) x = coordinateSimplexBoundaryChart v := by
+  let := coordinateSimplexBoundaryChartedSpace (ι := ι)
+  obtain ⟨v, hv⟩ : chartAt (ι → ℝ) x ∈ range coordinateSimplexBoundaryChart :=
+    coordinateSimplexBoundaryChartedSpace_atlas (ι := ι) ▸ chart_mem_atlas (ι → ℝ) x
+  refine ⟨v, ?_, hv.symm⟩
+  have hx := mem_chart_source (ι → ℝ) x
+  rwa [← hv, coordinateSimplexBoundaryChart_source] at hx
 
 /-- The simplex boundary's vertex-chart atlas defines a PL manifold structure. -/
 theorem coordinateSimplexBoundary_hasGroupoid :
