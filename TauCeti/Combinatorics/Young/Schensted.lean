@@ -293,7 +293,7 @@ private theorem isRowAbove_rowBump {x y : α} {upper lower : List α}
       · exact hxy
       · exact (hpre _ (by omega)).trans_lt hxy
   | some w =>
-    obtain ⟨j', hj', hL', hLj', hpre', hyw⟩ :=
+    obtain ⟨j', hj', hL', _, hpre', hyw⟩ :=
       exists_set_of_rowBump_snd_eq_some hlow
     rw [hL']
     -- the first entry of `lower` exceeding `y` is weakly left of column `j`
@@ -343,6 +343,15 @@ theorem length_getD_succ_rowInsertIndex_lt {rows : List (List α)} (h : rows.IsT
       ((rowInsert x rows).getD (rowInsertIndex x rows) []).length := by
   rw [length_getD_rowInsert, length_getD_rowInsert, ite_eq_right (by omega), ite_eq_left rfl]
   exact Nat.lt_succ_of_le (h.length_getD_succ_le _)
+
+/-- **A new cell below the first row sits under a longer row**: if `T ← x` adds its cell in row
+`i + 1`, then row `i + 1` of `T` is strictly shorter than row `i`. -/
+theorem length_getD_succ_lt_of_rowInsertIndex_eq_succ {rows : List (List α)}
+    (h : rows.IsTableauRows) {x : α} {i : ℕ} (hi : rowInsertIndex x rows = i + 1) :
+    (rows.getD (i + 1) []).length < (rows.getD i []).length := by
+  have := (h.rowInsert x).length_getD_succ_le i
+  rw [length_getD_rowInsert, length_getD_rowInsert, hi] at this
+  split_ifs at this <;> omega
 
 /-! ### Reverse insertion -/
 

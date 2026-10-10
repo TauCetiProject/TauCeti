@@ -40,7 +40,8 @@ The rationalization uses `IntegralLattice.ofIntegralForm` and Mathlib's
   `restrictMap_injective`, `range_restrictMap`, `form_restrictMap`, and
   `map_restrictMap_restrict_carrier`.
 * `TauCeti.IntegralLattice.restrictFull`: restriction to a full ambient submodule contained in the
-  original carrier, retaining the original rational ambient space.
+  original carrier, retaining the original rational ambient space; it inherits nondegeneracy and,
+  by `isEven_restrictFull`, evenness.
 * `TauCeti.IntegralLattice.restrictFullIsometry`: the canonical comparison of the two restrictions
   when the embedded submodule is full.
 
@@ -131,7 +132,7 @@ theorem restrictMap_tmul (L : IntegralLattice V) (S : Submodule ℤ L) (q : ℚ)
 form is needed. -/
 theorem restrictMap_injective (L : IntegralLattice V) (S : Submodule ℤ L) :
     Function.Injective (L.restrictMap S) :=
-  (L.carrier.subtype.comp S.subtype).liftBaseChange_injective (K := ℚ)
+  (L.carrier.subtype.comp S.subtype).liftBaseChange_injective (K := ℚ) (nonZeroDivisors ℤ)
     (L.carrier.injective_subtype.comp S.injective_subtype)
 
 /-- The range of the rational inclusion is exactly the rational span of the embedded submodule. -/
@@ -185,6 +186,21 @@ theorem restrictFull_carrier (L : IntegralLattice V) (N : Submodule ℤ V) (hN :
 theorem restrictFull_form (L : IntegralLattice V) (N : Submodule ℤ V) (hN : N ≤ L.carrier)
     [N.IsLattice ℚ] : (L.restrictFull N hN).form = L.form :=
   ofSubmodule_form _ _ _ _
+
+/-- Full restriction of a nondegenerate lattice is nondegenerate, since the form is unchanged. -/
+instance instIsNondegenerateRestrictFull (L : IntegralLattice V) [L.IsNondegenerate]
+    (N : Submodule ℤ V) (hN : N ≤ L.carrier) [N.IsLattice ℚ] :
+    (L.restrictFull N hN).IsNondegenerate :=
+  ⟨by rw [restrictFull_form]; exact L.form_nondegenerate⟩
+
+/-- Full restriction of an even lattice is even. -/
+theorem isEven_restrictFull {L : IntegralLattice V} (hL : L.IsEven) (N : Submodule ℤ V)
+    (hN : N ≤ L.carrier) [N.IsLattice ℚ] : (L.restrictFull N hN).IsEven := by
+  rw [isEven_iff_forall_norm]
+  rintro ⟨x, hx⟩
+  rw [restrictFull_carrier] at hx
+  obtain ⟨z, hz⟩ := hL.exists_norm_eq_two_mul ⟨x, hN hx⟩
+  exact ⟨z, by rwa [norm_apply, restrictFull_form, ← norm_apply]⟩
 
 /-- Fullness supplies the surjectivity needed to bundle the comparison as an isometry. -/
 private theorem restrictMap_bijective (L : IntegralLattice V) (S : Submodule ℤ L)

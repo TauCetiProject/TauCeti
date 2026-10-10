@@ -63,6 +63,20 @@ spanning vertex set. -/
 theorem mem_simplex : σ ∈ simplex V ↔ σ.Nonempty ∧ σ ⊆ V :=
   Iff.rfl
 
+/-- The image of a simplex is the simplex on the image of its spanning vertices. -/
+@[simp]
+theorem map_simplex {κ : Type*} [DecidableEq κ] (f : ι → κ) :
+    (simplex V).map f = simplex (V.image f) := by
+  refine SetLike.ext fun τ => ?_
+  constructor
+  · rintro ⟨σ, hσ, rfl⟩
+    obtain ⟨hne, hsub⟩ := mem_simplex.mp hσ
+    exact mem_simplex.mpr ⟨hne.image f, Finset.image_subset_image hsub⟩
+  · intro hτ
+    obtain ⟨hne, hsub⟩ := mem_simplex.mp hτ
+    obtain ⟨σ, hσ, rfl⟩ := Finset.subset_image_iff.mp hsub
+    exact mem_map_iff.mpr ⟨σ, mem_simplex.mpr ⟨Finset.image_nonempty.mp hne, hσ⟩, rfl⟩
+
 /-- A finite set is a face of a simplex boundary exactly when it is a nonempty proper subset of
 the spanning vertex set. -/
 @[simp]
@@ -141,6 +155,21 @@ theorem simplexBoundary_le_simplex : simplexBoundary V ≤ simplex V :=
 /-- The boundary of an abstract simplex has finitely many faces. -/
 theorem finite_faces_simplexBoundary (V : Finset ι) : (simplexBoundary V).faces.Finite :=
   (finite_faces_simplex V).subset simplexBoundary_le_simplex
+
+/-- Injective relabeling takes a simplex boundary to the boundary on the image vertex set. -/
+@[simp]
+theorem map_simplexBoundary {κ : Type*} [DecidableEq κ] (V : Finset ι) (f : ι ↪ κ) :
+    (simplexBoundary V).map f = simplexBoundary (V.image f) := by
+  ext τ
+  constructor
+  · rintro ⟨σ, hσ, rfl⟩
+    exact mem_simplexBoundary.mpr ⟨Finset.image_nonempty.mpr hσ.1,
+      (Finset.image_ssubset_image f.injective).mpr hσ.2⟩
+  · intro hτ
+    obtain ⟨σ, -, rfl⟩ := Finset.subset_image_iff.mp hτ.2.subset
+    exact mem_map_iff.mpr ⟨σ, mem_simplexBoundary.mpr
+      ⟨Finset.image_nonempty.mp hτ.1,
+        (Finset.image_ssubset_image f.injective).mp hτ.2⟩, rfl⟩
 
 /-- The boundary of a simplex with nonempty spanning set is a strict subcomplex of the simplex. -/
 theorem simplexBoundary_lt_simplex (hV : V.Nonempty) : simplexBoundary V < simplex V := by

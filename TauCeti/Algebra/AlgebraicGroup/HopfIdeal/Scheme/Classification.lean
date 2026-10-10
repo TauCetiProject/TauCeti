@@ -192,7 +192,6 @@ private theorem hopfSpec_map_closedSubgroupCoordinateMorphism
       (P.1 : Grp (Over (Spec (CommRingCat.of R))))) :
     (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map
         (closedSubgroupCoordinateMorphism H K P e).op = e.hom ≫ P.1.arrow := by
-  let F := AlgebraicGeometry.hopfSpec (CommRingCat.of R)
   let hF := AlgebraicGeometry.hopfSpec.fullyFaithful (R := CommRingCat.of R)
   simpa only [closedSubgroupCoordinateMorphism, Quiver.Hom.op_unop] using
     hF.map_preimage (e.hom ≫ P.1.arrow)

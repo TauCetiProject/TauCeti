@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.BaseChange
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 public import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
@@ -31,6 +32,10 @@ spinor norm with its local ones.
   extension of scalars is the pushforward of the spinor norm, as an equality of homomorphisms.
 * `CliffordAlgebra.orthogonalSpinorNorm_orthogonalGroupBaseChange`: its pointwise form.
 * `CliffordAlgebra.spinorNorm_specialOrthogonalGroupBaseChange`: the same on `SO(Q)`.
+* `CliffordAlgebra.spinorNormKernelBaseChange`: scalar extension restricted to the kernel of the
+  spinor norm.
+* `CliffordAlgebra.spinorNormKernelBaseChange_spinToSpinorNormKernel`: scalar extension commutes
+  with the Spin map to the spinor-norm kernel.
 
 ## References
 
@@ -109,5 +114,66 @@ theorem spinorNorm_specialOrthogonalGroupBaseChange (Q : QuadraticForm K V)
   rw [QuadraticMap.coe_specialOrthogonalToOrthogonal, QuadraticMap.coe_orthogonalGroupBaseChange,
     QuadraticMap.coe_specialOrthogonalToOrthogonal,
     QuadraticMap.coe_specialOrthogonalGroupBaseChange]
+
+/-! ### The spinor-norm kernel -/
+
+/-- Scalar extension carries the spinor-norm kernel into the spinor-norm kernel of the extended
+quadratic form. -/
+noncomputable def spinorNormKernelBaseChange (Q : QuadraticForm K V)
+    (hQ : Q.Nondegenerate) :
+    letI : Invertible (2 : L) :=
+      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
+    MonoidHom.ker (spinorNorm Q hQ) →*
+      MonoidHom.ker (spinorNorm (Q.baseChange L)
+        (QuadraticForm.Nondegenerate.baseChange hQ)) := by
+  letI : Invertible (2 : L) :=
+    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
+  exact ((QuadraticMap.specialOrthogonalGroupBaseChange Q).comp
+    (MonoidHom.ker (spinorNorm Q hQ)).subtype).codRestrict _ fun g ↦ by
+    rw [MonoidHom.mem_ker, MonoidHom.comp_apply, Subgroup.coe_subtype,
+      spinorNorm_specialOrthogonalGroupBaseChange Q hQ g, MonoidHom.mem_ker.mp g.2]
+    simp
+
+/-- The underlying special-orthogonal element of a base-changed spinor-kernel element is obtained
+by the usual special-orthogonal base-change map. -/
+@[simp]
+theorem coe_spinorNormKernelBaseChange_apply (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
+    (g : MonoidHom.ker (spinorNorm Q hQ)) :
+    letI : Invertible (2 : L) :=
+      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
+    ((spinorNormKernelBaseChange (L := L) Q hQ g :
+      MonoidHom.ker (spinorNorm (Q.baseChange L)
+        (QuadraticForm.Nondegenerate.baseChange hQ))) :
+        QuadraticMap.specialOrthogonalGroup (Q.baseChange L)) =
+      QuadraticMap.specialOrthogonalGroupBaseChange Q g := by
+  rfl
+
+/-- Scalar extension is injective on the spinor-norm kernel. -/
+theorem spinorNormKernelBaseChange_injective (Q : QuadraticForm K V)
+    (hQ : Q.Nondegenerate) :
+    letI : Invertible (2 : L) :=
+      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
+    Function.Injective (spinorNormKernelBaseChange (L := L) Q hQ) := by
+  let : Invertible (2 : L) :=
+    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
+  intro g h hgh
+  apply Subtype.ext
+  exact QuadraticMap.specialOrthogonalGroupBaseChange_injective (A := L) Q
+    (congrArg Subtype.val hgh)
+
+/-- Scalar extension commutes with the canonical Spin homomorphism to the spinor-norm kernel. -/
+@[simp]
+theorem spinorNormKernelBaseChange_spinToSpinorNormKernel (Q : QuadraticForm K V)
+    (hQ : Q.Nondegenerate) (x : spinGroup Q) :
+    letI : Invertible (2 : L) :=
+      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
+    spinorNormKernelBaseChange (L := L) Q hQ (spinToSpinorNormKernel Q hQ x) =
+      spinToSpinorNormKernel (Q.baseChange L) (QuadraticForm.Nondegenerate.baseChange hQ)
+        (spinGroupBaseChange Q x) := by
+  let : Invertible (2 : L) :=
+    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
+  apply Subtype.ext
+  rw [coe_spinorNormKernelBaseChange_apply, coe_spinToSpinorNormKernel_apply,
+    coe_spinToSpinorNormKernel_apply, spinToSpecialOrthogonal_baseChange]
 
 end CliffordAlgebra

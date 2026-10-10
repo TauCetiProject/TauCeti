@@ -54,8 +54,9 @@ finite-exponent values, by `TauCeti.tendsto_wassersteinEDist_atTop` and
 * `TauCeti.wassersteinEDist_eq_eLpNorm_quantile_sub` — the quantile formula for `W_p`, for every
   `1 ≤ p ≤ ∞`, unfolded at the two kinds of exponent as
   `TauCeti.wassersteinEDist_eq_lintegral_rpow_enorm_quantile_sub` (the integral and root, for
-  `p < ∞`) and `TauCeti.wassersteinEDist_top_eq_essSup_enorm_quantile_sub` (the essential
-  supremum, for `p = ∞`).
+  `p < ∞`, with `p`-th power `TauCeti.wassersteinEDist_rpow_eq_lintegral_rpow_enorm_quantile_sub`)
+  and `TauCeti.wassersteinEDist_top_eq_essSup_enorm_quantile_sub` (the essential supremum, for
+  `p = ∞`).
 
 ## References
 
@@ -189,6 +190,16 @@ theorem wassersteinEDist_eq_lintegral_rpow_enorm_quantile_sub {p : ℝ≥0∞} (
     ((Measure.measurable_quantile μ).sub (Measure.measurable_quantile ν)).aestronglyMeasurable
   rw [wassersteinEDist_eq_eLpNorm_quantile_sub hp,
     eLpNorm_eq_lintegral_rpow_enorm_toReal (zero_lt_one.trans_le hp).ne' hp_top hq]
+
+/-- **The quantile formula for the transport cost.** For `1 ≤ p < ∞`, the `p`-th power of the
+`p`-Wasserstein distance of two probability laws on `ℝ` is
+`∫₀¹ |μ.quantile t - ν.quantile t| ^ p dt`. -/
+theorem wassersteinEDist_rpow_eq_lintegral_rpow_enorm_quantile_sub {p : ℝ≥0∞} (hp : 1 ≤ p)
+    (hp_top : p ≠ ∞) (μ ν : Measure ℝ) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
+    wassersteinEDist p μ ν ^ p.toReal
+      = ∫⁻ t in Ioo (0 : ℝ) 1, ‖μ.quantile t - ν.quantile t‖ₑ ^ p.toReal := by
+  rw [wassersteinEDist_eq_lintegral_rpow_enorm_quantile_sub hp hp_top, one_div,
+    ENNReal.rpow_inv_rpow (ENNReal.toReal_pos (zero_lt_one.trans_le hp).ne' hp_top).ne']
 
 /-- **The quantile formula at the exponent `∞`.** The `∞`-Wasserstein distance of two probability
 laws on `ℝ` is the essential supremum of `|μ.quantile - ν.quantile|` on `(0, 1)`. -/

@@ -466,7 +466,6 @@ private theorem map_volume_affine {a c : ℝ} (hc : c ≠ 0) :
 /-- The affine map carries `Set.Ioc 0 1` onto `Set.Ioc a b`, stated as a preimage. -/
 private theorem preimage_affine_Ioc {a b : ℝ} (hab : a < b) :
     (fun x : ℝ => a + (b - a) * x) ⁻¹' Set.Ioc a b = Set.Ioc 0 1 := by
-  have hba : (0 : ℝ) < b - a := sub_pos.mpr hab
   ext x
   simp only [Set.mem_preimage, Set.mem_Ioc]
   constructor

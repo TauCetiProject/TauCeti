@@ -53,7 +53,7 @@ noncomputable def tangentKerMap (φ : A' →ₐc[R] A) :
       (tangentKer R A B).subtype).codRestrict (tangentKer R A' B)) fun ψ => by
     have hψ : dualNumberReduction R A B ψ.val = 1 := by
       have h : ψ.val ∈ tangentKer R A B := ψ.2
-      generalize hg : ψ.val = v at h ⊢
+      generalize ψ.val = v at h ⊢
       rwa [tangentKer_def, MonoidHom.mem_ker] at h
     rw [tangentKer_def, MonoidHom.mem_ker, dualNumberReduction_def]
     -- The reduction of `ψ` at the `A'` coefficient indexing is its `A`-side reduction:

@@ -286,11 +286,11 @@ theorem mem_weightSpace_glWeightEquiv_iff
         simp [diagonalCartanBasis_apply, diagonalCartanBasis_repr_apply, sum_lie]
       _ = ∑ i : n, (A : Matrix n n K) i i • ⁅Matrix.single i i (1 : K), x⁆ := by
         apply Finset.sum_congr rfl
-        intro i hi
+        intro i _
         rw [hsingle, smul_lie]
       _ = ∑ i : n, (A : Matrix n n K) i i • (mu i • x) := by
         apply Finset.sum_congr rfl
-        intro i hi
+        intro i _
         rw [hx i]
       _ = ∑ i : n, (mu i * (A : Matrix n n K) i i) • x := by
         simp [smul_smul, mul_comm]

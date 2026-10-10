@@ -116,7 +116,7 @@ theorem unit_value_mem_Ioo (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 + 1)
   have hθneg := realEmbedding_apply_lt_zero hmin φ
   have hθgt : -1 < φ θ := by
     by_contra h
-    have hle : φ θ ≤ -1 := le_of_not_gt h
+    have _ : φ θ ≤ -1 := le_of_not_gt h
     have hθ_nonpos : φ θ ≤ 0 := hθneg.le
     nlinarith [sq_nonneg (φ θ + 1), mul_nonpos_of_nonpos_of_nonneg
       hθ_nonpos (sq_nonneg (φ θ + 1))]
@@ -135,7 +135,7 @@ theorem unit_value_mem_Ioo (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 + 1)
     have hp := mul_nonneg (sub_nonneg.mpr hle) hq.le
     nlinarith
   have hval := unit_value_eq_sq_sub hmin hw hu
-  have hinv : (φ θ ^ 2 - φ θ) * (-φ θ) = 1 := by
+  have _ : (φ θ ^ 2 - φ θ) * (-φ θ) = 1 := by
     nlinarith
   have hlo : (5 / 4 : ℝ) < φ θ ^ 2 - φ θ := by
     by_contra h
@@ -184,7 +184,7 @@ private theorem no_cubic_candidate_const_one_root (a b : ℤ)
     have hs : -2 ≤ (a : ℝ) * x + b := le_of_not_gt h
     have hp := mul_le_mul_of_nonneg_left hs hx0.le
     have hquadratic_pos : 0 < x ^ 2 + x - 1 := by nlinarith
-    have hfac := mul_pos (sub_pos.mpr hx1) hquadratic_pos
+    have _ := mul_pos (sub_pos.mpr hx1) hquadratic_pos
     nlinarith
   have hslo : -8 / 3 < (a : ℝ) * x + b := by
     by_contra h
@@ -200,7 +200,7 @@ private theorem no_cubic_candidate_const_one_root (a b : ℤ)
     subst b
     norm_num at hroot
     have hq : x ^ 2 - 2 * x - 1 < 0 := by
-      have hp := mul_lt_mul_of_pos_left hx4 hx0
+      have _ := mul_lt_mul_of_pos_left hx4 hx0
       nlinarith
     nlinarith [mul_neg_of_pos_of_neg (sub_pos.mpr hx1) hq]
   · have hbl : (-1 : ℝ) < b := by linarith only [hslo, hx1]
@@ -211,7 +211,7 @@ private theorem no_cubic_candidate_const_one_root (a b : ℤ)
     subst b
     norm_num at hroot
     have hq : x ^ 2 - x - 1 < 0 := by
-      have hp := mul_lt_mul_of_pos_left hx4 hx0
+      have _ := mul_lt_mul_of_pos_left hx4 hx0
       nlinarith
     nlinarith [mul_neg_of_pos_of_neg (sub_pos.mpr hx1) hq]
   · have hbl : (-2 : ℝ) < b := by linarith only [hslo, hx1]
@@ -249,7 +249,7 @@ private theorem cubic_candidate_coefficients_const_neg_one_of_root (a b : ℤ)
   have hmono : 0 < (B - x) * (B ^ 2 + B * x + x ^ 2 - 1) := by
     apply mul_pos (sub_pos.mpr hxB)
     nlinarith [sq_nonneg (B - x)]
-  have hfx : x ^ 3 - x - 1 < 0 := by nlinarith
+  have _ : x ^ 3 - x - 1 < 0 := by nlinarith
   -- Since `x` lies strictly below the root `B` of `X³ - X - 1`, the root equation squeezes
   -- `a*x + b` into `(-1, 0)`.  Integral coefficients leave the two advertised survivors.
   have hrhi : (a : ℝ) * x + b < 0 := by
@@ -290,7 +290,7 @@ private theorem cubic_candidate_coefficients_const_neg_one_of_root (a b : ℤ)
     have hquadratic_pos : 0 < x ^ 2 + 1 := by nlinarith
     nlinarith [mul_pos (sub_pos.mpr hx1) hquadratic_pos]
   · have hbl' : (-1 : ℤ) < b := by exact_mod_cast hrlo
-    have hbu' : b < (0 : ℤ) := by exact_mod_cast hrhi
+    have : b < (0 : ℤ) := by exact_mod_cast hrhi
     omega
   · have hbl : (-3 : ℝ) < b := by linarith only [hrlo, hx4]
     have hbu : (b : ℝ) < -1 := by linarith only [hrhi, hx1]
@@ -300,7 +300,7 @@ private theorem cubic_candidate_coefficients_const_neg_one_of_root (a b : ℤ)
     exact hbi
   · have hbl : (-4 : ℝ) < b := by linarith only [hrlo, hx4]
     have hbu : (b : ℝ) < -2 := by linarith only [hrhi, hx1]
-    have hbl' : (-4 : ℤ) < b := by exact_mod_cast hbl
+    have : (-4 : ℤ) < b := by exact_mod_cast hbl
     have hbu' : b < (-2 : ℤ) := by exact_mod_cast hbu
     have hbi : b = -3 := by omega
     exact hbi
@@ -396,7 +396,7 @@ theorem cubicUnitEliminationCertificate (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 +
       haL haU hbL hbU h0
       (unit_value_pow_three_sub_self_sub_one hmin hw hu) hx1 hxB hxroot with
       hc | hc
-    · intro n hn
+    · intro n _
       have hg : g = X ^ 3 + X ^ 2 - 2 * X - 1 := by
         rw [hpoly, hc.1, hc.2.1, hc.2.2]
         norm_num
@@ -406,7 +406,7 @@ theorem cubicUnitEliminationCertificate (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 +
       intro heq
       rw [discr_eq_neg_twenty_three hmin hgen] at heq
       nlinarith [sq_nonneg (n : ℤ)]
-    · intro n hn
+    · intro n _
       have hg : g = X ^ 3 + 2 * X ^ 2 - 3 * X - 1 := by
         rw [hpoly, hc.1, hc.2.1, hc.2.2]
         norm_num

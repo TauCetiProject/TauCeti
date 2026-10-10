@@ -97,7 +97,7 @@ theorem isQuotientMap_sigma_subtype_faceInclusion {L : PreAbstractSimplicialComp
     · intro hs
       rw [(isClosed_setOf_support_mem hL).isClosedEmbedding_subtypeVal.isClosed_iff_image_isClosed]
       apply isClosed_of_faceInclusion hL
-      · rintro x ⟨y, hy, rfl⟩
+      · rintro x ⟨y, _, rfl⟩
         exact y.2
       · intro σ hσ
         convert (isClosed_sigma_iff.mp hs) ⟨σ, hσ⟩ using 1

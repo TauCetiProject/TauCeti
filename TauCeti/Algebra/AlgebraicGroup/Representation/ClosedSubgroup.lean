@@ -118,7 +118,7 @@ theorem eq_augmentation_of_isFaithful_of_quotient_coact_eq_tmul_one
   have hcomapBot : (⊥ : HopfIdeal R Q).comapOfSurjective q hq = I := by
     ext x
     rw [HopfIdeal.mem_comapOfSurjective, HopfIdeal.mem_bot,
-      CommHopfAlgCat.mkQuotient_eq_zero_iff, HopfIdeal.mem_toIdeal]
+      CommHopfAlgCat.mkQuotient_eq_zero_iff]
   calc
     I = (⊥ : HopfIdeal R Q).comapOfSurjective q hq := hcomapBot.symm
     _ = (HopfIdeal.augmentation R Q).comapOfSurjective q hq := by rw [haugmentationQ]

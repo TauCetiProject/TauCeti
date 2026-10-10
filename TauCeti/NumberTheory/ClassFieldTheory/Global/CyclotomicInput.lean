@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 public import TauCeti.Algebra.Module.CharacterModule
+import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
 
 /-!
 # Characters for the cyclotomic input to global class field theory
@@ -89,10 +90,6 @@ theorem orderOf_unitOfCoprime_pow_sub_one (q N : ℕ) (hq : 1 < q) (hN : N ≠ 0
     (pow_ne_zero _ (Nat.ne_zero_of_lt hq))
   have hm_dvd : m ∣ q ^ orderOf u - 1 :=
     (Nat.modEq_iff_dvd' hqpow).1 hmod.symm
-  have hm_pos : 0 < m := by
-    dsimp [m]
-    have : 1 < q ^ N := one_lt_pow₀ hq hN
-    omega
   have hsmall : q ^ orderOf u - 1 < m := by
     dsimp [m]
     have := Nat.pow_lt_pow_right hq hdlt
@@ -149,14 +146,8 @@ theorem exists_character_autToPow_apply {K E : Type*} [CommRing K] [CommRing E] 
   -- transparency); evaluate it definitionally instead.
   change χ (.ofMul (hζ.autToPow K σ)) = _
   have haut : hζ.autToPow K σ =
-      ZMod.unitOfCoprime q (Nat.coprime_pow_sub_one q N hq hN) := by
-    apply Units.ext
-    rw [ZMod.coe_unitOfCoprime,
-      ← ZMod.natCast_zmod_val (hζ.autToPow K σ : ZMod (q ^ N - 1)),
-      ZMod.natCast_eq_natCast_iff]
-    have hmod := (hζ.isOfFinOrder (NeZero.ne _)).pow_eq_pow_iff_modEq.mp
-      ((hζ.autToPow_spec K σ).trans hσ.symm)
-    simpa only [hζ.eq_orderOf] using hmod
+      ZMod.unitOfCoprime q (Nat.coprime_pow_sub_one q N hq hN) :=
+    Units.ext ((hζ.coe_autToPow_eq_natCast hσ.symm).trans (ZMod.coe_unitOfCoprime _ _).symm)
   rw [haut, hχ]
 
 end IsPrimitiveRoot

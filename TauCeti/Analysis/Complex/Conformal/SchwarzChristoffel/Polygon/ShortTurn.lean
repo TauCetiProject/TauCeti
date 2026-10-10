@@ -280,7 +280,7 @@ theorem disjoint_schwarzChristoffelPolygon_edgeSet_of_short_turn
     schwarzChristoffelPolygon_edgeSet_castSucc_castSucc, Set.disjoint_left]
   intro x hxi hxj
   rw [segment_eq_image'] at hxi hxj
-  obtain ⟨s, hs, rfl⟩ := hxi
+  obtain ⟨s, _, rfl⟩ := hxi
   obtain ⟨t, ht, heq⟩ := hxj
   let Vi := schwarzChristoffelVertex a e z₀ i.castSucc
   let Vi' := schwarzChristoffelVertex a e z₀ i.succ

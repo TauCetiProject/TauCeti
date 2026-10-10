@@ -171,7 +171,7 @@ theorem nonempty_unitaryEquivSpecialLinear_of_isSepClosed
     [NeZero (2 : K)] [IsSepClosed K] (a b : Kˣ) :
     Nonempty (unitary ℍ[K,(a : K),0,(b : K)] ≃*
       Matrix.SpecialLinearGroup (Fin 2) K) := by
-  obtain ⟨s, hs⟩ := IsSepClosed.exists_eq_mul_self (a : K)
+  obtain ⟨s, hs⟩ := IsSepClosed.isSquare (a : K)
   apply nonempty_unitaryEquivSpecialLinear_of_isSquare a b
   exact ⟨s, by simpa [pow_two] using hs⟩
 

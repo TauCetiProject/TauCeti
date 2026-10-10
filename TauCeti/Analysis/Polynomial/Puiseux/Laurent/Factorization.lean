@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Polynomial.Puiseux.Nonmonic
+public import TauCeti.Analysis.Polynomial.Puiseux.Nonmonic.Basic
 public import TauCeti.Analysis.Polynomial.Puiseux.Laurent.Basic
 
 /-!

@@ -359,7 +359,7 @@ private lemma truncated_integral_spec_rho_add_one (hH : Real.sqrt 3 / 2 < H) (h�
   obtain ⟨hδR_pos, hδR_lt, h2sin⟩ :=
     fdBoundaryArcExcisionHalfWidth_pos_and_lt_one_and_two_mul_sin_eq hε hε₃
   set δR := fdBoundaryArcExcisionHalfWidth ε with hδR_def
-  set δL := ε / (H - Real.sqrt 3 / 2) with hδL_def
+  set δL := ε / (H - Real.sqrt 3 / 2)
   have hδL_pos : 0 < δL := div_pos hε (hε.trans hεH)
   have hδL_le : δL ≤ 1 := (div_le_one (hε.trans hεH)).2 hεH.le
   have hlin : δL * (H - Real.sqrt 3 / 2) = ε := div_mul_cancel₀ ε (hε.trans hεH).ne'

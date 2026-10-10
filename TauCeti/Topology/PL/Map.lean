@@ -68,7 +68,7 @@ such a family of affine pieces.
 
 This is part of the structure-group track of layer 1 of the geometric-topology roadmap
 (`TauCetiRoadmap/GeometricTopology/README.md`); the groupoid built from it lives in
-`TauCeti/Geometry/Manifold/PLGroupoid.lean`.
+`TauCeti/Geometry/Manifold/PLGroupoid/Basic.lean`.
 -/
 
 public section
@@ -248,6 +248,39 @@ theorem IsPLOn.comp {t : Set F} (hg : IsPLOn g t) (hf : IsPLOn f s) (hst : s ⊆
   have hpre : f ⁻¹' W ∈ 𝓝[s] x := (hf.continuousOn x hx).tendsto_nhdsWithin hst hW
   exact ⟨V ∩ (s ∩ f ⁻¹' W), inter_mem hV (inter_mem self_mem_nhdsWithin hpre),
     hPAg.comp (hPAf.mono inter_subset_left) fun _ hy => hy.2.2⟩
+
+section AffineTransport
+
+variable {E' F' : Type*} [AddCommGroup E'] [Module ℝ E'] [TopologicalSpace E']
+  [AddCommGroup F'] [Module ℝ F'] [TopologicalSpace F']
+
+/-- Continuous affine extension and restriction transport PL maps to the image of a set.
+Only the domain restriction must undo its extension; the codomain map may be arbitrary. -/
+theorem IsPLOn.affine_transport (hf : IsPLOn f s)
+    (A : E →ᴬ[ℝ] E') (B : E' →ᴬ[ℝ] E) (C : F →ᴬ[ℝ] F')
+    (hBA : ∀ x ∈ s, B (A x) = x) : IsPLOn (C ∘ f ∘ B) (A '' s) := by
+  have hBs : A '' s ⊆ B ⁻¹' s := by
+    rintro _ ⟨x, hx, rfl⟩
+    simpa only [Set.mem_preimage, hBA x hx] using hx
+  exact (isPLOn_continuousAffineMap C Set.univ).comp
+    (hf.comp (isPLOn_continuousAffineMap B (A '' s)) hBs) (fun _ _ ↦ Set.mem_univ _)
+
+/-- PL regularity is preserved and reflected by continuous affine extensions with left
+inverses on the set and its image under the map under consideration. -/
+theorem isPLOn_affine_transport_iff
+    (A : E →ᴬ[ℝ] E') (B : E' →ᴬ[ℝ] E)
+    (C : F →ᴬ[ℝ] F') (D : F' →ᴬ[ℝ] F)
+    (hBA : ∀ x ∈ s, B (A x) = x) (hDC : ∀ x ∈ s, D (C (f x)) = f x) :
+    IsPLOn (C ∘ f ∘ B) (A '' s) ↔ IsPLOn f s := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.affine_transport A B C hBA⟩
+  have hcomp := (isPLOn_continuousAffineMap D Set.univ).comp
+    (h.comp (isPLOn_continuousAffineMap A s) (fun x hx ↦ Set.mem_image_of_mem A hx))
+    (fun _ _ ↦ Set.mem_univ _)
+  refine hcomp.congr ?_
+  intro x hx
+  simp only [Function.comp_apply, hBA x hx, hDC x hx]
+
+end AffineTransport
 
 /-- A polyhedral cover of `s` on whose cells `f` is affine and which is *locally finite along `s`*
 — every point of `s` has a neighbourhood meeting only finitely many cells — makes `f` piecewise

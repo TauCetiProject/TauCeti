@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.FGModuleCat.Abelian
-public import Mathlib.Algebra.Category.FGModuleCat.Colimits
 public import Mathlib.Algebra.Category.FGModuleCat.EssentiallySmall
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.Algebra.Category.ModuleCat.Projective
@@ -116,9 +115,9 @@ public section
 
 namespace TauCeti
 
-open CategoryTheory CategoryTheory.Limits CategoryTheory.ObjectProperty
+open CategoryTheory CategoryTheory.Limits
 
-universe u
+universe u v
 
 variable (R : Type u) [Ring R]
 
@@ -300,7 +299,7 @@ and `N` finitely generated, then `[N]` is the sum of the classes of the images o
 `G₀(mod R)`: `0 → range f → N → range g → 0` is a short exact sequence of finitely generated
 modules. Telescoping this along a longer exact sequence with zero ends makes its alternating sum of
 classes vanish. -/
-theorem exactK0_of_eq_range_add_range {M N P : Type u} [AddCommGroup M] [Module R M]
+theorem exactK0_of_eq_range_add_range {M : Type v} {N P : Type u} [AddCommGroup M] [Module R M]
     [Module.Finite R M] [AddCommGroup N] [Module R N] [Module.Finite R N] [AddCommGroup P]
     [Module R P] {f : M →ₗ[R] N} {g : N →ₗ[R] P} (hfg : Function.Exact f g) :
     (ExactK0.of (FGModuleCat.of R N) : ExactK0 (finiteModulesExactStructure R)) =
@@ -332,7 +331,7 @@ theorem exactK0_of_range_of_injective {M N : Type u} [AddCommGroup M] [Module R 
 
 /-- The image of a surjective linear map onto a finitely generated module has the class of its
 target in `G₀(mod R)`. -/
-theorem exactK0_of_range_of_surjective {M N : Type u} [AddCommGroup M] [Module R M]
+theorem exactK0_of_range_of_surjective {M : Type v} {N : Type u} [AddCommGroup M] [Module R M]
     [AddCommGroup N] [Module R N] [Module.Finite R N] {f : M →ₗ[R] N}
     (hf : Function.Surjective f) :
     letI := Module.Finite.equiv (LinearEquiv.ofTop _ (LinearMap.range_eq_top.mpr hf)).symm
@@ -341,6 +340,16 @@ theorem exactK0_of_range_of_surjective {M N : Type u} [AddCommGroup M] [Module R
       ExactK0.of (FGModuleCat.of R N) := by
   let := Module.Finite.equiv (LinearEquiv.ofTop _ (LinearMap.range_eq_top.mpr hf)).symm
   exact ExactK0.of_congr (LinearEquiv.ofTop _ (LinearMap.range_eq_top.mpr hf)).toFGModuleCatIso
+
+/-- In `G₀(mod R)`, the class of a finitely generated module is the sum of the classes of a
+finitely generated submodule and of the quotient by it. -/
+theorem exactK0_of_eq_submodule_add_quotient {M : Type u} [AddCommGroup M] [Module R M]
+    [Module.Finite R M] (N : Submodule R M) [Module.Finite R N] :
+    (ExactK0.of (FGModuleCat.of R M) : ExactK0 (finiteModulesExactStructure R)) =
+      ExactK0.of (FGModuleCat.of R N) + ExactK0.of (FGModuleCat.of R (M ⧸ N)) := by
+  rw [exactK0_of_eq_range_add_range R (LinearMap.exact_subtype_mkQ N),
+    exactK0_of_range_of_injective R N.injective_subtype,
+    exactK0_of_range_of_surjective R N.mkQ_surjective]
 
 /-- **The Euler relation of a six-term exact sequence.** For an exact sequence
 `0 → M₁ → M₂ → M₃ → M₄ → M₅ → M₆ → 0` of finitely generated modules, the classes of the odd-indexed
@@ -456,7 +465,7 @@ end CategoryTheory.Equivalence
 
 namespace TauCeti
 
-open CategoryTheory CategoryTheory.Limits CategoryTheory.ObjectProperty
+open CategoryTheory
 
 universe u
 
@@ -626,6 +635,16 @@ theorem cartanMap_apply (x : ExactK0.{u} (finiteProjectiveModulesExactStructure 
       (moduleResolutionEquiv R).toAddMonoidHom) fun M => ?_) x
   rcases M with ⟨M, hM⟩
   simp
+
+/-- The Cartan map sends the alternating class of a finite resolution of `M` by finitely
+generated projectives to the class of `M`. -/
+@[simp] theorem cartanMap_moduleEulerClassOf {M : ModuleCat.{u} R}
+    (hM : (ExactStructure.abelian (ModuleCat.{u} R)).admitsFiniteResolution
+      (finiteProjectiveModules R) M) :
+    cartanMap R (moduleEulerClassOf R hM) =
+      ExactK0.of ⟨M, admitsFiniteResolution_le_finiteModules R M hM⟩ := by
+  rw [cartanMap_apply, ← moduleResolutionEquiv_symm_of, AddEquiv.apply_symm_apply,
+    fromFiniteProjectiveResolution_of]
 
 section Inverse
 
