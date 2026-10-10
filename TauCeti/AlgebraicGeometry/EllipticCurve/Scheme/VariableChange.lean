@@ -130,13 +130,11 @@ private theorem toMatrix_map_mulVec_eq {C C' : VariableChange R} (h : C • W = 
   have hj (D : VariableChange R) : IsUnit (((D.map g).toMatrix *ᵥ P) 2) := by rwa [hZ D]
   -- both isomorphisms send the point with coordinates `P` to the same point of `projModel W`
   have key := projModelPoint_projModelVariableChangeIso_hom (hP := hP) hi (hj C)
+  -- the two triples of coordinates have the same unit third coordinate, so they are equal
   rw [hC, projModelPoint_eqToHom_assoc h hi,
     projModelPoint_projModelVariableChangeIso_hom hi (hj C'),
-    projModelPoint_eq_projModelPoint_iff] at key
-  obtain ⟨-, l, hl⟩ := key
-  -- the two triples of coordinates are proportional, with the same unit third coordinate
-  exact ((Projective.equiv_iff_eq_of_Z_eq' ((hZ C').trans (hZ C).symm)
-    (hj C).mem_nonZeroDivisors).mp ⟨l, hl.symm⟩).symm
+    projModelPoint_eq_projModelPoint_iff_of_apply_eq ((hZ C').trans (hZ C).symm)] at key
+  exact key.2.symm
 
 /-- A change of variables is determined by the isomorphism of projective Weierstrass models it
 induces. For changes of variables `C` and `C'` with `C • W = C' • W`, the isomorphisms
