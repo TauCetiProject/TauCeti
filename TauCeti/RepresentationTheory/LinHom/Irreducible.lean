@@ -33,7 +33,10 @@ variable {k G H V W : Type*} [Field k] [IsAlgClosed k] [Group G] [Group H]
 
 /-- The two-sided Hom representation of a product of groups is irreducible when its source
 and target representations are finite-dimensional and irreducible over an algebraically
-closed field. The first group acts on the target and the second on the source. -/
+closed field. The first group acts on the target and the second on the source.
+
+Both acting types are groups because `Representation.linHom` requires its acting type
+`G × H` to be a group, although the displayed action only inverts the source factor. -/
 theorem isIrreducible_linHom_comp_snd_comp_fst
     (ρ : Representation k H V) (σ : Representation k G W)
     (hρ : ρ.IsIrreducible) (hσ : σ.IsIrreducible) :
