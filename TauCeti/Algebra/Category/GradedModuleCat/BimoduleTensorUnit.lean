@@ -50,7 +50,8 @@ variable (Γ : InternalGrading k A) [GradedAlgebra Γ.piece]
 
 /-- The universe-lifted regular graded bimodule of `A`. -/
 -- The concrete carrier and transported grading are used by the unit computation API.
-abbrev bimoduleUnit : GradedModuleCat.{max v uA} (Γ.tensorProduct Γ.opposite).piece where
+@[expose]
+def bimoduleUnit : GradedModuleCat.{max v uA} (Γ.tensorProduct Γ.opposite).piece where
   carrier := ULift.{v} (Bimodule (AlgHom.id k A))
   grading := Γ.map ((Bimodule.of (AlgHom.id k A)).trans ULift.moduleEquiv.symm)
   gradedSMul := ⟨fun {p q} {z x} hz hx ↦ by
@@ -67,7 +68,8 @@ abbrev bimoduleUnit : GradedModuleCat.{max v uA} (Γ.tensorProduct Γ.opposite).
     rw [unitEquiv_symm_smul]
     have hb' := (Γ.mem_opposite_piece_iff (p - r) b).1 hb
     have h := SetLike.GradedMul.mul_mem (SetLike.GradedMul.mul_mem ha hx') hb'
-    simpa only [show r + q + (p - r) = p + q by omega] using h⟩
+    have hdeg : r + q + (p - r) = p + q := by omega
+    simpa only [hdeg] using h⟩
 
 /-- The unit bimodule has the same ground-ring module as the algebra. -/
 def bimoduleUnitEquiv : A ≃ₗ[k] bimoduleUnit.{v} Γ := unitEquiv
@@ -95,6 +97,7 @@ theorem tmul_smul_bimoduleUnitEquiv (a : A) (b : Aᵐᵒᵖ) (x : A) :
     LinearEquiv.symm_apply_apply]
 
 /-- Homogeneous membership in the regular bimodule is membership in the algebra grading. -/
+@[simp]
 theorem mem_bimoduleUnit_piece_iff (p : ℤ) (x : bimoduleUnit.{v} Γ) :
     x ∈ (bimoduleUnit.{v} Γ).grading.piece p ↔ (bimoduleUnitEquiv.{v} Γ).symm x ∈ Γ.piece p :=
   Γ.mem_map_piece_iff unitEquiv p x
@@ -208,10 +211,8 @@ def bimoduleTensorLeftUnitorInv : M ⟶ bimoduleTensorObj Γ Γ Δ (bimoduleUnit
 theorem bimoduleTensorLeftUnitorInv_apply (m : M) :
     (bimoduleTensorLeftUnitorInv.{v} Γ Δ M).hom m =
       bimoduleTensorTmul Γ Γ Δ (bimoduleUnit.{v} Γ) M (bimoduleUnitEquiv.{v} Γ 1) m := by
-  change TauCeti.Algebra.TensorProduct.linearMapOfFactors M (leftUnitInsertBase.{v} Γ Δ M)
-    _ _ m = _
-  rw [TauCeti.Algebra.TensorProduct.linearMapOfFactors_apply]
-  rfl
+  rw [bimoduleTensorLeftUnitorInv, hom_ofHom, leftUnitInsertLinear,
+    TauCeti.Algebra.TensorProduct.linearMapOfFactors_apply, leftUnitInsertBase_apply]
 
 /-- The regular graded bimodule is a left unit for balanced tensor composition. -/
 def bimoduleTensorLeftUnitor : bimoduleTensorObj Γ Γ Δ (bimoduleUnit.{v} Γ) M ≅ M where
@@ -285,8 +286,10 @@ private abbrev rightUnitAction : M →ₗ[k] bimoduleUnit.{v} Δ →ₗ[k] M :=
 private theorem rightUnitAction_degree {p q : ℤ} {m : M} {x : bimoduleUnit.{v} Δ}
     (hm : m ∈ M.grading.piece p) (hx : x ∈ (bimoduleUnit.{v} Δ).grading.piece q) :
     rightUnitAction.{v} Γ Δ M m x ∈ M.grading.piece (p + q) := by
-  change ((1 : A) ⊗ₜ[k] op ((bimoduleUnitEquiv.{v} Δ).symm x)) • m ∈
-    M.grading.piece (p + q)
+  simp only [rightUnitAction, LinearMap.flip_apply, LinearMap.comp_apply,
+    LinearEquiv.coe_toLinearMap, LinearEquiv.trans_apply, coe_opLinearEquiv,
+    AlgHom.toLinearMap_apply, Algebra.lsmul_apply,
+    TauCeti.Algebra.TensorProduct.smul_moduleRight]
   have hx' := (mem_bimoduleUnit_piece_iff.{v} Δ q x).1 hx
   have h1 : (1 : A) ∈ Γ.piece 0 := SetLike.one_mem_graded Γ.piece
   have hxop : op ((bimoduleUnitEquiv.{v} Δ).symm x) ∈ Δ.opposite.piece q :=
@@ -373,10 +376,8 @@ def bimoduleTensorRightUnitorInv : M ⟶ bimoduleTensorObj Γ Δ Δ M (bimoduleU
 theorem bimoduleTensorRightUnitorInv_apply (m : M) :
     (bimoduleTensorRightUnitorInv.{v} Γ Δ M).hom m =
       bimoduleTensorTmul Γ Δ Δ M (bimoduleUnit.{v} Δ) m (bimoduleUnitEquiv.{v} Δ 1) := by
-  change TauCeti.Algebra.TensorProduct.linearMapOfFactors M (rightUnitInsertBase.{v} Γ Δ M)
-    _ _ m = _
-  rw [TauCeti.Algebra.TensorProduct.linearMapOfFactors_apply]
-  rfl
+  rw [bimoduleTensorRightUnitorInv, hom_ofHom, rightUnitInsertLinear,
+    TauCeti.Algebra.TensorProduct.linearMapOfFactors_apply, rightUnitInsertBase_apply]
 
 /-- The regular graded bimodule is a right unit for balanced tensor composition. -/
 def bimoduleTensorRightUnitor : bimoduleTensorObj Γ Δ Δ M (bimoduleUnit.{v} Δ) ≅ M where
