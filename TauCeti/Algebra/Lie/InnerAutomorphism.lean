@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Algebra.Rat
 public import Mathlib.Algebra.Lie.AdjointAction.Basic
 public import Mathlib.Algebra.Lie.AdjointAction.Derivation
 import Mathlib.Algebra.Ring.Action.ConjAct
-import TauCeti.Algebra.Ring.Commutator
+import TauCeti.RingTheory.Nilpotent.Exp
 
 /-!
 # The inner automorphisms `exp (ad x)`
@@ -153,98 +153,45 @@ section Associative
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-variable {A : Type*} [Ring A] [Algebra ℚ A]
+section Conjugation
 
-/-- **The nilpotent exponential commutes with passage to the opposite ring.** Taking `exp` in
-`Aᵐᵒᵖ` and reading the result back in `A` gives `exp` in `A`. -/
-private theorem unop_exp_op {x : A} (hx : IsNilpotent x) :
-    MulOpposite.unop (IsNilpotent.exp (MulOpposite.op x)) = IsNilpotent.exp x := by
-  -- `map_exp` covers ring homomorphisms, but `MulOpposite.op` is an anti-homomorphism, so it does
-  -- not apply here; compare the two truncated sums directly instead.
-  obtain ⟨k, hk⟩ := hx
-  have hk_op : MulOpposite.op x ^ k = 0 := by
-    rw [← MulOpposite.op_pow, hk, MulOpposite.op_zero]
-  rw [IsNilpotent.exp_eq_sum hk, IsNilpotent.exp_eq_sum hk_op]
-  simp
+variable {A : Type*} [Ring A] [Algebra ℚ A] [Algebra K A]
 
-/-- **The exponential of left multiplication is left multiplication by the exponential.** -/
-private theorem exp_mulLeft_apply {x : A} (hx : IsNilpotent x) (a : A) :
-    IsNilpotent.exp (LinearMap.mulLeft ℚ x) a = IsNilpotent.exp x * a := by
-  have hmulLeft : (Algebra.lsmul ℚ ℚ A) x = LinearMap.mulLeft ℚ x := by
-    ext b
-    simp [Algebra.lsmul_apply, LinearMap.mulLeft_apply]
-  rw [← hmulLeft]
-  simpa [Algebra.smul_def] using
-    LinearMap.congr_fun (IsNilpotent.map_exp hx (Algebra.lsmul ℚ ℚ A)).symm a
-
-/-- **The exponential of right multiplication is right multiplication by the exponential.** -/
-private theorem exp_mulRight_apply {x : A} (hx : IsNilpotent x) (a : A) :
-    IsNilpotent.exp (LinearMap.mulRight ℚ x) a = a * IsNilpotent.exp x := by
-  -- Right multiplication on `A` is left multiplication over `Aᵐᵒᵖ`, so this is the mirror of
-  -- `exp_mulLeft_apply` transported by `unop_exp_op`.
-  have hxop : IsNilpotent (MulOpposite.op x) := hx.op
-  have hmulRight : (Algebra.lsmul ℚ ℚ A) (MulOpposite.op x) = LinearMap.mulRight ℚ x := by
-    ext b
-    rw [Algebra.lsmul_apply, op_smul_eq_mul, LinearMap.mulRight_apply]
-  calc
-    IsNilpotent.exp (LinearMap.mulRight ℚ x) a =
-        IsNilpotent.exp ((Algebra.lsmul ℚ ℚ A) (MulOpposite.op x)) a := by rw [hmulRight]
-    _ = (Algebra.lsmul ℚ ℚ A) (IsNilpotent.exp (MulOpposite.op x)) a :=
-      LinearMap.congr_fun (IsNilpotent.map_exp hxop (Algebra.lsmul ℚ ℚ A)).symm a
-    _ = (IsNilpotent.exp (MulOpposite.op x)) • a :=
-      Algebra.lsmul_apply (R := ℚ) (B := ℚ) (M := A) (IsNilpotent.exp (MulOpposite.op x)) a
-    _ = a * MulOpposite.unop (IsNilpotent.exp (MulOpposite.op x)) :=
-      MulOpposite.smul_eq_mul_unop _ _
-    _ = a * IsNilpotent.exp x := by rw [unop_exp_op hx]
-
-/-- In an associative `ℚ`-algebra, the inner automorphism `exp (ad x)` is conjugation by the
-nilpotent exponential `exp x`.
+/-- In an associative `ℚ`-algebra, the inner automorphism `exp (ad x)` over any base ring `K`
+acting on the algebra is conjugation by the nilpotent exponential `exp x`.
 
 The inverse of `exp x` is written explicitly as `exp (-x)`. This form is the bridge between the
 Lie-algebra automorphisms above and root subgroup elements in a Chevalley group. -/
 @[simp]
 theorem expAd_apply_eq_exp_mul_exp_neg {x y : A} (hx : IsNilpotent x) :
-    expAd (K := ℚ) x (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hx) y =
+    expAd (K := K) x (LieAlgebra.ad_nilpotent_of_nilpotent (R := K) hx) y =
       IsNilpotent.exp x * y * IsNilpotent.exp (-x) := by
-  rw [expAd_apply, LieAlgebra.ad_eq_lmul_left_sub_lmul_right (R := ℚ)]
-  have hleft : IsNilpotent (LinearMap.mulLeft ℚ x) := by
+  rw [expAd_apply, LieAlgebra.ad_eq_lmul_left_sub_lmul_right (R := K)]
+  have hleft : IsNilpotent (LinearMap.mulLeft K x) := by
     rwa [LinearMap.isNilpotent_mulLeft_iff]
-  have hright : IsNilpotent (LinearMap.mulRight ℚ x) := by
+  have hright : IsNilpotent (LinearMap.mulRight K x) := by
     rwa [LinearMap.isNilpotent_mulRight_iff]
-  have had : ((LinearMap.mulLeft ℚ : A → Module.End ℚ A) -
-        (LinearMap.mulRight ℚ : A → Module.End ℚ A)) x =
-      LinearMap.mulLeft ℚ x - LinearMap.mulRight ℚ x := rfl
-  rw [had, sub_eq_add_neg, IsNilpotent.exp_add_of_commute
+  rw [Pi.sub_apply, sub_eq_add_neg, IsNilpotent.exp_add_of_commute
     ((LinearMap.commute_mulLeft_right x x).neg_right) hleft hright.neg]
-  have hnegRight : -(LinearMap.mulRight ℚ x) = LinearMap.mulRight ℚ (-x) := by
+  have hnegRight : -(LinearMap.mulRight K x) = LinearMap.mulRight K (-x) := by
     ext a
     simp
-  rw [Module.End.mul_apply, hnegRight, exp_mulRight_apply hx.neg, exp_mulLeft_apply hx]
+  rw [Module.End.mul_apply, hnegRight, hx.neg.exp_mulRight_apply, hx.exp_mulLeft_apply]
   exact (mul_assoc _ _ _).symm
+
+end Conjugation
+
+variable {A : Type*} [Ring A] [Algebra ℚ A]
 
 private theorem exp_mul_exp_mul_exp_neg {x y : A} (hx : IsNilpotent x)
     (hy : IsNilpotent y) :
     IsNilpotent.exp x * IsNilpotent.exp y * IsNilpotent.exp (-x) =
       IsNilpotent.exp
         (expAd (K := ℚ) x (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hx) y) := by
-  let u : Aˣ :=
-    { val := IsNilpotent.exp x
-      inv := IsNilpotent.exp (-x)
-      val_inv := IsNilpotent.exp_mul_exp_neg_self hx
-      inv_val := IsNilpotent.exp_neg_mul_exp_self hx }
-  let e : A →+* A :=
-    MulSemiringAction.toRingHom (ConjAct Aˣ) A (ConjAct.toConjAct u)
-  have he (a : A) : e a = IsNilpotent.exp x * a * IsNilpotent.exp (-x) := by
-    rw [MulSemiringAction.toRingHom_apply, ConjAct.units_smul_def, ConjAct.ofConjAct_toConjAct]
-    rfl
-  have hmap := IsNilpotent.map_exp hy e
-  calc
-    IsNilpotent.exp x * IsNilpotent.exp y * IsNilpotent.exp (-x) =
-        e (IsNilpotent.exp y) := (he (IsNilpotent.exp y)).symm
-    _ = IsNilpotent.exp (e y) := hmap
-    _ = IsNilpotent.exp
-        (expAd (K := ℚ) x (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hx) y) := by
-      rw [expAd_apply_eq_exp_mul_exp_neg hx, he]
+  rw [expAd_apply_eq_exp_mul_exp_neg (K := ℚ) hx]
+  simpa only [ConjAct.units_smul_def, ConjAct.ofConjAct_toConjAct, coe_nilpotentExpUnit,
+    coe_inv_nilpotentExpUnit] using
+    (IsNilpotent.exp_smul (ConjAct.toConjAct (nilpotentExpUnit hx)) hy).symm
 
 /-- **The central-commutator exponential relation.** If `[x, y] = z`, the element `z` commutes
 with `x` and `y`, and `x` and `y` are nilpotent, then
