@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Character
-public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Weight
+public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Weight.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Character
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Rational
 
