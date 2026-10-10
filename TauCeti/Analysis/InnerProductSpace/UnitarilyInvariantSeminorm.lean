@@ -47,6 +47,8 @@ values:
 * `LinearMap.twoSidedUnitaryOrbitHull`: the convex combinations of points of the orbit;
   `LinearMap.twoSidedUnitaryOrbitHull_eq_convexHull` identifies it with `convexHull ℝ` of the orbit
   whenever the latter makes sense.
+* `LinearMap.twoSidedUnitaryOrbitHull_subset`: the orbit hull is the smallest set containing the
+  orbit and closed under convex combinations.
 * `TauCeti.UnitaryOrbitCertificate`: a representation `X = ∑ᵢ aᵢ • Uᵢ C Vᵢ`, with its
   coefficient mass `TauCeti.UnitaryOrbitCertificate.mass`.
 * `TauCeti.UnitaryOrbitCertificate.apply_le_mass_mul`: `N X ≤ mass * N C`.
@@ -217,6 +219,42 @@ theorem linearIsometryEquiv_comp_comp_mem_twoSidedUnitaryOrbitHull {C X : E →�
     exact (Y i).linearIsometryEquiv_comp_comp_mem_twoSidedUnitaryOrbit U V
   · ext x
     simp
+
+/-- **Minimality of the orbit hull.** The orbit hull of `C` is contained in every set that contains
+the two-sided unitary orbit of `C` and is closed under convex combinations of two of its points. -/
+theorem twoSidedUnitaryOrbitHull_subset {C : E →ₗ[𝕜] F} {S : Set (E →ₗ[𝕜] F)}
+    (hS : C.twoSidedUnitaryOrbit ⊆ S)
+    (hconv : ∀ X ∈ S, ∀ Y ∈ S, ∀ a b : ℝ, 0 ≤ a → 0 ≤ b → a + b = 1 →
+      (a : 𝕜) • X + (b : 𝕜) • Y ∈ S) :
+    C.twoSidedUnitaryOrbitHull ⊆ S := by
+  rintro _ ⟨n, t, Y, ht, htsum, hY, rfl⟩
+  induction n with
+  | zero => simp at htsum
+  | succ n ih =>
+    -- Split off the first point and rescale the remaining weights to sum to `1`.
+    rw [Fin.sum_univ_succ] at htsum ⊢
+    set s := ∑ i : Fin n, t i.succ
+    have hs : 0 ≤ s := Finset.sum_nonneg fun i _ ↦ ht _
+    rcases hs.eq_or_lt with hs | hs
+    · have ht' (i : Fin n) : t i.succ = 0 :=
+        (Finset.sum_eq_zero_iff_of_nonneg fun i _ ↦ ht _).mp hs.symm i (Finset.mem_univ _)
+      have ht0 : t 0 = 1 := by simpa [← hs] using htsum
+      simpa [ht', ht0] using hS (hY 0)
+    · have hmem := ih (fun i ↦ t i.succ / s) (fun i ↦ Y i.succ) (fun i ↦ div_nonneg (ht _) hs.le)
+        (by rw [← Finset.sum_div, div_self hs.ne']) fun i ↦ hY _
+      convert hconv _ (hS (hY 0)) _ hmem (t 0) s (ht 0) hs.le htsum using 2
+      simp only [Finset.smul_sum, smul_smul, RCLike.ofReal_div]
+      refine Finset.sum_congr rfl fun i _ ↦ ?_
+      rw [mul_div_cancel₀ _ (RCLike.ofReal_ne_zero.mpr hs.ne')]
+
+/-- The orbit hull of a point of the orbit hull of `C` is contained in the orbit hull of `C`. -/
+theorem twoSidedUnitaryOrbitHull_subset_of_mem {C X : E →ₗ[𝕜] F}
+    (h : X ∈ C.twoSidedUnitaryOrbitHull) :
+    X.twoSidedUnitaryOrbitHull ⊆ C.twoSidedUnitaryOrbitHull := by
+  refine twoSidedUnitaryOrbitHull_subset (fun Y hY ↦ ?_)
+    fun _ hX _ hY _ _ ha hb hab ↦ smul_add_smul_mem_twoSidedUnitaryOrbitHull hX hY ha hb hab
+  obtain ⟨U, V, rfl⟩ := mem_twoSidedUnitaryOrbit.mp hY
+  exact linearIsometryEquiv_comp_comp_mem_twoSidedUnitaryOrbitHull h U V
 
 end LinearMap
 

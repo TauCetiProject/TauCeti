@@ -25,7 +25,8 @@ corresponding estimates in the operator, Frobenius, Ky Fan and nuclear norms at 
 
 The hard direction reduces to the transfer descent for weak majorization
 (`TauCeti.IsSymmetricConvex.mem_of_prefixSum_le`). With `p = min (dim E) (dim F)`, write
-`C = ∑ᵢ σᵢ(C) wᵢ ⊗ vᵢ` over orthonormal families `(vᵢ)_{i < p}` and `(wᵢ)_{i < p}`. The tuples
+`C = ∑ᵢ σᵢ(C) wᵢ ⊗ vᵢ` over orthonormal families `(vᵢ)_{i < p}` and `(wᵢ)_{i < p}`
+(`LinearMap.exists_orthonormal_eq_sum_singularValues_smul_rankOne`). The tuples
 `x : Fin p → ℝ` with `∑ᵢ xᵢ wᵢ ⊗ vᵢ` in the hull form a symmetric convex set: permuting or changing
 the sign of the coordinates of `x` amounts to permuting or changing the sign of the vectors `wᵢ`
 and `vᵢ`, which is realized by unitaries of `F` and `E`. This set contains the singular values of
@@ -125,41 +126,6 @@ end DiagonalSum
 
 variable [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
 
-/-- **Compact singular value decomposition.** With `p = min (dim E) (dim F)`, every map
-`A : E →ₗ[𝕜] F` is `∑_{i < p} σᵢ(A) wᵢ ⊗ vᵢ` for orthonormal families `(vᵢ)` in `E` and `(wᵢ)`
-in `F`. -/
-private theorem exists_orthonormal_eq_diagonalSum (A : E →ₗ[𝕜] F) :
-    ∃ (v : Fin (min (finrank 𝕜 E) (finrank 𝕜 F)) → E)
-      (w : Fin (min (finrank 𝕜 E) (finrank 𝕜 F)) → F), Orthonormal 𝕜 v ∧ Orthonormal 𝕜 w ∧
-        A = diagonalSum 𝕜 v w fun i ↦ A.singularValues i := by
-  obtain ⟨b, hb⟩ := A.exists_orthonormalBasis_apply_eq_leftSingularVector
-  let iE : Fin (min (finrank 𝕜 E) (finrank 𝕜 F)) → Fin (finrank 𝕜 E) :=
-    Fin.castLE (min_le_left _ _)
-  let iF : Fin (min (finrank 𝕜 E) (finrank 𝕜 F)) → Fin (finrank 𝕜 F) :=
-    Fin.castLE (min_le_right _ _)
-  refine ⟨A.rightSingularBasis ∘ iE, b ∘ iF,
-    A.rightSingularBasis.orthonormal.comp _ (Fin.castLE_injective _),
-    b.orthonormal.comp _ (Fin.castLE_injective _), ?_⟩
-  -- Compare both sides on the right singular basis `(vₖ)`: each sends `vₖ` to `σₖ bₖ`, read as
-  -- `0` when `k ≥ p`, where `σₖ = 0`.
-  refine A.rightSingularBasis.toBasis.ext fun k ↦ ?_
-  simp only [OrthonormalBasis.coe_toBasis, diagonalSum_apply, Function.comp_apply,
-    orthonormal_iff_ite.mp A.rightSingularBasis.orthonormal, apply_rightSingularBasis]
-  have hiE (i : Fin (min (finrank 𝕜 E) (finrank 𝕜 F))) : iE i = k ↔ (i : ℕ) = k := Fin.ext_iff
-  rcases lt_or_ge (k : ℕ) (min (finrank 𝕜 E) (finrank 𝕜 F)) with hk | hk
-  · rw [Finset.sum_eq_single ⟨k, hk⟩
-      (fun i _ hi ↦ by simp [hiE, show (i : ℕ) ≠ k from fun h ↦ hi (Fin.ext h)]) (by simp)]
-    rcases eq_or_ne (A.singularValues k) 0 with hσ | hσ
-    · simp [hσ]
-    · simp [hiE, hb k (iF ⟨k, hk⟩) rfl hσ]
-  · have hσ : A.singularValues k = 0 := by
-      rw [← singularValues_adjoint]
-      exact (adjoint A).singularValues_of_finrank_le
-        ((min_le_iff.mp hk).resolve_left (not_le.mpr k.2))
-    rw [hσ, Finset.sum_eq_zero fun i _ ↦ by
-      simp [hiE, show (i : ℕ) ≠ k from fun h ↦ (h ▸ i.2).not_ge hk]]
-    simp
-
 /-- **Orbit-hull characterization of Ky Fan domination.** A map `A` lies in the convex hull of the
 two-sided unitary orbit of `C` exactly when every Ky Fan sum of `A` is at most the corresponding
 Ky Fan sum of `C`. -/
@@ -179,8 +145,10 @@ theorem mem_twoSidedUnitaryOrbitHull_iff_kyFanSum_le {A C : E →ₗ[𝕜] F} :
       _ = C.kyFanSum k := by rw [← Finset.sum_mul, htsum, one_mul]
   · intro h
     classical
-    obtain ⟨vA, wA, hvA, hwA, hA⟩ := A.exists_orthonormal_eq_diagonalSum
-    obtain ⟨vC, wC, hvC, hwC, hC⟩ := C.exists_orthonormal_eq_diagonalSum
+    obtain ⟨vA, wA, hvA, hwA, hA⟩ := A.exists_orthonormal_eq_sum_singularValues_smul_rankOne
+    obtain ⟨vC, wC, hvC, hwC, hC⟩ := C.exists_orthonormal_eq_sum_singularValues_smul_rankOne
+    change A = diagonalSum 𝕜 vA wA fun i ↦ A.singularValues i at hA
+    change C = diagonalSum 𝕜 vC wC fun i ↦ C.singularValues i at hC
     -- The coefficient tuples `x` whose diagonal sum over `(vC, wC)` lies in the hull form a
     -- symmetric convex set.
     let K : Set (Fin (min (finrank 𝕜 E) (finrank 𝕜 F)) → ℝ) :=
