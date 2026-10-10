@@ -49,6 +49,8 @@ Finally, both indices are additive under orthogonal products.
   is characterized by vanishing negative index and trivial radical.
 * `QuadraticForm.sigPos_add_sigNeg_of_nondegenerate`: the two indices of inertia of a
   nondegenerate quadratic form add up to the dimension.
+* `QuadraticForm.sigPos_eq_sigNeg_of_forall_mem_eq_zero`: a nondegenerate quadratic form
+  vanishing on a subspace of at least half the dimension has equal indices of inertia.
 
 ## References
 
@@ -385,6 +387,19 @@ theorem sigPos_add_sigNeg_of_nondegenerate (Q : _root_.QuadraticForm K M) (hQ : 
   have hsig := sigPos_add_sigNeg_add_radical (Q := Q)
   rw [hQ.radical_eq_bot] at hsig
   simpa only [finrank_bot, add_zero] using hsig
+
+/-- A nondegenerate quadratic form vanishing on a subspace of at least half the dimension has
+equal positive and negative indices of inertia. Such a subspace meets every positive-definite and
+every negative-definite subspace trivially, so neither index exceeds half the dimension, while
+nondegeneracy makes them add up to the dimension. -/
+theorem sigPos_eq_sigNeg_of_forall_mem_eq_zero (Q : _root_.QuadraticForm K M)
+    (hQ : Q.Nondegenerate) {W : Subspace K M} (hW : ∀ x ∈ W, Q x = 0)
+    (hdim : Module.finrank K M ≤ 2 * Module.finrank K W) : sigPos Q = sigNeg Q := by
+  have hpos := sigPos_add_finrank_le_of_nonpos (Q := Q) fun x hx => (hW x hx).le
+  have hneg := sigPos_add_finrank_le_of_nonpos (Q := -Q) (V := W) fun x hx => by simp [hW x hx]
+  have hsum := sigPos_add_sigNeg_of_nondegenerate Q hQ
+  rw [sigPos_neg] at hneg
+  omega
 
 end QuadraticForm
 
