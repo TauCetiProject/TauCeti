@@ -74,6 +74,25 @@ theorem natCard_continuousCohomology_one_eq_mul_of_localEulerCharacteristic_eq_l
     exact hq.symm
   exact_mod_cast hq'
 
+/-- The arithmetic behind the dimension form of `χ_F(A) = φ_F(A)` over `𝔽_ℓ`: for a prime `ℓ`,
+`ℓ ^ a · ℓ ^ c / ℓ ^ b = |ℓ ^ d|_p ^ f` holds exactly when `b = a + c + f v_p(ℓ ^ d)`. -/
+private theorem pow_mul_pow_div_pow_eq_padicNorm_pow_iff {ℓ : ℕ} (hℓ : ℓ.Prime) (a b c d f : ℕ) :
+    (ℓ : ℚ) ^ a * ℓ ^ c / ℓ ^ b = padicNorm p ((ℓ : ℚ) ^ d) ^ f ↔
+      b = a + c + f * padicValNat p (ℓ ^ d) := by
+  have hℓ1 : (1 : ℚ) < ℓ := by exact_mod_cast hℓ.one_lt
+  have hl : (ℓ : ℚ) ^ a * ℓ ^ c / ℓ ^ b = (ℓ : ℚ) ^ ((a + c : ℕ) - (b : ℤ)) := by
+    rw [zpow_sub₀ (by positivity), zpow_natCast, zpow_natCast, pow_add]
+  rw [hl, ← Nat.cast_pow, padicNorm.eq_zpow_of_nonzero (by exact_mod_cast (pow_pos hℓ.pos d).ne'),
+    padicValRat.of_nat, ← zpow_natCast, ← zpow_mul]
+  rcases eq_or_ne ℓ p with rfl | hne
+  · rw [zpow_right_inj₀ (by positivity) hℓ1.ne']
+    zify
+    constructor <;> intro h <;> linarith
+  · rw [padicValNat.eq_zero_of_not_dvd fun h ↦ hne ((Nat.prime_dvd_prime_iff_eq Fact.out hℓ).1
+      ((Fact.out : p.Prime).dvd_of_dvd_pow h)).symm]
+    simp [zpow_eq_one_iff_right₀ (by positivity : (0 : ℚ) ≤ ℓ) hℓ1.ne']
+    omega
+
 /-- **The `𝔽_ℓ`-dimension form of the local Euler characteristic formula.** For a prime `ℓ` and
 a finite smooth discrete representation `A` over `𝔽_ℓ`, `χ_F(A) = φ_F(A)` holds exactly when
 `dim H¹ = dim H⁰ + dim H² + [F : ℚ_p] v_p(#A)`. For `ℓ ≠ p` the last term is zero. -/
@@ -84,38 +103,20 @@ theorem localEulerCharacteristic_eq_localCardNorm_iff_finrank (ℓ : ℕ) [Fact 
         Module.finrank (ZMod ℓ) (continuousCohomology 0 A) +
           Module.finrank (ZMod ℓ) (continuousCohomology 2 A) +
             Module.finrank ℚ_[p] F * padicValNat p (Nat.card A.V) := by
-  have hℓ : ℓ.Prime := Fact.out
-  have hp : p.Prime := Fact.out
   have h₀ : Finite (continuousCohomology 0 A) :=
     finite_H (Nat.cast_ne_zero.2 (NeZero.ne ℓ)) A Fact.out (by omega)
   have h₁ : Finite (continuousCohomology 1 A) :=
     finite_H (Nat.cast_ne_zero.2 (NeZero.ne ℓ)) A Fact.out (by omega)
   have h₂ : Finite (continuousCohomology 2 A) :=
     finite_H (Nat.cast_ne_zero.2 (NeZero.ne ℓ)) A Fact.out (by omega)
+  have : Module.Finite (ZMod ℓ) A.V := Module.Finite.of_finite
   have : Module.Finite (ZMod ℓ) (continuousCohomology 0 A) := Module.Finite.of_finite
   have : Module.Finite (ZMod ℓ) (continuousCohomology 1 A) := Module.Finite.of_finite
   have : Module.Finite (ZMod ℓ) (continuousCohomology 2 A) := Module.Finite.of_finite
-  have hA : Nat.card A.V ≠ 0 := Nat.card_pos.ne'
-  rw [Subtype.ext_iff, Units.ext_iff, localEulerCharacteristic_coe, localCardNorm_coe,
-    Module.natCard_eq_pow_finrank (K := ZMod ℓ) (V := continuousCohomology 0 A),
-    Module.natCard_eq_pow_finrank (K := ZMod ℓ) (V := continuousCohomology 1 A),
-    Module.natCard_eq_pow_finrank (K := ZMod ℓ) (V := continuousCohomology 2 A),
-    Nat.card_zmod, padicNorm.eq_zpow_of_nonzero (by exact_mod_cast hA), padicValRat.of_nat]
-  generalize Module.finrank (ZMod ℓ) (continuousCohomology 0 A) = d₀
-  generalize Module.finrank (ZMod ℓ) (continuousCohomology 1 A) = d₁
-  generalize Module.finrank (ZMod ℓ) (continuousCohomology 2 A) = d₂
-  -- `φ_F(A) = p ^ (-k)` with `k = [F : ℚ_p] v_p(#A)`, and `χ_F(A) = ℓ ^ (d₀ + d₂) / ℓ ^ d₁`.
-  have hk : ((p : ℚ) ^ (-(padicValNat p (Nat.card A.V) : ℤ))) ^ Module.finrank ℚ_[p] F =
-      ((p ^ (Module.finrank ℚ_[p] F * padicValNat p (Nat.card A.V)) : ℕ) : ℚ)⁻¹ := by
-    rw [zpow_neg, inv_pow, zpow_natCast, ← pow_mul, mul_comm, Nat.cast_pow]
-  rw [hk, div_eq_iff (by exact_mod_cast (pow_pos hℓ.pos _).ne'), ← div_eq_inv_mul,
-    eq_div_iff (by exact_mod_cast (pow_pos hp.pos _).ne'),
-    ← Nat.cast_mul, ← Nat.cast_mul, Nat.cast_inj, ← pow_add]
-  rcases eq_or_ne ℓ p with rfl | hne
-  · rw [← pow_add, (Nat.pow_right_injective hℓ.two_le).eq_iff, eq_comm]
-  · rw [Module.natCard_eq_pow_finrank (K := ZMod ℓ) (V := A.V), Nat.card_zmod, padicValNat.pow,
-      padicValNat_primes hne.symm, mul_zero, mul_zero, pow_zero, mul_one,
-      (Nat.pow_right_injective hℓ.two_le).eq_iff, add_zero, eq_comm]
+  rw [Subtype.ext_iff, Units.ext_iff, localEulerCharacteristic_coe, localCardNorm_coe]
+  simp only [Module.natCard_eq_pow_finrank (K := ZMod ℓ) (V := continuousCohomology _ A),
+    Module.natCard_eq_pow_finrank (K := ZMod ℓ) (V := A.V), Nat.card_zmod, Nat.cast_pow]
+  exact pow_mul_pow_div_pow_eq_padicNorm_pow_iff p Fact.out ..
 
 /-- **The `𝔽_p`-dimension form of the local Euler characteristic formula.** Equality of the local
 Euler characteristic and the normalized absolute value of the coefficient order implies
