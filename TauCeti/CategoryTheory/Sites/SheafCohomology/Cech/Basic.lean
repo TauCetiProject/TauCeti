@@ -201,6 +201,25 @@ private def unopAlternatingFaceMapComplexIso :
     h ▸ (Category.id_comp _).trans
       ((unop_d_eq_cechComplexFunctor_obj_d U P i).symm.trans (Category.comp_id _).symm)
 
+/-! ### The differential -/
+
+/-- The differential of the Čech complex is the alternating sum of the restrictions along the
+coface maps: the factor of `((cechComplexFunctor U).obj P).d n (n + 1)` indexed by
+`k : Fin (n + 2) → ι` is the alternating sum over `m` of the factor indexed by `k ∘ m.succAbove`,
+restricted along the projection `U (k 0) × ⋯ × U (k (n + 1)) ⟶ ∏ⱼ U (k (m.succAbove j))`. -/
+@[reassoc]
+theorem cechComplexFunctor_obj_d_comp_π (n : ℕ) (k : Fin (n + 2) → ι) :
+    ((cechComplexFunctor U).obj P).d n (n + 1) ≫ Pi.π _ k =
+      ∑ m : Fin (n + 2), (-1 : ℤ) ^ (m : ℕ) • (Pi.π _ (k ∘ m.succAbove) ≫
+        P.map (Pi.lift fun x ↦ Pi.π (fun j ↦ U (k j)) (m.succAbove x)).op) := by
+  have h : ((cechComplexFunctor U).obj P).d n (n + 1) = AlternatingCofaceMapComplex.objD
+      ((FormalCoproduct.cosimplicialObjectFunctor (FormalCoproduct.mk _ U).cech).obj P) n :=
+    (CochainComplex.of_d _ (AlternatingCofaceMapComplex.objD _) n).trans rfl
+  rw [h, AlternatingCofaceMapComplex.objD]
+  refine (Preadditive.sum_comp _ _ _).trans (Finset.sum_congr rfl fun m _ ↦ ?_)
+  -- the coface map `δ m` unfolds to a `Pi.lift`
+  exact (Preadditive.zsmul_comp _ _ _).trans <| congrArg _ <| Pi.lift_comp_π _ _
+
 /-! ### Maps of presheaves -/
 
 /-- A morphism of presheaves `α : P ⟶ Q` acts on the Čech complexes factorwise: the factor of
