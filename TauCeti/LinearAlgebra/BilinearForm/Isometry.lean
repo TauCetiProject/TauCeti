@@ -189,9 +189,9 @@ theorem coe_isometryGroupEquivIsometryEquiv_symm (B : BilinForm R M) (e : B.Isom
 
 /-- Forgetting a bilinear isometry equivalence to a linear equivalence commutes with inversion. -/
 @[simp]
-theorem _root_.LinearMap.BilinForm.IsometryEquiv.toLinearEquiv_symm
+theorem _root_.LinearMap.BilinForm.IsometryEquiv.coe_symm_toLinearEquiv
     {B' : BilinForm R M'} (e : B.IsometryEquiv B') :
-    e.symm.toLinearEquiv = e.toLinearEquiv.symm := (rfl)
+    e.toLinearEquiv.symm = e.symm := (rfl)
 
 section Congr
 

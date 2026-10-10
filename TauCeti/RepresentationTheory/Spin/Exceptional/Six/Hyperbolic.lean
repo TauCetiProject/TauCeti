@@ -178,7 +178,7 @@ theorem spinSixWedgeIsometryEquivPolarSplit_symm_apply_inl (i : Fin 3) :
       spinSixWedgeBasis K (Sum.inl i) := by
   apply (spinSixWedgeIsometryEquivPolarSplit K).injective
   simp only [← LinearMap.BilinForm.IsometryEquiv.coe_toLinearEquiv,
-    LinearMap.BilinForm.IsometryEquiv.toLinearEquiv_symm, LinearEquiv.apply_symm_apply]
+    ← LinearMap.BilinForm.IsometryEquiv.coe_symm_toLinearEquiv, LinearEquiv.apply_symm_apply]
   exact (spinSixWedgeIsometryEquivPolarSplit_apply_inl K i).symm
 
 /-- The inverse hyperbolic coordinates recover the second half of the wedge basis. -/
@@ -188,7 +188,7 @@ theorem spinSixWedgeIsometryEquivPolarSplit_symm_apply_inr (i : Fin 3) :
       spinSixWedgeBasis K (Sum.inr i) := by
   apply (spinSixWedgeIsometryEquivPolarSplit K).injective
   simp only [← LinearMap.BilinForm.IsometryEquiv.coe_toLinearEquiv,
-    LinearMap.BilinForm.IsometryEquiv.toLinearEquiv_symm, LinearEquiv.apply_symm_apply]
+    ← LinearMap.BilinForm.IsometryEquiv.coe_symm_toLinearEquiv, LinearEquiv.apply_symm_apply]
   exact (spinSixWedgeIsometryEquivPolarSplit_apply_inr K i).symm
 
 variable [Invertible (2 : K)]
