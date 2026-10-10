@@ -159,14 +159,14 @@ private lemma typeAWeight_dotProduct_typeACoweight {a c : ℕ} (ha : a ≤ n) (h
     typeAWeight n a ⬝ᵥ typeACoweight n c
       = (if a = c then 1 else 0) - (if a = n then 1 else 0) := by
   have key : ∀ b : ℕ, ∑ k : Fin n, (if b = (k : ℕ) then (1 : ℤ) else 0) *
-      (if c ≤ (k : ℕ) then 1 else 0) = if h : b < n then (if c ≤ b then (1 : ℤ) else 0) else 0 :=
+      (if c ≤ (k : ℕ) then 1 else 0) = if _ : b < n then (if c ≤ b then (1 : ℤ) else 0) else 0 :=
     fun b => by
       simp only [ite_mul, one_mul, zero_mul]
       simpa only [Nat.add_zero, Nat.sub_zero, Nat.zero_le, and_true] using
         sum_ite_val_add (fun k : Fin n => if c ≤ (k : ℕ) then (1 : ℤ) else 0) b 0
   have key' : ∀ b : ℕ, ∑ k : Fin n, (if b = (k : ℕ) + 1 then (1 : ℤ) else 0) *
       (if c ≤ (k : ℕ) then 1 else 0)
-        = if h : b - 1 < n ∧ 1 ≤ b then (if c ≤ b - 1 then (1 : ℤ) else 0) else 0 :=
+        = if _ : b - 1 < n ∧ 1 ≤ b then (if c ≤ b - 1 then (1 : ℤ) else 0) else 0 :=
     fun b => by
       simp only [ite_mul, one_mul, zero_mul]
       exact sum_ite_val_add (fun k : Fin n => if c ≤ (k : ℕ) then (1 : ℤ) else 0) b 1
@@ -206,7 +206,7 @@ private lemma typeAPairRoot_injective : Injective (typeAPairRoot (n := n)) := by
   intro p q hpq
   have h2 : typeAPairRoot q ⬝ᵥ typeAPairCoroot p = 2 := by rw [← hpq]; exact typeAPairRoot_self p
   rw [typeAPairing] at h2
-  have hp := p.2
+  have _ := p.2
   have hq := q.2
   refine Subtype.ext (Prod.ext ?_ ?_) <;> (split_ifs at h2 <;> simp_all)
 
@@ -215,7 +215,7 @@ private lemma typeAPairCoroot_injective : Injective (typeAPairCoroot (n := n)) :
   have h2 : typeAPairRoot p ⬝ᵥ typeAPairCoroot q = 2 := by rw [← hpq]; exact typeAPairRoot_self p
   rw [typeAPairing] at h2
   have hp := p.2
-  have hq := q.2
+  have _ := q.2
   refine Subtype.ext (Prod.ext ?_ ?_) <;> (split_ifs at h2 <;> simp_all)
 
 /-- Reflection in the root indexed by `p`, as the transposition of the two entries of `p` acting on

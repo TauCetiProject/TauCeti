@@ -76,7 +76,8 @@ the constructed one, so it is available before, and independently of, uniqueness
   `H¹₀(Ω)`, with `TauCeti.PDE.norm_dirichletForcing_le`.
 * `TauCeti.PDE.IsWeakSolutionDirichlet`: the weak formulation of `L u = f` in `Ω`, `u = 0` on
   `∂Ω`.
-* `TauCeti.PDE.isWeakSolutionDirichlet_iff_forall_testFunction`: for bounded coefficients it is
+* `TauCeti.PDE.forall_energyFormH1_eq_setIntegral_iff_forall_testFunction` and
+  `TauCeti.PDE.isWeakSolutionDirichlet_iff_forall_testFunction`: for bounded coefficients it is
   enough to test the weak formulation against `C_c^∞(Ω)`.
 * `TauCeti.PDE.isCoercive_energyFormH1L0`: a diagonal lower bound packaged as `IsCoercive`.
 * `TauCeti.PDE.weakSolutionDirichlet` and
@@ -180,6 +181,43 @@ def IsWeakSolutionDirichlet (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
   simp only [IsWeakSolutionDirichlet, dirichletForcing_apply_eq_setIntegral]
 
 /-- **Testing against test functions suffices.** When the energy density is essentially bounded,
+so that the energy form is continuous on `H¹(Ω)`, a function `u ∈ H¹(Ω)` satisfies the weak
+equation `a(u, v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)` as soon as it does for every test function
+`v ∈ C_c^∞(Ω)`: both sides are continuous in `v`, and `H¹₀(Ω)` is the closure of `C_c^∞(Ω)`.
+No boundary condition is imposed on `u`. -/
+theorem forall_energyFormH1_eq_setIntegral_iff_forall_testFunction
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (f : Lp ℝ 2 (mu.restrict Omega)) (u : W1p mu Omega 2) :
+    (∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2)
+        = ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu) ↔
+      ∀ φ : 𝓓(Omega, ℝ),
+        energyFormH1 a b c u (W1p.ofTestFunctionₗ mu Omega 2 φ)
+          = ∫ x in Omega, f x * φ x ∂mu := by
+  -- On `H¹₀(Ω)`, the integral against `f` is the `L²` inner product with `f`.
+  have hforce : ∀ v : W1p0 mu Omega 2, ⟪f, W1p.value (v : W1p mu Omega 2)⟫_ℝ
+      = ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu := fun v =>
+    (dirichletForcing_apply f v).symm.trans (dirichletForcing_apply_eq_setIntegral f v)
+  have htest : ∀ φ : 𝓓(Omega, ℝ),
+      ∫ x in Omega, f x * W1p.value (W1p.ofTestFunctionₗ mu Omega 2 φ) x ∂mu
+        = ∫ x in Omega, f x * φ x ∂mu := fun φ => by
+    refine integral_congr_ae ?_
+    filter_upwards [testFunctionLp_apply_ae (mu := mu) 2 φ] with x hx
+    rw [W1p.value_ofTestFunctionₗ, hx]
+  refine ⟨fun h φ => (h ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩).trans (htest φ),
+    fun h v => ?_⟩
+  have hclosed : IsClosed {v : W1p mu Omega 2 |
+      energyFormH1L hcoeff u v = ⟪f, W1p.value v⟫_ℝ} :=
+    isClosed_eq (energyFormH1L hcoeff u).continuous
+      (((innerSL ℝ f).continuous.comp W1p.valueL.continuous).congr fun v => by
+        simp only [Function.comp_apply, innerSL_apply_apply]
+        exact congrArg _ (W1p.valueL_apply v))
+  have hmem := w1p0Submodule_subset_of_isClosed hclosed (fun φ =>
+    ((energyFormH1L_apply hcoeff _ _).trans ((h φ).trans (htest φ).symm)).trans
+      (hforce ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩).symm) v.2
+  rw [← energyFormH1L_apply hcoeff, ← hforce v]
+  exact hmem
+
+/-- **Testing against test functions suffices.** When the energy density is essentially bounded,
 so that the energy form is continuous on `H¹(Ω)`, `u` is a weak solution as soon as the weak
 equation `a(u, φ) = ∫_Ω f φ` holds for every test function `φ ∈ C_c^∞(Ω)`: both sides are
 continuous in the test function, and `H¹₀(Ω)` is the closure of `C_c^∞(Ω)`. -/
@@ -189,29 +227,9 @@ theorem isWeakSolutionDirichlet_iff_forall_testFunction
     IsWeakSolutionDirichlet a b c f u ↔
       ∀ φ : 𝓓(Omega, ℝ),
         energyFormH1 a b c (u : W1p mu Omega 2) (W1p.ofTestFunctionₗ mu Omega 2 φ)
-          = ∫ x in Omega, f x * φ x ∂mu := by
-  -- The forcing functional at a test function is the integral against it.
-  have hforce : ∀ φ : 𝓓(Omega, ℝ), ⟪f, W1p.value (W1p.ofTestFunctionₗ mu Omega 2 φ)⟫_ℝ
-      = ∫ x in Omega, f x * φ x ∂mu := fun φ => by
-    have h := dirichletForcing_apply_eq_setIntegral f
-      ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule (p := 2) φ⟩
-    rw [dirichletForcing_apply] at h
-    refine h.trans (integral_congr_ae ?_)
-    filter_upwards [testFunctionLp_apply_ae (mu := mu) 2 φ] with x hx
-    rw [W1p.value_ofTestFunctionₗ, hx]
-  refine ⟨fun h φ => ?_, fun h v => ?_⟩
-  · rw [← hforce]
-    exact (h ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩).trans (dirichletForcing_apply f _)
-  · have hclosed : IsClosed {v : W1p mu Omega 2 |
-        energyFormH1L hcoeff (u : W1p mu Omega 2) v = ⟪f, W1p.value v⟫_ℝ} :=
-      isClosed_eq (energyFormH1L hcoeff _).continuous
-        (((innerSL ℝ f).continuous.comp W1p.valueL.continuous).congr fun v => by
-          simp only [Function.comp_apply, innerSL_apply_apply]
-          exact congrArg _ (W1p.valueL_apply v))
-    have hmem := w1p0Submodule_subset_of_isClosed hclosed
-      (fun φ => by simpa only [Set.mem_ofPred_eq, energyFormH1L_apply, hforce] using h φ) v.2
-    rw [dirichletForcing_apply, ← energyFormH1L_apply hcoeff]
-    exact hmem
+          = ∫ x in Omega, f x * φ x ∂mu :=
+  (isWeakSolutionDirichlet_iff f u).trans
+    (forall_energyFormH1_eq_setIntegral_iff_forall_testFunction hcoeff f u)
 
 /-- **The energy estimate.** Any weak solution is bounded in `H¹` by the `L²` norm of the data,
 with the coercivity constant as the only other ingredient. The estimate is stated for every

@@ -62,7 +62,7 @@ theorem isPureDimensional_iff {d : ℕ} {X : Type*} [TopologicalSpace X] :
 theorem isPureDimensional_of_isEmpty (d : ℕ) (X : Type*) [TopologicalSpace X] [IsEmpty X] :
     IsPureDimensional d X := by
   intro Z hZ
-  obtain ⟨x, hx⟩ := hZ.1.nonempty
+  obtain ⟨x, _⟩ := hZ.1.nonempty
   exact isEmptyElim x
 
 /-- Pure dimension is preserved by a homeomorphism. -/

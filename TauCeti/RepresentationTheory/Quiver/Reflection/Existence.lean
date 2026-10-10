@@ -130,7 +130,7 @@ theorem exists_isSinkAdmissible_vertexPreReflectionList_eq_single_and_nonneg
   · refine nonneg_vertexPreReflectionList_take_append Q
       (nonneg_vertexPreReflectionList_take_flatten_replicate Q hd N hpasses) ?_
     rw [vertexPreReflectionList_flatten_replicate]
-    intro r hr
+    intro r _
     rw [List.take_take]
     exact hlast _ (min_le_right _ _)
 

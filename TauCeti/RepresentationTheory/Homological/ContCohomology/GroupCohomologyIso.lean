@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.LowDegree
+public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoriality
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.ExplicitFunctoriality
+import TauCeti.RepresentationTheory.Homological.GroupCohomology.Functoriality
 
 /-!
 # The explicit continuous complex of a discrete group is Mathlib's inhomogeneous complex
@@ -94,7 +97,7 @@ namespace TauCeti.ContCohomology
 
 universe u v w
 
-open groupCohomology
+open CategoryTheory _root_.groupCohomology
 
 section Differentials
 
@@ -411,6 +414,33 @@ theorem explicitH2AddEquivGroupCohomology_mk (z : Z2 G M) (c : cocycles₂ B)
     explicitH2AddEquivGroupCohomology φ ψ hψ (z : H2 G M) = H2π B c :=
   -- The equivalence is `QuotientAddGroup.liftEquiv` of the transport of cocycles.
   congrArg (H2π B) (Subtype.ext (funext fun h ↦ (hc h).symm))
+
+/-- The explicit-to-abstract comparison in degree two commutes with restriction to corresponding
+subgroups along the group isomorphism. -/
+theorem explicitH2AddEquivGroupCohomology_explicitRes2
+    (T : Subgroup G) (S : Subgroup H) (φS : T ≃* S)
+    (hφS : ∀ t : T, (φS t : H) = φ t) (x : H2 G M) :
+    explicitH2AddEquivGroupCohomology (B := Rep.res S.subtype B) φS ψ
+        (fun t m ↦ (hψ t m).trans (by simp [hφS]))
+        (explicitRes2 G M T x) =
+      groupCohomology.map S.subtype (𝟙 (Rep.res S.subtype B)) 2
+        (explicitH2AddEquivGroupCohomology φ ψ hψ x) := by
+  induction x using QuotientAddGroup.induction_on with
+  | H z =>
+    let c : cocycles₂ B := ⟨transport₂ φ ψ z,
+      (transport₂_mem_cocycles₂_iff φ ψ hψ z).2 (mem_Z2_iff.1 z.2).2⟩
+    rw [explicitRes2_mk, explicitH2AddEquivGroupCohomology_mk φ ψ hψ z c (fun _ ↦ rfl)]
+    have hmap := ConcreteCategory.congr_hom
+      (groupCohomology.H2π_comp_map S.subtype (𝟙 (Rep.res S.subtype B))) c
+    rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at hmap
+    rw [hmap]
+    apply explicitH2AddEquivGroupCohomology_mk
+    intro s
+    have hs (s : S) : (φS.symm s : G) = φ.symm s := by
+      apply φ.injective
+      simpa using (hφS (φS.symm s)).symm
+    rw [TauCeti.groupCohomology.mapCocycles₂_apply]
+    simp [cocyclesMap2_apply, c, transport₂, hs]
 
 end CompatiblePairDegree2
 

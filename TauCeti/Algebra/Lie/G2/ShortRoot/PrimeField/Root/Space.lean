@@ -170,12 +170,15 @@ def rootVector (k : Fin 2 ⊕ Fin 2) :
     (derivationComp (B := ZMod 3) (CommHopfAlgCat.commonKernelLift generator (.inl k)).hom
       ((AdditiveGroup.gaTangentLinearEquiv (R := ZMod 3) (B := ZMod 3)).symm 1))
 
-/-- The root vector is the differential of its numbered additive root subgroup at the unit
-tangent vector. -/
-theorem rootVector_def (k : Fin 2 ⊕ Fin 2) :
-    rootVector k = (Derivation.cotangentLinearEquiv (B := ZMod 3)).symm
-      (derivationComp (B := ZMod 3) (CommHopfAlgCat.commonKernelLift generator (.inl k)).hom
-        ((AdditiveGroup.gaTangentLinearEquiv (R := ZMod 3) (B := ZMod 3)).symm 1)) := (rfl)
+/-- Cotangent duality identifies the root vector with the differential of the numbered root
+subgroup at the additive unit tangent vector. -/
+-- Match cotangent duality before its bundled carrier presentation is simplified.
+@[simp↓]
+theorem cotangentLinearEquiv_rootVector (k : Fin 2 ⊕ Fin 2) :
+    Derivation.cotangentLinearEquiv (B := ZMod 3) (rootVector k) =
+      derivationComp (B := ZMod 3) (CommHopfAlgCat.commonKernelLift generator (.inl k)).hom
+        ((AdditiveGroup.gaTangentLinearEquiv (R := ZMod 3) (B := ZMod 3)).symm 1) := by
+  rw [rootVector, LinearEquiv.apply_symm_apply]
 
 /-- **The matrix of the tangent vector of a numbered simple root subgroup is its root
 generator**: the raising generator `Eᵢ` for `k = inl i` and the lowering generator `Fᵢ` for

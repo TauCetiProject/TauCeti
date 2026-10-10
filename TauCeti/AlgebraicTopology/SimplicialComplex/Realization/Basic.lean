@@ -231,7 +231,7 @@ theorem StandardSimplex.nonneg {σ : Finset ι} (x : StandardSimplex σ) (v : ι
       obtain ⟨w, _, rfl⟩ := hy
       by_cases h : w = v <;> simp [h])
     (by
-      intro y hy z hz a b ha hb hab
+      intro y hy z hz a b ha hb _
       simp only [Set.mem_ofPred_eq, Finsupp.add_apply, Finsupp.smul_apply] at hy hz ⊢
       exact add_nonneg (mul_nonneg ha hy) (mul_nonneg hb hz))
     x.2

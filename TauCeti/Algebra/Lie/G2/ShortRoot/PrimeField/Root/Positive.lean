@@ -96,7 +96,7 @@ theorem rootVector_inl_mem_positiveDefiningIdeal_lieSubalgebra (i : Fin 2) :
     rw [CommHopfAlgCat.mkQuotient_comp_quotientMapOfLe_assoc,
       CommHopfAlgCat.mkQuotient_comp_commonKernelLift,
       CommHopfAlgCat.mkQuotient_comp_commonKernelLift, Positive.generator_inl]
-  rw [rootVector_def, LinearEquiv.apply_symm_apply, HopfIdeal.mem_lieSubalgebra_iff]
+  rw [cotangentLinearEquiv_rootVector, HopfIdeal.mem_lieSubalgebra_iff]
   intro x hx
   have hz : (CommHopfAlgCat.commonKernelLift generator (.inl (.inl i))).hom x = 0 := by
     rw [← hcomp, CommHopfAlgCat.comp_apply,

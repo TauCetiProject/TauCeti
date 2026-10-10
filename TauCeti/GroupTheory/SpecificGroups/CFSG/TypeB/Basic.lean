@@ -36,8 +36,9 @@ because `TauCeti.TypeBLieIndex.two_le_rank` bounds the rank below by two:
 by `Fin d.1.rank`, the upstream Bourbaki index type of the index's own Dynkin type, rather than by a
 node of the carrier. The two numberings agree node for node, so
 `TauCeti.TypeBLieIndex.carrierNode` is the rank identification and nothing more; that is what
-`TauCeti.TypeBLieIndex.rootWeight_carrierNode_eq_root_simpleIndex` records, reading the character
-of the `i`-th raising subgroup as the `i`-th simple root of the type-`B` root datum the index names.
+`TauCeti.TypeBLieIndex.rootGeneratorWeight_carrierNode_eq_root_simpleIndex` records, reading the
+character of the `i`-th raising subgroup as the `i`-th simple root of the type-`B` root datum the
+index names.
 
 The spin carrier takes no rank hypothesis beyond the one the subtype supplies, so everything below
 is stated for every validated type-`B` index, the rank-two members `B₂(q)` included. Those members
@@ -66,8 +67,8 @@ once one is proved.
   type-`B` spin carrier at the index's rank.
 * `TauCeti.TypeBLieIndex.simpleRootSubgroup`: its positive simple-root subgroup at a
   Bourbaki-numbered node, with
-  `TauCeti.TypeBLieIndex.rootWeight_carrierNode_eq_root_simpleIndex` identifying the character of
-  that subgroup with the corresponding simple root of the type-`B` root datum.
+  `TauCeti.TypeBLieIndex.rootGeneratorWeight_carrierNode_eq_root_simpleIndex` identifying the
+  character of that subgroup with the corresponding simple root of the type-`B` root datum.
 * `TauCeti.TypeBLieIndex.frobenius`, `TauCeti.TypeBLieIndex.coe_frobenius_apply` and
   `TauCeti.TypeBLieIndex.frobenius_simpleRootSubgroup`: the carrier's `q`-power Frobenius, its
   entrywise description, and its simple-root-subgroup action formula `Frob_q (x_i(u)) = x_i(u ^ q)`.
@@ -191,11 +192,11 @@ same node correspondence, is the `i`-th simple root of
 in which the spin carrier serves that diagram; it is not a claim that the carrier is the pinned
 group of the diagram, no pinning being constructed for it.
 
-The character itself is `TauCeti.TypeBSpinCarrier.rootWeight`, which
+The character itself is `TauCeti.TypeBSpinCarrier.rootGeneratorWeight`, which
 `TauCeti.TypeBSpinCarrier.weightTorusPoints_conj_rootSubgroupPoints` exhibits as the one
 conjugation by the carrier's split torus rescales the parameter by. -/
-theorem rootWeight_carrierNode_eq_root_simpleIndex (i j : Fin d.1.rank) :
-    TypeBSpinCarrier.rootWeight d.carrierRank (.inl (d.carrierNode i)) (d.carrierNode j) =
+theorem rootGeneratorWeight_carrierNode_eq_root_simpleIndex (i j : Fin d.1.rank) :
+    TypeBSpinCarrier.rootGeneratorWeight d.carrierRank (.inl (d.carrierNode i)) (d.carrierNode j) =
       (d.1.dynkinType.simplyConnectedRootDatum d.1.dynkinType_valid).root
         (d.1.dynkinType.simpleIndex d.1.dynkinType_valid i) j := by
   -- The carrier reads its raising-generator weight as a simple root of the pinned datum at
@@ -209,7 +210,7 @@ theorem rootWeight_carrierNode_eq_root_simpleIndex (i j : Fin d.1.rank) :
   -- The carrier-side instance of `root_simpleIndex` is given explicitly: its node is typed by the
   -- carrier's `Fin (carrierRank + 1)`, which is the datum's `Fin (B (carrierRank + 1)).rank` only
   -- after unfolding `DynkinType.rank`, further than `simp` unifies.
-  rw [TypeBSpinCarrier.rootWeight_inl_eq_root_simpleIndex d.carrierRank ht,
+  rw [TypeBSpinCarrier.rootGeneratorWeight_inl_eq_root_simpleIndex d.carrierRank ht,
     DynkinType.root_simpleIndex (DynkinType.B (d.carrierRank + 1)) ht (d.carrierNode i)]
   simp only [DynkinType.root_simpleIndex, DynkinType.cartanMatrix_B]
   rw [d.dynkinType_cartanMatrix_apply, d.cartanMatrix_B_carrierNode]

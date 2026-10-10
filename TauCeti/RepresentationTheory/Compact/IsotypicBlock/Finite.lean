@@ -7,23 +7,21 @@ module
 
 public import TauCeti.RepresentationTheory.Compact.Character.IsotypicProjection
 public import TauCeti.RepresentationTheory.Compact.Finite
-public import TauCeti.RepresentationTheory.Compact.IsotypicBlock.Basic
+public import TauCeti.RepresentationTheory.Compact.IsotypicBlock.Isotypic
 
 /-!
 # For a finite group the Peter-Weyl block projections are the isotypic projectors
 
-`TauCeti/RepresentationTheory/Compact/IsotypicBlock/Basic.lean` proves that the character averaging
-operator `TauCeti.peterWeylBlockAveraging` of a model `π` is the orthogonal projection of `L²(G)`
-onto the `π`-block, and says in its `## What is not proved here` section that this is a statement
-about a projection onto a *subspace*, not about a `G`-isotypic decomposition: the block is called
-isotypic only because it is spanned by the matrix coefficients of `π` alone. The obstruction named
-there is that `ContRepresentation.isotypicProjector` is the integrated operator of a
-*norm*-continuous representation on a *finite-dimensional* carrier, while `L²(G)` is in general
-infinite-dimensional and its regular representation then only strongly continuous.
+The algebraic identification of Peter-Weyl blocks with the isotypic components of the left
+regular representation is proved for arbitrary compact groups in
+`TauCeti/RepresentationTheory/Compact/IsotypicBlock/Isotypic.lean`. This file additionally
+identifies their character averaging operators with the bundled
+`ContRepresentation.isotypicProjector` for finite discrete groups.
 
-Both obstructions disappear for a finite discrete `G`: every map out of `G` is continuous, and
-`L²(G)` is the space `G → 𝕜` of all functions on `G`, of dimension `|G|`
-(`TauCeti.finiteDimensional_lp_haarProb`). This file closes the gap there.
+The bundled projector requires a norm-continuous representation on a finite-dimensional
+carrier. Both conditions hold here: every map out of `G` is continuous, and `L²(G)` is the
+space `G → 𝕜` of all functions on `G`, of dimension `|G|`
+(`TauCeti.finiteDimensional_lp_haarProb`).
 
 The bridge is that **convolution is the integrated operator of the left regular representation**,
 `TauCeti.convolutionOperator_eq_integratedOperator_leftRegularLp`. Both operators are group averages
@@ -38,13 +36,9 @@ This also matches the convolution computation of the block file, which moves the
 the integrated operator of the kernel on the model's carrier.
 
 Reading the averaging kernel `dim V_π · conj χ_π` as
-`ContRepresentation.isotypicKernel` then identifies the two operators outright
-(`TauCeti.peterWeylBlockAveraging_eq_isotypicProjector`), and the range identification of the
-isotypic projector turns the `π`-block into the `π`-isotypic component of the left regular
-representation — Mathlib's `isotypicComponent` of the `𝕜[G]`-module `L²(G)` — in
-`TauCeti.mem_peterWeylBlock_iff_mem_isotypicComponent` and
-`TauCeti.toSubmodule_range_isotypicProjector_leftRegularLp`. That is the `G`-isotypic statement the
-block file leaves open, for the groups where the general construction is available.
+`ContRepresentation.isotypicKernel` identifies the two operators
+(`TauCeti.peterWeylBlockAveraging_eq_isotypicProjector`), and gives the range of the bundled
+projector as the Peter-Weyl block (`TauCeti.toSubmodule_range_isotypicProjector_leftRegularLp`).
 
 ## Main results
 
@@ -53,11 +47,9 @@ block file leaves open, for the groups where the general construction is availab
   representation.**
 * `TauCeti.peterWeylBlockAveraging_eq_isotypicProjector`: **the character averaging operator of a
   block is the isotypic projector of the model in the left regular representation.**
-* `TauCeti.toSubmodule_range_isotypicProjector_leftRegularLp`,
-  `TauCeti.mem_peterWeylBlock_iff_mem_isotypicComponent` and
-  `TauCeti.restrictScalars_isotypicComponent_eq_peterWeylBlock`: **the `π`-block of `L²(G)` is the
-  `π`-isotypic component of the left regular representation**, for a skeleton of the unitary dual
-  over an algebraically closed `𝕜`.
+* `TauCeti.toSubmodule_range_isotypicProjector_leftRegularLp`: **the range of the bundled
+  isotypic projector is the Peter-Weyl block**, for a skeleton of the unitary dual over an
+  algebraically closed `𝕜`.
 
 ## References
 
@@ -180,35 +172,6 @@ theorem toSubmodule_range_isotypicProjector_leftRegularLp (h : IsIrrepSkeleton m
       peterWeylBlock (models i) := by
   rw [← range_peterWeylBlockAveraging h i, peterWeylBlockAveraging_eq_isotypicProjector]
   rfl
-
-/-- **The `π`-block of `L²(G)` is the `π`-isotypic component of the left regular
-representation.**
-
-This is the `G`-isotypic reading of the Peter-Weyl blocks that
-`TauCeti/RepresentationTheory/Compact/IsotypicBlock/Basic.lean` leaves open: the block of a model
-`π` is Mathlib's `isotypicComponent` of type `π` in the `𝕜[G]`-module `L²(G)` carried by the left
-regular representation, so the decomposition of `L²(G)` into blocks is its isotypic decomposition
-as a representation of `G` acting by left translation. -/
-theorem mem_peterWeylBlock_iff_mem_isotypicComponent (h : IsIrrepSkeleton models) (i : ι)
-    (f : Lp 𝕜 2 (haarProb G)) :
-    f ∈ peterWeylBlock (models i) ↔
-      f ∈ isotypicComponent 𝕜[G] (leftRegularLp 𝕜 G).toRepresentation.asModule
-        (models i).rep.toRepresentation.asModule := by
-  rw [ContRepresentation.mem_isotypicComponent_iff_isotypicProjector_apply (leftRegularLp 𝕜 G)
-      continuous_of_discreteTopology (isUnitary_leftRegularLp 𝕜 G) (models i).rep
-      (models i).continuous_rep (models i).isIrreducible f,
-    ← ContIntertwiningMap.toContinuousLinearMap_apply,
-    ← peterWeylBlockAveraging_eq_isotypicProjector,
-    peterWeylBlockAveraging_eq_starProjection h i, Submodule.starProjection_eq_self_iff]
-
-/-- **The `π`-block is the `π`-isotypic component as a submodule**, the previous lemma read as an
-equality of subspaces of `L²(G)` rather than a membership criterion: restricting the scalars of
-Mathlib's `isotypicComponent` from `𝕜[G]` to `𝕜` returns the block. -/
-theorem restrictScalars_isotypicComponent_eq_peterWeylBlock (h : IsIrrepSkeleton models) (i : ι) :
-    (isotypicComponent 𝕜[G] (leftRegularLp 𝕜 G).toRepresentation.asModule
-        (models i).rep.toRepresentation.asModule).restrictScalars 𝕜 =
-      peterWeylBlock (models i) :=
-  SetLike.ext fun f => (mem_peterWeylBlock_iff_mem_isotypicComponent h i f).symm
 
 end Skeleton
 
