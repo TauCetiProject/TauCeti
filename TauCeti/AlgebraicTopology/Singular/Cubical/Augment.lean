@@ -38,9 +38,13 @@ open Finsupp unitInterval
 
 namespace TauCeti
 
-variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] (R : Type*) [Ring R]
+variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 
 namespace CubicalChain
+
+section Semiring
+
+variable (R : Type*) [Semiring R]
 
 variable (X) in
 /-- The augmentation of the unnormalized `0`-chains: the sum of the coefficients. -/
@@ -51,12 +55,6 @@ def augment : CubicalChain X R 0 →ₗ[R] R :=
 theorem augment_single (c : SingularCube X 0) (a : R) : augment X R (single c a) = a := by
   rw [augment, linearCombination_single, smul_eq_mul, mul_one]
 
-/-- The augmentation vanishes on boundaries: a path contributes its end point minus its starting
-point. -/
-theorem augment_boundary : augment X R ∘ₗ boundary X R 0 = 0 := by
-  refine lhom_ext' fun c ↦ LinearMap.ext_ring ?_
-  simp [boundary_single]
-
 theorem degenerate_le_ker_augment : degenerate X R 0 ≤ LinearMap.ker (augment X R) := by
   rw [degenerate_zero]
   exact bot_le
@@ -65,11 +63,23 @@ theorem augment_map (f : C(X, Y)) : augment Y R ∘ₗ map R f 0 = augment X R :
   refine lhom_ext' fun c ↦ LinearMap.ext_ring ?_
   simp
 
+end Semiring
+
+variable (R : Type*) [Ring R]
+
+/-- The augmentation vanishes on boundaries: a path contributes its end point minus its starting
+point. -/
+theorem augment_boundary : augment X R ∘ₗ boundary X R 0 = 0 := by
+  refine lhom_ext' fun c ↦ LinearMap.ext_ring ?_
+  simp [boundary_single]
+
 end CubicalChain
 
 namespace NormalizedCubicalChain
 
 open CubicalChain
+
+variable (R : Type*) [Ring R]
 
 variable (X) in
 /-- The augmentation of the normalized `0`-chains. -/
