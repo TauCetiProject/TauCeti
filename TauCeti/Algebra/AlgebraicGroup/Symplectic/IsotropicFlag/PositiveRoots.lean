@@ -103,7 +103,7 @@ theorem nontrivialAdjointWeight_and_forall_mem_lieSubalgebra_iff
 /-- The nontrivial adjoint characters whose whole weight space lies in the flag Lie algebra
 are exactly the positive roots of the standard type-C datum. This also excludes characters
 outside that root datum, over any nontrivial commutative base ring. -/
-theorem nontrivialAdjointWeight_and_forall_mem_lieSubalgebra_iff_exists_positiveRoot
+theorem mem_nontrivialAdjointWeights_and_forall_mem_lieSubalgebra_iff_exists_root_isPos
     (α : Multiplicative (ULift.{u} (Fin m) →₀ ℤ)) :
     (α ∈ Derivation.nontrivialAdjointWeights
         (Symplectic.diagonalTorusCoordinateMap (R := R) (m := m)).hom ∧
