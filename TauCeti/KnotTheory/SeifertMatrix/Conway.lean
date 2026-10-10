@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Alexander
+public import TauCeti.Algebra.Polynomial.Laurent.SignedInversion
 public import TauCeti.LinearAlgebra.Matrix.CornerMinor
 
 /-!
@@ -35,6 +36,7 @@ The normalization comparison uses `TauCeti.KnotTheory.alexander`. The minor calc
 public section
 
 open LaurentPolynomial
+open scoped Polynomial
 
 namespace Matrix
 
@@ -90,6 +92,12 @@ private theorem seifertConwayMatrix_eq_smul_map_alexanderMatrix (V : Matrix ι �
   rw [hT, hC, hC, mul_sub, ← mul_assoc, ← T_add]
   norm_num
 
+/-- Signed inversion transposes the half-power Seifert matrix. -/
+@[simp] theorem map_signedInvert_seifertConwayMatrix (V : Matrix ι ι R) :
+    V.seifertConwayMatrix.map signedInvert = V.seifertConwayMatrixᵀ := by
+  ext i j : 2
+  simp [seifertConwayMatrix_apply, sub_eq_add_neg, add_comm]
+
 variable [Fintype ι] [DecidableEq ι]
 
 /-- The Laurent determinant `det(s V - s⁻¹ Vᵀ)`. This is the Seifert-matrix expression used
@@ -117,6 +125,18 @@ theorem eval₂_seifertConwayDeterminant {S : Type*} [CommRing S]
 theorem seifertConwayDeterminant_of_isEmpty [IsEmpty ι] (V : Matrix ι ι R) :
     V.seifertConwayDeterminant = 1 := by
   simp [seifertConwayDeterminant]
+
+/-- The half-power Seifert determinant is fixed by `s ↦ -s⁻¹`, in every matrix size. -/
+@[simp] theorem signedInvert_seifertConwayDeterminant (V : Matrix ι ι R) :
+    signedInvert V.seifertConwayDeterminant = V.seifertConwayDeterminant := by
+  rw [seifertConwayDeterminant_def, RingHom.map_det, RingHom.mapMatrix_apply,
+    map_signedInvert_seifertConwayMatrix, det_transpose]
+
+/-- Every half-power Seifert determinant is a polynomial in `s⁻¹ - s`, including
+odd-size matrices, with coefficients in the original commutative ring. -/
+theorem exists_polynomial_eval₂_eq_seifertConwayDeterminant (V : Matrix ι ι R) :
+    ∃ p : R[X], Polynomial.eval₂ C (T (-1) - T 1) p = V.seifertConwayDeterminant :=
+  exists_eval₂_T_neg_sub_T (signedInvert_seifertConwayDeterminant V)
 
 /-- For a matrix of size `2g`, the half-power determinant is the normalized Alexander
 polynomial with its exponents doubled: `det(s V - s⁻¹ Vᵀ) = Δ_V(s²)`. -/
