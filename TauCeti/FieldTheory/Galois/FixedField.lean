@@ -81,6 +81,8 @@ inseparable extension can only be indexed by the intermediate fields of the sepa
   `IntermediateField.fixedField_iInf_stabilizer_eq_adjoin_range` and
   `IntermediateField.adjoin_eq_top_of_fixedField_stabilizer`: the stabilizer of `x` fixes
   exactly `K⟮x⟯`, in which `x` is a primitive element
+* `IntermediateField.apply_eq_self_of_forall_mem_inf`: inside a Galois extension `Ω / L`, an
+  automorphism fixing `E ∩ F` fixes `F`, for `E` finite Galois over a smaller base and `F ≤ L(E)`
 * `FixedPoints.isCyclic_algEquiv`
 * `AlgEquiv.toFixedFieldAlgEquiv`, with `AlgEquiv.zpowers_toFixedFieldAlgEquiv_eq_top` and
   `AlgEquiv.card_algEquiv_fixedField_zpowers`
@@ -386,6 +388,47 @@ theorem adjoin_eq_top_of_fixedField_stabilizer [IsGalois K M] (x : M) :
   have h := adjoin_simple_toSubalgebra_of_isAlgebraic hx'
   rw [htop, IntermediateField.top_toSubalgebra] at h
   exact h.symm
+
+section Restriction
+
+variable {k L Ω : Type*} [Field k] [Field L] [Field Ω] [Algebra k L] [Algebra k Ω]
+  [Algebra L Ω] [IsScalarTower k L Ω]
+
+/-- **Fixing a subfield of a compositum through its intersection with a Galois factor.** Let
+`Ω / L` be Galois, let `E / k` be a finite Galois subextension of `Ω` over a smaller base `k`, and
+let `F ≤ L(E)`. An automorphism of `Ω / L` that fixes every element of `E ∩ F` fixes `F`. -/
+theorem apply_eq_self_of_forall_mem_inf (E : IntermediateField k Ω) [FiniteDimensional k E]
+    [IsGalois k E] [IsGalois L Ω] {F : IntermediateField L Ω} (hF : F ≤ adjoin L (E : Set Ω))
+    (σ : Ω ≃ₐ[L] Ω) (hσ : ∀ x ∈ E, x ∈ F → σ x = x) {x : Ω} (hx : x ∈ F) : σ x = x := by
+  -- Galois theory supplies a fixer of `F` whose restriction to `E` agrees with `σ`; the two
+  -- automorphisms then agree on `L(E)`.
+  let r : (Ω ≃ₐ[L] Ω) →* (E ≃ₐ[k] E) :=
+    (AlgEquiv.restrictNormalHom E).comp (AlgEquiv.restrictScalarsHom k)
+  have hr (τ : Ω ≃ₐ[L] Ω) (e : E) : ((r τ e : E) : Ω) = τ e :=
+    AlgEquiv.restrictNormal_commutes (τ.restrictScalars k) E e
+  -- The restriction of `σ` fixes the field cut out in `E` by the restricted fixers of `F`.
+  have hmem : r σ ∈ F.fixingSubgroup.map r := by
+    rw [← fixingSubgroup_fixedField (F.fixingSubgroup.map r)]
+    rintro ⟨e, he⟩
+    apply Subtype.ext
+    rw [AlgEquiv.smul_def, hr]
+    refine hσ e e.2 ?_
+    rw [← InfiniteGalois.fixedField_fixingSubgroup F]
+    rintro ⟨τ, hτ⟩
+    simpa [hr] using congrArg Subtype.val (he ⟨r τ, Subgroup.mem_map_of_mem r hτ⟩)
+  obtain ⟨τ, hτ, hστ⟩ := hmem
+  have hagree : ∀ z ∈ adjoin L (E : Set Ω), τ z = σ z := by
+    intro z hz
+    induction hz using adjoin_induction with
+    | mem z hz => simpa [hr] using congrArg Subtype.val (DFunLike.congr_fun hστ ⟨z, hz⟩)
+    | algebraMap a => simp
+    | add a b _ _ ha hb => simp [ha, hb]
+    | inv a _ ha => simp [ha]
+    | mul a b _ _ ha hb => simp [ha, hb]
+  rw [← hagree x (hF hx)]
+  exact hτ ⟨x, hx⟩
+
+end Restriction
 
 end IntermediateField
 

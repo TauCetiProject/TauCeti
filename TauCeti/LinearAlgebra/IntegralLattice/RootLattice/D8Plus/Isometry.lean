@@ -180,12 +180,6 @@ theorem e8GlueRoot_mem_d8PlusCarrier (i : Fin 8) : e8GlueRoot i ∈ d8PlusCarrie
 
 /-! ## The comparison map -/
 
-/-- The simple roots of the `E₈` root lattice are the standard coordinate vectors. -/
-private theorem typeE₈SimpleRoot_eq_basisFun (i : Fin 8) :
-    typeE₈SimpleRoot i = Pi.basisFun ℚ (Fin 8) i := by
-  funext j
-  rw [typeE₈SimpleRoot_apply, Pi.basisFun_apply, Pi.single_apply]
-
 /-- The rational linear map sending the `i`-th simple root of the `E₈` root lattice to the `i`-th
 glue root of `D₈⁺`. -/
 noncomputable def e8GlueMap : (Fin 8 → ℚ) →ₗ[ℚ] (Fin 8 → ℚ) :=

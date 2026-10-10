@@ -25,7 +25,10 @@ given by its normalized valuation.
 Passing through all finite unramified extensions proves that the unramified coordinate of the
 absolute local Artin symbol is the image of the normalized valuation in `zHat`. Consequently,
 lifts of Artin symbols of units lie in inertia, while lifts of uniformizer symbols are arithmetic
-Frobenius lifts.
+Frobenius lifts. Conversely, every element of the image of inertia in `G_K^ab` is the Artin symbol
+of a unit. For a uniformizer `ϖ`, the products of the Artin symbols of the compact group `𝒪[K]ˣ`
+with the image of `ℤ̂` under `n ↦ Art(ϖ)ⁿ` form a compact set containing the dense image of the
+Artin map, hence all of `G_K^ab`; the unramified coordinate recovers `n` from such a product.
 
 ## Main definitions
 
@@ -44,6 +47,8 @@ Frobenius lifts.
   a unit lies in inertia.
 * `TauCeti.ClassFieldTheory.isArithFrobeniusLift_of_mk_eq_artinMap_uniformizer`: a lift of the
   Artin symbol of a uniformizer is an arithmetic Frobenius lift.
+* `TauCeti.ClassFieldTheory.map_artinMap_unitFiltration_zero`: the Artin symbols of the units of
+  `𝒪[K]` are exactly the image of inertia in `G_K^ab`.
 
 ## References
 
@@ -60,6 +65,7 @@ namespace TauCeti.ClassFieldTheory
 
 open CategoryTheory MonoidalCategory
 open _root_.ValuativeRel
+open scoped Pointwise
 
 variable (K L : Type) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
@@ -444,5 +450,38 @@ theorem isArithFrobeniusLift_of_mk_eq_artinMap_uniformizer {π : Kˣ}
   rw [← unramifiedCoordinate_mk_eq_gen_iff, hσ, unramifiedCoordinate_artinMap,
     (isUniformizer_def π).1 hπ, zHat.ofInt_ofAdd]
   simp
+
+/-- **The units of `𝒪[K]` map onto the image of inertia.** The Artin symbols of the elements of
+`U(K,0) = 𝒪[K]ˣ` are exactly the classes in `G_K^ab` of the elements of the inertia subgroup,
+equivalently (`ker_unramifiedCoordinate`) the classes with trivial unramified coordinate. -/
+theorem map_artinMap_unitFiltration_zero :
+    (unitFiltration K 0).map (artinMap K) = (inertiaSubgroup K).map (QuotientGroup.mk' _) := by
+  rw [← ker_unramifiedCoordinate]
+  refine le_antisymm ?_ fun y hy ↦ ?_
+  · rintro _ ⟨u, hu, rfl⟩
+    have hv : normalizedValuation K u = 1 := normalizedValuation_coe_unitFiltration_zero K ⟨u, hu⟩
+    simp [hv]
+  · obtain ⟨ϖ, hϖ⟩ := normalizedValuation_surjective (K := K) (.ofAdd 1)
+    set φ : zHat →ₜ* Field.absoluteGaloisGroupAbelianization K := zHat.lift (artinMap K ϖ)
+    have hφ : (unramifiedCoordinate K).comp φ = .id _ :=
+      zHat.hom_ext (by simp [φ, hϖ, zHat.ofInt_ofAdd])
+    -- `Art(U(K,0)) · φ(ℤ̂)` is compact and contains the dense image of `artinMap K`, since
+    -- `x = (x ϖ ^ (-v(x))) · ϖ ^ v(x)`.
+    have hS : (artinMap K '' (unitFiltration K 0 : Set Kˣ)) * Set.range φ = Set.univ := by
+      refine Set.eq_univ_of_univ_subset ?_
+      rw [← (denseRange_artinMap K).closure_range]
+      refine ((((isCompact_unitFiltration (K := K) 0).image (continuous_artinMap K)).mul
+        (isCompact_range φ.continuous)).isClosed).closure_subset_iff.2 ?_
+      rintro _ ⟨x, rfl⟩
+      refine ⟨_, ⟨_, mul_zpow_neg_mem_unitFiltration_zero hϖ x, rfl⟩,
+        _, ⟨zHat.ofInt (normalizedValuation K x), rfl⟩, ?_⟩
+      simp [φ, map_zpow]
+    -- Write `y = Art(u) · φ(z)`; the unramified coordinate of `y` is then `z`, so `z = 1`.
+    obtain ⟨_, ⟨u, hu, rfl⟩, _, ⟨z, rfl⟩, rfl⟩ := hS.symm ▸ Set.mem_univ y
+    have hv : normalizedValuation K u = 1 := normalizedValuation_coe_unitFiltration_zero K ⟨u, hu⟩
+    have hz : z = 1 := by
+      have hφz : unramifiedCoordinate K (φ z) = z := DFunLike.congr_fun hφ z
+      simpa [hv, hφz] using hy
+    exact ⟨u, hu, by simp [hz]⟩
 
 end TauCeti.ClassFieldTheory

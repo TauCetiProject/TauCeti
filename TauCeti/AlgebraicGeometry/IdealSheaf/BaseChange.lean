@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 public import Mathlib.AlgebraicGeometry.Pullbacks
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Comap
+public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
 public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.SplitEpi
 
 /-!
@@ -30,6 +31,14 @@ base change `T ⟶ X ×_S T` along `g : T ⟶ S` is the inverse image of the ide
 ideal sheaves of finitely many sections
 (`AlgebraicGeometry.Scheme.IdealSheafData.prod_ker_pullback_section`). Taking the ideal sheaf of
 a section, or of a finite family of sections, therefore commutes with arbitrary base change.
+
+The closed subscheme of the inverse image `I.comap g` along `g : X' ⟶ X` is the base change of the
+closed subscheme of `I` along `g`. Hence, if the closed subscheme of `I` is finite and flat over a
+base `S` and `g` is finite and flat of constant rank `n`, the rank over `S` of the closed subscheme
+of `I.comap g` is `n` times that of `I`
+(`AlgebraicGeometry.Scheme.IdealSheafData.finrank_comap_subschemeι_comp`). For relative effective
+Cartier divisors on relative curves, whose degree is this rank, this is the statement that inverse
+images under finite flat morphisms of constant degree multiply degrees.
 -/
 
 public section
@@ -142,6 +151,25 @@ theorem flat_appLE_comp_ofHom_quotient_mk (I : X.IdealSheafData) (f : X ⟶ S)
   rw [← Scheme.Hom.appLE_comp_appLE I.subschemeι f W U.1 _ hUW le_rfl,
     ← Scheme.Hom.app_eq_appLE, subschemeι_app, ← Category.assoc] at h
   exact (RingHom.Flat.respectsIso.cancel_right_isIso _ _).mp h
+
+/-- **Inverse images multiply ranks.** Suppose the closed subscheme of `I` is finite and flat over
+`S` through `f : X ⟶ S`, and `g : X' ⟶ X` is finite and flat of constant rank `n`. Then the
+rank over `S` of the closed subscheme of the inverse image `I.comap g` is `n` times the rank of
+the closed subscheme of `I`.
+
+For a relative effective Cartier divisor `D` on `X` over `S` that is finite over `S`, the inverse
+image `g⁻¹ D` is again a relative effective Cartier divisor
+(`AlgebraicGeometry.Scheme.IdealSheafData.IsRelativeEffectiveCartier.comap_of_flat`), and this
+says `deg (g⁻¹ D) = n * deg D`. -/
+theorem finrank_comap_subschemeι_comp (I : X.IdealSheafData) (f : X ⟶ S)
+    [Flat (I.subschemeι ≫ f)] [IsFinite (I.subschemeι ≫ f)] {X' : Scheme.{u}} (g : X' ⟶ X)
+    [Flat g] [IsFinite g] {n : ℕ} (hg : ∀ x, g.finrank x = n) (s : S) :
+    ((I.comap g).subschemeι ≫ g ≫ f).finrank s = n * (I.subschemeι ≫ f).finrank s := by
+  -- The closed subscheme of `I.comap g` is `X' ×_X I.subscheme`, finite flat of rank `n` over
+  -- `I.subscheme`.
+  rw [← comapIso_hom_fst, Category.assoc, pullback.condition_assoc,
+    Scheme.Hom.finrank_comp_left_of_isIso]
+  exact Scheme.Hom.finrank_comp _ _ (fun x ↦ by rw [Scheme.Hom.finrank_pullback_snd, hg]) s
 
 end AlgebraicGeometry.Scheme.IdealSheafData
 

@@ -10,10 +10,12 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Local.ArtinMap
 public import TauCeti.NumberTheory.LocalField.Padic
 import Mathlib.NumberTheory.Cyclotomic.Gal
 import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.FiniteExtension
+import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Surjectivity
 import TauCeti.GroupTheory.OrderOfElement.Basic
 import TauCeti.NumberTheory.ClassFieldTheory.Local.Unramified
 import TauCeti.NumberTheory.Cyclotomic.Irreducible
 import TauCeti.NumberTheory.LocalField.Unramified.Existence
+import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Basic
 import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Cyclotomic
 
 /-!
@@ -46,6 +48,13 @@ absolute Galois group (`localCyclotomicCharacter_artinMap_padic_uniformizer`). T
 value of the cyclotomic character on the Artin symbols of units, this determines the cyclotomic
 character on the whole image of the Artin map of `ℚ_p`.
 
+Over `ℚ_p`, the cyclotomic character and the action on the roots of unity of order prime to `p` can
+be prescribed independently: for `u ∈ ℤ_pˣ` and `f ≥ 1` some `ρ ∈ G_{ℚ_p}` has `χ_cyc(ρ) = u` and
+acts on the `(p^f − 1)`-st roots of unity as `ζ ↦ ζ ^ p`
+(`exists_localCyclotomicCharacter_eq_and_apply_of_pow_eq_one`). This is the finite-level linear
+disjointness of `ℚ_p(μ_{p^∞})` and the unramified extension of degree `f` that the comparison of
+the Artin symbols of units with the explicit cyclotomic symbols needs.
+
 Since the image of the absolute Artin map is dense in `G_K^ab`, the image of the `p`-adic
 cyclotomic character of `G_K` is the closure of its values on Artin symbols
 (`range_localCyclotomicCharacter`). This is how the image is computed from evaluations of the
@@ -65,6 +74,9 @@ cyclotomic character at units and at a uniformizer.
   character of the Artin symbol of `x ∈ Lˣ` is that of the Artin symbol of `N_{L/K} x`.
 * `TauCeti.ClassFieldTheory.localCyclotomicCharacter_artinMap_padic_uniformizer`: the `p`-adic
   cyclotomic character of the Artin symbol of `p` over `ℚ_[p]` is `1`.
+* `TauCeti.ClassFieldTheory.exists_localCyclotomicCharacter_eq_and_apply_of_pow_eq_one`: an
+  element of `G_{ℚ_p}` with prescribed cyclotomic character acting as Frobenius on the
+  `(p^f − 1)`-st roots of unity.
 * `TauCeti.ClassFieldTheory.range_localCyclotomicCharacter`: the image of the cyclotomic
   character of `G_K` is the closure of its values on the absolute Artin symbols.
 
@@ -82,6 +94,14 @@ For the roots of unity of `p`-power order over `ℚ_[p]`, the norm computation i
 (`TauCeti.irreducible_cyclotomic_prime_pow_ratPadic`). A norm has trivial finite Artin symbol
 (`localArtinMap_eq_zero_iff`), so the restriction of a lift of `Art_{ℚ_p}(p)` to `ℚ_p(ζ)` is
 trivial by `artinMap_restrict` and the injectivity of `IsPrimitiveRoot.autToPow`.
+
+For the independent prescription, the cyclotomic character of `G_{ℚ_p}` is surjective
+(`surjective_localCyclotomicCharacter_ratPadic`), so some `ρ₀` has `χ_cyc(ρ₀) = u`. A lift `τ` of
+the Artin symbol of `p` has trivial cyclotomic character and is an arithmetic Frobenius lift; its
+restriction to the unramified extension of degree `f` is that extension's Frobenius, which
+generates its Galois group (`IsArithFrobeniusLift.zpowers_restrictNormalHom_unramifiedExtension`).
+So `ρ₀` restricts there to a power `τ ^ j`, and `ρ = ρ₀ τ⁻ʲ τ` has character `u` and acts on the
+unramified extension as `τ` does.
 
 ## References
 
@@ -179,14 +199,8 @@ theorem localArtinMap_cyclotomic_padic (p : ℕ) [Fact p.Prime] (L : Type*) [Fie
       Additive.ofMul (Abelianization.of σ))
     {m : ℕ} (hm : p.Coprime m) {ζ : L} (hζ : ζ ^ m = 1) :
     σ ζ = ζ ^ p := by
-  have hπ : IsUniformizer ℚ_[p]
-      (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero)) := by
-    rw [isUniformizer_def]
-    apply Multiplicative.toAdd.injective
-    rw [Padic.toAdd_normalizedValuation_eq_valuation, Units.val_mk0, Padic.valuation_p,
-      toAdd_ofAdd]
-  have h := localArtinMap_cyclotomic_uniformizer ℚ_[p] L ι hπ hσ
-    (by rwa [Padic.natCard_residueField]) hζ
+  have h := localArtinMap_cyclotomic_uniformizer ℚ_[p] L ι (Padic.isUniformizer_natCast_self p)
+    hσ (by rwa [Padic.natCard_residueField]) hζ
   rwa [Padic.natCard_residueField] at h
 
 /-- **The `ℚ₂(ζ₅)` test of local reciprocity.** Over `ℚ_[2]`, the Artin symbol of `2` sends a
@@ -328,6 +342,47 @@ theorem localCyclotomicCharacter_artinMap_padic_uniformizer (σ : Field.absolute
     ← map_one (cyclotomicCharacter (SeparableClosure ℚ_[p]) p)]
   exact cyclotomicCharacter_eq_of_forall_pow_eq_one p fun _ _ ht ↦
     absoluteGaloisGroupRestrictEquiv_artinMap_padic_apply_of_pow_eq_one p σ hσ ht
+
+/-! ### Prescribing the cyclotomic character and the unramified action -/
+
+/-- **Independent prescription of the cyclotomic character and the unramified action.** For
+`u ∈ ℤ_pˣ` and `f ≠ 0` there is `ρ ∈ G_{ℚ_p}` whose `p`-adic cyclotomic character is `u` and which
+raises every `(p ^ f − 1)`-st root of unity to the `p`-th power. -/
+theorem exists_localCyclotomicCharacter_eq_and_apply_of_pow_eq_one (u : ℤ_[p]ˣ) {f : ℕ}
+    (hf : f ≠ 0) :
+    ∃ ρ : Field.absoluteGaloisGroup ℚ_[p], localCyclotomicCharacter p ℚ_[p] ρ = u ∧
+      ∀ z : AlgebraicClosure ℚ_[p], z ^ (p ^ f - 1) = 1 →
+        DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) ρ z = z ^ p := by
+  have hp := (Fact.out : p.Prime)
+  obtain ⟨τ, hτ⟩ := QuotientGroup.mk_surjective
+    (artinMap ℚ_[p] (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 hp.ne_zero)))
+  have hτχ := localCyclotomicCharacter_artinMap_padic_uniformizer p τ hτ
+  have hτF := isArithFrobeniusLift_of_mk_eq_artinMap_uniformizer ℚ_[p]
+    (Padic.isUniformizer_natCast_self p) τ hτ
+  have hτz (z : AlgebraicClosure ℚ_[p]) (hz : z ^ (p ^ f - 1) = 1) :
+      DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) τ z = z ^ p := by
+    -- The roots of unity of order `p ^ f - 1` are the nonzero roots of `X ^ (p ^ f) - X`.
+    have hpow : z ^ p ^ f = z := by
+      rw [← Nat.sub_add_cancel (Nat.one_le_pow f p hp.pos), pow_succ, hz, one_mul]
+    simpa using isArithFrobeniusLift_iff.1 hτF z f hf (by simpa using hpow)
+  have hF := unramifiedExtension_eq_adjoin_setOf_pow_eq_one (K := ℚ_[p])
+    (Ω := AlgebraicClosure ℚ_[p]) hf
+  rw [Padic.natCard_residueField] at hF
+  set F := unramifiedExtension ℚ_[p] (AlgebraicClosure ℚ_[p]) f
+  let r : Field.absoluteGaloisGroup ℚ_[p] →* Gal(F/ℚ_[p]) := AlgEquiv.restrictNormalHom F
+  obtain ⟨ρ₀, hρ₀⟩ := surjective_localCyclotomicCharacter_ratPadic p u
+  -- `τ` restricts to the Frobenius of `F`, which generates `Gal(F/ℚ_p)`.
+  obtain ⟨j, hj⟩ : ∃ j : ℤ, r τ ^ j = r ρ₀ := Subgroup.mem_zpowers_iff.1
+    ((hτF.zpowers_restrictNormalHom_unramifiedExtension hf).symm ▸ Subgroup.mem_top (r ρ₀))
+  refine ⟨ρ₀ * (τ ^ j)⁻¹ * τ, ?_, fun z hz ↦ ?_⟩
+  · rw [map_mul, map_mul, map_inv, map_zpow, hρ₀, hτχ, one_zpow, inv_one, mul_one, mul_one]
+  · have hr : r (ρ₀ * (τ ^ j)⁻¹ * τ) = r τ := by
+      rw [map_mul, map_mul, map_inv, map_zpow, ← hj, mul_inv_cancel, one_mul]
+    have hzF : z ∈ F := hF.ge (IntermediateField.subset_adjoin _ _ hz)
+    calc _ = (r (ρ₀ * (τ ^ j)⁻¹ * τ) ⟨z, hzF⟩ : AlgebraicClosure ℚ_[p]) :=
+          (AlgEquiv.restrictNormalHom_apply F _ _).symm
+      _ = (r τ ⟨z, hzF⟩ : AlgebraicClosure ℚ_[p]) := by rw [hr]
+      _ = z ^ p := (AlgEquiv.restrictNormalHom_apply F τ _).trans (hτz z hz)
 
 /-! ### The image of the cyclotomic character -/
 

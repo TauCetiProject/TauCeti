@@ -213,7 +213,7 @@ theorem IsPosSemidef.exists_linearIndependent_integralNorm_eq_successiveMinimum
         (Int.toNat_of_nonneg (hL.integralNorm_nonneg w)).symm
       have hsnoc : LinearIndependent ℤ (Fin.snoc x w) := by
         have h := (hx.map' L.carrier.subtype
-          (Submodule.ker_subtype _)).finSnoc_of_not_mem_span_over hw
+          (Submodule.ker_subtype _)).finSnoc_of_notMem_span_over hw
         have h' : LinearIndependent ℤ (L.carrier.subtype ∘ Fin.snoc x w) := by
           simpa only [Fin.comp_snoc, Submodule.subtype_apply] using h
         exact h'.of_comp L.carrier.subtype

@@ -10,6 +10,7 @@ public import Mathlib.Combinatorics.Quiver.Path.Vertices
 public import Mathlib.Basic.Finite.Prod
 public import Mathlib.Basic.Finite.Sigma
 public import Mathlib.SetTheory.Cardinal.Finite
+public import TauCeti.Combinatorics.Quiver.TotalPath
 
 /-!
 # The first arrow of a path
@@ -34,6 +35,9 @@ by its *last* arrow instead, and the two feed the two sides of the Euler form of
   the source of an arrow landing on the path.
 * `TauCeti.card_path_eq_ite_add_sum_firstArrow`: the path count `#(a → j)` equals
   `∑_b #(a ⟶ b) · #(b → j)`, plus `1` when `a = j` for the trivial path.
+* `TauCeti.Quiver.TotalPath.mk_toPath_comp_eq_mk_toPath_comp_iff`: a path out of a vertex is
+  determined by its first arrow and the path after it, the mirror image of
+  `TauCeti.Quiver.TotalPath.mk_cons_eq_mk_cons_iff`.
 
 ## Implementation notes
 
@@ -211,5 +215,30 @@ theorem card_path_eq_ite_add_sum_firstArrow [DecidableEq V] [Fintype V] (a : V)
       exact Nat.card_of_isEmpty
   rw [Nat.card_congr (pathFirstArrowEquiv a j), Nat.card_sum, hcard, Nat.card_sigma]
   exact congrArg _ (Finset.sum_congr rfl fun b _ ↦ Nat.card_prod _ _)
+
+/-- **A path out of `i` is determined by its first arrow and the path after it**: two indexed paths
+beginning with arrows out of `i` agree exactly when their remainders and their first arrows do.
+This is the mirror image of `TauCeti.Quiver.TotalPath.mk_cons_eq_mk_cons_iff`. -/
+theorem Quiver.TotalPath.mk_toPath_comp_eq_mk_toPath_comp_iff {i j j' t t' : V} {a : i ⟶ j}
+    {a' : i ⟶ j'} {p : _root_.Quiver.Path j t} {p' : _root_.Quiver.Path j' t'} :
+    (⟨i, t', a'.toPath.comp p'⟩ : Quiver.TotalPath V) = ⟨i, t, a.toPath.comp p⟩ ↔
+      (⟨j', t', p'⟩ : Quiver.TotalPath V) = ⟨j, t, p⟩ ∧ (⟨j', a'⟩ : Σ c, i ⟶ c) = ⟨j, a⟩ := by
+  constructor
+  · intro h
+    obtain ⟨-, h⟩ := Sigma.mk.inj h
+    obtain ⟨rfl, h⟩ := Sigma.mk.inj (eq_of_heq h)
+    have h' := (pathFirstArrowEquiv_toPath_comp a' p').symm.trans
+      ((congrArg (pathFirstArrowEquiv i t') (eq_of_heq h)).trans
+        (pathFirstArrowEquiv_toPath_comp a p))
+    obtain ⟨rfl, h'⟩ := Sigma.mk.inj (Sum.inr_injective h')
+    obtain ⟨rfl, rfl⟩ := Prod.mk.inj (eq_of_heq h')
+    exact ⟨rfl, rfl⟩
+  · rintro ⟨h, h'⟩
+    obtain ⟨rfl, h'⟩ := Sigma.mk.inj h'
+    obtain rfl := eq_of_heq h'
+    obtain ⟨-, h⟩ := Sigma.mk.inj h
+    obtain ⟨rfl, h⟩ := Sigma.mk.inj (eq_of_heq h)
+    obtain rfl := eq_of_heq h
+    rfl
 
 end TauCeti

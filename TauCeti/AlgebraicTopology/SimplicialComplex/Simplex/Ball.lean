@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Finite
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Relabel.Basic
 public import TauCeti.Analysis.Convex.CoordinateSimplex
 
 /-!
@@ -175,3 +176,25 @@ theorem realizationTopHomeomorphClosedBall_norm_eq_one_iff (n : ℕ)
     realizationTopHomeomorphCoordinateSimplex_mem_frontier_iff n x
 
 end AbstractSimplicialComplex
+
+namespace PreAbstractSimplicialComplex
+
+open AbstractSimplicialComplex
+
+variable {ι : Type*} {A : AbstractSimplicialComplex ι} {n : ℕ}
+
+/-- The polyhedron of a simplex with `n + 1` vertices is homeomorphic to the Euclidean closed
+`n`-ball, inside any ambient realization containing it. -/
+theorem nonempty_homeomorph_simplex_closedBall {V : Finset ι}
+    (hV : V.card = n + 1) (hA : simplex V ≤ A.toPreAbstractSimplicialComplex) :
+    Nonempty ({x : Realization A // x.1.support ∈ simplex V} ≃ₜ
+      Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1) := by
+  classical
+  let P := simplex (Finset.univ : Finset (Fin (n + 1)))
+  have hP : P = (⊤ : AbstractSimplicialComplex (Fin (n + 1))).toPreAbstractSimplicialComplex := by
+    simp only [P, simplex_univ, AbstractSimplicialComplex.top_toPreAbstractSimplicialComplex]
+  obtain ⟨r⟩ := nonempty_finsetRelabelingHomeomorph hV (fun f himage => by
+      rw [map_simplex, himage]) hP hA
+  exact ⟨r.trans (AbstractSimplicialComplex.realizationTopHomeomorphClosedBall n)⟩
+
+end PreAbstractSimplicialComplex

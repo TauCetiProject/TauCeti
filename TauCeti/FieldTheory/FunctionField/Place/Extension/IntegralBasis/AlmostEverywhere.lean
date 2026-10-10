@@ -31,6 +31,9 @@ compute the complementary module away from finitely many places.
 
 * `TauCeti.Place.finite_setOf_not_isIntegral`: an element integral over `F` is integral over the
   valuation rings of all but finitely many places.
+* `TauCeti.Place.finite_setOf_not_exists_map_eq_minpoly_and_separable`: the minimal polynomial of
+  a separable element is defined over `𝒪_P`, with separable reduction, at all but finitely many
+  places.
 * `TauCeti.Place.finite_setOf_not_isIntegralBasis`: every basis is an integral basis at all but
   finitely many places (Stichtenoth, Theorem 3.3.6).
 
@@ -87,6 +90,44 @@ theorem finite_setOf_not_isIntegral (hF : IsFunctionField k F) (x : F') (hx : Is
   rw [IsScalarTower.algebraMap_eq P.integers F F', ← Polynomial.eval₂_map, hmap,
     ← Polynomial.aeval_def]
   exact minpoly.aeval F x
+
+/-- **The minimal polynomial of a separable element has separable reduction almost everywhere.**
+For `x` separable over `F`, at all but finitely many places `P` the minimal polynomial of `x`
+comes from a polynomial over `𝒪_P` whose reduction modulo `P` is separable. -/
+theorem finite_setOf_not_exists_map_eq_minpoly_and_separable (hF : IsFunctionField k F) (x : F')
+    (hx : IsSeparable F x) :
+    {P : Place k F | ¬ ∃ φ : P.integers[X], φ.map (algebraMap P.integers F) = minpoly F x ∧
+      (φ.map (IsLocalRing.residue P.integers)).Separable}.Finite := by
+  classical
+  obtain ⟨a, b, hab⟩ := hx
+  -- The places where a coefficient of `a`, `b` or the minimal polynomial has a pole.
+  let S : Set (Place k F) := ⋃ q ∈ ({minpoly F x, a, b} : Finset F[X]),
+    ⋃ n ∈ q.support, {P : Place k F | P.ord (q.coeff n) < 0}
+  have hS : S.Finite := Set.Finite.biUnion (Finset.finite_toSet _) fun q _ ↦
+    q.support.finite_toSet.biUnion fun n _ ↦ finite_setOf_ord_neg hF (q.coeff n)
+  refine hS.subset fun P hP ↦ ?_
+  by_contra hPS
+  apply hP
+  have hcoeff : ∀ q ∈ ({minpoly F x, a, b} : Finset F[X]),
+      (q.coeffs : Set F) ⊆ P.integers.toSubring := fun q hq c hc ↦ by
+    obtain ⟨n, hn, rfl⟩ := Polynomial.mem_coeffs_iff.mp hc
+    refine P.mem_integers_iff_ord_nonneg.mpr (not_lt.mp fun hneg ↦ hPS ?_)
+    simp only [S, Set.mem_iUnion, Set.mem_ofPred_eq]
+    exact ⟨q, hq, n, mem_support_iff.mpr (by simpa using hn), hneg⟩
+  set φ := (minpoly F x).toSubring _ (hcoeff _ (by simp))
+  set A := a.toSubring _ (hcoeff a (by simp))
+  set B := b.toSubring _ (hcoeff b (by simp))
+  have hφ : φ.map (algebraMap P.integers F) = minpoly F x := map_toSubring _ _ _
+  -- The Bézout relation holds over `𝒪_P`, hence after reduction.
+  have hAB : A * φ + B * derivative φ = 1 := by
+    refine map_injective _ (IsFractionRing.injective P.integers F) ?_
+    rw [Polynomial.map_add, Polynomial.map_mul, Polynomial.map_mul, ← derivative_map, hφ,
+      Polynomial.map_one]
+    exact (congrArg₂ (· * minpoly F x + · * derivative (minpoly F x)) (map_toSubring _ _ _)
+      (map_toSubring _ _ _)).trans hab
+  refine ⟨φ, hφ, A.map (IsLocalRing.residue P.integers), B.map (IsLocalRing.residue P.integers), ?_⟩
+  rw [derivative_map, ← Polynomial.map_mul, ← Polynomial.map_mul, ← Polynomial.map_add, hAB,
+    Polynomial.map_one]
 
 /-! ### Bases integral at almost every place -/
 
