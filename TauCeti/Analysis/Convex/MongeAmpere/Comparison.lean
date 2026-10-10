@@ -35,7 +35,7 @@ impossible.
 ## Main statements
 
 * `TauCeti.mongeAmpereMeasure_le_of_le_of_le_frontier` — a convex function lying below
-  another with the same boundary values has larger Monge–Ampère mass;
+  another, with the reverse inequality on the frontier, has larger Monge–Ampère mass;
 * `TauCeti.le_of_mongeAmpereMeasure_le_of_le_frontier` — **the comparison principle**;
 * `TauCeti.eqOn_of_mongeAmpereMeasure_eq_of_eqOn_frontier` — two convex functions with the same
   Monge–Ampère measure and the same boundary values agree.
@@ -59,11 +59,11 @@ open scoped Topology ENNReal Pointwise
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {Ω : Set E} [DecidablePred (· ∈ Ω)] {u v : E → ℝ}
 
-/-- **A lower convex function with the same boundary values has more Monge–Ampère mass.** Let
-`Ω` be a bounded open set, and let `u` and `v` be convex on `Ω` and continuous on its closure,
-with `u ≤ v` on `Ω` and `v ≤ u` on the frontier of `Ω`. Then `MA_v(Ω) ≤ MA_u(Ω)` for the
-Monge–Ampère measures of `u` and `v` (extended by `⊤` off `Ω`) with respect to any measure `μ`
-absolutely continuous with respect to an additive Haar measure. -/
+/-- **A lower convex function with the reverse boundary inequality has more Monge–Ampère mass.**
+Let `Ω` be a bounded open set, and let `u` and `v` be convex on `Ω` and continuous on its
+closure, with `u ≤ v` on `Ω` and `v ≤ u` on the frontier of `Ω`. Then `MA_v(Ω) ≤ MA_u(Ω)` for
+the Monge–Ampère measures of `u` and `v` (extended by `⊤` off `Ω`) with respect to any measure
+`μ` absolutely continuous with respect to an additive Haar measure. -/
 theorem mongeAmpereMeasure_le_of_le_of_le_frontier (μ : Measure E) {ν : Measure E}
     [ν.IsAddHaarMeasure] (hμ : μ ≪ ν) (hΩo : IsOpen Ω) (hΩ : Bornology.IsBounded Ω)
     (hu : ConvexOn ℝ Ω u) (hv : ConvexOn ℝ Ω v) (huc : ContinuousOn u (closure Ω))

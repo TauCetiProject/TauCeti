@@ -161,7 +161,7 @@ theorem exists_forall_add_inner_le_of_forall_frontier [ProperSpace E] {Ω : Set 
     linarith
 
 omit [FiniteDimensional ℝ E] hf hbot in
-/-- **Supporting slopes of a function lying above on `Ω` and below on the frontier.** Let `Ω` be
+/-- **Supporting slopes of a function lying above at `x₀` and below on the frontier.** Let `Ω` be
 bounded, let `u` and `w` be continuous on its closure with `w ≤ u` on the frontier of `Ω`, and let
 `p` be a subgradient of `w` relative to `Ω` at `x₀ ∈ Ω`. Then for every `q` with
 `‖q‖ * diam Ω ≤ w x₀ - u x₀`, the slope `p + q` is a subgradient of `u` relative to `Ω` at some
