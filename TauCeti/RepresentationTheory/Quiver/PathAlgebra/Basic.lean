@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Quiver.TotalPath
 public import TauCeti.RepresentationTheory.Quiver.FirstArrow
 public import Mathlib.Algebra.Algebra.NonUnitalHom
 public import Mathlib.LinearAlgebra.Dimension.Finite
