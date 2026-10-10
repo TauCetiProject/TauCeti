@@ -44,6 +44,7 @@ at `0` while releasing the first.
 ## Main declarations
 
 * `TauCeti.pathTowardZero`: the straight-line path in `I` from `a` to `0`.
+* `TauCeti.cubeContraction`: the straight-line homotopy from the corner `0` to the identity.
 * `TauCeti.isPathConnected_cube`: `I^N` is path connected.
 * `TauCeti.zero_mem_cubeBoundary`: the corner `0` lies on the boundary.
 * `TauCeti.isPathConnected_cubeBoundary`: for `[Nontrivial N]`, `Cube.boundary N` is path
@@ -95,6 +96,24 @@ where `σ` is the interval symmetry `t ↦ 1 - t`. -/
 
 @[simp]
 theorem pathTowardZero_apply (a t : I) : pathTowardZero a t = a * σ t := rfl
+
+/-- The straight-line homotopy from the zero vertex to the identity on a standard cube. -/
+def cubeContraction (N : Type*) :
+    ContinuousMap.Homotopy (ContinuousMap.const (N → I) (fun _ ↦ 0))
+      (ContinuousMap.id (N → I)) where
+  toFun p i := Set.Icc.convexComb 0 (p.2 i) p.1
+  continuous_toFun := by
+    apply continuous_pi
+    intro i
+    have hc : Continuous (fun p : I × (N → I) ↦ ((0 : I), p.2 i, p.1)) := by fun_prop
+    exact Set.Icc.continuous_convexComb_prod.comp hc
+  map_zero_left := by intro x; ext i; simp
+  map_one_left := by intro x; ext i; simp
+
+@[simp]
+theorem cubeContraction_apply (N : Type*) (t : I) (x : N → I) (i : N) :
+    cubeContraction N (t, x) i = Set.Icc.convexComb 0 (x i) t :=
+  (rfl)
 
 /-- The cube `I^N` is path connected: every point is joined to the corner `0` by the pointwise
 product of the coordinate paths `pathTowardZero`. -/
