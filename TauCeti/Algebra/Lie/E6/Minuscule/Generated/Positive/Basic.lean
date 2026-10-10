@@ -151,6 +151,36 @@ theorem carrierDefiningIdeal_toIdeal_le_ker_generatedCoordinateLift (j : Fin 6 �
     Function.comp_apply, map_zero] using
     congrArg (CommHopfAlgCat.commonKernelLift (generator A) j).hom hx
 
+/-- A Hopf ideal of the generated carrier lies below the positive subgroup's defining ideal
+exactly when the positive numbered root and weight-torus coordinate lifts kill it. -/
+theorem le_carrierDefiningIdeal_iff (I : HopfIdeal A (generatedCoordinateHopfAlgebra A)) :
+    I ≤ carrierDefiningIdeal A ↔
+      ∀ j : Fin 6 ⊕ Unit, I.toIdeal ≤ RingHom.ker
+        (generatedCoordinateLift A (match j with
+          | .inl i => .inl (.inl i)
+          | .inr u => .inr u)).hom.toAlgHom.toRingHom := by
+  constructor
+  · intro h j
+    exact (HopfIdeal.toIdeal_le_toIdeal.mpr h).trans
+      (carrierDefiningIdeal_toIdeal_le_ker_generatedCoordinateLift A j)
+  · intro h
+    have hpre : I.comapOfSurjective (generatedCoordinateMap A).hom
+        (generatedCoordinateMap_surjective A) ≤ definingIdeal A := by
+      apply (CommHopfAlgCat.le_commonKernelHopfIdeal_iff _ _).mpr
+      intro j x hx
+      have hxI := HopfIdeal.mem_comapOfSurjective.mp hx
+      have hx0 : (generatedCoordinateMap A ≫ generatedCoordinateLift A (match j with
+        | .inl i => .inl (.inl i)
+        | .inr u => .inr u)).hom x = 0 := RingHom.mem_ker.mp (h j hxI)
+      rw [generatedCoordinateMap_comp_generatedCoordinateLift] at hx0
+      cases j <;> exact hx0
+    intro x hx
+    obtain ⟨y, rfl⟩ := generatedCoordinateMap_surjective A x
+    rw [mem_carrierDefiningIdeal]
+    have hy := hpre (HopfIdeal.mem_comapOfSurjective.mpr hx)
+    exact (congrArg (fun f ↦ f.hom y) (generatedCoordinateMap_comp_restriction A)).trans
+      ((CommHopfAlgCat.mkQuotient_eq_zero_iff _ _ y).mpr hy)
+
 variable (k : Type u) [Field k]
 
 /-- The positive subgroup generated over any field is smooth, including over imperfect fields. -/
