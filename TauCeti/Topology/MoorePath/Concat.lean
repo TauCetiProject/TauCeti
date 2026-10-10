@@ -132,9 +132,8 @@ theorem trans_const {x : X} (h : γ.target = (const x).source) : γ.trans (const
 
 /-- Constant paths at a point concatenate by adding their durations. -/
 @[simp]
-theorem constOfLength_trans_constOfLength (x : X) (L L' : ℝ≥0)
-    (h : (constOfLength x L).target = (constOfLength x L').source) :
-    (constOfLength x L).trans (constOfLength x L') h = constOfLength x (L + L') :=
+theorem constOfLength_trans_constOfLength (x : X) (L L' : ℝ≥0) :
+    (constOfLength x L).trans (constOfLength x L') (by simp) = constOfLength x (L + L') :=
   ext (by simp) fun t _ ↦ by rw [trans_apply, constOfLength_apply]; split_ifs <;> simp
 
 /-- Concatenation is continuous on the space of composable pairs. -/
