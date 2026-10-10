@@ -87,6 +87,11 @@ theorem nonsingular_curve37a1 {x y : ℚ} (h : y ^ 2 + y = x ^ 3 - x) :
 def curve37a1Point : (curve37a1.baseChange ℚ).toAffine.Point :=
   .some 0 0 (nonsingular_curve37a1 (by norm_num))
 
+/-- `curve37a1Point` is the point `(0, 0)`. -/
+@[simp]
+theorem curve37a1Point_def :
+    curve37a1Point = .some 0 0 (nonsingular_curve37a1 (by norm_num)) := (rfl)
+
 /-! ### Reduction at a prime of `ℤ` -/
 
 section Reduction
@@ -105,13 +110,18 @@ private theorem integralModel_curve37a1 :
     rw [WeierstrassCurve.baseChange, map_map, ← IsScalarTower.algebraMap_eq,
       WeierstrassCurve.baseChange])
 
+/-- An integer lies in the prime `v` exactly when its image in the valuation ring of `ℚ` at `v`
+lies in the maximal ideal. -/
+private theorem algebraMap_mem_maximalIdeal_iff (n : ℤ) :
+    algebraMap ℤ (v.valuation ℚ).valuationSubring n ∈ maximalIdeal _ ↔ n ∈ v.asIdeal := by
+  rw [Valuation.mem_maximalIdeal_iff, ← ValuationSubring.algebraMap_apply,
+    ← IsScalarTower.algebraMap_apply, v.valuation_lt_one_iff_mem]
+
 /-- 37.a1 has good reduction at every prime other than `37`. -/
 private theorem isElliptic_integralModel_curve37a1 (h37 : (37 : ℤ) ∉ v.asIdeal) :
     (integralModel (v.valuation ℚ).valuationSubring (curve37a1.baseChange ℚ)).IsElliptic := by
-  rw [integralModel_curve37a1, isElliptic_iff, map_Δ, Δ_curve37a1, ← notMem_maximalIdeal,
-    Valuation.mem_maximalIdeal_iff, not_lt, ← ValuationSubring.algebraMap_apply,
-    ← IsScalarTower.algebraMap_apply]
-  exact ((v.valuation_eq_one_iff_notMem (K := ℚ)).mpr h37).ge
+  rwa [integralModel_curve37a1, isElliptic_iff, map_Δ, Δ_curve37a1, ← notMem_maximalIdeal,
+    ← map_ofNat (algebraMap ℤ _), algebraMap_mem_maximalIdeal_iff]
 
 /-- A point `(x, y)` with `x = y = 0` on a curve equal to the image of 37.a1 over `ZMod p` is the
 image of the point `(0, 0)` over `ZMod p`, so it is killed by whatever kills that point. -/
@@ -139,10 +149,8 @@ private theorem nsmul_reductionHom_curve37a1Point {p : ℕ} [Fact p.Prime]
   -- the residue field has characteristic `p`, since `p ∈ v`
   have : CharP (ResidueField (v.valuation ℚ).valuationSubring) p := by
     refine (CharP.charP_iff_prime_eq_zero Fact.out).mpr ?_
-    rw [← map_natCast (residue (v.valuation ℚ).valuationSubring), residue_eq_zero_iff,
-      Valuation.mem_maximalIdeal_iff, ← map_natCast (algebraMap ℤ _),
-      ← ValuationSubring.algebraMap_apply, ← IsScalarTower.algebraMap_apply]
-    exact (v.valuation_lt_one_iff_mem (K := ℚ) _).mpr hp
+    rwa [← map_natCast (residue (v.valuation ℚ).valuationSubring), residue_eq_zero_iff,
+      ← map_natCast (algebraMap ℤ _), algebraMap_mem_maximalIdeal_iff]
   have hV : (integralModel (v.valuation ℚ).valuationSubring (curve37a1.baseChange ℚ)).map
       (residue (v.valuation ℚ).valuationSubring) =
         (curve37a1.map (Int.castRingHom (ZMod p))).map (ZMod.castHom dvd_rfl _) := by
@@ -153,7 +161,7 @@ private theorem nsmul_reductionHom_curve37a1Point {p : ℕ} [Fact p.Prime]
   have h0 : residue (v.valuation ℚ).valuationSubring
       ⟨0, (Valuation.mem_valuationSubring_iff _ _).mpr hval⟩ = 0 :=
     map_zero _
-  rw [curve37a1Point, Point.reductionHom_some_of_valuation_le_one _ _ hval]
+  rw [curve37a1Point_def, Point.reductionHom_some_of_valuation_le_one _ _ hval]
   · exact nsmul_some_eq_zero hV h0 h0 _ h₀ hm
   · rw [hV, h0]
     simpa only [map_zero] using (map_nonsingular _
