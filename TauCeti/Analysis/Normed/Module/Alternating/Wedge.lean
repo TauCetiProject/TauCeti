@@ -541,6 +541,13 @@ variable {E F₁ F₂ F₃ : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F₃] [NormedSpace ℝ F₃]
   {k l : ℕ}
 
+/-- The sign `(-1) ^ (m + n)` of inserting an entry at slot `m + n`, times the sign `(-1) ^ n` of
+moving that entry from slot `n` of a block to the front of the block, is `(-1) ^ m`. -/
+private lemma neg_one_pow_add_mul_neg_one_pow (m n : ℕ) :
+    (-1 : ℤ) ^ (m + n) * (-1) ^ n = (-1) ^ m := by
+  rw [pow_add, mul_assoc, ← mul_pow]
+  simp
+
 /-- The terms of the expansion of `(wedgeWith mu phi psi).curryLeft v` in which `v` lands in the
 `i`-th slot of `phi`: each such slot contributes the signed sum of `wedgeWith mu (phi.curryLeft v)
 psi`. -/
@@ -557,11 +564,14 @@ private lemma sum_sign_smul_insertNth_castAdd (mu : F₁ →L[ℝ] F₂ →L[ℝ
             (w ∘ Fin.cast (show k + (l + 1) = k + 1 + l by omega)) (sigma (Fin.castAdd (l + 1) a)))
           (psi fun b =>
             (w ∘ Fin.cast (show k + (l + 1) = k + 1 + l by omega)) (sigma (Fin.natAdd k b))) := by
+  have hsign : (-1 : ℤ) ^ (Fin.castAdd (l + 1) i : ℕ) * (-1) ^ (i : ℕ) = 1 := by
+    simpa using neg_one_pow_add_mul_neg_one_pow 0 i
+  -- Locate the entries of the inserted tuple, then move `v` to the front of the block of `phi`.
   simp_rw [Fin.insertNth_castAdd_comp_castAdd, Fin.insertNth_castAdd_apply_natAdd,
-    ContinuousAlternatingMap.map_insertNth, ← ContinuousAlternatingMap.curryLeft_apply_apply,
-    map_zsmul, FunLike.coe_smul, Pi.smul_apply, smul_comm (Perm.sign _),
-    ← Finset.smul_sum, smul_smul, Fin.val_castAdd, ← pow_add, ← two_mul, pow_mul, neg_one_sq,
-    one_pow, one_smul]
+    ContinuousAlternatingMap.map_insertNth, ← ContinuousAlternatingMap.curryLeft_apply_apply]
+  -- Collect the two signs in front of the sum, where they cancel.
+  simp only [map_zsmul, FunLike.coe_smul, Pi.smul_apply, smul_comm (Perm.sign _),
+    ← Finset.smul_sum, smul_smul, hsign, one_smul]
   symm
   refine Fintype.sum_equiv (finCongr (show k + (l + 1) = k + 1 + l by omega)).permCongr _ _
     fun sigma => ?_
@@ -581,11 +591,13 @@ private lemma sum_sign_smul_insertNth_natAdd (mu : F₁ →L[ℝ] F₂ →L[ℝ]
       (-1 : ℤ) ^ (k + 1) • ∑ sigma : Perm (Fin (k + 1 + l)), Perm.sign sigma •
         mu (phi fun a => w (sigma (Fin.castAdd l a)))
           (psi.curryLeft v fun b => w (sigma (Fin.natAdd (k + 1) b))) := by
-  have hsign : (-1 : ℤ) ^ (k + 1 + (i : ℕ)) * (-1) ^ (i : ℕ) = (-1) ^ (k + 1) := by
-    rw [pow_add, mul_assoc, ← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow, mul_one]
+  have hsign : (-1 : ℤ) ^ (Fin.natAdd (k + 1) i : ℕ) * (-1) ^ (i : ℕ) = (-1) ^ (k + 1) :=
+    neg_one_pow_add_mul_neg_one_pow (k + 1) i
+  -- Locate the entries of the inserted tuple, then move `v` to the front of the block of `psi`.
   simp_rw [Fin.insertNth_natAdd_apply_castAdd, Fin.insertNth_natAdd_comp_natAdd,
-    ContinuousAlternatingMap.map_insertNth, ← ContinuousAlternatingMap.curryLeft_apply_apply,
-    map_zsmul, smul_comm (Perm.sign _), ← Finset.smul_sum, smul_smul, Fin.val_natAdd, hsign,
+    ContinuousAlternatingMap.map_insertNth, ← ContinuousAlternatingMap.curryLeft_apply_apply]
+  -- Collect the two signs in front of the sum, where they combine to `(-1) ^ (k + 1)`.
+  simp only [map_zsmul, smul_comm (Perm.sign _), ← Finset.smul_sum, smul_smul, hsign,
     Function.comp_apply]
 
 /-- The interior product is an antiderivation of degree `-1` for the paired wedge:
