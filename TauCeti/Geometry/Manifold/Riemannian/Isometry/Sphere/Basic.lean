@@ -69,7 +69,7 @@ def unitSphereRiemannianIsometry (e : E ≃ₗᵢ[ℝ] F) :
     have hcoe : ⇑(unitSphereDiffeomorph (n := n) (k := k) e ∞) = unitSphereEquiv e := by
       rw [← Diffeomorph.coe_toEquiv, unitSphereDiffeomorph_toEquiv]
     rw [TauCeti.inner_tangentSpace_sphere, TauCeti.inner_tangentSpace_sphere, hcoe]
-    exact (congrArg₂ (inner ℝ) (mvfderiv_coe_sphere_unitSphereEquiv (k := k) e x v)
+    exact (congrArg₂ (inner ℝ : F → F → ℝ) (mvfderiv_coe_sphere_unitSphereEquiv (k := k) e x v)
       (mvfderiv_coe_sphere_unitSphereEquiv (k := k) e x w)).trans (e.inner_map_map _ _)
 
 /-- The underlying diffeomorphism is the restriction `unitSphereDiffeomorph e ∞`. -/

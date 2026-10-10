@@ -57,10 +57,10 @@ theorem _root_.IsSelfAdjoint.mem_resolventSet_of_im_ne_zero
 
 /-- The spectrum of a self-adjoint partial linear map is contained in the real axis. -/
 theorem _root_.IsSelfAdjoint.spectrum_subset_im_eq_zero (hA : IsSelfAdjoint A) :
-    LinearPMap.spectrum A ⊆ {z | RCLike.im z = 0} := by
+    partialSpectrum A ⊆ {z | RCLike.im z = 0} := by
   intro z hz
   by_contra him
-  exact (LinearPMap.mem_spectrum_iff A z).mp hz (hA.mem_resolventSet_of_im_ne_zero him)
+  exact (mem_partialSpectrum_iff A z).mp hz (hA.mem_resolventSet_of_im_ne_zero him)
 
 /-- The resolvent of a self-adjoint partial linear map obeys the sharp off-real norm bound. -/
 theorem _root_.IsSelfAdjoint.norm_resolvent_le (hA : IsSelfAdjoint A)
