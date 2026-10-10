@@ -66,6 +66,7 @@ lemma cellularChainBasis_repr (n : ℕ) :
           (finsuppLEquivDirectSum R R (cell C n)).symm := (rfl)
 
 /-- A cellular basis vector is the image of `1` in its cell's coproduct summand. -/
+@[simp]
 lemma cellularChainBasis_apply (n : ℕ) (j : cell C n) :
     cellularChainBasis C R n j =
       (cellularChainGroupIso C (ModuleCat.of R R) n).inv
@@ -153,6 +154,7 @@ lemma cellularChainBasis_repr_differential_apply (n : ℕ)
   simp [Finsupp.sum]
 
 /-- The cellular differential vanishes exactly when all its incidence coefficients vanish. -/
+@[simp]
 lemma cellularDifferential_eq_zero_iff (n : ℕ) :
     cellularDifferential C (ModuleCat.of R R) n = 0 ↔
       ∀ (i : cell C n) (j : cell C (n + 1)), cellularIncidence C R n i j = 0 := by
