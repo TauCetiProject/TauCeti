@@ -439,6 +439,59 @@ theorem mul_mem_piece (𝒜 : AInfinityAlgebra R A) {p q : ℤ} {x y : A}
   have h := (𝒜.m_degree 2 two_pos).map_mem ![p, q] ![x, y] fun i ↦ by fin_cases i <;> simpa
   simpa using h
 
+/-- The ternary operation has degree `-1`. -/
+theorem m_three_mem_piece (𝒜 : AInfinityAlgebra R A) {p q r : ℤ} {x y z : A}
+    (hx : x ∈ 𝒜.grading.piece p) (hy : y ∈ 𝒜.grading.piece q) (hz : z ∈ 𝒜.grading.piece r) :
+    𝒜.m 3 ![x, y, z] ∈ 𝒜.grading.piece (p + q + r - 1) := by
+  have h := (𝒜.m_degree 3 three_pos).map_mem ![p, q, r] ![x, y, z] fun i ↦ by
+    fin_cases i <;> simpa
+  convert h using 2
+  simp [Fin.sum_univ_three]
+  ring
+
+/-- The binary operation vanishes on a zero left input. -/
+theorem m_two_zero_left (𝒜 : AInfinityAlgebra R A) (y : A) :
+    𝒜.m 2 ![0, y] = 0 :=
+  (𝒜.m 2).map_coord_zero 0 rfl
+
+/-- The binary operation vanishes on a zero right input. -/
+theorem m_two_zero_right (𝒜 : AInfinityAlgebra R A) (x : A) :
+    𝒜.m 2 ![x, 0] = 0 :=
+  (𝒜.m 2).map_coord_zero 1 rfl
+
+/-- The ternary operation vanishes on a zero first input. -/
+theorem m_three_zero₀ (𝒜 : AInfinityAlgebra R A) (y z : A) :
+    𝒜.m 3 ![0, y, z] = 0 :=
+  (𝒜.m 3).map_coord_zero 0 rfl
+
+/-- The ternary operation vanishes on a zero second input. -/
+theorem m_three_zero₁ (𝒜 : AInfinityAlgebra R A) (x z : A) :
+    𝒜.m 3 ![x, 0, z] = 0 :=
+  (𝒜.m 3).map_coord_zero 1 rfl
+
+/-- The ternary operation vanishes on a zero third input. -/
+theorem m_three_zero₂ (𝒜 : AInfinityAlgebra R A) (x y : A) :
+    𝒜.m 3 ![x, y, 0] = 0 :=
+  (𝒜.m 3).map_coord_zero 2 rfl
+
+/-- The ternary operation is additive in its first input. -/
+theorem m_three_add₀ (𝒜 : AInfinityAlgebra R A) (x x' y z : A) :
+    𝒜.m 3 ![x + x', y, z] = 𝒜.m 3 ![x, y, z] + 𝒜.m 3 ![x', y, z] := by
+  convert (𝒜.m 3).map_update_add ![x, y, z] 0 x x' using 2 <;>
+    congr 1 <;> funext i <;> fin_cases i <;> rfl
+
+/-- The ternary operation is additive in its second input. -/
+theorem m_three_add₁ (𝒜 : AInfinityAlgebra R A) (x y y' z : A) :
+    𝒜.m 3 ![x, y + y', z] = 𝒜.m 3 ![x, y, z] + 𝒜.m 3 ![x, y', z] := by
+  convert (𝒜.m 3).map_update_add ![x, y, z] 1 y y' using 2 <;>
+    congr 1 <;> funext i <;> fin_cases i <;> rfl
+
+/-- The ternary operation is additive in its third input. -/
+theorem m_three_add₂ (𝒜 : AInfinityAlgebra R A) (x y z z' : A) :
+    𝒜.m 3 ![x, y, z + z'] = 𝒜.m 3 ![x, y, z] + 𝒜.m 3 ![x, y, z'] := by
+  convert (𝒜.m 3).map_update_add ![x, y, z] 2 z z' using 2 <;>
+    congr 1 <;> funext i <;> fin_cases i <;> rfl
+
 /-- On a pure tensor word of length `n` the Taylor map evaluates the arity-`n` operation after
 twisting the `i`-th letter by the Koszul twist of parameter `n - 1 - i`; on homogeneous letters
 these twists multiply to the suspension sign `(-1) ^ suspExp n d`. -/

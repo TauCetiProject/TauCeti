@@ -63,6 +63,8 @@ strict morphisms of these `A∞` algebras.
   cycle is the class of its degree-`p` component.
 * `TauCeti.AInfinityAlgebra.instGradedMulCohomologyGrading`: the product on cohomology has degree
   zero.
+* `TauCeti.AInfinityAlgebra.koszulTwist_cohomologyClass`: the Koszul twist of cohomology is induced
+  by the Koszul twist of cycles.
 
 ## References
 
@@ -234,6 +236,14 @@ theorem cohomologyClass_add (𝒜 : AInfinityAlgebra R A) {x y : A}
     𝒜.cohomologyClass (𝒜.cycles.add_mem hx hy) =
       𝒜.cohomologyClass hx + 𝒜.cohomologyClass hy := by
   exact 𝒜.cohomologyClassLinearMap.map_add ⟨x, hx⟩ ⟨y, hy⟩
+
+/-- The class of a cycle written as a sum of three cycles is the sum of their classes. -/
+theorem cohomologyClass_eq_add_add (𝒜 : AInfinityAlgebra R A) {X Y Z W : A} (hX : X ∈ 𝒜.cycles)
+    (hY : Y ∈ 𝒜.cycles) (hZ : Z ∈ 𝒜.cycles) (hW : W ∈ 𝒜.cycles) (h : W = X + (Y + Z)) :
+    𝒜.cohomologyClass hW =
+      𝒜.cohomologyClass hX + (𝒜.cohomologyClass hY + 𝒜.cohomologyClass hZ) := by
+  subst h
+  rw [← cohomologyClass_add, ← cohomologyClass_add]
 
 /-- The class of a scalar multiple of a cycle is the scalar multiple of its class. -/
 @[simp]
@@ -457,6 +467,31 @@ theorem cohomologyMul_mem_cohomologyGrading_piece (𝒜 : AInfinityAlgebra R A) 
 instance instGradedMulCohomologyGrading (𝒜 : AInfinityAlgebra R A) :
     SetLike.GradedMul 𝒜.cohomologyGrading.piece where
   mul_mem _ _ _ _ ha hb := 𝒜.cohomologyMul_mem_cohomologyGrading_piece ha hb
+
+/-- The degree-one Koszul twist of a cycle is a cycle. -/
+theorem koszulTwist_mem_cycles (𝒜 : AInfinityAlgebra R A) {a : A} (ha : a ∈ 𝒜.cycles) :
+    𝒜.grading.koszulTwist 1 a ∈ 𝒜.cycles := by
+  rw [mem_cycles] at ha ⊢
+  rw [m_one_koszulTwist, ha, map_zero, neg_zero]
+
+/-- The degree-one Koszul twist of the class of a cycle is the class of its Koszul twist. -/
+@[simp]
+theorem koszulTwist_cohomologyClass (𝒜 : AInfinityAlgebra R A) {a : A} (ha : a ∈ 𝒜.cycles) :
+    𝒜.cohomologyGrading.koszulTwist 1 (𝒜.cohomologyClass ha) =
+      𝒜.cohomologyClass (𝒜.koszulTwist_mem_cycles ha) := by
+  -- Both sides are linear in the cycle, so it suffices to compare them on homogeneous cycles.
+  let τ : 𝒜.cycles →ₗ[R] 𝒜.cycles :=
+    (𝒜.grading.koszulTwist 1).restrict fun _ ↦ 𝒜.koszulTwist_mem_cycles
+  have h : 𝒜.cohomologyGrading.koszulTwist 1 ∘ₗ 𝒜.cohomologyClassLinearMap =
+      𝒜.cohomologyClassLinearMap ∘ₗ τ := by
+    refine 𝒜.cyclesGrading.linearMap_ext fun p x hx ↦ ?_
+    rw [mem_cyclesGrading_piece] at hx
+    simp only [LinearMap.comp_apply, cohomologyClassLinearMap_apply]
+    rw [𝒜.cohomologyGrading.koszulTwist_one_apply_of_mem
+      (𝒜.cohomologyClass_mem_cohomologyGrading_piece x.2 hx), ← cohomologyClass_smul]
+    congr 1
+    exact (𝒜.grading.koszulTwist_one_apply_of_mem hx).symm
+  simpa [τ] using LinearMap.congr_fun h ⟨a, ha⟩
 
 end Grading
 
