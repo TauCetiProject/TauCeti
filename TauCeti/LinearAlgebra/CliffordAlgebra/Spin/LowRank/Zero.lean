@@ -117,16 +117,15 @@ theorem range_spinGroup_toUnits_eq_bot_of_subsingleton [Subsingleton V] :
 even unitary group. This is the boundary obstruction to extending the positive-dimensional
 low-rank identification to dimension zero. -/
 theorem range_spinGroup_toUnits_ne_evenUnitaryGroup_of_subsingleton [Subsingleton V]
-    [IsDomain K] (h2 : (2 : K) ≠ 0) :
+    (h2 : (2 : K) ≠ 0) :
     (spinGroup.toUnits : spinGroup Q →* (CliffordAlgebra Q)ˣ).range ≠ evenUnitaryGroup Q := by
   intro h
-  have hbot : evenUnitaryGroup Q = ⊥ :=
-    h.symm.trans (range_spinGroup_toUnits_eq_bot_of_subsingleton Q)
-  have hcard : Nat.card (evenUnitaryGroup Q) =
-      Nat.card (⊥ : Subgroup (CliffordAlgebra Q)ˣ) :=
-    congrArg (fun G : Subgroup (CliffordAlgebra Q)ˣ => Nat.card G) hbot
-  rw [card_evenUnitaryGroup_of_subsingleton Q h2] at hcard
-  simp at hcard
+  have hroots : rootsOfUnity 2 K ≠ ⊥ :=
+    TauCeti.rootsOfUnity_eq_bot_iff.not.mpr (not_not.mpr ⟨-1, .neg_one_of_two_ne_zero h2⟩)
+  rw [← Subgroup.nontrivial_iff_ne_bot] at hroots
+  have := (evenUnitaryGroupEquivRootsOfUnityOfSubsingleton Q).toEquiv.nontrivial
+  rw [Subgroup.nontrivial_iff_ne_bot, ← h] at this
+  exact this (range_spinGroup_toUnits_eq_bot_of_subsingleton Q)
 
 end CliffordAlgebra
 
