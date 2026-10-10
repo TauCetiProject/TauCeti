@@ -55,13 +55,6 @@ def closingHalfEdge (v : BraidWord n) (p : Fin n) (h : v.crossingsAt p ≠ []) :
   v.closure.crossing ((v.crossingsAt p).getLast h)
     (v.outgoingSlot ((v.crossingsAt p).getLast h) p)
 
-/-- The outgoing endpoint is the last crossing on the chosen position. -/
-theorem closingHalfEdge_def (v : BraidWord n) (p : Fin n)
-    (h : v.crossingsAt p ≠ []) :
-    v.closingHalfEdge p h = v.closure.crossing ((v.crossingsAt p).getLast h)
-      (v.outgoingSlot ((v.crossingsAt p).getLast h) p) := by
-  rfl
-
 /-- The successor of the last crossing on a strand position is its first crossing, through the
 closing arc. -/
 @[simp]
@@ -127,12 +120,12 @@ theorem crossing_outgoingSlot_eq_closingHalfEdge_iff (v : BraidWord n) {j : Fin 
   constructor
   · intro h
     have he := (crossingSlotEquiv v.length).injective
-      (by simpa only [closingHalfEdge_def, crossing_closure] using h)
+      (by simpa only [closingHalfEdge, crossing_closure] using h)
     obtain ⟨hj', hs⟩ := Prod.ext_iff.mp he
     simp only at hj' hs
     subst j
     exact ⟨v.eq_of_outgoingSlot_eq hj (List.getLast_mem hq) hs, rfl⟩
   · rintro ⟨rfl, rfl⟩
-    exact (v.closingHalfEdge_def p hq).symm
+    rfl
 
 end TauCeti.BraidWord
