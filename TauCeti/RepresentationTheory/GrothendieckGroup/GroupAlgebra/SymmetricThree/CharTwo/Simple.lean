@@ -34,7 +34,7 @@ universe u
 
 variable (k : Type u) [Field k] [CharP k 2]
 
-local instance : IsArtinianRing k[Equiv.Perm (Fin 3)] :=
+local instance instIsArtinianRingSymmetricThreeCharTwo : IsArtinianRing k[Equiv.Perm (Fin 3)] :=
   IsArtinianRing.of_finite k k[Equiv.Perm (Fin 3)]
 
 omit [CharP k 2] in
