@@ -527,6 +527,27 @@ theorem mem_rectanglePentagonDecompositions {x z : GridState n}
   classical
   simp [rectanglePentagonDecompositions]
 
+/-- The first rectangle underlying a counted rectangle--pentagon domain is empty. -/
+theorem toRectangleDecomposition_first_isEmpty_of_mem_rectanglePentagonDecompositions
+    {x z : GridState n} {D : GridRectanglePentagonDecomposition C.column C.turnRow x z}
+    (hD : D ∈ G.rectanglePentagonDecompositions C x z) :
+    D.toRectangleDecomposition.first.IsEmpty := by
+  have hempty := ((G.mem_unblockedRectangles _).1
+    ((G.mem_rectanglePentagonDecompositions C D).1 hD).1).1
+  simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+    GridRectanglePentagonDecomposition.toRectangleDecomposition_first_toGridRectangle] using hempty
+
+/-- The second rectangle underlying a counted rectangle--pentagon domain is empty. -/
+theorem toRectangleDecomposition_second_isEmpty_of_mem_rectanglePentagonDecompositions
+    {x z : GridState n} {D : GridRectanglePentagonDecomposition C.column C.turnRow x z}
+    (hD : D ∈ G.rectanglePentagonDecompositions C x z) :
+    D.toRectangleDecomposition.second.IsEmpty := by
+  have hempty := ((G.mem_pentagons _).1
+    ((G.mem_rectanglePentagonDecompositions C D).1 hD).2).1
+  simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+    GridRectanglePentagonDecomposition.toRectangleDecomposition_second_toGridRectangle,
+    GridRectanglePentagonDecomposition.toRectangleDecomposition_middle] using hempty
+
 /-- The pentagon--rectangle decompositions counted by the coefficient of the commuted
 differential after the pentagon map. -/
 noncomputable def pentagonRectangleDecompositions (x z : GridState n) :

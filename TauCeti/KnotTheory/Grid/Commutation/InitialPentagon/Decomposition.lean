@@ -251,6 +251,25 @@ theorem mem_rectangleInitialPentagonDecompositions {x z : GridState n}
   classical
   simp [rectangleInitialPentagonDecompositions]
 
+/-- The first rectangle underlying a counted rectangle--initial-side pentagon domain is empty. -/
+theorem toGridRectangleDecomposition_first_isEmpty_of_mem_rectangleInitialPentagonDecompositions
+    {x z : GridState n} {D : GridRectangleInitialPentagonDecomposition C.column C.turnRow x z}
+    (hD : D ∈ G.rectangleInitialPentagonDecompositions C x z) :
+    D.toGridRectangleDecomposition.first.IsEmpty := by
+  have hempty := ((G.mem_unblockedRectangles _).1
+    ((G.mem_rectangleInitialPentagonDecompositions C D).1 hD).1).1
+  exact hempty
+
+/-- The second rectangle underlying a counted rectangle--initial-side pentagon domain is empty. -/
+theorem toGridRectangleDecomposition_second_isEmpty_of_mem_rectangleInitialPentagonDecompositions
+    {x z : GridState n} {D : GridRectangleInitialPentagonDecomposition C.column C.turnRow x z}
+    (hD : D ∈ G.rectangleInitialPentagonDecompositions C x z) :
+    D.toGridRectangleDecomposition.second.IsEmpty := by
+  have hempty := ((G.mem_initialPentagons _).1
+    ((G.mem_rectangleInitialPentagonDecompositions C D).1 hD).2).1
+  simpa only [GridRectangleInitialPentagonDecomposition.pentagon_toGridRectangleBetween]
+    using hempty
+
 /-- The counted initial-side pentagon--rectangle domains: an initial-side pentagon counted by
 the commutation map and a rectangle of the commuted diagram. -/
 noncomputable def initialPentagonRectangleDecompositions (x z : GridState n) :
