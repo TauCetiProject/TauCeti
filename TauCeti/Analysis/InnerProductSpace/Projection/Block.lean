@@ -98,6 +98,36 @@ theorem offDiagBlock_smul (c : 𝕜) (A : E →L[𝕜] E) :
     U.offDiagBlock (c • A) = c • U.offDiagBlock A := by
   simp only [offDiagBlock, ContinuousLinearMap.smul_comp, ContinuousLinearMap.comp_smul, smul_add]
 
+@[simp]
+theorem diagBlock_zero : U.diagBlock 0 = 0 := by
+  simp [diagBlock]
+
+@[simp]
+theorem offDiagBlock_zero : U.offDiagBlock 0 = 0 := by
+  simp [offDiagBlock]
+
+/-- Taking the diagonal part commutes with negation. -/
+@[simp]
+theorem diagBlock_neg (A : E →L[𝕜] E) : U.diagBlock (-A) = -U.diagBlock A := by
+  simpa using U.diagBlock_smul (-1) A
+
+/-- Taking the off-diagonal part commutes with negation. -/
+@[simp]
+theorem offDiagBlock_neg (A : E →L[𝕜] E) : U.offDiagBlock (-A) = -U.offDiagBlock A := by
+  simpa using U.offDiagBlock_smul (-1) A
+
+/-- Taking the diagonal part commutes with subtraction. -/
+@[simp]
+theorem diagBlock_sub (A B : E →L[𝕜] E) :
+    U.diagBlock (A - B) = U.diagBlock A - U.diagBlock B := by
+  rw [sub_eq_add_neg, diagBlock_add, diagBlock_neg, sub_eq_add_neg]
+
+/-- Taking the off-diagonal part commutes with subtraction. -/
+@[simp]
+theorem offDiagBlock_sub (A B : E →L[𝕜] E) :
+    U.offDiagBlock (A - B) = U.offDiagBlock A - U.offDiagBlock B := by
+  rw [sub_eq_add_neg, offDiagBlock_add, offDiagBlock_neg, sub_eq_add_neg]
+
 /-- Every operator is the sum of its diagonal and off-diagonal parts. -/
 @[simp]
 theorem diagBlock_add_offDiagBlock (A : E →L[𝕜] E) :

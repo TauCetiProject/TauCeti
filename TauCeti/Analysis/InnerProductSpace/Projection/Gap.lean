@@ -204,6 +204,10 @@ theorem directedProjectionGap_eq_zero_iff : directedProjectionGap U V = 0 ↔ U 
   rw [directedProjectionGap, norm_eq_zero, starProjection_comp_starProjection_eq_zero_iff,
     isOrtho_comm, isOrtho_iff_le, orthogonal_orthogonal]
 
+@[simp]
+theorem directedProjectionGap_self : directedProjectionGap U U = 0 :=
+  (directedProjectionGap_eq_zero_iff U U).2 le_rfl
+
 /-- The gap between `U` and `V` vanishes exactly when `U = V`. -/
 @[simp]
 theorem projectionGap_eq_zero_iff : projectionGap U V = 0 ↔ U = V := by
