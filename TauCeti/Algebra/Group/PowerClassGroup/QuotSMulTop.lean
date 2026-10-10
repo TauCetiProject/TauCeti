@@ -19,7 +19,8 @@ is the group `G ⧸ Gⁿ` of `n`th power classes, written additively.
 
 * `TauCeti.zsmulTop_toAddSubgroup_eq_powerSubgroup`: `n • G` is the additive form of `Gⁿ`.
 * `TauCeti.quotSMulTopPowerClassEquiv`: the additive equivalence between reduction modulo `n` and
-  the group of `n`th power classes.
+  the group of `n`th power classes. It is natural in `G`
+  (`TauCeti.quotSMulTopPowerClassEquiv_map`).
 -/
 
 public section
@@ -64,5 +65,14 @@ theorem quotSMulTopPowerClassEquiv_mk {G : Type*} [CommGroup G] (n : ℕ) (x : A
       Additive.ofMul (powerClassHom G n x.toMul) := by
   -- Both quotient equivalences are `lift`s, which compute on classes by definition.
   rfl
+
+/-- The reduction/power-class equivalence is natural: it intertwines the reduction modulo `n` of a
+homomorphism `f` with the map `powerClassMap n f` of power classes. -/
+theorem quotSMulTopPowerClassEquiv_map {G H : Type*} [CommGroup G] [CommGroup H] (n : ℕ)
+    (f : G →* H) (x : QuotSMulTop (n : ℤ) (Additive G)) :
+    quotSMulTopPowerClassEquiv n (QuotSMulTop.map (n : ℤ) f.toAdditive.toIntLinearMap x) =
+      (powerClassMap n f).toAdditive (quotSMulTopPowerClassEquiv n x) := by
+  induction x using Submodule.Quotient.induction_on with
+  | H x => simp
 
 end TauCeti

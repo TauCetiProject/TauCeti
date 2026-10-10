@@ -419,18 +419,11 @@ def quotSMulTopUnitsPowerClassRepresentationEquiv (n : ℕ) :
         (powerClassRepresentation (K := K) (L := L) n).restrictScalarsInt where
   toLinearEquiv := (quotSMulTopPowerClassEquiv n).toIntLinearEquiv
   isIntertwining' tau := by
-    ext x
-    simp only [LinearMap.coe_comp, Function.comp_apply, Submodule.mkQ_apply,
-      Representation.quotSMulTop_apply_mk, Representation.restrictScalarsInt_apply,
-      powerClassRepresentation_apply]
-    -- Compare in the multiplicative quotient, where the actions are given by `Units.map`.
-    change Additive.toMul (quotSMulTopPowerClassEquiv n
-        (Submodule.Quotient.mk
-          ((Representation.ofDistribMulAction ℤ Gal(L/K) (Additive Lˣ)) tau x))) =
-      Additive.toMul (MonoidHom.toAdditive (powerClassMap n (Units.map (tau : L →* L)))
-        (quotSMulTopPowerClassEquiv n (Submodule.Quotient.mk x)))
-    rw [quotSMulTopPowerClassEquiv_mk, quotSMulTopPowerClassEquiv_mk]
-    simp
+    refine LinearMap.ext fun x ↦ ?_
+    simp only [LinearMap.coe_comp, Function.comp_apply, Representation.quotSMulTop_apply,
+      Representation.restrictScalarsInt_apply, powerClassRepresentation_apply]
+    -- On `Additive Lˣ`, the action of `tau` is the map induced by `Units.map tau`.
+    exact quotSMulTopPowerClassEquiv_map n (Units.map (tau : L →* L)) x
 
 /-- The equivariant reduction/power-class identification sends the class of `x` to its power
 class. -/
