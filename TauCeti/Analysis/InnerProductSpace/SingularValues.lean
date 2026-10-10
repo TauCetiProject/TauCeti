@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.SingularValues
+public import Mathlib.LinearAlgebra.Eigenspace.Matrix
 public import TauCeti.Analysis.InnerProductSpace.CourantFischer
 public import TauCeti.Data.Finsupp.Antitone
 public import TauCeti.LinearAlgebra.Eigenspace.Comp
@@ -70,6 +71,23 @@ Courant–Fischer min–max principle for their source Gram operators.
 * `LinearMap.singularValues_comp_le`: if `‖C y‖ ≤ c ‖y‖` for every `y`, then
   `σᵢ(C A) ≤ c σᵢ(A)` for every `i`.
 
+## Diagonal models
+
+For an orthonormal basis `(eᵢ)` of `E` and scalars `(dᵢ)`, the diagonal operator with `eᵢ` as
+eigenvectors and diagonal entries `dᵢ` is Mathlib's
+`Matrix.toLin e.toBasis e.toBasis (Matrix.diagonal d)`. Its additivity in `d`
+(`Matrix.diagonal_add`), its adjoint (`Matrix.toLin_conjTranspose` with
+`Matrix.diagonal_conjTranspose`) and its symmetry for real entries (`Matrix.isSymmetric_toLin_iff`)
+are in Mathlib. The last section computes its singular values and shows that every endomorphism
+is a diagonal operator up to isometries on both sides.
+
+* `Matrix.toLin_diagonal_apply_self`: the diagonal operator sends `eᵢ` to `dᵢ eᵢ`.
+* `Matrix.singularValues_toLin_diagonal`: the singular values of the diagonal operator are the
+  norms `‖dᵢ‖` listed in nonincreasing order.
+* `LinearMap.exists_linearIsometryEquiv_eq_comp_toLin_diagonal_comp`: every endomorphism `A` is
+  `U D V` for linear isometric equivalences `U`, `V` and the diagonal operator `D` with the
+  singular values of `A` as entries, in any prescribed orthonormal basis.
+
 ## Source
 
 The singular-system definitions `LinearMap.rightSingularBasis` and
@@ -83,6 +101,8 @@ Original copyright (c) 2026 Kitware, Inc.; Apache-2.0.
   2013, Theorem 1.3.22, Theorem 2.6.3 and Section 7.3.
 * R. A. Horn and C. R. Johnson, *Topics in Matrix Analysis*, Cambridge University Press, 1991,
   Section 3.3.
+* R. Bhatia, *Matrix Analysis*, Graduate Texts in Mathematics 169, Springer, 1997, Section I.2
+  (the singular value decomposition).
 -/
 
 public section
@@ -398,5 +418,60 @@ theorem singularValues_comp_le (C : F →ₗ[𝕜] G) (A : E →ₗ[𝕜] F) {c 
   singularValues_le_mul_of_norm_apply_le (fun x ↦ hC (A x)) i
 
 end Comparison
+
+section Diagonal
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+omit [FiniteDimensional 𝕜 E] in
+/-- The diagonal operator of an orthonormal basis `(eᵢ)` with entries `(dᵢ)` has `eᵢ` as an
+eigenvector with eigenvalue `dᵢ`. -/
+@[simp]
+theorem _root_.Matrix.toLin_diagonal_apply_self (e : OrthonormalBasis ι 𝕜 E) (d : ι → 𝕜)
+    (i : ι) : Matrix.toLin e.toBasis e.toBasis (Matrix.diagonal d) (e i) = d i • e i := by
+  simpa using (hasEigenvector_toLin_diagonal d i e.toBasis).apply_eq_smul
+
+/-- **Singular values of a diagonal operator.** If `π` lists the indices so that the norms
+`‖d (π k)‖` are nonincreasing, then the `k`-th singular value of the diagonal operator with entries
+`d` in an orthonormal basis is `‖d (π k)‖`. The singular values from `Fintype.card ι` on vanish
+(`LinearMap.singularValues_of_finrank_le`). -/
+theorem _root_.Matrix.singularValues_toLin_diagonal (e : OrthonormalBasis ι 𝕜 E) (d : ι → 𝕜)
+    {n : ℕ} (π : Fin n ≃ ι) (hπ : Antitone fun k ↦ ‖d (π k)‖) (k : Fin n) :
+    (Matrix.toLin e.toBasis e.toBasis (Matrix.diagonal d)).singularValues k = ‖d (π k)‖ := by
+  set D := Matrix.toLin e.toBasis e.toBasis (Matrix.diagonal d)
+  have hn : finrank 𝕜 E = n := by
+    rw [finrank_eq_card_basis e.toBasis, Fintype.card_congr π.symm, Fintype.card_fin]
+  have hDadj : adjoint D = Matrix.toLin e.toBasis e.toBasis (Matrix.diagonal (star d)) := by
+    rw [← Matrix.toLin_conjTranspose, Matrix.diagonal_conjTranspose]
+  -- The reindexed basis `e ∘ π` diagonalizes `D† D` with the nonincreasing entries `‖d (π k)‖²`,
+  -- so these are the sorted eigenvalues of `D† D`.
+  have hGram (k : Fin n) : (adjoint D ∘ₗ D) ((e.reindex π.symm) k) =
+      ((‖d (π k)‖ ^ 2 : ℝ) : 𝕜) • (e.reindex π.symm) k := by
+    simp [D, hDadj, smul_smul, RCLike.mul_conj]
+  have heig := D.isSymmetric_adjoint_comp_self.eigenvalues_eq_of_eigenbasis hn (e.reindex π.symm)
+    (fun i j hij ↦ pow_le_pow_left₀ (norm_nonneg _) (hπ hij) 2) hGram
+  rw [← sq_eq_sq₀ (D.singularValues_nonneg _) (norm_nonneg _), D.sq_singularValues_fin hn k, heig]
+
+/-- **Singular-value diagonal factorization.** Every endomorphism `A` of a finite-dimensional
+inner product space factors as `A = U D V`, where `U` and `V` are linear isometric equivalences
+and `D` is the diagonal operator whose entries in a prescribed orthonormal basis `(eᵢ)` are the
+singular values of `A`. -/
+theorem exists_linearIsometryEquiv_eq_comp_toLin_diagonal_comp (A : E →ₗ[𝕜] E) {n : ℕ}
+    (e : OrthonormalBasis (Fin n) 𝕜 E) :
+    ∃ U V : E ≃ₗᵢ[𝕜] E, A = (U : E →ₗ[𝕜] E) ∘ₗ
+      Matrix.toLin e.toBasis e.toBasis (Matrix.diagonal fun i ↦ (A.singularValues i : 𝕜)) ∘ₗ
+        (V : E →ₗ[𝕜] E) := by
+  have hn : finrank 𝕜 E = n := by rw [finrank_eq_card_basis e.toBasis, Fintype.card_fin]
+  subst hn
+  -- `V` sends the right singular basis `(vᵢ)` to `(eᵢ)`, and `U` sends `(eᵢ)` to an orthonormal
+  -- basis `(wᵢ)` extending the left singular vectors, so both sides send `vᵢ` to `σᵢ wᵢ`.
+  obtain ⟨w, hw⟩ := A.exists_orthonormalBasis_apply_eq_leftSingularVector
+  refine ⟨e.equiv w (.refl _), A.rightSingularBasis.equiv e (.refl _), ?_⟩
+  refine A.rightSingularBasis.toBasis.ext fun i ↦ ?_
+  rcases eq_or_ne (A.singularValues i) 0 with hσ | hσ
+  · simp [apply_rightSingularBasis, hσ]
+  · simp [apply_rightSingularBasis, hw i i rfl hσ]
+
+end Diagonal
 
 end LinearMap
