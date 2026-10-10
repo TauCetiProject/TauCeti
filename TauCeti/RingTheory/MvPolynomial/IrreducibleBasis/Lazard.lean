@@ -59,12 +59,9 @@ theorem exists_lazardEval_eq_C_mul_prod (hB : F.IsIrreducibleBasis B)
           ∏ b ∈ B, (swap b).lazardEval (Polynomial.C ∘ a) ^ e b := by
   obtain ⟨u, e, hfe⟩ := hB.exists_eq_C_content_mul_unit_mul_prod hf
   refine ⟨u, e, fun a ↦ ?_⟩
-  have hswap (g : MvPolynomial (Fin n) R) :
-      swap (Polynomial.C g) = MvPolynomial.map Polynomial.C g :=
-    optionEquivRight_optionEquivLeft_symm_C g
   conv_lhs => rw [hfe]
-  rw [map_mul, hswap, lazardEval_mul, lazardEval_map Polynomial.C Polynomial.C_injective,
-    lazardEval_mul]
+  rw [map_mul, optionEquivRight_optionEquivLeft_symm_C, lazardEval_mul,
+    lazardEval_map Polynomial.C Polynomial.C_injective, lazardEval_mul]
   congr 1
   simp only [map_prod, map_pow]
   simpa only [map_pow, lazardEvalHom_apply] using
@@ -83,14 +80,11 @@ theorem exists_lazardExponent_eq_content_add_sum (hB : F.IsIrreducibleBasis B)
   have hu : (u : MvPolynomial (Fin n) R).lazardExponent a = 0 :=
     lazardExponent_eq_zero_of_eval_ne_zero (u.isUnit.map (MvPolynomial.eval a)).ne_zero
   have hb : ∀ b ∈ B, swap b ≠ 0 := fun b hb ↦
-    (by simpa only [map_zero] using (swap).injective.ne (hB.irreducible b hb).ne_zero)
-  have hswap (g : MvPolynomial (Fin n) R) :
-      swap (Polynomial.C g) = MvPolynomial.map Polynomial.C g :=
-    optionEquivRight_optionEquivLeft_symm_C g
+    EmbeddingLike.map_ne_zero_iff.mpr (hB.irreducible b hb).ne_zero
   have hc' : MvPolynomial.map Polynomial.C (f.content * (u : MvPolynomial (Fin n) R)) ≠ 0 := by
-    simpa only [map_zero] using
-      (MvPolynomial.map_injective Polynomial.C Polynomial.C_injective).ne (mul_ne_zero hc u.ne_zero)
-  conv_lhs => rw [hfe, map_mul, hswap]
+    exact (map_ne_zero_iff _ (MvPolynomial.map_injective Polynomial.C
+      Polynomial.C_injective)).mpr (mul_ne_zero hc u.ne_zero)
+  conv_lhs => rw [hfe, map_mul, optionEquivRight_optionEquivLeft_symm_C]
   simp only [map_prod, map_pow]
   rw [lazardExponent_mul hc'
       (Finset.prod_ne_zero_iff.mpr fun b hb' ↦ pow_ne_zero _ (hb b hb')),
@@ -135,9 +129,9 @@ theorem exists_rootMultiplicity_lazardEval_eq_sum (hB : F.IsIrreducibleBasis B)
       lazardEvalHom_apply]
   have hC (c : MvPolynomial (Fin n) R) : ∃ r : R, φ (Polynomial.C c) = Polynomial.C r := by
     refine ⟨c.lazardEval a, ?_⟩
-    rw [hφ, AlgEquiv.trans_apply, optionEquivRight_optionEquivLeft_symm_C,
+    rw [hφ, optionEquivRight_optionEquivLeft_symm_C,
       lazardEval_map Polynomial.C Polynomial.C_injective]
-  have hp : swap f ≠ 0 := by simpa only [map_zero] using (swap).injective.ne hf0
+  have hp : swap f ≠ 0 := EmbeddingLike.map_ne_zero_iff.mpr hf0
   simpa only [hφ] using he φ hC ((hφ f).symm ▸ lazardEval_ne_zero hp _) t
 
 /-- The union of the roots in `R` of the nonzero inputs' Lazard evaluations is
@@ -150,14 +144,12 @@ theorem exists_isRoot_lazardEval_iff (hB : F.IsIrreducibleBasis B) (a : Fin n �
   constructor
   · rintro ⟨f, hf, hf0, ht⟩
     obtain ⟨e, he⟩ := hB.exists_rootMultiplicity_lazardEval_eq_sum hf hf0
-    have hp : swap f ≠ 0 := by simpa only [map_zero] using (swap).injective.ne hf0
+    have hp : swap f ≠ 0 := EmbeddingLike.map_ne_zero_iff.mpr hf0
     have hpos := (Polynomial.rootMultiplicity_pos (lazardEval_ne_zero hp _)).mpr ht
     rw [he] at hpos
     obtain ⟨b, hb, hbpos⟩ := Finset.sum_pos_iff.mp hpos
     refine ⟨b, hb, Polynomial.rootMultiplicity_pos'.mp ?_ |>.2⟩
-    by_contra! h
-    rw [Nat.eq_zero_of_le_zero h, mul_zero] at hbpos
-    exact lt_irrefl _ hbpos
+    exact pos_of_mul_pos_right hbpos (Nat.zero_le _)
   · rintro ⟨b, hb, ht⟩
     obtain ⟨f, hf, hf0, hbf⟩ := hB.exists_dvd b hb
     refine ⟨f, hf, hf0, ht.dvd ?_⟩
