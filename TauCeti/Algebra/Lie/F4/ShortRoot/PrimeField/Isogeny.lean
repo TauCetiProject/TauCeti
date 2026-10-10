@@ -21,7 +21,7 @@ finite dominant homomorphism criterion supplies faithful flatness.
 
 The result is stated both on coordinate Hopf algebras and on the actual carrier group scheme.
 On points, the exceptional endomorphism is injective over every reduced coefficient algebra
-and bijective over every perfect field of characteristic two. These pointwise
+and bijective over every perfect coefficient algebra over `𝔽₂`. These pointwise
 statements do not assert that the group-scheme endomorphism is an isomorphism: infinitesimal
 points of its kernel can persist over nonreduced algebras.
 
@@ -69,8 +69,8 @@ theorem isIsogeny_specialIsogenyHom : GroupScheme.IsIsogeny specialIsogenyHom :=
         isIsogeny_quotientIsogeny
     · exact GroupScheme.isIsogeny_of_isIso _
 
-/-- Over a reduced coefficient algebra, the exceptional endomorphism is injective on points.
-This follows from its Frobenius square and retains all reduced algebras, including fields. -/
+/-- Over a reduced coefficient algebra over `𝔽₂`, the exceptional endomorphism is injective
+on points. -/
 theorem specialIsogeny_injective (A : Type u) [CommRing A] [Algebra 𝔽₂ A] [IsReduced A] :
     Function.Injective (specialIsogeny A) := by
   cases subsingleton_or_nontrivial A with
@@ -106,12 +106,13 @@ theorem specialIsogeny_surjective (A : Type u) [CommRing A] [Algebra 𝔽₂ A] 
     ← AlgHom.comp_toRingHom, hcomp]
   simp
 
-/-- The exceptional endomorphism is bijective on points over a perfect field
-of characteristic two, although its group-scheme kernel need not be trivial. -/
-theorem specialIsogeny_bijective (K : Type u) [Field K] [Algebra 𝔽₂ K] [PerfectField K] :
-    Function.Bijective (specialIsogeny K) := by
-  let _ : CharP K 2 := charP_of_injective_algebraMap (algebraMap 𝔽₂ K).injective 2
-  exact ⟨specialIsogeny_injective K, specialIsogeny_surjective K⟩
+/-- The exceptional endomorphism is bijective on points over a perfect coefficient algebra
+over `𝔽₂`, although its group-scheme kernel need not be trivial. -/
+theorem specialIsogeny_bijective (A : Type u) [CommRing A] [Algebra 𝔽₂ A] [PerfectRing A 2] :
+    Function.Bijective (specialIsogeny A) := by
+  let _ : IsReduced A := (isReduced_iff_pow_one_lt 2 one_lt_two).2 fun x hx =>
+    (PerfectRing.bijective_frobenius (R := A) (p := 2)).1 (by simpa using hx)
+  exact ⟨specialIsogeny_injective A, specialIsogeny_surjective A⟩
 
 end
 
