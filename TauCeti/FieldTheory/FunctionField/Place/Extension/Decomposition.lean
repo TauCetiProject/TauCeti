@@ -63,6 +63,8 @@ proved here.
   everything exactly when the place below splits completely.
 * `TauCeti.Place.ramificationIdx_mul_relativeDegree_restrict_eq_relIndex`: the local degree in
   an intermediate field is the index of its fixing subgroup in the decomposition group.
+* `TauCeti.Place.isSplitCompletely_iff_forall_decompositionSubgroup_le`: complete splitting in
+  an intermediate field is detected by all upstairs decomposition groups.
 
 ## References
 
@@ -339,6 +341,29 @@ theorem ramificationIdx_mul_relativeDegree_restrict_eq_relIndex
       rw [hidx]
       ring
     _ = _ := mul_comm _ _
+
+variable {F}
+
+/-- A place splits completely in an intermediate field precisely when every decomposition
+group above it fixes that field pointwise. Testing just one upstairs place is not sufficient
+when the intermediate extension is not Galois. -/
+theorem isSplitCompletely_iff_forall_decompositionSubgroup_le
+    (hF : TauCeti.IsFunctionField k F) (P : Place k F) (E : IntermediateField F F') :
+    P.IsSplitCompletely (k' := k) (F' := E) ↔
+      ∀ Q : Place k F', Q.restrict k F = P →
+        Q.integers.decompositionSubgroup F ≤ E.fixingSubgroup := by
+  rw [isSplitCompletely_iff_forall_ramificationIdx_eq_one_and_relativeDegree_eq_one]
+  have hlocal (Q : Place k F') :
+      (ramificationIdx F (Q.restrict k E) = 1 ∧
+        relativeDegree k F (Q.restrict k E) = 1) ↔
+        Q.integers.decompositionSubgroup F ≤ E.fixingSubgroup := by
+    rw [← mul_eq_one, ramificationIdx_mul_relativeDegree_restrict_eq_relIndex,
+      Subgroup.relIndex_eq_one]
+  refine ⟨fun h Q hQ ↦ (hlocal Q).mp (h _ ?_), fun h R hR ↦ ?_⟩
+  · simpa only [restrict_restrict] using hQ
+  · obtain ⟨Q, rfl⟩ := restrict_surjective_of_finiteDimensional
+      (hF.finite_extension (E := E)) (hF.finite_extension (E := F')) R
+    exact (hlocal Q).mpr (h Q (by simpa only [restrict_restrict] using hR))
 
 end Place
 

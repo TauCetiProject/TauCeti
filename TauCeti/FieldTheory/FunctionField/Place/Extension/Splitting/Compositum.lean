@@ -44,27 +44,6 @@ section Galois
 
 variable [IsGalois F M]
 
-/-- A place splits completely in an intermediate field precisely when every decomposition
-group above it fixes that field pointwise. Testing just one upstairs place is not sufficient
-when the intermediate extension is not Galois. -/
-theorem isSplitCompletely_iff_forall_decompositionSubgroup_le
-    (hF : TauCeti.IsFunctionField k F) (P : Place k F) (E : IntermediateField F M) :
-    P.IsSplitCompletely (k' := k) (F' := E) ↔
-      ∀ Q : Place k M, Q.restrict k F = P →
-        Q.integers.decompositionSubgroup F ≤ E.fixingSubgroup := by
-  rw [isSplitCompletely_iff_forall_ramificationIdx_eq_one_and_relativeDegree_eq_one]
-  have hlocal (Q : Place k M) :
-      (ramificationIdx F (Q.restrict k E) = 1 ∧
-        relativeDegree k F (Q.restrict k E) = 1) ↔
-        Q.integers.decompositionSubgroup F ≤ E.fixingSubgroup := by
-    rw [← mul_eq_one, ramificationIdx_mul_relativeDegree_restrict_eq_relIndex,
-      Subgroup.relIndex_eq_one]
-  refine ⟨fun h Q hQ ↦ (hlocal Q).mp (h _ ?_), fun h R hR ↦ ?_⟩
-  · simpa only [restrict_restrict] using hQ
-  · obtain ⟨Q, rfl⟩ := restrict_surjective_of_finiteDimensional
-      (hF.finite_extension (E := E)) (hF.finite_extension (E := M)) R
-    exact (hlocal Q).mpr (h Q (by simpa only [restrict_restrict] using hR))
-
 /-- Complete splitting in a compositum is equivalent to complete splitting in both
 constituents. The two intermediate fields need not be Galois over the base. -/
 private theorem isSplitCompletely_sup_iff_of_isGalois
