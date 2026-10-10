@@ -62,7 +62,7 @@ theorem nonempty_orthogonalGroupContinuousMulEquivMatrix_of_definite
     exact ⟨orthogonalGroupContinuousMulEquivMatrix
       ((isUnit_of_invertible (2 : ℝ)).isSMulRegular ℝ) e⟩
   · obtain ⟨e⟩ := nonempty_isometryEquiv_toQuadraticForm'_one_of_posDef hQ
-    rw [← orthogonalGroup_neg Q]
+    rw [← orthogonalGroup_neg (Q := Q)]
     exact ⟨orthogonalGroupContinuousMulEquivMatrix
       ((isUnit_of_invertible (2 : ℝ)).isSMulRegular ℝ) e⟩
 

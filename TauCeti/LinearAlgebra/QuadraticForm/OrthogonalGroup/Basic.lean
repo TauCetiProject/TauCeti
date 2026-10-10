@@ -240,7 +240,7 @@ end QuadraticMap
 @[simp]
 theorem orthogonalGroup_neg {R : Type u} {M : Type v} {N : Type w} [CommRing R]
     [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-    (Q : QuadraticMap R M N) :
+    {Q : QuadraticMap R M N} :
     QuadraticMap.orthogonalGroup (-Q) = QuadraticMap.orthogonalGroup Q := by
   ext g
   simp
