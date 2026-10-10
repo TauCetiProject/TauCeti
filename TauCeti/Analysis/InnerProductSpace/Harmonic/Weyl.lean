@@ -24,19 +24,20 @@ import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 # Weyl's lemma
 
 Let `E` be a finite-dimensional real inner product space with an additive Haar measure `μ`, and
-let `Ω ⊆ E` be open. A locally integrable function `u : E → ℝ` is **weakly harmonic** on `Ω` if
+let `Ω ⊆ E` be open. A function `u` locally integrable on `Ω` is **weakly harmonic** there
+(`TauCeti.WeaklyHarmonicOn`) if
 
 `∫ Δφ • u ∂μ = 0` for every test function `φ ∈ 𝓓(Ω)`,
 
 that is, if its distributional Laplacian vanishes on `Ω`. Every harmonic function is weakly
-harmonic (`InnerProductSpace.HarmonicOnNhd.integral_laplacian_smul_eq_zero`). **Weyl's lemma** is
+harmonic (`InnerProductSpace.HarmonicOnNhd.weaklyHarmonicOn`). **Weyl's lemma** is
 the converse: a weakly harmonic function agrees almost everywhere on `Ω` with a function harmonic
 on `Ω`, that is, twice continuously differentiable with vanishing Laplacian. No differentiability
 of `u` is assumed, so a locally integrable distributional solution of `Δu = 0` is, after
 modification on a null set, a classical one.
 
 For a function continuous on `Ω` no modification is needed, and harmonicity on `Ω` is equivalent
-to weak harmonicity there (`TauCeti.harmonicOnNhd_iff_integral_laplacian_smul_eq_zero`).
+to weak harmonicity there (`TauCeti.harmonicOnNhd_iff_weaklyHarmonicOn`).
 
 ## The argument
 
@@ -60,9 +61,10 @@ and equal to `u` almost everywhere on `Ω`.
 
 ## Main declarations
 
-* `TauCeti.exists_harmonicOnNhd_ae_eq_of_integral_laplacian_smul_eq_zero`: **Weyl's lemma**.
-* `TauCeti.harmonicOnNhd_iff_integral_laplacian_smul_eq_zero`: a continuous function is harmonic
-  on `Ω` if and only if it is weakly harmonic there.
+* `TauCeti.WeaklyHarmonicOn`: weak harmonicity on an open set.
+* `TauCeti.WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq`: **Weyl's lemma**.
+* `TauCeti.harmonicOnNhd_iff_weaklyHarmonicOn`: a continuous function is harmonic on `Ω` if and
+  only if it is weakly harmonic there.
 
 ## References
 
@@ -81,8 +83,42 @@ open InnerProductSpace Laplacian MeasureTheory Metric Set Filter Topology Topolo
 open scoped Distributions Convolution
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] {Ω : Opens E}
-  {u : E → ℝ}
+  [MeasurableSpace E] {μ : Measure E} {Ω : Opens E} {F : Type*} [NormedAddCommGroup F]
+  [NormedSpace ℝ F] {w : E → F}
+
+/-- `WeaklyHarmonicOn μ Ω u` says that `u` is **weakly harmonic** on the open set `Ω`: it is
+locally integrable on `Ω` and its distributional Laplacian vanishes there, that is,
+`∫ Δφ • u ∂μ = 0` for every test function `φ ∈ 𝓓(Ω)`.
+
+Local integrability is part of the definition because `MeasureTheory.integral` is `0` on a
+non-integrable function, so without it the identity would hold for junk reasons. -/
+def WeaklyHarmonicOn (μ : Measure E) (Ω : Opens E) (u : E → F) : Prop :=
+  LocallyIntegrableOn u Ω μ ∧ ∀ φ : 𝓓(Ω, ℝ), ∫ x, Δ (φ : E → ℝ) x • u x ∂μ = 0
+
+/-- The constructor-and-eliminator form of `WeaklyHarmonicOn`. The definition is sealed by the
+module system, so downstream modules use this theorem rather than unfolding it. -/
+theorem weaklyHarmonicOn_iff :
+    WeaklyHarmonicOn μ Ω w ↔
+      LocallyIntegrableOn w Ω μ ∧ ∀ φ : 𝓓(Ω, ℝ), ∫ x, Δ (φ : E → ℝ) x • w x ∂μ = 0 :=
+  Iff.rfl
+
+/-- A weakly harmonic function on `Ω` is locally integrable on `Ω`. -/
+theorem WeaklyHarmonicOn.locallyIntegrableOn (h : WeaklyHarmonicOn μ Ω w) :
+    LocallyIntegrableOn w Ω μ := h.1
+
+/-- The identity defining weak harmonicity: `∫ Δφ • w ∂μ = 0` for every test function on `Ω`. -/
+theorem WeaklyHarmonicOn.integral_laplacian_smul_eq_zero (h : WeaklyHarmonicOn μ Ω w)
+    (φ : 𝓓(Ω, ℝ)) : ∫ x, Δ (φ : E → ℝ) x • w x ∂μ = 0 := h.2 φ
+
+variable [BorelSpace E] [μ.IsAddHaarMeasure]
+
+/-- **A harmonic function is weakly harmonic.** -/
+theorem _root_.InnerProductSpace.HarmonicOnNhd.weaklyHarmonicOn [CompleteSpace F]
+    (h : HarmonicOnNhd w Ω) : WeaklyHarmonicOn μ Ω w :=
+  ⟨h.contDiffOn.continuousOn.locallyIntegrableOn Ω.isOpen.measurableSet,
+    h.integral_laplacian_smul_eq_zero⟩
+
+variable {u : E → ℝ}
 
 /-- The Laplacian of a mollification of `u` vanishes at `y` when `u` is weakly harmonic on `Ω`:
 if the closed ball of radius `φ.rOut` about `y` lies in `Ω` and `f` agrees with `u` there, then
@@ -231,13 +267,12 @@ private theorem exists_harmonicOnNhd_ball_ae_eq (hu : LocallyIntegrableOn u Ω �
   rw [← indicator_of_mem hyK u]
   exact tendsto_nhds_unique hy (hunif.tendsto_at hyx)
 
-/-- **Weyl's lemma.** Let `u` be locally integrable on the open set `Ω` and weakly harmonic there:
-`∫ Δφ • u ∂μ = 0` for every test function `φ ∈ 𝓓(Ω)`. Then `u` agrees almost everywhere on `Ω`
-with a function harmonic on `Ω`. -/
-theorem exists_harmonicOnNhd_ae_eq_of_integral_laplacian_smul_eq_zero
-    (hu : LocallyIntegrableOn u Ω μ)
-    (hΔ : ∀ φ : 𝓓(Ω, ℝ), ∫ x, Δ (φ : E → ℝ) x • u x ∂μ = 0) :
+/-- **Weyl's lemma.** Let `u` be weakly harmonic on the open set `Ω`: locally integrable there,
+with `∫ Δφ • u ∂μ = 0` for every test function `φ ∈ 𝓓(Ω)`. Then `u` agrees almost everywhere on
+`Ω` with a function harmonic on `Ω`. -/
+theorem WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq (hw : WeaklyHarmonicOn μ Ω u) :
     ∃ v : E → ℝ, HarmonicOnNhd v Ω ∧ u =ᵐ[μ.restrict Ω] v := by
+  obtain ⟨hu, hΔ⟩ := hw
   -- Around each point of `Ω`, a ball on which `u` has a harmonic representative.
   have hloc : ∀ x ∈ (Ω : Set E), ∃ R > 0, ∃ h : E → ℝ,
       HarmonicOnNhd h (ball x R) ∧ u =ᵐ[μ.restrict (ball x R)] h := fun x hx ↦ by
@@ -282,11 +317,10 @@ theorem exists_harmonicOnNhd_ae_eq_of_integral_laplacian_smul_eq_zero
 /-- **Weyl's lemma for continuous functions.** A function continuous on the open set `Ω` is
 harmonic on `Ω` if and only if it is weakly harmonic there: `∫ Δφ • u ∂μ = 0` for every test
 function `φ ∈ 𝓓(Ω)`. -/
-theorem harmonicOnNhd_iff_integral_laplacian_smul_eq_zero (hu : ContinuousOn u Ω) :
-    HarmonicOnNhd u Ω ↔ ∀ φ : 𝓓(Ω, ℝ), ∫ x, Δ (φ : E → ℝ) x • u x ∂μ = 0 := by
-  refine ⟨fun h φ ↦ h.integral_laplacian_smul_eq_zero φ, fun hΔ ↦ ?_⟩
-  obtain ⟨v, hv, huv⟩ := exists_harmonicOnNhd_ae_eq_of_integral_laplacian_smul_eq_zero
-    (hu.locallyIntegrableOn Ω.isOpen.measurableSet) hΔ
+theorem harmonicOnNhd_iff_weaklyHarmonicOn (hu : ContinuousOn u Ω) :
+    HarmonicOnNhd u Ω ↔ WeaklyHarmonicOn μ Ω u := by
+  refine ⟨HarmonicOnNhd.weaklyHarmonicOn, fun hw ↦ ?_⟩
+  obtain ⟨v, hv, huv⟩ := hw.exists_harmonicOnNhd_ae_eq
   have heq : EqOn u v Ω :=
     Measure.eqOn_open_of_ae_eq huv Ω.isOpen hu hv.contDiffOn.continuousOn
   exact fun x hx ↦ (harmonicAt_congr_nhds
