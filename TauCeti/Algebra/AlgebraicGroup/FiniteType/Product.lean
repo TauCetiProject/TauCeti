@@ -56,6 +56,28 @@ noncomputable abbrev tensorProduct (H K : FiniteTypeCommHopfAlgCat.{u, v} R) :
   letI : Algebra.FiniteType R (H ⊗[R] K) := tensorProduct_finiteType (R := R) H K
   of R (H ⊗[R] K)
 
+/-- Tensor products preserve isomorphisms of finite-type commutative Hopf algebras. -/
+noncomputable def tensorProductCongr
+    {H H' K K' : FiniteTypeCommHopfAlgCat.{u, v} R} (e : H ≅ H') (f : K ≅ K') :
+    tensorProduct H K ≅ tensorProduct H' K' :=
+  let e' := _root_.CommHopfAlgCat.ofIso <|
+    (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R) (CommHopfAlgCat.{v} R)).mapIso e
+  let f' := _root_.CommHopfAlgCat.ofIso <|
+    (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R) (CommHopfAlgCat.{v} R)).mapIso f
+  ObjectProperty.isoMk _ <| _root_.CommHopfAlgCat.isoMk <|
+    BialgEquiv.ofBijective (Bialgebra.TensorProduct.map e'.toBialgHom f'.toBialgHom)
+      (Algebra.TensorProduct.congr e'.toAlgEquiv f'.toAlgEquiv).bijective
+
+/-- The tensor-product isomorphism applies its two factors to a pure tensor. -/
+@[simp]
+theorem tensorProductCongr_hom_tmul
+    {H H' K K' : FiniteTypeCommHopfAlgCat.{u, v} R} (e : H ≅ H') (f : K ≅ K')
+    (h : H) (k : K) :
+    toBialgHom (tensorProductCongr e f).hom (h ⊗ₜ[R] k) =
+      toBialgHom e.hom h ⊗ₜ[R] toBialgHom f.hom k := by
+  simp [tensorProductCongr]
+  rfl
+
 /-- The left coordinate inclusion `H → H ⊗[R] K`, bundled in the finite-type commutative
 Hopf-algebra category. On points this is the first projection from product points. -/
 noncomputable abbrev includeLeft (H K : FiniteTypeCommHopfAlgCat.{u, v} R) :
