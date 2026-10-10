@@ -44,7 +44,8 @@ construct.
 * `TauCeti.DescentDatum.transport e E`: the descent datum transported from `E` along an
   isomorphism `e : X ≅ Y` over `S'`, with the isomorphism `transportHom e E` to `E`.
 * `TauCeti.DescentDatum.baseChange p X`: the canonical descent datum on the base change
-  `X ×_S S'` of an object `X` over `S`, acting by `s · (x, s₀) = (x, s)`.
+  `X ×_S S'` of an object `X` over `S`, acting by `s · (x, s₀) = (x, s)`, with the morphism
+  `baseChangeHom p f : Hom (baseChange p X) (baseChange p Y)` induced by `f : X ⟶ Y` over `S`.
 
 A descent datum `D` is *effective* when there are an object `X` over `S` and a morphism
 `baseChange p X ⟶ D` of descent data which is an isomorphism over `S'`.
@@ -244,6 +245,31 @@ variable (p) in
 theorem baseChange_act_snd (X : Over S) :
     (baseChange p X).act ≫ pullback.snd X.hom p = pullback.fst _ _ := by
   simp [baseChange]
+
+variable (p) in
+/-- The morphism of canonical descent data induced by a morphism `f : X ⟶ Y` over `S`: its
+underlying morphism over `S'` is the base change `(x, s) ↦ (f x, s)`. -/
+noncomputable def baseChangeHom {X Y : Over S} (f : X ⟶ Y) :
+    Hom (baseChange p X) (baseChange p Y) where
+  hom := (Over.pullback p).map f
+  map_act := by refine pullback.hom_ext ?_ ?_ <;> simp
+
+variable (p) in
+@[simp]
+theorem baseChangeHom_hom {X Y : Over S} (f : X ⟶ Y) :
+    (baseChangeHom p f).hom = (Over.pullback p).map f :=
+  (rfl)
+
+variable (p) in
+@[simp]
+theorem baseChangeHom_id (X : Over S) : baseChangeHom p (𝟙 X) = Hom.id (baseChange p X) :=
+  Hom.ext ((Over.pullback p).map_id X)
+
+variable (p) in
+@[simp]
+theorem baseChangeHom_comp {X Y Z : Over S} (f : X ⟶ Y) (g : Y ⟶ Z) :
+    baseChangeHom p (f ≫ g) = (baseChangeHom p g).comp (baseChangeHom p f) :=
+  Hom.ext ((Over.pullback p).map_comp f g)
 
 end DescentDatum
 
