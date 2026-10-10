@@ -17,8 +17,8 @@ Over a ring with semisimple radical quotient, a projective module with local
 endomorphism ring and coatomic submodule lattice has simple head `P / J P`. In particular this
 holds for indecomposable projective modules of finite length. Every nonzero map from a module
 with simple head into a semisimple module has kernel `J P`. A surjection from such a projective
-module with coatomic submodule lattice onto a nonzero semisimple module is a projective cover.
-Thus its simple quotient is unique up to isomorphism.
+module with coatomic submodule lattice onto any nonzero module is a projective cover.
+Its nonzero semisimple quotients are necessarily simple and unique up to isomorphism.
 
 The locality argument uses `Ideal.endMapQ`: projectivity makes reduction of endomorphisms
 surjective, so the endomorphism ring of the head is local as well.
@@ -75,17 +75,22 @@ theorem ker_eq_jacobson_smul_top_of_ne_zero
   exact (hN.le_iff_eq (LinearMap.ker_eq_top.not.mpr hf)).mp hle
 
 /-- A surjection from a projective module with simple head and coatomic submodule lattice
-onto a nonzero semisimple module is a projective cover. -/
+onto any nonzero module is a projective cover. -/
 theorem isProjectiveCover_of_isSimpleModule_quotient_jacobson_smul_top
     [IsCoatomic (Submodule R P)] [Module.Projective R P]
     [IsSimpleModule R (P ⧸ Ring.jacobson R • (⊤ : Submodule R P))]
-    [IsSemisimpleModule R S] [Nontrivial S] {f : P →ₗ[R] S} (hf : Function.Surjective f) :
+    [Nontrivial S] {f : P →ₗ[R] S} (hf : Function.Surjective f) :
     IsProjectiveCover f where
   projective := inferInstance
   surjective := hf
   isSuperfluous_ker := by
-    rw [ker_eq_jacobson_smul_top_of_ne_zero (LinearMap.ne_zero_of_surjective hf)]
-    exact isSuperfluous_of_le_jacobson (Ring.jacobson_smul_top_le R P)
+    have hJ := isSuperfluous_of_le_jacobson (Ring.jacobson_smul_top_le R P)
+    have hcoatom : IsCoatom (Ring.jacobson R • (⊤ : Submodule R P)) :=
+      isSimpleModule_iff_isCoatom.mp inferInstance
+    have hsup : Ring.jacobson R • (⊤ : Submodule R P) ⊔ LinearMap.ker f ≠ ⊤ := fun h ↦
+      (LinearMap.ker_eq_top.not.mpr (LinearMap.ne_zero_of_surjective hf))
+        (hJ.eq_top_of_sup_eq_top h)
+    exact hJ.mono (le_sup_right.trans ((hcoatom.le_iff_eq hsup).mp le_sup_left).le)
 
 /-- A projective cover of a simple module is indecomposable. No finiteness or assumption on
 the radical of the ring is needed. -/

@@ -7,15 +7,16 @@ module
 
 public import TauCeti.RingTheory.Idempotents.Primitive.Decomposition
 public import TauCeti.RingTheory.Idempotents.Projective
-public import TauCeti.Algebra.Module.ProjectiveCover.Simple
+public import TauCeti.Algebra.Module.Projective.Top
 
 /-!
 # Primitive idempotents and simple heads
 
 In a left Artinian ring `R`, an idempotent `e` is primitive exactly when the head of its left
 ideal `Re` is simple. The head is the quotient `Re / J Re`, where `J` is the Jacobson radical.
-Every surjection from `Re` onto a nonzero semisimple module is then a projective cover. Given a
-complete primitive orthogonal family, these ideals supply projective covers of every simple module.
+Every surjection from `Re` onto a nonzero module is then a projective cover. If the target is
+semisimple, it is necessarily simple. Given a complete primitive orthogonal family, these ideals
+supply projective covers of every simple module.
 
 This connects the decomposition of the regular module by primitive idempotents to the simple
 modules. It uses the general simple-head theorem for indecomposable projectives and the existing
@@ -60,15 +61,24 @@ theorem IsPrimitiveIdempotent.isSimpleModule_quotient_jacobson_smul_top
   exact he.isIndecomposableModule.isSimpleModule_quotient_jacobson_smul_top
     (isFiniteLength_iff_isNoetherian_isArtinian.mpr ⟨inferInstance, inferInstance⟩)
 
-/-- Every surjection from the left ideal of a primitive idempotent onto a nonzero semisimple
-module is a projective cover. -/
+/-- Every surjection from the left ideal of a primitive idempotent onto a nonzero module is a
+projective cover. -/
 theorem IsPrimitiveIdempotent.isProjectiveCover_of_surjective
     (he : IsPrimitiveIdempotent e) {S : Type*} [AddCommGroup S] [Module R S]
-    [IsSemisimpleModule R S] [Nontrivial S] {f : (Ideal.span {e} : Ideal R) →ₗ[R] S}
+    [Nontrivial S] {f : (Ideal.span {e} : Ideal R) →ₗ[R] S}
     (hf : Function.Surjective f) : IsProjectiveCover f := by
   have := he.isIdempotentElem.projective_span_singleton
   have := he.isSimpleModule_quotient_jacobson_smul_top
   exact isProjectiveCover_of_isSimpleModule_quotient_jacobson_smul_top hf
+
+/-- Every nonzero semisimple quotient of the left ideal of a primitive idempotent in a left
+Artinian ring is simple. -/
+theorem IsPrimitiveIdempotent.isSimpleModule_of_surjective
+    (he : IsPrimitiveIdempotent e) {S : Type*} [AddCommGroup S] [Module R S]
+    [IsSemisimpleModule R S] [Nontrivial S] {f : (Ideal.span {e} : Ideal R) →ₗ[R] S}
+    (hf : Function.Surjective f) : IsSimpleModule R S := by
+  have := he.isIdempotentElem.projective_span_singleton
+  exact he.isIndecomposableModule.isSimpleModule_of_surjective S f hf
 
 end TauCeti
 
