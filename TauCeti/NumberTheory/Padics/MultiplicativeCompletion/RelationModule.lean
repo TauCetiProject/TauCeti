@@ -17,8 +17,10 @@ algebraic `ℤ_p[Gal(L/K)]`-linear map `β : relationModule → A(L)` defines a 
 homomorphism `R^ab(p) → V^ab(p)`, where `V` is the subgroup of `G_K` fixing `L`.
 
 The map is exactly `β` read through Lyndon's isomorphism and local reciprocity. It preserves
-surjectivity, and for normal `L/K` it is equivariant for the quotient actions. Thus the integral
-relation-module surjection can be used as a map of kernels of profinite group extensions.
+surjectivity, and for normal `L/K` it is equivariant for the quotient actions when `K` and `L`
+have compatible `ℚ_[p]`-algebra structures forming a scalar tower, `L` is finite over `ℚ_[p]`,
+and `ValuativeExtension ℚ_[p] L` holds. Thus the integral relation-module surjection can be used
+as a map of kernels of profinite group extensions.
 No compatibility of extension classes is asserted here.
 
 ## Main declarations

@@ -13,8 +13,9 @@ import Mathlib.Topology.Separation.Hausdorff
 
 A finitely generated Hausdorff topological module over a compact ring has the module topology.
 Consequently every linear map from it to a topological module is continuous. In particular this
-applies to finitely generated compact `ℤ_p`-modules, allowing algebraic maps between abelian
-pro-`p` groups to be used as maps of topological groups.
+applies to finitely generated compact Hausdorff topological `ℤ_p`-modules with continuous
+addition and scalar action, allowing algebraic maps between abelian pro-`p` groups to be used
+as maps of topological groups.
 
 The construction uses Mathlib's module topology and finite free presentations, rather than a
 second topology on finite modules.
