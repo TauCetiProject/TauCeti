@@ -80,6 +80,12 @@ private def localPowerClassMap (S : Finset (HeightOneSpectrum (𝓞 K))) (n : �
   map_one' := by ext <;> simp
   map_mul' x y := by ext <;> simp [QuotientGroup.mk_mul]
 
+private theorem localPowerClassMap_apply (S : Finset (HeightOneSpectrum (𝓞 K))) (n : ℕ)
+    (x : kummerIdeleSubgroup S 1) :
+    localPowerClassMap S n x = (fun v => QuotientGroup.mk (v.1.ideleFiniteCoord x.1),
+      fun w => QuotientGroup.mk (w.ideleInfiniteCoord x.1)) :=
+  (rfl)
+
 private theorem localPowerClassMap_surjective (S : Finset (HeightOneSpectrum (𝓞 K))) (n : ℕ) :
     Function.Surjective (localPowerClassMap S n) := by
   classical
@@ -108,10 +114,7 @@ private theorem ker_localPowerClassMap (S : Finset (HeightOneSpectrum (𝓞 K)))
   ext x
   have hx := (mem_kummerIdeleSubgroup_one_iff S x.1).mp x.2
   rw [MonoidHom.mem_ker, Subgroup.mem_subgroupOf]
-  change (((fun v : S => QuotientGroup.mk (v.1.ideleFiniteCoord x.1)),
-    fun w : InfinitePlace K => QuotientGroup.mk (w.ideleInfiniteCoord x.1)) :
-      LocalPowerClasses S n) = 1 ↔
-      x.1 ∈ kummerIdeleSubgroup S n
+  rw [localPowerClassMap_apply]
   simp only [mem_kummerIdeleSubgroup_iff, Prod.ext_iff, funext_iff, Prod.fst_one, Prod.snd_one,
     Pi.one_apply, QuotientGroup.eq_one_iff]
   constructor
@@ -135,24 +138,25 @@ theorem relIndex_kummerIdeleSubgroup (S : Finset (HeightOneSpectrum (𝓞 K))) (
     _ = _ := by simp [Nat.card_prod, Nat.card_pi, LocalPowerClasses]
 
 /-- The image of the Kummer idele subgroup in the idele class group. -/
-def kummerNormSubgroup (S : Finset (HeightOneSpectrum (𝓞 K))) (n : ℕ) :
+def kummerIdeleClassSubgroup (S : Finset (HeightOneSpectrum (𝓞 K))) (n : ℕ) :
     Subgroup (IdeleClassGroup (𝓞 K) K) :=
   (kummerIdeleSubgroup S n).map (QuotientGroup.mk' (IdeleGroup.principalSubgroup (𝓞 K) K))
 
-/-- An idele class lies in the Kummer norm subgroup exactly when it has a Kummer idele
+/-- An idele class lies in the Kummer idele class subgroup exactly when it has a Kummer idele
 representative. -/
-theorem mem_kummerNormSubgroup_iff (S : Finset (HeightOneSpectrum (𝓞 K))) (n : ℕ)
+@[simp]
+theorem mem_kummerIdeleClassSubgroup_iff (S : Finset (HeightOneSpectrum (𝓞 K))) (n : ℕ)
     (c : IdeleClassGroup (𝓞 K) K) :
-    c ∈ kummerNormSubgroup S n ↔
+    c ∈ kummerIdeleClassSubgroup S n ↔
       ∃ x ∈ kummerIdeleSubgroup S n, (x : IdeleClassGroup (𝓞 K) K) = c :=
   (Iff.rfl)
 
-/-- If the classes of `S` generate the ideal class group, the index of the Kummer norm subgroup
-divides the product of the local power-class counts. -/
-theorem index_kummerNormSubgroup_dvd (S : Finset (HeightOneSpectrum (𝓞 K))) (n : ℕ)
+/-- If the classes of `S` generate the ideal class group, the index of the Kummer idele class
+subgroup divides the product of the local power-class counts. -/
+theorem index_kummerIdeleClassSubgroup_dvd (S : Finset (HeightOneSpectrum (𝓞 K))) (n : ℕ)
     (hS : Subgroup.closure
       (HeightOneSpectrum.classGroupMk (R := 𝓞 K) '' (S : Set (HeightOneSpectrum (𝓞 K)))) = ⊤) :
-    (kummerNormSubgroup S n).index ∣
+    (kummerIdeleClassSubgroup S n).index ∣
       (∏ v : S, Nat.card ((v.1.adicCompletion K)ˣ ⧸ (powMonoidHom n).range)) *
         ∏ w : InfinitePlace K, Nat.card (w.Completionˣ ⧸ (powMonoidHom n).range) := by
   let f : kummerIdeleSubgroup S 1 →* IdeleClassGroup (𝓞 K) K :=
@@ -163,9 +167,9 @@ theorem index_kummerNormSubgroup_dvd (S : Finset (HeightOneSpectrum (𝓞 K))) (
     obtain ⟨x, hx, hc⟩ := IdeleClassGroup.exists_valued_ideleFiniteCoord_eq_one_and_mk_eq hS c
     exact ⟨⟨x, (mem_kummerIdeleSubgroup_one_iff S x).mpr hx⟩, hc⟩
   have hmap : ((kummerIdeleSubgroup S n).subgroupOf (kummerIdeleSubgroup S 1)).map f =
-      kummerNormSubgroup S n := by
+      kummerIdeleClassSubgroup S n := by
     dsimp only [f]
-    rw [kummerNormSubgroup, ← Subgroup.map_map, Subgroup.subgroupOf_map_subtype]
+    rw [kummerIdeleClassSubgroup, ← Subgroup.map_map, Subgroup.subgroupOf_map_subtype]
     exact congrArg (Subgroup.map _) (inf_eq_left.mpr (kummerIdeleSubgroup_le_one S n))
   rw [← relIndex_kummerIdeleSubgroup, Subgroup.relIndex, ← hmap]
   exact Subgroup.index_map_dvd _ hf
