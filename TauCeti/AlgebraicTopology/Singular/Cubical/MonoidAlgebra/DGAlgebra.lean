@@ -22,8 +22,7 @@ with the boundary as differential and `C^□_n` in cohomological degree `-n` (th
 * `TauCeti.cubicalChainGrading G R`: the `ℤ`-grading of `normalizedCubicalChainAlgebra G R`, with
   `C^□_n` in degree `-n`.
 * `TauCeti.cubicalChainDifferential G R`: the boundary as an `R`-linear endomorphism.
-* The `GradedAlgebra` instance on `cubicalChainGrading G R`, and the `Ring` instance on
-  `normalizedCubicalChainAlgebra G R`.
+* The `GradedAlgebra` instance on `cubicalChainGrading G R`.
 
 ## Main results
 
@@ -46,11 +45,6 @@ namespace TauCeti
 section Grading
 
 variable (G : Type*) [Monoid G] [TopologicalSpace G] [ContinuousMul G] (R : Type*) [CommRing R]
-
-/-- The inclusion of the chains of dimension `n` into the graded algebra. -/
-abbrev cubicalChainLof (n : ℕ) :
-    NormalizedCubicalChain G R n →ₗ[R] normalizedCubicalChainAlgebra G R :=
-  DirectSum.lof R ℕ (fun n ↦ NormalizedCubicalChain G R n) n
 
 /-- The graded piece of cohomological degree `i` of the algebra of cubical chains: the chains of
 dimension `-i` when `i ≤ 0`, and zero otherwise. -/
@@ -135,7 +129,6 @@ instance :
     GradedAlgebra (R := R) (A := normalizedCubicalChainAlgebra G R) (cubicalChainGrading G R) :=
   { }
 
-
 end Grading
 
 section Differential
@@ -143,25 +136,6 @@ section Differential
 variable (G : Type*) [Monoid G] [TopologicalSpace G] [ContinuousMul G] (R : Type*) [CommRing R]
 
 open NormalizedCubicalChain
-
-/-- The ring structure of the algebra of cubical chains. -/
-instance : Ring (normalizedCubicalChainAlgebra G R) :=
-  DirectSum.ring (fun n : ℕ ↦ NormalizedCubicalChain G R n)
-
-omit [Monoid G] [ContinuousMul G] in
-/-- Reindexing a chain does not change its image in the graded algebra. -/
-theorem cubicalChainLof_cast {n m : ℕ} (h : n = m) (x : NormalizedCubicalChain G R n) :
-    cubicalChainLof G R m (cast R h x) = cubicalChainLof G R n x := by
-  subst h
-  rw [cast_rfl]
-
-/-- The product of homogeneous chains in the graded algebra. -/
-theorem cubicalChainLof_mul {p q : ℕ} (a : NormalizedCubicalChain G R p)
-    (b : NormalizedCubicalChain G R q) :
-    cubicalChainLof G R p a * cubicalChainLof G R q b =
-      cubicalChainLof G R (p + q) (mul G R p q a b) := by
-  rw [DirectSum.lof_eq_of, DirectSum.lof_eq_of, DirectSum.lof_eq_of, DirectSum.of_mul_of,
-    NormalizedCubicalChain.gMul_mul]
 
 /-- The boundary of the chains of dimension `n`, as a map into the graded algebra; it vanishes in
 dimension `0`. -/
@@ -216,17 +190,17 @@ theorem cubicalChainDifferential_lof_mul_lof {m q : ℕ} (y : NormalizedCubicalC
         (-(m : ℤ)).negOnePow •
           (cubicalChainLof G R m y * cubicalChainDifferential G R (cubicalChainLof G R q z)) := by
   rw [cubicalChainLof_mul, negOnePow_neg_natCast_smul]
+  have h0 : ∀ n : ℕ, ((-1 : R) ^ n) • (0 : normalizedCubicalChainAlgebra G R) = 0 :=
+    fun n ↦ smul_zero (M := R) (A := normalizedCubicalChainAlgebra G R) _
+  -- In each case the dimension of the product reduces definitionally to `0` or to a successor,
+  -- so the differential is computed by `cubicalChainDifferential_lof_zero` or `_succ`.
   rcases m with _ | k <;> rcases q with _ | j
-  · rw [cubicalChainDifferential_lof G R (0 + 0)]
-    change (0 : normalizedCubicalChainAlgebra G R) = _
-    rw [cubicalChainDifferential_lof_zero, cubicalChainDifferential_lof_zero, zero_mul, mul_zero,
-      zero_add]
-    exact (smul_zero (M := R) (A := normalizedCubicalChainAlgebra G R) ((-1 : R) ^ 0)).symm
+  · rw [cubicalChainDifferential_lof_zero, cubicalChainDifferential_lof_zero,
+      cubicalChainDifferential_lof_zero, zero_mul, mul_zero, h0, zero_add]
   · have hL : cubicalChainDifferential G R
         (cubicalChainLof G R (0 + (j + 1)) (mul G R 0 (j + 1) y z)) =
           cubicalChainLof G R (0 + j) (mul G R 0 j y (boundary G R j z)) := by
-      rw [cubicalChainDifferential_lof G R (0 + (j + 1))]
-      change cubicalChainLof G R (0 + j) (boundary G R (0 + j) (mul G R 0 (j + 1) y z)) = _
+      refine (cubicalChainDifferential_lof_succ G R (0 + j) (mul G R 0 (j + 1) y z)).trans ?_
       congr 1
       apply cast_injective R (Nat.zero_add j)
       exact (boundary_cast R (Nat.zero_add j) (mul G R 0 (j + 1) y z)).symm.trans
@@ -235,17 +209,13 @@ theorem cubicalChainDifferential_lof_mul_lof {m q : ℕ} (y : NormalizedCubicalC
       cubicalChainLof_mul, zero_mul, zero_add (M := normalizedCubicalChainAlgebra G R), pow_zero]
     exact (one_smul R
       (cubicalChainLof G R (0 + j) (mul G R 0 j y (boundary G R j z)))).symm
-  · rw [cubicalChainDifferential_lof G R (k + 1 + 0)]
-    change cubicalChainLof G R k (boundary G R k (mul G R (k + 1) 0 y z)) = _
+  · refine (cubicalChainDifferential_lof_succ G R k (mul G R (k + 1) 0 y z)).trans ?_
     rw [boundary_mul_zero_right, cubicalChainDifferential_lof_succ,
-      cubicalChainDifferential_lof_zero, mul_zero, cubicalChainLof_mul,
-      show ((-1 : R) ^ (k + 1)) • (0 : normalizedCubicalChainAlgebra G R) = 0 from
-        smul_zero (M := R) (A := normalizedCubicalChainAlgebra G R) _,
+      cubicalChainDifferential_lof_zero, mul_zero, cubicalChainLof_mul, h0,
       add_zero (M := normalizedCubicalChainAlgebra G R)]
     rfl
-  · rw [cubicalChainDifferential_lof G R (k + 1 + (j + 1))]
-    change cubicalChainLof G R (k + 1 + j) (boundary G R (k + 1 + j)
-      (mul G R (k + 1) (j + 1) y z)) = _
+  · refine (cubicalChainDifferential_lof_succ G R (k + 1 + j)
+      (mul G R (k + 1) (j + 1) y z)).trans ?_
     have h' : k + 1 + j = k + j + 1 := by omega
     have e : cast R h' (boundary G R (k + 1 + j) (mul G R (k + 1) (j + 1) y z)) =
         mul G R k (j + 1) (boundary G R k y) z +

@@ -25,6 +25,7 @@ which the product of homogeneous elements is their Pontryagin product (`DirectSu
 
 ## Main definitions
 
+* `TauCeti.cubicalChainLof G R n`: the inclusion of the `n`-chains, with `cubicalChainLof_mul`.
 * `TauCeti.normalizedCubicalChainAlgebra G R`: the graded algebra `⨁ n, C^□_n(G; R)`.
 * `TauCeti.NormalizedCubicalChain.gMonoid`, `.gRing`, `.gAlgebra`: the graded structures.
 
@@ -130,6 +131,30 @@ variable (G : Type*) [Monoid G] [TopologicalSpace G] [ContinuousMul G] (R : Type
 /-- The **graded algebra of normalized cubical chains** of a topological monoid `G`:
 `⨁ n, C^□_n(G; R)` with the Pontryagin product. -/
 abbrev normalizedCubicalChainAlgebra : Type _ := ⨁ n : ℕ, NormalizedCubicalChain G R n
+
+/-- The ring structure of the graded algebra of normalized cubical chains. -/
+instance : Ring (normalizedCubicalChainAlgebra G R) :=
+  DirectSum.ring (fun n : ℕ ↦ NormalizedCubicalChain G R n)
+
+/-- The inclusion of the chains of dimension `n` into the graded algebra. -/
+abbrev cubicalChainLof (n : ℕ) :
+    NormalizedCubicalChain G R n →ₗ[R] normalizedCubicalChainAlgebra G R :=
+  DirectSum.lof R ℕ (fun n ↦ NormalizedCubicalChain G R n) n
+
+omit [Monoid G] [ContinuousMul G] in
+/-- Reindexing a chain does not change its image in the graded algebra. -/
+theorem cubicalChainLof_cast {n m : ℕ} (h : n = m) (x : NormalizedCubicalChain G R n) :
+    cubicalChainLof G R m (NormalizedCubicalChain.cast R h x) = cubicalChainLof G R n x := by
+  subst h
+  rw [NormalizedCubicalChain.cast_rfl]
+
+/-- The product of homogeneous chains in the graded algebra is their Pontryagin product. -/
+theorem cubicalChainLof_mul {p q : ℕ} (a : NormalizedCubicalChain G R p)
+    (b : NormalizedCubicalChain G R q) :
+    cubicalChainLof G R p a * cubicalChainLof G R q b =
+      cubicalChainLof G R (p + q) (NormalizedCubicalChain.mul G R p q a b) := by
+  rw [DirectSum.lof_eq_of, DirectSum.lof_eq_of, DirectSum.lof_eq_of, DirectSum.of_mul_of,
+    NormalizedCubicalChain.gMul_mul]
 
 end TauCeti
 
