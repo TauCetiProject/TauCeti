@@ -46,10 +46,14 @@ with a diffeomorphism of the circle, while the ambient `Diff(N)`-action is postc
 * `TauCeti.isSmoothEmbedding_comp_continuousLinearEquiv`: a smooth embedding of a vector space stays
   one after a linear change of coordinates of the source, which changes its model.
 * `TauCeti.isSmoothEmbedding_diffeomorph`: a diffeomorphism is a smooth embedding.
+* `TauCeti.isSmoothEmbedding_continuousLinearEquiv`: a continuous linear equivalence between normed
+  spaces is a smooth embedding.
 
 ## Main definitions
 
 * `TauCeti.SmoothEmbedding.ofDiffeomorph`: a diffeomorphism as a bundled smooth embedding.
+* `TauCeti.SmoothEmbedding.ofContinuousLinearEquiv`: a continuous linear equivalence as a bundled
+  smooth embedding.
 * `TauCeti.SmoothEmbedding.compDiffeomorph`: reparametrise a bundled smooth embedding by a
   diffeomorphism of its source.
 * `TauCeti.SmoothEmbedding.transDiffeomorph`: transport a bundled smooth embedding by a
@@ -133,6 +137,11 @@ theorem isSmoothEmbedding_diffeomorph [IsManifold I n M] [IsManifold I n M']
     (e : M ≃ₘ^n⟮I, I⟯ M') : IsSmoothEmbedding I I n e :=
   ⟨e.isImmersion, e.toHomeomorph.isEmbedding⟩
 
+/-- A continuous linear equivalence between normed spaces is a smooth embedding. -/
+theorem isSmoothEmbedding_continuousLinearEquiv (e : E ≃L[𝕜] E') :
+    IsSmoothEmbedding 𝓘(𝕜, E) 𝓘(𝕜, E') n e := by
+  simpa using isSmoothEmbedding_comp_continuousLinearEquiv e IsSmoothEmbedding.id
+
 end IsSmoothEmbedding
 
 namespace SmoothEmbedding
@@ -166,6 +175,21 @@ theorem coe_ofDiffeomorph [IsManifold I n M] [IsManifold I n M'] (e : M ≃ₘ^n
     ⇑(ofDiffeomorph e) = e := by
   funext x
   exact ofDiffeomorph_apply e x
+
+/-- A continuous linear equivalence between normed spaces, as a bundled smooth embedding. -/
+def ofContinuousLinearEquiv (e : E ≃L[𝕜] E') : SmoothEmbedding 𝓘(𝕜, E) 𝓘(𝕜, E') n E E' :=
+  SmoothEmbedding.ofIsSmoothEmbedding e (isSmoothEmbedding_continuousLinearEquiv e)
+
+@[simp]
+theorem ofContinuousLinearEquiv_apply (e : E ≃L[𝕜] E') (x : E) :
+    ofContinuousLinearEquiv (n := n) e x = e x := by
+  simp only [ofContinuousLinearEquiv, ofIsSmoothEmbedding_apply]
+
+@[simp]
+theorem coe_ofContinuousLinearEquiv (e : E ≃L[𝕜] E') :
+    ⇑(ofContinuousLinearEquiv (n := n) e) = e := by
+  funext x
+  exact ofContinuousLinearEquiv_apply e x
 
 /-- A diffeomorphism is onto, so as a smooth embedding it has full image.
 
