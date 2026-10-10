@@ -70,28 +70,6 @@ theorem localizationDualToCompletion_tmul (a : ℤ_[p]) (x : L.dualCarrier) :
   rw [localizationDualToCompletion, LinearMap.liftBaseChange_tmul]
   simp [TensorProduct.smul_tmul', Algebra.smul_def]
 
-/-- The localization of the dual carrier embeds injectively in the completed rational space. -/
-theorem localizationDualToCompletion_injective :
-    Function.Injective (L.localizationDualToCompletion p) := by
-  let f := (Algebra.linearMap ℤ_[p] ℚ_[p]).restrictScalars ℤ
-  let e := (TensorProduct.equivOfCompatibleSMul ℤ ℚ ℤ ℚ_[p] V).symm
-  let : IsAddTorsionFree V := .of_module_rat V
-  -- After forgetting `ℤ_p`-linearity, check on pure tensors that the map tensors the two
-  -- inclusions over `ℤ`, then identifies the rational scalar extension.
-  have h : (L.localizationDualToCompletion p).restrictScalars ℤ =
-      e.toLinearMap.comp (TensorProduct.map f L.dualCarrier.subtype) := by
-    apply TensorProduct.ext'
-    intro a x
-    change L.localizationDualToCompletion p (a ⊗ₜ x) =
-      e (TensorProduct.map f L.dualCarrier.subtype (a ⊗ₜ x))
-    rw [localizationDualToCompletion_tmul, TensorProduct.map_tmul]
-    rfl
-  -- Restricting scalars leaves the underlying function unchanged.
-  change Function.Injective ((L.localizationDualToCompletion p).restrictScalars ℤ)
-  rw [h]
-  exact e.injective.comp (TensorProduct.map_injective_of_flat_flat' f L.dualCarrier.subtype
-    (FaithfulSMul.algebraMap_injective ℤ_[p] ℚ_[p]) L.dualCarrier.subtype_injective)
-
 /-- Extending the localized dual carrier from `ℤ_p` to `ℚ_p` recovers the completed ambient
 space. This requires no nondegeneracy: the dual carrier contains the original full carrier. -/
 theorem isBaseChange_localizationDualToCompletion :
@@ -110,6 +88,19 @@ theorem isBaseChange_localizationDualToCompletion :
     (TensorProduct.isBaseChange ℚ V ℚ_[p])
   ext x
   simp
+
+/-- The localization of the dual carrier embeds injectively in the completed rational space. -/
+theorem localizationDualToCompletion_injective :
+    Function.Injective (L.localizationDualToCompletion p) := by
+  let : IsAddTorsionFree V := .of_module_rat V
+  have h := L.isBaseChange_localizationDualToCompletion p
+  have hmk : ⇑(L.localizationDualToCompletion p) =
+      h.equiv ∘ TensorProduct.mk ℤ_[p] ℚ_[p] (L.LocalDualCarrier p) 1 := by
+    ext x
+    simp [h.equiv_tmul]
+  rw [hmk]
+  exact h.equiv.injective.comp
+    (Module.Flat.tensorProduct_mk_injective ℤ_[p] (L.LocalDualCarrier p) ℚ_[p])
 
 variable [L.IsNondegenerate]
 
