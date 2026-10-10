@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.Cubical.CrossProduct
+public import TauCeti.AlgebraicTopology.Singular.Cubical.CrossProduct.Basic
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Normalized
 import Mathlib.LinearAlgebra.BilinearMap
 
@@ -96,38 +96,30 @@ theorem map_crossProduct (f : C(X, Z)) (g : C(Y, W)) (a : CubicalChain X R p)
 /-- The cross product of a degenerate chain with any chain is degenerate. -/
 theorem crossProduct_left_mem_degenerate {a : CubicalChain X R p} (ha : a ∈ degenerate X R p)
     (b : CubicalChain Y R q) : crossProduct X Y R p q a b ∈ degenerate (X × Y) R (p + q) := by
-  rw [degenerate] at ha
-  induction ha using Submodule.span_induction with
-  | mem f hf =>
-    obtain ⟨c, hc, rfl⟩ := hf
-    induction b using Finsupp.induction_linear with
-    | zero => simp
-    | add b b' hb hb' => simpa using add_mem hb hb'
-    | single d s =>
-      rw [crossProduct_single]
-      exact single_mem_degenerate R
-        ((SingularCube.isDegenerate_crossProduct_iff c d).2 (Or.inl hc)) _
+  refine degenerate_induction R (P := fun a ↦ crossProduct X Y R p q a b ∈
+    degenerate (X × Y) R (p + q)) (by simp) (fun c hc ↦ ?_) (fun a a' ha ha' ↦ by
+      simpa using add_mem ha ha') (fun r a ha ↦ by simpa using Submodule.smul_mem _ r ha) ha
+  induction b using Finsupp.induction_linear with
   | zero => simp
-  | add a a' _ _ ha ha' => simpa using add_mem ha ha'
-  | smul r a _ ha => simpa using Submodule.smul_mem _ r ha
+  | add b b' hb hb' => simpa using add_mem hb hb'
+  | single d s =>
+    rw [crossProduct_single]
+    exact single_mem_degenerate R
+      ((SingularCube.isDegenerate_crossProduct_iff c d).2 (Or.inl hc)) _
 
 /-- The cross product of any chain with a degenerate chain is degenerate. -/
 theorem crossProduct_right_mem_degenerate (a : CubicalChain X R p) {b : CubicalChain Y R q}
     (hb : b ∈ degenerate Y R q) : crossProduct X Y R p q a b ∈ degenerate (X × Y) R (p + q) := by
-  rw [degenerate] at hb
-  induction hb using Submodule.span_induction with
-  | mem f hf =>
-    obtain ⟨d, hd, rfl⟩ := hf
-    induction a using Finsupp.induction_linear with
-    | zero => simp
-    | add a a' ha ha' => simpa using add_mem ha ha'
-    | single c r =>
-      rw [crossProduct_single]
-      exact single_mem_degenerate R
-        ((SingularCube.isDegenerate_crossProduct_iff c d).2 (Or.inr hd)) _
+  refine degenerate_induction R (P := fun b ↦ crossProduct X Y R p q a b ∈
+    degenerate (X × Y) R (p + q)) (by simp) (fun d hd ↦ ?_) (fun b b' hb hb' ↦ by
+      simpa using add_mem hb hb') (fun r b hb ↦ by simpa using Submodule.smul_mem _ r hb) hb
+  induction a using Finsupp.induction_linear with
   | zero => simp
-  | add b b' _ _ hb hb' => simpa using add_mem hb hb'
-  | smul r b _ hb => simpa using Submodule.smul_mem _ r hb
+  | add a a' ha ha' => simpa using add_mem ha ha'
+  | single c r =>
+    rw [crossProduct_single]
+    exact single_mem_degenerate R
+      ((SingularCube.isDegenerate_crossProduct_iff c d).2 (Or.inr hd)) _
 
 end CrossProduct
 
