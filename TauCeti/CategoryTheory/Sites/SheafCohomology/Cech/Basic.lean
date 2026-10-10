@@ -68,6 +68,9 @@ be added or removed.
   `V ⟶ U` have homotopy equivalent Čech complexes.
 * `TauCeti.CategoryTheory.quasiIso_cechAugmentation_congr`: for such families, the augmented Čech
   complex of `P` for `U` is exact if and only if the one for `V` is.
+* `TauCeti.CategoryTheory.isIso_cechComplexMap`: a morphism of families that is the identity on
+  indices induces an isomorphism of Čech complexes when `P` inverts the induced maps of products.
+* `TauCeti.CategoryTheory.cechAugmentation_naturality`: the augmentation is natural in `P`.
 
 ## References
 
@@ -196,6 +199,16 @@ private def unopAlternatingFaceMapComplexIso :
     h ▸ (Category.id_comp _).trans
       ((unop_d_eq_cechComplexFunctor_obj_d U P i).symm.trans (Category.comp_id _).symm)
 
+/-! ### Maps of presheaves -/
+
+/-- A morphism of presheaves `α : P ⟶ Q` acts on the Čech complexes factorwise: the factor of
+`((cechComplexFunctor U).map α).f n` indexed by `a` is the component of `α` at
+`U (a 0) × ⋯ × U (a n)`. -/
+theorem cechComplexFunctor_map_f_π {Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q) (n : ℕ) (a : Fin (n + 1) → ι) :
+    ((cechComplexFunctor U).map α).f n ≫ Pi.π _ a =
+      Pi.π _ a ≫ α.app (op (∏ᶜ fun j ↦ U (a j))) :=
+  Pi.map_π (fun _ ↦ α.app _) a
+
 /-! ### Maps of families
 
 A morphism `φ` from the family `U` to a family `V : κ → C`, as a morphism of formal coproducts,
@@ -242,6 +255,30 @@ theorem cechComplexMap_comp {ι' : Type w} {W : ι' → C}
   simp only [cechComplexMap, CategoryTheory.Functor.map_comp, NatTrans.rightOp_comp,
     Functor.whiskerRight_comp]
   exact (alternatingCofaceMapComplex A).map_comp _ _
+
+/-- A morphism of families which is the identity on indices, given by morphisms
+`φ i : U i ⟶ W i`, induces an isomorphism of Čech complexes `Č(W, P) ⟶ Č(U, P)` as soon as `P`
+turns each induced morphism `U (a 0) × ⋯ × U (a n) ⟶ W (a 0) × ⋯ × W (a n)` into an
+isomorphism. -/
+theorem isIso_cechComplexMap {W : ι → C} (φ : ∀ i, U i ⟶ W i)
+    (h : ∀ (n : ℕ) (a : Fin (n + 1) → ι), IsIso (P.map (Limits.Pi.map fun j ↦ φ (a j)).op)) :
+    IsIso (cechComplexMap P (⟨id, φ⟩ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ W)) := by
+  have (n : ℕ) : IsIso ((cechComplexMap P
+      (⟨id, φ⟩ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ W)).f n) := by
+    have hπ (a : Fin (n + 1) → ι) : (cechComplexMap P
+        (⟨id, φ⟩ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ W)).f n ≫ Pi.π _ a =
+          Pi.π _ a ≫ P.map (Limits.Pi.map fun j ↦ φ (a j)).op :=
+      cechComplexMap_f_π P _ n a
+    -- in degree `n` the map is the product of the maps `P.map (Pi.map fun j ↦ φ (a j)).op`
+    have e : (cechComplexMap P
+        (⟨id, φ⟩ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ W)).f n =
+          Limits.Pi.map (fun a : Fin (n + 1) → ι ↦ P.map (Limits.Pi.map fun j ↦ φ (a j)).op) :=
+      Pi.hom_ext _ _ fun a ↦ (hπ a).trans
+        (Pi.map_π (fun a : Fin (n + 1) → ι ↦ P.map (Limits.Pi.map fun j ↦ φ (a j)).op) a).symm
+    have := h n
+    rw [e]
+    exact Pi.map_isIso _
+  exact HomologicalComplex.Hom.isIso_of_components _
 
 /-- The morphism of arrows to the terminal object of `FormalCoproduct C` induced by a morphism of
 formal coproducts. -/
@@ -399,6 +436,22 @@ theorem cechAugmentation_comp_cechComplexMap
         (cechAugmentation_f_zero_comp_π U hT P a).symm
 
 end Map
+
+/-- The augmentation is natural in the presheaf: for `α : P ⟶ Q`, restricting a section of `P`
+over `T` to the members of the family and then applying `α` is applying `α` over `T` and then
+restricting. -/
+@[reassoc]
+theorem cechAugmentation_naturality {Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q) :
+    cechAugmentation U hT P ≫ (cechComplexFunctor U).map α =
+      (CochainComplex.single₀ A).map (α.app (op T)) ≫ cechAugmentation U hT Q := by
+  refine HomologicalComplex.from_single_hom_ext (Pi.hom_ext _ _ fun (a : Fin 1 → ι) ↦ ?_)
+  -- restrict to `a`, then use naturality of `α` along the map to `T`
+  exact (Category.assoc _ _ _).trans <| (_ ≫= cechComplexFunctor_map_f_π U P α 0 a).trans <|
+    (Category.assoc _ _ _).symm.trans <| (cechAugmentation_f_zero_comp_π U hT P a =≫ _).trans <|
+      (α.naturality _).trans <|
+      (_ ≫= cechAugmentation_f_zero_comp_π U hT Q a).symm.trans <| (Category.assoc _ _ _).symm.trans
+        ((by simp : _ = ((CochainComplex.single₀ A).map (α.app (op T)) ≫
+          cechAugmentation U hT Q).f 0) =≫ _)
 
 /-! ### The augmentation in degree `0`
 
