@@ -19,8 +19,6 @@ the base of the standard Borel does not change its embedding in the special line
 No flatness or reducedness assumption on the base extension is needed. The construction
 uses `CommHopfAlgCat.quotientBaseChangeIsoOfMapEq` and the existing equality
 `SpecialLinear.UpperTriangular.map_baseChangeHopfIdeal_definingHopfIdeal`.
-The coordinate construction generalizes the rank-two Borel base-change construction in
-`TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Borel.Geometry`.
 
 ## References
 
@@ -53,7 +51,7 @@ noncomputable def coordinateHopfAlgebraBaseChangeIso :
 /-- The Borel base-change isomorphism commutes with restriction of functions from `SLₙ`.
 Contravariantly, this identifies the base change of the Borel inclusion with the inclusion
 constructed over the new base. -/
-@[reassoc]
+@[simp, reassoc]
 theorem baseChangeMap_coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_hom :
     CommHopfAlgCat.baseChangeMap (K := K) (coordinateMap R n) ≫
         (coordinateHopfAlgebraBaseChangeIso R K n).hom =
