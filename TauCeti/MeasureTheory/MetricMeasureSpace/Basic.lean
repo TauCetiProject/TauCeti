@@ -176,6 +176,13 @@ protected def refl (X : MetricMeasureSpace) : Equiv X X where
   toIsometryEquiv := IsometryEquiv.refl X
   measurePreserving' := MeasurePreserving.id _
 
+/-- Coercion to an isometric equivalence preserves the identity. -/
+@[simp]
+theorem coe_refl (X : MetricMeasureSpace) :
+    (Equiv.refl X : X ≃ᵢ X) = IsometryEquiv.refl X := by
+  ext
+  rfl
+
 /-- The inverse change of presentation. -/
 protected def symm (e : Equiv X Y) : Equiv Y X where
   toIsometryEquiv := e.toIsometryEquiv.symm
@@ -192,6 +199,13 @@ theorem coe_symm (e : Equiv X Y) :
 protected def trans (e : Equiv X Y) (f : Equiv Y Z) : Equiv X Z where
   toIsometryEquiv := e.toIsometryEquiv.trans f.toIsometryEquiv
   measurePreserving' := f.measurePreserving.comp e.measurePreserving
+
+/-- Coercion to an isometric equivalence preserves composition. -/
+@[simp]
+theorem coe_trans (e : Equiv X Y) (f : Equiv Y Z) :
+    (e.trans f : X ≃ᵢ Z) = (e : X ≃ᵢ Y).trans (f : Y ≃ᵢ Z) := by
+  ext
+  rfl
 
 @[simp]
 theorem refl_apply (x : X) : Equiv.refl X x = x := (rfl)
