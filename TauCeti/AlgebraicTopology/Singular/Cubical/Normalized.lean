@@ -256,6 +256,36 @@ theorem cast_mk {n m : ℕ} (h : n = m) (f : CubicalChain X R n) :
     cast R h (Submodule.Quotient.mk f) = Submodule.Quotient.mk (CubicalChain.cast R h f) :=
   Submodule.mapQ_apply _ _ _ f
 
+/-- Reindexing along successive dimension equalities is reindexing along their composite. -/
+@[simp]
+theorem cast_cast {n m k : ℕ} (h : n = m) (h' : m = k) (c : NormalizedCubicalChain X R n) :
+    cast R h' (cast R h c) = cast R (h.trans h') c := by
+  induction c using Submodule.Quotient.induction_on with
+  | H c => simp
+
+/-- Reindexing along `rfl` is the identity. -/
+@[simp]
+theorem cast_rfl {n : ℕ} (c : NormalizedCubicalChain X R n) : cast R rfl c = c := by
+  induction c using Submodule.Quotient.induction_on with
+  | H c => simp
+
+/-- Reindexing commutes with the push-forward. -/
+theorem map_cast (f : C(X, Y)) {n m : ℕ} (h : n = m) (c : NormalizedCubicalChain X R n) :
+    map R f m (cast R h c) = cast R h (map R f n c) := by
+  subst h
+  simp
+
+/-- Reindexing commutes with the boundary. -/
+theorem boundary_cast {n m : ℕ} (h : n = m) (c : NormalizedCubicalChain X R (n + 1)) :
+    boundary X R m (cast R (congrArg Nat.succ h) c) = cast R h (boundary X R n c) := by
+  subst h
+  simp
+
+/-- Reindexing is injective. -/
+theorem cast_injective {n m : ℕ} (h : n = m) :
+    Function.Injective (cast (X := X) R h) := fun a b hab ↦ by
+  simpa using congrArg (cast R h.symm) hab
+
 end NormalizedCubicalChain
 
 end TauCeti
