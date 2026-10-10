@@ -6,11 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.Grp.Abelian
-public import Mathlib.Algebra.Category.Grp.Biproducts
 public import Mathlib.CategoryTheory.Limits.Lattice
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.MayerVietoris
 
-import Mathlib.Algebra.Category.Grp.EpiMono
+import TauCeti.Algebra.Category.Grp.EpiMono
 import TauCeti.Algebra.Category.Grp.IsSheafFor
 
 /-!
@@ -46,30 +45,6 @@ namespace TauCeti.CategoryTheory
 variable {X : Type u} [SemilatticeInf X] [OrderTop X] (P : Xᵒᵖ ⥤ AddCommGrpCat.{w})
   (U : Fin 2 → X)
 
-/-- In `AddCommGrpCat`, the map `P(U 0) ⊞ P(U 1) ⟶ P(U 0 ⨯ U 1)` of the Mayer-Vietoris sequence
-is an epimorphism exactly when the difference of restrictions to `U 0 ⊓ U 1` is surjective. -/
-private lemma epi_biprod_desc_iff_surjective :
-    Epi (biprod.desc (P.map (prod.fst : U 0 ⨯ U 1 ⟶ U 0).op)
-        (-P.map (prod.snd : U 0 ⨯ U 1 ⟶ U 1).op)) ↔
-      Function.Surjective fun x : P.obj (op (U 0)) × P.obj (op (U 1)) ↦
-        P.map (homOfLE inf_le_left : U 0 ⊓ U 1 ⟶ U 0).op x.1 -
-          P.map (homOfLE inf_le_right : U 0 ⊓ U 1 ⟶ U 1).op x.2 := by
-  -- the product `U 0 ⨯ U 1` is the meet `U 0 ⊓ U 1`, so restriction between them is invertible
-  let e := iso_of_both_ways (homOfLE (CompleteLattice.prod_eq_inf (U 0) (U 1)).ge)
-    (homOfLE (CompleteLattice.prod_eq_inf (U 0) (U 1)).le)
-  have he : biprod.desc (P.map (prod.fst : U 0 ⨯ U 1 ⟶ U 0).op)
-      (-P.map (prod.snd : U 0 ⨯ U 1 ⟶ U 1).op) ≫ P.map e.hom.op =
-        biprod.desc (P.map (homOfLE inf_le_left : U 0 ⊓ U 1 ⟶ U 0).op)
-          (-P.map (homOfLE inf_le_right : U 0 ⊓ U 1 ⟶ U 1).op) := by
-    -- morphisms of `X` are unique, so `e` followed by a projection is the inequality of the meet
-    have h₀ : e.hom ≫ prod.fst = homOfLE inf_le_left := Subsingleton.elim _ _
-    have h₁ : e.hom ≫ prod.snd = homOfLE inf_le_right := Subsingleton.elim _ _
-    apply biprod.hom_ext' <;> simp [← P.map_comp, ← op_comp, h₀, h₁]
-  rw [← epi_comp_iff_of_isIso _ (P.map e.hom.op), he,
-    ← epi_comp_iff_of_epi (AddCommGrpCat.biprodIsoProd _ _).inv, AddCommGrpCat.epi_iff_surjective]
-  refine Iff.of_eq (congrArg _ (funext fun x ↦ ?_))
-  simp [AddCommGrpCat.biprodIsoProd_inv_comp_desc_apply, sub_eq_add_neg]
-
 /-- **The Čech complex of a two-member cover, elementwise.** Let `P` be a presheaf of abelian groups
 on a meet-semilattice `X` with a greatest element `⊤`, and let `U 0`, `U 1` be two elements of
 `X`. The augmented Čech complex `0 ⟶ P(⊤) ⟶ Č⁰(U, P) ⟶ Č¹(U, P) ⟶ ⋯` is exact if and only if the
@@ -85,7 +60,8 @@ theorem quasiIso_cechAugmentation_fin_two_iff_isSheafFor_and_surjective :
   -- the maps to the terminal object `⊤` are the inequalities `U i ≤ ⊤`
   have hπ : (fun i ↦ isTerminalTop.from (U i)) = fun _ ↦ homOfLE le_top :=
     funext fun _ ↦ Subsingleton.elim _ _
-  rw [quasiIso_cechAugmentation_fin_two_iff, epi_biprod_desc_iff_surjective,
+  rw [quasiIso_cechAugmentation_fin_two_iff,
+    P.epi_biprod_desc_map_prod_fst_neg_map_prod_snd_iff_surjective,
     Presieve.isSheafFor_comp_forget_addCommGrpCat_iff, hπ]
 
 end TauCeti.CategoryTheory
