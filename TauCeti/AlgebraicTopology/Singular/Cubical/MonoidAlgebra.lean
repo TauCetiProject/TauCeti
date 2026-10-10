@@ -129,30 +129,6 @@ theorem cast_injective {n m : ℕ} (h : n = m) :
     Function.Injective (cast (X := X) R h) := fun a b hab ↦ by
   simpa using congrArg (cast R h.symm) hab
 
-/-- The Leibniz rule for the cross product with a `0`-chain on the right. -/
-theorem boundary_crossProduct_zero_right {p : ℕ} (a : NormalizedCubicalChain X R (p + 1))
-    (b : NormalizedCubicalChain Y R 0) :
-    boundary (X × Y) R p (crossProduct X Y R (p + 1) 0 a b) =
-      crossProduct X Y R p 0 (boundary X R p a) b := by
-  induction a using Submodule.Quotient.induction_on with
-  | H a =>
-    induction b using Submodule.Quotient.induction_on with
-    | H b =>
-      rw [crossProduct_mk, boundary_mk, boundary_mk, crossProduct_mk,
-        CubicalChain.boundary_crossProduct_zero_right]
-
-/-- The Leibniz rule for the cross product with a `0`-chain on the left. -/
-theorem boundary_crossProduct_zero_left {q : ℕ} (a : NormalizedCubicalChain X R 0)
-    (b : NormalizedCubicalChain Y R (q + 1)) :
-    boundary (X × Y) R q (cast R (Nat.zero_add (q + 1)) (crossProduct X Y R 0 (q + 1) a b)) =
-      cast R (Nat.zero_add q) (crossProduct X Y R 0 q a (boundary Y R q b)) := by
-  induction a using Submodule.Quotient.induction_on with
-  | H a =>
-    induction b using Submodule.Quotient.induction_on with
-    | H b =>
-      rw [crossProduct_mk, cast_mk, boundary_mk, boundary_mk, crossProduct_mk, cast_mk,
-        CubicalChain.boundary_crossProduct_zero_left]
-
 end NormalizedCubicalChain
 
 end Casts
