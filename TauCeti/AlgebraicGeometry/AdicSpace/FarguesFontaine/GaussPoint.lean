@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.FarguesFontaine.Window
+public import TauCeti.Analysis.SpecialFunctions.Pow.NNRat
 public import TauCeti.RingTheory.WittVector.GaussValuation
 
 /-!
@@ -27,7 +28,10 @@ at `p` or `[ϖ]`, since `λ_ρ(p) = ρ` and `λ_ρ([ϖ]) = v(ϖ)`. So `η_ρ` li
 subset `𝒴 ⊆ Spa(𝕎 O, 𝕎 O)` whose quotient by Frobenius is the adic Fargues–Fontaine curve; in
 particular `𝒴` is nonempty. Its support is trivial, and its radius `κ(η_ρ)` is
 `log v(ϖ) / log ρ`, in the order-theoretic sense of `TauCeti.FarguesFontaine.IsRadiusLowerBound`:
-`q = a / b ≤ κ(η_ρ)` exactly when `v(ϖ) ^ b ≤ ρ ^ a`.
+`q = a / b ≤ κ(η_ρ)` exactly when `v(ϖ) ^ b ≤ ρ ^ a`. For `q ≠ 0` this says
+`v(ϖ) ^ (1 / q) ≤ ρ`, so the Gauss points with `q ≤ κ ≤ q'` are those of radius
+`ρ ∈ [v(ϖ) ^ (1 / q), v(ϖ) ^ (1 / q')]`: the radius `κ` and the Gauss radius `ρ` are related
+reciprocally.
 
 ## Main definitions
 
@@ -41,6 +45,8 @@ particular `𝒴` is nonempty. Its support is trivial, and its radius `κ(η_ρ)
 * `TauCeti.FarguesFontaine.spaY_nonempty` : `𝒴` is nonempty.
 * `TauCeti.FarguesFontaine.isRadiusLowerBound_gaussPoint_iff` and its upper analogue : the radius
   of `η_ρ`.
+* `TauCeti.FarguesFontaine.isRadiusLowerBound_gaussPoint_iff_rpow` and its upper analogue : the
+  reciprocal radius dictionary, `q ≤ κ(η_ρ) ↔ v(ϖ) ^ (1 / q) ≤ ρ` for `q ≠ 0`.
 
 ## References
 
@@ -125,5 +131,26 @@ theorem isRadiusUpperBound_gaussPoint_iff (hv : v.Integers O) (hρ : ρ < 1) (ϖ
       ρ ^ q.num ≤ v (algebraMap O K ϖ) ^ q.den := by
   rw [isRadiusUpperBound_iff_of_eq_div q.den_ne_zero (NNRat.num_div_den q).symm]
   simp
+
+/-- **The reciprocal radius dictionary, from below.** For `q ≠ 0`, the bound `q ≤ κ(η_ρ)` holds
+exactly when `v(ϖ) ^ (1 / q) ≤ ρ`. So the Gauss points with `q ≤ κ ≤ q'` are those of radius
+`ρ ∈ [v(ϖ) ^ (1 / q), v(ϖ) ^ (1 / q')]` (`isRadiusUpperBound_gaussPoint_iff_rpow`). -/
+theorem isRadiusLowerBound_gaussPoint_iff_rpow (hv : v.Integers O) (hρ : ρ < 1) (ϖ : O)
+    {q : ℚ≥0} (hq : q ≠ 0) :
+    IsRadiusLowerBound p ϖ q (gaussPoint p hv ρ hρ) ↔
+      v (algebraMap O K ϖ) ^ ((q : ℝ)⁻¹) ≤ ρ := by
+  have hnum : (0 : ℝ) < q.num := by exact_mod_cast NNRat.num_pos.mpr (pos_iff_ne_zero.mpr hq)
+  rw [isRadiusLowerBound_gaussPoint_iff, NNReal.rpow_inv_nnratCast, NNReal.rpow_inv_le_iff hnum,
+    NNReal.rpow_natCast]
+
+/-- **The reciprocal radius dictionary, from above.** For `q ≠ 0`, the bound `κ(η_ρ) ≤ q` holds
+exactly when `ρ ≤ v(ϖ) ^ (1 / q)`. -/
+theorem isRadiusUpperBound_gaussPoint_iff_rpow (hv : v.Integers O) (hρ : ρ < 1) (ϖ : O)
+    {q : ℚ≥0} (hq : q ≠ 0) :
+    IsRadiusUpperBound p ϖ q (gaussPoint p hv ρ hρ) ↔
+      ρ ≤ v (algebraMap O K ϖ) ^ ((q : ℝ)⁻¹) := by
+  have hnum : (0 : ℝ) < q.num := by exact_mod_cast NNRat.num_pos.mpr (pos_iff_ne_zero.mpr hq)
+  rw [isRadiusUpperBound_gaussPoint_iff, NNReal.rpow_inv_nnratCast, NNReal.le_rpow_inv_iff hnum,
+    NNReal.rpow_natCast]
 
 end TauCeti.FarguesFontaine
