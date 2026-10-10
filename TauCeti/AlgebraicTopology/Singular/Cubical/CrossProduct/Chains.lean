@@ -26,7 +26,6 @@ a factor has degree `0` are stated separately.
 
 ## Main definitions
 
-* `TauCeti.CubicalChain.cast`: reindexing of chains along an equality of dimensions.
 * `TauCeti.CubicalChain.crossProduct X Y R p q`: the cross product of cubical chains.
 * `TauCeti.NormalizedCubicalChain.crossProduct X Y R p q`: the cross product of normalized chains.
 
@@ -40,7 +39,8 @@ a factor has degree `0` are stated separately.
 * `TauCeti.CubicalChain.boundary_crossProduct`: the Leibniz rule, with
   `boundary_crossProduct_zero_left` and `boundary_crossProduct_zero_right` for a factor of
   degree `0`.
-* `TauCeti.NormalizedCubicalChain.boundary_crossProduct`: the Leibniz rule on normalized chains.
+* `TauCeti.NormalizedCubicalChain.boundary_crossProduct`: the Leibniz rule on normalized chains,
+  with `boundary_crossProduct_zero_left` and `boundary_crossProduct_zero_right`.
 
 ## References
 
@@ -59,25 +59,6 @@ variable {X Y Z W : Type*} [TopologicalSpace X] [TopologicalSpace Y] [Topologica
   [TopologicalSpace W]
 
 namespace CubicalChain
-
-section Cast
-
-variable (R : Type*) [Semiring R]
-
-/-- Reindex cubical chains along an equality of dimensions. -/
-def cast {n m : ℕ} (h : n = m) : CubicalChain X R n →ₗ[R] CubicalChain X R m :=
-  lmapDomain R R (SingularCube.cast h)
-
-@[simp]
-theorem cast_single {n m : ℕ} (h : n = m) (c : SingularCube X n) (a : R) :
-    cast R h (single c a) = single (SingularCube.cast h c) a := by
-  rw [cast, lmapDomain_apply, mapDomain_single]
-
-@[simp]
-theorem cast_rfl {n : ℕ} (f : CubicalChain X R n) : cast R rfl f = f := by
-  induction f using Finsupp.induction_linear <;> simp_all
-
-end Cast
 
 section CrossProduct
 
@@ -153,15 +134,6 @@ end CrossProduct
 section Leibniz
 
 variable {p q : ℕ} (R : Type*) [CommRing R]
-
-/-- Faces commute with reindexing. -/
-theorem _root_.TauCeti.SingularCube.face_cast {n m : ℕ} (h : n = m) (i : Fin (n + 1)) (t : I)
-    (c : SingularCube X (n + 1)) :
-    SingularCube.face (Fin.cast (congrArg Nat.succ h) i) t
-        (SingularCube.cast (congrArg Nat.succ h) c) =
-      SingularCube.cast h (SingularCube.face i t c) := by
-  subst h
-  simp
 
 /-- **The Leibniz rule for cubes**: the boundary of the cross product of a `(p + 1)`-cube and a
 `(q + 1)`-cube is the sum of the cross products of the boundary of the first factor with the
@@ -296,12 +268,6 @@ theorem boundary_crossProduct_zero_left (a : CubicalChain X R 0) (b : CubicalCha
 
 end Leibniz
 
-/-- Reindexing preserves degenerate chains. -/
-theorem cast_mem_degenerate (R : Type*) [Semiring R] {n m : ℕ} (h : n = m) {f : CubicalChain X R n}
-    (hf : f ∈ degenerate X R n) : cast R h f ∈ degenerate X R m := by
-  subst h
-  simpa using hf
-
 end CubicalChain
 
 namespace NormalizedCubicalChain
@@ -309,15 +275,6 @@ namespace NormalizedCubicalChain
 open CubicalChain
 
 variable (R : Type*) [CommRing R]
-
-/-- Reindex normalized chains along an equality of dimensions. -/
-def cast {n m : ℕ} (h : n = m) : NormalizedCubicalChain X R n →ₗ[R] NormalizedCubicalChain X R m :=
-  Submodule.mapQ _ _ (CubicalChain.cast R h) fun _ hf ↦ cast_mem_degenerate R h hf
-
-@[simp]
-theorem cast_mk {n m : ℕ} (h : n = m) (f : CubicalChain X R n) :
-    cast R h (Submodule.Quotient.mk f) = Submodule.Quotient.mk (CubicalChain.cast R h f) :=
-  Submodule.mapQ_apply _ _ _ f
 
 variable (X Y) in
 /-- The **cross product of normalized cubical chains**, induced by the cross product of the
@@ -377,6 +334,30 @@ theorem boundary_crossProduct {p q : ℕ} (a : NormalizedCubicalChain X R (p + 1
     | H b =>
       simp only [crossProduct_mk, boundary_mk, cast_mk, CubicalChain.boundary_crossProduct,
         Submodule.Quotient.mk_add, Submodule.Quotient.mk_smul]
+
+/-- The Leibniz rule for normalized chains when the second factor has degree `0`. -/
+theorem boundary_crossProduct_zero_right {p : ℕ} (a : NormalizedCubicalChain X R (p + 1))
+    (b : NormalizedCubicalChain Y R 0) :
+    boundary (X × Y) R p (crossProduct X Y R (p + 1) 0 a b) =
+      crossProduct X Y R p 0 (boundary X R p a) b := by
+  induction a using Submodule.Quotient.induction_on with
+  | H a =>
+    induction b using Submodule.Quotient.induction_on with
+    | H b =>
+      simp only [crossProduct_mk, boundary_mk, CubicalChain.boundary_crossProduct_zero_right]
+
+/-- The Leibniz rule for normalized chains when the first factor has degree `0`. -/
+theorem boundary_crossProduct_zero_left {q : ℕ} (a : NormalizedCubicalChain X R 0)
+    (b : NormalizedCubicalChain Y R (q + 1)) :
+    boundary (X × Y) R q (cast R (by omega : 0 + (q + 1) = q + 1)
+        (crossProduct X Y R 0 (q + 1) a b)) =
+      cast R (by omega : 0 + q = q) (crossProduct X Y R 0 q a (boundary Y R q b)) := by
+  induction a using Submodule.Quotient.induction_on with
+  | H a =>
+    induction b using Submodule.Quotient.induction_on with
+    | H b =>
+      simp only [crossProduct_mk, boundary_mk, cast_mk,
+        CubicalChain.boundary_crossProduct_zero_left]
 
 end NormalizedCubicalChain
 
