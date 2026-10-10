@@ -148,6 +148,29 @@ def toProdDiffeomorph : Sol ≃ₘ⟮𝓘(ℝ, ℝ × ℝ × ℝ), 𝓘(ℝ, ℝ
   exact congrArg (fun L => L v)
     (ContinuousLinearMap.id ℝ (ℝ × ℝ × ℝ)).hasFDerivAt.hasMFDerivAt.mfderiv
 
+/-- A map linear in Sol's global coordinates has that linear map as its differential,
+read in the canonical model-space tangent identifications. -/
+theorem tangentSpaceCastModel_mfderiv_of_eq_linear (Ψ : Sol → Sol)
+    (L : (ℝ × ℝ × ℝ) →L[ℝ] ℝ × ℝ × ℝ)
+    (hΨ : ∀ p : Sol, Ψ p = toProd.symm (L (toProd p))) (p : Sol)
+    (u : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) :
+    tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) (Ψ p)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) Ψ p u) =
+      L (tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) p u) := by
+  have heq : (Ψ : Sol → Sol) = toProd.symm ∘ L ∘ toProd := funext hΨ
+  have hf : MDifferentiable 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) toProd := by
+    simpa only [coe_toProdDiffeomorph] using
+      toProdDiffeomorph.mdifferentiable (by simp)
+  have hg : MDifferentiable 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) toProd.symm := by
+    simpa only [coe_toProdDiffeomorph_symm] using
+      toProdDiffeomorph.symm.mdifferentiable (by simp)
+  rw [heq, mfderiv_comp_apply p (hg _) (L.differentiable.mdifferentiable.comp hf p)]
+  simp only [Function.comp_apply]
+  rw [tangentSpaceCastModel_mfderiv_toProd_symm,
+    mfderiv_comp_apply p L.differentiableAt.mdifferentiableAt (hf p),
+    L.hasFDerivAt.hasMFDerivAt.mfderiv, mfderiv_toProd_apply]
+  rfl
+
 /-! ### The group structure -/
 
 /-- The product `(a, b, c) * (x, y, z) = (e^{-c} x + a, e^{c} y + b, c + z)` of the semidirect
