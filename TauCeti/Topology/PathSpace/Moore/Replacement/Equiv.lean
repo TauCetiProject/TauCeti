@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Homotopy.FiberHomotopyEquiv
-public import TauCeti.Topology.PathSpace.Moore.Replacement
+public import TauCeti.Topology.PathSpace.Moore.Replacement.Basic
 
 /-!
 # The Moore-path replacement of a Hurewicz fibration
@@ -16,11 +16,10 @@ Moore-path replacement is a **fibre homotopy equivalence** over `B`
 (`TauCeti.MooreReplacement.fiberHomotopyEquiv`), and so the fibre `F` of `p` over `b` is homotopy
 equivalent to the fibre `F'` of the replacement
 (`TauCeti.MooreReplacement.fiberHomotopyEquivFiber`).
-The inverse is built by lifting, from `e`, the homotopy `s ↦ γ (s · γ.length)` traced by the path of
-each pair `(e, γ)`: its end `ρ (e, γ)` lies over `γ.target`, and the two homotopies are vertical,
-`(s, e) ↦ G (s, (e, const))` on `E` and `(s, (e, γ)) ↦ (G (s, (e, γ)), γ|[s · γ.length, γ.length])`
-on `E'`.  This uses the homotopy lifting property with respect to `E'` itself, so the universe of
-test spaces is that of `E'`.
+The fibre homotopy equivalence identifies each fibre of `p` with the corresponding fibre of the
+replacement, `f ↦ (f, const)`, compatibly with the projections to `B`.  The hypothesis is the
+homotopy lifting property with respect to `E'` itself, so the universe of test spaces is that of
+`E'`.
 
 The endpoint evaluation `P_{A→X} X → X` of the Moore paths starting in a subset `A` is the
 Moore-path replacement of the inclusion `A → X`, up to a homeomorphism over `X`
@@ -125,8 +124,7 @@ def leftHomotopy {p : C(E, B)} (hp : IsHurewiczFibration.{max u v} p) :
   map_zero_left e := (liftedHomotopy_zero hp (incl p e)).trans (point_incl e)
   map_one_left _ := rfl
   prop' s := ContinuousMap.ext fun e ↦ by
-    change p (liftedHomotopy hp (s, incl p e)) = p e
-    rw [apply_liftedHomotopy, pathHomotopy_apply, path_incl, MoorePath.refl_apply]
+    simp [apply_liftedHomotopy, pathHomotopy_apply]
 
 /-- The vertical homotopy on `E'` from the identity to `incl ∘ retraction`:
 `(s, (e, γ)) ↦ (G (s, (e, γ)), γ|[s · γ.length, γ.length])`. -/
