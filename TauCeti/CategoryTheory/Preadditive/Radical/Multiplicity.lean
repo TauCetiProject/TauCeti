@@ -9,7 +9,7 @@ public import TauCeti.CategoryTheory.Preadditive.Radical.Basic
 public import TauCeti.CategoryTheory.Linear.Biproduct
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.LinearAlgebra.Quotient.Defs
-import TauCeti.LinearAlgebra.Quotient.Pi
+import TauCeti.LinearAlgebra.Quotient.Pi.Basic
 import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.LinearAlgebra.Dimension.Finite
 import Mathlib.LinearAlgebra.Isomorphisms
