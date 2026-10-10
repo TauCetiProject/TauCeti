@@ -280,7 +280,7 @@ theorem sUnitShortComplex_eq_mk :
       (comp_factorThruImage_eq_zero (sUnitInclusion_comp_sUnitValuation S)) := (rfl)
 
 /-- Ordinary units, S-units, and the valuation image form a short exact sequence. -/
-theorem sUnitShortComplex_shortExact : (sUnitShortComplex S).ShortExact := by
+theorem shortExact_sUnitShortComplex : (sUnitShortComplex S).ShortExact := by
   have h : (ShortComplex.mk (sUnitInclusion S) (sUnitValuation S)
       (sUnitInclusion_comp_sUnitValuation S)).Exact := by
     rw [← ShortComplex.exact_map_iff_of_faithful _
