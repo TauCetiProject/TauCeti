@@ -51,12 +51,12 @@ open DirectSum MulOpposite
 
 namespace TauCeti
 
-universe uR uA uM uP
+universe uR uA uM uP uQ
 
 section Map
 
 variable {R : Type uR} {A : Type uA} {M : Type uM} [CommRing R] [Semiring A]
-  {P Q : Type uP} [Fintype P]
+  {P : Type uP} {Q : Type uQ} [Fintype P]
   [AddCommMonoid M] [Module R M] [Module Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M]
 
 /-- The map `ℳ ⊗ ⟨P⟩ → ℳ ⊗ ⟨Q⟩` of a matrix `h : P → Q → A` with the Koszul sign, on the models
@@ -86,7 +86,7 @@ end Map
 section Single
 
 variable {R : Type uR} {A : Type uA} {M : Type uM} [CommRing R] [Semiring A]
-  {P Q : Type uP} [Fintype P]
+  {P : Type uP} {Q : Type uQ} [Fintype P]
   [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M]
   (h : P → Q → A) {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
 
@@ -119,7 +119,7 @@ section Properties
 variable {R : Type uR} {A : Type uA} {M : Type uM}
   [CommRing R] [Ring A] [Algebra R A]
   [AddCommGroup M] [Module R M]
-  {P Q : Type uP} {ind : P → ℤ} {indQ : Q → ℤ}
+  {P : Type uP} {Q : Type uQ} {ind : P → ℤ} {indQ : Q → ℤ}
   [Fintype P] [Fintype Q] [Module Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M]
   (h : P → Q → A) {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
 
@@ -244,7 +244,7 @@ section Cocycle
 
 variable {R : Type uR} {A : Type uA} {M : Type uM}
   [CommRing R] [Ring A] [Algebra R A]
-  {P Q : Type uP} {ind : P → ℤ} {indQ : Q → ℤ} [Fintype P] [Fintype Q]
+  {P : Type uP} {Q : Type uQ} {ind : P → ℤ} {indQ : Q → ℤ} [Fintype P] [Fintype Q]
   {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A}
   {mP : TwistingCocycle 𝒜 d P ind} {mQ : TwistingCocycle 𝒜 d Q indQ}
 
@@ -263,6 +263,15 @@ structure ParametrizedCocycle (ν₀ ν₁ : ContinuationCocycle mP mQ) where
     ∑ z, (ind x - indQ z).negOnePow • (h x z * mQ.m z y)
 
 namespace ParametrizedCocycle
+
+omit [GradedAlgebra 𝒜] in
+@[ext]
+theorem ext {ν₀ ν₁ : ContinuationCocycle mP mQ} {η₁ η₂ : ParametrizedCocycle ν₀ ν₁}
+    (h : ∀ x y, η₁.h x y = η₂.h x y) : η₁ = η₂ := by
+  obtain ⟨h₁, _, _⟩ := η₁
+  obtain ⟨h₂, _, _⟩ := η₂
+  obtain rfl : h₁ = h₂ := funext fun x ↦ funext fun y ↦ h x y
+  rfl
 
 variable {ν₀ ν₁ : ContinuationCocycle mP mQ} [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M]
   [IsScalarTower R Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M] {ℳ : ℤ → Submodule R M}
