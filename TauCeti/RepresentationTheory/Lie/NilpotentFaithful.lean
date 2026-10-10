@@ -86,7 +86,7 @@ theorem weightedPBWRepresentation_injective (N : ℕ) (hN : ∀ i, w i < N) :
 /-- With positive weights, every acting operator has `N`-th power zero, uniformly in the
 Lie element. No nilpotence, finiteness, or field assumption is needed for this bound. -/
 @[simp]
-theorem weightedPBWRepresentation_pow (hpos : ∀ i, 0 < w i) (N : ℕ) (x : L) :
+theorem weightedPBWRepresentation_pow_eq_zero (hpos : ∀ i, 0 < w i) (N : ℕ) (x : L) :
     b.weightedPBWRepresentation w hbracket N x ^ N = 0 := by
   rw [weightedPBWRepresentation_def, LieHom.leftRegularRep_eq_mulLeft,
     LinearMap.pow_mulLeft, LinearMap.mulLeft_eq_zero_iff]
@@ -113,13 +113,16 @@ theorem exists_faithful_weightedPBWRepresentation :
         b.weightedPBWIdeal w hbracket N) ∧
       Function.Injective (b.weightedPBWRepresentation w hbracket N) ∧
       ∀ x : L, b.weightedPBWRepresentation w hbracket N x ^ N = 0 := by
-  obtain ⟨c, b, w, hweight, _, hbracket⟩ :=
-    exists_basis_weight_lowerCentralSeries (K := K) (L := L)
-  have hpos := fun i ↦ (hweight i).1
-  have hN := fun i ↦ Nat.lt_succ_of_le (hweight i).2
-  exact ⟨c + 1, b, w, hbracket, by omega, fun i ↦ ⟨hpos i, hN i⟩,
-    b.moduleFinite_quotient_weightedPBWIdeal w hbracket hpos _,
-    b.weightedPBWRepresentation_injective w hbracket _ hN,
-    b.weightedPBWRepresentation_pow w hbracket hpos _⟩
+  obtain ⟨N, b, w, hbracket, hN, hweight, hfinite, hinj, hpow⟩ :=
+    UniversalEnvelopingAlgebra.exists_weightedPBWIdeal_of_isNilpotent K L
+  refine ⟨N, b, w, hbracket, hN, hweight, hfinite, ?_, ?_⟩
+  · rw [b.weightedPBWRepresentation_def, LieHom.leftRegularRep_injective_iff]
+    intro x y h
+    apply hinj
+    simpa only [LieHom.comp_apply, AlgHom.coe_toLieHom, Ideal.Quotient.mkₐ_eq_mk] using h
+  · intro x
+    rw [b.weightedPBWRepresentation_def, LieHom.leftRegularRep_eq_mulLeft,
+      LinearMap.pow_mulLeft, LinearMap.mulLeft_eq_zero_iff]
+    simpa only [LieHom.comp_apply, AlgHom.coe_toLieHom, Ideal.Quotient.mkₐ_eq_mk] using hpow x
 
 end TauCeti
