@@ -236,8 +236,8 @@ theorem range_orthogonalToIsom_eq_stabilizer :
   rw [hcast (hgfix.trans hfix.symm)] at hfull
   exact hfull
 
-/-- Every Riemannian isometry of Nil is a left translation followed by an
-orthogonal automorphism. Equivalently, the canonical semidirect-product action is surjective. -/
+/-- Every Riemannian isometry of Nil is an orthogonal automorphism followed by a
+left translation. Equivalently, the canonical semidirect-product action is surjective. -/
 theorem semidirectProductToIsom_surjective : Function.Surjective semidirectProductToIsom := by
   intro Φ
   let Ψ := (toIsom (Φ 1))⁻¹ * Φ
