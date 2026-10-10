@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
@@ -31,6 +31,8 @@ and proves it nondegenerate exactly for odd `θ` (Nikulin, Proposition 1.8.1).
 * `TauCeti.FiniteQuadraticModule.dyadicCyclic`: the finite quadratic module `q_θ^{(2)}(2^k)`.
 * `TauCeti.FiniteQuadraticModule.isNondegenerate_dyadicCyclic_iff`: it is nondegenerate exactly
   when `θ` is odd.
+* `TauCeti.FiniteQuadraticModule.dyadicCyclicBilinearIsometryOfModEq`: coefficient congruence
+  modulo `2^k` gives a bilinear isometry.
 
 ## References
 
@@ -45,6 +47,8 @@ public section
 namespace TauCeti.FiniteQuadraticModule
 
 /-! ## The generator -/
+
+section
 
 variable (k : ℕ) [NeZero k] (θ : ℤ)
 
@@ -136,5 +140,35 @@ theorem isNondegenerate_dyadicCyclic_iff : (dyadicCyclic k θ).IsNondegenerate �
     push_cast at hdiv
     exact (ZMod.intCast_zmod_eq_zero_iff_dvd j (2 ^ k)).2
       (by exact_mod_cast hcop.dvd_of_dvd_mul_left hdiv)
+
+end
+
+/-- Congruent coefficients modulo `2^k` give cyclic bilinear forms related by the
+identity on their cyclic group. The quadratic coefficient need only agree modulo
+`2^k`, since this statement concerns the polar pairing. -/
+noncomputable def dyadicCyclicBilinearIsometryOfModEq {k : ℕ} [NeZero k] {θ η : ℤ}
+    (h : θ ≡ η [ZMOD (2 ^ k : ℕ)]) :
+    FiniteBilinearModule.Isometry (dyadicCyclic k θ).toFiniteBilinearModule
+      (dyadicCyclic k η).toFiniteBilinearModule := by
+  let g : FiniteBilinearModule.Hom (dyadicCyclic k θ).toFiniteBilinearModule
+      (dyadicCyclic k η).toFiniteBilinearModule :=
+    { toAddMonoidHom := AddMonoidHom.id (ZMod (2 ^ k))
+      map_pairing' := fun x y ↦ by
+        -- Evaluate the identity homomorphism on the concrete cyclic carrier.
+        change (dyadicCyclic k η).toFiniteBilinearModule.pairing x y =
+          (dyadicCyclic k θ).toFiniteBilinearModule.pairing x y
+        obtain ⟨a, rfl⟩ := ZMod.intCast_surjective (n := 2 ^ k) x
+        obtain ⟨b, rfl⟩ := ZMod.intCast_surjective (n := 2 ^ k) y
+        rw [dyadicCyclic_pairing_intCast, dyadicCyclic_pairing_intCast]
+        have hvalue (s : ℤ) :
+            ((s * a * b / 2 ^ k : ℚ) : AddCircle (1 : ℚ)) =
+              ZMod.toRatAddCircle (2 ^ k) ((s * a * b : ℤ) : ZMod (2 ^ k)) := by
+          rw [ZMod.toRatAddCircle_intCast]
+          simp only [Int.cast_mul, Nat.cast_pow, Nat.cast_ofNat]
+        rw [hvalue η, hvalue θ]
+        congr 1
+        push_cast
+        rw [(ZMod.intCast_eq_intCast_iff η θ (2 ^ k)).mpr h.symm] }
+  exact g.toIsometry (by exact Function.bijective_id)
 
 end TauCeti.FiniteQuadraticModule
