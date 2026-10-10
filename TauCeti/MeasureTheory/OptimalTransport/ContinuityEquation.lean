@@ -32,11 +32,12 @@ absolutely convergent.
 
 The continuity equation is the Eulerian description of mass moving with velocity `v`. Its basic
 source of solutions is the Lagrangian one: if `P` is a finite measure on a parameter space `Ω` and
-`γ : Ω → ℝ → E` is a measurable family of absolutely continuous curves with `γ̇_ω(t) = vₜ(γ_ω(t))`
-for almost every `(ω, t)`, then the laws `μₜ = (γ · t)₊ P` of the positions at time `t` solve the
-continuity equation with velocity `v` (`TauCeti.isContinuityEquation_map`). For `Ω` a space of
-curves and `γ` the evaluation map this is the statement for a law on paths. A translating law, a
-stationary law and a Dirac mass moving along an absolutely continuous curve are special cases.
+`γ : Ω → ℝ → E` is a measurable family of absolutely continuous curves with
+`deriv γ_ω t = vₜ (γ_ω t)` for almost every `(ω, t)`, then the laws `μₜ = (γ · t)₊ P` of the
+positions at time `t` solve the continuity equation with velocity `v`
+(`TauCeti.isContinuityEquation_map`). For `Ω` a space of curves and `γ` the evaluation map this is
+the statement for a law on paths. A translating law, a stationary law and a Dirac mass moving along
+an absolutely continuous curve are special cases.
 
 ## Main definitions
 
@@ -54,7 +55,7 @@ stationary law and a Dirac mass moving along an absolutely continuous curve are 
   solves the continuity equation with velocity field `w`.
 * `TauCeti.isContinuityEquation_const`: a stationary law solves it with velocity field `0`.
 * `TauCeti.isContinuityEquation_dirac`: a Dirac mass moving along an absolutely continuous curve
-  `γ` solves it with any velocity field equal to `γ̇` along `γ`.
+  `γ` solves it with any velocity field equal to `deriv γ` along `γ`.
 
 ## References
 
@@ -190,7 +191,7 @@ private lemma measurable_fderiv_apply [SecondCountableTopology E] [BorelSpace E]
 /-- **Lagrangian solutions of the continuity equation.** Let `P` be a finite measure on a parameter
 space `Ω` and `γ : Ω → ℝ → E` a jointly measurable family of curves. If `P`-almost every curve is
 absolutely continuous on `[a, b]` and follows the velocity field `v`, in the sense that
-`γ̇_ω(t) = vₜ (γ_ω t)` for almost every `t ∈ (a, b)`, and the expected length
+`deriv γ_ω t = vₜ (γ_ω t)` for almost every `t ∈ (a, b)`, and the expected length
 `∫ ∫_a^b ‖vₜ (γ_ω t)‖ dt dP(ω)` is finite, then the laws `(γ · t)₊ P` of the positions at time `t`
 solve the continuity equation with velocity `v` on `(a, b)`. -/
 theorem isContinuityEquation_map [SecondCountableTopology E] [BorelSpace E] {Ω : Type*}
@@ -264,9 +265,9 @@ theorem isContinuityEquation_const [SecondCountableTopology E] [BorelSpace E] (�
   simpa using isContinuityEquation_map_add_smul μ 0 a b
 
 /-- **A moving Dirac mass solves the continuity equation.** If `γ` is a measurable curve which is
-absolutely continuous on `[a, b]` and `v` is a measurable velocity field with `γ̇ t = vₜ (γ t)` for
-almost every `t ∈ (a, b)` and `∫_a^b ‖vₜ (γ t)‖ dt < ∞`, then the Dirac masses `δ_{γ t}` solve the
-continuity equation with velocity `v` on `(a, b)`. -/
+absolutely continuous on `[a, b]` and `v` is a measurable velocity field with
+`deriv γ t = vₜ (γ t)` for almost every `t ∈ (a, b)` and `∫_a^b ‖vₜ (γ t)‖ dt < ∞`, then the
+Dirac masses `δ_{γ t}` solve the continuity equation with velocity `v` on `(a, b)`. -/
 theorem isContinuityEquation_dirac [SecondCountableTopology E] [BorelSpace E] {γ : ℝ → E}
     (hγm : Measurable γ) (hγ : AbsolutelyContinuousOnInterval γ a b) (hv : Measurable (uncurry v))
     (hderiv : ∀ᵐ t, t ∈ Ioo a b → HasDerivAt γ (v t (γ t)) t)
