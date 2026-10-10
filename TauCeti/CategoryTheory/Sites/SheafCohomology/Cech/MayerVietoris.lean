@@ -16,13 +16,13 @@ public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Basic
 
 Let `C` be a thin category with finite products and a terminal object `T`, for instance the poset
 of open subsets of a topological space, and let `P : Cᵒᵖ ⥤ A` be a presheaf with values in an
-abelian category. For a family of two objects `U 0` and `U 1`, the Čech complex of `P` reduces to
-the Mayer-Vietoris sequence `0 ⟶ P(T) ⟶ P(U 0) ⊞ P(U 1) ⟶ P(U 0 × U 1) ⟶ 0`: its cohomology
-vanishes in every degree `≥ 2`, and the augmented Čech complex is exact precisely when the
-Mayer-Vietoris sequence is short exact. This is the form in which exactness in every degree of the
-augmented Čech complex of a cover by two opens follows from statements in degrees `0` and `1`: the
-sheaf condition for the cover, and the fact that every section over the intersection is a
-difference of restrictions.
+abelian category. For a family of two objects `U 0` and `U 1`, the cohomology of the Čech complex
+of `P` vanishes in every degree `≥ 2`, and the augmented Čech complex is exact precisely when the
+Mayer-Vietoris sequence `0 ⟶ P(T) ⟶ P(U 0) ⊞ P(U 1) ⟶ P(U 0 × U 1) ⟶ 0` is short exact. The
+Čech complex itself still has terms in every degree; only its exactness reduces to that of this
+sequence. This is the form in which exactness in every degree of the augmented Čech complex of a
+cover by two opens follows from statements in degrees `0` and `1`: the sheaf condition for the
+cover, and the fact that every section over the intersection is a difference of restrictions.
 
 The proof restricts `P` to the members. For an object `Y`, the presheaf `P(Y × -)` has an exact
 augmented Čech complex for any family with a member receiving a map from `Y`
@@ -60,21 +60,6 @@ universe w v v' u u'
 namespace TauCeti.CategoryTheory
 
 variable {C : Type u} [Category.{v} C] {A : Type u'} [Category.{v'} A]
-
-/-- In a thin category, a presheaf takes the same value on any two parallel morphisms. -/
-private lemma map_eq_map [Quiver.IsThin C] (P : Cᵒᵖ ⥤ A) {X Y : Cᵒᵖ} (f g : X ⟶ Y) :
-    P.map f = P.map g :=
-  congrArg P.map (Quiver.Hom.unop_inj (Subsingleton.elim _ _))
-
-/-- In a thin category, a presheaf takes the same value on any two parallel composites. -/
-private lemma map_comp_map_eq [Quiver.IsThin C] (P : Cᵒᵖ ⥤ A) {X Y Y' Z : Cᵒᵖ} (f : X ⟶ Y)
-    (g : Y ⟶ Z) (f' : X ⟶ Y') (g' : Y' ⟶ Z) : P.map f ≫ P.map g = P.map f' ≫ P.map g' :=
-  (P.map_comp f g).symm.trans ((map_eq_map P _ _).trans (P.map_comp f' g'))
-
-/-- If `f ≫ g = f' ≫ g'` with `f` and `g'` invertible, then `inv f ≫ f' = g ≫ inv g'`. -/
-private lemma inv_comp_eq_comp_inv {X Y Y' Z : A} {f : X ⟶ Y} {f' : X ⟶ Y'} {g : Y ⟶ Z}
-    {g' : Y' ⟶ Z} [IsIso f] [IsIso g'] (w : f ≫ g = f' ≫ g') : inv f ≫ f' = g ≫ inv g' := by
-  rw [IsIso.inv_comp_eq, ← Category.assoc, IsIso.eq_comp_inv, w]
 
 variable [HasFiniteProducts C]
 
@@ -208,7 +193,9 @@ private abbrev restr (Y : C) : Cᵒᵖ ⥤ A :=
 /-- Restriction `P ⟶ P(Y × -)` along the projections `Y × V ⟶ V`. -/
 private def toRestr (Y : C) : P ⟶ restr P Y where
   app V := P.map (prod.snd : Y ⨯ V.unop ⟶ V.unop).op
-  naturality _ _ _ := map_comp_map_eq P _ _ _ _
+  -- both composites are restrictions along parallel morphisms of the thin category `C`
+  naturality _ _ _ := (P.map_comp _ _).symm.trans
+    ((congrArg P.map (Quiver.Hom.unop_inj (Subsingleton.elim _ _))).trans (P.map_comp _ _))
 
 /-- Restriction `P(Y × -) ⟶ P(Y' × -)` along a morphism `Y' ⟶ Y`. -/
 private abbrev restrMap {Y Y' : C} (h : Y' ⟶ Y) : restr P Y ⟶ restr P Y' :=
@@ -217,7 +204,8 @@ private abbrev restrMap {Y Y' : C} (h : Y' ⟶ Y) : restr P Y ⟶ restr P Y' :=
 private lemma toRestr_comp_restrMap {Y Y' : C} (h : Y' ⟶ Y) :
     toRestr P Y ≫ restrMap P h = toRestr P Y' := by
   ext V
-  exact (P.map_comp _ _).symm.trans (map_eq_map P _ _)
+  exact (P.map_comp _ _).symm.trans
+    (congrArg P.map (Quiver.Hom.unop_inj (Subsingleton.elim _ _)))
 
 /-- The two restrictions `P ⟶ P(U 0 × U 1 × -)`, through `U 0` and through `U 1`, agree. -/
 private lemma toRestr_comp_restrMap_app (V : C) :
@@ -343,7 +331,10 @@ private lemma mvRetr_id (n : ℕ) :
     · have := isIso_toRestr_app P (toMember U h)
       have := isIso_restrMap_app P (prod.snd : U 0 ⨯ U 1 ⟶ U 1)
         (prod.lift (prod.snd ≫ toMember U h) prod.fst)
-      simp [retr₀, sect₁, h, inv_comp_eq_comp_inv (toRestr_comp_restrMap_app U P _)]
+      simp only [retr₀, sect₁, h, ↓reduceDIte, Preadditive.comp_neg]
+      -- solve the square `toRestr_comp_restrMap_app` for the two inverses
+      rw [add_neg_eq_zero, IsIso.inv_comp_eq, ← Category.assoc, IsIso.eq_comp_inv]
+      exact (toRestr_comp_restrMap_app U P _).symm
     · simp [retr₀, sect₁, h]
   · refine (cechXMap_ext U fun a ↦ ?_).trans (cechXMap_zero U _ _ n)
     by_cases h : a 0 = 0
@@ -351,7 +342,9 @@ private lemma mvRetr_id (n : ℕ) :
     · have := isIso_toRestr_app P (toMember U (Fin.eq_one_of_ne_zero _ h))
       have := isIso_restrMap_app P (prod.fst : U 0 ⨯ U 1 ⟶ U 0)
         (prod.lift prod.fst (prod.snd ≫ toMember U (Fin.eq_one_of_ne_zero _ h)))
-      simp [retr₁, sect₀, h, inv_comp_eq_comp_inv (toRestr_comp_restrMap_app U P _).symm]
+      simp only [retr₁, sect₀, h, ↓reduceDIte]
+      rw [add_neg_eq_zero, IsIso.inv_comp_eq, ← Category.assoc, IsIso.eq_comp_inv]
+      exact toRestr_comp_restrMap_app U P _
   · refine (cechXMap_ext U fun a ↦ ?_).trans (cechXMap_id U _ n)
     by_cases h : a 0 = 0 <;> simp [retr₁, sect₁, h]
 
@@ -442,7 +435,8 @@ private lemma homologyZeroRestr_comp_homologyMap {Y Y' : C} (h : Y' ⟶ Y) :
   simp only [← Category.assoc]
   refine ((?_ : _ = _) =≫ _) =≫ _
   -- `restrObjIso` is the identity, and the remaining restrictions agree in the thin category `C`
-  exact (Category.comp_id _ =≫ _).trans ((map_comp_map_eq P _ _ _ _).trans
+  exact (Category.comp_id _ =≫ _).trans (((P.map_comp _ _).symm.trans
+    ((congrArg P.map (Quiver.Hom.unop_inj (Subsingleton.elim _ _))).trans (P.map_comp _ _))).trans
     (Category.comp_id _).symm)
 
 /-- The identification of `P(U 0) ⊞ P(U 1)` with the degree `0` cohomology of the middle term of
@@ -453,6 +447,16 @@ private abbrev homologyZeroBiprod :
         (cechComplexFunctor U).obj (restr P (U 1))).homology 0 :=
   biprod.desc (homologyZeroRestr U P (U 0) ≫ HomologicalComplex.homologyMap biprod.inl 0)
     (homologyZeroRestr U P (U 1) ≫ HomologicalComplex.homologyMap biprod.inr 0)
+
+omit [Quiver.IsThin C] in
+/-- `homologyZeroBiprod` is the biproduct of the identifications `homologyZeroRestr`, followed by
+the comparison of degree `0` cohomology with biproducts. Both factors are isomorphisms, which is
+how `isIso_homologyZeroBiprod` is proved. -/
+private lemma homologyZeroBiprod_eq :
+    homologyZeroBiprod U P = biprod.map (homologyZeroRestr U P (U 0))
+      (homologyZeroRestr U P (U 1)) ≫ biprod.desc (HomologicalComplex.homologyMap biprod.inl 0)
+        (HomologicalComplex.homologyMap biprod.inr 0) := by
+  ext <;> simp
 
 private lemma isIso_homologyZeroBiprod : IsIso (homologyZeroBiprod U P) := by
   have := isIso_homologyZeroRestr U P (𝟙 (U 0))
@@ -466,9 +470,7 @@ private lemma isIso_homologyZeroBiprod : IsIso (homologyZeroBiprod U P) := by
         (HomologicalComplex.homologyMap biprod.snd 0),
       by ext <;> simp [← HomologicalComplex.homologyMap_comp],
       by simp [← HomologicalComplex.homologyMap_comp, ← HomologicalComplex.homologyMap_add]⟩⟩
-  rw [show homologyZeroBiprod U P = biprod.map (homologyZeroRestr U P (U 0))
-      (homologyZeroRestr U P (U 1)) ≫ biprod.desc (HomologicalComplex.homologyMap biprod.inl 0)
-        (HomologicalComplex.homologyMap biprod.inr 0) by ext <;> simp]
+  rw [homologyZeroBiprod_eq]
   have : IsIso (biprod.map (homologyZeroRestr U P (U 0)) (homologyZeroRestr U P (U 1))) :=
     (biprod.mapIso (asIso (homologyZeroRestr U P (U 0)))
       (asIso (homologyZeroRestr U P (U 1)))).isIso_hom
