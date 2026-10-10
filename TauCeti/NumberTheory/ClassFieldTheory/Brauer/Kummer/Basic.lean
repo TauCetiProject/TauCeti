@@ -68,7 +68,7 @@ theorem kummerBrauerClass_mul_right (a b b' : Kˣ) :
   simp [kummerBrauerClass_def, kummerClass_mul]
 
 /-- The Kummer-cup Brauer class is killed by its exponent. -/
-theorem nsmul_kummerBrauerClass (a b : Kˣ) : n • kummerBrauerClass ζ hζ a b = 0 :=
+theorem nsmul_kummerBrauerClass_eq_zero (a b : Kˣ) : n • kummerBrauerClass ζ hζ a b = 0 :=
   (h2MuToBr_range n K hζ.neZero'.out.isUnit _).mp ⟨_, kummerBrauerClass_def ζ hζ a b |>.symm⟩
 
 /-- The Kummer-cup Brauer class satisfies the Steinberg relation. -/
