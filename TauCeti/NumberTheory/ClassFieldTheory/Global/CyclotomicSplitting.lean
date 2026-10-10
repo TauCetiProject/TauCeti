@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Cyclotomic.Basic
+public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Invariant
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.InvariantSum
 import Mathlib.NumberTheory.NumberField.InfinitePlace.TotallyRealComplex
 import TauCeti.NumberTheory.NumberField.LocalGlobal.Completion
@@ -27,8 +28,6 @@ input to the sum-of-local-invariants argument without assuming a global reciproc
 
 ## Main results
 
-* `TauCeti.ClassFieldTheory.brBaseChange_eq_zero_of_isPrimitiveRoot`: a root of unity of
-  order `q^n - 1` splits every `n`-torsion Brauer class of a nonarchimedean local field.
 * `TauCeti.ClassFieldTheory.exists_cyclotomicField_brLocalization_eq_zero`: one cyclotomic
   extension kills all localizations of a global Brauer class.
 
@@ -45,25 +44,6 @@ namespace TauCeti.ClassFieldTheory
 open IsDedekindDomain NumberField
 open _root_.ValuativeRel
 open scoped AdicCompletionExtension
-
-/-- Adjoining a primitive `(q^n - 1)`-st root of unity splits every `n`-torsion Brauer class
-of a nonarchimedean local field with residue cardinality `q`. The extension need not be finite
-or carry a valuation. -/
-theorem brBaseChange_eq_zero_of_isPrimitiveRoot
-    {F L : Type} [Field F] [ValuativeRel F] [TopologicalSpace F]
-    [IsNonarchimedeanLocalField F] [Field L] [Algebra F L]
-    {n : ℕ} (hn : n ≠ 0) {ζ : L} (hζ : IsPrimitiveRoot ζ (Nat.card 𝓀[F] ^ n - 1))
-    (x : Br F) (hx : n • x = 0) : brBaseChange F L x = 0 := by
-  let E := unramifiedExtension F L n
-  let _ := finiteExtensionValuativeRel F E
-  let _ := finiteExtensionNormedFieldTopology F E
-  have := finiteExtension_isNonarchimedeanLocalField F E
-  have := finiteExtension_valuativeExtension F E
-  have hE : brBaseChange F E x = 0 := by
-    apply (invMap E).injective
-    rw [map_zero, brBaseChange_eq_brRes F E IsSepClosed.lift, invMap_brRes,
-      finrank_unramifiedExtension_of_isPrimitiveRoot hn hζ, ← map_nsmul, hx, map_zero]
-  rw [← brBaseChange_brBaseChange F E L, hE, map_zero]
 
 variable (K : Type) [Field K] [NumberField K]
 
