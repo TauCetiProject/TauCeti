@@ -9,6 +9,7 @@ public import TauCeti.CategoryTheory.Preadditive.Radical.Basic
 public import TauCeti.CategoryTheory.Linear.Biproduct
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.LinearAlgebra.Quotient.Defs
+import TauCeti.LinearAlgebra.Quotient.Pi
 import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.LinearAlgebra.Dimension.Finite
 import Mathlib.LinearAlgebra.Isomorphisms
@@ -147,19 +148,9 @@ theorem finrank_quotient_jacobsonRadicalSubmodule_biproduct {J : Type*} [Fintype
     [∀ j, FiniteDimensional k ((P j ⟶ Y) ⧸ jacobsonRadicalSubmodule k (P j) Y)] :
     Module.finrank k ((⨁ P ⟶ Y) ⧸ jacobsonRadicalSubmodule k (⨁ P) Y) =
       ∑ j, Module.finrank k ((P j ⟶ Y) ⧸ jacobsonRadicalSubmodule k (P j) Y) := by
-  classical
-  let φ := (LinearMap.piMap fun j ↦ (jacobsonRadicalSubmodule k (P j) Y).mkQ) ∘ₗ
-    (homBiproductLinearEquiv k P Y).toLinearMap
-  have hsurj : Function.Surjective φ :=
-    (Function.Surjective.piMap (fun j ↦
-      (jacobsonRadicalSubmodule k (P j) Y).mkQ_surjective)).comp
-      (homBiproductLinearEquiv k P Y).surjective
-  have hker : LinearMap.ker φ = jacobsonRadicalSubmodule k (⨁ P) Y := by
-    ext f
-    simp [φ, funext_iff, mem_jacobsonRadicalSubmodule,
-      mem_jacobsonRadical_biproduct_left_iff]
-  exact ((Submodule.quotEquivOfEq _ _ hker.symm).trans
-    (φ.quotKerEquivOfSurjective hsurj)).finrank_eq.trans (Module.finrank_pi_fintype k)
+  exact finrank_quotient_eq_sum_of_equiv_pi k (homBiproductLinearEquiv k P Y)
+    (jacobsonRadicalSubmodule k (⨁ P) Y) (fun j ↦ jacobsonRadicalSubmodule k (P j) Y)
+    fun f ↦ by simp [mem_jacobsonRadicalSubmodule, mem_jacobsonRadical_biproduct_left_iff]
 
 /-- Morphisms into a finite biproduct, modulo the radical, have dimension equal to the sum
 of the corresponding dimensions for its summands. -/
@@ -168,19 +159,9 @@ theorem finrank_quotient_jacobsonRadicalSubmodule_biproduct_right {J : Type*} [F
     [∀ j, FiniteDimensional k ((Y ⟶ P j) ⧸ jacobsonRadicalSubmodule k Y (P j))] :
     Module.finrank k ((Y ⟶ ⨁ P) ⧸ jacobsonRadicalSubmodule k Y (⨁ P)) =
       ∑ j, Module.finrank k ((Y ⟶ P j) ⧸ jacobsonRadicalSubmodule k Y (P j)) := by
-  classical
-  let φ := (LinearMap.piMap fun j ↦ (jacobsonRadicalSubmodule k Y (P j)).mkQ) ∘ₗ
-    (homToBiproductLinearEquiv k P Y).toLinearMap
-  have hsurj : Function.Surjective φ :=
-    (Function.Surjective.piMap (fun j ↦
-      (jacobsonRadicalSubmodule k Y (P j)).mkQ_surjective)).comp
-      (homToBiproductLinearEquiv k P Y).surjective
-  have hker : LinearMap.ker φ = jacobsonRadicalSubmodule k Y (⨁ P) := by
-    ext f
-    simp [φ, funext_iff, mem_jacobsonRadicalSubmodule,
-      mem_jacobsonRadical_biproduct_right_iff]
-  exact ((Submodule.quotEquivOfEq _ _ hker.symm).trans
-    (φ.quotKerEquivOfSurjective hsurj)).finrank_eq.trans (Module.finrank_pi_fintype k)
+  exact finrank_quotient_eq_sum_of_equiv_pi k (homToBiproductLinearEquiv k P Y)
+    (jacobsonRadicalSubmodule k Y (⨁ P)) (fun j ↦ jacobsonRadicalSubmodule k Y (P j))
+    fun f ↦ by simp [mem_jacobsonRadicalSubmodule, mem_jacobsonRadical_biproduct_right_iff]
 
 /-- Between objects with local endomorphism rings, reversing source and target preserves
 the dimension of the morphism space modulo the radical. -/
