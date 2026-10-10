@@ -461,28 +461,26 @@ private theorem bijective_torsionByUnitsToKummerCoeff
       MonoidHom.toAdditive_apply_apply, toMul_ofMul, restrictRootsOfUnity_coe_apply,
       AddEquiv.coe_toAddMonoidHom, coe_torsionByUnitsEquivRootsOfUnity_apply] at h'
     exact Subtype.ext (Additive.toMul.injective (Units.ext (sigma.injective h')))
-  · set ζ : SeparableClosure K := ((xi.toMul : (SeparableClosure K)ˣ) : SeparableClosure K)
-    have hfix : ζ ∈ IntermediateField.fixedField sigma.fieldRange.fixingSubgroup := by
-      rintro ⟨g, hg⟩
-      have h := congrArg (fun z : KummerCoeff K n ↦ ((z.toMul : (SeparableClosure K)ˣ) :
-        SeparableClosure K)) (hN g hg xi)
-      simpa [AlgEquiv.smul_units_def] using h
-    rw [InfiniteGalois.fixedField_fixingSubgroup] at hfix
-    obtain ⟨y, hy⟩ := hfix
-    have hy0 : y ≠ 0 := by
-      rintro rfl
-      exact xi.toMul.1.ne_zero (by simp [ζ, ← hy])
-    have hyn : Units.mk0 y hy0 ^ n = 1 := by
-      apply Units.ext
-      apply sigma.injective
-      have := congrArg (fun u : (SeparableClosure K)ˣ ↦ (u : SeparableClosure K))
-        ((mem_rootsOfUnity n _).1 xi.toMul.2)
-      simpa [ζ, ← hy] using this
-    refine ⟨⟨Additive.ofMul (Units.mk0 y hy0), (Submodule.mem_torsionBy_iff _ _).2 ?_⟩, ?_⟩
+  · have hu : Additive.ofMul (xi.toMul : (SeparableClosure K)ˣ) ∈
+        H0 ↥sigma.fieldRange.fixingSubgroup (UnitsCoeff K) :=
+      (FixedPoints.mem_addSubgroup _ _ _).2 fun g ↦ by
+        have h := congrArg (fun z : KummerCoeff K n ↦ ((z.toMul : (SeparableClosure K)ˣ) :
+          SeparableClosure K)) (hN g g.2 xi)
+        rw [Subgroup.smul_def (α := UnitsCoeff K)]
+        refine Additive.toMul.injective (Units.ext ?_)
+        simp only [Additive.toMul_smul]
+        simpa [AlgEquiv.smul_units_def] using h
+    obtain ⟨b, hb⟩ := mem_H0_fixingSubgroup_unitsCoeff_iff.1 hu
+    have hbn : b ^ n = 1 := Units.map_injective sigma.toRingHom.injective <| by
+      rw [map_pow, hb, map_one]
+      exact (mem_rootsOfUnity n _).1 xi.toMul.2
+    refine ⟨⟨Additive.ofMul b, (Submodule.mem_torsionBy_iff _ _).2 ?_⟩, ?_⟩
     · apply Additive.toMul.injective
-      simpa [natCast_zsmul] using hyn
+      simpa [natCast_zsmul] using hbn
     · apply Additive.toMul.injective
-      exact Subtype.ext (Units.ext (by simpa [torsionByUnitsToKummerCoeff] using hy))
+      refine Subtype.ext (Units.ext ?_)
+      simpa [torsionByUnitsToKummerCoeff, restrictRootsOfUnity_coe_apply,
+        coe_torsionByUnitsEquivRootsOfUnity_apply] using congrArg Units.val hb
 
 end RootsOfUnity
 
