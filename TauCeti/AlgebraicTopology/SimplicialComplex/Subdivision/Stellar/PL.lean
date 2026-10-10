@@ -73,32 +73,32 @@ private theorem mem_convexHull_finsupp_single [Finite ι]
     (hx : x ∈ convexHull ℝ ((Pi.single · (1 : ℝ)) '' (τ : Set ι))) :
     Finsupp.equivFunOnFinite.symm x ∈
       convexHull ℝ ((Finsupp.single · (1 : ℝ)) '' (τ : Set ι)) := by
-  let e : (ι →₀ ℝ) ≃ₗ[ℝ] (ι → ℝ) :=
-    Finsupp.linearEquivFunOnFinite ℝ ℝ ι
-  have him := e.symm.toLinearMap.image_convexHull
+  have him := (Finsupp.linearEquivFunOnFinite ℝ ℝ ι).symm.toLinearMap.image_convexHull
       ((Pi.single · (1 : ℝ)) '' (τ : Set ι))
-  have hxf' : e.symm x ∈ e.symm '' convexHull ℝ
+  have hxf' : (Finsupp.linearEquivFunOnFinite ℝ ℝ ι).symm x ∈
+      (Finsupp.linearEquivFunOnFinite ℝ ℝ ι).symm '' convexHull ℝ
       ((Pi.single · (1 : ℝ)) '' (τ : Set ι)) := ⟨x, hx, rfl⟩
   have hxf₀ := him ▸ hxf'
-  have himage : e.symm '' ((Pi.single · (1 : ℝ)) '' (τ : Set ι)) =
+  have himage : (Finsupp.linearEquivFunOnFinite ℝ ℝ ι).symm ''
+      ((Pi.single · (1 : ℝ)) '' (τ : Set ι)) =
       (Finsupp.single · (1 : ℝ)) '' (τ : Set ι) := by
     ext z
     constructor
     · rintro ⟨y, ⟨i, hi, rfl⟩, rfl⟩
-      have hi_single : e.symm (Pi.single i 1) = Finsupp.single i 1 :=
+      have hi_single : (Finsupp.linearEquivFunOnFinite ℝ ℝ ι).symm (Pi.single i 1) =
+          Finsupp.single i 1 :=
         Finsupp.linearEquivFunOnFinite_symm_single ℝ ℝ ι i 1
-      exact ⟨i, hi, by simpa using hi_single.symm⟩
+      exact ⟨i, hi, hi_single.symm⟩
     · rintro ⟨i, hi, rfl⟩
-      have hi_single : e.symm (Pi.single i 1) = Finsupp.single i 1 :=
+      have hi_single : (Finsupp.linearEquivFunOnFinite ℝ ℝ ι).symm (Pi.single i 1) =
+          Finsupp.single i 1 :=
         Finsupp.linearEquivFunOnFinite_symm_single ℝ ℝ ι i 1
-      exact ⟨Pi.single (i : ι) 1, ⟨i, hi, rfl⟩, by simpa using hi_single⟩
-  have hxf₁ : e.symm x ∈ convexHull ℝ
+      exact ⟨Pi.single (i : ι) 1, ⟨i, hi, rfl⟩, hi_single⟩
+  have hxf₁ : (Finsupp.linearEquivFunOnFinite ℝ ℝ ι).symm x ∈ convexHull ℝ
       ((Finsupp.single · (1 : ℝ)) '' (τ : Set ι)) := by
     convert hxf₀ using 1
     exact congrArg (convexHull ℝ) himage.symm
-  -- `e` is the canonical finite-coordinate linear equivalence; its underlying equivalence is
-  -- definitionally `Finsupp.equivFunOnFinite`, which is the representation used by the APIs below.
-  simpa only [show e.symm x = Finsupp.equivFunOnFinite.symm x by rfl] using hxf₁
+  exact hxf₁
 
 private theorem coord_mem_source [Finite ι]
     {τ : (K.stellarSubdivision σ v).faces}
@@ -240,19 +240,6 @@ theorem exists_isPLOn_stellarSubdivisionLeftInverse
       · change ((face' τ).erase v' ∪ σ').image e ∈ K
         rw [Finset.image_union, herase, hσimage]
         exact hτK
-  have omitted (τ : L.faces) : ∃ a : κ, a ∈ σ' ∧ a ∉ face' τ := by
-    have hτV : τ.1 ⊆ V := hV τ.1 τ.2
-    obtain ⟨a, ha, haτ⟩ := exists_notMem_of_mem_stellarSubdivision
-      hvσ τ.2
-    refine ⟨⟨a, hVσ ha⟩, Finset.mem_preimage.mpr ha, ?_⟩
-    intro ha'
-    apply haτ
-    have haV : a ∈ V := by
-      by_cases hmem : a ∈ τ.1
-      · exact hτV hmem
-      · exact hVσ ha
-    have : (⟨a, haV⟩ : κ) ∈ face' τ := ha'
-    exact Finset.mem_preimage.mp this
   have hSinj : Set.InjOn S U := by
     intro x hx y hy hxy
     obtain ⟨τ, hxτ⟩ := mem_iUnion.mp hx
@@ -294,15 +281,12 @@ theorem exists_isPLOn_stellarSubdivisionLeftInverse
     rw [dite_eq_left hy]
     apply hSinj (Classical.choose_spec ((Set.mem_image S U _).mp hy)).1 hx
     exact (Classical.choose_spec ((Set.mem_image S U _).mp hy)).2
-  let a (τ : L.faces) : κ := Classical.choose (omitted τ)
-  have ha (τ : L.faces) : a τ ∈ σ' := (Classical.choose_spec (omitted τ)).1
-  have haτ (τ : L.faces) : a τ ∉ face' τ := (Classical.choose_spec (omitted τ)).2
   let F : L.faces → ((κ → ℝ) →ᴬ[ℝ] (κ → ℝ)) := fun _ => S.toContinuousAffineMap
   have hind (τ : L.faces) :
       AffineIndependent ℝ ((↑) : ((F τ) '' s τ) → (κ → ℝ)) := by
     let eF : (κ →₀ ℝ) ≃ₗ[ℝ] (κ → ℝ) := Finsupp.linearEquivFunOnFinite ℝ ℝ κ
-    have h := Finset.affineIndependent_stellarSubdivisionLinearMap
-      (ha τ) hv'σ' (haτ τ)
+    have h := affineIndependent_stellarSubdivision (K := Kκ) (σ := σ') (v := v')
+      hv'σ' (hfaceκ τ)
     have hm : AffineIndependent ℝ (fun i : face' τ => F τ (Pi.single (i : κ) 1)) := by
       have hm' := h.map' eF.toAffineMap eF.injective
       have heqfun : (fun i : face' τ => F τ (Pi.single (i : κ) 1)) =
