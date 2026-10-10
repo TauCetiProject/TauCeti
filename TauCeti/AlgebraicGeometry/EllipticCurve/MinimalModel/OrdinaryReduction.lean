@@ -38,7 +38,7 @@ reduction are preserved by such base change and, for an equation with good reduc
 reflected by it.
 
 Over a finite residue field, the reduction is supersingular exactly when `p` divides the trace of
-Frobenius of the reduction, `a_q = q + 1 - #W̃(k)` for `q` the order of `k`.
+Frobenius of the reduction, `a_q = q + 1 - #E(k)` for `E` the reduction and `q` the order of `k`.
 
 In residue characteristic `2` and `3` the reduction is supersingular exactly when its
 `j`-invariant vanishes. This reads off the integral model: with good reduction, it is ordinary at
