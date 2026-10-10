@@ -17,11 +17,11 @@ import TauCeti.Algebra.Lie.F4.ShortRoot.TorusAction
 /-!
 # Numbered root differentials of the short-root F₄ carrier over 𝔽₂
 
-The differentials of the eight numbered simple-root subgroups send the additive unit tangent
-vector to the corresponding integral Chevalley matrix reduced modulo two. The quadratic
-terms in the short-root parametrizations have zero differential at the identity. The vectors
-are nonzero and have their prescribed integral torus characters, even though characteristic
-two makes the short simple-root matrices square to zero.
+The differentials of the eight numbered signed-simple-root subgroups (four positive and four
+negative) send the additive unit tangent vector to the corresponding integral Chevalley matrix
+reduced modulo two. The quadratic terms in the short-root parametrizations have zero differential
+at the identity. The vectors are nonzero and have their prescribed integral torus characters,
+even though characteristic two makes the short simple-root matrices square to zero.
 
 These normalized vectors are the differential data needed for a pinning. Membership in the
 prescribed adjoint weight space does not assert that the vector spans that entire space.
@@ -34,7 +34,7 @@ simply connected group scheme is asserted.
 * `tangentMatrix_derivationComp_generator_inl`: the numbered differential on matrices,
   with coefficients in any commutative 𝔽₂-algebra.
 * `rootVector` and `tangentMatrix_rootVector`: the normalized unit tangent vectors.
-* `rootVector_mem_adjointWeightSpace`: each vector has the numbered simple-root character.
+* `rootVector_mem_adjointWeightSpace`: each vector has the numbered signed-simple-root character.
 
 ## References
 
@@ -170,6 +170,7 @@ theorem tangentMatrix_rootVector (k : Fin 4 ⊕ Fin 4) :
     tangentMatrix_derivationComp_generator_inl, LinearEquiv.apply_symm_apply, one_smul]
 
 /-- Every numbered root vector is nonzero, since its root subgroup is a closed immersion. -/
+@[simp↓]
 theorem rootVector_ne_zero (k : Fin 4 ⊕ Fin 4) : rootVector k ≠ 0 := by
   intro h
   have hd := congrArg (Derivation.cotangentLinearEquiv (B := ZMod 2)) h
@@ -199,7 +200,7 @@ theorem mem_adjointWeightSpace_iff (α : Multiplicative (Fin 4 →₀ ℤ))
       GeneralLinear.weightTorusBaseChangeCoordinateMap_eq]
   exact HopfIdeal.mem_adjointWeightSpace_iff_of_weightTorus J f4ShortRootWeight _ hπ α x
 
-/-- Each numbered root vector has its prescribed simple-root torus character. The integral
+/-- Each numbered root vector has its prescribed signed-simple-root torus character. The integral
 character is retained, rather than reducing the weight lattice modulo two. -/
 theorem rootVector_mem_adjointWeightSpace (k : Fin 4 ⊕ Fin 4) :
     rootVector k ∈ Derivation.adjointWeightSpace
