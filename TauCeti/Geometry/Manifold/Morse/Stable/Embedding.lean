@@ -29,6 +29,10 @@ for any time `T` that makes `e^{-T} v` small; by the contraction, the result doe
 scaling `v ↦ e^{-s} v` of `L` with the time-`s` map of the flow, so it is an immersion everywhere.
 It covers `W^s(x)` because every point of `W^s(x)` reaches the small cube of the chart where
 `W^s(x)` is `L`.
+The resulting embeddings of `W^s(x)` and `W^u(x)`, with the Hessian of `f` on their tangent spaces,
+are `TauCeti.IsAdaptedPseudoGradient.exists_isSmoothEmbedding_stableSet` and
+`TauCeti.IsAdaptedPseudoGradient.exists_isSmoothEmbedding_unstableSet`
+(`TauCeti/Geometry/Manifold/Morse/Stable/Tangent.lean`).
 
 ## Main declarations
 
@@ -39,14 +43,13 @@ It covers `W^s(x)` because every point of `W^s(x)` reaches the small cube of the
 * `TauCeti.IsAdaptedPseudoGradient.mfderiv_toChart_comp_stableParam_zero`: read in the chart, its
   derivative at `0` is the inclusion of the stable subspace, so the tangent space of `W^s(x)` at `x`
   is the stable subspace of the chart.
+* `TauCeti.IsAdaptedPseudoGradient.mfderiv_toChart_mfderiv_stableParam_zero`: the derivative of the
+  chart at `x` sends the tangent vector `dι₀ u` back to `u`.
 * `TauCeti.IsAdaptedPseudoGradient.isSmoothEmbedding_stableParam` and
   `TauCeti.IsAdaptedPseudoGradient.range_stableParam`: it is a smooth embedding with image
   `W^s(x)`.
 * `TauCeti.IsAdaptedPseudoGradient.exists_stableParam`: a Morse chart and a scale for which the
-  parametrization is a smooth embedding onto `W^s(x)` with the expected derivative at `0`.
-* `TauCeti.IsAdaptedPseudoGradient.exists_isSmoothEmbedding_stableSet` and
-  `TauCeti.IsAdaptedPseudoGradient.exists_isSmoothEmbedding_unstableSet`: `W^s(x)` and `W^u(x)` are
-  images of smooth embeddings of vector spaces of dimensions `n - k` and `k`.
+  parametrization is a smooth embedding onto `W^s(x)`, whose derivative at `0` the chart inverts.
 
 ## References
 
@@ -299,6 +302,18 @@ theorem isImmersionAt_stableParam_of_norm_lt {v : φ.stableSubspace}
     simp [hX.stableParam_of_norm_lt φ hφ hrT hδr hu',
       φ.toChart.right_inv (φ.coe_mem_target_of_norm_lt hrT hδr hu')]
 
+/-- **The chart inverts the derivative of the parametrization at `0`.** The derivative of the
+Morse chart at `x` sends the tangent vector `dι₀ u` of `W^s(x)` back to `u`. -/
+theorem mfderiv_toChart_mfderiv_stableParam_zero (hδ : 0 < δ) (u : φ.stableSubspace) :
+    mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart x
+      (mfderiv 𝓘(ℝ, φ.stableSubspace) 𝓘(ℝ, E) (hX.stableParam φ δ) 0 u) = (u : E) := by
+  have h0 := hX.stableParam_zero φ hφ hrT hδr hδ
+  have h := mfderiv_comp_apply_of_eq (hg := φ.mdifferentiableAt_toChart φ.mem_source)
+    (hf := (hX.isImmersionAt_stableParam_of_norm_lt φ hφ hrT hδr (v := 0)
+      (by simpa using hδ)).contMDiffAt.mdifferentiableAt (by simp)) (hy := h0) (v := u)
+  rw [hX.mfderiv_toChart_comp_stableParam_zero φ hφ hrT hδr hδ] at h
+  exact h.symm
+
 /-- **The parametrization is an immersion.** -/
 theorem isImmersion_stableParam (hδ : 0 < δ) :
     IsImmersion 𝓘(ℝ, φ.stableSubspace) 𝓘(ℝ, E) ∞ (hX.stableParam φ δ) := by
@@ -378,8 +393,8 @@ theorem exists_stableParam (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
     ∃ (φ : MorseChart E f x) (δ : ℝ),
       IsSmoothEmbedding 𝓘(ℝ, φ.stableSubspace) 𝓘(ℝ, E) ∞ (hX.stableParam φ δ) ∧
       range (hX.stableParam φ δ) = hX.flow.stableSet x ∧ hX.stableParam φ δ 0 = x ∧
-      mfderiv 𝓘(ℝ, φ.stableSubspace) 𝓘(ℝ, E) (φ.toChart ∘ hX.stableParam φ δ) 0 =
-        φ.stableSubspace.subtypeL := by
+      ∀ u : φ.stableSubspace, mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart x
+        (mfderiv 𝓘(ℝ, φ.stableSubspace) 𝓘(ℝ, E) (hX.stableParam φ δ) 0 u) = (u : E) := by
   obtain ⟨φ, hφ⟩ := hX.exists_morseChart x hx
   obtain ⟨r, hr, hrT⟩ := φ.exists_pos_forall_norm_lt_mem_target
   obtain ⟨ε, hε0, hε⟩ := hX.exists_forall_mem_stableSet_iff φ hφ hf
@@ -401,36 +416,7 @@ theorem exists_stableParam (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
   have hεs := fun y hy hyε ↦ (hε y hy hyε).1
   exact ⟨φ, δ, hX.isSmoothEmbedding_stableParam φ hφ hrT hδr hδ hεδ hεs,
     hX.range_stableParam φ hφ hrT hδr hδ hε0 hεs, hX.stableParam_zero φ hφ hrT hδr hδ,
-    hX.mfderiv_toChart_comp_stableParam_zero φ hφ hrT hδr hδ⟩
-
-/-- **The stable manifold is a smoothly embedded vector space.** For a critical point `x` of
-index `k`, the stable manifold `W^s(x)` of the flow of an adapted pseudo-gradient is the image of
-a smooth embedding of a real vector space of dimension `n - k`, sending `0` to `x`. -/
-theorem exists_isSmoothEmbedding_stableSet (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
-    (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) :
-    ∃ L : Submodule ℝ E,
-      Module.finrank ℝ L + manifoldMorseIndex 𝓘(ℝ, E) f x = Module.finrank ℝ E ∧
-      ∃ ι : L → M, IsSmoothEmbedding 𝓘(ℝ, L) 𝓘(ℝ, E) ∞ ι ∧
-        range ι = hX.flow.stableSet x ∧ ι 0 = x := by
-  obtain ⟨φ, δ, hemb, hrange, h0, -⟩ := hX.exists_stableParam hf hx
-  exact ⟨φ.stableSubspace, φ.finrank_stableSubspace_add_manifoldMorseIndex,
-    hX.stableParam φ δ, hemb, hrange, h0⟩
-
-/-- **The unstable manifold is a smoothly embedded vector space.** For a critical point `x` of
-index `k` of a Morse function, the unstable manifold `W^u(x)` of the flow of an adapted
-pseudo-gradient is the image of a smooth embedding of a real vector space of dimension `k`, sending
-`0` to `x`. -/
-theorem exists_isSmoothEmbedding_unstableSet (hf : IsMorse 𝓘(ℝ, E) f)
-    (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) :
-    ∃ L : Submodule ℝ E, Module.finrank ℝ L = manifoldMorseIndex 𝓘(ℝ, E) f x ∧
-      ∃ ι : L → M, IsSmoothEmbedding 𝓘(ℝ, L) 𝓘(ℝ, E) ∞ ι ∧
-        range ι = hX.flow.unstableSet x ∧ ι 0 = x := by
-  obtain ⟨L, hL, hemb⟩ := (hX.neg hf).exists_isSmoothEmbedding_stableSet
-    (hf.neg.contMDiff.mdifferentiable (by simp)) (mfderiv_neg_eq_zero_iff.2 hx)
-  have hidx := (hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero hx
-    ).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
-  rw [hX.unstableSet_eq_stableSet_neg hf]
-  exact ⟨L, by omega, hemb⟩
+    hX.mfderiv_toChart_mfderiv_stableParam_zero φ hφ hrT hδr hδ⟩
 
 end IsAdaptedPseudoGradient
 

@@ -33,6 +33,9 @@ is possible because a Morse function on a compact manifold has finitely many cri
 
 * `TauCeti.MorseChart.field`: the linear field of a Morse chart, on the manifold, with
   `TauCeti.MorseChart.mvfderiv_field_apply_lt_zero` and `TauCeti.MorseChart.mfderiv_eq_zero_iff`.
+* `TauCeti.MorseChart.hessianQuadraticForm_quadratic` and
+  `TauCeti.MorseChart.hessianQuadraticForm_extChartAt`: the Hessian of the quadratic normal form,
+  and the Hessian of `f` at the centre of a Morse chart, read in the preferred chart.
 * `TauCeti.IsMorse.finite_setOf_mfderiv_eq_zero`: finiteness of the critical set.
 * `TauCeti.IsMorse.exists_isAdaptedPseudoGradient`: existence of adapted pseudo-gradients.
 
@@ -151,6 +154,75 @@ theorem fderiv_quadratic_eq_zero_iff {z : E} : fderiv ℝ φ.quadratic z = 0 ↔
   · rintro rfl
     ext v
     simp [fderiv_quadratic_apply]
+
+omit [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- The derivative of the quadratic normal form is a continuous linear function of the point,
+`z ↦ Σᵢ wᵢ (L z)ᵢ (L ·)ᵢ`. -/
+private theorem exists_fderiv_quadratic_eq :
+    ∃ B : E →L[ℝ] E →L[ℝ] ℝ, fderiv ℝ φ.quadratic = B ∧
+      ∀ u, B u u = ∑ i, φ.weight i * φ.coord u i ^ 2 := by
+  set ℓ : Fin (Module.finrank ℝ E) → E →L[ℝ] ℝ := fun i ↦
+    (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin (Module.finrank ℝ E) ↦ ℝ) i).comp
+      (φ.coordL : E →L[ℝ] (Fin (Module.finrank ℝ E) → ℝ))
+  refine ⟨∑ i, φ.weight i • (ℓ i).smulRight (ℓ i), ?_, fun u ↦ ?_⟩
+  · ext z v
+    simp [ℓ, φ.fderiv_quadratic_apply, coordL_apply, mul_assoc]
+  · simp [ℓ, coordL_apply, sq]
+
+omit [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- **The Hessian of the quadratic normal form** `f x + (1/2) Σᵢ wᵢ (L z)ᵢ²` is `Σᵢ wᵢ (L u)ᵢ²`, at
+every point. -/
+theorem hessianQuadraticForm_quadratic (z u : E) :
+    hessianQuadraticForm φ.quadratic z u = ∑ i, φ.weight i * φ.coord u i ^ 2 := by
+  obtain ⟨B, hB, hBu⟩ := φ.exists_fderiv_quadratic_eq
+  rw [hessianQuadraticForm_apply, hB, B.fderiv, hBu]
+
+omit [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- The quadratic normal form is smooth. -/
+theorem contDiff_quadratic : ContDiff ℝ ∞ φ.quadratic := by
+  obtain ⟨B, hB, -⟩ := φ.exists_fderiv_quadratic_eq
+  rw [contDiff_infty_iff_fderiv, hB]
+  exact ⟨fun z ↦ φ.differentiableAt_quadratic z, B.contDiff⟩
+
+/-- **The Hessian in the preferred chart.** At the centre `x` of a Morse chart `φ`, the Hessian of
+`f` read in the preferred chart at `x` is `v ↦ Σᵢ wᵢ (L (dφ v))ᵢ²`, where `dφ` is the derivative of
+the Morse chart at `x`. -/
+theorem hessianQuadraticForm_extChartAt (v : E) :
+    hessianQuadraticForm (f ∘ (extChartAt 𝓘(ℝ, E) x).symm) (extChartAt 𝓘(ℝ, E) x x) v =
+      ∑ i, φ.weight i * φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart x v) i ^ 2 := by
+  set ψ := extChartAt 𝓘(ℝ, E) x
+  -- In the preferred chart, `f` is the normal form composed with the transition map `τ`.
+  set τ : E → E := φ.toChart ∘ ψ.symm with hτdef
+  have hτa : τ (ψ x) = 0 := by simp [τ, ψ]
+  have hsrc : ∀ᶠ z in 𝓝 (ψ x), ψ.symm z ∈ φ.toChart.source :=
+    (continuousAt_extChartAt_symm x).preimage_mem_nhds
+      (by simpa [ψ] using φ.toChart.open_source.mem_nhds φ.mem_source)
+  have hev : f ∘ ψ.symm =ᶠ[𝓝 (ψ x)] φ.quadratic ∘ τ := by
+    filter_upwards [hsrc] with z hz
+    exact φ.eqOn_quadratic hz
+  have hτ : ContDiffAt ℝ 2 τ (ψ x) := by
+    have h1 : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ φ.toChart (ψ.symm (ψ x)) := by
+      simpa [ψ] using (contMDiffOn_of_mem_maximalAtlas φ.mem_maximalAtlas).contMDiffAt
+        (φ.toChart.open_source.mem_nhds φ.mem_source)
+    have h2 : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ ψ.symm (ψ x) :=
+      (contMDiffOn_extChartAt_symm x).contMDiffAt
+        ((isOpen_extChartAt_target x).mem_nhds (mem_extChartAt_target x))
+    exact ((h1.comp _ h2).contDiffAt).of_le (by norm_cast)
+  have hcrit : fderiv ℝ φ.quadratic (τ (ψ x)) = 0 := by
+    rw [hτa]
+    exact φ.fderiv_quadratic_eq_zero_iff.2 rfl
+  -- The chart of the model space is the identity, so `φ` read in charts is `τ`.
+  have hD : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart x = fderiv ℝ τ (ψ x) := by
+    rw [(φ.mdifferentiableAt_toChart φ.mem_source).mfderiv, modelWithCornersSelf_coe, range_id,
+      fderivWithin_univ, writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
+      id_comp]
+    -- The casts `tangentSpaceCastModel` between the tangent spaces and `E` are identities.
+    rfl
+  rw [hessianQuadraticForm_congr_of_eventuallyEq hev,
+    hessianQuadraticForm_comp ((φ.contDiff_quadratic.of_le (by norm_cast)).contDiffAt) hτ hcrit,
+    QuadraticMap.comp_apply, hessianQuadraticForm_quadratic, hD]
+  -- The two sides differ only in reading `v` in `E` or in the tangent space `T_x M = E`.
+  rfl
 
 omit [IsManifold 𝓘(ℝ, E) ∞ M] in
 /-- The derivative of the quadratic normal form along the linear field is `-Σᵢ (L z)ᵢ²`. -/

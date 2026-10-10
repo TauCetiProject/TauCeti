@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Morse.Stable.Embedding
+public import TauCeti.Geometry.Manifold.Morse.Stable.Tangent
 public import TauCeti.Geometry.Manifold.Instances.OpenBall
 
 /-!
@@ -62,7 +62,7 @@ theorem exists_isSmoothEmbedding_unitBall_stableSet (hf : MDifferentiable 𝓘(�
         𝓘(ℝ, EuclideanSpace ℝ (Fin (Module.finrank ℝ E - manifoldMorseIndex 𝓘(ℝ, E) f x)))
         𝓘(ℝ, E) ∞ ι ∧
       range ι = hX.flow.stableSet x ∧ ι ⟨0, zero_mem_unitBallOpens _⟩ = x := by
-  obtain ⟨L, hL, ι, hι, hrange, hι0⟩ := hX.exists_isSmoothEmbedding_stableSet hf hx
+  obtain ⟨L, hL, ι, hι, hrange, hι0, -⟩ := hX.exists_isSmoothEmbedding_stableSet hf hx
   obtain ⟨ι', hι', hrange', hι'0⟩ := exists_isSmoothEmbedding_unitBall (Nat.eq_sub_of_add_eq hL) hι
   exact ⟨ι', hι', hrange'.trans hrange, hι'0.trans hι0⟩
 
@@ -75,7 +75,7 @@ theorem exists_isSmoothEmbedding_unitBall_unstableSet (hf : IsMorse 𝓘(ℝ, E)
       IsSmoothEmbedding 𝓘(ℝ, EuclideanSpace ℝ (Fin (manifoldMorseIndex 𝓘(ℝ, E) f x)))
         𝓘(ℝ, E) ∞ ι ∧
       range ι = hX.flow.unstableSet x ∧ ι ⟨0, zero_mem_unitBallOpens _⟩ = x := by
-  obtain ⟨L, hL, ι, hι, hrange, hι0⟩ := hX.exists_isSmoothEmbedding_unstableSet hf hx
+  obtain ⟨L, hL, ι, hι, hrange, hι0, -⟩ := hX.exists_isSmoothEmbedding_unstableSet hf hx
   obtain ⟨ι', hι', hrange', hι'0⟩ := exists_isSmoothEmbedding_unitBall hL hι
   exact ⟨ι', hι', hrange'.trans hrange, hι'0.trans hι0⟩
 
