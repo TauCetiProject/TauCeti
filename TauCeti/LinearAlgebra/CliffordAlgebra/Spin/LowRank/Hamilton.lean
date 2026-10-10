@@ -261,34 +261,27 @@ private theorem coe_hamiltonVectorEven_basisVector (i : Fin 3) :
     (hamiltonVectorEven (K := K) (hamiltonBasisVector i) :
         CliffordAlgebra (hamiltonThreeForm (K := K))) =
       ι (hamiltonThreeForm (K := K)) (hamiltonBasisVector i) * hamiltonVolume := by
-  -- Write `eₖ` for `ι _ (hamiltonBasisVector k)`. Distinct `eₖ` anticommute (`hanti`), and each
-  -- squares to `1` (`ι_hamiltonBasisVector_sq`).
-  have hanti {i j : Fin 3} (hij : i ≠ j) := ι_mul_ι_comm_of_isOrtho
-    (hamiltonBasisVector_isOrtho (K := K) hij).symm
+  -- Write `e k` for the basis vector `ι _ (hamiltonBasisVector k)`: each squares to `1`, and
+  -- distinct ones anticommute.
+  let e (k : Fin 3) := ι (hamiltonThreeForm (K := K)) (hamiltonBasisVector k)
+  have hsq (k : Fin 3) : e k * e k = 1 := ι_hamiltonBasisVector_sq k
+  have hanti {j k : Fin 3} (hjk : j ≠ k) : e k * e j = -(e j * e k) :=
+    ι_mul_ι_comm_of_isOrtho (hamiltonBasisVector_isOrtho (K := K) hjk).symm
   rw [hamiltonVectorEven_basisVector, hamiltonVolume_eq]
   -- The three coordinate cases expose the even-subalgebra coercion before Clifford calculation.
   fin_cases i
-  · change ι _ (hamiltonBasisVector 1) * ι _ (hamiltonBasisVector 2) =
-      ι _ (hamiltonBasisVector 0) *
-        (ι _ (hamiltonBasisVector 0) *
-          (ι _ (hamiltonBasisVector 1) * ι _ (hamiltonBasisVector 2)))
-    rw [← mul_assoc, ι_hamiltonBasisVector_sq, one_mul]
-  · change ι _ (hamiltonBasisVector 2) * ι _ (hamiltonBasisVector 0) =
-      ι _ (hamiltonBasisVector 1) *
-        (ι _ (hamiltonBasisVector 0) *
-          (ι _ (hamiltonBasisVector 1) * ι _ (hamiltonBasisVector 2)))
-    -- `e₁ (e₀ e₁ e₂) = -e₀ (e₁ e₁) e₂ = -e₀ e₂ = e₂ e₀`
-    rw [← mul_assoc (ι _ (hamiltonBasisVector 1)), hanti (i := 0) (j := 1) (by decide), neg_mul,
-      mul_assoc, ← mul_assoc (ι _ (hamiltonBasisVector 1)), ι_hamiltonBasisVector_sq, one_mul,
-      hanti (i := 0) (j := 2) (by decide)]
-  · change ι _ (hamiltonBasisVector 0) * ι _ (hamiltonBasisVector 1) =
-      ι _ (hamiltonBasisVector 2) *
-        (ι _ (hamiltonBasisVector 0) *
-          (ι _ (hamiltonBasisVector 1) * ι _ (hamiltonBasisVector 2)))
-    -- `e₂ (e₀ e₁ e₂) = -e₀ (e₂ e₁) e₂ = e₀ e₁ (e₂ e₂) = e₀ e₁`
-    rw [← mul_assoc (ι _ (hamiltonBasisVector 2)), hanti (i := 0) (j := 2) (by decide), neg_mul,
-      mul_assoc, ← mul_assoc (ι _ (hamiltonBasisVector 2)), hanti (i := 1) (j := 2) (by decide),
-      neg_mul, mul_assoc, ι_hamiltonBasisVector_sq, mul_one, mul_neg, neg_neg]
+  · change e 1 * e 2 = e 0 * (e 0 * (e 1 * e 2))
+    rw [← mul_assoc, hsq, one_mul]
+  · change e 2 * e 0 = e 1 * (e 0 * (e 1 * e 2))
+    calc e 2 * e 0 = -(e 0 * e 2) := hanti (by decide)
+      _ = -(e 0 * (e 1 * e 1) * e 2) := by rw [hsq, mul_one]
+      _ = e 1 * e 0 * e 1 * e 2 := by rw [hanti (by decide : (0 : Fin 3) ≠ 1)]; noncomm_ring
+      _ = e 1 * (e 0 * (e 1 * e 2)) := by noncomm_ring
+  · change e 0 * e 1 = e 2 * (e 0 * (e 1 * e 2))
+    calc e 0 * e 1 = e 0 * e 1 * (e 2 * e 2) := by rw [hsq, mul_one]
+      _ = -(e 0 * (e 2 * e 1) * e 2) := by rw [hanti (by decide : (1 : Fin 3) ≠ 2)]; noncomm_ring
+      _ = e 2 * e 0 * e 1 * e 2 := by rw [hanti (by decide : (0 : Fin 3) ≠ 2)]; noncomm_ring
+      _ = e 2 * (e 0 * (e 1 * e 2)) := by noncomm_ring
 
 omit [Invertible (2 : K)] in
 private theorem coe_hamiltonVectorEven (v : Fin 3 → K) :
