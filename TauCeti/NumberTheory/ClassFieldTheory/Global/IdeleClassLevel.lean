@@ -198,7 +198,7 @@ def globalGroundEquiv :
   (MulEquiv.ofBijective _ (GlobalNumberFields.ideleClassExtension_bijective K
       ((⊥ : Ω) : IntermediateField K (SeparableClosure K))
       fun x ↦ (mem_bot.1 x.2).imp fun _ hc ↦ Subtype.ext hc)).toAdditive.trans
-    (ideleClassLevelEquiv ⊥ (fixedField_toSubgroup_top K))
+    (ideleClassLevelEquiv ⊥ (TauCeti.fixedField_toSubgroup_top K))
 
 /-- `globalGroundEquiv K` sends the class of an idele of `K` to the class of its extension to
 `Kˢ`. -/
