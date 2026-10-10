@@ -52,22 +52,40 @@ variable {E B : TopCat.{w}} {p : E ⟶ B} {G : Type*} [Group G] [MulAction G E]
   (hG : IsQuotientCoveringMap p G)
   {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C] (R : C)
 
+/-- **The transfer is invariant under the action.** For the quotient covering map `p : E ⟶ B` of
+an action of a finite group `G`, the transfer `C(B; R) ⟶ C(E; R)` commutes with the action of `G`
+on `C(E; R)` by the chain maps `g_*`, so it is a natural transformation from the constant functor
+at `C(B; R)` to that action. -/
+def transferπ [Finite G] :
+    (Functor.const _).obj (((singularChainComplexFunctor C).obj R).obj B) ⟶
+      @TopCat.actionFunctor E G _ _ hG.toContinuousConstSMul ⋙
+        (singularChainComplexFunctor C).obj R where
+  app _ := hG.isCoveringMap.singularTransfer hG.finite_fiber R
+  naturality _ _ g := by
+    have := hG.toContinuousConstSMul
+    refine (Category.id_comp _).trans ?_
+    exact (hG.isCoveringMap.singularTransfer_comp_chainComplexMap_of_comp_eq hG.finite_fiber
+      R (f := TopCat.ofHom ⟨(g • ·), hG.continuous_const_smul g⟩) (MulAction.bijective g)
+      (by ext e; exact hG.map_smul g)).symm
+
+/-- Each component of `hG.transferπ R` is the transfer `C(B; R) ⟶ C(E; R)`. -/
+@[simp]
+theorem transferπ_app [Finite G] (X : SingleObj G) :
+    (hG.transferπ R).app X = hG.isCoveringMap.singularTransfer hG.finite_fiber R :=
+  (rfl)
+
 /-- **The transfer as a cone over the action.** For the quotient covering map `p : E ⟶ B` of an
-action of a finite group `G`, the transfer `C(B; R) ⟶ C(E; R)` is invariant under the action of
-`G` on `C(E; R)` by the chain maps `g_*`, so it is a cone over that action with point `C(B; R)`. -/
+action of a finite group `G`, the transfer `C(B; R) ⟶ C(E; R)` is a cone over the action of `G` on
+`C(E; R)`, with point `C(B; R)` and legs `hG.transferπ R`.
+
+Only this two-field wrapper is exposed, so that the cone point is `C(B; R)` by `dsimp`; the
+transfer itself, `hG.transferπ R`, stays opaque. -/
 @[expose, simps]
 def transferCone [Finite G] :
     Cone (@TopCat.actionFunctor E G _ _ hG.toContinuousConstSMul ⋙
       (singularChainComplexFunctor C).obj R) where
   pt := ((singularChainComplexFunctor C).obj R).obj B
-  π :=
-    { app _ := hG.isCoveringMap.singularTransfer hG.finite_fiber R
-      naturality _ _ g := by
-        have := hG.toContinuousConstSMul
-        refine (Category.id_comp _).trans ?_
-        exact (hG.isCoveringMap.singularTransfer_comp_chainComplexMap_of_comp_eq hG.finite_fiber
-          R (f := TopCat.ofHom ⟨(g • ·), hG.continuous_const_smul g⟩) (MulAction.bijective g)
-          (by ext e; exact hG.map_smul g)).symm }
+  π := hG.transferπ R
 
 /-- **The transfer exhibits invariants.** For the quotient covering map `p : E ⟶ B` of an action of
 a finite group `G`, and coefficients `R` on which multiplication by `|G|` is invertible, every
