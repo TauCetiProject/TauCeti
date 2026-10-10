@@ -139,13 +139,10 @@ lemma kronecker_coefficient_naturality {Z : C} (g : Y ⟶ Z) (i : α)
     kronecker k X Z i (homologyMap (X.linearYonedaObjMap k g) i x) =
       kronecker k X Y i x ≫ g := by
   obtain ⟨φ, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ i x
-  have hπ := ConcreteCategory.congr_hom (homologyπ_naturality (X.linearYonedaObjMap k g) i) φ
-  simp only [ModuleCat.comp_apply] at hπ
-  rw [hπ, ← cancel_epi (X.homologyπ i), kronecker_homologyπ, kronecker_homologyπ_assoc]
-  have hcyc := ConcreteCategory.congr_hom (cyclesMap_i (X.linearYonedaObjMap k g) i) φ
-  simp only [ModuleCat.comp_apply] at hcyc
-  exact (congrArg (X.iCycles i ≫ ·)
-    (hcyc.trans (X.linearYonedaObjMap_f_hom_apply k g i _))).trans (Category.assoc _ _ _).symm
+  rw [X.homologyMap_linearYonedaObjMap_homologyπ_apply k, ← cancel_epi (X.homologyπ i),
+    kronecker_homologyπ, kronecker_homologyπ_assoc,
+    X.iCycles_cyclesMap_linearYonedaObjMap_apply k]
+  exact (Category.assoc ..).symm
 
 variable (k Y) in
 /-- For a morphism `f : Xᵢ ⟶ A` vanishing on the boundaries coming from `Xᵢ₊₁`, the `k`-linear map
@@ -207,8 +204,7 @@ private lemma kronecker_surjective [Injective Y] (i : α) :
       Injective.comp_factorThru]⟩
 
 /-- For an injective object `Y`, a cohomology class evaluating to zero is zero: a cocycle
-vanishing on the cycles is the coboundary of an extension of its factorization through the
-coimage of the differential. -/
+vanishing on the cycles factors through the outgoing differential, so it is a coboundary. -/
 private lemma kronecker_injective [Injective Y] (i : α) :
     Function.Injective (kronecker k X Y i) := by
   rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
@@ -221,15 +217,10 @@ private lemma kronecker_injective [Injective Y] (i : α) :
   -- the cocycle vanishes on the cycles, so on the kernel of the differential `Xᵢ ⟶ Xⱼ`
   have hcyc : X.iCycles i ≫ a = 0 := by
     rw [← ha, ← kronecker_homologyπ, hx, comp_zero]
-  have hker : kernel.ι (X.d i j) ≫ a = 0 := by
-    rw [← X.liftCycles_i (kernel.ι (X.d i j)) j rfl (kernel.condition _), Category.assoc, hcyc,
-      comp_zero]
-  -- extend its factorization through the coimage along the monomorphism into `Xⱼ`
-  let b : X.X j ⟶ Y :=
-    Injective.factorThru (cokernel.desc _ a hker) (Abelian.factorThruCoimage (X.d i j))
-  have hb : X.d i j ≫ b = a := by
-    rw [← Abelian.coimage.fac (X.d i j), Category.assoc, Injective.comp_factorThru]
-    exact cokernel.π_desc _ _ _
+  let S := ShortComplex.mk (X.iCycles i) (X.d i j) (X.iCycles_d i j)
+  have hS : S.Exact := S.exact_of_f_is_kernel (X.cyclesIsKernel i j rfl)
+  let b : X.X j ⟶ Y := hS.descToInjective a hcyc
+  have hb : X.d i j ≫ b = a := hS.comp_descToInjective a hcyc
   have hφ : (X.linearYonedaObj k Y).toCycles j i b = φ :=
     HomologicalComplex.moduleCat_iCycles_injective _ _
       ((linearYonedaObj_iCycles_toCycles_apply j i b).trans (hb.trans ha.symm))
