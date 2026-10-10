@@ -83,6 +83,7 @@ def adelicSpinorNorm : U.finiteAdelicSpecialOrthogonal →* U.finiteAdelicSquare
     (fun p g hg ↦ (U.mem_localSpinorNormImage_iff hQ p _).mpr ⟨⟨g, hg⟩, rfl⟩)
 
 /-- Each component of the adelic spinor norm is the corresponding local spinor norm. -/
+@[simp]
 theorem adelicSpinorNorm_apply (g : U.finiteAdelicSpecialOrthogonal) (p : Nat.Primes) :
     U.adelicSpinorNorm hQ g p = CliffordAlgebra.spinorNorm (Q.baseChange ℚ_[p])
       (QuadraticForm.Nondegenerate.baseChange hQ) (g p) :=
@@ -107,6 +108,7 @@ theorem adelicSpinorKernel_def :
 
 /-- Membership in the adelic spinor kernel means that the spinor norm is trivial at every
 finite prime. -/
+@[simp]
 theorem mem_adelicSpinorKernel_iff (g : U.finiteAdelicSpecialOrthogonal) :
     g ∈ U.adelicSpinorKernel hQ ↔ ∀ p : Nat.Primes,
       CliffordAlgebra.spinorNorm (Q.baseChange ℚ_[p])

@@ -64,6 +64,7 @@ def OrthogonalCompactOpens.localSpinorNorm (hQ : Q.Nondegenerate) (p : Nat.Prime
     (QuadraticForm.Nondegenerate.baseChange hQ)).comp (U.specialOrthogonal p).subtype
 
 /-- The restricted local spinor norm agrees with the ambient spinor norm. -/
+@[simp]
 theorem OrthogonalCompactOpens.localSpinorNorm_apply (hQ : Q.Nondegenerate)
     (p : Nat.Primes) (g : U.specialOrthogonal p) :
     U.localSpinorNorm hQ p g = CliffordAlgebra.spinorNorm (Q.baseChange ℚ_[p])
