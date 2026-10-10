@@ -51,7 +51,7 @@ local notation "T" =>
 /-- Transposition of a right transpose, using a presenting map with superfluous kernel,
 recovers the original right module exactly when it has no nonzero projective retracts.
 In particular this applies to a minimal presentation; the right presentation is arbitrary. -/
-theorem nonempty_linearEquiv_transpose_rightTranspose_iff
+theorem nonempty_linearEquiv_transpose_rightTranspose_iff_isZero_projective_retract
     (Q : FiniteProjectivePresentation N) (P : FiniteProjectivePresentation Q.rightTranspose)
     (hP : IsSuperfluous (LinearMap.ker P.p))
     (hN : IsFiniteLength Aᵐᵒᵖ N)
@@ -89,7 +89,7 @@ variable {k : Type*} [CommSemiring k] [Algebra k A]
 original right module has no nonzero projective retracts. The scalar dual is specified by
 an equivariant pairing, and reflexivity suffices in place of a finite-dimensional field
 hypothesis. This is the recovery composite for the inverse `Tr D` correspondence. -/
-theorem nonempty_linearEquiv_translate_rightTranspose_iff
+theorem nonempty_linearEquiv_translate_rightTranspose_iff_isZero_projective_retract
     (Q : FiniteProjectivePresentation N) (P : FiniteProjectivePresentation Q.rightTranspose)
     (hP : IsSuperfluous (LinearMap.ker P.p))
     (hN : IsFiniteLength Aᵐᵒᵖ N)
@@ -99,7 +99,7 @@ theorem nonempty_linearEquiv_translate_rightTranspose_iff
     (he : ∀ (a : A) (x : E) (n : N), e (a • x) n = e x (MulOpposite.op a • n)) :
     Nonempty (AuslanderReitenTranslate k P.p ≃ₗ[A] E) ↔
       ∀ {R : ModuleCat.{max u v} Aᵐᵒᵖ}, Retract R N → Projective R → IsZero R := by
-  rw [← Q.nonempty_linearEquiv_transpose_rightTranspose_iff P hP hN hTr]
+  rw [← Q.nonempty_linearEquiv_transpose_rightTranspose_iff_isZero_projective_retract P hP hN hTr]
   constructor
   · rintro ⟨f⟩
     exact ⟨((LinearEquiv.refl k (AuslanderReitenTranslate k P.p)).ofEquivariantDual e
