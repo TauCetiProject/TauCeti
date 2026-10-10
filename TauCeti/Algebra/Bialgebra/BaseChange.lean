@@ -66,24 +66,6 @@ private theorem baseChangeTowerAlgEquiv_counit_comp :
   | tmul l h =>
       simp [Algebra.smul_def, IsScalarTower.algebraMap_apply k L K, mul_comm, mul_assoc]
 
--- With both comultiplications rewritten by `TauCeti.Coalgebra.baseChange_comul_tmul`, the
--- comparison is an identity between two nestings of `distribBaseChange`, checked on the
--- unspecified comultiplication `x` of an element of `H`.
-private theorem _root_.TensorProduct.baseChangeTowerAlgEquiv_comul_aux
-    (s : K) (l : L) (x : H ⊗[k] H) :
-    (Algebra.TensorProduct.map
-        (TauCeti.Algebra.TensorProduct.baseChangeTowerAlgEquiv k L H K).toAlgHom
-        (TauCeti.Algebra.TensorProduct.baseChangeTowerAlgEquiv k L H K).toAlgHom)
-      (_root_.TensorProduct.AlgebraTensorModule.distribBaseChange L K
-        (L ⊗[k] H) (L ⊗[k] H)
-        (s ⊗ₜ[L] _root_.TensorProduct.AlgebraTensorModule.distribBaseChange k L H H
-          (l ⊗ₜ[k] x))) =
-      _root_.TensorProduct.AlgebraTensorModule.distribBaseChange k K H H ((l • s) ⊗ₜ[k] x) := by
-  induction x using _root_.TensorProduct.inductionOn with
-  | add x y hx hy =>
-      simpa only [_root_.TensorProduct.tmul_add, map_add] using congrArg₂ (· + ·) hx hy
-  | tmul h₁ h₂ => simp
-
 private theorem baseChangeTowerAlgEquiv_map_comp_comul :
     (Algebra.TensorProduct.map
         (TauCeti.Algebra.TensorProduct.baseChangeTowerAlgEquiv k L H K).toAlgHom
@@ -101,7 +83,8 @@ private theorem baseChangeTowerAlgEquiv_map_comp_comul :
         AlgEquiv.coe_toAlgHom,
         TauCeti.Algebra.TensorProduct.baseChangeTowerAlgEquiv_tmul,
         TauCeti.Coalgebra.baseChange_comul_tmul]
-      exact _root_.TensorProduct.baseChangeTowerAlgEquiv_comul_aux k L H K s l
+      exact TauCeti.Algebra.TensorProduct.map_baseChangeTowerAlgEquiv_distribBaseChange
+        k L H H K s l
         (Coalgebra.comul (R := k) h)
 
 /-- **Base change of bialgebras composes in stages.** For a tower `k → L → K`, extending a
@@ -116,11 +99,18 @@ noncomputable def baseChangeTowerBialgEquiv :
     (baseChangeTowerAlgEquiv_counit_comp k L H K)
     (baseChangeTowerAlgEquiv_map_comp_comul k L H K)
 
+/-- The algebra equivalence underlying the scalar-extension tower comparison. -/
+@[simp]
+theorem baseChangeTowerBialgEquiv_toAlgEquiv :
+    (baseChangeTowerBialgEquiv k L H K).toAlgEquiv =
+      TauCeti.Algebra.TensorProduct.baseChangeTowerAlgEquiv k L H K :=
+  (rfl)
+
 /-- On a nested pure tensor, the tower comparison absorbs the intermediate scalar. -/
 @[simp]
 theorem baseChangeTowerBialgEquiv_tmul (s : K) (l : L) (h : H) :
     baseChangeTowerBialgEquiv k L H K (s ⊗ₜ[L] (l ⊗ₜ[k] h)) = (l • s) ⊗ₜ[k] h := by
-  rw [baseChangeTowerBialgEquiv, _root_.BialgEquiv.ofAlgEquiv_apply]
+  rw [← BialgEquiv.coe_toAlgEquiv, baseChangeTowerBialgEquiv_toAlgEquiv]
   exact TauCeti.Algebra.TensorProduct.baseChangeTowerAlgEquiv_tmul k L H K s l h
 
 /-- On a tensor with unit scalar, the tower comparison extends the intermediate coefficients. -/
@@ -136,9 +126,8 @@ theorem _root_.TensorProduct.baseChangeTowerBialgEquiv_one_tmul (x : L ⊗[k] H)
 @[simp]
 theorem baseChangeTowerBialgEquiv_symm_tmul (s : K) (h : H) :
     (baseChangeTowerBialgEquiv k L H K).symm (s ⊗ₜ[k] h) = s ⊗ₜ[L] (1 ⊗ₜ[k] h) := by
-  -- `BialgEquiv.ofAlgEquiv` retains the inverse of the supplied algebra equivalence.
-  change (TauCeti.Algebra.TensorProduct.baseChangeTowerAlgEquiv k L H K).symm (s ⊗ₜ[k] h) = _
-  exact TauCeti.Algebra.TensorProduct.baseChangeTowerAlgEquiv_symm_tmul k L H K s h
+  apply EquivLike.injective (baseChangeTowerBialgEquiv k L H K)
+  simp only [BialgEquiv.apply_symm_apply, baseChangeTowerBialgEquiv_tmul, one_smul]
 
 end Tower
 
