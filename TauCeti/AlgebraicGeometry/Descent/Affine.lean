@@ -233,17 +233,18 @@ private theorem spec_act (D : DescentDatum R S B) :
 
 /-- The action of `D.spec` is `Spec` of the coaction of `D`, through the canonical map
 `Spec (S ⊗[R] B) ⟶ Spec S ×_{Spec R} Spec B`. -/
-theorem lift_spec_act (D : DescentDatum R S B) (h) :
-    pullback.lift
-        (Spec.map (CommRingCat.ofHom
-          (Algebra.TensorProduct.includeLeftRingHom : S →+* S ⊗[R] B)))
-        (Spec.map (CommRingCat.ofHom
-          (Algebra.TensorProduct.includeRight : B →ₐ[R] S ⊗[R] B).toRingHom)) h ≫ D.spec.act =
-      Spec.map (CommRingCat.ofHom D.coaction.toRingHom) := by
+@[reassoc (attr := simp)]
+theorem lift_spec_act (D : DescentDatum R S B)
+    (h : Spec.map (CommRingCat.ofHom
+          (Algebra.TensorProduct.includeLeftRingHom : S →+* S ⊗[R] B)) ≫ Spec.algebraMap R S =
+        Spec.map (CommRingCat.ofHom
+          ((Algebra.TensorProduct.includeRight : B →ₐ[R] S ⊗[R] B) : B →+* S ⊗[R] B)) ≫
+          Spec.algebraMap S B ≫ Spec.algebraMap R S) :
+    pullback.lift _ _ h ≫ D.spec.act = Spec.map (CommRingCat.ofHom D.coaction.toRingHom) := by
   have : pullback.lift _ _ h = (tensorIso R S B).hom := by
     refine pullback.hom_ext ?_ ?_
-    · rw [pullback.lift_fst, tensorIso_hom_fst]
-    · rw [pullback.lift_snd, tensorIso_hom_snd]
+    · exact (pullback.lift_fst _ _ _).trans tensorIso_hom_fst.symm
+    · exact (pullback.lift_snd _ _ _).trans tensorIso_hom_snd.symm
   rw [this, spec_act, Iso.hom_inv_id_assoc]
 
 /-- The coaction `B → S ⊗[R] B` whose `Spec` is the action of a descent datum on `Spec B`. -/
