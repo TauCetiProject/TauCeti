@@ -147,7 +147,7 @@ private theorem laurentK0_projective_of_mem_span
       exact G.smul_mem _ (Submodule.subset_span (Set.mem_range_self i))
     -- A nonzero decomposable object has two nonzero projective summands.
     obtain ⟨Y, Z, e, hY, hZ⟩ :
-        ∃ Y Z, ∃ e : M ≅ Y ⊞ Z, ¬IsZero Y ∧ ¬IsZero Z := by
+        ∃ Y Z, ∃ _ : M ≅ Y ⊞ Z, ¬IsZero Y ∧ ¬IsZero Z := by
       simpa only [Indecomposable, hM, not_false_eq_true, true_and, not_forall,
         not_or, exists_prop] using hind
     have hdim := finrank_eq_add_of_iso_biprod M Y Z e

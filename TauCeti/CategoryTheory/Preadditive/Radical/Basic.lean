@@ -82,6 +82,9 @@ addition, exactly as in the ring case.
   with the composite taken in either order.
 * `TauCeti.comp_mem_jacobsonRadical_left` and `TauCeti.comp_mem_jacobsonRadical_right`: the
   radical is a **two-sided ideal** of the category.
+* `TauCeti.mem_jacobsonRadical_biproduct_left_iff` and
+  `TauCeti.mem_jacobsonRadical_biproduct_right_iff`: radical membership for a finite biproduct
+  is checked componentwise in either argument.
 * `TauCeti.jacobsonRadical_self_eq_jacobson`: on a single object the radical is the **Jacobson
   radical of the endomorphism ring**, `Ring.jacobson (End X)`.
 * `TauCeti.mem_jacobsonRadical_iff_not_isIso`: between objects with local endomorphism rings, the
@@ -256,6 +259,36 @@ theorem comp_mem_jacobsonRadical_right {X Y Z : C} {f : X ⟶ Y}
   intro g
   rw [Category.assoc]
   exact hf (h ≫ g)
+
+open CategoryTheory.Limits in
+/-- A morphism from a finite biproduct is radical exactly when each restriction to a summand
+is radical. -/
+theorem mem_jacobsonRadical_biproduct_left_iff {J : Type*} [Finite J]
+    (P : J → C) [HasBiproduct P] {Y : C} {f : ⨁ P ⟶ Y} :
+    f ∈ jacobsonRadical (⨁ P) Y ↔ ∀ j, biproduct.ι P j ≫ f ∈ jacobsonRadical (P j) Y := by
+  classical
+  let := Fintype.ofFinite J
+  refine ⟨fun hf j ↦ comp_mem_jacobsonRadical_left _ hf, fun hf ↦ ?_⟩
+  have heq : f = ∑ j, biproduct.π P j ≫ biproduct.ι P j ≫ f := by
+    simp [← Category.assoc, ← Preadditive.sum_comp, biproduct.total]
+  rw [heq]
+  exact (jacobsonRadical (⨁ P) Y).sum_mem fun j _ ↦
+    comp_mem_jacobsonRadical_left _ (hf j)
+
+open CategoryTheory.Limits in
+/-- A morphism into a finite biproduct is radical exactly when each projection to a summand
+is radical. -/
+theorem mem_jacobsonRadical_biproduct_right_iff {J : Type*} [Finite J]
+    (P : J → C) [HasBiproduct P] {Y : C} {f : Y ⟶ ⨁ P} :
+    f ∈ jacobsonRadical Y (⨁ P) ↔ ∀ j, f ≫ biproduct.π P j ∈ jacobsonRadical Y (P j) := by
+  classical
+  let := Fintype.ofFinite J
+  refine ⟨fun hf j ↦ comp_mem_jacobsonRadical_right hf _, fun hf ↦ ?_⟩
+  have heq : f = ∑ j, (f ≫ biproduct.π P j) ≫ biproduct.ι P j := by
+    simp [Category.assoc, ← Preadditive.comp_sum, biproduct.total]
+  rw [heq]
+  exact (jacobsonRadical Y (⨁ P)).sum_mem fun j _ ↦
+    comp_mem_jacobsonRadical_right (hf j) _
 
 /-! ### On a single object: the Jacobson radical of the endomorphism ring -/
 

@@ -377,7 +377,7 @@ theorem fixedField_iInf_stabilizer_eq_adjoin_range [IsGalois K M]
 theorem adjoin_eq_top_of_fixedField_stabilizer [IsGalois K M] (x : M) :
     Algebra.adjoin K {(⟨x, mem_fixedField_stabilizer x⟩ :
       fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x))} = ⊤ := by
-  set E := fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x) with hE
+  set E := fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x)
   set x' : E := ⟨x, mem_fixedField_stabilizer x⟩
   have hx' : IsAlgebraic K x' :=
     (isAlgebraic_algebraMap_iff (algebraMap E M).injective).mp (Algebra.IsAlgebraic.isAlgebraic x)

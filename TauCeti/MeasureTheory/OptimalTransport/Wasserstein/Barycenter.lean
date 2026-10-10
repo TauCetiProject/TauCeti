@@ -34,8 +34,8 @@ supported law `∑ i, w i • δ_{μ i}`: it exists, is unique, and its quantile
 
 At every exponent `1 ≤ p ≤ ∞`, the quantile barycenter of two laws with weights `1 - s` and `s`
 moves at constant speed: interpolations at times `s` and `r` are at distance
-`|s - r| W_p(μ₀, μ₁)`. So quantile interpolation is a geodesic segment and `P_p(ℝ)` is a geodesic
-space. The barycenter theory of two weighted points in geodesic spaces,
+`|s - r| W_p(μ₀, μ₁)`. So quantile interpolation is an explicit geodesic segment in `P_p(ℝ)`.
+The barycenter theory of two weighted points in geodesic spaces,
 `TauCeti.MeasureTheory.Measure.FrechetMean.TwoPoint`, then shows that for `1 < p < ∞` the
 interpolation at the barycentric time `τ = TauCeti.twoPointBarycenterTime p t` is a `p`-Fréchet
 barycenter of `(1 - t) δ_{μ₀} + t δ_{μ₁}`.
@@ -59,7 +59,7 @@ barycenter of `(1 - t) δ_{μ₀} + t δ_{μ₁}`.
   `P₂ (ℝ)` is unique and has the averaged quantile function.
 * `TauCeti.wassersteinEDist_quantileBarycenter_pair` and
   `TauCeti.exists_isGeodesicSegment_quantileBarycenter` — quantile interpolation of two laws is a
-  `W_p` geodesic, so `P_p(ℝ)` is a geodesic space.
+  `W_p` geodesic.
 * `TauCeti.isFrechetBarycenter_of_coe_eq_quantileBarycenter_twoPointBarycenterTime` — the
   quantile interpolation of two laws at the barycentric time is a `p`-Fréchet barycenter of the
   two weighted laws.
@@ -371,11 +371,6 @@ theorem exists_isGeodesicSegment_quantileBarycenter (μ₀ μ₁ : WassersteinSp
   · rw [WassersteinSpace.dist_def, WassersteinSpace.dist_def, hγ s hs, hγ r hr,
       wassersteinEDist_quantileBarycenter_pair hp m₀ m₁ hs hr, ENNReal.toReal_mul,
       ENNReal.toReal_ofReal (abs_nonneg _)]
-
-/-- For `1 ≤ p ≤ ∞`, the Wasserstein space `P_p(ℝ)` is a geodesic space: quantile interpolation
-joins any two laws by a geodesic segment. -/
-instance WassersteinSpace.instIsGeodesicSpace : IsGeodesicSpace (WassersteinSpace p ℝ) :=
-  ⟨fun μ₀ μ₁ ↦ (exists_isGeodesicSegment_quantileBarycenter μ₀ μ₁).imp fun _ h ↦ h.1⟩
 
 /-- **The barycenter of two laws on the line at every finite exponent.** For `1 < p < ∞` and
 `t ∈ [0, 1]`, the law whose quantile function is `(1 - τ) Q₀ + τ Q₁`, where

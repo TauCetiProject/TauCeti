@@ -693,8 +693,8 @@ lemma basicOpenFinset_inter (T₁ T₂ : Finset A) (s₁ s₂ : A) :
     basicOpenFinset T₁ s₁ ∩ basicOpenFinset T₂ s₂
       = basicOpenFinset (insert s₁ T₁ * insert s₂ T₂) (s₁ * s₂) := by
   rw [← basicOpenFinset_insert_self T₁ s₁, ← basicOpenFinset_insert_self T₂ s₂]
-  set U₁ := insert s₁ T₁ with hU₁
-  set U₂ := insert s₂ T₂ with hU₂
+  set U₁ := insert s₁ T₁
+  set U₂ := insert s₂ T₂
   have h₁ : s₁ ∈ U₁ := Finset.mem_insert_self _ _
   have h₂ : s₂ ∈ U₂ := Finset.mem_insert_self _ _
   ext v

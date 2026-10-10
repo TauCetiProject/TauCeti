@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.CoordinateRing.Vari
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.VariableChange
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Aut
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Neg
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.TautologicalPoint
 -- Proof-only: a degree-one isogeny has an inverse, and pullbacks give `x` a pole at infinity.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Factorisation
@@ -64,6 +65,8 @@ one of them: `W.autGroup ≃* (Hom W W)ˣ`.
 * `TauCeti.Isogeny.tautologicalPoint_variableChangePullback`: the tautological point of a change of
   variables is the generic point moved by `WeierstrassCurve.pointEquivVariableChange`.
 * `TauCeti.Isogeny.variableChangeIsogeny_inj`: a change of variables is determined by its isogeny.
+* `TauCeti.Isogeny.variableChangeIsogeny_negVariableChange`: the change of variables `[-1]` gives
+  the negation isogeny.
 * `TauCeti.Isogeny.exists_algebraMap_eq_pullback_of_degree_eq_one`: an isogeny of degree one out
   of a curve with integrally closed coordinate ring (for instance an elliptic curve) pulls the
   coordinate ring back into the coordinate ring.
@@ -184,6 +187,18 @@ theorem variableChangeIsogeny_inj (h : C • W₁ = W₂) (h' : C' • W₁ = W�
   ext z
   exact IsFractionRing.injective W₁.CoordinateRing W₁.FunctionField
     (by simpa using congrArg (fun φ : Isogeny W₁ W₂ => φ.pullback z) he)
+
+/-- **The change of variables `[-1]` gives the negation isogeny**: `negVariableChange` is the
+substitution `(x, y) ↦ (x, -y - a₁x - a₃)`, whose pullback is the conjugation of the coordinate
+ring. -/
+@[simp]
+theorem variableChangeIsogeny_negVariableChange (h : W₁.negVariableChange • W₁ = W₁) :
+    variableChangeIsogeny W₁.negVariableChange h = negIsogeny W₁ := by
+  refine Isogeny.ext (Affine.CoordinateRing.algHom_ext ?_ ?_)
+  · simp [variableChangeEquiv_symm_of_X, conj_mk_C]
+  · simp [variableChangeEquiv_symm_root, conj_mk_Y, Affine.negPolynomial,
+      IsScalarTower.algebraMap_apply F (Polynomial F) W₁.CoordinateRing]
+    ring
 
 /-! ### Every isomorphism is a change of variables -/
 

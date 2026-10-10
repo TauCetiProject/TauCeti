@@ -387,7 +387,7 @@ theorem restrict_eq_iff_forall_ord_pos (P : Place k F) :
   refine P'.mem_integers_iff_ord_nonneg.mpr ?_
   by_contra hneg
   rw [not_le] at hneg
-  set m := (P'.ord (algebraMap F F' t)).toNat with hm
+  set m := (P'.ord (algebraMap F F' t)).toNat
   have hpos := h (f ^ m * t) (by
     rw [P.ord_mul (pow_ne_zero _ hf0) ht0, P.ord_pow, ht]
     have := P.mem_integers_iff_ord_nonneg.mp hf
@@ -677,7 +677,7 @@ private theorem linearIndependent_mul_pow_of_linearIndependent_residue_finite {�
   classical
   have _ : Fintype ι := Fintype.ofFinite ι
   have ht0 : t ≠ 0 := by rintro rfl; simp at ht
-  set e := ramificationIdx F P' with he
+  set e := ramificationIdx F P'
   rw [Fintype.linearIndependent_iff]
   intro c hc
   by_contra hex

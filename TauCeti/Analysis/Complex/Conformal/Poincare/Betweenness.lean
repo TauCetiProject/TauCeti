@@ -173,8 +173,6 @@ theorem hyperbolicDist_zero_add_eq_iff_of_norm_lt_one (hm : ‖m‖ < 1) (hw : �
     have heq := Real.artanh_injOn hquotIoo hwIoo h
     rw [div_eq_iff (by nlinarith [norm_nonneg m] : (1 : ℝ) + ‖m‖ * pseudoHyperbolicExpr m w ≠ 0)]
       at heq
-    have hkey : pseudoHyperbolicExpr m w * (1 - ‖m‖ * ‖w‖) = ‖w‖ - ‖m‖ := by
-      linear_combination heq
     have hle : ‖m‖ ≤ ‖w‖ := by nlinarith [mul_nonneg hρ0 hden.le]
     have hρeq : pseudoHyperbolicExpr m w = |‖m‖ - ‖w‖| / (1 - ‖m‖ * ‖w‖) := by
       rw [abs_of_nonpos (by linarith), eq_div_iff hden.ne']

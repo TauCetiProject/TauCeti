@@ -70,7 +70,7 @@ lemma intersectionGraph_connected : T.intersectionGraph.Connected := by
   rw [SimpleGraph.reachable_iff_reflTransGen]
   induction T.reflTransGen_adj i j with
   | refl => exact .refl
-  | tail hab hbc ih => exact ih.tail ((intersectionGraph_adj_iff T).mpr hbc)
+  | tail _ hbc ih => exact ih.tail ((intersectionGraph_adj_iff T).mpr hbc)
 
 /-! ### Topological genus -/
 
@@ -93,9 +93,6 @@ theorem topologicalGenus_nonneg : 0 ≤ T.topologicalGenus := by
   have hcard' : Nat.card T.Component ≤ T.intersectionGraph.edgeSet.ncard + 1 := by
     simpa only [Nat.card_coe_set_eq] using hcard
   rw [topologicalGenus_def]
-  have hcard'' : (Nat.card T.Component : ℤ) ≤
-      (T.intersectionGraph.edgeSet.ncard : ℤ) + 1 := by
-    exact_mod_cast hcard'
   omega
 
 /-- The topological genus vanishes exactly when the intersection graph is a tree. -/

@@ -488,7 +488,6 @@ theorem hasOneCommonSide_of_right_eq_right (D : GridRectanglePentagonDecompositi
     simp only [GridRectangleBetween.mem_sideColumns, toRectangleDecomposition_first_left,
       toRectangleDecomposition_first_right, toRectangleDecomposition_second_left,
       toRectangleDecomposition_second_right, hcommon] at hc
-    have hrectangle := D.rectangle.left_ne_right
     grind
 
 /-- When the rectangle and pentagon share their terminal side, their underlying rectangle

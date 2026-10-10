@@ -87,7 +87,6 @@ theorem genus_le_finrank_sub_one_mul_finrank_sub_two_div_two (hF : IsFunctionFie
   have hRR := hc D (by
     rw [hdegD]
     have h1 : (c.toNat : ℤ) ≤ r := by exact_mod_cast le_max_right m c.toNat
-    have h2 : (1 : ℤ) ≤ m := by exact_mod_cast hm1
     nlinarith [Int.self_le_toNat c])
   -- The functions `y ^ j u ^ i` with `j < m` and `i + j ≤ r` are independent sections of `L(D)`.
   let f : (Σ j : Fin d, Fin (r + 1 - j)) → F := fun q ↦ y ^ (q.1 : ℕ) * (u : F) ^ (q.2 : ℕ)

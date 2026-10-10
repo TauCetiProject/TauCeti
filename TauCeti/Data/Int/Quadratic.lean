@@ -31,7 +31,6 @@ theorem abs_le_of_quadratic_eq {y b c : ℤ} (h : y ^ 2 + b * y = c) :
         (abs_add_le c (-(b * y)))
       _ = |b| * |y| + |c| := by rw [abs_mul]; omega
   by_contra hn
-  have hlarge : |b| + |c| + 1 < |y| := lt_of_not_ge hn
   have hy_nonneg := abs_nonneg y
   have hb_nonneg := abs_nonneg b
   have hc_nonneg := abs_nonneg c

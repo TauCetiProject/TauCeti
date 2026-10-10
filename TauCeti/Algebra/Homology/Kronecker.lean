@@ -36,6 +36,8 @@ over a field.
   `TauCeti.ChainComplex.kronecker_surjective_of_isSplitMono`.
 * `TauCeti.ChainComplex.kronecker_bijective` and `TauCeti.ChainComplex.kroneckerEquiv`: for an
   injective object `Y`, the Kronecker map is a `k`-linear equivalence.
+* `TauCeti.ChainComplex.kronecker_bijective_of_isIso`: the Kronecker map is bijective in a degree
+  without outgoing differential, such as degree zero of a chain complex indexed by `ℕ`.
 
 ## References
 
@@ -281,5 +283,27 @@ lemma kronecker_kroneckerSection (i : α) [IsSplitMono (X.iCycles i)] (g : X.hom
 theorem kronecker_surjective_of_isSplitMono (i : α) [IsSplitMono (X.iCycles i)] :
     Function.Surjective (kronecker k X Y i) :=
   fun g ↦ ⟨kroneckerSection k X Y i g, kronecker_kroneckerSection i g⟩
+
+/-- If the inclusion of the cycles `Zᵢ ⟶ Xᵢ` is an isomorphism, as in degree zero of a chain
+complex indexed by `ℕ`, the Kronecker map is injective: a cocycle vanishing on the cycles is
+zero. -/
+theorem kronecker_injective_of_isIso (i : α) [IsIso (X.iCycles i)] :
+    Function.Injective (kronecker k X Y i) := by
+  rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
+  intro x hx
+  obtain ⟨φ, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ i x
+  -- name the underlying cochain with its morphism type `Xᵢ ⟶ Y`, so that it can be cancelled
+  obtain ⟨a, ha⟩ : ∃ a : X.X i ⟶ Y, (X.linearYonedaObj k Y).iCycles i φ = a := ⟨_, rfl⟩
+  have ha0 : a = 0 := by
+    rw [← cancel_epi (X.iCycles i), ← ha, ← kronecker_homologyπ, hx, comp_zero, comp_zero]
+  rw [HomologicalComplex.moduleCat_iCycles_injective _ _ ((ha.trans ha0).trans (map_zero _).symm),
+    map_zero]
+
+/-- **The Kronecker map in the absence of outgoing differentials**: if the inclusion of the cycles
+`Zᵢ ⟶ Xᵢ` is an isomorphism, as in degree zero of a chain complex indexed by `ℕ`, the Kronecker
+map `Hⁱ(Hom(X, Y)) →ₗ[k] (Hᵢ(X) ⟶ Y)` is bijective, for every object `Y`. -/
+theorem kronecker_bijective_of_isIso (i : α) [IsIso (X.iCycles i)] :
+    Function.Bijective (kronecker k X Y i) :=
+  ⟨kronecker_injective_of_isIso i, kronecker_surjective_of_isSplitMono i⟩
 
 end TauCeti.ChainComplex

@@ -35,6 +35,7 @@ commutation of two insertions, dual to Mathlib's `Fin.removeNth_removeNth_eq_swa
 ## Main definitions
 
 * `TauCeti.SingularCube X n`: singular `n`-cubes in `X`.
+* `TauCeti.SingularCube.cast`: reindexing along an equality of dimensions.
 * `TauCeti.SingularCube.face`: the face of a cube in a coordinate, at a parameter `t ∈ I`.
 * `TauCeti.SingularCube.IsDegenerateAt`, `TauCeti.SingularCube.IsDegenerate`: degeneracy at a
   coordinate, and degeneracy.
@@ -66,6 +67,27 @@ variable {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalS
 abbrev SingularCube (X : Type*) [TopologicalSpace X] (n : ℕ) := C(Fin n → I, X)
 
 namespace SingularCube
+
+/-- Reindex a singular cube along an equality of dimensions. -/
+def cast {n m : ℕ} (h : n = m) (c : SingularCube X n) : SingularCube X m :=
+  c.comp ⟨fun x ↦ x ∘ Fin.cast h, by fun_prop⟩
+
+@[simp]
+theorem cast_apply {n m : ℕ} (h : n = m) (c : SingularCube X n) (x : Fin m → I) :
+    cast h c x = c (x ∘ Fin.cast h) :=
+  (rfl)
+
+@[simp]
+theorem cast_rfl {n : ℕ} (c : SingularCube X n) : cast rfl c = c := by
+  ext x
+  simp
+
+/-- Reindexing along successive dimension equalities is reindexing along their composite. -/
+@[simp]
+theorem cast_cast {n m k : ℕ} (h : n = m) (h' : m = k) (c : SingularCube X n) :
+    cast h' (cast h c) = cast (h.trans h') c := by
+  subst m k
+  simp
 
 /-- The face of an `(n+1)`-cube in its `i`-th coordinate, at the parameter `t`: the `n`-cube
 `x ↦ c (i.insertNth t x)`.  The front and back faces are `face i 0` and `face i 1`. -/

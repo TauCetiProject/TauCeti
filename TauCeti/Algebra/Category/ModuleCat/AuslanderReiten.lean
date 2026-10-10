@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.AuslanderReiten.InjectivelyTrivial
+public import TauCeti.Algebra.Module.AuslanderReiten.CocyclePairing
 public import TauCeti.CategoryTheory.Exact.Stable.Injective
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.EnoughInjectives
@@ -16,6 +16,7 @@ public import Mathlib.Algebra.Category.ModuleCat.EnoughInjectives
 A morphism `N → D Tr(f)` factors through an injective object exactly when its
 Nakayama Hom functional belongs to the image of dual restriction to `ker f`.
 This identifies the subspace killed on the Hom side of Auslander–Reiten duality.
+The cocycle pairing kills exactly the same morphisms as the injective stable quotient.
 
 The statement uses the existing injective stable category of modules and
 does not depend on a choice of injective envelope. It applies to arbitrary algebras
@@ -66,5 +67,16 @@ theorem auslanderReitenTranslate_injectiveStableFunctor_map_eq_zero_iff
     exact ⟨h.hom, congrArg ModuleCat.Hom.hom hh⟩
   · rintro ⟨h, hh⟩
     exact ⟨ModuleCat.ofHom h, ModuleCat.hom_ext hh⟩
+
+/-- The cocycle pairing kills exactly the morphisms killed by the injective stable
+quotient functor. -/
+theorem auslanderReitenCocyclePairing_eq_zero_iff_injectiveStableFunctor_map_eq_zero
+    (f : P₁ →ₗ[A] P₀) (N : ModuleCat.{max u v w} A)
+    (g : N →ₗ[A] AuslanderReitenTranslate k f) :
+    auslanderReitenCocyclePairing f g = 0 ↔
+      (ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.map
+        (ModuleCat.ofHom g) = 0 := by
+  rw [auslanderReitenCocyclePairing_eq_zero_iff,
+    auslanderReitenTranslate_injectiveStableFunctor_map_eq_zero_iff]
 
 end LinearMap
