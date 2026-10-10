@@ -173,11 +173,11 @@ private noncomputable def rightLeftSelfRecut (E : GridPentagonRectangleDecomposi
     (hturn : s ∉ Grid.cIco E.pentagon.bottom E.rectangle.bottom) :
     GridPentagonRectangleDecomposition a s x z where
   middle := (E.toRectangleDecomposition.recut hone hfirst hsecond).middle
-  pentagon := GridPentagonBetween.ofRightEq
+  first := GridPentagonBetween.ofRightEq
     (E.toRectangleDecomposition.recut hone hfirst hsecond).first
     (E.rightLeftSelfRecut_geometry hcommon hone hfirst hsecond hturn).1
     (E.rightLeftSelfRecut_geometry hcommon hone hfirst hsecond hturn).2.2
-  rectangle := (E.toRectangleDecomposition.recut hone hfirst hsecond).second
+  second := (E.toRectangleDecomposition.recut hone hfirst hsecond).second
 
 /-- Forgetting the turn row of the promoted recut recovers the generic recut. -/
 private theorem rightLeftSelfRecut_toRectangleDecomposition
@@ -190,7 +190,7 @@ private theorem rightLeftSelfRecut_toRectangleDecomposition
     (E.rightLeftSelfRecut hcommon hone hfirst hsecond hturn).toRectangleDecomposition =
       E.toRectangleDecomposition.recut hone hfirst hsecond := by
   apply GridRectangleDecomposition.ext <;>
-    simp [rightLeftSelfRecut,
+    simp [rightLeftSelfRecut, GridPentagonRectangleDecomposition.pentagon,
       (E.rightLeftSelfRecut_geometry hcommon hone hfirst hsecond hturn).1]
 
 /-- The promoted recut recuts the original domain. -/

@@ -76,34 +76,38 @@ variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G) {x z : Grid
 share exactly one, and never both pairs of sides. -/
 private theorem initialPentagon_overlap_side_facts
     (D : GridRectangleInitialPentagonDecomposition C.column C.turnRow x z) (hzx : z ≠ x) :
-    (¬D.HasDisjointSides ↔ D.first.left = D.second.left ∨ D.first.left = D.second.right ∨
-        D.first.right = D.second.left ∨ D.first.right = D.second.right) ∧
-      (D.HasOneCommonSide ↔ D.first.left = D.second.left ∨ D.first.left = D.second.right ∨
-        D.first.right = D.second.left ∨ D.first.right = D.second.right) ∧
+    (¬D.toGridRectangleDecomposition.HasDisjointSides ↔ D.first.left = D.second.left ∨
+        D.first.left = D.second.right ∨ D.first.right = D.second.left ∨
+          D.first.right = D.second.right) ∧
+      (D.toGridRectangleDecomposition.HasOneCommonSide ↔ D.first.left = D.second.left ∨
+        D.first.left = D.second.right ∨ D.first.right = D.second.left ∨
+          D.first.right = D.second.right) ∧
       ¬(D.first.left = D.second.left ∧ D.first.right = D.second.right) ∧
       ¬(D.first.left = D.second.right ∧ D.first.right = D.second.left) := by
-  have hone : D.HasOneCommonSide ↔ D.first.left = D.second.left ∨
+  have hone : D.toGridRectangleDecomposition.HasOneCommonSide ↔ D.first.left = D.second.left ∨
       D.first.left = D.second.right ∨ D.first.right = D.second.left ∨
         D.first.right = D.second.right := by
     constructor
     · intro hone
-      rcases D.side_eq_cases_of_hasOneCommonSide hone with
+      rcases D.toGridRectangleDecomposition.side_eq_cases_of_hasOneCommonSide hone with
         ⟨h, -⟩ | ⟨h, -⟩ | ⟨h, -⟩ | ⟨h, -⟩ <;> simp only [h, true_or, or_true]
     · intro h
-      obtain ⟨c, hc⟩ : ∃ c, c ∈ D.commonSideColumns := by
+      obtain ⟨c, hc⟩ : ∃ c, c ∈ D.toGridRectangleDecomposition.commonSideColumns := by
         rcases h with h | h | h | h
         · exact ⟨D.first.left, by simp [GridRectangleBetween.mem_sideColumns, h]⟩
         · exact ⟨D.first.left, by simp [GridRectangleBetween.mem_sideColumns, h]⟩
         · exact ⟨D.first.right, by simp [GridRectangleBetween.mem_sideColumns, h]⟩
         · exact ⟨D.first.right, by simp [GridRectangleBetween.mem_sideColumns, h]⟩
-      exact D.hasOneCommonSide_of_mem_commonSideColumns hc hzx
-  have hdisjoint : ¬D.HasDisjointSides ↔ D.HasOneCommonSide :=
-    ⟨(D.hasDisjointSides_or_hasOneCommonSide_of_ne hzx).resolve_left,
-      D.not_hasDisjointSides_of_hasOneCommonSide⟩
+      exact D.toGridRectangleDecomposition.hasOneCommonSide_of_mem_commonSideColumns hc hzx
+  have hdisjoint : ¬D.toGridRectangleDecomposition.HasDisjointSides ↔
+      D.toGridRectangleDecomposition.HasOneCommonSide :=
+    ⟨(D.toGridRectangleDecomposition.hasDisjointSides_or_hasOneCommonSide_of_ne hzx).resolve_left,
+      D.toGridRectangleDecomposition.not_hasDisjointSides_of_hasOneCommonSide⟩
   refine ⟨hdisjoint.trans hone, hone, fun ⟨h₁, h₂⟩ => ?_, fun ⟨h₁, h₂⟩ => ?_⟩
-  · exact D.sideColumns_ne_of_hasOneCommonSide (hone.2 (Or.inl h₁))
+  · exact D.toGridRectangleDecomposition.sideColumns_ne_of_hasOneCommonSide (hone.2 (Or.inl h₁))
       (by simp [GridRectangleBetween.sideColumns, h₁, h₂])
-  · exact D.sideColumns_ne_of_hasOneCommonSide (hone.2 (Or.inr (Or.inl h₁)))
+  · exact D.toGridRectangleDecomposition.sideColumns_ne_of_hasOneCommonSide
+      (hone.2 (Or.inr (Or.inl h₁)))
       (by simp [GridRectangleBetween.sideColumns, h₁, h₂, Finset.pair_comm])
 
 /-- The column order of the three side columns of a rectangle--initial-side-pentagon domain whose
@@ -129,7 +133,8 @@ open scoped Classical in
 common side column are the union of the six overlap families. -/
 theorem filter_not_hasDisjointSides_rectangleInitialPentagonDecompositions_eq_union
     (hzx : z ≠ x) :
-    (G.rectangleInitialPentagonDecompositions C x z).filter (fun D => ¬D.HasDisjointSides) =
+    (G.rectangleInitialPentagonDecompositions C x z).filter
+        (fun D => ¬D.toGridRectangleDecomposition.HasDisjointSides) =
       G.initialPentagonInitialCrossOverlapSources C x z ∪
         G.initialPentagonTerminalOverlapSources C x z ∪
           G.initialPentagonLeftRightOverlapSources C x z ∪
@@ -199,7 +204,8 @@ common-initial-side cross, common-terminal-side, and mixed sources, and the pent
 readings of the domains cut at the turn point. The same-sum pairs cancel among themselves. -/
 theorem sum_rectangleInitialPentagonWeight_overlap_eq_sum_partners (hzx : z ≠ x) :
     ∑ D ∈ (G.rectangleInitialPentagonDecompositions C x z).filter
-        (fun D => ¬D.HasDisjointSides), G.rectangleInitialPentagonWeight C R D =
+        (fun D => ¬D.toGridRectangleDecomposition.HasDisjointSides),
+        G.rectangleInitialPentagonWeight C R D =
       ∑ E ∈ G.initialPentagonInitialCrossOverlapPartners C x z,
           G.initialPentagonRectangleWeight C R E +
         ∑ E ∈ G.initialPentagonTerminalOverlapPartners C x z,

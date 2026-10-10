@@ -36,7 +36,7 @@ variable {n : ℕ} {a s : Fin n} {x z : GridState n}
 def commute (D : GridRectangleInitialPentagonDecomposition a s x z)
     (h : D.toGridRectangleDecomposition.HasDisjointSides) :
     GridInitialPentagonRectangleDecomposition a s x z where
-  toGridRectangleDecomposition := D.toGridRectangleDecomposition.commute h
+  toGridTwoStepDecomposition := D.toGridRectangleDecomposition.commute h
   first_left_eq := by simpa using D.second_left_eq
   first_turn_mem := by
     have heq := congrArg (fun r : GridRectangle n => s ∈ Grid.cIco r.bottom r.top)
@@ -102,7 +102,7 @@ variable {n : ℕ} {a s : Fin n} {x z : GridState n}
 def commute (D : GridInitialPentagonRectangleDecomposition a s x z)
     (h : D.toGridRectangleDecomposition.HasDisjointSides) :
     GridRectangleInitialPentagonDecomposition a s x z where
-  toGridRectangleDecomposition := D.toGridRectangleDecomposition.commute h
+  toGridTwoStepDecomposition := D.toGridRectangleDecomposition.commute h
   second_left_eq := by simpa using D.first_left_eq
   second_turn_mem := by
     have heq := congrArg (fun r : GridRectangle n => s ∈ Grid.cIco r.bottom r.top)
