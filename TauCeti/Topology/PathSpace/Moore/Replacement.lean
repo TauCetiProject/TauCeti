@@ -64,21 +64,6 @@ namespace TauCeti
 
 variable {E : Type u} {B : Type v} [TopologicalSpace E] [TopologicalSpace B]
 
-/-- A time of the unit interval, as a nonnegative real. -/
-private def unitToNNReal (s : I) : ℝ≥0 :=
-  ⟨s, s.2.1⟩
-
-private theorem continuous_unitToNNReal : Continuous unitToNNReal :=
-  continuous_subtype_val.subtype_mk _
-
-@[simp]
-private theorem unitToNNReal_zero : unitToNNReal 0 = 0 :=
-  (rfl)
-
-@[simp]
-private theorem unitToNNReal_one : unitToNNReal 1 = 1 :=
-  (rfl)
-
 namespace MooreReplacement
 
 /-! ### The endpoint map and its lifting function -/
@@ -227,11 +212,11 @@ theorem proj_comp_incl (p : C(E, B)) : (proj p).comp (incl p) = .id E :=
 /-- The homotopy from `incl ∘ proj` to the identity of `E'`, shrinking each path to its start:
 `(s, (e, γ)) ↦ (e, γ|[0, s · γ.length])`. -/
 def shrinkHomotopy (p : C(E, B)) : ContinuousMap.Homotopy ((incl p).comp (proj p)) (.id _) where
-  toFun y := mk y.2.point (y.2.path.truncate (unitToNNReal y.1 * y.2.path.length))
+  toFun y := mk y.2.point (y.2.path.truncate (toNNReal y.1 * y.2.path.length))
     (y.2.source_truncate_path _)
   continuous_toFun := continuous_mk (continuous_point.comp continuous_snd)
     ((continuous_path.comp continuous_snd).moorePath_truncate
-      ((continuous_unitToNNReal.comp continuous_fst).mul
+      ((toNNReal_continuous.comp continuous_fst).mul
         (MoorePath.continuous_length.comp (continuous_path.comp continuous_snd)))) _
   map_zero_left x := ext rfl (by simp)
   map_one_left x := ext rfl (by simp)
@@ -442,14 +427,14 @@ part `γ|[0, u]` of the path, `u = s · γ.length`, and keep the rest `γ|[u, γ
 def transportHomotopy {p : C(E, B)} (Φ : MooreLiftingFunction p) (b : B) :
     ContinuousMap.Homotopy (.id (Fiber p b)) ((fiberIncl p b).comp (Φ.transport b)) where
   toFun y := Fiber.mk' (MooreReplacement.mk
-      (Φ.lift y.2.val.point (y.2.val.path.truncate (unitToNNReal y.1 * y.2.val.path.length))
+      (Φ.lift y.2.val.point (y.2.val.path.truncate (toNNReal y.1 * y.2.val.path.length))
         (y.2.val.source_truncate_path _)).target
-      (y.2.val.path.drop (unitToNNReal y.1 * y.2.val.path.length))
+      (y.2.val.path.drop (toNNReal y.1 * y.2.val.path.length))
       (Φ.source_drop_eq _ _))
     (by rw [path_mk, MoorePath.target_drop, Fiber.target_path_val])
   continuous_toFun := by
-    have hL : Continuous fun y : I × Fiber p b ↦ unitToNNReal y.1 * y.2.val.path.length :=
-      (continuous_unitToNNReal.comp continuous_fst).mul (MoorePath.continuous_length.comp
+    have hL : Continuous fun y : I × Fiber p b ↦ toNNReal y.1 * y.2.val.path.length :=
+      (toNNReal_continuous.comp continuous_fst).mul (MoorePath.continuous_length.comp
         (continuous_path.comp (Fiber.continuous_val.comp continuous_snd)))
     have hγ : Continuous fun y : I × Fiber p b ↦ y.2.val.path :=
       continuous_path.comp (Fiber.continuous_val.comp continuous_snd)
@@ -458,13 +443,13 @@ def transportHomotopy {p : C(E, B)} (Φ : MooreLiftingFunction p) (b : B) :
       (hγ.moorePath_truncate hL) _)) (hγ.moorePath_drop hL) _).subtype_mk _
   map_zero_left x := by
     refine Fiber.ext (MooreReplacement.ext ?_ ?_)
-    · simp only [Fiber.val_mk', point_mk, unitToNNReal_zero, zero_mul, ContinuousMap.id_apply]
+    · simp only [Fiber.val_mk', point_mk, toNNReal_zero, zero_mul, ContinuousMap.id_apply]
       rw [Φ.lift_eq_refl_of_length_eq_zero _ _ _ (by simp), MoorePath.target_refl]
     · simp
   map_one_left x := by
     refine Fiber.ext (MooreReplacement.ext ?_ ?_)
     · simp
-    · simp only [Fiber.val_mk', path_mk, unitToNNReal_one, one_mul, MoorePath.drop_length,
+    · simp only [Fiber.val_mk', path_mk, toNNReal_one, one_mul, MoorePath.drop_length,
         ContinuousMap.comp_apply, val_fiberIncl, path_incl, coe_transport]
       rw [target_lift, Fiber.target_path_val]
 
