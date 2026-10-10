@@ -11,7 +11,7 @@ public import TauCeti.Algebra.Module.ZMod.SMulCommClass
 public import TauCeti.Data.ZMod.TrivialAction
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.FiniteExtension
 public import TauCeti.FieldTheory.GaloisCohomology.Kummer
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Conjugation
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Conjugation.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.H1.ZMod
 public import TauCeti.RepresentationTheory.QuotSMulTop
 public import TauCeti.RepresentationTheory.RankOneTwist

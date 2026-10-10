@@ -35,7 +35,8 @@ central `ω`, hence central, hence zero, in which case `y = c • ω` is itself 
 Lipschitz group (`CliffordAlgebra.mem_lipschitzGroup_of_involute_act_ι_mem_range_ι`).
 
 Dimension five is where the identification stops: in dimension six the even unitary group is
-strictly larger than the Spin group (`TauCeti/LinearAlgebra/CliffordAlgebra/Spin/LowRank/Six.lean`),
+strictly larger than the Spin group
+(`TauCeti/LinearAlgebra/CliffordAlgebra/Spin/LowRank/Six/Basic.lean`),
 the volume element being then reverse-antisymmetric and anticommuting with the vectors.
 
 ## Main results

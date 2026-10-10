@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Convex.Majorization
 public import TauCeti.Analysis.InnerProductSpace.CourantFischer
 public import TauCeti.Analysis.InnerProductSpace.SingularValues
 import TauCeti.Algebra.Order.BigOperators.Sum.ByParts
@@ -40,6 +41,8 @@ of singular values give at most the sum of its first `k` terms
 * `LinearMap.exists_orthonormal_sum_inner_eq_kyFanSum`: the leading singular pairs attain it.
 * `LinearMap.kyFanSum_le_iff`: the variational characterization.
 * `LinearMap.kyFanSum_add_le`: the Ky Fan triangle inequality.
+* `LinearMap.isWeaklyMajorizedBy_singularValues_add`: its restatement as the weak majorization
+  `σ(A + B) ≺w σ(A) + σ(B)`.
 * `LinearMap.kyFanSum_smul`, `LinearMap.kyFanSum_adjoint`,
   `LinearMap.kyFanSum_linearIsometryEquiv_comp`, `LinearMap.kyFanSum_comp_linearIsometryEquiv`:
   homogeneity, and invariance under adjoints and isometric changes of coordinates.
@@ -234,6 +237,22 @@ theorem kyFanSum_add_le (A B : E →ₗ[𝕜] F) (k : ℕ) :
   simp only [add_apply, inner_add_right, sum_add_distrib]
   exact (norm_add_le _ _).trans
     (add_le_add (hA.trans (A.kyFanSum_mono hm)) (hB.trans (B.kyFanSum_mono hm)))
+
+/-- **Singular-value triangle majorization.** For every length `n`, the first `n` singular values
+of `A + B` are weakly majorized by the coordinatewise sums of the first `n` singular values of `A`
+and of `B`. -/
+theorem isWeaklyMajorizedBy_singularValues_add (A B : E →ₗ[𝕜] F) (n : ℕ) :
+    TauCeti.IsWeaklyMajorizedBy (fun i : Fin n ↦ (A + B).singularValues i)
+      (fun i : Fin n ↦ A.singularValues i + B.singularValues i) where
+  antitone_left _ _ h := (A + B).singularValues_antitone h
+  antitone_right _ _ h := add_le_add (A.singularValues_antitone h) (B.singularValues_antitone h)
+  nonneg_left i := (A + B).singularValues_nonneg i
+  nonneg_right i := add_nonneg (A.singularValues_nonneg i) (B.singularValues_nonneg i)
+  prefixSum_le k := by
+    rw [TauCeti.prefixSum_eq_sum_range k (A + B).singularValues,
+      TauCeti.prefixSum_eq_sum_range k fun j ↦ A.singularValues j + B.singularValues j,
+      sum_add_distrib]
+    exact kyFanSum_add_le A B (min k n)
 
 /-- The Ky Fan sums are absolutely homogeneous: `Kₖ(c • A) = ‖c‖ Kₖ(A)`. -/
 @[simp]
