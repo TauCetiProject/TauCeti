@@ -18,9 +18,6 @@ it exactly when its root is positive for the standard type-C base. The criterion
 arbitrary nontrivial coefficient algebras, including characteristic two and nonreduced rings.
 It identifies which represented root-subgroup differentials lie in the flag Lie algebra.
 
-The forward implication uses the existing positive-root subgroup factorization. The converse
-uses the flag tangent equations and the unit entry of each negative root matrix.
-
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), §§21.1 and 24.6.

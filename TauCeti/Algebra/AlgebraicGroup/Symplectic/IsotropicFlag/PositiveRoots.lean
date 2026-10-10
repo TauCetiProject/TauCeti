@@ -17,13 +17,13 @@ lies in the standard isotropic flag Lie algebra exactly when it is positive in t
 base. This is the intrinsic positivity condition used to select simple roots for a pinning.
 The result holds over every nontrivial commutative ring, including characteristic two.
 
-The argument combines the entrywise adjoint-weight criterion with recognition of represented
-root-subgroup tangent images and the flag tangent equations. Its organization follows the
-positive-root calculation in `TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Pinning.Basic`.
-No Borel maximality assertion or choice of split maximal torus is needed for this calculation.
+These characterizations connect the diagonal type-C root datum with the adjoint weight spaces
+of the flag subgroup. They require neither a Borel maximality assertion nor a choice of split
+maximal torus.
 
 ## References
 
+* `TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Pinning.Basic`, the special-linear precedent.
 * J. S. Milne, *Algebraic Groups* (2017), §§21.1 and 24.6.
 * B. Conrad, *Reductive Group Schemes* (2014), §5.1.
 -/
