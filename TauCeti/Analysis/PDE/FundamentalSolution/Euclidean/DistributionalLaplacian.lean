@@ -226,12 +226,8 @@ private lemma integral_laplacian_mul_newtonianKernel_eq_neg_integral_sum (hn : 3
   have hci : ∀ i, HasCompactSupport fun y ↦ fderiv ℝ f y (b i) := fun i ↦
     (hc.fderiv ℝ).comp_left (g := fun L : EuclideanSpace ℝ (Fin n) →L[ℝ] ℝ ↦ L (b i)) rfl
   -- The Laplacian as a sum of iterated directional derivatives.
-  have hΔ : ∀ x, Δ f x = ∑ i, fderiv ℝ (fun y ↦ fderiv ℝ f y (b i)) x (b i) := fun x ↦ by
-    rw [laplacian_eq_iteratedFDeriv_orthonormalBasis f b]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [iteratedFDeriv_two_apply, fderiv_clm_apply
-      ((hf1.differentiable one_ne_zero) x) (differentiableAt_const _)]
-    simp
+  have hΔ : ∀ x, Δ f x = ∑ i, fderiv ℝ (fun y ↦ fderiv ℝ f y (b i)) x (b i) := fun x ↦
+    laplacian_eq_sum_fderiv_fderiv_apply b ((hf1.differentiable one_ne_zero) x)
   simp_rw [hΔ, Finset.sum_mul]
   rw [integral_finsetSum _ fun i _ ↦ ?_, integral_finsetSum _ fun i _ ↦
     integrable_fderiv_newtonianKernel_mul _ (hgi i).continuous (hci i), ← Finset.sum_neg_distrib]

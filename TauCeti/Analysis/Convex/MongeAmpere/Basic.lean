@@ -309,13 +309,7 @@ theorem mongeAmpereMeasure_ite_apply (hΩ : IsOpen Ω) (hu : ConvexOn ℝ Ω u) 
   congr 1
   ext y
   simp only [mem_subgradientImage_iff, mem_iUnion, exists_prop]
-  refine exists_congr fun x => and_congr_right fun hx => ?_
-  simp only [mem_subdifferential_iff, hx.2, ite_true, ne_eq, EReal.coe_ne_bot,
-    EReal.coe_ne_top, not_false_eq_true, true_and, innerₗ_apply_apply, mem_ofPred_eq]
-  refine ⟨fun h x' hx' => by simpa [hx', ← EReal.coe_add] using h x', fun h x' => ?_⟩
-  by_cases hx' : x' ∈ Ω
-  · simpa [hx', ← EReal.coe_add] using h x' hx'
-  · simp [hx']
+  exact exists_congr fun x => and_congr_right fun hx => mem_subdifferential_ite_iff _ hx.2
 
 end Ite
 

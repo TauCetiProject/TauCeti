@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Differential.Kaehler
+public import TauCeti.FieldTheory.FunctionField.Place.Basic
 public import TauCeti.FieldTheory.RatFunc.PowerTower
 public import TauCeti.RingTheory.Valuation.Discrete.Frobenius
 
@@ -30,6 +31,10 @@ equal `F^p`.
   derivation is exactly `F^p`.
 * `TauCeti.IsFunctionField.transcendental_and_isSeparable_adjoin_of_not_dvd_ord`: the
   valuation-order criterion.
+* `TauCeti.Place.transcendental_and_isSeparable_adjoin_of_not_dvd_ord`: its form for places, in
+  every characteristic: an element whose order at a place is not divisible by the characteristic
+  is separating, and `TauCeti.Place.transcendental_and_isSeparable_adjoin_of_ord_eq_one`: in
+  particular every prime element of a place is separating.
 
 ## Reference
 
@@ -208,5 +213,39 @@ theorem transcendental_and_isSeparable_adjoin_of_not_dvd_ord [PerfectField k]
     exact ⟨transcendental_of_D_ne_zero hDx, hF.isSeparable_adjoin_iff_D_ne_zero.mpr hDx⟩
 
 end IsFunctionField
+
+namespace Place
+
+/-- **The valuation-order criterion for a separating element, at a place** (Stichtenoth,
+Proposition 3.10.2): over a perfect field, if the order of `x` at a place is not divisible by the
+characteristic of `F`, then `x` is transcendental and `F / k(x)` is separable. In characteristic
+zero the hypothesis says that the order of `x` is nonzero. In particular every prime element of a
+place, an element of order one, is separating. -/
+theorem transcendental_and_isSeparable_adjoin_of_not_dvd_ord [PerfectField k]
+    (hF : TauCeti.IsFunctionField k F) (P : Place k F) {x : F}
+    (hx : ¬ (ringChar F : ℤ) ∣ P.ord x) :
+    Transcendental k x ∧ Algebra.IsSeparable k⟮x⟯ F := by
+  by_cases h0 : ringChar F = 0
+  · -- In characteristic zero every algebraic extension is separable.
+    have : CharP F 0 := ringChar.of_eq h0
+    have : CharZero F := CharP.charP_to_charZero F
+    have htr : Transcendental k x := P.transcendental_of_ord_ne_zero fun h ↦ hx (by simp [h])
+    have : FiniteDimensional k⟮x⟯ F := hF.finiteDimensional_adjoin htr
+    exact ⟨htr, inferInstance⟩
+  · have : CharP F (ringChar F) := ringChar.charP F
+    have : ExpChar F (ringChar F) := .prime (CharP.char_prime_of_ne_zero F h0)
+    exact hF.transcendental_and_isSeparable_adjoin_of_not_dvd_ord P.valuation (ringChar F)
+      (by rwa [Valuation.ord_def, ← P.ord_def])
+
+/-- **Every prime element of a place is separating** over a perfect field: an element of order one
+at a place is transcendental, and `F` is separable over the subfield it generates. -/
+theorem transcendental_and_isSeparable_adjoin_of_ord_eq_one [PerfectField k]
+    (hF : TauCeti.IsFunctionField k F) (P : Place k F) {t : F} (ht : P.ord t = 1) :
+    Transcendental k t ∧ Algebra.IsSeparable k⟮t⟯ F :=
+  P.transcendental_and_isSeparable_adjoin_of_not_dvd_ord hF <| by
+    rw [ht, ← Nat.cast_one, Int.natCast_dvd_natCast, Nat.dvd_one]
+    exact CharP.ringChar_ne_one
+
+end Place
 
 end TauCeti

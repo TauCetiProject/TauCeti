@@ -40,6 +40,8 @@ uses `PowerSeries.coeff_succ_pow_succ_eq_coeff_pow_mul_derivative` instead.
   `R⸨X⸩` form a scalar tower.
 * `TauCeti.LaurentSeries.coeff_algebraMap_mul`: multiplication by a constant of the algebra
   structure acts coefficientwise.
+* `TauCeti.laurentSeries_algebraMap_mul_eq_smul`: the algebra action agrees with the
+  coefficientwise scalar action.
 * `LaurentSeries.derivative_mul`: the product rule for the derivative of Laurent series.
 * `PowerSeries.coe_derivative`: the derivative of Laurent series extends that of power series.
 * `PowerSeries.coeff_neg_one_coe_zpow_mul_derivative`: the residue of `φ ^ n * φ'` for a power
@@ -75,6 +77,18 @@ theorem coeff_algebraMap_mul (c : R) (f : R⸨X⸩) (n : ℤ) :
     HahnSeries.C_mul_eq_smul, HahnSeries.coeff_smul, smul_eq_mul]
 
 end TauCeti.LaurentSeries
+
+namespace TauCeti
+
+/-- Multiplication by a constant of the Laurent-series algebra structure agrees with the
+coefficientwise scalar action. -/
+theorem laurentSeries_algebraMap_mul_eq_smul {R : Type*} [CommSemiring R]
+    (c : R) (f : LaurentSeries R) :
+    algebraMap R (LaurentSeries R) c * f = c • f := by
+  ext n
+  rw [LaurentSeries.coeff_algebraMap_mul, HahnSeries.coeff_smul, smul_eq_mul]
+
+end TauCeti
 
 namespace PowerSeries
 
