@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.Complex
+public import TauCeti.LinearAlgebra.QuadraticForm.SepClosed
 public import TauCeti.NumberTheory.QuadraticForm.Global.Predicates
 
 /-!
@@ -68,7 +69,7 @@ theorem equivalent_atComplexEmbedding_iff_finrank_eq [FiniteDimensional K V]
     (Q.atComplexEmbedding w).Equivalent (R.atComplexEmbedding w) ↔
       Module.finrank K V = Module.finrank K W := by
   let _ : Algebra K ℂ := w.embedding.toAlgebra
-  rw [equivalent_iff_finrank_eq_of_isAlgClosed _ _ (Nondegenerate.atComplexEmbedding hQ w)
+  rw [equivalent_iff_finrank_eq_of_isSepClosed _ _ (Nondegenerate.atComplexEmbedding hQ w)
       (Nondegenerate.atComplexEmbedding hR w), Module.finrank_baseChange,
     Module.finrank_baseChange]
 
@@ -97,7 +98,7 @@ theorem IsLocallyIsotropic.not_anisotropic_atComplexEmbedding [FiniteDimensional
     have hQ := ((isLocallyIsotropic_iff Q).1 h).1 (Classical.arbitrary _)
     rw [atFinitePlace_def, anisotropic_baseChange_iff_of_finrank_le_one hV] at hQ
     exact not_anisotropic_baseChange hQ
-  · exact _root_.QuadraticForm.not_anisotropic_of_isAlgClosed _
+  · exact _root_.QuadraticForm.not_anisotropic_of_isSepClosed _
       (by rw [Module.finrank_baseChange]; omega)
 
 /-- A scalar that a quadratic form represents locally is represented after scalar extension along
@@ -129,7 +130,7 @@ theorem LocallyRepresents.isRepresentedBy_atComplexEmbedding [FiniteDimensional 
     (w : InfinitePlace K) :
     (Q.atComplexEmbedding w).IsRepresentedBy (R.atComplexEmbedding w) := by
   -- Local representation bounds the dimension, the only invariant over `ℂ`.
-  rw [_root_.QuadraticForm.isRepresentedBy_iff_finrank_le_of_isAlgClosed _ _
+  rw [_root_.QuadraticForm.isRepresentedBy_iff_finrank_le_of_isSepClosed _ _
     (Nondegenerate.atComplexEmbedding hQ w) (Nondegenerate.atComplexEmbedding hR w)]
   simpa only [Module.finrank_baseChange] using h.finrank_le
 
