@@ -28,6 +28,7 @@ and Hurewicz fibrations are closed under composition and base change.
 
 ## Main results
 
+* `TauCeti.isHurewiczFibration_iff`: the characterization by the homotopy lifting property.
 * `TauCeti.IsHurewiczFibration.mem_serreFibrations`: a Hurewicz fibration is a Serre fibration.
 * `TauCeti.IsHurewiczFibration.comp`: Hurewicz fibrations are closed under composition.
 * `TauCeti.IsHurewiczFibration.pullback`: the base change of a Hurewicz fibration along any map is
@@ -52,41 +53,18 @@ namespace TauCeti
 variable {E : Type u} {B : Type v} [TopologicalSpace E] [TopologicalSpace B] {p : E → B}
   {A : Type w} [TopologicalSpace A]
 
-/-- A homeomorphism has the homotopy lifting property with respect to every space: a homotopy
-lifts along its inverse. -/
-theorem _root_.Homeomorph.hasHomotopyLiftingProperty (e : E ≃ₜ B) (A : Type w)
-    [TopologicalSpace A] : HasHomotopyLiftingProperty e A :=
-  fun f H hH ↦ ⟨(e.symm : C(B, E)).comp H, funext fun x ↦ by simp, fun a ↦ by simp [hH a]⟩
-
-/-- The homotopy lifting property is closed under composition: lift along the second map, then
-along the first. -/
-theorem HasHomotopyLiftingProperty.comp {C : Type v'} [TopologicalSpace C] {q : B → C}
-    (hq : HasHomotopyLiftingProperty q A) (hp : HasHomotopyLiftingProperty p A)
-    (hpc : Continuous p) : HasHomotopyLiftingProperty (q ∘ p) A := by
-  intro f H hH
-  obtain ⟨G₁, hG₁, hG₁₀⟩ := hq ((ContinuousMap.mk p hpc).comp f) H hH
-  obtain ⟨G₂, hG₂, hG₂₀⟩ := hp f G₁ hG₁₀
-  exact ⟨G₂, by rw [Function.comp_assoc, hG₂, hG₁], hG₂₀⟩
-
-/-- The homotopy lifting property passes to the base change `{(b', e) | g b' = p e} → B'` along
-any continuous map `g : B' → B`: lift the composite homotopy along `p` and pair it with the given
-one. -/
-theorem HasHomotopyLiftingProperty.pullback {B' : Type v'} [TopologicalSpace B']
-    (hp : HasHomotopyLiftingProperty p A) (g : C(B', B)) :
-    HasHomotopyLiftingProperty (fun x : {x : B' × E // g x.1 = p x.2} ↦ x.1.1) A := by
-  intro f H hH
-  let f' : C(A, E) := ⟨fun a ↦ (f a).1.2, by fun_prop⟩
-  obtain ⟨G, hG, hG₀⟩ := hp f' (g.comp H) fun a ↦ by
-    simp only [ContinuousMap.comp_apply, hH a, f', ContinuousMap.coe_mk]
-    exact (f a).2
-  refine ⟨⟨fun x ↦ ⟨(H x, G x), (congrFun hG x).symm⟩, by fun_prop⟩, funext fun x ↦ rfl, fun a ↦ ?_⟩
-  exact Subtype.ext (Prod.ext (hH a) (hG₀ a))
-
 /-- A map `p : E → B` is a **Hurewicz fibration**, for test spaces in the universe `w`, when it has
 the homotopy lifting property with respect to every space in `Type w`. -/
-@[expose] def IsHurewiczFibration.{w₀, u₀, v₀} {E : Type u₀} {B : Type v₀} [TopologicalSpace E]
+def IsHurewiczFibration.{w₀, u₀, v₀} {E : Type u₀} {B : Type v₀} [TopologicalSpace E]
     [TopologicalSpace B] (p : E → B) : Prop :=
   ∀ (A : Type w₀) [TopologicalSpace A], HasHomotopyLiftingProperty p A
+
+/-- A map is a Hurewicz fibration, for test spaces in the universe `w`, if and only if it has the
+homotopy lifting property with respect to every space in `Type w`. -/
+theorem isHurewiczFibration_iff :
+    IsHurewiczFibration.{w} p ↔
+      ∀ (A : Type w) [TopologicalSpace A], HasHomotopyLiftingProperty p A :=
+  Iff.rfl
 
 namespace IsHurewiczFibration
 
@@ -102,8 +80,8 @@ theorem down (h : IsHurewiczFibration.{max w w'} p) : IsHurewiczFibration.{w} p 
 
 /-- A Hurewicz fibration is a Serre fibration: the cubes `Iⁿ` are among the test spaces. -/
 theorem mem_serreFibrations {E B : _root_.TopCat.{u}} {p : E ⟶ B}
-    (h : IsHurewiczFibration.{0} p) : TopCat.serreFibrations p :=
-  TopCat.mem_serreFibrations_iff_cube.2 fun n ↦ h (Fin n → I)
+    (h : IsHurewiczFibration.{w} p) : TopCat.serreFibrations p :=
+  TopCat.mem_serreFibrations_iff_cube.2 fun n ↦ (h.down : IsHurewiczFibration.{0} p) (Fin n → I)
 
 /-- Hurewicz fibrations are closed under composition. -/
 theorem comp {C : Type v'} [TopologicalSpace C] {q : B → C} (hq : IsHurewiczFibration.{w} q)
