@@ -102,6 +102,7 @@ theorem definingHopfIdeal_toIdeal :
 
 /-- A ring homomorphism out of the coordinate ring of `GLₙ` kills the defining ideal of `SLₙ`
 exactly when it sends the generic determinant to one. -/
+@[simp↓]
 theorem definingHopfIdeal_toIdeal_le_ker_iff {S : Type*} [Ring S]
     (f : GeneralLinear.coordinateHopfAlgebra R n →+* S) :
     (definingHopfIdeal R n).toIdeal ≤ RingHom.ker f ↔
