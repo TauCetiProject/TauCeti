@@ -20,7 +20,7 @@ Thus the criterion detects the equations on nonreduced bases, not merely stabili
 geometric points.
 
 `grpObjOfClosedImmersion` constructs the group law from these three conditions, and
-`exists_grpObj_iff_ker_le` proves the converse. The compatible group structure is unique,
+`exists_grpObj_isMonHom_iff_ker_le` proves the converse. The compatible group structure is unique,
 and is commutative if the ambient group scheme is commutative. The resulting inclusion
 can be used with `ClosedSubgroupScheme.mk`.
 
@@ -102,7 +102,7 @@ theorem isMonHom_grpObjOfClosedImmersion (i : H ⟶ G) [IsClosedImmersion i.left
 
 /-- **The closed-subgroup criterion.** A closed subscheme carries a compatible group structure
 if and only if its defining ideal vanishes on identity, multiplication and inversion. -/
-theorem exists_grpObj_iff_ker_le (i : H ⟶ G) [IsClosedImmersion i.left] :
+theorem exists_grpObj_isMonHom_iff_ker_le (i : H ⟶ G) [IsClosedImmersion i.left] :
     (∃ h : GrpObj H, letI := h; IsMonHom i) ↔
       i.left.ker ≤ η[G].left.ker ∧
       i.left.ker ≤ ((i ⊗ₘ i) ≫ μ[G]).left.ker ∧
