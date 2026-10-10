@@ -294,9 +294,7 @@ private theorem decomposition [NeZero (2 : K)] (n : ℕ)
   ext (a | a | a) (b | b | b) <;>
     simp [typeBShortRootMatrix_def, typeBShortNegativeRootMatrix_def, typeBSumRootMatrix_def,
       typeBSumNegativeRootMatrix_def, Matrix.sum_apply, Matrix.smul_apply, Matrix.single_apply,
-      ite_and, mul_sub, Finset.sum_sub_distrib, LieAlgebra.Orthogonal.typeB.apply_inl_inl h2,
-      LieAlgebra.Orthogonal.typeB.apply_inr_inl_inl, LieAlgebra.Orthogonal.typeB.apply_inr_inr_inl,
-      LieAlgebra.Orthogonal.typeB.apply_inr_inr_inr_inr]
+      ite_and, mul_sub, Finset.sum_sub_distrib, LieAlgebra.Orthogonal.typeB.apply_inl_inl X h2]
   -- Positive-anisotropic entry.
   · ring
   -- Positive-negative block: the skew-symmetric block is the sum of its two halves.

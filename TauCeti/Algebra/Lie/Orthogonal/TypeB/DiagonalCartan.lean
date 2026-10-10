@@ -347,9 +347,9 @@ theorem mem_typeBDiagonalCartan_iff_isDiag (h2 : IsRegular (2 : K))
     by_cases hab : a = b
     · subst b
       rcases a with a | (a | a)
-      · simpa [typeBDiagonalMatrix] using (LieAlgebra.Orthogonal.typeB.apply_inl_inl h2 A a a)
+      · simpa [typeBDiagonalMatrix] using (LieAlgebra.Orthogonal.typeB.apply_inl_inl A h2 a)
       · simp [typeBDiagonalMatrix]
-      · simpa [typeBDiagonalMatrix] using (LieAlgebra.Orthogonal.typeB.apply_inr_inr_inr_inr A a a)
+      · simp [typeBDiagonalMatrix]
     · simpa [typeBDiagonalMatrix_apply, hab] using hdiag hab
 
 variable (K ι)

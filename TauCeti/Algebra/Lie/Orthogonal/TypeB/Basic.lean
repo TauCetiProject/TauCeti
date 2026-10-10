@@ -54,8 +54,8 @@ private theorem transpose_mul_JB (A : LieAlgebra.Orthogonal.typeB ι K) :
   exact hA
 
 /-- In a type-`B` matrix, the anisotropic diagonal entry vanishes when `2` is regular. -/
-theorem apply_inl_inl (h2 : IsRegular (2 : K)) (A : LieAlgebra.Orthogonal.typeB ι K)
-    (u v : Unit) : (A : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) (.inl u) (.inl v) = 0 := by
+theorem apply_inl_inl (A : LieAlgebra.Orthogonal.typeB ι K) (h2 : IsRegular (2 : K))
+    (u : Unit) : (A : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) (.inl u) (.inl u) = 0 := by
   have h := congr_fun (congr_fun (transpose_mul_JB A) (.inl ())) (.inl ())
   simp [LieAlgebra.Orthogonal.JB, Matrix.mul_apply] at h
   apply h2.left
@@ -64,6 +64,7 @@ theorem apply_inl_inl (h2 : IsRegular (2 : K)) (A : LieAlgebra.Orthogonal.typeB 
 
 /-- In a type-`B` matrix, the anisotropic column at the first isotropic half is determined by the
 anisotropic row at the second. -/
+@[simp]
 theorem apply_inr_inl_inl (A : LieAlgebra.Orthogonal.typeB ι K) (i : ι) (u : Unit) :
     (A : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) (.inr (.inl i)) (.inl u) =
       -(2 * (A : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) (.inl u) (.inr (.inr i))) := by
@@ -72,6 +73,7 @@ theorem apply_inr_inl_inl (A : LieAlgebra.Orthogonal.typeB ι K) (i : ι) (u : U
 
 /-- In a type-`B` matrix, the anisotropic column at the second isotropic half is determined by the
 anisotropic row at the first. -/
+@[simp]
 theorem apply_inr_inr_inl (A : LieAlgebra.Orthogonal.typeB ι K) (i : ι) (u : Unit) :
     (A : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) (.inr (.inr i)) (.inl u) =
       -(2 * (A : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) (.inl u) (.inr (.inl i))) := by
@@ -96,6 +98,7 @@ theorem apply_inr_inr_inr_inl (A : LieAlgebra.Orthogonal.typeB ι K) (i j : ι) 
 
 /-- In a type-`B` matrix, the lower-right isotropic block is the negative transpose of the
 upper-left one. -/
+@[simp]
 theorem apply_inr_inr_inr_inr (A : LieAlgebra.Orthogonal.typeB ι K) (i j : ι) :
     (A : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) (.inr (.inr i)) (.inr (.inr j)) =
       -(A : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) (.inr (.inl j)) (.inr (.inl i)) := by
