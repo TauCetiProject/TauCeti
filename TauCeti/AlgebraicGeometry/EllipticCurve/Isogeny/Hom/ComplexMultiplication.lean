@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.SeparableClosure
 public import Mathlib.NumberTheory.Zsqrtd.GaussianInt
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GenericPoint.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Differential
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Ring
 public import TauCeti.AlgebraicGeometry.EllipticCurve.NormalForms
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Supersingular
@@ -61,11 +62,14 @@ ordinary curve has geometric complex multiplication through its Frobenius endomo
   geometric complex multiplication.
 * `WeierstrassCurve.hasGeometricCM_of_a₆_eq_zero`: the curve `y² = x³ + a₄x` has geometric complex
   multiplication over every field.
+* `WeierstrassCurve.pullbackDifferential_gaussianIntCMAction_invariantDifferential`: the Gaussian
+  integer `a + bi` pulls the invariant differential `ω` back to `(a + bi) ω`.
 
 ## References
 
 * [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], III.4, III.9, III.10.1
   and V.3.1.
+* J. H. Silverman, *Advanced Topics in the Arithmetic of Elliptic Curves*, GTM 151, II.1.1.
 -/
 
 public section
@@ -298,6 +302,36 @@ theorem gaussianIntCMAction_sqrtd_mk_Y (ha₆ : W.a₆ = 0) {i : K} (hi : i ^ 2 
     (W.gaussianIntCMAction ha₆ i hi Zsqrtd.sqrtd).toNonUnitalAlgHom
       (Affine.CoordinateRing.mk W Y) = algebraMap K W.FunctionField i * Affine.genericY W := by
   rw [gaussianIntCMAction_sqrtd, sqrtNegOneHom_mk_Y]
+
+omit [W.IsElliptic] in
+/-- The automorphism `(x, y) ↦ (-x, iy)` pulls the invariant differential back to `i` times it. -/
+private theorem pullbackDifferential_sqrtNegOneHom_invariantDifferential (ha₆ : W.a₆ = 0) {i : K}
+    (hi : i ^ 2 = -1) :
+    (W.sqrtNegOneHom ha₆ hi).pullbackDifferential (Affine.invariantDifferential W) =
+      i • Affine.invariantDifferential W := by
+  rw [sqrtNegOneHom, Hom.pullbackDifferential_ofIsogeny,
+    pullbackDifferential_variableChangeIsogeny_invariantDifferential, sqrtNegOneUnit,
+    Units.val_mk]
+
+/-- **`ℤ[i]` acts on the invariant differential through `ℤ[i] → K`, `i ↦ i`**: the Gaussian
+integer `a + bi` pulls the invariant differential `ω` back to `(a + bi) ω`, so the action of
+`ℤ[i]` is normalised with respect to the chosen square root `i` of `-1`, in the sense of
+Silverman, *Advanced Topics in the Arithmetic of Elliptic Curves*, II.1.1. -/
+theorem pullbackDifferential_gaussianIntCMAction_invariantDifferential (ha₆ : W.a₆ = 0) {i : K}
+    (hi : i ^ 2 = -1) (z : GaussianInt) :
+    (W.gaussianIntCMAction ha₆ i hi z).pullbackDifferential (Affine.invariantDifferential W) =
+      ((z.re : K) + z.im * i) • Affine.invariantDifferential W := by
+  -- `a + bi` acts as `a • id + b • i`
+  have hz : W.gaussianIntCMAction ha₆ i hi z =
+      z.re • Hom.id W + z.im • W.sqrtNegOneHom ha₆ hi := by
+    rw [gaussianIntCMAction, TauCeti.CMAction.coe_mk, gaussianIntHom_apply, ← Hom.one_def,
+      zsmul_eq_mul, zsmul_eq_mul, mul_one]
+  -- the pullback of `ω` is additive and `ℤ`-linear in the morphism
+  rw [hz, Hom.pullbackDifferential_add_invariantDifferential,
+    Hom.pullbackDifferential_zsmul_id_invariantDifferential,
+    Hom.pullbackDifferential_zsmul_invariantDifferential,
+    pullbackDifferential_sqrtNegOneHom_invariantDifferential]
+  simp [add_smul, mul_smul, Int.cast_smul_eq_zsmul]
 
 /-- **The curve `y² = x³ + a₄x` has geometric complex multiplication**, over every field `K`
 (Silverman III.10.1): the action of the Gaussian integers is defined over a separable closure of
