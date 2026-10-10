@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.CoordinateRing
+public import TauCeti.RingTheory.Regular.RegularSequence
 import Mathlib.Algebra.GroupWithZero.Action.Regular
 import Mathlib.Algebra.MvPolynomial.Division
 import Mathlib.RingTheory.Polynomial.Eisenstein.Basic
@@ -23,7 +24,8 @@ is a prime element of `R[X, Y, Z]`, so the homogeneous coordinate ring
 is needed.
 
 Over any commutative ring `R`, the Weierstrass polynomial is, up to sign, a monic cubic in `X`
-over `R[Y, Z]`. Hence the class of `Z` is a nonzerodivisor of the homogeneous coordinate ring.
+over `R[Y, Z]`. Hence the class of `Z` is a nonzerodivisor of the homogeneous coordinate ring, and
+the classes of `Z` and `Y` form a weakly regular sequence in it.
 
 ## Main results
 
@@ -33,6 +35,8 @@ over `R[Y, Z]`. Hence the class of `Z` is a nonzerodivisor of the homogeneous co
   homogeneous coordinate ring of a Weierstrass curve is an integral domain.
 * `WeierstrassCurve.Projective.coord_two_mem_nonZeroDivisors`: over any commutative ring, the
   class of `Z` is a nonzerodivisor of the homogeneous coordinate ring.
+* `WeierstrassCurve.Projective.isWeaklyRegular_coord_two_coord_one`: over any commutative ring,
+  the classes of `Z` and `Y` form a weakly regular sequence in the homogeneous coordinate ring.
 
 ## References
 
@@ -84,24 +88,66 @@ private theorem finSuccEquiv_polynomial : finSuccEquiv R 2 W'.polynomial = -W'.c
 
 private theorem monic_cubic : W'.cubic.Monic := Cubic.monic_of_a_eq_one'
 
+-- As a polynomial in `X` over `R[Y, Z]`, the Weierstrass polynomial is the negative of the monic
+-- `cubic`, so a class in the homogeneous coordinate ring vanishes exactly when the remainder
+-- modulo `cubic` does.
+private theorem mk_eq_zero_iff_modByMonic_eq_zero (q : MvPolynomial (Fin 3) R) :
+    Ideal.Quotient.mk (Ideal.span {W'.polynomial}) q = 0 ↔ finSuccEquiv R 2 q %ₘ W'.cubic = 0 := by
+  rw [Ideal.Quotient.eq_zero_iff_dvd, ← map_dvd_iff (finSuccEquiv R 2), finSuccEquiv_polynomial,
+    Polynomial.modByMonic_eq_zero_iff_dvd W'.monic_cubic]
+  exact neg_dvd
+
 /-- The class of the homogeneous coordinate `Z` is a nonzerodivisor of the homogeneous coordinate
 ring `R[X, Y, Z] ⧸ (W'(X, Y, Z))` of a Weierstrass curve. -/
 theorem coord_two_mem_nonZeroDivisors : W'.coord 2 ∈ nonZeroDivisors W'.CoordinateRing := by
-  -- as a polynomial in `X` over `R[Y, Z]`, the Weierstrass polynomial is the negative of the
-  -- monic `cubic`, so a class vanishes exactly when the remainder modulo `cubic` does
-  have key (q : MvPolynomial (Fin 3) R) : Ideal.Quotient.mk (Ideal.span {W'.polynomial}) q = 0 ↔
-      finSuccEquiv R 2 q %ₘ W'.cubic = 0 := by
-    rw [Ideal.Quotient.eq_zero_iff_dvd, ← map_dvd_iff (finSuccEquiv R 2), finSuccEquiv_polynomial,
-      Polynomial.modByMonic_eq_zero_iff_dvd W'.monic_cubic]
-    exact neg_dvd
   refine mem_nonZeroDivisors_iff_left.mpr fun x hx ↦ ?_
   obtain ⟨p, rfl⟩ := Ideal.Quotient.mk_surjective x
   -- `Z` is a constant of `R[Y, Z][X]`, so the remainder of `Z * p` is `Z` times that of `p`
-  rw [← map_mul, key, map_mul, ← Fin.succ_one_eq_two, finSuccEquiv_X_succ,
-    ← Polynomial.smul_eq_C_mul, Polynomial.smul_modByMonic] at hx
+  rw [← map_mul, mk_eq_zero_iff_modByMonic_eq_zero, map_mul, ← Fin.succ_one_eq_two,
+    finSuccEquiv_X_succ, ← Polynomial.smul_eq_C_mul, Polynomial.smul_modByMonic] at hx
   -- and `Z` is a nonzerodivisor of `R[Y, Z]`, so it acts injectively on polynomials over it
-  rw [key]
+  rw [mk_eq_zero_iff_modByMonic_eq_zero]
   exact isRegular_X.left.isSMulRegular.polynomial.right_eq_zero_of_smul hx
+
+-- In `R[Y, Z]`, the variable `Y` is a nonzerodivisor modulo `Z`: as a polynomial in `Y` over
+-- `R[Z]`, the coefficients of `Y * u` are those of `u`, shifted by one.
+private theorem X_one_dvd_of_X_one_dvd_X_zero_mul {u : MvPolynomial (Fin 2) R}
+    (h : X 1 ∣ X 0 * u) : X 1 ∣ u := by
+  rw [← map_dvd_iff (finSuccEquiv R 1), map_mul, finSuccEquiv_X_zero, ← Fin.succ_zero_eq_one,
+    finSuccEquiv_X_succ, Polynomial.C_dvd_iff_dvd_coeff] at h
+  rw [← map_dvd_iff (finSuccEquiv R 1), ← Fin.succ_zero_eq_one, finSuccEquiv_X_succ,
+    Polynomial.C_dvd_iff_dvd_coeff]
+  intro i
+  simpa using h (i + 1)
+
+/-- The classes of the homogeneous coordinates `Z` and `Y` form a weakly regular sequence in the
+homogeneous coordinate ring `A = R[X, Y, Z] ⧸ (W'(X, Y, Z))` of a Weierstrass curve: `Z` is a
+nonzerodivisor of `A`, and `Y` is a nonzerodivisor of `A ⧸ (Z) = R[X, Y] ⧸ (X³)`. -/
+theorem isWeaklyRegular_coord_two_coord_one :
+    RingTheory.Sequence.IsWeaklyRegular W'.CoordinateRing [W'.coord 2, W'.coord 1] := by
+  refine RingTheory.Sequence.isWeaklyRegular_pair_iff.mpr
+    ⟨W'.coord_two_mem_nonZeroDivisors, fun a ⟨b, hb⟩ ↦ ?_⟩
+  obtain ⟨p, rfl⟩ := Ideal.Quotient.mk_surjective a
+  obtain ⟨q, rfl⟩ := Ideal.Quotient.mk_surjective b
+  -- over `R[Y, Z]`, the remainders of `p` and `q` modulo `cubic` satisfy `Y • r = Z • r'`
+  have hpq := (W'.mk_eq_zero_iff_modByMonic_eq_zero (X 1 * p - X 2 * q)).mp
+    (by rw [map_sub, map_mul, map_mul, sub_eq_zero]; exact hb)
+  rw [map_sub, map_mul, map_mul, ← Fin.succ_zero_eq_one, ← Fin.succ_one_eq_two,
+    finSuccEquiv_X_succ, finSuccEquiv_X_succ, Polynomial.sub_modByMonic,
+    ← Polynomial.smul_eq_C_mul, ← Polynomial.smul_eq_C_mul, Polynomial.smul_modByMonic,
+    Polynomial.smul_modByMonic, sub_eq_zero] at hpq
+  -- so `Z` divides the remainder `r` of `p`, coefficientwise
+  obtain ⟨t, ht⟩ : Polynomial.C (X 1) ∣ finSuccEquiv R 2 p %ₘ W'.cubic := by
+    refine Polynomial.C_dvd_iff_dvd_coeff _ _ |>.mpr fun i ↦ X_one_dvd_of_X_one_dvd_X_zero_mul ?_
+    have := congr(Polynomial.coeff $hpq i)
+    simp only [Polynomial.coeff_smul, smul_eq_mul] at this
+    exact ⟨_, this⟩
+  -- and `p` is congruent to `r` modulo the Weierstrass polynomial
+  refine ⟨Ideal.Quotient.mk _ ((finSuccEquiv R 2).symm t), ?_⟩
+  rw [← map_mul, ← sub_eq_zero, ← map_sub, mk_eq_zero_iff_modByMonic_eq_zero, map_sub, map_mul,
+    AlgEquiv.apply_symm_apply, ← Fin.succ_one_eq_two, finSuccEquiv_X_succ, ← ht,
+    Polynomial.modByMonic_eq_zero_iff_dvd W'.monic_cubic]
+  exact dvd_sub_comm.mp (Polynomial.dvd_modByMonic_sub _ _)
 
 private theorem map_cubic {S : Type*} [CommRing S] (f : R →+* S) :
     (W'.map f).cubic = W'.cubic.map (MvPolynomial.map f) := by
