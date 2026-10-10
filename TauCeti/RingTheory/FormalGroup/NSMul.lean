@@ -135,24 +135,6 @@ theorem nsmulSeries_mul (m n : ℕ) :
     · rfl
     · exact (PowerSeries.subst_X hn).symm
 
-/-- Substituting power series without constant term preserves the constant coefficient. -/
-private theorem constantCoeff_subst_of_constantCoeff_zero {a : Fin 2 → PowerSeries R}
-    (ha : HasSubst a) (ha' : ∀ i, PowerSeries.constantCoeff (a i) = 0)
-    (G : MvPowerSeries (Fin 2) R) :
-    PowerSeries.constantCoeff (subst a G) = constantCoeff G := by
-  rw [PowerSeries.constantCoeff_eq, constantCoeff_subst ha, finsum_eq_single _ 0]
-  · simp [coeff_zero_eq_constantCoeff_apply]
-  · intro d hd
-    obtain ⟨i, hi⟩ : ∃ i, d i ≠ 0 := by
-      by_contra! hc
-      exact hd <| Finsupp.ext hc
-    -- the monomial `aᵈ` has a factor `a i` without constant term
-    have : constantCoeff (d.prod fun s e ↦ a s ^ e) = 0 := by
-      rw [Finsupp.prod, map_prod]
-      exact Finset.prod_eq_zero (Finsupp.mem_support_iff.mpr hi) (by
-        rw [map_pow, ← PowerSeries.constantCoeff_eq, ha', zero_pow hi])
-    rw [this, smul_zero]
-
 /-- The chain rule for `[n + 1]_F(T) = F([n]_F(T), T)`. -/
 private theorem derivative_nsmulSeries_succ (n : ℕ) :
     PowerSeries.derivative (F.nsmulSeries (n + 1)) =
@@ -216,10 +198,12 @@ theorem coeff_one_nsmulSeries (n : ℕ) :
       · exact F.constantCoeff_nsmulSeries n
       · exact PowerSeries.constantCoeff_X
     have ha := hasSubst_of_constantCoeff_zero ha'
+    have hc (G : MvPowerSeries (Fin 2) R) :
+        PowerSeries.constantCoeff (subst ![F.nsmulSeries n, PowerSeries.X] G) = constantCoeff G :=
+      constantCoeff_subst_of_constantCoeff_zero ha ha' G
     -- the constant coefficient of the chain rule: the linear coefficients of `F` are `1`
     have h := congrArg PowerSeries.constantCoeff (F.derivative_nsmulSeries_succ n)
-    rw [map_add, map_mul, constantCoeff_subst_of_constantCoeff_zero ha ha',
-      constantCoeff_subst_of_constantCoeff_zero ha ha', ← coeff_zero_eq_constantCoeff_apply,
+    rw [map_add, map_mul, hc, hc, ← coeff_zero_eq_constantCoeff_apply,
       ← coeff_zero_eq_constantCoeff_apply, coeff_pderiv, coeff_pderiv,
       ← PowerSeries.coeff_zero_eq_constantCoeff_apply,
       ← PowerSeries.coeff_zero_eq_constantCoeff_apply, PowerSeries.coeff_derivative,
