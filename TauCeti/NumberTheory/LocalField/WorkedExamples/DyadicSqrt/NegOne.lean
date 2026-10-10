@@ -45,13 +45,15 @@ open scoped QuadraticAlgebra
 
 namespace TauCeti
 
+local instance instFactPrimeTwoDyadicSqrtNegOne : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+
+/-- The quadratic dyadic field `ℚ₂(i)`, with `i² = -1`. -/
+abbrev DyadicSqrtNegOne := QuadraticAlgebra ℚ_[2] (-1) 0
+
 namespace DyadicSqrtNegOne
 
-local notation "DyadicSqrtNegOne" => QuadraticAlgebra ℚ_[2] (-1) 0
-local notation "i" => (QuadraticAlgebra.omega : DyadicSqrtNegOne)
-local notation "finrank_eq_two" => QuadraticAlgebra.finrank_eq_two (-1 : ℚ_[2]) 0
-
-local instance : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+/-- The distinguished square root of `-1` in `ℚ₂(i)`. -/
+abbrev i : DyadicSqrtNegOne := QuadraticAlgebra.omega
 
 private theorem one_add_two_mul_i_ne_zero : (1 + 2 * i : DyadicSqrtNegOne) ≠ 0 := by
   intro h
@@ -90,11 +92,13 @@ instance instInvertibleTwo : Invertible (2 : DyadicSqrtNegOne) :=
 /-- **A nonzero dyadic Evens norm.** Along every embedding of `ℚ_2(i)` in a separable
 closure, the Evens norm of the class of `1 + 2i` is `(2) ∪ (5)`. -/
 theorem galoisEvens_oneAddTwoI (σ : DyadicSqrtNegOne →ₐ[ℚ_[2]] SeparableClosure ℚ_[2]) :
-    galoisEvens ℚ_[2] DyadicSqrtNegOne σ finrank_eq_two (kummerClass oneAddTwoI) =
+    galoisEvens ℚ_[2] DyadicSqrtNegOne σ
+      (QuadraticAlgebra.finrank_eq_two (-1 : ℚ_[2]) 0) (kummerClass oneAddTwoI) =
       (trivialF2TopPairing (AbsoluteGaloisGroup ℚ_[2])).cup 1 1
         (kummerClass (Units.mk0 (2 : ℚ_[2]) two_ne_zero))
         (kummerClass (Units.mk0 (5 : ℚ_[2]) (by norm_num))) := by
-  have h := galoisEvens2_kummerClass_one_add σ finrank_eq_two (-1) (x := i)
+  have h := galoisEvens2_kummerClass_one_add σ
+    (QuadraticAlgebra.finrank_eq_two (-1 : ℚ_[2]) 0) (-1) (x := i)
     (by
       rintro ⟨c, hc⟩
       have him := congrArg QuadraticAlgebra.im hc
@@ -113,7 +117,8 @@ theorem galoisEvens_oneAddTwoI (σ : DyadicSqrtNegOne →ₐ[ℚ_[2]] SeparableC
 /-- Kahn's expression gives the same value: its extra cup `(2) ∪ (-1)` vanishes. -/
 theorem galoisEvens_oneAddTwoI_eq_cup_add_cup
     (σ : DyadicSqrtNegOne →ₐ[ℚ_[2]] SeparableClosure ℚ_[2]) :
-    galoisEvens ℚ_[2] DyadicSqrtNegOne σ finrank_eq_two (kummerClass oneAddTwoI) =
+    galoisEvens ℚ_[2] DyadicSqrtNegOne σ
+      (QuadraticAlgebra.finrank_eq_two (-1 : ℚ_[2]) 0) (kummerClass oneAddTwoI) =
       (trivialF2TopPairing (AbsoluteGaloisGroup ℚ_[2])).cup 1 1
         (kummerClass (Units.mk0 (2 : ℚ_[2]) two_ne_zero))
         (kummerClass (Units.mk0 (5 : ℚ_[2]) (by norm_num))) +
@@ -126,7 +131,8 @@ theorem galoisEvens_oneAddTwoI_eq_cup_add_cup
 /-- The Evens norm of the Kummer class of `1 + 2i` is nonzero. -/
 theorem galoisEvens_oneAddTwoI_ne_zero
     (σ : DyadicSqrtNegOne →ₐ[ℚ_[2]] SeparableClosure ℚ_[2]) :
-    galoisEvens ℚ_[2] DyadicSqrtNegOne σ finrank_eq_two (kummerClass oneAddTwoI) ≠ 0 := by
+    galoisEvens ℚ_[2] DyadicSqrtNegOne σ
+      (QuadraticAlgebra.finrank_eq_two (-1 : ℚ_[2]) 0) (kummerClass oneAddTwoI) ≠ 0 := by
   rw [galoisEvens_oneAddTwoI]
   exact cup_kummerClass_two_five_ne_zero_padicTwo
 
@@ -134,7 +140,8 @@ theorem galoisEvens_oneAddTwoI_ne_zero
 whereas the genuine Evens norm is nonzero. -/
 theorem galoisEvens_oneAddTwoI_add_cup_neg_one_eq_zero
     (σ : DyadicSqrtNegOne →ₐ[ℚ_[2]] SeparableClosure ℚ_[2]) :
-    galoisEvens ℚ_[2] DyadicSqrtNegOne σ finrank_eq_two (kummerClass oneAddTwoI) +
+    galoisEvens ℚ_[2] DyadicSqrtNegOne σ
+      (QuadraticAlgebra.finrank_eq_two (-1 : ℚ_[2]) 0) (kummerClass oneAddTwoI) +
       (trivialF2TopPairing (AbsoluteGaloisGroup ℚ_[2])).cup 1 1
         (kummerClass (-1)) (kummerClass (-1)) = 0 := by
   rw [galoisEvens_oneAddTwoI, ← cup_kummerClass_two_five_eq_neg_one_neg_one_padicTwo]
@@ -145,7 +152,8 @@ restriction alone cannot distinguish it from the alternative corrected value. -/
 theorem galoisRes_galoisEvens_oneAddTwoI_eq_zero
     (σ : DyadicSqrtNegOne →ₐ[ℚ_[2]] SeparableClosure ℚ_[2]) :
     galoisRes ℚ_[2] DyadicSqrtNegOne σ 2
-      (galoisEvens ℚ_[2] DyadicSqrtNegOne σ finrank_eq_two (kummerClass oneAddTwoI)) = 0 := by
+      (galoisEvens ℚ_[2] DyadicSqrtNegOne σ
+        (QuadraticAlgebra.finrank_eq_two (-1 : ℚ_[2]) 0) (kummerClass oneAddTwoI)) = 0 := by
   have hi0 : i ≠ 0 := by
     intro h
     have him := congrArg QuadraticAlgebra.im h
@@ -165,9 +173,10 @@ theorem galoisRes_galoisEvens_oneAddTwoI_eq_zero
 Evens norm there; it is not conditional on the existence of such an embedding. -/
 theorem exists_galoisEvens_oneAddTwoI_ne_zero :
     ∃ σ : DyadicSqrtNegOne →ₐ[ℚ_[2]] SeparableClosure ℚ_[2],
-      galoisEvens ℚ_[2] DyadicSqrtNegOne σ finrank_eq_two (kummerClass oneAddTwoI) ≠ 0 :=
+      galoisEvens ℚ_[2] DyadicSqrtNegOne σ
+        (QuadraticAlgebra.finrank_eq_two (-1 : ℚ_[2]) 0) (kummerClass oneAddTwoI) ≠ 0 :=
   ⟨IsSepClosed.lift, galoisEvens_oneAddTwoI_ne_zero _⟩
 
-end «DyadicSqrtNegOne»
+end DyadicSqrtNegOne
 
 end TauCeti
