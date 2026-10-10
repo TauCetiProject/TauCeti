@@ -11,6 +11,8 @@ public import Mathlib.Algebra.Category.FGModuleCat.EssentiallySmall
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.CategoryTheory.Abelian.FunctorCategory
 public import Mathlib.LinearAlgebra.DirectSum.Finite
+import Mathlib.Algebra.Category.ModuleCat.Biproducts
+import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Biproducts
 -- Non-public: a monomorphism of functors into a category with pullbacks is a monomorphism at every
 -- object.
 import Mathlib.CategoryTheory.Limits.FunctorCategory.EpiMono
@@ -33,6 +35,8 @@ finite-dimensional over the base field gives such a representation.
 * `TauCeti.IsFinDim.of_iso`: pointwise finite-dimensionality transports along an isomorphism.
 * `TauCeti.IsFinDim.of_mono`: a subobject of a pointwise finite-dimensional representation is
   pointwise finite-dimensional.
+* `TauCeti.isFinDim_biproduct`: finite biproducts of finite-dimensional representations are
+  finite-dimensional.
 * The full subcategory of `IsFinDim` representations is essentially small for finite `Q`.
 * `TauCeti.module_finite_asModule_of_isFinDim`: a pointwise finite-dimensional representation
   gives a finite module over the path algebra when the vertex set is finite.
@@ -95,6 +99,22 @@ theorem IsFinDim.of_mono {M N : QuiverRep.{u, v, w, t} k Q} (hM : IsFinDim k Q M
   have hmono : Mono (f.app x) := inferInstance
   rw [ModuleCat.mono_iff_injective] at hmono
   exact FiniteDimensional.of_injective (f.app x).hom hmono
+
+/-- A finite biproduct of pointwise finite-dimensional representations is pointwise
+finite-dimensional. No finiteness of the quiver is required. -/
+theorem isFinDim_biproduct {ι : Type*} [Finite ι]
+    (M : ι → QuiverRep.{u, v, w, t} k Q) (hM : ∀ i, IsFinDim k Q (M i)) :
+    IsFinDim k Q (Limits.biproduct M) := by
+  intro v
+  obtain ⟨n, ⟨r⟩⟩ := Finite.exists_equiv_fin ι
+  let M' (i : Fin n) := M (r.symm i)
+  have (i : Fin n) : FiniteDimensional k ((M' i).obj v) := hM (r.symm i) v
+  let i : Limits.biproduct M ≅ Limits.biproduct M' :=
+    Limits.biproduct.whiskerEquiv r (fun j ↦ eqToIso (by simp [M']))
+  let E := (evaluation (Paths Q) (ModuleCat k)).obj v
+  let e := E.mapIso i ≪≫ E.mapBiproduct M' ≪≫
+    ModuleCat.biproductIsoPi (fun i ↦ (M' i).obj v)
+  exact Module.Finite.equiv e.toLinearEquiv.symm
 
 section ExactStructure
 
