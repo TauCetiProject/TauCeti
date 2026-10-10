@@ -54,8 +54,10 @@ variable {R A B C M N : Type*} [CommRing R] [Ring A] [Ring B] [Ring C]
   {dM : M →ₗ[R] M} {dN : N →ₗ[R] N}
 
 -- Prefer the existing ground-ring module when an outer ring specializes to `R`.
+/-- The outer left action on the balanced tensor product, induced by the action on `M`. -/
 local instance (priority := 50) : Module A (BalancedTensorProduct R B M N) :=
   leftModule (k := R) (A := B) (M := M) (N := N) A
+/-- The outer right action on the balanced tensor product, induced by the action on `N`. -/
 local instance (priority := 50) : Module Cᵐᵒᵖ (BalancedTensorProduct R B M N) :=
   rightModule (k := R) (A := B) (M := M) (N := N) Cᵐᵒᵖ
 local instance : IsScalarTower R A (BalancedTensorProduct R B M N) :=
