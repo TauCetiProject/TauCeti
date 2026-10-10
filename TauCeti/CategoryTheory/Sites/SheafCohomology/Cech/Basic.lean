@@ -71,6 +71,8 @@ be added or removed.
 * `TauCeti.CategoryTheory.isIso_cechComplexMap`: a morphism of families that is the identity on
   indices induces an isomorphism of Čech complexes when `P` inverts the induced maps of products.
 * `TauCeti.CategoryTheory.cechAugmentation_naturality`: the augmentation is natural in `P`.
+* `TauCeti.CategoryTheory.quasiIso_cechAugmentation_iff_of_iso`: acyclicity of a family is
+  invariant under isomorphisms of presheaves.
 
 ## References
 
@@ -570,5 +572,12 @@ theorem quasiIso_cechAugmentation_congr (φ : FormalCoproduct.mk _ U ⟶ FormalC
   exact quasiIso_iff_comp_right _ _
 
 end Map
+
+/-- **Acyclicity of a family is invariant under isomorphisms of presheaves.** If `P ≅ Q`, then the
+augmented Čech complex of `P` for `U` is exact if and only if the one for `Q` is. -/
+theorem quasiIso_cechAugmentation_iff_of_iso {Q : Cᵒᵖ ⥤ A} (e : P ≅ Q) :
+    QuasiIso (cechAugmentation U hT P) ↔ QuasiIso (cechAugmentation U hT Q) := by
+  rw [← quasiIso_iff_comp_right _ ((cechComplexFunctor U).map e.hom), cechAugmentation_naturality]
+  exact quasiIso_iff_comp_left _ _
 
 end TauCeti.CategoryTheory
