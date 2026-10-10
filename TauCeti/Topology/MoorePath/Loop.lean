@@ -173,7 +173,7 @@ theorem constOfLength_add (L L' : ℝ≥0) :
     (constOfLength (L + L') : MooreLoop X b) = constOfLength L * constOfLength L' :=
   ext (by
     simp only [toMoorePath_mul, toMoorePath_constOfLength]
-    exact (MoorePath.constOfLength_trans_constOfLength b L L' _).symm)
+    exact (MoorePath.constOfLength_trans_constOfLength b L L').symm)
 
 /-- The constant loops, as a monoid homomorphism from `ℝ≥0` written multiplicatively; it is a
 section of `lengthHom`. -/
