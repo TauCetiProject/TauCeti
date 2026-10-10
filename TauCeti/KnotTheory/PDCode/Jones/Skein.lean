@@ -57,7 +57,7 @@ theorem normalizedKauffmanBracket_insertCrossing_skein {R : Type*} [CommRing R] 
   have hc : (a : R) ^ 3 * (↑(a⁻¹) : R) ^ 3 = 1 := by
     rw [← mul_pow, a.mul_inv, one_pow]
   simp only [normalizedKauffmanBracket_def, writhe_insertCrossing,
-    writhe_orientedSmoothing, insertCrossing_toPDCode, orientedSmoothing_toPDCode]
+    writhe_orientedSmoothing, toPDCode_insertCrossing, toPDCode_orientedSmoothing]
   generalize hs : (D.orientation p ^^ D.orientation q) = b
   cases b <;> simp only [Bool.not_false, Bool.not_true, ↓reduceIte, hpos, hneg,
     Units.val_mul, Units.val_neg, Units.val_pow_eq_pow_val, Bool.false_eq_true, Bool.true_eq_false,

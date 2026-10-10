@@ -50,15 +50,15 @@ variable (D : OrientedPDCode n) (p q : Fin (4 * n))
   (h : D.orientation p = !D.orientation q)
 
 /-- Forgetting orientation gives the existing arc reconnection. -/
-@[simp] theorem reconnect_toPDCode :
+@[simp] theorem toPDCode_reconnect :
     (D.reconnect p q h).toPDCode = D.toPDCode.reconnect p q := (rfl)
 
 /-- Reconnection retains the directions of all half-edges. -/
-@[simp] theorem reconnect_orientation (x : Fin (4 * n)) :
+@[simp] theorem orientation_reconnect (x : Fin (4 * n)) :
     (D.reconnect p q h).orientation x = D.orientation x := (rfl)
 
 /-- Reconnection retains the oriented crossing-free components. -/
-@[simp] theorem reconnect_crossinglessComponents :
+@[simp] theorem crossinglessComponents_reconnect :
     (D.reconnect p q h).crossinglessComponents = D.crossinglessComponents := (rfl)
 
 /-- Reconnection preserves each crossing sign. -/
@@ -69,5 +69,23 @@ variable (D : OrientedPDCode n) (p q : Fin (4 * n))
 /-- Reconnection preserves the writhe. -/
 @[simp] theorem writhe_reconnect : (D.reconnect p q h).writhe = D.writhe := by
   simp [writhe_def]
+
+/-- Reflecting a reconnection reconnects the reflected code. -/
+@[simp] theorem mirror_reconnect :
+    (D.reconnect p q h).mirror = D.mirror.reconnect p q (by simpa using h) := by
+  apply OrientedPDCode.ext
+  · simp
+  · funext x
+    simp
+  · simp
+
+/-- Reversing a reconnection reconnects the reversed code. -/
+@[simp] theorem reverse_reconnect :
+    (D.reconnect p q h).reverse = D.reverse.reconnect p q (by simp [h]) := by
+  apply OrientedPDCode.ext
+  · simp
+  · funext x
+    simp
+  · simp
 
 end TauCeti.OrientedPDCode

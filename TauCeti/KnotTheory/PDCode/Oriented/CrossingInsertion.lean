@@ -71,22 +71,22 @@ variable (D : OrientedPDCode n) (p q : Fin (4 * n)) (b : Bool)
   (hqp : q ≠ p) (hqe : q ≠ D.edgePair.val p)
 
 /-- Forgetting orientation gives the unoriented crossing insertion. -/
-@[simp] theorem insertCrossing_toPDCode :
+@[simp] theorem toPDCode_insertCrossing :
     (D.insertCrossing p q b hqp hqe).toPDCode = D.toPDCode.insertCrossing p q b := (rfl)
 
 /-- Each old half-edge retains its direction. -/
-@[simp] theorem insertCrossing_orientation_inl (x : Fin (4 * n)) :
+@[simp] theorem orientation_insertCrossing_inl (x : Fin (4 * n)) :
     (D.insertCrossing p q b hqp hqe).orientation (halfEdgeSuccEquiv n (.inl x)) =
       D.orientation x := by simp [insertCrossing]
 
 /-- The four new directions are fixed by those of the two cut arcs. -/
-@[simp] theorem insertCrossing_orientation_inr (slot : Fin 4) :
+@[simp] theorem orientation_insertCrossing_inr (slot : Fin 4) :
     (D.insertCrossing p q b hqp hqe).orientation (halfEdgeSuccEquiv n (.inr slot)) =
       ![!D.orientation p, !D.orientation q, D.orientation p, D.orientation q] slot := by
   simp [insertCrossing]
 
 /-- The insertion retains all oriented crossing-free components. -/
-@[simp] theorem insertCrossing_crossinglessComponents :
+@[simp] theorem crossinglessComponents_insertCrossing :
     (D.insertCrossing p q b hqp hqe).crossinglessComponents = D.crossinglessComponents := (rfl)
 
 /-- Each old crossing retains its sign. -/
@@ -106,6 +106,31 @@ variable (D : OrientedPDCode n) (p q : Fin (4 * n)) (b : Bool)
       D.writhe + if (D.orientation p ^^ D.orientation q) = b then 1 else -1 := by
   simp [writhe_def, Fin.sum_univ_castSucc]
 
+/-- Reflecting the insertion inserts the crossing with the other strand over into the
+reflected code. -/
+@[simp] theorem mirror_insertCrossing :
+    (D.insertCrossing p q b hqp hqe).mirror =
+      D.mirror.insertCrossing p q (!b) hqp (by simpa using hqe) := by
+  apply OrientedPDCode.ext
+  · simp
+  · funext x
+    obtain ⟨x, rfl⟩ := (halfEdgeSuccEquiv n).surjective x
+    rcases x with x | slot <;> simp
+  · simp
+
+/-- Reversing the insertion inserts the same crossing into the reversed code. -/
+@[simp] theorem reverse_insertCrossing :
+    (D.insertCrossing p q b hqp hqe).reverse =
+      D.reverse.insertCrossing p q b hqp (by simpa using hqe) := by
+  apply OrientedPDCode.ext
+  · simp
+  · funext x
+    obtain ⟨x, rfl⟩ := (halfEdgeSuccEquiv n).surjective x
+    rcases x with x | slot
+    · simp
+    · fin_cases slot <;> simp
+  · simp
+
 /-- Smooth the inserted crossing in the orientation-preserving way.
 Oppositely directed ends are joined directly; equally directed ends are joined to the
 other end of the second arc. -/
@@ -116,23 +141,33 @@ def orientedSmoothing (D : OrientedPDCode n) (p q : Fin (4 * n)) : OrientedPDCod
     cases a <;> cases c <;> simp_all)
 
 /-- The unoriented smoothing is the reconnection selected by orientation parity. -/
-@[simp] theorem orientedSmoothing_toPDCode :
+@[simp] theorem toPDCode_orientedSmoothing :
     (D.orientedSmoothing p q).toPDCode =
       D.toPDCode.reconnect p
         (bif D.orientation p ^^ D.orientation q then q else D.edgePair.val q) := by
   simp [orientedSmoothing]
 
 /-- Oriented smoothing retains all half-edge directions. -/
-@[simp] theorem orientedSmoothing_orientation (x : Fin (4 * n)) :
+@[simp] theorem orientation_orientedSmoothing (x : Fin (4 * n)) :
     (D.orientedSmoothing p q).orientation x = D.orientation x := by simp [orientedSmoothing]
 
 /-- Oriented smoothing retains the oriented crossing-free components. -/
-@[simp] theorem orientedSmoothing_crossinglessComponents :
+@[simp] theorem crossinglessComponents_orientedSmoothing :
     (D.orientedSmoothing p q).crossinglessComponents = D.crossinglessComponents := by
   simp [orientedSmoothing]
 
 /-- The smoothing has the same writhe as the diagram before insertion. -/
 @[simp] theorem writhe_orientedSmoothing : (D.orientedSmoothing p q).writhe = D.writhe := by
+  simp [orientedSmoothing]
+
+/-- Reflecting the oriented smoothing smooths the reflected code. -/
+@[simp] theorem mirror_orientedSmoothing :
+    (D.orientedSmoothing p q).mirror = D.mirror.orientedSmoothing p q := by
+  simp [orientedSmoothing]
+
+/-- Reversing the oriented smoothing smooths the reversed code. -/
+@[simp] theorem reverse_orientedSmoothing :
+    (D.orientedSmoothing p q).reverse = D.reverse.orientedSmoothing p q := by
   simp [orientedSmoothing]
 
 end TauCeti.OrientedPDCode
