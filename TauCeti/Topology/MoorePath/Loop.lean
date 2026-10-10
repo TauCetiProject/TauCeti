@@ -24,9 +24,11 @@ the base point `FreeLoop X → X`.  The constant loops of duration `0` form a cl
 ## Main definitions
 
 * `TauCeti.MooreLoop X b`: the Moore loops at `b`, a topological monoid.
-* `TauCeti.MooreLoop.lengthHom`: the duration, as a monoid homomorphism to `Multiplicative ℝ≥0`.
+* `TauCeti.MooreLoop.lengthHom`: the duration, as a monoid homomorphism to `Multiplicative ℝ≥0`,
+  and its section `TauCeti.MooreLoop.constOfLengthHom` by the constant loops.
 * `TauCeti.MooreLoop.lengthHomeomorph`: `MooreLoop X b ≃ₜ ℝ≥0` when `X` is a subsingleton.
-* `TauCeti.FreeLoop X`: the free Moore loops, with `basepoint` and the constant loops `const`.
+* `TauCeti.FreeLoop X`: the free Moore loops, with `basepoint`, `length` and the constant loops
+  `const`.
 
 ## Main results
 
@@ -49,39 +51,6 @@ open NNReal Topology
 namespace TauCeti
 
 variable {X : Type*} [TopologicalSpace X]
-
-namespace MoorePath
-
-/-- The constant Moore path at `x` of duration `L`. -/
-def constOfLength (x : X) (L : ℝ≥0) : MoorePath X where
-  toFun _ := x
-  length := L
-  stopped' _ _ := rfl
-
-@[simp]
-theorem constOfLength_apply (x : X) (L t : ℝ≥0) : constOfLength x L t = x :=
-  (rfl)
-
-@[simp]
-theorem length_constOfLength (x : X) (L : ℝ≥0) : (constOfLength x L).length = L :=
-  (rfl)
-
-@[simp]
-theorem source_constOfLength (x : X) (L : ℝ≥0) : (constOfLength x L).source = x := by
-  rw [source_eq_apply, constOfLength_apply]
-
-@[simp]
-theorem target_constOfLength (x : X) (L : ℝ≥0) : (constOfLength x L).target = x := by
-  rw [target_eq_apply, constOfLength_apply]
-
-@[simp]
-theorem constOfLength_zero (x : X) : constOfLength x 0 = const x :=
-  ext (by simp) fun _ _ ↦ by simp
-
-theorem continuous_constOfLength : Continuous fun p : X × ℝ≥0 ↦ constOfLength p.1 p.2 :=
-  continuous_iff.2 ⟨continuous_snd, continuous_fst.comp continuous_fst⟩
-
-end MoorePath
 
 /-- The **Moore loops** at `b`: the Moore paths from `b` to `b`. -/
 abbrev MooreLoop (X : Type*) [TopologicalSpace X] (b : X) : Type _ :=
@@ -189,11 +158,38 @@ theorem toMoorePath_constOfLength (L : ℝ≥0) :
 
 @[simp]
 theorem length_constOfLength (L : ℝ≥0) : (constOfLength L : MooreLoop X b).length = L :=
-  (rfl)
+  MoorePath.length_constOfLength b L
 
 theorem continuous_constOfLength : Continuous (constOfLength : ℝ≥0 → MooreLoop X b) :=
   (MoorePath.continuous_constOfLength.comp
     (Continuous.prodMk continuous_const continuous_id)).subtype_mk _
+
+@[simp]
+theorem constOfLength_zero : (constOfLength 0 : MooreLoop X b) = 1 :=
+  ext (MoorePath.constOfLength_zero b)
+
+/-- The constant loops form a one-parameter family of monoid elements: durations add. -/
+theorem constOfLength_add (L L' : ℝ≥0) :
+    (constOfLength (L + L') : MooreLoop X b) = constOfLength L * constOfLength L' :=
+  ext (by
+    simp only [toMoorePath_mul, toMoorePath_constOfLength]
+    exact (MoorePath.constOfLength_trans_constOfLength b L L' _).symm)
+
+/-- The constant loops, as a monoid homomorphism from `ℝ≥0` written multiplicatively; it is a
+section of `lengthHom`. -/
+def constOfLengthHom : Multiplicative ℝ≥0 →* MooreLoop X b where
+  toFun L := constOfLength (Multiplicative.toAdd L)
+  map_one' := by simp
+  map_mul' _ _ := by simp [constOfLength_add]
+
+@[simp]
+theorem constOfLengthHom_apply (L : Multiplicative ℝ≥0) :
+    (constOfLengthHom L : MooreLoop X b) = constOfLength (Multiplicative.toAdd L) :=
+  (rfl)
+
+theorem lengthHom_comp_constOfLengthHom :
+    (lengthHom : MooreLoop X b →* Multiplicative ℝ≥0).comp constOfLengthHom = MonoidHom.id _ :=
+  MonoidHom.ext fun _ ↦ by simp
 
 /-- When `X` is a point, the duration is a homeomorphism `MooreLoop X b ≃ₜ ℝ≥0`: the Moore loop
 space of a point is `[0, ∞)`, not a point. -/
@@ -201,7 +197,7 @@ def lengthHomeomorph [Subsingleton X] : MooreLoop X b ≃ₜ ℝ≥0 where
   toFun := length
   invFun := constOfLength
   left_inv γ := ext (MoorePath.ext (by simp) fun _ _ ↦ Subsingleton.elim _ _)
-  right_inv _ := rfl
+  right_inv L := length_constOfLength L
   continuous_toFun := continuous_length
   continuous_invFun := continuous_constOfLength
 
@@ -231,11 +227,32 @@ theorem toMoorePath_injective : Function.Injective (toMoorePath : FreeLoop X →
 theorem ext {γ δ : FreeLoop X} (h : γ.toMoorePath = δ.toMoorePath) : γ = δ :=
   toMoorePath_injective h
 
+theorem isEmbedding_toMoorePath : IsEmbedding (toMoorePath : FreeLoop X → MoorePath X) :=
+  IsEmbedding.subtypeVal
+
 theorem continuous_toMoorePath : Continuous (toMoorePath : FreeLoop X → MoorePath X) :=
   continuous_subtype_val
 
-/-- The base point of a free loop. -/
+/-- The duration of a free loop. -/
+def length (γ : FreeLoop X) : ℝ≥0 := γ.toMoorePath.length
+
+@[simp]
+theorem length_toMoorePath (γ : FreeLoop X) : γ.toMoorePath.length = γ.length :=
+  (rfl)
+
+theorem continuous_length : Continuous (length : FreeLoop X → ℝ≥0) :=
+  MoorePath.continuous_length.comp continuous_toMoorePath
+
+/-- The base point of a free loop: its common starting and end point. -/
 def basepoint (γ : FreeLoop X) : X := γ.toMoorePath.source
+
+@[simp]
+theorem source_toMoorePath (γ : FreeLoop X) : γ.toMoorePath.source = γ.basepoint :=
+  (rfl)
+
+@[simp]
+theorem target_toMoorePath (γ : FreeLoop X) : γ.toMoorePath.target = γ.basepoint :=
+  γ.2.symm
 
 theorem continuous_basepoint : Continuous (basepoint : FreeLoop X → X) :=
   MoorePath.continuous_source.comp continuous_toMoorePath
@@ -248,6 +265,10 @@ theorem toMoorePath_const (x : X) : (const x).toMoorePath = MoorePath.const x :=
   (rfl)
 
 @[simp]
+theorem length_const (x : X) : (const x).length = 0 :=
+  MoorePath.length_const x
+
+@[simp]
 theorem basepoint_const (x : X) : (const x).basepoint = x :=
   MoorePath.source_const x
 
@@ -255,7 +276,7 @@ theorem continuous_const : Continuous (const : X → FreeLoop X) :=
   MoorePath.continuous_const.subtype_mk _
 
 /-- The constant loops are the loops of duration `0`. -/
-theorem range_const : Set.range (const : X → FreeLoop X) = {γ | γ.toMoorePath.length = 0} := by
+theorem range_const : Set.range (const : X → FreeLoop X) = {γ | γ.length = 0} := by
   ext γ
   constructor
   · rintro ⟨x, rfl⟩
@@ -269,8 +290,7 @@ theorem isClosedEmbedding_const : IsClosedEmbedding (const : X → FreeLoop X) w
     continuous_const
   isClosed_range := by
     rw [range_const]
-    exact isClosed_eq (MoorePath.continuous_length.comp continuous_toMoorePath)
-      _root_.continuous_const
+    exact isClosed_eq continuous_length _root_.continuous_const
 
 end FreeLoop
 
