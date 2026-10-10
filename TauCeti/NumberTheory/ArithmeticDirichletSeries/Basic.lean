@@ -263,8 +263,7 @@ theorem zeroExtend_ne_zero (f : IdealArithmeticFunction K) (hf : ∀ I, f I ≠ 
 /-- Zero extension preserves the pointwise zero function. -/
 @[simp]
 theorem zeroExtend_zero : zeroExtend (0 : IdealArithmeticFunction K) = 0 := by
-  simpa [zeroExtend_eq_extend] using
-    (Function.extend_zero (Subtype.val : (Ideal (𝓞 K))⁰ → Ideal (𝓞 K)))
+  simp [zeroExtend_eq_extend]
 
 /-- Zero extension preserves pointwise addition. -/
 @[simp]
