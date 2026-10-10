@@ -26,7 +26,6 @@ No spanning hypothesis on the roots or coroots is required.
 ## References
 
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Chapter VI, §1.
-* Formal infrastructure: Mathlib's `RootPairing.weylGroup.induction`.
 -/
 
 public section
@@ -52,6 +51,7 @@ private theorem ofIdx_smul_piAlgebraMap (i : ι) (x : κ → R) :
 private theorem exists_weylGroup_smul_piAlgebraMap (w : P.weylGroup) :
     ∃ v : (Q).weylGroup, ∀ x : κ → R, v • A x = A (w • x) := by
   obtain ⟨w, hw⟩ := w
+  -- The construction uses Mathlib's `RootPairing.weylGroup.induction` on indexed reflections.
   induction hw using weylGroup.induction with
   | mem i => exact ⟨weylGroup.ofIdx Q i, ofIdx_smul_piAlgebraMap S P hP i⟩
   | one => exact ⟨1, by simp⟩
