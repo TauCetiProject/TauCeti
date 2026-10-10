@@ -33,12 +33,13 @@ namespace ContinuousLinearEquiv
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
 
 /-- A positive-determinant linear map is smoothly isotopic to the identity, fixing the origin
-throughout the motion. The time slices are linear automorphisms. -/
+throughout the motion. The time slices are linear automorphisms with positive determinant. -/
 theorem exists_smoothIsotopy_id (L : E ≃L[ℝ] E) (hL : 0 < L.toContinuousLinearMap.det) :
     ∃ F : TauCeti.SmoothIsotopy (ContMDiffMap.id (I := 𝓘(ℝ, E)) (M := E))
         L.toDiffeomorph.toContMDiffMap,
       (∀ t : unitInterval, F (t, 0) = 0) ∧
-        ∀ t : unitInterval, ∃ A : E ≃L[ℝ] E, ∀ x, F (t, x) = A x := by
+        ∀ t : unitInterval, ∃ A : E ≃L[ℝ] E,
+          0 < A.toContinuousLinearMap.det ∧ ∀ x, F (t, x) = A x := by
   obtain ⟨γ, hγ, hγ0, hγ1, hγdet⟩ := L.toContinuousLinearMap.exists_contDiff_det_pos hL
   have hs : ContMDiff ((𝓡∂ 1).prod 𝓘(ℝ, E)) 𝓘(ℝ, E) ∞
       (fun p : unitInterval × E => γ p.1 p.2) :=
@@ -63,6 +64,10 @@ theorem exists_smoothIsotopy_id (L : E ≃L[ℝ] E) (hL : 0 < L.toContinuousLine
     -- Evaluate the locally constructed motion before using linearity.
     exact (γ t).map_zero
   · intro t
-    exact ⟨(γ t).toContinuousLinearEquivOfDetNeZero (hγdet t).ne', fun _ => rfl⟩
+    refine ⟨(γ t).toContinuousLinearEquivOfDetNeZero (hγdet t).ne', ?_, ?_⟩
+    · simpa only [ContinuousLinearMap.coe_toContinuousLinearEquivOfDetNeZero] using hγdet t
+    · intro x
+      dsimp only [F]
+      exact (ContinuousLinearMap.toContinuousLinearEquivOfDetNeZero_apply _ _ x).symm
 
 end ContinuousLinearEquiv

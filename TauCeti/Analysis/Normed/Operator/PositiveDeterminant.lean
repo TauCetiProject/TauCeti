@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Algebra.Matrix.PositiveDeterminant
+public import TauCeti.Analysis.Matrix.PositiveDeterminant
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 
 /-!
