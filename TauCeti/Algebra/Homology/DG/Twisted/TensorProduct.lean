@@ -68,6 +68,7 @@ namespace BalancedTensorProduct
 `α ⊗ g ↦ fun y ↦ α · g y`, the differential of the balanced tensor product of the right module
 `(ℳ, dM)` with the complex `K_m = (P → A, twistedDifferential m 𝒜 dA)` of free left modules is the
 twisted differential of `m` on `P → M`. -/
+@[simp]
 theorem piRight_differential (hM : IsDGRightModule hA ℳ dM)
     (hK : IsDGLeftModule hA (twistedTotalGrading 𝒜 ind) (twistedDifferential m 𝒜 dA))
     (z : BalancedTensorProduct R A M (P → A)) :
