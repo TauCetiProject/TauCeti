@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Galois
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Surjective
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ShortExact
+public import TauCeti.Topology.Algebra.GroupAction.QuotientAddGroup
 
 /-!
 # The Galois coefficient modules of an elliptic curve
@@ -61,6 +62,13 @@ automorphisms of an algebraic closure are the points over the perfect closure of
 * `WeierstrassCurve.pointGaloisAction_apply_eq_smul`: the action is
   `WeierstrassCurve.pointGaloisAction`.
 * `WeierstrassCurve.mem_H0_pointCoeff_iff`: a point of `E(Kˢ)` fixed by `G_K` comes from `E(K)`.
+
+## Implementation notes
+
+The construction follows the multiplicative coefficient modules of
+`TauCeti/FieldTheory/GaloisCohomology/Coefficients.lean`: `WeierstrassCurve.PointCoeff`,
+`WeierstrassCurve.kummerShortExact` and `WeierstrassCurve.basePointEquivInvariants` play the roles
+of `TauCeti.UnitsCoeff`, `TauCeti.kummerShortExact` and `TauCeti.baseUnitsEquivInvariants` there.
 
 ## References
 
@@ -184,28 +192,20 @@ theorem smul_mem_torsionCoeff {m : ℕ} (σ : AbsoluteGaloisGroup K) {P : W.Poin
   rw [AddSubgroup.torsionBy.nsmul_iff] at hP ⊢
   rw [← smul_comm, hP, smul_zero]
 
-instance (m : ℕ) : DistribMulAction (AbsoluteGaloisGroup K) (W.TorsionCoeff m) where
-  smul σ P := ⟨σ • (P : W.PointCoeff), smul_mem_torsionCoeff σ P.2⟩
-  one_smul P := Subtype.ext (one_smul _ (P : W.PointCoeff))
-  mul_smul σ τ P := Subtype.ext (mul_smul σ τ (P : W.PointCoeff))
-  smul_zero σ := Subtype.ext (smul_zero σ)
-  smul_add σ P Q := Subtype.ext (smul_add σ (P : W.PointCoeff) Q)
+instance (m : ℕ) : DistribMulAction (AbsoluteGaloisGroup K) (W.TorsionCoeff m) :=
+  (AddSubgroup.torsionBy W.PointCoeff m).restrictDistribMulAction fun σ _ => smul_mem_torsionCoeff σ
 
 /-- The Galois action on `E(Kˢ)[m]` is the action on `E(Kˢ)`. -/
 @[simp]
 theorem coe_smul_torsionCoeff {m : ℕ} (σ : AbsoluteGaloisGroup K) (P : W.TorsionCoeff m) :
     ((σ • P : W.TorsionCoeff m) : W.PointCoeff) = σ • (P : W.PointCoeff) :=
-  (rfl)
+  AddSubgroup.restrictDistribMulAction_coe_smul _ (fun σ _ => smul_mem_torsionCoeff σ) σ P
 
-/-- **`E(Kˢ)[m]` is a discrete `G_K`-module**: the stabilizer of a torsion point is its
-stabilizer in `E(Kˢ)`, which is open. -/
+/-- **`E(Kˢ)[m]` is a discrete `G_K`-module**: the restriction of the continuous action on
+`E(Kˢ)` to a stable subgroup is continuous. -/
 instance TorsionCoeff.instContinuousSMul (m : ℕ) :
-    ContinuousSMul (AbsoluteGaloisGroup K) (W.TorsionCoeff m) := by
-  refine continuousSMul_iff_stabilizer_isOpen.2 fun P => ?_
-  convert (continuousSMul_iff_stabilizer_isOpen.1
-    (PointCoeff.instContinuousSMul W)) (P : W.PointCoeff) using 2
-  ext σ
-  simp only [MulAction.mem_stabilizer_iff, ← Subtype.coe_inj, coe_smul_torsionCoeff]
+    ContinuousSMul (AbsoluteGaloisGroup K) (W.TorsionCoeff m) :=
+  AddSubgroup.restrictDistribMulAction_continuousSMul _ fun σ _ => smul_mem_torsionCoeff σ
 
 /-- The inclusion `E(Kˢ)[m] → E(Kˢ)`, as a `G_K`-equivariant homomorphism. -/
 def torsionCoeffIncl (m : ℕ) : W.TorsionCoeff m →+[AbsoluteGaloisGroup K] W.PointCoeff where
