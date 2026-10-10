@@ -27,7 +27,8 @@ effective descent for affine schemes.
 * `TauCeti.Algebra.DescentDatum.specEquiv`: every descent datum on `Spec B` relative to `p`
   arises in this way from a unique descent datum on `B`.
 * `TauCeti.Algebra.DescentDatum.Hom.spec`: a morphism of descent data on algebras gives a
-  morphism, in the opposite direction, of the descent data on their spectra.
+  morphism, in the opposite direction, of the descent data on their spectra; it preserves
+  identities and reverses composition (`Hom.id_spec`, `Hom.comp_spec`).
 * `TauCeti.Algebra.DescentDatum.specBaseChangeHom`: for an `R`-algebra `A`, the canonical
   descent datum on `Spec A ×_{Spec R} Spec S` is isomorphic to the descent datum on
   `Spec (S ⊗[R] A)` given by `Spec` of the canonical coaction.
@@ -317,8 +318,9 @@ theorem spec_specEquiv_symm
 
 section Hom
 
-variable {B' : Type u} [CommRing B'] [Algebra R B'] [Algebra S B'] [IsScalarTower R S B']
-  {D : DescentDatum R S B} {D' : DescentDatum R S B'}
+variable {B' B'' : Type u} [CommRing B'] [Algebra R B'] [Algebra S B'] [IsScalarTower R S B']
+  [CommRing B''] [Algebra R B''] [Algebra S B''] [IsScalarTower R S B'']
+  {D : DescentDatum R S B} {D' : DescentDatum R S B'} {D'' : DescentDatum R S B''}
 
 /-- Under the identifications with tensor products, `id ×_{Spec R} Spec f` is `Spec (id ⊗ f)`. -/
 private theorem tensorIso_hom_map (f : B →ₐ[S] B')
@@ -365,6 +367,22 @@ noncomputable def Hom.spec (f : Hom D D') : TauCeti.DescentDatum.Hom D'.spec D.s
 theorem Hom.spec_hom_left (f : Hom D D') :
     f.spec.hom.left = Spec.map (CommRingCat.ofHom f.toAlgHom.toRingHom) :=
   (rfl)
+
+variable (D) in
+/-- `Hom.spec` preserves identities. -/
+@[simp]
+theorem Hom.id_spec : (Hom.id D).spec = TauCeti.DescentDatum.Hom.id D.spec :=
+  TauCeti.DescentDatum.Hom.ext (Over.OverMorphism.ext (by simp))
+
+/-- `Hom.spec` reverses composition. -/
+@[simp]
+theorem Hom.comp_spec (g : Hom D' D'') (f : Hom D D') : (g.comp f).spec = f.spec.comp g.spec := by
+  refine TauCeti.DescentDatum.Hom.ext (Over.OverMorphism.ext ?_)
+  rw [spec_hom_left, TauCeti.DescentDatum.Hom.comp_hom, Over.comp_left, spec_hom_left,
+    spec_hom_left, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
+  congr 2
+  ext b
+  simp
 
 end Hom
 
