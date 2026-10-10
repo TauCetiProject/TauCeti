@@ -21,12 +21,16 @@ interpolation between that bound and the `L²` bound
 `‖T f‖_p ≤ (p / (p - 1) · 2 C + p / (2 - p) · 4 ‖T‖²) ^ (1 / p) ‖f‖_p`
 
 for every `1 < p < 2` and every `f ∈ L²`, where `C = 2ⁿ (4 ‖T‖² + 1) + 4 B` is the weak type
-`(1, 1)` constant. The constant blows up at both endpoints, as it must: a singular integral
-operator is not bounded on `L¹`.
+`(1, 1)` constant. This constant blows up at both endpoints. That is a limitation of the
+interpolation argument, not of every operator satisfying the hypotheses (the zero operator
+satisfies them), although classical singular integrals such as the Hilbert transform are indeed
+not bounded on `L¹`.
 
 Since `T` is only given on `L²`, the estimate is stated for `f ∈ L²`, and it is informative for
-`f ∈ L² ∩ Lᵖ`. The range `2 < p < ∞` follows by duality from the same theorem applied to the
-adjoint of `T`, and is not treated here.
+`f ∈ L² ∩ Lᵖ`. The range `2 < p < ∞` is not treated here. Classically it follows by duality, in
+the scalar or Hilbert space valued setting, from the same theorem applied to the adjoint of `T`,
+provided the adjoint also satisfies the cancellation condition (for instance when the kernel of
+`T` also satisfies Hörmander's condition in the other variable).
 
 Points of `ℝⁿ` are functions `ι → ℝ`, so distances and balls are taken in the sup norm.
 
