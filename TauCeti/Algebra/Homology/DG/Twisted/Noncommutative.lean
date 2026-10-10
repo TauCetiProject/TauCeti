@@ -31,8 +31,8 @@ basis paths (`gen_a_mul_gen_b_ne`), so it depends on the order in which the cons
 multiplies the coefficients.  The literal right-free reading of the same coefficients,
 `d e_x = Σ_y e_y m x y`, in which the twisting coefficient multiplies the coordinate `f x` on the
 left, is recorded as
-`rightFreeDifferential`: it gives `d² e_x = e_y (ba - ab) ≠ 0`
-(`rightFreeDifferential_rightFreeDifferential_single_x_ne_zero`), which is the reason for the
+`rightFreeOperator`: it gives `d² e_x = e_y (ba - ab) ≠ 0`
+(`rightFreeOperator_rightFreeOperator_single_x_ne_zero`), which is the reason for the
 variance convention of the twisted complex.
 
 ## Main definitions and results
@@ -47,9 +47,9 @@ variance convention of the twisted complex.
 * `TauCeti.TwistedExamples.twistedDifferential_twistedDifferential_single_x`: `D² (1 ⊗ x) = 0`,
   computed term by term.
 * `TauCeti.TwistedExamples.gen_a_mul_gen_b_ne`: `ab ≠ ba` in the path algebra.
-* `TauCeti.TwistedExamples.rightFreeDifferential`: the literal right-free reading of the
-  coefficients, with `rightFreeDifferential_rightFreeDifferential_single_x_ne_zero`: its square
-  does not vanish on `e_x`.
+* `TauCeti.TwistedExamples.rightFreeOperator`: the literal right-free reading of the
+  coefficients, with `rightFreeOperator_rightFreeOperator_single_x_ne_zero`: its square
+  does not vanish on `e_x`, so it is not a differential.
 
 ## References
 
@@ -250,37 +250,38 @@ square does not vanish. -/
 /-- The literal right-free reading of the coefficients of `threeCocycle`:
 `(d f) y = ∂ (f y) + Σ_x m x y * f x`, the twisting coefficient multiplying the coordinate `f x` on
 the left.  Recorded for comparison with `twistedDifferential`, where it multiplies on the right. -/
-noncomputable def rightFreeDifferential :
+noncomputable def rightFreeOperator :
     (Fin 3 → pathAlgebra ℚ (SingleObj ThreeArrow)) →ₗ[ℚ]
       (Fin 3 → pathAlgebra ℚ (SingleObj ThreeArrow)) :=
   LinearMap.pi fun y ↦ threeDifferential ∘ₗ LinearMap.proj y +
     ∑ x, LinearMap.mulLeft ℚ (threeMatrix x y) ∘ₗ LinearMap.proj x
 
 /-- The components of the right-free reading. -/
-theorem rightFreeDifferential_apply (f : Fin 3 → pathAlgebra ℚ (SingleObj ThreeArrow)) (y : Fin 3) :
-    rightFreeDifferential f y = threeDifferential (f y) + ∑ x, threeMatrix x y * f x := by
-  simp [rightFreeDifferential, LinearMap.pi_apply, LinearMap.sum_apply]
+@[simp]
+theorem rightFreeOperator_apply (f : Fin 3 → pathAlgebra ℚ (SingleObj ThreeArrow)) (y : Fin 3) :
+    rightFreeOperator f y = threeDifferential (f y) + ∑ x, threeMatrix x y * f x := by
+  simp [rightFreeOperator, LinearMap.pi_apply, LinearMap.sum_apply]
 
 /-- In the right-free reading, `d e_x = e_z a + e_y c`. -/
-theorem rightFreeDifferential_single_x :
-    rightFreeDifferential (Pi.single 0 1) = Pi.single 1 (gen .a) + Pi.single 2 (gen .c) := by
+theorem rightFreeOperator_single_x :
+    rightFreeOperator (Pi.single 0 1) = Pi.single 1 (gen .a) + Pi.single 2 (gen .c) := by
   funext y
-  fin_cases y <;> simp [rightFreeDifferential_apply, Fin.sum_univ_three, threeMatrix,
+  fin_cases y <;> simp [rightFreeOperator_apply, Fin.sum_univ_three, threeMatrix,
     isDGAlgebra_threeDifferential.map_one_eq_zero]
 
 /-- In the right-free reading, `d² e_x = e_y (ba - ab)`. -/
-theorem rightFreeDifferential_rightFreeDifferential_single_x :
-    rightFreeDifferential (rightFreeDifferential (Pi.single 0 1)) =
+theorem rightFreeOperator_rightFreeOperator_single_x :
+    rightFreeOperator (rightFreeOperator (Pi.single 0 1)) =
       Pi.single 2 (gen .b * gen .a - gen .a * gen .b) := by
-  rw [rightFreeDifferential_single_x]
+  rw [rightFreeOperator_single_x]
   funext y
-  fin_cases y <;> simp [rightFreeDifferential_apply, Fin.sum_univ_three, threeMatrix,
+  fin_cases y <;> simp [rightFreeOperator_apply, Fin.sum_univ_three, threeMatrix,
     sub_eq_neg_add, add_comm]
 
 /-- **The right-free reading is not a complex**: `d² e_x = e_y (ba - ab) ≠ 0`. -/
-theorem rightFreeDifferential_rightFreeDifferential_single_x_ne_zero :
-    rightFreeDifferential (rightFreeDifferential (Pi.single 0 1)) ≠ 0 := by
-  rw [rightFreeDifferential_rightFreeDifferential_single_x]
+theorem rightFreeOperator_rightFreeOperator_single_x_ne_zero :
+    rightFreeOperator (rightFreeOperator (Pi.single 0 1)) ≠ 0 := by
+  rw [rightFreeOperator_rightFreeOperator_single_x]
   intro h
   have := congrFun h 2
   rw [Pi.single_eq_same, Pi.zero_apply, sub_eq_zero] at this
