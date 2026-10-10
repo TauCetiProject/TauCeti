@@ -11,9 +11,10 @@ public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.MeasureTheory.Measure.GiryMonad
 public import TauCeti.MeasureTheory.Function.AbsolutelyContinuous
 import Mathlib.Analysis.Calculus.ContDiff.Operations
-import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Probability.Kernel.MeasurableIntegral
+import TauCeti.Analysis.Calculus.FDeriv.Measurable
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import TauCeti.MeasureTheory.Measure.Measurability
 
 /-!
@@ -154,54 +155,6 @@ theorem congr (h : IsContinuityEquation μ v a b) (hw : Measurable (uncurry w))
 
 end IsContinuityEquation
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- If an absolutely continuous curve `γ` has derivative `V t` at almost every time of `(a, b)`,
-then integrating `t ↦ fderiv ℝ φ (t, γ t) (1, V t)` over `(a, b)` gives zero for every `C¹`
-compactly supported `φ` with support in `(a, b) × E`: this integrand is the derivative of
-`t ↦ φ (t, γ t)`, which vanishes at both endpoints. -/
-private lemma integral_fderiv_prodMk_eq_zero {φ : ℝ × E → ℝ} (hφ : ContDiff ℝ 1 φ)
-    (hφc : HasCompactSupport φ) (hφs : tsupport φ ⊆ Ioo a b ×ˢ univ) {γ : ℝ → E}
-    (hγ : AbsolutelyContinuousOnInterval γ a b) {V : ℝ → E}
-    (hV : ∀ᵐ t, t ∈ Ioo a b → HasDerivAt γ (V t) t) :
-    ∫ t in Ioo a b, fderiv ℝ φ (t, γ t) (1, V t) = 0 := by
-  rcases lt_or_ge a b with hab | hab
-  swap
-  · simp [Ioo_eq_empty_of_le hab]
-  obtain ⟨K, hK⟩ := hφ.lipschitzWith_of_hasCompactSupport hφc one_ne_zero
-  have hg : AbsolutelyContinuousOnInterval (fun t ↦ φ (t, γ t)) a b :=
-    hK.comp_absolutelyContinuousOnInterval
-      (LipschitzWith.id.lipschitzOnWith.absolutelyContinuousOnInterval.prodMk hγ)
-  have hzero (s : ℝ) (hs : s ∉ Ioo a b) : φ (s, γ s) = 0 :=
-    image_eq_zero_of_notMem_tsupport fun h ↦ hs (hφs h).1
-  have hderiv : ∀ᵐ t, t ∈ Ioo a b →
-      deriv (fun t ↦ φ (t, γ t)) t = fderiv ℝ φ (t, γ t) (1, V t) := by
-    filter_upwards [hV] with t ht hmem
-    exact (HasFDerivAt.comp_hasDerivAt t (hφ.differentiable one_ne_zero (t, γ t)).hasFDerivAt
-      ((hasDerivAt_id' t).prodMk (ht hmem))).deriv
-  rw [← setIntegral_congr_ae measurableSet_Ioo hderiv, ← integral_Ioc_eq_integral_Ioo,
-    ← intervalIntegral.integral_of_le hab.le, hg.integral_deriv_eq_sub,
-    hzero a (by simp), hzero b (by simp), sub_self]
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The integrand of the continuity equation grows at most linearly in the velocity. -/
-private lemma exists_norm_fderiv_apply_le {φ : ℝ × E → ℝ} (hφ : ContDiff ℝ 1 φ)
-    (hφc : HasCompactSupport φ) : ∃ C, ∀ q w, ‖fderiv ℝ φ q (1, w)‖ ≤ C * (1 + ‖w‖) := by
-  obtain ⟨C, hC⟩ :=
-    (hφ.continuous_fderiv one_ne_zero).bounded_above_of_compact_support (hφc.fderiv ℝ)
-  refine ⟨C, fun q w ↦ ((fderiv ℝ φ q).le_opNorm _).trans
-    (mul_le_mul (hC q) ?_ (norm_nonneg _) ((norm_nonneg _).trans (hC q)))⟩
-  rw [Prod.norm_def, norm_one]
-  exact max_le (le_add_of_nonneg_right (norm_nonneg _)) (le_add_of_nonneg_left zero_le_one)
-
-omit [FiniteDimensional ℝ E] in
-/-- The integrand of the continuity equation, as a function of the space-time point and of the
-velocity, is measurable. -/
-private lemma measurable_fderiv_apply [SecondCountableTopology E]
-    {φ : ℝ × E → ℝ} (hφ : ContDiff ℝ 1 φ) :
-    Measurable fun q : (ℝ × E) × E ↦ fderiv ℝ φ q.1 (1, q.2) :=
-  (((hφ.continuous_fderiv one_ne_zero).comp continuous_fst).clm_apply
-    (continuous_const.prodMk continuous_snd)).measurable
-
 omit [FiniteDimensional ℝ E] [BorelSpace E] in
 /-- A measurable family of measures, rescaled by `(1 + μₜ E)⁻¹` to have mass at most one, as a
 kernel. It lets the measurability results for finite kernels apply to `μ`. -/
@@ -274,13 +227,15 @@ for every `C¹` compactly supported test function `φ`. -/
 theorem lintegral_lintegral_enorm_fderiv_lt_top (h : IsContinuityEquation μ v a b)
     {φ : ℝ × E → ℝ} (hφ : ContDiff ℝ 1 φ) (hφc : HasCompactSupport φ) :
     ∫⁻ t in Ioo a b, ∫⁻ x, ‖fderiv ℝ φ (t, x) (1, v t x)‖ₑ ∂μ t < ∞ := by
-  obtain ⟨C, hC⟩ := exists_norm_fderiv_apply_le hφ hφc
+  obtain ⟨C, hC⟩ :=
+    (hφ.continuous_fderiv one_ne_zero).bounded_above_of_compact_support (hφc.fderiv ℝ)
   have hle (t : ℝ) (x : E) :
       ‖fderiv ℝ φ (t, x) (1, v t x)‖ₑ ≤ ENNReal.ofReal C * (1 + ‖v t x‖ₑ) := by
-    have hC0 : 0 ≤ C := by simpa using (norm_nonneg _).trans (hC (0, 0) 0)
     rw [← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_one,
-      ← ENNReal.ofReal_add zero_le_one (norm_nonneg _), ← ENNReal.ofReal_mul hC0]
-    exact ENNReal.ofReal_le_ofReal (hC _ _)
+      ← ENNReal.ofReal_add zero_le_one (norm_nonneg _),
+      ← ENNReal.ofReal_mul ((norm_nonneg _).trans (hC 0))]
+    exact ENNReal.ofReal_le_ofReal <|
+      (fderiv ℝ φ _).le_of_opNorm_le_of_le (hC _) (by simp [Prod.norm_def])
   have hv (t : ℝ) : Measurable fun x ↦ 1 + ‖v t x‖ₑ :=
     measurable_const.add (h.measurable_velocity.comp measurable_prodMk_left).enorm
   have hm : Measurable fun t ↦ μ t univ := (Measure.measurable_coe .univ).comp h.measurable
@@ -301,7 +256,8 @@ theorem ae_integrable_fderiv (h : IsContinuityEquation μ v a b) {φ : ℝ × E 
     (hφ : ContDiff ℝ 1 φ) (hφc : HasCompactSupport φ) :
     ∀ᵐ t, t ∈ Ioo a b → Integrable (fun x ↦ fderiv ℝ φ (t, x) (1, v t x)) (μ t) := by
   have hF : Measurable fun q : ℝ × E ↦ fderiv ℝ φ q (1, v q.1 q.2) :=
-    (measurable_fderiv_apply hφ).comp (measurable_id.prodMk h.measurable_velocity)
+    (measurable_fderiv_apply ℝ φ).comp
+      (measurable_id.prodMk (measurable_const.prodMk h.measurable_velocity))
   rw [← ae_restrict_iff' measurableSet_Ioo]
   filter_upwards [ae_lt_top' (h.aemeasurable_lintegral
       (f := fun t x ↦ ‖fderiv ℝ φ (t, x) (1, v t x)‖ₑ) hF.enorm)
@@ -314,7 +270,8 @@ theorem integrableOn_integral_fderiv (h : IsContinuityEquation μ v a b) {φ : �
     (hφ : ContDiff ℝ 1 φ) (hφc : HasCompactSupport φ) :
     IntegrableOn (fun t ↦ ∫ x, fderiv ℝ φ (t, x) (1, v t x) ∂μ t) (Ioo a b) := by
   have hF : Measurable fun q : ℝ × E ↦ fderiv ℝ φ q (1, v q.1 q.2) :=
-    (measurable_fderiv_apply hφ).comp (measurable_id.prodMk h.measurable_velocity)
+    (measurable_fderiv_apply ℝ φ).comp
+      (measurable_id.prodMk (measurable_const.prodMk h.measurable_velocity))
   refine ⟨h.aestronglyMeasurable_integral hF.stronglyMeasurable, ?_⟩
   exact (lintegral_mono fun t ↦ enorm_integral_le_lintegral_enorm _).trans_lt
     (h.lintegral_lintegral_enorm_fderiv_lt_top hφ hφc)
@@ -352,8 +309,9 @@ theorem isContinuityEquation_map {Ω : Type*} [MeasurableSpace Ω] (P : Measure 
   -- the integrand `(t, x) ↦ fderiv ℝ φ (t, x) (1, v t x)` is measurable and has linear growth
   have hφ1 : ContDiff ℝ 1 φ := hφ.of_le (by simp)
   have hF : Measurable fun q : ℝ × E ↦ fderiv ℝ φ q (1, v q.1 q.2) :=
-    (measurable_fderiv_apply hφ1).comp (measurable_id.prodMk hv)
-  obtain ⟨C, hC⟩ := exists_norm_fderiv_apply_le hφ1 hφc
+    (measurable_fderiv_apply ℝ φ).comp (measurable_id.prodMk (measurable_const.prodMk hv))
+  obtain ⟨C, hC⟩ :=
+    (hφ1.continuous_fderiv one_ne_zero).bounded_above_of_compact_support (hφc.fderiv ℝ)
   have hpush (t : ℝ) : ∫ x, fderiv ℝ φ (t, x) (1, v t x) ∂P.map (γ · t) =
       ∫ ω, fderiv ℝ φ (t, γ ω t) (1, v t (γ ω t)) ∂P :=
     integral_map (hγt t).aemeasurable (hF.comp measurable_prodMk_left).aestronglyMeasurable
@@ -364,7 +322,7 @@ theorem isContinuityEquation_map {Ω : Type*} [MeasurableSpace Ω] (P : Measure 
       ((volume.restrict (Ioo a b)).prod P) := by
     refine Integrable.mono' (g := fun q ↦ C * (1 + ‖v q.1 (γ q.2 q.1)‖)) ?_
       (hF.comp (measurable_fst.prodMk hγ')).aestronglyMeasurable
-      (.of_forall fun q ↦ hC _ _)
+      (.of_forall fun q ↦ (fderiv ℝ φ _).le_of_opNorm_le_of_le (hC _) (by simp [Prod.norm_def]))
     refine ((integrable_const 1).add ?_).const_mul C
     refine ⟨(hv.comp (measurable_fst.prodMk hγ')).norm.aestronglyMeasurable, ?_⟩
     rw [hasFiniteIntegral_iff_enorm]
@@ -372,7 +330,20 @@ theorem isContinuityEquation_map {Ω : Type*} [MeasurableSpace Ω] (P : Measure 
   rw [integral_integral_swap hInt]
   refine integral_eq_zero_of_ae ?_
   filter_upwards [hac, hderiv] with ω hω hω'
-  exact integral_fderiv_prodMk_eq_zero hφ1 hφc hφs hω hω'
+  rcases lt_or_ge a b with hab | hab
+  swap
+  · simp [Ioo_eq_empty_of_le hab]
+  -- the integrand is the derivative of `t ↦ φ (t, γ ω t)`, which vanishes at both endpoints
+  have hzero (s : ℝ) (hs : s ∉ Ioo a b) : φ (s, γ ω s) = 0 :=
+    image_eq_zero_of_notMem_tsupport fun h ↦ hs (hφs h).1
+  have hd : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt (fun t ↦ (t, γ ω t)) (1, v t (γ ω t)) t := by
+    rw [uIoc_of_le hab.le]
+    filter_upwards [hω', compl_mem_ae_iff.2 (measure_singleton b)] with t ht htb hmem
+    exact (hasDerivAt_id' t).prodMk (ht ⟨hmem.1, hmem.2.lt_of_ne htb⟩)
+  have := (LipschitzWith.id.lipschitzOnWith.absolutelyContinuousOnInterval.prodMk
+    hω).integral_fderiv_apply_eq_sub hd hφ1
+  simp only [id, hzero a (by simp), hzero b (by simp), sub_self] at this
+  rwa [intervalIntegral.integral_of_le hab.le, integral_Ioc_eq_integral_Ioo] at this
 
 /-- **A translating law solves the continuity equation.** Translating a finite measure `μ` with
 constant velocity `w`, so that its law at time `t` is the pushforward of `μ` by `x ↦ x + t • w`,
