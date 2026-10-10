@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.EngelSubalgebra
 public import Mathlib.Algebra.Lie.Free
 public import TauCeti.Algebra.Lie.Basic
 
@@ -25,7 +26,8 @@ relations for a Cartan matrix are the standard example — and such a relation s
 presented algebra until it is known to be carried along by the map that checks it. That transport
 is `LieHom.map_ad_pow`, which lives in `TauCeti/Algebra/Lie/Basic.lean` and is imported here. The
 first fact supplied by this file is its companion `TauCeti.ad_neg_pow_apply_eq_zero`, which carries
-such a vanishing result from `x` to `-x`.
+such a vanishing result from `x` to `-x`; equivalently, `x` and `-x` have the same Engel subalgebra
+(`LieSubalgebra.engel_neg`), the elements on which their adjoint actions are locally nilpotent.
 
 The second is that a free Lie algebra is generated, as a Lie subalgebra, by its generators:
 `TauCeti.FreeLieAlgebra.lieSpan_range_of_eq_top`. This is what makes the images of the generators
@@ -35,6 +37,7 @@ generate the presented algebra, rather than merely determine maps out of it.
 
 * `TauCeti.ad_neg_pow_apply_eq_zero`: negating the element acting by `ad` preserves the vanishing of
   an iterated adjoint action.
+* `LieSubalgebra.engel_neg`: the Engel subalgebra of `-x` is that of `x`.
 * `TauCeti.FreeLieAlgebra.lieSpan_range_of_eq_top`: the generators of a free Lie algebra generate it
   as a Lie subalgebra.
 
@@ -58,6 +61,16 @@ theorem ad_neg_pow_apply_eq_zero {x y : L} {n : ℕ} (h : (LieAlgebra.ad R L x ^
   have hneg : LieAlgebra.ad R L (-x) = (-1 : R) • LieAlgebra.ad R L x := by
     rw [map_neg, neg_smul, one_smul]
   rw [hneg, smul_pow, LinearMap.smul_apply, h, smul_zero]
+
+/-- The Engel subalgebra of `-x` is that of `x`: the powers of `ad (-x)` are those of `ad x` up to
+sign. -/
+@[simp]
+theorem _root_.LieSubalgebra.engel_neg (x : L) :
+    LieSubalgebra.engel R (-x) = LieSubalgebra.engel R x := by
+  ext y
+  simp only [LieSubalgebra.mem_engel_iff]
+  refine ⟨fun ⟨n, hn⟩ => ⟨n, ?_⟩, fun ⟨n, hn⟩ => ⟨n, ad_neg_pow_apply_eq_zero hn⟩⟩
+  simpa using ad_neg_pow_apply_eq_zero hn
 
 namespace FreeLieAlgebra
 
