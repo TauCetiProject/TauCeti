@@ -107,6 +107,28 @@ theorem augment_map (f : C(X, Y)) : augment Y R ∘ₗ map R f 0 = augment X R :
   rw [LinearMap.comp_apply, map_mk, augment_mk, augment_mk, ← LinearMap.comp_apply,
     CubicalChain.augment_map]
 
+/-- On 0-chains, a constant map multiplies the class of its value by the augmentation. -/
+theorem map_const_zero (y : Y) (c : NormalizedCubicalChain X R 0) :
+    map R (ContinuousMap.const X y) 0 c = augment X R c • ofCube Y R (SingularCube.point y) := by
+  induction c using Submodule.Quotient.induction_on with
+  | H c =>
+    induction c using Finsupp.induction_linear with
+    | zero => simp
+    | add a b ha hb =>
+      simpa [← Submodule.mkQ_apply, add_smul] using congrArg₂ (· + ·) ha hb
+    | single c a =>
+      have h : (ContinuousMap.const X y).comp c = SingularCube.point y := by
+        ext x
+        simp
+      rw [map_mk, CubicalChain.map_single, augment_mk, CubicalChain.augment_single,
+        h, ofCube_def, ← smul_single_one]
+      simp only [← Submodule.mkQ_apply, map_smul]
+
+/-- The augmentation is surjective when a point of the space is given. -/
+theorem augment_surjective (x : X) : Function.Surjective (augment X R) := by
+  intro r
+  exact ⟨r • ofCube X R (SingularCube.point x), by simp⟩
+
 end NormalizedCubicalChain
 
 end TauCeti
