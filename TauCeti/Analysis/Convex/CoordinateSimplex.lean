@@ -72,12 +72,24 @@ theorem coordinateSimplexVertexSwap_apply [DecidableEq ι] (j : ι) (x : ι → 
   ring
 
 /-- Swapping a vertex with the origin twice is the identity on the ambient space. -/
-@[simp] theorem coordinateSimplexVertexSwap_vertexSwap (j : ι) (x : ι → ℝ) :
+@[simp] theorem coordinateSimplexVertexSwap_coordinateSimplexVertexSwap (j : ι) (x : ι → ℝ) :
     coordinateSimplexVertexSwap j (coordinateSimplexVertexSwap j x) = x := by
   classical
   ext i
   rw [coordinateSimplexVertexSwap_apply, sum_coordinateSimplexVertexSwap]
   by_cases h : i = j <;> simp [coordinateSimplexVertexSwap_apply, h]
+
+/-- The vertex swap sends the origin to the chosen coordinate vertex. -/
+@[simp] theorem coordinateSimplexVertexSwap_zero [DecidableEq ι] (j : ι) :
+    coordinateSimplexVertexSwap j 0 = Pi.single j 1 := by
+  ext i
+  simp [coordinateSimplexVertexSwap_apply, Pi.single_apply]
+
+/-- The vertex swap sends the chosen coordinate vertex to the origin. -/
+@[simp] theorem coordinateSimplexVertexSwap_single [DecidableEq ι] (j : ι) :
+    coordinateSimplexVertexSwap j (Pi.single j 1) = 0 := by
+  rw [← coordinateSimplexVertexSwap_zero j,
+    coordinateSimplexVertexSwap_coordinateSimplexVertexSwap]
 
 /-- Vertex swapping preserves and reflects membership in the full coordinate simplex. -/
 theorem coordinateSimplexVertexSwap_mem_iff (j : ι) (x : ι → ℝ) :
@@ -98,8 +110,8 @@ theorem coordinateSimplexVertexSwap_mem_iff (j : ι) (x : ι → ℝ) :
 noncomputable def coordinateSimplexVertexSwapHomeomorph (j : ι) : (ι → ℝ) ≃ₜ (ι → ℝ) where
   toFun := coordinateSimplexVertexSwap j
   invFun := coordinateSimplexVertexSwap j
-  left_inv := coordinateSimplexVertexSwap_vertexSwap j
-  right_inv := coordinateSimplexVertexSwap_vertexSwap j
+  left_inv := coordinateSimplexVertexSwap_coordinateSimplexVertexSwap j
+  right_inv := coordinateSimplexVertexSwap_coordinateSimplexVertexSwap j
   continuous_toFun := (coordinateSimplexVertexSwap j).continuous
   continuous_invFun := (coordinateSimplexVertexSwap j).continuous
 

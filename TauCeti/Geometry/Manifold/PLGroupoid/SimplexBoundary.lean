@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.PL.Simplex.Basic
+public import TauCeti.Topology.PL.Simplex
 public import TauCeti.Geometry.Manifold.PLGroupoid.Basic
 
 /-!
@@ -19,8 +19,8 @@ standard polyhedral sphere a PL structure, including the two-point zero-dimensio
 These standard sphere charts are local models for triangulated manifolds.
 
 Reference: C. P. Rourke and B. J. Sanderson, *Introduction to Piecewise-Linear Topology*,
-Springer (1972), Chapters 1–2. The origin coordinates are those of
-`coordinateSimplexBoundaryVertexHomeomorph`.
+Springer (1972), Chapters 1–2. The origin chart `coordinateSimplexBoundaryChart none`
+builds on the existing `coordinateSimplexBoundaryProjection` and `coordinateSimplexBoundaryLift`.
 -/
 
 public section
@@ -128,16 +128,20 @@ theorem coordinateSimplexBoundaryChartLift_projection (v : Option (Option ι))
   rw [coordinateSimplexBoundaryLift_projection ((chartSwap_mem_frontier_iff v x.1).2 x.2)
     ((mem_chartSource_iff v x).1 hx), chartSwap_involutive]
 
-/-- Chart lifts with mass less than one lie on the geometric simplex boundary. -/
+/-- If the minimum-subtraction lift of `y` has mass less than one (the common chart target
+condition), then every chart lift of `y` lies on the geometric simplex boundary. -/
 theorem coordinateSimplexBoundaryChartLift_mem_frontier (v : Option (Option ι)) {y : ι → ℝ}
     (hy : ∑ i, coordinateSimplexBoundaryLift y i < 1) :
     coordinateSimplexBoundaryChartLift v y ∈ frontier (coordinateSimplex (Option ι)) :=
   (chartSwap_mem_frontier_iff v _).2 (coordinateSimplexBoundaryLift_mem_frontier hy)
 
-private theorem isOpen_chartSource (v : Option (Option ι)) :
+/-- Every vertex chart source is open in the simplex boundary. -/
+theorem isOpen_coordinateSimplexBoundaryChartSource (v : Option (Option ι)) :
     IsOpen (coordinateSimplexBoundaryChartSource v) := by
   cases v with
-  | none => exact isOpen_coordinateSimplexBoundaryChartSource
+  | none =>
+    exact isOpen_lt (continuous_finsetSum _ fun i _ =>
+      (continuous_apply i).comp continuous_subtype_val) continuous_const
   | some j =>
     exact isOpen_lt continuous_const ((continuous_apply j).comp continuous_subtype_val)
 
@@ -164,8 +168,8 @@ private theorem chartProjection_mem_target (v : Option (Option ι))
 
 private theorem zero_mem_frontier : (0 : Option ι → ℝ) ∈
     frontier (coordinateSimplex (Option ι)) := by
-  simp only [mem_frontier_coordinateSimplex, Pi.zero_apply, Finset.sum_const_zero]
-  exact ⟨⟨fun _ => le_rfl, zero_le_one⟩, Or.inl ⟨none, trivial⟩⟩
+  simpa only [coordinateSimplexBoundaryLift_zero] using coordinateSimplexBoundaryLift_mem_frontier
+    (zero_mem_coordinateSimplexBoundaryChartTarget (ι := ι))
 
 /-- The PL chart at a simplex vertex, with source the complement of its opposite facet.
 Its target is the common open set whose minimum-subtraction lift has mass less than one. -/
@@ -189,7 +193,7 @@ def coordinateSimplexBoundaryChart (v : Option (Option ι)) :
   right_inv' y hy := by
     simp only [mem_ofPred_eq] at hy
     simp only [dite_eq_left hy, coordinateSimplexBoundaryChartProjection_lift]
-  open_source := isOpen_chartSource v
+  open_source := isOpen_coordinateSimplexBoundaryChartSource v
   open_target := isOpen_coordinateSimplexBoundaryChartTarget
   continuousOn_toFun := ((coordinateSimplexBoundaryChartProjection v).continuous.comp
     continuous_subtype_val).continuousOn
@@ -221,20 +225,18 @@ theorem coe_coordinateSimplexBoundaryChart_symm_apply (v : Option (Option ι)) {
     ((coordinateSimplexBoundaryChart v).symm y).1 = coordinateSimplexBoundaryChartLift v y := by
   simp only [coordinateSimplexBoundaryChart, ← OpenPartialHomeomorph.invFun_eq_coe, dite_eq_left hy]
 
-/-- The origin of each model chart lifts to its indexing simplex vertex. -/
-@[simp] theorem coe_coordinateSimplexBoundaryChart_symm_zero [DecidableEq ι]
-    (v : Option (Option ι)) :
-    ((coordinateSimplexBoundaryChart v).symm 0).1 =
-      match v with
-      | none => 0
-      | some j => Pi.single j 1 := by
-  classical
-  rw [coe_coordinateSimplexBoundaryChart_symm_apply v (by simp)]
-  cases v with
-  | none => simp
-  | some j =>
-    ext i
-    simp [coordinateSimplexVertexSwap_apply, Pi.single_apply]
+/-- The origin of the origin-vertex chart lifts to the origin vertex. -/
+@[simp] theorem coe_coordinateSimplexBoundaryChart_symm_zero_none :
+    ((coordinateSimplexBoundaryChart (ι := ι) none).symm 0).1 = 0 := by
+  rw [coe_coordinateSimplexBoundaryChart_symm_apply none (by simp)]
+  simp
+
+/-- The origin of a coordinate-vertex chart lifts to its indexing coordinate vertex. -/
+@[simp] theorem coe_coordinateSimplexBoundaryChart_symm_zero_some [DecidableEq ι]
+    (j : Option ι) :
+    ((coordinateSimplexBoundaryChart (some j)).symm 0).1 = Pi.single j 1 := by
+  rw [coe_coordinateSimplexBoundaryChart_symm_apply (some j) (by simp)]
+  simp
 
 /-- Coordinate changes between simplex boundary charts are piecewise affine on their domains. -/
 theorem isPiecewiseAffineOn_coordinateSimplexBoundaryChart_transition (v w : Option (Option ι)) :

@@ -133,45 +133,6 @@ theorem isOpen_coordinateSimplexBoundaryChartTarget :
   exact isOpen_lt (continuous_finsetSum _ fun i _ => (continuous_apply i).comp hcont)
     continuous_const
 
-/-- The vertex neighbourhood is open in the simplex boundary. -/
-theorem isOpen_coordinateSimplexBoundaryChartSource :
-    IsOpen {x : frontier (coordinateSimplex (Option ι)) | ∑ i, x.1 i < 1} :=
-  isOpen_lt (continuous_finsetSum _ fun i _ =>
-    (continuous_apply i).comp continuous_subtype_val) continuous_const
-
-/-- PL coordinates on the neighbourhood of the origin vertex obtained by deleting the
-opposite facet of the coordinate simplex boundary. -/
-def coordinateSimplexBoundaryVertexHomeomorph :
-    {x : frontier (coordinateSimplex (Option ι)) | ∑ i, x.1 i < 1} ≃ₜ
-      {y : ι → ℝ | ∑ i, coordinateSimplexBoundaryLift y i < 1} := by
-  have hcont := continuousOn_univ.mp
-    (isPiecewiseAffineOn_coordinateSimplexBoundaryLift (ι := ι)).continuousOn
-  exact {
-    toFun x := ⟨coordinateSimplexBoundaryProjection x.1.1, by
-      simpa only [mem_ofPred_eq, coordinateSimplexBoundaryLift_projection x.1.2 x.2] using x.2⟩
-    invFun y := ⟨⟨coordinateSimplexBoundaryLift y.1,
-      coordinateSimplexBoundaryLift_mem_frontier y.2⟩, y.2⟩
-    left_inv x := Subtype.ext (Subtype.ext (coordinateSimplexBoundaryLift_projection x.1.2 x.2))
-    right_inv y := Subtype.ext (coordinateSimplexBoundaryProjection_lift y.1)
-    continuous_toFun := ((coordinateSimplexBoundaryProjection (ι := ι)).continuous.comp
-      (continuous_subtype_val.comp continuous_subtype_val)).subtype_mk (fun x => by
-        simpa only [Function.comp_apply, mem_ofPred_eq,
-          coordinateSimplexBoundaryLift_projection x.1.2 x.2] using x.2)
-    continuous_invFun := ((hcont.comp continuous_subtype_val).subtype_mk
-      (fun y => coordinateSimplexBoundaryLift_mem_frontier y.2)).subtype_mk (fun y => y.2) }
-
-/-- The vertex homeomorphism has the ambient linear projection as its forward formula. -/
-@[simp] theorem coe_coordinateSimplexBoundaryVertexHomeomorph_apply
-    (x : {x : frontier (coordinateSimplex (Option ι)) | ∑ i, x.1 i < 1}) :
-    (coordinateSimplexBoundaryVertexHomeomorph x : ι → ℝ) =
-      coordinateSimplexBoundaryProjection x.1.1 := (rfl)
-
-/-- The inverse vertex homeomorphism has the ambient minimum-subtraction lift as its formula. -/
-@[simp] theorem coe_coordinateSimplexBoundaryVertexHomeomorph_symm_apply
-    (y : {y : ι → ℝ | ∑ i, coordinateSimplexBoundaryLift y i < 1}) :
-    ((coordinateSimplexBoundaryVertexHomeomorph.symm y).1 : Option ι → ℝ) =
-      coordinateSimplexBoundaryLift y.1 := (rfl)
-
 /-- The origin belongs to the flat chart target, including when there are no flat coordinates. -/
 theorem zero_mem_coordinateSimplexBoundaryChartTarget :
     (0 : ι → ℝ) ∈ {y : ι → ℝ | ∑ i, coordinateSimplexBoundaryLift y i < 1} := by
