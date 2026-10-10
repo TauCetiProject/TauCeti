@@ -138,7 +138,7 @@ theorem galoisEvens_oneAddTwoI_ne_zero
 
 /-- Adding the alternative correction `(-1) ∪ (-1)` makes the dyadic example zero,
 whereas the genuine Evens norm is nonzero. -/
-theorem galoisEvens_oneAddTwoI_add_cup_neg_one_eq_zero
+theorem galoisEvens_oneAddTwoI_add_cup_neg_one_neg_one_eq_zero
     (σ : DyadicSqrtNegOne →ₐ[ℚ_[2]] SeparableClosure ℚ_[2]) :
     galoisEvens ℚ_[2] DyadicSqrtNegOne σ
       (QuadraticAlgebra.finrank_eq_two (-1 : ℚ_[2]) 0) (kummerClass oneAddTwoI) +
