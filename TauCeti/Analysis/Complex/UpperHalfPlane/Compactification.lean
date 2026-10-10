@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
-public import Mathlib.Topology.Compactification.OnePoint.Basic
+public import TauCeti.Topology.Compactification.OnePoint
 
 /-!
 # The closed upper half-plane in the Riemann sphere
@@ -29,14 +29,8 @@ bounded subsets of the plane within the upper half-plane. -/
 theorem nhdsWithin_infty_coe_image_upperHalfPlaneSet :
     𝓝[((↑) : ℂ → OnePoint ℂ) '' upperHalfPlaneSet] (∞ : OnePoint ℂ) =
       map (↑) (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) := by
-  rw [nhdsWithin, OnePoint.nhds_infty_eq, inf_sup_right]
-  have hbot : pure (∞ : OnePoint ℂ) ⊓
-      𝓟 (((↑) : ℂ → OnePoint ℂ) '' upperHalfPlaneSet) = ⊥ := by
-    rw [← principal_singleton, inf_principal]
-    simp
-  simp only [hbot, sup_bot_eq]
-  rw [← map_inf_principal_preimage, preimage_image_eq _ OnePoint.coe_injective,
-    coclosedCompact_eq_cocompact, ← Metric.cobounded_eq_cocompact]
+  rw [nhdsWithin_infty_coe_image, coclosedCompact_eq_cocompact,
+    ← Metric.cobounded_eq_cocompact]
 
 /-- The closure of the upper half-plane in the sphere is its finite closed half-plane
 with the point at infinity added. -/

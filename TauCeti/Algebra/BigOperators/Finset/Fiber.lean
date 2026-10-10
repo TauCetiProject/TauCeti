@@ -35,6 +35,8 @@ fibre sums over the range holds for the fibre sum over every value of the codoma
   regroups, coordinate by coordinate, into `∑ i, ∑ a, φ i a * ∑ z with z i = a, f z`.
 * `TauCeti.lt_sum_filter_eq_of_forall_apply`: a negative lower bound for the fibre sums of `g`
   over its range is a lower bound for the fibre sum over every value.
+* `TauCeti.le_sum_filter_eq_of_forall_apply`: a nonpositive lower bound over the range bounds
+  every fibre sum.
 -/
 
 public section
@@ -81,6 +83,18 @@ theorem lt_sum_filter_eq_of_forall_apply {ι κ M : Type*} [Fintype ι] [Decidab
     [AddCommMonoid M] [LT M] {g : ι → κ} {F : ι → M} {c : M} (hc : c < 0)
     (h : ∀ j, c < ∑ i with g i = g j, F i) (k : κ) :
     c < ∑ i with g i = k, F i := by
+  by_cases hk : k ∈ Set.range g
+  · obtain ⟨j, rfl⟩ := hk
+    exact h j
+  · rwa [sum_eq_zero fun i hi => (hk ⟨i, (mem_filter.mp hi).2⟩).elim]
+
+/-- **A nonpositive lower bound on the fibre sums over the range bounds every fibre sum.** If
+`c ≤ 0` bounds from below the sum of `F` over each fibre of `g` above a value of `g`, then it
+bounds the sum of `F` over the fibre above any `k`. -/
+theorem le_sum_filter_eq_of_forall_apply {ι κ M : Type*} [Fintype ι] [DecidableEq κ]
+    [AddCommMonoid M] [LE M] {g : ι → κ} {F : ι → M} {c : M} (hc : c ≤ 0)
+    (h : ∀ j, c ≤ ∑ i with g i = g j, F i) (k : κ) :
+    c ≤ ∑ i with g i = k, F i := by
   by_cases hk : k ∈ Set.range g
   · obtain ⟨j, rfl⟩ := hk
     exact h j

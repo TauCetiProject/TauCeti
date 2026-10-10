@@ -66,6 +66,29 @@ theorem schwarzChristoffelSphereBoundary_apply (a e : ι → ℝ) (z₀ : UpperH
       schwarzChristoffelSphereExtension a e z₀ (OnePoint.map Complex.ofReal x) :=
   (rfl)
 
+private theorem tendsto_schwarzChristoffelPrimitive_sphere_of_im_pos (a e : ι → ℝ)
+    (z₀ : UpperHalfPlane) {z : ℂ} (hz : 0 < z.im) :
+    Tendsto (fun w => (schwarzChristoffelPrimitive a e z₀ w : OnePoint ℂ))
+      (𝓝[upperHalfPlaneSet] z) (𝓝 (schwarzChristoffelPrimitive a e z₀ z : OnePoint ℂ)) :=
+  OnePoint.continuous_coe.continuousAt.tendsto.comp
+    ((hasDerivAt_schwarzChristoffelPrimitive a e z₀ hz).continuousAt.tendsto.mono_left
+      nhdsWithin_le_nhds)
+
+private theorem tendsto_schwarzChristoffelPrimitive_sphere_boundary_value
+    (a e : ι → ℝ) (z₀ : UpperHalfPlane) (p : ℝ)
+    (he : -1 ≤ ∑ i with a i = p, e i) :
+    Tendsto (fun z => (schwarzChristoffelPrimitive a e z₀ z : OnePoint ℂ))
+      (𝓝[upperHalfPlaneSet] (p : ℂ))
+      (𝓝 (if ∑ i with a i = p, e i = -1 then ∞ else
+        (schwarzChristoffelBoundary a e z₀ p : OnePoint ℂ))) := by
+  split_ifs with hlog
+  · exact tendsto_coe_infty_of_tendsto_cobounded
+      (tendsto_schwarzChristoffelPrimitive_cobounded_of_prevertex_sum_eq_neg_one
+        a e z₀ p hlog)
+  · exact OnePoint.continuous_coe.continuousAt.tendsto.comp
+      (tendsto_schwarzChristoffelPrimitive_boundary a e z₀ p
+        (lt_of_le_of_ne he (Ne.symm hlog)))
+
 /-- On the open upper half-plane, the sphere extension agrees with the primitive. -/
 @[simp]
 theorem schwarzChristoffelSphereExtension_coe_of_im_pos (a e : ι → ℝ)
@@ -75,9 +98,7 @@ theorem schwarzChristoffelSphereExtension_coe_of_im_pos (a e : ι → ℝ)
   apply extendFrom_eq (A := ((↑) : ℂ → OnePoint ℂ) '' upperHalfPlaneSet)
     (subset_closure ⟨z, hz, rfl⟩)
   rw [OnePoint.nhdsWithin_coe_image, tendsto_map'_iff]
-  exact OnePoint.continuous_coe.continuousAt.tendsto.comp
-    ((hasDerivAt_schwarzChristoffelPrimitive a e z₀ hz).continuousAt.tendsto.mono_left
-      nhdsWithin_le_nhds)
+  exact tendsto_schwarzChristoffelPrimitive_sphere_of_im_pos a e z₀ hz
 
 /-- At an integrable real parameter, the sphere extension retains the finite boundary value. -/
 @[simp]
@@ -90,8 +111,8 @@ theorem schwarzChristoffelSphereExtension_coe_of_exponent_sum_gt_neg_one
   · exact image_closure_subset_closure_image OnePoint.continuous_coe
       ⟨(p : ℂ), by rw [Complex.closure_setOfPred_lt_im]; simp, rfl⟩
   · rw [OnePoint.nhdsWithin_coe_image, tendsto_map'_iff]
-    exact OnePoint.continuous_coe.continuousAt.tendsto.comp
-      (tendsto_schwarzChristoffelPrimitive_boundary a e z₀ p he)
+    simpa only [Function.comp_def, OnePoint.map_some, ite_eq_right (ne_of_gt he)] using
+      tendsto_schwarzChristoffelPrimitive_sphere_boundary_value a e z₀ p he.le
 
 /-- A logarithmic real prevertex maps to infinity in the sphere extension. -/
 @[simp]
@@ -103,10 +124,8 @@ theorem schwarzChristoffelSphereExtension_coe_of_exponent_sum_eq_neg_one
   · exact image_closure_subset_closure_image OnePoint.continuous_coe
       ⟨(p : ℂ), by rw [Complex.closure_setOfPred_lt_im]; simp, rfl⟩
   · rw [OnePoint.nhdsWithin_coe_image, tendsto_map'_iff]
-    have h := tendsto_schwarzChristoffelPrimitive_cobounded_of_prevertex_sum_eq_neg_one
-      a e z₀ p he
-    rw [Metric.cobounded_eq_cocompact, ← coclosedCompact_eq_cocompact] at h
-    exact OnePoint.tendsto_coe_infty.comp h
+    simpa only [Function.comp_def, OnePoint.map_some, ite_eq_left he] using
+      tendsto_schwarzChristoffelPrimitive_sphere_boundary_value a e z₀ p he.symm.le
 
 /-- At parameter infinity, the sphere-valued primitive approaches the finite vertex in the
 decaying range and infinity otherwise. This needs no assumptions on finite prevertices. -/
@@ -120,11 +139,10 @@ theorem tendsto_onePoint_map_schwarzChristoffelPrimitive_infty
   split_ifs with hsum
   · exact OnePoint.continuous_coe.continuousAt.tendsto.comp
       (tendsto_schwarzChristoffelPrimitive_atInfinity a e z₀ hsum)
-  · have h := tendsto_schwarzChristoffelPrimitive_atInfinity_cobounded_of_neg_one_le_sum
-      a e z₀ (le_of_not_gt hsum)
-    rw [Metric.cobounded_eq_cocompact, ← coclosedCompact_eq_cocompact] at h
-    simpa only [coclosedCompact_eq_cocompact, ← Metric.cobounded_eq_cocompact,
-      Function.comp_def, OnePoint.map_some] using OnePoint.tendsto_coe_infty.comp h
+  · simpa only [Function.comp_def, OnePoint.map_some] using
+      tendsto_coe_infty_of_tendsto_cobounded
+        (tendsto_schwarzChristoffelPrimitive_atInfinity_cobounded_of_neg_one_le_sum
+          a e z₀ (le_of_not_gt hsum))
 
 /-- At parameter infinity, the sphere extension has the finite vertex in the decaying range
 and the point at infinity otherwise. This needs no assumptions on finite prevertices. -/
@@ -186,15 +204,13 @@ theorem tendsto_schwarzChristoffelPrimitive_sphereBoundary (a e : ι → ℝ)
     Tendsto (fun z => (schwarzChristoffelPrimitive a e z₀ z : OnePoint ℂ))
       (𝓝[upperHalfPlaneSet] (p : ℂ))
       (𝓝 (schwarzChristoffelSphereBoundary a e z₀ (p : OnePoint ℝ))) := by
+  have h := tendsto_schwarzChristoffelPrimitive_sphere_boundary_value a e z₀ p he
   rcases he.eq_or_lt with he | he
-  · rw [schwarzChristoffelSphereBoundary_coe_of_exponent_sum_eq_neg_one a e z₀ p he.symm]
-    have h := tendsto_schwarzChristoffelPrimitive_cobounded_of_prevertex_sum_eq_neg_one
-      a e z₀ p he.symm
-    rw [Metric.cobounded_eq_cocompact, ← coclosedCompact_eq_cocompact] at h
-    exact OnePoint.tendsto_coe_infty.comp h
-  · rw [schwarzChristoffelSphereBoundary_coe_of_exponent_sum_gt_neg_one a e z₀ p he]
-    exact OnePoint.continuous_coe.continuousAt.tendsto.comp
-      (tendsto_schwarzChristoffelPrimitive_boundary a e z₀ p he)
+  · simpa only [ite_eq_left he.symm,
+      schwarzChristoffelSphereBoundary_coe_of_exponent_sum_eq_neg_one a e z₀ p he.symm]
+      using h
+  · simpa only [ite_eq_right (ne_of_gt he),
+      schwarzChristoffelSphereBoundary_coe_of_exponent_sum_gt_neg_one a e z₀ p he] using h
 
 /-- **Continuous spherical extension with multiple logarithmic ends.** If every finite
 prevertex has total exponent at least `-1`, the sphere extension is continuous on the
@@ -215,21 +231,12 @@ theorem continuousOn_schwarzChristoffelSphereExtension (a e : ι → ℝ)
     rw [Complex.closure_setOfPred_lt_im] at hzcl
     simp only [mem_ofPred_eq] at hzcl
     rcases lt_or_eq_of_le hzcl with hz | hz
-    · exact ⟨(schwarzChristoffelPrimitive a e z₀ z : OnePoint ℂ),
-        OnePoint.continuous_coe.continuousAt.tendsto.comp
-          ((hasDerivAt_schwarzChristoffelPrimitive a e z₀ hz).continuousAt.tendsto.mono_left
-            nhdsWithin_le_nhds)⟩
+    · exact ⟨_, tendsto_schwarzChristoffelPrimitive_sphere_of_im_pos a e z₀ hz⟩
     · have hzreal : (z.re : ℂ) = z := by
         apply Complex.ext <;> simp [← hz]
       rw [← hzreal]
-      have he : -1 ≤ ∑ i with a i = z.re, e i := by
-        classical
-        by_cases hp : z.re ∈ range a
-        · obtain ⟨j, hj⟩ := hp
-          rw [← hj]
-          exact hfinite j
-        · rw [Finset.sum_eq_zero fun i hi => (hp ⟨i, (Finset.mem_filter.mp hi).2⟩).elim]
-          norm_num
+      have he : -1 ≤ ∑ i with a i = z.re, e i :=
+        le_sum_filter_eq_of_forall_apply (by norm_num) hfinite z.re
       exact ⟨_, tendsto_schwarzChristoffelPrimitive_sphereBoundary a e z₀ z.re he⟩
 
 /-- **Continuous sphere boundary for several ends.** Integrable finite vertices and any
