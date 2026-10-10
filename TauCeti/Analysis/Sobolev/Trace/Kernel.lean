@@ -81,7 +81,8 @@ private theorem value_normalTranslate_ae (s : ℝ)
       (fun _ _ => by simp) w
 
 /-- Translating a function that vanishes off the half-space by `s > 0` into it makes it vanish on
-the layer `{x.fst < a + s}`, where the boundary-layer cutoff of slope `2 / s` is one. -/
+the layer `{x.fst < a + s}`. The boundary-layer cutoff of slope `2 / s` is one on
+`{a + s ≤ x.fst}`, so multiplying the translate by it leaves the translate unchanged. -/
 private theorem contDiffSMul_normalCutoff_normalTranslate {a s : ℝ} (hs : 0 < s) {M : ℝ}
     (hM : 0 ≤ M) (hθM : ∀ x ∈ (⊤ : Opens (WithLp 2 (ℝ × E))), |normalCutoff a (2 / s) x| ≤ M)
     (hθgradM : ∀ x ∈ (⊤ : Opens (WithLp 2 (ℝ × E))), ‖∇ (normalCutoff a (2 / s)) x‖ ≤ M)

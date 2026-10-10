@@ -306,8 +306,8 @@ private theorem abs_le_mul_sub_of_eq_zero_on_hyperplane {a M : ℝ} {χ : WithLp
   rwa [hχa x.snd, sub_zero, hx', WithLp.norm_toLp_fst, Real.norm_of_nonneg (sub_nonneg.2 hx),
     Real.norm_eq_abs] at hmv
 
-/-- For a positive slope `c`, the boundary-layer cutoff is supported a positive distance inside
-the half-space. -/
+/-- For a positive slope `c`, the boundary-layer cutoff has topological support inside the
+half-space `TauCeti.normalHalfSpace a`. -/
 theorem tsupport_normalCutoff_subset (a : ℝ) {c : ℝ} (hc : 0 < c) :
     tsupport (normalCutoff (E := E) a c) ⊆ normalHalfSpace (E := E) a := by
   have hclosed : IsClosed {x : WithLp 2 (ℝ × E) | a + c⁻¹ ≤ x.fst} :=
