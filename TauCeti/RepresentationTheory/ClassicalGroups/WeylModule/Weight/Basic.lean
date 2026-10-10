@@ -20,8 +20,8 @@ The Weyl module of a `μ`-tableau `t` is the image of the Young symmetrizer `c_t
 tensor power `(kⁿ)^{⊗|μ|}` of the standard representation of `GL n k`.  The tensor power is the
 internal direct sum of its weight spaces, which are the coordinate subspaces spanned by the
 monomial basis vectors of a given content, and `c_t` preserves each of them, so the Weyl module
-inherits a weight decomposition. This file bounds the surviving weights from above and shows
-that the shape weight attains the bound.
+inherits a weight decomposition. This file proves that decomposition, bounds the surviving weights
+from above, and shows that the shape weight attains the bound.
 
 The answer is the **dominance bound**: writing `r` for the row filling of `t`
 (`TauCeti.YoungTableau.rowFilling`, the filling of the labels by their row indices), every weight
@@ -67,6 +67,8 @@ weight only requires a nontrivial commutative `ℚ`-algebra.
   nonnegative of total degree `|μ|`, so the bounds give the dominance comparison.
 * `TauCeti.YoungTableau.weightSpace_weylRep_weightOfShape_ne_bot`: **when `μ.colLen 0 ≤ n`,
   the weight of the shape occurs in the Weyl module**, so over a field it is the highest weight.
+* `TauCeti.isInternal_weightSpace_weylRepOfShape`: the inherited weight decomposition of the
+  shape-indexed Weyl module.
 * `TauCeti.weightSpace_weylRepOfShape_eq_bot_iff`: transfers vanishing between the shape-indexed
   Weyl module and its row-superstandard tableau.
 * `TauCeti.sum_le_sum_weightOfShape_of_weightSpace_weylRepOfShape_ne_bot`,
@@ -304,6 +306,36 @@ end YoungTableau
 /-! ## The Weyl module of a shape -/
 
 variable {k : Type u} {n : ℕ}
+
+variable (k) (n) in
+/-- The integer weight spaces of a Weyl module form an internal direct sum. -/
+theorem isInternal_weightSpace_weylRepOfShape [Field k] [CharZero k] (μ : YoungDiagram) :
+    DirectSum.IsInternal fun l : Fin n → ℤ =>
+      weightSpace (W := (weylModuleOfShape k n μ).toSubmodule) (weylRepOfShape k n μ) l := by
+  classical
+  let a := YoungTableau.youngSymmetrizerOver k
+    (StandardYoungTableau.rowSuperstandard μ).toTableau
+  let A := permTensorActionAlgHom k n μ.card a
+  let q : Representation.IntertwiningMap (tensorPowerRep k n μ.card)
+      (weylRepOfShape k n μ) :=
+    { toLinearMap := A.codRestrict (weylModuleOfShape k n μ).toSubmodule (fun v => by
+        rw [weylModuleOfShape_toSubmodule]
+        exact LinearMap.mem_range.mpr ⟨v, rfl⟩)
+      isIntertwining' := fun g => by
+        apply LinearMap.ext
+        intro v
+        apply Subtype.ext
+        simp only [LinearMap.comp_apply, LinearMap.codRestrict_apply, weylRepOfShape_apply_coe]
+        exact congrArg (fun f : Module.End k _ => f v)
+          (commute_permTensorActionAlgHom_tensorPowerRep k n μ.card a g).eq }
+  have hq : Function.Surjective q := by
+    intro w
+    have hw : w.val ∈ LinearMap.range A := by
+      simpa only [weylModuleOfShape_toSubmodule] using w.property
+    obtain ⟨v, hv⟩ := hw
+    exact ⟨v, Subtype.ext hv⟩
+  exact isInternal_weightSpace_of_iSup_eq_top weightChar_injective
+    (q.iSup_weightSpace_eq_top_of_surjective hq iSup_weightSpace_tensorPowerRep_eq_top)
 
 /-- A shape-indexed Weyl weight space vanishes exactly when the corresponding weight space for
 its row-superstandard tableau vanishes. -/
