@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Fork
 import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Branch
-import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.Star
+import Mathlib.Tactic.IntervalCases
 
 /-!
 # Exceptional configurations of `(-2)`-indices
@@ -69,21 +69,7 @@ theorem exists_weight_intersection_branch_seven_eq
     branch_ne := fun i hi ↦ hbranch_ne i (by omega)
     branch_intersection_self := hbranch_self
     branch_intersection_pos := by norm_num; exact hbranch_pos }
-  let f : Fin 7 → T.Component := fun i ↦ if (i : ℕ) = 6 then branch else c i
-  have hf_injective : Function.Injective f := by
-    intro i j hij
-    apply Fin.ext
-    by_cases hi6 : (i : ℕ) = 6
-    · by_cases hj6 : (j : ℕ) = 6
-      · exact hi6.trans hj6.symm
-      · exact (hbranch_ne j (by omega) (by simpa [f, hi6, hj6] using hij)).elim
-    · by_cases hj6 : (j : ℕ) = 6
-      · exact (hbranch_ne i (by omega) (by simpa [f, hi6, hj6] using hij.symm)).elim
-      · exact hc.injOn i (by omega) j (by omega) (by simpa [f, hi6, hj6] using hij)
-  have hcard : 6 < Fintype.card T.Component := by
-    have := Fintype.card_le_of_injective f hf_injective
-    have hseven : 7 ≤ Fintype.card T.Component := by simpa using this
-    omega
+  have hcard : 6 < Fintype.card T.Component := hc.le_card_snoc hbranch_ne
   obtain ⟨w, hw, hwb, hedge, hab⟩ := hf.exists_weight_intersection_eq hcard
   -- The `E₆` subconfiguration on `c 1, …, c 5` and the same leaf supplies the final weight,
   -- edge, and non-edge.
@@ -148,253 +134,41 @@ theorem intersection_branch_eq_zero {c : ℕ → T.Component}
   let r : ℕ → T.Component := fun i ↦ c (6 - i)
   have hr : T.IsSelfIntersectionMinusTwoChain 6 r := by
     simpa [r] using hc.reverse.mono (s := 6) (by omega)
-  have hrbranch_ne : ∀ i < 6, branch ≠ r i := by
-    intro i hi
-    exact hbranch_ne (6 - i) (by omega)
   obtain ⟨w', hwr, -, hredge, -, hrbranch_zero⟩ :=
-    T.exists_weight_intersection_branch_seven_eq hr hrbranch_ne hbranch_self
-      (by simpa [r] using hbranch_pos)
+    T.exists_weight_intersection_branch_seven_eq hr (fun i hi ↦ hbranch_ne (6 - i) (by omega))
+      hbranch_self (by simpa [r] using hbranch_pos)
   have hww : (w' : ℤ) = w := (hwr 3 (by omega)).symm.trans (hw 3 (by omega))
-  have hw6 : (T.weight (c 6) : ℤ) = w := by
-    simpa [r, hww] using hwr 0 (by omega)
-  have hedge56 : T.intersection (c 5) (c 6) = w := by
-    rw [T.intersection_comm]
-    simpa [r, hww] using hredge 0 (by omega)
-  have hbranch6 : T.intersection (c 6) branch = 0 := by
-    simpa [r] using hrbranch_zero 0 (by omega) (by omega)
-  have hweight : ∀ i < 7, (T.weight (c i) : ℤ) = w := by
-    intro i hi
-    by_cases hi6 : i < 6
-    · exact hw i hi6
-    · have : i = 6 := by omega
-      simpa [this] using hw6
-  have hedge' : ∀ i, i + 1 < 7 → T.intersection (c i) (c (i + 1)) = w := by
-    intro i hi
-    by_cases hi5 : i < 5
+  have hweight (i : ℕ) (hi : i < 7) : (T.weight (c i) : ℤ) = w := by
+    obtain h | rfl : i < 6 ∨ i = 6 := by omega
+    · exact hw i h
+    · simpa [r, hww] using hwr 0 (by omega)
+  have hedge' (i : ℕ) (hi : i + 1 < 7) : T.intersection (c i) (c (i + 1)) = w := by
+    obtain h | rfl : i < 5 ∨ i = 5 := by omega
     · exact hedge i (by omega)
-    · have : i = 5 := by omega
-      simpa [this] using hedge56
-  have hzero : ∀ {i j}, i < 7 → j < 7 → i + 1 < j →
-      T.intersection (c i) (c j) = 0 := by
-    intro i j hi hj hij
-    exact hc.intersection_eq_zero (by omega) hi hj (by omega) (by omega) (by omega)
-  have hbranch_zero' : ∀ i < 7, i ≠ 3 → T.intersection (c i) branch = 0 := by
-    intro i hi hi3
-    by_cases hi6 : i < 6
-    · exact hbranch_zero i hi6 hi3
-    · have : i = 6 := by omega
-      simpa [this] using hbranch6
-  have hentry {i j : ℕ} (hi : i < 7) (hj : j < 7) :
-      T.intersection (c i) (c j) =
-        if i = j then -(2 * (w : ℤ))
-        else if i + 1 = j ∨ j + 1 = i then w else 0 := by
-    by_cases hij : i = j
-    · subst j
-      simp only [↓reduceIte]
-      rw [hc.intersection_self i hi, hweight i hi]
-    · simp only [hij, ↓reduceIte]
-      by_cases hadj : i + 1 = j ∨ j + 1 = i
-      · simp only [hadj, ↓reduceIte]
-        rcases hadj with rfl | hji
-        · exact hedge' i (by omega)
-        · rw [T.intersection_comm]
-          subst i
-          exact hedge' j (by omega)
-      · simp only [hadj, ↓reduceIte]
-        rcases lt_or_gt_of_ne hij with hijlt | hjilt
-        · exact hzero hi hj (by omega)
-        · rw [T.intersection_comm]
-          exact hzero hj hi (by omega)
+    · rw [T.intersection_comm]
+      simpa [r, hww] using hredge 0 (by omega)
+  have hentry {i j : ℕ} (hi : i < 7) (hj : j < 7) :=
+    hc.intersection_eq_ite (by omega) hweight hedge' hi hj
   have hbranch_entry {i : ℕ} (hi : i < 7) :
       T.intersection (c i) branch = if i = 3 then (w : ℤ) else 0 := by
-    by_cases hi3 : i = 3
-    · subst i
-      simp only [↓reduceIte]
+    split_ifs with h3
+    · subst h3
       exact hab
-    · simp only [hi3, ↓reduceIte]
-      exact hbranch_zero' i hi hi3
-  -- Index the configuration by the canonical three-armed star for affine `E₇`.
-  let e := AffineDynkinType.starIndexEquivE7
-  let d : StarIndex ![1, 3, 3] → T.Component
-    | none => c 3
-    | some v => if (v.1 : ℕ) = 0 then branch else if (v.1 : ℕ) = 1 then
-        c (2 - v.2) else c (4 + v.2)
-  have hcartan (i j : StarIndex ![1, 3, 3]) :
-      AffineDynkinType.E7.cartanMatrix (e i) (e j) = starCartanMatrix ![1, 3, 3] i j := by
-    exact congrFun (congrFun
-      AffineDynkinType.starCartanMatrix_one_three_three_eq_submatrix_E7 i) j |>.symm
-  have hintersection (i j : StarIndex ![1, 3, 3]) :
-      T.intersection (d i) (d j) =
-        -(w : ℤ) * AffineDynkinType.E7.cartanMatrix (e i) (e j) := by
-    rw [hcartan]
-    rcases i with _ | ⟨i, s⟩ <;> rcases j with _ | ⟨j, t⟩
-    · simp only [d, starCartanMatrix_none_none]
-      rw [hc.intersection_self 3 (by omega), hweight 3 (by omega)]
-      ring
-    · fin_cases j <;> dsimp only [d] <;> simp only [Nat.succ_eq_add_one, Nat.reduceAdd,
-        Fin.mk_one, Fin.reduceFinMk, Fin.isValue, starCartanMatrix_none_some,
-        Matrix.cons_val_one, Matrix.cons_val_zero, Matrix.cons_val, Int.reduceNeg, mul_ite,
-        mul_neg, mul_one, neg_neg, mul_zero, Nat.reduceEqDiff, reduceCtorEq, ite_true,
-        ite_false] at t ⊢
-      · simpa using hab
-      · rw [hentry (i := 3) (j := 2 - (t : ℕ)) (by omega) (by omega)]
-        split_ifs <;> omega
-      · rw [hentry (i := 3) (j := 4 + (t : ℕ)) (by omega) (by omega)]
-        split_ifs <;> omega
-    · rw [T.intersection_comm]
-      fin_cases i <;> dsimp only [d] <;> simp only [Nat.succ_eq_add_one, Nat.reduceAdd,
-        Fin.mk_one, Fin.reduceFinMk, Fin.isValue, starCartanMatrix_some_none,
-        Matrix.cons_val_one, Matrix.cons_val_zero, Matrix.cons_val, Int.reduceNeg, mul_ite,
-        mul_neg, mul_one, neg_neg, mul_zero, Nat.reduceEqDiff, reduceCtorEq, ite_true,
-        ite_false] at s ⊢
-      · simpa using hab
-      · rw [hentry (i := 3) (j := 2 - (s : ℕ)) (by omega) (by omega)]
-        split_ifs <;> omega
-      · rw [hentry (i := 3) (j := 4 + (s : ℕ)) (by omega) (by omega)]
-        split_ifs <;> omega
-    · fin_cases i <;> fin_cases j <;> dsimp only [d] <;> simp only [Nat.succ_eq_add_one,
-        Nat.reduceAdd, Fin.zero_eta, Fin.isValue, Fin.mk_one, Fin.reduceFinMk,
-        starCartanMatrix_some_some, zero_ne_one, one_ne_zero, Fin.reduceEq,
-        Matrix.cons_val_one, Matrix.cons_val_zero, Matrix.cons_val, Int.reduceNeg, mul_ite,
-        neg_mul, mul_neg, mul_one, neg_neg, mul_zero, Nat.reduceEqDiff, reduceCtorEq,
-        ite_true, ite_false] at s t ⊢
-      · rw [hbranch_self, hwb]
-        have hst : (s : ℕ) = t := congrArg Fin.val (Subsingleton.elim s t)
-        simp only [hst, ite_true]
-        ring
-      · rw [T.intersection_comm, hbranch_entry (i := 2 - (t : ℕ)) (by omega)]
-        split_ifs <;> omega
-      · rw [T.intersection_comm, hbranch_entry (i := 4 + (t : ℕ)) (by omega)]
-        split_ifs <;> omega
-      · rw [hbranch_entry (i := 2 - (s : ℕ)) (by omega)]
-        split_ifs <;> omega
-      · rw [hentry (i := 2 - (s : ℕ)) (j := 2 - (t : ℕ)) (by omega) (by omega)]
-        split_ifs <;> omega
-      · rw [hentry (i := 2 - (s : ℕ)) (j := 4 + (t : ℕ)) (by omega) (by omega)]
-        split_ifs <;> omega
-      · rw [hbranch_entry (i := 4 + (s : ℕ)) (by omega)]
-        split_ifs <;> omega
-      · rw [hentry (i := 4 + (s : ℕ)) (j := 2 - (t : ℕ)) (by omega) (by omega)]
-        split_ifs <;> omega
-      · rw [hentry (i := 4 + (s : ℕ)) (j := 4 + (t : ℕ)) (by omega) (by omega)]
-        split_ifs <;> omega
-  have hrow (i : StarIndex ![1, 3, 3]) :
-      ∑ j, T.intersection (d i) (d j) * AffineDynkinType.E7.marks (e j) = 0 := by
-    calc
-      _ = -(w : ℤ) * ∑ j, AffineDynkinType.E7.cartanMatrix (e i) (e j) *
-          AffineDynkinType.E7.marks (e j) := by
-        simp_rw [hintersection, mul_assoc, Finset.mul_sum]
-      _ = -(w : ℤ) * ∑ j : Fin AffineDynkinType.E7.nodes,
-          AffineDynkinType.E7.cartanMatrix (e i) j * AffineDynkinType.E7.marks j := by
-        exact congrArg (-(w : ℤ) * ·) (e.sum_comp fun j ↦
-          AffineDynkinType.E7.cartanMatrix (e i) j * AffineDynkinType.E7.marks j)
-      _ = -(w : ℤ) *
-          AffineDynkinType.E7.cartanMatrix.mulVec AffineDynkinType.E7.marks (e i) := by
-        rfl
-      _ = 0 := by
-        rw [AffineDynkinType.cartanMatrix_mulVec_marks_eq_zero AffineDynkinType.valid_E7]
-        simp
-  let nodeEquiv : Fin 8 ≃ Fin AffineDynkinType.E7.nodes :=
-    finCongr AffineDynkinType.nodes_E7.symm
-  let d' : ℕ → T.Component := fun i ↦
-    if hi : i < 8 then d (e.symm (nodeEquiv ⟨i, hi⟩)) else d none
-  let y : ℕ → ℤ := fun i ↦
-    if hi : i < 8 then AffineDynkinType.E7.marks (nodeEquiv ⟨i, hi⟩) else 0
-  have hd_injective : Function.Injective d := by
-    intro i j hij
-    rcases i with _ | ⟨a, s⟩ <;> rcases j with _ | ⟨b, t⟩
-    · rfl
-    · fin_cases b <;> simp only [d, Nat.succ_eq_add_one, Nat.reduceAdd, Fin.zero_eta,
-        Fin.mk_one, Fin.reduceFinMk, Fin.isValue, reduceCtorEq] at t hij ⊢
-      · exact (hbranch_ne 3 (by omega) hij.symm).elim
-      · exact (hc.ne (by omega) (by omega) (by omega) hij).elim
-      · have ht : (t : ℕ) < 3 := by simpa [Matrix.cons_val_two] using t.isLt
-        exact (hc.ne (by omega) (by omega) (by omega) hij).elim
-    · fin_cases a <;> simp only [d, Nat.succ_eq_add_one, Nat.reduceAdd, Fin.zero_eta,
-        Fin.mk_one, Fin.reduceFinMk, Fin.isValue, reduceCtorEq] at s hij ⊢
-      · exact (hbranch_ne 3 (by omega) hij).elim
-      · exact (hc.ne (by omega) (by omega) (by omega) hij.symm).elim
-      · have hs : (s : ℕ) < 3 := by simpa [Matrix.cons_val_two] using s.isLt
-        exact (hc.ne (by omega) (by omega) (by omega) hij.symm).elim
-    · fin_cases a <;> fin_cases b <;> simp only [d, Nat.succ_eq_add_one, Nat.reduceAdd,
-        Fin.zero_eta, Fin.isValue, Fin.mk_one, Fin.reduceFinMk, Option.some.injEq,
-        Matrix.cons_val_one, Matrix.cons_val_two, Matrix.cons_val_zero]
-        at s t hij ⊢
-      · congr 2
-        exact Fin.ext (by omega)
-      · exact (hbranch_ne (2 - t) (by omega) hij).elim
-      · have ht : (t : ℕ) < 3 := by simpa [Matrix.cons_val_two] using t.isLt
-        exact (hbranch_ne (4 + t) (by omega) hij).elim
-      · exact (hbranch_ne (2 - s) (by omega) hij.symm).elim
-      · congr 2
-        exact Fin.ext (by
-          have := hc.injOn (2 - s) (by omega) (2 - t) (by omega) hij
-          omega)
-      · have ht : (t : ℕ) < 3 := by simpa [Matrix.cons_val_two] using t.isLt
-        exact (hc.ne (by omega) (by omega) (by omega) hij).elim
-      · have hs : (s : ℕ) < 3 := by simpa [Matrix.cons_val_two] using s.isLt
-        exact (hbranch_ne (4 + s) (by omega) hij.symm).elim
-      · have hs : (s : ℕ) < 3 := by simpa [Matrix.cons_val_two] using s.isLt
-        exact (hc.ne (by omega) (by omega) (by omega) hij).elim
-      · congr 2
-        exact Fin.ext (by
-          have hs : (s : ℕ) < 3 := by simpa [Matrix.cons_val_two] using s.isLt
-          have ht : (t : ℕ) < 3 := by simpa [Matrix.cons_val_two] using t.isLt
-          have := hc.injOn (4 + s) (by omega) (4 + t) (by omega) hij
-          omega)
-  have hd_inj : ∀ i < 8, ∀ j < 8, d' i = d' j → i = j := by
-    intro i hi j hj hij
-    have hdij : d (e.symm (nodeEquiv ⟨i, hi⟩)) =
-        d (e.symm (nodeEquiv ⟨j, hj⟩)) := by simpa [d', hi, hj] using hij
-    have heij := congrArg e (hd_injective hdij)
-    have hfin : (⟨i, hi⟩ : Fin 8) = ⟨j, hj⟩ := nodeEquiv.injective (by
-      simpa only [Equiv.apply_symm_apply] using heij)
-    exact congrArg Fin.val hfin
-  refine T.not_forall_sum_intersection_mul_nonneg_of_pos hd_inj hcard (y := y) ?_ ?_ ?_
-  · intro i hi
-    simpa [y, hi] using
-      (AffineDynkinType.marks_pos (nodeEquiv ⟨i, hi⟩)).le
-  · refine ⟨0, by omega, ?_⟩
-    simpa [y] using AffineDynkinType.marks_pos (nodeEquiv (0 : Fin 8))
-  · intro i hi
-    let ii : Fin AffineDynkinType.E7.nodes := nodeEquiv ⟨i, hi⟩
-    have hsum :
-        (∑ x : Fin AffineDynkinType.E7.nodes,
-          T.intersection (d (e.symm ii)) (d (e.symm x)) * AffineDynkinType.E7.marks x) =
-        ∑ j : StarIndex ![1, 3, 3],
-          T.intersection (d (e.symm ii)) (d j) * AffineDynkinType.E7.marks (e j) := by
-      symm
-      simpa only [Equiv.symm_apply_apply] using e.sum_comp
-        (fun x : Fin AffineDynkinType.E7.nodes ↦
-          T.intersection (d (e.symm ii)) (d (e.symm x)) * AffineDynkinType.E7.marks x)
-    have hcanonical : 0 ≤ ∑ x : Fin AffineDynkinType.E7.nodes,
-        T.intersection (d (e.symm ii)) (d (e.symm x)) * AffineDynkinType.E7.marks x := by
-      rw [hsum, hrow]
-    rw [← Fin.sum_univ_eq_sum_range]
-    have hd'i : d' i = d (e.symm ii) := by
-      simp only [d', hi, dite_true]
-      -- The proof attached to the bound in `d'` is not definitionally the one used in `ii`.
-      rw [show nodeEquiv ⟨i, _⟩ = ii by
-        apply nodeEquiv.injective
-        exact Fin.ext rfl]
-    have hd'x (x : Fin 8) : d' x = d (e.symm (nodeEquiv x)) := by
-      simp only [d', Fin.is_lt, dite_true]
-    have hyx (x : Fin 8) : y x = AffineDynkinType.E7.marks (nodeEquiv x) := by
-      simp only [y, Fin.is_lt, dite_true]
-    have hnormalize :
-        (∑ x : Fin 8, T.intersection (d' i) (d' x) * y x) =
-          ∑ x : Fin AffineDynkinType.E7.nodes,
-            T.intersection (d (e.symm ii)) (d (e.symm x)) * AffineDynkinType.E7.marks x := by
-      calc
-        _ = ∑ x : Fin 8, T.intersection (d (e.symm ii))
-              (d (e.symm (nodeEquiv x))) * AffineDynkinType.E7.marks (nodeEquiv x) := by
-            apply Finset.sum_congr rfl
-            intro x _
-            rw [hd'i, hd'x, hyx]
-        _ = _ := nodeEquiv.sum_comp fun x ↦
-          T.intersection (d (e.symm ii)) (d (e.symm x)) * AffineDynkinType.E7.marks x
-    rw [hnormalize]
-    exact hcanonical
+    · obtain h | rfl : i < 6 ∨ i = 6 := by omega
+      · exact hbranch_zero i h h3
+      · simpa [r] using hrbranch_zero 0 (by omega) (by omega)
+  -- The affine `E₇` marks `1, 2, 3, 4, 3, 2, 1` on the chain and `2` on the branch give a
+  -- positive vector whose rows all vanish, contradicting negative definiteness.
+  let d : ℕ → T.Component := fun i ↦ if i = 7 then branch else c i
+  let y : ℕ → ℤ := fun i ↦ if i = 7 then 2 else if i ≤ 3 then i + 1 else 7 - i
+  have hd_inj : ∀ i < 8, ∀ j < 8, d i = d j → i = j := by
+    simpa only [d] using hc.injOn_snoc hbranch_ne
+  refine T.not_forall_sum_intersection_mul_nonneg_of_pos hd_inj hcard (y := y)
+    (fun i _ ↦ by simp only [y]; split_ifs <;> omega) ⟨0, by omega, by simp [y]⟩ fun i hi ↦ ?_
+  interval_cases i <;>
+    norm_num [Finset.sum_range_succ, d, y] <;>
+    simp [hentry, hbranch_entry, T.intersection_comm branch, hbranch_self, hwb] <;>
+    omega
 
 end IsSelfIntersectionMinusTwoChain
 
