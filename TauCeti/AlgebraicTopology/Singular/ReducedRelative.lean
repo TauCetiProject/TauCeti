@@ -115,6 +115,24 @@ theorem isIso_reducedSingularHomologyδ {k : ℕ}
       reducedSingularHomologyδ_comp_ι]
     exact hm.trans (Category.id_comp _).symm
 
+/-- **Degree-zero relative homology of a path-connected space vanishes** relative to a nonempty
+subspace: every point of `X` is homologous to a point of `A`, so `H₀(A) ⟶ H₀(X)` is onto. -/
+theorem isZero_singularHomology_zero [PathConnectedSpace P.fst] [Nonempty P.snd] :
+    IsZero (P.singularHomology R 0) := by
+  -- Through the augmentation `H₀(X) ≅ R`, the map `H₀(A) ⟶ H₀(X)` becomes the augmentation of
+  -- `A`, which the class of a point of `A` splits.
+  have hε : Epi ((AlgebraicTopology.singularHomologyFunctor A 0 |>.obj R).map P.map ≫
+      P.fst.singularHomology₀ε R) := by
+    rw [singularHomologyMap_singularHomology₀ε]
+    exact (IsSplitEpi.mk' ⟨_, singularHomology₀Section_singularHomology₀ε R
+      (Classical.arbitrary P.snd)⟩).epi
+  have : Epi ((AlgebraicTopology.singularHomologyFunctor A 0 |>.obj R).map P.map) :=
+    (epi_comp_iff_of_isIso _ _).mp hε
+  have h0 : P.singularHomologyπ R 0 = 0 := (P.singularHomology_exact_space R 0).epi_f_iff.1 this
+  have hπ : Epi (P.singularHomologyπ R 0) := inferInstance
+  rw [h0] at hπ
+  exact IsZero.of_epi_zero ((toSSetPair.obj P).right.homology R 0) _
+
 /-- The map `Hₖ(A) ⟶ Hₖ(X)` induced by the inclusion of the subspace is a monomorphism when the
 reduced homology of `A` vanishes in degree `k`: in degree zero it is followed by the augmentation of
 `X` to give the augmentation of `A`, which is then a monomorphism. -/
