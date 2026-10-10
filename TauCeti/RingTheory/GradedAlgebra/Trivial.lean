@@ -7,40 +7,48 @@ module
 
 public import Mathlib.Algebra.GradedMulAction
 public import Mathlib.RingTheory.GradedAlgebra.Basic
+public import TauCeti.Algebra.Module.GradedModule.Opposite
 
 /-!
-# The trivial grading of an algebra
+# The trivial grading of a module or an algebra
 
-Every algebra has a grading concentrated in degree zero.  This file packages that grading in the
-internal `GradedAlgebra` presentation and records its elementary membership and projection API.
-It is the canonical target grading for augmentations of integer-graded algebras.
+Every module has a grading concentrated in degree zero, and for an algebra this grading is an
+internal `GradedAlgebra`.  This file packages that grading and records its elementary membership
+and projection API.  It is the canonical target grading for augmentations of integer-graded
+algebras, and the grading of the coefficients in degree-zero examples.
 
 ## Main definitions
 
-* `TauCeti.trivialGrading`: the internal integer grading with the whole algebra in degree zero.
-* `TauCeti.toTrivialGradingZero`: the algebra viewed as the degree-zero piece of that grading.
+* `TauCeti.trivialGrading`: the internal integer grading with the whole module in degree zero.
+* `TauCeti.toTrivialGradingZero`: the module viewed as the degree-zero piece of that grading.
 
 ## Main results
 
-* `TauCeti.instGradedAlgebraTrivialGrading`: the trivial grading is a graded algebra.
+* `TauCeti.instGradedAlgebraTrivialGrading`: the trivial grading of an algebra is a graded algebra.
 * `TauCeti.proj_trivialGrading`: its degree projection is the identity in degree zero and zero in
   every other degree.
+* `TauCeti.instGradedSMulTrivialGradingOpposite`: any action of the opposite of a trivially graded
+  algebra on a trivially graded module is graded.
 -/
 
 public section
 
-open DirectSum
+open DirectSum MulOpposite
 
 namespace TauCeti
 
-variable (R A : Type*) [CommSemiring R] [Semiring A] [Algebra R A]
+variable (R A : Type*) [CommSemiring R]
 
-/-- The trivial integer grading of an `R`-algebra: all elements have degree zero and every other
+section Module
+
+variable [AddCommMonoid A] [Module R A]
+
+/-- The trivial integer grading of an `R`-module: all elements have degree zero and every other
 homogeneous piece is zero. -/
 def trivialGrading (p : ℤ) : Submodule R A :=
   if p = 0 then ⊤ else ⊥
 
-/-- The degree-zero piece of the trivial grading is the whole algebra. -/
+/-- The degree-zero piece of the trivial grading is the whole module. -/
 @[simp]
 theorem trivialGrading_zero : trivialGrading R A 0 = ⊤ := by
   simp [trivialGrading]
@@ -58,7 +66,7 @@ theorem mem_trivialGrading_iff {p : ℤ} {a : A} :
   · simp [hp]
   · simp [trivialGrading, hp]
 
-/-- Every element of the algebra, viewed as an element of the degree-zero piece of the trivial
+/-- Every element of the module, viewed as an element of the degree-zero piece of the trivial
 grading. -/
 def toTrivialGradingZero : A →+ trivialGrading R A 0 where
   toFun a := ⟨a, by simp⟩
@@ -67,6 +75,12 @@ def toTrivialGradingZero : A →+ trivialGrading R A 0 where
 
 @[simp]
 theorem coe_toTrivialGradingZero (a : A) : (toTrivialGradingZero R A a : A) = a := (rfl)
+
+end Module
+
+section Algebra
+
+variable [Semiring A] [Algebra R A]
 
 /-- The trivial grading is an internal grading: an element is its own degree-zero component, and
 all higher components vanish. -/
@@ -115,5 +129,23 @@ instance instGradedSMulTrivialGrading (𝒜 : ℤ → Submodule R A) :
     rcases (mem_trivialGrading_iff R R).mp hr with rfl | rfl
     · simpa using (𝒜 q).smul_mem r ha
     · simp
+
+/-- The opposite of a trivially graded algebra acts on a trivially graded module compatibly with
+the gradings, whatever the action is: everything sits in degree zero. -/
+instance instGradedSMulTrivialGradingOpposite {M : Type*} [AddCommMonoid M] [Module R M]
+    [Module Aᵐᵒᵖ M] :
+    SetLike.GradedSMul (InternalGrading.ofDecomposition (trivialGrading R A)).opposite.piece
+      (trivialGrading R M) where
+  smul_mem {i j a x} ha hx := by
+    rw [InternalGrading.mem_opposite_piece_iff, InternalGrading.ofDecomposition_piece,
+      mem_trivialGrading_iff] at ha
+    rw [mem_trivialGrading_iff] at hx ⊢
+    rcases ha with rfl | ha
+    · rcases hx with rfl | rfl <;> simp
+    · right
+      rw [← op_unop a, ha]
+      simp
+
+end Algebra
 
 end TauCeti

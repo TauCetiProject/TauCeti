@@ -29,13 +29,15 @@ out of this file.
 
 ## Main results
 
-* `TauCeti.TwistedExamples.projCocycle`: the twisting cocycle `m x y = (1, 0)` over `ℚ × ℚ`.
+* `TauCeti.TwistedExamples.projCocycle`: the twisting cocycle `m x y = (1, 0)` over `ℚ × ℚ`, with
+  its entries `projCocycle_m`.
 * `TauCeti.TwistedExamples.twistedDifferential_single_fst`,
   `TauCeti.TwistedExamples.twistedDifferential_single_snd`: the two values of `D (1 ⊗ x)`.
 
 ## References
 
-* The DGFloer roadmap, acceptance criterion 2 (`TauCetiRoadmap/DGFloer/README.md`).
+* J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
+  Applications to cotangent bundles*, arXiv:2404.07953, Section 1.4.
 -/
 
 public section
@@ -45,22 +47,6 @@ open MulOpposite
 namespace TauCeti
 
 namespace TwistedExamples
-
-/-- The opposite of a degree-`0` algebra acts on a degree-`0` module compatibly with the
-gradings, whatever the action is. -/
-instance instGradedSMulTrivialGradingOpposite {R A M : Type*} [CommSemiring R] [Semiring A]
-    [Algebra R A] [Semiring M] [Algebra R M] [Module Aᵐᵒᵖ M] :
-    SetLike.GradedSMul (InternalGrading.ofDecomposition (trivialGrading R A)).opposite.piece
-      (trivialGrading R M) where
-  smul_mem {i j a x} ha hx := by
-    rw [InternalGrading.mem_opposite_piece_iff, InternalGrading.ofDecomposition_piece,
-      mem_trivialGrading_iff] at ha
-    rw [mem_trivialGrading_iff] at hx ⊢
-    rcases ha with rfl | ha
-    · rcases hx with rfl | rfl <;> simp
-    · right
-      rw [← op_unop a, ha]
-      simp
 
 /-- The generators: `x = 0` of index `1` and `y = 1` of index `0`. -/
 def ind : Fin 2 → ℤ := ![1, 0]
@@ -78,16 +64,11 @@ def projCocycle : TwistingCocycle (trivialGrading ℚ (ℚ × ℚ)) 0 (Fin 2) in
       fin_cases i <;> fin_cases j <;> simp [projMatrix])
     (fun n hn ↦ trivialGrading_eq_bot ℚ (ℚ × ℚ) hn.ne')
 
+/-- The entries of the cocycle: `m x y = (1, 0)` and every other entry zero. -/
 @[simp]
-theorem projCocycle_m_zero_one : projCocycle.m 0 1 = (1, 0) := by
-  simp [projCocycle, projMatrix]
-
-@[simp]
-theorem projCocycle_m_one_zero : projCocycle.m 1 0 = 0 := by
-  simp [projCocycle, projMatrix]
-
-theorem one_mem_trivialGrading_zero : (1 : ℚ) ∈ trivialGrading ℚ ℚ 0 := by
-  simp
+theorem projCocycle_m (i j : Fin 2) :
+    projCocycle.m i j = if i = 0 ∧ j = 1 then (1, 0) else 0 := by
+  rw [projCocycle, TwistingCocycle.ofNonpos_m, projMatrix]
 
 section Fst
 
@@ -95,7 +76,7 @@ section Fst
 local instance instModuleFst : Module (ℚ × ℚ)ᵐᵒᵖ ℚ :=
   Module.compHom ℚ ((RingHom.fst ℚ ℚ).fromOpposite fun _ _ ↦ Commute.all _ _)
 
-theorem op_smul_fst (a : ℚ × ℚ) (r : ℚ) : op a • r = a.1 * r :=
+private theorem op_smul_fst (a : ℚ × ℚ) (r : ℚ) : op a • r = a.1 * r :=
   rfl
 
 local instance instIsScalarTowerFst : IsScalarTower ℚ (ℚ × ℚ)ᵐᵒᵖ ℚ :=
@@ -107,7 +88,7 @@ local instance instIsScalarTowerFst : IsScalarTower ℚ (ℚ × ℚ)ᵐᵒᵖ �
 /-- With the action through the first projection, `D (1 ⊗ x) = 1 ⊗ y`. -/
 theorem twistedDifferential_single_fst :
     twistedDifferential projCocycle.m (trivialGrading ℚ ℚ) 0 (Pi.single 0 1) = Pi.single 1 1 := by
-  rw [twistedDifferential_single projCocycle.m 0 0 one_mem_trivialGrading_zero]
+  rw [twistedDifferential_single projCocycle.m 0 0 (show (1 : ℚ) ∈ trivialGrading ℚ ℚ 0 by simp)]
   simp [Fin.sum_univ_two, op_smul_fst]
 
 end Fst
@@ -118,7 +99,7 @@ section Snd
 local instance instModuleSnd : Module (ℚ × ℚ)ᵐᵒᵖ ℚ :=
   Module.compHom ℚ ((RingHom.snd ℚ ℚ).fromOpposite fun _ _ ↦ Commute.all _ _)
 
-theorem op_smul_snd (a : ℚ × ℚ) (r : ℚ) : op a • r = a.2 * r :=
+private theorem op_smul_snd (a : ℚ × ℚ) (r : ℚ) : op a • r = a.2 * r :=
   rfl
 
 local instance instIsScalarTowerSnd : IsScalarTower ℚ (ℚ × ℚ)ᵐᵒᵖ ℚ :=
@@ -130,7 +111,7 @@ local instance instIsScalarTowerSnd : IsScalarTower ℚ (ℚ × ℚ)ᵐᵒᵖ �
 /-- With the action through the second projection, `D (1 ⊗ x) = 0`. -/
 theorem twistedDifferential_single_snd :
     twistedDifferential projCocycle.m (trivialGrading ℚ ℚ) 0 (Pi.single 0 1) = 0 := by
-  rw [twistedDifferential_single projCocycle.m 0 0 one_mem_trivialGrading_zero]
+  rw [twistedDifferential_single projCocycle.m 0 0 (show (1 : ℚ) ∈ trivialGrading ℚ ℚ 0 by simp)]
   simp [Fin.sum_univ_two, op_smul_snd]
 
 end Snd
