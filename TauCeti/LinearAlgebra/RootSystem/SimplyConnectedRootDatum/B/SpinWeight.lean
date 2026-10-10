@@ -458,7 +458,6 @@ private theorem typeBSpinWeight_typeBSpinReflection_apply_of_succ_of_last {n : �
     (hij : (j : ℕ) = (i : ℕ) + 1) (hjlt : ¬(j : ℕ) + 1 < n) (s : Finset (Fin n)) :
     typeBSpinWeight (typeBSpinReflection i s) j =
       typeBSpinWeight s j + 2 * typeBSpinWeight s i := by
-  have hjv := j.isLt
   have hilt : (i : ℕ) + 1 < n := by omega
   have hsucci : ((Order.succ i : Fin n) : ℕ) = (i : ℕ) + 1 := Fin.val_orderSucc_of_lt hilt
   have hjsucci : j = (Order.succ i : Fin n) := Fin.ext (by omega)

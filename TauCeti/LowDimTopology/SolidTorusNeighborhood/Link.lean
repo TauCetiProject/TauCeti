@@ -97,7 +97,7 @@ theorem exists_isSolidTorusLinkNeighborhood
   cases isEmpty_or_nonempty ι with
   | inl hι =>
       refine ⟨fun i => False.elim (hι.false i), ?_⟩
-      exact ⟨fun i => False.elim (hι.false i), fun i j hij => False.elim (hι.false i)⟩
+      exact ⟨fun i => False.elim (hι.false i), fun i j _ => False.elim (hι.false i)⟩
   | inr hι =>
       have hcompact : ∀ i, IsCompact (range (f i)) := fun i =>
         isCompact_range (hf i).continuous

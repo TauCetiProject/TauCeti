@@ -293,7 +293,7 @@ private theorem isRowAbove_rowBump {x y : α} {upper lower : List α}
       · exact hxy
       · exact (hpre _ (by omega)).trans_lt hxy
   | some w =>
-    obtain ⟨j', hj', hL', hLj', hpre', hyw⟩ :=
+    obtain ⟨j', hj', hL', _, hpre', hyw⟩ :=
       exists_set_of_rowBump_snd_eq_some hlow
     rw [hL']
     -- the first entry of `lower` exceeding `y` is weakly left of column `j`

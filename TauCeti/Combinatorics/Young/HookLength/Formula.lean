@@ -97,18 +97,15 @@ private theorem betaNumber_succ_add_one_of_forall_ne (hr : μ.colLen 0 ≤ r) (h
   have hcase : μ.rowLen i = 0 ∨ μ.rowLen (i + 1) = μ.rowLen i := by
     by_contra hcon
     push Not at hcon
-    obtain ⟨h0, hne⟩ := hcon
     refine hno (i, μ.rowLen i - 1) (mem_corners.mpr ((isCorner_def μ _).mpr ⟨?_, ?_, ?_⟩)) rfl
     · exact mem_iff_lt_rowLen.mpr (by omega)
     · simp only [mem_iff_lt_rowLen]; omega
     · simp only [mem_iff_lt_rowLen]; omega
   simp only [betaNumber_def] at hβ ⊢
   rcases hcase with h0 | h1
-  · have h1 : μ.rowLen (i + 1) = 0 := by omega
-    omega
+  · omega
   · rcases Nat.eq_zero_or_pos (μ.rowLen i) with h0 | h0
-    · have h2 : μ.rowLen (i + 1) = 0 := by omega
-      omega
+    · omega
     · have hmem : (i + 1, 0) ∈ μ := mem_iff_lt_rowLen.mpr (by omega)
       have := mem_iff_lt_colLen.mp hmem
       omega
@@ -135,8 +132,6 @@ private theorem betaNumber_term_eq_zero {μ : YoungDiagram} {r i : ℕ} (hr : μ
   by_cases hβ : μ.betaNumber r i = 0
   · rw [hβ]; simp
   obtain ⟨hlt, hsucc⟩ := betaNumber_succ_add_one_of_forall_ne hr (mem_range.mp hi) hβ hno
-  have hcast : ((μ.betaNumber r (i + 1) : ℤ)) + 1 = (μ.betaNumber r i : ℤ) := by
-    exact_mod_cast hsucc
   have hinner : ∏ l ∈ Ico (i + 1) r,
       (Function.update (fun j => (μ.betaNumber r j : ℤ)) i ((μ.betaNumber r i : ℤ) - 1) i
         - Function.update (fun j => (μ.betaNumber r j : ℤ)) i

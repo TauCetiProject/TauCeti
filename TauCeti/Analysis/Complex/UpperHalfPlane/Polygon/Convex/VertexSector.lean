@@ -314,8 +314,8 @@ theorem mem_vertexSector_iff_toReal_orientedAngle_mem_Icc {j : Fin n} {z w : ℍ
   -- `φ - α`, a real number in `(-π, π)` once `0 ≤ φ`
   obtain ⟨D, hD⟩ : ∃ D, D = geodesicLine (rayToward z (P.vertex (j + 1))) 1 := ⟨_, rfl⟩
   obtain ⟨E, hE⟩ : ∃ E, E = geodesicLine (rayToward z (P.vertex (j - 1))) 1 := ⟨_, rfl⟩
-  have hφ := Real.Angle.neg_pi_lt_toReal (orientedAngle z D w)
-  have hφ' := Real.Angle.toReal_le_pi (orientedAngle z D w)
+  have _ := Real.Angle.neg_pi_lt_toReal (orientedAngle z D w)
+  have _ := Real.Angle.toReal_le_pi (orientedAngle z D w)
   have hEw : orientedAngle z E w =
       (((orientedAngle z D w).toReal - P.interiorAngle j : ℝ) : Real.Angle) := by
     rw [← orientedAngle_add z E D w, orientedAngle_rev, hD, hE,
@@ -324,7 +324,7 @@ theorem mem_vertexSector_iff_toReal_orientedAngle_mem_Icc {j : Fin n} {z w : ℍ
   rw [mem_vertexSector_iff_sign_orientedAngle hz hw, ← hD, ← hE, hEw, Ne, Ne,
     ← Real.Angle.toReal_neg_iff_sign_neg, ← Real.Angle.toReal_mem_Ioo_iff_sign_pos, not_lt,
     Set.mem_Icc]
-  refine ⟨fun ⟨h₁, h₀⟩ ↦ ⟨h₀, ?_⟩, fun ⟨h₀, h₁⟩ ↦ ⟨?_, h₀⟩⟩
+  refine ⟨fun ⟨h₁, h₀⟩ ↦ ⟨h₀, ?_⟩, fun ⟨h₀, _⟩ ↦ ⟨?_, h₀⟩⟩
   · by_contra hlt
     rw [Real.Angle.toReal_coe_eq_self_iff.2 ⟨by linarith, by linarith⟩] at h₁
     exact h₁ ⟨by linarith, by linarith⟩
@@ -345,8 +345,8 @@ theorem mem_interior_vertexSector_iff_toReal_orientedAngle_mem_Ioo {j : Fin n} {
   -- as for the closed sector, the oriented angle from the incoming ray `E` is `φ - α`
   obtain ⟨D, hD⟩ : ∃ D, D = geodesicLine (rayToward z (P.vertex (j + 1))) 1 := ⟨_, rfl⟩
   obtain ⟨E, hE⟩ : ∃ E, E = geodesicLine (rayToward z (P.vertex (j - 1))) 1 := ⟨_, rfl⟩
-  have hφ := Real.Angle.neg_pi_lt_toReal (orientedAngle z D w)
-  have hφ' := Real.Angle.toReal_le_pi (orientedAngle z D w)
+  have _ := Real.Angle.neg_pi_lt_toReal (orientedAngle z D w)
+  have _ := Real.Angle.toReal_le_pi (orientedAngle z D w)
   have hEw : orientedAngle z E w =
       (((orientedAngle z D w).toReal - P.interiorAngle j : ℝ) : Real.Angle) := by
     rw [← orientedAngle_add z E D w, orientedAngle_rev, hD, hE,
@@ -355,7 +355,7 @@ theorem mem_interior_vertexSector_iff_toReal_orientedAngle_mem_Ioo {j : Fin n} {
   rw [mem_interior_vertexSector_iff_sign_orientedAngle hz hw, ← hD, ← hE, hEw,
     ← Real.Angle.toReal_neg_iff_sign_neg, ← Real.Angle.toReal_mem_Ioo_iff_sign_pos, Set.mem_Ioo,
     Set.mem_Ioo]
-  refine ⟨fun ⟨h₁, h₀, _⟩ ↦ ⟨h₀, ?_⟩, fun ⟨h₀, h₁⟩ ↦ ⟨?_, h₀, by linarith⟩⟩
+  refine ⟨fun ⟨h₁, h₀, _⟩ ↦ ⟨h₀, ?_⟩, fun ⟨h₀, _⟩ ↦ ⟨?_, h₀, by linarith⟩⟩
   · rw [Real.Angle.toReal_coe_eq_self_iff.2 ⟨by linarith, by linarith⟩] at h₁
     linarith
   · rw [Real.Angle.toReal_coe_eq_self_iff.2 ⟨by linarith, by linarith⟩]

@@ -135,7 +135,7 @@ theorem im_exp_neg_mul_schwarzChristoffelVertex_sub_pos_of_long_turn
     exact hlast
   have hθilower := (schwarzChristoffelEdgeAngle_mem_Ioc a e
     (fun k ↦ (he k).2) hsum i.castSucc).1
-  have hθjlower : -Real.pi < θj := by
+  have : -Real.pi < θj := by
     dsimp only [θj]
     linarith
   -- Both pieces incident to infinity point along the positive real axis when the total
@@ -328,7 +328,7 @@ theorem disjoint_schwarzChristoffelPolygon_edgeSet_of_long_turn
   intro x hxi hxj
   rw [segment_eq_image'] at hxi hxj
   obtain ⟨s, hs, rfl⟩ := hxi
-  obtain ⟨t, ht, heq⟩ := hxj
+  obtain ⟨t, -, heq⟩ := hxj
   let Vi := schwarzChristoffelVertex a e z₀ i.castSucc
   let Vi' := schwarzChristoffelVertex a e z₀ i.succ
   let Vj := schwarzChristoffelVertex a e z₀ j.castSucc
@@ -346,7 +346,6 @@ theorem disjoint_schwarzChristoffelPolygon_edgeSet_of_long_turn
       a e z₀ ha θj j (hfinite j.castSucc) (hfinite j.succ)
     simpa only [u, θj, sub_self, Real.sin_zero, mul_zero, Vi, Vi', Vj, Vj'] using him
   have hi_nonneg : 0 ≤ (u * (Vi' - Vi)).im := by
-    have hangle := schwarzChristoffelEdgeAngle_comp_strictMono a e ha fun k ↦ (he k).2
     have hij' : i.castSucc < j.castSucc := Fin.mk_lt_mk.mpr (by omega)
     have hdiff := schwarzChristoffelEdgeAngle_sub_mem_Ioo_two_pi
       a e ha (fun k ↦ (he k).2) hsum hij'

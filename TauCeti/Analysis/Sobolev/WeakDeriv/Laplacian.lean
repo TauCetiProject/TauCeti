@@ -85,7 +85,7 @@ theorem _root_.ContDiffOn.integral_fderiv_fderiv_smul_eq_integral_smul_fderiv_fd
     ∫ x, fderiv ℝ (fun y ↦ fderiv ℝ (φ : E → ℝ) y v) x v • u x ∂μ =
       ∫ x, (φ : E → ℝ) x • fderiv ℝ (fun y ↦ fderiv ℝ u y v) x v ∂μ := by
   have hΩ : IsOpen (Ω : Set E) := Ω.isOpen
-  set g : E → F := fun y ↦ fderiv ℝ u y v with hg_def
+  set g : E → F := fun y ↦ fderiv ℝ u y v with _
   have hu1 : ContDiffOn ℝ 1 (fderiv ℝ u) Ω := hu.fderiv_of_isOpen hΩ (by norm_num)
   have hg : ContDiffOn ℝ 1 g Ω := hu1.clm_apply contDiffOn_const
   have hu_loc : LocallyIntegrableOn u Ω μ := hu.continuousOn.locallyIntegrableOn hΩ.measurableSet
@@ -210,7 +210,7 @@ theorem _root_.TestFunction.laplacianCLM_apply (φ : 𝓓(Ω, F)) (y : E) :
   rw [laplacian_eq_iteratedFDeriv_stdOrthonormalBasis]
   simp only [iteratedFDeriv_two_apply, sum_apply, ContinuousLinearMap.comp_apply]
   apply Finset.sum_congr rfl
-  intro i hi
+  intro i _
   simp only [TestFunction.lineDerivOpCLM_eq_lineDerivCLM]
   rw [TestFunction.lineDerivCLM_apply_of_le le_top]
   have hinner :

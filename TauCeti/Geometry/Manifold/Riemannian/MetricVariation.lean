@@ -67,7 +67,7 @@ theorem eVariationOn_eq_pathELength_open
       rw [Manifold.pathELength_eq_lintegral_mfderivWithin_Icc]
       simp only [mfderivWithin_eq_fderivWithin, enorm_tangentSpace_vectorSpace]
       apply setLIntegral_congr_fun measurableSet_Icc
-      intro t ht
+      intro t _
       -- The scalar tangent space is definitionally the model field, but its bundled instances hide
       -- this from rewriting until the two one-dimensional continuous linear maps are exposed.
       change ‖derivWithin (Subtype.val ∘ γ) (Icc a b) t‖ₑ =

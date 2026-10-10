@@ -68,6 +68,8 @@ Huber ring is nonarchimedean, which is exactly the hypothesis under which
   is an associate of the original.
 * `TauCeti.Huber.IsHuberRing.quotient` and `TauCeti.Huber.IsTateRing.quotient`: a quotient of a
   Huber ring is a Huber ring, and a quotient of a Tate ring is a Tate ring.
+* `TauCeti.Huber.PairOfDefinition.quotient_idealImage`: the neighbourhood basis of zero of the
+  quotient pair of definition is the image of that of the original pair.
 * `TauCeti.Huber.PairOfDefinition.isBounded_ringOfDefinition`: a ring of definition is bounded,
   hence `A₀ ≤ A°` (`TauCeti.Huber.PairOfDefinition.le_powerBoundedSubring`). This is the
   boundedness half of Wedhorn Corollary 6.4.
@@ -545,6 +547,39 @@ def quotient [IsTopologicalRing A] (P : PairOfDefinition A) (J : Ideal A) :
 theorem quotient_ringOfDefinition [IsTopologicalRing A] (P : PairOfDefinition A) (J : Ideal A) :
     (P.quotient J).ringOfDefinition = P.ringOfDefinition.map (Ideal.Quotient.mk J) :=
   (rfl)
+
+/-- The ideal of definition of the quotient pair of definition is the image of the original one,
+under the map `A₀ → (A ⧸ J)₀` induced by the quotient map. -/
+private theorem quotient_idealOfDefinition [IsTopologicalRing A] (P : PairOfDefinition A)
+    (J : Ideal A) :
+    (P.quotient J).idealOfDefinition = P.idealOfDefinition.map
+      (((Ideal.Quotient.mk J).comp P.ringOfDefinition.subtype).codRestrict
+        (P.quotient J).ringOfDefinition fun a ↦ Subring.mem_map.mpr ⟨a, a.2, rfl⟩) :=
+  (rfl)
+
+/-- **The neighbourhood basis of the quotient pair is the image of the original one**: the image
+in `A ⧸ J` of the `n`-th power of the ideal of definition of the quotient pair is the image of
+`P.idealImage n` under the quotient map. -/
+theorem quotient_idealImage [IsTopologicalRing A] (P : PairOfDefinition A) (J : Ideal A)
+    (n : ℕ) :
+    (P.quotient J).idealImage n = (P.idealImage n).map (Ideal.Quotient.mk J).toAddMonoidHom := by
+  set q₀ : P.ringOfDefinition →+* (P.quotient J).ringOfDefinition :=
+    ((Ideal.Quotient.mk J).comp P.ringOfDefinition.subtype).codRestrict
+      (P.quotient J).ringOfDefinition fun a ↦ Subring.mem_map.mpr ⟨a, a.2, rfl⟩
+  have hq₀ : Function.Surjective q₀ := by
+    rintro ⟨x, hx⟩
+    obtain ⟨a, ha, rfl⟩ := Subring.mem_map.mp hx
+    exact ⟨⟨a, ha⟩, rfl⟩
+  ext x
+  simp only [mem_idealImage, AddSubgroup.mem_map, RingHom.toAddMonoidHom_eq_coe,
+    AddMonoidHom.coe_ofClass]
+  rw [quotient_idealOfDefinition, ← Ideal.map_pow]
+  constructor
+  · rintro ⟨y, hy, rfl⟩
+    obtain ⟨a, ha, rfl⟩ := (Ideal.mem_map_iff_of_surjective q₀ hq₀).mp hy
+    exact ⟨a, ⟨a, ha, rfl⟩, rfl⟩
+  · rintro ⟨_, ⟨a, ha, rfl⟩, rfl⟩
+    exact ⟨q₀ a, Ideal.mem_map_of_mem q₀ ha, rfl⟩
 
 /-- **Some power of a topologically nilpotent `s` carries any `c : A` into the ring of
 definition.** The ring of definition is open and `sⁿ c → 0`, so `sⁿ c` is eventually inside it.

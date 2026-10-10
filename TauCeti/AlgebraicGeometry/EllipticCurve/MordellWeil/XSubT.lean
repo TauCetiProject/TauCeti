@@ -766,7 +766,7 @@ lemma μX_mul_mul_eq_one : W.μX xP * W.μX xQ * W.μX xR = 1 := by
     exact μX_mul_mul_eq_one_of_eval_f_eq_zero hR hP hQ hPQR HR
   rw [μX_of_eval_f_ne_zero HP, μX_of_eval_f_ne_zero HQ, μX_of_eval_f_ne_zero HR,
     M.mk_mul_mk_mul_mk_eq_one_iff]
-  obtain ⟨pol, hpol, hpol₁⟩ :=
+  obtain ⟨pol, hpol, _⟩ :=
     Point.exists_polynomial_factorization_of_some_add_some_add_some_eq_zero hP hQ hR hPQR
   simp only [← map_mul, hpol, neg_sub, C_sub_X_mul_mul_eq_neg]
   simp
