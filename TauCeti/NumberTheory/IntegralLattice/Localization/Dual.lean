@@ -7,7 +7,8 @@ module
 
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Dual.Basic
-public import TauCeti.LinearAlgebra.Dual.BaseChange
+import Mathlib.RingTheory.Flat.TorsionFree
+import TauCeti.LinearAlgebra.Dual.BaseChange
 
 /-!
 # Localization commutes with integral lattice duality
@@ -66,6 +67,28 @@ theorem localizationDualToCompletion_tmul (a : ℤ_[p]) (x : L.dualCarrier) :
   rw [localizationDualToCompletion, LinearMap.liftBaseChange_tmul]
   simp [TensorProduct.smul_tmul', Algebra.smul_def]
 
+/-- The localization of the dual carrier embeds injectively in the completed rational space. -/
+theorem localizationDualToCompletion_injective :
+    Function.Injective (L.localizationDualToCompletion p) := by
+  let f := (Algebra.linearMap ℤ_[p] ℚ_[p]).restrictScalars ℤ
+  let e := (TensorProduct.equivOfCompatibleSMul ℤ ℚ ℤ ℚ_[p] V).symm
+  let : IsAddTorsionFree V := .of_module_rat V
+  -- After forgetting `ℤ_p`-linearity, check on pure tensors that the map tensors the two
+  -- inclusions over `ℤ`, then identifies the rational scalar extension.
+  have h : (L.localizationDualToCompletion p).restrictScalars ℤ =
+      e.toLinearMap.comp (TensorProduct.map f L.dualCarrier.subtype) := by
+    apply TensorProduct.ext'
+    intro a x
+    change L.localizationDualToCompletion p (a ⊗ₜ x) =
+      e (TensorProduct.map f L.dualCarrier.subtype (a ⊗ₜ x))
+    rw [localizationDualToCompletion_tmul, TensorProduct.map_tmul]
+    rfl
+  -- Restricting scalars leaves the underlying function unchanged.
+  change Function.Injective ((L.localizationDualToCompletion p).restrictScalars ℤ)
+  rw [h]
+  exact e.injective.comp (TensorProduct.map_injective_of_flat_flat' f L.dualCarrier.subtype
+    (FaithfulSMul.algebraMap_injective ℤ_[p] ℚ_[p]) L.dualCarrier.subtype_injective)
+
 variable [L.IsNondegenerate]
 
 /-- The perfect pairing between the localized dual carrier and the localized carrier. -/
@@ -105,19 +128,9 @@ theorem completedRationalForm_localizationDualToCompletion
       push_cast
       ring
 
-/-- The localization of the dual carrier embeds injectively in the completed rational space. -/
-theorem localizationDualToCompletion_injective :
-    Function.Injective (L.localizationDualToCompletion p) := by
-  intro x y hxy
-  apply (L.localDualPairingEquiv p).injective
-  apply LinearMap.ext
-  intro z
-  apply FaithfulSMul.algebraMap_injective ℤ_[p] ℚ_[p]
-  rw [← L.completedRationalForm_localizationDualToCompletion p,
-    ← L.completedRationalForm_localizationDualToCompletion p, hxy]
-
 /-- Localization commutes with duality as embedded carriers in the completed rational space.
 This equality uses the completed rational form on both sides and holds at every prime. -/
+@[simp]
 theorem range_localizationDualToCompletion :
     LinearMap.range (L.localizationDualToCompletion p) =
       (L.completedRationalForm p).dualSubmodule
