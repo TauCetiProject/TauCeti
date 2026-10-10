@@ -453,8 +453,7 @@ theorem raise_basis (i : Fin (n + 1)) :
   funext j
   rw [smul_apply, basis_apply]
   by_cases hj : (j : ℕ) + 1 = (i : ℕ)
-  · have _ := i.isLt
-    have hjn : (j : ℕ) < n := by omega
+  · have hjn : (j : ℕ) < n := by omega
     have h1 : (⟨(j : ℕ) + 1, by omega⟩ : Fin (n + 1)) = i := by ext; simp [hj]
     have h2 : j = (⟨(i : ℕ) - 1, by omega⟩ : Fin (n + 1)) := by ext; simp; omega
     rw [raise_apply, dite_eq_left hjn, basis_apply, h1, ite_eq_left rfl, ite_eq_left h2, ← hj]

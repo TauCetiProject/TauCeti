@@ -893,7 +893,6 @@ theorem intersection_eq_zero_of_star_five (hcard : 5 < Fintype.card T.Component)
     T.exists_weight_intersection_star_four_eq (by omega) h₁ h₂ h₃ h₅ h₂₃ h₂₅ h₃₅ e₁₂ e₁₃ e₁₅
   obtain ⟨-, -, -, -, -, -, -, -, -, -, z₄₅⟩ :=
     T.exists_weight_intersection_star_four_eq (by omega) h₁ h₂ h₄ h₅ h₂₄ h₂₅ h₄₅ e₁₂ e₁₄ e₁₅
-  have _hww : (w : ℤ) = w' := by omega
   -- The vector taking the value two at the centre and one at each leg is isotropic.
   have hneg := T.intersection_five_neg hcard h₁₂ h₁₃ h₁₄ h₁₅ h₂₃ h₂₄ h₂₅ h₃₄ h₃₅ h₄₅
     (y₁ := 2) (y₂ := 1) (y₃ := 1) (y₄ := 1) (y₅ := 1) (by omega)
@@ -969,22 +968,9 @@ theorem exists_weight_intersection_fork_five_eq (hcard : 5 < Fintype.card T.Comp
       -- The two orientations of ratio two are affine. Their displayed vectors span the kernels
       -- of the corresponding intersection matrices, contradicting negative definiteness.
       rcases hpq_cases with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-      · have hwh : (T.weight h : ℤ) = 2 * w := by
-          rw [hwi] at aq₁
-          omega
-        have _ahi : T.intersection h i = 2 * w := by
-          rw [hwi] at aq₁
-          rw [mul_comm]
-          exact aq₁
-        linarith [T.fork_five_form_neg hcard hhi' hhj hhk hhl hij' hik hil hjk' hjl' hkl
+      · linarith [T.fork_five_form_neg hcard hhi' hhj hhk hhl hij' hik hil hjk' hjl' hkl
           zhj zhk zhl zik zil zkl 1 2 2 1 1 one_ne_zero]
-      · have hwh : 2 * (T.weight h : ℤ) = w := by
-          rw [hwi] at aq₁
-          omega
-        have _ahi : T.intersection h i = w := by
-          rw [hwi, mul_one] at aq₁
-          exact aq₁
-        linarith [T.fork_five_form_neg hcard hhi' hhj hhk hhl hij' hik hil hjk' hjl' hkl
+      · linarith [T.fork_five_form_neg hcard hhi' hhj hhk hhl hij' hik hil hjk' hjl' hkl
           zhj zhk zhl zik zil zkl 2 2 2 1 1 (by omega)]
     · have hpqpos : 0 < p₁ * q₁ := mul_pos (by omega) (by omega)
       omega

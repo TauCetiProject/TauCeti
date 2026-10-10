@@ -107,8 +107,6 @@ private theorem exists_abs_two_mul_add_le {a m x₀ z : ℤ} (ha : 0 < a) (hm : 
   -- take the member nearest the value that would make `2 a x + z` vanish: the rounding error is
   -- at most a half, and the progression's gap scales it by `2 a m`
   have ham : (0 : ℚ) < 2 * (a : ℚ) * (m : ℚ) := by
-    have _ : (0 : ℚ) < (a : ℚ) := by exact_mod_cast ha
-    have _ : (0 : ℚ) < (m : ℚ) := by exact_mod_cast hm
     positivity
   set t : ℚ := (-(z : ℚ) - 2 * (a : ℚ) * (x₀ : ℚ)) / (2 * (a : ℚ) * (m : ℚ)) with htdef
   refine ⟨round t, ?_⟩
@@ -186,7 +184,6 @@ private theorem eq_zero_of_forall_nonneg_on_progression_of_ne {b c m x₀ y : �
   have hC0 : 0 ≤ |C| := abs_nonneg _
   have hCle : C ≤ |C| := le_abs_self _
   have hpos : 0 < (b * y * m) ^ 2 := by positivity
-  have _ : 1 ≤ (b * y * m) ^ 2 := by omega
   -- At this `k` the linear term is `-(|C| + 1) * (b y m)²`, which the constant cannot offset.
   have hx := h (-((|C| + 1) * (b * y * m)))
   rw [hid] at hx

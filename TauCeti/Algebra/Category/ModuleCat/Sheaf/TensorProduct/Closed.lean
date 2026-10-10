@@ -128,10 +128,10 @@ theorem _root_.SheafOfModules.dualIso_inv
     {M N : _root_.SheafOfModules.{u} (ringCatSheaf R)} (e : M ≅ N) :
     (_root_.SheafOfModules.dualIso e).inv =
       (pre e.hom).app (_root_.SheafOfModules.unit (ringCatSheaf R)) := by
-  have _ : IsIso (pre e.inv) := by
+  rw [_root_.SheafOfModules.dualIso, asIso_inv]
+  have _ : IsIso (pre e.inv) := by  -- This instance is needed for IsIso.inv_eq_of_hom_inv_id
     unfold pre
     infer_instance
-  rw [_root_.SheafOfModules.dualIso, asIso_inv]
   apply IsIso.inv_eq_of_hom_inv_id
   rw [← NatTrans.comp_app, ← pre_map, e.hom_inv_id, pre_id, NatTrans.id_app]
 

@@ -324,7 +324,6 @@ theorem eq_top_of_upperDerivation_mem_of_lowerDerivation_mem [Invertible (3 : R)
     convert hm using 2
     apply Subtype.ext
     ext a b
-    have _ := invOf_mul_self (3 : R)
     by_cases ha : a = i <;> by_cases hb : b = j <;>
       simp [Matrix.single_apply, Matrix.vecMulVec_apply, h, ha, hb] <;> grind
   have hsingle_smul : ∀ (i : Fin 3) (r : R), Pi.single i r = r • Pi.single i (1 : R) := by
