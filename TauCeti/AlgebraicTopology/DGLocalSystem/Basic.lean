@@ -156,7 +156,7 @@ variable {B' : Type*} [TopologicalSpace B'] {β} {β' : PathComponentBasepoints 
 /-- The **pullback** of DG local systems along a map `f : B' → B` sending each chosen basepoint
 `b'_{c'}` of `B'` to the chosen basepoint of the path component of `f (b'_{c'})`: componentwise,
 the pullback of the based map `f : (B', b'_{c'}) → (B, b_{f(c')})`. -/
-@[expose] def pullback (f : C(B', B))
+def pullback (f : C(B', B))
     (hf : ∀ c', f (β'.point c') = β.point (ZerothHomotopy.mk (f (β'.point c')))) :
     DGLocalSystemFamily.{uM} β R ⥤ DGLocalSystemFamily.{uM} β' R :=
   @Functor.pi' _ (fun c' ↦ DGLocalSystem.{uM} B' (β'.point c') R) (fun _ ↦ inferInstance) _ _
@@ -181,8 +181,10 @@ theorem pullback_map (f : C(B', B))
     (hf : ∀ c', f (β'.point c') = β.point (ZerothHomotopy.mk (f (β'.point c'))))
     {𝓕 𝓖 : DGLocalSystemFamily.{uM} β R} (φ : 𝓕 ⟶ 𝓖) (c' : ZerothHomotopy B') :
     (pullback R f hf).map φ c' =
-      (DGLocalSystem.pullback R f (hf c')).map (φ (ZerothHomotopy.mk (f (β'.point c')))) :=
-  (rfl)
+      eqToHom (pullback_obj R f hf 𝓕 c') ≫
+        (DGLocalSystem.pullback R f (hf c')).map (φ (ZerothHomotopy.mk (f (β'.point c')))) ≫
+          eqToHom (pullback_obj R f hf 𝓖 c').symm :=
+  ((Category.id_comp _).trans (Category.comp_id _)).symm
 
 /-- The component of `pullbackId`, for an index `c₁` equal to `c` (transport along `h`). -/
 def pullbackIdApp {c₁ c : ZerothHomotopy B} (h : c₁ = c)
@@ -212,14 +214,16 @@ def pullbackId :
 /-- The component of `pullbackId` at a family `𝓕` and a path component `c`. -/
 @[simp]
 theorem pullbackId_hom_app (𝓕 : DGLocalSystemFamily.{uM} β R) (c : ZerothHomotopy B) :
-    (pullbackId (β := β) R).hom.app 𝓕 c = (pullbackIdApp R (β.mk_point c) _ 𝓕).hom :=
-  (rfl)
+    (pullbackId (β := β) R).hom.app 𝓕 c =
+      eqToHom (pullback_obj R _ _ 𝓕 c) ≫ (pullbackIdApp R (β.mk_point c) _ 𝓕).hom :=
+  (Category.id_comp _).symm
 
 /-- The component of the inverse of `pullbackId` at a family `𝓕` and a path component `c`. -/
 @[simp]
 theorem pullbackId_inv_app (𝓕 : DGLocalSystemFamily.{uM} β R) (c : ZerothHomotopy B) :
-    (pullbackId (β := β) R).inv.app 𝓕 c = (pullbackIdApp R (β.mk_point c) _ 𝓕).inv :=
-  (rfl)
+    (pullbackId (β := β) R).inv.app 𝓕 c =
+      (pullbackIdApp R (β.mk_point c) _ 𝓕).inv ≫ eqToHom (pullback_obj R _ _ 𝓕 c).symm :=
+  (Category.comp_id _).symm
 
 variable {B'' : Type*} [TopologicalSpace B''] {β'' : PathComponentBasepoints B''}
 
@@ -268,9 +272,11 @@ theorem pullbackComp_hom_app (g : C(B, B'')) (f : C(B', B))
     (hf : ∀ c', f (β'.point c') = β.point (ZerothHomotopy.mk (f (β'.point c'))))
     (𝓕 : DGLocalSystemFamily.{uM} β'' R) (c' : ZerothHomotopy B') :
     (pullbackComp R g f hg hf).hom.app 𝓕 c' =
-      (pullbackCompApp R g f (congrArg (fun x ↦ ZerothHomotopy.mk (g x)) (hf c')) (hf c')
-        (hg _) _ 𝓕).hom :=
-  (rfl)
+      eqToHom (pullback_obj R _ _ 𝓕 c') ≫
+        (pullbackCompApp R g f (congrArg (fun x ↦ ZerothHomotopy.mk (g x)) (hf c')) (hf c')
+          (hg _) _ 𝓕).hom ≫
+          eqToHom (by rw [Functor.comp_obj, pullback_obj, pullback_obj]) :=
+  ((Category.id_comp _).trans (Category.comp_id _)).symm
 
 /-- The component of the inverse of `pullbackComp` at a family `𝓕` and a path component `c'`. -/
 @[simp]
@@ -279,9 +285,11 @@ theorem pullbackComp_inv_app (g : C(B, B'')) (f : C(B', B))
     (hf : ∀ c', f (β'.point c') = β.point (ZerothHomotopy.mk (f (β'.point c'))))
     (𝓕 : DGLocalSystemFamily.{uM} β'' R) (c' : ZerothHomotopy B') :
     (pullbackComp R g f hg hf).inv.app 𝓕 c' =
-      (pullbackCompApp R g f (congrArg (fun x ↦ ZerothHomotopy.mk (g x)) (hf c')) (hf c')
-        (hg _) _ 𝓕).inv :=
-  (rfl)
+      eqToHom (by rw [Functor.comp_obj, pullback_obj, pullback_obj]) ≫
+        (pullbackCompApp R g f (congrArg (fun x ↦ ZerothHomotopy.mk (g x)) (hf c')) (hf c')
+          (hg _) _ 𝓕).inv ≫
+          eqToHom (pullback_obj R _ _ 𝓕 c').symm :=
+  ((Category.id_comp _).trans (Category.comp_id _)).symm
 
 end DGLocalSystemFamily
 

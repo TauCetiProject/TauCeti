@@ -98,6 +98,8 @@ structure PathComponentBasepoints (X : Type*) [TopologicalSpace X] where
   /-- The chosen basepoint of a path component lies in that component. -/
   mk_point : ∀ c, ZerothHomotopy.mk (point c) = c
 
+attribute [simp] PathComponentBasepoints.mk_point
+
 /-- Some choice of a basepoint in each path component, through a right inverse of the surjection
 `ZerothHomotopy.mk`. -/
 noncomputable def PathComponentBasepoints.choose (X : Type*) [TopologicalSpace X] :
