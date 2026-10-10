@@ -103,9 +103,9 @@ theorem exists_isPLOn_closedStarHomeomorphClosedBall
 
 /-- A PL link-to-sphere map extends to a PL formula for the compact closed-star ball model.
 
-For a finite ambient vertex type, the closed-star compactness needed by the construction is
-provided internally by `isCompact_closedStarRealization_of_finite`. -/
-theorem exists_isPLOn_closedStarHomeomorphClosedBall_of_isPLOn [Finite ι]
+The compactness of the closed star is explicit, so the ambient vertex type need not be finite. -/
+theorem exists_isPLOn_closedStarHomeomorphClosedBall_of_isPLOn
+    (hK : IsCompact (closedStarRealization K {v}))
     (e : geometricLink K v ≃ₜ Metric.sphere (0 : E) 1)
     (F : (ι → ℝ) → E)
     (hF : ∀ y : geometricLink K v, F (y.1.1 : ι → ℝ) = e y)
@@ -113,11 +113,7 @@ theorem exists_isPLOn_closedStarHomeomorphClosedBall_of_isPLOn [Finite ι]
     ∃ G : (ι → ℝ) → E,
       IsPLOn G (range (fun x : closedStarRealization K {v} => (x.1.1 : ι → ℝ))) ∧
       ∀ x : closedStarRealization K {v},
-        G (x.1.1 : ι → ℝ) =
-          (closedStarHomeomorphClosedBall
-            (K.isCompact_closedStarRealization_of_finite v) e x : E) := by
-  let hK : IsCompact (closedStarRealization K {v}) :=
-    K.isCompact_closedStarRealization_of_finite v
+        G (x.1.1 : ι → ℝ) = (closedStarHomeomorphClosedBall hK e x : E) := by
   have hlink : IsCompact (range (fun y : geometricLink K v => (y.1.1 : ι → ℝ))) := by
     have hcompact := K.isCompact_geometricLink v hK
     let : CompactSpace (geometricLink K v) := isCompact_iff_compactSpace.mp hcompact
