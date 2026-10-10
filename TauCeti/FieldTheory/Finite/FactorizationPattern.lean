@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.UniqueFactorizationDomain.NormalizedFactors
 public import TauCeti.FieldTheory.Finite.Irreducible
 
 import Mathlib.Algebra.Polynomial.BigOperators
+import TauCeti.RingTheory.Polynomial.Factors
 
 /-!
 # Squarefree polynomials with prescribed factorization patterns over finite fields
@@ -50,20 +51,6 @@ namespace TauCeti
 
 variable (k : Type*) [Field k] [Finite k]
 
-omit [Finite k] in
-/-- The product of a duplicate-free multiset of monic irreducible polynomials is monic and
-squarefree, and its normalized factors are the multiset itself. -/
-private theorem monic_squarefree_normalizedFactors_prod [DecidableEq k] {s : Multiset k[X]}
-    (smonic : ∀ p ∈ s, p.Monic) (sirr : ∀ p ∈ s, Irreducible p) (snodup : s.Nodup) :
-    s.prod.Monic ∧ Squarefree s.prod ∧ normalizedFactors s.prod = s := by
-  have hfac : normalizedFactors s.prod = s := by
-    rw [normalizedFactors_prod_eq s sirr]
-    exact (Multiset.map_congr rfl fun p hp ↦ (smonic p hp).normalize_eq_self).trans s.map_id'
-  refine ⟨by simpa using monic_multiset_prod_of_monic s id smonic, ?_, hfac⟩
-  rw [squarefree_iff_nodup_normalizedFactors
-    (Multiset.prod_ne_zero fun hp ↦ (sirr 0 hp).ne_zero rfl), hfac]
-  exact snodup
-
 /-- For `2 ≤ n`, a finite field has a monic squarefree polynomial of degree `n` whose irreducible
 factors have degrees `1` and `n - 1`. -/
 theorem exists_monic_squarefree_map_natDegree_normalizedFactors_eq_pair_one_sub_one
@@ -74,7 +61,7 @@ theorem exists_monic_squarefree_map_natDegree_normalizedFactors_eq_pair_one_sub_
     exists_monic_irreducible_natDegree_eq_ne_X k (n - 1) (by omega)
   let s : Multiset k[X] := {X, h}
   have smonic : ∀ p ∈ s, p.Monic := by simp [s, monic_X, hmonic]
-  obtain ⟨gmonic, gsq, hfac⟩ := monic_squarefree_normalizedFactors_prod k smonic
+  obtain ⟨gmonic, gsq, hfac⟩ := monic_squarefree_normalizedFactors_prod smonic
     (by simp [s, irreducible_X, hirr]) (by simp [s, Ne.symm hX])
   refine ⟨s.prod, gmonic, ?_, gsq, by rw [hfac]; simp [s, hdeg]⟩
   rw [natDegree_multiset_prod_of_monic s smonic]
@@ -104,7 +91,7 @@ theorem exists_monic_squarefree_count_two_map_natDegree_normalizedFactors_eq_one
     have hq : h ≠ q := fun h' ↦ by rw [h'] at hdeg; omega
     let s : Multiset k[X] := {q, X, h}
     have smonic : ∀ p ∈ s, p.Monic := by simp [s, monic_X, qmonic, hmonic]
-    obtain ⟨gmonic, gsq, hfac⟩ := monic_squarefree_normalizedFactors_prod k smonic
+    obtain ⟨gmonic, gsq, hfac⟩ := monic_squarefree_normalizedFactors_prod smonic
       (by simp [s, irreducible_X, qirr, hirr]) (by simp [s, qX, Ne.symm hq, Ne.symm hX])
     refine ⟨s.prod, gmonic, ?_, gsq, ?_, ?_⟩
     · rw [natDegree_multiset_prod_of_monic s smonic]
@@ -126,7 +113,7 @@ theorem exists_monic_squarefree_count_two_map_natDegree_normalizedFactors_eq_one
     have hq : h ≠ q := fun h' ↦ by rw [h'] at hdeg; omega
     let s : Multiset k[X] := {q, h}
     have smonic : ∀ p ∈ s, p.Monic := by simp [s, qmonic, hmonic]
-    obtain ⟨gmonic, gsq, hfac⟩ := monic_squarefree_normalizedFactors_prod k smonic
+    obtain ⟨gmonic, gsq, hfac⟩ := monic_squarefree_normalizedFactors_prod smonic
       (by simp [s, qirr, hirr]) (by simp [s, Ne.symm hq])
     refine ⟨s.prod, gmonic, ?_, gsq, ?_, ?_⟩
     · rw [natDegree_multiset_prod_of_monic s smonic]
