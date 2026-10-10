@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.SmoothIsotopy.Basic
-public import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
+import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
 public import Mathlib.Analysis.LocallyConvex.Bounded
 public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
 
@@ -23,7 +23,7 @@ It gives an isotopy through embeddings; extending it to an ambient isotopy is a 
 assertion. Neither finite dimensionality nor compactness of the source is required.
 
 Reference: M. Hirsch, *Differential Topology*, GTM 33, Chapter 4, §6, Theorem 6.6.
-The bounded-set shrinking argument uses Mathlib's von Neumann boundedness and absorption API.
+The bounded-set shrinking argument uses Mathlib's von Neumann boundedness and small-sets API.
 -/
 
 public section
@@ -86,17 +86,18 @@ theorem shrinkingIsotopy_mapsTo_image (f : SmoothEmbedding 𝓘(ℝ, E) J n E N)
     nlinarith
   exact ⟨_, hs.smul_mem hx h₀ h₁, (f.shrinkingIsotopy_apply hc (t, x)).symm⟩
 
-/-- A bounded part of a smooth embedding can be shrunk into any neighbourhood of its
-centre, through embeddings fixing that centre. If the part is star-convex, the entire motion
-stays inside its original image. In particular this applies to every closed ball centred at zero. -/
+/-- A bounded part of a smooth embedding can be mapped into any neighbourhood of its
+centre at the endpoint of a shrinking isotopy. For a star-convex source subset,
+`shrinkingIsotopy_mapsTo_image` gives containment in its original image throughout the motion. -/
 theorem exists_shrinkingIsotopy_mapsTo (f : SmoothEmbedding 𝓘(ℝ, E) J n E N)
     {s : Set E} (hs : Bornology.IsBounded s) {U : Set N} (hU : U ∈ 𝓝 (f 0)) :
     ∃ (c : ℝ) (hc : 0 < c), c ≤ 1 ∧
       MapsTo (fun x => f.shrinkingIsotopy hc (1, x)) s U := by
   have hpre : f ⁻¹' U ∈ 𝓝 (0 : E) := f.contMDiff.continuous.continuousAt hU
-  have habs := ((NormedSpace.isVonNBounded_iff ℝ).mpr hs) hpre
-  have hnear : ∀ᶠ c : ℝ in 𝓝 0, MapsTo (fun x => c • x) s (f ⁻¹' U) :=
-    (absorbs_iff_eventually_nhds_zero (mem_of_mem_nhds hpre)).mp habs
+  have hnear : ∀ᶠ c : ℝ in 𝓝 0, MapsTo (fun x => c • x) s (f ⁻¹' U) := by
+    simpa only [mapsTo_iff_image_subset, image_smul] using
+      ((NormedSpace.isVonNBounded_iff ℝ).mpr hs).tendsto_smallSets_nhds.eventually
+        (eventually_smallSets_subset.mpr hpre)
   obtain ⟨a, b, hab, hsmall⟩ := hnear.exists_Ioo_subset
   obtain ⟨c, hc, hcb⟩ := exists_between (lt_min hab.2 (by norm_num : (0 : ℝ) < 1))
   refine ⟨c, hc, (hcb.trans_le (min_le_right _ _)).le, ?_⟩
