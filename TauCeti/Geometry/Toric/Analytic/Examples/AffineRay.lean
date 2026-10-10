@@ -266,13 +266,14 @@ theorem val_affineRayZeroFacePointHomeomorph_apply
       val_coneChartEquiv_snd_apply (isIntegralLattice_intCast 1) (isToricCone_bot _)
         zeroFaceBasis_extends x 0
 
-include g₀ in
 /-- The standard Laurent character has nonzero value at every zero-face complex point. -/
 theorem affineRayZeroFacePoint_apply_single_ne_zero
     (x : AffineSemigroupComplexPoint
       (dualSemigroup (isIntegralLattice_intCast 1) (⊥ : PointedCone ℝ (Fin 1 → ℝ)))) :
     x (MonoidAlgebra.single (ofAdd affineRayZeroFaceCharacter) 1) ≠ 0 := by
-  rw [← val_affineRayZeroFacePointHomeomorph_apply g₀ x]
+  rw [affineRayZeroFaceCharacter,
+    ← val_coneChartEquiv_snd_apply (isIntegralLattice_intCast 1) (isToricCone_bot _)
+      zeroFaceBasis_extends x 0]
   exact Units.ne_zero _
 
 /-- The zero-face point with unit coordinate `z` evaluates its standard Laurent monomial to `z`. -/
@@ -294,10 +295,10 @@ theorem affineRayZeroFacePointHomeomorph_symm_apply
     let _ := affinePointTopology g₀
     (affineRayZeroFacePointHomeomorph g₀).symm
       (Units.mk0 (x (MonoidAlgebra.single (ofAdd affineRayZeroFaceCharacter) 1))
-        (affineRayZeroFacePoint_apply_single_ne_zero g₀ x)) = x := by
+        (affineRayZeroFacePoint_apply_single_ne_zero x)) = x := by
   let _ := affinePointTopology g₀
   have h : Units.mk0 (x (MonoidAlgebra.single (ofAdd affineRayZeroFaceCharacter) 1))
-      (affineRayZeroFacePoint_apply_single_ne_zero g₀ x) =
+      (affineRayZeroFacePoint_apply_single_ne_zero x) =
       affineRayZeroFacePointHomeomorph g₀ x := by
     apply Units.ext
     exact (val_affineRayZeroFacePointHomeomorph_apply g₀ x).symm
@@ -406,7 +407,7 @@ theorem affineRayZeroFacePointDiffeomorph_symm_apply (n : ℕ∞ω)
     let _ := affineRayZeroFaceChartedSpace g₀
     (affineRayZeroFacePointDiffeomorph g₀ n).symm
       (Units.mk0 (x (MonoidAlgebra.single (ofAdd affineRayZeroFaceCharacter) 1))
-        (affineRayZeroFacePoint_apply_single_ne_zero g₀ x)) = x := by
+        (affineRayZeroFacePoint_apply_single_ne_zero x)) = x := by
   let _ := affinePointTopology g₀
   let _ := affineRayZeroFaceChartedSpace g₀
   exact affineRayZeroFacePointHomeomorph_symm_apply g₀ x
