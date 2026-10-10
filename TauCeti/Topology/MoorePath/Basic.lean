@@ -14,17 +14,17 @@ public import Mathlib.Topology.MetricSpace.ProperSpace.Real
 A **Moore path** in a space `X` is a continuous map `γ : [0, ∞) → X` together with a duration
 `L ≥ 0` at which it stops: `γ t = γ L` for every `t ≥ L`.  Unlike the paths of `Path`, which are
 parametrized by the unit interval, Moore paths concatenate by placing one after the other with the
-durations adding up, and this concatenation is strictly associative with strict units.  The Moore
-loops at a point therefore form a topological monoid, whose chains are a differential graded
-algebra without any Eilenberg–Zilber correction.  The constant path of duration `0` is the unit;
-for `X` a point the Moore loop space is `[0, ∞)`, so it is not homeomorphic to `Map_*(S¹, X)`.
+durations adding up, and this concatenation is strictly associative with strict units, so the
+Moore loops at a point form a topological monoid and not merely an `H`-space.  The constant path of
+duration `0` is the unit; for `X` a point the Moore loop space is `[0, ∞)`, so it is not
+homeomorphic to `Map_*(S¹, X)`.
 
 The space of Moore paths is topologized as a subspace of `ℝ≥0 × C(ℝ≥0, X)`, with the compact-open
 topology on the second factor.  Since `ℝ≥0` is locally compact, evaluation is continuous and a map
 into `MoorePath X` is continuous exactly when its duration and its uncurried evaluation are.
 
-This file defines the carrier, its topology, the end points and the constant paths.
-Concatenation, loops and the comparison with `Path` are in subsequent files.
+This file defines the carrier, its topology, the end points and the constant paths.  It does not
+define concatenation, loops, or the comparison with `Path`.
 
 ## Main definitions
 
@@ -87,14 +87,21 @@ theorem continuous (γ : MoorePath X) : Continuous γ :=
 theorem apply_of_length_le (γ : MoorePath X) {t : ℝ≥0} (h : γ.length ≤ t) : γ t = γ γ.length :=
   γ.stopped' t h
 
-/-- Two Moore paths with the same duration and the same values are equal. -/
+/-- Two Moore paths with the same duration and the same values up to that duration are equal:
+after the duration both are constant. -/
 @[ext]
-theorem ext {γ δ : MoorePath X} (hl : γ.length = δ.length) (h : ∀ t, γ t = δ t) : γ = δ := by
+theorem ext {γ δ : MoorePath X} (hl : γ.length = δ.length)
+    (h : ∀ t, t ≤ γ.length → γ t = δ t) : γ = δ := by
+  -- Beyond the common duration, both paths take their value at the duration.
+  have h' : ∀ t, γ t = δ t := fun t ↦ by
+    rcases le_or_gt t γ.length with ht | ht
+    · exact h t ht
+    · rw [γ.apply_of_length_le ht.le, δ.apply_of_length_le (hl ▸ ht.le), h _ le_rfl, hl]
   obtain ⟨⟨f, hf⟩, L, hs⟩ := γ
   obtain ⟨⟨g, hg⟩, L', hs'⟩ := δ
   dsimp only at hl
   subst hl
-  have : f = g := funext h
+  have : f = g := funext h'
   subst this
   rfl
 
@@ -129,7 +136,7 @@ theorem toProd_snd (γ : MoorePath X) : γ.toProd.2 = γ.toContinuousMap :=
   (rfl)
 
 theorem toProd_injective : Function.Injective (toProd : MoorePath X → ℝ≥0 × C(ℝ≥0, X)) :=
-  fun _ _ h ↦ ext (congrArg Prod.fst h) fun t ↦
+  fun _ _ h ↦ ext (congrArg Prod.fst h) fun t _ ↦
     congrArg (fun f : C(ℝ≥0, X) ↦ f t) (congrArg Prod.snd h)
 
 instance : TopologicalSpace (MoorePath X) :=
@@ -145,6 +152,7 @@ theorem isEmbedding_toProd : IsEmbedding (toProd : MoorePath X → ℝ≥0 × C(
 theorem continuous_toProd : Continuous (toProd : MoorePath X → ℝ≥0 × C(ℝ≥0, X)) :=
   continuous_induced_dom
 
+/-- The duration of a Moore path depends continuously on the path. -/
 theorem continuous_length : Continuous (length : MoorePath X → ℝ≥0) :=
   continuous_fst.comp continuous_toProd
 
@@ -159,9 +167,12 @@ theorem continuous_eval : Continuous fun p : MoorePath X × ℝ≥0 ↦ p.1 p.2 
 theorem continuous_eval_const (t : ℝ≥0) : Continuous fun γ : MoorePath X ↦ γ t :=
   continuous_eval.comp (continuous_id.prodMk _root_.continuous_const)
 
+/-- The starting point depends continuously on the path. -/
 theorem continuous_source : Continuous (source : MoorePath X → X) :=
   continuous_eval_const 0
 
+/-- The end point depends continuously on the path: it is the evaluation at the duration, which
+is itself continuous. -/
 theorem continuous_target : Continuous (target : MoorePath X → X) :=
   continuous_eval.comp (continuous_id.prodMk continuous_length)
 
@@ -204,7 +215,7 @@ theorem continuous_const : Continuous (const : X → MoorePath X) :=
 
 /-- A Moore path of duration `0` is constant. -/
 theorem eq_const_of_length_eq_zero {γ : MoorePath X} (h : γ.length = 0) : γ = const γ.source :=
-  ext (by rw [length_const, h]) fun t ↦ by
+  ext (by rw [length_const, h]) fun t _ ↦ by
     rw [const_apply, source_eq_apply, γ.apply_of_length_le (h.trans_le zero_le), h]
 
 /-! ### Paths between subsets -/
@@ -218,6 +229,8 @@ theorem mem_pathsBetween_iff {A B : Set X} {γ : MoorePath X} :
     γ ∈ pathsBetween A B ↔ γ.source ∈ A ∧ γ.target ∈ B :=
   Iff.rfl
 
+/-- The paths between two closed subsets form a closed subspace, since the end points are
+continuous. -/
 theorem isClosed_pathsBetween {A B : Set X} (hA : IsClosed A) (hB : IsClosed B) :
     IsClosed (pathsBetween A B) :=
   (hA.preimage continuous_source).inter (hB.preimage continuous_target)
