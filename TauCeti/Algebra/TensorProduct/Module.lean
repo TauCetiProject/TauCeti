@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.TensorProduct.Basic
 public import Mathlib.Algebra.Algebra.Tower
 
 /-!
-# Restricting a tensor-product algebra action to its factors
+# Modules over tensor-product algebras
 
 A module over `A ⊗[k] B` has commuting actions of `A` and `B`, obtained by restricting
 along `Algebra.TensorProduct.includeLeft` and `Algebra.TensorProduct.includeRight`.
@@ -19,6 +19,10 @@ For `B = Aᵐᵒᵖ`, they are the left and right actions of an ordinary bimodul
 The factor actions agree with the ground-ring action. This supplies the restriction needed for
 balanced tensor products of enveloping-algebra modules; it uses Mathlib's scalar restriction
 without a new bimodule type.
+
+A ground-linear map equivariant for the two factor inclusions is linear over the whole
+tensor-product algebra. `linearMapOfFactors` packages this criterion, so constructions
+with commuting outer actions can reuse the same extension of linearity.
 -/
 
 public section
@@ -85,5 +89,39 @@ theorem moduleRightIsScalarTower :
 
 end ScalarTower
 
+section LinearMaps
+
+variable [Module k M] {N : Type*} [AddCommMonoid N]
+  [Module k N] [Module (A ⊗[k] B) N]
+
+/-- A ground-linear map equivariant for both factor inclusions is tensor-algebra linear. -/
+def linearMapOfFactors (f : M →ₗ[k] N)
+    (hleft : ∀ (a : A) (m : M), f ((a ⊗ₜ[k] (1 : B)) • m) = (a ⊗ₜ[k] (1 : B)) • f m)
+    (hright : ∀ (b : B) (m : M), f (((1 : A) ⊗ₜ[k] b) • m) = ((1 : A) ⊗ₜ[k] b) • f m) :
+    M →ₗ[A ⊗[k] B] N where
+  toFun := f
+  map_add' := f.map_add
+  map_smul' c m := by
+    -- Remove the identity ring homomorphism in the linear-map structure field.
+    change f (c • m) = c • f m
+    induction c using TensorProduct.inductionOn with
+    | tmul a b =>
+      have h : a ⊗ₜ[k] b = (a ⊗ₜ[k] (1 : B)) * ((1 : A) ⊗ₜ[k] b) := by
+        simp only [tmul_mul_tmul, mul_one, one_mul]
+      rw [h, mul_smul, hleft, hright, ← mul_smul]
+    | add c d hc hd => simp only [add_smul, map_add, hc, hd]
+
+/-- Extending linearity preserves the underlying function. -/
+@[simp]
+theorem linearMapOfFactors_apply (f : M →ₗ[k] N) (hleft hright) (m : M) :
+    linearMapOfFactors (A := A) (B := B) M f hleft hright m = f m := (rfl)
+
+/-- Restricting the extended linear map returns the original ground-linear map. -/
+@[simp]
+theorem linearMapOfFactors_restrictScalars [IsScalarTower k (A ⊗[k] B) M]
+    [IsScalarTower k (A ⊗[k] B) N] (f : M →ₗ[k] N) (hleft hright) :
+    (linearMapOfFactors (A := A) (B := B) M f hleft hright).restrictScalars k = f := (rfl)
+
+end LinearMaps
 
 end TauCeti.Algebra.TensorProduct
