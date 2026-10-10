@@ -45,8 +45,8 @@ needs, since its two carriers are arbitrary probability spaces.
   `TauCeti.Measure.exists_glue_of_standardBorel_left` — **the gluing lemma**, in the two regimes
   obtained by disintegrating `σ` over `Y` (which needs `Z` standard Borel) and by disintegrating
   `π` over `Y` (which needs `X` standard Borel);
-* `TauCeti.Measure.exists_glue_of_fst_eq` — the gluing lemma for two plans out of a common first
-  space, realising both on `X × Y × Z`;
+* `MeasureTheory.Measure.exists_glue_of_fst_eq` — the gluing lemma for two plans out of a common
+  first space, realising both on `X × Y × Z`;
 * `TauCeti.MeasureTheory.exists_glue_of_countable_middle` — **the gluing lemma over a countable
   middle space**, which needs nothing of either outer space;
 * `TauCeti.Measure.exists_comp_of_exists_glue` — the composition of plans read off a glued measure,
@@ -271,8 +271,8 @@ Two plans out of a common space, `π` on `X × Y` and `ρ` on `X × Z` with `π.
 joint law on `X × Y × Z` whose `(X, Y)`-marginal is `π` and whose `(X, Z)`-marginal is `ρ`. Only
 the last space is assumed standard Borel. Compare
 `TauCeti.Measure.exists_glue_of_standardBorel_right`, where the shared space is the middle one. -/
-theorem exists_glue_of_fst_eq [StandardBorelSpace Z] {ρ : Measure (X × Z)} [IsFiniteMeasure ρ]
-    (hπρ : π.fst = ρ.fst) :
+theorem _root_.MeasureTheory.Measure.exists_glue_of_fst_eq [StandardBorelSpace Z]
+    {ρ : Measure (X × Z)} [IsFiniteMeasure ρ] (hπρ : π.fst = ρ.fst) :
     ∃ γ : Measure (X × Y × Z),
       γ.map (Prod.map id Prod.fst) = π ∧ γ.map (Prod.map id Prod.snd) = ρ := by
   obtain ⟨γ, hγπ, hγρ⟩ := exists_glue_of_standardBorel_right (π.map Prod.swap) ρ

@@ -148,7 +148,7 @@ theorem exists_isGeneralizedGeodesicPlan (hp : p ≠ 0) (μ ν₀ ν₁ : Measur
   obtain ⟨π₀, hπ₀, hπ₀opt⟩ := hopt ν₀ h₀
   obtain ⟨π₁, hπ₁, hπ₁opt⟩ := hopt ν₁ h₁
   have : IsFiniteMeasure π₁ := hπ₁.isFiniteMeasure
-  obtain ⟨γ, hγ₀, hγ₁⟩ := Measure.exists_glue_of_fst_eq π₀ (hπ₀.fst_eq.trans hπ₁.fst_eq.symm)
+  obtain ⟨γ, hγ₀, hγ₁⟩ := π₀.exists_glue_of_fst_eq (hπ₀.fst_eq.trans hπ₁.fst_eq.symm)
   exact ⟨γ, ⟨hγ₀ ▸ hπ₀, hγ₀ ▸ hπ₀opt, hγ₁ ▸ hπ₁, hγ₁ ▸ hπ₁opt⟩⟩
 
 end Polish
