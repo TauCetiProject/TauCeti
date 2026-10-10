@@ -125,6 +125,18 @@ theorem hasOneCommonSide_iff_existsUnique (D : GridRectangleDecomposition x z) :
   rw [HasOneCommonSide, Finset.card_eq_one_iff_existsUnique]
   simp only [mem_commonSideColumns]
 
+/-- Two rectangles sharing their initial side and having distinct terminal sides share exactly
+one side column. -/
+theorem hasOneCommonSide_of_left_eq_left (D : GridRectangleDecomposition x z)
+    (hcommon : D.first.left = D.second.left)
+    (hother : D.first.right ≠ D.second.right) : D.HasOneCommonSide := by
+  apply D.hasOneCommonSide_iff_existsUnique.mpr
+  refine ⟨D.first.left, ?_, ?_⟩
+  · simp [GridRectangleBetween.mem_sideColumns, hcommon]
+  · intro c hc
+    simp only [GridRectangleBetween.mem_sideColumns, ← hcommon] at hc
+    grind
+
 /-- Two rectangles sharing their initial side, the second ending strictly inside the first's
 column interval, share exactly one side column. -/
 theorem hasOneCommonSide_of_left_eq_left_of_mem_cIoo (D : GridRectangleDecomposition x z)
