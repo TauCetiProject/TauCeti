@@ -396,16 +396,16 @@ theorem comp_ν (h : IsDGAlgebra 𝒜 d) (ν₁ : ContinuationCocycle mP mQ)
 
 /-- The Kronecker continuation cocycle is a left identity for the composition. -/
 @[simp]
-theorem refl_comp [DecidableEq P] (h : IsDGAlgebra 𝒜 d) (hd : d 1 = 0)
-    (ν : ContinuationCocycle mP mQ) : (refl hd mP).comp h ν = ν := by
+theorem refl_comp [DecidableEq P] (h : IsDGAlgebra 𝒜 d) (ν : ContinuationCocycle mP mQ) :
+    (refl h.map_one_eq_zero mP).comp h ν = ν := by
   ext x y
   rw [comp_ν, refl_ν]
   exact congrFun (congrFun (Matrix.one_mul (Matrix.of ν.ν)) x) y
 
 /-- The Kronecker continuation cocycle is a right identity for the composition. -/
 @[simp]
-theorem comp_refl [DecidableEq Q] (h : IsDGAlgebra 𝒜 d) (hd : d 1 = 0)
-    (ν : ContinuationCocycle mP mQ) : ν.comp h (refl hd mQ) = ν := by
+theorem comp_refl [DecidableEq Q] (h : IsDGAlgebra 𝒜 d) (ν : ContinuationCocycle mP mQ) :
+    ν.comp h (refl h.map_one_eq_zero mQ) = ν := by
   ext x y
   rw [comp_ν, refl_ν]
   exact congrFun (congrFun (Matrix.mul_one (Matrix.of ν.ν)) x) y
