@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.GroupExtension.Cohomology
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicPow
-import TauCeti.GroupTheory.SpecificGroups.Cyclic.Generators
+import TauCeti.Algebra.Group.Subgroup.ZPowers
 import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
@@ -38,7 +38,7 @@ open ContCohomology
 variable {p : ℕ} [Fact p.Prime]
   {G M N : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [CompactSpace G] [TotallyDisconnectedSpace G]
-  [CommGroup M] [TopologicalSpace M] [IsTopologicalGroup M]
+  [CommGroup M] [TopologicalSpace M]
   [MulDistribMulAction G M] [ContinuousSMul G M] [CompactSpace M]
   [CommGroup N] [TopologicalSpace N] [IsTopologicalGroup N]
   [MulDistribMulAction G N] [ContinuousSMul G N] [CompactSpace N]
@@ -71,9 +71,19 @@ theorem exists_surjective_continuousMonoidHom_of_generating_classes
     · have : Subsingleton (H2 G (Additive N)) := Nat.card_eq_one_iff_unique.mp
         (by simpa [hzero] using hr) |>.1
       exact ⟨1, Nat.coprime_one_right _, Subsingleton.elim _ _⟩
-    · obtain ⟨n, hn, heq⟩ := exists_coprime_nsmul_eq_of_zmultiples_eq_top hx hy
+    · obtain ⟨k, hk, heq⟩ := AddSubgroup.exists_coprime_zsmul_of_generators
+        (X.map f hf).contCohomologyClass Y.contCohomologyClass hx hy
+      let n := (k % (Nat.card (H2 G (Additive N)) : ℤ)).natAbs
+      have hn : (Nat.card (H2 G (Additive N))).Coprime n := by
+        apply Nat.Coprime.symm
+        simpa only [Int.gcd_def, Int.natAbs_natCast] using
+          (Int.gcd_emod k (Nat.card (H2 G (Additive N)))).trans hk
+      have heq' : n • (X.map f hf).contCohomologyClass = Y.contCohomologyClass := by
+        rw [heq, ← natCast_zsmul, Int.natAbs_of_nonneg
+          (Int.emod_nonneg _ (Int.natCast_ne_zero.mpr Nat.card_pos.ne')),
+          mod_natCard_zsmul]
       rw [hr] at hn
-      exact ⟨n, (Nat.coprime_pow_left_iff (Nat.pos_of_ne_zero hzero) p n).mp hn, heq⟩
+      exact ⟨n, (Nat.coprime_pow_left_iff (Nat.pos_of_ne_zero hzero) p n).mp hn, heq'⟩
   let q : N →*[G] N :=
     { powMonoidHom n with map_smul' := fun g z ↦ (smul_pow' g z n).symm }
   have hq_apply (z : N) : q z = z ^ n := (rfl)
@@ -85,6 +95,10 @@ theorem exists_surjective_continuousMonoidHom_of_generating_classes
     obtain ⟨w, hw⟩ := (hN.padicPowHomeomorph u).surjective z
     exact ⟨w, (hq_apply w).trans <| by simpa [hu] using hw⟩
   have hqf : Continuous (q.comp f) := hq.comp hf
+  -- The compact source kernel inherits continuous group operations from its inclusion.
+  let : IsTopologicalGroup M :=
+    Topology.IsInducing.isTopologicalGroup X.toGroupExtension.inl
+      (X.continuous_inl.isClosedEmbedding X.toGroupExtension.inl_injective).isEmbedding.isInducing
   have hmap : (X.map (q.comp f) hqf).contCohomologyClass =
       Y.contCohomologyClass := by
     refine (X.contCohomologyClass_map (q.comp f) hqf).trans ?_
