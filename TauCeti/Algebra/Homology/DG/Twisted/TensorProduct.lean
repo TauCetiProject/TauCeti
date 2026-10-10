@@ -111,14 +111,16 @@ theorem piRight_differential (hM : IsDGRightModule hA ℳ dM)
 
 section Grading
 
--- Use the characteristic piece equation, since `ofDecomposition` is opaque across modules.
-local instance : SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece
-    (InternalGrading.ofDecomposition ℳ).piece := by
+-- Use the characteristic piece equation, since `ofDecomposition` is opaque across modules.  The
+-- instances are named: anonymous local instances get automatic names that clash across files.
+local instance instGradedSMulOppositeOfDecompositionTwisted :
+    SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece
+      (InternalGrading.ofDecomposition ℳ).piece := by
   rw [InternalGrading.ofDecomposition_piece]
   infer_instance
 
 omit [Fintype P] [DecidableEq P] in
-local instance [Finite P] : SetLike.GradedSMul 𝒜
+local instance instGradedSMulOfDecompositionTwistedTotalGrading [Finite P] : SetLike.GradedSMul 𝒜
     (InternalGrading.ofDecomposition (twistedTotalGrading 𝒜 ind)).piece := by
   rw [InternalGrading.ofDecomposition_piece]
   infer_instance
