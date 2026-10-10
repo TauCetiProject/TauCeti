@@ -56,6 +56,10 @@ then shows that every partner is of the kind above, so the two descriptions agre
 Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Section 5.1, and
 Manolescu--Ozsváth--Szabó--Thurston, *On combinatorial link Floer homology*, Section 3.1
 (arXiv:math/0610559).
+
+This file adapts the rectangle--pentagon formalization in
+`TauCeti.KnotTheory.Grid.Commutation.Overlap.Terminal.Mixed`
+(`GridDiagram.mem_terminalSelfPairs_iff_sides`).
 -/
 
 public section
