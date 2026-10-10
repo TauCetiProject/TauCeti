@@ -61,6 +61,20 @@ universe u
 variable {R S B : Type u} [CommRing R] [CommRing S] [Algebra R S]
   [CommRing B] [Algebra R B] [Algebra S B] [IsScalarTower R S B]
 
+/-- `Spec.map` turns a composite of ring homomorphisms into a composite of morphisms of schemes;
+this normalises the `Spec.map (CommRingCat.ofHom _)` chains appearing throughout this file. -/
+@[reassoc]
+private theorem spec_map_ofHom_comp {A A' A'' : Type u} [CommRing A] [CommRing A'] [CommRing A'']
+    (f : A' →+* A'') (g : A →+* A') :
+    Spec.map (CommRingCat.ofHom f) ≫ Spec.map (CommRingCat.ofHom g) =
+      Spec.map (CommRingCat.ofHom (f.comp g)) := by
+  rw [← Spec.map_comp, ← CommRingCat.ofHom_comp]
+
+/-- Ring homomorphisms that agree pointwise have the same `Spec.map`. -/
+private theorem spec_map_ofHom_congr {A A' : Type u} [CommRing A] [CommRing A'] {f g : A →+* A'}
+    (h : ∀ a, f a = g a) : Spec.map (CommRingCat.ofHom f) = Spec.map (CommRingCat.ofHom g) := by
+  rw [RingHom.ext h]
+
 /-- `Spec (S ⊗[R] B)` is the fibre product of `Spec S ⟶ Spec R` and `Spec B ⟶ Spec S ⟶ Spec R`. -/
 private theorem isPullback_spec_tensorProduct (R S B : Type u) [CommRing R] [CommRing S]
     [Algebra R S] [CommRing B] [Algebra R B] [Algebra S B] [IsScalarTower R S B] :
@@ -71,7 +85,7 @@ private theorem isPullback_spec_tensorProduct (R S B : Type u) [CommRing R] [Com
         (Algebra.TensorProduct.includeRight : B →ₐ[R] S ⊗[R] B).toRingHom))
       (Spec.algebraMap R S) ((Over.mk (Spec.algebraMap S B)).hom ≫ Spec.algebraMap R S) := by
   have h := isPullback_SpecMap_of_isPushout _ _ _ _ (CommRingCat.isPushout_tensorProduct R S B)
-  rw [IsScalarTower.algebraMap_eq R S B, CommRingCat.ofHom_comp, Spec.map_comp] at h
+  rw [IsScalarTower.algebraMap_eq R S B, ← spec_map_ofHom_comp] at h
   exact h
 
 variable (R S B) in
@@ -121,8 +135,7 @@ private theorem isPullback_spec_tensorProduct₃ :
   refine (isPullback_SpecMap_of_isPushout _ _ _ _
     (CommRingCat.isPushout_tensorProduct R S (S ⊗[R] B))).of_iso (Iso.refl _) (Iso.refl _)
     (tensorIso R S B) (Iso.refl _) (by simp) (by simp) (by simp) ?_
-  rw [Iso.refl_hom, Category.comp_id, tensorIso_hom_fst_assoc, ← Spec.map_comp,
-    ← CommRingCat.ofHom_comp]
+  rw [Iso.refl_hom, Category.comp_id, tensorIso_hom_fst_assoc, spec_map_ofHom_comp]
 
 /-- The identification of `Spec (S ⊗[R] (S ⊗[R] B))` with `Spec S ×_{Spec R} (Spec S ×_{Spec R}
 Spec B)`. -/
@@ -143,16 +156,12 @@ private theorem tensorIso₃_hom_lift (θ : B →ₐ[R] S ⊗[R] B)
         (Algebra.TensorProduct.map (AlgHom.id R S) θ).toRingHom) ≫ (tensorIso R S B).hom := by
   subst ha
   refine pullback.hom_ext ?_ ?_
-  · rw [Category.assoc, pullback.lift_fst, Category.assoc, tensorIso_hom_fst, ← Spec.map_comp,
-      ← CommRingCat.ofHom_comp]
-    refine (IsPullback.isoPullback_hom_fst _).trans ?_
-    congr 2
-    ext s
-    simp
-  · rw [Category.assoc, pullback.lift_snd, Category.assoc, tensorIso_hom_snd, ← Spec.map_comp,
-      ← CommRingCat.ofHom_comp, tensorIso₃, IsPullback.isoPullback_hom_snd_assoc, Category.assoc,
-      Iso.hom_inv_id_assoc, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
-    exact congrArg (fun φ ↦ Spec.map (CommRingCat.ofHom φ)) (RingHom.ext fun b ↦ by simp)
+  · rw [Category.assoc, pullback.lift_fst, Category.assoc, tensorIso_hom_fst, spec_map_ofHom_comp]
+    exact (IsPullback.isoPullback_hom_fst _).trans (spec_map_ofHom_congr fun s ↦ by simp)
+  · rw [Category.assoc, pullback.lift_snd, Category.assoc, tensorIso_hom_snd, spec_map_ofHom_comp,
+      tensorIso₃, IsPullback.isoPullback_hom_snd_assoc, Category.assoc, Iso.hom_inv_id_assoc,
+      spec_map_ofHom_comp]
+    exact spec_map_ofHom_congr fun b ↦ by simp
 
 /-- The normalisation `π x · x = x` of a descent datum on `Spec B` acting through `Spec` of `θ`
 is the counit equation for `θ`. -/
@@ -169,16 +178,13 @@ private theorem lift_act_iff (θ : B →ₐ[S] S ⊗[R] B) (h) :
           Algebra.TensorProduct.includeLeftRingHom = algebraMap S B := by
         ext s
         simp
-      rw [pullback.lift_fst, Category.assoc, tensorIso_hom_fst, ← Spec.map_comp,
-        ← CommRingCat.ofHom_comp, this]
+      rw [pullback.lift_fst, Category.assoc, tensorIso_hom_fst, spec_map_ofHom_comp, this]
       simp only [Over.mk_hom]
-    · rw [pullback.lift_snd, Category.assoc, tensorIso_hom_snd, ← Spec.map_comp,
-        ← CommRingCat.ofHom_comp]
+    · rw [pullback.lift_snd, Category.assoc, tensorIso_hom_snd, spec_map_ofHom_comp]
       simp only [Over.mk_left]
-      convert (Spec.map_id (.of B)).symm using 2
-      ext b
-      simp
-  rw [reassoc_of% hlift, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
+      exact (Spec.map_id (.of B)).symm.trans
+        (spec_map_ofHom_congr (f := RingHom.id B) fun b ↦ by simp)
+  rw [reassoc_of% hlift, spec_map_ofHom_comp]
   simp only [Over.mk_left]
   rw [← Spec.map_id, Spec.map_injective.eq_iff]
   refine ⟨fun h b ↦ congr($h b), fun h ↦ ?_⟩
@@ -202,8 +208,7 @@ private theorem act_assoc_iff (θ : B →ₐ[S] S ⊗[R] B)
   rw [← cancel_epi (tensorIso₃ (R := R) (S := S) (B := B)).hom, ← Category.assoc,
     ← Category.assoc, tensorIso₃_hom_lift (θ.restrictScalars R) a ha,
     tensorIso₃_hom_lift Algebra.TensorProduct.includeRight _ tensorIso_inv_snd.symm, ha,
-    Category.assoc, Category.assoc, Iso.hom_inv_id_assoc, ← Spec.map_comp,
-    ← CommRingCat.ofHom_comp, ← Spec.map_comp, ← CommRingCat.ofHom_comp,
+    Category.assoc, Category.assoc, Iso.hom_inv_id_assoc, spec_map_ofHom_comp, spec_map_ofHom_comp,
     Spec.map_injective.eq_iff]
   refine ⟨fun h b ↦ congr($h b), fun h ↦ ?_⟩
   ext b
@@ -219,10 +224,8 @@ noncomputable def spec (D : DescentDatum R S B) :
     have : Spec.map (CommRingCat.ofHom D.coaction.toRingHom) ≫ Spec.algebraMap S B =
         Spec.map (CommRingCat.ofHom
           (Algebra.TensorProduct.includeLeftRingHom : S →+* S ⊗[R] B)) := by
-      rw [← Spec.map_comp, ← CommRingCat.ofHom_comp]
-      congr 2
-      ext s
-      simp [Algebra.TensorProduct.algebraMap_apply]
+      rw [spec_map_ofHom_comp]
+      exact spec_map_ofHom_congr fun s ↦ by simp [Algebra.TensorProduct.algebraMap_apply]
     exact (Category.assoc _ _ _).trans ((congrArg _ this).trans tensorIso_inv_fst)
   lift_act := (lift_act_iff D.coaction _).2 D.counit_coaction
   act_assoc := (act_assoc_iff D.coaction _ rfl _ _).2 D.coassoc
@@ -334,14 +337,11 @@ private theorem tensorIso_hom_map (f : B →ₐ[S] B')
   subst hg
   refine pullback.hom_ext ?_ ?_
   · rw [Category.assoc, pullback.lift_fst, Category.comp_id, tensorIso_hom_fst, Category.assoc,
-      tensorIso_hom_fst, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
-    congr 2
-    ext s
-    simp
+      tensorIso_hom_fst, spec_map_ofHom_comp]
+    exact spec_map_ofHom_congr fun s ↦ by simp
   · rw [Category.assoc, pullback.lift_snd, tensorIso_hom_snd_assoc, Category.assoc,
-      tensorIso_hom_snd, ← Spec.map_comp, ← CommRingCat.ofHom_comp, ← Spec.map_comp,
-      ← CommRingCat.ofHom_comp]
-    exact congrArg (fun φ ↦ Spec.map (CommRingCat.ofHom φ)) (RingHom.ext fun b ↦ by simp)
+      tensorIso_hom_snd, spec_map_ofHom_comp, spec_map_ofHom_comp]
+    exact spec_map_ofHom_congr fun b ↦ by simp
 
 /-- A morphism of descent data on algebras induces a morphism, in the opposite direction, of the
 descent data on their spectra. -/
@@ -349,20 +349,15 @@ noncomputable def Hom.spec (f : Hom D D') : TauCeti.DescentDatum.Hom D'.spec D.s
   hom := Over.homMk (Spec.map (CommRingCat.ofHom f.toAlgHom.toRingHom)) <| by
     have : Spec.map (CommRingCat.ofHom f.toAlgHom.toRingHom) ≫ Spec.algebraMap S B =
         Spec.algebraMap S B' := by
-      rw [← Spec.map_comp, ← CommRingCat.ofHom_comp]
-      congr 2
-      ext b
-      simp
+      rw [spec_map_ofHom_comp]
+      exact spec_map_ofHom_congr fun b ↦ by simp
     exact this
   map_act := by
     rw [← cancel_epi (tensorIso R S B').hom, ← Category.assoc,
       tensorIso_hom_map f.toAlgHom _ (Over.homMk_left _ _) _ _, spec_act, spec_act]
     simp only [Category.assoc, Iso.hom_inv_id_assoc, Over.homMk_left]
-    rw [← Spec.map_comp, ← CommRingCat.ofHom_comp, ← Spec.map_comp,
-      ← CommRingCat.ofHom_comp]
-    congr 2
-    ext b
-    exact (f.coaction_toAlgHom b).symm
+    rw [spec_map_ofHom_comp, spec_map_ofHom_comp]
+    exact spec_map_ofHom_congr fun b ↦ (f.coaction_toAlgHom b).symm
 
 @[simp]
 theorem Hom.spec_hom_left (f : Hom D D') :
@@ -380,10 +375,8 @@ theorem Hom.id_spec : (Hom.id D).spec = TauCeti.DescentDatum.Hom.id D.spec :=
 theorem Hom.comp_spec (g : Hom D' D'') (f : Hom D D') : (g.comp f).spec = f.spec.comp g.spec := by
   refine TauCeti.DescentDatum.Hom.ext (Over.OverMorphism.ext ?_)
   rw [spec_hom_left, TauCeti.DescentDatum.Hom.comp_hom, Over.comp_left, spec_hom_left,
-    spec_hom_left, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
-  congr 2
-  ext b
-  simp
+    spec_hom_left, spec_map_ofHom_comp]
+  exact spec_map_ofHom_congr fun b ↦ by simp
 
 end Hom
 
@@ -404,21 +397,16 @@ noncomputable def specBaseChangeHom :
     have h₁ : Spec.map (CommRingCat.ofHom (baseChange R S A).coaction.toRingHom) ≫
         (pullbackSpecIso R S A).inv ≫ pullback.fst _ _ = Spec.map (CommRingCat.ofHom
           (Algebra.TensorProduct.includeLeftRingHom : S →+* S ⊗[R] (S ⊗[R] A))) := by
-      rw [pullbackSpecIso_inv_fst, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
-      congr 2
-      ext s
-      simp [Algebra.TensorProduct.one_def]
+      rw [pullbackSpecIso_inv_fst, spec_map_ofHom_comp]
+      exact spec_map_ofHom_congr fun s ↦ by simp [Algebra.TensorProduct.one_def]
     have h₂ : Spec.map (CommRingCat.ofHom (baseChange R S A).coaction.toRingHom) ≫
         (pullbackSpecIso R S A).inv ≫ pullback.snd _ _ = Spec.map (CommRingCat.ofHom
           (Algebra.TensorProduct.includeRight :
             S ⊗[R] A →ₐ[R] S ⊗[R] (S ⊗[R] A)).toRingHom) ≫
           Spec.map (CommRingCat.ofHom
             (Algebra.TensorProduct.includeRight : A →ₐ[R] S ⊗[R] A).toRingHom) := by
-      rw [pullbackSpecIso_inv_snd, ← Spec.map_comp, ← CommRingCat.ofHom_comp, ← Spec.map_comp,
-      ← CommRingCat.ofHom_comp]
-      congr 2
-      ext a
-      simp
+      rw [pullbackSpecIso_inv_snd, spec_map_ofHom_comp, spec_map_ofHom_comp]
+      exact spec_map_ofHom_congr fun a ↦ by simp
     have h₃ : (pullbackSpecIso R S A).hom ≫ Spec.map (CommRingCat.ofHom
         (Algebra.TensorProduct.includeRight : A →ₐ[R] S ⊗[R] A).toRingHom) =
         pullback.snd _ _ :=
