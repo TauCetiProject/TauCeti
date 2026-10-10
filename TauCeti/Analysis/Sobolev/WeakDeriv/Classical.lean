@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
-import TauCeti.Analysis.Sobolev.Mollification.Basic
+import TauCeti.Analysis.Sobolev.Mollification.Interior
 import Mathlib.Analysis.Calculus.BumpFunction.Convolution
 import Mathlib.Analysis.Calculus.UniformLimitsDeriv
 
@@ -19,7 +19,7 @@ More generally, a `Cᵏ` weak derivative makes the function `Cᵏ⁺¹`. These r
 representatives of Sobolev derivative fields into classical regularity, without imposing any
 boundary regularity or global integrability assumption.
 
-The proof combines `HasWeakFDerivOn.hasFDerivAt_convolution_right` with Mathlib's
+The proof combines `HasWeakFDerivOn.hasFDerivAt_indicator_convolution_normed` with Mathlib's
 `ContDiffBump.convolution_tendsto_right` and `hasFDerivAt_of_tendstoUniformlyOnFilter`.
 The value converges pointwise, while the derivative converges uniformly near each point.
 Restriction to
@@ -43,64 +43,70 @@ variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace �
   {mu : Measure E} [mu.IsAddHaarMeasure] {Omega : Opens E}
   {u : E → F} {U : E → E →L[ℝ] F}
 
-private theorem HasWeakFDerivOn.hasFDerivAt_of_locallyIntegrable
-    (h : HasWeakFDerivOn mu Omega u U) (hu : LocallyIntegrable u mu)
-    (hU : LocallyIntegrable U mu) (huc : ContinuousOn u Omega)
-    (hUc : ContinuousOn U Omega) {x : E} (hx : x ∈ Omega) : HasFDerivAt u (U x) x := by
+private theorem HasWeakFDerivOn.hasFDerivAt_indicator_of_integrableOn_ball
+    {x : E} {r : ℝ} (h : HasWeakFDerivOn mu ⟨ball x r, isOpen_ball⟩ u U) (hr : 0 < r)
+    (hu : IntegrableOn u (ball x r) mu) (hU : IntegrableOn U (ball x r) mu)
+    (huc : ContinuousOn u (ball x r)) (hUc : ContinuousOn U (ball x r)) :
+    HasFDerivAt ((ball x r).indicator u) (((ball x r).indicator U) x) x := by
   let := h.completeSpace
+  have huc_ext : ContinuousOn ((ball x r).indicator u) (ball x r) :=
+    huc.congr fun y hy => indicator_of_mem hy u
+  have hUc_ext : ContinuousOn ((ball x r).indicator U) (ball x r) :=
+    hUc.congr fun y hy => indicator_of_mem hy U
+  have hum : AEStronglyMeasurable ((ball x r).indicator u) mu :=
+    (hu.integrable_indicator isOpen_ball.measurableSet).aestronglyMeasurable
+  -- Explicit field and measure arguments keep elaboration from unfolding integrability of maps.
+  have hUm : AEStronglyMeasurable ((ball x r).indicator U) mu :=
+    Integrable.aestronglyMeasurable (f := (ball x r).indicator U) (μ := mu)
+      (IntegrableOn.integrable_indicator (f := U) (μ := mu) hU isOpen_ball.measurableSet)
   let phi : ℕ → ContDiffBump (0 : E) := fun n =>
     ⟨(1 / ((n : ℝ) + 1)) / 2, 1 / ((n : ℝ) + 1), by positivity,
       half_lt_self (by positivity)⟩
   have hphi : Tendsto (fun n => (phi n).rOut) atTop (𝓝 0) :=
     tendsto_one_div_add_atTop_nhds_zero_nat
-  let f := fun n => u ⋆[(ContinuousLinearMap.lsmul ℝ ℝ).flip, mu] (phi n).normed mu
-  let f' := fun n => U ⋆[(ContinuousLinearMap.lsmul ℝ ℝ).flip, mu] (phi n).normed mu
+  let f := fun n => (ball x r).indicator u ⋆[
+    (ContinuousLinearMap.lsmul ℝ ℝ).flip, mu] (phi n).normed mu
+  let f' := fun n => (ball x r).indicator U ⋆[
+    (ContinuousLinearMap.lsmul ℝ ℝ).flip, mu] (phi n).normed mu
   -- Joint convergence as the radius shrinks and the evaluation point approaches `x`
   -- yields exactly the near-point uniform convergence required by the derivative limit theorem.
-  have hUx : ContinuousAt U x := hUc.continuousAt (Omega.isOpen.mem_nhds hx)
-  have hconv : Tendsto (fun p : ℕ × E => f' p.1 p.2) (atTop ×ˢ 𝓝 x) (𝓝 (U x)) := by
+  have hUx : ContinuousAt ((ball x r).indicator U) x :=
+    hUc_ext.continuousAt (ball_mem_nhds x hr)
+  have hconv : Tendsto (fun p : ℕ × E => f' p.1 p.2) (atTop ×ˢ 𝓝 x)
+      (𝓝 (((ball x r).indicator U) x)) := by
     simp only [f', convolution_flip]
     exact ContDiffBump.convolution_tendsto_right (hphi.comp tendsto_fst)
-      (Eventually.of_forall fun _ => hU.aestronglyMeasurable)
+      (Eventually.of_forall fun _ => hUm)
       (hUx.tendsto.comp tendsto_snd) tendsto_snd
-  have hdist : Tendsto (fun p : ℕ × E => dist (f' p.1 p.2) (U p.2))
+  have hdist : Tendsto (fun p : ℕ × E => dist (f' p.1 p.2) (((ball x r).indicator U) p.2))
       (atTop ×ˢ 𝓝 x) (𝓝 0) := by
     simpa only [dist_self, Function.comp_apply] using hconv.dist (hUx.tendsto.comp tendsto_snd)
-  have hunif : TendstoUniformlyOnFilter f' U atTop (𝓝 x) := by
+  have hunif : TendstoUniformlyOnFilter f' ((ball x r).indicator U) atTop (𝓝 x) := by
     rw [Metric.tendstoUniformlyOnFilter_iff]
     intro ε hε
     simpa only [dist_comm] using (tendsto_order.1 hdist).2 ε hε
   -- Eventually all translated kernel supports lie inside the original domain.
-  obtain ⟨δ, hδ, hδO⟩ := Metric.isOpen_iff.1 Omega.isOpen x hx
   have hsmall : ∀ᶠ p : ℕ × E in atTop ×ˢ 𝓝 x,
-      dist p.2 x + (phi p.1).rOut < δ := by
-    have ht : Tendsto (fun p : ℕ × E => dist p.2 x + (phi p.1).rOut)
-        (atTop ×ˢ 𝓝 x) (𝓝 (dist x x + 0)) :=
-      (((continuous_id.dist continuous_const).tendsto x).comp tendsto_snd).add
-        (hphi.comp tendsto_fst)
-    have ht0 : Tendsto (fun p : ℕ × E => dist p.2 x + (phi p.1).rOut)
+      (phi p.1).rOut + dist p.2 x < r := by
+    have ht : Tendsto (fun p : ℕ × E => (phi p.1).rOut + dist p.2 x)
+        (atTop ×ˢ 𝓝 x) (𝓝 (0 + dist x x)) :=
+      (hphi.comp tendsto_fst).add
+        (((continuous_id.dist continuous_const).tendsto x).comp tendsto_snd)
+    have ht0 : Tendsto (fun p : ℕ × E => (phi p.1).rOut + dist p.2 x)
         (atTop ×ˢ 𝓝 x) (𝓝 0) := by simpa only [dist_self, zero_add] using ht
-    exact (tendsto_order.1 ht0).2 δ hδ
+    exact (tendsto_order.1 ht0).2 r hr
   have hderiv : ∀ᶠ p : ℕ × E in atTop ×ˢ 𝓝 x, HasFDerivAt (f p.1) (f' p.1 p.2) p.2 := by
     filter_upwards [hsmall] with p hp
-    apply h.hasFDerivAt_convolution_right hu hU _ (phi p.1).contDiff_normed
-      (phi p.1).hasCompactSupport_normed
-    intro y hy
-    apply hδO
-    rw [(phi p.1).tsupport_normed_eq] at hy
-    have hy' : ‖y‖ ≤ (phi p.1).rOut := by simpa using hy
-    calc
-      dist (p.2 - y) x ≤ dist (p.2 - y) p.2 + dist p.2 x := dist_triangle _ _ _
-      _ = ‖y‖ + dist p.2 x := by simp [dist_eq_norm]
-      _ ≤ (phi p.1).rOut + dist p.2 x := add_le_add hy' le_rfl
-      _ < δ := by simpa only [add_comm] using hp
+    exact h.hasFDerivAt_indicator_convolution_normed (memLp_one_iff_integrable.2 hu)
+      (memLp_one_iff_integrable.2 hU)
+      le_rfl le_rfl (phi p.1) p.2 (Metric.closedBall_subset_ball' hp)
   -- Pointwise convergence of the values completes the passage to the classical derivative.
   apply hasFDerivAt_of_tendstoUniformlyOnFilter hunif hderiv
-  filter_upwards [Omega.isOpen.mem_nhds hx] with y hy
+  filter_upwards [ball_mem_nhds x hr] with y hy
   simp only [f, convolution_flip]
   exact ContDiffBump.convolution_tendsto_right hphi
-    (Eventually.of_forall fun _ => hu.aestronglyMeasurable)
-    ((huc.continuousAt (Omega.isOpen.mem_nhds hy)).tendsto.comp tendsto_snd)
+    (Eventually.of_forall fun _ => hum)
+    ((huc_ext.continuousAt (isOpen_ball.mem_nhds hy)).tendsto.comp tendsto_snd)
     tendsto_const_nhds
 
 /-- A continuous weak Fréchet derivative of a continuous function is its classical derivative
@@ -118,22 +124,12 @@ theorem HasWeakFDerivOn.hasFDerivAt_of_continuousOn
   have hiU : IntegrableOn U (ball x r) mu :=
     ((hU.mono hrO).integrableOn_compact (isCompact_closedBall x r)).mono_set
       ball_subset_closedBall
-  have heu : (V : Set E).indicator u =ᶠ[𝓝 x] u := by
+  have heu : (ball x r).indicator u =ᶠ[𝓝 x] u := by
     filter_upwards [ball_mem_nhds x hr] with y hy using indicator_of_mem hy u
-  have heU : (V : Set E).indicator U =ᶠ[𝓝 x] U := by
+  have heU : (ball x r).indicator U =ᶠ[𝓝 x] U := by
     filter_upwards [ball_mem_nhds x hr] with y hy using indicator_of_mem hy U
-  have hviu : LocallyIntegrable ((V : Set E).indicator u) mu :=
-    (hiu.integrable_indicator V.isOpen.measurableSet).locallyIntegrable
-  -- Naming the field and measure avoids elaboration unfolding local integrability of maps.
-  have hviU : LocallyIntegrable ((V : Set E).indicator U) mu :=
-    Integrable.locallyIntegrable (f := (V : Set E).indicator U) (μ := mu)
-      (IntegrableOn.integrable_indicator (f := U) (μ := mu) hiU V.isOpen.measurableSet)
-  have hvcu : ContinuousOn ((V : Set E).indicator u) V :=
-    (hu.mono hVO).congr fun y hy => indicator_of_mem hy u
-  have hvcU : ContinuousOn ((V : Set E).indicator U) V :=
-    (hU.mono hVO).congr fun y hy => indicator_of_mem hy U
-  have hd := (h.mono hVO).indicator.hasFDerivAt_of_locallyIntegrable
-    hviu hviU hvcu hvcU (x := x) (mem_ball_self hr)
+  have hd := (h.mono hVO).hasFDerivAt_indicator_of_integrableOn_ball
+    hr hiu hiU (hu.mono hVO) (hU.mono hVO)
   rw [heU.eq_of_nhds] at hd
   exact hd.congr_of_eventuallyEq heu.symm
 
