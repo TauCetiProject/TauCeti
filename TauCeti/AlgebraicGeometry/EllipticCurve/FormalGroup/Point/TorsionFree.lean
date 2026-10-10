@@ -169,10 +169,13 @@ local notation "O_u" => u.adicCompletionIntegers F
 local notation "F_u" => u.adicCompletion F
 local notation "m_u" => IsLocalRing.maximalIdeal O_u
 
-local instance : IsLinearTopology O_u O_u :=
+-- Named: anonymous `local instance`s here get the same generated names as the ones in
+-- `FormalGroup/Point/Torsion.lean`, and both modules are imported by
+-- `Affine/Point/TorsionReduction.lean`.
+local instance isLinearTopology_adicCompletionIntegers : IsLinearTopology O_u O_u :=
   u.isAdic_maximalIdeal_adicCompletionIntegers (K := F) ▸ Ideal.isLinearTopology m_u
 
-local instance : Fact (IsAdic m_u) :=
+local instance fact_isAdic_maximalIdeal_adicCompletionIntegers : Fact (IsAdic m_u) :=
   ⟨u.isAdic_maximalIdeal_adicCompletionIntegers (K := F)⟩
 
 variable (C : WeierstrassCurve (u.adicCompletionIntegers F))
