@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.Bivariate
 public import Mathlib.FieldTheory.AlgebraicClosure
 public import TauCeti.FieldTheory.FunctionField.Basic
 import Mathlib.FieldTheory.RatFunc.IntermediateField
+import TauCeti.Algebra.Polynomial.Bivariate
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Transcendental
 
 /-!
 # The constant field of an algebraic function field
@@ -61,13 +64,25 @@ once `F' / F` is — a theorem, not a hypothesis, and the finiteness that makes 
   `F' / k'` cuts down along `F ⊆ F'` to the field of constants of `F / k`; for exact bases
   `TauCeti.IsFunctionField.algebraMap_mem_range_algebraMap_iff` reads this as `k' ∩ F = k`.
 * `TauCeti.algebraicClosure_ratFunc`: `k` is the field of constants of `k(x)`.
+* `TauCeti.isIntegrallyClosedIn_of_irreducible_map`: the field `k⟮x, y⟯` of a point of an
+  absolutely irreducible plane curve `φ(x, y) = 0`, with `x` transcendental, has exact constant
+  field `k` (Stichtenoth, Corollary 3.6.8), over any `k`, perfect or not.
+
+## The absolute-irreducibility criterion
+
+This is the practical test for exactness of the constants of a function field given by an
+equation. If `c ∈ F = k⟮x, y⟯` is algebraic over `k`, put `M = k⟮c⟯`. Since `M` embeds into an
+algebraic closure `L` of `k`, the polynomial `φ` stays irreducible over `M`, so Gauss's lemma gives
+`[F : M⟮x⟯] = deg_Y φ = [F : k⟮x⟯]`. Hence `M⟮x⟯ = k⟮x⟯`, and `c` is a constant of `k⟮x⟯ ≅ k(X)`,
+which has no constants beyond `k`.
 
 ## References
 
 The statements follow Stichtenoth, *Algebraic Function Fields and Codes*, second edition:
 Corollary 1.1.16 for the finiteness of the field of constants, the standing hypothesis of
-Section 1.4 for its exactness, Proposition 1.2.1(d) for the rational function field, and
-Definition 3.1.1 for an extension of function fields.
+Section 1.4 for its exactness, Proposition 1.2.1(d) for the rational function field,
+Definition 3.1.1 for an extension of function fields, and Corollary 3.6.8 for the
+absolute-irreducibility criterion, which Stichtenoth states over a perfect constant field.
 -/
 
 public section
@@ -292,5 +307,60 @@ integrally closed in every intermediate field of `F / k`. -/
 theorem isIntegrallyClosedIn_intermediateField (hex : IsIntegrallyClosedIn k F)
     (E : IntermediateField k F) : IsIntegrallyClosedIn k E :=
   isIntegrallyClosedIn_of_isScalarTower hex E
+
+/-! ### The absolute-irreducibility criterion -/
+
+open scoped Polynomial.Bivariate in
+/-- **An absolutely irreducible plane equation has exact constants** (Stichtenoth,
+Corollary 3.6.8). Let `F = k⟮x, y⟯` with `x` transcendental over `k`, and let `φ(x, y) = 0` for a
+polynomial `φ ∈ k[X][Y]` which stays irreducible over an algebraically closed field `L`
+containing `k`. Then `k` is the exact constant field of `F`.
+
+No perfectness of `k` is needed. Absolute irreducibility is only sufficient: over an imperfect
+field the constants of `F` can be exact although `φ` factors over `L`, as for
+`y ^ p = t x ^ p + u` over `𝔽_p(t, u)`. -/
+theorem isIntegrallyClosedIn_of_irreducible_map {L : Type*} [Field L] [Algebra k L]
+    [IsAlgClosed L] {x y : F} (hx : Transcendental k x) (hxy : k⟮x, y⟯ = ⊤) {φ : k[X][Y]}
+    (hφ : Irreducible (φ.map (mapRingHom (algebraMap k L)))) (h : aevalAeval x y φ = 0) :
+    IsIntegrallyClosedIn k F := by
+  refine isIntegrallyClosedIn_iff_forall_isAlgebraic.mpr fun c hc ↦ ?_
+  -- Compare `[F : k⟮x⟯]` with `[F : M⟮x⟯]` for the field of constants `M = k⟮c⟯`.
+  set M := k⟮c⟯
+  have : FiniteDimensional k M := adjoin.finiteDimensional hc.isIntegral
+  let σ : M →ₐ[k] L := IsAlgClosed.lift
+  have hφk : Irreducible φ :=
+    irreducible_of_irreducible_map_mapRingHom (algebraMap k L).injective hφ
+  have hφM : Irreducible (φ.map (mapRingHom (algebraMap k M))) :=
+    irreducible_of_irreducible_map_mapRingHom (f := (σ : M →+* L)) σ.injective <| by
+      rwa [Polynomial.map_map, mapRingHom_comp, σ.comp_algebraMap]
+  have hxyM : M⟮x, y⟯ = ⊤ := by
+    rw [← restrictScalars_eq_top_iff (K := k), eq_top_iff, ← hxy, adjoin_le_iff]
+    exact (subset_adjoin M {x, y} :)
+  have hM : aevalAeval x y (φ.map (mapRingHom (algebraMap k M))) = 0 := by
+    rw [aevalAeval_eq_eval₂, eval₂_map, ← h, aevalAeval_eq_eval₂]
+    congr 1
+    refine RingHom.ext fun p ↦ ?_
+    simp [aeval_map_algebraMap]
+  have hrankM := (hx.extendScalars M).finrank_eq_natDegree_of_aevalAeval_eq_zero hxyM hφM hM
+  rw [natDegree_map_eq_of_injective (map_injective _ (algebraMap k M).injective)] at hrankM
+  have hrankk := hx.finrank_eq_natDegree_of_aevalAeval_eq_zero hxy hφk h
+  have hle : k⟮x⟯ ≤ (M⟮x⟯).restrictScalars k := by
+    rw [adjoin_simple_le_iff, mem_restrictScalars]
+    exact mem_adjoin_simple_self M x
+  have : FiniteDimensional k⟮x⟯ F := Module.finite_of_finrank_pos <| by
+    rw [hrankk]
+    exact Nat.pos_of_ne_zero (hx.natDegree_ne_zero_of_aevalAeval_eq_zero hφk.ne_zero h)
+  -- So `M⟮x⟯ = k⟮x⟯`, and `c` is a constant of `k⟮x⟯ ≅ k(X)`, hence lies in `k`.
+  have hcx : c ∈ k⟮x⟯ := by
+    rw [eq_of_le_of_finrank_eq' hle (hrankk.trans hrankM.symm), mem_restrictScalars]
+    exact IntermediateField.algebraMap_mem (M⟮x⟯) ⟨c, mem_adjoin_simple_self k c⟩
+  set e := RatFunc.algEquivOfTranscendental x hx
+  have hc' : IsAlgebraic k (⟨c, hcx⟩ : k⟮x⟯) :=
+    (isAlgebraic_algebraMap_iff (algebraMap k⟮x⟯ F).injective).mp hc
+  obtain ⟨a, ha⟩ := isIntegrallyClosedIn_iff_forall_isAlgebraic.mp isIntegrallyClosedIn_ratFunc
+    _ (hc'.algHom (e.symm : k⟮x⟯ →ₐ[k] RatFunc k))
+  refine ⟨a, ?_⟩
+  have := congrArg (fun r ↦ ((e r : k⟮x⟯) : F)) ha
+  rwa [AlgEquiv.commutes, AlgEquiv.coe_toAlgHom, AlgEquiv.apply_symm_apply] at this
 
 end TauCeti
