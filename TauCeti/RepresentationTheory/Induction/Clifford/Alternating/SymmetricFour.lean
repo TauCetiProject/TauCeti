@@ -30,7 +30,9 @@ representations, the induced two-dimensional representation, and the two standar
 * The constituent classification `FDRep.simple_alternatingGroupFour_iff` and the recovery
   criteria `FDRep.liesOver_trivial_alternatingGroup_iff`,
   `FDRep.liesOver_alternatingGroup_iff_nonempty_iso_indFDRep`, and
-  `FDRep.liesOver_alternatingGroupFourStandard_iff`.
+  `FDRep.liesOver_alternatingGroupFourStandard_iff`, together with
+  `TauCeti.simple_indFDRep_ofLinearCharacter_alternatingGroup` and
+  `MonoidHom.nonempty_iso_indFDRep_ofLinearCharacter_alternatingGroup_inv`.
 -/
 
 public section
