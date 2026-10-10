@@ -78,10 +78,6 @@ sum of all coordinates. -/
 def prefixSum (k : ℕ) (x : Fin n → ℝ) : ℝ :=
   ∑ i : Fin n with i.val < k, x i
 
-theorem prefixSum_def (k : ℕ) (x : Fin n → ℝ) :
-    prefixSum k x = ∑ i : Fin n with i.val < k, x i :=
-  (rfl)
-
 @[simp]
 theorem prefixSum_zero (x : Fin n → ℝ) : prefixSum 0 x = 0 := by
   simp [prefixSum]
@@ -121,7 +117,7 @@ theorem prefixSum_le_of_sum_le {k : ℕ} {x y : Fin n → ℝ} (hsum : ∑ i, x 
   have hy := sum_filter_add_sum_filter_not univ (fun i : Fin n ↦ (i : ℕ) < k) y
   have htail : ∑ i : Fin n with ¬i.val < k, y i ≤ ∑ i : Fin n with ¬i.val < k, x i :=
     sum_le_sum fun i hi ↦ h i (not_lt.1 (mem_filter.1 hi).2)
-  rw [prefixSum_def, prefixSum_def]
+  unfold prefixSum
   linarith
 
 /-- Up to the length of the shorter tuple, prefix sums do not see the last coordinate. -/
@@ -213,14 +209,10 @@ variable {ι : Type*} [DecidableEq ι]
 /-- The *Robin Hood transfer* of `δ` from coordinate `i` to coordinate `j` of `x`: the tuple
 obtained by subtracting `δ` from `x i` and adding it to `x j`. It is an elementary step of
 majorization when `0 ≤ δ ≤ x i - x j`, that is, when mass moves from a larger coordinate to a
-smaller one without reversing their order. -/
+smaller one so that both new values lie between `x j` and `x i`; the two coordinates may swap
+order. -/
 def robinHood (x : ι → ℝ) (i j : ι) (δ : ℝ) : ι → ℝ :=
   x - Pi.single (M := fun _ ↦ ℝ) i δ + Pi.single (M := fun _ ↦ ℝ) j δ
-
-theorem robinHood_apply (x : ι → ℝ) (i j : ι) (δ : ℝ) (k : ι) :
-    robinHood x i j δ k =
-      x k - Pi.single (M := fun _ ↦ ℝ) i δ k + Pi.single (M := fun _ ↦ ℝ) j δ k :=
-  (rfl)
 
 @[simp]
 theorem robinHood_self (x : ι → ℝ) (i : ι) (δ : ℝ) : robinHood x i i δ = x := by
@@ -229,22 +221,23 @@ theorem robinHood_self (x : ι → ℝ) (i : ι) (δ : ℝ) : robinHood x i i δ
 @[simp]
 theorem robinHood_apply_left (x : ι → ℝ) {i j : ι} (hij : i ≠ j) (δ : ℝ) :
     robinHood x i j δ i = x i - δ := by
-  simp [robinHood_apply, hij]
+  simp [robinHood, hij]
 
 @[simp]
 theorem robinHood_apply_right (x : ι → ℝ) {i j : ι} (hij : i ≠ j) (δ : ℝ) :
     robinHood x i j δ j = x j + δ := by
-  simp [robinHood_apply, hij.symm]
+  simp [robinHood, hij.symm]
 
+@[simp]
 theorem robinHood_apply_of_ne (x : ι → ℝ) {i j k : ι} (hi : k ≠ i) (hj : k ≠ j) (δ : ℝ) :
     robinHood x i j δ k = x k := by
-  simp [robinHood_apply, hi, hj]
+  simp [robinHood, hi, hj]
 
 /-- A Robin Hood transfer preserves the total sum. -/
 @[simp]
 theorem sum_robinHood [Fintype ι] (x : ι → ℝ) (i j : ι) (δ : ℝ) :
     ∑ k, robinHood x i j δ k = ∑ k, x k := by
-  simp [robinHood_apply, sum_add_distrib, sum_sub_distrib]
+  simp [robinHood, sum_add_distrib, sum_sub_distrib]
 
 /-- `y` is a *T-transform* of `x`: it is obtained from `x` by one Robin Hood transfer from a
 coordinate to a coordinate with no larger value, followed by a permutation of the
@@ -253,15 +246,10 @@ def IsTTransform (x y : ι → ℝ) : Prop :=
   ∃ (i j : ι) (δ : ℝ) (σ : Equiv.Perm ι),
     0 ≤ δ ∧ δ ≤ x i - x j ∧ y = robinHood x i j δ ∘ σ
 
-theorem isTTransform_iff {x y : ι → ℝ} :
-    IsTTransform x y ↔ ∃ (i j : ι) (δ : ℝ) (σ : Equiv.Perm ι),
-      0 ≤ δ ∧ δ ≤ x i - x j ∧ y = robinHood x i j δ ∘ σ :=
-  (Iff.rfl)
-
 /-- A T-transform preserves the total sum. -/
 theorem IsTTransform.sum_eq [Fintype ι] {x y : ι → ℝ} (h : IsTTransform x y) :
     ∑ k, y k = ∑ k, x k := by
-  obtain ⟨i, j, δ, σ, -, -, rfl⟩ := isTTransform_iff.1 h
+  obtain ⟨i, j, δ, σ, -, -, rfl⟩ := h
   rw [← sum_robinHood x i j δ]
   exact Equiv.sum_comp σ (robinHood x i j δ)
 
@@ -354,7 +342,7 @@ theorem robinHood_mem (hK : IsSymmetricConvex K) (hx : x ∈ K) {i j : ι} {δ :
 /-- Symmetric convex sets are closed under T-transforms. -/
 theorem mem_of_isTTransform (hK : IsSymmetricConvex K) (hx : x ∈ K) {y : ι → ℝ}
     (h : IsTTransform x y) : y ∈ K := by
-  obtain ⟨i, j, δ, σ, hδ, hδ', rfl⟩ := isTTransform_iff.1 h
+  obtain ⟨i, j, δ, σ, hδ, hδ', rfl⟩ := h
   exact hK.comp_perm_mem σ _ (hK.robinHood_mem hx hδ hδ')
 
 /-- The section of a symmetric convex set of `(n + 1)`-tuples at a fixed value of the last
