@@ -32,6 +32,7 @@ the residue-field point factors through the zero section.
   `D₊(Xⱼ)` exactly when `j = 1`.
 * `WeierstrassCurve.mem_range_projModelZero_iff` and `WeierstrassCurve.range_projModelZero`: the
   image of the zero section is the complement of the chart `D₊(Z)`.
+* `WeierstrassCurve.isClosedImmersion_projModelZero`: the zero section is a closed immersion.
 * `WeierstrassCurve.preimage_basicOpen_coord_two_le`: under a morphism of projective Weierstrass
   models that carries the zero section to the zero section, the preimage of the chart `D₊(Z)` is
   contained in the chart `D₊(Z)`.
@@ -146,6 +147,14 @@ theorem range_projModelZero :
     Set.range W.projModelZero =
       (Proj.basicOpen W.toProjective.grading (W.toProjective.coord 2) : Set W.projModel)ᶜ :=
   Set.ext W.mem_range_projModelZero_iff
+
+/-- The zero section of the projective Weierstrass model is a closed immersion, as is every
+section of a separated morphism. -/
+instance isClosedImmersion_projModelZero : IsClosedImmersion W.projModelZero := by
+  have : IsClosedImmersion (W.projModelZero ≫ W.projModelOver) := by
+    rw [W.projModelZero_projModelOver]
+    infer_instance
+  exact IsClosedImmersion.of_comp W.projModelZero W.projModelOver
 
 variable {W} {W' : WeierstrassCurve R}
 

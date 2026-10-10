@@ -908,6 +908,19 @@ private theorem delta1Hom_apply (f : Z1 G C) :
     S.delta1Hom f =
       S.delta1Class (S.continuous_liftCochain_coe f) (S.isCocycle₁_proj_liftCochain f) := (rfl)
 
+/-- Before descent to `H¹`, `δ¹` is the class of the cochain of *any* continuous lift. -/
+private theorem delta1Hom_eq_of_lift (f : Z1 G C) {e : G → B} (hc : Continuous e)
+    (he : ∀ g, S.proj (e g) = (f : G → C) g) :
+    S.delta1Hom f =
+      H2pi G A ⟨S.delta1Cochain e, delta1Cochain_mem_Z2 hc he (mem_Z1_iff.1 f.2).2⟩ := by
+  have he' : groupCohomology.IsCocycle₁ fun g => S.proj (e g) := by
+    simpa only [he] using (mem_Z1_iff.1 f.2).2
+  have hproj : (fun g => S.proj (liftCochain S.proj_surjective (f : G → C) g)) =
+      fun g => S.proj (e g) := funext fun g => by
+    rw [apply_liftCochain S.proj_surjective, he]
+  rw [delta1Hom_apply, delta1Class_congr _ hc (S.isCocycle₁_proj_liftCochain f) he' hproj,
+    delta1Class_def]
+
 /-- `δ¹` before descent to cohomology kills the `1`-coboundaries. -/
 private theorem delta1Hom_eq_zero_of_mem_B1 (f : Z1 G C) (hf : (f : G → C) ∈ B1 G C) :
     S.delta1Hom f = 0 := by
@@ -918,20 +931,8 @@ private theorem delta1Hom_eq_zero_of_mem_B1 (f : Z1 G C) (hf : (f : G → C) ∈
   have hzero : S.delta1Cochain (d0 G B b) = 0 := funext fun p => by
     rw [delta1Cochain_apply, congrFun (d1_comp_d0_apply (G := G) b) p]
     exact S.retract_zero
-  have hsubtype :
-      (⟨S.delta1Cochain (d0 G B b),
-          delta1Cochain_mem_Z2 (continuous_d0_apply (G := G) b) he
-            (mem_Z1_iff.1 f.2).2⟩ :
-        Z2 G A) = 0 :=
-    Subtype.ext hzero
-  have hd0 : groupCohomology.IsCocycle₁ fun g => S.proj (d0 G B b g) := by
-    simpa only [he] using (mem_Z1_iff.1 f.2).2
-  have hproj : (fun g => S.proj (liftCochain S.proj_surjective (f : G → C) g)) =
-      fun g => S.proj (d0 G B b g) := funext fun g => by
-    rw [apply_liftCochain S.proj_surjective, he]
-  rw [delta1Hom_apply, delta1Class_congr _ (continuous_d0_apply (G := G) b)
-      (S.isCocycle₁_proj_liftCochain f) hd0 hproj, delta1Class_def, hsubtype]
-  exact map_zero _
+  rw [delta1Hom_eq_of_lift f (continuous_d0_apply (G := G) b) he]
+  exact (congrArg (H2pi G A) (Subtype.ext hzero)).trans (map_zero _)
 
 variable [ContinuousSMul G C]
 
@@ -961,13 +962,7 @@ theorem explicitDelta1_apply (f : Z1 G C) {e : G → B} (hc : Continuous e)
     obtain ⟨g, h⟩ := p
     exact S.incl_injective (((hae g h).trans (d1_apply e g h).symm).trans
       (incl_delta1Cochain he (mem_Z1_iff.1 f.2).2 (g, h)).symm)
-  have he' : groupCohomology.IsCocycle₁ fun g => S.proj (e g) := by
-    simpa only [he] using (mem_Z1_iff.1 f.2).2
-  have hproj : (fun g => S.proj (liftCochain S.proj_surjective (f : G → C) g)) =
-      fun g => S.proj (e g) := funext fun g => by
-    rw [apply_liftCochain S.proj_surjective, he]
-  rw [explicitDelta1_H1pi, delta1Hom_apply,
-    delta1Class_congr _ hc (S.isCocycle₁_proj_liftCochain f) he' hproj, delta1Class_def]
+  rw [explicitDelta1_H1pi, delta1Hom_eq_of_lift f hc he]
   exact congrArg (H2pi G A) (Subtype.ext hcochain.symm)
 
 end Delta1

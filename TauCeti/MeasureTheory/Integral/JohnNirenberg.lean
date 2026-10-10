@@ -28,6 +28,15 @@ provides. This is what lets Moser's proof of the Harnack inequality cross from b
 powers of a positive supersolution to bounds on positive powers: the logarithm of such a
 supersolution has bounded mean oscillation.
 
+Both statements hold on every cube, not only on dyadic ones. In the sup norm of `ι → ℝ` a cube
+`∏ᵢ [cᵢ - r, cᵢ + r]` is the closed ball `closedBall c r`, and if `f` has mean oscillation at most
+`M` on every closed ball inside it, then the same two bounds hold on `closedBall c r`
+(`TauCeti.volume_lt_norm_sub_setAverage_closedBall_le`,
+`TauCeti.setLIntegral_exp_mul_norm_sub_setAverage_closedBall_le`). For `0 < r` this follows from
+the dyadic case by the affine change of variables carrying the unit dyadic cube onto
+`closedBall c r`, which rescales Lebesgue measure by a constant and so preserves averages. For
+`r ≤ 0` the closed ball is null and both bounds are immediate.
+
 The proof iterates the Calderón–Zygmund decomposition. At height `2M`, the Calderón–Zygmund
 cubes of `‖f - f_{Q₀}‖` restricted to `Q₀` lie inside `Q₀`, cover at most half of it, and carry
 averages within `2ⁿ⁺¹ M` of `f_{Q₀}`, while `‖f - f_{Q₀}‖ ≤ 2M` almost everywhere off them. Each
@@ -41,6 +50,9 @@ step of size `2ⁿ⁺¹ M` in the level therefore halves the measure of the supe
 * `TauCeti.volume_lt_norm_sub_setAverage_le`: the **John–Nirenberg inequality**, exponential
   decay of the distribution function of `‖f - f_{Q₀}‖`.
 * `TauCeti.setLIntegral_exp_mul_norm_sub_setAverage_le`: exponential integrability.
+* `TauCeti.volume_lt_norm_sub_setAverage_closedBall_le`,
+  `TauCeti.setLIntegral_exp_mul_norm_sub_setAverage_closedBall_le`: the same two statements on an
+  arbitrary cube `closedBall c r`.
 
 ## References
 
@@ -354,5 +366,195 @@ theorem setLIntegral_exp_mul_norm_sub_setAverage_le [Nonempty ι] [CompleteSpace
           ENNReal.tsum_mul_left, ENNReal.tsum_geometric]
         ring
     _ = _ := by rw [hconst]
+
+section ClosedBall
+
+/-! ### Arbitrary cubes
+
+In the sup norm of `ι → ℝ` the closed ball `closedBall c r` is the closed cube
+`∏ᵢ [cᵢ - r, cᵢ + r]`. For `0 < r`, the affine bijection `y ↦ 2r y + (c - r)` carries the unit
+dyadic cube `[0, 1)ⁿ` onto this cube up to a null set and its dyadic subcubes onto closed balls
+inside `closedBall c r` up to null sets, and it rescales Lebesgue measure by the constant `(2r)ⁿ`.
+Averages are invariant under it, so the dyadic John–Nirenberg inequality for `f` composed with
+this map gives the inequality on every cube of positive radius. For `r ≤ 0` the closed ball is
+null, so both bounds hold trivially. -/
+
+open Metric
+
+variable {c : ι → ℝ} {r : ℝ}
+
+/-- The affine bijection `y ↦ 2r y + (c - r)` of `ι → ℝ`. -/
+private noncomputable def cubeEquiv (c : ι → ℝ) (hr : 0 < r) : (ι → ℝ) ≃ᵐ (ι → ℝ) :=
+  ((Homeomorph.smulOfNeZero (2 * r) (by positivity)).trans
+    (Homeomorph.addRight (c - fun _ => r))).toMeasurableEquiv
+
+private theorem cubeEquiv_apply (hr : 0 < r) (y : ι → ℝ) :
+    cubeEquiv c hr y = (2 * r) • y + (c - fun _ => r) :=
+  rfl
+
+/-- The affine bijection rescales Lebesgue measure by `(2r)⁻ⁿ`. -/
+private theorem map_cubeEquiv (hr : 0 < r) :
+    (volume : Measure (ι → ℝ)).map (cubeEquiv c hr) =
+      ENNReal.ofReal ((2 * r) ^ Fintype.card ι)⁻¹ • volume := by
+  have h : ⇑(cubeEquiv c hr) = (· + (c - fun _ => r)) ∘ ((2 * r) • ·) :=
+    funext (cubeEquiv_apply hr)
+  rw [h, ← Measure.map_map (measurable_add_const _) (measurable_const_smul _),
+    Measure.map_addHaar_smul _ (by positivity), Measure.map_smul, map_add_right_eq_self,
+    Module.finrank_fintype_fun_eq_card, abs_of_pos (by positivity)]
+  exact (measurable_add_const _).aemeasurable
+
+/-- The affine bijection multiplies sup distances by `2r`. -/
+private theorem preimage_cubeEquiv_closedBall (hr : 0 < r) (z : ι → ℝ) (ρ : ℝ) :
+    cubeEquiv c hr ⁻¹' closedBall (cubeEquiv c hr z) (2 * r * ρ) = closedBall z ρ := by
+  ext y
+  simp only [mem_preimage, mem_closedBall, dist_eq_norm, cubeEquiv_apply, add_sub_add_right_eq_sub,
+    ← smul_sub, norm_smul, Real.norm_of_nonneg (by positivity : (0 : ℝ) ≤ 2 * r)]
+  exact mul_le_mul_iff_right₀ (by positivity)
+
+/-- The affine bijection carries the closure of the unit dyadic cube onto `closedBall c r`. -/
+private theorem preimage_cubeEquiv_closedBall_self (hr : 0 < r) :
+    cubeEquiv c hr ⁻¹' closedBall c r = closure (dyadicCube 0 (0 : ι → ℤ)) := by
+  have hz : cubeEquiv c hr (fun i => (((0 : ι → ℤ) i : ℝ) + 2⁻¹) * 2 ^ (0 : ℤ)) = c := by
+    ext i
+    simp only [cubeEquiv_apply, Pi.add_apply, Pi.smul_apply, Pi.sub_apply, Pi.zero_apply,
+      Int.cast_zero, zero_add, zpow_zero, mul_one, smul_eq_mul]
+    ring
+  have hρ : 2 * r * ((2 : ℝ) ^ (0 : ℤ) / 2) = r := by
+    rw [zpow_zero]
+    ring
+  have h := preimage_cubeEquiv_closedBall (c := c) hr
+    (fun i => (((0 : ι → ℤ) i : ℝ) + 2⁻¹) * 2 ^ (0 : ℤ)) (2 ^ (0 : ℤ) / 2)
+  rw [hz, hρ] at h
+  rw [h, closure_dyadicCube]
+
+private theorem ofReal_inv_two_mul_pow_ne_zero (hr : 0 < r) :
+    ENNReal.ofReal ((2 * r) ^ Fintype.card ι)⁻¹ ≠ 0 :=
+  (ENNReal.ofReal_pos.2 (by positivity)).ne'
+
+omit [NormedSpace ℝ E] in
+/-- An integrable function on `closedBall c r` pulls back to an integrable function on the unit
+dyadic cube. -/
+private theorem integrableOn_comp_cubeEquiv (hr : 0 < r) (hf : IntegrableOn f (closedBall c r)) :
+    IntegrableOn (f ∘ cubeEquiv c hr) (dyadicCube 0 0) := by
+  have h : IntegrableOn f (closedBall c r) ((volume : Measure (ι → ℝ)).map (cubeEquiv c hr)) := by
+    rw [map_cubeEquiv hr, IntegrableOn, Measure.restrict_smul]
+    exact hf.smul_measure ENNReal.ofReal_ne_top
+  rw [integrableOn_map_equiv, preimage_cubeEquiv_closedBall_self hr] at h
+  exact h.mono_set subset_closure
+
+/-- Mean oscillation at most `M` on the closed balls inside `closedBall c r` pulls back to dyadic
+mean oscillation at most `M` on the unit dyadic cube. -/
+private theorem setLAverage_comp_cubeEquiv_le (hr : 0 < r)
+    (hM : ∀ y ρ, closedBall y ρ ⊆ closedBall c r →
+      ⨍⁻ x in closedBall y ρ, ‖f x - ⨍ z in closedBall y ρ, f z ∂volume‖ₑ ∂volume ≤ M)
+    (q : ℤ × (ι → ℤ)) (hq : dyadicCube q.1 q.2 ⊆ dyadicCube 0 0) :
+    ⨍⁻ x in dyadicCube q.1 q.2, ‖(f ∘ cubeEquiv c hr) x -
+      ⨍ y in dyadicCube q.1 q.2, (f ∘ cubeEquiv c hr) y ∂volume‖ₑ ∂volume ≤ M := by
+  set e := cubeEquiv c hr
+  set z : ι → ℝ := fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1
+  set B := closedBall (e z) (2 * r * (2 ^ q.1 / 2))
+  have hmap := map_cubeEquiv (c := c) hr
+  have ha := ofReal_inv_two_mul_pow_ne_zero (ι := ι) hr
+  have hpre : e ⁻¹' B = closure (dyadicCube q.1 q.2) := by
+    rw [preimage_cubeEquiv_closedBall, closure_dyadicCube]
+  have hae : dyadicCube q.1 q.2 =ᵐ[volume] e ⁻¹' B := by
+    rw [hpre, closure_dyadicCube]
+    exact dyadicCube_ae_eq_closedBall q.1 q.2
+  have havg : ⨍ y in e ⁻¹' B, f (e y) ∂volume = ⨍ y in B, f y ∂volume :=
+    setAverage_comp_preimage_of_map_eq_smul hmap ha ENNReal.ofReal_ne_top f B
+  have hlavg : ⨍⁻ x in e ⁻¹' B, ‖f (e x) - ⨍ y in B, f y ∂volume‖ₑ ∂volume =
+      ⨍⁻ x in B, ‖f x - ⨍ y in B, f y ∂volume‖ₑ ∂volume :=
+    setLAverage_comp_preimage_of_map_eq_smul hmap ha ENNReal.ofReal_ne_top
+      (fun x => ‖f x - ⨍ y in B, f y ∂volume‖ₑ) B
+  simp only [Function.comp_apply]
+  rw [setAverage_congr hae, setLAverage_congr hae, havg, hlavg]
+  refine hM _ _ ?_
+  rw [← e.surjective.preimage_subset_preimage_iff, hpre, preimage_cubeEquiv_closedBall_self hr]
+  exact closure_mono hq
+
+/-- **The John–Nirenberg inequality** on a cube. Let `f` be integrable on the closed sup-norm ball
+`closedBall c r ⊆ ℝⁿ`, `n ≥ 1`, that is, on the cube `∏ᵢ [cᵢ - r, cᵢ + r]`, with mean oscillation
+`⨍_B ‖f - f_B‖ ≤ M` on every closed ball `B ⊆ closedBall c r`. Then for every `s`,
+
+`|{x ∈ closedBall c r : ‖f x - f_{closedBall c r}‖ > s}| ≤
+  2 exp (-(log 2) s / (2ⁿ⁺¹ M)) |closedBall c r|`. -/
+theorem volume_lt_norm_sub_setAverage_closedBall_le [Nonempty ι] [CompleteSpace E]
+    (hf : IntegrableOn f (closedBall c r))
+    (hM : ∀ y ρ, closedBall y ρ ⊆ closedBall c r →
+      ⨍⁻ x in closedBall y ρ, ‖f x - ⨍ z in closedBall y ρ, f z ∂volume‖ₑ ∂volume ≤ M)
+    (s : ℝ) :
+    volume {x ∈ closedBall c r | s < ‖f x - ⨍ y in closedBall c r, f y ∂volume‖} ≤
+      ENNReal.ofReal (2 * Real.exp (-(Real.log 2 * s / (2 ^ (Fintype.card ι + 1) * M)))) *
+        volume (closedBall c r) := by
+  rcases le_or_gt r 0 with hr | hr
+  · rw [volume_closedBall_eq_zero_of_nonpos c hr, mul_zero]
+    exact (measure_mono_null (sep_subset _ _)
+      (volume_closedBall_eq_zero_of_nonpos c hr)).le
+  set e := cubeEquiv c hr
+  set B := closedBall c r
+  have hmap := map_cubeEquiv (c := c) hr
+  have ha := ofReal_inv_two_mul_pow_ne_zero (ι := ι) hr
+  have hvol (S : Set (ι → ℝ)) :
+      volume (e ⁻¹' S) = ENNReal.ofReal ((2 * r) ^ Fintype.card ι)⁻¹ * volume S := by
+    rw [← e.map_apply, hmap, Measure.smul_apply, smul_eq_mul]
+  have hB : e ⁻¹' B =ᵐ[volume] dyadicCube 0 0 := by
+    rw [preimage_cubeEquiv_closedBall_self hr, closure_dyadicCube]
+    exact (dyadicCube_ae_eq_closedBall 0 0).symm
+  have havg : ⨍ y in dyadicCube 0 0, (f ∘ e) y ∂volume = ⨍ y in B, f y ∂volume := by
+    rw [← setAverage_congr hB]
+    exact setAverage_comp_preimage_of_map_eq_smul hmap ha ENNReal.ofReal_ne_top f B
+  have hJN := volume_lt_norm_sub_setAverage_le (q₀ := (0, 0))
+    (integrableOn_comp_cubeEquiv hr hf) (setLAverage_comp_cubeEquiv_le hr hM) s
+  rw [havg] at hJN
+  rw [← ENNReal.mul_le_mul_iff_right ha ENNReal.ofReal_ne_top, ← hvol, mul_left_comm, ← hvol]
+  calc volume (e ⁻¹' {x ∈ B | s < ‖f x - ⨍ y in B, f y ∂volume‖})
+      = volume {x ∈ dyadicCube 0 0 | s < ‖(f ∘ e) x - ⨍ y in B, f y ∂volume‖} :=
+        measure_congr (hB.inter (ae_eq_refl _))
+    _ ≤ _ := hJN
+    _ = _ := by rw [measure_congr hB]
+
+/-- **Exponential integrability of functions of bounded mean oscillation** on a cube. Let `f` be
+integrable on the closed sup-norm ball `closedBall c r ⊆ ℝⁿ`, `n ≥ 1`, with mean oscillation
+`⨍_B ‖f - f_B‖ ≤ M` on every closed ball `B ⊆ closedBall c r`. If `ρ = exp (2ⁿ⁺¹ σ M) < 2`, then
+
+`∫_{closedBall c r} exp (σ ‖f - f_{closedBall c r}‖) ≤ (1 + 2ρ / (2 - ρ)) |closedBall c r|`. -/
+theorem setLIntegral_exp_mul_norm_sub_setAverage_closedBall_le [Nonempty ι] [CompleteSpace E]
+    (hf : IntegrableOn f (closedBall c r))
+    (hM : ∀ y ρ, closedBall y ρ ⊆ closedBall c r →
+      ⨍⁻ x in closedBall y ρ, ‖f x - ⨍ z in closedBall y ρ, f z ∂volume‖ₑ ∂volume ≤ M)
+    {σ : ℝ} (hρ : Real.exp (σ * (2 ^ (Fintype.card ι + 1) * M)) < 2) :
+    ∫⁻ x in closedBall c r,
+        ENNReal.ofReal (Real.exp (σ * ‖f x - ⨍ y in closedBall c r, f y ∂volume‖)) ≤
+      ENNReal.ofReal (1 + 2 * Real.exp (σ * (2 ^ (Fintype.card ι + 1) * M)) /
+        (2 - Real.exp (σ * (2 ^ (Fintype.card ι + 1) * M)))) * volume (closedBall c r) := by
+  rcases le_or_gt r 0 with hr | hr
+  · rw [setLIntegral_measure_zero _ _ (volume_closedBall_eq_zero_of_nonpos c hr)]
+    exact zero_le
+  set e := cubeEquiv c hr
+  set B := closedBall c r
+  have hmap := map_cubeEquiv (c := c) hr
+  have ha := ofReal_inv_two_mul_pow_ne_zero (ι := ι) hr
+  have hB : e ⁻¹' B =ᵐ[volume] dyadicCube 0 0 := by
+    rw [preimage_cubeEquiv_closedBall_self hr, closure_dyadicCube]
+    exact (dyadicCube_ae_eq_closedBall 0 0).symm
+  have havg : ⨍ y in dyadicCube 0 0, (f ∘ e) y ∂volume = ⨍ y in B, f y ∂volume := by
+    rw [← setAverage_congr hB]
+    exact setAverage_comp_preimage_of_map_eq_smul hmap ha ENNReal.ofReal_ne_top f B
+  have hJN := setLIntegral_exp_mul_norm_sub_setAverage_le (q₀ := (0, 0))
+    (integrableOn_comp_cubeEquiv hr hf) (setLAverage_comp_cubeEquiv_le hr hM) hρ
+  rw [havg] at hJN
+  have hint := setLIntegral_comp_preimage_of_map_eq_smul hmap
+    (fun x => ENNReal.ofReal (Real.exp (σ * ‖f x - ⨍ y in B, f y ∂volume‖))) B
+  have hvol : volume (e ⁻¹' B) = ENNReal.ofReal ((2 * r) ^ Fintype.card ι)⁻¹ * volume B := by
+    rw [← e.map_apply, hmap, Measure.smul_apply, smul_eq_mul]
+  rw [← ENNReal.mul_le_mul_iff_right ha ENNReal.ofReal_ne_top, ← hint, mul_left_comm, ← hvol]
+  calc ∫⁻ x in e ⁻¹' B, ENNReal.ofReal (Real.exp (σ * ‖f (e x) - ⨍ y in B, f y ∂volume‖))
+      = ∫⁻ x in dyadicCube 0 0,
+          ENNReal.ofReal (Real.exp (σ * ‖(f ∘ e) x - ⨍ y in B, f y ∂volume‖)) :=
+        setLIntegral_congr hB
+    _ ≤ _ := hJN
+    _ = _ := by rw [measure_congr hB]
+
+end ClosedBall
 
 end TauCeti

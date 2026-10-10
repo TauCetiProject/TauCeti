@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
 public import TauCeti.LinearAlgebra.IntegralLattice.Examples
 public import TauCeti.LinearAlgebra.IntegralLattice.Level
+public import TauCeti.LinearAlgebra.IntegralLattice.Scaling
 
 import Mathlib.Tactic.LinearCombination
 
@@ -63,6 +64,9 @@ the discriminant group needs in order to be finite — is available to instance 
 
 ## Main results
 
+* `TauCeti.IntegralLattice.ofGramMatrix_singleton_eq_rankOne`: `⟨2m⟩` is the Gram-matrix lattice
+  with the `1 × 1` Gram matrix `(2m)`.
+* `TauCeti.IntegralLattice.rankOne_eq_neg_rankOne_neg`: `⟨2m⟩` is the negative of `⟨-2m⟩`.
 * `TauCeti.IntegralLattice.mem_rankOne_dualCarrier_iff` and
   `TauCeti.IntegralLattice.rankOne_dualCarrier_eq_span`: the dual lattice is `(1 / (2m)) ℤe`.
 * `TauCeti.IntegralLattice.span_rankOneClass_eq_top`: `g` generates the discriminant group.
@@ -149,6 +153,32 @@ instance instIsNondegenerateRankOne (m : ℤ) [NeZero m] : (rankOne m).IsNondege
   refine ⟨(rankOne m).determinant_ne_zero_iff.mp ?_⟩
   rw [rankOne_determinant]
   exact mul_ne_zero two_ne_zero (NeZero.ne m)
+
+/-- The rank-one Gram-matrix lattice on the standard basis of `ℚ` with entry `2m` is `⟨2m⟩`. -/
+theorem ofGramMatrix_singleton_eq_rankOne (m : ℤ) {c : ℤ} (hc : c = 2 * m)
+    (h : (Matrix.of fun (_ _ : Fin 1) ↦ c).IsSymm) :
+    ofGramMatrix (Basis.singleton (Fin 1) ℚ) (Matrix.of fun _ _ ↦ c) h = rankOne m := by
+  subst hc
+  refine IntegralLattice.ext ?_ ?_
+  · ext q
+    simp [Submodule.mem_span_singleton, eq_comm]
+  · refine LinearMap.BilinForm.ext fun p q ↦ ?_
+    let _ : DecidableEq (Fin 1) := Classical.decEq _
+    rw [rankOne_form_apply, ofGramMatrix_form, Matrix.toBilin_apply]
+    simp only [Fin.sum_univ_one, Basis.singleton_repr, Matrix.map_apply, Matrix.of_apply,
+      eq_intCast]
+    push_cast
+    ring
+
+/-- `⟨2m⟩` is the negative of `⟨-2m⟩`. -/
+theorem rankOne_eq_neg_rankOne_neg (m : ℤ) : rankOne m = -rankOne (-m) := by
+  refine IntegralLattice.ext ?_ ?_
+  · ext x
+    simp [neg_carrier]
+  · refine LinearMap.BilinForm.ext fun x y ↦ ?_
+    simp only [neg_form, LinearMap.neg_apply, rankOne_form_apply]
+    push_cast
+    ring
 
 /-- The smallest positive member of the family is the Layer 1 acceptance example `a1`. -/
 theorem rankOne_one : rankOne 1 = a1 := by

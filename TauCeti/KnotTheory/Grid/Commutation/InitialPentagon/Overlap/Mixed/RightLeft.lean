@@ -73,21 +73,6 @@ namespace TauCeti.GridRectangleInitialPentagonDecomposition
 
 variable {n : ℕ} {a s : Fin n} {x z : GridState n}
 
-/-- A mixed overlap whose rectangle terminal side is the pentagon initial side has exactly one
-common side column. -/
-theorem hasOneCommonSide_of_right_eq_left
-    (D : GridRectangleInitialPentagonDecomposition a s x z)
-    (hcommon : D.first.right = D.second.left)
-    (hother : D.first.left ≠ D.second.right) : D.toGridRectangleDecomposition.HasOneCommonSide := by
-  apply D.toGridRectangleDecomposition.hasOneCommonSide_iff_existsUnique.mpr
-  refine ⟨D.first.right, ?_, ?_⟩
-  · simp [GridRectangleBetween.mem_sideColumns, hcommon]
-  · intro c hc
-    simp only [GridRectangleBetween.mem_sideColumns, hcommon] at hc
-    have hfirst := D.first.left_ne_right
-    have hsecond := D.second.left_ne_right
-    grind
-
 private theorem underlying_second_isEmpty
     (D : GridRectangleInitialPentagonDecomposition a s x z) (h : D.pentagon.IsEmpty) :
     D.toGridRectangleDecomposition.second.IsEmpty := by
@@ -121,7 +106,8 @@ private noncomputable def rightLeftRecut
     (hfirst : D.first.IsEmpty) (hsecond : D.pentagon.IsEmpty)
     (hturn : s ∉ Grid.cIco D.first.bottom D.first.top) :
     GridRectangleDecomposition x z :=
-  D.toGridRectangleDecomposition.recut (D.hasOneCommonSide_of_right_eq_left hcommon
+  D.toGridRectangleDecomposition.recut
+    (D.toGridRectangleDecomposition.hasOneCommonSide_of_right_eq_left hcommon
       (D.first_left_ne_second_right_of_right_eq_left hcommon hturn))
     hfirst (D.underlying_second_isEmpty hsecond)
 
@@ -138,7 +124,7 @@ private theorem rightLeftRecut_geometry
             s ∈ Grid.cIco E.first.bottom E.first.top := by
   let E := D.rightLeftRecut hcommon hfirst hsecond hturn
   have hdata := D.toGridRectangleDecomposition.isRecutOfRightEqLeft_recut hcommon
-    (D.hasOneCommonSide_of_right_eq_left hcommon
+    (D.toGridRectangleDecomposition.hasOneCommonSide_of_right_eq_left hcommon
       (D.first_left_ne_second_right_of_right_eq_left hcommon hturn))
     hfirst (D.underlying_second_isEmpty hsecond)
   have hturnWhole : s ∈ Grid.cIco D.first.bottom D.second.top := by
@@ -214,7 +200,8 @@ theorem recutRightEqLeft_toGridRectangleDecomposition
     (hfirst : D.first.IsEmpty) (hsecond : D.pentagon.IsEmpty)
     (hturn : s ∉ Grid.cIco D.first.bottom D.first.top) :
     (D.recutRightEqLeft hcommon hfirst hsecond hturn).toGridRectangleDecomposition =
-      D.toGridRectangleDecomposition.recut (D.hasOneCommonSide_of_right_eq_left hcommon
+      D.toGridRectangleDecomposition.recut
+        (D.toGridRectangleDecomposition.hasOneCommonSide_of_right_eq_left hcommon
           (D.first_left_ne_second_right_of_right_eq_left hcommon hturn))
         hfirst (by
           rw [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor] at hsecond ⊢
@@ -437,7 +424,7 @@ private theorem initialPentagonRightLeftOverlapSource_recut_data
     D.toGridRectangleDecomposition.HasOneCommonSide ∧ D.first.IsEmpty ∧ D.second.IsEmpty := by
   obtain ⟨hcommon, hturn, hfirst, hsecond⟩ :=
     G.initialPentagonRightLeftOverlapSource_data C D hD
-  refine ⟨D.hasOneCommonSide_of_right_eq_left hcommon
+  refine ⟨D.toGridRectangleDecomposition.hasOneCommonSide_of_right_eq_left hcommon
     (D.first_left_ne_second_right_of_right_eq_left hcommon hturn), hfirst, ?_⟩
   rw [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor] at hsecond ⊢
   simpa only [D.pentagon_toGridRectangleBetween] using hsecond

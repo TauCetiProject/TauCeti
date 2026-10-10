@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Algebra.Group.End
 public import Mathlib.Algebra.Ring.Parity
+public import Mathlib.Data.Fin.Tuple.Basic
 public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.Logic.Equiv.Fin.Rotate
 public import Mathlib.Data.Fin.SuccPredOrder
@@ -53,9 +54,12 @@ range, so the value is a `dite` rather than a plain application.
   summands split off.
 * `Fin.natCast_ne_zero`: the cast of a natural number `0 < a < n` to `Fin n` (under
   `open Fin.NatCast`) is nonzero.
+* `Fin.insertNth_insertNth`: two insertions into a tuple commute, up to reindexing by `succAbove`
+  and `predAbove`; the dual of Mathlib's `Fin.removeNth_removeNth_eq_swap`.
 * `Fin.predAbove_succ_succAbove`: `Fin.predAbove p` inverts `p.succ.succAbove`, the
   counterpart of Mathlib's `Fin.predAbove_succAbove` for `p.castSucc.succAbove`.
 * `Fin.val_succAbove`: the value of `p.succAbove i`, read off the comparison of `i` with `p`.
+* `Fin.val_predAbove`: the value of `p.predAbove i`, read off the comparison of `i` with `p`.
 * `Fin.finRotate_succ_eq_succ_succAbove` and `Fin.finRotate_succ_succAbove_of_ne`: the cyclic
   successor of `Fin (n + 1)` against the embeddings `Fin.succ` and `i.succ.succAbove` of `Fin n`,
   as used when a new entry is inserted into a cyclic sequence.
@@ -203,6 +207,17 @@ theorem val_succAbove {n : ℕ} (p : Fin (n + 1)) (i : Fin n) :
   unfold succAbove
   split_ifs <;> simp_all [lt_def]
 
+/-- The value of `p.predAbove i`: the value of `i` up to `p`, and one less above `p`. -/
+theorem val_predAbove {n : ℕ} (p : Fin n) (i : Fin (n + 1)) :
+    (p.predAbove i : ℕ) = if (p : ℕ) < i then (i : ℕ) - 1 else (i : ℕ) := by
+  rcases lt_or_ge p.castSucc i with h | h
+  · rw [predAbove_of_castSucc_lt _ _ h]
+    rw [lt_def, val_castSucc] at h
+    simp [h]
+  · rw [predAbove_of_le_castSucc _ _ h]
+    rw [le_def, val_castSucc] at h
+    simp [h]
+
 /-- The cyclic successor of `i.succ` in `Fin (n + 1)` is the cyclic successor of `i` in `Fin n`,
 read through the embedding `i.succ.succAbove` that skips `i.succ`. -/
 theorem finRotate_succ_eq_succ_succAbove {n : ℕ} (i : Fin n) :
@@ -333,6 +348,21 @@ theorem val_orderSucc_of_lt {n : ℕ} {i : Fin n} (h : (i : ℕ) + 1 < n) :
 theorem orderSucc_eq_self_of_not_lt {n : ℕ} {i : Fin n} (h : ¬(i : ℕ) + 1 < n) :
     (Order.succ i : Fin n) = i :=
   IsMax.succ_eq fun b _ => Fin.le_def.2 (by have := b.isLt; have := i.isLt; omega)
+
+/-- Two insertions into a tuple commute, up to reindexing: inserting `a` at `i` after inserting
+`b` at `j` is inserting `b` at `i.succAbove j` after inserting `a` at `j.predAbove i`.  This is the
+dual of `Fin.removeNth_removeNth_eq_swap`. -/
+theorem insertNth_insertNth {n : ℕ} {β : Sort*} (i : Fin (n + 2)) (j : Fin (n + 1)) (a b : β)
+    (x : Fin n → β) :
+    @insertNth _ (fun _ ↦ β) i a (@insertNth _ (fun _ ↦ β) j b x) =
+      @insertNth _ (fun _ ↦ β) (i.succAbove j) b
+        (@insertNth _ (fun _ ↦ β) (j.predAbove i) a x) := by
+  rw [eq_insertNth_iff]
+  refine ⟨by simp, ?_⟩
+  funext k
+  rcases eq_self_or_eq_succAbove (j.predAbove i) k with rfl | ⟨k, rfl⟩
+  · simp only [removeNth, succAbove_succAbove_predAbove, insertNth_apply_same]
+  · simp only [removeNth, succAbove_succAbove_succAbove_predAbove, insertNth_apply_succAbove]
 
 end Fin
 
