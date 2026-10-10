@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.GelfandTriple
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Analysis.ODE.Gronwall
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
 # The energy estimate and uniqueness for linear parabolic equations
@@ -67,11 +68,6 @@ namespace TauCeti
 variable {V H : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   [NormedAddCommGroup H] [InnerProductSpace ℝ H] {ι : V →L[ℝ] H} {A : ℝ → V →L[ℝ] StrongDual ℝ V}
   {a b α β : ℝ} {u : ℝ → V} {u' f : ℝ → StrongDual ℝ V} {w : ℝ → H}
-
-/-- A function integrable on `(a, b)` is interval integrable on `a..t` for `t ∈ [a, b]`. -/
-private theorem intervalIntegrable_of_integrableOn_Ioo {g : ℝ → ℝ}
-    (hg : IntegrableOn g (Ioo a b)) {t : ℝ} (ht : t ∈ Icc a b) : IntervalIntegrable g volume a t :=
-  (intervalIntegrable_iff_integrableOn_Ioo_of_le ht.1).2 (hg.mono_set (Ioo_subset_Ioo_right ht.2))
 
 /-- The pointwise energy balance: if `B` satisfies Gårding's inequality and `d + B x = g`, then
 `2 d x ≤ α⁻¹ ‖g‖² - α ‖x‖² + 2 β ‖ι x‖²`, by Young's inequality `2 g x ≤ α⁻¹ ‖g‖² + α ‖x‖²`. -/
@@ -142,9 +138,9 @@ theorem HasWeakLineDerivOn.norm_sq_add_mul_integral_le_of_gelfandDual
     intro s hs
     have hsb : s ∈ Icc a b := htb hs
     have hsub : Ioo a s ⊆ Ioo a b := Ioo_subset_Ioo_right hsb.2
-    have hφs := intervalIntegrable_of_integrableOn_Ioo hφi hsb
-    have hfs := intervalIntegrable_of_integrableOn_Ioo hf2 hsb
-    have hus := intervalIntegrable_of_integrableOn_Ioo hu2 hsb
+    have hφs := hφi.intervalIntegrable_of_mem_Icc ha hsb
+    have hfs := hf2.intervalIntegrable_of_mem_Icc ha hsb
+    have hus := hu2.intervalIntegrable_of_mem_Icc ha hsb
     -- the energy identity, then the pointwise bound integrated over `(a, s)`
     have hid : ‖w s‖ ^ 2 - ‖w a‖ ^ 2 = ∫ r in a..s, 2 * u' r (u r) := by
       rw [h.norm_sq_sub_norm_sq_eq_of_gelfandDual hu hu' hw hae ha hsb,
@@ -167,7 +163,7 @@ theorem HasWeakLineDerivOn.norm_sq_add_mul_integral_le_of_gelfandDual
     -- `∫ₐˢ ‖f‖² ≤ ∫ₐᵗ ‖f‖²` and `∫ₐˢ ‖w‖² ≤ ∫ₐˢ χ`
     have hfmono : ∫ r in a..s, ‖f r‖ ^ 2 ≤ ∫ r in a..t, ‖f r‖ ^ 2 :=
       intervalIntegral.integral_mono_interval le_rfl hs.1 hs.2
-        (Eventually.of_forall fun _ ↦ by positivity) (intervalIntegrable_of_integrableOn_Ioo hf2 ht)
+        (Eventually.of_forall fun _ ↦ by positivity) (hf2.intervalIntegrable_of_mem_Icc ha ht)
     have hχmono : ∫ r in a..s, ‖w r‖ ^ 2 ≤ ∫ r in a..s, χ r :=
       intervalIntegral.integral_mono_on hs.1 hφs
         (ContinuousOn.intervalIntegrable_of_Icc hs.1 (hχ.mono (Icc_subset_Icc_right hsb.2)))

@@ -20,9 +20,8 @@ function by an integral of itself: a continuous `φ` with `φ t ≤ c + K ∫ₐ
 some `K ≥ 0`. This file proves that such a `φ` satisfies `φ t ≤ c exp (K (t - a))`
 (`TauCeti.le_mul_exp_of_le_add_mul_integral`).
 
-The proof applies the differential form to the primitive `Ψ t = ∫ₐᵗ φ`, whose derivative `φ` is
-at most `c + K Ψ`, and then uses `K ≥ 0` to pass from the bound on `Ψ` back to `φ`. Without
-`K ≥ 0` the statement is false: a very negative stretch of `φ` makes `c + K ∫ₐᵗ φ` large.
+The hypothesis `K ≥ 0` cannot be dropped: a very negative stretch of `φ` makes `c + K ∫ₐᵗ φ`
+large when `K < 0`.
 
 ## References
 
@@ -44,6 +43,8 @@ theorem le_mul_exp_of_le_add_mul_integral {φ : ℝ → ℝ} {a b c K : ℝ}
     (hφ : ContinuousOn φ (Icc a b)) (hK : 0 ≤ K)
     (h : ∀ t ∈ Icc a b, φ t ≤ c + K * ∫ s in a..t, φ s) :
     ∀ t ∈ Icc a b, φ t ≤ c * exp (K * (t - a)) := by
+  -- Apply the differential form to the primitive `Ψ t = ∫ₐᵗ φ`, whose derivative `φ` is at most
+  -- `c + K Ψ`, then use `K ≥ 0` to pass from the bound on `Ψ` back to `φ`.
   intro t ht
   have hab : a ≤ b := ht.1.trans ht.2
   have hint : IntegrableOn φ (Icc a b) := hφ.integrableOn_Icc
