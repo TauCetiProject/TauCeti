@@ -286,6 +286,14 @@ theorem cast_injective {n m : ℕ} (h : n = m) :
     Function.Injective (cast (X := X) R h) := fun a b hab ↦ by
   simpa using congrArg (cast R h.symm) hab
 
+variable {R} in
+/-- Equal after reindexing implies heterogeneously equal. -/
+theorem heq_of_cast_eq {n m : ℕ} (h : n = m) {x : NormalizedCubicalChain X R n}
+    {y : NormalizedCubicalChain X R m} (hxy : cast R h x = y) : HEq x y := by
+  subst h
+  rw [cast_rfl] at hxy
+  exact heq_of_eq hxy
+
 end NormalizedCubicalChain
 
 end TauCeti
