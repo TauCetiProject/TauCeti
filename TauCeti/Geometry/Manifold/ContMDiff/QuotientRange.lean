@@ -24,11 +24,12 @@ The neighbourhood theorem uses regularity on an open domain, rather than regular
 only at its centre. This distinction matters at smooth order: smoothness at one point
 does not in general give one neighbourhood on which the family is smooth.
 
-Reuse the quotient-coordinate calculus in `TauCeti.Analysis.Calculus.QuotientRange` and
-the fixed-complement theorem `ContinuousAt.exists_isInvertible_coprod_subtypeL`.
 Reference: J. M. Lee, *Introduction to Smooth Manifolds*, second edition, the normal-bundle
 construction preceding Theorem 6.24.
 -/
+
+/- Formal sources: the quotient-coordinate calculus in `TauCeti.Analysis.Calculus.QuotientRange`
+and the fixed-complement theorem `ContinuousAt.exists_isInvertible_coprod_subtypeL`. -/
 
 public section
 
