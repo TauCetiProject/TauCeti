@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
@@ -27,6 +27,8 @@ quotient is `2c(s + t) + u`, which is a unit because `2` is nilpotent in `ℤ/2^
 * `ZMod.two_mul_sq_add_bijective`: `s ↦ 2cs² + us` is bijective when `u` is a unit.
 * `ZMod.BinaryQuadraticForm.exists_hyperbolic_of_two_mul`: the hyperbolic normal form
   when a diagonal coefficient is even.
+* `ZMod.BinaryQuadraticForm.exists_sq_add_mul_add_sq_of_odd`: the other normal form
+  when both diagonal coefficients are odd.
 * `ZMod.BinaryQuadraticForm.exists_basis`: a binary form with unit middle coefficient
   has one of the two standard normal forms in a basis of `(ℤ/2^{k+1})²`.
 -/
@@ -65,7 +67,7 @@ theorem exists_hyperbolic_of_two_mul (a' b : ZMod (2 ^ (k + 1)))
 /-- **The odd normal form.** For a unit `u`, the binary form
 `(2a' + 1)m² + umn + (2b' + 1)n²` over `ℤ/2^{k+1}` becomes `m² + mn + n²` in a suitable
 basis. -/
-private theorem exists_sq_add_mul_add_sq_of_odd (a' b' : ZMod (2 ^ (k + 1)))
+theorem exists_sq_add_mul_add_sq_of_odd (a' b' : ZMod (2 ^ (k + 1)))
     {u : ZMod (2 ^ (k + 1))} (hu : IsUnit u) :
     ∃ e₁ e₂ f₁ f₂ : ZMod (2 ^ (k + 1)), ∀ m n,
       (2 * a' + 1) * (m * e₁ + n * f₁) ^ 2 +
