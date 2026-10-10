@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.Representation
+import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.SquareClass
 import Mathlib.LinearAlgebra.Determinant
 import Mathlib.Tactic.LinearCombination
 
@@ -232,21 +233,18 @@ theorem apply_mul_eq_of_equivalent_binary [Invertible (2 : R)] {M : Type*}
     {a b c d : Rˣ} (h : (weightedSumSquares R ![(a : R), (b : R)]).Equivalent
       (weightedSumSquares R ![(c : R), (d : R)])) (x : Rˣ) :
     F (a * b) x = F (c * d) x := by
-  obtain ⟨s, hs⟩ := isSquare_mul_mul_of_equivalent_binary h
-  -- Rescale the first coordinate by the square root of the discriminant ratio.
   apply hF
-  refine ⟨QuadraticForm.isometryEquivWeightedSumSquaresWeightedSumSquares
-    ![s * (c * d)⁻¹, 1] ?_⟩
-  intro i
-  fin_cases i
-  · have hu : (c * d) * (s * (c * d)⁻¹) ^ 2 = a * b := by
-      calc
-        _ = (s * s) * ((c * d)⁻¹ * ((c * d) * (c * d)⁻¹)) := by
-          simp only [pow_two]
-          ac_rfl
-        _ = a * b := by rw [← hs]; simp [mul_assoc]
-    simpa using congrArg Units.val hu
-  · simp
+  have hsq : ∀ i : Fin 2, IsSquare (![a * b, x] i / ![c * d, x] i) := by
+    intro i
+    fin_cases i
+    · simpa [pow_two] using
+        (isSquare_mul_mul_of_equivalent_binary h).div (IsSquare.sq (c * d))
+    · simp
+  have hcoe (u v : Rˣ) : (fun i => ((![u, v] i : Rˣ) : R)) = ![(u : R), (v : R)] := by
+    ext i
+    fin_cases i <;> rfl
+  simpa only [weightedSumSquares_units, hcoe] using
+    equivalent_weightedSumSquares_of_isSquare_div (R := R) hsq
 
 /-- **The binary equivalence criterion**, Lam I.5.1. Two binary diagonal forms with unit
 coefficients are isometric exactly when their discriminants agree modulo squares and they
