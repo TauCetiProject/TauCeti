@@ -12,9 +12,11 @@ public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 # Transport of involutive distributions
 
 A diffeomorphism whose differential identifies two distributions preserves involutivity.
-The proof transports local differentiable sections by Mathlib's vector-field pullback and uses
-the naturality of the Lie bracket. In particular, a distribution is involutive if and only if
-its pullback by a diffeomorphism is involutive.
+This allows involutivity to be checked in diffeomorphic coordinate models when constructing
+integral manifolds. In particular, a distribution is involutive if and only if its pullback
+by a diffeomorphism is involutive.
+
+The vector-field pullback and Lie-bracket naturality APIs are provided by Mathlib.
 
 `TauCeti.IsInvolutiveDistribution.diffeomorph` gives the forward transport theorem, and
 `Diffeomorph.isInvolutiveDistribution_iff` gives the equivalence for identified distributions.
