@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
 public import TauCeti.RingTheory.DedekindDomain.LocalizationAtPrime
+-- Proof-only: of two coprime elements of a local ring, one is a unit.
+import TauCeti.RingTheory.LocalRing.Basic
 
 /-!
 # Semistable elliptic curves over a Dedekind domain
@@ -46,6 +48,8 @@ own, or over zero, where the curve has good reduction.
 * `WeierstrassCurve.isSemistable_iff_forall_valuation_Δ_eq_one_or_valuation_c₄_eq_one`:
   the corresponding global criterion.
 * `WeierstrassCurve.isSemistable_smul`: semistability is invariant under a change of variables.
+* `WeierstrassCurve.isSemistable_baseChange_of_isCoprime`: an equation over `O` whose
+  discriminant and `c₄` are coprime is semistable.
 * `WeierstrassCurve.not_hasAdditiveReduction_minimal_iff_exists_isUnit`: no additive reduction
   means some integral model has a unit discriminant or a unit `c₄`.
 * `WeierstrassCurve.not_hasAdditiveReduction_minimal_baseChange`: no additive reduction is
@@ -233,6 +237,18 @@ theorem isSemistable_smul (D : VariableChange F) (W : WeierstrassCurve F) [W.IsE
     isSemistable_iff_forall_valuation_Δ_eq_one_or_valuation_c₄_eq_one]
   refine forall_congr' fun v ↦ ?_
   rw [valuation_Δ_minimal_smul, valuation_c₄_minimal_smul]
+
+/-- **An equation over `O` whose discriminant and `c₄` are coprime is semistable.** At each
+height-one prime one of the two is a unit of the local ring, so the reduction there is good or
+multiplicative. -/
+theorem isSemistable_baseChange_of_isCoprime (W : WeierstrassCurve O)
+    [(W.baseChange F).IsElliptic] (h : IsCoprime W.Δ W.c₄) : IsSemistable O (W.baseChange F) :=
+  IsSemistable.of_forall_not_hasAdditiveReduction fun v =>
+    (not_hasAdditiveReduction_minimal_iff_exists_isUnit _ _).mpr
+      ⟨W.map (algebraMap O (Localization.AtPrime v.asIdeal)), 1, by
+        rw [map_Δ, map_c₄]
+        exact TauCeti.IsLocalRing.isUnit_or_isUnit_of_isCoprime (h.map _), by
+        rw [one_smul, baseChange, baseChange, map_map, ← IsScalarTower.algebraMap_eq]⟩
 
 variable (O' : Type*) [CommRing O'] [IsDedekindDomain O'] {L : Type*} [Field L] [Algebra O' L]
   [IsFractionRing O' L] [Algebra O O'] [Algebra F L] [Algebra O L] [IsScalarTower O O' L]
