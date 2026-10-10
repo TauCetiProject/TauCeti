@@ -85,9 +85,8 @@ theorem isSplitCompletely_sup_iff [Algebra.IsSeparable F M]
     isSplitCompletely_iff_of_algEquiv P (E₂.equivMap g), IntermediateField.map_sup]
   exact isSplitCompletely_sup_iff_of_isGalois hF P (E₁.map g) (E₂.map g)
 
-/-- A rational place splitting completely in both constituents has only rational extensions
-in the compositum; in particular the compositum has exact constant field `k`
-(Stichtenoth, Corollary 3.9.7). -/
+/-- If a rational place splits completely in both constituents, their compositum has
+exact constant field `k` (Stichtenoth, Corollary 3.9.7). -/
 theorem isIntegrallyClosedIn_sup_of_isSplitCompletely [Algebra.IsSeparable F M]
     (hF : TauCeti.IsFunctionField k F) (P : Place k F) (hP : P.degree = 1)
     (E₁ E₂ : IntermediateField F M)
