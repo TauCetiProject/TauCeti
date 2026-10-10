@@ -11,9 +11,9 @@ public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Pushforward
 /-!
 # Kernel distributions and their Gromov–Wasserstein lower bound
 
-The distribution of a measured kernel `(X, μ, ω)` is the measure `(μ.prod μ).map ω` on its
-target. For probability kernels this is a probability law, by Mathlib's existing product and
-pushforward instances. Its finite-moment condition is exactly the radial `MemLp` condition on
+The distribution `TauCeti.kernelDistribution μ ω` of a measured kernel `(X, μ, ω)` is the measure
+`(μ.prod μ).map ω` on its target. For probability kernels this is a probability law.
+Its finite-moment condition is exactly the radial `MemLp` condition on
 the kernel, by `TauCeti.hasFiniteMoment_map_iff_memLp_edist`; at exponent `∞` this means essential
 boundedness. This criterion holds at every basepoint in the metric target.
 
@@ -25,25 +25,16 @@ including `∞`; the source of the distance need only be σ-finite.
 
 ## Main statements
 
-* `TauCeti.wassersteinEDist_map_prod_le_gromovWassersteinDistortion` bounds the distance of
-  kernel laws by the distortion of any s-finite coupling.
-* `TauCeti.wassersteinEDist_map_prod_le_gromovWassersteinEDist` is the independent
+* `TauCeti.wassersteinEDist_kernelDistribution_le_gromovWassersteinDistortion` bounds the distance
+  of kernel laws by the distortion of any s-finite coupling.
+* `TauCeti.wassersteinEDist_kernelDistribution_le_gromovWassersteinEDist` is the independent
   kernel-distribution lower bound, also the nonexpansive stability estimate.
-* `TauCeti.AreWeaklyIsomorphicKernels.map_prod_eq` shows that the law is independent of
+* `TauCeti.AreWeaklyIsomorphicKernels.kernelDistribution_eq` shows that the law is independent of
   the weak-isomorphism representative.
-* `TauCeti.tendsto_wassersteinEDist_map_prod_zero` transfers convergence to kernel laws.
-
-## Implementation notes
-
-The a.e. measurability needed by `Measure.map` follows from `AEStronglyMeasurable.aemeasurable`.
-The identity on each image law is a.e. strongly measurable by
-`AEStronglyMeasurable.aestronglyMeasurable_id_map`. The two projections from a coupling then
-make its distance cost a.e. strongly measurable, even when the target is nonseparable.
-
-The existing `Measure.map_congr` supplies invariance under a.e. equality of kernels, including
-independence of the chosen strongly measurable representative. No choice of basepoint or exponent
-enters the kernel law itself. For an incoming kernel, exchanging its two arguments leaves its
-law unchanged, by `Measure.prod_swap` and `AEMeasurable.map_map_of_aemeasurable`.
+* `TauCeti.kernelDistribution_congr_ae` gives invariance under a.e. equality of kernels.
+* `TauCeti.kernelDistribution_swap` shows that exchanging a kernel's two arguments preserves its
+  distribution, so the same lower bound applies to incoming kernels.
+* `TauCeti.tendsto_wassersteinEDist_kernelDistribution_zero` transfers convergence to kernel laws.
 
 ## References
 
@@ -65,28 +56,53 @@ namespace TauCeti
 variable {X Y Z : Type*} [MeasurableSpace X] [MeasurableSpace Y] [MeasurableSpace Z]
   {μ : Measure X} {ν : Measure Y} {ωX : X × X → Z} {ωY : Y × Y → Z} {p : ℝ≥0∞}
 
+/-- The distribution of a kernel under two independent samples from its source measure. -/
+def kernelDistribution (μ : Measure X) (ω : X × X → Z) : Measure Z :=
+  (μ.prod μ).map ω
+
+/-- The kernel distribution is the pushforward of the square of the source measure. -/
+@[simp]
+theorem kernelDistribution_def : kernelDistribution μ ωX = (μ.prod μ).map ωX := (rfl)
+
+instance [IsProbabilityMeasure μ] : IsProbabilityMeasure (kernelDistribution μ ωX) := by
+  rw [kernelDistribution_def]
+  infer_instance
+
+/-- Almost-everywhere changes of a kernel preserve its distribution. -/
+theorem kernelDistribution_congr_ae {ωX' : X × X → Z} (h : ωX =ᵐ[μ.prod μ] ωX') :
+    kernelDistribution μ ωX = kernelDistribution μ ωX' :=
+  Measure.map_congr h
+
+/-- Exchanging the two arguments of an a.e. measurable kernel preserves its distribution. -/
+theorem kernelDistribution_swap [SFinite μ] (hωX : AEMeasurable ωX (μ.prod μ)) :
+    kernelDistribution μ (ωX ∘ Prod.swap) = kernelDistribution μ ωX := by
+  rw [kernelDistribution_def, kernelDistribution_def,
+    ← AEMeasurable.map_map_of_aemeasurable
+      (by simpa only [Measure.prod_swap] using hωX) measurable_swap.aemeasurable,
+    Measure.prod_swap]
+
 /-- Weakly isomorphic a.e. measurable kernels have the same kernel distribution. -/
-theorem AreWeaklyIsomorphicKernels.map_prod_eq [IsFiniteMeasure μ]
+theorem AreWeaklyIsomorphicKernels.kernelDistribution_eq [IsFiniteMeasure μ]
     (h : AreWeaklyIsomorphicKernels μ ωX ν ωY)
     (hωX : AEMeasurable ωX (μ.prod μ)) (hωY : AEMeasurable ωY (ν.prod ν)) :
-    (μ.prod μ).map ωX = (ν.prod ν).map ωY := by
+    kernelDistribution μ ωX = kernelDistribution ν ωY := by
   obtain ⟨π, hπ, heq⟩ := h.exists_isCoupling
   have : IsFiniteMeasure π := hπ.isFiniteMeasure
   have hX := hπ.measurePreserving_fst.prod hπ.measurePreserving_fst
   have hY := hπ.measurePreserving_snd.prod hπ.measurePreserving_snd
-  rw [← hX.map_eq, ← hY.map_eq]
+  rw [kernelDistribution_def, kernelDistribution_def, ← hX.map_eq, ← hY.map_eq]
   rw [AEMeasurable.map_map_of_aemeasurable (hX.map_eq.symm ▸ hωX) hX.aemeasurable,
     AEMeasurable.map_map_of_aemeasurable (hY.map_eq.symm ▸ hωY) hY.aemeasurable]
   exact Measure.map_congr heq
 
 variable [PseudoEMetricSpace Z] [BorelSpace Z]
 
-/-- The law of each kernel is coupled by mapping the square of any source coupling through
-the two kernels. Its Wasserstein cost is bounded by that coupling's GW distortion. -/
-theorem wassersteinEDist_map_prod_le_gromovWassersteinDistortion
+/-- The Wasserstein distance between kernel distributions is bounded by the GW distortion
+of any s-finite source coupling. -/
+theorem wassersteinEDist_kernelDistribution_le_gromovWassersteinDistortion
     {π : Measure (X × Y)} [SFinite π] (hπ : IsCoupling π μ ν)
     (hωX : AEStronglyMeasurable ωX (μ.prod μ)) (hωY : AEStronglyMeasurable ωY (ν.prod ν)) :
-    wassersteinEDist p ((μ.prod μ).map ωX) ((ν.prod ν).map ωY) ≤
+    wassersteinEDist p (kernelDistribution μ ωX) (kernelDistribution ν ωY) ≤
       gromovWassersteinDistortion p ωX ωY π := by
   have hprod := hπ.prodProdProdComm hπ
   have hd := continuous_edist.comp_aestronglyMeasurable₂
@@ -100,26 +116,26 @@ theorem wassersteinEDist_map_prod_le_gromovWassersteinDistortion
 Taking the kernel law is nonexpansive from GW distance to Wasserstein distance, in the
 no-`1 / 2` convention. No finite-moment, probability, or lower bound on the exponent is needed;
 in particular the estimate includes `p = ∞`. -/
-theorem wassersteinEDist_map_prod_le_gromovWassersteinEDist [SigmaFinite μ]
+theorem wassersteinEDist_kernelDistribution_le_gromovWassersteinEDist [SigmaFinite μ]
     (hωX : AEStronglyMeasurable ωX (μ.prod μ)) (hωY : AEStronglyMeasurable ωY (ν.prod ν)) :
-    wassersteinEDist p ((μ.prod μ).map ωX) ((ν.prod ν).map ωY) ≤
+    wassersteinEDist p (kernelDistribution μ ωX) (kernelDistribution ν ωY) ≤
       gromovWassersteinEDist p μ ωX ν ωY := by
   refine le_gromovWassersteinEDist fun π hπ ↦ ?_
   have : SigmaFinite π := SigmaFinite.of_map π measurable_fst.aemeasurable
     (by rw [← Measure.fst, hπ.fst_eq]; infer_instance)
-  exact wassersteinEDist_map_prod_le_gromovWassersteinDistortion hπ hωX hωY
+  exact wassersteinEDist_kernelDistribution_le_gromovWassersteinDistortion hπ hωX hωY
 
 /-- GW convergence implies Wasserstein convergence of kernel distributions, including at
 exponent `∞`. The carriers and measures may vary with the index. -/
-theorem tendsto_wassersteinEDist_map_prod_zero {ι : Type*} {l : Filter ι}
+theorem tendsto_wassersteinEDist_kernelDistribution_zero {ι : Type*} {l : Filter ι}
     {X' : ι → Type*} [∀ i, MeasurableSpace (X' i)] {μ' : (i : ι) → Measure (X' i)}
     [∀ i, SigmaFinite (μ' i)] {ω' : (i : ι) → X' i × X' i → Z}
     (hω' : ∀ i, AEStronglyMeasurable (ω' i) ((μ' i).prod (μ' i)))
     (hωX : AEStronglyMeasurable ωX (μ.prod μ))
     (h : Tendsto (fun i ↦ gromovWassersteinEDist p (μ' i) (ω' i) μ ωX) l (𝓝 0)) :
-    Tendsto (fun i ↦ wassersteinEDist p (((μ' i).prod (μ' i)).map (ω' i))
-      ((μ.prod μ).map ωX)) l (𝓝 0) :=
+    Tendsto (fun i ↦ wassersteinEDist p (kernelDistribution (μ' i) (ω' i))
+      (kernelDistribution μ ωX)) l (𝓝 0) :=
   tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds h (fun _ ↦ zero_le)
-    (fun i ↦ wassersteinEDist_map_prod_le_gromovWassersteinEDist (hω' i) hωX)
+    (fun i ↦ wassersteinEDist_kernelDistribution_le_gromovWassersteinEDist (hω' i) hωX)
 
 end TauCeti
