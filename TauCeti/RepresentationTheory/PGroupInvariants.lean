@@ -8,10 +8,8 @@ module
 public import Mathlib.RepresentationTheory.Invariants
 public import Mathlib.RepresentationTheory.Irreducible
 public import Mathlib.GroupTheory.PGroup
--- Non-public: `Representation.IsIrreducible.eq_trivial_of_invariants_ne_bot` and its dimension form
--- are what the irreducible corollaries apply, and `Representation.IsIrreducible.nontrivial`
--- supplies the nontriviality they need.
-import TauCeti.RepresentationTheory.Invariants
+-- Non-public: `Representation.IsIrreducible.nontrivial` supplies the nontriviality that the
+-- normal-subgroup corollary needs.
 import TauCeti.RepresentationTheory.Irreducible
 -- Non-public: `AddCommGroup.zmodModule` makes a `p`-torsion abelian group a `ZMod p`-module, used
 -- only to build a finite invariant set inside a proof.
@@ -33,7 +31,11 @@ counterpart of the characteristic-free `Representation.IsIrreducible.invariants_
 says that a nontrivial irreducible representation has no nonzero invariant vector; together they
 say that such a representation is irreducible only if it is the trivial representation on a line.
 Equivalently: over a field of characteristic `p`, the trivial module is the only irreducible
-module of a finite `p`-group.
+module of a finite `p`-group. That corollary is
+`Representation.IsIrreducible.eq_trivial_of_forall_pow_expChar_pow_eq_one` in
+`TauCeti/RepresentationTheory/Unipotent/PowerOrder.lean`, stated for a finite-dimensional
+representation of any group; an irreducible representation of a finite group is
+finite-dimensional (`Representation.IsIrreducible.finiteDimensional`).
 
 A finite normal `p`-subgroup of an arbitrary group acts trivially on every irreducible
 representation in characteristic `p`: its nonzero invariant subspace is stable under the
@@ -51,9 +53,6 @@ corollary here requires finiteness only of the subgroup.
   over a ring of characteristic `p`, all of whose elements act with `p`-power order, has a nonzero
   invariant vector**, with `Representation.exists_ne_zero_apply_eq_self_of_forall_pow_eq_one` its
   elementwise form.
-* `Representation.IsIrreducible.eq_trivial_of_forall_pow_eq_one`: over a field, such a
-  representation is irreducible only if it is the trivial representation, and
-  `Representation.IsIrreducible.finrank_eq_one_of_forall_pow_eq_one`: only if it is a line.
 * `Representation.IsIrreducible.comp_eq_trivial_of_isPGroup`: a finite normal `p`-subgroup
   acts trivially on an irreducible representation in characteristic `p`.
 
@@ -173,28 +172,6 @@ theorem exists_ne_zero_apply_eq_self_of_forall_pow_eq_one [CharP k p] [Finite G]
   exact ⟨v, hv0, hv⟩
 
 end CommRing
-
-section Field
-
-variable {k : Type u} {G : Type v} {V : Type w} [Field k] [Group G]
-  [AddCommGroup V] [Module k V] (p : ℕ) [Fact p.Prime] [CharP k p] [Finite G]
-
-/-- **An irreducible representation of a finite group in which every element acts with `p`-power
-order, over a field of characteristic `p`, is the trivial representation.** It has a nonzero
-invariant vector, and a nontrivial irreducible representation has none. -/
-theorem IsIrreducible.eq_trivial_of_forall_pow_eq_one {ρ : Representation k G V}
-    (h : ρ.IsIrreducible) (hρ : ∀ g : G, ∃ n : ℕ, ρ g ^ p ^ n = 1) : ρ = trivial k G V :=
-  have := h.nontrivial
-  h.eq_trivial_of_invariants_ne_bot (ρ.invariants_ne_bot_of_forall_pow_eq_one p hρ)
-
-/-- **Such an irreducible representation is a line**, an irreducible representation of any other
-dimension having no nonzero invariant vector. -/
-theorem IsIrreducible.finrank_eq_one_of_forall_pow_eq_one {ρ : Representation k G V}
-    (h : ρ.IsIrreducible) (hρ : ∀ g : G, ∃ n : ℕ, ρ g ^ p ^ n = 1) : Module.finrank k V = 1 :=
-  have := h.nontrivial
-  h.finrank_eq_one_of_invariants_ne_bot (ρ.invariants_ne_bot_of_forall_pow_eq_one p hρ)
-
-end Field
 
 section NormalSubgroup
 
