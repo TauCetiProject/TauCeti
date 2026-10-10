@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Differential.Kaehler
-public import TauCeti.RingTheory.Derivation.Wronskian
+public import TauCeti.RingTheory.Derivation.Wronskian.Rescale
 
 /-!
 # Wronskians in characteristic-zero function fields
@@ -18,8 +18,10 @@ independent over the exact constant field in characteristic zero.
 
 In particular, the elements of any basis of a Riemann--Roch space have nonzero Wronskian.
 For the canonical series, this is the nonvanishing prerequisite for describing Weierstrass
-weights by a ramification divisor. This file proves nonvanishing; it does not construct that
-divisor or compute its local orders.
+weights by a ramification divisor. Changing a separating parameter from `x` to `y`
+multiplies an `n`-function Wronskian by `(dx/dy) ^ (n * (n - 1) / 2)`. This is the
+transformation law used to make the associated differential tensor independent of
+that parameter. The file does not construct its divisor or compute its local orders.
 
 ## References
 
@@ -44,5 +46,26 @@ theorem wronskian_derivativeOfSeparating_ne_zero_iff (hF : IsFunctionField k F)
     (derivativeOfSeparating hx).wronskian f ≠ 0 ↔ LinearIndependent k f :=
   (derivativeOfSeparating hx).wronskian_ne_zero_iff
     (fun y hy ↦ (derivativeOfSeparating_eq_zero_iff hF hex hx y).mp hy) f
+
+/-- Changing the separating parameter from `x` to `y` multiplies the Wronskian of
+`n` functions by `(dx/dy) ^ (n * (n - 1) / 2)`. No characteristic or exact-constant-field
+hypothesis is needed for this transformation law. -/
+theorem wronskian_derivativeOfSeparating_eq {k F : Type*}
+    [Field k] [Field F] [Algebra k F] {x y : F}
+    (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F]
+    (hy : Transcendental k y) [Algebra.IsSeparable k⟮y⟯ F]
+    {n : ℕ} (f : Fin n → F) :
+    (derivativeOfSeparating hy).wronskian f =
+      (derivativeOfSeparating hy x) ^ (n * (n - 1) / 2) *
+        (derivativeOfSeparating hx).wronskian f := by
+  have hder : derivativeOfSeparating hy =
+      derivativeOfSeparating hy x • derivativeOfSeparating hx := by
+    ext z
+    simpa only [Derivation.smul_apply, smul_eq_mul, mul_comm] using
+      (derivativeOfSeparating hy).apply_eq_derivativeOfSeparating_smul hx z
+  calc
+    _ = (derivativeOfSeparating hy x • derivativeOfSeparating hx).wronskian f :=
+      congrArg (fun D : Derivation k F F ↦ D.wronskian f) hder
+    _ = _ := Derivation.wronskian_smul _ _ f
 
 end TauCeti
