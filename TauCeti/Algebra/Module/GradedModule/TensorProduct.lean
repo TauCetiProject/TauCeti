@@ -72,7 +72,7 @@ theorem piTensorProduct_ext (G : InternalGrading R M) {n : ℕ}
         g (PiTensorProduct.tprod R fun i ↦ (q i).2)) : f = g := by
   apply PiTensorProduct.ext_of_span_eq_top
     (g := fun _ (q : Σ d : ℤ, G.piece d) ↦ (q.2 : M))
-  · intro i
+  · intro _
     apply top_unique
     rw [← G.isInternal.submodule_iSup_eq_top]
     refine iSup_le fun d ↦ ?_

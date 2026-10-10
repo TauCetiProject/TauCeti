@@ -83,7 +83,7 @@ theorem eq_zero_of_map_sylow_eq_zero {x : groupCohomology A (n + 1)}
   induction m using Nat.recOnPrimePow with
   | zero => exact fun _ _ h0 _ _ ↦ absurd h0 (lt_irrefl 0)
   | one => exact fun y _ _ hy _ ↦ by simpa using hy
-  | prime_pow_mul a p m hp hpa hm ih =>
+  | prime_pow_mul a p m hp _ hm ih =>
     intro y hdiv hpos hy hres
     have : Fact p.Prime := ⟨hp⟩
     have hpdiv : p ∣ Nat.card G :=

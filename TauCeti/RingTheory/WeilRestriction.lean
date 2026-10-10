@@ -32,6 +32,9 @@ formation commutes with an arbitrary base change `A → A'`.
 * `TauCeti.Algebra.WeilRestriction.baseChangeAlgEquiv A B C A' B' C'`: for `B' = B ⊗[A] A'` and
   `C' = C ⊗[B] B'` (expressed through `Algebra.IsPushout`), the `A'`-algebra isomorphism
   `A' ⊗[A] WeilRestriction A B C ≃ₐ[A'] WeilRestriction A' B' C'`.
+* `TauCeti.Algebra.WeilRestriction.tensorHomEquiv A B D T`: for a finitely presented `A`-algebra
+  `D`, the Weil restriction of `B ⊗[A] D` represents `T ↦ (D →ₐ[A] T ⊗[A] B)`, the functor of
+  morphisms from `Spec B` to `Spec D` over `Spec A`.
 
 ## Main results
 
@@ -44,6 +47,7 @@ formation commutes with an arbitrary base change `A → A'`.
   compatible with the universal properties: for `g : WeilRestriction A' B' C' →ₐ[A'] T`, the point
   of `C` classified by `g ∘ baseChangeAlgEquiv` restricted to `WeilRestriction A B C` is the
   restriction to `C` of the point of `C'` classified by `g`.
+* `TauCeti.Algebra.WeilRestriction.tensorHomEquiv_comp`: `tensorHomEquiv` is natural in `T`.
 
 ## References
 
@@ -351,6 +355,44 @@ theorem homEquiv_comp_baseChangeAlgEquiv (g : WeilRestriction A' B' C' →ₐ[A'
   simp [Algebra.TensorProduct.map_id_comp]
 
 end BaseChange
+
+section TensorHom
+
+variable (A B D : Type*) [CommRing A] [CommRing B] [CommRing D] [Algebra A B] [Algebra A D]
+  [Module.Finite A B] [Module.Projective A B] [FinitePresentation A D]
+  (T : Type*) [CommRing T] [Algebra A T]
+
+/-- The Weil restriction along `B` of the scalar extension `B ⊗[A] D` represents the functor
+sending an `A`-algebra `T` to the set `D →ₐ[A] T ⊗[A] B`. Geometrically, `Spec` of it is the
+scheme of morphisms from `Spec B` to `Spec D` over `Spec A`: its `T`-points are the morphisms
+`Spec (T ⊗[A] B) → Spec D` over `Spec A`. It is natural in `T`, see
+`WeilRestriction.tensorHomEquiv_comp`. -/
+def tensorHomEquiv : (WeilRestriction A B (B ⊗[A] D) →ₐ[A] T) ≃ (D →ₐ[A] T ⊗[A] B) :=
+  (homEquiv A B (B ⊗[A] D) T).trans <| (AlgHom.liftEquiv A B D (B ⊗[A] T)).symm.trans <|
+    AlgEquiv.arrowCongr AlgEquiv.refl (Algebra.TensorProduct.comm A B T)
+
+variable {A B D T}
+
+/-- `WeilRestriction.tensorHomEquiv` sends `g` to the point `D → T ⊗[A] B` obtained by evaluating
+the point `homEquiv A B (B ⊗[A] D) T g` of `B ⊗[A] D` on `1 ⊗ d`. -/
+theorem tensorHomEquiv_apply (g : WeilRestriction A B (B ⊗[A] D) →ₐ[A] T) (d : D) :
+    tensorHomEquiv A B D T g d =
+      Algebra.TensorProduct.comm A B T (homEquiv A B (B ⊗[A] D) T g (1 ⊗ₜ d)) := (rfl)
+
+/-- Naturality of `WeilRestriction.tensorHomEquiv` in the `A`-algebra `T`: post-composing with
+`k : T →ₐ[A] T'` corresponds to post-composing with `k ⊗ B`. -/
+theorem tensorHomEquiv_comp {T' : Type*} [CommRing T'] [Algebra A T']
+    (g : WeilRestriction A B (B ⊗[A] D) →ₐ[A] T) (k : T →ₐ[A] T') :
+    tensorHomEquiv A B D T' (k.comp g) =
+      (Algebra.TensorProduct.map k (AlgHom.id A B)).comp (tensorHomEquiv A B D T g) := by
+  ext d
+  rw [tensorHomEquiv_apply, homEquiv_comp, AlgHom.comp_apply, AlgHom.comp_apply,
+    tensorHomEquiv_apply]
+  induction homEquiv A B (B ⊗[A] D) T g (1 ⊗ₜ d) using TensorProduct.inductionOn with
+  | tmul b t => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
+
+end TensorHom
 
 end WeilRestriction
 

@@ -251,7 +251,7 @@ theorem IsMorse.exists_isAdaptedPseudoGradient [CompactSpace M] [T2Space M]
     (hf : IsMorse 𝓘(ℝ, E) f) :
     ∃ X : (x : M) → TangentSpace 𝓘(ℝ, E) x, IsAdaptedPseudoGradient f X := by
   classical
-  set C := {y : M | mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0} with hCdef
+  set C := {y : M | mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0}
   have hC : C.Finite := hf.finite_setOf_mfderiv_eq_zero
   let φ : ∀ x ∈ C, MorseChart E f x := fun x hx ↦ (hf.nonempty_morseChart hx).some
   obtain ⟨W, hW, hWdisj⟩ := hC.t2_separation

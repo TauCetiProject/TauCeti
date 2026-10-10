@@ -330,7 +330,7 @@ theorem sorted_crossing_gluing_induction {E : Type*} [NormedAddCommGroup E] {γ 
     exact h_piece a b hA hab le_rfl
       fun u hu => h_far u hu fun t ht => absurd ht (List.not_mem_nil)
   | cons t rest IH =>
-    intro h_sorted hr a hA hab h_lo h_hi h_pair h_win h_far
+    intro h_sorted hr a hA _ h_lo h_hi h_pair h_win h_far
     have hr_nonneg : 0 ≤ r := hr (List.cons_ne_nil t rest)
     have h_head_lo : a ≤ t - r := h_lo t List.mem_cons_self
     have h_head_hi : t + r ≤ b := h_hi t List.mem_cons_self

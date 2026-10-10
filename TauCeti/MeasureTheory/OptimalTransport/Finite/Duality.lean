@@ -368,12 +368,11 @@ theorem exists_forall_finiteDualValue_le (c : ι × κ → ℝ) (μ : PMF ι) (�
   have : Nonempty ι := ⟨μ.support_nonempty.some⟩
   have : Nonempty κ := ⟨ν.support_nonempty.some⟩
   obtain ⟨q₀, hq₀⟩ := Finite.exists_max fun q : ι × κ ↦ |c q|
-  set M : ℝ := |c q₀| with hMdef
+  set M : ℝ := |c q₀|
   have hM : ∀ q, |c q| ≤ M := hq₀
   have hM0 : 0 ≤ M := abs_nonneg _
   set K : Set ((ι → ℝ) × (κ → ℝ)) :=
     {p | (∀ i j, p.1 i + p.2 j ≤ c (i, j)) ∧ (∀ i, |p.1 i| ≤ 2 * M) ∧ ∀ j, |p.2 j| ≤ 3 * M}
-    with hKdef
   have hKclosed : IsClosed K := by
     have h1 : IsClosed {p : (ι → ℝ) × (κ → ℝ) | ∀ i j, p.1 i + p.2 j ≤ c (i, j)} := by
       simp only [Set.ofPred_forall]

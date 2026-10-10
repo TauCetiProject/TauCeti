@@ -97,10 +97,10 @@ variable (K) in
 /-- The fixed field of the whole group `G_K` is `K`, the image of the structure map
 `K →ₐ[K] Kˢ`. This is the hypothesis under which `unitsLevelEquiv` identifies the level
 `((Kˢ)ˣ)^{G_K}` with `Kˣ`. -/
-theorem fixedField_toSubgroup_top :
+theorem fixedField_toSubgroup_top_eq_fieldRange :
     fixedField (⊤ : OpenSubgroup (AbsoluteGaloisGroup K)).toSubgroup =
       (Algebra.ofId K (SeparableClosure K)).fieldRange := by
-  rw [OpenSubgroup.toSubgroup_top, InfiniteGalois.fixedField_bot]
+  rw [TauCeti.fixedField_toSubgroup_top]
   ext x
   simp [mem_bot, Algebra.ofId_apply]
 
@@ -108,11 +108,9 @@ theorem fixedField_toSubgroup_top :
 theorem eq_top_of_fixedField_toSubgroup_eq {W : OpenSubgroup (AbsoluteGaloisGroup K)}
     (h : fixedField W.toSubgroup = (Algebra.ofId K (SeparableClosure K)).fieldRange) : W = ⊤ :=
   OpenSubgroup.toSubgroup_injective <|
-    calc W.toSubgroup = (fixedField W.toSubgroup).fixingSubgroup :=
-          (InfiniteGalois.fixingSubgroup_fixedField ⟨_, W.isClosed⟩).symm
-      _ = (fixedField (⊤ : OpenSubgroup (AbsoluteGaloisGroup K)).toSubgroup).fixingSubgroup := by
-          rw [h, fixedField_toSubgroup_top]
-      _ = _ := InfiniteGalois.fixingSubgroup_fixedField ⟨_, (⊤ : OpenSubgroup _).isClosed⟩
+    (toSubgroup_eq_fixingSubgroup_of_fixedField_eq
+      (h.trans (fixedField_toSubgroup_top_eq_fieldRange K).symm)).trans
+      (toSubgroup_eq_fixingSubgroup_of_fixedField_eq rfl).symm
 
 variable (K) in
 /-- The fixed field of the ground subgroup `G_K` of a layer `V ◁ G_K` is `K`, the image of the
@@ -121,7 +119,7 @@ ground level of such a layer with `Kˣ`. -/
 theorem fixedField_ground_ofOpenNormal (V : OpenNormalSubgroup (AbsoluteGaloisGroup K)) :
     fixedField (NormalLayer.ofOpenNormal V).ground.toSubgroup =
       (Algebra.ofId K (SeparableClosure K)).fieldRange := by
-  rw [NormalLayer.ground_ofOpenNormal, fixedField_toSubgroup_top]
+  rw [NormalLayer.ground_ofOpenNormal, fixedField_toSubgroup_top_eq_fieldRange]
 
 variable {L : Type*} [Field L] [Algebra K L] [FiniteDimensional K L] [IsGalois K L]
 
@@ -219,8 +217,7 @@ theorem levelNorm_unitsLevelEquiv (ι : E →ₐ[K] SeparableClosure K)
   obtain rfl : W₀ = ⊤ := eq_top_of_fixedField_toSubgroup_eq hW₀
   -- The representatives of the cosets of `W` in `G_K` are a transversal of `Gal(Kˢ/ι(E))`, so the
   -- norm is the product of the conjugates of `ι y` (`TauCeti.algebraMap_norm_eq_prod_transversal`).
-  have hfix : W.toSubgroup = ι.fieldRange.fixingSubgroup := by
-    rw [← hW, InfiniteGalois.fixingSubgroup_fixedField ⟨W.toSubgroup, W.isClosed⟩]
+  have hfix := toSubgroup_eq_fixingSubgroup_of_fixedField_eq hW
   let e := Subgroup.quotientEquivOfEq hfix
   refine Subtype.ext ?_
   rw [Formation.levelNorm_top_apply_coe, unitsLevelEquiv_apply_coe, unitsLevelEquiv_apply_coe,

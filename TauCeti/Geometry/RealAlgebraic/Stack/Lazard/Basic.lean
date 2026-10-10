@@ -228,8 +228,8 @@ theorem analyticOnSubmanifold_root {d : ℕ} (hS : IsAnalyticSubmanifold d S) (i
       eval_coeff_taylor_map_C]
   refine hS.analyticOnSubmanifold_of_rootMultiplicity_eq (F := fun x ↦
       (optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k))).lazardEval (Polynomial.C ∘ x))
-    (fun j ↦ ?_) (fun x hx ↦ ?_) ?_
-    fun x hx ↦ ⟨D.multiplicity k i, hk, eventually_nhdsWithin_of_forall fun y hy ↦ ?_⟩
+    (fun j ↦ ?_) (fun x _ ↦ ?_) ?_
+    fun x _ ↦ ⟨D.multiplicity k i, hk, eventually_nhdsWithin_of_forall fun y hy ↦ ?_⟩
   · have hsnoc (l : Fin (n + 1)) :
         AnalyticOnNhd ℝ (fun x : Fin n → ℝ ↦ Fin.snoc (α := fun _ ↦ ℝ) x 0 l) univ := by
       cases l using Fin.lastCases with
@@ -241,7 +241,7 @@ theorem analyticOnSubmanifold_root {d : ℕ} (hS : IsAnalyticSubmanifold d S) (i
       |>.analyticOnSubmanifold hS).congr fun x hx ↦ ?_
     simp only [hcoeff ⟨x, hx⟩ j, aeval_eq_eval]
   · -- the degree in the last variable bounds the degrees of all Lazard evaluations
-    refine ⟨(F k).degreeOf (Fin.last n), eventually_nhdsWithin_of_forall fun y hy ↦ ?_⟩
+    refine ⟨(F k).degreeOf (Fin.last n), eventually_nhdsWithin_of_forall fun y _ ↦ ?_⟩
     refine Polynomial.natDegree_le_iff_coeff_eq_zero.2 fun j hj ↦ ?_
     rw [coeff_lazardEval_optionEquivRight_rename_finSuccEquivLast, ← notMem_support_iff]
     refine notMem_support_of_degreeOf_lt (Fin.last n) ?_

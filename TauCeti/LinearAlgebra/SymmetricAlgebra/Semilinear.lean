@@ -118,7 +118,7 @@ theorem mapₛₗ_mem_homogeneousSubmodule (f : M →ₛₗ[φ] N) {n : ℕ}
       rw [mapₛₗ_algebraMap, homogeneousSubmodule, pow_zero]
       exact Submodule.algebraMap_mem _
   | add x y i _ _ ihx ihy => rw [map_add]; exact Submodule.add_mem _ ihx ihy
-  | mem_mul m hm i x hx ih =>
+  | mem_mul m hm i x _ ih =>
       obtain ⟨y, rfl⟩ := hm
       rw [map_mul, mapₛₗ_ι, Nat.succ_eq_add_one, Nat.add_comm]
       exact SetLike.mul_mem_graded (ι_mem_homogeneousSubmodule S N (f y)) ih
