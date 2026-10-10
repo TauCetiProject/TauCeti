@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Comp
 public import Mathlib.Analysis.Calculus.ParametricIntegral
 public import Mathlib.Analysis.Convolution
 public import Mathlib.MeasureTheory.Group.Integral
+import Mathlib.Analysis.Calculus.ContDiff.Convolution
 
 /-!
 # Smoothness of convolutions with dominated kernels
@@ -27,6 +28,10 @@ The iterated derivative of `f ⋆[L, μ] g` is a convolution against the iterate
 for the bilinear map `L_n` sending `(a, B)` to the multilinear map `m ↦ L a (B m)`
 (`ContinuousLinearMap.compContinuousMultilinearMapL` composed with `L`).
 
+For a compactly supported `C¹` factor `g`, the file also records the directional form
+`∂ᵥ (f ⋆ g) = f ⋆ ∂ᵥ g` of Mathlib's rule `HasCompactSupport.hasFDerivAt_convolution_right`, in
+which the derivative is a convolution with values in `F` rather than in a space of linear maps.
+
 ## Main declarations
 
 * `TauCeti.convolutionExists_of_ae_norm_le_of_integrable`,
@@ -38,6 +43,8 @@ for the bilinear map `L_n` sending `(a, B)` to the multilinear map `m ↦ L a (B
 * `TauCeti.contDiff_convolution_right_of_dominated`,
   `TauCeti.contDiff_convolution_left_of_dominated`: `f ⋆ g` is `C^N` when the smooth factor is.
 * `TauCeti.iteratedFDeriv_convolution_left_of_dominated`: `D^n (f ⋆ g) = D^n f ⋆ g`.
+* `HasCompactSupport.fderiv_convolution_right_apply`: for `g` compactly supported, the
+  directional derivative `∂ᵥ (f ⋆ g) = f ⋆ ∂ᵥ g`.
 -/
 
 public section
@@ -225,5 +232,15 @@ theorem iteratedFDeriv_convolution_left_of_dominated (hf : ContDiff ℝ N f)
         L.flip).flip, μ] g := by
   rw [← convolution_flip, iteratedFDeriv_convolution_right_of_dominated L.flip hg hgM hf hfφ hn,
     ← convolution_flip]
+
+omit [FiniteDimensional ℝ G] [μ.IsNegInvariant] in
+/-- **Directional derivatives of a convolution.** If `f` is locally integrable and `g` is `C¹`
+with compact support, then the derivative of `f ⋆ g` in a direction `v` is the convolution of `f`
+with the derivative of `g` in the direction `v`. -/
+theorem _root_.HasCompactSupport.fderiv_convolution_right_apply (hcg : HasCompactSupport g)
+    (hf : LocallyIntegrable f μ) (hg : ContDiff ℝ 1 g) (x v : G) :
+    fderiv ℝ (f ⋆[L, μ] g) x v = (f ⋆[L, μ] fun y => fderiv ℝ g y v) x := by
+  rw [(hcg.hasFDerivAt_convolution_right L hf hg x).fderiv,
+    convolution_precompR_apply L hf (hcg.fderiv (𝕜 := ℝ)) (hg.continuous_fderiv one_ne_zero) x v]
 
 end TauCeti
