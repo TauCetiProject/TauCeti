@@ -7,8 +7,9 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.LogarithmicEnd.Basic
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Power
-public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Basic
+public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Compactification
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Compactification
+import TauCeti.Algebra.BigOperators.Finset.Fiber
 
 /-!
 # Sphere-valued Schwarz--Christoffel boundary extension
@@ -57,6 +58,13 @@ finite parameters representing logarithmic ends. -/
 def schwarzChristoffelSphereBoundary (a e : ι → ℝ) (z₀ : UpperHalfPlane) :
     OnePoint ℝ → OnePoint ℂ :=
   schwarzChristoffelSphereExtension a e z₀ ∘ OnePoint.map Complex.ofReal
+
+/-- The sphere boundary evaluates the sphere extension on the compactified real axis. -/
+theorem schwarzChristoffelSphereBoundary_apply (a e : ι → ℝ) (z₀ : UpperHalfPlane)
+    (x : OnePoint ℝ) :
+    schwarzChristoffelSphereBoundary a e z₀ x =
+      schwarzChristoffelSphereExtension a e z₀ (OnePoint.map Complex.ofReal x) :=
+  (rfl)
 
 /-- On the open upper half-plane, the sphere extension agrees with the primitive. -/
 @[simp]
@@ -129,19 +137,24 @@ theorem schwarzChristoffelSphereExtension_infty (a e : ι → ℝ) (z₀ : Upper
   rw [closure_coe_image_upperHalfPlaneSet]
   exact mem_insert _ _
 
-/-- The finite-parameter boundary values: ordinary values at integrable points and infinity
-at logarithmic ends. -/
+/-- At an integrable real parameter, the sphere boundary retains the finite boundary value. -/
 @[simp]
-theorem schwarzChristoffelSphereBoundary_coe (a e : ι → ℝ) (z₀ : UpperHalfPlane)
-    (p : ℝ) (he : -1 ≤ ∑ i with a i = p, e i) :
+theorem schwarzChristoffelSphereBoundary_coe_of_exponent_sum_gt_neg_one
+    (a e : ι → ℝ) (z₀ : UpperHalfPlane) (p : ℝ)
+    (he : -1 < ∑ i with a i = p, e i) :
     schwarzChristoffelSphereBoundary a e z₀ (p : OnePoint ℝ) =
-      if -1 < ∑ i with a i = p, e i then
-        (schwarzChristoffelBoundary a e z₀ p : OnePoint ℂ) else ∞ := by
-  rcases he.eq_or_lt with he | he
-  · simp [schwarzChristoffelSphereBoundary, he.symm,
-      schwarzChristoffelSphereExtension_coe_of_exponent_sum_eq_neg_one a e z₀ p he.symm]
-  · simp [schwarzChristoffelSphereBoundary, he,
-      schwarzChristoffelSphereExtension_coe_of_exponent_sum_gt_neg_one a e z₀ p he]
+      (schwarzChristoffelBoundary a e z₀ p : OnePoint ℂ) := by
+  simpa only [schwarzChristoffelSphereBoundary_apply, OnePoint.map_some] using
+    schwarzChristoffelSphereExtension_coe_of_exponent_sum_gt_neg_one a e z₀ p he
+
+/-- A logarithmic real prevertex maps to infinity in the sphere boundary. -/
+@[simp]
+theorem schwarzChristoffelSphereBoundary_coe_of_exponent_sum_eq_neg_one
+    (a e : ι → ℝ) (z₀ : UpperHalfPlane) (p : ℝ)
+    (he : ∑ i with a i = p, e i = -1) :
+    schwarzChristoffelSphereBoundary a e z₀ (p : OnePoint ℝ) = ∞ := by
+  simpa only [schwarzChristoffelSphereBoundary_apply, OnePoint.map_some] using
+    schwarzChristoffelSphereExtension_coe_of_exponent_sum_eq_neg_one a e z₀ p he
 
 /-- The value of the sphere boundary at the compactifying parameter. -/
 @[simp]
@@ -149,7 +162,22 @@ theorem schwarzChristoffelSphereBoundary_infty (a e : ι → ℝ) (z₀ : UpperH
     schwarzChristoffelSphereBoundary a e z₀ ∞ =
       if ∑ i, e i < -1 then (schwarzChristoffelVertexAtInfinity a e z₀ : OnePoint ℂ)
       else ∞ := by
-  simp [schwarzChristoffelSphereBoundary]
+  simp [schwarzChristoffelSphereBoundary_apply]
+
+/-- When all finite prevertices are integrable and the vertex at infinity is finite, the
+sphere boundary is the complex-valued compactified boundary embedded in the sphere. -/
+theorem schwarzChristoffelSphereBoundary_eq_coe_compactifiedBoundary
+    (a e : ι → ℝ) (z₀ : UpperHalfPlane)
+    (hfinite : ∀ j, -1 < ∑ i with a i = a j, e i) (hinfty : ∑ i, e i < -1) :
+    schwarzChristoffelSphereBoundary a e z₀ =
+      ((↑) : ℂ → OnePoint ℂ) ∘ schwarzChristoffelCompactifiedBoundary a e z₀ := by
+  classical
+  ext x
+  induction x using OnePoint.rec with
+  | infty => simp [hinfty]
+  | coe p =>
+    simp [schwarzChristoffelSphereBoundary_coe_of_exponent_sum_gt_neg_one a e z₀ p
+      (lt_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite p)]
 
 /-- The primitive approaches the sphere boundary from the whole upper half-plane, including
 at logarithmic ends. -/
@@ -158,14 +186,15 @@ theorem tendsto_schwarzChristoffelPrimitive_sphereBoundary (a e : ι → ℝ)
     Tendsto (fun z => (schwarzChristoffelPrimitive a e z₀ z : OnePoint ℂ))
       (𝓝[upperHalfPlaneSet] (p : ℂ))
       (𝓝 (schwarzChristoffelSphereBoundary a e z₀ (p : OnePoint ℝ))) := by
-  rw [schwarzChristoffelSphereBoundary_coe a e z₀ p he]
-  split_ifs with hgt
-  · exact OnePoint.continuous_coe.continuousAt.tendsto.comp
-      (tendsto_schwarzChristoffelPrimitive_boundary a e z₀ p hgt)
-  · have h := tendsto_schwarzChristoffelPrimitive_cobounded_of_prevertex_sum_eq_neg_one
-      a e z₀ p (le_antisymm (le_of_not_gt hgt) he)
+  rcases he.eq_or_lt with he | he
+  · rw [schwarzChristoffelSphereBoundary_coe_of_exponent_sum_eq_neg_one a e z₀ p he.symm]
+    have h := tendsto_schwarzChristoffelPrimitive_cobounded_of_prevertex_sum_eq_neg_one
+      a e z₀ p he.symm
     rw [Metric.cobounded_eq_cocompact, ← coclosedCompact_eq_cocompact] at h
     exact OnePoint.tendsto_coe_infty.comp h
+  · rw [schwarzChristoffelSphereBoundary_coe_of_exponent_sum_gt_neg_one a e z₀ p he]
+    exact OnePoint.continuous_coe.continuousAt.tendsto.comp
+      (tendsto_schwarzChristoffelPrimitive_boundary a e z₀ p he)
 
 /-- **Continuous spherical extension with multiple logarithmic ends.** If every finite
 prevertex has total exponent at least `-1`, the sphere extension is continuous on the
