@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Basic
 import Mathlib.Data.Fin.Parity
+import Mathlib.Topology.CompactOpen
 
 /-!
 # Unnormalized cubical chains
@@ -82,19 +83,14 @@ def map (f : C(X, Y)) (n : ℕ) : CubicalChain X R n →ₗ[R] CubicalChain Y R 
 theorem map_apply_comp_of_injective (f : C(X, Y)) (hf : Function.Injective f)
     {n : ℕ} (g : CubicalChain X R n) (c : SingularCube X n) :
     map R f n g (f.comp c) = g c := by
-  have hinj : Function.Injective (fun d : SingularCube X n ↦ f.comp d) := by
-    intro d e h
-    ext x
-    exact hf (ContinuousMap.congr_fun h x)
-  rw [map, lmapDomain_apply, mapDomain_apply_of_injective hinj]
+  rw [map, lmapDomain_apply,
+    mapDomain_apply_of_injective (ContinuousMap.postcomp_injective f hf)]
 
 /-- An injective continuous map induces an injective push-forward on cubical chains. -/
 theorem map_injective (f : C(X, Y)) (hf : Function.Injective f) (n : ℕ) :
     Function.Injective (map R f n) := by
-  intro g h hgh
-  ext c
-  rw [← map_apply_comp_of_injective R f hf g c,
-    ← map_apply_comp_of_injective R f hf h c, hgh]
+  rw [map, coe_lmapDomain]
+  exact mapDomain_injective (ContinuousMap.postcomp_injective f hf)
 
 @[simp]
 theorem map_single (f : C(X, Y)) {n : ℕ} (c : SingularCube X n) (a : R) :
