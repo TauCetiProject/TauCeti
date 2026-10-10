@@ -185,7 +185,11 @@ variable {M'' N'' : Type u}
   (hg'₀ : LinearMap.IsHomogeneous g' 𝒩' 𝒩'' 0)
   (hf'd : dM'' ∘ₗ f' = f' ∘ₗ dM') (hg'd : dN'' ∘ₗ g' = g' ∘ₗ dN')
 
-/-- Tensoring preserves composition of degree-zero equivariant chain maps. -/
+/-- Tensoring preserves composition of degree-zero equivariant chain maps.
+
+The simp rule combines induced maps, so the intermediate DG-module data can be inferred
+from the composition. -/
+@[simp ←]
 theorem cochainComplexMap_comp :
     cochainComplexMap hM hN hM'' hN'' (f' ∘ₗ f) (g' ∘ₗ g)
       (fun a m ↦ by simp only [LinearMap.comp_apply, hf, hf'])
