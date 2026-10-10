@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RingTheory.MvPolynomial.Homogeneous
 public import Mathlib.RingTheory.MvPolynomial.EulerIdentity
-public import Mathlib.Logic.Equiv.Fin.Basic
 
 /-!
 # Dehomogenization and the affine gradient criterion
@@ -25,8 +24,6 @@ degree is needed, so the criterion also applies when the characteristic divides 
 ## References
 
 * W. Fulton, *Algebraic Curves*, Chapter 5, Section 1.
-* The derivative computation transports Mathlib's
-  `MvPolynomial.aeval_sumElim_pderiv_inl` along a coordinate equivalence.
 -/
 
 public section
@@ -72,33 +69,38 @@ theorem eval_dehomogenize (i : Fin (n + 1)) (p : MvPolynomial (Fin (n + 1)) R)
     refine Fin.succAboveCases i ?_ (fun l ↦ ?_) j <;> simp
   exact AlgHom.congr_fun h p
 
-end CommSemiring
-
-section CommRing
-
-variable {R : Type*} [CommRing R]
+/-- Changing coefficients commutes with dehomogenization. -/
+@[simp]
+theorem map_dehomogenize {S : Type*} [CommSemiring S] (f : R →+* S)
+    (i : Fin (n + 1)) (p : MvPolynomial (Fin (n + 1)) R) :
+    map f (dehomogenize i p) = dehomogenize i (map f p) := by
+  simp only [dehomogenize, aeval_def, algebraMap_eq]
+  rw [map_eval₂]
+  congr 1
+  ext l
+  refine Fin.succAboveCases i ?_ (fun j ↦ ?_) l <;> simp
 
 /-- Partial differentiation in a retained coordinate commutes with dehomogenization. -/
 theorem pderiv_dehomogenize (i : Fin (n + 1)) (j : Fin n)
     (p : MvPolynomial (Fin (n + 1)) R) :
     pderiv j (dehomogenize i p) = dehomogenize i (pderiv (i.succAbove j) p) := by
-  let e : Fin (n + 1) ≃ Fin n ⊕ PUnit.{1} :=
-    (finSuccEquiv' i).trans (Equiv.optionEquivSumPUnit (Fin n))
-  let q := rename e p
-  have he : ∀ l : Fin n, e (i.succAbove l) = Sum.inl l := by simp [e]
-  have hd : (aeval (Sum.elim X (fun _ : PUnit.{1} ↦ (1 : MvPolynomial (Fin n) R)))).comp
-      (rename e) = dehomogenize i := by
-    ext l
-    refine Fin.succAboveCases i ?_ (fun m ↦ ?_) l <;> simp [e]
-  have hq : aeval (Sum.elim X (fun _ : PUnit.{1} ↦ (1 : MvPolynomial (Fin n) R))) q =
-      dehomogenize i p := AlgHom.congr_fun hd p
-  have hder := pderiv_rename e.injective (i.succAbove j) p
-  rw [he] at hder
-  have h := aeval_sumElim_pderiv_inl q (fun _ : PUnit.{1} ↦ (1 : R)) j
-  simp only [Function.comp_def, map_one] at h
-  rw [hq] at h
-  rw [hder] at h
-  exact h.symm.trans (AlgHom.congr_fun hd (pderiv (i.succAbove j) p))
+  -- Follow the polynomial induction of Mathlib's `MvPolynomial.aeval_sumElim_pderiv_inl`,
+  -- here over a commutative semiring and with the omitted coordinate indexed by `i`.
+  classical
+  induction p using MvPolynomial.induction_on with
+  | C a => simp [dehomogenize]
+  | add p q hp hq => simp [hp, hq]
+  | mul_X p l h =>
+    refine Fin.succAboveCases i ?_ (fun k ↦ ?_) l
+    · simp [h, dehomogenize_X]
+    · simp [h, dehomogenize_X, Pi.single_apply, apply_ite,
+        Fin.succAbove_right_injective.eq_iff]
+
+end CommSemiring
+
+section CommRing
+
+variable {R : Type*} [CommRing R]
 
 /-- At a zero of a homogeneous equation, the omitted partial derivative is determined
 by the retained partial derivatives. -/
