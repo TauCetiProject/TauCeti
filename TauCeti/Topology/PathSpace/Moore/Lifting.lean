@@ -14,13 +14,12 @@ public import TauCeti.Topology.PathSpace.Moore.Comparison.Basic
 For a continuous map `p : E → B`, the space `MooreReplacement p` consists of the pairs `(e, γ)` of
 a point `e ∈ E` and a Moore path `γ` in `B` starting at `p e`, a subspace of `E × P B`.  It is the
 domain `E ×_B P B` of a lifting function, and also the total space of the Moore-path replacement of
-`p` (the later file `TauCeti.Topology.PathSpace.Moore.Replacement`).
+`p` (the later file `TauCeti.Topology.PathSpace.Moore.Replacement.Basic`).
 
 A **lifting function** for `p` on Moore paths is a continuous map `Φ : E ×_B P B → P E` such that
 `Φ (e, γ)` starts at `e` and lies over `γ`, `p ∘ Φ (e, γ) = γ` as Moore paths, so in particular of
-the length of `γ`.  A map with a lifting function is a Hurewicz fibration
-(`TauCeti.MooreLiftingFunction.isHurewiczFibration`): a homotopy `H : I × A → B` is a family of
-Moore paths of length one, and lifting them from the initial lift gives the lifted homotopy.
+the length of `γ`.  A map with a lifting function has the homotopy lifting property with respect
+to every space, so it is a Hurewicz fibration (`TauCeti.MooreLiftingFunction.isHurewiczFibration`).
 
 A lifting function is **transitive** (`TauCeti.MooreLiftingFunction.IsTransitive`) when it lifts
 the constant paths of length zero to constant paths and lifts a concatenation `γ · δ` to the
@@ -205,11 +204,12 @@ structure IsTransitive : Prop where
 
 /-! ### A lifting function makes a Hurewicz fibration -/
 
-/-- A map with a lifting function on Moore paths is a Hurewicz fibration: a homotopy is a family of
-Moore paths of length one, and their lifts from the initial lift form the lifted homotopy. -/
+/-- A map with a lifting function on Moore paths is a Hurewicz fibration: it has the homotopy
+lifting property with respect to every space. -/
 theorem isHurewiczFibration (Φ : MooreLiftingFunction p) : IsHurewiczFibration.{w} p := by
   refine isHurewiczFibration_iff.2 ⟨p.continuous, fun A _ f H hH ↦ ?_⟩
-  -- The homotopy at `a`, as a Moore path of length one.
+  -- The homotopy at `a` is a Moore path of length one; lifting these paths from the initial lift
+  -- gives the lifted homotopy.
   let γ : C(A, C(I, B)) := (H.comp ContinuousMap.prodSwap).curry
   have h₀ : ∀ a, (MoorePath.ofUnitPath (γ a)).source = p (f a) := fun a ↦ by
     rw [MoorePath.source_ofUnitPath]
