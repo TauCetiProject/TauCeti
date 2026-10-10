@@ -35,7 +35,8 @@ effective descent for affine schemes.
   `TauCeti.DescentDatum.exists_isAffine_baseChange_hom_isIso`: **effective descent for affine
   schemes.** If `S` is flat over `R` (for instance if `p` is faithfully flat), every descent
   datum on `Spec B` relative to `p` is isomorphic to the canonical descent datum on the base
-  change of the affine scheme `Spec D.descended` over `Spec R`.
+  change of the affine scheme `Spec D.descended` over `Spec R`; transporting along
+  `X ≅ Spec Γ(X, ⊤)`, the same holds for every affine scheme `X` over `Spec S`.
 
 ## References
 
@@ -475,19 +476,33 @@ namespace DescentDatum
 
 open Algebra.DescentDatum
 
-variable {R S B : Type u} [CommRing R] [CommRing S] [Algebra R S]
-  [CommRing B] [Algebra R B] [Algebra S B] [IsScalarTower R S B]
+variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S]
 
 /-- **Effective descent for affine schemes.** Let `S` be flat over `R` (for instance faithfully
-flat). Every descent datum on an affine scheme `Spec B ⟶ Spec S` relative to
-`Spec S ⟶ Spec R` is effective: it is isomorphic to the canonical descent datum on the base
-change of an affine scheme over `Spec R`. -/
-theorem exists_isAffine_baseChange_hom_isIso [Module.Flat R S]
-    (D : DescentDatum (Spec.algebraMap R S) (Over.mk (Spec.algebraMap S B))) :
-    ∃ X : Over (Spec (.of R)), IsAffine X.left ∧
-      ∃ f : Hom (baseChange (Spec.algebraMap R S) X) D, IsIso f.hom := by
-  obtain ⟨D, rfl⟩ := (specEquiv R S B).surjective D
-  exact ⟨_, inferInstanceAs (IsAffine (Spec _)), D.specDescendedHom, inferInstance⟩
+flat). Every descent datum on an affine scheme `X ⟶ Spec S` relative to `Spec S ⟶ Spec R` is
+effective: it is isomorphic to the canonical descent datum on the base change of an affine
+scheme over `Spec R`. -/
+theorem exists_isAffine_baseChange_hom_isIso [Module.Flat R S] {X : Over (Spec (.of S))}
+    [IsAffine X.left] (D : DescentDatum (Spec.algebraMap R S) X) :
+    ∃ X₀ : Over (Spec (.of R)), IsAffine X₀.left ∧
+      ∃ f : Hom (baseChange (Spec.algebraMap R S) X₀) D, IsIso f.hom := by
+  -- Present `X` as `Spec B ⟶ Spec S` for `B = Γ(X, ⊤)`, an `S`-algebra through `X.hom`.
+  let φ : S →+* Γ(X.left, ⊤) := ((Scheme.ΓSpecIso (.of S)).inv ≫ X.hom.appTop).hom
+  let _ : Algebra S Γ(X.left, ⊤) := φ.toAlgebra
+  let _ : Algebra R Γ(X.left, ⊤) := (φ.comp (algebraMap R S)).toAlgebra
+  have : IsScalarTower R S Γ(X.left, ⊤) := .of_algebraMap_eq fun _ ↦ rfl
+  let e : Over.mk (Spec.algebraMap S Γ(X.left, ⊤)) ≅ X := (Over.isoMk X.left.isoSpec <| by
+    change X.left.isoSpec.hom ≫ Spec.map ((Scheme.ΓSpecIso (.of S)).inv ≫ X.hom.appTop) = X.hom
+    rw [Spec.map_comp, Scheme.isoSpec_hom_naturality_assoc, Scheme.isoSpec_Spec_hom,
+      ← Spec.map_comp, Iso.inv_hom_id, Spec.map_id, Category.comp_id]).symm
+  obtain ⟨E, g, hg⟩ : ∃ (E : Algebra.DescentDatum R S Γ(X.left, ⊤)) (g : Hom E.spec D),
+      IsIso g.hom := by
+    refine ⟨(specEquiv R S _).symm (transport e D), ?_⟩
+    rw [spec_specEquiv_symm]
+    exact ⟨transportHom e D, by rw [transportHom_hom]; infer_instance⟩
+  refine ⟨_, inferInstanceAs (IsAffine (Spec _)), g.comp E.specDescendedHom, ?_⟩
+  rw [Hom.comp_hom]
+  infer_instance
 
 end DescentDatum
 

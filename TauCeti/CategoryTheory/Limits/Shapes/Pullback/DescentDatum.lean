@@ -41,6 +41,8 @@ construct.
 * `TauCeti.DescentDatum p X`: a descent datum on `X : Over S'` relative to `p : S' ⟶ S`.
 * `TauCeti.DescentDatum.Hom`: a morphism over `S'` intertwining the actions, with `Hom.id` and
   `Hom.comp`.
+* `TauCeti.DescentDatum.transport e E`: the descent datum transported from `E` along an
+  isomorphism `e : X ≅ Y` over `S'`, with the isomorphism `transportHom e E` to `E`.
 * `TauCeti.DescentDatum.baseChange p X`: the canonical descent datum on the base change
   `X ×_S S'` of an object `X` over `S`, acting by `s · (x, s₀) = (x, s)`.
 
@@ -134,6 +136,37 @@ def Hom.comp (g : Hom E F) (f : Hom D E) : Hom D F where
 variable {D} in
 @[simp]
 theorem Hom.comp_hom (g : Hom E F) (f : Hom D E) : (g.comp f).hom = f.hom ≫ g.hom :=
+  (rfl)
+
+/-- The descent datum on `X` transported from a descent datum on `Y` along an isomorphism
+`e : X ≅ Y` over `S'`: a point `s` of `S'` acts by `s · x = e⁻¹ (s · e x)`. -/
+noncomputable def transport (e : X ≅ Y) (E : DescentDatum p Y) : DescentDatum p X where
+  act := pullback.map p (X.hom ≫ p) p (Y.hom ≫ p) (𝟙 S') e.hom.left (𝟙 S) (by simp)
+      (by simp) ≫ E.act ≫ e.inv.left
+  act_hom := by simp
+  lift_act := by
+    have : pullback.lift X.hom (𝟙 X.left) (by simp) ≫
+        pullback.map p (X.hom ≫ p) p (Y.hom ≫ p) (𝟙 S') e.hom.left (𝟙 S) (by simp) (by simp) =
+        e.hom.left ≫ pullback.lift Y.hom (𝟙 Y.left) (by simp) := by
+      ext <;> simp
+    rw [reassoc_of% this, E.lift_act_assoc, ← Over.comp_left, e.hom_inv_id, Over.id_left]
+  act_assoc := by
+    have key := pullback.map p (pullback.fst p (X.hom ≫ p) ≫ p) p
+      (pullback.fst p (Y.hom ≫ p) ≫ p) (𝟙 S') (pullback.map p (X.hom ≫ p) p (Y.hom ≫ p) (𝟙 S')
+        e.hom.left (𝟙 S) (by simp) (by simp)) (𝟙 S) (by simp) (by simp) ≫= E.act_assoc
+    rw [← cancel_mono e.hom.left]
+    simp only [Category.assoc, ← Over.comp_left, e.inv_hom_id, Over.id_left, Category.comp_id]
+    simp only [← Category.assoc] at key ⊢
+    convert key using 2 <;> ext <;> simp
+
+/-- The isomorphism `e : X ≅ Y` over `S'` is a morphism from the transported descent datum
+`transport e E` to `E`. -/
+noncomputable def transportHom (e : X ≅ Y) (E : DescentDatum p Y) : Hom (transport e E) E where
+  hom := e.hom
+  map_act := by simp [transport, ← Over.comp_left]
+
+@[simp]
+theorem transportHom_hom (e : X ≅ Y) (E : DescentDatum p Y) : (transportHom e E).hom = e.hom :=
   (rfl)
 
 end Hom
