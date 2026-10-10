@@ -91,7 +91,9 @@ what the gluing lemma consumes.
 * `TauCeti.wassersteinEDist_rpow_eq_transportCost` and
   `TauCeti.wassersteinEDist_eq_transportCost_rpow` — for `0 < p < ∞`, the exact bridge to Layer 1's
   transport cost of `edist ^ p`, with `TauCeti.isOptimalCoupling_edist_rpow_iff` identifying the
-  minimizers and `TauCeti.wassersteinEDist_one_eq_transportCost` giving the case `p = 1`;
+  minimizers, `TauCeti.wassersteinEDist_one_eq_transportCost` giving the case `p = 1`, and
+  `TauCeti.wassersteinEDist_rpow_le_lintegral` the bound by the transport integral of a single
+  coupling;
 * `TauCeti.exists_isCoupling_eLpNorm_eq_wassersteinEDist` — on a Polish metric space and for a
   finite nonzero exponent, between finite measures that admit a coupling, the infimum is attained;
 * `TauCeti.wassersteinEDist_eq_zero_iff` — on a Polish metric space and for a finite nonzero
@@ -768,6 +770,14 @@ end MetricMoment
 section Bridge
 
 variable [EDist X]
+
+/-- For a finite nonzero exponent, every coupling bounds the `p`-th power of the Wasserstein
+distance by its transport integral of `edist ^ p`. -/
+theorem wassersteinEDist_rpow_le_lintegral (hd : Measurable fun z : X × X ↦ edist z.1 z.2)
+    (hp0 : p ≠ 0) (hp : p ≠ ∞) {μ ν : Measure X} {π : Measure (X × X)} (hπ : IsCoupling π μ ν) :
+    wassersteinEDist p μ ν ^ p.toReal ≤ ∫⁻ z, edist z.1 z.2 ^ p.toReal ∂π := by
+  rw [← eLpNorm_rpow_eq_lintegral hp0 hp hd.aemeasurable]
+  exact ENNReal.rpow_le_rpow (wassersteinEDist_le hπ p) ENNReal.toReal_nonneg
 
 /-- **The bridge to the primal Kantorovich problem.** For a finite nonzero exponent the `p`-th
 power of the Wasserstein distance is the transport cost of the cost `edist ^ p`, so the two
