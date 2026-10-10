@@ -287,6 +287,46 @@ theorem zigzagGradedSimple_def (i : V) :
         (zigzagVertexIdempotent_mem_zigzagIntegerGrade_zero k G i) := by
   rw [zigzagGradedSimple]
 
+/-- The class of a vertex-projective element in its graded simple head. -/
+noncomputable def zigzagGradedSimpleMk (i : V) :
+    (Ideal.span {zigzagVertexIdempotent k G i} : Ideal (nonisolatedZigzagQuotient k G)) →ₗ[
+      nonisolatedZigzagQuotient k G]
+      zigzagGradedSimple k G i :=
+  let _ := zigzagIntegerGradedAlgebra k G
+  (eqToHom (zigzagGradedSimple_def k G i).symm).hom ∘ₗ
+    gradedPositiveMulQuotientMk (zigzagVertexIdempotent_mem_zigzagIntegerGrade_zero k G i)
+
+/-- The head projection is the generic quotient map, transported to the graded vertex simple. -/
+theorem zigzagGradedSimpleMk_def (i : V) :
+    zigzagGradedSimpleMk k G i =
+      let _ := zigzagIntegerGradedAlgebra k G
+      (eqToHom (zigzagGradedSimple_def k G i).symm).hom ∘ₗ
+        gradedPositiveMulQuotientMk
+          (zigzagVertexIdempotent_mem_zigzagIntegerGrade_zero k G i) :=
+  (rfl)
+
+/-- Every element of the graded simple head has a vertex-projective representative. -/
+theorem zigzagGradedSimpleMk_surjective (i : V) :
+    Function.Surjective (zigzagGradedSimpleMk k G i) := by
+  let _ := zigzagIntegerGradedAlgebra k G
+  have hs : Function.Surjective (eqToHom (zigzagGradedSimple_def k G i).symm).hom :=
+    (GradedModuleCat.epi_iff_surjective _).1 inferInstance
+  exact hs.comp (gradedPositiveMulQuotientMk_surjective _)
+
+/-- A representative vanishes in the graded head exactly when it lies in the
+positive-degree ideal of its vertex projective. -/
+@[simp]
+theorem zigzagGradedSimpleMk_eq_zero_iff (i : V)
+    (x : (Ideal.span {zigzagVertexIdempotent k G i} : Ideal (nonisolatedZigzagQuotient k G))) :
+    zigzagGradedSimpleMk k G i x = 0 ↔
+      (x : nonisolatedZigzagQuotient k G) ∈
+        gradedPositiveMulIdeal (zigzagIntegerGrade k G) (zigzagVertexIdempotent k G i) := by
+  let _ := zigzagIntegerGradedAlgebra k G
+  have hi : Function.Injective (eqToHom (zigzagGradedSimple_def k G i).symm).hom :=
+    (GradedModuleCat.mono_iff_injective _).1 inferInstance
+  rw [zigzagGradedSimpleMk_def, LinearMap.comp_apply,
+    LinearMap.map_eq_zero_iff _ hi, gradedPositiveMulQuotientMk_eq_zero_iff]
+
 /-- A graded vertex simple is a finite graded module. -/
 theorem gradedFiniteModules_zigzagGradedSimple (i : V) :
     gradedFiniteModules (zigzagIntegerGrade k G) (zigzagGradedSimple k G i) :=
