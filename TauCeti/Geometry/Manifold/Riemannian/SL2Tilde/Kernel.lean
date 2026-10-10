@@ -19,18 +19,10 @@ constant translation of the fibre. Consequently two lifts of the same base map d
 unique fibre translation. This identifies the kernel needed to recover the full isometry group
 from its action on the hyperbolic plane.
 
-The twist term in `dz + exp (-y) dx` rules out a fibre reflection over the identity. The metric
-first forces the fibre coordinate to be independent of `y`; comparing the horizontal metric
-at two heights then forces its horizontal derivative to vanish and its vertical derivative to
-be one. The argument uses the actual Sasaki metric, without any fibre-preservation assumption.
-
 ## References
 
 * P. Scott, *The geometries of 3-manifolds*, Bull. London Math. Soc. 15 (1983),
   401–487, Section 4, pp. 464–465 (the isometry group of `SL₂ℝ~`).
-* The coordinate calculation follows the inherited-chart method of
-  `TauCeti.Geometry.Manifold.Riemannian.SL2Tilde.Connection`, and integrates derivatives
-  using Mathlib's `is_const_of_fderiv_eq_zero` and `eq_of_fderiv_eq`.
 -/
 
 public section
@@ -53,6 +45,8 @@ private theorem differentiable_coordinateMap (Φ : Isom J SL2Tilde) :
   -- SL2Tilde has exactly the charts of P; its coordinate equivalence is the identity.
   exact Φ.toDiffeomorph.contMDiff.contDiff.differentiable (by simp)
 
+-- This coordinate calculation follows the inherited-chart method of
+-- TauCeti.Geometry.Manifold.Riemannian.SL2Tilde.Connection.
 private theorem coordinate_derivative (Φ : Isom J SL2Tilde) (p u : P) :
     tangentSpaceCastModel J (Φ (toProd.symm p))
       (mfderiv J J Φ (toProd.symm p)
