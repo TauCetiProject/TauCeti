@@ -114,7 +114,7 @@ private lemma compXIso_hom_comp_d (n : ℕ) :
   rw [cechComplexFunctor_obj_d_comp_π, compXIso_hom_π, cechComplexFunctor_obj_d_comp_π_assoc,
     Preadditive.comp_sum, Preadditive.sum_comp]
   refine Finset.sum_congr rfl fun m _ ↦ ?_
-  rw [Preadditive.comp_zsmul, Preadditive.zsmul_comp, 
+  rw [Preadditive.comp_zsmul, Preadditive.zsmul_comp,
     ← Category.assoc (cechXIso U (G.op ⋙ Q) n).hom, ← Category.assoc (compXIso G U Q hG n).hom,
     compXIso_hom_π]
   simp only [Category.assoc, Functor.comp_map, Functor.op_map, ← Functor.map_comp, ← op_comp]
