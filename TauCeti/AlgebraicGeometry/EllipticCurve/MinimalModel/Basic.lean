@@ -28,6 +28,8 @@ between them has a scaling factor of valuation `1`, and they have the same `c₄
 * `WeierstrassCurve.isMinimal_of_valuation_c₄_eq_one`: over the fraction field of a discrete
   valuation ring, an integral Weierstrass equation with `v (c₄) = 1` is minimal.
 * `WeierstrassCurve.isMinimal_of_valuation_Δ_eq_one`: so is one with `v (Δ) = 1`.
+* `WeierstrassCurve.isMinimal_baseChange_of_isUnit_Δ_or_isUnit_c₄`: the same two criteria for an
+  equation given over `R`, whose discriminant or `c₄` is a unit.
 * `WeierstrassCurve.exists_smul_eq_minimal`: Mathlib's chosen minimal equation is obtained by a
   change of variables.
 * `WeierstrassCurve.exists_smul_minimal_eq_minimal`: chosen minimal equations of isomorphic
@@ -163,6 +165,18 @@ theorem isMinimal_of_valuation_Δ_eq_one (W : WeierstrassCurve K) [IsIntegral R 
   simp only [one_smul, ← Subtype.coe_le_coe, valuation_Δ_aux_eq_of_isIntegral R (C • W),
     valuation_Δ_aux_eq_of_isIntegral R W, hΔ]
   simpa [← integralModel_Δ_eq R (C • W)] using valuation_le_one _ _
+
+/-- **An equation over `R` whose discriminant or `c₄` is a unit is minimal over `R`.** These are
+the criteria `isMinimal_of_valuation_Δ_eq_one` and `isMinimal_of_valuation_c₄_eq_one`, for an
+equation whose coefficients are given in `R`. -/
+theorem isMinimal_baseChange_of_isUnit_Δ_or_isUnit_c₄ (W : WeierstrassCurve R)
+    (h : IsUnit W.Δ ∨ IsUnit W.c₄) : IsMinimal R (W.baseChange K) := by
+  have : IsIntegral R (W.baseChange K) := ⟨⟨W, rfl⟩⟩
+  have hval (r : R) : valuation K (maximalIdeal R) (algebraMap R K r) = 1 ↔ IsUnit r :=
+    (maximalIdeal R).valuation_eq_one_iff_notMem.trans IsLocalRing.notMem_maximalIdeal
+  rcases h with h | h
+  · exact isMinimal_of_valuation_Δ_eq_one R _ (by rwa [baseChange, map_Δ, hval])
+  · exact isMinimal_of_valuation_c₄_eq_one R _ (by rwa [baseChange, map_c₄, hval])
 
 /-- **Mathlib's chosen minimal equation lies in the variable-change orbit.** The equation
 `W.minimal R` is obtained from `W` by a change of variables. -/
