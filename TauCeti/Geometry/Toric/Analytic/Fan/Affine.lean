@@ -41,26 +41,6 @@ local notation "σₜ" => (Subtype.mk σ
   (Iff.mpr (mem_ofCone_cones hi (IsRegularCone.toIsToricCone hσ))
     (PointedCone.IsFaceOf.refl σ)) : Fan.cones (ofCone hi (IsRegularCone.toIsToricCone hσ)))
 
-/-- The inclusion of a face chart in an affine fan factors through its face-localization map
-into the maximal cone chart. -/
-theorem analyticAffineChartι_top_faceAffinePointMap
-    (τ : (ofCone hi hσ.toIsToricCone).cones)
-    (x : (ofCone hi hσ.toIsToricCone).analyticAffineChartDiagram.obj τ) :
-    (ofCone hi hσ.toIsToricCone).analyticAffineChartι (isRegular_ofCone hi hσ)
-      σₜ (faceAffinePointMap hi
-        ((mem_ofCone_cones hi hσ.toIsToricCone).1 τ.2) x) =
-      (ofCone hi hσ.toIsToricCone).analyticAffineChartι (isRegular_ofCone hi hσ) τ x := by
-  let f : τ ⟶ σₜ :=
-    homOfLE ((mem_ofCone_cones hi hσ.toIsToricCone).1 τ.2).le
-  have hface : (ofCone hi hσ.toIsToricCone).analyticAffineChartDiagram.map f x =
-      faceAffinePointMap hi ((mem_ofCone_cones hi hσ.toIsToricCone).1 τ.2) x :=
-    (ofCone hi hσ.toIsToricCone).analyticFaceMap_apply f x
-  exact (congrArg ((ofCone hi hσ.toIsToricCone).analyticAffineChartι
-      (isRegular_ofCone hi hσ) σₜ) hface).symm.trans
-    (ConcreteCategory.congr_hom
-      ((ofCone hi hσ.toIsToricCone).analyticAffineChartDiagram_map_comp_analyticAffineChartι
-        (isRegular_ofCone hi hσ) f) x)
-
 /-- The maximal cone chart covers the realization of the fan of a regular cone. -/
 theorem analyticAffineChartι_ofCone_surjective :
     Function.Surjective ((ofCone hi hσ.toIsToricCone).analyticAffineChartι
@@ -68,7 +48,9 @@ theorem analyticAffineChartι_ofCone_surjective :
   intro x
   obtain ⟨τ, y, rfl⟩ := (ofCone hi hσ.toIsToricCone).exists_analyticAffineChartι_apply_eq
     (isRegular_ofCone hi hσ) x
-  exact ⟨_, analyticAffineChartι_top_faceAffinePointMap hi hσ τ y⟩
+  exact ⟨_, (ofCone hi hσ.toIsToricCone).analyticAffineChartι_faceAffinePointMap
+    (isRegular_ofCone hi hσ) (τ := τ) (σ := σₜ)
+    ((mem_ofCone_cones hi hσ.toIsToricCone).1 τ.2).le y⟩
 
 /-- The canonical homeomorphism from the maximal affine chart to the analytic realization of
 the fan of a regular cone. -/
@@ -93,7 +75,9 @@ theorem analyticOfConeHomeomorph_symm_analyticAffineChartι
     (analyticOfConeHomeomorph hi hσ).symm
       ((ofCone hi hσ.toIsToricCone).analyticAffineChartι (isRegular_ofCone hi hσ) τ x) =
         faceAffinePointMap hi ((mem_ofCone_cones hi hσ.toIsToricCone).1 τ.2) x := by
-  rw [← analyticAffineChartι_top_faceAffinePointMap hi hσ τ x,
+  rw [← (ofCone hi hσ.toIsToricCone).analyticAffineChartι_faceAffinePointMap
+      (isRegular_ofCone hi hσ) (τ := τ) (σ := σₜ)
+      ((mem_ofCone_cones hi hσ.toIsToricCone).1 τ.2).le x,
     ← analyticOfConeHomeomorph_apply hi hσ
       (faceAffinePointMap hi ((mem_ofCone_cones hi hσ.toIsToricCone).1 τ.2) x)]
   exact (analyticOfConeHomeomorph hi hσ).symm_apply_apply _
@@ -174,7 +158,9 @@ theorem analyticOfConeDiffeomorph_symm_analyticAffineChartι (n : ℕ∞ω)
         faceAffinePointMap hi ((mem_ofCone_cones hi hσ.toIsToricCone).1 τ.2) x := by
   intro _ _
   let _ := (ofCone hi hσ.toIsToricCone).analyticChartedSpace (isRegular_ofCone hi hσ)
-  rw [← analyticAffineChartι_top_faceAffinePointMap hi hσ τ x,
+  rw [← (ofCone hi hσ.toIsToricCone).analyticAffineChartι_faceAffinePointMap
+      (isRegular_ofCone hi hσ) (τ := τ) (σ := σₜ)
+      ((mem_ofCone_cones hi hσ.toIsToricCone).1 τ.2).le x,
     ← analyticOfConeDiffeomorph_apply hi hσ hB κ g n]
   exact (analyticOfConeDiffeomorph hi hσ hB κ g n).symm_apply_apply _
 
