@@ -30,6 +30,8 @@ A based map `f : (B, b) → (B', b')` induces the continuous monoid homomorphism
 ## Main results
 
 * `TauCeti.loopChain_isDGAlgebra`: `C_*(Ω_b B; R)` is a differential graded algebra.
+* `TauCeti.loopChainMap_lof`, `TauCeti.loopChainAugmentation_lof_zero`,
+  `TauCeti.loopChainAugmentation_lof_succ`: the values on chains of a given dimension.
 * `TauCeti.loopChainMap_id`, `TauCeti.loopChainMap_comp`: functoriality.
 * `TauCeti.loopChainAugmentation_comp_loopChainMap`: compatibility with the augmentations.
 
@@ -66,6 +68,23 @@ theorem loopChain_isDGAlgebra :
 def loopChainAugmentation : DGAlgAugmentation (loopChain_isDGAlgebra B b R) :=
   cubicalChainAugmentation (MooreLoopSpace B b) R
 
+variable {B b R}
+
+/-- The augmentation of a `0`-chain of Moore loops. -/
+@[simp]
+theorem loopChainAugmentation_lof_zero (y : NormalizedCubicalChain (MooreLoopSpace B b) R 0) :
+    loopChainAugmentation B b R (cubicalChainLof (MooreLoopSpace B b) R 0 y) =
+      NormalizedCubicalChain.augment (MooreLoopSpace B b) R y := by
+  rw [loopChainAugmentation, cubicalChainAugmentation_lof, cubicalChainAugmentLof_zero]
+
+/-- The augmentation vanishes on chains of Moore loops of positive dimension. -/
+@[simp]
+theorem loopChainAugmentation_lof_succ (k : ℕ)
+    (y : NormalizedCubicalChain (MooreLoopSpace B b) R (k + 1)) :
+    loopChainAugmentation B b R (cubicalChainLof (MooreLoopSpace B b) R (k + 1) y) = 0 := by
+  rw [loopChainAugmentation, cubicalChainAugmentation_lof,
+    cubicalChainAugmentLof_of_ne_zero (Nat.succ_ne_zero k)]
+
 end Algebra
 
 section Map
@@ -77,6 +96,15 @@ variable {B B' B'' : Type*} [TopologicalSpace B] [TopologicalSpace B'] [Topologi
 def loopChainMap (f : C(B, B')) (hf : f b = b') :
     DGAlgHom (loopChain_isDGAlgebra B b R) (loopChain_isDGAlgebra B' b' R) :=
   cubicalChainDGAlgHom R (MooreLoopSpace.map f hf)
+
+/-- `C_*(Ωf)` on a chain of dimension `n` is the push-forward along `Ωf`. -/
+@[simp]
+theorem loopChainMap_lof (f : C(B, B')) (hf : f b = b') (n : ℕ)
+    (y : NormalizedCubicalChain (MooreLoopSpace B b) R n) :
+    loopChainMap R f hf (cubicalChainLof (MooreLoopSpace B b) R n y) =
+      cubicalChainLof (MooreLoopSpace B' b') R n
+        (NormalizedCubicalChain.map R (MooreLoopSpace.map f hf).toContinuousMap n y) := by
+  rw [loopChainMap, cubicalChainDGAlgHom_lof]
 
 /-- The identity map induces the identity. -/
 @[simp]
