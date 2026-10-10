@@ -369,13 +369,23 @@ theorem isContinuityEquation_const (μ : Measure E) [IsFiniteMeasure μ] (a b : 
 
 /-- **A moving Dirac mass solves the continuity equation.** If `γ` is a measurable curve which is
 absolutely continuous on `[a, b]` and `v` is a measurable velocity field with
-`deriv γ t = vₜ (γ t)` for almost every `t ∈ (a, b)` and `∫_a^b ‖vₜ (γ t)‖ dt < ∞`, then the
-Dirac masses `δ_{γ t}` solve the continuity equation with velocity `v` on `(a, b)`. -/
+`deriv γ t = vₜ (γ t)` for almost every `t ∈ (a, b)`, then the Dirac masses `δ_{γ t}` solve the
+continuity equation with velocity `v` on `(a, b)`. The finite length `∫_a^b ‖vₜ (γ t)‖ dt < ∞`
+follows from absolute continuity in finite dimension. -/
 theorem isContinuityEquation_dirac {γ : ℝ → E} (hγm : Measurable γ)
     (hγ : AbsolutelyContinuousOnInterval γ a b) (hv : Measurable (uncurry v))
-    (hderiv : ∀ᵐ t, t ∈ Ioo a b → HasDerivAt γ (v t (γ t)) t)
-    (hint : ∫⁻ t in Ioo a b, ‖v t (γ t)‖ₑ < ∞) :
+    (hderiv : ∀ᵐ t, t ∈ Ioo a b → HasDerivAt γ (v t (γ t)) t) :
     IsContinuityEquation (fun t ↦ Measure.dirac (γ t)) v a b := by
+  have hint : ∫⁻ t in Ioo a b, ‖v t (γ t)‖ₑ < ∞ := by
+    rcases lt_or_ge a b with hab | hab
+    swap
+    · simp [Ioo_eq_empty_of_le hab]
+    have hd : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt γ (v t (γ t)) t := by
+      rw [uIoc_of_le hab.le]
+      filter_upwards [hderiv, compl_mem_ae_iff.2 (measure_singleton b)] with t ht htb hmem
+      exact ht ⟨hmem.1, hmem.2.lt_of_ne htb⟩
+    have hI := (hγ.intervalIntegrable_of_ae_hasDerivAt hd).1
+    exact (hI.mono_set Ioo_subset_Ioc_self).2
   simpa [Measure.map_const] using isContinuityEquation_map (Measure.dirac ()) (γ := fun _ ↦ γ)
     (hγm.comp measurable_snd) hv (.of_forall fun _ ↦ hγ) (.of_forall fun _ ↦ hderiv)
     (by simpa using hint)
