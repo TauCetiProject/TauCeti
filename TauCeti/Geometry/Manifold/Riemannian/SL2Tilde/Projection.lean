@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.SL2Tilde.Curvature
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Curvature
 public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.UpperHalfSpace.Basic
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 -- Identify the open-subset tangent map with the cast used by the metric API.
 import all TauCeti.Geometry.Manifold.VectorBundle.Tangent
 -- The coordinate derivative uses the inherited model-space atlas of SL2Tilde.
@@ -24,7 +25,8 @@ Its differential is surjective and its horizontal metric is the pullback of the
 existing upper-half-space metric. The Sasaki metric and Ricci tensor together
 determine this pullback metric, so every Riemannian isometry preserves it.
 Consequently, a diffeomorphism induced on the base by an isometry is itself a
-hyperbolic isometry. This supplies the metric part of descent to the base.
+hyperbolic isometry. The analytic zero-fibre-coordinate section supplies a smooth
+right inverse for constructing such base maps.
 
 ## References
 
@@ -63,11 +65,24 @@ def projection (p : SL2Tilde) : UpperHalfSpace ℝ :=
     UpperHalfSpace.height (projection p) = exp p.y := by
   exact UpperHalfSpace.height_mk _ _
 
+/-- The zero-fibre-coordinate section of the hyperbolic projection. -/
+def projectionSection (q : UpperHalfSpace ℝ) : SL2Tilde :=
+  mk (q : Q).fst (log (UpperHalfSpace.height q)) 0
+
+/-- The section in global horocyclic coordinates. -/
+@[simp] theorem toProd_projectionSection (q : UpperHalfSpace ℝ) :
+    toProd (projectionSection q) = ((q : Q).fst, log (UpperHalfSpace.height q), 0) := by
+  simp [projectionSection]
+
+/-- The zero-coordinate section is a right inverse of the hyperbolic projection. -/
+@[simp] theorem projection_projectionSection (q : UpperHalfSpace ℝ) :
+    projection (projectionSection q) = q := by
+  apply UpperHalfSpace.ext_fst_height <;>
+    simp [projectionSection, exp_log (UpperHalfSpace.height_pos q)]
+
 /-- The hyperbolic projection is onto; the fibre coordinate may be chosen to be zero. -/
-theorem projection_surjective : Function.Surjective projection := by
-  intro q
-  refine ⟨mk (q : Q).fst (log (UpperHalfSpace.height q)) 0, ?_⟩
-  apply UpperHalfSpace.ext_fst_height <;> simp [exp_log (UpperHalfSpace.height_pos q)]
+theorem projection_surjective : Function.Surjective projection :=
+  fun q => ⟨projectionSection q, projection_projectionSection q⟩
 
 private theorem contDiff_projection_coordinates :
     ContDiff ℝ ω (fun p : P => WithLp.toLp 2 (p.1, exp p.2.1)) :=
@@ -80,6 +95,27 @@ theorem contMDiff_projection : ContMDiff J K ω projection := by
   have ht : ContMDiff J J ω toProd := contDiff_id.contMDiff
   have h := contDiff_projection_coordinates.contMDiff.comp ht
   simpa only [Function.comp_def, coe_projection, x, y] using h
+
+/-- The zero-coordinate section of the projection is analytic. -/
+theorem contMDiff_projectionSection : ContMDiff K J ω projectionSection := by
+  have hc : ContMDiff K 𝓘(ℝ, ℝ × ℝ) ω
+      (fun q : UpperHalfSpace ℝ => WithLp.ofLp (q : Q)) :=
+    (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ ℝ).contDiff.contMDiff.comp
+      UpperHalfSpace.contMDiff_coe
+  have hx : ContMDiff K 𝓘(ℝ, ℝ) ω (fun q : UpperHalfSpace ℝ => (q : Q).fst) :=
+    (ContinuousLinearMap.fst ℝ ℝ ℝ).contMDiff.comp hc
+  have hy : ContMDiff K 𝓘(ℝ, ℝ) ω
+      (fun q : UpperHalfSpace ℝ => UpperHalfSpace.height q) := by
+    simpa only [ContinuousLinearMap.coe_snd', Function.comp_def, ← UpperHalfSpace.snd_coe,
+      WithLp.snd]
+      using (ContinuousLinearMap.snd ℝ ℝ ℝ).contMDiff.comp hc
+  have hl : ContMDiff K 𝓘(ℝ, ℝ) ω (fun q : UpperHalfSpace ℝ =>
+      log (UpperHalfSpace.height q)) := by
+    intro q
+    exact (contDiffAt_log.mpr (UpperHalfSpace.height_pos q).ne').contMDiffAt.comp q (hy q)
+  -- Inverse global coordinates carry SL2Tilde's inherited analytic model-space atlas.
+  have h : ContMDiff J J ω toProd.symm := contDiff_id.contMDiff
+  exact h.comp (hx.prodMk_space (hl.prodMk_space contMDiff_const))
 
 private def projectionDerivative (p : SL2Tilde) : P →L[ℝ] Q :=
   (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ ℝ).symm.toContinuousLinearMap.comp
