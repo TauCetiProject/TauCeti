@@ -111,6 +111,7 @@ noncomputable def continuationHom (ν : ContinuationCocycle mP mQ) (hM : IsDGRig
       termHom_apply]
     exact (ν.continuationMap_twistedDifferential hM _).symm
 
+@[simp]
 theorem continuationHom_f_apply (ν : ContinuationCocycle mP mQ) (hM : IsDGRightModule h ℳ dM)
     (n : ℤ) (x : (mP.twistedCochainComplex dM hM).X n) :
     (twistedCochainComplexXEquiv mQ.mem_graded mQ.twisting hM n
@@ -120,13 +121,15 @@ theorem continuationHom_f_apply (ν : ContinuationCocycle mP mQ) (hM : IsDGRight
   termHom_apply mP mQ hM _ n n _ x
 
 /-- The Kronecker continuation cocycle induces the identity morphism. -/
-theorem continuationHom_refl [DecidableEq P] (hM : IsDGRightModule h ℳ dM) :
-    (refl h mP).continuationHom hM = 𝟙 (mP.twistedCochainComplex dM hM) := by
+@[simp]
+theorem continuationHom_refl [DecidableEq P] (hd : d 1 = 0) (hM : IsDGRightModule h ℳ dM) :
+    (refl hd mP).continuationHom hM = 𝟙 (mP.twistedCochainComplex dM hM) := by
   refine HomologicalComplex.hom_ext _ _ fun n ↦ termHom_ext fun x ↦ ?_
   rw [continuationHom_f_apply, continuationMap_refl]
   rfl
 
 /-- The composite of continuation cocycles induces the composite of the morphisms. -/
+@[simp]
 theorem continuationHom_comp (ν₁ : ContinuationCocycle mP mQ) (ν₂ : ContinuationCocycle mQ mS)
     (hM : IsDGRightModule h ℳ dM) :
     (ν₁.comp h ν₂).continuationHom hM = ν₁.continuationHom hM ≫ ν₂.continuationHom hM := by
@@ -150,8 +153,9 @@ noncomputable def homotopy (η : ParametrizedCocycle ν₀ ν₁) (hM : IsDGRigh
   hom i j :=
     if hij : j + 1 = i then
       termHom mP mQ hM (homotopyMap η.h ℳ) i j fun f hf ↦ by
+        have hj : i - 1 = j := by omega
         have := η.homotopyMap_mem_twistedTotalGrading hf
-        rwa [show i - 1 = j by omega] at this
+        rwa [hj] at this
     else 0
   zero i j hij := by
     have hij' : ¬ j + 1 = i := by simpa using hij
@@ -159,14 +163,31 @@ noncomputable def homotopy (η : ParametrizedCocycle ν₀ ν₁) (hM : IsDGRigh
   comm i := by
     -- Write `i = n + 1`, so that both differentials are in the form `d n (n + 1)`.
     obtain ⟨n, rfl⟩ : ∃ n, i = n + 1 := ⟨i - 1, by omega⟩
-    rw [dNext_eq _ (show (ComplexShape.up ℤ).Rel (n + 1) (n + 1 + 1) from rfl),
-      prevD_eq _ (show (ComplexShape.up ℤ).Rel n (n + 1) from rfl)]
+    have hnext : (ComplexShape.up ℤ).Rel (n + 1) (n + 1 + 1) := rfl
+    have hprev : (ComplexShape.up ℤ).Rel n (n + 1) := rfl
+    rw [dNext_eq _ hnext, prevD_eq _ hprev]
     simp only [dite_true]
     refine termHom_ext fun x ↦ ?_
     simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_add, LinearMap.add_apply,
       map_add, Submodule.coe_add, termHom_apply, twistedCochainComplexXEquiv_d,
       ContinuationCocycle.continuationHom_f_apply]
     exact (sub_eq_iff_eq_add.mp (η.homotopyMap_twistedDifferential hM _)).trans (by abel)
+
+/-- The component `X (j + 1) ⟶ X j` of the homotopy of a parametrized cocycle is its homotopy
+map. -/
+@[simp]
+theorem homotopy_hom_apply (η : ParametrizedCocycle ν₀ ν₁) (hM : IsDGRightModule h ℳ dM) (j : ℤ)
+    (x : (mP.twistedCochainComplex dM hM).X (j + 1)) :
+    (twistedCochainComplexXEquiv mQ.mem_graded mQ.twisting hM j
+        (((η.homotopy hM).hom (j + 1) j).hom x) : Q → M) =
+      homotopyMap η.h ℳ (twistedCochainComplexXEquiv mP.mem_graded mP.twisting hM (j + 1) x :
+        P → M) := by
+  simp only [homotopy, dite_true, termHom_apply]
+
+/-- The components of the homotopy of a parametrized cocycle vanish outside adjacent degrees. -/
+theorem homotopy_hom_eq_zero (η : ParametrizedCocycle ν₀ ν₁) (hM : IsDGRightModule h ℳ dM)
+    {i j : ℤ} (hij : j + 1 ≠ i) : (η.homotopy hM).hom i j = 0 := by
+  simp only [homotopy, hij, dite_false]
 
 end ParametrizedCocycle
 
@@ -182,9 +203,9 @@ structure Homologous [DecidableEq P] [DecidableEq Q] (h : IsDGAlgebra 𝒜 d)
   /-- The continuation cocycle from `mQ` to `mP`. -/
   ν' : ContinuationCocycle mQ mP
   /-- The composite `ν ν'` is homotopic to the Kronecker cocycle of `mP`. -/
-  homP : ParametrizedCocycle (ContinuationCocycle.refl h mP) (ν.comp h ν')
+  homP : ParametrizedCocycle (ContinuationCocycle.refl h.map_one_eq_zero mP) (ν.comp h ν')
   /-- The composite `ν' ν` is homotopic to the Kronecker cocycle of `mQ`. -/
-  homQ : ParametrizedCocycle (ContinuationCocycle.refl h mQ) (ν'.comp h ν)
+  homQ : ParametrizedCocycle (ContinuationCocycle.refl h.map_one_eq_zero mQ) (ν'.comp h ν)
 
 namespace Homologous
 
@@ -205,6 +226,16 @@ noncomputable def homotopyEquiv (H : Homologous h mP mQ) (hM : IsDGRightModule h
     have := H.homQ.homotopy hM
     rwa [ContinuationCocycle.continuationHom_refl,
       ContinuationCocycle.continuationHom_comp] at this
+
+@[simp]
+theorem homotopyEquiv_hom (H : Homologous h mP mQ) (hM : IsDGRightModule h ℳ dM) :
+    (H.homotopyEquiv hM).hom = H.ν.continuationHom hM :=
+  (rfl)
+
+@[simp]
+theorem homotopyEquiv_inv (H : Homologous h mP mQ) (hM : IsDGRightModule h ℳ dM) :
+    (H.homotopyEquiv hM).inv = H.ν'.continuationHom hM :=
+  (rfl)
 
 end Homologous
 
