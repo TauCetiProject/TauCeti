@@ -24,8 +24,10 @@ differential `D k F x` to this cotrace therefore determines an `F`-linear equiva
 `Ω[F⁄k] ≃ₗ[F] weilDifferentialSpace k F`.
 
 For every `y ∈ F`, the equivalence sends `dy` to `(dy/dx) dx`.  This is the linear comparison in
-Stichtenoth, Theorem 4.3.2.  Compatibility with local components and residues, and independence
-from the separating parameter, remain to be proved.
+Stichtenoth, Theorem 4.3.2.  When `F` has infinitely many rational places, the equivalence does
+not depend on the separating element, and at rational places with a separating prime element the
+local components of the Weil differential attached to `ω` are the residues of `ω`
+(`TauCeti.FieldTheory.FunctionField.Differential.Independence`).
 
 The divisor of `dx` is explicit: `(dx) = -2 (x)_∞ + Diff(F / k(x))` (Stichtenoth, Remark 4.3.7(c)).
 It is the divisor of a cotrace, `Con (η) + Diff(F / k(x))`, where the normalized differential `η` of

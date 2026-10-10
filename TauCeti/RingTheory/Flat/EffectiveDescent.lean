@@ -35,11 +35,14 @@ Forgetting the multiplication, a descent datum is in particular a coalgebra for 
 
 Since `Spec` is an anti-equivalence between commutative `R`-algebras and affine schemes over
 `Spec R`, the results below are effective descent for affine schemes along a faithfully flat
-morphism `Spec S → Spec R` of affine schemes:
+morphism `Spec S → Spec R` of affine schemes (the scheme-theoretic statements are in
+`TauCeti.AlgebraicGeometry.Descent.Affine`):
 
 * `TauCeti.Algebra.DescentDatum.baseChangeEquiv` (effectivity): if `S` is flat over `R`, the
   descended algebra `D.descended = {b | θ b = 1 ⊗ b}` satisfies `S ⊗[R] D.descended ≃ B`, and
   `coaction_baseChangeEquiv` identifies `θ` with the canonical datum on `S ⊗[R] D.descended`.
+* `TauCeti.Algebra.DescentDatum.toBaseChangeDescended`: the inverse of `baseChangeEquiv` as a
+  morphism from `D` to the canonical descent datum on `S ⊗[R] D.descended`.
 * `TauCeti.Algebra.DescentDatum.descended_baseChange`: if `S` is faithfully flat over `R`, the
   canonical datum on `S ⊗[R] A` descends to (the image of) `A`.
 * `TauCeti.Algebra.DescentDatum.equivDescended` (uniqueness): if `S` is faithfully flat over `R`,
@@ -491,6 +494,24 @@ theorem tmul_baseChangeHomEquiv_symm_apply [Module.FaithfullyFlat R S]
   simp
 
 end BaseChange
+
+/-- The effectivity isomorphism `baseChangeEquiv`, inverted, as a morphism of descent data from
+`D` to the canonical descent datum on `S ⊗[R] D.descended`. -/
+noncomputable def toBaseChangeDescended [Module.Flat R S] (D : DescentDatum R S B) :
+    Hom D (baseChange R S D.descended) where
+  toAlgHom := D.baseChangeEquiv.symm
+  coaction_toAlgHom b := by
+    obtain ⟨x, rfl⟩ := D.baseChangeEquiv.surjective b
+    rw [coaction_baseChangeEquiv]
+    simp only [AlgEquiv.coe_toAlgHom, AlgEquiv.symm_apply_apply]
+    induction x using TensorProduct.inductionOn with
+    | tmul s a => simp
+    | add x y hx hy => simp only [map_add, hx, hy]
+
+@[simp]
+theorem toBaseChangeDescended_toAlgHom [Module.Flat R S] (D : DescentDatum R S B) :
+    D.toBaseChangeDescended.toAlgHom = D.baseChangeEquiv.symm :=
+  (rfl)
 
 /-! ### Change of the base ring
 

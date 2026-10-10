@@ -153,7 +153,7 @@ private theorem liftPMap_unliftPMap (A : GrowthRenorm S hb →ₗ.[ℝ] GrowthRe
   refine LinearPMap.ext ?_ ?_
   · ext x
     simp [liftPMap, unliftPMap]
-  · intro x hx hy
+  · intro x hx _
     apply (equiv S hb).injective
     simp only [equiv_apply, liftPMap_apply, unliftPMap_apply, linearEquiv_symm_apply]
 
@@ -162,7 +162,7 @@ private theorem unliftPMap_liftPMap (A : X →ₗ.[ℝ] X) :
   refine LinearPMap.ext ?_ ?_
   · ext x
     simp [liftPMap, unliftPMap]
-  · intro x hx hy
+  · intro x hx _
     simp only [unliftPMap_apply, liftPMap_apply, linearEquiv_symm_apply]
 
 private def liftLinearMap (B : X →L[ℝ] X) :

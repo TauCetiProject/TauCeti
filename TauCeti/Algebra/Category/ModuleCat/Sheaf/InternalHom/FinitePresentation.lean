@@ -185,7 +185,7 @@ private theorem ihomStalkComparison_surjective_of_presentation {U : Opens X}
     ∃ s, M.ihomStalkComparison N x s = φ := by
   have : Fintype P.generators.I := Fintype.ofFinite _
   -- Lift the images of the germs of the generators to sections `n k` near `x`.
-  choose W hWU hxW n hn using fun k ↦ TopCat.Presheaf.exists_le_germ_eq N.val.presheaf
+  choose W _ hxW n hn using fun k ↦ TopCat.Presheaf.exists_le_germ_eq N.val.presheaf
     (φ (TopCat.Presheaf.germ M.val.presheaf U x hx
       ((P.generators.s k).eval (op (Over.mk (𝟙 U)))))) hx
   -- Write each relation as a combination `∑ₖ aⱼₖ • eₖ` of the basis sections over `U`.

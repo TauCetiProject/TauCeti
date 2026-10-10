@@ -90,10 +90,6 @@ theorem orderOf_unitOfCoprime_pow_sub_one (q N : ℕ) (hq : 1 < q) (hN : N ≠ 0
     (pow_ne_zero _ (Nat.ne_zero_of_lt hq))
   have hm_dvd : m ∣ q ^ orderOf u - 1 :=
     (Nat.modEq_iff_dvd' hqpow).1 hmod.symm
-  have hm_pos : 0 < m := by
-    dsimp [m]
-    have : 1 < q ^ N := one_lt_pow₀ hq hN
-    omega
   have hsmall : q ^ orderOf u - 1 < m := by
     dsimp [m]
     have := Nat.pow_lt_pow_right hq hdlt

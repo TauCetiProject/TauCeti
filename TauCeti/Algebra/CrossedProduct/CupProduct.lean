@@ -124,8 +124,9 @@ private theorem h2MuToUnits_explicitH2
         (explicitCoeff2 _ _ (kummerShortExact K 2 (isUnit_of_invertible _)).inclDistribMulActionHom
           continuous_of_discreteTopology
           (explicitCoeff2 _ _ (trivialF2ToMu2 K) continuous_of_discreteTopology z)) := by
-  rw [h2MuToUnits_def, ← TauCeti.ContinuousCohomology.coeffMap_eqToHom,
-    ← h2KummerToUnits_explicitH2AddEquivContinuousCohomology (isUnit_of_invertible _),
+  rw [kummerShortExact_inclDistribMulActionHom, h2MuToUnits_def,
+    ← TauCeti.ContinuousCohomology.coeffMap_eqToHom,
+    ← h2KummerToUnits_explicitH2AddEquivContinuousCohomology,
     ← explicitH2AddEquivContinuousCohomology_coeffMap, ← eqToHom_comp_kummerCoeffIsoTrivialF2_inv,
     TauCeti.ContinuousCohomology.coeffMap_comp]
   -- the two sides apply the same composite of coefficient maps, once as a composite morphism and

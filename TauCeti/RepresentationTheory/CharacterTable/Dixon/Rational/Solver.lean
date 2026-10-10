@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.FinEnum
+public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.Rows
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.IntegerChecker
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Rational.Basic
 
@@ -82,8 +82,7 @@ variable [Fintype G] [DecidableEq G]
 /-- An executable list of the signed integral lifts of the modular central-character search. -/
 private def liftedCentralRowsList (p : ℕ) [Fact p.Prime] [FinEnum (ZMod p)] :
     List (Fin d.numClasses → ℤ) :=
-  ((FinEnum.toList (Fin d.numClasses → ZMod p)).filter fun row =>
-    row ∈ d.centralCharacterSearch (F := ZMod p)).map fun row j => (row j).valMinAbs
+  (d.centralCharacterRows (F := ZMod p)).map fun row j => (row j).valMinAbs
 
 /-- The executable lifted-row list enumerates exactly `liftedCentralRows`. -/
 @[simp]

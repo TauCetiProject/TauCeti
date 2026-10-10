@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.GrothendieckGroup.Finrank
 public import TauCeti.RepresentationTheory.Irreducible
-public import TauCeti.RepresentationTheory.PGroupInvariants
+public import TauCeti.RepresentationTheory.Unipotent.PowerOrder
 public import TauCeti.RepresentationTheory.OfModule
 public import TauCeti.RepresentationTheory.AsModule
 
@@ -25,8 +25,8 @@ vectors, so it passes directly to submodules and quotients. The representation s
 endomorphisms instead. These results apply, for example, to permutation representations of
 quotients of `p`-power order and allow their induced classes to be computed additively.
 
-The simple-module argument uses the invariant-vector theorem in
-`TauCeti/RepresentationTheory/PGroupInvariants.lean`; finite-length induction supplies the
+The simple-module argument uses the trivial-line theorem for irreducible representations in
+`TauCeti/RepresentationTheory/Unipotent/PowerOrder.lean`; finite-length induction supplies the
 exact-sequence relations for arbitrary modules.
 
 ## References
@@ -62,9 +62,9 @@ theorem nonempty_linearEquiv_trivial_of_forall_pow_eq_one
     rw [← map_pow]
     ext x
     exact hn x
-  have htriv := hρ.eq_trivial_of_forall_pow_eq_one p hpow
-  have hdim := hρ.finrank_eq_one_of_forall_pow_eq_one p hpow
   have := hρ.finiteDimensional
+  have htriv := hρ.eq_trivial_of_forall_pow_expChar_pow_eq_one p hpow
+  have hdim := hρ.finrank_eq_one_of_forall_pow_expChar_pow_eq_one p hpow
   let e := LinearEquiv.ofFinrankEq M k (hdim.trans (Module.finrank_self k).symm)
   have he : ρ.Equiv (Representation.trivial k G k) := Representation.Equiv.mk e (by
     intro g

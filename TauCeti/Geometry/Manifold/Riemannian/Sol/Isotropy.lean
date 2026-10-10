@@ -86,21 +86,11 @@ private def isometryOfInvolution (L : (ℝ × ℝ × ℝ) →L[ℝ] ℝ × ℝ �
       (toProd.symm ∘ L ∘ toProd) p v)
       (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ)
         (toProd.symm ∘ L ∘ toProd) p w) = inner ℝ v w
-    have hf : MDifferentiable 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) toProd := by
-      simpa only [coe_toProdDiffeomorph] using toProdDiffeomorph.mdifferentiable (by simp)
-    have hg : MDifferentiable 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) toProd.symm := by
-      simpa only [coe_toProdDiffeomorph_symm] using
-        toProdDiffeomorph.symm.mdifferentiable (by simp)
     have hd (v : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) :
         tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) (toProd.symm (L (toProd p)))
           (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (toProd.symm ∘ L ∘ toProd) p v) =
         L (tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) p v) := by
-      rw [mfderiv_comp p (hg _) (L.differentiable.mdifferentiable.comp hf p)]
-      simp only [ContinuousLinearMap.comp_apply, Function.comp_apply,
-        tangentSpaceCastModel_mfderiv_toProd_symm]
-      rw [mfderiv_comp p L.differentiableAt.mdifferentiableAt (hf p)]
-      rw [L.hasFDerivAt.hasMFDerivAt.mfderiv]
-      exact congrArg L (mfderiv_toProd_apply p v)
+      exact tangentSpaceCastModel_mfderiv_of_eq_linear _ L (fun _ => rfl) p v
     rw [inner_def, inner_def]
     simp only [Function.comp_apply]
     rw [hd v, hd w]

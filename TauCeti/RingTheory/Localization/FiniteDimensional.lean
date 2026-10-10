@@ -58,7 +58,7 @@ theorem IsFractionRing.finiteDimensional_of_finite (R S K L : Type*) [CommRing R
   classical
   obtain ⟨t, ht⟩ := (Module.finite_def.mp ‹Module.Finite R S›)
   -- `V` is the `K`-span of the image of a finite `R`-generating set of `S`
-  set V : Submodule K L := Submodule.span K ((algebraMap S L) '' (t : Set S)) with hV
+  set V : Submodule K L := Submodule.span K ((algebraMap S L) '' (t : Set S)) with _hV
   -- every element of `S` already lies in `V`: an `R`-scalar is a `K`-scalar along `R → K → L`
   -- the `R`-span of the mapped generators already contains the image of `S`, and the `K`-span
   -- contains the `R`-span
@@ -71,7 +71,7 @@ theorem IsFractionRing.finiteDimensional_of_finite (R S K L : Type*) [CommRing R
     intro x v hv
     induction hv using Submodule.span_induction with
     | mem y hy =>
-        obtain ⟨y, hy, rfl⟩ := hy
+        obtain ⟨y, _, rfl⟩ := hy
         simpa [← map_mul] using hS (x * y)
     | zero => simp
     | add y z _ _ hy hz => simpa [mul_add] using V.add_mem hy hz

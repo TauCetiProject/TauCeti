@@ -212,8 +212,6 @@ lemma opp_ne_self (u : Fin (2 * n)) : opp u ≠ u := by
   split_ifs at this <;> omega
 
 lemma eq_or_eq_opp_of_axis_eq {u v : Fin (2 * n)} (h : axis u = axis v) : u = v ∨ u = opp v := by
-  have hu := u.isLt
-  have hv := v.isLt
   simp only [axis] at h
   split_ifs at h with h1 h2 h2
   · exact Or.inl (Fin.ext (by omega))
@@ -339,7 +337,6 @@ lemma shift_eq_self {u : Fin (2 * n)} {d : Fin n} (hd : (d : ℕ) = 0) : shift u
 
 lemma axis_shift_ne {u : Fin (2 * n)} {d : Fin n} (hd : (d : ℕ) ≠ 0) :
     axis (shift u d) ≠ axis u := by
-  have hu := u.isLt
   have hd' := d.isLt
   simp only [axis, coe_shift]
   split_ifs <;> omega
@@ -354,7 +351,6 @@ lemma cyclicDistance_lt (u v : Fin (2 * n)) : cyclicDistance u v < 2 * n := by
 
 @[simp] lemma cyclicDistance_eq_zero_iff {u v : Fin (2 * n)} : cyclicDistance u v = 0 ↔ u = v := by
   have hu := u.isLt
-  have hv := v.isLt
   simp only [cyclicDistance, Fin.ext_iff]
   split <;> omega
 
@@ -422,9 +418,8 @@ def index (u v : Fin (2 * n)) : Fin (2 * n) × Fin n :=
 lemma index_comm {u v : Fin (2 * n)} (h : IsPair u v) : index u v = index v u := by
   rcases eq_or_ne u v with rfl | huv
   · rfl
-  obtain ⟨h0, hn⟩ := h.cyclicDistance_ne huv
+  obtain ⟨_, hn⟩ := h.cyclicDistance_ne huv
   have hsum := cyclicDistance_add_cyclicDistance huv
-  have hlt := cyclicDistance_lt u v
   by_cases h1 : cyclicDistance u v < n
   · rw [index, dite_eq_left h1, index, dite_eq_right (by omega), dite_eq_left h1]
   · rw [index, dite_eq_right h1, dite_eq_left (by omega), index, dite_eq_left (by omega)]
@@ -437,9 +432,8 @@ lemma shift_index {u v : Fin (2 * n)} (h : IsPair u v) :
       rw [cyclicDistance_eq_zero_iff.mpr rfl]; exact rank_pos u
     exact Or.inl ⟨by rw [index, dite_eq_left hlt],
       by rw [index, dite_eq_left hlt]; exact shift_cyclicDistance hlt⟩
-  obtain ⟨h0, hn⟩ := h.cyclicDistance_ne huv
+  obtain ⟨_, hn⟩ := h.cyclicDistance_ne huv
   have hsum := cyclicDistance_add_cyclicDistance huv
-  have hlt := cyclicDistance_lt u v
   by_cases h1 : cyclicDistance u v < n
   · exact Or.inl ⟨by rw [index, dite_eq_left h1],
       by rw [index, dite_eq_left h1]; exact shift_cyclicDistance h1⟩
@@ -520,9 +514,6 @@ lemma abs_rootOfPair_dotProduct_corootOfPair_le_two {u v p q : Fin (2 * n)}
   · simpa only [rootOfPair_self] using atom_le_two u
   rcases eq_or_ne p q with rfl | hpq_ne
   · have haxis : axis u ≠ axis v := huv.resolve_left huv_ne
-    have huv_opp : u ≠ opp v := ne_of_axis_ne (by simpa using haxis)
-    have hvu : v ≠ u := ne_of_axis_ne haxis.symm
-    have hvu_opp : v ≠ opp u := ne_of_axis_ne (by simpa using haxis.symm)
     rw [rootOfPair_of_ne huv_ne, corootOfPair_self, add_dotProduct,
       signedWeight_dotProduct_signedCoweight,
       signedWeight_dotProduct_signedCoweight, abs_le]
@@ -671,7 +662,7 @@ lemma isPair_reflMap (h : IsPair p q) {u v : Fin (2 * n)} (huv : IsPair u v) :
 private lemma signedWeight_reflMap_of_axis_ne (hax : axis p ≠ axis q) (u : Fin (2 * n)) :
     signedWeight (reflMap p q u) =
       signedWeight u - (signedWeight u ⬝ᵥ corootOfPair p q) • rootOfPair p q := by
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8⟩ := long_ne hax
+  obtain ⟨h1, _, h3, _, h5, _, h7, h8⟩ := long_ne hax
   have hpq' : signedWeight p ⬝ᵥ signedCoweight q = 0 := signedWeight_dotProduct_of_axis_ne hax
   have hqp : signedWeight q ⬝ᵥ signedCoweight p = 0 :=
     signedWeight_dotProduct_of_axis_ne (Ne.symm hax)
@@ -741,7 +732,7 @@ lemma signedWeight_reflMap (h : IsPair p q) (u : Fin (2 * n)) :
 private lemma signedCoweight_reflMap_of_axis_ne (hax : axis p ≠ axis q) (u : Fin (2 * n)) :
     signedCoweight (reflMap p q u) =
       signedCoweight u - (rootOfPair p q ⬝ᵥ signedCoweight u) • corootOfPair p q := by
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8⟩ := long_ne hax
+  obtain ⟨h1, _, h3, _, h5, _, h7, h8⟩ := long_ne hax
   have hpq' : signedWeight p ⬝ᵥ signedCoweight q = 0 := signedWeight_dotProduct_of_axis_ne hax
   have hqp : signedWeight q ⬝ᵥ signedCoweight p = 0 :=
     signedWeight_dotProduct_of_axis_ne (Ne.symm hax)
@@ -823,7 +814,7 @@ lemma rootIdx_dotProduct_signedCoweight_eq_two_iff (z : Fin (2 * n) × Fin n) (m
       · rw [ite_eq_left rfl]
       · rw [ite_eq_left rfl]
   · have hax : axis z.1 ≠ axis (shift z.1 z.2) := hpair.resolve_left hne
-    obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8⟩ := long_ne hax
+    obtain ⟨h1, h2, h3, h4, _, _, _, _⟩ := long_ne hax
     rw [rootIdx, rootOfPair_of_ne hne, add_dotProduct,
       signedWeight_dotProduct_signedCoweight, signedWeight_dotProduct_signedCoweight]
     constructor
@@ -865,7 +856,7 @@ lemma two_mul_signedWeight_dotProduct_corootIdx_iff (z : Fin (2 * n) × Fin n) (
       · rw [ite_eq_left rfl]
         omega
   · have hax : axis z.1 ≠ axis (shift z.1 z.2) := hpair.resolve_left hne
-    obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8⟩ := long_ne hax
+    obtain ⟨_, h2, h3, h4, _, _, _, _⟩ := long_ne hax
     constructor
     · intro hc
       by_cases hm1 : m = z.1

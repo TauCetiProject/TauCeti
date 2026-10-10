@@ -118,6 +118,23 @@ omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
 theorem restr_source : (φ.restr hs hx).toChart.source = φ.toChart.source ∩ s :=
   φ.toChart.restr_source' s hs
 
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- A point of the chart is the point with its own coordinates. -/
+theorem toChart_symm_coord_symm_coord {y : M} (hy : y ∈ φ.toChart.source) :
+    φ.toChart.symm (φ.coord.symm (φ.coord (φ.toChart y))) = y := by
+  rw [LinearEquiv.symm_apply_apply, φ.toChart.left_inv hy]
+
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- The chart sends `0` back to the critical point. -/
+@[simp]
+theorem toChart_symm_zero : φ.toChart.symm 0 = x := by
+  rw [← φ.apply_self, φ.toChart.left_inv φ.mem_source]
+
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- The critical point is the point with coordinates `0`. -/
+theorem toChart_symm_coord_symm_zero : φ.toChart.symm (φ.coord.symm 0) = x := by
+  rw [map_zero, toChart_symm_zero]
+
 end MorseChart
 
 /-- **The Morse lemma on a manifold.** At a nondegenerate critical point `x` of a function `f`
@@ -138,9 +155,8 @@ theorem IsManifoldNondegenerateCriticalPoint.nonempty_morseChart
   replace hf : ContMDiffOn 𝓘(ℝ, E) 𝓘(ℝ) ∞ f s := fun y hy ↦ (hfs y hy).contMDiffWithinAt
   set c := chartAt E x with hc
   set g : E → ℝ := f ∘ (extChartAt 𝓘(ℝ, E) x).symm with hgdef
-  set a : E := extChartAt 𝓘(ℝ, E) x x with hadef
+  set a : E := extChartAt 𝓘(ℝ, E) x x
   set U := (extChartAt 𝓘(ℝ, E) x).target ∩ (extChartAt 𝓘(ℝ, E) x).symm ⁻¹' interior s
-    with hUdef
   have hU : IsOpen U := (continuousOn_extChartAt_symm x).isOpen_inter_preimage
     (isOpen_extChartAt_target x) isOpen_interior
   have haU : a ∈ U := ⟨mem_extChartAt_target x, by
