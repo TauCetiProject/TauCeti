@@ -152,7 +152,7 @@ private theorem tendsto_jorgensen (hw : 0 < w) (hlt : w * |A 1 0| < 1) :
     have h := pow_le_pow_of_le_one hε0 hlt.le (Nat.one_le_two_pow (n := n))
     rw [pow_one] at h
     exact (abs_jorgensen_apply_one_zero hw.le n).trans_le (hεdef ▸ h)
-  set C := max |A 0 0| (1 - ε)⁻¹ with hCdef
+  set C := max |A 0 0| (1 - ε)⁻¹
   have hC0 : 0 ≤ C := le_max_of_le_right (by positivity)
   have hCε : 1 + C * ε ≤ C := by
     have h2 : 0 < 1 - ε := by linarith

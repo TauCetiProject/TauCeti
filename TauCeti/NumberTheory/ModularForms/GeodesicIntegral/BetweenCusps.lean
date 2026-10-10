@@ -237,7 +237,6 @@ private theorem axisLimit_eq_of_smul_infty_eq (hΦ : ∀ τ : ℍ, HasDerivAt Φ
     simp only [num, denom, Matrix.GeneralLinearGroup.map_apply, eq_ratCast, hu10, hx, hr_def,
       Rat.cast_zero, Rat.cast_div]
     rw [Complex.ofReal_zero, zero_mul, zero_add]
-    have h11 : ((u 1 1 : ℝ) : ℂ) ≠ 0 := by exact_mod_cast hu11
     push_cast
     field_simp
     ring

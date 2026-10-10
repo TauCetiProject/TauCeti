@@ -306,7 +306,7 @@ theorem wassersteinEDist_one_eq_iSup_apply_eq_zero [IsProbabilityMeasure μ]
     wassersteinEDist 1 μ ν = ⨆ (f : X → ℝ) (_ : LipschitzWith 1 f) (_ : f x₀ = 0),
       ENNReal.ofReal (∫ x, f x ∂μ - ∫ x, f x ∂ν) := by
   rw [wassersteinEDist_one_eq_iSup hμ hν]
-  refine le_antisymm (iSup₂_le fun f hf ↦ ?_) (iSup₂_mono fun f hf ↦ iSup_le fun _ ↦ le_rfl)
+  refine le_antisymm (iSup₂_le fun f hf ↦ ?_) (iSup₂_mono fun f _ ↦ iSup_le fun _ ↦ le_rfl)
   have hg : LipschitzWith 1 fun x ↦ f x - f x₀ := LipschitzWith.of_le_add fun x y ↦ by
     have hxy := hf.le_add_mul x y
     rw [NNReal.coe_one, one_mul] at hxy

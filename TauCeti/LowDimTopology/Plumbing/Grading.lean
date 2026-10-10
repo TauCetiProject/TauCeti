@@ -137,7 +137,7 @@ theorem latticeDifferentialOnGenerator_mem_degreePart
   rw [PlumbingChain.mem_degreePart]
   intro D hD
   rw [latticeDifferentialOnGenerator_def] at hD
-  obtain ⟨v, hv, hDv⟩ := Finsupp.mem_support_finsetSum D hD
+  obtain ⟨v, _, hDv⟩ := Finsupp.mem_support_finsetSum D hD
   rw [Finsupp.mem_support_iff] at hDv
   simp only [Finsupp.add_apply, Finsupp.single_apply] at hDv
   split at hDv

@@ -128,7 +128,7 @@ theorem valuation_maximalIdeal_adicCompletionIntegers (x : v.adicCompletion K) :
     (IsDiscreteValuationRing.maximalIdeal (v.adicCompletionIntegers K)).valuation
       (v.adicCompletion K) x = Valued.v x := by
   -- reduce to elements of the ring of integers
-  obtain ⟨a, b, hb, rfl⟩ := IsFractionRing.div_surjective (A := v.adicCompletionIntegers K) x
+  obtain ⟨a, b, _, rfl⟩ := IsFractionRing.div_surjective (A := v.adicCompletionIntegers K) x
   rw [map_div₀, map_div₀]
   suffices h : ∀ y : v.adicCompletionIntegers K,
       (IsDiscreteValuationRing.maximalIdeal (v.adicCompletionIntegers K)).valuation

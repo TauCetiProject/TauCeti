@@ -32,8 +32,12 @@ point.
 * `TauCeti.Isogeny.negIsogeny_comp_negIsogeny`: negation is an involution.
 * `TauCeti.Isogeny.degree_negIsogeny`: negation has degree one, so it is an automorphism of `W`
   fixing the point at infinity.
+* `TauCeti.Isogeny.fieldPullback_negIsogeny_genericX` and
+  `TauCeti.Isogeny.fieldPullback_negIsogeny_genericY`: on functions, negation fixes `x` and sends
+  `y` to `-y - a₁x - a₃`.
 * `TauCeti.Isogeny.Hom.neg_comp` and `TauCeti.Isogeny.Hom.degree_neg`: negation passes through
   composition, and preserves degrees, on the carrier.
+* `TauCeti.Isogeny.Hom.ofIsogeny_negIsogeny`: the negation isogeny is `-1` among the endomorphisms.
 * `TauCeti.Isogeny.tautologicalPoint_negPullback`: read at the generic point, negation is the
   group law's inverse — which is what identifies this pullback as negation rather than merely
   some degree-one involution.
@@ -103,6 +107,24 @@ theorem negIsogeny_comp_negIsogeny : (negIsogeny W).comp (negIsogeny W) = id W :
 theorem degree_negIsogeny : (negIsogeny W).degree = 1 :=
   (degree_eq_one_of_comp_eq_id (negIsogeny_comp_negIsogeny W)).1
 
+/-- **Negation fixes the affine coordinate**: `x ∘ [-1] = x`. -/
+@[simp]
+theorem fieldPullback_negIsogeny_genericX :
+    (negIsogeny W).fieldPullback (genericX W) = genericX W := by
+  conv_lhs => rw [genericX_def, fieldPullback_algebraMap, negIsogeny_pullback, negPullback_apply,
+    AdjoinRoot.mk_C, conj_mk_C]
+  rw [genericX_def, AdjoinRoot.mk_C]
+
+/-- **Negation sends `y` to `-y - a₁x - a₃`**: `y ∘ [-1] = negY x y`. -/
+@[simp]
+theorem fieldPullback_negIsogeny_genericY :
+    (negIsogeny W).fieldPullback (genericY W) =
+      (W⁄W.FunctionField).toAffine.negY (genericX W) (genericY W) := by
+  conv_lhs => rw [genericY_def, fieldPullback_algebraMap, negIsogeny_pullback, negPullback_apply,
+    AdjoinRoot.mk_X, conj_mk_Y]
+  rw [← evalEval_genericX_genericY, ← map_negPolynomial, evalEval_negPolynomial]
+  simp only [WeierstrassCurve.baseChange]
+
 /-- **Negation's tautological point is the negated generic point.** This is what identifies
 `negIsogeny` as negation: read at the generic point of `W`, it is the group law's inverse. -/
 @[simp]
@@ -163,6 +185,11 @@ theorem neg_comp (g : Hom W₂ W₃) (f : Hom W₁ W₂) : (-g).comp f = -(g.com
 @[simp]
 theorem degree_neg (f : Hom W₁ W₂) : (-f).degree = f.degree := by
   rw [neg_def, degree_comp, degree_ofIsogeny, degree_negIsogeny, one_mul]
+
+/-- **The negation isogeny is `-1`** in the endomorphism monoid. -/
+@[simp]
+theorem ofIsogeny_negIsogeny : ofIsogeny (negIsogeny W) = -1 := by
+  rw [neg_def, one_def, comp_id]
 
 end Hom
 

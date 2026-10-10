@@ -53,6 +53,8 @@ uniformities are shadowed, so the evaluation the statement is about is never re-
   another to `0` separates them.
 * `MvPowerSeries.subst_powerSeriesSubst` : substituting into the composite of a one-variable
   series with a multivariate one is substituting into the inner series.
+* `MvPowerSeries.constantCoeff_subst_of_constantCoeff_zero` : substituting a family of series
+  without constant term preserves the constant coefficient.
 
 ## Separating multivariable parameters
 
@@ -244,6 +246,26 @@ theorem subst_powerSeriesSubst {O : Type*} [CommRing O] {σ' τ' : Type*}
     (hg : PowerSeries.HasSubst g) (f : PowerSeries O) :
     subst b (PowerSeries.subst g f) = PowerSeries.subst (subst b g) f := by
   rw [PowerSeries.subst_def, PowerSeries.subst_def, subst_comp_subst_apply hg.const hb]
+
+/-- Substituting a family of series without constant term preserves the constant coefficient.
+
+This is the multivariate analogue of `PowerSeries.constantCoeff_subst_of_constantCoeff_zero`. -/
+theorem constantCoeff_subst_of_constantCoeff_zero {O O' : Type*} [CommRing O] [CommRing O']
+    [Algebra O O'] {σ' τ' : Type*} {a : σ' → MvPowerSeries τ' O'} (ha : HasSubst a)
+    (ha' : ∀ i, constantCoeff (a i) = 0) (f : MvPowerSeries σ' O) :
+    constantCoeff (subst a f) = algebraMap O O' (constantCoeff f) := by
+  rw [constantCoeff_subst ha, finsum_eq_single _ 0]
+  · simp [Algebra.algebraMap_eq_smul_one, coeff_zero_eq_constantCoeff_apply]
+  · intro d hd
+    obtain ⟨i, hi⟩ : ∃ i, d i ≠ 0 := by
+      by_contra! hc
+      exact hd <| Finsupp.ext hc
+    -- the monomial `aᵈ` has a factor `a i` without constant term
+    have : constantCoeff (d.prod fun s e ↦ a s ^ e) = 0 := by
+      rw [Finsupp.prod, map_prod]
+      exact Finset.prod_eq_zero (Finsupp.mem_support_iff.mpr hi) (by
+        rw [map_pow, ha', zero_pow hi])
+    rw [this, smul_zero]
 
 end MvPowerSeries
 

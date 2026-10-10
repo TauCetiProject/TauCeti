@@ -167,7 +167,7 @@ theorem discriminant_typeE₆RootLattice : typeE₆RootLattice.discriminant = 3 
   decide
 
 /-- **The discriminant group of the type `E₆` root lattice has order `3`.** -/
--- This is not a `simp` lemma because `Nat.card_eq_fintype_card` rewrites its left-hand side.
+@[simp]
 theorem natCard_discriminantGroup_typeE₆RootLattice :
     Nat.card typeE₆RootLattice.DiscriminantGroup = 3 := by
   rw [natCard_discriminantGroup, discriminant_typeE₆RootLattice]
@@ -452,7 +452,7 @@ theorem discriminant_typeE₇RootLattice : typeE₇RootLattice.discriminant = 2 
   decide
 
 /-- **The discriminant group of the type `E₇` root lattice has order `2`.** -/
--- This is not a `simp` lemma because `Nat.card_eq_fintype_card` rewrites its left-hand side.
+@[simp]
 theorem natCard_discriminantGroup_typeE₇RootLattice :
     Nat.card typeE₇RootLattice.DiscriminantGroup = 2 := by
   rw [natCard_discriminantGroup, discriminant_typeE₇RootLattice]
@@ -686,6 +686,12 @@ theorem typeE₈SimpleRoot_apply (i j : Fin 8) :
     typeE₈SimpleRoot i j = if j = i then 1 else 0 := by
   simp [typeE₈SimpleRoot, Pi.basisFun_apply, Pi.single_apply]
 
+/-- The `i`-th simple root of type `E₈` is the `i`-th standard basis vector. -/
+-- Not a `simp` lemma: the definition is sealed so that `simp` keeps `typeE₈SimpleRoot i` intact.
+theorem typeE₈SimpleRoot_eq_basisFun (i : Fin 8) :
+    typeE₈SimpleRoot i = Pi.basisFun ℚ (Fin 8) i := by
+  rw [typeE₈SimpleRoot]
+
 /-- **The Gram matrix of the type `E₈` root lattice in its simple-root basis is the Cartan matrix
 `CartanMatrix.E 8`.** -/
 @[simp]
@@ -696,8 +702,8 @@ theorem form_typeE₈SimpleRoot_typeE₈SimpleRoot (i j : Fin 8) :
   exact form_ofGramMatrix_basisFun_basisFun _ _ i j
 
 /-- The carrier of the type `E₈` root lattice is the integral span of the simple roots. -/
--- This is not a `simp` lemma because `ofGramMatrix_carrier` first unfolds its left-hand side to a
--- bare `Submodule.span`; `mem_typeE₈RootLattice_carrier_iff` is the `simp` form.
+-- This is not a `simp` lemma: it would rewrite the left-hand side of the `simp` lemma
+-- `mem_typeE₈RootLattice_carrier_iff`.
 theorem typeE₈RootLattice_carrier :
     typeE₈RootLattice.carrier = Submodule.span ℤ (Set.range (Pi.basisFun ℚ (Fin 8))) := by
   rw [typeE₈RootLattice]
@@ -781,7 +787,7 @@ instance instSubsingletonDiscriminantGroupTypeE₈RootLattice :
     isUnimodular_typeE₈RootLattice
 
 /-- **The discriminant group of the type `E₈` root lattice has order `1`.** -/
--- This is not a `simp` lemma because `Nat.card_eq_fintype_card` rewrites its left-hand side.
+-- This is not a `simp` lemma: `simp` already proves it by `Nat.card_unique`.
 theorem natCard_discriminantGroup_typeE₈RootLattice :
     Nat.card typeE₈RootLattice.DiscriminantGroup = 1 := by
   rw [natCard_discriminantGroup, discriminant_typeE₈RootLattice]
