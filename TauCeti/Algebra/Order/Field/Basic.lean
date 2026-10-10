@@ -11,7 +11,10 @@ import Mathlib.Tactic.Linarith
 /-!
 # Reciprocal inequalities in ordered fields
 
-This file records a bound on a sum of two reciprocals in a linearly ordered field.
+This file records a bound on a sum of two reciprocals in a linearly ordered field. It turns a lower
+bound on a reciprocal sum `1 / b + 1 / c` with `b ≤ c` into an upper bound on the smaller
+denominator `b`; the classifications of sorted triangle-group signatures use it to bound their
+second parameter.
 
 ## Main results
 
