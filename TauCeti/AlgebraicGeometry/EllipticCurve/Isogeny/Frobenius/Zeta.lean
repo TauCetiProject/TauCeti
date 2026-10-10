@@ -62,8 +62,8 @@ numerator `1 - a_q T + q T²` has absolute value `q^{-1/2}`.
   `WeierstrassCurve.zetaFunction_eq_mul_inv`: rationality,
   `Z(W/F, T) = (1 - a_q T + q T²) / ((1 - T) (1 - q T))`.
 * `WeierstrassCurve.coe_zetaRatFunc`: the Laurent expansion of `zetaRatFunc` is `Z(W/F, T)`.
-* `WeierstrassCurve.mobiusAutOf_zetaRatFunc`: the functional equation,
-  `Z(W/F, 1 / (q T)) = Z(W/F, T)` in `ℚ(T)`.
+* `WeierstrassCurve.mobiusAutOf_zetaRatFunc`: `zetaRatFunc` is invariant under `T ↦ 1 / (q T)`;
+  for an elliptic curve this is the functional equation `Z(W/F, 1 / (q T)) = Z(W/F, T)` in `ℚ(T)`.
 * `WeierstrassCurve.norm_eq_inv_sqrt_card_of_one_sub_frobeniusTrace_mul_add_card_mul_sq_eq_zero`:
   the Riemann hypothesis, the zeros of `1 - a_q T + q T²` have absolute value `q^{-1/2}`.
 
@@ -101,10 +101,13 @@ theorem zetaRatFunc_def : W.zetaRatFunc =
       ((1 - RatFunc.X) * (1 - RatFunc.C (Nat.card F : ℚ) * RatFunc.X)) :=
   (rfl)
 
-/-- **The functional equation of the zeta function** (Silverman V.2.4):
-`Z(W/F, 1 / (q T)) = Z(W/F, T)` in `ℚ(T)`, where `q` is the number of elements of `F`. The
-substitution `T ↦ 1 / (q T)` is the linear fractional transformation with coefficient matrix
-`!![0, 1; q, 0]`. -/
+/-- The rational function `zetaRatFunc` is invariant under the substitution `T ↦ 1 / (q T)`,
+where `q` is the number of elements of `F`. This substitution is the linear fractional
+transformation with coefficient matrix `!![0, 1; q, 0]`.
+
+The identity is algebraic and holds at every Weierstrass model. For an elliptic curve, where
+`zetaRatFunc` is the zeta function (`coe_zetaRatFunc`), it is **the functional equation of the zeta
+function** (Silverman V.2.4): `Z(W/F, 1 / (q T)) = Z(W/F, T)` in `ℚ(T)`. -/
 @[simp]
 theorem mobiusAutOf_zetaRatFunc :
     RatFunc.mobiusAutOf (a := 0) (b := 1) (c := (Nat.card F : ℚ)) (d := 0)
