@@ -81,6 +81,15 @@ theorem homotopyMap_apply (f : P → M) (y : Q) :
       ∑ x, op (h x y) • (InternalGrading.ofDecomposition ℳ).koszulTwist 1 (f x) :=
   (rfl)
 
+end Map
+
+section Single
+
+variable {R : Type uR} {A : Type uA} {M : Type uM} [CommRing R] [Semiring A]
+  {P Q : Type uP} [Fintype P]
+  [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M]
+  (h : P → Q → A) {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
+
 /-- The `y`-component of the homotopy map of a homogeneous elementary tensor `α ⊗ x`, with `α` of
 degree `q`. -/
 theorem homotopyMap_single_apply [DecidableEq P] (x : P) {q : ℤ} {α : M} (hα : α ∈ ℳ q) (y : Q) :
@@ -91,7 +100,7 @@ theorem homotopyMap_single_apply [DecidableEq P] (x : P) {q : ℤ} {α : M} (hα
   have hε : (InternalGrading.ofDecomposition ℳ).koszulTwist 1 α = q.negOnePow • α := by
     rw [InternalGrading.koszulTwist_one_apply_of_mem _ hα',
       negOnePow_smul_eq_negOnePowCast_smul (R := R), negOnePowCast_eq_intCast]
-  simp only [homotopyMap_apply, Pi.single_apply, apply_ite, map_zero, smul_ite, smul_zero,
+  simp only [homotopyMap_apply, Pi.single_apply, apply_ite, map_zero, smul_zero,
     Finset.sum_ite_eq', Finset.mem_univ, ite_true, hε, smul_comm (op (h x y)) q.negOnePow]
 
 /-- The homotopy map of a homogeneous elementary tensor:
@@ -103,7 +112,7 @@ theorem homotopyMap_single [Fintype Q] [DecidableEq P] [DecidableEq Q] (x : P) {
   rw [homotopyMap_single_apply h x hα, Finset.sum_apply]
   simp only [Pi.single_apply, Finset.sum_ite_eq, Finset.mem_univ, ite_true]
 
-end Map
+end Single
 
 section Properties
 
@@ -117,6 +126,18 @@ variable {R : Type uR} {A : Type uA} {M : Type uM}
 variable {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A} {hA : IsDGAlgebra 𝒜 d}
   [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
 
+omit [IsScalarTower R Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M] [DirectSum.Decomposition ℳ] [Fintype P]
+  [Fintype Q] in
+/-- A homogeneous element `α` of degree `q`, multiplied by `a` of degree `e`, has degree
+`q + e`. -/
+theorem op_smul_mem_of_mem_graded' {e : ℤ} {a : A} (ha : a ∈ 𝒜 e) {q : ℤ} {α : M}
+    (hα : α ∈ ℳ q) : op a • α ∈ ℳ (q + e) := by
+  have hop : op a ∈ (InternalGrading.ofDecomposition 𝒜).opposite.piece e := by
+    rw [InternalGrading.op_mem_opposite_piece_iff, InternalGrading.ofDecomposition_piece]
+    exact ha
+  have := SetLike.GradedSMul.smul_mem hop hα
+  rwa [vadd_eq_add, add_comm] at this
+
 omit [IsScalarTower R Aᵐᵒᵖ M] [Fintype Q] in
 /-- The homotopy map of a matrix with homogeneous entries of degree `indQ y - ind x - 1` lowers
 the total degree by one. -/
@@ -127,14 +148,13 @@ theorem homotopyMap_mem_twistedTotalGrading (hh : ∀ x y, h x y ∈ 𝒜 (indQ 
   intro y
   rw [homotopyMap_apply]
   refine Submodule.sum_mem _ fun x _ ↦ ?_
-  -- The Koszul twist of parameter one preserves the degree: it acts by a sign.
   have hfx : f x ∈ (InternalGrading.ofDecomposition ℳ).piece (n + ind x) := by
     rw [InternalGrading.ofDecomposition_piece]
     exact hf x
   have hε : (InternalGrading.ofDecomposition ℳ).koszulTwist 1 (f x) ∈ ℳ (n + ind x) := by
     have := InternalGrading.koszulTwist_mem_piece _ hfx 1
     rwa [InternalGrading.ofDecomposition_piece] at this
-  have := op_smul_mem_of_mem_graded h hh x y hε
+  have := op_smul_mem_of_mem_graded' (ℳ := ℳ) (hh x y) hε
   convert this using 2
   ring
 
@@ -144,6 +164,7 @@ variable (mP : P → P → A) (mQ : Q → Q → A) (ν₀ ν₁ : P → Q → A)
 parametrized equation between the continuation cocycles `ν₀` and `ν₁`, and a differential graded
 right module `(ℳ, dM)`, `Ψ¹ - Ψ⁰ = D⁻ ∘ 𝔥 + 𝔥 ∘ D⁺`. -/
 theorem homotopyMap_twistedDifferential (hh : ∀ x y, h x y ∈ 𝒜 (indQ y - ind x - 1))
+    (hm : ∀ x y, mP x y ∈ 𝒜 (ind y - ind x + 1))
     (hp : ∀ x y, d (h x y) = ν₁ x y - ν₀ x y + ∑ z, (ind x - ind z).negOnePow • (mP x z * h z y) +
       ∑ z, (ind x - indQ z).negOnePow • (h x z * mQ z y))
     (hM : IsDGRightModule hA ℳ dM) (f : P → M) :
@@ -151,7 +172,6 @@ theorem homotopyMap_twistedDifferential (hh : ∀ x y, h x y ∈ 𝒜 (indQ y - 
       twistedDifferential mQ ℳ dM (homotopyMap h ℳ f) +
         homotopyMap h ℳ (twistedDifferential mP ℳ dM f) := by
   classical
-  -- Reduce to a homogeneous elementary tensor `α ⊗ x`.
   suffices key : ∀ (x : P) {q : ℤ} {α : M}, α ∈ ℳ q →
       continuationMap R M ν₁ (Pi.single x α) - continuationMap R M ν₀ (Pi.single x α) =
         twistedDifferential mQ ℳ dM (homotopyMap h ℳ (Pi.single x α)) +
@@ -169,18 +189,69 @@ theorem homotopyMap_twistedDifferential (hh : ∀ x y, h x y ∈ 𝒜 (indQ y - 
       abel
   intro x q α hα
   funext w
-  -- Reduce to the parametrized equation on the output coordinate w.
-  -- The chain homotopy identity `Ψ¹ - Ψ⁰ = D⁻ ∘ 𝔥 + 𝔥 ∘ D⁺` on a homogeneous tensor
-  -- `α ⊗ x` reduces to verifying the equations on each output coordinate w.
-  rw [continuationMap_single_apply, continuationMap_single_apply]
-  rw [homotopyMap_single_apply h x hα]
-  rw [twistedDifferential_single_apply mP ℳ dM x w hα]
-  rw [homotopyMap_single_apply h x hα]
-  -- The remaining proof uses the parametrized cocycle equation:
-  -- d(h x w) = ν₁ x w - ν₀ x w + Σ_z (-1)^(ind x - ind z) • (mP x z * h z w)
-  --            + Σ_z (-1)^(ind x - indQ z) • (h x z * mQ z w)
-  -- and applies twistedDifferential to the homotopy map output, then verifies both sides match.
-  sorry
+  have hdα : dM α ∈ ℳ (q + 1) := hM.isHomogeneous.map_mem hα
+  have hγ : ∀ y, q.negOnePow • (op (h x y) • α) ∈ ℳ (q + (indQ y - ind x - 1)) := fun y ↦
+    Submodule.smul_of_tower_mem _ _ (op_smul_mem_of_mem_graded' (hh x y) hα)
+  have hδ : ∀ z, q.negOnePow • (op (mP x z) • α) ∈ ℳ (q + (ind z - ind x + 1)) := fun z ↦
+    Submodule.smul_of_tower_mem _ _ (op_smul_mem_of_mem_graded' (hm x z) hα)
+  -- The two continuation maps.
+  have hL : (continuationMap R M ν₁ (Pi.single x α) - continuationMap R M ν₀ (Pi.single x α)) w =
+      op (ν₁ x w) • α - op (ν₀ x w) • α := by
+    simp only [Pi.sub_apply, continuationMap_single_apply]
+  -- `D⁻ ∘ 𝔥`.
+  have hR₁ : twistedDifferential mQ ℳ dM (homotopyMap h ℳ (Pi.single x α)) w =
+      dM (q.negOnePow • (op (h x w) • α)) +
+        ∑ y, (q + (indQ y - ind x - 1)).negOnePow •
+          (op (mQ y w) • (q.negOnePow • (op (h x y) • α))) := by
+    rw [homotopyMap_single h x hα, map_sum, Finset.sum_apply]
+    simp only [fun y ↦ twistedDifferential_single_apply mQ dM y w (hγ y), Finset.sum_add_distrib,
+      Pi.single_apply, Finset.sum_ite_eq, Finset.mem_univ, ite_true]
+  -- `𝔥 ∘ D⁺`.
+  have hR₂ : homotopyMap h ℳ (twistedDifferential mP ℳ dM (Pi.single x α)) w =
+      (q + 1).negOnePow • (op (h x w) • dM α) +
+        ∑ z, (q + (ind z - ind x + 1)).negOnePow •
+          (op (h z w) • (q.negOnePow • (op (mP x z) • α))) := by
+    rw [twistedDifferential_single mP dM x hα, map_add, map_sum, Pi.add_apply, Finset.sum_apply,
+      homotopyMap_single_apply h x hdα w]
+    simp only [fun z ↦ homotopyMap_single_apply h z (hδ z) w]
+  set SQ := ∑ y, (ind x - indQ y).negOnePow • (op (h x y * mQ y w) • α) with hSQ_def
+  set SP := ∑ z, (ind x - ind z).negOnePow • (op (mP x z * h z w) • α) with hSP_def
+  have hSQ : ∑ y, (q + (indQ y - ind x - 1)).negOnePow •
+      (op (mQ y w) • (q.negOnePow • (op (h x y) • α))) = -SQ := by
+    rw [hSQ_def, ← Finset.sum_neg_distrib]
+    refine Finset.sum_congr rfl fun y _ ↦ ?_
+    have hexp : q + (indQ y - ind x - 1) + q =
+        (ind x - indQ y) + 1 + 2 * (indQ y - ind x - 1 + q) := by
+      ring
+    have hsign : (q + (indQ y - ind x - 1)).negOnePow * q.negOnePow =
+        -(ind x - indQ y).negOnePow := by
+      rw [← Int.negOnePow_add, hexp, Int.negOnePow_add, Int.negOnePow_succ, Int.negOnePow_two_mul,
+        mul_one]
+    rw [smul_comm (op (mQ y w)) q.negOnePow, smul_smul, hsign, op_mul, mul_smul, Units.neg_smul]
+  have hSP : ∑ z, (q + (ind z - ind x + 1)).negOnePow •
+      (op (h z w) • (q.negOnePow • (op (mP x z) • α))) = -SP := by
+    rw [hSP_def, ← Finset.sum_neg_distrib]
+    refine Finset.sum_congr rfl fun z _ ↦ ?_
+    have hexp : q + (ind z - ind x + 1) + q = (ind x - ind z) + 1 + 2 * (ind z - ind x + q) := by
+      ring
+    have hsign : (q + (ind z - ind x + 1)).negOnePow * q.negOnePow =
+        -(ind x - ind z).negOnePow := by
+      rw [← Int.negOnePow_add, hexp, Int.negOnePow_add, Int.negOnePow_succ, Int.negOnePow_two_mul,
+        mul_one]
+    rw [smul_comm (op (h z w)) q.negOnePow, smul_smul, hsign, op_mul, mul_smul, Units.neg_smul]
+  have hd : dM (q.negOnePow • (op (h x w) • α)) =
+      q.negOnePow • (op (h x w) • dM α) + op (d (h x w)) • α := by
+    rw [LinearMap.map_smul_of_tower, hM.leibniz hα (h x w), smul_add, smul_smul, Int.units_mul_self,
+      one_smul]
+  have hq : (q + 1).negOnePow • (op (h x w) • dM α) = -(q.negOnePow • (op (h x w) • dM α)) := by
+    rw [Int.negOnePow_succ, Units.neg_smul]
+  have hdh : op (d (h x w)) • α = (op (ν₁ x w) • α - op (ν₀ x w) • α) + SP + SQ := by
+    rw [hp x w, op_add, op_add, op_sub, add_smul, add_smul, sub_smul, Finset.op_sum, Finset.op_sum,
+      Finset.sum_smul, Finset.sum_smul]
+    simp only [op_smul]
+    simp only [smul_assoc, hSP_def, hSQ_def]
+  rw [Pi.add_apply, hL, hR₁, hR₂, hSQ, hSP, hd, hq, hdh]
+  abel
 
 end Properties
 
