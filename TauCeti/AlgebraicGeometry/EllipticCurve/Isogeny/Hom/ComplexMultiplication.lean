@@ -269,27 +269,35 @@ private theorem gaussianIntCMAction_sqrtd (ha₆ : W.a₆ = 0) {i : K} (hi : i ^
   rw [gaussianIntCMAction, TauCeti.CMAction.coe_mk, gaussianIntHom_apply]
   simp
 
+omit [W.IsElliptic] in
+/-- The automorphism `(x, y) ↦ (-x, iy)` pulls `x` back to `-x`. -/
+private theorem sqrtNegOneHom_mk_C_X (ha₆ : W.a₆ = 0) {i : K} (hi : i ^ 2 = -1) :
+    (W.sqrtNegOneHom ha₆ hi).toNonUnitalAlgHom (Affine.CoordinateRing.mk W (C X)) =
+      -Affine.genericX W := by
+  simp [sqrtNegOneHom, Affine.CoordinateRing.mk, VariableChange.inv_def, sqrtNegOneUnit, ← map_pow,
+    hi, Affine.genericX_def]
+
+omit [W.IsElliptic] in
+/-- The automorphism `(x, y) ↦ (-x, iy)` pulls `y` back to `iy`. -/
+private theorem sqrtNegOneHom_mk_Y (ha₆ : W.a₆ = 0) {i : K} (hi : i ^ 2 = -1) :
+    (W.sqrtNegOneHom ha₆ hi).toNonUnitalAlgHom (Affine.CoordinateRing.mk W Y) =
+      algebraMap K W.FunctionField i * Affine.genericY W := by
+  have hi3 : i ^ 3 = -i := by linear_combination i * hi
+  simp [sqrtNegOneHom, Affine.CoordinateRing.mk, VariableChange.inv_def, sqrtNegOneUnit,
+    Odd.neg_pow (n := 3) ⟨1, rfl⟩, ← map_pow, hi3, Affine.genericY_def,
+    ← IsScalarTower.algebraMap_apply K W.CoordinateRing W.FunctionField]
+
 /-- **The Gaussian integer `i` pulls `x` back to `-x`.** -/
 theorem gaussianIntCMAction_sqrtd_mk_C_X (ha₆ : W.a₆ = 0) {i : K} (hi : i ^ 2 = -1) :
     (W.gaussianIntCMAction ha₆ i hi Zsqrtd.sqrtd).toNonUnitalAlgHom
       (Affine.CoordinateRing.mk W (C X)) = -Affine.genericX W := by
-  rw [gaussianIntCMAction_sqrtd, sqrtNegOneHom, Hom.ofIsogeny_apply, variableChangeIsogeny_pullback,
-    variableChangePullback_apply, Affine.CoordinateRing.mk, AdjoinRoot.mk_C,
-    Affine.CoordinateRing.variableChangeEquiv_symm_of_X, ← map_pow, VariableChange.inv_def]
-  have hi2 : (-i) ^ 2 = -1 := by rw [neg_sq, hi]
-  simp [sqrtNegOneUnit, hi2, Affine.genericX_def, Affine.CoordinateRing.mk]
+  rw [gaussianIntCMAction_sqrtd, sqrtNegOneHom_mk_C_X]
 
 /-- **The Gaussian integer `i` pulls `y` back to `iy`.** -/
 theorem gaussianIntCMAction_sqrtd_mk_Y (ha₆ : W.a₆ = 0) {i : K} (hi : i ^ 2 = -1) :
     (W.gaussianIntCMAction ha₆ i hi Zsqrtd.sqrtd).toNonUnitalAlgHom
       (Affine.CoordinateRing.mk W Y) = algebraMap K W.FunctionField i * Affine.genericY W := by
-  rw [gaussianIntCMAction_sqrtd, sqrtNegOneHom, Hom.ofIsogeny_apply, variableChangeIsogeny_pullback,
-    variableChangePullback_apply, Affine.CoordinateRing.mk, AdjoinRoot.mk_X,
-    Affine.CoordinateRing.variableChangeEquiv_symm_root, ← map_pow, ← map_pow,
-    VariableChange.inv_def]
-  have hi3 : (-i) ^ 3 = i := by linear_combination -i * hi
-  simp [sqrtNegOneUnit, hi3, Affine.genericY_def, Affine.CoordinateRing.mk,
-    ← IsScalarTower.algebraMap_apply K W.CoordinateRing W.FunctionField]
+  rw [gaussianIntCMAction_sqrtd, sqrtNegOneHom_mk_Y]
 
 /-- **The curve `y² = x³ + a₄x` has geometric complex multiplication**, over every field `K`
 (Silverman III.10.1): the action of the Gaussian integers is defined over a separable closure of
