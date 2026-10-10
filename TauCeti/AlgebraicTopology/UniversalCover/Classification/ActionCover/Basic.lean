@@ -114,7 +114,7 @@ theorem actionCoveringSpace_proj :
   CoveringSpace.mk_proj _ _
 
 /-- The characteristic equality of total spaces, viewed as a homeomorphism. -/
-private def actionCoverTotalSpaceHomeomorph :
+def actionCoverTotalSpaceHomeomorph :
     (actionCoveringSpace x₀ A : TopCat) ≃ₜ ActionCover x₀ A :=
   TopCat.homeoOfIso (eqToIso (actionCoveringSpace_coe x₀ A))
 
@@ -243,7 +243,8 @@ def actionCoveringSpaceMap (f : A → B)
       (actionCoverProj_actionCoverTotalSpaceHomeomorph x₀ A e))
 
 /-- The induced map keeps the point of the universal cover and applies `f` to its label. -/
-private theorem actionCoverTotalSpaceHomeomorph_map (f : A → B)
+@[simp]
+theorem actionCoverTotalSpaceHomeomorph_map (f : A → B)
     (hf : ∀ (g : FundamentalGroup X x₀) a, f (g • a) = g • f a)
     (e : (actionCoveringSpace x₀ A : TopCat)) :
     actionCoverTotalSpaceHomeomorph x₀ B ((actionCoveringSpaceMap x₀ f hf).hom.left e) =
