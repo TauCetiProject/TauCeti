@@ -229,7 +229,8 @@ private lemma boxLifts_of_cut [DecidableEq ι] {H : (ι → ℝ) → B} {a b : �
   · rw [hIcc]
     refine (hG₁.congr fun x hx ↦ ?_).union_of_isClosed (hG₂.congr fun x hx ↦ ?_) isClosed_Icc
       isClosed_Icc
-    · simp [show x i ≤ s by simpa [b₁] using hx.2 i]
+    · have hxs : x i ≤ s := by simpa [b₁] using hx.2 i
+      simp [hxs]
     · by_cases hxs : x i ≤ s
       · have hxP : x ∈ P := by
           simpa [P, mem_lowerFaces, a₂, hx] using le_antisymm hxs (by simpa [a₂] using hx.1 i)
@@ -347,7 +348,8 @@ theorem hasHomotopyLiftingProperty_cube_of_exists_trivialization [TopologicalSpa
     obtain ⟨-, j, hj, hxj⟩ := mem_lowerFaces.1 hx
     rw [Finset.mem_singleton] at hj
     subst hj
-    simp only [H', g, hxj, Pi.zero_apply, show clamp 0 = 0 from Set.projIcc_left zero_le_one]
+    have hclamp0 : clamp 0 = 0 := Set.projIcc_left zero_le_one
+    simp only [H', g, hxj, Pi.zero_apply, hclamp0]
     exact (hH _).symm
   obtain ⟨G, hG, hpG, hGg⟩ := boxLifts_of_exists_trivialization h hH' 0 1
     (Finset.singleton_nonempty none) g hg.continuousOn hgH
