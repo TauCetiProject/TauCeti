@@ -266,8 +266,8 @@ theorem adjoint_leftSingularVector (i : Fin (finrank 𝕜 E)) :
   rw [leftSingularVector_def, map_smul, ← comp_apply, adjoint_comp_self_rightSingularBasis]
   simp [smul_smul, sq, ← mul_assoc]
 
-/-- The left singular vectors are eigenvectors of the target Gram operator `A A†` for the
-squared singular values. -/
+/-- The eigenvalue equation `A A† uᵢ = σᵢ² uᵢ` for the target Gram operator, at every index.
+When `σᵢ ≠ 0`, `uᵢ` is an eigenvector of `A A†` for `σᵢ²`; when `σᵢ = 0`, `uᵢ = 0`. -/
 theorem self_comp_adjoint_leftSingularVector (i : Fin (finrank 𝕜 E)) :
     (A ∘ₗ adjoint A) (A.leftSingularVector i) =
       ((A.singularValues i ^ 2 : ℝ) : 𝕜) • A.leftSingularVector i := by
