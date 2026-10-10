@@ -15,8 +15,9 @@ import TauCeti.Algebra.Ring.NegOnePow
 Let `(ℳ, dM)` be a differential graded `(A, B)`-bimodule and `m : P → P → B` a matrix of
 coefficients in `B`, indexed by a finite set `P`.  The twisted differential
 `TauCeti.twistedDifferential m ℳ dM` on `P → M` is built from the right `B`-action; the left
-`A`-action, applied pointwise, commutes with it up to the Koszul sign, so the twisted complex is a
-differential graded left `A`-module (`isDGLeftModule_twistedDifferential`).
+`A`-action, applied pointwise, satisfies the Koszul–Leibniz rule with it,
+`D (a • f) = dA a • f + (-1) ^ |a| a • D f`, so the twisted complex is a differential graded left
+`A`-module (`isDGLeftModule_twistedDifferential`).
 
 The case `A = B = M` of the regular bimodule is the complex `K_m`: the free left module `P → A` on
 the generators `x ∈ P`, with `x` in cohomological degree `-ind x` and `d x = Σ_y m x y · y`,
@@ -86,9 +87,7 @@ variable {R : Type uR} {A : Type uA} {B : Type uB} {M : Type uM}
   [SetLike.GradedSMul 𝒜 ℳ] [SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece ℳ]
 
 /-- **The Koszul–Leibniz rule on a homogeneous elementary tensor**: for `a` of degree `p` and `α`
-of degree `q`, `D (a • (α ⊗ x)) = dA a • (α ⊗ x) + (-1) ^ p a • D (α ⊗ x)`.  Both sides are
-computed by `twistedDifferential_single` and compared through the left Leibniz rule of the
-bimodule. -/
+of degree `q`, `D (a • (α ⊗ x)) = dA a • (α ⊗ x) + (-1) ^ p a • D (α ⊗ x)`. -/
 theorem twistedDifferential_smul_single [DecidableEq P] (hM : IsDGBimodule hA hB ℳ dM) {p : ℤ}
     {a : A} (ha : a ∈ 𝒜 p) (x : P) {q : ℤ} {α : M} (hα : α ∈ ℳ q) :
     twistedDifferential m ℳ dM (a • (Pi.single x α : P → M)) =
