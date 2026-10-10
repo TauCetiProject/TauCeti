@@ -105,6 +105,7 @@ def liftPath {p : C(E, B)} (x : MooreReplacement p) (δ : MoorePath B)
     simp only [path_mk]
     congr 1
 
+@[simp]
 theorem liftPath_apply {p : C(E, B)} (x : MooreReplacement p) (δ : MoorePath B)
     (h : δ.source = endpoint p x) (s : ℝ≥0) :
     liftPath x δ h s = mk x.point (x.path.trans (δ.truncate s)
@@ -143,6 +144,7 @@ def endpointLiftingFunction (p : C(E, B)) : MooreLiftingFunction (endpoint p) wh
   source_apply' y := source_liftPath _ _ y.source_path
   map_apply' y := map_liftPath _ _ y.source_path
 
+@[simp]
 theorem endpointLiftingFunction_lift {p : C(E, B)} (x : MooreReplacement p) (δ : MoorePath B)
     (h : δ.source = endpoint p x) : (endpointLiftingFunction p).lift x δ h = liftPath x δ h := by
   simp [MooreLiftingFunction.lift_def, endpointLiftingFunction]
@@ -286,6 +288,7 @@ theorem act_one (x : Fiber p b) : x.act 1 = x :=
   ext (MooreReplacement.ext (by simp) (by simp))
 
 /-- The action is a right action: acting by `ω * ω'` is acting by `ω`, then by `ω'`. -/
+@[simp]
 theorem act_mul (x : Fiber p b) (ω ω' : MooreLoopSpace B b) :
     x.act (ω * ω') = (x.act ω).act ω' :=
   ext (MooreReplacement.ext (by simp) (by simp [MoorePath.trans_assoc]))
@@ -304,6 +307,7 @@ instance : MulAction (MooreLoopSpace B b)ᵐᵒᵖ (Fiber p b) where
   one_smul := act_one
   mul_smul ω ω' x := act_mul x ω'.unop ω.unop
 
+@[simp]
 theorem op_smul_eq_act (x : Fiber p b) (ω : MooreLoopSpace B b) : op ω • x = x.act ω :=
   (rfl)
 

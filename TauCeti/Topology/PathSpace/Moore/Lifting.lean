@@ -290,16 +290,11 @@ theorem fst_lift_apply (e : B × F) (γ : MoorePath B)
     (fst F).lift e γ h t = (γ t, e.2) :=
   (rfl)
 
-theorem fst_lift_length (e : B × F) (γ : MoorePath B)
-    (h : γ.source = (ContinuousMap.fst : C(B × F, B)) e) :
-    ((fst F).lift e γ h).length = γ.length :=
-  (rfl)
-
 /-- The lifting function of a product projection is transitive. -/
 theorem isTransitive_fst : (fst F).IsTransitive (B := B) where
   lift_trans e γ δ hγ h := by
     refine MoorePath.ext (by simp [MoorePath.length_trans]) fun t ↦ ?_
-    rw [fst_lift_apply, MoorePath.trans_apply, MoorePath.trans_apply, fst_lift_length]
+    rw [fst_lift_apply, MoorePath.trans_apply, MoorePath.trans_apply, length_lift]
     split_ifs
     · rw [fst_lift_apply]
     · refine Prod.ext ?_ ?_
