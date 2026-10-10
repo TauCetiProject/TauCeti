@@ -97,6 +97,47 @@ in the second. -/
 theorem mk_smul_left (g : G) (e : E) (a : A) : mk G (g • e) a = mk G e (g⁻¹ • a) :=
   Quotient.sound ⟨g, by simp⟩
 
+section Map
+
+variable {B C : Type*} [MulAction G B] [MulAction G C]
+
+/-- An equivariant map of labels induces a map of balanced products, keeping the first
+coordinate fixed. -/
+def mapRight (f : A → B) (hf : ∀ (g : G) a, f (g • a) = g • f a) :
+    BalancedProduct G E A → BalancedProduct G E B :=
+  Quotient.map' (Prod.map id f) fun _ _ ⟨g, hg⟩ => by
+    refine ⟨g, ?_⟩
+    rw [← hg]
+    exact Prod.ext rfl (hf g _).symm
+
+@[simp]
+theorem mapRight_mk (f : A → B) (hf : ∀ (g : G) a, f (g • a) = g • f a) (e : E) (a : A) :
+    mapRight f hf (mk G e a) = mk G e (f a) :=
+  (rfl)
+
+@[simp]
+theorem mapRight_id : mapRight (G := G) (E := E) (id : A → A) (fun _ _ => rfl) = id := by
+  funext z
+  induction z using Quotient.inductionOn with
+  | h p => rfl
+
+@[simp]
+theorem mapRight_comp (f : A → B) (hf : ∀ (g : G) a, f (g • a) = g • f a)
+    (k : B → C) (hk : ∀ (g : G) b, k (g • b) = g • k b) :
+    mapRight (G := G) (E := E) (k ∘ f) (fun g a => by simp only [Function.comp_apply, hf, hk]) =
+      mapRight k hk ∘ mapRight f hf := by
+  funext z
+  induction z using Quotient.inductionOn with
+  | h p => rfl
+
+/-- The map induced by a continuous equivariant label map is continuous. -/
+theorem continuous_mapRight [TopologicalSpace E] [TopologicalSpace A] [TopologicalSpace B]
+    (f : A → B) (hf : ∀ (g : G) a, f (g • a) = g • f a) (hfc : Continuous f) :
+    Continuous (mapRight (G := G) (E := E) f hf) :=
+  (continuous_id.prodMap hfc).quotient_map' _
+
+end Map
+
 variable (hq : ∀ (g : G) (e : E), q (g • e) = q e)
 
 variable (A) in
@@ -111,6 +152,14 @@ variable (A) in
 @[simp]
 theorem proj_mk (e : E) (a : A) : proj A hq (mk G e a) = q e :=
   (rfl)
+
+/-- A map of labels commutes with the balanced-product projections. -/
+@[simp]
+theorem proj_mapRight {B : Type*} [MulAction G B] (f : A → B)
+    (hf : ∀ (g : G) a, f (g • a) = g • f a) (z : BalancedProduct G E A) :
+    proj B hq (mapRight f hf z) = proj A hq z := by
+  induction z using Quotient.inductionOn with
+  | h p => rfl
 
 section Covering
 

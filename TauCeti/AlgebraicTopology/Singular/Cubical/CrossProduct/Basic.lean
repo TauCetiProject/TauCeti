@@ -97,6 +97,24 @@ theorem crossProduct_zero_right (c : SingularCube X p) (d : SingularCube Y 0)
     congr 1
   · exact congrArg d (Subsingleton.elim _ _)
 
+/-- A point on the left is a unit for the cross product of cubes, up to reindexing. -/
+theorem cast_crossProduct_point_left {q : ℕ} (x : X) (d : SingularCube Y q) :
+    cast (Nat.zero_add q) (crossProduct (point x) d) =
+      (ContinuousMap.prodMk (ContinuousMap.const Y x) (ContinuousMap.id Y)).comp d := by
+  apply ContinuousMap.ext
+  intro t
+  rw [cast_apply, crossProduct_zero_left, point_apply]
+  rfl
+
+/-- A point on the right is a unit for the cross product of cubes, up to reindexing. -/
+theorem cast_crossProduct_point_right {p : ℕ} (c : SingularCube X p) (y : Y) :
+    cast (Nat.add_zero p) (crossProduct c (point y)) =
+      (ContinuousMap.prodMk (ContinuousMap.id X) (ContinuousMap.const X y)).comp c := by
+  apply ContinuousMap.ext
+  intro t
+  rw [cast_apply, crossProduct_zero_right, point_apply]
+  rfl
+
 /-- Degeneracy in the first coordinate block is exactly degeneracy of the first factor. -/
 @[simp]
 theorem isDegenerateAt_crossProduct_castAdd_iff (c : SingularCube X p)
