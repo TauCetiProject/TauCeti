@@ -44,12 +44,6 @@ noncomputable def equivOfSubsingleton [Subsingleton M] : CliffordAlgebra Q â‰ƒâ‚
       rw [Subsingleton.elim x 0, map_zero]
       simp).trans CliffordAlgebraRing.equiv
 
-/-- The zero-dimensional Clifford equivalence fixes scalars. -/
-@[simp]
-theorem equivOfSubsingleton_algebraMap [Subsingleton M] (r : R) :
-    equivOfSubsingleton Q (algebraMap R (CliffordAlgebra Q) r) = r := by
-  exact (equivOfSubsingleton Q).commutes r
-
 /-- The inverse zero-dimensional Clifford equivalence is the scalar inclusion. -/
 @[simp]
 theorem equivOfSubsingleton_symm_apply [Subsingleton M] (r : R) :
