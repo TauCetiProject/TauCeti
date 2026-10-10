@@ -47,6 +47,7 @@ variable {R : Type u} [CommRing R] {m : ℕ}
 
 /-- The adjoint root-space condition is exactly membership of the corresponding
 root-subgroup differential image, after cotangent duality. -/
+@[simp↓ 1100]
 theorem mem_adjointWeightSpace_root_iff
     (root : GLSymplecticFin.RootSubgroupIndex m)
     (x : Module.Dual R (Bialgebra.CotangentSpace R (coordinateHopfAlgebra R m))) :
@@ -144,6 +145,17 @@ theorem rootSpaceEquiv_apply_coe (root : GLSymplecticFin.RootSubgroupIndex m) (c
   -- The additive tangent equivalence uses the symmetric-algebra coefficient presentation.
   erw [LinearEquiv.trans_apply, rootDifferentialEquiv_apply_coe,
     derivationComp_rootSubgroup_eq_smul_rootVector, LinearEquiv.apply_symm_apply, map_smul]
+
+/-- The coefficient from the inverse root-space trivialization reconstructs the vector
+in the cotangent dual. -/
+theorem rootSpaceEquiv_symm_apply_smul (root : GLSymplecticFin.RootSubgroupIndex m)
+    (x : Derivation.adjointWeightSpace (diagonalTorusCoordinateMap (R := R) (m := m)).hom
+      (Multiplicative.ofAdd ((diagonalRootDatum.{u} m).root root))) :
+    (rootSpaceEquiv (R := R) root).symm x •
+      (Derivation.cotangentLinearEquiv (B := R)).symm
+        (rootVector (R := R) (B := R) root) = x.val := by
+  rw [← rootSpaceEquiv_apply_coe]
+  exact congrArg Subtype.val ((rootSpaceEquiv (R := R) root).apply_symm_apply x)
 
 /-- The inverse differential recovers the additive tangent vector from its root-space
 coordinate. -/
