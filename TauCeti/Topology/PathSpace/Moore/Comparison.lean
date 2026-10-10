@@ -471,6 +471,9 @@ def toLengthOne : C(MooreLoopSpace X x, MooreLoopSpace X x) :=
     ⟨toPath, continuous_toPath⟩
 
 @[simp]
+theorem toLengthOne_apply (γ : MooreLoopSpace X x) : toLengthOne γ = γ.toPath.toMooreLoop :=
+  (rfl)
+
 theorem toMoorePath_toLengthOne (γ : MooreLoopSpace X x) :
     (toLengthOne γ).toMoorePath = MoorePath.toLengthOne γ.toMoorePath :=
   (rfl)
