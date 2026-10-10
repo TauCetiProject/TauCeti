@@ -187,7 +187,7 @@ theorem freyCurveModel_c₄ : (freyCurveModel α β).c₄ =
   ring
 
 /-- The discriminant of `freyCurveModel α β` is `(A β (A + B))²`, where `A = 4 α - 1` and
-`B = 16 β`; this is the discriminant `A² B² (A + B)²` of `freyCurve A B` divided by `2¹²`.
+`B = 16 β`; this is the discriminant `16 A² B² (A + B)²` of `freyCurve A B` divided by `2¹²`.
 -/
 @[simp]
 theorem freyCurveModel_Δ : (freyCurveModel α β).Δ =
