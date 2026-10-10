@@ -7,12 +7,10 @@ module
 
 public import Mathlib.NumberTheory.Padics.LocalField
 public import TauCeti.Algebra.QuadraticAlgebra.NormTrace
+public import TauCeti.FieldTheory.GaloisCohomology.MuTwo.PadicTwo
 public import TauCeti.FieldTheory.GaloisCohomology.MuTwo.Transfer
 public import TauCeti.FieldTheory.QuadraticForm.StiefelWhitney.Evens.Kummer.Value
-public import TauCeti.NumberTheory.LocalField.QuadraticForm.AnisotropicQuaternary
-public import TauCeti.NumberTheory.LocalField.QuadraticForm.PadicTwo
 public import TauCeti.NumberTheory.Padics.Basic
-import TauCeti.Algebra.Group.Units.Basic
 
 /-!
 # A nonzero Evens norm over `ℚ_2(i)`
@@ -55,15 +53,6 @@ local notation "finrank_eq_two" => QuadraticAlgebra.finrank_eq_two (-1 : ℚ_[2]
 
 local instance : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
 
-/-- The nonsquareness of `-1` supplies Mathlib's field structure on `ℚ_2(i)`. -/
-instance : Fact (¬ IsSquare (-1 : ℚ_[2])) := by
-  refine ⟨?_⟩
-  intro h
-  have hunit : IsSquare (-1 : ℚ_[2]ˣ) := isSquare_units_val_iff.mp (by simpa using h)
-  have := hilbertSymbol_eq_one_of_isSquare_left hunit (-1)
-  rw [hilbertSymbol_neg_one_neg_one_padicTwo] at this
-  norm_num at this
-
 private theorem one_add_two_mul_i_ne_zero : (1 + 2 * i : DyadicSqrtNegOne) ≠ 0 := by
   intro h
   have him := congrArg QuadraticAlgebra.im h
@@ -94,7 +83,7 @@ instance : Algebra.IsSeparable ℚ_[2] DyadicSqrtNegOne := by
   let : PerfectField ℚ_[2] := PerfectField.ofCharZero
   exact Algebra.IsAlgebraic.isSeparable_of_perfectField
 
-variable [Invertible (2 : ℚ_[2])]
+local instance : Invertible (2 : ℚ_[2]) := invertibleOfNonzero (by norm_num)
 
 /-- **A nonzero dyadic Evens norm.** Along every embedding of `ℚ_2(i)` in a separable
 closure, the Evens norm of the class of `1 + 2i` is `(2) ∪ (5)`. -/
@@ -120,17 +109,8 @@ theorem galoisEvens_oneAddTwoI (σ : DyadicSqrtNegOne →ₐ[ℚ_[2]] SeparableC
     norm_num
   simpa only [h2, h5] using h
 
-/-- The cup `(2) ∪ (5)` over `ℚ_2` is nonzero, since `(2,5)_{ℚ_2} = -1`. -/
-theorem _root_.TauCeti.cup_kummerClass_two_five_ne_zero_padicTwo :
-    (trivialF2TopPairing (AbsoluteGaloisGroup ℚ_[2])).cup 1 1
-      (kummerClass (Units.mk0 (2 : ℚ_[2]) two_ne_zero))
-      (kummerClass (Units.mk0 (5 : ℚ_[2]) (by norm_num))) ≠ 0 := by
-  rw [Ne, cup_kummerClass_eq_zero_iff_hilbertSymbol_eq_one,
-    hilbertSymbol_two_five_padicTwo]
-  norm_num
-
 /-- Kahn's expression gives the same value: its extra cup `(2) ∪ (-1)` vanishes. -/
-theorem galoisEvens_oneAddTwoI_eq_kahn
+theorem galoisEvens_oneAddTwoI_eq_cup_add_cup
     (σ : DyadicSqrtNegOne →ₐ[ℚ_[2]] SeparableClosure ℚ_[2]) :
     galoisEvens ℚ_[2] DyadicSqrtNegOne σ finrank_eq_two (kummerClass oneAddTwoI) =
       (trivialF2TopPairing (AbsoluteGaloisGroup ℚ_[2])).cup 1 1
@@ -148,17 +128,6 @@ theorem galoisEvens_oneAddTwoI_ne_zero
     galoisEvens ℚ_[2] DyadicSqrtNegOne σ finrank_eq_two (kummerClass oneAddTwoI) ≠ 0 := by
   rw [galoisEvens_oneAddTwoI]
   exact cup_kummerClass_two_five_ne_zero_padicTwo
-
-/-- Over `ℚ_2`, the two nonzero quaternion cups `(2) ∪ (5)` and `(-1) ∪ (-1)` agree. -/
-theorem _root_.TauCeti.cup_kummerClass_two_five_eq_neg_one_neg_one_padicTwo :
-    (trivialF2TopPairing (AbsoluteGaloisGroup ℚ_[2])).cup 1 1
-      (kummerClass (Units.mk0 (2 : ℚ_[2]) two_ne_zero))
-      (kummerClass (Units.mk0 (5 : ℚ_[2]) (by norm_num))) =
-    (trivialF2TopPairing (AbsoluteGaloisGroup ℚ_[2])).cup 1 1
-      (kummerClass (-1)) (kummerClass (-1)) := by
-  apply (cup_kummerClass_eq_cup_kummerClass_iff_quaternionClass_eq _ _ _ _).2
-  exact (BrauerGroup.quaternionClass_eq_iff_hilbertSymbol_eq _ _ _ _).2
-    (hilbertSymbol_two_five_padicTwo.trans hilbertSymbol_neg_one_neg_one_padicTwo.symm)
 
 /-- Adding the alternative correction `(-1) ∪ (-1)` makes the dyadic example zero,
 whereas the genuine Evens norm is nonzero. -/

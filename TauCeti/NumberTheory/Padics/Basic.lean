@@ -10,16 +10,16 @@ public import Mathlib.NumberTheory.Padics.PadicNumbers
 /-!
 # Basic instances for the `p`-adic numbers
 
-A direct nontriviality witness from Mathlib's field structure keeps instance search from
-backtracking through Henselian-ring instances. In particular, the rank and freeness instances
-used in `p`-adic trace calculations can be synthesized within the default search budget.
+This file supplies the canonical `Nontrivial ℚ_[p]` instance for prime `p`. It supports
+finite-dimensional constructions over the `p`-adic field, including algebraic trace and norm
+calculations for finite extensions.
 -/
 
 public section
 
 namespace TauCeti
 
-/-- The `p`-adic field is nontrivial, directly from Mathlib's field structure. -/
+/-- For prime `p`, the `p`-adic field has distinct zero and one. -/
 instance (p : ℕ) [Fact (Nat.Prime p)] : Nontrivial ℚ_[p] :=
   @DivisionRing.toNontrivial _ (instFieldPadic p).toDivisionRing
 

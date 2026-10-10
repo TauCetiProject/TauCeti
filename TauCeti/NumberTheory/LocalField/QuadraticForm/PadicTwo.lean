@@ -143,6 +143,15 @@ theorem hilbertSymbol_neg_one_neg_one_padicTwo : hilbertSymbol (-1 : ℚ_[2]ˣ) 
   exact (Int.units_eq_one_or _).resolve_left fun h ↦ not_hilbertSymbol_generators_eq_one hc
     hilbertSymbol_neg_one_unitTwo h hilbertSymbol_neg_one_unitFive
 
+/-- `-1` is not a square in `ℚ_2`, so the quadratic algebra `ℚ_2(i)` is a field. -/
+instance : Fact (¬ IsSquare (-1 : ℚ_[2])) := by
+  refine ⟨?_⟩
+  intro h
+  have hunit : IsSquare (-1 : ℚ_[2]ˣ) := isSquare_units_val_iff.mp (by simpa using h)
+  have := hilbertSymbol_eq_one_of_isSquare_left hunit (-1)
+  rw [hilbertSymbol_neg_one_neg_one_padicTwo] at this
+  norm_num at this
+
 /-- `(2, 5) = −1` over `ℚ_2`: `5` is not of the form `x² − 2 y²` with `x, y ∈ ℚ_2`. -/
 theorem hilbertSymbol_two_five_padicTwo :
     hilbertSymbol (Units.mk0 (2 : ℚ_[2]) two_ne_zero) (Units.mk0 5 (by norm_num)) = -1 := by
