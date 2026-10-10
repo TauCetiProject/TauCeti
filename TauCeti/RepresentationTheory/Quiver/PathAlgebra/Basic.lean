@@ -61,6 +61,8 @@ idempotents `e`, so left multiplication by `α` carries the `i`-component of a l
 * `TauCeti.vertexIdempotent_mul_mul_vertexIdempotent`: when the trivial path is the only path from
   `v` to itself, `eᵥ f eᵥ` is the coefficient of `f` on that path, times `eᵥ`, so the corner
   `eᵥ kQ eᵥ` is a copy of `k`. This is what makes the trivial paths visible to a two-sided ideal.
+* `TauCeti.PathAlgebra.sum_mul_ofArrow_eq_zero_iff`: uniqueness of the first-arrow decomposition
+  `∑_a f_a a`.
 * `TauCeti.PathAlgebra.adjoin_vertexIdempotents_union_arrows`: the vertex idempotents and arrows
   generate the path algebra.
 
@@ -1180,6 +1182,35 @@ theorem pathAlgebraBasis_repr_mul_ofPath_toPath_toPath_comp_of_ne {i j j' t : Q}
     (f : pathAlgebra k Q) :
     (pathAlgebraBasis k Q).repr (f * ofPath ⟨i, j', a'.toPath⟩) ⟨i, t, a.toPath.comp q⟩ = 0 :=
   pathAlgebraBasis_repr_mul_ofArrow_toPath_comp_of_ne a a' ha q f
+
+/-- **Uniqueness of the first-arrow decomposition.** A sum `∑_{a : i ⟶ j} f_a a` vanishes exactly
+when each `f_a` is killed by the vertex idempotent at the target of `a`: distinct arrows `a` out of
+`i` followed by paths `q` are distinct basis paths. Only the part `f_a eⱼ` of `f_a` on paths
+starting at `j` contributes to `f_a a`. -/
+theorem sum_mul_ofArrow_eq_zero_iff {i : Q} [Fintype ((j : Q) × (i ⟶ j))]
+    {f : (j : Q) × (i ⟶ j) → pathAlgebra k Q} :
+    ∑ a, f a * ofArrow a.2 = 0 ↔ ∀ a, f a * vertexIdempotent k a.1 = 0 := by
+  classical
+  constructor
+  · intro h a
+    refine (pathAlgebraBasis k Q).repr.injective (Finsupp.ext fun x => ?_)
+    obtain ⟨s, t, q⟩ := x
+    rw [pathAlgebraBasis_repr_mul_vertexIdempotent, map_zero, Finsupp.coe_zero, Pi.zero_apply]
+    split_ifs with hs
+    · subst hs
+      -- Read off the coordinate of the sum on the arrow `a` followed by `q`.
+      have h' := congrArg (fun F => (pathAlgebraBasis k Q).repr F ⟨i, t, a.2.toPath.comp q⟩) h
+      simp only [map_sum, Finsupp.coe_finsetSum, Finset.sum_apply, map_zero,
+        Finsupp.coe_zero, Pi.zero_apply] at h'
+      rw [Finset.sum_eq_single a, pathAlgebraBasis_repr_mul_ofArrow_toPath_comp] at h'
+      · exact h'
+      · intro a' _ ha'
+        exact pathAlgebraBasis_repr_mul_ofArrow_toPath_comp_of_ne a.2 a'.2 ha' q _
+      · simp
+    · rfl
+  · intro h
+    refine Finset.sum_eq_zero fun a _ => ?_
+    rw [ofArrow_eq_ofPath, ← vertexIdempotent_mul_ofPath, ← mul_assoc, h, zero_mul]
 
 end ArrowCoordinates
 
