@@ -29,6 +29,39 @@ for the ramification divisor of a linear series.
 
 public section
 
+namespace TauCeti
+
+/-- Differentiating a finite sum of iterates produces the next rescaling coefficients. -/
+private theorem sum_rescaleCoefficients {k R : Type*}
+    [CommSemiring k] [CommRing R] [Algebra k R]
+    (D : Derivation k R R) (a : R) (c : ℕ → R) (i : ℕ) (z : R)
+    (hc : c (i + 1) = 0) :
+    a * D (∑ j ∈ Finset.range (i + 1), c j * (D : R → R)^[j] z) =
+      ∑ j ∈ Finset.range (i + 2),
+        (a * D (c j) + if j = 0 then 0 else a * c (j - 1)) * (D : R → R)^[j] z := by
+  calc
+    _ = (∑ j ∈ Finset.range (i + 1), a * D (c j) * (D : R → R)^[j] z) +
+        ∑ j ∈ Finset.range (i + 1), a * c j * (D : R → R)^[j + 1] z := by
+      simp [map_sum, D.leibniz, Finset.mul_sum, Finset.sum_add_distrib,
+        Function.iterate_succ_apply', mul_add, mul_comm, mul_assoc, add_comm]
+    _ = (∑ j ∈ Finset.range (i + 2), a * D (c j) * (D : R → R)^[j] z) +
+        ∑ j ∈ Finset.range (i + 2),
+          (if j = 0 then 0 else a * c (j - 1)) * (D : R → R)^[j] z := by
+      congr 1
+      · rw [Finset.sum_range_succ
+          (fun j ↦ a * D (c j) * (D : R → R)^[j] z) (i + 1)]
+        simp [hc]
+      · rw [Finset.sum_range_succ'
+          (fun j ↦ (if j = 0 then 0 else a * c (j - 1)) * (D : R → R)^[j] z) (i + 1)]
+        simp
+    _ = _ := by
+      rw [← Finset.sum_add_distrib]
+      apply Finset.sum_congr rfl
+      intro j hj
+      ring
+
+end TauCeti
+
 namespace Derivation
 
 variable {k R : Type*} [CommSemiring k] [CommRing R] [Algebra k R]
@@ -46,7 +79,6 @@ private theorem exists_rescaleCoefficients (D : Derivation k R R) (a : R) (i : �
   | succ i ih =>
       obtain ⟨c, hc, hdiag, hiter⟩ := ih
       let d : ℕ → R := fun j ↦ a * D (c j) + if j = 0 then 0 else a * c (j - 1)
-      have hd0 : d 0 = a * D (c 0) := by simp [d]
       have hd (j : ℕ) : d (j + 1) = a * D (c (j + 1)) + a * c j := by simp [d]
       have hlast : c (i + 1) = 0 := hc _ (by omega)
       refine ⟨d, ?_, ?_, fun z ↦ ?_⟩
@@ -54,28 +86,8 @@ private theorem exists_rescaleCoefficients (D : Derivation k R R) (a : R) (i : �
         have hj0 : j ≠ 0 := by omega
         simp [d, hj0, hc j (by omega), hc (j - 1) (by omega)]
       · simp [hd, hlast, hdiag, pow_succ, mul_comm]
-      · have hshift :
-            (∑ j ∈ Finset.range (i + 1), D (c (j + 1)) * (D : R → R)^[j + 1] z) +
-                D (c 0) * z =
-              ∑ j ∈ Finset.range (i + 1), D (c j) * (D : R → R)^[j] z := by
-          calc
-            _ = ∑ j ∈ Finset.range (i + 1 + 1), D (c j) * (D : R → R)^[j] z := by
-              simpa only [Function.iterate_zero_apply] using
-                (Finset.sum_range_succ' (fun j ↦ D (c j) * (D : R → R)^[j] z) (i + 1)).symm
-            _ = _ := by rw [Finset.sum_range_succ]; simp [hlast]
-        rw [Function.iterate_succ_apply', hiter, Derivation.smul_apply, smul_eq_mul,
-          map_sum]
-        simp only [D.leibniz, smul_eq_mul]
-        rw [Finset.sum_range_succ' (fun j ↦ d j * (D : R → R)^[j] z) (i + 1), hd0]
-        simp_rw [hd, add_mul]
-        simp only [mul_assoc]
-        simp only [Finset.sum_add_distrib, ← Finset.mul_sum]
-        simp_rw [Function.iterate_succ_apply'] at hshift
-        simp_rw [Function.iterate_succ_apply']
-        simp_rw [mul_comm ((D : R → R)^[_] z) (D (c _))]
-        rw [← hshift]
-        simp only [Function.iterate_zero_apply]
-        ring
+      · rw [Function.iterate_succ_apply', hiter, Derivation.smul_apply, smul_eq_mul]
+        exact TauCeti.sum_rescaleCoefficients D a c i z hlast
 
 /-- Rescaling a derivation by `a` multiplies an `n`-function Wronskian by
 `a ^ (n * (n - 1) / 2)`. The scalar need not be a constant of the derivation. -/
