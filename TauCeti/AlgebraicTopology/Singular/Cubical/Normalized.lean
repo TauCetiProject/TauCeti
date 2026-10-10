@@ -62,13 +62,8 @@ variable (R : Type*) [Semiring R]
 
 variable (X) in
 /-- The **degenerate `n`-chains**: the span of the degenerate singular `n`-cubes. -/
-def degenerate (n : ℕ) : Submodule R (CubicalChain X R n) :=
+@[expose] def degenerate (n : ℕ) : Submodule R (CubicalChain X R n) :=
   Submodule.span R {f | ∃ c : SingularCube X n, IsDegenerate c ∧ f = single c 1}
-
-theorem degenerate_def (n : ℕ) :
-    degenerate X R n =
-      Submodule.span R {f | ∃ c : SingularCube X n, IsDegenerate c ∧ f = single c 1} :=
-  (rfl)
 
 theorem single_mem_degenerate {n : ℕ} {c : SingularCube X n} (hc : IsDegenerate c) (a : R) :
     single c a ∈ degenerate X R n := by
