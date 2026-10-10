@@ -72,6 +72,8 @@ for instance from a completion of a number field to a concrete model such as `�
   comparison of absolute Galois groups.
 * `TauCeti.ClassFieldTheory.artinMap_restrict`: the finite restrictions of the absolute local
   Artin map are the finite local Artin maps.
+* `TauCeti.ClassFieldTheory.mem_normGroup_of_mk_eq_artinMap`: an element whose Artin symbol has a
+  lift fixing a finite Galois extension `M` is a norm from `M`.
 * `TauCeti.ClassFieldTheory.denseRange_artinMap`: the absolute local Artin map has dense image.
 * `TauCeti.ClassFieldTheory.exists_artinMap_mem_iff`: the preimage of an open subgroup of
   `G_K^ab` is a norm subgroup.
@@ -154,6 +156,23 @@ theorem artinMap_restrict (L : Type*) [Field L] [Algebra K L] [FiniteDimensional
     ← (localClassFormation K).abelianizationRestrict_absoluteArtinMap, habs,
     abelianizationRestrict_mk V ⟨_, hmem⟩, MulEquiv.toAdditive_apply_apply, toMul_ofMul,
     abelianizationCongr_of, layerGalEquiv_mk]
+
+/-- **An Artin symbol that fixes a finite Galois extension is a norm from it.** If
+`σ ∈ Gal(AlgebraicClosure K/K)` represents the absolute Artin symbol of `x ∈ Kˣ` and fixes a finite
+Galois extension `M` of `K` inside `AlgebraicClosure K` pointwise, then `x` is a norm from `M`. -/
+theorem mem_normGroup_of_mk_eq_artinMap (M : IntermediateField K (AlgebraicClosure K))
+    [FiniteDimensional K M] [IsGalois K M] (x : Kˣ) (σ : Field.absoluteGaloisGroup K)
+    (hσ : (σ : Field.absoluteGaloisGroupAbelianization K) = artinMap K x)
+    (hM : ∀ y : M, DFunLike.coe (F := Gal(AlgebraicClosure K/K)) σ (y : AlgebraicClosure K) = y) :
+    x ∈ normGroup K M := by
+  let ι : M →ₐ[K] SeparableClosure K :=
+    IntermediateField.inclusion (le_separableClosure K (AlgebraicClosure K) M)
+  -- The restriction of `σ` to `M` is trivial, so the finite Artin symbol of `x` is.
+  have h1 : ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv K σ) = 1 :=
+    ι.restrictNormalHom_eq_iff.2 fun y ↦
+      Subtype.ext ((coe_absoluteGaloisGroupRestrictEquiv_apply K σ (ι y)).trans (hM y))
+  refine (localArtinMap_eq_zero_iff K M ι x).1 ((artinMap_restrict K M ι x σ hσ).trans ?_)
+  rw [h1, map_one, ofMul_one]
 
 /-- **The absolute local Artin map has dense image**: it reaches every finite quotient of
 `G_K^ab`, because every finite local Artin map is surjective. -/

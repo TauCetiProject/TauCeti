@@ -14,6 +14,7 @@ import Mathlib.NumberTheory.LegendreSymbol.Basic
 import Mathlib.NumberTheory.Padics.RingHoms
 import TauCeti.Algebra.Group.Units.Basic
 import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
+import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
 # Normalization of the p-adic absolute value
@@ -34,7 +35,7 @@ concrete p-adic norm and valuation APIs.
   `Padic.natCastValuation_two` are the two values it takes on the residue prime and on `2`.
 * `TauCeti.Padic.irreducible_natCast_self` shows that the residue prime is a uniformizer of
   the integer ring, and `TauCeti.Padic.isUniformizer_natCast_self` that it is a uniformizer of
-  `ℚ_[p]`.
+  `ℚ_[p]`; so is `p u` for every `u ∈ ℤ_pˣ`, `TauCeti.Padic.isUniformizer_natCast_self_mul_unit`.
 * `Padic.not_isSquare_neg_one_of_mod_four_eq_three`: `-1` is nonsquare in `ℚ_[p]` when
   `p ≡ 3 (mod 4)`.
 * `Padic.not_isSquare_intCast_of_not_isSquare_zmod`: an integer that is not a square modulo a
@@ -222,5 +223,17 @@ theorem isUniformizer_natCast_self :
   apply Multiplicative.toAdd.injective
   rw [_root_.Padic.toAdd_normalizedValuation_eq_valuation, Units.val_mk0, _root_.Padic.valuation_p,
     toAdd_ofAdd]
+
+/-- The residue prime `p` times a unit `u ∈ ℤ_pˣ` is a uniformizer of `ℚ_[p]`. -/
+theorem isUniformizer_natCast_self_mul_unit (u : ℤ_[p]ˣ) :
+    IsUniformizer ℚ_[p] (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero) *
+      Units.map (algebraMap ℤ_[p] ℚ_[p]).toMonoidHom u) := by
+  rw [isUniformizer_def, map_mul, (isUniformizer_def _).1 (isUniformizer_natCast_self p),
+    mul_eq_left]
+  apply Multiplicative.toAdd.injective
+  simp only [_root_.Padic.toAdd_normalizedValuation_eq_valuation, Units.coe_map,
+    RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, PadicInt.algebraMap_apply,
+    PadicInt.valuation_coe, PadicInt.valuation_eq_zero_of_isUnit u.isUnit, Nat.cast_zero,
+    toAdd_one]
 
 end TauCeti.Padic

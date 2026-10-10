@@ -60,6 +60,8 @@ indexed by the separable closure.
   normal extension.
 * `TauCeti.mem_perfectClosure_iff_fixed`: the fixed field of `Gal(E/F)` for a normal
   extension `E/F` is the relative perfect closure of `F` in `E`.
+* `TauCeti.absoluteGaloisGroup_pow_apply_eq_pow_pow`: if `g ∈ Field.absoluteGaloisGroup K` acts
+  on the `N`-th roots of unity by `w ↦ w ^ c`, then `g ^ i` acts on them by `w ↦ w ^ c ^ i`.
 
 ## References
 
@@ -367,6 +369,42 @@ instance : TotallySeparatedSpace (Field.absoluteGaloisGroup K) :=
 
 -- the two instances above are what make the profinite group object available
 example : ProfiniteGrp := ProfiniteGrp.of (Field.absoluteGaloisGroup K)
+
+/-! ### The action on the algebraic closure
+
+`Field.absoluteGaloisGroup K` is a plain definition, so its elements act on `AlgebraicClosure K`
+only through an explicit coercion via `Gal(AlgebraicClosure K/K)`, whose group laws it carries by
+definition. The next lemmas compute this action on products, on the identity and on powers. -/
+
+variable {K} in
+/-- A product in `Field.absoluteGaloisGroup K` acts on `AlgebraicClosure K` by composition. -/
+@[simp]
+theorem absoluteGaloisGroup_mul_apply (a b : Field.absoluteGaloisGroup K)
+    (w : AlgebraicClosure K) :
+    DFunLike.coe (F := Gal(AlgebraicClosure K/K)) (a * b) w =
+      DFunLike.coe (F := Gal(AlgebraicClosure K/K)) a
+        (DFunLike.coe (F := Gal(AlgebraicClosure K/K)) b w) :=
+  AlgEquiv.mul_apply (A₁ := AlgebraicClosure K) a b w
+
+/-- The identity of `Field.absoluteGaloisGroup K` acts trivially on `AlgebraicClosure K`. -/
+@[simp]
+theorem absoluteGaloisGroup_one_apply (w : AlgebraicClosure K) :
+    DFunLike.coe (F := Gal(AlgebraicClosure K/K)) (1 : Field.absoluteGaloisGroup K) w = w :=
+  AlgEquiv.one_apply (A₁ := AlgebraicClosure K) w
+
+variable {K} in
+/-- If `g` acts on the `N`-th roots of unity by `w ↦ w ^ c`, then `g ^ i` acts on them by
+`w ↦ w ^ c ^ i`. -/
+theorem absoluteGaloisGroup_pow_apply_eq_pow_pow {g : Field.absoluteGaloisGroup K} {N c : ℕ}
+    (hg : ∀ w : AlgebraicClosure K, w ^ N = 1 →
+      DFunLike.coe (F := Gal(AlgebraicClosure K/K)) g w = w ^ c)
+    (i : ℕ) {w : AlgebraicClosure K} (hw : w ^ N = 1) :
+    DFunLike.coe (F := Gal(AlgebraicClosure K/K)) (g ^ i) w = w ^ c ^ i := by
+  induction i generalizing w with
+  | zero => rw [pow_zero, pow_zero, pow_one, absoluteGaloisGroup_one_apply]
+  | succ i ih =>
+    rw [pow_succ, absoluteGaloisGroup_mul_apply, hg w hw,
+      ih (by rw [← pow_mul, mul_comm, pow_mul, hw, one_pow]), ← pow_mul, pow_succ, mul_comm]
 
 /-- The absolute Galois group of a separably closed field is trivial. -/
 instance [IsSepClosed K] : Subsingleton (AbsoluteGaloisGroup K) := by

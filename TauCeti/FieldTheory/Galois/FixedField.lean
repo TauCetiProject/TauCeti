@@ -86,6 +86,8 @@ inseparable extension can only be indexed by the intermediate fields of the sepa
 * `FixedPoints.isCyclic_algEquiv`
 * `AlgEquiv.toFixedFieldAlgEquiv`, with `AlgEquiv.zpowers_toFixedFieldAlgEquiv_eq_top` and
   `AlgEquiv.card_algEquiv_fixedField_zpowers`
+* `AlgEquiv.restrictNormalHom_mem_of_forall_mem_fixedField`: an automorphism fixing the fixed
+  field of `H ≤ Gal(L/K)` restricts to an element of `H`, for `L` finite and normal
 * `TauCeti.natCard_algEquiv_dvd_finrank`: the automorphism group of a finite extension has order
   dividing the degree, since that order is the degree over the field fixed by all automorphisms
 -/
@@ -556,6 +558,16 @@ theorem card_algEquiv_fixedField_zpowers (σ : M ≃ₐ[K] M) [Finite (Subgroup.
       AlgEquiv.restrictScalarsHom_apply, restrictScalars_toFixedFieldAlgEquiv]
   rw [← Subgroup.card_top (G := M ≃ₐ[IntermediateField.fixedField (Subgroup.zpowers σ)] M),
     ← zpowers_toFixedFieldAlgEquiv_eq_top σ, Nat.card_zpowers, horder]
+
+/-- **Restriction lands in `H` when it fixes `L ^ H`.** For a finite normal intermediate field `L`
+of `M / K` and a subgroup `H ≤ Gal(L/K)`, an automorphism of `M` fixing the fixed field of `H`
+pointwise restricts to an element of `H`, by the Galois correspondence in `L`. -/
+theorem restrictNormalHom_mem_of_forall_mem_fixedField (L : IntermediateField K M) [Normal K L]
+    [FiniteDimensional K L] {H : Subgroup Gal(L/K)} {σ : Gal(M/K)}
+    (hσ : ∀ x ∈ fixedField H, σ (x : M) = x) : restrictNormalHom L σ ∈ H := by
+  rw [← fixingSubgroup_fixedField H]
+  exact (mem_fixingSubgroup_iff _ _).2 fun x hx ↦ Subtype.ext <|
+    (restrictNormal_commutes σ L x).trans (hσ x hx)
 
 end AlgEquiv
 
