@@ -58,7 +58,7 @@ def fieldArtinMap : Kˣ →* Field.absoluteGaloisGroupAbelianization K :=
     (MonoidHom.toAdditive.symm
       (F.absoluteArtinMap.comp
         (unitsLevelEquiv (Algebra.ofId K (SeparableClosure K))
-          (fixedField_toSubgroup_top K)).toAddMonoidHom))
+          (fixedField_toSubgroup_top_eq_fieldRange K)).toAddMonoidHom))
 
 /-- **`F.fieldArtinMap` is the absolute Artin map of `F`**: the absolute Artin symbol of `x ∈ Kˣ`,
 regarded as an element of the ground level `((Kˢ)ˣ)^{G_K}`, carried from `Gal(Kˢ/K)^ab` to
@@ -66,7 +66,8 @@ regarded as an element of the ground level `((Kˢ)ˣ)^{G_K}`, carried from `Gal(
 theorem fieldArtinMap_apply (x : Kˣ) :
     F.fieldArtinMap x = (absoluteGaloisGroupRestrictEquiv K).symm.topologicalAbelianizationCongr
       (F.absoluteArtinMap
-        (unitsLevelEquiv (Algebra.ofId K (SeparableClosure K)) (fixedField_toSubgroup_top K)
+        (unitsLevelEquiv (Algebra.ofId K (SeparableClosure K))
+          (fixedField_toSubgroup_top_eq_fieldRange K)
           (Additive.ofMul x))).toMul := by
   rw [fieldArtinMap, MonoidHom.comp_apply, MonoidHom.toAdditive_symm_apply_apply]
   simp only [ContinuousMulEquiv.toMulEquiv_eq_coe, MulEquiv.toMonoidHom_eq_coe,
@@ -78,7 +79,8 @@ symbol of `x` for `F` is the class of the restriction of `σ` to the separable c
 theorem absoluteArtinMap_eq_of_mk_eq_fieldArtinMap (x : Kˣ) (σ : Field.absoluteGaloisGroup K)
     (hσ : (σ : Field.absoluteGaloisGroupAbelianization K) = F.fieldArtinMap x) :
     F.absoluteArtinMap
-        (unitsLevelEquiv (Algebra.ofId K (SeparableClosure K)) (fixedField_toSubgroup_top K)
+        (unitsLevelEquiv (Algebra.ofId K (SeparableClosure K))
+          (fixedField_toSubgroup_top_eq_fieldRange K)
           (Additive.ofMul x)) =
       Additive.ofMul ((absoluteGaloisGroupRestrictEquiv K σ : AbsoluteGaloisGroup K) :
         TopologicalAbelianization (AbsoluteGaloisGroup K)) := by

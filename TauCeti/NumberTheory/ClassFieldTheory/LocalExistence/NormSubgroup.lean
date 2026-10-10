@@ -127,7 +127,8 @@ of the layer `V ◁ G_K`, is `localGroundEquiv K V x`. -/
 theorem groundEquivOfOpenNormal_unitsLevelEquiv
     (V : OpenNormalSubgroup (AbsoluteGaloisGroup K)) (x : Kˣ) :
     NormalLayer.groundEquivOfOpenNormal (unitsFormation K) V
-        (unitsLevelEquiv (Algebra.ofId K (SeparableClosure K)) (fixedField_toSubgroup_top K)
+        (unitsLevelEquiv (Algebra.ofId K (SeparableClosure K))
+          (fixedField_toSubgroup_top_eq_fieldRange K)
           (Additive.ofMul x)) =
       localGroundEquiv K V (Additive.ofMul x) :=
   Subtype.ext (by simp)

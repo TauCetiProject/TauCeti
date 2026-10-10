@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex
+import TauCeti.Analysis.Complex.UpperHalfPlane.IdealRegion
 import TauCeti.Data.Fin.Basic
 
 /-!
@@ -19,9 +20,9 @@ a side can be a segment, a ray, or a full line.
 
 A point of the polygon on the supporting line of a side lies on that side: beyond a finite
 endpoint, the line leaves the closed half-plane of the adjacent side. Hence the boundary of the
-polygon is the union of its sides. A point near a regular side point, on the inner side of its
-line, is interior, so the interior is nonempty, and by convexity the polygon is the closure of
-its interior.
+polygon is the union of its sides, and so is null. A point near a regular side point, on the
+inner side of its line, is interior, so the interior is nonempty, and by convexity the polygon is
+the closure of its interior.
 
 ## Main results
 
@@ -31,6 +32,7 @@ its interior.
 * `ConvexPolygon.carrier_inter_range_sideGeodesic`: the polygon meets the supporting line of a
   side exactly in that side.
 * `ConvexPolygon.frontier_carrier`: the boundary is the union of the sides.
+* `ConvexPolygon.volume_frontier_carrier`: the boundary is a null set.
 * `ConvexPolygon.nonempty_interior_carrier`, `ConvexPolygon.closure_interior_carrier`: the
   interior is nonempty and dense in the polygon.
 
@@ -43,7 +45,7 @@ Beardon, *The Geometry of Discrete Groups*, Chapter 9.
 
 public section
 
-open Filter Set Topology UpperHalfPlane
+open Filter MeasureTheory Set Topology UpperHalfPlane
 open scoped MatrixGroups OnePoint
 
 namespace TauCeti.UpperHalfPlane.ConvexPolygon
@@ -211,6 +213,13 @@ theorem frontier_carrier : frontier P.carrier = ⋃ i, P.side i := by
   have hz := P.carrier_subset_closure_leftHalfPlane k hzc
   rw [closure_leftHalfPlane] at hz
   exact mem_iUnion.2 ⟨k, P.carrier_inter_range_sideGeodesic k ▸ ⟨hzc, hz.resolve_left hk⟩⟩
+
+/-- The boundary of a convex polygon is a null set: it is the union of finitely many sides, each
+contained in a geodesic line. -/
+theorem volume_frontier_carrier : volume (frontier P.carrier) = 0 := by
+  rw [P.frontier_carrier]
+  exact measure_iUnion_null fun i ↦
+    measure_mono_null (P.side_subset_range_sideGeodesic i) (volume_range_geodesicLine _)
 
 /-- A convex polygon has nonempty interior. -/
 theorem nonempty_interior_carrier : (interior P.carrier).Nonempty := by

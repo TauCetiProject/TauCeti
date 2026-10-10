@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Data.Nat.Choose.Lucas
 
+import Lean.Elab.Tactic.Omega
+
 /-!
 # Lucas' theorem with a nonzero last digit on top
 
@@ -21,6 +23,8 @@ needs.
 
 * `Choose.choose_mul_add_mul_modEq_choose_nat`: `choose (p * a + c) (p * b) ≡ choose a b [MOD p]`
   for `c < p`.
+* `TauCeti.Choose.choose_mul_choose_add_choose_modEq`: the parity identity
+  `C(2m, 2) C(2m - 1, 2) + C(2m + 1, 4) ≡ C(m, 2) [MOD 2]`.
 -/
 
 public section
@@ -39,3 +43,29 @@ theorem choose_mul_add_mul_modEq_choose_nat (hc : c < p) :
     Nat.mul_mod_right, Nat.mul_div_cancel_left _ hp, Nat.choose_zero_right, one_mul]
 
 end Choose
+
+namespace TauCeti.Choose
+
+/-- The parity identity
+`C(2m, 2) C(2m - 1, 2) + C(2m + 1, 4) ≡ C(m, 2) [MOD 2]`. -/
+theorem choose_mul_choose_add_choose_modEq (m : ℕ) :
+    (2 * m).choose 2 * (2 * m - 1).choose 2 + (2 * m + 1).choose 4 ≡ m.choose 2 [MOD 2] := by
+  rcases m with _ | k
+  · rfl
+  have hN := _root_.Choose.choose_mul_mul_modEq_choose_nat (p := 2) (a := k + 1) (b := 1)
+  have hC := _root_.Choose.choose_mul_add_mul_modEq_choose_nat
+    (p := 2) (a := k) (b := 1) one_lt_two
+  have hD := _root_.Choose.choose_mul_add_mul_modEq_choose_nat
+    (p := 2) (a := k + 1) (b := 2) one_lt_two
+  simp only [mul_one, Nat.reduceMul, Nat.choose_one_right] at hN hC hD
+  have hk : 2 * (k + 1) - 1 = 2 * k + 1 := by omega
+  rw [hk]
+  refine (Nat.ModEq.add (Nat.ModEq.mul hN hC) hD).trans ?_
+  obtain ⟨t, ht⟩ := Nat.even_mul_succ_self k
+  rw [mul_comm, ht]
+  unfold Nat.ModEq
+  omega
+
+end Choose
+
+end TauCeti

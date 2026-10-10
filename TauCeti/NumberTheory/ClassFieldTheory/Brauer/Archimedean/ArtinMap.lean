@@ -103,7 +103,7 @@ theorem infiniteArtinAt_apply (w : InfinitePlace K) (x : w.Completionˣ) :
       (absoluteGaloisGroupRestrictEquiv w.Completion).symm.topologicalAbelianizationCongr
         ((infiniteClassFormation w).absoluteArtinMap
           (unitsLevelEquiv (Algebra.ofId w.Completion (SeparableClosure w.Completion))
-            (fixedField_toSubgroup_top w.Completion) (Additive.ofMul x))).toMul :=
+            (fixedField_toSubgroup_top_eq_fieldRange w.Completion) (Additive.ofMul x))).toMul :=
   (infiniteClassFormation w).fieldArtinMap_apply x
 
 /-- **The archimedean Artin map on a layer.** If `σ ∈ Gal(AlgebraicClosure K_w/K_w)` represents

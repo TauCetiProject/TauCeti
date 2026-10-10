@@ -41,8 +41,14 @@ statements that use it.
 
 * `TauCeti.GradedLinearQuiver.mem_totalGrading_piece_iff`: an element of the total module has
   degree `n` exactly when each of its components has.
+* `TauCeti.GradedLinearQuiver.totalHom_induction` and
+  `TauCeti.GradedLinearQuiver.totalGrading_piece_induction`: induction on the total module, and on
+  its elements of a given degree, from the hom modules.
 * `TauCeti.GradedLinearQuiver.homInclusion_homProjection_of_mem_range`: an element of the image
   of a hom module is recovered from its component there.
+* `TauCeti.GradedLinearQuiver.multilinearMap_apply_mem`: a multilinear map of positive arity out
+  of the total module takes values in a submodule when it does so on composable strings and
+  vanishes on the other strings.
 * `TauCeti.GradedLinearQuiver.IsPathCompatible.ext`: a path-compatible operation is determined
   by its values on composable strings.
 * `TauCeti.GradedLinearQuiver.isPathCompatible_of_homogeneous`: path compatibility can be tested
@@ -113,10 +119,30 @@ theorem homInclusion_injective (X Y : C) :
     Function.Injective (homInclusion (R := R) X Y) :=
   Function.LeftInverse.injective (homProjection_homInclusion X Y)
 
+/-- The projection onto the morphisms `X ⟶ Y` evaluates an element of the direct sum at
+`(X, Y)`. -/
+theorem homProjection_apply (X Y : C) (x : TotalHom R C) : homProjection X Y x = x (X, Y) :=
+  (rfl)
+
 /-- Two elements of the total module of morphisms are equal when all of their components are. -/
 theorem totalHom_ext {x y : TotalHom R C}
     (h : ∀ X Y : C, homProjection X Y x = homProjection X Y y) : x = y :=
   DirectSum.ext_component R fun p ↦ h p.1 p.2
+
+/-- **Induction on the total module of morphisms**: a property closed under sums and holding on
+every hom module holds everywhere. -/
+@[elab_as_elim]
+theorem totalHom_induction {P : TotalHom R C → Prop} (zero : P 0)
+    (add : ∀ x y, P x → P y → P (x + y))
+    (homInclusion : ∀ X Y (f : homModule (R := R) X Y), P (homInclusion X Y f))
+    (x : TotalHom R C) : P x := by
+  classical
+  induction x using DirectSum.induction_on with
+  | zero => exact zero
+  | add x y hx hy => exact add x y hx hy
+  | of a f =>
+    have h := homInclusion a.1 a.2 f
+    rwa [homInclusion_eq_lof, DirectSum.lof_eq_of] at h
 
 /-- An element of the image of the morphisms `X ⟶ Y` is the inclusion of its component there. -/
 theorem homInclusion_homProjection_of_mem_range {X Y : C} {x : TotalHom R C}
@@ -138,6 +164,20 @@ theorem homProjection_mem_piece {n : ℤ} {x : TotalHom R C}
     (hx : x ∈ (totalGrading R C).piece n) (X Y : C) :
     homProjection X Y x ∈ (grading (R := R) X Y).piece n :=
   (mem_totalGrading_piece_iff n x).1 hx X Y
+
+/-- **Induction on the elements of degree `n` of the total module**: a property closed under sums
+and holding on the morphisms of degree `n` of every hom module holds on every element of degree
+`n`. -/
+theorem totalGrading_piece_induction {n : ℤ} {P : TotalHom R C → Prop} (zero : P 0)
+    (add : ∀ x y, P x → P y → P (x + y))
+    (homInclusion : ∀ X Y (f : homModule (R := R) X Y),
+      f ∈ (grading (R := R) X Y).piece n → P (homInclusion X Y f))
+    {x : TotalHom R C} (hx : x ∈ (totalGrading R C).piece n) : P x := by
+  classical
+  rw [← DirectSum.sum_support_of x]
+  refine Finset.sum_induction _ P add zero fun a _ ↦ ?_
+  have h := homInclusion a.1 a.2 _ (homProjection_mem_piece hx a.1 a.2)
+  rwa [homProjection_apply, homInclusion_eq_lof, DirectSum.lof_eq_of] at h
 
 /-- An included morphism has degree `n` in the total module exactly when it has degree `n`. -/
 @[simp]
@@ -184,6 +224,35 @@ private theorem exists_eq_of_chain {n : ℕ} (s t : Fin (n + 1) → C)
   | zero => simp
   | succ j => simp [Fin.rev_succ, Fin.succ_castSucc, -Fin.castSucc_succ, hst]
 
+/-- **Multilinear maps on the total module are controlled by strings of morphisms.** A
+multilinear map of positive arity out of the total module of morphisms takes values in a
+submodule `S` as soon as it sends every composable string into `S` and every string which is not
+composable to zero. -/
+theorem multilinearMap_apply_mem {M : Type*} [AddCommGroup M] [Module R M] {n : ℕ}
+    {f : MultilinearMap R (fun _ : Fin (n + 1) ↦ TotalHom R C) M} {S : Submodule R M}
+    (h : ∀ (X : Fin (n + 2) → C)
+      (x : ∀ i : Fin (n + 1), homModule (R := R) (X i.rev.castSucc) (X i.rev.succ)),
+        f (fun i ↦ homInclusion _ _ (x i)) ∈ S)
+    (h₀ : ∀ (s t : Fin (n + 1) → C) (x : ∀ i, homModule (R := R) (s i) (t i)) (i j : Fin (n + 1)),
+      (j : ℕ) = i + 1 → t j ≠ s i → f (fun k ↦ homInclusion (s k) (t k) (x k)) = 0)
+    (y : Fin (n + 1) → TotalHom R C) : f y ∈ S := by
+  classical
+  suffices key : ∀ (s t : Fin (n + 1) → C) (x : ∀ i, homModule (R := R) (s i) (t i)),
+      f (fun i ↦ homInclusion (s i) (t i) (x i)) ∈ S by
+    have hq : S.mkQ.compMultilinearMap f = 0 := by
+      refine MultilinearMap.directSum_ext fun p ↦ MultilinearMap.ext fun x ↦ ?_
+      have e (i : Fin (n + 1)) : DirectSum.lof R (C × C) (fun q ↦ homModule (R := R) q.1 q.2)
+          (p i) = homInclusion (p i).1 (p i).2 := (homInclusion_eq_lof _ _).symm
+      simpa [e] using key (fun i ↦ (p i).1) (fun i ↦ (p i).2) x
+    simpa using MultilinearMap.congr_fun hq y
+  intro s t x
+  by_cases hst : ∀ j : Fin n, t j.succ = s j.castSucc
+  · obtain ⟨X, rfl, rfl⟩ := exists_eq_of_chain s t hst
+    exact h X x
+  · obtain ⟨j, hj⟩ := not_forall.1 hst
+    rw [h₀ s t x j.castSucc j.succ (by simp) hj]
+    exact zero_mem S
+
 /-- **Path-compatible operations are determined by their values on composable strings.** -/
 theorem IsPathCompatible.ext {n : ℕ}
     {f g : MultilinearMap R (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C)}
@@ -192,27 +261,15 @@ theorem IsPathCompatible.ext {n : ℕ}
       (x : ∀ i : Fin n, homModule (R := R) (X i.rev.castSucc) (X i.rev.succ)),
         f (fun i ↦ homInclusion _ _ (x i)) = g fun i ↦ homInclusion _ _ (x i)) :
     f = g := by
-  classical
   rcases n with _ | n
   · refine MultilinearMap.ext fun x ↦ ?_
     rcases isEmpty_or_nonempty C with hC | ⟨⟨c⟩⟩
     · exact totalHom_ext fun X ↦ isEmptyElim X
     · obtain rfl : x = fun i ↦ homInclusion c c i.elim0 := Subsingleton.elim _ _
       exact h (fun _ ↦ c) fun i ↦ i.elim0
-  suffices key : ∀ (s t : Fin (n + 1) → C) (x : ∀ i, homModule (R := R) (s i) (t i)),
-      f (fun i ↦ homInclusion (s i) (t i) (x i)) = g fun i ↦ homInclusion (s i) (t i) (x i) by
-    refine MultilinearMap.directSum_ext fun p ↦ MultilinearMap.ext fun x ↦ ?_
-    have e (i : Fin (n + 1)) : DirectSum.lof R (C × C) (fun q ↦ homModule (R := R) q.1 q.2) (p i) =
-        homInclusion (p i).1 (p i).2 := (homInclusion_eq_lof _ _).symm
-    simp only [MultilinearMap.compLinearMap_apply, e]
-    exact key (fun i ↦ (p i).1) (fun i ↦ (p i).2) x
-  intro s t x
-  by_cases hst : ∀ j : Fin n, t j.succ = s j.castSucc
-  · obtain ⟨X, rfl, rfl⟩ := exists_eq_of_chain s t hst
-    exact h X x
-  · obtain ⟨j, hj⟩ := not_forall.1 hst
-    rw [hf.eq_zero_of_ne s t x j.castSucc j.succ (by simp) hj,
-      hg.eq_zero_of_ne s t x j.castSucc j.succ (by simp) hj]
+  refine MultilinearMap.ext fun y ↦ sub_eq_zero.1 <| (Submodule.mem_bot R).1 <|
+    multilinearMap_apply_mem (f := f - g) (fun X x ↦ by simp [h X x]) (fun s t x i j hij hne ↦ ?_) y
+  simp [hf.eq_zero_of_ne s t x i j hij hne, hg.eq_zero_of_ne s t x i j hij hne]
 
 /-- A path-compatible operation sends a string of morphisms in which the target of each morphism
 is the source of the one before it to a morphism from the source `a` of its last morphism to the

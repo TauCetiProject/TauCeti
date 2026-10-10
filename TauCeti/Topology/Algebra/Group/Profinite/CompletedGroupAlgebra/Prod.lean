@@ -159,10 +159,10 @@ theorem mapDomain_mapOfLE_comapDomain_botProdMk {U V : OpenNormalSubgroup Γ} (h
       rw [← botProdMk_mk U c' γ, MonoidAlgebra.comapDomain_single_map,
         MonoidAlgebra.mapDomain_single, QuotientGroup.mapOfLE_mk, ← botProdMk_mk V c' γ,
         MonoidAlgebra.comapDomain_single_map]
-    · rw [MonoidAlgebra.comapDomain_single_of_not_mem_range
+    · rw [MonoidAlgebra.comapDomain_single_of_notMem_range
           (mt (mem_range_botProdMk_iff U γ).mp hc),
         MonoidAlgebra.mapDomain_zero,
-        MonoidAlgebra.comapDomain_single_of_not_mem_range
+        MonoidAlgebra.comapDomain_single_of_notMem_range
           (mt (mem_range_botProdMk_iff V γ).mp hc)]
 
 end BotProd

@@ -89,16 +89,11 @@ theorem isHomogeneous_torsion (hd : d ≠ 0)
   rw [torsion_eq_torsion'_powers_X hd hX, Submodule.mem_torsion'_iff] at hx ⊢
   obtain ⟨⟨_, n, rfl⟩, hn⟩ := hx
   refine ⟨⟨X ^ n, ⟨n, rfl⟩⟩, ?_⟩
-  have hf : LinearMap.IsHomogeneous (_root_.LinearMap.lsmul k[X] M (X ^ n))
-      G.piece G.piece (-(n : ℤ) * d) := by
-    apply LinearMap.isHomogeneous_def.mpr
-    intro q y hy
-    simpa only [neg_mul, sub_eq_add_neg, _root_.LinearMap.lsmul_apply] using
-      X_pow_smul_mem_piece hX n hy
-  rw [Submonoid.smul_def] at hn
-  have key := hf.map_decompose p x
-  simpa only [Submonoid.smul_def, _root_.LinearMap.lsmul_apply, hn,
-    DirectSum.decompose_zero, DirectSum.zero_apply, ZeroMemClass.coe_zero] using key
+  rw [Submonoid.smul_def] at hn ⊢
+  have key := coe_decompose_X_pow_smul hX n (p - n * d) x
+  rw [sub_add_cancel, hn, DirectSum.decompose_zero, DirectSum.zero_apply,
+    ZeroMemClass.coe_zero] at key
+  exact key.symm
 
 end TauCeti.InternalGrading
 

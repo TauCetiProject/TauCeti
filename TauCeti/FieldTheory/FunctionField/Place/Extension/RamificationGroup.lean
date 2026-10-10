@@ -144,7 +144,7 @@ trivially on the residue field is acting trivially to order `1` on the valuation
 @[simp]
 theorem ramificationGroup_zero : ramificationGroup F P 0 = P.integers.inertiaSubgroup F := by
   ext g
-  rw [mem_ramificationGroup_iff, mem_inertiaSubgroup_iff]
+  rw [mem_ramificationGroup_iff, ValuationSubring.mem_inertiaSubgroup_iff]
   have key : ∀ x : P.integers, (IsLocalRing.residue P.integers (g • x) =
       IsLocalRing.residue P.integers x ↔
       (g : F' ≃ₐ[F] F') (x : F') - (x : F') ∈ P.filtration ((0 : ℕ) + 1)) := by

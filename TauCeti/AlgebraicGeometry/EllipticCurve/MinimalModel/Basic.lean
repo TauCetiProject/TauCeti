@@ -18,15 +18,16 @@ minimality only from that property or from a class that already extends it. Esta
 *given* equation therefore means quantifying over every change of variables, which is not something
 a caller can discharge by hand.
 
-This file supplies the cheapest sufficient condition — an integral Weierstrass equation whose `c₄`
-is a **unit** at the place is already minimal — and then the comparison any two minimal models
-admit: they have the same discriminant valuation, so a change of variables between them has a
-scaling factor of valuation `1`.
+This file supplies the cheapest sufficient conditions — an integral Weierstrass equation whose `c₄`
+or whose discriminant is a **unit** at the place is already minimal — and then the comparison any
+two minimal models admit: they have the same discriminant valuation, so a change of variables
+between them has a scaling factor of valuation `1`, and they have the same `c₄` valuation too.
 
 ## Main results
 
 * `WeierstrassCurve.isMinimal_of_valuation_c₄_eq_one`: over the fraction field of a discrete
   valuation ring, an integral Weierstrass equation with `v (c₄) = 1` is minimal.
+* `WeierstrassCurve.isMinimal_of_valuation_Δ_eq_one`: so is one with `v (Δ) = 1`.
 * `WeierstrassCurve.exists_smul_eq_minimal`: Mathlib's chosen minimal equation is obtained by a
   change of variables.
 * `WeierstrassCurve.exists_smul_minimal_eq_minimal`: chosen minimal equations of isomorphic
@@ -41,11 +42,17 @@ scaling factor of valuation `1`.
   minimal model to a minimal model.
 * `WeierstrassCurve.valuation_u_eq_one_of_isMinimal_smul`: for an elliptic curve, the scaling
   factor of such a change of variables satisfies `v (u) = 1`.
+* `WeierstrassCurve.valuation_c₄_eq_of_isMinimal_smul`: hence the two minimal models have equal
+  `v (c₄)`.
 * `WeierstrassCurve.VariableChange.exists_unit_algebraMap_eq_u_of_isMinimal_smul`: the scaling
   factor is the image of a unit of the discrete valuation ring.
 * `WeierstrassCurve.valuation_Δ_minimal_smul` and
   `WeierstrassCurve.valuation_c₄_minimal_smul`: the chosen minimal equations of isomorphic curves
   have the same discriminant and `c₄` valuations.
+* `WeierstrassCurve.hasGoodReduction_minimal_smul_iff` and
+  `WeierstrassCurve.HasGoodReduction.hasGoodReduction_minimal`: good reduction of the chosen
+  minimal equation is a property of the curve, and holds whenever some equation has good
+  reduction.
 * `WeierstrassCurve.HasSplitMultiplicativeReduction.of_isMinimal_smul`: split multiplicative
   reduction transfers along such a change of variables.
 
@@ -74,6 +81,8 @@ It is the unit-`c₄` case of the Kraus–Laska criterion — the special case "
 Remark VII.1.1, restricted to `v (c₄) = 0`. The proof is direct: a change of variables scales
 `c₄` by `u⁻⁴` and `Δ` by `u⁻¹²`, and integrality of the transformed model bounds `v (u⁻⁴)` by
 `1`, hence `v (u⁻¹²) ≤ 1`, so no change of variables can raise the discriminant's valuation.
+The unit-`Δ` case, `isMinimal_of_valuation_Δ_eq_one`, is immediate, since every integral model
+has `v (Δ) ≤ 1`.
 
 ## Provenance
 
@@ -156,6 +165,17 @@ theorem isMinimal_of_valuation_c₄_eq_one (W : WeierstrassCurve K) [IsIntegral 
   rw [variableChange_c₄, map_mul, map_pow, hc₄, mul_one] at hint
   simpa [variableChange_Δ, map_mul, map_pow] using mul_le_of_le_one_left'
     (pow_le_one' ((pow_le_one_iff (by norm_num)).mp hint) 12)
+
+/-- **An integral Weierstrass equation whose discriminant is a unit at the place is minimal.** The
+discriminant of every integral model has valuation at most `1`, which a unit discriminant already
+attains. This is the `v (Δ) = 0` case of Silverman, *AEC*, Remark VII.1.1. -/
+theorem isMinimal_of_valuation_Δ_eq_one (W : WeierstrassCurve K) [IsIntegral R W]
+    (hΔ : valuation K (maximalIdeal R) W.Δ = 1) : IsMinimal R W := by
+  refine ⟨⟨by simpa using ‹IsIntegral R W›, ?_⟩⟩
+  intro C hC _
+  simp only [one_smul, ← Subtype.coe_le_coe, valuation_Δ_aux_eq_of_isIntegral R (C • W),
+    valuation_Δ_aux_eq_of_isIntegral R W, hΔ]
+  simpa [← integralModel_Δ_eq R (C • W)] using valuation_le_one _ _
 
 /-- **Mathlib's chosen minimal equation lies in the variable-change orbit.** The equation
 `W.minimal R` is obtained from `W` by a change of variables. -/
@@ -262,6 +282,15 @@ theorem valuation_u_eq_one_of_isMinimal_smul {W₁ W₂ : WeierstrassCurve K} [I
     exact inv_eq_one.mp h1
   exact (pow_eq_one_iff_of_nonneg zero_le (by norm_num)).mp h12
 
+/-- **Two minimal models of an elliptic curve related by a change of variables have the same `c₄`
+valuation**, since the change of variables scales `c₄` by `u⁻⁴` with `v (u) = 1`. -/
+theorem valuation_c₄_eq_of_isMinimal_smul {W₁ W₂ : WeierstrassCurve K} [IsMinimal R W₁]
+    [IsMinimal R W₂] [W₁.IsElliptic] (D : VariableChange K) (hD : D • W₁ = W₂) :
+    valuation K (maximalIdeal R) W₂.c₄ = valuation K (maximalIdeal R) W₁.c₄ := by
+  rw [← hD, variableChange_c₄, map_mul, map_pow, Units.val_inv_eq_inv_val, map_inv₀,
+    valuation_u_eq_one_of_isMinimal_smul R D hD]
+  simp
+
 namespace VariableChange
 
 /-- The scaling factor between two minimal elliptic equations is the image of a unit of the
@@ -293,12 +322,30 @@ theorem valuation_c₄_minimal_smul (D : VariableChange K) (W : WeierstrassCurve
     valuation K (maximalIdeal R) ((D • W).minimal R).c₄ =
       valuation K (maximalIdeal R) (W.minimal R).c₄ := by
   obtain ⟨C₀, hC₀⟩ := W.exists_smul_eq_minimal R
-  let hEll : (W.minimal R).IsElliptic := hC₀ ▸ inferInstance
+  have : (W.minimal R).IsElliptic := hC₀ ▸ inferInstance
   obtain ⟨C, hC⟩ := exists_smul_minimal_eq_minimal R D W
-  have hu := @valuation_u_eq_one_of_isMinimal_smul R _ _ _ K _ _ _
-    (W.minimal R) ((D • W).minimal R) _ _ hEll C hC
-  rw [← hC, variableChange_c₄, map_mul, map_pow, Units.val_inv_eq_inv_val, map_inv₀, hu]
-  simp
+  exact valuation_c₄_eq_of_isMinimal_smul R C hC
+
+/-- The chosen minimal equation has good reduction exactly when its discriminant is a unit at the
+place. -/
+theorem hasGoodReduction_minimal_iff (W : WeierstrassCurve K) :
+    (W.minimal R).HasGoodReduction R ↔ valuation K (maximalIdeal R) (W.minimal R).Δ = 1 :=
+  ⟨fun h ↦ h.goodReduction, fun h ↦ ⟨h⟩⟩
+
+/-- **Good reduction is a property of the curve**: the chosen minimal equations of two equations
+related by a change of variables have good reduction together. -/
+@[simp]
+theorem hasGoodReduction_minimal_smul_iff (D : VariableChange K) (W : WeierstrassCurve K) :
+    ((D • W).minimal R).HasGoodReduction R ↔ (W.minimal R).HasGoodReduction R := by
+  rw [hasGoodReduction_minimal_iff, hasGoodReduction_minimal_iff, valuation_Δ_minimal_smul]
+
+/-- An equation with good reduction has a chosen minimal equation with good reduction. -/
+theorem HasGoodReduction.hasGoodReduction_minimal {W : WeierstrassCurve K}
+    (h : W.HasGoodReduction R) : (W.minimal R).HasGoodReduction R := by
+  have := h.toIsMinimal
+  obtain ⟨C, hC⟩ := W.exists_smul_eq_minimal R
+  rw [hasGoodReduction_minimal_iff, valuation_Δ_eq_of_isMinimal_smul R C hC]
+  exact h.goodReduction
 
 /-- **Split multiplicative reduction is an isomorphism invariant of minimal models.** If two
 minimal Weierstrass models of an elliptic curve over `K` are related by a change of variables

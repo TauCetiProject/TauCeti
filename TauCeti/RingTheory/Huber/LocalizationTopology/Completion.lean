@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.LocalizationTopology.UniversalProperty
-public import TauCeti.RingTheory.Huber.Completion
+public import TauCeti.RingTheory.Huber.Completion.Basic
 public import TauCeti.RingTheory.Localization.Completion
 public import TauCeti.Topology.Algebra.UniformRing
 

@@ -301,6 +301,22 @@ theorem doubledArrowSign_reverse {i j : Symmetrify Q} (b : i ⟶ j) :
 
 end SignReverse
 
+section SignSquare
+
+variable (k : Type w) {Q : Type u} [MulOneClass k] [HasDistribNeg k] [Quiver.{v} Q]
+
+/-- **Each sign squares to one**: `ε_b ε_b = 1`. -/
+@[simp]
+theorem doubledArrowSign_mul_self {i j : Symmetrify Q} (b : i ⟶ j) :
+    doubledArrowSign k b * doubledArrowSign k b = 1 := by
+  rcases b with a | a
+  · exact (congrArg₂ (· * ·) (doubledArrowSign_inl k a) (doubledArrowSign_inl k a)).trans
+      (one_mul 1)
+  · exact (congrArg₂ (· * ·) (doubledArrowSign_inr k a) (doubledArrowSign_inr k a)).trans
+      (neg_mul_neg 1 1 |>.trans (one_mul 1))
+
+end SignSquare
+
 section BacktrackIndependence
 
 variable (k : Type w) {Q : Type u} [Semiring k] [Quiver.{v} Q]
