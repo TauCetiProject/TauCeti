@@ -9,11 +9,12 @@ public import Mathlib.CategoryTheory.Limits.Shapes.SingleObj
 public import TauCeti.CategoryTheory.Preadditive.NSMul
 
 /-!
-# Recognising colimits of shape `SingleObj G`
+# Recognising colimits and limits of shape `SingleObj G`
 
 A functor `J : SingleObj G ⥤ C` is an object of `C` with an action of the monoid `G`, and its
-colimit, when it exists, is the object of coinvariants of that action. This file gives two
-criteria for a given cocone to be that colimit.
+colimit, when it exists, is the object of coinvariants of that action, and its limit the object of
+invariants. This file gives two criteria for a given cocone to be that colimit, and, in the
+preadditive setting, the dual criterion for a given cone to be that limit.
 
 In types, for a group `G`, Mathlib computes the colimit as the quotient by the action
 (`CategoryTheory.Limits.SingleObj.Types.colimitEquivQuotient`). Correspondingly, a cocone over
@@ -29,6 +30,13 @@ hypotheses are equations between morphisms, so every additive functor preserves 
 preserves this colimit (`CategoryTheory.Limits.SingleObj.isColimitMapCoconeOfTransfer`). This is
 the formal reason why, for a finite covering with deck group `G` and coefficients in which `|G|`
 is invertible, the homology of the base is the coinvariants of the homology of the total space.
+
+Dually, a cone over the action whose leg `t : c.pt ⟶ J.obj *` has a morphism `p : J.obj * ⟶ c.pt`
+back, with `t ≫ p = |G| • 𝟙` and `p ≫ t = ∑_{g ∈ G} J.map g`, is a limit cone when `|G|` is
+invertible on both objects (`CategoryTheory.Limits.SingleObj.isLimitOfTransfer`), and every
+additive functor preserves this limit (`CategoryTheory.Limits.SingleObj.isLimitMapConeOfTransfer`).
+This is why the transfer identifies the homology of the base with the invariants of the homology of
+the total space.
 
 ## References
 
@@ -131,5 +139,47 @@ noncomputable def isColimitMapCoconeOfTransfer {D : Type*} [Category D] [Preaddi
     (by simp only [Functor.mapCocone_ι_app, ← F.map_comp, ht', F.map_sum, Functor.comp_map])
 
 end Preadditive
+
+section PreadditiveLimit
+
+variable {C : Type*} [Category C] [Preadditive C] {G : Type*} [Monoid G] [Fintype G]
+  {J : SingleObj G ⥤ C} (c : Cone J) (p : J.obj (SingleObj.star G) ⟶ c.pt)
+
+/-- Let `G` be a finite monoid acting on an object of a preadditive category, and let `c` be a
+cone over the action whose leg `t` has a *projection* `p` back with `t ≫ p = |G| • 𝟙` and
+`p ≫ t = ∑_{g ∈ G} J.map g`. If multiplication by `|G|` is invertible on the acted-on object and on
+the cone point, then `c` is a limit cone: the cone point is the object of invariants. -/
+noncomputable def isLimitOfTransfer
+    (hp : c.π.app (SingleObj.star G) ≫ p = Fintype.card G • 𝟙 c.pt)
+    (hp' : p ≫ c.π.app (SingleObj.star G) = ∑ g : G, J.map g)
+    [IsIso (Fintype.card G • 𝟙 (J.obj (SingleObj.star G)))] [IsIso (Fintype.card G • 𝟙 c.pt)] :
+    IsLimit c where
+  lift s := s.π.app (SingleObj.star G) ≫ p ≫ inv (Fintype.card G • 𝟙 c.pt)
+  fac s j := by
+    obtain rfl : j = SingleObj.star G := rfl
+    rw [Category.assoc, Category.assoc, ← Preadditive.comp_inv_nsmul_id, reassoc_of% hp',
+      ← Category.assoc, IsIso.comp_inv_eq]
+    simp [Preadditive.comp_sum, Preadditive.comp_nsmul, s.w]
+  uniq s m hm := by
+    rw [← hm (SingleObj.star G), Category.assoc, reassoc_of% hp, IsIso.hom_inv_id]
+    exact (Category.comp_id m).symm
+
+/-- The limit of `CategoryTheory.Limits.SingleObj.isLimitOfTransfer` is preserved by every
+additive functor: under the same hypotheses, every additive functor sends `c` to a limit cone. -/
+noncomputable def isLimitMapConeOfTransfer {D : Type*} [Category D] [Preadditive D]
+    (F : C ⥤ D) [F.Additive]
+    (hp : c.π.app (SingleObj.star G) ≫ p = Fintype.card G • 𝟙 c.pt)
+    (hp' : p ≫ c.π.app (SingleObj.star G) = ∑ g : G, J.map g)
+    [IsIso (Fintype.card G • 𝟙 (J.obj (SingleObj.star G)))] [IsIso (Fintype.card G • 𝟙 c.pt)] :
+    IsLimit (F.mapCone c) :=
+  have : IsIso (Fintype.card G • 𝟙 ((J ⋙ F).obj (SingleObj.star G))) :=
+    F.isIso_nsmul_id_obj _ (J.obj _)
+  have : IsIso (Fintype.card G • 𝟙 (F.mapCone c).pt) := F.isIso_nsmul_id_obj _ c.pt
+  isLimitOfTransfer (F.mapCone c) (F.map p)
+    (by simp only [Functor.mapCone_pt, Functor.mapCone_π_app, ← F.map_comp, hp,
+      F.map_nsmul, F.map_id])
+    (by simp only [Functor.mapCone_π_app, ← F.map_comp, hp', F.map_sum, Functor.comp_map])
+
+end PreadditiveLimit
 
 end CategoryTheory.Limits.SingleObj
