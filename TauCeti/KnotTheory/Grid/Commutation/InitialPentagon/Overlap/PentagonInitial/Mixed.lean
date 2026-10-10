@@ -132,15 +132,7 @@ theorem mem_initialPentagonRectangleInitialSelfPairs_of_right_eq_left
   rw [← hErect] at hleft hsecondLeft
   have hEcommon : E.first.left = E.second.left := hleft.trans hsecondLeft.symm
   have hEcol : E.second.right ∈ Grid.cIoo E.first.left E.first.right := by
-    have hdata : E.IsRecutOfLeftEqLeft D.toGridRectangleDecomposition := by
-      rcases hback.orientation with h | h | h | h
-      · exact h
-      · apply False.elim
-        apply E.sideColumns_ne_of_hasOneCommonSide hEone
-        rw [GridRectangleBetween.sideColumns, GridRectangleBetween.sideColumns, hEcommon,
-          h.side_eq]
-      · exact (E.second.left_ne_right (hEcommon.symm.trans h.side_eq)).elim
-      · exact (E.first.left_ne_right (hEcommon.trans h.side_eq.symm)).elim
+    have hdata := hback.isRecutOfLeftEqLeft hEone hEcommon
     rcases hdata.recut_branch with ⟨-, -, hright, -⟩ | ⟨hcol, -⟩
     · exact (E.first.left_ne_right (hleft.trans hright)).elim
     · exact hcol
