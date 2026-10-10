@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.Geometry.Manifold.VectorField.Regularity
-
 public import TauCeti.Geometry.Diffeomorphism.Sphere
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Action
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere
@@ -33,8 +31,8 @@ manifold. With `E = EuclideanSpace ℝ (Fin 4)` this is the spherical model geom
 
 ## Main statements
 
-* `TauCeti.LinearIsometryEquiv.mfderiv_coe_sphere_unitSphereEquiv`: the differential of the
-  restriction to the spheres, read in the ambient space, is the linear isometry itself. Use
+* `LinearIsometryEquiv.mvfderiv_coe_sphere_unitSphereEquiv`: the differential of the restriction
+  to the spheres, read in the ambient space, is the linear isometry itself. Use
   `LinearIsometryEquiv.coe_unitSphereRiemannianIsometry` to apply it to the Riemannian isometry.
 * `LinearIsometryEquiv.unitSphereIsomHom_injective`: the homomorphism `O(E) →* Isom(S(E))` is
   injective.
@@ -71,10 +69,8 @@ def unitSphereRiemannianIsometry (e : E ≃ₗᵢ[ℝ] F) :
     have hcoe : ⇑(unitSphereDiffeomorph (n := n) (k := k) e ∞) = unitSphereEquiv e := by
       rw [← Diffeomorph.coe_toEquiv, unitSphereDiffeomorph_toEquiv]
     rw [TauCeti.inner_tangentSpace_sphere, TauCeti.inner_tangentSpace_sphere, hcoe]
-    simp only [mvfderiv_apply_eq_mfderiv_apply]
-    have hv := TauCeti.LinearIsometryEquiv.mfderiv_coe_sphere_unitSphereEquiv (k := k) e x v
-    have hw := TauCeti.LinearIsometryEquiv.mfderiv_coe_sphere_unitSphereEquiv (k := k) e x w
-    exact (congrArg₂ (fun a b : F => inner ℝ a b) hv hw).trans (e.inner_map_map _ _)
+    exact (congrArg₂ (inner ℝ) (mvfderiv_coe_sphere_unitSphereEquiv (k := k) e x v)
+      (mvfderiv_coe_sphere_unitSphereEquiv (k := k) e x w)).trans (e.inner_map_map _ _)
 
 /-- The underlying diffeomorphism is the restriction `unitSphereDiffeomorph e ∞`. -/
 @[simp]

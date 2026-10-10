@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Padics.LocalField
 public import TauCeti.Algebra.QuadraticAlgebra.NormTrace
-public import TauCeti.FieldTheory.GaloisCohomology.MuTwo.PadicTwo
+public import TauCeti.NumberTheory.LocalField.QuadraticForm.CupPadicTwo
 public import TauCeti.FieldTheory.GaloisCohomology.MuTwo.Transfer
 public import TauCeti.FieldTheory.QuadraticForm.StiefelWhitney.Evens.Kummer.Value
 public import TauCeti.NumberTheory.Padics.Basic
@@ -83,8 +83,8 @@ instance : Algebra.IsSeparable ℚ_[2] DyadicSqrtNegOne := by
   let : PerfectField ℚ_[2] := PerfectField.ofCharZero
   exact Algebra.IsAlgebraic.isSeparable_of_perfectField
 
-/-- Two is invertible in the dyadic field `ℚ_2`. -/
-local instance instInvertibleTwoPadicTwo : Invertible (2 : ℚ_[2]) :=
+/-- Two is invertible in the quadratic dyadic field `ℚ_2(i)`. -/
+instance : Invertible (2 : DyadicSqrtNegOne) :=
   invertibleOfNonzero (by norm_num)
 
 /-- **A nonzero dyadic Evens norm.** Along every embedding of `ℚ_2(i)` in a separable
@@ -94,7 +94,6 @@ theorem galoisEvens_oneAddTwoI (σ : DyadicSqrtNegOne →ₐ[ℚ_[2]] SeparableC
       (trivialF2TopPairing (AbsoluteGaloisGroup ℚ_[2])).cup 1 1
         (kummerClass (Units.mk0 (2 : ℚ_[2]) two_ne_zero))
         (kummerClass (Units.mk0 (5 : ℚ_[2]) (by norm_num))) := by
-  let : Invertible (2 : DyadicSqrtNegOne) := invertibleOfNonzero (by norm_num)
   have h := galoisEvens2_kummerClass_one_add σ finrank_eq_two (-1) (x := i)
     (by
       rintro ⟨c, hc⟩
@@ -145,10 +144,8 @@ theorem galoisEvens_oneAddTwoI_add_cup_neg_one_eq_zero
 restriction alone cannot distinguish it from the alternative corrected value. -/
 theorem galoisRes_galoisEvens_oneAddTwoI_eq_zero
     (σ : DyadicSqrtNegOne →ₐ[ℚ_[2]] SeparableClosure ℚ_[2]) :
-    letI : Invertible (2 : DyadicSqrtNegOne) := invertibleOfNonzero (by norm_num)
     galoisRes ℚ_[2] DyadicSqrtNegOne σ 2
       (galoisEvens ℚ_[2] DyadicSqrtNegOne σ finrank_eq_two (kummerClass oneAddTwoI)) = 0 := by
-  let : Invertible (2 : DyadicSqrtNegOne) := invertibleOfNonzero (by norm_num)
   have hi0 : i ≠ 0 := by
     intro h
     have him := congrArg QuadraticAlgebra.im h

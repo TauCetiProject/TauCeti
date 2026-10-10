@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Degree
-
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Supersingular
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RelativeFrobenius.Verschiebung
 -- Proof-only: separability is invariant under base change.
@@ -126,8 +124,8 @@ private theorem isSupersingular_of_separableDegree_verschiebungIsogeny_eq_one
   -- The base change of `V` has degree `p`, by the tower formula against `deg [p] = p ²`.
   have hdeg : (V.map ι).degree = p := by
     have h := congrArg TauCeti.Isogeny.degree hcomp
-    rw [degree_comp, degree_map Fr ι, degree_relativeFrobeniusIsogeny,
-      degree_mulByIntIsogenyOfNeZero, Int.natAbs_natCast, sq] at h
+    rw [degree_comp, degree_relativeFrobeniusIsogeny_map, degree_mulByIntIsogenyOfNeZero,
+      Int.natAbs_natCast, sq] at h
     exact Nat.eq_of_mul_eq_mul_right (Nat.pos_of_ne_zero (expChar_ne_zero K p)) h
   -- It is purely inseparable: if it were separable then so would `V` be, of degree `p` and
   -- separable degree `1`.

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.HilbertSymbol.Basic
 public import TauCeti.NumberTheory.Padics.SerreSigns
+public import TauCeti.NumberTheory.Padics.Basic
 import Mathlib.NumberTheory.Padics.LocalField
 import TauCeti.Algebra.Group.Units.Basic
 import TauCeti.NumberTheory.LocalField.Padic
@@ -69,8 +70,6 @@ private noncomputable abbrev unitTwo : ℚ_[2]ˣ := Units.mk0 2 two_ne_zero
 private noncomputable abbrev unitFive : ℚ_[2]ˣ := Units.mk0 5 (by norm_num)
 
 private theorem two_ne_zero_padicTwo : (2 : ℚ_[2]) ≠ 0 := two_ne_zero
-
-private noncomputable instance : Invertible (2 : ℚ_[2]) := invertibleOfNonzero two_ne_zero_padicTwo
 
 /-- An element `a = 2 ^ β u` of `ℚ_2ˣ`, with `u` a unit of `ℤ_2`, is `2 ^ β (-1) ^ ε(u) 5 ^ ω(u)`
 times a square. -/

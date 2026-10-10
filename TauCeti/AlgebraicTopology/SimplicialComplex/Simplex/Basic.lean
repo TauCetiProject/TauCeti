@@ -95,6 +95,16 @@ theorem self_notMem_simplexBoundary : V ∉ simplexBoundary V := by
 theorem singleton_mem_simplex {v : ι} : {v} ∈ simplex V ↔ v ∈ V := by
   simp
 
+/-- A zero-simplex has exactly its singleton vertex as a face. -/
+@[simp]
+theorem faces_simplex_singleton (v : ι) : (simplex {v}).faces = {{v}} := by
+  ext σ
+  constructor
+  · rintro ⟨hne, hsub⟩
+    exact hne.subset_singleton_iff.mp hsub
+  · rintro rfl
+    exact mem_simplex.mpr ⟨Finset.singleton_nonempty v, Finset.Subset.rfl⟩
+
 /-- The boundary of a one-simplex consists of its two singleton vertices. -/
 @[simp]
 theorem faces_simplexBoundary_pair [DecidableEq ι] {v w : ι} (hne : v ≠ w) :

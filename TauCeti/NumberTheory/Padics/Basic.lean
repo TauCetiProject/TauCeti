@@ -10,17 +10,24 @@ public import Mathlib.NumberTheory.Padics.PadicNumbers
 /-!
 # Basic instances for the `p`-adic numbers
 
-This file supplies the canonical `Nontrivial ℚ_[p]` instance for prime `p`. It supports
-finite-dimensional constructions over the `p`-adic field, including algebraic trace and norm
-calculations for finite extensions.
+This file provides a direct instance for the nontriviality of `ℚ_[p]`, already implied by
+its field structure, and an instance expressing that `2` is invertible. These instances support
+finite-dimensional constructions and algebraic trace and norm calculations over the `p`-adic field.
 -/
 
 public section
 
+noncomputable section
+
 namespace TauCeti
 
-/-- For prime `p`, the `p`-adic field has distinct zero and one. -/
+/-- A direct instance of the existing fact that the `p`-adic field has distinct zero and one. -/
+-- Avoid backtracking through Henselian-ring instances during rank and freeness synthesis.
 instance (p : ℕ) [Fact (Nat.Prime p)] : Nontrivial ℚ_[p] :=
   @DivisionRing.toNontrivial _ (instFieldPadic p).toDivisionRing
+
+/-- Two is invertible in the `p`-adic field, including when `p = 2`. -/
+instance (p : ℕ) [Fact (Nat.Prime p)] : Invertible (2 : ℚ_[p]) :=
+  invertibleOfNonzero two_ne_zero
 
 end TauCeti

@@ -50,13 +50,6 @@ def point (v : ι) : _root_.PreAbstractSimplicialComplex ι where
 @[simp]
 theorem mem_point {v : ι} {σ : Finset ι} : σ ∈ point v ↔ σ = {v} := Iff.rfl
 
-/-- The one-vertex complex has exactly its singleton vertex as a face. -/
-@[simp]
-theorem _root_.TauCeti.PreAbstractSimplicialComplex.faces_point (v : ι) :
-    (point v).faces = {{v}} := by
-  ext σ
-  exact mem_point
-
 /-- A singleton is a face of `point v` exactly when it is the singleton at `v`. -/
 theorem singleton_mem_point {v w : ι} : {w} ∈ point v ↔ w = v := by
   rw [mem_point, Finset.singleton_inj]
@@ -207,3 +200,4 @@ theorem exists_vertex (h : Collapsible K) : ∃ v : ι, ({v} : Finset ι) ∈ K 
 end Collapsible
 
 end PreAbstractSimplicialComplex
+
