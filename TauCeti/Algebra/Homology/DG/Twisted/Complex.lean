@@ -83,9 +83,12 @@ end TotalGrading
 
 section Differential
 
-variable {R : Type uR} {A : Type uA} {M : Type uM}
-  [CommRing R] [Semiring A] [AddCommGroup M] [Module R M]
-  {P : Type uP} [Fintype P] [Module Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M]
+variable {R : Type uR} {A : Type uA} {M : Type uM} [CommRing R] [Semiring A]
+  {P : Type uP} [Fintype P]
+
+section AddCommMonoid
+
+variable [AddCommMonoid M] [Module R M] [Module Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M]
 
 /-- The twisted differential on `ℳ ⊗ ⟨P⟩`, identified with `P → M`, of a matrix `m`.  Its
 `y`-component is `(D f) y = dM (f y) + Σ_x op (m x y) • ε (f x)`, where `ε` is the Koszul twist of
@@ -113,6 +116,11 @@ theorem twistedDifferential_apply (f : P → M) (y : P) :
       dM (f y) + ∑ x, op (m x y) • (InternalGrading.ofDecomposition ℳ).koszulTwist 1 (f x) := by
   rw [twistedDifferential]
   rfl
+
+end AddCommMonoid
+
+variable [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M]
+  (m : P → P → A) {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ] (dM : M →ₗ[R] M)
 
 /-- Evaluation on a homogeneous elementary tensor `α ⊗ x`, with `α` of degree `q`. -/
 theorem twistedDifferential_single [DecidableEq P] (x : P) {q : ℤ} {α : M} (hα : α ∈ ℳ q) :
