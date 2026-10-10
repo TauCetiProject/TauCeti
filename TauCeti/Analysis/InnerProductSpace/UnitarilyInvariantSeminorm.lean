@@ -14,22 +14,25 @@ public import TauCeti.Analysis.InnerProductSpace.SingularValues
 A seminorm `N` on the linear maps `E →ₗ[𝕜] F` between two inner product spaces is *unitarily
 invariant* when `N (U A V) = N A` for all unitaries `U` of `F` and `V` of `E`, acting
 independently on the target and the source. Square operators are the case `E = F`. Unitaries are
-represented as linear isometric equivalences `F ≃ₗᵢ[𝕜] F` and `E ≃ₗᵢ[𝕜] E`. The operator norm,
-the Frobenius norm, the Ky Fan norms and the nuclear norm are the standard examples. By a theorem
-of von Neumann, such a seminorm depends only on the singular values of its argument, which is what
-lets a single Ky Fan estimate yield bounds in all of these norms at once.
+represented as linear isometric equivalences `F ≃ₗᵢ[𝕜] F` and `E ≃ₗᵢ[𝕜] E`. The structure
+itself assumes neither finite-dimensionality nor boundedness: it is a seminorm on all algebraic
+linear maps `E →ₗ[𝕜] F`.
+
+When `E` and `F` are finite-dimensional, the operator norm, the Frobenius norm, the Ky Fan norms
+and the nuclear norm are the standard examples, and by a theorem of von Neumann such a seminorm
+depends only on the singular values of its argument, which is what lets a single Ky Fan estimate
+yield bounds in all of these norms at once. Neither the examples nor this classification are
+formalized here.
 
 This file sets up the structure together with the elementary vocabulary for comparing its
 values:
 
 * the two-sided unitary orbit `U C V` of a map `C`, on which every unitarily invariant seminorm
-  and the singular values are constant;
+  is constant, as are the singular values when `E` and `F` are finite-dimensional;
 * finite orbit certificates, which write `X` as a combination `∑ᵢ aᵢ • Uᵢ C Vᵢ` of points of the
   orbit of `C`, and bound `N X` by the coefficient mass `∑ᵢ ‖aᵢ‖` times `N C`;
 * transport of a unitarily invariant seminorm along isometric isomorphisms of the source and the
-  target, and to the adjoint maps;
-* the zero extension of `A : E →ₗ[𝕜] F` to an endomorphism of the `L²` product `E × F`, which has
-  the same singular values as `A`.
+  target, and, for finite-dimensional `E` and `F`, to the adjoint maps.
 
 ## Main declarations
 
@@ -42,16 +45,13 @@ values:
 * `TauCeti.UnitarilyInvariantSeminorm.arrowCongr`: transport along isometric isomorphisms of the
   source and the target.
 * `TauCeti.UnitarilyInvariantSeminorm.compAdjoint`: the seminorm `B ↦ N B†` on the adjoint maps.
-* `LinearMap.zeroExtension`, `LinearMap.singularValues_zeroExtension`: the zero extension
-  `(x, y) ↦ (0, A x)` and its singular values.
 
 ## Source
 
-The structure `UnitarilyInvariantSeminorm`, the two-sided unitary orbit, the finite orbit
-certificates and the zero extension are adapted from the
+The structure `UnitarilyInvariantSeminorm`, the two-sided unitary orbit and the finite orbit
+certificates are adapted from the
 [AIQ-Kitware DKPS formalization](https://github.com/AIQ-Kitware/aiq-dkps-formalization)
-(`ForTauCeti/Analysis/InnerProductSpace/UnitarilyInvariantSeminorm/Basic.lean` and
-`ForTauCeti/Analysis/InnerProductSpace/ZeroExtension.lean`).
+(`ForTauCeti/Analysis/InnerProductSpace/UnitarilyInvariantSeminorm/Basic.lean`).
 Original copyright (c) 2026 Kitware, Inc.; Apache-2.0.
 
 ## References
@@ -322,36 +322,3 @@ theorem mass_reindex (e : ι ≃ κ) : (c.reindex e).mass = c.mass := by
 end UnitaryOrbitCertificate
 
 end TauCeti
-
-/-! ### Zero extension to the square `L²` product -/
-
-namespace LinearMap
-
-/-- The **zero extension** of `A : E →ₗ[𝕜] F` to an endomorphism of the `L²` product `E × F`:
-the map `(x, y) ↦ (0, A x)`. -/
-noncomputable def zeroExtension (A : E →ₗ[𝕜] F) : WithLp 2 (E × F) →ₗ[𝕜] WithLp 2 (E × F) :=
-  (WithLp.linearEquiv 2 𝕜 (E × F)).symm.toLinearMap ∘ₗ inr 𝕜 E F ∘ₗ A ∘ₗ WithLp.fstₗ 2 𝕜 E F
-
-@[simp]
-theorem zeroExtension_apply (A : E →ₗ[𝕜] F) (z : WithLp 2 (E × F)) :
-    A.zeroExtension z = WithLp.toLp 2 (0, A z.fst) :=
-  (rfl)
-
-/-- **Singular values of the zero extension**: extending `A : E →ₗ[𝕜] F` by zero to an
-endomorphism of the `L²` product `E × F` leaves its zero-padded singular-value sequence
-unchanged. -/
-@[simp]
-theorem singularValues_zeroExtension [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
-    (A : E →ₗ[𝕜] F) : A.zeroExtension.singularValues = A.singularValues := by
-  -- `A.zeroExtension = B ∘ fst` for `B = (0, A ·)`, and the adjoint of `fst` is the inclusion
-  -- of the first factor; both `B` and that inclusion preserve norms.
-  set B : E →ₗ[𝕜] WithLp 2 (E × F) :=
-    (WithLp.linearEquiv 2 𝕜 (E × F)).symm.toLinearMap ∘ₗ inr 𝕜 E F ∘ₗ A
-  have hB : B.singularValues = A.singularValues :=
-    singularValues_eq_of_norm_apply_eq fun x ↦ by simp [B, WithLp.norm_toLp_snd]
-  have hA : A.zeroExtension = B ∘ₗ WithLp.fstₗ 2 𝕜 E F := rfl
-  rw [hA, ← singularValues_adjoint, adjoint_comp, WithLp.adjoint_fstₗ, ← hB,
-    ← singularValues_adjoint B]
-  exact singularValues_eq_of_norm_apply_eq fun x ↦ by simp [WithLp.norm_toLp_fst]
-
-end LinearMap
