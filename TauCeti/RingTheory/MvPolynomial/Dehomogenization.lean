@@ -81,6 +81,7 @@ theorem map_dehomogenize {S : Type*} [CommSemiring S] (f : R →+* S)
   refine Fin.succAboveCases i ?_ (fun j ↦ ?_) l <;> simp
 
 /-- Partial differentiation in a retained coordinate commutes with dehomogenization. -/
+@[simp]
 theorem pderiv_dehomogenize (i : Fin (n + 1)) (j : Fin n)
     (p : MvPolynomial (Fin (n + 1)) R) :
     pderiv j (dehomogenize i p) = dehomogenize i (pderiv (i.succAbove j) p) := by
@@ -95,6 +96,35 @@ theorem pderiv_dehomogenize (i : Fin (n + 1)) (j : Fin n)
     · simp [h, dehomogenize_X]
     · simp [h, dehomogenize_X, Pi.single_apply, apply_ite,
         Fin.succAbove_right_injective.eq_iff]
+
+/-- At a zero of a homogeneous equation, the homogeneous gradient vanishes if and only
+if the gradient of the equation in any chosen affine chart vanishes. -/
+theorem forall_eval_pderiv_eq_zero_iff_dehomogenize (i : Fin (n + 1))
+    {p : MvPolynomial (Fin (n + 1)) R} {d : ℕ} (hp : p.IsHomogeneous d)
+    (a : Fin n → R) (ha : eval a (dehomogenize i p) = 0) :
+    (∀ l, eval (i.insertNth 1 a) (pderiv l p) = 0) ↔
+      ∀ j, eval a (pderiv j (dehomogenize i p)) = 0 := by
+  constructor
+  · intro h j
+    rw [pderiv_dehomogenize, eval_dehomogenize]
+    exact h _
+  · intro h l
+    have he := congrArg (eval (i.insertNth 1 a)) hp.sum_X_mul_pderiv
+    rw [map_sum, Fin.sum_univ_succAbove _ i] at he
+    refine Fin.succAboveCases i ?_ (fun j ↦ ?_) l
+    · simpa [← pderiv_dehomogenize, ← eval_dehomogenize, h, ha] using he
+    · rw [← eval_dehomogenize, ← pderiv_dehomogenize]
+      exact h j
+
+/-- A homogeneous gradient is nonzero at a zero of the equation exactly when the
+affine gradient is nonzero. Over a field, this is the nonsingularity criterion. -/
+theorem exists_eval_pderiv_ne_zero_iff_dehomogenize (i : Fin (n + 1))
+    {p : MvPolynomial (Fin (n + 1)) R} {d : ℕ} (hp : p.IsHomogeneous d)
+    (a : Fin n → R) (ha : eval a (dehomogenize i p) = 0) :
+    (∃ l, eval (i.insertNth 1 a) (pderiv l p) ≠ 0) ↔
+      ∃ j, eval a (pderiv j (dehomogenize i p)) ≠ 0 := by
+  simpa only [not_forall] using not_congr
+    (forall_eval_pderiv_eq_zero_iff_dehomogenize i hp a ha)
 
 end CommSemiring
 
@@ -117,39 +147,11 @@ theorem eval_pderiv_eq_neg_sum_dehomogenize (i : Fin (n + 1))
   rw [eval_dehomogenize i (pderiv i p) a] at h
   exact eq_neg_of_add_eq_zero_left h
 
-/-- At a zero of a homogeneous equation, the homogeneous gradient vanishes if and only
-if the gradient of the equation in any chosen affine chart vanishes. -/
-theorem forall_eval_pderiv_eq_zero_iff_dehomogenize (i : Fin (n + 1))
-    {p : MvPolynomial (Fin (n + 1)) R} {d : ℕ} (hp : p.IsHomogeneous d)
-    (a : Fin n → R) (ha : eval a (dehomogenize i p) = 0) :
-    (∀ l, eval (i.insertNth 1 a) (pderiv l p) = 0) ↔
-      ∀ j, eval a (pderiv j (dehomogenize i p)) = 0 := by
-  constructor
-  · intro h j
-    rw [pderiv_dehomogenize, eval_dehomogenize]
-    exact h _
-  · intro h l
-    refine Fin.succAboveCases i ?_ (fun j ↦ ?_) l
-    · rw [eval_pderiv_eq_neg_sum_dehomogenize i hp a ha]
-      simp [h]
-    · rw [← eval_dehomogenize, ← pderiv_dehomogenize]
-      exact h j
-
-/-- A homogeneous gradient is nonzero at a zero of the equation exactly when the
-affine gradient is nonzero. Over a field, this is the nonsingularity criterion. -/
-theorem exists_eval_pderiv_ne_zero_iff_dehomogenize (i : Fin (n + 1))
-    {p : MvPolynomial (Fin (n + 1)) R} {d : ℕ} (hp : p.IsHomogeneous d)
-    (a : Fin n → R) (ha : eval a (dehomogenize i p) = 0) :
-    (∃ l, eval (i.insertNth 1 a) (pderiv l p) ≠ 0) ↔
-      ∃ j, eval a (pderiv j (dehomogenize i p)) ≠ 0 := by
-  simpa only [not_forall] using not_congr
-    (forall_eval_pderiv_eq_zero_iff_dehomogenize i hp a ha)
-
 end CommRing
 
-section Field
+section Semifield
 
-variable {k : Type*} [Field k]
+variable {k : Type*} [Semifield k]
 
 /-- At a homogeneous point whose `i`-th coordinate is nonzero, evaluation in the
 standard affine chart differs by the inverse `d`-th power of that coordinate. -/
@@ -164,7 +166,7 @@ theorem eval_dehomogenize_div (i : Fin (n + 1))
     refine Fin.succAboveCases i ?_ (fun j ↦ ?_) l <;> simp [hi, div_eq_mul_inv, mul_comm]
   rw [h, hp.eval_smul, smul_eq_mul]
 
-/-- Over a field, a nonzero homogeneous coordinate can be normalized to one without
+/-- Over a semifield, a nonzero homogeneous coordinate can be normalized to one without
 changing whether the gradient vanishes. The derivatives of the affine equation are
 evaluated at the coordinate ratios. -/
 theorem forall_eval_pderiv_eq_zero_iff_dehomogenize_div (i : Fin (n + 1))
@@ -191,6 +193,6 @@ theorem exists_eval_pderiv_ne_zero_iff_dehomogenize_div (i : Fin (n + 1))
   simpa only [not_forall] using not_congr
     (forall_eval_pderiv_eq_zero_iff_dehomogenize_div i hp b hi hb)
 
-end Field
+end Semifield
 
 end TauCeti
