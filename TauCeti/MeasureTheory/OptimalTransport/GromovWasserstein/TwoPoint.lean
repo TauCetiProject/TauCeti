@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.OptimalTransport.GromovWasserstein.Basic
-public import Mathlib.Probability.Distributions.Uniform
+public import TauCeti.Probability.ProbabilityMassFunction.Finite
 import Mathlib.MeasureTheory.Function.LpSeminorm.Indicator
 
 /-!
@@ -38,27 +38,15 @@ open scoped ENNReal
 
 namespace TauCeti
 
-/-- The scalar distance kernel of two labelled points with off-diagonal distance `a`.
-For `a > 0` this is the distance matrix of a two-point metric space. -/
+/-- The scalar kernel of two labelled points with off-diagonal entry `a`.
+For `a ≥ 0` it is a pseudometric distance kernel; for `a > 0` it is a metric distance kernel. -/
 def twoPointKernel (a : ℝ) (q : Fin 2 × Fin 2) : ℝ :=
   if q.1 = q.2 then 0 else a
 
-/-- The defining formula for the two-point distance matrix. -/
+/-- The defining formula for the scalar two-point kernel. -/
 @[simp]
 theorem twoPointKernel_apply (a : ℝ) (i j : Fin 2) :
     twoPointKernel a (i, j) = if i = j then 0 else a := by rfl
-
-private theorem uniformTwoPoint_prod_offDiagonal :
-    ((PMF.uniformOfFintype (Fin 2)).toMeasure.prod
-      (PMF.uniformOfFintype (Fin 2)).toMeasure) {q | q.1 ≠ q.2} = (2 : ℝ≥0∞)⁻¹ := by
-  have h : {q : Fin 2 × Fin 2 | q.1 ≠ q.2} = {(0, 1), (1, 0)} := by
-    ext ⟨i, j⟩
-    fin_cases i <;> fin_cases j <;> simp
-  rw [h, ← singleton_union, measure_union (by simp) (measurableSet_singleton _)]
-  simp only [← singleton_prod_singleton, Measure.prod_prod,
-    PMF.toMeasure_apply_singleton _ _ (measurableSet_singleton _),
-    PMF.uniformOfFintype_apply, Fintype.card_fin, Nat.cast_ofNat]
-  rw [← mul_two, mul_assoc, ENNReal.inv_mul_cancel (by norm_num) (by norm_num), mul_one]
 
 /-- The discrepancy of two matching uniform two-point kernels has an explicit `Lᵖ` norm.
 The formula includes `p = ∞`, since `∞.toReal = 0`. -/
@@ -72,8 +60,8 @@ theorem eLpNorm_twoPointKernel_edist (a b : ℝ) {p : ℝ≥0∞} (hp : p ≠ 0)
     funext q
     by_cases hq : q.1 = q.2 <;> simp [twoPointKernel, hq]
   rw [h, eLpNorm_indicator_const' (Set.toFinite _).measurableSet.nullMeasurableSet
-    (by rw [uniformTwoPoint_prod_offDiagonal]; norm_num) hp,
-    enorm_eq_self, uniformTwoPoint_prod_offDiagonal, ENNReal.inv_rpow,
+    (by rw [PMF.uniformOfFintype_fin_two_prod_offDiagonal]; norm_num) hp,
+    enorm_eq_self, PMF.uniformOfFintype_fin_two_prod_offDiagonal, ENNReal.inv_rpow,
     ← ENNReal.rpow_neg]
   simp [edist_dist, Real.dist_eq, neg_div, mul_comm]
 
@@ -126,7 +114,8 @@ theorem gromovWassersteinEDist_twoPoint {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b
   · rw [abs_of_nonpos (sub_nonpos.mpr h), neg_sub, gromovWassersteinEDist_comm]
     exact lower b a hb ha
 
-/-- At infinity the exact uniform two-point GW distance is the difference of the distances. -/
+/-- At infinity the exact uniform two-point GW distance is the absolute difference of the
+distances. -/
 theorem gromovWassersteinEDist_twoPoint_top {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) :
     gromovWassersteinEDist ∞ (PMF.uniformOfFintype (Fin 2)).toMeasure (twoPointKernel a)
       (PMF.uniformOfFintype (Fin 2)).toMeasure (twoPointKernel b) =
@@ -149,8 +138,9 @@ theorem twoPointKernel_dist {X : Type*} [PseudoMetricSpace X] (x : Fin 2 → X) 
   funext ⟨i, j⟩
   fin_cases i <;> fin_cases j <;> simp [twoPointKernel, dist_comm]
 
-/-- Exact GW distance between two labelled pairs in arbitrary metric spaces, with uniform laws
-on their labels. Distinct points give genuine two-point metric spaces. -/
+/-- Exact GW distance between two labelled pairs in arbitrary pseudometric spaces, with uniform
+laws on their labels. When `dist (x 0) (x 1) > 0` and `dist (y 0) (y 1) > 0`, the distance kernels
+on the labels give genuine two-point metric spaces. -/
 theorem gromovWassersteinEDist_dist_fin_two {X Y : Type*}
     [PseudoMetricSpace X] [PseudoMetricSpace Y] (x : Fin 2 → X) (y : Fin 2 → Y)
     {p : ℝ≥0∞} (hp : 1 ≤ p) :

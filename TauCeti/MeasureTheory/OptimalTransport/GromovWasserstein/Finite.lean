@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.OptimalTransport.Finite.Duality
+public import TauCeti.MeasureTheory.OptimalTransport.Finite.TransportMatrix
 public import TauCeti.MeasureTheory.OptimalTransport.GromovWasserstein.Basic
 
 /-!
