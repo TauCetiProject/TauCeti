@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Convex.CoordinateSimplex
-public import TauCeti.Topology.PL.Orthant
+public import TauCeti.Topology.PL.Orthant.Basic
 
 /-!
 # PL coordinates at a vertex of a simplex boundary
