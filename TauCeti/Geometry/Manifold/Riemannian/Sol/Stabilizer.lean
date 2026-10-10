@@ -138,8 +138,10 @@ private theorem diagonal_derivative (Φ : Isom J Sol) (hfix : Φ 1 = 1)
   · intro u
     have hu : u = u.1 • (1, 0, 0) + u.2.1 • (0, 1, 0) + u.2.2 • (0, 0, 1) := by
       ext <;> simp
-    -- A is the differential in the canonical coordinate tangent identifications.
-    change A u = _
+    have hA (v : P) : A v = tangentSpaceCastModel J (Φ 1)
+        (mfderiv J J Φ 1 ((tangentSpaceCastModel J (1 : Sol)).symm v)) := by
+      simp only [A, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
+    rw [← hA]
     rw [hu, map_add, map_add, map_smul, map_smul, map_smul, h₁, h₂, h₃]
     simp [mul_comm]
 
