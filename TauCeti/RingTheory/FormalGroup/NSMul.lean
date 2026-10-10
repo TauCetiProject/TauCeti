@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.FormalGroup.Logarithm
+-- Proof-only: splitting a power series into its truncation and its tail.
+import Mathlib.RingTheory.PowerSeries.Trunc
 
 /-!
 # Multiplication by `n` on a formal group law
@@ -41,6 +43,8 @@ IV.6.1).
 ## Main results
 
 * `FormalGroup.nsmulSeries_succ`: `[n + 1]_F(T) = F([n]_F(T), T)`.
+* `FormalGroup.nsmulSeries_add`: `[m + n]_F(T) = F([m]_F(T), [n]_F(T))`.
+* `FormalGroup.nsmulSeries_mul`: `[m n]_F(T) = [m]_F([n]_F(T))`.
 * `FormalGroup.subst_nsmulSeries_invariantDifferential_mul_derivative`:
   `P([n]_F(T)) · [n]_F'(T) = n · P(T)`.
 * `FormalGroup.coeff_one_nsmulSeries`: `[n]_F(T) = n T + ⋯`.
@@ -82,6 +86,12 @@ theorem nsmulSeries_succ (n : ℕ) :
     F.nsmulSeries (n + 1) = subst ![F.nsmulSeries n, PowerSeries.X] F.toPowerSeries := by
   rw [nsmulSeries, nsmulSeries, succ_nsmul, add_apply, val_tautologicalPoint]
 
+/-- `[m + n]_F(T) = F([m]_F(T), [n]_F(T))`. -/
+theorem nsmulSeries_add (m n : ℕ) :
+    F.nsmulSeries (m + n) = subst ![F.nsmulSeries m, F.nsmulSeries n] F.toPowerSeries := by
+  rw [nsmulSeries, add_nsmul, add_apply]
+  rfl
+
 @[simp]
 theorem nsmulSeries_one : F.nsmulSeries 1 = PowerSeries.X := by
   rw [nsmulSeries_succ, nsmulSeries_zero, F.zero_add PowerSeries.HasSubst.X']
@@ -100,6 +110,30 @@ theorem constantCoeff_nsmulSeries (n : ℕ) :
       · exact PowerSeries.constantCoeff_X
     rw [nsmulSeries_succ]
     exact constantCoeff_subst_eq_zero (hasSubst_of_constantCoeff_zero ha) ha F.zero_constantCoeff
+
+/-- `[m n]_F(T) = [m]_F([n]_F(T))`: multiplication by `m n` is the composite of multiplication by
+`m` and by `n`. -/
+theorem nsmulSeries_mul (m n : ℕ) :
+    F.nsmulSeries (m * n) = PowerSeries.subst (F.nsmulSeries n) (F.nsmulSeries m) := by
+  have hn : PowerSeries.HasSubst (F.nsmulSeries n) :=
+    PowerSeries.HasSubst.of_constantCoeff_zero (F.constantCoeff_nsmulSeries n)
+  induction m with
+  | zero => rw [zero_mul, nsmulSeries_zero, ← PowerSeries.coe_substAlgHom hn, map_zero]
+  | succ m ih =>
+    have ha : HasSubst ![F.nsmulSeries m, PowerSeries.X] :=
+      hasSubst_of_constantCoeff_zero fun s ↦ by
+        fin_cases s
+        · exact F.constantCoeff_nsmulSeries m
+        · exact PowerSeries.constantCoeff_X
+    -- `[m n + n]_F(T) = F([m]_F([n]_F(T)), [n]_F(T))`, and substituting `[n]_F(T)` into
+    -- `[m + 1]_F(T) = F([m]_F(T), T)` gives the same
+    rw [add_mul, one_mul, nsmulSeries_add, ih, nsmulSeries_succ,
+      PowerSeries.subst_def _ (subst _ _), subst_comp_subst_apply ha hn.const]
+    congr 1
+    funext s
+    fin_cases s
+    · rfl
+    · exact (PowerSeries.subst_X hn).symm
 
 /-- **Multiplication by `n` multiplies the invariant differential by `n`** (Silverman IV.4.3):
 `P([n]_F(T)) · [n]_F'(T) = n · P(T)` for a commutative formal group law `F`. -/
@@ -189,18 +223,21 @@ theorem exists_nsmulSeries_eq_of_prime [F.IsComm] {p : ℕ} (hp : p.Prime) :
       ((Nat.coprime_comm.mp ((Nat.Prime.coprime_iff_not_dvd hp).mpr
         (Nat.not_dvd_of_pos_of_lt hk₀ hkp))))
   choose! c hc using hdvd
+  -- split `[p]_F` into its terms of degree below `p` and its tail
   refine ⟨PowerSeries.mk fun j ↦ if j = 0 then 1 else if j + 1 < p then c (j + 1) else 0,
     PowerSeries.mk fun j ↦ PowerSeries.coeff (j + p) (F.nsmulSeries p), by simp, ?_⟩
+  conv_lhs => rw [(F.nsmulSeries p).eq_X_pow_mul_shift_add_trunc p, add_comm]
+  congr 1
   ext k
-  rw [map_add, PowerSeries.coeff_X_pow_mul', mul_assoc, ← map_natCast PowerSeries.C,
+  rw [Polynomial.coeff_coe, PowerSeries.coeff_trunc, mul_assoc, ← map_natCast PowerSeries.C,
     PowerSeries.coeff_C_mul]
   rcases k with _ | j
-  · simp [hp.ne_zero]
+  · simp [hp.pos]
   rw [PowerSeries.coeff_succ_X_mul, PowerSeries.coeff_mk]
   rcases Nat.eq_zero_or_pos j with rfl | hj
-  · simp [hp.one_lt.not_ge]
+  · simp [hp.one_lt]
   rcases lt_or_ge (j + 1) p with hjp | hjp
-  · simp [hj.ne', hjp, hjp.not_ge, hc (j + 1) (by omega) hjp]
-  · simp [hj.ne', hjp.not_gt, hjp, Nat.sub_add_cancel hjp]
+  · simp [hj.ne', hjp, hc (j + 1) (by omega) hjp]
+  · simp [hj.ne', hjp.not_gt]
 
 end FormalGroup

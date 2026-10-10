@@ -8,13 +8,12 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.KerReduction
 public import TauCeti.RingTheory.FormalGroup.NSMul
--- Proof-only: evaluating a substitution, and evaluating a renamed series.
+-- Proof-only: evaluating a power series at a point, and evaluating a renamed series.
 import TauCeti.RingTheory.MvPowerSeries.Rename
-import TauCeti.RingTheory.MvPowerSeries.Substitution
 import TauCeti.RingTheory.PowerSeries.Evaluation
 
 /-!
-# Torsion in the formal group when `p` is small
+# Torsion in the formal group when ramification is small relative to `p`
 
 Let `I` be an adic ideal of a complete Hausdorff linearly topologised integral domain `O`. On the
 group `Ê(I)` of formal-group parameters of a Weierstrass curve, multiplication by `n` is
@@ -104,9 +103,9 @@ theorem coe_nsmul (n : ℕ) (P : FormalGroupPoint W I) :
       Algebra.algebraMap_self,
       formalAddEval_def]
 
-/-- **`Ê(I)` has no `p`-torsion when `p` is small** (Silverman AEC IV.6.1, for points of order
-`p`): over an integral domain, if the prime `p` does not lie in `I ^ (p - 1)`, the only parameter
-`t ∈ I` with `p • t = 0` in `Ê(I)` is `t = 0`. -/
+/-- **`Ê(I)` has no `p`-torsion when `p ∉ I ^ (p - 1)`** (Silverman AEC IV.6.1, for points of
+order `p`): over an integral domain, if the prime `p` does not lie in `I ^ (p - 1)`, the only
+parameter `t ∈ I` with `p • t = 0` in `Ê(I)` is `t = 0`. -/
 theorem eq_zero_of_prime_nsmul_eq_zero [IsDomain O] {p : ℕ} (hp : p.Prime)
     (hpI : (p : O) ∉ I ^ (p - 1)) {P : FormalGroupPoint W I} (h : p • P = 0) : P = 0 := by
   have hI : IsAdic I := Fact.out
@@ -141,9 +140,9 @@ theorem eq_zero_of_prime_nsmul_eq_zero [IsDomain O] {p : ℕ} (hp : p.Prime)
   obtain ⟨v, hv⟩ := hunit.exists_right_inv
   simpa [mul_assoc, hv] using Ideal.mul_mem_right v _ hmem
 
-/-- **`Ê(I)` has no `n`-torsion when the prime factors of `n` are small**: over an integral
-domain, if every prime factor `p` of `n ≠ 0` satisfies `p ∉ I ^ (p - 1)`, the only parameter
-`t ∈ I` with `n • t = 0` in `Ê(I)` is `t = 0`. -/
+/-- **`Ê(I)` has no `n`-torsion when every prime factor `p` of `n` satisfies `p ∉ I ^ (p - 1)`**:
+over an integral domain, if every prime factor `p` of `n ≠ 0` satisfies `p ∉ I ^ (p - 1)`, the
+only parameter `t ∈ I` with `n • t = 0` in `Ê(I)` is `t = 0`. -/
 theorem eq_zero_of_nsmul_eq_zero_of_forall_prime_dvd [IsDomain O] {n : ℕ} (hn : n ≠ 0)
     (hnI : ∀ p : ℕ, p.Prime → p ∣ n → (p : O) ∉ I ^ (p - 1)) {P : FormalGroupPoint W I}
     (h : n • P = 0) : P = 0 := by
@@ -182,11 +181,11 @@ variable (C : WeierstrassCurve (u.adicCompletionIntegers F))
   [(C.baseChange (u.adicCompletion F)).IsElliptic]
 
 open scoped Classical in
-/-- **The kernel of reduction has no torsion of small residue-characteristic order** (Silverman AEC
-IV.6.1 and VII.3.1): a point of `E₁(F_u)` killed by an integer `n ≠ 0` whose prime factors `p` all
-satisfy `p ∉ u ^ (p - 1)` is the point at infinity. When the residue characteristic `p` has
-ramification index less than `p - 1` at `u`, as at every odd prime of `ℤ`, this holds for every
-`n ≠ 0`, and `E₁(F_u)` is torsion-free. -/
+/-- **The kernel of reduction has no `n`-torsion when ramification is small relative to the prime
+factors of `n`** (Silverman AEC IV.6.1 and VII.3.1): a point of `E₁(F_u)` killed by an integer
+`n ≠ 0` whose prime factors `p` all satisfy `p ∉ u ^ (p - 1)` is the point at infinity. When the
+residue characteristic `p` has ramification index less than `p - 1` at `u`, as at every odd prime
+of `ℤ`, this holds for every `n ≠ 0`, and `E₁(F_u)` is torsion-free. -/
 theorem eq_zero_of_mem_kerReduction_of_nsmul_eq_zero_of_forall_prime_dvd {n : ℕ} (hn : n ≠ 0)
     (hnu : ∀ p : ℕ, p.Prime → p ∣ n → (p : A) ∉ u.asIdeal ^ (p - 1))
     {P : (C.baseChange F_u).toAffine.Point} (hP : P ∈ C.kerReduction u) (h : n • P = 0) :

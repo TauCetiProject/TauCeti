@@ -28,8 +28,8 @@ this homomorphism is injective on the `n`-torsion `W(F)[n]` for every `n ∉ u`:
 VII.3.1(b), read over the global field. When the residue field is finite this bounds the
 prime-to-`u` torsion: `#W(F)[n]` divides `#W_k(k)`.
 
-Torsion of order divisible by the residue characteristic `p` is caught as well when `p` is small
-compared with the ramification at `u`: if `p ∉ u ^ (p - 1)`, the kernel of reduction has no
+Torsion of order divisible by the residue characteristic `p` is caught as well when the
+ramification at `u` is small relative to `p`: if `p ∉ u ^ (p - 1)`, the kernel of reduction has no
 `p`-torsion either (Silverman AEC IV.6.1;
 `WeierstrassCurve.eq_zero_of_mem_kerReduction_of_nsmul_eq_zero_of_forall_prime_dvd`). When every
 prime `p` satisfies `p ∉ u ^ (p - 1)`, as at every odd prime of `ℤ`, reduction is therefore
@@ -123,9 +123,9 @@ theorem valuation_xCoord_le_one_and_valuation_yCoord_le_one_of_nsmul_eq_zero
   valuation_le_one_of_forall_kerReduction u
     (fun C _ _ hQ hnQ ↦ C.eq_zero_of_mem_kerReduction_of_nsmul_eq_zero u hn hQ hnQ) hP h
 
-/-- **Torsion of order with small prime factors is integral at `u`**: a nonzero point of `W(F)`
-killed by an integer `n ≠ 0` whose prime factors `p` all satisfy `p ∉ u ^ (p - 1)` has both
-coordinates integral at `u`, for any integral model of `W` at `u`. -/
+/-- **Torsion is integral at `u` when ramification is small relative to the prime factors of its
+order**: a nonzero point of `W(F)` killed by an integer `n ≠ 0` whose prime factors `p` all satisfy
+`p ∉ u ^ (p - 1)` has both coordinates integral at `u`, for any integral model of `W` at `u`. -/
 theorem valuation_xCoord_le_one_and_valuation_yCoord_le_one_of_nsmul_eq_zero_of_forall_prime_dvd
     [IsIntegral (u.valuation F).valuationSubring W] [W.IsElliptic] [DecidableEq F] {n : ℕ}
     (hn : n ≠ 0)
@@ -177,9 +177,10 @@ theorem card_torsionBy_dvd_card_reduction {n : ℕ} (hn : (n : A) ∉ u.asIdeal)
     ((reductionHom (u.valuation F)).comp (AddSubgroup.torsionBy W.Point n).subtype)
     fun P Q hPQ ↦ Subtype.ext (injOn_reductionHom_torsionBy u hn P.2 Q.2 hPQ)
 
-/-- **At good reduction, reduction has no torsion of small order in its kernel** (Silverman AEC
-VII.3.1 and IV.6.1): a point killed by an integer `n ≠ 0` whose prime factors `p` all satisfy
-`p ∉ u ^ (p - 1)` and that reduces to the point at infinity is the point at infinity. -/
+/-- **At good reduction, the kernel of reduction has no `n`-torsion when ramification is small
+relative to the prime factors of `n`** (Silverman AEC VII.3.1 and IV.6.1): a point killed by an
+integer `n ≠ 0` whose prime factors `p` all satisfy `p ∉ u ^ (p - 1)` and that reduces to the point
+at infinity is the point at infinity. -/
 theorem eq_zero_of_reductionHom_eq_zero_of_nsmul_eq_zero_of_forall_prime_dvd {n : ℕ} (hn : n ≠ 0)
     (hnu : ∀ p : ℕ, p.Prime → p ∣ n → (p : A) ∉ u.asIdeal ^ (p - 1)) {P : W.Point}
     (hP : reductionHom (u.valuation F) P = 0) (h : n • P = 0) : P = 0 := by
@@ -194,11 +195,11 @@ theorem eq_zero_of_reductionHom_eq_zero_of_nsmul_eq_zero_of_forall_prime_dvd {n 
       (valuation_xCoord_le_one_and_valuation_yCoord_le_one_of_nsmul_eq_zero_of_forall_prime_dvd u
         hn hnu hP0 h).1
 
-/-- **At good reduction, reduction is injective on the torsion when `p` is small** (Silverman AEC
-VII.3.1 and IV.6.1): if every prime `p` satisfies `p ∉ u ^ (p - 1)`, that is, if the residue
-characteristic `p` of `u` has ramification index less than `p - 1` at `u`, then reduction of
-points is injective on the whole torsion subgroup of `W(F)`. Over `ℚ` this holds at every odd
-prime. -/
+/-- **At good reduction, reduction is injective on the torsion when ramification is small relative
+to `p`** (Silverman AEC VII.3.1 and IV.6.1): if every prime `p` satisfies `p ∉ u ^ (p - 1)`,
+that is, if the residue characteristic `p` of `u` has ramification index less than `p - 1` at `u`,
+then reduction of points is injective on the whole torsion subgroup of `W(F)`. Over `ℚ` this holds
+at every odd prime. -/
 theorem injOn_reductionHom_torsion
     (hu : ∀ p : ℕ, p.Prime → (p : A) ∉ u.asIdeal ^ (p - 1)) :
     Set.InjOn (reductionHom (u.valuation F) (W := W)) (AddCommGroup.torsion W.Point) := by
@@ -211,10 +212,10 @@ theorem injOn_reductionHom_torsion
   rw [nsmul_sub, mul_nsmul, hmP, nsmul_zero, mul_comm m k, mul_nsmul, hkQ, nsmul_zero, sub_zero]
 
 omit [DecidableEq (ResidueField (u.valuation F).valuationSubring)] in
-/-- **At good reduction, the torsion divides the reduced point count when `p` is small**: if every
-prime `p` satisfies `p ∉ u ^ (p - 1)`, the order of the torsion subgroup of `W(F)` divides the
-number of points of the reduced curve. When the reduced curve has infinitely many points,
-`Nat.card` reads `0` there and the statement is vacuous. -/
+/-- **At good reduction, the torsion divides the reduced point count when ramification is small
+relative to `p`**: if every prime `p` satisfies `p ∉ u ^ (p - 1)`, the order of the torsion
+subgroup of `W(F)` divides the number of points of the reduced curve. When the reduced curve has
+infinitely many points, `Nat.card` reads `0` there and the statement is vacuous. -/
 theorem card_torsion_dvd_card_reduction
     (hu : ∀ p : ℕ, p.Prime → (p : A) ∉ u.asIdeal ^ (p - 1)) :
     Nat.card (AddCommGroup.torsion W.Point) ∣
