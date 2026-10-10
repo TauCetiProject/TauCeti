@@ -216,14 +216,19 @@ instance instIsGeodesicSpace [IsGeodesicSpace X] : IsGeodesicSpace (WassersteinS
         ∀ t, ((γ t : ProbabilityMeasure X) : Measure X) = η.timeMarginal t :=
       ⟨fun t ↦ mk (η.timeMarginal t).toProbabilityMeasure (hmom t),
         fun t ↦ by simp⟩
-    refine ⟨IccExtend zero_le_one γ, ⟨?_, ?_, fun s hs t ht ↦ ?_⟩⟩
-    · rw [IccExtend_left]
-      exact ext (ProbabilityMeasure.toMeasure_injective ((hγ 0).trans h0))
-    · rw [IccExtend_right]
-      exact ext (ProbabilityMeasure.toMeasure_injective ((hγ 1).trans h1))
-    · rw [IccExtend_of_mem _ _ hs, IccExtend_of_mem _ _ ht, dist_def, dist_def, hγ, hγ, hW,
-        ENNReal.toReal_mul, edist_dist, ENNReal.toReal_ofReal dist_nonneg, Subtype.dist_eq,
-        Real.dist_eq]
+    have hγ0 : γ 0 = μ := ext (ProbabilityMeasure.toMeasure_injective ((hγ 0).trans h0))
+    have hγ1 : γ 1 = ν := ext (ProbabilityMeasure.toMeasure_injective ((hγ 1).trans h1))
+    have hdist (s t : I) : dist (γ s) (γ t) = |(s : ℝ) - t| * dist (γ 0) (γ 1) := by
+      rw [hγ0, hγ1, dist_def, dist_def, hγ, hγ, hW, ENNReal.toReal_mul, edist_dist,
+        ENNReal.toReal_ofReal dist_nonneg, Subtype.dist_eq, Real.dist_eq]
+    -- The curve is Lipschitz, hence a path; it is then a geodesic path by `hdist`.
+    have hc : (⟨γ, (LipschitzWith.of_dist_le_mul (K := (dist (γ 0) (γ 1)).toNNReal)
+        fun s t ↦ by rw [hdist, Real.coe_toNNReal _ dist_nonneg, Subtype.dist_eq, Real.dist_eq,
+          mul_comm]).continuous⟩ : C(I, WassersteinSpace p X)) ∈ geodesicPaths _ :=
+      mem_geodesicPaths_iff.2 hdist
+    have hseg := mem_geodesicPaths_iff_isGeodesicSegment.1 hc
+    simp only [ContinuousMap.coe_mk, hγ0, hγ1] at hseg
+    exact ⟨_, hseg⟩
 
 end WassersteinSpace
 
