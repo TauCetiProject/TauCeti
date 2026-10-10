@@ -122,7 +122,7 @@ private theorem exists_wronskian_eq_wronskian_basis_mul (hF : IsFunctionField k 
     simpa only [Matrix.of_apply] using h.symm
 
 include hP ht in
-/-- **The Wronskian of a canonical basis is nonzero at a rational place.** If `W`
+/-- **The Wronskian of a canonical basis is a nonzero function.** If `W`
 satisfies the Riemann--Roch identity, `P` is a rational place with a separating prime element `t`,
 and the gaps at `P` are pairwise distinct in `k`, then the Wronskian with respect to `t` of any
 `k`-basis of `L(W)` is nonzero. -/
