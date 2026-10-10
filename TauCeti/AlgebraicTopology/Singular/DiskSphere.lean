@@ -23,9 +23,9 @@ copy of the coefficient object, identified by the augmentation.
 In positive degrees, the disk is contractible, so the reduced connecting morphism of the pair
 identifies `Hₖ₊₁(Dⁿ, Sⁿ⁻¹)` with the reduced homology `H~ₖ(Sⁿ⁻¹)` of the boundary sphere, which is
 computed in `TauCeti/AlgebraicTopology/Singular/Sphere.lean`.  The isomorphism
-`Hₙ(Dⁿ, Sⁿ⁻¹) ≅ R` in the top degree is this connecting morphism followed by the chosen generator
-of `H~ₙ₋₁(Sⁿ⁻¹)`, so the connecting morphism carries the generator of the pair to the generator of
-the sphere.
+`Hₙ(Dⁿ, Sⁿ⁻¹) ≅ R` in the top degree is this connecting morphism followed by the standard generator
+`TauCeti.reducedSingularHomologyTopCatSphereIso` of `H~ₙ₋₁(Sⁿ⁻¹)`, so the connecting morphism
+carries the generator of the pair to the standard generator of the sphere.
 
 ## Main results
 
@@ -193,7 +193,7 @@ theorem isZero_singularHomology_diskBoundaryPair_of_ne {n k : ℕ} (hk : k ≠ n
           (TopPair.isIso_reducedSingularHomologyδ_of_contractibleSpace _ R k))
 
 /-- **The relative homology of a disk modulo its boundary in its dimension**: `Hₙ(Dⁿ, Sⁿ⁻¹) ≅ R`.
-For `n = m + 1` it is the reduced connecting isomorphism onto `H~ₘ(Sᵐ)` followed by the chosen
+For `n = m + 1` it is the reduced connecting isomorphism onto `H~ₘ(Sᵐ)` followed by the standard
 generator `TauCeti.reducedSingularHomologyTopCatSphereIso` of the sphere
 (`TauCeti.singularHomologyDiskBoundaryPairIso_succ_hom`); for `n = 0` the pair is a point modulo
 the empty set and the isomorphism is the augmentation. -/
@@ -208,7 +208,7 @@ def singularHomologyDiskBoundaryPairIso :
       reducedSingularHomologyTopCatSphereIso R m
 
 /-- In positive dimension, the identification `Hₘ₊₁(Dᵐ⁺¹, Sᵐ) ≅ R` is the reduced connecting
-morphism of the pair followed by the chosen generator of `H~ₘ(Sᵐ)`. -/
+morphism of the pair followed by the standard generator of `H~ₘ(Sᵐ)`. -/
 @[simp]
 lemma singularHomologyDiskBoundaryPairIso_succ_hom (m : ℕ) :
     (singularHomologyDiskBoundaryPairIso R (m + 1)).hom =

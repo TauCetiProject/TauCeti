@@ -195,16 +195,6 @@ theorem W1p.contDiffSMul_smul (hpsi : ContDiff ℝ ∞ psi) (hM : 0 ≤ M)
   simp only [h, h₁, hsmul, hsmul', hvalue c u, Pi.smul_apply, smul_eq_mul]
   ring
 
-omit [FiniteDimensional ℝ E] in
-/-- The squared Euclidean jet norm splits into the value and gradient contributions. -/
-private theorem norm_sq_coe_ae (w : W1p mu Omega p) :
-    ∀ᵐ x ∂mu.restrict Omega,
-      ‖(w : Sobolev1JetLp mu Omega p) x‖ ^ 2
-        = ‖W1p.value w x‖ ^ 2 + ‖W1p.gradient w x‖ ^ 2 := by
-  filter_upwards [W1p.value_apply_ae w, W1p.gradient_apply_ae w] with x hv hg
-  rw [hv, hg]
-  exact WithLp.prod_norm_sq_eq_of_L2 _
-
 /-- **The operator bound.**  Multiplication by `ψ` increases the `W^{1,p}` norm by a factor of at
 most `2 M`, where `M` bounds both `|ψ|` and `‖∇ψ‖`.  The two bounds enter separately: `M` scales
 the value and the `ψ ∇u` half of the gradient, while the second `M` pays for the Leibniz error
@@ -216,8 +206,8 @@ theorem W1p.norm_contDiffSMul_le (hpsi : ContDiff ℝ ∞ psi) (hM : 0 ≤ M)
   have hle : ‖(W1p.contDiffSMul psi hpsi hM hpsiM hgradM u : Sobolev1JetLp mu Omega p)‖
       ≤ ‖(2 * M) • (u : Sobolev1JetLp mu Omega p)‖ := by
     refine Lp.norm_le_norm_of_ae_le ?_
-    filter_upwards [norm_sq_coe_ae (W1p.contDiffSMul psi hpsi hM hpsiM hgradM u),
-      norm_sq_coe_ae u, W1p.value_contDiffSMul_ae hpsi hM hpsiM hgradM u,
+    filter_upwards [W1p.norm_apply_sq_ae (W1p.contDiffSMul psi hpsi hM hpsiM hgradM u),
+      W1p.norm_apply_sq_ae u, W1p.value_contDiffSMul_ae hpsi hM hpsiM hgradM u,
       W1p.gradient_contDiffSMul_ae hpsi hM hpsiM hgradM u,
       Lp.coeFn_smul (2 * M) (u : Sobolev1JetLp mu Omega p),
       ae_restrict_mem Omega.isOpen.measurableSet] with x hsq hsq' hv hg hsmul hx

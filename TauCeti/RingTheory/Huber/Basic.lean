@@ -35,6 +35,8 @@ Huber ring is nonarchimedean, which is exactly the hypothesis under which
 * `TauCeti.Huber.IsPseudoUniformizer`: a topologically nilpotent unit of `A`.
 * `TauCeti.Huber.PairOfDefinition.ofIsPseudoUniformizer`: the pair of definition `(A₀, ϖ A₀)`
   attached to an open bounded subring `A₀` containing a pseudouniformiser `ϖ`.
+* `TauCeti.Huber.PairOfDefinition.quotient`: the image of a pair of definition in a quotient
+  ring `A ⧸ J`.
 
 ## Main results
 
@@ -491,9 +493,10 @@ theorem le_powerBoundedSubring [NonarchimedeanRing A] (P : PairOfDefinition A) :
     P.ringOfDefinition ≤ powerBoundedSubring A := fun _ ha ↦
   mem_powerBoundedSubring.mpr (P.isBounded_ringOfDefinition.isPowerBounded_of_mem ha)
 
-/-- The image of a pair of definition in a quotient ring, used to furnish the quotient Huber
-ring structure. -/
-private def quotient [IsTopologicalRing A] (P : PairOfDefinition A) (J : Ideal A) :
+/-- The image of a pair of definition in a quotient ring `A ⧸ J`, with the quotient topology: its
+ring of definition is the image of `A₀` (`TauCeti.Huber.PairOfDefinition.quotient_ringOfDefinition`)
+and its ideal of definition is the image of `I`. -/
+def quotient [IsTopologicalRing A] (P : PairOfDefinition A) (J : Ideal A) :
     PairOfDefinition (A ⧸ J) := by
   let q : A →+* A ⧸ J := Ideal.Quotient.mk J
   let A₀ : Subring (A ⧸ J) := P.ringOfDefinition.map q
@@ -537,6 +540,11 @@ private def quotient [IsTopologicalRing A] (P : PairOfDefinition A) (J : Ideal A
     rintro y hy
     obtain ⟨x, hx, rfl⟩ := Ideal.mem_map_iff_of_surjective q₀ hq₀_surj |>.mp hy
     exact hn hx
+
+/-- The ring of definition of the quotient pair of definition is the image of the original one. -/
+theorem quotient_ringOfDefinition [IsTopologicalRing A] (P : PairOfDefinition A) (J : Ideal A) :
+    (P.quotient J).ringOfDefinition = P.ringOfDefinition.map (Ideal.Quotient.mk J) :=
+  (rfl)
 
 /-- **Some power of a topologically nilpotent `s` carries any `c : A` into the ring of
 definition.** The ring of definition is open and `sⁿ c → 0`, so `sⁿ c` is eventually inside it.
