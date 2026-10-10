@@ -243,10 +243,9 @@ theorem dihedralToIsom_map_mul (g : DihedralGroup 4) (p q : Sol) :
     · simp
     · intro f k _ _ hf hk p q
       simp only [RiemannianIsometry.mul_apply, hk, hf]
-    · intro f _ hf
-      -- Mathlib transports multiplicativity across a two-sided inverse.
-      simpa only [RiemannianIsometry.inv_apply, MulHom.inverse, MulHom.coe_mk] using
-        (MulHom.inverse ⟨f, hf⟩ f.symm f.symm_apply_apply f.apply_symm_apply).map_mul
+    · intro f _ hf p q
+      apply (EquivLike.injective f)
+      simp [hf]
   exact h p q
 
 end TauCeti.Sol
