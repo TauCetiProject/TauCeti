@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.StableManifold
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
+import TauCeti.Analysis.SpecialFunctions.Log.ExpNegLogOneAdd
 import TauCeti.Geometry.Manifold.Immersion
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 
@@ -70,22 +71,12 @@ namespace MorseChart
 variable (φ : MorseChart E f x)
 
 omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
-/-- The time `log (1 + ‖v‖ / δ)` used by the parametrization of the stable manifold is admissible:
-it brings `v` into the ball of radius `δ`. -/
-theorem exp_neg_log_mul_norm_lt {δ : ℝ} (hδ : 0 < δ) (v : φ.stableSubspace) :
-    Real.exp (-Real.log (1 + ‖v‖ / δ)) * ‖v‖ < δ := by
-  have h1 : 0 < 1 + ‖v‖ / δ := by positivity
-  rw [Real.exp_neg, Real.exp_log h1, inv_mul_lt_iff₀ h1, add_mul, one_mul,
-    div_mul_cancel₀ _ hδ.ne']
-  linarith [norm_nonneg v]
-
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
 /-- The time `log (1 + ‖v‖ / δ)` used by the parametrization of the stable manifold brings `v`
 into the ball of radius `δ`, in norm form. -/
 theorem norm_exp_neg_log_smul_lt {δ : ℝ} (hδ : 0 < δ) (v : φ.stableSubspace) :
     ‖Real.exp (-Real.log (1 + ‖v‖ / δ)) • v‖ < δ := by
   rw [norm_smul_of_nonneg (Real.exp_pos _).le]
-  exact φ.exp_neg_log_mul_norm_lt hδ v
+  exact Real.exp_neg_log_one_add_div_mul_lt hδ (norm_nonneg v)
 
 omit [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
 /-- The small cube of a Morse chart, where the coordinates and the chart value are small, is
@@ -173,7 +164,7 @@ theorem flow_neg_toChart_symm_eq {v : φ.stableSubspace} {T T' : ℝ} (hTT' : T 
 theorem stableParam_eq (hδ : 0 < δ) {v : φ.stableSubspace} {T : ℝ}
     (hT : Real.exp (-T) * ‖v‖ < δ) :
     hX.stableParam φ δ v = hX.flow (-T) (φ.toChart.symm (Real.exp (-T) • (v : E))) := by
-  have hτ := φ.exp_neg_log_mul_norm_lt hδ v
+  have hτ := Real.exp_neg_log_one_add_div_mul_lt hδ (norm_nonneg v)
   rw [stableParam]
   rcases le_total T (Real.log (1 + ‖v‖ / δ)) with h | h
   · exact (hX.flow_neg_toChart_symm_eq φ hφ hrT hδr h hT).symm
@@ -212,7 +203,7 @@ image by the time-`s` map of the flow. -/
 theorem stableParam_smul (hδ : 0 < δ) (v : φ.stableSubspace) (s : ℝ) :
     hX.stableParam φ δ (Real.exp (-s) • v) = hX.flow s (hX.stableParam φ δ v) := by
   set τ := Real.log (1 + ‖v‖ / δ)
-  have hτ : Real.exp (-τ) * ‖v‖ < δ := φ.exp_neg_log_mul_norm_lt hδ v
+  have hτ : Real.exp (-τ) * ‖v‖ < δ := Real.exp_neg_log_one_add_div_mul_lt hδ (norm_nonneg v)
   -- Rescaling `v` by `e^{-s}` shifts the admissible time from `τ` to `τ - s`.
   have hexp : Real.exp (-(τ - s)) * Real.exp (-s) = Real.exp (-τ) := by
     rw [← Real.exp_add]; ring_nf
@@ -224,7 +215,7 @@ theorem stableParam_smul (hδ : 0 < δ) (v : φ.stableSubspace) (s : ℝ) :
 /-- The parametrization takes values in the stable manifold. -/
 theorem stableParam_mem_stableSet (hδ : 0 < δ) (v : φ.stableSubspace) :
     hX.stableParam φ δ v ∈ hX.flow.stableSet x := by
-  rw [hX.stableParam_eq φ hφ hrT hδr hδ (φ.exp_neg_log_mul_norm_lt hδ v),
+  rw [hX.stableParam_eq φ hφ hrT hδr hδ (Real.exp_neg_log_one_add_div_mul_lt hδ (norm_nonneg v)),
     Flow.apply_mem_stableSet_iff, ← Submodule.coe_smul]
   exact hX.toChart_symm_mem_stableSet φ hφ hrT hδr (φ.norm_exp_neg_log_smul_lt hδ v)
 
@@ -235,8 +226,10 @@ theorem stableParam_injective (hδ : 0 < δ) : Injective (hX.stableParam φ δ) 
   have hle {a : ℝ} (ha : a ≤ T) (w : φ.stableSubspace) :
       Real.exp (-T) * ‖w‖ ≤ Real.exp (-a) * ‖w‖ := by
     gcongr
-  have hT := (hle (le_max_left _ _) v).trans_lt (φ.exp_neg_log_mul_norm_lt hδ v)
-  have hT' := (hle (le_max_right _ _) v').trans_lt (φ.exp_neg_log_mul_norm_lt hδ v')
+  have hT := (hle (le_max_left _ _) v).trans_lt
+    (Real.exp_neg_log_one_add_div_mul_lt hδ (norm_nonneg v))
+  have hT' := (hle (le_max_right _ _) v').trans_lt
+    (Real.exp_neg_log_one_add_div_mul_lt hδ (norm_nonneg v'))
   have hsmall {w : φ.stableSubspace} (hw : Real.exp (-T) * ‖w‖ < δ) :
       ‖Real.exp (-T) • w‖ < δ := by
     rwa [norm_smul_of_nonneg (Real.exp_pos _).le]
