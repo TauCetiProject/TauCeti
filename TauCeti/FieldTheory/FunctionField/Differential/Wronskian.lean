@@ -244,6 +244,14 @@ theorem ord_wronskian_derivativeOfSeparating {n : ℕ} {f : Fin n → F} (hf : �
   omega
 
 include hP ht in
+/-- At a rational place with a separating prime element `t`, in characteristic zero, nonzero
+functions with pairwise distinct orders at `P` have a nonzero Wronskian with respect to `t`. -/
+theorem wronskian_derivativeOfSeparating_ne_zero_of_injective [CharZero k] {n : ℕ}
+    {f : Fin n → F} (hf : ∀ j, f j ≠ 0) (hinj : Function.Injective fun j ↦ P.ord (f j)) :
+    (derivativeOfSeparating htr).wronskian f ≠ 0 :=
+  P.wronskian_derivativeOfSeparating_ne_zero hP ht htr hf (Int.cast_injective.comp hinj)
+
+include hP ht in
 /-- **The order of a Wronskian at a rational place, in characteristic zero**: nonzero functions
 with pairwise distinct orders at `P` have a Wronskian of order `∑ j, ord_P (f j) - n (n - 1) / 2`.
 -/
