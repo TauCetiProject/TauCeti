@@ -56,14 +56,22 @@ def AreWeaklyIsomorphicKernels (μ : Measure X) (ωX : X × X → Z) (ν : Measu
     (fun q : (X × Y) × (X × Y) ↦ ωX (q.1.1, q.2.1)) =ᵐ[π.prod π]
       (fun q ↦ ωY (q.1.2, q.2.2))
 
-/-- The exact-coupling characterization supplies both introduction and elimination for weak
-isomorphism, without unfolding the predicate in an importing module. -/
-theorem areWeaklyIsomorphicKernels_iff :
-    AreWeaklyIsomorphicKernels μ ωX ν ωY ↔
-      ∃ π : Measure (X × Y), IsCoupling π μ ν ∧
-        (fun q : (X × Y) × (X × Y) ↦ ωX (q.1.1, q.2.1)) =ᵐ[π.prod π]
-          (fun q ↦ ωY (q.1.2, q.2.2)) :=
-  (Iff.rfl)
+/-- A coupling that identifies the pulled-back kernels almost everywhere gives a weak
+isomorphism. This constructs weak isomorphisms without unfolding the predicate downstream. -/
+theorem areWeaklyIsomorphicKernels_of_isCoupling {π : Measure (X × Y)}
+    (hπ : IsCoupling π μ ν)
+    (heq : (fun q : (X × Y) × (X × Y) ↦ ωX (q.1.1, q.2.1)) =ᵐ[π.prod π]
+      (fun q ↦ ωY (q.1.2, q.2.2))) : AreWeaklyIsomorphicKernels μ ωX ν ωY :=
+  ⟨π, hπ, heq⟩
+
+/-- Extract an exact coupling from a weak isomorphism, without unfolding the predicate in an
+importing module. Neither construction nor extraction requires structure on the target. -/
+theorem AreWeaklyIsomorphicKernels.exists_isCoupling
+    (h : AreWeaklyIsomorphicKernels μ ωX ν ωY) :
+    ∃ π : Measure (X × Y), IsCoupling π μ ν ∧
+      (fun q : (X × Y) × (X × Y) ↦ ωX (q.1.1, q.2.1)) =ᵐ[π.prod π]
+        (fun q ↦ ωY (q.1.2, q.2.2)) :=
+  h
 
 /-- A weak isomorphism of probability kernels admits a common probability parametrization on
 the canonical carrier `X × Y`. -/
@@ -73,7 +81,7 @@ theorem AreWeaklyIsomorphicKernels.exists_probability_parametrization [IsProbabi
       MeasurePreserving Prod.fst γ μ ∧ MeasurePreserving Prod.snd γ ν ∧
       (fun q : (X × Y) × (X × Y) ↦ ωX (q.1.1, q.2.1)) =ᵐ[γ.prod γ]
         (fun q ↦ ωY (q.1.2, q.2.2)) := by
-  obtain ⟨π, hπ, heq⟩ := areWeaklyIsomorphicKernels_iff.mp h
+  obtain ⟨π, hπ, heq⟩ := h.exists_isCoupling
   exact ⟨π, hπ.isProbabilityMeasure, hπ.measurePreserving_fst, hπ.measurePreserving_snd, heq⟩
 
 /-- Exchanging the two kernels preserves weak isomorphism. No measurability of the target is
@@ -81,9 +89,9 @@ needed: the coordinate swap is a measurable equivalence. -/
 protected theorem AreWeaklyIsomorphicKernels.symm [IsFiniteMeasure μ]
     (h : AreWeaklyIsomorphicKernels μ ωX ν ωY) :
     AreWeaklyIsomorphicKernels ν ωY μ ωX := by
-  obtain ⟨π, hπ, heq⟩ := areWeaklyIsomorphicKernels_iff.mp h
+  obtain ⟨π, hπ, heq⟩ := h.exists_isCoupling
   have : IsFiniteMeasure π := hπ.isFiniteMeasure
-  refine areWeaklyIsomorphicKernels_iff.mpr ⟨π.map Prod.swap, hπ.swap, ?_⟩
+  refine areWeaklyIsomorphicKernels_of_isCoupling hπ.swap ?_
   rw [Measure.map_prod_map π π measurable_swap measurable_swap]
   have he : MeasurableEmbedding (Prod.map (Prod.swap : X × Y → Y × X) Prod.swap) :=
     (MeasurableEquiv.prodComm : X × Y ≃ᵐ Y × X).measurableEmbedding.prodMap
@@ -97,13 +105,13 @@ theorem areWeaklyIsomorphicKernels_congr_ae [IsFiniteMeasure μ]
   have transfer {a a' : X × X → Z} {b b' : Y × Y → Z}
       (ha : a =ᵐ[μ.prod μ] a') (hb : b =ᵐ[ν.prod ν] b')
       (h : AreWeaklyIsomorphicKernels μ a ν b) : AreWeaklyIsomorphicKernels μ a' ν b' := by
-    obtain ⟨π, hπ, heq⟩ := areWeaklyIsomorphicKernels_iff.mp h
+    obtain ⟨π, hπ, heq⟩ := h.exists_isCoupling
     have : IsFiniteMeasure π := hπ.isFiniteMeasure
     have ha' := (hπ.measurePreserving_fst.prod hπ.measurePreserving_fst).quasiMeasurePreserving
       |>.ae_eq_comp ha
     have hb' := (hπ.measurePreserving_snd.prod hπ.measurePreserving_snd).quasiMeasurePreserving
       |>.ae_eq_comp hb
-    exact areWeaklyIsomorphicKernels_iff.mpr ⟨π, hπ, ha'.symm.trans (heq.trans hb')⟩
+    exact areWeaklyIsomorphicKernels_of_isCoupling hπ (ha'.symm.trans (heq.trans hb'))
   exact ⟨transfer hX hY, transfer hX.symm hY.symm⟩
 
 section PseudoEMetricSpace
@@ -115,7 +123,7 @@ This implication also holds at exponent zero. -/
 theorem AreWeaklyIsomorphicKernels.gromovWassersteinEDist_eq_zero
     (h : AreWeaklyIsomorphicKernels μ ωX ν ωY) (p : ℝ≥0∞) :
     gromovWassersteinEDist p μ ωX ν ωY = 0 := by
-  obtain ⟨π, hπ, heq⟩ := areWeaklyIsomorphicKernels_iff.mp h
+  obtain ⟨π, hπ, heq⟩ := h.exists_isCoupling
   refine nonpos_iff_eq_zero.mp ((gromovWassersteinEDist_le hπ p ωX ωY).trans_eq ?_)
   rw [gromovWassersteinDistortion_def]
   have hzero : (fun q : (X × Y) × (X × Y) ↦
@@ -136,7 +144,13 @@ theorem areWeaklyIsomorphicKernels_iff_exists_distortion_eq_zero (hp : p ≠ 0) 
     AreWeaklyIsomorphicKernels μ ωX ν ωY ↔
       ∃ π : Measure (X × Y), IsCoupling π μ ν ∧
         gromovWassersteinDistortion p ωX ωY π = 0 := by
-  simp only [areWeaklyIsomorphicKernels_iff, gromovWassersteinDistortion_eq_zero_iff hp]
+  constructor
+  · intro h
+    obtain ⟨π, hπ, heq⟩ := h.exists_isCoupling
+    exact ⟨π, hπ, (gromovWassersteinDistortion_eq_zero_iff hp).mpr heq⟩
+  · rintro ⟨π, hπ, hzero⟩
+    exact areWeaklyIsomorphicKernels_of_isCoupling hπ
+      ((gromovWassersteinDistortion_eq_zero_iff hp).mp hzero)
 
 /-- A common s-finite parametrizing measure with equal pulled-back kernels gives a weak
 isomorphism. The witness coupling is the pushforward along the paired parametrizing maps. -/
@@ -178,8 +192,8 @@ theorem AreWeaklyIsomorphicKernels.trans_of_exists_glue [IsFiniteMeasure ν]
       IsCoupling π μ ν → IsCoupling σ ν ρ →
       ∃ γ : Measure (X × Y × W), γ.map (Prod.map id Prod.fst) = π ∧ γ.snd = σ) :
     AreWeaklyIsomorphicKernels μ ωX ρ ωW := by
-  obtain ⟨π, hπ, heqXY⟩ := areWeaklyIsomorphicKernels_iff.mp hXY
-  obtain ⟨σ, hσ, heqYW⟩ := areWeaklyIsomorphicKernels_iff.mp hYW
+  obtain ⟨π, hπ, heqXY⟩ := hXY.exists_isCoupling
+  obtain ⟨σ, hσ, heqYW⟩ := hYW.exists_isCoupling
   obtain ⟨γ, hγπ, hγσ⟩ := hglue π σ hπ hσ
   have hleft : MeasurePreserving (Prod.map id Prod.fst) γ π :=
     ⟨measurable_id.prodMap measurable_fst, hγπ⟩
