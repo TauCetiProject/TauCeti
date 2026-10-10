@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Velu.Coordinates
 public import TauCeti.FieldTheory.FunctionField.Divisor.ProductFormula
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Translation.Automorphism
 
 /-!
 # Vélu's coordinates generate the quotient function field
@@ -47,20 +48,6 @@ variable {F : Type*} [Field F] [DecidableEq F] (W : Affine F) [W.IsElliptic]
 
 attribute [local instance] Fintype.ofFinite
 
-omit [Finite Φ] in
-private theorem orbit_infinity_injective :
-    Function.Injective fun Q : Φ ↦ translation W Q • Place.infinity W := by
-  intro P Q h
-  have heq (T : Φ) : translation W T • Place.infinity W =
-      (pointEquivDegreeOnePlace W (-(Point.equivBaseChangeSelf W).symm T)).1 := by
-    rw [← coe_pointEquivDegreeOnePlace_zero, ← Point.zero_def,
-      ← (Point.equivBaseChangeSelf W).apply_symm_apply (T : (W⁄F).toAffine.Point),
-      translation_smul_pointEquivDegreeOnePlace, zero_sub]
-    simp only [AddEquiv.symm_apply_apply]
-  simp only [heq] at h
-  exact Subtype.ext ((Point.equivBaseChangeSelf W).symm.injective
-    (neg_injective ((pointEquivDegreeOnePlace W).injective (Subtype.ext h))))
-
 private theorem poles_eq_sum {z : W.FunctionField} (hz : z ≠ 0) (n : ℕ)
     (hord : ∀ Q : Φ, (translation W Q • Place.infinity W).ord z = -(n : ℤ))
     (hreg : ∀ P : Place F W.FunctionField,
@@ -68,7 +55,8 @@ private theorem poles_eq_sum {z : W.FunctionField} (hz : z ≠ 0) (n : ℕ)
     Divisor.poles W.isFunctionField (Units.mk0 z hz) =
       (n : ℤ) • ∑ Q : Φ, WeilDivisor.ofPoint (translation W Q • Place.infinity W) := by
   classical
-  rw [← Finset.sum_image fun _ _ _ _ h ↦ orbit_infinity_injective W Φ h]
+  rw [← Finset.sum_image fun _ _ _ _ h ↦
+    Subtype.ext (translation_smul_infinity_injective W h)]
   ext P
   rw [Divisor.coeff_poles, Units.val_mk0, WeilDivisor.coeff_zsmul,
     WeilDivisor.coeff_sum_ofPoint]
