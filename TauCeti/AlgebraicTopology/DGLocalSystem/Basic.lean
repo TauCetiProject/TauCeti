@@ -81,12 +81,6 @@ abbrev pullback (f : C(B, B')) (hf : f b = b') :
     DGLocalSystem.{uM} B' b' R ⥤ DGLocalSystem.{uM} B b R :=
   DGRightModuleCat.restrictScalars (loopChainMap R f hf)
 
-/-- The pullback is restriction of scalars along `C_*(Ωf)`, so the restriction-of-scalars API
-applies to it. -/
-theorem pullback_eq (f : C(B, B')) (hf : f b = b') :
-    pullback.{uM} R f hf = DGRightModuleCat.restrictScalars (loopChainMap R f hf) :=
-  (rfl)
-
 /-- The pullback along the identity is isomorphic to the identity functor. -/
 def pullbackId : pullback.{uM} R (.id B) (ContinuousMap.id_apply b) ≅ 𝟭 _ :=
   eqToIso (by rw [pullback, loopChainMap_id]) ≪≫ DGRightModuleCat.restrictScalarsId
@@ -215,6 +209,18 @@ def pullbackId :
       fun c ↦ pullbackIdApp R (β.mk_point c) _ 𝓕)
     (fun φ ↦ funext fun c ↦ pullbackIdApp_naturality R (β.mk_point c) _ φ)
 
+/-- The component of `pullbackId` at a family `𝓕` and a path component `c`. -/
+@[simp]
+theorem pullbackId_hom_app (𝓕 : DGLocalSystemFamily.{uM} β R) (c : ZerothHomotopy B) :
+    (pullbackId (β := β) R).hom.app 𝓕 c = (pullbackIdApp R (β.mk_point c) _ 𝓕).hom :=
+  (rfl)
+
+/-- The component of the inverse of `pullbackId` at a family `𝓕` and a path component `c`. -/
+@[simp]
+theorem pullbackId_inv_app (𝓕 : DGLocalSystemFamily.{uM} β R) (c : ZerothHomotopy B) :
+    (pullbackId (β := β) R).inv.app 𝓕 c = (pullbackIdApp R (β.mk_point c) _ 𝓕).inv :=
+  (rfl)
+
 variable {B'' : Type*} [TopologicalSpace B''] {β'' : PathComponentBasepoints B''}
 
 /-- The component of `pullbackComp`, for indices `c' = c` (transport along `h`). -/
@@ -254,6 +260,28 @@ def pullbackComp (g : C(B, B'')) (f : C(B', B))
     (fun φ ↦ funext fun c' ↦
       pullbackCompApp_naturality R g f (congrArg (fun x ↦ ZerothHomotopy.mk (g x)) (hf c'))
         (hf c') (hg _) _ φ)
+
+/-- The component of `pullbackComp` at a family `𝓕` and a path component `c'`. -/
+@[simp]
+theorem pullbackComp_hom_app (g : C(B, B'')) (f : C(B', B))
+    (hg : ∀ c, g (β.point c) = β''.point (ZerothHomotopy.mk (g (β.point c))))
+    (hf : ∀ c', f (β'.point c') = β.point (ZerothHomotopy.mk (f (β'.point c'))))
+    (𝓕 : DGLocalSystemFamily.{uM} β'' R) (c' : ZerothHomotopy B') :
+    (pullbackComp R g f hg hf).hom.app 𝓕 c' =
+      (pullbackCompApp R g f (congrArg (fun x ↦ ZerothHomotopy.mk (g x)) (hf c')) (hf c')
+        (hg _) _ 𝓕).hom :=
+  (rfl)
+
+/-- The component of the inverse of `pullbackComp` at a family `𝓕` and a path component `c'`. -/
+@[simp]
+theorem pullbackComp_inv_app (g : C(B, B'')) (f : C(B', B))
+    (hg : ∀ c, g (β.point c) = β''.point (ZerothHomotopy.mk (g (β.point c))))
+    (hf : ∀ c', f (β'.point c') = β.point (ZerothHomotopy.mk (f (β'.point c'))))
+    (𝓕 : DGLocalSystemFamily.{uM} β'' R) (c' : ZerothHomotopy B') :
+    (pullbackComp R g f hg hf).inv.app 𝓕 c' =
+      (pullbackCompApp R g f (congrArg (fun x ↦ ZerothHomotopy.mk (g x)) (hf c')) (hf c')
+        (hg _) _ 𝓕).inv :=
+  (rfl)
 
 end DGLocalSystemFamily
 
