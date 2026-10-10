@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicGeometry.BaseChangeSection
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Functor
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Section
 public import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
-public import TauCeti.AlgebraicGeometry.IdealSheaf.Section
 
 /-!
 # Graphs of points as relative effective Cartier divisors
