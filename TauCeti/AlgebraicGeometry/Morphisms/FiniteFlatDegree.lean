@@ -38,7 +38,7 @@ extension of fraction fields. The algebra structures on `K` and `L` record the c
 of this extension with the map of coordinate rings. -/
 theorem finrank_SpecMap_eq_finrank_fractionRing
     {R S : Type u} {K : Type v} {L : Type w}
-    [CommRing R] [IsDomain R] [CommRing S] [IsDomain S]
+    [CommRing R] [IsDomain R] [CommRing S]
     [CommRing K] [CommRing L] [Algebra R S] [Algebra R K] [Algebra S L]
     [Algebra R L] [Algebra K L] [IsScalarTower R K L] [IsScalarTower R S L]
     [IsFractionRing R K] [IsFractionRing S L] [Module.Flat R S] [Module.Finite R S]
