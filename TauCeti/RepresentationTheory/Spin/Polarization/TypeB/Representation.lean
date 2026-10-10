@@ -30,10 +30,7 @@ representation.
 
 The enveloping-algebra extension is what the Chevalley--Demazure construction consumes, since
 divided powers of root vectors and binomial coefficients in coroots live in the enveloping
-algebra and not in the Lie algebra. This is a prerequisite of the full-weight simply connected
-type-`B` carrier in Layer 9, "The Chevalley--Demazure construction", of
-`TauCetiRoadmap/ReductiveGroups/README.md`, whose consumer is milestone L0 of
-`TauCetiRoadmap/CFSGStatement/README.md`.
+algebra and not in the Lie algebra.
 
 ## Main declarations
 

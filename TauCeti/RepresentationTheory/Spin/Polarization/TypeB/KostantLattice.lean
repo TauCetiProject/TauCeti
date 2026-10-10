@@ -41,10 +41,6 @@ The eigenvalue computation is stated over an arbitrary field in which `2` is inv
 all the underlying Clifford comparison needs; only the lattice statements are specific to `ℚ`, where
 the coordinate lattice lives.
 
-This is a step towards the admissible lattice for the full-weight simply connected type-`B`
-Chevalley carrier in Layer 9 of the ReductiveGroups roadmap. That carrier is consumed by the
-`B_n(q)` branch of milestone L0 in the CFSGStatement roadmap.
-
 ## Main declarations
 
 * `TauCeti.SpinPolarizationData.spinAction_typeBQuadraticEquiv_typeBSimpleCorootGenerator_basis`:
