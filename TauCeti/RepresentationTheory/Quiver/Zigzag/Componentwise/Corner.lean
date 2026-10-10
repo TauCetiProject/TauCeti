@@ -59,4 +59,12 @@ theorem cornerSubmodule_zigzagAlgebra_eq_bot_of_ne_of_not_adj {i j : V}
   rw [cornerSubmodule_def]
   exact LinearMap.range_eq_bot.mpr hzero
 
+/-- Distinct nonadjacent vertex idempotents kill every algebra element between them. -/
+theorem zigzagAlgebraBasis_inl_mul_mul_eq_zero_of_ne_of_not_adj {i j : V}
+    (hij : i ≠ j) (hadj : ¬ G.Adj i j) (x : zigzagAlgebra k G) :
+    e i * x * e j = 0 := by
+  have h := mul_mul_mem_cornerSubmodule k (e i) (e j) x
+  simpa only [cornerSubmodule_zigzagAlgebra_eq_bot_of_ne_of_not_adj k G hij hadj,
+    Submodule.mem_bot] using h
+
 end TauCeti
