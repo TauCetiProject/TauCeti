@@ -34,8 +34,6 @@ maps, as in the extension lemma for maps into a space whose spheres are null-hom
   `Z × skeletonLT C n` to `Z × skeletonLT C (n + 1)`.
 * `TauCeti.exists_continuousMap_prod_complex_of_skeletonLT`: a compatible family of maps on the
   products of `Z` with the skeleta from the `k`-th one on glues to a map on `Z × C`.
-* `TauCeti.exists_mem_skeletonLT_add`: every point of `C` lies in some skeleton above any given
-  level.
 
 ## References
 
@@ -57,11 +55,6 @@ namespace TauCeti
 
 variable {X : Type u} [TopologicalSpace X] [T2Space X] {C D : Set X} [RelCWComplex C D]
   {Z Y : Type*} [TopologicalSpace Z] [TopologicalSpace Y]
-
-omit [T2Space X] in
-private lemma continuous_map_closedBall {n : ℕ} (j : cell C n) :
-    Continuous fun y : closedBall (0 : Fin n → ℝ) 1 ↦ map n j y :=
-  (continuousOn n j).comp_continuous continuous_subtype_val fun y ↦ y.2
 
 section Step
 
@@ -156,13 +149,6 @@ end Step
 section Glue
 
 variable {k : ℕ}
-
-/-- Every point of a relative CW complex lies in some skeleton above any given level. -/
-lemma exists_mem_skeletonLT_add (k : ℕ) {x : X} (hx : x ∈ C) :
-    ∃ j : ℕ, x ∈ (skeletonLT C ((k + j : ℕ) : ℕ∞) : Set X) := by
-  rw [← iUnion_skeletonLT_eq_complex (C := C), mem_iUnion] at hx
-  obtain ⟨j, hj⟩ := hx
-  exact ⟨j, skeletonLT_mono (by exact_mod_cast Nat.le_add_left j k) hj⟩
 
 private lemma skeletonLT_add_subset_add {j j' : ℕ} (h : j ≤ j') :
     (skeletonLT C ((k + j : ℕ) : ℕ∞) : Set X) ⊆ skeletonLT C ((k + j' : ℕ) : ℕ∞) :=

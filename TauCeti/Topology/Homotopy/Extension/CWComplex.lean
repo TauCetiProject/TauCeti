@@ -66,17 +66,15 @@ theorem hasHomotopyExtensionProperty_skeletonLT_succ (n : ℕ) :
         K (t, y) = G (t, ⟨⟨map n j y, map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 y.2)⟩,
           cellFrontier_subset_skeletonLT n j ⟨y, hy, rfl⟩⟩) := by
     intro j
-    have hmap : Continuous fun y : closedBall (0 : Fin n → ℝ) 1 ↦ map n j y :=
-      (continuousOn n j).comp_continuous continuous_subtype_val fun y ↦ y.2
     obtain ⟨K, hK0, hKs⟩ :=
       (hasHomotopyExtensionProperty_sphere_closedBall (E := Fin n → ℝ)).exists_extension_of_isClosed
         (isClosed_sphere.preimage continuous_subtype_val)
         (f.comp ⟨fun y ↦ ⟨map n j y, map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 y.2)⟩,
-          hmap.subtype_mk _⟩)
+          (continuous_map_closedBall j).subtype_mk _⟩)
         (G.comp ⟨fun p ↦ (p.1, ⟨⟨map n j p.2,
           map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 p.2.1.2)⟩,
           cellFrontier_subset_skeletonLT n j ⟨p.2, p.2.2, rfl⟩⟩),
-          continuous_fst.prodMk (((hmap.comp
+          continuous_fst.prodMk ((((continuous_map_closedBall j).comp
             (continuous_subtype_val.comp continuous_snd)).subtype_mk _).subtype_mk _)⟩)
         fun a ↦ hG _
     exact ⟨K, hK0, fun t y hy ↦ hKs t ⟨y, hy⟩⟩
