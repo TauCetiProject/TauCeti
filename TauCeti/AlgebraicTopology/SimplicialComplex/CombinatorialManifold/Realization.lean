@@ -73,12 +73,11 @@ theorem IsCombinatorialSphere.nonempty_homeomorph_sphere [DecidableEq ι]
 
 /-! ### Vertex-star ball models -/
 
-/-- The closed star of a vertex in a combinatorial manifold is a Euclidean closed ball.
+/-- The weak polyhedron of a vertex's closed star in a combinatorial `n`-manifold is homeomorphic
+to the Euclidean closed `n`-ball, providing the local closed-ball model for its vertex charts.
 
-The combinatorial star is first tagged by whether a vertex is the centre.  This injective
-relabeling turns it into a combinatorial ball, and `relabelingHomeomorph` transports the resulting
-polyhedron homeomorphism back to the original realization.  The statement uses the weak
-realization topology, so it does not require a finite ambient vertex type. -/
+The statement uses the weak realization topology and allows an arbitrary ambient vertex type;
+unused ambient vertices contribute no points. -/
 theorem IsCombinatorialManifold.nonempty_homeomorph_closedStar_closedBall
     [DecidableEq ι] (h : IsCombinatorialManifold K.toPreAbstractSimplicialComplex n)
     {v : ι} (hv : ({v} : Finset ι) ∈ K) :
