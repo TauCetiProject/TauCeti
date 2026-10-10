@@ -17,7 +17,8 @@ The positive subgroup generated over any field by the six positive numbered root
 weight torus is a Borel candidate: it is smooth, geometrically connected and geometrically
 solvable. The raising operators are upper triangular in the ordered minuscule basis, and the
 torus is diagonal, so the positive subgroup lies scheme-theoretically in the upper-triangular
-subgroup of `GL₂₇`.
+subgroup of `GL₂₇`. Its geometric points are therefore subgroups of solvable upper-triangular
+matrix groups and are themselves solvable.
 
 `isBorelCandidate_carrierDefiningIdeal` expresses this result inside the full generated
 minuscule carrier. Maximality among smooth connected solvable subgroups is not asserted.
@@ -28,10 +29,8 @@ E₆ group or its Borel.
 
 * J. E. Humphreys, *Linear Algebraic Groups*, §§21 and 26–28.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 17.
-
-The scheme-theoretic triangularity and quotient transport follow
-`TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Positive.BorelCandidate`. The weight-order
-argument is supplied by `TauCeti.E6Minuscule.positiveRootWeight_strict`.
+* Related formalization: `TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Positive.BorelCandidate`.
+* Minuscule weight order: `TauCeti.E6Minuscule.positiveRootWeight_strict`.
 -/
 
 public section
