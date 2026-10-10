@@ -56,7 +56,6 @@ theorem mem_kummerIdeleSubgroup_iff (S : Finset (HeightOneSpectrum (𝓞 K))) (n
     HeightOneSpectrum.adicCompletionIntegers.mem_units_iff_valued_eq_one, and_assoc]
 
 /-- At exponent one the Kummer subgroup is the full group of `S`-ideles. -/
-@[simp]
 theorem mem_kummerIdeleSubgroup_one_iff (S : Finset (HeightOneSpectrum (𝓞 K)))
     (x : IdeleGroup (𝓞 K) K) :
     x ∈ kummerIdeleSubgroup S 1 ↔
