@@ -7,7 +7,6 @@ module
 
 public import Mathlib.GroupTheory.Abelianization.Finite
 public import Mathlib.GroupTheory.FiniteAbelian.Duality
-import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 
 /-!
 # Extending characters through a group homomorphism
@@ -42,22 +41,12 @@ theorem exists_comp_eq_iff_comap_commutator_le_ker (f : B →* E) (χ : B →* R
   · rintro ⟨ψ, rfl⟩ x hx
     exact Abelianization.commutator_subset_ker ψ hx
   · intro hχ
-    let q := Abelianization.of.comp f
+    let q := (Abelianization.of.comp f).rangeRestrict
     have hq : q.ker ≤ χ.ker := by
-      simpa only [q, ← comap_ker, Abelianization.ker_of] using hχ
-    let χq := QuotientGroup.lift q.ker χ hq
-    let e := QuotientGroup.quotientKerEquivRange q
-    let χr := χq.comp e.symm.toMonoidHom
-    obtain ⟨ψ, hψ⟩ := domRestrict_surjective (M := R) q.range χr
-    refine ⟨ψ.comp Abelianization.of, ?_⟩
-    apply MonoidHom.ext
-    intro b
-    have hb := DFunLike.congr_fun hψ (q.rangeRestrict b)
-    have he : e (QuotientGroup.mk b) = q.rangeRestrict b :=
-      TauCeti.QuotientGroup.quotientKerEquivRange_apply_mk q b
-    have hinv : e.symm (q.rangeRestrict b) = QuotientGroup.mk b := by
-      rw [← he, e.symm_apply_apply]
-    simpa only [comp_apply, domRestrictHom_apply, domRestrict_apply, χr, χq, hinv,
-      MulEquiv.coe_toMonoidHom, QuotientGroup.lift_mk, coe_rangeRestrict, q] using hb
+      simpa only [q, ker_rangeRestrict, ← comap_ker, Abelianization.ker_of] using hχ
+    obtain ⟨ψ, hψ⟩ := domRestrict_surjective (M := R) _
+      (q.liftOfSurjective (Abelianization.of.comp f).rangeRestrict_surjective ⟨χ, hq⟩)
+    refine ⟨ψ.comp Abelianization.of, MonoidHom.ext fun b ↦ ?_⟩
+    simpa [q] using DFunLike.congr_fun hψ (q b)
 
 end MonoidHom

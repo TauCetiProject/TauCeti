@@ -19,7 +19,8 @@ forward along a character of its kernel. Together with the extension criterion i
 the fibers of its character transgression. The kernel characters that extend to the
 whole group are exactly those invisible to second cohomology.
 
-In characteristic zero, `projectiveLiftingCohomologyEquiv` identifies second cohomology
+Over an algebraically closed field whose characteristic does not divide `|G|`,
+`projectiveLiftingCohomologyEquiv` identifies second cohomology
 with the character dual of the part of the common lifting kernel lying in the commutator
 subgroup. This is the kernel comparison needed when reducing the common lifting extension
 to a Schur cover. No stem property of the common extension is asserted.
@@ -57,21 +58,39 @@ theorem projectiveLiftingFactorSet_characterTransgression_surjective :
   exact (congrArg FactorSet.cohomologyClass hfac).trans
     ((IsProjectiveRep.cohomologyClass_def _).symm.trans hx)
 
-/-- In characteristic zero, the second-cohomology group of a finite group is the character
-dual of the part of the common lifting kernel lying in the extension's commutator subgroup.
+section Duality
+
+variable [NeZero (Nat.card G : k)]
+
+local instance : HasEnoughRootsOfUnity k (Monoid.exponent
+    (FactorSet G (rootsOfUnity (Nat.card G) k) → rootsOfUnity (Nat.card G) k)) := by
+  apply HasEnoughRootsOfUnity.of_dvd k
+    (Monoid.exponent_dvd_of_forall_pow_eq_one (n := Nat.card G) ?_)
+  intro m
+  funext i
+  apply Subtype.ext
+  exact (m i).property
+
+local instance : HasEnoughRootsOfUnity k (Monoid.exponent
+    (Abelianization (projectiveLiftingFactorSet k G).Extension)) := by
+  have hcard : Nat.card (projectiveLiftingFactorSet k G).Extension =
+      Nat.card G ^ (Nat.card (FactorSet G (rootsOfUnity (Nat.card G) k)) + 1) := by
+    rw [Nat.card_congr (FactorSet.Extension.equivProd (projectiveLiftingFactorSet k G)),
+      Nat.card_prod, Nat.card_fun, HasEnoughRootsOfUnity.natCard_rootsOfUnity, pow_succ]
+  apply HasEnoughRootsOfUnity.of_dvd k (n :=
+    Nat.card G ^ (Nat.card (FactorSet G (rootsOfUnity (Nat.card G) k)) + 1))
+  rw [← hcard]
+  exact (Group.exponent_quotient_dvd _).trans Group.exponent_dvd_nat_card
+
+/-- Over an algebraically closed field whose characteristic does not divide the group order,
+the second-cohomology group of a finite group is the character dual of the part of the common
+lifting kernel lying in the extension's commutator subgroup.
 This identifies the kernel detected by all projective representations; it does not assert
 that the common lifting extension itself is a stem extension. -/
-noncomputable def projectiveLiftingCohomologyEquiv [CharZero k] :
+noncomputable def projectiveLiftingCohomologyEquiv :
     groupCohomology.H2 (Rep.ofMulDistribMulAction G kˣ) ≃+
       Additive (((commutator (projectiveLiftingFactorSet k G).Extension).comap
         (FactorSet.inl (projectiveLiftingFactorSet k G))) →* kˣ) := by
-  letI : NeZero (Nat.card G) := ⟨Nat.card_pos.ne'⟩
-  let M := FactorSet G (rootsOfUnity (Nat.card G) k) → rootsOfUnity (Nat.card G) k
-  letI : NeZero ((Monoid.exponent M : ℕ) : k) :=
-    ⟨Nat.cast_ne_zero.mpr Monoid.exponent_ne_zero_of_finite⟩
-  letI : NeZero ((Monoid.exponent
-      (Abelianization (projectiveLiftingFactorSet k G).Extension) : ℕ) : k) :=
-    ⟨Nat.cast_ne_zero.mpr Monoid.exponent_ne_zero_of_finite⟩
   exact ((AddEquiv.addSubgroupCongr (AddMonoidHom.range_eq_top.mpr
     (projectiveLiftingFactorSet_characterTransgression_surjective k G))).trans
       AddSubgroup.topEquiv).symm.trans
@@ -81,29 +100,25 @@ noncomputable def projectiveLiftingCohomologyEquiv [CharZero k] :
 /-- The cohomology-duality isomorphism reads the transgression of a kernel character as
 its restriction to the commutator part of the common lifting kernel. -/
 @[simp↓]
-theorem projectiveLiftingCohomologyEquiv_characterTransgression [CharZero k]
+theorem projectiveLiftingCohomologyEquiv_characterTransgression
     (χ : Additive (equivariantCharacterSubgroup G
       (FactorSet G (rootsOfUnity (Nat.card G) k) → rootsOfUnity (Nat.card G) k) kˣ)) :
     projectiveLiftingCohomologyEquiv k G
       ((projectiveLiftingFactorSet k G).characterTransgression χ) =
         (projectiveLiftingFactorSet k G).commutatorCharacterRestriction χ := by
-  let : NeZero (Nat.card G) := ⟨Nat.card_pos.ne'⟩
-  let M := FactorSet G (rootsOfUnity (Nat.card G) k) → rootsOfUnity (Nat.card G) k
-  let : NeZero ((Monoid.exponent M : ℕ) : k) :=
-    ⟨Nat.cast_ne_zero.mpr Monoid.exponent_ne_zero_of_finite⟩
-  let : NeZero ((Monoid.exponent
-      (Abelianization (projectiveLiftingFactorSet k G).Extension) : ℕ) : k) :=
-    ⟨Nat.cast_ne_zero.mpr Monoid.exponent_ne_zero_of_finite⟩
   simp only [projectiveLiftingCohomologyEquiv, AddEquiv.trans_apply,
     AddEquiv.symm_trans_apply]
   rw [← (projectiveLiftingFactorSet k G).characterTransgressionRangeEquiv_apply
     trivialMulDistribMulAction_smul χ]
-  congr 1
+  apply congrArg ((projectiveLiftingFactorSet k G).characterTransgressionRangeEquiv
+    trivialMulDistribMulAction_smul)
+  apply Subtype.ext
+  simp only [AddEquiv.addSubgroupCongr_symm_apply, AddSubgroup.topEquiv_symm_apply_coe]
 
 /-- Conversely, transgression recovers the cohomology class from the restricted kernel
 character under the inverse duality isomorphism. -/
 @[simp↓]
-theorem projectiveLiftingCohomologyEquiv_symm_commutatorCharacterRestriction [CharZero k]
+theorem projectiveLiftingCohomologyEquiv_symm_commutatorCharacterRestriction
     (χ : Additive (equivariantCharacterSubgroup G
       (FactorSet G (rootsOfUnity (Nat.card G) k) → rootsOfUnity (Nat.card G) k) kˣ)) :
     (projectiveLiftingCohomologyEquiv k G).symm
@@ -111,5 +126,7 @@ theorem projectiveLiftingCohomologyEquiv_symm_commutatorCharacterRestriction [Ch
         (projectiveLiftingFactorSet k G).characterTransgression χ := by
   rw [← projectiveLiftingCohomologyEquiv_characterTransgression]
   exact (projectiveLiftingCohomologyEquiv k G).symm_apply_apply _
+
+end Duality
 
 end TauCeti

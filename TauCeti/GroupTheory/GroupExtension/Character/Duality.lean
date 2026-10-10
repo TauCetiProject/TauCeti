@@ -67,7 +67,8 @@ theorem commutatorCharacterRestriction_surjective
   · apply (mem_equivariantCharacterSubgroup G M kˣ ψ).2
     intro g m
     rw [hM, trivialMulDistribMulAction_smul]
-  · exact congrArg Additive.ofMul hψ
+  · rw [commutatorCharacterRestriction_apply]
+    exact congrArg Additive.ofMul hψ
 
 end Restriction
 
