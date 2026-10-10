@@ -295,7 +295,6 @@ noncomputable def cechComplexMapHomotopy (φ ψ : FormalCoproduct.mk _ U ⟶ For
 of families `φ : U ⟶ V` and `ψ : V ⟶ U`, for instance two open covers each refining the other, the
 induced maps `Č(V, P) ⟶ Č(U, P)` and `Č(U, P) ⟶ Č(V, P)` are mutually inverse homotopy
 equivalences. -/
-@[expose, simps hom inv]
 noncomputable def cechComplexHomotopyEquiv (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V)
     (ψ : FormalCoproduct.mk _ V ⟶ FormalCoproduct.mk _ U) :
     HomotopyEquiv ((cechComplexFunctor V).obj P) ((cechComplexFunctor U).obj P) where
@@ -305,6 +304,18 @@ noncomputable def cechComplexHomotopyEquiv (φ : FormalCoproduct.mk _ U ⟶ Form
     (cechComplexMapHomotopy P (ψ ≫ φ) (𝟙 _)).trans (Homotopy.ofEq (cechComplexMap_id P))
   homotopyInvHomId := (Homotopy.ofEq (cechComplexMap_comp P φ ψ).symm).trans <|
     (cechComplexMapHomotopy P (φ ≫ ψ) (𝟙 _)).trans (Homotopy.ofEq (cechComplexMap_id P))
+
+/-- The forward map of `cechComplexHomotopyEquiv P φ ψ` is the map induced by `φ`. -/
+@[simp]
+theorem cechComplexHomotopyEquiv_hom (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V)
+    (ψ : FormalCoproduct.mk _ V ⟶ FormalCoproduct.mk _ U) :
+    (cechComplexHomotopyEquiv P φ ψ).hom = cechComplexMap P φ := (rfl)
+
+/-- The backward map of `cechComplexHomotopyEquiv P φ ψ` is the map induced by `ψ`. -/
+@[simp]
+theorem cechComplexHomotopyEquiv_inv (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V)
+    (ψ : FormalCoproduct.mk _ V ⟶ FormalCoproduct.mk _ U) :
+    (cechComplexHomotopyEquiv P φ ψ).inv = cechComplexMap P ψ := (rfl)
 
 end Map
 
