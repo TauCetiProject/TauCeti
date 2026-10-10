@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.ReducedRelative
 public import Mathlib.Topology.Homotopy.Contractible
+public import TauCeti.Topology.Category.TopPair
 
 /-!
 # Singular homology of contractible spaces
@@ -127,5 +128,21 @@ lemma singularHomologyIsoOfSubsetSingleton_hom (x : X) :
     (singularHomologyIsoOfSubsetSingleton R n x).hom =
       (TopPair.ofSubset ({x} : Set (TopCat.of X))).singularHomologyπ R (n + 1) :=
   (rfl)
+
+/-- **Naturality of `Hₙ₊₁(X; R) ≅ Hₙ₊₁(X, {x}; R)`** in based maps `f : (X, x) → (Y, y)`. -/
+@[reassoc]
+lemma singularHomologyIsoOfSubsetSingleton_hom_naturality {Y : Type w} [TopologicalSpace Y]
+    (f : C(X, Y)) {x : X} {y : Y} (hf : f x = y) :
+    ((singularHomologyFunctor C (n + 1)).obj R).map (TopCat.ofHom f) ≫
+        (singularHomologyIsoOfSubsetSingleton R n y).hom =
+      (singularHomologyIsoOfSubsetSingleton R n x).hom ≫
+        TopPair.singularHomologyMap (TopPair.ofSubsetMap (TopCat.ofHom f)
+          (Set.mapsTo_singleton.2 (Set.mem_singleton_iff.2 hf))) R (n + 1) := by
+  have h := SSetPair.homologyπ_naturality (TopPair.toSSetPair.map (TopPair.ofSubsetMap
+    (TopCat.ofHom f) (Set.mapsTo_singleton.2 (Set.mem_singleton_iff.2 hf)))) R (n + 1)
+  rw [TopPair.toSSetPair_map_right, TopPair.ofSubsetMap_fst] at h
+  -- `singularHomologyFunctor` unfolds to the homology of the singular simplicial set, which is the
+  -- source of the quotient map `singularHomologyπ`, so `h` is the claim up to that unfolding.
+  exact h
 
 end TauCeti

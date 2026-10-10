@@ -39,8 +39,7 @@ valued in the closed unit ball.
 * `TauCeti.isOpenEmbedding_inclusion_comp_unitBall`: `E` embeds openly in its closed unit ball.
 * `Homeomorph.unitBall_symm_apply_coe`: the inverse radial map in explicit coordinates.
 * `TauCeti.cubeHomeomorphClosedBall`: the cube `I^N` is the closed unit ball of the sup norm on
-  `N → ℝ`, through `t ↦ 2 * t - 1` in every coordinate; it carries the boundary of the cube onto the
-  unit sphere (`TauCeti.norm_cubeHomeomorphClosedBall_eq_one_iff`).
+  `N → ℝ`, through `t ↦ 2 * t - 1` in every coordinate.
 * `TauCeti.nonempty_homeomorph_cube_closedBall`: the closed unit ball of a real normed space of
   finite dimension `k` is homeomorphic to the cube `Iᵏ`.
 * `TauCeti.sphereHomeomorphOfFinrankEq`: the unit spheres of two finite-dimensional real normed
@@ -170,26 +169,12 @@ theorem coe_cubeHomeomorphClosedBall_apply (y : N → I) (i : N) :
   rw [h, iccHomeoI_symm_apply_coe]
   ring
 
-/-- A point of the cube is sent to the unit sphere of the sup norm exactly when one of its
-coordinates is `0` or `1`, that is, when it lies on the boundary `Cube.boundary N` of the cube. -/
-theorem norm_cubeHomeomorphClosedBall_eq_one_iff (y : N → I) :
-    ‖(cubeHomeomorphClosedBall N y : N → ℝ)‖ = 1 ↔ ∃ i, y i = 0 ∨ y i = 1 := by
-  have hle : ‖(cubeHomeomorphClosedBall N y : N → ℝ)‖ ≤ 1 :=
-    mem_closedBall_zero_iff.1 (cubeHomeomorphClosedBall N y).2
-  have hcoord (i : N) : ‖(cubeHomeomorphClosedBall N y : N → ℝ) i‖ = 1 ↔ y i = 0 ∨ y i = 1 := by
-    rw [coe_cubeHomeomorphClosedBall_apply, Real.norm_eq_abs, abs_eq zero_le_one]
-    have h₀ : y i = 0 ↔ (y i : ℝ) = 0 := by rw [← Icc.coe_eq_zero]
-    have h₁ : y i = 1 ↔ (y i : ℝ) = 1 := by rw [← Icc.coe_eq_one]
-    rw [h₀, h₁]
-    constructor <;> rintro (h | h) <;> [right; left; right; left] <;> linarith
-  constructor
-  · intro h
-    by_contra hne
-    have hlt (i : N) : ‖(cubeHomeomorphClosedBall N y : N → ℝ) i‖ < 1 :=
-      lt_of_le_of_ne ((norm_le_pi_norm _ i).trans hle) fun hi ↦ hne ⟨i, (hcoord i).1 hi⟩
-    exact ((pi_norm_lt_iff one_pos).2 hlt).ne h
-  · rintro ⟨i, hi⟩
-    exact le_antisymm hle (((hcoord i).2 hi).ge.trans (norm_le_pi_norm _ i))
+@[simp]
+theorem coe_cubeHomeomorphClosedBall_symm_apply (z : closedBall (0 : N → ℝ) 1) (i : N) :
+    (((cubeHomeomorphClosedBall N).symm z i : I) : ℝ) = ((z : N → ℝ) i + 1) / 2 := by
+  have h := coe_cubeHomeomorphClosedBall_apply ((cubeHomeomorphClosedBall N).symm z) i
+  rw [Homeomorph.apply_symm_apply] at h
+  linarith
 
 open unitInterval in
 /-- **The closed unit ball of a finite-dimensional real normed space is a cube.** The closed unit

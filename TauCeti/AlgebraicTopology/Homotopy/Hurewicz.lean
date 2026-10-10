@@ -36,7 +36,8 @@ The ingredients are the following.
   (`TauCeti.singularHomologyCubeBoundaryPairIso`), transported from
   `TauCeti.singularHomologyDiskBoundaryPairIso`.  No choices enter: the disk generator comes from
   the standard generator of the homology of the boundary sphere, and the homeomorphisms are
-  explicit.
+  explicit.  These are proved in `TauCeti/AlgebraicTopology/Disk.lean` and
+  `TauCeti/AlgebraicTopology/Singular/DiskSphere.lean`.
 * A generalized loop `p : Ω^ (Fin n) X x` is a map of pairs `(Iⁿ, ∂Iⁿ) ⟶ (X, {x})`
   (`GenLoop.toCubeBoundaryPairHom`), and homotopic generalized loops induce homotopic maps of pairs,
   hence the same map on relative homology (`GenLoop.singularHomologyMap_toCubeBoundaryPairHom_eq`).
@@ -50,9 +51,6 @@ this file.
 
 ## Main declarations
 
-* `TauCeti.cubeBoundaryPair`: the pair `(Iⁿ, ∂Iⁿ)`.
-* `TauCeti.diskBoundaryPairIsoCube`: the isomorphism of pairs `(Dⁿ, Sⁿ⁻¹) ≅ (Iⁿ, ∂Iⁿ)`.
-* `TauCeti.singularHomologyCubeBoundaryPairIso`: `Hₙ(Iⁿ, ∂Iⁿ; R) ≅ R`.
 * `GenLoop.toCubeBoundaryPairHom`: a generalized loop as a map of pairs `(Iⁿ, ∂Iⁿ) ⟶ (X, {x})`.
 * `GenLoop.hurewicz`: the Hurewicz class of a generalized loop, characterized by
   `GenLoop.hurewicz_comp_singularHomologyIsoOfSubsetSingleton_hom`.
@@ -73,104 +71,6 @@ open CategoryTheory Limits AlgebraicTopology
 open scoped unitInterval Topology Topology.Homotopy
 
 universe w v u
-
-namespace TauCeti
-
-section CubePair
-
-variable (n : ℕ)
-
-/-- The cube `Iⁿ` and its boundary `∂Iⁿ` as a topological pair, lifted to the universe `w`. -/
-abbrev cubeBoundaryPair : TopPair.{w} :=
-  TopPair.ofSubset (X := TopCat.of (ULift.{w} (I^(Fin n))))
-    (ULift.down ⁻¹' Cube.boundary (Fin n))
-
-/-- The homeomorphism from the Euclidean disk `Dⁿ` onto the cube `Iⁿ`: the radial rescaling of the
-disk onto the closed unit ball of the sup norm on `Fin n → ℝ`, followed by the inverse of the affine
-homeomorphism `TauCeti.cubeHomeomorphClosedBall` of the cube onto that ball. -/
-def diskHomeomorphCube : TopCat.disk.{w} n ≃ₜ (I^(Fin n)) :=
-  (diskHomeomorphClosedBall n).trans (cubeHomeomorphClosedBall (Fin n)).symm
-
-variable {n} in
-/-- `TauCeti.diskHomeomorphCube` carries the boundary sphere of the disk onto the boundary of the
-cube. -/
-theorem diskHomeomorphCube_mem_boundary_iff (z : TopCat.disk.{w} n) :
-    diskHomeomorphCube n z ∈ Cube.boundary (Fin n) ↔
-      z ∈ Set.range (TopCat.diskBoundaryInclusion.{w} n) := by
-  rw [← norm_diskHomeomorphClosedBall_eq_one_iff, Cube.boundary, Set.mem_ofPred_eq,
-    ← norm_cubeHomeomorphClosedBall_eq_one_iff, diskHomeomorphCube, Homeomorph.trans_apply,
-    Homeomorph.apply_symm_apply]
-
-/-- The homeomorphism `TauCeti.diskHomeomorphCube` as an isomorphism in `TopCat` from the disk
-onto the lifted cube. -/
-private def diskIsoCube : TopCat.disk.{w} n ≅ TopCat.of (ULift.{w} (I^(Fin n))) :=
-  TopCat.isoOfHomeo ((diskHomeomorphCube n).trans Homeomorph.ulift.{w}.symm)
-
-/-- The homeomorphism `TauCeti.diskHomeomorphCube` as a map of pairs `(Dⁿ, Sⁿ⁻¹) ⟶ (Iⁿ, ∂Iⁿ)`. -/
-def diskBoundaryPairToCube : diskBoundaryPair.{w} n ⟶ cubeBoundaryPair.{w} n :=
-  TopPair.ofHom (diskIsoCube n).hom
-    (TopCat.ofHom ⟨fun s ↦ ⟨ULift.up (diskHomeomorphCube n (TopCat.diskBoundaryInclusion n s)),
-      (diskHomeomorphCube_mem_boundary_iff _).2 ⟨s, rfl⟩⟩,
-      (continuous_uliftUp.comp ((diskHomeomorphCube n).continuous.comp
-        (TopCat.diskBoundaryInclusion n).hom.continuous)).subtype_mk _⟩)
-    (by ext; rfl)
-
-private lemma surjective_snd_diskBoundaryPairToCube :
-    Function.Surjective (TopPair.Hom.snd (diskBoundaryPairToCube.{w} n)) := by
-  rintro ⟨y, hy⟩
-  obtain ⟨s, hs⟩ := (diskHomeomorphCube_mem_boundary_iff ((diskHomeomorphCube n).symm y.down)).1
-    (by rwa [Homeomorph.apply_symm_apply])
-  refine ⟨s, Subtype.ext (ULift.ext ?_)⟩
-  -- The subspace component of the map is `TauCeti.diskHomeomorphCube` on the boundary sphere.
-  change diskHomeomorphCube n (TopCat.diskBoundaryInclusion n s) = y.down
-  rw [hs, Homeomorph.apply_symm_apply]
-
-/-- **The disk pair is the cube pair**: `TauCeti.diskBoundaryPairToCube` is an isomorphism of
-pairs `(Dⁿ, Sⁿ⁻¹) ≅ (Iⁿ, ∂Iⁿ)`. -/
-def diskBoundaryPairIsoCube : diskBoundaryPair.{w} n ≅ cubeBoundaryPair.{w} n :=
-  have : IsIso (TopPair.Hom.fst (diskBoundaryPairToCube.{w} n)) :=
-    inferInstanceAs (IsIso (diskIsoCube n).hom)
-  have := TopPair.isIso_of_isIso_fst_of_surjective_snd _ (surjective_snd_diskBoundaryPairToCube n)
-  asIso (diskBoundaryPairToCube n)
-
-@[simp]
-lemma diskBoundaryPairIsoCube_hom : (diskBoundaryPairIsoCube.{w} n).hom =
-    diskBoundaryPairToCube n :=
-  (rfl)
-
-end CubePair
-
-section CubePairHomology
-
-variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C) (n : ℕ)
-
-/-- **The relative homology of a cube modulo its boundary in its dimension**:
-`Hₙ(Iⁿ, ∂Iⁿ; R) ≅ R`, transported from `TauCeti.singularHomologyDiskBoundaryPairIso` along the
-isomorphism of pairs `TauCeti.diskBoundaryPairIsoCube`. -/
-def singularHomologyCubeBoundaryPairIso : (cubeBoundaryPair.{w} n).singularHomology R n ≅ R :=
-  (SSetPair.homologyFunctor R n).mapIso
-      (TopPair.toSSetPair.mapIso (diskBoundaryPairIsoCube n)).symm ≪≫
-    singularHomologyDiskBoundaryPairIso R n
-
-/-- The generator of `Hₙ(Iⁿ, ∂Iⁿ; R)` is the image of the generator of `Hₙ(Dⁿ, Sⁿ⁻¹; R)` under
-`TauCeti.diskBoundaryPairToCube`. -/
-lemma singularHomologyCubeBoundaryPairIso_inv :
-    (singularHomologyCubeBoundaryPairIso R n).inv =
-      (singularHomologyDiskBoundaryPairIso R n).inv ≫
-        TopPair.singularHomologyMap (diskBoundaryPairToCube.{w} n) R n :=
-  (rfl)
-
-/-- The relative homology of a cube modulo its boundary vanishes outside its dimension:
-`Hₖ(Iⁿ, ∂Iⁿ; R) = 0` for `k ≠ n`. -/
-theorem isZero_singularHomology_cubeBoundaryPair_of_ne {k : ℕ} (hk : k ≠ n) :
-    IsZero ((cubeBoundaryPair.{w} n).singularHomology R k) :=
-  (isZero_singularHomology_diskBoundaryPair_of_ne R hk).of_iso
-    ((SSetPair.homologyFunctor R k).mapIso
-      (TopPair.toSSetPair.mapIso (diskBoundaryPairIsoCube n))).symm
-
-end CubePairHomology
-
-end TauCeti
 
 namespace GenLoop
 
@@ -254,23 +154,9 @@ class of `f ∘ p` is the image of that of `p` under `f_* : Hₙ₊₁(X; R) ⟶
 theorem hurewicz_map (f : C(X, Y)) (hf : f x = y) (p : Ω^ (Fin (n + 1)) X x) :
     hurewicz R (GenLoop.map f hf p) =
       hurewicz R p ≫ ((singularHomologyFunctor C (n + 1)).obj R).map (TopCat.ofHom f) := by
-  let g : TopPair.ofSubset ({x} : Set (TopCat.of X)) ⟶ TopPair.ofSubset ({y} : Set (TopCat.of Y)) :=
-    TopPair.ofSubsetMap (TopCat.ofHom f) (Set.mapsTo_singleton.2 (Set.mem_singleton_iff.2 hf))
-  have hfst : TopPair.Hom.fst g = TopCat.ofHom f := by
-    ext z
-    exact TopPair.ofSubsetMap_fst_apply _ _ z
-  -- The quotient map from absolute to relative homology is natural in the map of pairs `g`,
-  -- whose ambient component is `f`.
-  have hπ := SSetPair.homologyπ_naturality (TopPair.toSSetPair.map g) R (n + 1)
-  rw [TopPair.toSSetPair_map_right, hfst] at hπ
-  have hπ' : ((singularHomologyFunctor C (n + 1)).obj R).map (TopCat.ofHom f) ≫
-      (singularHomologyIsoOfSubsetSingleton R n y).hom =
-        (singularHomologyIsoOfSubsetSingleton R n x).hom ≫
-          TopPair.singularHomologyMap g R (n + 1) := by
-    rw [singularHomologyIsoOfSubsetSingleton_hom, singularHomologyIsoOfSubsetSingleton_hom]
-    exact hπ
   rw [← cancel_mono (singularHomologyIsoOfSubsetSingleton R n y).hom,
-    hurewicz_comp_singularHomologyIsoOfSubsetSingleton_hom, Category.assoc, hπ',
+    hurewicz_comp_singularHomologyIsoOfSubsetSingleton_hom, Category.assoc,
+    singularHomologyIsoOfSubsetSingleton_hom_naturality R n f hf,
     hurewicz_comp_singularHomologyIsoOfSubsetSingleton_hom_assoc, toCubeBoundaryPairHom_map,
     TopPair.singularHomologyMap_comp]
 

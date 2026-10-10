@@ -9,7 +9,8 @@ public import Mathlib.Analysis.Normed.Module.Connected
 public import Mathlib.Topology.Category.TopCat.Sphere
 public import Mathlib.Topology.Category.TopPair
 public import Mathlib.Topology.Homotopy.Contractible
-public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
+public import TauCeti.Topology.Category.TopPair
+public import TauCeti.Topology.Homotopy.Cube.Radius
 
 /-!
 # Euclidean disks and their boundaries
@@ -26,7 +27,10 @@ in that universe be applied to it.  In particular the boundary of the `0`-disk i
 
 The disk is also homeomorphic to the closed unit ball of the sup norm on `Fin n → ℝ`, with its
 boundary going to the unit sphere (`TauCeti.diskHomeomorphClosedBall`); this is how the disk is
-compared with the domains of characteristic maps of CW complexes and with the cube.
+compared with the domains of characteristic maps of CW complexes and with the cube.  Composing it
+with the affine homeomorphism `TauCeti.cubeHomeomorphClosedBall` of the cube onto the same ball
+identifies the disk pair with the pair `TauCeti.cubeBoundaryPair n = (Iⁿ, ∂Iⁿ)` formed by the cube
+and its boundary (`TauCeti.diskBoundaryPairIsoCube`).
 -/
 
 public section
@@ -164,6 +168,71 @@ instance isEmpty_diskBoundary_zero : IsEmpty (TopCat.diskBoundary.{u} 0) :=
 instances about pairs with empty subspace apply to `diskBoundaryPair 0`. -/
 instance isEmpty_diskBoundaryPair_zero_snd : IsEmpty (diskBoundaryPair.{u} 0).snd :=
   inferInstanceAs (IsEmpty (TopCat.diskBoundary.{u} 0))
+
+section CubePair
+
+open scoped unitInterval Topology
+
+variable (n : ℕ)
+
+/-- The cube `Iⁿ` and its boundary `∂Iⁿ` as a topological pair, lifted to the universe `w`. -/
+abbrev cubeBoundaryPair : TopPair.{u} :=
+  TopPair.ofSubset (X := TopCat.of (ULift.{u} (I^(Fin n))))
+    (ULift.down ⁻¹' Cube.boundary (Fin n))
+
+/-- The homeomorphism from the Euclidean disk `Dⁿ` onto the cube `Iⁿ`: the radial rescaling of the
+disk onto the closed unit ball of the sup norm on `Fin n → ℝ`, followed by the inverse of the affine
+homeomorphism `TauCeti.cubeHomeomorphClosedBall` of the cube onto that ball. -/
+def diskHomeomorphCube : TopCat.disk.{u} n ≃ₜ (I^(Fin n)) :=
+  (diskHomeomorphClosedBall n).trans (cubeHomeomorphClosedBall (Fin n)).symm
+
+variable {n} in
+/-- `TauCeti.diskHomeomorphCube` carries the boundary sphere of the disk onto the boundary of the
+cube. -/
+theorem diskHomeomorphCube_mem_boundary_iff (z : TopCat.disk.{u} n) :
+    diskHomeomorphCube n z ∈ Cube.boundary (Fin n) ↔
+      z ∈ Set.range (TopCat.diskBoundaryInclusion.{u} n) := by
+  rw [← norm_diskHomeomorphClosedBall_eq_one_iff, ← norm_cubeHomeomorphClosedBall_eq_one_iff,
+    diskHomeomorphCube, Homeomorph.trans_apply, Homeomorph.apply_symm_apply]
+
+/-- The homeomorphism `TauCeti.diskHomeomorphCube` as an isomorphism in `TopCat` from the disk
+onto the lifted cube. -/
+private def diskIsoCube : TopCat.disk.{u} n ≅ TopCat.of (ULift.{u} (I^(Fin n))) :=
+  TopCat.isoOfHomeo ((diskHomeomorphCube n).trans Homeomorph.ulift.{u}.symm)
+
+/-- The homeomorphism `TauCeti.diskHomeomorphCube` as a map of pairs `(Dⁿ, Sⁿ⁻¹) ⟶ (Iⁿ, ∂Iⁿ)`. -/
+def diskBoundaryPairToCube : diskBoundaryPair.{u} n ⟶ cubeBoundaryPair.{u} n :=
+  TopPair.ofHom (diskIsoCube n).hom
+    (TopCat.ofHom ⟨fun s ↦ ⟨ULift.up (diskHomeomorphCube n (TopCat.diskBoundaryInclusion n s)),
+      (diskHomeomorphCube_mem_boundary_iff _).2 ⟨s, rfl⟩⟩,
+      (continuous_uliftUp.comp ((diskHomeomorphCube n).continuous.comp
+        (TopCat.diskBoundaryInclusion n).hom.continuous)).subtype_mk _⟩)
+    (by ext; rfl)
+
+private lemma surjective_snd_diskBoundaryPairToCube :
+    Function.Surjective (TopPair.Hom.snd (diskBoundaryPairToCube.{u} n)) := by
+  rintro ⟨y, hy⟩
+  obtain ⟨s, hs⟩ := (diskHomeomorphCube_mem_boundary_iff ((diskHomeomorphCube n).symm y.down)).1
+    (by rwa [Homeomorph.apply_symm_apply])
+  refine ⟨s, Subtype.ext (ULift.ext ?_)⟩
+  -- The subspace component of the map is `TauCeti.diskHomeomorphCube` on the boundary sphere.
+  change diskHomeomorphCube n (TopCat.diskBoundaryInclusion n s) = y.down
+  rw [hs, Homeomorph.apply_symm_apply]
+
+/-- **The disk pair is the cube pair**: `TauCeti.diskBoundaryPairToCube` is an isomorphism of
+pairs `(Dⁿ, Sⁿ⁻¹) ≅ (Iⁿ, ∂Iⁿ)`. -/
+def diskBoundaryPairIsoCube : diskBoundaryPair.{u} n ≅ cubeBoundaryPair.{u} n :=
+  have : IsIso (TopPair.Hom.fst (diskBoundaryPairToCube.{u} n)) :=
+    inferInstanceAs (IsIso (diskIsoCube n).hom)
+  have := TopPair.isIso_of_isIso_fst_of_surjective_snd _ (surjective_snd_diskBoundaryPairToCube n)
+  asIso (diskBoundaryPairToCube n)
+
+@[simp]
+lemma diskBoundaryPairIsoCube_hom : (diskBoundaryPairIsoCube.{u} n).hom =
+    diskBoundaryPairToCube n :=
+  (rfl)
+
+end CubePair
 
 end TauCeti
 end
