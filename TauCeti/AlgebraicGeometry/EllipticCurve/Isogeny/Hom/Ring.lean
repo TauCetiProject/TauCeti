@@ -9,6 +9,8 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.BaseChange
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.PointMap
 -- Proof-only: an elliptic curve has infinitely many points over a separably closed field.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.IsSepClosed
+-- Proof-only: the multiples `n • id` are distinct.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Hom
 -- Proof-only: every isogeny is a separable isogeny after a Frobenius power.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RelativeFrobenius.Factorisation
 -- Proof-only: relative Frobenius acts on points by powering the coordinates.
@@ -42,7 +44,7 @@ morphisms, along the faithful, additive base change (`TauCeti.Isogeny.Hom.map_in
   (Silverman III.4.8), with `pointMap_neg`, `pointMap_sub`, `pointMap_nsmul` and `pointMap_zsmul`.
 * `TauCeti.Isogeny.Hom.comp_add`: composition is additive in the inner morphism, over any field.
 * `TauCeti.Isogeny.Hom.compLeftHom`: postcomposition by a morphism, as an additive homomorphism.
-* The `Ring (Hom W W)` and `IsDomain (Hom W W)` instances.
+* The `Ring (Hom W W)`, `IsDomain (Hom W W)` and `CharZero (Hom W W)` instances.
 * `TauCeti.Isogeny.Hom.mapRingHom`: base change of endomorphisms, as a ring homomorphism.
 
 ## References
@@ -181,6 +183,12 @@ noncomputable instance : Ring (Hom W₁ W₁) where
 isogeny. -/
 instance : IsDomain (Hom W₁ W₁) :=
   NoZeroDivisors.to_isDomain _
+
+/-- **The endomorphism ring of an elliptic curve has characteristic zero**, whatever the
+characteristic of the base field: the multiples `n • id` of the identity are distinct. -/
+instance : CharZero (Hom W₁ W₁) :=
+  ⟨fun m n h ↦ Int.ofNat_inj.mp <| zsmul_id_injective (W₁ := W₁) <| by
+    simpa only [← one_def, natCast_zsmul, nsmul_one] using h⟩
 
 section BaseChange
 
