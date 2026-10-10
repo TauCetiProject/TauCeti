@@ -340,33 +340,6 @@ theorem explicitH1AddEquivGroupCohomology_mk (z : Z1 G M) (c : cocycles₁ B)
   -- The equivalence is `QuotientAddGroup.liftEquiv` of the transport of cocycles.
   congrArg (H1π B) (Subtype.ext (funext fun h ↦ (hc h).symm))
 
-/-- The explicit-to-abstract comparison in degree one commutes with restriction to corresponding
-subgroups along the group isomorphism. -/
-theorem explicitH1AddEquivGroupCohomology_explicitRes1
-    (T : Subgroup G) (S : Subgroup H) (φS : T ≃* S)
-    (hφS : ∀ t : T, (φS t : H) = φ t) (x : H1 G M) :
-    explicitH1AddEquivGroupCohomology (B := Rep.res S.subtype B) φS ψ
-        (fun t m ↦ (hψ t m).trans (by simp [hφS]))
-        (explicitRes1 G M T x) =
-      groupCohomology.map S.subtype (𝟙 (Rep.res S.subtype B)) 1
-        (explicitH1AddEquivGroupCohomology φ ψ hψ x) := by
-  induction x using QuotientAddGroup.induction_on with
-  | H z =>
-    let c : cocycles₁ B := ⟨transport₁ φ ψ z,
-      (transport₁_mem_cocycles₁_iff φ ψ hψ z).2 (mem_Z1_iff.1 z.2).2⟩
-    rw [explicitRes1_mk, explicitH1AddEquivGroupCohomology_mk φ ψ hψ z c (fun _ ↦ rfl)]
-    have hmap := ConcreteCategory.congr_hom
-      (groupCohomology.H1π_comp_map S.subtype (𝟙 (Rep.res S.subtype B))) c
-    rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at hmap
-    rw [hmap]
-    apply explicitH1AddEquivGroupCohomology_mk
-    intro s
-    have hs : (φS.symm s : G) = φ.symm s := by
-      apply φ.injective
-      simpa using (hφS (φS.symm s)).symm
-    simpa [cocyclesMap1_apply, c, transport₁, hs] using congrFun
-      (groupCohomology.coe_mapCocycles₁.{w, w} S.subtype (𝟙 (Rep.res S.subtype B)) c) s
-
 end CompatiblePairDegree1
 
 section CompatiblePairDegree2
