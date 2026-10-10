@@ -39,6 +39,8 @@ variable {V n : Type*} [AddCommGroup V] [Module ℝ V] [Fintype n] [DecidableEq 
 
 /-- In Euclidean coordinates the abstract orthogonal action is exactly the linear-isometry
 action of the associated orthogonal matrix. -/
+-- This is a named rewrite: simp already derives it from the matrix-action and coordinate
+-- comparison simp lemmas, so adding it to the simp set fails the simpNF linter.
 theorem orthogonalGroupToLinearIsometryEquiv_orthogonalGroupContinuousMulEquivMatrix_apply
     (e : Q.IsometryEquiv (Matrix.toQuadraticForm' (1 : Matrix n n ℝ)))
     (g : QuadraticMap.orthogonalGroup Q) (x : V) :
