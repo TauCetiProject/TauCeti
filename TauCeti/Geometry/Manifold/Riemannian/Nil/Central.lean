@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Nil.Curvature
+-- The private coordinate calculation uses Nil's model-space implementation.
+import all TauCeti.Geometry.Manifold.Riemannian.Nil.Basic
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Topology.Connected.TotallyDisconnected
@@ -44,6 +46,15 @@ namespace TauCeti.Nil
 local notation "P" => ℝ × ℝ × ℝ
 local notation "J" => 𝓘(ℝ, P)
 
+private theorem fderiv_coordinates_apply (f : Nil → Nil) (p : Nil)
+    (u : TangentSpace J p) :
+    fderiv ℝ (toProd ∘ f ∘ toProd.symm) (toProd p) (tangentSpaceCastModel J p u) =
+      tangentSpaceCastModel J (f p) (mfderiv J J f p u) := by
+  -- Nil has the inherited model-space charts. In those charts both tangent casts
+  -- are identities, and the coordinate map is the same function as the original map.
+  exact congrArg (fun L => L u) (mfderiv_eq_fderiv
+    (𝕜 := ℝ) (f := toProd ∘ f ∘ toProd.symm) (x := toProd p)).symm
+
 private theorem contDiff_coordinates (Φ : Isom J Nil) :
     ContDiff ℝ ∞ (toProd ∘ Φ ∘ toProd.symm) := by
   simpa only [Diffeomorph.coe_trans, coe_toProdDiffeomorph,
@@ -58,8 +69,8 @@ private theorem central_derivative (Φ : Isom J Nil) (p : P) :
   let u := (tangentSpaceCastModel J q).symm (0, 0, 1)
   have hxy := (mfderiv_central_iff Φ q u).2 (by simp [u])
   have hn := Φ.inner_mfderiv q u u
-  simp only [inner_def, ← fderiv_toProd_apply] at hn
-  simp only [← fderiv_toProd_apply] at hxy
+  simp only [inner_def, ← fderiv_coordinates_apply] at hn
+  simp only [← fderiv_coordinates_apply] at hxy
   simp only [q, u, ContinuousLinearEquiv.apply_symm_apply, Equiv.apply_symm_apply] at hn hxy
   rcases hxy with ⟨hx, hy⟩
   simp only [hx, hy, mul_zero, sub_zero, zero_add] at hn
@@ -83,7 +94,7 @@ theorem exists_mfderiv_central_eq (Φ : Isom J Nil) :
     isPreconnected_univ.constant_of_mapsTo (by simp : ({1, -1} : Set ℝ).Finite).isDiscrete
       ha.continuousOn hmaps (mem_univ p) (mem_univ 0)
   refine ⟨a 0, (central_derivative Φ 0).2.2, fun p => ?_⟩
-  rw [← fderiv_toProd_apply]
+  rw [← fderiv_coordinates_apply]
   simp only [ContinuousLinearEquiv.apply_symm_apply]
   exact Prod.ext (central_derivative Φ (toProd p)).1
     (Prod.ext (central_derivative Φ (toProd p)).2.1 (hconst (toProd p)))
@@ -100,7 +111,7 @@ private theorem coordinates_central_eq (Φ : Isom J Nil) {ε : ℝ}
       ((hasDerivAt_const s p.y).prodMk ((hasDerivAt_id s).const_add p.z))
   have hleft (s : ℝ) : HasDerivAt (fun t => f (p.x, p.y, p.z + t)) (0, 0, ε) s := by
     have h := hd (mk p.x p.y (p.z + s))
-    rw [← fderiv_toProd_apply] at h
+    rw [← fderiv_coordinates_apply] at h
     simp only [ContinuousLinearEquiv.apply_symm_apply, toProd_mk] at h
     exact h ▸ (hf _).hasFDerivAt.comp_hasDerivAt s (hcurve s)
   have hright (s : ℝ) :
@@ -130,7 +141,7 @@ theorem exists_central_eq (Φ : Isom J Nil) :
 
 /-- An isometry of Nil carries an entire central fibre onto the central fibre
 through the image of any one of its points. -/
-@[simp] theorem image_central_fibre (Φ : Isom J Nil) (p : Nil) :
+@[simp] theorem image_central_fiber (Φ : Isom J Nil) (p : Nil) :
     Φ '' {q : Nil | q.x = p.x ∧ q.y = p.y} =
       {q : Nil | q.x = (Φ p).x ∧ q.y = (Φ p).y} := by
   obtain ⟨ε, hε, hΦ⟩ := exists_central_eq Φ

@@ -162,19 +162,6 @@ def toProdDiffeomorph : Nil ≃ₘ⟮𝓘(ℝ, ℝ × ℝ × ℝ), 𝓘(ℝ, ℝ
 
 @[simp] theorem coe_toProdDiffeomorph_symm : ⇑toProdDiffeomorph.symm = toProd.symm := (rfl)
 
-/-- The differential of a map in global coordinates is its manifold differential
-read in the model tangent spaces. -/
-theorem fderiv_toProd_apply (f : Nil → Nil) (p : Nil)
-    (u : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) :
-    fderiv ℝ (toProd ∘ f ∘ toProd.symm) (toProd p)
-        (tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) p u) =
-      tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) (f p)
-        (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) f p u) := by
-  -- Nil has the inherited model-space charts. In those charts both tangent casts
-  -- are identities, and the coordinate map is the same function as the original map.
-  exact congrArg (fun L => L u) (mfderiv_eq_fderiv
-    (𝕜 := ℝ) (f := toProd ∘ f ∘ toProd.symm) (x := toProd p)).symm
-
 /-! ### The group structure -/
 
 /-- The product `(a, b, c) * (x, y, z) = (a + x, b + y, c + z + a y)` of the real Heisenberg
