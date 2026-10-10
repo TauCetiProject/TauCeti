@@ -226,7 +226,7 @@ private theorem continuous_unitPath {A : Type w} [TopologicalSpace A] (H : C(I �
 /-- A map with a lifting function on Moore paths is a Hurewicz fibration: a homotopy is a family of
 Moore paths of length one, and their lifts from the initial lift form the lifted homotopy. -/
 theorem isHurewiczFibration (Φ : MooreLiftingFunction p) : IsHurewiczFibration.{w} p := by
-  refine isHurewiczFibration_iff.2 fun A _ f H hH ↦ ?_
+  refine isHurewiczFibration_iff.2 ⟨p.continuous, fun A _ f H hH ↦ ?_⟩
   have h₀ : ∀ a, (unitPath H a).source = p (f a) := fun a ↦ by
     rw [MoorePath.source_def, unitPath_apply, show toI 0 = 0 from
       Set.projIcc_left zero_le_one, hH a]
