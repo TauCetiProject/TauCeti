@@ -16,6 +16,7 @@ import TauCeti.Algebra.AlgebraicGroup.Smooth.GeometricallyReduced
 import TauCeti.Algebra.AlgebraicGroup.Solvable.Lagrangian
 import TauCeti.Algebra.Coalgebra.Comodule.Flag.Extension
 import TauCeti.LinearAlgebra.BilinearForm.LagrangianBasis
+import TauCeti.RepresentationTheory.ClassicalGroups.Symplectic
 
 /-!
 # Borel subgroups of `Sp₂ₘ`
@@ -92,20 +93,27 @@ private theorem JFin_eq_submatrix :
   rw [← JFin_submatrix m (R := k), Matrix.submatrix_submatrix]
   simp
 
-/-- The standard symplectic form `x ↦ y ↦ xᵀ J y` in `Fin (m + m)` coordinates is
-alternating. -/
+/-- In `Fin (m + m)` coordinates, the form `x ↦ y ↦ xᵀ J y` is the standard symplectic form
+transported along `finSumFinEquiv`. -/
+private theorem toBilin'_JFin_eq_congr :
+    Matrix.toBilin' (JFin m k) = LinearMap.BilinForm.congr
+      (LinearEquiv.funCongrLeft k k finSumFinEquiv.symm) (stdSymplecticBilinForm k m) := by
+  refine LinearMap.ext₂ fun x y ↦ ?_
+  rw [LinearMap.BilinForm.congr_apply, LinearEquiv.funCongrLeft_symm, Equiv.symm_symm,
+    stdSymplecticBilinForm_apply, Matrix.toBilin'_apply', JFin_eq_submatrix,
+    Matrix.submatrix_mulVec_equiv, dotProduct_comp_equiv_symm]
+  rfl
+
+/-- The standard symplectic form in `Fin (m + m)` coordinates is alternating. -/
 private theorem isAlt_toBilin'_JFin : (Matrix.toBilin' (JFin m k)).IsAlt := by
   intro v
-  rw [Matrix.toBilin'_apply', JFin_eq_submatrix, Matrix.submatrix_mulVec_equiv,
-    dotProduct_comp_equiv_symm]
-  simp [Matrix.J, Matrix.fromBlocks_mulVec, dotProduct, mul_comm, Matrix.neg_mulVec]
+  rw [toBilin'_JFin_eq_congr, LinearMap.BilinForm.congr_apply]
+  exact isAlt_stdSymplecticBilinForm k m _
 
 /-- The standard symplectic form in `Fin (m + m)` coordinates is nondegenerate. -/
 private theorem nondegenerate_toBilin'_JFin : (Matrix.toBilin' (JFin m k)).Nondegenerate := by
-  rw [Matrix.nondegenerate_toBilin'_iff]
-  refine Matrix.nondegenerate_of_det_ne_zero ?_
-  rw [JFin_eq_submatrix, Matrix.det_submatrix_equiv_self]
-  exact (Matrix.isUnit_det_J (Fin m) k).ne_zero
+  rw [toBilin'_JFin_eq_congr]
+  exact (stdSymplecticBilinForm_nondegenerate k m).congr _
 
 /-- Read through the symplectic coordinate morphism, the general-linear matrix of a point of
 `Sp₂ₘ` is its symplectic matrix. -/

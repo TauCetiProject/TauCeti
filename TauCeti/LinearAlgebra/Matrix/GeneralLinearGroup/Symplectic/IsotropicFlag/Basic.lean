@@ -104,7 +104,6 @@ theorem mem_matrixSubgroup_iff_flagOrder (g : GLSymplecticFin m A) :
 /-- In paired coordinates, the flag subgroup consists of matrices whose upper-left block
 is upper triangular, whose lower-right block is lower triangular, and whose lower-left
 block vanishes. -/
-@[simp]
 theorem mem_matrixSubgroup_iff (g : GLSymplecticFin m A) :
     g ∈ matrixSubgroup m (A := A) ↔
       (∀ i j : Fin m, j < i → (g.val : Matrix _ _ A) (i.castAdd m) (j.castAdd m) = 0) ∧
@@ -136,6 +135,7 @@ theorem mem_matrixSubgroup_iff (g : GLSymplecticFin m A) :
 flag.** It suffices that the upper-left block is upper triangular and the lower-left block
 vanishes: the symplectic equations then make the lower-right block the inverse transpose of the
 upper-left one, hence lower triangular. -/
+@[simp]
 theorem mem_matrixSubgroup_iff_castAdd (g : GLSymplecticFin m A) :
     g ∈ matrixSubgroup m (A := A) ↔
       (∀ i j : Fin m, j < i → (g.val : Matrix _ _ A) (i.castAdd m) (j.castAdd m) = 0) ∧
