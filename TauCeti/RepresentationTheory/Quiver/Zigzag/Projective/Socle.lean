@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Projective.CartanMap
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Projective.Radical
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Projective.Loewy
 import Mathlib.CategoryTheory.Preadditive.Schur
 
 /-!
@@ -118,7 +118,8 @@ theorem coe_zigzagGradedSocleVolume (i : V) :
     (zigzagGradedSocleVolume k G hns i : Z) = zigzagVolume k G i :=
   (rfl)
 
-private theorem socleVolume_mem (i : V) :
+/-- The distinguished volume of the graded socle lies in degree two. -/
+theorem zigzagGradedSocleVolume_mem_grade_two (i : V) :
     zigzagGradedSocleVolume k G hns i ∈
       (zigzagGradedProjectiveSocle k G hns i).grading.piece 2 := by
   rw [mem_zigzagGradedProjectiveSocle_piece_iff, coe_zigzagGradedSocleVolume]
@@ -141,10 +142,11 @@ private theorem positiveIdeal_smul_socleVolume (i : V) :
       coe_zigzagGradedSocleVolume, Submodule.coe_zero]
     rw [mul_assoc, zigzagMk_vertexIdempotent_mul_zigzagVolume]
     have hv := (mem_zigzagGradedProjectiveSocle_piece_iff k G hns i 2 _).1
-      (socleVolume_mem k G hns i)
+      (zigzagGradedSocleVolume_mem_grade_two k G hns i)
     rw [coe_zigzagGradedSocleVolume] at hv
     have hm := mul_mem_zigzagIntegerGrade k G hx hv
-    obtain ⟨n, hn⟩ := Int.eq_ofNat_of_zero_le (show 0 ≤ p + 2 by omega)
+    have hp2 : 0 ≤ p + 2 := by omega
+    obtain ⟨n, hn⟩ := Int.eq_ofNat_of_zero_le hp2
     rw [hn, zigzagIntegerGrade_ofNat,
       zigzagGrade_eq_bot_of_three_le k G (by omega)] at hm
     exact hm
@@ -166,7 +168,7 @@ noncomputable def zigzagGradedHeadToSocle (i : V) :
         let _ := (zigzagGradedProjectiveSocle k G hns i).gradedSMul
         have hm := SetLike.GradedSMul.smul_mem
           (B := (zigzagGradedProjectiveSocle k G hns i).grading.piece) hx
-          (socleVolume_mem k G hns i)
+          (zigzagGradedSocleVolume_mem_grade_two k G hns i)
         simpa only [vadd_eq_add, add_zero, sub_neg_eq_add] using hm)
 
 /-- On a representative, the head-to-socle map is right multiplication by the volume. -/
@@ -198,32 +200,20 @@ private theorem headToSocle_ne_zero (i : V) : zigzagGradedHeadToSocle k G hns i 
 private theorem headToSocle_surjective (i : V) :
     Function.Surjective (zigzagGradedHeadToSocle k G hns i).hom := by
   intro x
-  have hx : (x : Z) ∈ k ∙ zigzagVolume k G i := by
-    let p : zigzagProjective k G i := ⟨x.1, x.2.1⟩
-    have hp : p ∈ zigzagProjectiveRadicalPower k G i 2 :=
-      (mem_zigzagProjectiveRadicalPower_iff k G i 2 p).2 x.2.2
-    have hline : p ∈ zigzagProjectiveVolumeLine k G i := by
-      rw [← restrictScalars_zigzagProjectiveRadicalPower_two_eq_volumeLine hns]
-      exact hp
-    obtain ⟨c, hc⟩ := (mem_zigzagProjectiveVolumeLine_iff k G i p).1 hline
-    refine Submodule.mem_span_singleton.2 ⟨c, ?_⟩
-    have hval := congrArg (fun y : zigzagProjective k G i => (y : Z)) hc
-    have hv : ((c • zigzagProjectiveVolume k G i : zigzagProjective k G i) : Z) =
-        c • (zigzagProjectiveVolume k G i : Z) :=
-      ((zigzagProjective k G i).restrictScalars k).subtype.map_smul c _
-    rwa [hv, coe_zigzagProjectiveVolume] at hval
-  obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp hx
-  refine ⟨zigzagGradedSimpleMk k G i
-    (c • spanSingletonGenerator (zigzagVertexIdempotent k G i)), ?_⟩
+  let p : zigzagProjective k G i := ⟨x.1, x.2.1⟩
+  have hp : p ∈ zigzagProjectiveRadicalPower k G i 2 :=
+    (mem_zigzagProjectiveRadicalPower_iff k G i 2 p).2 x.2.2
+  obtain ⟨y, hy⟩ := zigzagProjectiveMulVolume_surjective k G hns i ⟨p, hp⟩
+  let y' : (Ideal.span {zigzagVertexIdempotent k G i} : Ideal Z) :=
+    ⟨(y.1 : Z), by rw [← zigzagProjective_def]; exact y.1.2⟩
+  refine ⟨zigzagGradedSimpleMk k G i y', ?_⟩
   apply Subtype.ext
   rw [zigzagGradedHeadToSocle_mk]
-  have hv : ((c • spanSingletonGenerator (zigzagVertexIdempotent k G i) :
-      Ideal.span {zigzagVertexIdempotent k G i}) : Z) =
-      c • (spanSingletonGenerator (zigzagVertexIdempotent k G i) : Z) :=
-    ((Ideal.span {zigzagVertexIdempotent k G i} : Ideal Z).restrictScalars k).subtype.map_smul c _
-  rw [hv]
-  simpa only [Submodule.subtype_apply, coe_spanSingletonGenerator, smul_mul_assoc,
-    zigzagMk_vertexIdempotent_mul_zigzagVolume] using hc
+  have he := congrArg (fun z : zigzagProjectiveRadicalPower k G i 2 =>
+    ((z : zigzagProjective k G i) : Z)) hy
+  rw [zigzagProjectiveMulVolume_apply] at he
+  simpa only [y', p, mul_zigzagVolume hns, zigzagProjectiveHeadCoeff_apply,
+    zigzagTrivialCoeff_apply_eq_repr hns, Module.Basis.coord_apply] using he
 
 /-- Right multiplication by the volume is an isomorphism from the graded head to the
 socle shifted down by two. -/
@@ -271,8 +261,10 @@ noncomputable def zigzagGradedHeadIsoSocle (i : V) :
 @[simp]
 theorem zigzagGradedHeadIsoSocle_hom_apply (i : V) (x : zigzagGradedSimple k G i) :
     (zigzagGradedHeadIsoSocle k G hns i).hom.hom x =
-      (zigzagGradedHeadToSocle k G hns i).hom x :=
-  (rfl)
+      (zigzagGradedHeadToSocle k G hns i).hom x := by
+  simp only [zigzagGradedHeadIsoSocle, GradedModuleCat.isoMk_hom_hom,
+    LinearEquiv.coe_toLinearMap]
+  exact LinearEquiv.ofBijective_apply _ x
 
 /-- The inverse head–socle isomorphism sends the volume to the class of the vertex idempotent. -/
 @[simp]
