@@ -132,6 +132,44 @@ theorem mem_matrixSubgroup_iff (g : GLSymplecticFin m A) :
       simp only [Fin.natAdd_eq_addNat] at hij ⊢
       exact hlower i j ((flagOrder_addNat_lt_addNat_iff m i j).mp hij)
 
+/-- **A symplectic matrix preserving the isotropic half of the standard flag preserves the whole
+flag.** It suffices that the upper-left block is upper triangular and the lower-left block
+vanishes: the symplectic equations then make the lower-right block the inverse transpose of the
+upper-left one, hence lower triangular. -/
+theorem mem_matrixSubgroup_iff_castAdd (g : GLSymplecticFin m A) :
+    g ∈ matrixSubgroup m (A := A) ↔
+      (∀ i j : Fin m, j < i → (g.val : Matrix _ _ A) (i.castAdd m) (j.castAdd m) = 0) ∧
+      (∀ i j : Fin m, (g.val : Matrix _ _ A) (i.addNat m) (j.castAdd m) = 0) := by
+  rw [mem_matrixSubgroup_iff]
+  refine ⟨fun h ↦ ⟨h.1, h.2.2⟩, fun ⟨hupper, hzero⟩ ↦ ⟨hupper, ?_, hzero⟩⟩
+  let M : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) A :=
+    (g.val : Matrix _ _ A).submatrix finSumFinEquiv finSumFinEquiv
+  have hsymp : M ∈ Matrix.symplecticGroup (Fin m) A :=
+    submatrix_mem_symplecticGroup (GLSymplecticFin.mem_iff.mp g.2)
+  have hM₂₁ : M.toBlocks₂₁ = 0 := by
+    ext i j
+    simpa only [M, Matrix.toBlocks₂₁, Matrix.of_apply, Matrix.submatrix_apply,
+      finSumFinEquiv_apply_left, finSumFinEquiv_apply_right, Fin.natAdd_eq_addNat,
+      Matrix.zero_apply] using hzero i j
+  -- The symplectic equations give `M₁₁ᵀ * M₂₂ = 1` once the lower-left block vanishes.
+  have hAD : M.toBlocks₁₁ᵀ * M.toBlocks₂₂ = 1 := by
+    have hblocks := SymplecticGroup.fromBlocks_mem_iff.mp (M.fromBlocks_toBlocks.symm ▸ hsymp)
+    simpa only [hM₂₁, Matrix.transpose_zero, Matrix.zero_mul, sub_zero] using hblocks.2.2
+  let _ : Invertible M.toBlocks₁₁ := Matrix.invertibleOfIsUnitDet _ <|
+    IsUnit.of_mul_eq_one M.toBlocks₂₂.det <| by
+      rw [← Matrix.det_transpose M.toBlocks₁₁, ← Matrix.det_mul, hAD, Matrix.det_one]
+  have hA : M.toBlocks₁₁.BlockTriangular id := fun i j hij ↦ by
+    simpa only [M, Matrix.toBlocks₁₁, Matrix.of_apply, Matrix.submatrix_apply,
+      finSumFinEquiv_apply_left] using hupper i j hij
+  have hD : M.toBlocks₂₂ = (M.toBlocks₁₁⁻¹)ᵀ := by
+    rw [Matrix.transpose_nonsing_inv, Matrix.inv_eq_right_inv hAD]
+  intro i j hij
+  have h := congrFun (congrFun hD i) j
+  simp only [M, Matrix.toBlocks₂₂, Matrix.of_apply, Matrix.submatrix_apply,
+    finSumFinEquiv_apply_right, Fin.natAdd_eq_addNat, Matrix.transpose_apply] at h
+  rw [h]
+  exact Matrix.blockTriangular_inv_of_blockTriangular hA hij
+
 /-- Apply a ring homomorphism entrywise to a flag-preserving symplectic matrix. -/
 def map {B : Type*} [CommRing B] (phi : A →+* B) :
     matrixSubgroup m (A := A) →* matrixSubgroup m (A := B) :=
