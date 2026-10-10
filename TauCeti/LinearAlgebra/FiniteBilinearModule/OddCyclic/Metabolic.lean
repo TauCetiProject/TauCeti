@@ -45,14 +45,15 @@ theorem not_isMetabolic_oddCyclic {m : ℕ} (hm : Odd m) {θ : ℤ}
 /-- The nondegenerate odd cyclic form of order five with coefficient two has zero Gauss sign
 and no quadratic Lagrangian. Thus vanishing of the Gauss sign does not imply metabolicity. -/
 theorem gaussSign_eq_zero_and_not_isMetabolic_oddCyclic_five :
-    (oddCyclic 5 (by decide) 2).gaussSign = 0 ∧
+    (oddCyclic 5 (by decide) 2).IsNondegenerate ∧
+      (oddCyclic 5 (by decide) 2).gaussSign = 0 ∧
       ¬ (oddCyclic 5 (by decide) 2).IsMetabolic := by
   have : Fact (Nat.Prime 5) := ⟨by decide⟩
   have hc : IsCoprime (5 : ℤ) 2 := by norm_num [Int.isCoprime_iff_gcd_eq_one]
   have hθ : legendreSym 5 2 = -1 := by
     rw [legendreSym.at_two (by decide), ZMod.χ₈_nat_eq_if_mod_eight]
     norm_num
-  constructor
+  refine ⟨(isNondegenerate_oddCyclic_iff _ _ _).mpr hc, ?_, ?_⟩
   · simpa [hθ] using gaussSign_oddCyclic (by decide : Odd 5) 1 hc
   · exact not_isMetabolic_oddCyclic (by decide) hc (by norm_num)
 
