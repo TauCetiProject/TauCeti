@@ -3,8 +3,10 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: The Tau Ceti contributors
 -/
-import TauCeti.Geometry.Manifold.Distribution
-import TauCeti.Geometry.Manifold.Diffeomorph.Basic
+module
+
+public import TauCeti.Geometry.Manifold.Distribution
+public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 
 /-!
 # Transport of involutive distributions
@@ -24,6 +26,8 @@ The diffeomorphism must be at least `C²` over the reals (`minSmoothness 𝕜 2`
 scalar field), so that pullbacks of differentiable vector fields are differentiable and their
 Lie brackets transform naturally.
 -/
+
+public section
 
 noncomputable section
 
@@ -54,6 +58,7 @@ theorem IsInvolutiveDistribution.diffeomorph (hD : IsInvolutiveDistribution I D)
     IsInvolutiveDistribution J D' := by
   have hn0 : n ≠ 0 := ne_of_gt
     (lt_of_lt_of_le (by norm_num : (0 : ℕ∞ω) < 2) (le_minSmoothness.trans hn))
+  rw [isInvolutiveDistribution_iff]
   intro U hU V W hV hW hVD hWD y hy
   let V₀ := mpullback I J h V
   let W₀ := mpullback I J h W
