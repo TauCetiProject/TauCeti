@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.LocalDiffeomorph
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Exponential
 
 /-!
@@ -257,20 +257,8 @@ theorem riemannianLog_mem (h : IsNormalDomain I M p U) (hq : q ∈ riemannianExp
 theorem contMDiffOn_riemannianLog (h : IsNormalDomain I M p U) :
     ContMDiffOn I 𝓘(ℝ, TangentSpace I p) ∞ (riemannianLog I M p U)
       (riemannianExp I M p '' U) := by
-  rintro _ ⟨w, hw, rfl⟩
-  refine ContMDiffAt.contMDiffWithinAt ?_
-  have hloc := h.isLocalDiffeomorphOn ⟨w, hw⟩
-  have hinv : hloc.localInverse (riemannianExp I M p w) = w :=
-    hloc.localInverse_left_inv hloc.localInverse_mem_target
-  have hsource : hloc.localInverse.source ∈ 𝓝 (riemannianExp I M p w) :=
-    hloc.localInverse.open_source.mem_nhds hloc.localInverse_mem_source
-  have hpre : hloc.localInverse ⁻¹' U ∈ 𝓝 (riemannianExp I M p w) :=
-    hloc.continuousAt_localInverse.preimage_mem_nhds (by rw [hinv]; exact h.isOpen.mem_nhds hw)
-  refine hloc.contMDiffAt_localInverse.congr_of_eventuallyEq ?_
-  filter_upwards [hsource, hpre] with z hz hzU
-  have hzexp : riemannianExp I M p (hloc.localInverse z) = z := hloc.localInverse_right_inv hz
-  have hlog := h.riemannianLog_riemannianExp hzU
-  rwa [hzexp] at hlog
+  rw [riemannianLog_def]
+  exact h.isLocalDiffeomorphOn.contMDiffOn_invFunOn h.isOpen h.injOn
 
 /-- The Riemannian logarithm is continuous on the normal neighbourhood it inverts. -/
 theorem continuousOn_riemannianLog (h : IsNormalDomain I M p U) :
@@ -281,36 +269,28 @@ theorem continuousOn_riemannianLog (h : IsNormalDomain I M p U) :
 to its normal neighbourhood. -/
 def toPartialDiffeomorph (h : IsNormalDomain I M p U) :
     PartialDiffeomorph (modelWithCornersSelf ℝ (TangentSpace I p)) I
-      (TangentSpace I p) M ∞ where
-  toPartialEquiv :=
-    { toFun := riemannianExp I M p
-      invFun := riemannianLog I M p U
-      source := U
-      target := riemannianExp I M p '' U
-      map_source' := fun _ hv => ⟨_, hv, rfl⟩
-      map_target' := fun _ hq => h.riemannianLog_mem hq
-      left_inv' := fun _ hv => h.riemannianLog_riemannianExp hv
-      right_inv' := fun _ hq => h.riemannianExp_riemannianLog hq }
-  open_source := h.isOpen
-  open_target := h.isOpen_image
-  contMDiffOn_toFun := h.isLocalDiffeomorphOn.contMDiffOn
-  contMDiffOn_invFun := h.contMDiffOn_riemannianLog
+      (TangentSpace I p) M ∞ :=
+  h.isLocalDiffeomorphOn.partialDiffeomorphOfInjOn h.isOpen h.injOn
 
 /-- The source of the normal-domain partial diffeomorphism is the normal domain. -/
 @[simp] theorem toPartialDiffeomorph_source (h : IsNormalDomain I M p U) :
-    h.toPartialDiffeomorph.source = U := (rfl)
+    h.toPartialDiffeomorph.source = U := by
+  simp [toPartialDiffeomorph]
 
 /-- The target of the normal-domain partial diffeomorphism is the normal neighbourhood. -/
 @[simp] theorem toPartialDiffeomorph_target (h : IsNormalDomain I M p U) :
-    h.toPartialDiffeomorph.target = riemannianExp I M p '' U := (rfl)
+    h.toPartialDiffeomorph.target = riemannianExp I M p '' U := by
+  simp [toPartialDiffeomorph]
 
 /-- The forward map of the normal-domain partial diffeomorphism is the exponential map. -/
 @[simp] theorem coe_toPartialDiffeomorph (h : IsNormalDomain I M p U) :
-    ⇑h.toPartialDiffeomorph = riemannianExp I M p := (rfl)
+    ⇑h.toPartialDiffeomorph = riemannianExp I M p := by
+  simp [toPartialDiffeomorph]
 
 /-- The inverse map of the normal-domain partial diffeomorphism is the Riemannian logarithm. -/
 @[simp] theorem toPartialDiffeomorph_symm_apply (h : IsNormalDomain I M p U) (q : M) :
-    h.toPartialDiffeomorph.toPartialEquiv.symm q = riemannianLog I M p U q := (rfl)
+    h.toPartialDiffeomorph.toPartialEquiv.symm q = riemannianLog I M p U q := by
+  simp [toPartialDiffeomorph, riemannianLog_def]
 
 variable [I.Boundaryless] [T2Space M]
 
