@@ -102,7 +102,8 @@ instance : SetLike.GradedMonoid (cubicalChainGrading G R) where
       simp
     right
     refine ⟨m + n, NormalizedCubicalChain.mul G R m n y z, by push_cast; omega, ?_⟩
-    rw [DirectSum.lof_eq_of, DirectSum.lof_eq_of, DirectSum.lof_eq_of, DirectSum.of_mul_of]
+    rw [DirectSum.lof_eq_of, DirectSum.lof_eq_of, DirectSum.lof_eq_of, DirectSum.of_mul_of,
+      NormalizedCubicalChain.gMul_mul]
 
 /-- The decomposition of the algebra of cubical chains along its `ℤ`-grading. -/
 def cubicalChainDecompose :
@@ -159,7 +160,8 @@ theorem cubicalChainLof_mul {p q : ℕ} (a : NormalizedCubicalChain G R p)
     (b : NormalizedCubicalChain G R q) :
     cubicalChainLof G R p a * cubicalChainLof G R q b =
       cubicalChainLof G R (p + q) (mul G R p q a b) := by
-  rw [DirectSum.lof_eq_of, DirectSum.lof_eq_of, DirectSum.lof_eq_of, DirectSum.of_mul_of]
+  rw [DirectSum.lof_eq_of, DirectSum.lof_eq_of, DirectSum.lof_eq_of, DirectSum.of_mul_of,
+    NormalizedCubicalChain.gMul_mul]
 
 /-- The boundary of the chains of dimension `n`, as a map into the graded algebra; it vanishes in
 dimension `0`. -/
