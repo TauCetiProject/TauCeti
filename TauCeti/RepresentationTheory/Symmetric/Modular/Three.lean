@@ -146,18 +146,35 @@ noncomputable def standardThreeSequence : ShortComplex (Rep k (Equiv.Perm (Fin 3
       ext
       simp)
 
-/-- The defining maps and terms of the standard-module sequence. -/
-theorem standardThreeSequence_def :
-    standardThreeSequence k =
-      ShortComplex.mk (Rep.ofHom (standardThreeTrivialInclusion k))
-        (Rep.ofHom (standardThreeSignQuotient k)) (by
-          apply Rep.hom_ext
-          ext
-          simp) := (rfl)
+/-- The first term of the standard-module sequence is the trivial line. -/
+@[simp]
+theorem standardThreeSequence_X₁ :
+    (standardThreeSequence k).X₁ = Rep.trivial k (Equiv.Perm (Fin 3)) k := (rfl)
+
+/-- The middle term of the standard-module sequence is the standard representation. -/
+@[simp]
+theorem standardThreeSequence_X₂ :
+    (standardThreeSequence k).X₂ = Rep.of (standardRepresentation k (Fin 3)) := (rfl)
+
+/-- The last term of the standard-module sequence is the sign line. -/
+@[simp]
+theorem standardThreeSequence_X₃ :
+    (standardThreeSequence k).X₃ =
+      Rep.of (Representation.ofLinearCharacter (signLinearCharacter k (Fin 3))) := (rfl)
+
+/-- The first map of the standard-module sequence is the constant-vector inclusion. -/
+@[simp]
+theorem standardThreeSequence_f :
+    HEq (standardThreeSequence k).f (Rep.ofHom (standardThreeTrivialInclusion k)) := (HEq.rfl)
+
+/-- The second map of the standard-module sequence is the coordinate-difference quotient. -/
+@[simp]
+theorem standardThreeSequence_g :
+    HEq (standardThreeSequence k).g (Rep.ofHom (standardThreeSignQuotient k)) := (HEq.rfl)
 
 /-- The explicit sequence with middle term the standard module is short exact. -/
 theorem standardThreeSequence_shortExact : (standardThreeSequence k).ShortExact := by
-  rw [standardThreeSequence_def]
+  dsimp only [standardThreeSequence]
   exact ShortComplex.ShortExact.mk'
     ((Rep.exact_iff_function_exact _).2
       (exact_standardThreeTrivialInclusion_standardThreeSignQuotient k))

@@ -51,7 +51,6 @@ theorem fdRepK0RingEquiv_of_standard_perm_fin_three_char_three :
     exactK0_one_eq_of_trivial]
   simp only [FDRep.of_ρ']
   have hS := standardThreeSequence_shortExact k
-  rw [standardThreeSequence_def] at hS
   let := hS.mono_f
   let := hS.epi_g
   apply (finiteModulesExactK0Equiv k[Equiv.Perm (Fin 3)]).injective
@@ -59,12 +58,18 @@ theorem fdRepK0RingEquiv_of_standard_perm_fin_three_char_three :
   have h := ExactK0.of_conflation_fullSubcategory
     (isExtensionClosed_finiteModules k[Equiv.Perm (Fin 3)])
     ((ExactStructure.abelian_conflation _).2 (hS.map Rep.toModuleMonoidAlgebra))
-    (by exact (ModuleCat.isFG_iff (ModuleCat.of k[Equiv.Perm (Fin 3)]
-      (Representation.trivial k (Equiv.Perm (Fin 3)) k).asModule)).2 inferInstance)
-    (by exact (ModuleCat.isFG_iff (ModuleCat.of k[Equiv.Perm (Fin 3)]
-      (Representation.ofLinearCharacter (signLinearCharacter k (Fin 3))).asModule)).2 inferInstance)
-  simpa only [ShortComplex.map_X₁, ShortComplex.map_X₂, ShortComplex.map_X₃,
-    Rep.toModuleMonoidAlgebra, Rep.of_ρ] using h
+    (by
+      rw [ShortComplex.map_X₁, standardThreeSequence_X₁]
+      exact (ModuleCat.isFG_iff (ModuleCat.of k[Equiv.Perm (Fin 3)]
+        (Representation.trivial k (Equiv.Perm (Fin 3)) k).asModule)).2 inferInstance)
+    (by
+      rw [ShortComplex.map_X₃, standardThreeSequence_X₃]
+      exact (ModuleCat.isFG_iff (ModuleCat.of k[Equiv.Perm (Fin 3)]
+        (Representation.ofLinearCharacter (signLinearCharacter k (Fin 3))).asModule)).2
+        inferInstance)
+  simp only [ShortComplex.map_X₁, ShortComplex.map_X₂, ShortComplex.map_X₃] at h
+  simp only [standardThreeSequence_X₁, standardThreeSequence_X₂, standardThreeSequence_X₃] at h
+  simpa only [Rep.toModuleMonoidAlgebra, Rep.of_ρ, Rep.trivial] using h
 
 /-- The three-point permutation module of S₃ has two trivial factors and one sign factor. -/
 theorem permK0_fin_three_char_three :
