@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.PiTensorProduct.TwoStrand
+public import TauCeti.LinearAlgebra.SymplecticGroup
 public import TauCeti.RepresentationTheory.ClassicalGroups.Symplectic
 public import TauCeti.RepresentationTheory.Symmetric.TensorAction.Basic
 public import TauCeti.RepresentationTheory.Tensor.Power
@@ -76,6 +77,16 @@ The index set is `Fin n ⊕ Fin n` rather than a general `l ⊕ l`, even though 
 `Matrix.symplecticGroup` are defined for a general `l`, because the invariant form
 `TauCeti.stdSymplecticBilinForm` and the standard representation `TauCeti.stdSymplecticRep` that
 this file consumes are pinned at `Fin n`.
+
+Only the tensor *square* is treated here. The same two generators on the `d`-th tensor power, for
+an arbitrary pair of strands, are
+`TauCeti/RepresentationTheory/ClassicalGroups/BrauerGenerators/Symplectic/TensorPower.lean`, which
+reproduces both of them at `d = 2` from this file.
+
+The two entrywise readings of `Matrix.J` that the loop value and the antisymmetry of the bivector
+run on -- `Matrix.J_apply_swap` and `Matrix.sum_J_mul_J_self` -- are not proved here: they say
+nothing about tensor powers and live in `TauCeti.LinearAlgebra.SymplecticGroup`, beside the other
+elementary facts about `Matrix.J`.
 
 The bookkeeping for pure tensors on two strands carries no symplectic content and lives in
 `TauCeti.LinearAlgebra.PiTensorProduct.TwoStrand`. This file consumes one lemma from there,
@@ -232,20 +243,6 @@ end Cup
 
 section Loop
 
-/-- `J` is antisymmetric, entrywise. -/
-private theorem J_apply_swap (x y : Fin n ⊕ Fin n) :
-    Matrix.J (Fin n) k y x = -Matrix.J (Fin n) k x y := by
-  have h := congrFun (congrFun (Matrix.J_transpose (Fin n) k) x) y
-  simpa only [Matrix.transpose_apply, Matrix.neg_apply] using h
-
-/-- Each row of `J` pairs with itself to `1`, because `J * Jᵀ = 1`. -/
-private theorem sum_J_mul_J (x : Fin n ⊕ Fin n) :
-    ∑ y : Fin n ⊕ Fin n, Matrix.J (Fin n) k x y * Matrix.J (Fin n) k x y = 1 := by
-  have hJ : Matrix.J (Fin n) k * (Matrix.J (Fin n) k)ᵀ = 1 := by
-    rw [Matrix.J_transpose, Matrix.mul_neg, Matrix.J_squared, neg_neg]
-  have h := congrFun (congrFun hJ x) x
-  simpa only [Matrix.mul_apply, Matrix.one_apply_eq, Matrix.transpose_apply] using h
-
 /-- **The loop value.** A cup stacked under a cap closes into a loop, and the loop contracts the
 pairing `J` against the copairing `-J`: the value is `-∑ₓ ∑_y (J x y) * (J x y)`, which is
 `-tr (J * Jᵀ) = -tr 1 = -2n`. -/
@@ -262,7 +259,7 @@ theorem symplecticCap_comp_symplecticCup_apply (c : k) :
       intro x
       rw [map_sum]
       simp only [map_smul, symplecticCap_tprod_single, smul_eq_mul]
-      exact sum_J_mul_J k n x
+      exact Matrix.sum_J_mul_J_self (Fin n) k x
     rw [Finset.sum_congr rfl fun x _ => h1 x, Finset.sum_const, Finset.card_univ,
       Fintype.card_sum, Fintype.card_fin, nsmul_eq_mul, mul_one]
     push_cast
@@ -337,7 +334,7 @@ theorem symplecticFlip_comp_symplecticCup :
     refine Finset.sum_congr rfl fun a _ => ?_
     rw [← Finset.sum_neg_distrib]
     refine Finset.sum_congr rfl fun b _ => ?_
-    rw [J_apply_swap k n a b]
+    rw [Matrix.J_apply_swap (Fin n) k a b]
     exact neg_smul (M := ⨂[k]^2 ((Fin n ⊕ Fin n) → k)) _ _
   refine LinearMap.ext_ring ?_
   rw [LinearMap.comp_apply, symplecticCup_apply_one, LinearMap.neg_apply, symplecticCup_apply_one,

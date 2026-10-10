@@ -28,6 +28,8 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
 
 * `Matrix.J_mul_neg_J`, `Matrix.neg_J_mul_J` and `Matrix.isUnit_J`: the canonical skew-symmetric
   matrix is a unit, with inverse `-J`.
+* `Matrix.J_apply_swap` and `Matrix.sum_J_mul_J_self`: the two entrywise readings of `J`, that it
+  is antisymmetric and that each of its rows pairs with itself to `1`.
 * `Matrix.eq_J_conj_iff_mul_J_eq`: cancelling a conjugation by `J`.
 * `SymplecticGroup.transpose_eq_J_conj_inv`: the transpose of a symplectic matrix is the
   `J`-conjugate of its inverse.
@@ -58,6 +60,21 @@ theorem neg_J_mul_J : (-J l R) * J l R = 1 := by
 /-- The canonical skew-symmetric matrix is a unit, with inverse `-J`, because `J * J = -1`. -/
 theorem isUnit_J : IsUnit (J l R) :=
   ⟨⟨J l R, -J l R, J_mul_neg_J l R, neg_J_mul_J l R⟩, rfl⟩
+
+omit [Fintype l] in
+/-- **`J` is antisymmetric, entrywise**: transposing it negates it, so exchanging the two indices
+of an entry changes its sign. -/
+theorem J_apply_swap (x y : l ⊕ l) : J l R y x = -J l R x y := by
+  have h := congrFun (congrFun (J_transpose l R) x) y
+  simpa only [transpose_apply, neg_apply] using h
+
+/-- **Each row of `J` pairs with itself to `1`**: the `(x, x)` entry of `J * Jᵀ = 1`. This is the
+numerical content of the loop value of the symplectic Brauer algebra, a loop contracting the
+pairing `J` against the copairing `-J` one row at a time. -/
+theorem sum_J_mul_J_self (x : l ⊕ l) : ∑ y : l ⊕ l, J l R x y * J l R x y = 1 := by
+  have hJ : J l R * (J l R)ᵀ = 1 := by rw [J_transpose, mul_neg, J_squared, neg_neg]
+  have h := congrFun (congrFun hJ x) x
+  simpa only [mul_apply, one_apply_eq, transpose_apply] using h
 
 variable {l R}
 
