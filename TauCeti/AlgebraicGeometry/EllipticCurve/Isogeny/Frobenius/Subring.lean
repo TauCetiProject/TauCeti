@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Ring
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Supersingular
-public import Mathlib.LinearAlgebra.Dimension.Constructions
 -- Proof-only: `π² = a_q π - q` and `π̂ = a_q - π`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.Charpoly
 -- Proof-only: ordinarity is separability of `π̂`.
@@ -19,6 +18,8 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Differential
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Hom
 -- Proof-only: `ℤ` is integrally closed.
 import Mathlib.RingTheory.Polynomial.RationalRoot
+-- Proof-only: `finrank_span_eq_card`.
+import Mathlib.LinearAlgebra.Dimension.Constructions
 
 /-!
 # The subring `ℤ[π_q]` of the endomorphism ring

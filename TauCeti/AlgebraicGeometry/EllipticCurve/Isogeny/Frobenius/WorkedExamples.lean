@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.Subring
 public import TauCeti.AlgebraicGeometry.EllipticCurve.PointCount
-public import Mathlib.FieldTheory.Finite.GaloisField
+import Mathlib.FieldTheory.Finite.GaloisField
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.Charpoly
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.PowTrace
 
