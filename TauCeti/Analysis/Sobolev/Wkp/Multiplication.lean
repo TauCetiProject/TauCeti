@@ -197,11 +197,10 @@ theorem Wkp.norm_ofTestFunctionₗ_bilinLeftCLM_le (k : ℕ) {psi : E → ℝ}
 
 namespace Wkp0
 
-/-- Multiplication by a smooth scalar function with derivatives through order `k` bounded
-by `M`, as a continuous linear endomorphism of `W^{k,p}_0(Ω)`. -/
-def contDiffSMulL (k : ℕ) {psi : E → ℝ} (hpsi : ContDiff ℝ (⊤ : ℕ∞) psi)
-    {M : ℝ} (_hM : 0 ≤ M)
-    (_hbound : ∀ i ≤ k, ∀ x ∈ Omega, ‖iteratedFDeriv ℝ i psi x‖ ≤ M) :
+/-- A continuous linear endomorphism associated to a smooth scalar function on
+`W^{k,p}_0(Ω)`. When the derivatives through order `k` are bounded on `Ω`, its action
+on test functions is characterized by `contDiffSMulL_apply_ofTestFunction`. -/
+def contDiffSMulL (k : ℕ) {psi : E → ℝ} (hpsi : ContDiff ℝ (⊤ : ℕ∞) psi) :
     Wkp0 mu Omega p k →L[ℝ] Wkp0 mu Omega p k :=
   ((Wkp0.ofTestFunctionₗ (mu := mu) (p := p) k).comp
     (TestFunction.bilinLeftCLM (ContinuousLinearMap.lsmul ℝ ℝ) hpsi).toLinearMap).extendOfNorm
@@ -213,7 +212,7 @@ theorem contDiffSMulL_apply_ofTestFunction (k : ℕ) {psi : E → ℝ}
     (hpsi : ContDiff ℝ (⊤ : ℕ∞) psi) {M : ℝ} (hM : 0 ≤ M)
     (hbound : ∀ i ≤ k, ∀ x ∈ Omega, ‖iteratedFDeriv ℝ i psi x‖ ≤ M)
     (phi : 𝓓(Omega, ℝ)) :
-    contDiffSMulL (mu := mu) (p := p) k hpsi hM hbound
+    contDiffSMulL (mu := mu) (p := p) k hpsi
       (Wkp0.ofTestFunctionₗ k phi) =
       Wkp0.ofTestFunctionₗ k
         (TestFunction.bilinLeftCLM (ContinuousLinearMap.lsmul ℝ ℝ) hpsi phi) := by
@@ -224,25 +223,25 @@ theorem contDiffSMulL_apply_ofTestFunction (k : ℕ) {psi : E → ℝ}
           Wkp.norm_ofTestFunctionₗ_bilinLeftCLM_le (mu := mu) (p := p)
             k hpsi hM hbound phi⟩ phi
 
-/-- Smooth multiplication commutes with forgetting the highest weak derivative. The
-lower-order multiplier uses the same smooth function and the restricted derivative bound. -/
+/-- Smooth multiplication commutes with forgetting the highest weak derivative when the
+derivatives through order `k + 1` are bounded on `Ω`. -/
 theorem lowerOrderL_contDiffSMulL (k : ℕ) {psi : E → ℝ}
     (hpsi : ContDiff ℝ (⊤ : ℕ∞) psi) {M : ℝ} (hM : 0 ≤ M)
     (hbound : ∀ i ≤ k + 1, ∀ x ∈ Omega, ‖iteratedFDeriv ℝ i psi x‖ ≤ M)
     (u : Wkp0 mu Omega p (k + 1)) :
-    lowerOrderL k (contDiffSMulL (k + 1) hpsi hM hbound u) =
-      contDiffSMulL k hpsi hM
-        (fun i hi x hx => hbound i (hi.trans (Nat.le_succ k)) x hx) (lowerOrderL k u) := by
-  let T := (lowerOrderL (mu := mu) (p := p) k).comp
-    (contDiffSMulL (k + 1) hpsi hM hbound)
-  let S := (contDiffSMulL (mu := mu) (p := p) k hpsi hM
-    (fun i hi x hx => hbound i (hi.trans (Nat.le_succ k)) x hx)).comp (lowerOrderL k)
+    lowerOrderL k (contDiffSMulL (k + 1) hpsi u) =
+      contDiffSMulL k hpsi (lowerOrderL k u) := by
+  let T := (lowerOrderL (mu := mu) (Omega := Omega) (p := p) k).comp
+    (contDiffSMulL (k + 1) hpsi)
+  let S := (contDiffSMulL (mu := mu) (Omega := Omega) (p := p) k hpsi).comp (lowerOrderL k)
   have heq : (T : Wkp0 mu Omega p (k + 1) → Wkp0 mu Omega p k) = S := by
     apply (Wkp0.denseRange_ofTestFunctionₗ (k + 1)).equalizer T.continuous S.continuous
     funext phi
     simp only [T, S, Function.comp_apply, ContinuousLinearMap.comp_apply]
-    rw [contDiffSMulL_apply_ofTestFunction, lowerOrderL_ofTestFunctionₗ,
-      lowerOrderL_ofTestFunctionₗ, contDiffSMulL_apply_ofTestFunction]
+    rw [contDiffSMulL_apply_ofTestFunction (k + 1) hpsi hM hbound,
+      lowerOrderL_ofTestFunctionₗ, lowerOrderL_ofTestFunctionₗ,
+      contDiffSMulL_apply_ofTestFunction k hpsi hM
+        (fun i hi x hx => hbound i (hi.trans (Nat.le_succ k)) x hx)]
   exact congrFun heq u
 
 /-- The norm of smooth multiplication on `W^{k,p}_0(Ω)` is bounded explicitly in terms
@@ -250,7 +249,7 @@ of the Sobolev order and a common bound on the multiplier's derivatives. -/
 theorem norm_contDiffSMulL_le (k : ℕ) {psi : E → ℝ}
     (hpsi : ContDiff ℝ (⊤ : ℕ∞) psi) {M : ℝ} (hM : 0 ≤ M)
     (hbound : ∀ i ≤ k, ∀ x ∈ Omega, ‖iteratedFDeriv ℝ i psi x‖ ≤ M) :
-    ‖contDiffSMulL (mu := mu) (p := p) k hpsi hM hbound‖ ≤ 2 ^ (k + 1) * M :=
+    ‖contDiffSMulL (mu := mu) (Omega := Omega) (p := p) k hpsi‖ ≤ 2 ^ (k + 1) * M :=
   LinearMap.opNorm_extendOfNorm_le (Wkp0.denseRange_ofTestFunctionₗ k) (by positivity)
     (fun phi => by
       simpa only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe, ← Submodule.norm_coe,
@@ -268,9 +267,9 @@ theorem contDiffSMulL_unique (k : ℕ) {psi : E → ℝ}
       T (Wkp0.ofTestFunctionₗ k phi) =
         Wkp0.ofTestFunctionₗ k
           (TestFunction.bilinLeftCLM (ContinuousLinearMap.lsmul ℝ ℝ) hpsi phi)) :
-    contDiffSMulL k hpsi hM hbound = T := by
+    contDiffSMulL k hpsi = T := by
   apply DFunLike.coe_injective
-  apply (Wkp0.denseRange_ofTestFunctionₗ k).equalizer (contDiffSMulL k hpsi hM hbound).continuous
+  apply (Wkp0.denseRange_ofTestFunctionₗ k).equalizer (contDiffSMulL k hpsi).continuous
     T.continuous
   funext phi
   exact (contDiffSMulL_apply_ofTestFunction k hpsi hM hbound phi).trans (hT phi).symm
@@ -282,11 +281,11 @@ theorem value_contDiffSMulL_ae (k : ℕ) {psi : E → ℝ}
     (hbound : ∀ i ≤ k, ∀ x ∈ Omega, ‖iteratedFDeriv ℝ i psi x‖ ≤ M)
     (u : Wkp0 mu Omega p k) :
     ∀ᵐ x ∂mu.restrict Omega,
-      Wkp.value k (contDiffSMulL k hpsi hM hbound u : Wkp mu Omega p k) x =
+      Wkp.value k (contDiffSMulL k hpsi u : Wkp mu Omega p k) x =
         psi x * Wkp.value k (u : Wkp mu Omega p k) x := by
   obtain ⟨v, hv, hlim⟩ := mem_closure_iff_seq_limit.1 (Wkp0.denseRange_ofTestFunctionₗ k u)
   choose phi hphi using hv
-  let T := contDiffSMulL (mu := mu) (p := p) k hpsi hM hbound
+  let T := contDiffSMulL (mu := mu) (Omega := Omega) (p := p) k hpsi
   let V := (Wkp.valueL (mu := mu) (p := p) k).comp
     (wkp0Submodule mu Omega p k).toSubmodule.subtypeL
   have hinput := V.continuous.tendsto u |>.comp hlim
