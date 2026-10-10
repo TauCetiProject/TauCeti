@@ -60,8 +60,7 @@ of `A` run over the whole basis without splitting off the kernel.
 ## Source
 
 The singular-system definitions `LinearMap.rightSingularBasis` and
-`LinearMap.leftSingularVector` follow the suggested forms in
-`TauCetiRoadmap/OperatorTheory/PolarDecomposition/Suggested.lean`, which reproduce the
+`LinearMap.leftSingularVector` are adapted from the
 [AIQ-Kitware DKPS formalization](https://github.com/AIQ-Kitware/aiq-dkps-formalization).
 Original copyright (c) 2026 Kitware, Inc.; Apache-2.0.
 
