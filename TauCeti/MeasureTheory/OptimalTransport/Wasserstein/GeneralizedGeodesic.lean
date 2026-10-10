@@ -34,14 +34,16 @@ Along it, for `t ∈ [0, 1]`,
 and since `γ` projects to a coupling of `ν₀` and `ν₁`, the integral may be replaced by the smaller
 `W₂ (ν₀, ν₁) ^ 2`: the function `ν ↦ W₂ (μ, ν) ^ 2 / 2` is `1`-convex along generalized geodesics
 based at `μ`. The reason is the pointwise Hilbert identity
-`‖x - ((1 - t) a + t b)‖ ^ 2 + t (1 - t) ‖a - b‖ ^ 2 = (1 - t) ‖x - a‖ ^ 2 + t ‖x - b‖ ^ 2`,
-integrated against `γ`, together with the coupling of `μ` and `ν_t` that `γ` provides. All
-statements are inequalities in `[0, ∞]` and need no moment hypotheses.
+`‖x - ((1 - t) a + t b)‖ ^ 2 + t (1 - t) ‖a - b‖ ^ 2 = (1 - t) ‖x - a‖ ^ 2 + t ‖x - b‖ ^ 2`
+(`TauCeti.edist_smul_add_smul_sq_add`), integrated against `γ`, together with the coupling of `μ`
+and `ν_t` that `γ` provides. All statements are inequalities in `[0, ∞]` and need no moment
+hypotheses.
 
 This convexity is the estimate on which the theory of minimizing movements in the quadratic
-Wasserstein space rests: it makes the penalized functional of each implicit Euler step strictly
-convex along the generalized geodesics based at the previous step, which is what yields uniqueness
-of the step and the discrete energy estimates.
+Wasserstein space rests: for an energy that is `λ`-convex along the generalized geodesics based at
+the previous step, it makes the penalized functional of an implicit Euler step of size `τ`
+`(λ + 1 / τ)`-convex along them, hence strictly convex when `λ + 1 / τ > 0`, which is what yields
+uniqueness of the step and the discrete energy estimates.
 
 ## Main definitions
 
@@ -206,51 +208,6 @@ theorem IsGeneralizedGeodesicPlan.generalizedGeodesic_one
 
 end Interpolation
 
-section Pointwise
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {t : ℝ}
-
-/-- The pointwise identity behind the convexity of the squared distance along generalized
-geodesics, in `ℝ≥0∞`: for `t ∈ [0, 1]`,
-`d(x, (1 - t) a + t b) ^ 2 + t (1 - t) d(a, b) ^ 2 = (1 - t) d(x, a) ^ 2 + t d(x, b) ^ 2`. -/
-private theorem edist_smul_add_smul_sq_add (ht : t ∈ Icc (0 : ℝ) 1) (x a b : E) :
-    edist x ((1 - t) • a + t • b) ^ 2 + ENNReal.ofReal (t * (1 - t)) * edist a b ^ 2 =
-      ENNReal.ofReal (1 - t) * edist x a ^ 2 + ENNReal.ofReal t * edist x b ^ 2 := by
-  have h₀ : 0 ≤ t := ht.1
-  have h₁ : 0 ≤ 1 - t := sub_nonneg.2 ht.2
-  have key := mul_norm_sq_add_mul_norm_sub_sq (a := 1 - t) (b := t) (by simp) (b - a) (x - a)
-  rw [sub_add_cancel, one_mul, div_one, div_one, sub_sub_sub_cancel_right, norm_sub_rev b x,
-    norm_sub_rev b a, show x - a - t • (b - a) = x - ((1 - t) • a + t • b) by module] at key
-  simp only [edist_dist, dist_eq_norm, ← ENNReal.ofReal_pow (norm_nonneg _)]
-  rw [← ENNReal.ofReal_mul (mul_nonneg h₀ h₁), ← ENNReal.ofReal_mul h₁, ← ENNReal.ofReal_mul h₀,
-    ← ENNReal.ofReal_add (by positivity) (mul_nonneg (mul_nonneg h₀ h₁) (by positivity)),
-    ← ENNReal.ofReal_add (mul_nonneg h₁ (by positivity)) (mul_nonneg h₀ (by positivity))]
-  congr 1
-  linarith
-
-end Pointwise
-
-section Quadratic
-
-variable {X : Type*} [PseudoEMetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
-  [SecondCountableTopology X] {μ ν : Measure X}
-
-/-- Every coupling bounds the squared quadratic Wasserstein distance by its transport integral. -/
-private theorem wassersteinEDist_two_sq_le {π : Measure (X × X)} (hπ : IsCoupling π μ ν) :
-    wassersteinEDist 2 μ ν ^ 2 ≤ ∫⁻ z, edist z.1 z.2 ^ 2 ∂π := by
-  have h := wassersteinEDist_rpow_eq_transportCost (X := X) measurable_edist two_ne_zero
-    ENNReal.ofNat_ne_top μ ν
-  simp only [ENNReal.toReal_ofNat, ENNReal.rpow_two] at h
-  exact h ▸ transportCost_le_lintegral hπ _
-
-/-- The squared `L²` seminorm of the ground distance is its quadratic transport integral. -/
-private theorem eLpNorm_edist_two_sq (π : Measure (X × X)) :
-    eLpNorm (fun z : X × X ↦ edist z.1 z.2) 2 π ^ 2 = ∫⁻ z, edist z.1 z.2 ^ 2 ∂π := by
-  simpa using eLpNorm_rpow_eq_lintegral two_ne_zero ENNReal.ofNat_ne_top
-    (measurable_edist (α := X)).aemeasurable (μ := π)
-
-end Quadratic
-
 section InnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [MeasurableSpace E]
@@ -275,11 +232,13 @@ theorem wassersteinEDist_generalizedGeodesic_sq_add_le (hγ : γ.fst = μ) (ht :
       rfl
     · rw [Measure.snd, Measure.map_map measurable_snd (by fun_prop), generalizedGeodesic_def]
       rfl
+  have hW := wassersteinEDist_rpow_le_lintegral measurable_edist two_ne_zero ENNReal.ofNat_ne_top hπ
+  simp only [ENNReal.toReal_ofNat, ENNReal.rpow_two] at hW
   calc wassersteinEDist 2 μ (generalizedGeodesic γ t) ^ 2 +
         ENNReal.ofReal (t * (1 - t)) * ∫⁻ w, edist w.2.1 w.2.2 ^ 2 ∂γ
       ≤ ∫⁻ w, edist w.1 ((1 - t) • w.2.1 + t • w.2.2) ^ 2 ∂γ +
           ENNReal.ofReal (t * (1 - t)) * ∫⁻ w, edist w.2.1 w.2.2 ^ 2 ∂γ := by
-        grw [wassersteinEDist_two_sq_le hπ, lintegral_map (by fun_prop) (by fun_prop)]
+        grw [hW, lintegral_map (by fun_prop) (by fun_prop)]
     _ = ∫⁻ w, (ENNReal.ofReal (1 - t) * edist w.1 w.2.1 ^ 2 +
           ENNReal.ofReal t * edist w.1 w.2.2 ^ 2) ∂γ := by
         rw [← lintegral_const_mul _ (by fun_prop), ← lintegral_add_left (by fun_prop)]
@@ -300,12 +259,17 @@ theorem wassersteinEDist_sq_add_le (hγ : IsGeneralizedGeodesicPlan 2 γ μ ν�
         ENNReal.ofReal (t * (1 - t)) * ∫⁻ w, edist w.2.1 w.2.2 ^ 2 ∂γ ≤
       ENNReal.ofReal (1 - t) * wassersteinEDist 2 μ ν₀ ^ 2 +
         ENNReal.ofReal t * wassersteinEDist 2 μ ν₁ ^ 2 := by
+  -- The squared `L²` seminorm of the ground distance is its quadratic transport integral.
+  have hL (π : Measure (E × E)) :
+      eLpNorm (fun z : E × E ↦ edist z.1 z.2) 2 π ^ 2 = ∫⁻ z, edist z.1 z.2 ^ 2 ∂π := by
+    simpa using eLpNorm_rpow_eq_lintegral two_ne_zero ENNReal.ofNat_ne_top
+      (measurable_edist (α := E)).aemeasurable (μ := π)
   have h₀ : ∫⁻ w, edist w.1 w.2.1 ^ 2 ∂γ = wassersteinEDist 2 μ ν₀ ^ 2 := by
-    rw [← hγ.eLpNorm_left, eLpNorm_edist_two_sq,
+    rw [← hγ.eLpNorm_left, hL,
       lintegral_map (by fun_prop) (measurable_id.prodMap measurable_fst)]
     rfl
   have h₁ : ∫⁻ w, edist w.1 w.2.2 ^ 2 ∂γ = wassersteinEDist 2 μ ν₁ ^ 2 := by
-    rw [← hγ.eLpNorm_right, eLpNorm_edist_two_sq,
+    rw [← hγ.eLpNorm_right, hL,
       lintegral_map (by fun_prop) (measurable_id.prodMap measurable_snd)]
     rfl
   rw [← h₀, ← h₁]
@@ -323,8 +287,9 @@ theorem wassersteinEDist_sq_add_wassersteinEDist_sq_le (hγ : IsGeneralizedGeode
         ENNReal.ofReal t * wassersteinEDist 2 μ ν₁ ^ 2 := by
   refine le_trans ?_ (hγ.wassersteinEDist_sq_add_le ht)
   gcongr
-  calc wassersteinEDist 2 ν₀ ν₁ ^ 2 ≤ ∫⁻ z, edist z.1 z.2 ^ 2 ∂γ.snd :=
-        wassersteinEDist_two_sq_le hγ.isCoupling_snd
+  calc wassersteinEDist 2 ν₀ ν₁ ^ 2 ≤ ∫⁻ z, edist z.1 z.2 ^ 2 ∂γ.snd := by
+        simpa using wassersteinEDist_rpow_le_lintegral measurable_edist two_ne_zero
+          ENNReal.ofNat_ne_top hγ.isCoupling_snd
     _ = ∫⁻ w, edist w.2.1 w.2.2 ^ 2 ∂γ := lintegral_map (by fun_prop) measurable_snd
 
 end IsGeneralizedGeodesicPlan
