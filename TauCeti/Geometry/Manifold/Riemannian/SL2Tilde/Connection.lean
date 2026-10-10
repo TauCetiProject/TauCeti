@@ -64,31 +64,32 @@ private theorem mdifferentiableAt_constantField (v : P) (p : SL2Tilde) :
       (fun q => (⟨q, constantField v q⟩ : TangentBundle J SL2Tilde)) p :=
   (contMDiff_constantField (n := 1) v p).mdifferentiableAt one_ne_zero
 
+private theorem mvfderiv_comp_toProd (f : P → ℝ) (p : SL2Tilde) :
+    mvfderiv J (f ∘ toProd) p =
+      (fderiv ℝ f (toProd p)).comp (tangentSpaceCastModel J p).toContinuousLinearMap := by
+  -- The inherited model-space atlas makes `toProd` the global chart. Keep the
+  -- identification with the model-space derivative and its tangent cast in this bridge.
+  convert mvfderiv_eq_fderiv (𝕜 := ℝ) (f := f) (x := toProd p) using 1 <;> rfl
+
 private theorem mvfderiv_inner_constantField (u v w : P) (p : SL2Tilde) :
     mvfderiv J (fun q => inner ℝ (constantField u q) (constantField v q)) p
       (constantField w p) =
       -4 * exp (-2 * p.y) * w.2.1 * u.1 * v.1 -
         exp (-p.y) * w.2.1 * (u.1 * v.2.2 + u.2.2 * v.1) := by
   have heq : (fun q => inner ℝ (constantField u q) (constantField v q)) =
-      fun q : SL2Tilde => 2 * exp (-2 * q.y) * u.1 * v.1 + u.2.1 * v.2.1 +
-        u.2.2 * v.2.2 + exp (-q.y) * (u.1 * v.2.2 + u.2.2 * v.1) := by
+      (fun q : P => 2 * exp (-2 * q.2.1) * u.1 * v.1 + u.2.1 * v.2.1 +
+        u.2.2 * v.2.2 + exp (-q.2.1) * (u.1 * v.2.2 + u.2.2 * v.1)) ∘ toProd := by
     funext q
+    simp only [Function.comp_apply, fst_snd_toProd]
     have hsq : exp (-q.y) * exp (-q.y) = exp (-2 * q.y) := by
       rw [← exp_add]
       congr 1
       ring
     simp only [inner_def, constantField, ContinuousLinearEquiv.apply_symm_apply]
     linear_combination u.1 * v.1 * hsq
-  rw [heq]
-  -- SL2Tilde has the model-space atlas; its tangent casts and toProd are identities.
-  change (mvfderiv J (fun q : P => 2 * exp (-2 * q.2.1) * u.1 * v.1 +
-    u.2.1 * v.2.1 + u.2.2 * v.2.2 +
-    exp (-q.2.1) * (u.1 * v.2.2 + u.2.2 * v.1)) (toProd p)) w = _
-  rw [mvfderiv_eq_fderiv]
-  -- The model-space tangent cast in mvfderiv_eq_fderiv is the identity.
-  change fderiv ℝ (fun q : P => 2 * exp (-2 * q.2.1) * u.1 * v.1 +
-    u.2.1 * v.2.1 + u.2.2 * v.2.2 +
-    exp (-q.2.1) * (u.1 * v.2.2 + u.2.2 * v.1)) (toProd p) w = _
+  rw [heq, mvfderiv_comp_toProd]
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    constantField_apply, ContinuousLinearEquiv.apply_symm_apply]
   let hy := (ContinuousLinearMap.fst ℝ ℝ ℝ).comp
     (ContinuousLinearMap.snd ℝ ℝ (ℝ × ℝ))
   have hd := hy.hasFDerivAt (x := toProd p)
@@ -153,6 +154,7 @@ All vectors are read in the existing global chart, without choosing an orthonorm
     linear_combination h / 2 +
       (exp (-p.y) * w.1 + w.2.2 / 2) *
         (u.2.1 * v.2.2 + v.2.1 * u.2.2) * hinv
-  exact congrArg (tangentSpaceCastModel J p) heq
+  simpa only [constantField_apply, ContinuousLinearEquiv.apply_symm_apply, a] using
+    congrArg (tangentSpaceCastModel J p) heq
 
 end TauCeti.SL2Tilde
