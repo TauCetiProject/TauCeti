@@ -119,11 +119,6 @@ theorem restriction_surjective : Function.Surjective (restriction A).hom := by
 def carrierDefiningIdeal : HopfIdeal A (generatedCoordinateHopfAlgebra A) :=
   HopfIdeal.kerOfSurjective (restriction A).hom (restriction_surjective A)
 
-/-- The carrier-relative positive ideal is the kernel of restriction. -/
-theorem carrierDefiningIdeal_def :
-    carrierDefiningIdeal A =
-      HopfIdeal.kerOfSurjective (restriction A).hom (restriction_surjective A) := (rfl)
-
 @[simp]
 theorem mem_carrierDefiningIdeal (x : generatedCoordinateHopfAlgebra A) :
     x ∈ carrierDefiningIdeal A ↔ (restriction A).hom x = 0 :=
