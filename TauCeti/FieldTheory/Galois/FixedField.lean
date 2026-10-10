@@ -11,7 +11,6 @@ public import Mathlib.FieldTheory.PurelyInseparable.Basic
 public import Mathlib.GroupTheory.PGroup
 public import TauCeti.Algebra.Group.Subgroup.ZPowers
 import TauCeti.FieldTheory.Perfect
-import TauCeti.FieldTheory.SeparableDegree
 import Mathlib.Algebra.Field.ULift
 import Mathlib.FieldTheory.Galois.Infinite
 import Mathlib.GroupTheory.Sylow
