@@ -17,7 +17,7 @@ import Mathlib.Tactic.Ring
 
 This file records arithmetic identities involving natural-number binomial coefficients.
 
-Besides two identities for the second binomial coefficient, it develops Vandermonde's convolution
+Besides three identities for the second binomial coefficient, it develops Vandermonde's convolution
 `∑ i, C(A, i) * C(B, r - i) = C(A + B, r)` in the shape taken by factorial moments of a law
 supported on such a convolution: each summand is weighted by the falling factorial `(i)ₘ` of the
 summation index. The weighted sum is again a single binomial coefficient,
@@ -28,6 +28,7 @@ summation index. The weighted sum is again a single binomial coefficient,
 * `Nat.choose_two_add_mul_succ_div_two`: the sum of the second binomial coefficient and
   the triangular number is the corresponding square.
 * `Nat.add_choose_two`: the second binomial coefficient of a sum, with its cross term.
+* `Nat.pow_three_sub_self_eq_mul_choose_two`: `g³ - g = (2g + 2) · C(g, 2)`.
 * `Nat.descFactorial_mul_choose`: a falling factorial of the lower index lowers both indices,
   `(i)ₘ * C(A, i) = (A)ₘ * C(A - m, i - m)`.
 * `Nat.sum_range_descFactorial_mul_choose_mul_choose`: Vandermonde's convolution weighted by a
@@ -70,6 +71,20 @@ theorem add_choose_two (m n : ℕ) : (m + n).choose 2 = m.choose 2 + n.choose 2 
       have h2 : (n + 1).choose 2 = n.choose 1 + n.choose 2 := Nat.choose_succ_succ n 1
       rw [h1, h2, ih, Nat.choose_one_right, Nat.choose_one_right]
       ring
+
+/-- `g³ - g = (2g + 2) · C(g, 2)`. -/
+theorem pow_three_sub_self_eq_mul_choose_two (g : ℕ) :
+    g ^ 3 - g = (2 * g + 2) * g.choose 2 := by
+  have h2 : g.choose 2 * 2 = g * (g - 1) := by
+    rw [Nat.choose_two_right, Nat.div_mul_cancel g.even_mul_pred_self.two_dvd]
+  rcases g with _ | g
+  · simp
+  · rw [Nat.add_sub_cancel] at h2
+    have h : (2 * (g + 1) + 2) * (g + 1).choose 2 = (g + 2) * ((g + 1) * g) := by
+      rw [← h2]
+      ring
+    rw [h]
+    exact Nat.sub_eq_of_eq_add (by ring)
 
 /-- **A falling factorial of the lower index lowers both indices of a binomial coefficient:**
 `(i)ₘ * C(A, i) = (A)ₘ * C(A - m, i - m)` for `m ≤ i`.
