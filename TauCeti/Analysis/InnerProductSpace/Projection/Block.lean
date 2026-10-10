@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
+public import TauCeti.Analysis.InnerProductSpace.Reflection
 
 /-!
 # Diagonal and off-diagonal blocks of an operator
@@ -97,12 +97,6 @@ theorem offDiagBlock_add (A B : E →L[𝕜] E) :
 theorem offDiagBlock_smul (c : 𝕜) (A : E →L[𝕜] E) :
     U.offDiagBlock (c • A) = c • U.offDiagBlock A := by
   simp only [offDiagBlock, ContinuousLinearMap.smul_comp, ContinuousLinearMap.comp_smul, smul_add]
-
-/-- The reflection across `U`, as a bounded operator, is `2 P_U - 1`. -/
-theorem coe_reflection :
-    (U.reflection : E →L[𝕜] E) = 2 • U.starProjection - 1 := by
-  ext x
-  simp [reflection_apply]
 
 /-- Every operator is the sum of its diagonal and off-diagonal parts. -/
 @[simp]
