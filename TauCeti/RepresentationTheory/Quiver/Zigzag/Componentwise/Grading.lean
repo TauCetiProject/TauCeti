@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.DualNumber.Grading
+public import TauCeti.Algebra.Module.GradedModule.Internal
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Grading
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Decomposition
 
@@ -21,6 +22,10 @@ The graded pieces are submodules of the public algebra itself. Their internal di
 property and multiplicativity supply a `GradedAlgebra`, including for disconnected graphs
 and graphs with isolated vertices. As for the relation quotient, the grading is also extended by
 zero to integer degrees, in which internal grading shifts are stated.
+
+The signed `GradedAlgebra` bundle follows `TauCeti.zigzagIntegerGradedAlgebra` for the
+relation quotient. `TauCeti.zigzagAlgebraInternalGrading` packages these same signed pieces
+for internally graded modules and bimodule tensor products.
 
 See Huerfano–Khovanov, *A category for the adjoint representation*, Section 3, for the
 path grading and singleton convention.
@@ -256,5 +261,17 @@ theorem mul_mem_zigzagAlgebraIntegerGrade {m n : ℤ} {x y : zigzagAlgebra k G}
     (hx : x ∈ zigzagAlgebraIntegerGrade k G m) (hy : y ∈ zigzagAlgebraIntegerGrade k G n) :
     x * y ∈ zigzagAlgebraIntegerGrade k G (m + n) :=
   Graded.mul_mem_extendByZero (fun hx hy ↦ SetLike.mul_mem_graded hx hy) hx hy
+
+/-- The signed grading as a graded algebra. Install it locally when tensoring graded modules. -/
+@[instance_reducible]
+noncomputable def zigzagAlgebraIntegerGradedAlgebra :
+    GradedAlgebra (zigzagAlgebraIntegerGrade k G) :=
+  { (isInternal_zigzagAlgebraIntegerGrade k G).chooseDecomposition with
+    one_mem := (zigzagAlgebraIntegerGrade_ofNat k G 0).ge SetLike.GradedOne.one_mem
+    mul_mem := fun _ _ _ _ hx hy ↦ mul_mem_zigzagAlgebraIntegerGrade k G hx hy }
+
+/-- The signed path-length grading of the public zigzag algebra as an internal grading. -/
+noncomputable abbrev zigzagAlgebraInternalGrading : InternalGrading k (zigzagAlgebra k G) :=
+  ⟨zigzagAlgebraIntegerGrade k G, isInternal_zigzagAlgebraIntegerGrade k G⟩
 
 end TauCeti
