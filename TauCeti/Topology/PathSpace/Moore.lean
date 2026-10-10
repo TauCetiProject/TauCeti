@@ -398,11 +398,12 @@ theorem symm_trans (γ δ : MoorePath X) (h : γ.target = δ.source) :
   refine ext (add_comm _ _) fun t ↦ ?_
   rw [symm_apply, length_trans]
   rcases le_total t δ.length with ht | ht
-  · rw [trans_apply_of_le _ _ _ (show t ≤ δ.symm.length from ht), symm_apply,
-      add_tsub_assoc_of_le ht, trans_apply_length_add]
+  · have ht' : t ≤ δ.symm.length := by rwa [length_symm]
+    rw [trans_apply_of_le _ _ _ ht', symm_apply, add_tsub_assoc_of_le ht, trans_apply_length_add]
   · obtain ⟨s, rfl⟩ := exists_add_of_le ht
-    rw [trans_apply_of_length_le _ _ _ (show δ.symm.length ≤ δ.length + s from ht), symm_apply,
-      length_symm, add_tsub_cancel_left, add_comm γ.length, add_tsub_add_eq_tsub_left]
+    have ht' : δ.symm.length ≤ δ.length + s := by rwa [length_symm]
+    rw [trans_apply_of_length_le _ _ _ ht', symm_apply, length_symm, add_tsub_cancel_left,
+      add_comm γ.length, add_tsub_add_eq_tsub_left]
     exact trans_apply_of_le _ _ _ tsub_le_self
 
 end MoorePath
@@ -489,9 +490,9 @@ theorem refl_mem_pathsBetween {A B : Set X} {x : X} (hA : x ∈ A) (hB : x ∈ B
     refl x ∈ pathsBetween A B :=
   ⟨hA, hB⟩
 
-theorem trans_mem_pathsBetween {A B C : Set X} {γ δ : MoorePath X} (hγ : γ ∈ pathsBetween A B)
-    (hδ : δ ∈ pathsBetween B C) (h : γ.target = δ.source) : γ.trans δ h ∈ pathsBetween A C :=
-  ⟨by rw [source_trans]; exact hγ.1, by rw [target_trans]; exact hδ.2⟩
+theorem trans_mem_pathsBetween {A B : Set X} {γ δ : MoorePath X} (hγ : γ.source ∈ A)
+    (hδ : δ.target ∈ B) (h : γ.target = δ.source) : γ.trans δ h ∈ pathsBetween A B :=
+  ⟨by rw [source_trans]; exact hγ, by rw [target_trans]; exact hδ⟩
 
 theorem symm_mem_pathsBetween {A B : Set X} {γ : MoorePath X} :
     γ.symm ∈ pathsBetween B A ↔ γ ∈ pathsBetween A B := by
