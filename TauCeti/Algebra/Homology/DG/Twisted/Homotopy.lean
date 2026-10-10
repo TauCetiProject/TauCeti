@@ -255,4 +255,57 @@ theorem homotopyMap_twistedDifferential (hh : ∀ x y, h x y ∈ 𝒜 (indQ y - 
 
 end Properties
 
+/-! ### Parametrized cocycles -/
+
+section Cocycle
+
+variable {R : Type uR} {A : Type uA} {M : Type uM}
+  [CommRing R] [Ring A] [Algebra R A]
+  {P Q : Type uP} {ind : P → ℤ} {indQ : Q → ℤ} [Fintype P] [Fintype Q]
+  {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A}
+  {mP : TwistingCocycle 𝒜 d P ind} {mQ : TwistingCocycle 𝒜 d Q indQ}
+
+/-- A **parametrized cocycle** between two continuation cocycles `ν₀` and `ν₁` (the source's
+Definition 1.11): a matrix `h x y ∈ 𝒜 (indQ y - ind x - 1)` with
+`d (h x y) = ν₁ x y - ν₀ x y + Σ_z (-1) ^ (ind x - ind z) • (mP x z * h z y)
+  + Σ_z (-1) ^ (ind x - indQ z) • (h x z * mQ z y)`. -/
+structure ParametrizedCocycle (ν₀ ν₁ : ContinuationCocycle mP mQ) where
+  /-- The entries of the parametrized cocycle. -/
+  h : P → Q → A
+  /-- The entry `h x y` has cohomological degree `indQ y - ind x - 1`. -/
+  mem_graded : ∀ x y, h x y ∈ 𝒜 (indQ y - ind x - 1)
+  /-- The parametrized equation. -/
+  parametrized : ∀ x y, d (h x y) = ν₁.ν x y - ν₀.ν x y +
+    ∑ z, (ind x - ind z).negOnePow • (mP.m x z * h z y) +
+    ∑ z, (ind x - indQ z).negOnePow • (h x z * mQ.m z y)
+
+namespace ParametrizedCocycle
+
+variable {ν₀ ν₁ : ContinuationCocycle mP mQ} [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M]
+  [IsScalarTower R Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M] {ℳ : ℤ → Submodule R M}
+  [DirectSum.Decomposition ℳ]
+  [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
+  {dM : M →ₗ[R] M} {hA : IsDGAlgebra 𝒜 d}
+
+omit [IsScalarTower R Aᵐᵒᵖ M] in
+/-- The homotopy map of a parametrized cocycle lowers the total degree by one. -/
+theorem homotopyMap_mem_twistedTotalGrading (η : ParametrizedCocycle ν₀ ν₁) {n : ℤ}
+    {f : P → M} (hf : f ∈ twistedTotalGrading ℳ ind n) :
+    homotopyMap η.h ℳ f ∈ twistedTotalGrading ℳ indQ (n - 1) :=
+  TauCeti.homotopyMap_mem_twistedTotalGrading η.h η.mem_graded hf
+
+/-- **Homotopic continuation cocycles induce chain homotopic continuation maps**:
+`Ψ¹ - Ψ⁰ = D⁻ ∘ 𝔥 + 𝔥 ∘ D⁺`. -/
+theorem homotopyMap_twistedDifferential (η : ParametrizedCocycle ν₀ ν₁)
+    (hM : IsDGRightModule hA ℳ dM) (f : P → M) :
+    continuationMap R M ν₁.ν f - continuationMap R M ν₀.ν f =
+      twistedDifferential mQ.m ℳ dM (homotopyMap η.h ℳ f) +
+        homotopyMap η.h ℳ (twistedDifferential mP.m ℳ dM f) :=
+  TauCeti.homotopyMap_twistedDifferential η.h mP.m mQ.m ν₀.ν ν₁.ν dM η.mem_graded
+    mP.mem_graded η.parametrized hM f
+
+end ParametrizedCocycle
+
+end Cocycle
+
 end TauCeti
