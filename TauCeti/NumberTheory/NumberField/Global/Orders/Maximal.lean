@@ -57,11 +57,8 @@ variable {K : Type*} [Field K] [NumberField K]
 variable (K) in
 /-- The maximal order of `K` is the ring of integers `𝓞 K`: the two rings have the same elements
 of `K`. -/
-def maximalOrderRingEquiv : (maximalNumberFieldOrder K).toSubalgebra ≃+* 𝓞 K where
-  toFun x := ⟨x, by simpa using x.2⟩
-  invFun y := ⟨y.1, by simpa using y.2⟩
-  map_mul' _ _ := rfl
-  map_add' _ _ := rfl
+def maximalOrderRingEquiv : (maximalNumberFieldOrder K).toSubalgebra ≃+* 𝓞 K :=
+  (Subalgebra.equivOfEq _ _ (maximalNumberFieldOrder_toSubalgebra K)).toRingEquiv
 
 /-- The identification of the maximal order with `𝓞 K` is compatible with the inclusions into
 `K`. -/
@@ -71,6 +68,7 @@ theorem algebraMap_maximalOrderRingEquiv (x : (maximalNumberFieldOrder K).toSuba
 
 variable (K) in
 /-- The automorphism of the fraction field induced by `maximalOrderRingEquiv` is the identity. -/
+@[simp]
 theorem ringEquivOfRingEquiv_maximalOrderRingEquiv :
     IsFractionRing.ringEquivOfRingEquiv (K := K) (L := K) (maximalOrderRingEquiv K) =
       RingEquiv.refl K := by
@@ -211,6 +209,7 @@ theorem toClassGroup_comp_maximalOrderNarrowPicEquiv :
   simp
 
 /-- Elementwise form of `toClassGroup_comp_maximalOrderNarrowPicEquiv`. -/
+@[simp]
 theorem toClassGroup_maximalOrderNarrowPicEquiv (c : NarrowPic (maximalNumberFieldOrder K)) :
     NarrowClassGroup.toClassGroup (maximalOrderNarrowPicEquiv K c) =
       maximalOrderPicEquiv K ((maximalNumberFieldOrder K).narrowToPic c) :=
