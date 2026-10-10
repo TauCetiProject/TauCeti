@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicTopology.Singular.Excision
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 public import TauCeti.Topology.Category.TopPair
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
+public import TauCeti.Topology.Homotopy.HomotopyGroup.TransAt
 
 /-!
 # The Hurewicz map
@@ -320,14 +321,6 @@ private lemma mapsTo_id {s t : Set (cubeSpace.{w} m)} (h : s ⊆ t) :
     Set.MapsTo (𝟙 (cubeSpace.{w} m)) s t :=
   fun _ hz ↦ h hz
 
-/-- Following a map of pairs by an enlargement of the target subspace. -/
-private lemma ofSubsetMap_comp_ofSubsetMap_id {B : Set (cubeSpace.{w} m)}
-    {B' B'' : Set (cubeSpace.{w} m)} (g : cubeSpace.{w} m ⟶ cubeSpace.{w} m)
-    (hB : Set.MapsTo g B B') (h : Set.MapsTo (𝟙 (cubeSpace.{w} m)) B' B'')
-    (hB'' : Set.MapsTo g B B'') :
-    ofSubsetMap g hB ≫ ofSubsetMap (𝟙 _) h = ofSubsetMap g hB'' :=
-  (ofSubsetMap_comp g (𝟙 _) hB h hB'').symm
-
 private lemma boundary_subset_inter :
     Set.MapsTo (𝟙 (cubeSpace.{w} m)) (ULift.down ⁻¹' Cube.boundary (Fin m))
       (upperSet i ∩ lowerSet i) :=
@@ -415,6 +408,18 @@ private lemma singularHomologyMap_ofSubsetMap_eq_zero {B : Set (cubeSpace.{w} m)
     (TopCat.ofHom (⟨fun z ↦ ⟨g z, hg z⟩, by fun_prop⟩ : C(cubeSpace.{w} m, B)))
     (by rw [ofSubsetMap_fst]; rfl) k
 
+/-- Following the map induced by a map of pairs out of the cube pair by the map induced by an
+enlargement `B ⊆ B'` of the target subspace. -/
+private lemma singularHomologyMap_ofSubsetMap_comp_id {B B' : Set (cubeSpace.{w} m)}
+    (g : cubeSpace.{w} m ⟶ cubeSpace.{w} m)
+    (hB : Set.MapsTo g (ULift.down ⁻¹' Cube.boundary (Fin m)) B)
+    (h : B ⊆ B') (k : ℕ) :
+    (cubeBoundaryPair.{w} m).singularHomologyMap (ofSubsetMap g hB) R k ≫
+        (ofSubset B).singularHomologyMap (ofSubsetMap (𝟙 _) (mapsTo_id h)) R k =
+      (cubeBoundaryPair.{w} m).singularHomologyMap (ofSubsetMap g (hB.mono_right h)) R k := by
+  rw [← singularHomologyMap_comp, ← ofSubsetMap_comp]
+  rfl
+
 /-- **The pinch identity.** On `Hₖ(Iᵐ, ∂Iᵐ)`, the map to the relative homology of the cube modulo
 its boundary and the slab `1/4 ≤ zᵢ ≤ 1/2` is the sum of the maps induced by the two halves of the
 complement of the slab, each parametrised by `stretch`. -/
@@ -429,28 +434,18 @@ private theorem singularHomologyMap_inclusion_eq_add (k : ℕ) :
     (mapsTo_id Set.inter_subset_left) (mapsTo_id Set.inter_subset_right) k ?_ ?_
   · -- In `(Iᵐ, upperSet i)`, the identity is homotopic to the quarter stretch, and the upper half
     -- lands in `upperSet i`.
-    rw [Preadditive.add_comp, ← singularHomologyMap_comp, ← singularHomologyMap_comp,
-      ← singularHomologyMap_comp,
-      ofSubsetMap_comp_ofSubsetMap_id (𝟙 _) _ _ (mapsTo_id Set.subset_union_left),
-      ofSubsetMap_comp_ofSubsetMap_id (stretch i quarter) _ _
-        ((mapsTo_stretch_quarter i).mono_right Set.inter_subset_left),
-      ofSubsetMap_comp_ofSubsetMap_id (stretch i upperHalf) _ _
-        ((mapsTo_stretch_upperHalf i).mono_right Set.inter_subset_left),
-      singularHomologyMap_ofSubsetMap_eq_zero R (stretch i upperHalf) _
-        (stretch_upperHalf_mem_upperSet i), add_zero]
+    simp only [Preadditive.add_comp,
+      singularHomologyMap_ofSubsetMap_comp_id R _ _ Set.inter_subset_left]
+    rw [singularHomologyMap_ofSubsetMap_eq_zero R (stretch i upperHalf) _
+      (stretch_upperHalf_mem_upperSet i), add_zero]
     exact (ofSubsetHomotopy (stretchHomotopy i quarter)
       (stretchHomotopy_quarter_mem_upperSet i)).congr_singularHomologyMap R k
   · -- In `(Iᵐ, lowerSet i)`, the identity is homotopic to the upper half stretch, and the quarter
     -- lands in `lowerSet i`.
-    rw [Preadditive.add_comp, ← singularHomologyMap_comp, ← singularHomologyMap_comp,
-      ← singularHomologyMap_comp,
-      ofSubsetMap_comp_ofSubsetMap_id (𝟙 _) _ _ (mapsTo_id Set.subset_union_left),
-      ofSubsetMap_comp_ofSubsetMap_id (stretch i quarter) _ _
-        ((mapsTo_stretch_quarter i).mono_right Set.inter_subset_right),
-      ofSubsetMap_comp_ofSubsetMap_id (stretch i upperHalf) _ _
-        ((mapsTo_stretch_upperHalf i).mono_right Set.inter_subset_right),
-      singularHomologyMap_ofSubsetMap_eq_zero R (stretch i quarter) _
-        (stretch_quarter_mem_lowerSet i), zero_add]
+    simp only [Preadditive.add_comp,
+      singularHomologyMap_ofSubsetMap_comp_id R _ _ Set.inter_subset_right]
+    rw [singularHomologyMap_ofSubsetMap_eq_zero R (stretch i quarter) _
+      (stretch_quarter_mem_lowerSet i), zero_add]
     exact (ofSubsetHomotopy (stretchHomotopy i upperHalf)
       (stretchHomotopy_upperHalf_mem_lowerSet i)).congr_singularHomologyMap R k
 
@@ -459,24 +454,6 @@ end Pinch
 section FatConcatenation
 
 variable {X : Type w} [TopologicalSpace X] {x : X}
-
-/-- On the first half of the `i`-th direction, `transAt i f g` runs `f` at double speed. -/
-private lemma transAt_apply_of_le (f g : Ω^ (Fin m) X x) {t : I^(Fin m)}
-    (h : (t i : ℝ) ≤ 1 / 2) {a : I} (ha : (a : ℝ) = 2 * t i) :
-    GenLoop.transAt i f g t = f (Function.update t i a) := by
-  simp only [GenLoop.transAt, GenLoop.coe_copy]
-  rw [ite_eq_left h, Set.projIcc_of_mem _ ⟨by rw [← ha]; exact a.2.1,
-    by rw [← ha]; exact a.2.2⟩]
-  exact congrArg (fun b ↦ f (Function.update t i b)) (Subtype.ext ha.symm)
-
-/-- On the second half of the `i`-th direction, `transAt i f g` runs `g` at double speed. -/
-private lemma transAt_apply_of_lt (f g : Ω^ (Fin m) X x) {t : I^(Fin m)}
-    (h : 1 / 2 < (t i : ℝ)) {a : I} (ha : (a : ℝ) = 2 * t i - 1) :
-    GenLoop.transAt i f g t = g (Function.update t i a) := by
-  simp only [GenLoop.transAt, GenLoop.coe_copy]
-  rw [ite_eq_right (not_le.2 h), Set.projIcc_of_mem _ ⟨by rw [← ha]; exact a.2.1,
-    by rw [← ha]; exact a.2.2⟩]
-  exact congrArg (fun b ↦ g (Function.update t i b)) (Subtype.ext ha.symm)
 
 /-- The concatenation of `p`, a constant piece and `q` along the `i`-th direction: `p` is run on
 `zᵢ ≤ 1/4`, the slab `1/4 ≤ zᵢ ≤ 1/2` goes to the base point, and `q` is run on `zᵢ ≥ 1/2`.  It
@@ -493,12 +470,12 @@ private lemma fatTrans_apply_of_mem (p q : Ω^ (Fin m) X x) {z : cubeSpace.{w} m
   · exact GenLoop.boundary _ _ hV
   rw [Set.mem_ofPred_eq] at hU hV
   have h₂ : 2 * (z.down i : ℝ) ∈ Set.Icc (0 : ℝ) 1 := ⟨by linarith, by linarith⟩
-  rw [fatTrans, transAt_apply_of_le i _ _ hV (a := ⟨_, h₂⟩) rfl]
+  rw [fatTrans, GenLoop.transAt_apply_of_le i _ _ hV (a := ⟨_, h₂⟩) rfl]
   by_cases h : 2 * (z.down i : ℝ) ≤ 1 / 2
-  · rw [transAt_apply_of_le i _ _ (by simpa using h) (a := 1)
+  · rw [GenLoop.transAt_apply_of_le i _ _ (by simpa using h) (a := 1)
       (by simp only [Function.update_self, Set.Icc.coe_one]; linarith), Function.update_idem]
     exact GenLoop.boundary _ _ (update_mem_boundary_of i (Or.inr rfl))
-  · rw [transAt_apply_of_lt i _ _ (by simpa using not_le.1 h)
+  · rw [GenLoop.transAt_apply_of_lt i _ _ (by simpa using not_le.1 h)
       (a := ⟨4 * z.down i - 1, by constructor <;> linarith⟩) (by simp; ring)]
     exact GenLoop.const_apply
 
@@ -507,11 +484,11 @@ private lemma fatTrans_stretch_quarter (p q : Ω^ (Fin m) X x) (z : cubeSpace.{w
     fatTrans i p q (stretch i quarter z).down = p z.down := by
   have hs := (z.down i).2
   have h₂ : (z.down i : ℝ) / 2 ∈ Set.Icc (0 : ℝ) 1 := ⟨by linarith [hs.1], by linarith [hs.2]⟩
-  rw [fatTrans, transAt_apply_of_le i _ _ (a := ⟨_, h₂⟩)
+  rw [fatTrans, GenLoop.transAt_apply_of_le i _ _ (a := ⟨_, h₂⟩)
       (by rw [stretch_apply_self, coe_quarter]; linarith [hs.2])
       (by rw [stretch_apply_self, coe_quarter]; ring),
     stretch_apply, Function.update_idem,
-    transAt_apply_of_le i _ _ (a := z.down i) (by simp; linarith [hs.2]) (by simp; ring),
+    GenLoop.transAt_apply_of_le i _ _ (a := z.down i) (by simp; linarith [hs.2]) (by simp; ring),
     Function.update_idem, Function.update_eq_self]
 
 /-- On the upper half, read through `stretch i upperHalf`, the fat concatenation is `q`. -/
@@ -522,11 +499,12 @@ private lemma fatTrans_stretch_upperHalf (p q : Ω^ (Fin m) X x) (z : cubeSpace.
   · -- On the face `zᵢ = 0` both loops are at the base point.
     have hz : z.down i = 0 := Subtype.ext h₀.symm
     rw [GenLoop.boundary q _ ⟨i, Or.inl hz⟩, fatTrans,
-      transAt_apply_of_le i _ _ (a := 1) (by rw [stretch_apply_self, coe_upperHalf, hz]; norm_num)
+      GenLoop.transAt_apply_of_le i _ _ (a := 1)
+        (by rw [stretch_apply_self, coe_upperHalf, hz]; norm_num)
         (by rw [stretch_apply_self, coe_upperHalf, hz]; norm_num),
-      transAt_apply_of_lt i _ _ (a := 1) (by norm_num) (by norm_num)]
+      GenLoop.transAt_apply_of_lt i _ _ (a := 1) (by norm_num) (by norm_num)]
     exact GenLoop.const_apply
-  · rw [fatTrans, transAt_apply_of_lt i _ _ (a := z.down i)
+  · rw [fatTrans, GenLoop.transAt_apply_of_lt i _ _ (a := z.down i)
         (by rw [stretch_apply_self, coe_upperHalf]; linarith)
         (by rw [stretch_apply_self, coe_upperHalf]; ring),
       stretch_apply, Function.update_idem, Function.update_eq_self]
