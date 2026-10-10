@@ -92,26 +92,6 @@ theorem termHom_ext {hM : IsDGRightModule h ℳ dM} {i j : ℤ}
   exact (twistedCochainComplexXEquiv mQ.mem_graded mQ.twisting hM j).injective
     (Subtype.ext (hab x))
 
-/-- The differential of the twisted complex, on the underlying functions. -/
-theorem twistedCochainComplex_d_apply (hM : IsDGRightModule h ℳ dM) (n : ℤ)
-    (x : (mP.twistedCochainComplex dM hM).X n) :
-    (twistedCochainComplexXEquiv mP.mem_graded mP.twisting hM (n + 1)
-        (((mP.twistedCochainComplex dM hM).d n (n + 1)).hom x) : P → M) =
-      twistedDifferential mP.m ℳ dM
-        (twistedCochainComplexXEquiv mP.mem_graded mP.twisting hM n x) :=
-  twistedCochainComplexXEquiv_d mP.mem_graded mP.twisting hM n x
-
-/-- The differential of the twisted complex from degree `n` to degree `i = n + 1`, on the
-underlying functions. -/
-theorem twistedCochainComplex_d_apply' (hM : IsDGRightModule h ℳ dM) {n i : ℤ} (hi : n + 1 = i)
-    (x : (mP.twistedCochainComplex dM hM).X n) :
-    (twistedCochainComplexXEquiv mP.mem_graded mP.twisting hM i
-        (((mP.twistedCochainComplex dM hM).d n i).hom x) : P → M) =
-      twistedDifferential mP.m ℳ dM
-        (twistedCochainComplexXEquiv mP.mem_graded mP.twisting hM n x) := by
-  subst hi
-  exact twistedCochainComplex_d_apply hM n x
-
 end Components
 
 /-! ### The morphism of a continuation cocycle -/
@@ -127,7 +107,7 @@ noncomputable def continuationHom (ν : ContinuationCocycle mP mQ) (hM : IsDGRig
   comm' i j hij := by
     obtain rfl : i + 1 = j := hij
     refine termHom_ext fun x ↦ ?_
-    simp only [ModuleCat.hom_comp, LinearMap.comp_apply, twistedCochainComplex_d_apply,
+    simp only [ModuleCat.hom_comp, LinearMap.comp_apply, twistedCochainComplexXEquiv_d,
       termHom_apply]
     exact (ν.continuationMap_twistedDifferential hM _).symm
 
@@ -177,14 +157,15 @@ noncomputable def homotopy (η : ParametrizedCocycle ν₀ ν₁) (hM : IsDGRigh
     have hij' : ¬ j + 1 = i := by simpa using hij
     simp only [hij', dite_false]
   comm i := by
-    have h₁ : (ComplexShape.up ℤ).Rel i (i + 1) := rfl
-    have h₂ : (ComplexShape.up ℤ).Rel (i - 1) i := by simp [ComplexShape.up_Rel]
-    rw [dNext_eq _ h₁, prevD_eq _ h₂]
-    simp only [sub_add_cancel, dite_true]
+    -- Write `i = n + 1`, so that both differentials are in the form `d n (n + 1)`.
+    obtain ⟨n, rfl⟩ : ∃ n, i = n + 1 := ⟨i - 1, by omega⟩
+    rw [dNext_eq _ (show (ComplexShape.up ℤ).Rel (n + 1) (n + 1 + 1) from rfl),
+      prevD_eq _ (show (ComplexShape.up ℤ).Rel n (n + 1) from rfl)]
+    simp only [dite_true]
     refine termHom_ext fun x ↦ ?_
     simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_add, LinearMap.add_apply,
-      map_add, Submodule.coe_add, termHom_apply, twistedCochainComplex_d_apply',
-      ContinuationCocycle.continuationHom_f_apply, sub_add_cancel]
+      map_add, Submodule.coe_add, termHom_apply, twistedCochainComplexXEquiv_d,
+      ContinuationCocycle.continuationHom_f_apply]
     exact (sub_eq_iff_eq_add.mp (η.homotopyMap_twistedDifferential hM _)).trans (by abel)
 
 end ParametrizedCocycle
