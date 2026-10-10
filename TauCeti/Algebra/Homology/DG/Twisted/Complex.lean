@@ -81,12 +81,11 @@ theorem mem_twistedTotalGrading_iff {ℳ : ℤ → Submodule R M} {n : ℤ} {f :
 
 end TotalGrading
 
-variable {R : Type uR} {A : Type uA} {M : Type uM}
-  [CommRing R] [Ring A] [Algebra R A]
-  [AddCommGroup M] [Module R M]
-  {P : Type uP} {ind : P → ℤ}
+section Differential
 
-variable [Fintype P] [Module Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M]
+variable {R : Type uR} {A : Type uA} {M : Type uM}
+  [CommRing R] [Semiring A] [AddCommGroup M] [Module R M]
+  {P : Type uP} [Fintype P] [Module Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M]
 
 /-- The twisted differential on `ℳ ⊗ ⟨P⟩`, identified with `P → M`, of a matrix `m`.  Its
 `y`-component is `(D f) y = dM (f y) + Σ_x op (m x y) • ε (f x)`, where `ε` is the Koszul twist of
@@ -108,7 +107,7 @@ noncomputable def twistedDifferential (m : P → P → A) (ℳ : ℤ → Submodu
 
 variable (m : P → P → A) {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ] (dM : M →ₗ[R] M)
 
-omit [Fintype P] [Module Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M] in
+omit [Fintype P] [Module Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M] in
 /-- The Koszul twist of parameter one of `ℳ`, on an element of degree `q`, as the `ℤˣ`-scalar
 `q.negOnePow` of `TauCeti.IsDGRightModule.leibniz`. -/
 private theorem koszulTwist_one_apply {q : ℤ} {α : M} (hα : α ∈ ℳ q) :
@@ -119,7 +118,6 @@ private theorem koszulTwist_one_apply {q : ℤ} {α : M} (hα : α ∈ ℳ q) :
   rw [InternalGrading.koszulTwist_one_apply_of_mem _ hα',
     negOnePow_smul_eq_negOnePowCast_smul (R := R), negOnePowCast_eq_intCast]
 
-omit [Algebra R A] [IsScalarTower R Aᵐᵒᵖ M] in
 @[simp]
 theorem twistedDifferential_apply (f : P → M) (y : P) :
     twistedDifferential m ℳ dM f y =
@@ -127,7 +125,6 @@ theorem twistedDifferential_apply (f : P → M) (y : P) :
   rw [twistedDifferential]
   rfl
 
-omit [Algebra R A] [IsScalarTower R Aᵐᵒᵖ M] in
 /-- Evaluation on a homogeneous elementary tensor `α ⊗ x`, with `α` of degree `q`. -/
 theorem twistedDifferential_single [DecidableEq P] (x : P) {q : ℤ} {α : M} (hα : α ∈ ℳ q) :
     twistedDifferential m ℳ dM (Pi.single x α) =
@@ -138,7 +135,6 @@ theorem twistedDifferential_single [DecidableEq P] (x : P) {q : ℤ} {α : M} (h
   simp only [ite_true, koszulTwist_one_apply hα, smul_comm (op (m x y')) q.negOnePow]
   split_ifs with hxy <;> simp [hxy]
 
-omit [Algebra R A] [IsScalarTower R Aᵐᵒᵖ M] in
 /-- The `z`-component of the twisted differential of a homogeneous elementary tensor `α ⊗ x`. -/
 theorem twistedDifferential_single_apply [DecidableEq P] (x z : P) {q : ℤ} {α : M}
     (hα : α ∈ ℳ q) :
@@ -146,6 +142,15 @@ theorem twistedDifferential_single_apply [DecidableEq P] (x z : P) {q : ℤ} {α
       (Pi.single x (dM α) : P → M) z + q.negOnePow • (op (m x z) • α) := by
   rw [twistedDifferential_single m dM x hα, Pi.add_apply, Finset.sum_apply]
   simp [Pi.single_apply]
+
+end Differential
+
+variable {R : Type uR} {A : Type uA} {M : Type uM}
+  [CommRing R] [Ring A] [Algebra R A]
+  [AddCommGroup M] [Module R M]
+  {P : Type uP} {ind : P → ℤ}
+  [Fintype P] [Module Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M]
+  (m : P → P → A) {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ] (dM : M →ₗ[R] M)
 
 variable {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A} {h : IsDGAlgebra 𝒜 d}
   [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
