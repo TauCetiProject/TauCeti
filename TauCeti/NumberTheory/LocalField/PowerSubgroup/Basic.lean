@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.PowerClassGroup.Basic
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Pow
@@ -52,7 +53,9 @@ The openness results are stated in `PowerSubgroup.Open`, including the general c
 * `TauCeti.card_powerClasses`: `#(Kˣ ⧸ (Kˣ)ⁿ) = n · #μ_n(K) · q ^ v_K(n)` for `(n : K) ≠ 0`.
 * `TauCeti.card_powerClasses_eq_mul_inv_normalizedAbsoluteValue`: the same count as an equality
   `#(Kˣ ⧸ (Kˣ)ⁿ) = n · #μ_n(K) · ‖n‖_K⁻¹` in `ℚ≥0`, with `‖·‖_K` the normalized absolute value.
-* `TauCeti.finiteIndex_range_powMonoidHom`: `(Kˣ)ⁿ` has finite index in `Kˣ` for `(n : K) ≠ 0`.
+* `TauCeti.finiteIndex_range_powMonoidHom`: `(Kˣ)ⁿ` has finite index in `Kˣ` for `(n : K) ≠ 0`,
+  so the group `TauCeti.powerClassQuotient Kˣ n` of power classes is finite
+  (`TauCeti.finite_powerClassQuotient_units`).
 * `TauCeti.map_powMonoidHom_unitFiltration_succ_of_isUnit`: the `n`-th power map carries
   `U(K,i+1)` onto itself.
 * `TauCeti.unitFiltration_one_le_range_powMonoidHom_of_isUnit`: every principal unit is an
@@ -392,6 +395,13 @@ every nonzero `n`. -/
 instance instFiniteIndexRangePowMonoidHom [CharZero K] {n : ℕ} [NeZero n] :
     (powMonoidHom n : Kˣ →* Kˣ).range.FiniteIndex :=
   finiteIndex_range_powMonoidHom (Nat.cast_ne_zero.2 (NeZero.ne n))
+
+/-- When `n` is nonzero in `K`, the group `Kˣ ⧸ (Kˣ)ⁿ` of `n`-th power classes is finite. -/
+instance finite_powerClassQuotient_units {n : ℕ} [NeZero (n : K)] :
+    Finite (powerClassQuotient Kˣ n) :=
+  have : (powerSubgroup Kˣ n).FiniteIndex :=
+    powerSubgroup_eq_range_powMonoidHom Kˣ n ▸ finiteIndex_range_powMonoidHom (NeZero.ne (n : K))
+  Subgroup.finite_quotient_of_finiteIndex
 
 /-- **The number of `n`-th power classes away from the residue characteristic.** For `n`
 invertible in `𝒪[K]`, the quotient `Kˣ ⧸ (Kˣ)ⁿ` has `n · #μ_n(K)` elements, where `μ_n(K)` is the

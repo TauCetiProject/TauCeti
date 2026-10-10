@@ -28,7 +28,8 @@ the case where its `Ext¹`-term vanishes.
 
 ## Main definitions and results
 
-* `TopCat.singularKronecker`: the Kronecker map of singular cohomology, with
+* `TopCat.singularKronecker`: the Kronecker map of singular cohomology, the Kronecker map of the
+  singular chain complex (`TopCat.singularKronecker_def`), with
   `TopCat.singularKronecker_homologyπ` computing it on classes of cocycles and cycles and
   `TopCat.singularKronecker_naturality` its naturality.
 * `TopCat.singularKroneckerEquiv`: for an injective coefficient object `M`, the Kronecker map is a
@@ -58,6 +59,12 @@ evaluated on that cycle (`TopCat.singularKronecker_homologyπ`). -/
 def singularKronecker (X : TopCat.{w}) (k : Type*) [Ring k] [Linear k C] (n : ℕ) :
     X.singularCohomology R k M n →ₗ[k] (((singularHomologyFunctor C n).obj R).obj X ⟶ M) :=
   TauCeti.ChainComplex.kronecker k ((toSSet.obj X).chainComplex R) M n
+
+/-- The Kronecker map of singular cohomology is the Kronecker map of the singular chain complex. -/
+lemma singularKronecker_def (X : TopCat.{w}) (k : Type*) [Ring k] [Linear k C] (n : ℕ) :
+    X.singularKronecker (R := R) (M := M) k n =
+      TauCeti.ChainComplex.kronecker k ((toSSet.obj X).chainComplex R) M n :=
+  (rfl)
 
 /-- The Kronecker map on the classes of a singular cocycle and a singular cycle is the cocycle
 evaluated on the cycle. -/

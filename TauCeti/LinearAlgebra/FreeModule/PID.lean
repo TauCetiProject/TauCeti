@@ -5,18 +5,24 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.FreeModule.PID
+public import Mathlib.Algebra.Module.Projective
+public import Mathlib.LinearAlgebra.FreeModule.Basic
+public import Mathlib.RingTheory.PrincipalIdealDomain
+import Mathlib.SetTheory.Cardinal.Order
 
 /-!
-# Submodules of free modules over principal ideal domains
+# Submodules of free modules over principal ideal rings without zero divisors
 
-Every submodule of a free module over a principal ideal domain is free, without a finiteness
-hypothesis on the ambient module.  The construction well-orders an ambient basis and chooses one
-pivot for each nonzero ideal of possible leading coordinates.  The pivots form a basis of the
-submodule by elimination of the greatest coordinate in the finite support of each vector.
+Every submodule of a free module over a principal ideal ring without zero divisors is free,
+without a finiteness hypothesis on the ambient module. The construction well-orders an ambient basis
+and chooses a pivot for each nonzero ideal of possible leading coordinates. The pivots form a basis
+of the submodule by elimination of the greatest coordinate in the finite support of each vector.
 
 This is the arbitrary-rank form of Lang, *Algebra*, Chapter III, Theorem 7.1.  Mathlib's
-`Submodule.nonempty_basis_of_pid` is the finite-rank form.
+`Submodule.nonempty_basis_of_pid` is the finite-rank form.  A projective module embeds in a free
+module, so every submodule of a projective module is free as well
+(`Submodule.free_of_projective_of_isPrincipalIdealRing`), and so is every module that injects into
+a projective module (`Module.Free.of_injective_of_projective_of_isPrincipalIdealRing`).
 -/
 
 public section
@@ -28,11 +34,11 @@ namespace Submodule
 
 universe u v
 
-variable {R : Type u} {M : Type v} [CommRing R] [IsDomain R] [IsPrincipalIdealRing R]
+variable {R : Type u} {M : Type v} [CommRing R] [NoZeroDivisors R] [IsPrincipalIdealRing R]
   [AddCommGroup M] [Module R M]
 
-/-- Every submodule of a free module over a principal ideal domain is free, with no finiteness
-assumption on either module. -/
+/-- Every submodule of a free module over a principal ideal ring without zero divisors is free,
+with no finiteness assumption on either module. -/
 theorem free_of_isPrincipalIdealRing (N : Submodule R M) [Module.Free R M] :
     Module.Free R N := by
   classical
@@ -61,6 +67,7 @@ theorem free_of_isPrincipalIdealRing (N : Submodule R M) [Module.Free R M] :
     apply Finsupp.notMem_support_iff.mp
     intro hj
     exact (not_le_of_gt hij) ((b.mem_span_image.mp (hx_span i)) hj)
+  -- In a relation among pivots, its greatest index isolates one nonzero coordinate.
   have pivot_linearIndependent : LinearIndependent R pivot := by
     rw [linearIndependent_iff']
     intro s
@@ -71,23 +78,15 @@ theorem free_of_isPrincipalIdealRing (N : Submodule R M) [Module.Free R M] :
       intro g hsum i hi
       have ha_zero : g a = 0 := by
         have hcoord := congrArg ((b.coord a.1).comp N.subtype) hsum
-        have hsum_zero : ∑ j ∈ s, g j * b.coord a.1 (N.subtype (pivot j)) = 0 := by
+        have hsum_zero : ∑ j ∈ s, g j * b.coord a.1 (pivot j) = 0 := by
           apply Finset.sum_eq_zero
           intro j hj
-          -- Applying `N.subtype` is definitionally the coercion used by `coord_pivot_eq_zero`.
-          rw [show b.coord a.1 (N.subtype (pivot j)) = 0 by
-            simpa using coord_pivot_eq_zero (hsa j hj), mul_zero]
-        have hprod : g a * generator (I a) = 0 := by
-          rw [Finset.sum_insert ha_not_mem] at hcoord
-          simp only [map_add, map_sum, map_smul, map_zero, LinearMap.coe_comp,
-            Function.comp_apply, smul_eq_mul] at hcoord
-          -- Applying `N.subtype` is definitionally the coercion used by `coord_pivot_eq`.
-          rw [hsum_zero, add_zero, show b.coord a.1 (N.subtype (pivot a)) = generator (I a) by
-            simpa using coord_pivot_eq a] at hcoord
-          exact hcoord
-        exact (mul_eq_zero.mp hprod).resolve_right a.2
-      rw [Finset.mem_insert] at hi
-      rcases hi with rfl | hi
+          simp [coord_pivot_eq_zero (hsa j hj)]
+        simp only [Finset.sum_insert ha_not_mem, map_add, map_sum, map_smul, map_zero,
+          LinearMap.comp_apply, Submodule.subtype_apply, smul_eq_mul,
+          coord_pivot_eq, hsum_zero, add_zero] at hcoord
+        exact (mul_eq_zero.mp hcoord).resolve_right a.2
+      rcases Finset.mem_insert.mp hi with rfl | hi
       · exact ha_zero
       · apply ih g
         · simpa [Finset.sum_insert, ha_not_mem, ha_zero] using hsum
@@ -95,12 +94,10 @@ theorem free_of_isPrincipalIdealRing (N : Submodule R M) [Module.Free R M] :
   let P : Submodule R N := span R (Set.range pivot)
   have repr_support_nonempty {y : N} (hy : y ≠ 0) :
       (b.repr (y : M)).support.Nonempty := by
-    rw [Finset.nonempty_iff_ne_empty]
-    intro hsupp
-    apply hy
-    apply Subtype.ext
-    apply b.repr.injective
-    simpa using Finsupp.support_eq_empty.mp hsupp
+    simpa only [Finsupp.support_nonempty_iff, LinearEquiv.map_ne_zero_iff,
+      ne_eq, Submodule.coe_eq_zero] using hy
+  -- Eliminate the greatest coordinate; the well-order makes this termination argument valid
+  -- even when the ambient basis has arbitrary cardinality.
   have mem_P_of_bounded : ∀ i : ι, ∀ y : N,
       (↑(b.repr (y : M)).support : Set ι) ⊆ Set.Iic i → y ∈ P := by
     intro i
@@ -145,11 +142,8 @@ theorem free_of_isPrincipalIdealRing (N : Submodule R M) [Module.Free R M] :
       intro j hj
       exact (b.mem_span_image.mp hz_span) hj
     have hz_coord : b.coord i z = 0 := by
-      -- Unfolding `z` through the subtype coercion turns its coordinate into a difference.
-      rw [show (z : M) = (y : M) - c • (pivot ji : M) from rfl, map_sub, map_smul]
-      -- The value of `ji` is definitionally `i`, so the pivot-coordinate lemma applies.
-      rw [show b.coord i (pivot ji : M) = generator (I i) by
-        simpa [ji] using coord_pivot_eq ji, hc, smul_eq_mul, mul_comm, sub_self]
+      simp only [z, Submodule.coe_sub, Submodule.coe_smul, map_sub, map_smul]
+      rw [hx_coord i, hc, smul_eq_mul, mul_comm, sub_self]
     have hz_mem : z ∈ P := lower z hz_support hz_coord
     have hpivot : pivot ji ∈ P := subset_span (Set.mem_range_self ji)
     have : y = z + c • pivot ji := by simp [z]
@@ -169,4 +163,27 @@ theorem free_of_isPrincipalIdealRing (N : Submodule R M) [Module.Free R M] :
   apply Basis.mk pivot_linearIndependent
   simpa [P] using span_pivot_eq_top.ge
 
+/-- Every submodule of a projective module over a principal ideal ring without zero divisors is
+free: a projective module `M` embeds in the free module `M →₀ R`, and the image of the submodule
+is a submodule of a free module. -/
+theorem free_of_projective_of_isPrincipalIdealRing (N : Submodule R M) [Module.Projective R M] :
+    Module.Free R N := by
+  obtain ⟨s, hs⟩ := Module.projective_def.mp ‹Module.Projective R M›
+  have := (N.map s).free_of_isPrincipalIdealRing
+  exact .of_equiv (N.equivMapOfInjective s hs.injective).symm
+
 end Submodule
+
+namespace Module.Free
+
+variable {R : Type*} {M N : Type*} [CommRing R] [NoZeroDivisors R] [IsPrincipalIdealRing R]
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+
+/-- A module that injects into a projective module over a principal ideal ring without zero
+divisors is free: it is isomorphic to the range, a submodule of the projective module. -/
+theorem of_injective_of_projective_of_isPrincipalIdealRing [Module.Projective R M]
+    (f : N →ₗ[R] M) (hf : Function.Injective f) : Module.Free R N :=
+  have := (LinearMap.range f).free_of_projective_of_isPrincipalIdealRing
+  .of_equiv (LinearEquiv.ofInjective f hf).symm
+
+end Module.Free

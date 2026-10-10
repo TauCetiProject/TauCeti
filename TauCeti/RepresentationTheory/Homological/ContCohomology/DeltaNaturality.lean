@@ -144,12 +144,10 @@ theorem explicitDelta0_naturality
   obtain ⟨a, -, hai⟩ :=
     S.exists_continuous_incl_comp_eq (continuous_d0_apply (G := G) b) (proj_d0_eq_zero hbmem)
   have hai' : ∀ g : G, S.incl (a g) = g • b - b := fun g => (hai g).trans (d0_apply b g)
-  have ha : a ∈ Z1 G A := S.mem_Z1_of_incl_comp_eq_d0 hai'
   have hpush : ∀ h : H, S'.incl (fA (a (φ h))) = h • fB b - fB b := fun h => by
     rw [← hincl, hai' (φ h), map_sub, hfB]
-  have ha' : (fun h : H => fA (a (φ h))) ∈ Z1 H A' := S'.mem_Z1_of_incl_comp_eq_d0 hpush
-  rw [S.explicitDelta0_apply c hb ha hai',
-    S'.explicitDelta0_apply c' (b := fB b) (by rw [← hproj, hb, hc]) ha' hpush,
+  rw [S.explicitDelta0_apply c hb hai',
+    S'.explicitDelta0_apply c' (b := fB b) (by rw [← hproj, hb, hc]) hpush,
     QuotientAddGroup.mk'_apply, QuotientAddGroup.mk'_apply, explicitMap1_mk]
   exact congrArg (fun z : Z1 H A' => (z : H1 H A')) (Subtype.ext (by ext h; simp))
 
@@ -175,19 +173,17 @@ theorem explicitDelta1_naturality [ContinuousMul G] [ContinuousMul H]
       (continuous_d1_apply hecont) (proj_d1_eq_zero he hf1)
     have hai' : ∀ g h : G, S.incl (a (g, h)) = g • e h - e (g * h) + e g := fun g h => by
       rw [hai (g, h), d1_apply]
-    have ha : a ∈ Z2 G A := S.mem_Z2_of_incl_comp_eq_d1 hecont hai'
     -- The lift of the pushed-forward cocycle is the pushed-forward lift.
     have hecont' : Continuous fun h : H => fB (e (φ h)) :=
       continuous_of_discreteTopology.comp (hecont.comp φ.continuous)
     have hpush : ∀ h k : H, S'.incl (fA (a (φ h, φ k))) =
         h • fB (e (φ k)) - fB (e (φ (h * k))) + fB (e (φ h)) := fun h k => by
       rw [map_mul φ, ← hincl, hai' (φ h) (φ k), map_add, map_sub, hfB]
-    have ha' : (fun p : H × H => fA (a (φ p.1, φ p.2))) ∈ Z2 H A' :=
-      S'.mem_Z2_of_incl_comp_eq_d1 hecont' hpush
-    have hleft := S.explicitDelta1_apply f hecont he ha hai'
+    have hleft := S.explicitDelta1_apply f hecont he hai'
     have hright := S'.explicitDelta1_apply
       (cocyclesMap1 G C H C' φ fC continuous_of_discreteTopology hfC f) hecont'
-      (fun h => by rw [cocyclesMap1_apply, ← hproj, he]) ha' hpush
+      (fun h => by rw [cocyclesMap1_apply, ← hproj, he])
+      (a := fun p : H × H => fA (a (φ p.1, φ p.2))) hpush
     -- Both descriptions are stated against `H1pi`/`H2pi`, the goal against the quotient
     -- coercion; `mk'_apply` is the identification of the two spellings.
     simp only [QuotientAddGroup.mk'_apply] at hleft hright
@@ -322,8 +318,8 @@ theorem explicitCor_delta0 [ContinuousMul G] (x : H0 U C) :
         γ • n - n := fun γ => by
     rw [coe_cocyclesCor1, map_cochainsCor1 G A U _ _ S.incl S.incl_equivariant, hd0,
       cochainsCor1_d0, d0_apply]
-  rw [(S.restrict U).explicitDelta0_apply x hb ha hai', QuotientAddGroup.mk'_apply,
-    explicitCor1_mk, S.explicitDelta0_apply _ hproj (Subtype.property _) hincl,
+  rw [(S.restrict U).explicitDelta0_apply x hb hai', QuotientAddGroup.mk'_apply,
+    explicitCor1_mk, S.explicitDelta0_apply _ hproj hincl,
     QuotientAddGroup.mk'_apply]
 
 /-- **Corestriction commutes with `δ¹`**: `cor² ∘ δ¹ = δ¹ ∘ cor¹`, the degree-one counterpart of
@@ -357,10 +353,9 @@ theorem explicitCor_delta1 [IsTopologicalGroup G] [ContinuousSMul G C] (y : H1 U
         funext fun q => by rw [← restrict_incl S U, hai' q.1 q.2, d1_apply]
       rw [coe_cocyclesCor2, map_cochainsCor2 G A U _ _ S.incl S.incl_equivariant, hd1,
         cochainsCor2_d1, d1_apply]
-    have hleft := (S.restrict U).explicitDelta1_apply f hecont he ha hai'
+    have hleft := (S.restrict U).explicitDelta1_apply f hecont he hai'
     have hright := S.explicitDelta1_apply _
-      (continuous_cochainsCor1 G B U Quotient.out Quotient.out_eq hU hecont) he'
-      (Subtype.property _) hae
+      (continuous_cochainsCor1 G B U Quotient.out Quotient.out_eq hU hecont) he' hae
     simp only [QuotientAddGroup.mk'_apply] at hleft hright
     rw [hleft, explicitCor2_mk, explicitCor1_mk, hright]
 

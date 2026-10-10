@@ -466,11 +466,8 @@ variable (M : QuiverRep.{u, v, w, t} k Q)
 /-- **The module carried by a representation is no larger than the representation**: over a finite
 vertex set the direct sum `⨁ᵥ Mᵥ` is a finite product of the vertex spaces, so it has a model in
 their universe even though it is indexed by a vertex type that may live in a larger one. -/
-instance small_asModule : Small.{t} (asModule k Q M) := by
-  classical
-  have : Fintype Q := Fintype.ofFinite Q
-  have : Small.{t} Q := small_map (Finite.equivFin Q)
-  exact small_map (α := asModule k Q M) (DFinsupp.equivFunOnFintype (β := vertexSpace k Q M))
+instance small_asModule : Small.{t} (asModule k Q M) :=
+  inferInstanceAs (Small.{t} (Π₀ i, vertexSpace k Q M i))
 
 /-- **The module carried by a representation, in the universe of the representation**: a model of
 `TauCeti.QuiverRep.asModule` in `Type t`, as an object of `ModuleCat (kQ)`.  It is bundled as an

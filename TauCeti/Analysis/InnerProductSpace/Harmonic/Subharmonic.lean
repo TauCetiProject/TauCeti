@@ -30,7 +30,7 @@ below `h` on all of `closure U`. Applied to balls, it shows that the definition 
 the one of Gilbarg–Trudinger, Section 2.8: a subharmonic function lies below every harmonic
 function that dominates it on the boundary sphere of a ball. The proof reduces to the maximum
 principle for the sub-mean-value property on a compact superlevel set
-(`TauCeti.exists_mem_frontier_isMaxOn_of_le_setAverage_ball`).
+(`IsCompact.exists_mem_frontier_isMaxOn_of_le_setAverage_ball`).
 
 The comparison principle also holds between a subharmonic function `u` and a *superharmonic*
 function `w` (one with `-w` subharmonic): if `u ≤ w` on `frontier U`, both continuous on
@@ -166,7 +166,7 @@ theorem SubharmonicOn.le_of_le_frontier (hU : IsOpen U) (hUb : Bornology.IsBound
     simp only [mem_preimage, mem_Ici] at hym
     linarith
   have hxK : x ∈ K := ⟨hx, by simp only [mem_preimage, mem_Ici, m]; linarith⟩
-  obtain ⟨z, hz, hzmax⟩ := exists_mem_frontier_isMaxOn_of_le_setAverage_ball (μ := volume) hKc
+  obtain ⟨z, hz, hzmax⟩ := hKc.exists_mem_frontier_isMaxOn_of_le_setAverage_ball (μ := volume)
     ⟨x, hxK⟩ (hwc.mono inter_subset_left)
     fun y hy ↦ hw.frequently_le_setAverage y (hKU (interior_subset hy))
   -- A maximum point `z` of `w` on `K` has `w z ≥ w x > m`, so a neighbourhood of `z` lies in

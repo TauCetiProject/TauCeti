@@ -40,6 +40,11 @@ once `F' / F` is — a theorem, not a hypothesis, and the finiteness that makes 
   `TauCeti.isIntegrallyClosedIn_iff_forall_isAlgebraic`,
   `TauCeti.isIntegrallyClosedIn_iff_finrank_algebraicClosure_eq_one`: the three faces of the
   exactness hypothesis on the field of constants.
+* `TauCeti.isIntegrallyClosedIn_of_isAlgClosed`: an algebraically closed base field is exact in
+  every extension field.
+* `TauCeti.isIntegrallyClosedIn_of_isScalarTower` and
+  `TauCeti.isIntegrallyClosedIn_intermediateField`: exactness passes to the fields between `k`
+  and `F`.
 * `TauCeti.IsFunctionField.algebraicClosure` and
   `TauCeti.isIntegrallyClosedIn_algebraicClosure`: `F` is a function field over its field of
   constants, and there the field of constants is exact; the two are packaged as
@@ -134,6 +139,13 @@ theorem isIntegrallyClosedIn_iff_forall_isAlgebraic :
 theorem isIntegrallyClosedIn_iff_finrank_algebraicClosure_eq_one :
     IsIntegrallyClosedIn k F ↔ Module.finrank k (algebraicClosure k F) = 1 := by
   rw [IntermediateField.finrank_eq_one_iff, algebraicClosure_eq_bot_iff_isIntegrallyClosedIn]
+
+/-- An algebraically closed `k` is integrally closed in every extension field: an element
+algebraic over `k` has a linear minimal polynomial. -/
+theorem isIntegrallyClosedIn_of_isAlgClosed [IsAlgClosed k] : IsIntegrallyClosedIn k F :=
+  isIntegrallyClosedIn_iff.mpr ⟨(algebraMap k F).injective, fun {z} hz ↦
+    minpoly.mem_range_of_degree_eq_one k z
+      (IsAlgClosed.degree_eq_one_of_irreducible k (minpoly.irreducible hz))⟩
 
 /-- The field of constants is exact in itself: nothing in `F` outside `algebraicClosure k F` is
 algebraic over `algebraicClosure k F`. -/
@@ -265,12 +277,20 @@ theorem algebraicClosure_ratFunc (K : Type*) [Field K] :
 instance isIntegrallyClosedIn_ratFunc : IsIntegrallyClosedIn k (RatFunc k) :=
   algebraicClosure_eq_bot_iff_isIntegrallyClosedIn.1 (algebraicClosure_ratFunc k)
 
+/-- **Exactness passes down a tower**: if `k` is integrally closed in `F`, it is integrally
+closed in every field `E` between them, given as a tower `k → E → F`. -/
+theorem isIntegrallyClosedIn_of_isScalarTower (hex : IsIntegrallyClosedIn k F) (E : Type*)
+    [Field E] [Algebra k E] [Algebra E F] [IsScalarTower k E F] : IsIntegrallyClosedIn k E :=
+  isIntegrallyClosedIn_iff.mpr ⟨(algebraMap k E).injective, fun {z} hz ↦ by
+    obtain ⟨c, hc⟩ := (isIntegrallyClosedIn_iff.mp hex).2
+      (hz.map (IsScalarTower.toAlgHom k E F))
+    exact ⟨c, (algebraMap E F).injective (by
+      rw [← IsScalarTower.algebraMap_apply]; exact hc)⟩⟩
+
 /-- **Exactness passes to intermediate fields**: if `k` is integrally closed in `F`, it is
 integrally closed in every intermediate field of `F / k`. -/
 theorem isIntegrallyClosedIn_intermediateField (hex : IsIntegrallyClosedIn k F)
     (E : IntermediateField k F) : IsIntegrallyClosedIn k E :=
-  isIntegrallyClosedIn_iff.mpr ⟨(algebraMap k E).injective, fun {z} hz ↦ by
-    obtain ⟨c, hc⟩ := (isIntegrallyClosedIn_iff.mp hex).2 (hz.map E.val)
-    exact ⟨c, Subtype.ext (by simpa using hc)⟩⟩
+  isIntegrallyClosedIn_of_isScalarTower hex E
 
 end TauCeti

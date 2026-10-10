@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Huber.Completion
+public import TauCeti.RingTheory.Huber.Completion.Basic
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Completion
 public import Mathlib.Data.Finsupp.Weight
 
@@ -166,35 +166,30 @@ private theorem exists_level (P : PairOfDefinition A) {hT : IsWeightFamily T} (n
 /-! ### The pair of definition of `A⟨X⟩_T` -/
 
 /-- `A₀⟨X⟩_T`, the **ring of definition of `A⟨X⟩_T`**: the series all of whose coefficients meet
-the `A₀` bound.
+the `A₀` bound, that is `TauCeti.Huber.weightedSubring` of `A₀`.
 
 Its carrier is the neighbourhood subgroup `TauCeti.Huber.weightedNhd` of `A₀`, which is what makes
-it open; that it is a subring is coefficientwise multiplicativity of `A₀`. -/
+it open. -/
 def weightedRingOfDefinition (P : PairOfDefinition A) (hT : IsWeightFamily T) :
-    Subring (weightedRestrictedSubring T hT) where
-  carrier := weightedNhd T hT P.ringOfDefinition.toAddSubgroup
-  zero_mem' := (weightedNhd T hT P.ringOfDefinition.toAddSubgroup).zero_mem
-  one_mem' := by
-    have h := (weightedC_mem_weightedNhd hT (U := P.ringOfDefinition.toAddSubgroup)).mpr
-      P.ringOfDefinition.one_mem
-    rwa [map_one] at h
-  add_mem' hf hg := (weightedNhd T hT P.ringOfDefinition.toAddSubgroup).add_mem hf hg
-  neg_mem' hf := (weightedNhd T hT P.ringOfDefinition.toAddSubgroup).neg_mem hf
-  mul_mem' hf hg := mul_mem_weightedNhd
-    (Set.mul_subset_iff.mpr fun _ ha _ hb ↦ P.ringOfDefinition.mul_mem ha hb) hf hg
+    Subring (weightedRestrictedSubring T hT) :=
+  weightedSubring T hT P.ringOfDefinition
+
+/-- `A₀⟨X⟩_T` is `TauCeti.Huber.weightedSubring` of the ring of definition `A₀`. -/
+theorem weightedRingOfDefinition_def (P : PairOfDefinition A) (hT : IsWeightFamily T) :
+    P.weightedRingOfDefinition hT = weightedSubring T hT P.ringOfDefinition := (rfl)
 
 /-- Membership in `A₀⟨X⟩_T` is the `A₀` bound on every coefficient. -/
 @[simp]
 theorem mem_weightedRingOfDefinition (P : PairOfDefinition A) (hT : IsWeightFamily T)
     {f : weightedRestrictedSubring T hT} :
     f ∈ P.weightedRingOfDefinition hT ↔ f ∈ weightedNhd T hT P.ringOfDefinition.toAddSubgroup :=
-  (Iff.rfl)
+  mem_weightedSubring
 
 /-- The constant series `A₀ → A₀⟨X⟩_T`, the structure map of the ring of definition. -/
 noncomputable def weightedRingOfDefinitionC (P : PairOfDefinition A) (hT : IsWeightFamily T) :
     P.ringOfDefinition →+* P.weightedRingOfDefinition hT :=
   ((weightedC T hT).comp P.ringOfDefinition.subtype).codRestrict _ fun a ↦
-    (weightedC_mem_weightedNhd hT).mpr a.2
+    (weightedC_mem_weightedSubring hT).mpr a.2
 
 @[simp]
 theorem coe_weightedRingOfDefinitionC (P : PairOfDefinition A) (hT : IsWeightFamily T)
@@ -267,7 +262,7 @@ private theorem exists_mem_weightedIdeal_coe_eq (P : PairOfDefinition A) (hT : I
       ((g : weightedRestrictedSubring T hT) : MvPowerSeries (Fin k) A) = s ∧
         g ∈ P.weightedIdeal hT n :=
   ⟨⟨⟨s, mem_weightedRestrictedSubring.mpr hres⟩,
-    mem_weightedNhd.mpr fun ν ↦
+    (P.mem_weightedRingOfDefinition hT).mpr <| mem_weightedNhd.mpr fun ν ↦
       weightMul_mono T ν (P.idealImage_le_ringOfDefinition n) (hmem ν)⟩,
     rfl, mem_weightedNhd.mpr hmem⟩
 
@@ -404,7 +399,7 @@ theorem fg_weightedIdeal_one (P : PairOfDefinition A) (hT : IsWeightFamily T) :
 /-- `A₀⟨X⟩_T` is open in `A⟨X⟩_T`. -/
 theorem isOpen_weightedRingOfDefinition (P : PairOfDefinition A) (hT : IsWeightFamily T) :
     IsOpen (P.weightedRingOfDefinition hT : Set (weightedRestrictedSubring T hT)) :=
-  isOpen_weightedNhd hT P.isOpen_ringOfDefinition
+  isOpen_weightedSubring hT P.isOpen_ringOfDefinition
 
 /-- Each `Iⁿ⟨X⟩_T` is open in `A₀⟨X⟩_T`. -/
 theorem isOpen_weightedIdeal (P : PairOfDefinition A) (hT : IsWeightFamily T) (n : ℕ) :
