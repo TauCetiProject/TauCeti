@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Normed.Module.ContinuousInverse
 public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
+public import Mathlib.Analysis.Calculus.ContDiff.Operations
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.QuotientRange
 
 /-!
 # Fixed complements to nearby operator ranges
@@ -17,7 +19,8 @@ quotients through `ContinuousLinearMap.quotientRangeEquiv`. This is the local
 linear input for quotient bundles, such as the intrinsic normal bundle of an immersion.
 
 The proof uses Mathlib's `ContinuousLinearEquiv.equivOfRightInverse` and openness of
-invertibility.
+invertibility. Complementary coordinate operators are continuous on a domain of valid
+splittings, using Mathlib's regularity of operator inversion.
 
 Reference: J. M. Lee, *Introduction to Smooth Manifolds*, second edition,
 the normal-bundle construction preceding Theorem 6.24.
@@ -55,3 +58,21 @@ theorem ContinuousAt.exists_isInvertible_coprod_subtypeL
     (hA.continuousLinearMapCoprod continuousAt_const).eventually he.eventually_nhds
   obtain ⟨U, hUsub, hU, hx₀⟩ := mem_nhds_iff.mp hnear
   exact ⟨Q, hQ, U, hU, hx₀, fun x hx => hUsub hx⟩
+
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- A continuous operator family with a fixed valid complement has continuous
+complementary coordinate operators. The parameter space need only be topological. -/
+theorem Continuous.quotientRangeCoordinate [TopologicalSpace X] [CompleteSpace (E × G)]
+    {A : X → E →L[𝕜] F} (hA : Continuous A) (B : G →L[𝕜] F)
+    (h : ∀ x, ((A x).coprod B).IsInvertible) :
+    Continuous (fun x => (A x).quotientRangeCoordinate B) := by
+  apply continuous_iff_continuousAt.mpr
+  intro x
+  have hcop : ContinuousAt (fun y => (A y).coprod B) x :=
+    (hA.continuousAt.continuousLinearMapCoprod continuousAt_const)
+  have hi : ContinuousAt (fun y => ((A y).coprod B).inverse) x :=
+    ((h x).contDiffAt_map_inverse (n := 0)).continuousAt.comp
+      (f := fun y => (A y).coprod B) hcop
+  simpa only [ContinuousLinearMap.quotientRangeCoordinate_def] using
+    (continuousAt_const (y := ContinuousLinearMap.snd 𝕜 E G)).clm_comp hi
