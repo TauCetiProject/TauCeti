@@ -33,10 +33,11 @@ For a cyclic extension this computes the Herbrand quotient of the idele classes 
 h(C_L) = h(I_{L,S}) / h(U_{L,S}).
 ```
 
-This is the comparison through which the first fundamental inequality `h(C_L) = [L : K]` for a
-cyclic extension reduces to the local computation `h(I_{L,S}) = ∏_{v ∈ S} [L_w : K_v]`, with `S`
-also containing the archimedean places and the ramified primes, and the `S`-unit computation
-`h(U_{L,S}) = (∏_{v ∈ S} [L_w : K_v]) / [L : K]`.
+This is the comparison through which the equality `h(C_L) = [L : K]` for a cyclic extension,
+which supplies the first fundamental inequality `[C_K : N_{L/K} C_L] ≥ [L : K]`, reduces to a local
+computation and an `S`-unit computation. Writing `T` for the set of places of `K` consisting of `S`
+together with the archimedean places, with `S` containing the ramified primes, these are
+`h(I_{L,S}) = ∏_{v ∈ T} [L_w : K_v]` and `h(U_{L,S}) = (∏_{v ∈ T} [L_w : K_v]) / [L : K]`.
 
 ## Main definitions
 

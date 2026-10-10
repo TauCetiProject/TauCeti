@@ -445,9 +445,9 @@ theorem herbrandQuotient_eq_mul_of_shortExact {S : ShortComplex (Rep R G)} (hS :
   field_simp
   linear_combination -keyQ
 
-/-- In the hexagon, the degree `-1` Tate group of the right-hand term is squeezed between the
-degree `-1` Tate group of the middle term and the degree-zero Tate group of the left-hand term, so
-it is finite as soon as they are. -/
+/-- For a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of representations of a finite cyclic
+group, if the degree-zero Tate cohomology of `X₁` and the degree `-1` Tate cohomology of `X₂` are
+finite, then so is the degree `-1` Tate cohomology of `X₃`. -/
 theorem finite_tateCohomology_negOne_X₃_of_shortExact {S : ShortComplex (Rep R G)}
     (hS : S.ShortExact) [Finite (tateCohomology S.X₁ 0)] [Finite (tateCohomology S.X₂ (-1))] :
     Finite (tateCohomology S.X₃ (-1)) := by
