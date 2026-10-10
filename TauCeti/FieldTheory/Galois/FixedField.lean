@@ -10,11 +10,10 @@ public import Mathlib.FieldTheory.KrullTopology
 public import Mathlib.FieldTheory.PurelyInseparable.Basic
 public import Mathlib.GroupTheory.PGroup
 public import TauCeti.Algebra.Group.Subgroup.ZPowers
-import Mathlib.Algebra.CharP.Defs
 import TauCeti.FieldTheory.Perfect
 import TauCeti.FieldTheory.SeparableDegree
+import Mathlib.Algebra.Field.ULift
 import Mathlib.FieldTheory.Galois.Infinite
-import Mathlib.FieldTheory.AlgebraicClosure
 import Mathlib.GroupTheory.Sylow
 
 /-!
@@ -578,7 +577,7 @@ theorem isPGroup_of_forall_finrank_eq_one_of_not_dvd
     {R : Type u} {E : Type v} [Field R] [Field E] [Algebra R E] [FiniteDimensional R E]
     [IsGalois R E]
     {p : ℕ} [Fact p.Prime]
-    (hnotdvd : ∀ (F : Type v) [Field F] [Algebra R F] [FiniteDimensional R F],
+    (hnotdvd : ∀ (F : Type (max u v)) [Field F] [Algebra R F] [FiniteDimensional R F],
       ¬ p ∣ Module.finrank R F → Module.finrank R F = 1) :
     IsPGroup p Gal(E/R) := by
   let P : Sylow p Gal(E/R) := Classical.choice inferInstance
@@ -587,8 +586,14 @@ theorem isPGroup_of_forall_finrank_eq_one_of_not_dvd
   have hnotdvd_index : ¬ p ∣ Module.finrank R (fixedField P.toSubgroup) := by
     rw [hindex]
     exact P.not_dvd_index
-  have hfield : Module.finrank R (fixedField P.toSubgroup) = 1 :=
-    hnotdvd (↥(fixedField P.toSubgroup)) hnotdvd_index
+  let F : Type (max u v) := ULift.{max u v, v} (fixedField P.toSubgroup)
+  have e : F ≃ₗ[R] fixedField P.toSubgroup := ULift.moduleEquiv (R := R)
+  have hdim : Module.finrank R F = Module.finrank R (fixedField P.toSubgroup) :=
+    LinearEquiv.finrank_eq e
+  have hfield : Module.finrank R (fixedField P.toSubgroup) = 1 := by
+    have hfield' : Module.finrank R F = 1 := hnotdvd F (by rw [hdim]; exact hnotdvd_index)
+    rw [hdim] at hfield'
+    exact hfield'
   have htop : P.toSubgroup = ⊤ := by
     rw [← Subgroup.index_eq_one, ← hindex]
     exact hfield
@@ -602,7 +607,7 @@ every finite extension of `R` has degree a power of `p`. -/
 theorem exists_finrank_eq_pow_of_forall_finrank_eq_one_of_not_dvd
     {R : Type u} {E : Type v} [Field R] [Field E] [Algebra R E] [FiniteDimensional R E]
     {p : ℕ} [Fact p.Prime]
-    (hnotdvd : ∀ (F : Type v) [Field F] [Algebra R F] [FiniteDimensional R F],
+    (hnotdvd : ∀ (F : Type (max u v)) [Field F] [Algebra R F] [FiniteDimensional R F],
       ¬ p ∣ Module.finrank R F → Module.finrank R F = 1) :
     ∃ n, Module.finrank R E = p ^ n := by
   -- Embed `S` into finite Galois `N/R`. The Sylow argument makes `finrank R N` a `p`-power.
@@ -614,9 +619,8 @@ theorem exists_finrank_eq_pow_of_forall_finrank_eq_one_of_not_dvd
     infer_instance
   let : ∀ f : S →ₐ[R] Ω, Algebra.IsSeparable R f.fieldRange := fun f ↦
     AlgEquiv.Algebra.isSeparable (AlgEquiv.ofInjectiveField f)
-  have hsepN : Algebra.IsSeparable R N := by
-    change Algebra.IsSeparable R
-      ((⨆ f : S →ₐ[R] Ω, f.fieldRange) : IntermediateField R Ω)
+  have hsepN : Algebra.IsSeparable R (IntermediateField.normalClosure R S Ω) := by
+    rw [normalClosure_def]
     exact IntermediateField.isSeparable_iSup (t := fun f : S →ₐ[R] Ω ↦ f.fieldRange)
   let : Algebra.IsSeparable R N := hsepN
   let : FiniteDimensional R N := normalClosure.is_finiteDimensional R S Ω
@@ -626,14 +630,13 @@ theorem exists_finrank_eq_pow_of_forall_finrank_eq_one_of_not_dvd
     IntermediateField.finrank_dvd_of_le_right hle
   have hdim : Module.finrank R S = Module.finrank R i.fieldRange :=
     LinearEquiv.finrank_eq (AlgEquiv.ofInjectiveField i).toLinearEquiv
-  have hsep : Field.finSepDegree R E = Module.finrank R S :=
-    Field.finSepDegree_eq_finrank_separableClosure R E
+  have hsep : Field.finSepDegree R E = Module.finrank R S := by
+    rw [Field.finSepDegree_eq, Field.sepDegree, Module.finrank]
   have hdiv : Field.finSepDegree R E ∣ Module.finrank R N := by
     rw [hsep, hdim]
     exact hdivRange
   let : IsGalois R N := ⟨⟩
-  have hP : IsPGroup p Gal(N/R) :=
-    isPGroup_of_forall_finrank_eq_one_of_not_dvd (R := R) (E := N) hnotdvd
+  have hP : IsPGroup p Gal(N/R) := isPGroup_of_forall_finrank_eq_one_of_not_dvd hnotdvd
   obtain ⟨m, hm⟩ := IsPGroup.iff_card.mp hP
   have hNdeg : Module.finrank R N = p ^ m := by
     rw [← IsGalois.card_aut_eq_finrank R N, hm]
@@ -646,19 +649,14 @@ theorem exists_finrank_eq_pow_of_forall_finrank_eq_one_of_not_dvd
   by_cases hq : ringExpChar R = p
   · refine ⟨n + k, ?_⟩
     rw [← hmul, hn, hk, hq, pow_add]
-  · by_cases hqone : ringExpChar R = 1
-    · have hinsep : Field.finInsepDegree R E = 1 := by simpa [hqone] using hk
-      refine ⟨n, ?_⟩
-      rw [← hmul, hn, hinsep, mul_one]
-    · have hperfect : PerfectField R :=
-        perfectField_of_forall_finrank_eq_one_of_not_dvd (R := R) (E := E) (p := p)
-          hnotdvd hq hqone
-      let : PerfectField R := hperfect
-      have hsepE : Algebra.IsSeparable R E := inferInstance
-      have hinsep : Field.finInsepDegree R E = 1 :=
-        (isSeparable_iff_finInsepDegree_eq_one R E).mp hsepE
-      refine ⟨n, ?_⟩
-      rw [← hmul, hn, hinsep, mul_one]
+  · have hperfect : PerfectField R :=
+      perfectField_of_forall_finrank_eq_one_of_not_dvd hnotdvd hq
+    let : PerfectField R := hperfect
+    have hsepE : Algebra.IsSeparable R E := inferInstance
+    have hinsep : Field.finInsepDegree R E = 1 :=
+      (isSeparable_iff_finInsepDegree_eq_one R E).mp hsepE
+    refine ⟨n, ?_⟩
+    rw [← hmul, hn, hinsep, mul_one]
 
 /-- The order of the automorphism group of a finite field extension divides its degree. -/
 theorem natCard_algEquiv_dvd_finrank (F E : Type*) [Field F] [Field E] [Algebra F E]

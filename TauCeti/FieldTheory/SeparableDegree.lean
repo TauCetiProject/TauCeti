@@ -12,7 +12,6 @@ import Mathlib.FieldTheory.PurelyInseparable.Tower
 /-!
 # Separable and inseparable degrees
 
-For an algebraic extension, the finite separable degree is the `finrank` of the separable closure.
 In a tower `K → E → L` of fields whose lower map `algebraMap K E` is onto, `E` carries no more
 information over `K` than `K` itself does, so the degree of `L` is the same whichever of the two
 it is measured over. This file records these facts for separable and inseparable degrees, alongside
@@ -24,8 +23,6 @@ that a caller with any surjectively-presented intermediate field can use it.
 
 ## Main results
 
-* `Field.finSepDegree_eq_finrank_separableClosure`: the separable degree is the degree of the
-  separable closure, as a natural number.
 * `Field.finSepDegree_eq_of_surjective`: `[L : E]_s = [L : K]_s`.
 * `Field.finInsepDegree_eq_of_surjective`: `[L : E]_i = [L : K]_i`.
 -/
@@ -33,13 +30,6 @@ that a caller with any surjectively-presented intermediate field can use it.
 public section
 
 variable {K L : Type*} [Field K] [Field L]
-
-/-- For an algebraic extension, its finite separable degree is the `finrank` of its separable
-closure, including the value `0` when that closure has infinite degree. -/
-theorem Field.finSepDegree_eq_finrank_separableClosure (K L : Type*) [Field K] [Field L]
-    [Algebra K L] [Algebra.IsAlgebraic K L] :
-    Field.finSepDegree K L = Module.finrank K (separableClosure K L) := by
-  rw [Field.finSepDegree_eq, Field.sepDegree, Module.finrank]
 
 /-- **The separable degree is unchanged by a surjective base change.** Use this to move a
 separable degree between an intermediate field and a field presented as mapping onto it. -/
