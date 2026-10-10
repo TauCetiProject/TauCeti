@@ -340,12 +340,12 @@ variable {A B : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [
 
 /-- **A homomorphism topologically of finite type out of a Huber ring carries open ideals to
 ideals generating open ideals**, part of the adicity in Wedhorn's Proposition and Definition 6.29.
-Each of the three factors of a presentation does: the constant series
-(`TauCeti.Huber.isOpen_map_algebraMap_weightedRestrictedSubring`), the completion map
-(`TauCeti.Huber.isOpen_map_coeRingHom`), and the open surjection onto `B`. -/
+-/
 theorem IsTopologicallyFiniteType.isOpen_map {φ : A →+* B} (h : IsTopologicallyFiniteType φ)
     {J : Ideal A} (hJ : IsOpen (J : Set A)) : IsOpen (J.map φ : Set B) := by
   obtain ⟨k, T, _, hT, π, hπ, rfl⟩ := isTopologicallyFiniteType_iff.mp h
+  -- each of the three factors of the presentation carries open ideals to ideals generating open
+  -- ideals: the constant series, the completion map, and the open surjection onto `B`
   have hcomp : algebraMap A (Completion (weightedRestrictedSubring T hT)) =
       Completion.coeRingHom.comp (algebraMap A (weightedRestrictedSubring T hT)) :=
     RingHom.ext fun a ↦ Completion.algebraMap_def _ _ a
