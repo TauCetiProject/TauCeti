@@ -125,8 +125,8 @@ theorem addVal_Δ_eq_six_iff (hϖ : Irreducible ϖ) (W : WeierstrassCurve R)
   have hv : (6 : ℕ∞) + addVal R d = 6 ↔ addVal R d = 0 := by
     simp
   rw [hv, addVal_eq_zero_iff, ← residue_ne_zero_iff_isUnit, hr, mul_ne_zero_iff]
-  rw [show (16 : ResidueField R) = 2 ^ 4 by norm_num,
-    pow_ne_zero_iff (by norm_num : (4 : ℕ) ≠ 0)]
+  have h16 : (16 : ResidueField R) = 2 ^ 4 := by norm_num
+  rw [h16, pow_ne_zero_iff (by norm_num : (4 : ℕ) ≠ 0)]
 
 end DiscreteValuationRing
 
