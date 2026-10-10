@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.GroupLaw
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Smooth
 
 /-!
@@ -25,14 +26,29 @@ the coefficients of `W` along `φ`: the total space of `(toEllipticCurveGeom W).
 is identified with `(W.map φ).projModel` by `toEllipticCurveGeomBaseChangeIso`, again compatibly
 with the structure morphisms and the zero sections, and with the projections to `W.projModel`.
 
+The group law of the elliptic curve `toEllipticCurveGeom W`, glued from the Bosma–Lenstra addition
+morphisms of its local Weierstrass equations, is the group law of the projective model of `W`
+itself: `toEllipticCurveGeomIso` is an isomorphism of group schemes over `Spec R`
+(`isMonHom_toEllipticCurveGeomOverIso_hom`).
+
 ## Main definitions
 
 * `WeierstrassCurve.toEllipticCurveGeom W`: the projective model of an elliptic Weierstrass curve
   `W` over `R`, as an elliptic curve over `Spec R`.
 * `WeierstrassCurve.toEllipticCurveGeomIso W`: the identification of the total space of
   `toEllipticCurveGeom W` with `W.projModel`.
+* `WeierstrassCurve.toEllipticCurveGeomOverIso W`: the same identification, as an isomorphism of
+  objects of `Over (Spec R)`.
 * `WeierstrassCurve.toEllipticCurveGeomBaseChangeIso W φ`: the identification of the total space of
   the base change of `toEllipticCurveGeom W` along `Spec φ` with `(W.map φ).projModel`.
+
+## Main results
+
+* `WeierstrassCurve.addition_toEllipticCurveGeomIso_hom` and
+  `WeierstrassCurve.neg_toEllipticCurveGeomIso_hom`: the addition and negation morphisms of
+  `toEllipticCurveGeom W` are those of the projective model of `W`.
+* `WeierstrassCurve.isMonHom_toEllipticCurveGeomOverIso_hom`: `toEllipticCurveGeomOverIso W` is an
+  isomorphism of group schemes over `Spec R`.
 
 ## References
 
@@ -106,6 +122,96 @@ theorem toEllipticCurveGeomIso_hom_projModelOver :
 theorem zero_toEllipticCurveGeomIso_hom :
     (toEllipticCurveGeom W).zero ≫ (toEllipticCurveGeomIso W).hom = W.projModelZero := by
   simp [toEllipticCurveGeomIso, toEllipticCurveGeom]
+
+/-! ### The group law -/
+
+/-- The identification `toEllipticCurveGeomIso` of the total space of `toEllipticCurveGeom W` with
+the projective model `W.projModel`, as an isomorphism of objects of `Over (Spec R)`. It is an
+isomorphism of group schemes over `Spec R`, for the group law `EllipticCurveGeom.grpObj` of
+`toEllipticCurveGeom W` and the group law `grpObjProjModel` of the projective model
+(`isMonHom_toEllipticCurveGeomOverIso_hom`). -/
+noncomputable def toEllipticCurveGeomOverIso :
+    Over.mk (toEllipticCurveGeom W).structureMap ≅ Over.mk W.projModelOver :=
+  Over.isoMk (toEllipticCurveGeomIso W)
+
+/-- On total spaces, `toEllipticCurveGeomOverIso` is `toEllipticCurveGeomIso`. -/
+@[simp]
+theorem toEllipticCurveGeomOverIso_hom_left :
+    (toEllipticCurveGeomOverIso W).hom.left = (toEllipticCurveGeomIso W).hom :=
+  (rfl)
+
+/-- On total spaces, the inverse of `toEllipticCurveGeomOverIso` is that of
+`toEllipticCurveGeomIso`. -/
+@[simp]
+theorem toEllipticCurveGeomOverIso_inv_left :
+    (toEllipticCurveGeomOverIso W).inv.left = (toEllipticCurveGeomIso W).inv :=
+  (rfl)
+
+-- The pointed Weierstrass chart of `toEllipticCurveGeom W` over the whole base `Spec R`, whose
+-- inclusion into the curve is the identity and whose isomorphism with the projective model of its
+-- equation `W` is `toEllipticCurveGeomIso W`.
+private noncomputable def chart :
+    PointedWeierstrassChart (toEllipticCurveGeom W).structureMap (toEllipticCurveGeom W).zero where
+  base := Spec (.of R)
+  baseMap := 𝟙 _
+  baseMap_open := inferInstance
+  ring := .of R
+  baseIso := Iso.refl _
+  equation := W
+  equation_elliptic := inferInstance
+  pullbackCarrier := (toEllipticCurveGeom W).carrier
+  toTotal := 𝟙 _
+  toBase := (toEllipticCurveGeom W).structureMap
+  isPullback := .of_id_fst
+  modelIso := toEllipticCurveGeomIso W
+  modelIso_over := by simp
+  pulledZero := (toEllipticCurveGeom W).zero
+  pulledZero_toBase := by simp
+  pulledZero_toTotal := by simp
+  modelIso_zero := by simp
+
+/-- Under `toEllipticCurveGeomIso`, the addition morphism of `toEllipticCurveGeom W` is the
+Bosma–Lenstra addition morphism of `W`. -/
+@[reassoc (attr := simp)]
+theorem addition_toEllipticCurveGeomIso_hom :
+    (toEllipticCurveGeom W).addition ≫ (toEllipticCurveGeomIso W).hom =
+      pullback.map _ _ _ _ (toEllipticCurveGeomIso W).hom (toEllipticCurveGeomIso W).hom (𝟙 _)
+        (by simp) (by simp) ≫ W.additionMorphism := by
+  -- on the chart `chart W` over the whole base, whose inclusion into the curve is the identity,
+  -- the addition morphism is the addition of `W` transported along `toEllipticCurveGeomIso W`
+  have h := (toEllipticCurveGeom W).pullbackMap_addition (chart W)
+  have h2 := (chart W).addition_modelIso_hom
+  dsimp only [chart] at h h2
+  simp only [pullback.map_id, Category.id_comp, Category.comp_id, Iso.refl_hom] at h h2
+  rw [h]
+  exact h2
+
+/-- Under `toEllipticCurveGeomIso`, the negation morphism of `toEllipticCurveGeom W` is the
+negation morphism of the projective model of `W`. -/
+@[reassoc (attr := simp)]
+theorem neg_toEllipticCurveGeomIso_hom :
+    (toEllipticCurveGeom W).neg ≫ (toEllipticCurveGeomIso W).hom =
+      (toEllipticCurveGeomIso W).hom ≫ W.projModelNeg := by
+  -- on the chart `chart W` over the whole base, whose inclusion into the curve is the identity,
+  -- the negation morphism is the negation of `W` transported along `toEllipticCurveGeomIso W`
+  have h := (toEllipticCurveGeom W).toTotal_neg (chart W)
+  have h2 := (chart W).neg_modelIso_hom
+  dsimp only [chart] at h h2
+  simp only [Category.id_comp, Category.comp_id] at h h2
+  rw [h]
+  exact h2
+
+/-- **The projective model of `W` is the group scheme `toEllipticCurveGeom W`**: the identification
+`toEllipticCurveGeomOverIso` is a homomorphism from the group law `EllipticCurveGeom.grpObj` of the
+elliptic curve `toEllipticCurveGeom W` to the group law `grpObjProjModel` of the projective
+model. -/
+instance isMonHom_toEllipticCurveGeomOverIso_hom : IsMonHom (toEllipticCurveGeomOverIso W).hom where
+  one_hom := by
+    ext1
+    simp
+  mul_hom := by
+    ext1
+    simp [Over.tensorHom_left]
 
 /-! ### Base change along a ring homomorphism -/
 

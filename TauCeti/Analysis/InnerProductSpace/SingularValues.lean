@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.SingularValues
 public import Mathlib.LinearAlgebra.Eigenspace.Matrix
+public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.CourantFischer
 public import TauCeti.Data.Finsupp.Antitone
 public import TauCeti.LinearAlgebra.Eigenspace.Comp
@@ -70,6 +71,11 @@ Courant–Fischer min–max principle for their source Gram operators.
   `σᵢ(B) ≤ c σᵢ(A)` for every `i`.
 * `LinearMap.singularValues_comp_le`: if `‖C y‖ ≤ c ‖y‖` for every `y`, then
   `σᵢ(C A) ≤ c σᵢ(A)` for every `i`.
+* `LinearMap.singularValues_eq_of_norm_apply_eq`: if `‖B x‖ = ‖A x‖` for every `x`, then `A` and
+  `B` have the same singular values.
+* `LinearMap.singularValues_linearIsometryEquiv_comp`,
+  `LinearMap.singularValues_comp_linearIsometryEquiv`: composing with isometric isomorphisms on
+  either side leaves the singular values unchanged.
 
 ## Diagonal models
 
@@ -416,6 +422,28 @@ theorem singularValues_comp_le (C : F →ₗ[𝕜] G) (A : E →ₗ[𝕜] F) {c 
     (hC : ∀ y, ‖C y‖ ≤ c * ‖y‖) (i : ℕ) :
     (C ∘ₗ A).singularValues i ≤ c * A.singularValues i :=
   singularValues_le_mul_of_norm_apply_le (fun x ↦ hC (A x)) i
+
+/-- Two maps with the same source and `‖B x‖ = ‖A x‖` for every `x` have the same singular
+values. -/
+theorem singularValues_eq_of_norm_apply_eq {A : E →ₗ[𝕜] F} {B : E →ₗ[𝕜] G}
+    (h : ∀ x, ‖B x‖ = ‖A x‖) : B.singularValues = A.singularValues := by
+  ext i
+  exact le_antisymm
+    (by simpa using singularValues_le_mul_of_norm_apply_le (c := 1) (by simp [h]) i)
+    (by simpa using singularValues_le_mul_of_norm_apply_le (c := 1) (by simp [h]) i)
+
+/-- Composing on the left with an isometric isomorphism leaves the singular values unchanged. -/
+@[simp]
+theorem singularValues_linearIsometryEquiv_comp (U : F ≃ₗᵢ[𝕜] G) (A : E →ₗ[𝕜] F) :
+    ((U : F →ₗ[𝕜] G) ∘ₗ A).singularValues = A.singularValues :=
+  singularValues_eq_of_norm_apply_eq fun x ↦ by simp
+
+/-- Composing on the right with an isometric isomorphism leaves the singular values unchanged. -/
+@[simp]
+theorem singularValues_comp_linearIsometryEquiv (A : E →ₗ[𝕜] F) (V : G ≃ₗᵢ[𝕜] E) :
+    (A ∘ₗ (V : G →ₗ[𝕜] E)).singularValues = A.singularValues := by
+  rw [← singularValues_adjoint, adjoint_comp, V.adjoint_coe_eq_symm,
+    singularValues_linearIsometryEquiv_comp, singularValues_adjoint]
 
 end Comparison
 
