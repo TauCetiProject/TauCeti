@@ -8,13 +8,13 @@ module
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import Mathlib.Analysis.SpecificLimits.Normed
 public import Mathlib.Tactic.Module
-public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent
+public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Basic
 
 /-!
 # Neumann perturbations of an unbounded operator's resolvent
 
 The continuous-inverse foundation, the resolvent identity, and the bridge to Mathlib's algebraic
-resolvent are developed in `TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent`. This file
+resolvent are developed in `TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Basic`. This file
 proves the normed theory on complete normed spaces over nontrivially normed fields: a sufficiently
 small bounded perturbation of an operator preserves a resolvent point, and perturbing the
 spectral parameter gives a local Neumann formula and openness of the resolvent set.
