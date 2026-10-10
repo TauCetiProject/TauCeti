@@ -117,12 +117,7 @@ theorem mem_initialPentagonRectangleInitialSelfPairs_of_right_eq_left
     (hcommon : D.first.right = D.second.left) (hone : D.HasOneCommonSide)
     (hturn : C.turnRow ∉ Grid.cIco D.second.top D.first.top) :
     D ∈ G.initialPentagonRectangleInitialSelfPairs C x z := by
-  obtain ⟨hP, hR⟩ := (G.mem_initialPentagonRectangleDecompositions C D).1 hD
-  have hfirst : D.first.IsEmpty := by
-    simpa only [GridInitialPentagonRectangleDecomposition.pentagon_toGridRectangleBetween]
-      using ((G.mem_initialPentagons _).1 hP).1
-  have hsecond := (((G.swapColumns C.column (finRotate n C.column)).mem_unblockedRectangles _).1
-    hR).1
+  obtain ⟨hfirst, hsecond⟩ := G.isEmpty_of_mem_initialPentagonRectangleDecompositions C hD
   let E := D.rightLeftSelfRecut hcommon hone hfirst hsecond hturn
   -- The promotion only adds proof fields to the generic rectangle recut.
   have hErect : E.toGridRectangleDecomposition = D.recut hone hfirst hsecond := rfl
@@ -183,12 +178,8 @@ theorem mem_initialPentagonRectangleInitialSelfPairs_iff_sides
     · exact Or.inl ((G.mem_initialPentagonRectangleInitialSelfSources C D).1 hsource).2
     obtain ⟨hcounted, hcommon, hcol⟩ :=
       (G.mem_initialPentagonRectangleInitialSelfSources C S).1 hS
-    obtain ⟨hP, hR⟩ := (G.mem_initialPentagonRectangleDecompositions C S).1 hcounted
-    have hfirst : S.first.IsEmpty := by
-      simpa only [GridInitialPentagonRectangleDecomposition.pentagon_toGridRectangleBetween]
-        using ((G.mem_initialPentagons _).1 hP).1
-    have hsecond := (((G.swapColumns C.column (finRotate n C.column)).mem_unblockedRectangles _).1
-      hR).1
+    obtain ⟨hfirst, hsecond⟩ :=
+      G.isEmpty_of_mem_initialPentagonRectangleDecompositions C hcounted
     have hone := S.hasOneCommonSide_of_left_eq_left_of_mem_cIoo hcommon hcol
     have hEq : S.recutInitialSelf hcommon hcol hfirst hsecond = D := by
       apply GridInitialPentagonRectangleDecomposition.toGridRectangleDecomposition_injective

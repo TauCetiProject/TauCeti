@@ -271,6 +271,18 @@ theorem mem_initialPentagonRectangleDecompositions {x z : GridState n}
   classical
   simp [initialPentagonRectangleDecompositions]
 
+/-- Both underlying rectangles of a counted initial-side pentagon--rectangle decomposition
+are empty. -/
+theorem isEmpty_of_mem_initialPentagonRectangleDecompositions {x z : GridState n}
+    {D : GridInitialPentagonRectangleDecomposition C.column C.turnRow x z}
+    (hD : D ∈ G.initialPentagonRectangleDecompositions C x z) :
+    D.first.IsEmpty ∧ D.second.IsEmpty := by
+  obtain ⟨hP, hR⟩ := (G.mem_initialPentagonRectangleDecompositions C D).1 hD
+  refine ⟨?_, (G.swapColumns C.column (finRotate n C.column)).isEmpty_of_mem_unblockedRectangles
+    hR⟩
+  simpa only [GridInitialPentagonRectangleDecomposition.pentagon_toGridRectangleBetween]
+    using ((G.mem_initialPentagons _).1 hP).1
+
 variable (R : Type*) [CommSemiring R]
 
 /-- The weight of a rectangle followed by an initial-side pentagon, in the variables of the

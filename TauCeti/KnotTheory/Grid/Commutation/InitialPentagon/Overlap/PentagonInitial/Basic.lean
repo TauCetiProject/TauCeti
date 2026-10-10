@@ -285,11 +285,7 @@ private theorem initialPentagonRectangleInitialSelfSource_data
       D.first.IsEmpty ∧ D.second.IsEmpty := by
   obtain ⟨hcounted, hcommon, hcol⟩ :=
     (G.mem_initialPentagonRectangleInitialSelfSources C D).1 hD
-  obtain ⟨hP, hR⟩ := (G.mem_initialPentagonRectangleDecompositions C D).1 hcounted
-  rw [mem_initialPentagons,
-    GridInitialPentagonRectangleDecomposition.pentagon_toGridRectangleBetween] at hP
-  exact ⟨hcommon, hcol, hP.1,
-    (((G.swapColumns C.column (finRotate n C.column)).mem_unblockedRectangles _).1 hR).1⟩
+  exact ⟨hcommon, hcol, G.isEmpty_of_mem_initialPentagonRectangleDecompositions C hcounted⟩
 
 private noncomputable def initialPentagonRectangleInitialSelfPartner
     (D : {D // D ∈ G.initialPentagonRectangleInitialSelfSources C x z}) :
