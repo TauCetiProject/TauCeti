@@ -98,12 +98,14 @@ theorem explicitMap1_explicitRes1_of_conj (x : H1 G M) :
     simpa only [d0_apply] using
       (smul_inverseConjugation_apply_sub_eq_d0 G M V c g v).symm
 
-include hκ hf in
+include hf in
 omit [ContinuousSMul G M] [IsTopologicalGroup G] in
 /-- The degree-two conjugation correction on restricted cocycles is the differential of the
-restricted bar homotopy. This is an equality of cochains, before taking classes. -/
-theorem cochainsMap2_res_sub_eq_d1_of_conj (c : Z2 G M) :
-    cochainsMap2 (κ : V →* U) f (fun p : U × U => (c : G × G → M) (p.1, p.2)) -
+restricted bar homotopy. This is an equality of cochains, before taking classes, and does not
+require continuity of the subgroup map. -/
+theorem cochainsMap2_res_sub_eq_d1_of_conj (κ : V →* U)
+    (hκ : ∀ v : V, (κ v : G) = g⁻¹ * v * g) (c : Z2 G M) :
+    cochainsMap2 κ f (fun p : U × U => (c : G × G → M) (p.1, p.2)) -
         (fun p : V × V => (c : G × G → M) (p.1, p.2)) =
       d1 V M (fun v : V => inverseConjugationHomotopy2 g c v) := by
   funext ⟨v, w⟩
@@ -129,7 +131,8 @@ theorem explicitMap2_explicitRes2_of_conj (x : H2 G M) :
         continuous_subtype_val, ?_⟩
     funext ⟨v, w⟩
     simpa [cocyclesMap2_apply, cochainsMap2_apply] using
-      congrFun (cochainsMap2_res_sub_eq_d1_of_conj G M U V g κ hκ f hf c).symm (v, w)
+      congrFun (cochainsMap2_res_sub_eq_d1_of_conj G M U V g f hf (κ : V →* U) hκ c).symm
+        (v, w)
 
 end PositiveDegrees
 
