@@ -64,7 +64,7 @@ universe uR uA uM uP
 
 section Map
 
-variable (R : Type uR) {A : Type uA} (M : Type uM) [CommRing R] [Semiring A]
+variable (R : Type uR) {A : Type uA} (M : Type uM) [CommSemiring R] [Semiring A]
   {P Q : Type uP} [Fintype P]
   [AddCommMonoid M] [Module R M] [Module Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M]
 
@@ -82,12 +82,14 @@ noncomputable def continuationMap (ν : P → Q → A) : (P → M) →ₗ[R] (Q 
 
 variable {R M} (ν : P → Q → A)
 
-@[simp]
+/-- The `y`-component of the continuation map; not `@[simp]`, so that the elementary-tensor
+normal form `continuationMap_single_apply` is reached first. -/
 theorem continuationMap_apply (f : P → M) (y : Q) :
     continuationMap R M ν f y = ∑ x, op (ν x y) • f x :=
   (rfl)
 
 /-- The `y`-component of the continuation map of an elementary tensor `α ⊗ x`. -/
+@[simp]
 theorem continuationMap_single_apply [DecidableEq P] (x : P) (α : M) (y : Q) :
     continuationMap R M ν (Pi.single x α) y = op (ν x y) • α := by
   simp only [continuationMap_apply, Pi.single_apply, smul_ite, smul_zero, Finset.sum_ite_eq',
@@ -101,6 +103,35 @@ theorem continuationMap_single [Fintype Q] [DecidableEq P] [DecidableEq Q] (x : 
   simp only [Pi.single_apply, Finset.sum_ite_eq, Finset.mem_univ, ite_true]
 
 end Map
+
+/-! ### The maps of the Kronecker matrix and of a matrix product -/
+
+section MapMatrix
+
+variable {R : Type uR} {A : Type uA} {M : Type uM} [CommSemiring R] [Semiring A]
+  {P Q S : Type uP} [Fintype P] [Fintype Q]
+  [AddCommMonoid M] [Module R M] [Module Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M]
+
+/-- The Kronecker matrix induces the identity. -/
+@[simp]
+theorem continuationMap_kronecker [DecidableEq P] :
+    continuationMap R M (1 : Matrix P P A) = LinearMap.id := by
+  refine LinearMap.ext fun f ↦ funext fun y ↦ (continuationMap_apply _ f y).trans ?_
+  rw [LinearMap.id_apply]
+  simp only [Matrix.one_apply, apply_ite op, op_one, op_zero, ite_smul, one_smul, zero_smul,
+    Finset.sum_ite_eq', Finset.mem_univ, ite_true]
+
+/-- The matrix product induces the composite of the continuation maps. -/
+theorem continuationMap_matMul (ν₁ : P → Q → A) (ν₂ : Q → S → A) :
+    continuationMap R M (Matrix.of ν₁ * Matrix.of ν₂) =
+      (continuationMap R M ν₂).comp (continuationMap R M ν₁) := by
+  refine LinearMap.ext fun f ↦ funext fun z ↦ (continuationMap_apply _ f z).trans ?_
+  rw [LinearMap.comp_apply, continuationMap_apply]
+  simp only [continuationMap_apply, Matrix.mul_apply, Matrix.of_apply, Finset.op_sum,
+    Finset.sum_smul, Finset.smul_sum, op_mul, mul_smul]
+  exact Finset.sum_comm
+
+end MapMatrix
 
 section Properties
 
@@ -116,13 +147,13 @@ variable {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A}
 
 omit [IsScalarTower R Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M] [DirectSum.Decomposition ℳ] [Fintype P]
   [Fintype Q] in
-/-- A homogeneous element `α` of degree `q`, multiplied by `ν x y` of degree `indQ y - ind x`,
-has degree `q + (indQ y - ind x)`. -/
-theorem op_smul_mem_of_mem_graded (hν : ∀ x y, ν x y ∈ 𝒜 (indQ y - ind x)) (x : P) (y : Q)
-    {q : ℤ} {α : M} (hα : α ∈ ℳ q) : op (ν x y) • α ∈ ℳ (q + (indQ y - ind x)) := by
-  have hop : op (ν x y) ∈ (InternalGrading.ofDecomposition 𝒜).opposite.piece (indQ y - ind x) := by
+/-- A homogeneous element `α` of degree `q`, acted on by a homogeneous `a` of degree `e`, has
+degree `q + e`. -/
+theorem op_smul_mem_of_mem_graded {e : ℤ} {a : A} (ha : a ∈ 𝒜 e) {q : ℤ} {α : M}
+    (hα : α ∈ ℳ q) : op a • α ∈ ℳ (q + e) := by
+  have hop : op a ∈ (InternalGrading.ofDecomposition 𝒜).opposite.piece e := by
     rw [InternalGrading.op_mem_opposite_piece_iff, InternalGrading.ofDecomposition_piece]
-    exact hν x y
+    exact ha
   have := SetLike.GradedSMul.smul_mem hop hα
   rwa [vadd_eq_add, add_comm] at this
 
@@ -136,7 +167,7 @@ theorem continuationMap_mem_twistedTotalGrading (hν : ∀ x y, ν x y ∈ 𝒜 
   intro y
   rw [continuationMap_apply]
   refine Submodule.sum_mem _ fun x _ ↦ ?_
-  have := op_smul_mem_of_mem_graded ν hν x y (hf x)
+  have := op_smul_mem_of_mem_graded (hν x y) (hf x)
   convert this using 2
   ring
 
@@ -176,7 +207,7 @@ theorem continuationMap_twistedDifferential (hν : ∀ x y, ν x y ∈ 𝒜 (ind
       (op (ν x w) • dM α + q.negOnePow • (op (d (ν x w)) • α)) +
         ∑ y, (q + (indQ y - ind x)).negOnePow • (op (mQ y w) • (op (ν x y) • α)) := by
     rw [continuationMap_single, map_sum, Finset.sum_apply]
-    simp only [twistedDifferential_single_apply mQ dM _ w (op_smul_mem_of_mem_graded ν hν x _ hα)]
+    simp only [twistedDifferential_single_apply mQ dM _ w (op_smul_mem_of_mem_graded (hν x _) hα)]
     rw [Finset.sum_add_distrib, ← hM.leibniz hα]
     congr 1
     simp only [Pi.single_apply, Finset.sum_ite_eq, Finset.mem_univ, ite_true]
@@ -194,13 +225,10 @@ theorem continuationMap_twistedDifferential (hν : ∀ x y, ν x y ∈ 𝒜 (ind
       ∑ y, (q + (indQ y - ind x)).negOnePow • (op (mQ y w) • (op (ν x y) • α)) = 0 := by
     rw [Finset.op_sum, Finset.sum_smul, Finset.smul_sum, ← Finset.sum_add_distrib]
     refine Finset.sum_eq_zero fun z _ ↦ ?_
-    have hexp : q + (ind x - indQ z - 1) =
-        (q + (indQ z - ind x)) + 1 + 2 * (ind x - indQ z - 1) := by
-      ring
     have hsign : q.negOnePow * (ind x - indQ z - 1).negOnePow =
         -(q + (indQ z - ind x)).negOnePow := by
-      rw [← Int.negOnePow_add, hexp, Int.negOnePow_add, Int.negOnePow_succ, Int.negOnePow_two_mul,
-        mul_one]
+      rw [← Int.negOnePow_succ]
+      exact negOnePow_mul_negOnePow_of_even ⟨ind x - indQ z - 1, by ring⟩
     rw [op_smul, smul_assoc, smul_smul, hsign, op_mul, mul_smul, Units.neg_smul, neg_add_cancel]
   rw [h₁, add_assoc, h₂, add_zero]
 
@@ -235,16 +263,6 @@ theorem continuation_kronecker (hd : d 1 = 0) (x y : P) :
   · exact hd
   · exact map_zero d
 
-omit [Algebra R A] [IsScalarTower R Aᵐᵒᵖ M] [DirectSum.Decomposition ℳ] [Fintype Q] in
-/-- The Kronecker matrix induces the identity. -/
-theorem continuationMap_kronecker :
-    continuationMap R M (1 : Matrix P P A) = LinearMap.id := by
-  refine LinearMap.ext fun f ↦ funext fun y ↦ ?_
-  -- `Matrix P P A` is `P → P → A` by definition; the `change` makes the entries visible.
-  change ∑ x, op ((1 : Matrix P P A) x y) • f x = f y
-  simp only [Matrix.one_apply, apply_ite op, op_one, op_zero, ite_smul, one_smul, zero_smul,
-    Finset.sum_ite_eq', Finset.mem_univ, ite_true]
-
 end Kronecker
 
 section MatMul
@@ -264,18 +282,6 @@ theorem matMul_mem_graded (hν₁ : ∀ x y, ν₁ x y ∈ 𝒜 (indQ y - ind x)
   have := SetLike.mul_mem_graded (hν₁ x y) (hν₂ y z)
   convert this using 2
   ring
-
-omit [Algebra R A] [IsScalarTower R Aᵐᵒᵖ M] [DirectSum.Decomposition ℳ] [Fintype S] in
-/-- The matrix product induces the composite of the continuation maps. -/
-theorem continuationMap_matMul :
-    continuationMap R M (Matrix.of ν₁ * Matrix.of ν₂) =
-      (continuationMap R M ν₂).comp (continuationMap R M ν₁) := by
-  refine LinearMap.ext fun f ↦ funext fun z ↦ ?_
-  change ∑ x, op ((Matrix.of ν₁ * Matrix.of ν₂) x z) • f x =
-    ∑ y, op (ν₂ y z) • ∑ x, op (ν₁ x y) • f x
-  simp only [Matrix.mul_apply, Matrix.of_apply, Finset.op_sum, Finset.sum_smul, Finset.smul_sum,
-    op_mul, mul_smul]
-  exact Finset.sum_comm
 
 omit [IsScalarTower R Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M] [DirectSum.Decomposition ℳ] in
 /-- The matrix product of continuation cocycles `m₁ → m₂` and `m₂ → m₃` satisfies the
@@ -310,9 +316,7 @@ theorem continuation_matMul (h : IsDGAlgebra 𝒜 d) (m₁ : P → P → A) (m�
     refine Finset.sum_eq_zero fun z _ ↦ ?_
     rw [← Finset.sum_add_distrib]
     refine Finset.sum_eq_zero fun w _ ↦ ?_
-    have hexp : ind x - indQ z - 1 = (indQ z - ind x) + 1 + 2 * (ind x - indQ z - 1) := by ring
-    rw [hexp, Int.negOnePow_add, Int.negOnePow_succ, Int.negOnePow_two_mul, mul_one,
-      Units.neg_smul, neg_add_cancel]
+    rw [negOnePow_sub_sub_one, Units.neg_smul, neg_add_cancel]
   -- The `m₃` terms agree: `(-1) ^ (indQ z - ind x) (-1) ^ (indQ z - indS w - 1)` is
   -- `(-1) ^ (ind x - indS w - 1)`.
   have hD : (∑ x₁ : Q, ∑ x₂ : S, ((indQ x₁ - ind x).negOnePow * (indQ x₁ - indS x₂ - 1).negOnePow) •
@@ -320,10 +324,7 @@ theorem continuation_matMul (h : IsDGAlgebra 𝒜 d) (m₁ : P → P → A) (m�
       ∑ x₁ : S, ∑ x₂ : Q, (ind x - indS x₁ - 1).negOnePow • (ν₁ x x₂ * (ν₂ x₂ x₁ * m₃ x₁ y)) := by
     rw [Finset.sum_comm]
     refine Finset.sum_congr rfl fun w _ ↦ Finset.sum_congr rfl fun z _ ↦ ?_
-    have hexp : (indQ z - ind x) + (indQ z - indS w - 1) =
-        (ind x - indS w - 1) + 2 * (indQ z - ind x) := by
-      ring
-    rw [← Int.negOnePow_add, hexp, Int.negOnePow_add, Int.negOnePow_two_mul, mul_one]
+    rw [negOnePow_mul_negOnePow_of_even (c := ind x - indS w - 1) ⟨indQ z - ind x, by ring⟩]
   rw [hA, hD, add_assoc, ← add_assoc _ _ (∑ x₁ : S, ∑ x₂ : Q,
     (ind x - indS x₁ - 1).negOnePow • (ν₁ x x₂ * (ν₂ x₂ x₁ * m₃ x₁ y))), hBC, zero_add]
 
@@ -392,6 +393,32 @@ theorem comp_ν (h : IsDGAlgebra 𝒜 d) (ν₁ : ContinuationCocycle mP mQ)
     (ν₂ : ContinuationCocycle mQ mS) : (ν₁.comp h ν₂).ν = Matrix.of ν₁.ν * Matrix.of ν₂.ν :=
   (rfl)
 
+/-- The Kronecker continuation cocycle is a left identity for the composition. -/
+@[simp]
+theorem refl_comp [DecidableEq P] (h : IsDGAlgebra 𝒜 d) (ν : ContinuationCocycle mP mQ) :
+    (refl h mP).comp h ν = ν := by
+  ext x y
+  rw [comp_ν, refl_ν]
+  exact congrFun (congrFun (Matrix.one_mul (Matrix.of ν.ν)) x) y
+
+/-- The Kronecker continuation cocycle is a right identity for the composition. -/
+@[simp]
+theorem comp_refl [DecidableEq Q] (h : IsDGAlgebra 𝒜 d) (ν : ContinuationCocycle mP mQ) :
+    ν.comp h (refl h mQ) = ν := by
+  ext x y
+  rw [comp_ν, refl_ν]
+  exact congrFun (congrFun (Matrix.mul_one (Matrix.of ν.ν)) x) y
+
+/-- The composition of continuation cocycles is associative. -/
+theorem comp_assoc {T : Type uP} {indT : T → ℤ} [Fintype T] {mT : TwistingCocycle 𝒜 d T indT}
+    (h : IsDGAlgebra 𝒜 d) (ν₁ : ContinuationCocycle mP mQ) (ν₂ : ContinuationCocycle mQ mS)
+    (ν₃ : ContinuationCocycle mS mT) :
+    (ν₁.comp h ν₂).comp h ν₃ = ν₁.comp h (ν₂.comp h ν₃) := by
+  ext x y
+  rw [comp_ν, comp_ν, comp_ν, comp_ν]
+  exact congrFun (congrFun
+    (Matrix.mul_assoc (Matrix.of ν₁.ν) (Matrix.of ν₂.ν) (Matrix.of ν₃.ν)) x) y
+
 variable [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M]
   [SMulCommClass R Aᵐᵒᵖ M] {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
   [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ] {dM : M →ₗ[R] M}
@@ -414,7 +441,8 @@ theorem continuationMap_twistedDifferential (ν : ContinuationCocycle mP mQ)
   TauCeti.continuationMap_twistedDifferential ν.ν mP.m mQ.m dM ν.mem_graded ν.continuation hM f
 
 omit [IsScalarTower R Aᵐᵒᵖ M] [Fintype Q] [Fintype S] in
-/-- The Kronecker continuation cocycle induces the identity. -/
+/-- The Kronecker continuation cocycle induces the identity (`simp` proves it from `refl_ν` and
+`continuationMap_kronecker`). -/
 theorem continuationMap_refl [DecidableEq P] (h : IsDGAlgebra 𝒜 d) (m : TwistingCocycle 𝒜 d P ind) :
     continuationMap R M (refl h m).ν = LinearMap.id :=
   continuationMap_kronecker

@@ -126,18 +126,6 @@ variable {R : Type uR} {A : Type uA} {M : Type uM}
 variable {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A} {hA : IsDGAlgebra 𝒜 d}
   [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
 
-omit [IsScalarTower R Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M] [DirectSum.Decomposition ℳ] [Fintype P]
-  [Fintype Q] in
-/-- A homogeneous element `α` of degree `q`, multiplied by `a` of degree `e`, has degree
-`q + e`. -/
-theorem op_smul_mem_of_mem_graded' {e : ℤ} {a : A} (ha : a ∈ 𝒜 e) {q : ℤ} {α : M}
-    (hα : α ∈ ℳ q) : op a • α ∈ ℳ (q + e) := by
-  have hop : op a ∈ (InternalGrading.ofDecomposition 𝒜).opposite.piece e := by
-    rw [InternalGrading.op_mem_opposite_piece_iff, InternalGrading.ofDecomposition_piece]
-    exact ha
-  have := SetLike.GradedSMul.smul_mem hop hα
-  rwa [vadd_eq_add, add_comm] at this
-
 omit [IsScalarTower R Aᵐᵒᵖ M] [Fintype Q] in
 /-- The homotopy map of a matrix with homogeneous entries of degree `indQ y - ind x - 1` lowers
 the total degree by one. -/
@@ -154,7 +142,7 @@ theorem homotopyMap_mem_twistedTotalGrading (hh : ∀ x y, h x y ∈ 𝒜 (indQ 
   have hε : (InternalGrading.ofDecomposition ℳ).koszulTwist 1 (f x) ∈ ℳ (n + ind x) := by
     have := InternalGrading.koszulTwist_mem_piece _ hfx 1
     rwa [InternalGrading.ofDecomposition_piece] at this
-  have := op_smul_mem_of_mem_graded' (ℳ := ℳ) (hh x y) hε
+  have := op_smul_mem_of_mem_graded (ℳ := ℳ) (hh x y) hε
   convert this using 2
   ring
 
@@ -191,9 +179,9 @@ theorem homotopyMap_twistedDifferential (hh : ∀ x y, h x y ∈ 𝒜 (indQ y - 
   funext w
   have hdα : dM α ∈ ℳ (q + 1) := hM.isHomogeneous.map_mem hα
   have hγ : ∀ y, q.negOnePow • (op (h x y) • α) ∈ ℳ (q + (indQ y - ind x - 1)) := fun y ↦
-    Submodule.smul_of_tower_mem _ _ (op_smul_mem_of_mem_graded' (hh x y) hα)
+    Submodule.smul_of_tower_mem _ _ (op_smul_mem_of_mem_graded (hh x y) hα)
   have hδ : ∀ z, q.negOnePow • (op (mP x z) • α) ∈ ℳ (q + (ind z - ind x + 1)) := fun z ↦
-    Submodule.smul_of_tower_mem _ _ (op_smul_mem_of_mem_graded' (hm x z) hα)
+    Submodule.smul_of_tower_mem _ _ (op_smul_mem_of_mem_graded (hm x z) hα)
   -- The two continuation maps.
   have hL : (continuationMap R M ν₁ (Pi.single x α) - continuationMap R M ν₀ (Pi.single x α)) w =
       op (ν₁ x w) • α - op (ν₀ x w) • α := by
@@ -220,24 +208,19 @@ theorem homotopyMap_twistedDifferential (hh : ∀ x y, h x y ∈ 𝒜 (indQ y - 
       (op (mQ y w) • (q.negOnePow • (op (h x y) • α))) = -SQ := by
     rw [hSQ_def, ← Finset.sum_neg_distrib]
     refine Finset.sum_congr rfl fun y _ ↦ ?_
-    have hexp : q + (indQ y - ind x - 1) + q =
-        (ind x - indQ y) + 1 + 2 * (indQ y - ind x - 1 + q) := by
-      ring
     have hsign : (q + (indQ y - ind x - 1)).negOnePow * q.negOnePow =
         -(ind x - indQ y).negOnePow := by
-      rw [← Int.negOnePow_add, hexp, Int.negOnePow_add, Int.negOnePow_succ, Int.negOnePow_two_mul,
-        mul_one]
+      rw [← Int.negOnePow_succ]
+      exact negOnePow_mul_negOnePow_of_even ⟨indQ y - ind x - 1 + q, by ring⟩
     rw [smul_comm (op (mQ y w)) q.negOnePow, smul_smul, hsign, op_mul, mul_smul, Units.neg_smul]
   have hSP : ∑ z, (q + (ind z - ind x + 1)).negOnePow •
       (op (h z w) • (q.negOnePow • (op (mP x z) • α))) = -SP := by
     rw [hSP_def, ← Finset.sum_neg_distrib]
     refine Finset.sum_congr rfl fun z _ ↦ ?_
-    have hexp : q + (ind z - ind x + 1) + q = (ind x - ind z) + 1 + 2 * (ind z - ind x + q) := by
-      ring
     have hsign : (q + (ind z - ind x + 1)).negOnePow * q.negOnePow =
         -(ind x - ind z).negOnePow := by
-      rw [← Int.negOnePow_add, hexp, Int.negOnePow_add, Int.negOnePow_succ, Int.negOnePow_two_mul,
-        mul_one]
+      rw [← Int.negOnePow_succ]
+      exact negOnePow_mul_negOnePow_of_even ⟨ind z - ind x + q, by ring⟩
     rw [smul_comm (op (h z w)) q.negOnePow, smul_smul, hsign, op_mul, mul_smul, Units.neg_smul]
   have hd : dM (q.negOnePow • (op (h x w) • α)) =
       q.negOnePow • (op (h x w) • dM α) + op (d (h x w)) • α := by
