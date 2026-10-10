@@ -28,7 +28,8 @@ The homotopy is assembled from three pieces, each one a homotopy through maps th
 two end points, so that their composite is one as well (`MoorePath.PreservesEndpoints`,
 `ContinuousMap.HomotopyWith`):
 * appending a constant path of length `s ∈ [0, 1]` at the target, which only changes the length;
-* rescaling the path of length `L + 1` down to length one, which divides by lengths at least one;
+* rescaling (`MoorePath.rescale`) the path of length `L + 1` down to length one, which divides by
+  lengths at least one;
 * the image of the first homotopy under `ofUnitPath ∘ toUnitPath`.
 
 The detour through length `L + 1` avoids dividing by a length that could be zero.
@@ -37,10 +38,13 @@ The detour through length `L + 1` avoids dividing by a length that could be zero
 
 * `TauCeti.MoorePath.ofUnitPath`, `TauCeti.MoorePath.toUnitPath`: the comparison maps between
   `C(I, X)` and `MoorePath X`.
+* `TauCeti.MoorePath.rescale γ ℓ`: a Moore path reparametrized to the length `ℓ`; going to the
+  unit interval and back is `rescale γ 1` (`ofUnitPath_toUnitPath`).
 * `Path.toMoorePath`, `TauCeti.MoorePath.toPath`, `Path.toMooreLoop`,
   `TauCeti.MooreLoopSpace.toPath`: the based comparison maps.
 * `TauCeti.MoorePath.unitHomotopy`: the homotopy from `ofUnitPath ∘ toUnitPath` to the identity
   through end-point preserving maps.
+* `TauCeti.MooreLoopSpace.unitHomotopy`: its restriction to the Moore loops at `x`.
 * `TauCeti.MoorePath.homotopyEquivUnitPath`: the homotopy equivalence `MoorePath X ≃ₕ C(I, X)`.
 * `TauCeti.MooreLoopSpace.homotopyEquivPath`: the homotopy equivalence
   `MooreLoopSpace X x ≃ₕ Path x x` with Mathlib's loop space.
@@ -159,6 +163,71 @@ theorem ofUnitPath_toUnitPath_apply (γ : MoorePath X) (t : ℝ≥0) :
     ofUnitPath γ.toUnitPath t = γ (γ.length * min t 1) := by
   rw [ofUnitPath_apply, toUnitPath_apply, toNNReal_projIcc]
 
+/-! ### Reparametrization to a given length -/
+
+/-- The Moore path `γ` reparametrized to the length `ℓ`: the path `t ↦ γ (γ.length * t / ℓ)`.
+For `ℓ = 0` it is the constant path of length zero at the source. -/
+def rescale (γ : MoorePath X) (ℓ : ℝ≥0) : MoorePath X where
+  toFun t := γ (γ.length * t / ℓ)
+  continuous_toFun := γ.continuous.comp ((continuous_const.mul continuous_id).div_const _)
+  length := ℓ
+  apply_of_length_le' t ht := by
+    rcases eq_or_ne ℓ 0 with rfl | hℓ
+    · rw [div_zero, div_zero]
+    · rw [mul_div_cancel_right₀ _ hℓ, γ.apply_of_length_le ((le_div_iff₀ (pos_iff_ne_zero.2 hℓ)).2
+        (mul_le_mul le_rfl ht zero_le zero_le)), target_def]
+
+@[simp]
+theorem rescale_apply (γ : MoorePath X) (ℓ t : ℝ≥0) : γ.rescale ℓ t = γ (γ.length * t / ℓ) :=
+  (rfl)
+
+@[simp]
+theorem length_rescale (γ : MoorePath X) (ℓ : ℝ≥0) : (γ.rescale ℓ).length = ℓ :=
+  (rfl)
+
+@[simp]
+theorem source_rescale (γ : MoorePath X) (ℓ : ℝ≥0) : (γ.rescale ℓ).source = γ.source := by
+  rw [source_def, rescale_apply, mul_zero, zero_div, source_def]
+
+theorem target_rescale (γ : MoorePath X) {ℓ : ℝ≥0} (hℓ : ℓ ≠ 0) :
+    (γ.rescale ℓ).target = γ.target := by
+  rw [target_def, length_rescale, rescale_apply, mul_div_cancel_right₀ _ hℓ, target_def]
+
+/-- Reparametrizing a Moore path to its own length changes nothing. -/
+@[simp]
+theorem rescale_length (γ : MoorePath X) : γ.rescale γ.length = γ := by
+  refine ext rfl fun t ↦ ?_
+  rw [rescale_apply]
+  rcases eq_or_ne γ.length 0 with h | h
+  · rw [h, zero_mul, zero_div, γ.apply_of_length_le h.le,
+      γ.apply_of_length_le (h.trans_le (zero_le : (0 : ℝ≥0) ≤ t))]
+  · rw [mul_div_cancel_left₀ _ h]
+
+@[simp]
+theorem rescale_zero (γ : MoorePath X) : γ.rescale 0 = refl γ.source :=
+  ext (by rw [length_rescale, length_refl]) fun t ↦ by
+    rw [rescale_apply, div_zero, refl_apply, source_def]
+
+/-- Rescaling is continuous in the path and in the length, for nonzero lengths. -/
+@[fun_prop]
+theorem _root_.Continuous.moorePath_rescale {Y : Type*} [TopologicalSpace Y] {f : Y → MoorePath X}
+    {g : Y → ℝ≥0} (hf : Continuous f) (hg : Continuous g) (h0 : ∀ y, g y ≠ 0) :
+    Continuous fun y ↦ (f y).rescale (g y) := by
+  refine continuous_iff.2 ⟨hg, ?_⟩
+  simp only [rescale_apply]
+  exact (hf.comp continuous_fst).moorePath_eval
+    ((((continuous_length.comp hf).comp continuous_fst).mul continuous_snd).div₀
+      (hg.comp continuous_fst) fun p ↦ h0 p.1)
+
+/-- Sending a Moore path to the unit interval and back reparametrizes it to length one. -/
+theorem ofUnitPath_toUnitPath (γ : MoorePath X) : ofUnitPath γ.toUnitPath = γ.rescale 1 := by
+  refine ext (by rw [length_ofUnitPath, length_rescale]) fun t ↦ ?_
+  rw [ofUnitPath_toUnitPath_apply, rescale_apply, div_one]
+  rcases le_total t 1 with ht | ht
+  · rw [min_eq_left ht]
+  · rw [min_eq_right ht, mul_one, γ.apply_of_length_le le_rfl,
+      γ.apply_of_length_le (le_mul_of_one_le_right zero_le ht)]
+
 /-! ### The homotopy from `ofUnitPath ∘ toUnitPath` to the identity -/
 
 /-- A self-map of the Moore paths preserves the end points.  The homotopies below are through such
@@ -194,6 +263,9 @@ def toLengthOne : C(MoorePath X, MoorePath X) :=
 theorem toLengthOne_apply (γ : MoorePath X) : toLengthOne γ = ofUnitPath γ.toUnitPath :=
   (rfl)
 
+theorem toLengthOne_eq_rescale_one (γ : MoorePath X) : toLengthOne γ = γ.rescale 1 :=
+  ofUnitPath_toUnitPath γ
+
 /-- Appending constant paths of growing length at the target: a homotopy from the identity to
 `appendOne` through maps preserving the end points. -/
 private def appendHomotopy :
@@ -214,69 +286,33 @@ private theorem one_le_rescaleLength (s : I) (L : ℝ≥0) : 1 ≤ L + 1 - toNNR
   le_tsub_of_add_le_left (add_le_add_left (mul_le_of_le_one_left (zero_le : (0 : ℝ≥0) ≤ L)
     (toNNReal_le_one s)) 1)
 
-/-- The rescaling of `appendOne γ`, of length `L + 1`, to the length `L + 1 - s L`, which runs
-from `L + 1` down to `1` as `s` goes from `0` to `1` and stays at least `1`: the path
-`t ↦ γ ((L + 1) t / (L + 1 - s L))`. -/
-private def rescaleFun (p : I × MoorePath X) : MoorePath X where
-  toFun t := p.2 ((p.2.length + 1) * t / (p.2.length + 1 - toNNReal p.1 * p.2.length))
-  continuous_toFun := p.2.continuous.comp ((continuous_const.mul continuous_id).div_const _)
-  length := p.2.length + 1 - toNNReal p.1 * p.2.length
-  apply_of_length_le' t ht := by
-    have hℓ : 0 < p.2.length + 1 - toNNReal p.1 * p.2.length :=
-      zero_lt_one.trans_le (one_le_rescaleLength _ _)
-    rw [mul_div_cancel_right₀ _ hℓ.ne', p.2.apply_of_length_le le_self_add,
-      p.2.apply_of_length_le ((le_div_iff₀ hℓ).2 ?_)]
-    exact mul_le_mul le_self_add ht zero_le zero_le
-
-private theorem rescaleFun_apply (p : I × MoorePath X) (t : ℝ≥0) :
-    rescaleFun p t = p.2 ((p.2.length + 1) * t / (p.2.length + 1 - toNNReal p.1 * p.2.length)) :=
-  (rfl)
-
-private theorem length_rescaleFun (p : I × MoorePath X) :
-    (rescaleFun p).length = p.2.length + 1 - toNNReal p.1 * p.2.length :=
-  (rfl)
-
-/-- Rescaling the length from `L + 1` down to one: a homotopy from `appendOne` to
-`toLengthOne ∘ appendOne` through maps preserving the end points. -/
+/-- Rescaling `appendOne γ`, of length `L + 1`, to the length `L + 1 - s L`, which runs from
+`L + 1` down to `1` as `s` goes from `0` to `1` and stays at least `1`: a homotopy from `appendOne`
+to `toLengthOne ∘ appendOne` through maps preserving the end points. -/
 private def rescaleHomotopy :
     ContinuousMap.HomotopyWith appendOne ((toLengthOne (X := X)).comp appendOne)
       PreservesEndpoints where
-  toFun := rescaleFun
+  toFun p := (appendOne p.2).rescale (p.2.length + 1 - toNNReal p.1 * p.2.length)
   continuous_toFun := by
     have hL : Continuous fun p : I × MoorePath X ↦ p.2.length :=
       continuous_length.comp continuous_snd
-    have hℓ : Continuous fun p : I × MoorePath X ↦ p.2.length + 1 - toNNReal p.1 * p.2.length :=
-      (hL.add continuous_const).sub ((toNNReal_continuous.comp continuous_fst).mul hL)
-    refine continuous_iff.2 ⟨hℓ, ?_⟩
-    simp only [rescaleFun_apply]
-    exact (continuous_snd.comp continuous_fst).moorePath_eval
-      ((((hL.add continuous_const).comp continuous_fst).mul continuous_snd).div₀
-        (hℓ.comp continuous_fst) fun q ↦ (zero_lt_one.trans_le (one_le_rescaleLength _ _)).ne')
+    exact (appendOne.continuous.comp continuous_snd).moorePath_rescale
+      ((hL.add continuous_const).sub ((toNNReal_continuous.comp continuous_fst).mul hL))
+      fun p ↦ (zero_lt_one.trans_le (one_le_rescaleLength _ _)).ne'
   map_zero_left γ := by
-    refine ext (by rw [length_rescaleFun, appendOne_apply, length_trans, length_constOfLength,
-      toNNReal_zero, zero_mul, tsub_zero]) fun t ↦ ?_
-    rw [rescaleFun_apply, appendOne_apply, trans_constOfLength_target_apply, toNNReal_zero,
-      zero_mul, tsub_zero, mul_div_cancel_left₀ _ (add_pos_of_nonneg_of_pos zero_le one_pos).ne']
+    rw [toNNReal_zero, zero_mul, tsub_zero, ← length_constOfLength γ.target 1,
+      ← length_trans γ _ (source_constOfLength _ _).symm, ← appendOne_apply, rescale_length]
   map_one_left γ := by
-    refine ext (by rw [length_rescaleFun, ContinuousMap.comp_apply, toLengthOne_apply,
-      length_ofUnitPath, toNNReal_one, one_mul, add_tsub_cancel_left]) fun t ↦ ?_
-    rw [rescaleFun_apply, ContinuousMap.comp_apply, toLengthOne_apply, ofUnitPath_toUnitPath_apply,
-      appendOne_apply, length_trans, length_constOfLength, trans_constOfLength_target_apply,
-      toNNReal_one, one_mul, add_tsub_cancel_left, div_one]
-    rcases le_total t 1 with ht | ht
-    · rw [min_eq_left ht]
-    · dsimp only
-      rw [min_eq_right ht, mul_one, γ.apply_of_length_le le_self_add,
-        γ.apply_of_length_le (le_self_add.trans (le_mul_of_one_le_right zero_le ht))]
+    rw [toNNReal_one, one_mul, add_tsub_cancel_left, ContinuousMap.comp_apply,
+      toLengthOne_eq_rescale_one]
   prop' s γ := by
+    have hℓ : γ.length + 1 - toNNReal s * γ.length ≠ 0 :=
+      (zero_lt_one.trans_le (one_le_rescaleLength _ _)).ne'
     refine ⟨?_, ?_⟩
-    · change (rescaleFun (s, γ)).source = γ.source
-      rw [source_def, source_def, rescaleFun_apply, mul_zero, zero_div]
-    · have hℓ : 0 < γ.length + 1 - toNNReal s * γ.length :=
-        zero_lt_one.trans_le (one_le_rescaleLength _ _)
-      change (rescaleFun (s, γ)).target = γ.target
-      rw [target_def, length_rescaleFun, rescaleFun_apply, mul_div_cancel_right₀ _ hℓ.ne',
-        γ.apply_of_length_le le_self_add]
+    · change ((appendOne γ).rescale _).source = γ.source
+      rw [source_rescale, appendOne_apply, source_trans]
+    · change ((appendOne γ).rescale _).target = γ.target
+      rw [target_rescale _ hℓ, appendOne_apply, target_trans, target_constOfLength]
 
 /-- The image of `appendHomotopy` under `toLengthOne`: a homotopy from `toLengthOne` to
 `toLengthOne ∘ appendOne` through maps preserving the end points. -/
@@ -428,20 +464,48 @@ theorem _root_.Path.toPath_toMooreLoop (p : Path x x) : p.toMooreLoop.toPath = p
     Path.toMoorePath_apply]
   exact congr_arg p (projIcc_val zero_le_one s)
 
+/-- The composite `Path.toMooreLoop ∘ toPath`, bundled: a Moore loop reparametrized to length
+one. -/
+def toLengthOne : C(MooreLoopSpace X x, MooreLoopSpace X x) :=
+  (⟨Path.toMooreLoop, Path.continuous_toMooreLoop⟩ : C(Path x x, MooreLoopSpace X x)).comp
+    ⟨toPath, continuous_toPath⟩
+
+@[simp]
+theorem toMoorePath_toLengthOne (γ : MooreLoopSpace X x) :
+    (toLengthOne γ).toMoorePath = MoorePath.toLengthOne γ.toMoorePath :=
+  (rfl)
+
+/-- The homotopy from `toLengthOne` to the identity of the Moore loops at `x`: the restriction of
+`MoorePath.unitHomotopy`, which preserves the end points, to the loops. -/
+def unitHomotopy :
+    ContinuousMap.Homotopy toLengthOne (ContinuousMap.id (MooreLoopSpace X x)) where
+  toFun p := ⟨MoorePath.unitHomotopy (p.1, p.2.toMoorePath),
+    (MoorePath.unitHomotopy_source _ _).trans p.2.source_eq,
+    (MoorePath.unitHomotopy_target _ _).trans p.2.target_eq⟩
+  continuous_toFun := isEmbedding_toMoorePath.continuous_iff.2
+    ((MoorePath.unitHomotopy (X := X)).continuous.comp
+      (continuous_fst.prodMk (continuous_toMoorePath.comp continuous_snd)))
+  map_zero_left _ := ext (MoorePath.unitHomotopy_apply_zero _)
+  map_one_left _ := ext (MoorePath.unitHomotopy_apply_one _)
+
+@[simp]
+theorem toMoorePath_unitHomotopy (s : I) (γ : MooreLoopSpace X x) :
+    (unitHomotopy (s, γ)).toMoorePath = MoorePath.unitHomotopy (s, γ.toMoorePath) :=
+  (rfl)
+
+theorem unitHomotopy_apply_zero (γ : MooreLoopSpace X x) :
+    unitHomotopy (0, γ) = γ.toPath.toMooreLoop :=
+  (unitHomotopy (X := X) (x := x)).apply_zero γ
+
+theorem unitHomotopy_apply_one (γ : MooreLoopSpace X x) : unitHomotopy (1, γ) = γ :=
+  (unitHomotopy (X := X) (x := x)).apply_one γ
+
 /-- **The Moore loop space is homotopy equivalent to Mathlib's loop space** `Path x x` of loops
 parametrized by the unit interval, by `toPath` and `Path.toMooreLoop`. -/
 def homotopyEquivPath (x : X) : MooreLoopSpace X x ≃ₕ Path x x where
   toFun := ⟨toPath, continuous_toPath⟩
   invFun := ⟨Path.toMooreLoop, Path.continuous_toMooreLoop⟩
-  left_inv := ⟨{
-    toFun p := ⟨MoorePath.unitHomotopy (p.1, p.2.toMoorePath),
-      (MoorePath.unitHomotopy_source _ _).trans p.2.source_eq,
-      (MoorePath.unitHomotopy_target _ _).trans p.2.target_eq⟩
-    continuous_toFun := isEmbedding_toMoorePath.continuous_iff.2
-      ((MoorePath.unitHomotopy (X := X)).continuous.comp
-        (continuous_fst.prodMk (continuous_toMoorePath.comp continuous_snd)))
-    map_zero_left _ := ext (MoorePath.unitHomotopy_apply_zero _)
-    map_one_left _ := ext (MoorePath.unitHomotopy_apply_one _) }⟩
+  left_inv := ⟨unitHomotopy⟩
   right_inv :=
     ⟨(ContinuousMap.Homotopy.refl _).cast rfl (ContinuousMap.ext Path.toPath_toMooreLoop)⟩
 
