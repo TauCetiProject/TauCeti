@@ -16,13 +16,12 @@ the two sides of the square, in coordinates `(u, t)`), there is a lift of `H` on
 that agrees with `g` on `J` (`TauCeti.IsHurewiczFibration.exists_lift_openBox`).  The data on `J`
 is passed as a map on the whole square, of which only the values on `J` are used.
 
-The proof uses no cofibration theory.  Put `P = (1/2, 2)`, above the square, and for `x = (u, t)`
-let `m(x) = max (2 - t) (4 |u - 1/2|)`, which lies in `[1, 2]`, and `φ(x) = 2 / m(x) - 1 ∈ [0, 1]`,
-which vanishes exactly on `J`.  The point `r(x) = x + φ(x) (x - P)` is the radial projection of `x`
-from `P` onto `J`, and `k(s, x) = r(x) + min (φ x, s) (P - x)` moves from `r(x)` at `s = 0` to
-`x` at `s = φ(x)`, and is constant at the points of `J`.  Lifting `H ∘ k` from `g ∘ r` with the
-absolute homotopy lifting property and evaluating the lift at time `φ(x)` gives the relative
-lift.
+This is the form in which families of paths with prescribed end points are lifted: a homotopy of
+paths whose end points stay fixed in `B` lifts to a homotopy of paths whose end points follow
+prescribed lifts, for instance the constant lifts at a base point for loops
+(`TauCeti.IsHurewiczFibration.loopMap`).  It follows from the absolute homotopy lifting property
+through an explicit deformation of the square onto the open box (`TauCeti.OpenBox.deform`), so no
+cofibration theory is needed.
 
 ## Main results
 
@@ -131,8 +130,11 @@ theorem projT_eq_zero_or (u t : I) :
       rw [projU, time, hden, abs_of_pos hpos, sub_mul, key]
       ring
 
-/-- The deformation `k(s, x) = r(x) + min (φ x, s) (P - x)` of the square, clamped to the square:
-at time `0` it is the radial projection onto the open box, at time `φ x` it is `x`. -/
+/-- The deformation `k(s, x) = r(x) + min (φ x, s) (P - x)` of the square, clamped to the square,
+where `P = (1/2, 2)` lies above the square and `r(x) = x + φ(x) (x - P)` is the radial projection of
+`x` from `P` onto the open box: at time `0` it is `r(x)`, at time `φ x` it is `x`, and it is
+constant at the points of the open box.  Lifting a homotopy composed with it from the lift on the
+open box, and evaluating at time `φ x`, gives the relative lift. -/
 noncomputable def deform (s : I) (x : I × I) : I × I :=
   (projIcc 0 1 zero_le_one (projU x.1 x.2 + min (time x.1 x.2) s * (1 / 2 - x.1)),
     projIcc 0 1 zero_le_one (projT x.1 x.2 + min (time x.1 x.2) s * (2 - x.2)))
@@ -158,9 +160,12 @@ theorem deform_time (x : I × I) :
     congrArg Subtype.val (projIcc_of_mem zero_le_one ⟨time_nonneg _ _, time_le_one _ _⟩)
   simp only [deform, hφ, min_self, projU, projT]
   refine Prod.ext ?_ ?_
-  · rw [show (x.1 : ℝ) + time x.1 x.2 * (x.1 - 1 / 2) + time x.1 x.2 * (1 / 2 - x.1) = x.1 by ring]
+  · have hu : (x.1 : ℝ) + time x.1 x.2 * (x.1 - 1 / 2) + time x.1 x.2 * (1 / 2 - x.1) = x.1 := by
+      ring
+    rw [hu]
     exact projIcc_val zero_le_one _
-  · rw [show (x.2 : ℝ) + time x.1 x.2 * (x.2 - 2) + time x.1 x.2 * (2 - x.2) = x.2 by ring]
+  · have ht : (x.2 : ℝ) + time x.1 x.2 * (x.2 - 2) + time x.1 x.2 * (2 - x.2) = x.2 := by ring
+    rw [ht]
     exact projIcc_val zero_le_one _
 
 theorem deform_zero_of_isBox {x : I × I} (hx : IsBox x) : deform 0 x = x := by
