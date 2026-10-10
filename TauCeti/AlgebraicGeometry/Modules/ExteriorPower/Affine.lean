@@ -317,13 +317,12 @@ private lemma exteriorToOpen_map (n : ℕ) {M N : ModuleCat.{u} R} (φ : M ⟶ N
       (fun i ↦ tilde.toOpen N U (φ (m i))) := by
     funext i
     exact ConcreteCategory.congr_hom (tilde.toOpen_map_app φ U) (m i)
-  exact (congrArg (ModuleCat.exteriorPower.map ψ n) (exteriorToOpen_mk M n U m)).trans
-    ((ModuleCat.exteriorPower.map_mk ψ _).trans
-      ((congrArg (ModuleCat.exteriorPower.mk
-        (M := PresheafOfModulesOfCommRing.obj (R := (Spec R).presheaf) (tilde N).val (.op U)))
-        hm).trans
-        ((congrArg (exteriorToOpen N n U) (ModuleCat.exteriorPower.map_mk φ m)).trans
-          (exteriorToOpen_mk N n U (fun i ↦ φ (m i)))).symm))
+  simp only [exteriorToOpen_mk M n U m,
+    ModuleCat.exteriorPower.map_mk ψ (fun i ↦ tilde.toOpen M U (m i)),
+    ModuleCat.exteriorPower.map_mk φ m, Function.comp_def,
+    exteriorToOpen_mk N n U (fun i ↦ φ (m i))]
+  exact congrArg (ModuleCat.exteriorPower.mk
+    (M := PresheafOfModulesOfCommRing.obj (R := (Spec R).presheaf) (tilde N).val (.op U))) hm
 
 private lemma exteriorComparisonR_naturality (n : ℕ) {M N : ModuleCat.{u} R} (φ : M ⟶ N) :
     specPresheafMap ((PresheafOfModulesOfCommRing.exteriorPower
@@ -342,19 +341,26 @@ private lemma exteriorComparisonR_naturality (n : ℕ) {M N : ModuleCat.{u} R} (
         (exteriorComparisonR M n).app (.op (PrimeSpectrum.basicOpen f)) ≫
         (modulesSpecToSheaf.map (tilde.map (ModuleCat.exteriorPower.map φ n))).hom.app
           (.op (PrimeSpectrum.basicOpen f)) := by
-    have h₁ := congrArg (fun t ↦ t ≫
-      (exteriorComparisonR N n).app (.op (PrimeSpectrum.basicOpen f)))
-      (exteriorToOpen_map n φ (PrimeSpectrum.basicOpen f))
-    have h₂ := congrArg (fun t ↦ ModuleCat.exteriorPower.map φ n ≫ t)
-      (exteriorComparisonR_toOpen N n (PrimeSpectrum.basicOpen f))
-    have h₃ := congrArg (fun t ↦ t ≫
-      (modulesSpecToSheaf.map (tilde.map (ModuleCat.exteriorPower.map φ n))).hom.app
-        (.op (PrimeSpectrum.basicOpen f)))
-      (exteriorComparisonR_toOpen M n (PrimeSpectrum.basicOpen f))
-    exact (Category.assoc _ _ _).symm.trans
-      (h₁.trans ((Category.assoc _ _ _).trans
-        (h₂.trans ((tilde.toOpen_map_app (ModuleCat.exteriorPower.map φ n) _).symm.trans
-          (h₃.symm.trans (Category.assoc _ _ _))))))
+    calc
+      _ = ModuleCat.exteriorPower.map φ n ≫
+          exteriorToOpen N n (PrimeSpectrum.basicOpen f) ≫
+          (exteriorComparisonR N n).app (.op (PrimeSpectrum.basicOpen f)) := by
+        simpa only [Category.assoc] using congrArg (fun t ↦ t ≫
+          (exteriorComparisonR N n).app (.op (PrimeSpectrum.basicOpen f)))
+          (exteriorToOpen_map n φ (PrimeSpectrum.basicOpen f))
+      _ = ModuleCat.exteriorPower.map φ n ≫
+          tilde.toOpen (N.exteriorPower n) (PrimeSpectrum.basicOpen f) :=
+        congrArg (fun t ↦ ModuleCat.exteriorPower.map φ n ≫ t)
+          (exteriorComparisonR_toOpen N n (PrimeSpectrum.basicOpen f))
+      _ = tilde.toOpen (M.exteriorPower n) (PrimeSpectrum.basicOpen f) ≫
+          (modulesSpecToSheaf.map (tilde.map (ModuleCat.exteriorPower.map φ n))).hom.app
+            (.op (PrimeSpectrum.basicOpen f)) :=
+        (tilde.toOpen_map_app (ModuleCat.exteriorPower.map φ n) _).symm
+      _ = _ := by
+        simpa only [Category.assoc] using congrArg (fun t ↦ t ≫
+          (modulesSpecToSheaf.map (tilde.map (ModuleCat.exteriorPower.map φ n))).hom.app
+            (.op (PrimeSpectrum.basicOpen f)))
+          (exteriorComparisonR_toOpen M n (PrimeSpectrum.basicOpen f)).symm
   apply ModuleCat.hom_ext
   apply IsLocalizedModule.linearMap_ext (.powers f)
     (exteriorToOpen M n (PrimeSpectrum.basicOpen f)).hom
@@ -439,6 +445,7 @@ theorem tildeExteriorPowerIso_inv_toOpen_mk (n : ℕ) (M : ModuleCat.{u} R)
 
 /-- The affine comparison sends the associated section of a wedge to the sheafified wedge
 of its associated sections, over every open. -/
+@[simp]
 theorem tildeExteriorPowerIso_hom_toOpen_mk (n : ℕ) (M : ModuleCat.{u} R)
     (U : (Spec R).Opens) (m : Fin n → M) :
     (tildeExteriorPowerIso n M).hom.val.app (.op U)
@@ -489,11 +496,13 @@ theorem tildeExteriorPowerIso_inv_naturality (n : ℕ) {M N : ModuleCat.{u} R} (
     TauCeti.SheafOfModules.sheafificationIso_hom_naturality k
   have hd : d ≫ aN = aM ≫ F.map k.val :=
     (F.map_comp _ _).symm.trans (h.trans (F.map_comp _ _))
-  have hh : d ≫ aN ≫ cN = (aM ≫ cM) ≫ k :=
-    (Category.assoc _ _ _).symm.trans
-      ((congrArg (fun t ↦ t ≫ cN) hd).trans
-        ((Category.assoc _ _ _).trans
-          ((congrArg (fun t ↦ aM ≫ t) hc).trans (Category.assoc _ _ _).symm)))
+  have hh : d ≫ aN ≫ cN = (aM ≫ cM) ≫ k := by
+    calc
+      _ = (d ≫ aN) ≫ cN := (Category.assoc _ _ _).symm
+      _ = (aM ≫ F.map k.val) ≫ cN := congrArg (fun t ↦ t ≫ cN) hd
+      _ = aM ≫ F.map k.val ≫ cN := Category.assoc _ _ _
+      _ = aM ≫ cM ≫ k := congrArg (fun t ↦ aM ≫ t) hc
+      _ = _ := (Category.assoc _ _ _).symm
   -- Named morphisms keep the categorical calculation within the actual section carriers.
   change f ≫ iN = iM ≫ k
   rw [he, hiM, hiN]
