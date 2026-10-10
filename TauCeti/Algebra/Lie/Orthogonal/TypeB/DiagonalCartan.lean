@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.GeneralLinear.DiagonalCartan
-public import Mathlib.Algebra.Lie.Classical
+public import TauCeti.Algebra.Lie.Orthogonal.TypeB.Basic
 
 /-!
 # The diagonal Cartan subalgebra of the split orthogonal Lie algebra of type B
@@ -329,42 +329,6 @@ theorem lie_typeBDiagonalEquiv_apply (X : LieAlgebra.Orthogonal.typeB ι K) (d :
   simp only [diagonal_apply_eq]
   ring
 
-private theorem typeB_apply_inr_inr (A : LieAlgebra.Orthogonal.typeB ι K) (i : ι) :
-    (A : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) (.inr (.inr i)) (.inr (.inr i)) =
-      -(A : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) (.inr (.inl i)) (.inr (.inl i)) := by
-  have hA := A.2
-  -- The subtype witness is the skew-adjoint equation for Mathlib's matrix `JB`.
-  change (A : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) ∈
-    skewAdjointMatricesSubmodule (LieAlgebra.Orthogonal.JB ι K) at hA
-  rw [mem_skewAdjointMatricesSubmodule] at hA
-  have h := congr_fun (congr_fun hA (.inr (.inl i))) (.inr (.inr i))
-  exact neg_eq_iff_eq_neg.mp (by
-    simpa [LieAlgebra.Orthogonal.JB, LieAlgebra.Orthogonal.JD, Matrix.mul_apply,
-      Matrix.one_apply] using h.symm)
-
-private theorem typeB_apply_inl_inl_eq_zero (h2 : IsRegular (2 : K))
-    (A : LieAlgebra.Orthogonal.typeB ι K) (i : Unit) :
-    (A : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) (.inl i) (.inl i) = 0 := by
-  cases i
-  have hA := A.2
-  -- The subtype witness is the skew-adjoint equation for Mathlib's matrix `JB`.
-  change (A : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) ∈
-    skewAdjointMatricesSubmodule (LieAlgebra.Orthogonal.JB ι K) at hA
-  rw [mem_skewAdjointMatricesSubmodule] at hA
-  have h := congr_fun (congr_fun hA (.inl ())) (.inl ())
-  apply h2.left
-  apply h2.left
-  simp only [mul_zero]
-  have h' :
-      (A : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) (.inl ()) (.inl ()) * 2 =
-        -(2 * (A : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) (.inl ()) (.inl ())) := by
-    simpa [LieAlgebra.Orthogonal.JB, Matrix.mul_apply, Matrix.one_apply] using h
-  calc
-    2 * (2 * (A : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) (.inl ()) (.inl ())) =
-        (A : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) (.inl ()) (.inl ()) * 2 -
-          (-(2 * (A : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) (.inl ()) (.inl ()))) := by ring
-    _ = 0 := sub_eq_zero.mpr h'
-
 /-- When multiplication by `2` is injective, membership in the type-`B` diagonal Cartan is
 equivalent to being diagonal as an ambient matrix. Skew-adjointness then forces the middle entry
 to vanish and the two remaining diagonal blocks to be opposite. -/
@@ -383,9 +347,9 @@ theorem mem_typeBDiagonalCartan_iff_isDiag (h2 : IsRegular (2 : K))
     by_cases hab : a = b
     · subst b
       rcases a with a | (a | a)
-      · simpa [typeBDiagonalMatrix] using (typeB_apply_inl_inl_eq_zero h2 A a)
+      · simpa [typeBDiagonalMatrix] using (LieAlgebra.Orthogonal.typeB.apply_inl_inl h2 A a a)
       · simp [typeBDiagonalMatrix]
-      · simpa [typeBDiagonalMatrix] using (typeB_apply_inr_inr A a)
+      · simpa [typeBDiagonalMatrix] using (LieAlgebra.Orthogonal.typeB.apply_inr_inr_inr_inr A a a)
     · simpa [typeBDiagonalMatrix_apply, hab] using hdiag hab
 
 variable (K ι)
