@@ -17,9 +17,9 @@ import Mathlib.MeasureTheory.Measure.Prod
 /-!
 # The `Lᵖ` translation estimate
 
-This file develops translation of `Lᵖ` functions by a vector of an additive group carrying a
-right-invariant measure, and the quantitative translation estimate for `C¹` functions on a real
-normed space:
+This file develops continuous translation of `Lᵖ` functions on an additive monoid carrying a
+right-invariant measure, translation equivalences on additive commutative groups, and the
+quantitative translation estimate for `C¹` functions on a real normed space:
 
 `‖u(· + h) - u‖_p ≤ ‖h‖ ‖Du‖_p`.
 
@@ -74,7 +74,7 @@ namespace MeasureTheory
 
 namespace Lp
 
-variable {E F : Type*} [AddGroup E] [MeasurableSpace E] [TopologicalSpace E] [ContinuousAdd E]
+variable {E F : Type*} [AddMonoid E] [MeasurableSpace E] [TopologicalSpace E] [ContinuousAdd E]
   [BorelSpace E] [R1Space E] [NormedAddCommGroup F] {mu : Measure E} [mu.IsAddRightInvariant]
   [mu.InnerRegularCompactLTTop] [IsLocallyFiniteMeasure mu] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
@@ -183,6 +183,8 @@ theorem coeFn_translateLp_toLp {E F : Type*} [AddCommGroup E] [MeasurableSpace E
   (Measure.coeFn_translateLp h (hf.toLp f)).trans
     ((measurePreserving_add_right mu h).quasiMeasurePreserving.ae_eq_comp hf.coeFn_toLp)
 
+section
+
 variable {E F : Type*} [AddGroup E] [MeasurableSpace E] [MeasurableAdd E] {mu : Measure E}
   [mu.IsAddRightInvariant] {p : ℝ≥0∞}
 
@@ -197,7 +199,13 @@ theorem comp_add_right_restrict_of_mapsTo [TopologicalSpace F] [ContinuousENorm 
     (measurableEmbedding_addRight h) Omega)).mono_measure
     (Measure.restrict_mono_set mu hVO.subset_preimage)
 
-/-- Translation increments of an `Lᵖ` function tend to zero as the translation tends to zero. -/
+end
+
+variable {E F : Type*} [AddMonoid E] [MeasurableSpace E] {mu : Measure E}
+  [mu.IsAddRightInvariant] {p : ℝ≥0∞}
+
+/-- Translation increments of an `Lᵖ` function on an additive monoid tend to zero as the
+translation tends to zero. -/
 theorem tendsto_eLpNorm_comp_add_sub [TopologicalSpace E] [ContinuousAdd E] [BorelSpace E]
     [R1Space E] [mu.InnerRegularCompactLTTop] [IsLocallyFiniteMeasure mu] [NormedAddCommGroup F]
     {u : E → F} (hu : MemLp u p mu) (hp : 1 ≤ p) (hp' : p ≠ ∞) :
