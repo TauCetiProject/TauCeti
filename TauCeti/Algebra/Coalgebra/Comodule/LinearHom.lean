@@ -18,7 +18,9 @@ For comodules `M` and `N` over a Hopf algebra, with `M` finite projective,
 On algebra-valued points its action is `f ↦ g_N ∘ f ∘ g_M⁻¹`. In particular, taking
 `N = M` gives the conjugation representation on endomorphisms, used to construct
 representations with prescribed normal kernels. For a commutative Hopf algebra, the fixed
-vectors are exactly the comodule morphisms.
+vectors are exactly the comodule morphisms. Postcomposition by a comodule morphism
+is colinear on these Hom spaces. Surjectivity on its invariant vectors lifts the identity
+to an equivariant section, connecting exactness of invariants with splitting.
 
 The order `M* ⊗ N` is part of this construction. Over a noncommutative Hopf algebra,
 swapping it to `N ⊗ M*` need not be colinear, and the identity endomorphism need not be
@@ -146,6 +148,52 @@ theorem endOfPoint_linearHom_one_tmul_eq_iff
     rw [hpoint, ← LinearMap.comp_assoc, ← hf, LinearMap.comp_assoc,
       endOfPoint_comp_inv, LinearMap.comp_id]
 
+variable {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R H P]
+
+/-- Postcomposition by a comodule morphism is a morphism of linear Hom comodules.
+The source of the linear maps must be finite projective; their targets need not be. -/
+def Hom.linearHomPostcomp (f : Hom R H N P) :
+    Hom R H (M →ₗ[R] N) (M →ₗ[R] P) :=
+  transportHom (dualTensorHomEquiv R M N) (dualTensorHomEquiv R M P)
+    (Hom.tensorMap (Hom.id R H (Module.Dual R M)) f)
+
+/-- The underlying map on linear Hom spaces is ordinary postcomposition. -/
+@[simp]
+theorem Hom.linearHomPostcomp_toLinearMap (f : Hom R H N P) :
+    (f.linearHomPostcomp (M := M)).toLinearMap = f.toLinearMap.compRight R := by
+  rw [Hom.linearHomPostcomp, transportHom_toLinearMap, Hom.tensorMap_toLinearMap,
+    Hom.id_toLinearMap, toLinearMap_dualTensorHomEquiv,
+    ← LinearMap.lTensor_def, ← LinearMap.comp_assoc, dualTensorHom_comp_lTensor]
+  ext q m
+  simp
+
+/-- Postcomposition on the Hom comodule acts by composition of linear maps. -/
+@[simp]
+theorem Hom.linearHomPostcomp_apply (f : Hom R H N P) (q : M →ₗ[R] N) :
+    f.linearHomPostcomp q = f.toLinearMap.comp q := by
+  rw [← Hom.coe_toLinearMap, Hom.linearHomPostcomp_toLinearMap]
+  rfl
+
+/-- Postcomposition by the identity is the identity on the linear Hom comodule. -/
+-- Keep this untagged, as for `Hom.tensorMap_id`: categorical simplification rewrites
+-- the inner `Hom.id` before this identity can apply.
+theorem Hom.linearHomPostcomp_id :
+    (Hom.id R H N).linearHomPostcomp (M := M) = Hom.id R H (M →ₗ[R] N) := by
+  ext q m
+  simp only [Hom.linearHomPostcomp_apply, Hom.id_toLinearMap,
+    LinearMap.id_comp, Hom.id_apply]
+
+variable {P' : Type*} [AddCommMonoid P'] [Module R P'] [Comodule R H P']
+
+/-- Postcomposition on Hom comodules respects composition. -/
+@[simp]
+theorem Hom.linearHomPostcomp_comp (f : Hom R H N P) (g : Hom R H P P') :
+    (g.comp f).linearHomPostcomp (M := M) =
+      (g.linearHomPostcomp (M := M)).comp (f.linearHomPostcomp (M := M)) := by
+  ext q m
+  simp only [Hom.linearHomPostcomp_apply, Hom.comp_apply, Hom.comp_toLinearMap,
+    LinearMap.comp_assoc]
+
 end Hom
 
 section Fixed
@@ -212,6 +260,21 @@ theorem fixedLinearHomEquiv_toLinearMap (f : fixedSubcomodule R H (M →ₗ[R] N
 theorem fixedLinearHomEquiv_symm_coe (f : Hom R H M N) :
     ((fixedLinearHomEquiv (R := R) (H := H)).symm f : M →ₗ[R] N) = f.toLinearMap :=
   (rfl)
+
+/-- Surjectivity on invariant vectors of postcomposition lifts the identity to an
+equivariant section. The codomain must be finite projective; the source may be arbitrary. -/
+theorem Hom.exists_rightInverse_of_linearHomPostcomp_fixedMap_surjective
+    (f : Hom R H N M)
+    (hfixed : Function.Surjective (f.linearHomPostcomp (M := M)).fixedMap) :
+    ∃ s : Hom R H M N, f.comp s = Hom.id R H M := by
+  let e := fixedLinearHomEquiv (R := R) (H := H) (M := M) (N := M)
+  obtain ⟨s, hs⟩ := hfixed (e.symm (Hom.id R H M))
+  refine ⟨fixedLinearHomEquiv s, ?_⟩
+  apply Hom.toLinearMap_injective
+  have h := congrArg Subtype.val hs
+  simpa only [e, Hom.fixedMap_apply, Hom.linearHomPostcomp_apply,
+    Hom.comp_toLinearMap, fixedLinearHomEquiv_toLinearMap,
+    fixedLinearHomEquiv_symm_coe] using h
 
 end Fixed
 
