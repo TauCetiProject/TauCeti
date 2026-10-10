@@ -44,15 +44,9 @@ for weighted restricted power series exactly when each of its weight sets genera
 ideal. The sets may be infinite or unbounded. -/
 theorem isWeightFamily_iff_isOpen_span :
     IsWeightFamily T ↔ ∀ i, IsOpen (Ideal.span (T i) : Set A) := by
-  refine ⟨fun h i ↦ ?_, fun h ↦ ?_⟩
-  · have hle : weightMul T (Finsupp.single i 1) ⊤ ≤ (Ideal.span (T i)).toAddSubgroup := by
-      apply weightMul_le.mpr
-      intro t ht a _
-      rw [weightPow_single, pow_one] at ht
-      exact Ideal.mul_mem_right a _ (Ideal.subset_span ht)
-    exact AddSubgroup.isOpen_mono hle (h.isOpen_weightMul_top i 1)
-  · obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition (A := A)
-    exact isWeightFamily_iff.mpr fun i m U hU ↦
-      P.addSubgroupClosure_pow_mul_mem_nhds (h i) m hU
+  refine ⟨fun h i ↦ h.isOpen_span i, fun h ↦ ?_⟩
+  obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition (A := A)
+  exact isWeightFamily_iff.mpr fun i m U hU ↦
+    P.addSubgroupClosure_pow_mul_mem_nhds (h i) m hU
 
 end TauCeti.Huber
