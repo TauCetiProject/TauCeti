@@ -144,7 +144,7 @@ theorem relationMatrix_mem_relationSet (i j : Fin n) :
 
 /-- Mapping the relation matrix through an algebra morphism gives the relation of the images:
 the generic matrix maps entrywise, and the constant form maps to the constant form. -/
-@[simp] theorem relationMatrix_map {T : Type*} [CommRing T] [Algebra R T]
+@[simp] theorem relationMatrix_map {T : Type*} [Ring T] [Algebra R T]
     (phi : GeneralLinear.coordinateHopfAlgebra R n →ₐ[R] T) :
     (relationMatrix R n C).map phi =
       (GeneralLinear.genericMatrix R n).map phi * C.map (algebraMap R T) *
@@ -280,7 +280,7 @@ satisfies `X C Xᵀ = C`.** This is the criterion by which a subgroup of `GL n` 
 morphisms is shown to lie in the subgroup scheme preserving `C`: it suffices to evaluate the form
 relation on the generic matrix of each generator. -/
 @[simp↓]
-theorem definingHopfIdeal_toIdeal_le_ker_iff {T : Type*} [CommRing T] [Algebra R T]
+theorem definingHopfIdeal_toIdeal_le_ker_iff {T : Type*} [Ring T] [Algebra R T]
     (phi : GeneralLinear.coordinateHopfAlgebra R n →ₐ[R] T) :
     (definingHopfIdeal R n C).toIdeal ≤ RingHom.ker (phi : _ →+* T) ↔
       (GeneralLinear.genericMatrix R n).map phi * C.map (algebraMap R T) *
