@@ -139,7 +139,7 @@ def rightHomotopy {p : C(E, B)} (hp : IsHurewiczFibration.{max u v} p) :
     ((continuous_path.comp continuous_snd).moorePath_drop ((toNNReal_continuous.comp
       continuous_fst).mul (MoorePath.continuous_length.comp (continuous_path.comp
         continuous_snd)))) _
-  map_zero_left x := ext (liftedHomotopy_zero hp x) (by simp)
+  map_zero_left x := ext (by simpa using liftedHomotopy_zero hp x) (by simp)
   map_one_left x := ext (by simp [retraction_apply]) (by simp)
   prop' s := ContinuousMap.ext fun x ↦ by simp
 
@@ -158,7 +158,9 @@ def fiberHomotopyEquiv {p : C(E, B)} (hp : IsHurewiczFibration.{max u v} p) :
 Moore-path replacement, by `f ↦ (f, const)`. -/
 def fiberHomotopyEquivFiber {p : C(E, B)} (hp : IsHurewiczFibration.{max u v} p) (b : B) :
     HomotopyEquiv {e // p e = b} (Fiber p b) :=
-  (fiberHomotopyEquiv hp).fiber b
+  ((fiberHomotopyEquiv hp).fiber b).trans
+    ((Homeomorph.refl (MooreReplacement p)).subtype fun x ↦ by
+      rw [endpoint_apply, Homeomorph.refl_apply, id_eq]).toHomotopyEquiv
 
 /-! ### The endpoint evaluation -/
 
@@ -177,8 +179,8 @@ def homeomorphPathsFrom (A : Set X) :
     MooreReplacement (subtypeVal A) ≃ₜ {γ : MoorePath X // γ.source ∈ A} where
   toFun x := ⟨x.path, source_path_mem x⟩
   invFun γ := mk ⟨γ.1.source, γ.2⟩ γ.1 rfl
-  left_inv x := ext (Subtype.ext (source_path x)) rfl
-  right_inv _ := rfl
+  left_inv x := ext (Subtype.ext (by simp)) (by simp)
+  right_inv γ := Subtype.ext (by simp)
   continuous_toFun := continuous_path.subtype_mk _
   continuous_invFun := continuous_mk ((MoorePath.continuous_source.comp
     continuous_subtype_val).subtype_mk _) continuous_subtype_val _
@@ -189,7 +191,10 @@ end MooreReplacement
 Hurewicz fibration. -/
 theorem MoorePath.isHurewiczFibration_target {X : Type u} [TopologicalSpace X] (A : Set X) :
     IsHurewiczFibration.{w} fun γ : {γ : MoorePath X // γ.source ∈ A} ↦ γ.1.target :=
-  (MooreReplacement.isHurewiczFibration_endpoint _).comp_homeomorph
-    (MooreReplacement.homeomorphPathsFrom A).symm
+  by
+  convert (MooreReplacement.isHurewiczFibration_endpoint.{w} _).comp_homeomorph
+    (MooreReplacement.homeomorphPathsFrom A).symm using 1
+  funext γ
+  simp [MooreReplacement.endpoint_apply, MooreReplacement.homeomorphPathsFrom]
 
 end TauCeti
