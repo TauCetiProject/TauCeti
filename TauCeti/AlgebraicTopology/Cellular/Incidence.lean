@@ -24,8 +24,11 @@ The columns are also identified with the attaching maps: send the reduced fundam
 the boundary sphere through the attaching map, pass to skeletal relative homology, and take
 cellular coordinates. This is the homological coefficient formula; identifying it with the
 geometric degree of a sphere map obtained by collapsing the other cells is a separate result.
-The bases use the disk and sphere generators of `cellularChainGroupIso`, including their signed
-reduced degree-zero convention.
+The bases use the disk and sphere generators of `cellularChainGroupIso`. The sphere generator
+in `reducedSingularHomologyTopCatSphereIso` is fixed by the ordered standard orthonormal basis,
+starting with the reduced degree-zero class `[-e₀] - [e₀]`. The disk generator maps to it under
+the connecting morphism, as expressed by
+`singularHomologyDiskBoundaryPairIso_inv_comp_singularHomologyδ`.
 
 The coefficient ring and the ambient space lie in the same universe, as in Mathlib's exact
 coproduct interface for modules. No finite-cell or finite-dimensional hypothesis is imposed.
