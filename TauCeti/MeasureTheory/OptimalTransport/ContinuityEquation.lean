@@ -18,17 +18,18 @@ import TauCeti.MeasureTheory.Measure.Measurability
 /-!
 # The continuity equation
 
-Let `E` be a real normed space, `μ : ℝ → Measure E` a family of Borel measures and
-`v : ℝ → E → E` a Borel velocity field. The *continuity equation* on the time interval `(a, b)` is
-`∂ₜ μₜ + div (vₜ μₜ) = 0`, understood in the sense of distributions: for every smooth compactly
+Let `E` be a finite-dimensional real normed space, `μ : ℝ → Measure E` a family of Borel measures
+and `v : ℝ → E → E` a Borel velocity field. The *continuity equation* on the time interval `(a, b)`
+is `∂ₜ μₜ + div (vₜ μₜ) = 0`, understood in the sense of distributions: for every smooth compactly
 supported test function `φ : ℝ × E → ℝ` whose support lies in `(a, b) × E`,
 `∫_a^b ∫_E (∂ₜ φ (t, x) + ⟨∇ₓ φ (t, x), vₜ x⟩) dμₜ(x) dt = 0`.
 In a normed space the integrand is the space-time derivative of `φ` applied to the space-time
 velocity `(1, vₜ x)`, that is `fderiv ℝ φ (t, x) (1, v t x)`; this fixes the sign convention of the
-equation together with its test-function identity. The definition `TauCeti.IsContinuityEquation`
-also records the measurability of the time slices `t ↦ μₜ` and of `v`, and the integrability of the
-total mass `t ↦ μₜ E` and of `∫ ‖vₜ‖ dμₜ` over `(a, b)`, which make every integral in the identity
-absolutely convergent.
+equation together with its test-function identity. Finite dimensionality is essential: in an
+infinite-dimensional space every compactly supported continuous function vanishes, so the identity
+would be vacuous. The definition `TauCeti.IsContinuityEquation` also records the measurability of
+the time slices `t ↦ μₜ` and of `v`, and the integrability of the total mass `t ↦ μₜ E` and of
+`∫ ‖vₜ‖ dμₜ` over `(a, b)`, which make every integral in the identity absolutely convergent.
 
 The continuity equation is the Eulerian description of mass moving with velocity `v`. Its basic
 source of solutions is the Lagrangian one: if `P` is a finite measure on a parameter space `Ω` and
@@ -78,8 +79,11 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace
 distributions: for every smooth compactly supported `φ : ℝ × E → ℝ` with support in `(a, b) × E`,
 `∫_a^b ∫ (∂ₜ φ (t, x) + ⟨∇ₓ φ (t, x), vₜ x⟩) dμₜ(x) dt = 0`, the integrand being written as the
 space-time derivative `fderiv ℝ φ (t, x)` applied to `(1, v t x)`. The time slices `t ↦ μₜ` and the
-velocity field are measurable, and the total mass and `∫ ‖vₜ‖ dμₜ` are integrable over `(a, b)`. -/
-structure IsContinuityEquation (μ : ℝ → Measure E) (v : ℝ → E → E) (a b : ℝ) : Prop where
+velocity field are measurable, and the total mass and `∫ ‖vₜ‖ dμₜ` are integrable over `(a, b)`.
+The space `E` is finite-dimensional with its Borel σ-algebra, so that the test functions separate
+measures and every integrand in the identity is measurable. -/
+structure IsContinuityEquation [FiniteDimensional ℝ E] [BorelSpace E] (μ : ℝ → Measure E)
+    (v : ℝ → E → E) (a b : ℝ) : Prop where
   /-- The time slices `t ↦ μₜ` form a measurable family of measures. -/
   measurable : Measurable μ
   /-- The velocity field is jointly measurable in time and space. -/
@@ -93,8 +97,9 @@ structure IsContinuityEquation (μ : ℝ → Measure E) (v : ℝ → E → E) (a
     (hφc : HasCompactSupport φ) (hφs : tsupport φ ⊆ Ioo a b ×ˢ univ) :
     ∫ t in Ioo a b, ∫ x, fderiv ℝ φ (t, x) (1, v t x) ∂μ t = 0
 
-variable {μ : ℝ → Measure E} {v w : ℝ → E → E} {a b c d : ℝ}
+variable [FiniteDimensional ℝ E] [BorelSpace E] {μ : ℝ → Measure E} {v w : ℝ → E → E} {a b c d : ℝ}
 
+omit [FiniteDimensional ℝ E] [BorelSpace E] in
 /-- Outside the time projection of the support of the test function, the integrand of the
 continuity equation vanishes identically. -/
 private lemma integral_fderiv_eq_zero_of_notMem {φ : ℝ × E → ℝ} {I : Set ℝ}
@@ -141,7 +146,7 @@ theorem congr (h : IsContinuityEquation μ v a b) (hw : Measurable (uncurry w))
 
 end IsContinuityEquation
 
-omit [MeasurableSpace E] in
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- If an absolutely continuous curve `γ` has derivative `V t` at almost every time of `(a, b)`,
 then integrating `t ↦ fderiv ℝ φ (t, γ t) (1, V t)` over `(a, b)` gives zero for every `C¹`
 compactly supported `φ` with support in `(a, b) × E`: this integrand is the derivative of
@@ -169,7 +174,7 @@ private lemma integral_fderiv_prodMk_eq_zero {φ : ℝ × E → ℝ} (hφ : Cont
     ← intervalIntegral.integral_of_le hab.le, hg.integral_deriv_eq_sub,
     hzero a (by simp), hzero b (by simp), sub_self]
 
-omit [MeasurableSpace E] in
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- The integrand of the continuity equation grows at most linearly in the velocity. -/
 private lemma exists_norm_fderiv_apply_le {φ : ℝ × E → ℝ} (hφ : ContDiff ℝ 1 φ)
     (hφc : HasCompactSupport φ) : ∃ C, ∀ q w, ‖fderiv ℝ φ q (1, w)‖ ≤ C * (1 + ‖w‖) := by
@@ -180,9 +185,10 @@ private lemma exists_norm_fderiv_apply_le {φ : ℝ × E → ℝ} (hφ : ContDif
   rw [Prod.norm_def, norm_one]
   exact max_le (le_add_of_nonneg_right (norm_nonneg _)) (le_add_of_nonneg_left zero_le_one)
 
+omit [FiniteDimensional ℝ E] in
 /-- The integrand of the continuity equation, as a function of the space-time point and of the
 velocity, is measurable. -/
-private lemma measurable_fderiv_apply [SecondCountableTopology E] [BorelSpace E]
+private lemma measurable_fderiv_apply [SecondCountableTopology E]
     {φ : ℝ × E → ℝ} (hφ : ContDiff ℝ 1 φ) :
     Measurable fun q : (ℝ × E) × E ↦ fderiv ℝ φ q.1 (1, q.2) :=
   (((hφ.continuous_fderiv one_ne_zero).comp continuous_fst).clm_apply
@@ -194,8 +200,8 @@ absolutely continuous on `[a, b]` and follows the velocity field `v`, in the sen
 `deriv γ_ω t = vₜ (γ_ω t)` for almost every `t ∈ (a, b)`, and the expected length
 `∫ ∫_a^b ‖vₜ (γ_ω t)‖ dt dP(ω)` is finite, then the laws `(γ · t)₊ P` of the positions at time `t`
 solve the continuity equation with velocity `v` on `(a, b)`. -/
-theorem isContinuityEquation_map [SecondCountableTopology E] [BorelSpace E] {Ω : Type*}
-    [MeasurableSpace Ω] (P : Measure Ω) [IsFiniteMeasure P] {γ : Ω → ℝ → E}
+theorem isContinuityEquation_map {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
+    [IsFiniteMeasure P] {γ : Ω → ℝ → E}
     (hγ : Measurable (uncurry γ)) (hv : Measurable (uncurry v))
     (hac : ∀ᵐ ω ∂P, AbsolutelyContinuousOnInterval (γ ω) a b)
     (hderiv : ∀ᵐ ω ∂P, ∀ᵐ t, t ∈ Ioo a b → HasDerivAt (γ ω) (v t (γ ω t)) t)
@@ -244,8 +250,7 @@ theorem isContinuityEquation_map [SecondCountableTopology E] [BorelSpace E] {Ω 
 /-- **A translating law solves the continuity equation.** Translating a finite measure `μ` with
 constant velocity `w`, so that its law at time `t` is the pushforward of `μ` by `x ↦ x + t • w`,
 solves the continuity equation with the constant velocity field `w`. -/
-theorem isContinuityEquation_map_add_smul [SecondCountableTopology E] [BorelSpace E]
-    (μ : Measure E) [IsFiniteMeasure μ] (w : E) (a b : ℝ) :
+theorem isContinuityEquation_map_add_smul (μ : Measure E) [IsFiniteMeasure μ] (w : E) (a b : ℝ) :
     IsContinuityEquation (fun t ↦ μ.map (· + t • w)) (fun _ _ ↦ w) a b := by
   refine isContinuityEquation_map μ (γ := fun x t ↦ x + t • w)
     (continuous_fst.add (continuous_snd.smul continuous_const)).measurable
@@ -260,16 +265,16 @@ theorem isContinuityEquation_map_add_smul [SecondCountableTopology E] [BorelSpac
 
 /-- **A stationary law solves the continuity equation.** A finite measure which does not move
 solves the continuity equation with velocity field `0`. -/
-theorem isContinuityEquation_const [SecondCountableTopology E] [BorelSpace E] (μ : Measure E)
-    [IsFiniteMeasure μ] (a b : ℝ) : IsContinuityEquation (fun _ ↦ μ) (fun _ _ ↦ 0) a b := by
+theorem isContinuityEquation_const (μ : Measure E) [IsFiniteMeasure μ] (a b : ℝ) :
+    IsContinuityEquation (fun _ ↦ μ) (fun _ _ ↦ 0) a b := by
   simpa using isContinuityEquation_map_add_smul μ 0 a b
 
 /-- **A moving Dirac mass solves the continuity equation.** If `γ` is a measurable curve which is
 absolutely continuous on `[a, b]` and `v` is a measurable velocity field with
 `deriv γ t = vₜ (γ t)` for almost every `t ∈ (a, b)` and `∫_a^b ‖vₜ (γ t)‖ dt < ∞`, then the
 Dirac masses `δ_{γ t}` solve the continuity equation with velocity `v` on `(a, b)`. -/
-theorem isContinuityEquation_dirac [SecondCountableTopology E] [BorelSpace E] {γ : ℝ → E}
-    (hγm : Measurable γ) (hγ : AbsolutelyContinuousOnInterval γ a b) (hv : Measurable (uncurry v))
+theorem isContinuityEquation_dirac {γ : ℝ → E} (hγm : Measurable γ)
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hv : Measurable (uncurry v))
     (hderiv : ∀ᵐ t, t ∈ Ioo a b → HasDerivAt γ (v t (γ t)) t)
     (hint : ∫⁻ t in Ioo a b, ‖v t (γ t)‖ₑ < ∞) :
     IsContinuityEquation (fun t ↦ Measure.dirac (γ t)) v a b := by
