@@ -439,6 +439,17 @@ theorem InternalGrading.koszulTwist_apply_of_mem (G : InternalGrading R M) {x : 
     ← DirectSum.lof_eq_of R ℤ (fun i : ℤ => G.piece i)]
   simp [DirectSum.toModule_lof]
 
+/-- The Koszul twist fixes the elements of degree zero. -/
+theorem InternalGrading.koszulTwist_apply_of_mem_zero (G : InternalGrading R M) {x : M}
+    (hx : x ∈ G.piece 0) (q : ℤ) : koszulTwist G q x = x := by
+  rw [InternalGrading.koszulTwist_apply_of_mem G hx q, mul_zero, Int.negOnePow_zero,
+    Units.val_one, Int.cast_one, one_smul]
+
+/-- The Koszul twist of parameter one acts on an element of degree `e` as the sign `(-1)^e`. -/
+theorem InternalGrading.koszulTwist_one_apply_of_mem (G : InternalGrading R M) {x : M} {e : ℤ}
+    (hx : x ∈ G.piece e) : koszulTwist G 1 x = ((e.negOnePow : ℤ) : R) • x := by
+  rw [InternalGrading.koszulTwist_apply_of_mem G hx 1, one_mul]
+
 /-- The Koszul twist preserves each homogeneous piece. -/
 theorem InternalGrading.koszulTwist_mem_piece (G : InternalGrading R M) {x : M} {e : ℤ}
     (hx : x ∈ G.piece e) (q : ℤ) :

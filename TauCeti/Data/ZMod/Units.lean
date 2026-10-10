@@ -35,6 +35,9 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
   modulus. Its consumers are the descent arguments of
   `TauCeti/NumberTheory/ModularForms/Newforms/Descent/`, which carry a nebentypus lowered modulo
   `M / p` along a chain of divisibilities.
+* `ZMod.zmultiples_coe_unit_eq_top` — a unit of `ZMod d` generates `ZMod d` additively, so that
+  translation by it is a single cycle; its consumer is the genus-one Heegaard diagram of a lens
+  space in `TauCeti/LowDimTopology/Heegaard/LensSpace.lean`.
 -/
 
 public section
@@ -136,3 +139,10 @@ theorem ZMod.unitOfCoprime_mul {m n : ℕ} (hm : Nat.Coprime m d) (hn : Nat.Copr
     ZMod.unitOfCoprime (m * n) (Nat.coprime_mul_iff_left.mpr ⟨hm, hn⟩)
       = ZMod.unitOfCoprime m hm * ZMod.unitOfCoprime n hn :=
   Units.ext (by push_cast [ZMod.coe_unitOfCoprime]; ring)
+
+/-- A unit of `ZMod d` generates `ZMod d` as an additive group. -/
+theorem ZMod.zmultiples_coe_unit_eq_top (u : (ZMod d)ˣ) :
+    AddSubgroup.zmultiples (u : ZMod d) = ⊤ := by
+  refine (AddSubgroup.eq_top_iff' _).mpr fun y => ?_
+  obtain ⟨k, hk⟩ := ZMod.intCast_surjective (y * ((u⁻¹ : (ZMod d)ˣ) : ZMod d))
+  exact AddSubgroup.mem_zmultiples_iff.mpr ⟨k, by rw [zsmul_eq_mul, hk, Units.inv_mul_cancel_right]⟩

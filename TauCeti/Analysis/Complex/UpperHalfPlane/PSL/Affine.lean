@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.SmulDeriv
+public import TauCeti.Topology.Compactification.OnePoint.ProjectiveLine
 import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Translation
 
 /-!
@@ -16,6 +17,9 @@ The dilation `Matrix.SpecialLinearGroup.dilation s` acts on `ℍ` as `z ↦ exp 
 `UpperHalfPlane.toPoint P : z ↦ P.im * z + P.re` is the element of `PSL(2, ℝ)` given by a dilation
 followed by a real translation; it sends `I` to `P` (`UpperHalfPlane.toPoint_smul_I`). This file
 records its action, the action of its inverse, and its derivative.
+
+Conversely, every element of `PSL(2, ℝ)` fixing the ideal point `∞` acts on `ℍ` as an affine map
+`z ↦ μ * z + c` with `μ > 0` (`TauCeti.UpperHalfPlane.exists_coe_smul_eq_mul_add_of_smul_infty`).
 -/
 
 public section
@@ -23,7 +27,7 @@ public section
 noncomputable section
 
 open Matrix.ProjectiveSpecialLinearGroup TauCeti.UpperHalfPlane UpperHalfPlane
-open scoped MatrixGroups
+open scoped MatrixGroups OnePoint
 
 open Matrix.SpecialLinearGroup (dilation)
 
@@ -41,6 +45,28 @@ theorem coe_dilation_smul (s : ℝ) (z : ℍ) : ((dilation s • z : ℍ) : ℂ)
   rw [div_eq_iff hne, h2, Real.exp_neg]
   push_cast
   field_simp
+
+/-- **Elements fixing `∞` are affine.** An element of `PSL(2, ℝ)` fixing the ideal point `∞` acts
+on `ℍ` as `z ↦ μ * z + c` for some real `μ > 0` and `c`: the class of `!![a, b; 0, a⁻¹]` acts by
+`μ = a ^ 2` and `c = a * b`. -/
+theorem exists_coe_smul_eq_mul_add_of_smul_infty {g : PSL(2, ℝ)}
+    (hg : g • (∞ : OnePoint ℝ) = ∞) :
+    ∃ μ : ℝ, 0 < μ ∧ ∃ c : ℝ, ∀ z : ℍ, ((g • z : ℍ) : ℂ) = μ * z + c := by
+  induction g using QuotientGroup.induction_on with | H A => ?_
+  rw [mk_smul_infty_eq_infty_iff] at hg
+  have hdet : A 0 0 * A 1 1 = 1 := by
+    have := A.det_coe
+    rw [Matrix.det_fin_two, hg] at this
+    simpa using this
+  have h00 : A 0 0 ≠ 0 := left_ne_zero_of_mul_eq_one hdet
+  refine ⟨A 0 0 ^ 2, by positivity, A 0 0 * A 0 1, fun z ↦ ?_⟩
+  have h11 : (A 1 1 : ℂ) ≠ 0 := by exact_mod_cast right_ne_zero_of_mul_eq_one hdet
+  have hdetC : (A 0 0 : ℂ) * A 1 1 = 1 := by exact_mod_cast hdet
+  rw [UpperHalfPlane.pslMk_smul, UpperHalfPlane.coe_specialLinearGroup_apply, hg]
+  simp only [Algebra.algebraMap_self_apply, Complex.ofReal_zero, zero_mul, zero_add]
+  rw [div_eq_iff h11]
+  push_cast
+  linear_combination -(A 0 0 * (z : ℂ) + A 0 1) * hdetC
 
 end TauCeti.UpperHalfPlane
 

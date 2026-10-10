@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.UpperTriangular.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Solvable.Basic
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.IsotropicFlag
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.IsotropicFlag.Basic
 
 /-!
 # The standard complete isotropic flag subgroup of the symplectic group
@@ -23,7 +23,9 @@ lower-triangular lower-right block, and zero lower-left block.
 The quotient Hopf algebra represents these matrices over every commutative algebra,
 including nonreduced algebras and characteristic two. Its algebra-valued point groups
 are solvable. The diagonal symplectic torus factorization is developed in
-`TauCeti.Algebra.AlgebraicGroup.Symplectic.IsotropicFlag.DiagonalTorus`.
+`TauCeti.Algebra.AlgebraicGroup.Symplectic.IsotropicFlag.DiagonalTorus`. Positive root subgroup
+factorizations are developed in
+`TauCeti.Algebra.AlgebraicGroup.Symplectic.IsotropicFlag.RootSubgroup`.
 These constructions provide the flag subgroup used in the standard symplectic pinning;
 no smoothness, connectedness, or Borel maximality assertion is made here.
 
@@ -40,6 +42,7 @@ points arguments follow
 public section
 
 open AlgebraicGeometry CategoryTheory WithConv Matrix
+open scoped CategoryTheory.MonObj
 
 namespace TauCeti.Symplectic.IsotropicFlag
 
@@ -113,11 +116,6 @@ noncomputable abbrev coordinateMap :
     Symplectic.coordinateHopfAlgebra R m ⟶ coordinateHopfAlgebra R m :=
   CommHopfAlgCat.mkQuotient (Symplectic.coordinateHopfAlgebra R m) (definingHopfIdeal R m)
 
-/-- The isotropic flag subgroup has finite-type coordinate algebra. -/
-instance instAlgebraFiniteTypeCoordinateHopfAlgebra :
-    Algebra.FiniteType R (coordinateHopfAlgebra R m) :=
-  Algebra.FiniteType.quotient R (definingHopfIdeal R m).toIdeal
-
 /-- The closed subgroup scheme of `Sp₂ₘ` of symplectic matrices preserving the standard
 complete isotropic flag. -/
 noncomputable abbrev groupScheme :=
@@ -141,9 +139,6 @@ theorem mem_definingPointsSubgroup_iff
         (Symplectic.coordinateHopfAlgebra R m) (definingHopfIdeal R m)
         (CommAlgCat.of R A) ↔
       Symplectic.pointsMulEquiv R m (A := A) g ∈ matrixSubgroup m := by
-  have hsurj : Function.Surjective (Symplectic.coordinateMap R m).hom := by
-    rw [Symplectic.coordinateMap_def]
-    exact CommHopfAlgCat.mkQuotient_surjective _ _
   have hpullback :
       (CommHopfAlgCat.mapPointsFunctor (Symplectic.coordinateMap R m)).app
           (CommAlgCat.of R A) g =
@@ -159,8 +154,8 @@ theorem mem_definingPointsSubgroup_iff
             (GeneralLinear.weightParabolicDefiningHopfIdeal R (weights m))
             (CommAlgCat.of R A) := by
       rw [definingHopfIdeal_def]
-      exact CommHopfAlgCat.mem_quotientPointsSubgroup_map_iff_of_surjective
-        (Symplectic.coordinateMap R m) hsurj _ _ g
+      exact CommHopfAlgCat.mem_quotientPointsSubgroup_map_iff
+        (Symplectic.coordinateMap R m) _ _ g
     _ ↔ (GeneralLinear.pointsMulEquiv (m + m)
           ((CommHopfAlgCat.mapPointsFunctor (Symplectic.coordinateMap R m)).app
             (CommAlgCat.of R A) g) : Matrix _ _ A).BlockTriangular
@@ -174,6 +169,7 @@ theorem mem_definingPointsSubgroup_iff
       simp only [Matrix.BlockTriangular, Function.comp_apply, OrderDual.toDual_lt_toDual,
         weights_lt_weights_iff]
 
+/-- Identify the defining point subgroup with the flag-preserving symplectic matrices. -/
 private noncomputable def definingPointsSubgroupMulEquiv :
     CommHopfAlgCat.quotientPointsSubgroup
         (Symplectic.coordinateHopfAlgebra R m) (definingHopfIdeal R m)
@@ -254,6 +250,8 @@ theorem isSolvable_points :
     (pointsMulEquiv R m (A := A)).injective
 
 end Points
+
+
 
 /-- The isotropic flag subgroup has solvable geometric points over every field. -/
 theorem geometricallySolvablePointsCommHopfAlgProperty_coordinateHopfAlgebra

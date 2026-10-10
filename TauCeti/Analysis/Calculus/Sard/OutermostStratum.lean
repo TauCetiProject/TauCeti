@@ -10,7 +10,7 @@ import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import Mathlib.MeasureTheory.Measure.Prod
 import TauCeti.Analysis.Normed.Operator.Surjective
-import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Measure.Haar.Unique
 import TauCeti.MeasureTheory.Measure.LocallyNull
 
 /-!
@@ -328,9 +328,10 @@ private theorem addHaar_image_criticalPoints_eq_zero_aux (n : ℕ) :
       measure_prod_null_of_ae_null (hPcomp.image eF.continuous).isClosed.measurableSet
         (Filter.Eventually.of_forall hslicenull)
     have hnull : ν (f '' ({x | ¬ Surjective (fderiv ℝ f x)} ∩ K)) = 0 := by
-      have := (ContinuousLinearEquiv.quasiMeasurePreserving_addHaar eF ν
+      have := (eF.toContinuousAddEquiv.quasiMeasurePreserving_addHaar ν
         ((volume : Measure ℝ).prod (addHaar : Measure ↥Fk))).preimage_null hprod
-      rwa [Set.preimage_image_eq _ eF.injective] at this
+      rwa [ContinuousLinearEquiv.toContinuousAddEquiv_coe,
+        Set.preimage_image_eq _ eF.injective] at this
     refine ⟨(U ∩ {x | ¬ Surjective (fderiv ℝ f x)} ∩ {x | fderiv ℝ f x ≠ 0}) ∩
       Metric.ball a (r / 2), inter_mem_nhdsWithin _
         (Metric.isOpen_ball.mem_nhds (Metric.mem_ball_self (by linarith))), ?_⟩

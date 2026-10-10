@@ -69,16 +69,14 @@ intertwiners — of which `ContRepresentation.linHom_apply_eq_self_iff_isIntertw
 `ContRepresentation.invariantsEquivContIntertwiningMap` are the continuous analogues, the first
 proved by transporting the algebraic one — and `Representation.char_linHom` for the character.
 
-This supplies the Hom representation that Layer 6 of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md)
-needs to read a character integral as a dimension of intertwiners, the compact-group form of
+The Hom representation lets a character integral count intertwiners, the compact-group form of
 Mathlib's finite-group `Representation.card_inv_mul_sum_char_mul_char_eq_finrank`. The mathematical
 development follows Daniel Bump, *Lie Groups*, second edition, Chapter 2.
 -/
 
 public section
 
-open TauCeti TauCeti.ContRepresentation
+open TauCeti
 
 namespace ContRepresentation
 

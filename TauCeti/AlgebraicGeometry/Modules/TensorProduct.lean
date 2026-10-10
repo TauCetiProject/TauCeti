@@ -126,6 +126,24 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.sectionsFunctor_map (U : X.Opens) 
     (φ : M ⟶ N) : (Scheme.Modules.sectionsFunctor U).map φ = φ.val.app (Opposite.op U) :=
   rfl
 
+variable {X} in
+/-- The unit comparison of the sections functor is the identity on regular functions. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.sectionsFunctor_ε
+    (U : X.Opens) :
+    Functor.LaxMonoidal.ε (Scheme.Modules.sectionsFunctor U) =
+      𝟙 (ModuleCat.of Γ(X, U) Γ(X, U)) := by
+  let F : X.Modules ⥤ PresheafOfModulesOfCommRing.{v} X.presheaf :=
+    _root_.SheafOfModules.forget _
+  let _ : F.LaxMonoidal := SheafOfModules.forgetLaxMonoidal X.sheaf
+  -- Retype the forgetful functor over the commutative structure presheaf so that its
+  -- monoidal structure is visible to instance search.
+  change Functor.LaxMonoidal.ε
+    (F ⋙ PresheafOfModulesOfCommRing.evaluation (Opposite.op U)) = _
+  have hε : Functor.LaxMonoidal.ε F = 𝟙 _ := SheafOfModules.forget_ε X.sheaf
+  rw [Functor.LaxMonoidal.comp_ε, hε]
+  rfl
+
 end
 
 end TauCeti

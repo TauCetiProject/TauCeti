@@ -5,14 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Colimits
+public import Mathlib.Algebra.Category.ModuleCat.Products
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Basic
+public import Mathlib.RingTheory.SimpleModule.Basic
 
 /-!
 # Simplicial chains with varying coefficients
 
 This file records how the coproduct inclusion associated to a simplex behaves under a morphism
 of coefficient objects, and how the degreewise components of the chain maps induced by maps of
-simplicial sets compose with each other and with changes of coefficients.
+simplicial sets compose with each other and with changes of coefficients.  It also records that
+simplicial chain modules with semisimple coefficients are semisimple.
 -/
 
 public section
@@ -60,3 +64,17 @@ lemma chainComplexMap_f_chainComplexFunctor_map_app_f {X Y : _root_.SSet.{w}} (f
   rw [← HomologicalComplex.comp_f, ← HomologicalComplex.comp_f, NatTrans.naturality]
 
 end TauCeti.SSet
+
+namespace SSet
+
+/-- The simplicial chain modules `Cₙ(X; M) = ⨁ M` with semisimple coefficients `M` are
+semisimple. -/
+instance isSemisimpleModule_chainComplex_X {k : Type w} [Ring k] (X : SSet.{w})
+    (M : ModuleCat.{w} k) [IsSemisimpleModule k M] (n : ℕ) :
+    IsSemisimpleModule k ((X.chainComplex M).X n) := by
+  classical
+  -- `Cₙ(X; M)` is by definition the coproduct of copies of `M` indexed by the `n`-simplices.
+  exact .congr ((ModuleCat.coprodIsoDirectSum fun _ : X _⦋n⦌ ↦ M).toLinearEquiv.trans
+    (finsuppLequivDFinsupp k).symm)
+
+end SSet

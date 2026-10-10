@@ -80,7 +80,8 @@ local instance (t : YoungTableau μ) : DecidablePred (· ∈ rowSubgroup t) :=
   Classical.decPred _
 
 /-- Classical decidability of membership in the column group, used to form its finite sum. -/
-local instance (t : YoungTableau μ) : DecidablePred (· ∈ colSubgroup t) :=
+local instance decidablePredMemColSubgroup (t : YoungTableau μ) :
+    DecidablePred (· ∈ colSubgroup t) :=
   Classical.decPred _
 
 /-- The **row symmetrizer** `a_t`, the sum of the permutations preserving the rows of `t`. -/

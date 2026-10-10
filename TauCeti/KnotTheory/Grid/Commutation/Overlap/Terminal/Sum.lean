@@ -70,20 +70,8 @@ private theorem terminalSelfPairSource_data
         D.rectangle.IsEmpty ∧ D.pentagon.IsEmpty := by
   obtain ⟨hcounted, hcommon, hcol⟩ := (G.mem_terminalSelfPairSources C D).1 hD
   obtain ⟨hr, hP⟩ := (G.mem_rectanglePentagonDecompositions C D).1 hcounted
-  refine ⟨hcommon, ?_, ((G.mem_unblockedRectangles _).1 hr).1,
-    ((G.mem_pentagons _).1 hP).1⟩
-  apply D.toRectangleDecomposition.hasOneCommonSide_iff_existsUnique.mpr
-  refine ⟨D.pentagon.right, ?_, ?_⟩
-  · simp [GridRectangleBetween.mem_sideColumns, hcommon]
-  · intro c hc
-    simp only [GridRectangleBetween.mem_sideColumns,
-      GridRectanglePentagonDecomposition.toRectangleDecomposition_first_left,
-      GridRectanglePentagonDecomposition.toRectangleDecomposition_first_right,
-      GridRectanglePentagonDecomposition.toRectangleDecomposition_second_left,
-      GridRectanglePentagonDecomposition.toRectangleDecomposition_second_right,
-      hcommon] at hc
-    have hne := Grid.ne_left_of_mem_cIoo hcol
-    grind
+  exact ⟨hcommon, D.hasOneCommonSide_of_right_eq_right hcommon (Grid.ne_left_of_mem_cIoo hcol),
+    ((G.mem_unblockedRectangles _).1 hr).1, ((G.mem_pentagons _).1 hP).1⟩
 
 private theorem terminalSelfPairSource_second_right
     (D : GridRectanglePentagonDecomposition C.column C.turnRow x z)

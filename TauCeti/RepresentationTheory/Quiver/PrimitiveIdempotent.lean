@@ -34,7 +34,7 @@ contains no nonzero idempotent
 (`TauCeti.eq_zero_of_isIdempotentElem_of_mem_pathSpan_one`). Among the trivial paths, only the one
 at `v` can carry a nonzero coordinate of an element of the corner `eᵥ kQ eᵥ`, a vertex idempotent
 on the left confining the coordinates to the paths ending at `v`
-(`TauCeti.pathAlgebraBasis_repr_vertexIdempotent_mul_eq_zero`). So the trivial-path coordinates of
+(`TauCeti.pathAlgebraBasis_repr_vertexIdempotent_mul`). So the trivial-path coordinates of
 the two summands of a decomposition of `eᵥ` decompose `1` in `k`, and the summand whose coordinate
 primitivity of `1` kills lies in the arrow ideal, hence is zero.
 
@@ -89,7 +89,12 @@ private theorem mem_pathSpan_one_of_corner {v : Q} {f : pathAlgebra k Q}
   obtain rfl : p = _root_.Quiver.Path.nil := p.eq_nil_of_length_zero hzero
   rcases eq_or_ne a v with rfl | hav
   · exact hx hv
-  · exact hx (hf ▸ pathAlgebraBasis_repr_vertexIdempotent_mul_eq_zero v f hav)
+  · have hcoord : (pathAlgebraBasis k Q).repr (vertexIdempotent k v * f)
+        (⟨a, a, _root_.Quiver.Path.nil⟩ : Quiver.TotalPath Q) = 0 := by
+      classical
+      rw [pathAlgebraBasis_repr_vertexIdempotent_mul]
+      simp [hav]
+    exact hx (hf ▸ hcoord)
 
 /-- **A vertex idempotent of a path algebra is primitive.** In a decomposition of `eᵥ` into
 orthogonal idempotents, the two coordinates on the trivial path at `v` decompose `1` in the

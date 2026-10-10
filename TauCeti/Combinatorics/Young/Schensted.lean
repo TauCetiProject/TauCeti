@@ -344,6 +344,15 @@ theorem length_getD_succ_rowInsertIndex_lt {rows : List (List α)} (h : rows.IsT
   rw [length_getD_rowInsert, length_getD_rowInsert, ite_eq_right (by omega), ite_eq_left rfl]
   exact Nat.lt_succ_of_le (h.length_getD_succ_le _)
 
+/-- **A new cell below the first row sits under a longer row**: if `T ← x` adds its cell in row
+`i + 1`, then row `i + 1` of `T` is strictly shorter than row `i`. -/
+theorem length_getD_succ_lt_of_rowInsertIndex_eq_succ {rows : List (List α)}
+    (h : rows.IsTableauRows) {x : α} {i : ℕ} (hi : rowInsertIndex x rows = i + 1) :
+    (rows.getD (i + 1) []).length < (rows.getD i []).length := by
+  have := (h.rowInsert x).length_getD_succ_le i
+  rw [length_getD_rowInsert, length_getD_rowInsert, hi] at this
+  split_ifs at this <;> omega
+
 /-! ### Reverse insertion -/
 
 /-- **Reverse row insertion** from the end of row `k`: remove the last entry of row `k`

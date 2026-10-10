@@ -31,9 +31,18 @@ The embedding `τ` is a choice: two embeddings differ by an automorphism `h` of 
 (`AlgHom.exists_comp_eq_of_normal`), and then the two maps differ by conjugation by `h`
 (`absoluteGaloisGroupMap_comp`), which is invisible in cohomology.
 
+The last section concerns Mathlib's map `Field.absoluteGaloisGroup.mapOfAlgebra K L` itself,
+along a `K`-embedding of algebraic closures. When `algebraMap K L` is bijective, that embedding is
+onto, because `Lᵃˡᵍ` is algebraic over `K` and `Kᵃˡᵍ` is algebraically closed, and the map of
+absolute Galois groups is bijective. So an isomorphism of fields `e : K ≃+* L` induces an
+isomorphism of topological groups `G_L ≃ₜ* G_K`, through which statements about absolute Galois
+groups transport between isomorphic fields.
+
 ## Main definitions
 
 * `TauCeti.absoluteGaloisGroupMap τ`: the continuous homomorphism `G_L →ₜ* G_K` along `τ`.
+* `TauCeti.absoluteGaloisGroupMapEquiv e`: for an isomorphism of fields `e : K ≃+* L`, Mathlib's
+  map `Field.absoluteGaloisGroup.map e` as an isomorphism `G_L ≃ₜ* G_K`.
 
 ## Main results
 
@@ -42,6 +51,12 @@ The embedding `τ` is a choice: two embeddings differ by an automorphism `h` of 
   the map by `h`.
 * `TauCeti.absoluteGaloisGroupMap_absoluteGaloisGroupMap`: the maps are compatible with
   composition of extensions.
+* `TauCeti.absoluteGaloisGroup_mapOfAlgebra_commutes`: Mathlib's map
+  `Field.absoluteGaloisGroup.mapOfAlgebra K L g` is intertwined with `g` by the embedding of
+  algebraic closures.
+* `TauCeti.bijective_absoluteGaloisGroup_mapOfAlgebra`,
+  `TauCeti.bijective_absoluteGaloisGroup_map`: the map is bijective along an isomorphism of
+  fields.
 -/
 
 public section
@@ -113,5 +128,97 @@ theorem absoluteGaloisGroupMap_absoluteGaloisGroupMap {M : Type*} [Field M] [Alg
     absoluteGaloisGroupMap τ (absoluteGaloisGroupMap τ' g) = absoluteGaloisGroupMap τ'' g := by
   refine ((absoluteGaloisGroupMap_eq_iff τ'').2 fun x ↦ ?_).symm
   rw [hτ, hτ, absoluteGaloisGroupMap_commutes, absoluteGaloisGroupMap_commutes]
+
+/-! ### Mathlib's map along algebraic closures -/
+
+section MapOfAlgebra
+
+variable (K L) [Algebra (AlgebraicClosure K) (AlgebraicClosure L)]
+  [IsScalarTower K (AlgebraicClosure K) (AlgebraicClosure L)]
+
+/-- `Field.absoluteGaloisGroup.mapOfAlgebra K L g` is intertwined with `g` by the embedding of
+algebraic closures `Kᵃˡᵍ → Lᵃˡᵍ`.
+
+The coercions to functions carry their type arguments explicitly because
+`Field.absoluteGaloisGroup` is a plain definition. -/
+theorem absoluteGaloisGroup_mapOfAlgebra_commutes (g : Field.absoluteGaloisGroup L)
+    (x : AlgebraicClosure K) :
+    algebraMap (AlgebraicClosure K) (AlgebraicClosure L)
+        (DFunLike.coe (F := Gal(AlgebraicClosure K/K))
+          (Field.absoluteGaloisGroup.mapOfAlgebra K L g) x) =
+      DFunLike.coe (F := Gal(AlgebraicClosure L/L)) g
+        (algebraMap (AlgebraicClosure K) (AlgebraicClosure L) x) :=
+  AlgEquiv.restrictNormal_commutes _ _ x
+
+variable {K L} in
+/-- **Along an isomorphism of fields the map of absolute Galois groups is bijective.** If
+`algebraMap K L` is bijective, the embedding `Kᵃˡᵍ → Lᵃˡᵍ` is onto, since `Lᵃˡᵍ` is algebraic over
+`K` and `Kᵃˡᵍ` is algebraically closed, and conjugation by it inverts
+`Field.absoluteGaloisGroup.mapOfAlgebra K L`. -/
+theorem bijective_absoluteGaloisGroup_mapOfAlgebra (h : Function.Bijective (algebraMap K L)) :
+    Function.Bijective (Field.absoluteGaloisGroup.mapOfAlgebra K L) := by
+  let φ := algebraMap (AlgebraicClosure K) (AlgebraicClosure L)
+  have : Algebra.IsIntegral K L := Algebra.isIntegral_of_surjective h.2
+  have : Algebra.IsIntegral K (AlgebraicClosure L) := Algebra.IsIntegral.trans L
+  have : Algebra.IsIntegral (AlgebraicClosure K) (AlgebraicClosure L) :=
+    Algebra.IsIntegral.tower_top K
+  have hφ : Function.Bijective φ := IsAlgClosed.algebraMap_bijective_of_isIntegral
+  refine ⟨fun g₁ g₂ hg ↦ AlgEquiv.ext fun y ↦ ?_, fun τ ↦ ?_⟩
+  · obtain ⟨x, rfl⟩ := hφ.2 y
+    rw [← absoluteGaloisGroup_mapOfAlgebra_commutes, ← absoluteGaloisGroup_mapOfAlgebra_commutes,
+      hg]
+  · -- `φ` is an isomorphism over `K`, and conjugating `τ` by it gives the preimage of `τ`; it is
+    -- `L`-linear because `L` is the image of `K`.
+    let E : AlgebraicClosure K ≃ₐ[K] AlgebraicClosure L :=
+      AlgEquiv.ofBijective (IsScalarTower.toAlgHom K _ _) hφ
+    let g : Field.absoluteGaloisGroup L :=
+      AlgEquiv.ofRingEquiv (f := E.symm.trans ((τ : Gal(AlgebraicClosure K/K)).trans E))
+        fun l ↦ by
+          obtain ⟨k, rfl⟩ := h.2 l
+          rw [← IsScalarTower.algebraMap_apply]
+          exact AlgEquiv.commutes _ k
+    refine ⟨g, AlgEquiv.ext fun x ↦ hφ.1 ?_⟩
+    rw [absoluteGaloisGroup_mapOfAlgebra_commutes]
+    -- By construction `g (φ x)` is `E (τ (E.symm (E x)))`, and `E` is `φ`.
+    exact congrArg E ((τ : Gal(AlgebraicClosure K/K)).congr_arg (E.symm_apply_apply x))
+
+end MapOfAlgebra
+
+section Isomorphism
+
+omit [Algebra K L]
+
+/-- **Along a bijective ring homomorphism the map of absolute Galois groups is bijective**, for
+any choice of embedding of algebraic closures made by `Field.absoluteGaloisGroup.map`. -/
+theorem bijective_absoluteGaloisGroup_map {f : K →+* L} (hf : Function.Bijective f) :
+    Function.Bijective (Field.absoluteGaloisGroup.map f) :=
+  letI := f.toAlgebra
+  letI : Algebra (AlgebraicClosure K) (AlgebraicClosure L) :=
+    (IsAlgClosed.lift : AlgebraicClosure K →ₐ[K] AlgebraicClosure L).toAlgebra
+  bijective_absoluteGaloisGroup_mapOfAlgebra hf
+
+/-- **The isomorphism of absolute Galois groups induced by an isomorphism of fields**
+`e : K ≃+* L`: Mathlib's continuous map `Field.absoluteGaloisGroup.map e : G_L → G_K`, which is
+bijective (`bijective_absoluteGaloisGroup_map`) and hence a homeomorphism, as `G_L` is compact
+and `G_K` is Hausdorff. Like `Field.absoluteGaloisGroup.map`, it goes from `G_L` to `G_K`, and it
+depends on the embedding of algebraic closures over `e` chosen by `Field.absoluteGaloisGroup.map`.
+-/
+def absoluteGaloisGroupMapEquiv (e : K ≃+* L) :
+    Field.absoluteGaloisGroup L ≃ₜ* Field.absoluteGaloisGroup K where
+  toMulEquiv := MulEquiv.ofBijective (Field.absoluteGaloisGroup.map e.toRingHom)
+    (bijective_absoluteGaloisGroup_map e.bijective)
+  continuous_toFun := (Field.absoluteGaloisGroup.map e.toRingHom).continuous
+  continuous_invFun := Continuous.continuous_symm_of_equiv_compact_to_t2
+    (f := (MulEquiv.ofBijective (Field.absoluteGaloisGroup.map e.toRingHom)
+      (bijective_absoluteGaloisGroup_map e.bijective)).toEquiv)
+    (Field.absoluteGaloisGroup.map e.toRingHom).continuous
+
+/-- `absoluteGaloisGroupMapEquiv e` is Mathlib's map `Field.absoluteGaloisGroup.map e`. -/
+@[simp]
+theorem absoluteGaloisGroupMapEquiv_apply (e : K ≃+* L) (g : Field.absoluteGaloisGroup L) :
+    absoluteGaloisGroupMapEquiv e g = Field.absoluteGaloisGroup.map e.toRingHom g :=
+  (rfl)
+
+end Isomorphism
 
 end TauCeti

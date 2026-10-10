@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold
+public import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold.Basic
 
 /-!
 # Links of old faces after stellar subdivision

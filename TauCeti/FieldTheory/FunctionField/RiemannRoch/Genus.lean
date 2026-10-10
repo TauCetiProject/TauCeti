@@ -189,6 +189,11 @@ because every `ℝ`-degree and every `ℝ`-dimension is twice its `ℂ`-counterp
 noncomputable def genus : ℕ :=
   sSup (Set.range fun D : Divisor k F ↦ (Divisor.degree D + 1 - Divisor.dim D).toNat)
 
+/-- The genus is the supremum of the nonnegative divisor degree-dimension defects. -/
+theorem genus_def :
+    genus k F =
+      sSup (Set.range fun D : Divisor k F ↦ (Divisor.degree D + 1 - Divisor.dim D).toNat) := (rfl)
+
 /-- The set of values whose supremum defines the genus is bounded above. -/
 private theorem bddAbove_range_genusValue (hF : IsFunctionField k F) :
     BddAbove (Set.range fun D : Divisor k F ↦ (Divisor.degree D + 1 - Divisor.dim D).toNat) := by

@@ -47,18 +47,18 @@ This packages exactly the two facts consumed by the zero-exponent Yosida constru
 positive `lambda` is a resolvent point, and every positive power satisfies the sharp
 `M / lambda ^ n` estimate. -/
 theorem hilleYosida_zero_of {A : X →ₗ.[ℝ] X} {M omega : ℝ}
-    (hres : ∀ lambda, omega < lambda → lambda ∈ resolventSet A)
+    (hres : ∀ lambda, omega < lambda → lambda ∈ A.resolventSet)
     (hbound : ∀ n : ℕ, 1 ≤ n → ∀ lambda, omega < lambda →
-      ‖resolvent A lambda ^ n‖ ≤ M / (lambda - omega) ^ n) :
-    (∀ lambda, 0 < lambda → lambda ∈ resolventSet (subScalar A omega)) ∧
+      ‖A.resolvent lambda ^ n‖ ≤ M / (lambda - omega) ^ n) :
+    (∀ lambda, 0 < lambda → lambda ∈ (subScalar A omega).resolventSet) ∧
       ∀ n : ℕ, 1 ≤ n → ∀ lambda, 0 < lambda →
-        ‖resolvent (subScalar A omega) lambda ^ n‖ ≤ M / lambda ^ n := by
+        ‖(subScalar A omega).resolvent lambda ^ n‖ ≤ M / lambda ^ n := by
   constructor
   · intro lambda hlambda
     rw [mem_resolventSet_subScalar_iff]
     exact hres (lambda + omega) (by linarith)
   · intro n hn lambda hlambda
-    have hmem : lambda + omega ∈ resolventSet A := hres (lambda + omega) (by linarith)
+    have hmem : lambda + omega ∈ A.resolventSet := hres (lambda + omega) (by linarith)
     rw [resolvent_subScalar hmem]
     simpa only [add_sub_cancel_right] using hbound n hn (lambda + omega) (by linarith)
 

@@ -52,6 +52,8 @@ as `Kˣ` enters through an `Additive` adapter.
   subgroup, with `galOfOpenNormalEquiv` identifying its Galois group with `G ⧸ V`.
 * `TauCeti.ClassFieldTheory.NormalLayer.rep`: the coefficient module `A^V` of the layer, as a
   representation of `U ⧸ V`.
+* `TauCeti.ClassFieldTheory.NormalLayer.coeffFixedPointsEquiv`: the coefficient module `A^V`
+  read as the fixed points `M^V` when `A` is read on a `G`-module `M`.
 * `TauCeti.ClassFieldTheory.NormalLayer.H`, `TateH`, `TrivialTateH`: the ordinary and Tate
   cohomology carriers of the layer, in the coefficient module `A^V` and in trivial integral
   coefficients.
@@ -420,6 +422,60 @@ theorem groundLevelEquiv_apply_coe (x : (L.rep F).ρ.invariants) :
 theorem groundLevelEquiv_symm_apply_coe (y : F.level L.ground) :
     (dsimp% only ((L.groundLevelEquiv F).symm y : F.toRep.V)) = y :=
   (rfl)
+
+section FixedPoints
+
+variable {F} {M : Type} [AddCommGroup M] [DistribMulAction G M] (e : M ≃+ F.toRep.V)
+  (he : ∀ (g : G) (x : M), e (g • x) = F.toRep.ρ g (e x))
+
+/-- **The coefficient module of a layer read in a `G`-module**: when the coefficient module of the
+formation is read, through an equivariant additive equivalence `e : M ≃+ A`, on a `G`-module `M`,
+the coefficient module `A^V` of a layer `V ◁ U` is the subgroup `M^V` of fixed points of its top
+subgroup, viewed as a subgroup of the ground subgroup `U`. It only changes the coefficient
+dictionary (`coeffFixedPointsEquiv_apply_coe`) and is equivariant for the Galois group of the layer
+(`coeffFixedPointsEquiv_ρ`). -/
+def coeffFixedPointsEquiv :
+    (L.rep F).V ≃+ FixedPoints.addSubgroup (L.top.toSubgroup.subgroupOf L.ground.toSubgroup) M where
+  toFun x := ⟨e.symm (x : F.level L.top), (FixedPoints.mem_addSubgroup _ _ _).2 fun v =>
+    e.injective <| (he _ _).trans <| by
+      rw [e.apply_symm_apply]
+      exact (Formation.mem_level _).1 x.2 _ (Subgroup.mem_subgroupOf.1 v.2)⟩
+  invFun m := ⟨e m, (Formation.mem_level _).2 fun v hv =>
+    (he v m).symm.trans <| congrArg e <|
+      (FixedPoints.mem_addSubgroup _ _ _).1 m.2 ⟨⟨v, L.top_le_ground hv⟩, hv⟩⟩
+  left_inv _ := Subtype.ext (e.apply_symm_apply _)
+  right_inv _ := Subtype.ext (e.symm_apply_apply _)
+  map_add' _ _ := Subtype.ext (map_add e.symm _ _)
+
+/-- `coeffFixedPointsEquiv` reads an element of the coefficient module in `M` through `e`. -/
+@[simp]
+theorem coeffFixedPointsEquiv_apply_coe (x : (L.rep F).V) :
+    (L.coeffFixedPointsEquiv e he x : M) = e.symm (x : F.level L.top) :=
+  (rfl)
+
+/-- The inverse of `coeffFixedPointsEquiv` reads a fixed point of `M` in the coefficient module
+through `e`. -/
+@[simp]
+theorem coeffFixedPointsEquiv_symm_apply_coe
+    (m : FixedPoints.addSubgroup (L.top.toSubgroup.subgroupOf L.ground.toSubgroup) M) :
+    ((L.coeffFixedPointsEquiv e he).symm m : F.level L.top) = e m :=
+  (rfl)
+
+/-- `coeffFixedPointsEquiv` is equivariant for the Galois group of the layer. -/
+@[simp]
+theorem coeffFixedPointsEquiv_ρ
+    (g : L.ground.toSubgroup ⧸ L.top.toSubgroup.subgroupOf L.ground.toSubgroup)
+    (x : (L.rep F).V) :
+    L.coeffFixedPointsEquiv e he ((L.rep F).ρ g x) = g • L.coeffFixedPointsEquiv e he x := by
+  induction g using QuotientGroup.induction_on with
+  | H u =>
+    refine Subtype.ext ?_
+    rw [coeffFixedPointsEquiv_apply_coe, coe_quotient_smul_fixedPoints_addSubgroup,
+      coe_smul_fixedPoints_addSubgroup, coeffFixedPointsEquiv_apply_coe, AddEquiv.symm_apply_eq,
+      Subgroup.smul_def, he, AddEquiv.apply_symm_apply]
+    exact L.rep_ρ_mk_apply_coe _ u x
+
+end FixedPoints
 
 end Coefficients
 

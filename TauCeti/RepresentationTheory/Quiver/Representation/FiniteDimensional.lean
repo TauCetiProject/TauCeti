@@ -166,16 +166,20 @@ end ExactStructure
 
 variable (k Q) [Finite Q]
 
+/-- Over a finite quiver, the module carried by a representation with finite-dimensional vertex
+spaces is finite-dimensional, being the direct sum of those spaces. This is the quiver counterpart
+of Mathlib's instance `Module.Finite k ρ.asModule` for `Representation.asModule`. -/
+instance [DecidableEq Q] (M : QuiverRep.{u, v, w, t} k Q)
+    [∀ i, Module.Finite k (QuiverRep.vertexSpace k Q M i)] :
+    Module.Finite k (QuiverRep.asModule k Q M) :=
+  .equiv (QuiverRep.asModuleEquiv k Q M).symm
+
 /-- A pointwise finite-dimensional representation of a finite quiver gives a finite module over
 the path algebra under `QuiverRep.asModule`. -/
 theorem module_finite_asModule_of_isFinDim [DecidableEq Q]
     (M : QuiverRep.{u, v, w, t} k Q) (hM : IsFinDim k Q M) :
     Module.Finite (pathAlgebra k Q) (QuiverRep.asModule k Q M) := by
-  let h (i : Q) : Module.Finite k (QuiverRep.vertexSpace k Q M i) :=
-    hM ((Paths.of Q).obj i)
-  let hsum : Module.Finite k (DirectSum Q (QuiverRep.vertexSpace k Q M)) := inferInstance
-  let hmodule : Module.Finite k (QuiverRep.asModule k Q M) :=
-    Module.Finite.equiv (QuiverRep.asModuleEquiv k Q M).symm
+  have (i : Q) : Module.Finite k (QuiverRep.vertexSpace k Q M i) := hM ((Paths.of Q).obj i)
   exact Module.Finite.of_restrictScalars_finite k _ _
 
 /-- **A pointwise finite-dimensional representation of a finite quiver is carried to a
@@ -189,10 +193,7 @@ theorem module_finite_quiverRepEquivalenceFunctorObj_of_isFinDim
     Module.Finite k ((quiverRepEquivalence.{u, v, w, t} k Q).functor.obj M) := by
   classical
   rw [isFinDim_iff] at hM
-  let h (i : Q) : Module.Finite k (QuiverRep.vertexSpace k Q M i) := hM ((Paths.of Q).obj i)
-  let hsum : Module.Finite k (DirectSum Q (QuiverRep.vertexSpace k Q M)) := inferInstance
-  let hmodule : Module.Finite k (QuiverRep.asModule k Q M) :=
-    Module.Finite.equiv (QuiverRep.asModuleEquiv k Q M).symm
+  have (i : Q) : Module.Finite k (QuiverRep.vertexSpace k Q M i) := hM ((Paths.of Q).obj i)
   let hshrink : Module.Finite k (QuiverRep.asModuleShrink k Q M : Type t) :=
     Module.Finite.equiv ((QuiverRep.asModuleShrinkEquiv k Q M).restrictScalars k).symm
   exact Module.Finite.equiv

@@ -12,10 +12,10 @@ module
 public import Mathlib.Data.Matrix.Mul
 public import Mathlib.RingTheory.SimpleRing.Defs
 public import TauCeti.RingTheory.Semisimple.RegularIsotypicComponent
--- Non-public: used only inside proofs. The block count of a product of simple rings and the
--- simplicity of the endomorphism ring of an isotypic module are the two engines of the arguments
--- below, and neither is mentioned by an exported statement.
-import TauCeti.RingTheory.Semisimple.BlockCount
+-- Non-public: used only inside proofs. Factor counts and simplicity of isotypic endomorphism
+-- rings match the presentation with simple modules; matrix simplicity gives the specialization.
+import Mathlib.RingTheory.SimpleRing.Matrix
+import TauCeti.RingTheory.SimpleRing.Pi
 import TauCeti.RingTheory.Semisimple.IsotypicEnd
 
 /-!
@@ -26,7 +26,7 @@ division rings,
 
 `R ≃+* ∏ᵢ Matₙᵢ(Dᵢ)`,
 
-and `TauCeti.card_blocks_eq` shows that the number of factors does not depend on the presentation.
+and `RingEquiv.card_blocks_eq` shows that the number of factors does not depend on the presentation.
 That count is anonymous: it is read off the central idempotents and says nothing about what a block
 *is*.  This file identifies the index: **the blocks of any such presentation correspond to the
 isomorphism classes of simple `R`-modules**, so a presentation with `n` blocks exhibits exactly `n`
@@ -41,48 +41,51 @@ and each factor is a *simple* ring, because an isotypic component is a finite po
 module and so has a matrix endomorphism ring
 (`TauCeti.isSimpleRing_moduleEnd_of_isIsotypic`).  A presentation `R ≃+* ∏ᵢ Aᵢ` by simple rings
 gives a second such product decomposition of `Rᵐᵒᵖ`, so
-`TauCeti.card_eq_of_ringEquiv_pi_of_isSimpleRing` equates the two indices.  Composing with
+`RingEquiv.exists_equiv_factors` matches the two index types. Composing with
 `TauCeti.simpleSubmoduleClassesEquiv`, which identifies the isotypic components of `R` with the
 isomorphism classes of simple left ideals, and with `TauCeti.simpleModuleClass`, which realizes an
 abstract simple module by a left ideal, turns the block count into a count of simple modules.
 
 ## Main results
 
-* `TauCeti.card_isotypicComponents_eq_of_ringEquiv_pi`: a presentation of `R` as a finite product
-  of simple rings has as many factors as `R` has isotypic components.
-* `TauCeti.card_simpleSubmoduleClasses_eq_of_ringEquiv_pi` and
-  `TauCeti.nonempty_equiv_simpleSubmoduleClasses_of_ringEquiv_pi`: the factors are in bijection with
-  the isomorphism classes of simple `R`-modules.
-* `TauCeti.exists_simpleSubmodule_of_ringEquiv_pi`: **the blocks enumerate the simple modules.**
+* `RingEquiv.card_isotypicComponents_eq_of_pi`: a presentation of `R` as a product of simple
+  rings indexed by any type has as many factors as `R` has isotypic components.
+* `RingEquiv.card_simpleSubmoduleClasses_eq_of_pi`: such a presentation has as many factors as
+  there are isomorphism classes of simple `R`-modules.
+* `RingEquiv.nonempty_equiv_simpleSubmoduleClasses_of_pi`: the factors of a presentation
+  indexed by any type are in bijection with the isomorphism classes of simple `R`-modules.
+* `RingEquiv.exists_simpleSubmodule_of_pi`: **the blocks enumerate the simple modules.**
   A presentation of `R` by simple rings indexed by `ι` yields a family of simple left ideals indexed
   by `ι`, pairwise non-isomorphic, with every simple left ideal isomorphic to one of them.
-* `TauCeti.blocks_equiv_simpleModules`: the same statement for a Wedderburn presentation
-  `R ≃+* ∏ᵢ Matₙᵢ(Dᵢ)` indexed by `Fin n`, the form the roadmap pins.
+* `RingEquiv.exists_simpleSubmodule_of_pi_matrix`: the same statement for a Wedderburn presentation
+  `R ≃+* ∏ᵢ Matₙᵢ(Dᵢ)` indexed by `Fin n`.
 * `TauCeti.exists_nonempty_linearEquiv_of_forall_submodule`: such a family exhausts not only the
   simple left ideals but every simple `R`-module, because over a semisimple ring a simple module is
   realized by a left ideal.
 
 ## Implementation notes
 
+The presentation equivalence, family and cardinality results accept arbitrary index types
+without an explicit finiteness hypothesis. Semisimplicity of `R` nevertheless forces the index of
+an actual presentation by nontrivial simple rings to be finite. The general factor theorem in
+`TauCeti/RingTheory/SimpleRing/Pi.lean` also applies to genuinely infinite products.
+
 The results are stated for a presentation `R ≃+* ∏ᵢ Aᵢ` by arbitrary simple rings rather than by
 matrix algebras: simplicity of the factors is all the argument uses, and Artin--Wedderburn is what
 supplies such a presentation, not part of the statement.  The positivity hypotheses `NeZero (d i)`
 of the matrix form enter only to make `Matₙᵢ(Dᵢ)` simple, exactly as in
-`TauCeti.card_blocks_eq`; a block of size `0` is the trivial ring, and any presentation could be
+`RingEquiv.card_blocks_eq`; a block of size `0` is the trivial ring, and any presentation could be
 padded with such blocks.
 
 The isomorphism classes are handled through `TauCeti.SimpleSubmoduleClasses R R`, the classes of
 simple *left ideals*, which unlike the classes of abstract simple modules form a type.  The
-exhaustion clause of `TauCeti.exists_simpleSubmodule_of_ringEquiv_pi` is likewise stated for left
+exhaustion clause of `RingEquiv.exists_simpleSubmodule_of_pi` is likewise stated for left
 ideals, and `TauCeti.exists_nonempty_linearEquiv_of_forall_submodule` upgrades it to arbitrary
 simple modules in any universe; keeping the two apart is what lets the main statement stay
 universe-monomorphic in the modules it quantifies over.
 
 ## References
 
-This implements the Layer 2 target `blocks_equiv_simpleModules` ("blocks enumerate the simple
-modules") of the
-[semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md).
 See T. Y. Lam, *A First Course in Noncommutative Rings*, GTM 131, §3, or C. W. Curtis and
 I. Reiner, *Representation Theory of Finite Groups and Associative Algebras*, §25.
 -/
@@ -97,46 +100,42 @@ variable {R : Type u} [Ring R] [IsSemisimpleRing R]
 
 section Presentation
 
-variable {ι : Type*} [Finite ι] {A : ι → Type v} [∀ i, Ring (A i)] [∀ i, IsSimpleRing (A i)]
+variable {ι : Type*} {A : ι → Type v} [∀ i, Ring (A i)] [∀ i, IsSimpleRing (A i)]
 
-/-- **A presentation of a semisimple ring as a finite product of simple rings has one factor for
-each isotypic component of the regular module.**
+/-- The factors of a presentation of a semisimple ring by simple rings indexed by any type are
+in bijection with the isomorphism classes of simple modules.
 
-Both counts are counts of factors in a decomposition of `Rᵐᵒᵖ` as a product of simple rings: the
-opposite of the given presentation on one side, and the splitting of `End_R R ≃+* Rᵐᵒᵖ` along the
-isotypic components on the other, whose factors are simple by
-`TauCeti.isSimpleRing_moduleEnd_of_isIsotypic`: an isotypic component is a nonzero finite module
-all of whose simple submodules are isomorphic. -/
-theorem card_isotypicComponents_eq_of_ringEquiv_pi (e : R ≃+* ∀ i, A i) :
-    Nat.card (isotypicComponents R R) = Nat.card ι := by
+Match the given decomposition of `Rᵐᵒᵖ` with its decomposition along the isotypic components of the
+regular module, then identify those components with the isomorphism classes of simple modules. -/
+theorem _root_.RingEquiv.nonempty_equiv_simpleSubmoduleClasses_of_pi (e : R ≃+* ∀ i, A i) :
+    Nonempty (ι ≃ SimpleSubmoduleClasses R R) := by
   classical
   have : ∀ c : isotypicComponents R R, IsSimpleRing (Module.End R (c : Submodule R R)) := by
     rintro ⟨c, hc⟩
     have : Nontrivial c := Submodule.nontrivial_iff_ne_bot.mpr (bot_lt_isotypicComponents hc).ne'
     have : IsSemisimpleModule R c := by obtain ⟨S, _, rfl⟩ := hc; infer_instance
     exact isSimpleRing_moduleEnd_of_isIsotypic (IsIsotypic.isotypicComponents hc)
-  exact card_eq_of_ringEquiv_pi_of_isSimpleRing
+  let f := ((RingEquiv.op e).trans (RingEquiv.piMulOpposite A)).symm.trans
     ((RingEquiv.moduleEndSelf R).trans (IsSemisimpleModule.endRingEquiv R R))
-    ((RingEquiv.op e).trans (RingEquiv.piMulOpposite A))
+  obtain ⟨σ, -⟩ := f.exists_equiv_factors
+  exact ⟨σ.trans (simpleSubmoduleClassesEquiv R R).symm⟩
 
-/-- **A presentation of a semisimple ring as a finite product of simple rings has one factor for
-each isomorphism class of simple modules.** -/
-theorem card_simpleSubmoduleClasses_eq_of_ringEquiv_pi (e : R ≃+* ∀ i, A i) :
-    Nat.card (SimpleSubmoduleClasses R R) = Nat.card ι :=
-  (Nat.card_congr (simpleSubmoduleClassesEquiv R R)).trans
-    (card_isotypicComponents_eq_of_ringEquiv_pi e)
+/-- **A presentation of a semisimple ring as a product of simple rings indexed by any type has
+one factor for each isotypic component of the regular module.**
 
-/-- The factors of such a presentation are in bijection with the isomorphism classes of simple
-modules. The bijection is not canonical -- nothing orders the factors -- so it is produced as a
-`Nonempty`, from the equality of the two counts. -/
-theorem nonempty_equiv_simpleSubmoduleClasses_of_ringEquiv_pi (e : R ≃+* ∀ i, A i) :
-    Nonempty (ι ≃ SimpleSubmoduleClasses R R) := by
-  have : Finite (SimpleSubmoduleClasses R R) :=
-    .of_equiv _ (simpleSubmoduleClassesEquiv R R).symm
-  have := Fintype.ofFinite ι
-  have := Fintype.ofFinite (SimpleSubmoduleClasses R R)
-  refine ⟨Fintype.equivOfCardEq ?_⟩
-  simpa [Nat.card_eq_fintype_card] using (card_simpleSubmoduleClasses_eq_of_ringEquiv_pi e).symm
+This is the cardinality consequence of matching the given decomposition of `Rᵐᵒᵖ` with the
+splitting of `End_R R ≃+* Rᵐᵒᵖ` along its isotypic components. -/
+theorem _root_.RingEquiv.card_isotypicComponents_eq_of_pi (e : R ≃+* ∀ i, A i) :
+    Nat.card (isotypicComponents R R) = Nat.card ι := by
+  obtain ⟨φ⟩ := e.nonempty_equiv_simpleSubmoduleClasses_of_pi
+  exact Nat.card_congr ((simpleSubmoduleClassesEquiv R R).symm.trans φ.symm)
+
+/-- **A presentation of a semisimple ring as a product of simple rings indexed by any type has
+one factor for each isomorphism class of simple modules.** -/
+theorem _root_.RingEquiv.card_simpleSubmoduleClasses_eq_of_pi (e : R ≃+* ∀ i, A i) :
+    Nat.card (SimpleSubmoduleClasses R R) = Nat.card ι := by
+  obtain ⟨φ⟩ := e.nonempty_equiv_simpleSubmoduleClasses_of_pi
+  exact Nat.card_congr φ.symm
 
 /-- **The blocks enumerate the simple modules.** A presentation of a semisimple ring `R` as a
 product of simple rings indexed by `ι` produces a family of simple left ideals indexed by `ι` which
@@ -145,12 +144,12 @@ are pairwise non-isomorphic and exhaust the simple left ideals up to isomorphism
 Since every simple `R`-module is isomorphic to a simple left ideal, the family is a complete
 irredundant list of the simple `R`-modules; that consequence is
 `TauCeti.exists_nonempty_linearEquiv_of_forall_submodule`. -/
-theorem exists_simpleSubmodule_of_ringEquiv_pi (e : R ≃+* ∀ i, A i) :
+theorem _root_.RingEquiv.exists_simpleSubmodule_of_pi (e : R ≃+* ∀ i, A i) :
     ∃ S : ι → Submodule R R,
       (∀ i, IsSimpleModule R (S i)) ∧
       (∀ i j, Nonempty (S i ≃ₗ[R] S j) → i = j) ∧
       ∀ I : Submodule R R, IsSimpleModule R I → ∃ i, Nonempty (I ≃ₗ[R] S i) := by
-  obtain ⟨φ⟩ := nonempty_equiv_simpleSubmoduleClasses_of_ringEquiv_pi e
+  obtain ⟨φ⟩ := e.nonempty_equiv_simpleSubmoduleClasses_of_pi
   -- Choose a simple left ideal in each isomorphism class.
   have hrep : ∀ c : SimpleSubmoduleClasses R R, ∃ (N : Submodule R R) (h : IsSimpleModule R N),
       @SimpleSubmoduleClasses.mk R _ R _ _ N h = c :=
@@ -173,11 +172,11 @@ exhaust the simple left ideals up to isomorphism.
 
 The positivity hypotheses `NeZero (d i)` are what make the matrix blocks simple rings; they are the
 same hypotheses that `IsSemisimpleRing.exists_ringEquiv_pi_matrix_divisionRing` produces and that
-`TauCeti.card_blocks_eq` needs.
+`RingEquiv.card_blocks_eq` needs.
 
-The name is the one the roadmap pins for this target; the content is the family, so the general
-statement it specializes is `TauCeti.exists_simpleSubmodule_of_ringEquiv_pi`. -/
-theorem blocks_equiv_simpleModules {n : ℕ} {D : Fin n → Type v} [∀ i, DivisionRing (D i)]
+The general statement it specializes is `RingEquiv.exists_simpleSubmodule_of_pi`. -/
+theorem _root_.RingEquiv.exists_simpleSubmodule_of_pi_matrix {n : ℕ} {D : Fin n → Type v}
+    [∀ i, DivisionRing (D i)]
     {d : Fin n → ℕ} [∀ i, NeZero (d i)]
     (e : R ≃+* ∀ i, Matrix (Fin (d i)) (Fin (d i)) (D i)) :
     ∃ S : Fin n → Submodule R R,
@@ -185,14 +184,14 @@ theorem blocks_equiv_simpleModules {n : ℕ} {D : Fin n → Type v} [∀ i, Divi
       (∀ i j, Nonempty (S i ≃ₗ[R] S j) → i = j) ∧
       ∀ I : Submodule R R, IsSimpleModule R I → ∃ i, Nonempty (I ≃ₗ[R] S i) := by
   have : ∀ i, Nonempty (Fin (d i)) := fun i ↦ ⟨⟨0, Nat.pos_of_ne_zero (NeZero.ne (d i))⟩⟩
-  exact exists_simpleSubmodule_of_ringEquiv_pi e
+  exact e.exists_simpleSubmodule_of_pi
 
 end Presentation
 
 /-- **A family of simple left ideals exhausting the simple left ideals exhausts every simple
 module.** Over a semisimple ring every simple module is isomorphic to a left ideal, so no
 information is lost by listing only the left ideals; this is what turns the family produced by
-`TauCeti.exists_simpleSubmodule_of_ringEquiv_pi` into a list of *all* the simple `R`-modules, in
+`RingEquiv.exists_simpleSubmodule_of_pi` into a list of *all* the simple `R`-modules, in
 any universe. -/
 theorem exists_nonempty_linearEquiv_of_forall_submodule {κ : Type*} {S : κ → Submodule R R}
     (hS : ∀ I : Submodule R R, IsSimpleModule R I → ∃ k, Nonempty (I ≃ₗ[R] S k))

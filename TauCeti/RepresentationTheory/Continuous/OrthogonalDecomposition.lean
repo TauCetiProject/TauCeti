@@ -25,11 +25,11 @@ representation contains an atom of the lattice of subrepresentations
 (`Representation.exists_isAtom_le`), and an atom carries an irreducible representation
 (`Representation.isIrreducible_toRepresentation_of_isAtom`). Unitarity enters exactly
 once, to split off that atom orthogonally: the orthogonal complement of an invariant subspace is
-again invariant (`TauCeti.ContRepresentation.IsUnitary.orthogonal_mem_invtSubmodule`), so the
+again invariant (`ContRepresentation.IsUnitary.orthogonal_mem_invtSubmodule`), so the
 remainder is a strictly smaller subrepresentation and the descent recurses on it.
 
 No measure, no compactness, and no continuity of the representation are used: the argument runs on
-a `ContRepresentation` only because that is where `TauCeti.ContRepresentation.IsUnitary` lives, and
+a `ContRepresentation` only because that is where `ContRepresentation.IsUnitary` lives, and
 the acting group may be arbitrary. For a compact group the unitarity hypothesis is what Weyl's
 unitarian trick in `TauCeti.RepresentationTheory.Compact.Unitarizable` is there to supply. That
 trick does not make `π` itself unitary — it conjugates it into a unitary representation — so the
@@ -38,9 +38,9 @@ carried back to `π` along it.
 
 ## Main results
 
-* `TauCeti.ContRepresentation.IsUnitary.exists_orthogonal_irreducible_decomposition`: complete
+* `ContRepresentation.IsUnitary.exists_orthogonal_irreducible_decomposition`: complete
   reducibility in orthogonal internal form, with the dimension count that goes with it.
-* `TauCeti.ContRepresentation.IsUnitary.exists_orthogonal_irreducible_decomposition_of_congr`: the
+* `ContRepresentation.IsUnitary.exists_orthogonal_irreducible_decomposition_of_congr`: the
   same decomposition for a representation that is merely *conjugate* to a unitary one, its blocks
   carried back along the conjugating equivalence and orthogonal for the inner product that
   equivalence pulls back.
@@ -59,16 +59,14 @@ projection API consumes; `DirectSum.IsInternal` is then read off it through
 
 ## References
 
-This is the target `exists_orthogonal_irreducible_decomposition` of Layer 2 of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md).
 The mathematical development follows Daniel Bump, *Lie Groups*, second edition, Chapter 2.
 -/
 
 public section
 
-open scoped InnerProductSpace
+open TauCeti
 
-namespace TauCeti
+open scoped InnerProductSpace
 
 /-- Splitting the supremum of a family indexed by `Fin (n + 1)` off its first member. -/
 private theorem iSup_fin_succ {α : Type*} [CompleteLattice α] {n : ℕ} (f : Fin (n + 1) → α) :
@@ -228,7 +226,7 @@ continuous linear equivalence `e : V ≃L[𝕜] W` conjugates `π` into a *unita
 many irreducible subrepresentations, of dimensions adding up to `dim V`, whose images under `e` are
 pairwise orthogonal.
 
-This is `TauCeti.ContRepresentation.IsUnitary.exists_orthogonal_irreducible_decomposition` carried
+This is `ContRepresentation.IsUnitary.exists_orthogonal_irreducible_decomposition` carried
 back along the equivalence of continuous representations
 `ContRepresentation.congrEquiv : π.Equiv (congr e π)`: each block `U i` of the unitary model pulls
 back to `(U i).toSubmodule.map e.symm`, which is `π`-invariant because `e` intertwines `π` with
@@ -239,11 +237,11 @@ Orthogonality is not stated inside `V`, which carries no inner product here: `e`
 precisely because `π` need not preserve one, and the form the blocks are orthogonal for is the
 invariant `⟪e ·, e ·⟫` pulled back from `W`. Only the unitary model needs an inner product, so
 `V` is asked for no more than a finite-dimensional normed space, as
-`TauCeti.ContRepresentation.congr` itself is. Nothing here uses finiteness or compactness of the
+`ContinuousLinearEquiv.congr` itself is. Nothing here uses finiteness or compactness of the
 acting group; a construction of an `e` is what such a hypothesis is for, Weyl's unitarian trick
 `ContRepresentation.exists_isUnitary_congr` being one. -/
 theorem exists_orthogonal_irreducible_decomposition_of_congr {e : V ≃L[𝕜] W}
-    (he : IsUnitary (ContRepresentation.congr e π)) :
+    (he : IsUnitary (ContinuousLinearEquiv.congr e π)) :
     ∃ (n : ℕ) (U : Fin n → Subrepresentation π.toRepresentation),
       (∀ i, (U i).toRepresentation.IsIrreducible) ∧
       (Pairwise fun i j ↦ ∀ v ∈ (U i).toSubmodule, ∀ w ∈ (U j).toSubmodule, ⟪e v, e w⟫_𝕜 = 0) ∧
@@ -254,7 +252,7 @@ theorem exists_orthogonal_irreducible_decomposition_of_congr {e : V ≃L[𝕜] W
   -- `e` intertwines `π` with `congr e π`: that is the equivalence `ContRepresentation.congrEquiv`.
   have hint : ∀ (g : G) (v : V),
       (e : V ≃ₗ[𝕜] W) ((π.toRepresentation : Representation 𝕜 G V) g v) =
-        ((ContRepresentation.congr e π).toRepresentation : Representation 𝕜 G W) g
+        ((ContinuousLinearEquiv.congr e π).toRepresentation : Representation 𝕜 G W) g
           ((e : V ≃ₗ[𝕜] W) v) := fun g v ↦ by
     have h := (_root_.ContRepresentation.congrEquiv π e).toContIntertwiningMap.isIntertwining g v
     simp only [_root_.ContRepresentation.Equiv.coe_toContIntertwiningMap,
@@ -262,7 +260,7 @@ theorem exists_orthogonal_irreducible_decomposition_of_congr {e : V ≃L[𝕜] W
     exact h
   have hsymm : ∀ (g : G) (w : W),
       (e : V ≃ₗ[𝕜] W).symm
-          (((ContRepresentation.congr e π).toRepresentation : Representation 𝕜 G W) g w) =
+          (((ContinuousLinearEquiv.congr e π).toRepresentation : Representation 𝕜 G W) g w) =
         (π.toRepresentation : Representation 𝕜 G V) g ((e : V ≃ₗ[𝕜] W).symm w) := by
     intro g w
     have h := hint g ((e : V ≃ₗ[𝕜] W).symm w)
@@ -300,5 +298,3 @@ end Congr
 end IsUnitary
 
 end ContRepresentation
-
-end TauCeti

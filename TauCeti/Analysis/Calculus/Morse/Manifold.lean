@@ -60,7 +60,8 @@ theorem exists_stableSet_isManifold (h : IsNondegenerateCriticalPoint f x)
       h.isCompl_unstableLinearSubspace_stableLinearSubspace.symm
       h.contDiffAt.stableLinearSubspace.closed_of_finiteDimensional
       h.contDiffAt.unstableLinearSubspace.closed_of_finiteDimensional)
-    (fun y ↦ h.exists_stableSet_chart hfs hf y.property)
+    (fun y ↦ (h.exists_stableSet_chart hfs hf y.property).imp fun _ ⟨hy, hq, hqs, hmem⟩ ↦
+      ⟨hy, fun z hz ↦ (hq z hz).contMDiffAt, fun z hz ↦ (hqs z hz).contMDiffAt, hmem⟩)
 
 /-- The global unstable set of a Morse critical point has a `C¹` manifold structure modelled
 on the unstable Hessian subspace, with its subspace topology and a `C¹` inclusion into the
@@ -78,7 +79,8 @@ theorem exists_unstableSet_isManifold (h : IsNondegenerateCriticalPoint f x)
       h.isCompl_unstableLinearSubspace_stableLinearSubspace
       h.contDiffAt.unstableLinearSubspace.closed_of_finiteDimensional
       h.contDiffAt.stableLinearSubspace.closed_of_finiteDimensional)
-    (fun y ↦ h.exists_unstableSet_chart hfs hf y.property)
+    (fun y ↦ (h.exists_unstableSet_chart hfs hf y.property).imp fun _ ⟨hy, hq, hqs, hmem⟩ ↦
+      ⟨hy, fun z hz ↦ (hq z hz).contMDiffAt, fun z hz ↦ (hqs z hz).contMDiffAt, hmem⟩)
 
 end IsNondegenerateCriticalPoint
 end TauCeti

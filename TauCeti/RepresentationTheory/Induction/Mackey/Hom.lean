@@ -100,7 +100,7 @@ variable {k G : Type u} [Field k] [Group G] [Finite G] {H K : Subgroup G}
 noncomputable def indHomMackeyLinearEquiv (A : FDRep k H) (B : FDRep k K) :
     (indFDRep A ⟶ indFDRep B) ≃ₗ[k]
       (∀ D : DoubleCoset.Quotient (H : Set G) (K : Set G),
-        resFDRep ((mackeySubgroup D.out K H).subgroupOf H) A ⟶
+        Subgroup.resFDRep ((mackeySubgroup D.out K H).subgroupOf H) A ⟶
           (Action.res (FGModuleCat k) (mackeyToH D.out K H)).obj B) :=
   (FDRep.forget₂HomLinearEquiv (indFDRep A) (indFDRep B)).symm.trans <|
     (Linear.homCongr k (indFDRepForgetIso A) (indFDRepForgetIso B)).trans <|
@@ -108,7 +108,7 @@ noncomputable def indHomMackeyLinearEquiv (A : FDRep k H) (B : FDRep k K) :
       ((forget₂ (FDRep k H) (Rep k H)).obj A)
       ((forget₂ (FDRep k K) (Rep k K)).obj B)).trans <|
     LinearEquiv.piCongrRight fun D ↦ FDRep.forget₂HomLinearEquiv
-      (resFDRep ((mackeySubgroup D.out K H).subgroupOf H) A)
+      (Subgroup.resFDRep ((mackeySubgroup D.out K H).subgroupOf H) A)
       ((Action.res (FGModuleCat k) (mackeyToH D.out K H)).obj B)
 
 /-- Each finite-dimensional component is the corresponding `Rep` component, transported
@@ -119,7 +119,7 @@ theorem indHomMackeyLinearEquiv_apply (A : FDRep k H) (B : FDRep k K)
     (D : DoubleCoset.Quotient (H : Set G) (K : Set G)) :
     indHomMackeyLinearEquiv A B φ D =
       FDRep.forget₂HomLinearEquiv
-        (resFDRep ((mackeySubgroup D.out K H).subgroupOf H) A)
+        (Subgroup.resFDRep ((mackeySubgroup D.out K H).subgroupOf H) A)
         ((Action.res (FGModuleCat k) (mackeyToH D.out K H)).obj B)
         (Rep.indHomMackeyLinearEquiv
           ((forget₂ (FDRep k H) (Rep k H)).obj A)

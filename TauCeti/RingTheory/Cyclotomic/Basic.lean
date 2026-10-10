@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.AdjoinRoot
 public import Mathlib.RingTheory.Polynomial.Cyclotomic.Roots
 public import TauCeti.RingTheory.Polynomial.Cyclotomic.Computable
 
@@ -19,6 +18,9 @@ of a single power of `ζ`.  Addition, negation, multiplication, and equality are
 computations on finite lists of integers; multiplication convolves coefficient lists with
 `TauCeti.Polynomial.mulCoeffList` and then applies the computable cyclotomic reduction from
 `TauCeti.RingTheory.Polynomial.Cyclotomic.Computable`.
+
+The coefficient accessor is additive (`TauCeti.Cyclotomic.coeffAddHom`), and integer scalar
+multiplication scales each coordinate (`TauCeti.Cyclotomic.coeff_intCast_mul`).
 
 The ring is identified with Mathlib's `AdjoinRoot (Polynomial.cyclotomic e ℤ)`.  For nonzero `e`,
 evaluation at `exp (2 * π * I / e)` then gives the distinguished embedding into `ℂ` used to state
@@ -186,7 +188,7 @@ theorem degree_toPolynomial_lt (x : Cyclotomic e) :
 
 /-- The canonical representative is already reduced modulo the cyclotomic polynomial. -/
 @[simp]
-theorem modByMonic_toPolynomial (x : Cyclotomic e) :
+theorem toPolynomial_modByMonic (x : Cyclotomic e) :
     x.toPolynomial %ₘ cyclotomic e ℤ = x.toPolynomial :=
   (modByMonic_eq_self_iff (cyclotomic.monic e ℤ)).2 x.degree_toPolynomial_lt
 
@@ -194,7 +196,7 @@ theorem modByMonic_toPolynomial (x : Cyclotomic e) :
 theorem toAdjoinRoot_injective : Function.Injective (toAdjoinRoot : Cyclotomic e → _) := by
   intro x y h
   have h' := congrArg (AdjoinRoot.modByMonicHom (cyclotomic.monic e ℤ)) h
-  simp only [toAdjoinRoot, AdjoinRoot.modByMonicHom_mk, modByMonic_toPolynomial] at h'
+  simp only [toAdjoinRoot, AdjoinRoot.modByMonicHom_mk, toPolynomial_modByMonic] at h'
   exact ext_coeffs
     (eq_of_length_eq_of_ofCoeffList_eq (x.length_coeffs.trans y.length_coeffs.symm) h')
 
@@ -304,6 +306,59 @@ noncomputable def toAdjoinRootRingHom : Cyclotomic e →+* AdjoinRoot (cyclotomi
 theorem toAdjoinRootRingHom_apply (x : Cyclotomic e) :
     toAdjoinRootRingHom x = toAdjoinRoot x := (rfl)
 
+/-- The additive map reading a single power-basis coefficient. -/
+noncomputable def coeffAddHom (e j : ℕ) : Cyclotomic e →+ ℤ :=
+  ((Polynomial.lcoeff ℤ j).toAddMonoidHom.comp
+    (AdjoinRoot.modByMonicHom (Polynomial.cyclotomic.monic e ℤ)).toAddMonoidHom).comp
+      toAdjoinRootRingHom.toAddMonoidHom
+
+/-- The coefficient map agrees with the coefficient-vector accessor. -/
+@[simp]
+theorem coeffAddHom_apply (x : Cyclotomic e) (j : ℕ) : coeffAddHom e j x = x.coeff j := by
+  simp [coeffAddHom, toAdjoinRoot, coeff_toPolynomial]
+
+/-- Addition adds power-basis coefficients. -/
+@[simp]
+theorem coeff_add (x y : Cyclotomic e) (j : ℕ) :
+    (x + y).coeff j = x.coeff j + y.coeff j := by
+  simpa only [coeffAddHom_apply] using (coeffAddHom e j).map_add x y
+
+/-- Negation negates every power-basis coefficient. -/
+@[simp]
+theorem coeff_neg (x : Cyclotomic e) (j : ℕ) :
+    (-x).coeff j = -x.coeff j := by
+  simpa only [coeffAddHom_apply] using (coeffAddHom e j).map_neg x
+
+/-- Subtraction subtracts power-basis coefficients. -/
+@[simp]
+theorem coeff_sub (x y : Cyclotomic e) (j : ℕ) :
+    (x - y).coeff j = x.coeff j - y.coeff j := by
+  simpa only [coeffAddHom_apply] using (coeffAddHom e j).map_sub x y
+
+/-- Natural scalar multiplication scales every power-basis coefficient. -/
+@[simp↓]
+theorem coeff_nsmul (n : ℕ) (x : Cyclotomic e) (j : ℕ) :
+    (n • x).coeff j = n • x.coeff j := by
+  simpa only [coeffAddHom_apply] using (coeffAddHom e j).map_nsmul n x
+
+/-- Integer scalar multiplication scales every power-basis coefficient. -/
+@[simp↓]
+theorem coeff_zsmul (z : ℤ) (x : Cyclotomic e) (j : ℕ) :
+    (z • x).coeff j = z • x.coeff j := by
+  simpa only [coeffAddHom_apply] using (coeffAddHom e j).map_zsmul z x
+
+/-- Integer scalar multiplication scales every power-basis coefficient. -/
+@[simp]
+theorem coeff_intCast_mul (z : ℤ) (x : Cyclotomic e) (j : ℕ) :
+    ((z : Cyclotomic e) * x).coeff j = z * x.coeff j := by
+  simpa [zsmul_eq_mul] using (coeffAddHom e j).map_zsmul z x
+
+/-- A finite sum adds power-basis coefficients. -/
+@[simp]
+theorem coeff_sum {ι : Type*} (s : Finset ι) (f : ι → Cyclotomic e) (j : ℕ) :
+    (∑ i ∈ s, f i).coeff j = ∑ i ∈ s, (f i).coeff j := by
+  simpa only [coeffAddHom_apply] using map_sum (coeffAddHom e j) f s
+
 /-- Every class modulo `Φ_e` has an exact coefficient-vector representative. -/
 theorem toAdjoinRoot_surjective : Function.Surjective (toAdjoinRoot : Cyclotomic e → _) := by
   intro z
@@ -400,6 +455,13 @@ theorem evalCoeffs_eq_eval₂ {R : Type*} [Semiring R] (f : ℤ →+* R) (r : R)
     evalCoeffs f r x = x.toPolynomial.eval₂ f r := by
   rw [evalCoeffs, toPolynomial, TauCeti.Polynomial.eval₂_ofCoeffList]
 
+/-- The bundled evaluation at a root of the cyclotomic polynomial is the Horner evaluation
+`TauCeti.Cyclotomic.evalCoeffs`. -/
+theorem evalRingHom_eq_evalCoeffs {R : Type*} [CommRing R] (f : ℤ →+* R) (r : R)
+    (hr : (cyclotomic e ℤ).eval₂ f r = 0) (x : Cyclotomic e) :
+    evalRingHom f r hr x = evalCoeffs f r x := by
+  rw [evalRingHom_apply, evalCoeffs_eq_eval₂]
+
 /-- Horner's rule in closed form: coefficient-list evaluation is the sum of the evaluated
 coordinates against the powers of `r`, one term for each element of the power basis. -/
 theorem evalCoeffs_eq_sum {R : Type*} [Semiring R] (f : ℤ →+* R) (r : R) (x : Cyclotomic e) :
@@ -437,8 +499,7 @@ noncomputable def reduceRingHom (p : ℕ) [Fact p.Prime] [NeZero e]
 theorem reduceRingHom_apply (p : ℕ) [Fact p.Prime] [NeZero e]
     (r : ZMod p) (hr : IsPrimitiveRoot r e) (x : Cyclotomic e) :
     reduceRingHom p r hr x = reduce p r x := by
-  rw [reduceRingHom, reduce, evalRingHom, RingHom.comp_apply, toAdjoinRootRingHom_apply,
-    toAdjoinRoot, AdjoinRoot.lift_mk, evalCoeffs_eq_eval₂]
+  rw [reduceRingHom, evalRingHom_eq_evalCoeffs, reduce]
 
 /-- For a prime `p`, reduction at a primitive `e`-th root in `ZMod p` sends the distinguished
 generator `ζ` to that root. -/
@@ -500,8 +561,8 @@ theorem complexEmbedding_apply [NeZero e] (x : Cyclotomic e) :
   rw [complexEmbedding, evalRingHom_apply, aeval_def, algebraMap_int_eq]
 
 @[simp]
-theorem complexEmbedding_zeta [NeZero e] : complexEmbedding (zeta e) = complexRoot e := by
-  exact evalRingHom_zeta _ _ _
+theorem complexEmbedding_zeta [NeZero e] : complexEmbedding (zeta e) = complexRoot e :=
+  evalRingHom_zeta _ _ _
 
 /-- The distinguished complex realization of exact cyclotomic integers is injective. -/
 theorem complexEmbedding_injective [NeZero e] :

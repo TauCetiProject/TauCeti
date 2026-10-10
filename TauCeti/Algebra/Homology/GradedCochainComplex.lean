@@ -33,6 +33,7 @@ supplies: it serves the underlying complex of a DG algebra and of a DG module on
 
 * `TauCeti.gradedCochainComplex`: the cochain complex whose degree-`p` term is the submodule
   `ℳ p` and whose differential is the restriction of `dM`.
+* `TauCeti.gradedCochainComplexXEquiv`: its degree-`p` term identified with `ℳ p`.
 * `TauCeti.gradedCochainComplexLift`: the same complex with its terms lifted to a larger
   module universe.
 * `TauCeti.gradedCochainComplexMap`: the induced map in a common module universe.
@@ -99,6 +100,25 @@ theorem gradedCochainComplex_d_apply (p : ℤ) (x : ℳ p) :
     rw [gradedCochainComplex_d]
     rw [gradedCochainComplex_X_proof_eq_rfl, gradedCochainComplex_X_proof_eq_rfl]
     rfl
+
+/-- The degree-`p` term of `gradedCochainComplex` is the submodule `ℳ p`, as a linear
+equivalence. -/
+noncomputable def gradedCochainComplexXEquiv (p : ℤ) :
+    (gradedCochainComplex ℳ dM hdeg hsq).X p ≃ₗ[R] ℳ p :=
+  (eqToIso (gradedCochainComplex_X p)).toLinearEquiv
+
+/-- Under `gradedCochainComplexXEquiv`, the differential of `gradedCochainComplex` is `dM`. -/
+theorem gradedCochainComplexXEquiv_d (p : ℤ) (x : (gradedCochainComplex ℳ dM hdeg hsq).X p) :
+    (gradedCochainComplexXEquiv (p + 1)
+        (((gradedCochainComplex ℳ dM hdeg hsq).d p (p + 1)).hom x) : M) =
+      dM (gradedCochainComplexXEquiv p x) := by
+  have key := gradedCochainComplex_d_apply (hdeg := hdeg) (hsq := hsq) p
+    (gradedCochainComplexXEquiv p x)
+  -- `gradedCochainComplexXEquiv` is the `eqToHom` of `gradedCochainComplex_X`, whose inverse
+  -- cancels it.
+  rw [show (eqToHom (gradedCochainComplex_X p).symm) (gradedCochainComplexXEquiv p x) = x from
+    (eqToIso (gradedCochainComplex_X (hdeg := hdeg) (hsq := hsq) p)).hom_inv_id_apply x] at key
+  exact congrArg Subtype.val key
 
 /-- The graded cochain complex in a common module universe. Its degree-`p` term is
 `ULift (ℳ p)`, and its differential is the lifted restriction of `dM`. -/

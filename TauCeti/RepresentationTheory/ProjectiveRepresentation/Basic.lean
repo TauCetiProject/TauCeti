@@ -62,12 +62,14 @@ itself becomes the **twisted regular representation**, which realizes every fact
 * `TauCeti.exists_isProjectiveRep`: every normalized factor set is the factor set of a projective
   representation.
 
-## References
+## Implementation notes
 
-This builds the projective-representation half of Layer 7 of the
-[induction and restriction roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/RepresentationTheory/InductionRestriction/README.md),
-whose `IsProjectiveRep` is the notion defined here. That roadmap spells the factor set uncurried;
-it is curried here to match `TauCeti.IsFactorSet` and the twisted monoid algebra that consume it.
+Factor sets use the curried form `α : G → G → kˣ`: `α g h` is the scalar attached to the ordered
+pair `(g, h)`. This is the convention of `TauCeti.IsFactorSet` and `TauCeti.twistedMonoidAlgebra`,
+whose basis elements multiply as `e g * e h = (α g h : k) • e (g * h)`. Thus the twisted algebra
+and the lift use the same left-action convention.
+
+## References
 
 * G. Karpilovsky, *Projective Representations of Finite Groups*, Marcel Dekker (1985), Ch. 1 and 3.
 * I. M. Isaacs, *Character Theory of Finite Groups*, AMS Chelsea (1976), Ch. 11.

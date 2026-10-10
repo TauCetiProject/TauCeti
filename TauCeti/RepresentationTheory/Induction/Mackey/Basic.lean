@@ -426,9 +426,10 @@ theorem mackeySummand_eq_indFDRep_res_conjFDRep (s : G)
           (Subgroup.subgroupOfEquivOfLe
             (mackeySubgroup_le_right (s := s) (H := H) (K := K))).toMonoidHom).obj
         ((Action.res (FGModuleCat k) (mackeyToConjH s H K)).obj (conjFDRep s A))) := by
-  -- `mackeyToH` is a composite of three homomorphisms; `actionRes_comp` splits its restriction
+  -- `mackeyToH` is a composite of three homomorphisms; `MonoidHom.actionRes_comp` splits its
+  -- restriction
   -- into the corresponding three restrictions, the outer two of which are the ones stated.
-  simp only [mackeySummand, mackeyToH, actionRes_comp, CategoryTheory.Functor.comp_obj,
+  simp only [mackeySummand, mackeyToH, MonoidHom.actionRes_comp, CategoryTheory.Functor.comp_obj,
     MulEquiv.toMonoidHom_eq_coe, res_obj_eq_conjFDRep]
 
 /-- The character of the representation the Mackey summand is induced from: pulling `A` back along
@@ -460,7 +461,7 @@ The character of `Ind_H^G A` at `x : K`, read on `G`, is
 the same number: `FDRep.character_actionRes` is a `simp` lemma rewriting the left-hand side into
 it. -/
 theorem character_resFDRep_indFDRep_mackey [H.FiniteIndex] (A : FDRep k H) (x : K) :
-    (resFDRep K (indFDRep A)).character x =
+    (Subgroup.resFDRep K (indFDRep A)).character x =
       letI := Fintype.ofFinite (DoubleCoset.Quotient (K : Set G) (H : Set G))
       ∑ D : DoubleCoset.Quotient (K : Set G) (H : Set G),
         (mackeySummand (K := K) D.out A).character x := by

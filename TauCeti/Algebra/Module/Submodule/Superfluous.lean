@@ -53,10 +53,6 @@ contained in the radical `Module.jacobson`.
 
 ## References
 
-This is the superfluous-kernel vocabulary behind the projective-cover bullet of Layer 3 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, whose statement of it is
-"a projective `P` with an essential epimorphism `P ↠ M` (superfluous kernel)".
-
 See I. Assem, D. Simson, A. Skowroński, *Elements of the Representation Theory of Associative
 Algebras, Vol. 1*, Section I.4, and T. Y. Lam, *A First Course in Noncommutative Rings*, §24.
 -/

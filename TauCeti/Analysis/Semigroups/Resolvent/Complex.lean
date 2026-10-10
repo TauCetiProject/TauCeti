@@ -74,10 +74,10 @@ Every `lambda` with `omega < re lambda` is a resolvent point of the complex gene
 theorem mem_resolventSet_complexGenerator (S : StronglyContinuousSemigroup X)
     (hS : S.IsComplexLinear) (hb : S.HasGrowthBound omega M)
     (hlambda : omega < lambda.re) :
-    lambda ∈ TauCeti.LinearPMap.resolventSet (S.complexGenerator hS) := by
+    lambda ∈ LinearPMap.resolventSet (S.complexGenerator hS) := by
   have hT : (S.phaseShift hS lambda.im).IsComplexLinear := hS.phaseShift lambda.im
   have hreal : lambda.re ∈
-      TauCeti.LinearPMap.resolventSet
+      LinearPMap.resolventSet
         (((S.phaseShift hS lambda.im).complexGenerator hT).restrictScalars ℝ) := by
     rw [(S.phaseShift hS lambda.im).complexGenerator_restrictScalars hT]
     exact (S.phaseShift hS lambda.im).mem_resolventSet_generator
@@ -95,23 +95,23 @@ semigroup `t ↦ exp (-i (im lambda) t) S(t)` at the real point `re lambda`. -/
 theorem restrictScalars_resolvent_complexGenerator (S : StronglyContinuousSemigroup X)
     (hS : S.IsComplexLinear) (hb : S.HasGrowthBound omega M)
     (hlambda : omega < lambda.re) :
-    (TauCeti.LinearPMap.resolvent (S.complexGenerator hS) lambda).restrictScalars ℝ
+    (LinearPMap.resolvent (S.complexGenerator hS) lambda).restrictScalars ℝ
       = (S.phaseShift hS lambda.im).resolvent (hb.phaseShift hS lambda.im) lambda.re hlambda := by
   have hT : (S.phaseShift hS lambda.im).IsComplexLinear := hS.phaseShift lambda.im
   have hreal : lambda.re ∈
-      TauCeti.LinearPMap.resolventSet (S.phaseShift hS lambda.im).generator :=
+      LinearPMap.resolventSet (S.phaseShift hS lambda.im).generator :=
     (S.phaseShift hS lambda.im).mem_resolventSet_generator (hb.phaseShift hS lambda.im) hlambda
   have hrestrict :
       ((S.phaseShift hS lambda.im).complexGenerator hT).restrictScalars ℝ =
         (S.phaseShift hS lambda.im).generator :=
     (S.phaseShift hS lambda.im).complexGenerator_restrictScalars hT
   have hmem : (lambda.re : ℂ) + (lambda.im : ℂ) * Complex.I ∈
-      TauCeti.LinearPMap.resolventSet (S.complexGenerator hS) := by
+      LinearPMap.resolventSet (S.complexGenerator hS) := by
     rw [Complex.re_add_im]
     exact S.mem_resolventSet_complexGenerator hS hb hlambda
-  have hshift : TauCeti.LinearPMap.resolvent
+  have hshift : LinearPMap.resolvent
       ((S.phaseShift hS lambda.im).complexGenerator hT) (lambda.re : ℂ)
-      = TauCeti.LinearPMap.resolvent (S.complexGenerator hS) lambda := by
+      = LinearPMap.resolvent (S.complexGenerator hS) lambda := by
     rw [complexGenerator_phaseShift]
     rw [TauCeti.LinearPMap.resolvent_subScalar (A := S.complexGenerator hS)
       (omega := (lambda.im : ℂ) * Complex.I) (lambda := (lambda.re : ℂ)) hmem, Complex.re_add_im]
@@ -126,7 +126,7 @@ theorem restrictScalars_resolvent_complexGenerator (S : StronglyContinuousSemigr
 resolvent set of the generator. -/
 theorem setOf_lt_re_subset_resolventSet_complexGenerator (S : StronglyContinuousSemigroup X)
     (hS : S.IsComplexLinear) (hb : S.HasGrowthBound omega M) :
-    {z : ℂ | omega < z.re} ⊆ TauCeti.LinearPMap.resolventSet (S.complexGenerator hS) :=
+    {z : ℂ | omega < z.re} ⊆ LinearPMap.resolventSet (S.complexGenerator hS) :=
   fun _ hz => S.mem_resolventSet_complexGenerator hS hb hz
 
 /-- **The complex Laplace-transform bridge.** On the half-plane `omega < re lambda` the resolvent
@@ -135,7 +135,7 @@ of the complex generator is the pointwise Bochner integral
 theorem resolvent_complexGenerator_apply (S : StronglyContinuousSemigroup X)
     (hS : S.IsComplexLinear) (hb : S.HasGrowthBound omega M)
     (hlambda : omega < lambda.re) (x : X) :
-    TauCeti.LinearPMap.resolvent (S.complexGenerator hS) lambda x
+    LinearPMap.resolvent (S.complexGenerator hS) lambda x
       = ∫ t in Set.Ioi (0 : ℝ), Complex.exp (-(lambda * t)) • S.realOperator t x := by
   have hrestrict := congrArg (fun R : X →L[ℝ] X => R x)
     (S.restrictScalars_resolvent_complexGenerator hS hb hlambda)
@@ -155,7 +155,7 @@ bound `(omega, M)`, `‖R(lambda, A)‖ ≤ M / (re lambda - omega)`. -/
 theorem norm_resolvent_complexGenerator_le (S : StronglyContinuousSemigroup X)
     (hS : S.IsComplexLinear) (hb : S.HasGrowthBound omega M)
     (hlambda : omega < lambda.re) :
-    ‖TauCeti.LinearPMap.resolvent (S.complexGenerator hS) lambda‖ ≤ M / (lambda.re - omega) := by
+    ‖LinearPMap.resolvent (S.complexGenerator hS) lambda‖ ≤ M / (lambda.re - omega) := by
   rw [← ContinuousLinearMap.norm_restrictScalars (𝕜' := ℝ),
     S.restrictScalars_resolvent_complexGenerator hS hb hlambda]
   exact (S.phaseShift hS lambda.im).resolvent_norm_le (hb.phaseShift hS lambda.im) lambda.re
@@ -166,10 +166,10 @@ growth bound `(omega, M)`, `‖R(lambda, A)ⁿ‖ ≤ M / (re lambda - omega)ⁿ
 theorem norm_resolvent_complexGenerator_pow_le (S : StronglyContinuousSemigroup X)
     (hS : S.IsComplexLinear) (hb : S.HasGrowthBound omega M)
     (hlambda : omega < lambda.re) (n : ℕ) :
-    ‖TauCeti.LinearPMap.resolvent (S.complexGenerator hS) lambda ^ n‖ ≤
+    ‖LinearPMap.resolvent (S.complexGenerator hS) lambda ^ n‖ ≤
       M / (lambda.re - omega) ^ n := by
-  have hpow : (TauCeti.LinearPMap.resolvent (S.complexGenerator hS) lambda ^ n).restrictScalars ℝ
-      = (TauCeti.LinearPMap.resolvent (S.complexGenerator hS) lambda).restrictScalars ℝ ^ n :=
+  have hpow : (LinearPMap.resolvent (S.complexGenerator hS) lambda ^ n).restrictScalars ℝ
+      = (LinearPMap.resolvent (S.complexGenerator hS) lambda).restrictScalars ℝ ^ n :=
     ContinuousLinearMap.ext fun x => by
       simp only [ContinuousLinearMap.coe_restrictScalars', FunLike.coe_pow_eq_iterate]
   rw [← ContinuousLinearMap.norm_restrictScalars (𝕜' := ℝ), hpow,
@@ -180,7 +180,7 @@ theorem norm_resolvent_complexGenerator_pow_le (S : StronglyContinuousSemigroup 
 growth bound `(omega, M)`, the resolvent of the complex generator is analytic in operator norm. -/
 theorem analyticOnNhd_resolvent_complexGenerator (S : StronglyContinuousSemigroup X)
     (hS : S.IsComplexLinear) (hb : S.HasGrowthBound omega M) :
-    AnalyticOnNhd ℂ (TauCeti.LinearPMap.resolvent (S.complexGenerator hS))
+    AnalyticOnNhd ℂ (LinearPMap.resolvent (S.complexGenerator hS))
       {z : ℂ | omega < z.re} :=
   (LinearPMap.analyticOnNhd_resolvent (S.complexGenerator hS)).mono
     (S.setOf_lt_re_subset_resolventSet_complexGenerator hS hb)

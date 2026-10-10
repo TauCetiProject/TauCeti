@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Group.Action.Sum
 public import Mathlib.Order.Hom.Set
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Extended
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Endpoint
+public import Mathlib.Analysis.Complex.UpperHalfPlane.FunctionsBoundedAtInfty
 
 /-!
 # Oriented geodesics between points of `ℍ ∪ ∂ℍ`
@@ -30,6 +31,8 @@ line. Reading a point of `ℍ ⊕ OnePoint ℝ` other than `∞` as a complex nu
 is negative at points strictly to the left of a line
 (`sideForm_toComplex_neg_of_mem_extLeftHalfPlane`), and zero at the two points a line runs between
 (`IsGeodesicFromTo.sideForm_toComplex_left`, `IsGeodesicFromTo.sideForm_toComplex_right`).
+Geodesic lines with the same image have the same extended left half-plane, up to orientation
+reversal (`extLeftHalfPlane_eq_or_eq_mul_pslS_of_range_eq`).
 
 ## Main declarations
 
@@ -49,6 +52,8 @@ is negative at points strictly to the left of a line
   running from or to `∞` is a vertical line.
 * `TauCeti.UpperHalfPlane.exists_sideForm_eq_of_infty_mem_boundaryLeftHalfPlane`: a geodesic line
   with `∞` strictly on its left is a semicircle.
+* `TauCeti.UpperHalfPlane.eventually_mem_leftHalfPlane_of_infty_mem_boundaryLeftHalfPlane`:
+  all points high enough lie strictly to the left of such a line.
 
 ## Source
 
@@ -331,6 +336,25 @@ theorem IsGeodesicFromTo.extLeftHalfPlane_eq {g g' : PSL(2, ℝ)} {p q : ℍ ⊕
   rw [extLeftHalfPlane, extLeftHalfPlane, hg.leftHalfPlane_eq hg',
     hg.boundaryLeftHalfPlane_eq hg']
 
+/-- Geodesic lines with the same image have the same extended left half-plane, possibly after
+reversing the orientation of one of them. -/
+theorem extLeftHalfPlane_eq_or_eq_mul_pslS_of_range_eq {g k : PSL(2, ℝ)}
+    (h : Set.range (geodesicLine g) = Set.range (geodesicLine k)) :
+    extLeftHalfPlane k = extLeftHalfPlane g ∨
+      extLeftHalfPlane k = extLeftHalfPlane (g * pslS) := by
+  obtain ⟨s, hs⟩ := h ▸ (Set.mem_range_self 0 : geodesicLine g 0 ∈ Set.range (geodesicLine g))
+  obtain ⟨t, ht⟩ := h ▸ (Set.mem_range_self 1 : geodesicLine g 1 ∈ Set.range (geodesicLine g))
+  have hst : s ≠ t := by
+    intro heq
+    have he := geodesicLine_injective g (hs.symm.trans (heq ▸ ht))
+    exact zero_ne_one he
+  have hg : IsGeodesicFromTo g (.inl (geodesicLine g 0)) (.inl (geodesicLine g 1)) :=
+    ⟨0, 1, zero_lt_one, rfl, rfl⟩
+  rcases lt_or_gt_of_ne hst with hst | hts
+  · exact Or.inl (hg.extLeftHalfPlane_eq ⟨s, t, hst, hs, ht⟩)
+  · exact Or.inr ((isGeodesicFromTo_mul_pslS_iff.2 hg).extLeftHalfPlane_eq
+      ⟨t, s, hts, ht, hs⟩)
+
 /-- The points strictly to the left of `geodesicFromTo` transform naturally under the action. -/
 theorem extLeftHalfPlane_geodesicFromTo_smul (h : PSL(2, ℝ)) {p q : ℍ ⊕ OnePoint ℝ}
     (hpq : p ≠ q) :
@@ -579,5 +603,20 @@ theorem exists_sideForm_eq_of_infty_mem_boundaryLeftHalfPlane {g : PSL(2, ℝ)}
   obtain ⟨κ, hκ, hform⟩ := exists_sideForm_eq_of_smul_zero_of_smul_infty he₀.symm he₁.symm
   exact ⟨(e₀ + e₁) / 2, (e₁ - e₀) / 2, κ * (e₁ - e₀), by linarith, mul_pos hκ (sub_pos.2 he),
     hform⟩
+
+/-- A geodesic line with `∞` strictly on its left has every sufficiently high point of `ℍ` in its
+open left half-plane: the line is a semicircle, so it lies below the height of its radius. -/
+theorem eventually_mem_leftHalfPlane_of_infty_mem_boundaryLeftHalfPlane {g : PSL(2, ℝ)}
+    (h : (∞ : OnePoint ℝ) ∈ boundaryLeftHalfPlane g) :
+    ∀ᶠ z in atImInfty, z ∈ leftHalfPlane g := by
+  obtain ⟨m, ρ, κ, hρ, hκ, hform⟩ := exists_sideForm_eq_of_infty_mem_boundaryLeftHalfPlane h
+  refine (atImInfty_mem (leftHalfPlane g)).2 ⟨ρ + 1, fun z hz ↦ ?_⟩
+  rw [mem_leftHalfPlane_iff_sideForm_neg, hform]
+  have hsq : ρ ^ 2 < Complex.normSq ((z : ℂ) - m) := by
+    rw [Complex.normSq_apply]
+    simp only [Complex.sub_re, Complex.sub_im, Complex.ofReal_re, Complex.ofReal_im, sub_zero,
+      coe_re, coe_im]
+    nlinarith [mul_self_nonneg (z.re - m)]
+  exact mul_neg_of_pos_of_neg hκ (by linarith)
 
 end TauCeti.UpperHalfPlane

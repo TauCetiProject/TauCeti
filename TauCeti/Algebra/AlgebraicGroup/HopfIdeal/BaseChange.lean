@@ -221,7 +221,7 @@ theorem baseChangeHopfIdeal_le_iff (halg : Function.Injective (algebraMap k K))
       exact Algebra.TensorProduct.includeRight_injective
         (B := CommHopfAlgCat.quotient H J') halg <| by
           simpa only [Algebra.TensorProduct.includeRight_apply, TensorProduct.tmul_zero] using hx'
-    exact HopfIdeal.mem_toIdeal.mp ((mkQuotient_eq_zero_iff H J' x).mp hzero)
+    exact (mkQuotient_eq_zero_iff H J' x).mp hzero
   · exact baseChangeHopfIdeal_mono
 
 section FaithfullyFlat
@@ -444,7 +444,7 @@ theorem _root_.Module.Basis.mem_baseChangeHopfIdeal_iff (J : HopfIdeal k H)
   rw [TauCeti.CommHopfAlgCat.mem_baseChangeHopfIdeal_iff, hom_baseChangeMap_apply,
     b.lTensor_eq_zero_iff_forall_equivFinsuppOfBasisLeft]
   simp only [BialgHom.coe_toLinearMap]
-  exact forall_congr' fun j ↦ (mkQuotient_eq_zero_iff H J _).trans HopfIdeal.mem_toIdeal
+  exact forall_congr' fun j ↦ mkQuotient_eq_zero_iff H J _
 
 /-- The coefficients, in a basis of `K`, of the elements of a Hopf ideal of `K ⊗[k] H`. -/
 private def coefficientSet (I : HopfIdeal K (baseChange (K := K) H)) : Set H :=

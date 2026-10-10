@@ -27,8 +27,8 @@ square. So linear independence of the classes is the **Finset form** of square-c
 * `TauCeti.squareClass`, `TauCeti.squareClassHom`: the class of a unit, as a function and a
   multiplicative homomorphism, with `squareClass_eq_zero_iff` characterising the trivial class as
   the squares, `ker_squareClassHom` identifying the kernel of the quotient map with the subgroup
-  of squares, and `squareClass_mul`, `squareClass_prod`, `squareClass_pow` computing it on
-  products and powers.
+  of squares, and `squareClass_mul`, `squareClass_prod`, `squareClass_pow`, `squareClass_zpow`
+  computing it on products and powers.
 * `TauCeti.squareClass_eq_iff_isSquare_mul`: equality of square classes read as a square product.
 * `TauCeti.SquareClassGroup.two_nsmul_eq_zero`: the square-class group is killed by two.
 * `TauCeti.linearIndependent_squareClass_iff`: the classes of `d : ι → Kˣ` are `ZMod 2`-linearly
@@ -127,6 +127,12 @@ theorem squareClass_pow (u : Kˣ) (n : ℕ) : squareClass (u ^ n) = n • square
   induction n with
   | zero => simp
   | succ n ih => rw [pow_succ, squareClass_mul, ih, succ_nsmul]
+
+/-- The square class of an integer power is the corresponding multiple of the square class. -/
+@[simp]
+theorem squareClass_zpow (u : Kˣ) (n : ℤ) : squareClass (u ^ n) = n • squareClass u := by
+  rw [← toAdd_ofAdd (squareClass (u ^ n)), ← squareClassHom_apply, map_zpow, squareClassHom_apply,
+    toAdd_zpow, toAdd_ofAdd]
 
 private theorem zmod_two_eq_zero_or_one (t : ZMod 2) : t = 0 ∨ t = 1 := by revert t; decide
 

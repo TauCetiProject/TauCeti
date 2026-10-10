@@ -14,10 +14,15 @@ public import TauCeti.LinearAlgebra.TensorProduct.Basis
 public import TauCeti.LinearAlgebra.TensorProduct.Hom
 public import TauCeti.RepresentationTheory.CharacterTable.ClassFunction
 public import TauCeti.RepresentationTheory.PermutationModule
+public import TauCeti.RepresentationTheory.QuotSMulTop
+public import TauCeti.RepresentationTheory.RestrictScalars
 -- Non-public: flat base change of kernels (`LinearMap.tensorKerEquiv`) and of finite products
 -- (`TensorProduct.piRight`) are used only to construct the invariant and intertwiner comparisons.
 import Mathlib.RingTheory.Flat.Equalizer
 import Mathlib.LinearAlgebra.TensorProduct.Pi
+-- Non-public: bijectivity of the base-changed quotient map (`QuotSMulTop.baseChange_mkQ_bijective`)
+-- is used only to construct `Representation.baseChangeQuotSMulTopEquiv`.
+import TauCeti.LinearAlgebra.TensorProduct.Quotient
 -- Non-public: the bundling lemmas `FDRep.character_of` and `FDRep.character_ρ` are used only inside
 -- the proof of `FDRep.character_baseChange`.
 import TauCeti.RepresentationTheory.FDRep
@@ -72,8 +77,12 @@ of a permutation lattice `ℤ[X]` modulo a prime is `k[X]` and its rationalizati
   commutative base-field algebra preserves the dimension of an intertwiner space.
 * `Representation.IntertwiningMap.baseChange`: base change transports an intertwining map.
 * `Representation.Equiv.baseChange`: base change transports an equivalence of representations.
+* `Representation.baseChangeQuotSMulTopEquiv`: if `r` maps to `0` in `A`, the base change of `ρ`
+  is the base change of its reduction `ρ.quotSMulTop r` modulo `r`.
 * `TauCeti.baseChangeOfMulActionEquiv`: the base change of `R[X]` is `A[X]`.
 * `TauCeti.baseChangeComapEquiv`: the base change of the permutation module `X →₀ R` is `A[X]`.
+* `Representation.baseChangeRestrictScalarsIntEquiv`: a `ZMod n`-representation is its own
+  reduction, `ZMod n ⊗_ℤ ρ.restrictScalarsInt ≅ ρ`.
 -/
 
 public section
@@ -327,6 +336,54 @@ theorem _root_.Representation.IntertwiningMap.toLinearMap_baseChange
     (f.baseChange A).toLinearMap = f.toLinearMap.baseChange A :=
   (rfl)
 
+/-- **Base change preserves composition**: the base change of `g ∘ f` is the composite of the base
+changes `A ⊗ g ∘ A ⊗ f`. -/
+@[simp]
+theorem _root_.Representation.IntertwiningMap.baseChange_comp {U : Type*} [AddCommMonoid U]
+    [Module R U] {τ : _root_.Representation R G U}
+    (g : _root_.Representation.IntertwiningMap σ τ) (f : _root_.Representation.IntertwiningMap ρ σ)
+    (A : Type*) [Semiring A] [Algebra R A] :
+    (g.comp f).baseChange A = (g.baseChange A).comp (f.baseChange A) :=
+  _root_.Representation.IntertwiningMap.ext (LinearMap.baseChange_comp ..)
+
+/-- **Base change preserves a scalar composite**: if `g ∘ f` is multiplication by `r : R`, then so
+is the composite of the base changes `A ⊗ g ∘ A ⊗ f`. -/
+theorem _root_.Representation.IntertwiningMap.baseChange_apply_baseChange_apply_of_comp_eq_smul
+    {f : _root_.Representation.IntertwiningMap ρ σ} {g : _root_.Representation.IntertwiningMap σ ρ}
+    {r : R} (hgf : ∀ v, g (f v) = r • v) (A : Type*) [Semiring A] [Algebra R A]
+    (x : A ⊗[R] V) : g.baseChange A (f.baseChange A x) = r • x := by
+  have hcomp : g.toLinearMap ∘ₗ f.toLinearMap = r • LinearMap.id := LinearMap.ext hgf
+  have h := congrArg (fun φ ↦ φ.toLinearMap)
+    (_root_.Representation.IntertwiningMap.baseChange_comp g f A)
+  rw [_root_.Representation.IntertwiningMap.toLinearMap_baseChange,
+    _root_.Representation.IntertwiningMap.comp_toLinearMap, hcomp,
+    LinearMap.baseChange_smul, LinearMap.baseChange_id] at h
+  exact (LinearMap.congr_fun h x).symm
+
+/-- An intertwining map with two scalar inverse composites becomes bijective after base
+change whenever both scalars become units in the new coefficient semiring. -/
+theorem _root_.Representation.IntertwiningMap.baseChange_bijective_of_comp_eq_smul
+    {f : _root_.Representation.IntertwiningMap ρ σ} {g : _root_.Representation.IntertwiningMap σ ρ}
+    {r s : R} (hgf : ∀ v, g (f v) = r • v) (hfg : ∀ w, f (g w) = s • w)
+    (A : Type*) [Semiring A] [Algebra R A] (hr : IsUnit (algebraMap R A r))
+    (hs : IsUnit (algebraMap R A s)) :
+    Function.Bijective (f.baseChange A) := by
+  have hgfA (x : A ⊗[R] V) :
+      g.baseChange A (f.baseChange A x) = algebraMap R A r • x := by
+    simpa only [IsScalarTower.algebraMap_smul] using
+      _root_.Representation.IntertwiningMap.baseChange_apply_baseChange_apply_of_comp_eq_smul
+        hgf A x
+  have hfgA (y : A ⊗[R] W) :
+      f.baseChange A (g.baseChange A y) = algebraMap R A s • y := by
+    simpa only [IsScalarTower.algebraMap_smul] using
+      _root_.Representation.IntertwiningMap.baseChange_apply_baseChange_apply_of_comp_eq_smul
+        hfg A y
+  refine ⟨fun x y hxy ↦ hr.smul_left_cancel.mp ?_,
+    fun y ↦ ⟨g.baseChange A (hs.unit⁻¹ • y), ?_⟩⟩
+  · rw [← hgfA, ← hgfA, hxy]
+  · rw [hfgA]
+    exact smul_inv_smul hs.unit y
+
 /-- **Base change transports an equivalence of representations**: an equivariant isomorphism
 `ρ ≃ σ` becomes an equivariant isomorphism `A ⊗[R] V ≃ A ⊗[R] W` after extending the scalars,
 because the extension acts on the second factor, where the equivalence already intertwines the
@@ -360,6 +417,43 @@ theorem _root_.Representation.Equiv.baseChange_symm_tmul (φ : ρ.Equiv σ) (A :
   rw [← h, _root_.Representation.Equiv.symm_apply_apply]
 
 end Transport
+
+section QuotSMulTop
+
+variable {R A G V : Type*} [CommRing R] [Ring A] [Algebra R A] [Monoid G] [AddCommGroup V]
+  [Module R V]
+
+/-- **Base change only sees the reduction modulo a vanishing scalar.** If `r : R` maps to `0` in
+the `R`-algebra `A`, the base change of the quotient map `V → V ⧸ rV` is an equivalence
+`A ⊗[R] V ≃ A ⊗[R] (V ⧸ rV)` between the base changes of `ρ` and of its reduction
+`ρ.quotSMulTop r`. For `R = ℤ` and `A` of characteristic `ℓ`, the reduction `A ⊗[ℤ] V` of a
+`G`-module is that of `V ⧸ ℓV`. -/
+noncomputable def _root_.Representation.baseChangeQuotSMulTopEquiv
+    (ρ : _root_.Representation R G V) {r : R} (hr : algebraMap R A r = 0) :
+    (_root_.Representation.baseChange A ρ).Equiv
+      (_root_.Representation.baseChange A (ρ.quotSMulTop r)) :=
+  _root_.Representation.Equiv.mk
+    (LinearEquiv.ofBijective _ (QuotSMulTop.baseChange_mkQ_bijective hr)) fun g ↦ by
+      ext v
+      simp
+
+/-- `Representation.baseChangeQuotSMulTopEquiv` reduces the second factor of a pure tensor. -/
+@[simp]
+theorem _root_.Representation.baseChangeQuotSMulTopEquiv_tmul (ρ : _root_.Representation R G V)
+    {r : R} (hr : algebraMap R A r = 0) (a : A) (v : V) :
+    ρ.baseChangeQuotSMulTopEquiv hr (a ⊗ₜ[R] v) = a ⊗ₜ[R] Submodule.Quotient.mk v :=
+  (rfl)
+
+/-- The inverse of `Representation.baseChangeQuotSMulTopEquiv` lifts the second factor of a pure
+tensor along the quotient map. -/
+@[simp]
+theorem _root_.Representation.baseChangeQuotSMulTopEquiv_symm_tmul
+    (ρ : _root_.Representation R G V) {r : R} (hr : algebraMap R A r = 0) (a : A) (v : V) :
+    (ρ.baseChangeQuotSMulTopEquiv hr).symm (a ⊗ₜ[R] Submodule.Quotient.mk v) = a ⊗ₜ[R] v := by
+  rw [← _root_.Representation.baseChangeQuotSMulTopEquiv_tmul ρ hr,
+    _root_.Representation.Equiv.symm_apply_apply]
+
+end QuotSMulTop
 
 section Intertwiner
 
@@ -628,3 +722,32 @@ end Comap
 end PermutationRepresentation
 
 end TauCeti
+
+/-! ### `ZMod n`-representations as their own reductions -/
+
+open TensorProduct
+
+namespace Representation
+
+variable {n : ℕ} {G : Type*} [Monoid G] {W : Type*} [AddCommGroup W] [Module (ZMod n) W]
+
+/-- **The reduction of a `ZMod n`-module is itself**: `r ⊗ w ↦ r • w` is a `G`-equivariant
+`ZMod n`-linear isomorphism `ZMod n ⊗_ℤ W ≃ W` for every representation `ρ` of `G` over
+`ZMod n`. It is Mathlib's `TensorProduct.lidOfCompatibleSMul`, which applies because every element
+of `ZMod n` is the image of an integer. -/
+noncomputable def baseChangeRestrictScalarsIntEquiv (ρ : Representation (ZMod n) G W) :
+    (Representation.baseChange (ZMod n) ρ.restrictScalarsInt).Equiv ρ :=
+  haveI : CompatibleSMul ℤ (ZMod n) (ZMod n) W :=
+    .of_algebraMap_surjective _ _ ZMod.intCast_surjective
+  .mk (TensorProduct.lidOfCompatibleSMul ℤ (ZMod n) W) fun g ↦ by
+    ext w
+    simp [TensorProduct.lidOfCompatibleSMul_tmul, Representation.baseChange_apply]
+
+/-- The equivalence `ZMod n ⊗_ℤ W ≃ W` is the scalar multiplication on pure tensors. -/
+@[simp]
+theorem baseChangeRestrictScalarsIntEquiv_tmul (ρ : Representation (ZMod n) G W) (r : ZMod n)
+    (w : W) : ρ.baseChangeRestrictScalarsIntEquiv (r ⊗ₜ w) = r • w := by
+  rw [baseChangeRestrictScalarsIntEquiv, Representation.Equiv.mk_apply,
+    TensorProduct.lidOfCompatibleSMul_tmul]
+
+end Representation

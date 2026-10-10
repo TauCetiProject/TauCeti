@@ -38,6 +38,8 @@ path index and multiplication of the path algebra, independently of any coeffici
   vertex exactly when both its factors are.
 * `TauCeti.Quiver.TotalPath.mul?_nil_left`, `TauCeti.Quiver.TotalPath.mul?_nil_right`, and
   `TauCeti.Quiver.TotalPath.mul?_assoc`: trivial-path units and associativity.
+* `TauCeti.Quiver.TotalPath.mk_cons_eq_mk_cons_iff`: a path into a vertex is determined by its
+  last arrow and the path before it.
 
 ## References
 
@@ -177,6 +179,28 @@ theorem mul?_assoc (x y z : TotalPath Q) :
     · subst h₂
       rw [mul?_mk, Option.bind_some, mul?_eq_none (by simpa using h₁)]
     · rw [mul?_eq_none (by simpa using h₂), Option.bind_none]
+
+/-- **A path into `j` is determined by its last arrow and the path before it**: two indexed paths
+ending in arrows into `j` agree exactly when their prefixes and their last arrows do. -/
+theorem mk_cons_eq_mk_cons_iff {s s' i i' j : Q} {p : _root_.Quiver.Path s i}
+    {p' : _root_.Quiver.Path s' i'} {b : i ⟶ j} {b' : i' ⟶ j} :
+    (⟨s', j, p'.cons b'⟩ : TotalPath Q) = ⟨s, j, p.cons b⟩ ↔
+      (⟨s', i', p'⟩ : TotalPath Q) = ⟨s, i, p⟩ ∧ (⟨i', b'⟩ : Σ a, a ⟶ j) = ⟨i, b⟩ := by
+  constructor
+  · intro h
+    obtain ⟨rfl, h⟩ := Sigma.mk.inj h
+    have h := eq_of_heq (Sigma.mk.inj (eq_of_heq h)).2
+    obtain rfl := _root_.Quiver.Path.obj_eq_of_cons_eq_cons h
+    obtain ⟨hp, hb⟩ := (_root_.Quiver.Path.cons.inj h).2
+    obtain rfl := eq_of_heq hp
+    obtain rfl := eq_of_heq hb
+    exact ⟨rfl, rfl⟩
+  · rintro ⟨h, h'⟩
+    obtain ⟨rfl, h'⟩ := Sigma.mk.inj h'
+    obtain rfl := eq_of_heq h'
+    obtain ⟨rfl, h⟩ := Sigma.mk.inj h
+    obtain rfl := eq_of_heq (Sigma.mk.inj (eq_of_heq h)).2
+    rfl
 
 end Quiver.TotalPath
 

@@ -21,6 +21,10 @@ principal cocycle attached to `c g`.  The file records the algebraic degree-one 
 components of the corresponding bar homotopy and specializes their identities to continuous
 cocycles, including the degree-two cocycle identity that expresses the conjugation difference as
 a coboundary.
+
+A continuous `N`-equivariant coefficient map `f` with `f (g • m) = k • g • f m` intertwines the
+two conjugation actions of `g` up to the same factor `k` (`explicitCoeff1_smul_of_map_smul`). This
+is how a cyclotomic twist of the coefficients appears in the Galois action on `H¹`.
 -/
 
 public section
@@ -313,6 +317,30 @@ theorem smul_eq_self_of_mem (N : Subgroup G) [N.Normal] (g : N) (x : H1 N M) :
   change explicitConj1 (M := M) N (g : G) x = x
   rw [explicitConj1_eq_id_of_mem]
   rfl
+
+/-- **Coefficient maps intertwine conjugation up to a twist.** If a continuous `N`-equivariant
+coefficient map `f : M → M'` satisfies `f (g • m) = k • g • f m`, then the map it induces on
+`H¹(N, -)` satisfies the same relation with the conjugation action of `g`. For `k = 1` this says
+that a `G`-equivariant coefficient map induces a `G`-equivariant map on `H¹(N, -)`. -/
+theorem explicitCoeff1_smul_of_map_smul {M' : Type uA} [AddCommGroup M'] [TopologicalSpace M']
+    [IsTopologicalAddGroup M'] [DistribMulAction G M'] [ContinuousSMul G M']
+    (N : Subgroup G) [N.Normal] (f : M →+[N] M') (hf : Continuous f) (g : G) (k : ℕ)
+    (hg : ∀ m : M, f (g • m) = k • g • f m) (x : H1 N M) :
+    explicitCoeff1 N M f hf (g • x) = k • g • explicitCoeff1 N M f hf x := by
+  induction x using QuotientAddGroup.induction_on with
+  | _ c =>
+    rw [smul_mk, explicitCoeff1_mk, explicitCoeff1_mk, smul_mk, ← QuotientAddGroup.mk_nsmul]
+    congr 1
+    ext h
+    -- The coefficient leg of `explicitCoeff1_mk` is stated through `f.toMulActionHom`, so the
+    -- pointwise formulas are applied as terms rather than by rewriting under that proof.
+    rw [AddSubgroup.coe_nsmul, Pi.smul_apply]
+    refine (cocyclesMap1_apply _ _ _ _ _ _ _ _ _ h).trans ?_
+    refine Eq.trans ?_ (congrArg (k • ·) (cocyclesMap1_apply _ _ _ _ _ _ _ _ _ h)).symm
+    refine Eq.trans ?_ (congrArg (fun m => k • DistribSMul.toAddMonoidHom M' g m)
+      (cocyclesMap1_apply _ _ _ _ _ _ _ _ _ _)).symm
+    rw [cocyclesMap1_apply]
+    exact hg _
 
 end
 
