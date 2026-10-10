@@ -143,6 +143,12 @@ theorem derivativeOfSeparating_smul_D (y : F) :
     derivativeOfSeparating hx y • D k F x = D k F y := by
   simpa [derivativeOfSeparating] using (kaehlerBasisOfSeparating hx).sum_repr (D k F y)
 
+/-- The coordinate of `d y` in the basis `d x` is `dy/dx`. -/
+@[simp]
+theorem kaehlerBasisOfSeparating_repr_D (y : F) :
+    (kaehlerBasisOfSeparating hx).repr (D k F y) () = derivativeOfSeparating hx y := by
+  simp [derivativeOfSeparating]
+
 /-- `dy/dx` is the only scalar taking `d x` to `d y`. -/
 theorem eq_derivativeOfSeparating (y c : F) (hc : c • D k F x = D k F y) :
     c = derivativeOfSeparating hx y :=

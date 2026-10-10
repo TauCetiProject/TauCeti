@@ -146,8 +146,7 @@ theorem kaehlerResidue_apply (ω : Ω[F⁄k]) :
 @[simp]
 theorem kaehlerResidue_smul_D (z : F) : P.kaehlerResidue hP ht htr (z • D k F t) =
     P.residue hP ht z := by
-  rw [kaehlerResidue_apply, LinearMap.map_smul, ← kaehlerBasisOfSeparating_apply htr (),
-    Module.Basis.coord_apply, Module.Basis.repr_self, Finsupp.single_eq_same, smul_eq_mul, mul_one]
+  simp [kaehlerResidue_apply]
 
 /-- **Exact differentials have residue zero**: `res_P(dy) = 0`. -/
 @[simp]

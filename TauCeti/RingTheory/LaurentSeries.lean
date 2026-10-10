@@ -111,6 +111,13 @@ theorem derivative_single_mul (m : ℤ) (c : R) (f : R⸨X⸩) :
   push_cast
   ring
 
+/-- The product rule for a monomial times a power series:
+`(c X ^ m * φ)' = m c X ^ (m - 1) * φ + c X ^ m * φ'`. -/
+theorem derivative_single_mul_coe (m : ℤ) (c : R) (φ : R⟦X⟧) :
+    derivative R (single m c * (φ : R⸨X⸩)) =
+      single (m - 1) (m * c) * φ + single m c * ((d⁄dX φ : R⟦X⟧) : R⸨X⸩) := by
+  rw [derivative_single_mul, ← PowerSeries.coe_derivative]
+
 /-- **The product rule** for the derivative of Laurent series: `(f * g)' = f' * g + f * g'`. -/
 theorem derivative_mul (f g : R⸨X⸩) :
     derivative R (f * g) = derivative R f * g + f * derivative R g := by
@@ -134,10 +141,8 @@ theorem derivative_mul (f g : R⸨X⸩) :
       show a + (b - 1) = a + b - 1 by ring, ← single_add]
     push_cast
     ring_nf
-  rw [hfg, derivative_single_mul, derivative_single_mul, derivative_single_mul,
-    ← PowerSeries.coe_derivative, ← PowerSeries.coe_derivative, ← PowerSeries.coe_derivative,
-    Derivation.leibniz, smul_eq_mul, smul_eq_mul]
-  simp only [PowerSeries.coe_add, PowerSeries.coe_mul]
+  simp only [hfg, derivative_single_mul_coe]
+  simp only [Derivation.leibniz, smul_eq_mul, PowerSeries.coe_add, PowerSeries.coe_mul]
   rw [hd, hab]
   ring
 
