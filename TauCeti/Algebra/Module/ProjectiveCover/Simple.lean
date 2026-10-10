@@ -15,9 +15,10 @@ public import TauCeti.RingTheory.KrullSchmidt.Indecomposable
 
 Over a ring with semisimple radical quotient, a projective module with local
 endomorphism ring and coatomic submodule lattice has simple head `P / J P`. In particular this
-holds for indecomposable projective modules of finite length. Every surjection from such a module
-onto a simple module
-has kernel `J P` and is a projective cover. Thus its simple quotient is unique up to isomorphism.
+holds for indecomposable projective modules of finite length. Every nonzero map from a module
+with simple head into a semisimple module has kernel `J P`. A surjection from such a projective
+module with coatomic submodule lattice onto a nonzero semisimple module is a projective cover.
+Thus its simple quotient is unique up to isomorphism.
 
 The locality argument uses `Ideal.endMapQ`: projectivity makes reduction of endomorphisms
 surjective, so the endomorphism ring of the head is local as well.
@@ -61,29 +62,29 @@ theorem IsIndecomposableModule.isSimpleModule_quotient_jacobson_smul_top
   have := isLocalRing_end_of_isIndecomposable hfin hP
   exact isSimpleModule_quotient_jacobson_smul_top_of_isLocalRing_end
 
-/-- If a module has simple head, every surjection onto a simple module has kernel exactly
-`J P`. This identifies all its simple quotients with its head. -/
-theorem ker_eq_jacobson_smul_top_of_surjective
+/-- If a module has simple head, every nonzero map into a semisimple module has kernel exactly
+`J P`. In particular, this identifies all its nonzero semisimple quotients with its head. -/
+theorem ker_eq_jacobson_smul_top_of_ne_zero
     [IsSimpleModule R (P ⧸ Ring.jacobson R • (⊤ : Submodule R P))]
-    [IsSimpleModule R S] {f : P →ₗ[R] S} (hf : Function.Surjective f) :
+    [IsSemisimpleModule R S] {f : P →ₗ[R] S} (hf : f ≠ 0) :
     LinearMap.ker f = Ring.jacobson R • (⊤ : Submodule R P) := by
   let N := Ring.jacobson R • (⊤ : Submodule R P)
   have hle : N ≤ LinearMap.ker f :=
     (Ring.jacobson_smul_top_le R P).trans (IsSemisimpleModule.jacobson_le_ker R R P S f)
   have hN : IsCoatom N := isSimpleModule_iff_isCoatom.mp inferInstance
-  exact (hN.le_iff_eq (LinearMap.isCoatom_ker_of_surjective hf).ne_top).mp hle
+  exact (hN.le_iff_eq (LinearMap.ker_eq_top.not.mpr hf)).mp hle
 
 /-- A surjection from a projective module with simple head and coatomic submodule lattice
-onto a simple module is a projective cover. -/
+onto a nonzero semisimple module is a projective cover. -/
 theorem isProjectiveCover_of_isSimpleModule_quotient_jacobson_smul_top
     [IsCoatomic (Submodule R P)] [Module.Projective R P]
     [IsSimpleModule R (P ⧸ Ring.jacobson R • (⊤ : Submodule R P))]
-    [IsSimpleModule R S] {f : P →ₗ[R] S} (hf : Function.Surjective f) :
+    [IsSemisimpleModule R S] [Nontrivial S] {f : P →ₗ[R] S} (hf : Function.Surjective f) :
     IsProjectiveCover f where
   projective := inferInstance
   surjective := hf
   isSuperfluous_ker := by
-    rw [ker_eq_jacobson_smul_top_of_surjective hf]
+    rw [ker_eq_jacobson_smul_top_of_ne_zero (LinearMap.ne_zero_of_surjective hf)]
     exact isSuperfluous_of_le_jacobson (Ring.jacobson_smul_top_le R P)
 
 /-- A projective cover of a simple module is indecomposable. No finiteness or assumption on

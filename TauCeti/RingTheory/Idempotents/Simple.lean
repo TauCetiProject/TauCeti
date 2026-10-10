@@ -66,6 +66,7 @@ theorem IsPrimitiveIdempotent.isProjectiveCover_of_surjective
     (he : IsPrimitiveIdempotent e) {S : Type*} [AddCommGroup S] [Module R S]
     [IsSimpleModule R S] {f : (Ideal.span {e} : Ideal R) →ₗ[R] S}
     (hf : Function.Surjective f) : IsProjectiveCover f := by
+  have := IsSimpleModule.nontrivial R S
   have := he.isIdempotentElem.projective_span_singleton
   have := he.isSimpleModule_quotient_jacobson_smul_top
   exact isProjectiveCover_of_isSimpleModule_quotient_jacobson_smul_top hf
