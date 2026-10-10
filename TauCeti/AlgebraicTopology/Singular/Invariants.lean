@@ -78,13 +78,14 @@ def isLimitMapConeTransferCone [Fintype G] [IsIso (Fintype.card G • 𝟙 R)] {
     IsLimit (F.mapCone (hG.transferCone R)) := by
   have := hG.toContinuousConstSMul
   -- Singular chains are additive in the coefficients, so `|G|` stays invertible on `C(E; R)` and
-  -- `C(B; R)`. By `TopCat.actionFunctor_obj` and `transferCone_pt` (both `rfl`), these are the
-  -- acted-on object and the cone point of `hG.transferCone R`.
-  have : IsIso (Fintype.card G • 𝟙 ((E.actionFunctor G ⋙
-      (singularChainComplexFunctor C).obj R).obj (SingleObj.star G))) :=
-    (singularChainComplexFunctor C ⋙ (evaluation _ _).obj E).isIso_nsmul_id_obj _ R
-  have : IsIso (Fintype.card G • 𝟙 (hG.transferCone R).pt) :=
-    (singularChainComplexFunctor C ⋙ (evaluation _ _).obj B).isIso_nsmul_id_obj _ R
+  -- `C(B; R)`, and the additive functor `F` keeps it invertible on their images. By
+  -- `TopCat.actionFunctor_obj` and `transferCone_pt` (both `rfl`), these are the images of the
+  -- acted-on object and of the cone point of `hG.transferCone R`.
+  have : IsIso (Fintype.card G • 𝟙 (((E.actionFunctor G ⋙
+      (singularChainComplexFunctor C).obj R) ⋙ F).obj (SingleObj.star G))) :=
+    (singularChainComplexFunctor C ⋙ (evaluation _ _).obj E ⋙ F).isIso_nsmul_id_obj _ R
+  have : IsIso (Fintype.card G • 𝟙 (F.mapCone (hG.transferCone R)).pt) :=
+    (singularChainComplexFunctor C ⋙ (evaluation _ _).obj B ⋙ F).isIso_nsmul_id_obj _ R
   refine SingleObj.isLimitMapConeOfTransfer (hG.transferCone R)
     (SSet.chainComplexMap (TopCat.toSSet.map p) R) F ?_ ?_
   · exact hG.isCoveringMap.singularTransfer_comp_chainComplexMap hG.finite_fiber R fun b ↦ by

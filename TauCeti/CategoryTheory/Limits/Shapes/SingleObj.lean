@@ -165,16 +165,16 @@ noncomputable def isLimitOfTransfer
     exact (Category.comp_id m).symm
 
 /-- The limit of `CategoryTheory.Limits.SingleObj.isLimitOfTransfer` is preserved by every
-additive functor: under the same hypotheses, every additive functor sends `c` to a limit cone. -/
+additive functor: if `c` and `p` satisfy its transfer identities, then every additive functor `F`
+for which multiplication by `|G|` is invertible on the images of the acted-on object and of the
+cone point sends `c` to a limit cone. -/
 noncomputable def isLimitMapConeOfTransfer {D : Type*} [Category D] [Preadditive D]
     (F : C ⥤ D) [F.Additive]
     (hp : c.π.app (SingleObj.star G) ≫ p = Fintype.card G • 𝟙 c.pt)
     (hp' : p ≫ c.π.app (SingleObj.star G) = ∑ g : G, J.map g)
-    [IsIso (Fintype.card G • 𝟙 (J.obj (SingleObj.star G)))] [IsIso (Fintype.card G • 𝟙 c.pt)] :
+    [IsIso (Fintype.card G • 𝟙 ((J ⋙ F).obj (SingleObj.star G)))]
+    [IsIso (Fintype.card G • 𝟙 (F.mapCone c).pt)] :
     IsLimit (F.mapCone c) :=
-  have : IsIso (Fintype.card G • 𝟙 ((J ⋙ F).obj (SingleObj.star G))) :=
-    F.isIso_nsmul_id_obj _ (J.obj _)
-  have : IsIso (Fintype.card G • 𝟙 (F.mapCone c).pt) := F.isIso_nsmul_id_obj _ c.pt
   isLimitOfTransfer (F.mapCone c) (F.map p)
     (by simp only [Functor.mapCone_pt, Functor.mapCone_π_app, ← F.map_comp, hp,
       F.map_nsmul, F.map_id])
