@@ -135,6 +135,7 @@ def kummerMap : W.toAffine.Point →+ H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff
 
 /-- **The Kummer map is the degree-zero connecting homomorphism** of the Kummer sequence, read on
 `P` through the identification of `E(K)` with the invariants of `E(Kˢ)`. -/
+@[simp]
 theorem kummerMap_apply (P : W.toAffine.Point) :
     W.kummerMap m hm P = (W.kummerShortExact m hm).explicitDelta0 (W.basePointEquivInvariants P) :=
   (rfl)
