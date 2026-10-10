@@ -26,8 +26,10 @@ flat over `R`, and it fails for instance for `X = Spec (R ⧸ 𝔪)`, where `π`
 `X_s = X`. For a discrete valuation ring and an integral, locally Noetherian `X` flat over
 `R`, this file and `TauCeti.AlgebraicGeometry.SpecialFiber.Components` give the two halves of
 `X_s = div_X(π)`: the Weil divisor of `π` is supported on the components of `X_s` with their
-multiplicities, and the closed subscheme cut out by the equation `π` is `X_s` itself. Identifying
-`V(π)` with the divisor of `π` through the `CartierDivisor` API is not done here.
+multiplicities, and the closed subscheme cut out by the equation `π` is `X_s` itself.
+`TauCeti.AlgebraicGeometry.SpecialFiber.EffectiveCartier` proves that, for `X` flat over `R` and
+`π` a nonzerodivisor, `X_s` is an effective Cartier divisor with trivial ideal sheaf. Comparing
+this effective Cartier divisor with the Weil divisor of `π` is not done here.
 
 ## Main results
 

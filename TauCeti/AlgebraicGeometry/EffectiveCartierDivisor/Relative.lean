@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Basic
 public import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
 public import TauCeti.RingTheory.Flat.QuotientRegular
+import TauCeti.Algebra.Regular.SMul
 
 /-!
 # Relative effective Cartier divisors
@@ -149,8 +150,7 @@ theorem IsRelativeEffectiveCartier.comap {I : X.IdealSheafData}
       (R := Γ(S, W)) ha Γ(T, V)
     let t := (Algebra.TensorProduct.comm Γ(S, W) Γ(T, V) Γ(X, U)).toRingEquiv.trans
       (Scheme.ΓSpecIso (.of (Γ(X, U) ⊗[Γ(S, W)] Γ(T, V)))).symm.commRingCatIsoToRingEquiv
-    exact (Equiv.isSMulRegular_congr (e := t.toEquiv) (r := (1 : Γ(T, V)) ⊗ₜ a)
-      fun b ↦ t.map_mul _ b).mp hreg
+    exact (TauCeti.isSMulRegular_map_iff t _).mpr hreg
   · have hφ : ((pullbackSpecIso Γ(S, W) Γ(X, U) Γ(T, V)).inv ≫ m) ≫ pullback.fst f g =
         Spec.map (CommRingCat.ofHom Algebra.TensorProduct.includeLeftRingHom) ≫ hU.fromSpec := by
       simp [m]
