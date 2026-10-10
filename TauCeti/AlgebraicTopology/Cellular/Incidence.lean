@@ -71,13 +71,13 @@ lemma cellularChainBasis_apply (n : ℕ) (j : cell C n) :
       (cellularChainGroupIso C (ModuleCat.of R R) n).inv
         (Sigma.ι (fun _ : cell C n ↦ ModuleCat.of R R) j 1) := by
   classical
-  simp only [cellularChainBasis, Module.Basis.coe_ofRepr, LinearEquiv.trans_symm,
-    LinearEquiv.trans_apply, LinearEquiv.symm_symm, finsuppLEquivDirectSum_single]
-  rw [Iso.toLinearEquiv_symm, Iso.toLinearEquiv_apply, Iso.symm_hom,
-    Iso.trans_inv, ModuleCat.comp_apply]
-  congr 1
-  exact ModuleCat.lof_coprodIsoDirectSum_inv_apply
-    (fun _ : cell C n ↦ ModuleCat.of R R) j (1 : R)
+  apply (cellularChainBasis C R n).repr.injective
+  rw [Module.Basis.repr_self, cellularChainBasis_repr]
+  rw [LinearEquiv.trans_apply, Iso.toLinearEquiv_apply, Iso.trans_hom,
+    ModuleCat.comp_apply]
+  simp only [Iso.inv_hom_id_apply,
+    ModuleCat.ι_coprodIsoDirectSum_hom_apply (fun _ : cell C n ↦ ModuleCat.of R R) j,
+    finsuppLEquivDirectSum_symm_lof]
 
 /-- The boundary column of an `(n + 1)`-cell, with finite support on the `n`-cells. -/
 def cellularBoundaryColumn (n : ℕ) (j : cell C (n + 1)) : cell C n →₀ R :=
@@ -95,6 +95,13 @@ lemma cellularBoundaryColumn_def (n : ℕ) (j : cell C (n + 1)) :
 `ℤ` these are the integral cellular incidence numbers. -/
 def cellularIncidence (n : ℕ) (i : cell C n) (j : cell C (n + 1)) : R :=
   cellularBoundaryColumn C R n j i
+
+/-- An incidence coefficient is the corresponding coordinate of the differential of a cell. -/
+lemma cellularIncidence_def (n : ℕ) (i : cell C n) (j : cell C (n + 1)) :
+    cellularIncidence C R n i j =
+      (cellularChainBasis C R n).repr
+        (cellularDifferential C (ModuleCat.of R R) n
+          (cellularChainBasis C R (n + 1) j)) i := (rfl)
 
 @[simp]
 lemma cellularBoundaryColumn_apply (n : ℕ) (i : cell C n) (j : cell C (n + 1)) :
