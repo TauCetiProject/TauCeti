@@ -19,8 +19,9 @@ by the local `2`-descent conditions at every finite place of `F` and at each mem
 auxiliary family `Loc` of `F`-fields (classically, the completions at the infinite places).
 
 This file proves that this group is **finite**, for every auxiliary family `Loc`, and turns that
-into the **effective Mordell–Weil rank bound**
-`2 ^ rank W(F) * #W(F)[2] ≤ #Sel₂(W/F)`.
+into the **Mordell–Weil rank bound**
+`2 ^ rank W(F) * #W(F)[2] ≤ #Sel₂(W/F)`. The bound becomes an explicit numerical bound on the
+rank only once the Selmer group has been computed; no such computation is made here.
 
 The finiteness argument is short. At every finite place `v`, the local descent image over the
 completion `F_v` is unramified away from the bad primes of the base-changed curve over
