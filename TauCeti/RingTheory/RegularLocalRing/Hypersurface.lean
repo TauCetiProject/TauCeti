@@ -17,10 +17,11 @@ public import TauCeti.RingTheory.RegularLocalRing.Basic
 /-!
 # The Jacobian criterion for hypersurfaces
 
-Let `A` be a regular ring and `f ∈ A`, and let `P` be a prime of the hypersurface ring `A ⧸ (f)`
-lying over the prime `Q` of `A`. If some derivation `D` of `A` has `D f ∉ Q`, then the local ring
-`(A ⧸ (f))_P` is regular: `f` lies outside the square of the maximal ideal of the regular local
-ring `A_Q`, so it is a regular parameter there, and `(A ⧸ (f))_P` is `A_Q ⧸ (f)`.
+Let `f ∈ A`, and let `P` be a prime of the hypersurface ring `A ⧸ (f)` lying over a prime `Q` of
+`A` at which `A` is regular, i.e. `A_Q` is a regular local ring. If some derivation `D` of `A` has
+`D f ∉ Q`, then the local ring `(A ⧸ (f))_P` is regular: `f` lies outside the square of the
+maximal ideal of the regular local ring `A_Q`, so it is a regular parameter there, and
+`(A ⧸ (f))_P` is `A_Q ⧸ (f)`.
 
 For `A = k[X, Y]` over a field `k` and the partial derivatives `∂f/∂X` and `∂f/∂Y`, this is the
 Jacobian criterion for plane curves: if `f` is irreducible and `f`, `∂f/∂X`, `∂f/∂Y` generate
@@ -33,8 +34,8 @@ of the function field over `k(x)` are computed from `∂f/∂Y`.
 
 ## Main results
 
-* `TauCeti.isRegularLocalRing_localization_of_derivation_notMem`: the localization of
-  `A ⧸ (f)` at a prime over `Q` is a regular local ring when `D f ∉ Q`.
+* `Ideal.isRegularLocalRing_localization_of_derivation_notMem`: the localization of
+  `A ⧸ (f)` at a prime over `Q` is a regular local ring when `A_Q` is regular and `D f ∉ Q`.
 * `MvPolynomial.isDedekindDomain_quotient_span_singleton`: the coordinate ring of a smooth
   irreducible affine plane curve over a field is a Dedekind domain.
 
@@ -50,16 +51,17 @@ public section
 
 open Ideal IsLocalRing
 
-namespace TauCeti
+namespace Ideal
 
 variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
 
-/-- **The Jacobian criterion for a hypersurface.** Let `A` be a regular ring, `f ∈ A`, and `P` a
-prime of `A ⧸ (f)`. If some derivation `D` of `A` maps `f` outside the prime of `A` below `P`,
-then the localization of `A ⧸ (f)` at `P` is a regular local ring. -/
-theorem isRegularLocalRing_localization_of_derivation_notMem [IsRegularRing A] {f : A}
-    (P : Ideal (A ⧸ span {f})) [P.IsPrime] {D : Derivation R A A}
-    (hD : D f ∉ P.comap (Ideal.Quotient.mk _)) :
+/-- **The Jacobian criterion for a hypersurface.** Let `f ∈ A` and let `P` be a prime of
+`A ⧸ (f)` lying over the prime `Q` of `A`, with `A_Q` a regular local ring. If some derivation `D`
+of `A` maps `f` outside `Q`, then the localization of `A ⧸ (f)` at `P` is a regular local ring. -/
+theorem isRegularLocalRing_localization_of_derivation_notMem {f : A}
+    (P : Ideal (A ⧸ span {f})) [P.IsPrime]
+    [IsRegularLocalRing (Localization.AtPrime (P.comap (Ideal.Quotient.mk (span {f}))))]
+    {D : Derivation R A A} (hD : D f ∉ P.comap (Ideal.Quotient.mk _)) :
     IsRegularLocalRing (Localization.AtPrime P) := by
   set Q := P.comap (Ideal.Quotient.mk (span {f}))
   set B := Localization.AtPrime Q
@@ -67,7 +69,8 @@ theorem isRegularLocalRing_localization_of_derivation_notMem [IsRegularRing A] {
   have hfm : algebraMap A B f ∈ maximalIdeal B := by
     rw [IsLocalization.AtPrime.to_map_mem_maximal_iff _ Q]
     simp [Q, Ideal.Quotient.eq_zero_iff_mem.mpr (mem_span_singleton_self f)]
-  have := IsRegularLocalRing.quotient_span_singleton hfm (D.algebraMap_notMem_maximalIdeal_sq hD)
+  have :=
+    TauCeti.IsRegularLocalRing.quotient_span_singleton hfm (D.algebraMap_notMem_maximalIdeal_sq hD)
   -- `A_Q ⧸ (f)` is the localization of `A ⧸ (f)` at `P`
   have hspan : (span {f}).map (algebraMap A B) = span {algebraMap A B f} := by
     rw [Ideal.map_span, Set.image_singleton]
@@ -80,7 +83,7 @@ theorem isRegularLocalRing_localization_of_derivation_notMem [IsRegularRing A] {
   exact .of_ringEquiv ((quotientEquivAlgOfEq A hspan).toRingEquiv.symm.trans
     (IsLocalization.algEquiv P.primeCompl _ (Localization.AtPrime P)).toRingEquiv)
 
-end TauCeti
+end Ideal
 
 namespace MvPolynomial
 
@@ -106,7 +109,7 @@ theorem isDedekindDomain_quotient_span_singleton {f : MvPolynomial (Fin 2) k} (h
     rw [eq_top_iff, ← hsm, span_le, Set.insert_subset_iff, Set.pair_subset_iff]
     exact ⟨by simp [Ideal.Quotient.eq_zero_iff_mem.mpr (mem_span_singleton_self f)], h 0, h 1⟩
   -- so the local ring at `P` is regular, of dimension the height of `P`, which is one
-  have := TauCeti.isRegularLocalRing_localization_of_derivation_notMem P hi
+  have := P.isRegularLocalRing_localization_of_derivation_notMem hi
   have hheight : P.height = 1 := by
     have h1 : ((P.height + 1 : ℕ∞) : WithBot ℕ∞) ≤ ((1 + 1 : ℕ∞) : WithBot ℕ∞) := by
       push_cast
