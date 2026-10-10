@@ -7,10 +7,7 @@ module
 
 public import Mathlib.GroupTheory.Complement
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Translation.Place
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.VariableChange
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Aut
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.TautologicalPoint
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.VariableChange
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Translation.VariableChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.GenericPoint
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InfinityPlace
 
@@ -40,10 +37,9 @@ The proof has three steps.
 * An arbitrary automorphism moves the place at infinity to a degree-one place, the place of a point
   `R`, and the translation by `-R` moves it back; a translation fixing the place at infinity is
   the identity. So the two subgroups are complementary.
-* A change of variables carries translations to translations, `τ_P^* ∘ ψ = ψ ∘ τ_{P'}^*`, because it
-  induces a homomorphism of point groups (`WeierstrassCurve.pointEquivVariableChange`). Both sides
-  are determined by where they send the generic point, and this is computed with tautological
-  points. With commutativity of the translations this gives normality.
+* A change of variables carries translations to translations, `τ_P^* ∘ ψ = ψ ∘ τ_{P'}^*`
+  (`WeierstrassCurve.Affine.exists_translation_comp_fieldPullback_variableChangeIsogeny`). With
+  commutativity of the translations this gives normality.
 
 ## Main definitions
 
@@ -52,8 +48,6 @@ The proof has three steps.
 
 ## Main results
 
-* `WeierstrassCurve.Affine.translation_comp_fieldPullback_variableChangeIsogeny`: a change of
-  variables carries the translation by `P` to the translation by the corresponding point.
 * `WeierstrassCurve.Affine.stabilizer_infinity_eq_range_autGroupToAlgEquiv`: the automorphisms
   fixing the place at infinity are the changes of variables fixing `W`.
 * `WeierstrassCurve.Affine.isComplement'_stabilizer_infinity_range_translationHom`: every
@@ -77,79 +71,6 @@ open TauCeti TauCeti.Isogeny WeierstrassCurve
 namespace WeierstrassCurve.Affine
 
 variable {F : Type*} [Field F]
-
-section Conjugation
-
-variable {W₁ W₂ : Affine F} [W₁.IsElliptic] [W₂.IsElliptic]
-
-/-- **The tautological point of a change of variables**: the coordinate pullback of `C` cuts out the
-generic point of `W` moved to `C • W` by the inverse of `pointEquivVariableChange`, the point with
-coordinates `(u⁻²(x - r), u⁻³(y - s(x - r) - t))`. -/
-theorem tautologicalPoint_variableChangePullback (C : VariableChange F) :
-    (variableChangePullback C (rfl : C • W₁ = C • W₁)).tautologicalPoint =
-      (W₁.pointEquivVariableChange W₁.FunctionField C).symm (genericPoint W₁) := by
-  have hinv : (C.baseChange W₁.FunctionField)⁻¹ = C⁻¹.baseChange W₁.FunctionField :=
-    (map_inv (VariableChange.mapHom (algebraMap F W₁.FunctionField)) C).symm
-  rw [← Point.some_coords (CoordinatePullback.tautologicalPoint_ne_zero _), genericPoint_eq_some,
-    pointEquivVariableChange_symm_some]
-  simp only [Point.some.injEq, CoordinatePullback.xCoord_tautologicalPoint,
-    CoordinatePullback.yCoord_tautologicalPoint, variableChangePullback_apply,
-    CoordinateRing.variableChangeEquiv_symm_of_X, CoordinateRing.variableChangeEquiv_symm_root]
-  rw [hinv]
-  simp only [VariableChange.baseChange, VariableChange.map_u, VariableChange.map_r,
-    VariableChange.map_s, VariableChange.map_t, Units.coe_map, MonoidHom.coe_ofClass, map_add,
-    map_mul, map_pow, ← IsScalarTower.algebraMap_apply, genericX_def, genericY_def,
-    CoordinateRing.mk, AdjoinRoot.mk_C, AdjoinRoot.mk_X, and_self]
-
-variable [DecidableEq F]
-
-/-- **Translations are carried to translations by a change of variables.** For a change of
-variables `C`, write `ψ : F(C • W) → F(W)` for the pullback of the isomorphism `W → C • W`. Then
-`τ_P^* ∘ ψ = ψ ∘ τ_{P'}^*`, where `P'` is the point of `C • W` corresponding to `P`: the
-isomorphism is a homomorphism of point groups. -/
-theorem translation_comp_fieldPullback_variableChangeIsogeny (C : VariableChange F)
-    (P : (W₁⁄F).toAffine.Point) :
-    (translation W₁ P : W₁.FunctionField →ₐ[F] W₁.FunctionField).comp
-        (variableChangeIsogeny C (rfl : C • W₁ = C • W₁)).fieldPullback =
-      (variableChangeIsogeny C rfl).fieldPullback.comp
-        (translation (C • W₁) ((W₁.pointEquivVariableChange F C).symm P) :
-          (C • W₁).FunctionField →ₐ[F] (C • W₁).FunctionField) := by
-  set ψ := (variableChangeIsogeny C (rfl : C • W₁ = C • W₁)).fieldPullback
-  set e := W₁.pointEquivVariableChange W₁.FunctionField C
-  -- both sides send the generic point of `C • W` to `e⁻¹ g + P'`, `g` the generic point of `W`
-  have hgen : Point.map ψ (genericPoint (C • W₁)) = e.symm (genericPoint W₁) := by
-    rw [← tautologicalPoint_eq_map_genericPoint, variableChangeIsogeny_pullback,
-      tautologicalPoint_variableChangePullback]
-  have htaut : CoordinatePullback.tautologicalPoint
-      (((translation W₁ P : W₁.FunctionField →ₐ[F] W₁.FunctionField).comp ψ).comp
-        (CoordinatePullback.id (C • W₁))) =
-      CoordinatePullback.tautologicalPoint
-        ((ψ.comp (translation (C • W₁) ((W₁.pointEquivVariableChange F C).symm P) :
-          (C • W₁).FunctionField →ₐ[F] (C • W₁).FunctionField)).comp
-            (CoordinatePullback.id (C • W₁))) := by
-    rw [CoordinatePullback.tautologicalPoint_comp, CoordinatePullback.tautologicalPoint_comp,
-      CoordinatePullback.tautologicalPoint_id, ← Point.map_map, ← Point.map_map, hgen,
-      map_pointEquivVariableChange_symm, map_translation_genericPoint, map_translation_genericPoint,
-      translatedGenericPoint_def, translatedGenericPoint_def, map_add, map_add,
-      Point.map_baseChange, hgen, ← map_pointEquivVariableChange_symm]
-  refine AlgHom.toRingHom_injective
-    (IsFractionRing.ringHom_ext (A := (C • W₁).CoordinateRing) fun z ↦ ?_)
-  simpa using DFunLike.congr_fun (CoordinatePullback.tautologicalPoint_injective htaut) z
-
-/-- **A change of variables carries translations to translations**, for any change of variables
-`C • W₁ = W₂`: there is a point `P'` of `W₂` with `τ_P^* ∘ ψ = ψ ∘ τ_{P'}^*`, where `ψ` is the
-pullback of the isomorphism `W₁ → W₂`. -/
-theorem exists_translation_comp_fieldPullback_variableChangeIsogeny {C : VariableChange F}
-    (h : C • W₁ = W₂) (P : (W₁⁄F).toAffine.Point) :
-    ∃ P' : (W₂⁄F).toAffine.Point,
-      (translation W₁ P : W₁.FunctionField →ₐ[F] W₁.FunctionField).comp
-          (variableChangeIsogeny C h).fieldPullback =
-        (variableChangeIsogeny C h).fieldPullback.comp
-          (translation W₂ P' : W₂.FunctionField →ₐ[F] W₂.FunctionField) := by
-  subst h
-  exact ⟨_, translation_comp_fieldPullback_variableChangeIsogeny C P⟩
-
-end Conjugation
 
 section Automorphism
 

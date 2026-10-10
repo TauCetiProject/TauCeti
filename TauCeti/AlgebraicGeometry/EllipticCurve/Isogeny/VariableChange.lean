@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.CoordinateRing.VariableChange
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.VariableChange
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Aut
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.TautologicalPoint
 -- Proof-only: a degree-one isogeny has an inverse, and pullbacks give `x` a pole at infinity.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Factorisation
 -- Proof-only: integral closedness of the coordinate ring of an elliptic curve.
@@ -59,6 +61,8 @@ one of them: `W.autGroup ≃* (Hom W W)ˣ`.
 * `TauCeti.Isogeny.variableChangeIsogeny_comp` and `TauCeti.Isogeny.variableChangeIsogeny_one`:
   the isogenies of changes of variables compose as the changes of variables multiply.
 * `TauCeti.Isogeny.degree_variableChangeIsogeny`: they have degree one.
+* `TauCeti.Isogeny.tautologicalPoint_variableChangePullback`: the tautological point of a change of
+  variables is the generic point moved by `WeierstrassCurve.pointEquivVariableChange`.
 * `TauCeti.Isogeny.variableChangeIsogeny_inj`: a change of variables is determined by its isogeny.
 * `TauCeti.Isogeny.exists_algebraMap_eq_pullback_of_degree_eq_one`: an isogeny of degree one out
   of a curve with integrally closed coordinate ring (for instance an elliptic curve) pulls the
@@ -115,6 +119,26 @@ noncomputable def variableChangeIsogeny (h : C • W₁ = W₂) : Isogeny W₁ W
 theorem variableChangeIsogeny_pullback (h : C • W₁ = W₂) :
     (variableChangeIsogeny C h).pullback = variableChangePullback C h :=
   (rfl)
+
+open _root_.WeierstrassCurve.Affine in
+/-- **The tautological point of a change of variables**: the coordinate pullback of `C` cuts out the
+generic point of `W` moved to `C • W` by the inverse of `pointEquivVariableChange`, the point with
+coordinates `(u⁻²(x - r), u⁻³(y - s(x - r) - t))`. -/
+theorem tautologicalPoint_variableChangePullback [W₁.IsElliptic] :
+    (variableChangePullback C (rfl : C • W₁ = C • W₁)).tautologicalPoint =
+      (W₁.pointEquivVariableChange W₁.FunctionField C).symm (genericPoint W₁) := by
+  have hinv : (C.baseChange W₁.FunctionField)⁻¹ = C⁻¹.baseChange W₁.FunctionField :=
+    (map_inv (VariableChange.mapHom (algebraMap F W₁.FunctionField)) C).symm
+  rw [← Point.some_coords (CoordinatePullback.tautologicalPoint_ne_zero _), genericPoint_eq_some,
+    pointEquivVariableChange_symm_some]
+  simp only [Point.some.injEq, CoordinatePullback.xCoord_tautologicalPoint,
+    CoordinatePullback.yCoord_tautologicalPoint, variableChangePullback_apply,
+    variableChangeEquiv_symm_of_X, variableChangeEquiv_symm_root]
+  rw [hinv]
+  simp only [VariableChange.baseChange, VariableChange.map_u, VariableChange.map_r,
+    VariableChange.map_s, VariableChange.map_t, Units.coe_map, MonoidHom.coe_ofClass, map_add,
+    map_mul, map_pow, ← IsScalarTower.algebraMap_apply, genericX_def, genericY_def,
+    CoordinateRing.mk, AdjoinRoot.mk_C, AdjoinRoot.mk_X, and_self]
 
 /-- **The isogenies of changes of variables compose as the changes of variables multiply.** -/
 @[simp]

@@ -49,16 +49,14 @@ transformation laws of `b₈` and `b₆` are a quartic and a cubic equation for 
 coefficients `3` and `4`, which do not both vanish; those of `a₂` and `a₆` are monic quadratic
 equations for `s` and `t`. So each coordinate of `C` ranges over a finite set.
 
-This is the `Aut (E, O)` milestone of `TauCetiRoadmap/EllipticCurves/README.md` §Layer 1 (in its
-equation-level form over the ground field), which §Layer 5's twist classification quantifies
-over: for `j ∉ {0, 1728}` the pointed twists are exactly the quadratic twists because this group
-is `{±1}`.
+The classification of twists quantifies over this group: for `j ∉ {0, 1728}` the pointed twists
+of `E` are exactly the quadratic twists because this group is `{±1}`.
 
 The `j ∉ {0, 1728}` classification is adapted from the FLT project (`ImperialCollegeLondon/FLT`,
-`FLT/Mathlib/AlgebraicGeometry/EllipticCurve/Aut.lean` at the roadmap's pin `bc2fe8ff7396`,
+`FLT/Mathlib/AlgebraicGeometry/EllipticCurve/Aut.lean` at commit `bc2fe8ff7396`,
 FLT PR #1088, Apache 2.0). That file's own header reads `Authors: Michael Stoll, Claude`, and it
-has not been touched in FLT since `bc2fe8ff7396`, so the pin and the working clone
-(`d18b563029f3`, a later Mathlib bump) agree on it verbatim. Following this repository's
+has not been touched in FLT since `bc2fe8ff7396`, so that commit and the later commit
+`d18b563029f3` (a Mathlib bump) agree on it verbatim. Following this repository's
 convention for adapted material, the upstream authorship is credited here rather than in the
 copyright header.
 -/
