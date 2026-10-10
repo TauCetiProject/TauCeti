@@ -80,7 +80,6 @@ scoped[AdeleGaloisAction] attribute [instance]
 variable {K L}
 
 /-- The Galois action on an idele is the Galois action on the underlying adele. -/
-@[simp]
 theorem coe_idele_smul (σ : L ≃ₐ[K] L) (x : IdeleGroup (𝓞 L) L) :
     ((σ • x : IdeleGroup (𝓞 L) L) : AdeleRing (𝓞 L) L) = adeleGaloisAction K L σ x := by
   rw [Units.coe_smul, adele_smul_def]
