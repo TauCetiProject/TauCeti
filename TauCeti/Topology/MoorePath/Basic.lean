@@ -104,11 +104,9 @@ def source (γ : MoorePath X) : X := γ 0
 /-- The end point of a Moore path. -/
 def target (γ : MoorePath X) : X := γ γ.length
 
-@[simp]
 theorem source_eq_apply (γ : MoorePath X) : γ.source = γ 0 :=
   (rfl)
 
-@[simp]
 theorem target_eq_apply (γ : MoorePath X) : γ.target = γ γ.length :=
   (rfl)
 
