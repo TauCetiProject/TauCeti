@@ -124,6 +124,35 @@ theorem baseChangeTensorAlgEquiv_symm_tmul (l₁ l₂ : L) (a : A) (b : B) :
   exact (_root_.TensorProduct.AlgebraTensorModule.distribBaseChange K L A B).symm_apply_eq.mp
     (_root_.TensorProduct.AlgebraTensorModule.distribBaseChange_symm_tmul ..)
 
+/-- Distributing scalar extension in both tensor factors commutes with interchanging the
+middle two factors of a fourfold tensor product. The four algebras may be different. -/
+theorem _root_.Algebra.TensorProduct.map_baseChangeTensorAlgEquiv_tensorTensorTensorComm
+    (C D : Type*) [Semiring C] [Algebra K C] [Semiring D] [Algebra K D]
+    (s t : L) (x : A ⊗[K] B) (y : C ⊗[K] D) :
+    Algebra.TensorProduct.map
+        (baseChangeTensorAlgEquiv K L A C).toAlgHom
+        (baseChangeTensorAlgEquiv K L B D).toAlgHom
+      (_root_.TensorProduct.AlgebraTensorModule.tensorTensorTensorComm
+        K L K L L L (A ⊗[K] C) (B ⊗[K] D)
+        (s ⊗ₜ[L] t ⊗ₜ[K]
+          _root_.TensorProduct.AlgebraTensorModule.tensorTensorTensorComm
+            K K K K A B C D (x ⊗ₜ[K] y))) =
+      _root_.TensorProduct.AlgebraTensorModule.tensorTensorTensorComm
+        L L L L (L ⊗[K] A) (L ⊗[K] B) (L ⊗[K] C) (L ⊗[K] D)
+        (_root_.TensorProduct.AlgebraTensorModule.tensorTensorTensorComm
+            K L K L L L A B (s ⊗ₜ[L] t ⊗ₜ[K] x) ⊗ₜ[L]
+          _root_.TensorProduct.AlgebraTensorModule.tensorTensorTensorComm
+            K L K L L L C D (1 ⊗ₜ[L] 1 ⊗ₜ[K] y)) := by
+  induction x using _root_.TensorProduct.inductionOn with
+  | add x₁ x₂ hx₁ hx₂ =>
+      simp only [_root_.TensorProduct.add_tmul, _root_.TensorProduct.tmul_add,
+        map_add, hx₁, hx₂]
+  | tmul a b =>
+    induction y using _root_.TensorProduct.inductionOn with
+    | add y₁ y₂ hy₁ hy₂ =>
+        simp only [_root_.TensorProduct.tmul_add, map_add, hy₁, hy₂]
+    | tmul c d => simp
+
 /-- **Base change commutes with passing to the opposite algebra.** Together with
 `TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv` this is what makes base change respect both
 the multiplication and the inversion of Brauer classes. -/

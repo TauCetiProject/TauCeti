@@ -132,37 +132,6 @@ private theorem baseChangeTensorAlgEquiv_counit_comp :
       simpa only [TensorProduct.tmul_add, map_add] using congrArg₂ (· + ·) hx hy
   | tmul h l => simp [smul_smul, mul_comm]
 
--- This is the comultiplication compatibility on pure tensors after rewriting by
--- `TensorProduct.comul_tmul` and `CommSemiring.comul_apply`, so it compares the two
--- `tensorTensorTensorComm` reorderings.
-private theorem _root_.TensorProduct.baseChangeTensorAlgEquiv_comul_aux
-    (s : K) (x : H ⊗[k] H) (y : L ⊗[k] L) :
-    (Algebra.TensorProduct.map
-        (Algebra.TensorProduct.baseChangeTensorAlgEquiv k K H L).toAlgHom
-        (Algebra.TensorProduct.baseChangeTensorAlgEquiv k K H L).toAlgHom)
-      (TensorProduct.AlgebraTensorModule.tensorTensorTensorComm
-        k K k K K K (H ⊗[k] L) (H ⊗[k] L)
-        (1 ⊗ₜ[K] s ⊗ₜ[k]
-          TensorProduct.AlgebraTensorModule.tensorTensorTensorComm
-            k k k k H H L L (x ⊗ₜ[k] y))) =
-    TensorProduct.AlgebraTensorModule.tensorTensorTensorComm
-      K K K K (K ⊗[k] H) (K ⊗[k] H) (K ⊗[k] L) (K ⊗[k] L)
-      (TensorProduct.AlgebraTensorModule.tensorTensorTensorComm
-          k K k K K K H H (1 ⊗ₜ[K] s ⊗ₜ[k] x) ⊗ₜ[K]
-        TensorProduct.AlgebraTensorModule.tensorTensorTensorComm
-          k K k K K K L L (1 ⊗ₜ[K] 1 ⊗ₜ[k] y)) := by
-  induction x using TensorProduct.inductionOn with
-  | add x₁ x₂ hx₁ hx₂ =>
-      simpa only [TensorProduct.add_tmul, TensorProduct.tmul_add, map_add] using
-        congrArg₂ (· + ·) hx₁ hx₂
-  | tmul h₁ h₂ =>
-    induction y using TensorProduct.inductionOn with
-    | add y₁ y₂ hy₁ hy₂ =>
-        simpa only [TensorProduct.add_tmul, TensorProduct.tmul_add, map_add] using
-          congrArg₂ (· + ·) hy₁ hy₂
-    | tmul l₁ l₂ =>
-        simp
-
 private theorem baseChangeTensorAlgEquiv_map_comp_comul :
     (Algebra.TensorProduct.map
         (Algebra.TensorProduct.baseChangeTensorAlgEquiv k K H L).toAlgHom
@@ -186,7 +155,8 @@ private theorem baseChangeTensorAlgEquiv_map_comp_comul :
       rw [he]
       simpa only [Bialgebra.comulAlgHom_apply, TensorProduct.comul_tmul,
         CommSemiring.comul_apply] using
-        _root_.TensorProduct.baseChangeTensorAlgEquiv_comul_aux k K H L s
+        _root_.Algebra.TensorProduct.map_baseChangeTensorAlgEquiv_tensorTensorTensorComm
+          k K H H L L 1 s
           (Coalgebra.comul (R := k) h) (Coalgebra.comul (R := k) l)
 
 /-- **Base change commutes with tensor products of bialgebras.**
