@@ -7,7 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Alexander
 public import TauCeti.KnotTheory.Burau.Basic
-public import TauCeti.KnotTheory.Markov
+public import TauCeti.KnotTheory.Markov.Basic
 public import TauCeti.LinearAlgebra.Matrix.CornerMinor
 
 /-!

@@ -41,6 +41,7 @@ by the unit interval: when `X` is a point, the Moore loops at it form a copy of 
   `TauCeti.MoorePath.constOfLength x L`: the constant path at `x` of length `L`.
 * `TauCeti.MoorePath.trans`: concatenation of two Moore paths with matching endpoints.
 * `TauCeti.MoorePath.symm`: the reversal of a Moore path.
+* `TauCeti.MoorePath.rescale γ ℓ`: the Moore path `γ` reparametrized to the length `ℓ`.
 * `TauCeti.MoorePath.map`: the image of a Moore path under a continuous map.
 * `TauCeti.MoorePath.pathsBetween A B`: the Moore paths from `A` to `B`, the path space
   `P_{A→B} X`.
@@ -351,6 +352,13 @@ theorem constOfLength_trans_constOfLength (x : X) (L L' : ℝ≥0) :
   rw [trans_apply]
   split_ifs <;> rfl
 
+/-- Appending a constant path at the target changes only the length. -/
+theorem trans_constOfLength_target_apply (γ : MoorePath X) (s t : ℝ≥0) :
+    γ.trans (constOfLength γ.target s) (source_constOfLength _ _).symm t = γ t := by
+  rcases le_total t γ.length with ht | ht
+  · exact trans_apply_of_le _ _ _ ht
+  · rw [trans_apply_of_length_le _ _ _ ht, constOfLength_apply, γ.apply_of_length_le ht]
+
 /-! ### Reversal -/
 
 /-- The **reversal** of a Moore path: the same length, run backwards, `t ↦ γ (γ.length - t)`. -/
@@ -405,6 +413,62 @@ theorem symm_trans (γ δ : MoorePath X) (h : γ.target = δ.source) :
     rw [trans_apply_of_length_le _ _ _ ht', symm_apply, length_symm, add_tsub_cancel_left,
       add_comm γ.length, add_tsub_add_eq_tsub_left]
     exact trans_apply_of_le _ _ _ tsub_le_self
+
+/-! ### Reparametrization to a given length -/
+
+/-- The Moore path `γ` reparametrized to the length `ℓ`: the path `t ↦ γ (γ.length * t / ℓ)`.
+For `ℓ = 0` it is the constant path of length zero at the source. -/
+def rescale (γ : MoorePath X) (ℓ : ℝ≥0) : MoorePath X where
+  toFun t := γ (γ.length * t / ℓ)
+  continuous_toFun := γ.continuous.comp ((continuous_const.mul continuous_id).div_const _)
+  length := ℓ
+  apply_of_length_le' t ht := by
+    rcases eq_or_ne ℓ 0 with rfl | hℓ
+    · rw [div_zero, div_zero]
+    · rw [mul_div_cancel_right₀ _ hℓ, γ.apply_of_length_le ((le_div_iff₀ (pos_iff_ne_zero.2 hℓ)).2
+        (mul_le_mul le_rfl ht zero_le zero_le)), target_def]
+
+@[simp]
+theorem rescale_apply (γ : MoorePath X) (ℓ t : ℝ≥0) : γ.rescale ℓ t = γ (γ.length * t / ℓ) :=
+  (rfl)
+
+@[simp]
+theorem length_rescale (γ : MoorePath X) (ℓ : ℝ≥0) : (γ.rescale ℓ).length = ℓ :=
+  (rfl)
+
+@[simp]
+theorem source_rescale (γ : MoorePath X) (ℓ : ℝ≥0) : (γ.rescale ℓ).source = γ.source := by
+  rw [source_def, rescale_apply, mul_zero, zero_div, source_def]
+
+theorem target_rescale (γ : MoorePath X) {ℓ : ℝ≥0} (hℓ : ℓ ≠ 0) :
+    (γ.rescale ℓ).target = γ.target := by
+  rw [target_def, length_rescale, rescale_apply, mul_div_cancel_right₀ _ hℓ, target_def]
+
+/-- Reparametrizing a Moore path to its own length changes nothing. -/
+@[simp]
+theorem rescale_length (γ : MoorePath X) : γ.rescale γ.length = γ := by
+  refine ext rfl fun t ↦ ?_
+  rw [rescale_apply]
+  rcases eq_or_ne γ.length 0 with h | h
+  · rw [h, zero_mul, zero_div, γ.apply_of_length_le h.le,
+      γ.apply_of_length_le (h.trans_le (zero_le : (0 : ℝ≥0) ≤ t))]
+  · rw [mul_div_cancel_left₀ _ h]
+
+@[simp]
+theorem rescale_zero (γ : MoorePath X) : γ.rescale 0 = refl γ.source :=
+  ext (by rw [length_rescale, length_refl]) fun t ↦ by
+    rw [rescale_apply, div_zero, refl_apply, source_def]
+
+/-- Rescaling is continuous in the path and in the length, for nonzero lengths. -/
+@[fun_prop]
+theorem _root_.Continuous.moorePath_rescale {f : Y → MoorePath X} {g : Y → ℝ≥0}
+    (hf : Continuous f) (hg : Continuous g) (h0 : ∀ y, g y ≠ 0) :
+    Continuous fun y ↦ (f y).rescale (g y) := by
+  refine continuous_iff.2 ⟨hg, ?_⟩
+  simp only [rescale_apply]
+  exact (hf.comp continuous_fst).moorePath_eval
+    ((((continuous_length.comp hf).comp continuous_fst).mul continuous_snd).div₀
+      (hg.comp continuous_fst) fun p ↦ h0 p.1)
 
 end MoorePath
 
