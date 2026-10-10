@@ -161,3 +161,18 @@ theorem inv_natCast_le_norm_natCast (m : ℕ) [NeZero m] : (m : ℝ)⁻¹ ≤ �
   · exact_mod_cast Nat.le_of_dvd (Nat.pos_of_ne_zero (NeZero.ne m)) pow_padicValNat_dvd
 
 end Padic
+
+/-- A continuous additive homomorphism from `ℤ_[p]` to `ℤ` is zero: its image is compact, hence
+finite, and a finite subgroup of `ℤ` is trivial. -/
+theorem PadicInt.continuousAddMonoidHom_to_int_eq_zero (p : ℕ) [Fact p.Prime]
+    (φ : ContinuousAddMonoidHom ℤ_[p] ℤ) : φ = 0 := by
+  ext x
+  change φ x = 0
+  by_contra hx
+  have hfin : (Set.range φ).Finite := (isCompact_range (map_continuous φ)).finite_of_discrete
+  have hsub : Set.range (fun n : ℕ => (n : ℤ) * φ x) ⊆ Set.range φ := by
+    rintro _ ⟨n, rfl⟩
+    exact ⟨(n : ℤ) • x, by rw [map_zsmul, smul_eq_mul]⟩
+  have hinj : Function.Injective (fun n : ℕ => (n : ℤ) * φ x) := fun a b h =>
+    Nat.cast_injective (mul_right_cancel₀ hx h)
+  exact Set.infinite_range_of_injective hinj (hfin.subset hsub)
