@@ -19,6 +19,10 @@ It is all that is needed for the generic basis API -- `Module.Basis.coe_sumCoord
 `Module.Basis.sumCoords_self_apply`, `LinearMap.toMatrix_apply` -- to compute in terms of
 `MonoidAlgebra.coeff`.
 
+For a finite index type, `funMultiplicativeIntLinearEquiv` identifies a family of
+multiplicatively written integers with an integral monoid-algebra vector. This converts
+multiplicative valuation coordinates into coefficients of a permutation module.
+
 ## Main statements
 
 * `TauCeti.MonoidAlgebra.basis_repr`: the coordinates of `k[X]` in the standard basis are the
@@ -34,6 +38,28 @@ It is all that is needed for the generic basis API -- `Module.Basis.coe_sumCoord
 public section
 
 namespace TauCeti
+
+/-- Finite families of multiplicatively written integers are integral monoid-algebra vectors. -/
+noncomputable def funMultiplicativeIntLinearEquiv (X : Type*) [Finite X] :
+    Additive (X → Multiplicative ℤ) ≃ₗ[ℤ] MonoidAlgebra ℤ X :=
+  (MulEquiv.funMultiplicative X ℤ).symm.toAdditiveLeft.toIntLinearEquiv.trans
+    ((Finsupp.linearEquivFunOnFinite ℤ ℤ X).symm.trans
+      (_root_.MonoidAlgebra.coeffLinearEquiv ℤ).symm)
+
+/-- The coefficient is the corresponding integer coordinate in additive notation. -/
+@[simp]
+theorem funMultiplicativeIntLinearEquiv_coeff {X : Type*} [Finite X]
+    (u : Additive (X → Multiplicative ℤ)) (x : X) :
+    (funMultiplicativeIntLinearEquiv X u).coeff x = Multiplicative.toAdd (u.toMul x) :=
+  (rfl)
+
+/-- The inverse reads coefficients in multiplicative notation. -/
+@[simp]
+theorem funMultiplicativeIntLinearEquiv_symm_apply_apply {X : Type*} [Finite X]
+    (u : MonoidAlgebra ℤ X) (x : X) :
+    ((funMultiplicativeIntLinearEquiv X).symm u).toMul x =
+      Multiplicative.ofAdd (u.coeff x) :=
+  (rfl)
 
 /-- The coordinates of `k[X]` in the standard basis are the coefficients. -/
 @[simp]
