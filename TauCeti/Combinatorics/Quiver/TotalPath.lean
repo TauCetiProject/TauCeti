@@ -141,8 +141,9 @@ theorem eq_nil_iff_of_mul?_eq_some {v : Q} {x y z : TotalPath Q} (h : mul? x y =
   simp only [eq_nil_iff, fst_of_mul?_eq_some h, length_eq_add_of_mul?_eq_some h]
   constructor
   · rintro ⟨hy, hlen⟩
-    refine ⟨⟨?_, by omega⟩, hy, by omega⟩
-    rw [← hcomp, ← y.2.2.eq_of_length_zero (show y.2.2.length = 0 by omega)]
+    have hylen : y.2.2.length = 0 := by omega
+    refine ⟨⟨?_, by omega⟩, hy, hylen⟩
+    rw [← hcomp, ← y.2.2.eq_of_length_zero hylen]
     exact hy
   · rintro ⟨⟨-, hx⟩, hy, hy'⟩
     exact ⟨hy, by omega⟩
