@@ -16,8 +16,9 @@ the square `I ^ 2` of an ideal `I` of `A` into `I • M`. In particular, an elem
 `I` with `D f ∉ I` does not lie in `I ^ 2`.
 
 This is the elementary half of the Jacobian criterion: if a partial derivative of `f` does not
-vanish at a point, then `f` is not in the square of the maximal ideal there, so `f` is a regular
-parameter and the hypersurface `f = 0` is regular at the point.
+vanish at a point, then `f` is not in the square of the maximal ideal there. When the ambient
+local ring at the point is regular, `f` is therefore a regular parameter and the hypersurface
+`f = 0` is regular at the point.
 
 ## Main results
 
