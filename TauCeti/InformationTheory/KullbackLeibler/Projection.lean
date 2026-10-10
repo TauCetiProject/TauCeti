@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.InformationTheory.KullbackLeibler.DataProcessing
+public import TauCeti.MeasureTheory.Measure.Decomposition.Lebesgue
 public import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
@@ -41,6 +42,9 @@ is from `π.fitLaw f μ`.
   law `μ` under `π.fitLaw f μ`.
 * `MeasureTheory.Measure.fitLaw_eq_self`: a measure under which `f` already has law `μ` is its
   own projection.
+* `MeasureTheory.Measure.fitLaw_apply_singleton`: on spaces with measurable singletons, the
+  projection multiplies the mass of each point `ω` by `μ {f ω} / π.map f {f ω}`;
+  `MeasureTheory.Measure.fitLaw_real_singleton` is the same for real masses.
 * `TauCeti.klDiv_eq_klDiv_map_add_klDiv_fitLaw`: the Pythagorean identity above.
 * `TauCeti.klDiv_fitLaw`: if `μ ≪ π.map f`, the projection lies at relative entropy
   `klDiv μ (π.map f)` from `π`.
@@ -118,6 +122,27 @@ theorem fitLaw_eq_self [SigmaFinite μ] (hf : Measurable f) (h : π.map f = μ) 
   rw [fitLaw_def]
   conv_rhs => rw [← withDensity_one (μ := π)]
   exact withDensity_congr_ae (ae_of_ae_map hf.aemeasurable (rnDeriv_self _))
+
+/-- On spaces with measurable singletons, the projection reweights the mass of each point `ω` by
+the ratio of the masses that `μ` and the law of `f` under `π` give to `f ω`. -/
+theorem fitLaw_apply_singleton [MeasurableSingletonClass Ω] [MeasurableSingletonClass X]
+    [IsFiniteMeasure π] [SigmaFinite μ] (hf : Measurable f) (ω : Ω) :
+    π.fitLaw f μ {ω} = μ {f ω} / π.map f {f ω} * π {ω} := by
+  rw [fitLaw_def, withDensity_apply _ (measurableSet_singleton ω), lintegral_singleton]
+  rcases eq_or_ne (π {ω}) 0 with h | h
+  · rw [h, mul_zero, mul_zero]
+  have hle : π {ω} ≤ π.map f {f ω} := by
+    rw [map_apply hf (measurableSet_singleton _)]
+    exact measure_mono (Set.singleton_subset_iff.2 rfl)
+  rw [rnDeriv_eq_measure_singleton_div (ne_bot_of_le_ne_bot h hle) (measure_ne_top _ _)]
+
+/-- The real-mass form of `MeasureTheory.Measure.fitLaw_apply_singleton`: the projection reweights
+the real mass of each point `ω` by `μ.real {f ω} / (π.map f).real {f ω}`. -/
+theorem fitLaw_real_singleton [MeasurableSingletonClass Ω] [MeasurableSingletonClass X]
+    [IsFiniteMeasure π] [SigmaFinite μ] (hf : Measurable f) (ω : Ω) :
+    (π.fitLaw f μ).real {ω} = μ.real {f ω} / (π.map f).real {f ω} * π.real {ω} := by
+  rw [measureReal_def, fitLaw_apply_singleton hf, ENNReal.toReal_mul, ENNReal.toReal_div]
+  rfl
 
 /-- A measure `σ ≪ π` under which `f` has law `μ` is absolutely continuous with respect to the
 projection `π.fitLaw f μ`: the reweighting only removes mass on which `dμ/d(f₊π) ∘ f` vanishes,

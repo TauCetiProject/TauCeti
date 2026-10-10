@@ -38,7 +38,7 @@ public section
 
 namespace TauCeti
 
-open CategoryTheory CategoryTheory.Limits
+open CategoryTheory.Limits
 open scoped MonoidAlgebra ModuleCat
 
 universe u v
@@ -134,20 +134,10 @@ theorem exactK0_of_eq_finrank_smul_of_forall_pow_eq_one (M : FGModuleCat.{u} k[G
     have hQ : (ExactK0.of (FGModuleCat.of k[G] (X ⧸ N)) :
         ExactK0 (finiteModulesExactStructure k[G])) = t := ExactK0.of_congr e.toFGModuleCatIso
     -- The quotient is a trivial line. Add its class to the induction hypothesis.
-    let T : ShortComplex (FGModuleCat k[G]) :=
-      ShortComplex.mk (FGModuleCat.ofHom N.subtype) (FGModuleCat.ofHom N.mkQ) (by
-        apply FGModuleCat.hom_ext
-        exact (LinearMap.exact_subtype_mkQ N).linearMap_comp_eq_zero)
-    have hconf : (finiteModulesExactStructure k[G]).Conflation T :=
-      (finiteModulesExactStructure_conflation_iff k[G] T).mpr <| by
-        apply ModuleCat.shortComplex_shortExact
-        · exact LinearMap.exact_subtype_mkQ N
-        · exact N.injective_subtype
-        · exact N.mkQ_surjective
     have hrel : (ExactK0.of (FGModuleCat.of k[G] X) :
         ExactK0 (finiteModulesExactStructure k[G])) =
         ExactK0.of (FGModuleCat.of k[G] N) + t := by
-      simpa only [T, hQ] using ExactK0.of_conflation hconf
+      rw [exactK0_of_eq_submodule_add_quotient k[G] N, hQ]
     calc
       ExactK0.of (FGModuleCat.of k[G] X) = ExactK0.of (FGModuleCat.of k[G] N) + t := hrel
       _ = (finrankK0 k k[G] (ExactK0.of (FGModuleCat.of k[G] N)) + 1) • t := by

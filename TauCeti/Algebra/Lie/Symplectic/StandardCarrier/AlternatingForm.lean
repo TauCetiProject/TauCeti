@@ -157,23 +157,12 @@ private theorem rootIntMatrix_mul_JFin_add_eq_zero (k : Fin (n + 1) ⊕ Fin (n +
 
 private theorem rootIntMatrix_mul_self_eq_zero (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     rootIntMatrix n k * rootIntMatrix n k = 0 := by
-  have hsq := pow_two_rep_rootGenerator_eq_zero n k
-  have hG : (rootGenerator n k :
-      Matrix (Fin (n + 1) ⊕ Fin (n + 1)) (Fin (n + 1) ⊕ Fin (n + 1)) ℚ) *
-      (rootGenerator n k : Matrix _ _ ℚ) = 0 := by
-    ext a b
-    have h := DFunLike.congr_fun hsq (Pi.single b (1 : ℚ))
-    rw [pow_two, Module.End.mul_apply, rep_ι_apply, rep_ι_apply,
-      Matrix.mulVec_mulVec] at h
-    simp only [LinearMap.zero_apply] at h
-    have := congrFun h a
-    simpa [Matrix.mulVec_single] using this
   refine Matrix.map_injective (f := ((Int.castRingHom ℚ : ℤ →+* ℚ) : ℤ → ℚ))
     Int.cast_injective ?_
   simp only [Matrix.map_zero _ (map_zero (Int.castRingHom ℚ))]
   rw [← RingHom.mapMatrix_apply, map_mul]
   simp only [RingHom.mapMatrix_apply, Int.coe_castRingHom]
-  rw [map_rootIntMatrix, Matrix.submatrix_mul_equiv, hG]
+  rw [map_rootIntMatrix, Matrix.submatrix_mul_equiv, rootGenerator_mul_self_eq_zero]
   simp
 
 /-! ### The two generator matrices preserve the form -/

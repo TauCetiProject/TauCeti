@@ -34,6 +34,7 @@ point.
   fixing the point at infinity.
 * `TauCeti.Isogeny.Hom.neg_comp` and `TauCeti.Isogeny.Hom.degree_neg`: negation passes through
   composition, and preserves degrees, on the carrier.
+* `TauCeti.Isogeny.Hom.ofIsogeny_negIsogeny`: the negation isogeny is `-1` among the endomorphisms.
 * `TauCeti.Isogeny.tautologicalPoint_negPullback`: read at the generic point, negation is the
   group law's inverse — which is what identifies this pullback as negation rather than merely
   some degree-one involution.
@@ -163,6 +164,11 @@ theorem neg_comp (g : Hom W₂ W₃) (f : Hom W₁ W₂) : (-g).comp f = -(g.com
 @[simp]
 theorem degree_neg (f : Hom W₁ W₂) : (-f).degree = f.degree := by
   rw [neg_def, degree_comp, degree_ofIsogeny, degree_negIsogeny, one_mul]
+
+/-- **The negation isogeny is `-1`** in the endomorphism monoid. -/
+@[simp]
+theorem ofIsogeny_negIsogeny : ofIsogeny (negIsogeny W) = -1 := by
+  rw [neg_def, one_def, comp_id]
 
 end Hom
 

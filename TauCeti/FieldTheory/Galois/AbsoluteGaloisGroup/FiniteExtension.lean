@@ -98,6 +98,9 @@ isomorphism `G_K ⧸ Gal(Kˢ/σ(L)) ≃* Gal(L/K)`. This part uses normality but
 * `TauCeti.quotientFixingSubgroupFieldRangeEquiv_mk`,
   `TauCeti.absoluteGaloisGroupExtendQuotientEquiv_mk`: the two quotient isomorphisms send the
   class of `g` to its restriction along `σ`.
+* `TauCeti.toSubgroup_eq_fixingSubgroup_of_fixedField_eq`: an open subgroup of `G_K` is the
+  subgroup fixing its fixed field; `TauCeti.fixedField_toSubgroup_top`: the fixed field of `G_K`
+  is `K`.
 * `TauCeti.exists_galoisOpenNormalSubgroup_eq`: every open normal subgroup of `G_K` is
   `galoisOpenNormalSubgroup K E E.val` for a finite Galois intermediate field `E` of `Kˢ/K`.
 * `TauCeti.fixingOpenNormalSubgroup_eq_galoisOpenNormalSubgroup`: for a finite Galois `L/K`,
@@ -480,6 +483,24 @@ theorem absoluteGaloisGroupExtendQuotientEquiv_mk {U : Subgroup (Field.absoluteG
     (quotientFixingSubgroupFieldRangeEquiv_mk K L σ _)
 
 end OpenNormal
+
+/-! ### Open subgroups and their fixed fields -/
+
+variable {K} in
+/-- **An open subgroup of `G_K` is the subgroup fixing its fixed field**: if the fixed field of
+`U` is the intermediate field `E` of `Kˢ/K`, then `U` is the subgroup of `G_K` fixing `E`. -/
+theorem toSubgroup_eq_fixingSubgroup_of_fixedField_eq {U : OpenSubgroup (AbsoluteGaloisGroup K)}
+    {E : IntermediateField K (SeparableClosure K)} (hU : fixedField U.toSubgroup = E) :
+    U.toSubgroup = E.fixingSubgroup := by
+  rw [← hU]
+  exact (InfiniteGalois.fixingSubgroup_fixedField ⟨U.toSubgroup, U.isClosed⟩).symm
+
+/-- **The fixed field of `G_K` is `K`**: the whole of `G_K`, as an open subgroup, has fixed field
+the bottom intermediate field of `Kˢ/K`. -/
+theorem fixedField_toSubgroup_top :
+    fixedField (⊤ : OpenSubgroup (AbsoluteGaloisGroup K)).toSubgroup = ⊥ := by
+  rw [OpenSubgroup.toSubgroup_top]
+  exact InfiniteGalois.fixedField_bot
 
 variable {K} in
 /-- **Every open normal subgroup of `G_K` is the level of a finite Galois subextension**: it is

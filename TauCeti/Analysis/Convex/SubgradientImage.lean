@@ -21,6 +21,13 @@ Since `f` is continuous on `D`, its subgradients for the inner product are bound
 compact `K ⊆ D`, and the graph of the subdifferential over a closed `K ⊆ D` is closed. Hence
 the subgradient image `∂f(K) = ⋃ x ∈ K, ∂f(x)` of a compact subset of `D` is compact.
 
+For a real function `u` continuous on the closure of a bounded set `Ω`, every slope of an affine
+function through a point of the graph over `Ω` that lies below `u` on the frontier of `Ω` is a
+subgradient of `u` relative to `Ω` at some point of `Ω`. Consequently, if `w ≤ u` on the frontier
+of `Ω`, the subgradients of `w` relative to `Ω` at points where `u < w`, and their small
+perturbations, are subgradients of `u` relative to `Ω`: this is the comparison step behind the
+comparison principle for the Monge–Ampère equation.
+
 ## Main statements
 
 * `TauCeti.exists_norm_le_of_mem_subdifferential` — the subgradients of `f` are bounded over
@@ -28,7 +35,12 @@ the subgradient image `∂f(K) = ⋃ x ∈ K, ∂f(x)` of a compact subset of `D
 * `TauCeti.isClosed_setOf_mem_subdifferential` — the graph of the subdifferential over a closed
   subset of `D` is closed;
 * `TauCeti.isCompact_subgradientImage` — the subgradient image of a compact subset of `D` is
-  compact.
+  compact;
+* `TauCeti.exists_forall_add_inner_le_of_forall_frontier` — slopes of affine functions through a
+  point of the graph that lie below the boundary values are subgradients at points of `Ω`;
+* `TauCeti.exists_forall_add_inner_add_le_of_forall_frontier_le` — if `w ≤ u` on the frontier of
+  `Ω`, small perturbations of a subgradient of `w` at a point where `u < w` are subgradients of
+  `u` at points of `Ω`.
 
 ## References
 
@@ -120,5 +132,58 @@ theorem isCompact_subgradientImage {K : Set E} (hK : IsCompact K)
   convert hG.image continuous_snd using 1
   ext y
   simp
+
+omit [FiniteDimensional ℝ E] hf hbot in
+/-- **Slopes below the boundary values are subgradients.** Let `Ω` be bounded and `u` continuous
+on its closure, and let `x₀ ∈ Ω`. If the affine function `x ↦ u x₀ + ⟪x - x₀, p⟫` lies below `u`
+on the frontier of `Ω`, then `p` is a subgradient of `u` relative to `Ω` at some point `x₁ ∈ Ω`:
+`u x₁ + ⟪x - x₁, p⟫ ≤ u x` for every `x ∈ Ω`. -/
+theorem exists_forall_add_inner_le_of_forall_frontier [ProperSpace E] {Ω : Set E} {u : E → ℝ}
+    (hΩ : Bornology.IsBounded Ω) (hu : ContinuousOn u (closure Ω)) {x₀ : E} (hx₀ : x₀ ∈ Ω)
+    {p : E} (hp : ∀ x ∈ frontier Ω, u x₀ + inner ℝ (x - x₀) p ≤ u x) :
+    ∃ x₁ ∈ Ω, ∀ x ∈ Ω, u x₁ + inner ℝ (x - x₁) p ≤ u x := by
+  -- Minimize `u - ⟪·, p⟫` over the compact closure of `Ω`.
+  have hcont : ContinuousOn (fun x => u x - inner ℝ x p) (closure Ω) :=
+    hu.sub (continuous_id.inner continuous_const).continuousOn
+  obtain ⟨x₁, hx₁, hmin⟩ := hΩ.isCompact_closure.exists_isMinOn ⟨x₀, subset_closure hx₀⟩ hcont
+  have hmin' : ∀ x ∈ Ω, u x₁ - inner ℝ x₁ p ≤ u x - inner ℝ x p := fun x hx =>
+    isMinOn_iff.1 hmin x (subset_closure hx)
+  by_cases h₁ : x₁ ∈ Ω
+  · refine ⟨x₁, h₁, fun x hx => ?_⟩
+    have := hmin' x hx
+    rw [inner_sub_left]
+    linarith
+  · -- A minimum on the frontier is no smaller than the value at `x₀`, which is then a minimum.
+    refine ⟨x₀, hx₀, fun x hx => ?_⟩
+    have h₂ := hp x₁ ⟨hx₁, fun h => h₁ (interior_subset h)⟩
+    have h₃ := hmin' x hx
+    rw [inner_sub_left] at h₂ ⊢
+    linarith
+
+omit [FiniteDimensional ℝ E] hf hbot in
+/-- **Supporting slopes of a function lying above at `x₀` and below on the frontier.** Let `Ω` be
+bounded, let `u` and `w` be continuous on its closure with `w ≤ u` on the frontier of `Ω`, and let
+`p` be a subgradient of `w` relative to `Ω` at `x₀ ∈ Ω`. Then for every `q` with
+`‖q‖ * diam Ω ≤ w x₀ - u x₀`, the slope `p + q` is a subgradient of `u` relative to `Ω` at some
+point `x₁ ∈ Ω`. For `q = 0` this says that the subgradients of `w` at points where `u ≤ w` are
+subgradients of `u`. -/
+theorem exists_forall_add_inner_add_le_of_forall_frontier_le [ProperSpace E] {Ω : Set E}
+    {u w : E → ℝ} (hΩ : Bornology.IsBounded Ω) (hu : ContinuousOn u (closure Ω))
+    (hw : ContinuousOn w (closure Ω)) (hfr : ∀ x ∈ frontier Ω, w x ≤ u x) {x₀ : E}
+    (hx₀ : x₀ ∈ Ω) {p q : E} (hp : ∀ x ∈ Ω, w x₀ + inner ℝ (x - x₀) p ≤ w x)
+    (hq : ‖q‖ * diam Ω ≤ w x₀ - u x₀) :
+    ∃ x₁ ∈ Ω, ∀ x ∈ Ω, u x₁ + inner ℝ (x - x₁) (p + q) ≤ u x := by
+  -- The affine function through `(x₀, u x₀)` with slope `p + q` lies below `w` on the frontier.
+  refine exists_forall_add_inner_le_of_forall_frontier hΩ hu hx₀ fun x hx => ?_
+  have hxc := frontier_subset_closure hx
+  have h₁ : w x₀ + inner ℝ (x - x₀) p ≤ w x := le_on_closure hp (continuousOn_const.add
+    ((continuous_id.sub continuous_const).inner continuous_const).continuousOn) hw hxc
+  have h₂ : inner ℝ (x - x₀) q ≤ ‖q‖ * diam Ω := by
+    refine (real_inner_le_norm _ _).trans ?_
+    rw [mul_comm, ← dist_eq_norm, ← diam_closure Ω]
+    gcongr
+    exact dist_le_diam_of_mem hΩ.closure hxc (subset_closure hx₀)
+  rw [inner_add_right]
+  linarith [hfr x hx]
 
 end TauCeti
