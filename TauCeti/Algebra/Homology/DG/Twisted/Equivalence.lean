@@ -122,8 +122,8 @@ theorem continuationHom_f_apply (ν : ContinuationCocycle mP mQ) (hM : IsDGRight
 
 /-- The Kronecker continuation cocycle induces the identity morphism. -/
 @[simp]
-theorem continuationHom_refl [DecidableEq P] (hd : d 1 = 0) (hM : IsDGRightModule h ℳ dM) :
-    (refl hd mP).continuationHom hM = 𝟙 (mP.twistedCochainComplex dM hM) := by
+theorem continuationHom_refl [DecidableEq P] (hM : IsDGRightModule h ℳ dM) :
+    (refl h.map_one_eq_zero mP).continuationHom hM = 𝟙 (mP.twistedCochainComplex dM hM) := by
   refine HomologicalComplex.hom_ext _ _ fun n ↦ termHom_ext fun x ↦ ?_
   rw [continuationHom_f_apply, continuationMap_refl]
   rfl
