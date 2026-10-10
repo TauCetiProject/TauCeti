@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.AbsoluteArtinMap
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClassLevel
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Galois
-import TauCeti.NumberTheory.ClassFieldTheory.Formation.NormLimitation
+import TauCeti.NumberTheory.ClassFieldTheory.Formation.GroundNorm
 
 /-!
 # The norm of the idele-class formation
