@@ -113,16 +113,10 @@ theorem exists_faithful_weightedPBWRepresentation :
         b.weightedPBWIdeal w hbracket N) ∧
       Function.Injective (b.weightedPBWRepresentation w hbracket N) ∧
       ∀ x : L, b.weightedPBWRepresentation w hbracket N x ^ N = 0 := by
-  obtain ⟨N, b, w, hbracket, hN, hweight, hfinite, hinj, hpow⟩ :=
+  obtain ⟨N, b, w, hbracket, hN, hweight, hfinite, _, _⟩ :=
     UniversalEnvelopingAlgebra.exists_weightedPBWIdeal_of_isNilpotent K L
   refine ⟨N, b, w, hbracket, hN, hweight, hfinite, ?_, ?_⟩
-  · rw [b.weightedPBWRepresentation_def, LieHom.leftRegularRep_injective_iff]
-    intro x y h
-    apply hinj
-    simpa only [LieHom.comp_apply, AlgHom.coe_toLieHom, Ideal.Quotient.mkₐ_eq_mk] using h
-  · intro x
-    rw [b.weightedPBWRepresentation_def, LieHom.leftRegularRep_eq_mulLeft,
-      LinearMap.pow_mulLeft, LinearMap.mulLeft_eq_zero_iff]
-    simpa only [LieHom.comp_apply, AlgHom.coe_toLieHom, Ideal.Quotient.mkₐ_eq_mk] using hpow x
+  · exact b.weightedPBWRepresentation_injective w hbracket N (fun i ↦ (hweight i).2)
+  · exact b.weightedPBWRepresentation_pow_eq_zero w hbracket (fun i ↦ (hweight i).1) N
 
 end TauCeti
