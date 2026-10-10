@@ -20,7 +20,7 @@ More generally, a nondegenerate odd cyclic module whose order is not a square is
 ## Main declarations
 
 * `TauCeti.FiniteQuadraticModule.not_isMetabolic_oddCyclic`: the nonsquare-order obstruction.
-* `TauCeti.FiniteQuadraticModule.gaussSign_eq_zero_and_not_isMetabolic_oddCyclic_five`:
+* `isNondegenerate_and_gaussSign_eq_zero_and_not_isMetabolic_oddCyclic_five`:
   the concrete order-five counterexample with coefficient two.
 
 ## References
@@ -44,7 +44,7 @@ theorem not_isMetabolic_oddCyclic {m : ℕ} (hm : Odd m) {θ : ℤ}
 
 /-- The nondegenerate odd cyclic form of order five with coefficient two has zero Gauss sign
 and no quadratic Lagrangian. Thus vanishing of the Gauss sign does not imply metabolicity. -/
-theorem gaussSign_eq_zero_and_not_isMetabolic_oddCyclic_five :
+theorem isNondegenerate_and_gaussSign_eq_zero_and_not_isMetabolic_oddCyclic_five :
     (oddCyclic 5 (by decide) 2).IsNondegenerate ∧
       (oddCyclic 5 (by decide) 2).gaussSign = 0 ∧
       ¬ (oddCyclic 5 (by decide) 2).IsMetabolic := by
