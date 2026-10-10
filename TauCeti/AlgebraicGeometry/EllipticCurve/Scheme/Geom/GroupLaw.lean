@@ -45,6 +45,11 @@ groups on `Over S`, and is therefore a commutative group object
   `TauCeti.AlgebraicGeometry.EllipticCurveGeom.mul_left` and
   `TauCeti.AlgebraicGeometry.EllipticCurveGeom.inv_left`: the unit, multiplication and inverse are
   the zero section, the addition morphism and the negation morphism.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.hom_one_left`,
+  `TauCeti.AlgebraicGeometry.EllipticCurveGeom.hom_mul_left` and
+  `TauCeti.AlgebraicGeometry.EllipticCurveGeom.hom_inv_left`: in the group of points of `E` with
+  values in an object of `Over S`, the zero, the product and the inverse are the zero section, the
+  sum under the addition morphism and the negation.
 
 ## References
 
@@ -300,6 +305,31 @@ theorem mul_left : μ[Over.mk E.structureMap].left = E.addition :=
 @[simp]
 theorem inv_left : ι[Over.mk E.structureMap].left = E.neg :=
   (rfl)
+
+/-! ### The group of points -/
+
+section Points
+
+variable {Z : Over S}
+
+/-- The zero point of `E` with values in `Z` is the zero section over `Z`. -/
+@[simp]
+theorem hom_one_left : (1 : Z ⟶ Over.mk E.structureMap).left = Z.hom ≫ E.zero := by
+  simp [Hom.one_def]
+
+/-- The product of two points of `E` with values in `Z` is their sum under the addition
+morphism. -/
+@[simp]
+theorem hom_mul_left (x y : Z ⟶ Over.mk E.structureMap) :
+    (x * y).left = pullback.lift x.left y.left (x.w.trans y.w.symm) ≫ E.addition := by
+  simp [Hom.mul_def]
+
+/-- The inverse of a point of `E` with values in `Z` is its negation. -/
+@[simp]
+theorem hom_inv_left (x : Z ⟶ Over.mk E.structureMap) : x⁻¹.left = x.left ≫ E.neg := by
+  simp [Hom.inv_def]
+
+end Points
 
 end EllipticCurveGeom
 
