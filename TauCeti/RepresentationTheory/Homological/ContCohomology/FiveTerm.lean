@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Conjugation
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Conjugation.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Inflation.Basic
 
 /-!

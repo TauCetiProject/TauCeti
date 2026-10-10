@@ -76,6 +76,15 @@ theorem inverseConjugationHomotopy2_apply {K : Type uK} [Group K] {A : Type uA} 
     inverseConjugationHomotopy2 g c n = c (g, g⁻¹ * n * g) - c (n, g) :=
   by simp [inverseConjugationHomotopy2]
 
+/-- The degree-two inverse-conjugation homotopy preserves continuity. -/
+theorem continuous_inverseConjugationHomotopy2 {K : Type uK} [Group K]
+    [TopologicalSpace K] [ContinuousMul K] {A : Type uA} [Sub A]
+    [TopologicalSpace A] [ContinuousSub A] (g : K) {c : K × K → A}
+    (hc : Continuous c) : Continuous (inverseConjugationHomotopy2 g c) :=
+  (hc.comp (continuous_const.prodMk
+    ((continuous_const.mul continuous_id).mul continuous_const))).sub
+    (hc.comp (continuous_id.prodMk continuous_const))
+
 /-- The degree-one algebraic cochain-homotopy identity for inverse conjugation. -/
 theorem inverseConjugationCochainHomotopy1 {K : Type uK} [Group K]
     {A : Type uA} [AddCommGroup A] [DistribMulAction K A] (g : K) (c : K → A) :
