@@ -36,7 +36,8 @@ affine opens `U` of `S` with Weierstrass curves over `Γ(S, U)` and the chosen p
   to `Γ(base, V)`; its base is included in that of `c` by `restrictι`.
 * `TauCeti.AlgebraicGeometry.PointedWeierstrassChart.pullbackCarrierMap`: the morphism between the
   restrictions of the curve to the bases of two charts induced by a morphism of bases over `S`, a
-  base change square (`isPullback_pullbackCarrierMap`).
+  base change square (`isPullback_pullbackCarrierMap`); `projModelMap` is the same morphism between
+  the projective models of the equations of the two charts.
 * `TauCeti.AlgebraicGeometry.PointedWeierstrassAtlas π zero`: a family of pointed Weierstrass
   charts whose images cover the base.
 * `TauCeti.AlgebraicGeometry.IsLocallyWeierstrass π zero hzero`: every point of the base has an
@@ -398,6 +399,36 @@ induced by the zero section. -/
 @[reassoc (attr := simp)]
 theorem pulledZero_pullbackCarrierMap : k.pulledZero ≫ pullbackCarrierMap hh = h ≫ c.pulledZero :=
   c.isPullback.hom_ext (by simp [reassoc_of% hh]) (by simp)
+
+/-- The morphism between the projective models of the equations of two charts `k` and `c` induced
+by a morphism `h` of bases over `S`: `pullbackCarrierMap hh`, read through the isomorphisms of the
+restrictions of the curve with the projective models (`modelIso_hom_projModelMap`). It lies over
+`Spec k.ring ≅ k.base ⟶ c.base ≅ Spec c.ring`, as a base change square
+(`isPullback_projModelMap`), and carries the zero section to the zero section
+(`projModelZero_projModelMap`). -/
+noncomputable def projModelMap : k.equation.projModel ⟶ c.equation.projModel :=
+  k.modelIso.inv ≫ pullbackCarrierMap hh ≫ c.modelIso.hom
+
+/-- Through the isomorphisms with the projective models, `projModelMap hh` is
+`pullbackCarrierMap hh`. -/
+@[reassoc (attr := simp)]
+theorem modelIso_hom_projModelMap :
+    k.modelIso.hom ≫ projModelMap hh = pullbackCarrierMap hh ≫ c.modelIso.hom := by
+  simp [projModelMap]
+
+/-- The projective model of the equation of `k` is the base change of that of `c` along
+`Spec k.ring ≅ k.base ⟶ c.base ≅ Spec c.ring`, through `projModelMap hh`. -/
+theorem isPullback_projModelMap : IsPullback (projModelMap hh) k.equation.projModelOver
+    c.equation.projModelOver (k.baseIso.inv ≫ h ≫ c.baseIso.hom) :=
+  (isPullback_pullbackCarrierMap hh).of_iso k.modelIso c.modelIso k.baseIso c.baseIso
+    (by simp) k.modelIso_over.symm c.modelIso_over.symm (by simp)
+
+/-- The morphism `projModelMap hh` carries the zero section to the zero section. -/
+@[reassoc]
+theorem projModelZero_projModelMap : k.equation.projModelZero ≫ projModelMap hh =
+    (k.baseIso.inv ≫ h ≫ c.baseIso.hom) ≫ c.equation.projModelZero := by
+  rw [← cancel_epi k.baseIso.hom, ← k.modelIso_zero_assoc]
+  simp
 
 end Map
 
