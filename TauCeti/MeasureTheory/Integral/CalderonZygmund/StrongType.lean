@@ -21,10 +21,10 @@ interpolation between that bound and the `L²` bound
 `‖T f‖_p ≤ (p / (p - 1) · 2 C + p / (2 - p) · 4 ‖T‖²) ^ (1 / p) ‖f‖_p`
 
 for every `1 < p < 2` and every `f ∈ L²`, where `C = 2ⁿ (4 ‖T‖² + 1) + 4 B` is the weak type
-`(1, 1)` constant. This constant blows up at both endpoints. That is a limitation of the
-interpolation argument, not of every operator satisfying the hypotheses (the zero operator
-satisfies them), although classical singular integrals such as the Hilbert transform are indeed
-not bounded on `L¹`.
+`(1, 1)` constant. This constant blows up as `p → 1`, and also as `p → 2` when `‖T‖ > 0`. That
+is a limitation of the interpolation argument, not of every operator satisfying the hypotheses
+(the zero operator satisfies them), although classical singular integrals such as the Hilbert
+transform are indeed not bounded on `L¹`.
 
 Since `T` is only given on `L²`, the estimate is stated for `f ∈ L²`, and it is informative for
 `f ∈ L² ∩ Lᵖ`. The range `2 < p < ∞` is not treated here. Classically it follows by duality, in
