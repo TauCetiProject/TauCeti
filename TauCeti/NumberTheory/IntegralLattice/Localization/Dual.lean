@@ -93,13 +93,7 @@ theorem isBaseChange_localizationDualToCompletion :
 theorem localizationDualToCompletion_injective :
     Function.Injective (L.localizationDualToCompletion p) := by
   let : IsAddTorsionFree V := .of_module_rat V
-  have h := L.isBaseChange_localizationDualToCompletion p
-  have hmk : ⇑(L.localizationDualToCompletion p) =
-      h.equiv ∘ TensorProduct.mk ℤ_[p] ℚ_[p] (L.LocalDualCarrier p) 1 := by
-    ext x
-    simp [h.equiv_tmul]
-  rw [hmk]
-  exact h.equiv.injective.comp
+  exact (L.isBaseChange_localizationDualToCompletion p).injective_of_tensorProduct_mk_injective
     (Module.Flat.tensorProduct_mk_injective ℤ_[p] (L.LocalDualCarrier p) ℚ_[p])
 
 variable [L.IsNondegenerate]

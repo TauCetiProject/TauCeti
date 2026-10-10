@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.RingTheory.Flat.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Gram
 public import TauCeti.LinearAlgebra.IntegralLattice.Rationalization
+public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
 /-!
 # Localizing an integral lattice at a prime
@@ -150,14 +151,8 @@ theorem isBaseChange_localizationToCompletion :
 
 /-- **The canonical map `L_p → V_p` is injective.** -/
 theorem localizationToCompletion_injective :
-    Function.Injective (L.localizationToCompletion p) := by
-  have h := L.isBaseChange_localizationToCompletion p
-  have hmk : ⇑(L.localizationToCompletion p) =
-      h.equiv ∘ TensorProduct.mk ℤ_[p] ℚ_[p] (L.LocalCarrier p) 1 := by
-    ext x
-    simp [h.equiv_tmul]
-  rw [hmk]
-  exact h.equiv.injective.comp
+    Function.Injective (L.localizationToCompletion p) :=
+  (L.isBaseChange_localizationToCompletion p).injective_of_tensorProduct_mk_injective
     (Module.Flat.tensorProduct_mk_injective ℤ_[p] (L.LocalCarrier p) ℚ_[p])
 
 /-- **The image of `L_p` spans `V_p` over `ℚ_p`**, so `L_p` is full in the completion. -/
