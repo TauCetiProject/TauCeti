@@ -116,7 +116,7 @@ variable (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
 include hP ht htr hinf in
 /-- Under the Kähler–Weil comparison, the image of local Kähler differentials at a rational
 place is precisely the annihilator of its valuation ring for the local component. -/
-theorem mem_range_map_iff_forall_repartitionDualComponent_eq_zero (ω : Ω[F⁄k]) :
+theorem mem_range_map_iff_forall_repartitionDualComponent_eq_zero_of_uniformizer (ω : Ω[F⁄k]) :
     ω ∈ (KaehlerDifferential.map k k P.integers F).range ↔
       ∀ u ∈ P.integers,
         repartitionDualComponent
@@ -127,6 +127,21 @@ theorem mem_range_map_iff_forall_repartitionDualComponent_eq_zero (ω : Ω[F⁄k
   simp_rw [repartitionDualComponent_kaehlerDifferentialEquivWeilDifferentialOfSeparating
     hF hex hinf hx hP ht htr]
 
+include hP ht htr hinf in
+/-- Given a separating uniformizer at a rational place, a nonzero Weil differential has
+nonnegative order exactly when its corresponding Kähler differential comes from the valuation
+ring. The constant field need not be perfect. -/
+theorem mem_range_map_iff_weilDifferentialOrder_nonneg_of_uniformizer
+    (ω : weilDifferentialSpace k F)
+    (hω : (ω : Module.Dual k ↥(repartitionSpace k F)) ≠ 0) :
+    (kaehlerDifferentialEquivWeilDifferentialOfSeparating hF hex hx).symm ω ∈
+        (KaehlerDifferential.map k k P.integers F).range ↔
+      0 ≤ weilDifferentialOrder hF hex ω.2 hω P := by
+  rw [P.mem_range_map_iff_forall_repartitionDualComponent_eq_zero_of_uniformizer
+      hP ht htr hF hex hinf hx,
+    LinearEquiv.apply_symm_apply, le_weilDifferentialOrder_iff hF hex ω.2 hω P 0]
+  simp only [WithZero.exp_zero, ← P.mem_integers_iff]
+
 end WithUniformizer
 
 variable {k F : Type*} [Field k] [Field F] [Algebra k F] [PerfectField k]
@@ -134,11 +149,37 @@ variable {k F : Type*} [Field k] [Field F] [Algebra k F] [PerfectField k]
   (hex : IsIntegrallyClosedIn k F) (hinf : {Q : Place k F | Q.degree = 1}.Infinite)
   {x : F} (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F]
 
+/-- Over a perfect field, a Kähler differential comes from the valuation ring of a rational
+place exactly when its residue pairing with every integral function vanishes. No uniformizer
+is part of the statement. -/
+theorem mem_range_map_iff_forall_kaehlerResidueOfPerfectField_smul_eq_zero (ω : Ω[F⁄k]) :
+    ω ∈ (KaehlerDifferential.map k k P.integers F).range ↔
+      ∀ u ∈ P.integers, P.kaehlerResidueOfPerfectField hP hF (u • ω) = 0 := by
+  obtain ⟨t, ht, -⟩ := P.exists_ord_eq_one_and_forall_mem_ord_eq_zero ∅
+  obtain ⟨htr, hsep⟩ := P.transcendental_and_isSeparable_adjoin_of_ord_eq_one hF ht
+  let := hsep
+  rw [P.mem_range_map_iff_coord_mem_integers hP ht htr,
+    P.coord_mem_integers_iff_forall_kaehlerResidue_smul_eq_zero hP ht htr,
+    P.kaehlerResidueOfPerfectField_eq_kaehlerResidue hP ht hF htr]
+
+include hP hinf in
+/-- Over a perfect exact constant field with infinitely many rational places, the image of
+local Kähler differentials at a rational place is the annihilator of its valuation ring for the
+local component of the Kähler–Weil comparison, without choosing a uniformizer. -/
+theorem mem_range_map_iff_forall_repartitionDualComponent_eq_zero (ω : Ω[F⁄k]) :
+    ω ∈ (KaehlerDifferential.map k k P.integers F).range ↔
+      ∀ u ∈ P.integers,
+        repartitionDualComponent
+          (kaehlerDifferentialEquivWeilDifferentialOfSeparating hF hex hx ω :
+            Module.Dual k ↥(repartitionSpace k F)) P u = 0 := by
+  rw [P.mem_range_map_iff_forall_kaehlerResidueOfPerfectField_smul_eq_zero hP hF]
+  simp_rw [P.kaehlerResidueOfPerfectField_smul_eq_repartitionDualComponent hF hex hinf hx hP]
+
 include hP hinf in
 /-- Over a perfect exact constant field with infinitely many rational places, a nonzero Weil
 differential has nonnegative order at a rational place exactly when its corresponding Kähler
 differential comes from that place's valuation ring. No uniformizer is part of the statement. -/
-theorem mem_range_map_iff_nonneg_weilDifferentialOrder
+theorem mem_range_map_iff_weilDifferentialOrder_nonneg
     (ω : weilDifferentialSpace k F)
     (hω : (ω : Module.Dual k ↥(repartitionSpace k F)) ≠ 0) :
     (kaehlerDifferentialEquivWeilDifferentialOfSeparating hF hex hx).symm ω ∈
@@ -147,8 +188,7 @@ theorem mem_range_map_iff_nonneg_weilDifferentialOrder
   obtain ⟨t, ht, -⟩ := P.exists_ord_eq_one_and_forall_mem_ord_eq_zero ∅
   obtain ⟨htr, hsep⟩ := P.transcendental_and_isSeparable_adjoin_of_ord_eq_one hF ht
   let := hsep
-  rw [P.mem_range_map_iff_forall_repartitionDualComponent_eq_zero hP ht htr hF hex hinf hx,
-    LinearEquiv.apply_symm_apply, le_weilDifferentialOrder_iff hF hex ω.2 hω P 0]
-  simp only [WithZero.exp_zero, ← P.mem_integers_iff]
+  exact P.mem_range_map_iff_weilDifferentialOrder_nonneg_of_uniformizer
+    hP ht htr hF hex hinf hx ω hω
 
 end TauCeti.Place
