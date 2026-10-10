@@ -25,6 +25,7 @@ Stage 0.1 of the `TauCetiRoadmap/UniversalCovers` roadmap.
 
 ## Main declarations
 
+* `FundamentalGroup.map_id`: the identity induces the identity homomorphism.
 * `FundamentalGroup.map_comp`: induced maps preserve composition.
 * `FundamentalGroupoid.nonempty_hom`: the fundamental groupoid of a path-connected
   space is connected.
@@ -55,6 +56,15 @@ theorem nonempty_hom {Y : Type*} [TopologicalSpace Y]
 end FundamentalGroupoid
 
 namespace FundamentalGroup
+
+/-- The identity map induces the identity homomorphism on fundamental groups. -/
+@[simp]
+theorem map_id {X : Type*} [TopologicalSpace X] (x : X) :
+    map (ContinuousMap.id X) x = MonoidHom.id _ := by
+  ext p
+  -- Mapping a representative path by the identity preserves the path and its endpoints.
+  induction p using Path.Homotopic.Quotient.ind
+  rfl
 
 /-- The map on fundamental groups induced by a composite is the composite of the induced maps. -/
 @[simp]

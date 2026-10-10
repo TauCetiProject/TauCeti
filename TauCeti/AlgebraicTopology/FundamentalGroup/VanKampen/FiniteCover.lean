@@ -12,8 +12,9 @@ import Mathlib.Data.Fintype.Option
 # Based van Kampen for finite open covers
 
 Homomorphisms out of the fundamental groups of a finite open cover glue uniquely when they
-agree on each pairwise intersection, provided the double and triple intersections are path
-connected and every member contains the basepoint. The overlaps may differ from pair to pair.
+agree on each pairwise intersection, provided the triple intersections are path connected and
+every member contains the basepoint. Repeated triple indices imply path connectedness of the
+double intersections and individual members. The overlaps may differ from pair to pair.
 This gives the universal property needed to compute a fundamental group by successively
 adjoining cover members, without requiring a single common overlap.
 
@@ -39,13 +40,13 @@ variable {K : Type w} [Monoid K]
 
 /-- **The based van Kampen theorem for a finite open cover, in universal-property form.**
 Pairwise compatible homomorphisms out of the fundamental groups of the cover members extend
-uniquely to the ambient fundamental group. Repeated indices in the double-intersection
-hypothesis include path connectedness of the individual members. No common pairwise
-intersection is required, and the target can be any monoid. -/
+uniquely to the ambient fundamental group. Repeated indices in the triple-intersection
+hypothesis imply path connectedness of the double intersections and individual members. No
+common pairwise intersection is required, and the target can be any monoid. -/
 theorem existsUnique_vanKampenDesc_finite {X : Type v} [TopologicalSpace X]
     {ι : Type u} [Finite ι] (U : ι → Set X) (x : X)
     (hOpen : ∀ i, IsOpen (U i)) (hCover : ∀ y, ∃ i, y ∈ U i)
-    (hx : ∀ i, x ∈ U i) (hDouble : ∀ i j, IsPathConnected (U i ∩ U j))
+    (hx : ∀ i, x ∈ U i)
     (hTriple : ∀ i j k, IsPathConnected (U i ∩ U j ∩ U k))
     (f : ∀ i, FundamentalGroup (U i) ⟨x, hx i⟩ →* K)
     (hcompat : ∀ i j,
@@ -56,6 +57,8 @@ theorem existsUnique_vanKampenDesc_finite {X : Type v} [TopologicalSpace X]
     ∃! d : FundamentalGroup X x →* K, ∀ i,
       d.comp (FundamentalGroup.map (ContinuousMap.subtypeVal (U i)) ⟨x, hx i⟩) = f i := by
   classical
+  have hDouble (i j : ι) : IsPathConnected (U i ∩ U j) := by
+    simpa only [Set.inter_assoc, Set.inter_self] using hTriple i j j
   let P (ι : Type u) : Prop := ∀ (X : Type v) [TopologicalSpace X]
       (U : ι → Set X) (x : X),
       (∀ i, IsOpen (U i)) → (∀ y, ∃ i, y ∈ U i) →
