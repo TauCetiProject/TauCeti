@@ -8,7 +8,7 @@ module
 public import TauCeti.InformationTheory.Coding.GeneratorParityCheck
 public import TauCeti.InformationTheory.Coding.Weight.Divisibility
 public import TauCeti.InformationTheory.Coding.Weight.Enumerator
-public import TauCeti.LinearAlgebra.Matrix.Rank
+public import TauCeti.LinearAlgebra.Matrix.Rank.Basic
 
 /-!
 # The extended ternary Golay code

@@ -14,8 +14,10 @@ This file records general results relating matrix rank to the corresponding line
 
 ## Main results
 
-* `Matrix.rank_eq_card_iff_vecMul_injective` characterizes full row rank by injectivity of right
-  multiplication by the matrix.
+* `Matrix.rank_eq_card_iff_vecMul_injective` characterizes full row rank by injectivity of
+  vector-matrix multiplication.
+* `Matrix.rank_eq_card_iff_mulVec_injective` characterizes full column rank by injectivity of
+  matrix-vector multiplication.
 * `Matrix.rank_add_rank_le_rank_mul_add_card`: Sylvester's rank inequality
   `rank A + rank B ≤ rank (A * B) + n` for an `m × n` matrix `A` and an `n × o` matrix `B`.
 
@@ -31,6 +33,14 @@ variable {K : Type*} [Field K] {m n : Type*} [Fintype m] [Fintype n]
 theorem rank_eq_card_iff_vecMul_injective (B : Matrix m n K) :
     B.rank = Fintype.card m ↔ Function.Injective B.vecMul := by
   rw [vecMul_injective_iff, rank_eq_finrank_span_row,
+    linearIndependent_iff_card_eq_finrank_span, Set.finrank, eq_comm]
+
+omit [Fintype m] in
+/-- A matrix has full column rank exactly when matrix-vector multiplication is injective.
+The row index type need not be finite. -/
+theorem rank_eq_card_iff_mulVec_injective (B : Matrix m n K) :
+    B.rank = Fintype.card n ↔ Function.Injective B.mulVec := by
+  rw [mulVec_injective_iff, rank_eq_finrank_span_cols,
     linearIndependent_iff_card_eq_finrank_span, Set.finrank, eq_comm]
 
 omit [Fintype m] in

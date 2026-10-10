@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.PosDef.Basic
-public import TauCeti.LinearAlgebra.Matrix.Rank
+public import TauCeti.LinearAlgebra.Matrix.Rank.Basic
 
 /-!
 # Full-rank congruences of positive-definite matrices

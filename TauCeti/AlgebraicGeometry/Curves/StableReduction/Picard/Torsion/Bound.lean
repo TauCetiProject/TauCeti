@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Topology
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Picard.Torsion.Basic
-public import TauCeti.LinearAlgebra.Matrix.Rank
+public import TauCeti.LinearAlgebra.Matrix.Rank.Basic
 
 /-!
 # Bounding prime torsion by the topological genus

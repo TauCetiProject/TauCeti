@@ -9,7 +9,7 @@ public import TauCeti.Probability.Distributions.Wishart.Bartlett
 public import TauCeti.Probability.Distributions.Wishart.Congruence
 
 import TauCeti.Analysis.Matrix.OrthogonalRows
-import TauCeti.LinearAlgebra.Matrix.Rank
+import TauCeti.LinearAlgebra.Matrix.Rank.Basic
 import TauCeti.LinearAlgebra.Matrix.Triangular
 import TauCeti.MeasureTheory.Constructions.Pi
 
