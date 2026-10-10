@@ -6,6 +6,7 @@ Run with: PYTHONPATH=scripts python3 scripts/test_roadmap_progress.py
 
 import datetime as dt
 import json
+import os
 import pathlib
 import re
 import shutil
@@ -453,6 +454,195 @@ class Tree(unittest.TestCase):
         self.assertEqual(rows[3]["assessment"]["reason"], "no-report")
 
 
+class Topics(unittest.TestCase):
+    """Rows are grouped by the arXiv category each roadmap declares in its own metadata.toml."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        root = pathlib.Path(self.tmp.name)
+        for base, name, meta in ((rp.AREAS_DIR, "Primes", 'topic = "math.NT"\n'),
+                                 (rp.AREAS_DIR, "Curves", 'topic = "math.AG"\n'),
+                                 (rp.AREAS_DIR, "Bare", None),
+                                 (rp.AREAS_DIR, "Odd", 'topic = "physics.gen-ph"\n'),
+                                 (rp.AREAS_DIR, "Broken", "topic = \n"),
+                                 (rp.COMPLETED_DIR, "Finished", 'topic = "math.CO"\n')):
+            d = root / base / name
+            d.mkdir(parents=True)
+            (d / "README.md").write_text(f"# {name}\n### Layer 0: a\n")
+            if meta is not None:
+                (d / "metadata.toml").write_text(meta)
+        sub = root / rp.AREAS_DIR / "Primes" / "Sub"
+        sub.mkdir()
+        (sub / "README.md").write_text("# Sub\n### Layer 0: a\n")
+        (sub / "Suggested.lean").write_text("")
+        self.rows = rp.read_roadmaps(root, {})
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def topic(self, data, row_id):
+        return next(r["topic"] for r in data["rows"] if r["id"] == row_id)
+
+    def test_each_roadmap_is_grouped_by_its_declared_category(self):
+        now = dt.datetime(2026, 10, 1, tzinfo=UTC)
+        data = rp.build(self.rows, [], now, now, None, None, "test")
+        self.assertEqual(self.topic(data, "TauCetiRoadmap/Primes"), "Number Theory")
+        self.assertEqual(self.topic(data, "TauCetiRoadmap/Curves"), "Algebraic Geometry")
+        self.assertEqual(self.topic(data, "Completed/Finished"), "Combinatorics")
+
+    def test_a_sub_roadmap_is_in_its_parent_s_category(self):
+        now = dt.datetime(2026, 10, 1, tzinfo=UTC)
+        data = rp.build(self.rows, [], now, now, None, None, "test")
+        self.assertEqual(self.topic(data, "TauCetiRoadmap/Primes/Sub"), "Number Theory")
+
+    def test_no_or_unknown_or_malformed_metadata_is_unsorted(self):
+        now = dt.datetime(2026, 10, 1, tzinfo=UTC)
+        data = rp.build(self.rows, [], now, now, None, None, "test")
+        for name in ("Bare", "Odd", "Broken"):
+            self.assertEqual(self.topic(data, f"TauCetiRoadmap/{name}"), rp.UNSORTED, name)
+
+    def test_the_topic_list_is_the_categories_in_use_by_name(self):
+        now = dt.datetime(2026, 10, 1, tzinfo=UTC)
+        data = rp.build(self.rows, [], now, now, None, None, "test")
+        self.assertEqual(data["topics"], ["Algebraic Geometry", "Combinatorics",
+                                          "Number Theory"])
+
+
+class TopicScheme(unittest.TestCase):
+    """A snapshot says which classification its topics follow, so one from before the switch to
+    arXiv categories can be told apart from a current one."""
+
+    def test_build_stamps_the_scheme(self):
+        now = dt.datetime(2026, 10, 1, tzinfo=UTC)
+        self.assertEqual(rp.build([], [], now, now, None, None, "test")["topic_scheme"], rp.TOPIC_SCHEME)
+
+    def test_only_a_current_snapshot_passes(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = pathlib.Path(d) / "progress.json"
+            self.assertFalse(rp.snapshot_is_current(path))  # missing
+            path.write_text("{not json")
+            self.assertFalse(rp.snapshot_is_current(path))
+            path.write_text(json.dumps({"schema_version": 3, "topics": ["Number theory"]}))
+            self.assertFalse(rp.snapshot_is_current(path))  # from before the scheme existed
+            path.write_text(json.dumps({"schema_version": 3, "topic_scheme": rp.TOPIC_SCHEME}))
+            self.assertTrue(rp.snapshot_is_current(path))
+            self.assertEqual(rp.main(["--check-snapshot", str(path)]), 0)
+            path.write_text("[]")
+            self.assertEqual(rp.main(["--check-snapshot", str(path)]), 1)
+
+
+class PagesFailurePath(unittest.TestCase):
+    """The Pages workflow restores the last published static files from a cache and then
+    regenerates them. When the progress board's regeneration fails, the restored snapshot is
+    published only if it is in the current topic scheme; one from before the switch would show the
+    old hand-assigned topics under the new label, so the committed fallback replaces it. This runs
+    the workflow step's own script, with generation made to fail."""
+
+    REPO = pathlib.Path(__file__).resolve().parents[1]
+    COMMITTED = {"schema_version": 3, "topic_scheme": rp.TOPIC_SCHEME, "topics": ["Number Theory"],
+                 "which": "committed"}
+
+    def step_script(self):
+        text = (self.REPO / ".github" / "workflows" / "pages.yml").read_text(encoding="utf-8")
+        start = text.index("- name: Regenerate the roadmap progress board into static_files")
+        lines = text[text.index("run: |", start):].split("\n")[1:]
+        indent = len(lines[0]) - len(lines[0].lstrip())
+        body = []
+        for line in lines:
+            if line.strip() and len(line) - len(line.lstrip()) < indent:
+                break
+            body.append(line[indent:])
+        return "\n".join(body)
+
+    def publish_after_failure(self, restored):
+        """The JSON left for publication when generation fails over `restored` (None: no file)."""
+        with tempfile.TemporaryDirectory() as d:
+            root = pathlib.Path(d)
+            (root / "scripts").mkdir()
+            for name in ("roadmap_progress.py", "arxiv_categories.py"):
+                (root / "scripts" / name).write_text((self.REPO / "scripts" / name).read_text(encoding="utf-8"))
+            static = root / "web" / "static_files"
+            static.mkdir(parents=True)
+            (static / "progress.json").write_text(json.dumps(self.COMMITTED))
+            git = ["git", "-C", d, "-c", "user.name=t", "-c", "user.email=t@t"]
+            subprocess.run(["git", "init", "-q", d], check=True)
+            subprocess.run(git + ["add", "."], check=True)
+            subprocess.run(git + ["commit", "-qm", "fallback"], check=True)
+            if restored is None:
+                (static / "progress.json").unlink()
+            else:
+                (static / "progress.json").write_text(json.dumps(restored))
+            script = (self.step_script()
+                      .replace("${{ github.repository }}", "example/repo")
+                      .replace("/tmp/roadmap", str(root / "no-roadmap-here")))  # generation fails
+            run = subprocess.run(["bash", "-e", "-o", "pipefail", "-c", script], cwd=d, text=True,
+                                 capture_output=True, env={**os.environ, "RUNNER_TEMP": d})
+            self.assertEqual(run.returncode, 0, run.stderr)
+            self.assertIn("roadmap progress", (root / "data-failures").read_text())
+            return json.loads((static / "progress.json").read_text())
+
+    def test_a_legacy_restored_snapshot_is_replaced_by_the_committed_fallback(self):
+        legacy = {"schema_version": 3, "topics": ["Number theory", "Algebraic geometry"], "which": "legacy"}
+        self.assertEqual(self.publish_after_failure(legacy)["which"], "committed")
+
+    def test_a_current_restored_snapshot_is_kept(self):
+        current = {**self.COMMITTED, "which": "last published"}
+        self.assertEqual(self.publish_after_failure(current)["which"], "last published")
+
+    def test_no_restored_snapshot_means_the_committed_fallback(self):
+        self.assertEqual(self.publish_after_failure(None)["which"], "committed")
+
+
+class BoardSearch(unittest.TestCase):
+    """The board's search box (`matchInfo` in progress.js) finds a roadmap by its category's name,
+    which is what the board shows, and by its arXiv code, which it no longer shows. Runs the
+    function itself under node; skipped where there is no node."""
+
+    JS = pathlib.Path(__file__).resolve().parents[1] / "web" / "static_files" / "progress.js"
+
+    def match_info_source(self):
+        text = self.JS.read_text(encoding="utf-8")
+        start = text.index("function matchInfo(r) {")
+        depth, i = 0, text.index("{", start)
+        while True:
+            depth += {"{": 1, "}": -1}.get(text[i], 0)
+            if depth == 0:
+                return text[start:i + 1]
+            i += 1
+
+    def search(self, rows_and_queries):
+        import shutil
+        node = shutil.which("node")
+        if node is None:
+            self.skipTest("node is not installed")
+        harness = ("var state = {q: ''};\n" + self.match_info_source() + "\n"
+                   "var cases = " + json.dumps(rows_and_queries) + ";\n"
+                   "console.log(JSON.stringify(cases.map(function (c) {"
+                   " state.q = c[1]; return matchInfo(c[0]); })));\n")
+        run = subprocess.run([node, "-e", harness], capture_output=True, text=True, check=True)
+        return json.loads(run.stdout)
+
+    def row(self, topic, arxiv="absent"):
+        r = {"name": "Primes", "title": "Primes in progressions", "topic": topic, "layers": ["Layer 0: x"],
+             "status": None}
+        if arxiv != "absent":
+            r["arxiv"] = arxiv
+        return r
+
+    def test_a_category_is_found_by_its_code_and_by_its_name(self):
+        nt = self.row("Number Theory", "math.NT")
+        got = self.search([[nt, "math.NT"], [nt, "MATH.nt"], [nt, "math.nt"], [nt, "Number Theory"],
+                           [nt, "number"], [nt, "math.AG"]])
+        self.assertEqual([g["hit"] for g in got], [True, True, True, True, True, False])
+        self.assertEqual(got[0]["where"], "topic Number Theory")  # the explanation names, never codes
+
+    def test_an_unsorted_row_without_a_code_is_matched_by_name_only(self):
+        for arxiv in ("absent", None):
+            unsorted = self.row("Unsorted", arxiv)
+            got = self.search([[unsorted, "math.NT"], [unsorted, "unsorted"]])
+            self.assertEqual([g["hit"] for g in got], [False, True], arxiv)
+
+
 class Activity(unittest.TestCase):
     def test_weekly_bins_attribution_and_cutoff(self):
         cutoff = dt.datetime(2026, 9, 17, 12, 0, tzinfo=UTC)  # a Thursday; the week starts Monday 14th
@@ -515,8 +705,8 @@ class Activity(unittest.TestCase):
                {"number": 5, "merged_at": None, "open": True, "labels": ["roadmap/Widgets"]}]
         exported = dt.datetime(2026, 9, 18, 12, 30, tzinfo=UTC)
         cutoff = dt.datetime(2026, 9, 17, 3, 0, tzinfo=UTC)
-        data = rp.build(rows, prs, {"order": ["T"], "map": {"Widgets": "T"}}, exported, cutoff,
-                        "2026-09-17T03:00:00Z", "abc1234", "test")
+        rows[0]["arxiv"] = "math.NT"
+        data = rp.build(rows, prs, exported, cutoff, "2026-09-17T03:00:00Z", "abc1234", "test")
         self.assertEqual(data["exported_at"], "2026-09-18T12:30:00Z")
         self.assertEqual(data["collected_at"], "2026-09-17T03:00:00Z")
         self.assertEqual(data["cutoff"], "2026-09-17T03:00:00Z")
@@ -524,14 +714,15 @@ class Activity(unittest.TestCase):
         self.assertEqual(data["rows"][0]["activity"]["total"], 2)
         self.assertEqual(data["rows"][0]["activity"]["open"], 1)
         self.assertEqual(data["global"]["open"], 1)
-        self.assertEqual(data["rows"][0]["topic"], "T")
+        self.assertEqual(data["rows"][0]["topic"], "Number Theory")
+        self.assertEqual(data["topics"], ["Number Theory"])
         self.assertEqual(data["global"]["first_merge"], "2026-08-30T00:00:00Z")
         self.assertEqual(data["global"]["total"], 3)
         self.assertEqual(data["global"]["unattributed"]["no_label"], 1)
 
     def test_build_with_no_rows_or_prs_is_well_formed_and_unknown_collection_stays_unknown(self):
         now = dt.datetime(2026, 9, 17, tzinfo=UTC)
-        data = rp.build([], [], {}, now, now, None, None, "test")
+        data = rp.build([], [], now, now, None, None, "test")
         self.assertIsNone(data["global"]["first_merge"])
         self.assertIsNone(data["collected_at"])
         self.assertEqual(data["global"]["total"], 0)
