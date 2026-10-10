@@ -150,17 +150,18 @@ theorem twistedDifferential_single_apply [DecidableEq P] (x z : P) {q : ℤ} {α
 variable {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A} {h : IsDGAlgebra 𝒜 d}
   [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
 
+omit [IsScalarTower R Aᵐᵒᵖ M] in
 /-- The twisted differential of a matrix with homogeneous entries of degree `ind y - ind x + 1`
-raises the total degree by one. -/
+raises the total degree by one, for any homogeneous `dM` of degree one. -/
 theorem twistedDifferential_mem_twistedTotalGrading
-    (hm : ∀ x y, m x y ∈ 𝒜 (ind y - ind x + 1)) (hM : IsDGRightModule h ℳ dM)
+    (hm : ∀ x y, m x y ∈ 𝒜 (ind y - ind x + 1)) (hdM : LinearMap.IsHomogeneous dM ℳ ℳ 1)
     {n : ℤ} {f : P → M} (hf : f ∈ twistedTotalGrading ℳ ind n) :
     twistedDifferential m ℳ dM f ∈ twistedTotalGrading ℳ ind (n + 1) := by
   rw [mem_twistedTotalGrading_iff] at hf ⊢
   intro y
   rw [twistedDifferential_apply]
   refine add_mem ?_ (Submodule.sum_mem _ fun x _ ↦ ?_)
-  · have := hM.isHomogeneous.map_mem (hf y)
+  · have := hdM.map_mem (hf y)
     convert this using 2
     ring
   · have hα : (InternalGrading.ofDecomposition ℳ).koszulTwist 1 (f x) ∈ ℳ (n + ind x) := by
@@ -234,7 +235,7 @@ twisting equation, as a cochain complex of `R`-modules: the degree-`n` term is
 noncomputable def twistedCochainComplex : CochainComplex (ModuleCat.{max uP uM} R) ℤ :=
   gradedCochainComplex (twistedTotalGrading ℳ ind) (twistedDifferential m ℳ dM)
     (LinearMap.isHomogeneous_def.mpr fun _ _ hf ↦
-      twistedDifferential_mem_twistedTotalGrading m dM hm hM hf)
+      twistedDifferential_mem_twistedTotalGrading m dM hm hM.isHomogeneous hf)
     fun _ f ↦ twistedDifferential_sq_zero m dM hm htw hM f
 
 @[simp]
@@ -262,11 +263,13 @@ namespace TwistingCocycle
 
 variable (m : TwistingCocycle 𝒜 d P ind) (dM)
 
-/-- The twisted differential of a twisting cocycle raises the total degree by one. -/
-theorem twistedDifferential_mem_twistedTotalGrading (hM : IsDGRightModule h ℳ dM)
+omit [IsScalarTower R Aᵐᵒᵖ M] in
+/-- The twisted differential of a twisting cocycle raises the total degree by one, for any
+homogeneous `dM` of degree one. -/
+theorem twistedDifferential_mem_twistedTotalGrading (hdM : LinearMap.IsHomogeneous dM ℳ ℳ 1)
     {n : ℤ} {f : P → M} (hf : f ∈ twistedTotalGrading ℳ ind n) :
     twistedDifferential m.m ℳ dM f ∈ twistedTotalGrading ℳ ind (n + 1) :=
-  TauCeti.twistedDifferential_mem_twistedTotalGrading m.m dM m.mem_graded hM hf
+  TauCeti.twistedDifferential_mem_twistedTotalGrading m.m dM m.mem_graded hdM hf
 
 /-- The twisted differential of a twisting cocycle squares to zero when `(ℳ, dM)` is a
 differential graded right module over `(𝒜, d)`. -/
