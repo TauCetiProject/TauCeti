@@ -39,6 +39,8 @@ off the effective domain carries no meaning.
 
 * `TauCeti.descendingSlope_le_of_eventually_le`: an upper bound for the slope from a local bound
   on the decrease of `φ`.
+* `TauCeti.le_descendingSlope_of_tendsto`: a lower bound for the slope from the rates of decrease
+  of `φ` along a map tending to `x`.
 * `IsLocalMin.descendingSlope_eq_zero`: the slope vanishes at a local minimum.
 * `LipschitzOnWith.descendingSlope_le` and `LipschitzWith.descendingSlope_le`: the slope of a
   function that is `K`-Lipschitz near `x` is at most `K`.
@@ -90,6 +92,18 @@ theorem descendingSlope_le_of_eventually_le {C : ℝ≥0∞}
     (h : ∀ᶠ y in 𝓝[≠] x, (φ x - φ y).toENNReal ≤ C * edist x y) : descendingSlope φ x ≤ C := by
   rw [descendingSlope_def]
   exact limsup_le_of_le (h := h.mono fun _ hy ↦ ENNReal.div_le_of_le_mul hy)
+
+/-- If `g` tends to `x` from outside `x`, and along `g` the rates of decrease
+`(φ x - φ (g t))⁺ / d(x, g t)` are eventually at least `f t`, where `f t` tends to `L`, then the
+descending slope of `φ` at `x` is at least `L`. -/
+theorem le_descendingSlope_of_tendsto {α : Type*} {l : Filter α} [l.NeBot] {g : α → X}
+    {f : α → ℝ≥0∞} {L : ℝ≥0∞} (hg : Tendsto g l (𝓝[≠] x)) (hf : Tendsto f l (𝓝 L))
+    (hle : ∀ᶠ t in l, f t ≤ (φ x - φ (g t)).toENNReal / edist x (g t)) :
+    L ≤ descendingSlope φ x := by
+  rw [← hf.limsup_eq, descendingSlope_def]
+  exact (limsup_le_limsup hle).trans <|
+    (limsup_comp (fun y ↦ (φ x - φ y).toENNReal / edist x y) g l).trans_le
+      (limsup_le_limsup_of_le hg)
 
 /-- The descending slope vanishes at a local minimum. -/
 theorem _root_.IsLocalMin.descendingSlope_eq_zero (h : IsLocalMin φ x) :
