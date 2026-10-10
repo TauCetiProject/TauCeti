@@ -40,8 +40,9 @@ constant loop, and the constant loops `X → 𝓛₀X` are again a closed embedd
   closed embedding of `X` into `𝓛X` and into `𝓛₀X`.
 * `TauCeti.MooreLoopSpace.isEmbedding_toFreeLoop`, `TauCeti.MooreLoopSpace.range_toFreeLoop`: the
   based loops at `x` are the fibre of `basepoint` over `x`.
-* `TauCeti.MooreFreeLoopSpace.contractibleLoops_eq_pathComponent`: for a path-connected `X`, the
-  contractible loops are the path component of any constant loop.
+* `TauCeti.MooreFreeLoopSpace.contractibleLoops_eq_pathComponent`,
+  `TauCeti.MooreFreeLoopSpace.isPathConnected_contractibleLoops`: for a path-connected `X`, the
+  contractible loops are the path component of any constant loop, hence path connected.
 
 ## References
 
@@ -136,7 +137,7 @@ theorem length_const (x : X) : (const x).length = 0 :=
   MoorePath.length_refl x
 
 @[fun_prop]
-theorem continuous_const : Continuous (const : X → MooreFreeLoopSpace X) :=
+protected theorem continuous_const : Continuous (const : X → MooreFreeLoopSpace X) :=
   isEmbedding_toMoorePath.continuous_iff.2 MoorePath.continuous_refl
 
 /-- A free loop of length zero is the constant loop at its base point. -/
@@ -154,10 +155,11 @@ theorem range_const : Set.range (const : X → MooreFreeLoopSpace X) = {γ | γ.
 
 /-- The constant loops form a closed embedding `X → 𝓛X`, a section of `basepoint`. -/
 theorem isClosedEmbedding_const : IsClosedEmbedding (const : X → MooreFreeLoopSpace X) where
-  toIsEmbedding := IsEmbedding.of_leftInverse basepoint_const continuous_basepoint continuous_const
+  toIsEmbedding := IsEmbedding.of_leftInverse basepoint_const continuous_basepoint
+    MooreFreeLoopSpace.continuous_const
   isClosed_range := by
     rw [range_const]
-    exact isClosed_eq continuous_length _root_.continuous_const
+    exact isClosed_eq continuous_length continuous_const
 
 end MooreFreeLoopSpace
 
@@ -179,6 +181,16 @@ theorem toMoorePath_toFreeLoop (γ : MooreLoopSpace X x) :
 @[simp]
 theorem basepoint_toFreeLoop (γ : MooreLoopSpace X x) : γ.toFreeLoop.basepoint = x :=
   γ.source_eq
+
+@[simp]
+theorem length_toFreeLoop (γ : MooreLoopSpace X x) :
+    γ.toFreeLoop.length = γ.toMoorePath.length :=
+  (rfl)
+
+/-- The unit of the Moore loops at `x` is the constant free loop at `x`. -/
+@[simp]
+theorem toFreeLoop_one : (1 : MooreLoopSpace X x).toFreeLoop = MooreFreeLoopSpace.const x :=
+  MooreFreeLoopSpace.ext toMoorePath_one
 
 theorem toFreeLoop_injective :
     Function.Injective (toFreeLoop : MooreLoopSpace X x → MooreFreeLoopSpace X) :=
@@ -215,7 +227,7 @@ variable {X : Type*} [TopologicalSpace X]
 
 variable (X) in
 /-- The **contractible** free loops, `𝓛₀X`: the loops joined in `𝓛X` to a constant loop, that is,
-freely homotopic to a constant loop. -/
+freely homotopic to a constant loop through Moore loops of varying lengths. -/
 def contractibleLoops : Set (MooreFreeLoopSpace X) :=
   {γ | ∃ x, Joined (const x) γ}
 
@@ -238,10 +250,11 @@ theorem mem_contractibleLoops_iff_joined_const {γ : MooreFreeLoopSpace X} :
   refine ⟨fun ⟨x, hx⟩ ↦ ?_, fun h ↦ ⟨_, h⟩⟩
   -- `basepoint` carries a path from `const x` to `γ` to a path from `x` to `γ.basepoint` in `X`,
   -- hence to a path of constant loops from `const x` to `const γ.basepoint`.
-  have hc := (hx.map continuous_basepoint).map continuous_const
+  have hc := (hx.map continuous_basepoint).map MooreFreeLoopSpace.continuous_const
   rw [basepoint_const] at hc
   exact hc.symm.trans hx
 
+/-- The contractible loops are the union of the path components of the constant loops. -/
 theorem contractibleLoops_eq_iUnion_pathComponent :
     contractibleLoops X = ⋃ x, pathComponent (const x) := by
   ext γ
@@ -254,9 +267,10 @@ theorem contractibleLoops_eq_pathComponent [PathConnectedSpace X] (x : X) :
   ext γ
   rw [mem_pathComponent_iff, mem_contractibleLoops_iff_joined_const]
   have hc : Joined (const x) (const γ.basepoint) :=
-    (PathConnectedSpace.joined x γ.basepoint).map continuous_const
+    (PathConnectedSpace.joined x γ.basepoint).map MooreFreeLoopSpace.continuous_const
   exact ⟨hc.trans, hc.symm.trans⟩
 
+/-- For a path-connected `X`, the contractible loops `𝓛₀X` are path connected. -/
 theorem isPathConnected_contractibleLoops [PathConnectedSpace X] :
     IsPathConnected (contractibleLoops X) := by
   obtain ⟨x⟩ := PathConnectedSpace.nonempty (X := X)
@@ -273,7 +287,7 @@ theorem coe_constContractible (x : X) : (constContractible x : MooreFreeLoopSpac
 
 @[fun_prop]
 theorem continuous_constContractible : Continuous (constContractible : X → contractibleLoops X) :=
-  continuous_const.codRestrict _
+  MooreFreeLoopSpace.continuous_const.codRestrict _
 
 /-- The constant loops form a closed embedding `X → 𝓛₀X`. -/
 theorem isClosedEmbedding_constContractible :
