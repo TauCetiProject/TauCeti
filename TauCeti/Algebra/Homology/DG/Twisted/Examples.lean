@@ -88,7 +88,7 @@ local instance instIsScalarTowerFst : IsScalarTower ℚ (ℚ × ℚ)ᵐᵒᵖ �
 /-- With the action through the first projection, `D (1 ⊗ x) = 1 ⊗ y`. -/
 theorem twistedDifferential_single_fst :
     twistedDifferential projCocycle.m (trivialGrading ℚ ℚ) 0 (Pi.single 0 1) = Pi.single 1 1 := by
-  rw [twistedDifferential_single projCocycle.m 0 0 (show (1 : ℚ) ∈ trivialGrading ℚ ℚ 0 by simp)]
+  rw [twistedDifferential_single projCocycle.m 0 0 (q := 0) (by simp)]
   simp [Fin.sum_univ_two, op_smul_fst]
 
 end Fst
@@ -111,7 +111,7 @@ local instance instIsScalarTowerSnd : IsScalarTower ℚ (ℚ × ℚ)ᵐᵒᵖ �
 /-- With the action through the second projection, `D (1 ⊗ x) = 0`. -/
 theorem twistedDifferential_single_snd :
     twistedDifferential projCocycle.m (trivialGrading ℚ ℚ) 0 (Pi.single 0 1) = 0 := by
-  rw [twistedDifferential_single projCocycle.m 0 0 (show (1 : ℚ) ∈ trivialGrading ℚ ℚ 0 by simp)]
+  rw [twistedDifferential_single projCocycle.m 0 0 (q := 0) (by simp)]
   simp [Fin.sum_univ_two, op_smul_snd]
 
 end Snd
