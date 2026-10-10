@@ -161,7 +161,7 @@ private theorem exists_restriction_generator {V : Subgroup (AbsoluteGaloisGroup 
     exact (MulEquiv.subgroupCongr_apply hTS ((e.subgroupMap T) t)).trans
       (MulEquiv.coe_subgroupMap_apply e T t)
   let ES := explicitH2AddEquivGroupCohomology (B := Rep.res S.subtype B) eS ψ
-    (fun t m ↦ hψ t m)
+    (fun t m ↦ (hψ t m).trans (by simp [heS]))
   have hdim := (ClassFieldTheory.strictCohomologicalDimensionAt_galSeparableClosure_eq_two
     (K := K) p).le
   have hgen := (explicitRes2_abelianizationProPClass_generates
