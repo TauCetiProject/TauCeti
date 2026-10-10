@@ -124,6 +124,7 @@ open _root_.WeierstrassCurve.Affine in
 /-- **The tautological point of a change of variables**: the coordinate pullback of `C` cuts out the
 generic point of `W` moved to `C • W` by the inverse of `pointEquivVariableChange`, the point with
 coordinates `(u⁻²(x - r), u⁻³(y - s(x - r) - t))`. -/
+@[simp]
 theorem tautologicalPoint_variableChangePullback [W₁.IsElliptic] :
     (variableChangePullback C (rfl : C • W₁ = C • W₁)).tautologicalPoint =
       (W₁.pointEquivVariableChange W₁.FunctionField C).symm (genericPoint W₁) := by

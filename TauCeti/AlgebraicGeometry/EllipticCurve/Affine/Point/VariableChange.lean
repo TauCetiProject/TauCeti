@@ -269,6 +269,7 @@ theorem pointEquivVariableChange_symm_some {x y : L}
 /-- **The identification `pointEquivVariableChange` is natural in the field of coordinates**: it
 commutes with moving points along an `R`-algebra homomorphism `f : K → L`, since the change of
 variables has its coefficients in `R`. -/
+@[simp]
 theorem map_pointEquivVariableChange {K : Type*} [Field K] [DecidableEq K] [Algebra R K]
     (f : K →ₐ[R] L) (P : ((C • W).baseChange K).toAffine.Point) :
     Affine.Point.map f (W.pointEquivVariableChange K C P) =
@@ -279,6 +280,7 @@ theorem map_pointEquivVariableChange {K : Type*} [Field K] [DecidableEq K] [Alge
 
 /-- The inverse of `pointEquivVariableChange` commutes with moving points along an `R`-algebra
 homomorphism of the fields of coordinates. -/
+@[simp]
 theorem map_pointEquivVariableChange_symm {K : Type*} [Field K] [DecidableEq K] [Algebra R K]
     (f : K →ₐ[R] L) (P : (W.baseChange K).toAffine.Point) :
     Affine.Point.map f ((W.pointEquivVariableChange K C).symm P) =

@@ -181,6 +181,7 @@ theorem stabilizer_infinity_eq_range_autGroupToAlgEquiv :
 variable [DecidableEq F]
 
 /-- **The translation by `P` carries the place at infinity to the place of `-P`.** -/
+@[simp]
 theorem translation_smul_infinity (P : W.Point) :
     translation W (Point.equivBaseChangeSelf W P) • Place.infinity W =
       (pointEquivDegreeOnePlace W (-P)).1 := by
