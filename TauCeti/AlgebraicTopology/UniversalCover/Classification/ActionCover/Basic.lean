@@ -45,6 +45,8 @@ prepends the *inverse* loop class, the inverse cancels against the exchange
 * `TauCeti.UniversalCover.actionCoverFiberEquiv`: its fibre over `x₀` is `A`, and
   `TauCeti.UniversalCover.monodromy_actionCoverFiberEquiv` says the identification intertwines
   monodromy with the given action.
+* `TauCeti.UniversalCover.actionCoveringSpaceMap`: an equivariant label map induces a map of
+  covers, and `actionCoveringSpaceFiberEquiv_map` identifies its map on fibres.
 
 ## References
 
@@ -215,5 +217,79 @@ theorem actionCoveringSpaceFiberEquiv_apply_monodromy (g : FundamentalGroup X x�
   rw [actionCoveringSpaceFiberEquiv, Equiv.trans_apply, Equiv.trans_apply,
     actionCoverFiberTransport_apply_monodromy, ← ha, monodromy_actionCoverFiberEquiv,
     Equiv.symm_apply_apply, Equiv.symm_apply_apply]
+
+section Maps
+
+variable {A} {B C : Type u} [MulAction (FundamentalGroup X x₀) B]
+  [TopologicalSpace B] [DiscreteTopology B] [MulAction (FundamentalGroup X x₀) C]
+  [TopologicalSpace C] [DiscreteTopology C]
+
+/-- An equivariant label map gives a morphism of the associated covering spaces. -/
+def actionCoveringSpaceMap (f : A → B)
+    (hf : ∀ (g : FundamentalGroup X x₀) a, f (g • a) = g • f a) :
+    actionCoveringSpace x₀ A ⟶ actionCoveringSpace x₀ B :=
+  CoveringSpace.homMk (ConcreteCategory.ofHom (C := TopCat)
+    (X := (actionCoveringSpace x₀ A : TopCat)) (Y := (actionCoveringSpace x₀ B : TopCat))
+    ⟨fun e => (actionCoverTotalSpaceHomeomorph x₀ B).symm
+        (BalancedProduct.mapRight f hf (actionCoverTotalSpaceHomeomorph x₀ A e)),
+      (actionCoverTotalSpaceHomeomorph x₀ B).symm.continuous.comp
+        ((BalancedProduct.continuous_mapRight f hf continuous_of_discreteTopology).comp
+          (actionCoverTotalSpaceHomeomorph x₀ A).continuous)⟩) (by
+    ext e
+    simp only [ConcreteCategory.comp_apply, ConcreteCategory.hom_ofHom, ContinuousMap.coe_mk]
+    rw [← actionCoverProj_actionCoverTotalSpaceHomeomorph x₀ B,
+      Homeomorph.apply_symm_apply]
+    exact (BalancedProduct.proj_mapRight _ f hf _).trans
+      (actionCoverProj_actionCoverTotalSpaceHomeomorph x₀ A e))
+
+/-- The induced map keeps the point of the universal cover and applies `f` to its label. -/
+private theorem actionCoverTotalSpaceHomeomorph_map (f : A → B)
+    (hf : ∀ (g : FundamentalGroup X x₀) a, f (g • a) = g • f a)
+    (e : (actionCoveringSpace x₀ A : TopCat)) :
+    actionCoverTotalSpaceHomeomorph x₀ B ((actionCoveringSpaceMap x₀ f hf).hom.left e) =
+      BalancedProduct.mapRight f hf (actionCoverTotalSpaceHomeomorph x₀ A e) := by
+  simp only [actionCoveringSpaceMap, CoveringSpace.homMk_hom_left,
+    ConcreteCategory.hom_ofHom, ContinuousMap.coe_mk, Homeomorph.apply_symm_apply]
+
+/-- On the numbered fibres, the map of associated covers is the original label map. -/
+@[simp]
+theorem actionCoveringSpaceFiberEquiv_map (f : A → B)
+    (hf : ∀ (g : FundamentalGroup X x₀) a, f (g • a) = g • f a)
+    (e : ⇑(actionCoveringSpace x₀ A).proj ⁻¹' {x₀}) :
+    actionCoveringSpaceFiberEquiv x₀ B
+        (Function.fiberMap (actionCoveringSpaceMap x₀ f hf).hom.left.hom
+          (CoveringSpace.proj_hom_comp_hom_left_hom _) x₀ e) =
+      f (actionCoveringSpaceFiberEquiv x₀ A e) := by
+  apply (actionCoverFiberEquiv x₀ B).injective
+  simp only [actionCoveringSpaceFiberEquiv, Equiv.trans_apply, Equiv.apply_symm_apply]
+  apply Subtype.ext
+  rw [actionCoverFiberTransport_apply_coe, Function.fiberMap_apply_coe,
+    actionCoverTotalSpaceHomeomorph_map, actionCoverFiberEquiv_apply_coe]
+  have ha := congrArg Subtype.val
+    ((actionCoverFiberEquiv x₀ A).apply_symm_apply (actionCoverFiberTransport x₀ A e))
+  rw [actionCoverFiberEquiv_apply_coe, actionCoverFiberTransport_apply_coe] at ha
+  rw [← ha, BalancedProduct.mapRight_mk]
+
+@[simp]
+theorem actionCoveringSpaceMap_id :
+    actionCoveringSpaceMap x₀ (id : A → A) (fun _ _ => rfl) = 𝟙 _ := by
+  ext e
+  apply (actionCoverTotalSpaceHomeomorph x₀ A).injective
+  simp [actionCoverTotalSpaceHomeomorph_map]
+
+@[simp]
+theorem actionCoveringSpaceMap_comp (f : A → B)
+    (hf : ∀ (g : FundamentalGroup X x₀) a, f (g • a) = g • f a) (k : B → C)
+    (hk : ∀ (g : FundamentalGroup X x₀) b, k (g • b) = g • k b) :
+    actionCoveringSpaceMap x₀ (k ∘ f) (fun g a => by simp only [Function.comp_apply, hf, hk]) =
+      actionCoveringSpaceMap x₀ f hf ≫ actionCoveringSpaceMap x₀ k hk := by
+  ext e
+  apply (actionCoverTotalSpaceHomeomorph x₀ C).injective
+  simp only [ObjectProperty.FullSubcategory.comp_hom, Over.comp_left, TopCat.comp_app,
+    actionCoverTotalSpaceHomeomorph_map]
+  rw [BalancedProduct.mapRight_comp]
+  rfl
+
+end Maps
 
 end TauCeti.UniversalCover
