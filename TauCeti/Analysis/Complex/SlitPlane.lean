@@ -91,7 +91,7 @@ theorem exists_pos_forall_mem_ball_mul_one_add_le_norm_add {z : ℂ} (hz : z ∈
     · refine ⟨min z.re 1, lt_min hpos one_pos, fun x hx => (hre x).trans' ?_⟩
       nlinarith [min_le_left z.re 1, min_le_right z.re 1,
         mul_nonneg (sub_nonneg.2 (min_le_right z.re 1)) hx]
-    · have hy : 0 < |z.im| := abs_pos.mpr him
+    · have _ : 0 < |z.im| := abs_pos.mpr him
       have hu : 0 ≤ |z.re| := abs_nonneg _
       refine ⟨min (|z.im| / (2 * |z.re| + 2)) (1 / 4), lt_min (by positivity) (by norm_num),
         fun x hx => ?_⟩

@@ -179,6 +179,17 @@ theorem mul_mem_filtration {a b : ℤ} {z w : F} (hz : z ∈ P.filtration a)
   rw [mem_filtration_iff, map_mul, neg_add, WithZero.exp_add]
   exact mul_le_mul' (P.mem_filtration_iff.mp hz) (P.mem_filtration_iff.mp hw)
 
+/-- A finite product of functions of orders at least `a i` has order at least `∑ a i`. -/
+theorem prod_mem_filtration {ι : Type*} (s : Finset ι) {a : ι → ℤ} {z : ι → F}
+    (hz : ∀ i ∈ s, z i ∈ P.filtration (a i)) : ∏ i ∈ s, z i ∈ P.filtration (∑ i ∈ s, a i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert j s hj ih =>
+    rw [Finset.prod_insert hj, Finset.sum_insert hj]
+    exact P.mul_mem_filtration (hz j (Finset.mem_insert_self j s))
+      (ih fun i hi ↦ hz i (Finset.mem_insert_of_mem hi))
+
 /-- A function integral at `P` and congruent to `1` to order `a` stays congruent to `1` to
 order `a` after being raised to a power. -/
 theorem pow_sub_one_mem_filtration {a : ℤ} {u : F} (hu : u ∈ P.integers)

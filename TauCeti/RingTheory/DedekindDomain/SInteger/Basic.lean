@@ -117,7 +117,7 @@ lemma HeightOneSpectrum.valuation_le_one_of_mem_inv_coeIdeal {v w : HeightOneSpe
 /-- For `v ∈ S`, the extension of `v` to the ring of `S`-integers is the unit ideal. -/
 @[simp] lemma integer_map_asIdeal_eq_top {v : HeightOneSpectrum R} (hv : v ∈ S) :
     Ideal.map (algebraMap R (S.integer K)) v.asIdeal = ⊤ := by
-  set A := S.integer K with hA
+  set A := S.integer K with _
   set M := Ideal.map (algebraMap R A) v.asIdeal with hM
   -- `1 ∈ v * v⁻¹`, as a submodule of `K`
   have h1 : (1 : K) ∈
@@ -194,8 +194,8 @@ factors lie in `S`, and each of those extends to the unit ideal by `integer_map_
 @[simp] theorem integer_map_comap_eq (I : Ideal (S.integer K)) :
     Ideal.map (algebraMap R (S.integer K)) (I.comap (algebraMap R (S.integer K))) = I := by
   refine le_antisymm Ideal.map_comap_le fun x hx ↦ ?_
-  set f := algebraMap R (S.integer K) with hf
-  set J' := Ideal.map f (I.comap f) with hJ'
+  set f := algebraMap R (S.integer K) with _hf
+  set J' := Ideal.map f (I.comap f) with _
   -- for a denominator `d` of `x`, the product `f d * x` is extended from `R` and lies in `I`
   have key (d : R) (hd : d ∈ Algebra.denIdeal K (x : K)) : f d * x ∈ J' := by
     rw [Algebra.mem_denIdeal_iff] at hd
@@ -252,12 +252,12 @@ noncomputable abbrev integerIdealUnder (I : (Ideal (S.integer K))⁰) : (Ideal R
 nonzero prime is maximal, and equalities of ideals lift back through `integer_map_comap_eq`. -/
 instance : Ring.DimensionLEOne (S.integer K) := by
   refine ⟨fun {P} hP hPp ↦ ?_⟩
-  set f := algebraMap R (S.integer K) with hf
+  set f := algebraMap R (S.integer K) with _hf
   -- pass to a maximal ideal `M` above `P` and compare contractions in `R`
   obtain ⟨M, hM, hPM⟩ := P.exists_le_maximal hPp.ne_top
   have hcP : P.comap f ≠ ⊥ := integer_comap_ne_bot K S hP
   have hMne : M ≠ ⊥ := fun h ↦ hP (le_bot_iff.mp (h ▸ hPM))
-  have hcM : M.comap f ≠ ⊥ := integer_comap_ne_bot K S hMne
+  have _ : M.comap f ≠ ⊥ := integer_comap_ne_bot K S hMne
   -- both contractions are maximal in `R`, and one contains the other, so they are equal
   have hcPmax : (P.comap f).IsMaximal :=
     Ring.DimensionLEOne.maximalOfPrime hcP (hPp.comap f)

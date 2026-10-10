@@ -181,7 +181,7 @@ private theorem enorm_le_descendingSlope_of_hasFDerivAt (hf : HasFDerivAt f f' x
       (𝓝 (f' w / ‖w‖)) := by
     have := ((hasDerivAt_iff_tendsto_slope.1 hderiv).mono_left
       (nhdsWithin_mono _ fun t (ht : 0 < t) ↦ ht.ne')).neg.div_const ‖w‖
-    refine (this.congr' (eventually_nhdsWithin_of_forall fun t (ht : 0 < t) ↦ ?_)).trans
+    refine (this.congr' (eventually_nhdsWithin_of_forall fun t (_ : 0 < t) ↦ ?_)).trans
       (by rw [map_neg, neg_neg])
     simp only [slope_def_field, zero_smul, sub_zero, ← neg_div, neg_sub, div_div]
   have hmap : Tendsto (fun t : ℝ ↦ x - t • w) (𝓝[>] 0) (𝓝[≠] x) := by

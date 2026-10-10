@@ -60,6 +60,8 @@ def ofSubsetMap : ofSubset B ⟶ ofSubset B' :=
 @[simp]
 lemma ofSubsetMap_fst_apply (x : (ofSubset B).fst) : Hom.fst (ofSubsetMap g hB) x = g x := (rfl)
 
+lemma ofSubsetMap_fst : Hom.fst (ofSubsetMap g hB) = g := (rfl)
+
 @[simp]
 lemma ofSubsetMap_snd_apply (x : (ofSubset B).snd) :
     (Hom.snd (ofSubsetMap g hB) x).1 = g x.1 := (rfl)
