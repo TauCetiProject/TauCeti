@@ -137,6 +137,14 @@ theorem HasGoodReduction.hasGoodOrdinaryReduction_iff_not_hasGoodSupersingularRe
   ⟨HasGoodOrdinaryReduction.not_hasGoodSupersingularReduction,
     (h.hasGoodOrdinaryReduction_or_hasGoodSupersingularReduction p).resolve_right⟩
 
+/-- For an equation with good reduction, good supersingular reduction is the failure of good
+ordinary reduction. -/
+theorem HasGoodReduction.hasGoodSupersingularReduction_iff_not_hasGoodOrdinaryReduction
+    (h : W.HasGoodReduction R) :
+    W.HasGoodSupersingularReduction R p ↔ ¬W.HasGoodOrdinaryReduction R p :=
+  ⟨HasGoodSupersingularReduction.not_hasGoodOrdinaryReduction,
+    (h.hasGoodOrdinaryReduction_or_hasGoodSupersingularReduction p).resolve_left⟩
+
 /-! ### Independence of the minimal model -/
 
 /-- **Good ordinary reduction transfers between minimal models**: if two minimal equations are
