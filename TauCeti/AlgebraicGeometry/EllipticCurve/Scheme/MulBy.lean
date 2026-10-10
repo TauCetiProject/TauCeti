@@ -36,6 +36,8 @@ identifies the extension of function fields induced by the scheme `[n]` with the
 ## Main definitions
 
 * `WeierstrassCurve.projModelMulBy W n`: the morphism `[n] : projModel W ⟶ projModel W`.
+* `WeierstrassCurve.mulByFunctionFieldPullback W n`: over a field, for `n ≠ 0`, the pullback
+  `[n]^* : K(E) →+* K(E)` of rational functions along `[n]`.
 
 ## Main results
 
@@ -45,7 +47,7 @@ identifies the extension of function fields induced by the scheme `[n]` with the
 * `WeierstrassCurve.projModelMulBy_genericPoint`: over a field, for `n ≠ 0`, `[n]` sends the
   generic point of the projective model to itself; so `[n]` is dominant
   (`WeierstrassCurve.isDominant_projModelMulBy`).
-* `WeierstrassCurve.projModelFunctionFieldEquiv_functionFieldMap_projModelMulBy`: over a field, for
+* `WeierstrassCurve.projModelFunctionFieldEquiv_mulByFunctionFieldPullback`: over a field, for
   `n ≠ 0`, the pullback of rational functions along `[n]` is the equation-level pullback
   `(TauCeti.Isogeny.mulByIntIsogenyOfNeZero W hn).fieldPullback`.
 
@@ -173,6 +175,21 @@ private theorem projModelPointsEquiv_symm_some_projModelBaseChange {x y : L}
   exact (projModelPoint_projModelBaseChange _ _ hi).trans
     (projModelPoint_eq_projModelPoint_iff.mpr ⟨RingHom.id_comp g, 1, by simp⟩)
 
+-- If multiplication by `n` sends the affine point `(x, y)` of `W` over `L` to `(x', y')`, then
+-- `[n]` sends the point with homogeneous coordinates `[x : y : 1]` to the one with `[x' : y' : 1]`.
+private theorem projModelPoint_projModelMulBy_of_zsmul_some [DecidableEq L] {x y x' y' : L}
+    {h : (W.map g).toAffine.Nonsingular x y} {h' : (W.map g).toAffine.Nonsingular x' y'} {n : ℤ}
+    (hn : n • Affine.Point.some x y h = .some x' y' h') :
+    W.projModelPoint g (P := ![x, y, 1]) ((Projective.equation_some _ _).mpr h.1) (i := 2)
+        (by simpa only [Matrix.cons_val_two, Matrix.tail_cons, Matrix.head_cons] using
+          isUnit_one) ≫ W.projModelMulBy n =
+      W.projModelPoint g (P := ![x', y', 1]) ((Projective.equation_some _ _).mpr h'.1) (i := 2)
+        (by simpa only [Matrix.cons_val_two, Matrix.tail_cons, Matrix.head_cons] using
+          isUnit_one) := by
+  rw [← projModelPointsEquiv_symm_some_projModelBaseChange W g h,
+    ← projModelPointsEquiv_symm_some_projModelBaseChange W g h', Category.assoc,
+    projModelPointsEquiv_symm_projModelBaseChange_projModelMulBy, hn]
+
 end FieldPoints
 
 section GenericPoint
@@ -195,19 +212,12 @@ private theorem SpecMap_fromSpecStalk_genericPoint_projModelMulBy {n : ℤ} (hn 
   -- to its `n`-th multiple, the point with coordinates the pullbacks of `x` and `y` along `[n]`
   have hgen := (TauCeti.Isogeny.map_mulByIntIsogeny_genericPoint W.toAffine
     (TauCeti.Isogeny.psiFunctionField_ne_zero_of_Δ_ne_zero W W.isUnit_Δ.ne_zero hn)).symm
-  have hB := W.projModelPointsEquiv_symm_projModelBaseChange_projModelMulBy
-    (algebraMap K W.toAffine.FunctionField) W.toAffine.genericPoint n
   rw [Affine.genericPoint_eq_some, Affine.Point.map_some] at hgen
-  -- `erw`: the points of `W⁄K(W)` carry the ring structure of `K(W)` found through
-  -- `OreLocalization`, those of `W.map (algebraMap K K(W))` the one coming from its field
-  -- structure; they agree only after unfolding instances, which `rw` does not do
-  rw [Affine.genericPoint_eq_some] at hB
-  erw [hgen] at hB
-  rw [← Category.assoc] at hB
-  erw [projModelPointsEquiv_symm_some_projModelBaseChange,
-    projModelPointsEquiv_symm_some_projModelBaseChange] at hB
-  refine hB.trans (projModelPoint_eq_projModelPoint_iff.mpr ⟨(AlgHom.comp_algebraMap _).symm, 1,
-    funext fun k ↦ by fin_cases k <;> simp⟩)
+  -- `hgen` uses the ring structure of `K(W)` found through `OreLocalization`, the lemma the one
+  -- coming from its field structure; applying the lemma checks that they are definitionally equal
+  refine (W.projModelPoint_projModelMulBy_of_zsmul_some _ hgen).trans
+    (projModelPoint_eq_projModelPoint_iff.mpr ⟨(AlgHom.comp_algebraMap _).symm, 1,
+      funext fun k ↦ by fin_cases k <;> simp⟩)
 
 -- `[n]` acts on the generic point `Spec K(E) ⟶ E` of the projective model through the
 -- equation-level pullback of rational functions along `[n]`, conjugated by
@@ -238,19 +248,28 @@ theorem projModelMulBy_genericPoint {n : ℤ} (hn : n ≠ 0) :
   have : NeZero n := ⟨hn⟩
   (W.projModelMulBy n).genericPoint_eq_of_isDominant
 
+/-- **The pullback of rational functions along multiplication by `n`.** Over a field, for
+`n ≠ 0`, the pullback `[n]^* : K(E) →+* K(E)` of rational functions along the dominant morphism
+`[n]` of the projective Weierstrass model `E` (`AlgebraicGeometry.Scheme.Hom.functionFieldMap`).
+Through `projModelFunctionFieldEquiv` it is the equation-level pullback
+(`projModelFunctionFieldEquiv_mulByFunctionFieldPullback`). -/
+noncomputable def mulByFunctionFieldPullback (n : ℤ) [NeZero n] :
+    W.projModel.functionField →+* W.projModel.functionField :=
+  (W.projModelMulBy n).functionFieldMap.hom
+
 /-- **The pullback of rational functions along `[n]` is the equation-level one.** Over a field,
-for `n ≠ 0`, the pullback `[n]^* : K(E) ⟶ K(E)` of rational functions along multiplication by `n`
+for `n ≠ 0`, the pullback `[n]^* : K(E) →+* K(E)` of rational functions along multiplication by `n`
 on the projective Weierstrass model `E`, read through the identification
 `projModelFunctionFieldEquiv` of `K(E)` with the function field of the affine equation, is the
 pullback of rational functions along the equation-level multiplication by `n`,
 `(TauCeti.Isogeny.mulByIntIsogenyOfNeZero W hn).fieldPullback`. -/
 @[simp]
-theorem projModelFunctionFieldEquiv_functionFieldMap_projModelMulBy (n : ℤ) [NeZero n]
+theorem projModelFunctionFieldEquiv_mulByFunctionFieldPullback (n : ℤ) [NeZero n]
     (f : W.projModel.functionField) :
-    W.projModelFunctionFieldEquiv ((W.projModelMulBy n).functionFieldMap f) =
+    W.projModelFunctionFieldEquiv (W.mulByFunctionFieldPullback n f) =
       (TauCeti.Isogeny.mulByIntIsogenyOfNeZero W (NeZero.ne n)).fieldPullback
         (W.projModelFunctionFieldEquiv f) := by
-  rw [← ((W.projModelMulBy n).eq_functionFieldMap_iff _).mpr
+  rw [mulByFunctionFieldPullback, ← ((W.projModelMulBy n).eq_functionFieldMap_iff _).mpr
     (W.SpecMap_comp_fromSpecStalk_genericPoint (NeZero.ne n))]
   simp
 

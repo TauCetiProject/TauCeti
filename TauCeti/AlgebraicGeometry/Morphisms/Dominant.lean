@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.FunctionField
-public import Mathlib.AlgebraicGeometry.Morphisms.Preimmersion
 public import Mathlib.AlgebraicGeometry.Stalk
 
 /-!
@@ -104,6 +103,13 @@ theorem isDominant_of_SpecMap_fromSpecStalk (f : X ⟶ Y) (φ : Y.functionField 
 
 namespace Scheme.Hom
 
+/-- The preimage of a nonempty open under a dominant morphism is nonempty. -/
+instance nonempty_preimage_of_isDominant {X Y : Scheme.{u}} (f : X ⟶ Y) [IsDominant f]
+    (U : Y.Opens) [Nonempty U] : Nonempty (f ⁻¹ᵁ U) := by
+  obtain ⟨_, hx, x, rfl⟩ := f.denseRange.inter_open_nonempty U U.2
+    ⟨_, (Classical.arbitrary U).2⟩
+  exact ⟨⟨x, hx⟩⟩
+
 /-- The **pullback of rational functions** `f^* : K(Y) ⟶ K(X)` along a dominant morphism
 `f : X ⟶ Y` of irreducible schemes: the map of stalks of `f` at the generic point of `X`, which `f`
 sends to the generic point of `Y` (`genericPoint_eq_of_isDominant`). It is characterised by
@@ -139,7 +145,7 @@ schemes sends the germ at the generic point of a section `s` of `𝒪_Y` over a 
 the germ of its pullback `f^* s` over `f⁻¹ U`. -/
 @[reassoc]
 theorem germToFunctionField_functionFieldMap (f : X ⟶ Y) [IsDominant f] (U : Y.Opens)
-    [Nonempty U] [Nonempty (f ⁻¹ᵁ U)] :
+    [Nonempty U] :
     Y.germToFunctionField U ≫ f.functionFieldMap = f.app U ≫ X.germToFunctionField (f ⁻¹ᵁ U) := by
   rw [Scheme.germToFunctionField, Scheme.germToFunctionField, functionFieldMap,
     TopCat.Presheaf.germ_stalkSpecializes_assoc, germ_stalkMap]
