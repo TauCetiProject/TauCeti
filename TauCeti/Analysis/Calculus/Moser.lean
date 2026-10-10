@@ -5,22 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Duality
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
-public import Mathlib.Analysis.Normed.Module.FiniteDimension
 
 /-!
 # The local contraction equation for Moser deformation
 
-Let `B` be a family of bilinear forms which agrees at `x₀` with a fixed symplectic
-form `ω`. The contraction maps of `(1 - t) • ω + t • B x` are invertible on a
+Let `B` be a family of bilinear forms which agrees at `x₀` with a fixed invertible
+bilinear form `L`. The contraction maps of `(1 - t) • L + t • B x` are invertible on a
 single spatial neighbourhood of `x₀`, for every `t ∈ [0, 1]`. In fact, the time
 interval can also be enlarged to an open neighbourhood.
 
 For smooth `B` and a smooth one-form `α`, construct the jointly smooth vector field
 `X(t, x)` uniquely determined by
 
-`((1 - t) • ω + t • B x) (X(t, x)) = -α x`.
+`((1 - t) • L + t • B x) (X(t, x)) = -α x`.
 
 This is the local algebraic step in Moser's argument and in the proof of Darboux's
 theorem. Alternation and closedness of `B` are not needed for this step and are
@@ -38,27 +36,28 @@ open scoped Topology
 
 noncomputable section
 
-namespace TauCeti.SymplecticForm
+namespace TauCeti.ContinuousLinearMap.IsInvertible
 
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [CompleteSpace V]
   {W : Set V} {x₀ : V} {B : V → V →L[ℝ] V →L[ℝ] ℝ}
+  {L : V →L[ℝ] V →L[ℝ] ℝ}
 
-/-- A straight-line family agreeing with a symplectic form at one point has invertible
+/-- A straight-line family agreeing with an invertible bilinear form at one point has invertible
 contraction maps on one neighbourhood, uniformly for all times in `[0, 1]`.
 The returned time neighbourhood is open, so subsequent smoothness is ordinary local
 smoothness, including at the endpoints. -/
-theorem exists_isOpen_isInvertible_convexCombination (ω : SymplecticForm V)
+theorem exists_isOpen_isInvertible_lineMap (hL : L.IsInvertible)
     (hW : IsOpen W) (hx₀ : x₀ ∈ W) (hB : ContinuousOn B W)
-    (hB₀ : B x₀ = ω.toBilinForm.toContinuousBilinearMap) :
+    (hB₀ : B x₀ = L) :
     ∃ (T : Set ℝ) (U : Set V), IsOpen T ∧ IsOpen U ∧ Icc 0 1 ⊆ T ∧
       x₀ ∈ U ∧ U ⊆ W ∧
       ∀ p ∈ T ×ˢ U,
-        ((1 - p.1) • ω.toBilinForm.toContinuousBilinearMap + p.1 • B p.2).IsInvertible := by
+        ((1 - p.1) • L + p.1 • B p.2).IsInvertible := by
   -- Supply the existing topological instance for the nested operator space explicitly.
   let : ContinuousAdd (V →L[ℝ] V →L[ℝ] ℝ) :=
     ContinuousLinearMap.isTopologicalAddGroup.toContinuousAdd
   let A : ℝ × V → V →L[ℝ] V →L[ℝ] ℝ :=
-    fun p ↦ (1 - p.1) • ω.toBilinForm.toContinuousBilinearMap + p.1 • B p.2
+    fun p ↦ (1 - p.1) • L + p.1 • B p.2
   let N := {p : ℝ × V | p.2 ∈ W ∧ (A p).IsInvertible}
   have hN : IsOpen N := by
     rw [isOpen_iff_mem_nhds]
@@ -72,19 +71,14 @@ theorem exists_isOpen_isInvertible_convexCombination (ω : SymplecticForm V)
       (hAp (ContinuousLinearMap.isOpen_setOfPred_isInvertible.mem_nhds hp.2))
   have hline : Icc (0 : ℝ) 1 ×ˢ {x₀} ⊆ N := by
     rintro ⟨t, x⟩ ⟨-, hx⟩
-    have hx' : x = x₀ := hx
+    have hx' : x = x₀ := mem_singleton_iff.mp hx
     subst x
     refine ⟨hx₀, ?_⟩
-    have hA : A (t, x₀) = ω.toBilinForm.toContinuousBilinearMap := by
+    have hA : A (t, x₀) = L := by
       simp only [A, hB₀]
-      calc
-        (1 - t) • ω.toBilinForm.toContinuousBilinearMap +
-            t • ω.toBilinForm.toContinuousBilinearMap =
-          ((1 - t) + t) • ω.toBilinForm.toContinuousBilinearMap :=
-            (add_smul (1 - t) t ω.toBilinForm.toContinuousBilinearMap).symm
-        _ = ω.toBilinForm.toContinuousBilinearMap := by simp
+      rw [← add_smul (1 - t) t L, sub_add_cancel, one_smul]
     rw [hA]
-    exact ω.isInvertible_toContinuousBilinearMap
+    exact hL
   obtain ⟨T, U, hT, hU, hIT, hxU, hTU⟩ :=
     generalized_tube_lemma isCompact_Icc isCompact_singleton hN hline
   refine ⟨T, U ∩ W, hT, hU.inter hW, hIT,
@@ -96,24 +90,24 @@ theorem exists_isOpen_isInvertible_convexCombination (ω : SymplecticForm V)
 field, on an open time neighbourhood of `[0, 1]` and one spatial neighbourhood of `x₀`.
 The displayed equivalence characterizes the solution uniquely without unfolding it.
 Closedness and alternation of the varying bilinear form are separate geometric hypotheses. -/
-theorem exists_contDiffOn_moserField (ω : SymplecticForm V) {n : WithTop ℕ∞}
+theorem exists_contDiffOn_moserField (hL : L.IsInvertible) {n : WithTop ℕ∞}
     (hW : IsOpen W) (hx₀ : x₀ ∈ W) (hB : ContDiffOn ℝ n B W)
-    (hB₀ : B x₀ = ω.toBilinForm.toContinuousBilinearMap)
+    (hB₀ : B x₀ = L)
     {α : V → V →L[ℝ] ℝ} (hα : ContDiffOn ℝ n α W) :
     ∃ (T : Set ℝ) (U : Set V) (X : ℝ × V → V),
       IsOpen T ∧ IsOpen U ∧ Icc 0 1 ⊆ T ∧ x₀ ∈ U ∧ U ⊆ W ∧
       ContDiffOn ℝ n X (T ×ˢ U) ∧
       ∀ p ∈ T ×ˢ U, ∀ v : V,
         (∀ w : V,
-          ((1 - p.1) • ω.toBilinForm.toContinuousBilinearMap + p.1 • B p.2) v w =
+          ((1 - p.1) • L + p.1 • B p.2) v w =
             -α p.2 w) ↔ v = X p := by
   -- Use Mathlib's operator-norm scalar-action instance, without exporting another instance.
   let : IsBoundedSMul ℝ (V →L[ℝ] V →L[ℝ] ℝ) :=
     NormedSpace.toIsBoundedSMul (𝕜 := ℝ) (E := V →L[ℝ] V →L[ℝ] ℝ)
   obtain ⟨T, U, hT, hU, hIT, hxU, hUW, hA⟩ :=
-    ω.exists_isOpen_isInvertible_convexCombination hW hx₀ hB.continuousOn hB₀
+    exists_isOpen_isInvertible_lineMap hL hW hx₀ hB.continuousOn hB₀
   let A : ℝ × V → V →L[ℝ] V →L[ℝ] ℝ :=
-    fun p ↦ (1 - p.1) • ω.toBilinForm.toContinuousBilinearMap + p.1 • B p.2
+    fun p ↦ (1 - p.1) • L + p.1 • B p.2
   let X : ℝ × V → V := fun p ↦ (A p).inverse (-α p.2)
   have hBs : ContDiffOn ℝ n (fun p : ℝ × V ↦ B p.2) (T ×ˢ U) :=
     hB.comp contDiffOn_snd (fun p hp ↦ hUW hp.2)
@@ -129,15 +123,9 @@ theorem exists_contDiffOn_moserField (ω : SymplecticForm V) {n : WithTop ℕ∞
   refine ⟨T, U, X, hT, hU, hIT, hxU, hUW, hXs, ?_⟩
   intro p hp v
   -- Equality of covectors is tested on all tangent vectors.
-  have heq : (∀ w : V, A p v w = -α p.2 w) ↔ A p v = -α p.2 := by
-    constructor
-    · intro h
-      ext w
-      exact h w
-    · intro h w
-      exact congrArg (fun l : V →L[ℝ] ℝ ↦ l w) h
-  rw [heq]
+  change (∀ w : V, A p v w = (-α p.2) w) ↔ v = X p
+  rw [← ContinuousLinearMap.ext_iff]
   simpa only [eq_comm] using
     ((hA p hp).inverse_apply_eq (x := v) (y := -α p.2)).symm
 
-end TauCeti.SymplecticForm
+end TauCeti.ContinuousLinearMap.IsInvertible

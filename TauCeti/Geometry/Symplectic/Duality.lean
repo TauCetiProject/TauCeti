@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.AlmostComplex
-public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
-public import Mathlib.LinearAlgebra.Dual.Lemmas
-public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
+public import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # Contraction with a symplectic form
@@ -31,14 +29,8 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 continuous dual. -/
 @[simp]
 theorem isInvertible_toContinuousBilinearMap (ω : SymplecticForm V) :
-    ω.toBilinForm.toContinuousBilinearMap.IsInvertible := by
-  have hinj : Function.Injective ω.toBilinForm :=
-    LinearMap.ker_eq_bot.mp (LinearMap.separatingLeft_iff_ker_eq_bot.mp ω.nondegenerate.1)
-  let e := (ω.toBilinForm.linearEquivOfInjective hinj
-    (Subspace.dual_finrank_eq (K := ℝ) (V := V)).symm).trans
-      (LinearMap.toContinuousLinearMap : Module.Dual ℝ V ≃ₗ[ℝ] (V →L[ℝ] ℝ))
-  refine ⟨e.toContinuousLinearEquiv, ?_⟩
-  ext v w
-  simp [e, LinearMap.toContinuousBilinearMap_apply]
+    ω.toBilinForm.toContinuousBilinearMap.IsInvertible :=
+  TauCeti.LinearMap.BilinForm.SeparatingLeft.isInvertible_toContinuousBilinearMap
+    ω.nondegenerate.1
 
 end TauCeti.SymplecticForm
