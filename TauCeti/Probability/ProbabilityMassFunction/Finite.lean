@@ -74,6 +74,7 @@ theorem map_snd_eq_iff_fintype [Fintype ι] (ν : PMF κ) :
   simp only [tsum_fintype]
 
 /-- Two independent uniform samples from `Fin 2` differ with probability `1 / 2`. -/
+@[simp]
 theorem uniformOfFintype_fin_two_prod_offDiagonal :
     ((PMF.uniformOfFintype (Fin 2)).toMeasure.prod
       (PMF.uniformOfFintype (Fin 2)).toMeasure) {q | q.1 ≠ q.2} = (2 : ℝ≥0∞)⁻¹ := by
