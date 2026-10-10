@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.Reciprocity
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.GroupCohomologyIso
+import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.NumberTheory.ClassFieldTheory.Local.CohomologicalDimension.Strict
 import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClassModule.Sylow
 
@@ -155,8 +156,8 @@ private theorem exists_restriction_generator {V : Subgroup (AbsoluteGaloisGroup 
   have hmap : W.map (QuotientGroup.mk' V) = T :=
     Subgroup.map_comap_eq_self_of_surjective (QuotientGroup.mk'_surjective V) T
   have hTS : T.map e.toMonoidHom = S := Subgroup.map_comap_eq_self_of_surjective e.surjective S
-  let eS := (e.subgroupMap T).trans (MulEquiv.subgroupCongr hTS)
-  have heS (t : T) : (eS t : H) = e t := by rfl
+  let eS := Subgroup.congrOfMapEq e hTS
+  have heS (t : T) : (eS t : H) = e t := Subgroup.coe_congrOfMapEq_apply e hTS t
   let ES := explicitH2AddEquivGroupCohomology (B := Rep.res S.subtype B) eS ψ
     (fun t m ↦ (hψ t m).trans (by simp [heS]))
   have hdim := (ClassFieldTheory.strictCohomologicalDimensionAt_galSeparableClosure_eq_two
