@@ -69,21 +69,14 @@ theorem eventually_exists_conjTranspose_mul_mul_eq (hA : A.IsHermitian)
     simpa only [hroot_one] using hroot.tendsto.comp hC
   have hadj : Continuous adj := by
     exact (continuous_const.mul continuous_id.matrix_conjTranspose).mul continuous_const
-  have hR_adj : Tendsto (fun B => adj (R B)) (𝓝 A) (𝓝 1) := by
-    simpa only [Function.comp_def, hadj_one] using (hadj.tendsto 1).comp hR
   have hunit : ∀ᶠ B in 𝓝 A, IsUnit (R B) :=
     hR.eventually (Units.isOpen.mem_nhds isUnit_one)
   filter_upwards [hC.eventually TauCeti.eventually_mul_self_sqrtNearOne,
-    hR_adj.eventually TauCeti.eventually_sqrtNearOne_mul_self, hunit] with B hs hu hunit
+    hC.eventually (TauCeti.eventually_sqrtNearOne_fixed hadj.continuousAt hadj_one hadj_mul),
+    hunit] with B hs hu hunit
   intro hB
   have hs' : R B * R B = A⁻¹ * B := hs
-  -- The adjoint has the same square. Local uniqueness of the square root then forces
-  -- the chosen root to be self-adjoint for the pairing defined by `A`.
-  have hadj_square : adj (R B) * adj (R B) = A⁻¹ * B := by
-    rw [← hadj_mul, hs', hadj_C hB]
-  have hself : adj (R B) = R B := by
-    rw [hadj_square] at hu
-    exact hu.symm
+  have hself : adj (R B) = R B := hu (hadj_C hB)
   have hAR : (R B)ᴴ * A = A * R B := by
     have h := congrArg (fun S => A * S) hself
     simpa only [adj, ← Matrix.mul_assoc, A.mul_nonsing_inv hdet, Matrix.one_mul] using h
