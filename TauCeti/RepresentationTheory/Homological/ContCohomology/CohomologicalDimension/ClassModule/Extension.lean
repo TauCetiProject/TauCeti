@@ -56,9 +56,8 @@ theorem mem_abelianizationProPExtensionKernel_iff (g : G) :
 
 omit [V.Normal] in
 /-- The extension kernel is contained in `V`. -/
-theorem abelianizationProPExtensionKernel_le : abelianizationProPExtensionKernel p G V ≤ V := by
-  intro g hg
-  exact ((mem_abelianizationProPExtensionKernel_iff p G V g).mp hg).choose
+theorem abelianizationProPExtensionKernel_le : abelianizationProPExtensionKernel p G V ≤ V :=
+  Subgroup.map_subtype_le _
 
 instance abelianizationProPExtensionKernel_normal :
     (abelianizationProPExtensionKernel p G V).Normal where
@@ -134,10 +133,8 @@ theorem range_abelianizationProPExtensionInl :
 
 /-- The projection onto `G/V` is surjective. -/
 theorem abelianizationProPExtensionRightHom_surjective :
-    Function.Surjective (abelianizationProPExtensionRightHom p G V) := by
-  intro q
-  obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective q
-  exact ⟨QuotientGroup.mk g, abelianizationProPExtensionRightHom_mk p G V g⟩
+    Function.Surjective (abelianizationProPExtensionRightHom p G V) :=
+  QuotientGroup.lift_surjective_of_surjective _ _ (QuotientGroup.mk'_surjective V) _
 
 /-- The quotient group is an extension of `G/V` by its pro-p class module. -/
 def abelianizationProPExtension :
@@ -161,15 +158,23 @@ theorem abelianizationProPExtension_rightHom :
     (abelianizationProPExtension p G V).rightHom = abelianizationProPExtensionRightHom p G V := by
   simp [abelianizationProPExtension]
 
+/-- The section of the class-module extension given by the representatives `Quotient.out`. -/
+def abelianizationProPExtensionSection : (abelianizationProPExtension p G V).Section :=
+  ⟨fun q ↦ QuotientGroup.mk q.out, fun q ↦ by
+    simp [abelianizationProPExtension]⟩
+
+/-- The canonical section sends a quotient class to the class of its chosen representative. -/
+@[simp]
+theorem abelianizationProPExtensionSection_apply (q : G ⧸ V) :
+    abelianizationProPExtensionSection p G V q = QuotientGroup.mk q.out :=
+  (rfl)
+
 /-- Conjugation in the extension induces the canonical quotient action on `Vᵃᵇ(p)`. -/
 theorem abelianizationProPExtension_inducesAction :
     TauCeti.GroupExtension.InducesAction (abelianizationProPExtension p G V) := by
   let S := abelianizationProPExtension p G V
-  let σ : S.Section :=
-    ⟨fun q ↦ QuotientGroup.mk q.out, fun q ↦ by
-      simp [S, abelianizationProPExtension]⟩
-  have hσ (q : G ⧸ V) : σ q = QuotientGroup.mk q.out := (rfl)
-  apply (GroupExtension.inducesAction_iff_conjActOfSection_eq σ).mpr
+  apply (GroupExtension.inducesAction_iff_conjActOfSection_eq
+    (abelianizationProPExtensionSection p G V)).mpr
   apply MonoidHom.ext
   intro q
   apply MulEquiv.ext
@@ -182,32 +187,34 @@ theorem abelianizationProPExtension_inducesAction :
   have hact : q • abelianizationProPMk p G V v =
       abelianizationProPMk p G V (MulAut.conjNormal q.out v) := by
     conv_lhs => rw [← QuotientGroup.out_eq' q, abelianizationProPMk_conj]
-  rw [hσ q]
+  rw [abelianizationProPExtensionSection_apply]
   simp [S, hact, MulAut.conjNormal_apply]
 
-variable [CompactSpace G] [T2Space G] [IsClosed (V : Set G)]
+variable [CompactSpace G] [IsClosed (V : Set G)]
 
+omit [CompactSpace G] in
 /-- The ambient extension kernel is closed. -/
 instance isClosed_abelianizationProPExtensionKernel :
     IsClosed (abelianizationProPExtensionKernel p G V : Set G) := by
-  have hclosed : IsClosed ((abelianizationProPMk p G V).ker : Set V) :=
-    isClosed_singleton.preimage (continuous_abelianizationProPMk p G V)
-  simpa only [abelianizationProPExtensionKernel, Subgroup.coe_map, Set.univ_inter,
-    Subgroup.coe_subtype] using
-    (isCompact_univ (X := V) |>.inter_right hclosed).image continuous_subtype_val |>.isClosed
+  rw [abelianizationProPExtensionKernel, Subgroup.coe_map]
+  exact ‹IsClosed (V : Set G)›.isClosedMap_subtype_val _
+    (isClosed_singleton.preimage (continuous_abelianizationProPMk p G V))
 
-omit [T2Space G] in
+omit [CompactSpace G] [IsClosed (V : Set G)] in
 /-- The inclusion of the class module is continuous. -/
 theorem continuous_abelianizationProPExtensionInl :
     Continuous (abelianizationProPExtensionInl p G V) := by
-  have hq : Topology.IsQuotientMap (abelianizationProPMk p G V) :=
-    Topology.IsQuotientMap.of_surjective_continuous
-      (abelianizationProPMk_surjective p G V) (continuous_abelianizationProPMk p G V)
+  have hq : Topology.IsQuotientMap (abelianizationProPMk p G V) := by
+    have heq : (abelianizationProPMk p G V : V → abelianizationProP p G V) =
+        QuotientGroup.mk ∘ (QuotientGroup.mk : V → TopologicalAbelianization V) :=
+      funext (abelianizationProPMk_apply p G V)
+    rw [heq]
+    exact (QuotientGroup.isQuotientMap_mk _).comp (QuotientGroup.isQuotientMap_mk _)
   apply hq.continuous_iff.mpr
   exact (QuotientGroup.continuous_mk.comp continuous_subtype_val).congr fun v ↦
     (abelianizationProPExtensionInl_mk p G V v).symm
 
-omit [CompactSpace G] [T2Space G] [IsClosed (V : Set G)] in
+omit [CompactSpace G] [IsClosed (V : Set G)] in
 /-- The projection of the class-module extension is continuous. -/
 theorem continuous_abelianizationProPExtensionRightHom :
     Continuous (abelianizationProPExtensionRightHom p G V) :=
