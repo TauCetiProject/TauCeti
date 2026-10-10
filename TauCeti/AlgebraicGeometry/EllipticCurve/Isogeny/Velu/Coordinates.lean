@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Translation.FixedField
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Translation.Place
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Translation.Automorphism
 
 /-!
 # Vélu's quotient coordinates
@@ -109,9 +110,8 @@ private theorem valuation_translation_le_one {P : (W⁄F).toAffine.Point} (hP : 
     exact hP (by simpa [Q] using this)
   -- The inverse translation carries infinity to the place of the nonzero point `Q`.
   have hplace : (translation W P)⁻¹ • Place.infinity W ≠ Place.infinity W := by
-    rw [← coe_pointEquivDegreeOnePlace_zero, ← Point.zero_def,
-      ← translation_neg, ← (Point.equivBaseChangeSelf W).apply_symm_apply P, ← map_neg,
-      translation_smul_pointEquivDegreeOnePlace]
+    rw [← translation_neg, ← (Point.equivBaseChangeSelf W).apply_symm_apply P, ← map_neg,
+      translation_smul_infinity, neg_neg, ← coe_pointEquivDegreeOnePlace_zero, ← Point.zero_def]
     intro h
     have := (pointEquivDegreeOnePlace W).injective (Subtype.ext h)
     exact hQ (by simpa [Q] using this)
