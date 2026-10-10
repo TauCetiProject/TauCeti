@@ -54,9 +54,11 @@ and the one induced by `C` agree on the tautological point, hence on the scheme-
 dense chart `D₊(Z)`, hence everywhere, as the target is separated over `Spec R`.
 
 The behaviour at the zero section cannot be dropped: an isomorphism of affine coordinate rings
-need not come from a change of variables. Over `R = k[ε] ⧸ (ε²)`, the derivation
+need not come from a change of variables. Over `R = k[ε] ⧸ (ε²)` with `k` a field of
+characteristic different from `2`, the derivation
 `∂ = (2y + a₁x + a₃) ∂/∂x + (3x² + 2a₂x + a₄ - a₁y) ∂/∂y` of `R[W]` gives the automorphism
-`g ↦ g + εx ∂g`, which sends `x` to `x + εx(2y + a₁x + a₃)`, not of the shape `u²x + r`.
+`g ↦ g + εx ∂g`, which sends `x` to `x + εx(2y + a₁x + a₃)`. Its `xy` coefficient `2ε` is
+nonzero, so this is not of the shape `u²x + r`.
 
 ## Main results
 
