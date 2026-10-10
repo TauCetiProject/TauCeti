@@ -306,7 +306,8 @@ theorem hasGeometricCM_of_a₆_eq_zero (ha₆ : W.a₆ = 0) : W.HasGeometricCM :
   set L := SeparableClosure K
   have h2 : (2 : K) ≠ 0 := fun h2 => by
     have h := W.isUnit_Δ
-    rw [Δ_of_isShortNF, show (-16 : K) = -2 ^ 4 by norm_num, h2] at h
+    have h16 : (-16 : K) = -2 ^ 4 := by norm_num
+    rw [Δ_of_isShortNF, h16, h2] at h
     simp at h
   have : NeZero ((2 : ℕ) : L) :=
     ⟨by rw [Nat.cast_ofNat, ← map_ofNat (algebraMap K L) 2]; exact (_root_.map_ne_zero _).mpr h2⟩
