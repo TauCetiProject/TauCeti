@@ -62,10 +62,6 @@ noncomputable section
 variable {p : ℕ} [Fact p.Prime] {V ι : Type*}
   [AddCommGroup V] [Module ℚ_[p] V] {Q : QuadraticForm ℚ_[p] V} {b : Basis ι ℚ_[p] V}
 
-/-- The canonical invertibility witness for two over a `p`-adic field. -/
-local instance integralSpinorNormInvertibleTwoPadic : Invertible (2 : ℚ_[p]) :=
-  invertibleOfNonzero two_ne_zero
-
 /-- A `p`-adic number of norm one is integral. -/
 private theorem mem_subring_of_norm_eq_one {a : ℚ_[p]} (ha : ‖a‖ = 1) :
     a ∈ PadicInt.subring p :=
