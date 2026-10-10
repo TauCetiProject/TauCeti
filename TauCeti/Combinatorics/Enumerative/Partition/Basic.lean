@@ -18,7 +18,8 @@ are the single part `n` when `n ≠ 0`, and none when `n = 0`.  The third is
 second part is a single box; it is written at `n+2` so that both parts are positive with no
 hypothesis on `n`.
 
-It also records `TauCeti.parts_equivCast`, the transport of a partition along an equality of the
+It also records `Nat.Partition.sort_parts_ones`, the decreasingly sorted parts of `(1ⁿ)`, and
+`TauCeti.parts_equivCast`, the transport of a partition along an equality of the
 number being partitioned: such a transport leaves the parts alone.
 -/
 
@@ -46,6 +47,14 @@ def ones (n : ℕ) : n.Partition :=
 @[simp]
 theorem ones_parts (n : ℕ) : (ones n).parts = Multiset.replicate n 1 := by
   simp [ones, Multiset.filter_eq_self, Multiset.mem_replicate]
+
+/-- The decreasingly sorted parts of `(1ⁿ)` are `n` copies of `1`. -/
+theorem sort_parts_ones (n : ℕ) :
+    (ones n).parts.sort (· ≥ ·) = List.replicate n 1 := by
+  rw [ones_parts]
+  refine List.eq_replicate_iff.mpr ⟨?_, fun b hb => ?_⟩
+  · rw [Multiset.length_sort, Multiset.card_replicate]
+  · exact Multiset.eq_of_mem_replicate ((Multiset.mem_sort (· ≥ ·)).mp hb)
 
 /-- The product of the factorials of the parts of the coarsest partition `(n)` is `n !`.
 

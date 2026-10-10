@@ -5,7 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.Young.Kostka
 public import TauCeti.RepresentationTheory.Symmetric.Specht.Dominance
+-- Non-public: neither appears in the type of an exported declaration.  The character of the Young
+-- permutation module of the all-ones partition and the dimension of the Specht module are used
+-- only inside the proof of `TauCeti.spechtMultiplicity_ones`.
+import TauCeti.RepresentationTheory.Symmetric.PermutationModule.Extremes
+import TauCeti.RepresentationTheory.Symmetric.Specht.StandardBasis
 
 /-!
 # Specht multiplicities in Young permutation modules
@@ -25,6 +31,15 @@ part of Young's rule:
 These results describe the diagonal and the zero region of the Kostka multiplicity matrix.  In
 particular, they supply the unitriangular part of the multiplicity statement in Young's rule.
 
+It then proves Young's rule itself at one further partition, the all-ones `μ = (1ⁿ)`, where `M^μ`
+is the regular representation `ℚ[Sₙ]`.  There the multiplicity is the dimension `f^lam` of
+`S^lam`: the character of `M^{(1ⁿ)}` is `n !` at the identity and `0` elsewhere
+(`TauCeti.char_permutationModule_ones`), so the character pairing that computes an intertwiner
+dimension has a single surviving term.  Matching it against the combinatorial side,
+`TauCeti.kostkaNumber_ones`, gives the Kostka number `K_{lam (1ⁿ)}`, so the last column of the two
+matrices agrees as well.  The general identification of the two matrices — Young's rule proper —
+is not proved here; it needs the semistandard-tableau filtration of `M^μ`.
+
 ## Main definitions
 
 * `TauCeti.spechtMultiplicity`: the multiplicity of `S^lam` in `M^μ`.
@@ -37,6 +52,9 @@ particular, they supply the unitriangular part of the multiplicity statement in 
   dominance cone.
 * `TauCeti.dominates_of_spechtMultiplicity_ne_zero`: a nonzero multiplicity forces dominance.
 * `TauCeti.spechtMultiplicity_self`: the diagonal multiplicity is one.
+* `TauCeti.spechtMultiplicity_ones`: the multiplicity of `S^lam` in the regular representation
+  `M^{(1ⁿ)}` is `f^lam`, and `TauCeti.spechtMultiplicity_ones_eq_kostkaNumber` reads that as
+  Young's rule at the all-ones partition.
 
 ## References
 
@@ -201,5 +219,51 @@ theorem spechtMultiplicity_self (lam : YoungDiagram) :
     spechtMultiplicity lam (shapePartition lam) = 1 := by
   rw [spechtMultiplicity, ← (spechtSelfMultiplicityEquiv lam).finrank_eq]
   exact Module.finrank_self ℚ
+
+/-! ### Young's rule at the all-ones partition -/
+
+/-- **The multiplicity of `S^lam` in the regular representation is `f^lam`.**  The Young
+permutation module of the all-ones partition is `ℚ[Sₙ]`, whose character is `n !` at the identity
+and `0` elsewhere, so the character pairing that computes the intertwiner dimension collapses to
+the single term `(n !)⁻¹ · n ! · dim S^lam`. -/
+theorem spechtMultiplicity_ones (lam : YoungDiagram) :
+    spechtMultiplicity lam (Nat.Partition.ones lam.card) = standardCount lam := by
+  let _ : Invertible (Nat.card (Equiv.Perm (Fin lam.card)) : ℚ) :=
+    invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
+  have hcard : (Nat.card (Equiv.Perm (Fin lam.card)) : ℚ) = (lam.card.factorial : ℚ) := by
+    rw [Nat.card_perm, Nat.card_fin]
+  have hoff : ∀ g ∈ Finset.univ, g ≠ (1 : Equiv.Perm (Fin lam.card)) →
+      (permutationModule (Nat.Partition.ones lam.card)).ρ.character g *
+        (spechtSubrepresentation lam).toRepresentation.character g⁻¹ = 0 := by
+    intro g _ hg
+    rw [char_permutationModule_ones, ite_eq_right hg, zero_mul]
+  have hsum : ∑ g : Equiv.Perm (Fin lam.card),
+      (permutationModule (Nat.Partition.ones lam.card)).ρ.character g *
+        (spechtSubrepresentation lam).toRepresentation.character g⁻¹ =
+      (lam.card.factorial : ℚ) * (standardCount lam : ℚ) := by
+    rw [Finset.sum_eq_single_of_mem (1 : Equiv.Perm (Fin lam.card)) (Finset.mem_univ _) hoff,
+      char_permutationModule_ones, ite_eq_left rfl, inv_one, Representation.char_one]
+    rw [finrank_spechtSubrepresentation]
+  refine Nat.cast_injective (R := ℚ) ?_
+  rw [spechtMultiplicity_def,
+    ← Representation.card_inv_mul_sum_char_mul_char_eq_finrank
+      (spechtSubrepresentation lam).toRepresentation
+      (permutationModule (Nat.Partition.ones lam.card)).ρ,
+    hsum, hcard, inv_mul_cancel_left₀ (Nat.cast_ne_zero.mpr lam.card.factorial_ne_zero)]
+
+/-- **Young's rule at the all-ones partition**: the multiplicity of `S^lam` in the Young
+permutation module `M^{(1ⁿ)}` is the Kostka number `K_{lam (1ⁿ)}`.
+
+This is the last column of the multiplicity matrix, the one the regular representation
+`M^{(1ⁿ)} = ℚ[Sₙ]` reads: both sides are `f^lam`, the dimension of `S^lam` on the representation
+side (`TauCeti.spechtMultiplicity_ones`) and the number of standard Young tableaux of shape `lam`
+on the combinatorial side (`TauCeti.kostkaNumber_ones`).  Together with the diagonal
+`TauCeti.spechtMultiplicity_self` and `TauCeti.kostkaNumber_self`, and the common vanishing off the
+dominance cone, it is one more agreement of the two matrices; the general statement is still
+open. -/
+theorem spechtMultiplicity_ones_eq_kostkaNumber (lam : YoungDiagram) :
+    spechtMultiplicity lam (Nat.Partition.ones lam.card) =
+      kostkaNumber (shapePartition lam) (Nat.Partition.ones lam.card) := by
+  rw [spechtMultiplicity_ones, kostkaNumber_ones, diagramOf_shapePartition]
 
 end TauCeti
