@@ -28,9 +28,12 @@ to the quotient and the normalized chains are functorial.
 * `TauCeti.NormalizedCubicalChain X R n`: the normalized cubical `n`-chains.
 * `TauCeti.NormalizedCubicalChain.boundary X R n`: the induced boundary.
 * `TauCeti.NormalizedCubicalChain.map R f n`: the push-forward along a continuous map.
+* `TauCeti.NormalizedCubicalChain.cast R h`: reindexing along an equality of dimensions.
 
 ## Main results
 
+* `TauCeti.CubicalChain.degenerate_def`, `TauCeti.CubicalChain.degenerate_induction`: the
+  degenerate chains as a span, and induction on them.
 * `TauCeti.CubicalChain.boundary_mem_degenerate`: the boundary of a degenerate chain is degenerate.
 * `TauCeti.CubicalChain.degenerate_zero`: there are no degenerate `0`-chains.
 * `TauCeti.NormalizedCubicalChain.boundary_boundary`: `∂ ∘ ∂ = 0` on normalized chains.
@@ -64,6 +67,28 @@ variable (X) in
 def degenerate (n : ℕ) : Submodule R (CubicalChain X R n) :=
   Submodule.span R {f | ∃ c : SingularCube X n, IsDegenerate c ∧ f = single c 1}
 
+variable (X) in
+/-- The degenerate `n`-chains are the span of the chains of the degenerate `n`-cubes. -/
+theorem degenerate_def (n : ℕ) : degenerate X R n =
+    Submodule.span R {f | ∃ c : SingularCube X n, IsDegenerate c ∧ f = single c 1} :=
+  (rfl)
+
+/-- **Induction on degenerate chains**: a property of chains which holds for `0` and for the chain
+of each degenerate cube, and is stable under sums and scalar multiples, holds for every degenerate
+chain. -/
+theorem degenerate_induction {n : ℕ} {P : CubicalChain X R n → Prop} (zero : P 0)
+    (hsingle : ∀ c : SingularCube X n, IsDegenerate c → P (single c 1))
+    (hadd : ∀ f g, P f → P g → P (f + g)) (hsmul : ∀ (r : R) f, P f → P (r • f))
+    {g : CubicalChain X R n} (hg : g ∈ degenerate X R n) : P g := by
+  rw [degenerate_def] at hg
+  induction hg using Submodule.span_induction with
+  | mem f hf =>
+    obtain ⟨c, hc, rfl⟩ := hf
+    exact hsingle c hc
+  | zero => exact zero
+  | add f g _ _ hf hg => exact hadd f g hf hg
+  | smul r f _ hf => exact hsmul r f hf
+
 theorem single_mem_degenerate {n : ℕ} {c : SingularCube X n} (hc : IsDegenerate c) (a : R) :
     single c a ∈ degenerate X R n := by
   rw [← smul_single_one]
@@ -91,6 +116,12 @@ theorem map_mem_degenerate (f : C(X, Y)) {n : ℕ} {g : CubicalChain X R n}
 private theorem degenerate_le_comap_map (f : C(X, Y)) (n : ℕ) :
     degenerate X R n ≤ (degenerate Y R n).comap (map R f n) :=
   fun _ hg ↦ map_mem_degenerate R f hg
+
+/-- Reindexing preserves degenerate chains. -/
+theorem cast_mem_degenerate {n m : ℕ} (h : n = m) {f : CubicalChain X R n}
+    (hf : f ∈ degenerate X R n) : cast R h f ∈ degenerate X R m := by
+  subst h
+  simpa using hf
 
 end Semiring
 
@@ -215,6 +246,15 @@ theorem map_boundary (f : C(X, Y)) (n : ℕ) :
   unfold map boundary
   rw [← Submodule.mapQ_comp, ← Submodule.mapQ_comp]
   simp only [CubicalChain.map_boundary]
+
+/-- Reindex normalized chains along an equality of dimensions. -/
+def cast {n m : ℕ} (h : n = m) : NormalizedCubicalChain X R n →ₗ[R] NormalizedCubicalChain X R m :=
+  Submodule.mapQ _ _ (CubicalChain.cast R h) fun _ hf ↦ CubicalChain.cast_mem_degenerate R h hf
+
+@[simp]
+theorem cast_mk {n m : ℕ} (h : n = m) (f : CubicalChain X R n) :
+    cast R h (Submodule.Quotient.mk f) = Submodule.Quotient.mk (CubicalChain.cast R h f) :=
+  Submodule.mapQ_apply _ _ _ f
 
 end NormalizedCubicalChain
 
