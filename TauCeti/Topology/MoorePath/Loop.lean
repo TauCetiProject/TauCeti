@@ -144,7 +144,7 @@ unit. -/
 instance instMonoid : Monoid (MooreLoop X b) where
   mul_assoc γ δ ε := ext (by
     simp only [toMoorePath_mul]
-    exact MoorePath.trans_assoc _ _ _ _)
+    exact MoorePath.trans_assoc _ _)
   one_mul γ := ext (by
     simp only [toMoorePath_mul, toMoorePath_one]
     exact MoorePath.const_trans _)
