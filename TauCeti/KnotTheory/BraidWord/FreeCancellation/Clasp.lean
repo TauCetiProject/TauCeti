@@ -52,7 +52,7 @@ private def claspCross (N : ℕ) : Fin (N + 2) ≃ Fin (N + 2) :=
 
 @[simp] private theorem claspCross_old (N : ℕ) (j : Fin N) :
     claspCross N j.castSucc.castSucc = j.succ.succ := by
-  have h : j.castSucc.castSucc = Fin.castAdd 2 j := rfl
+  have h : j.castSucc.castSucc = Fin.castAdd 2 j := Fin.castSucc_castAdd j
   simp only [claspCross, Equiv.trans_apply, h, finAddFlip_apply_castAdd, finCongr_apply]
   apply Fin.ext
   simp only [Fin.val_natAdd, Fin.val_succ, Fin.val_cast]
@@ -60,7 +60,9 @@ private def claspCross (N : ℕ) : Fin (N + 2) ≃ Fin (N + 2) :=
 
 @[simp] private theorem claspCross_first (N : ℕ) :
     claspCross N (Fin.last N).castSucc = 0 := by
-  have h : (Fin.last N).castSucc = Fin.natAdd N (0 : Fin 2) := rfl
+  have h : (Fin.last N).castSucc = Fin.natAdd N (0 : Fin 2) := by
+    apply Fin.ext
+    simp
   simp only [claspCross, Equiv.trans_apply, h, finAddFlip_apply_natAdd, finCongr_apply]
   apply Fin.ext
   simp
@@ -349,14 +351,16 @@ private theorem unionOld (N : ℕ) (j : Fin N) (s : Fin 4) :
     disjointUnionHalfEdgeEquiv N 2 (.inl (crossingSlotEquiv N (j, s))) =
       halfEdgeSuccEquiv (N + 1) (.inl (halfEdgeSuccEquiv N
         (.inl (crossingSlotEquiv N (j, s))))) := by
+  have h : j.castSucc.castSucc = Fin.castAdd 2 j := Fin.castSucc_castAdd j
   simp only [disjointUnionHalfEdgeEquiv_inl_crossingSlot,
-    ← crossingSlotEquiv_succ_castSucc]
-  rfl
+    ← crossingSlotEquiv_succ_castSucc, h]
 
 private theorem unionFirst (N : ℕ) (s : Fin 4) :
     disjointUnionHalfEdgeEquiv N 2 (.inr (crossingSlotEquiv 2 (0, s))) =
       halfEdgeSuccEquiv (N + 1) (.inl (halfEdgeSuccEquiv N (.inr s))) := by
-  have h : Fin.natAdd N (0 : Fin 2) = (Fin.last N).castSucc := rfl
+  have h : Fin.natAdd N (0 : Fin 2) = (Fin.last N).castSucc := by
+    apply Fin.ext
+    simp
   simp only [disjointUnionHalfEdgeEquiv_inr_crossingSlot, h,
     ← crossingSlotEquiv_succ_castSucc, ← crossingSlotEquiv_succ_last]
 
@@ -371,53 +375,57 @@ section TwoCircles
 variable (v : BraidWord n) (i : Fin (n - 1)) (ε : ℤˣ)
   (hp₀ : v.crossingsAt (strand i) = []) (hq₀ : v.crossingsAt (strandSucc i) = [])
 
--- Remove the two crossing-free circles, keeping all old crossing data.
-private def twoCircleCore : OrientedPDCode v.length where
-  toPDCode := { v.closure.toPDCode with
-    crossinglessComponentCount := (closure ((i, ε) :: (i, -ε) :: v)).crossinglessComponentCount }
-  orientation := v.closure.orientation
-  orientation_edgePair := v.closure.orientation_edgePair
-  orientation_oppositeCrossingSlot := v.closure.orientation_oppositeCrossingSlot
-  crossinglessComponents := (closure ((i, ε) :: (i, -ε) :: v)).crossinglessComponents
-  card_crossinglessComponents := (closure ((i, ε) :: (i, -ε) :: v)).card_crossinglessComponents
+variable (D : OrientedPDCode v.length)
+  (hD : (D.adjoinCircle true).adjoinCircle true = v.closure)
+
+include hD
+
+private theorem twoCircleCore_halfEdge : D.halfEdge = v.closure.halfEdge := by
+  simpa using congrArg (fun C => C.halfEdge) hD
+
+private theorem twoCircleCore_edgePair : D.edgePair = v.closure.edgePair := by
+  simpa using congrArg (fun C => C.edgePair) hD
+
+private theorem twoCircleCore_overPair : D.overPair = v.closure.overPair := by
+  simpa using congrArg (fun C => C.overPair) hD
+
+private theorem twoCircleCore_orientation : D.orientation = v.closure.orientation := by
+  simpa using congrArg OrientedPDCode.orientation hD
 
 include hp₀ hq₀ in
-private theorem twoCircleCore_adjoin :
-    ((twoCircleCore v i ε).adjoinCircle true).adjoinCircle true = v.closure := by
+private theorem twoCircleCore_crossinglessComponents :
+    D.crossinglessComponents = (closure ((i, ε) :: (i, -ε) :: v)).crossinglessComponents := by
   have hc := crossinglessComponents_closure_insert_pair ([] : BraidWord n) v i ε (-ε)
   simp only [List.nil_append, hp₀, hq₀, ite_true, Multiset.replicate_one] at hc
-  have hc' : (((twoCircleCore v i ε).adjoinCircle true).adjoinCircle true).crossinglessComponents =
-      v.closure.crossinglessComponents := by
-    simpa [twoCircleCore, ← Multiset.singleton_add, add_comm, add_left_comm, add_assoc] using hc
-  apply OrientedPDCode.ext
-  · apply PDCode.ext
-    · simp [twoCircleCore]
-    · simp [twoCircleCore]
-    · simpa only [← OrientedPDCode.card_crossinglessComponents] using congrArg Multiset.card hc'
-    · simp [twoCircleCore]
-  · simp [twoCircleCore]
-  · exact hc'
+  have hcircles := congrArg OrientedPDCode.crossinglessComponents hD
+  simp only [OrientedPDCode.crossinglessComponents_adjoinCircle] at hcircles
+  rw [← hc] at hcircles
+  rw [Multiset.add_comm _ {true}, Multiset.singleton_add,
+    Multiset.add_comm _ {true}, Multiset.singleton_add] at hcircles
+  simpa only [Multiset.cons_inj_right, List.cons_append, List.nil_append] using hcircles
 
+omit hD in
 private def twoCircleDiagram : OrientedPDCode (v.length + 2) :=
-  (twoCircleCore v i ε).adjoinTwoCircleClasp true true (!decide (ε = 1))
+  D.adjoinTwoCircleClasp true true (!decide (ε = 1))
 
 private theorem readTwoCircleDiagram_edgePair_inl (x : Fin (4 * v.length)) :
-    (readClasp (twoCircleDiagram v i ε)).edgePair.val
+    (readClasp (twoCircleDiagram v ε D)).edgePair.val
         (claspHalf v.length (disjointUnionHalfEdgeEquiv v.length 2 (.inl x))) =
       claspHalf v.length
         (disjointUnionHalfEdgeEquiv v.length 2 (.inl (v.closure.edgePair.val x))) := by
-  have h := readClasp_edgePair_apply (twoCircleDiagram v i ε)
+  have h := readClasp_edgePair_apply (twoCircleDiagram v ε D)
     (disjointUnionHalfEdgeEquiv v.length 2 (.inl x))
   simpa [twoCircleDiagram, OrientedPDCode.adjoinTwoCircleClasp_def,
-    disjointUnion_edgePair_val, twoCircleCore] using h
+    disjointUnion_edgePair_val, twoCircleCore_edgePair v D hD] using h
 
+omit hD in
 private theorem readTwoCircleDiagram_edgePair_inr (j : Fin 2) (s : Fin 4) :
-    (readClasp (twoCircleDiagram v i ε)).edgePair.val
+    (readClasp (twoCircleDiagram v ε D)).edgePair.val
         (claspHalf v.length (disjointUnionHalfEdgeEquiv v.length 2
           (.inr (crossingSlotEquiv 2 (j, s))))) =
       claspHalf v.length (disjointUnionHalfEdgeEquiv v.length 2
         (.inr (crossingSlotEquiv 2 (j.rev, s.rev)))) := by
-  have h := readClasp_edgePair_apply (twoCircleDiagram v i ε)
+  have h := readClasp_edgePair_apply (twoCircleDiagram v ε D)
     (disjointUnionHalfEdgeEquiv v.length 2 (.inr (crossingSlotEquiv 2 (j, s))))
   simpa [twoCircleDiagram, OrientedPDCode.adjoinTwoCircleClasp_def,
     disjointUnion_edgePair_val] using h
@@ -427,14 +435,14 @@ private theorem readTwoCircleDiagram_edgePair_old {j : Fin v.length} {p : Fin n}
     (hjold : j ∈ v.crossingsAt p) :
     (closure ((i, ε) :: (i, -ε) :: v)).edgePair.val
         (crossingSlotEquiv _ (j.succ.succ, v.outgoingSlot j p)) =
-      (readClasp (twoCircleDiagram v i ε)).edgePair.val
+      (readClasp (twoCircleDiagram v ε D)).edgePair.val
         (crossingSlotEquiv _ (j.succ.succ, v.outgoingSlot j p)) := by
   have hpos : p ≠ strand i ∧ p ≠ strandSucc i := by
     constructor <;> intro h <;> subst p <;> simp_all
   have h := edgePair_closure_cons_cons_of_mem v i ε (-ε) hjold
   simp only [hpos.1, hpos.2, false_or, false_and, ite_false, crossing_closure,
     List.length_cons] at h
-  have hm := readTwoCircleDiagram_edgePair_inl v i ε
+  have hm := readTwoCircleDiagram_edgePair_inl v ε D hD
     (v.closure.crossing j (v.outgoingSlot j p))
   rw [edgePair_closure_outgoingSlot v hjold] at hm
   simp only [crossing_closure, unionOld, claspHalf_old_crossing] at hm
@@ -443,20 +451,20 @@ private theorem readTwoCircleDiagram_edgePair_old {j : Fin v.length} {p : Fin n}
 include hp₀ hq₀ in
 private theorem readTwoCircleDiagram_edgePair :
     (closure ((i, ε) :: (i, -ε) :: v)).edgePair =
-      (readClasp (twoCircleDiagram v i ε)).edgePair := by
+      (readClasp (twoCircleDiagram v ε D)).edgePair := by
   let w : BraidWord n := (i, ε) :: (i, -ε) :: v
-  let D := twoCircleDiagram v i ε
+  let C := twoCircleDiagram v ε D
   -- The closed clasp matching supplies all four outgoing arcs at the new crossings.
   have hmatchFirst (s : Fin 4) :
-      (readClasp D).edgePair.val (crossingSlotEquiv (v.length + 2) (0, s - 1)) =
+      (readClasp C).edgePair.val (crossingSlotEquiv (v.length + 2) (0, s - 1)) =
         crossingSlotEquiv (v.length + 2) (1, s.rev - 1) := by
     simpa only [unionFirst, unionSecond, claspHalf_first, claspHalf_second, Fin.reduceRev]
-      using readTwoCircleDiagram_edgePair_inr v i ε 0 s
+      using readTwoCircleDiagram_edgePair_inr v ε D 0 s
   have hmatchSecond (s : Fin 4) :
-      (readClasp D).edgePair.val (crossingSlotEquiv (v.length + 2) (1, s - 1)) =
+      (readClasp C).edgePair.val (crossingSlotEquiv (v.length + 2) (1, s - 1)) =
         crossingSlotEquiv (v.length + 2) (0, s.rev - 1) := by
     simpa only [unionFirst, unionSecond, claspHalf_first, claspHalf_second, Fin.reduceRev]
-      using readTwoCircleDiagram_edgePair_inr v i ε 1 s
+      using readTwoCircleDiagram_edgePair_inr v ε D 1 s
   have hm₀₂ := hmatchFirst 3
   have hm₀₁ := hmatchFirst 2
   have hm₁₂ := hmatchSecond 3
@@ -500,10 +508,10 @@ private theorem readTwoCircleDiagram_edgePair :
       have hletter : w[j.succ.succ.val] = v[j.val] := by simp [w]
       rw [outgoingSlot_congr hletter p]
       -- Every old crossing lies on an unaffected position, so its arc is preserved.
-      exact readTwoCircleDiagram_edgePair_old v i ε hp₀ hq₀ hjold
+      exact readTwoCircleDiagram_edgePair_old v i ε hp₀ hq₀ D hD hjold
 
 private theorem readTwoCircleDiagram_orientation :
-    (readClasp (twoCircleDiagram v i ε)).orientation =
+    (readClasp (twoCircleDiagram v ε D)).orientation =
       (closure ((i, ε) :: (i, -ε) :: v)).orientation := by
   funext x
   obtain ⟨⟨j, s⟩, rfl⟩ := (crossingSlotEquiv (v.length + 2)).surjective x
@@ -537,26 +545,31 @@ private theorem readTwoCircleDiagram_orientation :
         OrientedPDCode.relabel_orientation, Equiv.symm_apply_apply, twoCircleDiagram,
         OrientedPDCode.adjoinTwoCircleClasp_def]
       rw [← unionOld, OrientedPDCode.orientation_disjointUnion_inl]
-      simp [twoCircleCore]
+      simp [twoCircleCore_orientation v D hD]
 
 include hp₀ hq₀ in
 private theorem readTwoCircleDiagram_eq :
-    readClasp (twoCircleDiagram v i ε) = closure ((i, ε) :: (i, -ε) :: v) := by
+    readClasp (twoCircleDiagram v ε D) = closure ((i, ε) :: (i, -ε) :: v) := by
   apply OrientedPDCode.ext
   · apply PDCode.ext
     · ext x
       obtain ⟨⟨j, s⟩, rfl⟩ := (crossingSlotEquiv (v.length + 2)).surjective x
       rcases Fin.eq_zero_or_eq_succ j with rfl | ⟨j, rfl⟩
       · simp [readClasp, twoCircleDiagram, OrientedPDCode.adjoinTwoCircleClasp_def,
-          disjointUnion_halfEdge, twoCircleCore]
+          disjointUnion_halfEdge, twoCircleCore_halfEdge v D hD]
       · rcases Fin.eq_zero_or_eq_succ j with rfl | ⟨j, rfl⟩
         · simp [readClasp, twoCircleDiagram, OrientedPDCode.adjoinTwoCircleClasp_def,
-            disjointUnion_halfEdge, twoCircleCore]
+            disjointUnion_halfEdge, twoCircleCore_halfEdge v D hD]
         · simp [readClasp, twoCircleDiagram, OrientedPDCode.adjoinTwoCircleClasp_def,
-            disjointUnion_halfEdge, twoCircleCore, Fin.ext_iff]
-    · exact (readTwoCircleDiagram_edgePair v i ε hp₀ hq₀).symm
-    · simp [readClasp, twoCircleDiagram, twoCircleCore]
-    · have hfirst : (Fin.last v.length).castSucc = Fin.natAdd v.length (0 : Fin 2) := rfl
+            disjointUnion_halfEdge, twoCircleCore_halfEdge v D hD, Fin.ext_iff]
+    · exact (readTwoCircleDiagram_edgePair v i ε hp₀ hq₀ D hD).symm
+    · rw [← OrientedPDCode.card_crossinglessComponents,
+        ← OrientedPDCode.card_crossinglessComponents]
+      simp [readClasp, twoCircleDiagram,
+        twoCircleCore_crossinglessComponents v i ε hp₀ hq₀ D hD]
+    · have hfirst : (Fin.last v.length).castSucc = Fin.natAdd v.length (0 : Fin 2) := by
+        apply Fin.ext
+        simp
       have hsecond : Fin.last (v.length + 1) = Fin.natAdd v.length (1 : Fin 2) :=
         Fin.natAdd_last.symm
       funext j
@@ -566,18 +579,38 @@ private theorem readTwoCircleDiagram_eq :
       · rcases Fin.eq_zero_or_eq_succ j with rfl | ⟨j, rfl⟩
         · rcases Int.units_eq_one_or ε with rfl | rfl <;>
             simp [readClasp, twoCircleDiagram, OrientedPDCode.adjoinTwoCircleClasp_def, hsecond]
-        · have hj : j.castSucc.castSucc = Fin.castAdd 2 j := rfl
+        · have hj : j.castSucc.castSucc = Fin.castAdd 2 j := Fin.castSucc_castAdd j
           simp [readClasp, twoCircleDiagram, OrientedPDCode.adjoinTwoCircleClasp_def,
-            twoCircleCore, hj, Fin.ext_iff]
-  · exact readTwoCircleDiagram_orientation v i ε
-  · simp [readClasp, twoCircleDiagram, twoCircleCore]
+            twoCircleCore_overPair v D hD, hj, Fin.ext_iff]
+  · exact readTwoCircleDiagram_orientation v i ε D hD
+  · simp [readClasp, twoCircleDiagram,
+        twoCircleCore_crossinglessComponents v i ε hp₀ hq₀ D hD]
 
+omit D hD in
 include hp₀ hq₀ in
 /-- Inserting inverse letters on two crossing-free positions is a Reidemeister-II move
 between their two circles, even in the presence of arbitrary other crossings. -/
 theorem reidemeisterEquiv_closure_cons_cons_freeCancel_of_crossingsAt_eq_nil :
     OrientedPDCode.ReidemeisterEquiv v.closure (closure ((i, ε) :: (i, -ε) :: v)) := by
-  rw [← twoCircleCore_adjoin v i ε hp₀ hq₀, ← readTwoCircleDiagram_eq v i ε hp₀ hq₀]
+  have hc := crossinglessComponents_closure_insert_pair ([] : BraidWord n) v i ε (-ε)
+  simp only [List.nil_append, hp₀, hq₀, ite_true, Multiset.replicate_one] at hc
+  rw [Multiset.add_comm _ {true}, Multiset.singleton_add,
+    Multiset.add_comm _ {true}, Multiset.singleton_add] at hc
+  have hmem : true ∈ v.closure.crossinglessComponents := by
+    rw [← hc]
+    simp
+  obtain ⟨D₁, hD₁⟩ := OrientedPDCode.exists_eq_adjoinCircle_of_mem hmem
+  have hcircles := congrArg OrientedPDCode.crossinglessComponents hD₁
+  rw [← hc] at hcircles
+  simp only [OrientedPDCode.crossinglessComponents_adjoinCircle,
+    Multiset.cons_inj_right] at hcircles
+  have hmem₁ : true ∈ D₁.crossinglessComponents := by
+    rw [← hcircles]
+    simp
+  obtain ⟨D, hD⟩ := OrientedPDCode.exists_eq_adjoinCircle_of_mem hmem₁
+  have hcore : (D.adjoinCircle true).adjoinCircle true = v.closure := by
+    rw [← hD, ← hD₁]
+  rw [← readTwoCircleDiagram_eq v i ε hp₀ hq₀ D hcore, ← hcore]
   exact (OrientedPDCode.reidemeisterEquiv_adjoinTwoCircleClasp _ true true _).trans
     ((OrientedPDCode.reidemeisterEquiv_relabel _ _ _).trans
       ((OrientedPDCode.reidemeisterEquiv_rotateCrossing _ 0).trans
