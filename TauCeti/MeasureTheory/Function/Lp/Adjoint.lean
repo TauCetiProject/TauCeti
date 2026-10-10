@@ -20,9 +20,9 @@ conjugate exponents and `q < ∞`.
 
 This is the duality argument that transfers a bound in one range of exponents to the dual
 range: for instance the Calderón–Zygmund bound for `1 < p < 2` gives the bound for `2 < p < ∞`.
-Neither `‖T f‖_q` nor `‖f‖_p` is assumed finite, so the theorem in particular shows that `T`
-maps `L² ∩ Lᵖ` into `L^q`: the pairing of `T f` is only tested against bounded functions of
-finite-measure support (`AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_le`).
+Neither `‖T f‖_q` nor `‖f‖_p` is assumed finite, so when `C < ∞` the theorem in particular shows
+that `T` maps `L² ∩ Lᵖ` into `L^q`: the pairing of `T f` is only tested against bounded functions
+of finite-measure support (`AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_le`).
 
 ## Main declarations
 

@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Function.LpSpace.Complete
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 
 /-!
 # Norming `Lᵖ` functions by test functions
@@ -120,20 +121,6 @@ variable {α 𝕜 : Type*} {mα : MeasurableSpace α} {μ : Measure α} [RCLike 
 
 open TauCeti
 
-/-- If `X ^ r ≤ C X ^ (r - 1)` for a finite `X` and `r ≥ 1`, then `X ≤ C`: the last step of every
-norming argument, where `X` is a norm and `X ^ r` its pairing with the extremal function. -/
-private theorem le_of_rpow_le_mul_rpow_sub_one {X C : ℝ≥0∞} {r : ℝ} (hr : 1 ≤ r) (hX : X ≠ ∞)
-    (h : X ^ r ≤ C * X ^ (r - 1)) : X ≤ C := by
-  rcases eq_or_ne X 0 with hX0 | hX0
-  · simp [hX0]
-  have hXr : X ^ r = X ^ (r - 1) * X := by
-    conv_lhs => rw [show r = (r - 1) + 1 by ring]
-    rw [ENNReal.rpow_add _ _ hX0 hX, ENNReal.rpow_one]
-  have hpow0 : X ^ (r - 1) ≠ 0 := by simp [ENNReal.rpow_eq_zero_iff, hX0, hX]
-  have hpowtop : X ^ (r - 1) ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg (by linarith) hX
-  rw [hXr, mul_comm C] at h
-  exact (ENNReal.mul_le_mul_iff_right hpow0 hpowtop).1 h
-
 /-- **Norming by simple functions, `q < ∞`.** Let `q < ∞` and `q'` be Hölder conjugate. If
 `h ∈ L^q` satisfies `‖∫ h g‖ ≤ C ‖g‖_{q'}` for every simple function `g ∈ L^{q'}`, then
 `‖h‖_q ≤ C`. -/
@@ -206,7 +193,7 @@ theorem MemLp.eLpNorm_le_of_forall_enorm_integral_mul_le_of_ne_top {q q' : ℝ�
           rw [← add_mul]
           gcongr
   -- Hence `‖φ‖_q ≤ C + ε / 2`, and `‖h‖_q ≤ ‖φ‖_q + ε / 2`.
-  have hXle : X ≤ C + ε / 2 := le_of_rpow_le_mul_rpow_sub_one hr1 hX (hXr.trans hsplit)
+  have hXle : X ≤ C + ε / 2 := ENNReal.le_of_rpow_le_mul_rpow_sub_one hX (hXr.trans hsplit)
   calc eLpNorm h q μ = eLpNorm ((h - ⇑φ) + ⇑φ) q μ := by simp
     _ ≤ eLpNorm (h - ⇑φ) q μ + X := eLpNorm_add_le hq1
     _ ≤ ε / 2 + (C + ε / 2) := by gcongr
@@ -293,8 +280,9 @@ in an inner product space satisfies `‖∫ ⟪h, g⟫‖ ≤ C ‖g‖_{q'}` fo
 set of finite measure, then `‖h‖_q ≤ C`.
 
 Unlike `MemLp.eLpNorm_le_of_forall_enorm_integral_mul_le_of_ne_top`, `h` is not assumed to lie in
-`L^q`: membership is part of the conclusion. The test functions lie in every `Lˢ`, so the
-hypothesis only involves pairings that are defined, for instance, for every `h ∈ L²`. -/
+`L^q`: when `C < ∞`, membership in `L^q` follows from the conclusion. The test functions lie in
+every `Lˢ`, so the hypothesis only involves pairings that are defined, for instance, for every
+`h ∈ L²`. -/
 theorem AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_le {H : Type*}
     [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [SigmaFinite μ] {q q' : ℝ≥0∞}
     [hqq : q.HolderConjugate q'] (hq : q ≠ ∞) {h : α → H} (hh : AEStronglyMeasurable h μ)
@@ -388,7 +376,7 @@ theorem AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_le {H : T
       filter_upwards [hh.ae_eq_mk] with x hx
       rw [hx, hinner]
     rw [heq, ← ofReal_norm, RCLike.norm_ofReal, abs_of_nonneg hI]
-  refine le_of_rpow_le_mul_rpow_sub_one hr1 hX ?_
+  refine ENNReal.le_of_rpow_le_mul_rpow_sub_one (r := r) hX ?_
   calc X ^ r = ‖∫ x, ⟪h x, g x⟫_𝕜 ∂μ‖ₑ := hXr
     _ ≤ C * eLpNorm g q' μ :=
         hC g (spanningSets μ N) (measure_spanningSets_lt_top μ N).ne hg_supp hgtop
