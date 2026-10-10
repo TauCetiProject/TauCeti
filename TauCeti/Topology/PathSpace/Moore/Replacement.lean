@@ -77,15 +77,15 @@ def endpoint (p : C(E, B)) : C(MooreReplacement p, B) :=
 theorem endpoint_apply {p : C(E, B)} (x : MooreReplacement p) : endpoint p x = x.path.target :=
   (rfl)
 
-theorem source_trans_path {p : C(E, B)} (x : MooreReplacement p) (δ : MoorePath B)
+private theorem source_trans_path {p : C(E, B)} (x : MooreReplacement p) (δ : MoorePath B)
     (h : x.path.target = δ.source) : (x.path.trans δ h).source = p x.point := by
   rw [MoorePath.source_trans, source_path]
 
-theorem source_truncate_path {p : C(E, B)} (x : MooreReplacement p) (t : ℝ≥0) :
+private theorem source_truncate_path {p : C(E, B)} (x : MooreReplacement p) (t : ℝ≥0) :
     (x.path.truncate t).source = p x.point := by
   rw [MoorePath.source_truncate, source_path]
 
-theorem target_eq_source_truncate {p : C(E, B)} (x : MooreReplacement p) {δ : MoorePath B}
+private theorem target_eq_source_truncate {p : C(E, B)} (x : MooreReplacement p) {δ : MoorePath B}
     (h : δ.source = endpoint p x) (s : ℝ≥0) : x.path.target = (δ.truncate s).source := by
   rw [MoorePath.source_truncate, h, endpoint_apply]
 
@@ -109,7 +109,8 @@ def liftPath {p : C(E, B)} (x : MooreReplacement p) (δ : MoorePath B)
 theorem liftPath_apply {p : C(E, B)} (x : MooreReplacement p) (δ : MoorePath B)
     (h : δ.source = endpoint p x) (s : ℝ≥0) :
     liftPath x δ h s = mk x.point (x.path.trans (δ.truncate s)
-      (x.target_eq_source_truncate h s)) (x.source_trans_path _ _) :=
+      (by rw [MoorePath.source_truncate, h, endpoint_apply]))
+      (by rw [MoorePath.source_trans, source_path]) :=
   (rfl)
 
 @[simp]
@@ -375,7 +376,7 @@ theorem IsTransitive.continuousSMul {p : C(E, B)} {Φ : MooreLiftingFunction p}
   letI := hΦ.mulAction b
   ⟨(Φ.continuous_fiberAct b).comp (continuous_snd.prodMk (continuous_unop.comp continuous_fst))⟩
 
-theorem target_lift_val {p : C(E, B)} (Φ : MooreLiftingFunction p) {b : B} (x : Fiber p b) :
+private theorem target_lift_val {p : C(E, B)} (Φ : MooreLiftingFunction p) {b : B} (x : Fiber p b) :
     p (Φ.lift x.val.point x.val.path x.val.source_path).target = b := by
   rw [target_lift, Fiber.target_path_val]
 
@@ -403,7 +404,7 @@ theorem IsTransitive.transport_act {p : C(E, B)} {Φ : MooreLiftingFunction p}
   simp only [Fiber.path_act, Fiber.point_act]
   rw [hΦ.lift_trans, MoorePath.target_trans]
 
-theorem target_path_incl_val {p : C(E, B)} {b : B} (f : {e // p e = b}) :
+private theorem target_path_incl_val {p : C(E, B)} {b : B} (f : {e // p e = b}) :
     (incl p f).path.target = b := by
   simp [f.2]
 
@@ -417,6 +418,7 @@ theorem val_fiberIncl {p : C(E, B)} (b : B) (f : {e // p e = b}) :
     (fiberIncl p b f).val = incl p f :=
   (rfl)
 
+@[simp]
 theorem transport_comp_fiberIncl {p : C(E, B)} (Φ : MooreLiftingFunction p) (b : B) :
     (Φ.transport b).comp (fiberIncl p b) = .id _ :=
   ContinuousMap.ext fun f ↦ Subtype.ext <| by
@@ -424,7 +426,7 @@ theorem transport_comp_fiberIncl {p : C(E, B)} (Φ : MooreLiftingFunction p) (b 
       Φ.lift_eq_refl_of_length_eq_zero _ _ _ (by simp)]
     simp
 
-theorem source_drop_eq {p : C(E, B)} (Φ : MooreLiftingFunction p) (x : MooreReplacement p)
+private theorem source_drop_eq {p : C(E, B)} (Φ : MooreLiftingFunction p) (x : MooreReplacement p)
     (u : ℝ≥0) :
     (x.path.drop u).source =
       p (Φ.lift x.point (x.path.truncate u) (x.source_truncate_path u)).target := by
