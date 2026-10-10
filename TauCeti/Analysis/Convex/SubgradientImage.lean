@@ -40,7 +40,9 @@ comparison principle for the Monge–Ampère equation.
   point of the graph that lie below the boundary values are subgradients at points of `Ω`;
 * `TauCeti.exists_forall_add_inner_add_le_of_forall_frontier_le` — if `w ≤ u` on the frontier of
   `Ω`, small perturbations of a subgradient of `w` at a point where `u < w` are subgradients of
-  `u` at points of `Ω`.
+  `u` at points of `Ω`;
+* `TauCeti.mul_norm_le_of_forall_add_inner_le` — a subgradient of `u` at `x` relative to `Ω` is
+  bounded in terms of a bound for `|u|` on a ball about `x` inside `Ω`.
 
 ## References
 
@@ -185,5 +187,31 @@ theorem exists_forall_add_inner_add_le_of_forall_frontier_le [ProperSpace E] {Ω
     exact dist_le_diam_of_mem hΩ.closure hxc (subset_closure hx₀)
   rw [inner_add_right]
   linarith [hfr x hx]
+
+
+omit [FiniteDimensional ℝ E] hf hbot in
+/-- **Subgradients are bounded by the size of the function.** If `y` is a subgradient of `u`
+relative to `Ω` at `x`, the closed ball of radius `δ ≥ 0` about `x` lies in `Ω`, and `|u| ≤ M` on
+that ball, then `δ * ‖y‖ ≤ 2 * M`. -/
+theorem mul_norm_le_of_forall_add_inner_le {Ω : Set E} {u : E → ℝ} {x y : E} {δ M : ℝ}
+    (hδ : 0 ≤ δ) (hΩ : closedBall x δ ⊆ Ω) (hM : ∀ z ∈ closedBall x δ, |u z| ≤ M)
+    (hy : ∀ x' ∈ Ω, u x + inner ℝ (x' - x) y ≤ u x') : δ * ‖y‖ ≤ 2 * M := by
+  have hx := (abs_le.1 (hM x (mem_closedBall_self hδ))).1
+  rcases eq_or_ne y 0 with rfl | hy0
+  · have := (abs_le.1 (hM x (mem_closedBall_self hδ))).2
+    simp only [norm_zero, mul_zero]
+    linarith
+  -- Compare `u` at `x` and at the point `x + δ • y / ‖y‖` of the sphere in the direction `y`.
+  have hy0' : 0 < ‖y‖ := norm_pos_iff.2 hy0
+  set x' := x + (δ / ‖y‖) • y
+  have hx' : x' ∈ closedBall x δ := by
+    rw [mem_closedBall, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_eq_abs,
+      abs_of_nonneg (div_nonneg hδ hy0'.le), div_mul_cancel₀ _ hy0'.ne']
+  have hinner : inner ℝ (x' - x) y = δ * ‖y‖ := by
+    simp only [x', add_sub_cancel_left, real_inner_smul_left, real_inner_self_eq_norm_sq]
+    field_simp
+  have h := hy x' (hΩ hx')
+  rw [hinner] at h
+  linarith [(abs_le.1 (hM x' hx')).2]
 
 end TauCeti
