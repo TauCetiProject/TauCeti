@@ -272,7 +272,6 @@ theorem mem_pentagonTerminalSelfPairs_of_right_eq_left
     E.rightLeftSelfRecut_terminal_overlap hcommon hone hfirst hsecond hturn
   -- `E` is the terminal self-recut of `D`, so the two cover the same squares and `D` is counted.
   have hcovered := D.coveredSquares_val_add_recutTerminal hDcommon hDcol hDpentagon hDrectangle
-  dsimp only at hcovered
   rw [D.recutTerminal_eq_of_isRecut hDcommon hDcol hDpentagon hDrectangle hback] at hcovered
   refine (G.mem_pentagonTerminalSelfPairs C E).2 (Or.inr ⟨D,
     (G.mem_pentagonTerminalSelfPairSources C D).2 ⟨?_, hDcommon, hDcol⟩, hback⟩)
