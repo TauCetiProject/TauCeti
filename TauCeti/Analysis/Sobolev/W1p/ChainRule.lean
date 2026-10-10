@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 public import TauCeti.MeasureTheory.Function.Lp.L1Convergence
 
 import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
@@ -56,12 +57,18 @@ by approximation, and the *order* of the two limits matters.
 
 * `TauCeti.W1p.hasWeakFDerivOn_comp`: the chain rule, as a weak-derivative statement.
 * `TauCeti.W1p.contDiffComp`: `F ∘ u` as an element of `W^{1,p}(Ω)`.
+* `TauCeti.W1p.exists_value_gradient_ae_eq_comp_of_le`: the chain rule for `φ ∘ u` when `u` is
+  bounded below by a positive constant `ε` and `φ` is only `C¹` on some `(δ, ∞)` with `δ < ε`,
+  as for `log u` and `u⁻¹`.
+* `TauCeti.W1p.exists_value_gradient_ae_eq_log`: its instance `log u`, with gradient `u⁻¹ ∇u`.
 * `TauCeti.W1p.hasWeakFDerivOn_posPart`: the weak gradient of the positive part.
 * `TauCeti.W1p.posPartAboveOfMemLp`: the shifted truncation `(u - k)⁺` at an arbitrary
   level, assuming its value is globally in `Lᵖ`.
 * `TauCeti.W1p.posPartAbove`: the shifted truncation `(u - k)⁺` for `k ≥ 0`.
 * `TauCeti.W1p.posPart`: the positive part `u⁺` as an element of `W^{1,p}(Ω)`, with its value
   `TauCeti.W1p.value_posPart` and its weak gradient `TauCeti.W1p.gradient_posPart_ae`.
+* `TauCeti.W1p.posPart_eq_self_of_ae_nonneg`: the positive part of a nonnegative function is the
+  function itself.
 
 ## References
 
@@ -403,6 +410,133 @@ theorem W1p.gradient_contDiffComp_ae (hp : p ≠ ∞) (hF : ContDiff ℝ 1 F)
   exact MemLp.coeFn_toLp _
 
 end ChainRule
+
+/-! ### Composition with a function that is `C¹` near the range -/
+
+section PositiveComp
+
+/-- A `C¹` modification of `φ` away from `[b, ∞)`: it vanishes on `(-∞, a]` and agrees with `φ`
+on `[b, ∞)`. The factor `χ((t - a) / (b - a))`, with `χ = Real.smoothTransition`, switches from
+`0` to `1` on `[a, b]`. -/
+private noncomputable def positiveCutoff (φ : ℝ → ℝ) (a b t : ℝ) : ℝ :=
+  Real.smoothTransition ((t - a) / (b - a)) * φ t
+
+variable {φ : ℝ → ℝ} {a b δ ε : ℝ}
+
+private theorem positiveCutoff_of_le (hab : a < b) {t : ℝ} (ht : t ≤ a) :
+    positiveCutoff φ a b t = 0 := by
+  rw [positiveCutoff, Real.smoothTransition.zero_of_nonpos
+    (div_nonpos_of_nonpos_of_nonneg (by linarith) (by linarith)), zero_mul]
+
+private theorem positiveCutoff_of_le' (hab : a < b) {t : ℝ} (ht : b ≤ t) :
+    positiveCutoff φ a b t = φ t := by
+  have h : 1 ≤ (t - a) / (b - a) := by
+    rw [le_div_iff₀ (by linarith)]
+    linarith
+  rw [positiveCutoff, Real.smoothTransition.one_of_one_le h, one_mul]
+
+private theorem contDiff_positiveCutoff (hab : a < b) (hδa : δ < a)
+    (hφ : ContDiffOn ℝ 1 φ (Ioi δ)) : ContDiff ℝ 1 (positiveCutoff φ a b) := by
+  rw [contDiff_iff_contDiffAt]
+  intro t
+  rcases lt_or_ge t a with ht | ht
+  · -- Near a point of `(-∞, a)` the function vanishes identically.
+    refine (contDiffAt_const (c := (0 : ℝ))).congr_of_eventuallyEq ?_
+    filter_upwards [Iio_mem_nhds ht] with s hs
+    exact positiveCutoff_of_le hab (le_of_lt hs)
+  · exact (Real.smoothTransition.contDiffAt.comp t (by fun_prop)).mul
+      (hφ.contDiffAt (Ioi_mem_nhds (hδa.trans_le ht)))
+
+private theorem deriv_positiveCutoff_of_lt (hab : a < b) {t : ℝ} (ht : b < t) :
+    deriv (positiveCutoff φ a b) t = deriv φ t := by
+  refine Filter.EventuallyEq.deriv_eq ?_
+  filter_upwards [Ioi_mem_nhds ht] with s hs
+  exact positiveCutoff_of_le' hab (le_of_lt hs)
+
+private theorem exists_nnnorm_deriv_positiveCutoff_le (hab : a < b) (hδa : δ < a)
+    (hφ : ContDiffOn ℝ 1 φ (Ioi δ)) (hbε : b ≤ ε) {M : ℝ} (hM : ∀ t, ε ≤ t → |deriv φ t| ≤ M) :
+    ∃ K : ℝ≥0, ∀ t, ‖deriv (positiveCutoff φ a b) t‖₊ ≤ K := by
+  have hcont : Continuous (deriv (positiveCutoff φ a b)) :=
+    (contDiff_one_iff_deriv.mp (contDiff_positiveCutoff hab hδa hφ)).2
+  obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn
+    (hcont.continuousOn (s := Icc a ε))
+  have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC ε ⟨by linarith, le_rfl⟩)
+  refine ⟨(max C M).toNNReal, fun t => ?_⟩
+  rw [← NNReal.coe_le_coe, coe_nnnorm, Real.coe_toNNReal _ (hC0.trans (le_max_left _ _))]
+  rcases lt_or_ge t a with ht | ht
+  · -- The function vanishes near `t`, so its derivative there is `0`.
+    have h0 : deriv (positiveCutoff φ a b) t = 0 := by
+      rw [Filter.EventuallyEq.deriv_eq (f := fun _ => (0 : ℝ)) ?_, deriv_const]
+      filter_upwards [Iio_mem_nhds ht] with s hs
+      exact positiveCutoff_of_le hab (le_of_lt hs)
+    rw [h0, norm_zero]
+    exact hC0.trans (le_max_left _ _)
+  rcases le_or_gt t ε with ht' | ht'
+  · exact (hC t ⟨ht, ht'⟩).trans (le_max_left _ _)
+  · rw [deriv_positiveCutoff_of_lt hab (by linarith), Real.norm_eq_abs]
+    exact (hM t ht'.le).trans (le_max_right _ _)
+
+variable [MeasurableSpace E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
+  [FiniteDimensional ℝ E] {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
+
+/-- **The chain rule for Sobolev functions bounded below by a positive constant.** Let
+`1 ≤ p < ∞` and let `u ∈ W^{1,p}(Ω)` satisfy `u ≥ ε` almost everywhere, for some `ε > 0`. If `φ`
+is `C¹` on `(δ, ∞)` for some `δ < ε`, with derivative bounded on `[ε, ∞)`, then
+`φ ∘ u ∈ W^{1,p}(Ω)`, with weak gradient `φ'(u) ∇u`.
+
+Unlike `TauCeti.W1p.contDiffComp`, the function `φ` need not be `C¹`, Lipschitz or zero at `0`:
+only its values on a neighbourhood of the range of `u` matter. This covers `log u` and the powers
+`u^β`, `β < 0`. -/
+theorem W1p.exists_value_gradient_ae_eq_comp_of_le (hp : p ≠ ∞) (hδε : δ < ε)
+    (hφ : ContDiffOn ℝ 1 φ (Ioi δ)) (hε : 0 < ε) {M : ℝ} (hM : ∀ t, ε ≤ t → |deriv φ t| ≤ M)
+    {u : W1p mu Omega p} (hu : ∀ᵐ x ∂mu.restrict Omega, ε ≤ W1p.value u x) :
+    ∃ w : W1p mu Omega p,
+      W1p.value w =ᵐ[mu.restrict Omega] (fun x => φ (W1p.value u x)) ∧
+        W1p.gradient w =ᵐ[mu.restrict Omega]
+          fun x => deriv φ (W1p.value u x) • W1p.gradient u x := by
+  -- The cutoff switches on inside `(max δ 0, ε)`, so it is `C¹` and vanishes at `0`.
+  set d := max δ 0
+  have hdε : d < ε := max_lt hδε hε
+  have hab : (2 * d + ε) / 3 < (d + 2 * ε) / 3 := by linarith
+  have hδa : δ < (2 * d + ε) / 3 := by linarith [le_max_left δ 0]
+  obtain ⟨K, hK⟩ := exists_nnnorm_deriv_positiveCutoff_le hab hδa hφ (by linarith) hM
+  have hF := contDiff_positiveCutoff hab hδa hφ
+  have hF0 : positiveCutoff φ ((2 * d + ε) / 3) ((d + 2 * ε) / 3) 0 = 0 :=
+    positiveCutoff_of_le hab (by linarith [le_max_right δ 0])
+  refine ⟨W1p.contDiffComp hp hF hK hF0 u, ?_, ?_⟩
+  · filter_upwards [W1p.value_contDiffComp_ae hp hF hK hF0 u, hu] with x hx hux
+    rw [hx, positiveCutoff_of_le' hab (by linarith)]
+  · filter_upwards [W1p.gradient_contDiffComp_ae hp hF hK hF0 u, hu] with x hx hux
+    rw [hx, deriv_positiveCutoff_of_lt hab (by linarith)]
+
+/-- The logarithm of a Sobolev function bounded below by a positive constant is a Sobolev
+function, with weak gradient `u⁻¹ ∇u`. -/
+theorem W1p.exists_value_gradient_ae_eq_log (hp : p ≠ ∞) (hε : 0 < ε) {u : W1p mu Omega p}
+    (hu : ∀ᵐ x ∂mu.restrict Omega, ε ≤ W1p.value u x) :
+    ∃ w : W1p mu Omega p,
+      W1p.value w =ᵐ[mu.restrict Omega] (fun x => Real.log (W1p.value u x)) ∧
+        W1p.gradient w =ᵐ[mu.restrict Omega] fun x => (W1p.value u x)⁻¹ • W1p.gradient u x := by
+  obtain ⟨w, hwv, hwg⟩ := W1p.exists_value_gradient_ae_eq_comp_of_le (φ := Real.log) hp hε
+    (Real.contDiffOn_log.mono fun t ht => ne_of_gt ht) hε (M := ε⁻¹) (fun t ht => by
+      rw [Real.deriv_log, abs_inv, abs_of_pos (hε.trans_le ht)]
+      exact inv_anti₀ hε ht) hu
+  exact ⟨w, hwv, hwg.mono fun x hx => by simp only [hx, Real.deriv_log]⟩
+
+omit [FiniteDimensional ℝ E] in
+/-- The squared norm `(‖∇u‖ / u)²` of the gradient of `log u` is integrable on `Ω` when
+`u ∈ H¹(Ω)` is bounded below by a positive constant. -/
+theorem W1p.integrable_norm_gradient_div_value_sq {u : W1p mu Omega 2} (hε : 0 < ε)
+    (hu : ∀ᵐ x ∂mu.restrict Omega, ε ≤ W1p.value u x) :
+    Integrable (fun x => (‖W1p.gradient u x‖ / W1p.value u x) ^ 2) (mu.restrict Omega) := by
+  refine ((W1p.integrable_norm_gradient_sq u).const_mul (ε ^ 2)⁻¹).mono' ?_ ?_
+  · exact (((Lp.aestronglyMeasurable (W1p.gradient u)).aemeasurable.norm.div
+      (Lp.aestronglyMeasurable (W1p.value u)).aemeasurable).pow_const 2).aestronglyMeasurable
+  · filter_upwards [hu] with x hx
+    have hU : 0 < W1p.value u x := hε.trans_le hx
+    rw [Real.norm_eq_abs, abs_of_nonneg (by positivity), div_pow, div_eq_inv_mul]
+    gcongr
+
+end PositiveComp
 
 /-! ### The positive part -/
 
@@ -819,6 +953,16 @@ theorem W1p.posPartAbove_zero (hp : p ≠ ∞) (u : W1p mu Omega p) :
   filter_upwards [W1p.value_posPartAbove_ae hp (le_refl 0) u,
     Lp.coeFn_posPart (W1p.value u)] with x hx hy
   rw [hx, hy, sub_zero]
+
+/-- The positive part of an almost everywhere nonnegative Sobolev function is the function
+itself. -/
+theorem W1p.posPart_eq_self_of_ae_nonneg (hp : p ≠ ∞) {u : W1p mu Omega p}
+    (hu : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value u x) :
+    W1p.posPart hp u = u := by
+  refine W1p.ext_value (Lp.ext ?_)
+  rw [W1p.value_posPart]
+  filter_upwards [Lp.coeFn_posPart (W1p.value u), hu] with x hx hux
+  rw [hx, max_eq_left hux]
 
 end PosPart
 

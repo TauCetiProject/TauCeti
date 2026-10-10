@@ -33,7 +33,7 @@ theorem exists_thickenings_pairwiseDisjoint
   classical
   cases isEmpty_or_nonempty ι with
   | inl hι =>
-      exact ⟨1, zero_lt_one, fun i j hij => False.elim (hι.false i)⟩
+      exact ⟨1, zero_lt_one, fun i j _ => False.elim (hι.false i)⟩
   | inr hι =>
       let : Nonempty ι := hι
       have hex : ∀ i j, i ≠ j → ∃ δ : ℝ, 0 < δ ∧

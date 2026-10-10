@@ -41,6 +41,10 @@ both sides, in order to apply the rule to `e.symm` as well.
   `Manifold.IsImmersionOfComplement` counterparts and the `_iff` companions of all of them:
   immersions are stable under composition with a diffeomorphism on either side.
 * `Diffeomorph.isImmersion`: a diffeomorphism is an immersion.
+* `TauCeti.isImmersion_comp_continuousLinearEquiv` and its `Manifold.IsImmersionAt` and
+  `Manifold.IsImmersionAtOfComplement` counterparts: precomposing a map on a vector space with a
+  continuous linear equivalence `E₀ ≃L E` preserves immersions, although the source model changes
+  from `E` to `E₀`.
 * `TauCeti.isImmersion_iff_forall_isImmersionAt`: for a finite-dimensional target model, a map is
   an immersion exactly when it is an immersion at every point.
 
@@ -238,6 +242,58 @@ theorem _root_.Diffeomorph.isImmersion [IsManifold I n M] [IsManifold I n M']
     (e : M ≃ₘ^n⟮I, I⟯ M') :
     IsImmersion I I n e :=
   ((IsImmersion.id (I := I) (n := n) (M := M)).comp_diffeomorph e).congr rfl
+
+/-! ### Changing the model of a vector space source by a linear equivalence -/
+
+section LinearEquiv
+
+variable {E₀ : Type*} [NormedAddCommGroup E₀] [NormedSpace 𝕜 E₀] {g : E → N}
+
+/-- Precomposing a map on a vector space with a continuous linear equivalence `e : E₀ ≃L E`
+preserves the immersion normal form at a point, with the same complement, although the source
+model changes from `E` to `E₀`: a domain chart `ψ` of `E` is carried to the chart `e⁻¹ ∘ ψ ∘ e`
+of `E₀`, and the linear isomorphism of the normal form absorbs `e`. -/
+theorem isImmersionAtOfComplement_comp_continuousLinearEquiv (e : E₀ ≃L[𝕜] E) {x : E₀}
+    (h : IsImmersionAtOfComplement F 𝓘(𝕜, E) J n g (e x)) :
+    IsImmersionAtOfComplement F 𝓘(𝕜, E₀) J n (g ∘ e) x := by
+  set ψ : OpenPartialHomeomorph E₀ E₀ :=
+    (e.toHomeomorph.transOpenPartialHomeomorph h.domChart).transHomeomorph e.symm.toHomeomorph
+  have hsource : ψ.source = ⇑e ⁻¹' h.domChart.source := rfl
+  have hdom := h.domChart_mem_maximalAtlas
+  rw [IsManifold.mem_maximalAtlas_iff_contMDiffOn] at hdom
+  refine IsImmersionAtOfComplement.mk_of_charts
+    ((e.prodCongr (ContinuousLinearEquiv.refl 𝕜 F)).trans h.equiv) ψ h.codChart ?_
+    h.mem_codChart_source ?_ h.codChart_mem_maximalAtlas ?_ fun u hu ↦ ?_
+  · rw [hsource]
+    exact h.mem_domChart_source
+  · rw [IsManifold.mem_maximalAtlas_iff_contMDiffOn]
+    refine ⟨?_, ?_⟩
+    · exact e.symm.contDiff.contMDiff.comp_contMDiffOn
+        (hdom.1.comp e.contDiff.contMDiff.contMDiffOn fun _ hy ↦ hy)
+    · exact e.symm.contDiff.contMDiff.comp_contMDiffOn
+        (hdom.2.comp e.contDiff.contMDiff.contMDiffOn fun _ hy ↦ hy)
+  · rw [hsource]
+    exact fun _ hy ↦ h.source_subset_preimage_source hy
+  · -- Read through `ψ`, the map `g ∘ e` is `g` read through `h.domChart` at `e u`.
+    simp only [ψ, mfld_simps] at hu ⊢
+    have hu' : e u ∈ (h.domChart.extend 𝓘(𝕜, E)).target := by simpa using hu
+    simpa using h.writtenInCharts hu'
+
+/-- Precomposing a map on a vector space with a continuous linear equivalence preserves being an
+immersion at a point. -/
+theorem isImmersionAt_comp_continuousLinearEquiv (e : E₀ ≃L[𝕜] E) {x : E₀}
+    (h : IsImmersionAt 𝓘(𝕜, E) J n g (e x)) : IsImmersionAt 𝓘(𝕜, E₀) J n (g ∘ e) x :=
+  (isImmersionAtOfComplement_comp_continuousLinearEquiv e
+    h.isImmersionAtOfComplement_complement).isImmersionAt
+
+/-- Precomposing an immersion of a vector space with a continuous linear equivalence gives an
+immersion, for the new source model. -/
+theorem isImmersion_comp_continuousLinearEquiv (e : E₀ ≃L[𝕜] E)
+    (h : IsImmersion 𝓘(𝕜, E) J n g) : IsImmersion 𝓘(𝕜, E₀) J n (g ∘ e) :=
+  (IsImmersionOfComplement.isImmersion fun x ↦ isImmersionAtOfComplement_comp_continuousLinearEquiv
+    e (h.isImmersionOfComplement_complement (e x)))
+
+end LinearEquiv
 
 /-! ### Immersions into finite-dimensional models -/
 

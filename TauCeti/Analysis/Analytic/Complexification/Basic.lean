@@ -189,7 +189,7 @@ theorem apply_const_eq_zero_of_forall_ofReal {Q : ContinuousMultilinearMap ℂ (
     exact Q.analyticAt.comp this
   have hreal (t : ℝ) : φ t = 0 := by
     convert h fun i ↦ (z i).re + t * (z i).im using 2
-    ext i; simp [x, y]
+    ext _; simp [x, y]
   have hfreq : ∃ᶠ t in 𝓝[≠] (0 : ℂ), φ t = 0 := by
     have hT : Tendsto (fun t : ℝ ↦ (t : ℂ)) (𝓝[≠] 0) (𝓝[≠] 0) :=
       tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _

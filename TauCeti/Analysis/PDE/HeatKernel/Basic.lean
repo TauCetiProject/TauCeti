@@ -176,7 +176,6 @@ theorem integrable_heatKernel {t : ℝ} (ht : 0 < t) : Integrable (heatKernel t 
 `K_t ⋆ K_s = K_{t+s}` for `t, s > 0`. -/
 theorem heatKernel_convolution_heatKernel {t s : ℝ} (ht : 0 < t) (hs : 0 < s) :
     heatKernel t ⋆ heatKernel s = (heatKernel (t + s) : E → ℝ) := by
-  have hts : 0 < t + s := by positivity
   set p : ℝ := (Module.finrank ℝ E : ℝ) / 2
   set b : ℝ := (t + s) / (4 * t * s)
   have hb : 0 < b := by positivity

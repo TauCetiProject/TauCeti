@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.W1p.Basic
 import TauCeti.Analysis.Convex.Exhaustion
 import TauCeti.Analysis.Sobolev.Wkp.LocalApproximation
 import TauCeti.MeasureTheory.Function.Lp.Const
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 import Mathlib.MeasureTheory.Function.LpSpace.Complete
 
@@ -51,6 +52,8 @@ on a subdomain `U` whose closure is a compact subset of `Ω`.  Two limits are th
 * `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_convex`: the inequality on `W^{1,p}(Ω)`.
 * `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball`: the constant on a ball of radius `R`
   is `2 ^ (n + 1) * R`.
+* `TauCeti.W1p.setIntegral_value_sub_setAverage_sq_le_of_ball_subset`: the same bound in `L²`,
+  for a ball contained in `Ω`, with both sides written as integrals over the ball.
 
 ## References
 
@@ -331,5 +334,49 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball {c : E} {R : ℝ}
     (hOmega ▸ Metric.isBounded_ball (x := c) (r := R))
     Omega.isOpen.measurableSet.nullMeasurableSet subset_rfl hpos u).trans
     (mul_le_mul' (ENNReal.ofReal_le_ofReal hconst) le_rfl)
+
+/-- **The Poincaré–Wirtinger inequality on a ball inside the domain, in `L²`.**  If
+`u ∈ H¹(Ω)` and `B(c, R) ⊆ Ω`, then `∫_{B(c, R)} |u - ⨍_{B(c, R)} u|²` is at most
+`(2 ^ (n + 1) * R)²` times `∫_{B(c, R)} ‖∇u‖²`.  This is
+`TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball` for the restriction of `u` to the ball,
+with both sides written as integrals. -/
+theorem W1p.setIntegral_value_sub_setAverage_sq_le_of_ball_subset {c : E} {R : ℝ} (hR : 0 < R)
+    (hball : ball c R ⊆ (Omega : Set E)) (u : W1p mu Omega 2) :
+    ∫ x in ball c R, (W1p.value u x - ⨍ y in ball c R, W1p.value u y ∂mu) ^ 2 ∂mu ≤
+      (2 ^ (finrank ℝ E + 1) * R) ^ 2 * ∫ x in ball c R, ‖W1p.gradient u x‖ ^ 2 ∂mu := by
+  -- Restrict `u` to the ball `B = B(c, R)`, viewed as a domain of its own.
+  set B : Opens E := ⟨ball c R, isOpen_ball⟩
+  have hB : B ≤ Omega := hball
+  set uB := W1p.restrictL hB u
+  set m := ⨍ y in ball c R, W1p.value u y ∂mu
+  have hval : W1p.value uB =ᵐ[mu.restrict (ball c R)] W1p.value u := W1p.value_restrictL_ae hB u
+  have hP := W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball (p := 2) (by simp) hR
+    (rfl : (B : Set E) = ball c R) uB
+  have havg : ⨍ y in (B : Set E), W1p.value uB y ∂mu = m := average_congr hval
+  rw [havg] at hP
+  have hcongr : (fun x ↦ W1p.value uB x - m) =ᵐ[mu.restrict (ball c R)]
+      fun x ↦ W1p.value u x - m := hval.mono fun x hx ↦ congrArg (· - m) hx
+  have : IsFiniteMeasure (mu.restrict (ball c R)) :=
+    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
+  have hmem : MemLp (fun x ↦ W1p.value uB x - m) 2 (mu.restrict (ball c R)) :=
+    (Lp.memLp (W1p.value uB)).sub (memLp_const m)
+  -- Convert the `eLpNorm` bound into a bound on integrals of squares.
+  have hnorm : ‖hmem.toLp _‖ ≤ 2 ^ (finrank ℝ E + 1) * R * ‖W1p.gradient uB‖ := by
+    rw [Lp.norm_toLp, ← toReal_enorm (W1p.gradient uB),
+      ← ENNReal.toReal_ofReal (by positivity : (0 : ℝ) ≤ 2 ^ (finrank ℝ E + 1) * R),
+      ← ENNReal.toReal_mul]
+    exact ENNReal.toReal_mono (by finiteness) hP
+  have hsq : ∫ x in ball c R, (W1p.value u x - m) ^ 2 ∂mu = ‖hmem.toLp _‖ ^ 2 := by
+    rw [← Lp.integral_norm_sq_eq_norm_sq]
+    refine integral_congr_ae ?_
+    filter_upwards [hmem.coeFn_toLp, hcongr] with x hx hx'
+    rw [hx, hx', Real.norm_eq_abs, sq_abs]
+  have hgrad : ‖W1p.gradient uB‖ ^ 2 = ∫ x in ball c R, ‖W1p.gradient u x‖ ^ 2 ∂mu := by
+    rw [← W1p.integral_norm_gradient_sq_eq_norm_gradient_sq]
+    refine integral_congr_ae ?_
+    filter_upwards [W1p.gradient_restrictL_ae hB u] with x hx
+    rw [hx]
+  rw [hsq, ← hgrad, ← mul_pow]
+  exact pow_le_pow_left₀ (norm_nonneg _) hnorm 2
 
 end TauCeti

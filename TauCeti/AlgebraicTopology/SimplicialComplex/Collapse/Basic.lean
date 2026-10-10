@@ -122,7 +122,7 @@ theorem tail (hKL : CollapsesTo K L) (hLP : ElementaryCollapsesTo L P) : Collaps
 theorem le (h : CollapsesTo K L) : L ≤ K := by
   induction h with
   | refl => exact le_rfl
-  | tail hKL hLP ih => exact hLP.le.trans ih
+  | tail _ hLP ih => exact hLP.le.trans ih
 
 /-- If `K` collapses to a complex `L` that contains `K`, then `K` and `L` are equal. -/
 theorem eq_of_le (h : CollapsesTo K L) (hKL : K ≤ L) : K = L :=
@@ -152,7 +152,7 @@ theorem property_of_elementaryCollapsesTo {p : _root_.PreAbstractSimplicialCompl
     (h : CollapsesTo K L) (hK : p K) : p L := by
   induction h with
   | refl => exact hK
-  | tail hAB hBC ih => exact hp hBC ih
+  | tail _ hBC ih => exact hp hBC ih
 
 end CollapsesTo
 
