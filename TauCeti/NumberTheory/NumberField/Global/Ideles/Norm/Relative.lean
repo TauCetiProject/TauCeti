@@ -206,7 +206,8 @@ theorem ideleClassNormMap_ofCompletion (v : InfinitePlace K) (w : InfinitePlace 
 
 /-- The idele-class norm group `N_{L/K}(C_L)` is normal in `C_K`, which is commutative, so the
 norm quotient `C_K / N_{L/K}(C_L)` is a group. -/
-instance normal_range_ideleClassNormMap : (ideleClassNormMap K L).range.Normal :=
+instance normal_range_ideleClassNormMap :
+    (ideleClassNormMap K L : IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K).range.Normal :=
   ⟨fun n hn g ↦ by rwa [mul_comm g, mul_inv_cancel_right]⟩
 
 /-- The relative norm on idele classes is continuous for the quotient topology. -/

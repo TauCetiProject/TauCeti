@@ -125,13 +125,13 @@ theorem globalGroundEquiv_mem_normSubgroup_iff (E : Ω)
     (c : IdeleClassGroup (𝓞 K) K) :
     NormalLayer.groundEquivOfOpenNormal (globalFormation K) V (globalGroundEquiv K (.ofMul c)) ∈
         (NormalLayer.ofOpenNormal V).normSubgroup (globalFormation K) ↔
-      c ∈ (GlobalNumberFields.ideleClassNormMap K E).range := by
+      c ∈ (GlobalNumberFields.ideleClassNormMap K E :
+        IdeleClassGroup (𝓞 E) E →* IdeleClassGroup (𝓞 K) K).range := by
   rw [NormalLayer.mem_normSubgroup, (ideleClassLevelEquiv E hV).surjective.exists,
     Additive.ofMul.surjective.exists, MonoidHom.mem_range]
   refine exists_congr fun x ↦ ?_
   rw [norm_ideleClassLevelEquiv, EmbeddingLike.apply_eq_iff_eq, EmbeddingLike.apply_eq_iff_eq,
-    EmbeddingLike.apply_eq_iff_eq, ContinuousMonoidHom.coe_toMonoidHom,
-    MonoidHom.coe_ofClass]
+    EmbeddingLike.apply_eq_iff_eq, MonoidHom.coe_ofClass]
 
 /-- The map `C_K → A^{G_K} / N(A^V)` to the norm quotient of the layer `V ◁ G_K`, written
 multiplicatively. -/
@@ -154,7 +154,9 @@ private theorem groundNormQuotientHom_apply (V : OpenNormalSubgroup (AbsoluteGal
 private theorem ker_groundNormQuotientHom (E : Ω)
     {V : OpenNormalSubgroup (AbsoluteGaloisGroup K)}
     (hV : fixedField (NormalLayer.ofOpenNormal V).top.toSubgroup = E) :
-    (GlobalNumberFields.ideleClassNormMap K E).range = (groundNormQuotientHom V).ker := by
+    (GlobalNumberFields.ideleClassNormMap K E :
+        IdeleClassGroup (𝓞 E) E →* IdeleClassGroup (𝓞 K) K).range =
+      (groundNormQuotientHom V).ker := by
   ext c
   rw [MonoidHom.mem_ker, ← globalGroundEquiv_mem_normSubgroup_iff E hV, groundNormQuotientHom_apply,
     ofAdd_eq_one, NormalLayer.normQuotientMk_apply, Submodule.Quotient.mk_eq_zero]
@@ -174,7 +176,8 @@ the ground level of the layer `V ◁ G_K` of the idele-class formation descends 
 `N_{E/K}(C_E)` and by the norm subgroup of the layer (`globalGroundEquiv_mem_normSubgroup_iff`). -/
 def globalNormQuotientEquiv (E : Ω) {V : OpenNormalSubgroup (AbsoluteGaloisGroup K)}
     (hV : fixedField (NormalLayer.ofOpenNormal V).top.toSubgroup = E) :
-    Additive (IdeleClassGroup (𝓞 K) K ⧸ (GlobalNumberFields.ideleClassNormMap K E).range) ≃+
+    Additive (IdeleClassGroup (𝓞 K) K ⧸ (GlobalNumberFields.ideleClassNormMap K E :
+        IdeleClassGroup (𝓞 E) E →* IdeleClassGroup (𝓞 K) K).range) ≃+
       (NormalLayer.ofOpenNormal V).NormQuotient (globalFormation K) :=
   MulEquiv.toAdditiveLeft
     ((QuotientGroup.quotientMulEquivOfEq (ker_groundNormQuotientHom E hV)).trans
@@ -188,7 +191,8 @@ theorem globalNormQuotientEquiv_mk (E : Ω) {V : OpenNormalSubgroup (AbsoluteGal
     (hV : fixedField (NormalLayer.ofOpenNormal V).top.toSubgroup = E)
     (c : IdeleClassGroup (𝓞 K) K) :
     globalNormQuotientEquiv E hV (.ofMul (c : IdeleClassGroup (𝓞 K) K ⧸
-        (GlobalNumberFields.ideleClassNormMap K E).range)) =
+        (GlobalNumberFields.ideleClassNormMap K E :
+          IdeleClassGroup (𝓞 E) E →* IdeleClassGroup (𝓞 K) K).range)) =
       (NormalLayer.ofOpenNormal V).normQuotientMk (globalFormation K)
         (NormalLayer.groundEquivOfOpenNormal (globalFormation K) V
           (globalGroundEquiv K (.ofMul c))) :=
