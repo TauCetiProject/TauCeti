@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.FundamentalSolution.Gradient
+public import TauCeti.Analysis.PDE.FundamentalSolution.Planar.Gradient
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts

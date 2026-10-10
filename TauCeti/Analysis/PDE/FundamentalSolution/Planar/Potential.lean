@@ -5,14 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.FundamentalSolution.Planar
+public import TauCeti.Analysis.PDE.FundamentalSolution.Planar.Basic
 public import Mathlib.Analysis.Convolution
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import Mathlib.Analysis.Calculus.ContDiff.Convolution
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Convolution
 import TauCeti.Analysis.InnerProductSpace.Laplacian.WeakMaximumPrinciple
-import TauCeti.Analysis.PDE.FundamentalSolution.DistributionalLaplacian
+import TauCeti.Analysis.PDE.FundamentalSolution.Planar.DistributionalLaplacian
 
 /-!
 # The planar Newtonian potential solves Poisson's equation
