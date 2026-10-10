@@ -83,7 +83,7 @@ theorem augment_mk (f : CubicalChain X R 0) :
 
 @[simp]
 theorem augment_ofCube (c : SingularCube X 0) : augment X R (ofCube X R c) = 1 := by
-  rw [ofCube_eq_mk, augment_mk, augment_single]
+  rw [ofCube_def, augment_mk, augment_single]
 
 /-- The augmentation vanishes on boundaries. -/
 theorem augment_boundary : augment X R ∘ₗ boundary X R 0 = 0 := by

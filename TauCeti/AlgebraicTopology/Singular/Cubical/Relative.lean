@@ -13,8 +13,9 @@ public import TauCeti.AlgebraicTopology.Singular.Cubical.Normalized
 For a subspace `A ⊆ X`, the normalized cubical chains of `A` push forward to those of `X` along
 the inclusion, and the **relative cubical chains** `C^□_n(X, A; R)` are the quotient of the chains
 of `X` by this image.  The boundary descends, since it is natural, and the three complexes fit
-into the short exact sequence `C^□_*(A) → C^□_*(X) → C^□_*(X, A)`, whose connecting map gives the
-long exact sequence of the pair once the complexes are packaged as chain complexes.
+into the short exact sequence `C^□_*(A) → C^□_*(X) → C^□_*(X, A)`: the projection kills exactly
+the chains supported in `A` (`Submodule.ker_mkQ`), and the connecting map gives the long exact
+sequence of the pair once the complexes are packaged as chain complexes.
 
 ## Main definitions
 
@@ -51,9 +52,9 @@ namespace NormalizedCubicalChain
 def supportedIn (A : Set X) (n : ℕ) : Submodule R (NormalizedCubicalChain X R n) :=
   LinearMap.range (map R (ContinuousMap.subtypeVal A) n)
 
-theorem map_subtypeVal_mem_supportedIn {A : Set X} {n : ℕ} (g : NormalizedCubicalChain A R n) :
-    map R (ContinuousMap.subtypeVal A) n g ∈ supportedIn R A n :=
-  ⟨g, rfl⟩
+theorem supportedIn_def (A : Set X) (n : ℕ) :
+    supportedIn R A n = LinearMap.range (map R (ContinuousMap.subtypeVal A) n) := by
+  rw [supportedIn]
 
 /-- The chains supported in a subspace form a subcomplex. -/
 theorem boundary_mem_supportedIn {A : Set X} {n : ℕ} {g : NormalizedCubicalChain X R (n + 1)}
@@ -95,13 +96,6 @@ theorem boundary_boundary (n : ℕ) : boundary X R A n ∘ₗ boundary X R A (n 
   rw [LinearMap.comp_apply, boundary_mk, boundary_mk, LinearMap.zero_apply,
     ← LinearMap.comp_apply, NormalizedCubicalChain.boundary_boundary, LinearMap.zero_apply,
     Submodule.Quotient.mk_zero]
-
-/-- The projection from the chains of `X` to the relative chains kills exactly the chains
-supported in `A`: the short exact sequence of the pair. -/
-theorem ker_mkQ (n : ℕ) :
-    LinearMap.ker (NormalizedCubicalChain.supportedIn R A n).mkQ =
-      LinearMap.range (NormalizedCubicalChain.map R (ContinuousMap.subtypeVal A) n) :=
-  Submodule.ker_mkQ _
 
 end RelativeCubicalChain
 
