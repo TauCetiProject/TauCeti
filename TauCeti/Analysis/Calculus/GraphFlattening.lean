@@ -15,7 +15,7 @@ import Mathlib.Topology.OpenPartialHomeomorph.Basic
 # Flattening a graph boundary
 
 For a continuous real function `γ` on a normed space `E`, the shear
-`(t, y) ↦ (t - γ(y), y)` is an ambient homeomorphism of the Euclidean product.
+`(t, y) ↦ (t - γ(y), y)` is an ambient homeomorphism of the product `WithLp 2 (ℝ × E)`.
 It carries the region `γ(y) < t` to the positive normal half-space and its graph to
 height zero. Its inverse adds `γ(y)` to the normal coordinate.
 
@@ -106,6 +106,12 @@ section Differential
 
 variable [NormedSpace ℝ E]
 
+private theorem coe_graphFlattening_eq_comp (γ : E → ℝ) (hγ : Continuous γ) :
+    ⇑(graphFlattening γ hγ) = (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm ∘
+      (fun x : WithLp 2 (ℝ × E) => (x.fst - γ x.snd, x.snd)) := by
+  funext x
+  simp
+
 /-- The linear shear subtracting `L z` from the normal coordinate. This is the derivative of
 `graphFlattening` when the graph height has derivative `L`. -/
 def graphFlatteningL (L : E →L[ℝ] ℝ) :
@@ -127,7 +133,7 @@ def graphFlatteningL (L : E →L[ℝ] ℝ) :
   simp [graphFlatteningL, sub_eq_add_neg]
 
 /-- The norm of the linear graph shear is bounded by one plus the norm of the height
-functional, in the Euclidean product norm. -/
+functional, in the `WithLp 2` (L²) product norm. -/
 theorem norm_graphFlatteningL_le (L : E →L[ℝ] ℝ) :
     ‖(graphFlatteningL L).toContinuousLinearMap‖ ≤ 1 + ‖L‖ := by
   refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun x => ?_
@@ -149,15 +155,13 @@ theorem norm_graphFlatteningL_le (L : E →L[ℝ] ℝ) :
 theorem hasFDerivAt_graphFlattening {γ : E → ℝ} (hγ : Continuous γ)
     {x : WithLp 2 (ℝ × E)} {L : E →L[ℝ] ℝ} (hL : HasFDerivAt γ L x.snd) :
     HasFDerivAt (graphFlattening γ hγ) (graphFlatteningL L).toContinuousLinearMap x := by
-  have h := (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.hasFDerivAt.comp x
+  rw [coe_graphFlattening_eq_comp]
+  refine ((WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.hasFDerivAt.comp x
     (((WithLp.fstL 2 ℝ ℝ E).hasFDerivAt.sub
       (hL.comp x (WithLp.sndL 2 ℝ ℝ E).hasFDerivAt)).prodMk
-        (WithLp.sndL 2 ℝ ℝ E).hasFDerivAt)
-  convert h using 1
-  · ext z
-    simp
-  · ext z
-    simp
+        (WithLp.sndL 2 ℝ ℝ E).hasFDerivAt)).congr_fderiv ?_
+  ext z
+  simp
 
 /-- The Fréchet derivative of graph flattening, at a differentiability point of the height. -/
 theorem fderiv_graphFlattening {γ : E → ℝ} (hγ : Continuous γ)
@@ -166,15 +170,14 @@ theorem fderiv_graphFlattening {γ : E → ℝ} (hγ : Continuous γ)
       (graphFlatteningL (fderiv ℝ γ x.snd)).toContinuousLinearMap :=
   (hasFDerivAt_graphFlattening hγ hx.hasFDerivAt).fderiv
 
-/-- Graph flattening preserves the differentiability class of its height function. -/
+/-- Graph flattening has the same differentiability class as its height function. -/
 theorem contDiff_graphFlattening {n : WithTop ℕ∞} {γ : E → ℝ}
     (hγ : ContDiff ℝ n γ) : ContDiff ℝ n (graphFlattening γ hγ.continuous) := by
-  convert (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.contDiff (n := n) |>.comp
+  rw [coe_graphFlattening_eq_comp]
+  exact (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.contDiff (n := n) |>.comp
     (((WithLp.fstL 2 ℝ ℝ E).contDiff.sub
       (hγ.comp (WithLp.sndL 2 ℝ ℝ E).contDiff)).prodMk
-        (WithLp.sndL 2 ℝ ℝ E).contDiff) using 1
-  ext x
-  simp
+        (WithLp.sndL 2 ℝ ℝ E).contDiff)
 
 /-- The inverse graph chart has the same differentiability class as its height function. -/
 theorem contDiff_graphFlattening_symm {n : WithTop ℕ∞} {γ : E → ℝ}
@@ -187,19 +190,19 @@ variable [FiniteDimensional ℝ E]
 /-- A linear graph shear has determinant one. -/
 @[simp] theorem det_graphFlatteningL (L : E →L[ℝ] ℝ) :
     LinearMap.det (graphFlatteningL L).toLinearEquiv.toLinearMap = 1 := by
-  let c := (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).trans
-    (ContinuousLinearEquiv.prodComm ℝ ℝ E)
-  have h := LinearEquiv.det_conj
-    ((ContinuousLinearEquiv.refl ℝ E).toLinearEquiv.skewProd
-      (ContinuousLinearEquiv.refl ℝ ℝ).toLinearEquiv (-L.toLinearMap))
-    c.symm.toLinearEquiv
-  have hval := congrArg Units.val h
-  have hs : ((ContinuousLinearEquiv.refl ℝ E).toLinearEquiv.skewProd
-      (ContinuousLinearEquiv.refl ℝ ℝ).toLinearEquiv (-L.toLinearMap)).det = 1 := by
-    simp [ContinuousLinearEquiv.refl]
-  rw [hs] at hval
-  simpa [graphFlatteningL, c, ContinuousLinearEquiv.skewProd,
-    ContinuousLinearEquiv.toLinearEquiv_symm, LinearEquiv.coe_det] using hval
+  let c := ((WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).trans
+    (ContinuousLinearEquiv.prodComm ℝ ℝ E)).toLinearEquiv
+  have he : (graphFlatteningL L).toLinearEquiv =
+      (c.trans ((LinearEquiv.refl ℝ E).skewProd
+        (LinearEquiv.refl ℝ ℝ) (-L.toLinearMap))).trans c.symm := by
+    apply LinearEquiv.ext
+    intro x
+    simp [c, LinearEquiv.skewProd_apply, sub_eq_add_neg]
+  rw [← LinearEquiv.coe_det, he]
+  simpa only [LinearEquiv.symm_symm, LinearEquiv.det_skewProd, LinearEquiv.det_refl,
+    mul_one, Units.val_one] using congrArg Units.val
+      (LinearEquiv.det_conj ((LinearEquiv.refl ℝ E).skewProd
+        (LinearEquiv.refl ℝ ℝ) (-L.toLinearMap)) c.symm)
 
 /-- The Jacobian determinant of graph flattening is one wherever the height is differentiable. -/
 theorem det_fderiv_graphFlattening {γ : E → ℝ} (hγ : Continuous γ)

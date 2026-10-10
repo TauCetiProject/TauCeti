@@ -14,8 +14,9 @@ public import Mathlib.LinearAlgebra.Prod
 
 Mathlib builds the product `e₁.prodCongr e₂` of two linear equivalences, acting on `M₁ × M₂`
 componentwise. This file identifies which automorphisms of `M₁ × M₂` arise this way, records the
-determinant of such a product, and records that scalar multiplication on a product of complex
-modules is the product map of the two scalar multiplications.
+determinants of such a product and of a block triangular `skewProd` automorphism, and records
+that scalar multiplication on a product of complex modules is the product map of the two scalar
+multiplications.
 
 The characterization needs only containment: an automorphism `g` of `M₁ × M₂` that maps
 `M₁ × 0` into `M₁ × 0` and `0 × M₂` into `0 × M₂` already acts componentwise, and each component
