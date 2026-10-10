@@ -6,13 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Rep.Res
+public import TauCeti.Algebra.Group.PowerClassGroup.QuotSMulTop
 public import TauCeti.Algebra.Module.ZMod.SMulCommClass
 public import TauCeti.Data.ZMod.TrivialAction
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.FiniteExtension
 public import TauCeti.FieldTheory.GaloisCohomology.Kummer
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Conjugation
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.H1.ZMod
+public import TauCeti.RepresentationTheory.QuotSMulTop
 public import TauCeti.RepresentationTheory.RankOneTwist
+public import TauCeti.RepresentationTheory.RestrictScalars
 public import TauCeti.RingTheory.RootsOfUnity.ZMod
 
 /-!
@@ -74,6 +77,9 @@ of `L`.
 * `TauCeti.fixingSubgroupKummerEquivOfTrivial`: the Kummer isomorphism `Lˣ ⧸ (Lˣ)ⁿ ≃ H¹(N, M)`
   with trivial coefficients `M ≃ μₙ`, when `σ(L)` contains the `n`th roots of unity.
 * `TauCeti.powerClassFiniteRep`: the natural representation of `Gal(L/K)` on `Lˣ ⧸ (Lˣ)ⁿ`.
+* `TauCeti.quotSMulTopUnitsPowerClassRepresentationEquiv`: the identification of the reduction
+  `Lˣ ⧸ nLˣ` with `Lˣ ⧸ (Lˣ)ⁿ` respects the action of `Gal(L/K)`; it sends the class of `x` to
+  its power class (`TauCeti.quotSMulTopUnitsPowerClassRepresentationEquiv_mk`).
 * `TauCeti.kummerCoeffFiniteRep`: the roots-of-unity representation of `Gal(L/K)`.
 * `TauCeti.kummerH1FiniteRep`: the conjugation representation of `Gal(L/K)` on `H¹(N, ℤ/n)`.
 * `TauCeti.kummerH1FiniteRepresentationEquiv`: equivariant Kummer theory,
@@ -404,6 +410,29 @@ theorem powerClassRepresentation_apply (n : ℕ) (tau : Gal(L/K))
       MonoidHom.toAdditive (powerClassMap n (Units.map (tau : L →* L))) x := by
   rw [powerClassRepresentation]
   rfl
+
+/-- The natural identification of additive reduction with power classes is equivariant for the
+action of `Gal(L/K)`. -/
+def quotSMulTopUnitsPowerClassRepresentationEquiv (n : ℕ) :
+    ((Representation.ofDistribMulAction ℤ Gal(L/K) (Additive Lˣ)).quotSMulTop
+      (n : ℤ)).Equiv
+        (powerClassRepresentation (K := K) (L := L) n).restrictScalarsInt where
+  toLinearEquiv := (quotSMulTopPowerClassEquiv n).toIntLinearEquiv
+  isIntertwining' tau := by
+    refine LinearMap.ext fun x ↦ ?_
+    simp only [LinearMap.coe_comp, Function.comp_apply, Representation.quotSMulTop_apply,
+      Representation.restrictScalarsInt_apply, powerClassRepresentation_apply]
+    -- On `Additive Lˣ`, the action of `tau` is the map induced by `Units.map tau`.
+    exact quotSMulTopPowerClassEquiv_map n (Units.map (tau : L →* L)) x
+
+/-- The equivariant reduction/power-class identification sends the class of `x` to its power
+class. -/
+@[simp]
+theorem quotSMulTopUnitsPowerClassRepresentationEquiv_mk (n : ℕ) (x : Additive Lˣ) :
+    quotSMulTopUnitsPowerClassRepresentationEquiv (K := K) n (Submodule.Quotient.mk x) =
+      Additive.ofMul (powerClassHom Lˣ n x.toMul) :=
+  -- The underlying linear equivalence is `quotSMulTopPowerClassEquiv n`, read `ℤ`-linearly.
+  quotSMulTopPowerClassEquiv_mk n x
 
 /-! ### Quotients of the absolute Galois action -/
 

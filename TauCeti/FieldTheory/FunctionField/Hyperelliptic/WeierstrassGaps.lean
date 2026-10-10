@@ -24,7 +24,10 @@ Weierstrass gaps at a rational place `P` of `F` are decided by whether `P` ramif
 
 For `g ≥ 2` the two gap sequences differ, so a rational place has `2` as a pole number exactly when
 it ramifies over `k(x)`: the rational places whose gap sequence is not `1, …, g` are exactly the
-ramified ones.
+ramified ones. In terms of Weierstrass weights, the ramified rational places have the maximal
+weight `g (g - 1) / 2` and the unramified ones have weight `0`. Conversely, away from
+characteristic two, a function field of genus `g ≥ 2` with a rational place at which `2` is a pole
+number, that is, a rational place of maximal weight, is hyperelliptic.
 
 ## Main results
 
@@ -38,6 +41,11 @@ ramified ones.
   rational place are `1, …, g`.
 * `TauCeti.Place.isPoleNumber_two_iff_one_lt_ramificationIdx`: for `g ≥ 2`, `2` is a pole number
   at a rational place exactly when the place ramifies over `k(x)`.
+* `TauCeti.Place.weierstrassWeight_eq_genus_choose_two_iff_one_lt_ramificationIdx` and
+  `TauCeti.Place.weierstrassWeight_eq_zero_of_ramificationIdx_eq_one`: ramified rational places
+  have weight `g (g - 1) / 2`, unramified ones weight `0`.
+* `TauCeti.isHyperellipticFunctionField_of_isPoleNumber_two`: a rational place at which `2` is a
+  pole number makes a function field of genus at least two hyperelliptic.
 
 ## References
 
@@ -222,23 +230,9 @@ theorem isPoleNumber_two_of_one_lt_ramificationIdx {P : Place k F} (hP : P.degre
 /-- **The Weierstrass gaps at a ramified rational place are `1, 3, …, 2g - 1`.** -/
 theorem weierstrassGaps_eq_image_range_of_one_lt_ramificationIdx {P : Place k F}
     (hP : P.degree = 1) (hram : 1 < ramificationIdx k⟮x⟯ P) :
-    P.weierstrassGaps = (Finset.range (genus k F)).image fun i ↦ 2 * i + 1 := by
-  -- Every even number is a pole number, and the gap theorem leaves exactly `g` gaps below `2g`.
-  have h2 := isPoleNumber_two_of_one_lt_ramificationIdx hF hex hx hdeg hP hram
-  have heven : ∀ j : ℕ, P.IsPoleNumber (2 * j) := by
-    intro j
-    induction j with
-    | zero => exact P.isPoleNumber_zero
-    | succ j ih => simpa [mul_add, add_comm] using h2.add ih
-  refine Finset.eq_of_subset_of_card_le (fun n hn ↦ ?_) ?_
-  · -- A gap lies in `1, …, 2g - 1` and is odd, since every even number is a pole number.
-    rw [P.mem_weierstrassGaps_iff] at hn
-    obtain ⟨hn1, hn2, hgap⟩ := hn
-    obtain ⟨i, rfl | rfl⟩ := Nat.even_or_odd' n
-    · exact absurd (heven i) ((P.isGap_iff_not_isPoleNumber _).mp hgap)
-    · exact Finset.mem_image.mpr ⟨i, Finset.mem_range.mpr (by omega), rfl⟩
-  · rw [card_weierstrassGaps hF hex hP, Finset.card_image_of_injective _
-      (fun a b h ↦ by simpa using h), Finset.card_range]
+    P.weierstrassGaps = (Finset.range (genus k F)).image fun i ↦ 2 * i + 1 :=
+  weierstrassGaps_eq_image_range_of_isPoleNumber_two hF hex hP
+    (isPoleNumber_two_of_one_lt_ramificationIdx hF hex hx hdeg hP hram)
 
 /-- **No number up to the genus is a pole number at an unramified rational place.** -/
 theorem isGap_of_ramificationIdx_eq_one {P : Place k F} (hP : P.degree = 1)
@@ -278,6 +272,40 @@ theorem isPoleNumber_two_iff_one_lt_ramificationIdx (hg : 2 ≤ genus k F) {P : 
   exact absurd h2 ((P.isGap_iff_not_isPoleNumber 2).mp
     (isGap_of_ramificationIdx_eq_one hF hex hx hdeg hP he (by norm_num) hg))
 
+/-- **A rational place has the maximal Weierstrass weight `g (g - 1) / 2` exactly when it ramifies
+over `k(x)`**, for `g ≥ 2`: the branch places of the double cover are its places of maximal
+weight. -/
+theorem weierstrassWeight_eq_genus_choose_two_iff_one_lt_ramificationIdx (hg : 2 ≤ genus k F)
+    {P : Place k F} (hP : P.degree = 1) :
+    P.weierstrassWeight = (genus k F).choose 2 ↔ 1 < ramificationIdx k⟮x⟯ P :=
+  (weierstrassWeight_eq_genus_choose_two_iff hF hex hP).trans
+    (isPoleNumber_two_iff_one_lt_ramificationIdx hF hex hx hdeg hg hP)
+
+/-- **A rational place unramified over `k(x)` has Weierstrass weight zero.** -/
+theorem weierstrassWeight_eq_zero_of_ramificationIdx_eq_one {P : Place k F} (hP : P.degree = 1)
+    (hram : ramificationIdx k⟮x⟯ P = 1) : P.weierstrassWeight = 0 :=
+  (weierstrassWeight_eq_zero_iff hF hex hP).mpr
+    (weierstrassGaps_eq_Icc_of_ramificationIdx_eq_one hF hex hx hdeg hP hram)
+
 end Place
+
+/-- **A rational place at which `2` is a pole number makes a function field of genus `g ≥ 2`
+hyperelliptic**, away from characteristic two: the divisor `2P` has degree two and `ℓ(2P) ≥ 2`.
+By `TauCeti.Place.weierstrassWeight_eq_genus_choose_two_iff`, these are the rational places of
+maximal Weierstrass weight `g (g - 1) / 2`, so a function field that is not hyperelliptic has
+none. -/
+theorem isHyperellipticFunctionField_of_isPoleNumber_two (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) (h2 : (2 : k) ≠ 0) (hg : 2 ≤ genus k F) {P : Place k F}
+    (hP : P.degree = 1) (hpole : P.IsPoleNumber 2) : IsHyperellipticFunctionField k F := by
+  refine (isHyperellipticFunctionField_iff_two_le_genus_and_exists_degree_eq_two_and_two_le_dim
+    hF hex h2).mpr ⟨hg, (2 : ℤ) • WeilDivisor.ofPoint P, by simp [hP], ?_⟩
+  -- `ℓ(P) < ℓ(2P)` because `2` is a pole number, and `ℓ(P) ≥ ℓ(0) = 1`.
+  have hlt := (P.isPoleNumber_iff_dim_lt hF (by norm_num : 0 < 2)).mp hpole
+  have hle : Divisor.dim (0 : Divisor k F) ≤ Divisor.dim ((1 : ℤ) • WeilDivisor.ofPoint P) :=
+    Divisor.dim_mono hF (by simpa using
+      WeilDivisor.isEffective_iff_zero_le.mp (WeilDivisor.isEffective_ofPoint P))
+  rw [Divisor.dim_zero_of_isIntegrallyClosedIn hF hex] at hle
+  simp only [Nat.add_one_sub_one, Nat.cast_one, Nat.cast_ofNat] at hlt
+  omega
 
 end TauCeti

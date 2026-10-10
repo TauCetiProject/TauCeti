@@ -66,7 +66,8 @@ valuations need not differ from `η_r`.
 ## Main results
 
 * `TauCeti.ValuationSpectrum.coe_closedDiscGaussValuation`: the valuation is `sup_n ‖aₙ‖ rⁿ`;
-  it takes the value `‖a‖` on the constant `a` and `r` on the variable.
+  it takes the value `‖a‖` on the constant `a`, `r` on the variable, and `max r ‖a‖` on `T - a`
+  (`TauCeti.ValuationSpectrum.coe_closedDiscGaussValuation_weightedX_sub_weightedC`).
 * `TauCeti.ValuationSpectrum.isContinuous_closedDiscGaussValuation` and
   `TauCeti.ValuationSpectrum.closedDiscGaussValuation_le_one_of_isPowerBounded`: the two
   conditions for membership in the closed unit disc.
@@ -209,6 +210,25 @@ theorem coe_closedDiscGaussValuation_weightedX (hr₀ : 0 < r) (hr₁ : r ≤ 1)
   simp [closedDiscGaussValuation, toRestrictedSubring_weightedX,
     TauCeti.PowerSeries.gaussValuation_X]
   rfl
+
+/-- The Gauss valuation of radius `r` takes the value `max r ‖a‖` on `T - a`: the coefficients
+`-a` and `1` of `T - a` give the lower bounds `‖a‖` and `r`, and the ultrametric inequality the
+upper bound. -/
+@[simp]
+theorem coe_closedDiscGaussValuation_weightedX_sub_weightedC (hr₀ : 0 < r) (hr₁ : r ≤ 1) (a : R) :
+    (closedDiscGaussValuation hr₀ hr₁
+      (weightedX (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight 0 -
+        weightedC _ isWeightFamily_one_weight a) : ℝ) = max r ‖a‖ := by
+  have h n := norm_coeff_mul_pow_le_closedDiscGaussValuation hr₀ hr₁
+    (weightedX (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight 0 -
+      weightedC _ isWeightFamily_one_weight a) n
+  simp only [AddSubgroupClass.coe_sub, coe_weightedX, coe_weightedC] at h
+  refine le_antisymm ?_ (max_le ?_ ?_)
+  · refine (NNReal.coe_le_coe.mpr (Valuation.map_sub _ _ _)).trans ?_
+    rw [NNReal.coe_max, coe_closedDiscGaussValuation_weightedX, closedDiscGaussValuation_weightedC,
+      coe_nnnorm]
+  · simpa [MvPowerSeries.coeff_X, MvPowerSeries.coeff_C] using h 1
+  · simpa using h 0
 
 /-- The Gauss valuation vanishes only at zero. -/
 @[simp]
@@ -569,7 +589,7 @@ private theorem closedDiscGaussValuation_weightedX_eq_weightedC (hr₀ : 0 < r) 
 
 /-- Just above `r`, the variable `T` is strictly larger than a constant `c` of norm `r`: the
 Gauss norms agree and `T` attains its norm in the later degree. -/
-private theorem not_closedDiscGaussValuationAbove_weightedX_le (hr₀ : 0 < r) (hr₁ : r ≤ 1)
+theorem not_closedDiscGaussValuationAbove_weightedX_le (hr₀ : 0 < r) (hr₁ : r ≤ 1)
     {c : K} (hc : ‖c‖ = r) :
     ¬ closedDiscGaussValuationAbove hr₀ hr₁
         (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0) ≤
@@ -593,7 +613,7 @@ private theorem not_closedDiscGaussValuationAbove_weightedX_le (hr₀ : 0 < r) (
 
 /-- Just below `r`, a constant `c` of norm `r` is strictly larger than the variable `T`: the Gauss
 norms agree and `c` attains its norm in the earlier degree. -/
-private theorem not_closedDiscGaussValuationBelow_weightedC_le (hr₀ : 0 < r) (hr₁ : r ≤ 1)
+theorem not_closedDiscGaussValuationBelow_weightedC_le (hr₀ : 0 < r) (hr₁ : r ≤ 1)
     {c : K} (hc : ‖c‖ = r) :
     ¬ closedDiscGaussValuationBelow hr₀ hr₁ (weightedC _ isWeightFamily_one_weight c) ≤
       closedDiscGaussValuationBelow hr₀ hr₁
