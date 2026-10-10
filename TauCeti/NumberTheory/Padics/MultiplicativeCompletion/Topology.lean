@@ -36,7 +36,8 @@ variable (p : ℕ) [Fact p.Prime] (L : Type*) [Field L] [ValuativeRel L]
   [TopologicalSpace L] [IsNonarchimedeanLocalField L] [CharZero L]
 
 /-- The intrinsic `ℤ_p`-module action on the completed multiplicative group is jointly
-continuous: at level `m` it depends only on the scalar modulo `p^m` and the level-`m` coordinate. -/
+continuous: at level `m` it depends only on the scalar modulo `p^m` and the level-`m` coordinate.
+The local-field hypotheses make the power-class groups discrete in their quotient topology. -/
 instance padicCompletionUnitsContinuousSMul :
     ContinuousSMul ℤ_[p] (Additive ↑(padicCompletionUnits p L)) := by
   refine ⟨continuous_ofMul.comp (Continuous.subtype_mk (continuous_pi fun m ↦ ?_) _)⟩
