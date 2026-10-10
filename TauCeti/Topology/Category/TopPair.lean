@@ -60,6 +60,8 @@ def ofSubsetMap : ofSubset B ⟶ ofSubset B' :=
 @[simp]
 lemma ofSubsetMap_fst_apply (x : (ofSubset B).fst) : Hom.fst (ofSubsetMap g hB) x = g x := (rfl)
 
+lemma ofSubsetMap_fst : Hom.fst (ofSubsetMap g hB) = g := (rfl)
+
 @[simp]
 lemma ofSubsetMap_snd_apply (x : (ofSubset B).snd) :
     (Hom.snd (ofSubsetMap g hB) x).1 = g x.1 := (rfl)
@@ -72,6 +74,29 @@ lemma ofSubsetMap_id (h : Set.MapsTo (𝟙 X) B B) : ofSubsetMap (𝟙 X) h = �
 lemma ofSubsetMap_comp (h : Set.MapsTo (g ≫ g') B B'') :
     ofSubsetMap (g ≫ g') h = ofSubsetMap g hB ≫ ofSubsetMap g' hB' := by
   ext : 2 <;> rfl
+
+/-- A homeomorphism `e : X ≃ₜ Y` carrying `B` onto `B'` induces an isomorphism of pairs
+`(X, B) ≅ (Y, B')`. -/
+def ofSubsetIso (e : X ≃ₜ Y) (h : ∀ x, x ∈ B ↔ e x ∈ B') : ofSubset B ≅ ofSubset B' where
+  hom := ofSubsetMap (TopCat.ofHom e) fun x ↦ (h x).1
+  inv := ofSubsetMap (TopCat.ofHom e.symm) fun y hy ↦ (h _).2 (by simpa using hy)
+  hom_inv_id := by
+    ext a : 2
+    · exact Subtype.ext (e.symm_apply_apply a.1)
+    · exact e.symm_apply_apply a
+  inv_hom_id := by
+    ext a : 2
+    · exact Subtype.ext (e.apply_symm_apply a.1)
+    · exact e.apply_symm_apply a
+
+@[simp]
+lemma ofSubsetIso_hom (e : X ≃ₜ Y) (h : ∀ x, x ∈ B ↔ e x ∈ B') :
+    (ofSubsetIso e h).hom = ofSubsetMap (TopCat.ofHom e) fun x ↦ (h x).1 := (rfl)
+
+@[simp]
+lemma ofSubsetIso_inv (e : X ≃ₜ Y) (h : ∀ x, x ∈ B ↔ e x ∈ B') :
+    (ofSubsetIso e h).inv =
+      ofSubsetMap (TopCat.ofHom e.symm) fun y hy ↦ (h _).2 (by simpa using hy) := (rfl)
 
 /-- A homotopy between maps `X ⟶ Y` which keeps `B` inside `B'` at every time induces a homotopy
 between the induced maps of pairs `(X, B) ⟶ (Y, B')`. -/

@@ -85,7 +85,6 @@ theorem lt_window {N i j j' : ℕ} (hj : j < N) : j < window N i j' := by
 window `i'`, provided the offset `j` stays inside the window. -/
 theorem window_lt_window {N : ℕ} {i i' j j' : ℕ} (hj : j < N) (hi : i < i') :
     window N i j < window N i' j' := by
-  have h1 : (i + 1) * N + j < (i + 1) * N + N := by omega
   have h2 : (i + 1) * N + N = (i + 2) * N := by ring
   have h3 : (i + 2) * N ≤ (i' + 1) * N := Nat.mul_le_mul_right _ (by omega)
   simp only [window_def]

@@ -146,6 +146,32 @@ theorem range_derivationCompLieHom_rootSubgroup_eq_span
     rw [derivationCompLieHom_apply, derivationComp_rootSubgroup_eq_smul_rootVector,
       LinearEquiv.apply_symm_apply]
 
+/-- Extension from the base ring to a coefficient algebra preserves the normalized
+root-subgroup tangent vector. -/
+@[simp]
+theorem mapValue_rootVector (root : GLSymplecticFin.RootSubgroupIndex m) :
+    Derivation.mapValue (Algebra.ofId R B) (rootVector (R := R) (B := R) root) =
+      rootVector (R := R) (B := B) root := by
+  have hga : Derivation.mapValue (Algebra.ofId R B)
+      ((AdditiveGroup.gaTangentLinearEquiv (R := R) (B := R)).symm 1) =
+        (AdditiveGroup.gaTangentLinearEquiv (R := R) (B := B)).symm 1 := by
+    apply (AdditiveGroup.gaTangentLinearEquiv (R := R) (B := B)).injective
+    simp only [AdditiveGroup.gaTangentLinearEquiv_apply, Derivation.mapValue_apply,
+      AdditiveGroup.gaTangentLinearEquiv_symm_apply_ι, map_one]
+  rw [rootVector, rootVector]
+  ext a
+  rw [Derivation.mapValue_apply, derivationComp_apply, derivationComp_apply]
+  have ha := DFunLike.congr_fun hga ((rootSubgroupCoordinateMap (R := R) root).hom a)
+  rw [Derivation.mapValue_apply] at ha
+  -- Precomposition changes the counit-algebra index. Both equalities are in the same
+  -- value ring, but rewriting cannot cross the temporarily ill-typed synonym coercion.
+  change (Algebra.ofId R B)
+      ((AdditiveGroup.gaTangentLinearEquiv (R := R) (B := R)).symm 1
+        ((rootSubgroupCoordinateMap (R := R) root).hom a)) =
+    ((AdditiveGroup.gaTangentLinearEquiv (R := R) (B := B)).symm 1
+      ((rootSubgroupCoordinateMap (R := R) root).hom a) : B) at ha ⊢
+  exact ha
+
 /-- The normalized root vector is nonzero whenever the coefficient algebra is nontrivial. -/
 theorem rootVector_ne_zero [Nontrivial B] (root : GLSymplecticFin.RootSubgroupIndex m) :
     rootVector (R := R) (B := B) root ≠ 0 := by

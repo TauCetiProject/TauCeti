@@ -255,7 +255,7 @@ theorem integral_sq_studentTMeasure (hν : 2 < ν) :
     ∫ x, x ^ 2 ∂studentTMeasure ν = ν / (ν - 2) := by
   have hνpos : 0 < ν := lt_trans zero_lt_two hν
   have hbpos : 0 < (ν - 2) / 2 := by linarith
-  have hGν : Real.Gamma (ν / 2) ≠ 0 := (Real.Gamma_pos_of_pos (by linarith)).ne'
+  have _ : Real.Gamma (ν / 2) ≠ 0 := (Real.Gamma_pos_of_pos (by linarith)).ne'
   have hGb : Real.Gamma ((ν - 2) / 2) ≠ 0 := (Real.Gamma_pos_of_pos hbpos).ne'
   have hGs : Real.Gamma ((ν + 1) / 2) ≠ 0 :=
     (Real.Gamma_pos_of_pos (by linarith)).ne'

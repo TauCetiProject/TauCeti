@@ -180,12 +180,12 @@ def ofSubmodule (S : Submodule ℤ V) [hS : S.IsLattice ℚ] (B : LinearMap.Bili
   le_dual := hle
 
 @[simp]
-theorem ofSubmodule_carrier (S : Submodule ℤ V) [hS : S.IsLattice ℚ] (B : LinearMap.BilinForm ℚ V)
+theorem ofSubmodule_carrier (S : Submodule ℤ V) [S.IsLattice ℚ] (B : LinearMap.BilinForm ℚ V)
     (hB : B.IsSymm) (hle : S ≤ B.dualSubmodule S) :
     (ofSubmodule S B hB hle).carrier = S := (rfl)
 
 @[simp]
-theorem ofSubmodule_form (S : Submodule ℤ V) [hS : S.IsLattice ℚ] (B : LinearMap.BilinForm ℚ V)
+theorem ofSubmodule_form (S : Submodule ℤ V) [S.IsLattice ℚ] (B : LinearMap.BilinForm ℚ V)
     (hB : B.IsSymm) (hle : S ≤ B.dualSubmodule S) :
     (ofSubmodule S B hB hle).form = B := (rfl)
 

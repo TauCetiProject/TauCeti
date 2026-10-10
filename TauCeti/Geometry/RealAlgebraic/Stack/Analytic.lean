@@ -52,7 +52,7 @@ theorem analyticOnSubmanifold_root (hS : IsAnalyticSubmanifold d S)
     exact (D.natDegree_eq k ⟨y, hy⟩ ⟨x, hx⟩).le
   · rw [continuousOn_iff_continuous_domRestrict]
     exact (D.continuous_root i).congr fun x ↦ (hr x).symm
-  · intro x hx
+  · intro x _
     refine ⟨D.multiplicity k i, hk, ?_⟩
     filter_upwards [self_mem_nhdsWithin] with y hy
     rw [hr ⟨y, hy⟩]

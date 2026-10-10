@@ -190,7 +190,7 @@ theorem cup_bijective_of_cupTrivialInt_injective (N : Rep ℤ G) (u : tateCohomo
           ((resFunctor S.subtype).mapIso (λ_ (dimensionShiftUp (dimensionShiftUp N)))) ≪≫
         dimensionShiftUpTwoResIso N S 0).toLinearEquiv.toEquiv).trans (hcard p S hS))
   · -- Degree `1`: the source `H¹(S, ℤ)` vanishes.
-    intro p _ S inst hS
+    intro p _ S inst _
     obtain rfl : inst = Subgroup.fintypeOfFinite S := Subsingleton.elim _ _
     have : Subsingleton (tateCohomology (Rep.res S.subtype (Rep.trivial ℤ G ℤ)) (0 + 1)) :=
       ModuleCat.subsingleton_of_isZero (isZero_tateCohomology_one_res_trivial_int S)

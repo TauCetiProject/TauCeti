@@ -28,7 +28,7 @@ both coordinates nonzero.
 
 The statement is what makes a binary form `⟨1, δ⟩` represent `1` with both coordinates nonzero; it
 supplies the even unitary units `a + b • ω` outside the Lipschitz group in
-`TauCeti/LinearAlgebra/CliffordAlgebra/Spin/LowRank/Six.lean`.
+`TauCeti/LinearAlgebra/CliffordAlgebra/Spin/LowRank/Six/Basic.lean`.
 
 ## Main results
 

@@ -24,6 +24,7 @@ representative of its largest coordinate.
 * `TauCeti.padicCompletionUnitsCompactSpace`: `A(L)` is compact.
 * `TauCeti.isProP_padicCompletionUnits`: `A(L)` is pro-`p`.
 * `TauCeti.continuous_padicCompletionUnitsAut`: field automorphisms act continuously on `A(L)`.
+* `TauCeti.padicCompletionUnitsContinuousSMul`: the intrinsic `ℤ_p`-action is jointly continuous.
 * `TauCeti.denseRange_padicCompletionUnitsOf`: `Lˣ` is dense in `A(L)`.
 -/
 
@@ -33,6 +34,23 @@ namespace TauCeti
 
 variable (p : ℕ) [Fact p.Prime] (L : Type*) [Field L] [ValuativeRel L]
   [TopologicalSpace L] [IsNonarchimedeanLocalField L] [CharZero L]
+
+/-- The intrinsic `ℤ_p`-module action on the completed multiplicative group is jointly
+continuous: at level `m` it depends only on the scalar modulo `p^m` and the level-`m` coordinate.
+The local-field hypotheses make the power-class groups discrete in their quotient topology. -/
+instance padicCompletionUnitsContinuousSMul :
+    ContinuousSMul ℤ_[p] (Additive ↑(padicCompletionUnits p L)) := by
+  refine ⟨continuous_ofMul.comp (Continuous.subtype_mk (continuous_pi fun m ↦ ?_) _)⟩
+  have hpow : Continuous (fun y : ZMod (p ^ m) ×
+      (Lˣ ⧸ (powMonoidHom (p ^ m) : Lˣ →* Lˣ).range) ↦ y.2 ^ y.1.val) :=
+    continuous_of_discreteTopology
+  have hc : Continuous fun y : ℤ_[p] × Additive ↑(padicCompletionUnits p L) ↦
+      (PadicInt.toZModPow m y.1, y.2.toMul.1 m) :=
+    ((PadicInt.continuous_toZModPow m).comp continuous_fst).prodMk
+      ((continuous_apply m).comp (continuous_subtype_val.comp
+        (continuous_toMul.comp continuous_snd)))
+  exact (hpow.comp hc).congr fun y ↦ by
+    simp only [Function.comp_apply, PadicInt.val_toZModPow_eq_appr]
 
 /-- The coordinatewise action of a field automorphism on the multiplicative `p`-adic completion
 is continuous. -/
@@ -79,7 +97,7 @@ private theorem padicCompletionUnits_apply_eq_mk_of_le
     (hu : x.1 m = QuotientGroup.mk' _ u) : x.1 n = QuotientGroup.mk' _ u := by
   induction m, hnm using Nat.le_induction with
   | base => exact hu
-  | succ m hnm ih =>
+  | succ m _ ih =>
       apply ih
       rw [← (mem_padicCompletionUnits_iff p L x.1).mp x.2 m, hu]
       exact padicCompletionTransition_mk p L m u

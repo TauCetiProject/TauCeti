@@ -143,6 +143,11 @@ theorem snd_coe (x : UpperHalfSpace E) : (x : WithLp 2 (E × ℝ)).snd = height 
 theorem height_pos (x : UpperHalfSpace E) : 0 < height x :=
   (show upperHalfSpaceOpens E from x).2
 
+/-- A point of the upper half-space is not a point `(a, 0)` of its boundary hyperplane. -/
+theorem coe_ne_toLp (x : UpperHalfSpace E) (a : E) :
+    (x : WithLp 2 (E × ℝ)) ≠ WithLp.toLp 2 (a, 0) := fun h ↦
+  (height_pos x).ne' (by simpa [← snd_coe] using congrArg WithLp.snd h)
+
 @[simp]
 theorem mk_coe (x : UpperHalfSpace E) :
     mk (x : WithLp 2 (E × ℝ)) (by rw [snd_coe]; exact height_pos x) = x :=

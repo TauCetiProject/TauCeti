@@ -55,7 +55,7 @@ at which they do not take the value `1`. -/
 theorem _root_.AbsoluteValue.IsEquiv.eq_of_apply_eq {F : Type*} [Field F]
     {v w : AbsoluteValue F ℝ} (h : v.IsEquiv w) {x : F} (hx : x ≠ 0) (hv : v x ≠ 1)
     (hvw : v x = w x) : v = w := by
-  obtain ⟨c, hc, hcw⟩ := AbsoluteValue.isEquiv_iff_exists_rpow_eq.mp h
+  obtain ⟨c, _, hcw⟩ := AbsoluteValue.isEquiv_iff_exists_rpow_eq.mp h
   have h1 : v x ^ c = v x ^ (1 : ℝ) := by
     rw [Real.rpow_one, congrFun hcw x, hvw]
   have hc1 : c = 1 := (Real.rpow_right_inj (v.pos hx) hv).mp h1
