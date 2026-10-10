@@ -87,6 +87,9 @@ is simple, and `finrank K (End_R A) * finrank K R = (finrank K A)²`. Since
 * `TauCeti.finrank_mul_finrank_centralizer_of_isField`: the same dimension formula for a
   **subfield** of a central simple algebra, where centrality is asked of the ambient algebra
   instead of the subalgebra.
+* `AlgHom.range_eq_centralizer_iff_finrank_mul_finrank_eq`: a `K`-algebra homomorphism `g : B → A`
+  out of a simple `L`-algebra maps `B` onto the centralizer of the image of the field `L` exactly
+  when `[L : K] · dim_K B = dim_K A`.
 * `TauCeti.tensorCentralizerAlgEquiv`: **the tensor decomposition** `B ⊗[K] C_A(B) ≃ₐ[K] A`, by
   multiplication.
 * `TauCeti.centralizer_isCentral`: **the centralizer of a central simple subalgebra of a central
@@ -363,6 +366,42 @@ theorem finrank_mul_finrank_centralizer_of_isField (L : Subalgebra K A) (hL : Is
   have : IsMulCommutative ↥L := ⟨⟨hL.mul_comm⟩⟩
   have : IsSimpleRing ↥L := (isSimpleRing_iff_isField ↥L).2 hL
   exact finrank_mul_finrank_centralizer_of_isSimpleRing_tensorProduct_mulOpposite L
+
+/-- **The centralizer of a subfield, through a model.** A `K`-algebra homomorphism `g : B →ₐ[K] A`
+out of a simple `L`-algebra maps `B` onto the centralizer of the image of `L` exactly when
+`[L : K] · dim_K B = dim_K A`, which is the dimension of that centralizer given by
+`TauCeti.finrank_mul_finrank_centralizer_of_isField`. -/
+theorem _root_.AlgHom.range_eq_centralizer_iff_finrank_mul_finrank_eq (L : Type*) [Field L]
+    [Algebra K L] {B : Type*} [Ring B] [IsSimpleRing B] [Algebra L B] [Algebra K B]
+    [IsScalarTower K L B] (g : B →ₐ[K] A) :
+    g.range = Subalgebra.centralizer K ((g.comp (IsScalarTower.toAlgHom K L B)).range : Set A) ↔
+      finrank K L * finrank K B = finrank K A := by
+  set f := g.comp (IsScalarTower.toAlgHom K L B)
+  have hf : Function.Injective f := f.toRingHom.injective
+  have hg : Function.Injective g := g.toRingHom.injective
+  have : FiniteDimensional K L := FiniteDimensional.of_injective f.toLinearMap hf
+  have : FiniteDimensional K B := FiniteDimensional.of_injective g.toLinearMap hg
+  have hL : finrank K f.range = finrank K L :=
+    (AlgEquiv.ofInjective f hf).toLinearEquiv.finrank_eq.symm
+  have hB : finrank K g.range = finrank K B :=
+    (AlgEquiv.ofInjective g hg).toLinearEquiv.finrank_eq.symm
+  have hC := finrank_mul_finrank_centralizer_of_isField f.range
+    ((AlgEquiv.ofInjective f hf).symm.toMulEquiv.isField (Field.toIsField L))
+  rw [hL] at hC
+  constructor
+  · intro h
+    rw [← hB, h, hC]
+  · intro h
+    refine Subalgebra.eq_of_le_of_finrank_eq ?_ ?_
+    · rintro _ ⟨b, rfl⟩
+      rw [Subalgebra.mem_centralizer_iff]
+      rintro _ ⟨l, rfl⟩
+      -- `l` is central in `B`, so its image commutes with the image of `b`.
+      have hc : g b * g (algebraMap L B l) = g (algebraMap L B l) * g b := by
+        rw [← map_mul, ← map_mul, Algebra.commutes]
+      exact hc.symm
+    · rw [hB]
+      exact Nat.eq_of_mul_eq_mul_left finrank_pos (h.trans hC.symm)
 
 end Subfield
 

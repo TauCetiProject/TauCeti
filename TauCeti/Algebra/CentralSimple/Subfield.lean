@@ -165,6 +165,13 @@ instance [Module.Finite K A] : Module.Finite K (BaseChangeModule f) :=
 def of : A ≃ₗ[K] BaseChangeModule f :=
   (MulOpposite.opLinearEquiv K).trans (Bimodule.of (rightAlgHom% f))
 
+/-- Linear maps out of `BaseChangeModule f` are determined by their values on `of f x`. -/
+@[ext]
+theorem linearMap_ext {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R (BaseChangeModule f)]
+    [Module R M] {φ ψ : BaseChangeModule f →ₗ[R] M} (h : ∀ x, φ (of f x) = ψ (of f x)) :
+    φ = ψ :=
+  LinearMap.ext fun x ↦ by rw [← (of f).apply_symm_apply x, h]
+
 noncomputable instance : Module (L ⊗[K] A) (BaseChangeModule f) :=
   Module.compHom (M := Bimodule (rightAlgHom% f)) opOpMap%.toRingHom
 
