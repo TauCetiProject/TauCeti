@@ -114,6 +114,15 @@ theorem face_comp {n : ℕ} (i : Fin (n + 1)) (t : I) (f : C(X, Y)) (c : Singula
   ext x
   simp
 
+/-- Faces commute with reindexing. -/
+theorem face_cast {n m : ℕ} (h : n = m) (i : Fin (n + 1)) (t : I)
+    (c : SingularCube X (n + 1)) :
+    face (Fin.cast (congrArg Nat.succ h) i) t
+        (cast (congrArg Nat.succ h) c) =
+      cast h (face i t c) := by
+  subst h
+  simp
+
 /-- A cube is **degenerate at the coordinate `i`** when it does not depend on it. -/
 def IsDegenerateAt {n : ℕ} (c : SingularCube X n) (i : Fin n) : Prop :=
   ∀ (x : Fin n → I) (t : I), c (Function.update x i t) = c x

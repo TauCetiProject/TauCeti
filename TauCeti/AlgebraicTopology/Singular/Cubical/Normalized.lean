@@ -28,6 +28,7 @@ to the quotient and the normalized chains are functorial.
 * `TauCeti.NormalizedCubicalChain X R n`: the normalized cubical `n`-chains.
 * `TauCeti.NormalizedCubicalChain.boundary X R n`: the induced boundary.
 * `TauCeti.NormalizedCubicalChain.map R f n`: the push-forward along a continuous map.
+* `TauCeti.NormalizedCubicalChain.cast R h`: reindexing along an equality of dimensions.
 
 ## Main results
 
@@ -96,6 +97,12 @@ theorem map_mem_degenerate (f : C(X, Y)) {n : ℕ} {g : CubicalChain X R n}
 private theorem degenerate_le_comap_map (f : C(X, Y)) (n : ℕ) :
     degenerate X R n ≤ (degenerate Y R n).comap (map R f n) :=
   fun _ hg ↦ map_mem_degenerate R f hg
+
+/-- Reindexing preserves degenerate chains. -/
+theorem cast_mem_degenerate {n m : ℕ} (h : n = m) {f : CubicalChain X R n}
+    (hf : f ∈ degenerate X R n) : cast R h f ∈ degenerate X R m := by
+  subst h
+  simpa using hf
 
 end Semiring
 
@@ -220,6 +227,15 @@ theorem map_boundary (f : C(X, Y)) (n : ℕ) :
   unfold map boundary
   rw [← Submodule.mapQ_comp, ← Submodule.mapQ_comp]
   simp only [CubicalChain.map_boundary]
+
+/-- Reindex normalized chains along an equality of dimensions. -/
+def cast {n m : ℕ} (h : n = m) : NormalizedCubicalChain X R n →ₗ[R] NormalizedCubicalChain X R m :=
+  Submodule.mapQ _ _ (CubicalChain.cast R h) fun _ hf ↦ CubicalChain.cast_mem_degenerate R h hf
+
+@[simp]
+theorem cast_mk {n m : ℕ} (h : n = m) (f : CubicalChain X R n) :
+    cast R h (Submodule.Quotient.mk f) = Submodule.Quotient.mk (CubicalChain.cast R h f) :=
+  Submodule.mapQ_apply _ _ _ f
 
 end NormalizedCubicalChain
 
