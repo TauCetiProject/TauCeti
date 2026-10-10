@@ -54,6 +54,8 @@ multiplicative form `normResidue K L : Kˣ / N_{L/K}(Lˣ) ≃* Gal(L/K)^ab` is c
 * `TauCeti.ClassFieldTheory.surjective_localArtinMap`: the local Artin map is surjective.
 * `TauCeti.ClassFieldTheory.toAdditive_normResidue`: `normResidue` is finite local reciprocity
   for every embedding.
+* `TauCeti.ClassFieldTheory.index_normGroup_of_isMulCommutative`: the norm group of a finite
+  abelian extension has index equal to the degree.
 
 ## References
 
@@ -171,5 +173,15 @@ theorem normResidue_mk (ι : L →ₐ[K] SeparableClosure K) (a : Kˣ) :
       (localArtinMap K L ι (Additive.ofMul a)).toMul := by
   rw [localArtinMap_apply, ← toAdditive_normResidue K L ι, MulEquiv.toAdditive_apply_apply,
     toMul_ofMul, toMul_ofMul]
+
+open scoped IsMulCommutative in
+/-- **The norm index of a finite abelian extension**: if `Gal(L/K)` is commutative, then
+`[Kˣ : N_{L/K}(Lˣ)] = [L : K]`, since the norm residue isomorphism identifies the norm quotient
+with `Gal(L/K)^ab`, which is `Gal(L/K)` itself. -/
+theorem index_normGroup_of_isMulCommutative [IsMulCommutative Gal(L/K)] :
+    (normGroup K L).index = Module.finrank K L := by
+  rw [Subgroup.index, Nat.card_congr (normResidue K L).toEquiv,
+    ← Nat.card_congr (Abelianization.equivOfComm (H := Gal(L/K))).toEquiv,
+    IsGalois.card_aut_eq_finrank]
 
 end TauCeti.ClassFieldTheory

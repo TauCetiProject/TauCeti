@@ -441,11 +441,6 @@ noncomputable abbrev centerGroupSchemeι (H : _root_.CommHopfAlgCat.{u} k) :
       (AlgebraicGeometry.hopfSpec (CommRingCat.of k)).obj (Opposite.op H) :=
   quotientSpecι H (centerDefiningIdeal H)
 
-/-- The center is a closed subgroup scheme of the ambient affine group scheme. -/
-instance isClosedImmersion_centerGroupSchemeι (H : _root_.CommHopfAlgCat.{u} k) :
-    IsClosedImmersion (centerGroupSchemeι H).hom.hom.left :=
-  inferInstance
-
 /-- A central closed subgroup scheme cut out by `I` includes canonically into the center. -/
 noncomputable def centralSubgroupToCenter (H : _root_.CommHopfAlgCat.{u} k)
     (I : HopfIdeal k H) (hI : I.IsCentral) :

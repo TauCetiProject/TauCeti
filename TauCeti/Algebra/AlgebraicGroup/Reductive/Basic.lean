@@ -114,27 +114,26 @@ theorem reductiveCommHopfAlgProperty_of_geometricFiber_iso
         (FiniteTypeCommHopfAlgCat.quotient G I) →
       I = HopfIdeal.augmentation (AlgebraicClosure k) G) :
     reductiveCommHopfAlgProperty k H := by
-  rw [reductiveCommHopfAlgProperty_iff]
-  refine ⟨hsmooth, hconnected, ?_⟩
+  have hP : smoothUnipotentCommHopfAlgProperty (AlgebraicClosure k) =
+      (smoothCommHopfAlgProperty (AlgebraicClosure k) ⊓
+        geometricallyUnipotentPointsCommHopfAlgProperty (AlgebraicClosure k)).inverseImage
+          (forget₂ (FiniteTypeCommHopfAlgCat.{u, u} (AlgebraicClosure k))
+            (CommHopfAlgCat.{u} (AlgebraicClosure k))) := by
+    ext Q
+    simp only [smoothUnipotentCommHopfAlgProperty_iff, ObjectProperty.prop_inverseImage_iff,
+      ObjectProperty.prop_inf_iff, FiniteTypeCommHopfAlgCat.forget₂_commHopfAlgCat_obj,
+      smoothCommHopfAlgProperty_iff, geometricallyUnipotentPointsCommHopfAlgProperty_iff]
+  rw [reductiveCommHopfAlgProperty, hP]
+  apply geometricNormalSubgroupFreeCommHopfAlgProperty_of_geometricFiber_iso k
+    (smoothCommHopfAlgProperty (AlgebraicClosure k) ⊓
+      geometricallyUnipotentPointsCommHopfAlgProperty (AlgebraicClosure k))
+    H G.obj hsmooth hconnected
+    ((forget₂ (FiniteTypeCommHopfAlgCat.{u, u} (AlgebraicClosure k))
+      (CommHopfAlgCat.{u} (AlgebraicClosure k))).mapIso e)
   intro I hI _ hU
-  let f : G →ₐc[AlgebraicClosure k]
-      FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H :=
-    FiniteTypeCommHopfAlgCat.toBialgHom e.inv
-  have hf : Function.Bijective f := ConcreteCategory.bijective_of_isIso e.inv
-  let J : HopfIdeal (AlgebraicClosure k) G := I.comapOfSurjective f hf.2
-  have hJnormal : J.IsNormal := hI.comapOfSurjective_of_bijective f hf.1 hf.2
-  let qIso : FiniteTypeCommHopfAlgCat.quotient G J ≅
-      FiniteTypeCommHopfAlgCat.quotient
-        (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H) I :=
-    FiniteTypeCommHopfAlgCat.quotientIsoOfIso e.symm I
-  have hJU : smoothUnipotentCommHopfAlgProperty (AlgebraicClosure k)
-      (FiniteTypeCommHopfAlgCat.quotient G J) :=
-    (smoothUnipotentCommHopfAlgProperty (AlgebraicClosure k)).prop_of_iso qIso.symm hU
-  have hJ : J = HopfIdeal.augmentation (AlgebraicClosure k) G :=
-    htrivial J hJnormal hJU
-  rw [← HopfIdeal.comapOfSurjective_eq_comapOfSurjective_iff f hf.2,
-    HopfIdeal.comapOfSurjective_augmentation]
-  exact hJ
+  apply htrivial I hI
+  rw [hP]
+  exact hU
 
 /-- The category of reductive finite-type commutative Hopf algebras over a field. -/
 abbrev ReductiveCommHopfAlgCat (k : Type u) [Field k] :=

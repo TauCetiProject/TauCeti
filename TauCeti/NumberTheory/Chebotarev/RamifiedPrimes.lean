@@ -36,6 +36,8 @@ wrapped in a named predicate, matching how the roadmap states it. A `Prop`-value
 
 ## Main results
 
+* `TauCeti.eventually_isUnramifiedAt_liesOver`: almost every finite place has only
+  unramified places above it.
 * `NumberField.Chebotarev.mem_ramifiedPrimes_iff`: the defining condition for membership.
 * `NumberField.Chebotarev.under_notMem_ramifiedPrimes_iff_isUnramifiedAt`: in a Galois
   extension, unramifiedness can be tested at one prime above the base prime.
@@ -158,3 +160,22 @@ theorem ramifiedPrimes_subset_ramifiedPrimes : ramifiedPrimes K L ⊆ ramifiedPr
   exact TauCeti.RamificationInertia.isUnramifiedAt_of_isUnramifiedIn (S := 𝓞 M) hur P
 
 end NumberField.Chebotarev
+
+namespace TauCeti
+
+variable (K L : Type*) [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
+
+/-- Almost every finite place of a number field has only unramified primes above it. -/
+theorem eventually_isUnramifiedAt_liesOver :
+    ∀ᶠ v : HeightOneSpectrum (𝓞 K) in Filter.cofinite,
+      ∀ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
+        Algebra.IsUnramifiedAt (𝓞 K) w.1.asIdeal := by
+  classical
+  refine Filter.eventually_cofinite.mpr
+    ((NumberField.Chebotarev.ramifiedPrimes K L).finite_toSet.subset ?_)
+  intro v hv
+  apply (NumberField.Chebotarev.mem_ramifiedPrimes_iff v).mpr
+  intro h
+  exact hv fun w ↦ @h w.1.asIdeal w.1.isPrime w.2
+
+end TauCeti

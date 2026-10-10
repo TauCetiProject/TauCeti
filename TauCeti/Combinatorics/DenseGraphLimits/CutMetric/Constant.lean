@@ -48,7 +48,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory TauCeti.MeasureTheory
+open MeasureTheory
 
 open scoped unitInterval
 
@@ -68,7 +68,7 @@ pullback of `U - p` along the first coordinate, so every coupling contributes th
 theorem cutDist_const_right (U : Graphon Ω₁ μ₁) (p : I) :
     cutDist U (Graphon.const μ₂ p) =
       cutNorm μ₁ (U.toSymmKernel - (Graphon.const μ₁ p).toSymmKernel) := by
-  have hval (π : Measure (Ω₁ × Ω₂)) (hπ : IsCoupling μ₁ μ₂ π) :
+  have hval (π : Measure (Ω₁ × Ω₂)) (hπ : IsCoupling π μ₁ μ₂) :
       @cutNorm _ _ π hπ.isFiniteMeasure (overlayDiff U (Graphon.const μ₂ p) π) =
         cutNorm μ₁ (U.toSymmKernel - (Graphon.const μ₁ p).toSymmKernel) := by
     let _ := hπ.isFiniteMeasure

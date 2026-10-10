@@ -5,16 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Probability.Kernel.IonescuTulcea.Traj
+public import TauCeti.Probability.Kernel.IonescuTulcea.Traj
 public import TauCeti.MeasureTheory.OptimalTransport.Coupling
 public import TauCeti.Probability.Kernel.Composition.MeasureCompProd
 
 /-!
 # Gluing a countable chain of transport plans
 
-This file turns a sequence of probability measures on consecutive products
-`X n × X (n + 1)`, with matching adjacent marginals, into a probability measure on the path
+This file turns a sequence of finite measures on consecutive products
+`X n × X (n + 1)`, with matching adjacent marginals, into a finite measure on the path
 space `∀ n, X n`. Its projection to every consecutive pair is the prescribed measure.
+Probability plans give a probability path law.
 
 The construction uses Mathlib's Ionescu--Tulcea trajectory measure. At step `n`, the conditional
 kernel of the prescribed `(n, n + 1)`-plan is pulled back along evaluation at the last point of the
@@ -64,26 +65,35 @@ private instance chainKernel.instIsMarkovKernel (pi : ∀ n, Measure (X n × X (
   infer_instance
 
 /-- The path law obtained by disintegrating and iterating a countable chain of consecutive
-probability plans. -/
+finite plans. -/
 noncomputable def chainMeasure (pi : ∀ n, Measure (X n × X (n + 1)))
-    [∀ n, IsProbabilityMeasure (pi n)] : Measure ((n : ℕ) → X n) :=
+    [∀ n, IsFiniteMeasure (pi n)] : Measure ((n : ℕ) → X n) :=
   Kernel.trajMeasure (pi 0).fst (chainKernel pi)
 
-instance chainMeasure.instIsProbabilityMeasure
-    (pi : ∀ n, Measure (X n × X (n + 1))) [∀ n, IsProbabilityMeasure (pi n)] :
-    IsProbabilityMeasure (chainMeasure pi) := by
+instance chainMeasure.instIsFiniteMeasure
+    (pi : ∀ n, Measure (X n × X (n + 1))) [∀ n, IsFiniteMeasure (pi n)] :
+    IsFiniteMeasure (chainMeasure pi) := by
   rw [chainMeasure]
   infer_instance
 
-private theorem map_zero_chainMeasure
-    (pi : ∀ n, Measure (X n × X (n + 1))) [∀ n, IsProbabilityMeasure (pi n)] :
+instance chainMeasure.instIsProbabilityMeasure
+    (pi : ∀ n, Measure (X n × X (n + 1))) [∀ n, IsFiniteMeasure (pi n)]
+    [IsProbabilityMeasure (pi 0)] : IsProbabilityMeasure (chainMeasure pi) := by
+  rw [chainMeasure]
+  infer_instance
+
+/-- The initial coordinate has the first marginal of the initial plan, without any
+matching-marginal assumption. -/
+@[simp]
+theorem map_eval_zero_chainMeasure
+    (pi : ∀ n, Measure (X n × X (n + 1))) [∀ n, IsFiniteMeasure (pi n)] :
     (chainMeasure pi).map (fun x ↦ x 0) = (pi 0).fst := by
   let e : ((i : Iic 0) → X i) ≃ᵐ X 0 := MeasurableEquiv.piUnique _
   have heval : (fun x : (n : ℕ) → X n ↦ x 0) = e ∘ frestrictLe 0 := by
     funext x
     rfl
   have hprefix : (chainMeasure pi).map (frestrictLe 0) = (pi 0).fst.map e.symm := by
-    rw [chainMeasure, Kernel.trajMeasure,
+    simp [chainMeasure, Kernel.trajMeasure, e,
       MeasureTheory.Measure.map_comp _ _ (measurable_frestrictLe 0),
       Kernel.traj_map_frestrictLe, Kernel.partialTraj_self, MeasureTheory.Measure.id_comp]
   calc
@@ -91,11 +101,19 @@ private theorem map_zero_chainMeasure
         = ((chainMeasure pi).map (frestrictLe 0)).map e := by
             rw [heval]
             exact (MeasureTheory.Measure.map_map e.measurable (measurable_frestrictLe 0)).symm
-    _ = ((pi 0).fst.map e.symm).map e := by rw [hprefix]
-    _ = (pi 0).fst := MeasurableEquiv.map_map_symm e
+    _ = (pi 0).fst := by simp [hprefix]
+
+/-- The path law has the total mass of the initial plan, even if later marginals do not match. -/
+@[simp]
+theorem chainMeasure_univ
+    (pi : ∀ n, Measure (X n × X (n + 1))) [∀ n, IsFiniteMeasure (pi n)] :
+    chainMeasure pi Set.univ = pi 0 Set.univ := by
+  simpa only [MeasureTheory.Measure.map_apply (measurable_pi_apply 0) MeasurableSet.univ,
+    Set.preimage_univ, MeasureTheory.Measure.fst_univ] using
+    congrArg (fun μ : Measure (X 0) ↦ μ Set.univ) (map_eval_zero_chainMeasure pi)
 
 private theorem map_adjacent_chainMeasure_of_map_eval
-    (pi : ∀ n, Measure (X n × X (n + 1))) [∀ n, IsProbabilityMeasure (pi n)] (n : ℕ)
+    (pi : ∀ n, Measure (X n × X (n + 1))) [∀ n, IsFiniteMeasure (pi n)] (n : ℕ)
     (hn : (chainMeasure pi).map (fun x ↦ x n) = (pi n).fst) :
     (chainMeasure pi).map (fun x ↦ (x n, x (n + 1))) = pi n := by
   let last : ((i : Iic n) → X i) → X n := fun x ↦ x ⟨n, mem_Iic.mpr le_rfl⟩
@@ -104,80 +122,99 @@ private theorem map_adjacent_chainMeasure_of_map_eval
       Prod.map last id ∘ (fun x ↦ (frestrictLe n x, x (n + 1))) := by
     funext x
     rfl
-  rw [hpair, ← MeasureTheory.Measure.map_map (hlast.prodMap measurable_id) (by fun_prop),
-    chainMeasure, ← Kernel.map_frestrictLe_trajMeasure_compProd_eq_map_trajMeasure,
-    chainKernel, map_prodMap_compProd_comap,
-    MeasureTheory.Measure.map_map hlast (measurable_frestrictLe n)]
   have heval : last ∘ frestrictLe n = fun x : (k : ℕ) → X k ↦ x n := rfl
-  rw [heval, ← chainMeasure, hn, MeasureTheory.Measure.disintegrate]
+  have htraj : (chainMeasure pi).map (fun x ↦ (frestrictLe n x, x (n + 1))) =
+      (chainMeasure pi).map (frestrictLe n) ⊗ₘ chainKernel pi n := by
+    simpa only [chainMeasure] using
+      (Kernel.map_frestrictLe_trajMeasure_compProd_of_sFinite
+        (μ₀ := (pi 0).fst) (κ := chainKernel pi) n).symm
+  have hmarginal : ((chainMeasure pi).map (frestrictLe n)).map last = (pi n).fst := by
+    simpa only [MeasureTheory.Measure.map_map hlast (measurable_frestrictLe n), heval] using hn
+  calc
+    (chainMeasure pi).map (fun x ↦ (x n, x (n + 1)))
+        = ((chainMeasure pi).map (fun x ↦ (frestrictLe n x, x (n + 1)))).map
+            (Prod.map last id) := by
+              rw [hpair]
+              exact (MeasureTheory.Measure.map_map (hlast.prodMap measurable_id)
+                (by fun_prop)).symm
+    _ = ((chainMeasure pi).map (frestrictLe n) ⊗ₘ chainKernel pi n).map
+          (Prod.map last id) := by rw [htraj]
+    _ = ((chainMeasure pi).map (frestrictLe n)).map last ⊗ₘ (pi n).condKernel := by
+          simpa only [chainKernel, last] using
+            map_prodMap_compProd_comap ((chainMeasure pi).map (frestrictLe n))
+              (pi n).condKernel hlast
+    _ = (pi n).fst ⊗ₘ (pi n).condKernel := by rw [hmarginal]
+    _ = pi n := MeasureTheory.Measure.disintegrate _ _
 
-/-- Every time marginal of `chainMeasure pi` is the first marginal of the corresponding
-consecutive plan, provided neighboring plans have matching marginals. -/
+/-- The time-`n` marginal is the first marginal of `pi n`, provided neighboring plans have
+matching marginals before time `n`. -/
 theorem map_eval_chainMeasure (pi : ∀ n, Measure (X n × X (n + 1)))
-    [∀ n, IsProbabilityMeasure (pi n)]
-    (hpi : ∀ n, (pi n).snd = (pi (n + 1)).fst) (n : ℕ) :
+    [∀ n, IsFiniteMeasure (pi n)] (n : ℕ)
+    (hpi : ∀ k < n, (pi k).snd = (pi (k + 1)).fst) :
     (chainMeasure pi).map (fun x ↦ x n) = (pi n).fst := by
   induction n with
-  | zero => exact map_zero_chainMeasure pi
-  | succ n hn =>
-      have hp := map_adjacent_chainMeasure_of_map_eval pi n hn
-      calc
-        (chainMeasure pi).map (fun x ↦ x (n + 1))
-            = ((chainMeasure pi).map (fun x ↦ (x n, x (n + 1)))).snd := by
-                rw [MeasureTheory.Measure.snd, MeasureTheory.Measure.map_map]
-                · rfl
-                · exact measurable_snd
-                · fun_prop
-        _ = (pi n).snd := by rw [hp]
-        _ = (pi (n + 1)).fst := hpi n
+  | zero => exact map_eval_zero_chainMeasure pi
+  | succ n ih =>
+      have hn := ih (fun k hk ↦ hpi k (Nat.lt_trans hk n.lt_succ_self))
+      rw [← MeasureTheory.Measure.snd_map_prodMk (measurable_pi_apply n)
+        (measurable_pi_apply (n + 1)), map_adjacent_chainMeasure_of_map_eval pi n hn,
+        hpi n n.lt_succ_self]
 
-/-- **Countable chain gluing.** The consecutive-coordinate projection of `chainMeasure pi` is the
-prescribed plan `pi n` at every time `n`. -/
+/-- **Countable chain gluing.** The consecutive-coordinate projection at time `n` is `pi n`,
+provided neighboring plans have matching marginals before time `n`. -/
 theorem map_adjacent_chainMeasure (pi : ∀ n, Measure (X n × X (n + 1)))
-    [∀ n, IsProbabilityMeasure (pi n)]
-    (hpi : ∀ n, (pi n).snd = (pi (n + 1)).fst) (n : ℕ) :
+    [∀ n, IsFiniteMeasure (pi n)] (n : ℕ)
+    (hpi : ∀ k < n, (pi k).snd = (pi (k + 1)).fst) :
     (chainMeasure pi).map (fun x ↦ (x n, x (n + 1))) = pi n :=
-  map_adjacent_chainMeasure_of_map_eval pi n (map_eval_chainMeasure pi hpi n)
+  map_adjacent_chainMeasure_of_map_eval pi n (map_eval_chainMeasure pi n hpi)
 
 /-- The finite trajectory law obtained by projecting `chainMeasure pi` to coordinates at most
 `N`. -/
 noncomputable def prefixChainMeasure (pi : ∀ n, Measure (X n × X (n + 1)))
-    [∀ n, IsProbabilityMeasure (pi n)] (N : ℕ) : Measure ((i : Iic N) → X i) :=
+    [∀ n, IsFiniteMeasure (pi n)] (N : ℕ) : Measure ((i : Iic N) → X i) :=
   (chainMeasure pi).map (frestrictLe N)
 
+instance prefixChainMeasure.instIsFiniteMeasure
+    (pi : ∀ n, Measure (X n × X (n + 1))) [∀ n, IsFiniteMeasure (pi n)] (N : ℕ) :
+    IsFiniteMeasure (prefixChainMeasure pi N) := by
+  rw [prefixChainMeasure]
+  infer_instance
+
 instance prefixChainMeasure.instIsProbabilityMeasure
-    (pi : ∀ n, Measure (X n × X (n + 1))) [∀ n, IsProbabilityMeasure (pi n)] (N : ℕ) :
-    IsProbabilityMeasure (prefixChainMeasure pi N) := by
+    (pi : ∀ n, Measure (X n × X (n + 1))) [∀ n, IsFiniteMeasure (pi n)]
+    [IsProbabilityMeasure (pi 0)] (N : ℕ) : IsProbabilityMeasure (prefixChainMeasure pi N) := by
   rw [prefixChainMeasure]
   infer_instance
 
 /-- Projecting a finite prefix further gives the corresponding shorter prefix. -/
+@[simp]
 theorem map_frestrictLe₂_prefixChainMeasure
-    (pi : ∀ n, Measure (X n × X (n + 1))) [∀ n, IsProbabilityMeasure (pi n)]
+    (pi : ∀ n, Measure (X n × X (n + 1))) [∀ n, IsFiniteMeasure (pi n)]
     {M N : ℕ} (hMN : M ≤ N) :
     (prefixChainMeasure pi N).map (frestrictLe₂ hMN) = prefixChainMeasure pi M := by
   rw [prefixChainMeasure, MeasureTheory.Measure.map_map (measurable_frestrictLe₂ hMN)
     (measurable_frestrictLe N), frestrictLe₂_comp_frestrictLe]
   rfl
 
-/-- Every adjacent projection of a finite prefix of the countable path law agrees with the
-prescribed plan, as long as both coordinates occur in the prefix. -/
+/-- The adjacent projection at time `n` of a finite prefix agrees with `pi n`, as long as both
+coordinates occur in the prefix and neighboring plans match before time `n`. -/
 theorem map_adjacent_prefixChainMeasure
-    (pi : ∀ n, Measure (X n × X (n + 1))) [∀ n, IsProbabilityMeasure (pi n)]
-    (hpi : ∀ n, (pi n).snd = (pi (n + 1)).fst) {n N : ℕ} (hn : n < N) :
+    (pi : ∀ n, Measure (X n × X (n + 1))) [∀ n, IsFiniteMeasure (pi n)]
+    {n N : ℕ} (hpi : ∀ k < n, (pi k).snd = (pi (k + 1)).fst) (hn : n < N) :
     (prefixChainMeasure pi N).map
         (fun x ↦ (x ⟨n, mem_Iic.mpr (Nat.le_of_lt hn)⟩, x ⟨n + 1, mem_Iic.mpr hn⟩)) = pi n := by
   let adjacent : ((i : Iic N) → X i) → X n × X (n + 1) :=
     fun x ↦ (x ⟨n, mem_Iic.mpr (Nat.le_of_lt hn)⟩, x ⟨n + 1, mem_Iic.mpr hn⟩)
-  have hadjacent : Measurable adjacent := by fun_prop
+  have hrestrict : adjacent ∘ frestrictLe N = fun x : (k : ℕ) → X k ↦ (x n, x (n + 1)) := by
+    funext x
+    rfl
   calc
     (prefixChainMeasure pi N).map adjacent
         = (chainMeasure pi).map (adjacent ∘ frestrictLe N) := by
-            rw [prefixChainMeasure, MeasureTheory.Measure.map_map hadjacent
+            rw [prefixChainMeasure, MeasureTheory.Measure.map_map (by fun_prop)
               (measurable_frestrictLe N)]
-    _ = (chainMeasure pi).map (fun x ↦ (x n, x (n + 1))) := by
-          congr 1
-    _ = pi n := map_adjacent_chainMeasure pi hpi n
+    _ = (chainMeasure pi).map (fun x ↦ (x n, x (n + 1))) := by rw [hrestrict]
+    _ = pi n := map_adjacent_chainMeasure pi n hpi
 
 end Chain
 
@@ -189,19 +226,20 @@ variable {Y : Type u} [MeasurableSpace Y]
 `n`th and `(n + 1)`st coordinates have joint law `pi n`. -/
 theorem map_adjacent_chainMeasure_of_isCoupling [StandardBorelSpace Y] [Nonempty Y]
     {mu : ℕ → Measure Y} {pi : ℕ → Measure (Y × Y)}
-    [∀ n, IsProbabilityMeasure (pi n)]
+    [∀ n, IsFiniteMeasure (pi n)]
     (hpi : ∀ n, IsCoupling (pi n) (mu n) (mu (n + 1))) (n : ℕ) :
     (chainMeasure (X := fun _ ↦ Y) pi).map (fun x ↦ (x n, x (n + 1))) = pi n :=
-  map_adjacent_chainMeasure pi
-    (fun n ↦ by rw [(hpi n).snd_eq, (hpi (n + 1)).fst_eq]) n
+  map_adjacent_chainMeasure pi n
+    (fun k _ ↦ by rw [(hpi k).snd_eq, (hpi (k + 1)).fst_eq])
 
-/-- **The pathwise limit of a glued chain.** If couplings `pi n` of consecutive probability laws
+/-- **The pathwise limit of a glued chain.** If finite couplings `pi n` of consecutive laws
 are glued by `chainMeasure` and almost every path is Cauchy, then some measurable `Z` is the
 almost-sure limit of the coordinates, and the joint law of the `n`th coordinate and `Z` couples
 `mu n` with the law of `Z`. -/
-theorem exists_measurable_isCoupling_map_chainMeasure [PseudoMetricSpace Y] [BorelSpace Y]
-    [CompleteSpace Y] [StandardBorelSpace Y] [Nonempty Y] {mu : ℕ → Measure Y}
-    {pi : ℕ → Measure (Y × Y)} [∀ n, IsProbabilityMeasure (pi n)]
+theorem exists_measurable_isCoupling_map_chainMeasure [UniformSpace Y]
+    [TopologicalSpace.PseudoMetrizableSpace Y] [BorelSpace Y] [CompleteSpace Y]
+    [StandardBorelSpace Y] [Nonempty Y] {mu : ℕ → Measure Y}
+    {pi : ℕ → Measure (Y × Y)} [∀ n, IsFiniteMeasure (pi n)]
     (hpi : ∀ n, IsCoupling (pi n) (mu n) (mu (n + 1)))
     (hcauchy : ∀ᵐ x ∂chainMeasure (X := fun _ ↦ Y) pi, CauchySeq fun n ↦ x n) :
     ∃ Z : (ℕ → Y) → Y, Measurable Z ∧
@@ -209,16 +247,14 @@ theorem exists_measurable_isCoupling_map_chainMeasure [PseudoMetricSpace Y] [Bor
         Tendsto (fun n ↦ x n) atTop (nhds (Z x))) ∧
       ∀ n, IsCoupling ((chainMeasure (X := fun _ ↦ Y) pi).map fun x ↦ (x n, Z x))
         (mu n) ((chainMeasure (X := fun _ ↦ Y) pi).map Z) := by
-  set P : Measure (ℕ → Y) := chainMeasure (X := fun _ ↦ Y) pi
   have hev : ∀ n, Measurable fun x : ℕ → Y ↦ x n := fun n ↦ measurable_pi_apply n
   obtain ⟨Z, hZ, hZtendsto⟩ := measurable_limit_of_tendsto_metrizable_ae
     (fun n ↦ (hev n).aemeasurable) (hcauchy.mono fun _ hx ↦ cauchySeq_tendsto_of_complete hx)
   refine ⟨Z, hZ, hZtendsto, fun n ↦ ⟨?_, ?_⟩⟩
-  · rw [Measure.fst, Measure.map_map measurable_fst ((hev n).prodMk hZ), ← (hpi n).fst_eq]
-    exact map_eval_chainMeasure pi
-      (fun n ↦ by rw [(hpi n).snd_eq, (hpi (n + 1)).fst_eq]) n
-  · rw [Measure.snd, Measure.map_map measurable_snd ((hev n).prodMk hZ)]
-    rfl
+  · rw [Measure.fst_map_prodMk (hev n) hZ, ← (hpi n).fst_eq]
+    exact map_eval_chainMeasure pi n
+      (fun k _ ↦ by rw [(hpi k).snd_eq, (hpi (k + 1)).fst_eq])
+  · exact Measure.snd_map_prodMk (hev n) hZ
 
 end CouplingChain
 

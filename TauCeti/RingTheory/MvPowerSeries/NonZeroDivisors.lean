@@ -11,7 +11,7 @@ public import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 # The difference of two variables is a non-zero-divisor
 
 Mathlib shows that a *single* variable is a non-zero-divisor over an arbitrary semiring
-(`MvPowerSeries.X_mem_nonzeroDivisors`), and that `MvPowerSeries σ R` inherits `NoZeroDivisors`
+(`MvPowerSeries.X_mem_nonZeroDivisors`), and that `MvPowerSeries σ R` inherits `NoZeroDivisors`
 from `R`. Between those lies a gap: over a ring that *has* zero divisors, is `X i - X j` still
 regular? It is, and this file proves it.
 
@@ -40,7 +40,7 @@ variable {σ R : Type*} [CommRing R]
 /-- **The difference of two distinct variables is a non-zero-divisor**, over an arbitrary
 commutative ring: `f * (X i - X j) = 0` forces `f = 0`, with no hypothesis on `R`.
 
-Compare `MvPowerSeries.X_mem_nonzeroDivisors`, the same statement for a single variable, and the
+Compare `MvPowerSeries.X_mem_nonZeroDivisors`, the same statement for a single variable, and the
 `NoZeroDivisors (MvPowerSeries σ R)` instance, which requires `R` to have no zero divisors. -/
 theorem X_sub_X_mem_nonZeroDivisors {i j : σ} (hij : i ≠ j) :
     X i - X j ∈ (MvPowerSeries σ R)⁰ := by

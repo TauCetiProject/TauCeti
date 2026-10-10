@@ -31,6 +31,8 @@ Schwarz--Christoffel primitive.
 * `TauCeti.schwarzChristoffelPrevertexCoefficient_ne_zero` -- the coefficient is nonzero.
 * `TauCeti.norm_schwarzChristoffelPrevertexCoefficient` -- its norm is the positive product of
   distances to the other prevertices.
+* `TauCeti.exists_analyticAt_schwarzChristoffelIntegrand_eq_cpow_mul` -- the integrand factors
+  into its singular power and a function analytic at the prevertex.
 * `TauCeti.tendsto_schwarzChristoffelIntegrand_div_cpow` -- after division by the total power at
   a prevertex, the integrand tends to its leading coefficient.
 
@@ -57,21 +59,27 @@ private def schwarzChristoffelRegularFactor (a e : ι → ℝ) (p : ℝ) (z : �
   schwarzChristoffelContinuedIntegrand
     (fun i : {i // a i ≠ p} ↦ a i) (fun i ↦ e i) p z
 
-/-- The regular part of the continued Schwarz--Christoffel integrand is continuous at its
+/-- The regular part of the continued Schwarz--Christoffel integrand is analytic at its
 reference point. -/
-private theorem continuousAt_schwarzChristoffelRegularFactor (a e : ι → ℝ) (p : ℝ) :
-    ContinuousAt (schwarzChristoffelRegularFactor a e p) (p : ℂ) := by
-  apply (differentiableAt_schwarzChristoffelContinuedIntegrand _ _ ?_).continuousAt
-  intro i _
-  by_cases hip : a i ≤ p
-  · have hpos : 0 < p - a i := sub_pos.mpr (lt_of_le_of_ne hip i.property)
-    rw [ite_eq_left hip]
-    rw [← Complex.ofReal_sub]
-    exact Complex.ofReal_mem_slitPlane.mpr hpos
-  · have hpos : 0 < a i - p := sub_pos.mpr (lt_of_not_ge hip)
-    rw [ite_eq_right hip]
-    rw [← Complex.ofReal_sub]
-    exact Complex.ofReal_mem_slitPlane.mpr hpos
+private theorem analyticAt_schwarzChristoffelRegularFactor (a e : ι → ℝ) (p : ℝ) :
+    AnalyticAt ℂ (schwarzChristoffelRegularFactor a e p) (p : ℂ) := by
+  have hslit (i : {i // a i ≠ p}) :
+      (if a i ≤ p then (p : ℂ) - (a i : ℂ) else (a i : ℂ) - (p : ℂ)) ∈ slitPlane := by
+    by_cases hip : a i ≤ p
+    · have hpos : 0 < p - a i := sub_pos.mpr (lt_of_le_of_ne hip i.property)
+      simpa [hip, ← Complex.ofReal_sub] using Complex.ofReal_mem_slitPlane.mpr hpos
+    · have hpos : 0 < a i - p := sub_pos.mpr (lt_of_not_ge hip)
+      simpa [hip, ← Complex.ofReal_sub] using Complex.ofReal_mem_slitPlane.mpr hpos
+  apply analyticAt_iff_eventually_differentiableAt.mpr
+  have hev : ∀ᶠ z in 𝓝 (p : ℂ), ∀ i : {i // a i ≠ p},
+      (if a i ≤ p then z - (a i : ℂ) else (a i : ℂ) - z) ∈ slitPlane := by
+    apply eventually_all.mpr
+    intro i
+    have hc : Continuous (fun z : ℂ => if a i ≤ p then z - (a i : ℂ) else (a i : ℂ) - z) := by
+      split_ifs <;> fun_prop
+    exact hc.continuousAt.eventually (isOpen_slitPlane.mem_nhds (hslit i))
+  exact hev.mono fun z hz => differentiableAt_schwarzChristoffelContinuedIntegrand _ _
+    (fun i _ => hz i)
 
 /-- At its reference point, the regular part is the positive real product of the distances to
 all other prevertices. -/
@@ -158,6 +166,27 @@ private theorem schwarzChristoffelContinuedIntegrand_eq_cpow_mul_regularFactor
       (Finset.univ.filter fun i ↦ a i ≠ p) (by simp)
         (fun i ↦ (if a i ≤ p then z - (a i : ℂ) else (a i : ℂ) - z) ^ (e i : ℂ)))
 
+/-- At every real point, the Schwarz--Christoffel integrand factors into its total principal
+power and a function analytic there, whose value is the nonzero prevertex coefficient.
+This factorization also applies to nonintegrable exponents and coincident prevertices. -/
+theorem exists_analyticAt_schwarzChristoffelIntegrand_eq_cpow_mul (a e : ι → ℝ) (p : ℝ) :
+    ∃ g : ℂ → ℂ, AnalyticAt ℂ g (p : ℂ) ∧
+      g p = schwarzChristoffelPrevertexCoefficient a e p ∧
+      ∀ z ∈ upperHalfPlaneSet, schwarzChristoffelIntegrand a e z =
+        (z - (p : ℂ)) ^ ((∑ i with a i = p, e i : ℝ) : ℂ) * g z := by
+  let g : ℂ → ℂ := fun z => Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I) *
+    schwarzChristoffelRegularFactor a e p z
+  refine ⟨g, analyticAt_const.mul (analyticAt_schwarzChristoffelRegularFactor a e p), ?_, ?_⟩
+  · exact congrArg _ (schwarzChristoffelRegularFactor_ofReal a e p)
+  · intro z hz
+    have hzp : z ≠ (p : ℂ) := by
+      intro h
+      simp [h] at hz
+    rw [schwarzChristoffelIntegrand_eq_exp_mul_continued a e p hz,
+      schwarzChristoffelContinuedIntegrand_eq_cpow_mul_regularFactor a e p hzp]
+    dsimp only [g]
+    ring
+
 /-- **Leading asymptotic of the Schwarz--Christoffel integrand at a prevertex.**  Dividing the
 integrand by `(z - p)` raised to the total exponent carried by `p` leaves a function tending to the
 nonzero prevertex coefficient as `z` approaches `p` from the upper half-plane.  Coincident
@@ -168,18 +197,12 @@ theorem tendsto_schwarzChristoffelIntegrand_div_cpow (a e : ι → ℝ) (p : ℝ
         (z - (p : ℂ)) ^ ((∑ i with a i = p, e i : ℝ) : ℂ))
       (𝓝[upperHalfPlaneSet] (p : ℂ))
       (𝓝 (schwarzChristoffelPrevertexCoefficient a e p)) := by
-  have hregular := (continuousAt_schwarzChristoffelRegularFactor a e p).tendsto
-  rw [schwarzChristoffelPrevertexCoefficient_def,
-    ← schwarzChristoffelRegularFactor_ofReal]
-  refine Tendsto.congr' ?_
-    (tendsto_const_nhds.mul (hregular.mono_left nhdsWithin_le_nhds))
+  obtain ⟨g, hg, hgp, hfactor⟩ :=
+    exists_analyticAt_schwarzChristoffelIntegrand_eq_cpow_mul a e p
+  rw [← hgp]
+  refine (hg.continuousAt.tendsto.mono_left nhdsWithin_le_nhds).congr' ?_
   filter_upwards [self_mem_nhdsWithin] with z hz
-  have hzp : z ≠ (p : ℂ) := by
-    intro h
-    rw [h] at hz
-    simp at hz
-  rw [schwarzChristoffelIntegrand_eq_exp_mul_continued a e p hz,
-    schwarzChristoffelContinuedIntegrand_eq_cpow_mul_regularFactor a e p hzp]
-  field_simp [Complex.cpow_ne_zero_iff.mpr (Or.inl (sub_ne_zero.mpr hzp))]
+  rw [hfactor z hz]
+  rw [mul_comm, mul_div_cancel_right₀ _ (sub_cpow_ne_zero_of_im_pos hz p _)]
 
 end TauCeti

@@ -119,7 +119,7 @@ theorem mkQuotient_comp_kernelIso_hom (h : IsShortExact p i) :
 @[reassoc (attr := simp)]
 theorem comp_kernelIso_inv (h : IsShortExact p i) :
     i ≫ h.kernelIso.inv = mkQuotient G (kernelHopfIdeal p) :=
-  (Iso.comp_inv_eq _).mpr h.mkQuotient_comp_kernelIso_hom.symm
+  comp_quotientIsoOfKerOfSurjectiveEq_inv i h.surjective h.kerOfSurjective_eq_kernelHopfIdeal
 
 /-- The functions on `G` invariant under the subgroup `N` of a short exact sequence are exactly
 the functions pulled back from the quotient `Q`. -/

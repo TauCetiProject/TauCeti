@@ -46,6 +46,8 @@ puncture.
   fundamental groups at every point of `V \ {p}`, on the circle or off it. Composed with
   `Circle.fundamentalGroupMulEquiv`, it identifies `π₁(V \ {p}, z)` with `ℤ` by the degree of the
   direction of a loop.
+* `StarConvex.isCyclic_fundamentalGroup_diff_singleton`: consequently `π₁(V \ {p}, z)` is cyclic
+  at every point `z`.
 * `StarConvex.fundamentalGroup_map_directionFrom_comp_snd_bijective`: for simply connected `U`,
   the direction of the second coordinate induces a bijection of fundamental groups at every point
   of `U × (V \ {p})`. For a punctured ball, composing with `Circle.fundamentalGroupMulEquiv`
@@ -181,6 +183,16 @@ theorem _root_.StarConvex.fundamentalGroup_map_directionFrom_bijective (hV : Sta
     field_simp
   rw [← h]
   exact ContinuousMap.HomotopyEquiv.fundamentalGroup_map_bijective _ z
+
+/-- **The fundamental group of a punctured star-convex subset of `ℂ` is cyclic** at every point,
+on the circle about the puncture or off it, since the direction map embeds it in `π₁(Circle)`. -/
+theorem _root_.StarConvex.isCyclic_fundamentalGroup_diff_singleton (hV : StarConvex ℝ p V)
+    (hr : 0 < r) (hS : sphere p r ⊆ V) (z : ↥(V \ {p})) :
+    IsCyclic (FundamentalGroup ↥(V \ {p}) z) :=
+  have : IsCyclic (FundamentalGroup Circle (p.directionFrom V z)) :=
+    isCyclic_of_injective (Circle.fundamentalGroupMulEquiv _).toMonoidHom
+      (Circle.fundamentalGroupMulEquiv _).injective
+  isCyclic_of_injective _ (hV.fundamentalGroup_map_directionFrom_bijective hr hS z).injective
 
 end Complex
 

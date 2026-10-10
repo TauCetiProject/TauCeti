@@ -65,6 +65,8 @@ Grothendieck groups live in the same universe as the coefficient data.
   agree with the ambient grading shift after inclusion.
 * `TauCeti.laurentK0_of_shiftObj`: `[M{d}] = qᵈ [M]` in the graded Grothendieck group of finite
   graded modules.
+* `TauCeti.laurentK0_projective_of_shiftObj`: `[P{d}] = qᵈ [P]` in the graded Grothendieck group
+  of finite graded projectives.
 * `TauCeti.gradedFiniteProjectiveModulesExactStructure_eq_split`: the underlying exact structure
   on finite graded projectives is split when `𝒜` is a decomposition of `A`.
 * `TauCeti.gradedCartanMap_of`: the graded Cartan map sends the class of a projective to the class
@@ -149,6 +151,17 @@ instance : (gradedFiniteProjectiveModules 𝒜).IsClosedUnderIsomorphisms where
     let _ : Module.Projective A ↑((GradedModuleCat.toModuleCat (𝒜 := 𝒜)).obj M) := hM.2
     let e' := ((GradedModuleCat.toModuleCat (𝒜 := 𝒜)).mapIso e).toLinearEquiv
     exact ⟨Module.Finite.equiv e', Module.Projective.of_equiv e'⟩
+
+/-- A retract of a finite graded projective is a finite graded projective: its underlying module is
+a direct summand of a finitely generated projective module. -/
+instance : (gradedFiniteProjectiveModules 𝒜).IsStableUnderRetracts where
+  of_retract {M N} h hN := by
+    let _ : Module.Finite A N := hN.1
+    let _ : Module.Projective A N := hN.2
+    have hri : h.r.hom ∘ₗ h.i.hom = LinearMap.id := by
+      rw [← GradedModuleCat.hom_comp, h.retract, GradedModuleCat.hom_id]
+    exact ⟨Module.Finite.of_surjective h.r.hom fun x ↦ ⟨h.i.hom x, LinearMap.congr_fun hri x⟩,
+      Module.Projective.of_split h.i.hom h.r.hom hri⟩
 
 /-! ### A small model -/
 
@@ -329,20 +342,25 @@ instance : (gradedFiniteModules 𝒜).IsClosedUnderBinaryProducts :=
 instance : (gradedFiniteProjectiveModules 𝒜).IsClosedUnderBinaryProducts :=
   (isExtensionClosed_gradedFiniteProjectiveModules (𝒜 := 𝒜)).isClosedUnderBinaryProducts
 
-private noncomputable abbrev gradedModuleExactStructure (𝒜 : ℤ → Submodule k A) :
+/-- The canonical exact structure on graded modules, graded by the internal shift. -/
+noncomputable abbrev gradedModuleCanonicalExactStructure (𝒜 : ℤ → Submodule k A) :
     GradedExactStructure (GradedModuleCat.{uA} 𝒜) :=
   GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)
 
-private theorem isExtensionClosed_gradedFiniteModules' :
-    (gradedModuleExactStructure 𝒜).toExactStructure.IsExtensionClosed
+/-- Finite graded modules are extension closed for the graded abelian exact structure of the
+grading shift. -/
+theorem isExtensionClosed_gradedFiniteModules_gradedAbelian :
+    (GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)).toExactStructure.IsExtensionClosed
       (gradedFiniteModules 𝒜) := by
-  rw [gradedModuleExactStructure, GradedExactStructure.abelian_toExactStructure]
+  rw [GradedExactStructure.abelian_toExactStructure]
   exact isExtensionClosed_gradedFiniteModules
 
-private theorem isExtensionClosed_gradedFiniteProjectiveModules' :
-    (gradedModuleExactStructure 𝒜).toExactStructure.IsExtensionClosed
+/-- Finite graded modules with projective underlying module are extension closed for the graded
+abelian exact structure of the grading shift. -/
+theorem isExtensionClosed_gradedFiniteProjectiveModules_gradedAbelian :
+    (GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)).toExactStructure.IsExtensionClosed
       (gradedFiniteProjectiveModules 𝒜) := by
-  rw [gradedModuleExactStructure, GradedExactStructure.abelian_toExactStructure]
+  rw [GradedExactStructure.abelian_toExactStructure]
   exact isExtensionClosed_gradedFiniteProjectiveModules
 
 /-- Finite graded modules are stable under the grading shift. -/
@@ -360,32 +378,65 @@ theorem gradedFiniteProjectiveModules_shift :
   ext M
   rfl
 
-private theorem gradedFiniteModules_shift' :
-    (gradedFiniteModules 𝒜).inverseImage (gradedModuleExactStructure 𝒜).shift.functor =
+/-- Finite graded modules are stable under the shift of the graded abelian exact structure. -/
+theorem gradedFiniteModules_gradedAbelian_shift :
+    (gradedFiniteModules 𝒜).inverseImage
+        (GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)).shift.functor =
       gradedFiniteModules 𝒜 := by
-  rw [gradedModuleExactStructure, GradedExactStructure.abelian_shift]
+  rw [GradedExactStructure.abelian_shift]
   exact gradedFiniteModules_shift
 
-private theorem gradedFiniteProjectiveModules_shift' :
+/-- Finite graded modules with projective underlying module are stable under the shift of the
+graded abelian exact structure. -/
+theorem gradedFiniteProjectiveModules_gradedAbelian_shift :
     (gradedFiniteProjectiveModules 𝒜).inverseImage
-        (gradedModuleExactStructure 𝒜).shift.functor =
+        (GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)).shift.functor =
       gradedFiniteProjectiveModules 𝒜 := by
-  rw [gradedModuleExactStructure, GradedExactStructure.abelian_shift]
+  rw [GradedExactStructure.abelian_shift]
   exact gradedFiniteProjectiveModules_shift
 
-/-- The induced graded exact structure on finite graded modules. -/
-noncomputable def gradedFiniteModulesExactStructure (𝒜 : ℤ → Submodule k A) :
+/-- The induced graded exact structure on finite graded modules: the full-subcategory exact
+structure of the graded abelian exact structure for the grading shift. Its Laurent Grothendieck
+group is the graded Grothendieck group `G₀^gr(mod A)` of finite graded modules. -/
+@[expose] noncomputable def gradedFiniteModulesExactStructure (𝒜 : ℤ → Submodule k A) :
     GradedExactStructure (gradedFiniteModules 𝒜).FullSubcategory :=
-  (gradedModuleExactStructure 𝒜).fullSubcategory _
-    isExtensionClosed_gradedFiniteModules' gradedFiniteModules_shift'
+  (GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)).fullSubcategory _
+    isExtensionClosed_gradedFiniteModules_gradedAbelian
+      gradedFiniteModules_gradedAbelian_shift
 
 /-- The induced graded exact structure on finite graded modules with projective underlying
 module. When `𝒜` is a decomposition of `A`, it is the split exact structure, by
 `TauCeti.gradedFiniteProjectiveModulesExactStructure_eq_split`. -/
-noncomputable def gradedFiniteProjectiveModulesExactStructure (𝒜 : ℤ → Submodule k A) :
+@[expose] noncomputable def gradedFiniteProjectiveModulesExactStructure (𝒜 : ℤ → Submodule k A) :
     GradedExactStructure (gradedFiniteProjectiveModules 𝒜).FullSubcategory :=
-  (gradedModuleExactStructure 𝒜).fullSubcategory _
-    isExtensionClosed_gradedFiniteProjectiveModules' gradedFiniteProjectiveModules_shift'
+  (GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)).fullSubcategory _
+    isExtensionClosed_gradedFiniteProjectiveModules_gradedAbelian
+      gradedFiniteProjectiveModules_gradedAbelian_shift
+
+/-- The graded exact structure on finite graded modules is the one induced from the canonical
+graded exact structure on all graded modules, for any proofs of the side conditions. -/
+theorem gradedFiniteModulesExactStructure_eq_fullSubcategory
+    (hP : (GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)).toExactStructure
+      |>.IsExtensionClosed (gradedFiniteModules 𝒜))
+    (hshift : (gradedFiniteModules 𝒜).inverseImage
+        (GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)).shift.functor =
+      gradedFiniteModules 𝒜) :
+    gradedFiniteModulesExactStructure 𝒜 =
+      (GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)).fullSubcategory _ hP hshift := by
+  rw [gradedFiniteModulesExactStructure]
+
+/-- The graded exact structure on finite graded modules with projective underlying module is the
+one induced from the canonical graded exact structure on all graded modules, for any proofs of
+the side conditions. -/
+theorem gradedFiniteProjectiveModulesExactStructure_eq_fullSubcategory
+    (hP : (GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)).toExactStructure
+      |>.IsExtensionClosed (gradedFiniteProjectiveModules 𝒜))
+    (hshift : (gradedFiniteProjectiveModules 𝒜).inverseImage
+        (GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)).shift.functor =
+      gradedFiniteProjectiveModules 𝒜) :
+    gradedFiniteProjectiveModulesExactStructure 𝒜 =
+      (GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)).fullSubcategory _ hP hshift := by
+  rw [gradedFiniteProjectiveModulesExactStructure]
 
 /-- The shift on finite graded modules agrees with the ambient grading shift after applying the
 full-subcategory inclusion. -/
@@ -393,8 +444,8 @@ noncomputable def gradedFiniteModulesExactStructureShiftFunctorCompιIso :
   (gradedFiniteModulesExactStructure 𝒜).shift.functor ⋙ (gradedFiniteModules 𝒜).ι ≅
       (gradedFiniteModules 𝒜).ι ⋙ (GradedModuleCat.shift 𝒜).functor := by
   rw [gradedFiniteModulesExactStructure, GradedExactStructure.fullSubcategory_shift]
-  let e := (gradedModuleExactStructure 𝒜).fullSubcategoryShiftFunctorCompιIso
-    (gradedFiniteModules 𝒜) gradedFiniteModules_shift'
+  let e := (gradedModuleCanonicalExactStructure 𝒜).fullSubcategoryShiftFunctorCompιIso
+    (gradedFiniteModules 𝒜) gradedFiniteModules_gradedAbelian_shift
   rw [GradedExactStructure.abelian_shift] at e
   exact e
 
@@ -405,8 +456,8 @@ noncomputable def gradedFiniteProjectiveModulesExactStructureShiftFunctorCompιI
         (gradedFiniteProjectiveModules 𝒜).ι ≅
       (gradedFiniteProjectiveModules 𝒜).ι ⋙ (GradedModuleCat.shift 𝒜).functor := by
   rw [gradedFiniteProjectiveModulesExactStructure, GradedExactStructure.fullSubcategory_shift]
-  let e := (gradedModuleExactStructure 𝒜).fullSubcategoryShiftFunctorCompιIso
-    (gradedFiniteProjectiveModules 𝒜) gradedFiniteProjectiveModules_shift'
+  let e := (gradedModuleCanonicalExactStructure 𝒜).fullSubcategoryShiftFunctorCompιIso
+    (gradedFiniteProjectiveModules 𝒜) gradedFiniteProjectiveModules_gradedAbelian_shift
   rw [GradedExactStructure.abelian_shift] at e
   exact e
 
@@ -418,8 +469,7 @@ theorem gradedFiniteModulesExactStructure_conflation_iff
     (gradedFiniteModulesExactStructure 𝒜).Conflation S ↔
       (S.map (gradedFiniteModules 𝒜).ι).ShortExact := by
   rw [gradedFiniteModulesExactStructure, GradedExactStructure.fullSubcategory_conflation_iff,
-    gradedModuleExactStructure, GradedExactStructure.abelian_toExactStructure,
-    ExactStructure.abelian_conflation]
+    GradedExactStructure.abelian_toExactStructure, ExactStructure.abelian_conflation]
 
 /-- The conflations of finite graded modules with projective underlying module are the short
 exact sequences of graded modules whose three terms are of this kind. -/
@@ -429,7 +479,7 @@ theorem gradedFiniteProjectiveModulesExactStructure_conflation_iff
     (gradedFiniteProjectiveModulesExactStructure 𝒜).Conflation S ↔
       (S.map (gradedFiniteProjectiveModules 𝒜).ι).ShortExact := by
   rw [gradedFiniteProjectiveModulesExactStructure,
-    GradedExactStructure.fullSubcategory_conflation_iff, gradedModuleExactStructure,
+    GradedExactStructure.fullSubcategory_conflation_iff,
     GradedExactStructure.abelian_toExactStructure, ExactStructure.abelian_conflation]
 
 /-! ### Classes of shifted modules -/
@@ -439,29 +489,33 @@ theorem gradedFiniteModules_shiftObj {M : GradedModuleCat.{uA} 𝒜} (hM : grade
     (d : ℤ) : gradedFiniteModules 𝒜 (M.shiftObj d) :=
   gradedFiniteModules_iff.2 (gradedFiniteModules_iff.1 hM)
 
-/-- **`[M{d}] = qᵈ [M]`** in the graded Grothendieck group of finite graded modules, for the
-explicit internal shift `M{d}` with `(M{d})ₚ = M_{p-d}`. -/
-theorem laurentK0_of_shiftObj (M : (gradedFiniteModules 𝒜).FullSubcategory) (d : ℤ) :
-    LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜)
-        ⟨M.obj.shiftObj d, gradedFiniteModules_shiftObj M.property d⟩ =
-      (LaurentPolynomial.T d : LaurentPolynomial ℤ) •
-        LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜) M := by
+/-- In a full subcategory stable under internal shifts, whose exact-structure shift agrees with
+the ambient grading shift, the class of the explicit `d`-shift is `T d` times the original class. -/
+private theorem laurentK0_of_shiftObj_aux {P : ObjectProperty (GradedModuleCat.{uA} 𝒜)}
+    [HasZeroObject P.FullSubcategory] [HasBinaryBiproducts P.FullSubcategory]
+    [ObjectProperty.EssentiallySmall.{uA} P]
+    (E : GradedExactStructure P.FullSubcategory)
+    (hP : ∀ {M}, P M → ∀ d : ℤ, P (M.shiftObj d))
+    (hshift : E.shift.functor ⋙ P.ι ≅ P.ι ⋙ (GradedModuleCat.shift 𝒜).functor)
+    (M : P.FullSubcategory) (d : ℤ) :
+    LaurentK0.of.{uA} E ⟨M.obj.shiftObj d, hP M.property d⟩ =
+      (LaurentPolynomial.T d : LaurentPolynomial ℤ) • LaurentK0.of.{uA} E M := by
   -- One application of the shift of the full subcategory is the explicit shift by one.
-  have step : ∀ X : (gradedFiniteModules 𝒜).FullSubcategory,
+  have step : ∀ X : P.FullSubcategory,
       (LaurentPolynomial.T 1 : LaurentPolynomial ℤ) •
-          LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜) X =
-        LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜)
-          ⟨X.obj.shiftObj 1, gradedFiniteModules_shiftObj X.property 1⟩ := fun X => by
+          LaurentK0.of.{uA} E X =
+        LaurentK0.of.{uA} E
+          ⟨X.obj.shiftObj 1, hP X.property 1⟩ := fun X => by
     rw [LaurentK0.T_one_smul_of]
     exact LaurentK0.of_congr _
-      (ObjectProperty.isoMk _ (gradedFiniteModulesExactStructureShiftFunctorCompιIso.app X))
+      (ObjectProperty.isoMk _ (hshift.app X))
   -- Shifting by `d` and then by one is shifting by `d + 1`.
   have hadd : ∀ d : ℤ,
-      LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜)
-          ⟨M.obj.shiftObj (d + 1), gradedFiniteModules_shiftObj M.property _⟩ =
+      LaurentK0.of.{uA} E
+          ⟨M.obj.shiftObj (d + 1), hP M.property _⟩ =
         (LaurentPolynomial.T 1 : LaurentPolynomial ℤ) •
-          LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜)
-            ⟨M.obj.shiftObj d, gradedFiniteModules_shiftObj M.property d⟩ := fun d => by
+          LaurentK0.of.{uA} E
+            ⟨M.obj.shiftObj d, hP M.property d⟩ := fun d => by
     rw [step]
     exact LaurentK0.of_congr _
       (ObjectProperty.isoMk _ ((GradedModuleCat.shiftFunctorAddIso 𝒜 d 1).app M.obj).symm)
@@ -476,11 +530,42 @@ theorem laurentK0_of_shiftObj (M : (gradedFiniteModules 𝒜).FullSubcategory) (
     rw [sub_add_cancel, ih] at h
     calc _ = (LaurentPolynomial.T (-1) : LaurentPolynomial ℤ) •
           (LaurentPolynomial.T 1 : LaurentPolynomial ℤ) •
-            LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜)
-              ⟨M.obj.shiftObj (-(d : ℤ) - 1), gradedFiniteModules_shiftObj M.property _⟩ := by
+            LaurentK0.of.{uA} E
+              ⟨M.obj.shiftObj (-(d : ℤ) - 1), hP M.property _⟩ := by
           rw [smul_smul, ← LaurentPolynomial.T_add, neg_add_cancel, LaurentPolynomial.T_zero,
             one_smul]
       _ = _ := by rw [← h, smul_smul, ← LaurentPolynomial.T_add, neg_add_eq_sub]
+
+/-- **`[M{d}] = qᵈ [M]`** in the graded Grothendieck group of finite graded modules, for the
+explicit internal shift `M{d}` with `(M{d})ₚ = M_{p-d}`. -/
+theorem laurentK0_of_shiftObj (M : (gradedFiniteModules 𝒜).FullSubcategory) (d : ℤ) :
+    LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜)
+        ⟨M.obj.shiftObj d, gradedFiniteModules_shiftObj M.property d⟩ =
+      (LaurentPolynomial.T d : LaurentPolynomial ℤ) •
+        LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜) M :=
+  laurentK0_of_shiftObj_aux (P := gradedFiniteModules 𝒜)
+    (gradedFiniteModulesExactStructure 𝒜) (fun hM d => gradedFiniteModules_shiftObj hM d)
+    gradedFiniteModulesExactStructureShiftFunctorCompιIso M d
+
+/-- An internal shift of a finite graded projective has the same underlying finite projective
+module. -/
+theorem gradedFiniteProjectiveModules_shiftObj {M : GradedModuleCat.{uA} 𝒜}
+    (hM : gradedFiniteProjectiveModules 𝒜 M) (d : ℤ) :
+    gradedFiniteProjectiveModules 𝒜 (M.shiftObj d) :=
+  gradedFiniteProjectiveModules_iff.2 (gradedFiniteProjectiveModules_iff.1 hM)
+
+/-- **`[P{d}] = qᵈ [P]`** in the Laurent Grothendieck group of finite graded projectives, for the
+explicit internal shift with `(P{d})ₚ = P_{p-d}`. -/
+theorem laurentK0_projective_of_shiftObj
+    (P : (gradedFiniteProjectiveModules 𝒜).FullSubcategory) (d : ℤ) :
+    LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
+        ⟨P.obj.shiftObj d, gradedFiniteProjectiveModules_shiftObj P.property d⟩ =
+      (LaurentPolynomial.T d : LaurentPolynomial ℤ) •
+        LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜) P :=
+  laurentK0_of_shiftObj_aux (P := gradedFiniteProjectiveModules 𝒜)
+    (gradedFiniteProjectiveModulesExactStructure 𝒜)
+    (fun hM d => gradedFiniteProjectiveModules_shiftObj hM d)
+    gradedFiniteProjectiveModulesExactStructureShiftFunctorCompιIso P d
 
 /-! ### The graded Cartan map -/
 
@@ -502,11 +587,12 @@ noncomputable def gradedCartanMap (𝒜 : ℤ → Submodule k A) :
         (ObjectProperty.ιOfLE gradedFiniteProjectiveModules_le_finiteModules) := by
       rw [gradedFiniteProjectiveModulesExactStructure,
         gradedFiniteModulesExactStructure]
-      exact GradedConflationExact.ιOfLE (gradedModuleExactStructure 𝒜)
+      exact GradedConflationExact.ιOfLE (gradedModuleCanonicalExactStructure 𝒜)
         (gradedFiniteProjectiveModules 𝒜)
-        isExtensionClosed_gradedFiniteProjectiveModules'
-        isExtensionClosed_gradedFiniteModules'
-        gradedFiniteProjectiveModules_shift' gradedFiniteModules_shift'
+        isExtensionClosed_gradedFiniteProjectiveModules_gradedAbelian
+        isExtensionClosed_gradedFiniteModules_gradedAbelian
+        gradedFiniteProjectiveModules_gradedAbelian_shift
+        gradedFiniteModules_gradedAbelian_shift
         gradedFiniteProjectiveModules_le_finiteModules
     exact LaurentK0.map.{uA, uA} h
 
@@ -535,10 +621,12 @@ theorem gradedFiniteProjectiveModules_le_isProjective :
   let _ : Module.Projective A M := hM.2
   exact (ExactStructure.abelian_isProjective_iff M).2 inferInstance
 
-private theorem gradedFiniteProjectiveModules_le_isProjective' :
+/-- A finite graded module with projective underlying module is relatively projective for the
+graded abelian exact structure of the grading shift. -/
+theorem gradedFiniteProjectiveModules_le_isProjective_gradedAbelian :
     gradedFiniteProjectiveModules 𝒜 ≤
-      (gradedModuleExactStructure 𝒜).toExactStructure.isProjective := by
-  rw [gradedModuleExactStructure, GradedExactStructure.abelian_toExactStructure]
+      (GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)).toExactStructure.isProjective := by
+  rw [GradedExactStructure.abelian_toExactStructure]
   exact gradedFiniteProjectiveModules_le_isProjective
 
 /-- The underlying exact structure on finite graded projectives is the split exact structure. -/
@@ -548,6 +636,6 @@ theorem gradedFiniteProjectiveModulesExactStructure_eq_split :
   rw [gradedFiniteProjectiveModulesExactStructure,
     GradedExactStructure.fullSubcategory_toExactStructure]
   exact ExactStructure.fullSubcategory_eq_split
-    (gradedFiniteProjectiveModules_le_isProjective' (𝒜 := 𝒜))
+    (gradedFiniteProjectiveModules_le_isProjective_gradedAbelian (𝒜 := 𝒜))
 
 end TauCeti

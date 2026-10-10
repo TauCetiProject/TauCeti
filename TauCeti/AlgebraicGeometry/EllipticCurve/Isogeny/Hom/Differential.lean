@@ -108,6 +108,16 @@ theorem pullbackDifferential_comp {W₃ : WeierstrassCurve.Affine F} (g : Hom W�
   rw [ofIsogeny_comp_ofIsogeny, pullbackDifferential_ofIsogeny, pullbackDifferential_ofIsogeny,
     pullbackDifferential_ofIsogeny, Isogeny.pullbackDifferential_comp]
 
+/-- Pullback along a power is the corresponding power of the pullback operator. -/
+@[simp]
+theorem pullbackDifferential_pow (f : Hom W₁ W₁) (n : ℕ) :
+    (f ^ n).pullbackDifferential = f.pullbackDifferential ^ n := by
+  induction n with
+  | zero => simp [Module.End.one_eq_id]
+  | succ n ih =>
+    rw [pow_succ', mul_def, pullbackDifferential_comp, ih,
+      ← Module.End.mul_eq_comp, ← pow_succ]
+
 /-- **Negation negates the pullback of the invariant differential.** -/
 @[simp]
 theorem pullbackDifferential_neg_invariantDifferential (f : Hom W₁ W₂) :

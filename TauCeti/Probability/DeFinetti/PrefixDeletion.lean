@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
 public import Mathlib.MeasureTheory.Constructions.Polish.Basic
 public import TauCeti.Probability.Exchangeability.Contractability
-public import TauCeti.Probability.Exchangeability.PathSpace.ProcessShift
+public import TauCeti.Probability.Process.PathLaw.ProcessShift
 import Mathlib.MeasureTheory.MeasurableSpace.Prod
 public import Mathlib.Probability.Independence.Conditional
 import TauCeti.Probability.Independence.Conditional

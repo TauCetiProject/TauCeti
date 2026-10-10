@@ -36,7 +36,9 @@ module morphisms and homotopies, the differential of a cochain is detected by it
 ## Main definitions
 
 * `TauCeti.AInfinityRightModule.homCochains`: the homogeneous comodule morphisms of degree `p`
-  between the cofree bar comodules.
+  between the cofree bar comodules; by cofreeness these are the cofree lifts of Taylor maps of
+  degree `p` (`TauCeti.AInfinityRightModule.cofreeLift_mem_homCochains`,
+  `TauCeti.AInfinityRightModule.homCochains.eq_cofreeLift`).
 * `TauCeti.AInfinityRightModule.homDifferential`: the graded commutator with the module bar
   differentials.
 * `TauCeti.AInfinityRightModule.homComplex`: the morphism complex.
@@ -128,6 +130,13 @@ theorem toLinearMap_mem_homCochains {p : ℤ}
     F.toLinearMap ∈ homCochains MM NN p :=
   ⟨F.map_coact, hF⟩
 
+/-- The cofree lift of a Taylor map of degree `p` is a cochain of degree `p`. -/
+theorem cofreeLift_mem_homCochains {p : ℤ} {φ : (M ⊗[R] TensorWords R A) →ₗ[R] N}
+    (hφ : LinearMap.IsHomogeneous φ (barGrading AA MM.grading).piece
+      (NN.grading.shift 1).piece p) :
+    (Comodule.Hom.cofreeLift (C := TensorWords R A) φ).toLinearMap ∈ homCochains MM NN p :=
+  toLinearMap_mem_homCochains _ (AInfinityRightModuleHom.isHomogeneous_cofreeLift hφ)
+
 namespace homCochains
 
 variable {p : ℤ}
@@ -165,6 +174,16 @@ theorem ext_taylor {F G : homCochains MM NN p}
         rw [Comodule.Hom.cofreeEquiv_apply, Comodule.Hom.cofreeEquiv_apply]
         exact h)
   exact Subtype.ext (congrArg Comodule.Hom.toLinearMap hFG)
+
+/-- A cochain is the cofree lift of its Taylor map. -/
+theorem eq_cofreeLift (F : homCochains MM NN p) :
+    (F : (M ⊗[R] TensorWords R A) →ₗ[R] N ⊗[R] TensorWords R A) =
+      (Comodule.Hom.cofreeLift (C := TensorWords R A)
+        ((TensorProduct.rid R N).toLinearMap ∘ₗ
+          (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor N ∘ₗ
+            (F : (M ⊗[R] TensorWords R A) →ₗ[R] N ⊗[R] TensorWords R A))).toLinearMap :=
+  (congrArg Comodule.Hom.toLinearMap
+    (Comodule.Hom.cofreeLift_rid_comp_lTensor_counit_comp (toComoduleHom F))).symm
 
 end homCochains
 
@@ -399,6 +418,19 @@ theorem homComplex_X (p : ℤ) :
 theorem homComplex_d (p : ℤ) :
     (homComplex MM NN).d p (p + 1) = ModuleCat.ofHom (homDifferential MM NN p) := by
   apply CochainComplex.of_d
+
+/-- The degree-`p` term of the morphism complex is the module of cochains of degree `p`, as a
+linear equivalence. -/
+def homComplexXEquiv (p : ℤ) : (homComplex MM NN).X p ≃ₗ[R] homCochains MM NN p :=
+  (eqToIso (homComplex_X MM NN p)).toLinearEquiv
+
+/-- Under `homComplexXEquiv`, the differential of the morphism complex is `homDifferential`. -/
+theorem homComplexXEquiv_d (p : ℤ) (F : (homComplex MM NN).X p) :
+    homComplexXEquiv MM NN (p + 1) (((homComplex MM NN).d p (p + 1)).hom F) =
+      homDifferential MM NN p (homComplexXEquiv MM NN p F) := by
+  rw [homComplex_d]
+  -- Both `homComplexXEquiv`s are `eqToHom` of an equality of a module with itself.
+  rfl
 
 end AInfinityRightModule
 

@@ -40,6 +40,8 @@ unitary group is strictly larger than the Spin group.
   carrier coincide.
 * `CliffordAlgebra.spinGroupEquivEvenUnitaryOfFinrankLeFour`: the resulting multiplicative
   equivalence between the Spin group and the even unitary carrier.
+* `CliffordAlgebra.spinGroupEquivUnitaryOfAlgEquivOfFinrankLeFour`: transport of this
+  equivalence along any reversal-preserving algebra equivalence.
 
 ## References
 
@@ -53,7 +55,7 @@ open Module
 
 namespace CliffordAlgebra
 
-universe u v
+universe u v w
 
 variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
   [FiniteDimensional K V] [Invertible (2 : K)]
@@ -121,5 +123,47 @@ theorem spinGroupEquivEvenUnitaryOfFinrankLeFour_apply
     spinGroupEquivEvenUnitaryOfFinrankLeFour Q hQ hV0 hV s =
       spinGroupToEvenUnitary Q s :=
   MulEquiv.ofBijective_apply _ _ s
+
+variable {A : Type w} [Semiring A] [Algebra K A] [StarMul A]
+
+/-- A reversal-preserving algebra equivalence transports a positive, at-most-four-dimensional
+Spin group to the unitary group of the target algebra. -/
+noncomputable def spinGroupEquivUnitaryOfAlgEquivOfFinrankLeFour
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hV0 : 0 < finrank K V)
+    (hV : finrank K V ≤ 4) (e : even Q ≃ₐ[K] A)
+    (he : ∀ x, e (reverseEven Q x) = star (e x)) : spinGroup Q ≃* unitary A :=
+  (spinGroupEquivEvenUnitaryOfFinrankLeFour Q hQ hV0 hV).trans
+    (evenUnitaryGroupEquivUnitaryOfAlgEquiv Q e he)
+
+/-- The transported low-rank Spin equivalence applies the target algebra equivalence to the
+underlying even Clifford element. -/
+@[simp]
+theorem coe_spinGroupEquivUnitaryOfAlgEquivOfFinrankLeFour_apply
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hV0 : 0 < finrank K V)
+    (hV : finrank K V ≤ 4) (e : even Q ≃ₐ[K] A)
+    (he : ∀ x, e (reverseEven Q x) = star (e x)) (s : spinGroup Q) :
+    (spinGroupEquivUnitaryOfAlgEquivOfFinrankLeFour Q hQ hV0 hV e he s : A) =
+      e (evenUnitaryGroupEvenPart Q (spinGroupToEvenUnitary Q s)) := by
+  rw [spinGroupEquivUnitaryOfAlgEquivOfFinrankLeFour, MulEquiv.trans_apply,
+    spinGroupEquivEvenUnitaryOfFinrankLeFour_apply]
+  exact coe_evenUnitaryGroupEquivUnitaryOfAlgEquiv_apply Q e he _
+
+/-- The inverse transported low-rank Spin equivalence recovers the Clifford value through the
+inverse target algebra equivalence. -/
+@[simp]
+theorem coe_spinGroupEquivUnitaryOfAlgEquivOfFinrankLeFour_symm_apply
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hV0 : 0 < finrank K V)
+    (hV : finrank K V ≤ 4) (e : even Q ≃ₐ[K] A)
+    (he : ∀ x, e (reverseEven Q x) = star (e x)) (q : unitary A) :
+    ((spinGroupEquivUnitaryOfAlgEquivOfFinrankLeFour Q hQ hV0 hV e he).symm q :
+        CliffordAlgebra Q) = (e.symm (q : A) : CliffordAlgebra Q) := by
+  let s := (spinGroupEquivUnitaryOfAlgEquivOfFinrankLeFour Q hQ hV0 hV e he).symm q
+  have hs : e (evenUnitaryGroupEvenPart Q (spinGroupToEvenUnitary Q s)) = (q : A) := by
+    rw [← coe_spinGroupEquivUnitaryOfAlgEquivOfFinrankLeFour_apply Q hQ hV0 hV e he]
+    exact congrArg Subtype.val
+      ((spinGroupEquivUnitaryOfAlgEquivOfFinrankLeFour Q hQ hV0 hV e he).apply_symm_apply q)
+  have h := congrArg (fun x : even Q ↦ (x : CliffordAlgebra Q))
+    ((e.symm_apply_eq).mpr hs.symm)
+  simpa [s] using h.symm
 
 end CliffordAlgebra

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 import TauCeti.Analysis.Calculus.SecondDerivative
+import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 
 /-!
 # The Laplacian against test functions
@@ -118,20 +119,12 @@ theorem _root_.ContDiffOn.integral_laplacian_smul_eq_integral_smul_laplacian
   have hu_loc : LocallyIntegrableOn u Ω μ := hu.continuousOn.locallyIntegrableOn hΩ.measurableSet
   -- The Laplacians as sums of iterated directional derivatives over an orthonormal basis.
   have hΔφ : ∀ x, Δ (φ : E → ℝ) x =
-      ∑ i, fderiv ℝ (fun y ↦ fderiv ℝ (φ : E → ℝ) y (b i)) x (b i) := fun x ↦ by
-    rw [laplacian_eq_iteratedFDeriv_orthonormalBasis _ b]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [iteratedFDeriv_two_apply,
-      fderiv_clm_apply (hφ1.differentiable one_ne_zero x) (differentiableAt_const _)]
-    simp
+      ∑ i, fderiv ℝ (fun y ↦ fderiv ℝ (φ : E → ℝ) y (b i)) x (b i) := fun x ↦
+    laplacian_eq_sum_fderiv_fderiv_apply b (hφ1.differentiable one_ne_zero x)
   have hΔu : ∀ x ∈ (Ω : Set E), Δ u x =
-      ∑ i, fderiv ℝ (fun y ↦ fderiv ℝ u y (b i)) x (b i) := fun x hx ↦ by
-    rw [laplacian_eq_iteratedFDeriv_orthonormalBasis _ b]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [iteratedFDeriv_two_apply, fderiv_clm_apply
+      ∑ i, fderiv ℝ (fun y ↦ fderiv ℝ u y (b i)) x (b i) := fun x hx ↦
+    laplacian_eq_sum_fderiv_fderiv_apply b
       ((hu1.differentiableOn one_ne_zero).differentiableAt (hΩ.mem_nhds hx))
-      (differentiableAt_const _)]
-    simp
   -- Integrability of the summands.
   have hint₁ : ∀ i,
       Integrable (fun x ↦ fderiv ℝ (fun y ↦ fderiv ℝ (φ : E → ℝ) y (b i)) x (b i) • u x) μ := by

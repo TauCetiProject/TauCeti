@@ -21,17 +21,16 @@ algebra.
 
 The numbered root and coroot generators are read through their Clifford realizations in
 `TauCeti/RepresentationTheory/Spin/Polarization/TypeB/RootGenerators.lean`; this file also records
-the field-generic terminal-root actions on the exterior basis. The integrality of that action is
-the subject of
-`TauCeti/RepresentationTheory/Spin/Polarization/TypeB/KostantLattice.lean`. Nothing here is
-specific to `ℚ`: any field in which `2` is invertible carries the same representation.
+the field-generic actions of the root operators on the exterior basis: a difference-root operator
+contracts one coordinate and creates another, the represented simple-root operators are square-zero,
+and the simple-root operators move the exterior vacuum and singletons. The integrality of that
+action is the subject of `TauCeti/RepresentationTheory/Spin/Polarization/TypeB/KostantLattice.lean`.
+Nothing here is specific to `ℚ`: any field in which `2` is invertible carries the same
+representation.
 
 The enveloping-algebra extension is what the Chevalley--Demazure construction consumes, since
 divided powers of root vectors and binomial coefficients in coroots live in the enveloping
-algebra and not in the Lie algebra. This is a prerequisite of the full-weight simply connected
-type-`B` carrier in Layer 9, "The Chevalley--Demazure construction", of
-`TauCetiRoadmap/ReductiveGroups/README.md`, whose consumer is milestone L0 of
-`TauCetiRoadmap/CFSGStatement/README.md`.
+algebra and not in the Lie algebra.
 
 ## Main declarations
 
@@ -40,9 +39,16 @@ type-`B` carrier in Layer 9, "The Chevalley--Demazure construction", of
 * `TauCeti.SpinPolarizationData.typeBSpinLieRep_apply`: its value on a matrix.
 * `TauCeti.SpinPolarizationData.typeBSpinRep`: its extension to the universal enveloping algebra.
 * `TauCeti.SpinPolarizationData.typeBSpinRep_ι`: the extension evaluated on a Lie generator.
+* `TauCeti.SpinPolarizationData.typeBSpinRep_differenceRootGenerator_apply`: a difference-root
+  operator contracts one exterior coordinate and creates another.
+* `TauCeti.SpinPolarizationData.typeBSpinRep_simpleRootGenerator_sq`: the represented simple-root
+  operators are square-zero.
 * `typeBSpinRep_simpleRootGenerator_last_exteriorBasis_empty` and
   `typeBSpinRep_simpleNegativeRootGenerator_last_exteriorBasis_singleton`:
   the terminal root actions on the exterior vacuum and final singleton.
+* `typeBSpinRep_simpleRootGenerator_castSucc_exteriorBasis_singleton` and
+  `typeBSpinRep_simpleNegativeRootGenerator_castSucc_exteriorBasis_singleton`: the nonterminal
+  simple-root actions on exterior singletons.
 
 ## References
 
@@ -99,6 +105,20 @@ theorem typeBSpinRep_ι (x : LieAlgebra.Orthogonal.typeB ι K) :
       spinAction Q P (P.typeBQuadraticEquiv b z hz x : CliffordAlgebra Q) := by
   rw [typeBSpinRep, _root_.UniversalEnvelopingAlgebra.lift_ι_apply',
     P.typeBSpinLieRep_apply b z hz]
+
+/-- The difference-root operator indexed by distinct coordinates `i` and `j` contracts the `j`-th
+exterior coordinate and then creates the `i`-th one. -/
+theorem typeBSpinRep_differenceRootGenerator_apply (i j : ι) (hij : i ≠ j)
+    (x : ExteriorAlgebra K P.W) :
+    P.typeBSpinRep b z hz
+        (_root_.UniversalEnvelopingAlgebra.ι K (typeBDifferenceRootGenerator i j hij)) x =
+      ExteriorAlgebra.ι K (b i) *
+        CliffordAlgebra.contractLeft (b.coord j) x := by
+  rw [_root_.UniversalEnvelopingAlgebra.ι_apply, P.typeBSpinRep_ι b z hz,
+    P.typeBQuadraticEquiv_typeBDifferenceRootGenerator b z hz,
+    bivector_eq_ι_mul_ι_of_isOrtho Q (P.isOrtho_basis_dualVector b hij), map_mul,
+    Module.End.mul_apply, spinAction_ι_wedge, spinAction_ι_contract,
+    P.pairingEquiv_dualVector]
 
 section TerminalRoot
 
@@ -166,6 +186,73 @@ theorem typeBSpinRep_simpleNegativeRootGenerator_last_exteriorBasis_singleton
   simp [ExteriorAlgebra.basis_apply]
 
 end TerminalRoot
+
+section SimpleRoot
+
+variable {n : ℕ} (b : Module.Basis (Fin (n + 1)) K P.W)
+  (z : P.line) (hz : Q (z : V) = 1)
+
+private theorem typeBQuadraticEquiv_typeBSimpleRootGenerator_mul_self
+    (i : Fin (n + 1)) :
+    (P.typeBQuadraticEquiv b z hz (typeBSimpleRootGenerator i) : CliffordAlgebra Q) ^ 2 = 0 := by
+  refine Fin.lastCases ?_ (fun j ↦ ?_) i
+  · rw [typeBSimpleRootGenerator_last, pow_two]
+    exact P.typeBQuadraticEquiv_typeBShortRootGenerator_mul_self b z hz (Fin.last n)
+  · rw [typeBSimpleRootGenerator_castSucc, pow_two]
+    exact P.typeBQuadraticEquiv_typeBDifferenceRootGenerator_mul_self b z hz
+      j.castSucc j.succ (ne_of_lt j.castSucc_lt_succ)
+
+private theorem typeBQuadraticEquiv_typeBSimpleNegativeRootGenerator_mul_self
+    (i : Fin (n + 1)) :
+    (P.typeBQuadraticEquiv b z hz
+      (typeBSimpleNegativeRootGenerator i) : CliffordAlgebra Q) ^ 2 = 0 := by
+  refine Fin.lastCases ?_ (fun j ↦ ?_) i
+  · rw [typeBSimpleNegativeRootGenerator_last, pow_two]
+    exact P.typeBQuadraticEquiv_typeBShortNegativeRootGenerator_mul_self b z hz (Fin.last n)
+  · rw [typeBSimpleNegativeRootGenerator_castSucc, pow_two]
+    exact P.typeBQuadraticEquiv_typeBDifferenceRootGenerator_mul_self b z hz
+      j.succ j.castSucc (ne_of_gt j.castSucc_lt_succ)
+
+/-- Every represented positive or negative simple-root vector is square-zero. -/
+theorem typeBSpinRep_simpleRootGenerator_sq (k : Fin (n + 1) ⊕ Fin (n + 1)) :
+    P.typeBSpinRep b z hz
+        (_root_.UniversalEnvelopingAlgebra.ι K (typeBSimpleRootGeneratorFamily k)) ^ 2 = 0 := by
+  rw [_root_.UniversalEnvelopingAlgebra.ι_apply, P.typeBSpinRep_ι b z hz, pow_two, ← map_mul]
+  cases k with
+  | inl i =>
+      rw [typeBSimpleRootGeneratorFamily_inl, ← pow_two,
+        P.typeBQuadraticEquiv_typeBSimpleRootGenerator_mul_self b z hz i, map_zero]
+  | inr i =>
+      rw [typeBSimpleRootGeneratorFamily_inr, ← pow_two,
+        P.typeBQuadraticEquiv_typeBSimpleNegativeRootGenerator_mul_self b z hz i, map_zero]
+
+/-- A nonterminal positive simple-root operator moves the next exterior singleton one coordinate
+to the left. -/
+theorem typeBSpinRep_simpleRootGenerator_castSucc_exteriorBasis_singleton (j : Fin n) :
+    P.typeBSpinRep b z hz
+        (_root_.UniversalEnvelopingAlgebra.ι K
+          (typeBSimpleRootGeneratorFamily (.inl j.castSucc)))
+        (b.ExteriorAlgebra {j.succ}) =
+      b.ExteriorAlgebra {j.castSucc} := by
+  rw [typeBSimpleRootGeneratorFamily_inl, typeBSimpleRootGenerator_castSucc,
+    P.typeBSpinRep_differenceRootGenerator_apply b z hz,
+    TauCeti.ExteriorAlgebra.basis_singleton, CliffordAlgebra.contractLeft_ι]
+  simp [TauCeti.ExteriorAlgebra.basis_singleton]
+
+/-- A nonterminal negative simple-root operator moves an exterior singleton one coordinate to the
+right. -/
+theorem typeBSpinRep_simpleNegativeRootGenerator_castSucc_exteriorBasis_singleton (j : Fin n) :
+    P.typeBSpinRep b z hz
+        (_root_.UniversalEnvelopingAlgebra.ι K
+          (typeBSimpleRootGeneratorFamily (.inr j.castSucc)))
+        (b.ExteriorAlgebra {j.castSucc}) =
+      b.ExteriorAlgebra {j.succ} := by
+  rw [typeBSimpleRootGeneratorFamily_inr, typeBSimpleNegativeRootGenerator_castSucc,
+    P.typeBSpinRep_differenceRootGenerator_apply b z hz,
+    TauCeti.ExteriorAlgebra.basis_singleton, CliffordAlgebra.contractLeft_ι]
+  simp [TauCeti.ExteriorAlgebra.basis_singleton]
+
+end SimpleRoot
 
 end SpinPolarizationData
 

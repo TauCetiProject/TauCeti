@@ -145,8 +145,9 @@ variable {A : Type*} [Ring A] [UniformSpace A] [IsUniformAddGroup A] [Nonarchime
 the convolution product `instMul` and the unit `instOne`. -/
 noncomputable instance twoSidedRestrictedSubmodule.instRing :
     Ring (twoSidedRestrictedSubmodule A A) where
-  mul_assoc f g h := Subtype.ext <| ZeroAtFilter.addRingConvolution_assoc
-    (mem_twoSidedRestrictedSubmodule.mp f.2) (mem_twoSidedRestrictedSubmodule.mp g.2)
+  mul_assoc f g h := Subtype.ext <|
+    (mem_twoSidedRestrictedSubmodule.mp f.2).addRingConvolution_assoc
+    (mem_twoSidedRestrictedSubmodule.mp g.2)
     (mem_twoSidedRestrictedSubmodule.mp h.2)
   one_mul _ := Subtype.ext <| by simp
   mul_one _ := Subtype.ext <| by simp

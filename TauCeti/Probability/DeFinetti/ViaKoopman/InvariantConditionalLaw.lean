@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Kernel.ProbabilityMeasure
-public import TauCeti.Probability.Exchangeability.Basic
+public import TauCeti.Probability.Process.PathLaw.Basic
 public import Mathlib.MeasureTheory.MeasurableSpace.Invariants
 public import Mathlib.Probability.Kernel.CondDistrib
 

@@ -11,11 +11,14 @@ public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Hasse
 import Mathlib.LinearAlgebra.CliffordAlgebra.Equivs
 import TauCeti.Algebra.BrauerGroup.Splitting
 import TauCeti.Algebra.Quaternion.Binary
+import TauCeti.Data.Nat.Choose.Lucas
+import TauCeti.GroupTheory.OrderOfElement.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.CentralSimple.Even
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Quaternion
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Scaling
 import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 import TauCeti.LinearAlgebra.CliffordAlgebra.QuaternionPlane
+import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Semiring
 
 /-!
 # The Clifford invariant of a regular quadratic form
@@ -47,6 +50,19 @@ binary plane, the Clifford algebra of `⟨a, b⟩ ⊥ q` is `ℍ[K, a, b] ⊗ C(
 Clifford algebra of `q ⊥ ⟨a⟩` is `C(-a⁻¹ · q)`, so `c(x ⊥ ⟨a⟩) = c(⟨-a⟩ ⊗ x)` when `x` has even
 rank. In rank four the first gives `c⟨a, b, c, d⟩ = [(a, b)] · [(-abc, -abd)]`.
 
+Together with the orthogonal-sum and scaling formulas for the Hasse invariant, these recurrences
+give **Lam's comparison** (Lam V.3.20) in every rank: for a class of rank `n` and discriminant `d`,
+`c(q) = s(q) · [(-1, d)]^C(n-1,2) · [(-1,-1)]^C(n+1,4)`. Since every quaternion symbol is
+`2`-torsion, only the parities of the binomial exponents matter. On a class of rank `2m` with
+trivial signed discriminant, which is a class whose Witt class lies in the square of the
+fundamental ideal, the formula becomes `c(q) = s(q) · [(-1,-1)]^C(m,2)`. Lam (p. 120) cautions
+that the version of this formula published by C. T. C. Wall is incorrect.
+
+On such a class `x` the Clifford invariant is additive: `c(x ⊥ y) = c(x) · c(y)` for every class
+`y`. This follows by induction on the rank of `y` from the two recurrences, since rescaling `x`
+does not change `c(x)`. In particular adding a hyperbolic plane does not change the Clifford
+invariant, so it depends only on the Witt class.
+
 ## Main definitions
 
 * `TauCeti.RegularFormClass.cliffordInvariant`: the Clifford invariant of an isometry class of
@@ -77,14 +93,22 @@ rank. In rank four the first gives `c⟨a, b, c, d⟩ = [(a, b)] · [(-abc, -abd
 * `TauCeti.RegularFormClass.cliffordInvariant_eq_hasseInvariant_mul_of_rank_eq_three`: in rank
   three the Clifford invariant is the Hasse invariant times the discriminant and constant sign
   corrections from Lam V.3.20.
-* `TauCeti.RegularFormClass.cliffordInvariant_eq_hasseInvariant_mul_of_rank_le_three`: the exact
-  Lam V.3.20 formula simultaneously in every rank at most three.
+* `TauCeti.RegularFormClass.cliffordInvariant_eq_hasseInvariant_mul`: Lam's comparison of the
+  Clifford and Hasse invariants in every rank.
+* `TauCeti.RegularFormClass.cliffordInvariant_eq_hasseInvariant_mul_of_signedDiscr_eq_zero`: its
+  form `c = s · [(-1,-1)]^C(m,2)` in rank `2m` with trivial signed discriminant.
+* `TauCeti.RegularFormClass.cliffordInvariant_mk_rankOne_mul_of_signedDiscr_eq_zero`: on such a
+  class the Clifford invariant is unchanged by scaling.
+* `TauCeti.RegularFormClass.cliffordInvariant_add_of_signedDiscr_eq_zero`: `c(x ⊥ y) = c(x) · c(y)`
+  when `x` has even rank and trivial signed discriminant.
+* `TauCeti.RegularFormClass.cliffordInvariant_nsmul_hyperbolicClass_add`: adding hyperbolic planes
+  does not change the Clifford invariant.
 
 ## References
 
 * T. Y. Lam, *Introduction to Quadratic Forms over Fields*, Graduate Studies in Mathematics 67,
   American Mathematical Society (2005), Chapter V, §2 (Theorems 2.4 and 2.5), Definition 3.12,
-  and Theorem 3.20.
+  Theorem 3.20, and the Caution on p. 120.
 -/
 
 public section
@@ -408,30 +432,267 @@ theorem cliffordInvariant_eq_hasseInvariant_mul_of_rank_eq_three {x : RegularFor
     rw [hw, cliffordInvariant_mk_ternary_eq_hasseInvariant_mul, discr_mk,
       hprod, BrauerGroup.quaternionClassOnSquareClasses_squareClass]
 
-/-- **Lam's exact Clifford--Hasse comparison in every rank at most three.** The correction
-exponents are `C(n-1,2)` and `C(n+1,4)`, the binomial-coefficient form of Lam V.3.20. Rank three
-is the first case in which either correction is nontrivial. -/
-theorem cliffordInvariant_eq_hasseInvariant_mul_of_rank_le_three {x : RegularFormClass K}
-    (hx : x.rank ≤ 3) :
+/-! ### Lam's comparison in every rank -/
+
+section Lam
+
+open BrauerGroup
+
+/-- The statement of Lam's comparison for a class `x`. -/
+private def LamFormula (x : RegularFormClass K) : Prop :=
+  cliffordInvariant x = hasseInvariant x *
+    quaternionClassOnSquareClasses (squareClass (-1 : Kˣ)) (discr x) ^ (rank x - 1).choose 2 *
+    quaternionClass (-1) (-1) ^ (rank x + 1).choose 4
+
+/-- The induction step of Lam's comparison in even rank: splitting off a binary plane. -/
+private theorem lamFormula_mk_binary_add (a b : Kˣ) {y : RegularFormClass K} (hy : Even y.rank)
+    (hy2 : 2 ≤ y.rank)
+    (ih : LamFormula (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => -(a * b)⟩ * y)) :
+    LamFormula (Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩ + y) := by
+  have hr : rank (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => -(a * b)⟩ * y) = y.rank := by
+    rw [rank_mul, rank_mk, one_mul]
+  unfold LamFormula at ih ⊢
+  -- Expand both sides into `[(a, b)]`, `s(y)` and quaternion symbols in `-1`, `c = ab` and a
+  -- representative `δ` of `d(y)`.
+  rw [hasseInvariant_mk_rankOne_mul, discr_mk_rankOne_mul_of_even _ hy, hr] at ih
+  rw [cliffordInvariant_mk_binary_add a b hy, ih, hasseInvariant_add, discr_add, rank_add,
+    hasseInvariant_mk_binary, discr_mk, rank_mk]
+  obtain ⟨δ, hδ⟩ : ∃ δ : Kˣ, discr y = squareClass δ := ⟨_, (squareClass_toMul_out _).symm⟩
+  rw [hδ, Fin.prod_univ_two, ← squareClass_mul]
+  simp only [quaternionClassOnSquareClasses_squareClass]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
+  generalize a * b = c
+  rw [← neg_one_mul c]
+  simp only [quaternionClass_mul, quaternionClass_mul_left, quaternionClass_comm c (-1)]
+  -- Write the rank of `y` as `2(j + 1)` and abstract the four `2`-torsion symbols.
+  obtain ⟨j, hj⟩ : ∃ j, y.rank = 2 * (j + 1) := by
+    obtain ⟨k, hk⟩ := hy
+    exact ⟨k - 1, by omega⟩
+  rw [hj]
+  generalize hasseInvariant y = S
+  have e1 : 2 * (j + 1) - 1 = 2 * j + 1 := by omega
+  have e2 : 2 + 2 * (j + 1) - 1 = 2 * (j + 1) + 1 := by omega
+  have e3 : 2 + 2 * (j + 1) + 1 = 2 * (j + 2) + 1 := by omega
+  rw [e1, e2, e3]
+  have hu := quaternionClass_sq (-1 : Kˣ) (-1)
+  have hv := quaternionClass_sq (-1 : Kˣ) c
+  have hw := quaternionClass_sq (-1 : Kˣ) δ
+  have hz := quaternionClass_sq c δ
+  generalize quaternionClass (-1 : Kˣ) (-1) = u at hu ⊢
+  generalize quaternionClass (-1 : Kˣ) c = v at hv ⊢
+  generalize quaternionClass (-1 : Kˣ) δ = w at hw ⊢
+  generalize quaternionClass c δ = z at hz ⊢
+  generalize quaternionClass a b = P
+  -- The parities of the binomial exponents, by Lucas' theorem at the prime `2`.
+  have hA := Choose.choose_mul_mul_modEq_choose_nat (p := 2) (a := j + 1) (b := 1)
+  have hC := Choose.choose_mul_add_mul_modEq_choose_nat (p := 2) (a := j) (b := 1) one_lt_two
+  have hD := Choose.choose_mul_add_mul_modEq_choose_nat (p := 2) (a := j + 1) (b := 2) one_lt_two
+  have hE := Choose.choose_mul_add_mul_modEq_choose_nat (p := 2) (a := j + 1) (b := 1) one_lt_two
+  have hF := Choose.choose_mul_add_mul_modEq_choose_nat (p := 2) (a := j + 2) (b := 2) one_lt_two
+  have hP : (j + 2).choose 2 = (j + 1).choose 1 + (j + 1).choose 2 := Nat.choose_succ_succ' _ _
+  simp only [Nat.ModEq, mul_one, Nat.reduceMul, Nat.choose_one_right] at hA hC hD hE hF hP
+  rw [mul_assoc P S, mul_assoc P, mul_assoc P]
+  exact congrArg (P * ·) (mul_pow_eq_of_sq_eq_one hu hv hw hz (by unfold Nat.ModEq; omega)
+    (by unfold Nat.ModEq; omega) (by unfold Nat.ModEq; omega) (by unfold Nat.ModEq; omega))
+
+/-- The induction step of Lam's comparison in odd rank: splitting off a line. -/
+private theorem lamFormula_add_mk_rankOne (a : Kˣ) {y : RegularFormClass K} (hy : Even y.rank)
+    (hy2 : 2 ≤ y.rank)
+    (ih : LamFormula (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => -a⟩ * y)) :
+    LamFormula (y + Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩) := by
+  have hr : rank (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => -a⟩ * y) = y.rank := by
+    rw [rank_mul, rank_mk, one_mul]
+  unfold LamFormula at ih ⊢
+  -- Expand both sides into `s(y)` and quaternion symbols in `-1`, `a` and a representative `δ`
+  -- of `d(y)`.
+  rw [hasseInvariant_mk_rankOne_mul, discr_mk_rankOne_mul_of_even _ hy, hr] at ih
+  rw [cliffordInvariant_add_mk_rankOne a hy, ih, hasseInvariant_add, discr_add, rank_add,
+    hasseInvariant_mk_rankOne, discr_mk, rank_mk, Fin.prod_univ_one, mul_one]
+  obtain ⟨δ, hδ⟩ : ∃ δ : Kˣ, discr y = squareClass δ := ⟨_, (squareClass_toMul_out _).symm⟩
+  rw [hδ, ← squareClass_mul]
+  simp only [quaternionClassOnSquareClasses_squareClass]
+  rw [← neg_one_mul a]
+  simp only [quaternionClass_mul, quaternionClass_mul_left, quaternionClass_comm a (-1),
+    quaternionClass_comm δ a]
+  -- Write the rank of `y` as `2(j + 1)` and abstract the four `2`-torsion symbols.
+  obtain ⟨j, hj⟩ : ∃ j, y.rank = 2 * (j + 1) := by
+    obtain ⟨k, hk⟩ := hy
+    exact ⟨k - 1, by omega⟩
+  rw [hj]
+  generalize hasseInvariant y = S
+  have hu := quaternionClass_sq (-1 : Kˣ) (-1)
+  have hv := quaternionClass_sq (-1 : Kˣ) a
+  have hw := quaternionClass_sq (-1 : Kˣ) δ
+  have hz := quaternionClass_sq a δ
+  generalize quaternionClass (-1 : Kˣ) (-1) = u at hu ⊢
+  generalize quaternionClass (-1 : Kˣ) a = v at hv ⊢
+  generalize quaternionClass (-1 : Kˣ) δ = w at hw ⊢
+  generalize quaternionClass a δ = z at hz ⊢
+  have e1 : 2 * (j + 1) - 1 = 2 * j + 1 := by omega
+  have e2 : 2 * (j + 1) + 1 - 1 = 2 * (j + 1) := by omega
+  have e3 : 2 * (j + 1) + 1 + 1 = 2 * (j + 2) := by omega
+  rw [e1, e2, e3, mul_comm w v]
+  -- The parities of the binomial exponents, by Lucas' theorem at the prime `2`.
+  have hA := Choose.choose_mul_mul_modEq_choose_nat (p := 2) (a := j + 1) (b := 1)
+  have hC := Choose.choose_mul_add_mul_modEq_choose_nat (p := 2) (a := j) (b := 1) one_lt_two
+  have hD := Choose.choose_mul_add_mul_modEq_choose_nat (p := 2) (a := j + 1) (b := 2) one_lt_two
+  have hF := Choose.choose_mul_mul_modEq_choose_nat (p := 2) (a := j + 2) (b := 2)
+  have hP : (j + 2).choose 2 = (j + 1).choose 1 + (j + 1).choose 2 := Nat.choose_succ_succ' _ _
+  simp only [Nat.ModEq, mul_one, Nat.reduceMul, Nat.choose_one_right] at hA hC hD hF hP
+  exact mul_pow_eq_of_sq_eq_one hu hv hw hz (by unfold Nat.ModEq; omega) rfl
+    (by unfold Nat.ModEq; omega) (by unfold Nat.ModEq; omega)
+
+/-- Lam's comparison holds in ranks at most two, where both correction exponents vanish. -/
+private theorem lamFormula_of_rank_le_two {x : RegularFormClass K} (hx : x.rank ≤ 2) :
+    LamFormula x := by
+  rw [LamFormula, cliffordInvariant_eq_hasseInvariant_of_rank_le_two hx,
+    Nat.choose_eq_zero_of_lt (by omega : x.rank - 1 < 2),
+    Nat.choose_eq_zero_of_lt (by omega : x.rank + 1 < 4), pow_zero, pow_zero, mul_one, mul_one]
+
+/-- Lam's comparison in even rank, by splitting off binary planes. -/
+private theorem lamFormula_of_rank_eq_two_mul (m : ℕ) :
+    ∀ x : RegularFormClass K, x.rank = 2 * m → LamFormula x := by
+  induction m with
+  | zero => exact fun x hx => lamFormula_of_rank_le_two (by omega)
+  | succ m ih =>
+    intro x hx
+    rcases Nat.eq_zero_or_pos m with rfl | hm
+    · exact lamFormula_of_rank_le_two (by omega)
+    obtain ⟨a, b, y, hy, rfl⟩ := exists_eq_mk_binary_add (x := x) (by omega)
+    exact lamFormula_mk_binary_add a b ⟨m, by omega⟩ (by omega)
+      (ih _ (by rw [rank_mul, rank_mk, one_mul]; omega))
+
+/-- **Lam's comparison of the Clifford and Hasse invariants** (Lam V.3.20). For a class of
+rank `n` with discriminant `d`, `c(q) = s(q) · [(-1, d)]^C(n-1,2) · [(-1,-1)]^C(n+1,4)`, where
+`C(n-1,2) = (n-1)(n-2)/2` and `C(n+1,4) = (n+1)n(n-1)(n-2)/24`. -/
+theorem cliffordInvariant_eq_hasseInvariant_mul (x : RegularFormClass K) :
     cliffordInvariant x = hasseInvariant x *
-      BrauerGroup.quaternionClassOnSquareClasses (squareClass (-1 : Kˣ)) (discr x) ^
+      quaternionClassOnSquareClasses (squareClass (-1 : Kˣ)) (discr x) ^
         (x.rank - 1).choose 2 *
-      BrauerGroup.quaternionClass (-1) (-1) ^ (x.rank + 1).choose 4 := by
-  interval_cases hrank : x.rank
-  · rw [cliffordInvariant_eq_hasseInvariant_of_rank_le_two (by omega)]
-    simp [Nat.choose_eq_zero_of_lt]
-  · rw [cliffordInvariant_eq_hasseInvariant_of_rank_le_two (by omega)]
-    simp [Nat.choose_eq_zero_of_lt]
-  · rw [cliffordInvariant_eq_hasseInvariant_of_rank_le_two (by omega)]
-    simp
-  · rw [cliffordInvariant_eq_hasseInvariant_mul_of_rank_eq_three hrank]
-    norm_num [Nat.choose_eq_zero_of_lt]
+      quaternionClass (-1) (-1) ^ (x.rank + 1).choose 4 := by
+  rcases Nat.even_or_odd' x.rank with ⟨m, hm | hm⟩
+  · exact lamFormula_of_rank_eq_two_mul m x hm
+  rcases Nat.eq_zero_or_pos m with rfl | hm0
+  · exact lamFormula_of_rank_le_two (by omega)
+  obtain ⟨a, y, hy, rfl⟩ := exists_eq_add_mk_rankOne (x := x) (by omega)
+  exact lamFormula_add_mk_rankOne a ⟨m, by omega⟩ (by omega)
+    (lamFormula_of_rank_eq_two_mul m _ (by rw [rank_mul, rank_mk, one_mul]; omega))
+
+/-- With trivial signed discriminant the discriminant is the sign `C(n,2) • [-1]`, so a quaternion
+symbol against it is a power of the symbol against `-1`. -/
+private theorem quaternionClassOnSquareClasses_discr_of_signedDiscr_eq_zero (u : Kˣ)
+    {x : RegularFormClass K} (hd : signedDiscr x = 0) :
+    quaternionClassOnSquareClasses (squareClass u) (discr x) =
+      quaternionClass u (-1) ^ x.rank.choose 2 := by
+  rw [discr_eq_sign_add_signedDiscr, hd, add_zero (M := SquareClassGroup K), ← squareClass_pow,
+    quaternionClassOnSquareClasses_squareClass, quaternionClass_pow_right]
+
+/-- **Lam's comparison on the square of the fundamental ideal.** For a class of rank `2m` with
+trivial signed discriminant, `c(q) = s(q) · [(-1,-1)]^C(m,2)`: the discriminant correction in
+`TauCeti.RegularFormClass.cliffordInvariant_eq_hasseInvariant_mul` cancels. These are the classes
+whose Witt class lies in the square of the fundamental ideal
+(`TauCeti.wittClass_mem_fundamentalIdeal_sq_iff`). -/
+theorem cliffordInvariant_eq_hasseInvariant_mul_of_signedDiscr_eq_zero {x : RegularFormClass K}
+    {m : ℕ} (hx : x.rank = 2 * m) (hd : signedDiscr x = 0) :
+    cliffordInvariant x = hasseInvariant x * quaternionClass (-1) (-1) ^ m.choose 2 :=
+  calc cliffordInvariant x
+      = hasseInvariant x * quaternionClass (-1) (-1) ^
+          ((2 * m).choose 2 * (2 * m - 1).choose 2 + (2 * m + 1).choose 4) := by
+        rw [cliffordInvariant_eq_hasseInvariant_mul,
+          quaternionClassOnSquareClasses_discr_of_signedDiscr_eq_zero _ hd, hx, ← pow_mul, pow_add,
+          mul_assoc]
+    _ = hasseInvariant x * quaternionClass (-1) (-1) ^ m.choose 2 := by
+        rw [pow_eq_pow_of_modEq (Choose.choose_mul_choose_add_choose_modEq m)
+          (quaternionClass_sq _ _)]
+
+end Lam
 
 /-- The hyperbolic plane has trivial Clifford invariant: its Clifford algebra `ℍ[K, 1, -1]` is
 split. -/
 @[simp]
 theorem cliffordInvariant_hyperbolicClass : cliffordInvariant (hyperbolicClass K) = 1 := by
   rw [hyperbolicClass_def, cliffordInvariant_mk_binary, BrauerGroup.quaternionClass_one_left]
+
+/-! ### Additivity on the square of the fundamental ideal -/
+
+/-- **On the square of the fundamental ideal the Clifford invariant is a similarity invariant**:
+for a class `x` of even rank with trivial signed discriminant, `c(⟨t⟩ ⊗ x) = c(x)`. -/
+theorem cliffordInvariant_mk_rankOne_mul_of_signedDiscr_eq_zero (t : Kˣ)
+    {x : RegularFormClass K} (hx : Even x.rank) (hd : signedDiscr x = 0) :
+    cliffordInvariant (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => t⟩ * x) =
+      cliffordInvariant x := by
+  obtain ⟨m, hm⟩ := hx
+  have hm2 : x.rank = 2 * m := by omega
+  have htx : rank (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => t⟩ * x) = 2 * m := by
+    rw [rank_mul, rank_mk, one_mul, hm2]
+  -- Scaling multiplies the Hasse invariant by `u · u ^ (2m - 1)` with `u = [(t, -1)]^C(2m,2)`,
+  -- which is trivial since `u² = 1`.
+  have hcancel : BrauerGroup.quaternionClass t (-1) ^ (2 * m).choose 2 *
+      (BrauerGroup.quaternionClass t (-1) ^ (2 * m).choose 2) ^ (2 * m - 1) = 1 := by
+    have hu : (BrauerGroup.quaternionClass t (-1) ^ (2 * m).choose 2) ^ 2 = 1 := by
+      rw [← pow_mul, mul_comm, pow_mul, BrauerGroup.quaternionClass_sq, one_pow]
+    rcases m with _ | k
+    · simp
+    · have hk : 2 * (k + 1) - 1 = 2 * k + 1 := by omega
+      rw [hk, pow_succ, pow_mul, hu, one_pow, one_mul, ← pow_two, hu]
+  calc cliffordInvariant (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => t⟩ * x)
+      = hasseInvariant (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => t⟩ * x) *
+          BrauerGroup.quaternionClass (-1) (-1) ^ m.choose 2 :=
+        cliffordInvariant_eq_hasseInvariant_mul_of_signedDiscr_eq_zero htx
+          ((signedDiscr_mk_rankOne_mul_of_even t ⟨m, hm⟩).trans hd)
+    _ = hasseInvariant x * BrauerGroup.quaternionClass (-1) (-1) ^ m.choose 2 := by
+        rw [hasseInvariant_mk_rankOne_mul,
+          quaternionClassOnSquareClasses_discr_of_signedDiscr_eq_zero t hd, hm2,
+          mul_assoc (hasseInvariant x), hcancel, mul_one]
+    _ = cliffordInvariant x :=
+        (cliffordInvariant_eq_hasseInvariant_mul_of_signedDiscr_eq_zero hm2 hd).symm
+
+/-- **Additivity of the Clifford invariant on the square of the fundamental ideal**: if `x` has
+even rank and trivial signed discriminant, that is if its Witt class lies in `I(K)²`
+(`TauCeti.wittClass_mem_fundamentalIdeal_sq_iff`), then `c(x ⊥ y) = c(x) · c(y)` for every class
+`y`. The identity fails for a general pair: for `x = y = ⟨-1⟩` the left side is
+`c⟨-1, -1⟩ = [(-1, -1)]`, which is nontrivial over `ℝ`, while `c⟨-1⟩ = 1` in rank one. -/
+theorem cliffordInvariant_add_of_signedDiscr_eq_zero {x : RegularFormClass K} (hx : Even x.rank)
+    (hd : signedDiscr x = 0) (y : RegularFormClass K) :
+    cliffordInvariant (x + y) = cliffordInvariant x * cliffordInvariant y := by
+  induction hn : y.rank using Nat.strong_induction_on generalizing x y with
+  | _ n ih =>
+  -- By induction, the statement holds for every scaled class `⟨t⟩ ⊗ x` and every `z` of smaller
+  -- rank; scaling does not change `c(x)`.
+  have hscale (t : Kˣ) (z : RegularFormClass K) (hz : z.rank < n) :
+      cliffordInvariant (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => t⟩ * x + z) =
+        cliffordInvariant x * cliffordInvariant z := by
+    have hxt : Even (rank (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => t⟩ * x)) := by
+      rwa [rank_mul, rank_mk, one_mul]
+    rw [ih _ hz hxt ((signedDiscr_mk_rankOne_mul_of_even t hx).trans hd) z rfl,
+      cliffordInvariant_mk_rankOne_mul_of_signedDiscr_eq_zero t hx hd]
+  rcases Nat.even_or_odd n with ⟨k, hk⟩ | ⟨k, hk⟩
+  · rcases Nat.eq_zero_or_pos k with rfl | hk0
+    · obtain rfl : y = 0 := rank_eq_zero_iff.mp (by omega)
+      rw [add_zero, cliffordInvariant_zero, mul_one]
+    -- Split a binary plane off `y`.
+    obtain ⟨a, b, z, hz, rfl⟩ := exists_eq_mk_binary_add (x := y) (by omega)
+    have hze : Even z.rank := ⟨k - 1, by omega⟩
+    rw [add_left_comm, cliffordInvariant_mk_binary_add a b (by rw [rank_add]; exact hx.add hze),
+      mul_add (R := RegularFormClass K), hscale _ _ (by rw [rank_mul, rank_mk, one_mul]; omega),
+      cliffordInvariant_mk_binary_add a b hze, mul_left_comm]
+  · -- Split a line off `y`.
+    obtain ⟨a, z, hz, rfl⟩ := exists_eq_add_mk_rankOne (x := y) (by omega)
+    have hze : Even z.rank := ⟨k, by omega⟩
+    rw [← add_assoc, cliffordInvariant_add_mk_rankOne a (by rw [rank_add]; exact hx.add hze),
+      mul_add (R := RegularFormClass K), hscale _ _ (by rw [rank_mul, rank_mk, one_mul]; omega),
+      cliffordInvariant_add_mk_rankOne a hze]
+
+/-- Adding hyperbolic planes does not change the Clifford invariant, so the Clifford invariant
+depends only on the Witt class. -/
+theorem cliffordInvariant_nsmul_hyperbolicClass_add (m : ℕ) (x : RegularFormClass K) :
+    cliffordInvariant (m • hyperbolicClass K + x) = cliffordInvariant x := by
+  induction m with
+  | zero => rw [zero_nsmul, zero_add]
+  | succ m ih =>
+    rw [succ_nsmul', add_assoc, cliffordInvariant_add_of_signedDiscr_eq_zero
+      (by rw [rank_hyperbolicClass]; exact even_two) signedDiscr_hyperbolicClass,
+      cliffordInvariant_hyperbolicClass, one_mul, ih]
 
 end RegularFormClass
 

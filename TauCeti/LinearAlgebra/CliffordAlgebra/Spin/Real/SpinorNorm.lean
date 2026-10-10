@@ -130,7 +130,7 @@ theorem spinorNorm_eq_one_of_negDef (Q : QuadraticForm ℝ V) (hneg : (-Q).PosDe
   refine MonoidHom.ext fun g ↦ ?_
   rw [spinorNorm_apply, orthogonalSpinorNorm_eq_orthogonalDetSquareClass_of_negDef Q hneg,
     QuadraticMap.orthogonalDetSquareClass_apply, coe_specialOrthogonalToOrthogonal,
-    (QuadraticMap.mem_specialOrthogonalGroup_iff.mp g.2).2, map_one]
+    QuadraticMap.det_coe_specialOrthogonalGroup, map_one]
   simp only [MonoidHom.one_apply]
 
 /-- The spinor norm of a real quadratic form taking a negative value is surjective on `O(Q)`.

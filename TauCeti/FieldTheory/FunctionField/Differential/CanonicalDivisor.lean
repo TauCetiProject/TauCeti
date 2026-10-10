@@ -152,6 +152,16 @@ noncomputable def weilDifferentialDivisor (hF : IsFunctionField k F)
     (hmem : ω ∈ weilDifferentialSpace k F) (hω : ω ≠ 0) : Divisor k F :=
   (exists_isGreatest_mem_weilDifferentialFiltration hF hex hmem hω).choose
 
+/-- The divisor of a Weil differential depends only on the differential, not on the proofs that it
+is a nonzero Weil differential. -/
+theorem weilDifferentialDivisor_congr (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
+    {ω₁ ω₂ : Module.Dual k ↥(repartitionSpace k F)} (h : ω₁ = ω₂)
+    (hmem₁ : ω₁ ∈ weilDifferentialSpace k F) (hω₁ : ω₁ ≠ 0)
+    (hmem₂ : ω₂ ∈ weilDifferentialSpace k F) (hω₂ : ω₂ ≠ 0) :
+    weilDifferentialDivisor hF hex hmem₁ hω₁ = weilDifferentialDivisor hF hex hmem₂ hω₂ := by
+  subst h
+  rfl
+
 /-- The divisor of a nonzero Weil differential is indeed the greatest divisor bounding it. -/
 theorem isGreatest_weilDifferentialDivisor (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) {ω : Module.Dual k ↥(repartitionSpace k F)}

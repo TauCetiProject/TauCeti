@@ -77,6 +77,15 @@ variable {𝒜}
 instance : CoeSort (GradedModuleCat.{v} 𝒜) (Type v) :=
   ⟨GradedModuleCat.carrier⟩
 
+/-- The regular graded module of a graded algebra, with its given homogeneous pieces. -/
+noncomputable abbrev regular [DirectSum.Decomposition 𝒜] [SetLike.GradedMul 𝒜] :
+    GradedModuleCat.{uA} 𝒜 where
+  carrier := A
+  grading := InternalGrading.ofDecomposition 𝒜
+  gradedSMul := ⟨fun {_ _} _ _ ha hx ↦ by
+    rw [InternalGrading.ofDecomposition_piece] at hx ⊢
+    exact SetLike.GradedMul.mul_mem ha hx⟩
+
 /-- A morphism of graded `𝒜`-modules: an `A`-linear map of degree zero. -/
 structure Hom (M N : GradedModuleCat.{v} 𝒜) where
   /-- The underlying `A`-linear map. -/

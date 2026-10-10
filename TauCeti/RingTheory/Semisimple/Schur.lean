@@ -268,6 +268,25 @@ theorem finiteDimensional_linearMap_of_isEmpty_linearEquiv (h : IsEmpty (S ≃�
 
 end Vanishing
 
+section SimpleSymmetry
+
+variable {k A : Type*} [CommSemiring k] [Nontrivial k] [Ring A] [Algebra k A]
+
+/-- Hom-space finrank is symmetric between simple modules over an algebra. -/
+theorem finrank_linearMap_comm_of_isSimpleModule
+    (S N : Type*) [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S]
+    [AddCommGroup N] [Module k N] [Module A N] [IsScalarTower k A N]
+    [IsSimpleModule A S] [IsSimpleModule A N] :
+    Module.finrank k (S →ₗ[A] N) = Module.finrank k (N →ₗ[A] S) := by
+  by_cases h : Nonempty (S ≃ₗ[A] N)
+  · obtain ⟨e⟩ := h
+    exact ((homCongrRight k e.symm).trans (LinearEquiv.congrLeft S k e)).finrank_eq
+  · rw [finrank_linearMap_eq_zero_of_isEmpty_linearEquiv (not_nonempty_iff.mp h),
+      finrank_linearMap_eq_zero_of_isEmpty_linearEquiv
+        ⟨fun e ↦ h ⟨e.symm⟩⟩]
+
+end SimpleSymmetry
+
 section SchurDimension
 
 variable {k A S : Type*} [Field k] [IsAlgClosed k] [Ring A] [Algebra k A]

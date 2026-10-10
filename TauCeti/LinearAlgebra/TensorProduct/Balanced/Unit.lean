@@ -66,25 +66,29 @@ theorem lid_symm_apply (n : N) : (lid k A N).symm n = tmul k A 1 n := by
 
 /-- The left unit identification preserves the left regular outer action. -/
 @[simp]
-theorem lid_leftAction (a : A) (x : BalancedTensorProduct k A A N) :
-    lid k A N (leftAction k A A N A a x) = a • lid k A N x := by
+theorem lid_smul_left (a : A) (x : BalancedTensorProduct k A A N) :
+    letI := leftModule (k := k) (A := A) (M := A) (N := N) A
+    lid k A N (a • x) = a • lid k A N x := by
+  let _ := leftModule (k := k) (A := A) (M := A) (N := N) A
   simp only [lid, LinearEquiv.coe_ofLinearMap]
-  apply lift_leftAction k A A N A
+  apply lift_smul_left A
     (Algebra.lsmul k k N (A := A)).toLinearMap (leftAction_balanced k A N)
   intro a b n
   simp
 
-/-- The left unit identification preserves any commuting right outer action. -/
+/-- The left unit identification preserves any commuting outer action on the second factor. -/
 @[simp]
-theorem lid_rightAction (C : Type*) [Semiring C] [Module Cᵐᵒᵖ N]
-    [SMulCommClass Cᵐᵒᵖ k N] [SMulCommClass Cᵐᵒᵖ A N]
-    (c : Cᵐᵒᵖ) (x : BalancedTensorProduct k A A N) :
-    lid k A N (rightAction k A A N C c x) = c • lid k A N x := by
+theorem lid_smul_right (T : Type*) [Semiring T] [Module T N]
+    [SMulCommClass T k N] [SMulCommClass A T N]
+    (t : T) (x : BalancedTensorProduct k A A N) :
+    letI := rightModule (k := k) (A := A) (M := A) (N := N) T
+    lid k A N (t • x) = t • lid k A N x := by
+  let _ := rightModule (k := k) (A := A) (M := A) (N := N) T
   simp only [lid, LinearEquiv.coe_ofLinearMap]
-  apply lift_rightAction k A A N C
+  apply lift_smul_right T
     (Algebra.lsmul k k N (A := A)).toLinearMap (leftAction_balanced k A N)
-  intro c a n
-  simpa using (smul_comm c a n).symm
+  intro t a n
+  exact smul_comm a t n
 
 end Left
 
@@ -125,25 +129,29 @@ theorem rid_tmul (m : M) (a : A) : rid k A M (tmul k A m a) = op a • m := by
 theorem rid_symm_apply (m : M) : (rid k A M).symm m = tmul k A m 1 := by
   simp [rid]
 
-/-- The right unit identification preserves any commuting left outer action. -/
+/-- The right unit identification preserves any commuting outer action on the first factor. -/
 @[simp]
-theorem rid_leftAction (B : Type*) [Semiring B] [Module B M]
-    [SMulCommClass B k M] [SMulCommClass B Aᵐᵒᵖ M]
-    (b : B) (x : BalancedTensorProduct k A M A) :
-    rid k A M (leftAction k A M A B b x) = b • rid k A M x := by
+theorem rid_smul_left (S : Type*) [Semiring S] [Module S M]
+    [SMulCommClass S k M] [SMulCommClass S Aᵐᵒᵖ M]
+    (s : S) (x : BalancedTensorProduct k A M A) :
+    letI := leftModule (k := k) (A := A) (M := M) (N := A) S
+    rid k A M (s • x) = s • rid k A M x := by
+  let _ := leftModule (k := k) (A := A) (M := M) (N := A) S
   simp only [rid, LinearEquiv.coe_ofLinearMap]
-  apply lift_leftAction k A M A B
+  apply lift_smul_left S
     (((Algebra.lsmul k k M (A := Aᵐᵒᵖ)).toLinearMap.comp
       (opLinearEquiv k : A ≃ₗ[k] Aᵐᵒᵖ).toLinearMap).flip) (rightAction_balanced k A M)
-  intro b m a
-  simpa using (smul_comm b (op a) m).symm
+  intro s m a
+  simpa using (smul_comm s (op a) m).symm
 
 /-- The right unit identification preserves the right regular outer action. -/
 @[simp]
-theorem rid_rightAction (a : Aᵐᵒᵖ) (x : BalancedTensorProduct k A M A) :
-    rid k A M (rightAction k A M A A a x) = a • rid k A M x := by
+theorem rid_smul_right (a : Aᵐᵒᵖ) (x : BalancedTensorProduct k A M A) :
+    letI := rightModule (k := k) (A := A) (M := M) (N := A) Aᵐᵒᵖ
+    rid k A M (a • x) = a • rid k A M x := by
+  let _ := rightModule (k := k) (A := A) (M := M) (N := A) Aᵐᵒᵖ
   simp only [rid, LinearEquiv.coe_ofLinearMap]
-  apply lift_rightAction k A M A A
+  apply lift_smul_right Aᵐᵒᵖ
     (((Algebra.lsmul k k M (A := Aᵐᵒᵖ)).toLinearMap.comp
       (opLinearEquiv k : A ≃ₗ[k] Aᵐᵒᵖ).toLinearMap).flip) (rightAction_balanced k A M)
   intro a m b

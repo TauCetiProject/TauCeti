@@ -45,7 +45,7 @@ recorded once here rather than reconstructed at each use site.
 
 public section
 
-open scoped NumberField
+open scoped NumberField Pointwise
 
 namespace NumberField
 

@@ -329,7 +329,6 @@ theorem coindAcyclic (A : SmoothDiscreteTopRep.{v, u, u} R (⊥ : Subgroup G)) (
     (hn : 0 < n) :
     Limits.IsZero (continuousCohomology n ((smoothDiscreteι R G).obj (coindTopRep R G ⊥ A))) := by
   obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn.ne'
-  have : DiscreteTopology A.obj.V := A.property.discreteTopology
   rw [ObjectProperty.ι_obj, toSmoothDiscrete_obj_obj]
   exact TopModuleCat.isZero_of_subsingleton _
 

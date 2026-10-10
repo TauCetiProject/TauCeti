@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.MonoidAlgebra.RelationModule.Basic
 public import TauCeti.NumberTheory.LocalField.TameFrameModule.Torsion
 public import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.Rational
 import Mathlib.LinearAlgebra.TensorProduct.Prod
 import TauCeti.Algebra.MonoidAlgebra.FractionRing
+import TauCeti.NumberTheory.Padics.GroupAlgebra.RelationModule
 import TauCeti.NumberTheory.Padics.GroupAlgebra.StableIsomorphism
 import TauCeti.NumberTheory.Padics.GroupAlgebra.Transpose
 
@@ -49,15 +51,26 @@ The proof applies the cancellation theory of `ℤ_p[G]`-modules.
 * A stable isomorphism together with this rational identity is an isomorphism
   (`TauCeti.nonempty_linearEquiv_prod_of_stable`).
 
+When `σ, τ` generate `G` and `τ` has order prime to `p`, sharp exponents exist, and the
+decomposition makes `Y` a quotient of `ℤ_p[G]^(N + 2) = ℤ_p[G]² ⊕ ℤ_p[G]^N` by a copy of
+`ℤ_p[G]`. Comparing the induced presentation of `I_G` with the one by any generating family `g` of
+size `N + 2` (`TauCeti.exists_relationModule_surjective_of_exact`), the relation module of `g`,
+which is `R^ab(p)` for the presentation of `G` on `g` by Lyndon's theorem, maps onto `A(L)` with
+kernel `ℤ_p[G]`: the integral sequence `0 → ℤ_p[G] → R^ab(p) → A(L) → 0` of the proof of
+NSW (7.4.1).
+
 ## Main results
 
 * `TauCeti.nonempty_linearEquiv_tameFrameModule_prod`: an extension of `I_G` by `A(L)` of
   projective dimension at most one is isomorphic to `M₀ ⊕ ℤ_p[G]^N`.
+* `TauCeti.exists_relationModule_surjective_of_tameFrame`: on a layer with a generating pair
+  `σ, τ`, `τ` of order prime to `p`, the relation module of every generating family of size
+  `N + 2` maps onto `A(L)` with kernel `ℤ_p[G]`.
 
 ## References
 
 * J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, 2nd ed., proof of (7.4.1),
-  and (5.6.5).
+  and (5.6.5), (5.6.6).
 -/
 
 public section
@@ -142,5 +155,75 @@ theorem nonempty_linearEquiv_tameFrameModule_prod [Algebra ℚ_[p] L] [Module.Fi
       (LinearEquiv.prodComm Λ _ _ ≪≫ₗ (eA ≪≫ₗ TensorProduct.prodLeft _ _ _ _ _).symm ≪≫ₗ
         eM.symm) ≪≫ₗ
     LinearEquiv.prodComm Λ _ _ ≪≫ₗ (TensorProduct.prodLeft _ _ _ _ _).symm⟩
+
+/-- **The relation-module surjection on a tame layer** (the first half of the proof of
+NSW (7.4.1)). Let `L/K` be a finite Galois extension of `p`-adic fields with group `G`, and
+`N = [K : ℚ_p]`. Let `Y` be a `ℤ_p[G]`-module with a resolution `0 → P₁ → P₀ → Y → 0` by finitely
+generated projective `ℤ_p[G]`-modules, which is an extension `0 → A(L) → Y → I_G → 0` of the
+augmentation ideal by the `p`-adic completion `A(L)` of `Lˣ`. Let `σ, τ` generate `G`, with the
+order of `τ` prime to `p`. Then for every generating family `g` of `G` of size `N + 2`, the relation
+module of `g` maps onto `A(L)` with kernel isomorphic to `ℤ_p[G]`. -/
+theorem exists_relationModule_surjective_of_tameFrame [Algebra ℚ_[p] L] [Module.Finite ℚ_[p] L]
+    [Algebra ℚ_[p] K] [IsScalarTower ℚ_[p] K L] [IsGalois K L]
+    {Y P₀ P₁ : Type*} [AddCommGroup Y] [Module Λ Y]
+    [AddCommGroup P₀] [Module Λ P₀] [Module.Finite Λ P₀] [Module.Projective Λ P₀]
+    [AddCommGroup P₁] [Module Λ P₁] [Module.Finite Λ P₁] [Module.Projective Λ P₁]
+    {d : P₁ →ₗ[Λ] P₀} {ρ : P₀ →ₗ[Λ] Y}
+    (hdρ : Function.Exact d ρ) (hd : Function.Injective d) (hρ : Function.Surjective ρ)
+    {ι : Additive ↑(padicCompletionUnits p L) →ₗ[Λ] Y}
+    {π : Y →ₗ[Λ] RingHom.ker (MonoidAlgebra.augmentation ℤ_[p] (L ≃ₐ[K] L))}
+    (hιπ : Function.Exact ι π) (hι : Function.Injective ι) (hπ : Function.Surjective π)
+    (h : Finite (pPowerRootsOfUnity p L)) (σ τ : L ≃ₐ[K] L)
+    (hgen : Subgroup.closure {σ, τ} = ⊤) (hτ : ¬ p ∣ orderOf τ)
+    {g : Fin (Module.finrank ℚ_[p] K + 2) → L ≃ₐ[K] L} (hg : Subgroup.closure (Set.range g) = ⊤) :
+    ∃ β : MonoidAlgebra.relationModule ℤ_[p] (L ≃ₐ[K] L) g →ₗ[Λ]
+        Additive (padicCompletionUnits p L),
+      Function.Surjective β ∧ Nonempty (LinearMap.ker β ≃ₗ[Λ] Λ) := by
+  have := Module.Finite.right ℚ_[p] K L
+  obtain ⟨a, b, ha, hb, hcard, -⟩ := exists_tameFrame_exponents h σ τ hgen hτ
+  obtain ⟨eY⟩ := nonempty_linearEquiv_tameFrameModule_prod hdρ hd hρ hιπ hι hπ h σ τ hgen a b ha hb
+    hcard
+  set N := Module.finrank ℚ_[p] K
+  set rel := tameFrameRelations ℤ_[p] (L ≃ₐ[K] L) σ τ (a : ℤ_[p]) (b : ℤ_[p])
+  set k := tameFrameRelationMap ℤ_[p] (L ≃ₐ[K] L) σ τ (a : ℤ_[p]) (b : ℤ_[p])
+  -- `M₀ = ℤ_p[G]² / ℤ_p[G]·(σ - a, τ - b)`, and `1 ↦ (σ - a, τ - b)` is injective.
+  have hrel : Function.Exact k rel.toQuotient := by
+    rw [LinearMap.exact_iff, Module.Relations.ker_toQuotient, range_tameFrameRelationMap]
+  have hcard₁ := hcard ▸ (localRootOfUnityOrder_pos p L h).ne'
+  simp only [natCast_def] at hcard₁
+  have hk : Function.Injective k := tameFrameRelationMap_injective_of_card_ne_zero
+    (isOfFinOrder_of_finite σ) (isOfFinOrder_of_finite τ) hcard₁
+  -- So `Y ≃ M₀ ⊕ ℤ_p[G]^N` is the quotient of `ℤ_p[G]^(N + 2) = ℤ_p[G]² ⊕ ℤ_p[G]^N` by the image
+  -- of `ℤ_p[G]` under `x ↦ (x·(σ - a, τ - b), 0)`.
+  let eP : (Fin (N + 2) → Λ) ≃ₗ[Λ] (rel.G →₀ Λ) × (Fin N → Λ) :=
+    LinearEquiv.funCongrLeft Λ Λ (finSumFinEquiv.trans (finCongr (Nat.add_comm 2 N))) ≪≫ₗ
+      LinearEquiv.sumArrowLequivProdArrow _ _ Λ Λ ≪≫ₗ
+      (Finsupp.linearEquivFunOnFinite Λ Λ (Fin 2)).symm.prodCongr (.refl Λ _)
+  let φ : (Fin (N + 2) → Λ) →ₗ[Λ] Y :=
+    eY.symm.toLinearMap ∘ₗ rel.toQuotient.prodMap LinearMap.id ∘ₗ eP.toLinearMap
+  have hφ : Function.Surjective φ :=
+    eY.symm.surjective.comp ((rel.surjective_toQuotient.prodMap Function.surjective_id).comp
+      eP.surjective)
+  -- `φ` is by definition the composite, and `prodMap f id (y, z) = (f y, z)` holds by `rfl`
+  -- (`LinearMap.prodMap_apply`); `LinearMap.comp_apply` cannot be used to unfold `φ`, because the
+  -- semiring instances of `rel.Quotient` and `TameFrameModule` agree only up to unfolding.
+  have hφ' (y : rel.G →₀ Λ) (z : Fin N → Λ) :
+      φ (eP.symm (y, z)) = eY.symm (rel.toQuotient y, z) :=
+    congrArg (fun w ↦ eY.symm (rel.toQuotient.prodMap LinearMap.id w)) (eP.apply_symm_apply (y, z))
+  have hex : Function.Exact (eP.symm.toLinearMap ∘ₗ LinearMap.inl Λ _ _ ∘ₗ k) φ := by
+    intro x
+    obtain ⟨⟨y, z⟩, rfl⟩ := eP.symm.surjective x
+    rw [hφ', LinearEquiv.map_eq_zero_iff, Prod.mk_eq_zero, hrel y]
+    simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply, LinearMap.inl_apply,
+      Set.mem_range, EmbeddingLike.apply_eq_iff_eq, Prod.mk.injEq]
+    constructor
+    · rintro ⟨⟨r, rfl⟩, rfl⟩
+      exact ⟨r, rfl, rfl⟩
+    · rintro ⟨r, rfl, rfl⟩
+      exact ⟨⟨r, rfl⟩, rfl⟩
+  obtain ⟨β, hβ, ⟨eβ⟩⟩ := exists_relationModule_surjective_of_exact hιπ hι hπ hφ hg
+  refine ⟨β, hβ, ⟨eβ ≪≫ₗ .ofEq _ _ (LinearMap.exact_iff.mp hex) ≪≫ₗ
+    (LinearEquiv.ofInjective (eP.symm.toLinearMap ∘ₗ LinearMap.inl Λ _ _ ∘ₗ k)
+      (eP.symm.injective.comp (LinearMap.inl_injective.comp hk))).symm⟩⟩
 
 end TauCeti

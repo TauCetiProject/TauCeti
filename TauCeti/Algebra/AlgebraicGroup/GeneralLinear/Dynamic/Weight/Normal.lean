@@ -392,8 +392,7 @@ theorem weightLeviInParabolicGroupSchemeIso_hom_comp_weightLeviToParabolic
     ext x
     rw [weightParabolicCoordinateMap_apply, CommHopfAlgCat.mkQuotient_apply]
   dsimp only [q]
-  rw [hq_def, ← Category.assoc,
-    CommHopfAlgCat.mkQuotient_comp_quotientMapOfLe]
+  rw [hq_def, CommHopfAlgCat.mkQuotient_comp_quotientMapOfLe_assoc]
   rw [weightLeviInParabolicCoordinateIso, Iso.trans_hom, ← Category.assoc,
     mkQuotient_comp_eqToIso (R := R)
       (weightLeviInParabolicHopfIdeal_comapOfSurjective R w).symm,
@@ -484,8 +483,7 @@ theorem weightUnipotentInParabolicGroupSchemeIso_hom_comp_weightUnipotentToParab
     ext x
     rw [weightParabolicCoordinateMap_apply, CommHopfAlgCat.mkQuotient_apply]
   dsimp only [q]
-  rw [hq_def, ← Category.assoc,
-    CommHopfAlgCat.mkQuotient_comp_quotientMapOfLe]
+  rw [hq_def, CommHopfAlgCat.mkQuotient_comp_quotientMapOfLe_assoc]
   rw [weightUnipotentInParabolicCoordinateIso, Iso.trans_hom, ← Category.assoc,
     mkQuotient_comp_eqToIso (R := R)
       (weightUnipotentInParabolicHopfIdeal_comapOfSurjective R w).symm,

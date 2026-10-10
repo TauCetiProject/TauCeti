@@ -61,23 +61,23 @@ theorem nonempty_iso_of_liesOver_inertia_of_nonempty_iso_indFDRep
   let _ := Fintype.ofFinite
     (DoubleCoset.Quotient (inertia V : Set G) (inertia V : Set G))
   by_contra hAB
-  have hBA : (B ≅ A) → False := fun e ↦ hAB ⟨e.symm⟩
   have hterm (D : DoubleCoset.Quotient (inertia V : Set G) (inertia V : Set G)) :
       Module.finrank k
-          (resFDRep ((mackeySubgroup D.out (inertia V) (inertia V)).subgroupOf (inertia V)) B ⟶
+          (Subgroup.resFDRep
+            ((mackeySubgroup D.out (inertia V) (inertia V)).subgroupOf (inertia V)) A ⟶
             (Action.res (FGModuleCat k)
-              (mackeyToH D.out (inertia V) (inertia V))).obj A) = 0 := by
+              (mackeyToH D.out (inertia V) (inertia V))).obj B) = 0 := by
     by_cases hs : D.out ∈ inertia V
-    · have hchange := finrank_hom_res_mackeyToH_mul_left_mul_right B A hs
+    · have hchange := finrank_hom_res_mackeyToH_mul_left_mul_right A B hs
           (one_mem (inertia V)) 1
       have hrepresentative : D.out * 1 * 1 = D.out := by simp
       rw [hrepresentative] at hchange
       rw [hchange, finrank_hom_res_mackeyToH_one,
-        CategoryTheory.finrank_hom_simple_simple_eq_zero_of_not_iso k hBA]
-    · let _ := subsingleton_hom_res_mackeyToH_of_not_mem_inertia V B A hB hA hs
+        CategoryTheory.finrank_hom_simple_simple_eq_zero_of_not_iso k (fun e ↦ hAB ⟨e⟩)]
+    · let _ := subsingleton_hom_res_mackeyToH_of_not_mem_inertia V A B hA hB hs
       exact Module.finrank_zero_of_subsingleton
   have hzero : Module.finrank k (indFDRep A ⟶ indFDRep B) = 0 := by
-    rw [finrank_hom_indFDRep_mackey B A, Finset.sum_eq_zero fun D _ ↦ hterm D]
+    rw [finrank_hom_indFDRep_mackey A B, Finset.sum_eq_zero fun D _ ↦ hterm D]
   obtain ⟨e⟩ := hInd
   have he : e.hom ≠ 0 := by
     obtain ⟨x, hx⟩ := Module.finrank_pos_iff_exists_ne_zero.mp (show
