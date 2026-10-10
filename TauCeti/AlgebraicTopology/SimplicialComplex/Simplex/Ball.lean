@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Finite
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Relabel.Basic
 public import TauCeti.Analysis.Convex.CoordinateSimplex
-public import TauCeti.Geometry.Convex.ConvexSpace.Topology
 
 /-!
 # A simplex and its boundary as a ball and its sphere
@@ -181,20 +181,20 @@ namespace PreAbstractSimplicialComplex
 
 open AbstractSimplicialComplex
 
-/-- The polyhedron of any `n`-simplex is homeomorphic to the Euclidean closed `n`-ball,
-inside any ambient weak realization containing it. Unused ambient vertices add no points. -/
-theorem nonempty_homeomorph_simplex_closedBall {ι : Type*}
-    {K : AbstractSimplicialComplex ι} {V : Finset ι} {n : ℕ}
-    (hV : V.card = n + 1) (hK : simplex V ≤ K.toPreAbstractSimplicialComplex) :
-    Nonempty ({x : Realization K // x.1.support ∈ simplex V} ≃ₜ
-      closedBall (0 : EuclideanSpace ℝ (Fin n)) 1) := by
+variable {ι : Type*} {A : AbstractSimplicialComplex ι} {n : ℕ}
+
+/-- The polyhedron of a simplex with `n + 1` vertices is homeomorphic to the Euclidean closed
+`n`-ball, inside any ambient realization containing it. -/
+theorem nonempty_homeomorph_simplex_closedBall {V : Finset ι}
+    (hV : V.card = n + 1) (hA : simplex V ≤ A.toPreAbstractSimplicialComplex) :
+    Nonempty ({x : Realization A // x.1.support ∈ simplex V} ≃ₜ
+      Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1) := by
   classical
-  let e := V.equivFinOfCardEq hV
-  have hface : V ∈ K := hK (self_mem_simplex.mpr (Finset.card_pos.mp (by omega)))
-  exact ⟨(K.simplexRealizationHomeomorph V hface).symm.trans
-    ((Finset.standardSimplexHomeomorph V).trans
-      (e.stdSimplexHomeomorph.trans
-        ((realizationTopHomeomorphStdSimplex (ι := Fin (n + 1))).symm.trans
-        (realizationTopHomeomorphClosedBall n))))⟩
+  let P := simplex (Finset.univ : Finset (Fin (n + 1)))
+  have hP : P = (⊤ : AbstractSimplicialComplex (Fin (n + 1))).toPreAbstractSimplicialComplex := by
+    simp only [P, simplex_univ, AbstractSimplicialComplex.top_toPreAbstractSimplicialComplex]
+  obtain ⟨r⟩ := nonempty_finsetRelabelingHomeomorph hV (fun f himage => by
+      rw [map_simplex, himage]) hP hA
+  exact ⟨r.trans (AbstractSimplicialComplex.realizationTopHomeomorphClosedBall n)⟩
 
 end PreAbstractSimplicialComplex

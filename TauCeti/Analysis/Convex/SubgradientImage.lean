@@ -21,6 +21,10 @@ Since `f` is continuous on `D`, its subgradients for the inner product are bound
 compact `K ⊆ D`, and the graph of the subdifferential over a closed `K ⊆ D` is closed. Hence
 the subgradient image `∂f(K) = ⋃ x ∈ K, ∂f(x)` of a compact subset of `D` is compact.
 
+For a real function `u` continuous on the closure of a bounded set `Ω`, every slope of an affine
+function through a point of the graph over `Ω` that lies below `u` on the frontier of `Ω` is a
+subgradient of `u` relative to `Ω` at some point of `Ω`.
+
 ## Main statements
 
 * `TauCeti.exists_norm_le_of_mem_subdifferential` — the subgradients of `f` are bounded over
@@ -28,7 +32,9 @@ the subgradient image `∂f(K) = ⋃ x ∈ K, ∂f(x)` of a compact subset of `D
 * `TauCeti.isClosed_setOf_mem_subdifferential` — the graph of the subdifferential over a closed
   subset of `D` is closed;
 * `TauCeti.isCompact_subgradientImage` — the subgradient image of a compact subset of `D` is
-  compact.
+  compact;
+* `TauCeti.exists_forall_add_inner_le_of_forall_frontier` — slopes of affine functions through a
+  point of the graph that lie below the boundary values are subgradients at points of `Ω`.
 
 ## References
 
@@ -120,5 +126,32 @@ theorem isCompact_subgradientImage {K : Set E} (hK : IsCompact K)
   convert hG.image continuous_snd using 1
   ext y
   simp
+
+omit [FiniteDimensional ℝ E] hf hbot in
+/-- **Slopes below the boundary values are subgradients.** Let `Ω` be bounded and `u` continuous
+on its closure, and let `x₀ ∈ Ω`. If the affine function `x ↦ u x₀ + ⟪x - x₀, p⟫` lies below `u`
+on the frontier of `Ω`, then `p` is a subgradient of `u` relative to `Ω` at some point `x₁ ∈ Ω`:
+`u x₁ + ⟪x - x₁, p⟫ ≤ u x` for every `x ∈ Ω`. -/
+theorem exists_forall_add_inner_le_of_forall_frontier [ProperSpace E] {Ω : Set E} {u : E → ℝ}
+    (hΩ : Bornology.IsBounded Ω) (hu : ContinuousOn u (closure Ω)) {x₀ : E} (hx₀ : x₀ ∈ Ω)
+    {p : E} (hp : ∀ x ∈ frontier Ω, u x₀ + inner ℝ (x - x₀) p ≤ u x) :
+    ∃ x₁ ∈ Ω, ∀ x ∈ Ω, u x₁ + inner ℝ (x - x₁) p ≤ u x := by
+  -- Minimize `u - ⟪·, p⟫` over the compact closure of `Ω`.
+  have hcont : ContinuousOn (fun x => u x - inner ℝ x p) (closure Ω) :=
+    hu.sub (continuous_id.inner continuous_const).continuousOn
+  obtain ⟨x₁, hx₁, hmin⟩ := hΩ.isCompact_closure.exists_isMinOn ⟨x₀, subset_closure hx₀⟩ hcont
+  have hmin' : ∀ x ∈ Ω, u x₁ - inner ℝ x₁ p ≤ u x - inner ℝ x p := fun x hx =>
+    isMinOn_iff.1 hmin x (subset_closure hx)
+  by_cases h₁ : x₁ ∈ Ω
+  · refine ⟨x₁, h₁, fun x hx => ?_⟩
+    have := hmin' x hx
+    rw [inner_sub_left]
+    linarith
+  · -- A minimum on the frontier is no smaller than the value at `x₀`, which is then a minimum.
+    refine ⟨x₀, hx₀, fun x hx => ?_⟩
+    have h₂ := hp x₁ ⟨hx₁, fun h => h₁ (interior_subset h)⟩
+    have h₃ := hmin' x hx
+    rw [inner_sub_left] at h₂ ⊢
+    linarith
 
 end TauCeti
