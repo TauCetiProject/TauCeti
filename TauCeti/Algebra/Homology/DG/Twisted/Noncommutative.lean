@@ -37,7 +37,7 @@ multiplies the coefficients.
   `TauCeti.TwistedExamples.isDGAlgebra_threeDifferential` makes `ℚ⟨a, b, c⟩` a differential graded
   algebra.
 * `TauCeti.TwistedExamples.threeCocycle`: the twisting cocycle `m x z = a`, `m z y = b`,
-  `m x y = c`, with its entries `threeCocycle_m`.
+  `m x y = c`, with its entries `threeCocycle_m_apply`.
 * `TauCeti.TwistedExamples.twistedDifferential_single_x`: `D (1 ⊗ x) = a ⊗ z + c ⊗ y`.
 * `TauCeti.TwistedExamples.twistedDifferential_twistedDifferential_single_x`: `D² (1 ⊗ x) = 0`,
   computed term by term.
@@ -185,7 +185,7 @@ noncomputable def threeCocycle :
 
 /-- The entries of the cocycle. -/
 @[simp]
-theorem threeCocycle_m (i j : Fin 3) : threeCocycle.m i j = threeMatrix i j := by
+theorem threeCocycle_m_apply (i j : Fin 3) : threeCocycle.m i j = threeMatrix i j := by
   rw [threeCocycle]
 
 /-- **`D (1 ⊗ x) = a ⊗ z + c ⊗ y`** on the regular module. -/
