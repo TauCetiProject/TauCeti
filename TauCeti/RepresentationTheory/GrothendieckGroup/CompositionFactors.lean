@@ -36,7 +36,7 @@ variable {R : Type u} [Ring R] [IsArtinianRing R]
 /-- Jordan–Hölder coordinates at simple modules determine an exact Grothendieck class over
 an Artinian ring, without a chosen family of simple representatives. -/
 @[ext]
-theorem ExactK0.ext
+theorem ExactK0.ext_jordanHolderCoordinate
     {x y : ExactK0 (finiteModulesExactStructure R)}
     (h : ∀ S : FGModuleCat.{u} R, IsSimpleModule R S →
       jordanHolderCoordinate R S x = jordanHolderCoordinate R S y) : x = y := by
@@ -46,22 +46,13 @@ theorem ExactK0.ext
   ext i
   simpa only [simpleClassBasis_repr_apply] using h (S i) (hS i)
 
-/-- Two virtual classes over an Artinian ring agree exactly when all their simple
-Jordan–Hölder coordinates agree. -/
-@[simp]
-theorem ExactK0.eq_iff_jordanHolderCoordinate_eq
-    (x y : ExactK0 (finiteModulesExactStructure R)) :
-    x = y ↔ ∀ S : FGModuleCat.{u} R, IsSimpleModule R S →
-      jordanHolderCoordinate R S x = jordanHolderCoordinate R S y :=
-  ⟨fun h _ _ ↦ congrArg _ h, ExactK0.ext⟩
-
 /-- Finitely generated modules over an Artinian ring have the same exact Grothendieck class
 exactly when they have the same multiplicity of every simple composition factor. -/
 theorem ExactK0.of_eq_of_iff_jordanHolderMultiplicity_eq (M N : FGModuleCat.{u} R) :
     (ExactK0.of M : ExactK0 (finiteModulesExactStructure R)) = ExactK0.of N ↔
       ∀ S : FGModuleCat.{u} R, IsSimpleModule R S →
         jordanHolderMultiplicity R M S = jordanHolderMultiplicity R N S := by
-  simp only [ExactK0.eq_iff_jordanHolderCoordinate_eq, jordanHolderCoordinate_of,
+  simp only [ExactK0.ext_jordanHolderCoordinate_iff, jordanHolderCoordinate_of,
     Nat.cast_inj]
 
 end TauCeti
