@@ -290,6 +290,16 @@ structure IsConwaySphere (K : SmoothCircleEmbedding (𝓡 3) M)
 
 variable {e : SmoothEmbedding (𝓡 3) (𝓡 3) ∞ (EuclideanSpace ℝ (Fin 3)) M} {i : Fin 3}
 
+/-- A Conway sphere does not depend on rotation of the knot's parametrization. -/
+@[simp]
+theorem isConwaySphere_rotate_iff {K : SmoothCircleEmbedding (𝓡 3) M} (a : Circle) :
+    IsConwaySphere (K.rotate a) e i ↔ IsConwaySphere K e i := by
+  constructor <;> rintro ⟨hp, hi, ho, hv⟩ <;>
+    exact ⟨by simpa only [SmoothCircleEmbedding.range_rotate] using hp,
+      fun x hx ↦ by simpa only [SmoothCircleEmbedding.range_rotate] using hi x hx,
+      fun x hx ↦ by simpa only [SmoothCircleEmbedding.range_rotate] using ho x hx,
+      by simpa only [SmoothCircleEmbedding.range_rotate] using hv⟩
+
 /-- A Conway sphere of `K` in standard position for a half-turn is also one for every knot whose
 image is the mutation of `K` along it: near the sphere the mutation does not change the knot. -/
 theorem IsConwaySphere.of_range_eq_conwayMutation {K K' : SmoothCircleEmbedding (𝓡 3) M}
@@ -363,6 +373,34 @@ theorem IsConwayMutant.symm (h : IsConwayMutant K K') : IsConwayMutant K' K := b
     simpa using h.symm.toHomeomorph.continuous.tendsto (h θ)
   filter_upwards [ht.eventually hh] with t ht
   simpa using ht.symm
+
+/-- Rotating the source knot preserves its Conway mutants. -/
+theorem IsConwayMutant.rotate_left (hmut : IsConwayMutant K K') (a : Circle) :
+    IsConwayMutant (K.rotate a) K' := by
+  obtain ⟨b, rfl⟩ := Circle.exp_surjective a
+  obtain ⟨e, i, hK, hK', θ, hθ, h, hh⟩ := hmut
+  -- Translation by `b` lifts the circle rotation to the real parameter of the outside arc.
+  refine ⟨e, i, (isConwaySphere_rotate_iff _).2 hK, by simpa using hK', θ - b, ?_,
+    (OrderIso.addRight b).trans h, ?_⟩
+  · simpa only [SmoothCircleEmbedding.rotate_apply, ← Circle.exp_add, add_sub_cancel] using hθ
+  · have ht : Tendsto (fun t : ℝ ↦ t + b) (𝓝 (θ - b)) (𝓝 θ) := by
+      simpa only [sub_add_cancel] using (continuous_add_const b).tendsto (θ - b)
+    filter_upwards [ht.eventually hh] with t ht
+    simpa only [OrderIso.trans_apply, OrderIso.addRight_apply,
+      SmoothCircleEmbedding.rotate_apply, ← Circle.exp_add, add_comm b t] using ht
+
+/-- Conway mutation does not depend on rotation of the source knot's parametrization. -/
+@[simp]
+theorem isConwayMutant_rotate_left_iff (a : Circle) :
+    IsConwayMutant (K.rotate a) K' ↔ IsConwayMutant K K' :=
+  ⟨fun h ↦ by simpa using h.rotate_left a⁻¹, fun h ↦ h.rotate_left a⟩
+
+/-- Conway mutation does not depend on rotation of the mutant's parametrization. -/
+@[simp]
+theorem isConwayMutant_rotate_right_iff (a : Circle) :
+    IsConwayMutant K (K'.rotate a) ↔ IsConwayMutant K K' :=
+  ⟨fun h ↦ ((isConwayMutant_rotate_left_iff a).1 h.symm).symm,
+    fun h ↦ (h.symm.rotate_left a).symm⟩
 
 /-- A knot whose whole tangle inside a Conway sphere is invariant under the half-turn is a mutant
 of itself. -/
