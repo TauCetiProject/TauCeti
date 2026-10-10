@@ -77,6 +77,17 @@ theorem colLen_bot (j : ℕ) : (⊥ : YoungDiagram).colLen j = 0 :=
   Nat.eq_zero_of_not_pos fun h =>
     _root_.YoungDiagram.notMem_bot _ (_root_.YoungDiagram.mem_iff_lt_colLen.mpr h)
 
+/-- The empty Young diagram has no cells. -/
+@[simp]
+theorem card_bot : (⊥ : YoungDiagram).card = 0 :=
+  Finset.card_eq_zero.mpr _root_.YoungDiagram.cells_bot
+
+/-- A Young diagram with no cells is the empty one. -/
+theorem card_eq_zero_iff {μ : YoungDiagram} : μ.card = 0 ↔ μ = ⊥ :=
+  ⟨fun h => _root_.YoungDiagram.ext
+      ((Finset.card_eq_zero.mp h).trans _root_.YoungDiagram.cells_bot.symm),
+    fun h => h ▸ card_bot⟩
+
 /-- A Young diagram is determined by its row lengths. -/
 theorem rowLen_injective : Function.Injective _root_.YoungDiagram.rowLen := by
   intro μ ν h
