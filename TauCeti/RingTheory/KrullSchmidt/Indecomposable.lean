@@ -204,9 +204,8 @@ theorem IsIndecomposableModule.isSimpleModule [IsSemisimpleModule A M]
 
 /-! ### Splitting off an indecomposable module -/
 
-/-- **A split injection into an indecomposable module is an isomorphism.** If `g ∘ₗ f` is bijective
-and the source of `f` is nontrivial, then its image is a nonzero direct summand of the
-indecomposable target, so the complementary summand vanishes and `f` is surjective. -/
+/-- If `N` is nontrivial, `P` is indecomposable, and `g ∘ₗ f` is bijective for linear maps
+`f : N →ₗ[A] P` and `g : P →ₗ[A] N`, then `f` is bijective. -/
 theorem IsIndecomposableModule.bijective_of_bijective_comp {N P : Type*}
     [AddCommGroup N] [Module A N] [AddCommGroup P] [Module A P] [Nontrivial N]
     (hP : IsIndecomposableModule A P) {f : N →ₗ[A] P} {g : P →ₗ[A] N}
