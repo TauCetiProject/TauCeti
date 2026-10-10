@@ -74,15 +74,15 @@ instance : TopologicalSpace (MooreReplacement p) :=
   inferInstanceAs (TopologicalSpace {x : E × MoorePath B // x.2.source = p x.1})
 
 /-- The pair `(e, γ)`, for a Moore path `γ` starting at `p e`. -/
-def mk (e : E) (γ : MoorePath B) (h : γ.source = p e) : MooreReplacement p :=
+@[expose] def mk (e : E) (γ : MoorePath B) (h : γ.source = p e) : MooreReplacement p :=
   ⟨(e, γ), h⟩
 
 /-- The point of `E` of a pair `(e, γ)`. -/
-def point (x : MooreReplacement p) : E :=
+@[expose] def point (x : MooreReplacement p) : E :=
   x.1.1
 
 /-- The Moore path of a pair `(e, γ)`. -/
-def path (x : MooreReplacement p) : MoorePath B :=
+@[expose] def path (x : MooreReplacement p) : MoorePath B :=
   x.1.2
 
 @[simp]
@@ -138,7 +138,7 @@ namespace MooreLiftingFunction
 variable {p : C(E, B)} (Φ : MooreLiftingFunction p)
 
 /-- The lift of a Moore path `γ` starting at `p e`, from `e`. -/
-def lift (e : E) (γ : MoorePath B) (h : γ.source = p e) : MoorePath E :=
+@[expose] def lift (e : E) (γ : MoorePath B) (h : γ.source = p e) : MoorePath E :=
   Φ.toContinuousMap (.mk e γ h)
 
 theorem lift_def (e : E) (γ : MoorePath B) (h : γ.source = p e) :
@@ -158,6 +158,11 @@ theorem map_lift (e : E) (γ : MoorePath B) (h : γ.source = p e) : (Φ.lift e �
 theorem length_lift (e : E) (γ : MoorePath B) (h : γ.source = p e) :
     (Φ.lift e γ h).length = γ.length := by
   rw [← MoorePath.length_map p, map_lift]
+
+/-- The lift of a Moore path of length zero is the constant path at its start. -/
+theorem lift_eq_refl_of_length_eq_zero (e : E) (γ : MoorePath B) (h : γ.source = p e)
+    (hγ : γ.length = 0) : Φ.lift e γ h = .refl e := by
+  rw [MoorePath.eq_refl_of_length_eq_zero (γ := Φ.lift e γ h) (by rwa [length_lift]), source_lift]
 
 @[simp]
 theorem apply_lift (e : E) (γ : MoorePath B) (h : γ.source = p e) (t : ℝ≥0) :
