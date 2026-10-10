@@ -184,8 +184,6 @@ private lemma cechXMap_zero (F G : Cᵒᵖ ⥤ A) (n : ℕ) :
 
 end FactorwiseMaps
 
-variable [Quiver.IsThin C]
-
 /-- The presheaf `P(Y × -)`. -/
 private abbrev restr (Y : C) : Cᵒᵖ ⥤ A :=
   (prod.functor.obj Y).op ⋙ P
@@ -193,9 +191,11 @@ private abbrev restr (Y : C) : Cᵒᵖ ⥤ A :=
 /-- Restriction `P ⟶ P(Y × -)` along the projections `Y × V ⟶ V`. -/
 private def toRestr (Y : C) : P ⟶ restr P Y where
   app V := P.map (prod.snd : Y ⨯ V.unop ⟶ V.unop).op
-  -- both composites are restrictions along parallel morphisms of the thin category `C`
-  naturality _ _ _ := (P.map_comp _ _).symm.trans
-    ((congrArg P.map (Quiver.Hom.unop_inj (Subsingleton.elim _ _))).trans (P.map_comp _ _))
+  -- the projections `Y × V ⟶ V` are natural in `V`
+  naturality _ _ _ := by
+    dsimp [prod.functor]
+    simp only [← P.map_comp]
+    exact P.congr_map (Quiver.Hom.unop_inj (by simp))
 
 /-- Restriction `P(Y × -) ⟶ P(Y' × -)` along a morphism `Y' ⟶ Y`. -/
 private abbrev restrMap {Y Y' : C} (h : Y' ⟶ Y) : restr P Y ⟶ restr P Y' :=
@@ -204,8 +204,7 @@ private abbrev restrMap {Y Y' : C} (h : Y' ⟶ Y) : restr P Y ⟶ restr P Y' :=
 private lemma toRestr_comp_restrMap {Y Y' : C} (h : Y' ⟶ Y) :
     toRestr P Y ≫ restrMap P h = toRestr P Y' := by
   ext V
-  exact (P.map_comp _ _).symm.trans
-    (congrArg P.map (Quiver.Hom.unop_inj (Subsingleton.elim _ _)))
+  simp [toRestr, prod.functor, ← P.map_comp, ← op_comp]
 
 /-- The two restrictions `P ⟶ P(U 0 × U 1 × -)`, through `U 0` and through `U 1`, agree. -/
 private lemma toRestr_comp_restrMap_app (V : C) :
@@ -213,6 +212,8 @@ private lemma toRestr_comp_restrMap_app (V : C) :
       (toRestr P (U 1)).app (op V) ≫ (restrMap P (prod.snd : U 0 ⨯ U 1 ⟶ U 1)).app (op V) :=
   (NatTrans.comp_app _ _ _).symm.trans <| (NatTrans.congr_app ((toRestr_comp_restrMap P _).trans
     (toRestr_comp_restrMap P _).symm) (op V)).trans (NatTrans.comp_app _ _ _)
+
+variable [Quiver.IsThin C]
 
 /-- Over an object `V` with a morphism to `Y`, restriction along `Y × V ⟶ V` is invertible. -/
 private lemma isIso_toRestr_app {Y V : C} (g : V ⟶ Y) : IsIso ((toRestr P Y).app (op V)) :=
@@ -422,6 +423,7 @@ private lemma isIso_homologyZeroRestr {Y : C} {i₀ : Fin 2} (g : Y ⟶ U i₀) 
   unfold homologyZeroRestr
   infer_instance
 
+omit [Quiver.IsThin C] in
 /-- Restriction from `Y` to `Y'` is compatible with the identifications `homologyZeroRestr`. -/
 private lemma homologyZeroRestr_comp_homologyMap {Y Y' : C} (h : Y' ⟶ Y) :
     homologyZeroRestr U P Y ≫
@@ -430,14 +432,8 @@ private lemma homologyZeroRestr_comp_homologyMap {Y Y' : C} (h : Y' ⟶ Y) :
   simp only [homologyZeroRestr, Category.assoc]
   rw [← HomologicalComplex.homologyMap_comp, cechAugmentation_naturality,
     HomologicalComplex.homologyMap_comp,
-    HomologicalComplex.singleObjHomologySelfIso_inv_naturality_assoc, ← Category.assoc,
-    ← Category.assoc (P.map h.op)]
-  simp only [← Category.assoc]
-  refine ((?_ : _ = _) =≫ _) =≫ _
-  -- `restrObjIso` is the identity, and the remaining restrictions agree in the thin category `C`
-  exact (Category.comp_id _ =≫ _).trans (((P.map_comp _ _).symm.trans
-    ((congrArg P.map (Quiver.Hom.unop_inj (Subsingleton.elim _ _))).trans (P.map_comp _ _))).trans
-    (Category.comp_id _).symm)
+    HomologicalComplex.singleObjHomologySelfIso_inv_naturality_assoc]
+  simp [restrObjIso, prod.functor, ← P.map_comp_assoc, ← op_comp]
 
 /-- The identification of `P(U 0) ⊞ P(U 1)` with the degree `0` cohomology of the middle term of
 `mvShortComplex`. -/
@@ -476,6 +472,7 @@ private lemma isIso_homologyZeroBiprod : IsIso (homologyZeroBiprod U P) := by
       (asIso (homologyZeroRestr U P (U 1)))).isIso_hom
   infer_instance
 
+omit [Quiver.IsThin C] in
 /-- In degree `0` cohomology, the difference map of `mvShortComplex` is the Mayer-Vietoris map
 `P(U 0) ⊞ P(U 1) ⟶ P(U 0 × U 1)`. -/
 private lemma homologyZeroBiprod_comp_homologyMap_mvDiff :
