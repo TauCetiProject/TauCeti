@@ -140,6 +140,15 @@ def orientedSmoothing (D : OrientedPDCode n) (p q : Fin (4 * n)) : OrientedPDCod
     generalize hq : D.orientation q = c
     cases a <;> cases c <;> simp_all)
 
+/-- Smoothing with the same half-edge twice leaves the oriented code unchanged. -/
+@[simp] theorem orientedSmoothing_self : D.orientedSmoothing p p = D := by
+  simp [orientedSmoothing]
+
+/-- Smoothing the two ends of one arc leaves the oriented code unchanged. -/
+@[simp] theorem orientedSmoothing_partner :
+    D.orientedSmoothing p (D.edgePair.val p) = D := by
+  cases hp : D.orientation p <;> simp [orientedSmoothing, hp]
+
 /-- The unoriented smoothing is the reconnection selected by orientation parity. -/
 @[simp] theorem toPDCode_orientedSmoothing :
     (D.orientedSmoothing p q).toPDCode =

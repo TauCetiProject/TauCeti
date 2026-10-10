@@ -61,6 +61,16 @@ variable (D : OrientedPDCode n) (p q : Fin (4 * n))
 @[simp] theorem crossinglessComponents_reconnect :
     (D.reconnect p q h).crossinglessComponents = D.crossinglessComponents := (rfl)
 
+/-- Reconnecting the two ends of one arc leaves the oriented code unchanged. -/
+@[simp] theorem reconnect_partner
+    (h : D.orientation p = !D.orientation (D.edgePair.val p)) :
+    D.reconnect p (D.edgePair.val p) h = D := by
+  apply OrientedPDCode.ext
+  · simp
+  · funext x
+    simp
+  · simp
+
 /-- Reconnection preserves each crossing sign. -/
 @[simp] theorem crossingSign_reconnect (i : Fin n) :
     (D.reconnect p q h).crossingSign i = D.crossingSign i := by
