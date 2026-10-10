@@ -57,7 +57,7 @@ theorem mem_orbit_iff_mem_cycle {j k : Fin n} {z w : ℍ}
 
 /-- On the finite vertices, the orbit relation is exactly the cycle relation. This also applies
 to cycles with trivial vertex stabilizer. -/
-theorem quotientMk_finite_vertex_eq_iff_sameCycle
+theorem finiteVertex_quotientMk_eq_quotientMk_iff_sameCycle
     (hmap : ∀ i, σ.map i ∈ Γ)
     (hdisj : ∀ γ : Γ, γ ≠ 1 →
       Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier))
@@ -90,7 +90,7 @@ noncomputable def finiteVertexCycleEquiv
   let f : {i : Fin n // (P.vertex i).isLeft} → MulAction.orbitRel.Quotient Γ ℍ :=
     fun j ↦ Quotient.mk'' ((P.vertex j).getLeft j.2)
   have hker : ∀ j k, σ.next.SameCycle j.val k.val ↔ Setoid.ker f j k :=
-    fun j k ↦ (σ.quotientMk_finite_vertex_eq_iff_sameCycle hmap hdisj j k).symm
+    fun j k ↦ (σ.finiteVertex_quotientMk_eq_quotientMk_iff_sameCycle hmap hdisj j k).symm
   exact (Quotient.congrRight hker).trans (Setoid.quotientKerEquivRange f)
 
 /-- The finite-cycle bijection sends a vertex cycle to the actual orbit of its vertex. -/
