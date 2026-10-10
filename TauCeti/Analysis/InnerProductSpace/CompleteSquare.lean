@@ -18,9 +18,14 @@ from `y` to the weighted centre `(b / (a + b)) • x`, plus a constant:
 
 whenever `a + b ≠ 0`. This is the identity behind products of Gaussians being Gaussians.
 
+Specialized to the weights `1 - t` and `t` for `t ∈ [0, 1]`, it is the identity
+`d(x, (1 - t) a + t b) ^ 2 + t (1 - t) d(a, b) ^ 2 = (1 - t) d(x, a) ^ 2 + t d(x, b) ^ 2`,
+which we record in `ℝ≥0∞` for use in extended-valued integral estimates.
+
 ## Main declarations
 
 * `TauCeti.mul_norm_sq_add_mul_norm_sub_sq`: the completed-square identity above.
+* `TauCeti.edist_smul_add_smul_sq_add`: its convex-combination form for extended distances.
 -/
 
 public section
@@ -40,5 +45,24 @@ theorem mul_norm_sq_add_mul_norm_sub_sq {a b : ℝ} (hab : a + b ≠ 0) (x y : F
     real_inner_smul_right, real_inner_comm]
   field_simp
   ring
+
+/-- The completed square at the weights `1 - t` and `t`, for extended distances: for `t ∈ [0, 1]`,
+`d(x, (1 - t) a + t b) ^ 2 + t (1 - t) d(a, b) ^ 2 = (1 - t) d(x, a) ^ 2 + t d(x, b) ^ 2`. -/
+theorem edist_smul_add_smul_sq_add {t : ℝ} (ht : t ∈ Set.Icc (0 : ℝ) 1) (x a b : F) :
+    edist x ((1 - t) • a + t • b) ^ 2 + ENNReal.ofReal (t * (1 - t)) * edist a b ^ 2 =
+      ENNReal.ofReal (1 - t) * edist x a ^ 2 + ENNReal.ofReal t * edist x b ^ 2 := by
+  have h₀ : 0 ≤ t := ht.1
+  have h₁ : 0 ≤ 1 - t := sub_nonneg.2 ht.2
+  -- The point at which `mul_norm_sq_add_mul_norm_sub_sq` measures the distance from `x`.
+  have hcomb : x - a - t • (b - a) = x - ((1 - t) • a + t • b) := by module
+  have key := mul_norm_sq_add_mul_norm_sub_sq (a := 1 - t) (b := t) (by simp) (b - a) (x - a)
+  rw [sub_add_cancel, one_mul, div_one, div_one, sub_sub_sub_cancel_right, norm_sub_rev b x,
+    norm_sub_rev b a, hcomb] at key
+  simp only [edist_dist, dist_eq_norm, ← ENNReal.ofReal_pow (norm_nonneg _)]
+  rw [← ENNReal.ofReal_mul (mul_nonneg h₀ h₁), ← ENNReal.ofReal_mul h₁, ← ENNReal.ofReal_mul h₀,
+    ← ENNReal.ofReal_add (by positivity) (mul_nonneg (mul_nonneg h₀ h₁) (by positivity)),
+    ← ENNReal.ofReal_add (mul_nonneg h₁ (by positivity)) (mul_nonneg h₀ (by positivity))]
+  congr 1
+  linarith
 
 end TauCeti
