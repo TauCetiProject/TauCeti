@@ -21,7 +21,8 @@ graded components `HEq` required by `GradedMonoid.GMonoid`.
 
 Hence `⨁ n : ℕ, C^□_n(G; R)` is an `R`-algebra, `TauCeti.normalizedCubicalChainAlgebra G R`, in
 which the product of homogeneous elements is their Pontryagin product (`DirectSum.of_mul_of` and
-`NormalizedCubicalChain.gMul_mul`).
+`NormalizedCubicalChain.gMul_mul`), with unit the `0`-cube at `1`
+(`NormalizedCubicalChain.gOne_one`).
 
 ## Main definitions
 
@@ -54,6 +55,12 @@ variable (G R) in
 /-- The multiplication of the graded structure. -/
 instance gMul : GradedMonoid.GMul fun n : ℕ ↦ NormalizedCubicalChain G R n where
   mul := fun {p q} a b ↦ mul G R p q a b
+
+omit [ContinuousMul G] in
+/-- The unit of the graded structure is the `0`-cube at `1`. -/
+@[simp]
+theorem gOne_one : (GradedMonoid.GOne.one : NormalizedCubicalChain G R 0) = one G R :=
+  (rfl)
 
 /-- The multiplication of the graded structure is the Pontryagin product. -/
 @[simp]
