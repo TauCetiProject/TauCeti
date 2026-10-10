@@ -56,7 +56,7 @@ universe uR uA uM uP
 variable {R : Type uR} {A : Type uA} {M : Type uM}
   [CommRing R] [Ring A] [Algebra R A]
   [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M]
-  {P : Type uP} [Fintype P] [DecidableEq P] {ind : P → ℤ}
+  {P : Type uP} [Fintype P] {ind : P → ℤ}
   {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {dA : A →ₗ[R] A} {hA : IsDGAlgebra 𝒜 dA}
   {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
   [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
@@ -72,6 +72,7 @@ theorem piRight_differential (hM : IsDGRightModule hA ℳ dM)
     (hK : IsDGLeftModule hA (twistedTotalGrading 𝒜 ind) (twistedDifferential m 𝒜 dA))
     (z : BalancedTensorProduct R A M (P → A)) :
     piRight R A M P (differential hM hK z) = twistedDifferential m ℳ dM (piRight R A M P z) := by
+  classical
   -- Both sides are linear in `z`, and `α ⊗ g = Σ_x (α · g x) ⊗ e_x`; compare on `β ⊗ e_x`.
   suffices key : ∀ (β : M) (x : P),
       piRight R A M P (differential hM hK (tmul R A β (Pi.single x 1))) =
@@ -119,7 +120,7 @@ local instance instGradedSMulOppositeOfDecompositionTwisted :
   rw [InternalGrading.ofDecomposition_piece]
   infer_instance
 
-omit [Fintype P] [DecidableEq P] in
+omit [Fintype P] in
 local instance instGradedSMulOfDecompositionTwistedTotalGrading [Finite P] : SetLike.GradedSMul 𝒜
     (InternalGrading.ofDecomposition (twistedTotalGrading 𝒜 ind)).piece := by
   rw [InternalGrading.ofDecomposition_piece]
@@ -153,6 +154,7 @@ omit m in
 degree `n`. -/
 theorem piRight_symm_mem_grading {n : ℤ} {f : P → M} (hf : f ∈ twistedTotalGrading ℳ ind n) :
     (piRight R A M P).symm f ∈ (twistedGrading).piece n := by
+  classical
   rw [piRight_symm_apply]
   refine Submodule.sum_mem _ fun x _ ↦ ?_
   rw [mem_twistedTotalGrading_iff] at hf
