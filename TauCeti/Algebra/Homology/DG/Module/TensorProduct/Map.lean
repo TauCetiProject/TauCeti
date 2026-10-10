@@ -185,17 +185,17 @@ variable {M'' N'' : Type u}
   (hg'₀ : LinearMap.IsHomogeneous g' 𝒩' 𝒩'' 0)
   (hf'd : dM'' ∘ₗ f' = f' ∘ₗ dM') (hg'd : dN'' ∘ₗ g' = g' ∘ₗ dN')
 
-/-- Tensoring preserves composition of degree-zero equivariant chain maps. The proofs of
-compatibility for the composites can be chosen arbitrarily. -/
-theorem cochainComplexMap_comp
-    (hff : ∀ (a : A) m, (f' ∘ₗ f) (op a • m) = op a • (f' ∘ₗ f) m)
-    (hgg : ∀ (a : A) n, (g' ∘ₗ g) (a • n) = a • (g' ∘ₗ g) n)
-    (hff₀ : LinearMap.IsHomogeneous (f' ∘ₗ f) ℳ ℳ'' 0)
-    (hgg₀ : LinearMap.IsHomogeneous (g' ∘ₗ g) 𝒩 𝒩'' 0)
-    (hffd : dM'' ∘ₗ (f' ∘ₗ f) = (f' ∘ₗ f) ∘ₗ dM)
-    (hggd : dN'' ∘ₗ (g' ∘ₗ g) = (g' ∘ₗ g) ∘ₗ dN) :
+/-- Tensoring preserves composition of degree-zero equivariant chain maps. -/
+theorem cochainComplexMap_comp :
     cochainComplexMap hM hN hM'' hN'' (f' ∘ₗ f) (g' ∘ₗ g)
-      hff hgg hff₀ hgg₀ hffd hggd =
+      (fun a m ↦ by simp only [LinearMap.comp_apply, hf, hf'])
+      (fun a n ↦ by simp only [LinearMap.comp_apply, hg, hg'])
+      (by simpa only [add_zero] using hf'₀.comp hf₀)
+      (by simpa only [add_zero] using hg'₀.comp hg₀)
+      (by rw [← LinearMap.comp_assoc, hf'd, LinearMap.comp_assoc, hfd,
+        LinearMap.comp_assoc])
+      (by rw [← LinearMap.comp_assoc, hg'd, LinearMap.comp_assoc, hgd,
+        LinearMap.comp_assoc]) =
         cochainComplexMap hM hN hM' hN' f g hf hg hf₀ hg₀ hfd hgd ≫
           cochainComplexMap hM' hN' hM'' hN'' f' g' hf' hg' hf'₀ hg'₀ hf'd hg'd := by
   apply HomologicalComplex.hom_ext
