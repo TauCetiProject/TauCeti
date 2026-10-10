@@ -173,7 +173,7 @@ theorem apply_characterCarryCocycle_of_mk_eq_fieldArtinMap
     ι (unitsRepH2Equiv K (characterCarryCocycle χ hχ (baseUnitsEquivInvariants K (.ofMul a)) :
         H2 (AbsoluteGaloisGroup K) (UnitsCoeff K))) =
       χ (.ofMul (absoluteGaloisGroupRestrictEquiv K σ : AbsoluteGaloisGroup K)) := by
-  -- An open normal subgroup `V` of `G_K` on which `χ` vanishes, and the character `χ̄` of the
+  -- An open normal subgroup `V` of `G_K` on which `χ` vanishes, and the character `χbar` of the
   -- abelianized Galois group of the layer `V ◁ G_K` that `χ` induces.
   obtain ⟨V, hV⟩ := ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one
     (hχ.preimage continuous_ofMul) (by simp)
