@@ -25,8 +25,8 @@ The covers of `W` are taken in the meet-semilattice `Set.Iic W` of opens contain
 greatest element is `W`, and the structure presheaf is restricted to it
 (`presentationLimitAddCommGrpPresheaf`). For a two-member cover, exactness of the augmented Čech
 complex in every degree follows from statements in degrees `0` and `1`
-(`TauCeti.CategoryTheory.quasiIso_cechAugmentation_fin_two_iff_surjective`), and those are
-Lemma 8.33 on a rational subset: `injective_presentationLimitMap_inf_laurentCoverOpen`,
+(`TauCeti.CategoryTheory.quasiIso_cechAugmentation_fin_two_iff_isSheafFor_and_surjective`), and
+those are Lemma 8.33 on a rational subset: `injective_presentationLimitMap_inf_laurentCoverOpen`,
 `exists_presentationLimitMap_eq_of_inf_laurentCoverOpen` and
 `surjective_presentationLimitMap_sub_inf_laurentCoverOpen`.
 
@@ -71,7 +71,8 @@ theorem quasiIso_cechAugmentation_inf_laurentCoverOpen
         ⟨W ⊓ laurentCoverOpen Aplus f false, Set.mem_Iic.2 inf_le_left⟩]
       isTerminalTop (presentationLimitAddCommGrpPresheaf P Aplus W)) := by
   obtain ⟨T, s, hT, rfl⟩ := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp hW
-  rw [quasiIso_cechAugmentation_fin_two_iff_surjective, Presieve.isSheafFor_arrows_iff]
+  rw [quasiIso_cechAugmentation_fin_two_iff_isSheafFor_and_surjective,
+    Presieve.isSheafFor_arrows_iff]
   refine ⟨fun x hx ↦ ?_, fun z ↦ ?_⟩
   -- the sections of `presentationLimitAddCommGrpPresheaf` over `V` are by definition the elements
   -- of `presentationLimit Aplus V`, and its restriction maps are the `presentationLimitMap`s

@@ -21,20 +21,18 @@ analogous statement for all covering sieves of a Grothendieck topology at once.
 
 ## Main results
 
-* `TauCeti.AddCommGrpCat.isSheafFor_forget_iff`: a presheaf of abelian groups satisfies the
-  sheaf condition for a presieve `R` against every abelian group exactly when its underlying
-  presheaf of sets satisfies the sheaf condition for `R`.
+* `CategoryTheory.Presieve.isSheafFor_comp_forget_addCommGrpCat_iff`: a presheaf of abelian
+  groups satisfies the sheaf condition for a presieve `R` against every abelian group exactly when
+  its underlying presheaf of sets satisfies the sheaf condition for `R`.
 -/
 
 public section
 
-namespace TauCeti
-
-open CategoryTheory Opposite
+open Opposite
 
 universe w v u
 
-namespace AddCommGrpCat
+namespace CategoryTheory.Presieve
 
 variable {C : Type u} [Category.{v} C] {X : C}
 
@@ -42,11 +40,11 @@ variable {C : Type u} [Category.{v} C] {X : C}
 presheaf `P` of abelian groups satisfies the sheaf condition for a presieve `R` on the underlying
 presheaf of sets exactly when, for every abelian group `E`, the presheaf of homomorphisms
 `P ⋙ coyoneda.obj E` satisfies it. -/
-theorem isSheafFor_forget_iff (R : Presieve X) (P : Cᵒᵖ ⥤ _root_.AddCommGrpCat.{w}) :
-    R.IsSheafFor (P ⋙ forget _root_.AddCommGrpCat) ↔
-      ∀ E : _root_.AddCommGrpCat.{w}ᵒᵖ, R.IsSheafFor (P ⋙ coyoneda.obj E) := by
+theorem isSheafFor_comp_forget_addCommGrpCat_iff (R : Presieve X) (P : Cᵒᵖ ⥤ AddCommGrpCat.{w}) :
+    R.IsSheafFor (P ⋙ forget AddCommGrpCat) ↔
+      ∀ E : AddCommGrpCat.{w}ᵒᵖ, R.IsSheafFor (P ⋙ coyoneda.obj E) := by
   refine ⟨fun h E x hx ↦ ?_, fun h ↦ (Presieve.isSheafFor_iff_of_iso
-    (Functor.isoWhiskerLeft P _root_.AddCommGrpCat.coyonedaObjIsoForget)).1 (h _)⟩
+    (Functor.isoWhiskerLeft P AddCommGrpCat.coyonedaObjIsoForget)).1 (h _)⟩
   -- restriction to the members of `R` is jointly injective on underlying sets
   have hsep {s t : P.obj (op X)} (hst : ∀ ⦃Y : C⦄ ⦃g : Y ⟶ X⦄ (hg : R g),
       P.map g.op s = P.map g.op t) : s = t :=
@@ -62,11 +60,9 @@ theorem isSheafFor_forget_iff (R : Presieve X) (P : Cᵒᵖ ⥤ _root_.AddCommGr
     { toFun := t
       map_zero' := hsep fun _ g hg ↦ by simp [ht _ hg]
       map_add' e e' := hsep fun _ g hg ↦ by simp [ht _ hg] }
-  refine ⟨_root_.AddCommGrpCat.ofHom φ, fun _ g hg ↦ ConcreteCategory.ext_apply (ht · hg),
+  refine ⟨AddCommGrpCat.ofHom φ, fun _ g hg ↦ ConcreteCategory.ext_apply (ht · hg),
     fun ψ hψ ↦ ConcreteCategory.ext_apply fun e ↦ hsep fun _ g hg ↦ ?_⟩
   -- `ψ` and the glued map have the same restrictions at each `e`
   exact (ConcreteCategory.congr_hom (hψ g hg) e).trans (ht e hg).symm
 
-end AddCommGrpCat
-
-end TauCeti
+end CategoryTheory.Presieve

@@ -28,10 +28,11 @@ difference of restrictions of elements of `P(U 0)` and `P(U 1)`. The categorical
 
 ## Main results
 
-* `TauCeti.CategoryTheory.quasiIso_cechAugmentation_fin_two_iff_surjective`: the augmented Čech
-  complex of a presheaf of abelian groups on a meet-semilattice with top, for a two-member family,
-  is exact if and only if the underlying presheaf of sets satisfies the sheaf condition for the
-  family and the difference of restrictions `P(U 0) × P(U 1) → P(U 0 ⊓ U 1)` is surjective.
+* `TauCeti.CategoryTheory.quasiIso_cechAugmentation_fin_two_iff_isSheafFor_and_surjective`: the
+  augmented Čech complex of a presheaf of abelian groups on a meet-semilattice with top, for a
+  two-member family, is exact if and only if the underlying presheaf of sets satisfies the sheaf
+  condition for the family and the difference of restrictions `P(U 0) × P(U 1) → P(U 0 ⊓ U 1)` is
+  surjective.
 -/
 
 public section
@@ -75,7 +76,7 @@ on a meet-semilattice `X` with a greatest element `⊤`, and let `U 0`, `U 1` be
 underlying presheaf of sets of `P` satisfies the sheaf condition for the family `U i ≤ ⊤`, and
 every element of `P(U 0 ⊓ U 1)` is the difference of the restrictions of an element of `P(U 0)`
 and an element of `P(U 1)`. -/
-theorem quasiIso_cechAugmentation_fin_two_iff_surjective :
+theorem quasiIso_cechAugmentation_fin_two_iff_isSheafFor_and_surjective :
     QuasiIso (cechAugmentation U isTerminalTop P) ↔
       (Presieve.ofArrows U fun _ ↦ homOfLE le_top).IsSheafFor (P ⋙ forget AddCommGrpCat) ∧
         Function.Surjective fun x : P.obj (op (U 0)) × P.obj (op (U 1)) ↦
@@ -85,6 +86,6 @@ theorem quasiIso_cechAugmentation_fin_two_iff_surjective :
   have hπ : (fun i ↦ isTerminalTop.from (U i)) = fun _ ↦ homOfLE le_top :=
     funext fun _ ↦ Subsingleton.elim _ _
   rw [quasiIso_cechAugmentation_fin_two_iff, epi_biprod_desc_iff_surjective,
-    TauCeti.AddCommGrpCat.isSheafFor_forget_iff, hπ]
+    Presieve.isSheafFor_comp_forget_addCommGrpCat_iff, hπ]
 
 end TauCeti.CategoryTheory
