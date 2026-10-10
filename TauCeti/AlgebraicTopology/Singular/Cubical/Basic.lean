@@ -36,6 +36,7 @@ commutation of two insertions, dual to Mathlib's `Fin.removeNth_removeNth_eq_swa
 
 * `TauCeti.SingularCube X n`: singular `n`-cubes in `X`.
 * `TauCeti.SingularCube.cast`: reindexing along an equality of dimensions.
+* `TauCeti.SingularCube.point`: the `0`-cube at a point.
 * `TauCeti.SingularCube.face`: the face of a cube in a coordinate, at a parameter `t ∈ I`.
 * `TauCeti.SingularCube.IsDegenerateAt`, `TauCeti.SingularCube.IsDegenerate`: degeneracy at a
   coordinate, and degeneracy.
@@ -75,6 +76,13 @@ def cast {n m : ℕ} (h : n = m) (c : SingularCube X n) : SingularCube X m :=
 @[simp]
 theorem cast_apply {n m : ℕ} (h : n = m) (c : SingularCube X n) (x : Fin m → I) :
     cast h c x = c (x ∘ Fin.cast h) :=
+  (rfl)
+
+/-- The `0`-cube at a point. -/
+def point (x : X) : SingularCube X 0 := ContinuousMap.const _ x
+
+@[simp]
+theorem point_apply (x : X) (t : Fin 0 → I) : point x t = x :=
   (rfl)
 
 @[simp]

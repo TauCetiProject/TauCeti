@@ -25,10 +25,6 @@ The cross product of cubical chains of
 
 All three statements hold on normalized chains as well.
 
-## Main definitions
-
-* `TauCeti.SingularCube.point`: the `0`-cube at a point.
-
 ## Main results
 
 * `TauCeti.CubicalChain.crossProduct_assoc`, `TauCeti.NormalizedCubicalChain.crossProduct_assoc`.
@@ -51,35 +47,6 @@ open Finsupp unitInterval
 namespace TauCeti
 
 variable {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
-
-namespace SingularCube
-
-/-- The `0`-cube at a point. -/
-def point (x : X) : SingularCube X 0 := ContinuousMap.const _ x
-
-@[simp]
-theorem point_apply (x : X) (t : Fin 0 → I) : point x t = x :=
-  (rfl)
-
-/-- A point on the left is a unit for the cross product of cubes, up to reindexing. -/
-theorem cast_crossProduct_point_left {q : ℕ} (x : X) (d : SingularCube Y q) :
-    cast (Nat.zero_add q) (crossProduct (point x) d) =
-      (ContinuousMap.prodMk (ContinuousMap.const Y x) (ContinuousMap.id Y)).comp d := by
-  apply ContinuousMap.ext
-  intro t
-  rw [cast_apply, crossProduct_zero_left]
-  rfl
-
-/-- A point on the right is a unit for the cross product of cubes, up to reindexing. -/
-theorem cast_crossProduct_point_right {p : ℕ} (c : SingularCube X p) (y : Y) :
-    cast (Nat.add_zero p) (crossProduct c (point y)) =
-      (ContinuousMap.prodMk (ContinuousMap.id X) (ContinuousMap.const X y)).comp c := by
-  apply ContinuousMap.ext
-  intro t
-  rw [cast_apply, crossProduct_zero_right]
-  rfl
-
-end SingularCube
 
 namespace CubicalChain
 
