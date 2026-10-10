@@ -54,11 +54,6 @@ variable {V H : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   [NormedAddCommGroup H] [InnerProductSpace ℝ H] {ι : V →L[ℝ] H} {a b : ℝ} {u : ℝ → V}
   {u' : ℝ → StrongDual ℝ V}
 
-/-- The pairing `t ↦ u'(t)(u t)` of `u ∈ L²(V)` with `u' ∈ L²(V*)` is integrable. -/
-private theorem integrableOn_apply {s : Set ℝ} (hu : MemLp u 2 (volume.restrict s))
-    (hu' : MemLp u' 2 (volume.restrict s)) : IntegrableOn (fun t ↦ u' t (u t)) s :=
-  memLp_one_iff_integrable.1 ((ContinuousLinearMap.id ℝ (StrongDual ℝ V)).memLp_of_bilin 1 hu' hu)
-
 /-- **The oscillation estimate.** Suppose that at `s` and `s'` the functions `‖ι u‖²` and
 `ι.gelfandDual ∘ ι ∘ u` agree with primitives of `2 u'(u)` and `u'` based at `t₀ ∈ (a, b)`. If
 `s, s'` lie in an interval `(α, β) ⊆ (a, b)`, then
@@ -158,7 +153,8 @@ theorem HasWeakLineDerivOn.exists_continuousOn_ae_eq_of_gelfandDual [CompleteSpa
   · exact ⟨0, continuousOn_const, by simp [Ioo_eq_empty (not_lt.2 hba), EventuallyEq]⟩
   have : IsFiniteMeasure (volume.restrict (Ioo a b)) :=
     isFiniteMeasure_restrict.2 measure_Ioo_lt_top.ne
-  have hp : IntegrableOn (fun r ↦ u' r (u r)) (Ioo a b) := integrableOn_apply hu hu'
+  have hp : IntegrableOn (fun r ↦ u' r (u r)) (Ioo a b) :=
+    memLp_one_iff_integrable.1 ((ContinuousLinearMap.id ℝ (StrongDual ℝ V)).memLp_of_bilin 1 hu' hu)
   have hu'i : IntegrableOn u' (Ioo a b) := hu'.integrable one_le_two
   have hu2 : IntegrableOn (fun r ↦ ‖u r‖ ^ 2) (Ioo a b) :=
     (memLp_two_iff_integrable_sq_norm hu.aestronglyMeasurable).1 hu
@@ -275,9 +271,10 @@ theorem HasWeakLineDerivOn.norm_sq_sub_norm_sq_eq_of_gelfandDual
     (hae : (fun t ↦ ι (u t)) =ᵐ[volume.restrict (Ioo a b)] w) {s t : ℝ} (hs : s ∈ Icc a b)
     (ht : t ∈ Icc a b) :
     ‖w t‖ ^ 2 - ‖w s‖ ^ 2 = 2 * ∫ r in s..t, u' r (u r) := by
+  have hp : IntegrableOn (fun r ↦ u' r (u r)) (Ioo a b) :=
+    memLp_one_iff_integrable.1 ((ContinuousLinearMap.id ℝ (StrongDual ℝ V)).memLp_of_bilin 1 hu' hu)
   rw [← intervalIntegral.integral_const_mul]
-  exact ((h.norm_sq_of_gelfandDual hu hu').integral_eq_sub
-    ((integrableOn_apply hu hu').const_mul 2) (hw.norm.pow 2)
+  exact ((h.norm_sq_of_gelfandDual hu hu').integral_eq_sub (hp.const_mul 2) (hw.norm.pow 2)
     (hae.fun_comp fun y ↦ ‖y‖ ^ 2) hs ht).symm
 
 /-- **The `C([a, b]; H)` bound in a Gelfand triple.** Let `a < b`, let `u ∈ L²(a, b; V)` be such
@@ -290,8 +287,10 @@ theorem HasWeakLineDerivOn.norm_sq_le_of_gelfandDual
     (hu' : MemLp u' 2 (volume.restrict (Ioo a b))) {w : ℝ → H} (hw : ContinuousOn w (Icc a b))
     (hae : (fun t ↦ ι (u t)) =ᵐ[volume.restrict (Ioo a b)] w) {t : ℝ} (ht : t ∈ Icc a b) :
     ‖w t‖ ^ 2 ≤ (⨍ s in Ioo a b, ‖ι (u s)‖ ^ 2) + 2 * ∫ s in Ioo a b, |u' s (u s)| := by
+  have hp : IntegrableOn (fun r ↦ u' r (u r)) (Ioo a b) :=
+    memLp_one_iff_integrable.1 ((ContinuousLinearMap.id ℝ (StrongDual ℝ V)).memLp_of_bilin 1 hu' hu)
   have := (h.norm_sq_of_gelfandDual hu hu').norm_le_setAverage_add_integral hab
-    ((integrableOn_apply hu hu').const_mul 2) (hw.norm.pow 2) (hae.fun_comp fun y ↦ ‖y‖ ^ 2) ht
+    (hp.const_mul 2) (hw.norm.pow 2) (hae.fun_comp fun y ↦ ‖y‖ ^ 2) ht
   simpa [MeasureTheory.integral_const_mul] using this
 
 end TauCeti
