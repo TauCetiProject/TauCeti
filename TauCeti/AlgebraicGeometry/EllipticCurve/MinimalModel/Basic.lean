@@ -115,12 +115,6 @@ The source declaration `HasSplitMultiplicativeReduction.of_isMinimal_smul` no lo
 FLT's current head (`9deae05a`), which drops that development entirely; the pinned revision above
 is the record of it. It is absent from Mathlib too, whose `IsMinimal` API stops at the pairwise
 exclusion of the reduction types and never compares two minimal models.
-
-`valuation_Δ_le_of_isMinimal_smul` compares the discriminant valuations of two models related by
-a change of variables. `of_isMinimal_smul` drops the source's `[IsMinimal R W₁]`, which its `h₁`
-already implies, since `HasSplitMultiplicativeReduction` extends `HasMultiplicativeReduction`
-extends `IsMinimal`. The other statements are unchanged. The converse
-`isMinimal_of_valuation_Δ_eq_of_isMinimal_smul` is not in the source.
 -/
 
 public section
