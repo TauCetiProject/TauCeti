@@ -22,9 +22,6 @@ rings with nilpotents. After extension to any commutative coefficient algebra, t
 differential image is the scalar extension of the integral adjoint root space.
 No nontriviality, smoothness, or reducedness hypothesis is imposed on the base ring.
 
-The construction combines `Symplectic.mem_adjointWeightSpace_iff` with
-`Symplectic.mem_range_derivationCompLieHom_rootSubgroup_iff` and reuses the
-injectivity and normalization of the represented root-subgroup differential.
 The equivalence API follows `SpecialLinear.Root.Adjoint`.
 
 ## References
