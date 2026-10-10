@@ -41,8 +41,9 @@ feasible pair.
   of finite cost for a lower semicontinuous cost on Polish spaces is concentrated on a measurable
   `c`-cyclically monotone set.
 
-The converse, that concentration on a `c`-cyclically monotone set forces optimality, is the
-Schachermayer--Teichmann theorem and is not proved here.
+The converse, that concentration on a `c`-cyclically monotone set forces optimality when the cost
+is finite-valued, is the Schachermayer--Teichmann theorem
+`TauCeti.IsCoupling.isOptimalCoupling_iff_exists_isCyclicallyMonotone`.
 
 ## References
 

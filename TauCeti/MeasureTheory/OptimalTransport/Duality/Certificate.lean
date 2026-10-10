@@ -36,7 +36,9 @@ proving that the contact set of a dual feasible pair is `c`-cyclically monotone.
 certified plan is concentrated on a `c`-cyclically monotone set, which is measurable as soon as
 the cost and both potentials are. The converse implication — that
 concentration on a `c`-cyclically monotone set forces optimality — is the
-Schachermayer--Teichmann theorem and is not proved here.
+Schachermayer--Teichmann theorem `TauCeti.IsCoupling.isOptimalCoupling_of_isCyclicallyMonotone`.
+Its measure-theoretic half is proved here: real potentials on whose contact set a plan is
+concentrated certify optimality even when they are not integrable.
 
 ## Main definitions
 
@@ -59,6 +61,9 @@ Schachermayer--Teichmann theorem and is not proved here.
   than the dual value, provided `AEMeasurable c π`; so `TauCeti.IsOptimalCoupling.isDualCertificate`
   recovers the certificate from an optimal plan of almost-everywhere measurable cost whenever
   the dual value is attained;
+* `TauCeti.IsCoupling.isOptimalCoupling_of_ae_mem_dualContactSet` — a plan concentrated on the
+  contact set of almost-everywhere measurable real potentials, feasible on a product of sets of
+  full measure, is optimal, with no integrability of the potentials;
 * `TauCeti.isDualCertificate_graphPlan` and
   `TauCeti.transportCost_eq_lintegral_of_ae_mem_dualContactSet` — the Monge form: the
   Kantorovich value is attained at the graph plan of a map whose graph lies almost everywhere in
@@ -96,8 +101,8 @@ above, with both spaces a point, is such a pair.
 * F. Santambrogio, *Optimal Transport for Applied Mathematicians*, Progress in Nonlinear
   Differential Equations and their Applications 87, 2015, §1.3 and §1.6;
 * W. Schachermayer and J. Teichmann, *Characterization of optimal transport plans for the
-  Monge--Kantorovich problem*, Proc. Amer. Math. Soc. 137 (2009), 519--529, for the converse
-  that is not proved here.
+  Monge--Kantorovich problem*, Proc. Amer. Math. Soc. 137 (2009), 519--529, for optimality of
+  strongly `c`-monotone plans.
 
 This is Layer 2, items 7 and 8 of the optimal-transport roadmap.
 -/
@@ -374,6 +379,102 @@ theorem IsDualCertificate.of_isOptimalCoupling (h : IsDualCertificate c π μ ν
 
 end Certificate
 
+/-! ### Contact potentials without integrability -/
+
+section ContactPotential
+
+variable [MeasurableSpace X] [MeasurableSpace Y] {μ : Measure X} {ν : Measure Y}
+  {π : Measure (X × Y)}
+
+/-- **Contact potentials certify optimality without integrability.** Let `π` couple two finite
+measures `μ` and `ν`, and let `φ`, `ψ` be almost-everywhere measurable real potentials satisfying
+the dual constraint `φ x + ψ y ≤ c (x, y)` on a product `A ×ˢ B` of sets of full measure. If `π`
+is concentrated on their contact set, then `π` is an optimal coupling.
+
+Unlike `TauCeti.IsDualCertificate.isOptimalCoupling`, neither potential needs to be integrable,
+so the dual value `∫ φ ∂μ + ∫ ψ ∂ν` may be undefined; this is Schachermayer and Teichmann's
+*strong `c`-monotonicity*, with feasibility required only on `A ×ˢ B`. Potentials of this
+kind are produced from a `c`-cyclically monotone set by
+`TauCeti.IsCoupling.exists_ae_add_eq_of_isCyclicallyMonotone`. -/
+theorem IsCoupling.isOptimalCoupling_of_ae_mem_dualContactSet [IsFiniteMeasure μ]
+    (hπ : IsCoupling π μ ν) {A : Set X} {B : Set Y} (hA : μ Aᶜ = 0) (hB : ν Bᶜ = 0)
+    (hφ : AEMeasurable φ μ) (hψ : AEMeasurable ψ ν)
+    (hfeas : ∀ x ∈ A, ∀ y ∈ B, ENNReal.ofReal (φ x + ψ y) ≤ c (x, y))
+    (hae : ∀ᵐ z ∂π, z ∈ dualContactSet c φ ψ) : IsOptimalCoupling c π μ ν := by
+  have : IsFiniteMeasure ν := ⟨hπ.measure_univ_eq ▸ measure_lt_top μ Set.univ⟩
+  refine isOptimalCoupling_iff.2 ⟨hπ, fun σ hσ ↦ ?_⟩
+  -- The proof compares `π` with `σ` through the truncations `T n` of the potentials to `[-n, n]`.
+  -- These are bounded, so their split sums have the same integral against both couplings; that
+  -- integral is at most the cost of `σ` by feasibility, and tends to the cost of `π` by contact.
+  set T : ℕ → ℝ → ℝ := fun n t ↦ max (-(n : ℝ)) (min t n) with hT
+  have hT_le (n : ℕ) (a b : ℝ) :
+      ENNReal.ofReal (T n a + T n b) ≤ ENNReal.ofReal (a + b) := by
+    have hn : (0 : ℝ) ≤ n := n.cast_nonneg
+    rw [ENNReal.ofReal_le_ofReal_iff']
+    rcases le_total 0 (a + b) with h | h
+    · left
+      simp only [hT, max_def, min_def]
+      split_ifs <;> linarith
+    · right
+      simp only [hT, max_def, min_def]
+      split_ifs <;> linarith
+  have hT_nonneg (n : ℕ) {a b : ℝ} (h : 0 ≤ a + b) : 0 ≤ T n a + T n b := by
+    have hn : (0 : ℝ) ≤ n := n.cast_nonneg
+    simp only [hT, max_def, min_def]
+    split_ifs <;> linarith
+  have hT_eq (a : ℝ) : ∀ᶠ n in Filter.atTop, T n a = a := by
+    obtain ⟨N, hN⟩ := exists_nat_ge |a|
+    filter_upwards [Filter.eventually_ge_atTop N] with n hn
+    have hle : |a| ≤ n := hN.trans (Nat.cast_le.2 hn)
+    simp only [hT, min_eq_left (abs_le.1 hle).2, max_eq_right (abs_le.1 hle).1]
+  have hT_norm (n : ℕ) (t : ℝ) : ‖T n t‖ ≤ n := by
+    rw [Real.norm_eq_abs, abs_le]
+    exact ⟨le_max_left _ _, max_le (by linarith [(n.cast_nonneg : (0 : ℝ) ≤ n)])
+      (min_le_right _ _)⟩
+  have hfint n : Integrable (fun x ↦ T n (φ x)) μ :=
+    .of_bound (aemeasurable_const.max (hφ.min aemeasurable_const)).aestronglyMeasurable n
+      (ae_of_all _ fun x ↦ hT_norm n (φ x))
+  have hgint n : Integrable (fun y ↦ T n (ψ y)) ν :=
+    .of_bound (aemeasurable_const.max (hψ.min aemeasurable_const)).aestronglyMeasurable n
+      (ae_of_all _ fun y ↦ hT_norm n (ψ y))
+  -- Against `σ`, the value of each truncated pair is at most the cost.
+  have hAσ : ∀ᵐ z ∂σ, z.1 ∈ A := hσ.measurePreserving_fst.quasiMeasurePreserving.ae <|
+    measure_eq_zero_iff_ae_notMem.1 hA |>.mono fun _ h ↦ by simpa using h
+  have hBσ : ∀ᵐ z ∂σ, z.2 ∈ B := hσ.measurePreserving_snd.quasiMeasurePreserving.ae <|
+    measure_eq_zero_iff_ae_notMem.1 hB |>.mono fun _ h ↦ by simpa using h
+  have hσle n : ENNReal.ofReal (kantorovichDualValue μ ν (fun x ↦ T n (φ x))
+      (fun y ↦ T n (ψ y))) ≤ ∫⁻ z, c z ∂σ := by
+    rw [kantorovichDualValue_eq_integral hσ (hfint n) (hgint n)]
+    refine TauCeti.MeasureTheory.ofReal_integral_le_lintegral_ofReal.trans
+      (lintegral_mono_ae ?_)
+    filter_upwards [hAσ, hBσ] with z hzA hzB
+    exact (hT_le n _ _).trans (hfeas z.1 hzA z.2 hzB)
+  -- Along `π` the truncated split sums are nonnegative, so they integrate to the same value.
+  have hπeq n : ∫⁻ z, ENNReal.ofReal (T n (φ z.1) + T n (ψ z.2)) ∂π =
+      ENNReal.ofReal (kantorovichDualValue μ ν (fun x ↦ T n (φ x)) (fun y ↦ T n (ψ y))) := by
+    rw [kantorovichDualValue_eq_integral hπ (hfint n) (hgint n),
+      ofReal_integral_eq_lintegral_ofReal (hπ.integrable_add_split (hfint n) (hgint n))
+        (hae.mono fun z hz ↦ hT_nonneg n (add_nonneg_of_mem_dualContactSet hz))]
+  -- Along `π` the truncated split sums are eventually the cost, so Fatou's lemma concludes.
+  have hlim : ∀ᵐ z ∂π,
+      c z = Filter.liminf (fun n ↦ ENNReal.ofReal (T n (φ z.1) + T n (ψ z.2))) Filter.atTop := by
+    filter_upwards [hae] with z hz
+    rw [← ofReal_eq_of_mem_dualContactSet hz]
+    refine (Filter.Tendsto.liminf_eq (tendsto_const_nhds.congr' ?_)).symm
+    filter_upwards [hT_eq (φ z.1), hT_eq (ψ z.2)] with n h₁ h₂
+    rw [h₁, h₂]
+  calc ∫⁻ z, c z ∂π
+      = ∫⁻ z, Filter.liminf (fun n ↦ ENNReal.ofReal (T n (φ z.1) + T n (ψ z.2))) Filter.atTop
+          ∂π := lintegral_congr_ae hlim
+    _ ≤ Filter.liminf (fun n ↦ ∫⁻ z, ENNReal.ofReal (T n (φ z.1) + T n (ψ z.2)) ∂π)
+          Filter.atTop :=
+        lintegral_liminf_le' fun n ↦ ENNReal.measurable_ofReal.comp_aemeasurable
+          (hπ.integrable_add_split (hfint n) (hgint n)).aemeasurable
+    _ ≤ ∫⁻ z, c z ∂σ := Filter.liminf_le_of_frequently_le'
+        (Filter.Frequently.of_forall fun n ↦ (hπeq n).trans_le (hσle n))
+
+end ContactPotential
+
 /-! ### The Monge form of the certificate -/
 
 section Monge
@@ -453,8 +554,9 @@ theorem DualFeasible.isCyclicallyMonotone_dualContactSet
 
 /-- **A certified plan with measurable cost and potentials is concentrated on a measurable
 `c`-cyclically monotone set.** The converse implication, that concentration on a
-`c`-cyclically monotone set forces optimality, is the Schachermayer--Teichmann theorem and needs
-topological hypotheses. -/
+`c`-cyclically monotone set forces optimality, is the Schachermayer--Teichmann theorem
+`TauCeti.IsCoupling.isOptimalCoupling_of_isCyclicallyMonotone`; it needs a finite cost and
+Polish spaces. -/
 theorem IsDualCertificate.exists_isCyclicallyMonotone [MeasurableSpace X] [MeasurableSpace Y]
     {μ : Measure X} {ν : Measure Y} {π : Measure (X × Y)}
     (h : IsDualCertificate c π μ ν φ ψ) (hc : Measurable c) (hφm : Measurable φ)
