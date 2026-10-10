@@ -148,31 +148,20 @@ theorem not_anisotropic_of_isSepClosed
     {K W : Type*} [Field K] [IsSepClosed K] [Invertible (2 : K)] [AddCommGroup W] [Module K W]
     [FiniteDimensional K W] (Q : QuadraticForm K W)
     (h : 2 ≤ Module.finrank K W) : ¬ Q.Anisotropic := by
+  classical
   intro hQ
-  obtain ⟨e⟩ := Q.equivalent_weightedSumSquares_of_isSepClosed
+  have he := Q.equivalent_weightedSumSquares_of_isSepClosed
     (QuadraticMap.separatingLeft_of_anisotropic Q hQ)
+  have hstandard := he.anisotropic_iff.mp hQ
   obtain ⟨i, hi⟩ := IsSepClosed.isSquare (-1 : K)
-  let k := Module.finrank K W - 2
-  have hk : k + 1 + 1 = Module.finrank K W := by
-    dsimp [k]
-    omega
-  have hn : 0 < Module.finrank K W := by omega
-  let x₀ : Fin (k + 1 + 1) → K := Fin.cons 1 (Fin.cons i (fun _ : Fin k => 0))
-  let x : Fin (Module.finrank K W) → K :=
-    fun i => x₀ (Fin.cast hk.symm i)
-  have hx : x ≠ 0 := by
-    intro hx
-    let i₀ : Fin (Module.finrank K W) := ⟨0, hn⟩
-    have hi := congrArg (fun f => f i₀) hx
-    simp [x, x₀, i₀] at hi
-  have hzero : Q (e.symm x) = 0 := by
-    rw [← e.map_app]
-    rw [e.apply_symm_apply]
-    simp only [weightedSumSquares_apply, Pi.one_apply, one_smul]
-    rw [← (finCongr hk).sum_comp (fun i => x i * x i)]
-    simp [x, x₀, Fin.sum_univ_succ, ← hi]
-  apply hx
-  rw [← e.apply_symm_apply x, hQ _ hzero]
-  exact map_zero e
+  let i₀ : Fin (Module.finrank K W) := ⟨0, by omega⟩
+  let i₁ : Fin (Module.finrank K W) := ⟨1, by omega⟩
+  have hne : i₀ ≠ i₁ := by simp [i₀, i₁]
+  -- The two coordinate values contribute `1` and `-1` to the sum of squares.
+  have hzero := hstandard (Pi.single i₀ 1 + Pi.single i₁ i) (by
+    simp [weightedSumSquares_apply, Pi.single_apply, mul_add, add_mul, hne, hne.symm,
+      Finset.sum_add_distrib, Finset.sum_ite_eq', ← hi])
+  have : (1 : K) = 0 := by simpa [hne] using congrFun hzero i₀
+  exact one_ne_zero this
 
 end QuadraticForm
