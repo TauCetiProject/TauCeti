@@ -35,7 +35,10 @@ Right modules are represented as left modules over `Aᵐᵒᵖ`, so `α · a` is
 
 ## Main definitions
 
-* `TauCeti.twistedTotalGrading`: the grading of `P → M` by total degree.
+* `TauCeti.twistedTotalGrading`: the grading of `P → M` by total degree, with its decomposition
+  of `P → M` for finite `P` (`instDecompositionTwistedTotalGrading`, from
+  `iSupIndep_twistedTotalGrading` and `iSup_twistedTotalGrading_eq_top`) and the compatibility of a
+  pointwise left action with the degrees (`instGradedSMulTwistedTotalGrading`).
 * `TauCeti.twistedDifferential`: the differential `D` of the twisted complex of a matrix.
 * `TauCeti.twistedCochainComplex`: the twisted complex as a cochain complex of `R`-modules.
 * `TauCeti.TwistingCocycle.twistedCochainComplex`: the same for a twisting cocycle.
@@ -79,7 +82,92 @@ theorem mem_twistedTotalGrading_iff {ℳ : ℤ → Submodule R M} {n : ℤ} {f :
   rw [twistedTotalGrading, Submodule.mem_pi]
   simp only [Set.mem_univ, true_implies]
 
+section GradedSMul
+
+variable {A : Type uA} [AddCommMonoid A] [Module R A] [SMul A M]
+  {𝒜 : ℤ → Submodule R A} {ℳ : ℤ → Submodule R M}
+
+/-- The pointwise left action on `P → M` adds degrees in the total grading, as soon as the action
+on `M` does. -/
+instance instGradedSMulTwistedTotalGrading [SetLike.GradedSMul 𝒜 ℳ] :
+    SetLike.GradedSMul 𝒜 (twistedTotalGrading ℳ ind) where
+  smul_mem := by
+    intro i n a f ha hf
+    rw [mem_twistedTotalGrading_iff] at hf ⊢
+    intro x
+    have := SetLike.GradedSMul.smul_mem ha (hf x)
+    simpa only [vadd_eq_add, add_assoc, Pi.smul_apply] using this
+
+end GradedSMul
+
+section Decomposition
+
+variable (ℳ : ℤ → Submodule R M) [DirectSum.Decomposition ℳ]
+
+/-- The pieces of the total grading are independent. -/
+theorem iSupIndep_twistedTotalGrading : iSupIndep (twistedTotalGrading ℳ ind) := by
+  rw [iSupIndep_def]
+  intro n
+  rw [Submodule.disjoint_def]
+  intro f hf hf'
+  have hle : (⨆ (k) (_ : k ≠ n), twistedTotalGrading ℳ ind k) ≤
+      Submodule.pi Set.univ fun x ↦ ⨆ (j) (_ : j ≠ n + ind x), ℳ j := by
+    refine iSup₂_le fun k hk g hg ↦ ?_
+    rw [mem_twistedTotalGrading_iff] at hg
+    rw [Submodule.mem_pi]
+    intro x _
+    exact Submodule.mem_iSup_of_mem (k + ind x)
+      (Submodule.mem_iSup_of_mem (fun h ↦ hk (add_right_cancel h)) (hg x))
+  have hind := (DirectSum.Decomposition.isInternal ℳ).submodule_iSupIndep
+  rw [iSupIndep_def] at hind
+  rw [mem_twistedTotalGrading_iff] at hf
+  funext x
+  exact Submodule.disjoint_def.mp (hind (n + ind x)) (f x) (hf x)
+    (Submodule.mem_pi.mp (hle hf') x (Set.mem_univ x))
+
+variable [Finite P]
+
+/-- The pieces of the total grading span `P → M` when `P` is finite. -/
+theorem iSup_twistedTotalGrading_eq_top : (⨆ n, twistedTotalGrading ℳ ind n) = ⊤ := by
+  classical
+  let _ := Fintype.ofFinite P
+  rw [eq_top_iff]
+  intro f _
+  rw [← Finset.univ_sum_single f]
+  refine Submodule.sum_mem _ fun x _ ↦ ?_
+  have hsum : (Pi.single x (f x) : P → M) =
+      ∑ q ∈ (decompose ℳ (f x)).support, (Pi.single x (decompose ℳ (f x) q : M) : P → M) := by
+    rw [← LinearMap.coe_single R (fun _ : P ↦ M), ← map_sum, DirectSum.sum_support_decompose]
+  rw [hsum]
+  refine Submodule.sum_mem _ fun q _ ↦ Submodule.mem_iSup_of_mem (q - ind x) ?_
+  rw [mem_twistedTotalGrading_iff]
+  intro y
+  by_cases hy : y = x
+  · subst hy
+    rw [Pi.single_eq_same, sub_add_cancel]
+    exact SetLike.coe_mem _
+  · rw [Pi.single_eq_of_ne hy]
+    exact zero_mem _
+
+end Decomposition
+
 end TotalGrading
+
+section TotalGradingDecomposition
+
+variable {R : Type uR} {M : Type uM} [Ring R] [AddCommGroup M] [Module R M]
+  {P : Type uP} [Finite P] {ind : P → ℤ} (ℳ : ℤ → Submodule R M) [DirectSum.Decomposition ℳ]
+
+/-- The total grading is an internal direct sum decomposition of `P → M` for finite `P`.  Over a
+semiring, independence and spanning do not give an internal direct sum (see
+`DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top`), so the instance is stated over a
+ring. -/
+noncomputable instance instDecompositionTwistedTotalGrading :
+    DirectSum.Decomposition (twistedTotalGrading ℳ ind) :=
+  (DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
+    (iSupIndep_twistedTotalGrading ℳ) (iSup_twistedTotalGrading_eq_top ℳ)).chooseDecomposition
+
+end TotalGradingDecomposition
 
 section Differential
 
