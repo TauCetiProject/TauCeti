@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Combinatorics.Quiver.Covering
 public import Mathlib.RingTheory.TwoSidedIdeal.Kernel
-public import Mathlib.RingTheory.TwoSidedIdeal.Operations
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.RelationIdeal
 
 /-!
@@ -166,17 +165,19 @@ variable [HasReverse R] [Fintype R] [∀ i j : R, Fintype (i ⟶ j)] {ε : ∀ �
   (hr : ∀ u, r u = ∑ i, ∑ b : i ⟶ u, ofArrow b * (ε b • ofArrow (reverse b)))
   {π : pathAlgebra k R →ₐ[k] A} (hπ : ∀ f, π f = 0 ↔ f ∈ TwoSidedIdeal.span (Set.range r))
 
-include hr hπ
+include hr
 
 /-- **The Koszul complex is a complex**: the composite `y ↦ ∑_b b (ε_b b* y)` of its two maps at
-`v` is left multiplication by the relator `r_v`, which vanishes in `A`. -/
-theorem sum_map_ofArrow_mul_smul_map_ofArrow_reverse_mul_eq_zero (v : R) (y : A) :
-    ∑ i, ∑ b : i ⟶ v, π (ofArrow b) * (ε b • (π (ofArrow (reverse b)) * y)) = 0 := by
-  have hv : π (r v) = 0 := (hπ _).2 (TwoSidedIdeal.subset_span ⟨v, rfl⟩)
+`v` is left multiplication by the relator `r_v`, which vanishes in `A`. This needs only that `π`
+kills every relator, not that its kernel is the ideal they generate. -/
+theorem sum_map_ofArrow_mul_smul_map_ofArrow_reverse_mul_eq_zero (hrπ : ∀ u, π (r u) = 0) (v : R)
+    (y : A) : ∑ i, ∑ b : i ⟶ v, π (ofArrow b) * (ε b • (π (ofArrow (reverse b)) * y)) = 0 := by
   calc _ = π (r v) * y := by
         simp only [hr v, map_sum, Finset.sum_mul, map_mul, map_smul, mul_smul_comm,
           smul_mul_assoc, mul_assoc]
-    _ = 0 := by rw [hv, zero_mul]
+    _ = 0 := by rw [hrπ v, zero_mul]
+
+include hπ
 
 /-- **Exactness of the Koszul complex at its middle term.** Let `z_b ∈ e_i A` for the arrows
 `b : i ⟶ v`. Then `∑_b b z_b = 0` exactly when there is one `y ∈ e_v A` with `z_b = ε_b b* y` for
@@ -208,7 +209,8 @@ theorem sum_map_ofArrow_mul_eq_zero_iff (hπs : Function.Surjective π) (v : R)
       rw [h, ← mul_assoc, ← map_mul, hb', smul_mul_assoc]
   · rintro ⟨y, -, hy⟩
     simp only [hy]
-    exact sum_map_ofArrow_mul_smul_map_ofArrow_reverse_mul_eq_zero k hr hπ v y
+    exact sum_map_ofArrow_mul_smul_map_ofArrow_reverse_mul_eq_zero k hr
+      (fun u => (hπ _).2 (TwoSidedIdeal.subset_span ⟨u, rfl⟩)) v y
 
 end KoszulComplex
 

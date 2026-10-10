@@ -24,8 +24,12 @@ vertex `v` the Koszul complex of the vertex module `S_v` is
 
 the sum running over the arrows `b` of `R` into `v`. It differs from the Koszul complex of the
 preprojective algebra (`TauCeti.RepresentationTheory.Quiver.Preprojective.KoszulComplex`) only in
-carrying no signs. For the doubled quiver of a simple graph `G` the signless algebra is the
-quadratic dual of the zigzag algebra of `G`; when `G` is bipartite it is isomorphic to the
+carrying no signs. For the doubled quiver of a finite simple graph `G` the signless algebra is the
+quadratic dual of the quadratic zigzag presentation
+(`TauCeti.quadraticDualQuadraticZigzagEquivSignless`), and so, when `G` is connected with at least
+three vertices and that presentation is the zigzag algebra
+(`TauCeti.quadraticZigzagPresentationEquivZigzagQuotient`), the quadratic dual of the zigzag
+algebra of `G`. When `G` is bipartite the signless algebra is isomorphic to the
 preprojective algebra of a source--sink orientation
 (`TauCeti.symmetrifySignlessPreprojectiveAlgebraEquiv`), but when `G` is not bipartite and `2 ≠ 0`
 in `k` it is a different algebra, and its Koszul complex must be treated on its own.
@@ -46,6 +50,8 @@ of positive degree are the sums `∑_b b z_b`, is not addressed here.
 * `TauCeti.sum_signlessPreprojectiveMk_ofArrow_mul_ofArrow_reverse_mul_eq_zero`: the two maps
   compose to zero.
 * `TauCeti.sum_signlessPreprojectiveMk_ofArrow_mul_eq_zero_iff`: **exactness at the middle term.**
+* `TauCeti.signlessPreprojectiveMk_ofArrow_mul_eq_zero_iff_of_ne_reverse`: for a
+  non-backtracking choice of arrows `α`, left multiplication by `α_v` is injective on `e_v Π`.
 * `TauCeti.forall_signlessPreprojectiveMk_ofArrow_reverse_mul_eq_zero_iff_of_ne_reverse`:
   **exactness at the left end** for a non-backtracking choice of arrows.
 * `TauCeti.forall_signlessPreprojectiveMk_ofArrow_reverse_mul_eq_zero_iff_of_adj`: the same for
@@ -115,7 +121,7 @@ theorem sum_signlessPreprojectiveMk_ofArrow_mul_ofArrow_reverse_mul_eq_zero (v :
       (signlessPreprojectiveMk k R (ofArrow (reverse b)) * y) = 0 := by
   simpa only [one_smul] using sum_map_ofArrow_mul_smul_map_ofArrow_reverse_mul_eq_zero k
     (ε := fun _ _ _ => 1) (signlessPreprojectiveRelator_eq_sum_ofArrow_mul_smul k)
-    (signlessPreprojectiveMk_eq_zero_iff_mem_span k R) v y
+    (signlessPreprojectiveMk_signlessPreprojectiveRelator k) v y
 
 /-- **Exactness of the Koszul complex at its middle term.** Let `z_b ∈ e_i Π` for the arrows
 `b : i ⟶ v` of `R`. Then `∑_b b z_b = 0` exactly when there is one `y ∈ e_v Π` with `z_b = b* y` for
@@ -137,6 +143,25 @@ section LeftEnd
 
 variable [Finite R]
 
+/-- **An arrow of a non-backtracking choice acts injectively.** Let `σ` choose an arrow `α_u` out
+of every vertex `u` of `R` such that the arrow chosen at the head of `α_u` is never the reverse of
+`α_u`. Then for `y ∈ e_v Π`, `α_v y = 0` exactly when `y = 0`. -/
+theorem signlessPreprojectiveMk_ofArrow_mul_eq_zero_iff_of_ne_reverse
+    {σ : ∀ v : R, Quiver.Star v} (hσ : ∀ v, σ (σ v).1 ≠ Quiver.Star.mk (reverse (σ v).2)) (v : R)
+    {y : signlessPreprojectiveAlgebra k R}
+    (hy : signlessPreprojectiveMk k R (vertexIdempotent k v) * y = y) :
+    signlessPreprojectiveMk k R (ofArrow (σ v).2) * y = 0 ↔ y = 0 := by
+  -- The sums over arrows in the relators need finitely many vertices and arrows; the arrows
+  -- `i ⟶ j` embed in the finite star at `i`.
+  let := Fintype.ofFinite R
+  have (i j : R) : Finite (i ⟶ j) :=
+    Finite.of_injective (fun e : i ⟶ j => (Quiver.Star.mk e : Quiver.Star i)) sigma_mk_injective
+  let (i j : R) : Fintype (i ⟶ j) := Fintype.ofFinite _
+  exact map_ofArrow_mul_eq_zero_iff_of_ne_reverse k (ε := fun _ _ _ => 1) hσ
+    (fun _ => isUnit_one) (signlessPreprojectiveRelator_eq_sum_ofArrow_mul_smul k)
+    (signlessPreprojectiveMk_eq_zero_iff_mem_span k R) (signlessPreprojectiveMk_surjective k R) v
+    hy
+
 /-- **Exactness of the Koszul complex at its left end, for a non-backtracking choice of arrows.**
 Let `σ` choose an arrow `α_u` out of every vertex `u` of `R` such that the arrow chosen at the head
 of `α_u` is never the reverse of `α_u`. Then for `y ∈ e_v Π`, `b* y = 0` for every arrow `b` into
@@ -147,16 +172,9 @@ theorem forall_signlessPreprojectiveMk_ofArrow_reverse_mul_eq_zero_iff_of_ne_rev
     (hy : signlessPreprojectiveMk k R (vertexIdempotent k v) * y = y) :
     (∀ (i : R) (b : i ⟶ v), signlessPreprojectiveMk k R (ofArrow (reverse b)) * y = 0) ↔
       y = 0 := by
-  -- The sums over arrows in the relators need finitely many vertices and arrows; the arrows
-  -- `i ⟶ j` embed in the finite star at `i`.
-  let := Fintype.ofFinite R
-  have (i j : R) : Finite (i ⟶ j) :=
-    Finite.of_injective (fun e : i ⟶ j => (Quiver.Star.mk e : Quiver.Star i)) sigma_mk_injective
-  let (i j : R) : Fintype (i ⟶ j) := Fintype.ofFinite _
-  exact forall_map_ofArrow_reverse_mul_eq_zero_iff_of_ne_reverse k (ε := fun _ _ _ => 1) hσ
-    (fun _ => isUnit_one) (signlessPreprojectiveRelator_eq_sum_ofArrow_mul_smul k)
-    (signlessPreprojectiveMk_eq_zero_iff_mem_span k R) (signlessPreprojectiveMk_surjective k R) v
-    hy
+  refine ⟨fun h => ?_, fun h i b => by rw [h, mul_zero]⟩
+  refine (signlessPreprojectiveMk_ofArrow_mul_eq_zero_iff_of_ne_reverse k hσ v hy).1 ?_
+  simpa only [reverse_reverse] using h _ (reverse (σ v).2)
 
 /-- **Exactness of the Koszul complex at its left end, for a graph.** Let `G` be a finite simple
 graph and `f` a map sending every vertex to a neighbour, with `f (f v) ≠ v` for every `v`. Then in

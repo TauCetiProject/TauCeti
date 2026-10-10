@@ -90,10 +90,7 @@ theorem sum_preprojectiveMk_ofArrow_mul_doubledArrowSign_smul_eq_zero (v : Q)
   sum_map_ofArrow_mul_smul_map_ofArrow_reverse_mul_eq_zero (R := Symmetrify Q) k
     (r := localPreprojectiveRelator k (Q := Q))
     (fun u => localPreprojectiveRelator_eq_sum_ofArrow_mul (Q := Q) k u)
-    (fun f => by
-      rw [preprojectiveMk_eq_zero_iff, preprojectiveIdeal_eq_span_range_localPreprojectiveRelator]
-      -- The two ranges differ only in reading the vertex type `Q` as `Symmetrify Q`.
-      exact Iff.rfl)
+    (fun u => preprojectiveMk_localPreprojectiveRelator (Q := Q) k u)
     (Symmetrify.of.obj (V := Q) v) y
 
 /-- **Exactness of the Koszul complex at its middle term.** Let `z_b ∈ e_i Π` for the arrows
