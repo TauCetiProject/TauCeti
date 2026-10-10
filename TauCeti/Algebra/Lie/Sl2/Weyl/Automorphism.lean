@@ -339,9 +339,8 @@ end Killing
 
 /-! ## The Weyl element of a triple in an associative algebra
 
-When the ambient Lie algebra is the commutator algebra of an associative `ℚ`-algebra `A` — the
-case of a representation, where `A = Module.End ℚ V` — the Weyl automorphism is *inner*: it is
-conjugation by the unit
+Let `A` be an associative `ℚ`-algebra with `[Algebra K A]` for a commutative ring `K`. In its
+commutator Lie algebra, the Weyl automorphism over `K` is *inner*: it is conjugation by the unit
 
 ```text
 n = exp E · exp (-F) · exp E,
@@ -349,7 +348,13 @@ n = exp E · exp (-F) · exp E,
 
 Chevalley's `n_α = x_α(1) x_{-α}(-1) x_α(1)`. This is the passage from the Lie algebra to the
 group, and it is what makes the reflection an element of a Chevalley group rather than only an
-automorphism of its Lie algebra. -/
+automorphism of its Lie algebra.
+
+For a `K`-linear representation, one can take `A = Module.End K V` when this endomorphism ring
+also has a rational algebra structure, for example when `K` is a `ℚ`-algebra. In general, `K`
+need not contain `ℚ`: only `A` must carry both algebra structures. The reflection and
+reflected-weight formulas use scalars in `K`, allowing nonrational weights in complex
+representations. -/
 
 section Associative
 
