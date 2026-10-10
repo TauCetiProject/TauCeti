@@ -31,7 +31,11 @@ namespace Derivation
 
 open Matrix
 
-variable {k F : Type*} [Field k] [Field F] [Algebra k F]
+variable {k F : Type*}
+
+section
+
+variable [CommSemiring k] [CommRing F] [Algebra k F]
 
 /-- The Wronskian of `f`: row `i` consists of its `i`-th derivatives. The empty
 family has Wronskian `1`. -/
@@ -53,6 +57,10 @@ theorem wronskian_singleton (D : Derivation k F F) (f : Fin 1 → F) :
     D.wronskian f = f 0 := by
   rw [wronskian_def, Matrix.det_fin_one]
   simp
+
+end
+
+variable [Field k] [Field F] [Algebra k F]
 
 /-- A linearly independent family over the constant field has nonzero Wronskian. -/
 theorem wronskian_ne_zero_of_linearIndependent (D : Derivation k F F)
