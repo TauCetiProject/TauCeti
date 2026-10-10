@@ -121,10 +121,6 @@ theorem isIndecomposableModule_auslanderReitenTranspose_iff
       ((P.indecomposable_stableTransposeObj_iff hM hiM).mpr hpM)).mpr
     intro Q r hQ
     let := hQ
-    have hzero := hP.isSuperfluous_ker.subsingleton_of_retract_auslanderReitenTranspose
-      r.r.hom r.i.hom (by
-        simpa only [ModuleCat.hom_comp, ModuleCat.hom_id] using
-          congrArg ModuleCat.Hom.hom r.retract)
-    exact ModuleCat.isZero_iff_subsingleton.mpr hzero
+    exact hP.isSuperfluous_ker.isZero_of_retract_auslanderReitenTranspose r
 
 end TauCeti.FiniteProjectivePresentation

@@ -16,8 +16,9 @@ import TauCeti.LinearAlgebra.Dual.Equivalence
 /-!
 # Recovery by minimal transposition
 
-Let `Q` present a right module `N`, and let `P` present the left module obtained
-by taking the `A`-valued dual of `Q`. Transposing `P` recovers `N` up to actual isomorphism
+Let `Q` present a right module `N`, and let `P` present its right transpose `Tr N`,
+the cokernel of the `A`-valued dual of the presenting map of `Q`.
+Transposing `P` recovers `N` up to actual isomorphism
 exactly when `N` has no nonzero projective retracts, provided `N` and the transpose of `P`
 have finite length.
 The first map of `P` must have superfluous kernel, as it does for a minimal presentation.
@@ -63,11 +64,7 @@ theorem nonempty_linearEquiv_transpose_rightTranspose_iff_isZero_projective_retr
         Projective R → IsZero R := by
     intro R r hR
     let := hR
-    exact ModuleCat.isZero_iff_subsingleton.mpr
-      (hP.subsingleton_of_retract_auslanderReitenTranspose
-        r.r.hom r.i.hom (by
-          simpa only [ModuleCat.hom_comp, ModuleCat.hom_id] using
-            congrArg ModuleCat.Hom.hom r.retract))
+    exact hP.isZero_of_retract_auslanderReitenTranspose r
   constructor
   · rintro ⟨e⟩ R r hR
     exact hPT (r.trans (Retract.ofIso e.symm.toModuleIso)) hR
@@ -85,8 +82,8 @@ variable {k : Type*} [CommSemiring k] [Algebra k A]
   [Module k N] [IsScalarTower k Aᵐᵒᵖ N] [Module.IsReflexive k N]
   {E : Type*} [AddCommGroup E] [Module A E] [Module k E]
 
-/-- Applying `D Tr` to a right transpose recovers its scalar dual exactly when the
-original right module has no nonzero projective retracts. The scalar dual is specified by
+/-- Applying `D Tr` to a presentation of the right transpose of `N` recovers the scalar
+dual `D N` exactly when `N` has no nonzero projective retracts. The scalar dual is specified by
 an equivariant pairing, and reflexivity suffices in place of a finite-dimensional field
 hypothesis. This is the recovery composite for the inverse `Tr D` correspondence. -/
 theorem nonempty_linearEquiv_translate_rightTranspose_iff_isZero_projective_retract
@@ -105,16 +102,7 @@ theorem nonempty_linearEquiv_translate_rightTranspose_iff_isZero_projective_retr
     exact ⟨((LinearEquiv.refl k (AuslanderReitenTranslate k P.p)).ofEquivariantDual e
       (fun a φ n ↦ AuslanderReitenTranslate.smul_apply a φ n) he f).symm⟩
   · rintro ⟨d⟩
-    let t := (d.restrictScalars k).symm.dualMap.trans e.symm
-    have ht (φ : AuslanderReitenTranslate k P.p) (n : N) :
-        e (t φ) n = φ (d.symm n) := by
-      simp [t, LinearEquiv.dualMap_apply]
-    refine ⟨{ t with map_smul' := fun a φ ↦ e.injective ?_ }⟩
-    ext n
-    calc
-      e (t (a • φ)) n = (a • φ) (d.symm n) := ht _ _
-      _ = φ (d.symm (MulOpposite.op a • n)) := by
-        rw [AuslanderReitenTranslate.smul_apply, d.symm.map_smul]
-      _ = e (a • t φ) n := by rw [he, ht]
+    exact ⟨(LinearEquiv.refl k (AuslanderReitenTranslate k P.p)).toEquivariantDual e
+      (fun a φ n ↦ AuslanderReitenTranslate.smul_apply a φ n) he d.symm⟩
 
 end TauCeti.FiniteProjectivePresentation
