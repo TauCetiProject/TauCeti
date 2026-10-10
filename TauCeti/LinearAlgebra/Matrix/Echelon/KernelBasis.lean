@@ -400,7 +400,7 @@ theorem span_kernelBasis :
 /-- **The algorithm returns no vector twice.** -/
 theorem nodup_kernelBasis : (kernelBasis A).Nodup := by
   refine List.Nodup.map_on ?_ ((List.nodup_finRange n).filter _)
-  intro j hj j' hj' h
+  intro j hj j' _ h
   have hjfree : IsFreeColumn (List.ofFn A) j := by simpa using (List.mem_filter.mp hj).2
   by_contra hne
   have := congrFun h j

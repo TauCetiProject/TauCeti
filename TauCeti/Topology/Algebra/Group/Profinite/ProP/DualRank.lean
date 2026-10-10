@@ -269,7 +269,7 @@ theorem IsProP.exists_tendsto_cofinite_topologicallyGenerates_coord_eq (hG : IsP
   have hs1' : s 1 = 1 := by
     rw [← QuotientGroup.mk_one]
     exact hs1
-  set g : ι → G := fun i ↦ s (u i) with hg
+  set g : ι → G := fun i ↦ s (u i)
   have hmk : ∀ i, ((g i : G) : G ⧸ proPFrattini p G) = u i := fun i ↦ hsec (u i)
   refine ⟨g, ?_, ?_, fun i x ↦ ?_⟩
   · exact (hs1' ▸ hs.tendsto 1).comp hu

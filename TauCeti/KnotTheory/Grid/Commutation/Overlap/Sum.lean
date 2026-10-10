@@ -8,7 +8,7 @@ module
 public import TauCeti.KnotTheory.Grid.Commutation.Disjoint.Basic
 public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Initial.Sum
 public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Mixed.LeftRight
-public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Terminal.CrossSum
+public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Terminal.Cross.Sum
 public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Terminal.Mixed
 public import TauCeti.KnotTheory.Grid.Commutation.TurnCut
 import Mathlib.Algebra.CharP.Two
@@ -137,16 +137,13 @@ theorem filter_not_hasDisjointSides_rectanglePentagonDecompositions_eq_union (hz
         G.leftRightOverlapSources C x z ∪ G.rightLeftOverlapSources C x z ∪
           G.rectanglePentagonTurnCuts C x z ∪ G.terminalSelfPairs C x z := by
   ext D
-  obtain ⟨hdisjoint, hone, hsame, hmixed⟩ := G.overlap_side_facts C D hzx
+  obtain ⟨hdisjoint, hone, hsame, _⟩ := G.overlap_side_facts C D hzx
   obtain ⟨horder, hexclusive⟩ := G.overlap_column_order C D
   have hb := D.pentagon.right_eq
   have hr := D.rectangle.left_ne_right
   have hP := D.pentagon.left_ne_right
   have hPl : D.pentagon.left ∈ Grid.cIoo D.rectangle.left D.pentagon.right →
       D.pentagon.left ≠ D.rectangle.left := Grid.ne_left_of_mem_cIoo
-  have hrl : D.rectangle.left ∈ Grid.cIoo D.pentagon.left D.pentagon.right →
-      D.rectangle.left ≠ D.pentagon.left ∧ D.rectangle.left ≠ D.pentagon.right := fun h =>
-    ⟨Grid.ne_left_of_mem_cIoo h, Grid.ne_right_of_mem_cIoo h⟩
   simp only [Finset.mem_filter, Finset.mem_union, mem_initialOverlapSources,
     mem_terminalCrossOverlapSources, mem_terminalSelfPairs_iff_sides, mem_rightLeftOverlapSources,
     mem_leftRightOverlapSources, mem_rectanglePentagonTurnCuts, hdisjoint, hone]

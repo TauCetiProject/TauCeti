@@ -252,7 +252,7 @@ set lies in the `c`-superdifferential of the potential attached to any base poin
 theorem IsCyclicallyMonotone.subset_cSuperdifferential_rockafellarPotential
     (hS : IsCyclicallyMonotone c S) {p : X × Y} (hp : p ∈ S) :
     S ⊆ cSuperdifferential c (rockafellarPotential c S p) := by
-  set φ := rockafellarPotential c S p with hφdef
+  set φ := rockafellarPotential c S p
   have hstep : ∀ q ∈ S, ∀ x : X, φ x ≤ φ q.1 + ((c (x, q.2) - c q : ℝ) : EReal) :=
     fun q hq x => rockafellarPotential_le_add hq x
   rintro ⟨x, y⟩ hxy
@@ -264,7 +264,7 @@ theorem IsCyclicallyMonotone.subset_cSuperdifferential_rockafellarPotential
     have h := hstep (x, y) hxy p.1
     rw [hbot, hzero] at h
     simp at h
-  set b : ℝ := (φ x).toReal with hbdef
+  set b : ℝ := (φ x).toReal
   have hb : φ x = (b : EReal) := (EReal.coe_toReal htop hbot).symm
   have hle : ∀ x' : X, ((c (x, y) : EReal)) - φ x ≤ (c (x', y) : EReal) - φ x' := by
     intro x'
@@ -295,7 +295,7 @@ theorem IsCyclicallyMonotone.exists_isCConcave_subset_cSuperdifferential
     ∃ φ : X → EReal, IsCConcave c φ ∧ S ⊆ cSuperdifferential c φ := by
   rcases S.eq_empty_or_nonempty with rfl | ⟨p, hp⟩
   · exact ⟨cTransformSymm c 0, isCConcave_cTransformSymm c 0, Set.empty_subset _⟩
-  set φ := rockafellarPotential c S p with hφdef
+  set φ := rockafellarPotential c S p
   have hsub : S ⊆ cSuperdifferential c φ := hS.subset_cSuperdifferential_rockafellarPotential hp
   refine ⟨cTransformSymm c (cTransform c φ), isCConcave_cTransformSymm _ _, fun z hz => ?_⟩
   have hz' : z ∈ contactSet c φ (cTransform c φ) := by

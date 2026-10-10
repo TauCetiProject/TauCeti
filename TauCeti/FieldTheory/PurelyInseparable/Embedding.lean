@@ -60,7 +60,7 @@ theorem IsPurelyInseparable.nonempty_algHom_of_forall_exists_pow_eq (K M : Type*
   -- B2.0: `K'` inherits the exponential characteristic from `K`
   have : ExpChar K' p := expChar_of_injective_algebraMap (algebraMap K K').injective p
   set φ := IsPurelyInseparable.iterateFrobenius K M p hn with hφ
-  set ψ := iterateFrobenius K' p n with hψ
+  set ψ := iterateFrobenius K' p n
   set θ : M →+* K' := (algebraMap K K').comp φ with hθ
   have hψ_apply : ∀ y : K', ψ y = y ^ p ^ n := fun y ↦
     iterateFrobenius_def (R := K') (p := p) (n := n) (x := y)
@@ -74,7 +74,7 @@ theorem IsPurelyInseparable.nonempty_algHom_of_forall_exists_pow_eq (K M : Type*
     RingHom.mem_fieldRange.mpr ⟨algebraMap K K' a, (hKθ a).symm⟩
   -- B2.1 + B2.4: promote the good set and show it is everything
   set G : IntermediateField K M :=
-    (Subfield.comap θ ψ.fieldRange).toIntermediateField hKmem with hG
+    (Subfield.comap θ ψ.fieldRange).toIntermediateField hKmem
   have hsG : s ⊆ (G : Set M) := by
     intro x hx
     obtain ⟨y, hy⟩ := h x hx

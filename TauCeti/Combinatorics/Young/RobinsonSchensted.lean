@@ -220,7 +220,7 @@ theorem exists_robinsonSchensted_eq_iff {p : List (List α) × List ℕ} :
       simp only [getD_cons_zero, count_nil, length_eq_zero_iff] at this
       exact absurd this (isTableauRows_cons.mp hP).1
   | append_singleton r k ih =>
-    obtain ⟨hr', hk⟩ := isLatticeWord_append_singleton.mp hr
+    obtain ⟨hr', _⟩ := isLatticeWord_append_singleton.mp hr
     -- Row `k` of `P` ends in a corner, so reverse insertion from it undoes a row insertion.
     have hcorner : (P.getD (k + 1) []).length < (P.getD k []).length := by
       have := hr'.count_succ_le k

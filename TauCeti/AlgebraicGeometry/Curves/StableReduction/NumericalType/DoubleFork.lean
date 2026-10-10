@@ -413,7 +413,7 @@ theorem not_oppositeFork (hr : T.IsSelfIntersectionMinusTwoFork t c right)
     omega
   exact (T.not_forall_fintype_sum_intersection_mul_nonneg_of_pos (y := mark) he
     (by rw [hindexCard]; exact hcard) (fun i ↦ by
-      rcases i with i | i | i <;> simp [mark]) ⟨Sum.inl 0, by simp [mark]⟩) hrow
+      rcases i with _ | _ | _ <;> simp [mark]) ⟨Sum.inl 0, by simp [mark]⟩) hrow
 
 end IsSelfIntersectionMinusTwoFork
 

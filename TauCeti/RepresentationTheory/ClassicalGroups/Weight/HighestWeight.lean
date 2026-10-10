@@ -330,7 +330,6 @@ theorem IsRationalRep.exists_highestWeightVector [Nontrivial W] (h : IsRationalR
     rw [weightHeight_add_nsmul_single_sub_single l0 hij.ne m]
     have hij' : ((i : ℕ) : ℤ) < ((j : ℕ) : ℤ) := by
       exact_mod_cast Fin.lt_def.mp hij
-    have hm' : (0 : ℤ) < (m : ℤ) := by exact_mod_cast hm
     nlinarith [sub_pos.mpr hij']
   exact absurd (hmax _ hbot) (not_le.mpr hgt)
 

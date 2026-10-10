@@ -210,18 +210,12 @@ theorem discPoint_eq_gaussPoint_iff {a : K} (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r)
       (weightedC _ isWeightFamily_one_weight a)
       (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 -
         weightedC _ isWeightFamily_one_weight a)) h
+    -- the Gauss norm of radius `s` of `T - a` is `max s ‖a‖ ≥ ‖a‖`
     simp only [discPoint_vle_iff, gaussPoint_vle_iff, taylorHom_weightedC, map_sub,
       taylorHom_weightedX, add_sub_cancel_right, eq_iff_iff, ← NNReal.coe_le_coe,
       closedDiscGaussValuation_weightedC, coe_closedDiscGaussValuation_weightedX,
-      coe_nnnorm] at key
-    -- the constant coefficient of `T - a` bounds its Gauss norm of radius `s` below by `‖a‖`
-    have hle := norm_coeff_mul_pow_le_closedDiscGaussValuation hs₀ hs₁
-      (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 -
-        weightedC _ isWeightFamily_one_weight a) 0
-    simp only [Finsupp.single_zero, pow_zero, mul_one, coe_weightedX, coe_weightedC,
-      AddSubgroupClass.coe_sub, map_sub, MvPowerSeries.coeff_zero_X, MvPowerSeries.coeff_zero_C,
-      zero_sub, norm_neg] at hle
-    exact (key.mpr (by simpa using hle)).not_gt hlt
+      coe_closedDiscGaussValuation_weightedX_sub_weightedC, coe_nnnorm] at key
+    exact (key.mpr (le_max_right _ _)).not_gt hlt
   refine ⟨?_, har⟩
   rw [discPoint_eq_gaussPoint_of_norm_le ha hr₀ hr₁ har] at h
   exact (gaussPoint_inj hr₀ hr₁ hs₀ hs₁).mp h
