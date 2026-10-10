@@ -176,7 +176,7 @@ theorem not_forall_restrictedProductMap_surjective :
   intro h
   have hbij := (restrictedProductMap_surjective_iff_eventually_bijOn (fun _ ↦ ⊥) (fun _ ↦ ⊤)
     (fun _ ↦ MulEquiv.refl _) (.of_forall fun _ _ _ ↦ Subgroup.mem_top _)).mp (h _ _ _ _)
-  obtain ⟨i, hi⟩ := hbij.exists
+  obtain ⟨_, hi⟩ := hbij.exists
   obtain ⟨a, ha, hae⟩ := hi.surjOn (Subgroup.mem_top (Multiplicative.ofAdd (1 : ℤ)))
   rw [SetLike.mem_coe, Subgroup.mem_bot] at ha
   rw [ha, map_one, eq_comm, ofAdd_eq_one] at hae

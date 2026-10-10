@@ -5,14 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.FrechetMean.Basic
+public import TauCeti.MeasureTheory.Measure.FrechetMean.TwoPoint
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Rearrangement
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
 import TauCeti.Analysis.Normed.Group.WeightedVariance
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Borel
 
 /-!
-# Quadratic Wasserstein barycenters on the real line
+# Wasserstein barycenters on the real line
 
 On `ℝ`, the quadratic Wasserstein distance of two probability laws is the `L²(0, 1)` distance of
 their quantile functions, and a monotone function on `(0, 1)` is, almost everywhere, the quantile
@@ -32,6 +32,14 @@ quadratic Wasserstein space `P₂ (ℝ)` this identifies the Fréchet barycenter
 supported law `∑ i, w i • δ_{μ i}`: it exists, is unique, and its quantile function is
 `∑ i, w i * (μ i).quantile` almost everywhere.
 
+At every exponent `1 ≤ p ≤ ∞`, the quantile barycenter of two laws with weights `1 - s` and `s`
+moves at constant speed: interpolations at times `s` and `r` are at distance
+`|s - r| W_p(μ₀, μ₁)`. So quantile interpolation is an explicit geodesic segment in `P_p(ℝ)`.
+The barycenter theory of two weighted points in geodesic spaces,
+`TauCeti.MeasureTheory.Measure.FrechetMean.TwoPoint`, then shows that for `1 < p < ∞` the
+interpolation at the barycentric time `τ = TauCeti.twoPointBarycenterTime p t` is a `p`-Fréchet
+barycenter of `(1 - t) δ_{μ₀} + t δ_{μ₁}`.
+
 ## Main definitions
 
 * `TauCeti.quantileBarycenter w μ` — the law of `∑ i, w i * (μ i).quantile U` for `U` uniform on
@@ -49,6 +57,12 @@ supported law `∑ i, w i • δ_{μ i}`: it exists, is unique, and its quantile
 * `TauCeti.isFrechetBarycenter_two_iff_quantile_ae_eq` and
   `TauCeti.existsUnique_isFrechetBarycenter_two` — the Fréchet barycenter of finitely many laws in
   `P₂ (ℝ)` is unique and has the averaged quantile function.
+* `TauCeti.wassersteinEDist_quantileBarycenter_pair` and
+  `TauCeti.exists_isGeodesicSegment_quantileBarycenter` — quantile interpolation of two laws is a
+  `W_p` geodesic.
+* `TauCeti.isFrechetBarycenter_of_coe_eq_quantileBarycenter_twoPointBarycenterTime` — the
+  quantile interpolation of two laws at the barycentric time is a `p`-Fréchet barycenter of the
+  two weighted laws.
 
 ## References
 
@@ -268,5 +282,117 @@ theorem existsUnique_isFrechetBarycenter_two :
   rw [(isFrechetBarycenter_two_iff_eq_quantileBarycenter hw μ ν).1 hν, hb]
 
 end FrechetBarycenter
+
+/-! ### Two laws at every exponent -/
+
+section TwoLaws
+
+variable {p : ℝ≥0∞}
+
+/-- The quantile function of the quantile barycenter of two laws with weights `1 - s` and `s` is
+the interpolation `(1 - s) Q₀ + s Q₁` of their quantile functions. -/
+private theorem quantile_quantileBarycenter_pair_ae {s : ℝ} (hs : s ∈ Icc (0 : ℝ) 1)
+    (μ₀ μ₁ : Measure ℝ) :
+    (quantileBarycenter ![(1 - s).toNNReal, s.toNNReal] ![μ₀, μ₁]).quantile
+      =ᵐ[volume.restrict (Ioo (0 : ℝ) 1)] fun u ↦ (1 - s) * μ₀.quantile u + s * μ₁.quantile u := by
+  filter_upwards [quantile_quantileBarycenter_ae ![(1 - s).toNNReal, s.toNNReal] ![μ₀, μ₁]]
+    with u hu
+  simp [hu, Real.coe_toNNReal _ hs.1, Real.coe_toNNReal _ (sub_nonneg.2 hs.2)]
+
+/-- At time `0` the quantile interpolation of two laws is the first law. -/
+private theorem quantileBarycenter_pair_zero (μ₀ μ₁ : Measure ℝ) [IsProbabilityMeasure μ₀] :
+    quantileBarycenter ![(1 - 0 : ℝ).toNNReal, (0 : ℝ).toNNReal] ![μ₀, μ₁] = μ₀ :=
+  (eq_quantileBarycenter_iff.2 (Filter.Eventually.of_forall fun u ↦ by simp)).symm
+
+/-- At time `1` the quantile interpolation of two laws is the second law. -/
+private theorem quantileBarycenter_pair_one (μ₀ μ₁ : Measure ℝ) [IsProbabilityMeasure μ₁] :
+    quantileBarycenter ![(1 - 1 : ℝ).toNNReal, (1 : ℝ).toNNReal] ![μ₀, μ₁] = μ₁ :=
+  (eq_quantileBarycenter_iff.2 (Filter.Eventually.of_forall fun u ↦ by simp)).symm
+
+/-- **Quantile interpolation is a constant-speed curve for every Wasserstein distance.** For
+`1 ≤ p ≤ ∞` and times `s, r ∈ [0, 1]`, the quantile interpolations of `μ₀` and `μ₁` at times `s`
+and `r`, whose quantile functions are `(1 - s) Q₀ + s Q₁` and `(1 - r) Q₀ + r Q₁`, are at
+`p`-Wasserstein distance `|s - r| W_p(μ₀, μ₁)`. -/
+theorem wassersteinEDist_quantileBarycenter_pair (hp : 1 ≤ p) (μ₀ μ₁ : Measure ℝ)
+    [IsProbabilityMeasure μ₀] [IsProbabilityMeasure μ₁] {s r : ℝ} (hs : s ∈ Icc (0 : ℝ) 1)
+    (hr : r ∈ Icc (0 : ℝ) 1) :
+    wassersteinEDist p (quantileBarycenter ![(1 - s).toNNReal, s.toNNReal] ![μ₀, μ₁])
+        (quantileBarycenter ![(1 - r).toNNReal, r.toNNReal] ![μ₀, μ₁]) =
+      ENNReal.ofReal |s - r| * wassersteinEDist p μ₀ μ₁ := by
+  rw [wassersteinEDist_eq_eLpNorm_quantile_sub hp, wassersteinEDist_eq_eLpNorm_quantile_sub hp]
+  have hdiff : (fun u ↦
+      (quantileBarycenter ![(1 - s).toNNReal, s.toNNReal] ![μ₀, μ₁]).quantile u -
+        (quantileBarycenter ![(1 - r).toNNReal, r.toNNReal] ![μ₀, μ₁]).quantile u)
+      =ᵐ[volume.restrict (Ioo (0 : ℝ) 1)] (r - s) • fun u ↦ μ₀.quantile u - μ₁.quantile u := by
+    filter_upwards [quantile_quantileBarycenter_pair_ae hs μ₀ μ₁,
+      quantile_quantileBarycenter_pair_ae hr μ₀ μ₁] with u hus hur
+    simp only [hus, hur, Pi.smul_apply, smul_eq_mul]
+    ring
+  rw [eLpNorm_congr_ae hdiff, eLpNorm_const_smul, Real.enorm_eq_ofReal_abs, abs_sub_comm]
+
+variable [Fact (1 ≤ p)]
+
+/-- **Quantile interpolation is a Wasserstein geodesic.** For `1 ≤ p ≤ ∞`, any two laws in
+`P_p(ℝ)` are joined by a geodesic segment whose point at each time `s ∈ [0, 1]` is the quantile
+interpolation, the law with quantile function `(1 - s) Q₀ + s Q₁`. -/
+theorem exists_isGeodesicSegment_quantileBarycenter (μ₀ μ₁ : WassersteinSpace p ℝ) :
+    ∃ γ : ℝ → WassersteinSpace p ℝ, IsGeodesicSegment γ μ₀ μ₁ ∧
+      ∀ s ∈ Icc (0 : ℝ) 1, ((γ s : ProbabilityMeasure ℝ) : Measure ℝ) =
+        quantileBarycenter ![(1 - s).toNNReal, s.toNNReal]
+          ![((μ₀ : ProbabilityMeasure ℝ) : Measure ℝ),
+            ((μ₁ : ProbabilityMeasure ℝ) : Measure ℝ)] := by
+  have hp : (1 : ℝ≥0∞) ≤ p := Fact.out
+  set m₀ := ((μ₀ : ProbabilityMeasure ℝ) : Measure ℝ)
+  set m₁ := ((μ₁ : ProbabilityMeasure ℝ) : Measure ℝ)
+  set β : ℝ → Measure ℝ := fun s ↦ quantileBarycenter ![(1 - s).toNNReal, s.toNNReal] ![m₀, m₁]
+  have hW : wassersteinEDist p m₀ m₁ ≠ ∞ :=
+    WassersteinSpace.wassersteinEDist_ne_top measurable_edist μ₀ μ₁
+  -- Each interpolation has finite `p`-th moment, being at finite distance from `μ₀`.
+  have hβ (s : Icc (0 : ℝ) 1) : HasFiniteMoment p (β s) := by
+    rw [hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment measurable_edist
+      μ₀.hasFiniteMoment]
+    have h := wassersteinEDist_quantileBarycenter_pair hp m₀ m₁ (left_mem_Icc.2 zero_le_one) s.2
+    rw [quantileBarycenter_pair_zero] at h
+    rw [h]
+    exact ENNReal.mul_ne_top ENNReal.ofReal_ne_top hW
+  let γ : ℝ → WassersteinSpace p ℝ := fun s ↦
+    WassersteinSpace.mk ⟨β (projIcc 0 1 zero_le_one s), inferInstance⟩
+      (hβ (projIcc 0 1 zero_le_one s))
+  have hγ (s : ℝ) (hs : s ∈ Icc (0 : ℝ) 1) : ((γ s : ProbabilityMeasure ℝ) : Measure ℝ) = β s := by
+    have h : β (projIcc 0 1 zero_le_one s) = β s := by rw [projIcc_of_mem _ hs]
+    exact (congrArg ProbabilityMeasure.toMeasure (WassersteinSpace.coe_mk _ _)).trans h
+  refine ⟨γ, ⟨?_, ?_, fun s hs r hr ↦ ?_⟩, hγ⟩
+  · refine WassersteinSpace.ext (ProbabilityMeasure.toMeasure_injective ?_)
+    rw [hγ 0 (left_mem_Icc.2 zero_le_one)]
+    exact quantileBarycenter_pair_zero m₀ m₁
+  · refine WassersteinSpace.ext (ProbabilityMeasure.toMeasure_injective ?_)
+    rw [hγ 1 (right_mem_Icc.2 zero_le_one)]
+    exact quantileBarycenter_pair_one m₀ m₁
+  · rw [WassersteinSpace.dist_def, WassersteinSpace.dist_def, hγ s hs, hγ r hr,
+      wassersteinEDist_quantileBarycenter_pair hp m₀ m₁ hs hr, ENNReal.toReal_mul,
+      ENNReal.toReal_ofReal (abs_nonneg _)]
+
+/-- **The barycenter of two laws on the line at every finite exponent.** For `1 < p < ∞` and
+`t ∈ [0, 1]`, the law whose quantile function is `(1 - τ) Q₀ + τ Q₁`, where
+`τ = TauCeti.twoPointBarycenterTime p t`, is a `p`-Fréchet barycenter in `P_p(ℝ)` of
+`(1 - t) δ_{μ₀} + t δ_{μ₁}`. For `p = 2` the time `τ` is `t` itself. -/
+theorem isFrechetBarycenter_of_coe_eq_quantileBarycenter_twoPointBarycenterTime
+    (hp : 1 < p) (hp_top : p ≠ ∞) {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1)
+    (μ₀ μ₁ ν : WassersteinSpace p ℝ)
+    (hν : ((ν : ProbabilityMeasure ℝ) : Measure ℝ) =
+      quantileBarycenter
+        ![(1 - twoPointBarycenterTime p.toReal t).toNNReal,
+          (twoPointBarycenterTime p.toReal t).toNNReal]
+        ![((μ₀ : ProbabilityMeasure ℝ) : Measure ℝ), ((μ₁ : ProbabilityMeasure ℝ) : Measure ℝ)]) :
+    IsFrechetBarycenter p
+      (ENNReal.ofReal (1 - t) • Measure.dirac μ₀ + ENNReal.ofReal t • Measure.dirac μ₁) ν := by
+  have := WassersteinSpace.borelSpace (X := ℝ) hp_top
+  obtain ⟨γ, hγ, hγβ⟩ := exists_isGeodesicSegment_quantileBarycenter μ₀ μ₁
+  have hτ := twoPointBarycenterTime_mem_Icc p.toReal ht
+  have hν' : γ (twoPointBarycenterTime p.toReal t) = ν :=
+    WassersteinSpace.ext (ProbabilityMeasure.toMeasure_injective ((hγβ _ hτ).trans hν.symm))
+  exact hν' ▸ hγ.isFrechetBarycenter_twoPointBarycenterTime hp hp_top ht
+
+end TwoLaws
 
 end TauCeti

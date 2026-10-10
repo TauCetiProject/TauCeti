@@ -79,7 +79,7 @@ theorem points_eq_hopfIdealPointsSubgroup (A : Type v) [CommRing A] [Algebra (ZM
 
 /-- A matrix is a point of the carrier over `𝔽₂` exactly when its associated convolution point
 kills the carrier's defining Hopf ideal. -/
-@[simp]
+-- Not `@[simp]`: rewriting membership into this raw condition defeats the membership lemmas.
 theorem mem_points_iff (A : Type v) [CommRing A] [Algebra (ZMod 2) A]
     (g : _root_.Matrix.GeneralLinearGroup (Fin 26) A) :
     g ∈ points A ↔ ∀ x ∈ definingIdeal,

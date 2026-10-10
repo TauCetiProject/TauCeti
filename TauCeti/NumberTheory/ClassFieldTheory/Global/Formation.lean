@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Units
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.Coefficients
-import Mathlib.FieldTheory.Galois.Infinite
 
 /-!
 # The idele formation and the idele-class formation of a number field
@@ -132,10 +131,8 @@ theorem mem_level_ideleFormation_iff (E : Ω) {U : OpenSubgroup (AbsoluteGaloisG
     (hU : fixedField U.toSubgroup = E) {x : IdeleCoeff K} :
     (dsimp% only (ideleCoeffEquivIdeleFormation K x ∈ (ideleFormation K).level U)) ↔
       x ∈ (ideleCoeffOf K E).range := by
-  have hU' : U.toSubgroup = (E : IntermediateField K (SeparableClosure K)).fixingSubgroup := by
-    rw [← hU]
-    exact (InfiniteGalois.fixingSubgroup_fixedField ⟨U.toSubgroup, U.isClosed⟩).symm
-  rw [Formation.mem_level, mem_range_ideleCoeffOf_iff, ← hU']
+  rw [Formation.mem_level, mem_range_ideleCoeffOf_iff,
+    ← toSubgroup_eq_fixingSubgroup_of_fixedField_eq hU]
   refine forall₂_congr fun u _ ↦ ?_
   rw [← ideleCoeffEquivIdeleFormation_smul, (ideleCoeffEquivIdeleFormation K).injective.eq_iff]
 

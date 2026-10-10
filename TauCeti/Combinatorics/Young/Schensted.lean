@@ -78,6 +78,16 @@ theorem IsRowAbove.append_right [LT α] {upper lower : List α} (h : upper.IsRow
   rw [getElem_append_left (hl.trans_le h.length_le)]
   exact h.getElem_lt j _ hl
 
+/-- If one row sits above a second, and the second above a third, the first sits above the
+third. -/
+theorem IsRowAbove.trans [LT α] [IsTrans α (· < ·)] {upper middle lower : List α}
+    (h₁ : upper.IsRowAbove middle) (h₂ : middle.IsRowAbove lower) : upper.IsRowAbove lower :=
+  ⟨h₂.length_le.trans h₁.length_le, fun j hu hl => IsTrans.trans _ _ _
+    (h₁.getElem_lt j hu (hl.trans_le h₂.length_le)) (h₂.getElem_lt j _ hl)⟩
+
+instance [LT α] [IsTrans α (· < ·)] : IsTrans (List α) IsRowAbove :=
+  ⟨fun _ _ _ => IsRowAbove.trans⟩
+
 /-- The rows, listed from top to bottom, of a semistandard tableau: every row is nonempty and
 weakly increasing, and every row sits on top of the next one in the sense of `List.IsRowAbove`.
 So the row lengths weakly decrease and the columns strictly increase. -/
@@ -293,7 +303,7 @@ private theorem isRowAbove_rowBump {x y : α} {upper lower : List α}
       · exact hxy
       · exact (hpre _ (by omega)).trans_lt hxy
   | some w =>
-    obtain ⟨j', hj', hL', hLj', hpre', hyw⟩ :=
+    obtain ⟨j', hj', hL', _, hpre', hyw⟩ :=
       exists_set_of_rowBump_snd_eq_some hlow
     rw [hL']
     -- the first entry of `lower` exceeding `y` is weakly left of column `j`
@@ -343,6 +353,15 @@ theorem length_getD_succ_rowInsertIndex_lt {rows : List (List α)} (h : rows.IsT
       ((rowInsert x rows).getD (rowInsertIndex x rows) []).length := by
   rw [length_getD_rowInsert, length_getD_rowInsert, ite_eq_right (by omega), ite_eq_left rfl]
   exact Nat.lt_succ_of_le (h.length_getD_succ_le _)
+
+/-- **A new cell below the first row sits under a longer row**: if `T ← x` adds its cell in row
+`i + 1`, then row `i + 1` of `T` is strictly shorter than row `i`. -/
+theorem length_getD_succ_lt_of_rowInsertIndex_eq_succ {rows : List (List α)}
+    (h : rows.IsTableauRows) {x : α} {i : ℕ} (hi : rowInsertIndex x rows = i + 1) :
+    (rows.getD (i + 1) []).length < (rows.getD i []).length := by
+  have := (h.rowInsert x).length_getD_succ_le i
+  rw [length_getD_rowInsert, length_getD_rowInsert, hi] at this
+  split_ifs at this <;> omega
 
 /-! ### Reverse insertion -/
 

@@ -344,7 +344,7 @@ theorem exists_loopPath (a₀ : α) :
       simp [h0]
     classical
     have hex : ∃ m, 0 < m ∧ m ≤ n ∧ x m = a₀ := ⟨n, hnpos, le_rfl, hn⟩
-    set m := Nat.find hex with hm
+    let m := Nat.find hex
     obtain ⟨hm0, hmn, hxm⟩ : 0 < m ∧ m ≤ n ∧ x m = a₀ := Nat.find_spec hex
     have hmin : ∀ j, 0 < j → j < m → x j ≠ a₀ := by
       intro j hj0 hjm hxj

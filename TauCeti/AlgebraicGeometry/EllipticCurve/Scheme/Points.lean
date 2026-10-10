@@ -334,7 +334,7 @@ theorem chartι_eq_projModelPoint (i : Fin 3) :
   congr 2
   ext z
   obtain ⟨n, a, ha, rfl⟩ := Away.mk_surjective _ (W.toProjective.coord_mem_grading i) z
-  obtain ⟨p, hp, rfl⟩ := W.toProjective.mem_grading_iff.mp ha
+  obtain ⟨p, _, rfl⟩ := W.toProjective.mem_grading_iff.mp ha
   -- the unit coordinate is `1`, and evaluation at the classes of the variables is the quotient map
   have hu : (W.toProjective.chartPoint_self i ▸ isUnit_one :
       IsUnit (W.toProjective.chartPoint i i)).unit = 1 :=

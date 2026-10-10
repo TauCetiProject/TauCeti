@@ -129,6 +129,14 @@ theorem apply_of_mem_weightSpace {ρ : Representation k (GL (Fin n) k) W} {l : F
     ρ (diagGL t) w = ((weightChar k l t : kˣ) : k) • w :=
   (mem_weightSpace_iff ρ l w).mp hw t
 
+/-- A scalar matrix acts on a weight vector by the scalar raised to the weight's coordinate sum. -/
+theorem apply_scalar_of_mem_weightSpace {ρ : Representation k (GL (Fin n) k) W}
+    {l : Fin n → ℤ} {w : W} (hw : w ∈ weightSpace ρ l) (z : kˣ) :
+    ρ (GeneralLinearGroup.scalar (Fin n) z) w = ((z ^ (∑ i, l i) : kˣ) : k) • w := by
+  have h := apply_of_mem_weightSpace hw (fun _ ↦ z)
+  rw [weightChar_apply, torusCharacter_def, Finset.prod_zpow_eq_zpow_sum, diagGL_const] at h
+  exact h
+
 /-- **An operator commuting with the torus action preserves every weight space.**  A weight space
 is a joint eigenspace of the torus, and an operator commuting with an endomorphism carries each of
 its eigenvectors to an eigenvector of the same eigenvalue.

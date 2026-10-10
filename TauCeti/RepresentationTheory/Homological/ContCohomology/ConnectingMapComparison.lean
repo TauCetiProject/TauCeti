@@ -126,7 +126,7 @@ theorem explicitIso_delta0 (x : H0 G C) :
       _ = explicitH1AddEquivContinuousCohomology G A (⟨a, ha⟩ : Z1 G A) :=
         (explicitH1AddEquivContinuousCohomology_apply G A ⟨a, ha⟩).symm
       _ = _ := by
-        rw [S.explicitDelta0_apply x hb ha fun g ↦ (hab g).trans (d0_apply b g),
+        rw [S.explicitDelta0_apply x hb fun g ↦ (hab g).trans (d0_apply b g),
           explicitH1IsoContinuousCohomology_hom_apply, AddEquiv.apply_symm_apply,
           QuotientAddGroup.mk'_apply]
 
@@ -180,7 +180,7 @@ theorem explicitIso_delta1 (x : DiscreteH1 G C) :
       _ = explicitH2AddEquivContinuousCohomology G A (⟨a, ha⟩ : Z2 G A) :=
         (explicitH2AddEquivContinuousCohomology_apply G A ⟨a, ha⟩).symm
       _ = _ := by
-        have hδ := S.explicitDelta1_apply f hec he ha hae'
+        have hδ := S.explicitDelta1_apply f hec he hae'
         rw [QuotientAddGroup.mk'_apply, QuotientAddGroup.mk'_apply, hf] at hδ
         rw [hδ, explicitH2IsoContinuousCohomology_hom_apply, AddEquiv.apply_symm_apply]
 

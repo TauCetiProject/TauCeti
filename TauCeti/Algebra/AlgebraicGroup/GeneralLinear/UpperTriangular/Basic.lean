@@ -342,7 +342,7 @@ theorem upperTriangularFunctor_map {A B : CommAlgCat.{w} R} (phi : A ⟶ B) :
   rfl
 
 /-- The morphism part of the upper-triangular functor applies an algebra morphism entrywise. -/
-@[simp]
+-- Not `@[simp]`: `simp` never matches the `eqToHom` applied to an element; use `rw`.
 theorem upperTriangularFunctor_map_apply_apply {A B : CommAlgCat.{w} R} (phi : A ⟶ B)
     (g : ULift.{u, w} (upperTriangularGroup (Fin n) A)) (i j : Fin n) :
     (((eqToHom (upperTriangularFunctor_obj (R := R) n B)
@@ -370,7 +370,7 @@ noncomputable def pointsNatIso :
           (pointsMulEquiv_mapValue (R := R) (n := n) phi.hom f))
 
 /-- The forward component of `pointsNatIso` is the pointwise upper-triangular equivalence. -/
-@[simp]
+-- Not `@[simp]`: `simp` never matches the `eqToHom` applied to an element; use `rw`.
 theorem pointsNatIso_hom_app_apply (A : CommAlgCat.{w} R)
     (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n) A) :
     (eqToHom (upperTriangularFunctor_obj (R := R) n A)
@@ -380,7 +380,7 @@ theorem pointsNatIso_hom_app_apply (A : CommAlgCat.{w} R)
 
 /-- The inverse component of `pointsNatIso` is the inverse pointwise upper-triangular
 equivalence. -/
-@[simp]
+-- Not `@[simp]`: `simp` never matches the `eqToHom` applied to an element; use `rw`.
 theorem pointsNatIso_inv_app_apply (A : CommAlgCat.{w} R)
     (g : ULift.{u, w} (upperTriangularGroup (Fin n) A)) :
     (pointsNatIso (R := R) n).inv.app A
@@ -433,7 +433,7 @@ theorem coordinateMap_comp_rootSubgroupCoordinateMap (hij : i < j) :
 
 /-- Under the upper-triangular and general-linear point equivalences, the factored positive-root
 coordinate morphism gives the same transvection as the ambient root-subgroup morphism. -/
-@[simp]
+-- Not `@[simp]`: `simp` does not match its left-hand side, even with the lemma alone; use `rw`.
 theorem pointsMulEquiv_rootSubgroupCoordinateMap (hij : i < j)
     {A : Type w} [CommRing A] [Algebra R A]
     (f : HopfAlgebra.points

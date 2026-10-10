@@ -72,7 +72,7 @@ private theorem relations_eq_span_homogeneous :
         | @homogeneous r n =>
           exact Submodule.subset_span ⟨p, q, r, a, m, n, a.2, m.2, n.2, rfl⟩
   · rw [Submodule.span_le]
-    rintro z ⟨p, q, r, a, m, n, ha, hm, hn, rfl⟩
+    rintro z ⟨p, q, r, a, m, n, _, _, _, rfl⟩
     rw [balancedTensorRelations_def]
     exact Submodule.subset_span ⟨a, m, n, rfl⟩
 

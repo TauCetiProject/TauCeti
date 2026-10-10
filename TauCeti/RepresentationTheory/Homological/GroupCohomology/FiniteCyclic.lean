@@ -177,7 +177,7 @@ private theorem barToPeriodic₂_comm :
   have h₀ : Fin.contractNth 0 (· * ·) x 0 = x 0 * x 1 := rfl
   have h₁ : Fin.contractNth 1 (· * ·) x 0 = x 0 := rfl
   set i := cyclicLog g hg (x 0) with hi
-  set j := cyclicLog g hg (x 1) with hj
+  set j := cyclicLog g hg (x 1) with _
   have hmul : cyclicLog g hg (x 0 * x 1) = (i + j) % orderOf g := cyclicLog_mul g hg _ _
   -- As in `barToPeriodic₁_comm`, left multiplication is matched up to the instance path.
   simp only [Representation.ofMulAction_single, smul_eq_mul]

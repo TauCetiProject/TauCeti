@@ -56,6 +56,8 @@ integrable derivative bounds the metric derivative almost everywhere.
 
 * `HasDerivAt.tendsto_edist_div` and `HasDerivAt.metricDerivative_eq`: on a normed space the
   difference quotients converge to the norm of the derivative, which is the metric derivative.
+* `TauCeti.continuousAt_of_metricDerivative_ne_top`: a curve is continuous wherever its metric
+  derivative is finite.
 * `LipschitzWith.metricDerivative_le` and `LipschitzWith.metricDerivative_comp_le`: Lipschitz
   bounds on a curve and under Lipschitz post-composition.
 * `BoundedVariationOn.ae_metricDerivative_le_enorm_deriv_variationOnFromTo`: for a curve of bounded
@@ -106,6 +108,21 @@ theorem metricDerivative_eq_of_tendsto {l : ℝ≥0∞}
     (h : Tendsto (fun s ↦ edist (γ s) (γ t) / edist s t) (𝓝[≠] t) (𝓝 l)) :
     metricDerivative γ t = l :=
   (metricDerivative_def γ t).trans h.limsup_eq
+
+/-- A curve with finite metric derivative at `t` is continuous at `t`. -/
+theorem continuousAt_of_metricDerivative_ne_top (h : metricDerivative γ t ≠ ∞) :
+    ContinuousAt γ t := by
+  obtain ⟨C, hC, hCtop⟩ := exists_between (lt_top_iff_ne_top.2 h)
+  have hbound : ∀ᶠ s in 𝓝[≠] t, edist (γ s) (γ t) ≤ C * edist s t := by
+    filter_upwards [eventually_lt_of_limsup_lt hC, self_mem_nhdsWithin] with s hs hst
+    exact (ENNReal.div_le_iff (edist_pos.2 hst).ne' (edist_ne_top s t)).1 hs.le
+  have hlim : Tendsto (fun s ↦ C * edist s t) (𝓝[≠] t) (𝓝 0) := by
+    have := ENNReal.Tendsto.const_mul (tendsto_id.edist (tendsto_const_nhds (x := t)))
+      (Or.inr hCtop.ne) (f := 𝓝 t)
+    simpa using this.mono_left nhdsWithin_le_nhds
+  rw [← continuousWithinAt_compl_self, ContinuousWithinAt, tendsto_iff_edist_tendsto_0]
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hlim
+    (Eventually.of_forall fun _ ↦ bot_le) hbound
 
 /-- The metric derivative of a `K`-Lipschitz curve is at most `K` everywhere. -/
 theorem _root_.LipschitzWith.metricDerivative_le {K : ℝ≥0} (hγ : LipschitzWith K γ) (t : ℝ) :

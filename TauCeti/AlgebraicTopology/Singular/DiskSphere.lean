@@ -23,15 +23,18 @@ copy of the coefficient object, identified by the augmentation.
 In positive degrees, the disk is contractible, so the reduced connecting morphism of the pair
 identifies `Hₖ₊₁(Dⁿ, Sⁿ⁻¹)` with the reduced homology `H~ₖ(Sⁿ⁻¹)` of the boundary sphere, which is
 computed in `TauCeti/AlgebraicTopology/Singular/Sphere.lean`.  The isomorphism
-`Hₙ(Dⁿ, Sⁿ⁻¹) ≅ R` in the top degree is this connecting morphism followed by the chosen generator
-of `H~ₙ₋₁(Sⁿ⁻¹)`, so the connecting morphism carries the generator of the pair to the generator of
-the sphere.
+`Hₙ(Dⁿ, Sⁿ⁻¹) ≅ R` in the top degree is this connecting morphism followed by the standard generator
+`TauCeti.reducedSingularHomologyTopCatSphereIso` of `H~ₙ₋₁(Sⁿ⁻¹)`, so the connecting morphism
+carries the generator of the pair to the standard generator of the sphere.
 
 ## Main results
 
 * `TauCeti.isZero_singularHomology_diskBoundaryPair_zero`: `H₀(Dⁿ, Sⁿ⁻¹) = 0` for `n ≥ 1`.
 * `TauCeti.isZero_singularHomology_diskBoundaryPair_of_ne`: `Hₖ(Dⁿ, Sⁿ⁻¹) = 0` for `k ≠ n`.
 * `TauCeti.singularHomologyDiskBoundaryPairIso`: `Hₙ(Dⁿ, Sⁿ⁻¹) ≅ R`.
+* `TauCeti.singularHomologyCubeBoundaryPairIso` and
+  `TauCeti.isZero_singularHomology_cubeBoundaryPair_of_ne`: the same for the cube pair
+  `(Iⁿ, ∂Iⁿ)`, transported along `TauCeti.diskBoundaryPairIsoCube`.
 
 ## References
 
@@ -193,7 +196,7 @@ theorem isZero_singularHomology_diskBoundaryPair_of_ne {n k : ℕ} (hk : k ≠ n
           (TopPair.isIso_reducedSingularHomologyδ_of_contractibleSpace _ R k))
 
 /-- **The relative homology of a disk modulo its boundary in its dimension**: `Hₙ(Dⁿ, Sⁿ⁻¹) ≅ R`.
-For `n = m + 1` it is the reduced connecting isomorphism onto `H~ₘ(Sᵐ)` followed by the chosen
+For `n = m + 1` it is the reduced connecting isomorphism onto `H~ₘ(Sᵐ)` followed by the standard
 generator `TauCeti.reducedSingularHomologyTopCatSphereIso` of the sphere
 (`TauCeti.singularHomologyDiskBoundaryPairIso_succ_hom`); for `n = 0` the pair is a point modulo
 the empty set and the isomorphism is the augmentation. -/
@@ -208,7 +211,7 @@ def singularHomologyDiskBoundaryPairIso :
       reducedSingularHomologyTopCatSphereIso R m
 
 /-- In positive dimension, the identification `Hₘ₊₁(Dᵐ⁺¹, Sᵐ) ≅ R` is the reduced connecting
-morphism of the pair followed by the chosen generator of `H~ₘ(Sᵐ)`. -/
+morphism of the pair followed by the standard generator of `H~ₘ(Sᵐ)`. -/
 @[simp]
 lemma singularHomologyDiskBoundaryPairIso_succ_hom (m : ℕ) :
     (singularHomologyDiskBoundaryPairIso R (m + 1)).hom =
@@ -247,5 +250,37 @@ lemma singularHomologyDiskBoundaryPairIso_zero_hom :
   rfl
 
 end HigherDegrees
+
+section CubePairHomology
+
+variable (n : ℕ)
+
+/-- **The relative homology of a cube modulo its boundary in its dimension**:
+`Hₙ(Iⁿ, ∂Iⁿ; R) ≅ R`, transported from `TauCeti.singularHomologyDiskBoundaryPairIso` along the
+isomorphism of pairs `TauCeti.diskBoundaryPairIsoCube`. -/
+def singularHomologyCubeBoundaryPairIso : (cubeBoundaryPair.{w} n).singularHomology R n ≅ R :=
+  (SSetPair.homologyFunctor R n).mapIso
+      (TopPair.toSSetPair.mapIso (diskBoundaryPairIsoCube n)).symm ≪≫
+    singularHomologyDiskBoundaryPairIso R n
+
+/-- The generator of `Hₙ(Iⁿ, ∂Iⁿ; R)` is the image of the generator of `Hₙ(Dⁿ, Sⁿ⁻¹; R)` under
+`TauCeti.diskBoundaryPairToCube`. -/
+lemma singularHomologyCubeBoundaryPairIso_inv :
+    (singularHomologyCubeBoundaryPairIso R n).inv =
+      (singularHomologyDiskBoundaryPairIso R n).inv ≫
+        TopPair.singularHomologyMap (diskBoundaryPairToCube.{w} n) R n := by
+  rw [← diskBoundaryPairIsoCube_hom]
+  -- This is the inverse of the composite defining `singularHomologyCubeBoundaryPairIso`.
+  rfl
+
+/-- The relative homology of a cube modulo its boundary vanishes outside its dimension:
+`Hₖ(Iⁿ, ∂Iⁿ; R) = 0` for `k ≠ n`. -/
+theorem isZero_singularHomology_cubeBoundaryPair_of_ne {k : ℕ} (hk : k ≠ n) :
+    IsZero ((cubeBoundaryPair.{w} n).singularHomology R k) :=
+  (isZero_singularHomology_diskBoundaryPair_of_ne R hk).of_iso
+    ((SSetPair.homologyFunctor R k).mapIso
+      (TopPair.toSSetPair.mapIso (diskBoundaryPairIsoCube n))).symm
+
+end CubePairHomology
 
 end TauCeti

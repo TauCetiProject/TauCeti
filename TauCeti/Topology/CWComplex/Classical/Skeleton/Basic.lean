@@ -12,8 +12,9 @@ public import Mathlib.Topology.Category.TopCat.Basic
 # Skeletal objects of relative CW complexes
 
 The stages of a relative CW complex's skeletal filtration, bundled as topological spaces.
-Characteristic-map lemmas describe how open cells sit outside the lower skeleton, how their
-coordinates are unique, and how cells account for points in consecutive skeleta.
+Characteristic-map lemmas describe their continuity on the closed unit ball, how open cells sit
+outside the lower skeleton, how their coordinates are unique, and how cells account for points in
+consecutive skeleta.  Every point of the complex lies in some skeleton above any given level.
 
 The mathematical source is Hatcher, *Algebraic Topology*, Section 2.2.
 -/
@@ -56,6 +57,13 @@ lemma map_notMem_skeletonLT {n : ℕ} (j : cell C n) {y : Fin n → ℝ} (hy : �
   (disjoint_skeletonLT_openCell le_rfl).notMem_of_mem_left h ⟨y, mem_ball_zero_iff.2 hy, rfl⟩
 
 omit [T2Space X] in
+/-- The characteristic map of an `n`-cell is continuous on the closed unit ball, as a map out of
+the subtype. -/
+lemma continuous_map_closedBall {n : ℕ} (j : cell C n) :
+    Continuous fun y : closedBall (0 : Fin n → ℝ) 1 ↦ map n j y :=
+  (continuousOn n j).comp_continuous continuous_subtype_val fun y ↦ y.2
+
+omit [T2Space X] in
 /-- Two points of open unit balls with the same image under characteristic maps of `n`-cells come
 from the same cell and are equal. -/
 lemma map_eq_map_iff {n : ℕ} {i j : cell C n} {y z : Fin n → ℝ} (hy : ‖y‖ < 1)
@@ -86,5 +94,12 @@ lemma map_mem_skeletonLT_succ {n : ℕ} (j : cell C n) {y : Fin n → ℝ} (hy :
     map n j y ∈ (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X) := by
   rw [Nat.cast_succ]
   exact closedCell_subset_skeletonLT n j ⟨y, mem_closedBall_zero_iff.2 hy, rfl⟩
+
+/-- Every point of a relative CW complex lies in some skeleton above any given level. -/
+lemma exists_mem_skeletonLT_add (k : ℕ) {x : X} (hx : x ∈ C) :
+    ∃ j : ℕ, x ∈ (skeletonLT C ((k + j : ℕ) : ℕ∞) : Set X) := by
+  rw [← iUnion_skeletonLT_eq_complex (C := C), mem_iUnion] at hx
+  obtain ⟨j, hj⟩ := hx
+  exact ⟨j, skeletonLT_mono (by exact_mod_cast Nat.le_add_left j k) hj⟩
 
 end TauCeti

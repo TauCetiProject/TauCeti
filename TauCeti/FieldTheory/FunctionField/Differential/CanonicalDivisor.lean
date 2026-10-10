@@ -152,6 +152,16 @@ noncomputable def weilDifferentialDivisor (hF : IsFunctionField k F)
     (hmem : ω ∈ weilDifferentialSpace k F) (hω : ω ≠ 0) : Divisor k F :=
   (exists_isGreatest_mem_weilDifferentialFiltration hF hex hmem hω).choose
 
+/-- The divisor of a Weil differential depends only on the differential, not on the proofs that it
+is a nonzero Weil differential. -/
+theorem weilDifferentialDivisor_congr (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
+    {ω₁ ω₂ : Module.Dual k ↥(repartitionSpace k F)} (h : ω₁ = ω₂)
+    (hmem₁ : ω₁ ∈ weilDifferentialSpace k F) (hω₁ : ω₁ ≠ 0)
+    (hmem₂ : ω₂ ∈ weilDifferentialSpace k F) (hω₂ : ω₂ ≠ 0) :
+    weilDifferentialDivisor hF hex hmem₁ hω₁ = weilDifferentialDivisor hF hex hmem₂ hω₂ := by
+  subst h
+  rfl
+
 /-- The divisor of a nonzero Weil differential is indeed the greatest divisor bounding it. -/
 theorem isGreatest_weilDifferentialDivisor (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) {ω : Module.Dual k ↥(repartitionSpace k F)}
@@ -467,7 +477,7 @@ theorem divisorClass_eq_canonicalClass_iff (hF : IsFunctionField k F)
   -- `D` has the class of `W`.  Conversely such a `D` is itself a Riemann–Roch divisor, whose
   -- degree and dimension are `2g - 2` and `g` by Corollary 1.5.16.
   obtain ⟨ω, hωmem, hω0⟩ := (Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF hex)
-  refine ⟨fun hD ↦ ?_, fun ⟨hdeg, hdim⟩ ↦ ?_⟩
+  refine ⟨fun hD ↦ ?_, fun ⟨hdeg, _⟩ ↦ ?_⟩
   · have hRR := isRiemannRochDivisor_of_divisorClass_eq_canonicalClass hF hex hD
     exact ⟨hRR.degree_eq hF hex, (hRR.dim_eq hF hex).ge⟩
   · have hid := Divisor.isRiemannRochDivisor_iff.mp

@@ -37,8 +37,18 @@ between completed rational localisations of
 The consequences for `TauCeti.Huber.IsSheafyForEveryPresentation` are in
 `TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.SheafForEveryPresentation`.
 
+## Main definitions
+
+* `TauCeti.ValuationSpectrum.presentationLimitPresheafIsoPushforward` : the presentation-limit
+  presheaf of `(A, A⁺)` as the pushforward of that of `(B, B⁺)`, along mutually inverse continuous
+  ring homomorphisms.
+* `TauCeti.ValuationSpectrum.spaComapTopIso` : the homeomorphism of adic spectra induced by
+  mutually inverse continuous ring homomorphisms.
+
 ## Main results
 
+* `TauCeti.ValuationSpectrum.presentationLimitPresheafIsoPushforward_hom_app_comp_map_comp_π`:
+  on rational opens the transport isomorphism is the base change `A⟨T/s⟩ → B⟨φ(T)/φ(s)⟩`.
 * `TauCeti.ValuationSpectrum.isSheaf_presentationLimitPresheaf_iff_of_ringEquiv` : invariance of
   the sheaf property under isomorphism.
 * `TauCeti.ValuationSpectrum.isSheaf_presentationLimitPresheaf_completionPlus_iff` : invariance of
@@ -206,8 +216,15 @@ private noncomputable def presentationLimitIso (W : Opens ↥(spa Aplus)) :
   hom_inv_id := presentationLimitHom_comp_presentationLimitHom _ _ _ _ _ _ _ _ _ _
   inv_hom_id := presentationLimitHom_comp_presentationLimitHom _ _ _ _ _ _ _ _ _ _
 
-/-- The presentation-limit presheaf of `(A, A⁺)` is the pushforward of that of `(B, B⁺)`. -/
-private noncomputable def presentationLimitPresheafIso :
+/-- **Transport of the presentation-limit presheaf along an isomorphism.** For mutually inverse
+continuous ring homomorphisms `φ : A → B` and `ψ : B → A` carrying `A⁺` into `B⁺` and `B⁺` into
+`A⁺`, the presentation-limit presheaf of `(A, A⁺)` for a pair of definition `P` is isomorphic to
+the pushforward of that of `(B, B⁺)` for a pair of definition `P'` along the homeomorphism
+`Spa(B, B⁺) → Spa(A, A⁺)` induced by `φ`. On an open `W`, the component
+`𝒪_{Spa A}(W) → 𝒪_{Spa B}(φ⁻¹W)` is assembled from the base changes `A⟨T/s⟩ → B⟨φ(T)/φ(s)⟩` of
+the universal property. At `A = B` and `P = P'` this is the action on the structure presheaf of an
+automorphism of the pair `(A, A⁺)`. -/
+noncomputable def presentationLimitPresheafIsoPushforward :
     presentationLimitPresheaf P Aplus ≅
       (TopCat.Presheaf.pushforward _ (spaComapTopHom φ hφ hplus)).obj
         (presentationLimitPresheaf P' Bplus) :=
@@ -223,13 +240,65 @@ private noncomputable def presentationLimitPresheafIso :
         (hV := (Opens.map _).monotone (leOfHom f.unop))
         (hVU₁ := mem_of_spaComap_mem_map φ hφ hplus ψ hψ hψφ hplus' W.unop)]
 
+/-- **The transport isomorphism is the base change on rational opens.** On the sections over `W`,
+the component of `presentationLimitPresheafIsoPushforward`, restricted to an open `V ⊆ φ⁻¹W` and
+followed by the projection at an index `m` of `V`, is the projection at an index `i` of `W`
+followed by the base change `A⟨i⟩ → B⟨m⟩` of `φ`, whenever the denominator of `m` is the image of
+that of `i` and the numerators of `m` contain the images of those of `i`. -/
+@[reassoc]
+theorem presentationLimitPresheafIsoPushforward_hom_app_comp_map_comp_π
+    {W : Opens ↥(spa Aplus)} (i : PresentationIndex (P := P) Aplus W) {V : Opens ↥(spa Bplus)}
+    (hV : V ≤ (Opens.map (spaComapTopHom φ hφ hplus)).obj W)
+    (m : PresentationIndex (P := P') Bplus V)
+    (hden : m.pres.den = φ i.pres.den) (hnum : ∀ t ∈ i.pres.num, φ t ∈ m.pres.num) :
+    eqToHom (presentationLimitPresheaf_obj P Aplus (Opposite.op W)).symm ≫
+        (presentationLimitPresheafIsoPushforward φ hφ hplus ψ hψ hψφ hφψ hplus').hom.app
+          (Opposite.op W) ≫
+        eqToHom (presentationLimitPresheaf_obj P' Bplus _) ≫ presentationLimitMap hV ≫
+        presentationLimitπToPresentation Bplus V m =
+      presentationLimitπToPresentation Aplus W i ≫ i.pres.mapHom φ hφ m.pres hden hnum := by
+  simp only [presentationLimitPresheafIsoPushforward, NatIso.ofComponents_hom_app,
+    Iso.trans_hom, eqToIso.hom, presentationLimitIso, Category.assoc, eqToHom_trans_assoc,
+    eqToHom_refl, Category.id_comp, presentationLimitMap_comp_πToPresentation, Functor.op_obj,
+    Opposite.unop_op, presentationLimitHom_comp_πToPresentation_assoc, presentationLimitLeg]
+  -- `i` refines the index `ψ(m)` of `W`, and both maps out of the projections restrict to
+  -- `A → B → B⟨m⟩` on `A`
+  refine (presentationLimitπToPresentation_comp_eq ?_ ?_).symm
+  · classical
+    refine Presentation.le_def.mpr ⟨1, ?_, fun t ht ↦ ?_⟩
+    · rw [PresentationIndex.map_pres_den, presentationIndexRestrict_obj_pres, hden, hψφ,
+        mul_one]
+    · rw [mul_one, PresentationIndex.map_pres_num, presentationIndexRestrict_obj_pres]
+      exact Finset.mem_image.mpr ⟨φ t, hnum t ht, hψφ t⟩
+  · rw [ObjectProperty.FullSubcategory.comp_hom, Presentation.toCompletionLocTopHom_comp_mapHom,
+      Presentation.toCompletionLocTopHom_comp_mapHom_assoc,
+      Presentation.toCompletionLocTopHom_comp_eqToHom_hom (presentationIndexRestrict_obj_pres hV m)]
+
+omit [IsTopologicalRing A] [IsTopologicalRing B] in
 include hψφ hφψ in
-/-- The maps of adic spectra induced by `φ` and `ψ`, as an isomorphism of `TopCat`. -/
-private noncomputable def spaTopIso : TopCat.of ↥(spa Bplus) ≅ TopCat.of ↥(spa Aplus) where
+/-- **The homeomorphism of adic spectra induced by an isomorphism**: for mutually inverse
+continuous ring homomorphisms `φ : A → B` and `ψ : B → A` carrying `A⁺` into `B⁺` and `B⁺` into
+`A⁺`, the maps `Spa(B, B⁺) → Spa(A, A⁺)` and `Spa(A, A⁺) → Spa(B, B⁺)` they induce are mutually
+inverse, as an isomorphism of `TopCat`. -/
+noncomputable def spaComapTopIso : TopCat.of ↥(spa Bplus) ≅ TopCat.of ↥(spa Aplus) where
   hom := spaComapTopHom φ hφ hplus
   inv := spaComapTopHom ψ hψ hplus'
   hom_inv_id := TopCat.ext (spaComap_spaComap ψ hψ hplus' φ hφ hφψ hplus)
   inv_hom_id := TopCat.ext (spaComap_spaComap φ hφ hplus ψ hψ hψφ hplus')
+
+omit [IsTopologicalRing A] [IsTopologicalRing B] in
+/-- The forward map of `spaComapTopIso` is the map of adic spectra induced by `φ`. -/
+@[simp]
+theorem spaComapTopIso_hom :
+    (spaComapTopIso φ hφ hplus ψ hψ hψφ hφψ hplus').hom = spaComapTopHom φ hφ hplus :=
+  (rfl)
+
+omit [IsTopologicalRing A] [IsTopologicalRing B] in
+/-- The inverse map of `spaComapTopIso` is the map of adic spectra induced by `ψ`. -/
+@[simp]
+theorem spaComapTopIso_inv :
+    (spaComapTopIso φ hφ hplus ψ hψ hψφ hφψ hplus').inv = spaComapTopHom ψ hψ hplus' :=
+  (rfl)
 
 /-- **Sheafhood of the presentation limit is invariant under isomorphism.** If `e : A ≃+* B` is an
 isomorphism of topological rings carrying `A⁺` onto `B⁺`, then the presentation-limit presheaf of
@@ -248,8 +317,8 @@ theorem isSheaf_presentationLimitPresheaf_iff_of_ringEquiv (e : A ≃+* B) (he :
   exact TopCat.Presheaf.isSheaf_iff_of_iso_pushforward (X := TopCat.of ↥(spa Aplus))
     (Y := TopCat.of ↥(spa (Aplus.map (e : A →+* B)))) (F := presentationLimitPresheaf P Aplus)
     (G := presentationLimitPresheaf P' (Aplus.map (e : A →+* B)))
-    (spaTopIso _ he h₁ _ he' e.symm_apply_apply e.apply_symm_apply h₂)
-    (presentationLimitPresheafIso _ he h₁ _ he' e.symm_apply_apply e.apply_symm_apply h₂)
+    (spaComapTopIso _ he h₁ _ he' e.symm_apply_apply e.apply_symm_apply h₂)
+    (presentationLimitPresheafIsoPushforward _ he h₁ _ he' e.symm_apply_apply e.apply_symm_apply h₂)
 
 end TauCeti.ValuationSpectrum
 

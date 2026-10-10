@@ -54,8 +54,6 @@ private theorem exp_moment_gaussianWeight :
 
 /-- The Hermite normalization `cₙ = n!·√π` is positive. -/
 theorem hermiteNormalization_pos (n : ℕ) : (0 : ℝ) < (n.factorial : ℝ) * Real.sqrt Real.pi := by
-  have hfac : (0 : ℝ) < (n.factorial : ℝ) := by exact_mod_cast Nat.factorial_pos n
-  have hpi : (0 : ℝ) < Real.sqrt Real.pi := Real.sqrt_pos.mpr Real.pi_pos
   positivity
 
 /-- **Orthogonality against the Gaussian weight.** `∫ Hₘ(x√2)Hₙ(x√2)e^{-x²} = δₘₙ·n!√π`. This is
@@ -73,8 +71,6 @@ theorem integral_hermiteDilated_mul_hermiteDilated_mul_gaussianWeight (m n : ℕ
       ring_nf
     have hm : Real.sqrt ((m.factorial : ℝ) * Real.sqrt Real.pi) ≠ 0 :=
       ne_of_gt (Real.sqrt_pos.mpr (hermiteNormalization_pos m))
-    have hn : Real.sqrt ((n.factorial : ℝ) * Real.sqrt Real.pi) ≠ 0 :=
-      ne_of_gt (Real.sqrt_pos.mpr (hermiteNormalization_pos n))
     rw [eval_hermiteDilated, eval_hermiteDilated, hermiteFunction_def, hermiteFunction_def, ← he]
     field_simp
   simp_rw [hpt]
