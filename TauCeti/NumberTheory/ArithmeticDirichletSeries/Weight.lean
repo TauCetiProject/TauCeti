@@ -435,13 +435,7 @@ noncomputable def normTwist (z : ℂ) (χ : MultiplicativeIdealWeight K) :
         rw [map_mul, map_mul, Nat.cast_mul, Complex.natCast_mul_natCast_cpow]
         ring }
   finite_setOf_apply_eq_zero := χ.finite_badPrimes.subset fun 𝔭 h𝔭 ↦ by
-    have h : ((Ideal.absNorm 𝔭.asIdeal : ℕ) : ℂ) ≠ 0 := by
-      exact_mod_cast Ideal.absNorm_eq_zero_iff.not.mpr 𝔭.ne_bot
-    have h' : χ 𝔭.asIdeal * ((Ideal.absNorm 𝔭.asIdeal : ℕ) : ℂ) ^ (-z) = 0 := by
-      simpa [badPrimes] using h𝔭
-    rcases mul_eq_zero.mp h' with h₁ | h₂
-    · exact h₁
-    · exact absurd ((Complex.cpow_eq_zero_iff _ _).mp h₂).1 h
+    simpa [Complex.cpow_eq_zero_iff, Ideal.absNorm_eq_zero_iff, 𝔭.ne_bot] using h𝔭
 
 @[simp]
 theorem normTwist_apply (z : ℂ) (χ : MultiplicativeIdealWeight K) (I : Ideal (𝓞 K)) :
@@ -988,12 +982,10 @@ theorem norm_normTwist_apply_ne_one (χ : UnitaryIdealWeight K) {z : ℂ} (hz : 
     {I : Ideal (𝓞 K)} (hN : 1 < Ideal.absNorm I) :
     ‖MultiplicativeIdealWeight.normTwist z χ.1 I‖ ≠ 1 := by
   by_cases hI : χ.1.IsGood I
-  · have hN' : (1 : ℝ) < (Ideal.absNorm I : ℝ) := by exact_mod_cast hN
-    rw [norm_normTwist χ z hI]
-    rcases lt_trichotomy z.re 0 with h | h | h
-    · exact ne_of_gt ((Real.one_lt_rpow_iff_of_pos (by linarith)).mpr (Or.inl ⟨hN', by linarith⟩))
-    · exact absurd h hz
-    · exact ne_of_lt (Real.rpow_lt_one_of_one_lt_of_neg hN' (by linarith))
+  · rw [norm_normTwist χ z hI, Ne, ← Real.rpow_zero (Ideal.absNorm I : ℝ),
+      Real.rpow_right_inj (by exact_mod_cast zero_lt_one.trans hN) (by exact_mod_cast hN.ne'),
+      neg_eq_zero]
+    exact hz
   · rw [MultiplicativeIdealWeight.normTwist_apply,
       (MultiplicativeIdealWeight.apply_eq_zero_iff_not_isGood χ.1 I).mpr hI, zero_mul, norm_zero]
     exact zero_ne_one
@@ -1034,7 +1026,7 @@ noncomputable def restrictAway (χ : UnitaryIdealWeight K) (S : Set (HeightOneSp
     simp [h𝔭.2, χ.2 𝔭 h𝔭.1]⟩
 
 @[simp]
-theorem val_restrictAway (χ : UnitaryIdealWeight K) (S : Set (HeightOneSpectrum (𝓞 K)))
+theorem val_restrictAway (χ : UnitaryIdealWeight K) {S : Set (HeightOneSpectrum (𝓞 K))}
     (hS : S.Finite) : (restrictAway χ S hS).1 = χ.1.restrictAway S hS := (rfl)
 
 /-- Restricting a unitary weight away from no prime at all changes nothing. -/
@@ -1047,7 +1039,7 @@ theorem restrictAway_empty (χ : UnitaryIdealWeight K)
 pointwise square. As for `TauCeti.MultiplicativeIdealWeight.restrictAway_pow`, the exponent `0` is
 excluded. -/
 @[simp]
-theorem restrictAway_pow (χ : UnitaryIdealWeight K) (S : Set (HeightOneSpectrum (𝓞 K)))
+theorem restrictAway_pow (χ : UnitaryIdealWeight K) {S : Set (HeightOneSpectrum (𝓞 K))}
     (hS : S.Finite) {n : ℕ} (hn : n ≠ 0) : restrictAway (χ ^ n) S hS = restrictAway χ S hS ^ n :=
   Subtype.ext (by
     rw [val_restrictAway, val_pow, val_pow, val_restrictAway,
@@ -1113,7 +1105,7 @@ theorem mapEquiv_symm_apply (e : K ≃+* L) (χ : UnitaryIdealWeight L) :
 forward. -/
 @[simp]
 theorem map_restrictAway (e : K ≃+* L) (χ : UnitaryIdealWeight K)
-    (S : Set (HeightOneSpectrum (𝓞 K))) (hS : S.Finite) :
+    {S : Set (HeightOneSpectrum (𝓞 K))} (hS : S.Finite) :
     map e (χ.restrictAway S hS) =
       (map e χ).restrictAway
         (HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e) '' S)
