@@ -554,6 +554,22 @@ def orthogonalToIsom : Matrix.orthogonalGroup (Fin 2) ℝ →* Isom 𝓘(ℝ, �
 theorem orthogonalToIsom_apply (g : Matrix.orthogonalGroup (Fin 2) ℝ) (p : Nil) :
     orthogonalToIsom g p = orthogonalMulAut g p := (rfl)
 
+/-- At the identity, an orthogonal Nil automorphism has differential `g` on the
+horizontal plane and multiplication by `det g` on the central line. -/
+@[simp]
+theorem tangentSpaceCastModel_mfderiv_orthogonalToIsom_one
+    (g : Matrix.orthogonalGroup (Fin 2) ℝ)
+    (v : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) (1 : Nil)) :
+    let u := tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) (1 : Nil) v
+    tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) (orthogonalToIsom g 1)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (orthogonalToIsom g) 1 v) =
+        (g.1 0 0 * u.1 + g.1 0 1 * u.2.1,
+          g.1 1 0 * u.1 + g.1 1 1 * u.2.1, g.1.det * u.2.2) := by
+  have hfun : (orthogonalToIsom g : Nil → Nil) = matrixHom g.1 := rfl
+  rw [hfun]
+  simpa [matrixDeriv, firstL, secondL, xL, yL, zL] using
+    tangentSpaceCastModel_mfderiv_matrixHom g.1 1 v
+
 /-- Distinct orthogonal matrices act by distinct isometries of `Nil`. -/
 theorem orthogonalToIsom_injective : Function.Injective orthogonalToIsom := fun _ _ h ↦
   orthogonalMulAut_injective <| MulEquiv.ext fun p ↦ DFunLike.congr_fun h p
