@@ -271,7 +271,8 @@ theorem tendsto_entropicTransportCost_transportCost_of_uniformContinuous
     dist y y' ≤ dist y (w (q y)) + dist y' (w (q y')) := hqy ▸ dist_triangle_right _ _ _
     _ < δ / 2 + δ / 2 := add_lt_add (hqw y) (hqw y')
     _ = δ := add_halves δ
-  have hd := hcδ (show dist (x, y) (x', y') < δ by rw [Prod.dist_eq]; exact max_lt hx hy)
+  have hxy : dist (x, y) (x', y') < δ := by rw [Prod.dist_eq]; exact max_lt hx hy
+  have hd := hcδ hxy
   rw [NNReal.dist_eq] at hd
   have hle : c (x, y) ≤ c (x', y') + η := by
     rw [← NNReal.coe_le_coe, NNReal.coe_add]
