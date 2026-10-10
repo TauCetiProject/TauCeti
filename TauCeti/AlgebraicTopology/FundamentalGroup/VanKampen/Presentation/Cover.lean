@@ -22,14 +22,14 @@ This formulation combines presentations of the members of a finite open cover by
 the pairwise overlap relations. Neither finiteness nor openness is needed: it suffices that
 the interiors cover the space. No inclusion-induced homomorphism is assumed injective.
 
-The proof uses the neighborhood-cover descent theorem and Mathlib's normal closure and
-quotient-group universal properties.
-
 ## References
 
 * A. Hatcher, *Algebraic Topology*, Section 1.2, Theorem 1.20.
 * R. Brown, *Topology and Groupoids*, 3rd ed., Chapters 6–7.
 -/
+
+/- The proof uses the neighborhood-cover descent theorem and Mathlib's normal closure and
+quotient-group universal properties. -/
 
 public section
 
