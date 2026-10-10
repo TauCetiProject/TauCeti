@@ -76,10 +76,8 @@ private theorem vertical_derivative_sign (Φ : Isom J SL2Tilde) (p : P) :
   have h := (mfderiv_vertical_iff Φ q v).mpr hv
   have hi := Φ.inner_mfderiv q v v
   rw [inner_def, inner_def] at hi
-  simp only [h.1, h.2, hv'] at hi
-  norm_num at hi
   have hs : (tangentSpaceCastModel J (Φ q) (mfderiv J J Φ q v)).2.2 ^ 2 = 1 := by
-    nlinarith [hi]
+    simpa [h.1, h.2, hv', pow_two] using hi
   have he := coordinate_derivative Φ q v
   simp only [hv', q, Equiv.apply_symm_apply] at he
   rw [he]
@@ -144,11 +142,15 @@ theorem exists_apply_vertical_eq (Φ : Isom J SL2Tilde) :
     (fun t => (hf t).hasFDerivAt.fderiv.trans (hg t).hasFDerivAt.fderiv.symm)
     0 (by
       simp only [coordinateMap, c, g, Function.comp_apply, add_zero, mul_zero]
-      rw [← mk, mk_x_y_z]
-      rfl)
+      rw [← toProd_mk p.x p.y p.z, mk_x_y_z, Equiv.symm_apply_apply]
+      exact Prod.ext (fst_toProd (Φ p))
+        (Prod.ext (fst_snd_toProd (Φ p)) (snd_snd_toProd (Φ p))))
   intro t
   apply toProd.injective
-  simpa [coordinateMap, c, g, mk] using congrFun heq t
+  have ht := congrFun heq t
+  simp only [coordinateMap, c, g, Function.comp_apply] at ht
+  rw [← toProd_mk p.x p.y (p.z + t), Equiv.symm_apply_apply] at ht
+  simpa only [toProd_mk] using ht
 
 /-- The image of a whole vertical fibre is the whole fibre through the image of any
 one of its points, including for isometries that reverse the fibre orientation. -/
