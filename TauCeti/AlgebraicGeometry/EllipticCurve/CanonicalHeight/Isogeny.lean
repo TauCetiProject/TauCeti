@@ -16,21 +16,24 @@ import Mathlib.Algebra.Polynomial.Homogenize
 For a morphism `f : W₁ → W₂` of elliptic curves over a field with a theory of heights, the
 canonical height scales by the degree:
 
-  `ĥ(f P) = deg f · ĥ(P)`.
+  `canonicalHeight (f P) = deg f · canonicalHeight P`.
 
 The proof has two halves. First, a nonzero `f` is an isogeny `φ`, which acts on the `x`-line
 through the rational function `φ.xRatFunc` of degree `deg f`
 (`TauCeti.Isogeny.degree_eq_max_natDegree_xRatFunc`), so homogenising its numerator and
 denominator in degree `deg f` gives a pair of binary forms computing `x(f P)` from `x(P)`.
 Mathlib's upper bound for heights of values of homogeneous polynomial maps then gives
-`h(f P) ≤ deg f · h(P) + C`, and averaging along multiples gives `ĥ(f P) ≤ deg f · ĥ(P)`.
-Second, the same inequality for the dual `f̂`, whose composite with `f` is multiplication by
-`deg f`, gives `(deg f)² ĥ(P) = ĥ(f̂ (f P)) ≤ deg f · ĥ(f P)`, the reverse inequality.
+`h(f P) ≤ deg f · h(P) + C`, and averaging along multiples gives
+`canonicalHeight (f P) ≤ deg f · canonicalHeight P`. Second, the same inequality for the dual
+`f̂`, whose composite with `f` is multiplication by `deg f`, gives
+`(deg f)² canonicalHeight P = canonicalHeight (f̂ (f P)) ≤ deg f · canonicalHeight (f P)`, the
+reverse inequality.
 
 ## Main results
 
 * `TauCeti.Isogeny.Hom.exists_naiveHeight_pointMap_le`: `h(f P) ≤ deg f · h(P) + C`.
-* `TauCeti.Isogeny.Hom.canonicalHeight_pointMap`: `ĥ(f P) = deg f · ĥ(P)`.
+* `TauCeti.Isogeny.Hom.canonicalHeight_pointMap`:
+  `canonicalHeight (f P) = deg f · canonicalHeight P`.
 
 ## References
 
@@ -89,8 +92,9 @@ theorem exists_naiveHeight_pointMap_le (f : Hom W₁ W₂) :
     Point.naiveHeight_eq_logHeight, Point.xRep_some]
   linarith [le_max_left C 0]
 
-/-- **The canonical height grows at most by the degree**: `ĥ(f P) ≤ deg f · ĥ(P)`, the naïve bound
-divided by `n²` along the multiples `n • P`. -/
+/-- **The canonical height grows at most by the degree**:
+`canonicalHeight (f P) ≤ deg f · canonicalHeight P`, the naïve bound divided by `n²` along the
+multiples `n • P`. -/
 private theorem canonicalHeight_pointMap_le (f : Hom W₁ W₂) (P : W₁.Point) :
     (f.pointMap P).canonicalHeight ≤ f.degree * P.canonicalHeight := by
   obtain ⟨C, hC⟩ := f.exists_naiveHeight_pointMap_le
@@ -103,8 +107,9 @@ private theorem canonicalHeight_pointMap_le (f : Hom W₁ W₂) (P : W₁.Point)
   rw [← pointMap_nsmul, mul_div_assoc', ← add_div]
   exact div_le_div_of_nonneg_right (hC (n • P)) (sq_nonneg _)
 
-/-- **The canonical height scales by the degree along a morphism**: `ĥ(f P) = deg f · ĥ(P)`.
-This includes the zero morphism, which has degree `0` and sends every point to `O`. -/
+/-- **The canonical height scales by the degree along a morphism**:
+`canonicalHeight (f P) = deg f · canonicalHeight P`. This includes the zero morphism, which has
+degree `0` and sends every point to `O`. -/
 theorem canonicalHeight_pointMap (f : Hom W₁ W₂) (P : W₁.Point) :
     (f.pointMap P).canonicalHeight = f.degree * P.canonicalHeight := by
   have h₁ := canonicalHeight_pointMap_le f P
