@@ -134,7 +134,8 @@ def reflection : Isom 𝓘(ℝ, ℝ × ℝ × ℝ) SL2Tilde where
   ext <;> simp [RiemannianIsometry.mul_apply] <;> ring
 
 /-- Reflection fixes exactly the height axis in the coordinate space. -/
-theorem reflection_apply_eq_self_iff (p : SL2Tilde) :
+-- A pre-lemma, so that `simp` uses it before `reflection_apply` rewrites the left-hand side.
+@[simp↓] theorem reflection_apply_eq_self_iff (p : SL2Tilde) :
     reflection p = p ↔ p.x = 0 ∧ p.z = 0 := by
   constructor
   · intro h
@@ -146,7 +147,7 @@ theorem reflection_apply_eq_self_iff (p : SL2Tilde) :
     ext <;> simp [hx, hz]
 
 /-- No orientation-preserving affine lift equals the lifted reflection. -/
-theorem reflection_ne_translate (a s c : ℝ) : reflection ≠ translate a s c := by
+@[simp] theorem reflection_ne_translate (a s c : ℝ) : reflection ≠ translate a s c := by
   intro h
   have hzero := DFunLike.congr_fun h (mk 0 0 0)
   have ha : a = 0 := by simpa using (congrArg x hzero).symm
