@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.QuotSMulTop
-public import TauCeti.Algebra.Group.PowerClassGroup
+public import TauCeti.Algebra.Group.PowerClassGroup.Basic
 
 /-!
 # Power classes as reduction modulo `n`

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Group.PowerClassGroup
+public import TauCeti.Algebra.Group.PowerClassGroup.Basic
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Pow

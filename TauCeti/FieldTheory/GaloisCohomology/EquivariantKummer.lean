@@ -78,7 +78,8 @@ of `L`.
   with trivial coefficients `M ≃ μₙ`, when `σ(L)` contains the `n`th roots of unity.
 * `TauCeti.powerClassFiniteRep`: the natural representation of `Gal(L/K)` on `Lˣ ⧸ (Lˣ)ⁿ`.
 * `TauCeti.quotSMulTopUnitsPowerClassRepresentationEquiv`: the identification of the reduction
-  `Lˣ ⧸ nLˣ` with `Lˣ ⧸ (Lˣ)ⁿ` respects the action of `Gal(L/K)`.
+  `Lˣ ⧸ nLˣ` with `Lˣ ⧸ (Lˣ)ⁿ` respects the action of `Gal(L/K)`; it sends the class of `x` to
+  its power class (`TauCeti.quotSMulTopUnitsPowerClassRepresentationEquiv_mk`).
 * `TauCeti.kummerCoeffFiniteRep`: the roots-of-unity representation of `Gal(L/K)`.
 * `TauCeti.kummerH1FiniteRep`: the conjugation representation of `Gal(L/K)` on `H¹(N, ℤ/n)`.
 * `TauCeti.kummerH1FiniteRepresentationEquiv`: equivariant Kummer theory,
@@ -430,6 +431,15 @@ def quotSMulTopUnitsPowerClassRepresentationEquiv (n : ℕ) :
         (quotSMulTopPowerClassEquiv n (Submodule.Quotient.mk x)))
     rw [quotSMulTopPowerClassEquiv_mk, quotSMulTopPowerClassEquiv_mk]
     simp
+
+/-- The equivariant reduction/power-class identification sends the class of `x` to its power
+class. -/
+@[simp]
+theorem quotSMulTopUnitsPowerClassRepresentationEquiv_mk (n : ℕ) (x : Additive Lˣ) :
+    quotSMulTopUnitsPowerClassRepresentationEquiv (K := K) n (Submodule.Quotient.mk x) =
+      Additive.ofMul (powerClassHom Lˣ n x.toMul) :=
+  -- The underlying linear equivalence is `quotSMulTopPowerClassEquiv n`, read `ℤ`-linearly.
+  quotSMulTopPowerClassEquiv_mk n x
 
 /-! ### Quotients of the absolute Galois action -/
 

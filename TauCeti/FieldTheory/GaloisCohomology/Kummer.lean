@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Group.PowerClassGroup
+public import TauCeti.Algebra.Group.PowerClassGroup.Basic
 public import TauCeti.Algebra.GroupWithZero.Units.Basic
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Extension
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Norm

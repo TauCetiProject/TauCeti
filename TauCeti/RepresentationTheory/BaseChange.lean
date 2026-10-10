@@ -746,7 +746,8 @@ noncomputable def baseChangeRestrictScalarsIntEquiv (ρ : Representation (ZMod n
 /-- The equivalence `ZMod n ⊗_ℤ W ≃ W` is the scalar multiplication on pure tensors. -/
 @[simp]
 theorem baseChangeRestrictScalarsIntEquiv_tmul (ρ : Representation (ZMod n) G W) (r : ZMod n)
-    (w : W) : ρ.baseChangeRestrictScalarsIntEquiv (r ⊗ₜ w) = r • w :=
-  (rfl)
+    (w : W) : ρ.baseChangeRestrictScalarsIntEquiv (r ⊗ₜ w) = r • w := by
+  rw [baseChangeRestrictScalarsIntEquiv, Representation.Equiv.mk_apply,
+    TensorProduct.lidOfCompatibleSMul_tmul]
 
 end Representation
