@@ -391,31 +391,31 @@ theorem insertNth_castAdd_apply_natAdd {α : Type*} {k l : ℕ} (i : Fin (k + 1)
     split_ifs <;> omega
   rw [this, Fin.insertNth_apply_succAbove]
 
-/-- Inserting `x` at a slot of the second block of `Fin ((k + 1) + (l + 1))` leaves the entries of
-the first block as the corresponding entries of `y`. -/
+/-- Inserting `x` at a slot of the second block of `Fin (k + (l + 1))` leaves the entries of the
+first block as the corresponding entries of `y`. -/
 @[simp]
 theorem insertNth_natAdd_apply_castAdd {α : Type*} {k l : ℕ} (i : Fin (l + 1)) (x : α)
-    (y : Fin (k + 1 + l) → α) (a : Fin (k + 1)) :
-    Fin.insertNth (α := fun _ => α) (Fin.natAdd (k + 1) i : Fin (k + 1 + l + 1)) x y
+    (y : Fin (k + l) → α) (a : Fin k) :
+    Fin.insertNth (α := fun _ => α) (Fin.natAdd k i : Fin (k + l + 1)) x y
       (Fin.castAdd (l + 1) a) = y (Fin.castAdd l a) := by
-  have : (Fin.castAdd (l + 1) a : Fin (k + 1 + l + 1)) =
-      (Fin.natAdd (k + 1) i : Fin (k + 1 + l + 1)).succAbove (Fin.castAdd l a) := by
+  have : (Fin.castAdd (l + 1) a : Fin (k + l + 1)) =
+      (Fin.natAdd k i : Fin (k + l + 1)).succAbove (Fin.castAdd l a) := by
     ext
     simp only [Fin.val_natAdd, Fin.val_castAdd, Fin.val_succAbove]
     split_ifs <;> omega
   rw [this, Fin.insertNth_apply_succAbove]
 
-/-- Inserting `x` at a slot `i` of the second block of `Fin ((k + 1) + (l + 1))` and restricting to
-that block is inserting `x` at `i` into the restriction of `y` to its last `l` entries. -/
+/-- Inserting `x` at a slot `i` of the second block of `Fin (k + (l + 1))` and restricting to that
+block is inserting `x` at `i` into the restriction of `y` to its last `l` entries. -/
 theorem insertNth_natAdd_comp_natAdd {α : Type*} {k l : ℕ} (i : Fin (l + 1)) (x : α)
-    (y : Fin (k + 1 + l) → α) :
+    (y : Fin (k + l) → α) :
     (fun b : Fin (l + 1) => Fin.insertNth (α := fun _ => α)
-      (Fin.natAdd (k + 1) i : Fin (k + 1 + l + 1)) x y (Fin.natAdd (k + 1) b)) =
-      Fin.insertNth (α := fun _ => α) i x (fun c : Fin l => y (Fin.natAdd (k + 1) c)) := by
+      (Fin.natAdd k i : Fin (k + l + 1)) x y (Fin.natAdd k b)) =
+      Fin.insertNth (α := fun _ => α) i x (fun c : Fin l => y (Fin.natAdd k c)) := by
   rw [Fin.eq_insertNth_iff]
   refine ⟨Fin.insertNth_apply_same _ _ _, funext fun c => ?_⟩
-  have : (Fin.natAdd (k + 1) (i.succAbove c) : Fin (k + 1 + l + 1)) =
-      (Fin.natAdd (k + 1) i : Fin (k + 1 + l + 1)).succAbove (Fin.natAdd (k + 1) c) := by
+  have : (Fin.natAdd k (i.succAbove c) : Fin (k + l + 1)) =
+      (Fin.natAdd k i : Fin (k + l + 1)).succAbove (Fin.natAdd k c) := by
     ext
     simp only [Fin.val_natAdd, Fin.val_succAbove]
     split_ifs <;> omega
