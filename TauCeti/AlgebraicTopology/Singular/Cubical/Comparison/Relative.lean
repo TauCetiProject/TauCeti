@@ -46,7 +46,7 @@ relative homotopy invariance of cubical homology is transported from the simplic
   same map on relative cubical homology.
 -/
 
-public section
+@[expose] public section
 
 noncomputable section
 
