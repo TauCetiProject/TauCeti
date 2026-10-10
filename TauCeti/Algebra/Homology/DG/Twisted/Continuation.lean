@@ -60,12 +60,12 @@ open DirectSum MulOpposite
 
 namespace TauCeti
 
-universe uR uA uM uP
+universe uR uA uM uP uQ uS uT
 
 section Map
 
 variable (R : Type uR) {A : Type uA} (M : Type uM) [CommSemiring R] [Semiring A]
-  {P Q : Type uP} [Fintype P]
+  {P : Type uP} {Q : Type uQ} [Fintype P]
   [AddCommMonoid M] [Module R M] [Module Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M]
 
 /-- The map `ℳ ⊗ ⟨P⟩ → ℳ ⊗ ⟨Q⟩` of a matrix `ν : P → Q → A`, on the models `P → M` and
@@ -109,7 +109,7 @@ end Map
 section MapMatrix
 
 variable {R : Type uR} {A : Type uA} {M : Type uM} [CommSemiring R] [Semiring A]
-  {P Q S : Type uP} [Fintype P] [Fintype Q]
+  {P : Type uP} {Q : Type uQ} {S : Type uS} [Fintype P] [Fintype Q]
   [AddCommMonoid M] [Module R M] [Module Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M]
 
 /-- The Kronecker matrix induces the identity. -/
@@ -138,7 +138,7 @@ section Properties
 variable {R : Type uR} {A : Type uA} {M : Type uM}
   [CommRing R] [Ring A] [Algebra R A]
   [AddCommGroup M] [Module R M]
-  {P Q : Type uP} {ind : P → ℤ} {indQ : Q → ℤ}
+  {P : Type uP} {Q : Type uQ} {ind : P → ℤ} {indQ : Q → ℤ}
   [Fintype P] [Fintype Q] [Module Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M]
   (ν : P → Q → A) {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
 
@@ -251,7 +251,7 @@ theorem kronecker_mem_graded (x y : P) : (1 : Matrix P P A) x y ∈ 𝒜 (ind y 
 
 omit [IsScalarTower R Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M] [DirectSum.Decomposition ℳ] [Fintype Q] in
 /-- The Kronecker matrix satisfies the continuation equation from `m` to `m`, for any matrix `m`,
-as soon as `d 1 = 0`: the two sums reduce to `m x y - m x y`. -/
+as soon as `d 1 = 0`. -/
 theorem continuation_kronecker (hd : d 1 = 0) (x y : P) :
     d ((1 : Matrix P P A) x y) = ∑ z, m x z * (1 : Matrix P P A) z y +
       ∑ z, (ind x - ind z - 1).negOnePow • ((1 : Matrix P P A) x z * m z y) := by
@@ -267,7 +267,7 @@ end Kronecker
 
 section MatMul
 
-variable {S : Type uP} {indS : S → ℤ} [Fintype S] (ν₁ : P → Q → A) (ν₂ : Q → S → A)
+variable {S : Type uS} {indS : S → ℤ} [Fintype S] (ν₁ : P → Q → A) (ν₂ : Q → S → A)
 
 omit [IsScalarTower R Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M] [DirectSum.Decomposition ℳ] [Fintype P]
   [Fintype S] in
@@ -285,8 +285,7 @@ theorem matMul_mem_graded (hν₁ : ∀ x y, ν₁ x y ∈ 𝒜 (indQ y - ind x)
 
 omit [IsScalarTower R Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M] [DirectSum.Decomposition ℳ] in
 /-- The matrix product of continuation cocycles `m₁ → m₂` and `m₂ → m₃` satisfies the
-continuation equation from `m₁` to `m₃`: the `m₂` terms cancel through the sign identity
-`(-1) ^ (ind x - indQ w - 1) = -(-1) ^ (indQ w - ind x)`. -/
+continuation equation from `m₁` to `m₃`. -/
 theorem continuation_matMul (h : IsDGAlgebra 𝒜 d) (m₁ : P → P → A) (m₂ : Q → Q → A)
     (m₃ : S → S → A) (hν₁ : ∀ x y, ν₁ x y ∈ 𝒜 (indQ y - ind x))
     (hc₁ : ∀ x y, d (ν₁ x y) =
@@ -316,7 +315,7 @@ theorem continuation_matMul (h : IsDGAlgebra 𝒜 d) (m₁ : P → P → A) (m�
     refine Finset.sum_eq_zero fun z _ ↦ ?_
     rw [← Finset.sum_add_distrib]
     refine Finset.sum_eq_zero fun w _ ↦ ?_
-    rw [negOnePow_sub_sub_one, Units.neg_smul, neg_add_cancel]
+    rw [Int.negOnePow_sub_sub_one, Units.neg_smul, neg_add_cancel]
   -- The `m₃` terms agree: `(-1) ^ (indQ z - ind x) (-1) ^ (indQ z - indS w - 1)` is
   -- `(-1) ^ (ind x - indS w - 1)`.
   have hD : (∑ x₁ : Q, ∑ x₂ : S, ((indQ x₁ - ind x).negOnePow * (indQ x₁ - indS x₂ - 1).negOnePow) •
@@ -338,7 +337,8 @@ section Cocycle
 
 variable {R : Type uR} {A : Type uA} {M : Type uM}
   [CommRing R] [Ring A] [Algebra R A]
-  {P Q S : Type uP} {ind : P → ℤ} {indQ : Q → ℤ} {indS : S → ℤ} [Fintype P] [Fintype Q] [Fintype S]
+  {P : Type uP} {Q : Type uQ} {S : Type uS} {ind : P → ℤ} {indQ : Q → ℤ} {indS : S → ℤ}
+  [Fintype P] [Fintype Q] [Fintype S]
   {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A}
 
 /-- A **continuation cocycle** from the twisting cocycle `mP` on `(P, ind)` to the twisting cocycle
@@ -367,16 +367,17 @@ theorem ext {ν₁ ν₂ : ContinuationCocycle mP mQ} (h : ∀ x y, ν₁.ν x y
   obtain rfl : ν₁ = ν₂ := funext fun x ↦ funext fun y ↦ h x y
   rfl
 
-/-- The Kronecker matrix, as a continuation cocycle from `m` to itself. -/
-def refl [DecidableEq P] (h : IsDGAlgebra 𝒜 d) (m : TwistingCocycle 𝒜 d P ind) :
+/-- The Kronecker matrix, as a continuation cocycle from `m` to itself, for a differential with
+`d 1 = 0`. -/
+def refl [DecidableEq P] (hd : d 1 = 0) (m : TwistingCocycle 𝒜 d P ind) :
     ContinuationCocycle m m where
   ν := (1 : Matrix P P A)
   mem_graded := kronecker_mem_graded
-  continuation := continuation_kronecker m.m h.map_one_eq_zero
+  continuation := continuation_kronecker m.m hd
 
 @[simp]
-theorem refl_ν [DecidableEq P] (h : IsDGAlgebra 𝒜 d) (m : TwistingCocycle 𝒜 d P ind) :
-    (refl h m).ν = (1 : Matrix P P A) :=
+theorem refl_ν [DecidableEq P] (hd : d 1 = 0) (m : TwistingCocycle 𝒜 d P ind) :
+    (refl hd m).ν = (1 : Matrix P P A) :=
   (rfl)
 
 /-- The matrix product of continuation cocycles `mP → mQ` and `mQ → mS`, a continuation cocycle
@@ -395,22 +396,22 @@ theorem comp_ν (h : IsDGAlgebra 𝒜 d) (ν₁ : ContinuationCocycle mP mQ)
 
 /-- The Kronecker continuation cocycle is a left identity for the composition. -/
 @[simp]
-theorem refl_comp [DecidableEq P] (h : IsDGAlgebra 𝒜 d) (ν : ContinuationCocycle mP mQ) :
-    (refl h mP).comp h ν = ν := by
+theorem refl_comp [DecidableEq P] (h : IsDGAlgebra 𝒜 d) (hd : d 1 = 0)
+    (ν : ContinuationCocycle mP mQ) : (refl hd mP).comp h ν = ν := by
   ext x y
   rw [comp_ν, refl_ν]
   exact congrFun (congrFun (Matrix.one_mul (Matrix.of ν.ν)) x) y
 
 /-- The Kronecker continuation cocycle is a right identity for the composition. -/
 @[simp]
-theorem comp_refl [DecidableEq Q] (h : IsDGAlgebra 𝒜 d) (ν : ContinuationCocycle mP mQ) :
-    ν.comp h (refl h mQ) = ν := by
+theorem comp_refl [DecidableEq Q] (h : IsDGAlgebra 𝒜 d) (hd : d 1 = 0)
+    (ν : ContinuationCocycle mP mQ) : ν.comp h (refl hd mQ) = ν := by
   ext x y
   rw [comp_ν, refl_ν]
   exact congrFun (congrFun (Matrix.mul_one (Matrix.of ν.ν)) x) y
 
 /-- The composition of continuation cocycles is associative. -/
-theorem comp_assoc {T : Type uP} {indT : T → ℤ} [Fintype T] {mT : TwistingCocycle 𝒜 d T indT}
+theorem comp_assoc {T : Type uT} {indT : T → ℤ} [Fintype T] {mT : TwistingCocycle 𝒜 d T indT}
     (h : IsDGAlgebra 𝒜 d) (ν₁ : ContinuationCocycle mP mQ) (ν₂ : ContinuationCocycle mQ mS)
     (ν₃ : ContinuationCocycle mS mT) :
     (ν₁.comp h ν₂).comp h ν₃ = ν₁.comp h (ν₂.comp h ν₃) := by
@@ -441,10 +442,9 @@ theorem continuationMap_twistedDifferential (ν : ContinuationCocycle mP mQ)
   TauCeti.continuationMap_twistedDifferential ν.ν mP.m mQ.m dM ν.mem_graded ν.continuation hM f
 
 omit [IsScalarTower R Aᵐᵒᵖ M] [Fintype Q] [Fintype S] in
-/-- The Kronecker continuation cocycle induces the identity (`simp` proves it from `refl_ν` and
-`continuationMap_kronecker`). -/
-theorem continuationMap_refl [DecidableEq P] (h : IsDGAlgebra 𝒜 d) (m : TwistingCocycle 𝒜 d P ind) :
-    continuationMap R M (refl h m).ν = LinearMap.id :=
+/-- The Kronecker continuation cocycle induces the identity. -/
+theorem continuationMap_refl [DecidableEq P] (hd : d 1 = 0) (m : TwistingCocycle 𝒜 d P ind) :
+    continuationMap R M (refl hd m).ν = LinearMap.id :=
   continuationMap_kronecker
 
 omit [IsScalarTower R Aᵐᵒᵖ M] in
