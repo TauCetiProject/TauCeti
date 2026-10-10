@@ -105,7 +105,7 @@ theorem target_trans (h : γ.target = δ.source) : (γ.trans δ h).target = δ.t
 theorem trans_assoc (h₁ : γ.target = δ.source) (h₂ : δ.target = ε.source)
     (h₁₂ : (γ.trans δ h₁).target = ε.source) (h₂₃ : γ.target = (δ.trans ε h₂).source) :
     (γ.trans δ h₁).trans ε h₁₂ = γ.trans (δ.trans ε h₂) h₂₃ := by
-  refine ext (by simp [add_assoc]) fun t ↦ ?_
+  refine ext (by simp [add_assoc]) fun t _ ↦ ?_
   rcases le_or_gt t γ.length with ht₁ | ht₁
   · rw [trans_apply_of_le h₁₂ (by simpa using ht₁.trans le_self_add), trans_apply_of_le h₁ ht₁,
       trans_apply_of_le h₂₃ ht₁]
@@ -118,13 +118,13 @@ theorem trans_assoc (h₁ : γ.target = δ.source) (h₂ : δ.target = ε.source
 /-- The constant path is a strict left unit. -/
 @[simp]
 theorem const_trans {x : X} (h : (const x).target = δ.source) : (const x).trans δ h = δ := by
-  refine ext (by simp) fun t ↦ ?_
+  refine ext (by simp) fun t _ ↦ ?_
   rw [trans_apply_of_length_le h ((length_const x).trans_le zero_le), length_const, tsub_zero]
 
 /-- The constant path is a strict right unit. -/
 @[simp]
 theorem trans_const {x : X} (h : γ.target = (const x).source) : γ.trans (const x) h = γ := by
-  refine ext (by simp) fun t ↦ ?_
+  refine ext (by simp) fun t _ ↦ ?_
   rcases le_or_gt t γ.length with ht | ht
   · exact trans_apply_of_le h ht
   · rw [trans_apply_of_length_le h ht.le, const_apply, ← source_const x, ← h,
