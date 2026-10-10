@@ -228,7 +228,7 @@ theorem pullbackMap_addition (c : PointedWeierstrassChart E.structureMap E.zero)
 theorem addition_structureMap : E.addition ≫ E.structureMap =
     pullback.fst E.structureMap E.structureMap ≫ E.structureMap := by
   obtain ⟨A⟩ := E.localModel
-  refine hom_ext_of_atlas E p A _ _ fun i ↦ ?_
+  refine A.hom_ext p _ _ fun i ↦ ?_
   rw [← toPair_map]
   simp [(A.chart i).isPullback.w]
 
@@ -241,7 +241,7 @@ theorem eq_addition_of_atlas (A : PointedWeierstrassAtlas E.structureMap E.zero)
       (A.chart i).isPullback.w.symm (A.chart i).isPullback.w.symm ≫ μ =
         (A.chart i).addition ≫ (A.chart i).toTotal) :
     μ = E.addition :=
-  hom_ext_of_atlas E p A _ _ fun i ↦ by
+  A.hom_ext p _ _ fun i ↦ by
     rw [← toPair_map, Category.assoc, Category.assoc, hμ, pullbackMap_addition]
 
 end EllipticCurveGeom

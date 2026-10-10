@@ -181,20 +181,20 @@ theorem eq_neg_of_atlas (A : PointedWeierstrassAtlas E.structureMap E.zero)
     {ν : E.carrier ⟶ E.carrier}
     (hν : ∀ i, (A.chart i).toTotal ≫ ν = (A.chart i).neg ≫ (A.chart i).toTotal) :
     ν = E.neg :=
-  hom_ext_of_toTotal A _ _ fun i ↦ by rw [hν, toTotal_neg]
+  A.hom_ext_of_toTotal _ _ fun i ↦ by rw [hν, toTotal_neg]
 
 /-- The negation morphism of an elliptic curve over `S` lies over `S`. -/
 @[reassoc (attr := simp)]
 theorem neg_structureMap : E.neg ≫ E.structureMap = E.structureMap := by
   obtain ⟨A⟩ := E.localModel
-  refine hom_ext_of_toTotal A _ _ fun i ↦ ?_
+  refine A.hom_ext_of_toTotal _ _ fun i ↦ ?_
   simp [(A.chart i).isPullback.w]
 
 /-- The negation morphism of an elliptic curve fixes the zero section. -/
 @[reassoc (attr := simp)]
 theorem zero_neg : E.zero ≫ E.neg = E.zero := by
   obtain ⟨A⟩ := E.localModel
-  refine hom_ext_of_atlas E (𝟙 S) A _ _ fun i ↦ ?_
+  refine A.hom_ext (𝟙 S) _ _ fun i ↦ ?_
   -- over the base of a chart, the zero section is the section induced by it on the chart
   have h : pullback.fst (𝟙 S) (A.chart i).baseMap ≫ E.zero =
       pullback.snd _ _ ≫ (A.chart i).pulledZero ≫ (A.chart i).toTotal := by
@@ -205,7 +205,7 @@ theorem zero_neg : E.zero ≫ E.neg = E.zero := by
 @[reassoc (attr := simp)]
 theorem neg_neg : E.neg ≫ E.neg = 𝟙 E.carrier := by
   obtain ⟨A⟩ := E.localModel
-  refine hom_ext_of_toTotal A _ _ fun i ↦ ?_
+  refine A.hom_ext_of_toTotal _ _ fun i ↦ ?_
   simp
 
 /-- The negation morphism of an elliptic curve is an isomorphism, being an involution. -/

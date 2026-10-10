@@ -424,7 +424,7 @@ theorem isPullback_projModelMap : IsPullback (projModelMap hh) k.equation.projMo
     (by simp) k.modelIso_over.symm c.modelIso_over.symm (by simp)
 
 /-- The morphism `projModelMap hh` carries the zero section to the zero section. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem projModelZero_projModelMap : k.equation.projModelZero ≫ projModelMap hh =
     (k.baseIso.inv ≫ h ≫ c.baseIso.hom) ≫ c.equation.projModelZero := by
   rw [← cancel_epi k.baseIso.hom, ← k.modelIso_zero_assoc]

@@ -35,10 +35,10 @@ for the negation `E ⟶ E`, `Y = E`.
 
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.fst_glueMorphisms`: the glued morphism restricts to
   the given morphism over the base of every chart.
-* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.hom_ext_of_atlas`: two morphisms out of `Y` that
-  agree over the bases of the charts of one pointed Weierstrass atlas are equal;
-  `TauCeti.AlgebraicGeometry.EllipticCurveGeom.hom_ext_of_toTotal` is the case `Y = E`, stated on
-  the restrictions of `E` to the chart bases.
+* `TauCeti.AlgebraicGeometry.PointedWeierstrassAtlas.hom_ext`: two morphisms out of `Y` that
+  agree over the bases of the charts of one pointed Weierstrass atlas of any `π : X ⟶ S` are
+  equal; `TauCeti.AlgebraicGeometry.PointedWeierstrassAtlas.hom_ext_of_toTotal` is the case
+  `Y = X`, stated on the restrictions of `X` to the chart bases.
 -/
 
 public section
@@ -47,42 +47,51 @@ open CategoryTheory Limits AlgebraicGeometry
 
 universe u
 
-namespace TauCeti.AlgebraicGeometry.EllipticCurveGeom
+namespace TauCeti.AlgebraicGeometry
 
-open PointedWeierstrassChart
-
-variable {S : Scheme.{u}} (E : EllipticCurveGeom S) {Y Z : Scheme.{u}} (q : Y ⟶ S)
+variable {S : Scheme.{u}} {Y Z : Scheme.{u}} (q : Y ⟶ S)
 
 -- The preimages in `Y` of the bases of a family of charts covering `S` cover `Y`: the pullback
 -- along `q` of the open cover of `S` by the bases of the charts.
-private noncomputable def pieceCover {ι : Type*}
-    (c : ι → PointedWeierstrassChart E.structureMap E.zero)
+private noncomputable def pieceCover {X : Scheme.{u}} {π : X ⟶ S} {zero : S ⟶ X} {ι : Type*}
+    (c : ι → PointedWeierstrassChart π zero)
     (hc : ∀ s : S, ∃ i, ∃ b : (c i).base, (c i).baseMap b = s) : Y.OpenCover :=
   (Scheme.Cover.mkOfCovers ι (fun i ↦ (c i).base) (fun i ↦ (c i).baseMap) hc).pullback₁ q
 
+namespace PointedWeierstrassAtlas
+
+variable {X : Scheme.{u}} {π : X ⟶ S} {zero : S ⟶ X}
+
+/-- **Morphisms are determined on the charts of an atlas.** Two morphisms out of `Y` that agree on
+the preimages `Y ×_S U` of the bases `U` of the charts of a pointed Weierstrass atlas of `π` are
+equal. -/
+theorem hom_ext (A : PointedWeierstrassAtlas π zero) (f g : Y ⟶ Z)
+    (h : ∀ i, pullback.fst q (A.chart i).baseMap ≫ f = pullback.fst q (A.chart i).baseMap ≫ g) :
+    f = g :=
+  (pieceCover q A.chart A.covers).hom_ext f g h
+
+/-- **Morphisms out of `X` are determined on the charts of an atlas.** Two morphisms out of `X`
+that agree on the restrictions of `X` to the bases of the charts of a pointed Weierstrass atlas of
+`π` are equal. -/
+theorem hom_ext_of_toTotal (A : PointedWeierstrassAtlas π zero) (f g : X ⟶ Z)
+    (h : ∀ i, (A.chart i).toTotal ≫ f = (A.chart i).toTotal ≫ g) : f = g :=
+  A.hom_ext π f g fun i ↦ by
+    rw [← (A.chart i).isPullback.isoPullback_inv_fst, Category.assoc, Category.assoc, h]
+
+end PointedWeierstrassAtlas
+
+namespace EllipticCurveGeom
+
+open PointedWeierstrassChart
+
+variable (E : EllipticCurveGeom S)
+
 -- The preimages in `Y` of the bases of all pointed Weierstrass charts of `E` cover `Y`.
 private noncomputable def chartCover : Y.OpenCover :=
-  pieceCover E q id fun s ↦ by
+  pieceCover q (id : PointedWeierstrassChart E.structureMap E.zero → _) fun s ↦ by
     obtain ⟨A⟩ := E.localModel
     obtain ⟨i, b, hb⟩ := A.covers s
     exact ⟨A.chart i, b, hb⟩
-
-/-- **Morphisms are determined on the charts of an atlas.** Two morphisms out of `Y` that agree on
-the preimages `Y ×_S U` of the bases `U` of the charts of a pointed Weierstrass atlas of `E` are
-equal. -/
-theorem hom_ext_of_atlas (A : PointedWeierstrassAtlas E.structureMap E.zero) (f g : Y ⟶ Z)
-    (h : ∀ i, pullback.fst q (A.chart i).baseMap ≫ f = pullback.fst q (A.chart i).baseMap ≫ g) :
-    f = g :=
-  (pieceCover E q A.chart A.covers).hom_ext f g h
-
-variable {E} in
-/-- **Morphisms out of an elliptic curve are determined on the charts of an atlas.** Two morphisms
-out of `E` that agree on the restrictions of `E` to the bases of the charts of a pointed
-Weierstrass atlas are equal. -/
-theorem hom_ext_of_toTotal (A : PointedWeierstrassAtlas E.structureMap E.zero) (f g : E.carrier ⟶ Z)
-    (h : ∀ i, (A.chart i).toTotal ≫ f = (A.chart i).toTotal ≫ g) : f = g :=
-  hom_ext_of_atlas E E.structureMap A f g fun i ↦ by
-    rw [← (A.chart i).isPullback.isoPullback_inv_fst, Category.assoc, Category.assoc, h]
 
 variable {E q} (g : ∀ c : PointedWeierstrassChart E.structureMap E.zero, pullback q c.baseMap ⟶ Z)
   (hg : ∀ {k c : PointedWeierstrassChart E.structureMap E.zero} {h : k.base ⟶ c.base}
@@ -148,13 +157,15 @@ compatible with the morphisms of chart bases over `S`: if the base of a chart `k
 of a chart `c`, then `g c` restricts to `g k`. Its restriction to every chart is the given morphism
 (`fst_glueMorphisms`). -/
 noncomputable def glueMorphisms : Y ⟶ Z :=
-  (chartCover E q).glueMorphisms g (agree g hg)
+  (chartCover q E).glueMorphisms g (agree g hg)
 
 /-- On the preimage of the base of a chart `c`, the morphism glued from a compatible family `g` is
 `g c`. -/
 @[reassoc (attr := simp)]
 theorem fst_glueMorphisms (c : PointedWeierstrassChart E.structureMap E.zero) :
     pullback.fst q c.baseMap ≫ glueMorphisms g hg = g c :=
-  (chartCover E q).ι_glueMorphisms g (agree g hg) c
+  (chartCover q E).ι_glueMorphisms g (agree g hg) c
 
-end TauCeti.AlgebraicGeometry.EllipticCurveGeom
+end EllipticCurveGeom
+
+end TauCeti.AlgebraicGeometry
