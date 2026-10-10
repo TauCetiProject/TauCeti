@@ -163,6 +163,7 @@ theorem isZero_zigzagBraidComplexTensor_X_of_ne_of_not_adj
   apply (Limits.IsZero.iff_id_eq_zero _).2
   apply HomologicalComplex.mapBifunctor.hom_ext
   intro p q hpq
+  -- For cochains indexed by integers, totalization sends the pair `(p, q)` to `p + q`.
   change p + q = d at hpq
   have hz : Limits.IsZero (((zigzagBimoduleTensor k G).obj
       ((zigzagBraidComplex k G i).X p)).obj ((zigzagBraidComplex k G j).X q)) := by
