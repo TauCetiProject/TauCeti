@@ -27,7 +27,7 @@ to the quotient and the normalized chains are functorial.
 * `TauCeti.CubicalChain.degenerate X R n`: the submodule spanned by the degenerate `n`-cubes.
 * `TauCeti.NormalizedCubicalChain X R n`: the normalized cubical `n`-chains.
 * `TauCeti.NormalizedCubicalChain.boundary X R n`: the induced boundary.
-* `TauCeti.NormalizedCubicalChain.map f n`: the push-forward along a continuous map.
+* `TauCeti.NormalizedCubicalChain.map R f n`: the push-forward along a continuous map.
 
 ## Main results
 
@@ -70,6 +70,7 @@ theorem single_mem_degenerate {n : ℕ} {c : SingularCube X n} (hc : IsDegenerat
   exact Submodule.smul_mem _ a (Submodule.subset_span ⟨c, hc, rfl⟩)
 
 /-- There are no degenerate `0`-chains: a `0`-cube is a point. -/
+@[simp]
 theorem degenerate_zero : degenerate X R 0 = ⊥ := by
   rw [degenerate, Submodule.span_eq_bot]
   rintro f ⟨c, hc, rfl⟩
@@ -147,10 +148,11 @@ variable (X) in
 def ofCube {n : ℕ} (c : SingularCube X n) : NormalizedCubicalChain X R n :=
   Submodule.Quotient.mk (single c 1)
 
-theorem ofCube_eq_mk {n : ℕ} (c : SingularCube X n) :
+theorem ofCube_def {n : ℕ} (c : SingularCube X n) :
     ofCube X R c = Submodule.Quotient.mk (single c 1) := by
   rw [ofCube]
 
+@[simp]
 theorem ofCube_eq_zero {n : ℕ} {c : SingularCube X n} (hc : SingularCube.IsDegenerate c) :
     ofCube X R c = 0 :=
   (Submodule.Quotient.mk_eq_zero _).2 (single_mem_degenerate R hc 1)
@@ -168,11 +170,17 @@ theorem boundary_mk {n : ℕ} (f : CubicalChain X R (n + 1)) :
 
 /-- The boundary of a boundary vanishes. -/
 theorem boundary_boundary (n : ℕ) : boundary X R n ∘ₗ boundary X R (n + 1) = 0 := by
-  refine LinearMap.ext ((Submodule.Quotient.mk_surjective _).forall.2 fun f ↦ ?_)
-  rw [LinearMap.comp_apply, boundary_mk, boundary_mk, LinearMap.zero_apply,
-    Submodule.Quotient.mk_eq_zero]
-  rw [← LinearMap.comp_apply, CubicalChain.boundary_boundary, LinearMap.zero_apply]
-  exact Submodule.zero_mem _
+  rw [boundary, boundary, ← Submodule.mapQ_comp]
+  simp only [CubicalChain.boundary_boundary, Submodule.mapQ_zero]
+
+/-- The boundary of the class of a cube is the signed sum of the classes of its faces. -/
+@[simp]
+theorem boundary_ofCube {n : ℕ} (c : SingularCube X (n + 1)) :
+    boundary X R n (ofCube X R c) =
+      ∑ i : Fin (n + 1), (-1 : R) ^ (i : ℕ) •
+        (ofCube X R (SingularCube.face i 0 c) - ofCube X R (SingularCube.face i 1 c)) := by
+  rw [ofCube_def, boundary_mk, CubicalChain.boundary_single_one, CubicalChain.boundaryCube_def]
+  simp only [ofCube_def, ← Submodule.mkQ_apply, map_sum, map_smul, map_sub]
 
 /-- Normalized cubical chains pushed forward along a continuous map. -/
 def map (f : C(X, Y)) (n : ℕ) : NormalizedCubicalChain X R n →ₗ[R] NormalizedCubicalChain Y R n :=
@@ -183,22 +191,30 @@ theorem map_mk (f : C(X, Y)) {n : ℕ} (g : CubicalChain X R n) :
     map R f n (Submodule.Quotient.mk g) = Submodule.Quotient.mk (CubicalChain.map R f n g) :=
   Submodule.mapQ_apply _ _ _ g
 
+/-- The push-forward of the class of a cube is the class of the composed cube. -/
+@[simp]
+theorem map_ofCube (f : C(X, Y)) {n : ℕ} (c : SingularCube X n) :
+    map R f n (ofCube X R c) = ofCube Y R (f.comp c) := by
+  rw [ofCube_def, ofCube_def, map_mk, CubicalChain.map_single]
+
 @[simp]
 theorem map_id (n : ℕ) : map R (ContinuousMap.id X) n = LinearMap.id := by
-  refine LinearMap.ext ((Submodule.Quotient.mk_surjective _).forall.2 fun g ↦ ?_)
-  rw [map_mk, CubicalChain.map_id, LinearMap.id_apply, LinearMap.id_apply]
+  unfold map
+  simp only [CubicalChain.map_id, Submodule.mapQ_id]
 
 theorem map_comp (g : C(Y, Z)) (f : C(X, Y)) (n : ℕ) :
     map R (g.comp f) n = map R g n ∘ₗ map R f n := by
-  refine LinearMap.ext ((Submodule.Quotient.mk_surjective _).forall.2 fun h ↦ ?_)
-  rw [map_mk, LinearMap.comp_apply, map_mk, map_mk, CubicalChain.map_comp, LinearMap.comp_apply]
+  unfold map
+  simp only [CubicalChain.map_comp]
+  exact Submodule.mapQ_comp _ _ _ _ _ (degenerate_le_comap_map R f n)
+    (degenerate_le_comap_map R g n)
 
 /-- The boundary is natural. -/
 theorem map_boundary (f : C(X, Y)) (n : ℕ) :
     map R f n ∘ₗ boundary X R n = boundary Y R n ∘ₗ map R f (n + 1) := by
-  refine LinearMap.ext ((Submodule.Quotient.mk_surjective _).forall.2 fun g ↦ ?_)
-  rw [LinearMap.comp_apply, LinearMap.comp_apply, boundary_mk, map_mk, map_mk, boundary_mk,
-    ← LinearMap.comp_apply, CubicalChain.map_boundary, LinearMap.comp_apply]
+  unfold map boundary
+  rw [← Submodule.mapQ_comp, ← Submodule.mapQ_comp]
+  simp only [CubicalChain.map_boundary]
 
 end NormalizedCubicalChain
 
