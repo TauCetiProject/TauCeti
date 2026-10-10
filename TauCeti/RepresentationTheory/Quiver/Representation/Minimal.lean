@@ -96,13 +96,8 @@ theorem exists_retract_right_minimal_isRightAlmostSplit
       r := ObjectProperty.homMk r.r
       retract := ObjectProperty.hom_ext _ (by simp) }
   have hs : s.r ≫ s.i ≫ f = f := ObjectProperty.hom_ext _ (by simpa [s] using hr)
-  refine ⟨P', s, hs, ?_, fun b hb ↦ ?_⟩
-  · refine isRightAlmostSplit_iff.mpr ⟨?_, fun Z g hg ↦ ?_⟩
-    · intro h
-      exact hf.not_isSplitEpi (isSplitEpi_of_isSplitEpi_comp s.i f)
-    · obtain ⟨a, ha⟩ := hf.factors Z g hg
-      exact ⟨a ≫ s.r, by simp [Category.assoc, hs, ha]⟩
-  · have : IsIso (F.map b) := hmin b.hom (congrArg InducedCategory.Hom.hom hb)
-    exact isIso_of_reflects_iso b F
+  refine ⟨P', s, hs, hf.retract_i_comp s hs, fun b hb ↦ ?_⟩
+  have : IsIso (F.map b) := hmin b.hom (congrArg InducedCategory.Hom.hom hb)
+  exact isIso_of_reflects_iso b F
 
 end TauCeti.QuiverRep
