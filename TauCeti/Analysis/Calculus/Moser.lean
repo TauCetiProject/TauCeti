@@ -70,13 +70,11 @@ theorem exists_isOpen_isInvertible_lineMap (hL : L.IsInvertible)
     exact Filter.inter_mem ((hW.preimage continuous_snd).mem_nhds hp.1)
       (hAp (ContinuousLinearMap.isOpen_setOfPred_isInvertible.mem_nhds hp.2))
   have hline : Icc (0 : ℝ) 1 ×ˢ {x₀} ⊆ N := by
-    rintro ⟨t, x⟩ ⟨-, hx⟩
-    have hx' : x = x₀ := mem_singleton_iff.mp hx
-    subst x
+    rintro ⟨t, x⟩ ⟨-, rfl⟩
     refine ⟨hx₀, ?_⟩
-    have hA : A (t, x₀) = L := by
-      simp only [A, hB₀]
-      rw [← add_smul (1 - t) t L, sub_add_cancel, one_smul]
+    have hA : A (t, x) = L := by
+      dsimp only [A]
+      rw [hB₀, ← add_smul (1 - t) t L, sub_add_cancel, one_smul]
     rw [hA]
     exact hL
   obtain ⟨T, U, hT, hU, hIT, hxU, hTU⟩ :=
