@@ -74,19 +74,24 @@ theorem pathHomotopy_zero {p : C(E, B)} (x : MooreReplacement p) :
   rw [pathHomotopy_apply, toNNReal_zero, zero_mul, ← MoorePath.source_def, source_path,
     proj_apply]
 
+/-- For a Hurewicz fibration `p`, the homotopy traced by each pair `(e, γ)` lifts from `e`. -/
+theorem exists_liftedHomotopy {p : C(E, B)} (hp : IsHurewiczFibration.{max u v} p) :
+    ∃ G : C(I × MooreReplacement p, E), p ∘ G = pathHomotopy p ∧ ∀ x, G (0, x) = proj p x :=
+  hp.hasHomotopyLiftingProperty (MooreReplacement p) (proj p) (pathHomotopy p) pathHomotopy_zero
+
 /-- For a Hurewicz fibration `p`, a lift from `e` of the homotopy `s ↦ γ (s · γ.length)` traced by
 each pair `(e, γ)`. -/
 def liftedHomotopy {p : C(E, B)} (hp : IsHurewiczFibration.{max u v} p) :
     C(I × MooreReplacement p, E) :=
-  (hp (MooreReplacement p) (proj p) (pathHomotopy p) pathHomotopy_zero).choose
+  (exists_liftedHomotopy hp).choose
 
 theorem apply_liftedHomotopy {p : C(E, B)} (hp : IsHurewiczFibration.{max u v} p)
     (y : I × MooreReplacement p) : p (liftedHomotopy hp y) = pathHomotopy p y :=
-  congrFun (hp (MooreReplacement p) (proj p) (pathHomotopy p) pathHomotopy_zero).choose_spec.1 y
+  congrFun (exists_liftedHomotopy hp).choose_spec.1 y
 
 theorem liftedHomotopy_zero {p : C(E, B)} (hp : IsHurewiczFibration.{max u v} p)
     (x : MooreReplacement p) : liftedHomotopy hp (0, x) = x.point :=
-  ((hp (MooreReplacement p) (proj p) (pathHomotopy p) pathHomotopy_zero).choose_spec.2 x).trans
+  ((exists_liftedHomotopy hp).choose_spec.2 x).trans
     (proj_apply x)
 
 /-- For a Hurewicz fibration `p`, the inverse `E' → E` over `B` of the inclusion: the end of the
