@@ -65,6 +65,41 @@ noncomputable def borelPointsIsoParabolicFunctor :
   rw [dynamicCocharacter_eq_weightCocharacter]
   exact weightParabolicPointsIso R Borel.weights
 
+/-- Transport of a points-functor isomorphism along an equality of cocharacters does not change
+the ambient point underlying its components. -/
+private theorem coe_eqToHom_hom_app_mpr
+    {l l' : coordinateHopfAlgebra R 2 →ₐc[R] LaurentPolynomial R} (h : l' = l)
+    (e : HopfAlgebra.pointsFunctor (R := R) (H := Borel.coordinateHopfAlgebra R) ≅
+      Cocharacter.parabolicFunctor l)
+    {A : Type w} [CommRing A] [Algebra R A]
+    (f : HopfAlgebra.points (R := R) (H := Borel.coordinateHopfAlgebra R) (CommAlgCat.of R A)) :
+    (((eqToHom (Cocharacter.parabolicFunctor_obj l' (CommAlgCat.of R A)))
+      ((Eq.mpr (id (congrArg (fun a ↦ HopfAlgebra.pointsFunctor (R := R)
+          (H := Borel.coordinateHopfAlgebra R) ≅ Cocharacter.parabolicFunctor a) h)) e).hom.app
+        (CommAlgCat.of R A) f) : Cocharacter.parabolic (CommAlgCat.of R A) l') :
+      HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R 2) (CommAlgCat.of R A)) =
+      (((eqToHom (Cocharacter.parabolicFunctor_obj l (CommAlgCat.of R A)))
+        (e.hom.app (CommAlgCat.of R A) f) : Cocharacter.parabolic (CommAlgCat.of R A) l) :
+        HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R 2) (CommAlgCat.of R A)) := by
+  subst h
+  rfl
+
+/-- The ambient point underlying the represented dynamic-parabolic point is induced by the
+quotient coordinate map. -/
+theorem coe_borelPointsIsoParabolicFunctor_hom_app_apply
+    {A : Type w} [CommRing A] [Algebra R A]
+    (f : HopfAlgebra.points (R := R) (H := Borel.coordinateHopfAlgebra R) (CommAlgCat.of R A)) :
+    (((eqToHom (Cocharacter.parabolicFunctor_obj (dynamicCocharacter (R := R))
+        (CommAlgCat.of R A)))
+      ((borelPointsIsoParabolicFunctor (R := R)).hom.app (CommAlgCat.of R A) f) :
+        Cocharacter.parabolic (CommAlgCat.of R A) (dynamicCocharacter (R := R))) :
+      HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R 2) (CommAlgCat.of R A)) =
+      CommHopfAlgCat.quotientPointsHom (coordinateHopfAlgebra R 2)
+        (weightParabolicDefiningHopfIdeal R Borel.weights) (CommAlgCat.of R A) f := by
+  unfold borelPointsIsoParabolicFunctor
+  rw [coe_eqToHom_hom_app_mpr dynamicCocharacter_eq_weightCocharacter]
+  exact coe_weightParabolicPointsIso_hom_app_apply R Borel.weights f
+
 /-! ## The dynamic Levi -/
 
 /-- The diagonal-torus point map, with codomain restricted to the dynamic Levi. -/
