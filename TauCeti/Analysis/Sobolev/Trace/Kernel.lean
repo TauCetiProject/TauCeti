@@ -177,6 +177,7 @@ theorem W1p.mem_w1p0Submodule_normalHalfSpace_iff (hp : p ≠ (∞ : ℝ≥0∞)
 /-- **The functions of zero trace on a half-space are those of `H¹₀`.** A function
 `u ∈ H¹(H)` on `H = {x | a < x.fst}` lies in `H¹₀(H)` if and only if its trace on the boundary
 hyperplane `{a} × E` vanishes. -/
+@[simp]
 theorem W1p.mem_w1p0Submodule_iff_halfSpaceTrace_eq_zero (a : ℝ)
     (u : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) 2) :
     u ∈ w1p0Submodule volume (normalHalfSpace (E := E) a) 2 ↔ W1p.halfSpaceTrace a u = 0 := by
