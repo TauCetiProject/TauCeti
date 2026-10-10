@@ -41,6 +41,8 @@ off the effective domain carries no meaning.
   on the decrease of `φ`.
 * `TauCeti.le_descendingSlope_of_tendsto`: a lower bound for the slope from the rates of decrease
   of `φ` along a map tending to `x`.
+* `TauCeti.descendingSlope_le_iSup`: on a metric space, the slope is at most the global slope
+  `sup_y (φ x - φ y + (m / 2) d(x, y)²)⁺ / d(x, y)`, for every `m`.
 * `IsLocalMin.descendingSlope_eq_zero`: the slope vanishes at a local minimum.
 * `LipschitzOnWith.descendingSlope_le` and `LipschitzWith.descendingSlope_le`: the slope of a
   function that is `K`-Lipschitz near `x` is at most `K`.
@@ -146,6 +148,54 @@ theorem descendingSlope_const_mul {c : ℝ} (hc : 0 ≤ c) (f : X → ℝ) (x : 
   rw [← mul_sub, ENNReal.ofReal_mul hc, mul_div_assoc]
 
 end EMetricSpace
+
+section MetricSpace
+
+variable {X : Type*} [MetricSpace X]
+
+/-- The descending slope of any energy is at most its global slope
+`sup_y (φ x - φ y + (m / 2) d(x, y)²)⁺ / d(x, y)`, for every `m`: near `x` the correction
+`(m / 2) d(x, y)` vanishes. -/
+theorem descendingSlope_le_iSup (m : ℝ) (φ : X → EReal) (x : X) :
+    descendingSlope φ x ≤
+      ⨆ y, (φ x - φ y + ((m / 2 * dist x y ^ 2 : ℝ) : EReal)).toENNReal / edist x y := by
+  set S := ⨆ y, (φ x - φ y + ((m / 2 * dist x y ^ 2 : ℝ) : EReal)).toENNReal / edist x y
+  set K := ENNReal.ofReal (-m / 2)
+  have key (ε : ℝ) (hε : 0 < ε) : descendingSlope φ x ≤ S + K * ENNReal.ofReal ε := by
+    refine descendingSlope_le_of_eventually_le ?_
+    filter_upwards [nhdsWithin_le_nhds (Metric.ball_mem_nhds x hε), self_mem_nhdsWithin]
+      with y (hy : dist y x < ε) (hyx : y ≠ x)
+    have hd0 : edist x y ≠ 0 := (edist_pos.2 hyx.symm).ne'
+    have hS : (φ x - φ y + ((m / 2 * dist x y ^ 2 : ℝ) : EReal)).toENNReal ≤ S * edist x y := by
+      refine (ENNReal.div_mul_cancel hd0 (edist_ne_top x y)).symm.trans_le ?_
+      gcongr
+      exact le_iSup (fun y ↦
+        (φ x - φ y + ((m / 2 * dist x y ^ 2 : ℝ) : EReal)).toENNReal / edist x y) y
+    have hK : ENNReal.ofReal (-(m / 2 * dist x y ^ 2)) ≤ K * ENNReal.ofReal ε * edist x y := by
+      rw [show -(m / 2 * dist x y ^ 2) = -m / 2 * dist x y ^ 2 by ring,
+        ENNReal.ofReal_mul' (sq_nonneg _), ENNReal.ofReal_pow dist_nonneg, edist_dist, sq,
+        mul_assoc]
+      gcongr
+      rw [dist_comm] at hy
+      exact hy.le
+    -- Adding the real term `c = (m / 2) d(x, y)²` and removing it again costs at most `(-c)⁺`.
+    calc (φ x - φ y).toENNReal
+        = (φ x - φ y + ((m / 2 * dist x y ^ 2 : ℝ) : EReal) +
+            ((-(m / 2 * dist x y ^ 2) : ℝ) : EReal)).toENNReal := by
+          rw [add_assoc, ← EReal.coe_add, add_neg_cancel, EReal.coe_zero, add_zero]
+      _ ≤ (φ x - φ y + ((m / 2 * dist x y ^ 2 : ℝ) : EReal)).toENNReal +
+            ENNReal.ofReal (-(m / 2 * dist x y ^ 2)) := by
+          rw [← EReal.real_coe_toENNReal]
+          exact EReal.toENNReal_add_le
+      _ ≤ S * edist x y + K * ENNReal.ofReal ε * edist x y := add_le_add hS hK
+      _ = (S + K * ENNReal.ofReal ε) * edist x y := (add_mul _ _ _).symm
+  have hlim : Tendsto (fun ε : ℝ ↦ S + K * ENNReal.ofReal ε) (𝓝[>] 0) (𝓝 S) := by
+    have h0 : Tendsto (fun ε : ℝ ↦ ENNReal.ofReal ε) (𝓝[>] 0) (𝓝 0) := by
+      simpa using (ENNReal.continuous_ofReal.tendsto 0).mono_left nhdsWithin_le_nhds
+    simpa using tendsto_const_nhds.add (ENNReal.Tendsto.const_mul h0 (Or.inr ENNReal.ofReal_ne_top))
+  exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall key)
+
+end MetricSpace
 
 section NormedSpace
 

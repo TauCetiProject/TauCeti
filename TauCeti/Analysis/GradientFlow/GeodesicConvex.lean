@@ -16,9 +16,10 @@ a curve `γ` on `[0, 1]` if for every `t ∈ [0, 1]`
 
 `φ (γ t) ≤ (1 - t) φ (γ 0) + t φ (γ 1) - (m / 2) t (1 - t) d(γ 0, γ 1)²`.
 
-It is *`m`-geodesically convex* if any two points of finite energy are joined by a geodesic segment
-along which it is `m`-convex, and *`m`-convex along geodesics* if it is `m`-convex along every
-geodesic segment joining two points of finite energy. The parameter `m` may be negative, and the
+It is *`m`-geodesically convex* if any two points of its effective domain `{x | φ x ≠ ⊤}` (which
+includes points of energy `⊥`) are joined by a geodesic segment along which it is `m`-convex, and
+*`m`-convex along geodesics* if it is `m`-convex along every geodesic segment joining two points of
+its effective domain. The parameter `m` may be negative, and the
 two notions agree in a uniquely geodesic space. On the Wasserstein space `P_p(X)` these are the
 weak and the strong forms of displacement convexity. Geodesic convexity is the basic structural
 hypothesis of the theory of gradient flows in metric spaces of Ambrosio–Gigli–Savaré; under it the
@@ -34,21 +35,21 @@ over all points rather than a limit at `x`:
 
 `|∂φ|(x) = sup_y ((φ x - φ y) / d(x, y) + (m / 2) d(x, y))⁺`
 
-at every point of finite energy (`TauCeti.GeodesicallyConvex.descendingSlope_eq_iSup`). The
+at every point `x` with `φ x ≠ ⊤` (`TauCeti.GeodesicallyConvex.descendingSlope_eq_iSup`). The
 supremum is written as `(φ x - φ y + (m / 2) d(x, y)²)⁺ / d(x, y)`; its term at `y = x` is `0`.
 The inequality `≤` holds for every energy (`TauCeti.descendingSlope_le_iSup`); geodesic convexity
 gives `≥`, by comparing `φ` with its convexity bound near `x` along a geodesic towards `y`. As a
 supremum of lower semicontinuous functions, the descending slope of a lower semicontinuous
-geodesically convex energy is lower semicontinuous on the set of points of finite energy
+geodesically convex energy is lower semicontinuous on its effective domain `{x | φ x ≠ ⊤}`
 (`TauCeti.GeodesicallyConvex.lowerSemicontinuousOn_descendingSlope`).
 
 ## Main definitions
 
 * `TauCeti.ConvexAlong m φ γ`: `φ` is `m`-convex along the curve `γ`.
-* `TauCeti.GeodesicallyConvex m φ`: any two points of finite energy are joined by a geodesic
+* `TauCeti.GeodesicallyConvex m φ`: any two points with energy `≠ ⊤` are joined by a geodesic
   segment along which `φ` is `m`-convex.
 * `TauCeti.ConvexAlongGeodesics m φ`: `φ` is `m`-convex along every geodesic segment joining two
-  points of finite energy.
+  points with energy `≠ ⊤`.
 
 ## Main results
 
@@ -84,6 +85,12 @@ def ConvexAlong (m : ℝ) (φ : X → EReal) (γ : ℝ → X) : Prop :=
   ∀ t ∈ Icc (0 : ℝ) 1, φ (γ t) ≤ ((1 - t : ℝ) : EReal) * φ (γ 0) + (t : EReal) * φ (γ 1) -
     ((m / 2 * t * (1 - t) * dist (γ 0) (γ 1) ^ 2 : ℝ) : EReal)
 
+/-- The defining inequality of convexity along a curve. -/
+theorem convexAlong_def :
+    ConvexAlong m φ γ ↔ ∀ t ∈ Icc (0 : ℝ) 1, φ (γ t) ≤ ((1 - t : ℝ) : EReal) * φ (γ 0) +
+      (t : EReal) * φ (γ 1) - ((m / 2 * t * (1 - t) * dist (γ 0) (γ 1) ^ 2 : ℝ) : EReal) :=
+  Iff.rfl
+
 /-- Convexity along a geodesic segment from `x` to `y`, in terms of its endpoints. -/
 theorem IsGeodesicSegment.convexAlong_iff (hγ : IsGeodesicSegment γ x y) :
     ConvexAlong m φ γ ↔ ∀ t ∈ Icc (0 : ℝ) 1, φ (γ t) ≤ ((1 - t : ℝ) : EReal) * φ x +
@@ -97,15 +104,28 @@ theorem ConvexAlong.mono (h : ConvexAlong m φ γ) (hm : m' ≤ m) : ConvexAlong
       mul_nonneg (mul_nonneg ht.1 (sub_nonneg.2 ht.2)) (sq_nonneg _)
     nlinarith
 
-/-- The energy `φ` is *`m`-geodesically convex*: any two points of finite energy are joined by a
-geodesic segment along which `φ` is `m`-convex. -/
+/-- The energy `φ` is *`m`-geodesically convex*: any two points of its effective domain, that is
+with `φ x ≠ ⊤` (energy `⊥` is allowed), are joined by a geodesic segment along which `φ` is
+`m`-convex. -/
 def GeodesicallyConvex (m : ℝ) (φ : X → EReal) : Prop :=
   ∀ ⦃x y : X⦄, φ x ≠ ⊤ → φ y ≠ ⊤ → ∃ γ : ℝ → X, IsGeodesicSegment γ x y ∧ ConvexAlong m φ γ
 
 /-- The energy `φ` is *`m`-convex along geodesics*: it is `m`-convex along every geodesic segment
-joining two points of finite energy. -/
+joining two points of its effective domain, that is with `φ x ≠ ⊤` (energy `⊥` is allowed). -/
 def ConvexAlongGeodesics (m : ℝ) (φ : X → EReal) : Prop :=
   ∀ ⦃x y : X⦄, φ x ≠ ⊤ → φ y ≠ ⊤ → ∀ ⦃γ : ℝ → X⦄, IsGeodesicSegment γ x y → ConvexAlong m φ γ
+
+/-- The defining condition of geodesic convexity. -/
+theorem geodesicallyConvex_def :
+    GeodesicallyConvex m φ ↔ ∀ ⦃x y : X⦄, φ x ≠ ⊤ → φ y ≠ ⊤ →
+      ∃ γ : ℝ → X, IsGeodesicSegment γ x y ∧ ConvexAlong m φ γ :=
+  Iff.rfl
+
+/-- The defining condition of convexity along geodesics. -/
+theorem convexAlongGeodesics_def :
+    ConvexAlongGeodesics m φ ↔ ∀ ⦃x y : X⦄, φ x ≠ ⊤ → φ y ≠ ⊤ →
+      ∀ ⦃γ : ℝ → X⦄, IsGeodesicSegment γ x y → ConvexAlong m φ γ :=
+  Iff.rfl
 
 /-- Geodesic convexity with a parameter `m` implies it for every smaller parameter. -/
 theorem GeodesicallyConvex.mono (h : GeodesicallyConvex m φ) (hm : m' ≤ m) :
@@ -159,49 +179,7 @@ section MetricSpace
 
 variable {X : Type*} [MetricSpace X] {m : ℝ} {φ : X → EReal} {x : X}
 
-/-- The descending slope of any energy is at most its global slope
-`sup_y (φ x - φ y + (m / 2) d(x, y)²)⁺ / d(x, y)`, for every `m`: near `x` the correction
-`(m / 2) d(x, y)` vanishes. -/
-theorem descendingSlope_le_iSup (m : ℝ) (φ : X → EReal) (x : X) :
-    descendingSlope φ x ≤
-      ⨆ y, (φ x - φ y + ((m / 2 * dist x y ^ 2 : ℝ) : EReal)).toENNReal / edist x y := by
-  set S := ⨆ y, (φ x - φ y + ((m / 2 * dist x y ^ 2 : ℝ) : EReal)).toENNReal / edist x y
-  set K := ENNReal.ofReal (-m / 2)
-  have key (ε : ℝ) (hε : 0 < ε) : descendingSlope φ x ≤ S + K * ENNReal.ofReal ε := by
-    refine descendingSlope_le_of_eventually_le ?_
-    filter_upwards [nhdsWithin_le_nhds (Metric.ball_mem_nhds x hε), self_mem_nhdsWithin]
-      with y (hy : dist y x < ε) (hyx : y ≠ x)
-    have hd0 : edist x y ≠ 0 := (edist_pos.2 hyx.symm).ne'
-    have hS : (φ x - φ y + ((m / 2 * dist x y ^ 2 : ℝ) : EReal)).toENNReal ≤ S * edist x y := by
-      refine (ENNReal.div_mul_cancel hd0 (edist_ne_top x y)).symm.trans_le ?_
-      gcongr
-      exact le_iSup (fun y ↦
-        (φ x - φ y + ((m / 2 * dist x y ^ 2 : ℝ) : EReal)).toENNReal / edist x y) y
-    have hK : ENNReal.ofReal (-(m / 2 * dist x y ^ 2)) ≤ K * ENNReal.ofReal ε * edist x y := by
-      rw [show -(m / 2 * dist x y ^ 2) = -m / 2 * dist x y ^ 2 by ring,
-        ENNReal.ofReal_mul' (sq_nonneg _), ENNReal.ofReal_pow dist_nonneg, edist_dist, sq,
-        mul_assoc]
-      gcongr
-      rw [dist_comm] at hy
-      exact hy.le
-    -- Adding the real term `c = (m / 2) d(x, y)²` and removing it again costs at most `(-c)⁺`.
-    calc (φ x - φ y).toENNReal
-        = (φ x - φ y + ((m / 2 * dist x y ^ 2 : ℝ) : EReal) +
-            ((-(m / 2 * dist x y ^ 2) : ℝ) : EReal)).toENNReal := by
-          rw [add_assoc, ← EReal.coe_add, add_neg_cancel, EReal.coe_zero, add_zero]
-      _ ≤ (φ x - φ y + ((m / 2 * dist x y ^ 2 : ℝ) : EReal)).toENNReal +
-            ENNReal.ofReal (-(m / 2 * dist x y ^ 2)) := by
-          rw [← EReal.real_coe_toENNReal]
-          exact EReal.toENNReal_add_le
-      _ ≤ S * edist x y + K * ENNReal.ofReal ε * edist x y := add_le_add hS hK
-      _ = (S + K * ENNReal.ofReal ε) * edist x y := (add_mul _ _ _).symm
-  have hlim : Tendsto (fun ε : ℝ ↦ S + K * ENNReal.ofReal ε) (𝓝[>] 0) (𝓝 S) := by
-    have h0 : Tendsto (fun ε : ℝ ↦ ENNReal.ofReal ε) (𝓝[>] 0) (𝓝 0) := by
-      simpa using (ENNReal.continuous_ofReal.tendsto 0).mono_left nhdsWithin_le_nhds
-    simpa using tendsto_const_nhds.add (ENNReal.Tendsto.const_mul h0 (Or.inr ENNReal.ofReal_ne_top))
-  exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall key)
-
-/-- **Lower bound for the slope of a geodesically convex energy.** At a point `x` of finite energy
+/-- **Lower bound for the slope of a geodesically convex energy.** At a point `x` with `φ x ≠ ⊤`
 of an `m`-geodesically convex energy, each term `(φ x - φ y + (m / 2) d(x, y)²)⁺ / d(x, y)` of the
 global slope is at most the descending slope. -/
 theorem GeodesicallyConvex.le_descendingSlope (hφ : GeodesicallyConvex m φ) (hx : φ x ≠ ⊤)
@@ -269,7 +247,7 @@ theorem GeodesicallyConvex.le_descendingSlope (hφ : GeodesicallyConvex m φ) (h
               EReal.toENNReal_le_toENNReal (EReal.sub_le_sub le_rfl hu)
 
 /-- **The slope of a geodesically convex energy is its global slope.** If `φ` is `m`-geodesically
-convex and `φ x` is finite, then
+convex and `φ x ≠ ⊤`, then
 `|∂φ|(x) = sup_y (φ x - φ y + (m / 2) d(x, y)²)⁺ / d(x, y)`,
 that is, `|∂φ|(x) = sup_{y ≠ x} ((φ x - φ y) / d(x, y) + (m / 2) d(x, y))⁺`. -/
 theorem GeodesicallyConvex.descendingSlope_eq_iSup (hφ : GeodesicallyConvex m φ) (hx : φ x ≠ ⊤) :
@@ -278,7 +256,7 @@ theorem GeodesicallyConvex.descendingSlope_eq_iSup (hφ : GeodesicallyConvex m �
   le_antisymm (descendingSlope_le_iSup m φ x) (iSup_le (hφ.le_descendingSlope hx))
 
 /-- **The slope of a lower semicontinuous geodesically convex energy is lower semicontinuous** on
-the set of points of finite energy, being a supremum of lower semicontinuous functions there. -/
+its effective domain `{x | φ x ≠ ⊤}`, being a supremum of lower semicontinuous functions there. -/
 theorem GeodesicallyConvex.lowerSemicontinuousOn_descendingSlope (hφ : GeodesicallyConvex m φ)
     (hlsc : LowerSemicontinuousOn φ {x | φ x ≠ ⊤}) :
     LowerSemicontinuousOn (descendingSlope φ) {x | φ x ≠ ⊤} := by
