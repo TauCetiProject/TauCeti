@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.AbsoluteArtinMap
-public import TauCeti.NumberTheory.ClassFieldTheory.Formation.NormLimitation
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClassLevel
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Galois
+import TauCeti.NumberTheory.ClassFieldTheory.Formation.NormLimitation
 
 /-!
 # The norm of the idele-class formation
@@ -20,7 +20,10 @@ Galois subextension of `Kˢ/K`. The layer `V ◁ G_K` of the idele-class formati
 map of idele classes `N_{E/K} : C_E → C_K` (`norm_ideleClassLevelEquiv`). Hence the norm subgroup
 of the layer is the idele-class norm group `N_{E/K}(C_E)`
 (`globalGroundEquiv_mem_normSubgroup_iff`), and its norm quotient is `C_K / N_{E/K}(C_E)`
-(`globalNormQuotientEquiv`).
+(`globalNormQuotientEquiv`). For a finite Galois extension `L/K` given abstractly, the layer of
+`fixingOpenNormalSubgroup K L` has fixed field the image `E` of any `K`-embedding of `L`, and `E`
+has the same idele-class norm group as `L`, so its norm quotient is `C_K / N_{L/K}(C_L)`
+(`globalLayerNormQuotientEquiv`).
 
 The norm of the layer is computed on an idele `a` of `E`: by `Formation.levelNorm_top_apply_coe`
 it is the sum of the translates of the class of `a` by coset representatives of `V`, which act
@@ -36,6 +39,8 @@ global reciprocity are about.
 
 * `TauCeti.ClassFieldTheory.globalNormQuotientEquiv`: the norm quotient of the layer of `E` is
   `C_K / N_{E/K}(C_E)`.
+* `TauCeti.ClassFieldTheory.globalLayerNormQuotientEquiv`: the norm quotient of the layer of a
+  finite Galois extension `L/K` is `C_K / N_{L/K}(C_L)`.
 
 ## Main results
 
@@ -43,6 +48,8 @@ global reciprocity are about.
   map of idele classes `N_{E/K}`.
 * `TauCeti.ClassFieldTheory.globalGroundEquiv_mem_normSubgroup_iff`: an idele class of `K` lies
   in the norm subgroup of the layer of `E` exactly when it is a norm from `C_E`.
+* `TauCeti.ClassFieldTheory.globalGroundEquiv_mem_layerNormSubgroup_iff`: the same for the layer
+  of a finite Galois extension `L/K` and norms from `C_L`.
 
 ## References
 
@@ -133,43 +140,6 @@ theorem globalGroundEquiv_mem_normSubgroup_iff (E : Ω)
   rw [norm_ideleClassLevelEquiv, EmbeddingLike.apply_eq_iff_eq, EmbeddingLike.apply_eq_iff_eq,
     EmbeddingLike.apply_eq_iff_eq, MonoidHom.coe_ofClass]
 
-/-- The map `C_K → A^{G_K} / N(A^V)` to the norm quotient of the layer `V ◁ G_K`, written
-multiplicatively. -/
-private def groundNormQuotientHom (V : OpenNormalSubgroup (AbsoluteGaloisGroup K)) :
-    IdeleClassGroup (𝓞 K) K →*
-      Multiplicative ((NormalLayer.ofOpenNormal V).NormQuotient (globalFormation K)) :=
-  AddMonoidHom.toMultiplicativeRight
-    (((NormalLayer.ofOpenNormal V).normQuotientMk (globalFormation K)).toAddMonoidHom.comp
-      (((NormalLayer.groundEquivOfOpenNormal (globalFormation K) V).toAddEquiv.toAddMonoidHom).comp
-        (globalGroundEquiv K).toAddMonoidHom))
-
-private theorem groundNormQuotientHom_apply (V : OpenNormalSubgroup (AbsoluteGaloisGroup K))
-    (c : IdeleClassGroup (𝓞 K) K) :
-    groundNormQuotientHom V c = Multiplicative.ofAdd
-      ((NormalLayer.ofOpenNormal V).normQuotientMk (globalFormation K)
-        (NormalLayer.groundEquivOfOpenNormal (globalFormation K) V
-          (globalGroundEquiv K (.ofMul c)))) :=
-  (rfl)
-
-private theorem ker_groundNormQuotientHom (E : Ω)
-    {V : OpenNormalSubgroup (AbsoluteGaloisGroup K)}
-    (hV : fixedField (NormalLayer.ofOpenNormal V).top.toSubgroup = E) :
-    (GlobalNumberFields.ideleClassNormMap K E :
-        IdeleClassGroup (𝓞 E) E →* IdeleClassGroup (𝓞 K) K).range =
-      (groundNormQuotientHom V).ker := by
-  ext c
-  rw [MonoidHom.mem_ker, ← globalGroundEquiv_mem_normSubgroup_iff E hV, groundNormQuotientHom_apply,
-    ofAdd_eq_one, NormalLayer.normQuotientMk_apply, Submodule.Quotient.mk_eq_zero]
-
-private theorem surjective_groundNormQuotientHom
-    (V : OpenNormalSubgroup (AbsoluteGaloisGroup K)) :
-    Function.Surjective (groundNormQuotientHom V) := fun z ↦ by
-  obtain ⟨x, hx⟩ := Submodule.Quotient.mk_surjective _ z.toAdd
-  obtain ⟨y, rfl⟩ := (NormalLayer.groundEquivOfOpenNormal (globalFormation K) V).surjective x
-  obtain ⟨c, rfl⟩ := (globalGroundEquiv K).surjective y
-  refine ⟨c.toMul, ?_⟩
-  rw [groundNormQuotientHom_apply, ofMul_toMul, NormalLayer.normQuotientMk_apply, hx, ofAdd_toAdd]
-
 /-- **The norm quotient of the layer of `E` is `C_K / N_{E/K}(C_E)`**: if the fixed field of the
 open normal subgroup `V` of `G_K` is `E`, then the identification `globalGroundEquiv` of `C_K` with
 the ground level of the layer `V ◁ G_K` of the idele-class formation descends to the quotients by
@@ -179,10 +149,9 @@ def globalNormQuotientEquiv (E : Ω) {V : OpenNormalSubgroup (AbsoluteGaloisGrou
     Additive (IdeleClassGroup (𝓞 K) K ⧸ (GlobalNumberFields.ideleClassNormMap K E :
         IdeleClassGroup (𝓞 E) E →* IdeleClassGroup (𝓞 K) K).range) ≃+
       (NormalLayer.ofOpenNormal V).NormQuotient (globalFormation K) :=
-  MulEquiv.toAdditiveLeft
-    ((QuotientGroup.quotientMulEquivOfEq (ker_groundNormQuotientHom E hV)).trans
-      (QuotientGroup.quotientKerEquivOfSurjective (groundNormQuotientHom V)
-        (surjective_groundNormQuotientHom V)))
+  (NormalLayer.ofOpenNormal V).normQuotientEquivOfGroundEquiv (globalFormation K)
+    ((globalGroundEquiv K).trans (NormalLayer.groundEquivOfOpenNormal (globalFormation K) V))
+    (globalGroundEquiv_mem_normSubgroup_iff E hV)
 
 /-- `globalNormQuotientEquiv E hV` sends the class of `c ∈ C_K` to the class of `c` in the norm
 quotient of the layer. -/
@@ -196,6 +165,64 @@ theorem globalNormQuotientEquiv_mk (E : Ω) {V : OpenNormalSubgroup (AbsoluteGal
       (NormalLayer.ofOpenNormal V).normQuotientMk (globalFormation K)
         (NormalLayer.groundEquivOfOpenNormal (globalFormation K) V
           (globalGroundEquiv K (.ofMul c))) :=
-  (rfl)
+  NormalLayer.normQuotientEquivOfGroundEquiv_mk _ _ _ _ c
+
+section Layer
+
+variable (L : Type*) [Field L] [NumberField L] [Algebra K L] [IsGalois K L]
+
+variable (K) in
+/-- **The norm subgroup of the layer of `L` is `N_{L/K}(C_L)`**: for a finite Galois extension
+`L/K`, an idele class of `K` lies in the norm subgroup of the layer of
+`fixingOpenNormalSubgroup K L` exactly when it is the norm of an idele class of `L`. The fixed
+field of the layer is the image `E` of a `K`-embedding of `L` into `Kˢ`, and `E` and `L` have the
+same idele-class norm group (`range_ideleClassNormMap_eq_of_algEquiv`). -/
+theorem globalGroundEquiv_mem_layerNormSubgroup_iff (c : IdeleClassGroup (𝓞 K) K) :
+    NormalLayer.groundEquivOfOpenNormal (globalFormation K) (fixingOpenNormalSubgroup K L)
+        (globalGroundEquiv K (.ofMul c)) ∈
+        (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).normSubgroup (globalFormation K) ↔
+      c ∈ (GlobalNumberFields.ideleClassNormMap K L :
+        IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K).range := by
+  let ι : L →ₐ[K] SeparableClosure K := IsSepClosed.lift
+  have : FiniteDimensional K ι.fieldRange := ι.equivFieldRange.toLinearEquiv.finiteDimensional
+  have : IsGalois K ι.fieldRange := IsGalois.of_algEquiv ι.equivFieldRange
+  obtain ⟨E, hE⟩ : ∃ E : Ω, (E : IntermediateField K (SeparableClosure K)) = ι.fieldRange :=
+    ⟨⟨ι.fieldRange⟩, rfl⟩
+  have hV : fixedField (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).top.toSubgroup =
+      E := by
+    rw [NormalLayer.top_ofOpenNormal, fixingOpenNormalSubgroup_toSubgroup ι,
+      InfiniteGalois.fixedField_fixingSubgroup, hE]
+  rw [globalGroundEquiv_mem_normSubgroup_iff E hV,
+    GlobalNumberFields.range_ideleClassNormMap_eq_of_algEquiv
+      (ι.equivFieldRange.trans (IntermediateField.equivOfEq hE.symm))]
+
+variable (K) in
+/-- **The norm quotient of the layer of `L` is `C_K / N_{L/K}(C_L)`**: for a finite Galois
+extension `L/K`, the identification `globalGroundEquiv` of `C_K` with the ground level of the
+layer of `fixingOpenNormalSubgroup K L` in the idele-class formation descends to the quotients by
+`N_{L/K}(C_L)` and by the norm subgroup of the layer
+(`globalGroundEquiv_mem_layerNormSubgroup_iff`). -/
+def globalLayerNormQuotientEquiv :
+    Additive (IdeleClassGroup (𝓞 K) K ⧸ (GlobalNumberFields.ideleClassNormMap K L :
+        IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K).range) ≃+
+      (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).NormQuotient (globalFormation K) :=
+  (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).normQuotientEquivOfGroundEquiv
+    (globalFormation K) ((globalGroundEquiv K).trans
+      (NormalLayer.groundEquivOfOpenNormal (globalFormation K) (fixingOpenNormalSubgroup K L)))
+    (globalGroundEquiv_mem_layerNormSubgroup_iff K L)
+
+/-- `globalLayerNormQuotientEquiv K L` sends the class of `c ∈ C_K` to the class of `c` in the
+norm quotient of the layer. -/
+@[simp]
+theorem globalLayerNormQuotientEquiv_mk (c : IdeleClassGroup (𝓞 K) K) :
+    globalLayerNormQuotientEquiv K L (.ofMul (c : IdeleClassGroup (𝓞 K) K ⧸
+        (GlobalNumberFields.ideleClassNormMap K L :
+          IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K).range)) =
+      (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).normQuotientMk (globalFormation K)
+        (NormalLayer.groundEquivOfOpenNormal (globalFormation K) (fixingOpenNormalSubgroup K L)
+          (globalGroundEquiv K (.ofMul c))) :=
+  NormalLayer.normQuotientEquivOfGroundEquiv_mk _ _ _ _ c
+
+end Layer
 
 end TauCeti.ClassFieldTheory
