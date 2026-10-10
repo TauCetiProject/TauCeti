@@ -19,16 +19,17 @@ itself assumes neither finite-dimensionality nor boundedness: it is a seminorm o
 linear maps `E →ₗ[𝕜] F`.
 
 When `E` and `F` are finite-dimensional, the operator norm, the Frobenius norm, the Ky Fan norms
-and the nuclear norm are the standard examples, and by a theorem of von Neumann such a seminorm
-depends only on the singular values of its argument, which is what lets a single Ky Fan estimate
-yield bounds in all of these norms at once. Neither the examples nor this classification are
-formalized here.
+and the nuclear norm are the standard examples. The examples are not formalized here.
 
 This file sets up the structure together with the elementary vocabulary for comparing its
 values:
 
 * the two-sided unitary orbit `U C V` of a map `C`, on which every unitarily invariant seminorm
-  is constant, as are the singular values when `E` and `F` are finite-dimensional;
+  is constant; when `E` and `F` are finite-dimensional, the orbit of `C` consists exactly of the
+  maps with the same singular values as `C`, so a unitarily invariant seminorm depends only on the
+  singular values of its argument;
+* the convex hull of the two-sided unitary orbit, on which every unitarily invariant seminorm is
+  bounded by its value at `C`;
 * finite orbit certificates, which write `X` as a combination `∑ᵢ aᵢ • Uᵢ C Vᵢ` of points of the
   orbit of `C`, and bound `N X` by the coefficient mass `∑ᵢ ‖aᵢ‖` times `N C`;
 * transport of a unitarily invariant seminorm along isometric isomorphisms of the source and the
@@ -39,9 +40,20 @@ values:
 * `TauCeti.UnitarilyInvariantSeminorm`: seminorms on `E →ₗ[𝕜] F` invariant under unitaries of
   the source and of the target.
 * `LinearMap.twoSidedUnitaryOrbit`: the set of maps `U C V` with `U`, `V` unitary.
+* `LinearMap.mem_twoSidedUnitaryOrbit_iff_singularValues_eq`: two maps lie in the same orbit
+  exactly when they have the same singular values.
+* `TauCeti.UnitarilyInvariantSeminorm.map_eq_of_singularValues_eq`: a unitarily invariant
+  seminorm is determined by the singular values of its argument.
+* `LinearMap.twoSidedUnitaryOrbitHull`: the convex combinations of points of the orbit;
+  `LinearMap.twoSidedUnitaryOrbitHull_eq_convexHull` identifies it with `convexHull ℝ` of the orbit
+  whenever the latter makes sense.
 * `TauCeti.UnitaryOrbitCertificate`: a representation `X = ∑ᵢ aᵢ • Uᵢ C Vᵢ`, with its
   coefficient mass `TauCeti.UnitaryOrbitCertificate.mass`.
 * `TauCeti.UnitaryOrbitCertificate.apply_le_mass_mul`: `N X ≤ mass * N C`.
+* `TauCeti.UnitaryOrbitCertificate.exists_mass_eq_one_of_mem_twoSidedUnitaryOrbitHull`: points of
+  the orbit hull have certificates of mass one, so
+  `TauCeti.UnitarilyInvariantSeminorm.map_le_of_mem_twoSidedUnitaryOrbitHull`: `N X ≤ N C` on the
+  hull.
 * `TauCeti.UnitarilyInvariantSeminorm.arrowCongr`: transport along isometric isomorphisms of the
   source and the target.
 * `TauCeti.UnitarilyInvariantSeminorm.compAdjoint`: the seminorm `B ↦ N B†` on the adjoint maps.
@@ -110,6 +122,102 @@ theorem singularValues_eq_of_mem_twoSidedUnitaryOrbit [FiniteDimensional 𝕜 E]
   obtain ⟨U, V, rfl⟩ := h
   simp
 
+/-- **Determination of the orbit by singular values.** Two maps between finite-dimensional inner
+product spaces lie in the same two-sided unitary orbit exactly when they have the same singular
+values. -/
+theorem mem_twoSidedUnitaryOrbit_iff_singularValues_eq [FiniteDimensional 𝕜 E]
+    [FiniteDimensional 𝕜 F] {C X : E →ₗ[𝕜] F} :
+    X ∈ C.twoSidedUnitaryOrbit ↔ X.singularValues = C.singularValues := by
+  refine ⟨singularValues_eq_of_mem_twoSidedUnitaryOrbit, fun h ↦ ?_⟩
+  -- Both maps are unitary multiples of the same rectangular diagonal map.
+  obtain ⟨U, V, hC⟩ := C.exists_linearIsometryEquiv_eq_comp_toLin_comp
+    (stdOrthonormalBasis 𝕜 E) (stdOrthonormalBasis 𝕜 F)
+  obtain ⟨U', V', hX⟩ := X.exists_linearIsometryEquiv_eq_comp_toLin_comp
+    (stdOrthonormalBasis 𝕜 E) (stdOrthonormalBasis 𝕜 F)
+  rw [h] at hX
+  refine ⟨U.symm.trans U', V'.trans V.symm, ?_⟩
+  conv_lhs => rw [hC]
+  rw [hX]
+  ext x
+  simp
+
+/-! ### The convex hull of the two-sided unitary orbit -/
+
+/-- The **convex hull of the two-sided unitary orbit** of `C`: the convex combinations
+`∑ᵢ tᵢ • Xᵢ` of maps `Xᵢ` in the two-sided unitary orbit of `C`, with real weights `tᵢ ≥ 0`
+summing to `1`. The weights act through `ℝ → 𝕜`: for a general `RCLike` field `𝕜` the space
+`E →ₗ[𝕜] F` carries no `ℝ`-module instance to which `convexHull ℝ` could be applied. -/
+def twoSidedUnitaryOrbitHull (C : E →ₗ[𝕜] F) : Set (E →ₗ[𝕜] F) :=
+  {X | ∃ (n : ℕ) (t : Fin n → ℝ) (Y : Fin n → E →ₗ[𝕜] F), (∀ i, 0 ≤ t i) ∧ ∑ i, t i = 1 ∧
+    (∀ i, Y i ∈ C.twoSidedUnitaryOrbit) ∧ ∑ i, (t i : 𝕜) • Y i = X}
+
+theorem mem_twoSidedUnitaryOrbitHull {C X : E →ₗ[𝕜] F} :
+    X ∈ C.twoSidedUnitaryOrbitHull ↔
+      ∃ (n : ℕ) (t : Fin n → ℝ) (Y : Fin n → E →ₗ[𝕜] F), (∀ i, 0 ≤ t i) ∧ ∑ i, t i = 1 ∧
+        (∀ i, Y i ∈ C.twoSidedUnitaryOrbit) ∧ ∑ i, (t i : 𝕜) • Y i = X :=
+  Iff.rfl
+
+theorem twoSidedUnitaryOrbit_subset_twoSidedUnitaryOrbitHull (C : E →ₗ[𝕜] F) :
+    C.twoSidedUnitaryOrbit ⊆ C.twoSidedUnitaryOrbitHull :=
+  fun X hX ↦ mem_twoSidedUnitaryOrbitHull.mpr
+    ⟨1, fun _ ↦ 1, fun _ ↦ X, fun _ ↦ zero_le_one, by simp, fun _ ↦ hX, by simp⟩
+
+@[simp]
+theorem self_mem_twoSidedUnitaryOrbitHull (C : E →ₗ[𝕜] F) : C ∈ C.twoSidedUnitaryOrbitHull :=
+  C.twoSidedUnitaryOrbit_subset_twoSidedUnitaryOrbitHull C.self_mem_twoSidedUnitaryOrbit
+
+/-- When `F` is also a real vector space compatibly with its `𝕜`-structure (for instance when `𝕜`
+is `ℝ` or `ℂ`), the orbit hull is the convex hull `convexHull ℝ` of the two-sided unitary orbit. -/
+theorem twoSidedUnitaryOrbitHull_eq_convexHull [Module ℝ F] [IsScalarTower ℝ 𝕜 F]
+    (C : E →ₗ[𝕜] F) : C.twoSidedUnitaryOrbitHull = convexHull ℝ C.twoSidedUnitaryOrbit := by
+  have hsmul (t : ℝ) (Y : E →ₗ[𝕜] F) : (t : 𝕜) • Y = t • Y := by
+    ext x
+    exact (RCLike.real_smul_eq_coe_smul t (Y x)).symm
+  ext X
+  rw [mem_twoSidedUnitaryOrbitHull, mem_convexHull_iff_exists_fintype]
+  constructor
+  · rintro ⟨n, t, Y, ht, htsum, hY, rfl⟩
+    exact ⟨Fin n, inferInstance, t, Y, ht, htsum, hY, by simp only [hsmul]⟩
+  · rintro ⟨ι, _, t, Y, ht, htsum, hY, rfl⟩
+    let e := Fintype.equivFin ι
+    refine ⟨Fintype.card ι, t ∘ e.symm, Y ∘ e.symm, fun i ↦ ht _, ?_, fun i ↦ hY _, ?_⟩
+    · rw [← htsum]
+      exact e.symm.sum_comp t
+    · simp only [Function.comp_apply, hsmul]
+      exact e.symm.sum_comp fun i ↦ t i • Y i
+
+/-- The orbit hull depends only on the orbit: it is the same for every point of the orbit. -/
+theorem twoSidedUnitaryOrbitHull_eq_of_mem {C X : E →ₗ[𝕜] F} (h : X ∈ C.twoSidedUnitaryOrbit) :
+    X.twoSidedUnitaryOrbitHull = C.twoSidedUnitaryOrbitHull := by
+  ext
+  simp only [mem_twoSidedUnitaryOrbitHull, twoSidedUnitaryOrbit_eq_of_mem h]
+
+/-- The orbit hull is convex: it is closed under convex combinations of two of its points. -/
+theorem smul_add_smul_mem_twoSidedUnitaryOrbitHull {C X Y : E →ₗ[𝕜] F}
+    (hX : X ∈ C.twoSidedUnitaryOrbitHull) (hY : Y ∈ C.twoSidedUnitaryOrbitHull) {a b : ℝ}
+    (ha : 0 ≤ a) (hb : 0 ≤ b) (hab : a + b = 1) :
+    (a : 𝕜) • X + (b : 𝕜) • Y ∈ C.twoSidedUnitaryOrbitHull := by
+  obtain ⟨n, t, X', ht, htsum, hX', rfl⟩ := mem_twoSidedUnitaryOrbitHull.mp hX
+  obtain ⟨m, s, Y', hs, hssum, hY', rfl⟩ := mem_twoSidedUnitaryOrbitHull.mp hY
+  refine mem_twoSidedUnitaryOrbitHull.mpr ⟨n + m, Fin.append (a • t) (b • s), Fin.append X' Y',
+    fun i ↦ ?_, ?_, fun i ↦ ?_, ?_⟩
+  · cases i using Fin.addCases <;> simp [mul_nonneg, *]
+  · simp [Fin.sum_univ_add, ← Finset.mul_sum, htsum, hssum, hab]
+  · cases i using Fin.addCases <;> simp [*]
+  · simp [Fin.sum_univ_add, Finset.smul_sum, smul_smul]
+
+/-- The orbit hull is invariant under unitaries of the source and of the target. -/
+theorem linearIsometryEquiv_comp_comp_mem_twoSidedUnitaryOrbitHull {C X : E →ₗ[𝕜] F}
+    (h : X ∈ C.twoSidedUnitaryOrbitHull) (U : F ≃ₗᵢ[𝕜] F) (V : E ≃ₗᵢ[𝕜] E) :
+    (U : F →ₗ[𝕜] F) ∘ₗ X ∘ₗ (V : E →ₗ[𝕜] E) ∈ C.twoSidedUnitaryOrbitHull := by
+  obtain ⟨n, t, Y, ht, htsum, hY, rfl⟩ := mem_twoSidedUnitaryOrbitHull.mp h
+  refine mem_twoSidedUnitaryOrbitHull.mpr
+    ⟨n, t, fun i ↦ (U : F →ₗ[𝕜] F) ∘ₗ Y i ∘ₗ (V : E →ₗ[𝕜] E), ht, htsum, fun i ↦ ?_, ?_⟩
+  · rw [← twoSidedUnitaryOrbit_eq_of_mem (hY i)]
+    exact (Y i).linearIsometryEquiv_comp_comp_mem_twoSidedUnitaryOrbit U V
+  · ext x
+    simp
+
 end LinearMap
 
 namespace TauCeti
@@ -172,6 +280,13 @@ theorem map_eq_of_mem_twoSidedUnitaryOrbit {C X : E →ₗ[𝕜] F}
     (h : X ∈ C.twoSidedUnitaryOrbit) : N X = N C := by
   obtain ⟨U, V, rfl⟩ := h
   exact N.map_linearIsometryEquiv_comp_comp U V C
+
+/-- **Determination by singular values.** On maps between finite-dimensional inner product spaces,
+a unitarily invariant seminorm takes equal values at maps with the same singular values. -/
+theorem map_eq_of_singularValues_eq [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
+    {A B : E →ₗ[𝕜] F} (h : A.singularValues = B.singularValues) : N A = N B :=
+  N.map_eq_of_mem_twoSidedUnitaryOrbit
+    (LinearMap.mem_twoSidedUnitaryOrbit_iff_singularValues_eq.mpr h)
 
 /-! ### Transport along isometric isomorphisms -/
 
@@ -320,5 +435,23 @@ theorem mass_reindex (e : ι ≃ κ) : (c.reindex e).mass = c.mass := by
   exact e.symm.sum_comp fun i ↦ ‖c.coeff i‖
 
 end UnitaryOrbitCertificate
+
+/-- **Certificates from convex combinations.** Every point `X = ∑ᵢ tᵢ • Uᵢ C Vᵢ` of the convex hull
+of the two-sided unitary orbit of `C` has an orbit certificate over `C` of mass one. -/
+theorem UnitaryOrbitCertificate.exists_mass_eq_one_of_mem_twoSidedUnitaryOrbitHull
+    {C X : E →ₗ[𝕜] F} (h : X ∈ C.twoSidedUnitaryOrbitHull) :
+    ∃ (n : ℕ) (c : UnitaryOrbitCertificate (Fin n) C X), c.mass = 1 := by
+  obtain ⟨n, t, Y, ht, htsum, hY, rfl⟩ := LinearMap.mem_twoSidedUnitaryOrbitHull.mp h
+  choose U V hUV using fun i ↦ LinearMap.mem_twoSidedUnitaryOrbit.mp (hY i)
+  refine ⟨n, ⟨fun i ↦ (t i : 𝕜), U, V, by simp only [hUV]⟩, ?_⟩
+  simp [mass_def, abs_of_nonneg (ht _), htsum]
+
+/-- A unitarily invariant seminorm is bounded on the convex hull of the two-sided unitary orbit of
+`C` by its value at `C`. -/
+theorem UnitarilyInvariantSeminorm.map_le_of_mem_twoSidedUnitaryOrbitHull
+    (N : UnitarilyInvariantSeminorm 𝕜 E F) {C X : E →ₗ[𝕜] F}
+    (h : X ∈ C.twoSidedUnitaryOrbitHull) : N X ≤ N C := by
+  obtain ⟨n, c, hc⟩ := UnitaryOrbitCertificate.exists_mass_eq_one_of_mem_twoSidedUnitaryOrbitHull h
+  simpa [hc] using c.apply_le_mass_mul N
 
 end TauCeti

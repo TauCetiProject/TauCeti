@@ -84,12 +84,15 @@ eigenvectors and diagonal entries `dᵢ` is Mathlib's
 `Matrix.toLin e.toBasis e.toBasis (Matrix.diagonal d)`. Its additivity in `d`
 (`Matrix.diagonal_add`), its adjoint (`Matrix.toLin_conjTranspose` with
 `Matrix.diagonal_conjTranspose`) and its symmetry for real entries (`Matrix.isSymmetric_toLin_iff`)
-are in Mathlib. The last section computes its singular values and shows that every endomorphism
-is a diagonal operator up to isometries on both sides.
+are in Mathlib. The last section computes its singular values and shows that every map is a
+diagonal map up to isometries on both sides.
 
 * `Matrix.toLin_diagonal_apply_self`: the diagonal operator sends `eᵢ` to `dᵢ eᵢ`.
 * `Matrix.singularValues_toLin_diagonal`: the singular values of the diagonal operator are the
   norms `‖dᵢ‖` listed in nonincreasing order.
+* `LinearMap.exists_linearIsometryEquiv_eq_comp_toLin_comp`: every map `A : E →ₗ[𝕜] F` is `U D V`
+  for linear isometric equivalences `U` of `F` and `V` of `E` and the rectangular diagonal map `D`
+  with the singular values of `A` on its diagonal, in any prescribed orthonormal bases.
 * `LinearMap.exists_linearIsometryEquiv_eq_comp_toLin_diagonal_comp`: every endomorphism `A` is
   `U D V` for linear isometric equivalences `U`, `V` and the diagonal operator `D` with the
   singular values of `A` as entries, in any prescribed orthonormal basis.
@@ -480,6 +483,43 @@ theorem _root_.Matrix.singularValues_toLin_diagonal (e : OrthonormalBasis ι �
     (fun i j hij ↦ pow_le_pow_left₀ (norm_nonneg _) (hπ hij) 2) hGram
   rw [← sq_eq_sq₀ (D.singularValues_nonneg _) (norm_nonneg _), D.sq_singularValues_fin hn k, heig]
 
+/-- **Rectangular singular-value factorization.** Every linear map `A : E →ₗ[𝕜] F` between
+finite-dimensional inner product spaces factors as `A = U D V`, where `U` and `V` are linear
+isometric equivalences of `F` and `E`, and `D` is the rectangular diagonal map whose matrix in
+prescribed orthonormal bases `(eᵢ)` of `E` and `(fⱼ)` of `F` has the singular values of `A` on its
+diagonal: `D eᵢ = σᵢ fᵢ` when `i` is also an index of `(fⱼ)`, and `D eᵢ = 0` otherwise. -/
+theorem exists_linearIsometryEquiv_eq_comp_toLin_comp (A : E →ₗ[𝕜] F) {m n : ℕ}
+    (e : OrthonormalBasis (Fin m) 𝕜 E) (f : OrthonormalBasis (Fin n) 𝕜 F) :
+    ∃ (U : F ≃ₗᵢ[𝕜] F) (V : E ≃ₗᵢ[𝕜] E), A = (U : F →ₗ[𝕜] F) ∘ₗ
+      Matrix.toLin e.toBasis f.toBasis
+        (Matrix.of fun j i ↦ if (j : ℕ) = i then (A.singularValues i : 𝕜) else 0) ∘ₗ
+        (V : E →ₗ[𝕜] E) := by
+  have hm : finrank 𝕜 E = m := by rw [finrank_eq_card_basis e.toBasis, Fintype.card_fin]
+  have hn : finrank 𝕜 F = n := by rw [finrank_eq_card_basis f.toBasis, Fintype.card_fin]
+  subst hm hn
+  -- `V` sends the right singular basis `(vᵢ)` to `(eᵢ)`, and `U` sends `(fⱼ)` to an orthonormal
+  -- basis `(wⱼ)` extending the left singular vectors, so both sides send `vᵢ` to `σᵢ wᵢ`, read
+  -- as `0` when `i` is not an index of `(wⱼ)`.
+  obtain ⟨w, hw⟩ := A.exists_orthonormalBasis_apply_eq_leftSingularVector
+  refine ⟨f.equiv w (.refl _), A.rightSingularBasis.equiv e (.refl _), ?_⟩
+  refine A.rightSingularBasis.toBasis.ext fun i ↦ ?_
+  simp only [coe_comp, Function.comp_apply, OrthonormalBasis.coe_toBasis, apply_rightSingularBasis,
+    LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv, OrthonormalBasis.equiv_apply_basis,
+    Equiv.refl_apply]
+  rw [← e.coe_toBasis, Matrix.toLin_self]
+  simp only [Matrix.of_apply]
+  rcases lt_or_ge (i : ℕ) (finrank 𝕜 F) with hi | hi
+  · rw [Finset.sum_eq_single ⟨i, hi⟩
+      (fun j _ hj ↦ by simp [show (j : ℕ) ≠ i from fun h ↦ hj (Fin.ext h)]) (by simp)]
+    rcases eq_or_ne (A.singularValues i) 0 with hσ | hσ
+    · simp [hσ]
+    · simp [hw i ⟨i, hi⟩ rfl hσ]
+  · have hσ : A.singularValues i = 0 := by
+      rw [← singularValues_adjoint]
+      exact (adjoint A).singularValues_of_finrank_le hi
+    simp [hσ]
+
 /-- **Singular-value diagonal factorization.** Every endomorphism `A` of a finite-dimensional
 inner product space factors as `A = U D V`, where `U` and `V` are linear isometric equivalences
 and `D` is the diagonal operator whose entries in a prescribed orthonormal basis `(eᵢ)` are the
@@ -489,16 +529,14 @@ theorem exists_linearIsometryEquiv_eq_comp_toLin_diagonal_comp (A : E →ₗ[�
     ∃ U V : E ≃ₗᵢ[𝕜] E, A = (U : E →ₗ[𝕜] E) ∘ₗ
       Matrix.toLin e.toBasis e.toBasis (Matrix.diagonal fun i ↦ (A.singularValues i : 𝕜)) ∘ₗ
         (V : E →ₗ[𝕜] E) := by
-  have hn : finrank 𝕜 E = n := by rw [finrank_eq_card_basis e.toBasis, Fintype.card_fin]
-  subst hn
-  -- `V` sends the right singular basis `(vᵢ)` to `(eᵢ)`, and `U` sends `(eᵢ)` to an orthonormal
-  -- basis `(wᵢ)` extending the left singular vectors, so both sides send `vᵢ` to `σᵢ wᵢ`.
-  obtain ⟨w, hw⟩ := A.exists_orthonormalBasis_apply_eq_leftSingularVector
-  refine ⟨e.equiv w (.refl _), A.rightSingularBasis.equiv e (.refl _), ?_⟩
-  refine A.rightSingularBasis.toBasis.ext fun i ↦ ?_
-  rcases eq_or_ne (A.singularValues i) 0 with hσ | hσ
-  · simp [apply_rightSingularBasis, hσ]
-  · simp [apply_rightSingularBasis, hw i i rfl hσ]
+  have hD : (Matrix.diagonal fun i : Fin n ↦ (A.singularValues i : 𝕜)) =
+      Matrix.of fun j i : Fin n ↦ if (j : ℕ) = i then (A.singularValues i : 𝕜) else 0 := by
+    ext j i
+    rcases eq_or_ne j i with rfl | h
+    · simp
+    · simp [h, Fin.val_ne_of_ne h]
+  rw [hD]
+  exact A.exists_linearIsometryEquiv_eq_comp_toLin_comp e e
 
 end Diagonal
 
