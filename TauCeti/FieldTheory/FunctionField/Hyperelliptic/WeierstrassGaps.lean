@@ -26,8 +26,9 @@ For `g ≥ 2` the two gap sequences differ, so a rational place has `2` as a pol
 it ramifies over `k(x)`: the rational places whose gap sequence is not `1, …, g` are exactly the
 ramified ones. In terms of Weierstrass weights, the ramified rational places have the maximal
 weight `g (g - 1) / 2` and the unramified ones have weight `0`. Conversely, away from
-characteristic two, a function field of genus `g ≥ 2` with a rational place at which `2` is a pole
-number, that is, a rational place of maximal weight, is hyperelliptic.
+characteristic two or over a perfect field, a function field of genus `g ≥ 2` with a rational
+place at which `2` is a pole number, that is, a rational place of maximal weight, is
+hyperelliptic.
 
 ## Main results
 
@@ -44,8 +45,10 @@ number, that is, a rational place of maximal weight, is hyperelliptic.
 * `TauCeti.Place.weierstrassWeight_eq_genus_choose_two_iff_one_lt_ramificationIdx` and
   `TauCeti.Place.weierstrassWeight_eq_zero_of_ramificationIdx_eq_one`: ramified rational places
   have weight `g (g - 1) / 2`, unramified ones weight `0`.
-* `TauCeti.isHyperellipticFunctionField_of_isPoleNumber_two`: a rational place at which `2` is a
-  pole number makes a function field of genus at least two hyperelliptic.
+* `TauCeti.isHyperellipticFunctionField_of_isPoleNumber_two` and
+  `TauCeti.isHyperellipticFunctionField_of_isPoleNumber_two_of_perfectField`: a rational place at
+  which `2` is a pole number makes a function field of genus at least two hyperelliptic, away from
+  characteristic two or over a perfect field.
 
 ## References
 
@@ -289,17 +292,10 @@ theorem weierstrassWeight_eq_zero_of_ramificationIdx_eq_one {P : Place k F} (hP 
 
 end Place
 
-/-- **A rational place at which `2` is a pole number makes a function field of genus `g ≥ 2`
-hyperelliptic**, away from characteristic two: the divisor `2P` has degree two and `ℓ(2P) ≥ 2`.
-By `TauCeti.Place.weierstrassWeight_eq_genus_choose_two_iff`, these are the rational places of
-maximal Weierstrass weight `g (g - 1) / 2`, so a function field that is not hyperelliptic has
-none. -/
-theorem isHyperellipticFunctionField_of_isPoleNumber_two (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) (h2 : (2 : k) ≠ 0) (hg : 2 ≤ genus k F) {P : Place k F}
-    (hP : P.degree = 1) (hpole : P.IsPoleNumber 2) : IsHyperellipticFunctionField k F := by
-  refine (isHyperellipticFunctionField_iff_two_le_genus_and_exists_degree_eq_two_and_two_le_dim
-    hF hex h2).mpr ⟨hg, (2 : ℤ) • WeilDivisor.ofPoint P, by simp [hP], ?_⟩
-  -- `ℓ(P) < ℓ(2P)` because `2` is a pole number, and `ℓ(P) ≥ ℓ(0) = 1`.
+/-- If `2` is a pole number at `P`, then `ℓ(2P) ≥ 2`: `ℓ(P) < ℓ(2P)` and `ℓ(P) ≥ ℓ(0) = 1`. -/
+private theorem two_le_dim_two_zsmul_ofPoint_of_isPoleNumber_two (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) {P : Place k F} (hpole : P.IsPoleNumber 2) :
+    2 ≤ Divisor.dim ((2 : ℤ) • WeilDivisor.ofPoint P) := by
   have hlt := (P.isPoleNumber_iff_dim_lt hF (by norm_num : 0 < 2)).mp hpole
   have hle : Divisor.dim (0 : Divisor k F) ≤ Divisor.dim ((1 : ℤ) • WeilDivisor.ofPoint P) :=
     Divisor.dim_mono hF (by simpa using
@@ -307,5 +303,30 @@ theorem isHyperellipticFunctionField_of_isPoleNumber_two (hF : IsFunctionField k
   rw [Divisor.dim_zero_of_isIntegrallyClosedIn hF hex] at hle
   simp only [Nat.add_one_sub_one, Nat.cast_one, Nat.cast_ofNat] at hlt
   omega
+
+/-- **A rational place at which `2` is a pole number makes a function field of genus `g ≥ 2`
+hyperelliptic**, away from characteristic two: the divisor `2P` has degree two and `ℓ(2P) ≥ 2`.
+By `TauCeti.Place.weierstrassWeight_eq_genus_choose_two_iff`, these are the rational places of
+maximal Weierstrass weight `g (g - 1) / 2`, so a function field that is not hyperelliptic has
+none. Over a perfect field the characteristic hypothesis can be dropped, see
+`TauCeti.isHyperellipticFunctionField_of_isPoleNumber_two_of_perfectField`. -/
+theorem isHyperellipticFunctionField_of_isPoleNumber_two (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) (h2 : (2 : k) ≠ 0) (hg : 2 ≤ genus k F) {P : Place k F}
+    (hP : P.degree = 1) (hpole : P.IsPoleNumber 2) : IsHyperellipticFunctionField k F :=
+  (isHyperellipticFunctionField_iff_two_le_genus_and_exists_degree_eq_two_and_two_le_dim
+    hF hex h2).mpr ⟨hg, (2 : ℤ) • WeilDivisor.ofPoint P, by simp [hP],
+      two_le_dim_two_zsmul_ofPoint_of_isPoleNumber_two hF hex hpole⟩
+
+/-- **Over a perfect field, a rational place at which `2` is a pole number makes a function field
+of genus `g ≥ 2` hyperelliptic**, in every characteristic: the divisor `2P` of degree two with
+`ℓ(2P) ≥ 2` gives a rational subfield of index two, over which `F` is separable because `k` is
+perfect. -/
+theorem isHyperellipticFunctionField_of_isPoleNumber_two_of_perfectField [PerfectField k]
+    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) (hg : 2 ≤ genus k F)
+    {P : Place k F} (hP : P.degree = 1) (hpole : P.IsPoleNumber 2) :
+    IsHyperellipticFunctionField k F :=
+  isHyperellipticFunctionField_iff_two_le_genus_and_exists_finrank_adjoin_eq_two.mpr
+    ⟨hg, exists_transcendental_finrank_adjoin_eq_two_of_degree_eq_two hF hex (by omega)
+      (by simp [hP]) (two_le_dim_two_zsmul_ofPoint_of_isPoleNumber_two hF hex hpole)⟩
 
 end TauCeti
