@@ -13,6 +13,7 @@ public import TauCeti.MeasureTheory.Function.AbsolutelyContinuous
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Prod
+import Mathlib.Probability.Kernel.MeasurableIntegral
 import TauCeti.MeasureTheory.Measure.Measurability
 
 /-!
@@ -34,7 +35,8 @@ the time slices `t ↦ μₜ` and of `v`, and the integrability of the total mas
 The continuity equation is the Eulerian description of mass moving with velocity `v`. Its basic
 source of solutions is the Lagrangian one: if `P` is a finite measure on a parameter space `Ω` and
 `γ : Ω → ℝ → E` is a measurable family of absolutely continuous curves with
-`deriv γ_ω t = vₜ (γ_ω t)` for almost every `(ω, t)`, then the laws `μₜ = (γ · t)₊ P` of the
+`deriv γ_ω t = vₜ (γ_ω t)` for almost every `(ω, t)`, and with finite expected length
+`∫ ∫_a^b ‖vₜ (γ_ω t)‖ dt dP(ω) < ∞`, then the laws `μₜ = (γ · t)₊ P` of the
 positions at time `t` solve the continuity equation with velocity `v`
 (`TauCeti.isContinuityEquation_map`). For `Ω` a space of curves and `γ` the evaluation map this is
 the statement for a law on paths. A translating law, a stationary law and a Dirac mass moving along
@@ -50,8 +52,14 @@ an absolutely continuous curve are special cases.
 * `TauCeti.IsContinuityEquation.mono`: a solution on `(a, b)` is a solution on every subinterval.
 * `TauCeti.IsContinuityEquation.congr`: the velocity field matters only `μₜ`-almost everywhere, for
   almost every time `t`.
+* `TauCeti.IsContinuityEquation.lintegral_lintegral_enorm_fderiv_lt_top`,
+  `TauCeti.IsContinuityEquation.ae_integrable_fderiv` and
+  `TauCeti.IsContinuityEquation.integrableOn_integral_fderiv`: for every `C¹` compactly supported
+  test function, the integrand of the continuity equation is absolutely integrable against `μₜ dt`,
+  integrable against `μₜ` for almost every `t`, and its spatial integral is integrable in time.
 * `TauCeti.isContinuityEquation_map`: the laws at time `t` of a measurable family of absolutely
-  continuous curves following `v` solve the continuity equation with velocity `v`.
+  continuous curves following `v`, with finite expected length, solve the continuity equation with
+  velocity `v`.
 * `TauCeti.isContinuityEquation_map_add_smul`: a law translating with constant velocity `w`
   solves the continuity equation with velocity field `w`.
 * `TauCeti.isContinuityEquation_const`: a stationary law solves it with velocity field `0`.
@@ -193,6 +201,125 @@ private lemma measurable_fderiv_apply [SecondCountableTopology E]
     Measurable fun q : (ℝ × E) × E ↦ fderiv ℝ φ q.1 (1, q.2) :=
   (((hφ.continuous_fderiv one_ne_zero).comp continuous_fst).clm_apply
     (continuous_const.prodMk continuous_snd)).measurable
+
+omit [FiniteDimensional ℝ E] [BorelSpace E] in
+/-- A measurable family of measures, rescaled by `(1 + μₜ E)⁻¹` to have mass at most one, as a
+kernel. It lets the measurability results for finite kernels apply to `μ`. -/
+private noncomputable def normalizedKernel (hμ : Measurable μ) : ProbabilityTheory.Kernel ℝ E where
+  toFun t := (1 + μ t univ)⁻¹ • μ t
+  measurable' := Measure.measurable_of_measurable_coe _ fun s hs ↦ by
+    simp only [Measure.smul_apply, smul_eq_mul]
+    exact ((measurable_const.add ((Measure.measurable_coe .univ).comp hμ)).inv).mul
+      ((Measure.measurable_coe hs).comp hμ)
+
+omit [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] in
+private lemma normalizedKernel_apply (hμ : Measurable μ) (t : ℝ) :
+    normalizedKernel hμ t = (1 + μ t univ)⁻¹ • μ t := rfl
+
+omit [FiniteDimensional ℝ E] [BorelSpace E] in
+private instance (hμ : Measurable μ) : ProbabilityTheory.IsFiniteKernel (normalizedKernel hμ) := by
+  refine ⟨⟨1, ENNReal.one_lt_top, fun t ↦ ?_⟩⟩
+  rw [normalizedKernel_apply, Measure.smul_apply, smul_eq_mul]
+  rcases eq_or_ne (μ t univ) ∞ with h | h
+  · simp [h]
+  rw [ENNReal.inv_mul_le_iff (by simp) (by simp [h]), mul_one]
+  exact le_add_self
+
+omit [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] in
+private lemma lintegral_eq_mul_normalizedKernel (hμ : Measurable μ) {t : ℝ} (ht : μ t univ ≠ ∞)
+    (f : E → ℝ≥0∞) : ∫⁻ x, f x ∂μ t = (1 + μ t univ) * ∫⁻ x, f x ∂normalizedKernel hμ t := by
+  rw [normalizedKernel_apply, lintegral_smul_measure, smul_eq_mul, ← mul_assoc,
+    ENNReal.mul_inv_cancel (by simp) (by simp [ht]), one_mul]
+
+omit [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] in
+private lemma integral_eq_mul_normalizedKernel (hμ : Measurable μ) {t : ℝ} (ht : μ t univ ≠ ∞)
+    (f : E → ℝ) : ∫ x, f x ∂μ t = (1 + μ t univ).toReal * ∫ x, f x ∂normalizedKernel hμ t := by
+  have h0 : (1 + μ t univ).toReal ≠ 0 := (ENNReal.toReal_pos (by simp) (by simp [ht])).ne'
+  rw [normalizedKernel_apply, integral_smul_measure, smul_eq_mul, ENNReal.toReal_inv, ← mul_assoc,
+    mul_inv_cancel₀ h0, one_mul]
+
+namespace IsContinuityEquation
+
+/-- For almost every time `t ∈ (a, b)` the slice `μₜ` has finite mass. -/
+private lemma ae_measure_univ_ne_top (h : IsContinuityEquation μ v a b) :
+    ∀ᵐ t ∂volume.restrict (Ioo a b), μ t univ ≠ ∞ :=
+  (ae_lt_top ((Measure.measurable_coe .univ).comp h.measurable)
+    h.lintegral_measure_univ_lt_top.ne).mono fun _ ht ↦ ht.ne
+
+/-- The `μₜ`-integral of a jointly measurable function is almost everywhere measurable in time. -/
+private lemma aemeasurable_lintegral (h : IsContinuityEquation μ v a b) {f : ℝ → E → ℝ≥0∞}
+    (hf : Measurable (uncurry f)) :
+    AEMeasurable (fun t ↦ ∫⁻ x, f t x ∂μ t) (volume.restrict (Ioo a b)) := by
+  have hm : Measurable fun t ↦ 1 + μ t univ :=
+    measurable_const.add ((Measure.measurable_coe .univ).comp h.measurable)
+  have hκ := hf.lintegral_kernel_prod_right (κ := normalizedKernel h.measurable)
+  refine (hm.mul hκ).aemeasurable.congr ?_
+  filter_upwards [h.ae_measure_univ_ne_top] with t ht
+  exact (lintegral_eq_mul_normalizedKernel h.measurable ht _).symm
+
+/-- The `μₜ`-integral of a jointly measurable function is almost everywhere strongly measurable in
+time. -/
+private lemma aestronglyMeasurable_integral (h : IsContinuityEquation μ v a b) {f : ℝ → E → ℝ}
+    (hf : StronglyMeasurable (uncurry f)) :
+    AEStronglyMeasurable (fun t ↦ ∫ x, f t x ∂μ t) (volume.restrict (Ioo a b)) := by
+  have hm : Measurable fun t ↦ 1 + μ t univ :=
+    measurable_const.add ((Measure.measurable_coe .univ).comp h.measurable)
+  have hκ := hf.integral_kernel_prod_right (κ := normalizedKernel h.measurable)
+  refine (hm.ennreal_toReal.stronglyMeasurable.mul hκ).aestronglyMeasurable.congr ?_
+  filter_upwards [h.ae_measure_univ_ne_top] with t ht
+  exact (integral_eq_mul_normalizedKernel h.measurable ht _).symm
+
+/-- The integrand of the continuity equation is absolutely integrable against `μₜ dt` on `(a, b)`,
+for every `C¹` compactly supported test function `φ`. -/
+theorem lintegral_lintegral_enorm_fderiv_lt_top (h : IsContinuityEquation μ v a b)
+    {φ : ℝ × E → ℝ} (hφ : ContDiff ℝ 1 φ) (hφc : HasCompactSupport φ) :
+    ∫⁻ t in Ioo a b, ∫⁻ x, ‖fderiv ℝ φ (t, x) (1, v t x)‖ₑ ∂μ t < ∞ := by
+  obtain ⟨C, hC⟩ := exists_norm_fderiv_apply_le hφ hφc
+  have hle (t : ℝ) (x : E) :
+      ‖fderiv ℝ φ (t, x) (1, v t x)‖ₑ ≤ ENNReal.ofReal C * (1 + ‖v t x‖ₑ) := by
+    have hC0 : 0 ≤ C := by simpa using (norm_nonneg _).trans (hC (0, 0) 0)
+    rw [← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_one,
+      ← ENNReal.ofReal_add zero_le_one (norm_nonneg _), ← ENNReal.ofReal_mul hC0]
+    exact ENNReal.ofReal_le_ofReal (hC _ _)
+  have hv (t : ℝ) : Measurable fun x ↦ 1 + ‖v t x‖ₑ :=
+    measurable_const.add (h.measurable_velocity.comp measurable_prodMk_left).enorm
+  have hm : Measurable fun t ↦ μ t univ := (Measure.measurable_coe .univ).comp h.measurable
+  calc ∫⁻ t in Ioo a b, ∫⁻ x, ‖fderiv ℝ φ (t, x) (1, v t x)‖ₑ ∂μ t
+      ≤ ∫⁻ t in Ioo a b, ENNReal.ofReal C * (μ t univ + ∫⁻ x, ‖v t x‖ₑ ∂μ t) := by
+        refine lintegral_mono fun t ↦ (lintegral_mono (hle t)).trans_eq ?_
+        rw [lintegral_const_mul _ (hv t), lintegral_add_left measurable_const, lintegral_one]
+    _ < ∞ := by
+        rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
+          lintegral_add_left hm]
+        exact ENNReal.mul_lt_top ENNReal.ofReal_lt_top
+          (ENNReal.add_lt_top.2 ⟨h.lintegral_measure_univ_lt_top,
+            h.lintegral_lintegral_enorm_lt_top⟩)
+
+/-- For almost every time `t ∈ (a, b)`, the integrand of the continuity equation is integrable
+against `μₜ`, for every `C¹` compactly supported test function `φ`. -/
+theorem ae_integrable_fderiv (h : IsContinuityEquation μ v a b) {φ : ℝ × E → ℝ}
+    (hφ : ContDiff ℝ 1 φ) (hφc : HasCompactSupport φ) :
+    ∀ᵐ t, t ∈ Ioo a b → Integrable (fun x ↦ fderiv ℝ φ (t, x) (1, v t x)) (μ t) := by
+  have hF : Measurable fun q : ℝ × E ↦ fderiv ℝ φ q (1, v q.1 q.2) :=
+    (measurable_fderiv_apply hφ).comp (measurable_id.prodMk h.measurable_velocity)
+  rw [← ae_restrict_iff' measurableSet_Ioo]
+  filter_upwards [ae_lt_top' (h.aemeasurable_lintegral
+      (f := fun t x ↦ ‖fderiv ℝ φ (t, x) (1, v t x)‖ₑ) hF.enorm)
+    (h.lintegral_lintegral_enorm_fderiv_lt_top hφ hφc).ne] with t ht
+  exact ⟨(hF.comp measurable_prodMk_left).aestronglyMeasurable, ht⟩
+
+/-- The spatial integral of the integrand of the continuity equation is integrable over `(a, b)`,
+for every `C¹` compactly supported test function `φ`. -/
+theorem integrableOn_integral_fderiv (h : IsContinuityEquation μ v a b) {φ : ℝ × E → ℝ}
+    (hφ : ContDiff ℝ 1 φ) (hφc : HasCompactSupport φ) :
+    IntegrableOn (fun t ↦ ∫ x, fderiv ℝ φ (t, x) (1, v t x) ∂μ t) (Ioo a b) := by
+  have hF : Measurable fun q : ℝ × E ↦ fderiv ℝ φ q (1, v q.1 q.2) :=
+    (measurable_fderiv_apply hφ).comp (measurable_id.prodMk h.measurable_velocity)
+  refine ⟨h.aestronglyMeasurable_integral hF.stronglyMeasurable, ?_⟩
+  exact (lintegral_mono fun t ↦ enorm_integral_le_lintegral_enorm _).trans_lt
+    (h.lintegral_lintegral_enorm_fderiv_lt_top hφ hφc)
+
+end IsContinuityEquation
 
 /-- **Lagrangian solutions of the continuity equation.** Let `P` be a finite measure on a parameter
 space `Ω` and `γ : Ω → ℝ → E` a jointly measurable family of curves. If `P`-almost every curve is
