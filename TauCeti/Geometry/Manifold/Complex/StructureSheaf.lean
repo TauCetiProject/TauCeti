@@ -26,9 +26,9 @@ On a compact connected complex manifold, the constant-section map is an algebra
 isomorphism `ℂ ≃ₐ[ℂ] H⁰(X, 𝒪)`. The inverse is evaluation at any point, independently of
 which point is chosen. In particular, the space of global sections has dimension one.
 
-The structure sheaf's object representation is exposed so that the existing
-`ContMDiffMap` algebraic API applies directly to its sections. The sheaf of modules has
-exactly the same underlying presheaf of functions.
+The structure sheaf's object representation is exposed for its function coercion and
+algebra instance. Pointwise computation is provided by section evaluation lemmas.
+The sheaf of modules has exactly the same underlying presheaf of functions.
 
 The sheaf construction follows `smoothSheafCommRing` in
 `Mathlib/Geometry/Manifold/Sheaf/Smooth.lean` by Heather Macbeth and Adam Topaz, using
@@ -80,6 +80,39 @@ instance (U : (Opens (TopCat.of X))ᵒᵖ) :
   inferInstanceAs <| Algebra ℂ C^ω⟮I, (unop U : Opens X); ℂ⟯
 
 variable {I X}
+
+@[simp]
+theorem zero_apply {U : (Opens (TopCat.of X))ᵒᵖ} (x : ↥(unop U)) :
+    (0 : (holomorphicStructureSheaf I X).obj.obj U) x = 0 := (rfl)
+
+@[simp]
+theorem one_apply {U : (Opens (TopCat.of X))ᵒᵖ} (x : ↥(unop U)) :
+    (1 : (holomorphicStructureSheaf I X).obj.obj U) x = 1 := (rfl)
+
+@[simp]
+theorem add_apply {U : (Opens (TopCat.of X))ᵒᵖ}
+    (f g : (holomorphicStructureSheaf I X).obj.obj U) (x : ↥(unop U)) :
+    (f + g) x = f x + g x := (rfl)
+
+@[simp]
+theorem mul_apply {U : (Opens (TopCat.of X))ᵒᵖ}
+    (f g : (holomorphicStructureSheaf I X).obj.obj U) (x : ↥(unop U)) :
+    (f * g) x = f x * g x := (rfl)
+
+@[simp]
+theorem neg_apply {U : (Opens (TopCat.of X))ᵒᵖ}
+    (f : (holomorphicStructureSheaf I X).obj.obj U) (x : ↥(unop U)) :
+    (-f) x = -f x := (rfl)
+
+@[simp]
+theorem sub_apply {U : (Opens (TopCat.of X))ᵒᵖ}
+    (f g : (holomorphicStructureSheaf I X).obj.obj U) (x : ↥(unop U)) :
+    (f - g) x = f x - g x := (rfl)
+
+@[simp]
+theorem smul_apply {U : (Opens (TopCat.of X))ᵒᵖ} (c : ℂ)
+    (f : (holomorphicStructureSheaf I X).obj.obj U) (x : ↥(unop U)) :
+    (c • f) x = c • f x := (rfl)
 
 /-- Sections of the structure sheaf are equal if they agree at every point. -/
 @[ext]
@@ -151,6 +184,18 @@ theorem obj_eq (U : (Opens (TopCat.of X))ᵒᵖ) :
     (holomorphicStructureSheafModules I X).obj.obj U =
       ModuleCat.of ℂ ((holomorphicStructureSheaf I X).obj.obj U) := (rfl)
 
+instance (U : (Opens (TopCat.of X))ᵒᵖ) :
+    CoeFun ((holomorphicStructureSheafModules I X).obj.obj U) (fun _ ↦ ↥(unop U) → ℂ) where
+  -- Transport through the object API so the module sheaf's body can remain hidden.
+  coe f := (cast (congrArg (fun M : ModuleCat ℂ ↦ (M : Type _)) (obj_eq I X U)) f :
+    (holomorphicStructureSheaf I X).obj.obj U)
+
+@[simp]
+theorem map_apply {U V : (Opens (TopCat.of X))ᵒᵖ} (h : U ⟶ V)
+    (f : (holomorphicStructureSheafModules I X).obj.obj U) (x : ↥(unop V)) :
+    (holomorphicStructureSheafModules I X).obj.map h f x =
+      f (Opens.inclusion (leOfHom h.unop) x) := (rfl)
+
 /-- Forgetting the ring or module structure gives the same presheaf of functions. -/
 theorem forget_eq :
     (holomorphicStructureSheafModules I X).obj ⋙ forget (ModuleCat ℂ) =
@@ -192,7 +237,6 @@ theorem globalSectionsEquiv_apply (c : ℂ) (x : X) :
       ((globalSectionsEquiv I X).commutes c)
 
 /-- Evaluation at any point is the inverse of the constant-section isomorphism. -/
-@[simp]
 theorem globalSectionsEquiv_symm_apply
     (f : (holomorphicStructureSheaf I X).obj.obj (op ⊤)) (x : X) :
     (globalSectionsEquiv I X).symm f = f ⟨x, trivial⟩ := by
