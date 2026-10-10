@@ -10,6 +10,7 @@ public import Mathlib.CategoryTheory.Sites.CoversTop.Over
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.GeneratingSections
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Biprod
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Monoidal
+public import TauCeti.CategoryTheory.ObjectProperty
 
 /-!
 # Locally free sheaves of modules
@@ -78,44 +79,6 @@ variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C}
   [∀ X, HasWeakSheafify (J.over X) AddCommGrpCat.{u}]
   [∀ X, (J.over X).WEqualsLocallyBijective AddCommGrpCat.{u}]
   {M N : SheafOfModules.{u} R}
-
-/-- Local generators data transported along an isomorphism `f : M ⟶ N`: the covering family is
-unchanged, and the generating sections of `M.over (q.X i)` are pushed forward along the
-restriction of `f`. -/
-def _root_.SheafOfModules.LocalGeneratorsData.ofIsIso (f : M ⟶ N) [IsIso f]
-    (q : M.LocalGeneratorsData) : N.LocalGeneratorsData where
-  I := q.I
-  X := q.X
-  coversTop := q.coversTop
-  generators i := (q.generators i).ofEpi (f.over (q.X i))
-
-/-- Transporting local generators preserves the cover's index type. -/
-@[simp]
-theorem _root_.SheafOfModules.LocalGeneratorsData.ofIsIso_I (f : M ⟶ N) [IsIso f]
-    (q : M.LocalGeneratorsData) : (q.ofIsIso f).I = q.I := (rfl)
-
-/-- Transporting local generators preserves the covering objects. -/
-@[simp]
-theorem _root_.SheafOfModules.LocalGeneratorsData.ofIsIso_X (f : M ⟶ N) [IsIso f]
-    (q : M.LocalGeneratorsData) :
-    (q.ofIsIso f).X = fun i ↦ q.X ((LocalGeneratorsData.ofIsIso_I f q).mp i) := (rfl)
-
-/-- Transporting local generators pushes each generating family along the restricted isomorphism. -/
-@[simp]
-theorem _root_.SheafOfModules.LocalGeneratorsData.ofIsIso_generators
-    (f : M ⟶ N) [IsIso f] (q : M.LocalGeneratorsData) (i : (q.ofIsIso f).I) :
-    (q.ofIsIso f).generators i =
-      cast (by rw [LocalGeneratorsData.ofIsIso_X])
-        ((q.generators ((LocalGeneratorsData.ofIsIso_I f q).mp i)).ofEpi
-          (f.over (q.X ((LocalGeneratorsData.ofIsIso_I f q).mp i)))) := (rfl)
-
-/-- Locally free data transported along an isomorphism is locally free data. -/
-instance (f : M ⟶ N) [IsIso f] (q : M.LocalGeneratorsData) [q.IsLocallyFreeData] :
-    (q.ofIsIso f).IsLocallyFreeData where
-  isIso i := by
-    rw [LocalGeneratorsData.ofIsIso_generators]
-    exact (q.generators _).isIso_ofEpi_π (f.over (q.X _))
-      (LocalGeneratorsData.IsLocallyFreeData.isIso (q := q) _)
 
 variable (R) in
 /-- Local freeness of sheaves of modules, as a property of objects. -/
@@ -240,15 +203,11 @@ variable {C : Type u₁} [Category.{v₁} C] [HasPullbacks C] {J : GrothendieckT
 /-- Finite locally free sheaves of modules are closed under binary products, which are the direct
 sums `M ⊞ N`. -/
 instance isClosedUnderBinaryProducts_isFiniteLocallyFree :
-    (isFiniteLocallyFree R).IsClosedUnderBinaryProducts where
-  limitsOfShape_le := by
-    rintro M ⟨p⟩
-    obtain ⟨_, _⟩ := p.prop_diag_obj ⟨.left⟩
-    obtain ⟨_, _⟩ := p.prop_diag_obj ⟨.right⟩
-    exact (isFiniteLocallyFree R).prop_of_iso
-      (IsLimit.conePointUniqueUpToIso (BinaryBiproduct.isLimit _ _)
-        ((IsLimit.postcomposeHomEquiv (diagramIsoPair p.diag) _).2 p.isLimit))
-      ⟨isLocallyFree_biprod, isFinitePresentation_biprod⟩
+    (isFiniteLocallyFree R).IsClosedUnderBinaryProducts :=
+  ObjectProperty.isClosedUnderBinaryProducts_of_prop_biprod _ fun _ _ hM hN ↦ by
+    obtain ⟨_, _⟩ := hM
+    obtain ⟨_, _⟩ := hN
+    exact ⟨isLocallyFree_biprod, isFinitePresentation_biprod⟩
 
 variable [HasBinaryProducts C]
 

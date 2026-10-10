@@ -40,7 +40,10 @@ refinement. It is adapted from
 * `SheafOfModules.GeneratingSections.ofIteratedSlice`: generating sections on an iterated slice,
   read as generating sections on the slice over the underlying object;
 * `SheafOfModules.GeneratingSections.exists_sieve_sum_smul_eq`: finitely many generating sections
-  generate every section locally.
+  generate every section locally;
+* `SheafOfModules.LocalGeneratorsData.ofIsIso` transports local generators along an isomorphism;
+* `TauCeti.SheafOfModules.isFiniteType` is finite type as an object property, invariant under
+  isomorphisms.
 -/
 
 public section
@@ -90,6 +93,14 @@ instance _root_.SheafOfModules.GeneratingSections.isFiniteType_equivOfIso (e : M
   finite := by
     rw [GeneratingSections.equivOfIso_apply_I]
     exact hσ.finite
+
+/-- Generating sections pushed forward along an isomorphism exhibit a free sheaf if the original
+ones do. -/
+theorem _root_.SheafOfModules.GeneratingSections.isIso_ofEpi_π
+    (σ : M.GeneratingSections) (p : M ⟶ N) [IsIso p] (h : IsIso σ.π) :
+    IsIso (σ.ofEpi p).π := by
+  rw [GeneratingSections.ofEpi_π]
+  exact IsIso.comp_isIso' h inferInstance
 
 end EquivOfIso
 
@@ -285,6 +296,75 @@ theorem _root_.SheafOfModules.GeneratingSections.exists_sieve_sum_smul_eq
   exact ⟨a, (freeHomEquiv_symm_val_app_sum_smul G.s _ a).symm.trans ht⟩
 
 end LocalGeneration
+
+section FiniteType
+
+variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C}
+  {R : Sheaf J RingCat.{u}}
+  [∀ X, HasWeakSheafify (J.over X) AddCommGrpCat.{u}]
+  [∀ X, (J.over X).WEqualsLocallyBijective AddCommGrpCat.{u}]
+
+variable (R) in
+/-- Finite type of sheaves of modules, as a property of objects. -/
+abbrev isFiniteType : ObjectProperty (SheafOfModules.{u} R) :=
+  IsFiniteType
+
+variable {M N : SheafOfModules.{u} R}
+
+/-- Local generators data transported along an isomorphism `f : M ⟶ N`: the covering family is
+unchanged, and the generating sections of `M.over (q.X i)` are pushed forward along the
+restriction of `f`. -/
+def _root_.SheafOfModules.LocalGeneratorsData.ofIsIso (f : M ⟶ N) [IsIso f]
+    (q : M.LocalGeneratorsData) : N.LocalGeneratorsData where
+  I := q.I
+  X := q.X
+  coversTop := q.coversTop
+  generators i := (q.generators i).ofEpi (f.over (q.X i))
+
+/-- Transporting local generators preserves the cover's index type. -/
+@[simp]
+theorem _root_.SheafOfModules.LocalGeneratorsData.ofIsIso_I (f : M ⟶ N) [IsIso f]
+    (q : M.LocalGeneratorsData) : (q.ofIsIso f).I = q.I := (rfl)
+
+/-- Transporting local generators preserves the covering objects. -/
+@[simp]
+theorem _root_.SheafOfModules.LocalGeneratorsData.ofIsIso_X (f : M ⟶ N) [IsIso f]
+    (q : M.LocalGeneratorsData) :
+    (q.ofIsIso f).X = fun i ↦ q.X ((LocalGeneratorsData.ofIsIso_I f q).mp i) := (rfl)
+
+/-- Transporting local generators pushes each generating family along the restricted isomorphism. -/
+@[simp]
+theorem _root_.SheafOfModules.LocalGeneratorsData.ofIsIso_generators
+    (f : M ⟶ N) [IsIso f] (q : M.LocalGeneratorsData) (i : (q.ofIsIso f).I) :
+    (q.ofIsIso f).generators i =
+      cast (by rw [LocalGeneratorsData.ofIsIso_X])
+        ((q.generators ((LocalGeneratorsData.ofIsIso_I f q).mp i)).ofEpi
+          (f.over (q.X ((LocalGeneratorsData.ofIsIso_I f q).mp i)))) := (rfl)
+
+/-- Transporting local generators along an isomorphism preserves finite type. -/
+instance {M N : SheafOfModules.{u} R}
+    (f : M ⟶ N) [IsIso f] (q : M.LocalGeneratorsData) [hq : q.IsFiniteType] :
+    (q.ofIsIso f).IsFiniteType where
+  isFiniteType i := ⟨by
+    simpa only [LocalGeneratorsData.ofIsIso, GeneratingSections.ofEpi_I] using
+      (hq.isFiniteType i).finite⟩
+
+/-- Finite type of module sheaves is invariant under isomorphism. -/
+instance isClosedUnderIsomorphisms_isFiniteType :
+    (isFiniteType R).IsClosedUnderIsomorphisms where
+  of_iso e h := by
+    obtain ⟨q, _⟩ := h.exists_localGeneratorsData
+    exact ⟨q.ofIsIso e.hom, inferInstance⟩
+
+/-- Locally free data transported along an isomorphism is locally free data. -/
+instance (f : M ⟶ N) [IsIso f] (q : M.LocalGeneratorsData) [q.IsLocallyFreeData] :
+    (q.ofIsIso f).IsLocallyFreeData where
+  isIso i := by
+    rw [LocalGeneratorsData.ofIsIso_generators]
+    exact (q.generators _).isIso_ofEpi_π (f.over (q.X _))
+      (LocalGeneratorsData.IsLocallyFreeData.isIso (q := q) _)
+
+end FiniteType
 
 end SheafOfModules
 

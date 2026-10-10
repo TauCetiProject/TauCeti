@@ -62,15 +62,6 @@ section IsIso
 variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C}
   {R : Sheaf J RingCat.{u}} {M N : SheafOfModules.{u} R}
 
-/-- Generating sections pushed forward along an isomorphism exhibit a free sheaf if the original
-ones do. -/
-theorem _root_.SheafOfModules.GeneratingSections.isIso_ofEpi_π
-    [HasWeakSheafify J AddCommGrpCat.{u}] [J.WEqualsLocallyBijective AddCommGrpCat.{u}]
-    (σ : M.GeneratingSections) (p : M ⟶ N) [IsIso p] (h : IsIso σ.π) :
-    IsIso (σ.ofEpi p).π := by
-  rw [GeneratingSections.ofEpi_π]
-  exact IsIso.comp_isIso' h inferInstance
-
 /-- A presentation transported along an isomorphism has an invertible generating morphism if the
 original one does. -/
 theorem _root_.SheafOfModules.Presentation.isIso_ofIsIso_generators_π

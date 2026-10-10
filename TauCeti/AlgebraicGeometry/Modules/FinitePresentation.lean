@@ -11,6 +11,8 @@ public import TauCeti.AlgebraicGeometry.Modules.Localization
 public import Mathlib.RingTheory.LocalProperties.FinitePresentation
 public import Mathlib.RingTheory.Finiteness.Finsupp
 public import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.FinitePresentationDescent
+public import Mathlib.AlgebraicGeometry.Noetherian
 
 /-!
 # Finite presentation of modules and their associated sheaves
@@ -20,25 +22,18 @@ presented. More generally, the sections of a finitely presented sheaf over any a
 a finitely presented module over its ring of functions. On an affine scheme, the sheaf admits
 a global presentation with finitely many generators and relations.
 
-The forward implication uses Mathlib's `presentationTilde`, whose generating and relation
-families are precisely those of the module presentation. For the converse, finite local sheaf
-presentations can be refined to basic opens. A finite global presentation on an affine scheme
-gives a finite module presentation, and Mathlib's localization descent glues these finite
-presentations of modules. The analogous finite-type comparison supplies ambient cokernel
-closure for maps from quasicoherent sheaves of finite type to finitely presented sheaves.
-Over a Noetherian ring, ambient kernels of maps from quasicoherent sheaves of finite type
-to quasicoherent sheaves are also finitely presented.
+Cokernels of maps from quasicoherent sheaves of finite type to finitely presented sheaves are
+finitely presented on any scheme. On a locally Noetherian scheme, kernels of maps from
+quasicoherent sheaves of finite type to quasicoherent sheaves are finitely presented.
 This supplies the affine algebraic description of coherent sheaves on locally Noetherian
 schemes without imposing a Noetherian hypothesis on the affine result.
-
-The module-cokernel construction follows Mathlib's
-`AlgebraicGeometry.isIso_fromTildeΓ_of_presentation`, using the fully faithful tilde functor
-and its preservation of cokernels.
 
 ## References
 
 * The Stacks Project, *Properties of Schemes*, Section 28.17 (Tag 01PA),
   Lemma 28.17.2 (Tag 01PC).
+* Mathlib, `AlgebraicGeometry.isIso_fromTildeΓ_of_presentation` (formalization reference for
+  the module-cokernel construction).
 -/
 
 public section
@@ -67,13 +62,9 @@ instance isFinitePresentation_tilde [Module.FinitePresentation R M] :
   obtain ⟨s, hs, t, ht⟩ := Module.FinitePresentation.out (R := R) (M := M)
   let P := presentationTilde M (s : Set M) hs (t : Set (s →₀ R)) ht
   have : P.IsFinite := isFinite_presentationTilde M _ hs _ ht
-  let q := P.quasicoherentData
-  have : q.IsFinitePresentation := by
-    refine { isFinite_presentation := ?_ }
-    intro U
-    dsimp [q, SheafOfModules.Presentation.quasicoherentData]
-    apply +allowSynthFailures SheafOfModules.Presentation.isFinite_map
-  exact SheafOfModules.IsFinitePresentation.mk (M := tilde M) ⟨q, inferInstance⟩
+  exact SheafOfModules.IsFinitePresentation.mk (M := tilde M)
+    ⟨P.quasicoherentData,
+      TauCeti.SheafOfModules.Presentation.isFinitePresentation_quasicoherentData P⟩
 
 /-- A finite global presentation on `Spec R` gives a finitely presented module of global
 sections over `R`. -/
@@ -351,7 +342,7 @@ variable {M N : (Spec R).Modules}
 
 /-- The ambient cokernel of a morphism from a quasicoherent sheaf of finite type to a finitely
 presented sheaf on a spectrum is finitely presented, without a Noetherian hypothesis. -/
-instance _root_.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_cokernel_spec
+theorem _root_.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_cokernel_spec
     (f : M ⟶ N) [M.IsQuasicoherent] [M.IsFiniteType] [N.IsFinitePresentation] :
     (cokernel f).IsFinitePresentation := by
   have : N.IsQuasicoherent := SheafOfModules.instIsQuasicoherentOfIsFinitePresentation N
@@ -378,7 +369,7 @@ instance _root_.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_cokernel_s
 
 /-- Over a Noetherian ring, the ambient kernel of a morphism from a quasicoherent sheaf
 of finite type to a quasicoherent sheaf is finitely presented. -/
-instance _root_.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_kernel_spec
+theorem _root_.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_kernel_spec
     [IsNoetherianRing R] (f : M ⟶ N) [M.IsQuasicoherent] [M.IsFiniteType]
     [N.IsQuasicoherent] : (kernel f).IsFinitePresentation := by
   let g := (moduleSpecΓFunctor (R := R)).map f
@@ -390,6 +381,71 @@ instance _root_.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_kernel_spe
     Module.FinitePresentation.of_equiv (ModuleCat.kernelIsoKer g).symm.toLinearEquiv
   exact (SheafOfModules.isFinitePresentation (Spec R).ringCatSheaf).prop_of_iso
     (tildeKernelIso f) (isFinitePresentation_tilde (kernel g))
+
+section Global
+
+variable {X Y : Scheme.{u}}
+
+/-- A module sheaf is finitely presented exactly when its restrictions to the spectra of all
+affine opens are finitely presented. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_iff_affine_restrict
+    (M : X.Modules) :
+    M.IsFinitePresentation ↔
+      ∀ U : X.affineOpens, (M.restrict (U.2.isoSpec.inv ≫ U.1.ι)).IsFinitePresentation := by
+  constructor
+  · intro h U
+    let := h
+    infer_instance
+  intro hM
+  classical
+  have hlocal (U : X.affineOpens) : (M.over U.1).IsFinitePresentation := by
+    let eSpec : (M.restrict U.1.ι).restrict U.2.isoSpec.inv ≅
+        M.restrict (U.2.isoSpec.inv ≫ U.1.ι) :=
+      ((Scheme.Modules.restrictFunctorComp U.2.isoSpec.inv U.1.ι).app M).symm
+    have h := (SheafOfModules.isFinitePresentation (Spec Γ(X, U.1)).ringCatSheaf).prop_of_iso
+      eSpec.symm (hM U)
+    have := (TauCeti.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_restrict_iff_of_isIso
+      (M.restrict U.1.ι) U.2.isoSpec.inv).mp h
+    obtain ⟨P, hP⟩ := (M.restrict U.1.ι).exists_isFinite_presentation_of_isAffine
+    let Q := TauCeti.AlgebraicGeometry.Scheme.Modules.presentationOver U.1 P
+    have : P.IsFinite := hP
+    exact SheafOfModules.IsFinitePresentation.mk (M := M.over U.1)
+      ⟨Q.quasicoherentData, inferInstance⟩
+  exact SheafOfModules.IsFinitePresentation.of_coversTop M (fun U : X.affineOpens ↦ U.1)
+    (by simpa only [Opens.coversTop_iff, IsOpenCover] using iSup_affineOpens_eq_top X)
+
+variable {M N : X.Modules}
+
+/-- The ambient cokernel of a map from a quasicoherent sheaf of finite type to a finitely
+presented sheaf is finitely presented on any scheme. -/
+instance _root_.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_cokernel
+    (f : M ⟶ N) [M.IsQuasicoherent] [M.IsFiniteType] [N.IsFinitePresentation] :
+    (cokernel f).IsFinitePresentation := by
+  apply (cokernel f).isFinitePresentation_iff_affine_restrict.mpr
+  intro U
+  let F := Scheme.Modules.restrictFunctor (U.2.isoSpec.inv ≫ U.1.ι)
+  have : (F.obj M).IsQuasicoherent := inferInstance
+  have : (F.obj M).IsFiniteType := inferInstance
+  have : (F.obj N).IsFinitePresentation := inferInstance
+  exact (SheafOfModules.isFinitePresentation (Spec Γ(X, U.1)).ringCatSheaf).prop_of_iso
+    (PreservesCokernel.iso F f).symm (Scheme.Modules.isFinitePresentation_cokernel_spec (F.map f))
+
+/-- On a locally Noetherian scheme, the ambient kernel of a map from a quasicoherent sheaf of
+finite type to a quasicoherent sheaf is finitely presented. -/
+instance _root_.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_kernel
+    [IsLocallyNoetherian X] (f : M ⟶ N) [M.IsQuasicoherent] [M.IsFiniteType]
+    [N.IsQuasicoherent] : (kernel f).IsFinitePresentation := by
+  apply (kernel f).isFinitePresentation_iff_affine_restrict.mpr
+  intro U
+  let F := Scheme.Modules.restrictFunctor (U.2.isoSpec.inv ≫ U.1.ι)
+  have : (F.obj M).IsQuasicoherent := inferInstance
+  have : (F.obj M).IsFiniteType := inferInstance
+  have : (F.obj N).IsQuasicoherent := inferInstance
+  have : IsNoetherianRing Γ(X, U.1) := IsLocallyNoetherian.component_noetherian U
+  exact (SheafOfModules.isFinitePresentation (Spec Γ(X, U.1)).ringCatSheaf).prop_of_iso
+    (PreservesKernel.iso F f).symm (Scheme.Modules.isFinitePresentation_kernel_spec (F.map f))
+
+end Global
 
 end
 

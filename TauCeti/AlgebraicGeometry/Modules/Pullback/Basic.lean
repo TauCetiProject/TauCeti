@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.LocallyFree
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Pushforward
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.PullbackFree
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.LocalIsomorphism
@@ -560,6 +562,83 @@ instance isLocallyFree_pullback (f : X ⟶ Y) (M : Y.Modules) [M.IsLocallyFree] 
     ((pullback f).obj M).IsLocallyFree := by
   obtain ⟨q, _⟩ := SheafOfModules.IsLocallyFree.exists_isLocallyFreeData (M := M)
   exact (q.pullback f).isLocallyFree
+
+/-- Restriction of module sheaves along an open immersion preserves small limits. -/
+instance _root_.TauCeti.AlgebraicGeometry.Scheme.Modules.preservesLimitsOfSize_restrictFunctor
+    (f : X ⟶ Y) [IsOpenImmersion f] :
+    PreservesLimitsOfSize.{u, u} (Scheme.Modules.restrictFunctor f) := by
+  -- Restriction is the continuous-site pushforward with the inverse structure-ring map.
+  unfold Scheme.Modules.restrictFunctor
+  apply TauCeti.SheafOfModules.preservesLimitsOfSize_pushforward
+
+/-- Restriction to an open subscheme preserves finite presentation. -/
+instance _root_.TauCeti.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_restrict
+    (M : Y.Modules) [M.IsFinitePresentation] (f : X ⟶ Y) [IsOpenImmersion f] :
+    (M.restrict f).IsFinitePresentation :=
+  (SheafOfModules.isFinitePresentation X.ringCatSheaf).prop_of_iso
+    ((Scheme.Modules.restrictFunctorIsoPullback f).app M).symm inferInstance
+
+/-- Restriction to an open subscheme preserves finite type. -/
+instance _root_.TauCeti.AlgebraicGeometry.Scheme.Modules.isFiniteType_restrict
+    (M : Y.Modules) [M.IsFiniteType] (f : X ⟶ Y) [IsOpenImmersion f] :
+    (M.restrict f).IsFiniteType :=
+  (TauCeti.SheafOfModules.isFiniteType X.ringCatSheaf).prop_of_iso
+    ((Scheme.Modules.restrictFunctorIsoPullback f).app M).symm inferInstance
+
+/-- Restricting along an isomorphism and then its inverse recovers the original module. -/
+def _root_.TauCeti.AlgebraicGeometry.Scheme.Modules.restrictRestrictInvIso
+    (M : Y.Modules) (f : X ⟶ Y) [IsIso f] : (M.restrict f).restrict (inv f) ≅ M :=
+  ((Scheme.Modules.restrictFunctorComp (inv f) f).app M).symm ≪≫
+    (Scheme.Modules.restrictFunctorCongr (IsIso.inv_hom_id f)).app M ≪≫
+    Scheme.Modules.restrictFunctorId.app M
+
+/-- The canonical restriction comparison is the composite of the composition, congruence and
+identity comparisons. -/
+@[simp]
+lemma _root_.TauCeti.AlgebraicGeometry.Scheme.Modules.restrictRestrictInvIso_hom
+    (M : Y.Modules) (f : X ⟶ Y) [IsIso f] :
+    (TauCeti.AlgebraicGeometry.Scheme.Modules.restrictRestrictInvIso M f).hom =
+      ((Scheme.Modules.restrictFunctorComp (inv f) f).inv.app M) ≫
+        (Scheme.Modules.restrictFunctorCongr (IsIso.inv_hom_id f)).hom.app M ≫
+        Scheme.Modules.restrictFunctorId.hom.app M := (rfl)
+
+/-- The inverse restriction comparison reverses the identity, congruence and composition
+comparisons. -/
+@[simp]
+lemma _root_.TauCeti.AlgebraicGeometry.Scheme.Modules.restrictRestrictInvIso_inv
+    (M : Y.Modules) (f : X ⟶ Y) [IsIso f] :
+    (TauCeti.AlgebraicGeometry.Scheme.Modules.restrictRestrictInvIso M f).inv =
+      Scheme.Modules.restrictFunctorId.inv.app M ≫
+        (Scheme.Modules.restrictFunctorCongr (IsIso.inv_hom_id f)).inv.app M ≫
+        ((Scheme.Modules.restrictFunctorComp (inv f) f).hom.app M) := (rfl)
+
+/-- Restriction along an isomorphism detects finite presentation. -/
+@[simp]
+theorem _root_.TauCeti.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_restrict_iff_of_isIso
+    (M : Y.Modules) (f : X ⟶ Y) [IsIso f] :
+    (M.restrict f).IsFinitePresentation ↔ M.IsFinitePresentation := by
+  constructor
+  · intro h
+    let := h
+    exact (SheafOfModules.isFinitePresentation Y.ringCatSheaf).prop_of_iso
+      (TauCeti.AlgebraicGeometry.Scheme.Modules.restrictRestrictInvIso M f) inferInstance
+  · intro h
+    let := h
+    infer_instance
+
+/-- Restriction along an isomorphism detects finite type. -/
+@[simp]
+theorem _root_.TauCeti.AlgebraicGeometry.Scheme.Modules.isFiniteType_restrict_iff_of_isIso
+    (M : Y.Modules) (f : X ⟶ Y) [IsIso f] :
+    (M.restrict f).IsFiniteType ↔ M.IsFiniteType := by
+  constructor
+  · intro h
+    let := h
+    exact (TauCeti.SheafOfModules.isFiniteType Y.ringCatSheaf).prop_of_iso
+      (TauCeti.AlgebraicGeometry.Scheme.Modules.restrictRestrictInvIso M f) inferInstance
+  · intro h
+    let := h
+    infer_instance
 
 end
 

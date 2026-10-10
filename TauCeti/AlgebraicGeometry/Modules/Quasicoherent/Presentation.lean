@@ -30,6 +30,34 @@ universe u
 
 noncomputable section
 
+/-- A presentation on an open subscheme gives a presentation on the corresponding slice site. -/
+def AlgebraicGeometry.Scheme.Modules.presentationOver
+    {X : Scheme.{u}} {M : X.Modules} (U : X.Opens)
+    (P : (M.restrict U.ι).Presentation) : (M.over U).Presentation := by
+  let E := Scheme.Modules.overEquiv U
+  let F : SheafOfModules U.toScheme.ringCatSheaf ⥤
+      SheafOfModules (X.ringCatSheaf.over U) := E.inverse
+  have : PreservesColimitsOfSize.{u, u} F :=
+    E.symm.toAdjunction.leftAdjoint_preservesColimits
+  let e : F.obj (M.restrict U.ι) ≅ M.over U :=
+    E.inverse.mapIso ((Scheme.Modules.overFunctorEquiv U).app M).symm ≪≫
+      (E.unitIso.app (M.over U)).symm
+  exact @SheafOfModules.Presentation.ofIsIso _ _ _ _ _ _ _ _ e.hom (Iso.isIso_hom e)
+    (P.map F (U.sheafOfModulesEquivOverInverseUnit X.ringCatSheaf).symm)
+
+/-- Passing from an open subscheme to its slice site preserves finite presentations. -/
+instance AlgebraicGeometry.Scheme.Modules.isFinite_presentationOver
+    {X : Scheme.{u}} {M : X.Modules} (U : X.Opens)
+    (P : (M.restrict U.ι).Presentation) [P.IsFinite] :
+    (AlgebraicGeometry.Scheme.Modules.presentationOver U P).IsFinite := by
+  let F : SheafOfModules U.toScheme.ringCatSheaf ⥤
+      SheafOfModules (X.ringCatSheaf.over U) := (Scheme.Modules.overEquiv U).inverse
+  have : PreservesColimitsOfSize.{u, u} F :=
+    (Scheme.Modules.overEquiv U).symm.toAdjunction.leftAdjoint_preservesColimits
+  unfold AlgebraicGeometry.Scheme.Modules.presentationOver
+  exact @SheafOfModules.instIsFiniteOfIsIso _ _ _ _ _ _ _ _ _ (Iso.isIso_hom _) _
+    (SheafOfModules.Presentation.isFinite_map _ _ _)
+
 /-- A presentation on the canonical spectrum of an affine scheme transports back to a
 presentation on the affine scheme. -/
 def _root_.AlgebraicGeometry.Scheme.Modules.presentationOfIsoSpec
