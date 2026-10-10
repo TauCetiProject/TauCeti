@@ -75,11 +75,10 @@ theorem laurentSeriesExpansion_derivativeOfSeparating (z : F) :
   set e := P.laurentSeriesExpansion hP ht
   -- Make `k⸨X⸩` an `F`-module through the expansion, so that `z ↦ (e z)'` is a derivation.
   let _ : Module F k⸨X⸩ := Module.compHom _ e.toRingHom
+  have hsmul (z : F) (f : k⸨X⸩) : z • f = e z * f := rfl
   -- The `k`-module structure on `k⸨X⸩` found by instance search is the coefficientwise one.
   have he (c : k) (z : F) : e (c • z) = c • e z := by
-    ext n
-    rw [Algebra.smul_def, map_mul, AlgHom.commutes, TauCeti.LaurentSeries.coeff_algebraMap_mul,
-      HahnSeries.coeff_smul, smul_eq_mul]
+    rw [Algebra.smul_def, map_mul, AlgHom.commutes, laurentSeries_algebraMap_mul_eq_smul]
   have _ : IsScalarTower k F k⸨X⸩ := ⟨fun c z f ↦ by
     -- `z • f` is `e z * f` by the definition of `Module.compHom`.
     change e (c • z) * f = c • (e z * f)
@@ -89,17 +88,12 @@ theorem laurentSeriesExpansion_derivativeOfSeparating (z : F) :
       map_add' := by simp
       map_smul' := by simp [he]
       map_one_eq_zero' := by
-        -- Unfold the derivation to its defining formula `z ↦ (e z)'`.
-        change LaurentSeries.derivative k (e 1) = 0
-        rw [map_one, ← HahnSeries.single_zero_one, LaurentSeries.derivative_apply,
-          LaurentSeries.hasseDeriv_single]
-        simp
+        simpa only [LinearMap.coe_mk, AddHom.coe_mk, map_one, laurentSeriesDerivation_apply] using
+          (laurentSeriesDerivation k).map_one_eq_zero
       leibniz' a b := by
-        -- `a • m` is `e a * m` by the definition of `Module.compHom`.
-        change LaurentSeries.derivative k (e (a * b)) =
-          e a * LaurentSeries.derivative k (e b) + e b * LaurentSeries.derivative k (e a)
-        rw [map_mul, LaurentSeries.derivative_mul]
-        ring }
+        simpa only [LinearMap.coe_mk, AddHom.coe_mk, map_mul, hsmul, smul_eq_mul,
+          laurentSeriesDerivation_apply] using
+          (laurentSeriesDerivation k).leibniz (e a) (e b) }
   -- By the chain rule `D z = (dz/dt) • D t`, and `D t = (X)' = 1`. Unfolding `D` and the
   -- `Module.compHom` scalar action turns the chain rule into an identity of Laurent series.
   have h := D.apply_eq_derivativeOfSeparating_smul htr z
@@ -113,25 +107,6 @@ uniformizers `s` and `t` at a rational place, with `t` separating (Proposition 4
 theorem residue_eq_residue_mul_derivativeOfSeparating (hs : P.ord s = 1) (z : F) :
     P.residue hP hs z = P.residue hP ht (z * derivativeOfSeparating htr s) :=
   P.residue_eq_residue_mul hP ht hs (P.laurentSeriesExpansion_derivativeOfSeparating hP ht htr s) z
-
-/-- The coefficient formula for function-field differentiation in a separating uniformizer.
-The integer multiplier is interpreted in the constant field, so it can vanish in positive
-characteristic. -/
-theorem coeff_laurentSeriesExpansion_derivativeOfSeparating (z : F) (n : ℤ) :
-    (P.laurentSeriesExpansion hP ht (derivativeOfSeparating htr z)).coeff n =
-      ((n + 1 : ℤ) : k) * (P.laurentSeriesExpansion hP ht z).coeff (n + 1) := by
-  simp [laurentSeriesExpansion_derivativeOfSeparating, _root_.LaurentSeries.derivative_apply]
-
-include hP ht in
-/-- Differentiation lowers the order filtration by at most one. Using the filtration rather
-than the additive order includes functions whose derivative is zero. -/
-theorem derivativeOfSeparating_mem_filtration {m : ℤ} {z : F} (hz : z ∈ P.filtration m) :
-    derivativeOfSeparating htr z ∈ P.filtration (m - 1) := by
-  rw [mem_filtration_iff, ← P.valuation_laurentSeriesExpansion hP ht,
-    _root_.LaurentSeries.valuation_le_iff_coeff_lt_eq_zero k]
-  intro n hn
-  rw [coeff_laurentSeriesExpansion_derivativeOfSeparating]
-  rw [P.coeff_laurentSeriesExpansion_eq_zero_of_mem_filtration hP ht hz (by omega), mul_zero]
 
 /-- The derivative `dy/dt` has residue zero with respect to `t`: the formal derivative of a
 Laurent series has no `T⁻¹` term. -/

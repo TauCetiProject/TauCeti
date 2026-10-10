@@ -11,9 +11,10 @@ public import Mathlib.RingTheory.Derivation.Basic
 /-!
 # Differentiation of Laurent series
 
-The coefficientwise formal derivative of Laurent series satisfies the Leibniz rule over any
-commutative ring. Bundling it as a derivation allows the universal property of Kähler
-differentials to compare it with differentiation of algebraic functions in a local parameter.
+This file bundles the coefficientwise formal derivative of Laurent series as a derivation over
+any commutative ring, using the Leibniz rule from `LaurentSeries.Basic`. The bundle allows the
+universal property of Kähler differentials to compare it with differentiation of algebraic
+functions in a local parameter.
 
 The underlying linear map is Mathlib's `LaurentSeries.derivative`; no new differentiation
 operation is introduced.
@@ -44,8 +45,9 @@ noncomputable def laurentSeriesDerivation :
     intro h
     simpa using congrArg (fun i : ℤ ↦ (i : R)) h
   leibniz' f g := by
-    simpa only [LinearMap.coe_mk, AddHom.coe_mk, smul_eq_mul, mul_comm, add_comm] using
-      _root_.LaurentSeries.derivative_mul f g
+    simp only [LinearMap.coe_mk, AddHom.coe_mk, smul_eq_mul]
+    rw [_root_.LaurentSeries.derivative_mul]
+    ring
 
 /-- The bundled Laurent derivation evaluates as the coefficientwise derivative. -/
 @[simp]
