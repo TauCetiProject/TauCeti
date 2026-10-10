@@ -90,6 +90,16 @@ theorem prefixSum_min (k : ℕ) (x : Fin n → ℝ) : prefixSum (min k n) x = pr
   · rw [min_eq_left hk]
   · rw [min_eq_right hk, prefixSum_of_le le_rfl, prefixSum_of_le hk]
 
+/-- The prefix sums of the first `n` terms of a sequence `f : ℕ → ℝ` are its partial sums, capped
+at `n`. -/
+theorem prefixSum_eq_sum_range (k : ℕ) (f : ℕ → ℝ) :
+    prefixSum k (fun i : Fin n ↦ f i) = ∑ i ∈ range (min k n), f i := by
+  rw [prefixSum, sum_filter, Fin.sum_univ_eq_sum_range (fun i ↦ if i < k then f i else 0),
+    ← sum_filter]
+  congr 1
+  ext i
+  simp [lt_min_iff, and_comm]
+
 /-- Prefix sums are additive in the tuple. -/
 @[simp]
 theorem prefixSum_add (k : ℕ) (x y : Fin n → ℝ) :

@@ -103,6 +103,23 @@ theorem map_smul_left (f : M →ₗ[k] M') (g : N →ₗ[k] N')
 
 end Map
 
+section Lift
+
+variable {P : Type*} [AddCommGroup P] [Module k P] [Module S P]
+
+/-- A balanced bilinear map equivariant in the first factor induces a left-equivariant map. -/
+@[simp]
+theorem lift_smul_left (f : M →ₗ[k] N →ₗ[k] P)
+    (hf : ∀ (a : A) m n, f (op a • m) n = f m (a • n))
+    (hfs : ∀ (s : S) m n, f (s • m) n = s • f m n)
+    (s : S) (z : BalancedTensorProduct k A M N) :
+    lift f hf (s • z) = s • lift f hf z := by
+  induction z using induction_on with
+  | ht m n => simp [hfs]
+  | ha x y hx hy => simp only [smul_add, map_add, hx, hy]
+
+end Lift
+
 end Left
 
 section Right
@@ -174,6 +191,23 @@ theorem map_smul_right (f : M →ₗ[k] M') (g : N →ₗ[k] N')
   | ha x y hx hy => simp only [smul_add, map_add, hx, hy]
 
 end Map
+
+section Lift
+
+variable {P : Type*} [AddCommGroup P] [Module k P] [Module T P]
+
+/-- A balanced bilinear map equivariant in the second factor induces a right-equivariant map. -/
+@[simp]
+theorem lift_smul_right (f : M →ₗ[k] N →ₗ[k] P)
+    (hf : ∀ (a : A) m n, f (op a • m) n = f m (a • n))
+    (hfs : ∀ (s : T) m n, f m (s • n) = s • f m n)
+    (s : T) (z : BalancedTensorProduct k A M N) :
+    lift f hf (s • z) = s • lift f hf z := by
+  induction z using induction_on with
+  | ht m n => simp [hfs]
+  | ha x y hx hy => simp only [smul_add, map_add, hx, hy]
+
+end Lift
 
 end Right
 

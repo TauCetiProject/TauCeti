@@ -44,6 +44,8 @@ uses `PowerSeries.coeff_succ_pow_succ_eq_coeff_pow_mul_derivative` instead.
   coefficientwise scalar action.
 * `LaurentSeries.derivative_mul`: the product rule for the derivative of Laurent series.
 * `PowerSeries.coe_derivative`: the derivative of Laurent series extends that of power series.
+* `LaurentSeries.valuation_derivative_sub_zsmul_single_mul_le`: if `f` vanishes to order at least
+  `m`, so does `f' - m X⁻¹ f`.
 * `PowerSeries.coeff_neg_one_coe_zpow_mul_derivative`: the residue of `φ ^ n * φ'` for a power
   series `φ` of order one is `1` if `n = -1` and `0` otherwise.
 
@@ -159,6 +161,30 @@ theorem derivative_mul (f g : R⸨X⸩) :
   simp only [Derivation.leibniz, smul_eq_mul, PowerSeries.coe_add, PowerSeries.coe_mul]
   rw [hd, hab]
   ring
+
+/-- The derivative of `f` agrees with `m X⁻¹ f` up to a correction whose coefficient of `Xⁿ` is
+`(n + 1 - m)` times the coefficient of `Xⁿ⁺¹` in `f`. -/
+theorem coeff_derivative_sub_zsmul_single_mul (m n : ℤ) (f : R⸨X⸩) :
+    (derivative R f - m • (single (-1) 1 * f)).coeff n =
+      ((n + 1 - m : ℤ) : R) * f.coeff (n + 1) := by
+  rw [coeff_sub, coeff_smul, coeff_single_mul, derivative_apply, hasseDeriv_coeff,
+    Ring.choose_one_right, sub_neg_eq_add, one_mul, zsmul_eq_mul, zsmul_eq_mul]
+  push_cast
+  ring
+
+/-- **Differentiation lowers the order by at most one, with leading term `m X⁻¹ f`.** If `f` has
+valuation at most `exp (-m)`, that is, vanishes to order at least `m`, then `f' - m X⁻¹ f` again
+vanishes to order at least `m`. -/
+theorem valuation_derivative_sub_zsmul_single_mul_le {K : Type*} [Field K] {m : ℤ} {f : K⸨X⸩}
+    (hf : Valued.v f ≤ WithZero.exp (-m)) :
+    Valued.v (derivative K f - m • (single (-1) 1 * f)) ≤ WithZero.exp (-m) := by
+  rw [valuation_le_iff_coeff_lt_eq_zero] at hf ⊢
+  intro n hn
+  rw [coeff_derivative_sub_zsmul_single_mul]
+  -- Below `m - 1` the coefficient of `f` vanishes; at `m - 1` the integer factor does.
+  rcases lt_or_eq_of_le (show n + 1 ≤ m by omega) with h | h
+  · rw [hf _ h, mul_zero]
+  · simp [h]
 
 end LaurentSeries
 

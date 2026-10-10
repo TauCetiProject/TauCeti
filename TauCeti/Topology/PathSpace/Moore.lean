@@ -31,25 +31,38 @@ map.  So a Moore path is not a bundled function, and equality of Moore paths is 
 length and on the path (`MoorePath.ext`).
 
 The Moore loop space is not homeomorphic to Mathlib's loop space `Path x x` of loops parametrized
-by the unit interval: when `X` is a point, the Moore loops at it form a copy of `[0, ∞)`.
+by the unit interval: when `X` is a point, the Moore loops at it form a copy of `[0, ∞)`
+(`MooreLoopSpace.lengthHomeomorph`).
 
 ## Main definitions
 
 * `TauCeti.MoorePath X`: Moore paths in `X`, with `length`, `source` and `target`.
-* `TauCeti.MoorePath.refl x`: the constant path at `x` of length zero.
+* `TauCeti.MoorePath.refl x`: the constant path at `x` of length zero, and
+  `TauCeti.MoorePath.constOfLength x L`: the constant path at `x` of length `L`.
 * `TauCeti.MoorePath.trans`: concatenation of two Moore paths with matching endpoints.
+* `TauCeti.MoorePath.symm`: the reversal of a Moore path.
+* `TauCeti.MoorePath.rescale γ ℓ`: the Moore path `γ` reparametrized to the length `ℓ`.
 * `TauCeti.MoorePath.map`: the image of a Moore path under a continuous map.
+* `TauCeti.MoorePath.pathsBetween A B`: the Moore paths from `A` to `B`, the path space
+  `P_{A→B} X`.
 * `TauCeti.MooreLoopSpace X x`: the Moore loops at `x`, a monoid under concatenation with unit
   the constant loop of length zero.
 * `TauCeti.MooreLoopSpace.map`: the continuous monoid homomorphism induced by a based map.
+* `TauCeti.MooreLoopSpace.lengthHom`: the length, a continuous monoid homomorphism to `[0, ∞)`,
+  with the constant loops `TauCeti.MooreLoopSpace.constOfLengthHom` as a section.
 
 ## Main results
 
 * `TauCeti.MoorePath.trans_assoc`, `TauCeti.MoorePath.refl_trans`,
   `TauCeti.MoorePath.trans_refl`: concatenation is strictly associative and strictly unital.
+* `TauCeti.MoorePath.symm_symm`, `TauCeti.MoorePath.symm_trans`: reversal is an involution that
+  reverses concatenations.
 * `TauCeti.MoorePath.continuous_iff`: the characterization of continuous families of Moore paths.
 * `Continuous.moorePath_trans`: concatenation is continuous.
+* `TauCeti.MoorePath.isClosed_pathsBetween`: the paths between closed subsets form a closed
+  subspace.
 * `TauCeti.MooreLoopSpace.instContinuousMul`: the Moore loop space is a topological monoid.
+* `TauCeti.MooreLoopSpace.lengthHomeomorph`: the Moore loop space of a point is `[0, ∞)`.
 
 ## References
 
@@ -200,6 +213,38 @@ theorem eq_refl_of_length_eq_zero {γ : MoorePath X} (h : γ.length = 0) : γ = 
 theorem continuous_refl : Continuous (refl : X → MoorePath X) :=
   continuous_iff.2 ⟨continuous_const, continuous_fst⟩
 
+/-- The constant Moore path at `x` of length `L`. -/
+def constOfLength (x : X) (L : ℝ≥0) : MoorePath X where
+  toContinuousMap := .const ℝ≥0 x
+  length := L
+  apply_of_length_le' _ _ := rfl
+
+@[simp]
+theorem constOfLength_apply (x : X) (L t : ℝ≥0) : constOfLength x L t = x :=
+  (rfl)
+
+@[simp]
+theorem length_constOfLength (x : X) (L : ℝ≥0) : (constOfLength x L).length = L :=
+  (rfl)
+
+@[simp]
+theorem source_constOfLength (x : X) (L : ℝ≥0) : (constOfLength x L).source = x :=
+  (rfl)
+
+@[simp]
+theorem target_constOfLength (x : X) (L : ℝ≥0) : (constOfLength x L).target = x :=
+  (rfl)
+
+@[simp]
+theorem constOfLength_zero (x : X) : constOfLength x 0 = refl x :=
+  (rfl)
+
+/-- The constant paths form a continuous family in the point and the length. -/
+@[fun_prop]
+protected theorem _root_.Continuous.moorePath_constOfLength {f : Y → X} {g : Y → ℝ≥0}
+    (hf : Continuous f) (hg : Continuous g) : Continuous fun y ↦ constOfLength (f y) (g y) :=
+  continuous_iff.2 ⟨hg, hf.comp continuous_fst⟩
+
 /-! ### Concatenation -/
 
 /-- The path underlying a concatenation: `γ` up to time `γ.length`, then `δ` shifted by
@@ -299,6 +344,132 @@ theorem trans_refl {y : X} (γ : MoorePath X) (h : γ.target = (refl y).source) 
   · exact trans_apply_of_le _ _ _ ht
   · rw [trans_apply_of_length_le _ _ _ ht, refl_apply, γ.apply_of_length_le ht, h, source_refl]
 
+/-- Constant paths at a point concatenate by adding their lengths. -/
+@[simp]
+theorem constOfLength_trans_constOfLength (x : X) (L L' : ℝ≥0) :
+    (constOfLength x L).trans (constOfLength x L') (by simp) = constOfLength x (L + L') := by
+  refine ext rfl fun t ↦ ?_
+  rw [trans_apply]
+  split_ifs <;> rfl
+
+/-- Appending a constant path at the target changes only the length. -/
+theorem trans_constOfLength_target_apply (γ : MoorePath X) (s t : ℝ≥0) :
+    γ.trans (constOfLength γ.target s) (source_constOfLength _ _).symm t = γ t := by
+  rcases le_total t γ.length with ht | ht
+  · exact trans_apply_of_le _ _ _ ht
+  · rw [trans_apply_of_length_le _ _ _ ht, constOfLength_apply, γ.apply_of_length_le ht]
+
+/-! ### Reversal -/
+
+/-- The **reversal** of a Moore path: the same length, run backwards, `t ↦ γ (γ.length - t)`. -/
+def symm (γ : MoorePath X) : MoorePath X where
+  toFun t := γ (γ.length - t)
+  continuous_toFun := γ.continuous.comp (continuous_const.sub continuous_id)
+  length := γ.length
+  apply_of_length_le' t ht := by rw [tsub_eq_zero_of_le ht, tsub_self]
+
+@[simp]
+theorem symm_apply (γ : MoorePath X) (t : ℝ≥0) : γ.symm t = γ (γ.length - t) :=
+  (rfl)
+
+@[simp]
+theorem length_symm (γ : MoorePath X) : γ.symm.length = γ.length :=
+  (rfl)
+
+@[simp]
+theorem source_symm (γ : MoorePath X) : γ.symm.source = γ.target := by
+  rw [source_def, symm_apply, tsub_zero, target_def]
+
+@[simp]
+theorem target_symm (γ : MoorePath X) : γ.symm.target = γ.source := by
+  rw [target_def, length_symm, symm_apply, tsub_self, source_def]
+
+@[simp]
+theorem symm_symm (γ : MoorePath X) : γ.symm.symm = γ := by
+  refine ext rfl fun t ↦ ?_
+  rw [symm_apply, symm_apply, length_symm]
+  rcases le_total t γ.length with ht | ht
+  · rw [tsub_tsub_cancel_of_le ht]
+  · rw [tsub_eq_zero_of_le ht, tsub_zero, γ.apply_of_length_le ht, target_def]
+
+@[simp]
+theorem symm_refl (x : X) : (refl x).symm = refl x :=
+  ext rfl fun _ ↦ rfl
+
+@[simp]
+theorem symm_constOfLength (x : X) (L : ℝ≥0) : (constOfLength x L).symm = constOfLength x L :=
+  ext rfl fun _ ↦ rfl
+
+/-- Reversal exchanges the order of a concatenation. -/
+theorem symm_trans (γ δ : MoorePath X) (h : γ.target = δ.source) :
+    (γ.trans δ h).symm = δ.symm.trans γ.symm (by rw [target_symm, source_symm, h]) := by
+  refine ext (add_comm _ _) fun t ↦ ?_
+  rw [symm_apply, length_trans]
+  rcases le_total t δ.length with ht | ht
+  · have ht' : t ≤ δ.symm.length := by rwa [length_symm]
+    rw [trans_apply_of_le _ _ _ ht', symm_apply, add_tsub_assoc_of_le ht, trans_apply_length_add]
+  · obtain ⟨s, rfl⟩ := exists_add_of_le ht
+    have ht' : δ.symm.length ≤ δ.length + s := by rwa [length_symm]
+    rw [trans_apply_of_length_le _ _ _ ht', symm_apply, length_symm, add_tsub_cancel_left,
+      add_comm γ.length, add_tsub_add_eq_tsub_left]
+    exact trans_apply_of_le _ _ _ tsub_le_self
+
+/-! ### Reparametrization to a given length -/
+
+/-- The Moore path `γ` reparametrized to the length `ℓ`: the path `t ↦ γ (γ.length * t / ℓ)`.
+For `ℓ = 0` it is the constant path of length zero at the source. -/
+def rescale (γ : MoorePath X) (ℓ : ℝ≥0) : MoorePath X where
+  toFun t := γ (γ.length * t / ℓ)
+  continuous_toFun := γ.continuous.comp ((continuous_const.mul continuous_id).div_const _)
+  length := ℓ
+  apply_of_length_le' t ht := by
+    rcases eq_or_ne ℓ 0 with rfl | hℓ
+    · rw [div_zero, div_zero]
+    · rw [mul_div_cancel_right₀ _ hℓ, γ.apply_of_length_le ((le_div_iff₀ (pos_iff_ne_zero.2 hℓ)).2
+        (mul_le_mul le_rfl ht zero_le zero_le)), target_def]
+
+@[simp]
+theorem rescale_apply (γ : MoorePath X) (ℓ t : ℝ≥0) : γ.rescale ℓ t = γ (γ.length * t / ℓ) :=
+  (rfl)
+
+@[simp]
+theorem length_rescale (γ : MoorePath X) (ℓ : ℝ≥0) : (γ.rescale ℓ).length = ℓ :=
+  (rfl)
+
+@[simp]
+theorem source_rescale (γ : MoorePath X) (ℓ : ℝ≥0) : (γ.rescale ℓ).source = γ.source := by
+  rw [source_def, rescale_apply, mul_zero, zero_div, source_def]
+
+theorem target_rescale (γ : MoorePath X) {ℓ : ℝ≥0} (hℓ : ℓ ≠ 0) :
+    (γ.rescale ℓ).target = γ.target := by
+  rw [target_def, length_rescale, rescale_apply, mul_div_cancel_right₀ _ hℓ, target_def]
+
+/-- Reparametrizing a Moore path to its own length changes nothing. -/
+@[simp]
+theorem rescale_length (γ : MoorePath X) : γ.rescale γ.length = γ := by
+  refine ext rfl fun t ↦ ?_
+  rw [rescale_apply]
+  rcases eq_or_ne γ.length 0 with h | h
+  · rw [h, zero_mul, zero_div, γ.apply_of_length_le h.le,
+      γ.apply_of_length_le (h.trans_le (zero_le : (0 : ℝ≥0) ≤ t))]
+  · rw [mul_div_cancel_left₀ _ h]
+
+@[simp]
+theorem rescale_zero (γ : MoorePath X) : γ.rescale 0 = refl γ.source :=
+  ext (by rw [length_rescale, length_refl]) fun t ↦ by
+    rw [rescale_apply, div_zero, refl_apply, source_def]
+
+/-- Rescaling is continuous in the path and in the length, for nonzero lengths. -/
+@[fun_prop]
+theorem _root_.Continuous.moorePath_rescale {f : Y → MoorePath X} {g : Y → ℝ≥0}
+    (hf : Continuous f) (hg : Continuous g) (h0 : ∀ y, g y ≠ 0) :
+    Continuous fun y ↦ (f y).rescale (g y) := by
+  refine continuous_iff.2 ⟨hg, ?_⟩
+  simp only [rescale_apply]
+  exact (hf.comp continuous_fst).moorePath_eval
+    ((((continuous_length.comp hf).comp continuous_fst).mul continuous_snd).div₀
+      (hg.comp continuous_fst) fun p ↦ h0 p.1)
+
 end MoorePath
 
 /-- Concatenation of Moore paths is continuous. -/
@@ -362,6 +533,38 @@ theorem map_map (g : C(Y, Z)) (f : C(X, Y)) (γ : MoorePath X) :
 @[fun_prop]
 theorem continuous_map (f : C(X, Y)) : Continuous (map f : MoorePath X → MoorePath Y) :=
   continuous_iff.2 ⟨continuous_length, f.continuous.comp continuous_eval⟩
+
+/-! ### Paths between subsets -/
+
+/-- The Moore paths starting in `A` and ending in `B`: the path space `P_{A→B} X`. -/
+def pathsBetween (A B : Set X) : Set (MoorePath X) :=
+  {γ | γ.source ∈ A ∧ γ.target ∈ B}
+
+@[simp]
+theorem mem_pathsBetween {A B : Set X} {γ : MoorePath X} :
+    γ ∈ pathsBetween A B ↔ γ.source ∈ A ∧ γ.target ∈ B :=
+  Iff.rfl
+
+/-- The paths between two closed subsets form a closed subspace of the Moore paths. -/
+theorem isClosed_pathsBetween {A B : Set X} (hA : IsClosed A) (hB : IsClosed B) :
+    IsClosed (pathsBetween A B) :=
+  (hA.preimage continuous_source).inter (hB.preimage continuous_target)
+
+theorem refl_mem_pathsBetween {A B : Set X} {x : X} (hA : x ∈ A) (hB : x ∈ B) :
+    refl x ∈ pathsBetween A B :=
+  ⟨hA, hB⟩
+
+theorem trans_mem_pathsBetween {A B : Set X} {γ δ : MoorePath X} (hγ : γ.source ∈ A)
+    (hδ : δ.target ∈ B) (h : γ.target = δ.source) : γ.trans δ h ∈ pathsBetween A B :=
+  ⟨by rw [source_trans]; exact hγ, by rw [target_trans]; exact hδ⟩
+
+theorem symm_mem_pathsBetween {A B : Set X} {γ : MoorePath X} :
+    γ.symm ∈ pathsBetween B A ↔ γ ∈ pathsBetween A B := by
+  rw [mem_pathsBetween, mem_pathsBetween, source_symm, target_symm, and_comm]
+
+theorem map_mem_pathsBetween {A B : Set X} {γ : MoorePath X} (f : C(X, Y))
+    (hγ : γ ∈ pathsBetween A B) : γ.map f ∈ pathsBetween (f '' A) (f '' B) :=
+  ⟨⟨_, hγ.1, rfl⟩, ⟨_, hγ.2, rfl⟩⟩
 
 end MoorePath
 
@@ -432,6 +635,108 @@ instance instContinuousMul : ContinuousMul (MooreLoopSpace X x) where
   continuous_mul := isEmbedding_toMoorePath.continuous_iff.2 <|
     (continuous_toMoorePath.comp continuous_fst).moorePath_trans
       (continuous_toMoorePath.comp continuous_snd) fun p ↦ by simp
+
+/-! ### The length of Moore loops -/
+
+/-- The length of a Moore loop. -/
+def length (γ : MooreLoopSpace X x) : ℝ≥0 :=
+  γ.toMoorePath.length
+
+@[simp]
+theorem length_toMoorePath (γ : MooreLoopSpace X x) : γ.toMoorePath.length = γ.length :=
+  (rfl)
+
+@[simp]
+theorem length_one : (1 : MooreLoopSpace X x).length = 0 :=
+  (rfl)
+
+@[simp]
+theorem length_mul (γ δ : MooreLoopSpace X x) : (γ * δ).length = γ.length + δ.length :=
+  (rfl)
+
+@[fun_prop]
+theorem continuous_length : Continuous (length : MooreLoopSpace X x → ℝ≥0) :=
+  MoorePath.continuous_length.comp continuous_toMoorePath
+
+variable (x)
+
+/-- The length of Moore loops, as a continuous monoid homomorphism to `[0, ∞)` written
+multiplicatively. -/
+def lengthHom : MooreLoopSpace X x →ₜ* Multiplicative ℝ≥0 where
+  toFun γ := Multiplicative.ofAdd γ.length
+  map_one' := by rw [length_one, ofAdd_zero]
+  map_mul' γ δ := by rw [length_mul, ofAdd_add]
+  continuous_toFun := continuous_ofAdd.comp continuous_length
+
+@[simp]
+theorem lengthHom_apply (γ : MooreLoopSpace X x) : lengthHom x γ = Multiplicative.ofAdd γ.length :=
+  (rfl)
+
+/-- The constant loop at `x` of length `L`. -/
+def constOfLength (L : ℝ≥0) : MooreLoopSpace X x :=
+  ⟨MoorePath.constOfLength x L, MoorePath.source_constOfLength x L,
+    MoorePath.target_constOfLength x L⟩
+
+@[simp]
+theorem toMoorePath_constOfLength (L : ℝ≥0) :
+    (constOfLength x L).toMoorePath = MoorePath.constOfLength x L :=
+  (rfl)
+
+@[simp]
+theorem length_constOfLength (L : ℝ≥0) : (constOfLength x L).length = L :=
+  (rfl)
+
+@[simp]
+theorem constOfLength_zero : constOfLength x 0 = 1 :=
+  (rfl)
+
+/-- The constant loops at `x` multiply by adding their lengths. -/
+theorem constOfLength_add (L L' : ℝ≥0) :
+    constOfLength x (L + L') = constOfLength x L * constOfLength x L' :=
+  ext (MoorePath.constOfLength_trans_constOfLength x L L').symm
+
+@[fun_prop]
+theorem continuous_constOfLength : Continuous (constOfLength x) :=
+  isEmbedding_toMoorePath.continuous_iff.2 (continuous_const.moorePath_constOfLength continuous_id)
+
+/-- The constant loops at `x`, as a continuous monoid homomorphism from `[0, ∞)` written
+multiplicatively; it is a section of `lengthHom`. -/
+def constOfLengthHom : Multiplicative ℝ≥0 →ₜ* MooreLoopSpace X x where
+  toFun L := constOfLength x (Multiplicative.toAdd L)
+  map_one' := by rw [toAdd_one, constOfLength_zero]
+  map_mul' L L' := by rw [toAdd_mul, constOfLength_add]
+  continuous_toFun := (continuous_constOfLength x).comp continuous_toAdd
+
+@[simp]
+theorem constOfLengthHom_apply (L : Multiplicative ℝ≥0) :
+    constOfLengthHom x L = constOfLength x (Multiplicative.toAdd L) :=
+  (rfl)
+
+theorem lengthHom_comp_constOfLengthHom :
+    (lengthHom x).comp (constOfLengthHom x) = ContinuousMonoidHom.id (Multiplicative ℝ≥0) :=
+  ContinuousMonoidHom.ext fun _ ↦ by simp
+
+/-- When `X` is a point, the length is a homeomorphism `MooreLoopSpace X x ≃ₜ [0, ∞)`: the Moore
+loop space of a point is `[0, ∞)`, not a point. -/
+def lengthHomeomorph [Subsingleton X] : MooreLoopSpace X x ≃ₜ ℝ≥0 where
+  toFun := length
+  invFun := constOfLength x
+  left_inv _ := ext (MoorePath.ext rfl fun _ ↦ Subsingleton.elim _ _)
+  right_inv _ := rfl
+  continuous_toFun := continuous_length
+  continuous_invFun := continuous_constOfLength x
+
+@[simp]
+theorem lengthHomeomorph_apply [Subsingleton X] (γ : MooreLoopSpace X x) :
+    lengthHomeomorph x γ = γ.length :=
+  (rfl)
+
+@[simp]
+theorem lengthHomeomorph_symm_apply [Subsingleton X] (L : ℝ≥0) :
+    (lengthHomeomorph x).symm L = constOfLength x L :=
+  (rfl)
+
+variable {x}
 
 /-- The continuous monoid homomorphism of Moore loop spaces induced by a based map. -/
 def map (f : C(X, Y)) (hf : f x = y) : MooreLoopSpace X x →ₜ* MooreLoopSpace Y y where

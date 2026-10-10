@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TemperleyLieb.MarkovTrace
-public import TauCeti.KnotTheory.Markov
+public import TauCeti.KnotTheory.Markov.Basic
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 

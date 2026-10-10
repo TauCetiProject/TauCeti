@@ -32,6 +32,9 @@ carries the generator of the pair to the standard generator of the sphere.
 * `TauCeti.isZero_singularHomology_diskBoundaryPair_zero`: `H₀(Dⁿ, Sⁿ⁻¹) = 0` for `n ≥ 1`.
 * `TauCeti.isZero_singularHomology_diskBoundaryPair_of_ne`: `Hₖ(Dⁿ, Sⁿ⁻¹) = 0` for `k ≠ n`.
 * `TauCeti.singularHomologyDiskBoundaryPairIso`: `Hₙ(Dⁿ, Sⁿ⁻¹) ≅ R`.
+* `TauCeti.singularHomologyCubeBoundaryPairIso` and
+  `TauCeti.isZero_singularHomology_cubeBoundaryPair_of_ne`: the same for the cube pair
+  `(Iⁿ, ∂Iⁿ)`, transported along `TauCeti.diskBoundaryPairIsoCube`.
 
 ## References
 
@@ -247,5 +250,37 @@ lemma singularHomologyDiskBoundaryPairIso_zero_hom :
   rfl
 
 end HigherDegrees
+
+section CubePairHomology
+
+variable (n : ℕ)
+
+/-- **The relative homology of a cube modulo its boundary in its dimension**:
+`Hₙ(Iⁿ, ∂Iⁿ; R) ≅ R`, transported from `TauCeti.singularHomologyDiskBoundaryPairIso` along the
+isomorphism of pairs `TauCeti.diskBoundaryPairIsoCube`. -/
+def singularHomologyCubeBoundaryPairIso : (cubeBoundaryPair.{w} n).singularHomology R n ≅ R :=
+  (SSetPair.homologyFunctor R n).mapIso
+      (TopPair.toSSetPair.mapIso (diskBoundaryPairIsoCube n)).symm ≪≫
+    singularHomologyDiskBoundaryPairIso R n
+
+/-- The generator of `Hₙ(Iⁿ, ∂Iⁿ; R)` is the image of the generator of `Hₙ(Dⁿ, Sⁿ⁻¹; R)` under
+`TauCeti.diskBoundaryPairToCube`. -/
+lemma singularHomologyCubeBoundaryPairIso_inv :
+    (singularHomologyCubeBoundaryPairIso R n).inv =
+      (singularHomologyDiskBoundaryPairIso R n).inv ≫
+        TopPair.singularHomologyMap (diskBoundaryPairToCube.{w} n) R n := by
+  rw [← diskBoundaryPairIsoCube_hom]
+  -- This is the inverse of the composite defining `singularHomologyCubeBoundaryPairIso`.
+  rfl
+
+/-- The relative homology of a cube modulo its boundary vanishes outside its dimension:
+`Hₖ(Iⁿ, ∂Iⁿ; R) = 0` for `k ≠ n`. -/
+theorem isZero_singularHomology_cubeBoundaryPair_of_ne {k : ℕ} (hk : k ≠ n) :
+    IsZero ((cubeBoundaryPair.{w} n).singularHomology R k) :=
+  (isZero_singularHomology_diskBoundaryPair_of_ne R hk).of_iso
+    ((SSetPair.homologyFunctor R k).mapIso
+      (TopPair.toSSetPair.mapIso (diskBoundaryPairIsoCube n))).symm
+
+end CubePairHomology
 
 end TauCeti
