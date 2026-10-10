@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.ReducedRelative
 public import Mathlib.Topology.Homotopy.Contractible
 public import TauCeti.Topology.Category.TopPair
+public import Mathlib.LinearAlgebra.Dimension.Finite
 
 /-!
 # Singular homology of contractible spaces
@@ -22,6 +23,10 @@ with the reduced homology of the boundary sphere.  Dually, the quotient map
 
 Coefficients are an object `R` of an abelian category with coproducts, as everywhere in relative
 singular homology.
+
+With coefficients in a module `M`, the singular homology of a contractible space is free or
+finitely generated when `M` is, and for `M` free of finite rank it has the rank of `M` in degree
+zero and vanishes in positive degrees (`ModuleCat.finrank_singularHomology_of_contractibleSpace`).
 
 The results follow Hatcher, *Algebraic Topology*, Section 2.1: the vanishing of reduced homology
 for contractible spaces after Corollary 2.11 and Example 2.23 for the disk and its boundary sphere.
@@ -146,3 +151,43 @@ lemma singularHomologyIsoOfSubsetSingleton_hom_naturality {Y : Type w} [Topologi
   exact h
 
 end TauCeti
+
+namespace ModuleCat
+
+open TauCeti
+
+section Free
+
+variable {k : Type w} [Ring k] (M : ModuleCat.{w} k) (X : TopCat.{w}) [ContractibleSpace X]
+
+/-- The reduced singular homology of a contractible space is trivial. -/
+instance subsingleton_reducedSingularHomology_of_contractibleSpace (q : ℕ) :
+    Subsingleton ((reducedSingularHomologyFunctor M q).obj X) :=
+  ModuleCat.isZero_iff_subsingleton.mp
+    (isZero_reducedSingularHomologyFunctor_of_contractibleSpace M X q)
+
+/-- The singular homology of a contractible space with coefficients in a free module is free. -/
+instance free_singularHomology_of_contractibleSpace [Module.Free k M] (q : ℕ) :
+    Module.Free k (((singularHomologyFunctor (ModuleCat.{w} k) q).obj M).obj X) :=
+  free_singularHomology_of_free_reducedSingularHomology M q
+
+/-- The singular homology of a contractible space with coefficients in a finitely generated module
+is finitely generated. -/
+instance finite_singularHomology_of_contractibleSpace [Module.Finite k M] (q : ℕ) :
+    Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) q).obj M).obj X) :=
+  finite_singularHomology_of_finite_reducedSingularHomology M q
+
+/-- **The homology of a contractible space** with coefficients in a free module of finite rank
+has the rank of the coefficients in degree zero and vanishes in positive degrees. -/
+@[simp]
+theorem finrank_singularHomology_of_contractibleSpace [StrongRankCondition k] [Module.Free k M]
+    [Module.Finite k M] (q : ℕ) :
+    Module.finrank k (((singularHomologyFunctor (ModuleCat.{w} k) q).obj M).obj X) =
+      if q = 0 then Module.finrank k M else 0 := by
+  have := nontrivial_of_invariantBasisNumber k
+  rw [finrank_singularHomology_eq_finrank_reducedSingularHomology_add,
+    Module.finrank_zero_of_subsingleton, zero_add]
+
+end Free
+
+end ModuleCat
