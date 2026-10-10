@@ -18,9 +18,10 @@ integrates to `1` in the second variable against `ν`: the section `y ↦ dm/d(�
 probability density with respect to `ν`, the density of the conditional law of the second
 coordinate given the first. Symmetrically for the second marginal.
 
-These identities say that reweighting `μ ⊗ ν` by a function of the density of `m` along a map that
-factors through the two coordinates does not change the marginals; they are used for the block
-approximation of a coupling in entropic optimal transport.
+These identities are used for the block approximation of a coupling in entropic optimal
+transport: if `π` couples `μ` and `ν` and `p`, `q` are measurable maps on the two factors, then
+reweighting `μ ⊗ ν` by the density of `π.map (Prod.map p q)` against `(μ.map p).prod (ν.map q)`,
+pulled back along `Prod.map p q`, gives a measure that still has marginals `μ` and `ν`.
 -/
 
 public section
