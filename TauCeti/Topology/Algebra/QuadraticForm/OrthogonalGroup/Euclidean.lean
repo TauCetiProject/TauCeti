@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.Algebra.QuadraticForm.OrthogonalGroup.Matrix
 public import TauCeti.LinearAlgebra.OrthogonalGroup
 import Mathlib.LinearAlgebra.QuadraticForm.Real
+import TauCeti.LinearAlgebra.QuadraticForm.Standard
 
 /-!
 # Definite real orthogonal groups in Euclidean coordinates
@@ -39,11 +40,11 @@ variable {V n : Type*} [AddCommGroup V] [Module ℝ V] [Fintype n] [DecidableEq 
 
 /-- In Euclidean coordinates the abstract orthogonal action is exactly the linear-isometry
 action of the associated orthogonal matrix. -/
-theorem orthogonalGroupContinuousEquivMatrix_action
+theorem orthogonalGroupToLinearIsometryEquiv_orthogonalGroupContinuousMulEquivMatrix_apply
     (e : Q.IsometryEquiv (Matrix.toQuadraticForm' (1 : Matrix n n ℝ)))
     (g : QuadraticMap.orthogonalGroup Q) (x : V) :
     orthogonalGroupToLinearIsometryEquiv
-        (orthogonalGroupContinuousEquivMatrix
+        (orthogonalGroupContinuousMulEquivMatrix
           ((isUnit_of_invertible (2 : ℝ)).isSMulRegular ℝ) e g)
         ((EuclideanSpace.equiv n ℝ).symm (e x)) =
       (EuclideanSpace.equiv n ℝ).symm (e ((g : V ≃ₗ[ℝ] V) x)) := by
@@ -51,14 +52,12 @@ theorem orthogonalGroupContinuousEquivMatrix_action
 
 variable [FiniteDimensional ℝ V]
 
-/-- A positive definite real quadratic form admits Euclidean coordinates and the resulting
-topological identification of its orthogonal group with the matrix orthogonal group. -/
-theorem exists_orthogonalGroupContinuousEquivMatrix_of_posDef (hQ : Q.PosDef) :
-    ∃ _e : Q.IsometryEquiv
-        (Matrix.toQuadraticForm' (1 : Matrix (Fin (Module.finrank ℝ V))
-          (Fin (Module.finrank ℝ V)) ℝ)),
-      Nonempty (QuadraticMap.orthogonalGroup Q ≃ₜ*
-        Matrix.orthogonalGroup (Fin (Module.finrank ℝ V)) ℝ) := by
+/-- A positive definite real quadratic form is isometric to the standard sum-of-squares form
+in its dimension. -/
+theorem QuadraticForm.PosDef.nonempty_isometryEquiv_toQuadraticForm'_one (hQ : Q.PosDef) :
+    Nonempty (Q.IsometryEquiv
+      (Matrix.toQuadraticForm' (1 : Matrix (Fin (Module.finrank ℝ V))
+        (Fin (Module.finrank ℝ V)) ℝ))) := by
   obtain ⟨w, hw, ⟨e⟩⟩ := Q.equivalent_one_zero_neg_one_weighted_sum_squared
   have hwpos (i : Fin (Module.finrank ℝ V)) : 0 < w i := by
     have h := hQ (e.symm (Pi.single i 1)) (by simp)
@@ -66,32 +65,33 @@ theorem exists_orthogonalGroupContinuousEquivMatrix_of_posDef (hQ : Q.PosDef) :
     simpa [QuadraticMap.weightedSumSquares_apply, Pi.single_apply,
       Finset.sum_ite_eq'] using h
   have hwone : w = 1 := funext fun i ↦ by
-    rcases hw i with h | h | h <;> have := hwpos i <;> norm_num [h] at *
+    rcases hw i with h | h | h
+    · exfalso
+      have hp := hwpos i
+      norm_num [h] at hp
+    · exact False.elim (by simpa [h] using hwpos i)
+    · exact h
   have hstandard : QuadraticMap.weightedSumSquares ℝ w =
       Matrix.toQuadraticForm' (1 : Matrix (Fin (Module.finrank ℝ V))
         (Fin (Module.finrank ℝ V)) ℝ) := by
-    rw [hwone]
-    ext x
-    simp [toQuadraticForm'_one_apply, QuadraticMap.weightedSumSquares_apply, dotProduct]
+    rw [hwone, weightedSumSquares_eq_toQuadraticForm_diagonal, Matrix.diagonal_one']
   rw [hstandard] at e
-  exact ⟨e, ⟨orthogonalGroupContinuousEquivMatrix
-    ((isUnit_of_invertible (2 : ℝ)).isSMulRegular ℝ) e⟩⟩
+  exact ⟨e⟩
 
 /-- The orthogonal group of any definite real quadratic form is topologically isomorphic to
 the Euclidean matrix orthogonal group of the same dimension. -/
-theorem nonempty_orthogonalGroupContinuousEquivMatrix_of_definite
+theorem nonempty_orthogonalGroupContinuousMulEquivMatrix_of_definite
     (hQ : Q.PosDef ∨ (-Q).PosDef) :
     Nonempty (QuadraticMap.orthogonalGroup Q ≃ₜ*
       Matrix.orthogonalGroup (Fin (Module.finrank ℝ V)) ℝ) := by
   rcases hQ with hQ | hQ
-  · obtain ⟨_, h⟩ := exists_orthogonalGroupContinuousEquivMatrix_of_posDef hQ
-    exact h
-  · obtain ⟨_, ⟨E⟩⟩ := exists_orthogonalGroupContinuousEquivMatrix_of_posDef hQ
-    have h : QuadraticMap.orthogonalGroup Q = QuadraticMap.orthogonalGroup (-Q) := by
-      ext g
-      simp
-    rw [h]
-    exact ⟨E⟩
+  · obtain ⟨e⟩ := QuadraticForm.PosDef.nonempty_isometryEquiv_toQuadraticForm'_one hQ
+    exact ⟨orthogonalGroupContinuousMulEquivMatrix
+      ((isUnit_of_invertible (2 : ℝ)).isSMulRegular ℝ) e⟩
+  · obtain ⟨e⟩ := QuadraticForm.PosDef.nonempty_isometryEquiv_toQuadraticForm'_one hQ
+    rw [← QuadraticMap.orthogonalGroup_neg Q]
+    exact ⟨orthogonalGroupContinuousMulEquivMatrix
+      ((isUnit_of_invertible (2 : ℝ)).isSMulRegular ℝ) e⟩
 
 end
 

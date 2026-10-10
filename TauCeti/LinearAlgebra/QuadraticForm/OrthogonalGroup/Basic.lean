@@ -234,6 +234,15 @@ theorem coe_orthogonalGroupEquivIsometryEquiv_symm (Q : QuadraticMap R M N)
 
 end CommSemiring
 
+/-- Negating a quadratic map does not change its orthogonal group. -/
+@[simp]
+theorem orthogonalGroup_neg {R : Type u} {M : Type v} {N : Type w} [CommRing R]
+    [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+    (Q : QuadraticMap R M N) : orthogonalGroup (-Q) = orthogonalGroup Q := by
+  ext g
+  simp
+
+
 end QuadraticMap
 
 @[simp]

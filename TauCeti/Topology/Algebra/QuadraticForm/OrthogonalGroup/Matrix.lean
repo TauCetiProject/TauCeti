@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Equiv
+public import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.QuadraticForm
 public import TauCeti.Topology.Algebra.Module.GeneralLinearGroup
 import Mathlib.Topology.Algebra.Star.Unitary
 
@@ -34,9 +34,10 @@ variable {R V n : Type*} [CommRing R] [TopologicalSpace R] [IsTopologicalRing R]
 
 /-- Standard quadratic coordinates give a topological group isomorphism with the matrix
 orthogonal group, when multiplication by two is injective. -/
-def orthogonalGroupContinuousEquivMatrix (h2 : IsSMulRegular R (2 : R))
+def orthogonalGroupContinuousMulEquivMatrix (h2 : IsSMulRegular R (2 : R))
     (e : Q.IsometryEquiv (Matrix.toQuadraticForm' (1 : Matrix n n R))) :
     QuadraticMap.orthogonalGroup Q ≃ₜ* Matrix.orthogonalGroup n R := by
+  -- The local `starRingOfComm` instance makes star definitionally the identity.
   let : ContinuousStar R := ⟨continuous_id⟩
   let : ContinuousAdd (Module.End R V) := IsModuleTopology.toContinuousAdd R _
   let : ContinuousAdd (Module.End R (n → R)) := IsModuleTopology.toContinuousAdd R _
@@ -61,7 +62,8 @@ def orthogonalGroupContinuousEquivMatrix (h2 : IsSMulRegular R (2 : R))
   have hD (A : Matrix.orthogonalGroup n R) :
       D (Matrix.toLin' (A : Matrix n n R)) = (E.symm A : Module.End R V) := by
     ext x
-    simp [D, E, LinearEquiv.conjAlgEquiv_apply]
+    simp [D, E, LinearEquiv.conjAlgEquiv_apply, Matrix.toLin'_apply]
+    -- The double inverse of the underlying linear equivalence is definitionally `e`.
     rfl
   have hback : Continuous fun A : Matrix.orthogonalGroup n R ↦
       (E.symm A : Module.End R V) := by
@@ -77,23 +79,23 @@ def orthogonalGroupContinuousEquivMatrix (h2 : IsSMulRegular R (2 : R))
 /-- The coordinate comparison sends an automorphism to the matrix of its conjugate by the
 chosen quadratic isometry. -/
 @[simp]
-theorem coe_orthogonalGroupContinuousEquivMatrix_apply (h2 : IsSMulRegular R (2 : R))
+theorem coe_orthogonalGroupContinuousMulEquivMatrix_apply (h2 : IsSMulRegular R (2 : R))
     (e : Q.IsometryEquiv (Matrix.toQuadraticForm' (1 : Matrix n n R)))
     (g : QuadraticMap.orthogonalGroup Q) :
-    (orthogonalGroupContinuousEquivMatrix h2 e g : Matrix n n R) =
+    (orthogonalGroupContinuousMulEquivMatrix h2 e g : Matrix n n R) =
       LinearMap.toMatrix' (e.orthogonalGroupCongr g : Module.End R (n → R)) := by
-  simp [orthogonalGroupContinuousEquivMatrix]
+  simp [orthogonalGroupContinuousMulEquivMatrix]
 
 /-- The inverse coordinate comparison acts by matrix multiplication in the chosen coordinates. -/
 @[simp]
-theorem orthogonalGroupContinuousEquivMatrix_symm_apply (h2 : IsSMulRegular R (2 : R))
+theorem orthogonalGroupContinuousMulEquivMatrix_symm_apply (h2 : IsSMulRegular R (2 : R))
     (e : Q.IsometryEquiv (Matrix.toQuadraticForm' (1 : Matrix n n R)))
     (A : Matrix.orthogonalGroup n R) (x : V) :
-    ((orthogonalGroupContinuousEquivMatrix h2 e).symm A : V ≃ₗ[R] V) x =
+    ((orthogonalGroupContinuousMulEquivMatrix h2 e).symm A : V ≃ₗ[R] V) x =
       e.symm ((A : Matrix n n R) *ᵥ e x) := by
   have h := congrArg (fun M : Matrix n n R ↦ M *ᵥ e x)
-    (coe_orthogonalGroupContinuousEquivMatrix_apply h2 e
-      ((orthogonalGroupContinuousEquivMatrix h2 e).symm A))
+    (coe_orthogonalGroupContinuousMulEquivMatrix_apply h2 e
+      ((orthogonalGroupContinuousMulEquivMatrix h2 e).symm A))
   rw [ContinuousMulEquiv.apply_symm_apply, LinearMap.toMatrix'_mulVec] at h
   apply e.injective
   simpa using h.symm
@@ -101,12 +103,12 @@ theorem orthogonalGroupContinuousEquivMatrix_symm_apply (h2 : IsSMulRegular R (2
 /-- The coordinate comparison preserves the determinant, so it also identifies the
 determinant-one subgroups. This is a named rewrite rather than a simp rule: the simplifier
 already expands its left-hand side into the determinant of a conjugated endomorphism. -/
-theorem det_orthogonalGroupContinuousEquivMatrix (h2 : IsSMulRegular R (2 : R))
+theorem det_orthogonalGroupContinuousMulEquivMatrix (h2 : IsSMulRegular R (2 : R))
     (e : Q.IsometryEquiv (Matrix.toQuadraticForm' (1 : Matrix n n R)))
     (g : QuadraticMap.orthogonalGroup Q) :
-    (orthogonalGroupContinuousEquivMatrix h2 e g : Matrix n n R).det =
+    (orthogonalGroupContinuousMulEquivMatrix h2 e g : Matrix n n R).det =
       (_root_.QuadraticMap.orthogonalDet Q g : R) := by
-  rw [coe_orthogonalGroupContinuousEquivMatrix_apply, LinearMap.det_toMatrix',
+  rw [coe_orthogonalGroupContinuousMulEquivMatrix_apply, LinearMap.det_toMatrix',
     ← LinearEquiv.coe_det, ← _root_.QuadraticMap.orthogonalDet_apply,
     e.orthogonalDet_orthogonalGroupCongr]
 
