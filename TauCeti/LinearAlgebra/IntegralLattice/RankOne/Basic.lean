@@ -79,6 +79,10 @@ theorem isEven_rankOne_iff (a : ℤ) : (rankOne a).IsEven ↔ Even a := by
   rw [rankOne, isEven_ofGramMatrix_iff]
   simp [rankOneMatrix]
 
+/-- The rank-one lattice `⟨2m⟩` is even for every integer `m`. -/
+theorem isEven_rankOne_two_mul (m : ℤ) : (rankOne (2 * m)).IsEven :=
+  (isEven_rankOne_iff _).mpr (even_two_mul m)
+
 /-- The signed determinant of `⟨a⟩` is `a`. -/
 @[simp]
 theorem rankOne_determinant (a : ℤ) : (rankOne a).determinant = a := by
@@ -99,6 +103,8 @@ theorem ofGramMatrix_singleton_eq_rankOne (a : ℤ) {c : ℤ} (hc : c = a)
     (h : (Matrix.of fun (_ _ : Fin 1) ↦ c).IsSymm) :
     ofGramMatrix (Basis.singleton (Fin 1) ℚ) (Matrix.of fun _ _ ↦ c) h = rankOne a := by
   subst c
+  -- `Matrix.of` is definitionally the identity, so its constant matrix is `rankOneMatrix a`;
+  -- proof irrelevance identifies the symmetry witnesses.
   rfl
 
 /-- `⟨a⟩` is the negative of `⟨-a⟩`. -/

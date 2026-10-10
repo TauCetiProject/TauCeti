@@ -72,7 +72,7 @@ variable (m : ℤ) [NeZero m]
 
 /-- For `0 < m`, the Gauss sum of the discriminant form of `⟨2m⟩` is `(1 + i) √m`. -/
 private theorem gaussSum_rankOne_of_pos (hm : 0 < m) :
-    ((rankOne (2 * m)).discriminantQuadraticModule (by simp)).gaussSum =
+    ((rankOne (2 * m)).discriminantQuadraticModule (isEven_rankOne_two_mul m)).gaussSum =
       (1 + I) * √(m : ℝ) := by
   obtain ⟨M, rfl⟩ : ∃ M : ℕ, m = M := ⟨m.toNat, (Int.toNat_of_nonneg hm.le).symm⟩
   have hn : (2 * (M : ℤ)).natAbs = 2 * M := by omega
@@ -118,9 +118,9 @@ private theorem sqrt_two_mul_expCircle_toRatAddCircle_eight_one :
 /-- For `0 < m`, the discriminant form of `⟨2m⟩` has Gauss-sum invariant `1`:
 `(1 + i) √m = √(2m) · e^{2πi/8}`. -/
 private theorem gaussSign_rankOne_of_pos (hm : 0 < m) :
-    ((rankOne (2 * m)).discriminantQuadraticModule (by simp)).gaussSign = 1 := by
+    ((rankOne (2 * m)).discriminantQuadraticModule (isEven_rankOne_two_mul m)).gaussSign = 1 := by
   refine FiniteQuadraticModule.gaussSign_eq_of_gaussSum_eq _ ?_
-  have hcard : Nat.card ((rankOne (2 * m)).discriminantQuadraticModule (by simp)) =
+  have hcard : Nat.card ((rankOne (2 * m)).discriminantQuadraticModule (isEven_rankOne_two_mul m)) =
       (2 * m).natAbs :=
     natCard_rankOne_discriminantGroup (2 * m)
   obtain ⟨M, rfl⟩ : ∃ M : ℕ, m = M := ⟨m.toNat, (Int.toNat_of_nonneg hm.le).symm⟩
@@ -133,13 +133,15 @@ private theorem gaussSign_rankOne_of_pos (hm : 0 < m) :
 /-- **Milgram's theorem for `⟨2m⟩`**: the discriminant form of the rank-one lattice `⟨2m⟩` has
 Gauss-sum invariant the sign of `m`. -/
 theorem gaussSign_discriminantQuadraticModule_rankOne :
-    ((rankOne (2 * m)).discriminantQuadraticModule (by simp)).gaussSign = Int.sign m := by
+    ((rankOne (2 * m)).discriminantQuadraticModule (isEven_rankOne_two_mul m)).gaussSign =
+      Int.sign m := by
   rcases (NeZero.ne m).lt_or_gt with hm | hm
   · have : NeZero (-m) := ⟨neg_ne_zero.mpr (NeZero.ne m)⟩
     let e := Isometry.ofEq (show rankOne (2 * m) = -rankOne (2 * (-m)) from by
       simpa only [mul_neg] using rankOne_eq_neg_rankOne_neg (2 * m))
-    rw [(e.discriminantQuadraticIsometry (by simp)).gaussSign_eq,
-      ((rankOne (2 * (-m))).discriminantQuadraticIsometryNeg (by simp)).gaussSign_eq,
+    rw [(e.discriminantQuadraticIsometry (isEven_rankOne_two_mul m)).gaussSign_eq,
+      ((rankOne (2 * (-m))).discriminantQuadraticIsometryNeg
+        (isEven_rankOne_two_mul (-m))).gaussSign_eq,
       FiniteQuadraticModule.gaussSign_neg, gaussSign_rankOne_of_pos _ (by omega),
       Int.sign_eq_neg_one_of_neg hm]
     simp
@@ -351,7 +353,7 @@ theorem gaussSign_discriminantQuadraticModule_eq_sigPos_sub_sigNeg [L.IsNondegen
       rw [← sigNeg_orthogonalSum, e.sigNeg_eq]
       simp only [sigNeg, splitLattice_form]
     rw [← gaussSign_splitLattice L x hx hL, ← (e.discriminantQuadraticIsometry hS).gaussSign_eq,
-      ((rankOne (2 * m)).discriminantQuadraticIsometryOrthogonalSum B (by simp)
+      ((rankOne (2 * m)).discriminantQuadraticIsometryOrthogonalSum B (isEven_rankOne_two_mul m)
         hB).gaussSign_eq,
       FiniteQuadraticModule.gaussSign_prod (isNondegenerate_discriminantQuadraticModule _ _)
         (isNondegenerate_discriminantQuadraticModule _ _),
