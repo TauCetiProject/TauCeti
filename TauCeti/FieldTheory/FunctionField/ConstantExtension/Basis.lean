@@ -26,6 +26,8 @@ functions of `F' = F · k'` with bounded poles in terms of those of `F`.
 
 ## Main definitions and results
 
+* `TauCeti.finrank_le_finrank_of_constantCompositum_eq_top`: `[F · k' : F] ≤ [k' : k]` for any
+  finite `k' / k`, with no exactness or separability hypothesis.
 * `TauCeti.constantBasis`: the `F`-basis of `F' = F · k'` given by a `k`-basis of `k'`.
 * `TauCeti.constantBasis_repr_algebraMap`: the coordinates of a constant in a basis of constants
   are the images of its coordinates over `k`.
@@ -82,6 +84,18 @@ theorem span_range_algebraMap_comp_of_constantCompositum_eq_top [Algebra.IsInteg
     adjoin_range_algebraMap_of_constantCompositum_eq_top (k := k) h, Algebra.top_toSubmodule, hfun]
     at hspan
   exact hspan.symm
+
+/-- **Adjoining finitely many constants costs at most their degree**: if `F' = F · k'` for a finite
+extension `k' / k`, then `[F' : F] ≤ [k' : k]`, because the image of a `k`-basis of `k'` spans `F'`
+over `F`.  Equality is the degree form of linear disjointness of `F` and `k'` over `k`
+(`TauCeti.finrank_constantCompositum_eq_finrank_of_isSeparable`); for an inseparable `k' / k` the
+inequality can be strict. -/
+theorem finrank_le_finrank_of_constantCompositum_eq_top [FiniteDimensional k k']
+    (h : constantCompositum F k' F' = ⊤) : Module.finrank F F' ≤ Module.finrank k k' := by
+  let b := Module.finBasis k k'
+  have hle := finrank_range_le_card (R := F) (algebraMap k' F' ∘ b)
+  rwa [Set.finrank, span_range_algebraMap_comp_of_constantCompositum_eq_top h b, finrank_top,
+    Fintype.card_fin] at hle
 
 variable [Algebra.IsSeparable k k']
 variable (hex : IsIntegrallyClosedIn k F) (h : constantCompositum F k' F' = ⊤)

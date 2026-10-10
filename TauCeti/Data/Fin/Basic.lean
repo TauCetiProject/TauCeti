@@ -56,6 +56,8 @@ range, so the value is a `dite` rather than a plain application.
   `open Fin.NatCast`) is nonzero.
 * `Fin.insertNth_insertNth`: two insertions into a tuple commute, up to reindexing by `succAbove`
   and `predAbove`; the dual of Mathlib's `Fin.removeNth_removeNth_eq_swap`.
+* `Fin.insertNth_append_castAdd` and `Fin.insertNth_append_natAdd`: insertion into either block
+  of an appended tuple, used to compute faces of cross products of cubes.
 * `Fin.predAbove_succ_succAbove`: `Fin.predAbove p` inverts `p.succ.succAbove`, the
   counterpart of Mathlib's `Fin.predAbove_succAbove` for `p.castSucc.succAbove`.
 * `Fin.val_succAbove`: the value of `p.succAbove i`, read off the comparison of `i` with `p`.
@@ -73,6 +75,9 @@ range, so the value is a `dite` rather than a plain application.
   read off the value, below and at the top element.  Mathlib's `Fin.orderSucc_castSucc` and
   `Fin.orderSucc_last` state the same thing in the `castSucc`/`last` normal form; these are the
   versions keyed on the inequality `i + 1 < n`.
+* `Fin.insertNth_castAdd_comp_castAdd`, `Fin.insertNth_castAdd_apply_natAdd`,
+  `Fin.insertNth_natAdd_apply_castAdd` and `Fin.insertNth_natAdd_comp_natAdd`: the entries of a
+  tuple indexed by `Fin ((k + 1) + (l + 1))` after inserting an entry into one of the two blocks.
 * `Fin.partialProd_last`: the final partial product is the product of all the entries.
 * `Fin.partialSum_last`: the final partial sum is the sum of all the entries.
 * `TauCeti.add_one_ne_self`: adding one in `Fin n` is nontrivial when `2 ≤ n`.
@@ -363,6 +368,123 @@ theorem insertNth_insertNth {n : ℕ} {β : Sort*} (i : Fin (n + 2)) (j : Fin (n
   rcases eq_self_or_eq_succAbove (j.predAbove i) k with rfl | ⟨k, rfl⟩
   · simp only [removeNth, succAbove_succAbove_predAbove, insertNth_apply_same]
   · simp only [removeNth, succAbove_succAbove_succAbove_predAbove, insertNth_apply_succAbove]
+
+/-- Inserting in the first block of an appended tuple is insertion in its first factor. -/
+theorem insertNth_append_castAdd {n m : ℕ} {β : Sort*} (i : Fin (n + 1)) (a : β)
+    (x : Fin n → β) (y : Fin m → β) :
+    (Fin.cast (by omega : (n + 1) + m = (n + m) + 1) (i.castAdd m)).insertNth a
+        (append x y) =
+      append (i.insertNth a x) y ∘ Fin.cast (by omega) := by
+  symm
+  rw [eq_insertNth_iff]
+  refine ⟨by simp, ?_⟩
+  funext k
+  induction k using Fin.addCases with
+  | left k =>
+      have hk : Fin.cast (by omega : (n + m) + 1 = (n + 1) + m)
+          ((Fin.cast (by omega) (i.castAdd m)).succAbove (k.castAdd m)) =
+          (i.succAbove k).castAdd m := by
+        apply Fin.ext
+        simp only [val_cast, val_succAbove, val_castAdd]
+      simp [removeNth, Function.comp_apply, hk]
+  | right k =>
+      have hk : Fin.cast (by omega : (n + m) + 1 = (n + 1) + m)
+          ((Fin.cast (by omega) (i.castAdd m)).succAbove (k.natAdd n)) =
+          k.natAdd (n + 1) := by
+        apply Fin.ext
+        simp only [val_cast, val_succAbove, val_castAdd, val_natAdd]
+        have := i.isLt
+        split_ifs <;> omega
+      simp [removeNth, Function.comp_apply, hk]
+
+/-- Inserting in the second block of an appended tuple is insertion in its second factor. -/
+theorem insertNth_append_natAdd {n m : ℕ} {β : Sort*} (i : Fin (m + 1)) (a : β)
+    (x : Fin n → β) (y : Fin m → β) :
+    (i.natAdd n).insertNth a (append x y) = append x (i.insertNth a y) := by
+  symm
+  rw [eq_insertNth_iff]
+  refine ⟨by simp, ?_⟩
+  funext k
+  induction k using Fin.addCases with
+  | left k =>
+      have hk : (i.natAdd n).succAbove (k.castAdd m) = k.castAdd (m + 1) := by
+        apply Fin.ext
+        simp only [val_succAbove, val_castAdd, val_natAdd]
+        have := k.isLt
+        split_ifs <;> omega
+      simp [removeNth, hk]
+  | right k =>
+      have hk : (i.natAdd n).succAbove (k.natAdd n) = (i.succAbove k).natAdd n := by
+        apply Fin.ext
+        simp only [val_succAbove, val_natAdd]
+        split_ifs <;> omega
+      simp [removeNth, hk]
+
+/-! ### Inserting an entry into a tuple indexed by a sum of two blocks -/
+
+/-- Inserting `x` at a slot `i` of the first block of `Fin ((k + 1) + (l + 1))` and restricting to
+that block is inserting `x` at `i` into the restriction of `y` to its first `k` entries. -/
+theorem insertNth_castAdd_comp_castAdd {α : Type*} {k l : ℕ} (i : Fin (k + 1)) (x : α)
+    (y : Fin (k + 1 + l) → α) :
+    (fun a : Fin (k + 1) => Fin.insertNth (α := fun _ => α)
+      (Fin.castAdd (l + 1) i : Fin (k + 1 + l + 1)) x y (Fin.castAdd (l + 1) a)) =
+      Fin.insertNth (α := fun _ => α) i x
+        (fun b : Fin k => y (Fin.cast (show k + (l + 1) = k + 1 + l by omega)
+          (Fin.castAdd (l + 1) b))) := by
+  rw [Fin.eq_insertNth_iff]
+  refine ⟨Fin.insertNth_apply_same _ _ _, funext fun b => ?_⟩
+  have : (Fin.castAdd (l + 1) (i.succAbove b) : Fin (k + 1 + l + 1)) =
+      (Fin.castAdd (l + 1) i : Fin (k + 1 + l + 1)).succAbove
+        (Fin.cast (show k + (l + 1) = k + 1 + l by omega) (Fin.castAdd (l + 1) b)) := by
+    ext
+    simp only [Fin.val_castAdd, Fin.val_succAbove, Fin.val_cast]
+  simp only [Fin.removeNth, this, Fin.insertNth_apply_succAbove]
+
+/-- Inserting `x` at a slot of the first block of `Fin ((k + 1) + (l + 1))` leaves the entries of
+the second block as the corresponding entries of `y`, shifted down by one. -/
+@[simp]
+theorem insertNth_castAdd_apply_natAdd {α : Type*} {k l : ℕ} (i : Fin (k + 1)) (x : α)
+    (y : Fin (k + 1 + l) → α) (b : Fin (l + 1)) :
+    Fin.insertNth (α := fun _ => α) (Fin.castAdd (l + 1) i : Fin (k + 1 + l + 1)) x y
+      (Fin.natAdd (k + 1) b) =
+      y (Fin.cast (show k + (l + 1) = k + 1 + l by omega) (Fin.natAdd k b)) := by
+  have : (Fin.natAdd (k + 1) b : Fin (k + 1 + l + 1)) =
+      (Fin.castAdd (l + 1) i : Fin (k + 1 + l + 1)).succAbove
+        (Fin.cast (show k + (l + 1) = k + 1 + l by omega) (Fin.natAdd k b)) := by
+    ext
+    simp only [Fin.val_natAdd, Fin.val_castAdd, Fin.val_succAbove, Fin.val_cast]
+    split_ifs <;> omega
+  rw [this, Fin.insertNth_apply_succAbove]
+
+/-- Inserting `x` at a slot of the second block of `Fin (k + (l + 1))` leaves the entries of the
+first block as the corresponding entries of `y`. -/
+@[simp]
+theorem insertNth_natAdd_apply_castAdd {α : Type*} {k l : ℕ} (i : Fin (l + 1)) (x : α)
+    (y : Fin (k + l) → α) (a : Fin k) :
+    Fin.insertNth (α := fun _ => α) (Fin.natAdd k i : Fin (k + l + 1)) x y
+      (Fin.castAdd (l + 1) a) = y (Fin.castAdd l a) := by
+  have : (Fin.castAdd (l + 1) a : Fin (k + l + 1)) =
+      (Fin.natAdd k i : Fin (k + l + 1)).succAbove (Fin.castAdd l a) := by
+    ext
+    simp only [Fin.val_natAdd, Fin.val_castAdd, Fin.val_succAbove]
+    split_ifs <;> omega
+  rw [this, Fin.insertNth_apply_succAbove]
+
+/-- Inserting `x` at a slot `i` of the second block of `Fin (k + (l + 1))` and restricting to that
+block is inserting `x` at `i` into the restriction of `y` to its last `l` entries. -/
+theorem insertNth_natAdd_comp_natAdd {α : Type*} {k l : ℕ} (i : Fin (l + 1)) (x : α)
+    (y : Fin (k + l) → α) :
+    (fun b : Fin (l + 1) => Fin.insertNth (α := fun _ => α)
+      (Fin.natAdd k i : Fin (k + l + 1)) x y (Fin.natAdd k b)) =
+      Fin.insertNth (α := fun _ => α) i x (fun c : Fin l => y (Fin.natAdd k c)) := by
+  rw [Fin.eq_insertNth_iff]
+  refine ⟨Fin.insertNth_apply_same _ _ _, funext fun c => ?_⟩
+  have : (Fin.natAdd k (i.succAbove c) : Fin (k + l + 1)) =
+      (Fin.natAdd k i : Fin (k + l + 1)).succAbove (Fin.natAdd k c) := by
+    ext
+    simp only [Fin.val_natAdd, Fin.val_succAbove]
+    split_ifs <;> omega
+  simp only [Fin.removeNth, this, Fin.insertNth_apply_succAbove]
 
 end Fin
 

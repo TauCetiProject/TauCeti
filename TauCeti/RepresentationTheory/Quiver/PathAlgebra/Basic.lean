@@ -61,6 +61,9 @@ idempotents `e`, so left multiplication by `α` carries the `i`-component of a l
 * `TauCeti.vertexIdempotent_mul_mul_vertexIdempotent`: when the trivial path is the only path from
   `v` to itself, `eᵥ f eᵥ` is the coefficient of `f` on that path, times `eᵥ`, so the corner
   `eᵥ kQ eᵥ` is a copy of `k`. This is what makes the trivial paths visible to a two-sided ideal.
+* `TauCeti.pathAlgebraBasis_repr_mul_nil`: the coordinate on the trivial path at `v` is
+  multiplicative, a product of paths being that trivial path only when both factors are
+  (`TauCeti.Quiver.TotalPath.eq_nil_iff_of_mul?_eq_some`).
 * `TauCeti.PathAlgebra.sum_mul_ofArrow_eq_zero_iff`: uniqueness of the first-arrow decomposition
   `∑_a f_a a`.
 * `TauCeti.PathAlgebra.adjoin_vertexIdempotents_union_arrows`: the vertex idempotents and arrows
@@ -740,6 +743,49 @@ theorem vertexIdempotent_mul_mul_vertexIdempotent (v : Q)
       · simp [Quiver.TotalPath.mul?_eq_none, Ne.symm ha]
     · rw [Finsupp.single_eq_of_ne' fun h => hb (congrArg (·.2.1) h)]
       simp [Quiver.TotalPath.mul?_eq_none, hb]
+
+open PathAlgebra in
+/-- **The coordinate on a trivial path is multiplicative.** Concatenation adds lengths, so a
+product of basis paths is the trivial path at `v` only when both factors are that same trivial
+path (`TauCeti.Quiver.TotalPath.eq_nil_iff_of_mul?_eq_some`); the coordinate of `f * g` on it is
+therefore the product of the coordinates of `f` and of `g` on it. -/
+@[simp]
+theorem pathAlgebraBasis_repr_mul_nil (v : Q) (f g : pathAlgebra k Q) :
+    (pathAlgebraBasis k Q).repr (f * g) ⟨v, v, _root_.Quiver.Path.nil⟩
+      = (pathAlgebraBasis k Q).repr f ⟨v, v, _root_.Quiver.Path.nil⟩
+        * (pathAlgebraBasis k Q).repr g ⟨v, v, _root_.Quiver.Path.nil⟩ := by
+  induction f using PathAlgebra.induction_linear with
+  | zero => simp
+  | add f₁ f₂ h₁ h₂ =>
+    rw [add_mul, map_add, Finsupp.add_apply, h₁, h₂, map_add, Finsupp.add_apply, add_mul]
+  | single x c =>
+    induction g using PathAlgebra.induction_linear with
+    | zero => simp
+    | add g₁ g₂ h₁ h₂ =>
+      rw [mul_add, map_add, Finsupp.add_apply, h₁, h₂, map_add, Finsupp.add_apply, mul_add]
+    | single y d =>
+      rw [single_mul_single, pathAlgebraBasis_repr_single, pathAlgebraBasis_repr_single]
+      cases hxy : x.mul? y with
+      | none =>
+        -- The factors cannot both be the trivial path at `v`, or they would be composable.
+        have hb : ¬(x = (⟨v, v, _root_.Quiver.Path.nil⟩ : Quiver.TotalPath Q) ∧
+            y = (⟨v, v, _root_.Quiver.Path.nil⟩ : Quiver.TotalPath Q)) := by
+          rintro ⟨rfl, rfl⟩
+          exact Quiver.TotalPath.mul?_eq_none_iff.1 hxy rfl
+        rw [Option.elim_none, map_zero, Finsupp.zero_apply]
+        rcases not_and_or.1 hb with hx | hy
+        · rw [Finsupp.single_eq_of_ne' hx, zero_mul]
+        · rw [Finsupp.single_eq_of_ne' hy, mul_zero]
+      | some z =>
+        -- The concatenation is the trivial path at `v` exactly when both factors are.
+        have hz := Quiver.TotalPath.eq_nil_iff_of_mul?_eq_some (v := v) hxy
+        rw [Option.elim_some, pathAlgebraBasis_repr_single]
+        by_cases hzv : z = (⟨v, v, _root_.Quiver.Path.nil⟩ : Quiver.TotalPath Q)
+        · obtain ⟨hx, hy⟩ := hz.1 hzv
+          rw [hzv, hx, hy, Finsupp.single_eq_same, Finsupp.single_eq_same, Finsupp.single_eq_same]
+        · rcases not_and_or.1 (mt hz.2 hzv) with hx | hy
+          · rw [Finsupp.single_eq_of_ne' hzv, Finsupp.single_eq_of_ne' hx, zero_mul]
+          · rw [Finsupp.single_eq_of_ne' hzv, Finsupp.single_eq_of_ne' hy, mul_zero]
 
 end Basis
 

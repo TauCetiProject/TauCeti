@@ -16,6 +16,8 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.H1.ZMod
 public import TauCeti.RepresentationTheory.QuotSMulTop
 public import TauCeti.RepresentationTheory.RankOneTwist
 public import TauCeti.RepresentationTheory.RestrictScalars
+public import TauCeti.RepresentationTheory.TorsionBy
+public import TauCeti.RingTheory.RootsOfUnity.Basic
 public import TauCeti.RingTheory.RootsOfUnity.ZMod
 
 /-!
@@ -84,6 +86,8 @@ of `L`.
 * `TauCeti.kummerH1FiniteRep`: the conjugation representation of `Gal(L/K)` on `H¹(N, ℤ/n)`.
 * `TauCeti.kummerH1FiniteRepresentationEquiv`: equivariant Kummer theory,
   `H¹(N, ℤ/n) ≃ Hom(μₙ, ℤ/n) ⊗ Lˣ ⧸ (Lˣ)ⁿ` as representations of `Gal(L/K)`.
+* `TauCeti.torsionByUnitsEquivKummerCoeff`: when `σ(L)` contains the `n`th roots of unity, `σ`
+  identifies the `n`-torsion `μₙ(L)` of `Lˣ` with `μₙ` as representations of `Gal(L/K)`.
 
 ## Main results
 
@@ -434,6 +438,52 @@ theorem quotSMulTopUnitsPowerClassRepresentationEquiv_mk (n : ℕ) (x : Additive
   -- The underlying linear equivalence is `quotSMulTopPowerClassEquiv n`, read `ℤ`-linearly.
   quotSMulTopPowerClassEquiv_mk n x
 
+/-! ### The roots of unity of `L` -/
+
+section RootsOfUnity
+
+variable (sigma : L →ₐ[K] SeparableClosure K) (n : ℕ)
+
+/-- An `n`-torsion element of `Lˣ`, written additively, read as an `n`th root of unity of `Kˢ`
+through the embedding `σ`. -/
+private def torsionByUnitsToKummerCoeff :
+    Submodule.torsionBy ℤ (Additive Lˣ) (n : ℤ) →+ KummerCoeff K n :=
+  (restrictRootsOfUnity sigma n).toAdditive.comp (torsionByUnitsEquivRootsOfUnity n).toAddMonoidHom
+
+private theorem bijective_torsionByUnitsToKummerCoeff
+    (hN : ∀ g : AbsoluteGaloisGroup K, g ∈ sigma.fieldRange.fixingSubgroup →
+      ∀ xi : KummerCoeff K n, g • xi = xi) :
+    Function.Bijective (torsionByUnitsToKummerCoeff sigma n) := by
+  refine ⟨fun x y h ↦ ?_, fun xi ↦ ?_⟩
+  · have h' := congrArg (fun z : KummerCoeff K n ↦ ((z.toMul : (SeparableClosure K)ˣ) :
+      SeparableClosure K)) h
+    simp only [torsionByUnitsToKummerCoeff, AddMonoidHom.coe_comp, Function.comp_apply,
+      MonoidHom.toAdditive_apply_apply, toMul_ofMul, restrictRootsOfUnity_coe_apply,
+      AddEquiv.coe_toAddMonoidHom, coe_torsionByUnitsEquivRootsOfUnity_apply] at h'
+    exact Subtype.ext (Additive.toMul.injective (Units.ext (sigma.injective h')))
+  · have hu : Additive.ofMul (xi.toMul : (SeparableClosure K)ˣ) ∈
+        H0 ↥sigma.fieldRange.fixingSubgroup (UnitsCoeff K) :=
+      (FixedPoints.mem_addSubgroup _ _ _).2 fun g ↦ by
+        have h := congrArg (fun z : KummerCoeff K n ↦ ((z.toMul : (SeparableClosure K)ˣ) :
+          SeparableClosure K)) (hN g g.2 xi)
+        rw [Subgroup.smul_def (α := UnitsCoeff K)]
+        refine Additive.toMul.injective (Units.ext ?_)
+        simp only [Additive.toMul_smul]
+        simpa [AlgEquiv.smul_units_def] using h
+    obtain ⟨b, hb⟩ := mem_H0_fixingSubgroup_unitsCoeff_iff.1 hu
+    have hbn : b ^ n = 1 := Units.map_injective sigma.toRingHom.injective <| by
+      rw [map_pow, hb, map_one]
+      exact (mem_rootsOfUnity n _).1 xi.toMul.2
+    refine ⟨⟨Additive.ofMul b, (Submodule.mem_torsionBy_iff _ _).2 ?_⟩, ?_⟩
+    · apply Additive.toMul.injective
+      simpa [natCast_zsmul] using hbn
+    · apply Additive.toMul.injective
+      refine Subtype.ext (Units.ext ?_)
+      simpa [torsionByUnitsToKummerCoeff, restrictRootsOfUnity_coe_apply,
+        coe_torsionByUnitsEquivRootsOfUnity_apply] using congrArg Units.val hb
+
+end RootsOfUnity
+
 /-! ### Quotients of the absolute Galois action -/
 
 section FiniteGalois
@@ -490,6 +540,35 @@ theorem kummerCoeffFiniteRepresentation_restrictNormalHom
     (quotientFixingSubgroupFieldRangeEquiv K L sigma).symm_apply_apply _
   rw [hq, Representation.ofQuotient_coe_apply]
   rfl
+
+/-- **The roots of unity of `L` are those of `Kˢ`.** If the subgroup of `G_K` fixing `σ(L)`
+fixes the `n`th roots of unity of `Kˢ`, then `σ` identifies the `n`-torsion `μ_n(L)` of `Lˣ`
+with `μ_n(Kˢ)`, as representations of `Gal(L/K)`: an `n`th root of unity fixed by that subgroup
+lies in `σ(L)` by infinite Galois theory (`InfiniteGalois.fixedField_fixingSubgroup`). -/
+def torsionByUnitsEquivKummerCoeff
+    (hN : ∀ g : AbsoluteGaloisGroup K, g ∈ sigma.fieldRange.fixingSubgroup →
+      ∀ xi : KummerCoeff K n, g • xi = xi) :
+    ((Representation.ofDistribMulAction ℤ Gal(L/K) (Additive Lˣ)).torsionBy n).Equiv
+      (kummerCoeffFiniteRepresentation sigma n hN).restrictScalarsInt := by
+  refine .mk (AddEquiv.ofBijective _ (bijective_torsionByUnitsToKummerCoeff sigma n hN)
+    ).toIntLinearEquiv fun tau ↦ LinearMap.ext fun x ↦ ?_
+  obtain ⟨g, rfl⟩ := sigma.restrictNormalHom_surjective tau
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, AddEquiv.coe_toIntLinearEquiv,
+    AddEquiv.ofBijective_apply, Representation.restrictScalarsInt_apply]
+  rw [kummerCoeffFiniteRepresentation_restrictNormalHom]
+  apply Additive.toMul.injective
+  ext
+  simp [torsionByUnitsToKummerCoeff, restrictRootsOfUnity_coe_apply, AlgEquiv.smul_units_def]
+
+/-- `torsionByUnitsEquivKummerCoeff` sends an `n`-torsion unit `x` of `L` to `σ x`. -/
+@[simp]
+theorem coe_torsionByUnitsEquivKummerCoeff_apply
+    (hN : ∀ g : AbsoluteGaloisGroup K, g ∈ sigma.fieldRange.fixingSubgroup →
+      ∀ xi : KummerCoeff K n, g • xi = xi)
+    (x : Submodule.torsionBy ℤ (Additive Lˣ) (n : ℤ)) :
+    (((torsionByUnitsEquivKummerCoeff sigma n hN x).toMul : (SeparableClosure K)ˣ) :
+      SeparableClosure K) = sigma (x.1.toMul : L) := by
+  simp [torsionByUnitsEquivKummerCoeff, torsionByUnitsToKummerCoeff]
 
 /-- The absolute Galois group acts trivially on the constant coefficient module. -/
 local instance : DistribMulAction (AbsoluteGaloisGroup K) (ZMod n) :=

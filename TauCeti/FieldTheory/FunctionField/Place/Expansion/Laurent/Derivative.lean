@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Differential.Kaehler
+public import TauCeti.FieldTheory.FunctionField.Frobenius
+public import TauCeti.FieldTheory.FunctionField.Place.Approximation
 public import TauCeti.RingTheory.LaurentSeries.Derivative
 public import TauCeti.FieldTheory.FunctionField.Place.Expansion.Laurent.ChangeOfUniformizer
 
@@ -29,10 +31,17 @@ The formula makes the residue of a Kähler differential well defined (Definition
 `t`, since `z dt = (z · dt/ds) ds`. An exact differential `dy` has residue zero, because the formal
 derivative of a Laurent series has no `T⁻¹` term.
 
+Over a perfect field every prime element of a place is separating
+(`TauCeti.Place.transcendental_and_isSeparable_adjoin_of_ord_eq_one`), so the residue of a
+differential at a rational place needs no choice of uniformizer at all:
+`TauCeti.Place.kaehlerResidueOfPerfectField` computes it with any prime element.
+
 ## Main definitions
 
 * `TauCeti.Place.kaehlerResidue`: the residue `res_P(ω)` of a Kähler differential `ω` at a
   rational place, computed with a separating uniformizer.
+* `TauCeti.Place.kaehlerResidueOfPerfectField`: the residue `res_P(ω)` at a rational place of a
+  function field over a perfect field, with no uniformizer in its signature.
 
 ## Main results
 
@@ -44,6 +53,8 @@ derivative of a Laurent series has no `T⁻¹` term.
 * `TauCeti.Place.kaehlerResidue_eq_kaehlerResidue`: the residue of a differential is independent
   of the uniformizer used to compute it.
 * `TauCeti.Place.kaehlerResidue_D`: exact differentials have residue zero.
+* `TauCeti.Place.kaehlerResidueOfPerfectField_smul_D`: over a perfect field, `res_P(z dt)` is
+  `res_{P,t}(z)` for every prime element `t`.
 
 ## References
 
@@ -164,5 +175,53 @@ theorem kaehlerResidue_eq_kaehlerResidue (hs : P.ord s = 1) (hstr : Transcendent
     kaehlerResidue_smul_D, P.residue_eq_residue_mul_derivativeOfSeparating hP ht htr hs]
 
 end Kaehler
+
+/-! ### Residues of Kähler differentials over a perfect field -/
+
+section PerfectField
+
+variable [PerfectField k] (hF : IsFunctionField k F)
+
+/-- The **residue** `res_P(ω)` of a Kähler differential `ω` at a rational place `P` of a function
+field over a perfect field (Stichtenoth, Definition 4.2.10). Over a perfect field every prime
+element of `P` is separating
+(`TauCeti.Place.transcendental_and_isSeparable_adjoin_of_ord_eq_one`), so this is
+`TauCeti.Place.kaehlerResidue` computed with some prime element; it does not depend on the choice
+(`TauCeti.Place.kaehlerResidueOfPerfectField_eq_kaehlerResidue`). -/
+noncomputable def kaehlerResidueOfPerfectField : Ω[F⁄k] →ₗ[k] k :=
+  have ht := (P.exists_ord_eq_one_and_forall_mem_ord_eq_zero ∅).choose_spec.1
+  have hsep := P.transcendental_and_isSeparable_adjoin_of_ord_eq_one hF ht
+  letI := hsep.2
+  P.kaehlerResidue hP ht hsep.1
+
+/-- Over a perfect field, the residue of a differential is `TauCeti.Place.kaehlerResidue` computed
+with any separating uniformizer. -/
+theorem kaehlerResidueOfPerfectField_eq_kaehlerResidue (htr : Transcendental k t)
+    [Algebra.IsSeparable k⟮t⟯ F] :
+    P.kaehlerResidueOfPerfectField hP hF = P.kaehlerResidue hP ht htr :=
+  -- The left side unfolds to `kaehlerResidue` at the prime element chosen in the definition.
+  have ht' := (P.exists_ord_eq_one_and_forall_mem_ord_eq_zero ∅).choose_spec.1
+  have hsep := P.transcendental_and_isSeparable_adjoin_of_ord_eq_one hF ht'
+  letI := hsep.2
+  P.kaehlerResidue_eq_kaehlerResidue hP ht htr ht' hsep.1
+
+/-- Over a perfect field, the residue of `z dt` is `res_{P,t}(z)` for every prime element `t`
+of `P`. -/
+theorem kaehlerResidueOfPerfectField_smul_D (z : F) :
+    P.kaehlerResidueOfPerfectField hP hF (z • D k F t) = P.residue hP ht z := by
+  have hsep := P.transcendental_and_isSeparable_adjoin_of_ord_eq_one hF ht
+  let := hsep.2
+  rw [P.kaehlerResidueOfPerfectField_eq_kaehlerResidue hP ht hF hsep.1, kaehlerResidue_smul_D]
+
+/-- **Exact differentials have residue zero**: `res_P(dy) = 0`. -/
+@[simp]
+theorem kaehlerResidueOfPerfectField_D (y : F) :
+    P.kaehlerResidueOfPerfectField hP hF (D k F y) = 0 := by
+  obtain ⟨t, ht, -⟩ := P.exists_ord_eq_one_and_forall_mem_ord_eq_zero ∅
+  have hsep := P.transcendental_and_isSeparable_adjoin_of_ord_eq_one hF ht
+  let := hsep.2
+  rw [P.kaehlerResidueOfPerfectField_eq_kaehlerResidue hP ht hF hsep.1, kaehlerResidue_D]
+
+end PerfectField
 
 end TauCeti.Place

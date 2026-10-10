@@ -67,7 +67,6 @@ theorem abs_integral_apply_le (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hab : a <
   have hB : ‖B‖ ≤ 1 := LinearMap.mkContinuous₂_norm_le _ zero_le_one _
   have hE : 0 ≤ ∫ x in a..b, ‖γ' x‖ ^ 2 :=
     intervalIntegral.integral_nonneg hab.le fun x _ => by positivity
-  have hc : 0 ≤ (b - a) / (2 * π) := div_nonneg (sub_pos.2 hab).le (by positivity)
   calc |∫ x in a..b, ω (γ x) (γ' x)| = ‖∫ x in a..b, B (γ x) (γ' x)‖ := by
         simp [B, Real.norm_eq_abs]
     _ ≤ ‖B‖ * ((b - a) / (2 * π)) * ∫ x in a..b, ‖γ' x‖ ^ 2 :=

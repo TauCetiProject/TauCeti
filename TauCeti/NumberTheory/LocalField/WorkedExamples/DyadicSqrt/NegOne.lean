@@ -84,7 +84,7 @@ instance : Algebra.IsSeparable ℚ_[2] DyadicSqrtNegOne := by
   exact Algebra.IsAlgebraic.isSeparable_of_perfectField
 
 /-- Two is invertible in the quadratic dyadic field `ℚ_2(i)`. -/
-instance : Invertible (2 : DyadicSqrtNegOne) :=
+instance instInvertibleTwo : Invertible (2 : DyadicSqrtNegOne) :=
   invertibleOfNonzero (by norm_num)
 
 /-- **A nonzero dyadic Evens norm.** Along every embedding of `ℚ_2(i)` in a separable

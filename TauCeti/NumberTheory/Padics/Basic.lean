@@ -27,7 +27,7 @@ instance (p : ℕ) [Fact (Nat.Prime p)] : Nontrivial ℚ_[p] :=
   @DivisionRing.toNontrivial _ (instFieldPadic p).toDivisionRing
 
 /-- Two is invertible in the `p`-adic field, including when `p = 2`. -/
-instance (p : ℕ) [Fact (Nat.Prime p)] : Invertible (2 : ℚ_[p]) :=
+instance instInvertibleTwoPadic (p : ℕ) [Fact (Nat.Prime p)] : Invertible (2 : ℚ_[p]) :=
   invertibleOfNonzero two_ne_zero
 
 end TauCeti
