@@ -23,10 +23,9 @@ cocycle condition required for a projective presentation with nonzero kernel.
 The pairing is defined over a commutative ring; surjectivity and the kernel criterion
 use a field. No minimality or finite-dimensionality of the algebra or `N` is required.
 
-This supplies the cocycle restriction and quotient step in Layer 6, sublayer 6D
-(AR duality), of the
-[quiver-representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md).
-Identifying the cocycle quotient with `Ext¹` completes the presentation-level pairing.
+In presentation-level Auslander–Reiten duality, identifying the cocycle quotient
+with `Ext¹` gives a pairing between extension classes and maps into the translate
+modulo maps through injectives.
 
 ## References
 
@@ -197,7 +196,7 @@ noncomputable def auslanderReitenCocycleQuotientEquiv
     ext g
     rw [mem_ker, auslanderReitenCocyclePairing_eq_zero_iff_exists_extension f j hj,
       mem_range]
-    rfl
+    simp only [LinearMap.lcomp_apply']
   exact (Submodule.quotEquivOfEq _ _ hker.symm).trans
     ((auslanderReitenCocyclePairing (k := k) (N := N) f).quotKerEquivOfSurjective
       (auslanderReitenCocyclePairing_surjective (k := k) (N := N) f))
