@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Conjugation.Basic
+import TauCeti.Topology.Algebra.ConstMulAction
 
 /-!
 # Restriction and conjugation in explicit continuous cohomology
@@ -71,12 +72,6 @@ variable (G : Type uG) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   (hκ : ∀ v : V, (κ v : G) = g⁻¹ * v * g)
   (f : M →+ M) (hf : ∀ m : M, f m = g • m)
 
-include hf in
-omit [IsTopologicalGroup G] [IsTopologicalAddGroup M] in
-/-- A coefficient homomorphism equal to the action of a fixed element is continuous. -/
-theorem continuous_of_eq_smul : Continuous f :=
-  (continuous_const_smul g).congr fun m => (hf m).symm
-
 omit [IsTopologicalGroup G] [ContinuousSMul G M] in
 /-- Conjugating the restriction of a continuous `1`-cocycle changes it by the coboundary of its
 value at the conjugating element. This is the representative-level restriction identity. -/
@@ -91,7 +86,7 @@ omit [IsTopologicalGroup G] in
 /-- Conjugation carries restriction to `U` to restriction to `V` in degree one.
 The equality is on classes; on cocycles the correction is `d⁰(c g)`. -/
 theorem explicitMap1_explicitRes1_of_conj (x : H1 G M) :
-    explicitMap1 U M V M κ f (continuous_of_eq_smul G M g f hf)
+    explicitMap1 U M V M κ f (by exact continuous_of_eq_smul g hf)
       (inverseConjugation_smul_of_eq G M U V g κ hκ f hf)
       (explicitRes1 G M U x) = explicitRes1 G M V x := by
   induction x using QuotientAddGroup.induction_on with
@@ -123,7 +118,7 @@ variable [ContinuousMul G] [ContinuousMul U] [ContinuousMul V] in
 /-- Conjugation carries restriction to `U` to restriction to `V` in degree two.
 The cochain correction is the differential of a continuous restricted bar homotopy. -/
 theorem explicitMap2_explicitRes2_of_conj (x : H2 G M) :
-    explicitMap2 U M V M κ f (continuous_of_eq_smul G M g f hf)
+    explicitMap2 U M V M κ f (by exact continuous_of_eq_smul g hf)
       (inverseConjugation_smul_of_eq G M U V g κ hκ f hf)
       (explicitRes2 G M U x) = explicitRes2 G M V x := by
   induction x using QuotientAddGroup.induction_on with
