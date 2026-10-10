@@ -32,16 +32,18 @@ a Weierstrass equation over a discrete valuation ring.
 
 ## Main results
 
-* `Polynomial.cubic_eq_X_sub_C_pow_three_iff`: over a commutative ring,
+* `TauCeti.Polynomial.cubic_eq_X_sub_C_pow_three_iff`: over a commutative ring,
   `X³ + b X² + c X + d = (X - ρ)³` exactly when `b = -3ρ`, `c = 3ρ²` and `d = -ρ³`.
-* `Polynomial.exists_cubic_eq_X_sub_C_pow_three_iff`: over a perfect field,
+* `TauCeti.Polynomial.exists_cubic_eq_X_sub_C_pow_three_iff`: over a perfect field,
   `X³ + b X² + c X + d` is the cube of a monic linear polynomial exactly when `b² = 3c`,
   `c² = 3bd` and `bc = 9d`.
 -/
 
 public section
 
-namespace Polynomial
+open Polynomial
+
+namespace TauCeti.Polynomial
 
 /-- A monic cubic `X³ + b X² + c X + d` over a commutative ring is the cube `(X - ρ)³` exactly
 when `b = -3ρ`, `c = 3ρ²` and `d = -ρ³`. -/
@@ -84,4 +86,4 @@ theorem exists_cubic_eq_X_sub_C_pow_three_iff {k : Type*} [Field k] [PerfectFiel
     · field_simp
       linear_combination -b * hb - 3 * hd
 
-end Polynomial
+end TauCeti.Polynomial

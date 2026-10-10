@@ -34,8 +34,8 @@ If all three tests fail, then `ϖⁱ ∣ aᵢ` for every `i` and the equation wa
 always stops at Step 8, 9 or 10.
 
 The triple-root condition is stated on the coefficients of `W`, without dividing by `ϖ`: by
-`Polynomial.exists_cubic_eq_X_sub_C_pow_three_iff`, a monic cubic `T³ + b T² + c T + d` over the
-perfect field `k` is a cube exactly when `b² = 3c`, `c² = 3bd` and `bc = 9d`. For `P` these
+`TauCeti.Polynomial.exists_cubic_eq_X_sub_C_pow_three_iff`, a monic cubic `T³ + b T² + c T + d`
+over the perfect field `k` is a cube exactly when `b² = 3c`, `c² = 3bd` and `bc = 9d`. For `P` these
 conditions read `ϖ³ ∣ a₂² − 3 a₄`, `ϖ⁵ ∣ a₄² − 3 a₂ a₆` and `ϖ⁴ ∣ a₂ a₄ − 9 a₆`. Perfectness of `k`
 enters twice: to find the triple root, a cube root in characteristic `3`, and to complete the
 square in Step 9, a square root in characteristic `2`.
@@ -66,7 +66,7 @@ public section
 
 namespace WeierstrassCurve
 
-open IsLocalRing Polynomial
+open IsLocalRing Polynomial TauCeti.Polynomial
 
 variable {R : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R] {ϖ : R}
 
@@ -74,9 +74,10 @@ variable {R : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R] {ϖ :
 residue field, let `W` be an equation in the normal form of Step 6, `ϖ ∣ a₁`, `ϖ² ∣ a₃, a₄`,
 `ϖ³ ∣ a₆`, whose residue cubic `T³ + (a₂/ϖ) T² + (a₄/ϖ²) T + a₆/ϖ³` has a triple root:
 `ϖ³ ∣ a₂² − 3 a₄`, `ϖ⁵ ∣ a₄² − 3 a₂ a₆` and `ϖ⁴ ∣ a₂ a₄ − 9 a₆`
-(`Polynomial.exists_cubic_eq_X_sub_C_pow_three_iff`). Then a translation `x ↦ x + r` with `r ∈ R`
-moves the triple root to `0`: the new equation has `ϖ ∣ a₁`, `ϖ² ∣ a₂`, `ϖ² ∣ a₃`, `ϖ³ ∣ a₄` and
-`ϖ⁴ ∣ a₆`. (The condition `ϖ ∣ a₂` of the Step 6 normal form follows from the others.) -/
+(`TauCeti.Polynomial.exists_cubic_eq_X_sub_C_pow_three_iff`). Then a translation `x ↦ x + r`
+with `r ∈ R` moves the triple root to `0`: the new equation has `ϖ ∣ a₁`, `ϖ² ∣ a₂`, `ϖ² ∣ a₃`,
+`ϖ³ ∣ a₄` and `ϖ⁴ ∣ a₆`. (The condition `ϖ ∣ a₂` of the Step 6 normal form follows from the
+others.) -/
 theorem exists_variableChange_pow_dvd_a₂_a₄_a₆ [PerfectField (ResidueField R)]
     (hϖ : Irreducible ϖ) (W : WeierstrassCurve R) (h₁ : ϖ ∣ W.a₁) (h₃ : ϖ ^ 2 ∣ W.a₃)
     (h₄ : ϖ ^ 2 ∣ W.a₄) (h₆ : ϖ ^ 3 ∣ W.a₆) (hb : ϖ ^ 3 ∣ W.a₂ ^ 2 - 3 * W.a₄)
