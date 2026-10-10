@@ -24,11 +24,8 @@ the coordinates, and invariant under changing the sign of one coordinate. Such a
 (it contains every tuple dominated coordinatewise in absolute value by one of its members) and
 closed under Robin Hood transfers, which move mass from a larger coordinate to a smaller one.
 The main theorem is the *transfer descent*: a symmetric convex set containing `y` contains every
-antitone nonnegative `z` whose prefix sums are bounded by those of `y`. The proof is an induction
-on the length of the tuples. The last coordinate of `y` is set equal to that of `z` by one
-coordinate shrink or by one Robin Hood transfer, without breaking the prefix bounds, and the
-remaining coordinates are handled in the section of the set at that last value, which is again
-symmetric convex.
+antitone nonnegative `z` whose prefix sums are bounded by those of `y`. No ordering or sign
+condition is needed on `y`; in particular, it applies to every pair `z ≺w y`.
 
 Applied to the sublevel sets of a symmetric gauge (a seminorm invariant under permutations and
 sign changes of the coordinates), the descent shows that symmetric gauges are monotone for weak
@@ -82,25 +79,30 @@ def prefixSum (k : ℕ) (x : Fin n → ℝ) : ℝ :=
 theorem prefixSum_zero (x : Fin n → ℝ) : prefixSum 0 x = 0 := by
   simp [prefixSum]
 
+/-- A prefix sum of length at least `n` is the total sum. -/
 theorem prefixSum_of_le {k : ℕ} (hk : n ≤ k) (x : Fin n → ℝ) : prefixSum k x = ∑ i, x i := by
   rw [prefixSum, filter_true_of_mem fun i _ ↦ i.isLt.trans_le hk]
 
+/-- Capping the length of a prefix sum at `n` does not change it. -/
 @[simp]
 theorem prefixSum_min (k : ℕ) (x : Fin n → ℝ) : prefixSum (min k n) x = prefixSum k x := by
   rcases le_total k n with hk | hk
   · rw [min_eq_left hk]
   · rw [min_eq_right hk, prefixSum_of_le le_rfl, prefixSum_of_le hk]
 
+/-- Prefix sums are additive in the tuple. -/
 @[simp]
 theorem prefixSum_add (k : ℕ) (x y : Fin n → ℝ) :
     prefixSum k (x + y) = prefixSum k x + prefixSum k y := by
   simp [prefixSum, sum_add_distrib]
 
+/-- Prefix sums commute with scalar multiplication of the tuple. -/
 @[simp]
 theorem prefixSum_smul (k : ℕ) (c : ℝ) (x : Fin n → ℝ) :
     prefixSum k (c • x) = c * prefixSum k x := by
   simp [prefixSum, mul_sum]
 
+/-- Prefix sums are monotone in the tuple for the coordinatewise order. -/
 theorem prefixSum_mono (k : ℕ) {x y : Fin n → ℝ} (h : x ≤ y) : prefixSum k x ≤ prefixSum k y :=
   sum_le_sum fun i _ ↦ h i
 
@@ -151,12 +153,14 @@ variable {x y z x₁ x₂ y₁ y₂ : Fin n → ℝ}
 theorem refl (hx : Antitone x) (hx0 : 0 ≤ x) : IsWeaklyMajorizedBy x x :=
   ⟨hx, hx, hx0, hx0, fun _ ↦ le_rfl⟩
 
+/-- Weak majorization is transitive. -/
 @[trans]
 theorem trans (hxy : IsWeaklyMajorizedBy x y) (hyz : IsWeaklyMajorizedBy y z) :
     IsWeaklyMajorizedBy x z :=
   ⟨hxy.antitone_left, hyz.antitone_right, hxy.nonneg_left, hyz.nonneg_right,
     fun k ↦ (hxy.prefixSum_le k).trans (hyz.prefixSum_le k)⟩
 
+/-- Weak majorization is preserved by adding two weakly majorized pairs. -/
 theorem add (h₁ : IsWeaklyMajorizedBy x₁ y₁) (h₂ : IsWeaklyMajorizedBy x₂ y₂) :
     IsWeaklyMajorizedBy (x₁ + x₂) (y₁ + y₂) :=
   ⟨h₁.antitone_left.add h₂.antitone_left, h₁.antitone_right.add h₂.antitone_right,
@@ -164,6 +168,7 @@ theorem add (h₁ : IsWeaklyMajorizedBy x₁ y₁) (h₂ : IsWeaklyMajorizedBy x
     fun i ↦ add_nonneg (h₁.nonneg_right i) (h₂.nonneg_right i),
     fun k ↦ by simpa using add_le_add (h₁.prefixSum_le k) (h₂.prefixSum_le k)⟩
 
+/-- Weak majorization is preserved by scaling both tuples by a nonnegative real. -/
 theorem smul (h : IsWeaklyMajorizedBy x y) {c : ℝ} (hc : 0 ≤ c) :
     IsWeaklyMajorizedBy (c • x) (c • y) :=
   ⟨h.antitone_left.const_smul hc, h.antitone_right.const_smul hc,
