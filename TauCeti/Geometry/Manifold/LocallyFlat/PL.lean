@@ -44,27 +44,6 @@ theorem _root_.ContinuousAffineMap.isLocallyFlat_affineGraph
     IsLocallyFlat E F (fun x : E => (x, A x)) :=
   (isPLOn_continuousAffineMap A (Set.univ : Set E)).isLocallyFlat_graph
 
-/-- A continuous map is locally flat when an ambient homeomorphism presents its image as a graph.
-The section equation `(Φ (f x)).1 = x` identifies `f` with the graph of the second coordinate of
-`Φ ∘ f`, and the conclusion gives local flatness with complementary model `F`. -/
-theorem _root_.Continuous.isLocallyFlat_of_homeomorph_graph
-    {E M F : Type*} [NormedAddCommGroup E] [TopologicalSpace M] [NormedAddCommGroup F]
-    {f : E → M} (hf : Continuous f) (Φ : M ≃ₜ E × F)
-    (hΦ : ∀ x, (Φ (f x)).1 = x) :
-    IsLocallyFlat E F f := by
-  let g : E → F := fun x => (Φ (f x)).2
-  have hg : Continuous g := by
-    apply continuous_snd.comp
-    exact Φ.continuous.comp (continuousOn_univ.mp hf.continuousOn)
-  have hgraph : IsLocallyFlat E F (fun x => (x, g x)) :=
-    TauCeti.isLocallyFlat_graph g hg
-  have htransport := hgraph.homeomorph_comp Φ.symm
-  convert htransport using 1
-  funext x
-  apply Φ.injective
-  rw [Function.comp_apply, Φ.apply_symm_apply]
-  exact Prod.ext (hΦ x) rfl
-
 /-- A globally PL map is locally flat when an ambient homeomorphism presents its image as a graph.
 The section equation `(Φ (f x)).1 = x` identifies `f` with that graph, with complementary model
 `F`. -/
