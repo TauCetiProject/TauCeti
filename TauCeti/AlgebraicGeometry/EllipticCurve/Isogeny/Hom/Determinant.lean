@@ -71,20 +71,18 @@ theorem det_eq_of_weilPairing_eq_smul
 namespace Hom
 
 include hN in
-/-- **The determinant of the action of a separable isogeny on `E[N]` is its degree** modulo `N`,
+/-- **The determinant of the action of an isogeny on `E[N]` is its degree** modulo `N`,
 over a separably closed field in which `N` is invertible (Silverman III.8.6). -/
-theorem det_torsionLinearMap_ofIsogeny (φ : Isogeny W W)
-    [Algebra.IsSeparable φ.fieldPullback.fieldRange W.FunctionField] :
+theorem det_torsionLinearMap_ofIsogeny (φ : Isogeny W W) :
     LinearMap.det ((ofIsogeny φ).torsionLinearMap N) = φ.degree :=
   det_eq_of_weilPairing_eq_smul hN fun _ _ ↦ (φ.weilPairing_eq_degree_nsmul_weilPairing N hN
     (torsionLinearMap_apply _ N _).symm (torsionLinearMap_apply _ N _).symm).trans
       (Nat.cast_smul_eq_nsmul _ _ _).symm
 
 include hN in
-/-- The determinant of a nonzero separable morphism on `E[N]` is its degree modulo `N`,
+/-- The determinant of a nonzero morphism on `E[N]` is its degree modulo `N`,
 over a separably closed field in which `N` is invertible. -/
-theorem det_torsionLinearMap {f : Hom W W} (h : f ≠ 0)
-    [Algebra.IsSeparable (toIsogeny h).fieldPullback.fieldRange W.FunctionField] :
+theorem det_torsionLinearMap {f : Hom W W} (h : f ≠ 0) :
     LinearMap.det (f.torsionLinearMap N) = f.degree := by
   simpa only [ofIsogeny_toIsogeny, ← degree_ofIsogeny] using
     det_torsionLinearMap_ofIsogeny hN (toIsogeny h)

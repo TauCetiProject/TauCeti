@@ -36,7 +36,7 @@ open scoped Topology
 
 noncomputable section
 
-namespace TauCeti.ContinuousLinearMap.IsInvertible
+namespace TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [CompleteSpace V]
   {W : Set V} {x₀ : V} {B : V → V →L[ℝ] V →L[ℝ] ℝ}
@@ -126,4 +126,4 @@ theorem exists_contDiffOn_moserField (hL : L.IsInvertible) {n : WithTop ℕ∞}
   simpa only [eq_comm] using
     ((hA p hp).inverse_apply_eq (x := v) (y := -α p.2)).symm
 
-end TauCeti.ContinuousLinearMap.IsInvertible
+end TauCeti

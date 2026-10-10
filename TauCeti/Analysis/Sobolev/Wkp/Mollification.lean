@@ -62,13 +62,14 @@ theorem hasFDerivAt_indicator_convolution_value (u : Wkp mu Omega p 1)
     (hrho_cpt : HasCompactSupport rho) (x : E)
     (hx : ∀ y ∈ tsupport rho, x - y ∈ Omega) :
     fderiv ℝ
-      (((Omega : Set E).indicator (value 1 u : E → ℝ)) ⋆[
+      (((Omega : Set E).indicator (W1p.value u : E → ℝ)) ⋆[
         (ContinuousLinearMap.lsmul ℝ ℝ : ℝ →L[ℝ] ℝ →L[ℝ] ℝ).flip, mu] rho) x =
       (((Omega : Set E).indicator
         (fun y => innerSL ℝ (iteratedGradient 0 u y))) ⋆[
           (ContinuousLinearMap.lsmul ℝ ℝ :
-            ℝ →L[ℝ] (E →L[ℝ] ℝ) →L[ℝ] E →L[ℝ] ℝ).flip, mu] rho) x :=
-  (hasFDerivAt_indicator_convolution_value u rho hrho hrho_cpt x hx).fderiv
+            ℝ →L[ℝ] (E →L[ℝ] ℝ) →L[ℝ] E →L[ℝ] ℝ).flip, mu] rho) x := by
+  simpa only [value_one] using
+    (hasFDerivAt_indicator_convolution_value u rho hrho hrho_cpt x hx).fderiv
 
 /-- The classical derivative of the mollified `k`th iterated weak-gradient field
 is the mollified `(k+1)`st field in the interior of the domain. -/
@@ -152,15 +153,16 @@ theorem hasFDerivAt_indicator_convolution_normed_value [HasContDiffBump E]
     (u : Wkp mu Omega p 1) (phi : ContDiffBump (0 : E)) (x : E)
     (hx : Metric.closedBall x phi.rOut ⊆ Omega) :
     fderiv ℝ
-      (((Omega : Set E).indicator (value 1 u : E → ℝ)) ⋆[
+      (((Omega : Set E).indicator (W1p.value u : E → ℝ)) ⋆[
         (ContinuousLinearMap.lsmul ℝ ℝ : ℝ →L[ℝ] ℝ →L[ℝ] ℝ).flip, mu]
           phi.normed mu) x =
       (((Omega : Set E).indicator
         (fun y => innerSL ℝ (iteratedGradient 0 u y))) ⋆[
           (ContinuousLinearMap.lsmul ℝ ℝ :
             ℝ →L[ℝ] (E →L[ℝ] ℝ) →L[ℝ] E →L[ℝ] ℝ).flip, mu]
-          phi.normed mu) x :=
-  (hasFDerivAt_indicator_convolution_normed_value u phi x hx).fderiv
+          phi.normed mu) x := by
+  simpa only [value_one] using
+    (hasFDerivAt_indicator_convolution_normed_value u phi x hx).fderiv
 
 /-- Pointwise derivative form of
 `hasFDerivAt_indicator_convolution_normed_iteratedGradient`. -/
