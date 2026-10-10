@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import TauCeti.MeasureTheory.Integral.Average
-import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
+import TauCeti.MeasureTheory.Function.Lp.OperatorLocalBound
 
 /-!
 # Singular integral operators map bounded functions to functions of bounded mean oscillation
@@ -37,9 +37,10 @@ transposed kernel `(x, y) ↦ K y x`. Then for every `f ∈ L²` and every close
 
 (`ContinuousLinearMap.setLAverage_enorm_sub_setAverage_le_of_hormander_of_measure_closedBall_le`).
 In a finite-dimensional normed space with an additive Haar measure, `D = 5ⁿ` works for every
-ball, so `T f` has bounded mean oscillation with constant `2 (5^{n/2} ‖T‖ + B) ‖f‖_∞`
-(`ContinuousLinearMap.setLAverage_enorm_sub_setAverage_le_of_hormander`). The estimate is stated
-for `f ∈ L²`, where `T f` is defined, and it is informative when `‖f‖_∞ < ∞`.
+ball, so the same estimate holds on every ball with constant `2 (5^{n/2} ‖T‖ + B) ‖f‖_∞`
+(`ContinuousLinearMap.setLAverage_enorm_sub_setAverage_le_of_hormander`). Both estimates are
+inequalities in `ℝ≥0∞`, stated for `f ∈ L²`, where `T f` is defined. When `B < ∞` and
+`‖f‖_∞ < ∞` the constant is finite, and then `T f` has bounded mean oscillation.
 
 ## The proof
 
@@ -61,7 +62,8 @@ and replacing the constant by the average costs a factor `2`
   the mean oscillation of `T f` on a ball, in a metric measure space with a doubling bound for
   that ball.
 * `ContinuousLinearMap.setLAverage_enorm_sub_setAverage_le_of_hormander`:
-  `T f` has bounded mean oscillation on a finite-dimensional normed space with Haar measure.
+  the mean oscillation of `T f` on every ball of a finite-dimensional normed space with Haar
+  measure; when `B < ∞` and `‖f‖_∞ < ∞`, `T f` has bounded mean oscillation.
 
 ## References
 
@@ -143,38 +145,6 @@ section Doubling
 variable {X E F : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
   {μ : Measure X} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
-
-omit [PseudoMetricSpace X] [OpensMeasurableSpace X] [CompleteSpace F] in
-/-- The local part: if `g ∈ L²` is a bounded function `f` cut off to a set `s`, then the integral of
-`‖T g‖` over a set `t` is at most `‖T‖ ‖f‖_∞ (μ s)^{1/2} (μ t)^{1/2}`, by the Cauchy–Schwarz
-inequality and the `L²` bound for `T`. -/
-private theorem setLIntegral_enorm_apply_le_of_ae_eq_indicator (T : Lp E 2 μ →L[ℝ] Lp F 2 μ)
-    {f g : Lp E 2 μ} {s : Set X} (hs : MeasurableSet s) (hg : g =ᵐ[μ] s.indicator f) (t : Set X) :
-    ∫⁻ x in t, ‖T g x‖ₑ ∂μ ≤ ‖T‖ₑ * (eLpNorm f ∞ μ * μ s ^ (2⁻¹ : ℝ)) * μ t ^ (2⁻¹ : ℝ) := by
-  calc ∫⁻ x in t, ‖T g x‖ₑ ∂μ
-      = eLpNorm (T g) 1 (μ.restrict t) :=
-        (eLpNorm_one_eq_lintegral_enorm (Lp.aestronglyMeasurable _).restrict).symm
-    _ ≤ eLpNorm (T g) 2 (μ.restrict t) * μ t ^ (2⁻¹ : ℝ) := by
-        refine (eLpNorm_le_eLpNorm_mul_rpow_measure_univ (p := 1) (q := 2) (by norm_num)
-          (Lp.aestronglyMeasurable _).restrict).trans_eq ?_
-        rw [Measure.restrict_apply_univ]
-        norm_num
-    _ ≤ ‖T‖ₑ * (eLpNorm f ∞ μ * μ s ^ (2⁻¹ : ℝ)) * μ t ^ (2⁻¹ : ℝ) := by
-        gcongr
-        refine (eLpNorm_mono_measure _ Measure.restrict_le_self).trans ?_
-        rw [← Lp.enorm_def]
-        refine T.le_opENorm_of_le ?_
-        rw [Lp.enorm_def, eLpNorm_congr_ae hg,
-          eLpNorm_indicator_eq_eLpNorm_restrict hs.nullMeasurableSet]
-        calc eLpNorm f 2 (μ.restrict s)
-            ≤ eLpNorm f ∞ (μ.restrict s) *
-                μ.restrict s univ ^ (1 / (2 : ℝ≥0∞).toReal - 1 / (∞ : ℝ≥0∞).toReal) :=
-              eLpNorm_le_eLpNorm_mul_rpow_measure_univ le_top (Lp.aestronglyMeasurable f).restrict
-          _ ≤ eLpNorm f ∞ μ * μ s ^ (2⁻¹ : ℝ) := by
-              rw [Measure.restrict_apply_univ]
-              norm_num
-              gcongr
-              exact Measure.restrict_le_self
 
 omit [CompleteSpace F] in
 /-- The far part: if `b ∈ L²` is bounded by `M` and vanishes on `closedBall c (5 r)`, then on
@@ -262,7 +232,7 @@ theorem setLAverage_enorm_sub_setAverage_le_of_hormander_of_measure_closedBall_l
       norm_num
     calc ∫⁻ x in closedBall c r, ‖T (f - f₂) x‖ₑ ∂μ
         ≤ ‖T‖ₑ * (M * μ (closedBall c (5 * r)) ^ (2⁻¹ : ℝ)) * μ (closedBall c r) ^ (2⁻¹ : ℝ) :=
-          setLIntegral_enorm_apply_le_of_ae_eq_indicator T h5 hf₁ _
+          (setLIntegral_enorm_apply_le_of_ae_eq_indicator T h5 hf₁ _).trans_eq (by norm_num [M])
       _ ≤ ‖T‖ₑ * (M * (D * μ (closedBall c r)) ^ (2⁻¹ : ℝ)) *
             μ (closedBall c r) ^ (2⁻¹ : ℝ) := by gcongr
       _ = D ^ (2⁻¹ : ℝ) * ‖T‖ₑ * M *
@@ -306,9 +276,12 @@ variable {V E F : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimen
 dimension `n`, such that `T b x = ∫ K x y (b y) dy` for almost every `x` in any ball on which `b`
 vanishes, where the kernel `K` satisfies Hörmander's condition in the first variable,
 `∫_{dist y x' > 2 dist x x'} ‖K x y - K x' y‖ dy ≤ B` for all `x`, `x'`. Then for every `f ∈ L²`
-the function `T f` has bounded mean oscillation: on every closed ball `Q`,
+and every closed ball `Q`,
 
-`⨍_Q ‖T f - (T f)_Q‖ ≤ 2 (5^{n/2} ‖T‖ + B) ‖f‖_∞`. -/
+`⨍_Q ‖T f - (T f)_Q‖ ≤ 2 (5^{n/2} ‖T‖ + B) ‖f‖_∞`
+
+as an inequality in `ℝ≥0∞`. In particular, if `B < ∞` and `‖f‖_∞ < ∞`, then `T f` has bounded
+mean oscillation. -/
 theorem setLAverage_enorm_sub_setAverage_le_of_hormander
     (T : Lp E 2 μ →L[ℝ] Lp F 2 μ) {K : V → V → E →L[ℝ] F}
     (hK : ∀ x, AEStronglyMeasurable (K x) μ) {B : ℝ≥0∞}
