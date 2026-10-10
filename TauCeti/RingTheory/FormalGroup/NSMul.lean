@@ -170,7 +170,7 @@ theorem subst_nsmulSeries_invariantDifferential_mul_derivative [F.IsComm] (n : �
     ring
 
 /-- `P([n]_F(T))` is a unit, its constant coefficient being `1`. -/
-private theorem isUnit_subst_nsmulSeries_invariantDifferential (n : ℕ) :
+theorem isUnit_subst_nsmulSeries_invariantDifferential (n : ℕ) :
     IsUnit (PowerSeries.subst (F.nsmulSeries n) F.invariantDifferential) := by
   rw [PowerSeries.isUnit_iff_constantCoeff, PowerSeries.constantCoeff_eq,
     PowerSeries.constantCoeff_subst_of_constantCoeff_zero (F.constantCoeff_nsmulSeries n)]
