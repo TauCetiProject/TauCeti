@@ -28,7 +28,8 @@ All three statements hold on normalized chains as well.
 ## Main definitions
 
 * `TauCeti.SingularCube.point`: the `0`-cube at a point.
-* `TauCeti.assocMap`: the associator `(X × Y) × Z → X × Y × Z` as a continuous map.
+* `TauCeti.assocMap`: the associator `(X × Y) × Z → X × Y × Z` as a continuous map, with
+  `TauCeti.assocMap_apply`.
 
 ## Main results
 
@@ -55,7 +56,13 @@ variable {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalS
 
 variable (X Y Z) in
 /-- The associator `(X × Y) × Z → X × Y × Z` as a continuous map. -/
-def assocMap : C((X × Y) × Z, X × Y × Z) := (Homeomorph.prodAssoc X Y Z : C((X × Y) × Z, X × Y × Z))
+@[expose] def assocMap : C((X × Y) × Z, X × Y × Z) :=
+  (Homeomorph.prodAssoc X Y Z : C((X × Y) × Z, X × Y × Z))
+
+/-- The associator reassociates the coordinates. -/
+@[simp]
+theorem assocMap_apply (x : (X × Y) × Z) : assocMap X Y Z x = (x.1.1, x.1.2, x.2) :=
+  (rfl)
 
 namespace SingularCube
 
