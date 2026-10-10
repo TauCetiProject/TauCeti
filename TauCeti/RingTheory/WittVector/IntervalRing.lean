@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Analysis.Normed.Module.Completion
 public import Mathlib.Analysis.Normed.Unbundled.RingSeminorm
-public import TauCeti.RingTheory.Huber.Completion
+public import TauCeti.Analysis.Normed.Ring.Completion
+public import TauCeti.RingTheory.Huber.Completion.Basic
 public import TauCeti.RingTheory.Huber.Normed
 public import TauCeti.RingTheory.Valuation.ExtendToLocalization
 public import TauCeti.RingTheory.WittVector.GaussValuation
@@ -41,6 +42,10 @@ The ring `B^I` is a complete Hausdorff Tate ring: `p` becomes a unit of norm `ma
 hence a pseudouniformiser (`TauCeti.WittVector.isPseudoUniformizer_natCast_intervalRing`), and the
 Tate structure of `𝕎 O[1/(p [ϖ])]` comes from `TauCeti.Huber.IsTateRing.of_isUnit_norm_lt_one`.
 
+The norm `λ_I` is power-multiplicative, though in general not multiplicative, and so is its
+extension to `B^I`. Hence the power-bounded elements of `B^I` are exactly its unit ball
+`B^{I,+} = {x : λ_I(x) ≤ 1}`, which is therefore a ring of integral elements, and `B^I` is uniform.
+
 ## Main definitions
 
 * `TauCeti.WittVector.gaussValuationAway` : the extension of `λ_ρ` to `𝕎 O[1/(p [ϖ])]`.
@@ -57,6 +62,9 @@ Tate structure of `𝕎 O[1/(p [ϖ])]` comes from `TauCeti.Huber.IsTateRing.of_i
   `B^I`.
 * `TauCeti.WittVector.isPseudoUniformizer_teichmuller_intervalRing` : `[ϖ]` is a pseudouniformiser
   of `B^I`.
+* `TauCeti.WittVector.coe_powerBoundedSubring_intervalRing` : the power-bounded subring of `B^I`
+  is its unit ball `B^{I,+}`.
+* `TauCeti.WittVector.isUniform_intervalRing` : `B^I` is uniform.
 * `TauCeti.WittVector.IntervalLocalization.instIsTateRing` : `𝕎 O[1/(p [ϖ])]` with the interval
   norm is a Tate ring, so its completion `B^I` is a complete Hausdorff Tate ring by
   `TauCeti.Huber.IsTateRing.completion`.
@@ -260,6 +268,12 @@ instance instIsTateRing : IsTateRing (IntervalLocalization p hv hϖ hϖ' hρ₁ 
   IsTateRing.of_isUnit_norm_lt_one (isUnit_natCast p hv hϖ hϖ' hρ₁ hρ₂)
     (norm_natCast_lt_one p hv hϖ hϖ' hρ₁ hρ₂)
 
+/-- **The interval norm is power-multiplicative**: `λ_I(x ^ n) = λ_I(x) ^ n`, because `λ_{ρ₁}` and
+`λ_{ρ₂}` are multiplicative. -/
+theorem isPowMul_norm : IsPowMul (‖·‖ : IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂ → ℝ) :=
+  fun x n _ ↦ by
+    simp only [norm_def, map_pow, ← NNReal.coe_pow, ← NNReal.coe_max, (pow_left_mono n).map_max]
+
 /-- Scalar multiplication by `𝕎 O` is uniformly continuous, so that the `𝕎 O`-algebra structure
 extends to the completion `B^I`. -/
 instance : UniformContinuousConstSMul (𝕎 O) (IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂) :=
@@ -320,6 +334,33 @@ theorem isPseudoUniformizer_teichmuller_intervalRing :
   · rw [norm_algebraMap_intervalRing, gaussValuation_teichmuller, gaussValuation_teichmuller,
       max_self]
     exact_mod_cast hϖ'
+
+/-- **The norm of `B^I` is power-multiplicative**: `‖x ^ n‖ = ‖x‖ ^ n`. -/
+theorem isPowMul_norm_intervalRing : IsPowMul (‖·‖ : IntervalRing p hv hϖ hϖ' hρ₁ hρ₂ → ℝ) :=
+  (IntervalLocalization.isPowMul_norm p hv hϖ hϖ' hρ₁ hρ₂).completion
+
+/-- **The power-bounded elements of `B^I` are its unit ball**: `x ∈ B^I` is power-bounded exactly
+when `λ_I(x) ≤ 1`. -/
+@[simp]
+theorem isPowerBounded_iff_norm_le_one_intervalRing {x : IntervalRing p hv hϖ hϖ' hρ₁ hρ₂} :
+    IsPowerBounded x ↔ ‖x‖ ≤ 1 :=
+  (isPseudoUniformizer_natCast_intervalRing p hv hϖ hϖ' hρ₁ hρ₂).isPowerBounded_iff_norm_le_one
+    (isPowMul_norm_intervalRing p hv hϖ hϖ' hρ₁ hρ₂)
+
+/-- **The unit ball `B^{I,+}` of `B^I` is its power-bounded subring `(B^I)°`.** In particular it
+is a ring of integral elements of `B^I`, the plus ring of the Huber pair
+`TauCeti.Huber.Pair.powerBounded (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)`. -/
+theorem coe_powerBoundedSubring_intervalRing :
+    (powerBoundedSubring (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) :
+      Set (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)) = Metric.closedBall 0 1 :=
+  IsPseudoUniformizer.coe_powerBoundedSubring_eq_closedBall
+    (isPseudoUniformizer_natCast_intervalRing p hv hϖ hϖ' hρ₁ hρ₂)
+    (isPowMul_norm_intervalRing p hv hϖ hϖ' hρ₁ hρ₂)
+
+/-- **`B^I` is uniform**: its power-bounded subring, the unit ball, is bounded. -/
+instance isUniform_intervalRing : IsUniform (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) :=
+  IsUniform.of_isPowMul (isPseudoUniformizer_natCast_intervalRing p hv hϖ hϖ' hρ₁ hρ₂)
+    (isPowMul_norm_intervalRing p hv hϖ hϖ' hρ₁ hρ₂)
 
 /-! `B^I` is a complete Hausdorff Tate ring: completeness and separatedness hold for every
 completion, and the Tate structure is that of `𝕎 O[1/(p [ϖ])]`, carried to the completion by

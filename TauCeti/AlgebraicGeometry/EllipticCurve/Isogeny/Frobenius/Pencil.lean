@@ -120,7 +120,7 @@ theorem degree_zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id (r s : ℤ) (hs 
       (a : ZMod ℓ) • M - (c : ZMod ℓ) • 1 =
         LinearMap.toMatrix b b ((a • π - c • id (W⁄K).toAffine).torsionLinearMap ℓ) := by
     simp only [torsionLinearMap_sub, torsionLinearMap_zsmul, torsionLinearMap_id,
-      map_sub, map_zsmul, LinearMap.toMatrix_id, Int.cast_smul_eq_zsmul, M]
+      _root_.map_sub, _root_.map_zsmul, LinearMap.toMatrix_id, Int.cast_smul_eq_zsmul, M]
   refine ⟨M, ?_, ?_, ?_⟩
   · rw [LinearMap.det_toMatrix]
     simpa only [Int.cast_natCast, π] using

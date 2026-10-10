@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.Algebra.Category.ModuleCat.Products
+public import Mathlib.Algebra.Module.Projective
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Basic
-public import Mathlib.CategoryTheory.Preadditive.Projective.Basic
 public import Mathlib.RingTheory.SimpleModule.Basic
 
 /-!
@@ -17,7 +17,8 @@ public import Mathlib.RingTheory.SimpleModule.Basic
 This file records how the coproduct inclusion associated to a simplex behaves under a morphism
 of coefficient objects, and how the degreewise components of the chain maps induced by maps of
 simplicial sets compose with each other and with changes of coefficients.  It also records that
-simplicial chain modules with semisimple coefficients are semisimple.
+simplicial chain modules with semisimple coefficients are semisimple, and those with projective
+coefficients are projective.
 -/
 
 public section
@@ -78,14 +79,13 @@ instance isSemisimpleModule_chainComplex_X {k : Type w} [Ring k] (X : SSet.{w})
   exact .congr ((ModuleCat.coprodIsoDirectSum fun _ : X _⦋n⦌ ↦ M).toLinearEquiv.trans
     (finsuppLequivDFinsupp k).symm)
 
-/-- The simplicial chain objects `Cₙ(X; R) = ∐ R` with projective coefficients `R` are
+/-- The simplicial chain modules `Cₙ(X; M) = ⨁ M` with projective coefficients `M` are
 projective. -/
-instance projective_chainComplex_X {C : Type u} [Category.{v} C] [HasCoproducts.{w} C]
-    [Preadditive C] (X : SSet.{w}) (R : C) [Projective R] (n : ℕ) :
-    Projective ((X.chainComplex R).X n) where
-  -- `Cₙ(X; R)` is by definition the coproduct of copies of `R` indexed by the `n`-simplices.
-  factors f e _ := ⟨Sigma.desc fun x ↦ Projective.factorThru (X.ιChainComplex x ≫ f) e,
-    Sigma.hom_ext _ _ fun _ ↦
-      (Sigma.ι_comp_desc_assoc _ _ _).trans (Projective.factorThru_comp _ _)⟩
+instance projective_chainComplex_X {k : Type w} [Ring k] (X : SSet.{w})
+    (M : ModuleCat.{w} k) [Module.Projective k M] (n : ℕ) :
+    Module.Projective k ((X.chainComplex M).X n) := by
+  classical
+  -- `Cₙ(X; M)` is by definition the coproduct of copies of `M` indexed by the `n`-simplices.
+  exact .of_equiv' (ModuleCat.coprodIsoDirectSum fun _ : X _⦋n⦌ ↦ M).toLinearEquiv.symm
 
 end SSet

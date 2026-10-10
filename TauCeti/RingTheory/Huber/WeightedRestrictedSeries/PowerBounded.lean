@@ -20,10 +20,16 @@ Neither result needs the trivial weight family. The constant result holds for ev
 the variable result is the case `a = 1` of the power-boundedness of `a Xᵢ` for `a ∈ T i`, so it
 needs only `1 ∈ T i`, which the trivial family satisfies.
 
+More generally every weighted monomial `t Xν` with `t ∈ Tν` is power-bounded. This is what puts
+the subring whose integral closure is the plus ring of the Huber pair `A⟨X⟩_T`
+(`TauCeti.Huber.Pair.weighted`) inside `A⟨X⟩_T°`.
+
 ## Main results
 
-* `TauCeti.Huber.isPowerBounded_weightedC_mul_weightedX`: the weighted variable `a Xᵢ` is
-  power-bounded whenever `a ∈ T i`.
+* `TauCeti.Huber.isPowerBounded_weightedPolynomialHom_monomial`: the weighted monomial `t Xν` is
+  power-bounded whenever `t ∈ Tν`.
+* `TauCeti.Huber.isPowerBounded_weightedC_mul_weightedX`: in particular the weighted variable
+  `a Xᵢ` is power-bounded whenever `a ∈ T i`.
 * `TauCeti.Huber.isPowerBounded_weightedX`: the variable `Xᵢ` is power-bounded whenever `1 ∈ T i`,
   with `TauCeti.Huber.isPowerBounded_weightedX_one_weight` the trivial-weight case the closed
   polydisc uses.
@@ -51,8 +57,35 @@ namespace TauCeti.Huber
 
 variable {k : ℕ} {A : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]
 
-/-- **A weighted variable `a · Xᵢ` is power-bounded** whenever `a ∈ T i`: the weight `Tᵢ` is
-exactly what multiplies `Xᵢ` back into the unit ball of `A⟨X⟩_T`.
+/-- **A weighted monomial `t Xᵛ` is power-bounded** whenever `t ∈ Tᵛ`: the weight `Tᵛ` is exactly
+what multiplies `Xᵛ` back into the unit ball of `A⟨X⟩_T`. -/
+theorem isPowerBounded_weightedPolynomialHom_monomial {T : Fin k → Set A} (hT : IsWeightFamily T)
+    {ν : Fin k →₀ ℕ} {t : A} (ht : t ∈ weightPow T ν) :
+    IsPowerBounded (weightedPolynomialHom T hT (MvPolynomial.monomial ν t)) := by
+  classical
+  -- multiplying by `(t Xᵛ)ⁿ = tⁿ Xⁿᵛ` moves the coefficient at `μ` to `μ + n • ν` and multiplies it
+  -- by `tⁿ ∈ Tⁿᵛ`, so it lands in the weight subgroup at the shifted index and one neighbourhood
+  -- absorbs every power
+  refine isPowerBounded_iff.mpr <| isBounded_iff.mpr fun U hU ↦ ?_
+  have hbasis := hasBasis_nhds_zero_weightedTopology hT
+  obtain ⟨W, -, hWU⟩ := hbasis.mem_iff.mp hU
+  refine ⟨_, hbasis.mem_of_mem (i := W) trivial, ?_⟩
+  rintro _ ⟨g, hg, _, ⟨n, rfl⟩, rfl⟩
+  refine hWU ?_
+  simp only [SetLike.mem_coe, mem_weightedNhd] at hg ⊢
+  intro μ
+  rw [← map_pow, MvPolynomial.monomial_pow, Subring.coe_mul, coe_weightedPolynomialHom,
+    MvPolynomial.coe_monomial, MvPowerSeries.coeff_mul_monomial]
+  split
+  · -- the coefficient moves from `μ - n • ν` to `μ`, picking up the weight `tⁿ ∈ Tⁿᵛ`
+    rename_i hle
+    have hpow : t ^ n ∈ weightPow T (n • ν) := weightPow_nsmul T n ν ▸ Set.pow_mem_pow ht
+    have h2 := mul_mem_weightMul_add_of_mem_weightPow hpow (hg (μ - n • ν))
+    rwa [tsub_add_cancel_of_le hle, mul_comm] at h2
+  · exact (weightMul T μ W.toAddSubgroup).zero_mem
+
+/-- **A weighted variable `a · Xᵢ` is power-bounded** whenever `a ∈ T i`. This is
+`TauCeti.Huber.isPowerBounded_weightedPolynomialHom_monomial` at `ν = eᵢ`.
 
 Over a Tate ring the images of these elements present the completion of `A⟨X⟩_T` as a
 quotient of an unweighted restricted power-series algebra, one variable for each element of
@@ -62,34 +95,9 @@ each finite `Tᵢ`
 theorem isPowerBounded_weightedC_mul_weightedX {T : Fin k → Set A} (hT : IsWeightFamily T)
     {i : Fin k} {a : A} (ha : a ∈ T i) :
     IsPowerBounded (weightedC T hT a * weightedX T hT i) := by
-  classical
-  -- multiplying by `(a Xᵢ)ⁿ` moves the coefficient at `ν` to `ν + n · eᵢ` and multiplies it by
-  -- `aⁿ ∈ Tᵢⁿ`, so it lands in the weight subgroup at the shifted index and one neighbourhood
-  -- absorbs every power
-  refine isPowerBounded_iff.mpr <| isBounded_iff.mpr fun U hU ↦ ?_
-  have hbasis := hasBasis_nhds_zero_weightedTopology hT
-  obtain ⟨W, -, hWU⟩ := hbasis.mem_iff.mp hU
-  refine ⟨_, hbasis.mem_of_mem (i := W) trivial, ?_⟩
-  rintro _ ⟨g, hg, _, ⟨n, rfl⟩, rfl⟩
-  refine hWU ?_
-  simp only [SetLike.mem_coe, mem_weightedNhd] at hg ⊢
-  intro ν
-  have hcoe : ((g * (weightedC T hT a * weightedX T hT i) ^ n : weightedRestrictedSubring T hT) :
-      MvPowerSeries (Fin k) A) =
-        (g : MvPowerSeries (Fin k) A) * MvPowerSeries.monomial (Finsupp.single i n) (a ^ n) := by
-    push_cast [coe_weightedC, coe_weightedX]
-    rw [mul_pow, MvPowerSeries.X_pow_eq, ← map_pow, ← MvPowerSeries.monomial_zero_eq_C_apply,
-      MvPowerSeries.monomial_mul_monomial, zero_add, mul_one]
-  rw [hcoe, MvPowerSeries.coeff_mul_monomial]
-  split
-  · -- the coefficient moves from `ν - n · eᵢ` to `ν`, picking up the weight `aⁿ ∈ Tᵢⁿ`
-    rename_i hle
-    have hpow : a ^ n ∈ weightPow T (Finsupp.single i n) := by
-      rw [weightPow_single]
-      exact Set.pow_mem_pow ha
-    have h2 := mul_mem_weightMul_add_of_mem_weightPow hpow (hg (ν - Finsupp.single i n))
-    rwa [tsub_add_cancel_of_le hle, mul_comm] at h2
-  · exact (weightMul T ν W.toAddSubgroup).zero_mem
+  rw [← weightedPolynomialHom_C, ← weightedPolynomialHom_X, ← map_mul,
+    MvPolynomial.C_mul_X_eq_monomial]
+  exact isPowerBounded_weightedPolynomialHom_monomial hT (by rwa [weightPow_single, pow_one])
 
 /-- **The variable `Xᵢ` is power-bounded** whenever `1 ∈ T i`. This is
 `TauCeti.Huber.isPowerBounded_weightedC_mul_weightedX` at `a = 1`.

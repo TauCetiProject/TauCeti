@@ -33,6 +33,11 @@ The class is additive in `a` by construction and additive in `χ`
 carry class at the places of a number field, and additivity in `χ` reduces the local computation to
 a character taking the value `1 / n` on a generator.
 
+The cocycle construction and its naturality only require separately continuous multiplication on
+the groups: the open kernel makes the character locally constant. The cohomology map
+`explicitMap2_characterCarryCocycle` requires jointly continuous multiplication and continuous
+actions, as does the degree-two cohomology carrier `H2`.
+
 ## Main definitions
 
 * `TauCeti.ContCohomology.characterCarry χ g h`: the integer `⌊χ'(g) + χ'(h)⌋`.
@@ -125,9 +130,11 @@ theorem characterCarry_comp {H : Type*} [Group H] (χ : Additive G →+ AddCircl
 
 end Carry
 
+variable {G : Type u} [Group G] [TopologicalSpace G]
+
 section Cocycle
 
-variable {G : Type u} [Group G] [TopologicalSpace G] [ContinuousMul G]
+variable [SeparatelyContinuousMul G]
   {M : Type v} [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
   [DistribMulAction G M]
 
@@ -180,7 +187,7 @@ theorem characterCarryCocycle_apply (χ : Additive G →+ AddCircle (1 : ℚ))
 /-- **Naturality of the carry cocycle.** Pulling back the carry cocycle of `χ` and `a` along a
 compatible pair `(φ, f)` gives the carry cocycle of `χ ∘ φ` and `f a`. -/
 theorem cocyclesMap2_characterCarryCocycle {H : Type uH} [Group H] [TopologicalSpace H]
-    [ContinuousMul H] {N : Type uN} [AddCommGroup N] [TopologicalSpace N]
+    [SeparatelyContinuousMul H] {N : Type uN} [AddCommGroup N] [TopologicalSpace N]
     [IsTopologicalAddGroup N] [DistribMulAction H N] (φ : H →ₜ* G) (f : M →+ N)
     (hf : Continuous f) (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m)
     (χ : Additive G →+ AddCircle (1 : ℚ)) (hχ : IsOpen (χ.ker : Set (Additive G))) (a : H0 G M) :
@@ -192,28 +199,10 @@ theorem cocyclesMap2_characterCarryCocycle {H : Type uH} [Group H] [TopologicalS
   refine Subtype.ext (funext fun ⟨h, k⟩ ↦ ?_)
   simp [cocyclesMap2_apply, characterCarryCocycle_apply, map_zsmul]
 
-/-- **Naturality of the carry class.** Pulling back the cohomology class of the carry cocycle of
-`χ` and `a` along a compatible pair `(φ, f)` gives the carry class of `χ ∘ φ` and `f a`.
-
-This is the degree-two cohomology form of `cocyclesMap2_characterCarryCocycle`. -/
-theorem explicitMap2_characterCarryCocycle {H : Type uH} [Group H] [TopologicalSpace H]
-    [ContinuousMul H] [ContinuousSMul G M]
-    {N : Type uN} [AddCommGroup N] [TopologicalSpace N]
-    [IsTopologicalAddGroup N] [DistribMulAction H N] [ContinuousSMul H N]
-    (φ : H →ₜ* G) (f : M →+ N) (hf : Continuous f)
-    (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m)
-    (χ : Additive G →+ AddCircle (1 : ℚ)) (hχ : IsOpen (χ.ker : Set (Additive G)))
-    (a : H0 G M) :
-    explicitMap2 G M H N φ f hf hequiv (characterCarryCocycle χ hχ a : H2 G M) =
-      (characterCarryCocycle (χ.comp (φ : H →* G).toAdditive)
-        (by rw [← AddMonoidHom.comap_ker, AddSubgroup.coe_comap]
-            exact hχ.preimage (continuous_ofMul.comp (φ.continuous.comp continuous_toMul)))
-        (explicitMap0 G M φ f hequiv a) : H2 H N) := by
-  rw [explicitMap2_mk, cocyclesMap2_characterCarryCocycle]
-
 /-- **The class of the carry cocycle is additive in the character.** The carry cocycles of
 `χ₁ + χ₂`, `χ₁` and `χ₂` differ by the coboundary of `g ↦ ⌊χ₁'(g) + χ₂'(g)⌋ • a`. The classes are
-read in `Z² / B²`, which is `H2 G M` whenever the latter is defined. -/
+read in the quotient of `Z²` by the continuous coboundaries lying in `Z²`, which is `H2 G M`
+whenever the latter is defined. -/
 theorem characterCarryCocycle_add_character
     {χ₁ χ₂ : Additive G →+ AddCircle (1 : ℚ)}
     (hχ₁ : IsOpen (χ₁.ker : Set (Additive G))) (hχ₂ : IsOpen (χ₂.ker : Set (Additive G)))
@@ -276,5 +265,32 @@ theorem characterCarryCocycle_zsmul_character
     rw [eq_add_neg_iff_add_eq, ← h, ih]
 
 end Cocycle
+
+section Cohomology
+
+variable [ContinuousMul G]
+  {M : Type v} [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
+  [DistribMulAction G M]
+
+/-- **Naturality of the carry class.** Pulling back the cohomology class of the carry cocycle of
+`χ` and `a` along a compatible pair `(φ, f)` gives the carry class of `χ ∘ φ` and `f a`.
+
+This is the degree-two cohomology form of `cocyclesMap2_characterCarryCocycle`. -/
+theorem explicitMap2_characterCarryCocycle {H : Type uH} [Group H] [TopologicalSpace H]
+    [ContinuousMul H] [ContinuousSMul G M]
+    {N : Type uN} [AddCommGroup N] [TopologicalSpace N]
+    [IsTopologicalAddGroup N] [DistribMulAction H N] [ContinuousSMul H N]
+    (φ : H →ₜ* G) (f : M →+ N) (hf : Continuous f)
+    (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m)
+    (χ : Additive G →+ AddCircle (1 : ℚ)) (hχ : IsOpen (χ.ker : Set (Additive G)))
+    (a : H0 G M) :
+    explicitMap2 G M H N φ f hf hequiv (characterCarryCocycle χ hχ a : H2 G M) =
+      (characterCarryCocycle (χ.comp (φ : H →* G).toAdditive)
+        (by rw [← AddMonoidHom.comap_ker, AddSubgroup.coe_comap]
+            exact hχ.preimage (continuous_ofMul.comp (φ.continuous.comp continuous_toMul)))
+        (explicitMap0 G M φ f hequiv a) : H2 H N) := by
+  rw [explicitMap2_mk, cocyclesMap2_characterCarryCocycle]
+
+end Cohomology
 
 end TauCeti.ContCohomology

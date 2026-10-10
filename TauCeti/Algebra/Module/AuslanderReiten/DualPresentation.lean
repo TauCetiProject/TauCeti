@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Module.Projective.FinitePresentation
 public import TauCeti.LinearAlgebra.Dual.FiniteProjective
 public import TauCeti.LinearAlgebra.Dual.Opposite
+public import TauCeti.Algebra.Module.AuslanderReiten.Transpose
 public import Mathlib.Algebra.Exact.Basic
 
 /-!
@@ -20,7 +21,8 @@ presented over an arbitrary ring.
 The `A`-valued dual makes the inverse Auslander–Bridger transpose an actual left `A`-module,
 without transporting a module over the double opposite. `rightTransposePresentation` retains
 the presenting projectives and maps so that the canonical recovery is available to the stable
-equivalence.
+equivalence. `rightTransposeEquiv` compares the two codomain conventions semilinearly along
+the canonical equivalence from `A` to its double opposite.
 
 ## References
 
@@ -43,6 +45,33 @@ variable {N : ModuleCat.{v} Aᵐᵒᵖ}
 an actual left `A`-module rather than a module over the double opposite. -/
 noncomputable abbrev rightTranspose (Q : FiniteProjectivePresentation N) : ModuleCat.{max u v} A :=
   ModuleCat.of A ((Q.P₁ →ₗ[Aᵐᵒᵖ] A) ⧸ LinearMap.range (Q.p.lcomp A A))
+
+/-- Changing functional values from `A` to `Aᵐᵒᵖ` identifies the right transpose with the
+ordinary transpose over `Aᵐᵒᵖ`, with scalars transported to the double opposite. -/
+noncomputable def rightTransposeEquiv (Q : FiniteProjectivePresentation N) :
+    ((Q.P₁ →ₗ[Aᵐᵒᵖ] A) ⧸ LinearMap.range (Q.p.lcomp A A))
+      ≃ₛₗ[RingHomClass.toRingHom (RingEquiv.opOp A)]
+      AuslanderReitenTranspose Q.p :=
+  (AuslanderReitenTranspose.quotientEquiv Q.p _ (opDualCodomainEquiv A Q.P₁).symm
+    ((Submodule.map_symm_eq_iff (opDualCodomainEquiv A Q.P₁)).mpr
+      (map_range_opDualCodomainEquiv A Q.p))).symm
+
+/-- Right-transpose transport applies `op` to the values of a functional representative. -/
+@[simp]
+theorem rightTransposeEquiv_mk (Q : FiniteProjectivePresentation N)
+    (φ : Q.P₁ →ₗ[Aᵐᵒᵖ] A) :
+    Q.rightTransposeEquiv (Submodule.Quotient.mk φ) =
+      AuslanderReitenTranspose.mk Q.p (opDualCodomainEquiv A Q.P₁ φ) := by
+  apply Q.rightTransposeEquiv.symm.injective
+  simp [rightTransposeEquiv]
+
+/-- Inverse right-transpose transport removes the opposite from functional values. -/
+@[simp]
+theorem rightTransposeEquiv_symm_mk (Q : FiniteProjectivePresentation N)
+    (φ : Module.Dual Aᵐᵒᵖ Q.P₁) :
+    Q.rightTransposeEquiv.symm (AuslanderReitenTranspose.mk Q.p φ) =
+      Submodule.Quotient.mk ((opDualCodomainEquiv A Q.P₁).symm φ) := by
+  simp [rightTransposeEquiv]
 
 /-- The finite projective presentation of a right transpose obtained by dualizing its
 right presentation. The abbreviation keeps the dual modules and their maps definitionally

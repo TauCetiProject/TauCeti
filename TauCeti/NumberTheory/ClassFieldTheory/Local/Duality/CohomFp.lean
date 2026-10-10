@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Duality.FiniteModule
+public import TauCeti.NumberTheory.ClassFieldTheory.FiniteCohomology.DegreeTwo
 import TauCeti.Algebra.CharP.LocalRing
 import TauCeti.Algebra.Module.ZMod.Dual
+import TauCeti.NumberTheory.ClassFieldTheory.Brauer.RootsOfUnity
 import TauCeti.NumberTheory.LocalField.Kummer
 import TauCeti.RingTheory.RootsOfUnity.Basic
 
@@ -18,16 +20,21 @@ Let `K` be a nonarchimedean local field and `n` a natural number invertible in `
 duality for the trivial module `ℤ/n` computes its cohomology without a primitive `n`th root of
 unity in `K`; its dual is `Hom(ℤ/n, μₙ) = μₙ`.
 
-* In degree two, `H²(G_K, ℤ/n)` is dual to `H⁰(G_K, μₙ) = μₙ(K)`, so it vanishes when `K` has no
-  `n`th root of unity other than `1`.
+* In degree two, `H²(G_K, ℤ/n)` is dual to `H⁰(G_K, μₙ) = μₙ(K)`, so it is finite and vanishes
+  when `K` has no `n`th root of unity other than `1`.
 * In degree one, `H¹(G_K, ℤ/n)` is dual to `H¹(G_K, μₙ)`, which Kummer theory identifies with
   `Kˣ/(Kˣ)ⁿ`; so the two have the same order.
 
-For a prime `p` and `K` not containing a primitive `p`th root of unity, these are the inputs to the
-freeness of the maximal pro-`p` quotient of `G_K` and to its generator rank.
+For a prime `p` and a finite compatible extension `K` of `ℚ_[p]`, combining both cases gives
+`dim H²(G_K, 𝔽_p)` (`1` when `μ_p ⊆ K` and `0` when `μ_p ⊄ K`) and the Euler-characteristic
+identity `dim H¹(G_K, 𝔽_p) = 1 + dim H²(G_K, 𝔽_p) + [K : ℚ_[p]]`. When `K` does not contain a
+primitive `p`th root of unity, these are the inputs to the freeness of the maximal pro-`p`
+quotient of `G_K` and to its generator rank.
 
 ## Main results
 
+* `TauCeti.finite_cohomFp_two_absoluteGaloisGroup`: `H²(G_K, ℤ/n)` is finite when `n` is
+  invertible in `K`.
 * `TauCeti.ClassFieldTheory.subsingleton_cohomFp_two_absoluteGaloisGroup`: `H²(G_K, ℤ/n)` vanishes
   when `μₙ(K)` is trivial.
 * `TauCeti.ClassFieldTheory.natCard_cohomFp_one_absoluteGaloisGroup`: `H¹(G_K, ℤ/n)` has as many
@@ -36,10 +43,14 @@ freeness of the maximal pro-`p` quotient of `G_K` and to its generator rank.
   characteristic, `H¹(G_K, 𝔽_p)` has dimension one when `K` does not contain `μ_p`.
 * `TauCeti.finrank_cohomFp_one_absoluteGaloisGroup_le_two_of_coprime_ringChar`: away from the
   residue characteristic, `H¹(G_K, 𝔽_p)` has dimension at most two.
-* `TauCeti.subsingleton_cohomFp_two_absoluteGaloisGroup_of_not_mu`: `H²(G_K, 𝔽_p) = 0` for a prime
-  `p` when `K` contains no primitive `p`th root of unity.
+* `TauCeti.subsingleton_cohomFp_two_absoluteGaloisGroup_of_not_mu` and
+  `TauCeti.finrank_cohomFp_two_absoluteGaloisGroup_of_not_mu`: `H²(G_K, 𝔽_p) = 0` for a prime `p`
+  when `K` contains no primitive `p`th root of unity.
 * `TauCeti.finrank_cohomFp_one_absoluteGaloisGroup_of_not_mu`: `dim H¹(G_K, 𝔽_p) = [K : ℚ_[p]] + 1`
   for a finite compatible extension `K` of `ℚ_[p]` containing no primitive `p`th root of unity.
+* `TauCeti.finrank_cohomFp_one_absoluteGaloisGroup`: the Euler-characteristic identity
+  `dim H¹(G_K, 𝔽_p) = 1 + dim H²(G_K, 𝔽_p) + [K : ℚ_[p]]` for a finite compatible extension `K`
+  of `ℚ_[p]`.
 
 ## References
 
@@ -156,6 +167,17 @@ namespace TauCeti
 variable (p : ℕ) [Fact p.Prime] (K : Type) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
+omit [Fact p.Prime] in
+/-- Degree-two absolute Galois cohomology with trivial `ℤ/p` coefficients is finite when
+`p` is nonzero in the local field, even when `p` is not prime. At prime `p`, this also supplies
+its finite-dimensionality over `𝔽_p`. -/
+instance finite_cohomFp_two_absoluteGaloisGroup [NeZero (p : K)] :
+    Finite (cohomFp p (Field.absoluteGaloisGroup K) 2) := by
+  have : NeZero p := ⟨fun h ↦ NeZero.ne (p : K) (by simp [h])⟩
+  exact ClassFieldTheory.finite_H (NeZero.ne (p : K))
+    (trivialFp p (Field.absoluteGaloisGroup K))
+    (isSmoothDiscrete_trivialFp p (Field.absoluteGaloisGroup K)) le_rfl
+
 /-- **`H²(G_K, 𝔽_p)` vanishes** for a nonarchimedean local field `K` containing no primitive `p`th
 root of unity, `p` being invertible in `K`: by local duality it is dual to `μ_p(K) = 1`. -/
 theorem subsingleton_cohomFp_two_absoluteGaloisGroup_of_not_mu [NeZero (p : K)]
@@ -163,6 +185,14 @@ theorem subsingleton_cohomFp_two_absoluteGaloisGroup_of_not_mu [NeZero (p : K)]
     Subsingleton (cohomFp p (Field.absoluteGaloisGroup K) 2) :=
   ClassFieldTheory.subsingleton_cohomFp_two_absoluteGaloisGroup (NeZero.ne (p : K)).isUnit
     (rootsOfUnity_eq_bot_iff.2 hmu)
+
+/-- If a nonarchimedean local field `K` contains no primitive `p`th root of unity, with `p`
+invertible in `K`, then `dim H²(G_K, 𝔽_p) = 0`. -/
+theorem finrank_cohomFp_two_absoluteGaloisGroup_of_not_mu [NeZero (p : K)]
+    (hmu : ¬ ∃ ζ : K, IsPrimitiveRoot ζ p) :
+    Module.finrank (ZMod p) (cohomFp p (Field.absoluteGaloisGroup K) 2) = 0 := by
+  have := subsingleton_cohomFp_two_absoluteGaloisGroup_of_not_mu p K hmu
+  exact Module.finrank_zero_of_subsingleton
 
 /-- **Away from the residue characteristic, `H¹(G_K, 𝔽_p)` has dimension one when
 `μ_p ⊄ K`.** This follows from local duality and Kummer theory: `H¹(G_K, 𝔽_p)` has as many
@@ -199,6 +229,22 @@ theorem finrank_cohomFp_one_absoluteGaloisGroup_le_two_of_coprime_ringChar
     (IsLocalRing.isUnit_natCast_iff_not_dvd.2
       ((CharP.prime_ringChar 𝓀[K]).coprime_iff_not_dvd.mp hp.symm))
 
+/-- **Away from the residue characteristic, the Euler-characteristic identity for trivial `𝔽_p`
+coefficients holds**: `dim H¹(G_K, 𝔽_p) = 1 + dim H²(G_K, 𝔽_p)`. -/
+theorem finrank_cohomFp_one_absoluteGaloisGroup_of_isUnit
+    (hpK : IsUnit ((p : ℕ) : 𝒪[K])) :
+    Module.finrank (ZMod p) (cohomFp p (Field.absoluteGaloisGroup K) 1) =
+      1 + Module.finrank (ZMod p) (cohomFp p (Field.absoluteGaloisGroup K) 2) := by
+  have : NeZero (p : K) := ⟨natCast_ne_zero_of_isUnit hpK⟩
+  have : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
+  have : Fact (1 < p) := ⟨(Fact.out : p.Prime).one_lt⟩
+  by_cases hmu : ∃ ζ : K, IsPrimitiveRoot ζ p
+  · obtain ⟨ζ, hζ⟩ := hmu
+    rw [finrank_cohomFp_one_absoluteGaloisGroup_of_isUnit_of_exists_isPrimitiveRoot p K hpK
+      ⟨ζ, hζ⟩, ClassFieldTheory.finrank_cohomFp_two_absoluteGaloisGroup_of_isPrimitiveRoot hζ]
+  · rw [finrank_cohomFp_one_absoluteGaloisGroup_of_isUnit_of_not_mu p K hpK hmu,
+      finrank_cohomFp_two_absoluteGaloisGroup_of_not_mu p K hmu, add_zero]
+
 /-- If a finite compatible extension `K` of `ℚ_[p]` contains no primitive `p`th root of unity,
 then `dim H¹(G_K, 𝔽_p) = [K : ℚ_[p]] + 1`: by local duality and Kummer theory `H¹(G_K, 𝔽_p)` has
 as many elements as `Kˣ/(Kˣ)^p`, that is `p · #μ_p(K) · p ^ [K : ℚ_[p]]` with `μ_p(K) = 1`. -/
@@ -219,5 +265,27 @@ theorem finrank_cohomFp_one_absoluteGaloisGroup_of_not_mu
   dsimp only
   rw [← hfin]
   ring
+
+/-- **The Euler-characteristic identity for trivial `𝔽_p` coefficients** over a finite compatible
+extension `K` of `ℚ_[p]`: `dim H¹(G_K, 𝔽_p) = 1 + dim H²(G_K, 𝔽_p) + [K : ℚ_[p]]`. When `μ_p ⊆ K`,
+`dim H² = 1` and `dim H¹ = [K : ℚ_[p]] + 2`; when `μ_p ⊄ K`, `dim H² = 0` and
+`dim H¹ = [K : ℚ_[p]] + 1`. -/
+theorem finrank_cohomFp_one_absoluteGaloisGroup
+    [Algebra ℚ_[p] K] [ValuativeExtension ℚ_[p] K] :
+    Module.finrank (ZMod p) (cohomFp p (Field.absoluteGaloisGroup K) 1) =
+      1 + Module.finrank (ZMod p) (cohomFp p (Field.absoluteGaloisGroup K) 2) +
+        Module.finrank ℚ_[p] K := by
+  have : CharZero K := charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
+  have : NeZero (p : K) := ⟨Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero⟩
+  have : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
+  have : Fact (1 < p) := ⟨(Fact.out : p.Prime).one_lt⟩
+  by_cases hmu : ∃ ζ : K, IsPrimitiveRoot ζ p
+  · obtain ⟨ζ, hζ⟩ := hmu
+    rw [finrank_cohomFp_one_absoluteGaloisGroup_of_exists_isPrimitiveRoot p K ⟨ζ, hζ⟩,
+      ClassFieldTheory.finrank_cohomFp_two_absoluteGaloisGroup_of_isPrimitiveRoot hζ]
+    omega
+  · rw [finrank_cohomFp_one_absoluteGaloisGroup_of_not_mu p K hmu,
+      finrank_cohomFp_two_absoluteGaloisGroup_of_not_mu p K hmu]
+    omega
 
 end TauCeti

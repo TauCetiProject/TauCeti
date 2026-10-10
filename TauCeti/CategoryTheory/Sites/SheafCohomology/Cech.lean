@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Algebra.Homology.Opposite
 public import Mathlib.Algebra.Homology.SingleHomology
-public import Mathlib.CategoryTheory.Limits.FormalCoproducts.ExtraDegeneracy
+public import Mathlib.AlgebraicTopology.SimplicialObject.ChainHomotopy
 public import Mathlib.CategoryTheory.Sites.SheafCohomology.Cech
+public import TauCeti.AlgebraicTopology.CechNerve
+public import TauCeti.CategoryTheory.Limits.FormalCoproducts.Cech
 public import TauCeti.CategoryTheory.Sites.IsSheafFor
 
 /-!
@@ -31,11 +33,20 @@ cohomology of `Č(U, F)`, and `Č(U, F)` has no cohomology in positive degrees. 
 subset `W` fits this setting in the category `Over W`, which has finite products and the terminal
 object `Over.mk (𝟙 W)` (`CategoryTheory.Over.mkIdTerminal`).
 
+A morphism of families `U ⟶ V`, that is a morphism of formal coproducts, induces a map of Čech
+complexes `Č(V, P) ⟶ Č(U, P)` compatible with the augmentations, and any two morphisms `U ⟶ V`
+induce homotopic maps. For open covers this says that the map on Čech cohomology induced by a
+refinement does not depend on the refinement map; in particular, acyclicity of a cover only depends
+on the cover up to refinement in both directions, so that members contained in other members may
+be added or removed.
+
 ## Main definitions
 
 * `TauCeti.CategoryTheory.cechAugmentation U hT P`: the augmentation of the Čech complex of `P`
   for `U`; its degree `0` component restricts a section over `T` along each map to `T`
   (`TauCeti.CategoryTheory.cechAugmentation_f_zero_comp_π`).
+* `TauCeti.CategoryTheory.cechComplexMap P φ`: the map of Čech complexes `Č(V, P) ⟶ Č(U, P)`
+  induced by a morphism of families `φ : U ⟶ V`.
 
 ## Main results
 
@@ -51,11 +62,20 @@ object `Over.mk (𝟙 W)` (`CategoryTheory.Over.mkIdTerminal`).
   Mathlib's extra degeneracy `CategoryTheory.Limits.FormalCoproduct.extraDegeneracyCech` of the
   Čech object, which makes `ε` a homotopy equivalence
   (`SimplicialObject.Augmented.ExtraDegeneracy.homotopyEquiv`).
+* `TauCeti.CategoryTheory.cechComplexMapHomotopy`: any two morphisms of families `U ⟶ V`
+  induce homotopic maps of Čech complexes.
+* `TauCeti.CategoryTheory.cechComplexHomotopyEquiv`: families with morphisms `U ⟶ V` and
+  `V ⟶ U` have homotopy equivalent Čech complexes.
+* `TauCeti.CategoryTheory.quasiIso_cechAugmentation_congr`: for such families, the augmented Čech
+  complex of `P` for `U` is exact if and only if the one for `V` is.
 
 ## References
 
 * [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Appendix A: Definition A.1 and
   the acyclicity of a cover having `X` as a member, stated after Remark A.2.
+* R. Hartshorne, *Algebraic Geometry*, Graduate Texts in Mathematics 52, Springer, 1977,
+  Exercise III.4.4, for the independence of the map induced by a refinement from the refinement
+  map.
 -/
 
 public section
@@ -154,23 +174,150 @@ gives an augmented simplicial object in `Aᵒᵖ`, whose alternating face map co
 passing back to `A`, the Čech complex of `P`. Its augmentation `AlternatingFaceMapComplex.ε`,
 passed back to `A` in the same way (`singleIso`), is the augmentation of the Čech complex. -/
 
+private abbrev cechSimplicial : SimplicialObject Aᵒᵖ :=
+  ((SimplicialObject.whiskering _ _).obj ((FormalCoproduct.evalOp C A).obj P).rightOp).obj
+    (FormalCoproduct.mk _ U).cech
+
 private abbrev augmentedCech : SimplicialObject.Augmented Aᵒᵖ :=
   ((SimplicialObject.Augmented.whiskering _ _).obj ((FormalCoproduct.evalOp C A).obj P).rightOp).obj
     ((FormalCoproduct.mk _ U).cech.augmentOfIsTerminal (FormalCoproduct.isTerminalIncl _ hT))
 
 private lemma unop_d_eq_cechComplexFunctor_obj_d (n : ℕ) :
-    (AlternatingFaceMapComplex.obj (SimplicialObject.Augmented.drop.obj
-      (augmentedCech U hT P))).unop.d n (n + 1) = ((cechComplexFunctor U).obj P).d n (n + 1) := by
+    (AlternatingFaceMapComplex.obj (cechSimplicial U P)).unop.d n (n + 1) =
+      ((cechComplexFunctor U).obj P).d n (n + 1) := by
   rw [HomologicalComplex.unop_d, AlternatingFaceMapComplex.obj_d_eq]
-  -- the unopposite of each face map of `augmentedCech` is a coface map of the Čech object
+  -- the unopposite of each face map of `cechSimplicial` is a coface map of the Čech object
   exact Eq.symm <| (CochainComplex.of_d _ _ n).trans (AlternatingCofaceMapComplex.d_eq_unop_d _ n)
 
 private def unopAlternatingFaceMapComplexIso :
-    ((AlternatingFaceMapComplex.obj (SimplicialObject.Augmented.drop.obj
-      (augmentedCech U hT P))).unop : CochainComplex A ℕ) ≅ (cechComplexFunctor U).obj P :=
+    ((AlternatingFaceMapComplex.obj (cechSimplicial U P)).unop : CochainComplex A ℕ) ≅
+      (cechComplexFunctor U).obj P :=
   HomologicalComplex.Hom.isoOfComponents (fun _ ↦ Iso.refl _) fun i _ h ↦
     h ▸ (Category.id_comp _).trans
-      ((unop_d_eq_cechComplexFunctor_obj_d U hT P i).symm.trans (Category.comp_id _).symm)
+      ((unop_d_eq_cechComplexFunctor_obj_d U P i).symm.trans (Category.comp_id _).symm)
+
+/-! ### Maps of families
+
+A morphism `φ` from the family `U` to a family `V : κ → C`, as a morphism of formal coproducts,
+consists of a map `φ.f : ι → κ` of indices and morphisms `φ.φ i : U i ⟶ V (φ.f i)`; for open covers
+it is a refinement map. It induces a map of Čech complexes `Č(V, P) ⟶ Č(U, P)`
+(`cechComplexMap`). Any two morphisms `U ⟶ V` induce homotopic maps (`cechComplexMapHomotopy`),
+because they induce simplicially homotopic maps of Čech nerves
+(`CategoryTheory.Arrow.mapCechNerveHomotopy`). -/
+
+section Map
+
+variable {U} {κ : Type w} {V : κ → C}
+
+/-- The map of Čech complexes `Č(V, P) ⟶ Č(U, P)` induced by a morphism `φ` from the family `U`
+to the family `V`. In degree `n` it sends the factor `P(V (b 0) × ⋯ × V (b n))` indexed by
+`b = φ.f ∘ a` to the factor `P(U (a 0) × ⋯ × U (a n))` by restriction along the product of the
+`φ.φ (a j)` (`cechComplexMap_f_π`). -/
+noncomputable def cechComplexMap (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
+    (cechComplexFunctor V).obj P ⟶ (cechComplexFunctor U).obj P :=
+  (alternatingCofaceMapComplex A).map (Functor.whiskerRight
+    (NatTrans.rightOp (FormalCoproduct.cechFunctor.map φ)) ((FormalCoproduct.evalOp C A).obj P))
+
+/-- The factor of `(cechComplexMap P φ).f n` indexed by `a` is the factor of `Č(V, P)` indexed by
+`φ.f ∘ a`, restricted along the product of the morphisms `φ.φ (a j)`. -/
+theorem cechComplexMap_f_π (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) (n : ℕ)
+    (a : Fin (n + 1) → ι) :
+    (cechComplexMap P φ).f n ≫ Pi.π _ a =
+      Pi.π _ (φ.f ∘ a) ≫ P.map (Limits.Pi.map fun j ↦ φ.φ (a j)).op :=
+  Pi.lift_comp_π _ _
+
+/-- The identity morphism of a family induces the identity of its Čech complex. -/
+@[simp]
+theorem cechComplexMap_id : cechComplexMap P (𝟙 (FormalCoproduct.mk _ U)) = 𝟙 _ := by
+  simp only [cechComplexMap, CategoryTheory.Functor.map_id, NatTrans.rightOp_id,
+    Functor.whiskerRight_id']
+  exact (alternatingCofaceMapComplex A).map_id _
+
+/-- `cechComplexMap` is contravariantly functorial in the morphism of families. -/
+@[simp]
+theorem cechComplexMap_comp {ι' : Type w} {W : ι' → C}
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V)
+    (ψ : FormalCoproduct.mk _ V ⟶ FormalCoproduct.mk _ W) :
+    cechComplexMap P (φ ≫ ψ) = cechComplexMap P ψ ≫ cechComplexMap P φ := by
+  simp only [cechComplexMap, CategoryTheory.Functor.map_comp, NatTrans.rightOp_comp,
+    Functor.whiskerRight_comp]
+  exact (alternatingCofaceMapComplex A).map_comp _ _
+
+/-- The morphism of arrows to the terminal object of `FormalCoproduct C` induced by a morphism of
+formal coproducts. -/
+private abbrev cechArrowHom {X Y : FormalCoproduct.{w} C} (φ : X ⟶ Y) :
+    Arrow.mk ((FormalCoproduct.isTerminalIncl _ terminalIsTerminal).from X) ⟶
+      Arrow.mk ((FormalCoproduct.isTerminalIncl _ terminalIsTerminal).from Y) :=
+  Arrow.homMk φ (𝟙 _) ((FormalCoproduct.isTerminalIncl _ terminalIsTerminal).hom_ext _ _)
+
+/-- Under the identification of the Čech object of a formal coproduct with the Čech nerve of its
+map to the terminal object, the map induced by `φ` is `Arrow.mapCechNerve`. -/
+private lemma cechFunctor_map_eq {X Y : FormalCoproduct.{w} C} (φ : X ⟶ Y) :
+    (FormalCoproduct.cechFunctor.map φ : X.cech ⟶ Y.cech) =
+      (X.cechIsoCechNerve terminalIsTerminal).hom ≫ Arrow.mapCechNerve (cechArrowHom φ) ≫
+        (Y.cechIsoCechNerve terminalIsTerminal).inv :=
+  ((Iso.eq_comp_inv _).2 (FormalCoproduct.cechFunctor_map_comp_cechIsoCechNerve_hom _ φ)).trans
+    (Category.assoc _ _ _)
+
+/-- `cechComplexMap` read through `unopAlternatingFaceMapComplexIso`, as the map of alternating
+face map complexes of simplicial objects in `Aᵒᵖ`. -/
+private lemma cechComplexMap_eq (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
+    cechComplexMap P φ = (unopAlternatingFaceMapComplexIso V P).inv ≫
+      (HomologicalComplex.unopFunctor _ _).map ((alternatingFaceMapComplex Aᵒᵖ).map
+        (((SimplicialObject.whiskering _ _).obj ((FormalCoproduct.evalOp C A).obj P).rightOp).map
+          (FormalCoproduct.cechFunctor.map φ))).op ≫
+        (unopAlternatingFaceMapComplexIso U P).hom := by
+  ext n : 1
+  -- the components of `unopAlternatingFaceMapComplexIso` are identities
+  exact ((Category.id_comp _).trans (Category.comp_id _)).symm
+
+/-- **Any two morphisms of families induce homotopic maps of Čech complexes.** For morphisms
+`φ ψ` from the family `U` to the family `V`, for instance two refinement maps between open covers,
+the maps `Č(V, P) ⟶ Č(U, P)` they induce are homotopic. -/
+noncomputable def cechComplexMapHomotopy (φ ψ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
+    Homotopy (cechComplexMap P φ) (cechComplexMap P ψ) :=
+  -- the simplicial homotopy between the maps of Čech nerves, carried to the Čech objects and
+  -- then to simplicial objects in `Aᵒᵖ` by `P`
+  let H := (((Arrow.mapCechNerveHomotopy (cechArrowHom φ) (cechArrowHom ψ) rfl).postcomp
+    ((FormalCoproduct.mk _ V).cechIsoCechNerve terminalIsTerminal).inv).precomp
+      ((FormalCoproduct.mk _ U).cechIsoCechNerve terminalIsTerminal).hom).whiskerRight
+        ((FormalCoproduct.evalOp C A).obj P).rightOp
+  (Homotopy.ofEq (by
+    rw [cechComplexMap_eq, cechFunctor_map_eq]
+    exact (Category.assoc _ _ _).symm)).trans <|
+      ((H.toChainHomotopy.unop.compLeft (unopAlternatingFaceMapComplexIso V P).inv).compRight
+        (unopAlternatingFaceMapComplexIso U P).hom).trans <|
+          Homotopy.ofEq (by
+            rw [cechComplexMap_eq, cechFunctor_map_eq]
+            exact Category.assoc _ _ _)
+
+/-- **Families that map to each other have homotopy equivalent Čech complexes.** Given morphisms
+of families `φ : U ⟶ V` and `ψ : V ⟶ U`, for instance two open covers each refining the other, the
+induced maps `Č(V, P) ⟶ Č(U, P)` and `Č(U, P) ⟶ Č(V, P)` are mutually inverse homotopy
+equivalences. -/
+noncomputable def cechComplexHomotopyEquiv (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V)
+    (ψ : FormalCoproduct.mk _ V ⟶ FormalCoproduct.mk _ U) :
+    HomotopyEquiv ((cechComplexFunctor V).obj P) ((cechComplexFunctor U).obj P) where
+  hom := cechComplexMap P φ
+  inv := cechComplexMap P ψ
+  homotopyHomInvId := (Homotopy.ofEq (cechComplexMap_comp P ψ φ).symm).trans <|
+    (cechComplexMapHomotopy P (ψ ≫ φ) (𝟙 _)).trans (Homotopy.ofEq (cechComplexMap_id P))
+  homotopyInvHomId := (Homotopy.ofEq (cechComplexMap_comp P φ ψ).symm).trans <|
+    (cechComplexMapHomotopy P (φ ≫ ψ) (𝟙 _)).trans (Homotopy.ofEq (cechComplexMap_id P))
+
+/-- The forward map of `cechComplexHomotopyEquiv P φ ψ` is the map induced by `φ`. -/
+@[simp]
+theorem cechComplexHomotopyEquiv_hom (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V)
+    (ψ : FormalCoproduct.mk _ V ⟶ FormalCoproduct.mk _ U) :
+    (cechComplexHomotopyEquiv P φ ψ).hom = cechComplexMap P φ := (rfl)
+
+/-- The backward map of `cechComplexHomotopyEquiv P φ ψ` is the map induced by `ψ`. -/
+@[simp]
+theorem cechComplexHomotopyEquiv_inv (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V)
+    (ψ : FormalCoproduct.mk _ V ⟶ FormalCoproduct.mk _ U) :
+    (cechComplexHomotopyEquiv P φ ψ).inv = cechComplexMap P ψ := (rfl)
+
+end Map
 
 variable [HasZeroObject A]
 
@@ -199,7 +346,7 @@ def cechAugmentation : (CochainComplex.single₀ A).obj (P.obj (op T)) ⟶
     (cechComplexFunctor U).obj P :=
   (singleIso U hT P).hom ≫ (HomologicalComplex.unopFunctor _ _).map
     (AlternatingFaceMapComplex.ε.app (augmentedCech U hT P)).op ≫
-      (unopAlternatingFaceMapComplexIso U hT P).hom
+      (unopAlternatingFaceMapComplexIso U P).hom
 
 /-- The degree `0` component of the augmentation, followed by the projection of `Č⁰(U, P)` onto its
 factor indexed by `a : Fin 1 → ι`, is `P` applied to the map from `∏ᶜ fun j ↦ U (a j)` to the
@@ -231,6 +378,27 @@ theorem cechAugmentation_f_zero_comp_π (a : Fin 1 → ι) : (cechAugmentation U
     (Category.assoc _ _ _).trans <| (_ ≫= Pi.lift_comp_π _ _).trans <|
       (Pi.lift_comp_π_assoc _ _ _).trans <| (Category.id_comp _).trans <|
         P.congr_map (congrArg Quiver.Hom.op (hT.hom_ext _ _))
+
+section Map
+
+variable {U} {κ : Type w} {V : κ → C}
+
+/-- The augmentations of the Čech complexes are compatible with the maps induced by morphisms of
+families: restricting a section over `T` to the members of `V` and then to the members of `U`
+restricts it to the members of `U`. -/
+@[reassoc (attr := simp)]
+theorem cechAugmentation_comp_cechComplexMap
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
+    cechAugmentation V hT P ≫ cechComplexMap P φ = cechAugmentation U hT P := by
+  refine HomologicalComplex.from_single_hom_ext (Pi.hom_ext _ _ fun (a : Fin 1 → ι) ↦ ?_)
+  -- both sides restrict along a map to the terminal object `T`
+  exact (Category.assoc _ _ _).trans <| (_ ≫= cechComplexMap_f_π P φ 0 a).trans <|
+    (Category.assoc _ _ _).symm.trans <| (cechAugmentation_f_zero_comp_π V hT P _ =≫ _).trans <|
+      (P.map_comp _ _).symm.trans <|
+      (P.congr_map (congrArg Quiver.Hom.op (hT.hom_ext _ _))).trans
+        (cechAugmentation_f_zero_comp_π U hT P a).symm
+
+end Map
 
 /-! ### The augmentation in degree `0`
 
@@ -330,6 +498,23 @@ theorem quasiIso_cechAugmentation_of_hom {i₀ : ι} (f : T ⟶ U i₀) :
   -- the isomorphisms on either side are quasi-isomorphisms, as homotopy equivalences
   exact quasiIso_comp _ _ (hφ := (HomotopyEquiv.ofIso (singleIso U hT P)).quasiIso_hom)
     (hφ' := quasiIso_comp _ _ (hφ := hε)
-      (hφ' := (HomotopyEquiv.ofIso (unopAlternatingFaceMapComplexIso U hT P)).quasiIso_hom))
+      (hφ' := (HomotopyEquiv.ofIso (unopAlternatingFaceMapComplexIso U P)).quasiIso_hom))
+
+section Map
+
+variable {U} {κ : Type w} {V : κ → C}
+
+/-- **Acyclicity of the Čech complex depends only on the family up to maps both ways.** If there
+are morphisms of families `U ⟶ V` and `V ⟶ U`, for instance if `U` and `V` are open covers each
+refining the other, then the augmented Čech complex of `P` for `U` is exact if and only if the one
+for `V` is. -/
+theorem quasiIso_cechAugmentation_congr (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V)
+    (ψ : FormalCoproduct.mk _ V ⟶ FormalCoproduct.mk _ U) :
+    QuasiIso (cechAugmentation U hT P) ↔ QuasiIso (cechAugmentation V hT P) := by
+  have : QuasiIso (cechComplexMap P φ) := (cechComplexHomotopyEquiv P φ ψ).quasiIso_hom
+  rw [← cechAugmentation_comp_cechComplexMap hT P φ]
+  exact quasiIso_iff_comp_right _ _
+
+end Map
 
 end TauCeti.CategoryTheory

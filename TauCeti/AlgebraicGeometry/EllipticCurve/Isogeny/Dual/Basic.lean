@@ -49,9 +49,13 @@ The identity `φ ∘ φ̂ = [deg φ]` needs `φ ∘ [n] = [n] ∘ φ`
 (`TauCeti.Isogeny.comp_mulByIntIsogenyOfNeZero`). Precomposing with `φ` is injective, so it cancels
 from `φ ∘ φ̂ ∘ φ = φ ∘ [deg φ] = [deg φ] ∘ φ`.
 
+The dual extends to the additive group of morphisms by `0̂ = 0` (`TauCeti.Isogeny.Hom.dual`), the
+form in which it is additive and the degree is a quadratic form.
+
 ## Main definitions
 
 * `TauCeti.Isogeny.dual`: the dual `φ̂` of an isogeny `φ`.
+* `TauCeti.Isogeny.Hom.dual`: the dual extended to the group of morphisms, with `0̂ = 0`.
 
 ## Main results
 
@@ -70,6 +74,8 @@ from `φ ∘ φ̂ ∘ φ = φ ∘ [deg φ] = [deg φ] ∘ φ`.
 * `TauCeti.Isogeny.dual_dual`: `φ̂̂ = φ`.
 * `TauCeti.Isogeny.dual_mulByIntIsogeny`: `[n]` is self-dual.
 * `TauCeti.Isogeny.dual_map`: the dual of the base change is the base change of the dual.
+* `TauCeti.Isogeny.Hom.dual_comp_self`, `TauCeti.Isogeny.Hom.dual_dual` and
+  `TauCeti.Isogeny.Hom.dual_comp`: the same identities for the dual of a morphism.
 
 ## References
 
@@ -213,6 +219,76 @@ of `φ̂` is the dual of the base change of `φ`. -/
 theorem dual_map (f : F →+* K) : φ.dual.map f = (φ.map f).dual :=
   (eq_dual_iff_comp_eq _).mpr <| by
     rw [← comp_map, dual_comp, mulByIntIsogeny_map, mulByIntIsogeny_inj, degree_map]
+
+/-! ### The dual of a morphism -/
+
+namespace Hom
+
+variable {W₃ : WeierstrassCurve.Affine F} [W₃.IsElliptic]
+
+open scoped Classical in
+/-- **The dual of a morphism** `f : W₁ → W₂`: the dual isogeny `φ̂` when `f` is the isogeny `φ`, and
+the zero map when `f` is zero. -/
+noncomputable def dual (f : Hom W₁ W₂) : Hom W₂ W₁ :=
+  if hf : f = 0 then 0 else ofIsogeny (toIsogeny hf).dual
+
+/-- The dual of the zero map is the zero map. -/
+@[simp]
+theorem dual_zero : (0 : Hom W₁ W₂).dual = 0 := by
+  classical
+  simp [dual]
+
+/-- On an isogeny, the dual of a morphism is the dual isogeny. -/
+@[simp]
+theorem dual_ofIsogeny (φ : Isogeny W₁ W₂) : (ofIsogeny φ).dual = ofIsogeny φ.dual := by
+  classical
+  simp [dual]
+
+/-- **The dual of the dual is the original morphism.** -/
+@[simp]
+theorem dual_dual (f : Hom W₁ W₂) : f.dual.dual = f := by
+  rcases eq_zero_or_exists_ofIsogeny f with rfl | ⟨φ, rfl⟩ <;> simp
+
+/-- The dual of a morphism vanishes exactly when the morphism does. -/
+@[simp]
+theorem dual_eq_zero_iff {f : Hom W₁ W₂} : f.dual = 0 ↔ f = 0 :=
+  ⟨fun h ↦ by rw [← f.dual_dual, h, dual_zero], fun h ↦ h ▸ dual_zero⟩
+
+/-- **The dual has the same degree.** -/
+@[simp]
+theorem degree_dual (f : Hom W₁ W₂) : f.dual.degree = f.degree := by
+  rcases eq_zero_or_exists_ofIsogeny f with rfl | ⟨φ, rfl⟩ <;> simp
+
+/-- **`f̂ ∘ f = deg f • 1`** in the additive group of morphisms of `W₁`. -/
+@[simp]
+theorem dual_comp_self (f : Hom W₁ W₂) : f.dual.comp f = f.degree • id W₁ := by
+  rcases eq_zero_or_exists_ofIsogeny f with rfl | ⟨φ, rfl⟩
+  · simp
+  · rw [dual_ofIsogeny, ofIsogeny_dual_comp_ofIsogeny, degree_ofIsogeny]
+
+/-- **`f ∘ f̂ = deg f • 1`** in the additive group of morphisms of `W₂`. -/
+@[simp]
+theorem comp_dual_self (f : Hom W₁ W₂) : f.comp f.dual = f.degree • id W₂ := by
+  simpa only [dual_dual, degree_dual] using f.dual.dual_comp_self
+
+/-- **The dual of a composite is the composite of the duals in the opposite order**:
+`(g ∘ f)^ = f̂ ∘ ĝ`. -/
+@[simp]
+theorem dual_comp (g : Hom W₂ W₃) (f : Hom W₁ W₂) : (g.comp f).dual = f.dual.comp g.dual := by
+  rcases eq_zero_or_exists_ofIsogeny f with rfl | ⟨φ, rfl⟩
+  · simp
+  rcases eq_zero_or_exists_ofIsogeny g with rfl | ⟨ψ, rfl⟩
+  · simp
+  simp [dual_comp_dual]
+
+/-- **The identity is self-dual.** -/
+@[simp]
+theorem dual_id (W : WeierstrassCurve.Affine F) [W.IsElliptic] : (id W).dual = id W := by
+  have h := psiFunctionField_ne_zero_of_Δ_ne_zero W W.isUnit_Δ.ne_zero one_ne_zero
+  rw [← one_smul ℤ (id W), ← ofIsogeny_mulByIntIsogeny W h, dual_ofIsogeny,
+    dual_mulByIntIsogeny]
+
+end Hom
 
 end TauCeti.Isogeny
 

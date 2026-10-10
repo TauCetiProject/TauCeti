@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 public import Mathlib.AlgebraicGeometry.Morphisms.Separated
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Sum
+public import TauCeti.AlgebraicGeometry.IdealSheaf.Section
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
 public import TauCeti.AlgebraicGeometry.Scheme.Opens
 public import TauCeti.RingTheory.Localization.Ideal
@@ -41,6 +43,8 @@ along the section.
   effective Cartier divisor over the base.
 * `AlgebraicGeometry.Scheme.Hom.isRelativeEffectiveCartier_ker_of_smoothOfRelativeDimension`:
   the case of a section of a separated smooth relative curve.
+* `AlgebraicGeometry.Scheme.Hom.finrank_ker_comp_eq_one_of_comp_eq_id`: the closed subscheme
+  defined by a closed section has degree one over the base.
 * `AlgebraicGeometry.Scheme.IdealSheafData.isRelativeEffectiveCartier_prod_ker_pullback_section`:
   for a flat `f` and finitely many sections through such an open, the divisor `s₁ + ⋯ + sₙ` of the
   base-changed sections is a relative effective Cartier divisor on `X ×_S T` over `T`, for every
@@ -162,9 +166,7 @@ theorem isRelativeEffectiveCartier_ker_of_comp_eq_id (hs : s ≫ f = 𝟙 S) [Is
   rw [IdealSheafData.isRelativeEffectiveCartier_iff]
   refine ⟨isEffectiveCartier_ker_of_comp_eq_id s hs U hU, ?_⟩
   -- The closed subscheme of `s.ker` maps isomorphically to `S`.
-  have h : s.ker.subschemeι ≫ f = inv s.toImage :=
-    IsIso.eq_inv_of_hom_inv_id (by rw [← Category.assoc, Scheme.Hom.toImage_imageι, hs])
-  rw [h]
+  have := isIso_ker_subschemeι_comp s hs
   infer_instance
 
 /-- A section of a separated morphism `f : X ⟶ S` that is smooth of relative dimension one is a
@@ -172,12 +174,17 @@ relative effective Cartier divisor. -/
 theorem isRelativeEffectiveCartier_ker_of_smoothOfRelativeDimension (hs : s ≫ f = 𝟙 S)
     [IsSeparated f] [SmoothOfRelativeDimension 1 f] :
     s.ker.IsRelativeEffectiveCartier f := by
-  -- A section of a separated morphism is a closed immersion.
-  have : IsClosedImmersion (s ≫ f) := hs ▸ inferInstance
-  have := IsClosedImmersion.of_comp s f
+  have := s.isClosedImmersion_of_comp_eq_id hs
   have : SmoothOfRelativeDimension 1 ((⊤ : X.Opens).ι ≫ f) :=
     inferInstanceAs (SmoothOfRelativeDimension (0 + 1) _)
   exact isRelativeEffectiveCartier_ker_of_comp_eq_id s hs ⊤ (Set.subset_univ _)
+
+/-- The closed subscheme defined by the ideal sheaf of a closed section has degree one over the
+base. -/
+theorem finrank_ker_comp_eq_one_of_comp_eq_id (hs : s ≫ f = 𝟙 S) [IsClosedImmersion s] :
+    (s.ker.subschemeι ≫ f).finrank = 1 := by
+  have := isIso_ker_subschemeι_comp s hs
+  exact Scheme.Hom.finrank_eq_one_of_isIso _
 
 end AlgebraicGeometry.Scheme.Hom
 
