@@ -12,7 +12,7 @@ public import Mathlib.LinearAlgebra.Vandermonde
 public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Data.Int.SuccPred
 import Mathlib.LinearAlgebra.Matrix.Block
-import TauCeti.LinearAlgebra.Determinant
+import TauCeti.LinearAlgebra.Determinant.Basic
 import TauCeti.RingTheory.Polynomial.Pochhammer
 
 /-!
