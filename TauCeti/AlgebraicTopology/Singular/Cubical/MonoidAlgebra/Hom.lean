@@ -59,7 +59,7 @@ variable (R) in
 /-- The algebra homomorphism `C^□_*(G; R) → C^□_*(G'; R)` induced by a continuous monoid
 homomorphism `φ : G →ₜ* G'`: the push-forward of chains, dimension by dimension. -/
 def cubicalChainAlgHom (φ : G →ₜ* G') :
-    cubicalChainAlgebra G R →ₐ[R] cubicalChainAlgebra G' R :=
+    normalizedCubicalChainAlgebra G R →ₐ[R] normalizedCubicalChainAlgebra G' R :=
   DirectSum.toAlgebra R _
     (fun n ↦ cubicalChainLof G' R n ∘ₗ map R φ.toContinuousMap n)
     (by
@@ -144,7 +144,8 @@ theorem cubicalChainDGAlgHom_comp (ψ : G' →ₜ* G'') (φ : G →ₜ* G') :
       (cubicalChainDGAlgHom R ψ).comp (cubicalChainDGAlgHom R φ) :=
   cubicalChain_dgAlgHom_ext fun n y ↦ by
     rw [DGAlgHom.comp_apply, cubicalChainDGAlgHom_lof, cubicalChainDGAlgHom_lof,
-      cubicalChainDGAlgHom_lof, map_comp_apply]
+      cubicalChainDGAlgHom_lof, ← LinearMap.comp_apply (NormalizedCubicalChain.map R _ n),
+      ← NormalizedCubicalChain.map_comp]
     rfl
 
 end Hom
@@ -172,7 +173,7 @@ theorem cubicalChainAugmentLof_of_ne_zero {n : ℕ} (hn : n ≠ 0)
 
 variable (G R) in
 /-- The augmentation `C^□_*(G; R) → R` as an algebra homomorphism. -/
-def cubicalChainAugmentAlgHom : cubicalChainAlgebra G R →ₐ[R] R :=
+def cubicalChainAugmentAlgHom : normalizedCubicalChainAlgebra G R →ₐ[R] R :=
   DirectSum.toAlgebra R _ (cubicalChainAugmentLof G R)
     (by
       change cubicalChainAugmentLof G R 0 (one G R) = 1

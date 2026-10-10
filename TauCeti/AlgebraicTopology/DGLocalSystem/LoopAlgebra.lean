@@ -53,7 +53,7 @@ variable (B : Type*) [TopologicalSpace B] (b : B) (R : Type*) [CommRing R]
 
 /-- The **chain algebra of the Moore loop space**: `C_*(Ω_b B; R)`, the normalized cubical chains
 of the Moore loops at `b`, with the Pontryagin product. -/
-abbrev loopChainAlgebra : Type _ := cubicalChainAlgebra (MooreLoopSpace B b) R
+abbrev loopChainAlgebra : Type _ := normalizedCubicalChainAlgebra (MooreLoopSpace B b) R
 
 /-- **`C_*(Ω_b B; R)` is a differential graded algebra**, with the chains of dimension `n` in
 cohomological degree `-n` and the boundary as differential. -/

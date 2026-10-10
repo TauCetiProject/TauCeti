@@ -227,6 +227,10 @@ theorem mul_one {p : ℕ} (a : NormalizedCubicalChain G R p) :
 
 end MulOneClass
 
+section Hom
+
+variable {G : Type*} [Monoid G] [TopologicalSpace G] [ContinuousMul G]
+
 omit [ContinuousMul G] in
 /-- The augmentation of the unit is `1`. -/
 @[simp]
@@ -245,16 +249,18 @@ theorem map_mul (φ : G →ₜ* G') {p q : ℕ} (a : NormalizedCubicalChain G R 
       (mulMap G').comp (φ.toContinuousMap.prodMap φ.toContinuousMap) := by
     ext x
     simp [_root_.map_mul]
-  simp only [mul, LinearMap.compr₂_apply]
-  rw [map_comp_apply, key, ← map_comp_apply, map_crossProduct]
+  rw [mul_def, mul_def, ← LinearMap.comp_apply (map R φ.toContinuousMap (p + q)), ← map_comp, key,
+    map_comp, LinearMap.comp_apply, map_crossProduct]
 
 omit [ContinuousMul G] [ContinuousMul G'] in
 /-- Pushing forward along a continuous monoid homomorphism sends the unit to the unit. -/
 theorem map_one (φ : G →ₜ* G') : map R φ.toContinuousMap 0 (one G R) = one G' R := by
-  simp only [one, map_ofCube]
+  simp only [one_def, map_ofCube]
   congr 1
   ext t
   simp [SingularCube.point_apply, _root_.map_one]
+
+end Hom
 
 end NormalizedCubicalChain
 
