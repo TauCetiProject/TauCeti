@@ -57,13 +57,16 @@ open CategoryTheory Limits
 
 namespace HomologicalComplex
 
-variable {C : Type*} [Category* C] [Abelian C] {ι : Type*} {c : ComplexShape ι}
-  (K : HomologicalComplex C c)
+variable {C : Type*} [Category* C] {ι : Type*} {c : ComplexShape ι}
 
-/-- The projection from the cycles onto a projective homology object is a split epimorphism. -/
-instance isSplitEpi_homologyπ_of_projective (i : ι) [Projective (K.homology i)] :
+/-- The projection from the cycles onto a projective homology object is a split epimorphism.
+This only requires homology in degree `i`, in a category with zero morphisms. -/
+instance isSplitEpi_homologyπ_of_projective [HasZeroMorphisms C]
+    (K : HomologicalComplex C c) (i : ι) [K.HasHomology i] [Projective (K.homology i)] :
     IsSplitEpi (K.homologyπ i) :=
   ⟨⟨Projective.factorThru (𝟙 _) (K.homologyπ i), Projective.factorThru_comp _ _⟩⟩
+
+variable [Abelian C] (K : HomologicalComplex C c)
 
 namespace Split
 
