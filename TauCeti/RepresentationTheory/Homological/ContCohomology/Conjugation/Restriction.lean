@@ -43,12 +43,18 @@ variable (G : Type uG) [Group G] (M : Type uM) [AddCommGroup M] [DistribMulActio
   (hκ : ∀ v : V, (κ v : G) = g⁻¹ * v * g)
   (f : M →+ M) (hf : ∀ m : M, f m = g • m)
 
+include hκ hf in
+/-- Inverse conjugation on subgroups is compatible with the conjugating action on coefficients. -/
+theorem inverseConjugation_smul_of_eq (v : V) (m : M) :
+    f (κ v • m) = v • f m := by
+  simp [hf, Subgroup.smul_def, hκ, smul_smul, mul_assoc]
+
 /-- Conjugation carries restriction to `U` to restriction to `V` in degree zero.
 The group map may identify `V` with any subgroup of `gUg⁻¹`. -/
 -- Not `@[simp]`: the conjugating element occurs only in the hypotheses on `κ` and `f`.
 theorem explicitMap0_explicitRes0_of_conj (x : H0 G M) :
     explicitMap0 U M κ f
-      (fun v m => by simp [hf, Subgroup.smul_def, hκ, smul_smul, mul_assoc])
+      (inverseConjugation_smul_of_eq G M U V g κ hκ f hf)
       (explicitRes0 G M U x) = explicitRes0 G M V x := by
   apply Subtype.ext
   simp only [coe_explicitMap0, coe_explicitRes0, hf]
@@ -65,12 +71,28 @@ variable (G : Type uG) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   (hκ : ∀ v : V, (κ v : G) = g⁻¹ * v * g)
   (f : M →+ M) (hf : ∀ m : M, f m = g • m)
 
+include hf in
+omit [IsTopologicalGroup G] [IsTopologicalAddGroup M] in
+/-- A coefficient homomorphism equal to the action of a fixed element is continuous. -/
+theorem continuous_of_eq_smul : Continuous f :=
+  (continuous_const_smul g).congr fun m => (hf m).symm
+
+omit [IsTopologicalGroup G] [ContinuousSMul G M] in
+/-- Conjugating the restriction of a continuous `1`-cocycle changes it by the coboundary of its
+value at the conjugating element. This is the representative-level restriction identity. -/
+theorem smul_inverseConjugation_apply_sub_eq_d0 (c : Z1 G M) (g : G) (v : V) :
+    g • (c : G → M) (g⁻¹ * (v : G) * g) - (c : G → M) (v : G) =
+      d0 V M ((c : G → M) g) v := by
+  rw [groupCohomology.smul_apply_inv_mul_mul_of_isCocycle₁ (mem_Z1_iff.1 c.2).2 g (v : G),
+    d0_apply, Subgroup.smul_def]
+  abel
+
 omit [IsTopologicalGroup G] in
 /-- Conjugation carries restriction to `U` to restriction to `V` in degree one.
 The equality is on classes; on cocycles the correction is `d⁰(c g)`. -/
 theorem explicitMap1_explicitRes1_of_conj (x : H1 G M) :
-    explicitMap1 U M V M κ f ((continuous_const_smul g).congr fun m => (hf m).symm)
-      (fun v m => by simp [hf, Subgroup.smul_def, hκ, smul_smul, mul_assoc])
+    explicitMap1 U M V M κ f (continuous_of_eq_smul G M g f hf)
+      (inverseConjugation_smul_of_eq G M U V g κ hκ f hf)
       (explicitRes1 G M U x) = explicitRes1 G M V x := by
   induction x using QuotientAddGroup.induction_on with
   | _ c =>
@@ -78,8 +100,8 @@ theorem explicitMap1_explicitRes1_of_conj (x : H1 G M) :
     refine mem_B1_iff.2 ⟨(c : G → M) g, fun v => ?_⟩
     simp only [Pi.sub_apply, cocyclesMap1_apply, AddMonoidHom.id_apply,
       ContinuousMonoidHom.subgroupSubtype_apply, hf, hκ]
-    rw [groupCohomology.smul_apply_inv_mul_mul_of_isCocycle₁ (mem_Z1_iff.1 c.2).2]
-    simp [Subgroup.smul_def]
+    simpa only [d0_apply] using
+      (smul_inverseConjugation_apply_sub_eq_d0 G M V c g v).symm
 
 include hκ hf in
 omit [ContinuousSMul G M] [IsTopologicalGroup G] in
@@ -96,11 +118,13 @@ theorem cochainsMap2_res_sub_eq_d1_of_conj (c : Z2 G M) :
   simpa [cochainsMap2_apply, hf, hκ, MulAut.conj_apply,
     d1_apply, Subgroup.smul_def] using h
 
+omit [IsTopologicalGroup G] in
+variable [ContinuousMul G] [ContinuousMul U] [ContinuousMul V] in
 /-- Conjugation carries restriction to `U` to restriction to `V` in degree two.
 The cochain correction is the differential of a continuous restricted bar homotopy. -/
 theorem explicitMap2_explicitRes2_of_conj (x : H2 G M) :
-    explicitMap2 U M V M κ f ((continuous_const_smul g).congr fun m => (hf m).symm)
-      (fun v m => by simp [hf, Subgroup.smul_def, hκ, smul_smul, mul_assoc])
+    explicitMap2 U M V M κ f (continuous_of_eq_smul G M g f hf)
+      (inverseConjugation_smul_of_eq G M U V g κ hκ f hf)
       (explicitRes2 G M U x) = explicitRes2 G M V x := by
   induction x using QuotientAddGroup.induction_on with
   | _ c =>
