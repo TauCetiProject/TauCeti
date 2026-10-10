@@ -38,7 +38,7 @@ open Finsupp unitInterval
 
 namespace TauCeti
 
-variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] (R : Type*) [CommRing R]
+variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] (R : Type*) [Ring R]
 
 namespace CubicalChain
 

@@ -42,7 +42,7 @@ open Finsupp unitInterval
 
 namespace TauCeti
 
-variable {X : Type*} [TopologicalSpace X] (R : Type*) [CommRing R]
+variable {X : Type*} [TopologicalSpace X] (R : Type*) [Ring R]
 
 namespace NormalizedCubicalChain
 
@@ -70,7 +70,7 @@ end NormalizedCubicalChain
 
 /-- The **relative normalized cubical chains** of the pair `(X, A)`: the chains of `X` modulo
 those supported in `A`. -/
-abbrev RelativeCubicalChain (X : Type*) [TopologicalSpace X] (A : Set X) (R : Type*) [CommRing R]
+abbrev RelativeCubicalChain (X : Type*) [TopologicalSpace X] (A : Set X) (R : Type*) [Ring R]
     (n : ℕ) : Type _ :=
   NormalizedCubicalChain X R n ⧸ NormalizedCubicalChain.supportedIn R A n
 
