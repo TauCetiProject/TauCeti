@@ -70,8 +70,11 @@ theorem orbitBlockIntermediateFieldOrderIso_apply (x : L)
     (B : BlockMem G (⟨x, mem_orbit_self x⟩ : orbit G x)) :
     ((orbitBlockIntermediateFieldOrderIso G K x B).ofDual.1 : IntermediateField K L) =
       FixedPoints.intermediateField (stabilizer G (B : Set (orbit G x))) := by
-  obtain ⟨B, hx, hB⟩ := B
-  exact IsGaloisGroup.intermediateFieldEquivSubgroup_symm_apply_toDual G K L
+  -- The locally defined interval maps have no projection lemmas; reduce their composition to
+  -- the inverse Galois correspondence applied to the block's setwise stabilizer.
+  change (IsGaloisGroup.intermediateFieldEquivSubgroup G K L).symm
+    (OrderDual.toDual (stabilizer G (B : Set (orbit G x)))) = _
+  rw [IsGaloisGroup.intermediateFieldEquivSubgroup_symm_apply_toDual]
 
 /-- Membership in the field attached to a block means fixedness under every element of its
 setwise stabilizer. -/
