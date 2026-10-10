@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.UpperHalfSpace.Connection
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Sectional
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Ricci
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import all TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.UpperHalfSpace.Basic
 import all TauCeti.Geometry.Manifold.VectorBundle.Tangent
@@ -138,5 +140,19 @@ theorem hasConstantSectionalCurvature :
     ∇.HasConstantSectionalCurvature (isMetricCompatible_leviCivitaConnection J) (-1) :=
   ∇.hasConstantSectionalCurvature_of_curvatureTensor_eq_smul_inner_sub
     (isMetricCompatible_leviCivitaConnection J) (-1) curvatureTensor_eq
+
+/-- The Ricci tensor of hyperbolic space is minus the horizontal dimension times
+the hyperbolic metric. In dimension one it vanishes. -/
+@[simp 1100] theorem ricciTensor_eq (x : UpperHalfSpace E) (u v : TangentSpace J x) :
+    ∇.ricciTensor x u v = -(Module.finrank ℝ E : ℝ) * inner ℝ u v := by
+  have hdim : Module.finrank ℝ (TangentSpace J x) = Module.finrank ℝ E + 1 := by
+    rw [TauCeti.finrank_tangentSpace, (WithLp.linearEquiv 2 ℝ (E × ℝ)).finrank_eq,
+      Module.finrank_prod, Module.finrank_self]
+  have h := ∇.ricciTensor_eq_of_curvatureTensor_eq_smul_sub x
+    (-innerₗ (TangentSpace J x)) (fun w u v => by simp [curvatureTensor_eq]; module)
+  rw [h]
+  simp only [LinearMap.smul_apply, LinearMap.neg_apply, hdim, Nat.cast_add, Nat.cast_one,
+    add_sub_cancel_right, smul_eq_mul, innerₗ_apply_apply]
+  ring
 
 end TauCeti.UpperHalfSpace
