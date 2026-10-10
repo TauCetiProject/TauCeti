@@ -6,7 +6,7 @@ Authors: Wentao Li
 module
 
 public import TauCeti.Algebra.Group.Generators
-public import TauCeti.Algebra.Group.PrimaryDecomposition
+public import TauCeti.Algebra.Group.Primary.Decomposition
 
 /-!
 # The generator number of a finite abelian group
@@ -37,13 +37,11 @@ theorem spanFinrank_eq_sup_primaryComponents (A : Type*) [AddCommGroup A] [Finit
     fun p ↦ _root_.AddCommGroup.primaryComponent A p.1
   have hcop : Pairwise fun p q ↦ (Nat.card (M p)).Coprime (Nat.card (M q)) := by
     intro p q hpq
-    have : Fact p.1.Prime := ⟨Nat.prime_of_mem_primeFactors p.2⟩
-    have : Fact q.1.Prime := ⟨Nat.prime_of_mem_primeFactors q.2⟩
-    exact IsPGroup.coprime_card_of_ne p.1 q.1 (by simpa using hpq)
-      (_root_.CommGroup.primaryComponent (Multiplicative A) p.1)
-      (_root_.CommGroup.primaryComponent (Multiplicative A) q.1)
-      (_root_.CommGroup.primaryComponent.isPGroup (G := Multiplicative A))
-      (_root_.CommGroup.primaryComponent.isPGroup (G := Multiplicative A))
+    rw [show M p = _root_.AddCommGroup.primaryComponent A p.1 from rfl,
+      show M q = _root_.AddCommGroup.primaryComponent A q.1 from rfl,
+      natCard_primaryComponent A p, natCard_primaryComponent A q]
+    exact ((Nat.coprime_primes (Nat.prime_of_mem_primeFactors p.2)
+      (Nat.prime_of_mem_primeFactors q.2)).mpr (by simpa using hpq)).pow _ _
   let e : (∀ p, M p) ≃ₗ[ℤ] A := (primaryDecomposition A).toIntLinearEquiv
   have he := Submodule.spanFinrank_map_eq_of_injective e.toLinearMap e.injective
     (p := ⊤)

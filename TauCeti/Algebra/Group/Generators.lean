@@ -45,8 +45,8 @@ theorem span_range_pi_eq_top_of_coprime_card [Finite ι]
       (fun j _ l _ hjl ↦ hcop hjl)
     have he : (c.val : ℤ) • (fun j ↦ v j k) = Pi.single i (v i k) := by
       ext j
-      have hc := c.property j (Finset.mem_univ j)
-      change c.val % Nat.card (M j) = (if j = i then 1 else 0) % Nat.card (M j) at hc
+      have hc : c.val % Nat.card (M j) = (if j = i then 1 else 0) % Nat.card (M j) :=
+        c.property j (Finset.mem_univ j)
       rw [Pi.smul_apply, natCast_zsmul, ← mod_natCard_nsmul (v j k) c.val, hc,
         mod_natCard_nsmul]
       by_cases hji : j = i
@@ -60,8 +60,11 @@ theorem span_range_pi_eq_top_of_coprime_card [Finite ι]
         S.comap (LinearMap.single ℤ M i) := by
       apply Submodule.span_le.mpr
       rintro x ⟨k, rfl⟩
-      exact hsingle i k
-    exact hle (hv i ▸ Submodule.mem_top)
+      apply Submodule.mem_comap.mpr
+      simpa only [LinearMap.single_apply] using hsingle i k
+    have hx : LinearMap.single ℤ M i x ∈ S :=
+      Submodule.mem_comap.mp (hle (hv i ▸ Submodule.mem_top))
+    simpa only [LinearMap.single_apply] using hx
   apply top_unique
   intro x _
   rw [← Finset.univ_sum_single x]
