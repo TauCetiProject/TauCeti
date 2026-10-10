@@ -740,6 +740,21 @@ theorem TransportMatrix.isCoupling_toPMF_toMeasure (A : TransportMatrix μ ν) :
     rw [MeasureTheory.Measure.snd,
       PMF.toMeasure_map Prod.snd A.toPMF measurable_snd, A.map_snd_toPMF]
 
+/-- Every coupling of finite probability laws is represented by a transportation matrix. -/
+theorem IsCoupling.exists_transportMatrix {π : MeasureTheory.Measure (ι × κ)}
+    (hπ : IsCoupling π μ.toMeasure ν.toMeasure) :
+    ∃ A : TransportMatrix μ ν, A.toPMF.toMeasure = π := by
+  have : MeasureTheory.IsProbabilityMeasure π := hπ.isProbabilityMeasure
+  have hμ : π.toPMF.map Prod.fst = μ := by
+    apply PMF.toMeasure_injective
+    rw [← PMF.toMeasure_map _ _ measurable_fst, MeasureTheory.Measure.toPMF_toMeasure]
+    exact hπ.fst_eq
+  have hν : π.toPMF.map Prod.snd = ν := by
+    apply PMF.toMeasure_injective
+    rw [← PMF.toMeasure_map _ _ measurable_snd, MeasureTheory.Measure.toPMF_toMeasure]
+    exact hπ.snd_eq
+  exact ⟨TransportMatrix.ofPMF π.toPMF hμ hν, by simp⟩
+
 end Measure
 
 end TauCeti
