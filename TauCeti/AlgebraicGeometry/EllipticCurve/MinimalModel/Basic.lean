@@ -46,6 +46,10 @@ between them has a scaling factor of valuation `1`, and they have the same `c₄
   `v (c₄)`.
 * `WeierstrassCurve.VariableChange.exists_unit_algebraMap_eq_u_of_isMinimal_smul`: the scaling
   factor is the image of a unit of the discrete valuation ring.
+* `VariableChange.exists_baseChange_eq_and_smul_integralModel_eq_of_isMinimal_smul`: so the
+  change of variables is defined over `R` and relates the two integral models.
+* `WeierstrassCurve.exists_smul_reduction_eq_of_isMinimal_smul`: the reductions of two minimal
+  models are related by a change of variables over the residue field.
 * `WeierstrassCurve.valuation_Δ_minimal_smul` and
   `WeierstrassCurve.valuation_c₄_minimal_smul`: the chosen minimal equations of isomorphic curves
   have the same discriminant and `c₄` valuations.
@@ -53,6 +57,12 @@ between them has a scaling factor of valuation `1`, and they have the same `c₄
   `WeierstrassCurve.HasGoodReduction.hasGoodReduction_minimal`: good reduction of the chosen
   minimal equation is a property of the curve, and holds whenever some equation has good
   reduction.
+* `WeierstrassCurve.hasGoodReduction_iff_isUnit_integralModel_Δ`: an integral equation has good
+  reduction exactly when its integral discriminant is a unit, and then it is elliptic
+  (`WeierstrassCurve.HasGoodReduction.isElliptic`).
+* `WeierstrassCurve.HasGoodReduction.baseChange` and `WeierstrassCurve.reduction_baseChange`:
+  good reduction is preserved by base change along a map of discrete valuation rings, and the
+  reduction of the base change is the base change of the reduction.
 * `WeierstrassCurve.HasSplitMultiplicativeReduction.of_isMinimal_smul`: split multiplicative
   reduction transfers along such a change of variables.
 
@@ -128,13 +138,15 @@ proofs diverge in six places:
 * the source's `exists_variableChange_baseChange_eq_of_smul_eq` is this repository's
   `WeierstrassCurve.VariableChange.exists_baseChange_eq_of_smul_eq`, which is stated over
   `IsIntegrallyClosedIn R K` rather than a discrete valuation ring; instance search discharges it
-  here;
+  here. The descent and the comparison of the two integral models it gives are packaged as
+  `VariableChange.exists_baseChange_eq_and_smul_integralModel_eq_of_isMinimal_smul`, which the
+  proof calls, and `v (c₄)` is compared by `valuation_c₄_eq_of_isMinimal_smul`;
 * the source's `nodePoly_map_splits_smul_iff` is this repository's existing
   `splits_variableChange_nodePolynomial_map_iff`, and the node polynomial reaches Mathlib's class
   field through `nodePolynomial_def`, since the definition's body is not exposed across the module
   boundary;
 * the `⁄K` notation is written `baseChange`, and the source's `show … from rfl` scaffolding for it
-  is replaced by a single `congrArg`.
+  is replaced by a single `congrArg₂` in the descent lemma.
 -/
 
 public section
@@ -303,7 +315,34 @@ theorem exists_unit_algebraMap_eq_u_of_isMinimal_smul {W₁ W₂ : WeierstrassCu
   rw [Units.smul_def, Algebra.smul_def, mul_one] at hau
   exact ⟨u₀, hau⟩
 
+/-- **A change of variables between two minimal elliptic equations is defined over `R`, and it
+carries one integral model to the other.** Its scaling factor is the image of a unit, so it
+descends to a change of variables `C` over `R`, and since `R → K` is injective `C` relates the
+integral models themselves. A property of integral models that is invariant under changes of
+variables over `R`, such as one read off the reduction, is therefore shared by all minimal models
+of an elliptic curve (Silverman, *AEC*, Proposition VII.1.3(b)). -/
+theorem exists_baseChange_eq_and_smul_integralModel_eq_of_isMinimal_smul
+    {W₁ W₂ : WeierstrassCurve K} [IsMinimal R W₁] [IsMinimal R W₂] [W₁.IsElliptic]
+    (D : VariableChange K) (hD : D • W₁ = W₂) :
+    ∃ C : VariableChange R, C.baseChange K = D ∧ C • W₁.integralModel R = W₂.integralModel R := by
+  obtain ⟨u₀, hau⟩ := exists_unit_algebraMap_eq_u_of_isMinimal_smul R D hD
+  obtain ⟨C, hC⟩ := exists_baseChange_eq_of_smul_eq R D hD u₀ hau
+  refine ⟨C, hC, (integralModel_eq_of_baseChange_eq ?_).symm⟩
+  rw [WeierstrassCurve.baseChange, ← map_variableChange]
+  exact (congrArg₂ (· • ·) hC (baseChange_integralModel_eq R W₁)).trans hD
+
 end VariableChange
+
+/-- **The reductions of two minimal models of an elliptic curve are related by a change of
+variables over the residue field**, namely the reduction of the integral change of variables
+between their integral models. So every property of the reduction that is invariant under changes
+of variables, such as being elliptic, ordinary or supersingular, depends only on the curve. -/
+theorem exists_smul_reduction_eq_of_isMinimal_smul {W₁ W₂ : WeierstrassCurve K}
+    [IsMinimal R W₁] [IsMinimal R W₂] [W₁.IsElliptic] (D : VariableChange K) (hD : D • W₁ = W₂) :
+    ∃ C : VariableChange (IsLocalRing.ResidueField R), C • W₁.reduction R = W₂.reduction R := by
+  obtain ⟨C, -, hC⟩ :=
+    VariableChange.exists_baseChange_eq_and_smul_integralModel_eq_of_isMinimal_smul R D hD
+  exact ⟨C.map (IsLocalRing.residue R), by rw [reduction, reduction, ← hC, map_variableChange]⟩
 
 /-- The discriminants of the chosen minimal equations have the same valuation after a change of
 variables. -/
@@ -347,6 +386,54 @@ theorem HasGoodReduction.hasGoodReduction_minimal {W : WeierstrassCurve K}
   rw [hasGoodReduction_minimal_iff, valuation_Δ_eq_of_isMinimal_smul R C hC]
   exact h.goodReduction
 
+/-- **An integral equation has good reduction exactly when the discriminant of its integral model
+is a unit.** Such an equation is automatically minimal, so no minimality hypothesis appears. -/
+theorem hasGoodReduction_iff_isUnit_integralModel_Δ (W : WeierstrassCurve K) [IsIntegral R W] :
+    W.HasGoodReduction R ↔ IsUnit (W.integralModel R).Δ := by
+  have hval : valuation K (maximalIdeal R) W.Δ = 1 ↔ IsUnit (W.integralModel R).Δ := by
+    rw [← integralModel_Δ_eq R W]
+    exact (maximalIdeal R).valuation_eq_one_iff_notMem.trans IsLocalRing.notMem_maximalIdeal
+  rw [← hval]
+  exact ⟨fun h ↦ h.goodReduction,
+    fun h ↦ { toIsMinimal := isMinimal_of_valuation_Δ_eq_one R W h, goodReduction := h }⟩
+
+/-- **An equation with good reduction is elliptic**: its discriminant has valuation `1`, so it is
+nonzero. -/
+theorem HasGoodReduction.isElliptic {W : WeierstrassCurve K} (h : W.HasGoodReduction R) :
+    W.IsElliptic :=
+  ⟨isUnit_iff_ne_zero.mpr fun h0 ↦ by simpa [h0] using h.goodReduction⟩
+
+section BaseChange
+
+variable (S : Type*) [CommRing S] [IsDomain S] [IsDiscreteValuationRing S]
+  {L : Type*} [Field L] [Algebra S L] [IsFractionRing S L] [Algebra K L] [Algebra R S]
+
+/-- **Good reduction is preserved by base change.** Let `S` be a discrete valuation ring with
+fraction field `L`, receiving `R` compatibly with `K → L`. If an equation has good reduction over
+`R`, then its base change to `L` has good reduction over `S`: the unit discriminant of its integral
+model stays a unit. No ramification hypothesis is needed, and the base-changed equation is again
+minimal (Silverman, *AEC*, VII.5.4(b)). -/
+theorem HasGoodReduction.baseChange
+    (hRS : (algebraMap S L).comp (algebraMap R S) = (algebraMap K L).comp (algebraMap R K))
+    {W : WeierstrassCurve K} (h : W.HasGoodReduction R) : (W.baseChange L).HasGoodReduction S := by
+  have := h.toIsMinimal
+  have := IsIntegral.baseChange hRS W
+  rw [hasGoodReduction_iff_isUnit_integralModel_Δ, integralModel_baseChange hRS, map_Δ]
+  exact ((hasGoodReduction_iff_isUnit_integralModel_Δ R W).mp h).map _
+
+/-- **Reduction commutes with base change.** If `R → S` is a local homomorphism of discrete
+valuation rings compatible with `K → L`, and an equation is minimal over `R` with base change
+minimal over `S`, then its reduction over `S` is the base change of its reduction over `R` along
+the extension of residue fields. -/
+theorem reduction_baseChange [IsLocalHom (algebraMap R S)]
+    (hRS : (algebraMap S L).comp (algebraMap R S) = (algebraMap K L).comp (algebraMap R K))
+    (W : WeierstrassCurve K) [IsMinimal R W] [IsMinimal S (W.baseChange L)] :
+    (W.baseChange L).reduction S = (W.reduction R).baseChange (IsLocalRing.ResidueField S) := by
+  rw [reduction, reduction, integralModel_baseChange hRS, baseChange, map_map, map_map]
+  exact congrArg _ (RingHom.ext fun x ↦ (IsLocalRing.ResidueField.algebraMap_residue x).symm)
+
+end BaseChange
+
 /-- **Split multiplicative reduction is an isomorphism invariant of minimal models.** If two
 minimal Weierstrass models of an elliptic curve over `K` are related by a change of variables
 (`D • W₁ = W₂`), and `W₁` has split multiplicative reduction, then so does `W₂`.
@@ -364,26 +451,17 @@ theorem HasSplitMultiplicativeReduction.of_isMinimal_smul {W₁ W₂ : Weierstra
   -- `W₁` is minimal because it has multiplicative reduction, so that is not a hypothesis.
   have hm₁ := h₁.toHasMultiplicativeReduction
   have : IsMinimal R W₁ := hm₁.toIsMinimal
-  -- `v (D.u) = 1`, so `D.u` is the image of a unit of `R` and `D` descends to some `C₀` over `R`.
-  have hvu := valuation_u_eq_one_of_isMinimal_smul R D hD
-  obtain ⟨u₀, hau⟩ := VariableChange.exists_unit_algebraMap_eq_u_of_isMinimal_smul R D hD
-  obtain ⟨C₀, hDC₀⟩ := VariableChange.exists_baseChange_eq_of_smul_eq R D hD u₀ hau
-  have hW₂eq : (C₀ • W₁.integralModel R).baseChange K = W₂ := by
-    rw [WeierstrassCurve.baseChange, ← map_variableChange, ← hD, ← hDC₀]
-    exact congrArg _ (baseChange_integralModel_eq R W₁)
   -- `W₂` is again multiplicative, since `v (u) = 1` fixes the valuations of both `Δ` and `c₄`.
-  have hc₄eq : valuation K (maximalIdeal R) W₂.c₄ = valuation K (maximalIdeal R) W₁.c₄ := by
-    rw [← hD, variableChange_c₄, map_mul]
-    simp [hvu]
   have hmult₂ : W₂.HasMultiplicativeReduction R :=
     { badReduction := by rw [valuation_Δ_eq_of_isMinimal_smul R D hD]; exact hm₁.badReduction
-      multiplicativeReduction := by rw [hc₄eq]; exact hm₁.multiplicativeReduction }
-  -- and its integral model is `C₀ •` that of `W₁`, so their node polynomials split together.
+      multiplicativeReduction := by
+        rw [valuation_c₄_eq_of_isMinimal_smul R D hD]; exact hm₁.multiplicativeReduction }
+  -- `D` descends to some `C₀` over `R` carrying the integral model of `W₁` to that of `W₂`, so
+  -- their node polynomials split together.
   refine { hmult₂ with splitMultiplicativeReduction := ?_ }
-  have hint₂ : W₂.integralModel R = C₀ • W₁.integralModel R :=
-    map_injective (IsFractionRing.injective R K)
-      ((baseChange_integralModel_eq R W₂).trans hW₂eq.symm)
-  rw [hint₂, ← nodePolynomial_def]
+  obtain ⟨C₀, -, hint₂⟩ :=
+    VariableChange.exists_baseChange_eq_and_smul_integralModel_eq_of_isMinimal_smul R D hD
+  rw [← hint₂, ← nodePolynomial_def]
   exact (splits_variableChange_nodePolynomial_map_iff
     (algebraMap R (IsLocalRing.ResidueField R)) (W₁.integralModel R) C₀).mpr
       (by rw [nodePolynomial_def]; exact h₁.splitMultiplicativeReduction)
