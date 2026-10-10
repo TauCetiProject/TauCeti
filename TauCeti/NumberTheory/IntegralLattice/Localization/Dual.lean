@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Dual.Basic
 import Mathlib.RingTheory.Flat.TorsionFree
+import Mathlib.RingTheory.Localization.BaseChange
 import TauCeti.LinearAlgebra.Dual.BaseChange
 
 /-!
@@ -27,6 +28,8 @@ every `ℤ_p`-linear functional on the localized carrier.
 
 ## Main results
 
+* `TauCeti.IntegralLattice.isBaseChange_localizationDualToCompletion`: the completed ambient
+  space is the scalar extension of the localized dual carrier.
 * `TauCeti.IntegralLattice.localDualPairingEquiv`: the perfect pairing after localization.
 * `TauCeti.IntegralLattice.completedRationalForm_localizationDualToCompletion`: compatibility
   with the completed rational form.
@@ -88,6 +91,25 @@ theorem localizationDualToCompletion_injective :
   rw [h]
   exact e.injective.comp (TensorProduct.map_injective_of_flat_flat' f L.dualCarrier.subtype
     (FaithfulSMul.algebraMap_injective ℤ_[p] ℚ_[p]) L.dualCarrier.subtype_injective)
+
+/-- Extending the localized dual carrier from `ℤ_p` to `ℚ_p` recovers the completed ambient
+space. This requires no nondegeneracy: the dual carrier contains the original full carrier. -/
+theorem isBaseChange_localizationDualToCompletion :
+    IsBaseChange ℚ_[p] (L.localizationDualToCompletion p) := by
+  have hL : IsLocalizedModule (nonZeroDivisors ℤ) L.carrier.subtype :=
+    (isLocalizedModule_iff_isBaseChange (nonZeroDivisors ℤ) ℚ _).mpr
+      (Submodule.IsLattice.isBaseChange_subtype L.carrier)
+  let : IsLocalizedModule (nonZeroDivisors ℤ) L.dualCarrier.subtype :=
+    { map_units := hL.map_units
+      surj := fun v ↦ by
+        obtain ⟨⟨x, s⟩, hs⟩ := hL.surj v
+        exact ⟨(⟨x, L.le_dualCarrier x.property⟩, s), hs⟩
+      exists_of_eq := fun h ↦ ⟨1, by simpa using L.dualCarrier.subtype_injective h⟩ }
+  refine (TensorProduct.isBaseChange ℤ L.dualCarrier ℤ_[p]).of_comp ?_
+  convert (IsLocalizedModule.isBaseChange (nonZeroDivisors ℤ) ℚ L.dualCarrier.subtype).comp
+    (TensorProduct.isBaseChange ℚ V ℚ_[p])
+  ext x
+  simp
 
 variable [L.IsNondegenerate]
 
