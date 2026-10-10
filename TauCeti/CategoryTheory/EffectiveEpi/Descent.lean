@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Comma.Over.Pullback
 public import Mathlib.CategoryTheory.Limits.Shapes.KernelPair
+public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.DescentDatum
 public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Section
 
 /-!
@@ -35,6 +36,13 @@ that `X' ⟶ X` is their coequalizer.
 Uniqueness on its own only needs base change of `p` to be an epimorphism, and is Mathlib's
 `CategoryTheory.Over.faithful_pullback`.
 
+In the language of descent data (`TauCeti.DescentDatum`), a morphism
+`baseChange p X ⟶ baseChange p Y` of canonical descent data is a morphism over `S'` satisfying the
+descent condition. So base change from objects over `S` to descent data relative to `p` is fully
+faithful (`DescentDatum.baseChangeHomEquiv`). This is the uniqueness half of effective descent of
+objects: an object `X` over `S` with an isomorphism of descent data `baseChange p X ≅ D` is unique
+up to a unique isomorphism compatible with the descent data (`DescentDatum.Hom.descendIso`).
+
 For schemes, Mathlib shows that a flat surjective morphism which is quasi-compact, or locally of
 finite presentation, is an effective epimorphism, and these properties are stable under base
 change (`Mathlib.AlgebraicGeometry.Sites.Fpqc`). Instance search therefore discharges the
@@ -49,6 +57,11 @@ effective fpqc (and fppf) descent of sections and morphisms of schemes.
   `X ×_S S' ⟶ Y ×_S S'` over `S'` satisfying the descent condition.
 * `TauCeti.sectionDescentEquiv`, `TauCeti.homDescentEquiv`: base change as a bijection onto the
   sections, respectively morphisms, satisfying the descent condition.
+* `TauCeti.DescentDatum.baseChangeHomEquiv`: base change as a bijection from morphisms over `S`
+  to morphisms of canonical descent data.
+* `TauCeti.DescentDatum.Hom.descendIso`: the isomorphism between two objects over `S` whose
+  canonical descent data are isomorphic to the same descent datum, unique by
+  `DescentDatum.Hom.eq_descendIso`.
 
 ## References
 
@@ -250,5 +263,136 @@ theorem homDescentEquiv_symm_apply
   (rfl)
 
 end Hom
+
+namespace DescentDatum
+
+variable {X Y : Over S}
+
+/-- The morphism `X ×_S (S' ×_S S') ⟶ S' ×_S (X ×_S S')`, `(x, (s₁, s₂)) ↦ (s₂, (x, s₁))`.
+Followed by the second projection it is `pr₁^*`, and followed by the canonical action it is
+`pr₂^*`. -/
+private noncomputable def swap (X : Over S) :
+    pullback X.hom (pullback.fst p p ≫ p) ⟶
+      pullback p (((Over.pullback p).obj X).hom ≫ p) :=
+  pullback.lift (pullback.snd _ _ ≫ pullback.snd p p)
+    (pullback.mapSnd X.hom p _ (pullback.fst p p) rfl) <| by
+      simp [← pullback.condition]
+
+@[reassoc]
+private theorem swap_snd (X : Over S) :
+    swap p X ≫ pullback.snd _ _ = pullback.mapSnd X.hom p _ (pullback.fst p p) rfl :=
+  pullback.lift_snd _ _ _
+
+@[reassoc]
+private theorem swap_act (X : Over S) :
+    swap p X ≫ (baseChange p X).act =
+      pullback.mapSnd X.hom p _ (pullback.snd p p) pullback.condition.symm := by
+  refine pullback.hom_ext ?_ ?_ <;> simp [swap]
+
+/-- The underlying morphism of a morphism of canonical descent data satisfies the descent
+condition of `homDescentEquiv`: its two pullbacks to `S' ×_S S'` agree. -/
+private theorem Hom.mapSnd_comp_hom_left_comp_fst
+    (φ : Hom (baseChange p X) (baseChange p Y)) :
+    pullback.mapSnd X.hom p _ (pullback.fst p p) rfl ≫ φ.hom.left ≫ pullback.fst Y.hom p =
+      pullback.mapSnd X.hom p _ (pullback.snd p p) pullback.condition.symm ≫ φ.hom.left ≫
+        pullback.fst Y.hom p := by
+  have h := φ.map_act =≫ pullback.fst Y.hom p
+  simp only [Category.assoc, baseChange_act_fst, pullback.lift_snd_assoc] at h
+  rw [← swap_snd_assoc, ← swap_act_assoc, ← h]
+
+variable {p} [EffectiveEpi (pullback.fst X.hom p)]
+
+/-- **Descent of morphisms of canonical descent data.** A morphism
+`baseChange p X ⟶ baseChange p Y` of descent data descends to a morphism `X ⟶ Y` over `S`,
+provided that the base change `X ×_S S' ⟶ X` of `p` is an effective epimorphism. Its base change
+is `φ` (`baseChangeHom_descend`). -/
+noncomputable def Hom.descend (φ : Hom (baseChange p X) (baseChange p Y)) : X ⟶ Y :=
+  descendHom p φ.hom (mapSnd_comp_hom_left_comp_fst p φ)
+
+/-- The descended morphism, composed with the projection `X ×_S S' ⟶ X`, is `φ` followed by the
+projection `Y ×_S S' ⟶ Y`. -/
+@[reassoc (attr := simp)]
+theorem Hom.fst_comp_descend_left (φ : Hom (baseChange p X) (baseChange p Y)) :
+    pullback.fst X.hom p ≫ φ.descend.left = φ.hom.left ≫ pullback.fst Y.hom p :=
+  fst_comp_descendHom_left p _ _
+
+/-- **Effectiveness.** The base change of the descended morphism is `φ`. -/
+@[simp]
+theorem baseChangeHom_descend (φ : Hom (baseChange p X) (baseChange p Y)) :
+    baseChangeHom p φ.descend = φ :=
+  Hom.ext <| by rw [baseChangeHom_hom]; exact pullback_map_descendHom p _ _
+
+variable (p) in
+/-- **Uniqueness.** Descending the base change of a morphism `u : X ⟶ Y` over `S` recovers
+`u`. -/
+@[simp]
+theorem Hom.descend_baseChangeHom (u : X ⟶ Y) : (baseChangeHom p u).descend = u :=
+  (eq_descendHom p _ _ u (by simp)).symm
+
+variable (p X Y) in
+/-- **Full faithfulness of base change into descent data.** If the base change `X ×_S S' ⟶ X`
+of `p : S' ⟶ S` is an effective epimorphism, then base change along `p` is a bijection from the
+morphisms `X ⟶ Y` over `S` to the morphisms of canonical descent data
+`baseChange p X ⟶ baseChange p Y`. -/
+noncomputable def baseChangeHomEquiv : (X ⟶ Y) ≃ Hom (baseChange p X) (baseChange p Y) where
+  toFun := baseChangeHom p
+  invFun φ := φ.descend
+  left_inv := Hom.descend_baseChangeHom p
+  right_inv := baseChangeHom_descend
+
+variable (p) in
+/-- `baseChangeHomEquiv` sends a morphism over `S` to its base change. -/
+@[simp]
+theorem baseChangeHomEquiv_apply (u : X ⟶ Y) : baseChangeHomEquiv p X Y u = baseChangeHom p u :=
+  (rfl)
+
+/-- The inverse of `baseChangeHomEquiv` is descent of morphisms of canonical descent data. -/
+@[simp]
+theorem baseChangeHomEquiv_symm_apply (φ : Hom (baseChange p X) (baseChange p Y)) :
+    (baseChangeHomEquiv p X Y).symm φ = φ.descend :=
+  (rfl)
+
+section Iso
+
+variable [EffectiveEpi (pullback.fst Y.hom p)] {W : Over S'} {D : DescentDatum p W}
+  (f : Hom (baseChange p X) D) (g : Hom (baseChange p Y) D) [IsIso f.hom] [IsIso g.hom]
+
+/-- **Uniqueness of effective descent.** Two objects `X` and `Y` over `S` whose canonical
+descent data are both isomorphic to the same descent datum `D`, through `f` and `g`, are
+isomorphic over `S`; the isomorphism is compatible with `f` and `g`
+(`Hom.comp_baseChangeHom_descendIso`), and it is the only such isomorphism
+(`Hom.eq_descendIso`). -/
+noncomputable def Hom.descendIso : X ≅ Y where
+  hom := (g.inv.comp f).descend
+  inv := (f.inv.comp g).descend
+  hom_inv_id := (baseChangeHomEquiv p X X).injective <| by
+    simp [Hom.comp_assoc, ← Hom.comp_assoc g]
+  inv_hom_id := (baseChangeHomEquiv p Y Y).injective <| by
+    simp [Hom.comp_assoc, ← Hom.comp_assoc f]
+
+/-- The forward map of `Hom.descendIso f g` descends `g⁻¹ ∘ f`. -/
+@[simp]
+theorem Hom.descendIso_hom : (f.descendIso g).hom = (g.inv.comp f).descend :=
+  (rfl)
+
+/-- The inverse map of `Hom.descendIso f g` descends `f⁻¹ ∘ g`. -/
+@[simp]
+theorem Hom.descendIso_inv : (f.descendIso g).inv = (f.inv.comp g).descend :=
+  (rfl)
+
+/-- The isomorphism `Hom.descendIso f g : X ≅ Y` carries `f` to `g`. -/
+theorem Hom.comp_baseChangeHom_descendIso :
+    g.comp (baseChangeHom p (f.descendIso g).hom) = f := by
+  simp [← Hom.comp_assoc]
+
+/-- `Hom.descendIso f g` is the only isomorphism `X ≅ Y` carrying `f` to `g`. -/
+theorem Hom.eq_descendIso (e : X ≅ Y) (he : g.comp (baseChangeHom p e.hom) = f) :
+    e = f.descendIso g := by
+  ext1
+  rw [descendIso_hom, ← he, ← Hom.comp_assoc, inv_comp_self, Hom.id_comp, descend_baseChangeHom]
+
+end Iso
+
+end DescentDatum
 
 end TauCeti
