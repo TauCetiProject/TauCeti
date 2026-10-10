@@ -55,16 +55,12 @@ variable {X : Type*} [TopologicalSpace X] {x y z : X}
 
 /-! ### The concatenation of two Moore paths of length one -/
 
-theorem _root_.Path.toMoorePath_apply_eq_extend (p : Path x y) (t : ℝ≥0) :
-    p.toMoorePath t = p.extend t :=
-  Path.toMoorePath_apply p t
-
 /-- The concatenation of the Moore paths of `p` and `q` is the Moore path of `p.trans q`,
 reparametrized from length one to length two. -/
 theorem _root_.Path.transMoorePath_eq_rescale (p : Path x y) (q : Path y z) :
     p.toMoorePath.trans q.toMoorePath (by simp) = (p.trans q).toMoorePath.rescale 2 := by
   refine MoorePath.ext (by simp [one_add_one_eq_two]) fun t ↦ ?_
-  rw [MoorePath.rescale_apply, Path.length_toMoorePath, one_mul, Path.toMoorePath_apply_eq_extend,
+  rw [MoorePath.rescale_apply, Path.length_toMoorePath, one_mul, Path.toMoorePath_apply,
     NNReal.coe_div, NNReal.coe_ofNat]
   rcases le_total t 1 with ht | ht
   · have ht' : t ≤ p.toMoorePath.length := by rwa [Path.length_toMoorePath]
@@ -72,13 +68,13 @@ theorem _root_.Path.transMoorePath_eq_rescale (p : Path x y) (q : Path y z) :
       rw [div_le_div_iff_of_pos_right two_pos]
       exact_mod_cast ht
     rw [MoorePath.trans_apply_of_le _ _ _ ht', Path.extend_trans_of_le_half _ _ h2,
-      show (2 : ℝ) * (t / 2) = t by ring, Path.toMoorePath_apply_eq_extend]
+      show (2 : ℝ) * (t / 2) = t by ring, Path.toMoorePath_apply]
   · have ht' : p.toMoorePath.length ≤ t := by rwa [Path.length_toMoorePath]
     have h2 : (1 : ℝ) / 2 ≤ t / 2 := by
       rw [div_le_div_iff_of_pos_right two_pos]
       exact_mod_cast ht
     rw [MoorePath.trans_apply_of_length_le _ _ _ ht', Path.extend_trans_of_half_le _ _ h2,
-      show (2 : ℝ) * (t / 2) - 1 = t - 1 by ring, Path.toMoorePath_apply_eq_extend,
+      show (2 : ℝ) * (t / 2) - 1 = t - 1 by ring, Path.toMoorePath_apply,
       Path.length_toMoorePath, NNReal.coe_sub ht, NNReal.coe_one]
 
 end TauCeti
