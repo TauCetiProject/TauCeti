@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.GoodReduction
-public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.Torsion
-public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.TorsionFree
+public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.Torsion.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.Torsion.Free
 -- Proof-only: carrying points of `W` to the completion.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.MapAlong
 

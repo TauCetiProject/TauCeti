@@ -69,6 +69,7 @@ private theorem eval₂_eq_aeval (P : FormalGroupPoint W I) :
 open MvPowerSeries.WithPiTopology in
 /-- **Multiplication by `n` on `Ê(I)` is evaluation of `[n]`**: the parameter of `n • P` is the
 multiplication-by-`n` series of the elliptic formal group law evaluated at the parameter of `P`. -/
+@[simp]
 theorem coe_nsmul (n : ℕ) (P : FormalGroupPoint W I) :
     ((n • P : FormalGroupPoint W I) : O) =
       PowerSeries.eval₂ (RingHom.id O) (P : O) ((formalGroup W).nsmulSeries n) := by
@@ -169,7 +170,7 @@ local notation "F_u" => u.adicCompletion F
 local notation "m_u" => IsLocalRing.maximalIdeal O_u
 
 -- Named: anonymous `local instance`s here get the same generated names as the ones in
--- `FormalGroup/Point/Torsion.lean`, and both modules are imported by
+-- `FormalGroup/Point/Torsion/Basic.lean`, and both modules are imported by
 -- `Affine/Point/TorsionReduction.lean`.
 local instance isLinearTopology_adicCompletionIntegers : IsLinearTopology O_u O_u :=
   u.isAdic_maximalIdeal_adicCompletionIntegers (K := F) ▸ Ideal.isLinearTopology m_u
