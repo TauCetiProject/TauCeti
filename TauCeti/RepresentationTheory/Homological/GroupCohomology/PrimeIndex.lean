@@ -14,16 +14,16 @@ import TauCeti.RepresentationTheory.Homological.GroupCohomology.InflationRestric
 /-!
 # Reducing `H¹ = 0` and `#H² ∣ #G` to subquotients of prime order
 
-Let `A` be a representation of a finite group `G`. Suppose that for every subgroup `H` of `G` and
-every normal subgroup `N` of prime index in `H`,
+Let `A` be a representation of a finite group `G`. Suppose that for every solvable subgroup `H` of
+`G` and every normal subgroup `N` of prime index in `H`,
 
 ```text
 H¹(H ⧸ N, A^N) = 0    and    #H²(H ⧸ N, A^N) ∣ [H : N].
 ```
 
 Then `H¹(G, A) = 0` (`isZero_groupCohomology_one_of_prime_index`) and the order of `H²(G, A)`
-divides `#G` (`natCard_groupCohomology_two_dvd_natCard_of_prime_index`). No solvability is
-assumed.
+divides `#G` (`natCard_groupCohomology_two_dvd_natCard_of_prime_index`). No solvability of `G`
+is assumed.
 
 This is the Sylow and tower argument by which, for the idele classes `C_L` of a finite Galois
 extension `L/K` of number fields, the vanishing of `H¹(Gal(L/K), C_L)` and the second fundamental
@@ -70,7 +70,7 @@ composition. -/
 /-- The solvable case of `isZero_groupCohomology_one_of_prime_index`: `H¹(H, A)` vanishes for
 every solvable group `H` of order `n` mapping injectively to `G`. -/
 private theorem isZero_groupCohomology_one_res_of_isSolvable [Finite G] (A : Rep k G)
-    (h1 : ∀ (H : Type u) [Group H] (f : H →* G), Function.Injective f →
+    (h1 : ∀ (H : Type u) [Group H] [Group.IsSolvable H] (f : H →* G), Function.Injective f →
       ∀ (N : Subgroup H) [N.Normal], N.index.Prime →
         IsZero (groupCohomology ((res f A).quotientToInvariants N) 1))
     (n : ℕ) : ∀ (H : Type u) [Group H] [Group.IsSolvable H] (f : H →* G),
@@ -95,26 +95,27 @@ private theorem isZero_groupCohomology_one_res_of_isSolvable [Finite G] (A : Rep
 /-- The solvable case of `natCard_groupCohomology_two_dvd_natCard_of_prime_index`, for a solvable
 group `H` mapping injectively to `G`. -/
 private theorem natCard_groupCohomology_two_res_dvd_of_isSolvable [Finite G] (A : Rep k G)
-    (h1 : ∀ (H : Type u) [Group H] (f : H →* G), Function.Injective f →
+    (h1 : ∀ (H : Type u) [Group H] [Group.IsSolvable H] (f : H →* G), Function.Injective f →
       ∀ (N : Subgroup H) [N.Normal], N.index.Prime →
         IsZero (groupCohomology ((res f A).quotientToInvariants N) 1))
-    (h2 : ∀ (H : Type u) [Group H] (f : H →* G), Function.Injective f →
+    (h2 : ∀ (H : Type u) [Group H] [Group.IsSolvable H] (f : H →* G), Function.Injective f →
       ∀ (N : Subgroup H) [N.Normal], N.index.Prime →
         Nat.card (groupCohomology ((res f A).quotientToInvariants N) 2) ∣ N.index)
     (H : Type u) [Group H] [Group.IsSolvable H] (f : H →* G) (hf : Function.Injective f) :
     Nat.card (groupCohomology (res f A) 2) ∣ Nat.card H := by
   have : Finite H := Finite.of_injective f hf
   refine natCard_groupCohomology_two_dvd_natCard (res f A) (fun H' _ f' hf' => ?_)
-    (fun H' _ f' hf' => h2 H' (f.comp f') (hf.comp hf'))
+    (fun H' _ f' hf' =>
+      have := Group.isSolvable_of_isSolvable_injective hf'; h2 H' (f.comp f') (hf.comp hf'))
   have : Group.IsSolvable H' := Group.isSolvable_of_isSolvable_injective hf'
   exact isZero_groupCohomology_one_res_of_isSolvable A h1 _ H' (f.comp f') (hf.comp hf') rfl
 
 /-- **`H¹` vanishes if it does on the subquotients of prime order.** Let `A` be a representation
-of a finite group `G`. Suppose that for every subgroup `H` of `G` (given as an injective
+of a finite group `G`. Suppose that for every solvable subgroup `H` of `G` (given as an injective
 homomorphism `f : H →* G`) and every normal subgroup `N` of prime index in `H`,
 `H¹(H ⧸ N, A^N) = 0`. Then `H¹(G, A) = 0`. -/
 theorem isZero_groupCohomology_one_of_prime_index [Finite G] (A : Rep k G)
-    (h1 : ∀ (H : Type u) [Group H] (f : H →* G), Function.Injective f →
+    (h1 : ∀ (H : Type u) [Group H] [Group.IsSolvable H] (f : H →* G), Function.Injective f →
       ∀ (N : Subgroup H) [N.Normal], N.index.Prime →
         IsZero (groupCohomology ((res f A).quotientToInvariants N) 1)) :
     IsZero (groupCohomology A 1) := by
@@ -125,15 +126,15 @@ theorem isZero_groupCohomology_one_of_prime_index [Finite G] (A : Rep k G)
     Subtype.val_injective rfl⟩
 
 /-- **The order of `H²` divides that of the group if it does on the subquotients of prime
-order.** Let `A` be a representation of a finite group `G`. Suppose that for every subgroup `H` of
-`G` (given as an injective homomorphism `f : H →* G`) and every normal subgroup `N` of prime index
-in `H`, `H¹(H ⧸ N, A^N) = 0` and the order of `H²(H ⧸ N, A^N)` divides `[H : N]`. Then the order
-of `H²(G, A)` divides `#G`; in particular `H²(G, A)` is finite. -/
+order.** Let `A` be a representation of a finite group `G`. Suppose that for every solvable
+subgroup `H` of `G` (given as an injective homomorphism `f : H →* G`) and every normal subgroup `N`
+of prime index in `H`, `H¹(H ⧸ N, A^N) = 0` and the order of `H²(H ⧸ N, A^N)` divides `[H : N]`.
+Then the order of `H²(G, A)` divides `#G`; in particular `H²(G, A)` is finite. -/
 theorem natCard_groupCohomology_two_dvd_natCard_of_prime_index [Finite G] (A : Rep k G)
-    (h1 : ∀ (H : Type u) [Group H] (f : H →* G), Function.Injective f →
+    (h1 : ∀ (H : Type u) [Group H] [Group.IsSolvable H] (f : H →* G), Function.Injective f →
       ∀ (N : Subgroup H) [N.Normal], N.index.Prime →
         IsZero (groupCohomology ((res f A).quotientToInvariants N) 1))
-    (h2 : ∀ (H : Type u) [Group H] (f : H →* G), Function.Injective f →
+    (h2 : ∀ (H : Type u) [Group H] [Group.IsSolvable H] (f : H →* G), Function.Injective f →
       ∀ (N : Subgroup H) [N.Normal], N.index.Prime →
         Nat.card (groupCohomology ((res f A).quotientToInvariants N) 2) ∣ N.index) :
     Nat.card (groupCohomology A 2) ∣ Nat.card G := by
