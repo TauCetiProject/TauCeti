@@ -25,9 +25,8 @@ The measurable-event versions are `two_mul_sq_measureReal_sub_le_klDiv` and
 `two_mul_sq_measureReal_sub_le_mul_klDiv`. They use real subtraction before squaring, so
 they control the absolute difference in both directions.
 
-The proof combines `ofReal_integral_sub_log_integral_exp_le_klDiv` with Mathlib's
-`ProbabilityTheory.hasSubgaussianMGF_of_mem_Icc` applied to an indicator function. The
-eventwise characterization of total variation then gives the measure-level statement.
+These bounds turn small relative entropy into uniform control of probabilities of measurable
+events and of the total-variation distance.
 -/
 
 public section
@@ -38,6 +37,10 @@ open scoped ENNReal NNReal
 namespace TauCeti
 
 variable {α : Type*} [MeasurableSpace α] {μ ν : Measure α}
+
+/- The event proof combines `ofReal_integral_sub_log_integral_exp_le_klDiv` with Mathlib's
+`ProbabilityTheory.hasSubgaussianMGF_of_mem_Icc` applied to an indicator function. The
+eventwise characterization of total variation then gives the measure-level statement. -/
 
 /-- **Pinsker's inequality for events**, with natural logarithms. The extended-valued right
 side includes infinite relative entropy, without an absolute-continuity hypothesis. -/
