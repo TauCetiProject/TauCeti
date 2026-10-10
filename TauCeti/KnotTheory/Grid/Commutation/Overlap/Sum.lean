@@ -7,7 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Grid.Commutation.Disjoint.Basic
 public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Initial.Sum
-public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Mixed.LeftRight
+public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Mixed.LeftRight.Basic
 public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Terminal.Cross.Sum
 public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Terminal.Mixed
 public import TauCeti.KnotTheory.Grid.Commutation.TurnCut
