@@ -12,11 +12,11 @@ public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ExactChecker
 
 The positive degree belonging to a central-character row is determined by its weighted
 Hermitian norm. Clearing the class-size denominators makes this calculation executable in
-the coefficient ring itself, including the integers and exact cyclotomic integers.
+the coefficient semiring itself, including the integers and exact cyclotomic integers.
 
 `clearedClassRowNorm` multiplies the usual norm by the product of all class sizes.
 `recoverCharacterDegree?` tests positive divisors of the group order against the resulting
-degree-square equation. It returns `none` if no degree passes. Over a coefficient ring
+degree-square equation. It returns `none` if no degree passes. Over a coefficient semiring
 admitting a homomorphism to a characteristic-zero domain, at most one degree passes.
 For every certified exact character table, recovery returns its degree on each row.
 
@@ -36,7 +36,7 @@ public section
 namespace TauCeti.ClassData
 
 variable {G : Type*} [Group G] [Fintype G] [DecidableEq G]
-variable (d : ClassData G) {R : Type*} [CommRing R]
+variable (d : ClassData G) {R : Type*} [CommSemiring R]
 
 /-- The weighted Hermitian norm of a numbered row, with all class-size denominators cleared
 by their product. The coefficient of coordinate `k` is the product of the other class sizes. -/
@@ -59,13 +59,24 @@ def recoverCharacterDegree? [DecidableEq R] (conj : R →+* R)
   (List.range (Fintype.card G + 1)).find? fun n =>
     decide (0 < n ∧ n ∣ Fintype.card G ∧ (n : R) ^ 2 * norm = target)
 
+/-- A recovered degree is positive, divides the group order, and satisfies the
+denominator-cleared degree-square equation. No uniqueness assumption is needed. -/
+theorem recoverCharacterDegree?_sound [DecidableEq R] (conj : R →+* R)
+    (row : Fin d.numClasses → R) {n : ℕ}
+    (h : d.recoverCharacterDegree? conj row = some n) :
+    0 < n ∧ n ∣ Fintype.card G ∧
+      (n : R) ^ 2 * d.clearedClassRowNorm conj row =
+        (Fintype.card G : R) * (∏ j, (d.classFinset j).card : ℕ) := by
+  rw [recoverCharacterDegree?] at h
+  simpa only [decide_eq_true_eq] using List.find?_some h
+
 private theorem classSizeProduct_pos : 0 < ∏ j, (d.classFinset j).card :=
   Finset.prod_pos fun j _ => Finset.card_pos.mpr ⟨d.rep j, d.rep_mem_classFinset j⟩
 
 /-- The denominator-cleared degree-square identity for a certified exact character table.
 It involves only ring operations, so no division or passage to complex numbers is needed. -/
-theorem IsExactCharacterTableSpec.degree_sq_mul_clearedClassRowNorm
-    {d : ClassData G} {conj : R →+* R}
+theorem IsExactCharacterTableSpec.degree_sq_mul_clearedClassRowNorm_eq_card_mul_classSizeProduct
+    {R : Type*} [CommRing R] {d : ClassData G} {conj : R →+* R}
     {omega table : Matrix (Fin d.numClasses) (Fin d.numClasses) R}
     {degree : Fin d.numClasses → ℕ}
     (h : d.IsExactCharacterTableSpec conj omega table degree) (i : Fin d.numClasses) :
@@ -98,7 +109,7 @@ theorem IsExactCharacterTableSpec.degree_sq_mul_clearedClassRowNorm
     Finset.sum_congr rfl fun k _ => hterm k, ← Finset.mul_sum, h.row_orthogonal i i]
   simp [mul_comm]
 
-private theorem degree_eq_of_norm_eq {K : Type*} [CommRing K] [IsDomain K] [CharZero K]
+private theorem degree_eq_of_norm_eq {K : Type*} [CommSemiring K] [IsDomain K] [CharZero K]
     (f : R →+* K) {norm : R} {m n : ℕ}
     (hm : (m : R) ^ 2 * norm =
       (Fintype.card G : R) * (∏ j, (d.classFinset j).card : ℕ))
@@ -121,16 +132,14 @@ private theorem degree_eq_of_norm_eq {K : Type*} [CommRing K] [IsDomain K] [Char
 satisfying the degree-square equation. A homomorphism to a characteristic-zero domain ensures
 that no competing natural degree can satisfy it. -/
 theorem recoverCharacterDegree?_eq_some_iff [DecidableEq R]
-    {K : Type*} [CommRing K] [IsDomain K] [CharZero K] (f : R →+* K)
+    {K : Type*} [CommSemiring K] [IsDomain K] [CharZero K] (f : R →+* K)
     (conj : R →+* R) (row : Fin d.numClasses → R) (n : ℕ) :
     d.recoverCharacterDegree? conj row = some n ↔
       0 < n ∧ n ∣ Fintype.card G ∧
         (n : R) ^ 2 * d.clearedClassRowNorm conj row =
           (Fintype.card G : R) * (∏ j, (d.classFinset j).card : ℕ) := by
   constructor
-  · intro h
-    rw [recoverCharacterDegree?] at h
-    simpa only [decide_eq_true_eq] using List.find?_some h
+  · exact d.recoverCharacterDegree?_sound conj row
   · intro hn
     have hmem : n ∈ List.range (Fintype.card G + 1) := by
       simpa using Nat.lt_succ_of_le (Nat.le_of_dvd Fintype.card_pos hn.2.1)
@@ -138,18 +147,15 @@ theorem recoverCharacterDegree?_eq_some_iff [DecidableEq R]
       apply List.find?_isSome.mpr
       exact ⟨n, hmem, by simpa using hn⟩
     obtain ⟨m, hm⟩ := Option.isSome_iff_exists.mp hex
-    have hm' := hm
-    rw [recoverCharacterDegree?] at hm'
-    have hmtest := List.find?_some hm'
-    simp only [decide_eq_true_eq] at hmtest
-    have hmnorm := hmtest.2.2
+    have hmnorm := (d.recoverCharacterDegree?_sound conj row hm).2.2
     have hmn := d.degree_eq_of_norm_eq f hmnorm hn.2.2
     simpa [hmn] using hm
 
 /-- Recovering the degree of any row of a certified exact character table returns the
 certificate's degree. This applies to integer and exact cyclotomic tables. -/
-theorem IsExactCharacterTableSpec.recoverCharacterDegree?_eq_some [DecidableEq R]
-    {K : Type*} [CommRing K] [IsDomain K] [CharZero K]
+theorem IsExactCharacterTableSpec.recoverCharacterDegree?_eq_some
+    {R : Type*} [CommRing R] [DecidableEq R]
+    {K : Type*} [CommSemiring K] [IsDomain K] [CharZero K]
     {d : ClassData G} {conj : R →+* R}
     {omega table : Matrix (Fin d.numClasses) (Fin d.numClasses) R}
     {degree : Fin d.numClasses → ℕ}
@@ -157,6 +163,7 @@ theorem IsExactCharacterTableSpec.recoverCharacterDegree?_eq_some [DecidableEq R
     (i : Fin d.numClasses) :
     d.recoverCharacterDegree? conj (omega i) = some (degree i) := by
   exact (d.recoverCharacterDegree?_eq_some_iff f conj (omega i) (degree i)).mpr
-    ⟨h.degree_pos i, h.degree_dvd i, h.degree_sq_mul_clearedClassRowNorm i⟩
+    ⟨h.degree_pos i, h.degree_dvd i,
+      h.degree_sq_mul_clearedClassRowNorm_eq_card_mul_classSizeProduct i⟩
 
 end TauCeti.ClassData
