@@ -25,7 +25,7 @@ This file provides the cast to a ground ring of Mathlib's unit-valued sign chara
 * `TauCeti.negOnePow_smul_eq_negOnePowCast_smul`: the unit-valued sign and its ground-ring cast
   induce the same scalar action on a module.
 * `TauCeti.negOnePow_smul_negOnePow_smul`: the unit-valued sign acts as an involution.
-* `TauCeti.negOnePow_sub_sub_one`, `TauCeti.negOnePow_mul_negOnePow_of_even`: the parity
+* `Int.negOnePow_sub_sub_one`, `TauCeti.negOnePow_mul_negOnePow_of_even`: the parity
   identities behind the sign cancellations of twisted differentials.
 -/
 
@@ -113,7 +113,8 @@ section Parity
 
 /-- Reversing a difference and shifting it by one flips the sign:
 `(-1) ^ (a - b - 1) = -(-1) ^ (b - a)`. -/
-theorem negOnePow_sub_sub_one (a b : ℤ) : (a - b - 1).negOnePow = -(b - a).negOnePow := by
+theorem _root_.Int.negOnePow_sub_sub_one (a b : ℤ) :
+    (a - b - 1).negOnePow = -(b - a).negOnePow := by
   rw [← Int.negOnePow_succ, Int.negOnePow_eq_iff]
   exact ⟨a - b - 1, by omega⟩
 
