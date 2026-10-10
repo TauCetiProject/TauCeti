@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Morse.StableEmbedding
+public import TauCeti.Geometry.Manifold.Morse.Stable.Embedding
 public import TauCeti.Geometry.Manifold.Instances.OpenBall
 
 /-!
