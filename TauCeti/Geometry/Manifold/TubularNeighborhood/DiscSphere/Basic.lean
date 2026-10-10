@@ -95,7 +95,8 @@ normal spheres. -/
   grind
 
 /-- The difference between constant-radius closed normal discs and their open tube
-consists of the normal spheres. -/
+consists of the normal spheres. This simplifies differences written with `normalTube`,
+the constant-radius simp normal form of `normalTubeOfRadius`. -/
 @[simp] theorem normalDiscBundleOfRadius_sdiff_normalTube (f : M → V) (ε : ℝ) :
     normalDiscBundleOfRadius I f (fun _ => ε) \ normalTube I f ε =
       normalSphereBundleOfRadius I f (fun _ => ε) := by
