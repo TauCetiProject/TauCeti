@@ -16,6 +16,7 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.H1.ZMod
 public import TauCeti.RepresentationTheory.QuotSMulTop
 public import TauCeti.RepresentationTheory.RankOneTwist
 public import TauCeti.RepresentationTheory.RestrictScalars
+public import TauCeti.RepresentationTheory.TorsionBy
 public import TauCeti.RingTheory.RootsOfUnity.ZMod
 
 /-!
@@ -84,9 +85,12 @@ of `L`.
 * `TauCeti.kummerH1FiniteRep`: the conjugation representation of `Gal(L/K)` on `H¹(N, ℤ/n)`.
 * `TauCeti.kummerH1FiniteRepresentationEquiv`: equivariant Kummer theory,
   `H¹(N, ℤ/n) ≃ Hom(μₙ, ℤ/n) ⊗ Lˣ ⧸ (Lˣ)ⁿ` as representations of `Gal(L/K)`.
+* `TauCeti.torsionByUnitsEquivKummerCoeff`: when `σ(L)` contains the `n`th roots of unity, `σ`
+  identifies the `n`-torsion `μₙ(L)` of `Lˣ` with `μₙ` as representations of `Gal(L/K)`.
 
 ## Main results
 
+* `TauCeti.finrank_kummerCoeff`: `μ_ℓ` is a line over `𝔽_ℓ` for a prime `ℓ` invertible in `K`.
 * `TauCeti.fixingSubgroupKummerEquiv_ofMul_mk`: the Kummer class of `b` is the class of
   `h ↦ h α / α` for every `n`th root `α` of `σ b`.
 * `TauCeti.smul_fixingSubgroupKummerEquiv`: the Kummer isomorphism intertwines conjugation by
@@ -434,6 +438,78 @@ theorem quotSMulTopUnitsPowerClassRepresentationEquiv_mk (n : ℕ) (x : Additive
   -- The underlying linear equivalence is `quotSMulTopPowerClassEquiv n`, read `ℤ`-linearly.
   quotSMulTopPowerClassEquiv_mk n x
 
+/-! ### The roots of unity of `L` -/
+
+section RootsOfUnity
+
+variable (sigma : L →ₐ[K] SeparableClosure K) (n : ℕ)
+
+/-- An `n`-torsion element of `Lˣ`, written additively, read as an `n`th root of unity of `Kˢ`
+through the embedding `σ`. -/
+private def torsionByUnitsToKummerCoeff :
+    Submodule.torsionBy ℤ (Additive Lˣ) (n : ℤ) →+ KummerCoeff K n where
+  toFun x := Additive.ofMul ⟨Units.map (sigma : L →* SeparableClosure K) x.1.toMul, by
+    have hx := congrArg Additive.toMul ((Submodule.mem_torsionBy_iff _ _).1 x.2)
+    rw [natCast_zsmul, toMul_nsmul, toMul_zero] at hx
+    rw [mem_rootsOfUnity, ← map_pow, hx, map_one]⟩
+  map_zero' := by
+    apply Additive.toMul.injective
+    ext
+    simp
+  map_add' x y := by
+    apply Additive.toMul.injective
+    ext
+    simp
+
+private theorem coe_torsionByUnitsToKummerCoeff_apply
+    (x : Submodule.torsionBy ℤ (Additive Lˣ) (n : ℤ)) :
+    (((torsionByUnitsToKummerCoeff sigma n x).toMul : (SeparableClosure K)ˣ) :
+      SeparableClosure K) = sigma (x.1.toMul : L) :=
+  rfl
+
+private theorem bijective_torsionByUnitsToKummerCoeff
+    (hN : ∀ g : AbsoluteGaloisGroup K, g ∈ sigma.fieldRange.fixingSubgroup →
+      ∀ xi : KummerCoeff K n, g • xi = xi) :
+    Function.Bijective (torsionByUnitsToKummerCoeff sigma n) := by
+  refine ⟨fun x y h ↦ ?_, fun xi ↦ ?_⟩
+  · have h' := congrArg (fun z : KummerCoeff K n ↦ ((z.toMul : (SeparableClosure K)ˣ) :
+      SeparableClosure K)) h
+    simp only [coe_torsionByUnitsToKummerCoeff_apply] at h'
+    exact Subtype.ext (Additive.toMul.injective (Units.ext (sigma.injective h')))
+  · set ζ : SeparableClosure K := ((xi.toMul : (SeparableClosure K)ˣ) : SeparableClosure K)
+    have hfix : ζ ∈ IntermediateField.fixedField sigma.fieldRange.fixingSubgroup := by
+      rintro ⟨g, hg⟩
+      have h := congrArg (fun z : KummerCoeff K n ↦ ((z.toMul : (SeparableClosure K)ˣ) :
+        SeparableClosure K)) (hN g hg xi)
+      simpa [AlgEquiv.smul_units_def] using h
+    rw [InfiniteGalois.fixedField_fixingSubgroup] at hfix
+    obtain ⟨y, hy⟩ := hfix
+    have hy0 : y ≠ 0 := by
+      rintro rfl
+      exact xi.toMul.1.ne_zero (by simp [ζ, ← hy])
+    have hyn : Units.mk0 y hy0 ^ n = 1 := by
+      apply Units.ext
+      apply sigma.injective
+      have := congrArg (fun u : (SeparableClosure K)ˣ ↦ (u : SeparableClosure K))
+        ((mem_rootsOfUnity n _).1 xi.toMul.2)
+      simpa [ζ, ← hy] using this
+    refine ⟨⟨Additive.ofMul (Units.mk0 y hy0), (Submodule.mem_torsionBy_iff _ _).2 ?_⟩, ?_⟩
+    · apply Additive.toMul.injective
+      simpa [natCast_zsmul] using hyn
+    · apply Additive.toMul.injective
+      exact Subtype.ext (Units.ext hy)
+
+end RootsOfUnity
+
+/-- **`μ_ℓ` is a line over `𝔽_ℓ`** for a prime `ℓ` invertible in `K`. -/
+theorem finrank_kummerCoeff {ℓ : ℕ} [Fact ℓ.Prime] (hℓ : IsUnit (ℓ : K)) :
+    Module.finrank (ZMod ℓ) (KummerCoeff K ℓ) = 1 := by
+  have hp : ℓ.Prime := Fact.out
+  apply Nat.pow_right_injective hp.two_le
+  dsimp only
+  conv_rhs => rw [pow_one, ← natCard_kummerCoeff hℓ]
+  rw [Module.natCard_eq_pow_finrank (K := ZMod ℓ), Nat.card_zmod]
+
 /-! ### Quotients of the absolute Galois action -/
 
 section FiniteGalois
@@ -490,6 +566,25 @@ theorem kummerCoeffFiniteRepresentation_restrictNormalHom
     (quotientFixingSubgroupFieldRangeEquiv K L sigma).symm_apply_apply _
   rw [hq, Representation.ofQuotient_coe_apply]
   rfl
+
+/-- **The roots of unity of `L` are those of `Kˢ`.** If the subgroup of `G_K` fixing `σ(L)`
+fixes the `n`th roots of unity of `Kˢ`, then `σ` identifies the `n`-torsion `μ_n(L)` of `Lˣ`
+with `μ_n(Kˢ)`, as representations of `Gal(L/K)`: an `n`th root of unity fixed by that subgroup
+lies in `σ(L)` by infinite Galois theory (`InfiniteGalois.fixedField_fixingSubgroup`). -/
+def torsionByUnitsEquivKummerCoeff
+    (hN : ∀ g : AbsoluteGaloisGroup K, g ∈ sigma.fieldRange.fixingSubgroup →
+      ∀ xi : KummerCoeff K n, g • xi = xi) :
+    ((Representation.ofDistribMulAction ℤ Gal(L/K) (Additive Lˣ)).torsionBy n).Equiv
+      (kummerCoeffFiniteRepresentation sigma n hN).restrictScalarsInt := by
+  refine .mk (AddEquiv.ofBijective _ (bijective_torsionByUnitsToKummerCoeff sigma n hN)
+    ).toIntLinearEquiv fun tau ↦ LinearMap.ext fun x ↦ ?_
+  obtain ⟨g, rfl⟩ := sigma.restrictNormalHom_surjective tau
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, AddEquiv.coe_toIntLinearEquiv,
+    AddEquiv.ofBijective_apply, Representation.restrictScalarsInt_apply]
+  rw [kummerCoeffFiniteRepresentation_restrictNormalHom]
+  apply Additive.toMul.injective
+  ext
+  simp [coe_torsionByUnitsToKummerCoeff_apply, AlgEquiv.smul_units_def]
 
 /-- The absolute Galois group acts trivially on the constant coefficient module. -/
 local instance : DistribMulAction (AbsoluteGaloisGroup K) (ZMod n) :=
