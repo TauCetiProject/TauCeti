@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Differential.Weierstrass.TotalWeight
 public import TauCeti.FieldTheory.FunctionField.Hyperelliptic.WeierstrassGaps
+import TauCeti.Data.Nat.Choose.Basic
 
 /-!
 # The number of Weierstrass points
@@ -75,20 +76,6 @@ theorem weierstrassWeight_eq_genus_choose_two_of_isHyperellipticFunctionField
 
 variable [IsAlgClosed k]
 
-/-- `g³ - g = (2g + 2) · g (g - 1) / 2`. -/
-private theorem pow_three_sub_self_eq_mul_choose_two (g : ℕ) :
-    g ^ 3 - g = (2 * g + 2) * g.choose 2 := by
-  have h2 : g.choose 2 * 2 = g * (g - 1) := by
-    rw [Nat.choose_two_right, Nat.div_mul_cancel g.even_mul_pred_self.two_dvd]
-  rcases g with _ | g
-  · simp
-  · rw [Nat.add_sub_cancel] at h2
-    have h : (2 * (g + 1) + 2) * (g + 1).choose 2 = (g + 2) * ((g + 1) * g) := by
-      rw [← h2]
-      ring
-    rw [h]
-    exact Nat.sub_eq_of_eq_add (by ring)
-
 /-- The weights of the finitely many Weierstrass points add up to `g³ - g`. -/
 private theorem sum_toFinset_weierstrassWeight (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F)
@@ -123,7 +110,7 @@ theorem two_mul_genus_add_two_le_ncard_setOf_weierstrassWeight_ne_zero
   have hle := Finset.sum_le_card_nsmul hfin.toFinset (fun P ↦ P.weierstrassWeight)
     ((genus k F).choose 2) fun P _ ↦ P.weierstrassWeight_le_genus_choose_two hF hex
       (P.degree_eq_one_of_isAlgClosed_of_isFunctionField hF)
-  rw [sum_toFinset_weierstrassWeight hF hex hgaps hfin, pow_three_sub_self_eq_mul_choose_two,
+  rw [sum_toFinset_weierstrassWeight hF hex hgaps hfin, Nat.pow_three_sub_self_eq_mul_choose_two,
     smul_eq_mul] at hle
   rw [Set.ncard_eq_toFinset_card _ hfin]
   exact Nat.le_of_mul_le_mul_right hle (Nat.choose_pos hg)
@@ -147,7 +134,7 @@ private theorem isHyperellipticFunctionField_of_ncard_setOf_weierstrassWeight_ne
       (P.weierstrassWeight_le_genus_choose_two hF hex
         (P.degree_eq_one_of_isAlgClosed_of_isFunctionField hF)) (hlt P hP)
     rw [sum_toFinset_weierstrassWeight hF hex hgaps hfin, Finset.sum_const, smul_eq_mul,
-      pow_three_sub_self_eq_mul_choose_two] at hsum
+      Nat.pow_three_sub_self_eq_mul_choose_two] at hsum
     exact absurd (Nat.lt_of_mul_lt_mul_right hsum) (by omega)
   obtain ⟨P, -, hP⟩ := hmax
   have hP₁ := P.degree_eq_one_of_isAlgClosed_of_isFunctionField hF
@@ -174,7 +161,7 @@ theorem isHyperellipticFunctionField_iff_ncard_setOf_weierstrassWeight_ne_zero_e
   rw [Finset.sum_congr rfl fun P hP ↦
       weierstrassWeight_eq_genus_choose_two_of_isHyperellipticFunctionField hF hex hhyp
         (P.degree_eq_one_of_isAlgClosed_of_isFunctionField hF) (by simpa using hP),
-    Finset.sum_const, smul_eq_mul, pow_three_sub_self_eq_mul_choose_two] at hsum
+    Finset.sum_const, smul_eq_mul, Nat.pow_three_sub_self_eq_mul_choose_two] at hsum
   rw [Set.ncard_eq_toFinset_card _ hfin]
   exact Nat.eq_of_mul_eq_mul_right (Nat.choose_pos hg) hsum
 

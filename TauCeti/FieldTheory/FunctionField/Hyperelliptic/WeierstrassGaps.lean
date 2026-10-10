@@ -319,8 +319,9 @@ theorem isHyperellipticFunctionField_of_isPoleNumber_two (hF : IsFunctionField k
 
 /-- **Over a perfect field, a rational place at which `2` is a pole number makes a function field
 of genus `g ≥ 2` hyperelliptic**, in every characteristic: the divisor `2P` of degree two with
-`ℓ(2P) ≥ 2` gives a rational subfield of index two, over which `F` is separable because `k` is
-perfect. -/
+`ℓ(2P) ≥ 2` gives a rational subfield of index two. Over a perfect field the positive genus rules
+out a purely inseparable index-two extension, so `F` is separable over this subfield, see
+`TauCeti.isHyperellipticFunctionField_iff_two_le_genus_and_exists_finrank_adjoin_eq_two`. -/
 theorem isHyperellipticFunctionField_of_isPoleNumber_two_of_perfectField [PerfectField k]
     (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) (hg : 2 ≤ genus k F)
     {P : Place k F} (hP : P.degree = 1) (hpole : P.IsPoleNumber 2) :

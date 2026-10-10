@@ -112,8 +112,8 @@ private theorem two_ne_zero_of_isHyperellipticFunctionField (hF : IsFunctionFiel
   have h3 : 3 ∈ P.weierstrassGaps := hgapsP ▸ Finset.mem_image.mpr
     ⟨1, Finset.mem_range.mpr (by omega), rfl⟩
   intro h2
-  have h13 : ((1 : ℕ) : k) = ((3 : ℕ) : k) := by
-    rw [show ((3 : ℕ) : k) = ((1 : ℕ) : k) + 2 by push_cast; ring, h2, add_zero]
+  have hcast : ((3 : ℕ) : k) = ((1 : ℕ) : k) + 2 := by push_cast; ring
+  have h13 : ((1 : ℕ) : k) = ((3 : ℕ) : k) := by rw [hcast, h2, add_zero]
   exact absurd (hgaps P (Finset.mem_coe.mpr h1) (Finset.mem_coe.mpr h3) h13) (by norm_num)
 
 /-- **The automorphism group of a function field of genus at least two is finite**, over an
