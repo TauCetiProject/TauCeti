@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.Root.SumGenerators
+import TauCeti.Algebra.Lie.Orthogonal.TypeB.CartanBasis
 
 /-!
 # Generation of the split odd orthogonal Lie algebra
@@ -283,141 +284,30 @@ private theorem decomposition [NeZero (2 : K)] (n : ℕ)
         (X : Matrix (typeBIndex n) (typeBIndex n) K)
           (Sum.inr (Sum.inr i)) (Sum.inr (Sum.inl j))) •
           typeBSumNegativeRootGenerator i j) := by
-  have hX := X.2
-  -- The subtype witness is skew-adjointness for `JB`; expose its matrix equation blockwise.
-  change (X : Matrix (typeBIndex n) (typeBIndex n) K) ∈
-    skewAdjointMatricesSubmodule (LieAlgebra.Orthogonal.JB (Fin (n + 1)) K) at hX
-  rw [mem_skewAdjointMatricesSubmodule] at hX
-  -- The anisotropic coordinate vanishes, while its row determines the two short-root columns.
-  have hunit :
-      (X : Matrix (typeBIndex n) (typeBIndex n) K) (Sum.inl ()) (Sum.inl ()) = 0 := by
-    have h := congr_fun (congr_fun hX (Sum.inl ())) (Sum.inl ())
-    have h' :
-        (X : Matrix (typeBIndex n) (typeBIndex n) K) (Sum.inl ()) (Sum.inl ()) * 2 =
-          -(2 * (X : Matrix (typeBIndex n) (typeBIndex n) K)
-            (Sum.inl ()) (Sum.inl ())) := by
-      simpa [LieAlgebra.Orthogonal.JB, Matrix.mul_apply, Matrix.one_apply] using h
-    apply (mul_left_cancel₀ (NeZero.ne (2 : K)))
-    apply (mul_left_cancel₀ (NeZero.ne (2 : K)))
-    simp only [mul_zero]
-    calc
-      2 * (2 * (X : Matrix (typeBIndex n) (typeBIndex n) K)
-          (Sum.inl ()) (Sum.inl ())) =
-          (X : Matrix (typeBIndex n) (typeBIndex n) K) (Sum.inl ()) (Sum.inl ()) * 2 -
-            (-(2 * (X : Matrix (typeBIndex n) (typeBIndex n) K)
-              (Sum.inl ()) (Sum.inl ()))) := by ring
-      _ = 0 := sub_eq_zero.mpr h'
-  have hposUnit (i : Fin (n + 1)) :
-      (X : Matrix (typeBIndex n) (typeBIndex n) K)
-          (Sum.inr (Sum.inl i)) (Sum.inl ()) =
-        -(2 * (X : Matrix (typeBIndex n) (typeBIndex n) K)
-          (Sum.inl ()) (Sum.inr (Sum.inr i))) := by
-    have h := congr_fun (congr_fun hX (Sum.inl ())) (Sum.inr (Sum.inr i))
-    simpa [LieAlgebra.Orthogonal.JB, LieAlgebra.Orthogonal.JD, Matrix.mul_apply,
-      Matrix.one_apply] using h
-  have hnegUnit (i : Fin (n + 1)) :
-      (X : Matrix (typeBIndex n) (typeBIndex n) K)
-          (Sum.inr (Sum.inr i)) (Sum.inl ()) =
-        -(2 * (X : Matrix (typeBIndex n) (typeBIndex n) K)
-          (Sum.inl ()) (Sum.inr (Sum.inl i))) := by
-    have h := congr_fun (congr_fun hX (Sum.inl ())) (Sum.inr (Sum.inl i))
-    simpa [LieAlgebra.Orthogonal.JB, LieAlgebra.Orthogonal.JD, Matrix.mul_apply,
-      Matrix.one_apply] using h
-  -- The two off-diagonal square blocks are skew, and the final diagonal block is minus the
-  -- transpose of the first one.
-  have hsum (i j : Fin (n + 1)) :
-      (X : Matrix (typeBIndex n) (typeBIndex n) K)
-          (Sum.inr (Sum.inl j)) (Sum.inr (Sum.inr i)) =
-        -(X : Matrix (typeBIndex n) (typeBIndex n) K)
-          (Sum.inr (Sum.inl i)) (Sum.inr (Sum.inr j)) := by
-    have h := congr_fun (congr_fun hX (Sum.inr (Sum.inr i))) (Sum.inr (Sum.inr j))
-    simpa [LieAlgebra.Orthogonal.JB, LieAlgebra.Orthogonal.JD, Matrix.mul_apply,
-      Matrix.one_apply] using h
-  have hsumNeg (i j : Fin (n + 1)) :
-      (X : Matrix (typeBIndex n) (typeBIndex n) K)
-          (Sum.inr (Sum.inr j)) (Sum.inr (Sum.inl i)) =
-        -(X : Matrix (typeBIndex n) (typeBIndex n) K)
-          (Sum.inr (Sum.inr i)) (Sum.inr (Sum.inl j)) := by
-    have h := congr_fun (congr_fun hX (Sum.inr (Sum.inl i))) (Sum.inr (Sum.inl j))
-    simpa [LieAlgebra.Orthogonal.JB, LieAlgebra.Orthogonal.JD, Matrix.mul_apply,
-      Matrix.one_apply] using h
-  have hblockNeg (i j : Fin (n + 1)) :
-      (X : Matrix (typeBIndex n) (typeBIndex n) K)
-          (Sum.inr (Sum.inr i)) (Sum.inr (Sum.inr j)) =
-        -(X : Matrix (typeBIndex n) (typeBIndex n) K)
-          (Sum.inr (Sum.inl j)) (Sum.inr (Sum.inl i)) := by
-    have h := congr_fun (congr_fun hX (Sum.inr (Sum.inl i))) (Sum.inr (Sum.inr j))
-    simp [LieAlgebra.Orthogonal.JB, LieAlgebra.Orthogonal.JD, Matrix.mul_apply,
-      Matrix.one_apply] at h
-    linear_combination h
-  -- Each antisymmetric block is recovered from the full double sum with coefficient `2⁻¹`.
-  have hsumScaled (i j : Fin (n + 1)) :
-      (X : Matrix (typeBIndex n) (typeBIndex n) K)
-          (Sum.inr (Sum.inl i)) (Sum.inr (Sum.inr j)) =
-        (2 : K)⁻¹ * (X : Matrix (typeBIndex n) (typeBIndex n) K)
-            (Sum.inr (Sum.inl i)) (Sum.inr (Sum.inr j)) -
-          (2 : K)⁻¹ * (X : Matrix (typeBIndex n) (typeBIndex n) K)
-            (Sum.inr (Sum.inl j)) (Sum.inr (Sum.inr i)) := by
-    rw [hsum i j]
-    field_simp
-    ring
-  have hsumNegScaled (i j : Fin (n + 1)) :
-      (X : Matrix (typeBIndex n) (typeBIndex n) K)
-          (Sum.inr (Sum.inr i)) (Sum.inr (Sum.inl j)) =
-        (2 : K)⁻¹ * (X : Matrix (typeBIndex n) (typeBIndex n) K)
-            (Sum.inr (Sum.inr i)) (Sum.inr (Sum.inl j)) -
-          (2 : K)⁻¹ * (X : Matrix (typeBIndex n) (typeBIndex n) K)
-            (Sum.inr (Sum.inr j)) (Sum.inr (Sum.inl i)) := by
-    rw [hsumNeg i j]
-    field_simp
-    ring
+  have h2 : IsRegular (2 : K) := IsRegular.of_ne_zero (NeZero.ne 2)
   apply Subtype.ext
   simp only [AddMemClass.coe_add, AddSubmonoidClass.coe_finsetSum, SetLike.val_smul,
     coe_typeBShortNegativeRootGenerator, coe_typeBShortRootGenerator,
     coe_typeBBlockGenerator, coe_typeBSumRootGenerator,
     coe_typeBSumNegativeRootGenerator]
-  -- Check the resulting `3 × 3` block matrix in row-major order: the first row and column are
-  -- the short-root terms, the positive diagonal block is the block-generator sum, the two
-  -- off-diagonal square blocks are the sum-root terms, and the last block is the forced transpose.
-  ext (a | (a | a)) (b | (b | b))
-  -- Anisotropic-anisotropic entry.
-  · simpa [typeBShortRootMatrix_def, typeBShortNegativeRootMatrix_def,
-      typeBSumRootMatrix_def, typeBSumNegativeRootMatrix_def, Matrix.sum_apply,
-      Matrix.smul_apply, Matrix.single_apply] using hunit
-  -- Anisotropic-positive entry.
-  · simp [typeBShortRootMatrix_def, typeBShortNegativeRootMatrix_def,
-      typeBSumRootMatrix_def, typeBSumNegativeRootMatrix_def, Matrix.sum_apply,
-      Matrix.smul_apply, Matrix.single_apply]
-  -- Anisotropic-negative entry.
-  · simp [typeBShortRootMatrix_def, typeBShortNegativeRootMatrix_def,
-      typeBSumRootMatrix_def, typeBSumNegativeRootMatrix_def, Matrix.sum_apply,
-      Matrix.smul_apply, Matrix.single_apply]
+  -- Check the resulting `3 × 3` block matrix entrywise. The entry relations of a type-`B` matrix
+  -- close every block except the four handled below.
+  ext (a | a | a) (b | b | b) <;>
+    simp [typeBShortRootMatrix_def, typeBShortNegativeRootMatrix_def, typeBSumRootMatrix_def,
+      typeBSumNegativeRootMatrix_def, Matrix.sum_apply, Matrix.smul_apply, Matrix.single_apply,
+      ite_and, mul_sub, Finset.sum_sub_distrib, LieAlgebra.Orthogonal.typeB.apply_inl_inl X h2]
   -- Positive-anisotropic entry.
-  · simpa [typeBShortRootMatrix_def, typeBShortNegativeRootMatrix_def,
-      typeBSumRootMatrix_def, typeBSumNegativeRootMatrix_def, Matrix.sum_apply,
-      Matrix.smul_apply, Matrix.single_apply, mul_comm] using hposUnit a
-  -- Positive-positive block.
-  · simp [typeBShortRootMatrix_def, typeBShortNegativeRootMatrix_def,
-      typeBSumRootMatrix_def, typeBSumNegativeRootMatrix_def, Matrix.sum_apply,
-      Matrix.smul_apply, Matrix.single_apply, ite_and, Finset.mem_univ]
-  -- Positive-negative block.
-  · simpa [typeBShortRootMatrix_def, typeBShortNegativeRootMatrix_def,
-      typeBSumRootMatrix_def, typeBSumNegativeRootMatrix_def, Matrix.sum_apply,
-      Matrix.smul_apply, Matrix.single_apply, ite_and, Finset.mem_univ,
-      mul_sub, Finset.sum_sub_distrib] using hsumScaled a b
+  · ring
+  -- Positive-negative block: the skew-symmetric block is the sum of its two halves.
+  · simp only [LieAlgebra.Orthogonal.typeB.apply_inr_inl_inr_inr X b a]
+    field_simp
+    ring
   -- Negative-anisotropic entry.
-  · simpa [typeBShortRootMatrix_def, typeBShortNegativeRootMatrix_def,
-      typeBSumRootMatrix_def, typeBSumNegativeRootMatrix_def, Matrix.sum_apply,
-      Matrix.smul_apply, Matrix.single_apply, mul_comm] using hnegUnit a
-  -- Negative-positive block.
-  · simpa [typeBShortRootMatrix_def, typeBShortNegativeRootMatrix_def,
-      typeBSumRootMatrix_def, typeBSumNegativeRootMatrix_def, Matrix.sum_apply,
-      Matrix.smul_apply, Matrix.single_apply, ite_and, Finset.mem_univ,
-      mul_sub, Finset.sum_sub_distrib] using hsumNegScaled a b
-  -- Negative-negative block.
-  · simpa [typeBShortRootMatrix_def, typeBShortNegativeRootMatrix_def,
-      typeBSumRootMatrix_def, typeBSumNegativeRootMatrix_def, Matrix.sum_apply,
-      Matrix.smul_apply, Matrix.single_apply, ite_and] using hblockNeg a b
+  · ring
+  -- Negative-positive block, likewise.
+  · simp only [LieAlgebra.Orthogonal.typeB.apply_inr_inr_inr_inl X b a]
+    field_simp
+    ring
 
 /-- The positive and negative Bourbaki simple-root generators generate the split odd orthogonal
 Lie algebra of type `B`. -/
@@ -454,33 +344,12 @@ theorem lieSpan_range_typeBSimpleRootGenerator_union_range_typeBSimpleNegativeRo
     convert hscaled using 1
     simp [smul_smul, NeZero.ne (2 : K)]
   have hcartan : typeBDiagonalCartan K (Fin (n + 1)) ≤ S := by
-    intro A hA
-    let Ac : typeBDiagonalCartan K (Fin (n + 1)) := ⟨A, hA⟩
-    -- Bundle the Cartan-membership witness so its coordinate basis can expand the ambient element.
-    change (Ac : LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K) ∈ S
-    let B := typeBDiagonalCartanBasis (K := K) (ι := Fin (n + 1))
-    rw [← B.sum_repr Ac]
-    simp only [AddSubmonoidClass.coe_finsetSum, SetLike.val_smul]
-    apply S.sum_mem
-    intro i _
-    apply S.smul_mem
-    have hbracket := S.lie_mem (hshort i) (hshortNeg i)
-    rw [typeBShortRootGenerator_lie_negative, typeBShortCorootGenerator_eq_diagonal] at hbracket
-    have hscaled := S.smul_mem ((2 : K)⁻¹) hbracket
-    have hscale :
-        (2 : K)⁻¹ •
-            ((typeBDiagonalEquiv (K := K) (ι := Fin (n + 1)) (2 • Pi.single i 1) :
-              typeBDiagonalCartan K (Fin (n + 1))) :
-                LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K) =
-          ((B i : typeBDiagonalCartan K (Fin (n + 1))) :
-            LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K) := by
-      apply Subtype.ext
-      simp only [SetLike.val_smul, coe_typeBDiagonalEquiv_apply,
-        B, coe_typeBDiagonalCartanBasis_apply]
-      ext (a | (a | a)) (b | (b | b)) <;>
-        simp [typeBDiagonalMatrix_apply, NeZero.ne (2 : K)]
-    rw [hscale] at hscaled
-    exact hscaled
+    have := invertibleOfNonzero (NeZero.ne (2 : K))
+    rw [typeBDiagonalCartan_eq_lieSpan_typeBSimpleCorootGenerator, LieSubalgebra.lieSpan_le]
+    rintro _ ⟨i, rfl⟩
+    rw [← typeBSimpleRootGenerator_lie_negative]
+    exact S.lie_mem (LieSubalgebra.subset_lieSpan (Or.inl ⟨i, rfl⟩))
+      (LieSubalgebra.subset_lieSpan (Or.inr ⟨i, rfl⟩))
   have hblock (i j : Fin (n + 1)) : typeBBlockGenerator (K := K) n i j ∈ S := by
     by_cases hij : i = j
     · subst j

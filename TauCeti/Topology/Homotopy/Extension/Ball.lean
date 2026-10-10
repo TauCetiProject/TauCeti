@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Homotopy.Extension.Basic
-public import Mathlib.Analysis.Normed.Module.Basic
+public import Mathlib.Analysis.Convex.Contractible
+public import Mathlib.Analysis.Normed.Module.Convex
 
 /-!
 # The unit sphere is a closed cofibration in the closed unit ball
@@ -22,10 +23,17 @@ This is the basic example of a closed cofibration.  It is the geometric input fo
 extension property of the inclusion of a skeleton of a CW complex into the next one, whose cells
 are attached along maps defined on such spheres.
 
+As a consequence, a map out of the unit sphere is null-homotopic exactly when it extends over the
+closed unit ball: a null-homotopy is extended from the sphere to the ball, starting at a constant
+map, and conversely the closed ball is contractible.  This is the criterion for extending a map
+over a cell attached along a sphere.
+
 ## Main declarations
 
 * `TauCeti.hasHomotopyExtensionProperty_sphere_closedBall`: **the unit sphere has the homotopy
   extension property inside the closed unit ball.**
+* `ContinuousMap.nullhomotopic_iff_exists_extension_closedBall`: a map out of the unit sphere is
+  null-homotopic exactly when it extends over the closed unit ball.
 
 ## References
 
@@ -178,3 +186,41 @@ theorem hasHomotopyExtensionProperty_sphere_closedBall :
     exact Prod.ext (Subtype.ext (congrArg Prod.fst h)) (Subtype.ext (congrArg Prod.snd h))
 
 end TauCeti
+
+namespace ContinuousMap
+
+open Metric unitInterval
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] {Y : Type*} [TopologicalSpace Y]
+
+/-- **A map out of the unit sphere is null-homotopic exactly when it extends over the closed unit
+ball.** -/
+theorem nullhomotopic_iff_exists_extension_closedBall (g : C(sphere (0 : E) 1, Y)) :
+    g.Nullhomotopic ↔ ∃ G : C(closedBall (0 : E) 1, Y),
+      ∀ y : sphere (0 : E) 1, G ⟨y, sphere_subset_closedBall y.2⟩ = g y := by
+  constructor
+  · -- Extend a homotopy from a constant map to `g` over the closed ball, starting at the constant
+    -- map, and take its final stage.
+    rintro ⟨c, hc⟩
+    let H := hc.some.symm
+    obtain ⟨K, -, hK⟩ :=
+      TauCeti.hasHomotopyExtensionProperty_sphere_closedBall.exists_extension_of_isClosed
+        (isClosed_sphere.preimage continuous_subtype_val) (ContinuousMap.const _ c)
+        (H.toContinuousMap.comp ⟨fun p : I × (Subtype.val ⁻¹' sphere (0 : E) 1 :
+          Set (closedBall (0 : E) 1)) ↦ (p.1, (⟨p.2.1.1, p.2.2⟩ : sphere (0 : E) 1)), by fun_prop⟩)
+        fun a ↦ H.apply_zero _
+    exact ⟨⟨fun x ↦ K (1, x), by fun_prop⟩, fun y ↦
+      (hK 1 ⟨⟨y, sphere_subset_closedBall y.2⟩, y.2⟩).trans (H.apply_one y)⟩
+  · -- The closed ball is contractible, so every map out of it is null-homotopic.
+    rintro ⟨G, hG⟩
+    have : ContractibleSpace (closedBall (0 : E) 1) :=
+      (convex_closedBall 0 1).contractibleSpace ⟨0, mem_closedBall_self zero_le_one⟩
+    let ι : C(sphere (0 : E) 1, closedBall (0 : E) 1) :=
+      ⟨fun y ↦ ⟨y, sphere_subset_closedBall y.2⟩, by fun_prop⟩
+    have hg : g = (G.comp (ContinuousMap.id _)).comp ι := by
+      ext y
+      exact (hG y).symm
+    rw [hg]
+    exact ((id_nullhomotopic _).comp_right G).comp_left ι
+
+end ContinuousMap

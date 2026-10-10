@@ -53,6 +53,8 @@ Points of `ℝⁿ` are functions `ι → ℝ`, so distances and balls are taken 
   `L²`-bounded operator satisfying the cancellation condition is of weak type `(1, 1)`.
 * `TauCeti.setLIntegral_compl_closedBall_enorm_le_of_hormander`: Hörmander's kernel condition
   implies the cancellation condition, in any metric measure space.
+* `ContinuousLinearMap.setLIntegral_compl_closedBall_enorm_apply_le_of_hormander`: the same for an
+  operator on `L²(ℝⁿ)` given off balls by a kernel.
 * `ContinuousLinearMap.mul_volume_lt_enorm_le_of_hormander`: an `L²`-bounded operator with a
   kernel satisfying Hörmander's condition is of weak type `(1, 1)`.
 
@@ -350,6 +352,29 @@ theorem mul_volume_lt_enorm_le_of_setLIntegral_compl_closedBall_le [Nonempty ι]
           (mul_volume_biUnion_closedBall_le (fun x => ‖f x‖ₑ) t)) hbad
     _ = (2 ^ Fintype.card ι * (4 * ‖T‖ₑ ^ 2 + 1) + 4 * B) * ∫⁻ x, ‖f x‖ₑ := by ring
 
+/-- An operator on `L²(ℝⁿ)` given off balls by a kernel satisfying Hörmander's condition satisfies
+the cancellation condition: if `T b x = ∫ K x y (b y) dy` for almost every `x` off any closed ball
+outside which `b` vanishes, and `∫_{dist x y' > 2 dist y y'} ‖K x y - K x y'‖ dx ≤ B` for all `y`,
+`y'`, then `∫_{ℝⁿ \ closedBall y (2r)} ‖T b‖ ≤ B ‖b‖₁` for every `b ∈ L²` vanishing off
+`closedBall y r` with integral zero. -/
+theorem setLIntegral_compl_closedBall_enorm_apply_le_of_hormander [CompleteSpace F]
+    (T : Lp E 2 (volume : Measure (ι → ℝ)) →L[ℝ] Lp F 2 (volume : Measure (ι → ℝ)))
+    {K : (ι → ℝ) → (ι → ℝ) → E →L[ℝ] F} (hK : StronglyMeasurable (Function.uncurry K))
+    {B : ℝ≥0∞} (hB : ∀ y y', ∫⁻ x in {x | 2 * dist y y' < dist x y'}, ‖K x y - K x y'‖ₑ ≤ B)
+    (hrep : ∀ (b : Lp E 2 (volume : Measure (ι → ℝ))) (y : ι → ℝ) (r : ℝ),
+      (∀ᵐ x, x ∉ closedBall y r → b x = 0) →
+        ∀ᵐ x, x ∉ closedBall y r → T b x = ∫ z, K x z (b z))
+    (b : Lp E 2 (volume : Measure (ι → ℝ))) (y : ι → ℝ) (r : ℝ)
+    (hsupp : ∀ᵐ x, x ∉ closedBall y r → b x = 0) (hmean : ∫ x, b x = 0) :
+    ∫⁻ x in (closedBall y (2 * r))ᶜ, ‖T b x‖ₑ ≤ B * ∫⁻ x, ‖b x‖ₑ := by
+  -- A function in `L²` vanishing off a ball is integrable.
+  have : IsFiniteMeasure (volume.restrict (closedBall y r)) :=
+    isFiniteMeasure_restrict.2 measure_closedBall_lt_top.ne
+  have hb : Integrable b := IntegrableOn.integrable_of_ae_notMem_eq_zero
+    (((Lp.memLp b).restrict _).integrable one_le_two) hsupp
+  exact setLIntegral_compl_closedBall_enorm_le_of_hormander hK hB hb hsupp hmean
+    (hrep b y r hsupp)
+
 /-- **The Calderón–Zygmund theorem** for an operator given by a kernel. Let `T` be a bounded linear
 operator on `L²(ℝⁿ)` such that `T b x = ∫ K x y (b y) dy` for almost every `x` off any closed ball
 outside which `b` vanishes, where the kernel `K` satisfies Hörmander's condition
@@ -366,16 +391,9 @@ theorem mul_volume_lt_enorm_le_of_hormander [Nonempty ι] [CompleteSpace F]
         ∀ᵐ x, x ∉ closedBall y r → T b x = ∫ z, K x z (b z))
     (f : Lp E 2 (volume : Measure (ι → ℝ))) (t : ℝ≥0∞) :
     t * volume {x | t < ‖T f x‖ₑ} ≤
-      (2 ^ Fintype.card ι * (4 * ‖T‖ₑ ^ 2 + 1) + 4 * B) * ∫⁻ x, ‖f x‖ₑ := by
-  refine mul_volume_lt_enorm_le_of_setLIntegral_compl_closedBall_le T
-    (fun b y r hsupp hmean => ?_) f t
-  -- A function in `L²` vanishing off a ball is integrable.
-  have : IsFiniteMeasure (volume.restrict (closedBall y r)) :=
-    isFiniteMeasure_restrict.2 measure_closedBall_lt_top.ne
-  have hb : Integrable b := IntegrableOn.integrable_of_ae_notMem_eq_zero
-    (((Lp.memLp b).restrict _).integrable one_le_two) hsupp
-  exact setLIntegral_compl_closedBall_enorm_le_of_hormander hK hB hb hsupp hmean
-    (hrep b y r hsupp)
+      (2 ^ Fintype.card ι * (4 * ‖T‖ₑ ^ 2 + 1) + 4 * B) * ∫⁻ x, ‖f x‖ₑ :=
+  mul_volume_lt_enorm_le_of_setLIntegral_compl_closedBall_le T
+    (setLIntegral_compl_closedBall_enorm_apply_le_of_hormander T hK hB hrep) f t
 
 end WeakType
 

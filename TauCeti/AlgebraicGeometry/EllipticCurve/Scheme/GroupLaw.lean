@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Monoidal.Grp
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Addition.Morphism
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Addition.Points
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Neg
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Addition.Assoc
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Addition.Comm
@@ -31,9 +32,16 @@ ring: the right unit law `WeierstrassCurve.additionMorphism_right_unit`, associa
 and the right inverse law `WeierstrassCurve.additionMorphism_right_inv`. The left unit and left
 inverse laws follow from the right ones by commutativity.
 
+Over a field `K`, the points of this group scheme with values in `Spec K` form the group
+`W.toAffine.Point` of Mathlib: the dictionary `WeierstrassCurve.projModelPointsEquiv` between the
+sections of `projModel W ⟶ Spec K` and `W.toAffine.Point` carries the addition morphism to the
+addition of points (`WeierstrassCurve.projModelPointsEquiv_lift_additionMorphism`).
+
 ## Main definitions
 
 * `WeierstrassCurve.grpObjProjModel`: the group-object structure on `Over.mk W.projModelOver`.
+* `WeierstrassCurve.projModelPointsMulEquiv`: over a field `K`, the isomorphism between the group
+  of points of `projModel W` with values in `Spec K` and the group `W.toAffine.Point`.
 
 ## Main results
 
@@ -60,6 +68,8 @@ open CategoryTheory Limits AlgebraicGeometry MonoidalCategory CartesianMonoidalC
 universe u
 
 namespace WeierstrassCurve
+
+section CommRing
 
 variable {R : Type u} [CommRing R] (W : WeierstrassCurve R) [W.IsElliptic]
 
@@ -166,5 +176,51 @@ instance isCommMonObj_projModel : IsCommMonObj (Over.mk W.projModelOver) where
   mul_comm := by
     ext1
     simp
+
+end CommRing
+
+/-! ### The group of points over a field -/
+
+section Field
+
+variable {K : Type u} [Field K] [DecidableEq K] (W : WeierstrassCurve K) [W.IsElliptic]
+
+/-- **The group of points of the projective model over a field.** For an elliptic Weierstrass
+curve `W` over a field `K`, the points of the group scheme `projModel W` with values in the base
+`Spec K`, with the group law of `grpObjProjModel`, form a group isomorphic to the group
+`W.toAffine.Point` of Mathlib. The isomorphism is the dictionary `projModelPointsEquiv` between
+sections of `projModel W ⟶ Spec K` and `W.toAffine.Point`, which is additive by
+`projModelPointsEquiv_lift_additionMorphism`. -/
+noncomputable def projModelPointsMulEquiv :
+    (𝟙_ (Over (Spec (.of K))) ⟶ Over.mk W.projModelOver) ≃* Multiplicative W.toAffine.Point where
+  toFun x := .ofAdd (W.projModelPointsEquiv ⟨x.left, by simpa using x.w⟩)
+  invFun P := Over.homMk (W.projModelPointsEquiv.symm P.toAdd).1
+    (by simpa using (W.projModelPointsEquiv.symm P.toAdd).2)
+  left_inv x := by
+    ext1
+    simp
+  right_inv P := by
+    simp
+  map_mul' x y := by
+    rw [← ofAdd_add, ← projModelPointsEquiv_lift_additionMorphism]
+    simp [Hom.mul_def]
+
+/-- The point of `W` corresponding to a point `x` of the projective model over `Spec K` is the
+point corresponding to the section `x.left` of `projModel W ⟶ Spec K` under
+`projModelPointsEquiv`. -/
+@[simp]
+theorem toAdd_projModelPointsMulEquiv (x : 𝟙_ (Over (Spec (.of K))) ⟶ Over.mk W.projModelOver) :
+    (W.projModelPointsMulEquiv x).toAdd =
+      W.projModelPointsEquiv ⟨x.left, by simpa using x.w⟩ :=
+  (rfl)
+
+/-- The point of the projective model over `Spec K` corresponding to a point `P` of `W` is the
+section of `projModel W ⟶ Spec K` corresponding to `P` under `projModelPointsEquiv`. -/
+@[simp]
+theorem projModelPointsMulEquiv_symm_apply_left (P : Multiplicative W.toAffine.Point) :
+    (W.projModelPointsMulEquiv.symm P).left = (W.projModelPointsEquiv.symm P.toAdd).1 :=
+  (rfl)
+
+end Field
 
 end WeierstrassCurve
