@@ -171,7 +171,6 @@ theorem injective (ι : CMAction R W) : Function.Injective ι :=
 
 /-- **An element acts by an integer exactly when it is an integer**, the action being a faithful
 ring homomorphism. -/
-@[simp]
 theorem apply_mem_range_intCast_iff (ι : CMAction R W) {r : R} :
     ι r ∈ Set.range ((↑) : ℤ → Hom W W) ↔ r ∈ Set.range ((↑) : ℤ → R) :=
   ⟨fun ⟨n, hn⟩ => ⟨n, ι.injective (by rw [map_intCast, hn])⟩,
