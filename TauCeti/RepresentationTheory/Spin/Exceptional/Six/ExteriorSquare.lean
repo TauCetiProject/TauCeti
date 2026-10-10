@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry
-public import Mathlib.LinearAlgebra.ExteriorPower.WedgePairing
+public import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
 public import TauCeti.RepresentationTheory.ClassicalGroups.Volume
 
 /-!
@@ -57,19 +57,6 @@ noncomputable def spinSixWedgeForm :
         (Pi.basisFun K (Fin 4)).exteriorPowerTopEquiv)
     (by simp)
 
-omit [Nontrivial K] in
-private theorem spinSixWedgePairing_eq (n : ℕ)
-    (hfin : Module.finrank K (Fin 4 → K) = n) (hdeg : 2 + 2 = n)
-    (vol : (⋀[K]^n (Fin 4 → K)) ≃ₗ[K] K) :
-    exteriorPower.wedgePairing
-        ((LinearEquiv.ofEq
-          (⋀[K]^(Module.finrank K (Fin 4 → K)) (Fin 4 → K))
-          (⋀[K]^n (Fin 4 → K)) (congrArg (fun d ↦ ⋀[K]^d (Fin 4 → K)) hfin)).trans vol)
-        (hdeg.trans hfin.symm) =
-      (exteriorPower.wedge K (Fin 4 → K) 2 2).compr₂ (hdeg ▸ vol) := by
-  subst n
-  rfl
-
 /-- On pure wedges, the wedge form is the determinant of the concatenated vectors. -/
 @[simp]
 theorem spinSixWedgeForm_ιMulti (u v : Fin 2 → (Fin 4 → K)) :
@@ -81,17 +68,10 @@ theorem spinSixWedgeForm_ιMulti (u v : Fin 2 → (Fin 4 → K)) :
       (exteriorPower.wedge K (Fin 4 → K) 2 2).compr₂
         (Pi.basisFun K (Fin 4)).exteriorPowerTopEquiv by
     unfold spinSixWedgeForm
-    simpa only using spinSixWedgePairing_eq K 4 (by simp) rfl
+    simpa only using exteriorPower.wedgePairing_eq_compr₂_of_finrank_eq 4 (by simp) rfl
       (Pi.basisFun K (Fin 4)).exteriorPowerTopEquiv]
   simp only [LinearMap.compr₂_apply]
-  -- The bundled wedge map reduces to multiplication only after extensionality in the
-  -- graded subtype.
-  rw [show exteriorPower.wedge K (Fin 4 → K) 2 2
-      (exteriorPower.ιMulti K 2 u) (exteriorPower.ιMulti K 2 v) =
-      exteriorPower.ιMulti K 4 (Fin.append u v) by
-    apply Subtype.ext
-    simp only [SetLike.coe_gMul, exteriorPower.wedge, DirectSum.gMulLHom_apply_apply,
-      exteriorPower.ιMulti_apply_coe, ExteriorAlgebra.ιMulti_mul_ιMulti]]
+  rw [exteriorPower.wedge_ιMulti]
   -- Remove the remaining linear-map coercion so the top-degree basis theorem matches the goal.
   change (Pi.basisFun K (Fin 4)).exteriorPowerTopEquiv
       (exteriorPower.ιMulti K 4 (Fin.append u v)) =

@@ -28,6 +28,8 @@ ring. When the ring is nontrivial, `n` is the module's rank and this is its top 
 
 ## Main results
 
+* `Module.Basis.toMatrix_exteriorPower_map` expresses the induced matrix in terms of minors.
+* `RingHom.map_toMatrix_exteriorPower` changes the coefficient ring of the induced matrix.
 * `Module.Basis.map_exteriorPower_of_apply` gives the eigenvalues in the exterior-power basis.
 * `Module.Basis.trace_map_exteriorPower_of_apply` sums those eigenvalues to compute the trace.
 * `Module.Basis.exteriorPower_ιMulti_eq_det_smul` expands a degree-`n` exterior product in terms
@@ -213,3 +215,42 @@ theorem _root_.Module.Basis.trace_map_exteriorPower_top
 end Top
 
 end exteriorPower
+
+namespace Module.Basis
+
+variable {R M I : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+  [LinearOrder I] [Fintype I]
+
+/-- The matrix of an exterior-power map consists of the corresponding minors. -/
+theorem toMatrix_exteriorPower_map (b : Basis I R M) (n : ℕ) (f : M →ₗ[R] M)
+    (s t : Set.powersetCard I n) :
+    LinearMap.toMatrix (b.exteriorPower n) (b.exteriorPower n) (exteriorPower.map n f) s t =
+      (Matrix.of fun i j : Fin n ↦
+        LinearMap.toMatrix b b f (Set.powersetCard.ofFinEmbEquiv.symm s j)
+          (Set.powersetCard.ofFinEmbEquiv.symm t i)).det := by
+  simp [LinearMap.toMatrix_apply, exteriorPower.basis_repr_apply,
+    exteriorPower.basis_apply, exteriorPower.ιMulti_family,
+    exteriorPower.map_apply_ιMulti, exteriorPower.ιMultiDual_apply_ιMulti,
+    Basis.coord_apply]
+
+end Module.Basis
+
+namespace RingHom
+
+variable {R S I : Type*} [CommRing R] [CommRing S] [LinearOrder I] [Fintype I]
+
+/-- Exterior-power matrices commute with a change of coefficient ring. -/
+theorem map_toMatrix_exteriorPower (φ : R →+* S) (n : ℕ) (A : Matrix I I R) :
+    φ.mapMatrix (LinearMap.toMatrix ((Pi.basisFun R I).exteriorPower n)
+      ((Pi.basisFun R I).exteriorPower n) (exteriorPower.map n A.toLin')) =
+    LinearMap.toMatrix ((Pi.basisFun S I).exteriorPower n)
+      ((Pi.basisFun S I).exteriorPower n) (exteriorPower.map n (φ.mapMatrix A).toLin') := by
+  classical
+  ext s t
+  rw [RingHom.mapMatrix_apply, Matrix.map_apply,
+    Module.Basis.toMatrix_exteriorPower_map, Module.Basis.toMatrix_exteriorPower_map]
+  simp only [LinearMap.toMatrix_eq_toMatrix', LinearMap.toMatrix'_toLin']
+  rw [RingHom.map_det]
+  rfl
+
+end RingHom

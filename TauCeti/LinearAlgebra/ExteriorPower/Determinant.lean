@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.ExteriorPower.Basis
-public import Mathlib.LinearAlgebra.ExteriorPower.WedgePairing
+public import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 import Mathlib.Algebra.MvPolynomial.CommRing
 import Mathlib.Algebra.MvPolynomial.Eval
@@ -23,45 +23,6 @@ identity fixes the sign, and specialization gives the result over arbitrary ring
 public section
 
 open Module
-
-namespace Module.Basis
-
-variable {R M I : Type*} [CommRing R] [AddCommGroup M] [Module R M]
-  [LinearOrder I] [Fintype I]
-
-/-- The matrix of an exterior-power map consists of the corresponding minors. -/
-theorem toMatrix_exteriorPower_map (b : Basis I R M) (n : ℕ) (f : M →ₗ[R] M)
-    (s t : Set.powersetCard I n) :
-    LinearMap.toMatrix (b.exteriorPower n) (b.exteriorPower n) (exteriorPower.map n f) s t =
-      (Matrix.of fun i j : Fin n ↦
-        LinearMap.toMatrix b b f (Set.powersetCard.ofFinEmbEquiv.symm s j)
-          (Set.powersetCard.ofFinEmbEquiv.symm t i)).det := by
-  simp [LinearMap.toMatrix_apply, exteriorPower.basis_repr_apply,
-    exteriorPower.basis_apply, exteriorPower.ιMulti_family,
-    exteriorPower.map_apply_ιMulti, exteriorPower.ιMultiDual_apply_ιMulti,
-    Basis.coord_apply]
-
-end Module.Basis
-
-namespace RingHom
-
-variable {R S I : Type*} [CommRing R] [CommRing S] [LinearOrder I] [Fintype I]
-
-/-- Exterior-power matrices commute with a change of coefficient ring. -/
-theorem map_toMatrix_exteriorPower (φ : R →+* S) (n : ℕ) (A : Matrix I I R) :
-    φ.mapMatrix (LinearMap.toMatrix ((Pi.basisFun R I).exteriorPower n)
-      ((Pi.basisFun R I).exteriorPower n) (exteriorPower.map n A.toLin')) =
-    LinearMap.toMatrix ((Pi.basisFun S I).exteriorPower n)
-      ((Pi.basisFun S I).exteriorPower n) (exteriorPower.map n (φ.mapMatrix A).toLin') := by
-  classical
-  ext s t
-  rw [RingHom.mapMatrix_apply, Matrix.map_apply,
-    Module.Basis.toMatrix_exteriorPower_map, Module.Basis.toMatrix_exteriorPower_map]
-  simp only [LinearMap.toMatrix_eq_toMatrix', LinearMap.toMatrix'_toLin']
-  rw [RingHom.map_det]
-  rfl
-
-end RingHom
 
 namespace Matrix
 
@@ -80,15 +41,8 @@ private theorem det_exteriorPower_two_sq [IsDomain R] (A : Matrix (Fin 4) (Fin 4
   have hB : B.IsPerfPair := by dsimp [B]; infer_instance
   have hpair : B = (exteriorPower.wedge R (Fin 4 → R) 2 2).compr₂
       b.exteriorPowerTopEquiv := by
-    -- Remove the degree transports in the perfect wedge pairing.
-    have htransport (n : ℕ) (hn : Module.finrank R (Fin 4 → R) = n)
-        (hd : 2 + 2 = n) (v : (⋀[R]^n (Fin 4 → R)) ≃ₗ[R] R) :
-        exteriorPower.wedgePairing
-          ((LinearEquiv.ofEq _ _ (congrArg (fun d ↦ ⋀[R]^d (Fin 4 → R)) hn)).trans v)
-          (hd.trans hn.symm) = (exteriorPower.wedge R (Fin 4 → R) 2 2).compr₂ (hd ▸ v) := by
-      subst n
-      rfl
-    exact htransport 4 (by simp) rfl b.exteriorPowerTopEquiv
+    exact exteriorPower.wedgePairing_eq_compr₂_of_finrank_eq 4 (by simp) rfl
+      b.exteriorPowerTopEquiv
   have hcomp : B.comp (exteriorPower.map 2 A.toLin') (exteriorPower.map 2 A.toLin') =
       A.det • B := by
     apply exteriorPower.linearMap_ext
@@ -99,13 +53,7 @@ private theorem det_exteriorPower_two_sq [IsDomain R] (A : Matrix (Fin 4) (Fin 4
     intro v
     simp only [LinearMap.compAlternatingMap_apply, LinearMap.BilinForm.comp_apply,
       exteriorPower.map_apply_ιMulti, hpair, LinearMap.smul_apply, LinearMap.compr₂_apply]
-    have hw (u v : Fin 2 → (Fin 4 → R)) :
-        exteriorPower.wedge R (Fin 4 → R) 2 2 (exteriorPower.ιMulti R 2 u)
-          (exteriorPower.ιMulti R 2 v) = exteriorPower.ιMulti R 4 (Fin.append u v) := by
-      apply Subtype.ext
-      simp only [SetLike.coe_gMul, exteriorPower.wedge, DirectSum.gMulLHom_apply_apply,
-        exteriorPower.ιMulti_apply_coe, ExteriorAlgebra.ιMulti_mul_ιMulti]
-    rw [hw, hw]
+    rw [exteriorPower.wedge_ιMulti, exteriorPower.wedge_ιMulti]
     simp only [smul_eq_mul]
     have happ : Fin.append (A.toLin' ∘ u) (A.toLin' ∘ v) = A.toLin' ∘ Fin.append u v := by
       funext i
