@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.AbsoluteArtinMap
-public import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClassLevel
+public import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClass.Level
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Galois
 import TauCeti.NumberTheory.ClassFieldTheory.Formation.GroundNorm
 
