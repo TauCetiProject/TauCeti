@@ -395,8 +395,8 @@ variable {k L Ω : Type*} [Field k] [Field L] [Field Ω] [Algebra k L] [Algebra 
   [Algebra L Ω] [IsScalarTower k L Ω]
 
 /-- **Fixing a subfield of a compositum through its intersection with a finite normal factor.**
-Let `Ω / L` be Galois, let `E / k` be a finite normal subextension of `Ω` over a smaller base `k`, and
-let `F ≤ L(E)`. An automorphism of `Ω / L` that fixes every element of `E ∩ F` fixes `F`. -/
+Let `Ω / L` be Galois, let `E / k` be a finite normal subextension of `Ω` over a smaller base `k`,
+and let `F ≤ L(E)`. An automorphism of `Ω / L` that fixes every element of `E ∩ F` fixes `F`. -/
 theorem apply_eq_self_of_forall_mem_inf (E : IntermediateField k Ω) [FiniteDimensional k E]
     [Normal k E] [IsGalois L Ω] {F : IntermediateField L Ω} (hF : F ≤ adjoin L (E : Set Ω))
     (σ : Ω ≃ₐ[L] Ω) (hσ : ∀ x ∈ E, x ∈ F → σ x = x) {x : Ω} (hx : x ∈ F) : σ x = x := by
