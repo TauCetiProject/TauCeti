@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.BaseChange
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.MaximalUnramified
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Restriction
 import TauCeti.NumberTheory.ClassFieldTheory.Brauer.LocalH2Bound

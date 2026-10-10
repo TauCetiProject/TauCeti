@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Cyclotomic.Basic
-public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Invariant
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.InvariantSum
 import Mathlib.NumberTheory.NumberField.InfinitePlace.TotallyRealComplex
 import TauCeti.NumberTheory.NumberField.LocalGlobal.Completion
