@@ -80,6 +80,8 @@ it.
   topologically of finite type implies topologically of finite type, by the trivial weight family.
 * `TauCeti.Huber.IsTopologicallyFiniteType.continuous`: such a `φ` is continuous, since it factors
   through the presenting algebra's structure map.
+* `TauCeti.Huber.IsTopologicallyFiniteType.isOpen_map`: out of a Huber ring, such a `φ` carries
+  open ideals to ideals generating open ideals.
 * `TauCeti.Huber.IsStrictlyTopologicallyFiniteType.comp_isOpenQuotientMap` and
   `TauCeti.Huber.IsTopologicallyFiniteType.comp_isOpenQuotientMap`: both notions are stable under
   composing with a further open quotient map.
@@ -328,6 +330,29 @@ theorem IsStrictlyTopologicallyFiniteType.isStronglyNoetherian {φ : A →+* B}
   exact hπ.isStronglyNoetherian
 
 end StronglyNoetherian
+
+/-! ### Open ideals -/
+
+section OpenIdeal
+
+variable {A B : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
+  [CommRing B] [TopologicalSpace B]
+
+/-- **A homomorphism topologically of finite type out of a Huber ring carries open ideals to
+ideals generating open ideals**, part of the adicity in Wedhorn's Proposition and Definition 6.29.
+Each of the three factors of a presentation does: the constant series
+(`TauCeti.Huber.isOpen_map_algebraMap_weightedRestrictedSubring`), the completion map
+(`TauCeti.Huber.isOpen_map_coeRingHom`), and the open surjection onto `B`. -/
+theorem IsTopologicallyFiniteType.isOpen_map {φ : A →+* B} (h : IsTopologicallyFiniteType φ)
+    {J : Ideal A} (hJ : IsOpen (J : Set A)) : IsOpen (J.map φ : Set B) := by
+  obtain ⟨k, T, _, hT, π, hπ, rfl⟩ := isTopologicallyFiniteType_iff.mp h
+  have hcomp : algebraMap A (Completion (weightedRestrictedSubring T hT)) =
+      Completion.coeRingHom.comp (algebraMap A (weightedRestrictedSubring T hT)) :=
+    RingHom.ext fun a ↦ Completion.algebraMap_def _ _ a
+  rw [← Ideal.map_map, hcomp, ← Ideal.map_map, Ideal.map_eq_image_of_surjective _ hπ.surjective]
+  exact hπ.isOpenMap _ (isOpen_map_coeRingHom (isOpen_map_algebraMap_weightedRestrictedSubring hJ))
+
+end OpenIdeal
 
 /-! ### Presentations supplied by the open mapping theorem
 
