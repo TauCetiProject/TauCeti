@@ -38,6 +38,10 @@ function is compactly supported in `Ω`, and no regularity of `∂Ω` is used.
   against a test function, `∫ Δφ • u = ∫ φ • Δu`.
 * `InnerProductSpace.HarmonicOnNhd.integral_laplacian_smul_eq_zero`: a harmonic function is
   weakly harmonic.
+* `TauCeti.integral_laplacian_mul_eq_neg_integral_sum`: for a locally integrable `K` with a
+  locally integrable gradient `K'` in the integration-by-parts sense, `∫ Δf · K = -∫ K' · ∇f`
+  for `C²` functions `f` with compact support. This is the first half of the computation of the
+  distributional Laplacian of a fundamental solution.
 * `TestFunction.laplacianCLM_apply`: the test-function Laplacian agrees pointwise with the
   classical Laplacian.
 -/
@@ -163,6 +167,38 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.integral_laplacian_smul_eq_zero
   by_cases hx : x ∈ (Ω : Set E)
   · rw [(hu x hx).2.eq_of_nhds, Pi.zero_apply, smul_zero]
   · simp [φ.zero_on_compl hx]
+
+omit [CompleteSpace F] [μ.IsAddHaarMeasure] in
+/-- **Integration by parts against a kernel with an integrable gradient.** Let `K` and `K'` be
+locally integrable and satisfy `∫ K ∂ᵥg = -∫ (K' · v) g` for every `C¹` function `g` with compact
+support. Then for every `C²` function `f` with compact support and every orthonormal basis `b`,
+`∫ Δf · K = -∫ ∑ᵢ K'(bᵢ) ∂_{bᵢ}f`. -/
+theorem integral_laplacian_mul_eq_neg_integral_sum {K : E → ℝ} {K' : E → E →L[ℝ] ℝ}
+    (hK : LocallyIntegrable K μ) (hK' : LocallyIntegrable K' μ)
+    (hibp : ∀ g : E → ℝ, ContDiff ℝ 1 g → HasCompactSupport g → ∀ v,
+      ∫ x, K x * fderiv ℝ g x v ∂μ = -∫ x, K' x v * g x ∂μ)
+    {f : E → ℝ} (hf : ContDiff ℝ 2 f) (hc : HasCompactSupport f) {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ E) :
+    ∫ x, Δ f x * K x ∂μ = -∫ x, ∑ i, K' x (b i) * fderiv ℝ f x (b i) ∂μ := by
+  have hf1 : ContDiff ℝ 1 (fderiv ℝ f) := hf.fderiv_right (by norm_num)
+  have hgi : ∀ i, ContDiff ℝ 1 fun y ↦ fderiv ℝ f y (b i) := fun i ↦
+    hf1.clm_apply contDiff_const
+  have hci : ∀ i, HasCompactSupport fun y ↦ fderiv ℝ f y (b i) := fun i ↦
+    (hc.fderiv ℝ).comp_left (g := fun L : E →L[ℝ] ℝ ↦ L (b i)) rfl
+  -- The Laplacian as a sum of iterated directional derivatives.
+  have hΔ : ∀ x, Δ f x = ∑ i, fderiv ℝ (fun y ↦ fderiv ℝ f y (b i)) x (b i) := fun x ↦
+    laplacian_eq_sum_fderiv_fderiv_apply b ((hf1.differentiable one_ne_zero) x)
+  simp_rw [hΔ, Finset.sum_mul]
+  rw [integral_finsetSum _ fun i _ ↦ ?_, integral_finsetSum _ fun i _ ↦ ?_,
+    ← Finset.sum_neg_distrib]
+  · refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [← hibp _ (hgi i) (hci i) (b i)]
+    simp_rw [mul_comm]
+  · simpa [mul_comm] using (hK'.integrable_smul_left_of_hasCompactSupport (hgi i).continuous
+      (hci i)).apply_continuousLinearMap (b i)
+  · simpa [mul_comm] using hK.integrable_smul_right_of_hasCompactSupport
+      (((hgi i).continuous_fderiv one_ne_zero).clm_apply continuous_const)
+      (((hci i).fderiv ℝ).comp_left (g := fun L : E →L[ℝ] ℝ ↦ L (b i)) rfl)
 
 omit [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] in
 /-- Applying the test-function Laplacian operator agrees pointwise with the classical
