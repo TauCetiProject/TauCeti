@@ -32,11 +32,16 @@ the *initial projection* `u† u` is the orthogonal projection onto `(ker u)ᗮ`
   for endomorphisms, agreement with the star-monoid predicate.
 * `ContinuousLinearMap.isPartialIsometry_iff_norm_map`, `LinearMap.isPartialIsometry_iff_norm_map`:
   `u` is a partial isometry iff `‖u x‖ = ‖x‖` for every `x ∈ (ker u)ᗮ`.
-* `ContinuousLinearMap.isPartialIsometry_iff_adjoint_comp_self`: `u` is a partial isometry iff
-  `u† ∘L u = (ker u)ᗮ.starProjection`.
+* `ContinuousLinearMap.isPartialIsometry_iff_adjoint_comp_self`,
+  `LinearMap.isPartialIsometry_iff_adjoint_comp_self`: `u` is a partial isometry iff
+  `u† u = (ker u)ᗮ.starProjection`.
 * `ContinuousLinearMap.isPartialIsometry_iff_isIdempotentElem_adjoint_comp_self`,
-  `ContinuousLinearMap.IsPartialIsometry.isStarProjection_adjoint_comp_self`: `u` is a partial
-  isometry iff `u† u` is idempotent, and then `u† u` is a star projection.
+  `LinearMap.isPartialIsometry_iff_isIdempotentElem_adjoint_comp_self`: `u` is a partial
+  isometry iff `u† u` is idempotent.
+* `ContinuousLinearMap.IsPartialIsometry.isStarProjection_adjoint_comp_self`,
+  `ContinuousLinearMap.IsPartialIsometry.isStarProjection_self_comp_adjoint` (and their
+  `LinearMap` versions): the initial projection `u† u` and the final projection `u u†` of a
+  partial isometry are star projections.
 * `ContinuousLinearMap.IsPartialIsometry.adjoint`: the adjoint of a partial isometry is a partial
   isometry.
 * `LinearIsometry.isPartialIsometry_toContinuousLinearMap`: linear isometries are partial
@@ -216,6 +221,29 @@ theorem isPartialIsometry_iff_norm_map :
   simp [← isPartialIsometry_toContinuousLinearMap_iff,
     ContinuousLinearMap.isPartialIsometry_iff_norm_map]
 
+/-- A linear map between finite-dimensional spaces is a partial isometry iff its initial
+projection `u† ∘ₗ u` is the orthogonal projection onto the orthogonal complement of its kernel. -/
+theorem isPartialIsometry_iff_adjoint_comp_self :
+    u.IsPartialIsometry ↔ u.adjoint ∘ₗ u = (ker u)ᗮ.starProjection := by
+  have := FiniteDimensional.complete 𝕜 E
+  have := FiniteDimensional.complete 𝕜 F
+  rw [← show _ ↔ u.IsPartialIsometry from isPartialIsometry_toContinuousLinearMap_iff,
+    ContinuousLinearMap.isPartialIsometry_iff_adjoint_comp_self, ← adjoint_toContinuousLinearMap,
+    ← ContinuousLinearMap.coe_inj]
+  rfl
+
+/-- A linear map between finite-dimensional spaces is a partial isometry iff its initial
+projection `u† ∘ₗ u` is idempotent. -/
+theorem isPartialIsometry_iff_isIdempotentElem_adjoint_comp_self :
+    u.IsPartialIsometry ↔ IsIdempotentElem (u.adjoint ∘ₗ u) := by
+  have := FiniteDimensional.complete 𝕜 E
+  have := FiniteDimensional.complete 𝕜 F
+  rw [← show _ ↔ u.IsPartialIsometry from isPartialIsometry_toContinuousLinearMap_iff,
+    ContinuousLinearMap.isPartialIsometry_iff_isIdempotentElem_adjoint_comp_self,
+    ← adjoint_toContinuousLinearMap, IsIdempotentElem, IsIdempotentElem,
+    ← ContinuousLinearMap.coe_inj]
+  rfl
+
 /-- The initial projection `u† ∘ₗ u` of a partial isometry is a star projection. -/
 theorem IsPartialIsometry.isStarProjection_adjoint_comp_self (hu : u.IsPartialIsometry) :
     IsStarProjection (u.adjoint ∘ₗ u) where
@@ -231,6 +259,11 @@ protected theorem IsPartialIsometry.adjoint (hu : u.IsPartialIsometry) :
 @[simp]
 theorem isPartialIsometry_adjoint_iff : u.adjoint.IsPartialIsometry ↔ u.IsPartialIsometry :=
   ⟨fun hu ↦ adjoint_adjoint u ▸ hu.adjoint, IsPartialIsometry.adjoint⟩
+
+/-- The final projection `u ∘ₗ u†` of a partial isometry is a star projection. -/
+theorem IsPartialIsometry.isStarProjection_self_comp_adjoint (hu : u.IsPartialIsometry) :
+    IsStarProjection (u ∘ₗ u.adjoint) := by
+  simpa using hu.adjoint.isStarProjection_adjoint_comp_self
 
 @[simp]
 theorem isPartialIsometry_zero : (0 : E →ₗ[𝕜] F).IsPartialIsometry := by
