@@ -291,17 +291,22 @@ section Coordinates
 local notation "P" => ℝ × ℝ × ℝ
 local notation "J" => 𝓘(ℝ, P)
 
+/-- A Sol isometry is smooth when expressed in global coordinates. -/
+theorem contDiff_toProd_isometry (Φ : Isom J Sol) :
+    ContDiff ℝ ∞ ((toProd ∘ Φ) ∘ toProd.symm) := by
+  simpa only [Diffeomorph.coe_trans, coe_toProdDiffeomorph,
+    coe_toProdDiffeomorph_symm, RiemannianIsometry.coe_toDiffeomorph] using
+    (toProdDiffeomorph.symm.trans (Φ.toDiffeomorph.trans toProdDiffeomorph)).contMDiff.contDiff
+
 /-- The ordinary derivative of a Sol isometry in global coordinates is its manifold
 derivative, read through the canonical tangent-space identifications. -/
+@[simp]
 theorem fderiv_toProd_isometry_apply (Φ : Isom J Sol) (p : Sol)
     (u : TangentSpace J p) :
     fderiv ℝ ((toProd ∘ Φ) ∘ toProd.symm) (toProd p) (tangentSpaceCastModel J p u) =
       tangentSpaceCastModel J (Φ p) (mfderiv J J Φ p u) := by
   let f : P → P := (toProd ∘ Φ) ∘ toProd.symm
-  have hfc : ContDiff ℝ ∞ f := by
-    simpa only [f, Diffeomorph.coe_trans, coe_toProdDiffeomorph,
-      coe_toProdDiffeomorph_symm, RiemannianIsometry.coe_toDiffeomorph] using
-      (toProdDiffeomorph.symm.trans (Φ.toDiffeomorph.trans toProdDiffeomorph)).contMDiff.contDiff
+  have hfc : ContDiff ℝ ∞ f := contDiff_toProd_isometry Φ
   have hf : MDifferentiable J J toProd := by
     simpa only [coe_toProdDiffeomorph] using toProdDiffeomorph.mdifferentiable (by simp)
   have hg : MDifferentiable J J toProd.symm := by

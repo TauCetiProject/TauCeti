@@ -16,10 +16,6 @@ horizontal coordinates of its value depend only on the two horizontal coordinate
 argument. This separates the horizontal map from the height variable in the classification
 of Sol isometries.
 
-Height rigidity determines the vertical component of the differential. Preservation of
-the metric forces the other components of the image of a unit vertical vector to vanish.
-Integrating this differential along a vertical line gives the global formula.
-
 ## References
 
 * P. Scott, *The geometries of 3-manifolds*, Bull. London Math. Soc. 15 (1983),
@@ -71,10 +67,7 @@ private theorem hasDerivAt_vertical_coordinates (Φ : Isom J Sol) {ε : ℝ}
     (x y t : ℝ) :
     HasDerivAt (fun s => toProd (Φ (mk x y s))) (0, 0, ε) t := by
   let f : P → P := (toProd ∘ Φ) ∘ toProd.symm
-  have hf : ContDiff ℝ ∞ f := by
-    simpa only [f, Diffeomorph.coe_trans, coe_toProdDiffeomorph,
-      coe_toProdDiffeomorph_symm, RiemannianIsometry.coe_toDiffeomorph] using
-      (toProdDiffeomorph.symm.trans (Φ.toDiffeomorph.trans toProdDiffeomorph)).contMDiff.contDiff
+  have hf : ContDiff ℝ ∞ f := contDiff_toProd_isometry Φ
   have hc : HasDerivAt (fun s : ℝ => (x, y, s)) (0, 0, 1) t :=
     (hasDerivAt_const t x).prodMk ((hasDerivAt_const t y).prodMk (hasDerivAt_id t))
   have he : fderiv ℝ f (x, y, t) (0, 0, 1) = (0, 0, ε) := by

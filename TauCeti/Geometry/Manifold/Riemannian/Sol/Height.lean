@@ -50,11 +50,6 @@ local notation "J" => 𝓘(ℝ, P)
 private def coordinateMap (Φ : Isom J Sol) : P → P :=
   (toProd ∘ Φ) ∘ toProd.symm
 
-private theorem contDiff_isometry (Φ : Isom J Sol) : ContDiff ℝ ∞ (coordinateMap Φ) := by
-  simpa only [coordinateMap, Diffeomorph.coe_trans, coe_toProdDiffeomorph,
-    coe_toProdDiffeomorph_symm, RiemannianIsometry.coe_toDiffeomorph] using
-    (toProdDiffeomorph.symm.trans (Φ.toDiffeomorph.trans toProdDiffeomorph)).contMDiff.contDiff
-
 private theorem height_derivative_mul (Φ : Isom J Sol) (p : P) (u v : P) :
     (fderiv ℝ (coordinateMap Φ) p u).2.2 * (fderiv ℝ (coordinateMap Φ) p v).2.2 =
       u.2.2 * v.2.2 := by
@@ -82,7 +77,7 @@ private theorem height_derivative_sign_constant (Φ : Isom J Sol) (p : P) :
       (fderiv ℝ (coordinateMap Φ) 0 (0, 0, 1)).2.2 := by
   let a : P → ℝ := fun p => (fderiv ℝ (coordinateMap Φ) p (0, 0, 1)).2.2
   have ha : Continuous a :=
-    (((contDiff_isometry Φ).continuous_fderiv_apply (by simp)).comp
+    (((contDiff_toProd_isometry Φ).continuous_fderiv_apply (by simp)).comp
       (continuous_id.prodMk continuous_const)).snd.snd
   have hz : ∀ p, a p ≠ 0 := fun p => by
     rcases height_derivative_sign Φ p with h | h <;> simp [a, h]
@@ -118,8 +113,9 @@ image of the identity. The same sign applies to every point. -/
 theorem exists_height_eq (Φ : Isom J Sol) :
     ∃ ε : ℝ, (ε = 1 ∨ ε = -1) ∧ ∀ p : Sol, (Φ p).z = ε * p.z + (Φ 1).z := by
   obtain ⟨ε, hε, hd⟩ := exists_mfderiv_height_eq Φ
+  have hfc : ContDiff ℝ ∞ (coordinateMap Φ) := contDiff_toProd_isometry Φ
   have hf : Differentiable ℝ (fun p : P => (coordinateMap Φ p).2.2) :=
-    (contDiff_isometry Φ).differentiable (by simp) |>.snd.snd
+    hfc.differentiable (by simp) |>.snd.snd
   have hg : Differentiable ℝ (fun p : P => ε * p.2.2 + (Φ 1).z) := by fun_prop
   have heq := eq_of_fderiv_eq hf hg (fun p => by
     apply ContinuousLinearMap.ext
@@ -127,8 +123,8 @@ theorem exists_height_eq (Φ : Isom J Sol) :
     have h := hd (toProd.symm p) ((tangentSpaceCastModel J (toProd.symm p)).symm u)
     rw [← fderiv_toProd_isometry_apply] at h
     simp only [ContinuousLinearEquiv.apply_symm_apply, Equiv.apply_symm_apply] at h
-    rw [fderiv.snd ((contDiff_isometry Φ).differentiable (by simp) p).snd,
-      fderiv.snd ((contDiff_isometry Φ).differentiable (by simp) p),
+    rw [fderiv.snd (hfc.differentiable (by simp) p).snd,
+      fderiv.snd (hfc.differentiable (by simp) p),
       fderiv_add_const, fderiv_const_mul (differentiable_snd.snd p) ε,
       fderiv.snd differentiable_snd.differentiableAt, fderiv_snd]
     exact h)
