@@ -37,42 +37,54 @@ universe u
 variable {N V : Type u} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
   {i : N →+ V} {σ : PointedCone ℝ V} (hi : IsIntegralLattice i) (hσ : IsRegularCone i σ)
 
+local notation "σₜ" => (Subtype.mk σ
+  (Iff.mpr (mem_ofCone_cones hi (IsRegularCone.toIsToricCone hσ))
+    (PointedCone.IsFaceOf.refl σ)) : Fan.cones (ofCone hi (IsRegularCone.toIsToricCone hσ)))
+
+/-- The inclusion of a face chart in an affine fan factors through its face-localization map
+into the maximal cone chart. -/
+theorem analyticAffineChartι_top_faceAffinePointMap
+    (τ : (ofCone hi hσ.toIsToricCone).cones)
+    (x : (ofCone hi hσ.toIsToricCone).analyticAffineChartDiagram.obj τ) :
+    (ofCone hi hσ.toIsToricCone).analyticAffineChartι (isRegular_ofCone hi hσ)
+      σₜ (faceAffinePointMap hi
+        ((mem_ofCone_cones hi hσ.toIsToricCone).1 τ.2) x) =
+      (ofCone hi hσ.toIsToricCone).analyticAffineChartι (isRegular_ofCone hi hσ) τ x := by
+  let f : τ ⟶ σₜ :=
+    homOfLE ((mem_ofCone_cones hi hσ.toIsToricCone).1 τ.2).le
+  have hface : (ofCone hi hσ.toIsToricCone).analyticAffineChartDiagram.map f x =
+      faceAffinePointMap hi ((mem_ofCone_cones hi hσ.toIsToricCone).1 τ.2) x :=
+    (ofCone hi hσ.toIsToricCone).analyticFaceMap_apply f x
+  exact (congrArg ((ofCone hi hσ.toIsToricCone).analyticAffineChartι
+      (isRegular_ofCone hi hσ) σₜ) hface).symm.trans
+    (ConcreteCategory.congr_hom
+      ((ofCone hi hσ.toIsToricCone).analyticAffineChartDiagram_map_comp_analyticAffineChartι
+        (isRegular_ofCone hi hσ) f) x)
+
 /-- The maximal cone chart covers the realization of the fan of a regular cone. -/
-theorem surjective_analyticAffineChartι_ofCone :
+theorem analyticAffineChartι_ofCone_surjective :
     Function.Surjective ((ofCone hi hσ.toIsToricCone).analyticAffineChartι
-      (isRegular_ofCone hi hσ) ⟨σ, (mem_ofCone_cones hi hσ.toIsToricCone).2
-        (PointedCone.IsFaceOf.refl σ)⟩) := by
+      (isRegular_ofCone hi hσ) σₜ) := by
   intro x
   obtain ⟨τ, y, rfl⟩ := (ofCone hi hσ.toIsToricCone).exists_analyticAffineChartι_apply_eq
     (isRegular_ofCone hi hσ) x
-  let f : τ ⟶ (⟨σ, (mem_ofCone_cones hi hσ.toIsToricCone).2
-        (PointedCone.IsFaceOf.refl σ)⟩ : (ofCone hi hσ.toIsToricCone).cones) :=
-    homOfLE ((mem_ofCone_cones hi hσ.toIsToricCone).1 τ.2).le
-  exact ⟨_, ConcreteCategory.congr_hom
-    ((ofCone hi hσ.toIsToricCone).analyticAffineChartDiagram_map_comp_analyticAffineChartι
-      (isRegular_ofCone hi hσ) f) y⟩
+  exact ⟨_, analyticAffineChartι_top_faceAffinePointMap hi hσ τ y⟩
 
 /-- The canonical homeomorphism from the maximal affine chart to the analytic realization of
 the fan of a regular cone. -/
 noncomputable def analyticOfConeHomeomorph :
-    (ofCone hi hσ.toIsToricCone).analyticAffineChartDiagram.obj
-      ⟨σ, (mem_ofCone_cones hi hσ.toIsToricCone).2
-        (PointedCone.IsFaceOf.refl σ)⟩ ≃ₜ
+    (ofCone hi hσ.toIsToricCone).analyticAffineChartDiagram.obj σₜ ≃ₜ
       (ofCone hi hσ.toIsToricCone).analyticRealization (isRegular_ofCone hi hσ) :=
   ((ofCone hi hσ.toIsToricCone).isOpenEmbedding_analyticAffineChartι
-    (isRegular_ofCone hi hσ) ⟨σ, (mem_ofCone_cones hi hσ.toIsToricCone).2
-        (PointedCone.IsFaceOf.refl σ)⟩).isEmbedding.toHomeomorphOfSurjective
-      (surjective_analyticAffineChartι_ofCone hi hσ)
+    (isRegular_ofCone hi hσ) σₜ).isEmbedding.toHomeomorphOfSurjective
+      (analyticAffineChartι_ofCone_surjective hi hσ)
 
 /-- The affine-fan identification is the canonical inclusion of the maximal chart. -/
 @[simp]
 theorem analyticOfConeHomeomorph_apply
-    (x : (ofCone hi hσ.toIsToricCone).analyticAffineChartDiagram.obj
-      ⟨σ, (mem_ofCone_cones hi hσ.toIsToricCone).2
-        (PointedCone.IsFaceOf.refl σ)⟩) :
+    (x : (ofCone hi hσ.toIsToricCone).analyticAffineChartDiagram.obj σₜ) :
     analyticOfConeHomeomorph hi hσ x = (ofCone hi hσ.toIsToricCone).analyticAffineChartι
-      (isRegular_ofCone hi hσ) ⟨σ, (mem_ofCone_cones hi hσ.toIsToricCone).2
-        (PointedCone.IsFaceOf.refl σ)⟩ x := (rfl)
+      (isRegular_ofCone hi hσ) σₜ x := (rfl)
 
 /-- Every face chart becomes its face-localization map under the affine-fan identification. -/
 theorem analyticOfConeHomeomorph_symm_analyticAffineChartι
@@ -81,21 +93,10 @@ theorem analyticOfConeHomeomorph_symm_analyticAffineChartι
     (analyticOfConeHomeomorph hi hσ).symm
       ((ofCone hi hσ.toIsToricCone).analyticAffineChartι (isRegular_ofCone hi hσ) τ x) =
         faceAffinePointMap hi ((mem_ofCone_cones hi hσ.toIsToricCone).1 τ.2) x := by
-  let f : τ ⟶ (⟨σ, (mem_ofCone_cones hi hσ.toIsToricCone).2
-      (PointedCone.IsFaceOf.refl σ)⟩ : (ofCone hi hσ.toIsToricCone).cones) :=
-    homOfLE ((mem_ofCone_cones hi hσ.toIsToricCone).1 τ.2).le
-  apply (analyticOfConeHomeomorph hi hσ).injective
-  -- The localization formula uses affine points, while the homeomorphism uses bundled charts.
-  erw [Homeomorph.apply_symm_apply, analyticOfConeHomeomorph_apply]
-  have hface : (ofCone hi hσ.toIsToricCone).analyticAffineChartDiagram.map f x =
-      faceAffinePointMap hi ((mem_ofCone_cones hi hσ.toIsToricCone).1 τ.2) x :=
-    (ofCone hi hσ.toIsToricCone).analyticFaceMap_apply f x
-  exact (ConcreteCategory.congr_hom
-    ((ofCone hi hσ.toIsToricCone).analyticAffineChartDiagram_map_comp_analyticAffineChartι
-      (isRegular_ofCone hi hσ) f) x).symm.trans
-        (congrArg ((ofCone hi hσ.toIsToricCone).analyticAffineChartι
-          (isRegular_ofCone hi hσ) ⟨σ, (mem_ofCone_cones hi hσ.toIsToricCone).2
-            (PointedCone.IsFaceOf.refl σ)⟩) hface)
+  rw [← analyticAffineChartι_top_faceAffinePointMap hi hσ τ x,
+    ← analyticOfConeHomeomorph_apply hi hσ
+      (faceAffinePointMap hi ((mem_ofCone_cones hi hσ.toIsToricCone).1 τ.2) x)]
+  exact (analyticOfConeHomeomorph hi hσ).symm_apply_apply _
 
 section Manifold
 
@@ -111,32 +112,30 @@ noncomputable def analyticOfConeDiffeomorph (n : ℕ∞ω) :
     letI := (ofCone hi hσ.toIsToricCone).analyticChartedSpace (isRegular_ofCone hi hσ)
     Diffeomorph 𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ)) 𝓘(ℂ, Fin (Module.finrank ℤ N) → ℂ)
       (AffineSemigroupComplexPoint (dualSemigroup hi σ))
-      ((ofCone hi hσ.toIsToricCone).analyticRealization (isRegular_ofCone hi hσ)) n := by
+      ((ofCone hi hσ.toIsToricCone).analyticRealization (isRegular_ofCone hi hσ)) n :=
   let _ := affinePointTopology g
   let _ := coneChartedSpace hi hσ.toIsToricCone hB κ g
   letI := (ofCone hi hσ.toIsToricCone).analyticChartedSpace (isRegular_ofCone hi hσ)
   let P := (ofCone hi hσ.toIsToricCone).analyticAffineChartPartialDiffeomorph
-    (isRegular_ofCone hi hσ) ⟨σ, (mem_ofCone_cones hi hσ.toIsToricCone).2
-        (PointedCone.IsFaceOf.refl σ)⟩ hB κ g n
-  have hs : P.source = univ :=
+    (isRegular_ofCone hi hσ) σₜ hB κ g n
+  let hs : P.source = univ :=
     (ofCone hi hσ.toIsToricCone).analyticAffineChartPartialDiffeomorph_source _ _ _ _ _ _
-  have ht : P.target = univ := by
+  let ht : P.target = univ := by
     rw [analyticAffineChartPartialDiffeomorph_target,
-      range_eq_univ.mpr (surjective_analyticAffineChartι_ofCone hi hσ)]
-  have hf : ContMDiff 𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ))
+      range_eq_univ.mpr (analyticAffineChartι_ofCone_surjective hi hσ)]
+  let hf : ContMDiff 𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ))
       𝓘(ℂ, Fin (Module.finrank ℤ N) → ℂ) n P := by
     simpa only [hs, contMDiffOn_univ] using P.contMDiffOn_toFun
-  have hi' : ContMDiff 𝓘(ℂ, Fin (Module.finrank ℤ N) → ℂ)
+  let hi' : ContMDiff 𝓘(ℂ, Fin (Module.finrank ℤ N) → ℂ)
       𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ)) n P.invFun := by
     simpa only [ht, contMDiffOn_univ] using P.contMDiffOn_invFun
-  exact
-    { toEquiv :=
-        { toFun := P
-          invFun := P.invFun
-          left_inv := fun x ↦ P.left_inv (hs.symm ▸ mem_univ x)
-          right_inv := fun x ↦ P.right_inv (ht.symm ▸ mem_univ x) }
-      contMDiff_toFun := hf
-      contMDiff_invFun := hi' }
+  { toEquiv :=
+      { toFun := P
+        invFun := P.invFun
+        left_inv := fun x ↦ P.left_inv (hs.symm ▸ mem_univ x)
+        right_inv := fun x ↦ P.right_inv (ht.symm ▸ mem_univ x) }
+    contMDiff_toFun := hf
+    contMDiff_invFun := hi' }
 
 /-- The biholomorphism of an affine fan is its maximal chart inclusion. -/
 @[simp]
@@ -144,28 +143,40 @@ theorem analyticOfConeDiffeomorph_apply (n : ℕ∞ω)
     (x : AffineSemigroupComplexPoint (dualSemigroup hi σ)) :
     analyticOfConeDiffeomorph hi hσ hB κ g n x =
       (ofCone hi hσ.toIsToricCone).analyticAffineChartι (isRegular_ofCone hi hσ)
-        ⟨σ, (mem_ofCone_cones hi hσ.toIsToricCone).2
-          (PointedCone.IsFaceOf.refl σ)⟩ x := by
-  unfold analyticOfConeDiffeomorph
-  exact (ofCone hi hσ.toIsToricCone).analyticAffineChartPartialDiffeomorph_apply
-    (isRegular_ofCone hi hσ) ⟨σ, (mem_ofCone_cones hi hσ.toIsToricCone).2
-      (PointedCone.IsFaceOf.refl σ)⟩ hB κ g n x
+        σₜ x :=
+  (ofCone hi hσ.toIsToricCone).analyticAffineChartPartialDiffeomorph_apply
+    (isRegular_ofCone hi hσ) σₜ hB κ g n x
 
 /-- The inverse biholomorphism recovers a point from its maximal-chart inclusion. -/
 @[simp]
-theorem analyticOfConeDiffeomorph_symm_analyticAffineChartι (n : ℕ∞ω)
+theorem analyticOfConeDiffeomorph_symm_analyticAffineChartι_top (n : ℕ∞ω)
     (x : AffineSemigroupComplexPoint (dualSemigroup hi σ)) :
     let _ := affinePointTopology g
     let _ := coneChartedSpace hi hσ.toIsToricCone hB κ g
     letI := (ofCone hi hσ.toIsToricCone).analyticChartedSpace (isRegular_ofCone hi hσ)
     (analyticOfConeDiffeomorph hi hσ hB κ g n).symm
       ((ofCone hi hσ.toIsToricCone).analyticAffineChartι (isRegular_ofCone hi hσ)
-        ⟨σ, (mem_ofCone_cones hi hσ.toIsToricCone).2
-          (PointedCone.IsFaceOf.refl σ)⟩ x) = x := by
+        σₜ x) = x := by
   intro _ _
   let _ := (ofCone hi hσ.toIsToricCone).analyticChartedSpace (isRegular_ofCone hi hσ)
   rw [← analyticOfConeDiffeomorph_apply hi hσ hB κ g n x]
   exact (analyticOfConeDiffeomorph hi hσ hB κ g n).symm_apply_apply x
+
+/-- Every face chart becomes its face-localization map under the affine-fan biholomorphism. -/
+theorem analyticOfConeDiffeomorph_symm_analyticAffineChartι (n : ℕ∞ω)
+    (τ : (ofCone hi hσ.toIsToricCone).cones)
+    (x : (ofCone hi hσ.toIsToricCone).analyticAffineChartDiagram.obj τ) :
+    let _ := affinePointTopology g
+    let _ := coneChartedSpace hi hσ.toIsToricCone hB κ g
+    letI := (ofCone hi hσ.toIsToricCone).analyticChartedSpace (isRegular_ofCone hi hσ)
+    (analyticOfConeDiffeomorph hi hσ hB κ g n).symm
+      ((ofCone hi hσ.toIsToricCone).analyticAffineChartι (isRegular_ofCone hi hσ) τ x) =
+        faceAffinePointMap hi ((mem_ofCone_cones hi hσ.toIsToricCone).1 τ.2) x := by
+  intro _ _
+  let _ := (ofCone hi hσ.toIsToricCone).analyticChartedSpace (isRegular_ofCone hi hσ)
+  rw [← analyticAffineChartι_top_faceAffinePointMap hi hσ τ x,
+    ← analyticOfConeDiffeomorph_apply hi hσ hB κ g n]
+  exact (analyticOfConeDiffeomorph hi hσ hB κ g n).symm_apply_apply _
 
 end Manifold
 
@@ -176,50 +187,6 @@ local notation "h₀" => isRegular_ofCone hi (isRegularCone_bot hi)
 local notation "z₀" => (Subtype.mk (⊥ : PointedCone ℝ V)
   (Iff.mpr (mem_ofCone_cones hi (isToricCone_bot i))
     (PointedCone.IsFaceOf.refl ⊥)) : Fan.cones Φ₀)
-
-private noncomputable def zeroConeChartHomeomorphOfBasis {l s : ℕ}
-    {B : Module.Basis (ToricRay (⊥ : PointedCone ℝ V) ⊕ Fin l) ℤ N}
-    (hB : ∀ ρ, IsPrimitiveGenerator i ρ (B (Sum.inl ρ)))
-    (g : AddGeneratingFamily (dualSemigroup hi (⊥ : PointedCone ℝ V)) s) :
-    @Homeomorph (ComplexTorus N) (AffineSemigroupComplexPoint (dualSemigroup hi ⊥))
-      inferInstance (affinePointTopology g) := by
-  classical
-  let _ := affinePointTopology g
-  let A := (coneChartHomeomorph hi (isToricCone_bot i) hB g).trans
-    (Homeomorph.uniqueProd (ToricRay (⊥ : PointedCone ℝ V) → ℂ) (Fin l → ℂˣ))
-  let C := ((complexTorusCoordinatesContinuousMulEquiv B.integralCharacterRepr).toHomeomorph.trans
-    Homeomorph.sumArrowHomeomorphProdArrow).trans
-      (Homeomorph.uniqueProd (ToricRay (⊥ : PointedCone ℝ V) → ℂˣ) (Fin l → ℂˣ))
-  exact C.trans A.symm
-
-private theorem zeroConeChartHomeomorphOfBasis_apply {l s : ℕ}
-    {B : Module.Basis (ToricRay (⊥ : PointedCone ℝ V) ⊕ Fin l) ℤ N}
-    (hB : ∀ ρ, IsPrimitiveGenerator i ρ (B (Sum.inl ρ)))
-    (g : AddGeneratingFamily (dualSemigroup hi (⊥ : PointedCone ℝ V)) s)
-    (t : ComplexTorus N) :
-    zeroConeChartHomeomorphOfBasis hi hB g t =
-      t • (default : AffineSemigroupComplexPoint (dualSemigroup hi (⊥ : PointedCone ℝ V))) := by
-  classical
-  let _ := affinePointTopology g
-  let A := (coneChartHomeomorph hi (isToricCone_bot i) hB g).trans
-    (Homeomorph.uniqueProd (ToricRay (⊥ : PointedCone ℝ V) → ℂ) (Fin l → ℂˣ))
-  let C := ((complexTorusCoordinatesContinuousMulEquiv B.integralCharacterRepr).toHomeomorph.trans
-    Homeomorph.sumArrowHomeomorphProdArrow).trans
-      (Homeomorph.uniqueProd (ToricRay (⊥ : PointedCone ℝ V) → ℂˣ) (Fin l → ℂˣ))
-  apply A.injective
-  refine (A.apply_symm_apply (C t)).trans ?_
-  ext j
-  simp only [A, C, Homeomorph.trans_apply, Homeomorph.coe_uniqueProd,
-    coe_coneChartHomeomorph, coneChartEquiv_smul_snd, coneChartEquiv_default,
-    Prod.snd_one, Pi.one_apply, mul_one]
-  simp only [Homeomorph.sumArrowHomeomorphProdArrow_apply]
-  rw [ContinuousMulEquiv.toHomeomorph_eq_coe]
-  simp only [HomeomorphClass.coe_coe, Function.comp_apply]
-  rw [coe_complexTorusCoordinatesContinuousMulEquiv, complexTorusCoordinates_apply]
-  apply congrArg (fun m : IntegralCharacter N ↦ (t m : ℂ))
-  apply B.integralCharacterRepr.injective
-  ext a
-  simp [Finsupp.single_apply, eq_comm]
 
 private noncomputable def zeroConeChartHomeomorph :
     ComplexTorus N ≃ₜ (Φ₀).analyticAffineChartDiagram.obj z₀ :=
