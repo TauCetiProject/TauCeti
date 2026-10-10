@@ -168,6 +168,17 @@ theorem _root_.Derivation.apply_eq_derivativeOfSeparating_smul {M : Type*} [AddC
   rw [← D.liftKaehlerDifferential_comp_D, ← derivativeOfSeparating_smul_D hx y,
     LinearMap.map_smul, D.liftKaehlerDifferential_comp_D]
 
+/-- Differentiating with respect to a translate `x - a` of a separating element is differentiating
+with respect to `x`. -/
+theorem derivativeOfSeparating_sub_algebraMap {a : k}
+    (hxa : Transcendental k (x - algebraMap k F a)) [Algebra.IsSeparable k⟮x - algebraMap k F a⟯ F]
+    (y : F) : derivativeOfSeparating hxa y = derivativeOfSeparating hx y := by
+  have h1 : derivativeOfSeparating hxa x = 1 := by
+    have h := derivativeOfSeparating_self hxa
+    rwa [map_sub, Derivation.map_algebraMap, sub_zero] at h
+  rw [(derivativeOfSeparating hxa).apply_eq_derivativeOfSeparating_smul hx y, h1, smul_eq_mul,
+    mul_one]
+
 end Separating
 
 variable [PerfectField k]

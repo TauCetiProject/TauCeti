@@ -14,36 +14,36 @@ import TauCeti.FieldTheory.FunctionField.Place.Extension.Degree
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Trace
 
 /-!
-# The local components of `dt` at a zero of `t` are residues
+# The local components of `dt` at a zero of `t - a` are residues
 
 Let `F / k` be an algebraic function field and `t ∈ F` a separating element, and let `dt` be the
 Weil differential `TauCeti.weilDifferentialOfSeparating`, the cotrace to `F` of the canonical
-differential `η` of `k(t)`. At a rational place `P` of `F` at which `t` is a prime element,
-`ord_P t = 1`, the local component of `dt` is the residue in `t`:
+differential `η` of `k(t)`. At a rational place `P` of `F` at which `t - a` is a prime element for
+some constant `a ∈ k`, `ord_P (t - a) = 1`, the local component of `dt` is the residue in `t - a`:
 
-`(dt)_P (u) = res_{P,t} (u)` for every `u ∈ F`.
+`(dt)_P (u) = res_{P,t-a} (u)` for every `u ∈ F`.
 
-This is Stichtenoth's Theorem 4.3.2(d), `(z · δ(x))_P (u) = res_P (u z dx)`, for `x = t` a prime
-element at `P` and `z = 1`. It identifies the abstract local components of Weil differentials with
-the classical residues of Laurent expansions.
+This is Stichtenoth's Theorem 4.3.2(d), `(z · δ(x))_P (u) = res_P (u z dx)`, for `x = t` with
+`t - a` a prime element at `P` and `z = 1`. It identifies the abstract local components of Weil
+differentials with the classical residues of Laurent expansions.
 
 The proof transports the rational-function-field case
 (`TauCeti.repartitionDualComponent_ratFuncWeilDifferential_adicOfIrreducible_X_sub_C`) along the
-cotrace. The place `P` lies over the zero `P₀` of `t` in `k(t)` with `e(P ∣ P₀) = f(P ∣ P₀) = 1`,
-and `dt` is regular at every place over `P₀` because the different is effective. Weak
-approximation moves `u`, without changing its principal part at `P`, to a function that is regular
-at the other places over `P₀`; for such a function the local components of the cotrace over `P₀`
-(`TauCeti.trace_finsum_repartitionDualComponent_weilDifferentialCotrace`) give
-`(dt)_P (u) = η_{P₀} (Tr u) = res_{P₀,t} (Tr u)`. Finally the trace is the identity near `P`
-(`TauCeti.Place.algebraMap_trace_sub_mem_filtration`), so `Tr u` and `u` have the same residue at
-`P`.
+cotrace. The place `P` lies over the zero `P_a` of `t - a` in `k(t)` with
+`e(P ∣ P_a) = f(P ∣ P_a) = 1`, and `dt` is regular at every place over `P_a` because the different
+is effective. Weak approximation moves `u`, without changing its principal part at `P`, to a
+function that is regular at the other places over `P_a`; for such a function the local components
+of the cotrace over `P_a` (`TauCeti.trace_finsum_repartitionDualComponent_weilDifferentialCotrace`)
+give `(dt)_P (u) = η_{P_a} (Tr u) = res_{P_a,t-a} (Tr u)`. Finally the trace is the identity near
+`P` (`TauCeti.Place.algebraMap_trace_sub_mem_filtration`), so `Tr u` and `u` have the same residue
+at `P`.
 
 ## Main results
 
 * `TauCeti.repartitionDualComponent_weilDifferentialCotrace_ratFuncWeilDifferential`: for a finite
   separable extension `F` of `k(t)`, the local component of the cotrace of `η` at a rational place
-  where `t` is a prime element is `res_{P,t}`.
-* `TauCeti.repartitionDualComponent_weilDifferentialOfSeparating`: `(dt)_P = res_{P,t}`.
+  where `t - a` is a prime element is `res_{P,t-a}`.
+* `TauCeti.repartitionDualComponent_weilDifferentialOfSeparating`: `(dt)_P = res_{P,t-a}`.
 
 ## References
 
@@ -66,18 +66,20 @@ section RatFunc
 variable [Algebra (RatFunc k) F] [IsScalarTower k (RatFunc k) F]
 variable [FiniteDimensional (RatFunc k) F]
 
-/-! ### The place below a rational place at which `t` is a prime element -/
+/-! ### The place below a rational place at which `t - a` is a prime element -/
 
 section Below
 
-variable {P : Place k F} (hP : P.degree = 1) (ht : P.ord (algebraMap (RatFunc k) F RatFunc.X) = 1)
+variable {P : Place k F} (hP : P.degree = 1) {a : k}
+  (ht : P.ord (algebraMap (RatFunc k) F (RatFunc.X - RatFunc.C a)) = 1)
 include ht
 
-/-- A place at which `t` is a prime element is unramified over `k(t)`, and `t` is a prime element
-at the place below. -/
-private theorem ramificationIdx_eq_one_and_ord_X_eq_one :
-    ramificationIdx (RatFunc k) P = 1 ∧ (P.restrict k (RatFunc k)).ord RatFunc.X = 1 := by
-  have hord := ord_algebraMap_restrict k (RatFunc k) P RatFunc.X
+/-- A place at which `t - a` is a prime element is unramified over `k(t)`, and `t - a` is a prime
+element at the place below. -/
+private theorem ramificationIdx_eq_one_and_ord_X_sub_C_eq_one :
+    ramificationIdx (RatFunc k) P = 1 ∧
+      (P.restrict k (RatFunc k)).ord (RatFunc.X - RatFunc.C a) = 1 := by
+  have hord := ord_algebraMap_restrict k (RatFunc k) P (RatFunc.X - RatFunc.C a)
   rw [ht] at hord
   have he : ramificationIdx (RatFunc k) P = 1 := by
     exact_mod_cast Int.eq_one_of_mul_eq_one_right (by positivity) hord.symm
@@ -86,50 +88,46 @@ private theorem ramificationIdx_eq_one_and_ord_X_eq_one :
 
 include hP
 
-/-- A rational place at which `t` is a prime element lies over the zero `P₀` of `t`. -/
-private theorem restrict_eq_adicOfIrreducible_X_sub_C_zero :
-    P.restrict k (RatFunc k) = adicOfIrreducible (Polynomial.irreducible_X_sub_C (0 : k)) := by
-  have hX₀ := (ramificationIdx_eq_one_and_ord_X_eq_one ht).2
+/-- A rational place at which `t - a` is a prime element lies over the zero `P_a` of `t - a`. -/
+private theorem restrict_eq_adicOfIrreducible_X_sub_C :
+    P.restrict k (RatFunc k) = adicOfIrreducible (Polynomial.irreducible_X_sub_C a) := by
+  have hX₀ := (ramificationIdx_eq_one_and_ord_X_sub_C_eq_one ht).2
   rcases eq_infty_or_exists_eq_adicOfIrreducible_X_sub_C (Nat.eq_one_of_mul_eq_one_right
-    (hP ▸ degree_eq_degree_restrict_mul_relativeDegree k (RatFunc k) P).symm) with h | ⟨a, h⟩
-  · rw [h, ord_infty, RatFunc.intDegree_X] at hX₀
+    (hP ▸ degree_eq_degree_restrict_mul_relativeDegree k (RatFunc k) P).symm) with h | ⟨b, h⟩
+  · -- `t - a` has a pole at infinity.
+    rw [h, ord_infty, ← RatFunc.algebraMap_X, ← RatFunc.algebraMap_C, ← map_sub,
+      RatFunc.intDegree_polynomial, Polynomial.natDegree_X_sub_C] at hX₀
     omega
-  · -- `a = X - (X - a)` would vanish at the place below, so the constant `a` is zero.
-    obtain rfl : a = 0 := by
-      by_contra ha
-      have h1 := (adicOfIrreducible (Polynomial.irreducible_X_sub_C a)).mem_filtration_ord
-        (RatFunc.X - RatFunc.C a)
-      rw [ord_adicOfIrreducible_X_sub_C_self, ← h] at h1
-      have h2 := (P.restrict k (RatFunc k)).mem_filtration_ord RatFunc.X
-      rw [hX₀] at h2
-      have h3 := sub_mem h2 h1
-      rw [sub_sub_cancel, ← RatFunc.algebraMap_eq_C,
-        (P.restrict k (RatFunc k)).mem_filtration_iff_le_ord ((map_ne_zero _).mpr ha),
-        ord_algebraMap] at h3
-      omega
+  · -- `t - a` is a unit at the place of `X - b` unless `b = a`.
+    obtain rfl : b = a := by
+      by_contra hba
+      rw [h, ord_adicOfIrreducible_X_sub_C_of_not_associated _ fun hab ↦ hba ?_] at hX₀
+      · omega
+      · simpa using Polynomial.eq_of_monic_of_associated (Polynomial.monic_X_sub_C b)
+          (Polynomial.monic_X_sub_C a) hab
     exact h
 
-/-- Residues of rational functions at the zero of `X`, in `X`, are residues at `P` in `t`. -/
-private theorem residue_adicOfIrreducible_X_sub_C_zero (y : RatFunc k) :
-    (adicOfIrreducible (Polynomial.irreducible_X_sub_C (0 : k))).residue
-        (degree_adicOfIrreducible_X_sub_C 0) (ord_adicOfIrreducible_X_sub_C_self 0) y =
+/-- Residues of rational functions at the zero of `X - a`, in `X - a`, are residues at `P` in
+`t - a`. -/
+private theorem residue_adicOfIrreducible_X_sub_C (y : RatFunc k) :
+    (adicOfIrreducible (Polynomial.irreducible_X_sub_C a)).residue
+        (degree_adicOfIrreducible_X_sub_C a) (ord_adicOfIrreducible_X_sub_C_self a) y =
       P.residue hP ht (algebraMap (RatFunc k) F y) := by
-  have hP₀ := restrict_eq_adicOfIrreducible_X_sub_C_zero hP ht
-  -- Both sides are `k`-linear in `y`, vanish on the functions regular at `P₀`, and agree on the
-  -- powers of `X`, whose image in `F` is `t`.
+  have hP₀ := restrict_eq_adicOfIrreducible_X_sub_C hP ht
+  -- Both sides are `k`-linear in `y`, vanish on the functions regular at `P_a`, and agree on the
+  -- powers of `X - a`, whose image in `F` is `t - a`.
   refine LinearMap.congr_fun (g := P.residue hP ht ∘ₗ
     (IsScalarTower.toAlgHom k (RatFunc k) F).toLinearMap) ?_ y
-  refine (adicOfIrreducible (Polynomial.irreducible_X_sub_C (0 : k))).linearMap_ext_zpow
-    (degree_adicOfIrreducible_X_sub_C 0) (ord_adicOfIrreducible_X_sub_C_self 0) (m := 0)
+  refine (adicOfIrreducible (Polynomial.irreducible_X_sub_C a)).linearMap_ext_zpow
+    (degree_adicOfIrreducible_X_sub_C a) (ord_adicOfIrreducible_X_sub_C_self a) (m := 0)
     (fun y hy ↦ ?_) (fun j _ ↦ ?_)
   · rw [mem_filtration_zero_iff] at hy
     have hy₀ : y ∈ (P.restrict k (RatFunc k)).integers := hP₀ ▸ hy
     rw [residue_eq_zero_of_mem_integers _ _ _ hy, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
       IsScalarTower.coe_toAlgHom', residue_eq_zero_of_mem_integers _ _ _
         ((mem_integers_restrict_iff k (RatFunc k) P y).mp hy₀)]
-  · have hXC : (RatFunc.X - RatFunc.C (0 : k) : RatFunc k) = RatFunc.X := by simp
-    rw [residue_zpow_uniformizer, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
-      IsScalarTower.coe_toAlgHom', map_zpow₀, hXC, residue_zpow_uniformizer]
+  · rw [residue_zpow_uniformizer, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
+      IsScalarTower.coe_toAlgHom', map_zpow₀, residue_zpow_uniformizer]
 
 /-- **Moving a function off the other places over `P₀`**: every `u` agrees at `P`, modulo
 functions regular there, with a function `v` that is regular at the other places over `P₀` and
@@ -141,14 +139,14 @@ private theorem exists_sub_mem_integers_forall_mem_integers_and_trace_sub_mem_in
         v ∈ Q.integers) ∧
       algebraMap (RatFunc k) F (Algebra.trace (RatFunc k) F v) - v ∈ P.integers := by
   classical
-  obtain ⟨he, hX₀⟩ := ramificationIdx_eq_one_and_ord_X_eq_one ht
+  obtain ⟨he, hX₀⟩ := ramificationIdx_eq_one_and_ord_X_sub_C_eq_one ht
   set P₀ := P.restrict k (RatFunc k)
-  set t := algebraMap (RatFunc k) F RatFunc.X with htdef
+  set t := algebraMap (RatFunc k) F (RatFunc.X - RatFunc.C a) with htdef
   have ht0 : t ≠ 0 := by
     rintro h
     rw [h, ord_zero] at ht
     omega
-  -- `t` has order `e(Q ∣ P₀)` at every place `Q` over `P₀`.
+  -- `t - a` has order `e(Q ∣ P₀)` at every place `Q` over `P₀`.
   have htpow (Q : Place k F) (hQ : Q.restrict k (RatFunc k) = P₀) (n : ℤ) :
       t ^ n ∈ Q.filtration (ramificationIdx (RatFunc k) Q * n) := by
     have := Q.mem_filtration_ord (t ^ n)
@@ -182,7 +180,7 @@ private theorem exists_sub_mem_integers_forall_mem_integers_and_trace_sub_mem_in
     (Q.filtration_antitone (by positivity) (hwu Q hQ hne)), ?_⟩
   · rw [← sub_one_mul, ← mem_filtration_zero_iff]
     exact P.filtration_antitone (by omega) (P.mul_mem_filtration hw1 hu)
-  -- The trace is the identity near `P`, applied to `t ^ r * w * u`.
+  -- The trace is the identity near `P`, applied to `(t - a) ^ r * w * u`.
   have hwP : w ∈ P.filtration 0 := by
     simpa using add_mem (P.filtration_antitone (by omega) hw1)
       (P.mem_filtration_zero_iff.mpr P.integers.one_mem)
@@ -200,7 +198,8 @@ private theorem exists_sub_mem_integers_forall_mem_integers_and_trace_sub_mem_in
   have hf : relativeDegree k (RatFunc k) P = 1 := Nat.eq_one_of_mul_eq_one_left
     (hP ▸ degree_eq_degree_restrict_mul_relativeDegree k (RatFunc k) P).symm
   have htr := algebraMap_trace_sub_mem_filtration k (RatFunc k) P hF he hf r hz hzQ
-  -- `Tr (t ^ r * w u) = X ^ r * Tr (w u)`, so dividing by `t ^ r` gives the claim.
+  -- `Tr ((t - a) ^ r * w u) = (X - a) ^ r * Tr (w u)`, so dividing by `(t - a) ^ r` gives the
+  -- claim.
   rw [htdef, ← map_zpow₀, ← Algebra.smul_def, LinearMap.map_smul, smul_eq_mul, map_mul,
     Algebra.smul_def, ← mul_sub, map_zpow₀, ← htdef] at htr
   rw [← mem_filtration_zero_iff]
@@ -212,13 +211,13 @@ end Below
 
 variable [Algebra.IsSeparable (RatFunc k) F]
 
-/-- **The local component of `dt` at a zero of `t` is the residue in `t`** (Stichtenoth,
+/-- **The local component of `dt` at a zero of `t - a` is the residue in `t - a`** (Stichtenoth,
 Theorem 4.3.2(d)): for a finite separable extension `F` of `k(t)` and a rational place `P` of `F`
-at which the image of `t` is a prime element, the local component at `P` of the cotrace of the
-canonical differential `η = dt` of `k(t)` is `res_{P,t}`. -/
+at which the image of `t - a` is a prime element, the local component at `P` of the cotrace of the
+canonical differential `η = dt` of `k(t)` is `res_{P,t-a}`. -/
 theorem repartitionDualComponent_weilDifferentialCotrace_ratFuncWeilDifferential
-    (hF : IsFunctionField k F) {P : Place k F} (hP : P.degree = 1)
-    (ht : P.ord (algebraMap (RatFunc k) F RatFunc.X) = 1) (u : F) :
+    (hF : IsFunctionField k F) {P : Place k F} (hP : P.degree = 1) {a : k}
+    (ht : P.ord (algebraMap (RatFunc k) F (RatFunc.X - RatFunc.C a)) = 1) (u : F) :
     repartitionDualComponent (weilDifferentialCotrace k F (IsFunctionField.ratFunc k) hF
         ⟨ratFuncWeilDifferential k, ratFuncWeilDifferential_mem k⟩ :
           Module.Dual k ↥(repartitionSpace k F)) P u =
@@ -227,8 +226,8 @@ theorem repartitionDualComponent_weilDifferentialCotrace_ratFuncWeilDifferential
   set η : ↥(weilDifferentialSpace k (RatFunc k)) :=
     ⟨ratFuncWeilDifferential k, ratFuncWeilDifferential_mem k⟩ with hη
   set ω := weilDifferentialCotrace k F (IsFunctionField.ratFunc k) hF η with hω
-  have hP₀ := restrict_eq_adicOfIrreducible_X_sub_C_zero hP ht
-  -- `dt` is regular at every place over `P₀`, since the different is effective.
+  have hP₀ := restrict_eq_adicOfIrreducible_X_sub_C hP ht
+  -- `dt` is regular at every place over `P_a`, since the different is effective.
   have hkill (Q : Place k F) (hQ : Q.restrict k (RatFunc k) = P.restrict k (RatFunc k)) {v : F}
       (hv : v ∈ Q.integers) : repartitionDualComponent (ω : Module.Dual k _) Q v = 0 := by
     refine repartitionDualComponent_apply_eq_zero_of_le
@@ -240,7 +239,7 @@ theorem repartitionDualComponent_weilDifferentialCotrace_ratFuncWeilDifferential
     exact (Q.mem_integers_iff.mp hv).trans (by simp)
   obtain ⟨v, hvu, hvQ, hvtr⟩ :=
     exists_sub_mem_integers_forall_mem_integers_and_trace_sub_mem_integers hP ht hF u
-  -- Over `P₀`, only `P` contributes to the local components of `dt` at `v`.
+  -- Over `P_a`, only `P` contributes to the local components of `dt` at `v`.
   have hsum : (∑ᶠ (Q : Place k F) (_ : Q.restrict k (RatFunc k) = P.restrict k (RatFunc k)),
       repartitionDualComponent (ω : Module.Dual k _) Q v) =
         repartitionDualComponent (ω : Module.Dual k _) P v := by
@@ -253,7 +252,7 @@ theorem repartitionDualComponent_weilDifferentialCotrace_ratFuncWeilDifferential
     (IsFunctionField.ratFunc k) hF η (P.restrict k (RatFunc k)) v
   rw [← hω, Algebra.trace_self_apply, hsum, hη, hP₀,
     repartitionDualComponent_ratFuncWeilDifferential_adicOfIrreducible_X_sub_C,
-    residue_adicOfIrreducible_X_sub_C_zero hP ht] at hfib
+    residue_adicOfIrreducible_X_sub_C hP ht] at hfib
   calc repartitionDualComponent (ω : Module.Dual k _) P u
       = repartitionDualComponent (ω : Module.Dual k _) P v := by
         rw [← sub_eq_zero, ← map_sub, hkill P rfl (by simpa using neg_mem hvu)]
@@ -262,12 +261,13 @@ theorem repartitionDualComponent_weilDifferentialCotrace_ratFuncWeilDifferential
 
 end RatFunc
 
-/-- **The local component of `dt` at a zero of `t` is the residue in `t`** (Stichtenoth,
-Theorem 4.3.2(d)): for a separating element `t` of `F / k` and a rational place `P` at which `t` is
-a prime element, the Weil differential `dt` has local component `(dt)_P = res_{P,t}`. -/
+/-- **The local component of `dt` at a zero of `t - a` is the residue in `t - a`** (Stichtenoth,
+Theorem 4.3.2(d)): for a separating element `t` of `F / k` and a rational place `P` at which
+`t - a` is a prime element, the Weil differential `dt` has local component `(dt)_P = res_{P,t-a}`.
+-/
 theorem repartitionDualComponent_weilDifferentialOfSeparating (hF : IsFunctionField k F) {t : F}
     (htr : Transcendental k t) [Algebra.IsSeparable k⟮t⟯ F] {P : Place k F} (hP : P.degree = 1)
-    (ht : P.ord t = 1) (u : F) :
+    {a : k} (ht : P.ord (t - algebraMap k F a) = 1) (u : F) :
     repartitionDualComponent (weilDifferentialOfSeparating hF htr :
         Module.Dual k ↥(repartitionSpace k F)) P u =
       P.residue hP ht u := by
@@ -275,9 +275,12 @@ theorem repartitionDualComponent_weilDifferentialOfSeparating (hF : IsFunctionFi
   let _ := isScalarTower_ratFuncAlgebraOfTranscendental htr
   let _ := isFunctionField_iff_functionField.mp hF
   let _ := isSeparable_ratFuncAlgebraOfTranscendental htr
-  have hX := algebraMap_ratFuncAlgebraOfTranscendental_X htr
+  have hX : algebraMap (RatFunc k) F (RatFunc.X - RatFunc.C a) = t - algebraMap k F a := by
+    rw [map_sub, algebraMap_ratFuncAlgebraOfTranscendental_X, ← RatFunc.algebraMap_eq_C,
+      ← IsScalarTower.algebraMap_apply]
   -- The residue only depends on the uniformizer, not on the proof that it is one.
-  have hres {s : F} (hs : s = t) (hs₁ : P.ord s = 1) : P.residue hP hs₁ = P.residue hP ht := by
+  have hres {s : F} (hs : s = t - algebraMap k F a) (hs₁ : P.ord s = 1) :
+      P.residue hP hs₁ = P.residue hP ht := by
     subst hs
     rfl
   rw [weilDifferentialOfSeparating_def,
