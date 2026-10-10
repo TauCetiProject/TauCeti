@@ -16,7 +16,9 @@ If `A.coprod B` is invertible, every ambient vector has a unique decomposition
 `A u + B w`. The second coordinate identifies the quotient by `range A` with the
 fixed parameter space of `B`. In particular, when `A` varies and `B` stays fixed,
 the quotient coordinates are read off from the inverse of a family of operators
-between fixed spaces. This is useful for local coordinates on normal bundles.
+between fixed spaces. Ambient maps carrying one range into another induce coordinate
+changes satisfying the cocycle law; ambient equivalences preserving the ranges give
+invertible changes. This is useful for local coordinates on normal bundles.
 
 The construction uses Mathlib's total continuous-linear inverse and continuous
 quotient lift. No norm, completeness, or choice of an inner product is required.
@@ -131,5 +133,65 @@ theorem isInvertible_quotientRangeCoordinate_comp
       quotientRangeCoordinate_comp_quotientRangeCoordinate hC hB]
     ext w
     exact quotientRangeCoordinate_apply_right hB w
+
+section CoordinateChange
+
+variable {E' F' E'' F'' G'' : Type*}
+  [TopologicalSpace E'] [AddCommGroup E'] [Module R E']
+  [TopologicalSpace F'] [AddCommGroup F'] [Module R F'] [ContinuousAdd F']
+  [TopologicalSpace E''] [AddCommGroup E''] [Module R E'']
+  [TopologicalSpace F''] [AddCommGroup F''] [Module R F''] [ContinuousAdd F'']
+  [TopologicalSpace G''] [AddCommGroup G''] [Module R G'']
+  {A' : E' →L[R] F'} {B' : G' →L[R] F'}
+  {A'' : E'' →L[R] F''} {B'' : G'' →L[R] F''}
+
+/-- Replacing an ambient representative by its complementary representative does not
+change its coordinates after an ambient map carrying the first tangent range into the second. -/
+@[simp] theorem quotientRangeCoordinate_comp_of_map_range_le
+    (hB : (A.coprod B).IsInvertible) (hB' : (A'.coprod B').IsInvertible)
+    (T : F →L[R] F') (hT : A.range.map T.toLinearMap ≤ A'.range) :
+    (A'.quotientRangeCoordinate B' ∘L T ∘L B) ∘L A.quotientRangeCoordinate B =
+      A'.quotientRangeCoordinate B' ∘L T := by
+  ext y
+  have hm := hT (Submodule.mem_map_of_mem
+    (sub_apply_quotientRangeCoordinate_mem_range hB y))
+  rw [← ker_quotientRangeCoordinate hB'] at hm
+  have hz : A'.quotientRangeCoordinate B' (T (y - B (A.quotientRangeCoordinate B y))) = 0 := hm
+  rw [map_sub, map_sub, sub_eq_zero] at hz
+  exact hz.symm
+
+omit [ContinuousAdd F] in
+/-- Complementary coordinate changes satisfy the cocycle law, including changes of
+ambient coordinates. Range containment suffices; the ambient maps need not be invertible. -/
+@[simp] theorem quotientRangeCoordinate_comp_cocycle
+    (hB' : (A'.coprod B').IsInvertible) (hB'' : (A''.coprod B'').IsInvertible)
+    (T : F →L[R] F') (U : F' →L[R] F'')
+    (hU : A'.range.map U.toLinearMap ≤ A''.range) :
+    (A''.quotientRangeCoordinate B'' ∘L U ∘L B') ∘L
+      (A'.quotientRangeCoordinate B' ∘L T ∘L B) =
+        A''.quotientRangeCoordinate B'' ∘L (U ∘L T) ∘L B := by
+  rw [← comp_assoc, quotientRangeCoordinate_comp_of_map_range_le hB' hB'' U hU]
+  simp only [comp_assoc]
+
+/-- An ambient equivalence carrying one tangent range onto another induces an invertible
+change between any valid complementary coordinates. -/
+theorem isInvertible_quotientRangeCoordinate_comp_of_map_range_eq
+    (hB : (A.coprod B).IsInvertible) (hB' : (A'.coprod B').IsInvertible)
+    (T : F ≃L[R] F') (hT : A.range.map T.toLinearMap = A'.range) :
+    (A'.quotientRangeCoordinate B' ∘L T.toContinuousLinearMap ∘L B).IsInvertible := by
+  have hT' : A'.range.map T.symm.toLinearMap = A.range :=
+    (Submodule.map_symm_eq_iff T.toLinearEquiv).mpr hT
+  refine .of_inverse
+    (g := A.quotientRangeCoordinate B ∘L T.symm.toContinuousLinearMap ∘L B') ?_ ?_
+  · rw [quotientRangeCoordinate_comp_cocycle hB hB' T.symm.toContinuousLinearMap
+      T.toContinuousLinearMap hT.le]
+    ext w
+    simp [quotientRangeCoordinate_apply_right hB']
+  · rw [quotientRangeCoordinate_comp_cocycle hB' hB T.toContinuousLinearMap
+      T.symm.toContinuousLinearMap hT'.le]
+    ext w
+    simp [quotientRangeCoordinate_apply_right hB]
+
+end CoordinateChange
 
 end ContinuousLinearMap
