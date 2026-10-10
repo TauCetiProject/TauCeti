@@ -120,23 +120,17 @@ def stabilizeInvComponentsEquiv (b : BraidGroup (n + 1)) :
 @[simp] theorem stabilizeComponentsEquiv_symm_mk_last (b : BraidGroup (n + 1)) :
     (stabilizeComponentsEquiv b).symm (Quotient.mk _ (Fin.last (n + 1))) =
       Quotient.mk _ (Fin.last n) := by
-  apply (stabilizeComponentsEquiv b).injective
-  rw [Equiv.apply_symm_apply, stabilizeComponentsEquiv_mk]
-  apply Quotient.sound
-  exact (SameCycle.symm ⟨1, by
-    simp only [zpow_one, map_mul, permHom_sigma_last, Equiv.Perm.mul_apply,
-      Equiv.swap_apply_left, permHom_strandIncl_last]⟩)
+  unfold stabilizeComponentsEquiv spliceComponentsEquiv
+  rw [Equiv.symm_trans_apply]
+  exact orbitQuotientEquivSplice_symm_mk_new _ _ _ _ _ _ _ _ _
 
 /-- Under negative stabilization the new strand joins the old last strand's component. -/
 @[simp] theorem stabilizeInvComponentsEquiv_symm_mk_last (b : BraidGroup (n + 1)) :
     (stabilizeInvComponentsEquiv b).symm (Quotient.mk _ (Fin.last (n + 1))) =
       Quotient.mk _ (Fin.last n) := by
-  apply (stabilizeInvComponentsEquiv b).injective
-  rw [Equiv.apply_symm_apply, stabilizeInvComponentsEquiv_mk]
-  apply Quotient.sound
-  exact (SameCycle.symm ⟨1, by
-    simp only [zpow_one, map_mul, map_inv, permHom_sigma_last, Equiv.swap_inv,
-      Equiv.Perm.mul_apply, Equiv.swap_apply_left, permHom_strandIncl_last]⟩)
+  unfold stabilizeInvComponentsEquiv spliceComponentsEquiv
+  rw [Equiv.symm_trans_apply]
+  exact orbitQuotientEquivSplice_symm_mk_new _ _ _ _ _ _ _ _ _
 
 end MarkovBraid
 
