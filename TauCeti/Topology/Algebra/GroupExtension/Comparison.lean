@@ -84,6 +84,7 @@ variable [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
 omit [IsTopologicalGroup M] [ContinuousSMul G M] in
 /-- The kernel restriction of a weak comparison carries the source extension class to the
 target extension class. -/
+@[simp]
 theorem contCohomologyClass_map_equivariantKernelMap :
     (X.map (X.equivariantKernelMap Y φ hright)
       (X.continuous_equivariantKernelMap Y φ hright)).contCohomologyClass =
@@ -112,9 +113,8 @@ theorem zmultiples_contCohomologyClass_eq_top_of_comparison
     obtain ⟨n, hn⟩ := AddSubgroup.mem_zmultiples_iff.mp (hy.ge (AddSubgroup.mem_top y))
     exact ⟨n • X.contCohomologyClass, by simpa [hc] using hn⟩
   have hbij := hsurj.bijective_of_nat_card_le hcard.le
-  apply (AddSubgroup.zmultiples X.contCohomologyClass).eq_top_of_le_card
-  rw [Nat.card_zmultiples, hcard, ← addOrderOf_eq_card_of_zmultiples_eq_top hy, ← hc]
-  exact (addOrderOf_injective c hbij.injective _).le
+  apply AddSubgroup.map_injective hbij.injective
+  rw [c.map_zmultiples, hc, hy, AddSubgroup.map_top_of_surjective _ hbij.surjective]
 
 /-- A weak comparison and a cohomologically bijective surjection on kernels give a continuous
 surjection of extensions after a prime-to-`p` power correction. The weak comparison need not

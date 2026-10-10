@@ -47,6 +47,7 @@ theorem kernelMap_unique (f : M →* N) (hinl : T.inl.comp f = φ.comp S.inl) :
 
 /-- Restriction to the kernels intertwines conjugation by corresponding elements of the total
 groups. -/
+@[simp]
 theorem kernelMap_conjAct (e : E) (m : M) :
     S.kernelMap T φ hright (S.conjAct e m) =
       T.conjAct (φ e) (S.kernelMap T φ hright m) := by
