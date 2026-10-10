@@ -14,8 +14,8 @@ Over a field, pulling back functionals that annihilate a subspace gives exactly 
 annihilator of its inverse image. This is the extension-of-functionals statement needed
 when a Hom cocycle space is computed using an embedding into an injective module.
 
-The proof uses Mathlib's `LinearMap.range_dualMap_eq_dualAnnihilator_ker`, applied to
-the composite with the quotient by the subspace.
+Equivalently, every functional on `V` vanishing on the inverse image of `S` is the
+pullback of a functional on the quotient `W ⧸ S`.
 -/
 
 public section
