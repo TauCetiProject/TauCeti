@@ -467,6 +467,7 @@ noncomputable def specDescendedHom :
       D.spec :=
   (Hom.spec D.toBaseChangeDescended).comp (specBaseChangeHom D.descended)
 
+@[simp]
 theorem specDescendedHom_hom :
     D.specDescendedHom.hom =
       (specBaseChangeHom D.descended).hom ≫ D.toBaseChangeDescended.spec.hom := by
