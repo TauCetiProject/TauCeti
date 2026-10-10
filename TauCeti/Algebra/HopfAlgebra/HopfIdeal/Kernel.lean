@@ -12,7 +12,7 @@ public import TauCeti.Algebra.HopfAlgebra.Basic
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Basic
 
 import Mathlib.RingTheory.Nilpotent.Defs
-import TauCeti.Algebra.Bialgebra.Hom
+import TauCeti.Algebra.Bialgebra.Hom.Basic
 import TauCeti.RingTheory.Flat.TensorProduct
 
 /-!
