@@ -9,14 +9,15 @@ public import Mathlib.CategoryTheory.Monoidal.Grp
 public import Mathlib.CategoryTheory.Monoidal.Mon
 
 /-!
-# Commutative monoid objects
+# Monoid objects
 
-This file provides general-purpose facts about commutative monoid objects.
+This file provides general-purpose facts about monoid objects and their commutativity.
 
 ## Main declarations
 
 * `TauCeti.isCommMonObj_of_grp_iso`: commutativity of a group object is preserved by isomorphism.
 * `TauCeti.isCommMonObj_of_mono`: a monoid subobject of a commutative monoid object is commutative.
+* `TauCeti.monObj_eq_of_mono`: a monomorphism admits at most one compatible monoid structure.
 -/
 
 public section
@@ -27,6 +28,16 @@ open scoped CategoryTheory.MonObj
 namespace TauCeti
 
 universe u v
+
+/-- A monomorphism into a monoid object admits at most one compatible monoid structure. -/
+theorem monObj_eq_of_mono
+    {C : Type u} [Category.{v} C] [MonoidalCategory C]
+    {H G : C} [MonObj G] (i : H ⟶ G) [Mono i] (a b : MonObj H)
+    (ha : @IsMonHom _ _ _ H G a inferInstance i)
+    (hb : @IsMonHom _ _ _ H G b inferInstance i) : a = b := by
+  apply MonObj.ext
+  apply (cancel_mono i).1
+  exact ha.mul_hom.trans hb.mul_hom.symm
 
 /-- Commutativity of a group object is preserved under isomorphism. -/
 theorem isCommMonObj_of_grp_iso

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Grp
+public import TauCeti.CategoryTheory.Monoidal.Mon
 
 /-!
 # Group structures on subobjects
@@ -78,9 +79,7 @@ theorem grpObj_eq_of_mono [MonObj G] (i : H ⟶ G) [Mono i] (a b : GrpObj H)
     (ha : @IsMonHom _ _ _ H G a.toMonObj inferInstance i)
     (hb : @IsMonHom _ _ _ H G b.toMonObj inferInstance i) : a = b := by
   apply GrpObj.ext
-  apply MonObj.ext
-  apply (cancel_mono i).1
-  exact ha.mul_hom.trans hb.mul_hom.symm
+  exact monObj_eq_of_mono i a.toMonObj b.toMonObj ha hb
 
 /-- The unit of the induced group object is the specified lift. -/
 @[simp]
