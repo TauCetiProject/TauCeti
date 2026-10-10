@@ -174,6 +174,15 @@ theorem Hom.linearHomPostcomp_apply (f : Hom R H N P) (q : M →ₗ[R] N) :
   rw [← Hom.coe_toLinearMap, Hom.linearHomPostcomp_toLinearMap]
   rfl
 
+/-- A surjective comodule morphism induces surjective postcomposition on linear Hom
+comodules from a finite projective source. No projectivity of the targets is required. -/
+theorem Hom.linearHomPostcomp_surjective (f : Hom R H N P)
+    (hf : Function.Surjective f) :
+    Function.Surjective (f.linearHomPostcomp (M := M)) := by
+  intro q
+  obtain ⟨g, hg⟩ := Module.projective_lifting_property f.toLinearMap q hf
+  exact ⟨g, (Hom.linearHomPostcomp_apply f g).trans hg⟩
+
 /-- Postcomposition by the identity is the identity on the linear Hom comodule. -/
 -- Keep this untagged, as for `Hom.tensorMap_id`: categorical simplification rewrites
 -- the inner `Hom.id` before this identity can apply.

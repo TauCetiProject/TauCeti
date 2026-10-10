@@ -46,15 +46,16 @@ attribute [local instance] Comodule.linearHom
 
 namespace Coalgebra
 
-variable {k : Type u} [Field k] {H : Type v} [CommRing H] [HopfAlgebra k H]
+variable {k : Type u} [Field k] {H : Type v} [CommSemiring H] [HopfAlgebra k H]
 
 /-- A commutative Hopf algebra is linearly reductive exactly when invariant vectors
 preserve surjections of finite-dimensional comodules. Testing carriers in the field's
 universe suffices, even when the Hopf algebra lies in a different universe. -/
-theorem isLinearlyReductive_iff_forall_fixedMap_surjective :
+theorem isLinearlyReductive_iff_forall_fixedMap_surjective_of_surjective :
     IsLinearlyReductive.{u, v, u} k H ↔
       ∀ (M N : FGComoduleCat.{u, v, u} k H) (f : M ⟶ N),
         Function.Surjective f.hom → Function.Surjective f.hom.fixedMap := by
+  let _ : AddCommGroup H := Module.addCommMonoidToAddCommGroup k
   constructor
   · intro h M N f hf
     exact f.hom.fixedMap_surjective_of_isLinearlyReductive h hf
@@ -67,10 +68,7 @@ theorem isLinearlyReductive_iff_forall_fixedMap_surjective :
     let Q := V ⧸ W.toSubmodule
     let q : Comodule.Hom k H V Q := W.mkQ
     let p := q.linearHomPostcomp (M := Q)
-    have hp : Function.Surjective p := by
-      intro f
-      obtain ⟨g, hg⟩ := (W.mkQ_surjective).surjective_linearMapComp_left (N := Q) f
-      exact ⟨g, (Comodule.Hom.linearHomPostcomp_apply q g).trans hg⟩
+    have hp : Function.Surjective p := q.linearHomPostcomp_surjective W.mkQ_surjective
     obtain ⟨s, hs⟩ := q.exists_rightInverse_of_linearHomPostcomp_fixedMap_surjective
       (h (FGComoduleCat.of (R := k) (C := H) (Q →ₗ[k] V))
         (FGComoduleCat.of (R := k) (C := H) (Q →ₗ[k] Q)) (FGComoduleCat.ofHom p) hp)
