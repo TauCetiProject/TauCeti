@@ -6,12 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.CharP.Two
+public import Mathlib.RingTheory.Coprime.Basic
 public import Mathlib.RingTheory.LocalRing.Basic
 import Mathlib.Data.Int.GCD
 import Mathlib.Data.Nat.Prime.Basic
 
 /-!
-# Local rings that are not commutative
+# Basic facts about local rings
 
 This file records basic facts about possibly noncommutative local rings. Their only idempotents
 are `0` and `1`; this fact applies to endomorphism rings in the Krull-Schmidt theorem. In
@@ -27,6 +28,8 @@ characteristic two the idempotent criterion identifies the zeros of the Artin–
   when `t = 0` or `t = 1`.
 * `TauCeti.IsLocalRing.isUnit_natCast_of_not_dvd`: if the prime `p` is not a unit, every natural
   number prime to `p` is a unit.
+* `IsCoprime.isUnit_or_isUnit`: of two coprime elements of a commutative local ring, one is a
+  unit.
 -/
 
 public section
@@ -86,3 +89,11 @@ theorem IsLocalRing.isUnit_natCast_of_not_dvd {R : Type*} [Ring R] [IsLocalRing 
   · exact absurd (((Nat.cast_commute p _).isUnit_mul_iff).mp h).1 hpR
 
 end TauCeti
+
+/-- Of two coprime elements of a commutative local ring, one is a unit: a relation
+`u * a + v * b = 1` makes one of the two summands a unit. -/
+theorem IsCoprime.isUnit_or_isUnit {R : Type*} [CommSemiring R] [IsLocalRing R] {a b : R}
+    (h : IsCoprime a b) : IsUnit a ∨ IsUnit b := by
+  obtain ⟨u, v, huv⟩ := h
+  exact (IsLocalRing.isUnit_or_isUnit_of_add_one huv).imp isUnit_of_mul_isUnit_right
+    isUnit_of_mul_isUnit_right
