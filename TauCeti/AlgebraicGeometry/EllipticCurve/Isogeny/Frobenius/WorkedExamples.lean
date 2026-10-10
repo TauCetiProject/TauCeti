@@ -182,10 +182,7 @@ noncomputable abbrev gaussianIntCMActionCurveX3AddX : CMAction GaussianInt curve
   curveX3AddX.toAffine.gaussianIntCMAction rfl 2 (by decide)
 
 /-- **The Frobenius endomorphism of `y² = x³ + x` over `𝔽₅` is `1 + 2i`**, for the Gaussian
-integer `i` acting by `(x, y) ↦ (-x, 2y)`. Both `1 + 2i` and `1 - 2i` are roots of
-`X² - a_5 X + 5 = X² - 2X + 5`, and `π₅` commutes with `i`, so the domain of endomorphisms forces
-`π₅ = 1 ± 2i`. The sign is read off the invariant differential `ω`: Frobenius kills `ω`, while
-`1 - 2i` pulls it back to `(1 - 2 · 2) ω = 2ω`. -/
+integer `i` acting by `(x, y) ↦ (-x, 2y)`. -/
 theorem ofIsogeny_frobeniusIsogeny_curveX3AddX :
     Hom.ofIsogeny (frobeniusIsogeny curveX3AddX.toAffine) =
       gaussianIntCMActionCurveX3AddX ⟨1, 2⟩ := by
@@ -204,11 +201,12 @@ theorem ofIsogeny_frobeniusIsogeny_curveX3AddX :
     rw [Hom.mul_def, Hom.mul_def]
     exact Hom.frobenius_comp j
   have h₁ : ι ⟨1, 2⟩ = 1 + 2 * j := by
-    rw [show (⟨1, 2⟩ : GaussianInt) = 1 + 2 * Zsqrtd.sqrtd by ext <;> simp]
-    rw [map_add, map_mul, map_one, map_ofNat]
+    have hz : (⟨1, 2⟩ : GaussianInt) = 1 + 2 * Zsqrtd.sqrtd := by ext <;> simp
+    rw [hz, map_add, map_mul, map_one, map_ofNat]
   have h₂ : ι ⟨1, -2⟩ = 1 - 2 * j := by
-    rw [show (⟨1, -2⟩ : GaussianInt) = 1 - 2 * Zsqrtd.sqrtd by ext <;> simp]
-    rw [map_sub, map_mul, map_one, map_ofNat]
+    have hz : (⟨1, -2⟩ : GaussianInt) = 1 - 2 * Zsqrtd.sqrtd := by ext <;> simp
+    rw [hz, map_sub, map_mul, map_one, map_ofNat]
+  -- `π₅` is a root of `X² - a_5 X + 5 = X² - 2X + 5` and commutes with `i`, so
   -- `(π - (1 + 2i)) (π - (1 - 2i)) = (π² - 2π + 5) + 2(πi - iπ) - 4(i² + 1) = 0`
   have hroots : (π - ι ⟨1, 2⟩) * (π - ι ⟨1, -2⟩) = 0 := by
     have : (π - (1 + 2 * j)) * (π - (1 - 2 * j)) =
@@ -216,8 +214,9 @@ theorem ofIsogeny_frobeniusIsogeny_curveX3AddX :
     rw [h₁, h₂, this, hπ, hπj, hj, sub_self, mul_zero, add_zero]
     abel_nf
     norm_num
+  -- the endomorphism ring is a domain, so `π₅ = 1 ± 2i`; the sign is read off the invariant
+  -- differential `ω`: `π` kills `ω`, while `1 - 2i` pulls `ω` back to `(1 - 2 · 2) ω = 2ω ≠ 0`
   refine sub_eq_zero.1 ((mul_eq_zero.1 hroots).resolve_right fun h ↦ ?_)
-  -- `π` kills `ω`, while `1 - 2i` pulls `ω` back to `2ω ≠ 0`
   have hω := congrArg
     (fun f : Hom curveX3AddX.toAffine curveX3AddX.toAffine ↦
       f.pullbackDifferential (Affine.invariantDifferential curveX3AddX.toAffine))

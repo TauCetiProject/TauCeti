@@ -321,13 +321,17 @@ theorem pullbackDifferential_gaussianIntCMAction_invariantDifferential (ha₆ : 
     (hi : i ^ 2 = -1) (z : GaussianInt) :
     (W.gaussianIntCMAction ha₆ i hi z).pullbackDifferential (Affine.invariantDifferential W) =
       ((z.re : K) + z.im * i) • Affine.invariantDifferential W := by
-  -- `a + bi` acts as `a • id + b • i`, and the pullback of `ω` is additive in the morphism
-  rw [gaussianIntCMAction, TauCeti.CMAction.coe_mk, gaussianIntHom_apply, ← zsmul_one z.re,
-    ← zsmul_eq_mul, Hom.one_def, Hom.pullbackDifferential_add_invariantDifferential,
+  -- `a + bi` acts as `a • id + b • i`
+  have hz : W.gaussianIntCMAction ha₆ i hi z =
+      z.re • Hom.id W + z.im • W.sqrtNegOneHom ha₆ hi := by
+    rw [gaussianIntCMAction, TauCeti.CMAction.coe_mk, gaussianIntHom_apply, ← Hom.one_def,
+      zsmul_eq_mul, zsmul_eq_mul, mul_one]
+  -- the pullback of `ω` is additive and `ℤ`-linear in the morphism
+  rw [hz, Hom.pullbackDifferential_add_invariantDifferential,
     Hom.pullbackDifferential_zsmul_id_invariantDifferential,
     Hom.pullbackDifferential_zsmul_invariantDifferential,
-    pullbackDifferential_sqrtNegOneHom_invariantDifferential, add_smul, mul_smul,
-    Int.cast_smul_eq_zsmul, Int.cast_smul_eq_zsmul]
+    pullbackDifferential_sqrtNegOneHom_invariantDifferential]
+  simp [add_smul, mul_smul, Int.cast_smul_eq_zsmul]
 
 /-- **The curve `y² = x³ + a₄x` has geometric complex multiplication**, over every field `K`
 (Silverman III.10.1): the action of the Gaussian integers is defined over a separable closure of

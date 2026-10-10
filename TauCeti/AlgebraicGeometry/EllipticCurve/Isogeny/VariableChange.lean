@@ -239,11 +239,16 @@ theorem pullbackDifferential_variableChangeIsogeny_invariantDifferential (h : C 
       ← Units.val_mul]
     congr 1
     group
-  rw [invariantDifferential_def, invariantDifferential_def, pullbackDifferential_smul,
-    pullbackDifferential_D, map_inv₀, hd, hx, map_add, Derivation.leibniz,
-    Derivation.map_algebraMap, Derivation.map_algebraMap, smul_zero, add_zero, add_zero,
-    ← algebraMap_smul W₁.FunctionField (C.u : F), smul_smul, smul_smul, mul_inv, mul_right_comm,
-    ← map_inv₀, ← map_mul, hu]
+  -- `dx` pulls back to `u⁻² dx`
+  have hdx : (variableChangeIsogeny C rfl).pullbackDifferential
+      (KaehlerDifferential.D F _ (genericX (C • W₁))) =
+        algebraMap F W₁.FunctionField (↑C.u⁻¹ ^ 2) • KaehlerDifferential.D F _ (genericX W₁) := by
+    simp only [pullbackDifferential_D, hx, map_add, Derivation.leibniz, Derivation.map_algebraMap,
+      smul_zero, add_zero]
+  rw [invariantDifferential_def, invariantDifferential_def, pullbackDifferential_smul, hdx,
+    map_inv₀, hd, smul_smul, ← algebraMap_smul W₁.FunctionField (C.u : F), smul_smul]
+  congr 1
+  rw [mul_inv, mul_right_comm, ← map_inv₀, ← map_mul, hu]
 
 /-! ### Every isomorphism is a change of variables -/
 
