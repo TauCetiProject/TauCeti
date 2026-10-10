@@ -100,8 +100,9 @@ theorem schwarzChristoffelSphereExtension_coe_of_exponent_sum_eq_neg_one
     rw [Metric.cobounded_eq_cocompact, ← coclosedCompact_eq_cocompact] at h
     exact OnePoint.tendsto_coe_infty.comp h
 
--- This limit assembles both growth regimes at parameter infinity for the same extension.
-private theorem tendsto_onePoint_map_schwarzChristoffelPrimitive_infty
+/-- At parameter infinity, the sphere-valued primitive approaches the finite vertex in the
+decaying range and infinity otherwise. This needs no assumptions on finite prevertices. -/
+theorem tendsto_onePoint_map_schwarzChristoffelPrimitive_infty
     (a e : ι → ℝ) (z₀ : UpperHalfPlane) :
     Tendsto (OnePoint.map (schwarzChristoffelPrimitive a e z₀))
       (𝓝[((↑) : ℂ → OnePoint ℂ) '' upperHalfPlaneSet] (∞ : OnePoint ℂ))
