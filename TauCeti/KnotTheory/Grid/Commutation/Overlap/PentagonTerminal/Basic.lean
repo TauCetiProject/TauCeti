@@ -45,18 +45,6 @@ theorem hasOneCommonSide_of_terminal_overlap (D : GridPentagonRectangleDecomposi
     have hne := Grid.ne_left_of_mem_cIoo hcol
     grind
 
-/-- An empty pentagon is an empty first rectangle of the underlying two-step domain. -/
-theorem underlying_first_isEmpty (D : GridPentagonRectangleDecomposition a s x z)
-    (hp : D.pentagon.IsEmpty) : D.toRectangleDecomposition.first.IsEmpty := by
-  simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-    toRectangleDecomposition_first_toGridRectangle] using hp
-
-/-- An empty rectangle is an empty second rectangle of the underlying two-step domain. -/
-theorem underlying_second_isEmpty (D : GridPentagonRectangleDecomposition a s x z)
-    (hr : D.rectangle.IsEmpty) : D.toRectangleDecomposition.second.IsEmpty := by
-  simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-    toRectangleDecomposition_middle, toRectangleDecomposition_second_toGridRectangle] using hr
-
 private noncomputable def terminalRecut (D : GridPentagonRectangleDecomposition a s x z)
     (hcommon : D.rectangle.right = D.pentagon.right)
     (hcol : D.rectangle.left ∈ Grid.cIoo D.pentagon.left D.pentagon.right)

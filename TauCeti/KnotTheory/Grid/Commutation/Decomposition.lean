@@ -317,6 +317,18 @@ theorem toRectangleDecomposition_injective :
       (congrArg (fun y => GridPentagonBetween a s x y) hmiddle) D.pentagon E.pentagon
   exact GridPentagonRectangleDecomposition.ext hmiddle hpentagon hrectangle
 
+/-- An empty pentagon is an empty first rectangle of the underlying two-step domain. -/
+theorem underlying_first_isEmpty (D : GridPentagonRectangleDecomposition a s x z)
+    (hp : D.pentagon.IsEmpty) : D.toRectangleDecomposition.first.IsEmpty := by
+  simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+    toRectangleDecomposition_first_toGridRectangle] using hp
+
+/-- An empty rectangle is an empty second rectangle of the underlying two-step domain. -/
+theorem underlying_second_isEmpty (D : GridPentagonRectangleDecomposition a s x z)
+    (hr : D.rectangle.IsEmpty) : D.toRectangleDecomposition.second.IsEmpty := by
+  simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+    toRectangleDecomposition_middle, toRectangleDecomposition_second_toGridRectangle] using hr
+
 end GridPentagonRectangleDecomposition
 
 namespace GridRectanglePentagonDecomposition
