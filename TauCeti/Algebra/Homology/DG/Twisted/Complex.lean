@@ -108,6 +108,7 @@ private theorem koszulTwist_one_apply {q : ℤ} {α : M} (hα : α ∈ ℳ q) :
     (by rwa [InternalGrading.ofDecomposition_piece])
 
 omit [Algebra R A] [IsScalarTower R Aᵐᵒᵖ M] in
+@[simp]
 theorem twistedDifferential_apply (f : P → M) (y : P) :
     twistedDifferential m ℳ dM f y =
       dM (f y) + ∑ x, op (m x y) • (InternalGrading.ofDecomposition ℳ).koszulTwist 1 (f x) := by
