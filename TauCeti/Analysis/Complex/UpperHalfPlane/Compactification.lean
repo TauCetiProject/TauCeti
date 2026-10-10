@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
-public import TauCeti.Topology.Compactification.OnePoint
+public import TauCeti.Topology.Compactification.OnePoint.Nhds
 
 /-!
 # The closed upper half-plane in the Riemann sphere
@@ -52,5 +52,12 @@ theorem closure_coe_image_upperHalfPlaneSet :
       rfl
     rw [← hcl, Complex.closure_setOfPred_lt_im]
     simp
+
+/-- Every real point lies in the closure of the upper half-plane in the sphere. -/
+theorem ofReal_mem_closure_coe_image_upperHalfPlaneSet (p : ℝ) :
+    ((p : ℂ) : OnePoint ℂ) ∈
+      closure (((↑) : ℂ → OnePoint ℂ) '' upperHalfPlaneSet) := by
+  rw [closure_coe_image_upperHalfPlaneSet]
+  exact mem_insert_of_mem _ ⟨(p : ℂ), by simp, rfl⟩
 
 end TauCeti

@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Pow
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Compactification
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Compactification
 import TauCeti.Algebra.BigOperators.Finset.Fiber
+import TauCeti.Topology.Compactification.OnePoint.Map
 
 /-!
 # Sphere-valued Schwarz--Christoffel boundary extension
@@ -108,8 +109,7 @@ theorem schwarzChristoffelSphereExtension_coe_of_exponent_sum_gt_neg_one
     schwarzChristoffelSphereExtension a e z₀ ((p : ℂ) : OnePoint ℂ) =
       (schwarzChristoffelBoundary a e z₀ p : OnePoint ℂ) := by
   apply extendFrom_eq
-  · exact image_closure_subset_closure_image OnePoint.continuous_coe
-      ⟨(p : ℂ), by rw [Complex.closure_setOfPred_lt_im]; simp, rfl⟩
+  · exact ofReal_mem_closure_coe_image_upperHalfPlaneSet p
   · rw [OnePoint.nhdsWithin_coe_image, tendsto_map'_iff]
     simpa only [Function.comp_def, OnePoint.map_some, ite_eq_right (ne_of_gt he)] using
       tendsto_schwarzChristoffelPrimitive_sphere_boundary_value a e z₀ p he.le
@@ -121,8 +121,7 @@ theorem schwarzChristoffelSphereExtension_coe_of_exponent_sum_eq_neg_one
     (he : ∑ i with a i = p, e i = -1) :
     schwarzChristoffelSphereExtension a e z₀ ((p : ℂ) : OnePoint ℂ) = ∞ := by
   apply extendFrom_eq
-  · exact image_closure_subset_closure_image OnePoint.continuous_coe
-      ⟨(p : ℂ), by rw [Complex.closure_setOfPred_lt_im]; simp, rfl⟩
+  · exact ofReal_mem_closure_coe_image_upperHalfPlaneSet p
   · rw [OnePoint.nhdsWithin_coe_image, tendsto_map'_iff]
     simpa only [Function.comp_def, OnePoint.map_some, ite_eq_left he] using
       tendsto_schwarzChristoffelPrimitive_sphere_boundary_value a e z₀ p he.symm.le
@@ -225,11 +224,8 @@ theorem continuousOn_schwarzChristoffelSphereExtension (a e : ι → ℝ)
   | infty => exact ⟨_, tendsto_onePoint_map_schwarzChristoffelPrimitive_infty a e z₀⟩
   | coe z =>
     simp only [OnePoint.nhdsWithin_coe_image, tendsto_map'_iff]
-    have hzcl : z ∈ closure upperHalfPlaneSet := by
-      rw [OnePoint.isOpenEmbedding_coe.isEmbedding.closure_eq_preimage_closure_image]
-      exact hx
-    rw [Complex.closure_setOfPred_lt_im] at hzcl
-    simp only [mem_ofPred_eq] at hzcl
+    rw [closure_coe_image_upperHalfPlaneSet] at hx
+    have hzcl : 0 ≤ z.im := by simpa using hx
     rcases lt_or_eq_of_le hzcl with hz | hz
     · exact ⟨_, tendsto_schwarzChristoffelPrimitive_sphere_of_im_pos a e z₀ hz⟩
     · have hzreal : (z.re : ℂ) = z := by
@@ -246,17 +242,14 @@ infinite image. -/
 theorem continuous_schwarzChristoffelSphereBoundary (a e : ι → ℝ)
     (z₀ : UpperHalfPlane) (hfinite : ∀ j, -1 ≤ ∑ i with a i = a j, e i) :
     Continuous (schwarzChristoffelSphereBoundary a e z₀) := by
-  have hproper : Tendsto Complex.ofReal (coclosedCompact ℝ) (coclosedCompact ℂ) := by
-    simpa only [coclosedCompact_eq_cocompact] using
-      Complex.isUniformEmbedding_ofReal.isClosedEmbedding.tendsto_cocompact
-  have hcont := OnePoint.continuous_map Complex.continuous_ofReal hproper
+  have hcont := continuous_onePointMap_of_isProperMap
+    Complex.isUniformEmbedding_ofReal.isClosedEmbedding.isProperMap
   rw [schwarzChristoffelSphereBoundary, ← continuousOn_univ]
   apply (continuousOn_schwarzChristoffelSphereExtension a e z₀ hfinite).comp
     hcont.continuousOn
   intro x _
-  rw [closure_coe_image_upperHalfPlaneSet]
   induction x using OnePoint.rec with
-  | infty => simp
-  | coe p => exact mem_insert_of_mem _ ⟨(p : ℂ), by simp, by simp⟩
+  | infty => simp [closure_coe_image_upperHalfPlaneSet]
+  | coe p => exact ofReal_mem_closure_coe_image_upperHalfPlaneSet p
 
 end TauCeti

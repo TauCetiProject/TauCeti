@@ -24,7 +24,7 @@ Regrouping along the coordinate projections of a finite dependent product turns 
 summand is weighted by a sum of coordinate functions into a sum of one-coordinate sums against
 the fibrewise masses; this is the algebraic core of multi-marginal linear programming.
 
-Fibres over values the map does not take are empty, so a bound below `0` that holds for the
+Fibres over values the map does not take are empty, so a property holding at `0` and for the
 fibre sums over the range holds for the fibre sum over every value of the codomain.
 
 ## Main results
@@ -33,6 +33,8 @@ fibre sums over the range holds for the fibre sum over every value of the codoma
   of `F` over the fibres of `g`.
 * `TauCeti.sum_sum_eval_mul`: summing `(∑ i, φ i (z i)) * f z` over a finite dependent product
   regroups, coordinate by coordinate, into `∑ i, ∑ a, φ i a * ∑ z with z i = a, f z`.
+* `TauCeti.forall_sum_filter_eq_of_forall_apply`: a property holding at zero and at fibre
+  sums over the range holds at every fibre sum.
 * `TauCeti.lt_sum_filter_eq_of_forall_apply`: a negative lower bound for the fibre sums of `g`
   over its range is a lower bound for the fibre sum over every value.
 * `TauCeti.le_sum_filter_eq_of_forall_apply`: a nonpositive lower bound over the range bounds
@@ -76,17 +78,25 @@ theorem sum_sum_eval_mul {ι : Type*} {X : ι → Type*} {R : Type*} [Fintype ι
   have hz' : z i = a := (mem_filter.1 hz).2
   rw [hz']
 
+/-- A property holding at zero and at every fibre sum over the range holds at every
+fibre sum, since fibres outside the range are empty. -/
+theorem forall_sum_filter_eq_of_forall_apply {ι κ M : Type*} [Fintype ι] [DecidableEq κ]
+    [AddCommMonoid M] {g : ι → κ} {F : ι → M} {p : M → Prop} (h0 : p 0)
+    (h : ∀ j, p (∑ i with g i = g j, F i)) (k : κ) :
+    p (∑ i with g i = k, F i) := by
+  by_cases hk : k ∈ Set.range g
+  · obtain ⟨j, rfl⟩ := hk
+    exact h j
+  · rwa [sum_eq_zero fun i hi => (hk ⟨i, (mem_filter.mp hi).2⟩).elim]
+
 /-- **A negative lower bound on the fibre sums over the range bounds every fibre sum.** If
 `c < 0` bounds from below the sum of `F` over each fibre of `g` above a value of `g`, then it
 bounds the sum of `F` over the fibre above any `k`. -/
 theorem lt_sum_filter_eq_of_forall_apply {ι κ M : Type*} [Fintype ι] [DecidableEq κ]
     [AddCommMonoid M] [LT M] {g : ι → κ} {F : ι → M} {c : M} (hc : c < 0)
     (h : ∀ j, c < ∑ i with g i = g j, F i) (k : κ) :
-    c < ∑ i with g i = k, F i := by
-  by_cases hk : k ∈ Set.range g
-  · obtain ⟨j, rfl⟩ := hk
-    exact h j
-  · rwa [sum_eq_zero fun i hi => (hk ⟨i, (mem_filter.mp hi).2⟩).elim]
+    c < ∑ i with g i = k, F i :=
+  forall_sum_filter_eq_of_forall_apply hc h k
 
 /-- **A nonpositive lower bound on the fibre sums over the range bounds every fibre sum.** If
 `c ≤ 0` bounds from below the sum of `F` over each fibre of `g` above a value of `g`, then it
@@ -94,10 +104,7 @@ bounds the sum of `F` over the fibre above any `k`. -/
 theorem le_sum_filter_eq_of_forall_apply {ι κ M : Type*} [Fintype ι] [DecidableEq κ]
     [AddCommMonoid M] [LE M] {g : ι → κ} {F : ι → M} {c : M} (hc : c ≤ 0)
     (h : ∀ j, c ≤ ∑ i with g i = g j, F i) (k : κ) :
-    c ≤ ∑ i with g i = k, F i := by
-  by_cases hk : k ∈ Set.range g
-  · obtain ⟨j, rfl⟩ := hk
-    exact h j
-  · rwa [sum_eq_zero fun i hi => (hk ⟨i, (mem_filter.mp hi).2⟩).elim]
+    c ≤ ∑ i with g i = k, F i :=
+  forall_sum_filter_eq_of_forall_apply hc h k
 
 end TauCeti
