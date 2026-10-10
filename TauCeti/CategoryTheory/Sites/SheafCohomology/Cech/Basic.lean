@@ -204,7 +204,7 @@ private def unopAlternatingFaceMapComplexIso :
 /-- A morphism of presheaves `α : P ⟶ Q` acts on the Čech complexes factorwise: the factor of
 `((cechComplexFunctor U).map α).f n` indexed by `a` is the component of `α` at
 `U (a 0) × ⋯ × U (a n)`. -/
-@[reassoc (attr := simp)]
+@[reassoc]
 theorem cechComplexFunctor_map_f_π {Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q) (n : ℕ) (a : Fin (n + 1) → ι) :
     ((cechComplexFunctor U).map α).f n ≫ Pi.π _ a =
       Pi.π _ a ≫ α.app (op (∏ᶜ fun j ↦ U (a j))) :=
