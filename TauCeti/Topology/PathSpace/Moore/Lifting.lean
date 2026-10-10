@@ -202,14 +202,7 @@ private def toI (t : ℝ≥0) : I :=
 private theorem continuous_toI : Continuous toI :=
   continuous_projIcc.comp NNReal.continuous_coe
 
-/-- A time of the unit interval, as a nonnegative real. -/
-private def ofI (s : I) : ℝ≥0 :=
-  ⟨s, s.2.1⟩
-
-private theorem continuous_ofI : Continuous ofI :=
-  continuous_subtype_val.subtype_mk _
-
-private theorem toI_ofI (s : I) : toI (ofI s) = s :=
+private theorem toI_toNNReal (s : I) : toI (toNNReal s) = s :=
   Set.projIcc_val zero_le_one s
 
 /-- The Moore path of length one `t ↦ H (min t 1, a)` traced by a homotopy at the point `a`. -/
@@ -237,14 +230,14 @@ theorem isHurewiczFibration (Φ : MooreLiftingFunction p) : IsHurewiczFibration.
   have h₀ : ∀ a, (unitPath H a).source = p (f a) := fun a ↦ by
     rw [MoorePath.source_def, unitPath_apply, show toI 0 = 0 from
       Set.projIcc_left zero_le_one, hH a]
-  refine ⟨⟨fun x ↦ Φ.lift (f x.2) (unitPath H x.2) (h₀ x.2) (ofI x.1), ?_⟩, funext fun x ↦ ?_,
+  refine ⟨⟨fun x ↦ Φ.lift (f x.2) (unitPath H x.2) (h₀ x.2) (toNNReal x.1), ?_⟩, funext fun x ↦ ?_,
     fun a ↦ ?_⟩
   · exact (Φ.continuous_lift (f.continuous.comp continuous_snd)
       ((continuous_unitPath H).comp continuous_snd) fun x ↦ h₀ x.2).moorePath_eval
-      (continuous_ofI.comp continuous_fst)
-  · simp only [Function.comp_apply, ContinuousMap.coe_mk, apply_lift, unitPath_apply, toI_ofI]
+      (toNNReal_continuous.comp continuous_fst)
+  · simp only [Function.comp_apply, ContinuousMap.coe_mk, apply_lift, unitPath_apply, toI_toNNReal]
   · simp only [ContinuousMap.coe_mk]
-    rw [show ofI 0 = 0 from rfl, ← MoorePath.source_def, source_lift]
+    rw [toNNReal_zero, ← MoorePath.source_def, source_lift]
 
 end MooreLiftingFunction
 
