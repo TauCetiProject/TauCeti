@@ -7,9 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.DiagonalTorus.ClosedImmersion
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.KernelPoints
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Separation
-public import TauCeti.Algebra.AlgebraicGroup.Torus.Maximal
-import TauCeti.Algebra.AlgebraicGroup.Torus.SmoothConnected
+public import TauCeti.Algebra.AlgebraicGroup.Torus.Maximal.Points
 
 /-!
 # Maximality of the diagonal torus in the general linear group
@@ -38,6 +36,8 @@ whereas the competing subgroup below need not itself be a torus or connected.
   its quotient coordinate Hopf algebra is a split torus.
 * `TauCeti.GeneralLinear.quotientPointsSubgroup_diagonalTorusDefiningIdeal`: its points are the
   range of the diagonal-torus point morphism.
+* `TauCeti.GeneralLinear.centralizer_quotientPointsSubgroup_diagonalTorusDefiningIdeal`:
+  its geometric points are self-centralizing in the ambient point group.
 * `TauCeti.GeneralLinear.eq_diagonalTorusDefiningIdeal_of_le_of_isCocomm`: no larger reduced
   commutative closed subgroup contains the diagonal torus.
 * `TauCeti.GeneralLinear.isMaximalTorus_diagonalTorusDefiningIdeal`: the diagonal torus is a
@@ -184,6 +184,56 @@ private theorem pointsMulEquiv_diagonalTorusPoints_symm (t : Fin n → kˣ) :
     ((SplitTorus.pointsMulEquiv (R := k) (A := k)).apply_symm_apply
       (fun j : ULift.{u} (Fin n) ↦ t j.down)) (ULift.up i)
 
+omit [IsAlgClosed k] in
+/-- The canonical point equivalence identifies the diagonal closed subgroup with the subgroup
+of invertible diagonal matrices. -/
+theorem pointsMulEquiv_mem_diagonalTorus_iff
+    (g : HopfAlgebra.points (R := k) (H := coordinateHopfAlgebra k n) (CommAlgCat.of k k)) :
+    pointsMulEquiv (R := k) (A := k) n g ∈ TauCeti.diagonalTorus k n ↔
+      g ∈ CommHopfAlgCat.quotientPointsSubgroup (coordinateHopfAlgebra k n)
+        (diagonalTorusDefiningIdeal k n) (CommAlgCat.of k k) := by
+  rw [quotientPointsSubgroup_diagonalTorusDefiningIdeal]
+  constructor
+  · intro hg
+    obtain ⟨t, ht⟩ := mem_diagonalTorus_iff_exists_diagGL.mp hg
+    refine ⟨(SplitTorus.pointsMulEquiv (R := k) (A := k)).symm
+      (fun i : ULift.{u} (Fin n) ↦ t i.down), ?_⟩
+    apply (pointsMulEquiv (R := k) (A := k) n).injective
+    rw [mapPointsFunctor_diagonalTorusCoordinateMap_app,
+      pointsMulEquiv_diagonalTorusPoints_symm]
+    exact ht
+  · rintro ⟨q, hq⟩
+    have hq' : diagonalTorusPoints (A := k) q = g :=
+      (mapPointsFunctor_diagonalTorusCoordinateMap_app (CommAlgCat.of k k) q).symm.trans hq
+    refine mem_diagonalTorus_iff_exists_diagGL.mpr
+      ⟨diagonalTorusCoordinates (SplitTorus.pointsMulEquiv (R := k) (A := k) q), ?_⟩
+    exact (pointsMulEquiv_diagonalTorusPoints (R := k) (A := k) (N := n) q).symm.trans
+      (congrArg (pointsMulEquiv (R := k) (A := k) n) hq')
+
+/-- The geometric points of the diagonal closed subgroup are self-centralizing in the ambient
+point group of `GL_n`. -/
+theorem centralizer_quotientPointsSubgroup_diagonalTorusDefiningIdeal :
+    Subgroup.centralizer
+        (CommHopfAlgCat.quotientPointsSubgroup (coordinateHopfAlgebra k n)
+          (diagonalTorusDefiningIdeal k n) (CommAlgCat.of k k) : Set _) =
+      CommHopfAlgCat.quotientPointsSubgroup (coordinateHopfAlgebra k n)
+        (diagonalTorusDefiningIdeal k n) (CommAlgCat.of k k) := by
+  let e := pointsMulEquiv (R := k) (A := k) n
+  ext g
+  rw [← pointsMulEquiv_mem_diagonalTorus_iff, ← TauCeti.centralizer_diagonalTorus]
+  constructor
+  · intro hg m hm
+    change m ∈ TauCeti.diagonalTorus k n at hm
+    have hd := (pointsMulEquiv_mem_diagonalTorus_iff k n (e.symm m)).mp (by
+      simpa only [e, MulEquiv.apply_symm_apply] using hm)
+    have h := congrArg e (hg (e.symm m) hd)
+    simpa only [map_mul, MulEquiv.apply_symm_apply] using h
+  · intro hg d hd
+    apply e.injective
+    exact (map_mul e d g).trans <|
+      (hg (e d) ((pointsMulEquiv_mem_diagonalTorus_iff k n d).mpr hd)).trans
+        (map_mul e g d).symm
+
 /-- **The diagonal torus of `GL_n` is maximal among reduced commutative closed subgroup
 schemes over an algebraically closed field.**
 
@@ -196,80 +246,19 @@ theorem eq_diagonalTorusDefiningIdeal_of_le_of_isCocomm
     [IsReduced (CommHopfAlgCat.quotient (coordinateHopfAlgebra k n) I)]
     [Coalgebra.IsCocomm k (CommHopfAlgCat.quotient (coordinateHopfAlgebra k n) I)]
     (hI : I ≤ diagonalTorusDefiningIdeal k n) :
-    I = diagonalTorusDefiningIdeal k n := by
-  let H := coordinateHopfAlgebra k n
-  let D := diagonalTorusDefiningIdeal k n
-  let A := CommAlgCat.of k k
-  let GI := CommHopfAlgCat.quotientPointsSubgroup H I A
-  let GD := CommHopfAlgCat.quotientPointsSubgroup H D A
-  let e := pointsMulEquiv (R := k) (A := k) n
-  let P : Subgroup (GL (Fin n) k) := GI.map e.toMonoidHom
-  let _ : IsMulCommutative GI :=
-    CommHopfAlgCat.instIsMulCommutativeQuotientPointsSubgroup
-      (coordinateHopfAlgebra k n) I (CommAlgCat.of k k)
-  let _ : IsMulCommutative P := Subgroup.map_isMulCommutative GI e.toMonoidHom
-  have hDG : GD ≤ GI :=
-    CommHopfAlgCat.quotientPointsSubgroup_le_of_le H hI A
-  have hdiagonalP : TauCeti.diagonalTorus k n ≤ P := by
-    intro m hm
-    obtain ⟨t, rfl⟩ := mem_diagonalTorus_iff_exists_diagGL.mp hm
-    let s : ULift.{u} (Fin n) → kˣ := fun i ↦ t i.down
-    let q : WithConv
-        (MonoidAlgebra k (Multiplicative (ULift.{u} (Fin n) →₀ ℤ)) →ₐ[k] k) :=
-      (SplitTorus.pointsMulEquiv (R := k) (A := k)).symm s
-    let d := diagonalTorusPoints (R := k) (N := n) (A := k) q
-    have hdD : d ∈ GD := by
-      dsimp only [GD, D]
-      rw [quotientPointsSubgroup_diagonalTorusDefiningIdeal]
-      refine ⟨q, ?_⟩
-      exact mapPointsFunctor_diagonalTorusCoordinateMap_app A q
-    refine ⟨d, hDG hdD, ?_⟩
-    -- Unfold the `e.toMonoidHom` coercion introduced by `Subgroup.map` to the coercion of `e`.
-    change e d = diagGL t
-    simpa only [e, d, q, s] using pointsMulEquiv_diagonalTorusPoints_symm k n t
-  have hP : P = TauCeti.diagonalTorus k n :=
-    eq_diagonalTorus_of_le_of_isMulCommutative P hdiagonalP
-  have hpoints : GI = GD := by
-    apply le_antisymm
-    · intro g hg
-      have hegP : e g ∈ P := ⟨g, hg, rfl⟩
-      have hegD : e g ∈ TauCeti.diagonalTorus k n := hP ▸ hegP
-      obtain ⟨t, ht⟩ := mem_diagonalTorus_iff_exists_diagGL.mp hegD
-      let s : ULift.{u} (Fin n) → kˣ := fun i ↦ t i.down
-      let q : WithConv
-          (MonoidAlgebra k (Multiplicative (ULift.{u} (Fin n) →₀ ℤ)) →ₐ[k] k) :=
-        (SplitTorus.pointsMulEquiv (R := k) (A := k)).symm s
-      have hdiag : e (diagonalTorusPoints (R := k) (N := n) (A := k) q) = diagGL t := by
-        simpa only [e, q, s] using pointsMulEquiv_diagonalTorusPoints_symm k n t
-      dsimp only [GD, D]
-      rw [quotientPointsSubgroup_diagonalTorusDefiningIdeal]
-      refine ⟨q, ?_⟩
-      apply e.injective
-      rw [mapPointsFunctor_diagonalTorusCoordinateMap_app]
-      exact hdiag.trans ht
-    · exact hDG
-  let _ : IsReduced (CommHopfAlgCat.quotient H D) :=
-    HopfIdeal.isReduced_quotient_kerOfSurjective _ (diagonalTorusCoordinateMap_surjective k n)
-  exact HopfIdeal.eq_of_quotientPointsSubgroup_eq hpoints
+    I = diagonalTorusDefiningIdeal k n :=
+  HopfIdeal.eq_of_le_of_centralizer_quotientPointsSubgroup hI
+    (centralizer_quotientPointsSubgroup_diagonalTorusDefiningIdeal k n)
 
 /-- **The diagonal torus of `GL_n` is a maximal torus.** This packages the stronger result that
 no reduced commutative closed subgroup properly containing it exists into the general
 Hopf-ideal maximal-torus predicate. -/
 private theorem isMaximalTorus_diagonalTorusDefiningIdeal_of_isAlgClosed :
     HopfIdeal.IsMaximalTorus k (coordinateHopfAlgebra k n)
-      (diagonalTorusDefiningIdeal k n) := by
-  rw [HopfIdeal.isMaximalTorus_iff]
-  refine ⟨torusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal k n, ?_⟩
-  intro I hI hID
-  let _ : IsReduced
-      (CommHopfAlgCat.quotient (coordinateHopfAlgebra k n) I) :=
-    hI.geometricallyReduced.isReduced
-  let _ : Coalgebra.IsCocomm k
-      (CommHopfAlgCat.quotient (coordinateHopfAlgebra k n) I) :=
-    hI.isCocomm k _
-  have hEq := eq_diagonalTorusDefiningIdeal_of_le_of_isCocomm k n I hID
-  subst I
-  exact le_rfl
+      (diagonalTorusDefiningIdeal k n) :=
+  HopfIdeal.isMaximalTorus_of_centralizer_quotientPointsSubgroup
+    (torusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal k n)
+    (centralizer_quotientPointsSubgroup_diagonalTorusDefiningIdeal k n)
 
 omit [IsAlgClosed k] in
 /-- **The diagonal torus of `GL_n` is a maximal torus over every field.** Maximality is checked
