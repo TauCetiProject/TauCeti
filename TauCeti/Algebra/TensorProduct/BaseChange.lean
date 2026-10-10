@@ -27,6 +27,9 @@ with passing to the opposite algebra, and composes in stages:
 
 * `TauCeti.lid_rTensor_distribBaseChange_symm`: pairing against a linear functional commutes with
   distributing scalar extension over a tensor product.
+* `TauCeti.distribBaseChange_symm_tmul_eq_mul`: distributing scalar extension over a tensor
+  product of algebras sends `y ⊗ y'` to the product of the images of `y` and `y'` under the two
+  inclusions.
 * `TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv`:
   `L ⊗[K] (A ⊗[K] B) ≃ₐ[L] (L ⊗[K] A) ⊗[L] (L ⊗[K] B)`;
 * `TauCeti.Algebra.TensorProduct.baseChangeOpAlgEquiv`: `L ⊗[K] Aᵐᵒᵖ ≃ₐ[L] (L ⊗[K] A)ᵐᵒᵖ`;
@@ -83,6 +86,21 @@ theorem lid_rTensor_distribBaseChange_symm {R : Type u} {A : Type v} {M : Type w
   | tmul a m =>
     rw [← TensorProduct.AlgebraTensorModule.distribBaseChange_tmul, LinearEquiv.symm_apply_apply]
     simp [TensorProduct.smul_tmul']
+
+/-- Distributing scalar extension along `A` over a tensor product of `R`-algebras `M ⊗[R] N` sends
+`y ⊗ y'` to the product of `y` included in the first factor and `y'` included in the second. -/
+theorem distribBaseChange_symm_tmul_eq_mul {R A M N : Type*} [CommSemiring R] [CommSemiring A]
+    [Algebra R A] [Semiring M] [Algebra R M] [Semiring N] [Algebra R N] (y : A ⊗[R] M)
+    (y' : A ⊗[R] N) :
+    (TensorProduct.AlgebraTensorModule.distribBaseChange R A M N).symm (y ⊗ₜ[A] y') =
+      Algebra.TensorProduct.map (AlgHom.id R A) Algebra.TensorProduct.includeLeft y *
+        Algebra.TensorProduct.map (AlgHom.id R A) Algebra.TensorProduct.includeRight y' := by
+  induction y using TensorProduct.inductionOn with
+  | add y z hy hz => simp only [TensorProduct.add_tmul, map_add, hy, hz, add_mul]
+  | tmul a m =>
+    induction y' using TensorProduct.inductionOn with
+    | add y z hy hz => simp only [TensorProduct.tmul_add, map_add, hy, hz, mul_add]
+    | tmul a' n => simp
 
 namespace Algebra.TensorProduct
 
