@@ -21,9 +21,12 @@ by `M` preserves `W^{k,p}_0(Ω)`, with operator norm at most `2^(k+1) M`. This h
 `1 ≤ p ≤ ∞` on any open domain, without boundary regularity. The estimate includes every
 recorded weak derivative in the iterated graph norm.
 
-The test-function estimate controls the error when a smooth approximation is multiplied by a
-fixed cutoff. Extending that map to the closure of test functions gives the zero-boundary
-operator. This file does not assert multiplication on all of `W^{k,p}(Ω)`.
+The underlying estimate, `TauCeti.Wkp.norm_ofTestFunctionₗ_le_of_eqOn_mul`, needs only that the
+multiplied function be a `Cᵏ` representative `f` of some `u ∈ W^{k,p}(Ω)`: a test function equal
+to `ψ f` on `Ω` has norm at most `2^(k+1) M ‖u‖`. It controls the error when a smooth
+approximation is multiplied by a fixed cutoff. Extending the resulting map on test functions to
+their closure gives the zero-boundary operator. This file does not assert multiplication on all
+of `W^{k,p}(Ω)`.
 
 ## References
 
@@ -50,33 +53,31 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
 private theorem derivative_mul_le (k i : ℕ) (hi : i ≤ k)
     {psi : E → ℝ} (hpsi : ContDiff ℝ (⊤ : ℕ∞) psi) {M : ℝ} (hM : 0 ≤ M)
     (hbound : ∀ j ≤ k, ∀ x ∈ Omega, ‖iteratedFDeriv ℝ j psi x‖ ≤ M)
-    (phi : 𝓓(Omega, ℝ)) :
-    lpNorm (iteratedFDeriv ℝ i (fun x => phi x * psi x)) p (mu.restrict Omega) ≤
-      2 ^ i * M * ‖Wkp.ofTestFunctionₗ (mu := mu) (p := p) k phi‖ := by
-  let u := Wkp.ofTestFunctionₗ (mu := mu) (p := p) k phi
-  have hu : (Wkp.value k u : E → ℝ) =ᵐ[mu.restrict Omega] (phi : E → ℝ) := by
-    rw [Wkp.value_ofTestFunctionₗ]
-    exact testFunctionLp_apply_ae p phi
-  have hmem := Wkp.memLp_iteratedFDeriv_of_contDiffOn k u
-    (phi.contDiff.of_le (by simp)).contDiffOn hu
+    (u : Wkp mu Omega p k) {f : E → ℝ} (hf : ContDiffOn ℝ k f Omega)
+    (hu : (Wkp.value k u : E → ℝ) =ᵐ[mu.restrict Omega] f)
+    (Phi : 𝓓(Omega, ℝ)) (hPhi : EqOn Phi (fun x => psi x * f x) Omega) :
+    lpNorm (iteratedFDeriv ℝ i Phi) p (mu.restrict Omega) ≤ 2 ^ i * M * ‖u‖ := by
+  have hmem := Wkp.memLp_iteratedFDeriv_of_contDiffOn k u hf hu
   let a (j : ℕ) : ℝ := (i.choose j : ℝ) * M
-  let b (j : ℕ) : E → ℝ := fun x => a j * ‖iteratedFDeriv ℝ (i - j) (phi : E → ℝ) x‖
+  let b (j : ℕ) : E → ℝ := fun x => a j * ‖iteratedFDeriv ℝ (i - j) f x‖
   have hbmem (j : ℕ) : MemLp (b j) p (mu.restrict Omega) :=
     (hmem (i - j) ((Nat.sub_le _ _).trans hi)).norm.const_mul (a j)
   -- Integrate Mathlib's pointwise binomial estimate using the finite-sum triangle inequality.
-  have hprod : eLpNorm (iteratedFDeriv ℝ i (fun x => phi x * psi x)) p
-      (mu.restrict Omega) ≤ eLpNorm (∑ j ∈ Finset.range (i + 1), b j) p
-        (mu.restrict Omega) := by
+  -- On the open set `Ω`, the derivatives of `Phi` are those of `psi * f`.
+  have hprod : eLpNorm (iteratedFDeriv ℝ i Phi) p (mu.restrict Omega) ≤
+      eLpNorm (∑ j ∈ Finset.range (i + 1), b j) p (mu.restrict Omega) := by
     apply eLpNorm_mono_ae
-      (((phi.contDiff.mul hpsi).continuous_iteratedFDeriv (by simp)).aestronglyMeasurable)
+      ((Phi.contDiff.continuous_iteratedFDeriv (by simp)).aestronglyMeasurable)
     filter_upwards [ae_restrict_mem Omega.isOpen.measurableSet] with x hx
-    have heq : (fun y => phi y * psi y) = (fun y => psi y * phi y) := by
-      funext y
-      exact mul_comm _ _
-    rw [heq]
-    refine (norm_iteratedFDeriv_mul_le hpsi phi.contDiff x (by simp)).trans ?_
+    have hU : (Omega : Set E) ∈ nhds x := Omega.isOpen.mem_nhds hx
+    rw [((hPhi.eventuallyEq_of_mem hU).iteratedFDeriv ℝ i).eq_of_nhds,
+      ← iteratedFDerivWithin_of_isOpen i Omega.isOpen hx]
+    refine (norm_iteratedFDerivWithin_mul_le ((hpsi.of_le (by simp)).contDiffOn) hf
+      Omega.isOpen.uniqueDiffOn hx (n := i) (by exact_mod_cast hi)).trans ?_
     simp only [Finset.sum_apply, Real.norm_eq_abs]
     refine (Finset.sum_le_sum fun j hj => ?_).trans (le_abs_self _)
+    rw [iteratedFDerivWithin_of_isOpen j Omega.isOpen hx,
+      iteratedFDerivWithin_of_isOpen (i - j) Omega.isOpen hx]
     exact mul_le_mul_of_nonneg_right
       (mul_le_mul_of_nonneg_left
         (hbound j ((Nat.le_of_lt_succ (Finset.mem_range.mp hj)).trans hi) x hx)
@@ -84,16 +85,16 @@ private theorem derivative_mul_le (k i : ℕ) (hi : i ≤ k)
   have hsum := memLp_finsetSum' (Finset.range (i + 1)) (fun j _ => hbmem j)
   have hreal := ENNReal.toReal_mono hsum.eLpNorm_ne_top hprod
   calc
-    lpNorm (iteratedFDeriv ℝ i (fun x => phi x * psi x)) p (mu.restrict Omega)
+    lpNorm (iteratedFDeriv ℝ i Phi) p (mu.restrict Omega)
         ≤ lpNorm (∑ j ∈ Finset.range (i + 1), b j) p (mu.restrict Omega) := by
       simpa only [toReal_eLpNorm] using hreal
     _ ≤ ∑ j ∈ Finset.range (i + 1), lpNorm (b j) p (mu.restrict Omega) :=
       lpNorm_sum_le (fun j _ => hbmem j) Fact.out
     _ = ∑ j ∈ Finset.range (i + 1),
-        a j * lpNorm (iteratedFDeriv ℝ (i - j) (phi : E → ℝ)) p (mu.restrict Omega) := by
+        a j * lpNorm (iteratedFDeriv ℝ (i - j) f) p (mu.restrict Omega) := by
       apply Finset.sum_congr rfl
       intro j _
-      have hbj : b j = a j • (fun x => ‖iteratedFDeriv ℝ (i - j) (phi : E → ℝ) x‖) := by
+      have hbj : b j = a j • (fun x => ‖iteratedFDeriv ℝ (i - j) f x‖) := by
         funext x
         simp [b, smul_eq_mul]
       rw [hbj, lpNorm_const_smul,
@@ -102,42 +103,98 @@ private theorem derivative_mul_le (k i : ℕ) (hi : i ≤ k)
       rfl
     _ ≤ ∑ j ∈ Finset.range (i + 1), a j * ‖u‖ := by
       gcongr with j hj
-      exact Wkp.lpNorm_iteratedFDeriv_le_of_contDiffOn k u
-        (phi.contDiff.of_le (by simp)).contDiffOn hu (i - j) ((Nat.sub_le _ _).trans hi)
+      exact Wkp.lpNorm_iteratedFDeriv_le_of_contDiffOn k u hf hu (i - j)
+        ((Nat.sub_le _ _).trans hi)
     _ = 2 ^ i * M * ‖u‖ := by
       simp only [a, ← Finset.sum_mul, ← Nat.cast_sum, Nat.sum_range_choose]
       push_cast
       ring
 
-private theorem norm_ofTestFunction_one_mul_le {psi : E → ℝ}
+private theorem norm_ofTestFunction_one_le_of_eqOn_mul {psi : E → ℝ}
     (hpsi : ContDiff ℝ (⊤ : ℕ∞) psi) {M : ℝ} (hM : 0 ≤ M)
     (hbound : ∀ i ≤ 1, ∀ x ∈ Omega, ‖iteratedFDeriv ℝ i psi x‖ ≤ M)
-    (phi : 𝓓(Omega, ℝ)) :
-    ‖Wkp.ofTestFunctionₗ (mu := mu) (p := p) 1
-      (TestFunction.bilinLeftCLM (ContinuousLinearMap.lsmul ℝ ℝ) hpsi phi)‖ ≤
-      2 ^ (1 + 1) * M * ‖Wkp.ofTestFunctionₗ (mu := mu) (p := p) 1 phi‖ := by
-  let Phi := TestFunction.bilinLeftCLM (ContinuousLinearMap.lsmul ℝ ℝ) hpsi phi
-  have hPhi : (Phi : E → ℝ) = fun x => phi x * psi x := by
-    simp [Phi, smul_eq_mul]
+    (u : Wkp mu Omega p 1) {f : E → ℝ}
+    (hu : (Wkp.value 1 u : E → ℝ) =ᵐ[mu.restrict Omega] f)
+    (Phi : 𝓓(Omega, ℝ)) (hPhi : EqOn Phi (fun x => psi x * f x) Omega) :
+    ‖Wkp.ofTestFunctionₗ (mu := mu) (p := p) 1 Phi‖ ≤ 2 ^ (1 + 1) * M * ‖u‖ := by
   have hval : ∀ x ∈ Omega, |psi x| ≤ M := fun x hx => by
     simpa only [norm_iteratedFDeriv_zero, Real.norm_eq_abs] using hbound 0 (by omega) x hx
   have hgrad : ∀ x ∈ Omega, ‖∇ psi x‖ ≤ M := fun x hx => by
     simpa only [norm_gradient_eq_norm_fderiv, norm_iteratedFDeriv_one] using
       hbound 1 le_rfl x hx
-  have he := W1p.contDiffSMul_ofTestFunctionₗ (mu := mu) (p := p) hpsi hM hval hgrad phi Phi (by
-    funext x
-    simp [hPhi, mul_comm])
-  have h := W1p.norm_contDiffSMul_le hpsi hM hval hgrad
-    (W1p.ofTestFunctionₗ mu Omega p phi)
-  rw [he] at h
-  have h' : ‖W1p.ofTestFunctionₗ mu Omega p Phi‖ ≤
-      2 ^ (1 + 1) * M * ‖W1p.ofTestFunctionₗ mu Omega p phi‖ :=
+  -- The recursively indexed order-one space and its norm are those of `W1p`.
+  let v : W1p mu Omega p := u
+  have hv : (W1p.value v : E → ℝ) =ᵐ[mu.restrict Omega] f := by
+    simpa only [Wkp.value_one] using hu
+  -- At order one the test function `Phi` is the Leibniz product `psi u` of `W1p`.
+  have he : W1p.ofTestFunctionₗ mu Omega p Phi = W1p.contDiffSMul psi hpsi hM hval hgrad v := by
+    refine W1p.ext_value (Lp.ext ?_)
+    rw [W1p.value_ofTestFunctionₗ]
+    filter_upwards [W1p.value_contDiffSMul_ae hpsi hM hval hgrad v,
+      testFunctionLp_apply_ae (mu := mu) p Phi, hv,
+      ae_restrict_mem Omega.isOpen.measurableSet] with x hx hPx hvx hxO
+    rw [hPx, hx, hvx, hPhi hxO, smul_eq_mul]
+  have h := W1p.norm_contDiffSMul_le hpsi hM hval hgrad v
+  rw [← he] at h
+  have h' : ‖W1p.ofTestFunctionₗ mu Omega p Phi‖ ≤ 2 ^ (1 + 1) * M * ‖v‖ :=
     h.trans (mul_le_mul_of_nonneg_right
       (mul_le_mul_of_nonneg_right (by norm_num : (2 : ℝ) ≤ 2 ^ (1 + 1)) hM)
       (norm_nonneg _))
-  -- The recursively indexed order-one norm is the existing `W1p` norm.
   simp only [Wkp.ofTestFunctionₗ_one]
   convert h' using 1 <;> rfl
+
+/-- Let `u ∈ W^{k,p}(Ω)` have a representative `f` which is `Cᵏ` on `Ω`. If a test function
+`Phi` agrees on `Ω` with the product of `f` and a smooth scalar function whose derivatives through
+order `k` are bounded by `M`, then the full `W^{k,p}` norm of `Phi` is at most `2^(k+1) M ‖u‖`. -/
+theorem Wkp.norm_ofTestFunctionₗ_le_of_eqOn_mul (k : ℕ) {psi : E → ℝ}
+    (hpsi : ContDiff ℝ (⊤ : ℕ∞) psi) {M : ℝ} (hM : 0 ≤ M)
+    (hbound : ∀ i ≤ k, ∀ x ∈ Omega, ‖iteratedFDeriv ℝ i psi x‖ ≤ M)
+    (u : Wkp mu Omega p k) {f : E → ℝ} (hf : ContDiffOn ℝ k f Omega)
+    (hu : (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f)
+    (Phi : 𝓓(Omega, ℝ)) (hPhi : EqOn Phi (fun x => psi x * f x) Omega) :
+    ‖ofTestFunctionₗ (mu := mu) (p := p) k Phi‖ ≤ 2 ^ (k + 1) * M * ‖u‖ := by
+  have hPhi_ae (j : ℕ) : (value j (ofTestFunctionₗ (mu := mu) (p := p) j Phi) : E → ℝ)
+      =ᵐ[mu.restrict Omega] Phi := by
+    rw [value_ofTestFunctionₗ]
+    exact testFunctionLp_apply_ae p Phi
+  -- Orders zero and one use their existing norms; later orders split into the preceding
+  -- graph stage and the highest derivative, each controlled by the norm of `u`.
+  induction k using Nat.twoStepInduction with
+  | zero =>
+      have h := derivative_mul_le (mu := mu) (p := p) 0 0 le_rfl hpsi hM hbound u hf hu Phi hPhi
+      have he : ‖ofTestFunctionₗ (mu := mu) (p := p) 0 Phi‖ =
+          lpNorm (iteratedFDeriv ℝ 0 (Phi : E → ℝ)) p (mu.restrict Omega) := by
+        rw [← value_zero (ofTestFunctionₗ (mu := mu) (p := p) 0 Phi), Lp.norm_def, lpNorm]
+        congr 1
+        refine eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _)
+          ((Phi.contDiff.continuous_iteratedFDeriv (by simp)).aestronglyMeasurable) ?_
+        filter_upwards [hPhi_ae 0] with x hx
+        rw [hx, norm_iteratedFDeriv_zero]
+      rw [he]
+      simp only [pow_zero, one_mul] at h
+      simp only [zero_add, pow_one]
+      nlinarith [norm_nonneg u]
+  | one => exact norm_ofTestFunction_one_le_of_eqOn_mul hpsi hM hbound u hu Phi hPhi
+  | more k _ ih =>
+      have hlow := ih (fun i hi => hbound i (by omega)) (lowerOrder (k + 1) u)
+        (hf.of_le (by exact_mod_cast (by omega : k + 1 ≤ k + 2)))
+        (by simpa only [value_succ] using hu)
+      have hhigh : ‖iteratedGradient (k + 1)
+          (ofTestFunctionₗ (mu := mu) (p := p) (k + 2) Phi)‖ ≤ 2 ^ (k + 2) * M * ‖u‖ := by
+        rw [norm_iteratedGradient_eq_lpNorm_of_contDiffOn (k + 1) _
+          (Phi.contDiff.of_le (by simp)).contDiffOn (hPhi_ae (k + 2))]
+        exact derivative_mul_le (k + 2) (k + 2) le_rfl hpsi hM hbound u hf hu Phi hPhi
+      have hnorm := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k
+        (ofTestFunctionₗ (mu := mu) (p := p) (k + 2) Phi)
+      rw [lowerOrder_ofTestFunctionₗ] at hnorm
+      have hlow' := hlow.trans (mul_le_mul_of_nonneg_left (norm_lowerOrder_le (k + 1) u)
+        (by positivity))
+      rw [pow_succ (2 : ℝ) (k + 2)]
+      nlinarith [norm_nonneg (ofTestFunctionₗ (mu := mu) (p := p) (k + 2) Phi),
+        norm_nonneg (ofTestFunctionₗ (mu := mu) (p := p) (k + 1) Phi),
+        norm_nonneg (iteratedGradient (k + 1)
+          (ofTestFunctionₗ (mu := mu) (p := p) (k + 2) Phi)),
+        mul_nonneg (by positivity : 0 ≤ 2 ^ (k + 2) * M) (norm_nonneg u)]
 
 /-- Multiplying a test function by a smooth scalar function with derivatives through order
 `k` bounded by `M` increases its full `W^{k,p}` norm by at most `2^(k+1) M`. -/
@@ -147,53 +204,11 @@ theorem Wkp.norm_ofTestFunctionₗ_bilinLeftCLM_le (k : ℕ) {psi : E → ℝ}
     (phi : 𝓓(Omega, ℝ)) :
     ‖ofTestFunctionₗ (mu := mu) (p := p) k
       (TestFunction.bilinLeftCLM (ContinuousLinearMap.lsmul ℝ ℝ) hpsi phi)‖ ≤
-      2 ^ (k + 1) * M * ‖ofTestFunctionₗ (mu := mu) (p := p) k phi‖ := by
-  let Phi := TestFunction.bilinLeftCLM (ContinuousLinearMap.lsmul ℝ ℝ) hpsi phi
-  have hPhi : (Phi : E → ℝ) = fun x => phi x * psi x := by
-    simp [Phi, smul_eq_mul]
-  -- Orders zero and one use their existing norms; later orders split into the preceding
-  -- graph stage and the highest derivative, each controlled by the input graph norm.
-  induction k using Nat.twoStepInduction with
-  | zero =>
-      have h := derivative_mul_le (mu := mu) (p := p) 0 0 le_rfl hpsi hM hbound phi
-      have he : ‖ofTestFunctionₗ (mu := mu) (p := p) 0 Phi‖ =
-          lpNorm (iteratedFDeriv ℝ 0 (Phi : E → ℝ)) p (mu.restrict Omega) := by
-        rw [← value_zero (ofTestFunctionₗ (mu := mu) (p := p) 0 Phi),
-          value_ofTestFunctionₗ, Lp.norm_def, lpNorm]
-        congr 1
-        refine eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _)
-          ((Phi.contDiff.continuous_iteratedFDeriv (by simp)).aestronglyMeasurable) ?_
-        filter_upwards [testFunctionLp_apply_ae (mu := mu) p Phi] with x hx
-        rw [hx, norm_iteratedFDeriv_zero]
-      rw [he, hPhi]
-      simp only [pow_zero, one_mul] at h
-      simp only [zero_add, pow_one]
-      nlinarith [norm_nonneg (ofTestFunctionₗ (mu := mu) (p := p) 0 phi)]
-  | one => exact norm_ofTestFunction_one_mul_le hpsi hM hbound phi
-  | more k _ ih =>
-      have hlow := ih (fun i hi => hbound i (by omega))
-      have hhigh : ‖iteratedGradient (k + 1)
-          (ofTestFunctionₗ (mu := mu) (p := p) (k + 2) Phi)‖ ≤
-          2 ^ (k + 2) * M * ‖ofTestFunctionₗ (mu := mu) (p := p) (k + 2) phi‖ := by
-        rw [norm_iteratedGradient_eq_lpNorm_of_contDiffOn (k + 1) _
-          (Phi.contDiff.of_le (by simp)).contDiffOn (by
-            rw [value_ofTestFunctionₗ]
-            exact testFunctionLp_apply_ae p Phi), hPhi]
-        exact derivative_mul_le (k + 2) (k + 2) le_rfl hpsi hM hbound phi
-      have hnorm := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k
-        (ofTestFunctionₗ (mu := mu) (p := p) (k + 2) Phi)
-      rw [lowerOrder_ofTestFunctionₗ] at hnorm
-      have hcontrol := norm_lowerOrder_le (k + 1)
-        (ofTestFunctionₗ (mu := mu) (p := p) (k + 2) phi)
-      rw [lowerOrder_ofTestFunctionₗ] at hcontrol
-      have hlow' := hlow.trans (mul_le_mul_of_nonneg_left hcontrol (by positivity))
-      rw [pow_succ (2 : ℝ) (k + 2)]
-      nlinarith [norm_nonneg (ofTestFunctionₗ (mu := mu) (p := p) (k + 2) Phi),
-        norm_nonneg (ofTestFunctionₗ (mu := mu) (p := p) (k + 1) Phi),
-        norm_nonneg (iteratedGradient (k + 1)
-          (ofTestFunctionₗ (mu := mu) (p := p) (k + 2) Phi)),
-        mul_nonneg (by positivity : 0 ≤ 2 ^ (k + 2) * M)
-          (norm_nonneg (ofTestFunctionₗ (mu := mu) (p := p) (k + 2) phi))]
+      2 ^ (k + 1) * M * ‖ofTestFunctionₗ (mu := mu) (p := p) k phi‖ :=
+  norm_ofTestFunctionₗ_le_of_eqOn_mul k hpsi hM hbound _
+    (phi.contDiff.of_le (by simp)).contDiffOn
+    (by rw [value_ofTestFunctionₗ]; exact testFunctionLp_apply_ae p phi) _
+    (fun x _ => by simp [smul_eq_mul, mul_comm])
 
 namespace Wkp0
 

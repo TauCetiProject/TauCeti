@@ -31,6 +31,8 @@ stable and unstable manifolds are then studied.
   nondegenerate quadratic form.
 * `TauCeti.MorseChart.restr`: the restriction of a Morse chart to an open neighbourhood of its
   centre.
+* `TauCeti.MorseChart.neg`: a Morse chart for `f` is a Morse chart for `-f`, with the opposite
+  weights.
 * `TauCeti.IsManifoldNondegenerateCriticalPoint.nonempty_morseChart`: the Morse lemma on a
   manifold, for a function smooth near the critical point.
 * `TauCeti.IsMorse.nonempty_morseChart`: every critical point of a Morse function has a Morse
@@ -118,6 +120,70 @@ omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
 theorem restr_source : (φ.restr hs hx).toChart.source = φ.toChart.source ∩ s :=
   φ.toChart.restr_source' s hs
 
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- A point of the chart is the point with its own coordinates. -/
+theorem toChart_symm_coord_symm_coord {y : M} (hy : y ∈ φ.toChart.source) :
+    φ.toChart.symm (φ.coord.symm (φ.coord (φ.toChart y))) = y := by
+  rw [LinearEquiv.symm_apply_apply, φ.toChart.left_inv hy]
+
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- The chart sends `0` back to the critical point. -/
+@[simp]
+theorem toChart_symm_zero : φ.toChart.symm 0 = x := by
+  rw [← φ.apply_self, φ.toChart.left_inv φ.mem_source]
+
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- The critical point is the point with coordinates `0`. -/
+theorem toChart_symm_coord_symm_zero : φ.toChart.symm (φ.coord.symm 0) = x := by
+  rw [map_zero, toChart_symm_zero]
+
+/-- A Morse chart for `f` at a nondegenerate critical point is a Morse chart for `-f`, with the
+opposite weights. -/
+noncomputable def neg (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) :
+    MorseChart E (-f) x where
+  toChart := φ.toChart
+  mem_maximalAtlas := φ.mem_maximalAtlas
+  mem_source := φ.mem_source
+  apply_self := φ.apply_self
+  coord := φ.coord
+  weight := -φ.weight
+  weight_eq_neg_one_or_eq_one i := by
+    rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi <;> simp [hi]
+  ncard_weight_neg := by
+    have hidx := h.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
+    have hset : {i | (-φ.weight) i < 0} = {i | φ.weight i < 0}ᶜ := by
+      ext i
+      rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi <;> simp [hi]
+    have hc := Set.ncard_add_ncard_compl {i | φ.weight i < 0}
+    rw [Nat.card_eq_fintype_card, Fintype.card_fin, φ.ncard_weight_neg] at hc
+    rw [hset]
+    omega
+  eq_quadratic y hy := by
+    rw [Pi.neg_apply, Pi.neg_apply, φ.eq_quadratic y hy]
+    simp only [Pi.neg_apply, neg_mul, Finset.sum_neg_distrib]
+    ring
+
+omit [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- The negated Morse chart has the same chart. -/
+@[simp]
+theorem neg_toChart (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) :
+    (φ.neg h).toChart = φ.toChart := by
+  rw [neg]
+
+omit [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- The negated Morse chart has the same coordinates. -/
+@[simp]
+theorem neg_coord (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) :
+    (φ.neg h).coord = φ.coord := by
+  rw [neg]
+
+omit [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- The negated Morse chart has the opposite weights. -/
+@[simp]
+theorem neg_weight (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) :
+    (φ.neg h).weight = -φ.weight := by
+  rw [neg]
+
 end MorseChart
 
 /-- **The Morse lemma on a manifold.** At a nondegenerate critical point `x` of a function `f`
@@ -179,6 +245,15 @@ theorem IsManifoldNondegenerateCriticalPoint.nonempty_morseChart
     rw [hessianQuadraticForm_apply] at hQ
     rw [← hQ, QuadraticMap.weightedSumSquares_apply]
     simp [sq]
+
+omit [FiniteDimensional ℝ E] in
+/-- A point where the derivative of a Morse function vanishes is a nondegenerate critical
+point. -/
+theorem IsMorse.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero (hf : IsMorse 𝓘(ℝ, E) f)
+    {x : M} (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) :
+    IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x :=
+  hf.isManifoldNondegenerateCriticalPoint
+    ((mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm hf.contMDiff x).1 hx)
 
 /-- Every critical point of a Morse function has a Morse chart. -/
 theorem IsMorse.nonempty_morseChart (hf : IsMorse 𝓘(ℝ, E) f) {x : M}

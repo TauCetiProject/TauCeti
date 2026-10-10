@@ -11,10 +11,9 @@ public import TauCeti.AlgebraicTopology.Cellular.Map
 /-!
 # Naturality of the cellular–singular homology comparison
 
-The cellular–singular comparison for finite-dimensional relative CW complexes intertwines
-the homology map of a cellular chain map with the relative singular homology map of the
-original continuous map. Thus it compares the functorial homology theories, including their
-maps, rather than only their objects in each degree.
+The cellular–singular comparison intertwines the homology map of a cellular chain map with the
+relative singular homology map of the original continuous map. Thus it compares the functorial
+homology theories, including their maps, rather than only their objects in each degree.
 
 The underlying identification of cellular cycles with the homology of a skeleton relative
 to the base is natural without a dimension bound. Both squares use the restrictions of the
@@ -72,12 +71,16 @@ lemma cellularCyclesIso_inv_naturality (n : ℕ) :
   rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp]
   exact (cellularCyclesIso_hom_naturality C C' hf R n).symm
 
-variable [FiniteDimensional C] [FiniteDimensional C']
+variable (n : ℕ)
+  [IsIso ((skeletonBasePair C (n + 1)).singularHomologyMap
+    (skeletonBasePairToComplex C (n + 1)) R n)]
+  [IsIso ((skeletonBasePair C' (n + 1)).singularHomologyMap
+    (skeletonBasePairToComplex C' (n + 1)) R n)]
 
-/-- The cellular–singular comparison is natural under cellular maps of finite-dimensional
-relative CW complexes. The singular map is induced by the original map of the whole pairs. -/
+/-- The cellular–singular comparison is natural under cellular maps of relative CW complexes.
+The singular map is induced by the original map of the whole pairs. -/
 @[reassoc]
-lemma cellularSingularHomologyIso_hom_naturality (n : ℕ) :
+lemma cellularSingularHomologyIso_hom_naturality :
     homologyMap (cellularChainComplexMap C C' hf R) n ≫
         (cellularSingularHomologyIso C' R n).hom =
       (cellularSingularHomologyIso C R n).hom ≫
@@ -90,10 +93,10 @@ lemma cellularSingularHomologyIso_hom_naturality (n : ℕ) :
   rw [← TopPair.singularHomologyMap_comp, ← TopPair.singularHomologyMap_comp,
     skeletonBasePairMap_comp_toComplex]
 
-/-- The inverse cellular–singular comparison is natural under cellular maps of
-finite-dimensional relative CW complexes. -/
+/-- The inverse cellular–singular comparison is natural under cellular maps of relative CW
+complexes. -/
 @[reassoc]
-lemma cellularSingularHomologyIso_inv_naturality (n : ℕ) :
+lemma cellularSingularHomologyIso_inv_naturality :
     (complexBasePair C).singularHomologyMap (complexBasePairMap C C' hf) R n ≫
         (cellularSingularHomologyIso C' R n).inv =
       (cellularSingularHomologyIso C R n).inv ≫

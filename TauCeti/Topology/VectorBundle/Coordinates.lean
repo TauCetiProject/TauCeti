@@ -14,6 +14,8 @@ public import Mathlib.Topology.VectorBundle.Basic
 trivializations used to read a continuous semilinear map between vector-bundle fibres.
 The source and target bundles may have different bases. This formula permits regularity
 proved in coordinates centred at a point to be transported to fixed trivializations.
+The corresponding range-transport theorem identifies the subspaces in different
+charts, as required for quotient-bundle coordinate changes.
 
 The construction follows Mathlib's `ContinuousLinearMap.inCoordinates` and
 `Bundle.Trivialization.comp_continuousLinearEquivAt_eq_coord_change`.
@@ -58,5 +60,30 @@ theorem inCoordinates_eq_coordChangeL_comp {x₀ x₁ x : B} {y₀ y₁ y : B'}
   ext v
   simp only [comp_apply, ContinuousLinearEquiv.coe_coe,
     ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.symm_apply_apply]
+
+/-- Changing tangent or bundle coordinates transports an operator range by the target
+coordinate change. The source coordinate change is surjective and leaves the range unchanged. -/
+theorem map_range_inCoordinates_coordChangeL [RingHomSurjective σ] {x₀ x₁ x : B} {y₀ y₁ y : B'}
+    (ϕ : V x →SL[σ] W y)
+    (hx₀ : x ∈ (trivializationAt F V x₀).baseSet)
+    (hx₁ : x ∈ (trivializationAt F V x₁).baseSet)
+    (hy₀ : y ∈ (trivializationAt F' W y₀).baseSet)
+    (hy₁ : y ∈ (trivializationAt F' W y₁).baseSet) :
+    (inCoordinates F V F' W x₀ x y₀ y ϕ).range.map
+      ((trivializationAt F' W y₀).coordChangeL 𝕜'
+        (trivializationAt F' W y₁) y).toLinearMap =
+      (inCoordinates F V F' W x₁ x y₁ y ϕ).range := by
+  rw [inCoordinates_eq_coordChangeL_comp ϕ hx₁ hx₀ hy₁ hy₀,
+    ContinuousLinearMap.toLinearMap_comp, LinearMap.range_comp,
+    ContinuousLinearMap.toLinearMap_comp,
+    LinearMap.range_comp]
+  have hS : ((trivializationAt F V x₁).coordChangeL 𝕜
+      (trivializationAt F V x₀) x).toLinearMap.range = ⊤ :=
+    LinearMap.range_eq_top.mpr ((trivializationAt F V x₁).coordChangeL 𝕜
+      (trivializationAt F V x₀) x).surjective
+  -- The coordinate equivalence is coerced through a continuous linear map in the range.
+  erw [hS]
+  rw [Submodule.map_top]
+  rfl
 
 end ContinuousLinearMap
