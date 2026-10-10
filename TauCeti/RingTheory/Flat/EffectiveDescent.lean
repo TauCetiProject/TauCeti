@@ -15,22 +15,34 @@ public import TauCeti.RingTheory.TensorProduct.Maps
 Let `S` be an `R`-algebra. A descent datum on an `S`-algebra `B` relative to `R → S` is recorded
 as an `S`-algebra map `θ : B → S ⊗[R] B` (the *coaction*) which is a section of the
 multiplication map `S ⊗[R] B → B` and satisfies the coassociativity condition
-`(id ⊗ θ) ∘ θ = (id ⊗ (1 ⊗ ·)) ∘ θ` in `S ⊗[R] (S ⊗[R] B)`. This is the classical
-isomorphism-plus-cocycle formulation in another guise: an isomorphism of
-`S ⊗[R] S`-algebras `φ : B ⊗[R] S ≅ S ⊗[R] B` corresponds to `θ b = φ (b ⊗ 1)`, the
-normalisation of `φ` on the diagonal to the counit equation, and the cocycle condition on
-`S ⊗[R] S ⊗[R] S` to coassociativity. Forgetting the multiplication, a descent datum is in
-particular a coalgebra for the comonad `S ⊗[R] -` on `S`-modules (the module form of descent,
-behind Mathlib's `comonadicExtendScalars`); the algebra structure adds the requirement that the
-coaction be an `S`-algebra map.
+`(id ⊗ θ) ∘ θ = (id ⊗ (1 ⊗ ·)) ∘ θ` in `S ⊗[R] (S ⊗[R] B)`.
+
+This is equivalent to the classical isomorphism-plus-cocycle formulation
+`TauCeti.Algebra.IsoDescentDatum`: an isomorphism of `S ⊗[R] S`-algebras
+`φ : B ⊗[R] S ≅ S ⊗[R] B` with `φ₁₃ = φ₂₃ ∘ φ₁₂` on `B ⊗[R] S ⊗[R] S`. The equivalence
+`TauCeti.Algebra.DescentDatum.equivIsoDescentDatum` is given by `θ b = φ (b ⊗ 1)` and
+`φ (b ⊗ t) = θ b * (1 ⊗ t)`. The cocycle condition corresponds to coassociativity, while the
+counit equation (the normalisation of `φ` along the diagonal) is not imposed on `φ`: it follows
+from the cocycle condition and the invertibility of `φ`. For commutative `B`, `B ⊗[R] S` and
+`S ⊗[R] B` are the coordinate rings of the two pullbacks of `Spec B` along the projections
+`Spec (S ⊗[R] S) → Spec S`, so `IsoDescentDatum` is the usual scheme-theoretic descent datum on
+an affine scheme over `Spec S`, and the equivalence makes the results below available for it.
+
+Forgetting the multiplication, a descent datum is in particular a coalgebra for the comonad
+`S ⊗[R] -` on `S`-modules (the module form of descent, behind Mathlib's
+`comonadicExtendScalars`); the algebra structure adds the requirement that the coaction be an
+`S`-algebra map.
 
 Since `Spec` is an anti-equivalence between commutative `R`-algebras and affine schemes over
 `Spec R`, the results below are effective descent for affine schemes along a faithfully flat
-morphism `Spec S → Spec R` of affine schemes:
+morphism `Spec S → Spec R` of affine schemes (the scheme-theoretic statements are in
+`TauCeti.AlgebraicGeometry.Descent.Affine`):
 
 * `TauCeti.Algebra.DescentDatum.baseChangeEquiv` (effectivity): if `S` is flat over `R`, the
   descended algebra `D.descended = {b | θ b = 1 ⊗ b}` satisfies `S ⊗[R] D.descended ≃ B`, and
   `coaction_baseChangeEquiv` identifies `θ` with the canonical datum on `S ⊗[R] D.descended`.
+* `TauCeti.Algebra.DescentDatum.toBaseChangeDescended`: the inverse of `baseChangeEquiv` as a
+  morphism from `D` to the canonical descent datum on `S ⊗[R] D.descended`.
 * `TauCeti.Algebra.DescentDatum.descended_baseChange`: if `S` is faithfully flat over `R`, the
   canonical datum on `S ⊗[R] A` descends to (the image of) `A`.
 * `TauCeti.Algebra.DescentDatum.equivDescended` (uniqueness): if `S` is faithfully flat over `R`,
@@ -73,7 +85,7 @@ The faithfully flat input is the exactness of the Amitsur sequence
   Théorème 2.1 (effective descent for affine morphisms along faithfully flat quasi-compact
   morphisms).
 * The Stacks Project, Chapter *Descent*, Section *Descent for modules* (the Amitsur complex
-  argument used here).
+  argument used here, and the isomorphism-plus-cocycle definition of a descent datum).
 -/
 
 public section
@@ -130,10 +142,7 @@ structure DescentDatum where
   /-- The coaction `B → S ⊗[R] B`, linear over `S` acting on the left factor. -/
   coaction : B →ₐ[S] S ⊗[R] B
   /-- The coaction is a section of the multiplication map `S ⊗[R] B → B`. -/
-  counit_coaction (b : B) :
-    Algebra.TensorProduct.lift (Algebra.ofId S B) (AlgHom.id R B)
-      (fun s b ↦ by rw [Algebra.ofId_apply]; exact Algebra.commute_algebraMap_left s _)
-      (coaction b) = b
+  counit_coaction (b : B) : Algebra.TensorProduct.mulLeft (coaction b) = b
   /-- The cocycle condition: `(id ⊗ θ) ∘ θ = (id ⊗ (1 ⊗ ·)) ∘ θ`. -/
   coassoc (b : B) :
     Algebra.TensorProduct.map (AlgHom.id R S) (coaction.restrictScalars R) (coaction b) =
@@ -486,6 +495,24 @@ theorem tmul_baseChangeHomEquiv_symm_apply [Module.FaithfullyFlat R S]
 
 end BaseChange
 
+/-- The effectivity isomorphism `baseChangeEquiv`, inverted, as a morphism of descent data from
+`D` to the canonical descent datum on `S ⊗[R] D.descended`. -/
+noncomputable def toBaseChangeDescended [Module.Flat R S] (D : DescentDatum R S B) :
+    Hom D (baseChange R S D.descended) where
+  toAlgHom := D.baseChangeEquiv.symm
+  coaction_toAlgHom b := by
+    obtain ⟨x, rfl⟩ := D.baseChangeEquiv.surjective b
+    rw [coaction_baseChangeEquiv]
+    simp only [AlgEquiv.coe_toAlgHom, AlgEquiv.symm_apply_apply]
+    induction x using TensorProduct.inductionOn with
+    | tmul s a => simp
+    | add x y hx hy => simp only [map_add, hx, hy]
+
+@[simp]
+theorem toBaseChangeDescended_toAlgHom [Module.Flat R S] (D : DescentDatum R S B) :
+    D.toBaseChangeDescended.toAlgHom = D.baseChangeEquiv.symm :=
+  (rfl)
+
 /-! ### Change of the base ring
 
 If `S` is faithfully flat over `R`, the equalizer `D.descended → B ⇉ S ⊗[R] B` stays an equalizer
@@ -633,6 +660,300 @@ theorem coe_tensorDescendedEquiv_tmul [Module.FaithfullyFlat R S]
 end Comparison
 
 end DescentDatum
+
+/-! ### The classical form of a descent datum -/
+
+/-- A descent datum on the `S`-algebra `B` relative to `R → S`, in the classical form of a
+gluing isomorphism between the two pullbacks of `B` to `S ⊗[R] S`: an isomorphism
+`iso : B ⊗[R] S ≃ S ⊗[R] B` of `S ⊗[R] S`-algebras satisfying the cocycle condition
+`φ₁₃ = φ₂₃ ∘ φ₁₂` of `S ⊗[R] S ⊗[R] S`-algebra maps `B ⊗[R] S ⊗[R] S → S ⊗[R] S ⊗[R] B`.
+Linearity over `S ⊗[R] S` is recorded as linearity over the left copy of `S` (acting on `B`,
+respectively on the left factor) together with `iso_one_tmul` for the right copy.
+No normalisation of `iso` along the diagonal is imposed: it follows from the cocycle condition
+(see `toDescentDatum`). -/
+@[ext]
+structure IsoDescentDatum where
+  /-- The gluing isomorphism `B ⊗[R] S ≃ S ⊗[R] B`. -/
+  iso : B ⊗[R] S ≃ₐ[S] S ⊗[R] B
+  /-- `iso` is linear for the right copy of `S`, which acts on the right factor of `B ⊗[R] S`
+  and through `algebraMap S B` on the right factor of `S ⊗[R] B`. -/
+  iso_one_tmul (t : S) : iso (1 ⊗ₜ t) = 1 ⊗ₜ algebraMap S B t
+  /-- The cocycle condition `φ₂₃ ∘ φ₁₂ = φ₁₃`, where `φ₁₂ = iso ⊗ id`, `φ₂₃ = id ⊗ iso` and
+  `φ₁₃` applies `iso` to the first and third factors, leaving the middle one in place. -/
+  cocycle (x : B ⊗[R] S ⊗[R] S) :
+    Algebra.TensorProduct.map (AlgHom.id R S) ((iso : B ⊗[R] S →ₐ[S] S ⊗[R] B).restrictScalars R)
+        (Algebra.TensorProduct.assoc R R R S B S
+          (Algebra.TensorProduct.map ((iso : B ⊗[R] S →ₐ[S] S ⊗[R] B).restrictScalars R)
+            (AlgHom.id R S) x)) =
+      Algebra.TensorProduct.map (AlgHom.id R S)
+        (Algebra.TensorProduct.comm R B S : B ⊗[R] S →ₐ[R] S ⊗[R] B)
+        (Algebra.TensorProduct.assoc R R R S B S
+          (Algebra.TensorProduct.map ((iso : B ⊗[R] S →ₐ[S] S ⊗[R] B).restrictScalars R)
+            (AlgHom.id R S) (TensorProduct.rightComm R B S S x)))
+
+namespace IsoDescentDatum
+
+variable {R S B}
+
+attribute [simp] iso_one_tmul
+
+/-- The gluing isomorphism is determined by its values on `B ⊗ 1`: by linearity for the right
+copy of `S`, `iso (b ⊗ t) = iso (b ⊗ 1) * (1 ⊗ t)`. -/
+theorem iso_tmul (E : IsoDescentDatum R S B) (b : B) (t : S) :
+    E.iso (b ⊗ₜ t) = E.iso (b ⊗ₜ 1) * 1 ⊗ₜ algebraMap S B t := by
+  rw [← E.iso_one_tmul, ← map_mul, Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul]
+
+end IsoDescentDatum
+
+namespace DescentDatum
+
+variable {R S B}
+
+open Algebra.TensorProduct
+
+variable (D : DescentDatum R S B)
+
+/-- The gluing map `B ⊗[R] S → S ⊗[R] B`, `b ⊗ t ↦ coaction b * (1 ⊗ t)`. -/
+private noncomputable def isoHom : B ⊗[R] S →ₐ[S] S ⊗[R] B :=
+  Algebra.TensorProduct.lift D.coaction
+    (Algebra.TensorProduct.includeRight.comp (IsScalarTower.toAlgHom R S B))
+    (fun _ t ↦ by rw [AlgHom.comp_apply]; exact commute_one_tmul_algebraMap _ t)
+
+private theorem isoHom_tmul (b : B) (t : S) :
+    D.isoHom (b ⊗ₜ t) = D.coaction b * 1 ⊗ₜ algebraMap S B t := by
+  rw [isoHom, Algebra.TensorProduct.lift_tmul]
+  rfl
+
+/-- The inverse gluing map `S ⊗[R] B → B ⊗[R] S`, `s ⊗ b ↦ (s ⊗ 1) * τ (coaction b)`, where
+`τ` swaps the two factors. -/
+private noncomputable def isoInv : S ⊗[R] B →ₐ[S] B ⊗[R] S :=
+  Algebra.TensorProduct.lift (Algebra.ofId S (B ⊗[R] S))
+    ((Algebra.TensorProduct.comm R S B).toAlgHom.comp (D.coaction.restrictScalars R))
+    (fun s x ↦ by rw [Algebra.ofId_apply]; exact Algebra.commute_algebraMap_left s _)
+
+private theorem isoInv_tmul (s : S) (b : B) :
+    D.isoInv (s ⊗ₜ b) =
+      algebraMap S B s ⊗ₜ 1 * Algebra.TensorProduct.comm R S B (D.coaction b) := by
+  simp [isoInv, Algebra.TensorProduct.algebraMap_apply]
+
+private theorem isoHom_comm (x : S ⊗[R] B) :
+    D.isoHom (Algebra.TensorProduct.comm R S B x) =
+      Algebra.TensorProduct.map (AlgHom.id R S) (mulLeft.restrictScalars R)
+        (Algebra.TensorProduct.leftComm R S S B
+          (Algebra.TensorProduct.map (AlgHom.id R S) (D.coaction.restrictScalars R) x)) := by
+  induction x using TensorProduct.inductionOn with
+  | tmul s b =>
+    have key (y : S ⊗[R] B) :
+        Algebra.TensorProduct.map (AlgHom.id R S) (mulLeft.restrictScalars R)
+          (Algebra.TensorProduct.leftComm R S S B (s ⊗ₜ y)) = 1 ⊗ₜ algebraMap S B s * y := by
+      induction y using TensorProduct.inductionOn with
+      | tmul t b => simp [Algebra.TensorProduct.tmul_mul_tmul]
+      | add y y' hy hy' => simp only [tmul_add, map_add, hy, hy', mul_add]
+    simp [isoHom_tmul, key, (commute_one_tmul_algebraMap (D.coaction b) s).eq]
+  | add x y hx hy => simp only [map_add, hx, hy]
+
+private theorem isoHom_isoInv (x : S ⊗[R] B) : D.isoHom (D.isoInv x) = x := by
+  suffices h : D.isoHom.comp D.isoInv = AlgHom.id S _ from congr($h x)
+  refine Algebra.TensorProduct.ext (Subsingleton.elim _ _) (AlgHom.ext fun b ↦ ?_)
+  have hR (y : S ⊗[R] B) :
+      Algebra.TensorProduct.map (AlgHom.id R S) (mulLeft.restrictScalars R)
+        (Algebra.TensorProduct.leftComm R S S B
+          (Algebra.TensorProduct.map (AlgHom.id R S) Algebra.TensorProduct.includeRight y)) =
+        (1 : S) ⊗ₜ[R] mulLeft y := by
+    induction y using TensorProduct.inductionOn with
+    | tmul s b => simp
+    | add x y hx hy => simp only [map_add, hx, hy, tmul_add]
+  have h1 := congr(Algebra.TensorProduct.map (AlgHom.id R S) (mulLeft.restrictScalars R)
+    (Algebra.TensorProduct.leftComm R S S B $(D.coassoc b)))
+  simp only [← isoHom_comm, hR, D.counit_coaction] at h1
+  simpa [isoInv_tmul, ← Algebra.TensorProduct.one_def] using h1
+
+private theorem isoInv_eq (x : S ⊗[R] B) :
+    D.isoInv x = mulLeft (Algebra.TensorProduct.map (AlgHom.id R S)
+      (Algebra.TensorProduct.comm R S B : S ⊗[R] B →ₐ[R] B ⊗[R] S)
+      (Algebra.TensorProduct.map (AlgHom.id R S) (D.coaction.restrictScalars R) x)) := by
+  induction x using TensorProduct.inductionOn with
+  | tmul s b => simp [isoInv_tmul, Algebra.TensorProduct.algebraMap_apply]
+  | add x y hx hy => simp only [map_add, hx, hy]
+
+private theorem isoInv_isoHom (x : B ⊗[R] S) : D.isoInv (D.isoHom x) = x := by
+  suffices h : D.isoInv.comp D.isoHom = AlgHom.id S _ from congr($h x)
+  refine Algebra.TensorProduct.ext (AlgHom.ext fun b ↦ ?_) (AlgHom.ext fun t ↦ ?_)
+  · have hR (y : S ⊗[R] B) :
+        mulLeft (Algebra.TensorProduct.map (AlgHom.id R S)
+          (Algebra.TensorProduct.comm R S B : S ⊗[R] B →ₐ[R] B ⊗[R] S)
+          (Algebra.TensorProduct.map (AlgHom.id R S) Algebra.TensorProduct.includeRight y)) =
+          mulLeft y ⊗ₜ[R] (1 : S) := by
+      induction y using TensorProduct.inductionOn with
+      | tmul s b =>
+        simp [Algebra.TensorProduct.algebraMap_apply, Algebra.TensorProduct.tmul_mul_tmul]
+      | add x y hx hy => simp only [map_add, hx, hy, add_tmul]
+    have h1 := congr(mulLeft (Algebra.TensorProduct.map (AlgHom.id R S)
+      (Algebra.TensorProduct.comm R S B : S ⊗[R] B →ₐ[R] B ⊗[R] S) $(D.coassoc b)))
+    simp only [← isoInv_eq, hR, D.counit_coaction] at h1
+    simpa [isoHom_tmul, ← Algebra.TensorProduct.one_def] using h1
+  · simp [isoHom_tmul, isoInv_tmul, Algebra.TensorProduct.algebraMap_apply]
+
+/-- The gluing isomorphism `B ⊗[R] S ≃ S ⊗[R] B` of a descent datum. -/
+private noncomputable def isoEquiv : B ⊗[R] S ≃ₐ[S] S ⊗[R] B :=
+  AlgEquiv.ofAlgHom D.isoHom D.isoInv (AlgHom.ext D.isoHom_isoInv) (AlgHom.ext D.isoInv_isoHom)
+
+private theorem isoEquiv_tmul (b : B) (t : S) :
+    D.isoEquiv (b ⊗ₜ t) = D.coaction b * 1 ⊗ₜ algebraMap S B t :=
+  D.isoHom_tmul b t
+
+/-- The classical form of a descent datum: the gluing isomorphism
+`b ⊗ t ↦ coaction b * (1 ⊗ t)`. -/
+noncomputable def toIsoDescentDatum : IsoDescentDatum R S B where
+  iso := D.isoEquiv
+  iso_one_tmul t := by simp [isoEquiv_tmul]
+  cocycle x := by
+    induction x using TensorProduct.inductionOn with
+    | tmul y u =>
+      induction y using TensorProduct.inductionOn with
+      | tmul b t =>
+        have split (t u : S) : (D.coaction b * 1 ⊗ₜ algebraMap S B t) ⊗ₜ[R] u =
+            (D.coaction b ⊗ₜ 1) * ((1 ⊗ₜ algebraMap S B t) ⊗ₜ u) := by
+          simp [Algebra.TensorProduct.tmul_mul_tmul]
+        simp only [Algebra.TensorProduct.map_tmul, TensorProduct.rightComm_tmul,
+          AlgHom.restrictScalars_apply, AlgEquiv.coe_toAlgHom, AlgHom.id_apply, isoEquiv_tmul,
+          split, map_mul, map_assoc_tmul_one, Algebra.TensorProduct.comm_comp_includeLeft]
+        have hθ : ((D.isoEquiv : B ⊗[R] S →ₐ[S] S ⊗[R] B).restrictScalars R).comp
+            Algebra.TensorProduct.includeLeft = D.coaction.restrictScalars R :=
+          AlgHom.ext fun b ↦ by simp [isoEquiv_tmul, ← Algebra.TensorProduct.one_def]
+        rw [hθ, D.coassoc]
+        congr 1
+        simp [isoEquiv_tmul, Algebra.TensorProduct.algebraMap_apply]
+      | add y y' hy hy' => simp only [add_tmul, map_add, hy, hy']
+    | add x y hx hy => simp only [map_add, hx, hy]
+
+@[simp]
+theorem toIsoDescentDatum_iso_tmul (b : B) (t : S) :
+    D.toIsoDescentDatum.iso (b ⊗ₜ t) = D.coaction b * 1 ⊗ₜ algebraMap S B t :=
+  D.isoHom_tmul b t
+
+@[simp]
+theorem toIsoDescentDatum_iso_symm_tmul (s : S) (b : B) :
+    D.toIsoDescentDatum.iso.symm (s ⊗ₜ b) =
+      algebraMap S B s ⊗ₜ 1 * Algebra.TensorProduct.comm R S B (D.coaction b) :=
+  D.isoInv_tmul s b
+
+end DescentDatum
+
+namespace IsoDescentDatum
+
+variable {R S B}
+
+open Algebra.TensorProduct
+
+variable (E : IsoDescentDatum R S B)
+
+private theorem coassoc (b : B) :
+    Algebra.TensorProduct.map (AlgHom.id R S)
+        (((E.iso : B ⊗[R] S →ₐ[S] S ⊗[R] B).comp
+          Algebra.TensorProduct.includeLeft).restrictScalars R) (E.iso (b ⊗ₜ 1)) =
+      Algebra.TensorProduct.map (AlgHom.id R S) Algebra.TensorProduct.includeRight
+        (E.iso (b ⊗ₜ 1)) := by
+  have h := E.cocycle ((b ⊗ₜ 1) ⊗ₜ 1)
+  simp only [Algebra.TensorProduct.map_tmul, TensorProduct.rightComm_tmul,
+    AlgHom.restrictScalars_apply, AlgEquiv.coe_toAlgHom, AlgHom.id_apply] at h
+  rwa [map_assoc_tmul_one, map_assoc_tmul_one, Algebra.TensorProduct.comm_comp_includeLeft] at h
+
+/-- **Normalisation of a descent datum along the diagonal.** The composite
+`B → B ⊗[R] S → S ⊗[R] B → B`, `b ↦ μ (iso (b ⊗ 1))` with `μ` the multiplication map, is the
+identity. This is a consequence of the cocycle condition and the invertibility of `iso`. -/
+private theorem mulLeft_iso_tmul_one (b : B) : mulLeft (E.iso (b ⊗ₜ 1)) = b := by
+  set c : B →ₐ[S] B := mulLeft.comp
+    ((E.iso : B ⊗[R] S →ₐ[S] S ⊗[R] B).comp Algebra.TensorProduct.includeLeft) with hc
+  -- `c` intertwines the two multiplication maps along `iso`, hence is surjective.
+  have hmul : mulLeft.comp (E.iso : B ⊗[R] S →ₐ[S] S ⊗[R] B) = c.comp mulRight := by
+    refine Algebra.TensorProduct.ext (AlgHom.ext fun b ↦ ?_) (AlgHom.ext fun t ↦ ?_)
+    · simp [hc]
+    · simp
+  have hsurj : Function.Surjective c := fun b ↦
+    ⟨mulRight (E.iso.symm (1 ⊗ₜ b)), by
+      simpa using congr($hmul.symm (E.iso.symm (1 ⊗ₜ b)))⟩
+  -- `c` is idempotent, by the cocycle condition.
+  have hidem : ∀ a, c (c a) = c a := fun a ↦ by
+    have hθ (θ : B →ₐ[S] S ⊗[R] B) (y : S ⊗[R] B) :
+        mulLeft (Algebra.TensorProduct.map (AlgHom.id R S) (mulLeft.restrictScalars R)
+          (Algebra.TensorProduct.map (AlgHom.id R S) (θ.restrictScalars R) y)) =
+          mulLeft (θ (mulLeft y)) := by
+      induction y using TensorProduct.inductionOn with
+      | tmul s b => simp [Algebra.TensorProduct.algebraMap_apply]
+      | add x y hx hy => simp only [map_add, hx, hy]
+    have hR (y : S ⊗[R] B) :
+        mulLeft (Algebra.TensorProduct.map (AlgHom.id R S)
+          ((mulLeft : S ⊗[R] B →ₐ[S] B).restrictScalars R)
+          (Algebra.TensorProduct.map (AlgHom.id R S) Algebra.TensorProduct.includeRight y)) =
+          mulLeft y := by
+      induction y using TensorProduct.inductionOn with
+      | tmul s b => simp
+      | add x y hx hy => simp only [map_add, hx, hy]
+    have h := congr(mulLeft (Algebra.TensorProduct.map (AlgHom.id R S)
+      (mulLeft.restrictScalars R) $(E.coassoc a)))
+    rw [hθ, hR] at h
+    simpa [hc] using h
+  obtain ⟨a, rfl⟩ := hsurj b
+  simpa [hc] using hidem a
+
+/-- The coaction form of a classical descent datum: `coaction b = iso (b ⊗ 1)`. -/
+noncomputable def toDescentDatum : DescentDatum R S B where
+  coaction := (E.iso : B ⊗[R] S →ₐ[S] S ⊗[R] B).comp Algebra.TensorProduct.includeLeft
+  counit_coaction := E.mulLeft_iso_tmul_one
+  coassoc := E.coassoc
+
+@[simp]
+theorem toDescentDatum_coaction (b : B) : E.toDescentDatum.coaction b = E.iso (b ⊗ₜ 1) :=
+  (rfl)
+
+end IsoDescentDatum
+
+namespace DescentDatum
+
+variable {R S B}
+
+variable (R S B) in
+/-- Descent data in coalgebra form and in the classical form of a gluing isomorphism with the
+cocycle condition are equivalent: `coaction b = iso (b ⊗ 1)` and
+`iso (b ⊗ t) = coaction b * (1 ⊗ t)`. -/
+noncomputable def equivIsoDescentDatum : DescentDatum R S B ≃ IsoDescentDatum R S B where
+  toFun := toIsoDescentDatum
+  invFun := IsoDescentDatum.toDescentDatum
+  left_inv D := DescentDatum.ext <| AlgHom.ext fun b ↦ by
+    simp [← Algebra.TensorProduct.one_def]
+  right_inv E := IsoDescentDatum.ext <| AlgEquiv.coe_toAlgHom_injective <|
+    Algebra.TensorProduct.ext' fun b t ↦ by
+      simp only [AlgEquiv.coe_toAlgHom, toIsoDescentDatum_iso_tmul,
+        IsoDescentDatum.toDescentDatum_coaction, E.iso_tmul b t]
+
+@[simp]
+theorem equivIsoDescentDatum_apply (D : DescentDatum R S B) :
+    equivIsoDescentDatum R S B D = D.toIsoDescentDatum :=
+  (rfl)
+
+@[simp]
+theorem equivIsoDescentDatum_symm_apply (E : IsoDescentDatum R S B) :
+    (equivIsoDescentDatum R S B).symm E = E.toDescentDatum :=
+  (rfl)
+
+@[simp]
+theorem toIsoDescentDatum_toDescentDatum (D : DescentDatum R S B) :
+    D.toIsoDescentDatum.toDescentDatum = D :=
+  (equivIsoDescentDatum R S B).left_inv D
+
+end DescentDatum
+
+namespace IsoDescentDatum
+
+variable {R S B}
+
+@[simp]
+theorem toDescentDatum_toIsoDescentDatum (E : IsoDescentDatum R S B) :
+    E.toDescentDatum.toIsoDescentDatum = E :=
+  (DescentDatum.equivIsoDescentDatum R S B).right_inv E
+
+end IsoDescentDatum
 
 end Algebra
 

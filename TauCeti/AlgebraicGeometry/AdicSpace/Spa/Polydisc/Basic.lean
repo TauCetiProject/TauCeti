@@ -6,6 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Comap
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.NormedField
 public import TauCeti.RingTheory.Huber.WeightedEval.Continuous
 public import TauCeti.RingTheory.Huber.WeightedEval.Hom
 
@@ -75,6 +76,8 @@ and `Polynomial.taylorEquiv` for the same substitution on polynomials, the trans
 * `TauCeti.ValuationSpectrum.evalAtHom_comp_taylorHom`: translating by `a` and then evaluating
   at `b` is evaluating at `b + a`; `TauCeti.ValuationSpectrum.comap_taylorHom_classicalPoint`
   is the resulting recentring of classical points.
+* `TauCeti.ValuationSpectrum.closedPolydisc_vle_weightedC_iff`: over an ultrametric normed field,
+  points of the closed polydisc compare constants by their norms.
 
 ## References
 
@@ -405,5 +408,24 @@ theorem comap_taylorHom_classicalPoint (x : spa (powerBoundedSubring A)) (a b : 
     ← Function.comp_apply (f := comap _), ← comap_comp, evalAtHom_comp_taylorHom]
 
 end Translation
+
+section NormedField
+
+variable {K : Type*} [NormedField K] [IsUltrametricDist K] [NonarchimedeanRing K]
+
+/-- **Every point of the closed polydisc compares constants by their norms**: its pullback along
+the constant embedding `K → K⟨T⟩` is a point of `Spa (K, K°)`. -/
+theorem closedPolydisc_vle_weightedC_iff {k : ℕ} (v : closedPolydisc k K) (x y : K) :
+    v.1.toValuativeRel.vle (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x)
+        (weightedC _ isWeightFamily_one_weight y) ↔ ‖x‖ ≤ ‖y‖ := by
+  have hv : v.1 ∈ spa (powerBoundedSubring (weightedRestrictedSubring
+      (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight)) := closedPolydisc_def k K ▸ v.2
+  have hv' := comap_mem_spa (continuous_weightedC isWeightFamily_one_weight)
+    (Aplus := powerBoundedSubring K)
+    (fun _ ha ↦ mem_powerBoundedSubring.mpr
+      (isPowerBounded_weightedC _ (mem_powerBoundedSubring.mp ha))) hv
+  rw [← vle_iff_norm_le_of_mem_spa hv', comap_vle]
+
+end NormedField
 
 end TauCeti.ValuationSpectrum

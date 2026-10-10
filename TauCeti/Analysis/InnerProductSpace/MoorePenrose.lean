@@ -29,8 +29,9 @@ singular-system construction
 
 `A⁺ y = ∑ᵢ σᵢ⁻² ⟪A vᵢ, y⟫ vᵢ = ∑ᵢ σᵢ⁻¹ ⟪uᵢ, y⟫ vᵢ`,
 
-where `(vᵢ)` is the ordered orthonormal eigenbasis of `A† A`, `σᵢ` are the singular values of `A`,
-and `uᵢ = σᵢ⁻¹ A vᵢ` are the left singular vectors. In words, `A⁺` inverts each nonzero singular
+where `(vᵢ) = A.rightSingularBasis` is the ordered orthonormal eigenbasis of `A† A`, `σᵢ` are the
+singular values of `A`, and `uᵢ = σᵢ⁻¹ A vᵢ = A.leftSingularVector i` are the left singular
+vectors. In words, `A⁺` inverts each nonzero singular
 value and sends the zero ones to zero. Every Moore–Penrose inverse of `A` equals `A⁺`.
 
 The relation reduces to familiar one-sided inverses in the injective, surjective, and invertible
@@ -203,18 +204,17 @@ section Construction
 variable [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
 
 /-- The **Moore–Penrose inverse** of a linear map `A` between finite-dimensional inner product
-spaces: `A⁺ y = ∑ᵢ σᵢ⁻² ⟪A vᵢ, y⟫ vᵢ`, where `(vᵢ)` is the ordered orthonormal eigenbasis of
-`A† A` and `σᵢ` are the singular values of `A`. Indices with `σᵢ = 0` contribute nothing. -/
+spaces: `A⁺ y = ∑ᵢ σᵢ⁻² ⟪A vᵢ, y⟫ vᵢ`, where `(vᵢ)` is the right singular basis of `A`
+(the ordered orthonormal eigenbasis of `A† A`) and `σᵢ` are the singular values of `A`. Indices
+with `σᵢ = 0` contribute nothing. -/
 noncomputable def moorePenroseInverse (A : E →ₗ[𝕜] F) : F →ₗ[𝕜] E :=
   ∑ i : Fin (finrank 𝕜 E), ((A.singularValues i ^ 2 : ℝ) : 𝕜)⁻¹ •
-    (rankOne 𝕜 (A.isSymmetric_adjoint_comp_self.eigenvectorBasis rfl i)
-      (A (A.isSymmetric_adjoint_comp_self.eigenvectorBasis rfl i))).toLinearMap
+    (rankOne 𝕜 (A.rightSingularBasis i) (A (A.rightSingularBasis i))).toLinearMap
 
 /-- The singular expansion of `A⁺ y`. -/
 theorem moorePenroseInverse_apply (A : E →ₗ[𝕜] F) (y : F) :
     A.moorePenroseInverse y = ∑ i : Fin (finrank 𝕜 E), ((A.singularValues i ^ 2 : ℝ) : 𝕜)⁻¹ •
-      ⟪A (A.isSymmetric_adjoint_comp_self.eigenvectorBasis rfl i), y⟫ •
-        A.isSymmetric_adjoint_comp_self.eigenvectorBasis rfl i := by
+      ⟪A (A.rightSingularBasis i), y⟫ • A.rightSingularBasis i := by
   simp [moorePenroseInverse]
 
 variable (A : E →ₗ[𝕜] F)
@@ -222,22 +222,21 @@ variable (A : E →ₗ[𝕜] F)
 private theorem moorePenroseInverse_apply_apply (x : E) :
     A.moorePenroseInverse (A x) = ∑ i : Fin (finrank 𝕜 E),
       (((A.singularValues i ^ 2 : ℝ) : 𝕜)⁻¹ * ((A.singularValues i ^ 2 : ℝ) : 𝕜)) •
-        ⟪A.isSymmetric_adjoint_comp_self.eigenvectorBasis rfl i, x⟫ •
-          A.isSymmetric_adjoint_comp_self.eigenvectorBasis rfl i := by
-  simp only [moorePenroseInverse_apply, inner_apply_eigenvectorBasis, mul_smul]
+        ⟪A.rightSingularBasis i, x⟫ • A.rightSingularBasis i := by
+  simp only [moorePenroseInverse_apply, inner_apply_rightSingularBasis, mul_smul]
 
 /-- The singular-system construction `A⁺` is a Moore–Penrose inverse of `A`. -/
 @[simp]
 theorem isMoorePenroseInverse_moorePenroseInverse :
     IsMoorePenroseInverse A A.moorePenroseInverse where
   comp_comp_self := LinearMap.ext fun x ↦ by
-    set v := A.isSymmetric_adjoint_comp_self.eigenvectorBasis rfl
+    set v := A.rightSingularBasis
     conv_rhs => rw [← v.sum_repr' x]
     simp only [comp_apply, moorePenroseInverse_apply_apply, map_sum, map_smul]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [smul_comm, inv_mul_smul_apply_eigenvectorBasis]
+    rw [smul_comm, inv_mul_smul_apply_rightSingularBasis]
   comp_comp_self' := LinearMap.ext fun y ↦ by
-    set v := A.isSymmetric_adjoint_comp_self.eigenvectorBasis rfl
+    set v := A.rightSingularBasis
     rw [comp_apply, comp_apply, moorePenroseInverse_apply_apply, moorePenroseInverse_apply]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
     simp_rw [← mul_smul]
@@ -249,8 +248,7 @@ theorem isMoorePenroseInverse_moorePenroseInverse :
   isSymmetric_comp := by
     have : A ∘ₗ A.moorePenroseInverse = ∑ i : Fin (finrank 𝕜 E),
         ((A.singularValues i ^ 2 : ℝ) : 𝕜)⁻¹ •
-          (rankOne 𝕜 (A (A.isSymmetric_adjoint_comp_self.eigenvectorBasis rfl i))
-            (A (A.isSymmetric_adjoint_comp_self.eigenvectorBasis rfl i))).toLinearMap := by
+          (rankOne 𝕜 (A (A.rightSingularBasis i)) (A (A.rightSingularBasis i))).toLinearMap := by
       ext y
       simp [moorePenroseInverse_apply]
     rw [this]
@@ -258,8 +256,7 @@ theorem isMoorePenroseInverse_moorePenroseInverse :
   isSymmetric_comp' := by
     have : A.moorePenroseInverse ∘ₗ A = ∑ i : Fin (finrank 𝕜 E),
         (((A.singularValues i ^ 2 : ℝ) : 𝕜)⁻¹ * ((A.singularValues i ^ 2 : ℝ) : 𝕜)) •
-          (rankOne 𝕜 (A.isSymmetric_adjoint_comp_self.eigenvectorBasis rfl i)
-            (A.isSymmetric_adjoint_comp_self.eigenvectorBasis rfl i)).toLinearMap := by
+          (rankOne 𝕜 (A.rightSingularBasis i) (A.rightSingularBasis i)).toLinearMap := by
       ext x
       simp [moorePenroseInverse_apply_apply]
     rw [this]

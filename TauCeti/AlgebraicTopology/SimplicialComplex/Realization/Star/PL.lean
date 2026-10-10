@@ -13,8 +13,8 @@ public import TauCeti.Topology.PL.Cone
 # Piecewise-linear radial maps of vertex stars
 
 A finite piecewise-affine coordinate formula for a map of geometric vertex links extends to
-such a formula for its radial map of closed stars, including at the apex. For finite source
-vertex types, a local PL formula suffices. Applying the construction to both
+such a formula for its radial map of closed stars, including at the apex. For compact links, a
+local PL formula suffices. Applying the construction to both
 directions of a link homeomorphism supplies PL formulas for the closed-star homeomorphism
 and its inverse. Restricting these formulas to open stars supplies local PL chart maps.
 
@@ -101,28 +101,22 @@ theorem exists_isPiecewiseAffineOn_closedStarMap
   exact ⟨(coneToStar w) ∘ coneMap F ∘ (starToCone v), hout,
     coneToStar_coneMap_eq f F hF⟩
 
-/-- A PL coordinate formula on a geometric link in a finite source coordinate space
-extends to a PL coordinate formula on its entire closed star, including the apex.
-The target vertex type need not be finite. -/
-theorem exists_isPLOn_closedStarMap [Finite ι]
+/-- A PL coordinate formula on a geometric link extends to a PL coordinate formula on
+its entire closed star, including the apex, whenever the link is compact. Neither ambient
+vertex type needs to be finite. Finiteness of the link's face collection supplies compactness. -/
+theorem exists_isPLOn_closedStarMap
+    (hc : IsCompact (geometricLink K v))
     (f : geometricLink K v → geometricLink L w) (F : (ι → ℝ) → (κ → ℝ))
     (hF : ∀ y : geometricLink K v, F (y.1.1 : ι → ℝ) = (f y).1.1)
     (hf : IsPLOn F (range (fun y : geometricLink K v => (y.1.1 : ι → ℝ)))) :
     ∃ G : (ι → ℝ) → (κ → ℝ),
       IsPLOn G (range (fun x : closedStarRealization K {v} => (x.1.1 : ι → ℝ))) ∧
       ∀ x : closedStarRealization K {v}, G (x.1.1 : ι → ℝ) = (closedStarMap f x).1.1 := by
-  have hc : IsCompact (range (fun y : geometricLink K v => (y.1.1 : ι → ℝ))) := by
-    let := Fintype.ofFinite ι
-    have hcompact : IsCompact (geometricLink K v) := by
-      simpa only [Set.inter_def, Set.mem_ofPred_eq, Function.comp_apply,
-        ← mem_geometricLink, Set.ofPred_mem_eq] using
-        (K.isCompact_closedStarRealization_of_finite v).inter_left
-          (isClosed_eq ((continuous_apply v).comp (continuous_realization_coe K))
-            (continuous_const (y := (0 : ℝ))))
-    have : CompactSpace (geometricLink K v) := isCompact_iff_compactSpace.mp hcompact
-    exact isCompact_range ((continuous_realization_coe K).comp continuous_subtype_val)
+  have : CompactSpace (geometricLink K v) := isCompact_iff_compactSpace.mp hc
+  have hcoord : IsCompact (range (fun y : geometricLink K v => (y.1.1 : ι → ℝ))) :=
+    isCompact_range ((continuous_realization_coe K).comp continuous_subtype_val)
   obtain ⟨G, hG, heq⟩ := exists_isPiecewiseAffineOn_closedStarMap f F hF
-    (hf.isPiecewiseAffineOn_of_isCompact hc)
+    (hf.isPiecewiseAffineOn_of_isCompact hcoord)
   exact ⟨G, hG.isPLOn, heq⟩
 
 end AbstractSimplicialComplex
