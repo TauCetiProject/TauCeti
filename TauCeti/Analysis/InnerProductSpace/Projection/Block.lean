@@ -29,6 +29,9 @@ formulas turn operator-norm estimates for `A` into estimates for its blocks.
 ## Main results
 
 * `Submodule.diagBlock_add_offDiagBlock`: the two parts sum to `A`.
+* `Submodule.diagBlock_diagBlock`, `Submodule.offDiagBlock_offDiagBlock`,
+  `Submodule.diagBlock_offDiagBlock`, `Submodule.offDiagBlock_diagBlock`: taking either part is
+  idempotent, and each part annihilates the other.
 * `Submodule.two_smul_diagBlock`: `2 • U.diagBlock A = A + R_U A R_U`.
 * `Submodule.two_smul_offDiagBlock`: `2 • U.offDiagBlock A = A - R_U A R_U`.
 * `Submodule.commute_reflection_iff`: `R_U` commutes with `A` exactly when `P_U` does.
@@ -168,6 +171,43 @@ theorem diagBlock_eq_self_iff {A : E →L[𝕜] E} :
     U.diagBlock A = A ↔ Commute U.starProjection A := by
   rw [← offDiagBlock_eq_zero_iff, ← add_eq_left (a := U.diagBlock A),
     diagBlock_add_offDiagBlock, eq_comm]
+
+/-- The diagonal part of any operator commutes with the orthogonal projection onto `U`. -/
+theorem commute_starProjection_diagBlock (A : E →L[𝕜] E) :
+    Commute U.starProjection (U.diagBlock A) := by
+  simp only [diagBlock, starProjection_orthogonal', ← ContinuousLinearMap.mul_def]
+  have hP := U.isIdempotentElem_starProjection
+  have h0 := hP.mul_one_sub_self
+  have h1 := hP.one_sub_mul_self
+  set P := U.starProjection
+  -- Both products reduce to `P A P`, since `P (1 - P) = (1 - P) P = 0`.
+  have hPP (B : E →L[𝕜] E) : P * (P * B) = P * B := by rw [← mul_assoc, hP.eq]
+  have h0' (B : E →L[𝕜] E) : P * ((1 - P) * B) = 0 := by rw [← mul_assoc, h0, zero_mul]
+  change P * _ = _ * P
+  simp only [mul_add, add_mul, mul_assoc, hP.eq, h1, hPP, h0', mul_zero, add_zero]
+
+/-- The diagonal part of the diagonal part of `A` is the diagonal part of `A`. -/
+@[simp]
+theorem diagBlock_diagBlock (A : E →L[𝕜] E) : U.diagBlock (U.diagBlock A) = U.diagBlock A :=
+  (U.diagBlock_eq_self_iff).2 (U.commute_starProjection_diagBlock A)
+
+/-- The off-diagonal part of the diagonal part of `A` vanishes. -/
+@[simp]
+theorem offDiagBlock_diagBlock (A : E →L[𝕜] E) : U.offDiagBlock (U.diagBlock A) = 0 :=
+  (U.offDiagBlock_eq_zero_iff).2 (U.commute_starProjection_diagBlock A)
+
+/-- The diagonal part of the off-diagonal part of `A` vanishes. -/
+@[simp]
+theorem diagBlock_offDiagBlock (A : E →L[𝕜] E) : U.diagBlock (U.offDiagBlock A) = 0 := by
+  have h := congrArg U.diagBlock (U.diagBlock_add_offDiagBlock A)
+  rwa [diagBlock_add, diagBlock_diagBlock, add_eq_left] at h
+
+/-- The off-diagonal part of the off-diagonal part of `A` is the off-diagonal part of `A`. -/
+@[simp]
+theorem offDiagBlock_offDiagBlock (A : E →L[𝕜] E) :
+    U.offDiagBlock (U.offDiagBlock A) = U.offDiagBlock A := by
+  have h := congrArg U.offDiagBlock (U.diagBlock_add_offDiagBlock A)
+  rwa [offDiagBlock_add, offDiagBlock_diagBlock, zero_add] at h
 
 /-- The diagonal part of `A` relative to `Uᗮ ⊕ Uᗮᗮ` is its diagonal part relative to `U ⊕ Uᗮ`. -/
 @[simp]
