@@ -28,8 +28,6 @@ All three statements hold on normalized chains as well.
 ## Main definitions
 
 * `TauCeti.SingularCube.point`: the `0`-cube at a point.
-* `TauCeti.assocMap`: the associator `(X × Y) × Z → X × Y × Z` as a continuous map, with
-  `TauCeti.assocMap_apply`.
 
 ## Main results
 
@@ -54,16 +52,6 @@ namespace TauCeti
 
 variable {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
 
-variable (X Y Z) in
-/-- The associator `(X × Y) × Z → X × Y × Z` as a continuous map. -/
-@[expose] def assocMap : C((X × Y) × Z, X × Y × Z) :=
-  (Homeomorph.prodAssoc X Y Z : C((X × Y) × Z, X × Y × Z))
-
-/-- The associator reassociates the coordinates. -/
-@[simp]
-theorem assocMap_apply (x : (X × Y) × Z) : assocMap X Y Z x = (x.1.1, x.1.2, x.2) :=
-  (rfl)
-
 namespace SingularCube
 
 /-- The `0`-cube at a point. -/
@@ -72,13 +60,6 @@ def point (x : X) : SingularCube X 0 := ContinuousMap.const _ x
 @[simp]
 theorem point_apply (x : X) (t : Fin 0 → I) : point x t = x :=
   (rfl)
-
-/-- The cross product of cubes is associative, as a cube in `X × Y × Z`. -/
-theorem map_assocMap_crossProduct {p q r : ℕ} (c : SingularCube X p) (d : SingularCube Y q)
-    (e : SingularCube Z r) :
-    (assocMap X Y Z).comp (crossProduct (crossProduct c d) e) =
-      cast (Nat.add_assoc p q r).symm (crossProduct c (crossProduct d e)) :=
-  (crossProduct_assoc c d e).symm
 
 /-- A point on the left is a unit for the cross product of cubes, up to reindexing. -/
 theorem cast_crossProduct_point_left {q : ℕ} (x : X) (d : SingularCube Y q) :
@@ -108,7 +89,7 @@ variable {p q r : ℕ} (R : Type*) [CommSemiring R]
 associator of the spaces and the reindexing `p + (q + r) = (p + q) + r`. -/
 theorem crossProduct_assoc (a : CubicalChain X R p) (b : CubicalChain Y R q)
     (c : CubicalChain Z R r) :
-    map R (assocMap X Y Z) (p + q + r)
+    map R (Homeomorph.prodAssoc X Y Z : C((X × Y) × Z, X × Y × Z)) (p + q + r)
         (crossProduct (X × Y) Z R (p + q) r (crossProduct X Y R p q a b) c) =
       cast R (Nat.add_assoc p q r).symm
         (crossProduct X (Y × Z) R p (q + r) a (crossProduct Y Z R q r b c)) := by
@@ -125,7 +106,7 @@ theorem crossProduct_assoc (a : CubicalChain X R p) (b : CubicalChain Y R q)
       | add c c' hc hc' => simp only [map_add, hc, hc']
       | single c₃ s₃ =>
         simp only [crossProduct_single, map_single, cast_single, mul_assoc]
-        rw [SingularCube.map_assocMap_crossProduct]
+        rw [← SingularCube.crossProduct_assoc]
 
 /-- A point on the left is a unit for the cross product of chains: the cross product with the
 `0`-cube at `x` is the push-forward along `y ↦ (x, y)`, up to reindexing `0 + q = q`. -/
@@ -204,7 +185,7 @@ variable {p q r : ℕ} (R : Type*) [CommRing R]
 the spaces and the reindexing `p + (q + r) = (p + q) + r`. -/
 theorem crossProduct_assoc (a : NormalizedCubicalChain X R p) (b : NormalizedCubicalChain Y R q)
     (c : NormalizedCubicalChain Z R r) :
-    map R (assocMap X Y Z) (p + q + r)
+    map R (Homeomorph.prodAssoc X Y Z : C((X × Y) × Z, X × Y × Z)) (p + q + r)
         (crossProduct (X × Y) Z R (p + q) r (crossProduct X Y R p q a b) c) =
       cast R (Nat.add_assoc p q r).symm
         (crossProduct X (Y × Z) R p (q + r) a (crossProduct Y Z R q r b c)) := by

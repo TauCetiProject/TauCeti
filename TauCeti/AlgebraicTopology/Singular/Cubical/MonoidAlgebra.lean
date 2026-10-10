@@ -177,13 +177,14 @@ theorem mul_assoc {p q r : ℕ} (a : NormalizedCubicalChain G R p) (b : Normaliz
   -- `a × (b × c)` is the reindexed push-forward of `(a × b) × c` along the associator.
   have hW : crossProduct G (G × G) R p (q + r) a (crossProduct G G R q r b c) =
       cast R (Nat.add_assoc p q r)
-        (map R (assocMap G G G) (p + q + r)
+        (map R (Homeomorph.prodAssoc G G G : C((G × G) × G, G × G × G)) (p + q + r)
           (crossProduct (G × G) G R (p + q) r (crossProduct G G R p q a b) c)) := by
     rw [hZ, cast_cast, cast_rfl]
   have key : (mulMap G).comp ((mulMap G).prodMap (ContinuousMap.id G)) =
-      (mulMap G).comp (((ContinuousMap.id G).prodMap (mulMap G)).comp (assocMap G G G)) := by
+      (mulMap G).comp (((ContinuousMap.id G).prodMap (mulMap G)).comp
+        (Homeomorph.prodAssoc G G G : C((G × G) × G, G × G × G))) := by
     ext x
-    simp [_root_.mul_assoc]
+    simp [_root_.mul_assoc, Homeomorph.prodAssoc, Equiv.prodAssoc]
   simp only [mul, LinearMap.compr₂_apply]
   rw [crossProduct_map_left, crossProduct_map_right, hW, map_cast, map_cast]
   simp only [map_comp_apply, key]
