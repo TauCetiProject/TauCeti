@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Additive
-import TauCeti.Algebra.Polynomial.CubicTripleRoot
+import TauCeti.Algebra.Polynomial.Cubic.TripleRoot
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 import TauCeti.RingTheory.LocalRing.QuadraticDoubleRoot
 
