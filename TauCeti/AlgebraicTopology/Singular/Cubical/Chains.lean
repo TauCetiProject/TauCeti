@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Basic
+import Mathlib.Data.Fin.Parity
 
 /-!
 # Unnormalized cubical chains
@@ -40,10 +41,8 @@ only the central signs `(-1) ^ i` enter the boundary.
 
 ## Implementation notes
 
-The concrete model and the proof of `boundary_boundary` follow
-`TauCeti.AlgebraicTopology.Singular.Subdivision.AffineChain`, whose `boundary` is also a
-`Finsupp.linearCombination` of signed faces and whose `boundary_boundary` is also a
-`Finset.sum_involution` over pairs of face indices.
+The concrete model, with its `boundary` and `boundary_boundary`, follows
+`TauCeti.AlgebraicTopology.Singular.Subdivision.AffineChain`.
 
 ## References
 
@@ -130,23 +129,6 @@ theorem boundary_single {n : ℕ} (c : SingularCube X (n + 1)) (a : R) :
   simp only [boundary, linearCombination_single, boundaryCube, Finset.smul_sum, smul_sub,
     smul_single, smul_eq_mul, mul_one, hc]
 
-/-- The parity of the exponent after a cubical swap: `(-1) ^ (i.succAbove j + j.predAbove i)` is
-the opposite of `(-1) ^ (i + j)`. -/
-theorem neg_one_pow_succAbove_add_predAbove {n : ℕ} (i : Fin (n + 2)) (j : Fin (n + 1)) :
-    (-1 : R) ^ ((i.succAbove j : ℕ) + (j.predAbove i : ℕ)) = -(-1 : R) ^ ((i : ℕ) + j) := by
-  rcases j.castSucc.lt_or_le i with h | h
-  · rw [Fin.succAbove_of_castSucc_lt i j h, Fin.predAbove_of_castSucc_lt j i h, Fin.val_castSucc,
-      Fin.val_pred]
-    have hi : (i : ℕ) + j = (j + ((i : ℕ) - 1)) + 1 := by
-      have := Fin.lt_def.1 h
-      rw [Fin.val_castSucc] at this
-      omega
-    rw [hi, pow_succ, mul_neg_one, neg_neg]
-  · -- The exponent `j + 1 + i` is the successor of `i + j`.
-    have hj : (j : ℕ) + 1 + i = (i + j) + 1 := by omega
-    rw [Fin.succAbove_of_le_castSucc i j h, Fin.predAbove_of_le_castSucc j i h, Fin.val_succ,
-      Fin.coe_castPred, hj, pow_succ, mul_neg_one]
-
 /-- The involution on pairs of face indices behind `∂ ∘ ∂ = 0`: `(i, j)` goes to
 `(i.succAbove j, j.predAbove i)`. -/
 def faceSwap {n : ℕ} (p : Fin (n + 2) × Fin (n + 1)) : Fin (n + 2) × Fin (n + 1) :=
@@ -163,6 +145,8 @@ theorem faceSwap_ne {n : ℕ} (p : Fin (n + 2) × Fin (n + 1)) : faceSwap p ≠ 
 
 /-- The boundary of a boundary vanishes. -/
 theorem boundary_boundary (n : ℕ) : boundary X R n ∘ₗ boundary X R (n + 1) = 0 := by
+  -- As for `AffineChain.boundary_boundary`: the terms of `∂ ∂ c` cancel in pairs under
+  -- `faceSwap`, by the cubical identity and the parity of the swapped exponent.
   refine lhom_ext' fun c ↦ LinearMap.ext_ring ?_
   simp only [LinearMap.coe_comp, Function.comp_apply, lsingle_apply, LinearMap.zero_apply,
     boundary_single, map_sum, map_smul, map_sub, ← Finset.sum_sub_distrib, Finset.smul_sum]
@@ -171,7 +155,7 @@ theorem boundary_boundary (n : ℕ) : boundary X R n ∘ₗ boundary X R (n + 1)
     (fun _ _ ↦ Finset.mem_univ _) (fun p _ ↦ faceSwap_faceSwap p)
   obtain ⟨i, j⟩ := p
   simp only [faceSwap, ← face_face, smul_sub, smul_smul, ← pow_add,
-    neg_one_pow_succAbove_add_predAbove, neg_smul]
+    Fin.neg_one_pow_succAbove_add_predAbove, neg_smul]
   abel
 
 /-- The boundary is natural. -/
