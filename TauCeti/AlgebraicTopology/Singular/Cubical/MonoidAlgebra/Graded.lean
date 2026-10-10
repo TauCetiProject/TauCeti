@@ -43,14 +43,6 @@ namespace TauCeti
 
 namespace NormalizedCubicalChain
 
-/-- Equal after reindexing implies heterogeneously equal. -/
-theorem heq_of_cast_eq {X : Type*} [TopologicalSpace X] {R : Type*} [Ring R] {n m : ℕ}
-    (h : n = m) {x : NormalizedCubicalChain X R n} {y : NormalizedCubicalChain X R m}
-    (hxy : cast R h x = y) : HEq x y := by
-  subst h
-  rw [cast_rfl] at hxy
-  exact heq_of_eq hxy
-
 variable {G : Type*} [Monoid G] [TopologicalSpace G] [ContinuousMul G] {R : Type*} [CommRing R]
 
 variable (G R) in
@@ -119,9 +111,7 @@ instance gAlgebra : DirectSum.GAlgebra R fun n : ℕ ↦ NormalizedCubicalChain 
   map_one := one_smul R (one G R)
   map_mul r s := by
     refine congrArg (GradedMonoid.mk 0) ?_
-    -- The graded product of `gMul` in degrees `0, 0` is `mul G R 0 0` by definition, and
-    -- `GradedMonoid.GMul.mul` exposes no other lemma to rewrite with, so the goal is restated.
-    change (r * s) • one G R = mul G R 0 0 (r • one G R) (s • one G R)
+    simp only [gMul_mul, LinearMap.toAddMonoidHom_coe, LinearMap.toSpanSingleton_apply]
     have h1 : mul G R 0 0 (one G R) (one G R) = one G R := by
       simpa using one_mul (one G R)
     rw [LinearMap.map_smul₂, map_smul, h1, mul_smul]
