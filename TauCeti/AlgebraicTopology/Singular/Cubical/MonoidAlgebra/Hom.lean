@@ -59,18 +59,15 @@ variable (R) in
 /-- The algebra homomorphism `C^□_*(G; R) → C^□_*(G'; R)` induced by a continuous monoid
 homomorphism `φ : G →ₜ* G'`: the push-forward of chains, dimension by dimension. -/
 def cubicalChainAlgHom (φ : G →ₜ* G') :
-    cubicalChainAlgebra G R →ₐ[R] cubicalChainAlgebra G' R :=
+    normalizedCubicalChainAlgebra G R →ₐ[R] normalizedCubicalChainAlgebra G' R :=
   DirectSum.toAlgebra R _
     (fun n ↦ cubicalChainLof G' R n ∘ₗ map R φ.toContinuousMap n)
     (by
-      change cubicalChainLof G' R 0 (map R φ.toContinuousMap 0 (one G R)) = 1
-      rw [NormalizedCubicalChain.map_one, DirectSum.lof_eq_of]
+      rw [gOne_one, LinearMap.comp_apply, NormalizedCubicalChain.map_one, DirectSum.lof_eq_of]
       rfl)
     (fun {i j} a b ↦ by
-      change cubicalChainLof G' R (i + j) (map R φ.toContinuousMap (i + j) (mul G R i j a b)) =
-        cubicalChainLof G' R i (map R φ.toContinuousMap i a) *
-          cubicalChainLof G' R j (map R φ.toContinuousMap j b)
-      rw [NormalizedCubicalChain.map_mul, cubicalChainLof_mul])
+      rw [gMul_mul, LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.comp_apply,
+        NormalizedCubicalChain.map_mul, cubicalChainLof_mul])
 
 /-- The induced algebra homomorphism on a chain of dimension `n`. -/
 @[simp]
@@ -80,32 +77,40 @@ theorem cubicalChainAlgHom_lof (φ : G →ₜ* G') (n : ℕ) (y : NormalizedCubi
   rw [DirectSum.lof_eq_of]
   exact DirectSum.toAddMonoid_of _ _ _
 
+/-- The induced algebra homomorphism preserves the cohomological degree. -/
+theorem cubicalChainAlgHom_mem (φ : G →ₜ* G') {i : ℤ} {a : normalizedCubicalChainAlgebra G R}
+    (ha : a ∈ cubicalChainGrading G R i) :
+    cubicalChainAlgHom R φ a ∈ cubicalChainGrading G' R i := by
+  rcases (mem_cubicalChainGrading_iff G R).1 ha with rfl | ⟨n, y, hn, rfl⟩
+  · rw [map_zero]
+    exact zero_mem _
+  · rw [cubicalChainAlgHom_lof]
+    exact (mem_cubicalChainGrading_iff G' R).2 (Or.inr ⟨n, _, hn, rfl⟩)
+
+/-- The induced algebra homomorphism commutes with the differentials. -/
+theorem cubicalChainDifferential_cubicalChainAlgHom (φ : G →ₜ* G')
+    (a : normalizedCubicalChainAlgebra G R) :
+    cubicalChainDifferential G' R (cubicalChainAlgHom R φ a) =
+      cubicalChainAlgHom R φ (cubicalChainDifferential G R a) := by
+  induction a using DirectSum.induction_on with
+  | zero => simp
+  | of n y =>
+    rw [← DirectSum.lof_eq_of R, cubicalChainAlgHom_lof]
+    rcases n with _ | k
+    · rw [cubicalChainDifferential_lof_zero, cubicalChainDifferential_lof_zero, map_zero]
+    · rw [cubicalChainDifferential_lof_succ, cubicalChainDifferential_lof_succ,
+        cubicalChainAlgHom_lof, ← LinearMap.comp_apply (boundary G' R k), ← map_boundary,
+        LinearMap.comp_apply]
+  | add a b ha hb => rw [map_add, map_add, ha, hb, map_add, map_add]
+
 variable (R) in
 /-- The **morphism of DG algebras** `C^□_*(G; R) → C^□_*(G'; R)` induced by a continuous monoid
 homomorphism. -/
 def cubicalChainDGAlgHom (φ : G →ₜ* G') :
     DGAlgHom (cubicalChain_isDGAlgebra G R) (cubicalChain_isDGAlgebra G' R) where
   toAlgHom := cubicalChainAlgHom R φ
-  map_mem := fun {i a} ha ↦ by
-    rcases (mem_cubicalChainGrading_iff G R).1 ha with rfl | ⟨n, y, hn, rfl⟩
-    · rw [map_zero]
-      exact zero_mem _
-    · change cubicalChainAlgHom R φ (cubicalChainLof G R n y) ∈ _
-      rw [cubicalChainAlgHom_lof]
-      exact (mem_cubicalChainGrading_iff G' R).2 (Or.inr ⟨n, _, hn, rfl⟩)
-  map_d' := fun a ↦ by
-    change cubicalChainDifferential G' R (cubicalChainAlgHom R φ a) =
-      cubicalChainAlgHom R φ (cubicalChainDifferential G R a)
-    induction a using DirectSum.induction_on with
-    | zero => simp
-    | of n y =>
-      rw [← DirectSum.lof_eq_of R, cubicalChainAlgHom_lof]
-      rcases n with _ | k
-      · rw [cubicalChainDifferential_lof_zero, cubicalChainDifferential_lof_zero, map_zero]
-      · rw [cubicalChainDifferential_lof_succ, cubicalChainDifferential_lof_succ,
-          cubicalChainAlgHom_lof, ← LinearMap.comp_apply (boundary G' R k), ← map_boundary,
-          LinearMap.comp_apply]
-    | add a b ha hb => rw [map_add, map_add, ha, hb, map_add, map_add]
+  map_mem := cubicalChainAlgHom_mem φ
+  map_d' := cubicalChainDifferential_cubicalChainAlgHom φ
 
 /-- The induced DG algebra morphism on a chain of dimension `n`. -/
 @[simp]
@@ -144,7 +149,8 @@ theorem cubicalChainDGAlgHom_comp (ψ : G' →ₜ* G'') (φ : G →ₜ* G') :
       (cubicalChainDGAlgHom R ψ).comp (cubicalChainDGAlgHom R φ) :=
   cubicalChain_dgAlgHom_ext fun n y ↦ by
     rw [DGAlgHom.comp_apply, cubicalChainDGAlgHom_lof, cubicalChainDGAlgHom_lof,
-      cubicalChainDGAlgHom_lof, map_comp_apply]
+      cubicalChainDGAlgHom_lof, ← LinearMap.comp_apply (NormalizedCubicalChain.map R _ n),
+      ← NormalizedCubicalChain.map_comp]
     rfl
 
 end Hom
@@ -172,14 +178,11 @@ theorem cubicalChainAugmentLof_of_ne_zero {n : ℕ} (hn : n ≠ 0)
 
 variable (G R) in
 /-- The augmentation `C^□_*(G; R) → R` as an algebra homomorphism. -/
-def cubicalChainAugmentAlgHom : cubicalChainAlgebra G R →ₐ[R] R :=
+def cubicalChainAugmentAlgHom : normalizedCubicalChainAlgebra G R →ₐ[R] R :=
   DirectSum.toAlgebra R _ (cubicalChainAugmentLof G R)
-    (by
-      change cubicalChainAugmentLof G R 0 (one G R) = 1
-      rw [cubicalChainAugmentLof_zero, augment_one])
+    (by rw [gOne_one, cubicalChainAugmentLof_zero, augment_one])
     (fun {i j} a b ↦ by
-      change cubicalChainAugmentLof G R (i + j) (mul G R i j a b) =
-        cubicalChainAugmentLof G R i a * cubicalChainAugmentLof G R j b
+      rw [gMul_mul]
       rcases Nat.eq_zero_or_pos i with rfl | hi
       · rcases Nat.eq_zero_or_pos j with rfl | hj
         · rw [cubicalChainAugmentLof_zero a, cubicalChainAugmentLof_zero b, ← augment_mul]
@@ -196,38 +199,43 @@ theorem cubicalChainAugmentAlgHom_lof (n : ℕ) (y : NormalizedCubicalChain G R 
   rw [DirectSum.lof_eq_of]
   exact DirectSum.toAddMonoid_of (fun n ↦ (cubicalChainAugmentLof G R n).toAddMonoidHom) n y
 
+/-- The augmentation is concentrated in degree `0`. -/
+theorem cubicalChainAugmentAlgHom_mem {i : ℤ} {a : normalizedCubicalChainAlgebra G R}
+    (ha : a ∈ cubicalChainGrading G R i) :
+    cubicalChainAugmentAlgHom G R a ∈ trivialGrading R R i := by
+  rcases (mem_cubicalChainGrading_iff G R).1 ha with rfl | ⟨n, y, hn, rfl⟩
+  · rw [map_zero]
+    exact zero_mem _
+  · rw [cubicalChainAugmentAlgHom_lof, mem_trivialGrading_iff]
+    rcases Nat.eq_zero_or_pos n with rfl | hn'
+    · left
+      omega
+    · right
+      exact cubicalChainAugmentLof_of_ne_zero (by omega) y
+
+/-- The augmentation vanishes on boundaries. -/
+theorem cubicalChainAugmentAlgHom_differential (a : normalizedCubicalChainAlgebra G R) :
+    cubicalChainAugmentAlgHom G R (cubicalChainDifferential G R a) = 0 := by
+  induction a using DirectSum.induction_on with
+  | zero => simp
+  | of n y =>
+    rw [← DirectSum.lof_eq_of R]
+    rcases n with _ | k
+    · rw [cubicalChainDifferential_lof_zero, map_zero]
+    · rw [cubicalChainDifferential_lof_succ, cubicalChainAugmentAlgHom_lof]
+      rcases k with _ | j
+      · rw [cubicalChainAugmentLof_zero, ← LinearMap.comp_apply, augment_boundary,
+          LinearMap.zero_apply]
+      · rw [cubicalChainAugmentLof_of_ne_zero (by omega)]
+  | add a b ha hb => rw [map_add, map_add, ha, hb, add_zero]
+
 variable (G R) in
 /-- The **augmentation of the DG algebra of cubical chains**: the augmentation of `0`-chains,
 extended by zero, as a DG algebra morphism to the ground ring. -/
 def cubicalChainAugmentation : DGAlgAugmentation (cubicalChain_isDGAlgebra G R) where
   toAlgHom := cubicalChainAugmentAlgHom G R
-  map_mem := fun {i a} ha ↦ by
-    rcases (mem_cubicalChainGrading_iff G R).1 ha with rfl | ⟨n, y, hn, rfl⟩
-    · rw [map_zero]
-      exact zero_mem _
-    · change cubicalChainAugmentAlgHom G R (cubicalChainLof G R n y) ∈ _
-      rw [cubicalChainAugmentAlgHom_lof, mem_trivialGrading_iff]
-      rcases Nat.eq_zero_or_pos n with rfl | hn'
-      · left
-        omega
-      · right
-        exact cubicalChainAugmentLof_of_ne_zero (by omega) y
-  map_d' := fun a ↦ by
-    change (0 : R →ₗ[R] R) (cubicalChainAugmentAlgHom G R a) =
-      cubicalChainAugmentAlgHom G R (cubicalChainDifferential G R a)
-    rw [LinearMap.zero_apply]
-    induction a using DirectSum.induction_on with
-    | zero => simp
-    | of n y =>
-      rw [← DirectSum.lof_eq_of R]
-      rcases n with _ | k
-      · rw [cubicalChainDifferential_lof_zero, map_zero]
-      · rw [cubicalChainDifferential_lof_succ, cubicalChainAugmentAlgHom_lof]
-        rcases k with _ | j
-        · rw [cubicalChainAugmentLof_zero, ← LinearMap.comp_apply, augment_boundary,
-            LinearMap.zero_apply]
-        · rw [cubicalChainAugmentLof_of_ne_zero (by omega)]
-    | add a b ha hb => rw [map_add, map_add, ← ha, ← hb, add_zero]
+  map_mem := cubicalChainAugmentAlgHom_mem
+  map_d' a := (LinearMap.zero_apply _).trans (cubicalChainAugmentAlgHom_differential a).symm
 
 /-- The augmentation on a chain of dimension `n`. -/
 @[simp]
