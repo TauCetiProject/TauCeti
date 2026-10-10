@@ -15,8 +15,7 @@ import Mathlib.Basic.Finite.Sum
 # Polyhedral boxes in finite coordinate spaces
 
 Coordinate boxes are convex polyhedra. Consequently the closed balls for the
-supremum metric on a finite real coordinate space are convex polyhedra. These
-balls give polyhedral neighbourhoods when restricting local PL decompositions.
+supremum metric on a finite real coordinate space are convex polyhedra.
 -/
 
 public section
