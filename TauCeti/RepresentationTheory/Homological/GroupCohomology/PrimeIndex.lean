@@ -14,8 +14,8 @@ import TauCeti.RepresentationTheory.Homological.GroupCohomology.InflationRestric
 /-!
 # Reducing `H¹ = 0` and `#H² ∣ #G` to subquotients of prime order
 
-Let `A` be a representation of a finite group `G`. Suppose that for every solvable subgroup `H` of
-`G` and every normal subgroup `N` of prime index in `H`,
+Let `A` be a representation of a finite group `G`. Suppose that for every prime `p`, every
+`p`-subgroup `H` of `G` and every normal subgroup `N` of prime index in `H`,
 
 ```text
 H¹(H ⧸ N, A^N) = 0    and    #H²(H ⧸ N, A^N) ∣ [H : N].
@@ -55,31 +55,32 @@ open _root_.groupCohomology
 
 variable {k G : Type u} [CommRing k] [Group G]
 
-/- The proof first treats a solvable group by induction on its order: it has a normal subgroup of
-prime index, the inflation-restriction sequence `0 ⟶ H¹(H ⧸ N, A^N) ⟶ H¹(H, A) ⟶ H¹(N, A)` is
-always exact, and `natCard_groupCohomology_two_dvd_natCard` bounds `H²` once `H¹` vanishes on
-every subgroup. A Sylow subgroup is solvable, and the restrictions to one Sylow `p`-subgroup for
-each prime `p` together detect every class in positive degree
-(`eq_zero_of_map_sylow_eq_zero`). So `H¹(G, A)` vanishes, and `H²(G, A)` embeds in the product
-of the `H²(P, A)` over these Sylow subgroups `P`, whose order divides `∏ #P = #G`.
+/- The proof first treats a finite `p`-group by induction on its order: it is solvable, so it has a
+normal subgroup of prime index, the inflation-restriction sequence
+`0 ⟶ H¹(H ⧸ N, A^N) ⟶ H¹(H, A) ⟶ H¹(N, A)` is always exact, and
+`natCard_groupCohomology_two_dvd_natCard` bounds `H²` once `H¹` vanishes on every subgroup. The
+restrictions to one Sylow `p`-subgroup for each prime `p` together detect every class in positive
+degree (`eq_zero_of_map_sylow_eq_zero`). So `H¹(G, A)` vanishes, and `H²(G, A)` embeds in the
+product of the `H²(P, A)` over these Sylow subgroups `P`, whose order divides `∏ #P = #G`.
 
 As in `TauCeti.RepresentationTheory.Homological.GroupCohomology.Solvable`, subgroups of `G` enter
 through injective homomorphisms `H →* G`, so that a subgroup of a subgroup is again one, by
 composition. -/
 
-/-- The solvable case of `isZero_groupCohomology_one_of_prime_index`: `H¹(H, A)` vanishes for
-every solvable group `H` of order `n` mapping injectively to `G`. -/
-private theorem isZero_groupCohomology_one_res_of_isSolvable [Finite G] (A : Rep k G)
-    (h1 : ∀ (H : Type u) [Group H] [Group.IsSolvable H] (f : H →* G), Function.Injective f →
-      ∀ (N : Subgroup H) [N.Normal], N.index.Prime →
+/-- The `p`-group case of `isZero_groupCohomology_one_of_prime_index`: `H¹(H, A)` vanishes for
+every finite `p`-group `H` of order `n` mapping injectively to `G`. -/
+private theorem isZero_groupCohomology_one_res_of_isPGroup [Finite G] (A : Rep k G)
+    (h1 : ∀ (p : ℕ) [Fact p.Prime] (H : Type u) [Group H], IsPGroup p H → ∀ (f : H →* G),
+      Function.Injective f → ∀ (N : Subgroup H) [N.Normal], N.index.Prime →
         IsZero (groupCohomology ((res f A).quotientToInvariants N) 1))
-    (n : ℕ) : ∀ (H : Type u) [Group H] [Group.IsSolvable H] (f : H →* G),
+    (p : ℕ) [Fact p.Prime] (n : ℕ) : ∀ (H : Type u) [Group H], IsPGroup p H → ∀ (f : H →* G),
       Function.Injective f → Nat.card H = n → IsZero (groupCohomology (res f A) 1) := by
   induction n using Nat.strong_induction_on with
   | _ n ih =>
-  intro H _ _ f hf hn
+  intro H _ hH f hf hn
   have : Finite H := Finite.of_injective f hf
-  rcases subsingleton_or_nontrivial H with hH | hH
+  have : Group.IsSolvable H := have := hH.isNilpotent; inferInstance
+  rcases subsingleton_or_nontrivial H with _ | _
   · exact isZero_groupCohomology_succ_of_subsingleton (res f A) 0
   obtain ⟨N, hN, hp⟩ := Group.IsSolvable.exists_normal_index_prime H
   have hlt : Nat.card N < n := by
@@ -89,53 +90,54 @@ private theorem isZero_groupCohomology_one_res_of_isSolvable [Finite G] (A : Rep
     nlinarith
   -- `H¹(H ⧸ N, A^N) ⟶ H¹(H, A) ⟶ H¹(N, A)` is exact with vanishing outer terms
   have hS := infRes_exact (res f A) (S := N) 0 fun i hi => absurd hi (Nat.not_lt_zero i)
-  exact hS.isZero_X₂ ((h1 H f hf N hp).eq_of_src _ _)
-    ((ih _ hlt N (f.comp N.subtype) (hf.comp Subtype.val_injective) rfl).eq_of_tgt _ _)
+  exact hS.isZero_X₂ ((h1 p H hH f hf N hp).eq_of_src _ _)
+    ((ih _ hlt N (hH.to_subgroup N) (f.comp N.subtype) (hf.comp Subtype.val_injective)
+      rfl).eq_of_tgt _ _)
 
-/-- The solvable case of `natCard_groupCohomology_two_dvd_natCard_of_prime_index`, for a solvable
-group `H` mapping injectively to `G`. -/
-private theorem natCard_groupCohomology_two_res_dvd_of_isSolvable [Finite G] (A : Rep k G)
-    (h1 : ∀ (H : Type u) [Group H] [Group.IsSolvable H] (f : H →* G), Function.Injective f →
-      ∀ (N : Subgroup H) [N.Normal], N.index.Prime →
+/-- The `p`-group case of `natCard_groupCohomology_two_dvd_natCard_of_prime_index`, for a `p`-group
+`H` mapping injectively to `G`. -/
+private theorem natCard_groupCohomology_two_res_dvd_of_isPGroup [Finite G] (A : Rep k G)
+    (h1 : ∀ (p : ℕ) [Fact p.Prime] (H : Type u) [Group H], IsPGroup p H → ∀ (f : H →* G),
+      Function.Injective f → ∀ (N : Subgroup H) [N.Normal], N.index.Prime →
         IsZero (groupCohomology ((res f A).quotientToInvariants N) 1))
-    (h2 : ∀ (H : Type u) [Group H] [Group.IsSolvable H] (f : H →* G), Function.Injective f →
-      ∀ (N : Subgroup H) [N.Normal], N.index.Prime →
+    (h2 : ∀ (p : ℕ) [Fact p.Prime] (H : Type u) [Group H], IsPGroup p H → ∀ (f : H →* G),
+      Function.Injective f → ∀ (N : Subgroup H) [N.Normal], N.index.Prime →
         Nat.card (groupCohomology ((res f A).quotientToInvariants N) 2) ∣ N.index)
-    (H : Type u) [Group H] [Group.IsSolvable H] (f : H →* G) (hf : Function.Injective f) :
+    (p : ℕ) [Fact p.Prime] (H : Type u) [Group H] (hH : IsPGroup p H) (f : H →* G)
+    (hf : Function.Injective f) :
     Nat.card (groupCohomology (res f A) 2) ∣ Nat.card H := by
   have : Finite H := Finite.of_injective f hf
-  refine natCard_groupCohomology_two_dvd_natCard (res f A) (fun H' _ f' hf' => ?_)
-    (fun H' _ f' hf' =>
-      have := Group.isSolvable_of_isSolvable_injective hf'; h2 H' (f.comp f') (hf.comp hf'))
-  have : Group.IsSolvable H' := Group.isSolvable_of_isSolvable_injective hf'
-  exact isZero_groupCohomology_one_res_of_isSolvable A h1 _ H' (f.comp f') (hf.comp hf') rfl
+  have : Group.IsSolvable H := have := hH.isNilpotent; inferInstance
+  refine natCard_groupCohomology_two_dvd_natCard (res f A)
+    (fun H' _ f' hf' => isZero_groupCohomology_one_res_of_isPGroup A h1 p _ H'
+      (hH.of_injective f' hf') (f.comp f') (hf.comp hf') rfl)
+    (fun H' _ f' hf' => h2 p H' (hH.of_injective f' hf') (f.comp f') (hf.comp hf'))
 
 /-- **`H¹` vanishes if it does on the subquotients of prime order.** Let `A` be a representation
-of a finite group `G`. Suppose that for every solvable subgroup `H` of `G` (given as an injective
-homomorphism `f : H →* G`) and every normal subgroup `N` of prime index in `H`,
+of a finite group `G`. Suppose that for every prime `p`, every `p`-subgroup `H` of `G` (given as
+an injective homomorphism `f : H →* G`) and every normal subgroup `N` of prime index in `H`,
 `H¹(H ⧸ N, A^N) = 0`. Then `H¹(G, A) = 0`. -/
 theorem isZero_groupCohomology_one_of_prime_index [Finite G] (A : Rep k G)
-    (h1 : ∀ (H : Type u) [Group H] [Group.IsSolvable H] (f : H →* G), Function.Injective f →
-      ∀ (N : Subgroup H) [N.Normal], N.index.Prime →
+    (h1 : ∀ (p : ℕ) [Fact p.Prime] (H : Type u) [Group H], IsPGroup p H → ∀ (f : H →* G),
+      Function.Injective f → ∀ (N : Subgroup H) [N.Normal], N.index.Prime →
         IsZero (groupCohomology ((res f A).quotientToInvariants N) 1)) :
     IsZero (groupCohomology A 1) := by
   refine isZero_of_isZero_sylow A 0 fun p _ _ => ?_
   obtain ⟨P⟩ : Nonempty (Sylow p G) := inferInstance
-  have : Group.IsSolvable P := have := P.isPGroup'.isNilpotent; inferInstance
-  exact ⟨P, isZero_groupCohomology_one_res_of_isSolvable A h1 _ P (P : Subgroup G).subtype
-    Subtype.val_injective rfl⟩
+  exact ⟨P, isZero_groupCohomology_one_res_of_isPGroup A h1 p _ P P.isPGroup'
+    (P : Subgroup G).subtype Subtype.val_injective rfl⟩
 
 /-- **The order of `H²` divides that of the group if it does on the subquotients of prime
-order.** Let `A` be a representation of a finite group `G`. Suppose that for every solvable
-subgroup `H` of `G` (given as an injective homomorphism `f : H →* G`) and every normal subgroup `N`
-of prime index in `H`, `H¹(H ⧸ N, A^N) = 0` and the order of `H²(H ⧸ N, A^N)` divides `[H : N]`.
+order.** Let `A` be a representation of a finite group `G`. Suppose that for every prime `p`, every
+`p`-subgroup `H` of `G` (given as an injective homomorphism `f : H →* G`) and every normal subgroup
+`N` of prime index in `H`, `H¹(H ⧸ N, A^N) = 0` and the order of `H²(H ⧸ N, A^N)` divides `[H : N]`.
 Then the order of `H²(G, A)` divides `#G`; in particular `H²(G, A)` is finite. -/
 theorem natCard_groupCohomology_two_dvd_natCard_of_prime_index [Finite G] (A : Rep k G)
-    (h1 : ∀ (H : Type u) [Group H] [Group.IsSolvable H] (f : H →* G), Function.Injective f →
-      ∀ (N : Subgroup H) [N.Normal], N.index.Prime →
+    (h1 : ∀ (p : ℕ) [Fact p.Prime] (H : Type u) [Group H], IsPGroup p H → ∀ (f : H →* G),
+      Function.Injective f → ∀ (N : Subgroup H) [N.Normal], N.index.Prime →
         IsZero (groupCohomology ((res f A).quotientToInvariants N) 1))
-    (h2 : ∀ (H : Type u) [Group H] [Group.IsSolvable H] (f : H →* G), Function.Injective f →
-      ∀ (N : Subgroup H) [N.Normal], N.index.Prime →
+    (h2 : ∀ (p : ℕ) [Fact p.Prime] (H : Type u) [Group H], IsPGroup p H → ∀ (f : H →* G),
+      Function.Injective f → ∀ (N : Subgroup H) [N.Normal], N.index.Prime →
         Nat.card (groupCohomology ((res f A).quotientToInvariants N) 2) ∣ N.index) :
     Nat.card (groupCohomology A 2) ∣ Nat.card G := by
   classical
@@ -153,9 +155,8 @@ theorem natCard_groupCohomology_two_dvd_natCard_of_prime_index [Finite G] (A : R
     exact ⟨P ⟨p, Nat.mem_primeFactors.2 ⟨Fact.out, hp, Nat.card_pos.ne'⟩⟩, congrFun hx _⟩
   have hP (p : (Nat.card G).primeFactors) :
       Nat.card (groupCohomology (res (P p : Subgroup G).subtype A) 2) ∣ Nat.card (P p) := by
-    have : Group.IsSolvable (P p) := have := (P p).isPGroup'.isNilpotent; inferInstance
-    exact natCard_groupCohomology_two_res_dvd_of_isSolvable A h1 h2 _ (P p : Subgroup G).subtype
-      Subtype.val_injective
+    exact natCard_groupCohomology_two_res_dvd_of_isPGroup A h1 h2 p _ (P p).isPGroup'
+      (P p : Subgroup G).subtype Subtype.val_injective
   calc Nat.card (groupCohomology A 2)
       = Nat.card Φ.range := Nat.card_congr (AddMonoidHom.ofInjective hΦ).toEquiv
     _ ∣ Nat.card (∀ p, groupCohomology (res (P p : Subgroup G).subtype A) 2) :=
