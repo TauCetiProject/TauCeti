@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Character
-public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.TensorPower
+public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Weight
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Character
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Rational
 
@@ -39,35 +39,6 @@ universe u
 
 variable (k : Type u) [Field k] [CharZero k] (n : ℕ)
 
-/-- The integer weight spaces of a Weyl module form an internal direct sum. -/
-theorem isInternal_weightSpace_weylRepOfShape (μ : YoungDiagram) :
-    DirectSum.IsInternal fun l : Fin n → ℤ =>
-      weightSpace (W := (weylModuleOfShape k n μ).toSubmodule) (weylRepOfShape k n μ) l := by
-  classical
-  let a := YoungTableau.youngSymmetrizerOver k
-    (StandardYoungTableau.rowSuperstandard μ).toTableau
-  let A := permTensorActionAlgHom k n μ.card a
-  let q : Representation.IntertwiningMap (tensorPowerRep k n μ.card)
-      (weylRepOfShape k n μ) :=
-    { toLinearMap := A.codRestrict (weylModuleOfShape k n μ).toSubmodule (fun v => by
-        rw [weylModuleOfShape_toSubmodule]
-        exact LinearMap.mem_range.mpr ⟨v, rfl⟩)
-      isIntertwining' := fun g => by
-        apply LinearMap.ext
-        intro v
-        apply Subtype.ext
-        simp only [LinearMap.comp_apply, LinearMap.codRestrict_apply, weylRepOfShape_apply_coe]
-        exact congrArg (fun f : Module.End k _ => f v)
-          (commute_permTensorActionAlgHom_tensorPowerRep k n μ.card a g).eq }
-  have hq : Function.Surjective q := by
-    intro w
-    have hw : w.val ∈ LinearMap.range A := by
-      simpa only [weylModuleOfShape_toSubmodule] using w.property
-    obtain ⟨v, hv⟩ := hw
-    exact ⟨v, Subtype.ext hv⟩
-  exact isInternal_weightSpace_of_iSup_eq_top weightChar_injective
-    (q.iSup_weightSpace_eq_top_of_surjective hq iSup_weightSpace_tensorPowerRep_eq_top)
-
 /-- The dimension of a Weyl-module weight space is the number of semistandard tableaux
 of the given content. The content is a natural exponent vector read as an integer weight. -/
 theorem finrank_weightSpace_weylRepOfShape (μ : YoungDiagram) (d : Fin n →₀ ℕ) :
@@ -96,6 +67,7 @@ theorem finrank_weightSpace_weylRepOfShape_weightOfShape (μ : YoungDiagram)
 
 /-- For every dominant integer weight, the rational Weyl module has a one-dimensional
 weight space at that weight, including weights with negative entries. -/
+@[simp]
 theorem finrank_weightSpace_rationalWeylRep_self (l : DominantWeight n) :
     Module.finrank k (weightSpace (W := (weylModuleOfShape k n l.detShiftShape).toSubmodule)
       (rationalWeylRep k n l) (l : Fin n → ℤ)) = 1 := by

@@ -81,21 +81,23 @@ theorem coeff_eq_finrank_weightSpace_of_character_diagGL
     intro d d' h
     ext i
     exact Nat.cast_injective (congrFun h i)
-  let S := (finite_setOf_weightSpace_ne_bot weightChar_injective ρ).toFinset
-  let a : (Fin n → ℤ) →₀ K := Finsupp.onFinset S
-    (fun l => (Module.finrank K (weightSpace ρ l) : K)) (by
-      intro l hl
-      dsimp only [S]
-      rw [Set.Finite.mem_toFinset]
-      intro hbot
-      exact hl (by rw [hbot]; simp))
+  have hs : Function.support (fun l => (Module.finrank K (weightSpace ρ l) : K)) ⊆
+      {l | weightSpace ρ l ≠ ⊥} := by
+    intro l hl hbot
+    exact hl (by dsimp only; rw [hbot]; simp)
+  let a : (Fin n → ℤ) →₀ K := Finsupp.ofSupportFinite
+    (fun l => (Module.finrank K (weightSpace ρ l) : K))
+    ((finite_setOf_weightSpace_ne_bot weightChar_injective ρ).subset hs)
   have hcomb : Finsupp.linearCombination K (fun l => ⇑(weightCharHom K l)) a =
       Finsupp.linearCombination K (fun l => ⇑(weightCharHom K l))
         (Finsupp.mapDomain e P.coeff) := by
-    rw [Finsupp.linearCombination_onFinset, Finsupp.linearCombination_mapDomain]
+    rw [Finsupp.linearCombination_apply_of_mem_supported K
+      (s := (finite_setOf_weightSpace_ne_bot weightChar_injective ρ).toFinset) (by
+        simpa only [Finsupp.mem_supported, a, Finsupp.ofSupportFinite_support,
+          Set.Finite.coe_toFinset] using hs), Finsupp.linearCombination_mapDomain]
     ext t
     rw [Finset.sum_apply]
-    simp only [Pi.smul_apply, smul_eq_mul]
+    simp only [a, Finsupp.ofSupportFinite_coe, Pi.smul_apply, smul_eq_mul]
     rw [← ρ.character_diagGL_eq_sum_finrank_weightSpace hρ, hP t,
       Finsupp.linearCombination_apply, Finsupp.sum]
     simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Function.comp_apply]
@@ -106,6 +108,6 @@ theorem coeff_eq_finrank_weightSpace_of_character_diagGL
   have ha := LinearIndependent.finsuppLinearCombination_injective
     (linearIndependent_weightCharHom (K := K) (κ := Fin n)) hcomb
   have h := congrArg (fun b : (Fin n → ℤ) →₀ K => b (e d)) ha
-  simpa only [a, Finsupp.onFinset_apply, Finsupp.mapDomain_apply_of_injective he] using h.symm
+  simpa only [a, Finsupp.ofSupportFinite_coe, Finsupp.mapDomain_apply_of_injective he] using h.symm
 
 end Representation
