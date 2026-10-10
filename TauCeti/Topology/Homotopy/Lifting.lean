@@ -15,7 +15,10 @@ homotopy `H : I × A → B` whose initial map lifts along `p` to `f : A → E` l
 homotopy `G : I × A → E` starting at `f`.  The property is stated for maps between topological
 spaces in arbitrary universes.  Covering maps have it for every space
 (`IsCoveringMap.hasHomotopyLiftingProperty`), as do product projections
-(`TauCeti.hasHomotopyLiftingProperty_fst`); it depends on the space only up to homeomorphism
+(`TauCeti.hasHomotopyLiftingProperty_fst`) and homeomorphisms
+(`Homeomorph.hasHomotopyLiftingProperty`); it is closed under composition
+(`TauCeti.HasHomotopyLiftingProperty.comp`) and base change
+(`TauCeti.HasHomotopyLiftingProperty.pullback`); it depends on the space only up to homeomorphism
 (`Homeomorph.hasHomotopyLiftingProperty_iff`), and a map with it lifts paths
 (`TauCeti.HasHomotopyLiftingProperty.exists_path_lift`).
 
@@ -72,6 +75,33 @@ homotopy lifts by keeping the `F`-coordinate of the initial lift fixed. -/
 theorem hasHomotopyLiftingProperty_fst (F : Type*) [TopologicalSpace F] (A : Type w)
     [TopologicalSpace A] : HasHomotopyLiftingProperty (Prod.fst : B × F → B) A :=
   fun f H hH ↦ ⟨⟨fun x ↦ (H x, (f x.2).2), by fun_prop⟩, rfl, fun a ↦ Prod.ext (hH a) rfl⟩
+
+/-- A homeomorphism has the homotopy lifting property with respect to every space. -/
+theorem _root_.Homeomorph.hasHomotopyLiftingProperty (e : E ≃ₜ B) (A : Type w)
+    [TopologicalSpace A] : HasHomotopyLiftingProperty e A :=
+  fun f H hH ↦ ⟨(e.symm : C(B, E)).comp H, funext fun x ↦ by simp, fun a ↦ by simp [hH a]⟩
+
+/-- The homotopy lifting property is closed under composition. -/
+theorem HasHomotopyLiftingProperty.comp {C : Type*} [TopologicalSpace C] {q : B → C}
+    (hq : HasHomotopyLiftingProperty q A) (hp : HasHomotopyLiftingProperty p A)
+    (hpc : Continuous p) : HasHomotopyLiftingProperty (q ∘ p) A := by
+  intro f H hH
+  obtain ⟨G₁, hG₁, hG₁₀⟩ := hq ((ContinuousMap.mk p hpc).comp f) H hH
+  obtain ⟨G₂, hG₂, hG₂₀⟩ := hp f G₁ hG₁₀
+  exact ⟨G₂, by rw [Function.comp_assoc, hG₂, hG₁], hG₂₀⟩
+
+/-- The homotopy lifting property passes to the base change `{(b', e) | g b' = p e} → B'` along
+any continuous map `g : B' → B`. -/
+theorem HasHomotopyLiftingProperty.pullback {B' : Type*} [TopologicalSpace B']
+    (hp : HasHomotopyLiftingProperty p A) (g : C(B', B)) :
+    HasHomotopyLiftingProperty (fun x : {x : B' × E // g x.1 = p x.2} ↦ x.1.1) A := by
+  intro f H hH
+  let f' : C(A, E) := ⟨fun a ↦ (f a).1.2, by fun_prop⟩
+  obtain ⟨G, hG, hG₀⟩ := hp f' (g.comp H) fun a ↦ by
+    simp only [ContinuousMap.comp_apply, hH a, f', ContinuousMap.coe_mk]
+    exact (f a).2
+  refine ⟨⟨fun x ↦ ⟨(H x, G x), (congrFun hG x).symm⟩, by fun_prop⟩, funext fun x ↦ rfl, fun a ↦ ?_⟩
+  exact Subtype.ext (Prod.ext (hH a) (hG₀ a))
 
 /-- The homotopy lifting property with respect to a space passes to every space homeomorphic to
 it. -/
