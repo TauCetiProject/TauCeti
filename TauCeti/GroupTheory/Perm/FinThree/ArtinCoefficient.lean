@@ -17,9 +17,6 @@ and the alternating subgroup are `1`, and that of the whole group is `0`.
 These are integral coefficients: they can be used in induction identities in every
 characteristic, including characteristics two and three.
 
-The calculation uses the subgroup enumeration and the upper-sum identity
-`TauCeti.sum_artinCoeff_of_mem`, rather than enumerating relative indices separately.
-
 ## References
 
 * J.-P. Serre, *Linear Representations of Finite Groups*, §9.2.
@@ -88,7 +85,7 @@ theorem artinCoeff_bot_perm_fin_three :
   omega
 
 /-- Artin's fixed-point identity for `S₃`, with all subgroup coefficients evaluated. -/
-theorem artin_fixedPoint_identity_perm_fin_three (g : Equiv.Perm (Fin 3)) :
+theorem sum_artinCoeff_mul_card_fixedBy_perm_fin_three_eq_six (g : Equiv.Perm (Fin 3)) :
     -3 * (Nat.card (MulAction.fixedBy
         (Equiv.Perm (Fin 3) ⧸ (⊥ : Subgroup (Equiv.Perm (Fin 3)))) g) : ℤ) +
       2 * (∑ a : Fin 3, (Nat.card (MulAction.fixedBy

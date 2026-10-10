@@ -21,9 +21,6 @@ virtual class gives the corresponding identity among its induced restrictions.
 In particular, the displayed relation does not assert that the representations are
 isomorphic or that any short exact sequences split.
 
-The proof evaluates `TauCeti.natCard_nsmul_eq_sum_artinCoeff_indK0_resK0` using the
-six-subgroup enumeration and the integral coefficients.
-
 ## References
 
 * J.-P. Serre, *Linear Representations of Finite Groups*, §9.2.
