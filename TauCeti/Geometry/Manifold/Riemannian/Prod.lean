@@ -17,7 +17,7 @@ the inner product of tangent vectors `(v₁, v₂)` and `(w₁, w₂)` at `(x, y
 `⟪v₁, w₁⟫ + ⟪v₂, w₂⟫`: the two factors are orthogonal and each carries its own metric. This file
 constructs that metric and shows that it is `C^n`, respectively continuous, when the metrics of
 both factors are. Products such as `S² × ℝ` and `ℍ² × ℝ` are among Thurston's model geometries,
-and isometries of products are in `TauCeti.Geometry.Manifold.Riemannian.Isometry.Prod`.
+and isometries of products are in `TauCeti.Geometry.Manifold.Riemannian.Isometry.Prod.Basic`.
 
 ## Main definitions
 
