@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.PointCount
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Supersingular
 -- Proof-only: the integral model of an equation over `R`, for the examples.
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
+-- Proof-only: the trace criterion for supersingularity over a finite field.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.Supersingular
 
 /-!
 # Good ordinary and good supersingular reduction
@@ -34,6 +37,9 @@ fields, and ordinarity is invariant under field extension, so good ordinary and 
 reduction are preserved by such base change and, for an equation with good reduction over `R`,
 reflected by it.
 
+Over a finite residue field, the reduction is supersingular exactly when `p` divides the trace of
+Frobenius of the reduction, `a_q = q + 1 - #W̃(k)` for `q` the order of `k`.
+
 In residue characteristic `2` and `3` the reduction is supersingular exactly when its
 `j`-invariant vanishes. This reads off the integral model: with good reduction, it is ordinary at
 `2` exactly when `a₁` is a unit, and ordinary at `3` exactly when `b₂` is a unit. The examples at
@@ -57,6 +63,9 @@ characteristic `3`.
 * `WeierstrassCurve.hasGoodOrdinaryReduction_baseChange_iff` and
   `WeierstrassCurve.hasGoodSupersingularReduction_baseChange_iff`: given good reduction, both are
   preserved and reflected by base change along a local map of discrete valuation rings.
+* `WeierstrassCurve.hasGoodSupersingularReduction_iff_dvd_frobeniusTrace` and
+  `WeierstrassCurve.hasGoodOrdinaryReduction_iff_not_dvd_frobeniusTrace`: over a finite residue
+  field, the trace criterion for the reduction.
 * `WeierstrassCurve.hasGoodOrdinaryReduction_iff_isUnit_a₁_of_char_two` and
   `WeierstrassCurve.hasGoodOrdinaryReduction_iff_isUnit_b₂_of_char_three`: the criteria in
   residue characteristic `2` and `3`.
@@ -262,6 +271,27 @@ theorem HasGoodSupersingularReduction.baseChange
   (hasGoodSupersingularReduction_baseChange_iff S hRS hp h.toHasGoodReduction).mpr h
 
 end BaseChange
+
+/-! ### Finite residue field -/
+
+/-- **Good ordinary reduction by the trace of Frobenius**: over a finite residue field of
+characteristic `p`, an equation with good reduction has good ordinary reduction exactly when `p`
+does not divide the trace of Frobenius of its reduction. -/
+theorem hasGoodOrdinaryReduction_iff_not_dvd_frobeniusTrace [Finite (ResidueField R)]
+    [ExpChar (ResidueField R) p] [W.HasGoodReduction R] :
+    W.HasGoodOrdinaryReduction R p ↔ ¬(p : ℤ) ∣ (W.reduction R).frobeniusTrace := by
+  have := (hasGoodReduction_iff_isElliptic_reduction (R := R)).mp ‹_›
+  rw [hasGoodOrdinaryReduction_iff_isOrdinary_reduction, isOrdinary_iff_not_dvd_frobeniusTrace]
+
+/-- **Good supersingular reduction by the trace of Frobenius**: over a finite residue field of
+characteristic `p`, an equation with good reduction has good supersingular reduction exactly when
+`p` divides the trace of Frobenius of its reduction. -/
+theorem hasGoodSupersingularReduction_iff_dvd_frobeniusTrace [Finite (ResidueField R)]
+    [ExpChar (ResidueField R) p] [W.HasGoodReduction R] :
+    W.HasGoodSupersingularReduction R p ↔ (p : ℤ) ∣ (W.reduction R).frobeniusTrace := by
+  have := (hasGoodReduction_iff_isElliptic_reduction (R := R)).mp ‹_›
+  rw [hasGoodSupersingularReduction_iff_isSupersingular_reduction,
+    isSupersingular_iff_dvd_frobeniusTrace]
 
 /-! ### Residue characteristic two and three -/
 
