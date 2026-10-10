@@ -97,8 +97,8 @@ theorem piRight_tmul (m : M) (g : P → A) :
   ext y
   simp [piRight, piRightBilinear_apply]
 
-/-- A tensor with a coordinate function is the function supported at that coordinate. -/
-@[simp]
+/-- A tensor with a coordinate function is the function supported at that coordinate.  Not a
+`simp` lemma: `piRight_tmul` already normalizes its left-hand side. -/
 theorem piRight_tmul_single (x : P) (m : M) :
     piRight k A M P (tmul k A m (Pi.single x 1)) = Pi.single x m := by
   ext y
