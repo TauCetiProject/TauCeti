@@ -13,7 +13,8 @@ public import TauCeti.NumberTheory.NumberField.Global.Adeles.Extension
 A field isomorphism transports finite and infinite adeles by restriction of places and the
 induced maps of completions. The resulting ring equivalences are continuous in both directions
 and commute with the diagonal embeddings. Their composition laws give the Galois action on the
-full adele ring, with the discrete topology on the finite automorphism group.
+finite adele ring and on the full adele ring, with the discrete topology on the finite automorphism
+group; the former is the finite component of the latter.
 
 The construction uses `finiteAdeleExtension` and `infiniteAdeleExtension` with the algebra
 structure induced by the field isomorphism. In particular, it preserves the restricted-product
@@ -247,6 +248,30 @@ omit [NumberField K]
 
 variable [Algebra K L]
 
+/-- The action of the field automorphism group on finite adeles, by ring automorphisms. It is
+the finite component of `adeleGaloisAction` (`adeleGaloisAction_snd`). -/
+noncomputable def finiteAdeleGaloisAction :
+    (L ≃ₐ[K] L) →* (FiniteAdeleRing (𝓞 L) L ≃+* FiniteAdeleRing (𝓞 L) L) where
+  toFun σ := finiteAdeleEquiv L L σ.toRingEquiv
+  map_one' := finiteAdeleEquiv_refl L
+  map_mul' σ τ := by
+    ext a : 1
+    exact (RingEquiv.congr_fun
+      (finiteAdeleEquiv_trans L L L τ.toRingEquiv σ.toRingEquiv) a).symm
+
+/-- Evaluation of the Galois action on finite adeles uses transport along the underlying field
+automorphism. -/
+theorem finiteAdeleGaloisAction_apply (σ : L ≃ₐ[K] L) (a : FiniteAdeleRing (𝓞 L) L) :
+    finiteAdeleGaloisAction K L σ a = finiteAdeleEquiv L L σ.toRingEquiv a :=
+  (rfl)
+
+/-- The Galois action on finite adeles extends the action on the diagonally embedded number
+field. -/
+@[simp]
+theorem finiteAdeleGaloisAction_algebraMap (σ : L ≃ₐ[K] L) (x : L) :
+    finiteAdeleGaloisAction K L σ (algebraMap L _ x) = algebraMap L _ (σ x) :=
+  finiteAdeleEquiv_algebraMap L L σ.toRingEquiv x
+
 /-- The action of the field automorphism group on full adeles, by continuous ring automorphisms.
 No normality hypothesis is needed to act; for a Galois extension this is the Galois action. -/
 noncomputable def adeleGaloisAction :
@@ -261,6 +286,13 @@ noncomputable def adeleGaloisAction :
 /-- Evaluation of the Galois action uses transport along the underlying field automorphism. -/
 theorem adeleGaloisAction_apply (σ : L ≃ₐ[K] L) (a : AdeleRing (𝓞 L) L) :
     adeleGaloisAction K L σ a = adeleEquiv L L σ.toRingEquiv a :=
+  (rfl)
+
+/-- The finite component of the Galois action on full adeles is the Galois action on finite
+adeles. -/
+@[simp]
+theorem adeleGaloisAction_snd (σ : L ≃ₐ[K] L) (a : AdeleRing (𝓞 L) L) :
+    (adeleGaloisAction K L σ a).2 = finiteAdeleGaloisAction K L σ a.2 :=
   (rfl)
 
 /-- The Galois action extends the action on the diagonally embedded number field. -/

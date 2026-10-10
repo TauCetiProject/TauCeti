@@ -29,6 +29,7 @@ be chosen in every factor at once.
 
 * `Representation.pi ρ`: the product of a family of representations.
 * `Rep.pi M`: the product of a family of objects of `Rep k G`.
+* `Rep.piLift f`: the morphism into `Rep.pi M` with prescribed components `f i : A ⟶ M i`.
 
 ## Main results
 
@@ -108,9 +109,23 @@ namespace Rep
 
 universe w
 
-variable {k G : Type*} [CommRing k] [Monoid G] {ι : Type w} (M : ι → Rep.{w} k G)
+variable {k G : Type*} [CommSemiring k] [Monoid G] {ι : Type w} (M : ι → Rep.{w} k G)
 
 /-- The product of a family of representations, as an object of `Rep k G`. -/
 noncomputable abbrev pi : Rep.{w} k G := Rep.of (Representation.pi fun i ↦ (M i).ρ)
+
+variable {M}
+
+/-- **The universal property of the product**: the morphism into `Rep.pi M` whose components are
+the morphisms `f i : A ⟶ M i`. -/
+noncomputable def piLift {A : Rep.{w} k G} (f : ∀ i, A ⟶ M i) : A ⟶ pi M :=
+  ofHom (LinearMap.intertwiningMap_of_isIntertwiningMap _ _
+    (LinearMap.pi fun i ↦ (f i).hom.toLinearMap) fun g x ↦ funext fun i ↦ hom_comm_apply (f i) g x)
+
+/-- The components of `Rep.piLift f` are the morphisms `f i`. -/
+@[simp]
+theorem piLift_hom_apply {A : Rep.{w} k G} (f : ∀ i, A ⟶ M i) (x : A) (i : ι) :
+    (piLift f).hom x i = (f i).hom x :=
+  (rfl)
 
 end Rep
