@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Cubical.CrossProduct.Assoc
+public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 import Mathlib.LinearAlgebra.BilinearMap
 
 /-!
@@ -36,7 +37,10 @@ for the cross product.
 * `TauCeti.NormalizedCubicalChain.one_mul`, `TauCeti.NormalizedCubicalChain.mul_one`: strict units.
 * `TauCeti.NormalizedCubicalChain.boundary_mul`: the Leibniz rule, with
   `boundary_mul_zero_left` and `boundary_mul_zero_right` for a factor of degree `0`.
-* `TauCeti.NormalizedCubicalChain.augment_mul`: the augmentation is multiplicative.
+* `TauCeti.NormalizedCubicalChain.augment_mul`, `augment_one`: the augmentation is multiplicative
+  and unital.
+* `TauCeti.NormalizedCubicalChain.map_mul`, `TauCeti.NormalizedCubicalChain.map_one`: pushing
+  forward along a continuous monoid homomorphism preserves the product and the unit.
 
 ## References
 
@@ -248,6 +252,35 @@ theorem augment_mul (a b : NormalizedCubicalChain G R 0) :
     augment G R (mul G R 0 0 a b) = augment G R a * augment G R b := by
   simp only [mul, LinearMap.compr₂_apply]
   rw [← LinearMap.comp_apply (augment G R), augment_map, augment_crossProduct]
+
+omit [ContinuousMul G] in
+/-- The augmentation of the unit is `1`. -/
+@[simp]
+theorem augment_one : augment G R (one G R) = 1 :=
+  augment_ofCube R _
+
+variable {G' : Type*} [Monoid G'] [TopologicalSpace G'] [ContinuousMul G']
+
+/-- Pushing forward along a continuous monoid homomorphism is multiplicative for the Pontryagin
+product. -/
+theorem map_mul (φ : G →ₜ* G') {p q : ℕ} (a : NormalizedCubicalChain G R p)
+    (b : NormalizedCubicalChain G R q) :
+    map R φ.toContinuousMap (p + q) (mul G R p q a b) =
+      mul G' R p q (map R φ.toContinuousMap p a) (map R φ.toContinuousMap q b) := by
+  have key : φ.toContinuousMap.comp (mulMap G) =
+      (mulMap G').comp (φ.toContinuousMap.prodMap φ.toContinuousMap) := by
+    ext x
+    simp [_root_.map_mul]
+  simp only [mul, LinearMap.compr₂_apply]
+  rw [map_comp_apply, key, ← map_comp_apply, map_crossProduct]
+
+omit [ContinuousMul G] [ContinuousMul G'] in
+/-- Pushing forward along a continuous monoid homomorphism sends the unit to the unit. -/
+theorem map_one (φ : G →ₜ* G') : map R φ.toContinuousMap 0 (one G R) = one G' R := by
+  simp only [one, map_ofCube]
+  congr 1
+  ext t
+  simp [SingularCube.point_apply, _root_.map_one]
 
 end NormalizedCubicalChain
 
