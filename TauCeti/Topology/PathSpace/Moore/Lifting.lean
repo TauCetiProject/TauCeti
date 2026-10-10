@@ -35,11 +35,14 @@ on a fibre strict.
 * `TauCeti.MooreLiftingFunction p`: lifting functions for `p` on Moore paths, with
   `TauCeti.MooreLiftingFunction.lift`.
 * `TauCeti.MooreLiftingFunction.IsTransitive`: transitivity of a lifting function.
+* `TauCeti.MooreLiftingFunction.fst`: the lifting function of a product projection.
 
 ## Main results
 
 * `TauCeti.MooreLiftingFunction.isHurewiczFibration`: a map with a lifting function is a Hurewicz
   fibration.
+* `TauCeti.MooreLiftingFunction.isTransitive_fst`: the lifting function of a product projection is
+  transitive.
 
 ## References
 
@@ -238,6 +241,63 @@ theorem isHurewiczFibration (Φ : MooreLiftingFunction p) : IsHurewiczFibration.
   · simp only [Function.comp_apply, ContinuousMap.coe_mk, apply_lift, unitPath_apply, toI_toNNReal]
   · simp only [ContinuousMap.coe_mk]
     rw [toNNReal_zero, ← MoorePath.source_def, source_lift]
+
+
+/-! ### The product projection -/
+
+section Fst
+
+variable (F : Type*) [TopologicalSpace F]
+
+/-- The lifting function of the projection `B × F → B`: the lift of `γ` from `(b, f)` is `γ`
+paired with the constant path at `f`. -/
+@[expose] def fst : MooreLiftingFunction (ContinuousMap.fst : C(B × F, B)) where
+  toContinuousMap :=
+    { toFun x :=
+        { toFun t := (x.path t, x.point.2)
+          continuous_toFun := by fun_prop
+          length := x.path.length
+          apply_of_length_le' t ht :=
+            Prod.ext ((x.path.apply_of_length_le ht).trans x.path.target_def) rfl }
+      continuous_toFun := MoorePath.continuous_iff.2
+        ⟨(MoorePath.continuous_length.comp MooreReplacement.continuous_path :
+            Continuous fun x : MooreReplacement (ContinuousMap.fst : C(B × F, B)) ↦ x.path.length),
+          (MoorePath.continuous_iff.1 MooreReplacement.continuous_path).2.prodMk
+            ((continuous_snd.comp MooreReplacement.continuous_point).comp continuous_fst)⟩ }
+  source_apply' x := by
+    rw [MoorePath.source_def]
+    exact Prod.ext ((MoorePath.source_def _).symm.trans x.source_path) rfl
+  map_apply' x := MoorePath.ext (MoorePath.length_map _ _) fun t ↦ by
+    rw [MoorePath.map_apply]
+    rfl
+
+variable {F}
+
+@[simp]
+theorem fst_lift_apply (e : B × F) (γ : MoorePath B)
+    (h : γ.source = (ContinuousMap.fst : C(B × F, B)) e) (t : ℝ≥0) :
+    (fst F).lift e γ h t = (γ t, e.2) :=
+  (rfl)
+
+theorem fst_lift_length (e : B × F) (γ : MoorePath B)
+    (h : γ.source = (ContinuousMap.fst : C(B × F, B)) e) :
+    ((fst F).lift e γ h).length = γ.length :=
+  (rfl)
+
+/-- The lifting function of a product projection is transitive. -/
+theorem isTransitive_fst : (fst F).IsTransitive (B := B) where
+  lift_refl e := MoorePath.ext (by simp [MoorePath.length_refl]) fun t ↦ by
+    simp [MoorePath.refl_apply]
+  lift_trans e γ δ hγ h := by
+    refine MoorePath.ext (by simp [MoorePath.length_trans]) fun t ↦ ?_
+    rw [fst_lift_apply, MoorePath.trans_apply, MoorePath.trans_apply, fst_lift_length]
+    split_ifs
+    · rw [fst_lift_apply]
+    · refine Prod.ext ?_ ?_
+      · rw [fst_lift_apply]
+      · rw [fst_lift_apply, MoorePath.target_def, fst_lift_apply]
+
+end Fst
 
 end MooreLiftingFunction
 
