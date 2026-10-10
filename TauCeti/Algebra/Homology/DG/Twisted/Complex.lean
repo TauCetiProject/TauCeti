@@ -107,17 +107,6 @@ noncomputable def twistedDifferential (m : P → P → A) (ℳ : ℤ → Submodu
 
 variable (m : P → P → A) {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ] (dM : M →ₗ[R] M)
 
-omit [Fintype P] [Module Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M] in
-/-- The Koszul twist of parameter one of `ℳ`, on an element of degree `q`, as the `ℤˣ`-scalar
-`q.negOnePow` of `TauCeti.IsDGRightModule.leibniz`. -/
-private theorem koszulTwist_one_apply {q : ℤ} {α : M} (hα : α ∈ ℳ q) :
-    (InternalGrading.ofDecomposition ℳ).koszulTwist 1 α = q.negOnePow • α := by
-  -- The pieces of `ofDecomposition ℳ` are those of `ℳ`.
-  have hα' : α ∈ (InternalGrading.ofDecomposition ℳ).piece q := by
-    rwa [InternalGrading.ofDecomposition_piece]
-  rw [InternalGrading.koszulTwist_one_apply_of_mem _ hα',
-    negOnePow_smul_eq_negOnePowCast_smul (R := R), negOnePowCast_eq_intCast]
-
 @[simp]
 theorem twistedDifferential_apply (f : P → M) (y : P) :
     twistedDifferential m ℳ dM f y =
@@ -129,10 +118,16 @@ theorem twistedDifferential_apply (f : P → M) (y : P) :
 theorem twistedDifferential_single [DecidableEq P] (x : P) {q : ℤ} {α : M} (hα : α ∈ ℳ q) :
     twistedDifferential m ℳ dM (Pi.single x α) =
       Pi.single x (dM α) + ∑ y, Pi.single y (q.negOnePow • (op (m x y) • α)) := by
+  -- The Koszul twist of parameter one acts on `α` by the `ℤˣ`-scalar `q.negOnePow`.
+  have hα' : α ∈ (InternalGrading.ofDecomposition ℳ).piece q := by
+    rwa [InternalGrading.ofDecomposition_piece]
+  have hε : (InternalGrading.ofDecomposition ℳ).koszulTwist 1 α = q.negOnePow • α := by
+    rw [InternalGrading.koszulTwist_one_apply_of_mem _ hα',
+      negOnePow_smul_eq_negOnePowCast_smul (R := R), negOnePowCast_eq_intCast]
   funext y'
   simp only [twistedDifferential_apply, Pi.add_apply, Finset.sum_apply, Pi.single_apply]
   rw [Finset.sum_eq_single x (fun x' _ hx' ↦ by simp [hx']) (by simp)]
-  simp only [ite_true, koszulTwist_one_apply hα, smul_comm (op (m x y')) q.negOnePow]
+  simp only [ite_true, hε, smul_comm (op (m x y')) q.negOnePow]
   split_ifs with hxy <;> simp [hxy]
 
 /-- The `z`-component of the twisted differential of a homogeneous elementary tensor `α ⊗ x`. -/
@@ -169,9 +164,13 @@ theorem twistedDifferential_mem_twistedTotalGrading
   · have := hdM.map_mem (hf y)
     convert this using 2
     ring
-  · have hα : (InternalGrading.ofDecomposition ℳ).koszulTwist 1 (f x) ∈ ℳ (n + ind x) := by
-      rw [koszulTwist_one_apply (hf x)]
-      exact Submodule.smul_of_tower_mem _ _ (hf x)
+  · -- The Koszul twist of parameter one preserves the degree: it acts by a sign.
+    have hfx : f x ∈ (InternalGrading.ofDecomposition ℳ).piece (n + ind x) := by
+      rw [InternalGrading.ofDecomposition_piece]
+      exact hf x
+    have hα : (InternalGrading.ofDecomposition ℳ).koszulTwist 1 (f x) ∈ ℳ (n + ind x) := by
+      rw [InternalGrading.koszulTwist_one_apply_of_mem _ hfx]
+      exact Submodule.smul_mem _ _ (hf x)
     have hmxy : op (m x y) ∈
         (InternalGrading.ofDecomposition 𝒜).opposite.piece (ind y - ind x + 1) := by
       rw [InternalGrading.op_mem_opposite_piece_iff, InternalGrading.ofDecomposition_piece]
