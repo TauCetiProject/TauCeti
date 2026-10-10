@@ -30,6 +30,11 @@ preserves this colimit (`CategoryTheory.Limits.SingleObj.isColimitMapCoconeOfTra
 the formal reason why, for a finite covering with deck group `G` and coefficients in which `|G|`
 is invertible, the homology of the base is the coinvariants of the homology of the total space.
 
+For the infinite cyclic group, the coinvariants are a cokernel: if `ℤ` acts on an object of a
+preadditive category with generator acting by `t`, a colimit cocone over the action is a cokernel
+of `𝟙 - t` (`CategoryTheory.Limits.SingleObj.isColimitCokernelCoforkOfIsColimit`).  For an
+infinite cyclic covering, this presents the chains of the base as a cokernel.
+
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
@@ -131,5 +136,51 @@ noncomputable def isColimitMapCoconeOfTransfer {D : Type*} [Category D] [Preaddi
     (by simp only [Functor.mapCocone_ι_app, ← F.map_comp, ht', F.map_sum, Functor.comp_map])
 
 end Preadditive
+
+section Int
+
+variable {C : Type*} [Category C] {J : SingleObj (Multiplicative ℤ) ⥤ C}
+
+/-- A morphism out of an object with an action of `ℤ` that is invariant under the generator is
+invariant under the whole action. -/
+lemma map_comp_eq_of_map_ofAdd_one_comp_eq {W : C} {g : J.obj (SingleObj.star _) ⟶ W}
+    (hg : J.map (Multiplicative.ofAdd 1) ≫ g = g) (n : Multiplicative ℤ) : J.map n ≫ g = g := by
+  -- In `SingleObj`, composition is multiplication in the opposite order.
+  have hmul (a b : Multiplicative ℤ) :
+      J.map (X := SingleObj.star _) (Y := SingleObj.star _) (a * b) =
+        J.map (X := SingleObj.star _) (Y := SingleObj.star _) b ≫ J.map a := by
+    rw [← SingleObj.comp_as_mul, J.map_comp]
+  induction n using Multiplicative.rec with | ofAdd n => ?_
+  induction n using Int.induction_on with
+  | zero => rw [ofAdd_zero, ← SingleObj.id_as_one, J.map_id, Category.id_comp]
+  | succ k hk => rw [ofAdd_add, mul_comm, hmul, Category.assoc, hg, hk]
+  | pred k hk =>
+    conv_lhs => rw [← hg, ← Category.assoc, ← hmul, ← ofAdd_add]
+    rw [add_sub_cancel, hk]
+
+variable [Preadditive C] (c : Cocone J)
+
+/-- **Coinvariants of an action of `ℤ` are a cokernel.**  For an action of `ℤ` on an object of a
+preadditive category, whose generator acts by `t`, a colimit cocone is a cokernel of `𝟙 - t`. -/
+noncomputable def isColimitCokernelCoforkOfIsColimit (hc : IsColimit c)
+    {t : J.obj (SingleObj.star _) ⟶ J.obj (SingleObj.star _)}
+    (ht : J.map (Multiplicative.ofAdd 1) = t) :
+    IsColimit (CokernelCofork.ofπ (f := 𝟙 _ - t) (c.ι.app (SingleObj.star _))
+      (by simp [← ht, Preadditive.sub_comp])) :=
+  -- A morphism killing `𝟙 - t` is invariant under the generator, hence a cocone over the action.
+  let cocone {W : C} (g : J.obj (SingleObj.star _) ⟶ W) (hg : (𝟙 _ - t) ≫ g = 0) : Cocone J :=
+    { pt := W
+      ι :=
+        { app _ := g
+          naturality _ _ n := by
+            refine (map_comp_eq_of_map_ofAdd_one_comp_eq ?_ n).trans (Category.comp_id g).symm
+            rwa [Preadditive.sub_comp, Category.id_comp, sub_eq_zero, eq_comm, ← ht] at hg } }
+  CokernelCofork.IsColimit.ofπ _ _ (fun g hg ↦ hc.desc (cocone g hg))
+    (fun g hg ↦ hc.fac (cocone g hg) (SingleObj.star _))
+    (fun g hg m hm ↦ hc.hom_ext fun j ↦ by
+      obtain rfl : j = SingleObj.star _ := rfl
+      exact hm.trans (hc.fac (cocone g hg) _).symm)
+
+end Int
 
 end CategoryTheory.Limits.SingleObj
