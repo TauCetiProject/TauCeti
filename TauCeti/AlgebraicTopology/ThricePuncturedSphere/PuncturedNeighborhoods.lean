@@ -182,13 +182,15 @@ theorem coe_puncturedNeighborhoodZeroHomeomorphPuncturedDiscOneHalf_symm_apply
 
 /-- The local coordinate `z ↦ 1 - z` identifies the punctured neighborhood of `1` with the
 punctured neighborhood of `0`. -/
-private noncomputable def puncturedNeighborhoodOneHomeomorphZero :
+noncomputable def puncturedNeighborhoodOneHomeomorphZero :
     ↥puncturedNeighborhoodOne ≃ₜ ↥puncturedNeighborhoodZero :=
   mob01.subtype fun z ↦ by
     rw [mem_puncturedNeighborhoodOne, mem_puncturedNeighborhoodZero, coe_mob01]
     rw [norm_sub_rev]
 
-private theorem coe_puncturedNeighborhoodOneHomeomorphZero
+/-- The coordinate from the neighborhood of `1` to that of `0` is `z ↦ 1 - z`. -/
+@[simp]
+theorem coe_puncturedNeighborhoodOneHomeomorphZero
     (z : ↥puncturedNeighborhoodOne) :
     (((puncturedNeighborhoodOneHomeomorphZero z : ↥puncturedNeighborhoodZero) :
       ThricePuncturedSphere) : ℂ) = 1 - ((z : ThricePuncturedSphere) : ℂ) := by
@@ -196,6 +198,18 @@ private theorem coe_puncturedNeighborhoodOneHomeomorphZero
   simp only [← Homeomorph.coe_toEquiv, Homeomorph.subtype_toEquiv,
     Equiv.subtypeEquiv_apply]
   exact coe_mob01 (z : ThricePuncturedSphere)
+
+/-- The inverse coordinate between the finite punctured neighborhoods is also `z ↦ 1 - z`. -/
+@[simp]
+theorem coe_puncturedNeighborhoodOneHomeomorphZero_symm_apply
+    (z : puncturedNeighborhoodZero) :
+    (puncturedNeighborhoodOneHomeomorphZero.symm z : ThricePuncturedSphere) = mob01 z := by
+  apply Subtype.ext
+  have h := coe_puncturedNeighborhoodOneHomeomorphZero
+    (puncturedNeighborhoodOneHomeomorphZero.symm z)
+  rw [Homeomorph.apply_symm_apply] at h
+  rw [coe_mob01, h]
+  ring
 
 /-- The coordinate `z ↦ 1 - z` identifies the standard neighborhood of `1` with the complex
 punctured disc of radius `1 / 2`. -/
