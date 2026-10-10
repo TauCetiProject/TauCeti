@@ -137,16 +137,14 @@ proofs diverge in six places:
   with no inversion at all;
 * the source's `exists_variableChange_baseChange_eq_of_smul_eq` is this repository's
   `WeierstrassCurve.VariableChange.exists_baseChange_eq_of_smul_eq`, which is stated over
-  `IsIntegrallyClosedIn R K` rather than a discrete valuation ring; instance search discharges it
-  here. The descent and the comparison of the two integral models it gives are packaged as
-  `VariableChange.exists_baseChange_eq_and_smul_integralModel_eq_of_isMinimal_smul`, which the
-  proof calls, and `v (c₄)` is compared by `valuation_c₄_eq_of_isMinimal_smul`;
+  `IsIntegrallyClosedIn R K` rather than a discrete valuation ring. The descended change of
+  variables, together with the comparison of the two integral models, is stated separately as
+  `VariableChange.exists_baseChange_eq_and_smul_integralModel_eq_of_isMinimal_smul`;
 * the source's `nodePoly_map_splits_smul_iff` is this repository's existing
   `splits_variableChange_nodePolynomial_map_iff`, and the node polynomial reaches Mathlib's class
   field through `nodePolynomial_def`, since the definition's body is not exposed across the module
   boundary;
-* the `⁄K` notation is written `baseChange`, and the source's `show … from rfl` scaffolding for it
-  is replaced by a single `congrArg₂` in the descent lemma.
+* the `⁄K` notation is written `baseChange`.
 -/
 
 public section
