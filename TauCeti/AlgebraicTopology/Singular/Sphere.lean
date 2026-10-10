@@ -552,9 +552,9 @@ private lemma reducedSingularHomologySphereIso_hom_neg_zero {F : Type w} [Normed
       simp
     -- `f` carries the class `[-b 0] - [b 0]` to `[b 0] - [-b 0]`.
     rw [← cancel_mono ((reducedSingularHomologyι R 0).app _), Category.assoc,
-      (reducedSingularHomologyι R 0).naturality, reducedSingularHomologySphereIso_inv_ι_assoc,
-      Preadditive.neg_comp, reducedSingularHomologySphereIso_inv_ι, Preadditive.sub_comp, neg_sub]
-    simp only [singularHomology₀Section_naturality]
+      (reducedSingularHomologyι R 0).naturality, reducedSingularHomologySphereIso_inv_ι_assoc]
+    simp only [Preadditive.neg_comp, reducedSingularHomologySphereIso_inv_ι, Preadditive.sub_comp,
+      neg_sub, singularHomology₀Section_naturality]
     congr 2 <;> ext <;> simp [h₀]
   | succ n ih =>
     -- `f` fixes the last basis vector, so it commutes with the suspension isomorphism there, and
@@ -599,8 +599,8 @@ theorem reducedSingularHomologyFunctor_map_reflection_unitSphereMap {n : ℕ}
     rw [hb₀, real_inner_smul_left] at this
     simpa [hv] using this
 
-/-- The case of `TauCeti.reducedSingularHomologyFunctor_map_unitSphereMap` for a product of
-reflections, by induction on the number of factors. -/
+/-- A product of hyperplane reflections of `E` acts on `H_redₙ(S)` by the sign of its
+determinant. -/
 private lemma reducedSingularHomologyFunctor_map_list_prod_reflection {n : ℕ}
     (hE : finrank ℝ E = n + 1) (l : List E) :
     (reducedSingularHomologyFunctor R n).map (TopCat.ofHom
@@ -609,6 +609,7 @@ private lemma reducedSingularHomologyFunctor_map_list_prod_reflection {n : ℕ}
       (SignType.sign (LinearMap.det
         (l.map fun v ↦ (ℝ ∙ v)ᗮ.reflection).prod.toLinearIsometry.toLinearMap) : ℤ) • 𝟙 _ := by
   have : FiniteDimensional ℝ E := Module.finite_of_finrank_eq_succ hE
+  -- Induction on the number of factors.
   induction l with
   | nil =>
     -- The empty product is the identity, of determinant one.
@@ -641,9 +642,9 @@ private lemma reducedSingularHomologyFunctor_map_list_prod_reflection {n : ℕ}
       ext; simp
     rw [hcomp, Functor.map_comp, ih,
       reducedSingularHomologyFunctor_map_reflection_unitSphereMap R hE hv, hdet,
-      LinearMap.det_comp, sign_mul, Submodule.det_reflection, Submodule.orthogonal_orthogonal,
+      LinearMap.det_comp, Submodule.det_reflection, Submodule.orthogonal_orthogonal,
       finrank_span_singleton hv]
-    simp
+    simp [Left.sign_neg]
 
 /-- **A linear isometry acts on the homology of a sphere by the sign of its determinant.**  For a
 real inner product space `E` of dimension `n + 1` and a linear isometry `f : E →ₗᵢ[ℝ] E`, the
@@ -719,9 +720,8 @@ theorem reducedSingularHomologyFunctor_map_sphere_neg {n : ℕ} (hE : finrank �
   have hdet : (LinearIsometryEquiv.neg ℝ (E := E)).toLinearIsometry.toLinearMap =
       (-1 : ℝ) • LinearMap.id := by
     ext; simp
-  rw [h, reducedSingularHomologyFunctor_map_unitSphereMap R hE, hdet, LinearMap.det_smul,
-    LinearMap.det_id, mul_one, hE, sign_pow]
-  simp
+  rw [h, reducedSingularHomologyFunctor_map_unitSphereMap R hE, hdet, LinearMap.det_smul]
+  simp [hE, sign_pow]
 
 end Orientation
 
