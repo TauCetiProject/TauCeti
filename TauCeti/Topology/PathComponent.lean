@@ -25,6 +25,7 @@ gives local path connectedness of the subspace.
 * `Joined.eq_of_totallyDisconnectedSpace` and
   `ZerothHomotopy.mk_injective_of_totallyDisconnectedSpace`: in a totally disconnected space,
   the path components are the points.
+* `TauCeti.PathComponentBasepoints`: a choice of a basepoint in each path component.
 
 ## References
 
@@ -86,5 +87,13 @@ theorem _root_.Joined.eq_of_totallyDisconnectedSpace [TotallyDisconnectedSpace X
 theorem _root_.ZerothHomotopy.mk_injective_of_totallyDisconnectedSpace
     [TotallyDisconnectedSpace X] : Function.Injective (ZerothHomotopy.mk (X := X)) :=
   fun _ _ h ↦ Joined.eq_of_totallyDisconnectedSpace (Quotient.exact h)
+
+/-- A choice of a basepoint in each path component of a space: a section of the projection
+`ZerothHomotopy.mk` to the set of path components. -/
+structure PathComponentBasepoints (X : Type*) [TopologicalSpace X] where
+  /-- The chosen basepoint of a path component. -/
+  point : ZerothHomotopy X → X
+  /-- The chosen basepoint of a path component lies in that component. -/
+  mk_point : ∀ c, ZerothHomotopy.mk (point c) = c
 
 end TauCeti
