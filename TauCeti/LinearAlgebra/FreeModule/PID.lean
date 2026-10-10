@@ -21,7 +21,8 @@ of the submodule by elimination of the greatest coordinate in the finite support
 This is the arbitrary-rank form of Lang, *Algebra*, Chapter III, Theorem 7.1.  Mathlib's
 `Submodule.nonempty_basis_of_pid` is the finite-rank form.  A projective module embeds in a free
 module, so every submodule of a projective module is free as well
-(`Submodule.free_of_projective_of_isPrincipalIdealRing`).
+(`Submodule.free_of_projective_of_isPrincipalIdealRing`), and so is every module that injects into
+a projective module (`Module.Free.of_injective_of_projective_of_isPrincipalIdealRing`).
 -/
 
 public section
@@ -172,3 +173,17 @@ theorem free_of_projective_of_isPrincipalIdealRing (N : Submodule R M) [Module.P
   exact .of_equiv (N.equivMapOfInjective s hs.injective).symm
 
 end Submodule
+
+namespace Module.Free
+
+variable {R : Type*} {M N : Type*} [CommRing R] [NoZeroDivisors R] [IsPrincipalIdealRing R]
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+
+/-- A module that injects into a projective module over a principal ideal ring without zero
+divisors is free: it is isomorphic to the range, a submodule of the projective module. -/
+theorem of_injective_of_projective_of_isPrincipalIdealRing [Module.Projective R M]
+    (f : N →ₗ[R] M) (hf : Function.Injective f) : Module.Free R N :=
+  have := (LinearMap.range f).free_of_projective_of_isPrincipalIdealRing
+  .of_equiv (LinearEquiv.ofInjective f hf).symm
+
+end Module.Free
