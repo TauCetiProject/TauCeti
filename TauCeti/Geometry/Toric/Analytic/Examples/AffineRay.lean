@@ -31,7 +31,7 @@ open Multiplicative
 namespace TauCeti.Toric
 
 private noncomputable instance rayUnique : Unique (ToricRay affineRayCone) := by
-  rw [affineRayCone_eq_hull]
+  rw [affineRayCone_def]
   exact ⟨⟨ToricRay.hullSingleton one_ne_zero⟩, ToricRay.eq_hullSingleton one_ne_zero⟩
 
 private noncomputable def rayBasis :
@@ -54,7 +54,7 @@ private theorem rayBasis_extends (ρ : ToricRay affineRayCone) :
     rw [hi]
     -- Rewriting under the binder transports the ray's dependent cone carrier.
     revert ρ
-    rw [affineRayCone_eq_hull]
+    rw [affineRayCone_def]
     intro ρ
     rw [ToricRay.eq_hullSingleton one_ne_zero ρ, ToricRay.mem_hullSingleton]
     exact PointedCone.subset_hull (by simp)
