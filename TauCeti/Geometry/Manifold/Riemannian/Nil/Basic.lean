@@ -42,6 +42,7 @@ Section 4), but that every isometry is of this form is not proved here.
 
 * `TauCeti.Nil`: the model geometry Nil, with the coordinate equivalence `Nil.toProd` to `ℝ³`
   and the coordinates `Nil.x`, `Nil.y`, `Nil.z`.
+* `TauCeti.Nil.toProdDiffeomorph`: the smooth global coordinates in real three-space.
 * `TauCeti.Nil.instGroup`: the group structure of `Nil`, and `TauCeti.Nil.toHeisenberg`, the
   group isomorphism with the real Heisenberg group.
 * `TauCeti.Nil.riemannianMetric`: the analytic metric `dx² + dy² + (dz - x dy)²`, which is the
@@ -149,6 +150,17 @@ theorem ext {p q : Nil} (hx : p.x = q.x) (hy : p.y = q.y) (hz : p.z = q.z) : p =
 
 @[simp]
 theorem mk_x_y_z (p : Nil) : mk p.x p.y p.z = p := (rfl)
+
+/-- The global coordinate diffeomorphism of Nil with real three-space. -/
+def toProdDiffeomorph : Nil ≃ₘ⟮𝓘(ℝ, ℝ × ℝ × ℝ), 𝓘(ℝ, ℝ × ℝ × ℝ)⟯
+    (ℝ × ℝ × ℝ) where
+  toEquiv := toProd
+  contMDiff_toFun := contMDiff_id
+  contMDiff_invFun := contMDiff_id
+
+@[simp] theorem coe_toProdDiffeomorph : ⇑toProdDiffeomorph = toProd := (rfl)
+
+@[simp] theorem coe_toProdDiffeomorph_symm : ⇑toProdDiffeomorph.symm = toProd.symm := (rfl)
 
 /-! ### The group structure -/
 
