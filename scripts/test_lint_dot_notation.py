@@ -434,6 +434,93 @@ end TauCeti
             self.assertIn("1 new", stdout.getvalue())
             self.assertIn("1 ratchetable", stdout.getvalue())
 
+    def _scoped_tree(self, root: pathlib.Path) -> list[str]:
+        """A merge base where `Own.lean` owns `TauCeti.Foo` and `User.lean` relies on that."""
+        mathlib = root / "Mathlib"
+        mathlib.mkdir()
+        (mathlib / "Foo.lean").write_text("namespace Foo\nend Foo\n")
+        for tree in ("base", "head"):
+            source_root = root / tree / "TauCeti"
+            source_root.mkdir(parents=True)
+            (source_root / "Own.lean").write_text(
+                "namespace TauCeti\nstructure Foo where\nend TauCeti\n")
+            (source_root / "User.lean").write_text(
+                "namespace TauCeti\nnamespace Foo\ndef bar (x : Foo) := x\nend Foo\nend TauCeti\n")
+        baseline = root / "baseline.txt"
+        baseline.write_text("")
+        return ["--mathlib-root", str(mathlib), "--source-root", str(root / "head" / "TauCeti"),
+                "--baseline", str(baseline)]
+
+    def test_scoped_run_lints_only_the_listed_modules(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            args = self._scoped_tree(root)
+            # A violation in an unlisted file with unchanged ownership is out of scope.
+            (root / "head" / "TauCeti" / "Other.lean").write_text(
+                "namespace TauCeti.X\nnamespace Foo\ndef baz (x : Foo) := x\nend Foo\nend TauCeti.X\n")
+            (root / "base" / "TauCeti" / "Other.lean").write_text(
+                (root / "head" / "TauCeti" / "Other.lean").read_text())
+            modules = root / "modules.txt"
+            modules.write_text("TauCeti.User\n")
+            stdout = io.StringIO()
+            with contextlib.redirect_stdout(stdout):
+                result = lint.main([*args, "--only-modules", str(modules),
+                                    "--base-source-root", str(root / "base" / "TauCeti")])
+        self.assertEqual(result, 0)
+        self.assertIn("checking the 1 changed module(s) only", stdout.getvalue())
+        self.assertNotIn("checking every file", stdout.getvalue())
+
+    def test_scoped_run_catches_violations_exposed_by_a_removed_owning_type(self):
+        for how in ("delete", "edit"):
+            with self.subTest(how=how), tempfile.TemporaryDirectory() as directory:
+                root = pathlib.Path(directory)
+                args = self._scoped_tree(root)
+                own = root / "head" / "TauCeti" / "Own.lean"
+                modules = root / "modules.txt"
+                if how == "delete":
+                    # lint-scope.sh does not list a deleted file, so the scope is empty.
+                    own.unlink()
+                    modules.write_text("")
+                else:
+                    own.write_text("namespace TauCeti\ndef Foo : Nat := 0\nend TauCeti\n")
+                    modules.write_text("TauCeti.Own\n")
+                stdout = io.StringIO()
+                with contextlib.redirect_stdout(stdout):
+                    result = lint.main([*args, "--only-modules", str(modules),
+                                        "--base-source-root", str(root / "base" / "TauCeti")])
+                # `User.lean` is unchanged and unlisted, but its declaration is now a violation.
+                self.assertEqual(result, 1)
+                self.assertIn("alters which namespaces Tau Ceti owns", stdout.getvalue())
+                self.assertIn("TauCeti.Foo.bar", stdout.getvalue())
+
+    def test_scoped_run_without_a_merge_base_checks_every_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            args = self._scoped_tree(root)
+            (root / "head" / "TauCeti" / "Own.lean").unlink()
+            modules = root / "modules.txt"
+            modules.write_text("")
+            stdout = io.StringIO()
+            with contextlib.redirect_stdout(stdout):
+                result = lint.main([*args, "--only-modules", str(modules)])
+        self.assertEqual(result, 1)
+        self.assertIn("checking every file", stdout.getvalue())
+
+    def test_write_baseline_rejects_only_modules(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            args = self._scoped_tree(root)
+            baseline = root / "baseline.txt"
+            baseline.write_text("kept\t[\"TauCeti.Kept\"]\n")
+            modules = root / "modules.txt"
+            modules.write_text("TauCeti.User\n")
+            stderr = io.StringIO()
+            with contextlib.redirect_stderr(stderr), self.assertRaises(SystemExit) as raised:
+                lint.main([*args, "--write-baseline", "--only-modules", str(modules)])
+            self.assertEqual(raised.exception.code, 2)
+            self.assertIn("cannot be combined with --only-modules", stderr.getvalue())
+            self.assertEqual(baseline.read_text(), "kept\t[\"TauCeti.Kept\"]\n")
+
 
 if __name__ == "__main__":
     unittest.main()

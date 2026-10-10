@@ -95,6 +95,11 @@ module_re="^TauCeti(/[A-Za-z_][A-Za-z0-9_']*)+\.lean$"
 : > "$LIST"
 : > "$UNMATCHED"
 while IFS= read -r -d '' file; do
+  # A deleted file has nothing left to lint or audit, so it is not listed. What its deletion can do
+  # to other files is covered elsewhere: a module that imported it changes too (or the build
+  # fails), so it is listed; and a namespace-owning type it declared is seen by the dot-notation
+  # lint, which compares ownership against the merge base (`--base-source-root`) and lints every
+  # file when ownership differs.
   if ! [[ "$file" =~ $module_re ]]; then
     [[ "$file" == *.lean ]] && printf '%s\n' "$file" >> "$UNMATCHED"
     continue
