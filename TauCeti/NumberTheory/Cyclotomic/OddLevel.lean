@@ -65,9 +65,13 @@ theorem singleton_two_mul_iff_of_odd [IsDomain B] {n : ℕ} (hn : Odd n) (h2 : (
     exact this
 
 /-- **Levels `≡ 2 mod 4` may be halved.** If `n ≡ 2 mod 4`, an `n`-th cyclotomic extension `B` of
-`A`, with `B` a domain in which `2 ≠ 0`, is also an `n / 2`-th cyclotomic extension of `A`. -/
+`A`, with `B` a domain, is also an `n / 2`-th cyclotomic extension of `A`. -/
 theorem singleton_div_two_of_mod_four_eq_two [IsDomain B] {n : ℕ} (hn : n % 4 = 2)
-    (h2 : (2 : B) ≠ 0) [IsCyclotomicExtension {n} A B] : IsCyclotomicExtension {n / 2} A B := by
+    [IsCyclotomicExtension {n} A B] : IsCyclotomicExtension {n / 2} A B := by
+  have : NeZero n := ⟨by omega⟩
+  have : NeZero (n : B) := IsCyclotomicExtension.neZero n A B
+  have h2 : (2 : B) ≠ 0 :=
+    ne_zero_of_dvd_ne_zero (NeZero.ne (n : B)) (Nat.cast_dvd_cast (by omega : 2 ∣ n))
   rw [← singleton_two_mul_iff_of_odd (Nat.odd_iff.mpr (by omega)) h2,
     Nat.mul_div_cancel' (by omega : 2 ∣ n)]
   infer_instance
