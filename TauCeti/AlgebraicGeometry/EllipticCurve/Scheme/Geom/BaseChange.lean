@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Basic
 public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Section
 
 /-!

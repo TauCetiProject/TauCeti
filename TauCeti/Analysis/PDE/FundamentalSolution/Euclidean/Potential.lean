@@ -68,32 +68,11 @@ theorem contDiff_newtonianKernel_convolution {k : ℕ∞} (hf : ContDiff ℝ k f
 /-- **The Newtonian potential solves Poisson's equation.** For `n ≥ 3` and `f` of class `C²`
 with compact support on `ℝⁿ`, the Newtonian potential `u = Gₙ ⋆ f` satisfies `-Δu = f`. -/
 theorem laplacian_newtonianKernel_convolution [CompleteSpace F] (hn : 3 ≤ n)
-    (hf : ContDiff ℝ 2 f) (hc : HasCompactSupport f) : Δ (newtonianKernel n ⋆ f) = -f := by
-  rw [hc.laplacian_convolution_right _ (locallyIntegrable_newtonianKernel n) hf]
-  funext x
-  have hΔc : HasCompactSupport (Δ f) :=
-    hc.mono' ((subset_tsupport _).trans (tsupport_laplacian_subset f))
-  have hΔcont : Continuous (Δ f) := by
-    rw [laplacian_eq_iteratedFDeriv_stdOrthonormalBasis]
-    have := hf.continuous_iteratedFDeriv (m := 2) le_rfl
-    fun_prop
-  have hint := hΔc.convolutionExists_right (lsmul ℝ ℝ) (locallyIntegrable_newtonianKernel n)
-    hΔcont x
-  -- Test against every continuous linear functional `φ`, which reduces to real values.
-  refine (SeparatingDual.eq_iff_forall_dual_eq (R := ℝ)).2 fun φ => ?_
-  have hφf : ContDiff ℝ 2 (φ ∘ f) := φ.contDiff.comp hf
-  calc φ ((newtonianKernel n ⋆ Δ f) x)
-      = ∫ t, newtonianKernel n t * φ (Δ f (x - t)) := by
-        rw [convolution_def, ← φ.integral_comp_comm hint]
-        simp
-    _ = ∫ y, Δ (φ ∘ f) y * newtonianKernel n (y - x) := by
-        rw [← integral_sub_left_eq_self _ volume x]
-        congr 1 with y
-        rw [sub_sub_cancel, newtonianKernel_sub_comm,
-          hf.contDiffAt.laplacian_CLM_comp_left, Function.comp_apply, mul_comm]
-    _ = φ ((-f) x) := by
-        rw [integral_laplacian_mul_newtonianKernel_sub hn hφf (hc.comp_left φ.map_zero) x]
-        simp
+    (hf : ContDiff ℝ 2 f) (hc : HasCompactSupport f) : Δ (newtonianKernel n ⋆ f) = -f :=
+  laplacian_convolution_eq_neg_of_integral_laplacian_mul (locallyIntegrable_newtonianKernel n)
+    (fun _ hφ hφc x ↦ by
+      simp_rw [newtonianKernel_sub_comm n x]
+      exact integral_laplacian_mul_newtonianKernel_sub hn hφ hφc x) hf hc
 
 /-- For `n ≥ 3`, the Newtonian potential of a `C²` function `f` with compact support is harmonic
 off the support of `f`. -/

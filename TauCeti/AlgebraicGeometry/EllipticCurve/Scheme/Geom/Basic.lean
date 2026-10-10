@@ -31,6 +31,12 @@ affine opens `U` of `S` with Weierstrass curves over `Γ(S, U)` and the chosen p
   with section `zero`.
 * `TauCeti.AlgebraicGeometry.PointedWeierstrassChart.ofAffineOpen`: the pointed Weierstrass chart
   on an affine open of the base given by the data of the local-model condition there.
+* `TauCeti.AlgebraicGeometry.PointedWeierstrassChart.restrict c V`: the restriction of a chart to
+  an affine open `V` of its base, with equation the coefficient extension of the equation of `c`
+  to `Γ(base, V)`; its base is included in that of `c` by `restrictι`.
+* `TauCeti.AlgebraicGeometry.PointedWeierstrassChart.pullbackCarrierMap`: the morphism between the
+  restrictions of the curve to the bases of two charts induced by a morphism of bases over `S`, a
+  base change square (`isPullback_pullbackCarrierMap`).
 * `TauCeti.AlgebraicGeometry.PointedWeierstrassAtlas π zero`: a family of pointed Weierstrass
   charts whose images cover the base.
 * `TauCeti.AlgebraicGeometry.IsLocallyWeierstrass π zero hzero`: every point of the base has an
@@ -265,6 +271,135 @@ noncomputable def ofAffineOpen (hzero : zero ≫ π = 𝟙 S) (U : S.affineOpens
   pulledZero_toBase := pullback.lift_snd _ _ _
   pulledZero_toTotal := pullback.lift_fst _ _ _
   modelIso_zero := by simp [← hzero']
+
+section Restrict
+
+variable (c : PointedWeierstrassChart π zero) (V : c.base.affineOpens)
+
+-- The ring homomorphism whose `Spec` is the inclusion of `V` into the base of the chart, read
+-- through `V ≅ Spec Γ(base, V)` and `base ≅ Spec ring`.
+private noncomputable def restrictRingHom : c.ring ⟶ Γ(c.base, V.1) :=
+  Spec.preimage (V.2.isoSpec.inv ≫ V.1.ι ≫ c.baseIso.hom)
+
+private theorem specMap_restrictRingHom :
+    Spec.map (c.restrictRingHom V) = V.2.isoSpec.inv ≫ V.1.ι ≫ c.baseIso.hom :=
+  Spec.map_preimage _
+
+-- Over `V`, the chart is the base change of the projective model along
+-- `Spec Γ(base, V) ⟶ Spec ring`.
+private theorem isPullback_restrict :
+    IsPullback (pullback.fst c.toBase V.1.ι ≫ c.modelIso.hom)
+      (pullback.snd c.toBase V.1.ι ≫ V.2.isoSpec.hom) c.equation.projModelOver
+      (Spec.map (CommRingCat.ofHom (c.restrictRingHom V).hom)) := by
+  refine (IsPullback.of_hasPullback c.toBase V.1.ι).of_iso (.refl _) c.modelIso V.2.isoSpec
+    c.baseIso ?_ ?_ ?_ ?_ <;> simp [specMap_restrictRingHom]
+
+-- Over `V`, the chart is the projective model of the coefficient extension of its equation.
+private noncomputable def restrictModelIso :
+    pullback c.toBase V.1.ι ≅ (c.equation.map (c.restrictRingHom V).hom).projModel :=
+  (c.isPullback_restrict V).isoIsPullback _ _ (c.equation.isPullback_projModelBaseChange _)
+
+private theorem restrictModelIso_hom_projModelOver :
+    (c.restrictModelIso V).hom ≫ (c.equation.map (c.restrictRingHom V).hom).projModelOver =
+      pullback.snd c.toBase V.1.ι ≫ V.2.isoSpec.hom :=
+  IsPullback.isoIsPullback_hom_snd _ _ _ _
+
+private theorem restrictModelIso_hom_projModelBaseChange :
+    (c.restrictModelIso V).hom ≫ c.equation.projModelBaseChange (c.restrictRingHom V).hom =
+      pullback.fst c.toBase V.1.ι ≫ c.modelIso.hom :=
+  IsPullback.isoIsPullback_hom_fst _ _ _ _
+
+/-- The **restriction** of a pointed Weierstrass chart `c` to an affine open `V` of its base: the
+chart with base `V`, coefficient ring `Γ(base, V)` and, as equation, the coefficient extension of
+the equation of `c` along `ring ⟶ Γ(base, V)`. Its base is included in that of `c` by
+`restrictι`. -/
+noncomputable def restrict : PointedWeierstrassChart π zero where
+  base := V.1
+  baseMap := V.1.ι ≫ c.baseMap
+  baseMap_open := inferInstance
+  ring := Γ(c.base, V.1)
+  baseIso := V.2.isoSpec
+  equation := c.equation.map (c.restrictRingHom V).hom
+  equation_elliptic := inferInstance
+  pullbackCarrier := pullback c.toBase V.1.ι
+  toTotal := pullback.fst c.toBase V.1.ι ≫ c.toTotal
+  toBase := pullback.snd c.toBase V.1.ι
+  isPullback := (IsPullback.of_hasPullback c.toBase V.1.ι).paste_horiz c.isPullback
+  modelIso := c.restrictModelIso V
+  modelIso_over := c.restrictModelIso_hom_projModelOver V
+  pulledZero := pullback.lift (V.1.ι ≫ c.pulledZero) (𝟙 _) (by simp)
+  pulledZero_toBase := pullback.lift_snd _ _ _
+  pulledZero_toTotal := by simp
+  modelIso_zero := by
+    -- compare the two sides through the base change square of the projective model
+    refine (c.equation.isPullback_projModelBaseChange _).hom_ext ?_ ?_
+    · simp [restrictModelIso_hom_projModelBaseChange,
+        WeierstrassCurve.projModelZero_projModelBaseChange, specMap_restrictRingHom]
+    · -- `𝟙 (Spec Γ(base, V))` is stated with `CommRingCat.of`, out of reach of `comp_id`
+      simp only [Category.assoc, restrictModelIso_hom_projModelOver, pullback.lift_snd_assoc,
+        Category.id_comp, WeierstrassCurve.projModelZero_projModelOver]
+      exact (Category.comp_id _).symm
+
+/-- The inclusion of the base of the restriction `c.restrict V` into the base of `c`, an open
+immersion with image `V` (`opensRange_restrictι`). -/
+noncomputable def restrictι : (c.restrict V).base ⟶ c.base :=
+  V.1.ι
+
+instance : IsOpenImmersion (c.restrictι V) :=
+  inferInstanceAs (IsOpenImmersion V.1.ι)
+
+/-- The base of the restriction `c.restrict V` lies over the base of `c`. -/
+@[reassoc (attr := simp)]
+theorem restrictι_baseMap : c.restrictι V ≫ c.baseMap = (c.restrict V).baseMap :=
+  (rfl)
+
+/-- The image of the base of the restriction `c.restrict V` in the base of `c` is `V`. -/
+@[simp]
+theorem opensRange_restrictι : (c.restrictι V).opensRange = V.1 :=
+  V.1.opensRange_ι
+
+/-- The image of the base of the restriction `c.restrict V` in the base of `c` is `V`, as a set of
+points. -/
+@[simp]
+theorem range_restrictι : Set.range (c.restrictι V) = V.1 :=
+  V.1.range_ι
+
+end Restrict
+
+section Map
+
+variable {k c : PointedWeierstrassChart π zero} {h : k.base ⟶ c.base}
+
+/-- The morphism from the restriction of the curve to the base of a chart `k` to its restriction to
+the base of a chart `c`, induced by a morphism `h` of bases over `S`. -/
+noncomputable def pullbackCarrierMap (hh : h ≫ c.baseMap = k.baseMap) :
+    k.pullbackCarrier ⟶ c.pullbackCarrier :=
+  c.isPullback.lift k.toTotal (k.toBase ≫ h) (by rw [Category.assoc, hh, k.isPullback.w])
+
+variable (hh : h ≫ c.baseMap = k.baseMap)
+
+/-- The morphism `pullbackCarrierMap` lies over the inclusions into the curve. -/
+@[reassoc (attr := simp)]
+theorem pullbackCarrierMap_toTotal : pullbackCarrierMap hh ≫ c.toTotal = k.toTotal :=
+  IsPullback.lift_fst _ _ _ _
+
+/-- The morphism `pullbackCarrierMap` lies over the morphism of bases. -/
+@[reassoc (attr := simp)]
+theorem pullbackCarrierMap_toBase : pullbackCarrierMap hh ≫ c.toBase = k.toBase ≫ h :=
+  IsPullback.lift_snd _ _ _ _
+
+/-- The restriction of the curve to the base of `k` is the base change along `h` of its
+restriction to the base of `c`. -/
+theorem isPullback_pullbackCarrierMap : IsPullback (pullbackCarrierMap hh) k.toBase c.toBase h :=
+  .of_right (by simpa [hh] using k.isPullback) (pullbackCarrierMap_toBase hh) c.isPullback
+
+/-- The morphism `pullbackCarrierMap` carries the section induced by the zero section to the section
+induced by the zero section. -/
+@[reassoc (attr := simp)]
+theorem pulledZero_pullbackCarrierMap : k.pulledZero ≫ pullbackCarrierMap hh = h ≫ c.pulledZero :=
+  c.isPullback.hom_ext (by simp [reassoc_of% hh]) (by simp)
+
+end Map
 
 end PointedWeierstrassChart
 
