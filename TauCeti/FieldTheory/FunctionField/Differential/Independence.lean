@@ -12,7 +12,7 @@ import TauCeti.FieldTheory.FunctionField.Different.Separating
 import TauCeti.FieldTheory.FunctionField.Place.Existence
 
 /-!
-# The chain rule for Weil differentials and independence of the Kähler–Weil comparison
+# The chain rule, independence of the Kähler–Weil comparison, and the residue theorem
 
 Let `F / k` be an algebraic function field with exact constants, and let `x` and `y` be separating
 elements. The Weil differentials `dx` and `dy` (`TauCeti.weilDifferentialOfSeparating`) are the
@@ -43,6 +43,12 @@ element used to build it, and the local components of the Weil differential atta
 differential `ω` are its residues: `ω_P (u) = res_P (u ω)` at every rational place with a
 separating prime element (Stichtenoth, Theorem 4.3.2(d)).
 
+Over an algebraically closed field every place is rational and every prime element is separating,
+so each local component of a Weil differential at `1` is the residue there of the corresponding
+Kähler differential. The abstract residue theorem `∑_P ω_P (1) = 0`
+(`TauCeti.finsum_repartitionDualComponent_eq_zero`) then becomes **the residue theorem**
+`∑_P res_P (ω) = 0` for every Kähler differential `ω` (Stichtenoth, Corollary 4.3.3).
+
 ## Main results
 
 * `TauCeti.weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul_of_ord_eq_one`:
@@ -53,11 +59,16 @@ separating prime element (Stichtenoth, Theorem 4.3.2(d)).
   the Kähler–Weil comparison is independent of the separating element.
 * `TauCeti.repartitionDualComponent_kaehlerDifferentialEquivWeilDifferentialOfSeparating`:
   **local components are residues**, `ω_P (u) = res_P (u ω)`.
+* `TauCeti.Place.kaehlerResidueOfPerfectField_smul_eq_repartitionDualComponent`: the same over a
+  perfect field, with the uniformizer-free residue.
+* `TauCeti.finsum_kaehlerResidueOfPerfectField_eq_zero`: **the residue theorem**
+  `∑_P res_P (ω) = 0` over an algebraically closed field, a sum with finitely many nonzero terms
+  (`TauCeti.finite_support_kaehlerResidueOfPerfectField`).
 
 ## References
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
-  Theorem 4.3.2.
+  Theorem 4.3.2 and Corollary 4.3.3.
 -/
 
 public section
@@ -168,5 +179,71 @@ theorem repartitionDualComponent_kaehlerDifferentialEquivWeilDifferentialOfSepar
     coe_weilDifferentialSpaceModule_smul, repartitionDualComponent_repartitionDualMul,
     repartitionDualComponent_weilDifferentialOfSeparating hF htr hP ht₀,
     hres (by simp) ht₀, smul_smul, Place.kaehlerResidue_smul_D, mul_comm]
+
+/-- **Local components are residues, over a perfect field** (Stichtenoth, Theorem 4.3.2(d)): over
+a perfect exact constant field with infinitely many rational places, the residue `res_P (u ω)` of a
+Kähler differential at a rational place `P` is the local component at `P` of the Weil differential
+attached to `ω`, evaluated at `u`. Every prime element of `P` is separating here, so no uniformizer
+is needed. -/
+theorem Place.kaehlerResidueOfPerfectField_smul_eq_repartitionDualComponent [PerfectField k]
+    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
+    (hinf : {P : Place k F | P.degree = 1}.Infinite) {x : F}
+    (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F] {P : Place k F} (hP : P.degree = 1)
+    (ω : Ω[F⁄k]) (u : F) :
+    P.kaehlerResidueOfPerfectField hP hF (u • ω) =
+      repartitionDualComponent (kaehlerDifferentialEquivWeilDifferentialOfSeparating hF hex hx ω :
+        Module.Dual k ↥(repartitionSpace k F)) P u := by
+  obtain ⟨t, ht, -⟩ := P.exists_ord_eq_one_and_forall_mem_ord_eq_zero ∅
+  have hsep := P.transcendental_and_isSeparable_adjoin_of_ord_eq_one hF ht
+  let := hsep.2
+  rw [P.kaehlerResidueOfPerfectField_eq_kaehlerResidue hP ht hF hsep.1,
+    repartitionDualComponent_kaehlerDifferentialEquivWeilDifferentialOfSeparating hF hex hinf hx hP
+      ht hsep.1]
+
+section IsAlgClosed
+
+variable [IsAlgClosed k]
+
+/-- Over an algebraically closed field, a Kähler differential has nonzero residue at only finitely
+many places. -/
+theorem finite_support_kaehlerResidueOfPerfectField (hF : IsFunctionField k F) (ω : Ω[F⁄k]) :
+    (Function.support fun P : Place k F ↦
+      P.kaehlerResidueOfPerfectField (P.degree_eq_one_of_isAlgClosed_of_isFunctionField hF) hF
+        ω).Finite := by
+  obtain ⟨x, hx, hsep⟩ := hF.exists_transcendental_and_isSeparable_adjoin_of_perfectField
+  let := hsep
+  let W :=
+    kaehlerDifferentialEquivWeilDifferentialOfSeparating hF isIntegrallyClosedIn_of_isAlgClosed hx ω
+  -- Each residue is the local component at `1` of the Weil differential attached to `ω`.
+  convert finite_support_repartitionDualComponent_apply (Submodule.coe_mem W)
+    ⟨_, const_mem_repartitionSpace hF 1⟩ using 3 with P
+  rw [← one_smul F ω, Place.kaehlerResidueOfPerfectField_smul_eq_repartitionDualComponent hF
+    isIntegrallyClosedIn_of_isAlgClosed (Place.infinite_setOf_degree_eq_one hF) hx]
+  simp [W]
+
+/-- **The residue theorem** (Stichtenoth, Corollary 4.3.3): over an algebraically closed field,
+the residues of a Kähler differential `ω` at the places of `F` sum to zero,
+`∑_P res_P (ω) = 0`. Every place is rational here, and only finitely many residues are nonzero
+(`TauCeti.finite_support_kaehlerResidueOfPerfectField`).
+
+Algebraic closure is needed: over `ℚ`, the differential `2x / (x² - 2) dx` of `ℚ(x)` has residue
+zero at every rational place `x = a` and residue `-2` at infinity; the missing residue sits at the
+place of `x² - 2`, which is not rational (see
+`TauCeti.finsum_residue_adicOfIrreducible_X_sub_C`). -/
+theorem finsum_kaehlerResidueOfPerfectField_eq_zero (hF : IsFunctionField k F) (ω : Ω[F⁄k]) :
+    ∑ᶠ P : Place k F,
+      P.kaehlerResidueOfPerfectField (P.degree_eq_one_of_isAlgClosed_of_isFunctionField hF) hF ω =
+        0 := by
+  obtain ⟨x, hx, hsep⟩ := hF.exists_transcendental_and_isSeparable_adjoin_of_perfectField
+  let := hsep
+  let W :=
+    kaehlerDifferentialEquivWeilDifferentialOfSeparating hF isIntegrallyClosedIn_of_isAlgClosed hx ω
+  -- The abstract residue theorem `∑_P W_P (1) = 0`, with each local component a residue.
+  refine Eq.trans (finsum_congr fun P ↦ ?_)
+    (finsum_repartitionDualComponent_eq_zero hF (Submodule.coe_mem W) 1)
+  rw [← one_smul F ω, Place.kaehlerResidueOfPerfectField_smul_eq_repartitionDualComponent hF
+    isIntegrallyClosedIn_of_isAlgClosed (Place.infinite_setOf_degree_eq_one hF) hx]
+
+end IsAlgClosed
 
 end TauCeti
