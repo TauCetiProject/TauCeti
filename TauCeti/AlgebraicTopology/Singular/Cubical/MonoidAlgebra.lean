@@ -34,7 +34,8 @@ for the cross product.
 
 * `TauCeti.NormalizedCubicalChain.mul_assoc`: strict associativity.
 * `TauCeti.NormalizedCubicalChain.one_mul`, `TauCeti.NormalizedCubicalChain.mul_one`: strict units.
-* `TauCeti.NormalizedCubicalChain.boundary_mul`: the Leibniz rule.
+* `TauCeti.NormalizedCubicalChain.boundary_mul`: the Leibniz rule, with
+  `boundary_mul_zero_left` and `boundary_mul_zero_right` for a factor of degree `0`.
 * `TauCeti.NormalizedCubicalChain.augment_mul`: the augmentation is multiplicative.
 
 ## References
@@ -116,6 +117,41 @@ theorem crossProduct_map_right {Z W : Type*} [TopologicalSpace Z] [TopologicalSp
     crossProduct W Z R p q a (map R f q b) =
       map R ((ContinuousMap.id W).prodMap f) (p + q) (crossProduct W X R p q a b) := by
   rw [map_crossProduct, map_id, LinearMap.id_apply]
+
+/-- Reindexing commutes with the boundary. -/
+theorem boundary_cast {n m : ℕ} (h : n = m) (c : NormalizedCubicalChain X R (n + 1)) :
+    boundary X R m (cast R (congrArg Nat.succ h) c) = cast R h (boundary X R n c) := by
+  subst h
+  simp
+
+/-- Reindexing is injective. -/
+theorem cast_injective {n m : ℕ} (h : n = m) :
+    Function.Injective (cast (X := X) R h) := fun a b hab ↦ by
+  simpa using congrArg (cast R h.symm) hab
+
+/-- The Leibniz rule for the cross product with a `0`-chain on the right. -/
+theorem boundary_crossProduct_zero_right {p : ℕ} (a : NormalizedCubicalChain X R (p + 1))
+    (b : NormalizedCubicalChain Y R 0) :
+    boundary (X × Y) R p (crossProduct X Y R (p + 1) 0 a b) =
+      crossProduct X Y R p 0 (boundary X R p a) b := by
+  induction a using Submodule.Quotient.induction_on with
+  | H a =>
+    induction b using Submodule.Quotient.induction_on with
+    | H b =>
+      rw [crossProduct_mk, boundary_mk, boundary_mk, crossProduct_mk,
+        CubicalChain.boundary_crossProduct_zero_right]
+
+/-- The Leibniz rule for the cross product with a `0`-chain on the left. -/
+theorem boundary_crossProduct_zero_left {q : ℕ} (a : NormalizedCubicalChain X R 0)
+    (b : NormalizedCubicalChain Y R (q + 1)) :
+    boundary (X × Y) R q (cast R (Nat.zero_add (q + 1)) (crossProduct X Y R 0 (q + 1) a b)) =
+      cast R (Nat.zero_add q) (crossProduct X Y R 0 q a (boundary Y R q b)) := by
+  induction a using Submodule.Quotient.induction_on with
+  | H a =>
+    induction b using Submodule.Quotient.induction_on with
+    | H b =>
+      rw [crossProduct_mk, cast_mk, boundary_mk, boundary_mk, crossProduct_mk, cast_mk,
+        CubicalChain.boundary_crossProduct_zero_left]
 
 end NormalizedCubicalChain
 
@@ -211,6 +247,24 @@ theorem boundary_mul {p q : ℕ} (a : NormalizedCubicalChain G R (p + 1))
   rw [← map_cast, ← LinearMap.comp_apply (boundary G R _), ← map_boundary, LinearMap.comp_apply,
     boundary_crossProduct, map_add, map_smul, map_cast]
   rfl
+
+/-- The Leibniz rule for the Pontryagin product with a `0`-chain on the right. -/
+theorem boundary_mul_zero_right {p : ℕ} (a : NormalizedCubicalChain G R (p + 1))
+    (b : NormalizedCubicalChain G R 0) :
+    boundary G R p (mul G R (p + 1) 0 a b) = mul G R p 0 (boundary G R p a) b := by
+  simp only [mul, LinearMap.compr₂_apply]
+  rw [← LinearMap.comp_apply (boundary G R p), ← map_boundary, LinearMap.comp_apply,
+    boundary_crossProduct_zero_right]
+  rfl
+
+/-- The Leibniz rule for the Pontryagin product with a `0`-chain on the left. -/
+theorem boundary_mul_zero_left {q : ℕ} (a : NormalizedCubicalChain G R 0)
+    (b : NormalizedCubicalChain G R (q + 1)) :
+    boundary G R q (cast R (Nat.zero_add (q + 1)) (mul G R 0 (q + 1) a b)) =
+      cast R (Nat.zero_add q) (mul G R 0 q a (boundary G R q b)) := by
+  simp only [mul, LinearMap.compr₂_apply]
+  rw [← map_cast, ← LinearMap.comp_apply (boundary G R q), ← map_boundary, LinearMap.comp_apply,
+    boundary_crossProduct_zero_left, map_cast]
 
 /-- **The augmentation is multiplicative** on the Pontryagin product of `0`-chains. -/
 theorem augment_mul (a b : NormalizedCubicalChain G R 0) :
