@@ -160,7 +160,7 @@ theorem exists_algEquiv_reverseEven_eq_neg_J_mul_transpose_mul_J (Q : QuadraticF
       rintro _ ⟨z, rfl⟩
       have hz : φ (e (biv z)) = -e (biv z) := by
         rw [hφe, ← map_neg]
-        exact congrArg e (Subtype.ext (by simp [biv]))
+        exact congrArg e (Subtype.ext (by simp [biv, reverse_bivectorExterior]))
       rw [mem_skewAdjointMatricesSubmodule, Matrix.IsSkewAdjoint, IsAdjointPair,
         LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, ← hz, hφC, ← Matrix.mul_assoc,
         ← Matrix.mul_assoc, Units.mul_inv, Matrix.one_mul]

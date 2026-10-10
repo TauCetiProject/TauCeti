@@ -34,8 +34,9 @@ open WeierstrassCurve.Affine
 variable {F : Type*} [Field F] {W₁ W₂ : WeierstrassCurve.Affine F} [W₁.IsElliptic] [W₂.IsElliptic]
   (φ : Isogeny W₁ W₂)
 
-/-- **An isogeny commutes with multiplication by `n`**: `φ ∘ [n] = [n] ∘ φ` (Silverman III.4.8). -/
-@[simp]
+/-- **An isogeny commutes with multiplication by `n`**: `φ ∘ [n] = [n] ∘ φ` (Silverman III.4.8).
+This identity is used explicitly: applying it repeatedly to two multiplication isogenies swaps
+their factors indefinitely instead of reducing the composite to multiplication by their product. -/
 theorem comp_mulByIntIsogenyOfNeZero {n : ℤ} (hn : n ≠ 0) :
     φ.comp (mulByIntIsogenyOfNeZero W₁ hn) = (mulByIntIsogenyOfNeZero W₂ hn).comp φ :=
   Hom.ofIsogeny_injective <| by
