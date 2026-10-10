@@ -81,7 +81,8 @@ private theorem countP_le_rowBump_iff (x a : α) {row : List α} (hrow : row.Sor
 
 /-- There is a weakly increasing subsequence of length `n`, with all letters at most `a`,
 exactly when the first row of the insertion tableau has at least `n` entries at most `a`. -/
-theorem exists_sortedLE_sublist_length_bounded_iff (w : List α) (n : ℕ) (a : α) :
+theorem exists_sortedLE_sublist_length_bounded_iff_le_countP_headD_robinsonSchensted_fst
+    (w : List α) (n : ℕ) (a : α) :
     (∃ s, s <+ w ∧ s.SortedLE ∧ s.length = n ∧ ∀ y ∈ s, y ≤ a) ↔
       n ≤ ((robinsonSchensted w).1.headD []).countP (fun y => y ≤ a) := by
   induction w using reverseRecOn generalizing n a with
@@ -103,7 +104,8 @@ theorem exists_sortedLE_sublist_length_bounded_iff (w : List α) (n : ℕ) (a : 
 /-- Schensted's theorem for words: there is a weakly increasing subsequence of length `n`
 exactly when `n` is at most the length of the first row of the insertion tableau. Thus this
 length is attained by an increasing subsequence, and bounds the length of every such subsequence. -/
-theorem exists_sortedLE_sublist_length_iff (w : List α) (n : ℕ) :
+theorem exists_sortedLE_sublist_length_iff_le_length_headD_robinsonSchensted_fst
+    (w : List α) (n : ℕ) :
     (∃ s, s <+ w ∧ s.SortedLE ∧ s.length = n) ↔
       n ≤ ((robinsonSchensted w).1.headD []).length := by
   cases n with
@@ -112,8 +114,9 @@ theorem exists_sortedLE_sublist_length_iff (w : List α) (n : ℕ) :
     constructor
     · rintro ⟨s, hs, hsort, hlen⟩
       have hpos : 0 < s.length := by omega
-      have hcount := (exists_sortedLE_sublist_length_bounded_iff w (n + 1)
-        (s.maximum_of_length_pos hpos)).mp
+      have hcount :=
+        (exists_sortedLE_sublist_length_bounded_iff_le_countP_headD_robinsonSchensted_fst
+          w (n + 1) (s.maximum_of_length_pos hpos)).mp
           ⟨s, hs, hsort, hlen, fun _ hy => le_maximum_of_length_pos_of_mem hy hpos⟩
       exact hcount.trans countP_le_length
     · intro hlen
@@ -125,16 +128,18 @@ theorem exists_sortedLE_sublist_length_iff (w : List α) (n : ℕ) :
         intro y hy
         simpa only [decide_eq_true_eq] using le_maximum_of_length_pos_of_mem hy hpos
       obtain ⟨s, hs, hsort, hslen, _⟩ :=
-        (exists_sortedLE_sublist_length_bounded_iff w (n + 1) a).mpr (hcount ▸ hlen)
+        (exists_sortedLE_sublist_length_bounded_iff_le_countP_headD_robinsonSchensted_fst
+          w (n + 1) a).mpr (hcount ▸ hlen)
       exact ⟨s, hs, hsort, hslen⟩
 
 /-- Schensted's theorem for words without repeated letters, including permutation words:
 there is a strictly increasing subsequence of length `n` exactly when `n` is at most the
 length of the first row of the insertion tableau. -/
-theorem exists_sortedLT_sublist_length_iff (w : List α) (hw : w.Nodup) (n : ℕ) :
+theorem exists_sortedLT_sublist_length_iff_le_length_headD_robinsonSchensted_fst
+    (w : List α) (hw : w.Nodup) (n : ℕ) :
     (∃ s, s <+ w ∧ s.SortedLT ∧ s.length = n) ↔
       n ≤ ((robinsonSchensted w).1.headD []).length := by
-  rw [← exists_sortedLE_sublist_length_iff]
+  rw [← exists_sortedLE_sublist_length_iff_le_length_headD_robinsonSchensted_fst]
   constructor
   · rintro ⟨s, hs, hsort, hlen⟩
     exact ⟨s, hs, hsort.sortedLE, hlen⟩
