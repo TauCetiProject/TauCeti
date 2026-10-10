@@ -187,12 +187,6 @@ theorem coe_isometryGroupEquivIsometryEquiv (B : BilinForm R M) (e : isometryGro
 theorem coe_isometryGroupEquivIsometryEquiv_symm (B : BilinForm R M) (e : B.IsometryEquiv B) :
     (((isometryGroupEquivIsometryEquiv B).symm e : M ≃ₗ[R] M) : M → M) = ⇑e := (rfl)
 
-/-- Forgetting a bilinear isometry equivalence to a linear equivalence commutes with inversion. -/
-@[simp]
-theorem _root_.LinearMap.BilinForm.IsometryEquiv.coe_symm_toLinearEquiv
-    {B' : BilinForm R M'} (e : B.IsometryEquiv B') :
-    e.toLinearEquiv.symm = e.symm := (rfl)
-
 section Congr
 
 /-- Conjugation by `e` carries `Aut(M, B)` onto `Aut(M', B ∘ e⁻¹)`. -/

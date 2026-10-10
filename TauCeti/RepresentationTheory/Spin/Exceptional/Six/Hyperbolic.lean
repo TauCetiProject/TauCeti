@@ -176,20 +176,18 @@ theorem spinSixWedgeIsometryEquivPolarSplit_apply_inr (i : Fin 3) :
 theorem spinSixWedgeIsometryEquivPolarSplit_symm_apply_inl (i : Fin 3) :
     (spinSixWedgeIsometryEquivPolarSplit K).symm ((Pi.basisFun K (Fin 3)).coord i, 0) =
       spinSixWedgeBasis K (Sum.inl i) := by
-  apply (spinSixWedgeIsometryEquivPolarSplit K).injective
-  simp only [← LinearMap.BilinForm.IsometryEquiv.coe_toLinearEquiv,
-    ← LinearMap.BilinForm.IsometryEquiv.coe_symm_toLinearEquiv, LinearEquiv.apply_symm_apply]
-  exact (spinSixWedgeIsometryEquivPolarSplit_apply_inl K i).symm
+  rw [← spinSixWedgeIsometryEquivPolarSplit_apply_inl K i]
+  -- Bilinear isometry inversion is defined using the underlying linear equivalence.
+  exact (spinSixWedgeIsometryEquivPolarSplit K).toLinearEquiv.symm_apply_apply _
 
 /-- The inverse hyperbolic coordinates recover the second half of the wedge basis. -/
 @[simp]
 theorem spinSixWedgeIsometryEquivPolarSplit_symm_apply_inr (i : Fin 3) :
     (spinSixWedgeIsometryEquivPolarSplit K).symm (0, Pi.single i 1) =
       spinSixWedgeBasis K (Sum.inr i) := by
-  apply (spinSixWedgeIsometryEquivPolarSplit K).injective
-  simp only [← LinearMap.BilinForm.IsometryEquiv.coe_toLinearEquiv,
-    ← LinearMap.BilinForm.IsometryEquiv.coe_symm_toLinearEquiv, LinearEquiv.apply_symm_apply]
-  exact (spinSixWedgeIsometryEquivPolarSplit_apply_inr K i).symm
+  rw [← spinSixWedgeIsometryEquivPolarSplit_apply_inr K i]
+  -- Bilinear isometry inversion is defined using the underlying linear equivalence.
+  exact (spinSixWedgeIsometryEquivPolarSplit K).toLinearEquiv.symm_apply_apply _
 
 variable [Invertible (2 : K)]
 
