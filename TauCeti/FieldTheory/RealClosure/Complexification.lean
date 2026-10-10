@@ -82,8 +82,7 @@ noncomputable def _root_.QuadraticAlgebra.sqrt
 /-- The coordinates of the chosen square root satisfy the equations obtained by squaring. -/
 theorem _root_.QuadraticAlgebra.sqrt_coordinates
     (z : QuadraticAlgebra R (-1) 0) :
-    (QuadraticAlgebra.sqrt z).re ^ 2 - (QuadraticAlgebra.sqrt z).im ^ 2 = z.re ∧
-      2 * (QuadraticAlgebra.sqrt z).re * (QuadraticAlgebra.sqrt z).im = z.im := by
+    z.sqrt.re ^ 2 - z.sqrt.im ^ 2 = z.re ∧ 2 * z.sqrt.re * z.sqrt.im = z.im := by
   let a := z.re
   let b := z.im
   let m := complex_sqrt_magnitude a b
@@ -130,10 +129,10 @@ theorem _root_.QuadraticAlgebra.sqrt_coordinates
 /-- The chosen square root squares to its input. -/
 @[simp]
 theorem _root_.QuadraticAlgebra.sq_sqrt
-    (z : QuadraticAlgebra R (-1) 0) : (QuadraticAlgebra.sqrt z) ^ 2 = z := by
+    (z : QuadraticAlgebra R (-1) 0) : z.sqrt ^ 2 = z := by
   rw [pow_two]
   obtain ⟨hre, him⟩ := QuadraticAlgebra.sqrt_coordinates z
-  have hmul : z = QuadraticAlgebra.sqrt z * QuadraticAlgebra.sqrt z := by
+  have hmul : z = z.sqrt * z.sqrt := by
     apply QuadraticAlgebra.ext
     · simp only [QuadraticAlgebra.re_mul]
       linear_combination -hre
@@ -169,14 +168,12 @@ private theorem quadratic_to_complex_hom_apply (z : QuadraticAlgebra ℝ (-1) 0)
 
 /-- The real part of the chosen square root is nonnegative. -/
 theorem _root_.QuadraticAlgebra.re_sqrt_nonneg
-    (z : QuadraticAlgebra R (-1) 0) :
-    0 ≤ (QuadraticAlgebra.sqrt z).re :=
+    (z : QuadraticAlgebra R (-1) 0) : 0 ≤ z.sqrt.re :=
   nonnegSqrt_nonneg (complex_sqrt_radicands_nonneg z.re z.im).1
 
 /-- If the input has nonnegative imaginary part, so does its chosen square root. -/
 theorem _root_.QuadraticAlgebra.im_sqrt_nonneg_of_im_nonneg
-    (z : QuadraticAlgebra R (-1) 0) (hz : 0 ≤ z.im) :
-    0 ≤ (QuadraticAlgebra.sqrt z).im := by
+    (z : QuadraticAlgebra R (-1) 0) (hz : 0 ≤ z.im) : 0 ≤ z.sqrt.im := by
   simpa only [QuadraticAlgebra.sqrt, ite_eq_left hz, complex_sqrt_imag_part] using
     (nonnegSqrt_nonneg (complex_sqrt_radicands_nonneg z.re z.im).2)
 
@@ -184,17 +181,15 @@ theorem _root_.QuadraticAlgebra.im_sqrt_nonneg_of_im_nonneg
 imaginary part. -/
 theorem _root_.QuadraticAlgebra.im_sqrt_nonpos_of_im_neg
     (z : QuadraticAlgebra R (-1) 0) (hz : z.im < 0) :
-    (QuadraticAlgebra.sqrt z).im ≤ 0 := by
+    z.sqrt.im ≤ 0 := by
   simpa only [QuadraticAlgebra.sqrt, ite_eq_right (not_le_of_gt hz), complex_sqrt_imag_part] using
     (neg_nonpos.mpr (nonnegSqrt_nonneg (complex_sqrt_radicands_nonneg z.re z.im).2))
 
 /-- A square root with nonnegative real part and the chosen imaginary-part sign is `sqrt z`. -/
 theorem _root_.QuadraticAlgebra.sqrt_unique
     (z w : QuadraticAlgebra R (-1) 0) (hw_sq : w ^ 2 = z) (hw_re : 0 ≤ w.re)
-    (hw_im_sign : if 0 ≤ z.im then 0 ≤ w.im else w.im ≤ 0) :
-    w = QuadraticAlgebra.sqrt z := by
-  let v := QuadraticAlgebra.sqrt z
-  change w = v
+    (hw_im_sign : if 0 ≤ z.im then 0 ≤ w.im else w.im ≤ 0) : w = z.sqrt := by
+  let v := z.sqrt
   have hv_sq : v ^ 2 = z := by
     simp [v]
   have hfactor : (w - v) * (w + v) = 0 := by
@@ -220,6 +215,7 @@ theorem _root_.QuadraticAlgebra.sqrt_unique
       apply QuadraticAlgebra.ext
       · exact hv_re_zero
       · exact hv_im_zero
+    change w = v  -- Writing the target as `v` lets the final rewrites by `hwv` and `hv_zero` match.
     rw [hwv, hv_zero]
     simp
 
@@ -235,7 +231,7 @@ noncomputable def _root_.QuadraticAlgebra.equivComplex :
       · have hi := congrArg Complex.im h
         simpa [quadratic_to_complex_hom_apply] using hi
     · intro z
-      refine ⟨⟨z.re, z.im⟩, ?_⟩
+      use ⟨z.re, z.im⟩
       rw [quadratic_to_complex_hom_apply]
       apply Complex.ext <;> simp)
 
@@ -259,11 +255,10 @@ theorem _root_.QuadraticAlgebra.im_equivComplex (z : QuadraticAlgebra ℝ (-1) 0
 
 /-- `QuadraticAlgebra.sqrt` agrees with Mathlib's principal complex square root over `ℝ`. -/
 theorem _root_.QuadraticAlgebra.equivComplex_sqrt (z : QuadraticAlgebra ℝ (-1) 0) :
-    QuadraticAlgebra.equivComplex (QuadraticAlgebra.sqrt z) =
+    QuadraticAlgebra.equivComplex z.sqrt =
       Complex.sqrt (QuadraticAlgebra.equivComplex z) := by
   -- Expose the algebra hom underlying the equivalence to apply the complex comparison.
-  change quadratic_to_complex_hom (QuadraticAlgebra.sqrt z) =
-    Complex.sqrt (quadratic_to_complex_hom z)
+  change quadratic_to_complex_hom z.sqrt = Complex.sqrt (quadratic_to_complex_hom z)
   rw [quadratic_to_complex_hom_apply, quadratic_to_complex_hom_apply,
     Complex.sqrt_eq_real_add_ite]
   apply Complex.ext
@@ -277,8 +272,7 @@ theorem isSquare (z : QuadraticAlgebra R (-1) 0) : IsSquare z := by
   obtain ⟨o, ho⟩ := IsSemireal.exists_linearOrder (K := R)
   let := o
   have := ho
-  refine ⟨QuadraticAlgebra.sqrt z, ?_⟩
-  simpa [pow_two] using
-    (QuadraticAlgebra.sq_sqrt z).symm
+  use z.sqrt
+  simpa [pow_two] using (QuadraticAlgebra.sq_sqrt z).symm
 
 end QuadraticAlgebra
