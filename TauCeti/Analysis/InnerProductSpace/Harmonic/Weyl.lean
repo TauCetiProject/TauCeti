@@ -62,6 +62,9 @@ and equal to `u` almost everywhere on `Ω`.
 ## Main declarations
 
 * `TauCeti.WeaklyHarmonicOn`: weak harmonicity on an open set.
+* `TauCeti.WeaklyHarmonicOn.mono`, `TauCeti.WeaklyHarmonicOn.congr_ae`,
+  `TauCeti.WeaklyHarmonicOn.add`, …: weak harmonicity is local, depends only on the a.e. class of
+  the function on `Ω`, and is closed under the linear operations.
 * `TauCeti.WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq`: **Weyl's lemma**.
 * `TauCeti.harmonicOnNhd_iff_weaklyHarmonicOn`: a continuous function is harmonic on `Ω` if and
   only if it is weakly harmonic there.
@@ -109,6 +112,72 @@ theorem WeaklyHarmonicOn.locallyIntegrableOn (h : WeaklyHarmonicOn μ Ω w) :
 /-- The identity defining weak harmonicity: `∫ Δφ • w ∂μ = 0` for every test function on `Ω`. -/
 theorem WeaklyHarmonicOn.integral_laplacian_smul_eq_zero (h : WeaklyHarmonicOn μ Ω w)
     (φ : 𝓓(Ω, ℝ)) : ∫ x, Δ (φ : E → ℝ) x • w x ∂μ = 0 := h.2 φ
+
+/-- A weakly harmonic function on `Ω` is weakly harmonic on every smaller open set: weak
+harmonicity is a local notion. -/
+theorem WeaklyHarmonicOn.mono {Ω' : Opens E} (h : WeaklyHarmonicOn μ Ω w) (hΩ : Ω' ≤ Ω) :
+    WeaklyHarmonicOn μ Ω' w :=
+  ⟨h.locallyIntegrableOn.mono_set hΩ, fun φ ↦ h.integral_laplacian_smul_eq_zero
+    ⟨φ, φ.contDiff, φ.hasCompactSupport, φ.tsupport_subset.trans hΩ⟩⟩
+
+/-- The zero function is weakly harmonic, for every `μ`. -/
+@[simp]
+theorem weaklyHarmonicOn_zero : WeaklyHarmonicOn μ Ω (0 : E → F) :=
+  ⟨locallyIntegrableOn_zero, fun _ ↦ by simp⟩
+
+/-- Weak harmonicity is preserved by negation. -/
+theorem WeaklyHarmonicOn.neg (h : WeaklyHarmonicOn μ Ω w) : WeaklyHarmonicOn μ Ω (-w) :=
+  ⟨h.locallyIntegrableOn.neg, fun φ ↦ by
+    simp only [Pi.neg_apply, smul_neg, integral_neg, h.integral_laplacian_smul_eq_zero φ,
+      neg_zero]⟩
+
+/-- Weak harmonicity is preserved by multiplication by a real scalar. -/
+theorem WeaklyHarmonicOn.const_smul (h : WeaklyHarmonicOn μ Ω w) (c : ℝ) :
+    WeaklyHarmonicOn μ Ω (c • w) :=
+  ⟨h.locallyIntegrableOn.smul c, fun φ ↦ by
+    simp only [Pi.smul_apply, smul_comm _ c, integral_smul, h.integral_laplacian_smul_eq_zero φ,
+      smul_zero]⟩
+
+section OpensMeasurable
+
+variable [OpensMeasurableSpace E]
+
+/-- The Laplacian of a test function on `Ω` scales a function locally integrable on `Ω` to a
+globally integrable one. -/
+private theorem integrable_laplacian_smul (hw : LocallyIntegrableOn w Ω μ) (φ : 𝓓(Ω, ℝ)) :
+    Integrable (fun x ↦ Δ (φ : E → ℝ) x • w x) μ := by
+  simpa only [TestFunction.laplacianCLM_apply] using
+    integrable_smul_of_locallyIntegrableOn hw (LineDeriv.laplacianCLM ℝ E (𝓓(Ω, ℝ)) φ)
+
+/-- Replacing `w` by a function agreeing with it almost everywhere on `Ω` preserves weak
+harmonicity: only the restriction of `w` to `Ω` is seen. -/
+theorem WeaklyHarmonicOn.congr_ae {w' : E → F} (h : WeaklyHarmonicOn μ Ω w)
+    (hw : w =ᵐ[μ.restrict Ω] w') : WeaklyHarmonicOn μ Ω w' := by
+  refine ⟨h.locallyIntegrableOn.congr hw, fun φ ↦ ?_⟩
+  rw [← h.integral_laplacian_smul_eq_zero φ]
+  refine integral_congr_ae ?_
+  filter_upwards [(ae_restrict_iff' Ω.isOpen.measurableSet).1 hw] with x hx
+  by_cases hxΩ : x ∈ (Ω : Set E)
+  · rw [hx hxΩ]
+  · rw [image_eq_zero_of_notMem_tsupport fun h' ↦
+      hxΩ (φ.tsupport_subset (tsupport_laplacian_subset _ h'))]
+    simp
+
+/-- Weak harmonicity is preserved by addition. -/
+theorem WeaklyHarmonicOn.add {w₁ w₂ : E → F} (h₁ : WeaklyHarmonicOn μ Ω w₁)
+    (h₂ : WeaklyHarmonicOn μ Ω w₂) : WeaklyHarmonicOn μ Ω (w₁ + w₂) := by
+  refine ⟨h₁.locallyIntegrableOn.add h₂.locallyIntegrableOn, fun φ ↦ ?_⟩
+  simp only [Pi.add_apply, smul_add]
+  rw [integral_add (integrable_laplacian_smul h₁.locallyIntegrableOn φ)
+    (integrable_laplacian_smul h₂.locallyIntegrableOn φ), h₁.integral_laplacian_smul_eq_zero φ,
+    h₂.integral_laplacian_smul_eq_zero φ, add_zero]
+
+/-- Weak harmonicity is preserved by subtraction. -/
+theorem WeaklyHarmonicOn.sub {w₁ w₂ : E → F} (h₁ : WeaklyHarmonicOn μ Ω w₁)
+    (h₂ : WeaklyHarmonicOn μ Ω w₂) : WeaklyHarmonicOn μ Ω (w₁ - w₂) := by
+  simpa [sub_eq_add_neg] using h₁.add h₂.neg
+
+end OpensMeasurable
 
 variable [BorelSpace E] [μ.IsAddHaarMeasure]
 
