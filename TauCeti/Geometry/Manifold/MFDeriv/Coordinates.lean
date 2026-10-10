@@ -11,10 +11,11 @@ import TauCeti.Topology.VectorBundle.Coordinates
 /-!
 # Regularity of the differential in fixed tangent charts
 
-The differential of a `C^n` map, read in fixed source and target tangent charts,
-is `C^m` throughout their overlap when `m + 1 ≤ n`. The source and target manifolds
-are `C^(m+1)`; boundary and corners are allowed. Smooth and analytic orders are
-included, without shrinking separately for each finite differentiability order.
+The differential of a `C^n` map `f`, read in the fixed source tangent chart at `x₀`
+and target tangent chart at `f x₀`, is `C^m` throughout their overlap when `m + 1 ≤ n`.
+The source and target manifolds are `C^(m+1)`; boundary and corners are allowed.
+Smooth and analytic orders are included, without shrinking separately for each finite
+differentiability order.
 
 These operator families give the ranges whose quotients are the intrinsic normal
 fibres of an embedding. Their regularity on one chart overlap permits a single
@@ -41,8 +42,9 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {m n : ℕ∞ω} [IsManifold I (m + 1) M] [IsManifold I' (m + 1) M']
   {f : M → M'} {s : Set M} {x₀ x : M}
 
-/-- A `C^n` map at `x` has a `C^m` differential in any fixed tangent charts
-containing `x` and `f x`, provided `m + 1 ≤ n`. The chart centre need not be `x`. -/
+/-- A `C^n` map `f` at `x` has a `C^m` differential in the fixed source tangent chart
+at `x₀` and target tangent chart at `f x₀`, provided they contain `x` and `f x`,
+respectively, and `m + 1 ≤ n`. The source chart centre `x₀` need not be `x`. -/
 theorem ContMDiffAt.mfderiv_inTangentCoordinates (hf : ContMDiffAt I I' n f x)
     (hmn : m + 1 ≤ n) (hx : x ∈ (chartAt H x₀).source)
     (hy : f x ∈ (chartAt H' (f x₀)).source) :
@@ -74,8 +76,8 @@ theorem ContMDiffAt.mfderiv_inTangentCoordinates (hf : ContMDiffAt I I' n f x)
     (F := E) (F' := E') (x₀ := x₀) (x₁ := x) (y₀ := f x₀) (y₁ := f x)
     (mfderiv I I' f y) hy₀ hy hy₀' hy')
 
-/-- On an open domain, a `C^n` map has a `C^m` coordinate differential on the
-overlap of any fixed source chart and the corresponding target chart. -/
+/-- On an open domain, a `C^n` map `f` has a `C^m` coordinate differential on the
+overlap of the fixed source tangent chart at `x₀` and target tangent chart at `f x₀`. -/
 theorem ContMDiffOn.mfderiv_inTangentCoordinates (hf : ContMDiffOn I I' n f s)
     (hmn : m + 1 ≤ n) (hs : IsOpen s) (x₀ : M) :
     haveI : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
@@ -87,8 +89,9 @@ theorem ContMDiffOn.mfderiv_inTangentCoordinates (hf : ContMDiffOn I I' n f s)
   exact ((hf.contMDiffAt (hs.mem_nhds hxs)).mfderiv_inTangentCoordinates
     hmn hx hy).contMDiffWithinAt
 
-/-- A globally `C^n` map has a `C^m` differential on every fixed tangent-chart
-overlap, including at smooth and analytic orders. -/
+/-- A globally `C^n` map `f` has a `C^m` differential on the overlap of the fixed source
+tangent chart at `x₀` and target tangent chart at `f x₀`, including at smooth and analytic
+orders. -/
 theorem ContMDiff.mfderiv_inTangentCoordinates (hf : ContMDiff I I' n f)
     (hmn : m + 1 ≤ n) (x₀ : M) :
     haveI : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
