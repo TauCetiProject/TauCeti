@@ -94,7 +94,7 @@ theorem locSubring_map_awayMap_quotientMk :
   refine le_antisymm ?_ ?_
   · rw [Subring.map_le_iff_le_comap, locSubring_le_iff]
     refine ⟨fun a ha ↦ ?_, fun t ht ↦ ?_⟩
-    · rw [Subring.mem_comap, RingHom.awayMap_algebraMap]
+    · rw [Subring.mem_comap, IsLocalization.Away.map, IsLocalization.map_eq]
       exact algebraMap_mem_locSubring _ _ _ _
         (by rw [quotient_ringOfDefinition]; exact Subring.mem_map.mpr ⟨a, ha, rfl⟩)
     · rw [Subring.mem_comap, RingHom.awayMap_divBy]
@@ -105,7 +105,7 @@ theorem locSubring_map_awayMap_quotientMk :
     · rw [quotient_ringOfDefinition] at hb
       obtain ⟨a, ha, rfl⟩ := Subring.mem_map.mp hb
       exact ⟨_, algebraMap_mem_locSubring P T s S ha,
-        RingHom.awayMap_algebraMap (V := S) (W := S') (Ideal.Quotient.mk J) s a⟩
+        IsLocalization.map_eq _ a⟩
     · rw [← Finset.mem_coe, hT'] at ht'
       obtain ⟨t, ht, rfl⟩ := ht'
       exact ⟨_, divBy_mem_locSubring P T s S ht, RingHom.awayMap_divBy _ s t⟩
@@ -148,8 +148,8 @@ private theorem locIdeal_pow_map_awayMapQuotientMkRestrict (n : ℕ) :
     have hab : awayMapQuotientMkRestrict P J T s S hT' S' (toLocSubring P T s S a) =
         toLocSubring (P.quotient J) T' (Ideal.Quotient.mk J s) S' b := by
       apply Subtype.ext
-      rw [coe_awayMapQuotientMkRestrict, toLocSubring_apply, toLocSubring_apply, hba]
-      exact RingHom.awayMap_algebraMap (V := S) (W := S') (Ideal.Quotient.mk J) s a
+      rw [coe_awayMapQuotientMkRestrict, toLocSubring_apply, toLocSubring_apply, hba,
+        IsLocalization.Away.map, IsLocalization.map_eq]
     rw [SetLike.mem_coe, Ideal.mem_comap, hab]
     exact toLocSubring_mem_locIdeal_pow _ _ _ _ hb
   · rw [locIdeal_pow_eq_span, Ideal.span_le]
@@ -163,8 +163,9 @@ private theorem locIdeal_pow_map_awayMapQuotientMkRestrict (n : ℕ) :
     have hab' : toLocSubring (P.quotient J) T' (Ideal.Quotient.mk J s) S' b =
         awayMapQuotientMkRestrict P J T s S hT' S' (toLocSubring P T s S a) := by
       apply Subtype.ext
-      rw [coe_awayMapQuotientMkRestrict, toLocSubring_apply, toLocSubring_apply, ← hab]
-      exact (RingHom.awayMap_algebraMap (V := S) (W := S') (Ideal.Quotient.mk J) s a).symm
+      rw [coe_awayMapQuotientMkRestrict, toLocSubring_apply, toLocSubring_apply, ← hab,
+        IsLocalization.Away.map, IsLocalization.map_eq]
+      rfl
     rw [SetLike.mem_coe, hab']
     exact Ideal.mem_map_of_mem _ (toLocSubring_mem_locIdeal_pow _ _ _ _ ha)
 
@@ -346,7 +347,7 @@ theorem completionLocQuotientHom_comp_toCompletionLoc (hden : HasDenominatorPowe
     (hasDenominatorPower_quotient P J T s S hT' S' hden)
   ext a
   simp only [RingHom.comp_apply, toCompletionLoc_apply, completionLocQuotientHom_coe,
-    RingHom.awayMap_algebraMap]
+    IsLocalization.Away.map, IsLocalization.map_eq]
 
 /-- **The completed map is determined by continuity and compatibility with the structure maps**:
 a continuous ring homomorphism `A⟨T/s⟩ → (A ⧸ J)⟨q(T)/q(s)⟩` carrying the structure map of `A` to
