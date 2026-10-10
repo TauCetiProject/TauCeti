@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Module.TensorProductActions
 public import TauCeti.Algebra.Module.GradedModule.Opposite
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Actions
 public import Mathlib.CategoryTheory.Linear.LinearFunctor
+public import Mathlib.CategoryTheory.Linear.FunctorCategory
 
 /-!
 # Balanced tensor products of graded bimodules
@@ -388,11 +389,35 @@ instance : ((bimoduleTensor Γ).obj M).Additive where
 instance : ((bimoduleTensor Γ).flip.obj N).Additive where
   map_add := bimoduleTensorMap_add_left Γ _ _ (𝟙 N)
 
+instance : (bimoduleTensor Γ).Additive where
+  map_add {X Y f g} := by
+    apply NatTrans.ext
+    funext N
+    exact bimoduleTensorMap_add_left Γ f g (𝟙 N)
+
+instance : (bimoduleTensor Γ).flip.Additive where
+  map_add {X Y f g} := by
+    apply NatTrans.ext
+    funext M
+    exact bimoduleTensorMap_add_right Γ (𝟙 M) f g
+
 instance : ((bimoduleTensor Γ).obj M).Linear k where
   map_smul f c := bimoduleTensorMap_smul_right Γ c (𝟙 M) f
 
 instance : ((bimoduleTensor Γ).flip.obj N).Linear k where
   map_smul f c := bimoduleTensorMap_smul_left Γ c f (𝟙 N)
+
+instance : (bimoduleTensor Γ).Linear k where
+  map_smul f c := by
+    apply NatTrans.ext
+    funext N
+    exact bimoduleTensorMap_smul_left Γ c f (𝟙 N)
+
+instance : (bimoduleTensor Γ).flip.Linear k where
+  map_smul f c := by
+    apply NatTrans.ext
+    funext M
+    exact bimoduleTensorMap_smul_right Γ c (𝟙 M) f
 
 end Tensor
 
