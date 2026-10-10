@@ -20,8 +20,8 @@ likewise for finite and for infinite adeles separately.
 Both sides are continuous and multiplicative in `a` and agree on the diagonal `L`, where the
 formula is the one for field elements. The diagonal `L` is dense in the finite adeles of `L`
 (strong approximation) and in the infinite adeles of `L` (weak approximation), so the two sides
-agree on each factor. The full adele ring is handled factor by factor, since `L` is discrete in
-it.
+agree on each factor. The formula for adeles follows by applying these two formulas to the
+infinite and finite factors of `AdeleRing`.
 
 This is what identifies the norm map of ideles with the norm of the Galois module of ideles, and
 hence the norm of the idele-class formation with the norm map of idele classes.
@@ -81,8 +81,8 @@ back to `L`, the norm of an adele `a` of `L` is `∏_σ σ a`. -/
 theorem adeleExtension_adeleNorm (a : AdeleRing (𝓞 L) L) :
     adeleExtension (𝓞 K) K (𝓞 L) L (adeleNorm K L a) =
       ∏ σ : L ≃ₐ[K] L, adeleGaloisAction K L σ a := by
-  -- `L` is discrete in the adeles, so the two factors are treated separately. `AdeleRing` is a
-  -- type synonym for the product, so its projections are `RingHom.fst` and `RingHom.snd`.
+  -- Apply the infinite and finite formulas to the two factors. `AdeleRing` is a type synonym
+  -- for the product, so its projections are `RingHom.fst` and `RingHom.snd`.
   refine Prod.ext ?_ ?_
   · rw [adeleExtension_fst, adeleNorm_fst, infiniteAdeleExtension_infiniteAdeleNorm]
     refine Eq.trans ?_ (map_prod (RingHom.fst (InfiniteAdeleRing L) (FiniteAdeleRing (𝓞 L) L))
