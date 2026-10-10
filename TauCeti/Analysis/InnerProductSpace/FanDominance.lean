@@ -147,8 +147,10 @@ theorem mem_twoSidedUnitaryOrbitHull_iff_kyFanSum_le {A C : E →ₗ[𝕜] F} :
     classical
     obtain ⟨vA, wA, hvA, hwA, hA⟩ := A.exists_orthonormal_eq_sum_singularValues_smul_rankOne
     obtain ⟨vC, wC, hvC, hwC, hC⟩ := C.exists_orthonormal_eq_sum_singularValues_smul_rankOne
-    change A = diagonalSum 𝕜 vA wA fun i ↦ A.singularValues i at hA
-    change C = diagonalSum 𝕜 vC wC fun i ↦ C.singularValues i at hC
+    replace hA : A = diagonalSum 𝕜 vA wA fun i ↦ A.singularValues i := by
+      simpa only [diagonalSum] using hA
+    replace hC : C = diagonalSum 𝕜 vC wC fun i ↦ C.singularValues i := by
+      simpa only [diagonalSum] using hC
     -- The coefficient tuples `x` whose diagonal sum over `(vC, wC)` lies in the hull form a
     -- symmetric convex set.
     let K : Set (Fin (min (finrank 𝕜 E) (finrank 𝕜 F)) → ℝ) :=
