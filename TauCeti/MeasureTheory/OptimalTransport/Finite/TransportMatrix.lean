@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Matrix.Basic
+public import TauCeti.MeasureTheory.OptimalTransport.Coupling
 public import TauCeti.Probability.ProbabilityMassFunction.Finite
 
 /-!
@@ -19,7 +20,8 @@ This file packages that correspondence. `TauCeti.TransportMatrix μ ν` is the t
 `ℝ≥0∞`-valued matrices with row sums `μ` and column sums `ν`, and
 `TauCeti.transportMatrixEquiv` identifies it with the subtype of product PMFs whose two
 pushforwards are `μ` and `ν`. The codomain `ℝ≥0∞` makes nonnegativity intrinsic, rather than
-a separate side condition.
+a separate side condition. `TauCeti.TransportMatrix.isCoupling_toPMF_toMeasure` identifies the
+associated measure as a coupling of the marginal measures.
 
 The entries are also read as a real-valued function `TauCeti.TransportMatrix.toRealFun` on the
 product, whose row and column sums are the real marginal masses, and the total
@@ -286,5 +288,21 @@ theorem transportMatrixEquiv_symm_apply (μ : PMF ι) (ν : PMF κ)
     (A : TransportMatrix μ ν) (p : ι × κ) :
     ((transportMatrixEquiv μ ν).symm A).1 p = A p.1 p.2 := by
   rfl
+
+section Measure
+
+variable [MeasurableSpace ι] [MeasurableSpace κ] {μ : PMF ι} {ν : PMF κ}
+
+/-- The measure a finite transportation matrix defines is a coupling of the two marginals. -/
+theorem TransportMatrix.isCoupling_toPMF_toMeasure (A : TransportMatrix μ ν) :
+    IsCoupling A.toPMF.toMeasure μ.toMeasure ν.toMeasure where
+  fst_eq := by
+    rw [MeasureTheory.Measure.fst,
+      PMF.toMeasure_map Prod.fst A.toPMF measurable_fst, A.map_fst_toPMF]
+  snd_eq := by
+    rw [MeasureTheory.Measure.snd,
+      PMF.toMeasure_map Prod.snd A.toPMF measurable_snd, A.map_snd_toPMF]
+
+end Measure
 
 end TauCeti
