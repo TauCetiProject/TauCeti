@@ -112,14 +112,16 @@ theorem exists_basis (a b : ZMod (2 ^ (k + 1))) {u : ZMod (2 ^ (k + 1))}
       (h : ∀ m n, a * (m * e₁ + n * f₁) ^ 2 + u * (m * e₁ + n * f₁) * (m * e₂ + n * f₂) +
         b * (m * e₂ + n * f₂) ^ 2 = m * n) :
       IsUnit (e₁ * f₂ - f₁ * e₂) :=
-    TauCeti.BinaryQuadraticForm.isUnit_det_of_quadratic_identity (a := a) (b := b) (u := u) (A := 0) (B := 0) (C := 1)
+    TauCeti.BinaryQuadraticForm.isUnit_det_of_quadratic_identity
+      (a := a) (b := b) (u := u) (A := 0) (B := 0) (C := 1)
       (by simp)
       fun m n ↦ by linear_combination h m n
   have hV {a b e₁ e₂ f₁ f₂ : ZMod (2 ^ (k + 1))}
       (h : ∀ m n, a * (m * e₁ + n * f₁) ^ 2 + u * (m * e₁ + n * f₁) * (m * e₂ + n * f₂) +
         b * (m * e₂ + n * f₂) ^ 2 = m ^ 2 + m * n + n ^ 2) :
       IsUnit (e₁ * f₂ - f₁ * e₂) :=
-    TauCeti.BinaryQuadraticForm.isUnit_det_of_quadratic_identity (a := a) (b := b) (u := u) (A := 1) (B := 1) (C := 1)
+    TauCeti.BinaryQuadraticForm.isUnit_det_of_quadratic_identity
+      (a := a) (b := b) (u := u) (A := 1) (B := 1) (C := 1)
       (by convert isUnit_two_mul_add (c := 1) isUnit_one using 1; ring)
       fun m n ↦ by linear_combination h m n
   obtain ⟨a', rfl⟩ | ⟨a', rfl⟩ := eq_two_mul_or_eq_two_mul_add_one a
