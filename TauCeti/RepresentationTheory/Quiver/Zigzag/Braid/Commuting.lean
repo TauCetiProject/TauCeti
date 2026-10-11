@@ -118,6 +118,8 @@ theorem ιMapBifunctor_zigzagBraidComplexTensorXZeroIso_hom (i j : V) :
       ((((F).flip.obj ((B j).X 0)).mapIso (zigzagBraidComplexXIso₁ k G i) ≪≫
         ((F).obj Z).mapIso (zigzagBraidComplexXIso₁ k G j)) ≪≫
           zigzagBimoduleLeftUnitor k G Z).hom := by
+  -- Expose the constructed hom projections as the desc map and unit comparison
+  -- so the totalization summand-inclusion equation computes the regular summand.
   change HomologicalComplex.ιMapBifunctor (B i) (B j) F c 0 0 0 (by simp) ≫
       tensorZeroHom k G i j = (tensorPairZeroIso k G i j).hom
   simp only [tensorZeroHom, HomologicalComplex.ι_mapBifunctorDesc,
@@ -198,6 +200,8 @@ theorem ιMapBifunctor_zigzagBraidComplexTensorXMinusOneIso_hom_left (i j : V) :
       ((((F).flip.obj ((B j).X 0)).mapIso (zigzagBraidComplexXIso₀ k G i) ≪≫
         ((F).obj (U i)).mapIso (zigzagBraidComplexXIso₁ k G j)) ≪≫
           zigzagBimoduleRightUnitor k G (U i)).hom ≫ biprod.inl := by
+  -- Expose the constructed hom projections as the desc map and right-unit comparison
+  -- so the (-1,0) summand-inclusion equation computes the first biproduct summand.
   change HomologicalComplex.ιMapBifunctor (B i) (B j) F c (-1) 0 (-1) (by simp) ≫
       tensorMinusOneHom k G i j = (tensorPairLeftIso k G i j).hom ≫ biprod.inl
   simp only [tensorMinusOneHom, HomologicalComplex.ι_mapBifunctorDesc,
@@ -211,6 +215,8 @@ theorem ιMapBifunctor_zigzagBraidComplexTensorXMinusOneIso_hom_right (i j : V) 
       ((((F).flip.obj ((B j).X (-1))).mapIso (zigzagBraidComplexXIso₁ k G i) ≪≫
         ((F).obj Z).mapIso (zigzagBraidComplexXIso₀ k G j)) ≪≫
           zigzagBimoduleLeftUnitor k G (U j)).hom ≫ biprod.inr := by
+  -- Expose the constructed hom projections as the desc map and left-unit comparison
+  -- so the (0,-1) summand-inclusion equation computes the second biproduct summand.
   change HomologicalComplex.ιMapBifunctor (B i) (B j) F c 0 (-1) (-1) (by simp) ≫
       tensorMinusOneHom k G i j = (tensorPairRightIso k G i j).hom ≫ biprod.inr
   simp only [tensorMinusOneHom, HomologicalComplex.ι_mapBifunctorDesc,
