@@ -888,20 +888,6 @@ a locally flat embedding has local product neighbourhoods in any codimension.
 
 section ProductNeighborhood
 
-/-- An open partial homeomorphism turns an open embedding into its target into an open embedding
-into its source. This is the transport step of the constructions below. -/
-private theorem isOpenEmbedding_symm_comp {X : Type*} [TopologicalSpace X]
-    (ψ : OpenPartialHomeomorph M F) {g : X → F} (hg : IsOpenEmbedding g)
-    (hgr : range g ⊆ ψ.target) : IsOpenEmbedding (ψ.symm ∘ g) :=
-  .of_continuous_injective_isOpenMap
-    (ψ.continuousOn_symm.comp_continuous hg.continuous fun q => hgr (mem_range_self q))
-    (fun q q' hqq' => hg.injective (ψ.symm.injOn
-      (ψ.symm_source ▸ hgr (mem_range_self q)) (ψ.symm_source ▸ hgr (mem_range_self q')) hqq'))
-    fun O hO => by
-      rw [image_comp]
-      exact ψ.isOpen_image_symm_of_subset_target (hg.isOpenMap O hO)
-        ((image_subset_range g O).trans hgr)
-
 variable {G : Type*} [SeminormedAddCommGroup G] [NormedSpace ℝ G]
 
 /-- A slice chart whose target is a box `u ×ˢ ball 0 r` exhibits its source as a product of the
@@ -927,7 +913,7 @@ private theorem exists_isOpenEmbedding_prod_of_target_eq_prod {ψ : OpenPartialH
   have hjr : range j = ψ.target := by
     rw [hj, range_prodMap, Subtype.range_coe, hρr, hψt]
   set σ : u × G → M := ψ.symm ∘ j with hσ
-  have hσe : IsOpenEmbedding σ := isOpenEmbedding_symm_comp ψ hje hjr.subset
+  have hσe : IsOpenEmbedding σ := ψ.symm.isOpenEmbedding_comp hje hjr.subset
   -- The zero slice of `σ` and the restriction of `f` are two embeddings with the same image.
   set e₁ : (f ⁻¹' ψ.source) → M := f ∘ ((↑) : (f ⁻¹' ψ.source) → N) with he₁
   set e₂ : u → M := fun v => σ (v, 0) with he₂
