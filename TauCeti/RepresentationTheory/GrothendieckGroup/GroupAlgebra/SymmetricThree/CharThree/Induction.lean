@@ -47,13 +47,21 @@ private theorem signLinearCharacter_mul_self :
     congrArg Units.val h
   simpa only [Int.cast_mul, Int.cast_one] using congrArg (fun z : ℤ => (z : k)) hz
 
+private theorem simpleClassBasis_eq_linearCharacter (b : Bool) :
+    symmetricThreeCharThreeSimpleClassBasis k b =
+      fdRepK0RingEquiv k (Equiv.Perm (Fin 3))
+        (ExactK0.of (FDRep.ofLinearCharacter
+          (if b then signLinearCharacter k (Fin 3) else 1))) := by
+  -- Both sides take the same representation through the two Grothendieck-group presentations.
+  rw [symmetricThreeCharThreeSimpleClassBasis_apply,
+    fdRepK0RingEquiv_of, FDRep.ofLinearCharacter_def]
+  rfl
+
 private theorem signClass_eq :
     symmetricThreeCharThreeSimpleClassBasis k true =
       fdRepK0RingEquiv k (Equiv.Perm (Fin 3))
         (ExactK0.of (FDRep.ofLinearCharacter (signLinearCharacter k (Fin 3)))) := by
-  rw [symmetricThreeCharThreeSimpleClassBasis_apply,
-    fdRepK0RingEquiv_of, FDRep.ofLinearCharacter_def]
-  rfl
+  simpa only [ite_true] using simpleClassBasis_eq_linearCharacter k true
 
 /-- The sign basis vector squares to the unit in the characteristic-three Grothendieck ring. -/
 theorem symmetricThreeCharThreeSimpleClassBasis_true_mul_self :
@@ -72,12 +80,9 @@ theorem indK0_sign_stabilizer_perm_fin_three_char_three :
   have hres : resK0 k (H : Subgroup (Equiv.Perm (Fin 3))).subtype (B true) = C true :=
     resK0_stabilizer_perm_fin_three_simpleClassBasis_apply k a true
   have hzero : B false = (1 : ExactK0 (finiteModulesExactStructure k[Equiv.Perm (Fin 3)])) := by
-    have h : B false = fdRepK0RingEquiv k (Equiv.Perm (Fin 3))
-        (ExactK0.of (FDRep.ofLinearCharacter (1 : Equiv.Perm (Fin 3) →* kˣ))) := by
-      rw [symmetricThreeCharThreeSimpleClassBasis_apply,
-        fdRepK0RingEquiv_of, FDRep.ofLinearCharacter_def]
-      rfl
-    rw [h, exactK0_ofLinearCharacter_one]
+    rw [simpleClassBasis_eq_linearCharacter]
+    simpa only [Bool.false_eq_true, ite_false] using
+      (exactK0_ofLinearCharacter_one (k := k) (G := Equiv.Perm (Fin 3)))
   have hind : indK0 k H 1 = 2 • B false + B true := by
     rw [hzero, signClass_eq]
     exact indK0_one_stabilizer_perm_fin_three_char_three k a
