@@ -42,9 +42,8 @@ theorem coe_twoTorsionBaseChange (x : twoTorsion K) :
 @[simp]
 theorem twoTorsionBaseChange_self : twoTorsionBaseChange K K = MonoidHom.id (twoTorsion K) := by
   ext x
-  change ((twoTorsionBaseChange K K x : twoTorsion K) : BrauerGroup K) = x
   rw [coe_twoTorsionBaseChange, baseChange_self]
-  rfl
+  simp only [MonoidHom.id_apply]
 
 variable (M : Type u) [Field M] [Algebra K M] [Algebra L M] [IsScalarTower K L M]
 
@@ -53,8 +52,7 @@ variable (M : Type u) [Field M] [Algebra K M] [Algebra L M] [IsScalarTower K L M
 theorem twoTorsionBaseChange_comp :
     (twoTorsionBaseChange L M).comp (twoTorsionBaseChange K L) = twoTorsionBaseChange K M := by
   ext x
-  change (baseChange L M) (baseChange K L (x : BrauerGroup K)) =
-    baseChange K M (x : BrauerGroup K)
+  simp only [MonoidHom.comp_apply, coe_twoTorsionBaseChange]
   exact congrArg (fun f : BrauerGroup K →* BrauerGroup M => f (x : BrauerGroup K))
     (baseChange_comp K L M)
 
