@@ -28,7 +28,7 @@ public section
 open IntermediateField MulAction NumberField
 open scoped NumberField Pointwise
 
-namespace TauCeti
+namespace Ideal
 
 variable {K M : Type*} [Field K] [NumberField K] [Field M] [NumberField M]
   [Algebra K M] [IsGalois K M]
@@ -41,28 +41,26 @@ theorem sum_ramificationIdx_mul_inertiaDeg_doubleCoset_eq_finrank
     (H : Subgroup (M ≃ₐ[K] M)) :
     (∑ᶠ q : DoubleCoset.Quotient (H : Set (M ≃ₐ[K] M))
         (stabilizer (M ≃ₐ[K] M) Q : Set (M ≃ₐ[K] M)),
-      (Ideal.doubleCosetQuotientEquivPrimesOver p Q H q : Ideal (𝓞 ↥(fixedField H))).ramificationIdx
+      (doubleCosetQuotientEquivPrimesOver p Q H q : Ideal (𝓞 ↥(fixedField H))).ramificationIdx
           (𝓞 K) *
-        (Ideal.doubleCosetQuotientEquivPrimesOver p Q H q : Ideal (𝓞 ↥(fixedField H))).inertiaDeg
+        (doubleCosetQuotientEquivPrimesOver p Q H q : Ideal (𝓞 ↥(fixedField H))).inertiaDeg
           (𝓞 K)) = Module.finrank K ↥(fixedField H) := by
   classical
-  let _ := Fintype.ofFinite
-    (DoubleCoset.Quotient (H : Set (M ≃ₐ[K] M))
-      (stabilizer (M ≃ₐ[K] M) Q : Set (M ≃ₐ[K] M)))
+  let _ : p.IsPrime := Ideal.isPrime_of_liesOver (P := Q) (p := p)
+  let e := doubleCosetQuotientEquivPrimesOver p Q H
+  let _ := Fintype.ofFinite (DoubleCoset.Quotient (H : Set (M ≃ₐ[K] M))
+    (stabilizer (M ≃ₐ[K] M) Q : Set (M ≃ₐ[K] M)))
+  let _ : Fintype (p.primesOver (𝓞 ↥(fixedField H))) := Fintype.ofEquiv _ e
   rw [finsum_eq_sum_of_fintype]
+  rw [e.sum_comp (fun q : p.primesOver (𝓞 ↥(fixedField H)) =>
+    q.1.ramificationIdx (𝓞 K) * q.1.inertiaDeg (𝓞 K))]
   calc
-    _ = ∑ q, Nat.card (DoubleCoset.quotToDoubleCoset H (stabilizer (M ≃ₐ[K] M) Q) q) /
-        Nat.card H := by
-      apply Finset.sum_congr rfl
-      intro q _
-      exact Ideal.ramificationIdx_mul_inertiaDeg_doubleCosetQuotientEquivPrimesOver_eq_card_div
-        p Q H q
-    _ = H.index := Subgroup.sum_card_quotToDoubleCoset_div_card_eq_index H
-      (stabilizer (M ≃ₐ[K] M) Q)
-    _ = Module.finrank K ↥(fixedField H) := by
-      rw [IntermediateField.finrank_eq_fixingSubgroup_index,
-        IntermediateField.fixingSubgroup_fixedField]
+    _ = Module.finrank (𝓞 K) (𝓞 ↥(fixedField H)) :=
+      Ideal.sum_ramification_inertia_eq_finrank p (𝓞 ↥(fixedField H))
+    _ = Module.finrank K ↥(fixedField H) :=
+      (IsFractionRing.finrank_eq (𝓞 K) K (𝓞 ↥(fixedField H))
+        (↥(fixedField H))).symm
 
-end TauCeti
+end Ideal
 
 end
