@@ -802,6 +802,42 @@ def H₁AddEquivHomology : H₁ X ≃+ ((singularChains ℤ).obj X).homology 1 :
     (((singularChains ℤ).obj X).homologyIsoSc' 2 1 0 (by simp) (by simp)).symm).toLinearEquiv
       |>.toAddEquiv)
 
+/-- Every `1`-cycle lies under a cycle of the singular chain complex. -/
+lemma exists_iCycles_eq (c : cycles₁ X) :
+    ∃ z : ((singularChains ℤ).obj X).cycles 1,
+      (((singularChains ℤ).obj X).iCycles 1).hom z = c := by
+  have hi : (ComplexShape.down ℕ).prev 1 = 2 := by simp
+  have hk : (ComplexShape.down ℕ).next 1 = 0 := by simp
+  have h₁ := congr($(((singularChains ℤ).obj X).cyclesIsoSc'_inv_iCycles 2 1 0 hi hk).hom
+    ((sc₁ X).moduleCatCyclesIso.inv.hom (cyclesToK X c)))
+  have h₂ := congr($((sc₁ X).moduleCatCyclesIso_inv_iCycles).hom (cyclesToK X c))
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at h₁ h₂
+  exact ⟨_, h₁.trans h₂⟩
+
+/-- The identification of cycles modulo boundaries with the homology of the singular chain
+complex sends the class of a cycle `c` to the homology class of the cycle of the complex lying
+over `c`. -/
+lemma H₁AddEquivHomology_mk (c : cycles₁ X) (z : ((singularChains ℤ).obj X).cycles 1)
+    (hz : (((singularChains ℤ).obj X).iCycles 1).hom z = c) :
+    H₁AddEquivHomology X (QuotientAddGroup.mk c) =
+      (((singularChains ℤ).obj X).homologyπ 1).hom z := by
+  have hi : (ComplexShape.down ℕ).prev 1 = 2 := by simp
+  have hk : (ComplexShape.down ℕ).next 1 = 0 := by simp
+  have h₁ := congr($(((singularChains ℤ).obj X).cyclesIsoSc'_inv_iCycles 2 1 0 hi hk).hom
+    ((sc₁ X).moduleCatCyclesIso.inv.hom (cyclesToK X c)))
+  have h₂ := congr($((sc₁ X).moduleCatCyclesIso_inv_iCycles).hom (cyclesToK X c))
+  have h₃ := congr($((sc₁ X).moduleCatCyclesIso_inv_π).hom (cyclesToK X c))
+  have h₄ := congr($(((singularChains ℤ).obj X).π_homologyIsoSc'_inv 2 1 0 hi hk).hom
+    ((sc₁ X).moduleCatCyclesIso.inv.hom (cyclesToK X c)))
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at h₁ h₂ h₃ h₄
+  have hz₀ : z = (((singularChains ℤ).obj X).cyclesIsoSc' 2 1 0 hi hk).inv.hom
+      ((sc₁ X).moduleCatCyclesIso.inv.hom (cyclesToK X c)) := by
+    apply (ModuleCat.mono_iff_injective (((singularChains ℤ).obj X).iCycles 1)).1 inferInstance
+    refine hz.trans ?_
+    exact (h₁.trans h₂).symm
+  rw [hz₀, ← h₄, h₃]
+  rfl
+
 /-! ### The Hurewicz isomorphism -/
 
 /-- **The Hurewicz theorem in degree one**: for a path-connected space `X` with a base point `x`,
