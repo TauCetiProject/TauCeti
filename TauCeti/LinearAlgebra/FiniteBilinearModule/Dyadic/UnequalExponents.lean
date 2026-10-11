@@ -131,10 +131,6 @@ noncomputable def dyadicCyclicProdGapTwoIsometryFiveMul (k : ℕ) [NeZero k] {θ
       (isNondegenerate_prod _ _).mpr
         ⟨(isNondegenerate_dyadicCyclic_iff _ _).mpr ((by decide : Odd (5 : ℤ)).mul hθ),
           (isNondegenerate_dyadicCyclic_iff _ _).mpr ((by decide : Odd (5 : ℤ)).mul hη)⟩
-    have hinj : Function.Injective g := fun x y hxy ↦
-      FiniteBilinearModule.Hom.injective g.toFiniteBilinearModule hsource
-        ((Hom.toFiniteBilinearModule_apply g x).trans
-          (hxy.trans (Hom.toFiniteBilinearModule_apply g y).symm))
-    exact ⟨(g.toIsometry ((Nat.bijective_iff_injective_and_card g).mpr ⟨hinj, rfl⟩)).symm⟩
+    exact ⟨(g.toIsometryOfNondegenerate hsource rfl).symm⟩
 
 end TauCeti.FiniteQuadraticModule

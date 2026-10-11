@@ -124,13 +124,8 @@ noncomputable def dyadicUProdSelfIsometryDyadicVProdSelf (k : ℕ) :
             rw [hβ x.2]
             dsimp only [Prod.fst, Prod.snd]
             linear_combination h x.2.1 x.2.2 }
-      have hinj : Function.Injective g := fun x y hxy ↦
-        FiniteBilinearModule.Hom.injective g.toFiniteBilinearModule
-          ((isNondegenerate_prod _ _).2
-            ⟨isNondegenerate_dyadicU _, isNondegenerate_dyadicU _⟩)
-          ((Hom.toFiniteBilinearModule_apply g x).trans
-            (hxy.trans (Hom.toFiniteBilinearModule_apply g y).symm))
-      exact ⟨g.toIsometry ((Nat.bijective_iff_injective_and_card g).2 ⟨hinj, rfl⟩)⟩
+      exact ⟨g.toIsometryOfNondegenerate ((isNondegenerate_prod _ _).2
+        ⟨isNondegenerate_dyadicU _, isNondegenerate_dyadicU _⟩) rfl⟩
 
 private theorem dyadicCyclic_prod_quadratic_intCast (k : ℕ) [NeZero k]
     (θ η x y : ℤ) :
@@ -213,10 +208,6 @@ noncomputable def dyadicCyclicProdIsometryFiveMul (k : ℕ) [NeZero k] {θ η : 
       (isNondegenerate_prod _ _).mpr
         ⟨(isNondegenerate_dyadicCyclic_iff _ _).mpr ((by decide : Odd (5 : ℤ)).mul hθ),
           (isNondegenerate_dyadicCyclic_iff _ _).mpr ((by decide : Odd (5 : ℤ)).mul hη)⟩
-    have hinj : Function.Injective g := fun x y hxy ↦
-      FiniteBilinearModule.Hom.injective g.toFiniteBilinearModule hsource
-        ((Hom.toFiniteBilinearModule_apply g x).trans
-          (hxy.trans (Hom.toFiniteBilinearModule_apply g y).symm))
-    exact ⟨(g.toIsometry ((Nat.bijective_iff_injective_and_card g).mpr ⟨hinj, rfl⟩)).symm⟩
+    exact ⟨(g.toIsometryOfNondegenerate hsource rfl).symm⟩
 
 end TauCeti.FiniteQuadraticModule
