@@ -119,8 +119,12 @@ theorem _root_.HasStrictFDerivAt.exists_mem_nhds_forall_isCompact_inter_preimage
   set Θ : N → F × f'.ker := fun x => (f (x : E), Pker (x : E))
   have hanti : AntilipschitzWith (.mk (2 * C + 2) (by positivity)) Θ := by
     refine AntilipschitzWith.of_le_mul_dist fun x y => ?_
-    have hf : ‖f (x : E) - f (y : E)‖ ≤ ‖Θ x - Θ y‖ := norm_fst_le (Θ x - Θ y)
-    have hP : ‖P (x : E) - P (y : E)‖ ≤ ‖Θ x - Θ y‖ := norm_snd_le (Θ x - Θ y)
+    have hf : ‖f (x : E) - f (y : E)‖ ≤ ‖Θ x - Θ y‖ := by
+      simpa only [Prod.fst_sub, Θ] using norm_fst_le (Θ x - Θ y)
+    -- The kernel coordinate has the norm induced from `E`, and `Pker` coerces to `P`.
+    have hP : ‖P (x : E) - P (y : E)‖ ≤ ‖Θ x - Θ y‖ := by
+      simpa only [Prod.snd_sub, Θ, ← Submodule.norm_coe, Submodule.coe_sub, Pker,
+        ContinuousLinearMap.coe_codRestrict_apply] using norm_snd_le (Θ x - Θ y)
     have hfC := mul_le_mul_of_nonneg_left hf hC.le
     rw [Subtype.dist_eq, dist_eq_norm, dist_eq_norm, NNReal.coe_mk]
     nlinarith [key (x : E) x.2 (y : E) y.2]
