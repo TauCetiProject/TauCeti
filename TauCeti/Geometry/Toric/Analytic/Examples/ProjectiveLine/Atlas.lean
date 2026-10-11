@@ -252,8 +252,10 @@ theorem projectiveLine_chart_cover :
     isRegular_projectiveLineFan x
   rcases (mem_projectiveLineFan_cones σ.1).1 σ.2 with h | h | h
   · have hz : σ ≤ projectiveLinePositiveCone := by
-      change σ.1 ≤ affineRayCone
-      rw [h]
+      rcases σ with ⟨σ, _⟩
+      apply Subtype.mk_le_mk.mpr
+      have hσbot : σ = ⊥ := by simpa only using h
+      rw [hσbot]
       exact bot_le
     left
     exact ⟨faceAffinePointMap projectiveLineFan.lattice
@@ -301,10 +303,10 @@ theorem projectiveLine_chart_transition
     exact ⟨⟨x, rfl⟩, ⟨y, hxy.symm⟩⟩
   obtain ⟨z, hz⟩ := hz
   have hp : projectiveLineZeroCone ≤ projectiveLinePositiveCone := by
-    change (⊥ : PointedCone ℝ (Fin 1 → ℝ)) ≤ affineRayCone
+    apply Subtype.mk_le_mk.mpr
     exact bot_le
   have hn : projectiveLineZeroCone ≤ projectiveLineNegativeCone := by
-    change (⊥ : PointedCone ℝ (Fin 1 → ℝ)) ≤ negativeRayCone
+    apply Subtype.mk_le_mk.mpr
     exact bot_le
   have hpx : faceAffinePointMap projectiveLineFan.lattice
       (projectiveLineFan.isFaceOf_of_le projectiveLinePositiveCone.2
