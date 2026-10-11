@@ -72,18 +72,31 @@ private def epsilon : Z ⟶ W :=
 def projectionZero : K.X 0 ⟶ Z :=
   h.zeroIso.hom ≫ (biprod.fst - (biprod.snd ≫ biprod.snd) ≫
     (h.minusIso.inv ≫ K.d (-1) 0 ≫ h.zeroIso.hom ≫ biprod.fst))
+omit [HasZeroObject C] in
+/-- The corrected projection subtracts the bottom differential's surviving component. -/
+theorem projectionZero_def :
+    projectionZero h = h.zeroIso.hom ≫
+      (biprod.fst - (biprod.snd ≫ biprod.snd) ≫
+        (h.minusIso.inv ≫ K.d (-1) 0 ≫ h.zeroIso.hom ≫ biprod.fst)) := (rfl)
+
 /-- The degree-zero inclusion corrected by the differential into the upper identity block. -/
 def inclusionZero : Z ⟶ K.X 0 :=
   (biprod.inl - (biprod.inl ≫ h.zeroIso.inv ≫ K.d 0 1 ≫ h.oneIso.hom) ≫
     (biprod.inl ≫ biprod.inr)) ≫ h.zeroIso.inv
 omit [HasZeroObject C] in
+/-- The corrected inclusion subtracts the surviving component of the top differential. -/
+theorem inclusionZero_def :
+    inclusionZero h =
+      (biprod.inl - (biprod.inl ≫ h.zeroIso.inv ≫ K.d 0 1 ≫ h.oneIso.hom) ≫
+        (biprod.inl ≫ biprod.inr)) ≫ h.zeroIso.inv := (rfl)
+
+omit [HasZeroObject C] in
 private theorem d_projectionZero : K.d (-1) 0 ≫ projectionZero h = 0 := by
-  change K.d (-1) 0 ≫ h.zeroIso.hom ≫ (biprod.fst - pU ≫ delta h) = 0
-  have hz := d_fst h
+  rw [projectionZero_def]
   have hu := h.d_snd_snd
-  simp only [← Category.assoc] at hz hu
-  simp only [pU, Category.assoc, Preadditive.comp_sub]
-  simp only [← Category.assoc, hz, hu, sub_self]
+  simp only [← Category.assoc] at hu
+  simp only [Category.assoc, Preadditive.comp_sub]
+  simp only [← Category.assoc, hu, Iso.hom_inv_id, Category.id_comp, sub_self]
 
 omit [HasZeroObject C] in
 private theorem inclusionZero_d : inclusionZero h ≫ K.d 0 1 = 0 := by
@@ -98,7 +111,7 @@ private def projection : K ⟶ (HomologicalComplex.single C (ComplexShape.up ℤ
   HomologicalComplex.mkHomToSingle (projectionZero h) (by
     intro n hn
     have hn' : n = -1 := by
-      change n + 1 = 0 at hn
+      rw [ComplexShape.up_Rel] at hn
       omega
     subst n
     exact d_projectionZero h)
@@ -106,7 +119,7 @@ private def inclusion : (HomologicalComplex.single C (ComplexShape.up ℤ) 0).ob
   HomologicalComplex.mkHomFromSingle (inclusionZero h) (by
     intro n hn
     have hn' : n = 1 := by
-      change (0 : ℤ) + 1 = n at hn
+      rw [ComplexShape.up_Rel] at hn
       omega
     subst n
     exact inclusionZero_d h)
