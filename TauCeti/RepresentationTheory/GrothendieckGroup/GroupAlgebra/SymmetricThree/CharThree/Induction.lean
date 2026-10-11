@@ -63,6 +63,8 @@ private theorem signClass_eq :
         (ExactK0.of (FDRep.ofLinearCharacter (signLinearCharacter k (Fin 3)))) := by
   simpa only [ite_true] using simpleClassBasis_eq_linearCharacter k true
 
+-- `symmetricThreeCharThreeSimpleClassBasis_apply` simplifies the left side before this theorem
+-- can fire as a simp lemma; use the named theorem to rewrite the class product.
 /-- The sign basis vector squares to the unit in the characteristic-three Grothendieck ring. -/
 theorem symmetricThreeCharThreeSimpleClassBasis_true_mul_self :
     symmetricThreeCharThreeSimpleClassBasis k true *

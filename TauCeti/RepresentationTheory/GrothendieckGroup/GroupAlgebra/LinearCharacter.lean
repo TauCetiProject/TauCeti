@@ -30,6 +30,8 @@ namespace TauCeti
 
 universe u
 
+-- These are named rewrite rules: `fdRepK0RingEquiv_of` simplifies their left sides, so
+-- registering them as simp lemmas would violate `simpNF`.
 /-- The trivial linear character represents the unit of the exact Grothendieck ring. -/
 theorem exactK0_ofLinearCharacter_one {k G : Type u} [Field k] [Monoid G] [Finite G] :
     fdRepK0RingEquiv k G
