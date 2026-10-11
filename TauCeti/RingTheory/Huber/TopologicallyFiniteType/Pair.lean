@@ -228,6 +228,23 @@ theorem weighted_completion_plus_le_comap (S' : Pair B)
     ((S'.plus.toAddSubgroup.isClosed_of_isOpen S'.isRingOfIntegralElements.isOpen).preimage hψ)
     hC hX
 
+variable {S} in
+/-- **A morphism of Huber pairs, applied coefficientwise, preserves the completed weighted plus
+rings**: for `f : (A, A⁺) → (B, B⁺)` and weights with `f(Tᵢ) ⊆ T'ᵢ`, the induced map
+`Â⟨X⟩_T → B̂⟨X⟩_{T'}` carries the plus ring of `(A⟨X⟩_T, A⟨X⟩_T⁺)^` into that of
+`(B⟨X⟩_{T'}, B⟨X⟩_{T'}⁺)^`. -/
+theorem weighted_completion_plus_le_comap_weightedMapCompletion {U : Pair B} (f : Hom S U)
+    {T' : Fin k → Set B} (hT' : IsWeightFamily T') (hTT' : ∀ i, f.toRingHom '' T i ⊆ T' i) :
+    (S.weighted hT).completion.plus ≤ (U.weighted hT').completion.plus.comap
+      (weightedMapCompletion f.continuous_toRingHom hT hT' hTT') :=
+  S.weighted_completion_plus_le_comap hT _ (continuous_weightedMapCompletion ..)
+    (fun a ha ↦ by
+      rw [weightedMapCompletion_coe, weightedMap_weightedC]
+      exact U.weightedC_mem_weighted_completion_plus hT' (f.map_mem_plus a ha))
+    (fun i t ht ↦ by
+      rw [weightedMapCompletion_coe, map_mul, weightedMap_weightedC, weightedMap_weightedX]
+      exact U.weightedC_mul_weightedX_mem_weighted_completion_plus hT' (hTT' i ⟨t, ht, rfl⟩))
+
 variable {S hT} in
 /-- **A morphism onto a completed weighted pair is a quotient mapping** as soon as it is an open
 quotient map and the constants from `A⁺` and the weighted variables `t Xᵢ` (`t ∈ Tᵢ`) are
