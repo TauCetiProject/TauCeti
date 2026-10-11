@@ -51,6 +51,11 @@ def bourbakiVertex : Fin 8 → DeletedVertex
 def deletedGraph : SimpleGraph DeletedVertex :=
   (Quiver.underlyingGraph AffineE8).induce (fun v : AffineE8 => v ≠ AffineE8.long1)
 
+/-- Adjacency in the deleted graph is inherited from the affine `E₈` quiver. -/
+@[simp] theorem deletedGraph_adj (u v : DeletedVertex) :
+    deletedGraph.Adj u v ↔ (Quiver.underlyingGraph AffineE8).Adj u.1 v.1 :=
+  SimpleGraph.induce_adj
+
 /-- The eight arrows are exactly the edges of the three arms. -/
 private theorem nonempty_hom_iff (a b : AffineE8) : Nonempty (a ⟶ b) ↔
     (a = .short ∧ b = .center) ∨
@@ -78,7 +83,7 @@ private theorem nonempty_hom_iff (a b : AffineE8) : Nonempty (a ⟶ b) ↔
 /-- **Deleting the affine vertex from the affine `E₈` quiver gives the finite Bourbaki `E₈`
 diagram.** The isomorphism sends finite nodes `0,1,2,3,4,5,6,7` to
 `medium2, short, medium4, center, long5, long4, long3, long2`, respectively. -/
-def deletedGraphIso :
+@[expose] def deletedGraphIso :
     diagramGraph (CartanMatrix.E 8) ≃g deletedGraph where
   toEquiv :=
     { toFun := bourbakiVertex
@@ -100,5 +105,9 @@ def deletedGraphIso :
     fin_cases i <;> fin_cases j <;>
       simp [deletedGraph, bourbakiVertex, Quiver.underlyingGraph_adj, diagramGraph_adj,
         CartanMatrix.E, nonempty_hom_iff]
+
+/-- The graph isomorphism acts on vertices by the explicit Bourbaki relabelling. -/
+@[simp] theorem deletedGraphIso_apply (i : Fin 8) :
+    deletedGraphIso i = bourbakiVertex i := rfl
 
 end TauCeti.Quiver.AffineE8
