@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Weyl
 public import TauCeti.Analysis.PDE.DirichletProblem
 public import TauCeti.Analysis.Sobolev.W1p.Restriction
+import TauCeti.Analysis.InnerProductSpace.Harmonic.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 
 /-!
@@ -126,15 +127,13 @@ theorem exists_harmonicOnNhd_ae_eq_of_forall_energyFormH1_eq_zero {w : W1p mu Om
   refine WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq ((weaklyHarmonicOn_iff).2
     ⟨(W1p.hasWeakFDerivOn w).locallyIntegrableOn, fun φ => ?_⟩)
   rw [(W1p.hasWeakFDerivOn w).integral_laplacian_smul_eq_neg_integral_inner φ, neg_eq_zero,
-    ← hw φ, energyFormH1_const_eq_setIntegral,
-    ← setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => ?_]
-  · refine integral_congr_ae ?_
-    filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) 2 φ] with x hx
-    rw [W1p.gradient_ofTestFunctionₗ, hx, matrixBilinearForm_one_apply]
-    exact (EuclideanSpace.inner_eq_star_dotProduct _ _).trans (dotProduct_comm _ _)
-  · have hφ : fderiv ℝ (φ : EuclideanSpace ℝ ι → ℝ) x = 0 :=
-      fderiv_of_notMem_tsupport ℝ fun hx' => hx (φ.tsupport_subset hx')
-    simp [gradient, hφ]
+    ← hw φ, energyFormH1_const_eq_setIntegral]
+  simp_rw [real_inner_comm (W1p.gradient w _)]
+  rw [← setIntegral_inner_gradient_eq_integral_inner_gradient φ _ φ.tsupport_subset]
+  refine integral_congr_ae ?_
+  filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) 2 φ] with x hx
+  rw [W1p.gradient_ofTestFunctionₗ, hx, matrixBilinearForm_one_apply]
+  exact EuclideanSpace.inner_eq_star_dotProduct _ _
 
 omit [DecidableEq ι] in
 /-- **The weak gradient of a weakly harmonic Sobolev function is harmonic.** If the value of
@@ -154,16 +153,8 @@ theorem W1p.exists_harmonicOnNhd_ae_eq_gradient {p : ENNReal} [Fact (1 ≤ p)]
     simp only [innerSL_apply_apply, real_inner_comm (b i)] at hd
     exact (hd.weaklyHarmonicOn hw).exists_harmonicOnNhd_ae_eq
   choose h hh hae using hi
-  have hsum : ∀ s : Finset ι, HarmonicOnNhd (fun x => ∑ i ∈ s, h i x • b i) Omega := by
-    intro s
-    induction s using Finset.induction_on with
-    | empty => simp
-    | insert j s hj ih =>
-      have hj' := ((hh j).comp_CLM (ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (b j))).add ih
-      convert hj' using 1
-      ext1 x
-      simp [Finset.sum_insert hj]
-  refine ⟨fun x => ∑ i, h i x • b i, hsum Finset.univ, ?_⟩
+  refine ⟨fun x => ∑ i, h i x • b i, HarmonicOnNhd.sum _ fun i _ =>
+    (hh i).comp_CLM (ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (b i)), ?_⟩
   filter_upwards [ae_all_iff.2 hae] with x hx
   conv_lhs => rw [← b.sum_repr' (W1p.gradient w x)]
   exact Finset.sum_congr rfl fun i _ => by rw [hx i]
@@ -215,17 +206,6 @@ theorem exists_sub_mem_w1p0Submodule_harmonicOnNhd_ae_eq_of_subset_ball {n : ℕ
 
 section Transfer
 
-omit [DecidableEq ι] [mu.IsAddHaarMeasure] in
-/-- Pairing a field with the gradient of a test function only sees the support of the test
-function. -/
-private theorem setIntegral_inner_gradient_eq_integral {U : Opens (EuclideanSpace ℝ ι)}
-    (φ : 𝓓(U, ℝ)) (g : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι)
-    {s : Set (EuclideanSpace ℝ ι)} (hs : tsupport (φ : EuclideanSpace ℝ ι → ℝ) ⊆ s) :
-    ∫ x in s, ⟪g x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu =
-      ∫ x, ⟪g x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu :=
-  setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by
-    simp [gradient, fderiv_of_notMem_tsupport ℝ fun h => hx (hs h)]
-
 omit [DecidableEq ι] in
 /-- Subtracting a constant `c` from a square-integrable field `G` on `B` does not change its
 pairing with gradients of test functions on `B`. -/
@@ -243,7 +223,7 @@ theorem inner_toLp_gradient_ofTestFunctionₗ {B : Opens (EuclideanSpace ℝ ι)
     simpa [hpt] using (integrable_lineDeriv_smul_of_locallyIntegrableOn
       (locallyIntegrableOn_const (1 : ℝ) (μ := mu) (s := B)) φ c).integrableOn
   have hc : ∫ x in B, ⟪c, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu = 0 := by
-    rw [setIntegral_inner_gradient_eq_integral φ _ φ.tsupport_subset]
+    rw [setIntegral_inner_gradient_eq_integral_inner_gradient φ _ φ.tsupport_subset]
     simpa only [hpt] using TestFunction.integral_lineDeriv_eq_zero (μ := mu) φ c
   have hGint : IntegrableOn (fun x => ⟪G x - c, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ) B mu := by
     refine (L2.integrable_inner hGc.toLp
@@ -295,8 +275,8 @@ theorem forall_energyFormH1_restrictL_eq_inner {B : Opens (EuclideanSpace ℝ ι
   have hΩ : energyFormH1 (fun _ => 1) 0 0 u (W1p.ofTestFunctionₗ mu Omega 2 φ') =
       ∫ x in Omega, ⟪G x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu := hu φ'
   rw [energyFormH1_one_zero_zero_eq_inner, L2.inner_def] at hΩ ⊢
-  rw [setIntegral_inner_gradient_eq_integral φ G hφB,
-    ← setIntegral_inner_gradient_eq_integral φ G hφΩ, ← hΩ]
+  rw [setIntegral_inner_gradient_eq_integral_inner_gradient φ G hφB,
+    ← setIntegral_inner_gradient_eq_integral_inner_gradient φ G hφΩ, ← hΩ]
   calc ∫ x in B, ⟪W1p.gradient (W1p.restrictL hB u) x,
         W1p.gradient (W1p.ofTestFunctionₗ mu B 2 φ) x⟫_ℝ ∂mu
       = ∫ x in B, ⟪W1p.gradient u x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu := by
@@ -305,8 +285,8 @@ theorem forall_energyFormH1_restrictL_eq_inner {B : Opens (EuclideanSpace ℝ ι
           gradientTestFunctionLp_apply_ae (mu := mu) (Omega := B) 2 φ] with x hx hφx
         rw [W1p.gradient_ofTestFunctionₗ, hx, hφx]
     _ = ∫ x in Omega, ⟪W1p.gradient u x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu := by
-        rw [setIntegral_inner_gradient_eq_integral φ _ hφB,
-          setIntegral_inner_gradient_eq_integral φ _ hφΩ]
+        rw [setIntegral_inner_gradient_eq_integral_inner_gradient φ _ hφB,
+          setIntegral_inner_gradient_eq_integral_inner_gradient φ _ hφΩ]
     _ = ∫ x in Omega, ⟪W1p.gradient u x,
           W1p.gradient (W1p.ofTestFunctionₗ mu Omega 2 φ') x⟫_ℝ ∂mu := by
         refine integral_congr_ae ?_

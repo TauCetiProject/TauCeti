@@ -152,6 +152,8 @@ weaken them for no gain.
   equivalently, `TestFunction.integral_lineDeriv_eq_zero`, `∫ ∂_w φ = 0` for a test function `φ`.
 * `TauCeti.hasWeakFDerivOn_testFunction`: a test function has weak derivative the linear
   functional represented by its gradient.
+* `TauCeti.setIntegral_inner_gradient_eq_integral_inner_gradient`: the gradient of a test function
+  vanishes off its support, so pairings with it may be integrated over any set containing it.
 * `TauCeti.HasWeakLineDerivOn.ae_eq` and `TauCeti.HasWeakFDerivOn.ae_eq`: uniqueness almost
   everywhere on `Ω`.
 * `TauCeti.HasWeakLineDerivOn.ae_eq_lineDeriv` and `TauCeti.HasWeakFDerivOn.ae_eq_fderiv`: where
@@ -746,6 +748,15 @@ theorem hasWeakFDerivOn_testFunction (φ : 𝓓(Ω, ℝ)) :
     (φ.contDiff.differentiable (by simp)) x
   · exact φ.continuous.locallyIntegrable.locallyIntegrableOn _
   · exact (φ.contDiff.continuous_fderiv (by simp)).locallyIntegrable.locallyIntegrableOn _
+
+omit [BorelSpace E] [μ.IsAddHaarMeasure] in
+/-- The gradient of a test function vanishes off its support, so pairing a field `g` with it
+over any set `s` containing that support is the same as over the whole space. -/
+theorem setIntegral_inner_gradient_eq_integral_inner_gradient (φ : 𝓓(Ω, ℝ)) (g : E → E)
+    {s : Set E} (hs : tsupport (φ : E → ℝ) ⊆ s) :
+    ∫ x in s, ⟪g x, ∇ (φ : E → ℝ) x⟫_ℝ ∂μ = ∫ x, ⟪g x, ∇ (φ : E → ℝ) x⟫_ℝ ∂μ :=
+  setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by
+    simp [gradient, fderiv_of_notMem_tsupport ℝ fun h => hx (hs h)]
 
 end TestFunction
 

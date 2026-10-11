@@ -91,6 +91,19 @@ private theorem decayConst_nonneg (n : ℕ) : 0 ≤ decayConst n := by
   unfold decayConst
   positivity
 
+/-- The exponent `n + 1 + 2α` of the comparison estimate splits as `t^{n+1} (t^α)²`. -/
+private theorem rpow_add_two_mul_eq {t : ℝ} (ht : 0 < t) (a : ℝ) :
+    t ^ ((n : ℝ) + 1 + 2 * a) = t ^ (n + 1) * (t ^ a) ^ 2 := by
+  rw [Real.rpow_add ht, ← Real.rpow_natCast, mul_comm (2 : ℝ), Real.rpow_mul ht.le,
+    Real.rpow_two, Nat.cast_add, Nat.cast_one]
+
+/-- The volume of a ball of radius `t > 0` in `ℝ^{n+1}` is `t^{n+1}` times that of the unit
+ball. -/
+private theorem measureReal_ball_eq (x : EuclideanSpace ℝ (Fin (n + 1))) {t : ℝ} (ht : 0 < t) :
+    volume.real (ball x t) =
+      t ^ (n + 1) * volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) := by
+  rw [Measure.addHaar_real_ball_of_pos _ _ ht, finrank_euclideanSpace_fin]
+
 /-- **The energy error of a replacement.** Let `u ∈ H¹(Ω)`, let `B ⊆ Ω` be open and of finite
 measure, and let `w ∈ H¹(B)` satisfy the energy estimate `‖∇(u - w)‖_{L²(B)} ≤ ‖G - c‖_{L²(B)}`,
 with `∇w = H` almost everywhere on `B`. If `‖G - c‖ ≤ M` on `B`, then
@@ -181,10 +194,8 @@ private theorem setIntegral_norm_gradient_sub_setAverage_sq_le
         r ^ ((n : ℝ) + 1 + 2 * α) := by
     refine (setIntegral_norm_gradient_sub_sq_le hB measure_ball_lt_top.ne hwH hGc hest'
       hbd).trans_eq ?_
-    change volume.real (ball x₀ r) * _ = _
-    rw [Measure.addHaar_real_ball_of_pos _ _ hr, finrank_euclideanSpace_fin, Real.rpow_add hr,
-      mul_comm (2 : ℝ), Real.rpow_mul hr.le, Real.rpow_two, ← Real.rpow_natCast, Nat.cast_add,
-      Nat.cast_one]
+    simp only [B, Opens.coe_mk]
+    rw [measureReal_ball_eq x₀ hr, rpow_add_two_mul_eq hr]
     ring
   have hcomp := hH.setIntegral_ball_norm_sub_setAverage_sq_le_add hfm hHm hρ hρr
   have hq : (ρ / r) ^ (finrank ℝ (EuclideanSpace ℝ (Fin (n + 1))) + 2) =
@@ -324,18 +335,13 @@ private theorem exists_setAverage_norm_gradient_sub_le {α : ℝ≥0} (hα : 0 <
     congr 2
     push_cast
     ring
-  have hvol : volume.real (ball x t) =
-      t ^ (n + 1) * volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) := by
-    rw [Measure.addHaar_real_ball_of_pos _ _ ht, finrank_euclideanSpace_fin]
-  have htγ : t ^ ((n : ℝ) + 1 + 2 * α) = t ^ (n + 1) * (t ^ (α : ℝ)) ^ 2 := by
-    rw [Real.rpow_add ht, ← Real.rpow_natCast, mul_comm (2 : ℝ), Real.rpow_mul ht.le,
-      Real.rpow_two, Nat.cast_add, Nat.cast_one]
   have htn : 0 < t ^ (n + 1) := by positivity
   rw [← pow_le_pow_iff_left₀ (average_nonneg fun _ => norm_nonneg _) (by positivity) two_ne_zero]
   refine hJ.trans ?_
-  rw [hvol, div_le_iff₀ (by positivity), mul_pow, mul_pow, Real.sq_sqrt (by positivity)]
+  rw [measureReal_ball_eq x ht, div_le_iff₀ (by positivity), mul_pow, mul_pow,
+    Real.sq_sqrt (by positivity)]
   refine hψ.trans ?_
-  rw [htγ, ← ha2]
+  rw [rpow_add_two_mul_eq ht, ← ha2]
   have hK : (0 : ℝ) ≤ K := K.2
   have hcross : 0 ≤ R ^ (-(((n : ℝ) + 1) / 2 + α)) * ‖W1p.gradient u‖ * K := by positivity
   have key : C * (t ^ (n + 1) * (t ^ (α : ℝ)) ^ 2) *
@@ -385,8 +391,7 @@ private theorem norm_setAverage_closedBall_gradient_le
     congr 1
     push_cast
     ring
-  rw [Measure.addHaar_real_ball_of_pos _ _ hR, finrank_euclideanSpace_fin, mul_pow, mul_pow,
-    inv_pow, Real.sq_sqrt hω.le, hR2]
+  rw [measureReal_ball_eq z hR, mul_pow, mul_pow, inv_pow, Real.sq_sqrt hω.le, hR2]
   calc (∫ y in ball z R, ‖W1p.gradient u y‖ ^ 2) /
         (R ^ (n + 1) * volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1))
       ≤ ‖W1p.gradient u‖ ^ 2 /
