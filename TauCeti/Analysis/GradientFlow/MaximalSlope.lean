@@ -11,7 +11,7 @@ public import Mathlib.Analysis.MeanInequalities
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 public import TauCeti.Analysis.GradientFlow.UpperGradient
-public import TauCeti.MeasureTheory.Function.CurveAction
+public import TauCeti.MeasureTheory.Function.CurveAction.Basic
 
 /-!
 # Curves of maximal slope

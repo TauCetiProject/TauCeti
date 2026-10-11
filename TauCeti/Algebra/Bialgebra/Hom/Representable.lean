@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Bialgebra.TensorProduct
+public import TauCeti.Algebra.Bialgebra.BaseChange
 public import TauCeti.RingTheory.WeilRestriction
+import TauCeti.Algebra.Bialgebra.Equiv
 import TauCeti.Algebra.Coalgebra.BaseChange
 
 /-!
@@ -37,18 +39,28 @@ restriction along `G ⊗[R] G` agree. Both conditions are therefore equalities b
 of the classifying map with two fixed algebra homomorphisms, and it suffices to impose them on
 finitely many generators. So they cut out a finitely generated ideal of the Weil restriction.
 
+The formation of `HomAlgebra R H G` commutes with an arbitrary base change `R → S`: the
+`S`-algebra `S ⊗[R] HomAlgebra R H G` is isomorphic to `HomAlgebra S (S ⊗[R] H) (S ⊗[R] G)`.
+Both represent the same functor on `S`-algebras `T`, because the tower comparisons
+`T ⊗[S] (S ⊗[R] H) ≃ₐc[T] T ⊗[R] H` identify the two sets of bialgebra homomorphisms, naturally
+in `T`; the isomorphism is the one that the Yoneda lemma produces.
+
 ## Main definitions
 
 * `TauCeti.Bialgebra.HomAlgebra R H G`: an `R`-algebra representing the functor
   `T ↦ (T ⊗[R] H →ₐc[T] T ⊗[R] G)`.
 * `TauCeti.Bialgebra.HomAlgebra.homEquiv R H G T`: the bijection
   `(HomAlgebra R H G →ₐ[R] T) ≃ (T ⊗[R] H →ₐc[T] T ⊗[R] G)`.
+* `TauCeti.Bialgebra.HomAlgebra.baseChangeAlgEquiv R H G S`: the `S`-algebra isomorphism
+  `S ⊗[R] HomAlgebra R H G ≃ₐ[S] HomAlgebra S (S ⊗[R] H) (S ⊗[R] G)`.
 
 ## Main results
 
 * `TauCeti.Bialgebra.HomAlgebra.homEquiv_comp_one_tmul`: `homEquiv` is natural in `T`.
 * `TauCeti.Bialgebra.HomAlgebra.instFinitePresentation`: `HomAlgebra R H G` is of finite
   presentation over `R`.
+* `TauCeti.Bialgebra.HomAlgebra.homEquiv_comp_baseChangeAlgEquiv`: `baseChangeAlgEquiv` is
+  compatible with the universal properties.
 
 ## References
 
@@ -352,6 +364,98 @@ theorem homEquiv_comp_one_tmul {T' : Type*} [CommRing T'] [Algebra R T']
 /-- `HomAlgebra R H G` is of finite presentation over `R`. -/
 instance instFinitePresentation : Algebra.FinitePresentation R (HomAlgebra R H G) :=
   Algebra.FinitePresentation.quotient (ideal_fg R H G)
+
+section BaseChange
+
+open TauCeti.Bialgebra.TensorProduct (baseChangeTowerBialgEquiv)
+
+variable {S : Type*} [CommRing S] [Algebra R S] [Algebra S T] [IsScalarTower R S T]
+
+variable (R H G T S) in
+-- The natural bijection identifying the functors on `S`-algebras represented by
+-- `S ⊗[R] HomAlgebra R H G` and by `HomAlgebra S (S ⊗[R] H) (S ⊗[R] G)`: restrict scalars to `R`,
+-- classify by `homEquiv`, transport along the tower comparisons `T ⊗[S] (S ⊗[R] -) ≃ T ⊗[R] -`, and
+-- classify again by `homEquiv` over `S`.
+private def baseChangeHomEquiv :
+    (S ⊗[R] HomAlgebra R H G →ₐ[S] T) ≃ (HomAlgebra S (S ⊗[R] H) (S ⊗[R] G) →ₐ[S] T) :=
+  (AlgHom.liftEquiv R S (HomAlgebra R H G) T).symm.trans <| (homEquiv R H G T).trans <|
+    (BialgEquiv.arrowCongr (baseChangeTowerBialgEquiv R S H T)
+      (baseChangeTowerBialgEquiv R S G T)).symm.trans (homEquiv S _ _ T).symm
+
+-- `baseChangeHomEquiv` is natural in the `S`-algebra `T`.
+private lemma baseChangeHomEquiv_comp {T' : Type*} [CommRing T'] [Algebra R T'] [Algebra S T']
+    [IsScalarTower R S T'] (f : S ⊗[R] HomAlgebra R H G →ₐ[S] T) (k : T →ₐ[S] T') :
+    baseChangeHomEquiv R H G T' S (k.comp f) = k.comp (baseChangeHomEquiv R H G T S f) := by
+  apply (homEquiv S _ _ T').injective
+  apply BialgHom.coe_toAlgHom_injective
+  -- both sides are `T'`-algebra homomorphisms out of `T' ⊗[S] (S ⊗[R] H)`, so it suffices to
+  -- compare them on `1 ⊗ (1 ⊗ h)`, where both reduce to `homEquiv_comp_one_tmul`
+  ext h
+  have hk : (AlgHom.liftEquiv R S (HomAlgebra R H G) T').symm (k.comp f) =
+      (k.restrictScalars R).comp ((AlgHom.liftEquiv R S (HomAlgebra R H G) T).symm f) := by
+    ext; simp
+  simp [baseChangeHomEquiv, homEquiv_comp_one_tmul, hk,
+    _root_.TensorProduct.baseChangeTowerBialgEquiv_symm_map]
+
+-- By naturality, `baseChangeHomEquiv` is precomposition with the image of the identity.
+private lemma baseChangeHomEquiv_eq_comp (f : S ⊗[R] HomAlgebra R H G →ₐ[S] T) :
+    baseChangeHomEquiv R H G T S f =
+      f.comp (baseChangeHomEquiv R H G _ S (AlgHom.id S (S ⊗[R] HomAlgebra R H G))) := by
+  rw [← baseChangeHomEquiv_comp, AlgHom.comp_id]
+
+variable (R H G S) in
+/-- **The scheme of homomorphisms commutes with base change.** For a commutative `R`-algebra `S`,
+this is an isomorphism of `S`-algebras from `S ⊗[R] HomAlgebra R H G` to the coordinate ring
+`HomAlgebra S (S ⊗[R] H) (S ⊗[R] G)` of the scheme of homomorphisms between the base changes. It
+is compatible with the universal properties, see `HomAlgebra.homEquiv_comp_baseChangeAlgEquiv`. -/
+def baseChangeAlgEquiv : S ⊗[R] HomAlgebra R H G ≃ₐ[S] HomAlgebra S (S ⊗[R] H) (S ⊗[R] G) :=
+  -- `baseChangeHomEquiv` takes a target `T` with `[Algebra R T] [IsScalarTower R S T]`: make
+  -- `HomAlgebra S (S ⊗[R] H) (S ⊗[R] G)` an `R`-algebra through `R → S`
+  let _ : Algebra R (HomAlgebra S (S ⊗[R] H) (S ⊗[R] G)) := Algebra.compHom _ (algebraMap R S)
+  have _ : IsScalarTower R S (HomAlgebra S (S ⊗[R] H) (S ⊗[R] G)) := .of_algebraMap_eq' rfl
+  -- the two Yoneda maps: the images of the identities under `baseChangeHomEquiv` and its inverse
+  AlgEquiv.ofAlgHom ((baseChangeHomEquiv R H G _ S).symm (AlgHom.id S _))
+    (baseChangeHomEquiv R H G _ S (AlgHom.id S _))
+    (by rw [← baseChangeHomEquiv_eq_comp, Equiv.apply_symm_apply])
+    ((baseChangeHomEquiv R H G _ S).injective <| by
+      rw [baseChangeHomEquiv_eq_comp, AlgHom.comp_assoc, ← baseChangeHomEquiv_eq_comp,
+        Equiv.apply_symm_apply, AlgHom.comp_id])
+
+-- `baseChangeHomEquiv` is precomposition with the inverse of `baseChangeAlgEquiv`.
+private lemma baseChangeHomEquiv_comp_baseChangeAlgEquiv
+    (g : HomAlgebra S (S ⊗[R] H) (S ⊗[R] G) →ₐ[S] T) :
+    baseChangeHomEquiv R H G T S (g.comp (baseChangeAlgEquiv R H G S).toAlgHom) = g := by
+  have h : (baseChangeAlgEquiv R H G S).symm.toAlgHom =
+      baseChangeHomEquiv R H G _ S (AlgHom.id S (S ⊗[R] HomAlgebra R H G)) := by
+    rw [baseChangeAlgEquiv, AlgEquiv.ofAlgHom_symm, AlgEquiv.toAlgHom_ofAlgHom]
+  rw [baseChangeHomEquiv_eq_comp, AlgHom.comp_assoc, ← h, AlgEquiv.comp_symm, AlgHom.comp_id]
+
+/-- Compatibility of `HomAlgebra.baseChangeAlgEquiv` with the universal properties. Let `T` be an
+`S`-algebra, `g : HomAlgebra S (S ⊗[R] H) (S ⊗[R] G) →ₐ[S] T`, and `g₀ : HomAlgebra R H G →ₐ[R] T`
+the restriction of `g ∘ baseChangeAlgEquiv` along `HomAlgebra R H G → S ⊗[R] HomAlgebra R H G`.
+Then the tower comparisons `T ⊗[S] (S ⊗[R] -) ≃ₐc[T] T ⊗[R] -` carry the bialgebra homomorphism
+classified by `g` to the one classified by `g₀`. -/
+theorem homEquiv_comp_baseChangeAlgEquiv (g : HomAlgebra S (S ⊗[R] H) (S ⊗[R] G) →ₐ[S] T) :
+    (homEquiv R H G T ((AlgHom.liftEquiv R S _ T).symm
+        (g.comp (baseChangeAlgEquiv R H G S).toAlgHom))).comp
+        (baseChangeTowerBialgEquiv R S H T : T ⊗[S] (S ⊗[R] H) →ₐc[T] T ⊗[R] H) =
+      (baseChangeTowerBialgEquiv R S G T : T ⊗[S] (S ⊗[R] G) →ₐc[T] T ⊗[R] G).comp
+        (homEquiv S _ _ T g) := by
+  conv_rhs => rw [← baseChangeHomEquiv_comp_baseChangeAlgEquiv g]
+  ext x
+  simp [baseChangeHomEquiv]
+
+/-- `HomAlgebra.homEquiv_comp_baseChangeAlgEquiv` evaluated on `1 ⊗ h`: the bialgebra homomorphism
+classified by the restriction of `g ∘ baseChangeAlgEquiv` sends `1 ⊗ h` to the image under the
+tower comparison of the value at `1 ⊗ (1 ⊗ h)` of the one classified by `g`. -/
+theorem homEquiv_comp_baseChangeAlgEquiv_one_tmul
+    (g : HomAlgebra S (S ⊗[R] H) (S ⊗[R] G) →ₐ[S] T) (h : H) :
+    homEquiv R H G T ((AlgHom.liftEquiv R S _ T).symm
+        (g.comp (baseChangeAlgEquiv R H G S).toAlgHom)) (1 ⊗ₜ h) =
+      baseChangeTowerBialgEquiv R S G T (homEquiv S _ _ T g (1 ⊗ₜ (1 ⊗ₜ h))) := by
+  simpa using congr($(homEquiv_comp_baseChangeAlgEquiv g) (1 ⊗ₜ (1 ⊗ₜ h)))
+
+end BaseChange
 
 end HomAlgebra
 

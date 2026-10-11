@@ -124,6 +124,16 @@ lemma mem_closedPolydisc_iff
         isWeightFamily_one_weight), v.toValuativeRel.vle f 1 := by
   rw [closedPolydisc_def, mem_spa_iff]
 
+variable {k A} in
+/-- The pullback of a point of the closed polydisc along the constant embedding `A → A⟨T⟩` is a
+point of `Spa (A, A°)`. -/
+theorem comap_weightedC_mem_spa (v : closedPolydisc k A) :
+    comap (weightedC (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) v.1 ∈
+      spa (powerBoundedSubring A) :=
+  comap_mem_spa (continuous_weightedC isWeightFamily_one_weight)
+    (fun _ ha ↦ mem_powerBoundedSubring.mpr
+      (isPowerBounded_weightedC _ (mem_powerBoundedSubring.mp ha))) (closedPolydisc_def k A ▸ v.2)
+
 end Polydisc
 
 section ClassicalPoints
@@ -418,13 +428,7 @@ the constant embedding `K → K⟨T⟩` is a point of `Spa (K, K°)`. -/
 theorem closedPolydisc_vle_weightedC_iff {k : ℕ} (v : closedPolydisc k K) (x y : K) :
     v.1.toValuativeRel.vle (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x)
         (weightedC _ isWeightFamily_one_weight y) ↔ ‖x‖ ≤ ‖y‖ := by
-  have hv : v.1 ∈ spa (powerBoundedSubring (weightedRestrictedSubring
-      (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight)) := closedPolydisc_def k K ▸ v.2
-  have hv' := comap_mem_spa (continuous_weightedC isWeightFamily_one_weight)
-    (Aplus := powerBoundedSubring K)
-    (fun _ ha ↦ mem_powerBoundedSubring.mpr
-      (isPowerBounded_weightedC _ (mem_powerBoundedSubring.mp ha))) hv
-  rw [← vle_iff_norm_le_of_mem_spa hv', comap_vle]
+  rw [← vle_iff_norm_le_of_mem_spa (comap_weightedC_mem_spa v), comap_vle]
 
 end NormedField
 

@@ -117,7 +117,7 @@ variable {A : Type w} [CommRing A] [Algebra R A]
 its matrix is orthogonal. This is the ambient membership criterion that further cuts consume;
 the determinant-one cut (`TauCeti.SpecialOrthogonal`) combines it with the special-linear
 one. -/
-@[simp]
+@[simp↓]
 theorem mem_definingPointsSubgroup_iff
     (g : HopfAlgebra.points (R := R)
       (H := GeneralLinear.coordinateHopfAlgebra R n) (CommAlgCat.of R A)) :

@@ -17,7 +17,9 @@ Let `W` be an elliptic Weierstrass curve over a commutative ring `R`. Its projec
 of relative dimension one and proper over `Spec R`, and it is its own pointed Weierstrass chart
 over the whole base. It is therefore an elliptic curve over `Spec R` in the sense of
 `EllipticCurveGeom`: `W.toEllipticCurveGeom`. By definition, every elliptic curve over a scheme is,
-Zariski-locally on the base, isomorphic to one of these.
+Zariski-locally on the base, isomorphic to one of these. Over a local ring, the only open
+neighbourhood of the closed point is the whole spectrum, so every elliptic curve over a local ring
+is globally isomorphic to one of these (`exists_iso_toEllipticCurveGeom`).
 
 The total space of `toEllipticCurveGeom W` is identified with `W.projModel` by
 `toEllipticCurveGeomIso`, compatibly with the structure morphisms and the zero sections. Base change
@@ -49,6 +51,9 @@ itself: `toEllipticCurveGeomIso` is an isomorphism of group schemes over `Spec R
   `toEllipticCurveGeom W` are those of the projective model of `W`.
 * `WeierstrassCurve.isMonHom_toEllipticCurveGeomOverIso_hom`: `toEllipticCurveGeomOverIso W` is an
   isomorphism of group schemes over `Spec R`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.exists_iso_toEllipticCurveGeom`: every elliptic curve
+  over a local ring `R` is isomorphic, over `Spec R` and compatibly with the zero sections, to
+  `toEllipticCurveGeom W` for an elliptic Weierstrass curve `W` over `R`.
 
 ## References
 
@@ -268,3 +273,49 @@ theorem zero_toEllipticCurveGeomBaseChangeIso_hom :
   apply (W.isPullback_projModelBaseChange φ).hom_ext <;> simp
 
 end WeierstrassCurve
+
+/-! ### Elliptic curves over a local ring -/
+
+namespace TauCeti.AlgebraicGeometry.EllipticCurveGeom
+
+variable {R : Type u} [CommRing R] [IsLocalRing R] (E : EllipticCurveGeom (Spec (.of R)))
+
+/-- **An elliptic curve over a local ring is the projective model of a Weierstrass equation.** For
+an elliptic curve `E` over `Spec R`, with `R` a local ring, there are an elliptic Weierstrass curve
+`W` over `R` and an isomorphism of the total space of `toEllipticCurveGeom W` with that of `E` over
+`Spec R`, carrying the zero section `[0 : 1 : 0]` to the zero section of `E`. -/
+theorem exists_iso_toEllipticCurveGeom :
+    ∃ (W : WeierstrassCurve R) (_ : W.IsElliptic)
+      (e : W.toEllipticCurveGeom.carrier ≅ E.carrier),
+      e.hom ≫ E.structureMap = W.toEllipticCurveGeom.structureMap ∧
+        W.toEllipticCurveGeom.zero ≫ e.hom = E.zero := by
+  obtain ⟨A⟩ := E.localModel
+  obtain ⟨i, x, hx⟩ := A.covers (IsLocalRing.closedPoint R)
+  let c := A.chart i
+  -- the base of a chart through the closed point of `Spec R` is an open neighbourhood of the closed
+  -- point, hence all of `Spec R`, and the chart is all of `E`
+  have : IsIso c.baseMap := (isIso_iff_isOpenImmersion_and_surjective _).mpr
+    ⟨inferInstance, ⟨fun s ↦ ((IsLocalRing.specializes_closedPoint s).mem_open
+      c.baseMap.isOpenEmbedding.isOpen_range ⟨x, hx⟩)⟩⟩
+  have : IsIso c.toTotal := c.isPullback.isIso_fst_of_isIso
+  -- the coefficient ring of the chart is identified with `R` by `ψ`, and `W` is the equation of
+  -- the chart with its coefficients moved along `ψ`
+  let ψ : c.ring ⟶ .of R := Spec.preimage (inv (c.baseIso.inv ≫ c.baseMap))
+  have hψ : Spec.map ψ = inv (c.baseIso.inv ≫ c.baseMap) := Spec.map_preimage _
+  have : IsIso (c.equation.projModelBaseChange ψ.hom) := by
+    have := c.equation.isPullback_projModelBaseChange ψ.hom
+    rw [CommRingCat.ofHom_hom, hψ] at this
+    exact this.isIso_fst_of_isIso
+  refine ⟨c.equation.map ψ.hom, inferInstance,
+    asIso ((WeierstrassCurve.toEllipticCurveGeomIso _).hom ≫
+      c.equation.projModelBaseChange ψ.hom ≫ c.modelIso.inv ≫ c.toTotal), ?_, ?_⟩
+  · have h : c.modelIso.inv ≫ c.toBase = c.equation.projModelOver ≫ c.baseIso.inv := by
+      rw [Iso.inv_comp_eq, c.modelIso_over_assoc, Iso.hom_inv_id, Category.comp_id]
+    simp only [asIso_hom, Category.assoc, c.isPullback.w, reassoc_of% h]
+    rw [(c.equation.isPullback_projModelBaseChange ψ.hom).w_assoc]
+    simp [hψ]
+  · have h : c.equation.projModelZero ≫ c.modelIso.inv = c.baseIso.inv ≫ c.pulledZero := by
+      rw [Iso.comp_inv_eq, Category.assoc, c.modelIso_zero, Iso.inv_hom_id_assoc]
+    simp [WeierstrassCurve.projModelZero_projModelBaseChange_assoc, reassoc_of% h, hψ]
+
+end TauCeti.AlgebraicGeometry.EllipticCurveGeom
