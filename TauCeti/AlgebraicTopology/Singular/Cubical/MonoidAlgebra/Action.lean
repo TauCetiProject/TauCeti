@@ -571,6 +571,12 @@ def cubicalChainModuleMap (f : C(Y, Y')) (hf : ∀ (g : G) (y : Y), f (op g • 
   map_mem' := cubicalChainModuleLinearMap_mem f
   map_d' := cubicalChainModuleDifferential_linearMap f
 
+/-- The induced morphism is the push-forward of chains. -/
+theorem cubicalChainModuleMap_apply (f : C(Y, Y'))
+    (hf : ∀ (g : G) (y : Y), f (op g • y) = op g • f y) (x : cubicalChainModule Y G R) :
+    cubicalChainModuleMap R f hf x = cubicalChainModuleLinearMap R f x :=
+  (rfl)
+
 /-- The induced morphism on a homogeneous chain. -/
 @[simp]
 theorem cubicalChainModuleMap_lof (f : C(Y, Y'))
