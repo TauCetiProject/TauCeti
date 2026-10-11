@@ -75,30 +75,31 @@ def cubeModelPoint : cubeModel.{u} 0 := ULift.up fun i ↦ i.elim0
 
 /-- The `0`-simplex at the point of the `0`-cube: the value on the model of the comparison map
 from cubical to simplicial chains in degree zero. -/
-def cubicalToSingularGen₀ : ((singularChains k).obj ((cubicalModelBasis.{u} k).model 0)).X 0 :=
+def cubicalToSingularGen₀ :
+    ((singularChains k).obj ((cubicalModelPresentation.{u} k).model 0)).X 0 :=
   simplexChain (TopCat.toSSetObj₀Equiv.symm cubeModelPoint) 1
 
 /-- The `0`-cube at the vertex of the `0`-simplex: the value on the model of the comparison map
 from simplicial to cubical chains in degree zero. -/
 def singularToCubicalGen₀ :
-    ((normalizedCubicalChainComplex k).obj ((singularModelBasis.{u} k).model 0)).X 0 :=
+    ((normalizedCubicalChainComplex k).obj ((singularModelPresentation.{u} k).model 0)).X 0 :=
   NormalizedCubicalChain.ofCube (simplexModel 0) k
     (SingularCube.point (SimplexCategory.toTopInitialVertex ⦋0⦌))
 
 theorem singularAugment_extend_cubicalToSingularGen₀ (X : TopCat.{u})
     (x : ((normalizedCubicalChainComplex k).obj X).X 0) :
-    singularAugment k X ((cubicalModelBasis k).extend (cubicalToSingularGen₀ k) X x) =
+    singularAugment k X ((cubicalModelPresentation k).extend (cubicalToSingularGen₀ k) X x) =
       cubicalAugment k X x :=
-  (cubicalModelBasis k).augment_extend (fun f x ↦ cubicalAugment_map f x)
+  (cubicalModelPresentation k).augment_extend (fun f x ↦ cubicalAugment_map f x)
     (fun f x ↦ singularAugment_map f x) _
     ((singularAugment_simplexChain _ _ 1).trans (NormalizedCubicalChain.augment_ofCube k _).symm)
     X x
 
 theorem cubicalAugment_extend_singularToCubicalGen₀ (X : TopCat.{u})
     (x : ((singularChains k).obj X).X 0) :
-    cubicalAugment k X ((singularModelBasis k).extend (singularToCubicalGen₀ k) X x) =
+    cubicalAugment k X ((singularModelPresentation k).extend (singularToCubicalGen₀ k) X x) =
       singularAugment k X x :=
-  (singularModelBasis k).augment_extend (fun f x ↦ singularAugment_map f x)
+  (singularModelPresentation k).augment_extend (fun f x ↦ singularAugment_map f x)
     (fun f x ↦ cubicalAugment_map f x) _
     ((NormalizedCubicalChain.augment_ofCube k _).trans (singularAugment_simplexChain _ _ 1).symm)
     X x
@@ -106,15 +107,15 @@ theorem cubicalAugment_extend_singularToCubicalGen₀ (X : TopCat.{u})
 /-- **The comparison map from normalized cubical to simplicial singular chains**: the natural
 chain map sending a point to the same point, built by acyclic models. -/
 def cubicalToSingular : normalizedCubicalChainComplex.{u} k ⟶ singularChains k :=
-  (cubicalModelBasis k).chainMap (isAcyclicOn_singularChains_cubicalModelBasis k)
+  (cubicalModelPresentation k).chainMap (isAcyclicOn_singularChains_cubicalModelPresentation k)
     (fun X x ↦ cubicalAugment_d X x) (cubicalToSingularGen₀ k)
     (singularAugment_extend_cubicalToSingularGen₀ k)
 
 /-- **The comparison map from simplicial singular to normalized cubical chains**: the natural
 chain map sending a point to the same point, built by acyclic models. -/
 def singularToCubical : singularChains k ⟶ normalizedCubicalChainComplex.{u} k :=
-  (singularModelBasis k).chainMap
-    (isAcyclicOn_normalizedCubicalChainComplex_singularModelBasis k)
+  (singularModelPresentation k).chainMap
+    (isAcyclicOn_normalizedCubicalChainComplex_singularModelPresentation k)
     (fun X x ↦ singularAugment_d X x) (singularToCubicalGen₀ k)
     (cubicalAugment_extend_singularToCubicalGen₀ k)
 
@@ -124,13 +125,13 @@ variable {k}
 theorem singularAugment_cubicalToSingular (X : TopCat.{u})
     (x : ((normalizedCubicalChainComplex k).obj X).X 0) :
     singularAugment k X (((cubicalToSingular k).app X).f 0 x) = cubicalAugment k X x := by
-  rw [cubicalToSingular, AcyclicModels.ModelBasis.chainMap_app_f_zero_apply]
+  rw [cubicalToSingular, AcyclicModels.ModelPresentation.chainMap_app_f_zero_apply]
   exact singularAugment_extend_cubicalToSingularGen₀ k X x
 
 /-- The comparison map to cubical chains is compatible with the augmentations. -/
 theorem cubicalAugment_singularToCubical (X : TopCat.{u}) (x : ((singularChains k).obj X).X 0) :
     cubicalAugment k X (((singularToCubical k).app X).f 0 x) = singularAugment k X x := by
-  rw [singularToCubical, AcyclicModels.ModelBasis.chainMap_app_f_zero_apply]
+  rw [singularToCubical, AcyclicModels.ModelPresentation.chainMap_app_f_zero_apply]
   exact cubicalAugment_extend_singularToCubicalGen₀ k X x
 
 variable (k)
@@ -138,7 +139,7 @@ variable (k)
 /-- The composite of the comparison maps on simplicial chains is homotopic to the identity. -/
 def singularToCubicalCompHomotopy (X : TopCat.{u}) :
     Homotopy ((singularToCubical k).app X ≫ (cubicalToSingular k).app X) (𝟙 _) :=
-  (singularModelBasis k).homotopy (isAcyclicOn_singularChains_singularModelBasis k)
+  (singularModelPresentation k).homotopy (isAcyclicOn_singularChains_singularModelPresentation k)
     (singularToCubical k ≫ cubicalToSingular k) (𝟙 _) (fun X x ↦ by
       simp only [NatTrans.comp_app, HomologicalComplex.comp_f, ModuleCat.comp_apply,
         NatTrans.id_app, HomologicalComplex.id_f, ModuleCat.id_apply]
@@ -147,8 +148,8 @@ def singularToCubicalCompHomotopy (X : TopCat.{u}) :
 /-- The composite of the comparison maps on cubical chains is homotopic to the identity. -/
 def cubicalToSingularCompHomotopy (X : TopCat.{u}) :
     Homotopy ((cubicalToSingular k).app X ≫ (singularToCubical k).app X) (𝟙 _) :=
-  (cubicalModelBasis k).homotopy
-    (isAcyclicOn_normalizedCubicalChainComplex_cubicalModelBasis k)
+  (cubicalModelPresentation k).homotopy
+    (isAcyclicOn_normalizedCubicalChainComplex_cubicalModelPresentation k)
     (cubicalToSingular k ≫ singularToCubical k) (𝟙 _) (fun X x ↦ by
       simp only [NatTrans.comp_app, HomologicalComplex.comp_f, ModuleCat.comp_apply,
         NatTrans.id_app, HomologicalComplex.id_f, ModuleCat.id_apply]
