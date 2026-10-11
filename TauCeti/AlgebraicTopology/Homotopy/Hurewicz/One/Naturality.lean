@@ -40,13 +40,7 @@ namespace TauCeti.HurewiczOne
 
 variable {X Y : TopCat.{0}} (f : X ⟶ Y)
 
--- Not a simp lemma: `TauCeti.singularChainComplexFunctor_obj_map` rewrites the chain map inside
--- the left-hand side first, so the `simpNF` linter rejects it.
-lemma map_chain₁ (g : C(I, X)) :
-    ((singularChains ℤ).map f).f 1 (chain₁ g) = chain₁ ((f.hom).comp g) := by
-  rw [singularChains_map_f_simplexChain, toSSet_map_app_simplex₁]
-
-lemma map_mem_cycles₁ {c : Chains X 1} (hc : c ∈ cycles₁ X) :
+lemma map_mem_cycles₁ {c : ((singularChains ℤ).obj X).X 1} (hc : c ∈ cycles₁ X) :
     ((singularChains ℤ).map f).f 1 c ∈ cycles₁ Y := by
   have hc' : ((singularChains ℤ).obj X).d 1 0 c = 0 := mem_cycles₁_iff.1 hc
   exact mem_cycles₁ (by rw [HomologicalComplex.Hom.comm_apply, hc', map_zero])
@@ -58,9 +52,10 @@ lemma homologyMap_H₁AddEquivHomology_mk (c : cycles₁ X) :
         (H₁AddEquivHomology X (H₁.mk c)) =
       H₁AddEquivHomology Y
         (H₁.mk ⟨((singularChains ℤ).map f).f 1 c, map_mem_cycles₁ f c.2⟩) := by
-  let z := ((singularChains ℤ).obj X).moduleCatCyclesMk (c : Chains X 1) 0 (by simp) c.2
+  let z := ((singularChains ℤ).obj X).moduleCatCyclesMk (c : ((singularChains ℤ).obj X).X 1) 0
+    (by simp) c.2
   have hz : (((singularChains ℤ).obj X).iCycles 1).hom z = c :=
-    ((singularChains ℤ).obj X).iCycles_moduleCatCyclesMk 1 (c : Chains X 1) 0 (by simp) c.2
+    ((singularChains ℤ).obj X).iCycles_moduleCatCyclesMk 1 _ 0 (by simp) c.2
   have h₁ := congr($(HomologicalComplex.homologyπ_naturality ((singularChains ℤ).map f) 1).hom z)
   have h₂ := congr($(HomologicalComplex.cyclesMap_i ((singularChains ℤ).map f) 1).hom z)
   simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at h₁ h₂
@@ -74,9 +69,17 @@ lemma homologyMap_H₁AddEquivHomology_loopClass {x : X} (γ : Path x x) :
     (HomologicalComplex.homologyMap ((singularChains ℤ).map f) 1).hom
         (H₁AddEquivHomology X (loopClass γ)) =
       H₁AddEquivHomology Y (loopClass (γ.map (f.hom).continuous)) := by
-  rw [loopClass_def, loopClass_def, homologyMap_H₁AddEquivHomology_mk]
-  congr 2
-  exact Subtype.ext (map_chain₁ f γ.toContinuousMap)
+  let z := ((singularChains ℤ).obj X).moduleCatCyclesMk (pathChain ℤ γ.toContinuousMap) 0
+    (by simp) (mem_cycles₁_iff.1 (pathChain_mem_cycles₁ γ))
+  have hz : (((singularChains ℤ).obj X).iCycles 1).hom z = pathChain ℤ γ.toContinuousMap :=
+    ((singularChains ℤ).obj X).iCycles_moduleCatCyclesMk 1 _ 0 (by simp) _
+  have h₁ := congr($(HomologicalComplex.homologyπ_naturality ((singularChains ℤ).map f) 1).hom z)
+  have h₂ := congr($(HomologicalComplex.cyclesMap_i ((singularChains ℤ).map f) 1).hom z)
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at h₁ h₂
+  rw [H₁AddEquivHomology_loopClass γ z hz, h₁]
+  refine (H₁AddEquivHomology_loopClass _ _ ?_).symm
+  rw [h₂, hz, singularChains_map_f_pathChain]
+  rfl
 
 /-- **Naturality of the Hurewicz map**: for a continuous map `f`, the map induced on the first
 homology group of the singular chain complex corresponds to the map induced on fundamental
@@ -91,8 +94,8 @@ theorem homologyMap_H₁AddEquivHomology_hurewiczAb {x : X}
   induction a using Quot.ind with | mk p =>
   induction p using Path.Homotopic.Quotient.ind with | mk γ =>
   rw [Abelianization.mk_eq_of, toMul_ofMul, Abelianization.map_of,
-    FundamentalGroup.map_apply, ← Path.Homotopic.Quotient.mk_map, hurewiczAb_ofMul_of,
-    hurewiczAb_ofMul_of, homologyMap_H₁AddEquivHomology_loopClass]
+    FundamentalGroup.map_apply, ← Path.Homotopic.Quotient.mk_map, hurewiczAb_ofMul_of_mk,
+    hurewiczAb_ofMul_of_mk, homologyMap_H₁AddEquivHomology_loopClass]
 
 /-- **Naturality of the Hurewicz isomorphism** of path-connected spaces. -/
 theorem homologyMap_hurewiczHomologyAddEquiv [PathConnectedSpace X] [PathConnectedSpace Y]
@@ -116,10 +119,10 @@ theorem hurewicz₁_fundamentalGroupMulEquivOfPath {x x' : X} (p : Path x x')
     ← Path.Homotopic.Quotient.mk_trans, ← Path.Homotopic.Quotient.mk_trans, hurewicz₁_mk,
     hurewicz₁_mk]
   congr 1
-  rw [loopClass_def, loopClass_def, H₁.mk_eq_mk_iff]
-  have h₁ := chain₁_add_sub_trans_mem_boundaries₁ p.symm (γ.trans p)
-  have h₂ := chain₁_add_sub_trans_mem_boundaries₁ γ p
-  have h₃ := chain₁_add_symm_mem_boundaries₁ p.symm
+  refine (loopClass_eq_iff _ _).2 ?_
+  have h₁ := pathChain_add_sub_trans_mem_boundaries₁ p.symm (γ.trans p)
+  have h₂ := pathChain_add_sub_trans_mem_boundaries₁ γ p
+  have h₃ := pathChain_add_symm_mem_boundaries₁ p.symm
   rw [Path.symm_symm] at h₃
   have := add_mem (sub_mem (neg_mem h₁) h₂) h₃
   convert this using 1
