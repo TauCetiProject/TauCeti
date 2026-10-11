@@ -54,6 +54,7 @@ theorem diagonalTorusRevPerm_symm_apply (i : ULift.{u} (Fin r)) :
 
 /-- The graph automorphism acts on the standard diagonal torus by reversing its
 fundamental-weight coordinates. This equality holds on points over every `R`-algebra. -/
+@[simp]
 theorem typeAGraphAutomorphism_diagonalTorusPoints
     (A : Type w) [CommRing A] [Algebra R A]
     (p : WithConv (MonoidAlgebra R
@@ -96,6 +97,9 @@ theorem typeAGraphCoordinateIso_hom_comp_diagonalTorusCoordinateMap :
   rw [op_comp, op_comp, Functor.map_comp, Functor.map_comp]
   ext A p
   -- The represented point-functor maps are precomposition by coordinate morphisms.
+  -- `ext` exposes a point through the `WithConv` wrapper, while the point API is
+  -- stated using the underlying algebra homomorphism. There is no named extensionality
+  -- bridge for this coercion; the following `change` only unfolds that wrapper.
   change WithConv (MonoidAlgebra R
     (Multiplicative (ULift.{u} (Fin r) →₀ ℤ)) →ₐ[R] A) at p
   apply (pointsMulEquiv (R := R) (A := A) (r + 1)).injective
@@ -114,6 +118,10 @@ theorem typeAGraphCoordinateIso_hom_comp_diagonalTorusCoordinateMap :
   -- exactly the point-level diagonal-torus calculation above.
   rw [NatTrans.comp_app, NatTrans.comp_app]
   erw [GrpCat.comp_apply, GrpCat.comp_apply]
+  -- `mapPointsFunctor_app_apply` is the interface lemma for each map separately, but
+  -- does not normalize their composite through `GrpCat`'s coercions. State that
+  -- composite in the point API's form so the four applications below can use the
+  -- interface lemma explicitly.
   change pointsMulEquiv (R := R) (A := A) (r + 1)
       ((CommHopfAlgCat.mapPointsFunctor (typeAGraphCoordinateIso R r).hom).app A
         ((CommHopfAlgCat.mapPointsFunctor (diagonalTorusCoordinateMap r R)).app A p)) =
