@@ -16,9 +16,10 @@ import TauCeti.Algebra.Module.Torsion.Basic
 # The endomorphism ring of an ordinary elliptic curve is commutative
 
 Let `W` be an elliptic curve over a field `F` of characteristic `p > 0`. If `W` is ordinary, then
-its endomorphism ring `Hom W W` is commutative (Silverman V.3.1 and III.9.4). Together with the
-quadratic relation every endomorphism satisfies over `ℤ`, this is what makes the endomorphism ring
-of an ordinary curve an order in an imaginary quadratic field rather than in a quaternion algebra.
+its endomorphism ring `Hom W W` is commutative (Silverman V.3.1 and III.9.4). This rules out a
+quaternion order, so the endomorphism ring of an ordinary curve is `ℤ` or an order in an imaginary
+quadratic field. Over a finite field it is the latter
+(`WeierstrassCurve.finrank_hom_of_isOrdinary`).
 
 The proof reads the endomorphisms on the `p`-power torsion over an algebraic closure `Ω` of `F`.
 Endomorphisms over `F` embed into those over `Ω` by base change, and `W` stays ordinary there.
