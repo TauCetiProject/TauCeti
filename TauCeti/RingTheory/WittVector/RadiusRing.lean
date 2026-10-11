@@ -58,6 +58,8 @@ are Remark 2.7, proved here, and Proposition 2.9.
 * `TauCeti.WittVector.norm_algebraMap_radiusRing` : on `𝕎 O`, the norm of `A^r` is `λ_ρ`.
 * `TauCeti.WittVector.RadiusLocalization.instIsTateRing` : `𝕎 O[1/[ϖ]]` is a Tate ring, with
   pseudouniformiser `[ϖ]`, so its completion `A^r` is a complete Hausdorff Tate ring.
+* `TauCeti.WittVector.RadiusRing.exists_norm_teichmuller_pow_mul_sub_lt` : every nonzero
+  `x ∈ A^r` has some `y ∈ 𝕎 O` with `‖[ϖ]^k x - y‖ < ‖[ϖ]^k x‖`.
 * `TauCeti.WittVector.RadiusRing.degree_eq_gaussDegree` : the degree of `x ∈ A^r` is the degree of
   any `y ∈ 𝕎 O` with `‖[ϖ]^k x - y‖ < ‖[ϖ]^k x‖`.
 * `TauCeti.WittVector.RadiusRing.degree_eq_of_norm_sub_lt` : if `‖x - y‖ < ‖x‖`, then `x` and `y`
@@ -234,7 +236,7 @@ theorem norm_algebraMap_radiusRing (x : 𝕎 O) :
 
 /-- The norm of `p` in `A^r` is `ρ`. -/
 @[simp]
-theorem norm_natCast_radiusRing : ‖(p : RadiusRing p hv hϖ hϖ' hρ)‖ = ρ := by
+theorem norm_p_radiusRing : ‖(p : RadiusRing p hv hϖ hϖ' hρ)‖ = ρ := by
   rw [← map_natCast (algebraMap (𝕎 O) (RadiusRing p hv hϖ hϖ' hρ)), norm_algebraMap_radiusRing,
     gaussValuation_p]
 
@@ -265,9 +267,16 @@ private theorem norm_teichmuller_pow_pos (k : ℕ) : 0 < ‖ι (teichmuller p ϖ
     gaussValuation_teichmuller, map_ne_zero, map_ne_zero_iff _ hv.hom_inj]
   exact pow_ne_zero_of_integers hv hϖ k
 
+/-- Multiplying by a power of `[ϖ]` preserves a strict inequality of norms in `A^r`. -/
+private theorem norm_teichmuller_pow_mul_lt (k : ℕ) {a b : RadiusRing p hv hϖ hϖ' hρ}
+    (h : ‖a‖ < ‖b‖) : ‖ι (teichmuller p ϖ ^ k) * a‖ < ‖ι (teichmuller p ϖ ^ k) * b‖ := by
+  rw [norm_mul, norm_mul]
+  exact mul_lt_mul_of_pos_left h (norm_teichmuller_pow_pos p hv hϖ hϖ' hρ k)
+
 /-- Every nonzero `x ∈ A^r` is approximated by some `[ϖ]^(-k) y` with `y ∈ 𝕎 O`, up to an error
-smaller than `‖x‖`: elements of `𝕎 O[1/[ϖ]]` are dense in `A^r`. -/
-private theorem exists_approx {x : RadiusRing p hv hϖ hϖ' hρ} (hx : x ≠ 0) :
+smaller than `‖x‖`: elements of `𝕎 O[1/[ϖ]]` are dense in `A^r`. Such an approximation computes
+the degree of `x` (`TauCeti.WittVector.RadiusRing.degree_eq_gaussDegree`). -/
+theorem exists_norm_teichmuller_pow_mul_sub_lt {x : RadiusRing p hv hϖ hϖ' hρ} (hx : x ≠ 0) :
     ∃ (k : ℕ) (y : 𝕎 O),
       ‖ι (teichmuller p ϖ ^ k) * x - ι y‖ < ‖ι (teichmuller p ϖ ^ k) * x‖ := by
   obtain ⟨z, hz⟩ := Completion.denseRange_coe.exists_dist_lt x (norm_pos_iff.mpr hx)
@@ -278,11 +287,11 @@ private theorem exists_approx {x : RadiusRing p hv hϖ hϖ' hρ} (hx : x ≠ 0) 
       RadiusRing p hv hϖ hϖ' hρ) = ι y := by
     rw [hk, Completion.algebraMap_def, Completion.algebraMap_def, ← Completion.coe_mul,
       mul_comm (algebraMap _ _ _), IsLocalization.mk'_spec]
-  rw [← hy, ← mul_sub, norm_mul, norm_mul, ← dist_eq_norm]
-  exact mul_lt_mul_of_pos_left hz (norm_teichmuller_pow_pos p hv hϖ hϖ' hρ k)
+  rw [← hy, ← mul_sub]
+  exact norm_teichmuller_pow_mul_lt p hv hϖ hϖ' hρ k (by rwa [← dist_eq_norm])
 
-/-- Two approximations of `x ∈ A^r` by Witt vectors, as in `exists_approx`, have the same
-degree. -/
+/-- Two approximations of `x ∈ A^r` by Witt vectors, as in
+`exists_norm_teichmuller_pow_mul_sub_lt`, have the same degree. -/
 private theorem gaussDegree_eq_of_approx {x : RadiusRing p hv hϖ hϖ' hρ} {k l : ℕ} {y z : 𝕎 O}
     (hy : ‖ι (teichmuller p ϖ ^ k) * x - ι y‖ < ‖ι (teichmuller p ϖ ^ k) * x‖)
     (hz : ‖ι (teichmuller p ϖ ^ l) * x - ι z‖ < ‖ι (teichmuller p ϖ ^ l) * x‖) :
@@ -294,11 +303,11 @@ private theorem gaussDegree_eq_of_approx {x : RadiusRing p hv hϖ hϖ' hρ} {k l
     simp only [X, ← hmn, pow_add, map_mul]
     ring
   have hy' : ‖X - ι (teichmuller p ϖ ^ l * y)‖ < ‖X‖ := by
-    rw [hX k l rfl, map_mul, ← mul_sub, norm_mul, norm_mul]
-    exact mul_lt_mul_of_pos_left hy (norm_teichmuller_pow_pos p hv hϖ hϖ' hρ l)
+    rw [hX k l rfl, map_mul, ← mul_sub]
+    exact norm_teichmuller_pow_mul_lt p hv hϖ hϖ' hρ l hy
   have hz' : ‖X - ι (teichmuller p ϖ ^ k * z)‖ < ‖X‖ := by
-    rw [hX l k (add_comm l k), map_mul, ← mul_sub, norm_mul, norm_mul]
-    exact mul_lt_mul_of_pos_left hz (norm_teichmuller_pow_pos p hv hϖ hϖ' hρ k)
+    rw [hX l k (add_comm l k), map_mul, ← mul_sub]
+    exact norm_teichmuller_pow_mul_lt p hv hϖ hϖ' hρ k hz
   -- The two Witt vectors are closer to each other than their common Gauss valuation.
   have hlt : gaussValuation p hv ρ hρ.2 (teichmuller p ϖ ^ l * y - teichmuller p ϖ ^ k * z) <
       gaussValuation p hv ρ hρ.2 (teichmuller p ϖ ^ l * y) := by
@@ -342,10 +351,12 @@ theorem degree_eq_gaussDegree {x : RadiusRing p hv hϖ hϖ' hρ} {k : ℕ} {y : 
 theorem degree_zero : degree p hv hϖ hϖ' hρ 0 = 0 := by
   simp [degree]
 
-/-- On a nonzero Witt vector, the degree of `A^r` is its degree for the Gauss valuation `λ_ρ`. -/
+/-- On a Witt vector, the degree of `A^r` is its degree for the Gauss valuation `λ_ρ`. -/
 @[simp]
-theorem degree_algebraMap {y : 𝕎 O} (hy : y ≠ 0) :
+theorem degree_algebraMap (y : 𝕎 O) :
     degree p hv hϖ hϖ' hρ (ι y) = gaussDegree p hv ρ hρ.2 y := by
+  rcases eq_or_ne y 0 with rfl | hy
+  · rw [map_zero, degree_zero, gaussDegree_zero]
   refine degree_eq_gaussDegree p hv hϖ hϖ' hρ (k := 0) ?_
   rw [pow_zero, map_one, one_mul, sub_self, norm_zero, norm_algebraMap_radiusRing, NNReal.coe_pos,
     pos_iff_ne_zero, ne_eq, gaussValuation_eq_zero_iff hv hρ.1 hρ.2]
@@ -353,14 +364,12 @@ theorem degree_algebraMap {y : 𝕎 O} (hy : y ≠ 0) :
 
 /-- The degree of `p` is `1`. -/
 @[simp]
-theorem degree_natCast : degree p hv hϖ hϖ' hρ (p : RadiusRing p hv hϖ hϖ' hρ) = 1 := by
+theorem degree_p : degree p hv hϖ hϖ' hρ (p : RadiusRing p hv hϖ hϖ' hρ) = 1 := by
   have h₁ : (1 : O) ≠ 0 := fun h₁ ↦
     one_ne_zero (α := K) (by simpa using congrArg (algebraMap O K) h₁)
   have h := gaussDegree_teichmuller_mul_pow (p := p) hv hρ.1 hρ.2 h₁ 1
   rw [map_one, one_mul, pow_one] at h
-  have hp : (p : 𝕎 O) ≠ 0 := fun h₀ ↦
-    hρ.1.ne' (by simpa [h₀] using (gaussValuation_p (p := p) hv hρ.2).symm)
-  rw [← map_natCast ι, degree_algebraMap p hv hϖ hϖ' hρ hp, h]
+  rw [← map_natCast ι, degree_algebraMap, h]
 
 /-- **The degree only depends on the leading part** (Kedlaya, Remark 2.7): if `‖x - y‖ < ‖x‖`,
 then `x` and `y` have the same degree. -/
@@ -370,7 +379,7 @@ theorem degree_eq_of_norm_sub_lt {x y : RadiusRing p hv hϖ hϖ' hρ} (h : ‖x 
   have hy : y ≠ 0 := by
     rintro rfl
     simp at h
-  obtain ⟨k, z, hz⟩ := exists_approx p hv hϖ hϖ' hρ hy
+  obtain ⟨k, z, hz⟩ := exists_norm_teichmuller_pow_mul_sub_lt p hv hϖ hϖ' hρ hy
   -- An approximation of `y` is also one of `x`.
   have hx : ‖ι (teichmuller p ϖ ^ k) * x - ι z‖ < ‖ι (teichmuller p ϖ ^ k) * x‖ := by
     have hnorm : ‖ι (teichmuller p ϖ ^ k) * y‖ = ‖ι (teichmuller p ϖ ^ k) * x‖ := by
@@ -379,16 +388,15 @@ theorem degree_eq_of_norm_sub_lt {x y : RadiusRing p hv hϖ hϖ' hρ} (h : ‖x 
         ι (teichmuller p ϖ ^ k) * (x - y) + (ι (teichmuller p ϖ ^ k) * y - ι z) := by
       ring
     rw [e]
-    refine (IsUltrametricDist.norm_add_le_max _ _).trans_lt (max_lt ?_ (hnorm ▸ hz))
-    rw [norm_mul, norm_mul]
-    exact mul_lt_mul_of_pos_left h (norm_teichmuller_pow_pos p hv hϖ hϖ' hρ k)
+    exact (IsUltrametricDist.norm_add_le_max _ _).trans_lt
+      (max_lt (norm_teichmuller_pow_mul_lt p hv hϖ hϖ' hρ k h) (hnorm ▸ hz))
   rw [degree_eq_gaussDegree p hv hϖ hϖ' hρ hz, degree_eq_gaussDegree p hv hϖ hϖ' hρ hx]
 
 /-- **The degree is additive on products** (Kedlaya, Lemma 2.6). -/
 theorem degree_mul {x y : RadiusRing p hv hϖ hϖ' hρ} (hx : x ≠ 0) (hy : y ≠ 0) :
     degree p hv hϖ hϖ' hρ (x * y) = degree p hv hϖ hϖ' hρ x + degree p hv hϖ hϖ' hρ y := by
-  obtain ⟨k, z, hz⟩ := exists_approx p hv hϖ hϖ' hρ hx
-  obtain ⟨l, w, hw⟩ := exists_approx p hv hϖ hϖ' hρ hy
+  obtain ⟨k, z, hz⟩ := exists_norm_teichmuller_pow_mul_sub_lt p hv hϖ hϖ' hρ hx
+  obtain ⟨l, w, hw⟩ := exists_norm_teichmuller_pow_mul_sub_lt p hv hϖ hϖ' hρ hy
   set X := ι (teichmuller p ϖ ^ k) * x
   set Y := ι (teichmuller p ϖ ^ l) * y
   have hX : 0 < ‖X‖ := by
