@@ -58,14 +58,12 @@ abbrev affineRayFan : Fan ((Int.castAddHom ℝ).compLeft (Fin 1)) :=
   Fan.ofCone (isIntegralLattice_intCast 1) isRegularCone_affineRayCone.toIsToricCone
 
 /-- The standard affine-line fan has exactly the faces of the positive ray. -/
-@[simp]
 theorem mem_affineRayFan_cones {σ : PointedCone ℝ (Fin 1 → ℝ)} :
     σ ∈ affineRayFan.cones ↔ σ.IsFaceOf affineRayCone := by
   exact Fan.mem_ofCone_cones (isIntegralLattice_intCast 1)
     isRegularCone_affineRayCone.toIsToricCone
 
 /-- The support of the affine-line fan is its positive ray. -/
-@[simp]
 theorem support_affineRayFan : affineRayFan.support = affineRayCone :=
   Fan.support_ofCone (isIntegralLattice_intCast 1) isRegularCone_affineRayCone.toIsToricCone
 

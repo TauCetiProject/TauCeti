@@ -29,7 +29,6 @@ namespace TauCeti.Toric
 abbrev affinePlaneFan := affineRayFan.prod affineRayFan
 
 /-- The cones of the affine-plane fan are products of faces of the positive ray. -/
-@[simp]
 theorem mem_affinePlaneFan_cones {ξ : PointedCone ℝ ((Fin 1 → ℝ) × (Fin 1 → ℝ))} :
     ξ ∈ affinePlaneFan.cones ↔
       ∃ (σ τ : PointedCone ℝ (Fin 1 → ℝ)), σ.IsFaceOf affineRayCone ∧
@@ -39,7 +38,6 @@ theorem mem_affinePlaneFan_cones {ξ : PointedCone ℝ ((Fin 1 → ℝ) × (Fin 
 
 /-- The support of the affine-plane fan is the positive quadrant, expressed as a product of
 the two positive rays. -/
-@[simp]
 theorem support_affinePlaneFan :
     affinePlaneFan.support = (affineRayCone : Set (Fin 1 → ℝ)) ×ˢ affineRayCone := by
   simp only [affinePlaneFan, Fan.support_prod, support_affineRayFan]

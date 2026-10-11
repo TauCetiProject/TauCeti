@@ -71,7 +71,6 @@ theorem affinePlaneDiffeomorph_apply (n : ℕ∞ω)
 
 /-- On the maximal product chart, the two affine-plane coordinates are the standard character
 evaluations of the two affine-ray chart points. -/
-@[simp]
 theorem affinePlaneDiffeomorph_analyticAffineChartι (n : ℕ∞ω)
     (x y : AffineSemigroupComplexPoint
       (dualSemigroup (isIntegralLattice_intCast 1) affineRayCone)) :
