@@ -8,9 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.Subring
 -- Proof-only: the endomorphisms of an ordinary curve commute.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Ordinary
--- Proof-only: `π̂ = a_q - π`.
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.Charpoly
--- Proof-only: the dual is additive, and `f̂ + f` is an integer.
+-- Proof-only: `2f - t` is anti-self-dual and squares to an integer, where `t` is the trace of `f`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Degree
 
 /-!
