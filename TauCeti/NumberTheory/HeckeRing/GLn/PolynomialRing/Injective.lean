@@ -6,7 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import TauCeti.NumberTheory.HeckeRing.GLn.PolynomialRing.Basic
-public import TauCeti.NumberTheory.HeckeRing.GLn.PolynomialRing.LeadingTerm
+public import TauCeti.NumberTheory.HeckeRing.GLn.ProductSupport
 
 /-!
 # `pLocalSubring` is a polynomial ring for `n = 1, 2`
