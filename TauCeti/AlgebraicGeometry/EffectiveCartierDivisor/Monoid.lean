@@ -53,7 +53,6 @@ instance (T : (Over S)ᵒᵖ) :
   exact h.symm ▸ inferInstance
 
 /-- Pullback of relative effective Cartier divisors preserves the empty divisor. -/
-@[simp]
 lemma relativeEffectiveCartier_map_one {T T' : (Over S)ᵒᵖ} (φ : T ⟶ T') :
     (relativeEffectiveCartierSubfunctor f).toFunctor.map φ
       (1 : (relativeEffectiveCartierSubfunctor f).toFunctor.obj T) = 1 := by
@@ -61,7 +60,6 @@ lemma relativeEffectiveCartier_map_one {T T' : (Over S)ᵒᵖ} (φ : T ⟶ T') :
   exact baseChangeIdealSheafFunctor_map_top f φ
 
 /-- Pullback of relative effective Cartier divisors preserves their sum. -/
-@[simp]
 lemma relativeEffectiveCartier_map_mul {T T' : (Over S)ᵒᵖ} (φ : T ⟶ T')
     (D E : (relativeEffectiveCartierSubfunctor f).toFunctor.obj T) :
     (relativeEffectiveCartierSubfunctor f).toFunctor.map φ (D * E) =

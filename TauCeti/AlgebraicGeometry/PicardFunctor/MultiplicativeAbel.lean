@@ -60,7 +60,6 @@ def abelMapMonoidHom (T : (Over S)ᵒᵖ) :
   map_mul' D E := abelMap_app_mul f T D E
 
 /-- The monoid homomorphism agrees pointwise with the Abel map. -/
-@[simp]
 lemma abelMapMonoidHom_apply (T : (Over S)ᵒᵖ)
     (D : (relativeEffectiveCartierSubfunctor f).toFunctor.obj T) :
     abelMapMonoidHom f T D = (abelMap f).app T (ULift.up D) := by
