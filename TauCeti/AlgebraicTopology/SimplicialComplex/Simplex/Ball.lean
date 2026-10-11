@@ -144,7 +144,7 @@ theorem image_openStarRealization_top_last (n : ℕ) :
   · intro hy
     refine ⟨(realizationTopHomeomorphCoordinateSimplex n).symm y, ?_, ?_⟩
     · rw [mem_openStarRealization, realizationTopHomeomorphCoordinateSimplex_symm_last]
-      change ∑ i, y.1 i < 1 at hy
+      simp only [Set.mem_ofPred_eq] at hy
       linarith
     · simp
 
