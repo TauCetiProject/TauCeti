@@ -27,7 +27,7 @@ Over a separably closed field, `E[n]` is finite over `Spec K` of rank `n²`
 as its rank is étale (`AlgebraicGeometry.Scheme.Hom.etale_of_finrank_le_natCard`). Over an arbitrary
 field `K`, the `n`-torsion of the base change of `E` to an algebraic closure of `K` is the base
 change of `E[n]` (`EllipticCurveGeom.isPullback_torsionMap`), and étaleness descends along the
-faithfully flat morphism `Spec K̄ ⟶ Spec K`.
+faithfully flat morphism `Spec (AlgebraicClosure K) ⟶ Spec K`.
 
 ## Main results
 
