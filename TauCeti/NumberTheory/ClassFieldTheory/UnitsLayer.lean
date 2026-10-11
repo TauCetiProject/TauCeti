@@ -51,6 +51,8 @@ layer is cut out by a subextension that need not be normal.
 ## Main definitions
 
 * `TauCeti.ClassFieldTheory.layerGalEquiv ι`: the Galois group of the layer is `Gal(L/K)`.
+* `TauCeti.ClassFieldTheory.layerGalEquivOfFixedField hV`: the Galois group of the layer of an open
+  normal subgroup `V` is `Gal(E/K)`, for `E` the fixed field of `V`.
 * `TauCeti.ClassFieldTheory.layerNormQuotientEquiv K L`: the norm quotient of the layer is
   `Kˣ / N_{L/K}(Lˣ)`.
 * `TauCeti.ClassFieldTheory.layerCohomologyEquiv ι`: the cohomology of the layer is the concrete
@@ -190,6 +192,32 @@ theorem abelianizationCongr_layerGalEquiv (ι ι' : L →ₐ[K] SeparableClosure
   simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, abelianizationCongr_of,
     layerGalEquiv_comp, map_mul, map_inv]
   rw [mul_comm, ← mul_assoc, mul_inv_cancel, one_mul]
+
+/-- **The Galois group of the layer of an open normal subgroup is that of its fixed field**: if the
+fixed field of the open normal subgroup `V` of `G_K` is the normal intermediate field `E` of
+`Kˢ/K`, restriction to `E` identifies the Galois group `G_K ⧸ V` of the layer `V ◁ G_K` with
+`Gal(E/K)` (`layerGalEquivOfFixedField_mk`). Unlike `layerGalEquiv`, it is stated for an arbitrary
+open normal subgroup, with `E` read inside `Kˢ`. -/
+def layerGalEquivOfFixedField {E : IntermediateField K (SeparableClosure K)} [Normal K E]
+    {V : OpenNormalSubgroup (AbsoluteGaloisGroup K)}
+    (hV : fixedField (NormalLayer.ofOpenNormal V).top.toSubgroup = E) :
+    (NormalLayer.ofOpenNormal V).Gal ≃* Gal(E/K) :=
+  (NormalLayer.galOfOpenNormalEquiv V).trans <|
+    (QuotientGroup.quotientMulEquivOfEq (toSubgroup_eq_fixingSubgroup_of_fixedField_eq
+      (U := V.toOpenSubgroup) (NormalLayer.top_ofOpenNormal V ▸ hV))).trans
+      (quotientFixingSubgroupEquiv K (SeparableClosure K) E).toMulEquiv
+
+/-- `layerGalEquivOfFixedField hV` sends the class of `σ ∈ G_K` to its restriction to `E`. -/
+@[simp]
+theorem layerGalEquivOfFixedField_mk {E : IntermediateField K (SeparableClosure K)} [Normal K E]
+    {V : OpenNormalSubgroup (AbsoluteGaloisGroup K)}
+    (hV : fixedField (NormalLayer.ofOpenNormal V).top.toSubgroup = E)
+    (σ : (NormalLayer.ofOpenNormal V).ground) :
+    layerGalEquivOfFixedField hV (σ : (NormalLayer.ofOpenNormal V).Gal) =
+      AlgEquiv.restrictNormalHom E (σ : AbsoluteGaloisGroup K) := by
+  rw [layerGalEquivOfFixedField, MulEquiv.trans_apply, NormalLayer.galOfOpenNormalEquiv_mk,
+    MulEquiv.trans_apply, QuotientGroup.quotientMulEquivOfEq_mk]
+  exact quotientFixingSubgroupEquiv_mk _
 
 end Galois
 
