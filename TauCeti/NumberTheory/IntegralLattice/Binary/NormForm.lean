@@ -141,7 +141,7 @@ theorem binaryNormForm_eq_zero_iff : L.binaryNormForm b = 0 ↔ L.form = 0 := by
       rw [norm_eq_binaryNormForm L b]
       simp [hf]
     ext x y
-    change L.form x y = 0
+    simp only [LinearMap.zero_apply]
     have h := L.norm_add x y
     simp only [hnorm] at h
     linarith
