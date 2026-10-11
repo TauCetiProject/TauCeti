@@ -97,15 +97,14 @@ theorem finsum_add_sum_apply_restrictNormalHom_eq_zero_of_le_adjoin
   -- On the image of `G_K`, `χ` composed with restriction to `E` factors through `c`.
   let φ : {φ : Additive (AbsoluteGaloisGroup K) →+ M // c.rangeRestrict.ker ≤ φ.ker} :=
     ⟨χ.comp (AlgEquiv.restrictNormalHom E).toAdditive, fun g hg ↦ by
-      rw [AddMonoidHom.ker_rangeRestrict, AddMonoidHom.mem_ker, ← ofMul_toMul g, hc,
-        ← ofMul_one, Additive.ofMul.apply_eq_iff_eq] at hg
+      induction g using Additive.rec with | ofMul g => ?_
+      simp only [AddMonoidHom.ker_rangeRestrict, AddMonoidHom.mem_ker, hc, ofMul_eq_zero] at hg
       -- An automorphism with trivial cyclotomic character fixes `K(μ_{p^∞})`, hence `E`.
-      have hgE : AlgEquiv.restrictNormalHom E g.toMul = 1 := by
+      have hgE : AlgEquiv.restrictNormalHom E g = 1 := by
         rw [← MonoidHom.mem_ker, E.restrictNormalHom_ker]
         exact fixingSubgroup_le hE
           ((mem_fixingSubgroup_adjoin_iff_cyclotomicCharacter_eq_one p).2 hg)
-      rw [AddMonoidHom.mem_ker, ← ofMul_toMul g, AddMonoidHom.comp_apply,
-        MonoidHom.toAdditive_apply_apply, toMul_ofMul, hgE, ofMul_one, map_zero]⟩
+      simp [hgE]⟩
   let ψ : c.range →+ M := c.rangeRestrict.liftOfSurjective c.rangeRestrict_surjective φ
   have hψ (g : AbsoluteGaloisGroup K) :
       χ (.ofMul (AlgEquiv.restrictNormalHom E g)) = ψ (c.rangeRestrict (.ofMul g)) :=
