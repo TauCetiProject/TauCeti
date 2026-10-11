@@ -25,6 +25,7 @@ last formula is `x ⌢ 1 = x`. It is the unit law for the cap product of A. Hatc
 For explicit rewriting, use `TauCeti.capChain_constCochain X` and
 `TauCeti.singularCap_constSingularCocycle X`, with the space as the first argument.
 Both coefficient formulas are available to `simp` without opening the `TauCeti` namespace.
+The direct unit identities are `TauCeti.capChain_unit X` and `TauCeti.singularCap_unit X`.
 -/
 
 public section
@@ -65,9 +66,9 @@ lemma capChain_constCochain (X : TopCat.{w}) (k : Type*) [Semiring k] [Linear k 
     op_id, Functor.map_id_apply, SSet.ιChainComplex_chainComplexFunctor_map_app_f,
     Category.assoc]
 
--- Capping with the constant unit cochain is the identity, with arbitrary chain coefficients.
-example (k : Type*) [Semiring k] [Linear k C] [MonoidalLinear k C]
-    {X : TopCat.{w}} (S : C) (n : ℕ) :
+/-- Capping with the constant unit cochain is the identity, with arbitrary chain coefficients. -/
+lemma capChain_unit (X : TopCat.{w}) (k : Type*) [Semiring k] [Linear k C]
+    [MonoidalLinear k C] (S : C) (n : ℕ) :
     ChainComplex.capChain k (X.alexanderWhitneyDiagonal (λ_ S).inv)
         ((TopCat.toSSet.obj X).chainComplexPairing (λ_ S).hom) 0 n n (Nat.zero_add n)
         ((TopCat.toSSet.obj X).constCochain (𝟙 (𝟙_ C))) =
@@ -105,9 +106,10 @@ lemma singularCap_constSingularCocycle (X : TopCat.{w}) (k : Type*) [Ring k] [Li
   -- since this functor is obtained by postcomposing singular chains with `homologyFunctor`.
   exact (homologyπ_naturality f n).symm
 
--- The unit law `x ⌢ 1 = x`, including degree zero, is a specialization of the coefficient formula.
-example (k : Type*) [Ring k] [Linear k C]
-    [MonoidalLinear k C] {X : TopCat.{w}} (S : C) (n : ℕ) :
+/-- Capping with the class of the constant unit cocycle is the identity on singular homology,
+including degree zero, with arbitrary coefficients. -/
+lemma singularCap_unit (X : TopCat.{w}) (k : Type*) [Ring k] [Linear k C]
+    [MonoidalLinear k C] (S : C) (n : ℕ) :
     X.singularCap k (λ_ S).inv (λ_ S).hom 0 n n (Nat.zero_add n)
         ((X.singularCochainComplex (𝟙_ C) k (𝟙_ C)).homologyπ 0
           (X.constSingularCocycle k (𝟙 (𝟙_ C)))) =
