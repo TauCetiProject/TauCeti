@@ -15,8 +15,9 @@ the corresponding basis vector.  This repackages `Module.Basis.repr_symm_single`
 through in the same direction, for the common situation where what one holds is a bound on the
 support rather than an explicit `Finsupp.single`.
 
-Nothing here needs more than a semiring of scalars, since only `Finsupp.support_subset_singleton`
-and the coordinate isomorphism are involved.
+These lemmas need no additive inverses: they hold over a semiring of scalars. Their proofs combine
+coordinate isomorphisms and `Finsupp.support_subset_singleton` with basis extensionality and
+linear-map composition.
 
 ## Main results
 
