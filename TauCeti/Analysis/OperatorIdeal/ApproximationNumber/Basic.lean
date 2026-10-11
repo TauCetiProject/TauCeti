@@ -20,13 +20,12 @@ finite-dimensional Hilbert spaces the approximation numbers are the singular val
 general they are the basic `s`-number sequence measuring how well `T` is approximated by
 finite-rank maps.
 
-Following Mathlib's proposed spelling for the same object, the sequence is
-`ContinuousLinearMap.singularValue T : ℕ → ℝ≥0`. This file proves its elementary calculus: the
-infimum characterization, antitonicity, the bound by the operator norm, the additive and
-multiplicative index laws `a_{m+n}(S + T) ≤ aₘ(S) + aₙ(T)` and `a_{m+n}(S T) ≤ aₘ(S) aₙ(T)`, the
-two-sided ideal inequality `aₙ(A T B) ≤ ‖A‖ aₙ(T) ‖B‖`, scalar homogeneity, and Lipschitz
-continuity in operator norm. It also defines the Ky Fan gauge `Kₖ(T) = ∑_{n<k} aₙ(T)`, the
-prefix sums from which the Ky Fan operator ideals are built.
+The sequence is `ContinuousLinearMap.singularValue T : ℕ → ℝ≥0`. This file proves its
+elementary calculus: the infimum characterization, antitonicity, the bound by the operator norm,
+the additive and multiplicative index laws `a_{m+n}(S + T) ≤ aₘ(S) + aₙ(T)` and
+`a_{m+n}(S T) ≤ aₘ(S) aₙ(T)`, the two-sided ideal inequality `aₙ(A T B) ≤ ‖A‖ aₙ(T) ‖B‖`, scalar
+homogeneity, and Lipschitz continuity in operator norm. It also defines the Ky Fan gauge
+`Kₖ(T) = ∑_{n<k} aₙ(T)`, the prefix sums from which the Ky Fan operator ideals are built.
 
 No completeness, finite dimension, or inner product is assumed: the scalars form any nontrivially
 normed field and the spaces are seminormed. Spaces in different universes are allowed, so the
@@ -88,9 +87,7 @@ private theorem rank_comp_le_right (A : F →L[𝕜] G) {R : E →L[𝕜] F} {n 
 
 private theorem rank_smul_le (c : 𝕜) {R : E →L[𝕜] F} {n : ℕ} (h : R.rank ≤ n) :
     (c • R).rank ≤ n :=
-  (Submodule.rank_mono fun _ hy ↦ by
-    obtain ⟨x, rfl⟩ := LinearMap.mem_range.mp hy
-    exact LinearMap.mem_range.mpr ⟨c • x, by simp⟩).trans h
+  (Submodule.rank_mono (LinearMap.range_smul_le_range (R : E →ₗ[𝕜] F) c)).trans h
 
 end Rank
 
@@ -100,10 +97,14 @@ end Rank
 operator norms `‖T - R‖` over all bounded linear maps `R` of rank at most `n`. The indexing is
 zero-based, so `a₀(T) = ‖T‖` (`singularValue_zero`).
 
-On finite-dimensional Hilbert spaces these are the singular values of `T`; the name follows the
-spelling proposed for Mathlib. -/
+On finite-dimensional Hilbert spaces these are the singular values of `T`. -/
 noncomputable def singularValue (T : E →L[𝕜] F) (n : ℕ) : ℝ≥0 :=
   ⨅ R : {R : E →L[𝕜] F // R.rank ≤ n}, ‖T - R.1‖₊
+
+/-- `aₙ(T)` is the infimum of `‖T - R‖` over the bounded maps `R` of rank at most `n`. -/
+theorem singularValue_def (T : E →L[𝕜] F) (n : ℕ) :
+    T.singularValue n = ⨅ R : {R : E →L[𝕜] F // R.rank ≤ n}, ‖T - R.1‖₊ := by
+  rw [singularValue]
 
 private instance (n : ℕ) : Nonempty {R : E →L[𝕜] F // R.rank ≤ n} :=
   ⟨⟨0, by simp⟩⟩
@@ -273,6 +274,11 @@ theorem singularValue_smul (c : 𝕜) (T : E →L[𝕜] F) (n : ℕ) :
 of `T`. -/
 noncomputable def kyFanGauge (T : E →L[𝕜] F) (k : ℕ) : ℝ≥0 :=
   ∑ n ∈ Finset.range k, T.singularValue n
+
+/-- `Kₖ(T)` is the sum of the approximation numbers `aₙ(T)` for `n < k`. -/
+theorem kyFanGauge_def (T : E →L[𝕜] F) (k : ℕ) :
+    T.kyFanGauge k = ∑ n ∈ Finset.range k, T.singularValue n := by
+  rw [kyFanGauge]
 
 /-- The empty Ky Fan gauge vanishes. -/
 @[simp]
