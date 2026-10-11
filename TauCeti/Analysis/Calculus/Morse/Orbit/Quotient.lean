@@ -34,7 +34,7 @@ public section
 open Set Topology
 open _root_.Flow
 
-namespace TauCeti.Flow
+namespace TauCeti
 
 section OrbitRelation
 
@@ -132,4 +132,4 @@ theorem orbitQuotientHomeomorphLevelSlice_mk_eq_iff
   rw [← Homeomorph.eq_symm_apply, orbitQuotientHomeomorphLevelSlice_symm_apply, Quotient.eq]
   exact connectingOrbitSetoid_iff _ _
 
-end TauCeti.Flow
+end TauCeti
