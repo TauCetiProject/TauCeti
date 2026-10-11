@@ -44,6 +44,8 @@ and it commutes with base change along a map `R → S` compatible with `K → L`
   tower.
 * `WeierstrassCurve.integralModel_eq_of_baseChange_eq`: the integral model is the equation over
   `R` with the given base change.
+* `WeierstrassCurve.integralModel_baseChange_self`: the integral model of the base change of an
+  equation over `R` is that equation.
 * `WeierstrassCurve.IsIntegral.baseChange` and `WeierstrassCurve.integralModel_baseChange`:
   integrality is preserved by base change along a map `R → S` compatible with `K → L`, and the
   integral model of the base change is the image of the integral model.
@@ -308,6 +310,13 @@ theorem integralModel_eq_of_baseChange_eq {R : Type*} [CommRing R] {K : Type*} [
     {W₀ : WeierstrassCurve R} (h : W₀.baseChange K = W) : integralModel R W = W₀ :=
   map_injective (FaithfulSMul.algebraMap_injective R K)
     ((baseChange_integralModel_eq R W).trans h.symm)
+
+/-- **The integral model of the base change of an equation over `R` is that equation.** -/
+@[simp]
+theorem integralModel_baseChange_self {R : Type*} [CommRing R] {K : Type*} [Field K] [Algebra R K]
+    [FaithfulSMul R K] (W : WeierstrassCurve R) [IsIntegral R (W.baseChange K)] :
+    (W.baseChange K).integralModel R = W :=
+  integralModel_eq_of_baseChange_eq rfl
 
 section BaseChange
 
