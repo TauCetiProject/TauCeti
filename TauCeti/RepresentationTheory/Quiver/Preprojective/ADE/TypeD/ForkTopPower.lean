@@ -47,12 +47,12 @@ noncomputable def signlessPreprojectiveDForkBacktrack (l : Bool) : Π :=
   signlessArrow k DG j c * signlessArrow k DG c j
 
 /-- The backtrack through the first fork leaf. -/
-@[simp] theorem signlessPreprojectiveDForkBacktrack_true :
+theorem signlessPreprojectiveDForkBacktrack_true :
     signlessPreprojectiveDForkBacktrack (n := n) k true =
       signlessArrow k DG (c + 1) c * signlessArrow k DG c (c + 1) := (rfl)
 
 /-- The backtrack through the second fork leaf. -/
-@[simp] theorem signlessPreprojectiveDForkBacktrack_false :
+theorem signlessPreprojectiveDForkBacktrack_false :
     signlessPreprojectiveDForkBacktrack (n := n) k false =
       signlessArrow k DG (c + 2) c * signlessArrow k DG c (c + 2) := (rfl)
 
