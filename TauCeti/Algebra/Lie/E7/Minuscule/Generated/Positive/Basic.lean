@@ -177,8 +177,10 @@ variable (k : Type u) [Field k]
 /-- The positive subgroup generated over any field is smooth, including over imperfect fields. -/
 theorem smooth_coordinateHopfAlgebra :
     smoothCommHopfAlgProperty k (coordinateHopfAlgebra k) := by
-  let : ∀ j, Algebra.IsGeometricallyReduced k (generatorCodomain k j) := fun _ ↦
-    isGeometricallyReduced_generatorCoordinateAlgebra k _
+  let : ∀ j, Algebra.IsGeometricallyReduced k (generatorCodomain k j) := fun j ↦
+    isGeometricallyReduced_generatorCoordinateAlgebra k (match j with
+      | .inl i => .inl (.inl i)
+      | .inr u => .inr u)
   exact
     CommHopfAlgCat.smoothCommHopfAlgProperty_quotient_commonKernelHopfIdeal_of_geometricallyReduced
       (generator k)
@@ -187,7 +189,9 @@ theorem smooth_coordinateHopfAlgebra :
 theorem geometricallyConnected_coordinateHopfAlgebra :
     geometricallyConnectedCommHopfAlgProperty k (coordinateHopfAlgebra k) := by
   exact geometricallyConnectedCommHopfAlgProperty_commonKernelQuotient_of_geometricallyConnected
-    (generator k) (fun _ ↦ geometricallyConnected_generatorCoordinateAlgebra k _)
+    (generator k) (fun j ↦ geometricallyConnected_generatorCoordinateAlgebra k (match j with
+      | .inl i => .inl (.inl i)
+      | .inr u => .inr u))
 
 end
 
