@@ -7,6 +7,7 @@ module
 public import TauCeti.NumberTheory.IntegralLattice.Binary.NormForm
 public import TauCeti.LinearAlgebra.IntegralLattice.Index
 public import TauCeti.LinearAlgebra.IntegralLattice.Examples
+public import TauCeti.LinearAlgebra.IntegralLattice.Unit
 public import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 
 /-!
@@ -31,16 +32,6 @@ public section
 open Module Matrix
 namespace TauCeti.IntegralLattice
 
-/-- The standard integer lattice in the rational plane, with norm `x² + y²`. -/
-noncomputable def squareLattice : IntegralLattice (Fin 2 → ℚ) :=
-  ofGramMatrix (Pi.basisFun ℚ (Fin 2)) (1 : Matrix (Fin 2) (Fin 2) ℤ)
-    (Matrix.isSymm_one)
-
-/-- The standard rational form is the coordinate dot product. -/
-@[simp] theorem squareLattice_form_apply (x y : Fin 2 → ℚ) :
-    squareLattice.form x y = x 0 * y 0 + x 1 * y 1 := by
-  simp [squareLattice, Matrix.toBilin_apply, Fin.sum_univ_two]
-
 private noncomputable def integralMatrixBasis (P : Matrix (Fin 2) (Fin 2) ℤ)
     (hP : IsUnit (P.map (Int.castRingHom ℚ)).det) : Basis (Fin 2) ℚ (Fin 2 → ℚ) :=
   (Pi.basisFun ℚ (Fin 2)).map
@@ -55,9 +46,9 @@ private theorem integralMatrixBasis_apply (P : Matrix (Fin 2) (Fin 2) ℤ)
 
 private theorem integralMatrixBasis_integral (P : Matrix (Fin 2) (Fin 2) ℤ)
     (hP : IsUnit (P.map (Int.castRingHom ℚ)).det) (i j : Fin 2) :
-    squareLattice.form (integralMatrixBasis P hP i) (integralMatrixBasis P hP j) ∈
+    (unitLattice (Fin 2)).form (integralMatrixBasis P hP i) (integralMatrixBasis P hP j) ∈
       (1 : Submodule ℤ ℚ) := by
-  rw [squareLattice_form_apply]
+  rw [unitLattice_form_apply, Fin.sum_univ_two]
   simp only [integralMatrixBasis_apply]
   exact Submodule.mem_one.mpr ⟨P 0 i * P 0 j + P 1 i * P 1 j, by simp⟩
 
@@ -72,13 +63,13 @@ private theorem diagonalMatrix_det_unit :
 /-- The sublattice spanned by `(2, 0)` and `(0, 1)`, with the standard square form. -/
 noncomputable def coordinateIndexTwoSublattice : IntegralLattice (Fin 2 → ℚ) :=
   ofBasis (integralMatrixBasis !![2, 0; 0, 1] coordinateMatrix_det_unit)
-    squareLattice.form squareLattice.isSymm
+    (unitLattice (Fin 2)).form (unitLattice (Fin 2)).isSymm
     (integralMatrixBasis_integral !![2, 0; 0, 1] coordinateMatrix_det_unit)
 
 /-- The sublattice spanned by `(1, 1)` and `(1, -1)`, with the standard square form. -/
 noncomputable def diagonalIndexTwoSublattice : IntegralLattice (Fin 2 → ℚ) :=
   ofBasis (integralMatrixBasis !![1, 1; 1, -1] diagonalMatrix_det_unit)
-    squareLattice.form squareLattice.isSymm
+    (unitLattice (Fin 2)).form (unitLattice (Fin 2)).isSymm
     (integralMatrixBasis_integral !![1, 1; 1, -1] diagonalMatrix_det_unit)
 
 /-- The integral carrier basis induced by `(2, 0), (0, 1)`. -/
@@ -92,7 +83,8 @@ noncomputable def diagonalIndexTwoSublattice.basis : Basis (Fin 2) ℤ diagonalI
 
 private theorem normForm_of_integralMatrixBasis (P : Matrix (Fin 2) (Fin 2) ℤ)
     (hP : IsUnit (P.map (Int.castRingHom ℚ)).det) :
-    let L := ofBasis (integralMatrixBasis P hP) squareLattice.form squareLattice.isSymm
+    let L := ofBasis (integralMatrixBasis P hP)
+      (unitLattice (Fin 2)).form (unitLattice (Fin 2)).isSymm
       (integralMatrixBasis_integral P hP)
     L.binaryNormForm (ofBasis.basis _ _ _ _) =
       ⟨P 0 0 ^ 2 + P 1 0 ^ 2, 2 * (P 0 0 * P 0 1 + P 1 0 * P 1 1),
@@ -102,7 +94,7 @@ private theorem normForm_of_integralMatrixBasis (P : Matrix (Fin 2) (Fin 2) ℤ)
   all_goals apply Int.cast_injective (α := ℚ)
   all_goals simp [binaryNormForm_a, binaryNormForm_b, binaryNormForm_c, gramMatrix_apply,
     integralForm_cast,
-    ofBasis.coe_basis, integralMatrixBasis_apply, pow_two]
+    ofBasis.coe_basis, integralMatrixBasis_apply, pow_two, Fin.sum_univ_two]
 
 /-- Restriction to the coordinate sublattice gives `4x² + y²`. -/
 @[simp] theorem coordinateIndexTwoSublattice_normForm :
@@ -118,39 +110,32 @@ private theorem normForm_of_integralMatrixBasis (P : Matrix (Fin 2) (Fin 2) ℤ)
 
 private theorem integralMatrixBasis_carrier_le (P : Matrix (Fin 2) (Fin 2) ℤ)
     (hP : IsUnit (P.map (Int.castRingHom ℚ)).det) :
-    (ofBasis (integralMatrixBasis P hP) squareLattice.form squareLattice.isSymm
-      (integralMatrixBasis_integral P hP)).carrier ≤ squareLattice.carrier := by
+    (ofBasis (integralMatrixBasis P hP) (unitLattice (Fin 2)).form (unitLattice (Fin 2)).isSymm
+      (integralMatrixBasis_integral P hP)).carrier ≤ (unitLattice (Fin 2)).carrier := by
   rw [ofBasis_carrier, Submodule.span_le]
   rintro _ ⟨i, rfl⟩
-  rw [squareLattice, ofGramMatrix_carrier]
-  change integralMatrixBasis P hP i ∈ Submodule.span ℤ (Set.range (Pi.basisFun ℚ (Fin 2)))
-  rw [Module.Basis.mem_span_iff_repr_mem]
-  intro j
-  exact ⟨P j i, by simpa using (integralMatrixBasis_apply P hP i j).symm⟩
+  exact (mem_unitLattice_carrier_iff (Fin 2) _).mpr
+    (fun j ↦ ⟨P j i, (integralMatrixBasis_apply P hP i j).symm⟩)
 
 /-- The coordinate sublattice keeps the original ambient rational form. -/
 @[simp] theorem coordinateIndexTwoSublattice_form :
-    coordinateIndexTwoSublattice.form = squareLattice.form := by
+    coordinateIndexTwoSublattice.form = (unitLattice (Fin 2)).form := by
   simp [coordinateIndexTwoSublattice]
 
 /-- The diagonal sublattice keeps the original ambient rational form. -/
 @[simp] theorem diagonalIndexTwoSublattice_form :
-    diagonalIndexTwoSublattice.form = squareLattice.form := by
+    diagonalIndexTwoSublattice.form = (unitLattice (Fin 2)).form := by
   simp [diagonalIndexTwoSublattice]
 
 /-- The coordinate sublattice lies inside the standard square lattice. -/
 theorem coordinateIndexTwoSublattice_carrier_le :
-    coordinateIndexTwoSublattice.carrier ≤ squareLattice.carrier :=
+    coordinateIndexTwoSublattice.carrier ≤ (unitLattice (Fin 2)).carrier :=
   integralMatrixBasis_carrier_le _ _
 
 /-- The diagonal sublattice lies inside the standard square lattice. -/
 theorem diagonalIndexTwoSublattice_carrier_le :
-    diagonalIndexTwoSublattice.carrier ≤ squareLattice.carrier :=
+    diagonalIndexTwoSublattice.carrier ≤ (unitLattice (Fin 2)).carrier :=
   integralMatrixBasis_carrier_le _ _
-
-/-- The standard square lattice has determinant one. -/
-@[simp] theorem squareLattice_determinant : squareLattice.determinant = 1 := by
-  simp [squareLattice]
 
 /-- The coordinate sublattice has determinant four. -/
 @[simp] theorem coordinateIndexTwoSublattice_determinant :
@@ -173,28 +158,29 @@ theorem diagonalIndexTwoSublattice_carrier_le :
 /-- The coordinate sublattice has index two in the standard square lattice. -/
 @[simp] theorem coordinateIndexTwoSublattice_relIndex :
     coordinateIndexTwoSublattice.carrier.toAddSubgroup.relIndex
-      squareLattice.carrier.toAddSubgroup = 2 := by
-  have h := coordinateIndexTwoSublattice.determinant_eq_mul_relIndex_sq squareLattice
+      (unitLattice (Fin 2)).carrier.toAddSubgroup = 2 := by
+  have h := coordinateIndexTwoSublattice.determinant_eq_mul_relIndex_sq (unitLattice (Fin 2))
     coordinateIndexTwoSublattice_form coordinateIndexTwoSublattice_carrier_le
-  simp only [coordinateIndexTwoSublattice_determinant, squareLattice_determinant, one_mul] at h
+  simp only [coordinateIndexTwoSublattice_determinant, unitLattice_determinant, one_mul] at h
   have hnonneg := Int.natCast_nonneg
     (coordinateIndexTwoSublattice.carrier.toAddSubgroup.relIndex
-      squareLattice.carrier.toAddSubgroup)
+      (unitLattice (Fin 2)).carrier.toAddSubgroup)
   have he : (coordinateIndexTwoSublattice.carrier.toAddSubgroup.relIndex
-      squareLattice.carrier.toAddSubgroup : ℤ) = 2 := by nlinarith
+      (unitLattice (Fin 2)).carrier.toAddSubgroup : ℤ) = 2 := by nlinarith
   exact_mod_cast he
 
 /-- The diagonal sublattice has index two in the standard square lattice. -/
 @[simp] theorem diagonalIndexTwoSublattice_relIndex :
     diagonalIndexTwoSublattice.carrier.toAddSubgroup.relIndex
-      squareLattice.carrier.toAddSubgroup = 2 := by
-  have h := diagonalIndexTwoSublattice.determinant_eq_mul_relIndex_sq squareLattice
+      (unitLattice (Fin 2)).carrier.toAddSubgroup = 2 := by
+  have h := diagonalIndexTwoSublattice.determinant_eq_mul_relIndex_sq (unitLattice (Fin 2))
     diagonalIndexTwoSublattice_form diagonalIndexTwoSublattice_carrier_le
-  simp only [diagonalIndexTwoSublattice_determinant, squareLattice_determinant, one_mul] at h
+  simp only [diagonalIndexTwoSublattice_determinant, unitLattice_determinant, one_mul] at h
   have hnonneg := Int.natCast_nonneg
-    (diagonalIndexTwoSublattice.carrier.toAddSubgroup.relIndex squareLattice.carrier.toAddSubgroup)
+    (diagonalIndexTwoSublattice.carrier.toAddSubgroup.relIndex
+      (unitLattice (Fin 2)).carrier.toAddSubgroup)
   have he : (diagonalIndexTwoSublattice.carrier.toAddSubgroup.relIndex
-      squareLattice.carrier.toAddSubgroup : ℤ) = 2 := by nlinarith
+      (unitLattice (Fin 2)).carrier.toAddSubgroup : ℤ) = 2 := by nlinarith
   exact_mod_cast he
 
 /-- The coordinate restriction remains primitive, despite having index two. -/
@@ -218,30 +204,11 @@ theorem indexTwoSublattices_binaryContent_ne :
       diagonalIndexTwoSublattice.binaryContent (by simp) := by
   simp
 
-private theorem hyperbolicPlane_carrier_eq_span :
-    hyperbolicPlane.carrier = Submodule.span ℤ (Set.range (Pi.basisFun ℚ (Fin 2))) := by
-  ext x
-  rw [mem_hyperbolicPlane_carrier_iff, Module.Basis.mem_span_iff_repr_mem]
-  simp [Pi.basisFun_repr]
-
-/-- The coordinate integral basis of the existing hyperbolic plane. -/
-noncomputable def hyperbolicPlaneBasis : Basis (Fin 2) ℤ hyperbolicPlane :=
-  ((Pi.basisFun ℚ (Fin 2)).restrictScalars ℤ).map
-    (LinearEquiv.ofEq _ _ hyperbolicPlane_carrier_eq_span.symm)
-
-/-- The hyperbolic basis vectors are the standard coordinate vectors. -/
-@[simp] theorem coe_hyperbolicPlaneBasis (i : Fin 2) :
-    (hyperbolicPlaneBasis i : Fin 2 → ℚ) = Pi.single i 1 := by
-  simp only [hyperbolicPlaneBasis, Basis.map_apply, LinearEquiv.coe_ofEq_apply,
-    Basis.restrictScalars_apply, Pi.basisFun_apply]
-
 /-- The integral norm form of the hyperbolic plane is `2xy`. -/
 @[simp] theorem hyperbolicPlane_binaryNormForm :
     hyperbolicPlane.binaryNormForm hyperbolicPlaneBasis = ⟨0, 2, 0⟩ := by
-  ext
-  all_goals apply Int.cast_injective (α := ℚ)
-  all_goals simp [binaryNormForm_a, binaryNormForm_b, binaryNormForm_c, gramMatrix_apply,
-    integralForm_cast, hyperbolicPlane_form_apply]
+  ext <;> simp only [binaryNormForm_a, binaryNormForm_b, binaryNormForm_c,
+    gramMatrix_hyperbolicPlaneBasis] <;> norm_num
 
 /-- The hyperbolic plane has binary content two. -/
 @[simp] theorem hyperbolicPlane_binaryContent : hyperbolicPlane.binaryContent (by simp) = 2 := by
@@ -263,19 +230,13 @@ theorem hyperbolicPlane_binaryNormForm_primPart :
     hyperbolicPlane_binaryNormForm_primPart]
   norm_num [BinaryQuadraticForm.discrim_def, discrim]
 
-/-- The square-lattice carrier consists exactly of vectors with integer coordinates. -/
-@[simp] theorem mem_squareLattice_carrier_iff (x : Fin 2 → ℚ) :
-    x ∈ squareLattice.carrier ↔ ∀ i, ∃ z : ℤ, (z : ℚ) = x i := by
-  rw [squareLattice, ofGramMatrix_carrier, Module.Basis.mem_span_iff_repr_mem]
-  simp [Pi.basisFun_repr]
-
 /-- The coordinate sublattice basis vectors are the columns `(2, 0), (0, 1)`. -/
 @[simp] theorem coordinateIndexTwoSublattice_coe_basis (i j : Fin 2) :
     (coordinateIndexTwoSublattice.basis i : Fin 2 → ℚ) j =
       ((!![2, 0; 0, 1] : Matrix (Fin 2) (Fin 2) ℤ) j i : ℚ) := by
   exact (congrFun (ofBasis.coe_basis
-    (integralMatrixBasis !![2, 0; 0, 1] coordinateMatrix_det_unit) squareLattice.form
-    squareLattice.isSymm (integralMatrixBasis_integral _ _) i) j).trans
+    (integralMatrixBasis !![2, 0; 0, 1] coordinateMatrix_det_unit) (unitLattice (Fin 2)).form
+    (unitLattice (Fin 2)).isSymm (integralMatrixBasis_integral _ _) i) j).trans
     (integralMatrixBasis_apply _ _ i j)
 
 /-- The diagonal sublattice basis vectors are the columns `(1, 1), (1, -1)`. -/
@@ -283,15 +244,16 @@ theorem hyperbolicPlane_binaryNormForm_primPart :
     (diagonalIndexTwoSublattice.basis i : Fin 2 → ℚ) j =
       ((!![1, 1; 1, -1] : Matrix (Fin 2) (Fin 2) ℤ) j i : ℚ) := by
   exact (congrFun (ofBasis.coe_basis
-    (integralMatrixBasis !![1, 1; 1, -1] diagonalMatrix_det_unit) squareLattice.form
-    squareLattice.isSymm (integralMatrixBasis_integral _ _) i) j).trans
+    (integralMatrixBasis !![1, 1; 1, -1] diagonalMatrix_det_unit) (unitLattice (Fin 2)).form
+    (unitLattice (Fin 2)).isSymm (integralMatrixBasis_integral _ _) i) j).trans
     (integralMatrixBasis_apply _ _ i j)
 
 /-- The original square lattice has binary content one. -/
-@[simp] theorem squareLattice_binaryContent : squareLattice.binaryContent (by simp) = 1 := by
-  unfold squareLattice
-  rw [binaryContent_eq_content_binaryNormForm _
-    (ofGramMatrix.basis (Pi.basisFun ℚ (Fin 2)) 1 Matrix.isSymm_one)]
+@[simp] theorem unitLattice_binaryContent : (unitLattice (Fin 2)).binaryContent (by simp) = 1 := by
+  have hf : (unitLattice (Fin 2)).binaryNormForm (unitLatticeBasis (Fin 2)) = ⟨1, 0, 1⟩ := by
+    ext <;> simp only [binaryNormForm_a, binaryNormForm_b, binaryNormForm_c,
+      gramMatrix_unitLatticeBasis] <;> norm_num
+  rw [binaryContent_eq_content_binaryNormForm _ (unitLatticeBasis (Fin 2)), hf]
   norm_num [BinaryQuadraticForm.content_def]
 
 end TauCeti.IntegralLattice
