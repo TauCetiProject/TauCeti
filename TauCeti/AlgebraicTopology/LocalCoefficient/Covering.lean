@@ -44,6 +44,7 @@ on the sheet over each point. Its transport maps are the linear extensions of pa
     Finsupp.lmapDomain R R (hp.monodromy γ)
   map_id x := by
     have hmon : hp.monodromy (𝟙 x) = id := by
+      -- The groupoid identity is represented by the reflexive path class.
       rw [show (𝟙 x : x ⟶ x) = Path.Homotopic.Quotient.refl x.as from rfl,
         hp.monodromy_refl]
     ext f e
@@ -53,6 +54,14 @@ on the sheet over each point. Its transport maps are the linear extensions of pa
       funext fun e => hp.monodromy_trans_apply γ δ e
     ext f e
     simp [hmon]
+
+/-- The fibre of the permutation local coefficient system over `x` is the free module on the
+sheet over `x`. -/
+theorem permutationLocalSystem_obj (hp : IsCoveringMap p) (R : Type v) [Ring R]
+    (x : FundamentalGroupoid B) :
+    (hp.permutationLocalSystem R).obj x =
+      ModuleCat.of R ((p ⁻¹' {x.as}) →₀ R) :=
+  rfl
 
 /-- Evaluating transport in the permutation local system is the linear extension of monodromy. -/
 @[simp]
@@ -67,7 +76,7 @@ theorem permutationLocalSystem_map_single (hp : IsCoveringMap p) (R : Type v) [R
     {x y : FundamentalGroupoid B} (γ : x ⟶ y) (e : p ⁻¹' {x.as}) (r : R) :
     ((hp.permutationLocalSystem R).map γ).hom (Finsupp.single e r) =
       Finsupp.single (hp.monodromy γ e) r := by
-  change Finsupp.lmapDomain R R (hp.monodromy γ) (Finsupp.single e r) = _
-  rw [Finsupp.lmapDomain_apply, Finsupp.mapDomain_single]
+  rw [permutationLocalSystem_map_apply, Finsupp.lmapDomain_apply,
+    Finsupp.mapDomain_single]
 
 end IsCoveringMap
