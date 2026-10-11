@@ -14,8 +14,9 @@ public import Mathlib.CategoryTheory.Abelian.DiagramLemmas.KernelCokernelComp
 
 For monomorphisms `a : X ⟶ Y` and `b : Y ⟶ Z` of cochain complexes, the sequence
 `cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b` is short exact
-(`CochainComplex.cokernelCompShortComplex_shortExact`). Under the identifications of the
-cohomology of mapping cones of monomorphisms with the cohomology of their cokernels, the
+(`CochainComplex.cokernelCompShortComplex_shortExact`). Under the canonical maps from the mapping
+cones of `a` and `b` to their cokernels (`mappingCone.descShortComplex`, quasi-isomorphisms since
+`a` and `b` are monomorphisms), the
 connecting map of the distinguished triangle of mapping cones attached to `a` and `b` is the
 connecting map of this short exact sequence
 (`CochainComplex.homologySequenceδ_mappingConeCompTriangleh`), so the connecting maps of the
@@ -75,15 +76,15 @@ lemma cokernelCompShortComplex_shortExact [Mono b] :
     rw [kernelCokernelCompSequence.δ_fac, kernel.ι_of_mono, zero_comp, neg_zero]
   · exact epi_of_epi_fac (cokernel.π_desc _ _ _)
 
-/-- The morphism from the short exact sequence `Y ⟶ Z ⟶ cokernel b` to the short exact sequence
-`cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b`. -/
+/-- The morphism from the short complex `Y ⟶ Z ⟶ cokernel b` to the short complex
+`cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b` (both short exact when `b` is a monomorphism). -/
 noncomputable def cokernelShortComplexToCompShortComplex :
-    ShortComplex.mk b (cokernel.π b) (cokernel.condition b) ⟶ cokernelCompShortComplex a b where
+    ShortComplex.cokernelSequence b ⟶ cokernelCompShortComplex a b where
   τ₁ := cokernel.π a
   τ₂ := cokernel.π (a ≫ b)
   τ₃ := 𝟙 _
-  comm₁₂ := by simp
-  comm₂₃ := by simp
+  comm₁₂ := cokernel.π_desc _ _ _
+  comm₂₃ := (cokernel.π_desc _ _ _).trans ((Category.id_comp _).trans (Category.comp_id _).symm)
 
 end Cokernels
 
@@ -91,72 +92,72 @@ section Connecting
 
 variable {X Y Z : CochainComplex C ℤ} (a : X ⟶ Y) (b : Y ⟶ Z) [Mono a] [Mono b]
 
-/-- The short exact sequence `X ⟶ Y ⟶ cokernel a` of a monomorphism `a`. -/
-noncomputable abbrev cokernelSequence {X Y : CochainComplex C ℤ} (a : X ⟶ Y) :
-    ShortComplex (CochainComplex C ℤ) :=
-  ShortComplex.mk a (cokernel.π a) (cokernel.condition a)
-
-lemma cokernelSequence_shortExact {X Y : CochainComplex C ℤ} (a : X ⟶ Y) [Mono a] :
-    (cokernelSequence a).ShortExact :=
-  ShortComplex.ShortExact.mk' (ShortComplex.exact_of_g_is_cokernel _ (cokernelIsCokernel _))
-    inferInstance inferInstance
-
 omit [Mono a] in
 /-- The connecting map in cohomology of the triangle of mapping cones
-`cone a ⟶ cone (a ≫ b) ⟶ cone b ⟶ (cone a)⟦1⟧`, read through the quasi-isomorphisms
-`cone a ⟶ cokernel a` and `cone b ⟶ cokernel b`, is the connecting map of the short exact
-sequence `cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b`; version in the category of cochain
-complexes. -/
+`cone a ⟶ cone (a ≫ b) ⟶ cone b ⟶ (cone a)⟦1⟧`, read through the canonical maps
+`cone a ⟶ cokernel a` and `cone b ⟶ cokernel b` (`mappingCone.descShortComplex`), is the
+connecting map of the short exact sequence `cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b`; version
+in the category of cochain complexes. The map `cone b ⟶ cokernel b` is a quasi-isomorphism since
+`b` is a monomorphism, and so is `cone a ⟶ cokernel a` when `a` is one. -/
 lemma shiftMap_mappingConeCompTriangle_mor₃ (n₀ n₁ : ℤ) (h : 1 + n₀ = n₁) :
     (HomologicalComplex.homologyFunctor C (ComplexShape.up ℤ) 0).shiftMap
         (mappingConeCompTriangle a b).mor₃ n₀ n₁ h ≫
-      HomologicalComplex.homologyMap (mappingCone.descShortComplex (cokernelSequence a)) n₁ =
-    HomologicalComplex.homologyMap (mappingCone.descShortComplex (cokernelSequence b)) n₀ ≫
+      HomologicalComplex.homologyMap
+        (mappingCone.descShortComplex (ShortComplex.cokernelSequence a)) n₁ =
+    HomologicalComplex.homologyMap
+        (mappingCone.descShortComplex (ShortComplex.cokernelSequence b)) n₀ ≫
       (cokernelCompShortComplex_shortExact a b).δ n₀ n₁ (by simp [← h, add_comm]) := by
   -- The connecting map of the triangle of `b` alone, through `homologySequenceδ_triangleh`.
-  have hb := mappingCone.homologySequenceδ_triangleh (cokernelSequence_shortExact b) n₀ n₁
+  have hb := mappingCone.homologySequenceδ_triangleh (TauCeti.cokernelSequence_shortExact b) n₀ n₁
     (by lia)
   rw [homologySequenceδ_quotient_mapTriangle_obj] at hb
   have hb' : (HomologicalComplex.homologyFunctor C (ComplexShape.up ℤ) 0).shiftMap
       (mappingCone.triangle b).mor₃ n₀ n₁ h =
-      HomologicalComplex.homologyMap (mappingCone.descShortComplex (cokernelSequence b)) n₀ ≫
-        (cokernelSequence_shortExact b).δ n₀ n₁ (by simp [← h, add_comm]) := by
+      HomologicalComplex.homologyMap
+        (mappingCone.descShortComplex (ShortComplex.cokernelSequence b)) n₀ ≫
+        (TauCeti.cokernelSequence_shortExact b).δ n₀ n₁ (by simp [← h, add_comm]) := by
     have h₁ := (Iso.cancel_iso_hom_left
       ((homologyFunctorFactors C (ComplexShape.up ℤ) n₀).app (mappingCone b)) _ _).1 hb
     exact (Iso.cancel_iso_inv_right _ _
       ((homologyFunctorFactors C (ComplexShape.up ℤ) n₁).app Y)).1
         (h₁.trans (Category.assoc _ _ _).symm)
   have hnat := HomologicalComplex.HomologySequence.δ_naturality
-    (cokernelShortComplexToCompShortComplex a b) (cokernelSequence_shortExact b)
+    (cokernelShortComplexToCompShortComplex a b) (TauCeti.cokernelSequence_shortExact b)
     (cokernelCompShortComplex_shortExact a b) n₀ n₁ (by simp [← h, add_comm])
   dsimp [cokernelShortComplexToCompShortComplex] at hnat
-  rw [HomologicalComplex.homologyMap_id, Category.id_comp] at hnat
+  erw [HomologicalComplex.homologyMap_id, Category.id_comp] at hnat
   dsimp only [mappingConeCompTriangle, Pretriangulated.Triangle.mk_mor₃]
   erw [Functor.shiftMap_comp]
+  -- The shifted cohomology functor `(homologyFunctor 0).shift n₁` is, by definition of its shift
+  -- sequence, `homologyFunctor n₁`; we restate the goal with `homologyMap` to rewrite with `hb'`.
   change ((HomologicalComplex.homologyFunctor C (ComplexShape.up ℤ) 0).shiftMap
       (mappingCone.triangle b).mor₃ n₀ n₁ h ≫
         HomologicalComplex.homologyMap (mappingCone.inr a) n₁) ≫
-      HomologicalComplex.homologyMap (mappingCone.descShortComplex (cokernelSequence a)) n₁ = _
+      HomologicalComplex.homologyMap
+        (mappingCone.descShortComplex (ShortComplex.cokernelSequence a)) n₁ = _
   rw [hb']
   erw [Category.assoc, Category.assoc]
   erw [← HomologicalComplex.homologyMap_comp]
-  erw [mappingCone.inr_descShortComplex (cokernelSequence a)]
+  erw [mappingCone.inr_descShortComplex (ShortComplex.cokernelSequence a)]
   rw [← hnat]
   rfl
 
 omit [Mono a] in
 /-- The connecting map in cohomology of the distinguished triangle of mapping cones
 `cone a ⟶ cone (a ≫ b) ⟶ cone b ⟶ (cone a)⟦1⟧` in the homotopy category, read through the
-quasi-isomorphisms `cone a ⟶ cokernel a` and `cone b ⟶ cokernel b`, is the connecting map of the
-short exact sequence `cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b`. -/
+canonical maps `cone a ⟶ cokernel a` and `cone b ⟶ cokernel b` (quasi-isomorphisms for
+monomorphisms), is the connecting map of the short exact sequence
+`cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b`. -/
 lemma homologySequenceδ_mappingConeCompTriangleh (n₀ n₁ : ℤ) (h : n₀ + 1 = n₁) :
     (homologyFunctor C (ComplexShape.up ℤ) 0).homologySequenceδ
         ((quotient C (ComplexShape.up ℤ)).mapTriangle.obj (mappingConeCompTriangle a b))
         n₀ n₁ h ≫
       (homologyFunctorFactors C (ComplexShape.up ℤ) n₁).hom.app (mappingCone a) ≫
-        HomologicalComplex.homologyMap (mappingCone.descShortComplex (cokernelSequence a)) n₁ =
+        HomologicalComplex.homologyMap
+        (mappingCone.descShortComplex (ShortComplex.cokernelSequence a)) n₁ =
     (homologyFunctorFactors C (ComplexShape.up ℤ) n₀).hom.app (mappingCone b) ≫
-      HomologicalComplex.homologyMap (mappingCone.descShortComplex (cokernelSequence b)) n₀ ≫
+      HomologicalComplex.homologyMap
+        (mappingCone.descShortComplex (ShortComplex.cokernelSequence b)) n₀ ≫
         (cokernelCompShortComplex_shortExact a b).δ n₀ n₁ (by simp [← h]) := by
   rw [homologySequenceδ_quotient_mapTriangle_obj]
   erw [Category.assoc, Category.assoc, Iso.inv_hom_id_app_assoc,
@@ -177,11 +178,8 @@ lemma spectralObject_δ_comp_hIsoCokernel {i j k : ι} (f : i ⟶ j) (g : j ⟶ 
     (spectralObject F).δ f g n₀ n₁ h ≫ (spectralObjectHIsoCokernel F f n₁).hom =
       (spectralObjectHIsoCokernel F g n₀).hom ≫
         (cokernelCompShortComplex_shortExact (F.map f) (F.map g)).δ n₀ n₁ (by simp [← h]) := by
-  have e (a b : ι) (u : a ⟶ b) [Mono (F.map u)] (n : ℤ) : (spectralObjectHIsoCokernel F u n).hom =
-      (homologyFunctorFactors C (ComplexShape.up ℤ) n).hom.app (mappingCone (F.map u)) ≫
-        HomologicalComplex.homologyMap (mappingCone.descShortComplex (cokernelSequence (F.map u)))
-          n := rfl
-  rw [spectralObject_δ, e, e]
+  rw [spectralObject_δ, spectralObjectHIsoCokernel_hom, spectralObjectHIsoCokernel_hom,
+    spectralObjectHIso_hom, spectralObjectHIso_hom]
   exact (homologySequenceδ_mappingConeCompTriangleh (F.map f) (F.map g) n₀ n₁ h).trans
     (Category.assoc _ _ _).symm
 
@@ -214,7 +212,7 @@ theorem spectralSequence_page_two_d_eq (p q : ℤ) :
     Abelian.SpectralObject.coreE₂Cohomological (p, q) (p + 2, q - 1)
     (by simp [ComplexShape.up']; lia) ((q - 1 : ℤ) : EInt) q ((q + 1 : ℤ) : EInt) rfl rfl rfl
     (p + q) (p + q + 1) rfl, key]
-  simp [spectralSequenceFirstPageXIsoCokernel]
+  simp [spectralSequenceFirstPageXIsoCokernel_eq]
 
 end SpectralSequence
 
