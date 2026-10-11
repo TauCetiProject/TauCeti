@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
-public import TauCeti.RingTheory.Flat.GenericRank
+public import Mathlib.LinearAlgebra.Dimension.Localization
 
 /-!
 # Rank and fraction-ring dimension for finite flat affine morphisms
@@ -16,7 +16,7 @@ the dimension after passing to compatible fraction rings. When the source is als
 these fraction rings are fields, and the dimension is the function-field extension degree.
 
 The local rank is Mathlib's `Scheme.Hom.finrank`. Its affine formula reduces the result to
-the generic-rank calculation for finite flat modules and the invariance of dimension under
+Mathlib's fibre-rank calculation for finite flat modules and the invariance of dimension under
 passage to fraction rings.
 
 ## References
@@ -45,7 +45,7 @@ theorem finrank_SpecMap_eq_finrank_fractionRing
     (p : PrimeSpectrum R) :
     (Spec.map (CommRingCat.ofHom (algebraMap R S))).finrank p = Module.finrank K L := by
   rw [Scheme.Hom.finrank_SpecMap_algebraMap]
-  exact (TauCeti.rankAtStalk_eq_finrank_of_isDomain p).trans
+  exact ((Module.rankAtStalk_eq p).trans p.asIdeal.finrank_fiber_eq_finrank).trans
     (IsFractionRing.finrank_eq R K S L).symm
 
 end TauCeti.AlgebraicGeometry
