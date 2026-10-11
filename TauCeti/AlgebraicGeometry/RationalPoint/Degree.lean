@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.RationalPoint.Basic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Degree
+public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.EulerCharacteristic
 
 /-!
 # Divisor degrees at a rational point
@@ -82,6 +83,29 @@ theorem relativeDegree_sub_zsmul_ofPoint_of_section (hs : s ≫ f = 𝟙 S) {y :
     SchemeWeilDivisor.relativeDegree f
         (D - SchemeWeilDivisor.relativeDegree f D • WeilDivisor.ofPoint x₀) = 0 := by
   rw [map_sub, relativeDegree_zsmul_ofPoint_of_section hs hx₀, sub_self]
+
+section EulerDegree
+
+variable {k : Type u} [Field k] {X : Scheme.{u}} [IsIntegral X] [IsNoetherian X]
+  [∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))]
+  [X.Over (Spec (.of k))] [IsProper (X ↘ Spec (.of k))]
+  [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)]
+
+/-- **A rational point has Euler degree one in the Picard group.** On a proper Noetherian integral
+curve over `k` with discrete valuation rings at codimension-one points and finite-dimensional
+`H¹(X, 𝒪_X)`, the line-bundle class `𝒪_X(x)` of a point `x` in the image of a section has
+Euler-characteristic degree one. This is the Picard-group form of
+`relativeDegree_ofPoint_of_section`. -/
+theorem eulerDegree_toLineBundleClass_ofPoint_of_section
+    (hX : ∀ x : X, Order.coheight x ≤ 1) {s : Spec (.of k) ⟶ X}
+    (hs : s ≫ (X ↘ Spec (.of k)) = 𝟙 (Spec (.of k))) {y : Spec (.of k)}
+    {x₀ : CodimensionOnePoint X} (hx₀ : (x₀ : X) = s y) :
+    LineBundleClass.eulerDegree k (SchemeWeilDivisor.toLineBundleClass hX
+      (WeilDivisor.ofPoint x₀)) = 1 := by
+  rw [LineBundleClass.eulerDegree_toLineBundleClass k hX]
+  exact relativeDegree_ofPoint_of_section hs hx₀
+
+end EulerDegree
 
 end AlgebraicGeometry
 
