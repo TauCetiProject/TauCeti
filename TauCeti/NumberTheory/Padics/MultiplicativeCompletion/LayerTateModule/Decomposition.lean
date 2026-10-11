@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.Decomposition
 public import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.LayerTateModule.Basic
-import Mathlib.Algebra.Module.FinitePresentation
 import Mathlib.RingTheory.Noetherian.Basic
 
 /-!
@@ -61,10 +60,6 @@ theorem nonempty_linearEquiv_tameFrameModule_prod
   have hd : Function.Injective d := (LinearMap.ker f).subtype_injective
   have hρ : Function.Surjective ρ := hf
   let : IsNoetherianRing Λ := IsNoetherianRing.of_finite ℤ_[p] Λ
-  let : Module.Finite Λ Y.carrier := Y.finite
-  let : Module.FinitePresentation Λ Y.carrier := Module.finitePresentation_of_finite Λ _
-  let : Module.Finite Λ P₁ := Module.Finite.of_fg <|
-    Module.FinitePresentation.fg_ker f hf
   let : Module.Projective Λ P₁ := hker
   exact TauCeti.nonempty_linearEquiv_tameFrameModule_prod
     hdρ hd hρ Y.exact_ι_π Y.ι_injective Y.π_surjective h σ τ hgen a b ha hb hcard
