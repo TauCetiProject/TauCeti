@@ -290,25 +290,9 @@ theorem _root_.StrongConvexOn.geodesicallyConvex_potentialEnergy (hV : StrongCon
   rw [geodesicallyConvex_def]
   intro μ₀ μ₁ _ _
   -- The interpolation of an optimal plan for the quadratic cost is a geodesic.
-  obtain ⟨π, hπ, hπopt⟩ := exists_isCoupling_eLpNorm_eq_wassersteinEDist two_ne_zero
-    ENNReal.ofNat_ne_top _ _
-    (exists_isCoupling_of_wassersteinEDist_ne_top
-      (WassersteinSpace.wassersteinEDist_ne_top measurable_edist μ₀ μ₁))
-  obtain ⟨γ, hγ, hγt⟩ := WassersteinSpace.exists_isGeodesicSegment_map_smul_add_smul hπ hπopt
+  obtain ⟨π, hπ, hmem, hdist, γ, hγ, hγt⟩ :=
+    WassersteinSpace.exists_dist_sq_eq_integral_isGeodesicSegment_map_smul_add_smul μ₀ μ₁
   refine ⟨γ, hγ, hγ.convexAlong_iff.2 fun t ht ↦ ?_⟩
-  -- The squared distance between the endpoints is the quadratic cost of the optimal plan.
-  have hd : eLpNorm (fun z : E × E ↦ z.1 - z.2) 2 π = eLpNorm (fun z : E × E ↦ edist z.1 z.2) 2 π :=
-    eLpNorm_congr_enorm_ae (by fun_prop) measurable_edist.aestronglyMeasurable
-      (.of_forall fun z ↦ by simp [edist_eq_enorm_sub])
-  have hmem : MemLp (fun z : E × E ↦ z.1 - z.2) 2 π := by
-    rw [memLp_iff, hd, hπopt]
-    exact (WassersteinSpace.wassersteinEDist_ne_top measurable_edist μ₀ μ₁).lt_top
-  have hdist : dist μ₀ μ₁ ^ 2 = ∫ z, ‖z.1 - z.2‖ ^ 2 ∂π := by
-    rw [WassersteinSpace.dist_def, ← hπopt, ← hd,
-      hmem.eLpNorm_eq_integral_rpow_norm two_ne_zero ENNReal.ofNat_ne_top,
-      ENNReal.toReal_ofReal (by positivity)]
-    simpa using Real.rpow_inv_natCast_pow (n := 2) (integral_nonneg fun z ↦ by positivity)
-      two_ne_zero
   rw [hγt t ht, hdist, ← hπ.fst_eq, ← hπ.snd_eq]
   exact hV.potentialEnergy_map_le hVm
     (hπ.fst_eq ▸ potentialEnergy_ne_bot_of_hasFiniteMoment (WassersteinSpace.hasFiniteMoment μ₀)

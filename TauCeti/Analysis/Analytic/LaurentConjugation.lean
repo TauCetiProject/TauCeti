@@ -32,6 +32,23 @@ public section
 
 open Filter Set Topology ComplexConjugate
 
+namespace TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E]
+
+/-- Conjugating the distinguished coordinate and applying a parameter map that fixes
+the base point preserves convergence to that point. -/
+theorem tendsto_conjParam {τ : E → E} {x₀ : E}
+    (hτ : ContinuousAt τ x₀) (hτ0 : τ x₀ = x₀) :
+    Tendsto (fun p : E × ℂ ↦ (τ p.1, conj p.2))
+      (𝓝 (x₀, (0 : ℂ))) (𝓝 (x₀, (0 : ℂ))) := by
+  have hT : ContinuousAt (fun p : E × ℂ ↦ (τ p.1, conj p.2)) (x₀, 0) :=
+    (hτ.comp continuousAt_fst).prodMk
+      (Complex.continuous_conj.continuousAt.comp continuousAt_snd)
+  simpa [hτ0] using hT.tendsto
+
+end TauCeti
+
 namespace AnalyticAt
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -74,11 +91,8 @@ theorem laurent_eq_of_conj {u v : E × ℂ → ℂ} {x₀ : E} {m n : ℤ} {τ :
     ⟨_, hvR, by simpa using hv0, eventually_nhdsWithin_iff.mpr hslice⟩
   refine ⟨hmn, ?_⟩
   let T : E × ℂ → E × ℂ := fun p ↦ (τ p.1, conj p.2)
-  have hT : ContinuousAt T (x₀, 0) := (hτ.comp continuousAt_fst).prodMk
-    (Complex.continuous_conj.continuousAt.comp continuousAt_snd)
-  have hT0 : T (x₀, 0) = (x₀, 0) := by simp [T, hτ0]
-  have hTt : Tendsto T (𝓝 (x₀, (0 : ℂ))) (𝓝 (x₀, (0 : ℂ))) := by
-    simpa only [hT0] using hT.tendsto
+  have hTt : Tendsto T (𝓝 (x₀, (0 : ℂ))) (𝓝 (x₀, (0 : ℂ))) :=
+    TauCeti.tendsto_conjParam hτ hτ0
   have hunit : ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)), p.2 ≠ 0 → u p = conj (v (T p)) := by
     filter_upwards [heq] with p hp hp0
     have hp' := hp hp0
