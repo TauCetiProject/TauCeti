@@ -148,7 +148,7 @@ variable [ContinuousSMul G C]
 
 /-- Integral second continuous cohomology of a compact group is the additive group of
 continuous rational-circle characters. -/
-noncomputable def continuousCohomologyTwoIntEquivContinuousCharacters :
+noncomputable def continuousCohomologyTwoIntEquivContinuousMonoidHom :
     continuousCohomology 2 (ofDiscreteModule ℤ G (ULift.{u} ℤ)) ≃+
       Additive (G →ₜ* Multiplicative C) :=
   (rationalIntegralDeltaIso G C e hℤ hℚ hC 0).symm.toContinuousLinearEquiv.toAddEquiv.trans
@@ -157,13 +157,13 @@ noncomputable def continuousCohomologyTwoIntEquivContinuousCharacters :
 /-- The inverse character identification takes the explicit class of the character to
 canonical cohomology and then applies the connecting map. -/
 @[simp]
-theorem continuousCohomologyTwoIntEquivContinuousCharacters_symm_apply
+theorem continuousCohomologyTwoIntEquivContinuousMonoidHom_symm_apply
     (χ : Additive (G →ₜ* Multiplicative C)) :
-    (continuousCohomologyTwoIntEquivContinuousCharacters G C e hℤ hℚ hC).symm χ =
+    (continuousCohomologyTwoIntEquivContinuousMonoidHom G C e hℤ hℚ hC).symm χ =
       (rationalIntegralShortExact G C e hℤ hℚ hC).delta 1
         (explicitH1AddEquivContinuousCohomology G C
           ((H1EquivOfSmulEqSelf hC).symm χ)) := by
-  rw [continuousCohomologyTwoIntEquivContinuousCharacters, AddEquiv.symm_trans_apply,
+  rw [continuousCohomologyTwoIntEquivContinuousMonoidHom, AddEquiv.symm_trans_apply,
     AddEquiv.symm_trans_apply, AddEquiv.symm_symm]
   -- Iso.toContinuousLinearEquiv has no inverse-application lemma: its defining invFun
   -- is the inverse morphism. Expose just that conversion after rewriting the composites.
