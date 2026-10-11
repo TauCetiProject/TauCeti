@@ -47,6 +47,9 @@ from `ℚ_p` to its finite extensions.
 * `TauCeti.ClassFieldTheory.cyclotomicCharacter_artinMap`: for `F/ℚ_p` finite, a representative
   of the Artin symbol of a unit `u` of the valuation ring of `F` has cyclotomic character
   `N_{F/ℚ_p}(u)⁻¹`.
+* `TauCeti.ClassFieldTheory.localCyclotomicCharacter_artinMap_uniformizer`: for a uniformizer
+  `ϖ` of a finite extension `K/ℚ_p`, its Artin symbol `σ` satisfies
+  `χ_cyc(σ) · N_{K/ℚ_p}(ϖ) = p ^ f(K/ℚ_p)`.
 
 ## References
 
