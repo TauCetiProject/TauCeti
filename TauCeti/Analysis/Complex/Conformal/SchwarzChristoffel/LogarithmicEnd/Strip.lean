@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.LogarithmicEnd.Basic
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Log
 
 /-!
 # Strip bounds near logarithmic Schwarz--Christoffel ends
@@ -33,7 +34,7 @@ variable {ι : Type*} [Fintype ι]
 
 /-- Near a logarithmic prevertex, the normalized primitive lies in any prescribed enlargement
 of the horizontal strip of height `π`, after a suitable target translation. -/
-theorem eventually_im_normalized_schwarzChristoffelPrimitive_mem_Ioo_of_sum_eq_neg_one
+theorem exists_eventually_im_normalized_schwarzChristoffelPrimitive_mem_Ioo_of_sum_eq_neg_one
     (a e : ι → ℝ) (z₀ : UpperHalfPlane) (p : ℝ)
     (he : ∑ i with a i = p, e i = -1) {ε : ℝ} (hε : 0 < ε) :
     ∃ c : ℂ, ∀ᶠ z in 𝓝[upperHalfPlaneSet] (p : ℂ),
@@ -57,25 +58,10 @@ theorem eventually_im_normalized_schwarzChristoffelPrimitive_mem_Ioo_of_sum_eq_n
   filter_upwards [hsmall, self_mem_nhdsWithin,
     mem_nhdsWithin_of_mem_nhds (Metric.ball_mem_nhds (p : ℂ) hr)] with z hsmall hzupper hzball
   have him : 0 < z.im := hzupper
-  have hzp : z - (p : ℂ) ≠ 0 := by
-    intro h
-    have := congrArg Complex.im h
-    simp at this
-    linarith
-  have harg : (log (z - (p : ℂ))).im ∈ Ioo (0 : ℝ) Real.pi := by
-    rw [log_im, arg_of_im_pos (by simpa using him)]
-    constructor
-    · apply Real.arccos_pos.mpr
-      apply (div_lt_one (norm_pos_iff.mpr hzp)).2
-      exact lt_of_le_of_lt (le_abs_self _) (abs_re_lt_norm.mpr (by simpa using him.ne'))
-    · apply Real.arccos_lt_pi.mpr
-      have hnorm : -‖z - (p : ℂ)‖ < (z - (p : ℂ)).re := by
-        have him' : (z - (p : ℂ)).im ≠ 0 := by simpa using him.ne'
-        have habs : |(z - (p : ℂ)).re| < ‖z - (p : ℂ)‖ := abs_re_lt_norm.mpr him'
-        have hle : -|(z - (p : ℂ)).re| ≤ (z - (p : ℂ)).re := neg_abs_le _
-        linarith
-      rw [lt_div_iff₀ (norm_pos_iff.mpr hzp)]
-      simpa using hnorm
+  have hshift : z - (p : ℂ) ∈ upperHalfPlaneSet := by
+    simpa using him
+  have harg : (log (z - (p : ℂ))).im ∈ Ioo (0 : ℝ) Real.pi :=
+    bijOn_log_upperHalfPlaneSet.1 hshift
   have hdecomp : (schwarzChristoffelPrimitive a e z₀ z - H (p : ℂ)) / C =
       log (z - (p : ℂ)) + (H z - H (p : ℂ)) / C := by
     rw [← hformula z ⟨hzball, hzupper⟩]
