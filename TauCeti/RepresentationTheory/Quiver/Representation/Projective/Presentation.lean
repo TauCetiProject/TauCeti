@@ -95,6 +95,7 @@ namespace CategoryTheory.ObjectProperty.FullSubcategory
 
 /-- Projectivity in the finite-dimensional category agrees with ambient projectivity for
 a quiver with finitely many paths. -/
+@[simp]
 theorem projective_iff_projective_obj_of_finite_paths
     (M : ObjectProperty.FullSubcategory (IsFinDim.{u, v, w, t} k Q)) :
     Projective M ↔ Projective M.obj := by
