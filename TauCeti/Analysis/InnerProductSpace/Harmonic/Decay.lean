@@ -11,6 +11,7 @@ import Mathlib.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # Decay estimates for harmonic functions on concentric balls
@@ -89,6 +90,12 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F] {u : E → F}
 
+omit [CompleteSpace F] in
+/-- A function harmonic on a neighbourhood of `closedBall y s` is integrable on `ball y s`. -/
+private lemma _root_.InnerProductSpace.HarmonicOnNhd.integrableOn_ball {y : E} {s : ℝ}
+    (hu : HarmonicOnNhd u (closedBall y s)) : IntegrableOn u (ball y s) μ :=
+  (hu.continuousOn.integrableOn_compact (isCompact_closedBall y s)).mono_set ball_subset_closedBall
+
 /-- **The pointwise `L²` bound for harmonic functions.** If `u` is harmonic on a neighbourhood of
 the closed ball `closedBall y s`, then the measure of the ball `ball y s` times `‖u y‖²` is at most
 the integral of `‖u‖²` over that ball. -/
@@ -96,8 +103,7 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.measureReal_ball_mul_norm_sq_le_s
     {y : E} {s : ℝ} (hu : HarmonicOnNhd u (closedBall y s)) :
     μ.real (ball y s) * ‖u y‖ ^ 2 ≤ ∫ x in ball y s, ‖u x‖ ^ 2 ∂μ := by
   have hc : ContinuousOn u (closedBall y s) := hu.continuousOn
-  have hint : IntegrableOn u (ball y s) μ :=
-    (hc.integrableOn_compact (isCompact_closedBall y s)).mono_set ball_subset_closedBall
+  have hint : IntegrableOn u (ball y s) μ := hu.integrableOn_ball
   have hint2 : IntegrableOn (fun x ↦ ‖u x‖ ^ 2) (ball y s) μ :=
     ((hc.norm.pow 2).integrableOn_compact (isCompact_closedBall y s)).mono_set
       ball_subset_closedBall
@@ -127,8 +133,7 @@ private lemma norm_sq_le_of_mem_ball_half {x₀ x : E} {R : ℝ} (hR : 0 < R)
     (hx : x ∈ ball x₀ (R / 2)) :
     ‖u x‖ ^ 2 ≤ 2 ^ finrank ℝ E * (∫ x in ball x₀ R, ‖u x‖ ^ 2 ∂μ) /
       (R ^ finrank ℝ E * μ.real (ball (0 : E) 1)) := by
-  have hω : 0 < μ.real (ball (0 : E) 1) :=
-    ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne' measure_ball_lt_top.ne
+  have hω : 0 < μ.real (ball (0 : E) 1) := measureReal_ball_pos μ 0 one_pos
   have hsub : closedBall x (R / 2) ⊆ ball x₀ R := by
     intro z hz
     rw [mem_ball] at hx ⊢
@@ -164,8 +169,7 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.setIntegral_ball_norm_sq_le {x₀
   · simp only [ball_zero, Measure.restrict_empty, integral_zero_measure]
     positivity
   have hR : 0 < R := hρ.trans_le hρR
-  have hω : 0 < μ.real (ball (0 : E) 1) :=
-    ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne' measure_ball_lt_top.ne
+  have hω : 0 < μ.real (ball (0 : E) 1) := measureReal_ball_pos μ 0 one_pos
   rcases le_or_gt (2 * ρ) R with h2 | h2
   · -- On `ball x₀ ρ ⊆ ball x₀ (R / 2)`, `‖u‖²` is bounded by the pointwise estimate.
     calc ∫ x in ball x₀ ρ, ‖u x‖ ^ 2 ∂μ
@@ -197,12 +201,8 @@ private lemma mul_norm_sub_le_of_norm_le (μ : Measure E) [μ.IsAddHaarMeasure] 
       2 * M * (((s + dist y z) ^ finrank ℝ E - s ^ finrank ℝ E) * μ.real (ball (0 : E) 1)) := by
   set n := finrank ℝ E
   set ω := μ.real (ball (0 : E) 1)
-  have hiy : IntegrableOn u (ball y s) μ :=
-    (hy.continuousOn.integrableOn_compact (isCompact_closedBall y s)).mono_set
-      ball_subset_closedBall
-  have hiz : IntegrableOn u (ball z s) μ :=
-    (hz.continuousOn.integrableOn_compact (isCompact_closedBall z s)).mono_set
-      ball_subset_closedBall
+  have hiy : IntegrableOn u (ball y s) μ := hy.integrableOn_ball
+  have hiz : IntegrableOn u (ball z s) μ := hz.integrableOn_ball
   -- By the mean-value property, `sⁿ ω (u y - u z)` is the difference of the integrals of `u` over
   -- `ball y s` and `ball z s`, in which the integrals over their intersection cancel.
   have hdiff : (s ^ n * ω) • (u y - u z) =
@@ -253,26 +253,20 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.norm_sub_le_of_norm_le {y z : E} 
   set n := finrank ℝ E
   set ω := (Measure.addHaar : Measure E).real (ball 0 1)
   set d := dist y z
-  have hω : 0 < ω := ENNReal.toReal_pos (measure_ball_pos _ 0 one_pos).ne' measure_ball_lt_top.ne
+  have hω : 0 < ω := measureReal_ball_pos _ 0 one_pos
   have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM y (Or.inl (mem_ball_self hs)))
   have hd : 0 ≤ d := dist_nonneg
   rw [le_div_iff₀ hs]
   -- In dimension `0` both points coincide; otherwise `(s + d)ⁿ - sⁿ ≤ n d (2 s)ⁿ⁻¹`.
   rcases Nat.eq_zero_or_pos n with hn | hn
-  · rw [hn, pow_zero, pow_zero, sub_self, zero_mul, mul_zero] at hmain
-    have : ‖u y - u z‖ = 0 :=
-      le_antisymm (by nlinarith [norm_nonneg (u y - u z)]) (norm_nonneg _)
-    rw [this, hn]
-    simp
+  · have h : ω * ‖u y - u z‖ ≤ 0 := by simpa [hn] using hmain
+    simpa [hn] using mul_nonpos_of_nonpos_of_nonneg (nonpos_of_mul_nonpos_right h hω) hs.le
   obtain ⟨k, hk⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
   rw [hk] at hmain ⊢
   have hpow : (s + d) ^ (k + 1) - s ^ (k + 1) ≤ d * (k + 1) * (2 * s) ^ k := by
-    have h := abs_pow_sub_pow_le (s + d) s (k + 1)
-    rw [abs_of_nonneg (sub_nonneg.2 (pow_le_pow_left₀ hs.le (by linarith) _)),
-      add_sub_cancel_left, abs_of_nonneg hd, abs_of_pos (by linarith), abs_of_pos hs,
-      max_eq_left (by linarith), Nat.add_sub_cancel] at h
-    push_cast at h
-    exact h.trans (by gcongr; linarith)
+    refine (le_abs_self _).trans ((abs_pow_sub_pow_le (s + d) s (k + 1)).trans ?_)
+    simp only [add_sub_cancel_left, Nat.add_sub_cancel, Nat.cast_succ]
+    gcongr <;> grind
   have hmain' : s ^ (k + 1) * ω * ‖u y - u z‖ ≤
       s ^ (k + 1) * ω * (2 ^ (k + 1) * (k + 1) * M * d / s) := by
     refine hmain.trans ?_
@@ -322,8 +316,7 @@ private lemma setIntegral_ball_norm_sub_setAverage_sq_le_of_eight_mul_le {x₀ :
   set n := finrank ℝ E with hn
   set I := ∫ x in ball x₀ R, ‖u x - c‖ ^ 2 ∂μ
   have hR : 0 < R := by linarith
-  have hω : 0 < μ.real (ball (0 : E) 1) :=
-    ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne' measure_ball_lt_top.ne
+  have hω : 0 < μ.real (ball (0 : E) 1) := measureReal_ball_pos μ 0 one_pos
   -- The pointwise bound on `ball x₀ (R / 2)` bounds `‖u - c‖` there by `M`, and so the
   -- oscillation of `u` on `ball x₀ ρ` by `L`.
   set M := √(2 ^ n * I / (R ^ n * μ.real (ball (0 : E) 1)))
@@ -336,8 +329,7 @@ private lemma setIntegral_ball_norm_sub_setAverage_sq_le_of_eight_mul_le {x₀ :
       (fun x hx ↦ Real.le_sqrt_of_sq_le (norm_sq_le_of_mem_ball_half hR hv hint hx)) hρ h8 hy hz
   -- Every value of `u` on `ball x₀ ρ` therefore lies within `L` of the average.
   have hiu : IntegrableOn u (ball x₀ ρ) μ :=
-    (hu.continuousOn.mono (closedBall_subset_ball (by linarith))).integrableOn_compact
-      (isCompact_closedBall x₀ ρ) |>.mono_set ball_subset_closedBall
+    (hu.mono (closedBall_subset_ball (by linarith))).integrableOn_ball
   have hdev : ∀ y ∈ ball x₀ ρ, ‖u y - ⨍ z in ball x₀ ρ, u z ∂μ‖ ≤ L := fun y hy ↦ by
     have h := Convex.set_average_mem (convex_closedBall (u y) L) isClosed_closedBall
       (measure_ball_pos μ x₀ hρ).ne' measure_ball_lt_top.ne
