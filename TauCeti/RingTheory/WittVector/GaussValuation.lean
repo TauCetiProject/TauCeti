@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Valuation.Integers
+public import Mathlib.RingTheory.WittVector.Domain
 public import Mathlib.Topology.Instances.NNReal.Lemmas
+public import TauCeti.RingTheory.Valuation.Integers
 public import TauCeti.RingTheory.Valuation.Continuous.Adic
 public import TauCeti.RingTheory.WittVector.TeichmullerCoeff
 
@@ -46,6 +47,7 @@ modulo a suitable power of `p`.
 * `TauCeti.WittVector.gaussValuation_apply` : `λ_ρ(x) = supₙ v(xₙ) ρⁿ`.
 * `TauCeti.WittVector.gaussValuation_teichmuller_mul_pow` : `λ_ρ([a] p ^ m) = v(a) ρ ^ m`.
 * `TauCeti.WittVector.gaussValuation_eq_zero_iff` : for `0 < ρ`, `λ_ρ` vanishes only at `0`.
+* `TauCeti.WittVector.gaussValuation_pos` : for `0 < ρ`, `λ_ρ` is positive away from `0`.
 * `TauCeti.WittVector.isContinuous_gaussValuation` : if `v(ϖ) < 1`, then `λ_ρ` is continuous for
   the `(p, [ϖ])`-adic topology.
 * `TauCeti.WittVector.eventually_gaussValuation_eq_mul_pow_gaussDegree` : for `ρ'` slightly larger
@@ -424,6 +426,17 @@ theorem gaussValuation_eq_zero_iff (hv : v.Integers O) (hρ₀ : 0 < ρ) (hρ : 
   rw [← teichmullerCoeff_pow, zero_coeff,
     hn.resolve_right (pow_ne_zero n hρ₀.ne'), zero_pow (pow_ne_zero n (Fact.out : p.Prime).ne_zero)]
 
+/-- For `0 < ρ`, the Gauss valuation of a nonzero Witt vector is positive. -/
+theorem gaussValuation_pos (hv : v.Integers O) (hρ₀ : 0 < ρ) (hρ : ρ < 1) {x : 𝕎 O}
+    (hx : x ≠ 0) : 0 < gaussValuation p hv ρ hρ x :=
+  pos_iff_ne_zero.mpr ((gaussValuation_eq_zero_iff hv hρ₀ hρ).not.mpr hx)
+
+variable (p) in
+omit [CharP O p] [PerfectRing O p] in
+/-- The Teichmüller representative `[a]` of `a ≠ 0` is nonzero, as its `0`-th coordinate is `a`. -/
+theorem teichmuller_ne_zero {a : O} (ha : a ≠ 0) : teichmuller p a ≠ 0 := fun h ↦
+  ha (by simpa using congrArg (coeff · 0) h)
+
 /-- **The Gauss valuations are continuous** for the `(p, [ϖ])`-adic topology on `𝕎 O`, when
 `v(ϖ) < 1`: `λ_ρ` is at most `1` everywhere, and at most `max ρ v(ϖ) < 1` at `p` and `[ϖ]`. -/
 theorem isContinuous_gaussValuation [TopologicalSpace (𝕎 O)] {ϖ : O}
@@ -472,9 +485,7 @@ private theorem bddAbove_setOf_eq_gaussValuation (hv : v.Integers O) (hρ₀ : 0
     {x : 𝕎 O} (hx : x ≠ 0) :
     BddAbove {n | v (algebraMap O K (x.teichmullerCoeff n)) * ρ ^ n =
       gaussValuation p hv ρ hρ x} := by
-  have hM : 0 < gaussValuation p hv ρ hρ x :=
-    pos_iff_ne_zero.mpr ((gaussValuation_eq_zero_iff hv hρ₀ hρ).not.mpr hx)
-  obtain ⟨N, hN⟩ := NNReal.exists_pow_lt_of_lt_one hM hρ
+  obtain ⟨N, hN⟩ := NNReal.exists_pow_lt_of_lt_one (gaussValuation_pos hv hρ₀ hρ hx) hρ
   refine ⟨N, fun n hn ↦ le_of_not_ge fun hNn ↦ ?_⟩
   have h : v (algebraMap O K (x.teichmullerCoeff n)) * ρ ^ n < gaussValuation p hv ρ hρ x :=
     ((mul_le_of_le_one_left' (hv.map_le_one (x.teichmullerCoeff n))).trans
@@ -522,8 +533,7 @@ theorem eventually_gaussValuation_eq_mul_pow_gaussDegree (hv : v.Integers O) (h�
   set d := gaussDegree p hv ρ hρ x
   set a : ℕ → ℝ≥0 := fun n ↦ v (algebraMap O K (x.teichmullerCoeff n))
   have hM := gaussValuation_eq_mul_pow_gaussDegree hv hρ₀ hρ hx
-  have hM₀ : 0 < a d * ρ ^ d :=
-    hM ▸ pos_iff_ne_zero.mpr ((gaussValuation_eq_zero_iff hv hρ₀ hρ).not.mpr hx)
+  have hM₀ : 0 < a d * ρ ^ d := hM ▸ gaussValuation_pos hv hρ₀ hρ hx
   obtain ⟨ρ₁, hρρ₁, hρ₁⟩ := exists_between hρ
   obtain ⟨N, hN⟩ := NNReal.exists_pow_lt_of_lt_one hM₀ hρ₁
   -- Each of the finitely many indices below `N` is dominated by the degree near `ρ`: the indices
@@ -570,8 +580,8 @@ theorem gaussDegree_eq_of_eventually_eq_mul_pow (hv : v.Integers O) (hρ₀ : 0 
     gaussDegree p hv ρ hρ x = n := by
   set d := gaussDegree p hv ρ hρ x
   set a := v (algebraMap O K (x.teichmullerCoeff d))
-  have hM₀ : a * ρ ^ d ≠ 0 := gaussValuation_eq_mul_pow_gaussDegree hv hρ₀ hρ hx ▸
-    (gaussValuation_eq_zero_iff hv hρ₀ hρ).not.mpr hx
+  have hM₀ : a * ρ ^ d ≠ 0 :=
+    (gaussValuation_eq_mul_pow_gaussDegree hv hρ₀ hρ hx ▸ gaussValuation_pos hv hρ₀ hρ hx).ne'
   have heq : ∀ᶠ ρ' in 𝓝[≥] ρ, a * ρ' ^ d = c * ρ' ^ n := by
     filter_upwards [h, eventually_gaussValuation_eq_mul_pow_gaussDegree hv hρ₀ hρ hx,
       nhdsWithin_le_nhds (Iio_mem_nhds hρ)] with ρ' h h' hρ'
@@ -619,14 +629,11 @@ theorem gaussDegree_eq_of_gaussValuation_sub_lt (hv : v.Integers O) (hρ₀ : 0 
 theorem gaussDegree_mul (hv : v.Integers O) (hρ₀ : 0 < ρ) (hρ : ρ < 1) {x y : 𝕎 O} (hx : x ≠ 0)
     (hy : y ≠ 0) :
     gaussDegree p hv ρ hρ (x * y) = gaussDegree p hv ρ hρ x + gaussDegree p hv ρ hρ y := by
-  have hxy : x * y ≠ 0 := fun h ↦ by
-    have h' := congrArg (gaussValuation p hv ρ hρ) h
-    rw [map_mul, map_zero, mul_eq_zero, gaussValuation_eq_zero_iff hv hρ₀ hρ,
-      gaussValuation_eq_zero_iff hv hρ₀ hρ] at h'
-    exact h'.elim hx hy
+  have := hv.isDomain
   refine gaussDegree_eq_of_eventually_eq_mul_pow
     (c := v (algebraMap O K (x.teichmullerCoeff (gaussDegree p hv ρ hρ x))) *
-      v (algebraMap O K (y.teichmullerCoeff (gaussDegree p hv ρ hρ y)))) hv hρ₀ hρ hxy ?_
+      v (algebraMap O K (y.teichmullerCoeff (gaussDegree p hv ρ hρ y)))) hv hρ₀ hρ
+    (mul_ne_zero hx hy) ?_
   filter_upwards [eventually_gaussValuation_eq_mul_pow_gaussDegree hv hρ₀ hρ hx,
     eventually_gaussValuation_eq_mul_pow_gaussDegree hv hρ₀ hρ hy] with ρ' hx' hy' hρ'
   rw [map_mul, hx' hρ', hy' hρ', pow_add]
@@ -635,12 +642,10 @@ theorem gaussDegree_mul (hv : v.Integers O) (hρ₀ : 0 < ρ) (hρ : ρ < 1) {x 
 /-- The degree of `[a] p ^ m` is `m`, for `a ≠ 0`. -/
 theorem gaussDegree_teichmuller_mul_pow (hv : v.Integers O) (hρ₀ : 0 < ρ) (hρ : ρ < 1) {a : O}
     (ha : a ≠ 0) (m : ℕ) : gaussDegree p hv ρ hρ (teichmuller p a * (p : 𝕎 O) ^ m) = m := by
-  have hne : teichmuller p a * (p : 𝕎 O) ^ m ≠ 0 := fun h ↦ by
-    have h' := congrArg (gaussValuation p hv ρ hρ) h
-    rw [gaussValuation_teichmuller_mul_pow, map_zero, mul_eq_zero, map_eq_zero,
-      map_eq_zero_iff _ hv.hom_inj] at h'
-    exact h'.elim ha (pow_ne_zero m hρ₀.ne')
-  exact gaussDegree_eq_of_eventually_eq_mul_pow hv hρ₀ hρ hne
+  have := hv.isDomain
+  have hp : (p : 𝕎 O) ≠ 0 := fun h ↦ hρ₀.ne (by simpa [h] using gaussValuation_p (p := p) hv hρ)
+  exact gaussDegree_eq_of_eventually_eq_mul_pow hv hρ₀ hρ
+    (mul_ne_zero (teichmuller_ne_zero p ha) (pow_ne_zero m hp))
     (Filter.Eventually.of_forall fun ρ' hρ' ↦ gaussValuation_teichmuller_mul_pow hv hρ' a m)
 
 /-- Multiplying by a Teichmüller representative `[c]` with `c ≠ 0` does not change the degree. -/
@@ -650,13 +655,9 @@ theorem gaussDegree_teichmuller_mul (hv : v.Integers O) (hρ₀ : 0 < ρ) (hρ :
     gaussDegree p hv ρ hρ (teichmuller p c * x) = gaussDegree p hv ρ hρ x := by
   rcases eq_or_ne x 0 with rfl | hx
   · rw [mul_zero]
-  have hc' : teichmuller p c ≠ 0 := fun h ↦ by
-    have h' := gaussValuation_teichmuller (p := p) hv hρ c
-    rw [h, map_zero, eq_comm, map_eq_zero, map_eq_zero_iff _ hv.hom_inj] at h'
-    exact hc h'
   have h₀ := gaussDegree_teichmuller_mul_pow (p := p) hv hρ₀ hρ hc 0
   rw [pow_zero, mul_one] at h₀
-  rw [gaussDegree_mul hv hρ₀ hρ hc' hx, h₀, zero_add]
+  rw [gaussDegree_mul hv hρ₀ hρ (teichmuller_ne_zero p hc) hx, h₀, zero_add]
 
 end Degree
 

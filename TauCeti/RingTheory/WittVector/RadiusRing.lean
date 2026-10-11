@@ -119,14 +119,6 @@ theorem isUnit_algebraMap_teichmuller :
 
 end RadiusLocalization
 
-include hv hϖ in
-/-- The powers of `ϖ ≠ 0` are nonzero, since `O` embeds into the field `K`. -/
-private theorem pow_ne_zero_of_integers (n : ℕ) : ϖ ^ n ≠ 0 := fun h ↦ by
-  have h' : algebraMap O K (ϖ ^ n) ≠ 0 := by
-    rw [map_pow]
-    exact pow_ne_zero n ((map_ne_zero_iff _ hv.hom_inj).mpr hϖ)
-  exact h' (by rw [h, map_zero])
-
 variable [CharP O p] [PerfectRing O p]
 
 include hϖ in
@@ -175,6 +167,14 @@ theorem radiusNorm_algebraMap (x : 𝕎 O) :
       gaussValuation p hv ρ hρ.2 x := by
   rw [radiusNorm_apply, radiusValuation_algebraMap]
 
+/-- The Gauss norm of a fraction `x / s` in `𝕎 O[1/[ϖ]]` is `λ_ρ(x) / λ_ρ(s)`. -/
+@[simp]
+theorem radiusNorm_mk' (x : 𝕎 O) (s : Submonoid.powers (teichmuller p ϖ)) :
+    radiusNorm p hv hϖ hϖ' hρ (IsLocalization.mk' (RadiusLocalization p hv hϖ hϖ' hρ) x s) =
+      gaussValuation p hv ρ hρ.2 x * (gaussValuation p hv ρ hρ.2 s : ℝ)⁻¹ := by
+  rw [radiusNorm_apply, radiusValuation, Valuation.extendToLocalization_mk', NNReal.coe_mul,
+    NNReal.coe_inv]
+
 /-- The Gauss norm on `𝕎 O[1/[ϖ]]` is nonarchimedean. -/
 theorem isNonarchimedean_radiusNorm : IsNonarchimedean (radiusNorm p hv hϖ hϖ' hρ) := fun x y ↦ by
   simp only [radiusNorm_apply, ← NNReal.coe_max, NNReal.coe_le_coe]
@@ -195,6 +195,13 @@ theorem norm_def (x : RadiusLocalization p hv hϖ hϖ' hρ) : ‖x‖ = radiusNo
 theorem norm_algebraMap (x : 𝕎 O) :
     ‖algebraMap (𝕎 O) (RadiusLocalization p hv hϖ hϖ' hρ) x‖ = gaussValuation p hv ρ hρ.2 x := by
   rw [norm_def, radiusNorm_algebraMap]
+
+/-- The norm of a fraction `x / s` in `𝕎 O[1/[ϖ]]` is `λ_ρ(x) / λ_ρ(s)`. -/
+@[simp]
+theorem norm_mk' (x : 𝕎 O) (s : Submonoid.powers (teichmuller p ϖ)) :
+    ‖IsLocalization.mk' (RadiusLocalization p hv hϖ hϖ' hρ) x s‖ =
+      gaussValuation p hv ρ hρ.2 x * (gaussValuation p hv ρ hρ.2 s : ℝ)⁻¹ := by
+  rw [norm_def, radiusNorm_mk']
 
 instance : NormMulClass (RadiusLocalization p hv hϖ hϖ' hρ) :=
   ⟨fun x y ↦ by simp only [norm_def, map_mul]⟩
@@ -236,7 +243,7 @@ theorem norm_algebraMap_radiusRing (x : 𝕎 O) :
 
 /-- The norm of `p` in `A^r` is `ρ`. -/
 @[simp]
-theorem norm_p_radiusRing : ‖(p : RadiusRing p hv hϖ hϖ' hρ)‖ = ρ := by
+theorem norm_natCast_radiusRing : ‖(p : RadiusRing p hv hϖ hϖ' hρ)‖ = ρ := by
   rw [← map_natCast (algebraMap (𝕎 O) (RadiusRing p hv hϖ hϖ' hρ)), norm_algebraMap_radiusRing,
     gaussValuation_p]
 
@@ -263,9 +270,16 @@ local notation "ι" => algebraMap (𝕎 O) (RadiusRing p hv hϖ hϖ' hρ)
 
 /-- The powers of `[ϖ]` have positive norm in `A^r`. -/
 private theorem norm_teichmuller_pow_pos (k : ℕ) : 0 < ‖ι (teichmuller p ϖ ^ k)‖ := by
+  have := hv.isDomain
   rw [norm_algebraMap_radiusRing, NNReal.coe_pos, pos_iff_ne_zero, ← map_pow,
     gaussValuation_teichmuller, map_ne_zero, map_ne_zero_iff _ hv.hom_inj]
-  exact pow_ne_zero_of_integers hv hϖ k
+  exact pow_ne_zero k hϖ
+
+/-- Multiplying a nonzero element of `A^r` by a power of `[ϖ]` keeps its norm positive. -/
+private theorem norm_teichmuller_pow_mul_pos (k : ℕ) {a : RadiusRing p hv hϖ hϖ' hρ}
+    (ha : a ≠ 0) : 0 < ‖ι (teichmuller p ϖ ^ k) * a‖ := by
+  rw [norm_mul]
+  exact mul_pos (norm_teichmuller_pow_pos p hv hϖ hϖ' hρ k) (norm_pos_iff.mpr ha)
 
 /-- Multiplying by a power of `[ϖ]` preserves a strict inequality of norms in `A^r`. -/
 private theorem norm_teichmuller_pow_mul_lt (k : ℕ) {a b : RadiusRing p hv hϖ hϖ' hρ}
@@ -289,6 +303,13 @@ theorem exists_norm_teichmuller_pow_mul_sub_lt {x : RadiusRing p hv hϖ hϖ' hρ
       mul_comm (algebraMap _ _ _), IsLocalization.mk'_spec]
   rw [← hy, ← mul_sub]
   exact norm_teichmuller_pow_mul_lt p hv hϖ hϖ' hρ k (by rwa [← dist_eq_norm])
+
+/-- A Witt vector approximating `x ∈ A^r`, as in `exists_norm_teichmuller_pow_mul_sub_lt`, is
+nonzero. -/
+private theorem ne_zero_of_norm_sub_lt {x : RadiusRing p hv hϖ hϖ' hρ} {k : ℕ} {y : 𝕎 O}
+    (h : ‖ι (teichmuller p ϖ ^ k) * x - ι y‖ < ‖ι (teichmuller p ϖ ^ k) * x‖) : y ≠ 0 := by
+  rintro rfl
+  simp at h
 
 /-- Two approximations of `x ∈ A^r` by Witt vectors, as in
 `exists_norm_teichmuller_pow_mul_sub_lt`, have the same degree. -/
@@ -321,9 +342,9 @@ private theorem gaussDegree_eq_of_approx {x : RadiusRing p hv hϖ hϖ' hρ} {k l
           IsUltrametricDist.norm_sub_le_max _ _
       _ < ‖X‖ := max_lt hz' hy'
   have h := gaussDegree_eq_of_gaussValuation_sub_lt hv hρ.1 hρ.2 hlt
-  rwa [← map_pow, ← map_pow,
-    gaussDegree_teichmuller_mul hv hρ.1 hρ.2 (pow_ne_zero_of_integers hv hϖ k),
-    gaussDegree_teichmuller_mul hv hρ.1 hρ.2 (pow_ne_zero_of_integers hv hϖ l), eq_comm] at h
+  have := hv.isDomain
+  rwa [← map_pow, ← map_pow, gaussDegree_teichmuller_mul hv hρ.1 hρ.2 (pow_ne_zero k hϖ),
+    gaussDegree_teichmuller_mul hv hρ.1 hρ.2 (pow_ne_zero l hϖ), eq_comm] at h
 
 open Classical in
 /-- **Kedlaya's degree on `A^r`.** For `x ≠ 0` it is the degree
@@ -364,10 +385,9 @@ theorem degree_algebraMap (y : 𝕎 O) :
 
 /-- The degree of `p` is `1`. -/
 @[simp]
-theorem degree_p : degree p hv hϖ hϖ' hρ (p : RadiusRing p hv hϖ hϖ' hρ) = 1 := by
-  have h₁ : (1 : O) ≠ 0 := fun h₁ ↦
-    one_ne_zero (α := K) (by simpa using congrArg (algebraMap O K) h₁)
-  have h := gaussDegree_teichmuller_mul_pow (p := p) hv hρ.1 hρ.2 h₁ 1
+theorem degree_natCast : degree p hv hϖ hϖ' hρ (p : RadiusRing p hv hϖ hϖ' hρ) = 1 := by
+  have := hv.isDomain
+  have h := gaussDegree_teichmuller_mul_pow (p := p) hv hρ.1 hρ.2 one_ne_zero 1
   rw [map_one, one_mul, pow_one] at h
   rw [← map_natCast ι, degree_algebraMap, h]
 
@@ -399,22 +419,9 @@ theorem degree_mul {x y : RadiusRing p hv hϖ hϖ' hρ} (hx : x ≠ 0) (hy : y �
   obtain ⟨l, w, hw⟩ := exists_norm_teichmuller_pow_mul_sub_lt p hv hϖ hϖ' hρ hy
   set X := ι (teichmuller p ϖ ^ k) * x
   set Y := ι (teichmuller p ϖ ^ l) * y
-  have hX : 0 < ‖X‖ := by
-    rw [norm_mul]
-    exact mul_pos (norm_teichmuller_pow_pos p hv hϖ hϖ' hρ k) (norm_pos_iff.mpr hx)
-  have hY : 0 < ‖Y‖ := by
-    rw [norm_mul]
-    exact mul_pos (norm_teichmuller_pow_pos p hv hϖ hϖ' hρ l) (norm_pos_iff.mpr hy)
-  have hz' : ‖ι z‖ = ‖X‖ := (IsUltrametricDist.norm_eq_of_norm_sub_lt_left hz).symm
+  have hX : 0 < ‖X‖ := norm_teichmuller_pow_mul_pos p hv hϖ hϖ' hρ k hx
+  have hY : 0 < ‖Y‖ := norm_teichmuller_pow_mul_pos p hv hϖ hϖ' hρ l hy
   have hw' : ‖ι w‖ = ‖Y‖ := (IsUltrametricDist.norm_eq_of_norm_sub_lt_left hw).symm
-  have hz0 : z ≠ 0 := by
-    rintro rfl
-    rw [map_zero, norm_zero] at hz'
-    exact hX.ne hz'
-  have hw0 : w ≠ 0 := by
-    rintro rfl
-    rw [map_zero, norm_zero] at hw'
-    exact hY.ne hw'
   -- The product of the two approximations approximates the product.
   have hXY : ι (teichmuller p ϖ ^ (k + l)) * (x * y) = X * Y := by
     simp only [X, Y, pow_add, map_mul]
@@ -431,7 +438,9 @@ theorem degree_mul {x y : RadiusRing p hv hϖ hϖ' hρ} (hx : x ≠ 0) (hy : y �
     · rw [norm_mul, hw']
       exact mul_lt_mul_of_pos_right hz hY
   rw [degree_eq_gaussDegree p hv hϖ hϖ' hρ hzw, degree_eq_gaussDegree p hv hϖ hϖ' hρ hz,
-    degree_eq_gaussDegree p hv hϖ hϖ' hρ hw, gaussDegree_mul hv hρ.1 hρ.2 hz0 hw0]
+    degree_eq_gaussDegree p hv hϖ hϖ' hρ hw,
+    gaussDegree_mul hv hρ.1 hρ.2 (ne_zero_of_norm_sub_lt p hv hϖ hϖ' hρ hz)
+      (ne_zero_of_norm_sub_lt p hv hϖ hϖ' hρ hw)]
 
 end RadiusRing
 
