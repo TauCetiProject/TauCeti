@@ -148,7 +148,7 @@ variable {G : Type*} [AddGroup G] [MeasurableSpace G] [MeasurableSub₂ G] {w : 
 
 /-- For a kernel `w (x - y)`, the interaction energy is the potential energy of `w / 2` against
 the law of `x - y` under `μ ⊗ μ`. -/
-theorem interactionEnergy_comp_sub [SFinite μ] (hw : Measurable w) :
+theorem interactionEnergy_comp_sub (hw : Measurable w) :
     interactionEnergy (fun z ↦ w (z.1 - z.2)) μ =
       potentialEnergy (fun x ↦ w x / 2) ((μ.prod μ).map fun z ↦ z.1 - z.2) := by
   rw [interactionEnergy, potentialEnergy_map (hw.div_const 2) measurable_sub.aemeasurable]
