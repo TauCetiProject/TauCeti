@@ -69,6 +69,8 @@ converge because `Â` is complete, and their sums exhibit the element as a combi
   `TauCeti.Huber.IsRingOfIntegralElements.completion`: the closure in `Â` of the image of a subring
   of `A⁰` lies in `Â⁰`, and the closure of the image of a ring of integral elements of `A` is a ring
   of integral elements of `Â`.
+  `TauCeti.Huber.topologicalClosure_map_coeRingHom_powerBoundedSubring`: for `A⁰` itself the
+  closure of the image is all of `Â⁰`.
 * `TauCeti.Huber.Pair.completion` and `TauCeti.Huber.Pair.completionHom`: the completed Huber pair
   `(Â, Â⁺)`, with `Â⁺` the closure of the image of `A⁺`, and the completion map as a morphism of
   Huber pairs. `TauCeti.Huber.Pair.Hom.extension` extends a morphism into a complete Hausdorff
@@ -602,6 +604,30 @@ theorem topologicalClosure_map_coeRingHom_le_powerBoundedSubring [IsHuberRing A]
       isPowerBounded_completion_coe_of_isPowerBounded (mem_powerBoundedSubring.mp (hR ha)))
     (AddSubgroup.isClosed_of_isOpen (powerBoundedSubring _).toAddSubgroup
       (isOpen_powerBoundedSubring _))
+
+/-- **`Â⁰` is the closure in `Â` of the image of `A⁰`.** One inclusion is
+`topologicalClosure_map_coeRingHom_le_powerBoundedSubring`. For the other, the closure `G` of the
+image of `A⁰` is open, so a power-bounded `y ∈ Â` has an approximation `a ∈ A` with `a - y ∈ G`;
+then `a` is power-bounded in `Â`, hence in `A` by `isPowerBounded_completion_coe_iff`, and
+`y = a - (a - y) ∈ G`. -/
+theorem topologicalClosure_map_coeRingHom_powerBoundedSubring [IsHuberRing A] :
+    ((powerBoundedSubring A).map (Completion.coeRingHom : A →+* Completion A)).topologicalClosure =
+      powerBoundedSubring (Completion A) := by
+  set G :=
+    ((powerBoundedSubring A).map (Completion.coeRingHom : A →+* Completion A)).topologicalClosure
+  have hG : G ≤ powerBoundedSubring (Completion A) :=
+    topologicalClosure_map_coeRingHom_le_powerBoundedSubring le_rfl
+  refine le_antisymm hG fun y hy ↦ ?_
+  have hopen : IsOpen ((fun z ↦ z - y) ⁻¹' (G : Set (Completion A))) :=
+    (Completion.isOpen_topologicalClosure_map_coeRingHom (isOpen_powerBoundedSubring A)).preimage
+      (continuous_sub_right y)
+  obtain ⟨a, ha⟩ := Completion.denseRange_coe.exists_mem_open hopen ⟨y, by simp [G.zero_mem]⟩
+  have hay : (a : Completion A) - y ∈ G := ha
+  have hpb : IsPowerBounded a := isPowerBounded_completion_coe_iff.mp <| by
+    simpa using (powerBoundedSubring (Completion A)).add_mem (hG hay) hy
+  have haG : (a : Completion A) ∈ G :=
+    Subring.le_topologicalClosure _ ⟨a, mem_powerBoundedSubring.mpr hpb, rfl⟩
+  simpa using G.sub_mem haG hay
 
 /-- **Completion preserves rings of integral elements** (Wedhorn, Lemma 7.47): the closure in `Â`
 of the image of a ring of integral elements of a Huber ring `A` is a ring of integral elements of
