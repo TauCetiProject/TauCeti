@@ -56,6 +56,21 @@ def overOne : ConnectedComponents (p ⁻¹' puncturedNeighborhoodOne) → Filled
 def overInf : ConnectedComponents (p ⁻¹' puncturedNeighborhoodInf) → FilledPoint p :=
   Sum.inr ∘ Sum.inr
 
+/-- The three kinds of added point, as an explicit sum for defining maps out of them. -/
+def equivSum : FilledPoint p ≃
+    ConnectedComponents (p ⁻¹' puncturedNeighborhoodZero) ⊕
+      ConnectedComponents (p ⁻¹' puncturedNeighborhoodOne) ⊕
+        ConnectedComponents (p ⁻¹' puncturedNeighborhoodInf) := Equiv.refl _
+
+@[simp]
+theorem equivSum_overZero (c) : equivSum p (overZero p c) = Sum.inl c := (rfl)
+
+@[simp]
+theorem equivSum_overOne (c) : equivSum p (overOne p c) = Sum.inr (Sum.inl c) := (rfl)
+
+@[simp]
+theorem equivSum_overInf (c) : equivSum p (overInf p c) = Sum.inr (Sum.inr c) := (rfl)
+
 theorem overZero_injective : Function.Injective (overZero p) := Sum.inl_injective
 
 theorem overOne_injective : Function.Injective (overOne p) :=
@@ -91,7 +106,57 @@ theorem cases (y : FilledPoint p) :
     | inl c => exact Or.inr (Or.inl ⟨c, rfl⟩)
     | inr c => exact Or.inr (Or.inr ⟨c, rfl⟩)
 
-variable {n : ℕ} (hp : IsCoveringMap p) (ν : p ⁻¹' {basePt} ≃ Fin n)
+/-- The points labelled `0` are exactly those constructed over `0`. -/
+theorem puncture_eq_zero_iff (y : FilledPoint p) :
+    puncture p y = 0 ↔ ∃ c, y = overZero p c := by
+  constructor
+  · intro h
+    rcases FilledPoint.cases p y with ⟨c, rfl⟩ | ⟨c, rfl⟩ | ⟨c, rfl⟩
+    · exact ⟨c, rfl⟩
+    · simp at h
+    · simp at h
+  · rintro ⟨c, rfl⟩
+    simp
+
+/-- The points labelled `1` are exactly those constructed over `1`. -/
+theorem puncture_eq_one_iff (y : FilledPoint p) :
+    puncture p y = 1 ↔ ∃ c, y = overOne p c := by
+  constructor
+  · intro h
+    rcases FilledPoint.cases p y with ⟨c, rfl⟩ | ⟨c, rfl⟩ | ⟨c, rfl⟩
+    · simp at h
+    · exact ⟨c, rfl⟩
+    · simp at h
+  · rintro ⟨c, rfl⟩
+    simp
+
+/-- The points labelled `2` (the puncture `∞`) are exactly those constructed over `∞`. -/
+theorem puncture_eq_two_iff (y : FilledPoint p) :
+    puncture p y = 2 ↔ ∃ c, y = overInf p c := by
+  constructor
+  · intro h
+    rcases FilledPoint.cases p y with ⟨c, rfl⟩ | ⟨c, rfl⟩ | ⟨c, rfl⟩
+    · simp at h
+    · simp at h
+    · exact ⟨c, rfl⟩
+  · rintro ⟨c, rfl⟩
+    simp
+
+variable {n : ℕ}
+
+/-- A numbered finite cover has only finitely many added points. -/
+theorem finite (hp : IsCoveringMap p) (ν : p ⁻¹' {basePt} ≃ Fin n) :
+    Finite (FilledPoint p) := by
+  have : Finite (ConnectedComponents (p ⁻¹' puncturedNeighborhoodZero)) :=
+    Finite.of_equiv _ (hp.sameCycleQuotientσ0EquivConnectedComponents ν)
+  have : Finite (ConnectedComponents (p ⁻¹' puncturedNeighborhoodOne)) :=
+    Finite.of_equiv _ (hp.sameCycleQuotientσ1EquivConnectedComponents ν)
+  have : Finite (ConnectedComponents (p ⁻¹' puncturedNeighborhoodInf)) :=
+    Finite.of_equiv _ (hp.sameCycleQuotientσinfEquivConnectedComponents ν)
+  change Finite (_ ⊕ _ ⊕ _)
+  infer_instance
+
+variable (hp : IsCoveringMap p) (ν : p ⁻¹' {basePt} ≃ Fin n)
 
 /-- The number of points added to a numbered finite cover is the sum of the cycle counts
 of its three monodromy permutations. Fixed points count as cycles of length one. -/
@@ -100,19 +165,19 @@ theorem natCard_eq_cycleCounts :
       (hp.monodromyTriple ν).cycleCounts.1 +
         (hp.monodromyTriple ν).cycleCounts.2.1 +
           (hp.monodromyTriple ν).cycleCounts.2.2 := by
-  let : Finite (ConnectedComponents (p ⁻¹' puncturedNeighborhoodZero)) :=
+  have : Finite (ConnectedComponents (p ⁻¹' puncturedNeighborhoodZero)) :=
     Finite.of_equiv _ (hp.sameCycleQuotientσ0EquivConnectedComponents ν)
-  let : Finite (ConnectedComponents (p ⁻¹' puncturedNeighborhoodOne)) :=
+  have : Finite (ConnectedComponents (p ⁻¹' puncturedNeighborhoodOne)) :=
     Finite.of_equiv _ (hp.sameCycleQuotientσ1EquivConnectedComponents ν)
-  let : Finite (ConnectedComponents (p ⁻¹' puncturedNeighborhoodInf)) :=
+  have : Finite (ConnectedComponents (p ⁻¹' puncturedNeighborhoodInf)) :=
     Finite.of_equiv _ (hp.sameCycleQuotientσinfEquivConnectedComponents ν)
+  have : Finite (FilledPoint p) := finite p hp ν
+  simp only [PermutationTriple.cycleCounts_σ0, PermutationTriple.cycleCounts_σ1,
+    PermutationTriple.cycleCounts_σinf, orbitCount_def]
   rw [FilledPoint, Nat.card_sum, Nat.card_sum,
     Nat.card_congr (hp.sameCycleQuotientσ0EquivConnectedComponents ν).symm,
     Nat.card_congr (hp.sameCycleQuotientσ1EquivConnectedComponents ν).symm,
     Nat.card_congr (hp.sameCycleQuotientσinfEquivConnectedComponents ν).symm]
-  rw [← orbitCount_def, ← orbitCount_def, ← orbitCount_def,
-    ← PermutationTriple.cycleCounts_σ0, ← PermutationTriple.cycleCounts_σ1,
-    ← PermutationTriple.cycleCounts_σinf]
   omega
 
 end FilledPoint
