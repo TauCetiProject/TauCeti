@@ -20,7 +20,9 @@ records the basic properties of the maps
 `i`, commute with morphisms of complexes, vanish after a morphism from a complex concentrated in
 degree `i`, and are epimorphisms in degrees where the complex is exact. The sequence
 `Zᵢ ⟶ Kᵢ ⟶ Zⱼ` of cycles is exact (`HomologicalComplex.exact_iCycles_toCycles`), so the cycles of
-a complex exact in degree `j` fit into short exact sequences `0 ⟶ Zᵢ ⟶ Kᵢ ⟶ Zⱼ ⟶ 0`.
+a complex exact in degree `j` fit into short exact sequences `0 ⟶ Zᵢ ⟶ Kᵢ ⟶ Zⱼ ⟶ 0`. Finally, the
+isomorphisms `homologyIsoSc'` are natural
+(`HomologicalComplex.homologyMap_comp_homologyIsoSc'_hom`).
 -/
 
 public section
@@ -134,5 +136,25 @@ instance cyclesFunctor_additive [CategoryWithHomology C] (i : ι) :
     -- `cyclesFunctor` is opaque, so expose its defining map before applying the map-level API.
     change cyclesMap (f + g) i = cyclesMap f i + cyclesMap g i
     exact cyclesMap_add f g i
+
+section HomologyIsoSc'
+
+variable {C : Type*} [Category* C] [HasZeroMorphisms C] [CategoryWithHomology C] {ι : Type*}
+  {c : ComplexShape ι} {K L : HomologicalComplex C c} (f : K ⟶ L) (i j k : ι)
+  (hi : c.prev j = i) (hk : c.next j = k)
+
+/-- The isomorphisms `homologyIsoSc'` are natural (the naturality of Mathlib's
+`homologyFunctorIso'`, without its identity factor). -/
+@[reassoc]
+lemma homologyMap_comp_homologyIsoSc'_hom :
+    homologyMap f j ≫ (L.homologyIsoSc' i j k hi hk).hom =
+      (K.homologyIsoSc' i j k hi hk).hom ≫
+        ShortComplex.homologyMap ((shortComplexFunctor' C c i j k).map f) := by
+  subst hi hk
+  simp only [homologyIsoSc'_eq_refl, Iso.refl_hom]
+  -- `homologyMap f j` is by definition the homology map of `(shortComplexFunctor' C c _ j _).map f`
+  exact (Category.comp_id _).trans (Category.id_comp _).symm
+
+end HomologyIsoSc'
 
 end HomologicalComplex

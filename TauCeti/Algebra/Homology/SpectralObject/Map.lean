@@ -13,7 +13,8 @@ public import Mathlib.Algebra.Homology.SpectralObject.Differentials
 Let `φ : X ⟶ Y` be a morphism of spectral objects in an abelian category. We define the induced
 maps on the objects `E^n(f₁, f₂, f₃)` (`CategoryTheory.Abelian.SpectralObject.EMap`), on the
 cycles `Z^n(f, g)` (`CategoryTheory.Abelian.SpectralObject.cyclesMapOfHom`), and show that they are
-functorial in `φ` and compatible with the projections `πE`, the maps `toCycles`, the
+functorial in `φ` (`EMap_id`, `EMap_comp`, `cyclesMapOfHom_id`, `cyclesMapOfHom_comp`) and
+compatible with the projections `πE`, the maps `toCycles`, the
 functoriality maps `X.map` in the indices, and the differentials `X.d`
 (`CategoryTheory.Abelian.SpectralObject.d_EMap`). These are the ingredients of the morphism of
 spectral sequences induced by `φ`.
@@ -29,6 +30,13 @@ spectral sequences induced by `φ`.
 * `CategoryTheory.Abelian.SpectralObject.EMap_id`, `EMap_comp`: functoriality.
 * `CategoryTheory.Abelian.SpectralObject.map_EMap`: compatibility with `X.map`.
 * `CategoryTheory.Abelian.SpectralObject.d_EMap`: compatibility with the differentials.
+
+## References
+
+* The constructions adapt to morphisms of spectral objects those of Joël Riou's Mathlib files
+  `Mathlib/Algebra/Homology/SpectralObject/{Page,Cycles,Differentials}.lean` (`shortComplexMap`,
+  `map`, `cyclesMap`, `πE_map`), which are functorial in the indices.
+* J.-L. Verdier, *Des catégories dérivées des catégories abéliennes*, Astérisque 239 (1996), II.4.
 -/
 
 public section
@@ -47,7 +55,6 @@ variable {i j k l : ι} (f₁ : i ⟶ j) (f₂ : j ⟶ k) (f₃ : k ⟶ l) (n₀
 
 /-- The morphism of short complexes `X.shortComplex f₁ f₂ f₃ ⟶ Y.shortComplex f₁ f₂ f₃` induced by
 a morphism of spectral objects. -/
-@[expose, simps]
 def shortComplexMapOfHom :
     X.shortComplex f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ ⟶ Y.shortComplex f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ where
   τ₁ := (φ.hom n₀).app (mk₁ f₃)
@@ -55,6 +62,33 @@ def shortComplexMapOfHom :
   τ₃ := (φ.hom n₂).app (mk₁ f₁)
   comm₁₂ := (φ.comm n₀ n₁ hn₁ f₂ f₃).symm
   comm₂₃ := (φ.comm n₁ n₂ hn₂ f₁ f₂).symm
+
+@[simp]
+lemma shortComplexMapOfHom_τ₁ :
+    (shortComplexMapOfHom φ f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂).τ₁ = (φ.hom n₀).app (mk₁ f₃) := by
+  rw [shortComplexMapOfHom]
+
+@[simp]
+lemma shortComplexMapOfHom_τ₂ :
+    (shortComplexMapOfHom φ f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂).τ₂ = (φ.hom n₁).app (mk₁ f₂) := by
+  rw [shortComplexMapOfHom]
+
+@[simp]
+lemma shortComplexMapOfHom_τ₃ :
+    (shortComplexMapOfHom φ f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂).τ₃ = (φ.hom n₂).app (mk₁ f₁) := by
+  rw [shortComplexMapOfHom]
+
+@[simp]
+lemma shortComplexMapOfHom_id :
+    shortComplexMapOfHom (𝟙 X) f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ = 𝟙 _ := by
+  ext <;> simp <;> rfl
+
+@[reassoc, simp]
+lemma shortComplexMapOfHom_comp :
+    shortComplexMapOfHom (φ ≫ ψ) f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ =
+      shortComplexMapOfHom φ f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ ≫
+        shortComplexMapOfHom ψ f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ := by
+  ext <;> simp <;> rfl
 
 /-- The morphism `X.E f₁ f₂ f₃ n₀ n₁ n₂ ⟶ Y.E f₁ f₂ f₃ n₀ n₁ n₂` induced by a morphism of
 spectral objects. -/
@@ -65,41 +99,41 @@ noncomputable def EMap :
 @[simp]
 lemma EMap_id :
     EMap (𝟙 X) f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ = 𝟙 _ := by
-  have : shortComplexMapOfHom (𝟙 X) f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ = 𝟙 _ := by
-    ext <;> rfl
-  rw [EMap, this, ShortComplex.homologyMap_id]
+  rw [EMap, shortComplexMapOfHom_id, ShortComplex.homologyMap_id]
   rfl
 
 @[reassoc]
 lemma EMap_comp :
     EMap (φ ≫ ψ) f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ =
       EMap φ f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ ≫ EMap ψ f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ := by
-  have : shortComplexMapOfHom (φ ≫ ψ) f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ =
-      shortComplexMapOfHom φ f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ ≫
-        shortComplexMapOfHom ψ f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ := by
-    ext <;> rfl
-  rw [EMap, this, ShortComplex.homologyMap_comp]
+  rw [EMap, shortComplexMapOfHom_comp, ShortComplex.homologyMap_comp]
   rfl
 
 variable {i' j' k' l' : ι} {f₁' : i' ⟶ j'} {f₂' : j' ⟶ k'} {f₃' : k' ⟶ l'}
+
+/-- The morphisms `shortComplexMapOfHom` commute with the functoriality maps
+`X.shortComplexMap` in the indices. -/
+@[reassoc]
+lemma shortComplexMap_shortComplexMapOfHom (α : mk₃ f₁ f₂ f₃ ⟶ mk₃ f₁' f₂' f₃') :
+    X.shortComplexMap f₁ f₂ f₃ f₁' f₂' f₃' α n₀ n₁ n₂ hn₁ hn₂ ≫
+      shortComplexMapOfHom φ f₁' f₂' f₃' n₀ n₁ n₂ hn₁ hn₂ =
+      shortComplexMapOfHom φ f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ ≫
+        Y.shortComplexMap f₁ f₂ f₃ f₁' f₂' f₃' α n₀ n₁ n₂ hn₁ hn₂ := by
+  ext <;> simp only [ShortComplex.comp_τ₁, ShortComplex.comp_τ₂, ShortComplex.comp_τ₃,
+    shortComplexMap_τ₁, shortComplexMap_τ₂, shortComplexMap_τ₃, shortComplexMapOfHom_τ₁,
+    shortComplexMapOfHom_τ₂, shortComplexMapOfHom_τ₃] <;>
+    exact (φ.hom _).naturality _
 
 /-- The maps `EMap` commute with the functoriality maps `X.map` in the indices. -/
 @[reassoc]
 lemma map_EMap (α : mk₃ f₁ f₂ f₃ ⟶ mk₃ f₁' f₂' f₃') :
     X.map f₁ f₂ f₃ f₁' f₂' f₃' α n₀ n₁ n₂ hn₁ hn₂ ≫ EMap φ f₁' f₂' f₃' n₀ n₁ n₂ hn₁ hn₂ =
       EMap φ f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ ≫ Y.map f₁ f₂ f₃ f₁' f₂' f₃' α n₀ n₁ n₂ hn₁ hn₂ := by
-  have : X.shortComplexMap f₁ f₂ f₃ f₁' f₂' f₃' α n₀ n₁ n₂ hn₁ hn₂ ≫
-      shortComplexMapOfHom φ f₁' f₂' f₃' n₀ n₁ n₂ hn₁ hn₂ =
-      shortComplexMapOfHom φ f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ ≫
-        Y.shortComplexMap f₁ f₂ f₃ f₁' f₂' f₃' α n₀ n₁ n₂ hn₁ hn₂ := by
-    ext <;> simp only [ShortComplex.comp_τ₁, ShortComplex.comp_τ₂, ShortComplex.comp_τ₃,
-      shortComplexMap_τ₁, shortComplexMap_τ₂, shortComplexMap_τ₃, shortComplexMapOfHom_τ₁,
-      shortComplexMapOfHom_τ₂, shortComplexMapOfHom_τ₃] <;>
-      exact (φ.hom _).naturality _
   -- `ShortComplex.homologyMap_comp` only matches the zero-morphism instances of
   -- `X.shortComplex` up to unfolding of instances, hence `erw`.
   dsimp only [map, EMap]
-  erw [← ShortComplex.homologyMap_comp, this, ShortComplex.homologyMap_comp]
+  erw [← ShortComplex.homologyMap_comp, shortComplexMap_shortComplexMapOfHom,
+    ShortComplex.homologyMap_comp]
   rfl
 
 end E
@@ -129,21 +163,27 @@ lemma toCycles_cyclesMapOfHom (fg : i ⟶ k) (h : f ≫ g = fg) :
 
 variable {l : ι} (f₃ : k ⟶ l) (n₀ n₂ : ℤ) (hn₁ : n₀ + 1 = n) (hn₂ : n + 1 = n₂)
 
+/-- Through the identifications `cyclesIso`, the map on cycles of `shortComplexMapOfHom` is
+`cyclesMapOfHom`. -/
 @[reassoc]
+lemma cyclesIso_inv_cyclesMap_shortComplexMapOfHom :
+    (X.cyclesIso f g f₃ n₀ n n₂ hn₁ hn₂).inv ≫
+      ShortComplex.cyclesMap (shortComplexMapOfHom φ f g f₃ n₀ n n₂ hn₁ hn₂) =
+      cyclesMapOfHom φ f g n ≫ (Y.cyclesIso f g f₃ n₀ n n₂ hn₁ hn₂).inv := by
+  rw [← cancel_mono (Y.shortComplex f g f₃ n₀ n n₂ hn₁ hn₂).iCycles, Category.assoc,
+    ShortComplex.cyclesMap_i, X.cyclesIso_inv_i_assoc f g f₃ n₀ n n₂ hn₁ hn₂, Category.assoc,
+    Y.cyclesIso_inv_i f g f₃ n₀ n n₂ hn₁ hn₂]
+  exact (cyclesMapOfHom_i φ f g n).symm
+
+@[reassoc (attr := simp)]
 lemma πE_EMap :
     X.πE f g f₃ n₀ n n₂ hn₁ hn₂ ≫ EMap φ f g f₃ n₀ n n₂ hn₁ hn₂ =
       cyclesMapOfHom φ f g n ≫ Y.πE f g f₃ n₀ n n₂ hn₁ hn₂ := by
-  have h : (X.cyclesIso f g f₃ n₀ n n₂ hn₁ hn₂).inv ≫
-      ShortComplex.cyclesMap (shortComplexMapOfHom φ f g f₃ n₀ n n₂ hn₁ hn₂) =
-      cyclesMapOfHom φ f g n ≫ (Y.cyclesIso f g f₃ n₀ n n₂ hn₁ hn₂).inv := by
-    rw [← cancel_mono (Y.shortComplex f g f₃ n₀ n n₂ hn₁ hn₂).iCycles, Category.assoc,
-      ShortComplex.cyclesMap_i, X.cyclesIso_inv_i_assoc f g f₃ n₀ n n₂ hn₁ hn₂, Category.assoc,
-      Y.cyclesIso_inv_i f g f₃ n₀ n n₂ hn₁ hn₂]
-    exact (cyclesMapOfHom_i φ f g n).symm
   dsimp only [πE, EMap]
   -- as in Mathlib's `Page.lean`, the short complexes `X.shortComplex` only match the generic
   -- lemmas up to unfolding of instances, hence `erw`.
-  erw [Category.assoc, ShortComplex.homologyπ_naturality, reassoc_of% h]
+  erw [Category.assoc, ShortComplex.homologyπ_naturality,
+    cyclesIso_inv_cyclesMap_shortComplexMapOfHom_assoc φ f g n f₃ n₀ n₂ hn₁ hn₂]
 
 end Cycles
 
