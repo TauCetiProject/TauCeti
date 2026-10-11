@@ -269,13 +269,13 @@ theorem coeff_neg_one_map_mul_derivative {K : Type*} [Field K] (ψ : K⸨X⸩ �
   -- Both sides agree on monomials, by the residue of `φ ^ j * φ'`.
   have mono (j : ℤ) (c : K) :
       (ψ (single j c) * derivative K (φ : K⸨X⸩)).coeff (-1) = (single j c : K⸨X⸩).coeff (-1) := by
-    have h : (single j c : K⸨X⸩) = C c * (single 1 1 : K⸨X⸩) ^ j := by
-      rw [← RatFunc.single_zpow, C_apply, single_mul_single, zero_add, mul_one]
-    rw [coeff_single, h, map_mul, map_zpow₀, hC, hX, mul_assoc, C_mul_eq_smul, coeff_smul,
+    -- The substitution sends `c X ^ j` to `c φ ^ j`.
+    have h : ψ (single j c) = C c * (φ : K⸨X⸩) ^ j := by
+      rw [← hC, ← hX, ← map_zpow₀, ← map_mul]
+      simp [← RatFunc.single_zpow]
+    rw [h, mul_assoc, C_mul_eq_smul, coeff_smul,
       PowerSeries.coeff_neg_one_coe_zpow_mul_derivative hφ]
-    by_cases hj : j = -1
-    · simp [hj]
-    · simp [hj, Ne.symm hj]
+    simp [coeff_single, eq_comm]
   -- Induction on the order of the pole.
   have key (d : ℕ) (f : K⸨X⸩) (hf : Valued.v f ≤ WithZero.exp (d : ℤ)) :
       (ψ f * derivative K (φ : K⸨X⸩)).coeff (-1) = f.coeff (-1) := by
