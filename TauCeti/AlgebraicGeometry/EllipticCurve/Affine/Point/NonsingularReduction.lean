@@ -51,6 +51,8 @@ whichever variable has a nonvanishing partial derivative at the point of `W_k`
   contained in `E₀(F)`.
 * `WeierstrassCurve.Affine.nonsingularReductionHom_eq_zero_iff`: the kernel of the reduction
   homomorphism is the kernel of reduction `E₁(F)`.
+* `WeierstrassCurve.Affine.mem_ker_nonsingularReductionHom_iff`: the same statement for the kernel
+  subgroup `E₁(F)` of `E₀(F)`.
 * `WeierstrassCurve.Affine.nonsingularReductionHom_surjective`: if the valuation ring is
   Henselian, the reduction homomorphism is surjective.
 
@@ -129,14 +131,17 @@ noncomputable def nonsingularReduction : AddSubgroup W.Point where
 
 /-- A point lies in `E₀(F)` exactly when its reduction is a nonsingular point of the reduced curve.
 -/
+@[simp]
 theorem mem_nonsingularReduction_iff {P : W.Point} :
     P ∈ W.nonsingularReduction v ↔ ((integralModel v.valuationSubring W).map
       (residue v.valuationSubring)).toProjective.NonsingularLift (Point.reduction v P) :=
   Iff.rfl
 
+-- `high`: tried before `mem_nonsingularReduction_iff`, whose `NonsingularLift` form `simp` cannot
+-- reduce to coordinates.
 /-- An affine point with integral `x`-coordinate has nonsingular reduction exactly when the
 residues of its coordinates form a nonsingular point of the reduced curve. -/
-@[simp]
+@[simp high]
 theorem some_mem_nonsingularReduction_iff {x y : F} (h : W.Nonsingular x y) (hx : v x ≤ 1) :
     Point.some x y h ∈ W.nonsingularReduction v ↔
       ((integralModel v.valuationSubring W).map (residue v.valuationSubring)).toAffine.Nonsingular
@@ -211,6 +216,14 @@ theorem nonsingularReductionHom_eq_zero_iff (P : W.nonsingularReduction v) :
     ← (Projective.Point.toAffineAddEquiv _).symm.injective.eq_iff, _root_.map_zero,
     Projective.Point.toAffineAddEquiv_symm_apply, Projective.Point.ext_iff,
     Projective.Point.zero_point]
+
+/-- **The kernel of reduction `E₁(F)` as a subgroup of `E₀(F)`**: a point with nonsingular reduction
+lies in the kernel of the reduction homomorphism exactly when it is the point at infinity or its
+`x`-coordinate has a pole. -/
+@[simp]
+theorem mem_ker_nonsingularReductionHom_iff (P : W.nonsingularReduction v) :
+    P ∈ (W.nonsingularReductionHom v).ker ↔ (P : W.Point) = 0 ∨ 1 < v (P : W.Point).xCoord := by
+  rw [AddMonoidHom.mem_ker, nonsingularReductionHom_eq_zero_iff]
 
 /-- **Reduction onto the nonsingular points.** If the valuation ring is Henselian, for instance
 complete, every nonsingular point of the reduced curve is the reduction of a point of `W(F)` with
