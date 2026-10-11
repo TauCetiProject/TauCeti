@@ -64,23 +64,6 @@ namespace TauCeti
 
 universe uM
 
-section Generic
-
-variable {R A B M : Type*} [CommRing R] [Ring A] [Ring B] [Algebra R A] [Algebra R B]
-  {𝒜 : ℤ → Submodule R A} {ℬ : ℤ → Submodule R B} [GradedAlgebra 𝒜] [GradedAlgebra ℬ]
-  {dA : A →ₗ[R] A} {dB : B →ₗ[R] B} {hA : IsDGAlgebra 𝒜 dA} {hB : IsDGAlgebra ℬ dB}
-  [AddCommGroup M] [Module R M] [Module Bᵐᵒᵖ M]
-  {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
-  [SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece ℳ]
-
-/-- The restricted action of a DG algebra morphism respects degrees, as a named statement. -/
-theorem gradedSMul_restrictScalarsGrading (f : DGAlgHom hA hB) :
-    SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece
-      (IsDGRightModule.restrictScalarsGrading (ℳ := ℳ) f) :=
-  inferInstance
-
-end Generic
-
 variable (B : Type*) [TopologicalSpace B] (b : B) (R : Type*) [CommRing R]
 
 /-- A **rank-one local system** on the pointed space `(B, b)`: a character of the Moore loops at
@@ -96,12 +79,12 @@ namespace RankOneLocalSystem
 variable {B b R} (L : RankOneLocalSystem B b R)
 
 /-- The character `Ω_b B → R` of a rank-one local system, with values in `R`. -/
-@[expose] def character : MooreLoopSpace B b →* R :=
+def character : MooreLoopSpace B b →* R :=
   (Units.coeHom R).comp L.ρ
 
 @[simp]
-theorem character_apply (γ : MooreLoopSpace B b) : L.character γ = (L.ρ γ : R) :=
-  rfl
+theorem character_apply (γ : MooreLoopSpace B b) : L.character γ = (L.ρ γ : R) := by
+  rw [character, MonoidHom.comp_apply, Units.coeHom_apply]
 
 theorem character_eq_of_joined ⦃γ δ : MooreLoopSpace B b⦄ (h : Joined γ δ) :
     L.character γ = L.character δ := by
