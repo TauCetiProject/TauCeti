@@ -98,7 +98,8 @@ corestriction on the invariant `σ b` of the fixing subgroup is the product of t
   order `n` over a group isomorphic to `G_K`, when `K` contains the `n`th roots of unity.
 * `TauCeti.explicitCoeff1_kummerCoeffPow_kummerMap`: the power map `μₙ → μₘ` sends the Kummer
   class of `a` at level `n` to its Kummer class at level `m`, and
-  `TauCeti.explicitCoeff1_kummerCoeffPow_surjective`: it is surjective on `H¹`.
+  `TauCeti.explicitCoeff1_kummerCoeffPow_surjective`: it is surjective on `H¹` when `n` is
+  invertible in `K`.
 * `TauCeti.explicitIso_kummerMap`: the explicit and canonical Kummer maps agree under the
   degree-one comparison isomorphism.
 * `TauCeti.explicitMap1_kummerMap`: pullback along an arbitrary field extension carries the
