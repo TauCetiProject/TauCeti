@@ -15,8 +15,12 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.InnerProductSpace.Lions
+import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
+import TauCeti.MeasureTheory.Function.StronglyMeasurable.Caratheodory
 
 /-!
 # Existence for linear parabolic equations
@@ -35,14 +39,17 @@ into the **variational formulation**
 `∫ₐᵇ (A(t) u(t) φ(t) - ⟪ι u(t), ι φ'(t)⟫) dt = ∫ₐᵇ f(t) φ(t) dt + ⟪u₀, ι φ(a)⟫`,
 
 in which neither the time derivative of `u` nor its value at `t = a` appears: the initial
-condition is carried by the boundary term `⟪u₀, ι φ(a)⟫`. This file proves that the variational
-formulation has a solution `u ∈ L²(a, b; V)`
-(`TauCeti.exists_memLp_forall_setIntegral_eq_add_inner`).
+condition is carried by the boundary term `⟪u₀, ι φ(a)⟫`. Only the orthogonal projection of `u₀`
+onto the closure of the range of `ι` enters this term, so the formulation determines the initial
+value only up to `(range ι)ᗮ`; it encodes `u(a) = u₀` itself only when `ι` has dense range, as it
+does for a genuine Gelfand triple. This file proves that the variational formulation has a
+solution `u ∈ L²(a, b; V)` (`TauCeti.exists_memLp_forall_setIntegral_eq_add_inner`).
 
 That `u` is then a weak solution in the sense of
 `TauCeti.HasWeakLineDerivOn.ae_eq_of_gelfandDual`, with weak time derivative
-`u' = f - A u ∈ L²(a, b; V*)` and a continuous representative equal to `u₀` at `t = a`, is not
-proved here.
+`u' = f - A u ∈ L²(a, b; V*)` and a continuous representative whose value at `t = a` is the
+orthogonal projection of `u₀` onto the closure of the range of `ι` (so `u₀` itself when `ι` has
+dense range), is not proved here.
 
 ## The proof
 
@@ -64,8 +71,9 @@ operator `A(t) + β ι* ι` and the right-hand side `e^{-β (t - a)} f`.
 The coefficient `A` is only assumed weakly measurable, `t ↦ A(t) u v` measurable for all
 `u, v ∈ V` as in Lions and Showalter, and essentially bounded by `Λ`. This covers divergence-form
 operators with `L^∞` coefficients, which are in general not strongly measurable as maps into
-`V →L[ℝ] V*`. Measurability of `t ↦ A(t) u(t) φ(t)` for `u ∈ L²(a, b; V)` then follows by
-approximating `(u, φ)` with simple functions, so no separability of `V` is needed.
+`V →L[ℝ] V*`. Measurability of `t ↦ A(t) u(t) φ(t)` for `u ∈ L²(a, b; V)` then follows from
+`MeasureTheory.AEStronglyMeasurable.apply_of_forall_of_continuous`, which approximates `(u, φ)`
+with simple functions, so no separability of `V` is needed.
 
 ## Main declarations
 
@@ -85,70 +93,13 @@ approximating `(u, φ)` with simple functions, so no separability of `V` is need
 public section
 
 open MeasureTheory Set
-open scoped InnerProductSpace
+open scoped ENNReal InnerProductSpace
 
 namespace TauCeti
 
 variable {V H : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   [NormedAddCommGroup H] [InnerProductSpace ℝ H] {A : ℝ → V →L[ℝ] StrongDual ℝ V}
   {f : ℝ → StrongDual ℝ V} {a b α β Λ : ℝ}
-
-/-- A continuous function is essentially bounded on `(a, b)`. -/
-private theorem exists_nonneg_ae_norm_le {E : Type*} [NormedAddCommGroup E] {g : ℝ → E}
-    (hg : Continuous g) : ∃ C, 0 ≤ C ∧ ∀ᵐ t ∂volume.restrict (Ioo a b), ‖g t‖ ≤ C := by
-  obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn (hg.continuousOn (s := Icc a b))
-  refine ⟨max C 0, le_max_right _ _, ?_⟩
-  filter_upwards [ae_restrict_mem measurableSet_Ioo] with t ht
-  exact (hC t (Ioo_subset_Icc_self ht)).trans (le_max_left _ _)
-
-/-- If `t ↦ A(t) u v` is measurable for all `u, v`, then so is `t ↦ A(t) u(t) φ(t)` for strongly
-measurable `u` and `φ`: approximate `(u, φ)` by simple functions and use continuity of `A(t)`. -/
-private theorem aestronglyMeasurable_apply_apply {μ : Measure ℝ}
-    (hA : ∀ u v, AEStronglyMeasurable (fun t => A t u v) μ) {u φ : ℝ → V}
-    (hu : AEStronglyMeasurable u μ) (hφ : AEStronglyMeasurable φ μ) :
-    AEStronglyMeasurable (fun t => A t (u t) (φ t)) μ := by
-  have hg := (hu.prodMk hφ).stronglyMeasurable_mk
-  refine aestronglyMeasurable_of_tendsto_ae Filter.atTop
-    (f := fun n t => A t (hg.approx n t).1 (hg.approx n t).2) (fun n => ?_) ?_
-  · have : (fun t => A t (hg.approx n t).1 (hg.approx n t).2) = fun t =>
-        ∑ y ∈ (hg.approx n).range, ((hg.approx n) ⁻¹' {y}).indicator (fun t => A t y.1 y.2) t := by
-      ext t
-      rw [Finset.sum_eq_single_of_mem _ ((hg.approx n).mem_range_self t)]
-      · simp
-      · intro y _ hy
-        simp [hy.symm]
-    rw [this]
-    exact Finset.aestronglyMeasurable_fun_sum _ fun y _ =>
-      (hA y.1 y.2).indicator ((hg.approx n).measurableSet_fiber y)
-  · filter_upwards [(hu.prodMk hφ).ae_eq_mk] with t ht
-    have := ((A t).continuous₂.tendsto _).comp (hg.tendsto_approx t)
-    rwa [← ht] at this
-
-omit [InnerProductSpace ℝ V] in
-/-- A scalar function dominated by `K ‖u‖` for some `u ∈ L²(μ; V)` is integrable, with integral
-at most `K μ(univ)^{1/2} ‖u‖_{L²}`. -/
-private theorem integrable_and_abs_integral_le {μ : Measure ℝ} [IsFiniteMeasure μ]
-    (u : Lp V 2 μ) {g : ℝ → ℝ} {K : ℝ} (hK : 0 ≤ K) (hg : AEStronglyMeasurable g μ)
-    (hgu : ∀ᵐ t ∂μ, |g t| ≤ K * ‖u t‖) :
-    Integrable g μ ∧ |∫ t, g t ∂μ| ≤ K * (μ univ ^ (1 / 2 : ℝ)).toReal * ‖u‖ := by
-  have hu : Integrable (fun t => ‖u t‖) μ := ((Lp.memLp u).integrable one_le_two).norm
-  have hgi : Integrable g μ := (hu.const_mul K).mono' hg (by simpa only [Real.norm_eq_abs])
-  refine ⟨hgi, ?_⟩
-  -- `‖u‖_{L¹} ≤ μ(univ)^{1/2} ‖u‖_{L²}`.
-  have hL1 : ∫ t, ‖u t‖ ∂μ ≤ (μ univ ^ (1 / 2 : ℝ)).toReal * ‖u‖ := by
-    have h := eLpNorm_le_eLpNorm_mul_rpow_measure_univ (p := 1) (q := 2) (μ := μ) one_le_two
-      (Lp.aestronglyMeasurable u)
-    norm_num at h
-    rw [integral_norm_eq_lintegral_enorm (Lp.aestronglyMeasurable u),
-      ← eLpNorm_one_eq_lintegral_enorm (Lp.aestronglyMeasurable u), Lp.norm_def, mul_comm,
-      ← ENNReal.toReal_mul]
-    exact ENNReal.toReal_mono (ENNReal.mul_ne_top (Lp.eLpNorm_ne_top u)
-      (ENNReal.rpow_ne_top_of_nonneg (by norm_num) (measure_ne_top μ univ))) h
-  calc |∫ t, g t ∂μ| ≤ ∫ t, |g t| ∂μ := abs_integral_le_integral_abs
-    _ ≤ ∫ t, K * ‖u t‖ ∂μ := integral_mono_ae hgi.abs (hu.const_mul K) hgu
-    _ = K * ∫ t, ‖u t‖ ∂μ := integral_const_mul _ _
-    _ ≤ K * ((μ univ ^ (1 / 2 : ℝ)).toReal * ‖u‖) := by gcongr
-    _ = K * (μ univ ^ (1 / 2 : ℝ)).toReal * ‖u‖ := by ring
 
 /-- For a `C¹` test function `φ`, the integrand `A(t) u(t) φ(t) - ⟪ι u(t), ι φ'(t)⟫` of the
 variational formulation is integrable for every `u ∈ L²(a, b; V)`, and its integral is bounded by
@@ -162,26 +113,41 @@ private theorem exists_forall_integrable_and_abs_integral_le (ι : V →L[ℝ] H
         (volume.restrict (Ioo a b)) ∧
       |∫ t in Ioo a b, (A t (u t) (φ t) - ⟪ι (u t), ι (deriv φ t)⟫_ℝ)| ≤ K * ‖u‖ := by
   have hφ' : Continuous (deriv φ) := hφ.continuous_deriv le_rfl
-  obtain ⟨C₁, hC₁0, hC₁⟩ := exists_nonneg_ae_norm_le (a := a) (b := b) hφ.continuous
-  obtain ⟨C₂, hC₂0, hC₂⟩ := exists_nonneg_ae_norm_le (a := a) (b := b) hφ'
+  set μ := volume.restrict (Ioo a b)
+  set C₁ := lpNorm φ ∞ μ
+  set C₂ := lpNorm (deriv φ) ∞ μ
+  have hC₁ : ∀ᵐ t ∂μ, ‖φ t‖ ≤ C₁ := ae_le_lpNorm_exponent_top <|
+    hφ.continuous.continuousOn.memLp_top_of_subset_isCompact isCompact_Icc measurableSet_Ioo
+      Ioo_subset_Icc_self
+  have hC₂ : ∀ᵐ t ∂μ, ‖deriv φ t‖ ≤ C₂ := ae_le_lpNorm_exponent_top <|
+    hφ'.continuousOn.memLp_top_of_subset_isCompact isCompact_Icc measurableSet_Ioo
+      Ioo_subset_Icc_self
   set K := |Λ| * C₁ + ‖ι‖ * ‖ι‖ * C₂
-  refine ⟨K * (volume.restrict (Ioo a b) univ ^ (1 / 2 : ℝ)).toReal, fun u =>
-    integrable_and_abs_integral_le u (by positivity) ?_ ?_⟩
-  · exact (aestronglyMeasurable_apply_apply hA (Lp.aestronglyMeasurable u)
-      hφ.continuous.aestronglyMeasurable).sub
-      ((ι.continuous.comp_aestronglyMeasurable (Lp.aestronglyMeasurable u)).inner
-        (ι.continuous.comp hφ').aestronglyMeasurable)
-  · filter_upwards [hA_bound, hC₁, hC₂] with t hAt h₁ h₂
-    calc |A t (u t) (φ t) - ⟪ι (u t), ι (deriv φ t)⟫_ℝ|
-        ≤ ‖A t (u t) (φ t)‖ + |⟪ι (u t), ι (deriv φ t)⟫_ℝ| := abs_sub _ _
+  have hK : 0 ≤ K := add_nonneg (mul_nonneg (abs_nonneg _) lpNorm_nonneg)
+    (mul_nonneg (mul_self_nonneg _) lpNorm_nonneg)
+  -- The integrand is dominated by `K ‖u‖`.
+  have hdom : ∀ u : Lp V 2 μ,
+      ∀ᵐ t ∂μ, ‖A t (u t) (φ t) - ⟪ι (u t), ι (deriv φ t)⟫_ℝ‖ ≤ K * ‖u t‖ := by
+    intro u
+    filter_upwards [hA_bound, hC₁, hC₂] with t hAt h₁ h₂
+    calc ‖A t (u t) (φ t) - ⟪ι (u t), ι (deriv φ t)⟫_ℝ‖
+        ≤ ‖A t (u t) (φ t)‖ + ‖⟪ι (u t), ι (deriv φ t)⟫_ℝ‖ := norm_sub_le _ _
       _ ≤ ‖A t‖ * ‖u t‖ * ‖φ t‖ + ‖ι (u t)‖ * ‖ι (deriv φ t)‖ :=
-          add_le_add ((A t).le_opNorm₂ _ _) (abs_real_inner_le_norm _ _)
+          add_le_add ((A t).le_opNorm₂ _ _) (norm_inner_le_norm _ _)
       _ ≤ |Λ| * ‖u t‖ * C₁ + ‖ι‖ * ‖u t‖ * (‖ι‖ * C₂) := by
           gcongr
           · exact hAt.trans (le_abs_self Λ)
           · exact ι.le_opNorm _
           · exact (ι.le_opNorm _).trans (by gcongr)
       _ = K * ‖u t‖ := by ring
+  refine ⟨K * (μ univ ^ (1 - 1 / (2 : ℝ≥0∞).toReal)).toReal, fun u => ⟨?_, ?_⟩⟩
+  · refine (((Lp.memLp u).integrable one_le_two).norm.const_mul K).mono' ?_ (hdom u)
+    exact (((Lp.aestronglyMeasurable u).prodMk hφ.continuous.aestronglyMeasurable)
+      |>.apply_of_forall_of_continuous (g := fun t p => A t p.1 p.2)
+        (fun p => hA p.1 p.2) fun t => (A t).continuous₂).sub
+      ((ι.continuous.comp_aestronglyMeasurable (Lp.aestronglyMeasurable u)).inner
+        (ι.continuous.comp hφ').aestronglyMeasurable)
+  · simpa only [Real.norm_eq_abs] using Lp.norm_integral_le_of_ae_norm_le_mul u hK (hdom u)
 
 /-- **The energy inequality behind coercivity.** For a `C¹` function `φ` with `φ(b) = 0`,
 integrating `d/dt ‖ι φ‖² = 2 ⟪ι φ, ι φ'⟫` by parts and using coercivity of `A` gives
@@ -212,9 +178,14 @@ private theorem mul_setIntegral_norm_sq_add_le (ι : V →L[ℝ] H) (hab : a ≤
     linarith
   -- `t ↦ A(t) φ(t) φ(t)` is bounded and strongly measurable, hence integrable.
   have hAφφ : Integrable (fun t => A t (φ t) (φ t)) (volume.restrict (Ioo a b)) := by
-    obtain ⟨C, -, hC⟩ := exists_nonneg_ae_norm_le (a := a) (b := b) hφ.continuous
-    refine (MemLp.of_bound (aestronglyMeasurable_apply_apply hA hφ.continuous.aestronglyMeasurable
-      hφ.continuous.aestronglyMeasurable) (Λ * C * C) ?_).integrable le_rfl
+    set C := lpNorm φ ∞ (volume.restrict (Ioo a b))
+    have hC : ∀ᵐ t ∂volume.restrict (Ioo a b), ‖φ t‖ ≤ C := ae_le_lpNorm_exponent_top <|
+      hφ.continuous.continuousOn.memLp_top_of_subset_isCompact isCompact_Icc measurableSet_Ioo
+        Ioo_subset_Icc_self
+    refine (MemLp.of_bound ((hφ.continuous.aestronglyMeasurable.prodMk
+      hφ.continuous.aestronglyMeasurable).apply_of_forall_of_continuous
+        (g := fun t p => A t p.1 p.2) (fun p => hA p.1 p.2) fun t => (A t).continuous₂)
+      (Λ * C * C) ?_).integrable le_rfl
     filter_upwards [hA_bound, hC] with t hAt hφt
     have hΛ : 0 ≤ Λ := (norm_nonneg (A t)).trans hAt
     have hC0 : 0 ≤ C := (norm_nonneg _).trans hφt
@@ -244,8 +215,8 @@ private theorem mem_testFunctions {φ : ℝ → V} :
 
 private theorem memLp_testFunctions (φ : testFunctions V b) :
     MemLp (φ : ℝ → V) 2 (volume.restrict (Ioo a b)) := by
-  obtain ⟨C, -, hC⟩ := exists_nonneg_ae_norm_le (a := a) (b := b) φ.2.1.continuous
-  exact MemLp.of_bound φ.2.1.continuous.aestronglyMeasurable C hC
+  exact (φ.2.1.continuous.continuousOn.memLp_top_of_subset_isCompact isCompact_Icc
+    measurableSet_Ioo Ioo_subset_Icc_self).mono_exponent le_top
 
 variable (a) in
 /-- The test functions as elements of `L²(a, b; V)`. -/
@@ -420,8 +391,10 @@ measurable in `t` (`t ↦ A(t) u v` measurable for all `u, v`), bounded by `Λ` 
 `∫ₐᵇ (A(t) u(t) φ(t) - ⟪ι u(t), ι φ'(t)⟫) dt = ∫ₐᵇ f(t) φ(t) dt + ⟪u₀, ι φ(a)⟫`
 
 for every `C¹` function `φ : ℝ → V` with `φ(b) = 0`. This is the weak formulation of
-`u' + A(t) u = f` with initial value `u(a) = u₀`, obtained by integrating `⟪u', φ⟫` by parts.
-No sign is imposed on `β`. -/
+`u' + A(t) u = f` with initial value `u₀`, obtained by integrating `⟪u', φ⟫` by parts. Since `u₀`
+enters only through `⟪u₀, ι φ(a)⟫`, only its orthogonal projection onto the closure of the range of
+`ι` is seen; the condition is `u(a) = u₀` itself when `ι` has dense range. No sign is imposed on
+`β`. -/
 theorem exists_memLp_forall_setIntegral_eq_add_inner [CompleteSpace V] {ι : V →L[ℝ] H}
     (hab : a ≤ b)
     (hA : ∀ u v, AEStronglyMeasurable (fun t => A t u v) (volume.restrict (Ioo a b)))
@@ -442,9 +415,9 @@ theorem exists_memLp_forall_setIntegral_eq_add_inner [CompleteSpace V] {ι : V �
     simpa [he, mul_comm] using (((hasDerivAt_id t).sub_const a).const_mul β).exp
   -- Continuous functions are essentially bounded on `(a, b)`, so `e` and `e⁻¹` are multipliers
   -- of `L²(a, b)`.
-  have htop : ∀ {g : ℝ → ℝ}, Continuous g → MemLp g ⊤ (volume.restrict (Ioo a b)) := fun hg => by
-    obtain ⟨C, -, hC⟩ := exists_nonneg_ae_norm_le (a := a) (b := b) hg
-    exact memLp_top_of_bound hg.aestronglyMeasurable C hC
+  have htop : ∀ {g : ℝ → ℝ}, Continuous g → MemLp g ⊤ (volume.restrict (Ioo a b)) := fun hg =>
+    hg.continuousOn.memLp_top_of_subset_isCompact isCompact_Icc measurableSet_Ioo
+      Ioo_subset_Icc_self
   set B : V →L[ℝ] StrongDual ℝ V := ι.gelfandDual.comp ι
   have hB : ∀ v w, B v w = ⟪ι v, ι w⟫_ℝ := fun v w => ι.gelfandDual_apply _ _
   have hshift_bound : ∀ᵐ t ∂volume.restrict (Ioo a b), ‖A t + β • B‖ ≤ Λ + |β| * ‖B‖ := by
