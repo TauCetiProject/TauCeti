@@ -8,8 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Basic
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Genus
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Singular
-import TauCeti.FieldTheory.FunctionField.Consequences.GenusZero
 import TauCeti.FieldTheory.FunctionField.Elliptic.Nonsingular
 import TauCeti.FieldTheory.FunctionField.Elliptic.Weierstrass.Model
 
