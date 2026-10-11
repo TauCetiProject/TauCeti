@@ -34,8 +34,11 @@ namespace LMFDB
 /-- A frozen low-degree LMFDB record, represented by its label and monodromy triple in Tau
 Ceti's multiplication convention. -/
 structure SmallDegreeRecord where
+  /-- The LMFDB label of this Belyi-map record. -/
   label : String
+  /-- The degree of the corresponding Belyi map. -/
   degree : ℕ
+  /-- The record's monodromy triple in Tau Ceti's multiplication convention. -/
   triple : ConnectedTriple degree
   degree_le_four : degree ≤ 4
 
