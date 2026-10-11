@@ -164,6 +164,15 @@ noncomputable abbrev toPresheafedSpaceGlueData :
 
 local notation "𝖣'" => D.toPresheafedSpaceGlueData.toGlueData
 
+/-- The glue condition for the charts of the glued presheafed space, stated for the underlying
+morphisms of the gluing maps of pre-adic spaces. -/
+private theorem toHom_glue_condition (i j : D.J) :
+    (D.f i j).toHom ≫ 𝖣'.ι i = (D.t i j ≫ D.f j i).toHom ≫ 𝖣'.ι j := by
+  rw [comp_toHom]
+  -- the legs of `mapGlueData forgetToPresheafedSpace` are the underlying morphisms `toHom` of
+  -- the pre-adic gluing maps only definitionally, so the glue condition is applied by `exact`
+  exact (D.toPresheafedSpaceGlueData.glue_condition i j).symm.trans (Category.assoc _ _ _).symm
+
 /-- Points of charts with the same image in the glued presheafed space come from a point of an
 overlap, where the transition morphisms of pre-adic spaces are compatible with the stalk
 valuations. So the valuations they induce on the stalk of the glued presheafed space agree: the
@@ -181,8 +190,7 @@ private theorem comap_stalkMap_ι_eq (i j : D.J) (x : D.U i) (x' : D.U j)
       ∃ z : D.V (i, j), (D.f i j).base z = x ∧ (D.t i j ≫ D.f j i).base z = x' :=
     (D.toPresheafedSpaceGlueData.ι_eq_iff_rel i j x x').mp h
   exact comap_stalkMap_base_eq_of_comp_eq (X := D.U) (π := fun k ↦ 𝖣'.ι k) (D.f i j)
-    (D.t i j ≫ D.f j i)
-    ((D.toPresheafedSpaceGlueData.glue_condition i j).symm.trans (Category.assoc _ _ _).symm) z h
+    (D.t i j ≫ D.f j i) (D.toHom_glue_condition i j) z h
 
 /-- The glued presheafed space with the stalk valuations descended from the charts. -/
 private noncomputable def gluedPreAdicSpace : PreAdicSpace.{u} :=
@@ -208,7 +216,7 @@ private theorem f_comp_ιGlued (i j : D.J) :
     D.f i j ≫ D.ιGlued i = (D.t i j ≫ D.f j i) ≫ D.ιGlued j :=
   Hom.ext' (by
     rw [comp_toHom, comp_toHom, ιGlued_toHom, ιGlued_toHom]
-    exact (D.toPresheafedSpaceGlueData.glue_condition i j).symm.trans (Category.assoc _ _ _).symm)
+    exact D.toHom_glue_condition i j)
 
 /-- The glued pre-adic space as a multicofork of the gluing diagram. -/
 private noncomputable def gluedMulticofork : Multicofork 𝖣.diagram :=
@@ -267,14 +275,17 @@ private theorem isoPresheafedSpace_inv_base_ι (k : D.J) (z : D.U k) :
   ConcreteCategory.congr_hom (congrArg PresheafedSpace.Hom.base (D.ι_isoPresheafedSpace_inv k)) z
 
 /-- **The charts of a glued pre-adic space are jointly surjective.** -/
-theorem ι_jointly_surjective (x : 𝖣.glued) : ∃ (i : D.J) (y : D.U i), (𝖣.ι i).base y = x := by
-  obtain ⟨i, y, hy⟩ :=
-    D.toPresheafedSpaceGlueData.ι_jointly_surjective (D.isoPresheafedSpace.hom.base x)
-  refine ⟨i, y, (D.isoPresheafedSpace_inv_base_ι i y).symm.trans ?_⟩
-  -- composites and identities of presheafed spaces have composite and identity base maps
-  exact (congrArg D.isoPresheafedSpace.inv.base hy).trans
-    (ConcreteCategory.congr_hom (congrArg PresheafedSpace.Hom.base
-      D.isoPresheafedSpace.hom_inv_id) x)
+theorem ι_jointly_surjective (x : 𝖣.glued) : ∃ (i : D.J) (y : D.U i), (𝖣.ι i).base y = x :=
+  -- the image of the cospan of open immersions `f i j`, `f i k` is again such a cospan, whose
+  -- pullback is preserved by the forgetful functor to topological spaces
+  have (i j k : D.J) : PreservesLimit (cospan (D.f i j) (D.f i k) ⋙ forgetToPresheafedSpace)
+      (PresheafedSpace.forget _) :=
+    have : PreservesLimit (cospan (forgetToPresheafedSpace.map (D.f i j))
+        (forgetToPresheafedSpace.map (D.f i k))) (PresheafedSpace.forget _) :=
+      PresheafedSpace.IsOpenImmersion.forget_preservesLimitsOfLeft (hf := D.f_open i j) _ _
+    preservesLimit_of_iso_diagram _ (cospanCompIso _ _ _).symm
+  𝖣.ι_jointly_surjective
+    (forgetToPresheafedSpace ⋙ PresheafedSpace.forget _ ⋙ CategoryTheory.forget TopCat) x
 
 /-- **Points with the same image in a glued pre-adic space.** Points `x` of `U i` and `y` of
 `U j` have the same image in the glued space if and only if there is a point `z` of `V i j` with

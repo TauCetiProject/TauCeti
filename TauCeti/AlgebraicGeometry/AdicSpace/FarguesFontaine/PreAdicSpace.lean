@@ -504,8 +504,9 @@ private theorem heq_descendedValuation_frobenius (y : spaY p ϖ) :
     ((ValuationSpectrum.comap_eqToHom_eq_iff_heq _ h₀.symm _ _).mp
       (PreAdicSpace.comap_stalkMap_base_eq_of_comp_eq
         (π := fun _ : Unit ↦ quotientPresheafedHom P hI) (i := ()) (j := ()) (𝟙 _)
-        (spaYFrobenius P hI) ((Category.id_comp _).trans
-          (spaYFrobenius_toHom_comp_quotientPresheafedHom P hI).symm) y h₀))
+        (spaYFrobenius P hI) (by
+          rw [PreAdicSpace.id_toHom, Category.id_comp]
+          exact (spaYFrobenius_toHom_comp_quotientPresheafedHom P hI).symm) y h₀))
 
 /-- Integer powers of Frobenius do not change the descended valuation. -/
 private theorem heq_descendedValuation_zpow (n : ℤ) (y : spaY p ϖ) :
