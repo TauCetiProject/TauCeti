@@ -48,8 +48,7 @@ private theorem isZero_forwardInverseProduct_X (i : V) (n : ℤ)
   apply (IsZero.iff_id_eq_zero _).2
   apply HomologicalComplex.mapBifunctor.hom_ext
   intro p q hpq
-  -- Cochain totalization assigns the tensor pair the sum of its two indices.
-  change p + q = n at hpq
+  rw [ComplexShape.π_eq_add] at hpq
   exact (isZero_zigzagBraidInverseComplexTensor_pair k G i p q (by omega)).eq_of_src _ _
 
 private def forwardMinusPairIso (i : V) :
@@ -133,7 +132,7 @@ private theorem forward_d_third (i : V) :
   apply HomologicalComplex.mapBifunctor.hom_ext
   intro p q hpq
   -- Only the pair (-1,0) can contribute to total degree -1.
-  change p + q = -1 at hpq
+  rw [ComplexShape.π_eq_add] at hpq
   by_cases hp : p = -1
   · subst p
     obtain rfl : q = 0 := by omega
