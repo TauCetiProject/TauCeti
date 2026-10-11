@@ -5,15 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.CWComplex.Classical.Subcomplex
 public import TauCeti.Analysis.Convex.RadialPush
-public import TauCeti.Analysis.Normed.Module.Ball.Retraction
 public import TauCeti.Topology.CWComplex.Classical.CompactSupport
-public import TauCeti.Topology.CWComplex.Classical.OpenCells
-public import TauCeti.Topology.CWComplex.Classical.Quotient
-public import TauCeti.Topology.CWComplex.Classical.Skeleton.Basic
+public import TauCeti.Topology.CWComplex.Classical.Skeleton.CellDeformation
 public import TauCeti.Topology.Homotopy.AvoidPoint
-public import TauCeti.Topology.Homotopy.HomotopicRel
+public import TauCeti.Topology.Homotopy.Homotopic.Rel
 
 /-!
 # Compressing maps of low-dimensional compacta into skeleta
@@ -24,28 +20,30 @@ This file proves that maps `K → X` can be pushed off the cells of dimension gr
 `dim E`:
 
 * If `dim E < k` and `f : K → X` lands in `Xᵏ`, then for every `k`-cell `j`, `f` is homotopic,
-  relative to the points not sent into the open cell `j`, to a map sending those points into the
-  frontier of `j` (`TauCeti.exists_homotopicRel_cellFrontier`). This is Hatcher's Lemma 4.10.
+  relative to the points not sent into the open cell `j`, to a map sending the points that `f`
+  sends into the open cell `j` into its frontier (`TauCeti.exists_homotopicRel_cellFrontier`).
+  This is Hatcher's Lemma 4.10 together with the radial push from the proof of Theorem 4.8.
 * Doing this for the finitely many `k`-cells that the compact image of `f` meets compresses `f`
   into `Xᵏ⁻¹`, relative to the points already sent there
   (`TauCeti.exists_homotopicRel_skeletonLT`).
 * Since the image of `f` lies in some finite skeleton, every map `f : K → X` into the complex is
-  homotopic, relative to the points sent into `Xⁿ` with `n = dim E`, to a map into `Xⁿ`
+  homotopic, relative to the points sent into `Xⁿ` with `dim E ≤ n`, to a map into `Xⁿ`
   (`TauCeti.exists_homotopicRel_skeletonLT_finrank`). Applied to a closed `i`-ball with `i ≤ n`,
-  placed in an `n`-dimensional space, it homotopes every map of pairs `(Dⁱ, Sⁱ⁻¹) → (X, Xⁿ)`
-  relative to `Sⁱ⁻¹` into `Xⁿ`; this is the compression property behind Hatcher's
-  Corollary 4.12, that the pair `(X, Xⁿ)` is `n`-connected.
+  it homotopes every map of pairs `(Dⁱ, Sⁱ⁻¹) → (X, Xⁿ)` relative to `Sⁱ⁻¹` into `Xⁿ`; this is
+  the compression property behind Hatcher's Corollary 4.12, that the pair `(X, Xⁿ)` is
+  `n`-connected.
 
 These are the steps of the cellular approximation theorem that concern a single cell of the
 domain; the theorem itself follows from them by induction over the cells of the domain using the
 homotopy extension property.
 
 To push a map off a `k`-cell, read the open cell, which is open in `Xᵏ`, as a chart through the
-inverse of its characteristic map. `ContinuousMap.exists_homotopyRel_notMem_range` homotopes the
-map off one point `p` of the open cell, and, the image being compact, off a small ball around
-`p`. The radial deformation of the closed unit ball away from `p` onto the unit sphere
-(`Convex.exists_homotopyRel_frontier`), read through the characteristic map, is a homotopy of
-`Xᵏ` that is supported in the open cell and ends by pushing the rest of the cell onto its
+inverse of its characteristic map (`TauCeti.openCellChart`).
+`ContinuousMap.exists_homotopyRel_notMem_range` homotopes the map off one point `p` of the open
+cell, and, the image being compact, off a small ball around `p`. The radial deformation of the
+closed unit ball away from `p` onto the unit sphere (`Convex.exists_homotopyRel_frontier`), read
+through the characteristic map (`TauCeti.cellDeformation`), is a homotopy of `Xᵏ` that is
+supported in the open cell and ends by pushing the rest of the cell onto its
 frontier.
 
 ## References
@@ -66,112 +64,6 @@ namespace TauCeti
 
 variable {X : Type u} [TopologicalSpace X] [T2Space X] {C D : Set X} [RelCWComplex C D] {k : ℕ}
 
-/-- The inverse of the characteristic map of a `k`-cell, as a chart of the `k`-skeleton whose
-source is the open cell and whose target is the open unit ball. Outside the closed unit ball the
-inverse chart is extended by the radial retraction. -/
-private def openCellChart (j : cell C k) :
-    OpenPartialHomeomorph (skeletonLT C ((k + 1 : ℕ) : ℕ∞) : Set X) (Fin k → ℝ) where
-  toFun x := (map k j).symm x
-  invFun y := ⟨map k j (radialRetraction 1 y), map_mem_skeletonLT_succ j <| by
-    rw [norm_radialRetraction zero_le_one]
-    exact min_le_right _ _⟩
-  source := Subtype.val ⁻¹' openCell k j
-  target := ball 0 1
-  map_source' x hx := map_symm_mem_ball k hx
-  map_target' y hy := by
-    rw [mem_preimage, Subtype.coe_mk, radialRetraction_of_norm_le (mem_ball_zero_iff.1 hy).le]
-    exact ⟨y, hy, rfl⟩
-  left_inv' x hx := Subtype.ext <| by
-    rw [Subtype.coe_mk,
-      radialRetraction_of_norm_le (mem_ball_zero_iff.1 (map_symm_mem_ball k hx)).le]
-    exact map_map_symm k hx
-  right_inv' y hy := by
-    rw [Subtype.coe_mk, radialRetraction_of_norm_le (mem_ball_zero_iff.1 hy).le]
-    exact (map k j).left_inv (by rwa [source_eq])
-  open_source := isOpen_preimage_val_openCell k Subset.rfl j
-  open_target := isOpen_ball
-  continuousOn_toFun := (continuousOn_symm k j).comp continuous_subtype_val.continuousOn
-    fun x hx ↦ by rwa [target_map_eq_openCell]
-  continuousOn_invFun := Continuous.continuousOn <| Continuous.subtype_mk
-    ((continuousOn k j).comp_continuous (lipschitzWith_radialRetraction zero_le_one).continuous
-      fun y ↦ radialRetraction_mem_closedBall zero_le_one y) _
-
-private lemma openCellChart_apply (j : cell C k) (x : (skeletonLT C ((k + 1 : ℕ) : ℕ∞) : Set X)) :
-    openCellChart j x = (map k j).symm x :=
-  rfl
-
-/-- The image of the target of `openCellChart j` under its inverse is the open cell `j`. -/
-private lemma openCellChart_symm_image_target (j : cell C k) :
-    (openCellChart j).symm '' ball 0 1 = Subtype.val ⁻¹' openCell k j :=
-  (openCellChart j).symm_image_target_eq_source
-
-/-- The deformation of the `k`-skeleton obtained from a deformation `Ψ` of the closed unit ball
-by reading it through the characteristic map of the `k`-cell `j`, at time `t`: a point of the open
-cell `j` moves by `Ψ`, and every other point is fixed. -/
-private def cellPushVal (j : cell C k) (Ψ : C(I × (Fin k → ℝ), Fin k → ℝ)) (q : I × X) : X :=
-  open Classical in
-  if q.2 ∈ openCell k j then map k j (Ψ (q.1, (map k j).symm q.2)) else q.2
-
-omit [T2Space X] in
-private lemma cellPushVal_of_notMem {j : cell C k} {Ψ : C(I × (Fin k → ℝ), Fin k → ℝ)} {t : I}
-    {x : X} (hx : x ∉ openCell k j) : cellPushVal j Ψ (t, x) = x := by
-  simp [cellPushVal, hx]
-
-omit [T2Space X] in
-private lemma cellPushVal_of_mem {j : cell C k} {Ψ : C(I × (Fin k → ℝ), Fin k → ℝ)} {t : I}
-    {x : X} (hx : x ∈ openCell k j) :
-    cellPushVal j Ψ (t, x) = map k j (Ψ (t, (map k j).symm x)) := by
-  simp [cellPushVal, hx]
-
-/-- Through the characteristic map of `j`, the deformation of the skeleton is `Ψ`, provided `Ψ`
-fixes the unit sphere. -/
-private lemma cellPushVal_map {j : cell C k} {Ψ : C(I × (Fin k → ℝ), Fin k → ℝ)}
-    (hΨ : ∀ t y, ‖y‖ = 1 → Ψ (t, y) = y) (t : I) {y : Fin k → ℝ} (hy : ‖y‖ ≤ 1) :
-    cellPushVal j Ψ (t, map k j y) = map k j (Ψ (t, y)) := by
-  rcases hy.lt_or_eq with hy | hy
-  · have hmem : y ∈ (map k j).source := by rwa [source_eq, mem_ball_zero_iff]
-    rw [cellPushVal_of_mem ⟨y, mem_ball_zero_iff.2 hy, rfl⟩, (map k j).left_inv hmem]
-  · -- A point of the boundary sphere lands in the frontier of the cell, outside the open cell.
-    rw [hΨ t y hy, cellPushVal_of_notMem fun h ↦
-      (disjoint_skeletonLT_openCell le_rfl).notMem_of_mem_right h
-        (cellFrontier_subset_skeletonLT k j ⟨y, mem_sphere_zero_iff_norm.2 hy, rfl⟩)]
-
-private lemma continuous_cellPushVal (j : cell C k) {Ψ : C(I × (Fin k → ℝ), Fin k → ℝ)}
-    (hΨ : ∀ t y, ‖y‖ = 1 → Ψ (t, y) = y) (hΨb : ∀ t y, ‖y‖ ≤ 1 → ‖Ψ (t, y)‖ ≤ 1) :
-    Continuous fun q : I × (skeletonLT C ((k + 1 : ℕ) : ℕ∞) : Set X) ↦
-      cellPushVal j Ψ (q.1, q.2) := by
-  rw [continuous_prod_complex_iff]
-  refine ⟨fun m ⟨i, hi⟩ ↦ ?_, ?_⟩
-  · have hm : m ≤ k := Nat.lt_succ_iff.1 (by
-      simpa only [RelCWComplex.skeletonLT_I, mem_ofPred_eq, Nat.cast_lt] using hi)
-    by_cases hij : (⟨m, i⟩ : Σ n, cell C n) = ⟨k, j⟩
-    · -- On the cell `j` the deformation is `Ψ`, read through the characteristic map.
-      obtain ⟨rfl, hij⟩ := Sigma.mk.inj_iff.1 hij
-      obtain rfl := eq_of_heq hij
-      refine ((continuousOn m i).comp_continuous (Ψ.continuous.comp
-        (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd)))
-        fun q ↦ mem_closedBall_zero_iff.2 (hΨb _ _ (mem_closedBall_zero_iff.1 q.2.2))).congr
-        fun q ↦ ?_
-      exact (cellPushVal_map hΨ q.1 (mem_closedBall_zero_iff.1 q.2.2)).symm
-    · -- Every other cell of the skeleton misses the open cell `j`, and is fixed.
-      refine ((continuousOn m i).comp_continuous (continuous_subtype_val.comp continuous_snd)
-        fun q ↦ q.2.2).congr fun q ↦ (cellPushVal_of_notMem ?_).symm
-      exact (disjoint_closedCell_openCell_of_ne k hm hij).notMem_of_mem_left ⟨q.2, q.2.2, rfl⟩
-  · -- The base lies in the `(k-1)`-skeleton, which misses the open cell `j`.
-    refine (continuous_subtype_val.comp continuous_snd).congr fun q ↦
-      (cellPushVal_of_notMem ?_).symm
-    exact (disjoint_skeletonLT_openCell le_rfl).notMem_of_mem_left
-      ((skeletonLT C k).base_subset q.2.2)
-
-private lemma cellPushVal_mem {j : cell C k} {Ψ : C(I × (Fin k → ℝ), Fin k → ℝ)}
-    (hΨb : ∀ t y, ‖y‖ ≤ 1 → ‖Ψ (t, y)‖ ≤ 1) (t : I) {x : X}
-    (hx : x ∈ (skeletonLT C ((k + 1 : ℕ) : ℕ∞) : Set X)) :
-    cellPushVal j Ψ (t, x) ∈ (skeletonLT C ((k + 1 : ℕ) : ℕ∞) : Set X) := by
-  by_cases hxj : x ∈ openCell k j
-  · rw [cellPushVal_of_mem hxj]
-    exact map_mem_skeletonLT_succ j (hΨb _ _ (mem_ball_zero_iff.1 (map_symm_mem_ball k hxj)).le)
-  · rwa [cellPushVal_of_notMem hxj]
-
 /-- **A deformation of the closed unit ball fixing the unit sphere, read through the
 characteristic map of a `k`-cell `j`, deforms maps into the `k`-skeleton relative to the points
 not sent into the open cell `j`.** A point `z` sent into the open cell, at `map k j y`, ends at
@@ -186,49 +78,58 @@ private lemma exists_homotopicRel_openCell (j : cell C k) {g : C(Fin k → ℝ, 
       ∀ z, (f z : X) ∉ openCell k j → f' z = f z := by
   have hΨ (t : I) (y : Fin k → ℝ) (hy : ‖y‖ = 1) : Ψ (t, y) = y :=
     Ψ.eq_fst t (frontier_closedBall (0 : Fin k → ℝ) one_ne_zero ▸ mem_sphere_zero_iff_norm.2 hy)
+  have hfix {t : I} {x : X} (hx : x ∉ openCell k j) :
+      cellDeformation {j} Ψ.toContinuousMap (t, x) = x :=
+    cellDeformation_of_notMem fun i hi ↦ by rwa [mem_singleton_iff.1 hi]
   let Q : C(I × Z, (skeletonLT C ((k + 1 : ℕ) : ℕ∞) : Set X)) :=
-    ⟨fun q ↦ ⟨cellPushVal j Ψ.toContinuousMap (q.1, f q.2), cellPushVal_mem hΨb q.1 (f q.2).2⟩,
-      ((continuous_cellPushVal j hΨ hΨb).comp
+    ⟨fun q ↦ ⟨cellDeformation {j} Ψ.toContinuousMap (q.1, f q.2),
+        cellDeformation_mem hΨb q.1 (f q.2).2⟩,
+      ((continuous_cellDeformation {j} hΨ hΨb).comp
         (continuous_fst.prodMk (f.continuous.comp continuous_snd))).subtype_mk _⟩
-  have hQ (q : I × Z) : (Q q : X) = cellPushVal j Ψ.toContinuousMap (q.1, f q.2) := rfl
+  have hQ (q : I × Z) : (Q q : X) = cellDeformation {j} Ψ.toContinuousMap (q.1, f q.2) := rfl
   have h0 (z : Z) : Q (0, z) = f z := by
     refine Subtype.ext ?_
     by_cases hz : (f z : X) ∈ openCell k j
     · -- At time `0` the deformation `Ψ` is the identity.
-      rw [hQ, cellPushVal_of_mem hz, ContinuousMap.HomotopyWith.coe_toContinuousMap,
-        Ψ.apply_zero, ContinuousMap.id_apply, map_map_symm k hz]
-    · exact cellPushVal_of_notMem hz
+      rw [hQ, cellDeformation_of_mem (mem_singleton j) hz,
+        ContinuousMap.HomotopyWith.coe_toContinuousMap, Ψ.apply_zero, ContinuousMap.id_apply,
+        map_map_symm k hz]
+    · exact hfix hz
   refine ⟨Q.curry 1, ⟨⟨⟨Q, h0, fun _ ↦ rfl⟩, fun t z hz ↦ Subtype.ext ?_⟩⟩, fun z hz ↦ ?_,
     fun z hz ↦ Subtype.ext ?_⟩
-  · exact cellPushVal_of_notMem (hS z hz)
-  · rw [ContinuousMap.curry_apply, hQ, cellPushVal_of_mem hz,
+  · exact hfix (hS z hz)
+  · rw [ContinuousMap.curry_apply, hQ, cellDeformation_of_mem (mem_singleton j) hz,
       ContinuousMap.HomotopyWith.coe_toContinuousMap, Ψ.apply_one]
-  · exact cellPushVal_of_notMem hz
+  · exact hfix hz
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
 
-/-- **Pushing a map off a cell of higher dimension** (Hatcher, Lemma 4.10). Let `K` be a compact
-subset of a real normed space of dimension less than `k`, and let `f : K → X` land in the
-`k`-skeleton `skeletonLT C (k + 1)`. For every `k`-cell `j`, `f` is homotopic, relative to the
-points that `f` does not send into the open cell `j`, to a map sending the points that `f` sends
-into the open cell `j` into its frontier. -/
+/-- **Pushing a map off a cell of higher dimension** (Hatcher, Lemma 4.10 together with the
+radial push from the proof of Theorem 4.8). Let `K` be a compact subset of a real normed space
+of dimension less than `k`, and let `f : K → X` land in the `k`-skeleton `skeletonLT C (k + 1)`.
+For every `k`-cell `j`, `f` is homotopic, relative to the points that `f` does not send into the
+open cell `j`, to a map sending the points that `f` sends into the open cell `j` into its
+frontier. -/
 theorem exists_homotopicRel_cellFrontier {K : Set E} (hK : IsCompact K) (hk : finrank ℝ E < k)
     (j : cell C k) (f : C(K, X)) (hf : ∀ x, f x ∈ (skeletonLT C ((k + 1 : ℕ) : ℕ∞) : Set X)) :
     ∃ g : C(K, X), f.HomotopicRel g (f ⁻¹' openCell k j)ᶜ ∧
       ∀ x, f x ∈ openCell k j → g x ∈ cellFrontier k j := by
   let f' : C(K, (skeletonLT C ((k + 1 : ℕ) : ℕ∞) : Set X)) :=
     ⟨fun x ↦ ⟨f x, hf x⟩, f.continuous.subtype_mk hf⟩
-  let φ := openCellChart (C := C) j
+  let φ := openCellChart k j
+  have hφs : φ.source = Subtype.val ⁻¹' openCell k j := openCellChart_source k j
+  have hφt : φ.target = ball 0 1 := openCellChart_target k j
   -- First homotope `f` off a point `φ.symm p` of the open cell, keeping the open cell in itself.
   obtain ⟨g₁, ⟨H₁⟩, hg₁, p, hp, hpg₁⟩ := f'.exists_homotopyRel_notMem_range hK.isClosed
-    (by rwa [Module.finrank_fin_fun]) φ one_pos Subset.rfl
-  rw [openCellChart_symm_image_target] at H₁
+    (by rwa [Module.finrank_fin_fun]) φ one_pos hφt.ge
+  rw [openCellChart_symm_image_ball] at H₁
+  rw [hφs] at hg₁
   -- The image of `g₁` is compact, so `g₁` misses `φ.symm (ball p ε)` for some `ε > 0`.
   have : CompactSpace K := isCompact_iff_compactSpace.1 hK
   have hU : IsOpen (φ.target ∩ φ.symm ⁻¹' (range g₁)ᶜ) :=
     φ.continuousOn_symm.isOpen_inter_preimage φ.open_target
       (isCompact_range g₁.continuous).isClosed.isOpen_compl
-  obtain ⟨ε, hε, hεU⟩ := Metric.isOpen_iff.1 hU p ⟨hp, hpg₁⟩
+  obtain ⟨ε, hε, hεU⟩ := Metric.isOpen_iff.1 hU p ⟨hφt ▸ hp, hpg₁⟩
   -- Then push the closed unit ball radially away from `p` onto the sphere.
   obtain ⟨ψ, Ψ, hΨs, hΨε⟩ := (convex_closedBall (0 : Fin k → ℝ) 1).exists_homotopyRel_frontier
     isClosed_closedBall isBounded_closedBall (by rwa [interior_closedBall _ one_ne_zero]) hε
@@ -249,7 +150,7 @@ theorem exists_homotopicRel_cellFrontier {K : Set E} (hK : IsCompact K) (hk : fi
     by_contra! h
     refine (hεU (mem_ball.2 h)).2 ⟨x, ?_⟩
     rw [← openCellChart_apply]
-    exact (φ.left_inv hx₁).symm
+    exact (φ.left_inv (hφs ▸ hx₁)).symm
   rw [ContinuousMap.comp_apply, ContinuousMap.coe_mk, hg₂j x hx₁]
   exact ⟨_, hΨε _ (ball_subset_closedBall hy) hyε, rfl⟩
 
@@ -305,16 +206,16 @@ theorem exists_homotopicRel_skeletonLT {K : Set E} (hK : IsCompact K) (hk : finr
   refine ⟨g, hfg, fun x ↦ mem_skeletonLT_of_forall_notMem_openCell k (hg x) fun j hj ↦ ?_⟩
   exact hgA x j (hA.mem_toFinset.2 ⟨f x, ⟨x, rfl⟩, hgf x j hj⟩) hj
 
-/-- **Compressing a map of a compactum into the skeleton of its dimension**, the compression
-step of Hatcher's Corollary 4.12. Let `K` be a compact subset of a real normed space of
-dimension `n`. Every map `f : K → X` into the complex is homotopic, relative to the points that
-`f` sends into the `n`-skeleton `skeletonLT C (n + 1)`, to a map into `skeletonLT C (n + 1)`. -/
-theorem exists_homotopicRel_skeletonLT_finrank {K : Set E} (hK : IsCompact K) (f : C(K, X))
-    (hf : ∀ x, f x ∈ C) :
-    ∃ g : C(K, X), f.HomotopicRel g (f ⁻¹' (skeletonLT C ((finrank ℝ E + 1 : ℕ) : ℕ∞) : Set X)) ∧
-      ∀ x, g x ∈ (skeletonLT C ((finrank ℝ E + 1 : ℕ) : ℕ∞) : Set X) := by
+/-- **Compressing a map of a compactum into a skeleton of at least its dimension**, the
+compression step of Hatcher's Corollary 4.12. Let `K` be a compact subset of a real normed space
+of dimension at most `n`. Every map `f : K → X` into the complex is homotopic, relative to the
+points that `f` sends into the `n`-skeleton `skeletonLT C (n + 1)`, to a map into
+`skeletonLT C (n + 1)`. -/
+theorem exists_homotopicRel_skeletonLT_finrank {K : Set E} (hK : IsCompact K) {n : ℕ}
+    (hn : finrank ℝ E ≤ n) (f : C(K, X)) (hf : ∀ x, f x ∈ C) :
+    ∃ g : C(K, X), f.HomotopicRel g (f ⁻¹' (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X)) ∧
+      ∀ x, g x ∈ (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X) := by
   have : CompactSpace K := isCompact_iff_compactSpace.1 hK
-  set n := finrank ℝ E
   -- The compact image of `f` lies in a finite skeleton; compress it one dimension at a time.
   obtain ⟨m, hm⟩ := exists_subset_skeletonLT_of_isCompact (C := C) (isCompact_range f.continuous)
     (range_subset_iff.2 hf)

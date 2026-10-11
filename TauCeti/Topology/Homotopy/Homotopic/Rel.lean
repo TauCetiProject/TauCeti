@@ -28,9 +28,12 @@ namespace ContinuousMap
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {f₀ f₁ : C(X, Y)} {S T : Set X}
 
 /-- A homotopy relative to `S` is a homotopy relative to every subset of `S`. -/
-@[expose, simps toHomotopy]
+@[expose, simps]
 def HomotopyRel.mono (F : HomotopyRel f₀ f₁ S) (hTS : T ⊆ S) : HomotopyRel f₀ f₁ T where
-  toHomotopy := F.toHomotopy
+  toFun := F
+  continuous_toFun := F.continuous
+  map_zero_left := F.apply_zero
+  map_one_left := F.apply_one
   prop' t _ hx := F.prop t _ (hTS hx)
 
 /-- Maps homotopic relative to `S` are homotopic relative to every subset of `S`. -/

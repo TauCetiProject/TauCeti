@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.CWComplex.Classical.Basic
+public import Mathlib.Topology.OpenPartialHomeomorph.Basic
 public import Mathlib.Topology.PartialHomeomorph.Basic
+public import TauCeti.Analysis.Normed.Module.Ball.Retraction
+public import TauCeti.Topology.CWComplex.Classical.Skeleton.Basic
 
 /-!
 # The open cells lying between two consecutive skeleta
@@ -37,6 +40,8 @@ difference of the two skeleta.
   a given `n`-cell misses its open cell.
 * `TauCeti.isOpen_preimage_val_openCell`: each open `n`-cell is open in that union, and more
   generally in every subset of the `n`-skeleton.
+* `TauCeti.openCellChart`: the inverse of the characteristic map of an `n`-cell, as a chart of the
+  `n`-skeleton with source the open cell and target the open unit ball.
 * `TauCeti.iUnionOpenCellHomeomorph`: that union is homeomorphic to the disjoint union of one
   open unit ball for each cell of the top dimension.
 
@@ -203,6 +208,61 @@ lemma isOpen_preimage_val_openCell {S : Set X}
   rw [hcompl]
   exact ((isClosed_skeletonLT_union_iUnion_closedCell n _).preimage
     continuous_subtype_val).isOpen_compl
+
+/-- The inverse of the characteristic map of an `n`-cell `i`, as a chart of the `n`-skeleton
+`skeletonLT C (n + 1)` whose source is the open cell and whose target is the open unit ball.
+Outside the closed unit ball the inverse chart is extended by the radial retraction. -/
+noncomputable def openCellChart (i : cell C n) :
+    OpenPartialHomeomorph (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X) (Fin n → ℝ) where
+  toFun x := (map n i).symm x
+  invFun y := ⟨map n i (radialRetraction 1 y), map_mem_skeletonLT_succ i <| by
+    rw [norm_radialRetraction zero_le_one]
+    exact min_le_right _ _⟩
+  source := Subtype.val ⁻¹' openCell n i
+  target := ball 0 1
+  map_source' x hx := map_symm_mem_ball n hx
+  map_target' y hy := by
+    rw [mem_preimage, Subtype.coe_mk, radialRetraction_of_norm_le (mem_ball_zero_iff.1 hy).le]
+    exact ⟨y, hy, rfl⟩
+  left_inv' x hx := Subtype.ext <| by
+    rw [Subtype.coe_mk,
+      radialRetraction_of_norm_le (mem_ball_zero_iff.1 (map_symm_mem_ball n hx)).le]
+    exact map_map_symm n hx
+  right_inv' y hy := by
+    rw [Subtype.coe_mk, radialRetraction_of_norm_le (mem_ball_zero_iff.1 hy).le]
+    exact (map n i).left_inv (by rwa [source_eq])
+  open_source := isOpen_preimage_val_openCell n Subset.rfl i
+  open_target := isOpen_ball
+  continuousOn_toFun := (continuousOn_symm n i).comp continuous_subtype_val.continuousOn
+    fun x hx ↦ by rwa [target_map_eq_openCell]
+  continuousOn_invFun := Continuous.continuousOn <| Continuous.subtype_mk
+    ((continuousOn n i).comp_continuous (lipschitzWith_radialRetraction zero_le_one).continuous
+      fun y ↦ radialRetraction_mem_closedBall zero_le_one y) _
+
+/-- The chart of an open cell is the inverse of its characteristic map. -/
+@[simp]
+lemma openCellChart_apply (i : cell C n) (x : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X)) :
+    openCellChart n i x = (map n i).symm x :=
+  (rfl)
+
+/-- The source of the chart of an open cell is the open cell. -/
+@[simp]
+lemma openCellChart_source (i : cell C n) :
+    (openCellChart n i).source =
+      (Subtype.val ⁻¹' openCell n i : Set (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X)) :=
+  (rfl)
+
+/-- The target of the chart of an open cell is the open unit ball. -/
+@[simp]
+lemma openCellChart_target (i : cell C n) : (openCellChart n i).target = ball 0 1 :=
+  (rfl)
+
+/-- The image of the open unit ball under the inverse of the chart of an open cell is the open
+cell. -/
+lemma openCellChart_symm_image_ball (i : cell C n) :
+    (openCellChart n i).symm '' ball 0 1 =
+      (Subtype.val ⁻¹' openCell n i : Set (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X)) :=
+  (openCellChart n i).symm_image_target_eq_source
 
 /-- **The open `n`-cells form a topological disjoint union of open balls.**  This is a
 homeomorphism from the disjoint union of one open unit ball for each `n`-cell onto the union of

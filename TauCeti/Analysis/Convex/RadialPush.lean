@@ -26,7 +26,7 @@ pushes a map missing a neighbourhood of a point of an open cell off the whole ce
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
-  Section 4.1, proof of Lemma 4.10, the deformation retraction of `Dᵏ ∖ {p}` onto `∂Dᵏ`.
+  Section 4.1, proof of Theorem 4.8, the deformation retraction of `Dᵏ ∖ {p}` onto `∂Dᵏ`.
 -/
 
 public section
@@ -91,6 +91,7 @@ theorem exists_homotopyRel_frontier (hs : Convex ℝ s) (hsc : IsClosed s)
     simp [a, h1, hc1]
   let g : C(E, E) :=
     ⟨fun y ↦ p + a 1 y • (y - p), hcont.comp (continuous_const.prodMk continuous_id)⟩
+  have hg (y : E) : g y = p + a 1 y • (y - p) := rfl
   refine ⟨g,
     { toFun := fun q ↦ p + a q.1 q.2 • (q.2 - p)
       continuous_toFun := hcont
@@ -110,8 +111,7 @@ theorem exists_homotopyRel_frontier (hs : Convex ℝ s) (hsc : IsClosed s)
   · -- Far from `p`, the cut-off `c` is inactive, so the endpoint has gauge one.
     have hγc := hfar y hyp
     rw [hfr]
-    change gauge K (p + a 1 y • (y - p) - p) = 1
-    rw [add_sub_cancel_left, hgauge, max_eq_left hγc]
+    rw [hg, add_sub_cancel_left, hgauge, max_eq_left hγc]
     simp [div_self (hc.trans_le hγc).ne']
 
 end Convex
