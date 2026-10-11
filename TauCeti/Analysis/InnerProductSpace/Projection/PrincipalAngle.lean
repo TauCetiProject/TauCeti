@@ -48,8 +48,6 @@ this file. Without the dimension hypothesis the statement fails: for a line `U` 
   angles of `U` and `V` vanish exactly when `U ≤ V`; in particular the principal angles of a
   subspace with itself vanish (`Submodule.principalAngles_self`).
 * `Submodule.principalCosines_eq_zero_iff`: all principal cosines vanish exactly when `U ⟂ V`.
-* `Submodule.finrank_inf_orthogonal_comm`: for subspaces of the same dimension, `U ⊓ Vᗮ` and
-  `V ⊓ Uᗮ` have the same dimension.
 * `Submodule.sin_principalAngles`: the sine of the `i`-th principal angle is the `i`-th principal
   sine.
 
@@ -320,16 +318,6 @@ private theorem eigenspace_sinThetaMap_one :
     _ = ⟪U.starProjection (V.starProjection x), x⟫_𝕜 :=
         (inner_starProjection_left_eq_right U _ _).symm
     _ = 0 := by rw [h, inner_zero_left]
-
-omit [U.HasOrthogonalProjection] in
-/-- For subspaces of the same dimension, `U ⊓ Vᗮ` and `V ⊓ Uᗮ` have the same dimension. -/
-theorem finrank_inf_orthogonal_comm (h : finrank 𝕜 U = finrank 𝕜 V) :
-    finrank 𝕜 ↥(U ⊓ Vᗮ) = finrank 𝕜 ↥(V ⊓ Uᗮ) := by
-  have h₁ := Submodule.finrank_sup_add_finrank_inf_eq U Vᗮ
-  have h₂ := Submodule.finrank_add_finrank_orthogonal (U ⊔ Vᗮ)
-  rw [← inf_orthogonal, orthogonal_orthogonal, inf_comm] at h₂
-  have h₃ := Submodule.finrank_add_finrank_orthogonal V
-  omega
 
 /-- **Equal-rank symmetry of the principal sines.** For subspaces of the same dimension, the
 principal sines of `U` and `V` are those of `V` and `U`. -/

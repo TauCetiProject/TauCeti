@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
+public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 
 /-!
 # Products of orthogonal projections
@@ -16,12 +17,14 @@ For submodules `U` and `V` of an inner product space admitting orthogonal projec
 hypothesis on the ambient space, where the adjoint of a bounded operator need not exist.
 
 A map `T P_U` that factors through the projection onto a finite-dimensional `U` has rank at most
-`dim U`.
+`dim U`. For subspaces `U` and `V` of the same finite dimension, `U ⊓ Vᗮ` and `V ⊓ Uᗮ` have the
+same dimension.
 
 ## Main results
 
 * `Submodule.norm_starProjection_comp_starProjection_comm`: `‖P_U P_V‖ = ‖P_V P_U‖`.
 * `Submodule.finrank_range_comp_starProjection_le`: `rank (T P_U) ≤ dim U`.
+* `Submodule.finrank_inf_orthogonal_comm`: `dim (U ⊓ Vᗮ) = dim (V ⊓ Uᗮ)` when `dim U = dim V`.
 -/
 
 public section
@@ -78,5 +81,16 @@ theorem finrank_range_comp_starProjection_le {F : Type*} [NormedAddCommGroup F]
   have hU : LinearMap.range (U.starProjection : E →ₗ[𝕜] E) = U := range_starProjection U
   rw [ContinuousLinearMap.toLinearMap_comp, LinearMap.range_comp, hU]
   exact finrank_map_le _ _
+
+omit [U.HasOrthogonalProjection] [V.HasOrthogonalProjection] in
+/-- For subspaces of the same dimension, `U ⊓ Vᗮ` and `V ⊓ Uᗮ` have the same dimension. -/
+theorem finrank_inf_orthogonal_comm [FiniteDimensional 𝕜 E]
+    (h : Module.finrank 𝕜 U = Module.finrank 𝕜 V) :
+    Module.finrank 𝕜 ↥(U ⊓ Vᗮ) = Module.finrank 𝕜 ↥(V ⊓ Uᗮ) := by
+  have h₁ := finrank_sup_add_finrank_inf_eq U Vᗮ
+  have h₂ := finrank_add_finrank_orthogonal (U ⊔ Vᗮ)
+  rw [← inf_orthogonal, orthogonal_orthogonal, inf_comm] at h₂
+  have h₃ := finrank_add_finrank_orthogonal V
+  omega
 
 end Submodule
