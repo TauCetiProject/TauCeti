@@ -77,29 +77,6 @@ private theorem inf_eq_bot_of_le_affineRayCone_of_le_negativeRayCone
     σ ⊓ τ ≤ affineRayCone ⊓ negativeRayCone := inf_le_inf hσ hτ
     _ = ⊥ := affineRayCone_inf_negativeRayCone
 
-private theorem face_hull_singleton_eq_bot_or_eq (v : Fin 1 → ℝ)
-    {σ : PointedCone ℝ (Fin 1 → ℝ)}
-    (hσ : σ.IsFaceOf (PointedCone.hull ℝ {v})) :
-    σ = ⊥ ∨ σ = PointedCone.hull ℝ {v} := by
-  by_cases hv : v ∈ σ
-  · right
-    apply le_antisymm hσ.le
-    intro x hx
-    obtain ⟨r, hr, rfl⟩ := PointedCone.mem_hull_singleton.mp hx
-    exact σ.smul_mem hr hv
-  · left
-    apply le_antisymm _ bot_le
-    intro x hx
-    obtain ⟨r, hr, hrx⟩ := PointedCone.mem_hull_singleton.mp (hσ.le hx)
-    by_cases hr0 : r = 0
-    · rw [hr0, zero_smul] at hrx
-      exact hrx.symm ▸ Submodule.zero_mem _
-    · have hrpos : 0 < r := lt_of_le_of_ne hr (Ne.symm hr0)
-      have hv' : v ∈ σ := hσ.mem_of_smul_add_mem
-        (PointedCone.subset_hull (Set.mem_singleton v)) (Submodule.zero_mem _) hrpos
-        (by simpa only [add_zero, hrx] using hx)
-      exact (hv hv').elim
-
 /-- The complete fan with the positive and negative standard rays. A cone belongs to this fan
 exactly when it is a face of one of the two rays. -/
 def projectiveLineFan : Fan ((Int.castAddHom ℝ).compLeft (Fin 1)) where
@@ -149,15 +126,15 @@ def projectiveLineFan : Fan ((Int.castAddHom ℝ).compLeft (Fin 1)) where
 theorem mem_projectiveLineFan_cones (σ : PointedCone ℝ (Fin 1 → ℝ)) :
     σ ∈ projectiveLineFan.cones ↔
       σ = ⊥ ∨ σ = affineRayCone ∨ σ = negativeRayCone := by
-  change (σ.IsFaceOf affineRayCone ∨ σ.IsFaceOf negativeRayCone) ↔ _
+  simp only [projectiveLineFan, Set.mem_ofPred_eq]
   constructor
   · rintro (h | h)
     · rw [affineRayCone_def] at h
-      rcases face_hull_singleton_eq_bot_or_eq 1 h with h | h
+      rcases h.eq_bot_or_eq_of_hull_singleton 1 with h | h
       · exact Or.inl h
       · exact Or.inr (Or.inl (h.trans affineRayCone_def.symm))
     · rw [negativeRayCone_def] at h
-      rcases face_hull_singleton_eq_bot_or_eq (-(1 : Fin 1 → ℝ)) h with h | h
+      rcases h.eq_bot_or_eq_of_hull_singleton (-(1 : Fin 1 → ℝ)) with h | h
       · exact Or.inl h
       · exact Or.inr (Or.inr (h.trans negativeRayCone_def.symm))
   · rintro (h | h | h)
