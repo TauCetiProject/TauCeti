@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.PullbackFree
-public import TauCeti.AlgebraicGeometry.VectorBundle.ExteriorPower
+public import TauCeti.AlgebraicGeometry.VectorBundle.ExteriorPower.Basic
 
 /-!
 # Pullback of exterior powers of free sheaves
