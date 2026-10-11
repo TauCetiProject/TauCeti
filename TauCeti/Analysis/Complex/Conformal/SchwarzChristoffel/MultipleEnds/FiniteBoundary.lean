@@ -12,10 +12,10 @@ import TauCeti.Algebra.BigOperators.Finset.Fiber
 # Finite boundary values of a Schwarz--Christoffel map with several ends
 
 A logarithmic prevertex is a boundary parameter whose image in the Riemann sphere is infinity.
-The finite spherical boundary values are precisely the ordinary values at integrable real
-parameters, together with the value at parameter infinity when the total exponent is less than
-`-1`. This description makes the exceptional set in the multiple-end covering theorem explicit
-in the complex plane.
+When every finite prevertex exponent sum is at least `-1`, the finite spherical boundary values
+are precisely the ordinary values at integrable real parameters, together with the value at
+parameter infinity when the total exponent is less than `-1`. This description makes the
+exceptional set in the multiple-end covering theorem explicit in the complex plane.
 
 ## References
 
@@ -139,9 +139,7 @@ theorem frontier_image_schwarzChristoffelPrimitive_eq_finiteBoundary_diff_image
         (schwarzChristoffelPrimitive a e z₀ '' upperHalfPlaneSet) := by
   rw [(isOpen_image_schwarzChristoffelPrimitive a e z₀
     isOpen_upperHalfPlaneSet subset_rfl).frontier_eq,
-    closure_image_schwarzChristoffelPrimitive_eq_union_finiteBoundary a e z₀ hfinite]
-  ext w
-  simp only [mem_sdiff, mem_union]
-  tauto
+    closure_image_schwarzChristoffelPrimitive_eq_union_finiteBoundary a e z₀ hfinite,
+    union_sdiff_left]
 
 end TauCeti
