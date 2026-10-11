@@ -20,9 +20,10 @@ The construction uses Mathlib's `Algebra.TensorProduct.commRight`,
 
 With `B` acting on the left factor instead, `TensorProduct.cancelBaseChangeLeft` is the
 `R`-linear identification `(B ⊗[R] P) ⊗[B] N ≃ P ⊗[R] N` for an `R`-module `P`. Under it,
-extending a `B`-linear map along `B → B ⊗[R] P` becomes tensoring the underlying `R`-linear map
-with `P` (`TensorProduct.cancelBaseChangeLeft_lTensor`), so the two are injective together
-(`LinearMap.injective_lTensor_iff_injective_lTensor_restrictScalars`). For a field `P = κ(p)`,
+tensoring a `B`-linear map over `B` with the `B`-module `B ⊗[R] P` becomes tensoring the
+underlying `R`-linear map with `P` (`TensorProduct.cancelBaseChangeLeft_lTensor`), so the two are
+injective together (`LinearMap.injective_lTensor_iff_injective_lTensor_restrictScalars`). When
+`P` is an `R`-algebra, the first is extension of scalars along `B → B ⊗[R] P`; for `P = κ(p)`,
 this compares base change to the fibre ring `B ⊗[R] κ(p)` with base change to `κ(p)`.
 -/
 
@@ -77,9 +78,9 @@ namespace TensorProduct
 variable (R B P : Type*) [CommSemiring R] [CommSemiring B] [Algebra R B]
   [AddCommMonoid P] [Module R P]
 
-/-- Cancelling `B` on the left identifies extension of a `B`-module `N` along `B → B ⊗[R] P`
-with the tensor product over `R` of `P` and the underlying `R`-module of `N`. The map sends
-`(b ⊗ p) ⊗ n` to `p ⊗ (b • n)`. -/
+/-- Cancelling `B` on the left identifies the tensor product over `B` of the `B`-module
+`B ⊗[R] P` with a `B`-module `N` with the tensor product over `R` of `P` and the underlying
+`R`-module of `N`. The map sends `(b ⊗ p) ⊗ n` to `p ⊗ (b • n)`. -/
 def cancelBaseChangeLeft (N : Type*) [AddCommMonoid N] [Module R N] [Module B N]
     [IsScalarTower R B N] : (B ⊗[R] P) ⊗[B] N ≃ₗ[R] P ⊗[R] N :=
   (TensorProduct.comm B (B ⊗[R] P) N).restrictScalars R ≪≫ₗ
@@ -95,7 +96,7 @@ theorem cancelBaseChangeLeft_tmul (b : B) (p : P) (n : N) :
     cancelBaseChangeLeft R B P N ((b ⊗ₜ[R] p) ⊗ₜ[B] n) = p ⊗ₜ[R] (b • n) := by
   simp [cancelBaseChangeLeft]
 
-/-- The inverse left cancellation inserts the unit of `B` in the scalar-extended algebra. -/
+/-- The inverse left cancellation inserts the unit of `B` in the left factor of `B ⊗[R] P`. -/
 @[simp]
 theorem cancelBaseChangeLeft_symm_tmul (p : P) (n : N) :
     (cancelBaseChangeLeft R B P N).symm (p ⊗ₜ[R] n) = (1 ⊗ₜ[R] p) ⊗ₜ[B] n := by
@@ -103,7 +104,7 @@ theorem cancelBaseChangeLeft_symm_tmul (p : P) (n : N) :
 
 variable {R B P}
 
-/-- Through `cancelBaseChangeLeft`, extending a `B`-linear map `f` along `B → B ⊗[R] P` is
+/-- Through `cancelBaseChangeLeft`, tensoring a `B`-linear map `f` over `B` with `B ⊗[R] P` is
 tensoring the underlying `R`-linear map of `f` with `P`. -/
 theorem cancelBaseChangeLeft_lTensor (f : N →ₗ[B] N') (z : (B ⊗[R] P) ⊗[B] N) :
     cancelBaseChangeLeft R B P N' (f.lTensor (B ⊗[R] P) z) =
@@ -125,7 +126,7 @@ variable {R B : Type*} [CommSemiring R] [CommSemiring B] [Algebra R B] (P : Type
   [AddCommMonoid P] [Module R P] {N N' : Type*} [AddCommMonoid N] [Module R N] [Module B N]
   [IsScalarTower R B N] [AddCommMonoid N'] [Module R N'] [Module B N'] [IsScalarTower R B N']
 
-/-- Extending a `B`-linear map along `B → B ⊗[R] P` gives an injective map exactly when
+/-- Tensoring a `B`-linear map over `B` with `B ⊗[R] P` gives an injective map exactly when
 tensoring its underlying `R`-linear map with `P` does. -/
 theorem injective_lTensor_iff_injective_lTensor_restrictScalars (f : N →ₗ[B] N') :
     Function.Injective (f.lTensor (B ⊗[R] P)) ↔
