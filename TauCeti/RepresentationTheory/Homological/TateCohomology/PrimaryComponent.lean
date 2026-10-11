@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Linear
+public import TauCeti.Algebra.Module.Torsion.PrimaryComponent
 import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
-public import Mathlib.GroupTheory.Torsion
 
 /-!
 # Primary components of Tate cohomology
@@ -30,7 +30,7 @@ variable {k G : Type u} [CommRing k] [Group G] [Fintype G]
 
 /-- Multiplication by `p` on every Tate cohomology group is bijective when it is bijective on
 the coefficient representation. -/
-theorem bijective_nsmul_tateCohomology (A : Rep.{u} k G) (p : ℕ)
+theorem tateCohomology_nsmul_bijective (A : Rep.{u} k G) (p : ℕ)
     (hp : Function.Bijective (fun x : A.V ↦ p • x)) (n : ℤ) :
     Function.Bijective (fun x : tateCohomology A n ↦ p • x) := by
   -- The underlying map of `p • 𝟙 A` is multiplication by `p` on `A.V`.
@@ -48,21 +48,7 @@ bijective on the coefficient representation. This applies in every integer degre
 theorem primaryComponent_tateCohomology_eq_bot (A : Rep.{u} k G) (p : ℕ)
     (hp : Function.Bijective (fun x : A.V ↦ p • x)) (n : ℤ) :
     AddCommGroup.primaryComponent (tateCohomology A n) p = ⊥ := by
-  have h_inj := (bijective_nsmul_tateCohomology A p hp n).1
-  have hpow (j : ℕ) (x : tateCohomology A n) (hx : p ^ j • x = 0) : x = 0 := by
-    induction j with
-    | zero => simpa using hx
-    | succ j ih =>
-      apply ih
-      apply h_inj
-      simpa [pow_succ', mul_smul] using hx
-  ext x
-  simp only [AddCommGroup.mem_primaryComponent, AddSubgroup.mem_bot]
-  constructor
-  · rintro ⟨j, hj⟩
-    exact hpow j x hj
-  · intro hx
-    subst x
-    exact ⟨0, by simp⟩
+  exact AddCommGroup.primaryComponent_eq_bot_of_injective_nsmul _ p
+    (tateCohomology_nsmul_bijective A p hp n).1
 
 end TauCeti.TateCohomology
