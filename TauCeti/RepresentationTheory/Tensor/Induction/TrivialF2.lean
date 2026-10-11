@@ -86,6 +86,7 @@ variable (G : Type v) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   (U : Subgroup G) (hU : IsOpen (U : Set G)) (s : U.LeftTransversal)
   [U.FiniteIndex]
 
+/-- The finite quotient indexing the tensor factors of tensor induction. -/
 noncomputable local instance quotientFintype : Fintype (G ⧸ U) :=
   U.fintypeQuotientOfFiniteIndex
 
@@ -181,7 +182,6 @@ noncomputable def smoothTensorInducedTrivialF2Tprod
 
 /-- On a pure tensor, the smooth trivial-`𝔽₂` tensor-induction isomorphism multiplies
 the underlying `ZMod 2` values. -/
-@[simp]
 theorem smoothTensorInducedTrivialF2Iso_hom_apply_tprod
     (x : G ⧸ U → (DiscreteRep.trivialF2 U).V) :
     trivialF2Equiv G ((smoothTensorInducedTrivialF2Iso G U hU s).hom.hom.hom
