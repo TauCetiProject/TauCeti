@@ -120,7 +120,6 @@ theorem symmetricThreeCharThreeSimpleClassBasis_false :
     fdRepK0RingEquiv_of, FDRep.of_ρ', ← exactK0_one_eq_of_trivial]
 
 /-- The basis vector indexed by `true` is the sign class. -/
-@[simp↓]
 theorem symmetricThreeCharThreeSimpleClassBasis_true :
     symmetricThreeCharThreeSimpleClassBasis k true =
       fdRepK0RingEquiv k (Equiv.Perm (Fin 3))
