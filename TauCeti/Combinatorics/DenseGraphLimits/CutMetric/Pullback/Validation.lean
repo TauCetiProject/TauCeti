@@ -37,8 +37,7 @@ of the map form, without the equivalence (`cutDistPullback_dirac_dirac`,
 `cutDistPullback_finiteGraphGraphonOnFin_top_two_const_half`).
 
 The checks are deliberately unnamed. Their statements are special cases of those two
-carrier-generic theorems and differ from them only in the proof route, so downstream developments
-should cite `cutDistPullback_dirac_dirac` and
+carrier-generic theorems, so downstream developments should cite `cutDistPullback_dirac_dirac` and
 `cutDistPullback_finiteGraphGraphonOnFin_top_two_const_half` rather than a regression here.
 
 ## Main results
