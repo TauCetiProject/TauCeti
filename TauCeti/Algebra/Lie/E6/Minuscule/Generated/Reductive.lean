@@ -9,7 +9,6 @@ public import TauCeti.Algebra.AlgebraicGroup.Connected.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.Reductive.Basic
 public import TauCeti.Algebra.Lie.E6.Minuscule.Generated.Connected
 public import TauCeti.Algebra.Lie.E6.Minuscule.Generated.UnipotentRadical
-import Mathlib.RingTheory.Etale.Descent
 
 /-!
 # Reductivity of the generated type-E₆ minuscule subgroup
@@ -48,7 +47,6 @@ The argument follows the type-`Bₙ₊₁` spin carrier in
 public section
 
 open CategoryTheory
-open scoped TensorProduct
 
 namespace TauCeti.E6Minuscule
 

@@ -100,6 +100,8 @@ theorem generatedCoordinateMap_comp_eqToIso_hom :
         eqToHom (generatedCoordinateHopfAlgebra_def k) =
       CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra k 24)
         (generatedDefiningIdeal k) := by
+  -- In this defining module the deliberately opaque named quotient and quotient map reduce,
+  -- so the equality transport is the identity.  Consumers use this theorem as the interface.
   dsimp [generatedCoordinateMap]
   cases generatedCoordinateHopfAlgebra_def k
   rfl

@@ -9,7 +9,6 @@ public import TauCeti.Algebra.AlgebraicGroup.Connected.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.Reductive.Basic
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Generated.Connected
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Generated.UnipotentRadical
-import Mathlib.RingTheory.Etale.Descent
 
 /-!
 # Reductivity of the generated type-Bₙ₊₁ spin subgroup
@@ -48,7 +47,6 @@ The argument follows the short-root type-`G₂` carrier in
 public section
 
 open CategoryTheory
-open scoped TensorProduct
 
 namespace TauCeti.TypeBSpinCarrier
 

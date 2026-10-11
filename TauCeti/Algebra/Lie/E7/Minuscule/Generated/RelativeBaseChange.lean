@@ -124,13 +124,11 @@ free scalar extension.** -/
 noncomputable def generatedCoordinateHopfAlgebraBaseChangeIso :
     CommHopfAlgCat.baseChange (K := S) (generatedCoordinateHopfAlgebra R) ≅
       generatedCoordinateHopfAlgebra S :=
-  eqToIso (congrArg (CommHopfAlgCat.baseChange (K := S))
-      (generatedCoordinateHopfAlgebra_def R)) ≪≫
-    CommHopfAlgCat.quotientBaseChangeIsoOfMapEq
-      (generatedDefiningIdeal R) (generatedDefiningIdeal S)
-      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R S 56)
-      (map_baseChange_generatedDefiningIdeal R S) ≪≫
-    eqToIso (generatedCoordinateHopfAlgebra_def S).symm
+  CommHopfAlgCat.baseChangeIsoOfEqQuotient (generatedDefiningIdeal R)
+    (generatedDefiningIdeal S) (generatedCoordinateHopfAlgebra_def R)
+    (generatedCoordinateHopfAlgebra_def S)
+    (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R S 56)
+    (map_baseChange_generatedDefiningIdeal R S)
 
 /-- Scalar extension of the generated finite-type type-`E₇` subgroup is the subgroup generated
 after scalar extension. -/
@@ -147,33 +145,8 @@ theorem baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebra
     CommHopfAlgCat.baseChangeMap (K := S) (generatedCoordinateMap R) ≫
         (generatedCoordinateHopfAlgebraBaseChangeIso R S).hom =
       (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R S 56).hom ≫
-        generatedCoordinateMap S := by
-  have hbase :
-      CommHopfAlgCat.baseChangeMap (K := S) (generatedCoordinateMap R) ≫
-          (eqToIso (congrArg (CommHopfAlgCat.baseChange (K := S))
-            (generatedCoordinateHopfAlgebra_def R))).hom =
-        CommHopfAlgCat.baseChangeMap (K := S)
-          (CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra R 56)
-            (generatedDefiningIdeal R)) := by
-    let F := CommHopfAlgCat.baseChangeFunctor (k := R) (K := S)
-    calc
-      _ = F.map (generatedCoordinateMap R) ≫
-          F.map (eqToIso (generatedCoordinateHopfAlgebra_def R)).hom := by
-        rw [CommHopfAlgCat.baseChangeFunctor_map]
-        congr 1
-        simpa only [eqToIso.hom] using
-          (eqToHom_map F (generatedCoordinateHopfAlgebra_def R)).symm
-      _ = F.map (generatedCoordinateMap R ≫
-          (eqToIso (generatedCoordinateHopfAlgebra_def R)).hom) :=
-        (F.map_comp _ _).symm
-      _ = F.map (CommHopfAlgCat.mkQuotient
-          (GeneralLinear.coordinateHopfAlgebra R 56) (generatedDefiningIdeal R)) := by
-        rw [generatedCoordinateMap_comp_eqToIso_hom]
-      _ = _ := CommHopfAlgCat.baseChangeFunctor_map _
-  simp only [generatedCoordinateHopfAlgebraBaseChangeIso, Iso.trans_hom]
-  rw [← Category.assoc, hbase, ← Category.assoc,
-    CommHopfAlgCat.baseChangeMap_mkQuotient_comp_quotientBaseChangeIsoOfMapEq_hom,
-    Category.assoc, ← generatedCoordinateMap_comp_eqToIso_hom]
-  simp
+        generatedCoordinateMap S :=
+  CommHopfAlgCat.baseChangeMap_comp_baseChangeIsoOfEqQuotient_hom _ _ _ _ _ _ _ _
+    (generatedCoordinateMap_comp_eqToIso_hom R) (generatedCoordinateMap_comp_eqToIso_hom S)
 
 end TauCeti.E7Minuscule

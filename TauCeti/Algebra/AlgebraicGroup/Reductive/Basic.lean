@@ -154,22 +154,19 @@ theorem reductiveCommHopfAlgProperty_of_geometricFiber_iso_of_smooth_connected
       I = HopfIdeal.augmentation (AlgebraicClosure k) G) :
     reductiveCommHopfAlgProperty k H := by
   let K := AlgebraicClosure k
-  have hbaseSmooth : smoothCommHopfAlgProperty (AlgebraicClosure k)
-      (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H).obj :=
-    (smoothCommHopfAlgProperty (AlgebraicClosure k)).prop_of_iso
-      ((forget₂ (FiniteTypeCommHopfAlgCat.{u, u} (AlgebraicClosure k))
-        (CommHopfAlgCat.{u} (AlgebraicClosure k))).mapIso e).symm hsmooth
+  let e' := ((forget₂ (FiniteTypeCommHopfAlgCat.{u, u} K) (CommHopfAlgCat.{u} K)).mapIso e).symm
+  have hbaseSmooth : smoothCommHopfAlgProperty K
+      (FiniteTypeCommHopfAlgCat.baseChange (K := K) H).obj :=
+    (smoothCommHopfAlgProperty K).prop_of_iso e' hsmooth
+  -- `baseChange` bundles the tensor product; `coe_of` identifies its underlying algebra.
   let _ : Algebra.Smooth K (K ⊗[k] H.obj) := by
     simpa only [FiniteTypeCommHopfAlgCat.baseChange, CommHopfAlgCat.baseChange,
       _root_.CommHopfAlgCat.coe_of] using
       (smoothCommHopfAlgProperty_iff _).mp hbaseSmooth
   exact reductiveCommHopfAlgProperty_of_geometricFiber_iso k H G
-    (Algebra.Smooth.of_smooth_tensorProduct_of_faithfullyFlat
-      (R := k) (S := H.obj) (AlgebraicClosure k))
-    (geometricallyConnectedCommHopfAlgProperty.of_baseChange k (AlgebraicClosure k) H.obj
-      ((geometricallyConnectedCommHopfAlgProperty (AlgebraicClosure k)).prop_of_iso
-        ((forget₂ (FiniteTypeCommHopfAlgCat.{u, u} (AlgebraicClosure k))
-          (CommHopfAlgCat.{u} (AlgebraicClosure k))).mapIso e).symm hconnected))
+    (Algebra.Smooth.of_smooth_tensorProduct_of_faithfullyFlat (R := k) (S := H.obj) K)
+    (geometricallyConnectedCommHopfAlgProperty.of_baseChange k K H.obj
+      ((geometricallyConnectedCommHopfAlgProperty K).prop_of_iso e' hconnected))
     e htrivial
 
 /-- The category of reductive finite-type commutative Hopf algebras over a field. -/
