@@ -49,16 +49,29 @@ private def functionChart (U : X.AffineZariskiSite) :
 private lemma functionChart_naturality {U U' : X.AffineZariskiSite} (h : U ⟶ U') :
     p.pushforwardStructureAlgebra.relativeSpecGluingData.functor.map h ≫
       functionChart p U' = functionChart p U := by
-  rw [CommMon.relativeSpecGluingData_functor_map]
-  dsimp only [functionChart]
-  -- The gluing functor's objects and the sections-presheaf objects are semireducible
-  -- presentations of the explicit section rings in `functionChart`; `rw` cannot
-  -- identify these endpoints at its default transparency, so use `erw` here.
-  erw [← Spec.map_comp_assoc, ← p.pushforwardStructureAlgebraPresheafIso.inv.naturality]
-  erw [Spec.map_comp_assoc]
-  exact congrArg (Spec.map (p.pushforwardStructureAlgebraPresheafIso.inv.app (op U.1)) ≫ ·)
-    ((U'.2.preimage p).map_fromSpec (U.2.preimage p)
-      ((TopologicalSpace.Opens.map p.base).map ((toOpensFunctor X).map h)).op)
+  -- Explicit section-ring endpoints let ordinary rewriting use `Spec.map_comp_assoc`.
+  let r : CommRingCat.of Γ(p.pushforwardStructureAlgebra.X, U'.1) ⟶
+      CommRingCat.of Γ(p.pushforwardStructureAlgebra.X, U.1) :=
+    p.pushforwardStructureAlgebra.sectionsPresheaf.map ((toOpensFunctor X).map h).op
+  let k : CommRingCat.of Γ(V, p ⁻¹ᵁ U.1) ⟶
+      CommRingCat.of Γ(p.pushforwardStructureAlgebra.X, U.1) :=
+    p.pushforwardStructureAlgebraPresheafIso.inv.app (op U.1)
+  let k' : CommRingCat.of Γ(V, p ⁻¹ᵁ U'.1) ⟶
+      CommRingCat.of Γ(p.pushforwardStructureAlgebra.X, U'.1) :=
+    p.pushforwardStructureAlgebraPresheafIso.inv.app (op U'.1)
+  let s : CommRingCat.of Γ(V, p ⁻¹ᵁ U'.1) ⟶ CommRingCat.of Γ(V, p ⁻¹ᵁ U.1) :=
+    V.presheaf.map ((TopologicalSpace.Opens.map p.base).map ((toOpensFunctor X).map h)).op
+  have hring : k' ≫ r = s ≫ k :=
+    (p.pushforwardStructureAlgebraPresheafIso.inv.naturality
+      ((toOpensFunctor X).map h).op).symm
+  have hchart : Spec.map r ≫ (Spec.map k' ≫ (U'.2.preimage p).fromSpec) =
+      Spec.map k ≫ (U.2.preimage p).fromSpec := by
+    rw [← Spec.map_comp_assoc, hring, Spec.map_comp_assoc]
+    exact congrArg (Spec.map k ≫ ·)
+      ((U'.2.preimage p).map_fromSpec (U.2.preimage p)
+        ((TopologicalSpace.Opens.map p.base).map ((toOpensFunctor X).map h)).op)
+  exact (congrArg (· ≫ functionChart p U')
+    (p.pushforwardStructureAlgebra.relativeSpecGluingData_functor_map h)).trans hchart
 
 /-- The canonical map from the relative spectrum of an affine morphism's function algebra
 back to its source, obtained by gluing the affine identifications on inverse images. -/
@@ -89,21 +102,24 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.relativeSpecFunctionsToScheme_comp :
   apply p.pushforwardStructureAlgebra.relativeSpec_hom_ext
   intro U
   rw [Scheme.Hom.relativeSpecCover_f_relativeSpecFunctionsToScheme_assoc]
-  -- Rewriting the chart equation leaves the opaque cover-object accessor as the
-  -- source of the composition; `erw` identifies it with the explicit spectrum.
-  erw [Category.assoc,
-    ← IsAffineOpen.SpecMap_appLE_fromSpec p U.2 (U.2.preimage p) le_rfl,
-    ← Spec.map_comp_assoc,
-    CommMon.relativeSpecCover_f_relativeSpecToBase]
-  congr 2
-  apply (cancel_mono (p.pushforwardStructureAlgebraPresheafIso.hom.app (op U.1))).mp
-  have h := NatTrans.congr_app
-    p.pushforwardStructureAlgebra_toSectionsPresheaf_comp (op U.1)
-  rw [NatTrans.comp_app] at h
-  -- The presheaf-iso components use presheaf objects, whereas `appLE` uses bundled
-  -- section rings. Their endpoints agree only after semireducible unfolding.
-  erw [Category.assoc, Iso.inv_hom_id_app, Scheme.Hom.appLE_eq_app]
-  exact (Category.comp_id _).trans h.symm
+  have hring :
+      p.pushforwardStructureAlgebra.toSectionsPresheaf.app (op U.1) ≫
+        p.pushforwardStructureAlgebraPresheafIso.hom.app (op U.1) =
+      p.appLE U.1 (p ⁻¹ᵁ U.1) le_rfl := by
+    have h := NatTrans.congr_app
+      p.pushforwardStructureAlgebra_toSectionsPresheaf_comp (op U.1)
+    rw [NatTrans.comp_app] at h
+    exact h.trans (Scheme.Hom.app_eq_appLE p)
+  have hinv : p.appLE U.1 (p ⁻¹ᵁ U.1) le_rfl ≫
+      p.pushforwardStructureAlgebraPresheafIso.inv.app (op U.1) =
+      p.pushforwardStructureAlgebra.toSectionsPresheaf.app (op U.1) := by
+    rw [← hring]
+    simp only [Category.assoc, Iso.hom_inv_id_app, Category.comp_id]
+  have hspec := congrArg (fun f ↦ Spec.map f ≫ U.2.fromSpec) hinv
+  simp only [Spec.map_comp_assoc,
+    IsAffineOpen.SpecMap_appLE_fromSpec p U.2 (U.2.preimage p) le_rfl] at hspec
+  exact (Category.assoc _ _ _).trans
+    (hspec.trans (p.pushforwardStructureAlgebra.relativeSpecCover_f_relativeSpecToBase U).symm)
 
 /-- The affine chart of the function algebra is the affine inverse image of the base chart. -/
 private def functionChartIso (U : X.AffineZariskiSite) :
@@ -168,7 +184,9 @@ private lemma functionChart_ring_naturality (g : V ⟶ W) (h : g ≫ q = p)
     Scheme.Hom.pushforwardStructureAlgebraPresheafIso_inv_app]
   apply ConcreteCategory.hom_ext
   intro x
-  -- Evaluate the bundled ring maps to use the public section-ring formula.
+  -- The iso components retain presheaf-object coercions; `CommRingCat.comp_apply`
+  -- and `hom_comp` do not match them at rewriting transparency. `change` identifies
+  -- these presentations before evaluating the maps on the section rings.
   change CommMon.sectionsAlgHom (Scheme.Hom.pushforwardStructureAlgebraMap g h) U.1
     ((q.pushforwardStructureAlgebraSectionsRingEquiv U.1).symm x) =
     (p.pushforwardStructureAlgebraSectionsRingEquiv U.1).symm
