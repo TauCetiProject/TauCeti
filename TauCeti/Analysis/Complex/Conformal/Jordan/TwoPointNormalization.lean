@@ -32,8 +32,9 @@ where both maps have the boundary limit `0`.
 * `TauCeti.eqOn_upperHalfPlaneSet_of_tendsto_of_bijOn_of_isJordanCurve_insert_infty` -- two
   conformal maps onto an unbounded Jordan domain that tend to infinity at infinity coincide as
   soon as they have the same limits at two distinct real points.
-* `TauCeti.eq_of_tendsto_of_bijOn_upperHalfPlaneSet_of_isJordanCurve_insert_infty` -- a conformal
-  map onto an unbounded Jordan domain has distinct finite boundary limits at distinct real points.
+* `TauCeti.eq_of_tendsto_of_bijOn_upperHalfPlaneSet_of_isJordanCurve_insert_infty` -- if a
+  conformal map onto an unbounded Jordan domain has the same finite boundary limit at two real
+  points, then the points are equal.
 
 ## References
 
