@@ -39,8 +39,8 @@ variable {mu : Measure (EuclideanSpace ℝ (Fin 2))} [mu.IsAddHaarMeasure]
 /-- **Planar local boundedness of weak subsolutions.** There is a constant `D`, depending only on
 the ellipticity constants and the normalization of `μ`, such that if `u` is a weak subsolution of
 `-div(a ∇u) ≤ 0` on the ball `B(x₀, 2)`, then for every level `k`, `u ≤ k + D ‖(u-k)⁺‖₂` almost
-everywhere on `B(x₀, 1/2)`. The estimate specializes the general local boundedness theorem after restricting
-the subsolution to the larger ball. -/
+everywhere on `B(x₀, 1/2)`. The estimate specializes the general local boundedness theorem after
+restricting the subsolution to the larger ball. -/
 theorem exists_ae_value_le_add_mul_sqrt_setIntegral_ball_half
     : ∃ D : ℝ, 0 < D ∧ ∀ {Omega : Opens (EuclideanSpace ℝ (Fin 2))}
       {a : EuclideanSpace ℝ (Fin 2) → Matrix (Fin 2) (Fin 2) ℝ}
