@@ -682,10 +682,6 @@ theorem le_maximalTameExtension_iff [Algebra.IsSeparable K L] :
   let _ := finiteIntermediateFieldTopology K (AlgebraicClosure K) N
   have := finiteIntermediateField_isNonarchimedeanLocalField K (AlgebraicClosure K) N
   have := finiteIntermediateField_valuativeExtension K (AlgebraicClosure K) N
-  have : Algebra.IsSeparable K N :=
-    (le_separableClosure_iff K (AlgebraicClosure K) N).1 (normalClosure_le_iff.2 fun f ↦ by
-      have : Algebra.IsSeparable K f.fieldRange := AlgEquiv.Algebra.isSeparable f.equivFieldRange
-      exact le_separableClosure K (AlgebraicClosure K) f.fieldRange)
   have : IsGalois K N := ⟨⟩
   have : ValuativeExtension L N := (IsScalarTower.toAlgHom K L N).valuativeExtension
   rw [← normalClosure_le_iff_of_normal, le_maximalTameExtension_iff_of_isGalois N]

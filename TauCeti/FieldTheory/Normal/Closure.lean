@@ -24,7 +24,8 @@ When `F⟮x⟯` is already all of `E`, this says that `E` itself is a splitting 
 
 For an arbitrary ambient field, the embedding images of an extension into its normal closure
 generate that whole normal closure. This allows properties preserved under composita to be
-proved by working with the embedding images.
+proved by working with the embedding images. In particular, the normal closure of a separable
+extension is separable.
 -/
 
 /- The proof uses Mathlib's description of the normal closure as the supremum of the
@@ -35,6 +36,15 @@ public section
 namespace TauCeti
 
 open IntermediateField Polynomial
+
+/-- The normal closure of a separable extension in any ambient field is separable. -/
+instance isSeparable_normalClosure (K L Ω : Type*) [Field K] [Field L] [Field Ω]
+    [Algebra K L] [Algebra K Ω] [Algebra.IsSeparable K L] :
+    Algebra.IsSeparable K (normalClosure K L Ω) := by
+  have (f : L →ₐ[K] Ω) : Algebra.IsSeparable K f.fieldRange :=
+    AlgEquiv.Algebra.isSeparable f.equivFieldRange
+  rw [normalClosure_def]
+  infer_instance
 
 /-- The images of all `K`-embeddings of `L` into `normalClosure K L Ω` generate that field. -/
 theorem normalClosure_iSup_fieldRange_eq_top (K L Ω : Type*) [Field K] [Field L] [Field Ω]
