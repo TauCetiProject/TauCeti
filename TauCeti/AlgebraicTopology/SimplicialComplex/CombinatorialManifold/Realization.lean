@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold.Star
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Homeomorph
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.PL
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Ball
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.BoundarySphere
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Relabel.Basic
