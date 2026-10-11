@@ -26,6 +26,8 @@ require a commutative target.
   `Algebra.TensorProduct.map (AlgHom.id R S) f`.
 * `Algebra.TensorProduct.mulLeft`, `Algebra.TensorProduct.mulRight`: the
   multiplication maps `s ⊗ b ↦ s • b` and `b ⊗ t ↦ b * t`.
+* `Algebra.TensorProduct.mulLeft_map`, `Algebra.TensorProduct.mulLeft_map_includeRight`:
+  naturality of tensor multiplication and cancellation of an inserted middle factor `1`.
 * `Algebra.TensorProduct.map_assoc_tmul_one`: applying `f : B ⊗[R] C → D` after
   reassociating `y ⊗ 1` is the base change of `b ↦ f (b ⊗ 1)`.
 -/
@@ -80,6 +82,24 @@ noncomputable def mulLeft : S ⊗[R] B →ₐ[S] B :=
 theorem mulLeft_tmul (s : S) (b : B) :
     (mulLeft (s ⊗ₜ[R] b) : B) = algebraMap S B s * b := by
   simp [mulLeft]
+
+/-- Tensor multiplication commutes with an algebra map over `S`. -/
+@[simp]
+theorem mulLeft_map {C : Type*} [Semiring C] [Algebra R C] [Algebra S C]
+    [IsScalarTower R S C] (f : B →ₐ[S] C) (x : S ⊗[R] B) :
+    mulLeft (map (AlgHom.id R S) (f.restrictScalars R) x) = f (mulLeft x) := by
+  induction x using TensorProduct.inductionOn with
+  | tmul s b => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
+
+omit [Algebra S B] [IsScalarTower R S B] in
+/-- Multiplying the first two factors cancels insertion of `1` in the middle factor. -/
+@[simp]
+theorem mulLeft_map_includeRight (x : S ⊗[R] B) :
+    mulLeft (map (AlgHom.id R S) (includeRight : B →ₐ[R] S ⊗[R] B) x) = x := by
+  induction x using TensorProduct.inductionOn with
+  | tmul s b => simp [algebraMap_apply, tmul_mul_tmul]
+  | add x y hx hy => simp only [map_add, hx, hy]
 
 /-- The multiplication map `B ⊗[R] S →ₐ[S] B`, `b ⊗ t ↦ b * t`, for an `S`-algebra `B` which
 need not be commutative. -/

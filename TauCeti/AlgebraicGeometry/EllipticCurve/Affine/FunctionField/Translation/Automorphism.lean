@@ -188,6 +188,16 @@ theorem translation_smul_infinity (P : W.Point) :
   rw [← coe_pointEquivDegreeOnePlace_zero, ← Point.zero_def,
     translation_smul_pointEquivDegreeOnePlace, zero_sub]
 
+/-- Distinct rational points translate the place at infinity to distinct places. -/
+theorem translation_smul_infinity_injective :
+    Function.Injective fun P : (W⁄F).toAffine.Point ↦ translation W P • Place.infinity W := by
+  intro P Q h
+  obtain ⟨P, rfl⟩ := (Point.equivBaseChangeSelf W).surjective P
+  obtain ⟨Q, rfl⟩ := (Point.equivBaseChangeSelf W).surjective Q
+  simp only [translation_smul_infinity] at h
+  exact congrArg (Point.equivBaseChangeSelf W)
+    (neg_injective ((pointEquivDegreeOnePlace W).injective (Subtype.ext h)))
+
 /-- Every automorphism of the function field is an automorphism of the elliptic curve followed by
 a translation. -/
 private theorem exists_mem_stabilizer_mul_translation_eq

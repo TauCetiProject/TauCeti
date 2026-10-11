@@ -15,6 +15,7 @@ import Mathlib.RingTheory.SimpleModule.InjectiveProjective
 import Mathlib.RepresentationTheory.Rep.Iso
 import TauCeti.RepresentationTheory.Irreducible
 import TauCeti.RepresentationTheory.AsModule
+import TauCeti.RepresentationTheory.Intertwining
 import TauCeti.RepresentationTheory.OfModule
 import TauCeti.RepresentationTheory.Rep.ChangeOfGroup
 
@@ -76,6 +77,10 @@ finite-dimensional representations.
   lifts invariant vectors when its target is projective over the target group algebra.
 * `Representation.Equiv.invariantsLinearEquiv`: equivalent representations have isomorphic
   invariants.
+* `Representation.invariants_comp_of_surjective`: restriction along a surjective homomorphism
+  does not change the invariants.
+* `Representation.finrank_invariants_tprod_of_comp`: invariant dimensions of tensor products may
+  be compared along a surjective homomorphism of groups.
 * `Rep.invariantsFunctor_map_surjective_of_surjective_of_projective`: taking invariants preserves
   a surjective morphism of representations whose target is projective over the group algebra.
 * `Rep.trivialHomEquivInvariants`: the intertwiners out of the trivial line are the invariant
@@ -139,6 +144,19 @@ theorem range_norm_trivial (k H : Type*) [CommSemiring k] [Group H] [Fintype H] 
     LinearMap.range (Representation.trivial k H k).norm = Ideal.span {(Nat.card H : k)} := by
   ext x
   simp [Representation.norm, Ideal.mem_span_singleton', mul_comm]
+
+end Representation
+
+namespace Representation
+
+/-- **Restriction along a surjective homomorphism does not change the invariants**: a vector is
+fixed by every `f g` exactly when it is fixed by every element of `H`. -/
+theorem invariants_comp_of_surjective {k G H V : Type*} [CommRing k] [Group G] [Group H]
+    [AddCommGroup V] [Module k V] (ρ : Representation k H V) (f : G →* H)
+    (hf : Function.Surjective f) : invariants (ρ.comp f) = ρ.invariants := by
+  ext v
+  simp only [mem_invariants, MonoidHom.comp_apply]
+  exact ⟨fun h g ↦ by obtain ⟨g, rfl⟩ := hf g; exact h g, fun h g ↦ h (f g)⟩
 
 end Representation
 
@@ -291,6 +309,26 @@ theorem coe_invariantsLinearEquiv_apply (φ : ρ.Equiv σ) (x : ρ.invariants) :
   (rfl)
 
 end Representation.Equiv
+
+namespace Representation
+
+variable {k G H V V' W W' : Type*} [CommRing k] [Group G] [Group H]
+  [AddCommGroup V] [Module k V] [AddCommGroup V'] [Module k V']
+  [AddCommGroup W] [Module k W] [AddCommGroup W'] [Module k W']
+
+/-- **Invariant dimensions of tensor products along a surjective homomorphism of groups.** If the
+restrictions of `X` and `Y` along a surjective `f : G →* H` are equivalent to `X'` and `Y'`, then
+`X ⊗ Y` and `X' ⊗ Y'` have invariants of the same dimension: restriction along `f` does not change
+the invariants (`Representation.invariants_comp_of_surjective`), and it commutes with tensor
+products. -/
+theorem finrank_invariants_tprod_of_comp {f : G →* H} (hf : Function.Surjective f)
+    {X : Representation k H V} {Y : Representation k H W} {X' : Representation k G V'}
+    {Y' : Representation k G W'} (e₁ : Equiv (X.comp f) X') (e₂ : Equiv (Y.comp f) Y') :
+    Module.finrank k (X.tprod Y).invariants = Module.finrank k (X'.tprod Y').invariants := by
+  rw [← invariants_comp_of_surjective (X.tprod Y) f hf]
+  exact (e₁.tprod e₂).invariantsLinearEquiv.finrank_eq
+
+end Representation
 
 namespace Rep
 

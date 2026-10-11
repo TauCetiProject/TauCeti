@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Weighted
+public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Weighted.Basic
 public import TauCeti.Algebra.Lie.OfAssociative
 
 /-!
@@ -19,7 +19,7 @@ algebra, over a field of any characteristic.
 
 The action reuses `LieHom.leftRegularRep`. The carrier, its finiteness, separation of the
 Lie generators, and their uniform power bound come from the weighted PBW construction in
-`TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Weighted`. No Lie-module instance is installed
+`TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Weighted.Basic`. No Lie-module instance is installed
 on the quotient: consumers use the explicit Lie homomorphism.
 
 ## References

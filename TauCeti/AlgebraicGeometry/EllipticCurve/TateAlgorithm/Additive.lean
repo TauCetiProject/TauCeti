@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Reduction
 public import Mathlib.FieldTheory.Perfect
+import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 import TauCeti.RingTheory.LocalRing.QuadraticDoubleRoot
 
@@ -48,6 +49,12 @@ minimal; `WeierstrassCurve.not_isMinimal_baseChange_of_pow_dvd` records this.
 * `WeierstrassCurve.not_isMinimal_baseChange_of_pow_dvd`: **Step 11 of Tate's algorithm**. An
   equation over `R` with nonzero discriminant and `ϖⁱ ∣ aᵢ` for `i = 1, 2, 3, 4, 6` is not minimal
   over the fraction field.
+
+* `WeierstrassCurve.pow_three_dvd_Δ_of_dvd_b₂_of_dvd_a₃_of_dvd_a₄_of_sq_dvd_a₆`,
+  `WeierstrassCurve.pow_four_dvd_Δ_of_dvd_b₂_of_sq_dvd_b₆_of_pow_three_dvd_b₈`, and
+  `WeierstrassCurve.pow_five_dvd_Δ_of_dvd_b₂_of_pow_three_dvd_b₆_of_pow_three_dvd_b₈`:
+  discriminant bounds at the early additive tests;
+  `WeierstrassCurve.sq_dvd_b₄_of_dvd_b₂_of_sq_dvd_b₆_of_pow_three_dvd_b₈` supplies the Step 4 bound.
 
 ## References
 
@@ -174,5 +181,95 @@ theorem not_isMinimal_baseChange_of_pow_dvd (hϖ : Irreducible ϖ) (W : Weierstr
   exact (this.trans_le hle).false
 
 end WeierstrassCurve
+
+namespace TauCeti
+
+variable {R : Type*} [CommRing R] (W : WeierstrassCurve R) (ϖ : R)
+
+/-- If the Step 3 test fails (`ϖ² ∣ a₆`), the discriminant is divisible by `ϖ³`.
+The coefficient conditions are those of the Step 2 normal form. -/
+theorem _root_.WeierstrassCurve.pow_three_dvd_Δ_of_dvd_b₂_of_dvd_a₃_of_dvd_a₄_of_sq_dvd_a₆
+    (hb₂ : ϖ ∣ W.b₂) (h₃ : ϖ ∣ W.a₃) (h₄ : ϖ ∣ W.a₄) (h₆ : ϖ ^ 2 ∣ W.a₆) :
+    ϖ ^ 3 ∣ W.Δ := by
+  have h₆one : ϖ ∣ W.a₆ := (dvd_pow_self ϖ (by decide : 2 ≠ 0)).trans h₆
+  have hb₈ : ϖ ^ 2 ∣ W.b₈ :=
+    (W.dvd_b₄_and_dvd_b₆_and_sq_dvd_b₈_of_dvd_b₂_of_dvd_a₃_of_dvd_a₄_of_dvd_a₆
+      ϖ hb₂ h₃ h₄ h₆one).2.2
+  obtain ⟨B₂, hB₂⟩ := hb₂
+  obtain ⟨A₃, hA₃⟩ := h₃
+  obtain ⟨A₄, hA₄⟩ := h₄
+  obtain ⟨A₆, hA₆⟩ := h₆
+  have hB₄ : W.b₄ = ϖ * (W.a₁ * A₃ + 2 * A₄) := by
+    rw [WeierstrassCurve.b₄, hA₃, hA₄]; ring
+  have hB₆ : W.b₆ = ϖ ^ 2 * (A₃ ^ 2 + 4 * A₆) := by
+    rw [WeierstrassCurve.b₆, hA₃, hA₆]; ring
+  obtain ⟨B₈, hB₈⟩ := hb₈
+  refine ⟨-ϖ * B₂ ^ 2 * B₈ - 8 * (W.a₁ * A₃ + 2 * A₄) ^ 3 -
+    27 * ϖ * (A₃ ^ 2 + 4 * A₆) ^ 2 +
+    9 * ϖ * B₂ * (W.a₁ * A₃ + 2 * A₄) * (A₃ ^ 2 + 4 * A₆), ?_⟩
+  rw [WeierstrassCurve.Δ, hB₂, hB₄, hB₆, hB₈]
+  ring
+
+/-- At Step 4, the failed `b₈` test forces `ϖ² ∣ b₄` from
+`4 b₈ = b₂ b₆ - b₄²`. No restriction on the residue characteristic is needed. -/
+theorem _root_.WeierstrassCurve.sq_dvd_b₄_of_dvd_b₂_of_sq_dvd_b₆_of_pow_three_dvd_b₈
+    [IsDomain R]
+    (hϖ : Prime ϖ) (hb₂ : ϖ ∣ W.b₂) (hb₆ : ϖ ^ 2 ∣ W.b₆)
+    (hb₈ : ϖ ^ 3 ∣ W.b₈) : ϖ ^ 2 ∣ W.b₄ := by
+  have heq : W.b₄ ^ 2 = W.b₂ * W.b₆ - 4 * W.b₈ := by
+    linear_combination W.b_relation
+  have hsq : ϖ ^ 3 ∣ W.b₄ ^ 2 := by
+    rw [heq]
+    obtain ⟨B₂, hB₂⟩ := hb₂
+    obtain ⟨B₆, hB₆⟩ := hb₆
+    obtain ⟨B₈, hB₈⟩ := hb₈
+    refine ⟨B₂ * B₆ - 4 * B₈, ?_⟩
+    rw [hB₂, hB₆, hB₈]
+    ring
+  have hp : ϖ ∣ W.b₄ := hϖ.dvd_of_dvd_pow
+    ((dvd_pow_self ϖ (by decide : 3 ≠ 0)).trans hsq)
+  obtain ⟨B₄, hB₄⟩ := hp
+  have hB₄sq : ϖ ∣ B₄ ^ 2 := by
+    rw [hB₄, mul_pow] at hsq
+    rw [pow_succ ϖ 2] at hsq
+    exact (mul_dvd_mul_iff_left (pow_ne_zero 2 hϖ.ne_zero)).1 hsq
+  obtain ⟨C₄, hC₄⟩ := hϖ.dvd_of_dvd_pow hB₄sq
+  exact ⟨C₄, by rw [hB₄, hC₄]; ring⟩
+
+/-- If the Step 4 test fails (`ϖ³ ∣ b₈`), then `ϖ⁴` divides the discriminant.
+The `ϖ² ∣ b₆` hypothesis already follows from the failed Step 3 test. -/
+theorem _root_.WeierstrassCurve.pow_four_dvd_Δ_of_dvd_b₂_of_sq_dvd_b₆_of_pow_three_dvd_b₈
+    [IsDomain R]
+    (hϖ : Prime ϖ) (hb₂ : ϖ ∣ W.b₂) (hb₆ : ϖ ^ 2 ∣ W.b₆)
+    (hb₈ : ϖ ^ 3 ∣ W.b₈) : ϖ ^ 4 ∣ W.Δ := by
+  have hb₄ := W.sq_dvd_b₄_of_dvd_b₂_of_sq_dvd_b₆_of_pow_three_dvd_b₈ ϖ hϖ hb₂ hb₆ hb₈
+  obtain ⟨B₂, hB₂⟩ := hb₂
+  obtain ⟨B₄, hB₄⟩ := hb₄
+  obtain ⟨B₆, hB₆⟩ := hb₆
+  obtain ⟨B₈, hB₈⟩ := hb₈
+  refine ⟨-ϖ * B₂ ^ 2 * B₈ - 8 * ϖ ^ 2 * B₄ ^ 3 - 27 * B₆ ^ 2 +
+    9 * ϖ * B₂ * B₄ * B₆, ?_⟩
+  rw [WeierstrassCurve.Δ, hB₂, hB₄, hB₆, hB₈]
+  ring
+
+/-- If the Step 5 test also fails (`ϖ³ ∣ b₆`), then `ϖ⁵` divides the discriminant.
+This is the discriminant bound at the entry to Step 6, before its normalising change of
+variables. -/
+theorem _root_.WeierstrassCurve.pow_five_dvd_Δ_of_dvd_b₂_of_pow_three_dvd_b₆_of_pow_three_dvd_b₈
+    [IsDomain R] (hϖ : Prime ϖ) (hb₂ : ϖ ∣ W.b₂) (hb₆ : ϖ ^ 3 ∣ W.b₆)
+    (hb₈ : ϖ ^ 3 ∣ W.b₈) : ϖ ^ 5 ∣ W.Δ := by
+  have hb₆two : ϖ ^ 2 ∣ W.b₆ :=
+    (pow_dvd_pow ϖ (by decide : 2 ≤ 3)).trans hb₆
+  have hb₄ := W.sq_dvd_b₄_of_dvd_b₂_of_sq_dvd_b₆_of_pow_three_dvd_b₈ ϖ hϖ hb₂ hb₆two hb₈
+  obtain ⟨B₂, hB₂⟩ := hb₂
+  obtain ⟨B₄, hB₄⟩ := hb₄
+  obtain ⟨B₆, hB₆⟩ := hb₆
+  obtain ⟨B₈, hB₈⟩ := hb₈
+  refine ⟨-B₂ ^ 2 * B₈ - 8 * ϖ * B₄ ^ 3 - 27 * ϖ * B₆ ^ 2 +
+    9 * ϖ * B₂ * B₄ * B₆, ?_⟩
+  rw [WeierstrassCurve.Δ, hB₂, hB₄, hB₆, hB₈]
+  ring
+
+end TauCeti
 
 end

@@ -281,16 +281,9 @@ instance isAffine_groupScheme (G : FGCommGrpCat.{u}) :
 
 /-- The structural morphism `D(G) ⟶ Spec R` is locally of finite type. -/
 instance locallyOfFiniteType_groupScheme (G : FGCommGrpCat.{u}) :
-    LocallyOfFiniteType (groupScheme R G).X.hom := by
-  let : Algebra.FiniteType R (MonoidAlgebra R G) := (coordinateRing R G).property
-  rw [groupScheme_X_hom]
-  let : LocallyOfFiniteType (eqToHom (groupScheme_X_left R G)) :=
-    locallyOfFiniteType_of_isOpenImmersion _
-  let : LocallyOfFiniteType
-      (Spec.map (CommRingCat.ofHom (algebraMap R (MonoidAlgebra R G)))) := by
-    rw [← AlgebraicGeometry.specOverSpec_over]
-    infer_instance
-  exact locallyOfFiniteType_comp _ _
+    LocallyOfFiniteType (groupScheme R G).X.hom :=
+  (algebraFiniteType_iff_locallyOfFiniteType_hopfSpec R (coordinateRing R G).obj).mp
+    (coordinateRing R G).property
 
 /-- The diagonalizable group scheme `D(G)` bundled as a finite-type affine group scheme. -/
 noncomputable def finiteTypeGroupScheme (G : FGCommGrpCat.{u}) :
