@@ -18,9 +18,6 @@ enough for every central entry, including `8`, to lie in the signed residue wind
 good prime `13` would not have this property.
 
 The existing integer certificate then proves success of the assembled rational Dixon solver.
-The modular search and lift admit direct execution. Success of the assembled solver is
-proved from its completeness characterization, rather than by evaluating its enumeration of
-all possible row numberings and degree assignments.
 
 Columns retain the cycle-type order `1⁴`, `2·1²`, `2²`, `3·1`, `4`. In particular, the two
 degree-three rows remain distinct: their values on the odd classes have opposite signs.
