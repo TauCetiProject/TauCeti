@@ -8,8 +8,9 @@ module
 public import TauCeti.FieldTheory.FunctionField.Different.Divisor
 public import TauCeti.FieldTheory.FunctionField.Hyperelliptic.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Basic
-public import TauCeti.FieldTheory.FunctionField.Place.Extension.Degree
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Eisenstein
+-- Proof-only: the degree of a place in terms of its restriction and relative degree.
+import TauCeti.FieldTheory.FunctionField.Place.Extension.Degree
 -- Proof-only: the Hurwitz genus formula over `k(x)` and the conorm degree formula.
 import TauCeti.FieldTheory.FunctionField.Different.Hurwitz
 -- Proof-only: ramification index and different exponent of `y ^ n = u` for prime `n`.
