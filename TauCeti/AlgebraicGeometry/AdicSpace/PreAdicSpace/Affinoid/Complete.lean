@@ -10,10 +10,9 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.RationalOpen
 /-!
 # Complete models of affinoid pre-adic spaces
 
-Every affinoid pre-adic space can be presented by a complete Hausdorff Huber pair.
-Indeed, the whole spectrum is the rational subset `R({1}/1)`, whose completed rational
-localisation gives the same pre-adic space. The comparison retains the structure presheaf
-and stalk valuations. Complete models allow local morphism properties to be checked using
+Every affinoid pre-adic space can be presented by a complete Hausdorff Huber pair,
+with an isomorphism retaining the structure presheaf and stalk valuations.
+Complete models allow local morphism properties to be checked using
 maps of complete Huber pairs, even when the original affinoid presentation was incomplete.
 
 ## References

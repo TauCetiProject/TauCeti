@@ -11,15 +11,11 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Complete
 /-!
 # Open immersions are locally of finite type
 
-An open immersion with adic source is locally of finite type. An affinoid neighbourhood
-of a source point is identified with its open image in the target. Present both by the
-same complete Hausdorff Huber pair: the local ring map is then the identity, which has
-a finite-type presentation with no variables. In particular, the identity of every
-adic space is locally of finite type.
+An open immersion with adic source is locally of finite type. In particular, the identity
+of every adic space is locally of finite type.
 
 This gives the open-subspace morphisms used in refining local finite-type charts.
-The target need not itself be adic: the affinoid charts of the source supply the
-required charts on its open image.
+The target may be any pre-adic space.
 
 ## References
 
@@ -38,42 +34,30 @@ universe u
 
 variable {X Y : PreAdicSpace.{u}}
 
-/-- An open immersion with adic source is locally of finite type. Its local presentations
-use the identity of a complete Hausdorff affinoid chart, so the target may be any pre-adic
-space. -/
-theorem locallyOfFiniteType_of_isOpenImmersion (f : X ⟶ Y) [IsOpenImmersion f]
-    (hX : isAdic X) : LocallyOfFiniteType f := by
-  rw [locallyOfFiniteType_iff]
-  intro x
-  obtain ⟨U, hU, hx⟩ := hX.isLocallyAffinoid x
+/-- The identity of every adic space is locally of finite type. -/
+theorem locallyOfFiniteType_id (hX : isAdic X) : LocallyOfFiniteType (𝟙 X) := by
+  refine LocallyOfFiniteType.of_iSup_eq_top (fun U : X.affinoidOpens ↦ U.1) ?_ ?_
+  · simpa only [sSup_eq_iSup'] using
+      (isLocallyAffinoid_iff_sSup_eq_top X).mp hX.isLocallyAffinoid
+  intro U
   obtain ⟨A, _, _, _, _, _, _, _, S, P, hP, ⟨e⟩⟩ :=
-    (isAffinoid_iff_exists_complete _).mp hU
-  let V : Opens Y := f.isOpenEmbedding.isOpenMap.functor.obj U
-  have hr : Set.range (X.ofRestrict U.isOpenEmbedding ≫ f).base =
-      Set.range (Y.ofRestrict V.isOpenEmbedding).base := by
-    ext y
-    constructor
-    · rintro ⟨⟨z, hz⟩, rfl⟩
-      exact ⟨⟨f.base z, z, hz, rfl⟩, rfl⟩
-    · rintro ⟨⟨_, z, hz, rfl⟩, rfl⟩
-      exact ⟨⟨z, hz⟩, rfl⟩
-  let e' := IsOpenImmersion.isoOfRangeEq
-    (X.ofRestrict U.isOpenEmbedding ≫ f) (Y.ofRestrict V.isOpenEmbedding) hr
+    (isAffinoid_iff_exists_complete _).mp U.2
   have hs : isSheafy (presentationLimitPreAdicSpace P S.plus
       S.isRingOfIntegralElements.isPowerBounded_of_mem hP) :=
-    ObjectProperty.prop_of_iso isSheafy e (isSheafy_restrict U.isOpenEmbedding hX.isSheafy)
+    ObjectProperty.prop_of_iso isSheafy e (isSheafy_restrict U.1.isOpenEmbedding hX.isSheafy)
   have hs' := (isSheafy_presentationLimitPreAdicSpace_iff P S.plus
     S.isRingOfIntegralElements.isPowerBounded_of_mem hP).mp hs
-  refine ⟨U, hx, V, fun z hz ↦ ⟨z, hz, rfl⟩, A, inferInstance, inferInstance,
-    inferInstance, inferInstance, S, P, hP, A, inferInstance, inferInstance, inferInstance,
-    inferInstance, inferInstance, inferInstance, inferInstance, S, P, hP, Pair.Hom.id S,
-    Pair.Hom.isTopologicallyFiniteType_id S, hs', e, e'.symm ≪≫ e, ?_⟩
-  simp only [Pair.Hom.toRingHom_id, presentationLimitPreAdicSpaceComap_id]
-  simp only [Iso.trans_inv, Iso.symm_inv, Category.id_comp, Category.assoc, Iso.hom_inv_id_assoc]
-  exact (IsOpenImmersion.isoOfRangeEq_hom_comp _ _ hr).symm
+  have hid := locallyOfFiniteType_id_presentationLimitPreAdicSpace (T := S) P hP hs'
+  have hpre := MorphismProperty.RespectsIso.precomp (@LocallyOfFiniteType) e.hom _ hid
+  have hpost := MorphismProperty.RespectsIso.postcomp (@LocallyOfFiniteType) e.inv _ hpre
+  have hU : LocallyOfFiniteType (𝟙 (X.restrict U.1.isOpenEmbedding)) := by
+    simpa using hpost
+  simpa using hU.comp_of_isOpenImmersion (X.ofRestrict U.1.isOpenEmbedding)
 
-/-- The identity of every adic space is locally of finite type. -/
-theorem locallyOfFiniteType_id (hX : isAdic X) : LocallyOfFiniteType (𝟙 X) :=
-  locallyOfFiniteType_of_isOpenImmersion (𝟙 X) hX
+/-- An open immersion with adic source is locally of finite type, with arbitrary pre-adic
+target. -/
+theorem locallyOfFiniteType_of_isOpenImmersion (f : X ⟶ Y) [IsOpenImmersion f]
+    (hX : isAdic X) : LocallyOfFiniteType f := by
+  simpa using (locallyOfFiniteType_id hX).comp_of_isOpenImmersion f
 
 end TauCeti.PreAdicSpace
