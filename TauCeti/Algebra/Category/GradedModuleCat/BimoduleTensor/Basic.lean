@@ -240,6 +240,22 @@ theorem mem_bimoduleTensorObj_piece_iff {p : ℤ} {z : bimoduleTensorObj Γ Δ �
       ∃ x ∈ (M.grading.tensorProduct N.grading).piece p, bimoduleTensorMkQ Γ Δ Θ M N x = z :=
   BalancedTensorProduct.mem_grading_piece_iff M.grading N.grading
 
+/-- A linear map shifts the degree of every tensor if it does so on homogeneous pure tensors. -/
+theorem bimoduleTensorObj_map_mem_of_tmul {Q : Type*} [AddCommGroup Q] [Module k Q]
+    (H : InternalGrading k Q) (f : bimoduleTensorObj Γ Δ Θ M N →ₗ[k] Q) (s : ℤ)
+    (hf : ∀ {p q : ℤ} {m : M} {n : N},
+      m ∈ M.grading.piece p → n ∈ N.grading.piece q →
+        f (bimoduleTensorTmul Γ Δ Θ M N m n) ∈ H.piece (p + q + s))
+    {p : ℤ} {z : bimoduleTensorObj Γ Δ Θ M N}
+    (hz : z ∈ (bimoduleTensorObj Γ Δ Θ M N).grading.piece p) : f z ∈ H.piece (p + s) := by
+  obtain ⟨x, hx, rfl⟩ := (mem_bimoduleTensorObj_piece_iff Γ Δ Θ M N).1 hz
+  rw [InternalGrading.tensorProduct_piece_eq_iSup] at hx
+  refine (iSup_le fun q ↦ Submodule.map₂_le.mpr fun m hm n hn ↦ ?_ :
+    _ ≤ (H.piece (p + s)).comap (f.comp (bimoduleTensorMkQ Γ Δ Θ M N))) hx
+  rw [Submodule.mem_comap, TensorProduct.mk_apply, LinearMap.comp_apply,
+    bimoduleTensorMkQ_tmul]
+  simpa only [show q + (p - q) = p by omega] using hf hm hn
+
 /-- Balancing moves the right `B`-action to the left `B`-action. -/
 theorem bimoduleTensorTmul_balance (b : B) (m : M) (n : N) :
     bimoduleTensorTmul Γ Δ Θ M N (((1 : A) ⊗ₜ[k] op b) • m) n =
@@ -258,6 +274,34 @@ theorem tmul_smul_bimoduleTensorTmul (a : A) (c : Cᵐᵒᵖ) (m : M) (n : N) :
   rw [TensorProduct.Algebra.smul_def (R := k) (A := A) (B := Cᵐᵒᵖ)
     (M := BalancedTensorProduct k B M N)]
   simp only [BalancedTensorProduct.smul_tmul_right, BalancedTensorProduct.smul_tmul_left]
+
+/-- The underlying carrier identification preserves the restricted left outer action. -/
+theorem bimoduleTensorUnderlyingEquiv_smul_left (a : A)
+    (x : bimoduleTensorObj Γ Δ Θ M N) :
+    bimoduleTensorUnderlyingEquiv Γ Δ Θ M N (a • x) =
+      a • bimoduleTensorUnderlyingEquiv Γ Δ Θ M N x := by
+  induction x using bimoduleTensor_induction_on Γ Δ Θ M N with
+  | ht m n =>
+    rw [TauCeti.Algebra.TensorProduct.smul_moduleLeft,
+      tmul_smul_bimoduleTensorTmul, bimoduleTensorUnderlyingEquiv_tmul]
+    simp only [← Algebra.TensorProduct.one_def, one_smul, bimoduleTensorUnderlyingEquiv_tmul,
+      BalancedTensorProduct.smul_tmul_left,
+      TauCeti.Algebra.TensorProduct.smul_moduleLeft]
+  | ha x y hx hy => simp only [smul_add, map_add, hx, hy]
+
+/-- The underlying carrier identification preserves the restricted right outer action. -/
+theorem bimoduleTensorUnderlyingEquiv_smul_right (c : Cᵐᵒᵖ)
+    (x : bimoduleTensorObj Γ Δ Θ M N) :
+    bimoduleTensorUnderlyingEquiv Γ Δ Θ M N (c • x) =
+      c • bimoduleTensorUnderlyingEquiv Γ Δ Θ M N x := by
+  induction x using bimoduleTensor_induction_on Γ Δ Θ M N with
+  | ht m n =>
+    rw [TauCeti.Algebra.TensorProduct.smul_moduleRight,
+      tmul_smul_bimoduleTensorTmul, bimoduleTensorUnderlyingEquiv_tmul]
+    simp only [← Algebra.TensorProduct.one_def, one_smul, bimoduleTensorUnderlyingEquiv_tmul,
+      BalancedTensorProduct.smul_tmul_right,
+      TauCeti.Algebra.TensorProduct.smul_moduleRight]
+  | ha x y hx hy => simp only [smul_add, map_add, hx, hy]
 
 variable {M N}
   {M' M'' : GradedModuleCat.{vM} (Γ.tensorProduct Δ.opposite).piece}
@@ -471,7 +515,7 @@ theorem bimoduleTensorMap_smul_right (c : k) (f : M ⟶ M') (g : N ⟶ N') :
 
 /-- Balanced tensor composition of internally graded bimodules. -/
 -- Expose the object assignment so the tensor maps have the computed source and target types.
-@[expose]
+@[expose, implicit_reducible]
 noncomputable def bimoduleTensor :
     GradedModuleCat.{vM} (Γ.tensorProduct Δ.opposite).piece ⥤
       GradedModuleCat.{vN} (Δ.tensorProduct Θ.opposite).piece ⥤

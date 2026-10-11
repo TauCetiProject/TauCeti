@@ -17,9 +17,8 @@ functor from commutative algebras to groups. For a Hopf algebra `H` over `R`, an
 `A : CommAlgCat R` is sent to the convolution group on `H →ₐ[R] A`; a morphism
 `φ : A ⟶ B` acts by post-composition with `φ`.
 
-This is the categorical form of the ReductiveGroups roadmap Layer 0 target "R-points as a
-group": for the affine group scheme represented by a commutative Hopf algebra `H`, its
-functor of points has values `A ↦ (H →ₐ[R] A)` and group law given by convolution.
+When `H` is commutative, this is the functor of points of the affine group scheme that `H`
+represents: its values are `A ↦ (H →ₐ[R] A)`, with the convolution group law.
 
 ## Main definitions
 
@@ -33,10 +32,8 @@ functor of points has values `A ↦ (H →ₐ[R] A)` and group law given by conv
 
 ## References
 
-This packages the "R-points as a group via convolution" milestone of the Tau Ceti
-ReductiveGroups roadmap, Layer 0. It builds on Mathlib's convolution monoid for algebra
-homomorphisms and the convolution-group inverse already developed in
-`TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints`.
+The construction builds on Mathlib's convolution monoid for algebra homomorphisms and on the
+convolution-group inverse of `TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints`.
 -/
 
 public section

@@ -218,7 +218,7 @@ variable {A : Type w} [CommRing A] [Algebra R A]
 /-- Membership in the point subgroup cut out by the determinant kernel is determinant one.
 This is the ambient membership criterion that further cuts consume; the determinant-one cut of
 the orthogonal group (`TauCeti.SpecialOrthogonal`) combines it with the orthogonal one. -/
-@[simp]
+@[simp↓]
 theorem mem_definingPointsSubgroup_iff_det_eq_one
     (g : HopfAlgebra.points (R := R)
       (H := GeneralLinear.coordinateHopfAlgebra R n) (CommAlgCat.of R A)) :

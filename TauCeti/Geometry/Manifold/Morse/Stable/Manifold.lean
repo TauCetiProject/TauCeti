@@ -100,6 +100,22 @@ theorem finrank_stableSubspace_add_manifoldMorseIndex :
   rw [stableSubspace]
   omega
 
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- The diagonal form `Σᵢ wᵢ (L u)ᵢ²` of a Morse chart is positive on the nonzero vectors of the
+stable subspace, where the coordinates of negative weight vanish. -/
+theorem sum_weight_mul_coord_sq_pos {u : E} (hu : u ∈ φ.stableSubspace) (hu0 : u ≠ 0) :
+    0 < ∑ i, φ.weight i * φ.coord u i ^ 2 := by
+  -- Each term is `(L u)ᵢ²`: for a negative weight, the coordinate vanishes.
+  have hterm (i : Fin (Module.finrank ℝ E)) : φ.weight i * φ.coord u i ^ 2 = φ.coord u i ^ 2 := by
+    rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi
+    · simp [φ.mem_stableSubspace.1 hu i (by rw [hi]; norm_num)]
+    · rw [hi, one_mul]
+  obtain ⟨j, hj⟩ : ∃ j, φ.coord u j ≠ 0 := by
+    by_contra! h
+    exact hu0 (φ.coord.injective (funext fun i ↦ by simpa using h i))
+  simp only [hterm]
+  exact Finset.sum_pos' (fun i _ ↦ sq_nonneg _) ⟨j, Finset.mem_univ j, by positivity⟩
+
 end MorseChart
 
 namespace IsAdaptedPseudoGradient
