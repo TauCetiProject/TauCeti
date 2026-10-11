@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.FirstPage
+public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.SpectralObject
 
 /-!
 # Naturality of the spectral object of a filtered complex
@@ -30,14 +30,16 @@ open CategoryTheory Limits ComposableArrows HomotopyCategory
 
 namespace CochainComplex
 
-variable {C : Type*} [Category* C] [Abelian C] {ι : Type*} [Category* ι]
-  {F G H : ι ⥤ CochainComplex C ℤ}
+section Triangulated
 
-omit [Abelian C] in
+variable {C : Type*} [Category* C] [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
+  {ι : Type*} [Category* ι] {F G H : ι ⥤ CochainComplex C ℤ}
+
+omit [HasZeroObject C] in
 /-- The third morphisms of the distinguished triangles of mapping cones in the homotopy category
 are natural in the pair of composable morphisms. -/
-lemma quotient_mappingConeCompTriangle_mor₃_naturality [Preadditive C]
-    [HasBinaryBiproducts C] {X₁ X₂ X₃ Y₁ Y₂ Y₃ : CochainComplex C ℤ} (f : X₁ ⟶ X₂) (g : X₂ ⟶ X₃)
+lemma quotient_mappingConeCompTriangle_mor₃_naturality {X₁ X₂ X₃ Y₁ Y₂ Y₃ : CochainComplex C ℤ}
+    (f : X₁ ⟶ X₂) (g : X₂ ⟶ X₃)
     (f' : Y₁ ⟶ Y₂) (g' : Y₂ ⟶ Y₃) (a : X₁ ⟶ Y₁) (b : X₂ ⟶ Y₂) (c : X₃ ⟶ Y₃)
     (h₁ : f ≫ b = a ≫ f') (h₂ : g ≫ c = b ≫ g') :
     ((quotient C (ComplexShape.up ℤ)).map (mappingConeCompTriangle f g).mor₃ ≫
@@ -83,6 +85,11 @@ lemma triangulatedSpectralObjectMap_comp (α : F ⟶ G) (β : G ⟶ H) :
   simp [triangulatedSpectralObjectMap]
   rfl
 
+end Triangulated
+
+variable {C : Type*} [Category* C] [Abelian C] {ι : Type*} [Category* ι]
+  {F G H : ι ⥤ CochainComplex C ℤ}
+
 /-- The morphism of spectral objects `spectralObject F ⟶ spectralObject G` induced by a natural
 transformation `α : F ⟶ G`. -/
 noncomputable def spectralObjectMap (α : F ⟶ G) : spectralObject F ⟶ spectralObject G :=
@@ -116,7 +123,8 @@ lemma spectralObjectMap_hom_app_hIso (α : F ⟶ G) {i j : ι} (f : i ⟶ j) (n 
       (spectralObjectHIso F f n).hom ≫
         HomologicalComplex.homologyMap
           (mappingCone.map (F.map f) (G.map f) (α.app i) (α.app j) (α.naturality f)) n := by
-  dsimp [spectralObjectMap, triangulatedSpectralObjectMap, spectralObjectHIso]
+  rw [spectralObjectHIso_hom, spectralObjectHIso_hom]
+  dsimp [spectralObjectMap, triangulatedSpectralObjectMap]
   convert ((homologyFunctorFactors C (ComplexShape.up ℤ) n).hom.naturality
     (mappingCone.map (F.map f) (G.map f) (α.app i) (α.app j) (α.naturality f))) using 2
   all_goals rfl
@@ -129,19 +137,19 @@ lemma spectralObjectMap_hom_app_hIsoCokernel (α : F ⟶ G) {i j : ι} (f : i �
       (spectralObjectHIsoCokernel F f n).hom ≫
         HomologicalComplex.homologyMap
           (cokernel.map (F.map f) (G.map f) (α.app i) (α.app j) (α.naturality f)) n := by
-  have e (K : ι ⥤ CochainComplex C ℤ) (u : i ⟶ j) [Mono (K.map u)] :
-      (spectralObjectHIsoCokernel K u n).hom = (spectralObjectHIso K u n).hom ≫
-        HomologicalComplex.homologyMap
-          (mappingCone.descShortComplex (cokernelSequence (K.map u))) n := rfl
-  rw [e, e, reassoc_of% spectralObjectMap_hom_app_hIso]
-  simp only [Category.assoc, ← HomologicalComplex.homologyMap_comp]
-  congr 2
-  exact mappingCone.map_descShortComplex (cokernelSequence (F.map f))
-    (cokernelSequence (G.map f))
-    { τ₁ := α.app i
-      τ₂ := α.app j
-      τ₃ := cokernel.map (F.map f) (G.map f) (α.app i) (α.app j) (α.naturality f)
-      comm₁₂ := (α.naturality f).symm
-      comm₂₃ := by simp }
+  rw [spectralObjectHIsoCokernel_hom, spectralObjectHIsoCokernel_hom]
+  erw [reassoc_of% spectralObjectMap_hom_app_hIso]
+  have key := congrArg (fun φ => HomologicalComplex.homologyMap φ n)
+    (mappingCone.map_descShortComplex (ShortComplex.cokernelSequence (F.map f))
+      (ShortComplex.cokernelSequence (G.map f))
+      { τ₁ := α.app i
+        τ₂ := α.app j
+        τ₃ := cokernel.map (F.map f) (G.map f) (α.app i) (α.app j) (α.naturality f)
+        comm₁₂ := (α.naturality f).symm
+        comm₂₃ := (cokernel.π_desc _ _ _).symm })
+  dsimp only at key
+  rw [HomologicalComplex.homologyMap_comp] at key
+  erw [HomologicalComplex.homologyMap_comp] at key
+  exact (congrArg ((spectralObjectHIso F f n).hom ≫ ·) key).trans (Category.assoc _ _ _).symm
 
 end CochainComplex
