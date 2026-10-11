@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
+public import TauCeti.AlgebraicGeometry.Morphisms.Finite
 public import TauCeti.RingTheory.Flat.Rank
 
 /-!
@@ -160,16 +161,6 @@ theorem Scheme.Hom.finrank_comp (f : X ⟶ Y) (g : Y ⟶ S) [Flat f] [IsFinite f
   rwa [finrank_SpecMap_eq_finrank ‹φ.hom.Finite› ‹φ.hom.Flat›,
     ← RingHom.algebraMap_toAlgebra φ.hom, RingHom.finrank_algebraMap] at this
 
-/-- A finite morphism to the spectrum of a field has finite-dimensional global sections, for any
-`K`-algebra structure on `Γ(X, ⊤)` given by the map of global sections. -/
-theorem Scheme.Hom.finite_of_field {K : Type u} [Field K] {X : Scheme.{u}}
-    (f : X ⟶ Spec (.of K)) [IsFinite f] [Algebra K Γ(X, ⊤)]
-    (hf : algebraMap K Γ(X, ⊤) = ((Scheme.ΓSpecIso (.of K)).inv ≫ f.appTop).hom) :
-    Module.Finite K Γ(X, ⊤) := by
-  rw [← RingHom.finite_algebraMap, hf, CommRingCat.hom_comp]
-  exact f.finite_appTop.comp (RingHom.Finite.of_surjective _
-    (Scheme.ΓSpecIso (.of K)).commRingCatIsoToRingEquiv.symm.surjective)
-
 /-- **Over a field, the rank is the dimension of the global sections.** The rank of a finite
 morphism `f : X ⟶ Spec K` is the `K`-dimension of `Γ(X, ⊤)`, for the `K`-algebra structure given
 by the map of global sections. -/
@@ -178,7 +169,7 @@ theorem Scheme.Hom.finrank_eq_finrank_of_field {K : Type u} [Field K] {X : Schem
     (hf : algebraMap K Γ(X, ⊤) = ((Scheme.ΓSpecIso (.of K)).inv ≫ f.appTop).hom)
     (s : Spec (.of K)) : f.finrank s = Module.finrank K Γ(X, ⊤) := by
   have : IsAffine X := isAffine_of_isAffineHom f
-  have : Module.Finite K Γ(X, ⊤) := f.finite_of_field hf
+  have : Module.Finite K Γ(X, ⊤) := f.moduleFinite_appTop hf
   have hfin : (CommRingCat.ofHom (algebraMap K Γ(X, ⊤))).hom.Finite := by
     rwa [CommRingCat.hom_ofHom, RingHom.finite_algebraMap]
   -- `f` is the spectrum of the map of global sections, up to the isomorphism `X ≅ Spec Γ(X, ⊤)`.
