@@ -274,7 +274,7 @@ theorem weightParabolicFiniteTypeCoordinateHopfAlgebra_obj (w : Fin N → ℤ) :
 
 /-- The subgroup cut out by the weight-parabolic ideal consists exactly of block-triangular
 ambient points. -/
-@[simp]
+@[simp↓]
 theorem mem_weightParabolicDefiningPointsSubgroup_iff_blockTriangular (w : Fin N → ℤ)
     {A : Type*} [CommRing A] [Algebra R A]
     (g : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R N)

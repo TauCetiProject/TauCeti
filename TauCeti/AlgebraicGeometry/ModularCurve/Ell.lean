@@ -33,7 +33,10 @@ category fibred in groupoids over `Sch/B`:
 
 Base change of a fixed object `X = (S, E)` is functorial in the scheme over `S`
 (`EllObj.baseChangeFunctor`), with the canonical morphisms `EllipticCurveGeom.baseChangeMap`
-between base changes as the morphisms of total spaces.
+between base changes as the morphisms of total spaces, and with the projections
+`EllObj.baseChangeFunctorHom` to `X`. Along an arrow `f : X ⟶ Y` of `Ell/B`, base change of `X` is
+base change of `Y` along the composite with `f.base` (`EllObj.baseChangeFunctorIso`); this is what
+makes the fibres of moduli problems over `Ell/B` compatible with base change.
 
 An arrow of `Ell/B` is determined by its morphism of total spaces (`EllObj.hom_ext`): the morphism
 of bases is recovered through the zero section (`EllObj.Hom.base_eq`). It is automatically
@@ -50,6 +53,8 @@ compatible with the group laws (`EllObj.Hom.addition_total` and `EllObj.Hom.neg_
   of `B`-schemes, with its arrow to the object.
 * `TauCeti.AlgebraicGeometry.EllObj.baseChangeFunctor X`: base change of an object `X = (S, E)`
   of `Ell/B` as a functor from schemes over `S` to `Ell/B`.
+* `TauCeti.AlgebraicGeometry.EllObj.baseChangeFunctorIso f`: for an arrow `f : X ⟶ Y`, the natural
+  isomorphism between base change of `X` and base change of `Y` along the composite with `f.base`.
 
 ## Main results
 
@@ -262,6 +267,14 @@ instance isStronglyCartesian {R S : Over B} (g : R ⟶ S) (f : X ⟶ Y) [(forget
   exact Hom.eq_lift _ _ _ _ χ hχf
     (congr_arg CommaMorphism.left (IsHomLift.eq_of_isHomLift (forget B) k χ)).symm
 
+/-- Two arrows `X ⟶ Y` of `Ell/B` with the same morphism of bases and the same composite with an
+arrow `g : Y ⟶ Z` are equal, since `g` is strongly cartesian. -/
+theorem hom_ext_of_comp (g : Y ⟶ Z) {k k' : X ⟶ Y} (hk : k ≫ g = k' ≫ g)
+    (hb : k.base = k'.base) : k = k' :=
+  have := isHomLift_of_base_eq (f := k) (g := (forget B).map k) rfl
+  have := isHomLift_of_base_eq (f := k') (g := (forget B).map k) hb.symm
+  Functor.IsStronglyCartesian.ext (forget B) ((forget B).map g) g ((forget B).map k) hk
+
 /-! ### Base change -/
 
 /-- The **base change** of an object `X = (S, E)` of `Ell/B` along a morphism `g : T ⟶ S` of
@@ -333,6 +346,85 @@ theorem isIso_iff_isIso_base (f : X ⟶ Y) : IsIso f ↔ IsIso f.base := by
     have : IsIso ((Over.forget B).map ((forget B).map f)) := h
     have : IsIso ((forget B).map f) := isIso_of_reflects_iso _ (Over.forget B)
     exact Functor.IsStronglyCartesian.isIso_of_base_isIso (forget B) ((forget B).map f) f
+
+/-! ### Base change along an arrow of `Ell/B` -/
+
+/-- The arrow of `Ell/B` from the base change `X.baseChangeFunctor.obj T` of `X = (S, E)` along
+`T ⟶ S` to `X`, lying over the structure morphism of `T`: the arrow `baseChangeHom` along `T ⟶ S`,
+whose source is `X.baseChangeFunctor.obj T` by definition. Its morphism of total spaces is the
+first projection of the fibre product. -/
+noncomputable def baseChangeFunctorHom (X : EllObj B) (T : Over X.base) :
+    X.baseChangeFunctor.obj T ⟶ X :=
+  X.baseChangeHom (T := Over.mk (T.hom ≫ X.structureMap)) (Over.homMk T.hom)
+
+@[simp]
+theorem baseChangeFunctorHom_base {X : EllObj B} (T : Over X.base) :
+    (X.baseChangeFunctorHom T).base = T.hom :=
+  (rfl)
+
+@[simp]
+theorem baseChangeFunctorHom_total {X : EllObj B} (T : Over X.base) :
+    (X.baseChangeFunctorHom T).total = (X.curve.baseChangeIso T.hom).hom ≫ pullback.fst _ _ :=
+  (rfl)
+
+/-- The arrows `baseChangeFunctorHom` are natural in the scheme over the base of `X`. -/
+@[reassoc (attr := simp)]
+theorem baseChangeFunctor_map_baseChangeFunctorHom {X : EllObj B} {T' T : Over X.base}
+    (k : T' ⟶ T) :
+    X.baseChangeFunctor.map k ≫ X.baseChangeFunctorHom T = X.baseChangeFunctorHom T' := by
+  ext
+  -- the objects of these composites are only definitionally those of the two lemmas below, so
+  -- `simp` cannot rewrite with them
+  exact (X.curve.baseChangeMap_baseChangeIso_hom_assoc k.left (Over.w k) _).trans
+    (congrArg ((X.curve.baseChangeIso T'.hom).hom ≫ ·) (pullback.mapSnd_fst _ _ _ _ _))
+
+/-- The component at `T` of `baseChangeFunctorIso f`: the cartesian factorisation of
+`X.baseChangeFunctorHom T ≫ f` through `Y.baseChangeFunctorHom`, over the identity of `T`. -/
+private noncomputable def baseChangeFunctorIsoApp {X Y : EllObj B} (f : X ⟶ Y) (T : Over X.base) :
+    X.baseChangeFunctor.obj T ⟶ Y.baseChangeFunctor.obj ((Over.map f.base).obj T) :=
+  Hom.lift (Y.baseChangeFunctorHom ((Over.map f.base).obj T)) (X.baseChangeFunctorHom T ≫ f)
+    (𝟙 T.left) (Category.id_comp _)
+
+@[reassoc (attr := simp)]
+private theorem baseChangeFunctorIsoApp_comp {X Y : EllObj B} (f : X ⟶ Y) (T : Over X.base) :
+    baseChangeFunctorIsoApp f T ≫ Y.baseChangeFunctorHom ((Over.map f.base).obj T) =
+      X.baseChangeFunctorHom T ≫ f :=
+  Hom.lift_comp _ _ _ _
+
+private theorem baseChangeFunctorIsoApp_naturality {X Y : EllObj B} (f : X ⟶ Y)
+    {T' T : Over X.base} (k : T' ⟶ T) :
+    X.baseChangeFunctor.map k ≫ baseChangeFunctorIsoApp f T =
+      baseChangeFunctorIsoApp f T' ≫ Y.baseChangeFunctor.map ((Over.map f.base).map k) :=
+  -- the two morphisms of bases are `k.left ≫ 𝟙 T.left` and `𝟙 T'.left ≫ k.left` only after
+  -- unfolding `baseChangeFunctor`, so they are compared by a term rather than by `simp`
+  hom_ext_of_comp (Y.baseChangeFunctorHom _) (by simp)
+    ((Category.comp_id k.left).trans (Category.id_comp _).symm)
+
+/-- **Base change along an arrow of `Ell/B`.** For an arrow `f : X ⟶ Y` of `Ell/B`, the base
+change of `X` along a scheme `T` over `X.base` is identified with the base change of `Y` along
+the composite `T ⟶ X.base ⟶ Y.base`, naturally in `T`. The component at `T` lies over the identity
+of `T` (`baseChangeFunctorIso_hom_app_base`) and is the cartesian factorisation of
+`X.baseChangeFunctorHom T ≫ f` through `Y.baseChangeFunctorHom`
+(`baseChangeFunctorIso_hom_app_comp`). -/
+noncomputable def baseChangeFunctorIso {X Y : EllObj B} (f : X ⟶ Y) :
+    X.baseChangeFunctor ≅ Over.map f.base ⋙ Y.baseChangeFunctor :=
+  NatIso.ofComponents
+    (fun T ↦
+      have : IsIso (baseChangeFunctorIsoApp f T) :=
+        (isIso_iff_isIso_base _ _).2 (inferInstanceAs (IsIso (𝟙 T.left)))
+      asIso (baseChangeFunctorIsoApp f T))
+    (baseChangeFunctorIsoApp_naturality f)
+
+@[simp]
+theorem baseChangeFunctorIso_hom_app_base {X Y : EllObj B} (f : X ⟶ Y) (T : Over X.base) :
+    ((baseChangeFunctorIso f).hom.app T).base = 𝟙 T.left :=
+  (rfl)
+
+@[reassoc (attr := simp)]
+theorem baseChangeFunctorIso_hom_app_comp {X Y : EllObj B} (f : X ⟶ Y) (T : Over X.base) :
+    (baseChangeFunctorIso f).hom.app T ≫ Y.baseChangeFunctorHom ((Over.map f.base).obj T) =
+      X.baseChangeFunctorHom T ≫ f :=
+  baseChangeFunctorIsoApp_comp f T
 
 end EllObj
 

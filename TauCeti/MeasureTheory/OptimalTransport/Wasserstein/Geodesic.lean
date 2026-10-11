@@ -29,7 +29,9 @@ every two-time projection of such a plan is optimal.
 On a Polish geodesic space, every pair of finite measures at finite Wasserstein distance is the
 pair of endpoint laws of such a plan, obtained by lifting an optimal coupling to geodesic paths.
 Consequently the space `P_p (X)` of probability measures with finite `p`-th moment is itself a
-geodesic space.
+geodesic space. On a separable Banach space no measurable selection is needed: the affine segments
+lift every optimal coupling `π`, so the laws of `(1 - t) • x + t • y` under `π` form a geodesic
+segment of `P_p (E)`.
 
 ## Main results
 
@@ -41,8 +43,14 @@ geodesic space.
   optimal coupling of its laws at those times.
 * `TauCeti.exists_ae_mem_geodesicPaths_wassersteinEDist_timeMarginal_eq`: on a Polish geodesic
   space, two finite measures at finite `p`-Wasserstein distance are joined by such a plan.
+* `TauCeti.WassersteinSpace.exists_isGeodesicSegment_timeMarginal`: the laws at intermediate times
+  of such a plan between two points of `P_p (X)` trace a geodesic segment of `P_p (X)`.
 * `TauCeti.WassersteinSpace.instIsGeodesicSpace`: on a Polish geodesic space, `P_p (X)` is a
   geodesic space for every `1 ≤ p ≤ ∞`.
+* `TauCeti.WassersteinSpace.exists_isGeodesicSegment_map_smul_add_smul`: on a separable Banach
+  space, the laws of `(1 - t) • x + t • y` under an optimal coupling form a geodesic segment.
+* `TauCeti.WassersteinSpace.exists_dist_sq_eq_integral_isGeodesicSegment_map_smul_add_smul`: for
+  the exponent `2`, the interpolated plan can be chosen with `∫ ‖x - y‖² dπ = W₂ (μ, ν)²`.
 
 ## References
 
@@ -190,48 +198,152 @@ namespace WassersteinSpace
 
 variable [Fact (1 ≤ p)]
 
+/-- **Wasserstein geodesics from optimal dynamic plans**, as geodesic segments of `P_p (X)`. The
+laws at intermediate times of a probability dynamic plan concentrated on geodesic paths, whose
+endpoint law is an optimal coupling of two laws `μ` and `ν` of finite `p`-th moment, trace a
+geodesic segment of `P_p (X)` from `μ` to `ν`. -/
+theorem exists_isGeodesicSegment_timeMarginal {η : Measure C(I, X)} [IsProbabilityMeasure η]
+    (hη : ∀ᵐ γ ∂η, γ ∈ geodesicPaths X) {μ ν : WassersteinSpace p X}
+    (h0 : η.timeMarginal 0 = μ) (h1 : η.timeMarginal 1 = ν)
+    (hopt : eLpNorm (fun z : X × X ↦ edist z.1 z.2) p η.endpointLaw =
+      wassersteinEDist p ((μ : ProbabilityMeasure X) : Measure X)
+        ((ν : ProbabilityMeasure X) : Measure X)) :
+    ∃ γ : ℝ → WassersteinSpace p X, IsGeodesicSegment γ μ ν ∧
+      ∀ t : I, ((γ t : ProbabilityMeasure X) : Measure X) = η.timeMarginal t := by
+  have hp : (1 : ℝ≥0∞) ≤ p := Fact.out
+  have hμν := wassersteinEDist_ne_top measurable_edist μ ν
+  have hW (s t : I) : wassersteinEDist p (η.timeMarginal s) (η.timeMarginal t) =
+      edist s t * wassersteinEDist p ((μ : ProbabilityMeasure X) : Measure X)
+        ((ν : ProbabilityMeasure X) : Measure X) := by
+    rw [wassersteinEDist_timeMarginal_eq hη hp (by rw [h0, h1, hopt]) (h0 ▸ h1 ▸ hμν) s t, h0,
+      h1]
+  -- The law at time `t` has finite moment, being at finite distance from `μ`.
+  have hmom (t : I) :
+      HasFiniteMoment p ((η.timeMarginal t).toProbabilityMeasure : Measure X) := by
+    rw [Measure.coe_toProbabilityMeasure]
+    refine (hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment measurable_edist
+      (hasFiniteMoment μ)).2 ?_
+    rw [← h0, hW]
+    exact ENNReal.mul_ne_top (edist_ne_top 0 t) hμν
+  obtain ⟨γ, hγ⟩ : ∃ γ : I → WassersteinSpace p X,
+      ∀ t, ((γ t : ProbabilityMeasure X) : Measure X) = η.timeMarginal t :=
+    ⟨fun t ↦ mk (η.timeMarginal t).toProbabilityMeasure (hmom t),
+      fun t ↦ by simp⟩
+  have hγ0 : γ 0 = μ := ext (ProbabilityMeasure.toMeasure_injective ((hγ 0).trans h0))
+  have hγ1 : γ 1 = ν := ext (ProbabilityMeasure.toMeasure_injective ((hγ 1).trans h1))
+  have hdist (s t : I) : dist (γ s) (γ t) = |(s : ℝ) - t| * dist (γ 0) (γ 1) := by
+    rw [hγ0, hγ1, dist_def, dist_def, hγ, hγ, hW, ENNReal.toReal_mul, edist_dist,
+      ENNReal.toReal_ofReal dist_nonneg, Subtype.dist_eq, Real.dist_eq]
+  -- The curve is Lipschitz, hence a path; it is then a geodesic path by `hdist`.
+  have hc : (⟨γ, (LipschitzWith.of_dist_le_mul (K := (dist (γ 0) (γ 1)).toNNReal)
+      fun s t ↦ by rw [hdist, Real.coe_toNNReal _ dist_nonneg, Subtype.dist_eq, Real.dist_eq,
+        mul_comm]).continuous⟩ : C(I, WassersteinSpace p X)) ∈ geodesicPaths _ :=
+    mem_geodesicPaths_iff.2 hdist
+  have hseg := mem_geodesicPaths_iff_isGeodesicSegment.1 hc
+  simp only [ContinuousMap.coe_mk, hγ0, hγ1] at hseg
+  exact ⟨_, hseg, fun t ↦ by rw [IccExtend_val, hγ]⟩
+
 /-- **`P_p (X)` is a geodesic space.** On a Polish geodesic space, the space of probability
 measures with finite `p`-th moment, with the `p`-Wasserstein distance, is a geodesic space for
 every `1 ≤ p ≤ ∞`: the laws at intermediate times of a dynamic plan lifting an optimal coupling
 to geodesic paths form a geodesic segment. -/
 instance instIsGeodesicSpace [IsGeodesicSpace X] : IsGeodesicSpace (WassersteinSpace p X) where
   exists_isGeodesicSegment μ ν := by
-    have hp : (1 : ℝ≥0∞) ≤ p := Fact.out
-    have hμν := wassersteinEDist_ne_top measurable_edist μ ν
-    obtain ⟨η, -, hη, h0, h1, -, hW⟩ :=
-      exists_ae_mem_geodesicPaths_wassersteinEDist_timeMarginal_eq hp _ _ hμν
+    obtain ⟨η, -, hη, h0, h1, hopt, -⟩ :=
+      exists_ae_mem_geodesicPaths_wassersteinEDist_timeMarginal_eq Fact.out _ _
+        (wassersteinEDist_ne_top measurable_edist μ ν)
     have : IsProbabilityMeasure η := by
       rw [← Measure.isProbabilityMeasure_map_iff (ContinuousMap.measurable_eval 0).aemeasurable,
         ← Measure.timeMarginal_def, h0]
       infer_instance
-    -- The law at time `t` has finite moment, being at finite distance from `μ`.
-    have hmom (t : I) :
-        HasFiniteMoment p ((η.timeMarginal t).toProbabilityMeasure : Measure X) := by
-      rw [Measure.coe_toProbabilityMeasure]
-      refine (hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment measurable_edist
-        (hasFiniteMoment μ)).2 ?_
-      rw [← h0, hW]
-      exact ENNReal.mul_ne_top (edist_ne_top 0 t) hμν
-    obtain ⟨γ, hγ⟩ : ∃ γ : I → WassersteinSpace p X,
-        ∀ t, ((γ t : ProbabilityMeasure X) : Measure X) = η.timeMarginal t :=
-      ⟨fun t ↦ mk (η.timeMarginal t).toProbabilityMeasure (hmom t),
-        fun t ↦ by simp⟩
-    have hγ0 : γ 0 = μ := ext (ProbabilityMeasure.toMeasure_injective ((hγ 0).trans h0))
-    have hγ1 : γ 1 = ν := ext (ProbabilityMeasure.toMeasure_injective ((hγ 1).trans h1))
-    have hdist (s t : I) : dist (γ s) (γ t) = |(s : ℝ) - t| * dist (γ 0) (γ 1) := by
-      rw [hγ0, hγ1, dist_def, dist_def, hγ, hγ, hW, ENNReal.toReal_mul, edist_dist,
-        ENNReal.toReal_ofReal dist_nonneg, Subtype.dist_eq, Real.dist_eq]
-    -- The curve is Lipschitz, hence a path; it is then a geodesic path by `hdist`.
-    have hc : (⟨γ, (LipschitzWith.of_dist_le_mul (K := (dist (γ 0) (γ 1)).toNNReal)
-        fun s t ↦ by rw [hdist, Real.coe_toNNReal _ dist_nonneg, Subtype.dist_eq, Real.dist_eq,
-          mul_comm]).continuous⟩ : C(I, WassersteinSpace p X)) ∈ geodesicPaths _ :=
-      mem_geodesicPaths_iff.2 hdist
-    have hseg := mem_geodesicPaths_iff_isGeodesicSegment.1 hc
-    simp only [ContinuousMap.coe_mk, hγ0, hγ1] at hseg
-    exact ⟨_, hseg⟩
+    obtain ⟨γ, hγ, -⟩ := exists_isGeodesicSegment_timeMarginal hη h0 h1 hopt
+    exact ⟨γ, hγ⟩
 
 end WassersteinSpace
 
 end Polish
+
+section Normed
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+  [SecondCountableTopology E] [MeasurableSpace E] [BorelSpace E] [Fact (1 ≤ p)]
+
+/-- **Linear interpolation of an optimal plan.** On a separable Banach space `E` and for
+`1 ≤ p ≤ ∞`, let `π` be an optimal coupling of two laws `μ` and `ν` of finite `p`-th moment. The
+laws of `(1 - t) • x + t • y` under `π`, for `t ∈ [0, 1]`, trace a geodesic segment of `P_p (E)`
+from `μ` to `ν`. -/
+theorem WassersteinSpace.exists_isGeodesicSegment_map_smul_add_smul {μ ν : WassersteinSpace p E}
+    {π : Measure (E × E)}
+    (hπ : IsCoupling π ((μ : ProbabilityMeasure E) : Measure E)
+      ((ν : ProbabilityMeasure E) : Measure E))
+    (hπopt : eLpNorm (fun z : E × E ↦ edist z.1 z.2) p π =
+      wassersteinEDist p ((μ : ProbabilityMeasure E) : Measure E)
+        ((ν : ProbabilityMeasure E) : Measure E)) :
+    ∃ γ : ℝ → WassersteinSpace p E, IsGeodesicSegment γ μ ν ∧ ∀ t ∈ Icc (0 : ℝ) 1,
+      ((γ t : ProbabilityMeasure E) : Measure E) = π.map fun z ↦ (1 - t) • z.1 + t • z.2 := by
+  have : IsProbabilityMeasure π := hπ.isProbabilityMeasure
+  -- The plan, lifted to the affine segments joining its pairs of points.
+  let seg : E × E → C(I, E) := fun z ↦ ⟨fun t ↦ AffineMap.lineMap z.1 z.2 (t : ℝ), by fun_prop⟩
+  have hseg : Measurable seg :=
+    (ContinuousMap.continuous_of_continuous_uncurry _ <| by
+      simp only [seg, ContinuousMap.coe_mk, AffineMap.lineMap_apply_module]
+      fun_prop).measurable
+  have hη : ∀ᵐ γ ∂π.map seg, γ ∈ geodesicPaths E :=
+    (ae_map_iff hseg.aemeasurable isClosed_geodesicPaths.measurableSet).2 <| .of_forall fun z ↦
+      mem_geodesicPaths_iff.2 fun s t ↦ by simp [seg, dist_lineMap_lineMap, Real.dist_eq]
+  have hmarg (t : I) : (π.map seg).timeMarginal t =
+      π.map fun z ↦ (1 - (t : ℝ)) • z.1 + (t : ℝ) • z.2 := by
+    rw [Measure.timeMarginal_def, Measure.map_map (ContinuousMap.measurable_eval t) hseg]
+    congr 1
+    ext z
+    simp [seg, AffineMap.lineMap_apply_module]
+  have hend : (π.map seg).endpointLaw = π := by
+    rw [Measure.endpointLaw_def, Measure.map_map
+      ((ContinuousMap.measurable_eval 0).prodMk (ContinuousMap.measurable_eval 1)) hseg]
+    convert Measure.map_id
+    ext z <;> simp [seg]
+  have h0 : (π.map seg).timeMarginal 0 = ((μ : ProbabilityMeasure E) : Measure E) := by
+    rw [hmarg, ← hπ.fst_eq]
+    simp [Measure.fst]
+  have h1 : (π.map seg).timeMarginal 1 = ((ν : ProbabilityMeasure E) : Measure E) := by
+    rw [hmarg, ← hπ.snd_eq]
+    simp [Measure.snd]
+  obtain ⟨γ, hγ, hγt⟩ := WassersteinSpace.exists_isGeodesicSegment_timeMarginal hη h0 h1
+    (by rw [hend, hπopt])
+  exact ⟨γ, hγ, fun t ht ↦ by rw [hγt ⟨t, ht⟩, hmarg]⟩
+
+omit [Fact (1 ≤ p)] in
+/-- **Quadratic linear interpolation.** On a separable Banach space `E`, two laws `μ` and `ν` of
+finite second moment have an optimal coupling `π` for the quadratic cost: the displacement `x - y`
+is square integrable under `π`, with `∫ ‖x - y‖² dπ = W₂ (μ, ν)²`, and the laws of
+`(1 - t) • x + t • y` under `π`, for `t ∈ [0, 1]`, trace a geodesic segment of `P₂ (E)` from `μ`
+to `ν`. -/
+theorem WassersteinSpace.exists_dist_sq_eq_integral_isGeodesicSegment_map_smul_add_smul
+    (μ ν : WassersteinSpace 2 E) :
+    ∃ π : Measure (E × E),
+      IsCoupling π ((μ : ProbabilityMeasure E) : Measure E)
+        ((ν : ProbabilityMeasure E) : Measure E) ∧
+      MemLp (fun z : E × E ↦ z.1 - z.2) 2 π ∧ dist μ ν ^ 2 = ∫ z, ‖z.1 - z.2‖ ^ 2 ∂π ∧
+      ∃ γ : ℝ → WassersteinSpace 2 E, IsGeodesicSegment γ μ ν ∧ ∀ t ∈ Icc (0 : ℝ) 1,
+        ((γ t : ProbabilityMeasure E) : Measure E) = π.map fun z ↦ (1 - t) • z.1 + t • z.2 := by
+  obtain ⟨π, hπ, hπopt⟩ := exists_isCoupling_eLpNorm_eq_wassersteinEDist two_ne_zero
+    ENNReal.ofNat_ne_top _ _
+    (exists_isCoupling_of_wassersteinEDist_ne_top
+      (WassersteinSpace.wassersteinEDist_ne_top measurable_edist μ ν))
+  -- The `L²` norm of the displacement is the `L²` norm of the ground distance.
+  have hd : eLpNorm (fun z : E × E ↦ z.1 - z.2) 2 π = eLpNorm (fun z : E × E ↦ edist z.1 z.2) 2 π :=
+    eLpNorm_congr_enorm_ae (by fun_prop) measurable_edist.aestronglyMeasurable
+      (.of_forall fun z ↦ by simp [edist_eq_enorm_sub])
+  have hmem : MemLp (fun z : E × E ↦ z.1 - z.2) 2 π := by
+    rw [memLp_iff, hd, hπopt]
+    exact (WassersteinSpace.wassersteinEDist_ne_top measurable_edist μ ν).lt_top
+  refine ⟨π, hπ, hmem, ?_, WassersteinSpace.exists_isGeodesicSegment_map_smul_add_smul hπ hπopt⟩
+  rw [WassersteinSpace.dist_def, ← hπopt, ← hd,
+    hmem.eLpNorm_eq_integral_rpow_norm two_ne_zero ENNReal.ofNat_ne_top,
+    ENNReal.toReal_ofReal (by positivity)]
+  simpa using Real.rpow_inv_natCast_pow (n := 2) (integral_nonneg fun z ↦ by positivity)
+    two_ne_zero
+
+end Normed
 
 end TauCeti

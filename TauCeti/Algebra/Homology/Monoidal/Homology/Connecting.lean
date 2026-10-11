@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.HomologySequence
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
-public import TauCeti.Algebra.Homology.BifunctorHomotopy
+public import TauCeti.Algebra.Homology.Bifunctor.Homotopy
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Cross
 public import TauCeti.CategoryTheory.GradedObject.Monoidal
 
