@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Relative
-public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative
+public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Zero
 
 /-!
