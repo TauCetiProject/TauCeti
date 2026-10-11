@@ -102,21 +102,20 @@ private noncomputable def actionCoverRestriction (σ : Φ.cones) :
           (Spec.map (CommRingCat.ofHom (algebraMap ℂ
             (affineCoordinateRing Φ.lattice (⊥ : PointedCone ℝ V)))))
           Φ.algebraicRealizationStructureMap)
-        (Φ.affineToricChartι σ) ⟶
+        (Φ.affineToricChartι σ) ≅
       pullback
         (Spec.map (CommRingCat.ofHom (algebraMap ℂ
           (affineCoordinateRing Φ.lattice (⊥ : PointedCone ℝ V)))))
         (Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing Φ.lattice σ.1)))) :=
-  pullback.lift (pullback.fst _ _ ≫ pullback.fst _ _) (pullback.snd _ _) (by
-    rw [Category.assoc, pullback.condition, ← Category.assoc, pullback.condition,
-      Category.assoc, affineToricChartι_comp_algebraicRealizationStructureMap])
+  pullbackLeftPullbackSndIso _ _ _ ≪≫
+    pullback.congrHom rfl (Φ.affineToricChartι_comp_algebraicRealizationStructureMap σ)
 
 @[reassoc]
 private theorem map_actionCoverRestriction {τ σ : Φ.cones} (h : τ.1.IsFaceOf σ.1) :
     pullback.map (pullback.snd _ _) (Φ.affineToricChartι τ) (pullback.snd _ _)
         (Φ.affineToricChartι σ) (𝟙 _) (faceAffineToricSchemeMap Φ.lattice h) (𝟙 _)
-        (by simp) (by simp) ≫ actionCoverRestriction σ =
-      actionCoverRestriction τ ≫ affineToricSchemeActionFaceMap Φ.lattice σ.1 h := by
+        (by simp) (by simp) ≫ (actionCoverRestriction σ).hom =
+      (actionCoverRestriction τ).hom ≫ affineToricSchemeActionFaceMap Φ.lattice σ.1 h := by
   apply pullback.hom_ext <;> simp [actionCoverRestriction]
 
 private noncomputable def actionOnCover (σ : Φ.cones) :
@@ -126,17 +125,28 @@ private noncomputable def actionOnCover (σ : Φ.cones) :
             (affineCoordinateRing Φ.lattice (⊥ : PointedCone ℝ V)))))
           Φ.algebraicRealizationStructureMap)
         (Φ.affineToricChartι σ) ⟶ Φ.algebraicRealization :=
-  actionCoverRestriction σ ≫ affineToricSchemeAction Φ.lattice σ.1 ≫ Φ.affineToricChartι σ
+  (actionCoverRestriction σ).hom ≫ affineToricSchemeAction Φ.lattice σ.1 ≫ Φ.affineToricChartι σ
+
+variable (Φ) in
+private theorem actionCover_f (σ : Φ.cones) :
+    (actionCover Φ).f σ = pullback.fst (pullback.snd _ _) (Φ.affineToricChartι σ) :=
+  rfl
+
+variable (Φ) in
+private theorem actionCover_trans {τ σ : Φ.cones} (h : τ ⟶ σ) :
+    (actionCover Φ).trans h =
+      pullback.map (pullback.snd _ _) (Φ.affineToricChartι τ) (pullback.snd _ _)
+        (Φ.affineToricChartι σ) (𝟙 _)
+        (faceAffineToricSchemeMap Φ.lattice (Φ.isFaceOf_of_le σ.2 τ.2 (leOfHom h))) (𝟙 _)
+        (by simp) (by simp) :=
+  rfl
 
 private theorem trans_comp_actionOnCover {τ σ : Φ.cones} (h : τ ⟶ σ) :
     (actionCover Φ).trans h ≫ actionOnCover σ = actionOnCover τ := by
-  have hτσ : τ.1.IsFaceOf σ.1 := Φ.isFaceOf_of_le σ.2 τ.2 (leOfHom h)
-  have key := map_actionCoverRestriction_assoc hτσ
-    (affineToricSchemeAction Φ.lattice σ.1 ≫ Φ.affineToricChartι σ)
-  simp only [affineToricSchemeActionFaceMap_comp_action_assoc,
-    faceAffineToricSchemeMap_comp_affineToricChartι] at key
-  -- The transition maps of the pulled-back cover are the induced maps of pullbacks.
-  exact key
+  rw [actionCover_trans, actionOnCover, actionOnCover]
+  exact (map_actionCoverRestriction_assoc _ _).trans <| by
+    rw [affineToricSchemeActionFaceMap_comp_action_assoc,
+      faceAffineToricSchemeMap_comp_affineToricChartι]
 
 variable (Φ) in
 /-- The action of the dense torus on the toric scheme of a fan, glued from the affine torus
@@ -150,12 +160,13 @@ noncomputable def algebraicRealizationAction :
 
 private theorem fst_comp_algebraicRealizationAction (σ : Φ.cones) :
     pullback.fst (pullback.snd _ _) (Φ.affineToricChartι σ) ≫ Φ.algebraicRealizationAction =
-      actionCoverRestriction σ ≫ affineToricSchemeAction Φ.lattice σ.1 ≫
+      (actionCoverRestriction σ).hom ≫ affineToricSchemeAction Φ.lattice σ.1 ≫
         Φ.affineToricChartι σ :=
   (actionCover Φ).map_glueMorphismsOfLocallyDirected actionOnCover trans_comp_actionOnCover σ
 
+@[reassoc]
 private theorem actionCoverRestriction_comp_algebraicRealizationActionChartMap (σ : Φ.cones) :
-    actionCoverRestriction σ ≫ algebraicRealizationActionChartMap σ =
+    (actionCoverRestriction σ).hom ≫ algebraicRealizationActionChartMap σ =
       pullback.fst (pullback.snd _ _) (Φ.affineToricChartι σ) := by
   apply pullback.hom_ext
   · simp [actionCoverRestriction]
@@ -167,14 +178,9 @@ of a fan is the affine torus action followed by the chart inclusion. -/
 theorem algebraicRealizationActionChartMap_comp_algebraicRealizationAction (σ : Φ.cones) :
     algebraicRealizationActionChartMap σ ≫ Φ.algebraicRealizationAction =
       affineToricSchemeAction Φ.lattice σ.1 ≫ Φ.affineToricChartι σ := by
-  let e := pullback.lift (algebraicRealizationActionChartMap σ) (pullback.snd _ _)
-    (algebraicRealizationActionChartMap_comp_snd σ)
-  have he : e ≫ actionCoverRestriction σ = 𝟙 _ := by
-    apply pullback.hom_ext <;> simp [e, actionCoverRestriction]
-  have hchart : algebraicRealizationActionChartMap σ =
-      e ≫ pullback.fst (pullback.snd _ _) (Φ.affineToricChartι σ) := by
-    simp [e]
-  rw [hchart, Category.assoc, fst_comp_algebraicRealizationAction, reassoc_of% he]
+  rw [← cancel_epi (actionCoverRestriction σ).hom,
+    actionCoverRestriction_comp_algebraicRealizationActionChartMap_assoc,
+    fst_comp_algebraicRealizationAction]
 
 /-- Morphisms out of the product of the dense torus with the toric scheme of a fan are determined
 by their restrictions to the products of the dense torus with the affine charts. -/
@@ -186,11 +192,10 @@ theorem algebraicRealizationActionChartMap_hom_ext {Y : Scheme}
     (H : ∀ σ, algebraicRealizationActionChartMap σ ≫ g = algebraicRealizationActionChartMap σ ≫ h) :
     g = h := by
   refine (actionCover Φ).hom_ext g h fun (σ : Φ.cones) ↦ ?_
-  -- The maps of the pulled-back cover are the first projections of the pullbacks.
-  change pullback.fst (pullback.snd _ _) (Φ.affineToricChartι σ) ≫ g =
-    pullback.fst (pullback.snd _ _) (Φ.affineToricChartι σ) ≫ h
-  rw [← actionCoverRestriction_comp_algebraicRealizationActionChartMap, Category.assoc,
-    Category.assoc, H]
+  have hσ := (actionCoverRestriction σ).hom ≫= H σ
+  simp only [actionCoverRestriction_comp_algebraicRealizationActionChartMap_assoc] at hσ
+  rw [actionCover_f]
+  exact hσ
 
 /-- Restricting the product of the dense torus with an affine chart to a face is compatible with
 the inclusions into the product of the dense torus with the toric scheme. -/

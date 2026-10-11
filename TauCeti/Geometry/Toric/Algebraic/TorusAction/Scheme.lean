@@ -66,10 +66,9 @@ theorem affineToricSchemeAction_comp_specMap_algebraMap :
         Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing hi σ))) =
       pullback.snd _ _ ≫
         Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing hi σ))) := by
-  rw [affineToricSchemeAction, Category.assoc, ← Spec.map_comp, ← CommRingCat.ofHom_comp,
-    ← pullback.condition, ← pullbackSpecIso_hom_base]
-  exact congrArg (_ ≫ ·) <| congrArg (fun f ↦ Spec.map (CommRingCat.ofHom f))
-    (affineCoordinateRingCoaction hi σ).comp_algebraMap
+  rw [← cancel_epi (pullbackSpecIso ℂ _ _).inv]
+  simp [← Spec.map_comp, ← CommRingCat.ofHom_comp,
+    (affineCoordinateRingCoaction hi σ).comp_algebraMap]
 
 /-- For the zero cone, the affine action is multiplication of the dense torus scheme. -/
 theorem affineToricSchemeAction_bot :
