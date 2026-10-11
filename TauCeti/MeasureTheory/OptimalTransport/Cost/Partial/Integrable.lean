@@ -61,11 +61,7 @@ theorem exists_lintegral_le_mul_mass_add_of_le_split
     have hbcomp : AEMeasurable (fun z : X × Y ↦ b z.2) ρ := by
       exact hbρ.comp_quasiMeasurePreserving hρ.measurePreserving_snd.quasiMeasurePreserving
     rw [lintegral_add_right' _ hbcomp]
-    rw [← hρ.measurePreserving_fst.map_eq] at haρ
-    rw [← hρ.measurePreserving_snd.map_eq] at hbρ
-    rw [← hρ.measurePreserving_fst.map_eq, ← hρ.measurePreserving_snd.map_eq,
-      lintegral_map' haρ measurable_fst.aemeasurable,
-      lintegral_map' hbρ measurable_snd.aemeasurable]
+    rw [hρ.lintegral_comp_fst haρ, hρ.lintegral_comp_snd hbρ]
   calc
     ∫⁻ z, c z ∂ρ ≤ ∫⁻ z, a z.1 + b z.2 ∂ρ := lintegral_mono hc
     _ = (∫⁻ x, a x ∂ρ.fst) + ∫⁻ y, b y ∂ρ.snd := hsplit
@@ -88,24 +84,7 @@ theorem exists_transportCost_le_partialTransportCost_add_of_le_split [IsFiniteMe
       transportCost c μ ν ≤ partialTransportCost c μ ν ε + C * ε + η := by
   obtain ⟨C, hC⟩ := exists_lintegral_le_mul_mass_add_of_le_split
     ha hb haint hbint hc hη
-  refine ⟨C, fun ε ↦ ?_⟩
-  rw [partialTransportCost_def]
-  simp only [ENNReal.iInf_add]
-  refine le_iInf fun π ↦ le_iInf fun hfst ↦ le_iInf fun hsnd ↦ le_iInf fun hπmass ↦ ?_
-  obtain ⟨ρ, hρ, hπρ, hρmass⟩ := exists_isCoupling_add_of_le_marginals hmass hfst hsnd
-  have hρfst : ρ.fst ≤ μ := hρ.fst_eq.trans_le Measure.sub_le
-  have hρsnd : ρ.snd ≤ ν := hρ.snd_eq.trans_le Measure.sub_le
-  have hdeficit : ρ univ ≤ ε := by
-    rw [hρmass, tsub_le_iff_right]
-    simpa only [add_comm] using hπmass
-  calc
-    transportCost c μ ν ≤ ∫⁻ z, c z ∂(π + ρ) := transportCost_le_lintegral hπρ c
-    _ = (∫⁻ z, c z ∂π) + ∫⁻ z, c z ∂ρ := lintegral_add_measure _ _ _
-    _ ≤ (∫⁻ z, c z ∂π) + (C * ρ univ + η) :=
-      add_le_add le_rfl (hC ρ hρfst hρsnd)
-    _ ≤ (∫⁻ z, c z ∂π) + C * ε + η := by
-      rw [add_assoc]
-      gcongr
+  exact ⟨C, fun _ ↦ transportCost_le_partialTransportCost_add_of_lintegral_le hmass hC⟩
 
 /-- **Relaxation preserves transport under an integrable split upper envelope.**
 For finite measures of equal mass, discarding arbitrarily small amounts of mass does not
@@ -130,5 +109,18 @@ theorem relaxedTransportCost_eq_transportCost_of_le_split [IsFiniteMeasure μ]
       add_le_add (add_le_add (partialTransportCost_le_relaxedTransportCost hδ')
         (by simpa only [mul_comm] using hCδ.le)) le_rfl
     _ = relaxedTransportCost c μ ν + η := by rw [add_assoc, ENNReal.add_halves]
+
+/-- **Relaxation preserves bounded-cost transport.** This is the constant-envelope case of
+`relaxedTransportCost_eq_transportCost_of_le_split`: for finite equal-mass measures and a
+uniformly bounded nonnegative cost, the relaxed and ordinary primal values coincide. -/
+theorem relaxedTransportCost_eq_transportCost_of_bounded [IsFiniteMeasure μ]
+    (hmass : μ univ = ν univ) (C : NNReal) (hc : ∀ z, c z ≤ C) :
+    relaxedTransportCost c μ ν = transportCost c μ ν := by
+  exact relaxedTransportCost_eq_transportCost_of_le_split
+    (a := fun _ ↦ C) (b := fun _ ↦ 0) hmass aemeasurable_const aemeasurable_const
+    (by
+      rw [lintegral_const]
+      exact ENNReal.mul_ne_top ENNReal.coe_ne_top (measure_ne_top μ univ))
+    (by simp) (fun z ↦ by simpa using hc z)
 
 end TauCeti
