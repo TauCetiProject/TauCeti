@@ -23,7 +23,9 @@ rescaled half-difference. None of these maps requires a field hypothesis on `R`.
 
 public section
 
-namespace QuadraticAlgebra
+open QuadraticAlgebra
+
+namespace TauCeti.QuadraticAlgebra
 
 /-- The quadratic algebra with an idempotent generator is the product algebra. -/
 def algEquivProdOfIdempotent {R : Type*} [CommRing R] :
@@ -72,9 +74,8 @@ theorem algEquivProdOfRoots_apply {R : Type*} [CommRing R] {a b : R} (r s : R)
     (h : IsUnit (r - s)) (ha : a = -(r * s)) (hb : b = r + s)
     (z : QuadraticAlgebra R a b) :
     algEquivProdOfRoots r s h ha hb z = (z.re + r * z.im, z.re + s * z.im) := by
-  rw [← re_smul_add_im_smul z, map_add, map_smul, map_one, map_smul,
-    algEquivProdOfRoots_omega]
-  ext <;> simp [Algebra.smul_def, mul_comm]
+  conv_lhs => rw [← re_smul_add_im_smul z]
+  ext <;> simp [algEquivProdOfRoots_omega, Algebra.smul_def, mul_comm]
 
 /-- The inverse splitting divides the coordinate difference and interpolation numerator by
 the unit root difference. -/
@@ -85,17 +86,9 @@ theorem algEquivProdOfRoots_symm_apply {R : Type*} [CommRing R] {a b : R} (r s :
       ⟨(r * z.2 - s * z.1) * (h.unit⁻¹ : Rˣ), (z.1 - z.2) * (h.unit⁻¹ : Rˣ)⟩ := by
   apply (algEquivProdOfRoots r s h ha hb).injective
   rw [AlgEquiv.apply_symm_apply, algEquivProdOfRoots_apply]
-  have hu : (r - s) * (h.unit⁻¹ : Rˣ) = 1 := by
-    simpa only [h.unit_spec] using Units.mul_inv h.unit
   ext <;> dsimp
-  · symm
-    calc
-      _ = (r - s) * (h.unit⁻¹ : Rˣ) * z.1 := by ring
-      _ = z.1 := by rw [hu, one_mul]
-  · symm
-    calc
-      _ = (r - s) * (h.unit⁻¹ : Rˣ) * z.2 := by ring
-      _ = z.2 := by rw [hu, one_mul]
+  · linear_combination -z.1 * h.mul_val_inv
+  · linear_combination -z.2 * h.mul_val_inv
 
 /-- With `2` invertible, `QuadraticAlgebra R a 0` with `a = u²` for a unit `u` splits by
 sending its square-root generator to `(u, -u)`. -/
@@ -126,4 +119,4 @@ theorem algEquivProdOfSq_symm_apply {R : Type*} [CommRing R] [Invertible (2 : R)
   · simp only [mul_assoc, Units.mul_inv_cancel_left]
     linear_combination -z.2 * (invOf_mul_self (2 : R))
 
-end QuadraticAlgebra
+end TauCeti.QuadraticAlgebra
