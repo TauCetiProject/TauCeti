@@ -139,16 +139,15 @@ theorem isFractionRing_integralClosure_adjoin (hF : IsFunctionField k F)
   have : FiniteDimensional k⟮x⟯ F := hF.finiteDimensional_adjoin hx
   exact integralClosure.isFractionRing_of_finite_extension k⟮x⟯ F
 
-/-- **`R_x` is a finitely generated `k`-algebra**: the integral closure of `k[x]` in an algebraic
-function field `F`, for `x` transcendental over `k`, is a finite `k[x]`-module. No separability of
-`F / k(x)` is assumed. -/
-theorem finiteType_integralClosure_adjoin (hF : IsFunctionField k F) (hx : Transcendental k x) :
+/-- **`R_x` is a finitely generated `k`-algebra**: for `x` transcendental over `k` and `F` finite
+over `k(x)`, for instance an algebraic function field, the integral closure of `k[x]` in `F` is a
+finite `k[x]`-module. No separability of `F / k(x)` is assumed. -/
+theorem finiteType_integralClosure_adjoin [FiniteDimensional k⟮x⟯ F] (hx : Transcendental k x) :
     Algebra.FiniteType k (integralClosure (Algebra.adjoin k {x}) F) := by
-  have : FiniteDimensional k⟮x⟯ F := hF.finiteDimensional_adjoin hx
   have : Module.Finite (Algebra.adjoin k {x}) (integralClosure (Algebra.adjoin k {x}) F) :=
     IsIntegralClosure.finite_adjoin_of_transcendental k hx F _
   have : Algebra.FiniteType k (Algebra.adjoin k {x}) :=
-    (Subalgebra.fg_iff_finiteType _).mp ⟨{x}, by simp⟩
+    .adjoin_of_finite (Set.finite_singleton x)
   exact .trans (S := Algebra.adjoin k {x}) inferInstance inferInstance
 
 /-- **The functions regular wherever `x` is form a Dedekind domain**, for `x` transcendental over
@@ -164,8 +163,9 @@ transcendental over `k`: this holomorphy ring is `R_x`. -/
 theorem finiteType_holomorphyRing_setOf_mem (hF : IsFunctionField k F)
     (hx : Transcendental k x) :
     Algebra.FiniteType k (holomorphyRing {P : Place k F | x ∈ P.integers}) := by
+  have : FiniteDimensional k⟮x⟯ F := hF.finiteDimensional_adjoin hx
   rw [← restrictScalars_integralClosure_adjoin_eq_holomorphyRing hF x]
-  exact finiteType_integralClosure_adjoin hF hx
+  exact finiteType_integralClosure_adjoin hx
 
 end Model
 

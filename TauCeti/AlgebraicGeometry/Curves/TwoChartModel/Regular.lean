@@ -11,6 +11,9 @@ public import TauCeti.AlgebraicGeometry.Scheme.DiscreteValuationStalk
 public import TauCeti.AlgebraicGeometry.Scheme.FunctionField
 public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
 public import TauCeti.FieldTheory.FunctionField.AffineModel.IntegralClosure
+-- Proof-only: regularity of local rings of spectra of regular rings, and codimension bounds.
+import TauCeti.AlgebraicGeometry.Scheme.RegularLocalRing
+import TauCeti.Topology.KrullDimension
 
 /-!
 # The two-chart model of a function field is a regular curve
@@ -25,6 +28,7 @@ that the scheme is a curve over `k` in the sense used to compare it with the fun
 
 * it is locally of finite type over `k` and Noetherian;
 * it has dimension one, because its function field `F` has transcendence degree one over `k`;
+* it is regular: every local ring is a regular local ring;
 * its points other than the generic point are exactly its points of codimension one, and the
   local ring at each of them is a discrete valuation ring.
 
@@ -45,6 +49,8 @@ function field (`TauCeti.AlgebraicGeometry.CodimensionOnePoint.equivPlace`).
   codimension at most one, and exactly one unless it is the generic point.
 * `TauCeti.AlgebraicGeometry.twoChartModel.isDiscreteValuationRing_stalk`: the local ring at a
   codimension-one point is a discrete valuation ring.
+* `TauCeti.AlgebraicGeometry.twoChartModel.isRegularLocalRing_stalk`: every local ring is a
+  regular local ring.
 
 ## References
 
@@ -80,6 +86,22 @@ private noncomputable def chartCover : (twoChartModel hF hx).OpenCover :=
       · exact ⟨false, q, rfl⟩)
     (fun b ↦ by cases b <;> dsimp <;> infer_instance)
 
+/-- On the member of `chartCover` indexed by `true`, which is the finite chart `ιFinite`, the
+structure morphism is `Spec` of the inclusion of the constants. -/
+private theorem chartCover_f_true_over :
+    (chartCover hF hx).f true ≫ (twoChartModel hF hx ↘ Spec (.of k)) =
+      Spec.map (CommRingCat.ofHom
+        (algebraMap k (holomorphyRing {P : Place k F | x ∈ P.integers}))) :=
+  ιFinite_over hF hx
+
+/-- On the member of `chartCover` indexed by `false`, which is the chart at infinity `ιInfinity`,
+the structure morphism is `Spec` of the inclusion of the constants. -/
+private theorem chartCover_f_false_over :
+    (chartCover hF hx).f false ≫ (twoChartModel hF hx ↘ Spec (.of k)) =
+      Spec.map (CommRingCat.ofHom
+        (algebraMap k (holomorphyRing {P : Place k F | x⁻¹ ∈ P.integers}))) :=
+  ιInfinity_over hF hx
+
 /-- **The two-chart model is locally of finite type over `k`**, for `x` transcendental over `k`:
 both charts are spectra of finitely generated `k`-algebras. -/
 theorem locallyOfFiniteType (hxt : Transcendental k x) :
@@ -89,15 +111,13 @@ theorem locallyOfFiniteType (hxt : Transcendental k x) :
   have := HasRingHomProperty.instIsZariskiLocalAtSource (P := @LocallyOfFiniteType)
   refine IsZariskiLocalAtSource.of_openCover (chartCover hF hx) fun b ↦ ?_
   cases b
-  · -- The member of `chartCover` indexed by `false` is the chart at infinity by definition.
-    change LocallyOfFiniteType (ιInfinity hF hx ≫ _)
-    rw [ιInfinity_over, HasRingHomProperty.Spec_iff (P := @LocallyOfFiniteType)]
-    exact RingHom.finiteType_algebraMap.mpr
-      (finiteType_holomorphyRing_setOf_mem hF fun h ↦ hxt (IsAlgebraic.inv_iff.mp h))
-  · -- The member of `chartCover` indexed by `true` is the finite chart by definition.
-    change LocallyOfFiniteType (ιFinite hF hx ≫ _)
-    rw [ιFinite_over, HasRingHomProperty.Spec_iff (P := @LocallyOfFiniteType)]
-    exact RingHom.finiteType_algebraMap.mpr (finiteType_holomorphyRing_setOf_mem hF hxt)
+  · rw [chartCover_f_false_over]
+    exact (HasRingHomProperty.Spec_iff (P := @LocallyOfFiniteType)).mpr
+      (RingHom.finiteType_algebraMap.mpr
+        (finiteType_holomorphyRing_setOf_mem hF fun h ↦ hxt (IsAlgebraic.inv_iff.mp h)))
+  · rw [chartCover_f_true_over]
+    exact (HasRingHomProperty.Spec_iff (P := @LocallyOfFiniteType)).mpr
+      (RingHom.finiteType_algebraMap.mpr (finiteType_holomorphyRing_setOf_mem hF hxt))
 
 /-- **The two-chart model is a Noetherian scheme**, for `x` transcendental over `k`: it is of
 finite type over the field `k` and covered by two affine charts. -/
@@ -122,12 +142,9 @@ theorem topologicalKrullDim_eq_one (hxt : Transcendental k x) :
 over `k`. -/
 theorem coheight_le_one (hxt : Transcendental k x) (p : twoChartModel hF hx) :
     coheight p ≤ 1 := by
-  have := isDedekindDomain_holomorphyRing_setOf_mem hF hxt
-  have := isDedekindDomain_holomorphyRing_setOf_mem hF fun h ↦ hxt (IsAlgebraic.inv_iff.mp h)
-  rcases (Set.ext_iff.mp (range_ιFinite_union_range_ιInfinity hF hx) p).mpr trivial with
-    ⟨q, rfl⟩ | ⟨q, rfl⟩
-  · exact_mod_cast coheight_le_of_isOpenImmersion (n := 1) _ q
-  · exact_mod_cast coheight_le_of_isOpenImmersion (n := 1) _ q
+  have := TauCeti.coheight_le_topologicalKrullDim p
+  rw [topologicalKrullDim_eq_one hxt] at this
+  exact_mod_cast this
 
 /-- **The codimension-one points of the two-chart model are its points other than the generic
 point**, for `x` transcendental over `k`. -/
@@ -149,5 +166,16 @@ theorem isDiscreteValuationRing_stalk (hxt : Transcendental k x)
     ⟨q, rfl⟩ | ⟨q, rfl⟩
   · exact isDiscreteValuationRing_stalk_of_isDedekindDomain _ q hp
   · exact isDiscreteValuationRing_stalk_of_isDedekindDomain _ q hp
+
+/-- **The two-chart model is regular**, for `x` transcendental over `k`: its local rings are the
+local rings of the Dedekind domains `𝒪_x` and `𝒪_{x⁻¹}`, which are regular. -/
+theorem isRegularLocalRing_stalk (hxt : Transcendental k x) (p : twoChartModel hF hx) :
+    IsRegularLocalRing ((twoChartModel hF hx).presheaf.stalk p) := by
+  have := isDedekindDomain_holomorphyRing_setOf_mem hF hxt
+  have := isDedekindDomain_holomorphyRing_setOf_mem hF fun h ↦ hxt (IsAlgebraic.inv_iff.mp h)
+  rcases (Set.ext_iff.mp (range_ιFinite_union_range_ιInfinity hF hx) p).mpr trivial with
+    ⟨q, rfl⟩ | ⟨q, rfl⟩
+  · exact (isRegularLocalRing_stalk_iff_of_isOpenImmersion _ q).mpr inferInstance
+  · exact (isRegularLocalRing_stalk_iff_of_isOpenImmersion _ q).mpr inferInstance
 
 end TauCeti.AlgebraicGeometry.twoChartModel
