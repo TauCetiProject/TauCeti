@@ -100,7 +100,8 @@ private theorem map_stabilizer_galEquivNormalClosure_eq_stabilizer (x : E)
       ((galEquivNormalClosure (F := F) (E := E) x) : _ →* _) =
       stabilizer Gal(normalClosure F F⟮x⟯ E/F)
         (splittingFieldEquivNormalClosure x (y : (minpoly F x).SplittingField)) := by
-  simpa only [MulEquiv.toMonoidHom_eq_coe, fixingSubgroup_adjoin_simple] using
+  simpa only [MulEquiv.toMonoidHom_eq_coe, IntermediateField.fixingSubgroup,
+    fixingSubgroup_adjoin_simple] using
     map_stabilizer_galEquivNormalClosure (F := F) (E := E) x y
 
 /-- Cosets in the polynomial Galois group of a root stabilizer index the embeddings of

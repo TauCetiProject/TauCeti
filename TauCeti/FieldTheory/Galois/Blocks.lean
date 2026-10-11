@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.GroupAction.Primitive
 public import Mathlib.FieldTheory.Galois.IsGaloisGroup
+public import TauCeti.FieldTheory.Galois.FixedField
 
 /-!
 # Blocks inside a Galois orbit
@@ -40,20 +41,6 @@ open scoped Pointwise
 
 open IntermediateField MulAction
 
-section Stabilizer
-
-variable {G K L : Type*} [Group G] [Field K] [Field L] [Algebra K L]
-  [MulSemiringAction G L] [SMulCommClass G K L]
-
-/-- Fixing the simple extension pointwise is equivalent to fixing its generator. -/
-theorem fixingSubgroup_adjoin_simple_eq_stabilizer (x : L) :
-    fixingSubgroup G (K⟮x⟯ : Set L) = stabilizer G x := by
-  ext g
-  rw [mem_fixingSubgroup_iff, mem_stabilizer_iff]
-  simpa using forall_mem_adjoin_smul_eq_self_iff K (S := {x}) g
-
-end Stabilizer
-
 variable {G K L : Type*} [Group G] [Finite G] [Field K] [Field L] [Algebra K L]
   [MulSemiringAction G L] [IsGaloisGroup G K L]
 
@@ -64,7 +51,7 @@ private noncomputable def orbitStabilizerOrderIsoDualIic (x : L) :
       (Set.Iic (IsGaloisGroup.intermediateFieldEquivSubgroup G K L K⟮x⟯))ᵒᵈ :=
   let hstab : stabilizer G (⟨x, mem_orbit_self x⟩ : orbit G x) =
       fixingSubgroup G (K⟮x⟯ : Set L) := by
-    rw [fixingSubgroup_adjoin_simple_eq_stabilizer]
+    rw [IntermediateField.fixingSubgroup_adjoin_simple]
     ext g
     rw [mem_stabilizer_iff, Subtype.ext_iff, orbit.coe_smul, mem_stabilizer_iff]
   { toFun := fun H ↦ OrderDual.toDual ⟨OrderDual.toDual H.1, hstab.symm.trans_le H.2⟩
@@ -179,7 +166,7 @@ theorem isPreprimitive_orbit_iff_isAtom_adjoin_simple (x : L) (hx : K⟮x⟯ ≠
       intro g _
       exact hs (mem_orbit _ _) (mem_orbit_self _)
     have hfix : fixingSubgroup G (K⟮x⟯ : Set L) = ⊤ := by
-      rw [fixingSubgroup_adjoin_simple_eq_stabilizer, hstab]
+      rw [IntermediateField.fixingSubgroup_adjoin_simple, hstab]
     apply hx
     apply (IsGaloisGroup.intermediateFieldEquivSubgroup G K L).injective
     simp [IsGaloisGroup.intermediateFieldEquivSubgroup_apply, hfix]
