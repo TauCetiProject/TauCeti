@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.ContractibleChains
+public import TauCeti.Topology.Homotopy.Cube.Basic
 public import TauCeti.AlgebraicTopology.Singular.Cubical.ChainComplex
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Cone
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Normalization
@@ -151,16 +152,8 @@ def cubicalModelPresentation :
   coord_map f _ x := cubicalCoord_map f x
   sum_coord _ _ x := sum_cubicalCoord x
 
-/-- The straight-line contraction of the cube `Iⁿ` onto its vertex `0`. -/
-def cubeContraction (n : ℕ) :
-    (ContinuousMap.const (Fin n → unitInterval) 0).Homotopy (ContinuousMap.id _) where
-  toFun p j := ⟨(p.1 : ℝ) * p.2 j, unitInterval.mul_mem p.1.2 (p.2 j).2⟩
-  continuous_toFun := by fun_prop
-  map_zero_left x := by ext j; simp
-  map_one_left x := by ext j; simp
-
-instance (n : ℕ) : ContractibleSpace (Fin n → unitInterval) :=
-  (contractible_iff_id_nullhomotopic _).2 ⟨0, ⟨(cubeContraction n).symm⟩⟩
+instance (N : Type*) : ContractibleSpace (N → unitInterval) :=
+  (contractible_iff_id_nullhomotopic _).2 ⟨fun _ ↦ 0, ⟨(cubeContraction N).symm⟩⟩
 
 instance (n : ℕ) : ContractibleSpace (cubeModel.{u} n) :=
   (Homeomorph.ulift (X := Fin n → unitInterval)).contractibleSpace

@@ -15,17 +15,17 @@ import TauCeti.Analysis.Normed.Algebra.Basic
 This file rewrites the filled commutator quotient as an integral of conjugations. It is the
 Banach-algebra shadow of the left-trivialized differential-of-exponential factor.
 
+For the commutator operator `ad x : y ↦ x * y - y * x`, the operator exponential
+`exp (-t ad x)` acts by conjugation by `exp (-t x)`. Averaging this action over `0 ≤ t ≤ 1`
+gives the dexp factor; left multiplication by `exp x` then gives the derivative of the
+Banach-algebra exponential, as shown in `TauCeti.Geometry.Lie.Adjoint.BanachDexp.Derivative`.
+
 ## Main results
 
 * `TauCeti.Lie.banachDexpFactor_eq_integral_exp`: the dexp factor is the integral of the operator
   exponential along the line segment from `0` to `-ad x`.
 * `TauCeti.Lie.banachDexpFactor_apply_eq_integral`: on an algebra element, the integrand is
   conjugation by `exp (-t x)`.
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 1, "The conjugation formulas".
 -/
 
 public section
