@@ -192,9 +192,7 @@ private theorem infinityPlace_veluY_sq_sub_veluX_pow_three_le :
   have hY := infinityPlace_veluY W Φ
   have hc : ∀ a : F, v (algebraMap F W.FunctionField a) ≤ 1 :=
     Valuation.IsTrivialOn.valuation_algebraMap_le_one _
-  have heq := (equation_iff _ _).mp (equation_genericX_genericY W)
-  simp only [WeierstrassCurve.baseChange, WeierstrassCurve.map_a₁, WeierstrassCurve.map_a₂,
-    WeierstrassCurve.map_a₃, WeierstrassCurve.map_a₄, WeierstrassCurve.map_a₆] at heq
+  have heq := (equation_baseChange_iff _ _ _).mp (equation_genericX_genericY W)
   have hexp : ∀ m n : ℤ, m ≤ n → WithZero.exp m ≤ WithZero.exp n := fun _ _ h ↦
     WithZero.exp_le_exp.mpr h
   have h1 : (1 : ℤᵐ⁰) ≤ WithZero.exp 5 := by
@@ -263,7 +261,7 @@ private theorem natDegree_eq_three_and_infinityPlace_le_of_sq_add_mul_add_eq_zer
   have hrel : v (Polynomial.aeval X p * Y + Polynomial.aeval X q) = WithZero.exp 6 := by
     rw [show Polynomial.aeval X p * Y + Polynomial.aeval X q = -(Y ^ 2) by linear_combination h,
       Valuation.map_neg, map_pow, infinityPlace_veluY, ← WithZero.exp_nsmul]
-    rfl
+    norm_num
   rw [infinityPlace_aeval_mul_add W Φ hq] at hrel
   rcases max_choice (v (Polynomial.aeval X p * Y)) (WithZero.exp (2 * q.natDegree : ℤ))
     with hm | hm
@@ -330,7 +328,7 @@ private theorem exists_equation_veluX_veluY :
       (W'.baseChange W.FunctionField).toAffine.Equation (veluX W Φ) (veluY W Φ) := by
   obtain ⟨p, q, h⟩ := exists_sq_add_mul_add_eq_zero W Φ
   refine ⟨⟨p.coeff 1, -q.coeff 2, p.coeff 0, -q.coeff 1, -q.coeff 0⟩, ?_⟩
-  rw [equation_iff]
+  rw [equation_baseChange_iff]
   have hp := Polynomial.aeval_eq_sum_range' (n := 2)
     (Nat.lt_succ_of_le (natDegree_le_one_of_sq_add_mul_add_eq_zero h)) (veluX W Φ)
   have hq := Polynomial.aeval_eq_sum_range' (n := 4)
@@ -339,8 +337,7 @@ private theorem exists_equation_veluX_veluY :
   simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, zero_add,
     Algebra.smul_def, coeff_three_eq_neg_one_of_sq_add_mul_add_eq_zero h, map_neg,
     map_one] at hp hq
-  simp only [WeierstrassCurve.baseChange, WeierstrassCurve.map_a₁, WeierstrassCurve.map_a₂,
-    WeierstrassCurve.map_a₃, WeierstrassCurve.map_a₄, WeierstrassCurve.map_a₆, map_neg]
+  simp only [map_neg]
   rw [hp, hq] at h
   linear_combination h
 
@@ -361,10 +358,8 @@ satisfied by Vélu's coordinates is `veluCurve W Φ`. -/
 theorem _root_.WeierstrassCurve.Affine.eq_veluCurve_of_equation {W' : WeierstrassCurve F}
     (h : (W'.baseChange W.FunctionField).toAffine.Equation (veluX W Φ) (veluY W Φ)) :
     W' = veluCurve W Φ := by
-  have h₁ := (equation_iff _ _).mp h
-  have h₂ := (equation_iff _ _).mp (equation_veluX_veluY W Φ)
-  simp only [WeierstrassCurve.baseChange, WeierstrassCurve.map_a₁, WeierstrassCurve.map_a₂,
-    WeierstrassCurve.map_a₃, WeierstrassCurve.map_a₄, WeierstrassCurve.map_a₆] at h₁ h₂
+  have h₁ := (equation_baseChange_iff _ _ _).mp h
+  have h₂ := (equation_baseChange_iff _ _ _).mp (equation_veluX_veluY W Φ)
   have hXo := ord_infinity_veluX W Φ
   have hYo := ord_infinity_veluY W Φ
   set V := veluCurve W Φ
