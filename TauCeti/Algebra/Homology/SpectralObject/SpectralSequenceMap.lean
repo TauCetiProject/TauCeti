@@ -242,11 +242,11 @@ lemma spectralSequencePageXMap_id (r : ℤ) (hr : r₀ ≤ r) (pq : κ) :
     spectralSequencePageXMap data (𝟙 X) r hr pq = 𝟙 _ := by
   simp [spectralSequencePageXMap]
 
-@[reassoc]
+@[reassoc, simp]
 lemma spectralSequencePageXMap_comp (r : ℤ) (hr : r₀ ≤ r) (pq : κ) :
     spectralSequencePageXMap data (φ ≫ ψ) r hr pq =
       spectralSequencePageXMap data φ r hr pq ≫ spectralSequencePageXMap data ψ r hr pq := by
-  simp [spectralSequencePageXMap, EMap_comp]
+  simp [spectralSequencePageXMap]
 
 @[simp]
 lemma spectralSequencePageMap_id (r : ℤ) (hr : r₀ ≤ r) :
@@ -254,22 +254,22 @@ lemma spectralSequencePageMap_id (r : ℤ) (hr : r₀ ≤ r) :
   ext pq
   simp
 
-@[reassoc]
+@[reassoc, simp]
 lemma spectralSequencePageMap_comp (r : ℤ) (hr : r₀ ≤ r) :
     spectralSequencePageMap data (φ ≫ ψ) r hr =
       spectralSequencePageMap data φ r hr ≫ spectralSequencePageMap data ψ r hr := by
   ext pq
-  simp [spectralSequencePageXMap_comp]
+  simp
 
 @[simp]
 lemma spectralSequenceMap_id : spectralSequenceMap data (𝟙 X) = 𝟙 _ := by
   ext r hr : 2
   simp
 
-@[reassoc]
+@[reassoc, simp]
 lemma spectralSequenceMap_comp :
     spectralSequenceMap data (φ ≫ ψ) = spectralSequenceMap data φ ≫ spectralSequenceMap data ψ := by
   ext r hr : 2
-  simp [spectralSequencePageMap_comp]
+  simp
 
 end CategoryTheory.Abelian.SpectralObject
