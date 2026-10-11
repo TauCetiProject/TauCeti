@@ -42,25 +42,14 @@ local notation "T" => zigzagBraidInverseComplexTensor k G
 
 attribute [local instance] zigzagAlgebraIntegerGradedAlgebra
 
-private theorem isZero_forwardInversePair_of_not_support (i : V) (p q : ℤ)
-    (h : ¬ ((p = -1 ∨ p = 0) ∧ (q = 0 ∨ q = 1))) :
-    IsZero (((F).obj ((zigzagBraidComplex k G i).X p)).obj
-      ((zigzagBraidInverseComplex k G i).X q)) := by
-  by_cases hp : p = -1 ∨ p = 0
-  · exact ((F).obj ((zigzagBraidComplex k G i).X p)).map_isZero
-      (isZero_zigzagBraidInverseComplex_X i (by omega) (by omega))
-  · exact ((F).flip.obj ((zigzagBraidInverseComplex k G i).X q)).map_isZero
-      (isZero_zigzagBraidComplex_X i (by omega) (by omega))
-
 private theorem isZero_forwardInverseProduct_X (i : V) (n : ℤ)
     (h₀ : n ≠ -1) (h₁ : n ≠ 0) (h₂ : n ≠ 1) :
     IsZero ((T i).X n) := by
   apply (IsZero.iff_id_eq_zero _).2
   apply HomologicalComplex.mapBifunctor.hom_ext
   intro p q hpq
-  -- Cochain totalization assigns the tensor pair the sum of its two indices.
-  change p + q = n at hpq
-  exact (isZero_forwardInversePair_of_not_support k G i p q (by omega)).eq_of_src _ _
+  rw [ComplexShape.π_eq_add] at hpq
+  exact (isZero_zigzagBraidInverseComplexTensor_pair k G i p q (by omega)).eq_of_src _ _
 
 private def forwardMinusPairIso (i : V) :
     ((F).obj ((zigzagBraidComplex k G i).X (-1))).obj
@@ -100,7 +89,7 @@ private def forwardZeroIso (i : V) :
     (T i).X 0 ≅ zigzagGradedBimodule k G ⊞ ((U i).shiftObj (-2) ⊞ U i) :=
   HomologicalComplex.mapBifunctorTwoSummandIso (zigzagBraidComplex k G i)
       (zigzagBraidInverseComplex k G i) F (ComplexShape.up ℤ) 0 0 (-1) 1 0 (by simp) (by simp)
-      (by simp) (fun p q hpq _ ↦ isZero_forwardInversePair_of_not_support k G i p q (by
+      (by simp) (fun p q hpq _ ↦ isZero_zigzagBraidInverseComplexTensor_pair k G i p q (by
         rw [ComplexShape.π_eq_add] at hpq
         omega)) ≪≫
     biprod.mapIso (forwardRegularPairIso k G i) (forwardMiddlePairIso k G i)
@@ -143,7 +132,7 @@ private theorem forward_d_third (i : V) :
   apply HomologicalComplex.mapBifunctor.hom_ext
   intro p q hpq
   -- Only the pair (-1,0) can contribute to total degree -1.
-  change p + q = -1 at hpq
+  rw [ComplexShape.π_eq_add] at hpq
   by_cases hp : p = -1
   · subst p
     obtain rfl : q = 0 := by omega
@@ -169,7 +158,7 @@ private theorem forward_d_third (i : V) :
       zero_add, ιMapBifunctor_zigzagBraidInverseTensorXMinusOneIso_hom]
     rw [forwardMiddlePair_coevaluation, neg_neg]
     rfl
-  · exact (isZero_forwardInversePair_of_not_support k G i p q (by omega)).eq_of_src _ _
+  · exact (isZero_zigzagBraidInverseComplexTensor_pair k G i p q (by omega)).eq_of_src _ _
 
 private theorem forwardEvaluationTransport (i : V) :
     ((F).map ((zigzagBraidComplex k G i).d (-1) 0)).app

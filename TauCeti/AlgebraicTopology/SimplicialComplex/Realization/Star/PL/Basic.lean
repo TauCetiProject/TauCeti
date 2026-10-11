@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.Homeomorph
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.Cone
 public import TauCeti.Topology.PL.Cone
 
 /-!
@@ -45,16 +46,6 @@ namespace AbstractSimplicialComplex
 variable {ι κ : Type*} [DecidableEq ι] [DecidableEq κ]
   {K : AbstractSimplicialComplex ι} {L : AbstractSimplicialComplex κ} {v : ι} {w : κ}
 
-/-- Read a star as a cone: delete its apex coordinate and record the remaining mass. -/
-private def starToCone (v : ι) : (ι → ℝ) →ᴬ[ℝ] ((ι → ℝ) × ℝ) :=
-  ((ContinuousLinearMap.id ℝ (ι → ℝ) -
-      (ContinuousLinearMap.proj v).smulRight (Pi.single v 1)).toContinuousAffineMap).prod
-    (ContinuousAffineMap.const ℝ (ι → ℝ) 1 -
-      (ContinuousLinearMap.proj v).toContinuousAffineMap)
-
-private theorem starToCone_apply (v : ι) (x : ι → ℝ) :
-    starToCone v x = (x - x v • Pi.single v 1, 1 - x v) := (rfl)
-
 /-- Reinsert the target apex, whose coordinate is one minus the cone height. -/
 private def coneToStar (w : κ) : ((κ → ℝ) × ℝ) →ᴬ[ℝ] (κ → ℝ) :=
   let apex : κ → ℝ := Pi.single w 1
@@ -66,35 +57,6 @@ private def coneToStar (w : κ) : ((κ → ℝ) × ℝ) →ᴬ[ℝ] (κ → ℝ)
 private theorem coneToStar_apply (w : κ) (p : (κ → ℝ) × ℝ) :
     coneToStar w p = p.1 - p.2 • Pi.single w 1 + Pi.single w 1 := (rfl)
 
-private theorem starToCone_of_lt (x : closedStarRealization K {v}) (hx : x.1.1 v < 1) :
-    starToCone v (x.1.1 : ι → ℝ) =
-      ((1 - x.1.1 v) •
-        ((starLinkProjection K v
-          ⟨x.1, (mem_puncturedClosedStar K v _).mpr ⟨x.2, hx⟩⟩).1.1 : ι → ℝ),
-        1 - x.1.1 v) := by
-  rw [starToCone_apply]
-  congr 1
-  ext j
-  by_cases hj : j = v
-  · simp [hj]
-  · simp [starLinkProjection_apply, hj,
-      ← mul_assoc, mul_inv_cancel₀ (sub_pos.mpr hx).ne']
-
-private theorem starToCone_of_not_lt (x : closedStarRealization K {v})
-    (hx : ¬x.1.1 v < 1) : starToCone v (x.1.1 : ι → ℝ) = 0 := by
-  have hv : x.1.1 v = 1 := le_antisymm (Realization.le_one K x.1 v) (not_lt.mp hx)
-  have he : x.1 = vertex K v := (Realization.eq_vertex_iff K x.1 v).mpr hv
-  rw [starToCone_apply, he]
-  ext j <;> simp [vertex_val, Finsupp.single_apply, Pi.single_apply, eq_comm]
-
-private theorem starToCone_mem (x : closedStarRealization K {v}) :
-    starToCone v (x.1.1 : ι → ℝ) ∈
-      (range (fun y : geometricLink K v => (y.1.1 : ι → ℝ))).cone := by
-  by_cases hx : x.1.1 v < 1
-  · rw [starToCone_of_lt x hx]
-    exact (smul_mem_cone_iff _ (sub_pos.mpr hx)).mpr (mem_range_self _)
-  · rw [starToCone_of_not_lt x hx]
-    exact zero_mem_cone _
 
 private theorem coneToStar_coneMap_eq
     (f : geometricLink K v → geometricLink L w) (F : (ι → ℝ) → (κ → ℝ))
