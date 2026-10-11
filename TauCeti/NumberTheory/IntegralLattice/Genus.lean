@@ -63,7 +63,7 @@ theorem localIntegralForm_equivalent (h : L.SameGenus M) (p : ℕ) [Fact p.Prime
   (sameGenus_iff L M).mp h |>.2 p
 
 /-- Every integral lattice belongs to its own genus. -/
-@[refl]
+@[refl, simp]
 theorem refl (L : IntegralLattice V) : L.SameGenus L :=
   (sameGenus_iff L L).mpr ⟨rfl, fun _ ↦ LinearMap.BilinForm.Equivalent.refl _⟩
 
