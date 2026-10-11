@@ -11,9 +11,10 @@ import Mathlib.Data.List.GetD
 /-!
 # Executable conjugacy-class data
 
-The class-algebra theory of a finite group is indexed by `ConjClasses G`, a quotient type: perfect
-for stating theorems, useless for computing with, since nothing picks a representative of a class
-or orders the classes. The Burnside--Dixon--Schneider character-table algorithm needs both, because
+The class-algebra theory of a finite group is indexed by `ConjClasses G`, a quotient type. It is
+computable (Mathlib gives it decidable equality and a `Fintype` instance), but nothing numbers the
+classes or picks a representative of each. The Burnside--Dixon--Schneider character-table
+algorithm needs both, because
 its input is the array of structure constants `aᵢⱼₖ` and its output is a table whose rows and
 columns are numbered.
 
@@ -65,12 +66,7 @@ order `8` as a closed instance of everything here.
 
 ## References
 
-This implements the object `ClassData` and the executable `structureConstant` of Layer 6 of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-the layer that makes the Burnside--Dixon--Schneider algorithm executable. The `Fin`-indexed family
-`classFinset` is what the class-multiplication matrices are indexed by, while `classes` packages
-the same family as the executable `List (Finset G)` requested there. See J. D. Dixon, *High speed
-computation of group characters*, Numer. Math. 10 (1967) 446-450.
+* J. D. Dixon, *High speed computation of group characters*, Numer. Math. 10 (1967), 446–450.
 -/
 
 -- The definitions carrying the computation are individually `@[expose]`d below: a downstream
@@ -95,6 +91,7 @@ finiteness what turns the classes into `Finset`s.
 The order of `reps` is the arbitrary but fixed numbering of the conjugacy classes that a
 computation indexes by; `TauCeti.ClassData.equivConjClasses` identifies it with
 `ConjClasses G`. -/
+@[ext]
 structure ClassData (G : Type*) [Group G] where
   /-- The chosen representatives, in the order that numbers the classes. -/
   reps : List G
@@ -104,14 +101,6 @@ structure ClassData (G : Type*) [Group G] where
   exists_isConj : ∀ g : G, ∃ x ∈ reps, IsConj x g
 
 namespace ClassData
-
-/-- **Class data is determined by its representatives**: the two remaining fields are proofs. -/
-@[ext]
-theorem ext {d₁ d₂ : ClassData G} (h : d₁.reps = d₂.reps) : d₁ = d₂ := by
-  cases d₁
-  cases d₂
-  subst h
-  rfl
 
 /-- Class data extracted from a list `l` that meets every conjugacy class: keep an entry exactly
 when it is not conjugate to any entry kept from the part of `l` after it. Since `List.pwFilter`
@@ -147,8 +136,8 @@ theorem reps_ofList [DecidableRel (IsConj : G → G → Prop)] (l : List G)
     (hl : ∀ g : G, ∃ x ∈ l, IsConj x g) :
     (ofList l hl).reps = l.pwFilter fun x y => ¬ IsConj x y := (rfl)
 
-/-- Every finite group has class data; the witness is noncomputable only because
-`Finset.toList` is. -/
+/-- Every finite group has class data. The witness is noncomputable: it enumerates `G` through
+`Fintype.ofFinite` and `Finset.toList`, and decides conjugacy classically. -/
 noncomputable instance [Finite G] : Inhabited (ClassData G) := by
   letI := Fintype.ofFinite G
   letI := Classical.decRel (IsConj : G → G → Prop)
