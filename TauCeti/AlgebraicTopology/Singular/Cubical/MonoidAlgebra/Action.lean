@@ -208,8 +208,9 @@ section Carrier
 
 /-- The **DG right module of cubical chains** of a space `Y` with a right action of `G`:
 `⨁ n, C^□_n(Y; R)`, acted on by the chains of `G`.  It is a type synonym of
-`normalizedCubicalChainAlgebra Y R`, recording the acting monoid `G`. -/
-@[nolint unusedArguments]
+`normalizedCubicalChainAlgebra Y R`, recording the acting monoid `G`.  It is exposed so that
+linear maps out of it can be built from its homogeneous parts. -/
+@[expose, nolint unusedArguments]
 def cubicalChainModule (Y : Type*) [TopologicalSpace Y] (_G : Type*) (R : Type*) [CommRing R] :
     Type _ :=
   normalizedCubicalChainAlgebra Y R
