@@ -140,6 +140,12 @@ noncomputable def relativeMaslovIndex (Λ Γ : TotallyRealPath E)
     (h₀ : Λ 0 = Γ 0) (h₁ : Λ 1 = Γ 1) : ℤ :=
   Circle.degree (Λ.relativeMaslovPhasePath Γ h₀ h₁)
 
+/-- The relative Maslov index is the degree of the relative phase loop. -/
+theorem relativeMaslovIndex_def (Λ Γ : TotallyRealPath E)
+    (h₀ : Λ 0 = Γ 0) (h₁ : Λ 1 = Γ 1) :
+    relativeMaslovIndex Λ Γ h₀ h₁ = Circle.degree (Λ.relativeMaslovPhasePath Γ h₀ h₁) := by
+  rw [relativeMaslovIndex]
+
 /-- Comparing a path with itself gives relative Maslov index zero. -/
 @[simp]
 theorem relativeMaslovIndex_self (Λ : TotallyRealPath E) :
@@ -169,8 +175,7 @@ theorem relativeMaslovIndex_eq_of_angle_lifts (Λ Γ : TotallyRealPath E)
   have hθ : Continuous fun t => θΛ t - θΓ t := hθΛ.sub hθΓ
   have hθγ (t : I) : Circle.exp (θΛ t - θΓ t) = γ t := by
     rw [relativeMaslovPhasePath_apply]
-    rw [show θΛ t - θΓ t = θΛ t + -(θΓ t) by ring,
-      Circle.exp_add, Circle.exp_neg, hΛ t, hΓ t]
+    rw [sub_eq_add_neg, Circle.exp_add, Circle.exp_neg, hΛ t, hΓ t]
   rw [relativeMaslovIndex]
   exact Circle.degree_eq_of_sub_eq γ hθ hθγ hangle
 
