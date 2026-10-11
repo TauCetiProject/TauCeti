@@ -62,6 +62,16 @@ noncomputable def rootIntMatrix (j : Fin 6 ⊕ Fin 6) : Matrix (Fin 54) (Fin 54)
     (TauCeti.serreH ℚ (CartanMatrix.E 6)ᵀ) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice j matrixBasis
 
+/-- The numbered integral root matrix is the matrix of the lattice endomorphism supplied by
+its Kostant root operator. -/
+theorem rootIntMatrix_eq_toMatrix (k : Fin 6 ⊕ Fin 6) :
+    rootIntMatrix k = LinearMap.toMatrix matrixBasis matrixBasis
+      (kostantRootOperator
+        (TauCeti.serreRootGenerator (CartanMatrix.E 6)ᵀ)
+        (TauCeti.serreH ℚ (CartanMatrix.E 6)ᵀ) rep lattice.toAddSubgroup
+        rep_kostantForm_mem_lattice k) := by
+  rw [rootIntMatrix, kostantRootGeneratorIntMatrix_eq_toMatrix]
+
 /-- A represented root operator acts on a lattice basis vector by its integral matrix column. -/
 theorem rep_rootGenerator_matrixBasis_eq_sum (j : Fin 6 ⊕ Fin 6) (s : Fin 54) :
     rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
