@@ -10,7 +10,7 @@ public import Mathlib.Topology.Homotopy.HomotopyGroup
 public import TauCeti.Geometry.Convex.ConvexSpace.Defs
 
 /-!
-# The cube and the prism as quotients of standard simplices
+# Standard simplices as quotients of the cube and the prism
 
 This file constructs two continuous surjections onto standard simplices which collapse only
 boundary points, so that maps out of the simplex that are constant on (part of) its boundary are
@@ -234,6 +234,7 @@ lemma prism_weights_succ_succ (s : I) (w : StdSimplex ℝ (Fin (n + 1))) (k : Fi
   (rfl)
 
 /-- The end `s = 0` of `prism` is the face map `δ 0`. -/
+@[simp]
 lemma prism_zero (w : StdSimplex ℝ (Fin (n + 1))) :
     prism 0 w = w.map (0 : Fin (n + 2)).succAbove := by
   refine ext <| Finsupp.ext fun k => Fin.cases ?_ (fun k => ?_) k
@@ -244,6 +245,7 @@ lemma prism_zero (w : StdSimplex ℝ (Fin (n + 1))) :
     rfl
 
 /-- The end `s = 1` of `prism` is the face map `δ 1`. -/
+@[simp]
 lemma prism_one (w : StdSimplex ℝ (Fin (n + 1))) :
     prism 1 w = w.map (1 : Fin (n + 2)).succAbove := by
   refine ext <| Finsupp.ext fun k => Fin.cases ?_ (fun k => Fin.cases ?_ (fun k => ?_) k) k
@@ -295,9 +297,10 @@ lemma surjective_prism :
     have hv1 : v.weights 1 = 0 := by linarith
     refine ⟨(0, w), ext <| Finsupp.ext fun k =>
       Fin.cases ?_ (fun k => Fin.cases ?_ (fun k => ?_) k) k⟩
-    · simp [hw0, hv0, hv1]
-    · rw [Fin.succ_zero_eq_one']
-      simp [hw0, hv0, hv1]
+    · rw [prism_weights_zero, hw0, hv0, hv1]
+      simp
+    · rw [Fin.succ_zero_eq_one', prism_weights_one, hw0, hv0, hv1]
+      simp
     · rfl
   · have hpos : 0 < v.weights 0 + v.weights 1 := lt_of_le_of_ne (add_nonneg h0 h1) (Ne.symm hs)
     let s : I := ⟨v.weights 0 / (v.weights 0 + v.weights 1), div_nonneg h0 hpos.le,

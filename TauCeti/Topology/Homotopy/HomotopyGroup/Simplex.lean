@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Convex.ConvexSpace.Cube
 public import TauCeti.Geometry.Convex.ConvexSpace.Topology
 
+import TauCeti.Data.Fin.Basic
+
 /-!
 # Generalized loops as maps out of a simplex
 
@@ -46,14 +48,6 @@ namespace GenLoop
 
 variable {X : Type*} [TopologicalSpace X] {x : X}
 
-/-- A map out of a simplex which sends every facet to `x` sends every point with a vanishing
-barycentric coordinate to `x`. -/
-private lemma apply_eq_of_weights_eq_zero {n : ℕ} {φ : C(StdSimplex ℝ (Fin (n + 1)), X)}
-    (hφ : ∀ (i : Fin (n + 1)) (z : StdSimplex ℝ (Fin n)), φ (z.map i.succAbove) = x)
-    {b : StdSimplex ℝ (Fin (n + 1))} {k : Fin (n + 1)} (hb : b.weights k = 0) : φ b = x := by
-  obtain ⟨z, rfl⟩ := (StdSimplex.mem_range_map_succAbove_iff k b).2 hb
-  exact hφ k z
-
 /-- `Convexity.StdSimplex.ofCube n` as a continuous map. -/
 private def ofCubeMap (n : ℕ) : C(I^(Fin n), StdSimplex ℝ (Fin (n + 1))) :=
   ⟨StdSimplex.ofCube n, StdSimplex.continuous_ofCube n⟩
@@ -75,7 +69,7 @@ private def toGenLoop {n : ℕ} {φ : C(StdSimplex ℝ (Fin (n + 1)), X)}
     Ω^ (Fin n) X x :=
   ⟨φ.comp (ofCubeMap n), fun t ht => by
     obtain ⟨k, hk⟩ := StdSimplex.exists_weights_ofCube_eq_zero_iff.2 ht
-    exact apply_eq_of_weights_eq_zero hφ hk⟩
+    exact StdSimplex.apply_eq_of_weights_eq_zero hφ hk⟩
 
 /-- The map `Δⁿ → X` through which a generalized loop factors along the quotient map
 `ofCube n`. -/
@@ -134,16 +128,6 @@ private lemma isQuotientMap_prismOfCubeMap (n : ℕ) : IsQuotientMap (prismOfCub
   obtain ⟨t, rfl⟩ := StdSimplex.surjective_ofCube n w
   exact ⟨(s, t), rfl⟩
 
-/-- The facets of `Δⁿ⁺¹` other than `0` and `1` are those opposite the vertices `k + 2`. -/
-private lemma exists_eq_succ_succ {n : ℕ} {j : Fin (n + 2)} (hj : 1 < j) :
-    ∃ k : Fin n, j = k.succ.succ := by
-  cases j using Fin.cases with
-  | zero => exact absurd hj (by simp)
-  | succ j =>
-    cases j using Fin.cases with
-    | zero => exact absurd hj (by simp)
-    | succ k => exact ⟨k, rfl⟩
-
 /-- A homotopy relative to the boundary between the generalized loops of `φ` and `ψ` descends
 along the quotient map `I × Iⁿ → Δⁿ⁺¹` to a map with facets `φ`, `ψ` and `x`. -/
 private lemma exists_isFacetHomotopy {n : ℕ}
@@ -179,7 +163,7 @@ private lemma exists_isFacetHomotopy {n : ℕ}
   · obtain ⟨t, rfl⟩ := StdSimplex.surjective_ofCube n z
     rw [← StdSimplex.prism_one, hτ, F.apply_one]
     rfl
-  · obtain ⟨k, rfl⟩ := exists_eq_succ_succ hj
+  · obtain ⟨k, rfl⟩ := Fin.exists_succ_succ_eq.2 hj
     obtain ⟨⟨s, t⟩, hst⟩ := hq.surjective (z.map k.succ.succ.succAbove)
     have hb := StdSimplex.weights_map_succAbove_self (R := ℝ) k.succ.succ z
     rw [← hst, prismOfCubeMap_apply, StdSimplex.prism_weights_succ_succ] at hb
@@ -207,7 +191,7 @@ private lemma apply_prism_ofCube_of_mem_boundary {n : ℕ} {φ : C(StdSimplex �
       simp only [Fin.succAbove_zero,
         StdSimplex.weights_map_apply_of_injective (Fin.succ_injective _)] at this
       rwa [Fin.succ_zero_eq_one', StdSimplex.prism_weights_one, hk, mul_zero] at this
-    rw [← hz, h0, apply_eq_of_weights_eq_zero hφ hz1]
+    rw [← hz, h0, StdSimplex.apply_eq_of_weights_eq_zero hφ hz1]
   | succ k =>
     obtain ⟨z, hz⟩ := (StdSimplex.mem_range_map_succAbove_iff k.succ.succ
       (StdSimplex.prism s (StdSimplex.ofCube n t))).2 (by simp [hk])
