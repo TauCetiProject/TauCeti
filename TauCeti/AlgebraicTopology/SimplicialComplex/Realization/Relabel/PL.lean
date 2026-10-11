@@ -52,7 +52,7 @@ variable {α β κ ν : Type*} [DecidableEq κ] [DecidableEq ν]
 the original polyhedra. Its explicit formula extends the input coordinates by zero
 and restricts the output coordinates. For a homeomorphism, use the theorem with its
 inverse and the two relabelings exchanged to descend the inverse formula. -/
-theorem isPLOn_relabelingHomeomorph_comp
+theorem isPLOn_restriction_comp_extendByZero
     (h : {x : Realization A // x.1.support ∈ P.map e} →
       {y : Realization B // y.1.support ∈ Q.map d})
     (f : (κ → ℝ) → (ν → ℝ))
