@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Module.Torsion.PrimaryComponent
 public import TauCeti.GroupTheory.Torsion
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.HomologySequence
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Linear
-public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.AllDegrees
+import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.AllDegrees
 
 /-!
 # Primary components of Tate cohomology
