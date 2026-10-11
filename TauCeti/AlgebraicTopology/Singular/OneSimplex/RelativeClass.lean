@@ -126,6 +126,12 @@ def absClass₁ (X : SSet.{w}) (s : X _⦋1⦌) (h : X.δ 0 s = X.δ 1 s) : R �
     rw [SSet.ιChainComplex_d, Fin.sum_univ_two, h]
     simp) ≫ (X.chainComplex R).homologyπ 1
 
+lemma absClass₁_eq (X : SSet.{w}) (s : X _⦋1⦌) (h : X.δ 0 s = X.δ 1 s) :
+    absClass₁ R X s h = (X.chainComplex R).liftCycles (X.ιChainComplex s) 0 (by simp) (by
+      rw [SSet.ιChainComplex_d, Fin.sum_univ_two, h]
+      simp) ≫ (X.chainComplex R).homologyπ 1 := by
+  rw [absClass₁]
+
 /-- The relative class of a `1`-simplex whose two faces agree is the image of its absolute
 class. -/
 lemma absClass₁_homologyπ (h : Q.right.δ 0 s = Q.right.δ 1 s) :

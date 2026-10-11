@@ -105,6 +105,10 @@ section Cube
 /-- The point of the cube `I¹` with coordinate `t`. -/
 def cubePoint (t : I) : (cubeBoundaryPair.{w} 1).fst := ULift.up fun _ ↦ t
 
+@[simp]
+lemma cubePoint_down (t : I) : (cubePoint.{w} t).down = fun _ ↦ t := by
+  rw [cubePoint]
+
 /-- An endpoint of the cube `I¹`, as a point of its boundary. -/
 def cubeEnd (t : I) (ht : t = 0 ∨ t = 1) : (cubeBoundaryPair.{w} 1).snd :=
   ⟨cubePoint t, ⟨0, ht⟩⟩
@@ -120,6 +124,14 @@ def cubeSimplex : (TopCat.toSSet.obj (cubeBoundaryPair.{w} 1).fst) _⦋1⦌ :=
 def cubeEndVertex (t : I) (ht : t = 0 ∨ t = 1) :
     (TopCat.toSSet.obj (cubeBoundaryPair.{w} 1).snd) _⦋0⦌ :=
   TopCat.toSSetObj₀Equiv.symm (cubeEnd t ht)
+
+/-- The standard simplex of `I¹` is the parametrization of the standard `1`-simplex by its last
+weight. -/
+lemma toSSetObjEquiv_cubeSimplex_apply (a : Convexity.StdSimplex ℝ (Fin 2)) :
+    (cubeBoundaryPair.{w} 1).fst.toSSetObjEquiv _ cubeSimplex a =
+      cubePoint (Convexity.StdSimplex.homeomorphI a) := by
+  rw [cubeSimplex, Equiv.apply_symm_apply]
+  exact congrArg cubePoint (Subtype.ext (Convexity.StdSimplex.homeomorphI_apply_coe a).symm)
 
 lemma δ_one_cubeSimplex :
     (TopCat.toSSet.obj (cubeBoundaryPair.{w} 1).fst).δ 1 cubeSimplex =
