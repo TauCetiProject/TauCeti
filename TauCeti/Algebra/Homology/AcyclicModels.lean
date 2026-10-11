@@ -20,14 +20,18 @@ that `G` is **acyclic on the models**: its homology vanishes in positive degrees
 and in degree zero a chain of augmentation zero is a boundary (`IsAcyclicOn`).  Then:
 
 * a natural chain map `F ⟶ G` exists as soon as it exists in degree zero compatibly with the
-  augmentations (`ModelBasis.chainMap`);
+  augmentations, provided the augmentation of `F` vanishes on boundaries
+  (`ModelBasis.chainMap`);
 * two natural chain maps `F ⟶ G` which agree after augmentation in degree zero are chain
   homotopic (`ModelBasis.homotopy`).
 
 Both are built degree by degree.  A natural map out of `Fₙ` is determined by its value on the
-generator `uₙ`, and every element of `Gₘ(Mₙ)` determines one (`ModelBasis.extend`).  So at each
-step it suffices to choose an element of `G(Mₙ)` whose boundary is a prescribed chain; that chain
-is a cycle by the previous step, hence a boundary by acyclicity.
+generator `uₙ`, and every element `t ∈ Gₘ(Mₙ)` determines one, `ModelBasis.extend t`.  Its value
+on the generator need not be `t` itself, since the coefficients of `uₙ` need not be those of a
+single basis element; what matters is that the boundary of the extended map is controlled by the
+boundary of `t` (`ModelBasis.d_extend`).  So at each step it suffices to choose an element of
+`G(Mₙ)` whose boundary is a prescribed chain; that chain is a cycle by the previous step, hence a
+boundary by acyclicity.  The chosen elements are internal to the construction.
 
 This is the form of the theorem of Eilenberg and Mac Lane used for the comparison of cubical and
 simplicial singular chains.  The coefficients `σ ↦ aσ` need not be unique: the normalized cubical
@@ -47,7 +51,7 @@ chains are only a natural retract of the free modules on the cubes.
 * W. S. Massey, *Singular Homology Theory*, GTM 70, Springer, 1980, Chapter VII.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -132,19 +136,23 @@ theorem NatLinear.sub_app {m n : ℕ} (φ ψ : NatLinear F G n m) (X : C) (x : (
     (φ.sub ψ).app X x = φ.app X x - ψ.app X x :=
   (rfl)
 
-/-- A chosen witness of an existential statement, or `0` when there is none. -/
-private theorem spec_dite {α : Type*} [Zero α] {p : α → Prop} [Decidable (∃ a, p a)]
+/-- A witness chosen by `Exists.choose` when there is one, and `0` otherwise, satisfies the
+predicate as soon as some element does. -/
+theorem _root_.TauCeti.dite_exists_choose_spec {α : Type*} [Zero α] {p : α → Prop}
+    [Decidable (∃ a, p a)]
     (h : ∃ a, p a) : p (if h' : ∃ a, p a then h'.choose else 0) := by
   simp only [h, ↓reduceDIte]
   exact h.choose_spec
 
-/-- A chain map commutes with the boundaries, on elements. -/
-private theorem hom_d_apply {K L : ChainComplex (ModuleCat.{u} k) ℕ} (φ : K ⟶ L) (i j : ℕ)
-    (x : K.X i) : L.d i j (φ.f i x) = φ.f j (K.d i j x) := by
+/-- A chain map of complexes of modules commutes with the boundaries, on elements. -/
+theorem _root_.HomologicalComplex.Hom.comm_apply {ι : Type*} {c : ComplexShape ι}
+    {K L : HomologicalComplex (ModuleCat.{u} k) c} (φ : K ⟶ L) (i j : ι) (x : K.X i) :
+    L.d i j (φ.f i x) = φ.f j (K.d i j x) := by
   rw [← ModuleCat.comp_apply, φ.comm, ModuleCat.comp_apply]
 
-/-- The boundary of a boundary vanishes, on elements. -/
-private theorem d_d_apply (K : ChainComplex (ModuleCat.{u} k) ℕ) (i j l : ℕ) (x : K.X i) :
+/-- In a complex of modules the boundary of a boundary vanishes, on elements. -/
+theorem _root_.HomologicalComplex.d_comp_d_apply {ι : Type*} {c : ComplexShape ι}
+    (K : HomologicalComplex (ModuleCat.{u} k) c) (i j l : ι) (x : K.X i) :
     K.d j l (K.d i j x) = 0 := by
   rw [← ModuleCat.comp_apply, HomologicalComplex.d_comp_d]
   rfl
@@ -214,9 +222,9 @@ variable {εF : ∀ X : C, (F.obj X).X 0 →ₗ[k] k} {εG : ∀ X : C, (G.obj X
   (t₀ : (G.obj (B.model 0)).X 0) (ht₀ : ∀ X x, εG X (B.extend t₀ X x) = εF X x)
 
 open Classical in
-/-- The values on the generators of the natural chain map extending `B.extend t₀`, chosen degree
-by degree. -/
-def chainMapGen (t₀ : (G.obj (B.model 0)).X 0) : (n : ℕ) → (G.obj (B.model n)).X n
+/-- The elements of the models chosen degree by degree to define the components of the natural
+chain map extending `B.extend t₀` through `ModelBasis.extend`. -/
+private def chainMapGen (t₀ : (G.obj (B.model 0)).X 0) : (n : ℕ) → (G.obj (B.model n)).X n
   | 0 => t₀
   | n + 1 =>
     if h : ∃ b, (G.obj (B.model (n + 1))).d (n + 1) n b =
@@ -225,8 +233,8 @@ def chainMapGen (t₀ : (G.obj (B.model 0)).X 0) : (n : ℕ) → (G.obj (B.model
     then h.choose else 0
 
 include hG hεF ht₀ in
-/-- The values on the generators have the prescribed boundaries. -/
-theorem d_chainMapGen (n : ℕ) :
+/-- The chosen elements have the prescribed boundaries. -/
+private theorem d_chainMapGen (n : ℕ) :
     (G.obj (B.model (n + 1))).d (n + 1) n (B.chainMapGen t₀ (n + 1)) =
       B.extend (B.chainMapGen t₀ n) (B.model (n + 1))
         ((F.obj (B.model (n + 1))).d (n + 1) n (B.gen (n + 1))) := by
@@ -234,26 +242,26 @@ theorem d_chainMapGen (n : ℕ) :
   induction n with
   | zero =>
     rw [chainMapGen]
-    refine spec_dite (p := fun b ↦ _ = _) ?_
+    refine dite_exists_choose_spec (p := fun b ↦ _ = _) ?_
     refine hG.exists_d_eq_of_augment_eq_zero 1 _ ?_
     rw [chainMapGen, ht₀, hεF]
   | succ n ih =>
     rw [chainMapGen]
-    refine spec_dite (p := fun b ↦ _ = _) ?_
+    refine dite_exists_choose_spec (p := fun b ↦ _ = _) ?_
     refine hG.exists_d_eq_of_d_eq_zero (n + 2) n _ ?_
     rw [B.d_extend _ (B.extendNat (B.chainMapGen t₀ n)).compD ih, NatLinear.compD_app,
-      d_d_apply, map_zero]
+      HomologicalComplex.d_comp_d_apply, map_zero]
 
 include hG hεF ht₀ in
-/-- The maps determined by the chosen values commute with the boundaries. -/
-theorem d_extend_chainMapGen (n : ℕ) (X : C) (x : (F.obj X).X (n + 1)) :
+/-- The maps determined by the chosen elements commute with the boundaries. -/
+private theorem d_extend_chainMapGen (n : ℕ) (X : C) (x : (F.obj X).X (n + 1)) :
     (G.obj X).d (n + 1) n (B.extend (B.chainMapGen t₀ (n + 1)) X x) =
       B.extend (B.chainMapGen t₀ n) X ((F.obj X).d (n + 1) n x) :=
   B.d_extend _ (B.extendNat (B.chainMapGen t₀ n)).compD (B.d_chainMapGen hG hεF t₀ ht₀ n) X x
 
-/-- **Existence of natural chain maps**: a natural map `F₀ → G₀` compatible with the
-augmentations, determined by `t₀` on the model, extends to a natural chain map `F ⟶ G`, if `G`
-is acyclic on the models of `F`. -/
+/-- **Existence of natural chain maps**: if `G` is acyclic on the models of `F` and the augmentation
+of `F` vanishes on boundaries, the natural map `F₀ → G₀` determined by `t₀`, compatible with the
+augmentations, extends to a natural chain map `F ⟶ G`. -/
 def chainMap : F ⟶ G where
   app X := ChainComplex.ofHom (fun n ↦ ModuleCat.ofHom (B.extend (B.chainMapGen t₀ n) X))
     fun n ↦ by
@@ -263,11 +271,7 @@ def chainMap : F ⟶ G where
     ext n x
     exact B.extend_map _ f x
 
-@[simp]
-theorem chainMap_app_f_apply (X : C) (n : ℕ) (x : (F.obj X).X n) :
-    ((B.chainMap hG hεF t₀ ht₀).app X).f n x = B.extend (B.chainMapGen t₀ n) X x :=
-  (rfl)
-
+/-- In degree zero the natural chain map is the map determined by `t₀`. -/
 theorem chainMap_app_f_zero_apply (X : C) (x : (F.obj X).X 0) :
     ((B.chainMap hG hεF t₀ ht₀).app X).f 0 x = B.extend t₀ X x :=
   (rfl)
@@ -280,9 +284,9 @@ variable {εG : ∀ X : C, (G.obj X).X 0 →ₗ[k] k} (hG : IsAcyclicOn G B.mode
   (hfg : ∀ X x, εG X ((f.app X).f 0 x) = εG X ((g.app X).f 0 x))
 
 open Classical in
-/-- The values on the generators of the chain homotopy between two natural chain maps, chosen
-degree by degree. -/
-def homotopyGen : (n : ℕ) → (G.obj (B.model n)).X (n + 1)
+/-- The elements of the models chosen degree by degree to define the components of the chain
+homotopy between two natural chain maps through `ModelBasis.extend`. -/
+private def homotopyGen : (n : ℕ) → (G.obj (B.model n)).X (n + 1)
   | 0 =>
     if h : ∃ b, (G.obj (B.model 0)).d 1 0 b =
         (f.app (B.model 0)).f 0 (B.gen 0) - (g.app (B.model 0)).f 0 (B.gen 0)
@@ -297,14 +301,14 @@ def homotopyGen : (n : ℕ) → (G.obj (B.model n)).X (n + 1)
 
 include hG hfg in
 /-- The homotopy condition in degree zero. -/
-theorem d_extend_homotopyGen_zero (X : C) (x : (F.obj X).X 0) :
+private theorem d_extend_homotopyGen_zero (X : C) (x : (F.obj X).X 0) :
     (G.obj X).d 1 0 (B.extend (B.homotopyGen f g 0) X x) =
       (f.app X).f 0 x - (g.app X).f 0 x := by
   classical
   have h := B.d_extend (B.homotopyGen f g 0) ((NatLinear.ofHom f 0).sub (NatLinear.ofHom g 0))
     (by
       rw [homotopyGen]
-      refine spec_dite (p := fun b ↦ _ = _) ?_
+      refine dite_exists_choose_spec (p := fun b ↦ _ = _) ?_
       refine hG.exists_d_eq_of_augment_eq_zero 0 _ ?_
       simp [hfg]) X x
   simpa using h
@@ -322,23 +326,24 @@ private theorem d_homotopyGen_succ (n : ℕ) :
   induction n with
   | zero =>
     rw [homotopyGen]
-    refine spec_dite (p := fun b ↦ _ = _) ?_
+    refine dite_exists_choose_spec (p := fun b ↦ _ = _) ?_
     refine hG.exists_d_eq_of_d_eq_zero 1 0 _ ?_
-    rw [map_sub, map_sub, B.d_extend_homotopyGen_zero hG f g hfg, hom_d_apply, hom_d_apply,
-      sub_self]
+    rw [map_sub, map_sub, B.d_extend_homotopyGen_zero hG f g hfg,
+      HomologicalComplex.Hom.comm_apply, HomologicalComplex.Hom.comm_apply, sub_self]
   | succ n ih =>
     rw [homotopyGen]
-    refine spec_dite (p := fun b ↦ _ = _) ?_
+    refine dite_exists_choose_spec (p := fun b ↦ _ = _) ?_
     refine hG.exists_d_eq_of_d_eq_zero (n + 2) (n + 1) _ ?_
     have h := B.d_extend _ (target B f g n) ih (B.model (n + 2))
       ((F.obj (B.model (n + 2))).d (n + 2) (n + 1) (B.gen (n + 2)))
     simp only [target, NatLinear.sub_app, NatLinear.ofHom_app, NatLinear.compD_app,
       extendNat] at h ⊢
-    rw [map_sub, map_sub, h, d_d_apply, map_zero, sub_zero, hom_d_apply, hom_d_apply, sub_self]
+    rw [map_sub, map_sub, h, HomologicalComplex.d_comp_d_apply, map_zero, sub_zero,
+      HomologicalComplex.Hom.comm_apply, HomologicalComplex.Hom.comm_apply, sub_self]
 
 include hG hfg in
 /-- The homotopy condition in positive degrees. -/
-theorem d_extend_homotopyGen_succ (n : ℕ) (X : C) (x : (F.obj X).X (n + 1)) :
+private theorem d_extend_homotopyGen_succ (n : ℕ) (X : C) (x : (F.obj X).X (n + 1)) :
     (G.obj X).d (n + 2) (n + 1) (B.extend (B.homotopyGen f g (n + 1)) X x) =
       (f.app X).f (n + 1) x - (g.app X).f (n + 1) x -
         B.extend (B.homotopyGen f g n) X ((F.obj X).d (n + 1) n x) := by
@@ -347,12 +352,12 @@ theorem d_extend_homotopyGen_succ (n : ℕ) (X : C) (x : (F.obj X).X (n + 1)) :
 
 /-- The components of the chain homotopy: `Fᵢ(X) → Gⱼ(X)`, determined on the model when
 `j = i + 1`, and zero otherwise. -/
-def homotopyHom (X : C) (i j : ℕ) : (F.obj X).X i ⟶ (G.obj X).X j :=
+private def homotopyHom (X : C) (i j : ℕ) : (F.obj X).X i ⟶ (G.obj X).X j :=
   if h : i + 1 = j then
     ModuleCat.ofHom (B.extend (B.homotopyGen f g i) X) ≫ eqToHom (by rw [h])
   else 0
 
-theorem homotopyHom_succ (X : C) (i : ℕ) :
+private theorem homotopyHom_succ (X : C) (i : ℕ) :
     B.homotopyHom f g X i (i + 1) = ModuleCat.ofHom (B.extend (B.homotopyGen f g i) X) := by
   simp [homotopyHom]
 
@@ -382,11 +387,19 @@ def homotopy (X : C) : Homotopy (f.app X) (g.app X) where
       rw [B.d_extend_homotopyGen_succ hG f g hfg]
       abel
 
+private theorem homotopy_hom (X : C) : (B.homotopy hG f g hfg X).hom = B.homotopyHom f g X :=
+  (rfl)
+
+/-- The components of the chain homotopy vanish off the shape of the complexes. -/
+theorem homotopy_hom_eq_zero (X : C) {i j : ℕ} (h : i + 1 ≠ j) :
+    (B.homotopy hG f g hfg X).hom i j = 0 := by
+  simp only [homotopy_hom, homotopyHom, h, ↓reduceDIte]
+
 /-- The chain homotopy is natural. -/
 theorem homotopy_hom_naturality {X Y : C} (φ : X ⟶ Y) (i j : ℕ) :
     (F.map φ).f i ≫ (B.homotopy hG f g hfg Y).hom i j =
       (B.homotopy hG f g hfg X).hom i j ≫ (G.map φ).f j := by
-  change (F.map φ).f i ≫ B.homotopyHom f g Y i j = B.homotopyHom f g X i j ≫ (G.map φ).f j
+  rw [homotopy_hom, homotopy_hom]
   by_cases h : i + 1 = j
   · subst h
     rw [homotopyHom_succ, homotopyHom_succ]
