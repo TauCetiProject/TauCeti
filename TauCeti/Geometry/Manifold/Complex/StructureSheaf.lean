@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+-- Supplies ring limits for `Presheaf.isSheaf_iff_isSheaf_forget` below.
 public import Mathlib.Algebra.Category.Ring.Limits
 public import Mathlib.Algebra.Category.Ring.Colimits
 public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
 public import Mathlib.Geometry.Manifold.Sheaf.Basic
 public import Mathlib.Geometry.Manifold.Complex
+-- Supplies module limits for `Presheaf.isSheaf_iff_isSheaf_forget` below.
 public import Mathlib.Algebra.Category.ModuleCat.Limits
 public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 public import Mathlib.Topology.Sheaves.Functors
