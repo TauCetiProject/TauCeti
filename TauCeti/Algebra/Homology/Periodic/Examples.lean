@@ -33,6 +33,7 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Limits
 
+/-- The algebra of dual numbers over `k`. -/
 abbrev DualNumbers (k : Type*) := DualNumber k
 
 variable {k : Type*} [Field k]
