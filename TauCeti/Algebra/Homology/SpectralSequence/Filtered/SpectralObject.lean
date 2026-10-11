@@ -42,7 +42,10 @@ cohomology `H^{p+q}(F_{q+1}/F_q)` of a graded piece of the filtration
   `F.map f`.
 * `CochainComplex.spectralObjectHIsoCokernel`: for a monomorphism `F.map f`, `H^n(f)` is the
   cohomology of the cokernel of `F.map f`.
-* `CochainComplex.spectralSequenceFirstPageXIso`: the first page is `H^{p+q}(F_{q+1}/F_q)`.
+* `CochainComplex.spectralSequenceFirstPageXIsoCokernel`: the first page is
+  `H^{p+q}(F_{q+1}/F_q)`.
+* `CochainComplex.spectralObject_δ`: the connecting maps are those of the triangles of mapping
+  cones.
 
 ## References
 
@@ -65,7 +68,7 @@ variable {ι : Type*} [Category* ι] (F : ι ⥤ CochainComplex C ℤ)
 /-- The spectral object of a functor `F : ι ⥤ CochainComplex C ℤ`: to `f : i ⟶ j` and `n : ℤ` it
 attaches the `n`th cohomology of the mapping cone of `F.map f`, and its connecting maps are those
 of the distinguished triangles of mapping cones. -/
-noncomputable def spectralObject : Abelian.SpectralObject C ι :=
+@[expose] noncomputable def spectralObject : Abelian.SpectralObject C ι :=
   ((spectralObjectMappingCone C).precomp F).mapHomologicalFunctor
     (homologyFunctor C (ComplexShape.up ℤ) 0)
 
@@ -74,6 +77,29 @@ the maps `F.map f`. -/
 noncomputable def spectralObjectHIso {i j : ι} (f : i ⟶ j) (n : ℤ) :
     ((spectralObject F).H n).obj (mk₁ f) ≅ (mappingCone (F.map f)).homology n :=
   (homologyFunctorFactors C (ComplexShape.up ℤ) n).app (mappingCone (F.map f))
+
+/-- The connecting maps of the spectral object of `F` are the connecting maps of the homology
+sequences of the distinguished triangles of mapping cones attached to `F.map f` and `F.map g`. -/
+lemma spectralObject_δ {i j k : ι} (f : i ⟶ j) (g : j ⟶ k) (n₀ n₁ : ℤ) (h : n₀ + 1 = n₁) :
+    (spectralObject F).δ f g n₀ n₁ h =
+      (homologyFunctor C (ComplexShape.up ℤ) 0).homologySequenceδ
+        ((quotient C (ComplexShape.up ℤ)).mapTriangle.obj
+          (mappingConeCompTriangle (F.map f) (F.map g))) n₀ n₁ h := by
+  refine (Triangulated.SpectralObject.mapHomologicalFunctor_δ _ _ f g n₀ n₁ h).trans ?_
+  dsimp only [Functor.homologySequenceδ]
+  congr 1
+  have e (a b : ι) (u : a ⟶ b) :
+      (spectralObjectMappingCone C).ω₁.map (F.mapComposableArrowsObjMk₁Iso u).hom = 𝟙 _ :=
+    (congrArg (quotient C (ComplexShape.up ℤ)).map (mappingCone.map_id (F.map u))).trans
+      (CategoryTheory.Functor.map_id _ _)
+  have e' (a b : ι) (u : a ⟶ b) :
+      (spectralObjectMappingCone C).ω₁.map (F.mapComposableArrowsObjMk₁Iso u).inv = 𝟙 _ :=
+    (congrArg (quotient C (ComplexShape.up ℤ)).map (mappingCone.map_id (F.map u))).trans
+      (CategoryTheory.Functor.map_id _ _)
+  dsimp [Triangulated.SpectralObject.precomp, Triangulated.SpectralObject.δ]
+  rw [e, e']
+  erw [Category.id_comp, CategoryTheory.Functor.map_id, Category.comp_id]
+  rfl
 
 /-- The short exact sequence `F i ⟶ F j ⟶ cokernel (F.map f)` of a monomorphism `F.map f`. -/
 noncomputable abbrev cokernelShortComplex {i j : ι} (f : i ⟶ j) :
@@ -150,24 +176,26 @@ variable (F : EInt ⥤ CochainComplex C ℤ)
 noncomputable abbrev spectralSequence :=
   (spectralObject F).spectralSequence Abelian.SpectralObject.coreE₂Cohomological
 
-/-- The objects on the first page of the spectral sequence of `F`: at `(p, q)`, the
-`(p + q)`th cohomology of the mapping cone of `F_q ⟶ F_{q+1}`. -/
-noncomputable def spectralSequenceFirstPageXIso (p q : ℤ) :
-    ((spectralSequence F).page 2).X (p, q) ≅
-      (mappingCone (F.map (homOfLE (show (q : EInt) ≤ (q + 1 : ℤ) by simp)))).homology
-        (p + q) :=
-  (spectralObject F).spectralSequenceFirstPageXIso _ (p, q) q (q + 1 : ℤ) rfl rfl (p + q) rfl ≪≫
-    spectralObjectHIso F _ _
+/-- The objects on the first page of the spectral sequence of `F`: at `pq = (p, q)`, the
+`(p + q)`th cohomology of the mapping cone of `F_q ⟶ F_{q+1}`. The indices `q`, `q + 1` and
+`p + q` are given as `i₁`, `i₂` and `n` together with equations, for flexibility. -/
+noncomputable def spectralSequenceFirstPageXIso (pq : ℤ × ℤ) (i₁ i₂ : ℤ) (hi₁ : i₁ = pq.2)
+    (hi₂ : i₂ = pq.2 + 1) (n : ℤ) (hn : n = pq.1 + pq.2) :
+    ((spectralSequence F).page 2).X pq ≅
+      (mappingCone (F.map (homOfLE (show (i₁ : EInt) ≤ i₂ by simp [hi₁, hi₂])))).homology n :=
+  (spectralObject F).spectralSequenceFirstPageXIso _ pq i₁ i₂ (by simp [hi₁]) (by simp [hi₂]) n
+    hn ≪≫ spectralObjectHIso F _ _
 
 /-- The objects on the first page of the spectral sequence of `F` when the transition maps of
-`F` are monomorphisms: at `(p, q)`, the `(p + q)`th cohomology of the graded piece
+`F` are monomorphisms: at `pq = (p, q)`, the `(p + q)`th cohomology of the graded piece
 `F_{q+1}/F_q`. -/
-noncomputable def spectralSequenceFirstPageXIsoCokernel (p q : ℤ)
-    [Mono (F.map (homOfLE (show (q : EInt) ≤ (q + 1 : ℤ) by simp)))] :
-    ((spectralSequence F).page 2).X (p, q) ≅
-      (cokernel (F.map (homOfLE (show (q : EInt) ≤ (q + 1 : ℤ) by simp)))).homology (p + q) :=
-  (spectralObject F).spectralSequenceFirstPageXIso _ (p, q) q (q + 1 : ℤ) rfl rfl (p + q) rfl ≪≫
-    spectralObjectHIsoCokernel F _ _
+noncomputable def spectralSequenceFirstPageXIsoCokernel (pq : ℤ × ℤ) (i₁ i₂ : ℤ)
+    (hi₁ : i₁ = pq.2) (hi₂ : i₂ = pq.2 + 1) (n : ℤ) (hn : n = pq.1 + pq.2)
+    [Mono (F.map (homOfLE (show (i₁ : EInt) ≤ i₂ by simp [hi₁, hi₂])))] :
+    ((spectralSequence F).page 2).X pq ≅
+      (cokernel (F.map (homOfLE (show (i₁ : EInt) ≤ i₂ by simp [hi₁, hi₂])))).homology n :=
+  (spectralObject F).spectralSequenceFirstPageXIso _ pq i₁ i₂ (by simp [hi₁]) (by simp [hi₂]) n
+    hn ≪≫ spectralObjectHIsoCokernel F _ _
 
 end SpectralSequence
 
