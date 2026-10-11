@@ -19,9 +19,9 @@ preferred chart, with local constancy and the transition-Jacobian compatibility 
 by the simultaneous sign flip gives `Manifold.Orientation`; `orientationAt` is its tangent-space
 orientation and is independent of the chosen lift.
 
-The preserving-map and top-form interfaces are developed in the later orientation layer.  The
-construction here is deliberately independent of integration and of a chosen orientation of the
-atlas.
+Tangent-space orientations provide the signs used to compare derivatives of maps and to evaluate
+top forms, while the construction remains independent of integration and of a chosen orientation
+of the atlas.
 
 The conventions follow Lee, *Introduction to Smooth Manifolds*, 2nd ed., Chapter 15.
 -/
@@ -115,18 +115,18 @@ def OrientationLift.setoid : Setoid (OrientationLift I M ι) where
             | mk lm' lc' ls' lcont' lcomp' =>
               cases l'' with
               | mk lm'' lc'' ls'' lcont'' lcomp'' =>
-                change lm' = -lm at hm
-                change ls' = fun x y ↦ -ls x y at hs
-                change lm'' = -lm' at hm'
-                change ls'' = fun x y ↦ -ls' x y at hs'
+                have hm0 : lm' = -lm := by simpa using hm
+                have hs0 : ls' = fun x y ↦ -ls x y := by simpa using hs
+                have hm'0 : lm'' = -lm' := by simpa using hm'
+                have hs'0 : ls'' = fun x y ↦ -ls' x y := by simpa using hs'
                 have hlm : lm'' = lm := by
                   calc
-                    lm'' = -lm' := hm'
-                    _ = -(-lm) := by rw [hm]
+                    lm'' = -lm' := hm'0
+                    _ = -(-lm) := by rw [hm0]
                     _ = lm := by
                       exact InvolutiveNeg.neg_neg lm
                 have hls : ls'' = ls := by
-                  rw [hs', hs]
+                  rw [hs'0, hs0]
                   funext x y
                   simp
                 cases hlm
@@ -194,6 +194,20 @@ def _root_.TauCeti.Manifold.Orientation.mk (l : OrientationLift I M ι) :
     Manifold.Orientation I M ι :=
   Quotient.mk _ l
 
+/-- Eliminate a manifold orientation by choosing an orientation lift representative. -/
+theorem _root_.TauCeti.Manifold.Orientation.inductionOn {p : Manifold.Orientation I M ι → Prop}
+    (o : Manifold.Orientation I M ι) (h : ∀ l, p (Manifold.Orientation.mk l)) : p o :=
+  Quotient.inductionOn o h
+
+/-- Two representatives define the same manifold orientation exactly when they agree up to the
+diagonal sign flip. -/
+theorem _root_.TauCeti.Manifold.Orientation.mk_eq_mk_iff (l l' : OrientationLift I M ι) :
+    Manifold.Orientation.mk l = Manifold.Orientation.mk l' ↔
+      l' = l ∨
+        (l'.modelOrientation = -l.modelOrientation ∧
+          l'.sign = fun x y ↦ -l.sign x y) := by
+  exact Quotient.eq'
+
 /-- The tangent-space orientation induced by a quotient orientation. -/
 noncomputable def _root_.TauCeti.Manifold.Orientation.orientationAt
     (o : Manifold.Orientation I M ι) (x : M) :
@@ -202,6 +216,7 @@ noncomputable def _root_.TauCeti.Manifold.Orientation.orientationAt
     (fun _l _l' h ↦ _root_.TauCeti.Manifold.Orientation.tangentOrientation_congr h x) o
 
 /-- The characteristic equation for the tangent orientation represented by a lift. -/
+@[simp]
 theorem _root_.TauCeti.Manifold.Orientation.orientationAt_mk
     (l : OrientationLift I M ι) (x : M) :
     _root_.TauCeti.Manifold.Orientation.orientationAt
@@ -214,22 +229,20 @@ theorem _root_.TauCeti.Manifold.Orientation.orientationAt_mk
     OrientationLift.tangentOrientation]
 
 /-- Flipping the model orientation reverses every induced tangent orientation. -/
+@[simp]
 theorem _root_.TauCeti.Manifold.Orientation.orientationAt_neg
     (o : Manifold.Orientation I M ι) (x : M) :
     _root_.TauCeti.Manifold.Orientation.orientationAt o.neg x =
       -_root_.TauCeti.Manifold.Orientation.orientationAt o x := by
-  refine Quotient.inductionOn o (fun l => ?_)
-  change (if l.sign x ⟨x, mem_chart_source H x⟩ = 1 then
-      Orientation.map ι (tangentSpaceCastModel I x).symm.toLinearEquiv
-        (-l.modelOrientation)
-    else
-      -Orientation.map ι (tangentSpaceCastModel I x).symm.toLinearEquiv
-        (-l.modelOrientation)) =
-    -(if l.sign x ⟨x, mem_chart_source H x⟩ = 1 then
-        Orientation.map ι (tangentSpaceCastModel I x).symm.toLinearEquiv l.modelOrientation
-      else
-        -Orientation.map ι (tangentSpaceCastModel I x).symm.toLinearEquiv l.modelOrientation)
-  rw [Orientation.map_neg]
+  refine Manifold.Orientation.inductionOn
+    (p := fun o => Manifold.Orientation.orientationAt o.neg x =
+      -Manifold.Orientation.orientationAt o x) o (fun l => ?_)
+  let lneg : OrientationLift I M ι := { l with modelOrientation := -l.modelOrientation }
+  have hneg : (Manifold.Orientation.mk l).neg = Manifold.Orientation.mk lneg := by
+    rfl
+  rw [hneg, Manifold.Orientation.orientationAt_mk,
+    Manifold.Orientation.orientationAt_mk]
+  simp only [lneg, Orientation.map_neg]
   by_cases hsign : l.sign x ⟨x, mem_chart_source H x⟩ = 1 <;> simp [hsign]
 
 end TauCeti
