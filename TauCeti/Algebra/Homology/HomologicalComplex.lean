@@ -23,6 +23,8 @@ differential into it, the identification of the homology with the cycles is natu
 (`HomologicalComplex.isoHomologyπ_inv_naturality`). The sequence
 `Zᵢ ⟶ Kᵢ ⟶ Zⱼ` of cycles is exact (`HomologicalComplex.exact_iCycles_toCycles`), so the cycles of
 a complex exact in degree `j` fit into short exact sequences `0 ⟶ Zᵢ ⟶ Kᵢ ⟶ Zⱼ ⟶ 0`.
+For chain complexes indexed by the natural numbers, the identification of zero chains with
+cycles is natural (`ChainComplex.cycles₀Iso_inv_naturality`).
 -/
 
 public section
@@ -149,3 +151,18 @@ instance cyclesFunctor_additive [CategoryWithHomology C] (i : ι) :
     exact cyclesMap_add f g i
 
 end HomologicalComplex
+
+namespace ChainComplex
+
+variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C]
+  {K L : ChainComplex C ℕ} [K.HasHomology 0] [L.HasHomology 0]
+
+/-- The identification of degree-zero chains with degree-zero cycles is natural. -/
+@[reassoc]
+lemma cycles₀Iso_inv_naturality (φ : K ⟶ L) :
+    K.cycles₀Iso.inv ≫ HomologicalComplex.cyclesMap φ 0 =
+      φ.f 0 ≫ L.cycles₀Iso.inv := by
+  apply (cancel_mono (L.iCycles 0)).1
+  simp
+
+end ChainComplex
