@@ -75,7 +75,7 @@ instance : MorphismProperty.IsStableUnderComposition @Unramified := by
   rw [unramified_eq]
   exact MorphismProperty.IsStableUnderComposition.inf
 
-instance : MorphismProperty.IsStableUnderBaseChange @Unramified := by
+instance isStableUnderBaseChange : MorphismProperty.IsStableUnderBaseChange @Unramified := by
   rw [unramified_eq]
   exact MorphismProperty.IsStableUnderBaseChange.inf
 
@@ -88,18 +88,12 @@ instance unramified_comp {Z : Scheme.{u}} (g : Y ⟶ Z)
   MorphismProperty.comp_mem _ f g ‹Unramified f› ‹Unramified g›
 
 instance {X Y S : Scheme.{u}} (f : X ⟶ S) (g : Y ⟶ S) [Unramified g] :
-    Unramified (pullback.fst f g) := by
-  have h : MorphismProperty.IsStableUnderBaseChange @Unramified := by
-    rw [unramified_eq]
-    exact MorphismProperty.IsStableUnderBaseChange.inf
-  exact h.of_isPullback (IsPullback.of_hasPullback f g).flip inferInstance
+    Unramified (pullback.fst f g) :=
+  isStableUnderBaseChange.of_isPullback (IsPullback.of_hasPullback f g).flip inferInstance
 
 instance {X Y S : Scheme.{u}} (f : X ⟶ S) (g : Y ⟶ S) [Unramified f] :
-    Unramified (pullback.snd f g) := by
-  have h : MorphismProperty.IsStableUnderBaseChange @Unramified := by
-    rw [unramified_eq]
-    exact MorphismProperty.IsStableUnderBaseChange.inf
-  exact h.of_isPullback (IsPullback.of_hasPullback f g) inferInstance
+    Unramified (pullback.snd f g) :=
+  isStableUnderBaseChange.of_isPullback (IsPullback.of_hasPullback f g) inferInstance
 
 instance (priority := 900) {X Y : Scheme} (f : X ⟶ Y)
     [AlgebraicGeometry.IsImmersion f] :
