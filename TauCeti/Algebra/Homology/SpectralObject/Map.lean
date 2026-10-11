@@ -84,17 +84,22 @@ lemma shortComplexMapOfHom_τ₃ :
 @[simp]
 lemma shortComplexMapOfHom_id :
     shortComplexMapOfHom (𝟙 X) f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ = 𝟙 _ := by
-  -- the remaining goals compare `(𝟙 X).hom n` and `𝟙`, equal by definition of the identity of
-  -- spectral objects
-  ext <;> simp <;> rfl
+  -- the remaining goals are `𝟙 ((X.H n₀).obj (mk₁ f₃)) = 𝟙 (X.shortComplex …).X₁` (and similarly
+  -- for `X₂`, `X₃`): `(X.shortComplex …).X₁` is `(X.H n₀).obj (mk₁ f₃)` by definition, and
+  -- `shortComplex_X₁` cannot rewrite the object under `𝟙`
+  ext <;> simp only [shortComplexMapOfHom_τ₁, shortComplexMapOfHom_τ₂, shortComplexMapOfHom_τ₃,
+    id_hom, NatTrans.id_app, ShortComplex.id_τ₁, ShortComplex.id_τ₂, ShortComplex.id_τ₃] <;> rfl
 
 @[reassoc, simp]
 lemma shortComplexMapOfHom_comp :
     shortComplexMapOfHom (φ ≫ ψ) f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ =
       shortComplexMapOfHom φ f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ ≫
         shortComplexMapOfHom ψ f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ := by
-  -- the composition of morphisms of spectral objects is defined componentwise
-  ext <;> simp <;> rfl
+  -- after `simp`, both sides are `(φ.hom n).app _ ≫ (ψ.hom n).app _`, composed in `C` between
+  -- the objects `(Y.H n).obj _` and `(Y.shortComplex …).X₁` (equal by definition), hence `rfl`
+  ext <;> simp only [shortComplexMapOfHom_τ₁, shortComplexMapOfHom_τ₂, shortComplexMapOfHom_τ₃,
+    comp_hom, NatTrans.comp_app, ShortComplex.comp_τ₁, ShortComplex.comp_τ₂,
+    ShortComplex.comp_τ₃] <;> rfl
 
 /-- The morphism `X.E f₁ f₂ f₃ n₀ n₁ n₂ ⟶ Y.E f₁ f₂ f₃ n₀ n₁ n₂` induced by a morphism of
 spectral objects. -/
@@ -164,17 +169,14 @@ lemma cyclesMapOfHom_i :
 
 @[simp]
 lemma cyclesMapOfHom_id : cyclesMapOfHom (𝟙 X) f g n = 𝟙 _ := by
-  rw [← cancel_mono (X.iCycles f g n), cyclesMapOfHom_i, Category.id_comp]
-  -- `(𝟙 X).hom n` is the identity by definition
-  exact Category.comp_id _
+  rw [← cancel_mono (X.iCycles f g n), cyclesMapOfHom_i, id_hom, NatTrans.id_app, Category.comp_id,
+    Category.id_comp]
 
-@[reassoc]
+@[reassoc, simp]
 lemma cyclesMapOfHom_comp :
     cyclesMapOfHom (φ ≫ ψ) f g n = cyclesMapOfHom φ f g n ≫ cyclesMapOfHom ψ f g n := by
   rw [← cancel_mono (Z.iCycles f g n), cyclesMapOfHom_i, Category.assoc, cyclesMapOfHom_i,
-    cyclesMapOfHom_i_assoc]
-  -- `(φ ≫ ψ).hom n` is `φ.hom n ≫ ψ.hom n` by definition
-  rfl
+    cyclesMapOfHom_i_assoc, comp_hom, NatTrans.comp_app]
 
 @[reassoc]
 lemma toCycles_cyclesMapOfHom (fg : i ⟶ k) (h : f ≫ g = fg) :
@@ -231,17 +233,14 @@ lemma p_opcyclesMapOfHom :
 
 @[simp]
 lemma opcyclesMapOfHom_id : opcyclesMapOfHom (𝟙 X) f g n = 𝟙 _ := by
-  rw [← cancel_epi (X.pOpcycles f g n), p_opcyclesMapOfHom, Category.comp_id]
-  -- `(𝟙 X).hom n` is the identity by definition
-  exact Category.id_comp _
+  rw [← cancel_epi (X.pOpcycles f g n), p_opcyclesMapOfHom, id_hom, NatTrans.id_app,
+    Category.comp_id, Category.id_comp]
 
-@[reassoc]
+@[reassoc, simp]
 lemma opcyclesMapOfHom_comp :
     opcyclesMapOfHom (φ ≫ ψ) f g n = opcyclesMapOfHom φ f g n ≫ opcyclesMapOfHom ψ f g n := by
   rw [← cancel_epi (X.pOpcycles f g n), p_opcyclesMapOfHom, p_opcyclesMapOfHom_assoc,
-    p_opcyclesMapOfHom]
-  -- `(φ ≫ ψ).hom n` is `φ.hom n ≫ ψ.hom n` by definition
-  exact Category.assoc ((φ.hom n).app (mk₁ f)) ((ψ.hom n).app (mk₁ f)) _
+    p_opcyclesMapOfHom, comp_hom, NatTrans.comp_app, Category.assoc]
 
 @[reassoc]
 lemma opcyclesMapOfHom_fromOpcycles (fg : i ⟶ k) (h : f ≫ g = fg) :
