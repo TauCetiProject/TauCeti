@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 public import Mathlib.CategoryTheory.Abelian.FunctorCategory
+public import Mathlib.CategoryTheory.Abelian.DiagramLemmas.KernelCokernelComp
 
 /-!
 # Short exact kernel and cokernel sequences
@@ -19,6 +20,10 @@ an abelian category is short exact as soon as it is short exact objectwise.
 
 * `TauCeti.kernelSequence_shortExact`: the kernel sequence of an epimorphism is short exact.
 * `TauCeti.cokernelSequence_shortExact`: the cokernel sequence of a monomorphism is short exact.
+* `TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact`: for composable `a` and `b` with
+  `b` a monomorphism, `cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b` is short exact.
+* `TauCeti.cokernelSequenceToSnakeInputL₃`: the morphism from `Y ⟶ Z ⟶ cokernel b` to that
+  sequence.
 * `CategoryTheory.ShortComplex.shortExact_of_forall_evaluation`: a short complex of functors is
   short exact if it is short exact after evaluation at every object.
 -/
@@ -52,6 +57,37 @@ instance mono_cokernelSequence_f {X Y : C} (f : X ⟶ Y) [Mono f] :
 lemma cokernelSequence_shortExact {X Y : C} (f : X ⟶ Y) [Mono f] :
     (ShortComplex.cokernelSequence f).ShortExact :=
   { exact := ShortComplex.cokernelSequence_exact _ }
+
+section Comp
+
+variable {X Y Z : C} (a : X ⟶ Y) (b : Y ⟶ Z)
+
+/-- The sequence `cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b`, the last row of Mathlib's
+`kernelCokernelCompSequence.snakeInput a b`, is short exact when `b` is a monomorphism. -/
+lemma kernelCokernelCompSequence_snakeInput_L₃_shortExact [Mono b] :
+    (kernelCokernelCompSequence.snakeInput a b).L₃.ShortExact := by
+  have hE := kernelCokernelCompSequence_exact a b
+  refine ShortComplex.ShortExact.mk' (kernelCokernelCompSequence.snakeInput a b).L₃_exact ?_ ?_
+  · exact (hE.exact 2).mono_g (by
+      dsimp
+      rw [kernelCokernelCompSequence.δ_fac, kernel.ι_of_mono, zero_comp, neg_zero])
+  · have : Epi (kernelCokernelCompSequence.snakeInput a b).L₂.g :=
+      inferInstanceAs (Epi (biprod.snd : Y ⊞ Z ⟶ Z))
+    exact (kernelCokernelCompSequence.snakeInput a b).epi_L₃_g
+
+/-- The morphism of short complexes from `Y ⟶ Z ⟶ cokernel b` to
+`cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b` given by the cokernel projections of `a` and
+`a ≫ b` and the identity of `cokernel b`. -/
+@[expose, simps]
+noncomputable def cokernelSequenceToSnakeInputL₃ :
+    ShortComplex.cokernelSequence b ⟶ (kernelCokernelCompSequence.snakeInput a b).L₃ where
+  τ₁ := cokernel.π a
+  τ₂ := cokernel.π (a ≫ b)
+  τ₃ := 𝟙 _
+  comm₁₂ := cokernel.π_desc _ _ _
+  comm₂₃ := (cokernel.π_desc _ _ _).trans ((Category.id_comp _).trans (Category.comp_id _).symm)
+
+end Comp
 
 end TauCeti
 
