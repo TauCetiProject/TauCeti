@@ -14,10 +14,10 @@ public import TauCeti.MeasureTheory.Function.AbsolutelyContinuous
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.PullOut
-import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
 import Mathlib.MeasureTheory.Function.FactorsThrough
 import Mathlib.Probability.Kernel.MeasurableIntegral
 import TauCeti.Analysis.Calculus.FDeriv.Measurable
+import TauCeti.MeasureTheory.Function.ConditionalExpectation
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import TauCeti.MeasureTheory.Measure.Measurability
 
@@ -427,18 +427,6 @@ private lemma integral_fderiv_apply_comp_eq_of_condExp {S : Type*}
   rw [← integral_condExp hm (f := fun q ↦ L q (W q))]
   exact (integral_congr_ae this).symm
 
-omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
-/-- Jensen's inequality for the conditional expectation, as an inequality of `lintegral`s: for
-`1 ≤ p`, the `p`-th power of the norm of `ν[W | m]` integrates to at most that of `W`. -/
-private lemma lintegral_enorm_condExp_rpow_le [CompleteSpace E] {S : Type*}
-    {m m₀ : MeasurableSpace S} {ν : Measure S} {W : S → E} (hW : AEStronglyMeasurable W ν)
-    {p : ℝ} (hp : 1 ≤ p) :
-    ∫⁻ q, ‖(ν[W | m]) q‖ₑ ^ p ∂ν ≤ ∫⁻ q, ‖W q‖ₑ ^ p ∂ν := by
-  have hp₀ : 0 < p := by linarith
-  have h := eLpNorm_condExp_le_eLpNorm (μ := ν) (m := m) W (p := .ofReal p) (by simpa using hp)
-  simpa [eLpNorm_eq_lintegral_rpow_enorm_toReal, hp₀, hp₀.le, integrable_condExp.1, hW,
-    ENNReal.rpow_le_rpow_iff] using h
-
 /-- **The barycentric velocity of a law on curves.** Let `P` be a finite measure on a parameter
 space `Ω` and `γ : Ω → ℝ → E` a jointly measurable family of curves, `P`-almost every one of which
 is absolutely continuous on `[a, b]` with derivative `V ω t` at almost every `t ∈ (a, b)`, where
@@ -483,8 +471,8 @@ theorem exists_isContinuityEquation_map {Ω : Type*} [MeasurableSpace Ω] (P : M
   -- Jensen's inequality for the conditional expectation, read on the time slices
   have hbound (p : ℝ) (hp : 1 ≤ p) : ∫⁻ t in Ioo a b, ∫⁻ x, ‖u (t, x)‖ₑ ^ p ∂P.map (γ · t) ≤
       ∫⁻ ω, (∫⁻ t in Ioo a b, ‖V ω t‖ₑ ^ p) ∂P := by
-    have h := lintegral_enorm_condExp_rpow_le (ν := ν) (m := MeasurableSpace.comap G inferInstance)
-      hW.aestronglyMeasurable hp
+    have h := MeasureTheory.lintegral_enorm_condExp_rpow_le (μ := ν)
+      (m := MeasurableSpace.comap G inferInstance) hW.aestronglyMeasurable hp
     rw [hcu] at h
     have hmap (t : ℝ) : ∫⁻ x, ‖u (t, x)‖ₑ ^ p ∂P.map (γ · t) = ∫⁻ ω, ‖u (t, γ ω t)‖ₑ ^ p ∂P :=
       lintegral_map ((hu.measurable.comp measurable_prodMk_left).enorm.pow_const _) (hγt t)
