@@ -10,12 +10,11 @@ public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 public import Mathlib.MeasureTheory.Measure.Typeclasses.SFinite
 
 /-!
-# Atomic/diffuse decomposition of a finite measure
+# Atomic/diffuse decomposition of an s-finite measure
 
-For a measure with measurable singletons, the points of positive singleton mass form a countable,
-and hence measurable, set. Restricting the measure to this set preserves every point mass, while
-restricting it to the complement gives a measure with zero mass on every singleton. This
-decomposition lets results for measures without atoms be applied to the diffuse part.
+For an s-finite measure with measurable singletons, the points of positive singleton mass form a
+countable, hence measurable, set. Restricting the measure to this set preserves every point mass;
+restricting it to the complement gives a measure with zero mass on every singleton.
 -/
 
 public section
@@ -164,15 +163,8 @@ theorem atomicPart_add_diffusePart (μ : Measure X) [SFinite μ] :
 
 /-- The diffuse remainder has zero mass on every singleton. -/
 instance diffusePart_nullSingletonClass (μ : Measure X) :
-    NullSingletonClass (diffusePart μ) := by
-  refine ⟨fun x ↦ ?_⟩
-  rw [diffusePart, restrict_apply (measurableSet_singleton x)]
-  by_cases hx : x ∈ positiveSingletons μ
-  · simp [hx]
-  · have hzero : μ {x} = 0 := by
-      by_contra hne
-      exact hx ((mem_positiveSingletons_iff μ x).2 hne)
-    simp [hx, hzero]
+    NullSingletonClass (diffusePart μ) :=
+  ⟨diffusePart_apply_singleton μ⟩
 
 end MeasureTheory.Measure
 
