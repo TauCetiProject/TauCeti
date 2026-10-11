@@ -85,8 +85,7 @@ private def reverseMinusIso (i : V) : (reverseInverseProduct k G i).X (-1) ≅ U
   HomologicalComplex.mapBifunctorSingleSummandIso (zigzagBraidInverseComplex k G i)
       (zigzagBraidComplex k G i) F (ComplexShape.up ℤ) 0 (-1) (-1) (by simp)
       (fun p q hpq _ ↦ isZero_reverseInversePair_of_not_support k G i p q (by
-        -- Cochain totalization assigns the tensor pair the sum of its two indices.
-        change p + q = -1 at hpq
+        rw [ComplexShape.π_eq_add] at hpq
         omega)) ≪≫
     reverseMinusPairIso k G i
 
@@ -94,7 +93,7 @@ private def reverseOneIso (i : V) : (reverseInverseProduct k G i).X 1 ≅ (U i).
   HomologicalComplex.mapBifunctorSingleSummandIso (zigzagBraidInverseComplex k G i)
       (zigzagBraidComplex k G i) F (ComplexShape.up ℤ) 1 0 1 (by simp)
       (fun p q hpq _ ↦ isZero_reverseInversePair_of_not_support k G i p q (by
-        change p + q = 1 at hpq
+        rw [ComplexShape.π_eq_add] at hpq
         omega)) ≪≫
     reverseOnePairIso k G i
 
@@ -120,7 +119,7 @@ private def reverseZeroIso (i : V) : (reverseInverseProduct k G i).X 0 ≅
   HomologicalComplex.mapBifunctorTwoSummandIso (zigzagBraidInverseComplex k G i)
       (zigzagBraidComplex k G i) F (ComplexShape.up ℤ) 0 0 1 (-1) 0 (by simp) (by simp) (by simp)
       (fun p q hpq _ ↦ isZero_reverseInversePair_of_not_support k G i p q (by
-        change p + q = 0 at hpq
+        rw [ComplexShape.π_eq_add] at hpq
         omega)) ≪≫
     biprod.mapIso (reverseRegularPairIso k G i) (reverseMiddlePairIso k G i)
 

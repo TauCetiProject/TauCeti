@@ -101,8 +101,7 @@ private def forwardZeroIso (i : V) :
   HomologicalComplex.mapBifunctorTwoSummandIso (zigzagBraidComplex k G i)
       (zigzagBraidInverseComplex k G i) F (ComplexShape.up ℤ) 0 0 (-1) 1 0 (by simp) (by simp)
       (by simp) (fun p q hpq _ ↦ isZero_forwardInversePair_of_not_support k G i p q (by
-        -- Cochain totalization assigns the tensor pair the sum of its two indices.
-        change p + q = 0 at hpq
+        rw [ComplexShape.π_eq_add] at hpq
         omega)) ≪≫
     biprod.mapIso (forwardRegularPairIso k G i) (forwardMiddlePairIso k G i)
 
