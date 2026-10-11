@@ -144,23 +144,10 @@ theorem sUnitValuation_coeff
   valuationVector_coeff S u v
 
 omit [Finite S] in
-private def unitInclusion : (𝓞 L)ˣ →* (S : Set (HeightOneSpectrum (𝓞 L))).unit L :=
-  (Subgroup.inclusion (Set.unit_mono L (Set.empty_subset _))).comp
-    (Set.unitEmptyEquivUnits (R := 𝓞 L) L).symm.toMonoidHom
-
-omit [Finite S] in
-private theorem unitInclusion_val (u : (𝓞 L)ˣ) :
-    (unitInclusion S u).val = Units.map (algebraMap (𝓞 L) L) u := by
-  apply Units.ext
-  exact (Set.algebraMap_unitEmptyEquivUnits_apply L
-    ((Set.unitEmptyEquivUnits (R := 𝓞 L) L).symm u)).symm.trans
-      (by simp)
-
-omit [Finite S] in
 /-- The inclusion of ordinary units into S-units, as a morphism of integral representations. -/
 def sUnitInclusion : Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (𝓞 L)ˣ ⟶ sUnitRep S :=
   Rep.ofHom
-    { toLinearMap := (unitInclusion S).toAdditive.toIntLinearMap
+    { toLinearMap := (unitsToUnit (S : Set (HeightOneSpectrum (𝓞 L))) L).toAdditive.toIntLinearMap
       isIntertwining' g := by
         let := sUnitAction S
         apply LinearMap.ext
@@ -170,10 +157,10 @@ def sUnitInclusion : Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (𝓞 L)ˣ ⟶ sU
           toMul_ofMul]
         apply congrArg Additive.ofMul
         apply Subtype.ext
-        rw [unitInclusion_val]
+        rw [unitsToUnit_val]
         -- Reduce equivariance of units to equivariance of the ring-of-integers embedding.
         apply Units.ext
-        simp only [sUnitAction_smul_val, Units.coe_smul, unitInclusion_val, AlgEquiv.smul_units_def,
+        simp only [sUnitAction_smul_val, Units.coe_smul, unitsToUnit_val, AlgEquiv.smul_units_def,
           Units.coe_map, MonoidHom.coe_ofClass, algebraMap_smul_eq_apply] }
 
 omit [Finite S] in
@@ -181,7 +168,7 @@ omit [Finite S] in
 @[simp]
 theorem sUnitInclusion_val (u : Additive (𝓞 L)ˣ) :
     ((sUnitInclusion S).hom u).toMul.val = Units.map (algebraMap (𝓞 L) L) u.toMul :=
-  unitInclusion_val S u.toMul
+  unitsToUnit_val (S : Set (HeightOneSpectrum (𝓞 L))) L u.toMul
 
 omit [Finite S] in
 /-- Ordinary units embed injectively into the S-unit representation. -/

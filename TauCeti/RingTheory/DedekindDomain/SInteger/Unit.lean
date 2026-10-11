@@ -55,6 +55,9 @@ Throughout, `R` is an *arbitrary* Dedekind domain and `K` its fraction field; `R
 `(S.integer K)ˣ` are the unit groups in play. The motivating case is `R = 𝒪_K` for a number
 field, but nothing here assumes it, so the ring-of-integers notation is deliberately avoided.
 
+`TauCeti.unitsToUnit` includes ordinary units into `S`-units for any set `S` of primes;
+`TauCeti.unitsToUnit_val` identifies their underlying units in the fraction field.
+
 ## Relation to mathlib4#40791
 
 **The names, statements and proofs here are taken from the open Mathlib pull request
@@ -67,7 +70,7 @@ being reconciled name by name. **`unit_fg_of_units` and
 `algebraMap_unitEmptyEquivUnits_apply` are the exceptions: they have no #40791 analogue, so at
 bump time they must be re-homed onto Mathlib's `Set.unit_fg`, not dropped with the rest.**
 
-**Four declarations here are not that PR's**, and are marked as such where they occur:
+**The following declarations here are not that PR's**:
 
 * `mem_unit_iff` is the membership lemma for `Set.unit`, which neither #40791 nor Mathlib states;
   it is the companion of `Set.mem_integer_iff` next door, and `@[simp]` for the same reason.
@@ -79,6 +82,8 @@ bump time they must be re-homed onto Mathlib's `Set.unit_fg`, not dropped with t
 * **`algebraMap_unitEmptyEquivUnits_apply` is new here**, with no counterpart in #40791: it is the
   element-level characterisation of the three-fold composite `unitEmptyEquivUnits`, so that a
   future user of that equiv need not unfold it.
+* `TauCeti.unitsToUnit` and `TauCeti.unitsToUnit_val` include ordinary units into `S`-units and
+  characterize their underlying elements, using `unitEmptyEquivUnits` and `unit_mono`.
 
 The valuation lemma these proofs run on,
 `IsDedekindDomain.HeightOneSpectrum.valuationOfNeZero_eq_one_iff`, is not here: it mentions no
@@ -210,5 +215,27 @@ instance unit_fg_of_units [Finite S] [Monoid.FG Rˣ] : Group.FG (S.unit K) :=
     (unitEmptyEquivUnits K).symm.surjective
 
 end Set
+
+namespace TauCeti
+
+variable {R : Type*} [CommRing R] [IsDedekindDomain R]
+  (S : Set (HeightOneSpectrum R)) (K : Type*) [Field K] [Algebra R K] [IsFractionRing R K]
+
+/-- The inclusion of the ordinary units of a Dedekind domain into its `S`-units.
+It is the inverse of `Set.unitEmptyEquivUnits` followed by enlargement of the allowed primes. -/
+noncomputable def unitsToUnit : Rˣ →* S.unit K :=
+  (Subgroup.inclusion (Set.unit_mono K (Set.empty_subset _))).comp
+    (Set.unitEmptyEquivUnits (R := R) K).symm.toMonoidHom
+
+/-- The inclusion of ordinary units into `S`-units preserves their image in the fraction field. -/
+@[simp]
+theorem unitsToUnit_val (u : Rˣ) :
+    (unitsToUnit S K u).val = Units.map (algebraMap R K) u := by
+  apply Units.ext
+  exact (Set.algebraMap_unitEmptyEquivUnits_apply K
+    ((Set.unitEmptyEquivUnits (R := R) K).symm u)).symm.trans
+      (by simp)
+
+end TauCeti
 
 end
