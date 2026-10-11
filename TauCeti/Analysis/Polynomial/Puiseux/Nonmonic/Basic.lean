@@ -173,14 +173,12 @@ theorem exists_analyticOnNhd_nonmonic_powerSubstitution [FiniteDimensional ℂ E
 
 /-- Multiplying pole-removed branches of a nonmonic power-substituted splitting by the
 leading-coefficient unit gives analytic functions on the full product and a complete splitting
-of integral normalization off the hyperplane, with the same labels. Near each point of the
-hyperplane, the scaling and factorization identities also hold eventually away from it,
-and power substitution preserves analyticity of scalar functions. No degree condition on
+of integral normalization off the hyperplane, with the same labels. No degree condition on
 the central fibers, distinctness of the branches, or analyticity of the original branches
 is required. -/
 theorem exists_analyticOnNhd_integralNormalization_eq_prod_X_sub_C_powerSubstitution
     {r g : Fin d → E × ℂ → ℂ}
-    (hU : IsOpen U) (hR' : 0 < R') (hn : n ≠ 0) (hR : R' ^ n ≤ R)
+    (hn : n ≠ 0) (hR : R' ^ n ≤ R)
     (hdeg : ∀ b ∈ U ×ˢ (ball 0 R \ {0}), (F b).natDegree = d)
     (hu : AnalyticOnNhd ℂ u (U ×ˢ ball 0 R))
     (hu0 : ∀ b ∈ U ×ˢ (ball 0 R \ {0}), u b ≠ 0)
@@ -193,16 +191,8 @@ theorem exists_analyticOnNhd_integralNormalization_eq_prod_X_sub_C_powerSubstitu
       (∀ i, AnalyticOnNhd ℂ (s i) (U ×ˢ ball 0 R')) ∧
       (∀ b ∈ U ×ˢ (ball 0 R' \ {0}), ∀ i,
         (F (b.1, b.2 ^ n)).coeff d * r i b = s i b) ∧
-      (∀ b ∈ U ×ˢ (ball 0 R' \ {0}),
-        (F (b.1, b.2 ^ n)).integralNormalization = ∏ i, (X - C (s i b))) ∧
-      ∀ x ∈ U,
-        (∀ i, AnalyticAt ℂ (s i) (x, 0)) ∧
-        (∀ w : E × ℂ → ℂ, AnalyticOnNhd ℂ w (U ×ˢ ball 0 R) →
-          AnalyticAt ℂ (w ∘ fun b ↦ (b.1, b.2 ^ n)) (x, 0)) ∧
-        (∀ᶠ b in 𝓝 (x, (0 : ℂ)), b.2 ≠ 0 → ∀ i,
-          (F (b.1, b.2 ^ n)).coeff d * r i b = s i b) ∧
-        ∀ᶠ b in 𝓝 (x, (0 : ℂ)), b.2 ≠ 0 →
-          (F (b.1, b.2 ^ n)).integralNormalization = ∏ i, (X - C (s i b)) := by
+      ∀ b ∈ U ×ˢ (ball 0 R' \ {0}),
+        (F (b.1, b.2 ^ n)).integralNormalization = ∏ i, (X - C (s i b)) := by
   let q : E × ℂ → E × ℂ := fun b ↦ (b.1, b.2 ^ n)
   have hq : AnalyticOnNhd ℂ q (U ×ˢ ball 0 R') := fun _ _ ↦
     analyticAt_fst.prod (analyticAt_snd.pow n)
@@ -232,12 +222,6 @@ theorem exists_analyticOnNhd_integralNormalization_eq_prod_X_sub_C_powerSubstitu
     rw [(F (q b)).integralNormalization_eq_prod_X_sub_C (fun i ↦ r i b)
       (leadingCoeff_ne_zero.mp hl0) (by simpa only [q, hlc] using hr b hb)]
     simp only [← hlc, mul_comm _ ((F (q b)).coeff d), hscale b hb]
-  refine ⟨s, hsa, hscale, hnorm, fun x hx ↦ ?_⟩
-  have hx' : (x, (0 : ℂ)) ∈ U ×ˢ ball 0 R' := ⟨hx, mem_ball_self hR'⟩
-  refine ⟨fun i ↦ hsa i _ hx', fun w hw ↦ (hw.comp hq hqfull) _ hx', ?_, ?_⟩
-  · filter_upwards [(hU.prod isOpen_ball).mem_nhds hx'] with b hb hb0
-    exact hscale b ⟨hb.1, hb.2, hb0⟩
-  · filter_upwards [(hU.prod isOpen_ball).mem_nhds hx'] with b hb hb0
-    exact hnorm b ⟨hb.1, hb.2, hb0⟩
+  exact ⟨s, hsa, hscale, hnorm⟩
 
 end TauCeti.Polynomial
