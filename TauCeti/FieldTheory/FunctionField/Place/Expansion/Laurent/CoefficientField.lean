@@ -286,9 +286,11 @@ theorem residueResidueField_mul_inv_uniformizer (u : P.integers) :
     simp at ht
   have hu : t ^ (0 + 1) * (u * t⁻¹) = u := by
     rw [zero_add, pow_one, mul_left_comm, mul_inv_cancel₀ ht0, mul_one]
-  rw [P.residueResidueField_eq_coeff_powerSeriesExpansionResidueField ht 0 (z := u * t⁻¹)
-      (by rw [hu]; exact u.2),
-    show (⟨_, _⟩ : P.integers) = u from Subtype.ext hu,
+  have hmem : t ^ (0 + 1) * (u * t⁻¹) ∈ P.integers := by rw [hu]; exact u.2
+  -- The power-series expansion is taken of `t ^ (0 + 1) * (u * t⁻¹)` as an element of
+  -- `P.integers`; identify that element with `u`.
+  have hsub : (⟨t ^ (0 + 1) * (u * t⁻¹), hmem⟩ : P.integers) = u := Subtype.ext hu
+  rw [P.residueResidueField_eq_coeff_powerSeriesExpansionResidueField ht 0 hmem, hsub,
     PowerSeries.coeff_zero_eq_constantCoeff_apply, constantCoeff_powerSeriesExpansionResidueField]
 
 /-- The `k`-valued residue at a place with separable residue field: the trace from `F_P` to `k`
