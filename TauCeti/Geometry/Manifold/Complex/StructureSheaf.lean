@@ -373,7 +373,51 @@ instance (U : (Opens (TopCat.of X))ᵒᵖ) :
   coe f := (cast (congrArg (fun M : ModuleCat ℂ ↦ (M : Type _)) (obj_eq I X U)) f :
     (holomorphicStructureSheaf I X).obj.obj U)
 
+/-- Ring sections and module sections have the same complex vector space structure. -/
+def sectionsLinearEquiv (U : (Opens (TopCat.of X))ᵒᵖ) :
+    (holomorphicStructureSheafModules I X).obj.obj U ≃ₗ[ℂ]
+      (holomorphicStructureSheaf I X).obj.obj U := by
+  rw [obj_eq]
+  exact LinearEquiv.refl ℂ _
+
+@[simp]
+theorem sectionsLinearEquiv_apply (U : (Opens (TopCat.of X))ᵒᵖ)
+    (f : (holomorphicStructureSheafModules I X).obj.obj U) (x : ↥(unop U)) :
+    sectionsLinearEquiv I X U f x = f x := (rfl)
+
+@[simp]
+theorem sectionsLinearEquiv_symm_apply (U : (Opens (TopCat.of X))ᵒᵖ)
+    (f : (holomorphicStructureSheaf I X).obj.obj U) (x : ↥(unop U)) :
+    (sectionsLinearEquiv I X U).symm f x = f x := (rfl)
+
 variable {I X}
+
+/-- A section of the module sheaf is complex analytic on its domain. -/
+theorem contMDiff {U : (Opens (TopCat.of X))ᵒᵖ}
+    (f : (holomorphicStructureSheafModules I X).obj.obj U) : ContMDiff I 𝓘(ℂ) ω f :=
+  (holomorphicStructureSheaf.contMDiff (sectionsLinearEquiv I X U f)).congr
+    (fun x ↦ (sectionsLinearEquiv_apply I X U f x).symm)
+
+/-- A section of the module sheaf is holomorphic on its domain. -/
+theorem mdifferentiable {U : (Opens (TopCat.of X))ᵒᵖ}
+    (f : (holomorphicStructureSheafModules I X).obj.obj U) : MDifferentiable I 𝓘(ℂ) f :=
+  (contMDiff f).mdifferentiable (by simp)
+
+attribute [local irreducible] holomorphicStructureSheafModules holomorphicStructureSheaf
+
+/-- Complex analytic functions give sections of the module sheaf for any complex model. -/
+def ofContMDiff {U : Opens X} (f : U → ℂ) (hf : ContMDiff I 𝓘(ℂ) ω f) :
+    (holomorphicStructureSheafModules I X).obj.obj (op (α := Opens X) U) :=
+  (sectionsLinearEquiv I X (op (α := Opens X) U)).symm
+    (holomorphicStructureSheaf.ofContMDiff f hf)
+
+@[simp]
+theorem ofContMDiff_apply {U : Opens X} (f : U → ℂ)
+    (hf : ContMDiff I 𝓘(ℂ) ω f) (x : U) :
+    ofContMDiff f hf x = f x := by
+  rw [ofContMDiff, sectionsLinearEquiv_symm_apply, holomorphicStructureSheaf.ofContMDiff_apply]
+
+attribute [local semireducible] holomorphicStructureSheafModules holomorphicStructureSheaf
 
 @[simp]
 theorem zero_apply {U : (Opens (TopCat.of X))ᵒᵖ} (x : ↥(unop U)) :
@@ -474,5 +518,28 @@ theorem finrank_globalSections :
   exact Module.finrank_self ℂ
 
 end holomorphicStructureSheaf
+
+namespace holomorphicStructureSheafModules
+
+variable [I.Boundaryless] [IsManifold I 1 X] [CompactSpace X] [PreconnectedSpace X]
+  [Nonempty X]
+
+-- Keep the dimension rule on the public module carrier after import.
+attribute [local irreducible] holomorphicStructureSheafModules holomorphicStructureSheaf
+
+instance : FiniteDimensional ℂ
+    ((holomorphicStructureSheafModules I X).obj.obj (op (α := Opens X) ⊤)) :=
+  (sectionsLinearEquiv I X (op (α := Opens X) ⊤)).symm.finiteDimensional
+
+/-- The module sheaf's global sections on a nonempty compact connected complex manifold
+form a one-dimensional complex vector space. -/
+@[simp]
+theorem finrank_globalSections :
+    Module.finrank ℂ
+      ((holomorphicStructureSheafModules I X).obj.obj (op (α := Opens X) ⊤)) = 1 := by
+  rw [(sectionsLinearEquiv I X (op (α := Opens X) ⊤)).finrank_eq]
+  exact holomorphicStructureSheaf.finrank_globalSections I X
+
+end holomorphicStructureSheafModules
 
 end TauCeti
