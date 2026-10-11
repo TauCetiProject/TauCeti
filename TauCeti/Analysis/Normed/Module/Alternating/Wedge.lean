@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Module.Alternating.Curry
 public import Mathlib.LinearAlgebra.Alternating.DomCoprod
 public import TauCeti.Data.Fin.Basic
 public import TauCeti.Topology.Algebra.Module.Alternating.Wedge
+public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import Mathlib.Analysis.Normed.Module.Alternating.Uncurry.Fin
 import TauCeti.GroupTheory.Perm.Basic
 import TauCeti.GroupTheory.Perm.Inversion
@@ -76,26 +77,6 @@ variable {E F₁ F₂ F₃ : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ 
   [SeminormedAddCommGroup F₂] [NormedSpace ℝ F₂]
   [SeminormedAddCommGroup F₃] [NormedSpace ℝ F₃]
 
-@[simp]
-private lemma pairingLinear_tmul (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (x : F₁) (y : F₂) :
-    ContinuousAlternatingMap.pairingLinear mu (x ⊗ₜ[ℝ] y) = mu x y :=
-  rfl
-
-/-- The unalternated multilinear pairing underlying `wedgeWith`. -/
-noncomputable def wedgeWithUnalternated {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
-    (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) :
-    MultilinearMap ℝ (fun _ : Fin (k + l) => E) F₃ :=
-  ContinuousAlternatingMap.wedgeWithUnalternated mu phi psi
-
-/-- The unalternated pairing evaluates `phi` on the first `k` vectors and `psi` on the last `l`. -/
-@[simp]
-theorem wedgeWithUnalternated_apply {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
-    (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂)
-    (v : Fin (k + l) → E) :
-    wedgeWithUnalternated mu phi psi v =
-      mu (phi (fun i => v (Fin.castAdd l i))) (psi (fun j => v (Fin.natAdd k j))) := by
-  exact ContinuousAlternatingMap.wedgeWithUnalternated_apply mu phi psi v
-
 private noncomputable def wedgeAlternating {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) :
     E [⋀^Fin (k + l)]→ₗ[ℝ] F₃ :=
@@ -106,7 +87,7 @@ private lemma wedgeAlternating_eq_alternatization {k l : ℕ} (mu : F₁ →L[�
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) :
     wedgeAlternating mu phi psi =
       (((k.factorial : ℝ) * (l.factorial : ℝ))⁻¹) •
-        (wedgeWithUnalternated mu phi psi).alternatization := by
+        (ContinuousAlternatingMap.wedgeWithUnalternated mu phi psi).alternatization := by
   have htransport :
       MultilinearMap.alternatization
           ((MultilinearMap.domCoprod phi.toAlternatingMap.toMultilinearMap
@@ -121,8 +102,8 @@ private lemma wedgeAlternating_eq_alternatization {k l : ℕ} (mu : F₁ →L[�
     symm
     exact Fintype.sum_equiv finSumFinEquiv.permCongr _ _ fun sigma => by
       simp
-  unfold wedgeAlternating wedgeWithUnalternated
-    ContinuousAlternatingMap.wedgeWithUnalternated
+  rw [ContinuousAlternatingMap.wedgeWithUnalternated_def]
+  unfold wedgeAlternating
   rw [LinearMap.compMultilinearMap_alternatization,
     htransport,
     MultilinearMap.domCoprod_alternatization_eq]
@@ -140,13 +121,15 @@ private lemma wedgeAlternating_apply {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[
           mu (phi (fun i => v (sigma (Fin.castAdd l i))))
             (psi (fun j => v (sigma (Fin.natAdd k j)))) := by
   rw [wedgeAlternating_eq_alternatization]
-  simp [MultilinearMap.alternatization_apply, wedgeWithUnalternated_apply]
+  simp [MultilinearMap.alternatization_apply,
+    ContinuousAlternatingMap.wedgeWithUnalternated_apply]
 
 private lemma norm_wedgeWithUnalternated_le {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂)
     (v : Fin (k + l) → E) :
-    ‖wedgeWithUnalternated mu phi psi v‖ ≤ ‖mu‖ * ‖phi‖ * ‖psi‖ * ∏ i, ‖v i‖ := by
-  rw [wedgeWithUnalternated_apply]
+    ‖ContinuousAlternatingMap.wedgeWithUnalternated mu phi psi v‖ ≤
+      ‖mu‖ * ‖phi‖ * ‖psi‖ * ∏ i, ‖v i‖ := by
+  rw [ContinuousAlternatingMap.wedgeWithUnalternated_apply]
   calc
     _ ≤ ‖mu‖ * ‖phi (fun i => v (Fin.castAdd l i))‖ *
         ‖psi (fun j => v (Fin.natAdd k j))‖ := mu.le_opNorm₂ _ _
@@ -168,7 +151,8 @@ private lemma norm_wedgeAlternating_le {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →
     MultilinearMap.alternatization_apply,
     norm_smul]
   have hterm (sigma : Equiv.Perm (Fin (k + l))) :
-      ‖Equiv.Perm.sign sigma • wedgeWithUnalternated mu phi psi (v ∘ sigma)‖ ≤
+      ‖Equiv.Perm.sign sigma •
+        ContinuousAlternatingMap.wedgeWithUnalternated mu phi psi (v ∘ sigma)‖ ≤
         ‖mu‖ * ‖phi‖ * ‖psi‖ * ∏ i, ‖v i‖ := by
     simpa [Equiv.Perm.prod_comp sigma Finset.univ (fun i => ‖v i‖) (by simp),
       Function.comp_def] using norm_wedgeWithUnalternated_le mu phi psi (v ∘ sigma)
@@ -191,16 +175,6 @@ private lemma norm_wedgeAlternating_le {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →
       rw [← hchoose]
       ring
 
-private lemma wedgeAlternating_apply_one_one (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
-    (phi : E [⋀^Fin 1]→L[ℝ] F₁) (psi : E [⋀^Fin 1]→L[ℝ] F₂) (v w : E) :
-    wedgeAlternating mu phi psi ![v, w] =
-      mu (phi ![v]) (psi ![w]) - mu (phi ![w]) (psi ![v]) := by
-  classical
-  rw [wedgeAlternating_apply]
-  rw [univ_perm_fin_two, Finset.sum_insert (by decide), Finset.sum_singleton,
-    Equiv.Perm.sign_swap (by decide : (0 : Fin 2) ≠ 1)]
-  simp [Fin.fin_one_eq_zero, Matrix.cons_fin_one, sub_eq_add_neg]
-
 /-- The paired wedge product of continuous alternating maps, normalized as the signed sum over all
 permutations divided by `k! l!`. Equivalently, it is the unscaled sum over `(k, l)`-shuffles. -/
 noncomputable def wedgeWith {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
@@ -208,6 +182,16 @@ noncomputable def wedgeWith {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃
     E [⋀^Fin (k + l)]→L[ℝ] F₃ :=
   (wedgeAlternating mu phi psi).mkContinuous
     ((k + l).choose k * ‖mu‖ * ‖phi‖ * ‖psi‖) (norm_wedgeAlternating_le mu phi psi)
+
+/-- On normed spaces, the norm-controlled wedge equals the topological paired wedge. -/
+theorem wedgeWith_eq_topological {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) :
+    wedgeWith mu phi psi =
+      ContinuousAlternatingMap.pairedWedge mu mu.continuous₂ phi psi := by
+  ext v
+  simp only [wedgeWith, AlternatingMap.coe_mkContinuous]
+  rw [wedgeAlternating_apply]
+  exact (ContinuousAlternatingMap.pairedWedge_apply mu mu.continuous₂ phi psi v).symm
 
 /-- The paired wedge is the signed permutation sum divided by `k! l!`. -/
 theorem wedgeWith_apply {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
@@ -218,8 +202,8 @@ theorem wedgeWith_apply {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
         ∑ sigma : Equiv.Perm (Fin (k + l)), Equiv.Perm.sign sigma •
           mu (phi (fun i => v (sigma (Fin.castAdd l i))))
             (psi (fun j => v (sigma (Fin.natAdd k j)))) := by
-  simp only [wedgeWith, AlternatingMap.coe_mkContinuous]
-  exact wedgeAlternating_apply mu phi psi v
+  rw [wedgeWith_eq_topological]
+  exact ContinuousAlternatingMap.pairedWedge_apply mu mu.continuous₂ phi psi v
 
 /-- The underlying alternating map of the paired wedge is the alternatization of its unalternated
 multilinear pairing, divided by `k! l!`. -/
@@ -227,7 +211,7 @@ theorem wedgeWith_toAlternatingMap {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[�
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) :
     (wedgeWith mu phi psi).toAlternatingMap =
       (((k.factorial : ℝ) * (l.factorial : ℝ))⁻¹) •
-        (wedgeWithUnalternated mu phi psi).alternatization := by
+        (ContinuousAlternatingMap.wedgeWithUnalternated mu phi psi).alternatization := by
   simp only [wedgeWith]
   exact wedgeAlternating_eq_alternatization mu phi psi
 
@@ -236,8 +220,8 @@ theorem wedgeWith_apply_one_one (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (phi : E [⋀^Fin 1]→L[ℝ] F₁) (psi : E [⋀^Fin 1]→L[ℝ] F₂) (v w : E) :
     wedgeWith mu phi psi ![v, w] =
       mu (phi ![v]) (psi ![w]) - mu (phi ![w]) (psi ![v]) := by
-  simp only [wedgeWith, AlternatingMap.coe_mkContinuous]
-  exact wedgeAlternating_apply_one_one mu phi psi v w
+  rw [wedgeWith_eq_topological]
+  exact ContinuousAlternatingMap.pairedWedge_apply_one_one mu.continuous₂ phi psi v w
 
 /-- Postcomposing the pairing postcomposes the paired wedge. -/
 @[simp]
@@ -294,36 +278,32 @@ theorem wedgeWith_zero_pairing {k l : ℕ} (phi : E [⋀^Fin k]→L[ℝ] F₁)
 theorem wedgeWith_add_left {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (phi phi' : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) :
     wedgeWith mu (phi + phi') psi = wedgeWith mu phi psi + wedgeWith mu phi' psi := by
-  ext v
-  simp only [wedgeWith_apply, ContinuousAlternatingMap.add_apply, map_add, add_apply,
-    smul_add, Finset.sum_add_distrib]
+  simp only [wedgeWith_eq_topological]
+  exact ContinuousAlternatingMap.pairedWedge_add_left mu mu.continuous₂ phi phi' psi
 
 /-- The paired wedge is additive in its second form. -/
 @[simp]
 theorem wedgeWith_add_right {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi psi' : E [⋀^Fin l]→L[ℝ] F₂) :
     wedgeWith mu phi (psi + psi') = wedgeWith mu phi psi + wedgeWith mu phi psi' := by
-  ext v
-  simp only [wedgeWith_apply, ContinuousAlternatingMap.add_apply, map_add,
-    smul_add, Finset.sum_add_distrib]
+  simp only [wedgeWith_eq_topological]
+  exact ContinuousAlternatingMap.pairedWedge_add_right mu mu.continuous₂ phi psi psi'
 
 /-- The paired wedge respects scalar multiplication in its first form. -/
 @[simp]
 theorem wedgeWith_smul_left {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (c : ℝ)
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) :
     wedgeWith mu (c • phi) psi = c • wedgeWith mu phi psi := by
-  ext v
-  simp only [wedgeWith_apply, ContinuousAlternatingMap.smul_apply, map_smul, smul_apply,
-    Finset.smul_sum, smul_comm _ c]
+  simp only [wedgeWith_eq_topological]
+  exact ContinuousAlternatingMap.pairedWedge_smul_left mu mu.continuous₂ c phi psi
 
 /-- The paired wedge respects scalar multiplication in its second form. -/
 @[simp]
 theorem wedgeWith_smul_right {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (c : ℝ)
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) :
     wedgeWith mu phi (c • psi) = c • wedgeWith mu phi psi := by
-  ext v
-  simp only [wedgeWith_apply, ContinuousAlternatingMap.smul_apply, map_smul,
-    Finset.smul_sum, smul_comm _ c]
+  simp only [wedgeWith_eq_topological]
+  exact ContinuousAlternatingMap.pairedWedge_smul_right mu mu.continuous₂ c phi psi
 
 /-- Wedge with the zero form on the left is zero. -/
 @[simp]
