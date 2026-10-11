@@ -111,24 +111,6 @@ theorem isUnit_det_weightLeviLocalizedGenericMatrix (w : Fin N → ℤ) :
   rw [weightLeviLocalizedGenericMatrix, ← AlgHom.mapMatrix_apply, ← AlgHom.map_det]
   exact IsLocalization.Away.algebraMap_isUnit _
 
-/-- In the weight-Levi quotient, an ambient entry between different weight blocks is zero. -/
-@[simp]
-theorem weightLeviQuotient_mk_genericMatrix_apply_of_ne (w : Fin N → ℤ)
-    {i j : Fin N} (hij : w i ≠ w j) :
-    Ideal.Quotient.mk (weightLeviDefiningHopfIdeal R w).toIdeal
-      (coordinateHopfAlgebraAlgEquiv R N
-        (coordinateRingMap R N (MvPolynomial.X (i, j)))) = 0 := by
-  rw [← genericMatrix_apply, Ideal.Quotient.eq_zero_iff_mem, weightLeviDefiningHopfIdeal_def,
-    HopfIdeal.sup_toIdeal, weightParabolicDefiningHopfIdeal_toIdeal,
-    weightParabolicDefiningHopfIdeal_toIdeal]
-  rcases lt_or_gt_of_ne hij with hij | hji
-  · apply Ideal.mem_sup_left
-    rw [genericMatrix_apply]
-    exact Ideal.subset_span (X_mem_weightParabolicRelationSet R w hij)
-  · apply Ideal.mem_sup_right
-    rw [genericMatrix_apply]
-    exact Ideal.subset_span (X_mem_weightParabolicRelationSet R (-w) (by simpa using hji))
-
 /-- Block-diagonal evaluation on the bundled coordinate algebra of `GL_N`. -/
 private def weightLeviAmbientToCoordinateRing (w : Fin N → ℤ) :
     coordinateHopfAlgebra R N →ₐ[R] WeightLeviCoordinateRing R w :=
