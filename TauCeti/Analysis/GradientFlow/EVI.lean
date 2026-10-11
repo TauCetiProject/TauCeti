@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.ODE.Gronwall
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Topology.Semicontinuity.Basic
+import TauCeti.Analysis.ODE.Gronwall
 
 /-!
 # The evolution variational inequality
@@ -138,19 +139,6 @@ private theorem le_gronwallBound (h : IsEVISolution lam φ u) (hy : φ y ≠ ⊤
   exact (h.eventually_slope_lt hy hr0 (hc r hr) hq).frequently.mono fun z hz ↦ by
     rwa [slope_def_field, div_eq_inv_mul] at hz
 
-/-- The closed form of `e^{λT}` times the Grönwall bound with rate `-λ`. -/
-private theorem exp_mul_gronwallBound_neg (δ lam c T : ℝ) :
-    exp (lam * T) * gronwallBound δ (-lam) c T = δ + (∫ r in 0..T, exp (lam * r)) * c := by
-  rcases eq_or_ne lam 0 with rfl | hlam
-  · simp [gronwallBound_K0]
-    ring
-  · rw [intervalIntegral.integral_comp_mul_left (fun r ↦ exp r) hlam, integral_exp]
-    simp only [gronwallBound_of_K_ne_0 (neg_ne_zero.2 hlam), neg_mul, exp_neg, mul_zero, exp_zero,
-      smul_eq_mul]
-    have := (exp_pos (lam * T)).ne'
-    field_simp
-    ring
-
 /-- The integrated form of the evolution variational inequality on an interval of positive
 times. -/
 private theorem exp_mul_dist_sq_sub_le_of_pos (h : IsEVISolution lam φ u)
@@ -240,13 +228,6 @@ theorem exp_mul_dist_sq_sub_le (h : IsEVISolution lam φ u) (hφ : LowerSemicont
           exp (lam * r)).intervalIntegrable _ _) 0
       exact ((hE.comp (continuous_sub_left t)).mul continuous_const).continuousWithinAt
   · exact exp_mul_dist_sq_sub_le_of_pos h (h.antitoneOn hφ) hy hs hst hc
-
-/-- The function `E_λ(T) = ∫₀ᵀ e^{λr} dr` is positive for `T > 0`. -/
-private theorem integral_exp_mul_pos (lam : ℝ) {T : ℝ} (hT : 0 < T) :
-    0 < ∫ r in 0..T, exp (lam * r) :=
-  intervalIntegral.intervalIntegral_pos_of_pos_on
-    ((by fun_prop : Continuous fun r ↦ exp (lam * r)).intervalIntegrable _ _)
-    (fun _ _ ↦ exp_pos _) hT
 
 /-- **The energy regularization estimate.** For an `EVI_λ` solution `u` of a lower semicontinuous
 energy, a point `y` with `φ y ≠ ⊤` and a time `t > 0`,
