@@ -66,6 +66,8 @@ over every point is the spectrum of an algebra of dimension `n²` over its resid
 * `WeierstrassCurve.flat_projModelMulBy`: over a field, for `n ≠ 0`, `[n]` is flat.
 * `WeierstrassCurve.finrank_fieldRange_mulByFunctionFieldPullback`: over a field, for `n ≠ 0`,
   `[K(E) : [n]^* K(E)] = n²`.
+* `WeierstrassCurve.finrank_projModelMulBy`: over a field, for `n ≠ 0`, `[n]` has rank `n²` at
+  every point.
 
 ## References
 
