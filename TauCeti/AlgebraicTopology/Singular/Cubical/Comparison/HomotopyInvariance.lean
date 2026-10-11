@@ -33,8 +33,6 @@ equivalence `TauCeti.cubicalSingularHomotopyEquiv`.  If `f` and `g` are homotopi
 
 ## Main results
 
-* `TauCeti.singularCubicalHomologyIso`, `TauCeti.singularCubicalHomologyNatIso`: cubical singular
-  homology is naturally isomorphic to singular homology.
 * `TopCat.Homotopy.congr_homologyMap_normalizedCubicalChainComplex`: homotopic maps induce the same
   map on cubical homology.
 * `ContinuousMap.HomotopyEquiv.quasiIso_normalizedCubicalChainComplex_map`: a homotopy
@@ -54,63 +52,6 @@ open CategoryTheory AlgebraicTopology TauCeti
 universe u
 
 variable {k : Type u} [Ring k]
-
-namespace TauCeti
-
-instance (X : TopCat.{u}) : QuasiIso ((singularToCubical k).app X) := by
-  rw [← cubicalSingularHomotopyEquiv_hom]
-  infer_instance
-
-instance (X : TopCat.{u}) : QuasiIso ((cubicalToSingular k).app X) := by
-  rw [← cubicalSingularHomotopyEquiv_inv]
-  infer_instance
-
-variable (k) in
-/-- **Cubical singular homology is singular homology**: the isomorphism induced by the comparison
-of cubical and simplicial chains. -/
-def singularCubicalHomologyIso (X : TopCat.{u}) (n : ℕ) :
-    ((singularChains k).obj X).homology n ≅ ((normalizedCubicalChainComplex k).obj X).homology n :=
-  (cubicalSingularHomotopyEquiv k X).toHomologyIso n
-
-@[simp]
-theorem singularCubicalHomologyIso_hom (X : TopCat.{u}) (n : ℕ) :
-    (singularCubicalHomologyIso k X n).hom =
-      HomologicalComplex.homologyMap ((singularToCubical k).app X) n := by
-  rw [← cubicalSingularHomotopyEquiv_hom]
-  rfl
-
-@[simp]
-theorem singularCubicalHomologyIso_inv (X : TopCat.{u}) (n : ℕ) :
-    (singularCubicalHomologyIso k X n).inv =
-      HomologicalComplex.homologyMap ((cubicalToSingular k).app X) n := by
-  rw [← cubicalSingularHomotopyEquiv_inv]
-  rfl
-
-/-- The comparison isomorphism on homology is natural. -/
-@[reassoc]
-theorem singularCubicalHomologyIso_hom_naturality {X Y : TopCat.{u}} (f : X ⟶ Y) (n : ℕ) :
-    HomologicalComplex.homologyMap ((singularChains k).map f) n ≫
-        (singularCubicalHomologyIso k Y n).hom =
-      (singularCubicalHomologyIso k X n).hom ≫
-        HomologicalComplex.homologyMap ((normalizedCubicalChainComplex k).map f) n := by
-  simp only [singularCubicalHomologyIso_hom, ← HomologicalComplex.homologyMap_comp,
-    (singularToCubical k).naturality]
-
-variable (k) in
-/-- **Cubical singular homology is naturally isomorphic to singular homology**, as functors on
-topological spaces. -/
-def singularCubicalHomologyNatIso (n : ℕ) :
-    singularChains k ⋙ HomologicalComplex.homologyFunctor _ _ n ≅
-      normalizedCubicalChainComplex k ⋙ HomologicalComplex.homologyFunctor _ _ n :=
-  NatIso.ofComponents (fun X ↦ singularCubicalHomologyIso k X n)
-    fun f ↦ singularCubicalHomologyIso_hom_naturality f n
-
-@[simp]
-theorem singularCubicalHomologyNatIso_app (n : ℕ) (X : TopCat.{u}) :
-    (singularCubicalHomologyNatIso k n).app X = singularCubicalHomologyIso k X n :=
-  (rfl)
-
-end TauCeti
 
 namespace TopCat.Homotopy
 
@@ -165,6 +106,18 @@ def normalizedCubicalChainComplexHomotopyEquiv (e : X ≃ₕ Y) :
       ((TopCat.Homotopy.normalizedCubicalChainComplexMap (f := TopCat.ofHom e.invFun ≫
         TopCat.ofHom e.toFun) (g := 𝟙 _) e.right_inv.some k).trans
         (_root_.Homotopy.ofEq ((normalizedCubicalChainComplex k).map_id _)))
+
+@[simp]
+theorem normalizedCubicalChainComplexHomotopyEquiv_hom (e : X ≃ₕ Y) :
+    (normalizedCubicalChainComplexHomotopyEquiv k e).hom =
+      (normalizedCubicalChainComplex k).map (TopCat.ofHom e.toFun) :=
+  (rfl)
+
+@[simp]
+theorem normalizedCubicalChainComplexHomotopyEquiv_inv (e : X ≃ₕ Y) :
+    (normalizedCubicalChainComplexHomotopyEquiv k e).inv =
+      (normalizedCubicalChainComplex k).map (TopCat.ofHom e.invFun) :=
+  (rfl)
 
 /-- **A homotopy equivalence induces a quasi-isomorphism of normalized cubical chains.** -/
 theorem quasiIso_normalizedCubicalChainComplex_map (e : X ≃ₕ Y) :

@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 public import TauCeti.AlgebraicTopology.Singular.Relative
-public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.HomotopyInvariance
+public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Basic
 
 /-!
 # The relative comparison of cubical and simplicial singular chains
@@ -25,7 +25,10 @@ The comparison maps of `TauCeti.cubicalSingularHomotopyEquiv` are natural, so th
 chains of `A` into those of `A` and induce maps of relative chain complexes in both directions
 (`TopPair.singularToCubicalRel`, `TopPair.cubicalToSingularRel`).  By the five lemma, applied to
 the long exact homology sequences, both are quasi-isomorphisms, so relative cubical homology is
-relative singular homology (`TopPair.singularCubicalHomologyIso`), naturally in the pair.  The
+relative singular homology (`TopPair.singularCubicalHomologyIso`), naturally in the pair.  Its
+inverse is induced by `TopPair.cubicalToSingularRel`, because the natural homotopy between the
+composite on simplicial chains and the identity descends to relative chains
+(`TopPair.singularToCubicalRelCompHomotopy`).  The
 relative homotopy invariance of cubical homology is transported from the simplicial one
 (`TopPair.Homotopy.congr_homologyMap_cubicalChainComplexMap`).
 
@@ -37,6 +40,8 @@ relative homotopy invariance of cubical homology is transported from the simplic
   maps.
 * `TopPair.singularCubicalHomologyIso k P n`: relative cubical homology is relative singular
   homology.
+* `TopPair.singularToCubicalRelCompHomotopy k P`: the relative comparison maps compose to a map
+  homotopic to the identity on relative simplicial chains.
 
 ## Main results
 
@@ -65,6 +70,7 @@ namespace TopPair
 
 variable (k : Type u) [Ring k]
 
+/-- The inclusion of a subspace induces a monomorphism of normalized cubical chains. -/
 instance mono_normalizedCubicalChainComplex_map (P : TopPair.{u}) :
     Mono ((normalizedCubicalChainComplex k).map P.map) :=
   HomologicalComplex.mono_of_mono_f _ fun n ↦ (ModuleCat.mono_iff_injective _).2
@@ -196,6 +202,26 @@ def cubicalToSingularShortComplex (P : TopPair.{u}) :
   comm₁₂ := ((cubicalToSingular k).naturality P.map).symm
   comm₂₃ := (π_cubicalToSingularRel k P).symm
 
+/-- The relative comparison maps compose, on relative simplicial chains, to a map chain
+homotopic to the identity: the natural homotopy `singularToCubicalCompHomotopy` descends to the
+quotient by the chains of the subspace. -/
+def singularToCubicalRelCompHomotopy (P : TopPair.{u}) :
+    _root_.Homotopy (singularToCubicalRel k P ≫ cubicalToSingularRel k P) (𝟙 _) :=
+  _root_.Homotopy.descCokernel (singularToCubicalCompHomotopy k P.fst)
+    ((singularChains k).map P.map)
+    (singularRelπ k P) (singularRelπ k P)
+    (fun n ↦ (toSSetPair.obj P).chainComplex_condition_f (ModuleCat.of k k) n)
+    (fun n ↦ (toSSetPair.obj P).isColimitCokernelCoforkChainComplexX (ModuleCat.of k k) n)
+    (fun i j ↦ by
+      have h : (singularChains k).map P.map ≫ singularRelπ k P = 0 :=
+        P.chainComplexMap_comp_singularChainComplexπ _
+      rw [← Category.assoc, singularToCubicalCompHomotopy_hom_naturality, Category.assoc,
+        ← HomologicalComplex.comp_f, h, HomologicalComplex.zero_f, comp_zero])
+    (by
+      rw [singularRelπ_singularToCubicalRel_assoc, π_cubicalToSingularRel, Category.assoc]
+      rfl)
+    (by simp)
+
 /-- **The relative comparison map to cubical chains is a quasi-isomorphism.** -/
 instance quasiIso_singularToCubicalRel (P : TopPair.{u}) : QuasiIso (singularToCubicalRel k P) :=
   HomologicalComplex.HomologySequence.quasiIso_τ₃ (singularToCubicalShortComplex k P)
@@ -232,6 +258,14 @@ theorem singularCubicalHomologyIso_hom (P : TopPair.{u}) (n : ℕ) :
     (singularCubicalHomologyIso k P n).hom =
       HomologicalComplex.homologyMap (singularToCubicalRel k P) n :=
   (rfl)
+
+@[simp]
+theorem singularCubicalHomologyIso_inv (P : TopPair.{u}) (n : ℕ) :
+    (singularCubicalHomologyIso k P n).inv =
+      HomologicalComplex.homologyMap (cubicalToSingularRel k P) n := by
+  refine (IsIso.inv_eq_of_hom_inv_id ?_).trans rfl
+  rw [← HomologicalComplex.homologyMap_comp, (singularToCubicalRelCompHomotopy k P).homologyMap_eq,
+    HomologicalComplex.homologyMap_id]
 
 /-- The relative comparison isomorphism on homology is natural in the pair. -/
 @[reassoc]

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.QuasiIso
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Models
 
 /-!
@@ -28,11 +29,16 @@ invariance, the long exact sequence of a pair, excision) are transported to cubi
   singular chains.
 * `TauCeti.cubicalToSingular k`: the natural chain map back.
 * `TauCeti.cubicalSingularHomotopyEquiv k X`: the chain homotopy equivalence they form.
+* `TauCeti.singularCubicalHomologyIso k X n`, `TauCeti.singularCubicalHomologyNatIso k n`: cubical
+  singular homology is naturally isomorphic to singular homology.
 
 ## Main results
 
 * `TauCeti.cubicalAugment_singularToCubical` and `TauCeti.singularAugment_cubicalToSingular`: the
   comparison maps are compatible with the augmentations.
+* `TauCeti.singularToCubical_app_f_zero_simplexChain` and
+  `TauCeti.cubicalToSingular_app_f_zero_ofCube`: in degree zero the comparison maps send a point
+  to the same point.
 
 ## References
 
@@ -52,57 +58,9 @@ namespace TauCeti
 
 variable {k : Type u} [Ring k]
 
-/-! ### Properties of the augmentations -/
-
-/-- The augmentation of the normalized cubical chains is natural. -/
-theorem cubicalAugment_map {X Y : TopCat.{u}} (f : X ⟶ Y)
-    (x : ((normalizedCubicalChainComplex k).obj X).X 0) :
-    cubicalAugment k Y (((normalizedCubicalChainComplex k).map f).f 0 x) = cubicalAugment k X x :=
-  LinearMap.congr_fun (NormalizedCubicalChain.augment_map k f.hom) x
-
-/-- The augmentation of the normalized cubical chains vanishes on boundaries. -/
-theorem cubicalAugment_d (X : TopCat.{u}) (x : ((normalizedCubicalChainComplex k).obj X).X 1) :
-    cubicalAugment k X (((normalizedCubicalChainComplex k).obj X).d 1 0 x) = 0 :=
-  (congrArg (cubicalAugment k X) (normalizedCubicalChainComplex_obj_d_apply X 0 x)).trans
-    (LinearMap.congr_fun (NormalizedCubicalChain.augment_boundary k) x)
-
 /-! ### The comparison maps -/
 
 variable (k)
-
-/-- The point of the `0`-cube. -/
-def cubeModelPoint : cubeModel.{u} 0 := ULift.up fun i ↦ i.elim0
-
-/-- The `0`-simplex at the point of the `0`-cube: the value on the model of the comparison map
-from cubical to simplicial chains in degree zero. -/
-def cubicalToSingularGen₀ :
-    ((singularChains k).obj ((cubicalModelPresentation.{u} k).model 0)).X 0 :=
-  simplexChain (TopCat.toSSetObj₀Equiv.symm cubeModelPoint) 1
-
-/-- The `0`-cube at the vertex of the `0`-simplex: the value on the model of the comparison map
-from simplicial to cubical chains in degree zero. -/
-def singularToCubicalGen₀ :
-    ((normalizedCubicalChainComplex k).obj ((singularModelPresentation.{u} k).model 0)).X 0 :=
-  NormalizedCubicalChain.ofCube (simplexModel 0) k
-    (SingularCube.point (SimplexCategory.toTopInitialVertex ⦋0⦌))
-
-theorem singularAugment_extend_cubicalToSingularGen₀ (X : TopCat.{u})
-    (x : ((normalizedCubicalChainComplex k).obj X).X 0) :
-    singularAugment k X ((cubicalModelPresentation k).extend (cubicalToSingularGen₀ k) X x) =
-      cubicalAugment k X x :=
-  (cubicalModelPresentation k).augment_extend (fun f x ↦ cubicalAugment_map f x)
-    (fun f x ↦ singularAugment_map f x) _
-    ((singularAugment_simplexChain _ _ 1).trans (NormalizedCubicalChain.augment_ofCube k _).symm)
-    X x
-
-theorem cubicalAugment_extend_singularToCubicalGen₀ (X : TopCat.{u})
-    (x : ((singularChains k).obj X).X 0) :
-    cubicalAugment k X ((singularModelPresentation k).extend (singularToCubicalGen₀ k) X x) =
-      singularAugment k X x :=
-  (singularModelPresentation k).augment_extend (fun f x ↦ singularAugment_map f x)
-    (fun f x ↦ cubicalAugment_map f x) _
-    ((NormalizedCubicalChain.augment_ofCube k _).trans (singularAugment_simplexChain _ _ 1).symm)
-    X x
 
 /-- **The comparison map from normalized cubical to simplicial singular chains**: the natural
 chain map sending a point to the same point, built by acyclic models. -/
@@ -155,6 +113,19 @@ def cubicalToSingularCompHomotopy (X : TopCat.{u}) :
         NatTrans.id_app, HomologicalComplex.id_f, ModuleCat.id_apply]
       rw [cubicalAugment_singularToCubical, singularAugment_cubicalToSingular]) X
 
+/-- The homotopy `singularToCubicalCompHomotopy` is natural. -/
+theorem singularToCubicalCompHomotopy_hom_naturality {X Y : TopCat.{u}} (f : X ⟶ Y) (i j : ℕ) :
+    ((singularChains k).map f).f i ≫ (singularToCubicalCompHomotopy k Y).hom i j =
+      (singularToCubicalCompHomotopy k X).hom i j ≫ ((singularChains k).map f).f j :=
+  AcyclicModels.ModelPresentation.homotopy_hom_naturality _ _ _ _ _ f i j
+
+/-- The homotopy `cubicalToSingularCompHomotopy` is natural. -/
+theorem cubicalToSingularCompHomotopy_hom_naturality {X Y : TopCat.{u}} (f : X ⟶ Y) (i j : ℕ) :
+    ((normalizedCubicalChainComplex k).map f).f i ≫ (cubicalToSingularCompHomotopy k Y).hom i j =
+      (cubicalToSingularCompHomotopy k X).hom i j ≫
+        ((normalizedCubicalChainComplex k).map f).f j :=
+  AcyclicModels.ModelPresentation.homotopy_hom_naturality _ _ _ _ _ f i j
+
 /-- **Cubical and simplicial singular chains are naturally chain homotopy equivalent.** -/
 def cubicalSingularHomotopyEquiv (X : TopCat.{u}) :
     HomotopyEquiv ((singularChains k).obj X) ((normalizedCubicalChainComplex k).obj X) where
@@ -171,6 +142,95 @@ theorem cubicalSingularHomotopyEquiv_hom (X : TopCat.{u}) :
 @[simp]
 theorem cubicalSingularHomotopyEquiv_inv (X : TopCat.{u}) :
     (cubicalSingularHomotopyEquiv k X).inv = (cubicalToSingular k).app X :=
+  (rfl)
+
+variable {k}
+
+/-! ### The comparison maps in degree zero -/
+
+/-- **The comparison map to cubical chains sends a point to the point cube.** -/
+theorem singularToCubical_app_f_zero_simplexChain {X : TopCat.{u}}
+    (σ : (TopCat.toSSet.obj X) _⦋0⦌) :
+    ((singularToCubical k).app X).f 0 (simplexChain σ 1) =
+      NormalizedCubicalChain.ofCube X k (SingularCube.point (TopCat.toSSetObj₀Equiv σ)) := by
+  refine (AcyclicModels.ModelPresentation.chainMap_app_f_zero_apply _ _ _ _ _ X _).trans ?_
+  refine (singularModelPresentation_extend_simplexChain
+    (G := normalizedCubicalChainComplex k) (singularToCubicalGen₀ k) σ).trans ?_
+  refine (normalizedCubicalChainComplex_map_f_apply σ.down 0 _).trans ?_
+  refine (NormalizedCubicalChain.map_ofCube k σ.down.hom _).trans ?_
+  exact congrArg _ (ContinuousMap.ext fun t ↦ by
+    simp only [ContinuousMap.comp_apply, SingularCube.point_apply]
+    exact (congrArg σ.down.hom
+      (Subsingleton.elim (α := SimplexCategory.toTop.{u}.obj ⦋0⦌) _ default)).trans rfl)
+
+/-- **The comparison map to simplicial chains sends a point cube to the point.** -/
+theorem cubicalToSingular_app_f_zero_ofCube {X : TopCat.{u}} (x : X) :
+    ((cubicalToSingular k).app X).f 0
+        (NormalizedCubicalChain.ofCube X k (SingularCube.point x)) =
+      simplexChain (TopCat.toSSetObj₀Equiv.symm x) 1 := by
+  refine (AcyclicModels.ModelPresentation.chainMap_app_f_zero_apply _ _ _ _ _ X _).trans ?_
+  refine (cubicalModelPresentation_extend_ofCube_zero (G := singularChains k)
+    (cubicalToSingularGen₀ k) _).trans ?_
+  refine (singularChains_map_f_simplexChain (k := k) _ _ 1).trans ?_
+  refine congrArg (simplexChain · 1) ((TopCat.toSSet_map_app_toSSetObj₀Equiv_symm
+    (cubeToHom (SingularCube.point x)) (cubeModelPoint.{u})).trans ?_)
+  exact congrArg _ ((cubeToHom_apply _ _).trans (SingularCube.point_apply _ _))
+
+/-! ### Quasi-isomorphisms and the homology comparison -/
+
+/-- The comparison map to cubical chains is a quasi-isomorphism. -/
+instance (X : TopCat.{u}) : QuasiIso ((singularToCubical k).app X) := by
+  rw [← cubicalSingularHomotopyEquiv_hom]
+  infer_instance
+
+/-- The comparison map to simplicial chains is a quasi-isomorphism. -/
+instance (X : TopCat.{u}) : QuasiIso ((cubicalToSingular k).app X) := by
+  rw [← cubicalSingularHomotopyEquiv_inv]
+  infer_instance
+
+variable (k) in
+/-- **Cubical singular homology is singular homology**: the isomorphism induced by the comparison
+of cubical and simplicial chains. -/
+def singularCubicalHomologyIso (X : TopCat.{u}) (n : ℕ) :
+    ((singularChains k).obj X).homology n ≅ ((normalizedCubicalChainComplex k).obj X).homology n :=
+  (cubicalSingularHomotopyEquiv k X).toHomologyIso n
+
+@[simp]
+theorem singularCubicalHomologyIso_hom (X : TopCat.{u}) (n : ℕ) :
+    (singularCubicalHomologyIso k X n).hom =
+      HomologicalComplex.homologyMap ((singularToCubical k).app X) n := by
+  rw [← cubicalSingularHomotopyEquiv_hom]
+  rfl
+
+@[simp]
+theorem singularCubicalHomologyIso_inv (X : TopCat.{u}) (n : ℕ) :
+    (singularCubicalHomologyIso k X n).inv =
+      HomologicalComplex.homologyMap ((cubicalToSingular k).app X) n := by
+  rw [← cubicalSingularHomotopyEquiv_inv]
+  rfl
+
+/-- The comparison isomorphism on homology is natural. -/
+@[reassoc]
+theorem singularCubicalHomologyIso_hom_naturality {X Y : TopCat.{u}} (f : X ⟶ Y) (n : ℕ) :
+    HomologicalComplex.homologyMap ((singularChains k).map f) n ≫
+        (singularCubicalHomologyIso k Y n).hom =
+      (singularCubicalHomologyIso k X n).hom ≫
+        HomologicalComplex.homologyMap ((normalizedCubicalChainComplex k).map f) n := by
+  simp only [singularCubicalHomologyIso_hom, ← HomologicalComplex.homologyMap_comp,
+    (singularToCubical k).naturality]
+
+variable (k) in
+/-- **Cubical singular homology is naturally isomorphic to singular homology**, as functors on
+topological spaces. -/
+def singularCubicalHomologyNatIso (n : ℕ) :
+    singularChains k ⋙ HomologicalComplex.homologyFunctor _ _ n ≅
+      normalizedCubicalChainComplex k ⋙ HomologicalComplex.homologyFunctor _ _ n :=
+  NatIso.ofComponents (fun X ↦ singularCubicalHomologyIso k X n)
+    fun f ↦ singularCubicalHomologyIso_hom_naturality f n
+
+@[simp]
+theorem singularCubicalHomologyNatIso_app (n : ℕ) (X : TopCat.{u}) :
+    (singularCubicalHomologyNatIso k n).app X = singularCubicalHomologyIso k X n :=
   (rfl)
 
 end TauCeti
