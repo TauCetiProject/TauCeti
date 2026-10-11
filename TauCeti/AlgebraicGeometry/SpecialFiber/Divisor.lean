@@ -54,15 +54,15 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.specialFiberMultiplicity_pos
   omega
 
 /-- The multiplicity is zero away from the special fibre. -/
-@[simp]
 theorem _root_.AlgebraicGeometry.Scheme.Hom.specialFiberMultiplicity_eq_zero_of_ne
     (hη : toBase (genericPoint X) ≠ closedPoint R) {π : R}
-    (hπ : π ∈ maximalIdeal R) (hπ0 : π ≠ 0) (x : CodimensionOnePoint X)
+    (hπ : ¬ IsUnit π) (hπ0 : π ≠ 0) (x : CodimensionOnePoint X)
     (hx : toBase x ≠ closedPoint R) : toBase.specialFiberMultiplicity π x = 0 := by
   rw [Scheme.Hom.specialFiberMultiplicity]
+  have hπ' : π ∈ maximalIdeal R := by simpa using hπ
   have hnonneg := Scheme.ord_germToFunctionField_nonneg
     (toBase.appTop ((Scheme.ΓSpecIso (.of R)).inv π)) (x := x) trivial
-  have hnotpos := (toBase.ord_germToFunctionField_appTop_pos_iff hη hπ hπ0 x.property).not.mpr hx
+  have hnotpos := (toBase.ord_germToFunctionField_appTop_pos_iff hη hπ' hπ0 x.property).not.mpr hx
   exact Int.toNat_eq_zero.mpr (by omega)
 
 /-- The divisor of the pullback of `π` is the sum of its component multiplicities over the
