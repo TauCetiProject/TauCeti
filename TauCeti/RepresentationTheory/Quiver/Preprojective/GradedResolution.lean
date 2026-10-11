@@ -323,7 +323,7 @@ theorem preprojectiveGradedKoszulDifferential_exact
 resolution of its vertex augmentation module, over the ordinary opposite algebra.
 This is an abbreviation so the types and module instances of its explicit terms can be used
 without transporting along equalities. Its augmentation is computed by
-`preprojectiveGradedVertexAugmentation_hom`. -/
+`preprojectiveGradedKoszulResolution_π`. -/
 noncomputable abbrev preprojectiveGradedKoszulResolution
     (hQ : ∀ u : Q, ∃ w, Nonempty (u ⟶ w)) (v : Q) :
     GradedProjectiveResolution 𝒜 (preprojectiveGradedVertexModule k v).grading where
@@ -338,16 +338,15 @@ noncomputable abbrev preprojectiveGradedKoszulResolution
         (preprojectiveRightProjective k (Symmetrify.of.obj v)))
     · infer_instance
   d n := (preprojectiveGradedKoszulDifferential k v n).hom
-  «π» := (preprojectiveGradedVertexAugmentation k v).hom
+  «π» := preprojectiveVertexAugmentation k v
   isHomogeneous_d n := (preprojectiveGradedKoszulDifferential k v n).isHomogeneous
-  isHomogeneous_π := (preprojectiveGradedVertexAugmentation k v).isHomogeneous
-  surjective_π := by
-    rw [preprojectiveGradedVertexAugmentation_hom]
-    exact preprojectiveVertexAugmentation_surjective k v
+  isHomogeneous_π := by
+    rw [← preprojectiveGradedVertexAugmentation_hom]
+    exact (preprojectiveGradedVertexAugmentation k v).isHomogeneous
+  surjective_π := preprojectiveVertexAugmentation_surjective k v
   exact_d_π := by
     rw [LinearMap.exact_iff, preprojectiveGradedKoszulDifferential_zero,
-      preprojectiveGradedKoszulRight_hom, preprojectiveGradedVertexAugmentation_hom,
-      ker_preprojectiveVertexAugmentation]
+      preprojectiveGradedKoszulRight_hom, ker_preprojectiveVertexAugmentation]
   exact_d_d := preprojectiveGradedKoszulDifferential_exact k hQ v
 
 /-- The projective terms of the graded resolution are the shifted Koszul terms. -/
@@ -363,6 +362,12 @@ theorem preprojectiveGradedKoszulResolution_d
     (hQ : ∀ u : Q, ∃ w, Nonempty (u ⟶ w)) (v : Q) (n : ℕ) :
     (preprojectiveGradedKoszulResolution k hQ v).d n =
       (preprojectiveGradedKoszulDifferential k v n).hom := (rfl)
+
+/-- The augmentation of the resolution is the vertex augmentation. -/
+@[simp]
+theorem preprojectiveGradedKoszulResolution_π
+    (hQ : ∀ u : Q, ∃ w, Nonempty (u ⟶ w)) (v : Q) :
+    (preprojectiveGradedKoszulResolution k hQ v).π = preprojectiveVertexAugmentation k v := (rfl)
 
 /-- The terms of the resolution are the shifted graded Koszul terms. -/
 @[simp]
