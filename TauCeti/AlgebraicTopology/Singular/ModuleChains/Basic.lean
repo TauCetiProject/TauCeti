@@ -36,7 +36,7 @@ and vanishing on boundaries.
   vanishes on boundaries.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
