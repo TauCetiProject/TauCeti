@@ -330,6 +330,7 @@ sheafy as open subspaces of the `U i`, and the underlying presheafed space of th
 colimit of the gluing diagram among presheafed spaces, whose structure presheaf is a limit of
 pushforwards of the structure sheaves of the `U i` and `V i j`. Conversely each `U i` is an open
 subspace of the glued space. -/
+@[simp]
 theorem isSheafy_glued_iff : isSheafy 𝖣.glued ↔ ∀ i, isSheafy (D.U i) :=
   ⟨fun h i ↦ isSheafy_of_isOpenImmersion h (𝖣.ι i), fun hU ↦
     PresheafedSpace.isSheaf_of_isColimit (𝖣.diagram.multispan ⋙ forgetToPresheafedSpace)
@@ -341,6 +342,7 @@ theorem isSheafy_glued_iff : isSheafy 𝖣.glued ↔ ∀ i, isSheafy (D.U i) :=
 
 /-- **A glued pre-adic space is locally affinoid exactly when the pieces are**, since the charts
 of the glued space are open immersions covering it. -/
+@[simp]
 theorem isLocallyAffinoid_glued_iff :
     isLocallyAffinoid 𝖣.glued ↔ ∀ i, isLocallyAffinoid (D.U i) :=
   ⟨fun h i ↦ isLocallyAffinoid_of_isOpenImmersion h (𝖣.ι i), fun hU ↦
@@ -348,6 +350,7 @@ theorem isLocallyAffinoid_glued_iff :
 
 /-- **A glued pre-adic space is an adic space exactly when the pieces are**: gluing adic spaces
 gives an adic space, and conversely each `U i` is an open adic subspace of the glued space. -/
+@[simp]
 theorem isAdic_glued_iff : isAdic 𝖣.glued ↔ ∀ i, isAdic (D.U i) := by
   simp only [isAdic_iff, isSheafy_glued_iff, isLocallyAffinoid_glued_iff, forall_and]
 
@@ -373,6 +376,26 @@ point and legs are, by definition, the glued pre-adic space and its charts. -/
       naturality _ _ f := ObjectProperty.hom_ext (P := isAdic)
         ((colimit.w 𝖣.diagram.multispan f).trans (Category.comp_id _).symm) }
 
+/-- The object of `adicDiagram` at an overlap `V i j` is `V i j`. -/
+@[simp]
+theorem adicDiagram_obj_left_obj (hU : ∀ i, isAdic (D.U i)) (i j : D.J) :
+    ((D.adicDiagram hU).obj (.left (i, j))).obj = D.V (i, j) := (rfl)
+
+/-- The object of `adicDiagram` at a piece `U i` is `U i`. -/
+@[simp]
+theorem adicDiagram_obj_right_obj (hU : ∀ i, isAdic (D.U i)) (i : D.J) :
+    ((D.adicDiagram hU).obj (.right i)).obj = D.U i := (rfl)
+
+/-- The first map of `adicDiagram` at `V i j` is the open immersion `f i j : V i j ⟶ U i`. -/
+@[simp]
+theorem adicDiagram_map_fst_hom (hU : ∀ i, isAdic (D.U i)) (i j : D.J) :
+    ((D.adicDiagram hU).map (.fst (i, j))).hom = D.f i j := (rfl)
+
+/-- The second map of `adicDiagram` at `V i j` is `t i j ≫ f j i : V i j ⟶ U j`. -/
+@[simp]
+theorem adicDiagram_map_snd_hom (hU : ∀ i, isAdic (D.U i)) (i j : D.J) :
+    ((D.adicDiagram hU).map (.snd (i, j))).hom = D.t i j ≫ D.f j i := (rfl)
+
 /-- The cocone point of `gluedAdicCocone` is the glued pre-adic space. -/
 @[simp]
 theorem gluedAdicCocone_pt_obj (hU : ∀ i, isAdic (D.U i)) :
@@ -382,6 +405,12 @@ theorem gluedAdicCocone_pt_obj (hU : ∀ i, isAdic (D.U i)) :
 @[simp]
 theorem gluedAdicCocone_ι_app_right_hom (hU : ∀ i, isAdic (D.U i)) (i : D.J) :
     ((D.gluedAdicCocone hU).ι.app (.right i)).hom = 𝖣.ι i := (rfl)
+
+/-- The leg of `gluedAdicCocone` at `V i j` is `f i j ≫ ι i`. -/
+@[simp]
+theorem gluedAdicCocone_ι_app_left_hom (hU : ∀ i, isAdic (D.U i)) (i j : D.J) :
+    ((D.gluedAdicCocone hU).ι.app (.left (i, j))).hom = D.f i j ≫ 𝖣.ι i :=
+  (congrArg (·.hom) ((D.gluedAdicCocone hU).w (.fst (i, j)))).symm
 
 /-- **The universal property of the glued adic space**: gluing adic spaces along open immersions
 gives a colimit of the gluing diagram in the category `(Adic)` of adic spaces. -/
