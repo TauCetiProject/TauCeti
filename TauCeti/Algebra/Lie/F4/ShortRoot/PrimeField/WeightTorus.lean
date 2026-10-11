@@ -13,7 +13,7 @@ import TauCeti.Algebra.AlgebraicGroup.Hopf.KernelPoints
 /-!
 # The weight torus inside the short-root F₄ carrier
 
-The numbered weight-torus map of the prime-field short-root carrier is a closed immersion.
+The rank-four weight-torus map of the prime-field short-root carrier is a closed immersion.
 Its kernel is an intrinsic Hopf ideal of the carrier, whose quotient is the rank-four split
 torus. Over every commutative `𝔽₂`-algebra, points of this closed subgroup are precisely the
 named weight-torus matrix points. The identification retains nonreduced coefficient algebras,
