@@ -189,7 +189,7 @@ theorem openCoverSingularTotal_def :
 
 /-- The graded object in total degree `n` is the coproduct of the bidegrees summing to `n`.
 This is the summand inclusion into that coproduct. -/
-noncomputable def openCoverSingularTotal_ιTotal (p q n : ℕ)
+noncomputable def openCoverSingularTotalInclusion (p q n : ℕ)
     (h : ComplexShape.π (ComplexShape.down ℕ) (ComplexShape.down ℕ)
       (ComplexShape.down ℕ) (p, q) = n) :
     ((openCoverSingularBicomplex U R).X p).X q ⟶
@@ -200,10 +200,10 @@ noncomputable def openCoverSingularTotal_ιTotal (p q n : ℕ)
 omit [HasZeroObject C] in
 /-- The total differential after inclusion of a bidegree summand is the sum of its signed
 horizontal and vertical contributions. -/
-theorem openCoverSingularTotal_ιTotal_d (p q n : ℕ)
+theorem openCoverSingularTotalInclusion_d (p q n : ℕ)
     (h : ComplexShape.π (ComplexShape.down ℕ) (ComplexShape.down ℕ)
       (ComplexShape.down ℕ) (p, q) = n + 1) :
-    openCoverSingularTotal_ιTotal U R p q (n + 1) h ≫
+    openCoverSingularTotalInclusion U R p q (n + 1) h ≫
         (openCoverSingularTotal U R).d (n + 1) n =
       (openCoverSingularBicomplex U R).d₁ (ComplexShape.down ℕ) p q n +
       (openCoverSingularBicomplex U R).d₂ (ComplexShape.down ℕ) p q n := by
@@ -224,15 +224,15 @@ def openCoverSingularTotalMap {Y : TopCat.{u}} {κ : Type u} (V : κ → Opens Y
 omit [HasZeroObject C] in
 /-- The total map on a summand is induced by the bicomplex map in that bidegree. -/
 @[reassoc (attr := simp)]
-theorem openCoverSingularTotalMap_ιTotal {Y : TopCat.{u}} {κ : Type u}
+theorem openCoverSingularTotalMap_inclusion {Y : TopCat.{u}} {κ : Type u}
     (V : κ → Opens Y) (f : X ⟶ Y) (r : ι → κ)
     (hf : ∀ i, Set.MapsTo f (U i) (V (r i))) (p q n : ℕ)
     (h : ComplexShape.π (ComplexShape.down ℕ) (ComplexShape.down ℕ)
       (ComplexShape.down ℕ) (p, q) = n) :
-    openCoverSingularTotal_ιTotal U R p q n h ≫
+    openCoverSingularTotalInclusion U R p q n h ≫
         (openCoverSingularTotalMap U R V f r hf).f n =
       ((openCoverSingularBicomplexMap U R V f r hf).f p).f q ≫
-        openCoverSingularTotal_ιTotal V R p q n h := by
+        openCoverSingularTotalInclusion V R p q n h := by
   exact HomologicalComplex₂.ιTotal_map
       (K := openCoverSingularBicomplex U R)
       (L := openCoverSingularBicomplex V R)
