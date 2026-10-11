@@ -35,9 +35,8 @@ open TauCeti
 variable {G : Type*} [Group G] (U : Subgroup G)
 
 /-- The base-group element comparing the monomial embeddings obtained from two left
-transversals. Its coordinate at `x` is `r_s(x)⁻¹ r_t(x)` in `U`. The body is exposed so the
-base and permutation coordinates can be read by the following lemmas. -/
-@[expose] noncomputable def monomialChangeTransversal (s t : U.LeftTransversal) :
+transversals. Its coordinate at `x` is `r_s(x)⁻¹ r_t(x)` in `U`. -/
+noncomputable def monomialChangeTransversal (s t : U.LeftTransversal) :
     WreathProduct U (G ⧸ U) :=
   SemidirectProduct.inl fun x ↦
     ⟨transversalDiff U (leftTransversalRep U s) (leftTransversalRep U t) x,
@@ -51,12 +50,12 @@ chosen representatives. -/
       ⟨transversalDiff U (leftTransversalRep U s) (leftTransversalRep U t) x,
         transversalDiff_mem U _ _ (leftTransversalRep_mk U s)
           (leftTransversalRep_mk U t) x⟩ :=
-  rfl
+  by simp [monomialChangeTransversal]
 
 /-- Changing a transversal does not alter the permutation coordinate of the comparing element. -/
 @[simp] theorem monomialChangeTransversal_right (s t : U.LeftTransversal) :
     (monomialChangeTransversal U s t).right = 1 :=
-  rfl
+  by simp [monomialChangeTransversal]
 
 /-- Comparing a transversal with itself gives the identity element. -/
 @[simp] theorem monomialChangeTransversal_self (s : U.LeftTransversal) :

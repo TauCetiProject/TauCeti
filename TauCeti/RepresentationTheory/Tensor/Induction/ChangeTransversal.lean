@@ -40,9 +40,8 @@ variable {R : Type u} [CommSemiring R] {G : Type v} [Group G]
   (ρ : Representation R U M)
 
 /-- The tensor-power linear equivalence induced by changing the transversal. It acts by the
-comparison element in the base group of the wreath product. Its body is exposed so the bundled
-representation equivalence below can compute on arbitrary tensors. -/
-@[expose] noncomputable def tensorInducedChangeTransversalLinearEquiv :
+comparison element in the base group of the wreath product. -/
+noncomputable def tensorInducedChangeTransversalLinearEquiv :
     (⨂[R] _ : G ⧸ U, M) ≃ₗ[R] (⨂[R] _ : G ⧸ U, M) := by
   let W := ρ.wreathTensor (G ⧸ U)
   let c := monomialChangeTransversal U s t
@@ -58,39 +57,55 @@ representation equivalence below can compute on arbitrary tensors. -/
         Module.End.one_apply]
   exact LinearEquiv.ofBijective (W c) hbij
 
+/-- The change-of-transversal linear equivalence acts by the wreath tensor representation of
+the comparison element. -/
+theorem tensorInducedChangeTransversalLinearEquiv_apply (z : ⨂[R] _ : G ⧸ U, M) :
+    tensorInducedChangeTransversalLinearEquiv U s t ρ z =
+      ρ.wreathTensor (G ⧸ U) (monomialChangeTransversal U s t) z :=
+  by
+    unfold tensorInducedChangeTransversalLinearEquiv
+    exact LinearEquiv.ofBijective_apply _ z
+
 /-- On a pure tensor, the comparison applies the transversal difference in each coordinate. -/
 @[simp] theorem tensorInducedChangeTransversalLinearEquiv_apply_tprod
     (m : G ⧸ U → M) :
     tensorInducedChangeTransversalLinearEquiv U s t ρ (PiTensorProduct.tprod R m) =
       PiTensorProduct.tprod R fun x ↦
         ρ ((monomialChangeTransversal U s t).left x) (m x) := by
-  change (ρ.wreathTensor (G ⧸ U)) (monomialChangeTransversal U s t)
-    (PiTensorProduct.tprod R m) = _
-  rw [monomialChangeTransversal, Representation.wreathTensor_inl_apply_tprod]
-  rfl
+  rw [tensorInducedChangeTransversalLinearEquiv_apply]
+  rw [Representation.wreathTensor_apply_tprod]
+  simp only [monomialChangeTransversal_right, ← Equiv.Perm.inv_def, inv_one,
+    Equiv.Perm.coe_one, id_eq]
 
-/-- Changing the transversal yields an equivalence of tensor-induced representations. Its body
-is exposed to identify its underlying linear equivalence on tensors. -/
-@[expose] noncomputable def tensorInducedChangeTransversal :
+/-- Changing the transversal yields an equivalence of tensor-induced representations. -/
+noncomputable def tensorInducedChangeTransversal :
     (U.tensorInducedRepresentation t ρ).Equiv
       (U.tensorInducedRepresentation s ρ) :=
   Representation.Equiv.mk (tensorInducedChangeTransversalLinearEquiv U s t ρ) (fun g ↦ by
     apply LinearMap.ext
     intro z
     simp only [LinearMap.comp_apply, tensorInducedRepresentation_apply]
-    change (ρ.wreathTensor (G ⧸ U)) (monomialChangeTransversal U s t)
-        ((ρ.wreathTensor (G ⧸ U)) (monomialHom U t g) z) =
-      (ρ.wreathTensor (G ⧸ U)) (monomialHom U s g)
-        ((ρ.wreathTensor (G ⧸ U)) (monomialChangeTransversal U s t) z)
+    simp only [LinearEquiv.coe_coe]
+    rw [tensorInducedChangeTransversalLinearEquiv_apply,
+      tensorInducedChangeTransversalLinearEquiv_apply]
     rw [← Module.End.mul_apply, ← Module.End.mul_apply, ← map_mul, ← map_mul,
       monomialChangeTransversal_mul_monomialHom])
+
+/-- The underlying linear equivalence of the representation comparison is the named
+change-of-transversal linear equivalence. -/
+theorem tensorInducedChangeTransversal_toLinearEquiv :
+    (tensorInducedChangeTransversal U s t ρ).toLinearEquiv =
+      tensorInducedChangeTransversalLinearEquiv U s t ρ :=
+  by simp only [tensorInducedChangeTransversal, Representation.Equiv.toLinearEquiv_mk']
 
 /-- The representation equivalence has the named factorwise linear equivalence as its
 underlying map. -/
 theorem tensorInducedChangeTransversal_apply (z : ⨂[R] _ : G ⧸ U, M) :
     tensorInducedChangeTransversal U s t ρ z =
       tensorInducedChangeTransversalLinearEquiv U s t ρ z :=
-  rfl
+  by
+    change (tensorInducedChangeTransversal U s t ρ).toLinearEquiv z = _
+    rw [tensorInducedChangeTransversal_toLinearEquiv]
 
 /-- On a pure tensor, changing the transversal applies the difference of representatives to
 each factor at its coset. -/
