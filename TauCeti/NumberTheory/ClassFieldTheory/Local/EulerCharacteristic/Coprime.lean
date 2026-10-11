@@ -59,6 +59,10 @@ Equivariant Kummer theory computes the middle term at the fixed field `L` of `W`
 
 * J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, 2nd ed., proof of (7.3.1).
 * J. S. Milne, *Arithmetic Duality Theorems*, 2nd ed., I, proof of Theorem 2.8.
+* The statement and the outline of its proof are adapted from split 6 of the pull-request split
+  plan in `LOOKAHEAD.md` on the Tau Ceti lookahead branch
+  `lookahead/ClassFieldTheory/euler-characteristic-mixed` of `roed-math/TauCeti`, commit
+  `217e838c7c3ccfe5f1c3874537459b0527c37625`.
 -/
 
 public section
