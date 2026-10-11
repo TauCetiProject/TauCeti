@@ -29,8 +29,9 @@ variable [Algebra R A] [Algebra R H]
 
 /-- A Laurent polynomial comes from a polynomial exactly when its negative coefficients vanish. -/
 @[simp]
-theorem mem_range_toLaurent_iff {p : LaurentPolynomial A} :
-    p ∈ Set.range Polynomial.toLaurent ↔ ∀ n : ℤ, n < 0 → p.coeff n = 0 := by
+theorem exists_toLaurent_eq_iff {p : LaurentPolynomial A} :
+    (∃ q : Polynomial A, q.toLaurent = p) ↔ ∀ n : ℤ, n < 0 → p.coeff n = 0 := by
+  change p ∈ Set.range Polynomial.toLaurent ↔ _
   have hcast (n : ℤ) : n ∉ Set.range (Nat.cast : ℕ → ℤ) ↔ n < 0 := by
     constructor
     · intro hn
@@ -57,13 +58,13 @@ theorem exists_algHom_toLaurent_comp_eq_iff {f : H →ₐ[R] LaurentPolynomial A
       ∀ h : H, ∀ n : ℤ, n < 0 → (f h).coeff n = 0 := by
   constructor
   · rintro ⟨F, rfl⟩ h
-    exact mem_range_toLaurent_iff.mp ⟨F h, rfl⟩
+    exact exists_toLaurent_eq_iff.mp ⟨F h, rfl⟩
   · intro hf
     let i : Polynomial A →ₐ[R] LaurentPolynomial A :=
       Polynomial.toLaurentAlg.restrictScalars R
     let e := AlgEquiv.ofInjective i Polynomial.toLaurent_injective
     let F := e.symm.toAlgHom.comp (f.codRestrict i.range fun h ↦
-      mem_range_toLaurent_iff.mpr (hf h))
+      exists_toLaurent_eq_iff.mpr (hf h))
     refine ⟨F, AlgHom.ext fun h ↦ ?_⟩
     exact congrArg Subtype.val (e.apply_symm_apply (f.codRestrict i.range _ h))
 
