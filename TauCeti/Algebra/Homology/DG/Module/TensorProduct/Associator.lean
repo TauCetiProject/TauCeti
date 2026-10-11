@@ -17,8 +17,7 @@ The carrier map is the balanced associator and has degree zero. It commutes with
 three-term tensor differential: the last term has sign `(-1)^(|m|+|n|)` in either
 parenthesization. No flatness is needed for these underived tensor products.
 
-The algebraic statements permit independent carrier universes; the complex isomorphism uses
-a common module universe, matching `BalancedTensorProduct.cochainComplex`.
+Both the algebraic statements and the complex isomorphism permit independent carrier universes.
 
 ## References
 
@@ -115,7 +114,7 @@ end Algebraic
 
 section Complex
 
-universe u
+universe uM uN uP
 
 variable {R B C : Type*} [CommRing R] [Ring B] [Ring C]
   [Algebra R B] [Algebra R C]
@@ -123,7 +122,7 @@ variable {R B C : Type*} [CommRing R] [Ring B] [Ring C]
   [GradedAlgebra ℬ] [GradedAlgebra 𝒞]
   {dB : B →ₗ[R] B} {dC : C →ₗ[R] C}
   {hB : IsDGAlgebra ℬ dB} {hC : IsDGAlgebra 𝒞 dC}
-  {M N P : Type u}
+  {M : Type uM} {N : Type uN} {P : Type uP}
   [AddCommGroup M] [Module R M] [Module Bᵐᵒᵖ M] [IsScalarTower R Bᵐᵒᵖ M]
   [AddCommGroup N] [Module R N] [Module B N] [Module Cᵐᵒᵖ N]
   [IsScalarTower R B N] [IsScalarTower R Cᵐᵒᵖ N] [SMulCommClass B Cᵐᵒᵖ N]
@@ -197,8 +196,11 @@ theorem cochainComplexAssoc_hom_f_apply (p : ℤ) (x : (GL).piece p) :
       ((cochainComplexAssoc hM hN hP).hom.f p
         ((eqToHom (cochainComplex_X (isDGRightModule_tensorProduct hM hN) hP p).symm) x)) :
       BalancedTensorProduct R B M (BalancedTensorProduct R C N P)) = assoc x := by
-  simp [cochainComplexAssoc, HomologicalComplex.Hom.isoOfComponents, assocDegreeIso,
-    ← CategoryTheory.comp_apply, LinearEquiv.ofSubmodules_apply]
+  simp only [cochainComplexAssoc, HomologicalComplex.Hom.isoOfComponents_hom_f,
+    assocDegreeIso, Iso.trans_hom, eqToIso.hom, Iso.symm_hom, eqToIso.inv,
+    ← CategoryTheory.comp_apply, Category.assoc, eqToHom_trans_assoc, eqToHom_trans, eqToHom_refl,
+    Category.id_comp, Category.comp_id, LinearEquiv.toModuleIso_hom,
+    ModuleCat.hom_ofHom, LinearEquiv.coe_coe, LinearEquiv.ofSubmodules_apply]
 
 /-- Under the canonical degree-piece identifications, inverse reassociation restores the
 original parentheses. -/
@@ -208,8 +210,11 @@ theorem cochainComplexAssoc_inv_f_apply (p : ℤ) (x : (GR).piece p) :
       ((cochainComplexAssoc hM hN hP).inv.f p
         ((eqToHom (cochainComplex_X hM (isDGLeftModule_tensorProduct hN hP) p).symm) x)) :
       BalancedTensorProduct R C (BalancedTensorProduct R B M N) P) = assoc.symm x := by
-  simp [cochainComplexAssoc, HomologicalComplex.Hom.isoOfComponents, assocDegreeIso,
-    ← CategoryTheory.comp_apply, LinearEquiv.ofSubmodules_symm_apply]
+  simp only [cochainComplexAssoc, HomologicalComplex.Hom.isoOfComponents_inv_f,
+    assocDegreeIso, Iso.trans_inv, eqToIso.inv, Iso.symm_inv, eqToIso.hom,
+    ← CategoryTheory.comp_apply, Category.assoc, eqToHom_trans_assoc, eqToHom_trans, eqToHom_refl,
+    Category.id_comp, Category.comp_id, LinearEquiv.toModuleIso_inv,
+    ModuleCat.hom_ofHom, LinearEquiv.coe_coe, LinearEquiv.ofSubmodules_symm_apply]
 
 end Complex
 
