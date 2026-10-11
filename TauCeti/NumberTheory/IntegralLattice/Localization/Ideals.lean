@@ -38,12 +38,14 @@ noncomputable abbrev localScaleIdeal : Ideal ℤ_[p] := (L.localIntegralForm p).
 noncomputable abbrev localNormIdeal : Ideal ℤ_[p] := (L.localIntegralForm p).normIdeal
 
 /-- Localization extends the integral scale ideal. -/
+@[simp]
 theorem localScaleIdeal_eq_map :
     L.localScaleIdeal p = Ideal.map (algebraMap ℤ ℤ_[p]) L.scaleIdeal := by
   rw [localScaleIdeal, localIntegralForm_def, scaleIdeal]
   exact LinearMap.BilinForm.scaleIdeal_baseChange L.integralForm
 
 /-- Localization extends the integral norm ideal. -/
+@[simp]
 theorem localNormIdeal_eq_map :
     L.localNormIdeal p = Ideal.map (algebraMap ℤ ℤ_[p]) L.normIdeal := by
   rw [localNormIdeal, localIntegralForm_def, normIdeal]

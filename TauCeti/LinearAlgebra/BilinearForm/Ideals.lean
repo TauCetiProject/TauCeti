@@ -187,6 +187,7 @@ variable {R A M : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
   [AddCommMonoid M] [Module R M]
 
 /-- The scale ideal of a base-changed form is the extension of its scale ideal. -/
+@[simp]
 theorem scaleIdeal_baseChange (B : LinearMap.BilinForm R M) :
     (B.baseChange A).scaleIdeal = Ideal.map (algebraMap R A) B.scaleIdeal := by
   apply le_antisymm
@@ -219,6 +220,7 @@ variable {R A M : Type*} [CommRing R] [CommRing A] [Algebra R A]
   [AddCommMonoid M] [Module R M]
 
 /-- The norm ideal commutes with extension of scalars. -/
+@[simp]
 theorem normIdeal_baseChange (B : LinearMap.BilinForm R M) :
     (B.baseChange A).normIdeal = Ideal.map (algebraMap R A) B.normIdeal := by
   let I := Ideal.map (algebraMap R A) B.normIdeal
