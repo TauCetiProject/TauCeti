@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.D4.Tripled.Basic
 public import TauCeti.Algebra.Lie.Presentation.MinusculeWeightTable.Rational
+import TauCeti.LinearAlgebra.Basis.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.D.D4SpinIndex
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.RootBasis
 import TauCeti.Data.Finset.Basic
@@ -230,20 +231,6 @@ theorem d4SpinMinusBlockEquiv_symm_single
   apply (P.d4SpinMinusBlockEquiv b).injective
   simp
 
-private theorem blockEquiv_intertwines {ι κ X : Type*} [Fintype κ]
-    [AddCommGroup X] [Module ℚ X] (basis : Module.Basis ι ℚ X)
-    (e : X ≃ₗ[ℚ] (κ → ℚ)) (f : Module.End ℚ X) (M : Matrix κ κ ℚ)
-    (hbasis : ∀ s, e (f (basis s)) = M *ᵥ e (basis s)) (x : X) :
-    e (f x) = M *ᵥ e x := by
-  classical
-  have hmap :
-      e.toLinearMap.comp f = (Matrix.mulVecLin M).comp e.toLinearMap := by
-    apply basis.ext
-    intro s
-    simpa only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
-      Matrix.mulVecLin_apply] using hbasis s
-  exact LinearMap.congr_fun hmap x
-
 private theorem d4Block_raisingMatrixQ_mulVec_single
     {p : Finset (Fin 4) → Prop} {block : ℤ}
     (e : {s : Finset (Fin 4) // p s} ≃ {a : Fin 24 // d4TripledSummand a = block})
@@ -436,9 +423,15 @@ theorem d4SpinPlusBlockEquiv_serreE (hline : P.line = ⊥) (i : Fin 4)
         (P.typeDSpinPlusLieRep b hline (TypeDStd.rootGenerator 4 (by omega) (.inl i)) x) =
       (D4Tripled.weightTable.raisingMatrixQ i).submatrix Subtype.val Subtype.val *ᵥ
         P.d4SpinPlusBlockEquiv b x := by
-  apply blockEquiv_intertwines (P.d4SpinPlusBasis b) (P.d4SpinPlusBlockEquiv b)
+  apply (P.d4SpinPlusBasis b).intertwines_of_apply
+    (P.d4SpinPlusBlockEquiv b).toLinearMap
+    (f := P.typeDSpinPlusLieRep b hline
+      (TypeDStd.rootGenerator 4 (by omega) (.inl i)))
+    (g := Matrix.mulVecLin
+      ((D4Tripled.weightTable.raisingMatrixQ i).submatrix Subtype.val Subtype.val))
   intro s
-  simpa only [d4SpinPlusBasis, coe_basisOfLinearIndependentOfCardEqFinrank'] using
+  simpa only [LinearEquiv.coe_toLinearMap, Matrix.mulVecLin_apply, d4SpinPlusBasis,
+    coe_basisOfLinearIndependentOfCardEqFinrank'] using
     P.d4SpinPlusBlockEquiv_serreE_exteriorBasis b hline i s
 
 /-- The even half-spin coordinate equivalence intertwines each negative simple-root operator with
@@ -450,9 +443,15 @@ theorem d4SpinPlusBlockEquiv_serreF (hline : P.line = ⊥) (i : Fin 4)
         (P.typeDSpinPlusLieRep b hline (TypeDStd.rootGenerator 4 (by omega) (.inr i)) x) =
       (D4Tripled.weightTable.loweringMatrixQ i).submatrix Subtype.val Subtype.val *ᵥ
         P.d4SpinPlusBlockEquiv b x := by
-  apply blockEquiv_intertwines (P.d4SpinPlusBasis b) (P.d4SpinPlusBlockEquiv b)
+  apply (P.d4SpinPlusBasis b).intertwines_of_apply
+    (P.d4SpinPlusBlockEquiv b).toLinearMap
+    (f := P.typeDSpinPlusLieRep b hline
+      (TypeDStd.rootGenerator 4 (by omega) (.inr i)))
+    (g := Matrix.mulVecLin
+      ((D4Tripled.weightTable.loweringMatrixQ i).submatrix Subtype.val Subtype.val))
   intro s
-  simpa only [d4SpinPlusBasis, coe_basisOfLinearIndependentOfCardEqFinrank'] using
+  simpa only [LinearEquiv.coe_toLinearMap, Matrix.mulVecLin_apply, d4SpinPlusBasis,
+    coe_basisOfLinearIndependentOfCardEqFinrank'] using
     P.d4SpinPlusBlockEquiv_serreF_exteriorBasis b hline i s
 
 private theorem d4SpinPlusBlockEquiv_serreH_exteriorBasis (hline : P.line = ⊥)
@@ -486,9 +485,15 @@ theorem d4SpinPlusBlockEquiv_serreH (hline : P.line = ⊥) (i : Fin 4)
         (P.typeDSpinPlusLieRep b hline (TypeDStd.cartanGenerator 4 (by omega) i) x) =
       (D4Tripled.weightTable.cartanGeneratorMatrixQ i).submatrix Subtype.val Subtype.val *ᵥ
         P.d4SpinPlusBlockEquiv b x := by
-  apply blockEquiv_intertwines (P.d4SpinPlusBasis b) (P.d4SpinPlusBlockEquiv b)
+  apply (P.d4SpinPlusBasis b).intertwines_of_apply
+    (P.d4SpinPlusBlockEquiv b).toLinearMap
+    (f := P.typeDSpinPlusLieRep b hline
+      (TypeDStd.cartanGenerator 4 (by omega) i))
+    (g := Matrix.mulVecLin
+      ((D4Tripled.weightTable.cartanGeneratorMatrixQ i).submatrix Subtype.val Subtype.val))
   intro s
-  simpa only [d4SpinPlusBasis, coe_basisOfLinearIndependentOfCardEqFinrank'] using
+  simpa only [LinearEquiv.coe_toLinearMap, Matrix.mulVecLin_apply, d4SpinPlusBasis,
+    coe_basisOfLinearIndependentOfCardEqFinrank'] using
     P.d4SpinPlusBlockEquiv_serreH_exteriorBasis b hline i s
 
 private theorem d4SpinMinusBlockEquiv_serreE_exteriorBasis (hline : P.line = ⊥)
@@ -582,9 +587,15 @@ theorem d4SpinMinusBlockEquiv_serreE (hline : P.line = ⊥) (i : Fin 4)
         (P.typeDSpinMinusLieRep b hline (TypeDStd.rootGenerator 4 (by omega) (.inl i)) x) =
       (D4Tripled.weightTable.raisingMatrixQ i).submatrix Subtype.val Subtype.val *ᵥ
         P.d4SpinMinusBlockEquiv b x := by
-  apply blockEquiv_intertwines (P.d4SpinMinusBasis b) (P.d4SpinMinusBlockEquiv b)
+  apply (P.d4SpinMinusBasis b).intertwines_of_apply
+    (P.d4SpinMinusBlockEquiv b).toLinearMap
+    (f := P.typeDSpinMinusLieRep b hline
+      (TypeDStd.rootGenerator 4 (by omega) (.inl i)))
+    (g := Matrix.mulVecLin
+      ((D4Tripled.weightTable.raisingMatrixQ i).submatrix Subtype.val Subtype.val))
   intro s
-  simpa only [d4SpinMinusBasis, coe_basisOfLinearIndependentOfCardEqFinrank'] using
+  simpa only [LinearEquiv.coe_toLinearMap, Matrix.mulVecLin_apply, d4SpinMinusBasis,
+    coe_basisOfLinearIndependentOfCardEqFinrank'] using
     P.d4SpinMinusBlockEquiv_serreE_exteriorBasis b hline i s
 
 /-- The odd half-spin coordinate equivalence intertwines each negative simple-root operator with
@@ -596,9 +607,15 @@ theorem d4SpinMinusBlockEquiv_serreF (hline : P.line = ⊥) (i : Fin 4)
         (P.typeDSpinMinusLieRep b hline (TypeDStd.rootGenerator 4 (by omega) (.inr i)) x) =
       (D4Tripled.weightTable.loweringMatrixQ i).submatrix Subtype.val Subtype.val *ᵥ
         P.d4SpinMinusBlockEquiv b x := by
-  apply blockEquiv_intertwines (P.d4SpinMinusBasis b) (P.d4SpinMinusBlockEquiv b)
+  apply (P.d4SpinMinusBasis b).intertwines_of_apply
+    (P.d4SpinMinusBlockEquiv b).toLinearMap
+    (f := P.typeDSpinMinusLieRep b hline
+      (TypeDStd.rootGenerator 4 (by omega) (.inr i)))
+    (g := Matrix.mulVecLin
+      ((D4Tripled.weightTable.loweringMatrixQ i).submatrix Subtype.val Subtype.val))
   intro s
-  simpa only [d4SpinMinusBasis, coe_basisOfLinearIndependentOfCardEqFinrank'] using
+  simpa only [LinearEquiv.coe_toLinearMap, Matrix.mulVecLin_apply, d4SpinMinusBasis,
+    coe_basisOfLinearIndependentOfCardEqFinrank'] using
     P.d4SpinMinusBlockEquiv_serreF_exteriorBasis b hline i s
 
 private theorem d4SpinMinusBlockEquiv_serreH_exteriorBasis (hline : P.line = ⊥)
@@ -632,9 +649,15 @@ theorem d4SpinMinusBlockEquiv_serreH (hline : P.line = ⊥) (i : Fin 4)
         (P.typeDSpinMinusLieRep b hline (TypeDStd.cartanGenerator 4 (by omega) i) x) =
       (D4Tripled.weightTable.cartanGeneratorMatrixQ i).submatrix Subtype.val Subtype.val *ᵥ
         P.d4SpinMinusBlockEquiv b x := by
-  apply blockEquiv_intertwines (P.d4SpinMinusBasis b) (P.d4SpinMinusBlockEquiv b)
+  apply (P.d4SpinMinusBasis b).intertwines_of_apply
+    (P.d4SpinMinusBlockEquiv b).toLinearMap
+    (f := P.typeDSpinMinusLieRep b hline
+      (TypeDStd.cartanGenerator 4 (by omega) i))
+    (g := Matrix.mulVecLin
+      ((D4Tripled.weightTable.cartanGeneratorMatrixQ i).submatrix Subtype.val Subtype.val))
   intro s
-  simpa only [d4SpinMinusBasis, coe_basisOfLinearIndependentOfCardEqFinrank'] using
+  simpa only [LinearEquiv.coe_toLinearMap, Matrix.mulVecLin_apply, d4SpinMinusBasis,
+    coe_basisOfLinearIndependentOfCardEqFinrank'] using
     P.d4SpinMinusBlockEquiv_serreH_exteriorBasis b hline i s
 
 end TauCeti.SpinPolarizationData
