@@ -34,7 +34,8 @@ namespace TauCeti.DenseGraphLimits
 
 -- The uncountable carrier is discrete, so it is not being supplied with a standard Borel
 -- structure. The point mass below is nevertheless a probability measure.
-local instance : MeasurableSpace ℝ := ⊤
+/-- The discrete measurable space on the real carrier used by the regression below. -/
+local instance instMeasurableSpaceRealTauCeti : MeasurableSpace ℝ := ⊤
 
 /-- A strict graphon on the uncountable discrete carrier, supported on one point in each
 coordinate. -/
