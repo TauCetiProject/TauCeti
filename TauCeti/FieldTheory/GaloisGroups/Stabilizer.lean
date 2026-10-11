@@ -270,4 +270,17 @@ theorem rootSetEquivOrbit_smul (hp : Irreducible p) {α : p.SplittingField}
   simp only [coe_rootSetEquivOrbit_apply, Gal.coe_smul, orbit.coe_smul]
   rfl
 
+/-- The root-to-orbit identification as an equivariant map. -/
+def rootSetToOrbit (hp : Irreducible p) {α : p.SplittingField}
+    (hα : α ∈ p.rootSet p.SplittingField) : p.rootSet p.SplittingField →[p.Gal] orbit p.Gal α :=
+  { toFun := rootSetEquivOrbit hp hα
+    map_smul' := rootSetEquivOrbit_smul hp hα }
+
+/-- The equivariant root-to-orbit map has the root-to-orbit equivalence as its underlying map. -/
+@[simp]
+theorem coe_rootSetToOrbit (hp : Irreducible p) {α : p.SplittingField}
+    (hα : α ∈ p.rootSet p.SplittingField) :
+    (rootSetToOrbit hp hα : p.rootSet p.SplittingField → orbit p.Gal α) =
+      rootSetEquivOrbit hp hα := (rfl)
+
 end TauCeti
