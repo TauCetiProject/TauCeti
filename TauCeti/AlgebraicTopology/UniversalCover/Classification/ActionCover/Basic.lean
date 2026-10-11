@@ -94,12 +94,12 @@ theorem continuous_actionCoverProj : Continuous (actionCoverProj x₀ A) :=
 omit [PathConnectedSpace X] [SemilocallySimplyConnectedSpace X] [DiscreteTopology A] in
 /-- The projection of the cover attached to `A` is an open map. -/
 theorem isOpenMap_actionCoverProj : IsOpenMap (actionCoverProj x₀ A) := by
-  intro U hU
-  rw [← Set.image_preimage_eq U Quotient.mk_surjective, Set.image_image]
+  apply IsOpenMap.of_comp (f := Quotient.mk _) continuous_quotient_mk' Quotient.mk_surjective
   have hcomp : (fun p => actionCoverProj x₀ A (Quotient.mk _ p)) = proj ∘ Prod.fst :=
     funext fun p => actionCoverProj_mk x₀ A p.1 p.2
-  rw [hcomp, Set.image_comp]
-  exact isOpenMap_proj x₀ _ (isOpenMap_fst _ (hU.preimage continuous_quotient_mk'))
+  change IsOpenMap (fun p : UniversalCover x₀ × A => actionCoverProj x₀ A (Quotient.mk _ p))
+  rw [hcomp]
+  exact (isOpenMap_proj x₀).comp isOpenMap_fst
 
 omit [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X] [TopologicalSpace A]
   [DiscreteTopology A] in
