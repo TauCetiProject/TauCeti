@@ -150,8 +150,7 @@ power series `a`. -/
 theorem coe_weightedRestrictedSubringOneEquiv_weightedC (a : R) :
     ((weightedRestrictedSubringOneEquiv (weightedC _ isWeightFamily_one_weight a) :
         PowerSeries.IsRestricted.subring (R := R) 1) : PowerSeries R) = PowerSeries.C a := by
-  rw [coe_weightedRestrictedSubringOneEquiv, coe_weightedC]
-  exact MvPowerSeries.rename_C _ a
+  simp [coe_weightedRestrictedSubringOneEquiv, PowerSeries.C_apply]
 
 /-- The trivially weighted one-variable equivalence sends the variable `T` to the variable of
 Mathlib's univariate power series. -/
@@ -160,8 +159,7 @@ theorem coe_weightedRestrictedSubringOneEquiv_weightedX :
     ((weightedRestrictedSubringOneEquiv (weightedX (fun _ : Fin 1 ↦ ({1} : Set R))
         isWeightFamily_one_weight 0) : PowerSeries.IsRestricted.subring (R := R) 1) :
         PowerSeries R) = PowerSeries.X := by
-  rw [coe_weightedRestrictedSubringOneEquiv, coe_weightedX]
-  exact MvPowerSeries.rename_X _ 0
+  simp [coe_weightedRestrictedSubringOneEquiv, PowerSeries.X_apply]
 
 end Comparison
 

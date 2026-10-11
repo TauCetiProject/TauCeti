@@ -119,8 +119,9 @@ private noncomputable def toRestrictedSubring (hr : |r| ≤ 1) :
 private theorem coe_toRestrictedSubring (hr : |r| ≤ 1)
     (f : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight) :
     (toRestrictedSubring hr f : PowerSeries R) =
-      MvPowerSeries.rename finOneEquiv (f : MvPowerSeries (Fin 1) R) :=
-  coe_weightedRestrictedSubringOneEquiv f
+      MvPowerSeries.rename finOneEquiv (f : MvPowerSeries (Fin 1) R) := by
+  rw [toRestrictedSubring, RingHom.comp_apply, Subring.coe_inclusion]
+  simp [coe_weightedRestrictedSubringOneEquiv]
 
 private theorem toRestrictedSubring_injective (hr : |r| ≤ 1) :
     Function.Injective (toRestrictedSubring (R := R) hr) := fun _ _ h ↦ by
@@ -131,8 +132,10 @@ private theorem toRestrictedSubring_weightedC (hr : |r| ≤ 1) (a : R) :
     toRestrictedSubring hr
       (weightedC (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight a) =
       (⟨PowerSeries.C a, PowerSeries.isRestricted_C r a⟩ :
-        PowerSeries.IsRestricted.subring (R := R) r) :=
-  Subtype.ext (coe_weightedRestrictedSubringOneEquiv_weightedC a)
+        PowerSeries.IsRestricted.subring (R := R) r) := by
+  apply Subtype.ext
+  rw [toRestrictedSubring, RingHom.comp_apply, Subring.coe_inclusion]
+  exact coe_weightedRestrictedSubringOneEquiv_weightedC a
 
 private theorem toRestrictedSubring_weightedX (hr : |r| ≤ 1) :
     toRestrictedSubring hr
