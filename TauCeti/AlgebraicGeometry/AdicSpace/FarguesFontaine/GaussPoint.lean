@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.FarguesFontaine.Window
 public import TauCeti.RingTheory.WittVector.GaussValuation
 public import Mathlib.Analysis.SpecialFunctions.Log.Base
+import TauCeti.Analysis.SpecialFunctions.Log.Base
 
 /-!
 # Gauss points of `𝒴 = D(p) ∩ D([ϖ])`
@@ -140,15 +141,9 @@ theorem isRadiusLowerBound_gaussPoint_iff_le_logb (hv : v.Integers O) (hρ₀ : 
     (ϖ : O) (hϖ₀ : 0 < v (algebraMap O K ϖ)) (q : ℚ≥0) :
     IsRadiusLowerBound p ϖ q (gaussPoint p hv ρ hρ) ↔
       (q : ℝ) ≤ Real.logb (ρ : ℝ) (v (algebraMap O K ϖ)) := by
-  rw [isRadiusLowerBound_gaussPoint_iff hv hρ ϖ q]
-  rw [← NNReal.coe_le_coe]
+  rw [isRadiusLowerBound_gaussPoint_iff hv hρ ϖ q, ← NNReal.coe_le_coe, NNRat.cast_def]
   push_cast
-  rw [Real.le_logb_iff_rpow_le_of_base_lt_one (by exact_mod_cast hρ₀)
-    (by exact_mod_cast hρ) (by exact_mod_cast hϖ₀)]
-  rw [← Real.rpow_le_rpow_iff (le_of_lt (by exact_mod_cast hϖ₀))
-    (Real.rpow_nonneg (le_of_lt (by exact_mod_cast hρ₀)) _) (Nat.cast_pos.mpr q.den_pos)]
-  rw [← Real.rpow_mul (by exact_mod_cast hρ₀.le)]
-  simp [NNRat.cast_def, Nat.cast_ne_zero.mpr q.den_ne_zero]
+  exact Real.pow_le_pow_iff_div_le_logb_of_base_lt_one hρ₀ hρ hϖ₀ q.den_pos
 
 /-- **The upper radius bound on a Gauss point is a real ratio inequality.** Under the same
 positivity hypotheses, `κ(η_ρ) ≤ q` is equivalent to
@@ -157,14 +152,8 @@ theorem isRadiusUpperBound_gaussPoint_iff_logb_le (hv : v.Integers O) (hρ₀ : 
     (ϖ : O) (hϖ₀ : 0 < v (algebraMap O K ϖ)) (q : ℚ≥0) :
     IsRadiusUpperBound p ϖ q (gaussPoint p hv ρ hρ) ↔
       Real.logb (ρ : ℝ) (v (algebraMap O K ϖ)) ≤ (q : ℝ) := by
-  rw [isRadiusUpperBound_gaussPoint_iff hv hρ ϖ q]
-  rw [← NNReal.coe_le_coe]
+  rw [isRadiusUpperBound_gaussPoint_iff hv hρ ϖ q, ← NNReal.coe_le_coe, NNRat.cast_def]
   push_cast
-  rw [Real.logb_le_iff_le_rpow_of_base_lt_one (by exact_mod_cast hρ₀)
-    (by exact_mod_cast hρ) (by exact_mod_cast hϖ₀)]
-  rw [← Real.rpow_le_rpow_iff (Real.rpow_nonneg (le_of_lt (by exact_mod_cast hρ₀)) _)
-    (le_of_lt (by exact_mod_cast hϖ₀)) (Nat.cast_pos.mpr q.den_pos)]
-  rw [← Real.rpow_mul (by exact_mod_cast hρ₀.le)]
-  simp [NNRat.cast_def, Nat.cast_ne_zero.mpr q.den_ne_zero]
+  exact Real.pow_le_pow_iff_logb_le_div_of_base_lt_one hρ₀ hρ hϖ₀ q.den_pos
 
 end TauCeti.FarguesFontaine
