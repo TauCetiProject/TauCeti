@@ -124,9 +124,9 @@ private theorem coe_toRestrictedSubring (hr : |r| ≤ 1)
   simp [coe_weightedRestrictedSubringOneEquiv]
 
 private theorem toRestrictedSubring_injective (hr : |r| ≤ 1) :
-    Function.Injective (toRestrictedSubring (R := R) hr) := fun _ _ h ↦ by
-  have h' := congrArg Subtype.val h
-  exact weightedRestrictedSubringOneEquiv.injective (Subtype.ext h')
+    Function.Injective (toRestrictedSubring (R := R) hr) := by
+  rw [toRestrictedSubring, RingHom.coe_comp, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom]
+  exact (Subring.inclusion_injective _).comp weightedRestrictedSubringOneEquiv.injective
 
 private theorem toRestrictedSubring_weightedC (hr : |r| ≤ 1) (a : R) :
     toRestrictedSubring hr
