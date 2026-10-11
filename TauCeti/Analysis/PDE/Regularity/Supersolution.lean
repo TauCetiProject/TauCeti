@@ -33,7 +33,7 @@ approached by the functions `t ↦ t / (t² + c²)`: these are convex and noninc
 `[2c, ∞)`, so each `u / (u² + c²)` is a subsolution once `2c ≤ m`, and De Giorgi's local
 boundedness theorem for subsolutions bounds them from above, uniformly in `c`. Letting `c → 0`
 bounds `u⁻¹`. This is the lower bound for positive supersolutions in Moser's proof of the
-Harnack inequality: in dimension `n ≥ 3`, on every ball `B(x₀, R) ⊆ Ω`,
+Harnack inequality: in every dimension `n`, on every ball `B(x₀, R) ⊆ Ω`,
 
 `u⁻¹ ≤ D R^{-n/2} ‖u⁻¹‖_{L²(B(x₀, R))}` almost everywhere on `B(x₀, R/2)`,
 
@@ -46,11 +46,12 @@ bound is an ingredient of Moser's weak Harnack inequality.
 
 * `TauCeti.PDE.UniformlyEllipticOn.energyFormH1_contDiffComp_nonpos`: a convex nonincreasing
   function of a supersolution is a subsolution.
-* `TauCeti.PDE.exists_ae_inv_value_le_mul_rpow_mul_sqrt_setIntegral`: the lower bound
-  `u⁻¹ ≤ D R^{-1/α} ‖u⁻¹‖_{L²(B(x₀, R))}` for positive supersolutions, under a Sobolev inequality
-  with exponent `q > 2` and `α = 1 - 2/q`.
-* `TauCeti.PDE.exists_ae_inv_value_le_mul_rpow_mul_sqrt_setIntegral_of_inv_add_eq_inv`: the
-  scale-invariant lower bound `u⁻¹ ≤ D R^{-n/2} ‖u⁻¹‖_{L²(B(x₀, R))}` in dimension `n ≥ 3`.
+* `TauCeti.PDE.exists_ae_inv_value_le_mul_rpow_mul_rpow_mul_sqrt_setIntegral_of_forall_eLpNorm_le`:
+  the lower bound `u⁻¹ ≤ D S^{1/α} R^{-1/α} ‖u⁻¹‖_{L²(B(x₀, R))}` for positive supersolutions,
+  under a Sobolev inequality `‖v‖_q ≤ S ‖∇v‖₂` on `W^{1,2}_0(B(x₀, R))` with `q > 2` and
+  `α = 1 - 2/q`.
+* `TauCeti.PDE.exists_ae_inv_value_le_mul_rpow_mul_sqrt_setIntegral`: the scale-invariant lower
+  bound `u⁻¹ ≤ D R^{-n/2} ‖u⁻¹‖_{L²(B(x₀, R))}` in every dimension.
 
 ## Implementation notes
 
@@ -397,52 +398,52 @@ private theorem ae_inv_value_le_mul_sqrt_setIntegral
     tendsto_const_nhds.div_atTop (tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds)
   exact le_of_tendsto' (tendsto_invApprox hlim (hm.trans_le hux)) hx
 
-/-- **The lower bound for positive supersolutions.** For every exponent `q > 2` and constant `S`
-there is `D > 0`, depending on `λ`, `Λ`, `q`, `S` (and the normalization of the additive Haar
-measure used), such that the following holds. Let `a` be measurable and uniformly elliptic on
-`Ω` with constants `λ, Λ`, suppose that `‖v‖_q ≤ S ‖∇v‖₂` for every `v ∈ W^{1,2}_0(Ω)`, and let
-`u ∈ H¹(Ω)` be a weak supersolution of `-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0`, that is `a(u, v) ≥ 0` for every
-nonnegative `v ∈ H¹₀(Ω)`, with `u ≥ m > 0` almost everywhere on `Ω`. Then for every ball
-`B(x₀, R) ⊆ Ω`,
+/-- **The lower bound for positive supersolutions under a Sobolev inequality.** Fix ellipticity
+constants `λ, Λ` and an exponent `q > 2`, and let `α = 1 - 2/q`. There is `D > 0`, depending only
+on these (and the dimension), such that the following holds. Let `a` be measurable and uniformly
+elliptic on `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak supersolution of
+`-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`, with `u ≥ m > 0`
+almost everywhere on `Ω`. If `B(x₀, R) ⊆ Ω` and `‖v‖_q ≤ S ‖∇v‖₂` for every
+`v ∈ W^{1,2}_0(B(x₀, R))`, then
 
-`u⁻¹ ≤ D R^{-1/α} (∫_{B(x₀, R)} u⁻²)^{1/2}` almost everywhere on `B(x₀, R/2)`,
+`u⁻¹ ≤ D S^{1/α} R^{-1/α} (∫_{B(x₀, R)} u⁻²)^{1/2}` almost everywhere on `B(x₀, R/2)`.
 
-where `α = 1 - 2/q`. The constant does not depend on `m`. -/
-theorem exists_ae_inv_value_le_mul_rpow_mul_sqrt_setIntegral {q : ℝ≥0∞} (hq : 2 < q) (S : ℝ≥0) :
-    ∃ D : ℝ, 0 < D ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
+The constant does not depend on `m` or on `S`. -/
+theorem exists_ae_inv_value_le_mul_rpow_mul_rpow_mul_sqrt_setIntegral_of_forall_eLpNorm_le
+    {q : ℝ≥0∞} (hq : 2 < q) :
+    ∃ D : ℝ, 0 < D ∧ ∀ {S : ℝ≥0} {Omega : Opens (EuclideanSpace ℝ ι)}
       {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2} {m : ℝ}
-      {x₀ : EuclideanSpace ℝ ι} {R : ℝ},
+      {x₀ : EuclideanSpace ℝ ι} {R : ℝ}, 0 < S →
       UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
       AEStronglyMeasurable a (mu.restrict Omega) →
-      (∀ v ∈ w1p0Submodule mu Omega 2,
-        eLpNorm (W1p.value v) q (mu.restrict Omega) ≤ S * ‖W1p.gradient v‖ₑ) →
       (∀ v : W1p0 mu Omega 2,
         (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
           0 ≤ energyFormH1 a 0 0 u (v : W1p mu Omega 2)) →
       0 < m → (∀ᵐ x ∂mu.restrict Omega, m ≤ W1p.value u x) →
       0 < R → ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      (∀ v ∈ w1p0Submodule mu ⟨ball x₀ R, isOpen_ball⟩ 2,
+        eLpNorm (W1p.value v) q (mu.restrict (ball x₀ R)) ≤ S * ‖W1p.gradient v‖ₑ) →
       ∀ᵐ x ∂mu.restrict (ball x₀ (R / 2)),
-        (W1p.value u x)⁻¹ ≤ D * R ^ (-(1 - 2 / q.toReal)⁻¹) *
+        (W1p.value u x)⁻¹ ≤ D * (S : ℝ) ^ (1 - 2 / q.toReal)⁻¹ * R ^ (-(1 - 2 / q.toReal)⁻¹) *
           √(∫ x in ball x₀ R, (W1p.value u x)⁻¹ ^ 2 ∂mu) := by
-  obtain ⟨D, hD, hbound⟩ := exists_ae_value_le_add_mul_rpow_mul_sqrt_setIntegral (mu := mu)
-    (lam := lam) (Lam := Lam) hq S
-  exact ⟨D, hD, fun h ha hS hu hm hum hR hball =>
+  obtain ⟨D, hD, hbound⟩ :=
+    exists_ae_value_le_add_mul_rpow_mul_rpow_mul_sqrt_setIntegral_of_forall_eLpNorm_le (mu := mu)
+      (lam := lam) (Lam := Lam) hq
+  exact ⟨D, hD, fun hS0 h ha hu hm hum hR hball hS =>
     ae_inv_value_le_mul_sqrt_setIntegral h ha hu hm hum hR hball (by positivity)
-      fun _ hw => hbound (k := 0) h ha hS hw hR hball⟩
+      fun _ hw => hbound (k := 0) hS0 h ha hw hR hball hS⟩
 
-/-- **The lower bound for positive supersolutions in dimension `n ≥ 3`.** Let `2*` be the Sobolev
-exponent of `W^{1,2}` in dimension `n`, so that `1/2* + 1/n = 1/2` and `2* < ∞` (this forces
-`n ≥ 3`). There is `D > 0`, depending on `λ`, `Λ`, the dimension and the normalization of the
-additive Haar measure `mu`, such that for every measurable, uniformly elliptic `a` on `Ω` with
-constants `λ, Λ`, every weak supersolution `u ∈ H¹(Ω)` of `-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0` with `u ≥ m > 0`
-almost everywhere on `Ω`, and every ball `B(x₀, R) ⊆ Ω`,
+/-- **The lower bound for positive supersolutions.** In every dimension `n ≥ 1` there is `D > 0`,
+depending on `λ`, `Λ`, the dimension and the normalization of the additive Haar measure `mu`, such
+that for every measurable, uniformly elliptic `a` on `Ω` with constants `λ, Λ`, every weak
+supersolution `u ∈ H¹(Ω)` of `-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0` with `u ≥ m > 0` almost everywhere on `Ω`, and
+every ball `B(x₀, R) ⊆ Ω`,
 
 `u⁻¹ ≤ D R^{-n/2} (∫_{B(x₀, R)} u⁻²)^{1/2}` almost everywhere on `B(x₀, R/2)`.
 
 So `u` is bounded below on `B(x₀, R/2)` by `D⁻¹ R^{n/2} ‖u⁻¹‖_{L²(B(x₀, R))}⁻¹`. The constant does
 not depend on `m`, on `Ω`, or on the size of `u`. -/
-theorem exists_ae_inv_value_le_mul_rpow_mul_sqrt_setIntegral_of_inv_add_eq_inv {pstar : ℝ≥0∞}
-    (hpstar : pstar ≠ (∞ : ℝ≥0∞)) (hexp : pstar⁻¹ + (Fintype.card ι : ℝ≥0∞)⁻¹ = 2⁻¹) :
+theorem exists_ae_inv_value_le_mul_rpow_mul_sqrt_setIntegral [Nonempty ι] :
     ∃ D : ℝ, 0 < D ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
       {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2} {m : ℝ}
       {x₀ : EuclideanSpace ℝ ι} {R : ℝ},
@@ -456,9 +457,8 @@ theorem exists_ae_inv_value_le_mul_rpow_mul_sqrt_setIntegral_of_inv_add_eq_inv {
       ∀ᵐ x ∂mu.restrict (ball x₀ (R / 2)),
         (W1p.value u x)⁻¹ ≤ D * R ^ (-(Fintype.card ι : ℝ) / 2) *
           √(∫ x in ball x₀ R, (W1p.value u x)⁻¹ ^ 2 ∂mu) := by
-  obtain ⟨D, hD, hbound⟩ :=
-    exists_ae_value_le_add_mul_rpow_mul_sqrt_setIntegral_of_inv_add_eq_inv (mu := mu)
-      (lam := lam) (Lam := Lam) hpstar hexp
+  obtain ⟨D, hD, hbound⟩ := exists_ae_value_le_add_mul_rpow_mul_sqrt_setIntegral (mu := mu)
+    (lam := lam) (Lam := Lam)
   exact ⟨D, hD, fun h ha hu hm hum hR hball =>
     ae_inv_value_le_mul_sqrt_setIntegral h ha hu hm hum hR hball (by positivity)
       fun _ hw => hbound (k := 0) h ha hw hR hball⟩

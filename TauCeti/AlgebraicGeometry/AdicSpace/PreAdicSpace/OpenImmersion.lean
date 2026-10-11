@@ -35,6 +35,9 @@ promoted to `𝒱^pre` by `TauCeti.PreAdicSpace.Hom.ofFac`.
   have isomorphic sources.
 * `TauCeti.PreAdicSpace.IsOpenImmersion.isoRestrict`: an open immersion identifies its source
   with the restriction of its target to its image.
+* `TauCeti.PreAdicSpace.Hom.restrictPreimage`: a morphism restricted over an open of its target.
+* `TauCeti.PreAdicSpace.restrictRestrictIso`: restricting a restriction is restricting to the
+  image.
 
 The design follows `AlgebraicGeometry.LocallyRingedSpace.IsOpenImmersion`.
 
@@ -172,6 +175,93 @@ theorem isoRestrict_inv_comp : (isoRestrict f).inv ≫ f = Y.ofRestrict f.isOpen
 end IsoRestrict
 
 end IsOpenImmersion
+
+section Restrict
+
+variable {U : TopCat.{u}} (X : PreAdicSpace.{u}) {f : U ⟶ X.toTopCat} (h : IsOpenEmbedding f)
+
+-- Both bases are the inclusion of a subtype followed by `f`, so a point lies in either range
+-- exactly when it is the image of a point of `V`. The identifications of the two bases with
+-- `f ∘ Subtype.val` are the `rfl`-lemmas `comp_base` and `ofRestrict_base`, which cannot be
+-- rewritten inside `Set.range`: the source of the right-hand side of `ofRestrict_base` is the open
+-- `(Opens.toTopCat _).obj V`, while the source of the left-hand side is the carrier of a
+-- restriction, which unfolds to it only at default transparency, so the rewritten composite is
+-- ill-typed for `rw`. The two sets are compared pointwise instead.
+private theorem range_ofRestrict_comp_ofRestrict_base (V : Opens (X.restrict h)) :
+    Set.range ((X.restrict h).ofRestrict V.isOpenEmbedding ≫ X.ofRestrict h).base =
+      Set.range (X.ofRestrict (h.isOpenMap.functor.obj V).isOpenEmbedding).base := by
+  ext y
+  constructor
+  · rintro ⟨⟨v, hv⟩, rfl⟩
+    exact ⟨⟨f v, v, hv, rfl⟩, rfl⟩
+  · rintro ⟨⟨_, v, hv, rfl⟩, rfl⟩
+    exact ⟨⟨v, hv⟩, rfl⟩
+
+/-- Restricting a restriction is restricting to the image: `X` restricted to `U` and then to an
+open `V` of `U` is isomorphic in `𝒱^pre` to `X` restricted to the image of `V` in `X`, both being
+open subspaces of `X` with the same image. The isomorphism is compatible with the canonical
+morphisms to `X` (`restrictRestrictIso_hom_ofRestrict`). -/
+noncomputable def restrictRestrictIso (V : Opens (X.restrict h)) :
+    (X.restrict h).restrict V.isOpenEmbedding ≅
+      X.restrict (h.isOpenMap.functor.obj V).isOpenEmbedding :=
+  IsOpenImmersion.isoOfRangeEq ((X.restrict h).ofRestrict V.isOpenEmbedding ≫ X.ofRestrict h)
+    (X.ofRestrict (h.isOpenMap.functor.obj V).isOpenEmbedding)
+    (range_ofRestrict_comp_ofRestrict_base X h V)
+
+@[reassoc (attr := simp)]
+theorem restrictRestrictIso_hom_ofRestrict (V : Opens (X.restrict h)) :
+    (restrictRestrictIso X h V).hom ≫ X.ofRestrict (h.isOpenMap.functor.obj V).isOpenEmbedding =
+      (X.restrict h).ofRestrict V.isOpenEmbedding ≫ X.ofRestrict h :=
+  IsOpenImmersion.isoOfRangeEq_hom_comp _ _ _
+
+/-- The inverse nested-restriction isomorphism commutes with the canonical morphisms to `X`. -/
+@[reassoc (attr := simp)]
+theorem restrictRestrictIso_inv_ofRestrict (V : Opens (X.restrict h)) :
+    (restrictRestrictIso X h V).inv ≫ (X.restrict h).ofRestrict V.isOpenEmbedding ≫
+      X.ofRestrict h = X.ofRestrict (h.isOpenMap.functor.obj V).isOpenEmbedding :=
+  IsOpenImmersion.isoOfRangeEq_inv_comp _ _ _
+
+end Restrict
+
+namespace Hom
+
+variable (f : X ⟶ Y) (V : Opens Y)
+
+/-- Restrict a morphism over an open of its target: `f⁻¹(V) → V`, with the restricted pre-adic
+structures. It is the unique morphism commuting with the inclusions into `X` and `Y`. -/
+noncomputable def restrictPreimage :
+    X.restrict ((Opens.map f.base).obj V).isOpenEmbedding ⟶ Y.restrict V.isOpenEmbedding :=
+  IsOpenImmersion.lift (Y.ofRestrict V.isOpenEmbedding)
+    (X.ofRestrict ((Opens.map f.base).obj V).isOpenEmbedding ≫ f)
+    (by rintro _ ⟨x, rfl⟩; exact ⟨⟨f.base x.1, Opens.mem_map.mp x.2⟩, rfl⟩)
+
+/-- The restriction of a morphism commutes with the inclusions of the open subspaces. -/
+@[reassoc (attr := simp)]
+theorem restrictPreimage_ofRestrict :
+    f.restrictPreimage V ≫ Y.ofRestrict V.isOpenEmbedding =
+      X.ofRestrict ((Opens.map f.base).obj V).isOpenEmbedding ≫ f := by
+  unfold restrictPreimage
+  exact IsOpenImmersion.lift_fac _ _ _
+
+/-- Any morphism between the restricted spaces that commutes with their inclusions is the
+restriction of the original morphism. -/
+theorem restrictPreimage_uniq
+    (g : X.restrict ((Opens.map f.base).obj V).isOpenEmbedding ⟶ Y.restrict V.isOpenEmbedding)
+    (hg : g ≫ Y.ofRestrict V.isOpenEmbedding =
+      X.ofRestrict ((Opens.map f.base).obj V).isOpenEmbedding ≫ f) :
+    g = f.restrictPreimage V := by
+  unfold restrictPreimage
+  exact IsOpenImmersion.lift_uniq _ _ _ g hg
+
+/-- On points, the restricted morphism is the original map with codomain restricted to `V`. -/
+@[simp]
+theorem restrictPreimage_base_apply
+    (x : X.restrict ((Opens.map f.base).obj V).isOpenEmbedding) :
+    (f.restrictPreimage V).base x = ⟨f.base x.1, Opens.mem_map.mp x.2⟩ := by
+  apply Subtype.ext
+  exact congrArg (fun g ↦ g.base x) (f.restrictPreimage_ofRestrict V)
+
+end Hom
 
 end PreAdicSpace
 
