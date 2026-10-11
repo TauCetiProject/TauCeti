@@ -45,17 +45,6 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable {K : Type*} [Field K]
 
-private theorem lie_typeBDifferenceRootGenerator_chain
-    {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (i j k : ι) (hij : i ≠ j) (hjk : j ≠ k) (hik : i ≠ k) :
-    ⁅typeBDifferenceRootGenerator (K := K) i j hij,
-      typeBDifferenceRootGenerator (K := K) j k hjk⁆ =
-        typeBDifferenceRootGenerator (K := K) i k hik := by
-  apply Subtype.ext
-  simpa only [LieSubalgebra.coe_bracket, coe_typeBDifferenceRootGenerator] using
-    typeBDifferenceRootMatrix_lie_differenceRootMatrix_chain
-      (K := K) i j j k hij hjk rfl hik
-
 private theorem differenceRootGenerator_mem_lieSpan_of_lt
     (n : ℕ) (i j : Fin (n + 1)) (hij : i < j) :
     typeBDifferenceRootGenerator (K := K) i j (ne_of_lt hij) ∈
@@ -91,7 +80,7 @@ private theorem differenceRootGenerator_mem_lieSpan_of_lt
       rw [typeBSimpleRootGenerator_castSucc] at ha
       simpa only [hai, hak] using ha
     have hj := differenceRootGenerator_mem_lieSpan_of_lt n k j hkj
-    rw [← lie_typeBDifferenceRootGenerator_chain i k j
+    rw [← typeBDifferenceRootGenerator_lie_chain i k j
       (ne_of_lt hik) (ne_of_lt hkj) (ne_of_lt hij)]
     exact S.lie_mem hi hj
 termination_by (j : ℕ) - (i : ℕ)
@@ -132,7 +121,7 @@ private theorem reverseDifferenceRootGenerator_mem_lieSpan_of_lt
         LieSubalgebra.subset_lieSpan (Or.inr (Set.mem_range_self a.castSucc))
       rw [typeBSimpleNegativeRootGenerator_castSucc] at ha
       simpa only [hai, hak] using ha
-    rw [← lie_typeBDifferenceRootGenerator_chain j k i
+    rw [← typeBDifferenceRootGenerator_lie_chain j k i
       (ne_of_gt hkj) (ne_of_gt hik) (ne_of_gt hij)]
     exact S.lie_mem hj hi
 termination_by (j : ℕ) - (i : ℕ)
