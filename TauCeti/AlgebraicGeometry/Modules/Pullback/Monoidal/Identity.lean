@@ -42,6 +42,8 @@ theorem pullback_id_η (X : Scheme.{u}) :
     η (pullback (𝟙 X)) = (pullbackId X).hom.app (𝟙_ (QuasicoherentSheaf X)) := by
   apply ObjectProperty.hom_ext
   rw [pullback_η_hom, pullbackId_hom_app_hom, Scheme.Modules.pullbackObjUnitIso_id]
+  -- The full-subcategory unit has underlying module `𝟙_ X.Modules`; its object
+  -- identification is therefore the same `eqToHom`, by proof irrelevance.
   rfl
 
 /-- The inverse tensor comparison of identity pullback is compatible with the canonical
@@ -51,10 +53,6 @@ theorem pullback_id_δ (X : Scheme.{u}) (E F : QuasicoherentSheaf X) :
     δ (pullback (𝟙 X)) E F ≫
         ((pullbackId X).hom.app E ⊗ₘ (pullbackId X).hom.app F) =
       (pullbackId X).hom.app (E ⊗ F) := by
-  -- Instance search does not unfold `Scheme.Modules` when the full-subcategory API exposes
-  -- its underlying sheaf type. Use the same monoidal structure locally at that type.
-  let : MonoidalCategory (_root_.SheafOfModules X.ringCatSheaf) :=
-    Scheme.Modules.instMonoidalCategory X
   apply ObjectProperty.hom_ext
   -- Read full-subcategory composition and tensor on the underlying modules. This avoids
   -- mixing the category instances for `X.Modules` and its unfolded sheaf type during rewriting.
@@ -62,24 +60,19 @@ theorem pullback_id_δ (X : Scheme.{u}) (E F : QuasicoherentSheaf X) :
       (tensorHom (C := X.Modules) ((pullbackId X).hom.app E).hom
         ((pullbackId X).hom.app F).hom) =
     ((pullbackId X).hom.app (E ⊗ F)).hom
-  erw [pullback_δ_hom, pullbackId_hom_app_hom, pullbackId_hom_app_hom,
+  rw [pullback_δ_hom, pullbackId_hom_app_hom, pullbackId_hom_app_hom,
     pullbackId_hom_app_hom]
   let eE := eqToIso (C := X.Modules) (pullback_obj_obj (𝟙 X) E)
   let eF := eqToIso (C := X.Modules) (pullback_obj_obj (𝟙 X) F)
-  let p := eqToHom (C := X.Modules) (pullback_obj_obj (𝟙 X) (E ⊗ F))
-  let a := (Scheme.Modules.pullbackId X).hom.app E.obj
-  let b := (Scheme.Modules.pullbackId X).hom.app F.obj
-  have ht : (eE.inv ⊗ₘ eF.inv) ≫ ((eE.hom ≫ a) ⊗ₘ (eF.hom ≫ b)) = a ⊗ₘ b :=
-    (congrArg ((eE.inv ⊗ₘ eF.inv) ≫ ·)
-      (tensorHom_comp_tensorHom eE.hom eF.hom a b).symm).trans
-        ((tensorIso eE eF).inv_hom_id_assoc (a ⊗ₘ b))
-  calc
-    _ = p ≫ δ (Scheme.Modules.pullback (𝟙 X)) E.obj F.obj ≫
-        (eE.inv ⊗ₘ eF.inv) ≫ ((eE.hom ≫ a) ⊗ₘ (eF.hom ≫ b)) :=
-      (Category.assoc _ _ _).trans (congrArg (p ≫ ·) (Category.assoc _ _ _))
-    _ = p ≫ δ (Scheme.Modules.pullback (𝟙 X)) E.obj F.obj ≫ (a ⊗ₘ b) :=
-      congrArg (p ≫ δ (Scheme.Modules.pullback (𝟙 X)) E.obj F.obj ≫ ·) ht
-    _ = _ := congrArg (p ≫ ·) (Scheme.Modules.pullback_id_δ X E.obj F.obj)
+  -- `erw` unfolds `Scheme.Modules` and the site underlying `X.ringCatSheaf` to
+  -- identify the module-category instances with those exposed by the subcategory.
+  erw [Category.assoc, Category.assoc,
+    ← tensorHom_comp_tensorHom eE.hom eF.hom
+      ((Scheme.Modules.pullbackId X).hom.app E.obj)
+      ((Scheme.Modules.pullbackId X).hom.app F.obj),
+    (tensorIso eE eF).inv_hom_id_assoc, Scheme.Modules.pullback_id_δ]
+  -- The underlying module of the full-subcategory tensor `E ⊗ F` is `E.obj ⊗ F.obj`.
+  rfl
 
 /-- The identity isomorphism of quasicoherent pullback is monoidal. -/
 instance isMonoidal_pullbackId_hom (X : Scheme.{u}) :
