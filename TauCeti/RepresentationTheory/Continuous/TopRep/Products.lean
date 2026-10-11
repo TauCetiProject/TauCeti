@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Continuous.TopRep
 public import Mathlib.CategoryTheory.Limits.Shapes.Products
+public import Mathlib.CategoryTheory.Action.Limits
 
 /-!
 # Products of topological representations
@@ -28,8 +29,7 @@ variable {R : Type u} [Ring R] [TopologicalSpace R]
 variable {G : Type v} [Monoid G]
 
 /-- The pointwise product representation, with the product topology on its underlying module. -/
-@[expose]
-def pi {ι : Type w} (X : ι → TopRep R G) : TopRep R G :=
+@[expose] def pi {ι : Type w} (X : ι → TopRep R G) : TopRep R G :=
   let ρ : ContRepresentation R G (∀ i, (X i).V) := {
     toMonoidHom := {
       toFun g := ContinuousLinearMap.pi fun i =>
@@ -43,6 +43,11 @@ def pi {ι : Type w} (X : ι → TopRep R G) : TopRep R G :=
     }
   }
   TopRep.of ρ
+
+/-- The underlying module of a pointwise product is the pointwise product of the underlying
+modules. -/
+@[simp] theorem pi_V {ι : Type w} (X : ι → TopRep R G) :
+    (pi X).V = ∀ i, (X i).V := rfl
 
 /-- The action on a product representation is pointwise. -/
 @[simp]
@@ -97,6 +102,13 @@ theorem piLift_comp_piπ {ι : Type w} {A : TopRep R G} (X : ι → TopRep R G)
 @[expose] def piFan {ι : Type w} (X : ι → TopRep R G) : Fan X :=
   Fan.mk (pi X) (piπ X)
 
+/-- The cone point of the pointwise product fan is the pointwise product representation. -/
+@[simp] theorem piFan_pt {ι : Type w} (X : ι → TopRep R G) : (piFan X).pt = pi X := rfl
+
+/-- The projections of the pointwise product fan are the product projections. -/
+@[simp] theorem piFan_proj {ι : Type w} (X : ι → TopRep R G) (i : ι) :
+    (piFan X).proj i = piπ X i := rfl
+
 /-- The pointwise product fan is a limit. -/
 def piFanIsLimit {ι : Type w} (X : ι → TopRep R G) : IsLimit (piFan X) :=
   Fan.IsLimit.mk _ (fun s => piLift X s.proj)
@@ -104,16 +116,32 @@ def piFanIsLimit {ι : Type w} (X : ι → TopRep R G) : IsLimit (piFan X) :=
     (fun s _ hm => pi_hom_ext X (fun i => (hm i).trans
       (piLift_comp_piπ X s.proj i).symm))
 
-/-- Topological representations admit products indexed by types in their universe. -/
-instance : HasProducts.{w} (TopRep.{w} R G) := fun _ =>
-  { has_limit F := HasLimit.mk
-      ⟨(Cone.postcompose Discrete.natIsoFunctor.inv).obj
-        (piFan fun i => F.obj ⟨i⟩),
-        (IsLimit.postcomposeInvEquiv _ _).symm
-          (piFanIsLimit fun i => F.obj ⟨i⟩)⟩ }
+/-- Topological representations admit all limits, by equivalence with continuous actions on
+topological modules. -/
+instance : HasLimits (TopRep.{w} R G) :=
+  Adjunction.has_limits_of_equivalence (TopRep.toActionTopModFunc (k := R) (G := G))
 
-/-- Topological representations admit finite categorical products. -/
-instance : HasFiniteProducts (TopRep.{w} R G) :=
-  hasFiniteProducts_of_hasProducts.{w} _
+/-- The categorical product is isomorphic to the pointwise product representation. -/
+noncomputable def piIsoPi {ι : Type w} (X : ι → TopRep R G) : ∏ᶜ X ≅ pi X :=
+  { hom := piLift X fun i => Pi.π X i
+    inv := Pi.lift (piπ X)
+    hom_inv_id := by
+      apply Pi.hom_ext
+      intro i
+      simp
+    inv_hom_id := by
+      apply pi_hom_ext
+      intro i
+      simp }
+
+/-- The comparison from the categorical product commutes with each pointwise projection. -/
+@[simp] theorem piIsoPi_hom_piπ {ι : Type w} (X : ι → TopRep R G) (i : ι) :
+    (piIsoPi X).hom ≫ piπ X i = Pi.π X i := by
+  simp [piIsoPi]
+
+/-- The inverse comparison commutes with each categorical product projection. -/
+@[simp] theorem piIsoPi_inv_π {ι : Type w} (X : ι → TopRep R G) (i : ι) :
+    (piIsoPi X).inv ≫ Pi.π X i = piπ X i := by
+  simp [piIsoPi]
 
 end TopRep

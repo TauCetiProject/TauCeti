@@ -308,6 +308,15 @@ lemma IsSmoothDiscrete.of_injective {X Y : TopRep R G} (f : X ⟶ Y)
   rw [hstab]
   exact hY.stabilizer_isOpen _
 
+/-- Smooth discreteness is preserved by isomorphisms of topological representations. -/
+instance : ObjectProperty.IsClosedUnderIsomorphisms
+    (fun X : TopRep.{w} R G => IsSmoothDiscrete R X) where
+  of_iso e hX := by
+    refine IsSmoothDiscrete.of_injective e.inv ?_ hX
+    intro x y h
+    have hh := congrArg (fun z => e.hom.hom z) h
+    simpa using hh
+
 omit [TopologicalSpace G] in
 /-- A discrete object is the image of its own underlying module under the dictionary; openness of
 the stabilizers plays no part, and a smooth discrete object supplies the discreteness through
