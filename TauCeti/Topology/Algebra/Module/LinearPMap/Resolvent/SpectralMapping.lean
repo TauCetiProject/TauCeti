@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Basic
+public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Shift
 public import Mathlib.Tactic.Module
 
 /-!
@@ -55,25 +55,13 @@ theorem isResolventAt_of_isUnit_one_sub_smul_resolvent (hz : z ∈ A.resolventSe
   have hBR : B * A.resolvent z = (z - w) • A.resolvent z := by
     simp [B]
   have hp := B.isResolventAt_vadd_of_isUnit_one_sub_mul_resolvent hz (hBR ▸ h)
-  simp only [hBR] at hp
-  refine ⟨hp.mem_domain, fun y => ?_, fun x => ?_⟩
-  · calc
-      w • _ - A ⟨_, hp.mem_domain y⟩ =
-          z • _ - ((B : X →ₗ[𝕜] X) +ᵥ A) ⟨_, hp.mem_domain y⟩ := by
-            rw [LinearPMap.vadd_apply]
-            simp only [B, ContinuousLinearMap.coe_coe, smul_apply, one_apply_eq_self]
-            module
-      _ = y := hp.smul_sub_apply y
-  · calc
-      (A.resolvent z * Ring.inverse (1 - (z - w) • A.resolvent z))
-          (w • (x : X) - A x) =
-        (A.resolvent z * Ring.inverse (1 - (z - w) • A.resolvent z))
-          (z • (x : X) - ((B : X →ₗ[𝕜] X) +ᵥ A) x) := by
-            congr 1
-            rw [LinearPMap.vadd_apply]
-            simp only [B, ContinuousLinearMap.coe_coe, smul_apply, one_apply_eq_self]
-            module
-      _ = (x : X) := hp.apply_smul_sub x
+  have hshift : ((B : X →ₗ[𝕜] X) +ᵥ A) = subScalar A (w - z) := by
+    refine _root_.LinearPMap.ext (by simp) fun x hx hy => ?_
+    rw [LinearPMap.vadd_apply, subScalar_apply]
+    simp only [B, ContinuousLinearMap.coe_coe, smul_apply, one_apply_eq_self]
+    module
+  simp only [hBR, hshift] at hp
+  simpa only [add_sub, add_sub_cancel_left] using isResolventAt_subScalar_iff.mp hp
 
 /-- The exact invertibility criterion for changing a resolvent parameter. -/
 theorem mem_resolventSet_iff_isUnit_one_sub_smul_resolvent (hz : z ∈ A.resolventSet) :
