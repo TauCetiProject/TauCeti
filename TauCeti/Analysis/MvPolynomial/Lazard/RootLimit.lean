@@ -30,11 +30,11 @@ public section
 
 open Filter Finsupp Polynomial Topology
 
-namespace TauCeti
-
 open MvPolynomial
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n : ℕ}
+
+namespace MvPolynomial
 
 /-- A finite limit of roots in `T` of the polynomial restricted to a monomial curve is a root
 of the Lazard evaluation at the center. The weights must separate the removed exponent from
@@ -73,7 +73,7 @@ theorem isRoot_lazardEval_of_tendsto_monomialCurve
       (𝓝[≠] 0) (𝓝 (R.evalEval z 0)) := by
     have hpair : Tendsto (fun y ↦ (r y, y)) (𝓝[≠] (0 : 𝕜)) (𝓝 (z, 0)) := by
       simpa only [nhds_prod_eq, id_eq] using hr.prodMk hy
-    exact ((TauCeti.Polynomial.continuous_evalEval R).tendsto (z, 0)).comp hpair
+    exact ((Polynomial.continuous_evalEval R).tendsto (z, 0)).comp hpair
   have hlim' : Tendsto (fun y ↦ q.eval (r y) +
       y * (R.eval (Polynomial.C y)).eval (r y)) (𝓝[≠] 0) (𝓝 (q.eval z)) := by
     simpa using ((q.continuousAt.tendsto.comp hr).add (hy.mul hRlim))
@@ -82,4 +82,4 @@ theorem isRoot_lazardEval_of_tendsto_monomialCurve
   have hcoeff := coeff_taylor_lazardExponent p (Polynomial.C ∘ a)
   simpa only [Polynomial.IsRoot, q, v, hcoeff] using hzero0
 
-end TauCeti
+end MvPolynomial

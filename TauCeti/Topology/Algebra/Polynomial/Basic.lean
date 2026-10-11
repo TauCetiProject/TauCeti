@@ -32,15 +32,13 @@ coefficients with powers of `t`.
 * `Polynomial.continuousAt_coeff_prod`: coefficients of a finite product of families.
 * `Polynomial.continuous_eval_of_continuous_coeff`: joint continuity of the evaluation of a family
   of bounded degree.
-* `TauCeti.Polynomial.continuous_evalEval`: joint continuity of bivariate polynomial evaluation.
+* `Polynomial.continuous_evalEval`: joint continuity of bivariate polynomial evaluation.
 -/
 
 public section
 
 open Filter Topology
 open scoped Polynomial.Bivariate
-
-namespace TauCeti
 
 namespace Polynomial
 
@@ -58,8 +56,6 @@ theorem continuous_evalEval {R : Type*} [CommSemiring R] [TopologicalSpace R]
     ((P.coeff j).continuous.comp continuous_fst).mul (continuous_snd.pow j)
 
 end Polynomial
-
-end TauCeti
 
 namespace Polynomial
 
