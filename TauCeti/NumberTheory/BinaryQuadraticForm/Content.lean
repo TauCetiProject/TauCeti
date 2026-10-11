@@ -28,51 +28,6 @@ open scoped MatrixGroups
 
 namespace TauCeti.BinaryQuadraticForm
 
-section CommRing
-
-variable {R : Type*} [CommRing R]
-
-/-- Multiply every coefficient of a binary quadratic form by a scalar. -/
-def scale (f : BinaryQuadraticForm R) (r : R) : BinaryQuadraticForm R :=
-  ⟨r * f.a, r * f.b, r * f.c⟩
-
-/-- The leading coefficient of a scaled form. -/
-@[simp] theorem scale_a (f : BinaryQuadraticForm R) (r : R) : (f.scale r).a = r * f.a := (rfl)
-
-/-- The middle coefficient of a scaled form. -/
-@[simp] theorem scale_b (f : BinaryQuadraticForm R) (r : R) : (f.scale r).b = r * f.b := (rfl)
-
-/-- The last coefficient of a scaled form. -/
-@[simp] theorem scale_c (f : BinaryQuadraticForm R) (r : R) : (f.scale r).c = r * f.c := (rfl)
-
-/-- Scaling a form multiplies each represented value by the scalar. -/
-@[simp] theorem eval_scale (f : BinaryQuadraticForm R) (r x y : R) :
-    (f.scale r).eval x y = r * f.eval x y := by
-  simp only [eval_def, scale_a, scale_b, scale_c]
-  ring
-
-/-- Scaling a form multiplies its discriminant by the square of the scalar. -/
-@[simp] theorem discrim_scale (f : BinaryQuadraticForm R) (r : R) :
-    (f.scale r).discrim = r ^ 2 * f.discrim := by
-  simp only [discrim_def, discrim, scale_a, scale_b, scale_c]
-  ring
-
-/-- Scaling the coefficients commutes with a proper change of variables. -/
-theorem scale_smul (f : BinaryQuadraticForm R) (r : R) (γ : Matrix.SpecialLinearGroup (Fin 2) R) :
-    (γ • f).scale r = γ • f.scale r := by
-  ext <;> simp only [scale_a, scale_b, scale_c, smul_a, smul_b, smul_c] <;> ring
-
-/-- Scaling by a nonzero scalar is injective over a domain. -/
-theorem scale_injective [IsDomain R] {r : R} (hr : r ≠ 0) :
-    Function.Injective (fun f : BinaryQuadraticForm R ↦ f.scale r) := by
-  intro f g h
-  ext
-  · exact mul_left_cancel₀ hr (congrArg BinaryQuadraticForm.a h)
-  · exact mul_left_cancel₀ hr (congrArg BinaryQuadraticForm.b h)
-  · exact mul_left_cancel₀ hr (congrArg BinaryQuadraticForm.c h)
-
-end CommRing
-
 /-- The nonnegative gcd of the three coefficients of an integral binary quadratic form. -/
 def content (f : BinaryQuadraticForm ℤ) : ℕ :=
   Int.gcd f.a (Int.gcd f.b f.c)
@@ -80,6 +35,10 @@ def content (f : BinaryQuadraticForm ℤ) : ℕ :=
 /-- The content is the gcd of the leading coefficient and the gcd of the other two. -/
 theorem content_def (f : BinaryQuadraticForm ℤ) :
     f.content = Int.gcd f.a (Int.gcd f.b f.c) := (rfl)
+
+/-- The zero form has content zero. -/
+@[simp] theorem content_zero : (0 : BinaryQuadraticForm ℤ).content = 0 := by
+  simp [content_def]
 
 /-- An integral binary quadratic form is primitive when its coefficients have gcd one. -/
 def IsPrimitive (f : BinaryQuadraticForm ℤ) : Prop := f.content = 1
@@ -106,57 +65,128 @@ theorem content_dvd_c (f : BinaryQuadraticForm ℤ) : (f.content : ℤ) ∣ f.c 
 
 /-- Content zero occurs exactly for the form with all coefficients zero. -/
 @[simp] theorem content_eq_zero_iff (f : BinaryQuadraticForm ℤ) :
-    f.content = 0 ↔ f = ⟨0, 0, 0⟩ := by
+    f.content = 0 ↔ f = 0 := by
   simp [content_def, BinaryQuadraticForm.ext_iff]
 
 /-- Every nonzero binary quadratic form has positive content. -/
 theorem content_pos_iff (f : BinaryQuadraticForm ℤ) :
-    0 < f.content ↔ f ≠ ⟨0, 0, 0⟩ := by
+    0 < f.content ↔ f ≠ 0 := by
   simp [Nat.pos_iff_ne_zero]
 
 /-- The content of a scalar multiple is the absolute scalar times the original content. -/
-@[simp] theorem content_scale (f : BinaryQuadraticForm ℤ) (r : ℤ) :
-    (f.scale r).content = r.natAbs * f.content := by
-  simp only [content_def, scale_a, scale_b, scale_c, Int.gcd_eq_natAbs_gcd_natAbs,
+@[simp] theorem content_smul' (f : BinaryQuadraticForm ℤ) (r : ℤ) :
+    (r • f).content = r.natAbs * f.content := by
+  simp only [content_def, smul_a', smul_b', smul_c', smul_eq_mul, Int.gcd_eq_natAbs_gcd_natAbs,
     Int.natAbs_mul, Int.natAbs_natCast, Nat.gcd_mul_left]
 
+/-- Natural scalar multiplication multiplies the content by that scalar. -/
+@[simp] theorem content_nsmul (f : BinaryQuadraticForm ℤ) (n : ℕ) :
+    (n • f).content = n * f.content := by
+  simpa only [natCast_zsmul, Int.natAbs_natCast] using content_smul' f (n : ℤ)
+
+/-- Negation preserves the content. -/
+@[simp] theorem content_neg (f : BinaryQuadraticForm ℤ) : (-f).content = f.content := by
+  simpa only [neg_one_smul, Int.natAbs_neg, Int.natAbs_one, one_mul] using content_smul' f (-1)
+
 /-- Divide all three coefficients by the content. The zero form has zero primitive part. -/
-def primitivePart (f : BinaryQuadraticForm ℤ) : BinaryQuadraticForm ℤ :=
+def primPart (f : BinaryQuadraticForm ℤ) : BinaryQuadraticForm ℤ :=
   ⟨f.a / f.content, f.b / f.content, f.c / f.content⟩
 
 /-- The leading coefficient of the primitive part. -/
-@[simp] theorem primitivePart_a (f : BinaryQuadraticForm ℤ) :
-    f.primitivePart.a = f.a / f.content := (rfl)
+@[simp] theorem primPart_a (f : BinaryQuadraticForm ℤ) :
+    f.primPart.a = f.a / f.content := (rfl)
 
 /-- The middle coefficient of the primitive part. -/
-@[simp] theorem primitivePart_b (f : BinaryQuadraticForm ℤ) :
-    f.primitivePart.b = f.b / f.content := (rfl)
+@[simp] theorem primPart_b (f : BinaryQuadraticForm ℤ) :
+    f.primPart.b = f.b / f.content := (rfl)
 
 /-- The last coefficient of the primitive part. -/
-@[simp] theorem primitivePart_c (f : BinaryQuadraticForm ℤ) :
-    f.primitivePart.c = f.c / f.content := (rfl)
+@[simp] theorem primPart_c (f : BinaryQuadraticForm ℤ) :
+    f.primPart.c = f.c / f.content := (rfl)
+
+/-- The primitive part of the zero form is zero. -/
+@[simp] theorem primPart_zero : (0 : BinaryQuadraticForm ℤ).primPart = 0 := by
+  ext <;> simp
 
 /-- The original form is its content times its primitive part, including for the zero form. -/
-@[simp] theorem scale_primitivePart_content (f : BinaryQuadraticForm ℤ) :
-    f.primitivePart.scale f.content = f := by
+@[simp] theorem content_smul_primPart (f : BinaryQuadraticForm ℤ) :
+    f.content • f.primPart = f := by
   ext
-  · simpa [mul_comm] using Int.ediv_mul_cancel f.content_dvd_a
-  · simpa [mul_comm] using Int.ediv_mul_cancel f.content_dvd_b
-  · simpa [mul_comm] using Int.ediv_mul_cancel f.content_dvd_c
+  · simpa [smul_eq_mul, nsmul_eq_mul, mul_comm] using Int.ediv_mul_cancel f.content_dvd_a
+  · simpa [smul_eq_mul, nsmul_eq_mul, mul_comm] using Int.ediv_mul_cancel f.content_dvd_b
+  · simpa [smul_eq_mul, nsmul_eq_mul, mul_comm] using Int.ediv_mul_cancel f.content_dvd_c
 
 /-- The primitive part of a nonzero form has content one. -/
-theorem isPrimitive_primitivePart (f : BinaryQuadraticForm ℤ) (hf : f ≠ ⟨0, 0, 0⟩) :
-    f.primitivePart.IsPrimitive := by
+theorem isPrimitive_primPart (f : BinaryQuadraticForm ℤ) (hf : f ≠ 0) :
+    f.primPart.IsPrimitive := by
   rw [isPrimitive_iff]
-  have h := congrArg content f.scale_primitivePart_content
-  rw [content_scale, Int.natAbs_natCast] at h
+  have h := congrArg content f.content_smul_primPart
+  rw [content_nsmul] at h
   exact (mul_left_cancel₀ (Nat.ne_of_gt ((f.content_pos_iff).mpr hf))
     (h.trans (Nat.mul_one _).symm))
 
+/-- A primitive form is its own primitive part. -/
+@[simp] theorem IsPrimitive.primPart_eq {f : BinaryQuadraticForm ℤ} (hf : f.IsPrimitive) :
+    f.primPart = f := by
+  ext <;> simp [(isPrimitive_iff f).mp hf]
+
+/-- A scalar multiple of a primitive form has content the absolute scalar. -/
+theorem content_smul_of_isPrimitive (f : BinaryQuadraticForm ℤ) (r : ℤ)
+    (hf : f.IsPrimitive) : (r • f).content = r.natAbs := by
+  rw [content_smul', (isPrimitive_iff f).mp hf, mul_one]
+
+/-- Primitive normalization of a scalar multiple retains only the sign of the scalar.
+The formula also holds when either the scalar or the form is zero. -/
+theorem primPart_smul' (f : BinaryQuadraticForm ℤ) (r : ℤ) :
+    (r • f).primPart = r.sign • f.primPart := by
+  by_cases hf : f = 0
+  · simp [hf]
+  by_cases hr : r = 0
+  · simp [hr]
+  have hc : (r • f).content ≠ 0 := by
+    rw [content_smul']
+    exact mul_ne_zero (Int.natAbs_ne_zero.mpr hr) (f.content_pos_iff.mpr hf).ne'
+  have hrs : (r.natAbs : ℤ) * r.sign = r := by
+    simpa only [mul_comm] using Int.sign_mul_natAbs r
+  apply smul_right_injective (M := BinaryQuadraticForm ℤ)
+    (r := ((r • f).content : ℤ)) (by exact_mod_cast hc)
+  dsimp only
+  calc
+    ((r • f).content : ℤ) • (r • f).primPart = r • f := by
+      rw [natCast_zsmul, content_smul_primPart]
+    _ = r • ((f.content : ℤ) • f.primPart) := by
+      rw [natCast_zsmul, content_smul_primPart]
+    _ = ((r • f).content : ℤ) • (r.sign • f.primPart) := by
+      rw [smul_smul, smul_smul, content_smul', Nat.cast_mul,
+        mul_right_comm (r.natAbs : ℤ) (f.content : ℤ) r.sign, hrs]
+
+/-- For a primitive form, scalar normalization retains the sign times the form itself. -/
+theorem primPart_smul_of_isPrimitive (f : BinaryQuadraticForm ℤ) (r : ℤ)
+    (hf : f.IsPrimitive) : (r • f).primPart = r.sign • f := by
+  rw [primPart_smul', hf.primPart_eq]
+
+/-- Primitive normalization commutes with negation. -/
+@[simp] theorem primPart_neg (f : BinaryQuadraticForm ℤ) : (-f).primPart = -f.primPart := by
+  simpa only [neg_one_smul, Int.sign_neg, Int.sign_one] using primPart_smul' f (-1)
+
+/-- The decomposition into positive content and a primitive form is unique. -/
+theorem eq_smul_iff_of_isPrimitive (f g : BinaryQuadraticForm ℤ) {c : ℕ}
+    (hc : 0 < c) (hg : g.IsPrimitive) :
+    f = (c : ℤ) • g ↔ f.content = c ∧ f.primPart = g := by
+  constructor
+  · intro h
+    rw [h]
+    constructor
+    · rw [content_smul_of_isPrimitive _ _ hg, Int.natAbs_natCast]
+    · rw [primPart_smul_of_isPrimitive _ _ hg,
+        Int.sign_eq_one_of_pos (by exact_mod_cast hc), one_smul]
+  · rintro ⟨hc, hg⟩
+    rw [← hc, ← hg, natCast_zsmul, content_smul_primPart]
+
 /-- A form's discriminant is the square of its content times its primitive discriminant. -/
 theorem discrim_eq_content_sq_mul (f : BinaryQuadraticForm ℤ) :
-    f.discrim = (f.content : ℤ) ^ 2 * f.primitivePart.discrim := by
-  rw [← discrim_scale, scale_primitivePart_content]
+    f.discrim = (f.content : ℤ) ^ 2 * f.primPart.discrim := by
+  rw [← discrim_smul', natCast_zsmul, content_smul_primPart]
 
 /-- Divisibility of every represented value is equivalent to divisibility of the content. -/
 theorem dvd_content_iff_forall_eval (f : BinaryQuadraticForm ℤ) (n : ℕ) :
@@ -164,14 +194,19 @@ theorem dvd_content_iff_forall_eval (f : BinaryQuadraticForm ℤ) (n : ℕ) :
   rw [dvd_content_iff]
   constructor
   · rintro ⟨ha, hb, hc⟩ x y
-    rw [eval_def]
-    exact dvd_add (dvd_add (dvd_mul_of_dvd_left ha _)
-      (dvd_mul_of_dvd_left (dvd_mul_of_dvd_left hb _) _))
-      (dvd_mul_of_dvd_left hc _)
+    obtain ⟨a', ha⟩ := ha
+    obtain ⟨b', hb⟩ := hb
+    obtain ⟨c', hc⟩ := hc
+    refine ⟨a' * x ^ 2 + b' * x * y + c' * y ^ 2, ?_⟩
+    rw [eval_def, ha, hb, hc]
+    ring
   · intro h
     refine ⟨by simpa using h 1 0, ?_, by simpa using h 0 1⟩
-    have hb := dvd_sub (dvd_sub (h 1 1) (h 1 0)) (h 0 1)
-    simpa [eval_def, sub_eq_add_neg, add_comm, add_left_comm, add_assoc] using hb
+    have hb : f.b = f.eval 1 1 - f.eval 1 0 - f.eval 0 1 := by
+      simp only [eval_def]
+      ring
+    rw [hb]
+    exact dvd_sub (dvd_sub (h 1 1) (h 1 0)) (h 0 1)
 
 /-- Proper integral changes of variables preserve the content. -/
 @[simp] theorem content_smul (f : BinaryQuadraticForm ℤ)
@@ -184,23 +219,32 @@ theorem dvd_content_iff_forall_eval (f : BinaryQuadraticForm ℤ) (n : ℕ) :
     exact (g.dvd_content_iff_forall_eval g.content).mp dvd_rfl _ _
   exact Nat.dvd_antisymm (by simpa using h (γ • f) γ⁻¹) (h f γ)
 
+/-- Primitivity is preserved by proper integral changes of variables. -/
+@[simp] theorem isPrimitive_smul_iff (f : BinaryQuadraticForm ℤ)
+    (γ : Matrix.SpecialLinearGroup (Fin 2) ℤ) : (γ • f).IsPrimitive ↔ f.IsPrimitive := by
+  rw [isPrimitive_iff, isPrimitive_iff, content_smul]
+
 /-- Taking primitive parts commutes with proper integral changes of variables. -/
-theorem primitivePart_smul (f : BinaryQuadraticForm ℤ)
+theorem primPart_smul (f : BinaryQuadraticForm ℤ)
     (γ : Matrix.SpecialLinearGroup (Fin 2) ℤ) :
-    (γ • f).primitivePart = γ • f.primitivePart := by
-  by_cases hf : f = ⟨0, 0, 0⟩
+    (γ • f).primPart = γ • f.primPart := by
+  by_cases hf : f = 0
   · subst f
-    ext <;> simp [primitivePart_a, primitivePart_b, primitivePart_c, content_def]
-  · apply scale_injective (r := (f.content : ℤ)) (by
+    simp
+  · apply smul_right_injective (M := BinaryQuadraticForm ℤ) (r := (f.content : ℤ)) (by
       exact_mod_cast (f.content_pos_iff.mpr hf).ne')
     dsimp only
-    rw [← content_smul f γ, scale_primitivePart_content, content_smul,
-      scale_smul, scale_primitivePart_content]
+    calc
+      (f.content : ℤ) • (γ • f).primPart = γ • f := by
+        rw [← content_smul f γ, natCast_zsmul, content_smul_primPart]
+      _ = γ • ((f.content : ℤ) • f.primPart) := by
+        rw [natCast_zsmul, content_smul_primPart]
+      _ = (f.content : ℤ) • (γ • f.primPart) := (smul_comm _ _ _).symm
 
 /-- The discriminant of a primitive part is invariant under proper changes of variables. -/
-@[simp] theorem discrim_primitivePart_smul (f : BinaryQuadraticForm ℤ)
+@[simp] theorem discrim_primPart_smul (f : BinaryQuadraticForm ℤ)
     (γ : Matrix.SpecialLinearGroup (Fin 2) ℤ) :
-    (γ • f).primitivePart.discrim = f.primitivePart.discrim := by
-  rw [primitivePart_smul, discrim_smul]
+    (γ • f).primPart.discrim = f.primPart.discrim := by
+  rw [primPart_smul, discrim_smul]
 
 end TauCeti.BinaryQuadraticForm

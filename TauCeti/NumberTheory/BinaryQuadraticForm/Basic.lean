@@ -6,7 +6,10 @@ Authors: Chris Birkbeck, Wentao Li
 module
 
 public import Mathlib.Algebra.QuadraticDiscriminant
+public import Mathlib.Algebra.Module.Prod
+public import Mathlib.Algebra.Module.Torsion.Prod
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
+import Mathlib.Algebra.Module.TransferInstance
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.QuadraticDiscriminant
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
@@ -53,6 +56,8 @@ associated bilinear form and so requires `2` to be invertible in `R`, which fail
 
 * `TauCeti.BinaryQuadraticForm R`: the binary quadratic form `a x² + b x y + c y²` over `R`.
 * `TauCeti.BinaryQuadraticForm.equivProd`: a form is its triple of coefficients `(a, b, c)`.
+* Binary quadratic forms inherit coefficientwise addition and scalar multiplication, including
+  `Module S (TauCeti.BinaryQuadraticForm R)` whenever `R` is an `S`-module.
 * `TauCeti.BinaryQuadraticForm.discrim`: its discriminant `b² - 4 a c`.
 * `TauCeti.BinaryQuadraticForm.eval`: its value `a x² + b x y + c y²` at `(x, y)`.
 * The instance `MulAction SL(2, R) (TauCeti.BinaryQuadraticForm R)`: the action
@@ -73,7 +78,8 @@ associated bilinear form and so requires `2` to be invertible in `R`, which fail
 ## Implementation notes
 
 `discrim` and `equivProd` are exposed, so that the kernel can evaluate them, as `decide` does for
-the values of `TauCeti.hurwitzClassNumber`; the other definitions are not.
+the values of `TauCeti.hurwitzClassNumber`. The additive coefficient equivalence `addEquivProd`
+is also exposed to transport the module structure.
 
 ## References
 
@@ -110,6 +116,127 @@ def equivProd {R : Type*} : BinaryQuadraticForm R ≃ R × R × R where
   toFun f := (f.a, f.b, f.c)
   invFun t := ⟨t.1, t.2.1, t.2.2⟩
 
+/-- The zero binary quadratic form has zero coefficients. -/
+instance instZero {R : Type*} [Zero R] : Zero (BinaryQuadraticForm R) where
+  zero := ⟨0, 0, 0⟩
+
+/-- Addition of binary quadratic forms is coefficientwise. -/
+instance instAdd {R : Type*} [Add R] : Add (BinaryQuadraticForm R) where
+  add f g := ⟨f.a + g.a, f.b + g.b, f.c + g.c⟩
+
+/-- Negation of binary quadratic forms is coefficientwise. -/
+instance instNeg {R : Type*} [Neg R] : Neg (BinaryQuadraticForm R) where
+  neg f := ⟨-f.a, -f.b, -f.c⟩
+
+/-- Subtraction of binary quadratic forms is coefficientwise. -/
+instance instSub {R : Type*} [Sub R] : Sub (BinaryQuadraticForm R) where
+  sub f g := ⟨f.a - g.a, f.b - g.b, f.c - g.c⟩
+
+/-- Scalar multiplication acts coefficientwise on binary quadratic forms. -/
+instance instSMul {S R : Type*} [SMul S R] : SMul S (BinaryQuadraticForm R) where
+  smul s f := ⟨s • f.a, s • f.b, s • f.c⟩
+
+/-- Addition of binary quadratic forms is coefficientwise. -/
+instance instAddCommMonoid {R : Type*} [AddCommMonoid R] :
+    AddCommMonoid (BinaryQuadraticForm R) :=
+  Function.Injective.addCommMonoid equivProd equivProd.injective rfl
+    (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
+
+/-- Binary quadratic forms over an additive group form an additive group. -/
+instance instAddCommGroup {R : Type*} [AddCommGroup R] :
+    AddCommGroup (BinaryQuadraticForm R) :=
+  Function.Injective.addCommGroup equivProd equivProd.injective rfl
+    (fun _ _ ↦ rfl) (fun _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
+
+/-- The additive coefficient equivalence used to transport the module structure. -/
+@[expose]
+def addEquivProd {R : Type*} [AddCommMonoid R] :
+    BinaryQuadraticForm R ≃+ R × R × R :=
+  { equivProd with map_add' := fun _ _ ↦ rfl }
+
+/-- A module structure on the coefficients induces one on binary quadratic forms. -/
+instance instModule {S R : Type*} [Semiring S] [AddCommMonoid R] [Module S R] :
+    Module S (BinaryQuadraticForm R) :=
+  Function.Injective.module S (addEquivProd (R := R)).toAddMonoidHom
+    equivProd.injective (fun _ _ ↦ rfl)
+
+/-- Regular scalars act injectively on binary quadratic forms. -/
+instance instModuleIsTorsionFree {S R : Type*} [Semiring S] [AddCommMonoid R] [Module S R]
+    [Module.IsTorsionFree S R] : Module.IsTorsionFree S (BinaryQuadraticForm R) :=
+  Function.Injective.moduleIsTorsionFree equivProd equivProd.injective (fun _ _ ↦ rfl)
+
+/-- The leading coefficient of the zero form is zero. -/
+@[simp] theorem zero_a {R : Type*} [Zero R] : (0 : BinaryQuadraticForm R).a = 0 := (rfl)
+
+/-- The middle coefficient of the zero form is zero. -/
+@[simp] theorem zero_b {R : Type*} [Zero R] : (0 : BinaryQuadraticForm R).b = 0 := (rfl)
+
+/-- The last coefficient of the zero form is zero. -/
+@[simp] theorem zero_c {R : Type*} [Zero R] : (0 : BinaryQuadraticForm R).c = 0 := (rfl)
+
+section Add
+
+variable {R : Type*} [Add R]
+
+/-- Addition adds the leading coefficients. -/
+@[simp] theorem add_a (f g : BinaryQuadraticForm R) : (f + g).a = f.a + g.a := (rfl)
+
+/-- Addition adds the middle coefficients. -/
+@[simp] theorem add_b (f g : BinaryQuadraticForm R) : (f + g).b = f.b + g.b := (rfl)
+
+/-- Addition adds the last coefficients. -/
+@[simp] theorem add_c (f g : BinaryQuadraticForm R) : (f + g).c = f.c + g.c := (rfl)
+
+end Add
+
+section Neg
+
+variable {R : Type*} [Neg R]
+
+/-- Negation negates the leading coefficient. -/
+@[simp] theorem neg_a (f : BinaryQuadraticForm R) : (-f).a = -f.a := (rfl)
+
+/-- Negation negates the middle coefficient. -/
+@[simp] theorem neg_b (f : BinaryQuadraticForm R) : (-f).b = -f.b := (rfl)
+
+/-- Negation negates the last coefficient. -/
+@[simp] theorem neg_c (f : BinaryQuadraticForm R) : (-f).c = -f.c := (rfl)
+
+end Neg
+
+section Sub
+
+variable {R : Type*} [Sub R]
+
+/-- Subtraction subtracts the leading coefficients. -/
+@[simp] theorem sub_a (f g : BinaryQuadraticForm R) : (f - g).a = f.a - g.a := (rfl)
+
+/-- Subtraction subtracts the middle coefficients. -/
+@[simp] theorem sub_b (f g : BinaryQuadraticForm R) : (f - g).b = f.b - g.b := (rfl)
+
+/-- Subtraction subtracts the last coefficients. -/
+@[simp] theorem sub_c (f g : BinaryQuadraticForm R) : (f - g).c = f.c - g.c := (rfl)
+
+end Sub
+
+section SMul
+
+variable {R S : Type*} [SMul S R]
+
+/-- Scalar multiplication multiplies the leading coefficient. -/
+@[simp] theorem smul_a' (r : S) (f : BinaryQuadraticForm R) :
+    (r • f).a = r • f.a := (rfl)
+
+/-- Scalar multiplication multiplies the middle coefficient. -/
+@[simp] theorem smul_b' (r : S) (f : BinaryQuadraticForm R) :
+    (r • f).b = r • f.b := (rfl)
+
+/-- Scalar multiplication multiplies the last coefficient. -/
+@[simp] theorem smul_c' (r : S) (f : BinaryQuadraticForm R) :
+    (r • f).c = r • f.c := (rfl)
+
+end SMul
+
 section Semiring
 
 variable {R : Type*} [Semiring R]
@@ -138,6 +265,11 @@ theorem eval_one_zero (f : BinaryQuadraticForm R) : f.eval 1 0 = f.a := by
 @[simp]
 theorem eval_zero_one (f : BinaryQuadraticForm R) : f.eval 0 1 = f.c := by
   simp [eval_def]
+
+/-- Scaling a form multiplies every represented value by the scalar. -/
+@[simp] theorem eval_smul' (r : R) (f : BinaryQuadraticForm R) (x y : R) :
+    (r • f).eval x y = r * f.eval x y := by
+  simp only [eval_def, smul_a', smul_b', smul_c', smul_eq_mul, mul_add, mul_assoc]
 
 end Semiring
 
@@ -216,11 +348,27 @@ instance : MulAction SL(2, R) (BinaryQuadraticForm R) where
       Matrix.mul_apply, Fin.sum_univ_two]
     refine ⟨?_, ?_, ?_⟩ <;> ring
 
+/-- Proper changes of variables act additively on forms. -/
+instance instDistribMulAction : DistribMulAction SL(2, R) (BinaryQuadraticForm R) where
+  __ := (inferInstance : MulAction SL(2, R) (BinaryQuadraticForm R))
+  smul_zero γ := by ext <;> simp
+  smul_add γ f g := by ext <;> simp <;> ring
+
+/-- Scaling the coefficients commutes with a proper change of variables. -/
+instance instSMulCommClass : SMulCommClass R SL(2, R) (BinaryQuadraticForm R) where
+  smul_comm r γ f := by ext <;> simp [smul_eq_mul] <;> ring
+
 /-- The discriminant `b² - 4 a c` of a binary quadratic form is invariant under `SL(2, R)`. -/
 @[simp]
 theorem discrim_smul (γ : SL(2, R)) (f : BinaryQuadraticForm R) : (γ • f).discrim = f.discrim := by
   simp only [discrim_def, discrim, smul_a, smul_b, smul_c]
   linear_combination (f.b ^ 2 - 4 * f.a * f.c) * congr($(γ.fin_two_mul_sub_mul_eq_one) ^ 2)
+
+/-- Scaling a form multiplies its discriminant by the squared scalar. -/
+@[simp] theorem discrim_smul' (r : R) (f : BinaryQuadraticForm R) :
+    (r • f).discrim = r ^ 2 * f.discrim := by
+  simp only [discrim_def, discrim, smul_a', smul_b', smul_c', smul_eq_mul]
+  ring
 
 /-- The positive definite integral binary quadratic forms of discriminant `-D`, for `D ≠ 0`, as a
 sub-action of `SL(2, ℤ)`: the forms of discriminant `-D` whose leading coefficient is positive. -/
