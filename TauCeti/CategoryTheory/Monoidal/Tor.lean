@@ -17,7 +17,8 @@ sequence with `P₁` and `P₀` projective. Then
 
 * `Tor₁(X, M)` is the kernel of `X ◁ S.f : X ⊗ P₁ ⟶ X ⊗ P₀`
   (`CategoryTheory.ShortComplex.ShortExact.torOneIsoKernel`), naturally in `X` and in maps of
-  such presentations;
+  such presentations, sending the homology class of a cycle of `X ⊗ -` applied to the resolution
+  to that cycle;
 * `Torₙ(X, M)` vanishes for `n ≥ 2`
   (`CategoryTheory.ShortComplex.ShortExact.isZero_Tor_add_two`).
 
@@ -57,6 +58,16 @@ variable (hS : S.ShortExact) [Projective S.X₁] [Projective S.X₂]
 `X ◁ S.f : X ⊗ P₁ ⟶ X ⊗ P₀`. -/
 def torOneIsoKernel (X : C) : ((Tor C 1).obj X).obj S.X₃ ≅ kernel (X ◁ S.f) :=
   hS.leftDerivedOneIsoKernel ((tensoringLeft C).obj X)
+
+/-- The identification of `Tor₁(X, M)` with the kernel of `X ◁ S.f` sends the homology class of a
+cycle of `X ⊗ -` applied to the resolution to that cycle. -/
+@[reassoc (attr := simp)]
+lemma homologyπ_comp_isoLeftDerivedObj_inv_comp_torOneIsoKernel_hom_comp_ι (X : C) :
+    ((((tensoringLeft C).obj X).mapHomologicalComplex _).obj S.resolutionComplex).homologyπ 1 ≫
+      (hS.projectiveResolution.isoLeftDerivedObj ((tensoringLeft C).obj X) 1).inv ≫
+        (hS.torOneIsoKernel X).hom ≫ kernel.ι (X ◁ S.f) =
+      ((((tensoringLeft C).obj X).mapHomologicalComplex _).obj S.resolutionComplex).iCycles 1 :=
+  hS.homologyπ_comp_isoLeftDerivedObj_inv_comp_leftDerivedOneIsoKernel_hom_comp_ι _
 
 include hS in
 /-- `Torₙ(X, M)` vanishes for `n ≥ 2` when `M` has a projective presentation of length one. -/

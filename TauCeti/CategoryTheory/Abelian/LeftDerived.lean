@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 public import Mathlib.CategoryTheory.Abelian.LeftDerived
+public import TauCeti.Algebra.Homology.HomologicalComplex
 
 /-!
 # Left derived functors on a projective presentation of length one
@@ -192,13 +193,6 @@ private lemma mapHomologicalComplex_d_two_one :
     ((F.mapHomologicalComplex _).obj hS.projectiveResolution.complex).d 2 1 = 0 :=
   (F.map_isZero (S.isZero_resolutionComplex_X_add_two 0)).eq_of_src _ _
 
-omit [HasProjectiveResolutions C] in
-/-- After applying `F`, the differential of the resolution out of degree `1` is
-`F.map S.f`. -/
-private lemma mapHomologicalComplex_d_one_zero :
-    ((F.mapHomologicalComplex _).obj hS.projectiveResolution.complex).d 1 0 = F.map S.f :=
-  (rfl)
-
 omit [Projective S.X₁] [Projective S.X₂] [HasProjectiveResolutions C] [F.Additive] in
 /-- For a chain complex with no nonzero differential into degree `1`, its homology in degree `1`,
 written as `homologyFunctor` applied to it as in `isoLeftDerivedObj`, is its cycles. -/
@@ -254,31 +248,12 @@ lemma homologyπ_comp_isoLeftDerivedObj_inv_comp_leftDerivedOneIsoKernel_hom_com
         (hS.leftDerivedOneIsoKernel F).hom ≫ kernel.ι (F.map S.f) =
       ((F.mapHomologicalComplex _).obj S.resolutionComplex).iCycles 1 := by
   rw [leftDerivedOneIsoKernel_hom_comp_ι]
-  -- `isoLeftDerivedObj` lands in `homologyFunctor` applied to the complex, which is only
-  -- definitionally `homology`, so the cancellations are composed as terms rather than rewritten.
-  exact (_ ≫= Iso.inv_hom_id_assoc _ _).trans
-    (HomologicalComplex.isoHomologyπ_hom_inv_id_assoc _ 2 1 (by simp)
-      (hS.mapHomologicalComplex_d_two_one F) _)
-
-omit [Projective S.X₁] [Projective S.X₂] [HasProjectiveResolutions C] [F.Additive] in
-/-- A chain map between two complexes with no nonzero differential into degree `1`, read on the
-cycles in degree `1` through the identifications of the homology in degree `1` with the cycles. -/
-private lemma homologyMap_comp_isoHomologyπ_inv_comp_iCycles {K L : ChainComplex D ℕ}
-    (ψ : K ⟶ L) (hK : K.d 2 1 = 0) (hL : L.d 2 1 = 0) :
-    HomologicalComplex.homologyMap ψ 1 ≫ (L.isoHomologyπ 2 1 (by simp) hL).inv ≫ L.iCycles 1 =
-      (K.isoHomologyπ 2 1 (by simp) hK).inv ≫ K.iCycles 1 ≫ ψ.f 1 := by
-  rw [← cancel_epi (K.isoHomologyπ 2 1 (by simp) hK).hom]
-  simp
-
-omit [Projective S.X₁] [Projective S.X₂] [HasProjectiveResolutions C] [F.Additive] in
-/-- `homologyMap_comp_isoHomologyπ_inv_comp_iCycles`, with the homology written through
-`homologyFunctor` as in `isoLeftDerivedObj`. -/
-private lemma homologyFunctor_map_comp_homologyOneIsoCycles_hom_comp_iCycles
-    {K L : ChainComplex D ℕ} (ψ : K ⟶ L) (hK : K.d 2 1 = 0) (hL : L.d 2 1 = 0) :
-    (HomologicalComplex.homologyFunctor D _ 1).map ψ ≫ (homologyOneIsoCycles L hL).hom ≫
-        L.iCycles 1 =
-      (homologyOneIsoCycles K hK).hom ≫ K.iCycles 1 ≫ ψ.f 1 :=
-  homologyMap_comp_isoHomologyπ_inv_comp_iCycles ψ hK hL
+  -- `homologyπ` lands in `homology`, while `isoLeftDerivedObj` lands in `homologyFunctor` applied
+  -- to the complex. These agree only definitionally, so the cancellation needs `erw`, as in
+  -- Mathlib's `ProjectiveResolution.isoLeftDerivedObj_hom_naturality`.
+  erw [Iso.inv_hom_id_assoc]
+  exact HomologicalComplex.isoHomologyπ_hom_inv_id_assoc _ 2 1 (by simp)
+    (hS.mapHomologicalComplex_d_two_one F) _
 
 variable {hS} {G : C ⥤ D} [G.Additive] (hS' : S'.ShortExact) [Projective S'.X₁] [Projective S'.X₂]
 
@@ -294,15 +269,18 @@ private lemma comp_leftDerivedOneIsoKernel_hom_comp_ι
         (hS'.projectiveResolution.isoLeftDerivedObj G 1).inv) :
     m ≫ (hS'.leftDerivedOneIsoKernel G).hom ≫ kernel.ι (G.map S'.f) =
       ((hS.leftDerivedOneIsoKernel F).hom ≫ kernel.ι (F.map S.f)) ≫ ψ.f 1 := by
-  -- The kernel inclusions and the cycle inclusions have codomains that agree only up to
-  -- unfolding `F.mapHomologicalComplex`, so the steps are chained with `Eq.trans`.
   subst hm
-  refine (_ ≫= hS'.leftDerivedOneIsoKernel_hom_comp_ι G).trans ?_
-  refine (Category.assoc _ _ _).trans <| (_ ≫= Category.assoc _ _ _).trans <|
-    (_ ≫= _ ≫= Iso.inv_hom_id_assoc _ _).trans ?_
-  refine (_ ≫= homologyFunctor_map_comp_homologyOneIsoCycles_hom_comp_iCycles ψ
-    (hS.mapHomologicalComplex_d_two_one F) (hS'.mapHomologicalComplex_d_two_one G)).trans ?_
-  refine Eq.trans ?_ ((hS.leftDerivedOneIsoKernel_hom_comp_ι F).symm =≫ ψ.f 1)
+  rw [Category.assoc, Category.assoc, leftDerivedOneIsoKernel_hom_comp_ι,
+    leftDerivedOneIsoKernel_hom_comp_ι]
+  -- The cycle inclusions land in `F` applied to the resolution in degree `1` rather than in
+  -- `F.obj S.X₁`, and `homologyFunctor` is only definitionally `homology`. The rewrites at these
+  -- junctions therefore need `erw`, as in Mathlib's
+  -- `ProjectiveResolution.isoLeftDerivedObj_hom_naturality`, and the final reassociation is
+  -- composed as a term.
+  erw [Iso.inv_hom_id_assoc,
+    HomologicalComplex.isoHomologyπ_inv_naturality_assoc ψ 2 1 (by simp)
+      (hS.mapHomologicalComplex_d_two_one F) (hS'.mapHomologicalComplex_d_two_one G),
+    HomologicalComplex.cyclesMap_i]
   exact ((Category.assoc _ _ _).trans (_ ≫= Category.assoc _ _ _)).symm
 
 omit [G.Additive] [Projective S'.X₁] [Projective S'.X₂] in
