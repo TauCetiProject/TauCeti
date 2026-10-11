@@ -134,8 +134,8 @@ variable (m : ℕ)
 
 /-- **The Selmer structure of the `m`-Selmer group**: on `E(Kˢ)[m]`, localised along the
 restriction maps `τ i`, with local condition at `L i` the kernel of
-`H¹(G_{L i}, E[m]) → H¹(G_{L i}, E)`. For `m` invertible in `K` this kernel is the image of the
-local Kummer map `E(L i) → H¹(G_{L i}, E[m])`
+`H¹(G_{L i}, E[m]) → H¹(G_{L i}, E)`. When `W` is elliptic and `m` is invertible in `K`, this
+kernel is the image of the local Kummer map `E(L i) → H¹(G_{L i}, E[m])`
 (`WeierstrassCurve.mem_selmerGroup_iff_forall_torsionRes_mem_range_kummerMap`). -/
 def selmerStructure :
     SelmerStructure (AbsoluteGaloisGroup K) (W.TorsionCoeff m)
