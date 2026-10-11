@@ -21,7 +21,8 @@ feeds the Grothendieck-group computation for finite-dimensional vector spaces.
 * `FGModuleCat.hom_hom_ofHom`: the linear map underlying `FGModuleCat.ofHom f` is `f`, the
   analogue of Mathlib's `ModuleCat.hom_ofHom`.
 * `FGModuleCat.biprodIsoProd`: the biproduct of two finitely generated modules is their product,
-  the analogue of Mathlib's `ModuleCat.biprodIsoProd`.
+  the analogue of Mathlib's `ModuleCat.biprodIsoProd`, with its projection lemmas
+  `FGModuleCat.biprodIsoProd_inv_comp_fst` and `FGModuleCat.biprodIsoProd_inv_comp_snd`.
 * `FGModuleCat.finrank_biprod`: rank is additive on biproducts of finite free modules.
 -/
 
@@ -49,6 +50,41 @@ noncomputable def _root_.FGModuleCat.biprodIsoProd {R : Type u} [Ring R]
   letI F := forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)
   letI : PreservesBinaryBiproduct X Y F := preservesBinaryBiproduct_of_preservesBinaryCoproduct F
   F.preimageIso (F.mapBiprod X Y ≪≫ ModuleCat.biprodIsoProd X.obj Y.obj)
+
+/-- The inverse of `FGModuleCat.biprodIsoProd` followed by the first biproduct projection is the
+first product projection. -/
+@[simp, elementwise]
+theorem _root_.FGModuleCat.biprodIsoProd_inv_comp_fst {R : Type u} [Ring R]
+    (X Y : FGModuleCat.{v} R) :
+    (FGModuleCat.biprodIsoProd X Y).inv ≫ biprod.fst = FGModuleCat.ofHom (LinearMap.fst R X Y) := by
+  have : PreservesBinaryBiproduct X Y (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)) :=
+    preservesBinaryBiproduct_of_preservesBinaryCoproduct _
+  apply (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).map_injective
+  have h : ((forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).mapBiprod X Y).inv ≫
+      (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).map biprod.fst = biprod.fst := by
+    rw [Iso.inv_comp_eq, Functor.mapBiprod_hom, biprod.lift_fst]
+  rw [Functor.map_comp, FGModuleCat.biprodIsoProd, Functor.preimageIso_inv, Functor.map_preimage,
+    Iso.trans_inv, Category.assoc, h]
+  -- The forgetful functor sends `X` to `X.obj` and `FGModuleCat.ofHom f` to `ModuleCat.ofHom f`
+  -- definitionally, so Mathlib's projection lemma closes the goal up to that unfolding.
+  exact ModuleCat.biprodIsoProd_inv_comp_fst _ _
+
+/-- The inverse of `FGModuleCat.biprodIsoProd` followed by the second biproduct projection is the
+second product projection. -/
+@[simp, elementwise]
+theorem _root_.FGModuleCat.biprodIsoProd_inv_comp_snd {R : Type u} [Ring R]
+    (X Y : FGModuleCat.{v} R) :
+    (FGModuleCat.biprodIsoProd X Y).inv ≫ biprod.snd = FGModuleCat.ofHom (LinearMap.snd R X Y) := by
+  have : PreservesBinaryBiproduct X Y (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)) :=
+    preservesBinaryBiproduct_of_preservesBinaryCoproduct _
+  apply (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).map_injective
+  have h : ((forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).mapBiprod X Y).inv ≫
+      (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).map biprod.snd = biprod.snd := by
+    rw [Iso.inv_comp_eq, Functor.mapBiprod_hom, biprod.lift_snd]
+  rw [Functor.map_comp, FGModuleCat.biprodIsoProd, Functor.preimageIso_inv, Functor.map_preimage,
+    Iso.trans_inv, Category.assoc, h]
+  -- As for `biprodIsoProd_inv_comp_fst`.
+  exact ModuleCat.biprodIsoProd_inv_comp_snd _ _
 
 /-- The rank of a biproduct of finite free modules is the sum of their ranks. -/
 @[simp]
