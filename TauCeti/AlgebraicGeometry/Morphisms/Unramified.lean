@@ -26,7 +26,7 @@ unramifiedness condition directly.
 
 public section
 
-open CategoryTheory AlgebraicGeometry
+open CategoryTheory AlgebraicGeometry Limits
 
 universe u
 
@@ -83,17 +83,23 @@ instance : MorphismProperty.IsMultiplicative @Unramified := by
   rw [unramified_eq]
   exact MorphismProperty.IsMultiplicative.inf
 
-instance : IsZariskiLocalAtSource @Unramified := by
-  rw [unramified_eq]
-  have h : HasRingHomProperty (@LocallyOfFiniteType ⊓ @FormallyUnramified)
-      (fun f ↦ f.FiniteType ∧ f.FormallyUnramified) := HasRingHomProperty.inf
-  infer_instance
+instance unramified_comp {Z : Scheme.{u}} (g : Y ⟶ Z)
+    [Unramified f] [Unramified g] : Unramified (f ≫ g) :=
+  MorphismProperty.comp_mem _ f g ‹Unramified f› ‹Unramified g›
 
-instance : IsZariskiLocalAtTarget @Unramified := by
-  rw [unramified_eq]
-  have h : HasRingHomProperty (@LocallyOfFiniteType ⊓ @FormallyUnramified)
-      (fun f ↦ f.FiniteType ∧ f.FormallyUnramified) := HasRingHomProperty.inf
-  infer_instance
+instance {X Y S : Scheme.{u}} (f : X ⟶ S) (g : Y ⟶ S) [Unramified g] :
+    Unramified (pullback.fst f g) := by
+  have h : MorphismProperty.IsStableUnderBaseChange @Unramified := by
+    rw [unramified_eq]
+    exact MorphismProperty.IsStableUnderBaseChange.inf
+  exact h.of_isPullback (IsPullback.of_hasPullback f g).flip inferInstance
+
+instance {X Y S : Scheme.{u}} (f : X ⟶ S) (g : Y ⟶ S) [Unramified f] :
+    Unramified (pullback.snd f g) := by
+  have h : MorphismProperty.IsStableUnderBaseChange @Unramified := by
+    rw [unramified_eq]
+    exact MorphismProperty.IsStableUnderBaseChange.inf
+  exact h.of_isPullback (IsPullback.of_hasPullback f g) inferInstance
 
 instance (priority := 900) {X Y : Scheme} (f : X ⟶ Y)
     [AlgebraicGeometry.IsImmersion f] :
