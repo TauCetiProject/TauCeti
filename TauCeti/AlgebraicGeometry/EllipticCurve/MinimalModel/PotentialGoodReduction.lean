@@ -275,18 +275,6 @@ theorem hasGoodReduction_freyCurve_one (h2 : IsUnit (2 : R)) {B : K}
 
 /-! ### The Deuring normal form -/
 
-omit [IsDomain R] [IsDiscreteValuationRing R] [IsFractionRing R K] in
-/-- A root of `X³ (X³ - 24)³ - c (X³ - 27)`, for `c ∈ R`, is integral over `R`: the polynomial is
-monic. -/
-private theorem isIntegral_of_pow_three_mul_sub_pow_three_eq {c : R} {x : K}
-    (h : x ^ 3 * (x ^ 3 - 24) ^ 3 = algebraMap R K c * (x ^ 3 - 27)) :
-    _root_.IsIntegral R x := by
-  open Polynomial in
-  refine ⟨X ^ 3 * (X ^ 3 - 24) ^ 3 - C c * (X ^ 3 - 27), ?_, ?_⟩
-  · monicity!
-  · simp only [eval₂_sub, eval₂_pow, eval₂_mul, eval₂_X, eval₂_C, eval₂_ofNat]
-    rw [h, sub_self]
-
 /-- **A curve in Deuring normal form with integral `j`-invariant has good reduction** over a
 discrete valuation ring in which `3` is a unit. The curve is `y² + axy + y = x³`, that is
 `WeierstrassCurve.deuringNormalForm a`.
@@ -303,9 +291,14 @@ theorem hasGoodReduction_deuringNormalForm (h3 : IsUnit (3 : R)) {a : K}
   obtain ⟨c, hc⟩ := hj
   have key : a ^ 3 * (a ^ 3 - 24) ^ 3 = algebraMap R K c * (a ^ 3 - 27) := by
     rw [hc, deuringNormalForm_j, div_mul_cancel₀ _ hΔ]
-  -- `a` is integral over `R`, hence in `R`
-  obtain ⟨α, hα⟩ := IsIntegrallyClosed.isIntegral_iff.mp
-    (isIntegral_of_pow_three_mul_sub_pow_three_eq R key)
+  -- `a` is a root of the monic `X³ (X³ - 24)³ - c (X³ - 27)`, so integral over `R`, hence in `R`
+  have ha : _root_.IsIntegral R a := by
+    open Polynomial in
+    refine ⟨X ^ 3 * (X ^ 3 - 24) ^ 3 - C c * (X ^ 3 - 27), ?_, ?_⟩
+    · monicity!
+    · simp only [eval₂_sub, eval₂_pow, eval₂_mul, eval₂_X, eval₂_C, eval₂_ofNat]
+      rw [key, sub_self]
+  obtain ⟨α, hα⟩ := IsIntegrallyClosed.isIntegral_iff.mp ha
   -- the discriminant `α³ - 27` divides the unit `3⁶`
   have hdvd : (α ^ 3 - 27) * (c - (α ^ 9 - 45 * α ^ 6 + 513 * α ^ 3 + 27)) = 3 ^ 6 :=
     IsFractionRing.injective R K (by
