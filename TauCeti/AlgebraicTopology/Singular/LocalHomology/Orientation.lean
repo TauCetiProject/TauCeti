@@ -66,7 +66,7 @@ theorem isLocalOrientation_inv_one {M : Type w} [TopologicalSpace M] {x : M} {d 
 /-- The local orientation at `x` selected by a chart and its chart-induced local homology
 isomorphism. -/
 def localOrientationOfChart {M E : Type w} [TopologicalSpace M] [T2Space M]
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [NormedAddCommGroup E] [NormedSpace ℝ E]
     (φ : OpenPartialHomeomorph M E) {x : M} (hx : x ∈ φ.source) {n : ℕ}
     (hn : finrank ℝ E = n + 1) : LocalOrientation M x (n + 1) :=
   ⟨(singularHomologyComplSingletonIsoOfFinrankEq (A := ModuleCat.{w} ℤ)
@@ -77,7 +77,7 @@ def localOrientationOfChart {M E : Type w} [TopologicalSpace M] [T2Space M]
 The chart computation identifies its local homology group with `ℤ`, and the inverse image of `1`
 is a generator. -/
 theorem exists_localOrientation_of_chart {M E : Type w} [TopologicalSpace M] [T2Space M]
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [ChartedSpace E M]
     (x : M) {n : ℕ} (hn : finrank ℝ E = n + 1) :
     Nonempty (LocalOrientation M x (n + 1)) :=
   ⟨localOrientationOfChart (chartAt E x) (mem_chart_source E x) hn⟩
