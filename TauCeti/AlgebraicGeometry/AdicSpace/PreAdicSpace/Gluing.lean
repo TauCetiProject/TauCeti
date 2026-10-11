@@ -52,8 +52,8 @@ gluing diagram in `(Adic)`.
   pre-adic space is the glued presheafed space.
 * `TauCeti.PreAdicSpace.GlueData.vPullbackConeIsLimit`: `V i j` is the pullback of the charts
   `U i` and `U j` of the glued space.
-* `TauCeti.PreAdicSpace.GlueData.adicDiagram`, `TauCeti.PreAdicSpace.GlueData.gluedAdicCocone`:
-  for adic pieces, the gluing diagram in `(Adic)` and the glued adic space with its charts.
+* `TauCeti.PreAdicSpace.GlueData.gluedAdicι`: for adic pieces, the charts of the glued adic
+  space, as a natural transformation out of the gluing diagram in `(Adic)`.
 * `TauCeti.PreAdicSpace.GlueData.isColimitGluedAdicCocone`: the universal property of the glued
   adic space in `(Adic)`.
 
@@ -354,71 +354,46 @@ gives an adic space, and conversely each `U i` is an open adic subspace of the g
 theorem isAdic_glued_iff : isAdic 𝖣.glued ↔ ∀ i, isAdic (D.U i) := by
   simp only [isAdic_iff, isSheafy_glued_iff, isLocallyAffinoid_glued_iff, forall_and]
 
-/-- The gluing diagram of glue data of pre-adic spaces whose pieces `U i` are adic spaces, as a
-diagram in the category `(Adic)` of adic spaces; the overlaps `V i j` are open adic subspaces of
-the `U i`. Its body is exposed so that its objects and morphisms are, by definition, those of the
-gluing diagram in `𝒱^pre`. -/
-@[expose] noncomputable def adicDiagram (hU : ∀ i, isAdic (D.U i)) :
-    WalkingMultispan (MultispanShape.prod D.J) ⥤ AdicSpace.{u} :=
-  isAdic.lift 𝖣.diagram.multispan fun
-    | .left (⟨i, j⟩ : D.J × D.J) =>
-      (isAdic_of_isOpenImmersion (hU i) (D.f i j) : isAdic (D.V (i, j)))
-    | .right i => hU i
+/-- **The gluing diagram of adic pieces lies in `(Adic)`**: if every piece `U i` is an adic
+space, then so is every object of the gluing diagram, the overlaps `V i j` being open adic
+subspaces of the `U i`. So the gluing diagram lifts to `(Adic)` as
+`isAdic.lift 𝖣.diagram.multispan (D.isAdic_multispan_obj hU)`. -/
+theorem isAdic_multispan_obj (hU : ∀ i, isAdic (D.U i)) :
+    ∀ j, isAdic (𝖣.diagram.multispan.obj j)
+  | .left (⟨i, j⟩ : D.J × D.J) =>
+    (isAdic_of_isOpenImmersion (hU i) (D.f i j) : isAdic (D.V (i, j)))
+  | .right i => hU i
 
-/-- The glued adic space of glue data of pre-adic spaces whose pieces are adic spaces, with its
-charts, as a cocone over the gluing diagram in `(Adic)`. Its body is exposed so that its cocone
-point and legs are, by definition, the glued pre-adic space and its charts. -/
-@[expose] noncomputable def gluedAdicCocone (hU : ∀ i, isAdic (D.U i)) :
-    Cocone (D.adicDiagram hU) where
-  pt := ⟨𝖣.glued, D.isAdic_glued_iff.mpr hU⟩
-  ι :=
-    { app j := ObjectProperty.homMk (colimit.ι 𝖣.diagram.multispan j)
-      naturality _ _ f := ObjectProperty.hom_ext (P := isAdic)
-        ((colimit.w 𝖣.diagram.multispan f).trans (Category.comp_id _).symm) }
+/-- The charts of the glued adic space of glue data of pre-adic spaces whose pieces are adic
+spaces, as a natural transformation from the gluing diagram in `(Adic)` to the constant diagram
+at the glued adic space. Its legs are described by `gluedAdicι_app_right_hom` and
+`gluedAdicι_app_left_hom`. -/
+noncomputable def gluedAdicι (hU : ∀ i, isAdic (D.U i)) :
+    isAdic.lift 𝖣.diagram.multispan (D.isAdic_multispan_obj hU) ⟶
+      (Functor.const _).obj (⟨𝖣.glued, D.isAdic_glued_iff.mpr hU⟩ : AdicSpace.{u}) where
+  app j := ObjectProperty.homMk (colimit.ι 𝖣.diagram.multispan j)
+  naturality _ _ f := ObjectProperty.hom_ext (P := isAdic)
+    ((colimit.w 𝖣.diagram.multispan f).trans (Category.comp_id _).symm)
 
-/-- The object of `adicDiagram` at an overlap `V i j` is `V i j`. -/
+/-- The leg of `gluedAdicι` at `U i` is the chart `ι i` of the glued pre-adic space. -/
 @[simp]
-theorem adicDiagram_obj_left_obj (hU : ∀ i, isAdic (D.U i)) (i j : D.J) :
-    ((D.adicDiagram hU).obj (.left (i, j))).obj = D.V (i, j) := (rfl)
+theorem gluedAdicι_app_right_hom (hU : ∀ i, isAdic (D.U i)) (i : D.J) :
+    ((D.gluedAdicι hU).app (.right i)).hom = 𝖣.ι i := (rfl)
 
-/-- The object of `adicDiagram` at a piece `U i` is `U i`. -/
+/-- The leg of `gluedAdicι` at `V i j` is `f i j ≫ ι i`. -/
 @[simp]
-theorem adicDiagram_obj_right_obj (hU : ∀ i, isAdic (D.U i)) (i : D.J) :
-    ((D.adicDiagram hU).obj (.right i)).obj = D.U i := (rfl)
-
-/-- The first map of `adicDiagram` at `V i j` is the open immersion `f i j : V i j ⟶ U i`. -/
-@[simp]
-theorem adicDiagram_map_fst_hom (hU : ∀ i, isAdic (D.U i)) (i j : D.J) :
-    ((D.adicDiagram hU).map (.fst (i, j))).hom = D.f i j := (rfl)
-
-/-- The second map of `adicDiagram` at `V i j` is `t i j ≫ f j i : V i j ⟶ U j`. -/
-@[simp]
-theorem adicDiagram_map_snd_hom (hU : ∀ i, isAdic (D.U i)) (i j : D.J) :
-    ((D.adicDiagram hU).map (.snd (i, j))).hom = D.t i j ≫ D.f j i := (rfl)
-
-/-- The cocone point of `gluedAdicCocone` is the glued pre-adic space. -/
-@[simp]
-theorem gluedAdicCocone_pt_obj (hU : ∀ i, isAdic (D.U i)) :
-    (D.gluedAdicCocone hU).pt.obj = 𝖣.glued := (rfl)
-
-/-- The leg of `gluedAdicCocone` at `U i` is the chart `ι i` of the glued pre-adic space. -/
-@[simp]
-theorem gluedAdicCocone_ι_app_right_hom (hU : ∀ i, isAdic (D.U i)) (i : D.J) :
-    ((D.gluedAdicCocone hU).ι.app (.right i)).hom = 𝖣.ι i := (rfl)
-
-/-- The leg of `gluedAdicCocone` at `V i j` is `f i j ≫ ι i`. -/
-@[simp]
-theorem gluedAdicCocone_ι_app_left_hom (hU : ∀ i, isAdic (D.U i)) (i j : D.J) :
-    ((D.gluedAdicCocone hU).ι.app (.left (i, j))).hom = D.f i j ≫ 𝖣.ι i :=
-  (congrArg (·.hom) ((D.gluedAdicCocone hU).w (.fst (i, j)))).symm
+theorem gluedAdicι_app_left_hom (hU : ∀ i, isAdic (D.U i)) (i j : D.J) :
+    ((D.gluedAdicι hU).app (.left (i, j))).hom = D.f i j ≫ 𝖣.ι i :=
+  (congrArg (·.hom) ((Cocone.mk _ (D.gluedAdicι hU)).w (.fst (i, j)))).symm
 
 /-- **The universal property of the glued adic space**: gluing adic spaces along open immersions
-gives a colimit of the gluing diagram in the category `(Adic)` of adic spaces. -/
+gives a colimit of the gluing diagram in the category `(Adic)` of adic spaces, with the charts
+`gluedAdicι` as legs. -/
 noncomputable def isColimitGluedAdicCocone (hU : ∀ i, isAdic (D.U i)) :
-    IsColimit (D.gluedAdicCocone hU) :=
-  -- the image of `gluedAdicCocone` in `𝒱^pre` is the colimit cocone of the gluing diagram, up to
-  -- the definitional equality `adicDiagram hU ⋙ isAdic.ι = 𝖣.diagram.multispan` of
-  -- `ObjectProperty.liftCompιIso`, and the fully faithful inclusion reflects colimits
+    IsColimit (Cocone.mk _ (D.gluedAdicι hU)) :=
+  -- the image of this cocone in `𝒱^pre` is the colimit cocone of the gluing diagram, up to the
+  -- definitional equality `isAdic.lift 𝖣.diagram.multispan _ ⋙ isAdic.ι = 𝖣.diagram.multispan`
+  -- of `ObjectProperty.liftCompιIso`, and the fully faithful inclusion reflects colimits
   isColimitOfReflects isAdic.ι (colimit.isColimit 𝖣.diagram.multispan)
 
 end GlueData
