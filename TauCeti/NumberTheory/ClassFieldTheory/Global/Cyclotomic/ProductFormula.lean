@@ -7,8 +7,8 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.Cyclotomic.ArtinNorm
 import Mathlib.NumberTheory.Padics.HeightOneSpectrum
-import TauCeti.Data.Rat.Units
 import TauCeti.NumberTheory.ClassFieldTheory.Local.ExplicitCyclotomicSymbol.ArtinMap
+import TauCeti.NumberTheory.ClassFieldTheory.Local.ExplicitCyclotomicSymbol.ProductFormula
 import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
@@ -36,11 +36,11 @@ field of `ℚ_ℓ` having `ℓ` elements), at `p` it is `u⁻¹` for `a = pᵏ u
 (`abelianizedLocalCyclotomicCharacter_artinMap_padic`), and at the real place it is the sign of
 `a` (`abelianizedLocalCyclotomicCharacter_infiniteArtinAt_of_neg`). The finite places of `ℚ` are
 read in `ℚ_ℓ` through `Padic.adicCompletionEquiv` and the naturality of the cyclotomic character
-of Artin symbols (`abelianizedLocalCyclotomicCharacter_artinMap_congr`). The product of the local
-factors is a character of `ℚˣ`, so it suffices to evaluate it at the generators `-1` and the primes
-`q` (`MonoidHom.ext_units_rat`): at `-1` the factors at `p` and at the real place are both `-1`,
-at `p` every factor is trivial, and at a prime `q ≠ p` the factors at `q` and at `p` are `q` and
-`q⁻¹`. The norm functoriality of the local Artin symbols
+of Artin symbols (`abelianizedLocalCyclotomicCharacter_artinMap_congr`). Modulo `pⁿ` the local
+factors are exactly the explicit cyclotomic symbols `cyclotomicSymbol (pⁿ) ℓ` and
+`realCyclotomicSymbol (pⁿ)` of `ℚ(μ_{pⁿ})/ℚ`, so the product formula over `ℚ` is, level by level,
+the product formula for the explicit symbols (`prod_cyclotomicSymbol_of_subset`). The norm
+functoriality of the local Artin symbols
 (`finprod_abelianizedLocalCyclotomicCharacter_artinMap_normUnits` and
 `prod_abelianizedLocalCyclotomicCharacter_infiniteArtinAt_normUnits`) then carries the formula
 for `N_{K/ℚ}(x)` over `ℚ` to the formula for `x` over `K`.
@@ -90,50 +90,37 @@ private theorem ratLocalFactor_self {a : ℚˣ} {k : ℤ} {u : ℤ_[p]ˣ}
     (ha : (a : ℚ_[p]) = (p : ℚ_[p]) ^ k * (u : ℤ_[p])) : ratLocalFactor p p a = u⁻¹ :=
   abelianizedLocalCyclotomicCharacter_artinMap_padic p (by simpa using ha)
 
-/-- The local factors of `-1` multiply to `-1`: only the factor at `p` is nontrivial. -/
-private theorem finprod_ratLocalFactor_neg_one :
-    ∏ᶠ ℓ : Nat.Primes, ratLocalFactor p ℓ (-1) = -1 := by
-  let P : Nat.Primes := ⟨p, Fact.out⟩
-  rw [finprod_eq_single _ P fun ℓ hℓ ↦ ?_]
-  · exact (ratLocalFactor_self p (k := 0) (u := -1) (by simp)).trans inv_neg_one
+/-- Modulo `p ^ n`, the factor at `ℓ` is the explicit cyclotomic symbol
+`cyclotomicSymbol (p ^ n) ℓ`: `u⁻¹` at `ℓ = p` and `ℓ ^ v_ℓ(a)` at `ℓ ≠ p`. -/
+private theorem unitsMap_toZModPow_ratLocalFactor (n ℓ : ℕ) [Fact ℓ.Prime] (a : ℚˣ) :
+    Units.map (PadicInt.toZModPow n : ℤ_[p] →+* ZMod (p ^ n)).toMonoidHom (ratLocalFactor p ℓ a) =
+      cyclotomicSymbol (p ^ n) ℓ (Units.map (algebraMap ℚ ℚ_[ℓ]).toMonoidHom a) := by
+  set x := Units.map (algebraMap ℚ ℚ_[ℓ]).toMonoidHom a
+  have hx : (x : ℚ_[ℓ]) = (a : ℚ) := by simp [x]
+  have hx0 : (x : ℚ_[ℓ]) ≠ 0 := hx ▸ Rat.cast_ne_zero.2 a.ne_zero
+  obtain rfl | hℓ := eq_or_ne ℓ p
+  · obtain ⟨w, hw⟩ := Padic.exists_eq_zpow_valuation_mul hx0
+    have h := unitsMap_cyclotomicSymbol_primePow (ℓ ^ n) ℓ dvd_rfl x _ w hw
+    rw [ZMod.unitsMap_self, MonoidHom.id_apply] at h
+    rw [h, ratLocalFactor_self ℓ (hx ▸ hw), map_inv]
   · obtain ⟨u, hu⟩ := PadicInt.isUnit_natCast_of_coprime (p := p)
-      ((Nat.coprime_primes Fact.out ℓ.2).2 fun h ↦ hℓ (Subtype.ext h.symm))
-    rw [ratLocalFactor_of_ne p hu]
-    simp
+      ((Nat.coprime_primes Fact.out Fact.out).2 hℓ.symm)
+    have hcop : ℓ.Coprime (p ^ n) := ((Nat.coprime_primes Fact.out Fact.out).2 hℓ).pow_right n
+    rw [ratLocalFactor_of_ne p hu, cyclotomicSymbol_of_coprime _ _ hcop, hx,
+      Padic.valuation_ratCast, map_zpow]
+    congr 1
+    ext
+    simp [hu]
 
-/-- The local factors of a prime `q` multiply to `1`: for `q ≠ p` the factors at `q` and at `p`
-are `q` and `q⁻¹`, and all others are trivial. -/
-private theorem finprod_ratLocalFactor_prime {q : ℕ} (hq : q.Prime) :
-    ∏ᶠ ℓ : Nat.Primes, ratLocalFactor p ℓ (Units.mk0 (q : ℚ) (by exact_mod_cast hq.ne_zero)) =
-      1 := by
-  let P : Nat.Primes := ⟨p, Fact.out⟩
-  let Q : Nat.Primes := ⟨q, hq⟩
-  have hval (ℓ : Nat.Primes) (hℓ : ℓ ≠ Q) : padicValRat ℓ q = 0 := by
-    rw [padicValRat.of_nat, Nat.cast_eq_zero, padicValNat.eq_zero_iff]
-    exact Or.inr (Or.inr fun h ↦ hℓ (Subtype.ext ((Nat.prime_dvd_prime_iff_eq ℓ.2 hq).1 h)))
-  have hne (ℓ : Nat.Primes) (hℓ : ℓ ≠ P) (hℓQ : ℓ ≠ Q) :
-      ratLocalFactor p ℓ (Units.mk0 (q : ℚ) (by exact_mod_cast hq.ne_zero)) = 1 := by
-    obtain ⟨u, hu⟩ := PadicInt.isUnit_natCast_of_coprime (p := p)
-      ((Nat.coprime_primes Fact.out ℓ.2).2 fun h ↦ hℓ (Subtype.ext h.symm))
-    rw [ratLocalFactor_of_ne p hu, Units.val_mk0, hval ℓ hℓQ, zpow_zero]
-  obtain hqp | hqp := eq_or_ne q p
-  · subst hqp
-    refine finprod_eq_one_of_forall_eq_one fun ℓ ↦ ?_
-    obtain rfl | hℓ := eq_or_ne ℓ P
-    · exact (ratLocalFactor_self q (k := 1) (u := 1) (by simp)).trans inv_one
-    · exact hne ℓ hℓ hℓ
-  · have : Fact q.Prime := ⟨hq⟩
-    obtain ⟨u, hu⟩ := PadicInt.isUnit_natCast_of_coprime (p := p)
-      ((Nat.coprime_primes Fact.out hq).2 hqp.symm)
-    have hPQ : P ≠ Q := fun h ↦ hqp (congrArg Subtype.val h).symm
-    rw [finprod_eq_prod_of_mulSupport_subset (s := {P, Q}) _ fun ℓ hℓ ↦ ?_,
-      Finset.prod_pair hPQ, ratLocalFactor_self p (k := 0) (u := u) (by simp [hu]),
-      ratLocalFactor_of_ne p (ℓ := q) hu, Units.val_mk0, padicValRat.self hq.one_lt, zpow_one,
-      inv_mul_cancel]
-    by_contra h
-    simp only [Finset.coe_insert, Finset.coe_singleton, Set.mem_insert_iff,
-      Set.mem_singleton_iff, not_or] at h
-    exact hℓ (hne ℓ h.1 h.2)
+/-- The factor at a prime `ℓ ≠ p` dividing neither the numerator nor the denominator of `a` is
+trivial. -/
+private theorem ratLocalFactor_eq_one {ℓ : ℕ} [Fact ℓ.Prime] (hℓ : ℓ ≠ p) {a : ℚˣ}
+    (hnum : ¬ ℓ ∣ (a : ℚ).num.natAbs) (hden : ¬ ℓ ∣ (a : ℚ).den) : ratLocalFactor p ℓ a = 1 := by
+  obtain ⟨u, hu⟩ := PadicInt.isUnit_natCast_of_coprime (p := p)
+    ((Nat.coprime_primes Fact.out Fact.out).2 hℓ.symm)
+  rw [ratLocalFactor_of_ne p hu, padicValRat, padicValInt, padicValNat.eq_zero_of_not_dvd hnum,
+    padicValNat.eq_zero_of_not_dvd hden]
+  simp
 
 /-- The archimedean factor of `a ∈ ℚˣ`, read in the completion `x`, is the sign of `a`. -/
 private theorem abelianizedLocalCyclotomicCharacter_infiniteArtinAt_rat (w : InfinitePlace ℚ)
@@ -165,49 +152,50 @@ private theorem abelianizedLocalCyclotomicCharacter_artinMap_adicCompletion_rat 
   refine congrArg _ (congrArg _ (Units.ext ?_))
   simp [hx]
 
-/-- Only finitely many of the factors at the primes are nontrivial. -/
-private theorem hasFiniteMulSupport_ratLocalFactor (a : ℚˣ) :
-    Function.HasFiniteMulSupport fun ℓ : Nat.Primes ↦ ratLocalFactor p ℓ a := by
-  have h := (hasFiniteMulSupport_abelianizedLocalCyclotomicCharacter_artinMap (K := ℚ) p a).preimage
-    ((primesEquiv (R := 𝓞 ℚ)).symm.injective.injOn)
-  refine h.subset fun ℓ hℓ ↦ ?_
-  rwa [Set.mem_preimage, Function.mem_mulSupport,
-    abelianizedLocalCyclotomicCharacter_artinMap_adicCompletion_rat p ℓ a _
-      (by rw [Units.coe_map, MonoidHom.coe_ofClass, eq_ratCast])]
-
-/-- The product of the `p`-adic cyclotomic characters of the local Artin symbols of `a ∈ ℚˣ` at
-all places of `ℚ`, as a character of `ℚˣ`. -/
-private def ratProduct : ℚˣ →* ℤ_[p]ˣ where
-  toFun a := (∏ᶠ ℓ : Nat.Primes, ratLocalFactor p ℓ a) *
-    ∏ w : InfinitePlace ℚ, abelianizedLocalCyclotomicCharacter p w.Completion
-      (infiniteArtinAt w (Units.map (algebraMap ℚ w.Completion : ℚ →* w.Completion) a))
-  map_one' := by simp [ratLocalFactor]
-  map_mul' a b := by
-    simp only [ratLocalFactor, map_mul, finprod_mul_distrib (hasFiniteMulSupport_ratLocalFactor p a)
-      (hasFiniteMulSupport_ratLocalFactor p b), Finset.prod_mul_distrib]
-    exact mul_mul_mul_comm _ _ _ _
-
-/-- The archimedean factor of `a ∈ ℚˣ` is the sign of `a`. -/
-private theorem prod_infiniteArtinAt_rat (a : ℚˣ) :
-    ∏ w : InfinitePlace ℚ, abelianizedLocalCyclotomicCharacter p w.Completion
-      (infiniteArtinAt w (Units.map (algebraMap ℚ w.Completion : ℚ →* w.Completion) a)) =
-      if 0 < (a : ℚ) then 1 else -1 := by
-  rw [Fintype.prod_unique]
-  exact abelianizedLocalCyclotomicCharacter_infiniteArtinAt_rat p _ a _
-    (by rw [Units.coe_map, MonoidHom.coe_ofClass, eq_ratCast])
-
-/-- **The product formula over `ℚ`**, with the finite places indexed by the primes. -/
+/-- **The product formula over `ℚ`**, with the finite places indexed by the primes. Only the
+primes dividing `p · a` contribute, and modulo every `p ^ n` the factors are the explicit
+cyclotomic symbols, so this is the product formula `prod_cyclotomicSymbol_of_subset`. -/
 private theorem finprod_ratLocalFactor_mul_eq_one (a : ℚˣ) :
     (∏ᶠ ℓ : Nat.Primes, ratLocalFactor p ℓ a) * (if 0 < (a : ℚ) then 1 else -1) = 1 := by
-  rw [← prod_infiniteArtinAt_rat]
-  refine DFunLike.congr_fun (MonoidHom.ext_units_rat (f := ratProduct p) (g := 1) ?_ fun q hq ↦ ?_)
-    a
-  · rw [ratProduct, MonoidHom.coe_mk, OneHom.coe_mk, finprod_ratLocalFactor_neg_one,
-      prod_infiniteArtinAt_rat]
-    simp
-  · rw [ratProduct, MonoidHom.coe_mk, OneHom.coe_mk, finprod_ratLocalFactor_prime p hq,
-      prod_infiniteArtinAt_rat]
-    simp [hq.pos]
+  set T := (p * (a : ℚ).num.natAbs * (a : ℚ).den).primeFactors
+  have hS : p * (a : ℚ).num.natAbs * (a : ℚ).den ≠ 0 :=
+    mul_ne_zero (mul_ne_zero (Fact.out : p.Prime).ne_zero
+      (Int.natAbs_ne_zero.2 (Rat.num_ne_zero.2 a.ne_zero))) (a : ℚ).den_ne_zero
+  have hT (ℓ : ℕ) (hℓ : ℓ ∈ T) : ℓ.Prime := Nat.prime_of_mem_primeFactors hℓ
+  let ι : T ↪ Nat.Primes := ⟨fun ℓ ↦ ⟨ℓ, hT ℓ ℓ.2⟩, fun _ _ h ↦
+    Subtype.ext (congrArg (fun q : Nat.Primes ↦ (q : ℕ)) h)⟩
+  rw [finprod_eq_prod_of_mulSupport_subset (s := T.attach.map ι) _ fun ℓ hℓ ↦ ?_,
+    Finset.prod_map]
+  · refine Units.ext (PadicInt.ext_of_toZModPow.1 fun n ↦ ?_)
+    have h := prod_cyclotomicSymbol_of_subset (p ^ n) T hT
+      (fun q hq ↦ Nat.mem_primeFactors.2 ⟨Nat.prime_of_mem_primeFactors hq,
+        ((Nat.prime_of_mem_primeFactors hq).dvd_of_dvd_pow (Nat.dvd_of_mem_primeFactors hq)).trans
+          ((dvd_mul_right _ _).mul_right _), hS⟩) a
+      (Nat.primeFactors_mono ((dvd_mul_left _ _).mul_right _) hS)
+      (Nat.primeFactors_mono (dvd_mul_left _ _) hS)
+    have hsign : Units.map (PadicInt.toZModPow n : ℤ_[p] →+* ZMod (p ^ n)).toMonoidHom
+        (if 0 < (a : ℚ) then 1 else -1) =
+          realCyclotomicSymbol (p ^ n) (Units.map (algebraMap ℚ ℝ).toMonoidHom a) := by
+      split_ifs with ha
+      · rw [map_one, realCyclotomicSymbol_of_pos _ _ (by simpa using ha)]
+      · rw [RingHom.toMonoidHom_eq_coe, Units.map_neg_one, realCyclotomicSymbol_of_neg _ _ (by
+          simpa using lt_of_le_of_ne (not_lt.1 ha) a.ne_zero)]
+    have key := congrArg Units.val (show Units.map
+        (PadicInt.toZModPow n : ℤ_[p] →+* ZMod (p ^ n)).toMonoidHom
+          ((∏ ℓ ∈ T.attach, ratLocalFactor p (ι ℓ) a) * (if 0 < (a : ℚ) then 1 else -1)) = 1 by
+      rw [map_mul, map_prod, hsign, mul_comm, ← h]
+      exact congrArg _ (Finset.prod_congr rfl fun ℓ _ ↦
+        unitsMap_toZModPow_ratLocalFactor p n (ι ℓ) a))
+    simpa using key
+  · by_contra h
+    have hℓT : ¬ (ℓ : ℕ) ∣ p * (a : ℚ).num.natAbs * (a : ℚ).den := fun hd ↦
+      h (Finset.mem_coe.2 (Finset.mem_map.2
+        ⟨⟨ℓ, Nat.mem_primeFactors.2 ⟨ℓ.2, hd, hS⟩⟩, Finset.mem_attach _ _, rfl⟩))
+    refine hℓ (ratLocalFactor_eq_one p (fun he ↦ hℓT ?_) (fun hd ↦ hℓT ?_) fun hd ↦ hℓT ?_)
+    · rw [he]
+      exact (dvd_mul_right _ _).mul_right _
+    · exact (hd.mul_left _).mul_right _
+    · exact hd.mul_left _
 
 end Rat
 
