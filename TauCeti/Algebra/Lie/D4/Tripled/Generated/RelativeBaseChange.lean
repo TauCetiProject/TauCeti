@@ -58,6 +58,50 @@ noncomputable def generatorCoordinateAlgebraBaseChangeIso
         (G := SplitTorus.characterGroup (Fin 4)))
 
 omit [Module.Free R S] in
+private theorem generatorCoordinateMap_baseChange_root (j : Fin 4 ⊕ Fin 4) :
+    (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R S 24).inv ≫
+        CommHopfAlgCat.baseChangeMap (generatorCoordinateMap R (.inl j)) ≫
+        (generatorCoordinateAlgebraBaseChangeIso R S (.inl j)).hom =
+      generatorCoordinateMap S (.inl j) := by
+  apply _root_.CommHopfAlgCat.hom_ext
+  apply GeneralLinear.coordinateHopfAlgebra_bialgHom_ext S 24
+  intro i k
+  rw [generatorCoordinateMap_inl, generatorCoordinateMap_inl,
+    GeneralLinear.coordinateHopfAlgebraBaseChangeMap_X]
+  rw [UniversalEnvelopingAlgebra.kostantRootSubgroupBaseChangePresentationCoordinateMap_def,
+    UniversalEnvelopingAlgebra.kostantRootSubgroupBaseChangePresentationCoordinateMap_def]
+  simp only [generatorCoordinateAlgebraBaseChangeIso,
+    _root_.CommHopfAlgCat.hom_comp, BialgHom.comp_apply]
+  rw [GeneralLinear.coordinateHopfAlgebraBaseChangeIso_inv_X,
+    CommHopfAlgCat.baseChangeMap_apply_tmul,
+    GeneralLinear.coordinateHopfAlgebraBaseChangeIso_inv_X,
+    CommHopfAlgCat.baseChangeMap_apply_tmul]
+  exact AdditiveGroup.gaScalarTensorBialgEquiv_one_tmul_gaScalarTensorBialgEquiv_one_tmul _
+
+omit [Module.Free R S] in
+private theorem generatorCoordinateMap_baseChange_weight (j : Unit) :
+    (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R S 24).inv ≫
+        CommHopfAlgCat.baseChangeMap (generatorCoordinateMap R (.inr j)) ≫
+        (generatorCoordinateAlgebraBaseChangeIso R S (.inr j)).hom =
+      generatorCoordinateMap S (.inr j) := by
+  apply _root_.CommHopfAlgCat.hom_ext
+  apply GeneralLinear.coordinateHopfAlgebra_bialgHom_ext S 24
+  intro i k
+  rw [generatorCoordinateMap_inr, generatorCoordinateMap_inr,
+    GeneralLinear.coordinateHopfAlgebraBaseChangeMap_X]
+  rw [GeneralLinear.weightTorusBaseChangeCoordinateMap_def,
+    GeneralLinear.weightTorusBaseChangeCoordinateMap_def]
+  simp only [generatorCoordinateAlgebraBaseChangeIso,
+    _root_.CommHopfAlgCat.hom_comp, BialgHom.comp_apply]
+  rw [GeneralLinear.coordinateHopfAlgebraBaseChangeIso_inv_X,
+    CommHopfAlgCat.baseChangeMap_apply_tmul,
+    GeneralLinear.coordinateHopfAlgebraBaseChangeIso_inv_X,
+    CommHopfAlgCat.baseChangeMap_apply_tmul,
+    DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso_hom_apply,
+    DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso_hom_apply]
+  exact MonoidAlgebra.scalarTensorBialgEquiv_one_tmul_scalarTensorBialgEquiv_one_tmul _ _
+
+omit [Module.Free R S] in
 /-- **The tripled type-D₄ generators commute with scalar extension.** Under the canonical
 coordinate identifications, each root-subgroup or weight-torus map over `R` extends to the
 corresponding map over `S`. -/
@@ -68,36 +112,9 @@ theorem generatorCoordinateMap_baseChange (j : Sum (Fin 4 ⊕ Fin 4) Unit) :
       generatorCoordinateMap S j := by
   let _ : IsScalarTower ℤ R S := IsScalarTower.of_algebraMap_eq fun x ↦ by
     exact (map_intCast (algebraMap R S) x).symm
-  apply _root_.CommHopfAlgCat.hom_ext
-  apply GeneralLinear.coordinateHopfAlgebra_bialgHom_ext S 24
-  intro i k
   cases j with
-  | inl j =>
-      rw [generatorCoordinateMap_inl, generatorCoordinateMap_inl,
-        GeneralLinear.coordinateHopfAlgebraBaseChangeMap_X]
-      rw [UniversalEnvelopingAlgebra.kostantRootSubgroupBaseChangePresentationCoordinateMap_def,
-        UniversalEnvelopingAlgebra.kostantRootSubgroupBaseChangePresentationCoordinateMap_def]
-      simp only [generatorCoordinateAlgebraBaseChangeIso,
-        _root_.CommHopfAlgCat.hom_comp, BialgHom.comp_apply]
-      rw [GeneralLinear.coordinateHopfAlgebraBaseChangeIso_inv_X,
-        CommHopfAlgCat.baseChangeMap_apply_tmul,
-        GeneralLinear.coordinateHopfAlgebraBaseChangeIso_inv_X,
-        CommHopfAlgCat.baseChangeMap_apply_tmul]
-      exact AdditiveGroup.gaScalarTensorBialgEquiv_one_tmul_gaScalarTensorBialgEquiv_one_tmul _
-  | inr j =>
-      rw [generatorCoordinateMap_inr, generatorCoordinateMap_inr,
-        GeneralLinear.coordinateHopfAlgebraBaseChangeMap_X]
-      rw [GeneralLinear.weightTorusBaseChangeCoordinateMap_def,
-        GeneralLinear.weightTorusBaseChangeCoordinateMap_def]
-      simp only [generatorCoordinateAlgebraBaseChangeIso,
-        _root_.CommHopfAlgCat.hom_comp, BialgHom.comp_apply]
-      rw [GeneralLinear.coordinateHopfAlgebraBaseChangeIso_inv_X,
-        CommHopfAlgCat.baseChangeMap_apply_tmul,
-        GeneralLinear.coordinateHopfAlgebraBaseChangeIso_inv_X,
-        CommHopfAlgCat.baseChangeMap_apply_tmul,
-        DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso_hom_apply,
-        DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso_hom_apply]
-      exact MonoidAlgebra.scalarTensorBialgEquiv_one_tmul_scalarTensorBialgEquiv_one_tmul _ _
+  | inl j => exact generatorCoordinateMap_baseChange_root R S j
+  | inr j => exact generatorCoordinateMap_baseChange_weight R S j
 
 /-- Scalar extension carries the generated tripled type-D₄ defining ideal to the ideal generated
 over the extension ring. -/
