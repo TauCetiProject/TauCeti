@@ -24,7 +24,7 @@ last formula is `x ⌢ 1 = x`. It is the unit law for the cap product of A. Hatc
 
 For explicit rewriting, use `TauCeti.capChain_constCochain X` and
 `TauCeti.singularCap_constSingularCocycle X`, with the space as the first argument.
-Both coefficient formulas are also available to `simp`.
+Both coefficient formulas are available to `simp` without opening the `TauCeti` namespace.
 -/
 
 public section
