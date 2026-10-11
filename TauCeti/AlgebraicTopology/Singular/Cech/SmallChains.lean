@@ -125,6 +125,11 @@ def openCoverSmallAugmentedSingularNerveEvaluationIso (q : ℕ) :
     (openCoverArrow U).augmentedCechNerveMapsFrom (SimplexCategory.toTop.obj ⦋q⦌) ≅
       ((SimplicialObject.Augmented.whiskering SSet.{u} (Type u)).obj
         ((evaluation _ _).obj (op ⦋q⦌))).obj (openCoverSmallAugmentedSingularNerve U) :=
+  -- `TopCat.toSSet` is `Presheaf.restrictedULiftYoneda.{0} SimplexCategory.toTop`, so its
+  -- `q`-simplices are by definition `ULift` of the maps out of `SimplexCategory.toTop.obj ⦋q⦌`,
+  -- with `Equiv.ulift` the identification (it is also the first step of `TopCat.toSSetObjEquiv`).
+  -- On both sides the simplicial operators act by postcomposition with the Čech nerve maps and the
+  -- augmentations by postcomposition with `WidePullback.base`, so all squares hold by `rfl`.
   Comma.isoMk
     (NatIso.ofComponents (fun n ↦ Equiv.toIso Equiv.ulift.symm) (by
         intro n m θ
@@ -164,6 +169,18 @@ def openCoverSmallSingularAugmentation :
     (((SimplicialObject.Augmented.whiskering SSet.{u} (ChainComplex C ℕ)).obj
       ((SSet.chainComplexFunctor C).obj R)).obj (openCoverSmallAugmentedSingularNerve U))
 
+/-- In Čech degree zero, the augmentation onto small chains is the chain map induced by the
+augmentation of the small augmented singular nerve. -/
+@[simp]
+theorem openCoverSmallSingularAugmentation_f_zero :
+    (openCoverSmallSingularAugmentation U R).f 0 =
+      ((SSet.chainComplexFunctor C).obj R).map
+        ((openCoverSmallAugmentedSingularNerve U).hom.app (op ⦋0⦌)) := by
+  rw [openCoverSmallSingularAugmentation, AlternatingFaceMapComplex.ε_app_f_zero]
+  dsimp [SimplicialObject.Augmented.whiskering, SimplicialObject.Augmented.whiskeringObj]
+  -- The whiskered augmentation ends with the component of `Functor.constComp`, an identity.
+  exact Category.comp_id _
+
 /-- The augmentation onto small chains followed by their inclusion is the augmentation onto all
 singular chains. -/
 @[reassoc (attr := simp)]
@@ -172,14 +189,11 @@ theorem openCoverSmallSingularAugmentation_comp_single₀_map :
         (SSet.chainComplexMap (X.smallSingularSubcomplex (fun i ↦ (U i : Set X))).ι R) =
       openCoverSingularAugmentation U R := by
   apply HomologicalComplex.to_single_hom_ext
-  rw [HomologicalComplex.comp_f, openCoverSingularAugmentation_f_zero,
-    openCoverSmallSingularAugmentation, AlternatingFaceMapComplex.ε_app_f_zero,
-    ChainComplex.single₀_map_f_zero]
-  dsimp [SimplicialObject.Augmented.whiskering, SimplicialObject.Augmented.whiskeringObj]
-  -- `Functor.constComp` contributes an identity; the rest is the image of
-  -- `openCoverSmallAugmentedSingularNerve_hom_app_ι` under the chain complex functor.
-  exact (Category.comp_id _ =≫ _).trans (((SSet.chainComplexFunctor C).obj R).map_comp _ _).symm
-    |>.trans (congrArg _ (openCoverSmallAugmentedSingularNerve_hom_app_ι U _))
+  rw [HomologicalComplex.comp_f, openCoverSmallSingularAugmentation_f_zero,
+    ChainComplex.single₀_map_f_zero, openCoverSingularAugmentation_f_zero]
+  -- The image of `openCoverSmallAugmentedSingularNerve_hom_app_ι` under the chain complex functor.
+  exact (((SSet.chainComplexFunctor C).obj R).map_comp _ _).symm.trans
+    (congrArg _ (openCoverSmallAugmentedSingularNerve_hom_app_ι U _))
 
 /-- **The rows of the Čech--singular bicomplex resolve the small singular chains.** In each
 singular degree `q`, the augmentation of the `q`-th row of the bicomplex onto the small singular
@@ -205,12 +219,19 @@ noncomputable def openCoverSmallSingularAugmentationRowHomotopyEquiv (q : ℕ) :
           simp only [ComplexShape.down_Rel] at *; omega)).eq_of_src _ _))))
 
 /-- The homotopy equivalence of a row is the row of the augmentation onto small chains. -/
+@[simp]
 theorem openCoverSmallSingularAugmentationRowHomotopyEquiv_hom (q : ℕ) :
     (openCoverSmallSingularAugmentationRowHomotopyEquiv U R q).hom =
       ((HomologicalComplex.eval C (ComplexShape.down ℕ) q).mapHomologicalComplex _).map
         (openCoverSmallSingularAugmentation U R) := by
   ext (_ | _)
-  · -- In degree `0` the outer stages of the composite are identities.
+  · -- Unfold the composite: its middle stage is, by the definition of
+    -- `ExtraDegeneracy.homotopyEquiv`, the augmentation `AlternatingFaceMapComplex.ε.app` of the
+    -- evaluated nerve, which in degree `0` is the row of the augmentation onto small chains. The
+    -- outer stages are identities in degree `0`. Rewriting with `HomotopyEquiv.trans_hom` or
+    -- `HomologicalComplex.comp_f` fails here: the stages compose only up to definitional equality.
+    dsimp only [openCoverSmallSingularAugmentationRowHomotopyEquiv, HomotopyEquiv.trans,
+      HomotopyEquiv.ofIso, SimplicialObject.Augmented.ExtraDegeneracy.homotopyEquiv]
     exact (Category.id_comp (obj := C) _).trans (Category.comp_id _)
   · exact ((HomologicalComplex.eval C (ComplexShape.down ℕ) q).map_isZero
       (HomologicalComplex.isZero_single_obj_X _ _ _ _ (by simp))).eq_of_tgt _ _
