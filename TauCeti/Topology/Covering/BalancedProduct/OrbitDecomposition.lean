@@ -70,6 +70,14 @@ theorem orbitEquiv_mk (o : MulAction.orbitRel.Quotient G A) (e : E) (a : o.orbit
     (orbitPairsEquiv_smul (G := G) (E := E) (A := A)) ⟨o, e, a⟩).trans
       (congrArg Quotient.mk'' (orbitPairsEquiv_apply o e a))
 
+/-- The inverse comparison places a representative in the summand of its label orbit. -/
+@[simp]
+theorem orbitEquiv_symm_mk (e : E) (a : A) :
+    (orbitEquiv (G := G)).symm (mk G e a) =
+      ⟨Quotient.mk'' a, mk G e ⟨a, MulAction.mem_orbit_self a⟩⟩ := by
+  apply (orbitEquiv (G := G)).injective
+  rw [Equiv.apply_symm_apply, orbitEquiv_mk]
+
 /-- On an arbitrary summand, the orbit comparison is the map induced by label inclusion. -/
 theorem orbitEquiv_apply (o : MulAction.orbitRel.Quotient G A)
     (z : BalancedProduct G E o.orbit) :
@@ -120,9 +128,8 @@ theorem orbitHomeomorph_mk (o : MulAction.orbitRel.Quotient G A) (e : E) (a : o.
 @[simp]
 theorem orbitHomeomorph_symm_mk (e : E) (a : A) :
     (orbitHomeomorph (G := G)).symm (mk G e a) =
-      ⟨Quotient.mk'' a, mk G e ⟨a, MulAction.mem_orbit_self a⟩⟩ := by
-  apply (orbitHomeomorph (G := G)).injective
-  rw [Homeomorph.apply_symm_apply, orbitHomeomorph_mk]
+      ⟨Quotient.mk'' a, mk G e ⟨a, MulAction.mem_orbit_self a⟩⟩ :=
+  orbitEquiv_symm_mk e a
 
 end Topology
 

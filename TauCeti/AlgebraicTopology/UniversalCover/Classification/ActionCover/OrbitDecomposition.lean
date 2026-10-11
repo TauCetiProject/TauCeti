@@ -20,9 +20,6 @@ This file identifies its projection to `X`: on each summand it is the associated
 projection for that orbit. Thus the disjoint-union comparison is over `X`. Each label orbit
 is nonempty and transitive, without requiring the whole action to be transitive. Empty label
 sets give empty disjoint unions.
-
-The comparison is the generic balanced-product decomposition; no second construction of
-associated covers or their orbit decomposition is introduced here.
 -/
 
 public section
