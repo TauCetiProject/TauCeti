@@ -27,7 +27,6 @@ Proposition `prop:FotimesL-mL`.
 ## Main definitions
 
 * `TauCeti.TwistingCocycle.map`: the image of a twisting cocycle under a DG algebra morphism.
-* `TauCeti.restrictScalarsPiEquiv`: the identification of `P → f^* M` with `P → M`.
 * `TauCeti.TwistingCocycle.twistedCochainComplexRestrictScalarsIso`: the isomorphism between the
   twisted complex of a restricted module and the twisted complex of the image cocycle.
 
@@ -58,7 +57,7 @@ variable {R : Type uR} {A : Type uA} {B : Type uB}
 namespace TwistingCocycle
 
 /-- The **image of a twisting cocycle** under a morphism of differential graded algebras. -/
-@[expose] def map (f : DGAlgHom hA hB) (m : TwistingCocycle 𝒜 dA P ind) :
+def map (f : DGAlgHom hA hB) (m : TwistingCocycle 𝒜 dA P ind) :
     TwistingCocycle ℬ dB P ind where
   m x y := f (m.m x y)
   mem_graded x y := Graded.map_mem f (m.mem_graded x y)
@@ -70,8 +69,8 @@ namespace TwistingCocycle
 
 @[simp]
 theorem map_m (f : DGAlgHom hA hB) (m : TwistingCocycle 𝒜 dA P ind) (x y : P) :
-    (m.map f).m x y = f (m.m x y) :=
-  rfl
+    (m.map f).m x y = f (m.m x y) := by
+  rw [map]
 
 /-- The image under the identity morphism is the cocycle itself. -/
 @[simp]
@@ -83,6 +82,7 @@ variable {C : Type*} [Ring C] [Algebra R C] {𝒞 : ℤ → Submodule R C} [Grad
   {dC : C →ₗ[R] C} {hC : IsDGAlgebra 𝒞 dC}
 
 /-- The image under a composite is the image of the image. -/
+@[simp]
 theorem map_map (g : DGAlgHom hB hC) (f : DGAlgHom hA hB) (m : TwistingCocycle 𝒜 dA P ind) :
     (m.map f).map g = m.map (g.comp f) := by
   ext x y
@@ -97,31 +97,6 @@ variable {M : Type uM} [AddCommGroup M] [Module R M] [Module Bᵐᵒᵖ M]
   {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
   [SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece ℳ]
   {dM : M →ₗ[R] M} (f : DGAlgHom hA hB)
-
-omit [Module Bᵐᵒᵖ M] [IsScalarTower R Bᵐᵒᵖ M]
-  [SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece ℳ] in
-/-- The Koszul twist of a restricted module is the Koszul twist of the original module. -/
-theorem val_koszulTwist_restrictScalars (q : ℤ) (x : DGRightModule.RestrictScalars f M) :
-    ((InternalGrading.ofDecomposition
-        (IsDGRightModule.restrictScalarsGrading (ℳ := ℳ) f)).koszulTwist q x).val =
-      (InternalGrading.ofDecomposition ℳ).koszulTwist q x.val := by
-  have hG :
-      InternalGrading.ofDecomposition (IsDGRightModule.restrictScalarsGrading (ℳ := ℳ) f) =
-      (InternalGrading.ofDecomposition ℳ).map
-        (DGRightModule.RestrictScalars.linearEquiv f M).symm :=
-    InternalGrading.ext fun p ↦ by
-      ext y
-      rw [InternalGrading.ofDecomposition_piece, IsDGRightModule.mem_restrictScalarsGrading_iff,
-        InternalGrading.mem_map_piece_iff, LinearEquiv.symm_symm,
-        InternalGrading.ofDecomposition_piece]
-  have h := LinearMap.congr_fun
-    (((InternalGrading.ofDecomposition ℳ).isHomogeneous_map_symm
-      (DGRightModule.RestrictScalars.linearEquiv f M).symm).koszulTwist_comp q) x
-  simp only [mul_zero, Int.negOnePow_zero, Units.val_one, Int.cast_one, one_smul,
-    LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.symm_symm,
-    DGRightModule.RestrictScalars.linearEquiv_apply] at h
-  rw [hG]
-  exact h.symm
 
 variable (m : P → P → A)
 
@@ -140,19 +115,6 @@ theorem val_twistedDifferential_restrictScalars (g : P → DGRightModule.Restric
   refine Finset.sum_congr rfl fun x _ ↦ ?_
   rw [DGRightModule.RestrictScalars.linearEquiv_apply, DGRightModule.RestrictScalars.val_op_smul,
     val_koszulTwist_restrictScalars]
-
-/-- The identification of `P → f^* M` with `P → M`, coordinatewise. -/
-def restrictScalarsPiEquiv :
-    (P → DGRightModule.RestrictScalars f M) ≃ₗ[R] (P → M) :=
-  LinearEquiv.piCongrRight fun _ ↦ DGRightModule.RestrictScalars.linearEquiv f M
-
-omit [Fintype P] [Module Bᵐᵒᵖ M] [IsScalarTower R Bᵐᵒᵖ M]
-  [DirectSum.Decomposition ℳ]
-  [SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece ℳ] in
-@[simp]
-theorem restrictScalarsPiEquiv_apply (g : P → DGRightModule.RestrictScalars f M) (x : P) :
-    restrictScalarsPiEquiv (M := M) (P := P) f g x = (g x).val := by
-  simp [restrictScalarsPiEquiv]
 
 omit [Fintype P] [Module Bᵐᵒᵖ M] [IsScalarTower R Bᵐᵒᵖ M]
   [SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece ℳ] in
@@ -214,6 +176,25 @@ noncomputable def twistedCochainComplexRestrictScalarsIso :
         val_twistedDifferential_restrictScalars, twistedCochainComplexXEquiv_restrictScalarsXEquiv]
       exact congrArg (fun φ ↦ twistedDifferential (fun x y ↦ f (m.m x y)) ℳ dM φ y)
         (funext fun x ↦ restrictScalarsPiEquiv_apply f _ x)
+
+/-- The isomorphism of twisted complexes is the degreewise identification. -/
+@[simp]
+theorem twistedCochainComplexRestrictScalarsIso_hom_f_apply (n : ℤ)
+    (g : (m.twistedCochainComplex (IsDGRightModule.restrictScalarsDifferential (dM := dM) f)
+      (hM.restrictScalars f)).X n) :
+    ((m.twistedCochainComplexRestrictScalarsIso f hM).hom.f n).hom g =
+      m.twistedCochainComplexRestrictScalarsXEquiv f hM n g := by
+  simp only [twistedCochainComplexRestrictScalarsIso, HomologicalComplex.Hom.isoOfComponents_hom_f,
+    LinearEquiv.toModuleIso_hom, ModuleCat.hom_ofHom, LinearEquiv.coe_coe]
+
+/-- The inverse isomorphism of twisted complexes is the inverse degreewise identification. -/
+@[simp]
+theorem twistedCochainComplexRestrictScalarsIso_inv_f_apply (n : ℤ)
+    (g : ((m.map f).twistedCochainComplex dM hM).X n) :
+    ((m.twistedCochainComplexRestrictScalarsIso f hM).inv.f n).hom g =
+      (m.twistedCochainComplexRestrictScalarsXEquiv f hM n).symm g := by
+  simp only [twistedCochainComplexRestrictScalarsIso, HomologicalComplex.Hom.isoOfComponents_inv_f,
+    LinearEquiv.toModuleIso_inv, ModuleCat.hom_ofHom, LinearEquiv.coe_coe]
 
 end TwistingCocycle
 
