@@ -151,11 +151,9 @@ theorem isSheaf_spaYPresheaf_of_spaY_eq (h : spaY p ϖ = spaY p ϖ')
   -- `Spa(𝕎 R, 𝕎 R)` with its structure presheaf, as a presheafed space
   let X : PresheafedSpace CompleteSeparatedTopCommRingCat :=
     ⟨TopCat.of (spa (⊤ : Subring (WittVector p R))), presentationLimitPresheaf P ⊤⟩
-  TopCat.Presheaf.isSheaf_of_iso (PresheafedSpace.sheafIsoOfIso
-      (PresheafedSpace.IsOpenImmersion.isoOfRangeEq
-        (X.ofRestrict (isOpenEmbedding_spaYInclusion p ϖ))
-        (X.ofRestrict (isOpenEmbedding_spaYInclusion p ϖ')) (range_spaYInclusion_eq h))).symm
-    (TopCat.Sheaf.pushforward_sheaf_of_sheaf _ hY)
+  (PresheafedSpace.IsOpenImmersion.isSheaf_iff_of_range_eq
+    (X.ofRestrict (isOpenEmbedding_spaYInclusion p ϖ))
+    (X.ofRestrict (isOpenEmbedding_spaYInclusion p ϖ')) (range_spaYInclusion_eq h)).mp hY
 
 end SpaYPreAdic
 
@@ -315,6 +313,7 @@ theorem quotientPreAdicHom_comp_spaXPreAdicSpaceCongr_hom (h : spaY p ϖ = spaY 
 
 /-- On points, the isomorphism of the pre-adic spaces `𝒳` is the homeomorphism `spaXCongr` of the
 orbit spaces. -/
+@[simp]
 theorem spaXPreAdicSpaceCongr_hom_base (h : spaY p ϖ = spaY p ϖ')
     (hY : (spaYPresheaf P ϖ).IsSheaf) (x : spaX hI) :
     (spaXPreAdicSpaceCongr P hI hI' h hY).hom.base x = spaXCongr hI hI' h x := by

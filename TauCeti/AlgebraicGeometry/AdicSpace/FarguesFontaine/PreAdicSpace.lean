@@ -40,8 +40,10 @@ on wandering opens, such as the Frobenius windows, with the corresponding pieces
   orbit spaces; on sections it takes values in the Frobenius-invariant sections of `𝒪_𝒴`, which are
   those of `𝒪_𝒳`.
 
-The sheaf condition on `𝒪_𝒴` is a hypothesis throughout, as for `isSheaf_spaXPresheaf` and
-`isIso_spaXPresheafRestrict`; it is not proved here.
+The sheaf condition on `𝒪_𝒴` is a hypothesis for the window charts and the stalks of `𝒳`, for `𝒳`
+as a pre-adic space and for the universal property in `𝒱^pre`, as for `isSheaf_spaXPresheaf` and
+`isIso_spaXPresheafRestrict`; it is not proved here. Frobenius on `𝒴`, the projection `q` and its
+universal property among presheafed spaces do not need it.
 
 ## Main definitions
 
@@ -233,6 +235,26 @@ theorem spaYFrobenius_toHom_comp_quotientPresheafedHom :
   exact NatTrans.ext (funext fun U ↦ (Category.assoc _ _ _).trans
     ((congrArg (fun t ↦ _ ≫ _ ≫ (spaYPresheaf P ϖ).map t) (Subsingleton.elim _ _)).trans (h U)))
 
+omit [IsTopologicalRing (WittVector p R)] in
+variable {hI} in
+/-- A function on `𝒴`, possibly dependent, that is invariant under Frobenius is invariant under
+every integer power of Frobenius. -/
+private theorem heq_zpow_apply_of_heq_frobenius {β : spaY p ϖ → Sort*} (F : ∀ y, β y)
+    (hF : ∀ y, HEq (F (frobeniusHomeomorph hI y)) (F y)) (n : ℤ) (y : spaY p ϖ) :
+    HEq (F ((frobeniusHomeomorph hI ^ n) y)) (F y) := by
+  induction n using Int.induction_on generalizing y with
+  | zero => exact congr_arg_heq F (by simp [Homeomorph.one_apply])
+  | succ n ih =>
+    rw [add_comm, zpow_one_add, Homeomorph.mul_apply]
+    exact (hF _).trans (ih y)
+  | pred n ih =>
+    have e : frobeniusHomeomorph hI ((frobeniusHomeomorph hI ^ (-(n : ℤ) - 1)) y) =
+        (frobeniusHomeomorph hI ^ (-(n : ℤ))) y := by
+      rw [← Homeomorph.mul_apply, ← zpow_one_add]
+      congr 2
+      omega
+    exact (hF _).symm.trans ((congr_arg_heq F e).trans (ih y))
+
 /-! ### The universal property of the projection -/
 
 section Desc
@@ -246,20 +268,10 @@ variable {P hI} {W : PresheafedSpace CompleteSeparatedTopCommRingCat.{v}}
 Frobenius. -/
 private theorem base_zpow_apply_of_comp_eq (hg : (spaYFrobenius P hI).toHom ≫ g = g) (n : ℤ)
     (v : spaY p ϖ) : g.base ((frobeniusHomeomorph hI ^ n) v) = g.base v := by
-  have h₁ (v : spaY p ϖ) : g.base (frobeniusHomeomorph hI v) = g.base v := by
-    have := congrArg (fun f ↦ f.base v) hg
-    rw [spaYFrobenius_toHom] at this
-    exact this
-  induction n using Int.induction_on generalizing v with
-  | zero => rw [zpow_zero, Homeomorph.one_apply]
-  | succ n ih => rw [add_comm, zpow_one_add, Homeomorph.mul_apply, h₁, ih]
-  | pred n ih =>
-    have e : frobeniusHomeomorph hI ((frobeniusHomeomorph hI ^ (-(n : ℤ) - 1)) v) =
-        (frobeniusHomeomorph hI ^ (-(n : ℤ))) v := by
-      rw [← Homeomorph.mul_apply, ← zpow_one_add]
-      congr 2
-      omega
-    rw [← h₁, e, ih]
+  refine eq_of_heq (heq_zpow_apply_of_heq_frobenius (fun v ↦ g.base v) (fun v ↦ heq_of_eq ?_) n v)
+  have := congrArg (fun f ↦ f.base v) hg
+  rw [spaYFrobenius_toHom] at this
+  exact this
 
 /-- The continuous map `𝒳 → W` through which a Frobenius-invariant morphism `𝒴 → W` factors. -/
 private def descBase (hg : (spaYFrobenius P hI).toHom ≫ g = g) :
@@ -494,20 +506,8 @@ private theorem heq_descendedValuation_frobenius (y : spaY p ϖ) :
 
 /-- Integer powers of Frobenius do not change the descended valuation. -/
 private theorem heq_descendedValuation_zpow (n : ℤ) (y : spaY p ϖ) :
-    HEq (descendedValuation P hI ((frobeniusHomeomorph hI ^ n) y)) (descendedValuation P hI y) := by
-  induction n using Int.induction_on generalizing y with
-  | zero => exact congr_arg_heq (descendedValuation P hI) (by simp [Homeomorph.one_apply])
-  | succ n ih =>
-    rw [add_comm, zpow_one_add, Homeomorph.mul_apply]
-    exact (heq_descendedValuation_frobenius _).trans (ih y)
-  | pred n ih =>
-    have e : frobeniusHomeomorph hI ((frobeniusHomeomorph hI ^ (-(n : ℤ) - 1)) y) =
-        (frobeniusHomeomorph hI ^ (-(n : ℤ))) y := by
-      rw [← Homeomorph.mul_apply, ← zpow_one_add]
-      congr 2
-      omega
-    exact (heq_descendedValuation_frobenius _).symm.trans
-      ((congr_arg_heq (descendedValuation P hI) e).trans (ih y))
+    HEq (descendedValuation P hI ((frobeniusHomeomorph hI ^ n) y)) (descendedValuation P hI y) :=
+  heq_zpow_apply_of_heq_frobenius _ heq_descendedValuation_frobenius n y
 
 /-- **The descended valuations do not depend on the representative of an orbit**: the compatibility
 hypothesis of `PreAdicSpace.descend` for the projection `𝒴 → 𝒳`. -/
