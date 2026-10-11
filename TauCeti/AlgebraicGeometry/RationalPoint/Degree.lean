@@ -28,17 +28,11 @@ degree, and for the Euler-characteristic degree of the associated line-bundle cl
 * `eulerDegree_toLineBundleClass_ofPoint_of_section`: on a proper integral curve, the
   line-bundle class `𝒪_X(x₀)` of a rational point has Euler-characteristic degree `1`.
 
-This is the geometric source of the weight-one base point hypothesis that the Layer A degree
-theory runs on: the weight of a point of a curve over `k` is its residue degree `[κ(x) : k]`
-(`SchemeWeilDivisor.relativeDegree`), and both the class-group splitting
-`OrderSystem.classGroupAddEquivPicZeroProdInt` and the Abel-Jacobi class
-`OrderSystem.weightedAbelJacobiClass` require a base point of weight one. So this file records
-precisely why a `k`-rational point supplies that hypothesis, instead of it having to be assumed.
-
-No external mathematics is vendored; the proofs reuse `SchemeWeilDivisor.relativeDegree_ofPoint`,
-the `AddMonoidHom` structure of `SchemeWeilDivisor.relativeDegree`, and
-`residueDegree_eq_one_of_section` from `RationalPoint.Basic`, as well as
-`LineBundleClass.eulerDegree_toLineBundleClass` from `WeilDivisor.Scheme.EulerCharacteristic`.
+On a curve over `k`, the divisor degree weights each point by its residue degree
+`[κ(x) : k]`. A `k`-rational point therefore has weight one, so subtracting the divisor degree
+times that point normalizes a divisor to degree zero. Its associated line bundle likewise has
+Euler-characteristic degree one, giving the degree-one input for the normalized Picard class
+`𝒪_X(x - x₀)` and the Abel–Jacobi map based at `x₀`.
 -/
 
 public section
@@ -55,9 +49,8 @@ variable {X S : Scheme.{u}} {f : X ⟶ S} {s : S ⟶ X}
 
 /-- A prime divisor whose generic point is a rational point has relative degree one.
 
-This is the geometric origin of the weight-one base point hypothesis of the Layer A degree
-theory: the weight of a codimension-one point `x` of a curve over `k` is its residue degree
-`[κ(x) : k]`, and at a `k`-rational point that weight is one. -/
+The relative degree weights a codimension-one point `x` of a curve over `k` by its residue
+degree `[κ(x) : k]`, so a `k`-rational point has weight one. -/
 theorem relativeDegree_ofPoint_of_section (hs : s ≫ f = 𝟙 S) {y : S}
     {x₀ : CodimensionOnePoint X} (hx₀ : (x₀ : X) = s y) :
     SchemeWeilDivisor.relativeDegree f (WeilDivisor.ofPoint x₀) = 1 := by
