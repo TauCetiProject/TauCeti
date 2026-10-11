@@ -11,9 +11,10 @@ public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 /-!
 # Cofiniteness of the projective congruence subgroup `Γ₀(N)`
 
-The image of `Γ₀(N)` in `PSL(2, ℝ)` is a finite-index subgroup of the effective level-one
-modular group. Since the latter is cofinite, the projective image is cofinite as well. This is
-the analytic finiteness input for constructing the modular curve of level `Γ₀(N)`.
+For nonzero `N`, the image of `Γ₀(N)` in `PSL(2, ℝ)` is a finite-index subgroup of the
+effective level-one modular group. Since the latter is cofinite, the projective image is
+cofinite as well. This provides the analytic finiteness input for constructing the modular
+curve of level `Γ₀(N)`.
 
 The proof uses the finite index of `Γ₀(N)` in `SL(2, ℤ)`, passes through the surjection from
 `SL(2, ℤ)` onto the image of `PSL(2, ℤ)` in `PSL(2, ℝ)`, and then applies the finite-index
@@ -21,8 +22,8 @@ inheritance theorem for cofiniteness.
 
 ## Main result
 
-* `CongruenceSubgroup.Gamma0_psl2zToPSL2RRange_isCofinite`: the effective image of `Γ₀(N)` is
-  cofinite in `PSL(2, ℝ)`.
+* `CongruenceSubgroup.Gamma0_psl2zToPSL2RRange_isCofinite`: for nonzero `N`, the effective
+  image of `Γ₀(N)` is cofinite in `PSL(2, ℝ)`.
 
 ## References
 
@@ -36,8 +37,8 @@ open scoped MatrixGroups
 
 namespace CongruenceSubgroup
 
-/-- The image of `Γ₀(N)` in `PSL(2, ℝ)` is cofinite. It has finite index in the effective
-level-one modular group, which is cofinite by its standard fundamental domain. -/
+/-- For nonzero `N`, the image of `Γ₀(N)` in `PSL(2, ℝ)` is cofinite. It has finite index
+in the effective level-one modular group, which is cofinite by its standard fundamental domain. -/
 theorem Gamma0_psl2zToPSL2RRange_isCofinite (N : ℕ) [NeZero N] :
     ((Gamma0 N).map sl2zToPSL2R).IsCofinite := by
   let p : SL(2, ℤ) →* PSL(2, ℤ) := QuotientGroup.mk' (Subgroup.center SL(2, ℤ))
