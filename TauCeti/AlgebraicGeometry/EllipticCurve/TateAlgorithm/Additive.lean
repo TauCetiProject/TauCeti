@@ -50,10 +50,11 @@ minimal; `WeierstrassCurve.not_isMinimal_baseChange_of_pow_dvd` records this.
   equation over `R` with nonzero discriminant and `ϖⁱ ∣ aᵢ` for `i = 1, 2, 3, 4, 6` is not minimal
   over the fraction field.
 
-* `WeierstrassCurve.pow_three_dvd_Δ_of_tateStepThree`,
-  `WeierstrassCurve.pow_four_dvd_Δ_of_tateStepFour`, and
-  `WeierstrassCurve.pow_five_dvd_Δ_of_tateStepFive`: discriminant bounds at the early
-  additive tests; `WeierstrassCurve.sq_dvd_b₄_of_tateStepFour` supplies the Step 4 bound.
+* `WeierstrassCurve.pow_three_dvd_Δ_of_dvd_b₂_of_dvd_a₃_of_dvd_a₄_of_sq_dvd_a₆`,
+  `WeierstrassCurve.pow_four_dvd_Δ_of_dvd_b₂_of_sq_dvd_b₆_of_pow_three_dvd_b₈`, and
+  `WeierstrassCurve.pow_five_dvd_Δ_of_dvd_b₂_of_pow_three_dvd_b₆_of_pow_three_dvd_b₈`:
+  discriminant bounds at the early additive tests;
+  `WeierstrassCurve.sq_dvd_b₄_of_dvd_b₂_of_sq_dvd_b₆_of_pow_three_dvd_b₈` supplies the Step 4 bound.
 
 ## References
 
@@ -187,12 +188,13 @@ variable {R : Type*} [CommRing R] (W : WeierstrassCurve R) (ϖ : R)
 
 /-- If the Step 3 test fails (`ϖ² ∣ a₆`), the discriminant is divisible by `ϖ³`.
 The coefficient conditions are those of the Step 2 normal form. -/
-theorem _root_.WeierstrassCurve.pow_three_dvd_Δ_of_tateStepThree
+theorem _root_.WeierstrassCurve.pow_three_dvd_Δ_of_dvd_b₂_of_dvd_a₃_of_dvd_a₄_of_sq_dvd_a₆
     (hb₂ : ϖ ∣ W.b₂) (h₃ : ϖ ∣ W.a₃) (h₄ : ϖ ∣ W.a₄) (h₆ : ϖ ^ 2 ∣ W.a₆) :
     ϖ ^ 3 ∣ W.Δ := by
   have h₆one : ϖ ∣ W.a₆ := (dvd_pow_self ϖ (by decide : 2 ≠ 0)).trans h₆
   have hb₈ : ϖ ^ 2 ∣ W.b₈ :=
-    (W.tateStepTwo_invariant_divisibilities ϖ hb₂ h₃ h₄ h₆one).2.2
+    (W.dvd_b₄_and_dvd_b₆_and_sq_dvd_b₈_of_dvd_b₂_of_dvd_a₃_of_dvd_a₄_of_dvd_a₆
+      ϖ hb₂ h₃ h₄ h₆one).2.2
   obtain ⟨B₂, hB₂⟩ := hb₂
   obtain ⟨A₃, hA₃⟩ := h₃
   obtain ⟨A₄, hA₄⟩ := h₄
@@ -210,7 +212,7 @@ theorem _root_.WeierstrassCurve.pow_three_dvd_Δ_of_tateStepThree
 
 /-- At Step 4, the failed `b₈` test forces `ϖ² ∣ b₄` from
 `4 b₈ = b₂ b₆ - b₄²`. No restriction on the residue characteristic is needed. -/
-theorem _root_.WeierstrassCurve.sq_dvd_b₄_of_tateStepFour
+theorem _root_.WeierstrassCurve.sq_dvd_b₄_of_dvd_b₂_of_sq_dvd_b₆_of_pow_three_dvd_b₈
     [IsDomain R]
     (hϖ : Prime ϖ) (hb₂ : ϖ ∣ W.b₂) (hb₆ : ϖ ^ 2 ∣ W.b₆)
     (hb₈ : ϖ ^ 3 ∣ W.b₈) : ϖ ^ 2 ∣ W.b₄ := by
@@ -236,11 +238,11 @@ theorem _root_.WeierstrassCurve.sq_dvd_b₄_of_tateStepFour
 
 /-- If the Step 4 test fails (`ϖ³ ∣ b₈`), then `ϖ⁴` divides the discriminant.
 The `ϖ² ∣ b₆` hypothesis already follows from the failed Step 3 test. -/
-theorem _root_.WeierstrassCurve.pow_four_dvd_Δ_of_tateStepFour
+theorem _root_.WeierstrassCurve.pow_four_dvd_Δ_of_dvd_b₂_of_sq_dvd_b₆_of_pow_three_dvd_b₈
     [IsDomain R]
     (hϖ : Prime ϖ) (hb₂ : ϖ ∣ W.b₂) (hb₆ : ϖ ^ 2 ∣ W.b₆)
     (hb₈ : ϖ ^ 3 ∣ W.b₈) : ϖ ^ 4 ∣ W.Δ := by
-  have hb₄ := W.sq_dvd_b₄_of_tateStepFour ϖ hϖ hb₂ hb₆ hb₈
+  have hb₄ := W.sq_dvd_b₄_of_dvd_b₂_of_sq_dvd_b₆_of_pow_three_dvd_b₈ ϖ hϖ hb₂ hb₆ hb₈
   obtain ⟨B₂, hB₂⟩ := hb₂
   obtain ⟨B₄, hB₄⟩ := hb₄
   obtain ⟨B₆, hB₆⟩ := hb₆
@@ -253,12 +255,12 @@ theorem _root_.WeierstrassCurve.pow_four_dvd_Δ_of_tateStepFour
 /-- If the Step 5 test also fails (`ϖ³ ∣ b₆`), then `ϖ⁵` divides the discriminant.
 This is the discriminant bound at the entry to Step 6, before its normalising change of
 variables. -/
-theorem _root_.WeierstrassCurve.pow_five_dvd_Δ_of_tateStepFive
+theorem _root_.WeierstrassCurve.pow_five_dvd_Δ_of_dvd_b₂_of_pow_three_dvd_b₆_of_pow_three_dvd_b₈
     [IsDomain R] (hϖ : Prime ϖ) (hb₂ : ϖ ∣ W.b₂) (hb₆ : ϖ ^ 3 ∣ W.b₆)
     (hb₈ : ϖ ^ 3 ∣ W.b₈) : ϖ ^ 5 ∣ W.Δ := by
   have hb₆two : ϖ ^ 2 ∣ W.b₆ :=
     (pow_dvd_pow ϖ (by decide : 2 ≤ 3)).trans hb₆
-  have hb₄ := W.sq_dvd_b₄_of_tateStepFour ϖ hϖ hb₂ hb₆two hb₈
+  have hb₄ := W.sq_dvd_b₄_of_dvd_b₂_of_sq_dvd_b₆_of_pow_three_dvd_b₈ ϖ hϖ hb₂ hb₆two hb₈
   obtain ⟨B₂, hB₂⟩ := hb₂
   obtain ⟨B₄, hB₄⟩ := hb₄
   obtain ⟨B₆, hB₆⟩ := hb₆

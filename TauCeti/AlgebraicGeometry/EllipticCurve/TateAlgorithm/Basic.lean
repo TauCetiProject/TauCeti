@@ -53,9 +53,9 @@ cubic `y² = x³ − s` is singular only at `(s^{1/3}, 0)`, which is not rationa
   an equation, the reduction is split multiplicative exactly when `π ∤ b₂` and `T² + a₁ T − a₂`
   splits over the residue field.
 
-* `WeierstrassCurve.tateStepTwo_invariant_divisibilities` and
-  `WeierstrassCurve.sq_dvd_Δ_of_tateStepTwo`: the invariant and discriminant divisibilities
-  of the additive Step 2 normal form.
+* `WeierstrassCurve.dvd_b₄_and_dvd_b₆_and_sq_dvd_b₈_of_dvd_b₂_of_dvd_a₃_of_dvd_a₄_of_dvd_a₆`
+  and `WeierstrassCurve.sq_dvd_Δ_of_dvd_b₂_of_dvd_a₃_of_dvd_a₄_of_dvd_a₆`: the invariant and
+  discriminant divisibilities of the additive Step 2 normal form.
 
 ## References
 
@@ -183,7 +183,8 @@ variable {R : Type*} [CommRing R] (W : WeierstrassCurve R) (ϖ : R)
 
 /-- In the additive Step 2 normal form, `ϖ` divides `b₄` and `b₆`, and `ϖ²` divides
 `b₈`. The last assertion uses `ϖ ∣ b₂` as well as the singularity at the origin. -/
-theorem _root_.WeierstrassCurve.tateStepTwo_invariant_divisibilities
+theorem
+    _root_.WeierstrassCurve.dvd_b₄_and_dvd_b₆_and_sq_dvd_b₈_of_dvd_b₂_of_dvd_a₃_of_dvd_a₄_of_dvd_a₆
     (hb₂ : ϖ ∣ W.b₂) (h₃ : ϖ ∣ W.a₃) (h₄ : ϖ ∣ W.a₄) (h₆ : ϖ ∣ W.a₆) :
     ϖ ∣ W.b₄ ∧ ϖ ∣ W.b₆ ∧ ϖ ^ 2 ∣ W.b₈ := by
   obtain ⟨B₂, hB₂⟩ := hb₂
@@ -199,10 +200,12 @@ theorem _root_.WeierstrassCurve.tateStepTwo_invariant_divisibilities
     linear_combination (ϖ * A₆) * hB₂
 
 /-- The additive Step 2 normal form has discriminant divisible by `ϖ²`. -/
-theorem _root_.WeierstrassCurve.sq_dvd_Δ_of_tateStepTwo
+theorem _root_.WeierstrassCurve.sq_dvd_Δ_of_dvd_b₂_of_dvd_a₃_of_dvd_a₄_of_dvd_a₆
     (hb₂ : ϖ ∣ W.b₂) (h₃ : ϖ ∣ W.a₃) (h₄ : ϖ ∣ W.a₄) (h₆ : ϖ ∣ W.a₆) :
     ϖ ^ 2 ∣ W.Δ := by
-  obtain ⟨hb₄, hb₆, hb₈⟩ := W.tateStepTwo_invariant_divisibilities ϖ hb₂ h₃ h₄ h₆
+  obtain ⟨hb₄, hb₆, hb₈⟩ :=
+    W.dvd_b₄_and_dvd_b₆_and_sq_dvd_b₈_of_dvd_b₂_of_dvd_a₃_of_dvd_a₄_of_dvd_a₆
+      ϖ hb₂ h₃ h₄ h₆
   obtain ⟨B₂, hB₂⟩ := hb₂
   obtain ⟨B₄, hB₄⟩ := hb₄
   obtain ⟨B₆, hB₆⟩ := hb₆
