@@ -33,6 +33,7 @@ Galois extension be recognised over an algebraic closure.
   tensors.
 * `TauCeti.Bialgebra.TensorProduct.baseChangeTowerBialgEquiv_symm_tmul`: the value of its
   inverse on pure tensors.
+* `TensorProduct.baseChangeTowerBialgEquiv_symm_map`: its inverse is natural in the outer ring.
 
 ## References
 
@@ -133,6 +134,18 @@ theorem baseChangeTowerBialgEquiv_symm_tmul (s : K) (h : H) :
     (baseChangeTowerBialgEquiv k L H K).symm (s ⊗ₜ[k] h) = s ⊗ₜ[L] (1 ⊗ₜ[k] h) := by
   apply EquivLike.injective (baseChangeTowerBialgEquiv k L H K)
   simp only [BialgEquiv.apply_symm_apply, baseChangeTowerBialgEquiv_tmul, one_smul]
+
+/-- The inverse tower comparison is natural in the outer ring: for an `L`-algebra homomorphism
+`f : K →ₐ[L] K'`, it intertwines the two scalar extensions along `f`. -/
+theorem _root_.TensorProduct.baseChangeTowerBialgEquiv_symm_map {K' : Type*} [CommSemiring K']
+    [Algebra k K'] [Algebra L K'] [IsScalarTower k L K'] (f : K →ₐ[L] K') (x : K ⊗[k] H) :
+    (baseChangeTowerBialgEquiv k L H K').symm
+        (Algebra.TensorProduct.map (f.restrictScalars k) (AlgHom.id k H) x) =
+      Algebra.TensorProduct.map f (AlgHom.id L (L ⊗[k] H))
+        ((baseChangeTowerBialgEquiv k L H K).symm x) := by
+  induction x using _root_.TensorProduct.inductionOn with
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | tmul s h => simp
 
 end Tower
 

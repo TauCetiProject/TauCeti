@@ -103,20 +103,9 @@ theorem groupSchemeι_comp_determinant :
 group scheme. -/
 instance isClosedImmersion_groupSchemeι :
     AlgebraicGeometry.IsClosedImmersion (groupSchemeι R n).hom.hom.left := by
-  let e1 := (eqToHom (groupScheme_def R n)).hom.hom.left
-  let c := (CommHopfAlgCat.kernelSpecι (GeneralLinear.determinantCoordinateMap R n)).hom.hom.left
-  let e2 := (eqToHom (GeneralLinear.groupScheme_def R n).symm).hom.hom.left
-  have hc : AlgebraicGeometry.IsClosedImmersion c := by
-    dsimp only [c]
-    rw [CommHopfAlgCat.kernelSpecι_def]
-    infer_instance
-  have hec : AlgebraicGeometry.IsClosedImmersion (e1 ≫ c) :=
-    (MorphismProperty.cancel_left_of_respectsIso _ e1 c).2 hc
-  have hece : AlgebraicGeometry.IsClosedImmersion ((e1 ≫ c) ≫ e2) :=
-    (MorphismProperty.cancel_right_of_respectsIso _ (e1 ≫ c) e2).2 hec
-  rw [groupSchemeι_def]
+  rw [groupSchemeι_def, CommHopfAlgCat.kernelSpecι_def]
   simp only [Grp.comp', Mon.comp_hom', Over.comp_left]
-  exact hece
+  infer_instance
 
 /-- The structural morphism of the special-linear group scheme is locally of finite type. -/
 instance locallyOfFiniteType_groupScheme :

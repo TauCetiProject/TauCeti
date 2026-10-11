@@ -20,10 +20,9 @@ canonical topology of the linear automorphism group `V ≃ₗ[K] V`, is compact 
 anisotropic. No nondegeneracy assumption is needed.
 
 For an isotropic form, `O(Q)` is not compact over any nontrivially normed field, without local
-compactness or finite-dimensionality. In finite dimension, `SO(Q)` is not compact either when
-the radical is trivial. More generally, any set of automorphisms containing the split torus of a
-hyperbolic pair at every square parameter is not compact; this also applies to the image of the
-Spin group. None of these results requires a condition on `2`.
+compactness or finite-dimensionality. More generally, any set of automorphisms containing the
+split torus of a hyperbolic pair at every square parameter is not compact; this also applies to
+the image of the Spin group. None of these results requires a condition on `2`.
 
 ## Main results
 
@@ -33,8 +32,6 @@ Spin group. None of these results requires a condition on `2`.
   is compact.
 * `TauCeti.QuadraticMap.not_isCompact_orthogonalGroup`: the orthogonal group of an isotropic form
   is not compact.
-* `TauCeti.QuadraticMap.not_isCompact_specialOrthogonalGroup`: the special orthogonal group of
-  an isotropic form with trivial radical is not compact.
 * `TauCeti.QuadraticMap.isCompact_orthogonalGroup_iff`: the orthogonal group is compact exactly
   when the form is anisotropic.
 -/
@@ -72,16 +69,6 @@ theorem not_isCompact_of_hyperbolicPairTorus_sq_mem {u v : V} (hu : Q u = 0) (hv
   have := hr _ ⟨_, hS (Units.mk0 t ht0), rfl⟩
   simp only [htorus, Units.val_pow_eq_pow_val, Units.val_mk0, norm_pow] at this
   nlinarith [le_max_left r 1, le_max_right r 1]
-
-/-- The special orthogonal group of an isotropic quadratic form with trivial radical on a
-finite-dimensional space over a nontrivially normed field is not compact. -/
-theorem not_isCompact_specialOrthogonalGroup [FiniteDimensional K V] (hQ : Q.radical = ⊥)
-    (hiso : ¬Q.Anisotropic) :
-    ¬IsCompact (specialOrthogonalGroup Q : Set (V ≃ₗ[K] V)) := by
-  obtain ⟨u, v, -, hu, hv, huv⟩ :=
-    _root_.QuadraticMap.exists_isotropic_pair_of_radical_eq_bot hQ hiso
-  exact not_isCompact_of_hyperbolicPairTorus_sq_mem Q hu hv huv fun t =>
-    hyperbolicPairTorus_mem_specialOrthogonalGroup hu hv huv (t ^ 2)
 
 /-- The orthogonal group of an isotropic quadratic form over a nontrivially normed field is not
 compact. No nondegeneracy or finite-dimensionality is required. -/
