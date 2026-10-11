@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.Average
+import Mathlib.Analysis.Convex.Integral
 
 /-!
 # Norms of averages
@@ -24,7 +25,8 @@ about any convenient constant gives one about the average, the form used by the 
 inequality.
 
 The average of a function over a set `s` is also controlled by its average over a larger set
-`t ⊇ s`, at the cost of the ratio `μ t / μ s` of their measures.
+`t ⊇ s`, at the cost of the ratio `μ t / μ s` of their measures. In square mean the same
+comparison with a constant reads `∫_s ‖f - f_s‖² ≤ 4 ∫_s ‖f - c‖²` on a set of finite measure.
 
 Averages are unchanged by a change of variables that rescales the measure by a constant factor,
 such as an affine homothety of a finite-dimensional space with its Haar measure: if a measurable
@@ -41,6 +43,8 @@ equivalence `e` pushes `μ` forward to `a • ν` with `0 < a < ∞`, then the a
   average is at most twice its mean oscillation about any constant.
 * `TauCeti.norm_setAverage_sub_le_of_subset`: the average over a subset `s ⊆ t`
   differs from a constant `c` by at most `μ t / μ s` times the average of `‖f - c‖` over `t`.
+* `TauCeti.setIntegral_norm_sub_setAverage_sq_le`: the square mean oscillation of `f` about its
+  average is at most four times its square mean oscillation about any constant.
 * `TauCeti.setLIntegral_comp_preimage_of_map_eq_smul`,
   `TauCeti.setIntegral_comp_preimage_of_map_eq_smul`,
   `TauCeti.setLAverage_comp_preimage_of_map_eq_smul`,
@@ -141,6 +145,46 @@ theorem norm_setAverage_sub_le_of_subset (hst : s ⊆ t) (hs : μ s ≠ 0) (ht :
     _ = μ.real t / μ.real s * ⨍ x in t, ‖f x - c‖ ∂μ := by
         rw [setAverage_eq, smul_eq_mul]
         field_simp
+
+/-- The square mean oscillation of `f` on a set `s` of finite measure about its own average is at
+most four times its square mean oscillation about any constant `c`:
+`∫_s ‖f - f_s‖² ≤ 4 ∫_s ‖f - c‖²`. -/
+theorem setIntegral_norm_sub_setAverage_sq_le (hs : μ s ≠ ⊤) (hf : IntegrableOn f s μ) {c : F}
+    (hfc : IntegrableOn (fun x ↦ ‖f x - c‖ ^ 2) s μ) :
+    ∫ x in s, ‖f x - ⨍ y in s, f y ∂μ‖ ^ 2 ∂μ ≤ 4 * ∫ x in s, ‖f x - c‖ ^ 2 ∂μ := by
+  rcases eq_or_ne (μ s) 0 with h0 | h0
+  · simp [Measure.restrict_eq_zero.2 h0]
+  have hm : 0 < μ.real s := ENNReal.toReal_pos h0 hs
+  set a := ‖(⨍ y in s, f y ∂μ) - c‖
+  set J := ∫ x in s, ‖f x - c‖ ^ 2 ∂μ
+  -- The average lies within the mean of `‖f - c‖` of `c`, and Jensen's inequality bounds the
+  -- square of that mean by the mean of `‖f - c‖²`, so `μ s * a² ≤ J`.
+  have ha : a ≤ ⨍ x in s, ‖f x - c‖ ∂μ := by
+    simpa [div_self hm.ne'] using norm_setAverage_sub_le_of_subset subset_rfl h0 hs hf c
+  have hJ : (⨍ x in s, ‖f x - c‖ ∂μ) ^ 2 ≤ ⨍ x in s, ‖f x - c‖ ^ 2 ∂μ :=
+    (Even.convexOn_pow even_two).map_set_average_le (continuous_pow 2).continuousOn isClosed_univ
+      h0 hs (ae_of_all _ fun _ ↦ Set.mem_univ _) (hf.sub (integrableOn_const hs)).norm hfc
+  have haJ : μ.real s * a ^ 2 ≤ J := by
+    calc μ.real s * a ^ 2 ≤ μ.real s * ⨍ x in s, ‖f x - c‖ ^ 2 ∂μ := by
+          gcongr
+          exact (pow_le_pow_left₀ (norm_nonneg _) ha 2).trans hJ
+      _ = J := by rw [setAverage_eq, smul_eq_mul, ← mul_assoc, mul_inv_cancel₀ hm.ne', one_mul]
+  -- Pointwise, `‖f x - f_s‖² ≤ 2 ‖f x - c‖² + 2 a²`.
+  calc ∫ x in s, ‖f x - ⨍ y in s, f y ∂μ‖ ^ 2 ∂μ
+      ≤ ∫ x in s, (2 * ‖f x - c‖ ^ 2 + 2 * a ^ 2) ∂μ := by
+        refine integral_mono_of_nonneg (ae_of_all _ fun _ ↦ by positivity)
+          ((hfc.const_mul 2).add (integrableOn_const hs)) (ae_of_all _ fun x ↦ ?_)
+        have htri : ‖f x - ⨍ y in s, f y ∂μ‖ ≤ ‖f x - c‖ + a := by
+          calc ‖f x - ⨍ y in s, f y ∂μ‖ = ‖(f x - c) - ((⨍ y in s, f y ∂μ) - c)‖ := by
+                congr 1; abel
+            _ ≤ ‖f x - c‖ + a := norm_sub_le _ _
+        have h0' : 0 ≤ ‖f x - ⨍ y in s, f y ∂μ‖ := norm_nonneg _
+        nlinarith [sq_nonneg (‖f x - c‖ - a)]
+    _ = 2 * J + 2 * (μ.real s * a ^ 2) := by
+        rw [integral_add (hfc.const_mul 2) (integrableOn_const hs), integral_const_mul,
+          setIntegral_const, smul_eq_mul]
+        ring
+    _ ≤ 4 * J := by linarith
 
 end Subset
 
