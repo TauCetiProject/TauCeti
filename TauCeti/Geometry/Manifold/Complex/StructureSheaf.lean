@@ -178,26 +178,12 @@ open CategoryTheory.Limits
 
 variable (I X)
 
-/-- Evaluation of a holomorphic section at a point of its domain, as a ring homomorphism. -/
-def evalAt (x : X) (U : OpenNhds (X := TopCat.of X) x) :
-    (holomorphicStructureSheaf I X).obj.obj (op (α := Opens X) U.1) →+* ℂ :=
-    { toFun := fun f ↦ f ⟨x, U.2⟩
-      map_one' := one_apply _
-      map_mul' := fun f g ↦ mul_apply f g _
-      map_zero' := zero_apply _
-      map_add' := fun f g ↦ add_apply f g _ }
-
-@[simp]
-theorem evalAt_apply (x : X) (U : OpenNhds (X := TopCat.of X) x)
-    (f : (holomorphicStructureSheaf I X).obj.obj (op (α := Opens X) U.1)) :
-    evalAt I X x U f = toFun I X (op (α := Opens X) U.1) f ⟨x, U.2⟩ := (rfl)
-
 /-- Evaluation of germs at their base point, as a morphism of commutative rings. -/
 def evalHom (x : X) : (holomorphicStructureSheaf I X).presheaf.stalk x ⟶ CommRingCat.of ℂ :=
   colimit.desc _
     { pt := CommRingCat.of ℂ
       ι :=
-        { app := fun U ↦ CommRingCat.ofHom (evalAt I X x (unop U))
+        { app := fun U ↦ CommRingCat.ofHom (ContMDiffMap.evalRingHom ⟨x, (unop U).2⟩)
           naturality := by
             intro U V h
             apply CommRingCat.hom_ext
@@ -217,7 +203,9 @@ def eval (x : X) : (holomorphicStructureSheaf I X).presheaf.stalk x →+* ℂ :=
 @[simp, reassoc]
 theorem germ_evalHom (U : Opens X) (x : X) (hx : x ∈ U) :
     (holomorphicStructureSheaf I X).presheaf.germ U x hx ≫ evalHom I X x =
-      CommRingCat.ofHom (evalAt I X x ⟨U, hx⟩) :=
+      eqToHom (obj_eq I X (op (α := Opens X) U)) ≫
+        CommRingCat.ofHom (ContMDiffMap.evalRingHom (I := I) (I' := 𝓘(ℂ))
+          (n := ω) (R := ℂ) (⟨x, hx⟩ : U)) :=
   colimit.ι_desc _ _
 
 /-- Evaluation of a germ, in the categorical form of the stalk evaluation map. -/
@@ -228,7 +216,8 @@ theorem evalHom_germ (U : Opens X) (x : X) (hx : x ∈ U)
         ((holomorphicStructureSheaf I X).presheaf.germ U x hx) f)) =
       toFun I X (op (α := Opens X) U) f ⟨x, hx⟩ := (by
   rw [← ConcreteCategory.comp_apply, germ_evalHom]
-  exact evalAt_apply I X x ⟨U, hx⟩ f)
+  -- Mathlib's evaluation homomorphism evaluates the bundled section's underlying function.
+  rfl)
 
 -- Avoid indexing on carrier projections that normalize differently after import.
 /-- Evaluating the germ of a section returns its value at the base point. -/
