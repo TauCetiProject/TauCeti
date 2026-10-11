@@ -11,14 +11,17 @@ public import Mathlib.FieldTheory.Normal.Closure
 /-!
 # Tame ramification of normal closures
 
-The normal closure of a finite tamely ramified extension of nonarchimedean local fields is
-again tamely ramified. This permits testing tame ramification in a normal extension without
-requiring the original extension to be Galois. The normal closure may carry any compatible
-local-field structures extending the base; the ambient field needs no valuation or topology.
+For a finite tamely ramified extension `L/K` of nonarchimedean local fields, Mathlib's
+`IntermediateField.normalClosure K L Ω`, the compositum of all `K`-embedding images of `L` in
+`Ω`, is tamely ramified. It may carry any compatible local-field structures extending the
+base; the ambient field needs no valuation or topology.
 
-Mathlib's `IntermediateField.normalClosure` is the compositum of the images of all embeddings
-of the extension. There are finitely many such embeddings, and tameness is preserved by
-embeddings and finite composita.
+When `Ω/K` is normal and admits a `K`-embedding of `L`, this compositum is a normal closure
+in the sense of `IsNormalClosure`. In particular, taking `Ω` to be an algebraic closure proves
+that the usual normal closure is tame, permitting tame ramification to be tested in a normal
+extension without requiring `L/K` to be Galois. For an arbitrary ambient field the result
+still applies to the compositum of its embedding images; if there are no embeddings, that
+compositum is the degree-one extension `⊥`.
 
 ## References
 
@@ -41,9 +44,10 @@ variable {K L Ω : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField (normalClosure K L Ω)]
   [ValuativeExtension K (normalClosure K L Ω)]
 
-/-- The normal closure of a tamely ramified finite extension is tamely ramified, for any
-compatible local-field structures over the base. The ambient field need not be normal,
-algebraically closed, or valued. -/
+/-- The compositum of all `K`-embedding images of a tamely ramified finite extension `L/K` in
+`Ω` is tamely ramified, for any compatible local-field structures over the base. If `Ω/K` is
+normal and admits such an embedding, this is a normal closure of `L/K` in the sense of
+`IsNormalClosure`; otherwise it is Mathlib's embedding-image compositum (possibly `⊥`). -/
 theorem IsTamelyRamified.normalClosure (hL : IsTamelyRamified K L) :
     IsTamelyRamified K (IntermediateField.normalClosure K L Ω) := by
   have := finite_of_valuativeExtension K L
