@@ -220,6 +220,13 @@ theorem restrictRestrictIso_hom_ofRestrict (V : Opens (X.restrict h)) :
       (X.restrict h).ofRestrict V.isOpenEmbedding ≫ X.ofRestrict h :=
   IsOpenImmersion.isoOfRangeEq_hom_comp _ _ _
 
+/-- The inverse nested-restriction isomorphism commutes with the canonical morphisms to `X`. -/
+@[reassoc (attr := simp)]
+theorem restrictRestrictIso_inv_ofRestrict (V : Opens (X.restrict h)) :
+    (restrictRestrictIso X h V).inv ≫ (X.restrict h).ofRestrict V.isOpenEmbedding ≫
+      X.ofRestrict h = X.ofRestrict (h.isOpenMap.functor.obj V).isOpenEmbedding :=
+  IsOpenImmersion.isoOfRangeEq_inv_comp _ _ _
+
 end Restrict
 
 namespace Hom
