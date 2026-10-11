@@ -95,12 +95,12 @@ local notation "𝒢" => pathAlgebra k (Ginzburg2Quiver Q)
 /-- The local preprojective relator included into the doubled-arrow part of the Ginzburg path
 algebra. -/
 noncomputable def ginzburg2Relator (i : Q) : 𝒢 :=
-  (∑ j : Q, ∑ a : Ginzburg2DoubledHom j i,
-      ofArrow (Ginzburg2Arrow.doubledMap a) *
-        ofArrow (Ginzburg2Arrow.doubledMap (Quiver.reverse a))) -
-    ∑ j : Q, ∑ a : Ginzburg2DoubledHom i j,
-      ofArrow (Ginzburg2Arrow.doubledMap (Quiver.reverse a)) *
-        ofArrow (Ginzburg2Arrow.doubledMap a)
+  (∑ j : Q, ∑ a : (j ⟶ i),
+      ofArrow (Ginzburg2Arrow.doubledMap (Sum.inl a)) *
+        ofArrow (Ginzburg2Arrow.doubledMap (Quiver.reverse (Sum.inl a)))) -
+    ∑ j : Q, ∑ a : (i ⟶ j),
+      ofArrow (Ginzburg2Arrow.doubledMap (Quiver.reverse (Sum.inl a))) *
+        ofArrow (Ginzburg2Arrow.doubledMap (Sum.inl a))
 
 /-- The cohomological degree of each arrow: doubled arrows have degree zero and added loops have
 degree minus one. -/
@@ -125,18 +125,19 @@ private theorem ginzburg2Relator_cohomological_mem (i : Q) :
         gradeBy k (ginzburg2CohomologicalWeight (Q := Q)) 0 := by
     exact ofArrow_mem_gradeBy (ginzburg2CohomologicalWeight (Q := Q))
       (Ginzburg2Arrow.doubledMap a)
-  have hhead {i j : Q} (a : Ginzburg2DoubledHom i j) :
-      (ofArrow (Ginzburg2Arrow.doubledMap a) *
-        ofArrow (Ginzburg2Arrow.doubledMap (Quiver.reverse a)) : 𝒢) ∈
+  have hhead {i j : Q} (a : (i ⟶ j)) :
+      (ofArrow (Ginzburg2Arrow.doubledMap (Sum.inl a)) *
+        ofArrow (Ginzburg2Arrow.doubledMap (Quiver.reverse (Sum.inl a))) : 𝒢) ∈
           gradeBy k (ginzburg2CohomologicalWeight (Q := Q)) 0 := by
     exact (gradeBy_mul_gradeBy_le (k := k) (wt := ginzburg2CohomologicalWeight (Q := Q))
-      0 0) (Submodule.mul_mem_mul (hedge a) (hedge (Quiver.reverse a)))
-  have htail {i j : Q} (a : Ginzburg2DoubledHom i j) :
-      (ofArrow (Ginzburg2Arrow.doubledMap (Quiver.reverse a)) *
-        ofArrow (Ginzburg2Arrow.doubledMap a) : 𝒢) ∈
+      0 0) (Submodule.mul_mem_mul (hedge (Sum.inl a))
+        (hedge (Quiver.reverse (Sum.inl a))))
+  have htail {i j : Q} (a : (i ⟶ j)) :
+      (ofArrow (Ginzburg2Arrow.doubledMap (Quiver.reverse (Sum.inl a))) *
+        ofArrow (Ginzburg2Arrow.doubledMap (Sum.inl a)) : 𝒢) ∈
           gradeBy k (ginzburg2CohomologicalWeight (Q := Q)) 0 := by
     exact (gradeBy_mul_gradeBy_le (k := k) (wt := ginzburg2CohomologicalWeight (Q := Q))
-      0 0) (Submodule.mul_mem_mul (hedge (Quiver.reverse a)) (hedge a))
+      0 0) (Submodule.mul_mem_mul (hedge (Quiver.reverse (Sum.inl a))) (hedge (Sum.inl a)))
   apply Submodule.sub_mem
   · exact (gradeBy k (ginzburg2CohomologicalWeight (Q := Q)) 0).sum_mem
       (fun j _ => (gradeBy k (ginzburg2CohomologicalWeight (Q := Q)) 0).sum_mem
@@ -155,18 +156,18 @@ private theorem ginzburg2Relator_adams_mem (i : Q) :
         gradeBy k (ginzburg2AdamsWeight (Q := Q)) 1 := by
     exact ofArrow_mem_gradeBy (ginzburg2AdamsWeight (Q := Q))
       (Ginzburg2Arrow.doubledMap a)
-  have hhead {i j : Q} (a : Ginzburg2DoubledHom i j) :
-      (ofArrow (Ginzburg2Arrow.doubledMap a) *
-        ofArrow (Ginzburg2Arrow.doubledMap (Quiver.reverse a)) : 𝒢) ∈
+  have hhead {i j : Q} (a : (i ⟶ j)) :
+      (ofArrow (Ginzburg2Arrow.doubledMap (Sum.inl a)) *
+        ofArrow (Ginzburg2Arrow.doubledMap (Quiver.reverse (Sum.inl a))) : 𝒢) ∈
           gradeBy k (ginzburg2AdamsWeight (Q := Q)) 2 := by
     exact (gradeBy_mul_gradeBy_le (k := k) (wt := ginzburg2AdamsWeight (Q := Q)) 1 1)
-      (Submodule.mul_mem_mul (hedge a) (hedge (Quiver.reverse a)))
-  have htail {i j : Q} (a : Ginzburg2DoubledHom i j) :
-      (ofArrow (Ginzburg2Arrow.doubledMap (Quiver.reverse a)) *
-        ofArrow (Ginzburg2Arrow.doubledMap a) : 𝒢) ∈
+      (Submodule.mul_mem_mul (hedge (Sum.inl a)) (hedge (Quiver.reverse (Sum.inl a))))
+  have htail {i j : Q} (a : (i ⟶ j)) :
+      (ofArrow (Ginzburg2Arrow.doubledMap (Quiver.reverse (Sum.inl a))) *
+        ofArrow (Ginzburg2Arrow.doubledMap (Sum.inl a)) : 𝒢) ∈
           gradeBy k (ginzburg2AdamsWeight (Q := Q)) 2 := by
     exact (gradeBy_mul_gradeBy_le (k := k) (wt := ginzburg2AdamsWeight (Q := Q)) 1 1)
-      (Submodule.mul_mem_mul (hedge (Quiver.reverse a)) (hedge a))
+      (Submodule.mul_mem_mul (hedge (Quiver.reverse (Sum.inl a))) (hedge (Sum.inl a)))
   apply Submodule.sub_mem
   · exact (gradeBy k (ginzburg2AdamsWeight (Q := Q)) 2).sum_mem
       (fun j _ => (gradeBy k (ginzburg2AdamsWeight (Q := Q)) 2).sum_mem
