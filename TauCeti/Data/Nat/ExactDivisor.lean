@@ -422,6 +422,68 @@ theorem IsExactDivisor.prodPrimePow_primeFactors (h : IsExactDivisor Q N) :
   · exact absurd h0 hp0
   · rw [h0]
 
+/-- Intersecting prime supports takes the greatest common divisor of their maximal-prime-power
+products. -/
+theorem prodPrimePow_gcd {N : ℕ} {s t : Finset ℕ} (hs : s ⊆ N.primeFactors) (ht : t
+    ⊆ N.primeFactors) :
+    TauCeti.Nat.prodPrimePow N (s ∩ t) =
+      Nat.gcd (TauCeti.Nat.prodPrimePow N s) (TauCeti.Nat.prodPrimePow N t) := by
+  have hs0 : prodPrimePow N s ≠ 0 := by
+    rw [prodPrimePow, Finset.prod_ne_zero_iff]
+    intro p hp
+    exact pow_ne_zero _ (Nat.prime_of_mem_primeFactors (hs hp)).ne_zero
+  have ht0 : prodPrimePow N t ≠ 0 := by
+    rw [prodPrimePow, Finset.prod_ne_zero_iff]
+    intro p hp
+    exact pow_ne_zero _ (Nat.prime_of_mem_primeFactors (ht hp)).ne_zero
+  have hst0 : prodPrimePow N (s ∩ t) ≠ 0 := by
+    rw [prodPrimePow, Finset.prod_ne_zero_iff]
+    intro p hp
+    exact pow_ne_zero _ (Nat.prime_of_mem_primeFactors (hs (Finset.mem_inter.mp hp).1)).ne_zero
+  refine Nat.eq_of_factorization_eq hst0
+    (Nat.gcd_pos_of_pos_left (prodPrimePow N t) (Nat.pos_of_ne_zero hs0)).ne' ?_
+  intro p
+  rw [factorization_prodPrimePow (Finset.inter_subset_left.trans hs),
+    Nat.factorization_gcd hs0 ht0, Finsupp.inf_apply,
+    factorization_prodPrimePow hs, factorization_prodPrimePow ht]
+  by_cases hps : p ∈ s <;> by_cases hpt : p ∈ t <;>
+    simp [hps, hpt, Finset.mem_inter]
+
+/-- Removing a contained prime support divides out its maximal-prime-power product. -/
+theorem prodPrimePow_sdiff {N : ℕ} {s t : Finset ℕ} (hs : s ⊆ N.primeFactors) (hts :
+    t ⊆ s) :
+    TauCeti.Nat.prodPrimePow N (s \ t) =
+      TauCeti.Nat.prodPrimePow N s / TauCeti.Nat.prodPrimePow N t := by
+  have := hs
+  have hdisj : Disjoint t (s \ t) := by
+    rw [Finset.disjoint_left]
+    intro p hp1 hp2
+    exact Finset.mem_sdiff.mp hp2 |>.2 hp1
+  have hunion : t ∪ (s \ t) = s :=
+    Finset.union_sdiff_of_subset hts
+  have hpos : 0 < prodPrimePow N t := (isExactDivisor_prodPrimePow (N := N) (s := t)).pos
+  have hprod : prodPrimePow N s = prodPrimePow N t * prodPrimePow N (s \ t) := by
+    unfold prodPrimePow
+    rw [← Finset.prod_union hdisj, hunion]
+  rw [hprod, Nat.mul_div_cancel_left _ hpos]
+
+/-- Divisibility between exact divisors is equivalent to inclusion of their prime supports. -/
+theorem IsExactDivisor.dvd_iff_primeFactors_subset {Q R N : ℕ} (hQ :
+    TauCeti.Nat.IsExactDivisor Q N)
+    (hR : TauCeti.Nat.IsExactDivisor R N) :
+    Q ∣ R ↔ Q.primeFactors ⊆ R.primeFactors := by
+  constructor
+  · intro hQR
+    exact Nat.primeFactors_mono hQR hR.ne_zero
+  · intro hs
+    have hQ_eq : Q = prodPrimePow N Q.primeFactors := hQ.prodPrimePow_primeFactors.symm
+    have hR_eq : R = prodPrimePow N R.primeFactors := hR.prodPrimePow_primeFactors.symm
+    rw [hQ_eq, hR_eq]
+    rw [prodPrimePow, prodPrimePow]
+    refine ⟨∏ p ∈ R.primeFactors \ Q.primeFactors, p ^ N.factorization p, ?_⟩
+    rw [mul_comm]
+    exact (Finset.prod_sdiff hs).symm
+
 /-! ### The exact-divisor group -/
 
 /-- **The exact divisors of `N`, bundled as a group.** Multiplication is symmetric difference:
