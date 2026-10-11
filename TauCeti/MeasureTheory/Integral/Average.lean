@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.MeasureTheory.Integral.Average
 import Mathlib.Analysis.Convex.Integral
 
@@ -26,19 +25,15 @@ about any convenient constant gives one about the average, the form used by the 
 inequality.
 
 The average of a function over a set `s` is also controlled by its average over a larger set
-`t ⊇ s`, at the cost of the ratio `μ t / μ s` of their measures. In square mean the same
-comparison with a constant reads `∫_s ‖f - f_s‖² ≤ 4 ∫_s ‖f - c‖²` on a set of finite measure.
-In the same way, the mean oscillation of `f` on `s` is at most `2 μ t / μ s` times its mean
-oscillation on `t`, which transfers a bound on mean oscillations from one family of sets to a
-comparable one, such as from balls to cubes.
+`t ⊇ s`, at the cost of the ratio `μ t / μ s` of their measures; together with the factor-`2`
+bound above this compares mean oscillations on nested sets, as in the theory of functions of
+bounded mean oscillation. In square mean the comparison with a constant reads
+`∫_s ‖f - f_s‖² ≤ 4 ∫_s ‖f - c‖²` on a set of finite measure.
 
 Averages are unchanged by a change of variables that rescales the measure by a constant factor,
 such as an affine homothety of a finite-dimensional space with its Haar measure: if a measurable
 equivalence `e` pushes `μ` forward to `a • ν` with `0 < a < ∞`, then the average of `f ∘ e` over
 `e ⁻¹' s` with respect to `μ` is the average of `f` over `s` with respect to `ν`.
-
-Exponential integrability of `|log v - c|` controls the averages of powers of a positive function
-`v`: if `∫_s exp (σ |log v - c|) ≤ K μ s`, then `⨍_s v^q ≤ e^{qc} K` for every `|q| ≤ σ`.
 
 ## Main results
 
@@ -50,8 +45,10 @@ Exponential integrability of `|log v - c|` controls the averages of powers of a 
   average is at most twice its mean oscillation about any constant.
 * `TauCeti.norm_setAverage_sub_le_of_subset`: the average over a subset `s ⊆ t`
   differs from a constant `c` by at most `μ t / μ s` times the average of `‖f - c‖` over `t`.
-* `TauCeti.setLAverage_enorm_sub_setAverage_le_of_subset`: the mean oscillation of `f` on a
-  subset `s ⊆ t` is at most `2 μ t / μ s` times its mean oscillation on `t`.
+* `TauCeti.setLAverage_le_div_mul_setLAverage_of_subset`: the average of a nonnegative function
+  over a subset `s ⊆ t` is at most `μ t / μ s` times its average over `t`.
+* `TauCeti.enorm_setAverage_sub_le_of_subset`: the extended-norm form of
+  `TauCeti.norm_setAverage_sub_le_of_subset`.
 * `TauCeti.setIntegral_norm_sub_setAverage_sq_le`: the square mean oscillation of `f` about its
   average is at most four times its square mean oscillation about any constant.
 * `TauCeti.setLIntegral_comp_preimage_of_map_eq_smul`,
@@ -59,8 +56,6 @@ Exponential integrability of `|log v - c|` controls the averages of powers of a 
   `TauCeti.setLAverage_comp_preimage_of_map_eq_smul`,
   `TauCeti.setAverage_comp_preimage_of_map_eq_smul`: integrals and averages under a measurable
   equivalence that rescales the measure by a constant.
-* `TauCeti.setAverage_rpow_le_of_setLIntegral_exp_le`: averages of powers of a positive function
-  from exponential integrability of its logarithm.
 -/
 
 public section
@@ -135,43 +130,46 @@ section Subset
 variable {X F : Type*} [MeasurableSpace X] {μ : Measure X} [NormedAddCommGroup F]
   [NormedSpace ℝ F] [CompleteSpace F] {f : X → F} {s t : Set X}
 
+/-- The average of a nonnegative function over a subset `s` of `t` is at most `μ t / μ s` times
+its average over `t`. -/
+theorem setLAverage_le_div_mul_setLAverage_of_subset {g : X → ℝ≥0∞} (hst : s ⊆ t)
+    (ht : μ t ≠ ⊤) : ⨍⁻ x in s, g x ∂μ ≤ μ t / μ s * ⨍⁻ x in t, g x ∂μ := by
+  rcases eq_or_ne (μ t) 0 with ht0 | ht0
+  · rw [setLAverage_eq, setLIntegral_measure_zero _ _ (measure_mono_null hst ht0),
+      ENNReal.zero_div]
+    exact zero_le
+  have h : μ t / μ s * ((∫⁻ x in t, g x ∂μ) / μ t) = (∫⁻ x in t, g x ∂μ) / μ s := by
+    rw [ENNReal.div_eq_inv_mul, mul_assoc, ENNReal.mul_div_cancel ht0 ht,
+      ← ENNReal.div_eq_inv_mul]
+  rw [setLAverage_eq, setLAverage_eq, h]
+  exact ENNReal.div_le_div_right (lintegral_mono_set hst) _
+
+/-- The average of `f` over a subset `s` of `t` differs from a constant `c` by at most `μ t / μ s`
+times the average of `‖f - c‖ₑ` over `t`. This is the extended-norm form of
+`TauCeti.norm_setAverage_sub_le_of_subset`; it needs `f` to be integrable only on `s`. -/
+theorem enorm_setAverage_sub_le_of_subset (hst : s ⊆ t) (hs : μ s ≠ 0) (ht : μ t ≠ ⊤)
+    (hf : IntegrableOn f s μ) (c : F) :
+    ‖(⨍ x in s, f x ∂μ) - c‖ₑ ≤ μ t / μ s * ⨍⁻ x in t, ‖f x - c‖ₑ ∂μ := by
+  have hs' : μ s ≠ ⊤ := ne_top_of_le_ne_top ht (measure_mono hst)
+  calc ‖(⨍ x in s, f x ∂μ) - c‖ₑ = ‖⨍ x in s, (f x - c) ∂μ‖ₑ := by
+        rw [setAverage_fun_sub hf (integrableOn_const hs'), setAverage_const hs hs']
+    _ ≤ ⨍⁻ x in s, ‖f x - c‖ₑ ∂μ := enorm_setAverage_le_setLAverage _ _ _
+    _ ≤ μ t / μ s * ⨍⁻ x in t, ‖f x - c‖ₑ ∂μ :=
+        setLAverage_le_div_mul_setLAverage_of_subset hst ht
+
 /-- The average of `f` over a subset `s` of `t` differs from a constant `c` by at most
 `μ t / μ s` times the average of `‖f - c‖` over `t`. -/
 theorem norm_setAverage_sub_le_of_subset (hst : s ⊆ t) (hs : μ s ≠ 0) (ht : μ t ≠ ⊤)
     (hf : IntegrableOn f t μ) (c : F) :
     ‖(⨍ x in s, f x ∂μ) - c‖ ≤ μ.real t / μ.real s * ⨍ x in t, ‖f x - c‖ ∂μ := by
-  have hs' : μ s ≠ ⊤ := ne_top_of_le_ne_top ht (measure_mono hst)
-  have hsr : 0 < μ.real s := ENNReal.toReal_pos hs hs'
-  have htr : 0 < μ.real t := hsr.trans_le (measureReal_mono hst ht)
-  have hfs : IntegrableOn f s μ := hf.mono_set hst
-  have heq : (⨍ x in s, f x ∂μ) - c = ⨍ x in s, (f x - c) ∂μ := by
-    rw [setAverage_fun_sub hfs (integrableOn_const hs'), setAverage_const hs hs']
-  calc ‖(⨍ x in s, f x ∂μ) - c‖ ≤ (μ.real s)⁻¹ * ∫ x in t, ‖f x - c‖ ∂μ := by
-        rw [heq, setAverage_eq, norm_smul, norm_inv, Real.norm_of_nonneg hsr.le]
-        gcongr
-        refine (norm_integral_le_integral_norm _).trans
-          (setIntegral_mono_set ?_ ?_ hst.eventuallyLE)
-        · exact (hf.sub (integrableOn_const ht)).norm
-        · exact ae_of_all _ fun _ ↦ norm_nonneg _
-    _ = μ.real t / μ.real s * ⨍ x in t, ‖f x - c‖ ∂μ := by
-        rw [setAverage_eq, smul_eq_mul]
-        field_simp
-
-/-- The mean oscillation of `f` on a subset `s` of a set `t` of finite measure is at most
-`2 μ t / μ s` times its mean oscillation on `t`:
-`⨍_s ‖f - f_s‖ ≤ 2 (μ t / μ s) ⨍_t ‖f - f_t‖`. -/
-theorem setLAverage_enorm_sub_setAverage_le_of_subset (hst : s ⊆ t) (ht : μ t ≠ ⊤)
-    (hf : IntegrableOn f t μ) :
-    ⨍⁻ x in s, ‖f x - ⨍ y in s, f y ∂μ‖ₑ ∂μ ≤
-      2 * (μ t / μ s) * ⨍⁻ x in t, ‖f x - ⨍ y in t, f y ∂μ‖ₑ ∂μ := by
-  set c := ⨍ y in t, f y ∂μ
-  calc ⨍⁻ x in s, ‖f x - ⨍ y in s, f y ∂μ‖ₑ ∂μ
-      ≤ 2 * ⨍⁻ x in s, ‖f x - c‖ₑ ∂μ := setLAverage_enorm_sub_setAverage_le (hf.mono_set hst) c
-    _ ≤ 2 * (μ t / μ s * ⨍⁻ x in t, ‖f x - c‖ₑ ∂μ) := by
-        gcongr
-        rw [setLAverage_eq, ← ENNReal.mul_div_right_comm, measure_mul_setLAverage _ ht]
-        gcongr
-    _ = 2 * (μ t / μ s) * ⨍⁻ x in t, ‖f x - c‖ₑ ∂μ := (mul_assoc _ _ _).symm
+  have hfc : IntegrableOn (fun x => f x - c) t μ := hf.sub (integrableOn_const ht)
+  have hav : (⨍⁻ x in t, ‖f x - c‖ₑ ∂μ).toReal = ⨍ x in t, ‖f x - c‖ ∂μ := by
+    simpa using toReal_setLAverage hfc.1.enorm (ae_of_all _ fun _ => enorm_ne_top)
+  rw [← toReal_enorm, measureReal_def, measureReal_def, ← ENNReal.toReal_div, ← hav,
+    ← ENNReal.toReal_mul]
+  exact ENNReal.toReal_mono
+    (ENNReal.mul_ne_top (ENNReal.div_ne_top ht hs) (setLAverage_lt_top hfc.2.ne).ne)
+    (enorm_setAverage_sub_le_of_subset hst hs ht (hf.mono_set hst) c)
 
 /-- The square mean oscillation of `f` on a set `s` of finite measure about its own average is at
 most four times its square mean oscillation about any constant `c`:
@@ -255,53 +253,5 @@ theorem setAverage_comp_preimage_of_map_eq_smul (he : μ.map e = a • ν) (ha :
     smul_smul, mul_inv_rev, inv_mul_cancel_right₀ (ENNReal.toReal_ne_zero.2 ⟨ha, ha'⟩)]
 
 end ChangeOfVariables
-
-section Rpow
-
-variable {X : Type*} [MeasurableSpace X] {μ : Measure X} {s : Set X} {v : X → ℝ}
-
-/-- If `v > 0` and `exp (σ |log v - c|)` has integral at most `K μ s` over `s`, then for every
-exponent `|q| ≤ σ` the average of `v^q` over `s` is at most `e^{qc} K`, because
-`v^q = e^{qc} e^{q (log v - c)} ≤ e^{qc} exp (σ |log v - c|)`. -/
-theorem setAverage_rpow_le_of_setLIntegral_exp_le (hs : μ s ≠ ⊤)
-    (hv : ∀ᵐ x ∂μ.restrict s, 0 < v x) (hvm : AEMeasurable v (μ.restrict s)) {c K q σ : ℝ}
-    (hK : 0 ≤ K) (hq : |q| ≤ σ)
-    (hJ : ∫⁻ x in s, ENNReal.ofReal (Real.exp (σ * ‖Real.log (v x) - c‖)) ∂μ ≤
-      ENNReal.ofReal K * μ s) :
-    ⨍ x in s, v x ^ q ∂μ ≤ Real.exp (q * c) * K := by
-  have hI : ∫⁻ x in s, ENNReal.ofReal (v x ^ q) ∂μ ≤
-      ENNReal.ofReal (Real.exp (q * c) * K * μ.real s) := by
-    calc ∫⁻ x in s, ENNReal.ofReal (v x ^ q) ∂μ
-        ≤ ∫⁻ x in s, ENNReal.ofReal (Real.exp (q * c)) *
-            ENNReal.ofReal (Real.exp (σ * ‖Real.log (v x) - c‖)) ∂μ := by
-          refine lintegral_mono_ae (hv.mono fun x hx => ?_)
-          rw [← ENNReal.ofReal_mul (Real.exp_pos _).le, ← Real.exp_add, Real.rpow_def_of_pos hx]
-          refine ENNReal.ofReal_le_ofReal (Real.exp_le_exp.2 ?_)
-          have h : q * (Real.log (v x) - c) ≤ σ * ‖Real.log (v x) - c‖ := by
-            rw [Real.norm_eq_abs]
-            calc q * (Real.log (v x) - c) ≤ |q * (Real.log (v x) - c)| := le_abs_self _
-              _ = |q| * |Real.log (v x) - c| := abs_mul _ _
-              _ ≤ σ * |Real.log (v x) - c| := by gcongr
-          linarith
-      _ = ENNReal.ofReal (Real.exp (q * c)) *
-            ∫⁻ x in s, ENNReal.ofReal (Real.exp (σ * ‖Real.log (v x) - c‖)) ∂μ :=
-          lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
-      _ ≤ ENNReal.ofReal (Real.exp (q * c)) * (ENNReal.ofReal K * μ s) := by gcongr
-      _ = ENNReal.ofReal (Real.exp (q * c) * K * μ.real s) := by
-          rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_mul (Real.exp_pos _).le,
-            ofReal_measureReal hs, mul_assoc]
-  have hnn : 0 ≤ᵐ[μ.restrict s] fun x => v x ^ q := hv.mono fun x hx => Real.rpow_nonneg hx.le q
-  rw [setAverage_eq, smul_eq_mul,
-    integral_eq_lintegral_of_nonneg_ae hnn (hvm.pow_const q).aestronglyMeasurable]
-  rcases eq_or_ne (μ.real s) 0 with h0 | h0
-  · rw [h0, inv_zero, zero_mul]
-    positivity
-  calc (μ.real s)⁻¹ * (∫⁻ x in s, ENNReal.ofReal (v x ^ q) ∂μ).toReal
-      ≤ (μ.real s)⁻¹ * (Real.exp (q * c) * K * μ.real s) := by
-        gcongr
-        exact ENNReal.toReal_le_of_le_ofReal (by positivity) hI
-    _ = Real.exp (q * c) * K := by field_simp
-
-end Rpow
 
 end TauCeti

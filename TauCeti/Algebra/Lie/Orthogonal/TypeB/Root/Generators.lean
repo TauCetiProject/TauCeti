@@ -191,6 +191,18 @@ theorem typeBDifferenceRootGenerator_lie_swap (i j : ι) (hij : i ≠ j) :
       Matrix.single_apply, Pi.single_apply]
   all_goals aesop
 
+/-- Concatenated difference-root vectors bracket to the difference-root vector of the concatenated
+index pair. -/
+@[simp]
+theorem typeBDifferenceRootGenerator_lie_chain (i j k : ι) (hij : i ≠ j) (hjk : j ≠ k)
+    (hik : i ≠ k) :
+    ⁅typeBDifferenceRootGenerator (K := K) i j hij,
+      typeBDifferenceRootGenerator (K := K) j k hjk⁆ =
+      typeBDifferenceRootGenerator i k hik := by
+  apply Subtype.ext
+  simpa only [LieSubalgebra.coe_bracket, coe_typeBDifferenceRootGenerator] using
+    typeBDifferenceRootMatrix_lie_differenceRootMatrix_chain (K := K) i j j k hij hjk rfl hik
+
 /-- Every difference-root matrix is square-zero. -/
 theorem typeBDifferenceRootMatrix_mul_self (i j : ι) (hij : i ≠ j) :
     typeBDifferenceRootMatrix (K := K) i j hij * typeBDifferenceRootMatrix i j hij = 0 := by
