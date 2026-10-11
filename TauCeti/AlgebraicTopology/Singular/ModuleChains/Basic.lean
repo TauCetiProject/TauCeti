@@ -15,7 +15,8 @@ public import TauCeti.AlgebraicTopology.TopologicalSimplex
 For a ring `k`, the simplicial singular chain complex with coefficients in `k` is the complex of
 `k`-modules whose `n`-chains are the formal `k`-combinations of singular `n`-simplices.  This file
 gives the element-level interface to it: the chain `simplexChain σ a` of a simplex with a
-coefficient, the extensionality of linear maps out of the chains, the push-forward and the
+coefficient, the extensionality of linear maps out of the chains (and, for integer coefficients,
+of additive maps), the linear map with prescribed values on simplices, the push-forward and the
 boundary of a simplex, and the augmentation, the sum of the coefficients of a `0`-chain, natural
 and vanishing on boundaries.
 
@@ -24,12 +25,14 @@ and vanishing on boundaries.
 * `TauCeti.singularChains k`: the simplicial singular chain complex functor with coefficients in
   the ring `k`.
 * `TauCeti.simplexChain σ a`: the chain of a singular simplex `σ` with coefficient `a`.
+* `TauCeti.chainsDesc f`: the linear map out of the singular `n`-chains with the given values on
+  singular simplices.
 * `TauCeti.singularAugment k X`: the augmentation of the simplicial singular chains.
 
 ## Main results
 
-* `TauCeti.singularChains_linearMap_ext`: linear maps out of the chains are determined on
-  simplices.
+* `TauCeti.singularChains_linearMap_ext`, `TauCeti.singularChains_addMonoidHom_ext`: linear maps,
+  and additive maps out of the chains with integer coefficients, are determined on simplices.
 * `TauCeti.singularChains_d_simplexChain`: the boundary of a simplex.
 * `TauCeti.singularAugment_map`, `TauCeti.singularAugment_d`: the augmentation is natural and
   vanishes on boundaries.

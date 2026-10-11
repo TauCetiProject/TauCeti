@@ -22,6 +22,11 @@ is a cycle, `HomologicalComplex.moduleCatCyclesMk`.  This constructor directly r
 an element of `K.cycles n` for modules over a ring in any universe, whereas Mathlib's
 `HomologicalComplex.cyclesMk` returns an element of `(forget₂ C Ab).obj (K.cycles n)`.
 
+For a short complex `S` of modules, the projection of Mathlib's explicit left homology data
+`S.moduleCatLeftHomologyData` from the cycles `LinearMap.ker S.g` onto the homology is surjective,
+and identifies two cycles exactly when their difference is in the image of `S.f`
+(`CategoryTheory.ShortComplex.moduleCatLeftHomologyData_π_hom_eq_iff`).
+
 For a cochain complex `K`, `K.cyclesShortComplex n` is the sequence
 `Zⁿ(K) ⟶ Kⁿ ⟶ Zⁿ⁺¹(K)`. It is short exact whenever `K` is exact in degree `n + 1`.
 -/
@@ -154,3 +159,23 @@ theorem cyclesShortComplex_shortExact {K : CochainComplex (ModuleCat.{u} R) ℤ}
     K.iCycles_moduleCatCyclesMk n x (n + 1) (by simp) hdx⟩
 
 end HomologicalComplex
+
+namespace CategoryTheory.ShortComplex
+
+variable {R : Type*} [Ring R] (S : ShortComplex (ModuleCat R))
+
+/-- Two cycles of a short complex of modules have the same class in the explicit left homology
+exactly when their difference is a boundary. -/
+lemma moduleCatLeftHomologyData_π_hom_eq_iff (c c' : LinearMap.ker S.g.hom) :
+    S.moduleCatLeftHomologyData.π.hom c = S.moduleCatLeftHomologyData.π.hom c' ↔
+      ∃ y, S.f.hom y = (c : S.X₂) - c' :=
+  (Submodule.Quotient.eq _).trans
+    ⟨fun ⟨y, hy⟩ ↦ ⟨y, congrArg Subtype.val hy⟩, fun ⟨y, hy⟩ ↦ ⟨y, Subtype.ext hy⟩⟩
+
+/-- Every class of the explicit left homology of a short complex of modules is the class of a
+cycle. -/
+lemma moduleCatLeftHomologyData_π_hom_surjective :
+    Function.Surjective S.moduleCatLeftHomologyData.π.hom :=
+  (ModuleCat.epi_iff_surjective _).1 inferInstance
+
+end CategoryTheory.ShortComplex

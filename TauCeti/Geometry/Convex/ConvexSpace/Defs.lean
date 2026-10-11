@@ -31,14 +31,15 @@ theorem weights_map_apply_of_injective {f : X → Y} (hf : f.Injective) (x : Std
 
 omit [IsStrictOrderedRing R] in
 /-- The three weights of a point of the standard `2`-simplex add up to `1`. -/
-theorem weights_zero_add_weights_one_add_weights_two (x : StdSimplex R (Fin 3)) :
+theorem total_fin_three (x : StdSimplex R (Fin 3)) :
     x.weights 0 + x.weights 1 + x.weights 2 = 1 := by
   rw [← x.total_of_fintype, Fin.sum_univ_three]
 
 /-- The weights of the last two vertices of a point of the standard `2`-simplex add up to at
 most `1`. -/
-theorem weights_one_add_two_le (x : StdSimplex R (Fin 3)) : x.weights 1 + x.weights 2 ≤ 1 := by
-  rw [← x.weights_zero_add_weights_one_add_weights_two, add_assoc]
+theorem weights_one_add_weights_two_le_one (x : StdSimplex R (Fin 3)) :
+    x.weights 1 + x.weights 2 ≤ 1 := by
+  rw [← x.total_fin_three, add_assoc]
   exact le_add_of_nonneg_left (x.weights_nonneg 0)
 
 /-- The map of standard simplices along an injective map is injective. -/
