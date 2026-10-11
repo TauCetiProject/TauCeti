@@ -431,12 +431,6 @@ theorem gaussValuation_pos (hv : v.Integers O) (hρ₀ : 0 < ρ) (hρ : ρ < 1) 
     (hx : x ≠ 0) : 0 < gaussValuation p hv ρ hρ x :=
   pos_iff_ne_zero.mpr ((gaussValuation_eq_zero_iff hv hρ₀ hρ).not.mpr hx)
 
-variable (p) in
-omit [CharP O p] [PerfectRing O p] in
-/-- The Teichmüller representative `[a]` of `a ≠ 0` is nonzero, as its `0`-th coordinate is `a`. -/
-theorem teichmuller_ne_zero {a : O} (ha : a ≠ 0) : teichmuller p a ≠ 0 := fun h ↦
-  ha (by simpa using congrArg (coeff · 0) h)
-
 /-- **The Gauss valuations are continuous** for the `(p, [ϖ])`-adic topology on `𝕎 O`, when
 `v(ϖ) < 1`: `λ_ρ` is at most `1` everywhere, and at most `max ρ v(ϖ) < 1` at `p` and `[ϖ]`. -/
 theorem isContinuous_gaussValuation [TopologicalSpace (𝕎 O)] {ϖ : O}
