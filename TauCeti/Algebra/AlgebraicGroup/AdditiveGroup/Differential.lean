@@ -85,6 +85,17 @@ theorem derivationComp_eq_smul (φ : H →ₐc[R] SymmetricAlgebra R R)
     (derivationCompLieHom (B := B) φ).map_smul (gaTangentLinearEquiv d)
       ((gaTangentLinearEquiv (R := R) (B := B)).symm 1)
 
+/-- An injective additive one-parameter subgroup differential sends the unit tangent vector
+to a nonzero vector over every nontrivial coefficient algebra. -/
+theorem derivationComp_gaUnit_ne_zero [Nontrivial B]
+    (φ : H →ₐc[R] SymmetricAlgebra R R)
+    (hφ : Function.Injective (derivationComp (B := B) φ)) :
+    derivationComp (B := B) φ ((gaTangentLinearEquiv (R := R) (B := B)).symm 1) ≠ 0 := by
+  intro h
+  have hd := hφ (h.trans (map_zero _).symm)
+  have hu := congrArg (gaTangentLinearEquiv (R := R) (B := B)) hd
+  exact one_ne_zero (by simpa only [LinearEquiv.apply_symm_apply, map_zero] using hu)
+
 /-- Coefficient change preserves the image of the additive unit tangent vector under the
 differential of any additive one-parameter subgroup. -/
 theorem mapValue_derivationComp_gaUnit {C : Type*} [CommRing C] [Algebra R C]

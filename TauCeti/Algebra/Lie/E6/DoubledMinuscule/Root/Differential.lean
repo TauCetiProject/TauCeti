@@ -134,11 +134,8 @@ Use this directly: simplification changes the inherited integer module in the ze
 before this statement can match. -/
 theorem rootVector_ne_zero [Nontrivial B] (k : Fin 6 ⊕ Fin 6) :
     rootVector (B := B) k ≠ 0 := by
-  intro h
-  have hd := derivationComp_rootSubgroup_injective (B := B) k
-    (h.trans (map_zero _).symm)
-  have hu := congrArg (AdditiveGroup.gaTangentLinearEquiv (R := ℤ) (B := B)) hd
-  exact one_ne_zero (by simpa only [LinearEquiv.apply_symm_apply, map_zero] using hu)
+  exact AdditiveGroup.derivationComp_gaUnit_ne_zero _
+    (derivationComp_rootSubgroup_injective (B := B) k)
 
 end
 
