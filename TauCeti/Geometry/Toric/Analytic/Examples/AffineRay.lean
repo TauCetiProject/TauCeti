@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Toric.Algebraic.Examples.AffineRay
 public import TauCeti.Geometry.Toric.Analytic.Cone.FaceLocalization
+public import TauCeti.Geometry.Toric.Analytic.Fan.Affine
 public import Mathlib.Geometry.Manifold.Instances.UnitsOfNormedAlgebra
 
 /-!
@@ -16,6 +17,7 @@ The positive ray in the standard rank-one lattice has affine complex-point chart
 Its zero face has chart `ℂˣ`, and face localization is the ordinary inclusion into `ℂ`.
 The identifications use the regular-cone coordinate maps, with the standard lattice basis;
 in particular, the coordinate on the affine line is evaluation of the standard character.
+The same coordinate identifies the analytic realization of the affine-line fan with `ℂ`.
 
 ## References
 
@@ -438,5 +440,35 @@ theorem affineRayPointHomeomorph_faceAffinePointMap_symm (z : ℂˣ) :
         ((affineRayZeroFacePointHomeomorph g₀).symm z)) = (z : ℂ) := by
   let _ := affinePointTopology g₀
   rw [affineRayPointHomeomorph_faceAffinePointMap g g₀, Homeomorph.apply_symm_apply]
+
+/-- The analytic realization of the standard affine-line fan is biholomorphic to the complex
+line. The map is the coordinate of the maximal ray chart. -/
+noncomputable def affineRayFanDiffeomorph (n : ℕ∞ω) :
+    letI := affineRayFan.analyticChartedSpace isRegular_affineRayFan
+    Diffeomorph 𝓘(ℂ, Fin (Module.finrank ℤ (Fin 1 → ℤ)) → ℂ) 𝓘(ℂ, ℂ)
+      (affineRayFan.analyticRealization isRegular_affineRayFan) ℂ n := by
+  letI := affineRayFan.analyticChartedSpace isRegular_affineRayFan
+  let g := (affineRayFan.analyticChartGenerators affineRayFanMaxCone).2
+  letI := affinePointTopology g
+  letI := affineRayChartedSpace g
+  exact (Fan.analyticOfConeDiffeomorph (isIntegralLattice_intCast 1)
+    isRegularCone_affineRayCone rayBasis_extends rayNumbering g n).symm.trans
+      (affineRayPointDiffeomorph g n)
+
+/-- On the maximal affine chart, the affine-line realization coordinate evaluates the standard
+character monomial. -/
+@[simp]
+theorem affineRayFanDiffeomorph_analyticAffineChartι (n : ℕ∞ω)
+    (x : AffineSemigroupComplexPoint
+      (dualSemigroup (isIntegralLattice_intCast 1) affineRayCone)) :
+    affineRayFanDiffeomorph n
+      (affineRayFan.analyticAffineChartι isRegular_affineRayFan affineRayFanMaxCone x) =
+        x (MonoidAlgebra.single (ofAdd affineRayCharacter) 1) := by
+  let g := (affineRayFan.analyticChartGenerators affineRayFanMaxCone).2
+  simp only [affineRayFanDiffeomorph, Diffeomorph.coe_trans, Function.comp_apply]
+  rw [Fan.analyticOfConeDiffeomorph_symm_analyticAffineChartι_top
+    (isIntegralLattice_intCast 1) isRegularCone_affineRayCone rayBasis_extends
+      rayNumbering g n]
+  exact affineRayPointDiffeomorph_apply g n x
 
 end TauCeti.Toric

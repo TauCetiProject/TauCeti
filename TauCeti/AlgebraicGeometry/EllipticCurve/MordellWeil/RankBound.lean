@@ -71,16 +71,18 @@ open scoped Classical in
 class in the `2`-Selmer group lies in `A(S, 2)`, for `S` the bad primes of `W` over `𝓞 F`. Only
 the local conditions at the finite places are used, so this holds for every auxiliary family
 `Loc`. -/
-theorem selmerGroup₂_le_selmerGroupA : W.selmerGroup₂ (𝓞 F) Loc ≤ W.selmerGroupA (𝓞 F) :=
-  fun _ hm ↦ W.mem_selmerGroupA_of_forall_localRes fun v _ ↦
-    (W⁄(v.adicCompletion F)).toAffine.range_μ_le_selmerGroupA (v.adicCompletionIntegers F) <|
+theorem selmerGroup₂_le_selmerGroupA :
+    W.selmerGroup₂ (𝓞 F) Loc ≤ W.selmerGroupA (𝓞 F) (W.badPrimes (𝓞 F)) :=
+  fun _ hm ↦ W.mem_selmerGroupA_of_forall_localRes fun v hv ↦ by
+    rw [← W.badPrimes_adicCompletionIntegers hv]
+    exact (W⁄(v.adicCompletion F)).toAffine.range_μ_le_selmerGroupA (v.adicCompletionIntegers F) <|
       (W.mem_localCondition_iff _).mp (((W.mem_selmerGroup₂_iff (𝓞 F) Loc).mp hm).2.1 v)
 
 open scoped Classical in
 /-- **The 2-Selmer group of an elliptic curve over a number field is finite**, for every
 auxiliary family `Loc` of local conditions beyond the finite places. -/
 theorem finite_selmerGroup₂ : Finite (W.selmerGroup₂ (𝓞 F) Loc) :=
-  have := W.finite_selmerGroupA (𝓞 F)
+  have := W.finite_selmerGroupA (𝓞 F) (W.finite_badPrimes (𝓞 F))
   Finite.of_injective _ (Subgroup.inclusion_injective (W.selmerGroup₂_le_selmerGroupA Loc))
 
 open scoped Classical in

@@ -93,7 +93,6 @@ theorem det_torsionLinearMap_zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id
       ((r • ofIsogeny (baseChangeFrobenius K W) - s • id (W⁄K).toAffine).torsionLinearMap N) =
         (r • ofIsogeny (baseChangeFrobenius K W) - s • id (W⁄K).toAffine).degree := by
   let h := zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id_ne_zero W r s hs
-  have := (isSeparable_toIsogeny_zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id_iff W r s h).2 hs
   exact det_torsionLinearMap hN h
 
 end Torsion

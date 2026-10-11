@@ -43,7 +43,8 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C]
 
 /-- Capping with a constant degree-zero cochain is the map on chains induced by the coefficient
 morphism `u ≫ e ▷ S ≫ μ`. -/
-@[simp]
+-- Simplify the application before `capChain_apply` unfolds the cap-chain map.
+@[simp↓]
 lemma capChain_constCochain (X : TopCat.{w}) (k : Type*) [Semiring k] [Linear k C]
     [MonoidalLinear k C] {R S T M P : C}
     [∀ J : Type w, PreservesColimitsOfShape (Discrete J) (tensorLeft M)]
@@ -67,7 +68,6 @@ example (k : Type*) [Semiring k] [Linear k C] [MonoidalLinear k C]
         ((TopCat.toSSet.obj X).chainComplexPairing (λ_ S).hom) 0 n n (Nat.zero_add n)
         ((TopCat.toSSet.obj X).constCochain (𝟙 (𝟙_ C))) =
       𝟙 (((TopCat.toSSet.obj X).chainComplex S).X n) := by
-  rw [capChain_constCochain]
   simp
 
 end Chain

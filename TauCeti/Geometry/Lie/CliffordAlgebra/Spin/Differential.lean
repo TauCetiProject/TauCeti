@@ -173,7 +173,7 @@ private theorem coordinate_exp_mulVec_eq_conjugation (n : ℕ)
     change (((QuadraticMap.specialOrthogonalToGeneralLinear Q
       (spinToSpecialOrthogonal Q s) : Matrix.GeneralLinearGroup (Fin n) ℝ) :
         Matrix (Fin n) (Fin n) ℝ) *ᵥ v) = _
-    rw [TauCeti.QuadraticMap.specialOrthogonalToGeneralLinear_mulVec,
+    rw [QuadraticMap.specialOrthogonalToGeneralLinear_mulVec,
       coe_spinToSpecialOrthogonal_apply]
   have hstar : star (x : CliffordAlgebra Q) = -(x : CliffordAlgebra Q) := by
     have hreverse := reverse_eq_neg_of_mem_quadraticLieSubalgebra Q x.property
