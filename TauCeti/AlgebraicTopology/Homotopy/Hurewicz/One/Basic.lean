@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
+public import TauCeti.Topology.Homotopy.Path
 public import TauCeti.Geometry.Convex.ConvexSpace.ContractibleSpaceStdSimplex
 public import TauCeti.Geometry.Convex.ConvexSpace.Defs
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
@@ -42,15 +43,16 @@ images of paths in the simply connected standard simplex, and it inverts the Hur
 conjugation is trivial in the abelianization. Conversely, the loop through `σ` differs from `σ` by
 the chains of the chosen paths at its endpoints, which cancel on cycles.
 
-The homology group is first described as `1`-cycles modulo boundaries (`TauCeti.HurewiczOne.H₁`)
-and then identified with the homology of the singular chain complex in `ModuleCat ℤ`
-(`TauCeti.HurewiczOne.H₁AddEquivHomology`).
+The homology group is first described as the explicit homology
+`ShortComplex.moduleCatLeftHomologyData` of the short complex `C₂ → C₁ → C₀`, that is `1`-cycles
+modulo boundaries (`TauCeti.HurewiczOne.H₁`), and then identified with the homology of the
+singular chain complex (`TauCeti.HurewiczOne.H₁AddEquivHomology`).
 
 ## Main definitions and results
 
 * `TauCeti.HurewiczOne.hurewicz₁`: the Hurewicz homomorphism `π₁(X, x) → H₁(X; ℤ)`.
 * `TauCeti.HurewiczOne.hurewiczAddEquiv`: for path-connected `X`, it induces an isomorphism from the
-  abelianization of `π₁(X, x)` onto the `1`-cycles modulo boundaries.
+  abelianization of `π₁(X, x)` onto `H₁`, the `1`-cycles modulo boundaries.
 * `TauCeti.HurewiczOne.hurewiczHomologyAddEquiv`: the same isomorphism onto the first homology group
   of the singular chain complex of `X` with integer coefficients.
 
@@ -79,15 +81,6 @@ private lemma homeomorphI_eq (w : StdSimplex ℝ (Fin 2)) :
 
 variable {X : TopCat.{0}}
 
-lemma toSSetObjEquiv_δ {n : ℕ} (s : (TopCat.toSSet.obj X) _⦋n + 1⦌) (i : Fin (n + 2)) :
-    X.toSSetObjEquiv _ ((TopCat.toSSet.obj X).δ i s) =
-      (X.toSSetObjEquiv _ s).comp ⟨StdSimplex.map i.succAbove, StdSimplex.continuous_map ℝ _⟩ :=
-  rfl
-
-/-- The singular `0`-simplex at a point. -/
-def simplex₀ (p : X) : (TopCat.toSSet.obj X) _⦋0⦌ :=
-  (X.toSSetObjEquiv _).symm (ContinuousMap.const _ p)
-
 /-- The singular `1`-simplex of a map from the unit interval. -/
 def simplex₁ (g : C(I, X)) : (TopCat.toSSet.obj X) _⦋1⦌ :=
   (X.toSSetObjEquiv _).symm (g.comp toI)
@@ -97,30 +90,37 @@ lemma toSSetObjEquiv_simplex₁ (g : C(I, X)) :
     X.toSSetObjEquiv _ (simplex₁ g) = g.comp toI :=
   Equiv.apply_symm_apply _ _
 
-lemma δ_zero_simplex₁ (g : C(I, X)) : (TopCat.toSSet.obj X).δ 0 (simplex₁ g) = simplex₀ (g 1) := by
-  apply (X.toSSetObjEquiv _).injective
-  ext w
-  rw [toSSetObjEquiv_δ]
-  simp only [simplex₁, simplex₀, Equiv.apply_symm_apply, ContinuousMap.comp_apply,
-    ContinuousMap.coe_mk, ContinuousMap.const_apply]
-  congr 1
-  ext
-  rw [StdSimplex.homeomorphI_apply_coe]
-  change (StdSimplex.map (Fin.succAbove 0) w).weights ((0 : Fin 2).succAbove 0) = 1
-  rw [StdSimplex.weights_map_apply_of_injective Fin.succAbove_right_injective]
+/-- The `0`-th face of the standard `1`-simplex is its last vertex, of parameter `1`. -/
+lemma homeomorphI_map_succAbove_zero (w : StdSimplex ℝ (Fin 1)) :
+    StdSimplex.homeomorphI (StdSimplex.map (Fin.succAbove (0 : Fin 2)) w) = 1 := by
+  refine Subtype.ext ?_
+  rw [StdSimplex.homeomorphI_apply_coe, show (1 : Fin 2) = (0 : Fin 2).succAbove 0 from rfl,
+    StdSimplex.weights_map_apply_of_injective Fin.succAbove_right_injective]
   simp
 
-lemma δ_one_simplex₁ (g : C(I, X)) : (TopCat.toSSet.obj X).δ 1 (simplex₁ g) = simplex₀ (g 0) := by
+/-- The `1`-st face of the standard `1`-simplex is its first vertex, of parameter `0`. -/
+lemma homeomorphI_map_succAbove_one (w : StdSimplex ℝ (Fin 1)) :
+    StdSimplex.homeomorphI (StdSimplex.map (Fin.succAbove (1 : Fin 2)) w) = 0 :=
+  Subtype.ext ((StdSimplex.homeomorphI_apply_coe _).trans
+    (StdSimplex.weights_map_succAbove_self 1 w))
+
+lemma δ_zero_simplex₁ (g : C(I, X)) :
+    (TopCat.toSSet.obj X).δ 0 (simplex₁ g) = TopCat.toSSetObj₀Equiv.symm (g 1) := by
   apply (X.toSSetObjEquiv _).injective
   ext w
-  rw [toSSetObjEquiv_δ]
-  simp only [simplex₁, simplex₀, Equiv.apply_symm_apply, ContinuousMap.comp_apply,
-    ContinuousMap.coe_mk, ContinuousMap.const_apply]
-  congr 1
-  ext
-  rw [StdSimplex.homeomorphI_apply_coe]
-  change (StdSimplex.map (Fin.succAbove 1) w).weights 1 = 0
-  exact StdSimplex.weights_map_succAbove_self 1 w
+  rw [TopCat.toSSetObjEquiv_δ_apply, toSSetObjEquiv_simplex₁, ContinuousMap.comp_apply,
+    ContinuousMap.coe_coe, homeomorphI_map_succAbove_zero, TopCat.toSSetObj₀Equiv_symm_apply,
+    Equiv.apply_symm_apply]
+  rfl
+
+lemma δ_one_simplex₁ (g : C(I, X)) :
+    (TopCat.toSSet.obj X).δ 1 (simplex₁ g) = TopCat.toSSetObj₀Equiv.symm (g 0) := by
+  apply (X.toSSetObjEquiv _).injective
+  ext w
+  rw [TopCat.toSSetObjEquiv_δ_apply, toSSetObjEquiv_simplex₁, ContinuousMap.comp_apply,
+    ContinuousMap.coe_coe, homeomorphI_map_succAbove_one, TopCat.toSSetObj₀Equiv_symm_apply,
+    Equiv.apply_symm_apply]
+  rfl
 
 /-- The inclusion of the `i`-th facet of the standard `2`-simplex. -/
 def face (i : Fin 3) : C(StdSimplex ℝ (Fin 2), StdSimplex ℝ (Fin 3)) :=
@@ -162,7 +162,7 @@ variable (X) in
 abbrev Chains (n : ℕ) := ((singularChains ℤ).obj X).X n
 
 /-- The chain of the singular `0`-simplex at a point. -/
-abbrev chain₀ (p : X) : Chains X 0 := simplexChain (simplex₀ p) 1
+abbrev chain₀ (p : X) : Chains X 0 := simplexChain (TopCat.toSSetObj₀Equiv.symm p) 1
 
 /-- The chain of the singular `1`-simplex of a map from the unit interval. -/
 abbrev chain₁ (g : C(I, X)) : Chains X 1 := simplexChain (simplex₁ g) 1
@@ -179,9 +179,8 @@ abbrev chain₂ (f : C(StdSimplex ℝ (Fin 3), X)) : Chains X 2 :=
 lemma δ_toSSetObjEquiv_symm (f : C(StdSimplex ℝ (Fin 3), X)) (i : Fin 3) (g : C(I, X))
     (h : f.comp (face i) = g.comp toI) :
     (TopCat.toSSet.obj X).δ i ((X.toSSetObjEquiv (.op ⦋2⦌)).symm f) = simplex₁ g := by
-  apply (X.toSSetObjEquiv _).injective
-  rw [toSSetObjEquiv_δ, Equiv.apply_symm_apply, simplex₁, Equiv.apply_symm_apply]
-  exact h
+  rw [simplex₁, ← h]
+  exact TopCat.toSSetObjEquiv_symm_naturality (SimplexCategory.δ i) f
 
 lemma d_chain₂ (f : C(StdSimplex ℝ (Fin 3), X)) (g₀ g₁ g₂ : C(I, X))
     (h₀ : f.comp (face 0) = g₀.comp toI)
@@ -194,9 +193,13 @@ lemma d_chain₂ (f : C(StdSimplex ℝ (Fin 3), X)) (g₀ g₁ g₂ : C(I, X))
   simp [sub_eq_add_neg]
 
 variable (X) in
+/-- The short complex `C₂ → C₁ → C₀` of the singular chains of `X`. -/
+abbrev sc₁ := ((singularChains ℤ).obj X).sc' 2 1 0
+
+variable (X) in
 /-- The boundaries among the singular `1`-chains of `X`. -/
-abbrev boundaries₁ : AddSubgroup (Chains X 1) :=
-  (((singularChains ℤ).obj X).d 2 1).hom.toAddMonoidHom.range
+abbrev boundaries₁ : Submodule ℤ (Chains X 1) :=
+  LinearMap.range (((singularChains ℤ).obj X).d 2 1).hom
 
 lemma mem_boundaries₁ {c : Chains X 1} (y : Chains X 2)
     (h : ((singularChains ℤ).obj X).d 2 1 y = c) : c ∈ boundaries₁ X :=
@@ -217,33 +220,6 @@ def concatProj : C(StdSimplex ℝ (Fin 3), I) :=
     (by fun_prop :
       Continuous fun w : StdSimplex ℝ (Fin 3) ↦ w.weights 1 / 2 + w.weights 2).subtype_mk _⟩
 
-/-- A concatenation of paths at a parameter `s = t / 2` takes the value of the first path at
-`t`. -/
-lemma _root_.Path.trans_apply_of_eq_left {Y : Type*} [TopologicalSpace Y] {a b c : Y}
-    (γ : Path a b) (δ : Path b c) {s t : I}
-    (h : (s : ℝ) = t / 2) : γ.trans δ s = γ t := by
-  rw [Path.trans_apply]
-  split_ifs with hs
-  · congr 1
-    ext
-    simp [h]; ring
-  · exact absurd (by rw [h]; linarith [t.2.2]) hs
-
-/-- A concatenation of paths at a parameter `s = (1 + t) / 2` takes the value of the second path
-at `t`. -/
-lemma _root_.Path.trans_apply_of_eq_right {Y : Type*} [TopologicalSpace Y] {a b c : Y}
-    (γ : Path a b) (δ : Path b c) {s t : I}
-    (h : (s : ℝ) = (1 + t) / 2) : γ.trans δ s = δ t := by
-  rw [Path.trans_apply]
-  split_ifs with hs
-  · have ht : (t : ℝ) = 0 := by linarith [t.2.1]
-    have : t = 0 := Subtype.ext ht
-    subst this
-    rw [show (⟨2 * s, _⟩ : I) = 1 from Subtype.ext (by simp [h]), γ.target, δ.source]
-  · congr 1
-    ext
-    simp [h]; ring
-
 /-- The chain of a concatenation of paths differs from the sum of the chains of the two paths by
 a boundary. -/
 lemma chain₁_add_sub_trans_mem_boundaries₁ {a b c : X} (γ : Path a b) (δ : Path b c) :
@@ -253,13 +229,15 @@ lemma chain₁_add_sub_trans_mem_boundaries₁ {a b c : X} (γ : Path a b) (δ :
   rw [d_chain₂ _ δ.toContinuousMap (γ.trans δ).toContinuousMap γ.toContinuousMap]
   · abel
   · ext a
-    exact Path.trans_apply_of_eq_right γ δ (by
-      simp [concatProj, homeomorphI_eq]; linarith [a.total_fin_two])
+    exact Path.trans_apply_of_ge γ δ
+      (by simp [concatProj]; linarith [a.total_fin_two, a.weights_nonneg 1]) _
+      (by simp [concatProj, homeomorphI_eq]; linarith [a.total_fin_two])
   · ext a
     simp [concatProj, homeomorphI_eq]
   · ext a
-    exact Path.trans_apply_of_eq_left γ δ
-      (by simp [concatProj, homeomorphI_eq])
+    exact Path.trans_apply_of_le γ δ
+      (by simp [concatProj]; linarith [a.total_fin_two, a.weights_nonneg 0]) _
+      (by simp [concatProj, homeomorphI_eq]; ring)
 
 /-- The weight of the last vertex of the standard `2`-simplex, as a point of the unit
 interval. -/
@@ -334,48 +312,90 @@ lemma simplexPath_simplex₁_apply (g : C(I, X)) (t : I) : simplexPath (simplex�
 
 /-! ### The Hurewicz map -/
 
-variable (X) in
-/-- The singular `1`-cycles of `X`. -/
-abbrev cycles₁ : AddSubgroup (Chains X 1) :=
-  (((singularChains ℤ).obj X).d 1 0).hom.toAddMonoidHom.ker
+section ModuleCat
+
+variable {R : Type*} [Ring R] (S : ShortComplex (ModuleCat R))
+
+/- These two facts are stated for an arbitrary ring: for `ℤ`, instance search on the cycles
+`LinearMap.ker S.g.hom` finds `AddCommGroup.toIntModule`, which is only propositionally equal to
+the submodule structure that `ShortComplex.moduleCatLeftHomologyData` uses. -/
+
+private lemma π_hom_eq_iff (c c' : LinearMap.ker S.g.hom) :
+    S.moduleCatLeftHomologyData.π.hom c = S.moduleCatLeftHomologyData.π.hom c' ↔
+      ∃ y, S.f.hom y = (c : S.X₂) - c' :=
+  (Submodule.Quotient.eq _).trans
+    ⟨fun ⟨y, hy⟩ ↦ ⟨y, congrArg Subtype.val hy⟩, fun ⟨y, hy⟩ ↦ ⟨y, Subtype.ext hy⟩⟩
+
+private lemma π_hom_surjective : Function.Surjective S.moduleCatLeftHomologyData.π.hom :=
+  (ModuleCat.epi_iff_surjective _).1 inferInstance
+
+end ModuleCat
 
 variable (X) in
-/-- The first singular homology group of `X` with integer coefficients, as the quotient of the
-`1`-cycles by the boundaries. -/
-abbrev H₁ := cycles₁ X ⧸ (boundaries₁ X).addSubgroupOf (cycles₁ X)
+/-- The singular `1`-cycles of `X`, the kernel of the differential of `sc₁ X`. -/
+abbrev cycles₁ : Submodule ℤ (Chains X 1) :=
+  LinearMap.ker (sc₁ X).g.hom
+
+variable (X) in
+/-- The first singular homology group of `X` with integer coefficients, as the explicit homology
+`cycles₁ X ⧸ boundaries` of `sc₁ X` in `ModuleCat ℤ`. -/
+abbrev H₁ : ModuleCat ℤ := (sc₁ X).moduleCatLeftHomologyData.H
 
 lemma mem_cycles₁ {c : Chains X 1} (h : ((singularChains ℤ).obj X).d 1 0 c = 0) :
     c ∈ cycles₁ X :=
   h
+
+/-- The class in `H₁ X` of a `1`-cycle. -/
+def H₁.mk (c : cycles₁ X) : H₁ X :=
+  (sc₁ X).moduleCatLeftHomologyData.π.hom c
+
+lemma H₁.mk_add (c c' : cycles₁ X) : H₁.mk (c + c') = H₁.mk c + H₁.mk c' := by
+  rw [H₁.mk, H₁.mk, H₁.mk]
+  exact map_add _ _ _
+
+lemma H₁.mk_zero : H₁.mk (0 : cycles₁ X) = 0 := by
+  rw [H₁.mk]
+  exact map_zero _
+
+lemma H₁.mk_eq_mk_iff (c c' : cycles₁ X) :
+    H₁.mk c = H₁.mk c' ↔ (c : Chains X 1) - c' ∈ boundaries₁ X := by
+  rw [H₁.mk, H₁.mk]
+  exact (π_hom_eq_iff (sc₁ X) c c').trans LinearMap.mem_range.symm
+
+lemma H₁.mk_eq_zero_iff (c : cycles₁ X) : H₁.mk c = 0 ↔ (c : Chains X 1) ∈ boundaries₁ X := by
+  rw [← H₁.mk_zero, H₁.mk_eq_mk_iff, ZeroMemClass.coe_zero, sub_zero]
+
+lemma H₁.mk_surjective : Function.Surjective (H₁.mk (X := X)) := by
+  intro h
+  obtain ⟨c, hc⟩ := π_hom_surjective (sc₁ X) h
+  exact ⟨c, hc⟩
 
 lemma chain₁_mem_cycles₁ {x : X} (γ : Path x x) : chain₁ γ.toContinuousMap ∈ cycles₁ X :=
   mem_cycles₁ (by rw [d_chain₁]; simp)
 
 /-- The homology class of the chain of a loop. -/
 def loopClass {x : X} (γ : Path x x) : H₁ X :=
-  QuotientAddGroup.mk ⟨_, chain₁_mem_cycles₁ γ⟩
+  H₁.mk ⟨_, chain₁_mem_cycles₁ γ⟩
 
 lemma loopClass_def {x : X} (γ : Path x x) :
-    loopClass γ = QuotientAddGroup.mk ⟨_, chain₁_mem_cycles₁ γ⟩ := by
+    loopClass γ = H₁.mk ⟨_, chain₁_mem_cycles₁ γ⟩ := by
   rw [loopClass]
 
 lemma loopClass_eq_iff {x : X} (γ γ' : Path x x) :
     loopClass γ = loopClass γ' ↔
       chain₁ γ.toContinuousMap - chain₁ γ'.toContinuousMap ∈ boundaries₁ X := by
-  rw [loopClass, loopClass, QuotientAddGroup.eq_iff_sub_mem, AddSubgroup.mem_addSubgroupOf]
-  rfl
+  rw [loopClass, loopClass, H₁.mk_eq_mk_iff]
 
-lemma loopClass_refl (x : X) : loopClass (Path.refl x) = 0 :=
-  (QuotientAddGroup.eq_zero_iff _).2
-    ((AddSubgroup.mem_addSubgroupOf).2 (chain₁_const_mem_boundaries₁ x))
+lemma loopClass_refl (x : X) : loopClass (Path.refl x) = 0 := by
+  rw [loopClass, H₁.mk_eq_zero_iff]
+  exact chain₁_const_mem_boundaries₁ x
 
 lemma loopClass_trans {x : X} (γ δ : Path x x) :
     loopClass (γ.trans δ) = loopClass γ + loopClass δ := by
-  rw [loopClass, loopClass, loopClass, ← QuotientAddGroup.mk_add,
-    QuotientAddGroup.eq_iff_sub_mem, AddSubgroup.mem_addSubgroupOf]
+  rw [loopClass, loopClass, loopClass, ← H₁.mk_add, H₁.mk_eq_mk_iff]
   have := neg_mem (chain₁_add_sub_trans_mem_boundaries₁ γ δ)
   convert this using 1
-  simp only [AddSubgroupClass.coe_sub, AddSubgroup.coe_add]
+  simp only [Submodule.coe_add]
   abel
 
 variable (X) in
@@ -389,6 +409,8 @@ def hurewicz₁ (x : X) : FundamentalGroup X x →* Multiplicative (H₁ X) wher
   map_mul' p q := by
     refine Quotient.inductionOn₂ (s₁ := Path.Homotopic.setoid x x)
       (s₂ := Path.Homotopic.setoid x x) p q fun p q ↦ ?_
+    -- The product `⟦p⟧ * ⟦q⟧` in the fundamental group is, by definition of the composition in
+    -- the fundamental groupoid, the class of `q.trans p`, on which `Quotient.lift` computes.
     change Multiplicative.ofAdd (loopClass (q.trans p)) = _
     rw [loopClass_trans, add_comm]
     rfl
@@ -487,24 +509,38 @@ lemma inverseValue_cocycle (τ : (TopCat.toSSet.obj X) _⦋2⦌) :
 def inverseChains : Chains X 1 →ₗ[ℤ] Additive (Abelianization (FundamentalGroup X x)) :=
   chainsDesc (inverseValue x)
 
+lemma inverseChains_simplexChain (s : (TopCat.toSSet.obj X) _⦋1⦌) :
+    inverseChains x (simplexChain s 1) = inverseValue x s := by
+  rw [inverseChains, chainsDesc_simplexChain_one]
+
 lemma inverseChains_d (y : Chains X 2) :
     inverseChains x (((singularChains ℤ).obj X).d 2 1 y) = 0 := by
   have := singularChains_linearMap_ext
     (L := inverseChains x ∘ₗ (((singularChains ℤ).obj X).d 2 1).hom) (L' := 0) fun τ ↦ by
       rw [LinearMap.comp_apply, singularChains_d_simplexChain (n := 1), Fin.sum_univ_three]
-      simp only [map_add, map_zsmul, inverseChains, chainsDesc_simplexChain_one]
+      simp only [map_add, map_zsmul, inverseChains_simplexChain]
       simpa [sub_eq_add_neg] using inverseValue_cocycle x τ
   exact LinearMap.congr_fun this y
 
+/-- The inverse Hurewicz map on the `1`-cycles, as a morphism of `ℤ`-modules. The module structure
+on the cycles is passed explicitly, as in `TauCeti.HurewiczOne.H₁.mk_eq_mk_iff`. -/
+def inverseCycles :
+    (sc₁ X).moduleCatLeftHomologyData.K ⟶ ModuleCat.of ℤ (Additive (Abelianization
+      (FundamentalGroup X x))) :=
+  @ModuleCat.ofHom ℤ _ _ _ _ (cycles₁ X).module _ _
+    ((inverseChains x).comp (cycles₁ X).subtype)
+
+lemma f'_inverseCycles : (sc₁ X).moduleCatLeftHomologyData.f' ≫ inverseCycles x = 0 :=
+  ModuleCat.hom_ext (LinearMap.ext fun y ↦ inverseChains_d x y)
+
 /-- **The inverse of the Hurewicz map in degree one**, on the first homology group. -/
-def inverse₁ : H₁ X →+ Additive (Abelianization (FundamentalGroup X x)) :=
-  QuotientAddGroup.lift _ ((inverseChains x).toAddMonoidHom.comp (cycles₁ X).subtype)
-    fun c hc ↦ by
-      obtain ⟨y, hy⟩ := AddSubgroup.mem_addSubgroupOf.1 hc
-      simp only [AddMonoidHom.mem_ker, AddMonoidHom.coe_comp, Function.comp_apply,
-        AddSubgroup.coe_subtype, LinearMap.toAddMonoidHom_coe]
-      rw [← hy]
-      exact inverseChains_d x y
+def inverse₁ : H₁ X →ₗ[ℤ] Additive (Abelianization (FundamentalGroup X x)) :=
+  ((sc₁ X).moduleCatLeftHomologyData.descH (inverseCycles x) (f'_inverseCycles x)).hom
+
+lemma inverse₁_mk (c : cycles₁ X) : inverse₁ x (H₁.mk c) = inverseChains x c := by
+  rw [inverse₁]
+  exact congr($((sc₁ X).moduleCatLeftHomologyData.π_descH (inverseCycles x)
+    (f'_inverseCycles x)).hom c)
 
 omit [PathConnectedSpace X] in
 lemma of_conj (p q : FundamentalGroup X x) :
@@ -531,39 +567,43 @@ lemma inverse₁_loopClass (γ : Path x x) :
   have hγ : simplexPath (simplex₁ γ.toContinuousMap) = γ.cast hs ht := by
     ext t
     simp
-  change inverseChains x (chain₁ γ.toContinuousMap) = _
-  rw [inverseChains, chainsDesc_simplexChain_one, inverseValue, hγ,
+  rw [loopClass, inverse₁_mk, inverseChains_simplexChain, inverseValue, hγ,
     Path.Homotopic.Quotient.mk_cast, ofMul_of_loopThrough_cast]
 
-
-/-- The point of a singular `0`-simplex. -/
-def point (v : (TopCat.toSSet.obj X) _⦋0⦌) : X := X.toSSetObjEquiv _ v (StdSimplex.single 0)
-
 omit [PathConnectedSpace X] in
-lemma point_δ_zero (s : (TopCat.toSSet.obj X) _⦋1⦌) :
-    point ((TopCat.toSSet.obj X).δ 0 s) = tgt s := by
-  change X.toSSetObjEquiv _ s (StdSimplex.map (Fin.succAbove 0) (StdSimplex.single 0)) = _
-  rw [StdSimplex.map_single]
+lemma toSSetObj₀Equiv_δ_zero (s : (TopCat.toSSet.obj X) _⦋1⦌) :
+    TopCat.toSSetObj₀Equiv ((TopCat.toSSet.obj X).δ 0 s) = tgt s := by
+  rw [TopCat.toSSetObj₀Equiv_apply, TopCat.toSSetObjEquiv_δ_apply, tgt,
+    Subsingleton.elim default (StdSimplex.single 0), StdSimplex.map_single]
   rfl
 
 omit [PathConnectedSpace X] in
-lemma point_δ_one (s : (TopCat.toSSet.obj X) _⦋1⦌) :
-    point ((TopCat.toSSet.obj X).δ 1 s) = src s := by
-  change X.toSSetObjEquiv _ s (StdSimplex.map (Fin.succAbove 1) (StdSimplex.single 0)) = _
-  rw [StdSimplex.map_single]
+lemma toSSetObj₀Equiv_δ_one (s : (TopCat.toSSet.obj X) _⦋1⦌) :
+    TopCat.toSSetObj₀Equiv ((TopCat.toSSet.obj X).δ 1 s) = src s := by
+  rw [TopCat.toSSetObj₀Equiv_apply, TopCat.toSSetObjEquiv_δ_apply, src,
+    Subsingleton.elim default (StdSimplex.single 0), StdSimplex.map_single]
   rfl
 
 /-- The `1`-chains of the chosen paths from the base point to the points of a `0`-chain. -/
-def pathChains : Chains X 0 →+ Chains X 1 :=
-  (chainsDesc (V := Chains X 1) fun v ↦ chain₁ (pathTo x (point v)).toContinuousMap).toAddMonoidHom
+def pathChains : Chains X 0 →ₗ[ℤ] Chains X 1 :=
+  chainsDesc fun v ↦ chain₁ (pathTo x (TopCat.toSSetObj₀Equiv v)).toContinuousMap
+
+lemma pathChains_simplexChain (v : (TopCat.toSSet.obj X) _⦋0⦌) :
+    pathChains x (simplexChain v 1) =
+      chain₁ (pathTo x (TopCat.toSSetObj₀Equiv v)).toContinuousMap := by
+  rw [pathChains, chainsDesc_simplexChain_one]
 
 /-- The loop at the base point through a singular `1`-simplex. -/
 def loopPath (s : (TopCat.toSSet.obj X) _⦋1⦌) : Path x x :=
   (pathTo x (src s)).trans ((simplexPath s).trans (pathTo x (tgt s)).symm)
 
 /-- The `1`-chains of the loops through the simplices of a `1`-chain. -/
-def loopChains : Chains X 1 →+ Chains X 1 :=
-  (chainsDesc (V := Chains X 1) fun s ↦ chain₁ (loopPath x s).toContinuousMap).toAddMonoidHom
+def loopChains : Chains X 1 →ₗ[ℤ] Chains X 1 :=
+  chainsDesc fun s ↦ chain₁ (loopPath x s).toContinuousMap
+
+lemma loopChains_simplexChain (s : (TopCat.toSSet.obj X) _⦋1⦌) :
+    loopChains x (simplexChain s 1) = chain₁ (loopPath x s).toContinuousMap := by
+  rw [loopChains, chainsDesc_simplexChain_one]
 
 omit [PathConnectedSpace X] in
 lemma chain₁_add_symm_mem_boundaries₁ {a b : X} (γ : Path a b) :
@@ -593,33 +633,28 @@ lemma chain₁_loopPath_sub_mem_boundaries₁ (s : (TopCat.toSSet.obj X) _⦋1�
 
 lemma loopChains_sub_mem_boundaries₁ (c : Chains X 1) :
     loopChains x c - c + pathChains x (((singularChains ℤ).obj X).d 1 0 c) ∈ boundaries₁ X := by
-  let φ : Chains X 1 →+ Chains X 1 ⧸ boundaries₁ X :=
-    (QuotientAddGroup.mk' (boundaries₁ X)).comp (loopChains x -
-      AddMonoidHom.id _ + (pathChains x).comp
-        (((singularChains ℤ).obj X).d 1 0).hom.toAddMonoidHom)
+  let φ : Chains X 1 →+ Chains X 1 ⧸ (boundaries₁ X).toAddSubgroup :=
+    (QuotientAddGroup.mk' _).comp (loopChains x - LinearMap.id +
+      pathChains x ∘ₗ (((singularChains ℤ).obj X).d 1 0).hom).toAddMonoidHom
   have : φ = 0 := singularChains_addMonoidHom_ext fun s ↦ by
-    simp only [φ, AddMonoidHom.coe_comp, Function.comp_apply, AddMonoidHom.add_apply,
-      AddMonoidHom.sub_apply, AddMonoidHom.id_apply,
-      AddMonoidHom.zero_apply, QuotientAddGroup.mk'_apply, QuotientAddGroup.eq_zero_iff]
-    change loopChains x (simplexChain s 1) - simplexChain s 1 +
-      pathChains x (((singularChains ℤ).obj X).d 1 0 (simplexChain s 1)) ∈ boundaries₁ X
-    rw [singularChains_d_simplexChain (n := 0), Fin.sum_univ_two]
-    simp only [loopChains, pathChains, LinearMap.toAddMonoidHom_coe, map_add, map_zsmul,
-      chainsDesc_simplexChain_one, Fin.val_zero, Fin.val_one, pow_zero, pow_one]
-    erw [point_δ_zero, point_δ_one]
+    rw [AddMonoidHom.zero_apply, AddMonoidHom.comp_apply, QuotientAddGroup.mk'_apply,
+      QuotientAddGroup.eq_zero_iff, Submodule.mem_toAddSubgroup, LinearMap.toAddMonoidHom_coe,
+      LinearMap.add_apply, LinearMap.sub_apply, LinearMap.id_apply, LinearMap.comp_apply,
+      singularChains_d_simplexChain (n := 0), Fin.sum_univ_two, map_add, map_zsmul, map_zsmul,
+      pathChains_simplexChain, pathChains_simplexChain, toSSetObj₀Equiv_δ_zero,
+      toSSetObj₀Equiv_δ_one, loopChains_simplexChain]
     convert chain₁_loopPath_sub_mem_boundaries₁ x s using 1
+    simp only [Fin.val_zero, Fin.val_one, pow_zero, pow_one, one_smul]
     abel
-  have h : φ c = 0 := DFunLike.congr_fun this c
-  exact (QuotientAddGroup.eq_zero_iff _).1 h
+  exact (Submodule.mem_toAddSubgroup _).1 ((QuotientAddGroup.eq_zero_iff _).1
+    (DFunLike.congr_fun this c))
 
 lemma loopChains_mem_cycles₁ (c : Chains X 1) : loopChains x c ∈ cycles₁ X := by
-  have : (((singularChains ℤ).obj X).d 1 0).hom.toAddMonoidHom.comp (loopChains x) = 0 :=
-    singularChains_addMonoidHom_ext fun s ↦ by
-      simp only [AddMonoidHom.coe_comp, Function.comp_apply, loopChains,
-        LinearMap.toAddMonoidHom_coe, chainsDesc_simplexChain_one,
-        AddMonoidHom.zero_apply]
+  have : (((singularChains ℤ).obj X).d 1 0).hom ∘ₗ loopChains x = 0 :=
+    singularChains_linearMap_ext fun s ↦ by
+      rw [LinearMap.comp_apply, loopChains_simplexChain, LinearMap.zero_apply]
       exact chain₁_mem_cycles₁ (loopPath x s)
-  exact DFunLike.congr_fun this c
+  exact mem_cycles₁ (LinearMap.congr_fun this c)
 
 omit [PathConnectedSpace X] in
 /-- The Hurewicz map on the abelianized fundamental group, written additively. -/
@@ -633,25 +668,20 @@ lemma hurewiczAb_ofMul_of (γ : Path x x) :
   simp [hurewiczAb]
 
 lemma hurewiczAb_inverseChains (c : Chains X 1) :
-    hurewiczAb x (inverseChains x c) = QuotientAddGroup.mk ⟨_, loopChains_mem_cycles₁ x c⟩ := by
-  let ψ : Chains X 1 →+ Additive (Abelianization (FundamentalGroup X x)) :=
-    (inverseChains x).toAddMonoidHom
-  let ρ : Chains X 1 →+ H₁ X :=
-    (QuotientAddGroup.mk' _).comp ((loopChains x).codRestrict _ (loopChains_mem_cycles₁ x))
-  have : (hurewiczAb x).comp ψ = ρ := singularChains_addMonoidHom_ext fun s ↦ by
-    have e : loopChains x (simplexChain s 1) = chain₁ (loopPath x s).toContinuousMap := by
-      rw [loopChains, LinearMap.toAddMonoidHom_coe, chainsDesc_simplexChain_one]
-    simp only [AddMonoidHom.coe_comp, Function.comp_apply, ψ, ρ, LinearMap.toAddMonoidHom_coe,
-      inverseChains, chainsDesc_simplexChain_one, QuotientAddGroup.mk'_apply,
-      AddMonoidHom.codRestrict_apply]
-    exact (hurewiczAb_ofMul_of x (loopPath x s)).trans
-      (congrArg QuotientAddGroup.mk (Subtype.ext e.symm))
+    hurewiczAb x (inverseChains x c) = H₁.mk ⟨_, loopChains_mem_cycles₁ x c⟩ := by
+  let ψ : Chains X 1 →+ H₁ X := (hurewiczAb x).comp (inverseChains x).toAddMonoidHom
+  let ρ : Chains X 1 →+ H₁ X := ((sc₁ X).moduleCatLeftHomologyData.π.hom ∘ₗ
+    (loopChains x).codRestrict (cycles₁ X) (loopChains_mem_cycles₁ x)).toAddMonoidHom
+  have : ψ = ρ := singularChains_addMonoidHom_ext fun s ↦ by
+    simp only [ψ, ρ, AddMonoidHom.coe_comp, Function.comp_apply, LinearMap.toAddMonoidHom_coe,
+      inverseChains_simplexChain]
+    refine (hurewiczAb_ofMul_of x (loopPath x s)).trans
+      (congrArg H₁.mk (Subtype.ext (loopChains_simplexChain x s).symm))
   exact DFunLike.congr_fun this c
 
 lemma hurewiczAb_inverse₁ (h : H₁ X) : hurewiczAb x (inverse₁ x h) = h := by
-  induction h using QuotientAddGroup.induction_on with | H z =>
-  change hurewiczAb x (inverseChains x z) = _
-  rw [hurewiczAb_inverseChains, QuotientAddGroup.eq_iff_sub_mem, AddSubgroup.mem_addSubgroupOf]
+  obtain ⟨z, rfl⟩ := H₁.mk_surjective h
+  rw [inverse₁_mk, hurewiczAb_inverseChains, H₁.mk_eq_mk_iff]
   have hz : ((singularChains ℤ).obj X).d 1 0 z = 0 := z.2
   have := loopChains_sub_mem_boundaries₁ x z
   rw [hz, map_zero, add_zero] at this
@@ -660,16 +690,14 @@ lemma hurewiczAb_inverse₁ (h : H₁ X) : hurewiczAb x (inverse₁ x h) = h := 
 lemma inverse₁_hurewiczAb (a : Additive (Abelianization (FundamentalGroup X x))) :
     inverse₁ x (hurewiczAb x a) = a := by
   induction a using Additive.rec with | ofMul a =>
-  induction a using QuotientGroup.induction_on with | H p =>
-  rw [show (QuotientGroup.mk p : Abelianization (FundamentalGroup X x)) = Abelianization.of p
-    from rfl]
-  obtain ⟨γ, rfl⟩ : ∃ γ : Path x x, Path.Homotopic.Quotient.mk γ = p :=
-    Quotient.exists_rep (s := Path.Homotopic.setoid x x) p
+  induction a using Quot.ind with | mk p =>
+  induction p using Path.Homotopic.Quotient.ind with | mk γ =>
+  rw [Abelianization.mk_eq_of]
   exact (congrArg (inverse₁ x) (hurewiczAb_ofMul_of x γ)).trans (inverse₁_loopClass x γ)
 
 /-- **The Hurewicz theorem in degree one**: for a path-connected space, the Hurewicz map
-identifies the abelianized fundamental group with the first homology group, written as cycles
-modulo boundaries. -/
+identifies the abelianized fundamental group with the first homology group, written as the
+explicit homology of the short complex `C₂ → C₁ → C₀`. -/
 def hurewiczAddEquiv : Additive (Abelianization (FundamentalGroup X x)) ≃+ H₁ X where
   __ := hurewiczAb x
   invFun := inverse₁ x
@@ -692,111 +720,33 @@ end Inverse
 /-! ### Comparison with the homology of the singular chain complex -/
 
 variable (X) in
-/-- The short complex `C₂ → C₁ → C₀` of the singular chains of `X`. -/
-abbrev sc₁ := ((singularChains ℤ).obj X).sc' 2 1 0
-
-variable (X) in
-/-- The inclusion of the cycles into the kernel of the differential of `sc₁ X`. -/
-def cyclesToK : cycles₁ X →+ (sc₁ X).moduleCatLeftHomologyData.K where
-  toFun c := ⟨c.1, c.2⟩
-  map_zero' := rfl
-  map_add' _ _ := rfl
-
-variable (X) in
-/-- The projection from the kernel of the differential of `sc₁ X` to the quotient of cycles by
-boundaries. -/
-def kToH₁ : (sc₁ X).moduleCatLeftHomologyData.K ⟶ ModuleCat.of ℤ (H₁ X) :=
-  @ModuleCat.ofHom ℤ _ _ _ _ (LinearMap.ker (sc₁ X).g.hom).module _ _
-    (intLinearMapOfAddMonoidHom ((QuotientAddGroup.mk' ((boundaries₁ X).addSubgroupOf _)).comp
-      { toFun c := (⟨c.1, c.2⟩ : cycles₁ X)
-        map_zero' := rfl
-        map_add' _ _ := rfl }))
-
-lemma kToH₁_apply (k : (sc₁ X).moduleCatLeftHomologyData.K) :
-    (kToH₁ X).hom k = QuotientAddGroup.mk (⟨k.1, k.2⟩ : cycles₁ X) := by
-  rw [kToH₁]
-  exact intLinearMapOfAddMonoidHom_apply _ _
-
-lemma f'_kToH₁ : (sc₁ X).moduleCatLeftHomologyData.f' ≫ kToH₁ X = 0 := by
-  ext y
-  rw [ModuleCat.hom_comp, LinearMap.comp_apply, kToH₁_apply]
-  exact (QuotientAddGroup.eq_zero_iff _).2 (AddSubgroup.mem_addSubgroupOf.2 ⟨y, rfl⟩)
-
-variable (X) in
-/-- The quotient of cycles by boundaries is the explicit homology of `sc₁ X` in `ModuleCat`. -/
-def H₁AddEquivModuleCat : H₁ X ≃+ (sc₁ X).moduleCatLeftHomologyData.H where
-  toFun := QuotientAddGroup.lift _
-    ((sc₁ X).moduleCatLeftHomologyData.π.hom.toAddMonoidHom.comp (cyclesToK X))
-    fun c hc ↦ by
-      obtain ⟨y, hy⟩ := AddSubgroup.mem_addSubgroupOf.1 hc
-      have hc' : cyclesToK X c = (sc₁ X).moduleCatLeftHomologyData.f'.hom y :=
-        Subtype.ext hy.symm
-      rw [AddMonoidHom.mem_ker, AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe, hc']
-      exact congr($((sc₁ X).moduleCatLeftHomologyData.f'_π).hom y)
-  invFun := ((sc₁ X).moduleCatLeftHomologyData.descH (kToH₁ X) f'_kToH₁).hom
-  left_inv h := by
-    induction h using QuotientAddGroup.induction_on with | H c =>
-    exact congr($((sc₁ X).moduleCatLeftHomologyData.π_descH (kToH₁ X) f'_kToH₁).hom
-      (cyclesToK X c)).trans (kToH₁_apply _)
-  right_inv h := by
-    obtain ⟨k, rfl⟩ := Quot.exists_rep h
-    have e := congr($((sc₁ X).moduleCatLeftHomologyData.π_descH (kToH₁ X) f'_kToH₁).hom k)
-    rw [ModuleCat.hom_comp] at e
-    refine (congrArg (QuotientAddGroup.lift _ _ _) (e.trans (kToH₁_apply k))).trans ?_
-    rfl
-  map_add' := map_add _
-
-lemma H₁AddEquivModuleCat_mk (c : cycles₁ X) :
-    H₁AddEquivModuleCat X (QuotientAddGroup.mk c) =
-      (sc₁ X).moduleCatLeftHomologyData.π.hom (cyclesToK X c) := by
-  rw [H₁AddEquivModuleCat]
-  rfl
-
-variable (X) in
-/-- The quotient of cycles by boundaries is the first homology group of the singular chain
+/-- The explicit homology `H₁ X` of `sc₁ X` is the first homology group of the singular chain
 complex. -/
 def H₁AddEquivHomology : H₁ X ≃+ ((singularChains ℤ).obj X).homology 1 :=
-  (H₁AddEquivModuleCat X).trans (((sc₁ X).moduleCatHomologyIso.symm ≪≫
+  ((sc₁ X).moduleCatHomologyIso.symm ≪≫
     (((singularChains ℤ).obj X).homologyIsoSc' 2 1 0 (by simp) (by simp)).symm).toLinearEquiv
-      |>.toAddEquiv)
+      |>.toAddEquiv
 
-variable (X) in
-/-- The cycle of the singular chain complex lying over a `1`-cycle. -/
-def cycleOf (c : cycles₁ X) : ((singularChains ℤ).obj X).cycles 1 :=
-  (((singularChains ℤ).obj X).cyclesIsoSc' 2 1 0 (by simp) (by simp)).inv.hom
-    ((sc₁ X).moduleCatCyclesIso.inv.hom (cyclesToK X c))
-
-lemma iCycles_cycleOf (c : cycles₁ X) :
-    (((singularChains ℤ).obj X).iCycles 1).hom (cycleOf X c) = c := by
-  have h₁ := congr($(((singularChains ℤ).obj X).cyclesIsoSc'_inv_iCycles 2 1 0
-    (by simp) (by simp)).hom ((sc₁ X).moduleCatCyclesIso.inv.hom (cyclesToK X c)))
-  have h₂ := congr($((sc₁ X).moduleCatCyclesIso_inv_iCycles).hom (cyclesToK X c))
-  simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at h₁ h₂
-  rw [cycleOf]
-  exact h₁.trans h₂
-
-/-- Every `1`-cycle lies under a cycle of the singular chain complex. -/
-lemma exists_iCycles_eq (c : cycles₁ X) :
-    ∃ z : ((singularChains ℤ).obj X).cycles 1,
-      (((singularChains ℤ).obj X).iCycles 1).hom z = c :=
-  ⟨_, iCycles_cycleOf c⟩
-
-/-- The identification of cycles modulo boundaries with the homology of the singular chain
-complex sends the class of a cycle `c` to the homology class of the cycle of the complex lying
-over `c`. -/
+/-- The identification of `H₁ X` with the homology of the singular chain complex sends the class
+of a cycle `c` to the homology class of the cycle of the complex lying over `c`. -/
 lemma H₁AddEquivHomology_mk (c : cycles₁ X) (z : ((singularChains ℤ).obj X).cycles 1)
     (hz : (((singularChains ℤ).obj X).iCycles 1).hom z = c) :
-    H₁AddEquivHomology X (QuotientAddGroup.mk c) =
-      (((singularChains ℤ).obj X).homologyπ 1).hom z := by
-  have hz₀ : z = cycleOf X c :=
+    H₁AddEquivHomology X (H₁.mk c) = (((singularChains ℤ).obj X).homologyπ 1).hom z := by
+  have hi : (ComplexShape.down ℕ).prev 1 = 2 := by simp
+  have hk : (ComplexShape.down ℕ).next 1 = 0 := by simp
+  have h₁ := congr($(((singularChains ℤ).obj X).cyclesIsoSc'_inv_iCycles 2 1 0 hi hk).hom
+    ((sc₁ X).moduleCatCyclesIso.inv.hom c))
+  have h₂ := congr($((sc₁ X).moduleCatCyclesIso_inv_iCycles).hom c)
+  have h₃ := congr($((sc₁ X).moduleCatCyclesIso_inv_π).hom c)
+  have h₄ := congr($(((singularChains ℤ).obj X).π_homologyIsoSc'_inv 2 1 0 hi hk).hom
+    ((sc₁ X).moduleCatCyclesIso.inv.hom c))
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at h₁ h₂ h₃ h₄
+  have hz₀ : z = (((singularChains ℤ).obj X).cyclesIsoSc' 2 1 0 hi hk).inv.hom
+      ((sc₁ X).moduleCatCyclesIso.inv.hom c) :=
     (ModuleCat.mono_iff_injective (((singularChains ℤ).obj X).iCycles 1)).1 inferInstance
-      (hz.trans (iCycles_cycleOf c).symm)
-  have h₃ := congr($((sc₁ X).moduleCatCyclesIso_inv_π).hom (cyclesToK X c))
-  have h₄ := congr($(((singularChains ℤ).obj X).π_homologyIsoSc'_inv 2 1 0
-    (by simp) (by simp)).hom ((sc₁ X).moduleCatCyclesIso.inv.hom (cyclesToK X c)))
-  simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at h₃ h₄
-  rw [hz₀, cycleOf, ← h₄, h₃]
-  rfl
+      (hz.trans (h₁.trans h₂).symm)
+  rw [hz₀, ← h₄]
+  exact (congrArg (((singularChains ℤ).obj X).homologyIsoSc' 2 1 0 hi hk).inv.hom h₃).symm
 
 /-! ### The Hurewicz isomorphism -/
 

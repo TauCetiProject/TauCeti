@@ -124,48 +124,31 @@ theorem chainsDesc_simplexChain_one {X : TopCat.{u}} {n : ℕ} {V : Type u} [Add
 
 end Singular
 
-/-- An additive map out of a `ℤ`-module, as a `ℤ`-linear map for the given module structure.
-Mathlib's `AddMonoidHom.toIntLinearMap` uses the module structure `AddCommGroup.toIntModule`,
-which is only propositionally equal to the module structure of the carrier of an object of
-`ModuleCat ℤ`; the module structure here is an implicit argument, so that it is unified with the
-one of the expected type rather than synthesized. -/
-def intLinearMapOfAddMonoidHom {M V : Type*} [AddCommGroup M] {_ : Module ℤ M} [AddCommGroup V]
-    (f : M →+ V) : M →ₗ[ℤ] V where
-  toFun := f
-  map_add' := f.map_add
-  map_smul' a c := by
-    rw [RingHom.id_apply]
-    exact (congrArg f (int_smul_eq_zsmul _ a c)).trans (map_zsmul f a c)
-
-@[simp]
-theorem intLinearMapOfAddMonoidHom_apply {M V : Type*} [AddCommGroup M] {inst : Module ℤ M}
-    [AddCommGroup V] (f : M →+ V) (c : M) :
-    @intLinearMapOfAddMonoidHom M V _ inst _ f c = f c := by
-  rw [intLinearMapOfAddMonoidHom]
-  rfl
-
 /-- Additive maps out of the singular chains with integer coefficients agree when they agree on
 simplices. -/
 theorem singularChains_addMonoidHom_ext {X : TopCat.{0}} {n : ℕ} {V : Type} [AddCommGroup V]
     {f g : ((singularChains ℤ).obj X).X n →+ V}
     (h : ∀ s, f (simplexChain s 1) = g (simplexChain s 1)) : f = g :=
-  AddMonoidHom.ext fun c ↦ LinearMap.congr_fun (singularChains_linearMap_ext
-    (L := intLinearMapOfAddMonoidHom f) (L' := intLinearMapOfAddMonoidHom g) h) c
+  -- An additive map is linear for the module structure of the chains, which is only
+  -- propositionally equal to `AddCommGroup.toIntModule` (so `AddMonoidHom.toIntLinearMap` does
+  -- not apply).
+  let lin (φ : ((singularChains ℤ).obj X).X n →+ V) : ((singularChains ℤ).obj X).X n →ₗ[ℤ] V :=
+    { toFun := φ
+      map_add' := φ.map_add
+      map_smul' a c := (congrArg φ (int_smul_eq_zsmul _ a c)).trans (map_zsmul φ a c) }
+  AddMonoidHom.ext fun c ↦ LinearMap.congr_fun
+    (singularChains_linearMap_ext (L := lin f) (L' := lin g) h) c
 
 /-- The augmentation of the simplicial singular chains: the sum of the coefficients. -/
 def singularAugment (X : TopCat.{u}) : ((singularChains k).obj X).X 0 →ₗ[k] k :=
-  (Cofan.IsColimit.desc ((TopCat.toSSet.obj X).isColimitChainComplexXCofan (ModuleCat.of k k) 0)
-    (fun _ ↦ 𝟙 (ModuleCat.of k k))).hom
+  chainsDesc fun _ ↦ (1 : k)
 
 variable {k} in
 /-- The augmentation of the chain of a `0`-simplex with coefficient `a` is `a`. -/
 @[simp]
 theorem singularAugment_simplexChain (X : TopCat.{u}) (σ : (TopCat.toSSet.obj X) _⦋0⦌)
     (a : k) : singularAugment k X (simplexChain σ a) = a := by
-  have h := Cofan.IsColimit.fac ((TopCat.toSSet.obj X).isColimitChainComplexXCofan
-    (ModuleCat.of k k) 0) (fun _ ↦ 𝟙 (ModuleCat.of k k)) σ
-  simp only [SSet.chainComplexXCofan, Cofan.inj, Cofan.mk_ι_app] at h
-  exact congrArg (fun g ↦ g.hom a) h
+  rw [singularAugment, chainsDesc_simplexChain, smul_eq_mul, mul_one]
 
 variable {k}
 
