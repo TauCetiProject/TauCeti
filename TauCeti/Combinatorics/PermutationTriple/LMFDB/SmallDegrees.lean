@@ -78,23 +78,19 @@ def smallDegreeRecords : List SmallDegreeRecord :=
 theorem smallDegreeRecords_length : smallDegreeRecords.length = 13 := by decide
 
 /-- The full ordered cycle datum attached to an LMFDB record. -/
-def computedCycleData (r : SmallDegreeRecord) :
-    ℕ × Multiset ℕ × Multiset ℕ × Multiset ℕ :=
-  (r.degree, r.triple.1.σ0.computedCycleType, r.triple.1.σ1.computedCycleType,
-    r.triple.1.σinf.computedCycleType)
-
-/-- The executable cycle data are exactly the record triple's ordered mathematical cycle data. -/
-@[simp]
-theorem computedCycleData_eq_cycleData (r : SmallDegreeRecord) :
-    computedCycleData r =
-      (r.degree, r.triple.1.cycleData.1, r.triple.1.cycleData.2.1,
-        r.triple.1.cycleData.2.2) := by
-  simp [computedCycleData, PermutationTriple.cycleData]
+def computedCycleData (r : SmallDegreeRecord) := (r.degree, r.triple.1.cycleData)
 
 /-- The cycle partitions with their branch-point order forgotten. -/
 def computedUnorderedCycleData (r : SmallDegreeRecord) : ℕ × Multiset (Multiset ℕ) :=
   (r.degree, {r.triple.1.σ0.computedCycleType, r.triple.1.σ1.computedCycleType,
     r.triple.1.σinf.computedCycleType})
+
+/-- Read the unordered cycle data of an LMFDB record from its connected triple. -/
+@[simp]
+theorem computedUnorderedCycleData_eq_unorderedCycleData (r : SmallDegreeRecord) :
+    computedUnorderedCycleData r = (r.degree, r.triple.1.unorderedCycleData) := by
+  simp [computedUnorderedCycleData, PermutationTriple.unorderedCycleData_def,
+    PermutationTriple.cycleData]
 
 /-- The thirteen frozen records have pairwise distinct ordered cycle data, hence represent
 distinct connected-triple isomorphism classes in their respective degrees. -/
@@ -106,8 +102,8 @@ theorem computedUnorderedCycleData_nodup :
     (smallDegreeRecords.map computedUnorderedCycleData).Nodup := by
   decide +kernel
 
-/-- The listed frozen records represent every branch-point orbit of connected triples in
-degrees one through four, with exactly one record in each orbit. -/
+/-- The unordered cycle data of the frozen records give the explicit thirteen-entry
+degree-at-most-four table. -/
 theorem computedUnorderedCycleData_eq_small_degree_table :
     (smallDegreeRecords.map computedUnorderedCycleData).toFinset =
       { (1, {{1}, {1}, {1}}),
@@ -129,8 +125,7 @@ theorem computedUnorderedCycleData_eq_small_degree_table :
 from the complete connected-triple tables. -/
 theorem unorderedCycleData_eq_classification (n : ℕ) (hn : n ≤ 4) :
   (((smallDegreeRecords.filter (fun r => r.degree = n)).map
-    (fun r => {r.triple.1.σ0.computedCycleType, r.triple.1.σ1.computedCycleType,
-      r.triple.1.σinf.computedCycleType})).toFinset) =
+    (fun r => (computedUnorderedCycleData r).2)).toFinset) =
       (Finset.univ : Finset (ConnectedTriple n)).image
         (fun t => t.1.unorderedCycleData) := by
   interval_cases n
