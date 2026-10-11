@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Function.MetricDerivative
+public import TauCeti.MeasureTheory.Function.MetricDerivative.Basic
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.SlidingWindow
 
