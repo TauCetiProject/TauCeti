@@ -43,14 +43,10 @@ theorem _root_.AlgebraicGeometry.Scheme.isFinite_singularLocus_subschemeι_comp
     letI : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of R)) := hnodal.syntomic
     IsFinite ((X.singularLocus R).subschemeι ≫ (X ↘ Spec (.of R))) := by
   have : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of R)) := hnodal.syntomic
-  let s := (X.singularLocus R).subschemeι ≫ (X ↘ Spec (.of R))
-  have hfu : FormallyUnramified s := hnodal.singular_formallyUnramified
-  have hqf : LocallyQuasiFinite s := LocallyQuasiFinite.of_formallyUnramified s
-  have hproper : IsProper s := by
-    dsimp [s]
-    infer_instance
-  have hfinite : IsFinite s := IsFinite.of_isProper_of_locallyQuasiFinite s
-  exact hfinite
+  have : FormallyUnramified
+      ((X.singularLocus R).subschemeι ≫ (X ↘ Spec (.of R))) :=
+    hnodal.singular_formallyUnramified
+  exact IsFinite.of_isProper_of_locallyQuasiFinite _
 
 variable {K : Type u} [Field K]
 
@@ -62,9 +58,10 @@ theorem _root_.AlgebraicGeometry.Scheme.etale_singularLocus_subschemeι_comp
     letI : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of K)) := hnodal.syntomic
     Etale ((X.singularLocus K).subschemeι ≫ (X ↘ Spec (.of K))) := by
   have : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of K)) := hnodal.syntomic
-  let s := (X.singularLocus K).subschemeι ≫ (X ↘ Spec (.of K))
-  have hfu : FormallyUnramified s := hnodal.singular_formallyUnramified
-  have hflat : Flat s := inferInstance
-  exact Etale.of_formallyUnramified_of_flat s
+  have : FormallyUnramified
+      ((X.singularLocus K).subschemeι ≫ (X ↘ Spec (.of K))) :=
+    hnodal.singular_formallyUnramified
+  have : Flat ((X.singularLocus K).subschemeι ≫ (X ↘ Spec (.of K))) := inferInstance
+  exact Etale.of_formallyUnramified_of_flat _
 
 end TauCeti.AlgebraicGeometry

@@ -23,16 +23,14 @@ universe u
 namespace AlgebraicGeometry
 
 /-- A formally unramified morphism that is locally of finite type is locally quasi-finite. -/
-theorem LocallyQuasiFinite.of_formallyUnramified {X Y : Scheme.{u}} (f : X ⟶ Y)
-    [FormallyUnramified f] [LocallyOfFiniteType f] : LocallyQuasiFinite f := by
+instance (priority := low) LocallyQuasiFinite.of_formallyUnramified {X Y : Scheme.{u}}
+    (f : X ⟶ Y) [hform : FormallyUnramified f] [htype : LocallyOfFiniteType f] :
+    LocallyQuasiFinite f := by
   rw [locallyQuasiFinite_iff]
   intro U hU V hV e
-  have hform := (inferInstance : FormallyUnramified f).formallyUnramified_appLE hU hV e
-  have htype : (f.appLE U V e).hom.FiniteType :=
-    (show LocallyOfFiniteType f from inferInstance).finiteType_appLE hU hV e
+  have hform := hform.formallyUnramified_appLE hU hV e
+  have htype := htype.finiteType_appLE hU hV e
   algebraize [(f.appLE U V e).hom]
-  have : Algebra.EssFiniteType _ _ := htype.essFiniteType
-  have : Algebra.FormallyUnramified _ _ := hform
   exact RingHom.quasiFinite_algebraMap.mpr inferInstance
 
 end AlgebraicGeometry
