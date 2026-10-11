@@ -94,6 +94,24 @@ theorem mem_resolventSet_iff_isUnit_one_sub_smul_resolvent (hz : z ∈ A.resolve
       module
   · exact fun h => (isResolventAt_of_isUnit_one_sub_smul_resolvent hz h).mem_resolventSet
 
+/-- The resolvent at a new parameter is obtained by inverting the scalar perturbation,
+with no smallness assumption on the change of parameter. -/
+theorem resolvent_eq_mul_inverse_one_sub_smul_resolvent (hz : z ∈ A.resolventSet)
+    (h : IsUnit (1 - (z - w) • A.resolvent z)) :
+    A.resolvent w = A.resolvent z * Ring.inverse (1 - (z - w) • A.resolvent z) :=
+  _root_.LinearPMap.resolvent_eq_of_isResolventAt
+    (isResolventAt_of_isUnit_one_sub_smul_resolvent hz h)
+
+/-- The inverse of the scalar perturbation relating two resolvent parameters. -/
+theorem inverse_one_sub_smul_resolvent (hz : z ∈ A.resolventSet)
+    (hw : w ∈ A.resolventSet) :
+    Ring.inverse (1 - (z - w) • A.resolvent z) = 1 + (z - w) • A.resolvent w := by
+  have h := (mem_resolventSet_iff_isUnit_one_sub_smul_resolvent hz).mp hw
+  have hcancel := Ring.mul_inverse_cancel _ h
+  rw [sub_mul, one_mul, smul_mul_assoc,
+    ← resolvent_eq_mul_inverse_one_sub_smul_resolvent hz h] at hcancel
+  exact sub_eq_iff_eq_add.mp hcancel
+
 end CommRing
 
 section Field
