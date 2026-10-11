@@ -14,6 +14,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Limits
 public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 public import Mathlib.Topology.Sheaves.Functors
 public import TauCeti.Geometry.Manifold.Complex.Chart
+public import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 
 /-!
 # The holomorphic structure sheaf
@@ -261,9 +262,8 @@ def precomp (f : X → Y) (hf : ContMDiff I J ω f) (U : (Opens Y)ᵒᵖ) :
         ((Opens.map (TopCat.ofHom ⟨f, hf.continuous⟩)).obj (unop U))) :=
     { toFun := fun g ↦ ofContMDiff (fun x ↦ g ⟨f x.1, x.2⟩) (by
         apply (contMDiff g).comp (I' := J)
-        intro x
-        exact (ChartedSpace.liftPropWithinAt_subtypeVal_comp_iff _ Set.univ x).mp
-          ((hf.comp contMDiff_subtype_val) x))
+        exact (TauCeti.ContMDiff.subtypeVal_comp_iff (unop U) _).mp
+          (hf.comp contMDiff_subtype_val))
       map_one' := rfl
       map_mul' := fun _ _ ↦ rfl
       map_zero' := rfl
@@ -450,9 +450,9 @@ theorem algebraMap_bijective :
     simpa only [algebraMap_apply] using
       congrArg (fun f ↦ f ⟨Classical.arbitrary X, trivial⟩) h
   · intro f
-    have hf : ContMDiff I 𝓘(ℂ) ∞ (fun x : X ↦ f ⟨x, trivial⟩) := by
-      apply ((contMDiff f).of_le le_top).comp (I' := I)
-      apply (ContMDiff.subtypeVal_comp_iff (I := I) (I' := I) ⊤ _).1
+    have hf : ContMDiff I 𝓘(ℂ) ω (fun x : X ↦ f ⟨x, trivial⟩) := by
+      apply (contMDiff f).comp (I' := I)
+      apply (TauCeti.ContMDiff.subtypeVal_comp_iff (I := I) (I' := I) ⊤ _).mp
       exact contMDiff_id
     obtain ⟨c, hc⟩ := (hf.mdifferentiable (by simp)).exists_eq_const_of_compactSpace
     refine ⟨c, holomorphicStructureSheaf.ext fun x ↦ ?_⟩
