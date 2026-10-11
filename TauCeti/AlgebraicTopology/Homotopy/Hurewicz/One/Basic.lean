@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 public import TauCeti.Topology.Homotopy.Path
+public import TauCeti.Algebra.Homology.ModuleCat
 public import TauCeti.Geometry.Convex.ConvexSpace.ContractibleSpaceStdSimplex
 public import TauCeti.Geometry.Convex.ConvexSpace.Defs
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
@@ -743,8 +744,7 @@ lemma H₁AddEquivHomology_mk (c : cycles₁ X) (z : ((singularChains ℤ).obj X
   simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at h₁ h₂ h₃ h₄
   have hz₀ : z = (((singularChains ℤ).obj X).cyclesIsoSc' 2 1 0 hi hk).inv.hom
       ((sc₁ X).moduleCatCyclesIso.inv.hom c) :=
-    (ModuleCat.mono_iff_injective (((singularChains ℤ).obj X).iCycles 1)).1 inferInstance
-      (hz.trans (h₁.trans h₂).symm)
+    HomologicalComplex.moduleCat_iCycles_injective _ 1 (hz.trans (h₁.trans h₂).symm)
   rw [hz₀, ← h₄]
   exact (congrArg (((singularChains ℤ).obj X).homologyIsoSc' 2 1 0 hi hk).inv.hom h₃).symm
 

@@ -90,13 +90,6 @@ theorem singularChains_map_f_simplexChain {X Y : TopCat.{u}} (f : X ⟶ Y) {n : 
       (TopCat.toSSet.obj Y).ιChainComplex (R := ModuleCat.of k k) _ a
   rw [← ModuleCat.comp_apply, SSet.ι_chainComplexMap_f]
 
-/-- Pushing chains forward along a continuous map commutes with the boundary. -/
-theorem singularChains_map_f_d {X Y : TopCat.{u}} (f : X ⟶ Y) (n m : ℕ)
-    (c : ((singularChains k).obj X).X n) :
-    ((singularChains k).map f).f m (((singularChains k).obj X).d n m c) =
-      ((singularChains k).obj Y).d n m (((singularChains k).map f).f n c) :=
-  congr($(((singularChains k).map f).comm n m).hom c).symm
-
 /-- The linear map out of the singular `n`-chains with the given values on singular simplices. -/
 def chainsDesc {X : TopCat.{u}} {n : ℕ} {V : Type u} [AddCommGroup V] [Module k V]
     (f : (TopCat.toSSet.obj X) _⦋n⦌ → V) : ((singularChains k).obj X).X n →ₗ[k] V :=
