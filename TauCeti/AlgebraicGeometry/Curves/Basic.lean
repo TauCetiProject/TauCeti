@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Curves.TwoChartModel.Proper
+public import Mathlib.AlgebraicGeometry.Morphisms.Proper
 public import TauCeti.AlgebraicGeometry.Scheme.FunctionField
 
 /-!
@@ -49,16 +49,3 @@ theorem IsCurveOver.isFunctionField [X.IsCurveOver k] :
     (IsCurveOver.topologicalKrullDim_eq_one k)
 
 end AlgebraicGeometry.Scheme
-
-namespace TauCeti.AlgebraicGeometry.twoChartModel
-
-variable {k F : Type u} [Field k] [Field F] [Algebra k F]
-  {hF : TauCeti.IsFunctionField k F} {x : F} {hx : x ≠ 0}
-
-/-- The two-chart model of a function field is a proper integral curve with that function field. -/
-theorem isCurveOver (hxt : Transcendental k x) :
-    (twoChartModel hF hx).IsCurveOver k := by
-  exact @AlgebraicGeometry.Scheme.IsCurveOver.mk (twoChartModel hF hx) k _ _ inferInstance
-    (isProper hxt) (topologicalKrullDim_eq_one hxt)
-
-end TauCeti.AlgebraicGeometry.twoChartModel
