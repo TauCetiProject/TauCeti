@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Homology.HomologySequence
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import TauCeti.Algebra.Homology.BifunctorHomotopy
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Cross
+public import TauCeti.CategoryTheory.GradedObject.Monoidal
 
 /-!
 # The cross product and connecting morphisms
@@ -32,6 +33,10 @@ input which identifies the connecting morphisms in the proof of the Künneth for
 ## Main definitions and results
 
 * `HomologicalComplex.tensorLeftShortComplex`: the short complex `K ⊗ S`.
+* `HomologicalComplex.shortExact_tensorLeftShortComplex`,
+  `HomologicalComplex.shortExact_tensorLeftShortComplex_of_preservesFiniteLimits`: `K ⊗ S` is
+  short exact when `S` is split in each degree, or when tensoring with each term of `K` is exact
+  and each degree of `K ⊗ S` has finitely many summands.
 * `HomologicalComplex.homologyCross_comp_δ`: the connecting morphism of `K ⊗ S` on a cross
   product.
 
@@ -92,14 +97,54 @@ lemma shortExact_tensorLeftShortComplex (hS : S.ShortExact) [∀ q, IsSplitMono 
         simp [← whiskerLeft_comp_assoc, this]
       id := by
         refine mapBifunctor.hom_ext fun p q h ↦ ?_
-        have := (σ q).id
-        dsimp at this ⊢
-        simp only [Preadditive.comp_add, ι_mapBifunctorDesc_assoc, curriedTensor_obj_obj,
-          Category.assoc, ι_mapBifunctorMap, id_f, CategoryTheory.Functor.map_id, NatTrans.id_app,
-          curriedTensor_obj_map, Category.id_comp, ι_mapBifunctorMap_assoc, ι_mapBifunctorDesc,
-          Category.comp_id]
-        rw [← whiskerLeft_comp_assoc, ← whiskerLeft_comp_assoc, ← Preadditive.add_comp,
-          ← MonoidalPreadditive.whiskerLeft_add, this, whiskerLeft_id, Category.id_comp] }
+        -- the splitting identity of `S.X₂.X q`, tensored with `K.X p`
+        simpa using congrArg (fun φ ↦ K.X p ◁ φ ≫ ιTensorObj K S.X₂ p q n h) (σ q).id }
+
+variable {S} in
+/-- Tensoring on the left with `K` preserves short exact sequences of complexes when tensoring with
+each term of `K` is exact and each degree of the tensor product has finitely many summands, for
+instance for complexes of modules indexed by `ℕ` whose terms in `K` are flat. -/
+lemma shortExact_tensorLeftShortComplex_of_preservesFiniteLimits (hS : S.ShortExact)
+    [∀ p, PreservesFiniteLimits (tensorLeft (K.X p))]
+    [∀ p, PreservesFiniteColimits (tensorLeft (K.X p))]
+    (hfin : ∀ n, (ComplexShape.π c c c ⁻¹' {n}).Finite) :
+    (tensorLeftShortComplex K S).ShortExact := by
+  refine shortExact_of_degreewise_shortExact _ fun n ↦ ?_
+  -- coproducts over the finite fibre of `n` are exact
+  have := (hfin n).to_subtype
+  have : HasColimitsOfShape (Discrete (ComplexShape.π c c c ⁻¹' {n})) C :=
+    hasColimitsOfShape_discrete _ _
+  have : HasExactColimitsOfShape (Discrete (ComplexShape.π c c c ⁻¹' {n})) C :=
+    @hasExactColimitsOfShape_discrete_finite C _ _ Abelian.hasFiniteBiproducts _ _
+  -- in degree `n`, `K ⊗ S` is the coproduct of the sequences `K.X p ⊗ S.X q` with `p + q = n`,
+  -- which are short exact
+  let T : ShortComplex (GradedObject (I × I) C) :=
+    ShortComplex.mk
+      (X₁ := ((((curriedTensor C).mapBifunctorHomologicalComplex c c).obj K).obj
+        S.X₁).toGradedObject)
+      (X₂ := ((((curriedTensor C).mapBifunctorHomologicalComplex c c).obj K).obj
+        S.X₂).toGradedObject)
+      (X₃ := ((((curriedTensor C).mapBifunctorHomologicalComplex c c).obj K).obj
+        S.X₃).toGradedObject)
+      (fun x ↦ K.X x.1 ◁ S.f.f x.2) (fun x ↦ K.X x.1 ◁ S.g.f x.2)
+      (funext fun x ↦ (whiskerLeft_comp _ _ _).symm.trans (by simp [← comp_f]; rfl))
+  have hT := GradedObject.shortExact_mapMap T (ComplexShape.π c c c) n fun ⟨p, q⟩ ↦
+    ((shortExact_iff_degreewise_shortExact S).1 hS q).map_of_exact (tensorLeft (K.X p))
+  refine ShortComplex.shortExact_of_iso ?_ hT
+  -- the summand inclusions of `K ⊗ S` in degree `n` are those of the coproducts over the fibre
+  refine ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _)
+    (GradedObject.mapObj_ext _ _ _ _ fun ⟨p, q⟩ h ↦ ?_)
+    (GradedObject.mapObj_ext _ _ _ _ fun ⟨p, q⟩ h ↦ ?_)
+  · dsimp
+    rw [Category.id_comp, Category.comp_id]
+    refine ((ι_tensorHom _ _ p q n h).trans ?_).trans (GradedObject.ι_mapMap T.f _ (p, q) n h).symm
+    simp only [id_f, id_tensorHom]
+    rfl
+  · dsimp
+    rw [Category.id_comp, Category.comp_id]
+    refine ((ι_tensorHom _ _ p q n h).trans ?_).trans (GradedObject.ι_mapMap T.g _ (p, q) n h).symm
+    simp only [id_f, id_tensorHom]
+    rfl
 
 end ShortComplex
 
@@ -189,17 +234,30 @@ theorem homologyCross_comp_δ :
     simp
   have hδS : a₃ ≫ S.X₃.homologyπ q ≫ hS.δ q q' hq =
       S.X₁.liftCycles a₁ (c.next q') rfl ha₁ ≫ S.X₁.homologyπ q' := by
+    -- `δ_eq` computes `δ` on the cycles lifting `a₃ ≫ iCycles`, which are `a₃` itself
+    have e₃ : S.X₃.liftCycles (a₃ ≫ S.X₃.iCycles q) q' (c.next_eq' hq) (by simp) = a₃ := by
+      simp [← cancel_mono (S.X₃.iCycles q)]
     have := hS.δ_eq q q' hq (a₃ ≫ S.X₃.iCycles q) (by simp) a₂ h₂ a₁ h₁ _ rfl
-    rwa [show S.X₃.liftCycles (a₃ ≫ S.X₃.iCycles q) q' (c.next_eq' hq) (by simp) = a₃ by
-      simp [← cancel_mono (S.X₃.iCycles q)]] at this
+    rwa [e₃] at this
   -- both sides agree on `x ⊗ a₃`, and these generate `Hₚ(K) ⊗ H_q(S.X₃)`
   have : Epi (K.cycles p ◁ a₃) := (tensorLeft (K.cycles p)).map_epi a₃
   refine homology_tensor_homology_hom_ext K S.X₃ p q ?_
-  rw [← cancel_epi (K.cycles p ◁ a₃), homologyπ_tensorHom_homologyCross_assoc,
-    ← Category.assoc, cyclesCross_homologyπ_δ K hKS hq h h' a₃ a₂ a₁ h₂ h₁ ha₁,
-    Preadditive.comp_zsmul, Preadditive.comp_zsmul, whiskerLeft_comp_tensorHom_assoc,
-    tensorHom_comp_whiskerLeft_assoc, Category.assoc, hδS, ← whiskerLeft_comp_tensorHom_assoc,
-    homologyπ_tensorHom_homologyCross, Preadditive.zsmul_comp, Category.assoc]
+  -- on `x ⊗ a₃`, the left side is computed by `cyclesCross_homologyπ_δ`
+  have hl : (K.cycles p ◁ a₃) ≫ (K.homologyπ p ⊗ₘ S.X₃.homologyπ q) ≫
+      homologyCross K S.X₃ p q n h ≫ hKS.δ n n' (h ▸ h' ▸ c.add_rel p hq) =
+        ((c.ε p : ℤ) • (K.cycles p ◁ S.X₁.liftCycles a₁ (c.next q') rfl ha₁) ≫
+          cyclesCross K S.X₁ p q' n' h') ≫ (tensorObj K S.X₁).homologyπ n' := by
+    rw [homologyπ_tensorHom_homologyCross_assoc, ← Category.assoc]
+    exact cyclesCross_homologyπ_δ K hKS hq h h' a₃ a₂ a₁ h₂ h₁ ha₁
+  -- and the right side by the connecting morphism `hδS` of `S`
+  have hr : (K.cycles p ◁ a₃) ≫ (K.homologyπ p ⊗ₘ S.X₃.homologyπ q) ≫
+      (K.homology p ◁ hS.δ q q' hq) =
+        (K.cycles p ◁ S.X₁.liftCycles a₁ (c.next q') rfl ha₁) ≫
+          (K.homologyπ p ⊗ₘ S.X₁.homologyπ q') := by
+    rw [whiskerLeft_comp_tensorHom_assoc, tensorHom_comp_whiskerLeft, Category.assoc, hδS,
+      whiskerLeft_comp_tensorHom]
+  rw [← cancel_epi (K.cycles p ◁ a₃), hl]
+  simp [reassoc_of% hr, homologyπ_tensorHom_homologyCross]
 
 end Connecting
 

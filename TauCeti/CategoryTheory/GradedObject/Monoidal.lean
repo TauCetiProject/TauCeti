@@ -7,20 +7,22 @@ module
 
 public import Mathlib.CategoryTheory.Abelian.Basic
 public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Basic
+public import Mathlib.CategoryTheory.Functor.ReflectsIso.Exact
 public import Mathlib.Data.Set.Finite.Basic
 public import Mathlib.CategoryTheory.GradedObject.Monoidal
 public import Mathlib.CategoryTheory.Monoidal.Preadditive
 
 /-!
-# Monomorphisms and reindexing for tensor products of graded objects
+# Exactness and reindexing for tensor products of graded objects
 
 The tensor product of two graded objects `X` and `Y` has the coproduct of the `X i ⊗ Y j` with
 `i + j = n` in degree `n` (`CategoryTheory.GradedObject.Monoidal.tensorObj`).  This file records
-two facts about these coproducts which are used to compare homology of tensor products of
-complexes.
+facts about these coproducts which are used to compare homology of tensor products of complexes.
 
 * A family of monomorphisms induces a monomorphism on coproducts over the fibres of a map, when
-  these coproducts are exact (`CategoryTheory.GradedObject.mono_mapMap`).  In particular the tensor
+  these coproducts are exact (`CategoryTheory.GradedObject.mono_mapMap`), and likewise a family of
+  short exact sequences induces a short exact sequence
+  (`CategoryTheory.GradedObject.shortExact_mapMap`).  In particular the tensor
   product of morphisms of graded objects is a monomorphism in a degree with finitely many
   summands as soon as each summand is (`CategoryTheory.GradedObject.Monoidal.mono_tensorHom`), for
   instance in every degree for graded objects indexed by `ℕ`.
@@ -57,6 +59,33 @@ lemma mono_mapMap [Abelian C] {X Y : GradedObject I C} (φ : X ⟶ Y) (p : I →
   have : Mono α := NatTrans.mono_of_mono_app _
   rw [hα]
   exact Functor.map_mono colim _
+
+/-- A short complex of graded objects which is short exact in each degree induces a short exact
+sequence on the coproducts over the fibre of `p : I → J` over `j`, when coproducts of that shape
+are exact. -/
+lemma shortExact_mapMap [Abelian C] (S : ShortComplex (GradedObject I C)) (p : I → J)
+    [S.X₁.HasMap p] [S.X₂.HasMap p] [S.X₃.HasMap p] (j : J)
+    [HasColimitsOfShape (Discrete (p ⁻¹' {j})) C]
+    [HasExactColimitsOfShape (Discrete (p ⁻¹' {j})) C]
+    (hS : ∀ i, (ShortComplex.mk (S.f i) (S.g i) (congr_fun S.zero i)).ShortExact) :
+    (ShortComplex.mk (mapMap S.f p j) (mapMap S.g p j) (mapObj_ext _ _ _ _ fun i _ ↦ by
+      rw [ι_mapMap_assoc, ι_mapMap, ← Category.assoc, ← Pi.comp_apply, S.zero]
+      simp)).ShortExact := by
+  -- the coproducts over the fibre are the colimits of the corresponding discrete diagrams, and
+  -- `colim` is exact
+  let T : ShortComplex (Discrete (p ⁻¹' {j}) ⥤ C) :=
+    ShortComplex.mk (X₁ := Discrete.functor (S.X₁.mapObjFun p j))
+      (X₂ := Discrete.functor (S.X₂.mapObjFun p j)) (X₃ := Discrete.functor (S.X₃.mapObjFun p j))
+      (Discrete.natTrans fun i ↦ S.f i.as.1) (Discrete.natTrans fun i ↦ S.g i.as.1)
+      (by ext i; exact congr_fun S.zero i.as.1)
+  have hT : T.ShortExact := by
+    have hP : JointlyReflectIsomorphisms fun i : Discrete (p ⁻¹' {j}) ↦ (evaluation _ C).obj i :=
+      ⟨fun f h ↦ have : ∀ i, IsIso (f.app i) := h; NatIso.isIso_of_isIso_app f⟩
+    rw [hP.shortExact_iff]
+    exact fun i ↦ hS i.as.1
+  refine ShortComplex.shortExact_of_iso (ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _)
+    ?_ ?_) (hT.map_of_exact colim)
+  all_goals exact mapObj_ext _ _ _ _ fun i hi ↦ by simp
 
 namespace Monoidal
 
