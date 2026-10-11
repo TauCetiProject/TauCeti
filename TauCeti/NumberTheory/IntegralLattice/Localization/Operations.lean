@@ -54,15 +54,15 @@ The underlying equivalence is scalar extension of the carrier-product equivalenc
 tensor-product distribution over products. -/
 noncomputable def localOrthogonalSumIsometry :
     ((L.orthogonalSum M).localIntegralForm p).IsometryEquiv
-      ((L.localIntegralForm p).prod (M.localIntegralForm p)) :=
-  (LinearMap.BilinForm.IsometryEquiv.baseChange ℤ_[p]
-    (⟨L.orthogonalSumCarrierEquiv M, by
-      intro x y
-      simpa only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearEquiv.coe_coe,
-        LinearMap.BilinForm.prod_apply, orthogonalSumFst_apply,
-        orthogonalSumSnd_apply] using (L.integralForm_orthogonalSum M x y).symm⟩ :
-      (L.orthogonalSum M).integralForm.IsometryEquiv (L.integralForm.prod M.integralForm))).trans
-    (bilinFormBaseChangeProdIsometry ℤ_[p] L.integralForm M.integralForm)
+      ((L.localIntegralForm p).prod (M.localIntegralForm p)) where
+  toLinearEquiv := ((L.orthogonalSumCarrierIsometry M).baseChange ℤ_[p]).toLinearEquiv.trans
+    (bilinFormBaseChangeProdIsometry ℤ_[p] L.integralForm M.integralForm).toLinearEquiv
+  map_app' x y := by
+    simp only [localIntegralForm_def, AddHom.toFun_eq_coe, LinearMap.coe_toAddHom,
+      LinearEquiv.coe_coe, LinearEquiv.trans_apply,
+      LinearMap.BilinForm.IsometryEquiv.coe_toLinearEquiv]
+    rw [(bilinFormBaseChangeProdIsometry ℤ_[p] L.integralForm M.integralForm).map_app,
+      ((L.orthogonalSumCarrierIsometry M).baseChange ℤ_[p]).map_app]
 
 /-- The integral sum comparison on a pure tensor. -/
 @[simp]
@@ -70,35 +70,21 @@ theorem localOrthogonalSumIsometry_tmul (a : ℤ_[p]) (x : L.orthogonalSum M) :
     L.localOrthogonalSumIsometry M p (a ⊗ₜ x) =
       (a ⊗ₜ L.orthogonalSumFst M x, a ⊗ₜ L.orthogonalSumSnd M x) := by
   rw [← LinearMap.BilinForm.IsometryEquiv.coe_toLinearEquiv, localOrthogonalSumIsometry]
-  simp only [LinearMap.BilinForm.IsometryEquiv.trans, LinearEquiv.trans_apply,
-    LinearMap.BilinForm.IsometryEquiv.coe_toLinearEquiv,
+  simp only [LinearEquiv.trans_apply, LinearMap.BilinForm.IsometryEquiv.coe_toLinearEquiv,
     LinearMap.BilinForm.IsometryEquiv.baseChange_tmul,
-    bilinFormBaseChangeProdIsometry_tmul, orthogonalSumFst_apply,
-    orthogonalSumSnd_apply]
-  rfl
+    bilinFormBaseChangeProdIsometry_tmul, orthogonalSumCarrierIsometry_apply,
+    orthogonalSumFst_apply, orthogonalSumSnd_apply]
 
 /-- The inverse integral sum comparison on a pair of pure tensors with a common scalar. -/
 @[simp]
 theorem localOrthogonalSumIsometry_symm_tmul (a : ℤ_[p]) (x : L) (y : M) :
     (L.localOrthogonalSumIsometry M p).symm (a ⊗ₜ x, a ⊗ₜ y) =
       a ⊗ₜ ((L.orthogonalSumInl M x) + (L.orthogonalSumInr M y)) := by
-  rw [localOrthogonalSumIsometry]
-  rw [← LinearMap.BilinForm.IsometryEquiv.coe_toLinearEquiv]
-  simp only [LinearMap.BilinForm.IsometryEquiv.symm,
-    LinearMap.BilinForm.IsometryEquiv.trans, LinearEquiv.trans_symm,
-    LinearEquiv.trans_apply]
-  change (LinearMap.BilinForm.IsometryEquiv.baseChange ℤ_[p] _).symm
-    ((bilinFormBaseChangeProdIsometry ℤ_[p] L.integralForm M.integralForm).symm
-      (a ⊗ₜ x, a ⊗ₜ y)) = _
-  rw [bilinFormBaseChangeProdIsometry_symm_tmul,
-    bilinFormIsometryEquiv_baseChange_symm_tmul]
-  apply congrArg (fun z => a ⊗ₜ[ℤ] z)
-  apply (L.orthogonalSumCarrierEquiv M).injective
-  simp only [map_add, orthogonalSumCarrierEquiv_inl, orthogonalSumCarrierEquiv_inr,
-    Prod.mk_add_mk, add_zero, zero_add]
-  change (L.orthogonalSumCarrierEquiv M) ((L.orthogonalSumCarrierEquiv M).symm (x, y)) =
-    (x, y)
-  exact LinearEquiv.apply_symm_apply _ _
+  apply (L.localOrthogonalSumIsometry M p).toLinearEquiv.symm_apply_eq.mpr
+  simp only [LinearMap.BilinForm.IsometryEquiv.coe_toLinearEquiv,
+    localOrthogonalSumIsometry_tmul, orthogonalSumFst_apply, orthogonalSumSnd_apply,
+    map_add, orthogonalSumCarrierEquiv_inl, orthogonalSumCarrierEquiv_inr,
+    add_zero, zero_add]
 
 /-- The inverse integral sum comparison on a pure tensor in the first coordinate. -/
 @[simp]
@@ -122,13 +108,7 @@ noncomputable def completedOrthogonalSumIsometry :
   map_app' x y := by
     simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearEquiv.coe_coe,
       LinearMap.BilinForm.IsometryEquiv.coe_toLinearEquiv]
-    have hform : orthogonalSumForm L M = L.form.prod M.form := by
-      apply LinearMap.ext
-      intro x
-      apply LinearMap.ext
-      intro y
-      simp
-    simpa only [completedRationalForm, orthogonalSum_form, hform] using
+    simpa only [completedRationalForm_def, orthogonalSum_form, orthogonalSumForm_eq_prod] using
       (bilinFormBaseChangeProdIsometry ℚ_[p] L.form M.form).map_app y x
 
 /-- The rational sum comparison on a pure tensor. -/
@@ -144,10 +124,9 @@ theorem completedOrthogonalSumIsometry_tmul (a : ℚ_[p]) (x : V × W) :
 theorem completedOrthogonalSumIsometry_symm_tmul (a : ℚ_[p]) (x : V) (y : W) :
     (L.completedOrthogonalSumIsometry M p).symm (a ⊗ₜ x, a ⊗ₜ y) =
       a ⊗ₜ (x, y) := by
-  rw [← LinearMap.BilinForm.IsometryEquiv.coe_toLinearEquiv,
-    LinearMap.BilinForm.IsometryEquiv.symm, completedOrthogonalSumIsometry]
-  change (bilinFormBaseChangeProdIsometry ℚ_[p] L.form M.form).symm _ = _
-  exact bilinFormBaseChangeProdIsometry_symm_tmul L.form M.form a x y
+  apply (L.completedOrthogonalSumIsometry M p).toLinearEquiv.symm_apply_eq.mpr
+  simp only [LinearMap.BilinForm.IsometryEquiv.coe_toLinearEquiv,
+    completedOrthogonalSumIsometry_tmul]
 
 /-- The inverse rational sum comparison on a pure tensor in the first coordinate. -/
 @[simp]
@@ -174,7 +153,7 @@ theorem completedOrthogonalSumIsometry_localizationToCompletion
 
 /-- The local carrier of an orthogonal sum, transported to the product completion, is the product
 of the two local carriers. This identifies the embedded lattices, not just their forms. -/
-theorem range_localizationToCompletion_orthogonalSum :
+theorem map_range_localizationToCompletion_orthogonalSum :
     (LinearMap.range ((L.orthogonalSum M).localizationToCompletion p)).map
         ((L.completedOrthogonalSumIsometry M p).toLinearEquiv.toLinearMap.restrictScalars ℤ_[p]) =
       (LinearMap.range (L.localizationToCompletion p)).prod

@@ -192,14 +192,6 @@ theorem _root_.LinearMap.BilinForm.IsometryEquiv.baseChange_tmul (f : B₁.Isome
     (a : A) (m : M₁) : f.baseChange A (a ⊗ₜ m) = a ⊗ₜ f m :=
   LinearEquiv.baseChange_tmul R A M₁ M₂ (e := (f : M₁ ≃ₗ[R] M₂)) a m
 
-/-- The inverse of a base-changed isometry applies the original inverse on pure tensors. -/
-@[simp]
-theorem bilinFormIsometryEquiv_baseChange_symm_tmul (f : B₁.IsometryEquiv B₂) (a : A) (m : M₂) :
-    (f.baseChange A).symm (a ⊗ₜ m) = a ⊗ₜ f.symm m := by
-  rw [← LinearMap.BilinForm.IsometryEquiv.coe_toLinearEquiv,
-    LinearMap.BilinForm.IsometryEquiv.symm, LinearMap.BilinForm.IsometryEquiv.baseChange]
-  exact LinearEquiv.baseChange_symm_tmul R A M₁ M₂ a m
-
 variable (A) in
 /-- Base change of a product of bilinear forms is isometric to the product of their base changes,
 via the canonical distribution of tensor products over products. -/
