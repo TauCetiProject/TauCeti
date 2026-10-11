@@ -141,7 +141,6 @@ noncomputable def gradedVertexProjectiveClass (i : Q) :
 
 /-- The vertex-projective class is the Grothendieck class of the corresponding graded left
 ideal. -/
-@[simp]
 theorem gradedVertexProjectiveClass_eq (i : Q) :
     gradedVertexProjectiveClass k Q i =
       LaurentK0.of.{max u v w} (gradedFiniteProjectiveModulesExactStructure (integerGrade k Q))
