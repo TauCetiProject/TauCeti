@@ -46,6 +46,9 @@ which determine the relator, are also preserved (`LinearEquiv.finrank_eq`,
 
 * `TauCeti.localCyclotomicCharacter_mapOfAlgebra`, `TauCeti.localCyclotomicCharacter_map`: the
   cyclotomic character of `G_L` is that of `G_K` read through the map of absolute Galois groups.
+* `TauCeti.cyclotomicCharacter_absoluteGaloisGroupMap`: the same along the map
+  `absoluteGaloisGroupMap τ` of absolute Galois groups defined by an embedding of separable
+  closures.
 * `TauCeti.cyclotomicOrientation_maximalProPQuotient_map`: the cyclotomic orientation is natural
   along any continuous homomorphism of absolute Galois groups compatible with the cyclotomic
   characters.
@@ -97,6 +100,17 @@ theorem localCyclotomicCharacter_map (f : K →+* L) (g : Field.absoluteGaloisGr
   letI : Algebra (AlgebraicClosure K) (AlgebraicClosure L) :=
     (IsAlgClosed.lift : AlgebraicClosure K →ₐ[K] AlgebraicClosure L).toAlgebra
   localCyclotomicCharacter_mapOfAlgebra p K L g
+
+/-- **The cyclotomic character along a map of absolute Galois groups.** For a `K`-embedding
+`τ : Kˢ →ₐ[K] Lˢ` of separable closures, the cyclotomic character of `g ∈ Gal(Lˢ/L)` is that of
+its image `absoluteGaloisGroupMap τ g` in `Gal(Kˢ/K)`. -/
+theorem cyclotomicCharacter_absoluteGaloisGroupMap [Algebra K L]
+    (τ : SeparableClosure K →ₐ[K] SeparableClosure L) (g : AbsoluteGaloisGroup L) :
+    cyclotomicCharacter (SeparableClosure K) p (absoluteGaloisGroupMap τ g).toRingEquiv =
+      cyclotomicCharacter (SeparableClosure L) p g.toRingEquiv :=
+  (cyclotomicCharacter_eq_of_injective p (f := τ.toRingHom) τ.injective
+    (fun x ↦ (absoluteGaloisGroupMap_commutes τ g x).symm)
+    fun H i ↦ let ⟨_, hζ⟩ := H i; hζ.exists_isPrimitiveRoot_of_isSepClosed K).symm
 
 /-! ### The cyclotomic orientation -/
 
