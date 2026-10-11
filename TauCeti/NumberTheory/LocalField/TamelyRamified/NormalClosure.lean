@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.LocalField.TamelyRamified.BaseChange
 public import Mathlib.FieldTheory.Normal.Closure
-import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
 
 /-!
 # Tame ramification of normal closures
@@ -59,18 +58,10 @@ theorem IsTamelyRamified.normalClosure (hL : IsTamelyRamified K L) :
   let (E : IntermediateField K N) : ValuativeExtension K E :=
     finiteIntermediateField_valuativeExtension K N E
   let P (E : IntermediateField K N) : Prop := IsTamelyRamified K E
-  have hbot : P ⊥ := by
-    dsimp only [P]
-    have hef := ramificationIndex_mul_inertiaDegree K (⊥ : IntermediateField K N)
-    rw [IntermediateField.finrank_bot] at hef
-    rw [isTamelyRamified_iff, (mul_eq_one.mp hef).1]
-    exact (CharP.prime_ringChar 𝓀[K]).not_dvd_one
+  have hbot : P ⊥ := isTamelyRamified_of_finrank_eq_one IntermediateField.finrank_bot
   have hsup (E F : IntermediateField K N) (hE : P E) (hF : P F) : P (E ⊔ F) := by
     exact isTamelyRamified_sup_iff.2 ⟨hE, hF⟩
-  have hrange (f : L →ₐ[K] N) : P f.fieldRange := by
-    let g := f.equivFieldRange.toAlgHom
-    have hg : Function.Surjective g := f.equivFieldRange.surjective
-    exact hL.of_adjoin_range_eq_top g (by rw [Set.range_eq_univ.2 hg, adjoin_univ])
+  have hrange (f : L →ₐ[K] N) : P f.fieldRange := hL.of_algEquiv f.equivFieldRange
   let _ := Fintype.ofFinite (L →ₐ[K] N)
   have htop : (Finset.univ.sup fun f : L →ₐ[K] N ↦ f.fieldRange) = ⊤ := by
     apply IntermediateField.lift_injective
@@ -81,9 +72,6 @@ theorem IsTamelyRamified.normalClosure (hL : IsTamelyRamified K L) :
       (normalClosure_def K L Ω).symm
   have hPt : P ⊤ := htop ▸ Finset.sup_induction hbot (fun E hE F hF ↦ hsup E F hE hF)
     (fun f _ ↦ hrange f)
-  -- Base change along the surjective top-field equivalence transports the tame compositum to `N`.
-  let g := (topEquiv : (⊤ : IntermediateField K N) ≃ₐ[K] N).toAlgHom
-  have hg : Function.Surjective g := topEquiv.surjective
-  exact hPt.of_adjoin_range_eq_top g (by rw [Set.range_eq_univ.2 hg, adjoin_univ])
+  exact hPt.of_algEquiv topEquiv
 
 end TauCeti
