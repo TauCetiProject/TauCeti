@@ -198,6 +198,7 @@ theorem cubicalChainDifferential_mem {i : ℤ} {x : normalizedCubicalChainAlgebr
     exact (mem_cubicalChainGrading_iff G R).2 (Or.inr ⟨k, _, by push_cast at hn; omega, rfl⟩)
 
 /-- The differential squares to zero. -/
+@[simp]
 theorem cubicalChainDifferential_cubicalChainDifferential
     (x : normalizedCubicalChainAlgebra G R) :
     cubicalChainDifferential G R (cubicalChainDifferential G R x) = 0 := by
