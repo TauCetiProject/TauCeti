@@ -51,6 +51,16 @@ theorem dehomogenize_X (i j : Fin (n + 1)) :
       Fin.insertNth (α := fun _ ↦ MvPolynomial (Fin n) R) i 1 X j := by
   simp [dehomogenize]
 
+/-- Dehomogenizing a monomial drops the exponent of the chosen coordinate and keeps the others,
+indexed by `i.succAbove`. -/
+theorem dehomogenize_monomial (i : Fin (n + 1)) (s : Fin (n + 1) →₀ ℕ) (c : R) :
+    dehomogenize i (monomial s c) =
+      monomial (Finsupp.equivFunOnFinite.symm (s ∘ i.succAbove)) c := by
+  rw [monomial_eq, monomial_eq, map_mul, dehomogenize, algHom_C,
+    Finsupp.prod_fintype _ _ (by simp), Finsupp.prod_fintype _ _ (by simp), map_prod,
+    Fin.prod_univ_succAbove _ i]
+  simp
+
 /-- Substituting after adjoining the omitted variable recovers the original polynomial.
 In particular, every affine polynomial is the dehomogenization of a polynomial. -/
 @[simp]

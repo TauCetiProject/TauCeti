@@ -51,13 +51,15 @@ largest `s 0 + s 1` over its support.  These are the forms in which a plane curv
 
 ## The chart at infinity
 
-For `n` at least the total degree of `φ`, the projective closure of the curve `φ = 0` is
+For `n` at least the total degree of `φ`, the degree-`n` homogenization of `φ` is
 `Φ(X₀, X₁, X₂) = ∑ₛ cₛ X₀ ^ s 0 X₁ ^ s 1 X₂ ^ (n - s 0 - s 1)`, and `φ = Φ(X₀, X₁, 1)`.  In the
 affine chart where the first homogeneous coordinate does not vanish, with coordinates
-`(X₂ / X₀, X₁ / X₀)`, the curve has the equation `MvPolynomial.inftyChart n φ = Φ(1, X₁, X₀)`,
-that is `X₀ ^ n φ(1 / X₀, X₁ / X₀)`.  This chart contains the points at infinity of `φ = 0`
-other than `(0 : 1 : 0)`, and when the coefficient of `X₁ ^ n` is nonzero that point is not on
-the curve.
+`(X₂ / X₀, X₁ / X₀)`, the equation `Φ = 0` reads `MvPolynomial.inftyChart n φ = Φ(1, X₁, X₀)`,
+that is `X₀ ^ n φ(1 / X₀, X₁ / X₀)`.  When `n` is the total degree of `φ`, `Φ = 0` is the
+projective closure of the curve `φ = 0`; for larger `n` it also contains the line at infinity
+`X₂ = 0`.  In the case `n = φ.totalDegree`, this chart contains the points at infinity of
+`φ = 0` other than `(0 : 1 : 0)`, and when the coefficient of `X₁ ^ n` is nonzero that point is
+not on the curve.
 
 * `MvPolynomial.coeff_inftyChart` and `MvPolynomial.inftyChart_monomial`: the coefficients of
   the chart equation.
@@ -118,9 +120,9 @@ theorem totalDegree_pos_of_aeval_eq_zero {φ : MvPolynomial (Fin 2) R}
 
 /-- **The equation of a plane curve in the chart at infinity**: for `φ = ∑ₛ cₛ X₀ ^ s 0 X₁ ^ s 1`,
 `inftyChart n φ = ∑ₛ cₛ X₀ ^ (n - s 0 - s 1) X₁ ^ s 1`, which is `X₀ ^ n φ(1 / X₀, X₁ / X₀)` when
-`n` is at least the total degree of `φ`.  It is the projective closure of `φ = 0`, as a curve of
-degree `n`, dehomogenized in the affine chart where the first homogeneous coordinate does not
-vanish. -/
+`n` is at least the total degree of `φ`.  It is the degree-`n` homogenization of `φ`,
+dehomogenized in the affine chart where the first homogeneous coordinate does not vanish; when
+`n = φ.totalDegree` this is the equation of the projective closure of `φ = 0` in that chart. -/
 noncomputable def inftyChart (n : ℕ) (φ : MvPolynomial (Fin 2) R) : MvPolynomial (Fin 2) R :=
   ∑ s ∈ φ.support, monomial (Finsupp.single 0 (n - (s 0 + s 1)) + Finsupp.single 1 (s 1))
     (φ.coeff s)
@@ -189,19 +191,13 @@ theorem inftyChart_dehomogenize {G : MvPolynomial (Fin 3) R} {n : ℕ} (hG : G.I
   have hs : s 0 + s 1 + s 2 = n := by
     simpa [Finsupp.weight_apply, Finsupp.sum_fintype, Fin.sum_univ_three] using
       hG (mem_support_iff.mp hs)
-  have h2 : TauCeti.dehomogenize 2 (monomial s (G.coeff s)) =
-      monomial (Finsupp.single 0 (s 0) + Finsupp.single 1 (s 1)) (G.coeff s) := by
-    simp [monomial_eq, Finsupp.prod_fintype, Fin.prod_univ_three, algHom_C]
-    rfl
-  have h0 : TauCeti.dehomogenize 0 (monomial s (G.coeff s)) =
-      monomial (Finsupp.single 0 (s 1) + Finsupp.single 1 (s 2)) (G.coeff s) := by
-    simp [monomial_eq, Finsupp.prod_fintype, Fin.prod_univ_three, algHom_C]
-    rfl
-  simp only [L, AddMonoidHom.coe_mk, ZeroHom.coe_mk, h2, h0, inftyChart_monomial, rename_monomial]
+  simp only [L, AddMonoidHom.coe_mk, ZeroHom.coe_mk, TauCeti.dehomogenize_monomial,
+    inftyChart_monomial, rename_monomial]
   refine congrArg (fun t ↦ monomial t (G.coeff s)) ?_
-  rw [Finsupp.mapDomain_add, Finsupp.mapDomain_single, Finsupp.mapDomain_single]
+  -- Dehomogenizing at `X₂` keeps the coordinates `(X₀, X₁)`, at `X₀` it keeps `(X₁, X₂)`.
+  have h21 : (2 : Fin 3).succAbove 1 = 1 := by decide
   ext i
-  fin_cases i <;> simp
+  fin_cases i <;> simp [Finsupp.mapDomain_equiv_apply, h21]
   omega
 
 /-- The chart equation at infinity of a polynomial of total degree at most `n` again has total
