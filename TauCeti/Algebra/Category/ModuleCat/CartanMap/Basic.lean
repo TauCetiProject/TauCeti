@@ -12,6 +12,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.RingTheory.Finiteness.Prod
 public import Mathlib.RingTheory.SimpleModule.InjectiveProjective
 public import TauCeti.CategoryTheory.GrothendieckGroup.ProjectiveResolution
+public import TauCeti.Algebra.Category.FGModuleCat.Basic
 
 /-!
 # The Cartan map of a ring
@@ -285,14 +286,8 @@ theorem exactK0_fgModuleCat_prod (M N : Type u) [AddCommGroup M] [Module R M] [M
     [AddCommGroup N] [Module R N] [Module.Finite R N] :
     (ExactK0.of (FGModuleCat.of R (M × N)) : ExactK0 (finiteModulesExactStructure R)) =
       ExactK0.of (FGModuleCat.of R M) + ExactK0.of (FGModuleCat.of R N) := by
-  let F := forget₂ (FGModuleCat.{u} R) (ModuleCat.{u} R)
-  let X := FGModuleCat.of R M
-  let Y := FGModuleCat.of R N
-  let _ : PreservesBinaryBiproduct X Y F := preservesBinaryBiproduct_of_preservesBinaryCoproduct F
-  let e : F.obj (X ⊞ Y) ≅ ModuleCat.of R (M × N) :=
-    F.mapBiprod X Y ≪≫ ModuleCat.biprodIsoProd X.obj Y.obj
   rw [← ExactK0.of_biprod]
-  exact ExactK0.of_congr (F.preimageIso e).symm
+  exact ExactK0.of_congr (FGModuleCat.biprodIsoProd (FGModuleCat.of R M) (FGModuleCat.of R N)).symm
 
 /-- **The class of the middle term of an exact pair.** If `M → N → P` is exact at `N`, with `M`
 and `N` finitely generated, then `[N]` is the sum of the classes of the images of the two maps in

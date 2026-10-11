@@ -20,6 +20,8 @@ feeds the Grothendieck-group computation for finite-dimensional vector spaces.
 
 * `FGModuleCat.hom_hom_ofHom`: the linear map underlying `FGModuleCat.ofHom f` is `f`, the
   analogue of Mathlib's `ModuleCat.hom_ofHom`.
+* `FGModuleCat.biprodIsoProd`: the biproduct of two finitely generated modules is their product,
+  the analogue of Mathlib's `ModuleCat.biprodIsoProd`.
 * `FGModuleCat.finrank_biprod`: rank is additive on biproducts of finite free modules.
 -/
 
@@ -40,18 +42,21 @@ theorem _root_.FGModuleCat.hom_hom_ofHom {R : Type u} [Ring R] {V W : Type v} [A
 
 attribute [local instance] HasBinaryBiproducts.of_hasBinaryCoproducts
 
+/-- The biproduct of two finitely generated modules is their product, the analogue of Mathlib's
+`ModuleCat.biprodIsoProd`. -/
+noncomputable def _root_.FGModuleCat.biprodIsoProd {R : Type u} [Ring R]
+    (X Y : FGModuleCat.{v} R) : (X ⊞ Y : FGModuleCat.{v} R) ≅ FGModuleCat.of R (X × Y) :=
+  letI F := forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)
+  letI : PreservesBinaryBiproduct X Y F := preservesBinaryBiproduct_of_preservesBinaryCoproduct F
+  F.preimageIso (F.mapBiprod X Y ≪≫ ModuleCat.biprodIsoProd X.obj Y.obj)
+
 /-- The rank of a biproduct of finite free modules is the sum of their ranks. -/
 @[simp]
 theorem _root_.FGModuleCat.finrank_biprod (R : Type u) [Ring R] [StrongRankCondition R]
     (X Y : FGModuleCat.{v} R) [Module.Free R X] [Module.Free R Y] :
     Module.finrank R ((X ⊞ Y : FGModuleCat.{v} R) : Type v) =
-      Module.finrank R X + Module.finrank R Y := by
-  let F := forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)
-  let _ : PreservesBinaryBiproduct X Y F :=
-    preservesBinaryBiproduct_of_preservesBinaryCoproduct F
-  let e : F.obj (X ⊞ Y) ≅ ModuleCat.of R (X × Y) :=
-    F.mapBiprod X Y ≪≫ ModuleCat.biprodIsoProd X.obj Y.obj
-  let e' : (X ⊞ Y : FGModuleCat.{v} R) ≅ FGModuleCat.of R (X × Y) := F.preimageIso e
-  exact (FGModuleCat.isoToLinearEquiv e').finrank_eq.trans Module.finrank_prod
+      Module.finrank R X + Module.finrank R Y :=
+  (FGModuleCat.isoToLinearEquiv (FGModuleCat.biprodIsoProd X Y)).finrank_eq.trans
+    Module.finrank_prod
 
 end TauCeti
