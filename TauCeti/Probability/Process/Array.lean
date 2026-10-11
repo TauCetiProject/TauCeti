@@ -37,7 +37,6 @@ variable {α Ω : Type*}
 
 /-- Reindex an array-shaped path by a permutation of each axis: the `(i, j)`-entry of
 `pairReindex σ τ x` is `x (σ i, τ j)`. This is the two-axis analogue of `permReindex`. -/
-@[expose]
 def pairReindex (σ τ : Equiv.Perm ℕ) (x : ℕ × ℕ → α) : ℕ × ℕ → α :=
   fun p ↦ x (σ p.1, τ p.2)
 
@@ -68,17 +67,14 @@ theorem pairReindex_one_one : pairReindex (α := α) 1 1 = id := by
 /-! ## Rows, columns and the diagonal -/
 
 /-- The `i`-th row of an array, as a random element of path space. -/
-@[expose]
 def arrayRow (X : ℕ × ℕ → Ω → α) (i : ℕ) : Ω → (ℕ → α) :=
   fun ω j ↦ X (i, j) ω
 
 /-- The `j`-th column of an array, as a random element of path space. -/
-@[expose]
 def arrayCol (X : ℕ × ℕ → Ω → α) (j : ℕ) : Ω → (ℕ → α) :=
   fun ω i ↦ X (i, j) ω
 
 /-- The diagonal of an array, as a process. -/
-@[expose]
 def arrayDiag (X : ℕ × ℕ → Ω → α) (i : ℕ) : Ω → α :=
   X (i, i)
 
@@ -144,6 +140,7 @@ theorem measurableSet_symmetricArraysWithDiag [MeasurableEq α] (d : α) :
       measurableSet_eq_fun (measurable_pi_apply _) measurable_const
   exact h1.inter h2
 
+/-- Reindexing the two axes of an array by permutations is a measurable map. -/
 @[fun_prop]
 theorem measurable_pairReindex (σ τ : Equiv.Perm ℕ) :
     Measurable (pairReindex (α := α) σ τ) :=
@@ -151,10 +148,14 @@ theorem measurable_pairReindex (σ τ : Equiv.Perm ℕ) :
 
 variable [MeasurableSpace Ω]
 
+/-- If every array entry is almost everywhere measurable, each row is almost everywhere
+measurable as a path-valued map. -/
 theorem aemeasurable_arrayRow {μ : Measure Ω} {X : ℕ × ℕ → Ω → α}
     (hX : ∀ p, AEMeasurable (X p) μ) (i : ℕ) : AEMeasurable (arrayRow X i) μ :=
   AEMeasurable.of_eval fun j ↦ hX (i, j)
 
+/-- If every array entry is almost everywhere measurable, each column is almost everywhere
+measurable as a path-valued map. -/
 theorem aemeasurable_arrayCol {μ : Measure Ω} {X : ℕ × ℕ → Ω → α}
     (hX : ∀ p, AEMeasurable (X p) μ) (j : ℕ) : AEMeasurable (arrayCol X j) μ :=
   AEMeasurable.of_eval fun i ↦ hX (i, j)

@@ -237,19 +237,37 @@ theorem separatelyExchangeable_iff_axes {μ : Measure Ω} {X : ℕ × ℕ → Ω
   constructor
   · exact fun h ↦ ⟨fun σ ↦ h σ 1, fun τ ↦ h 1 τ⟩
   · rintro ⟨hrow, hcol⟩ σ τ
-    have hrow' : (μ.map fun ω p ↦ X p ω).map (pairReindex σ 1) = μ.map fun ω p ↦ X p ω :=
-      (map_map_array hX (measurable_pairReindex (α := α) σ 1)).trans (hrow σ)
-    have hcol' : (μ.map fun ω p ↦ X p ω).map (pairReindex 1 τ) = μ.map fun ω p ↦ X p ω :=
-      (map_map_array hX (measurable_pairReindex (α := α) 1 τ)).trans (hcol τ)
+    have hrow' : (μ.map fun ω p ↦ X p ω).map (pairReindex σ 1) = μ.map fun ω p ↦ X p ω := by
+      calc
+        _ = μ.map (fun ω ↦ pairReindex σ 1 fun p ↦ X p ω) :=
+          map_map_array hX (measurable_pairReindex (α := α) σ 1)
+        _ = μ.map fun ω p ↦ X (σ p.1, p.2) ω := by
+          congr 1
+          funext ω p
+          simp [pairReindex_apply]
+        _ = μ.map fun ω p ↦ X p ω := hrow σ
+    have hcol' : (μ.map fun ω p ↦ X p ω).map (pairReindex 1 τ) = μ.map fun ω p ↦ X p ω := by
+      calc
+        _ = μ.map (fun ω ↦ pairReindex 1 τ fun p ↦ X p ω) :=
+          map_map_array hX (measurable_pairReindex (α := α) 1 τ)
+        _ = μ.map fun ω p ↦ X (p.1, τ p.2) ω := by
+          congr 1
+          funext ω p
+          simp [pairReindex_apply]
+        _ = μ.map fun ω p ↦ X p ω := hcol τ
     calc (μ.map fun ω p ↦ X (σ p.1, τ p.2) ω)
-        = (μ.map fun ω p ↦ X p ω).map (pairReindex σ τ) :=
+        = μ.map (fun ω ↦ pairReindex σ τ fun p ↦ X p ω) := by
+          congr 1
+          funext ω p
+          simp [pairReindex_apply]
+        _ = (μ.map fun ω p ↦ X p ω).map (pairReindex σ τ) :=
           (map_map_array hX (measurable_pairReindex σ τ)).symm
-      _ = ((μ.map fun ω p ↦ X p ω).map (pairReindex 1 τ)).map (pairReindex σ 1) := by
+        _ = ((μ.map fun ω p ↦ X p ω).map (pairReindex 1 τ)).map (pairReindex σ 1) := by
           rw [Measure.map_map (measurable_pairReindex σ 1) (measurable_pairReindex 1 τ),
             pairReindex_comp]
           simp only [one_mul, mul_one]
-      _ = (μ.map fun ω p ↦ X p ω).map (pairReindex σ 1) := by rw [hcol']
-      _ = μ.map fun ω p ↦ X p ω := hrow'
+        _ = (μ.map fun ω p ↦ X p ω).map (pairReindex σ 1) := by rw [hcol']
+        _ = μ.map fun ω p ↦ X p ω := hrow'
 
 /-! ## Rows and columns of a separately exchangeable array -/
 
@@ -257,8 +275,10 @@ theorem separatelyExchangeable_iff_axes {μ : Measure Ω} {X : ℕ × ℕ → Ω
 paths: permuting the rows is the case `τ = 1` of separate exchangeability, read off by currying. -/
 theorem SeparatelyExchangeable.fullyExchangeable_arrayRow {μ : Measure Ω} {X : ℕ × ℕ → Ω → α}
     (h : SeparatelyExchangeable μ X) (hX : ∀ p, AEMeasurable (X p) μ) :
-    FullyExchangeable μ (arrayRow X) := fun σ ↦
-  h.map_comp hX σ 1 (MeasurableEquiv.curry ℕ ℕ α).measurable
+  FullyExchangeable μ (arrayRow X) := fun σ ↦
+  by
+    convert h.map_comp hX σ 1 (MeasurableEquiv.curry ℕ ℕ α).measurable using 1 <;>
+      congr 1 <;> funext ω i j <;> simp [arrayRow_apply]
 
 /-- **The rows of a separately exchangeable array form an exchangeable sequence** of random
 paths. -/
@@ -271,9 +291,11 @@ theorem SeparatelyExchangeable.exchangeable_arrayRow {μ : Measure Ω} {X : ℕ 
 paths. -/
 theorem SeparatelyExchangeable.fullyExchangeable_arrayCol {μ : Measure Ω} {X : ℕ × ℕ → Ω → α}
     (h : SeparatelyExchangeable μ X) (hX : ∀ p, AEMeasurable (X p) μ) :
-    FullyExchangeable μ (arrayCol X) := fun τ ↦
-  h.map_comp hX 1 τ (F := fun x j i ↦ x (i, j))
-    (Measurable.of_eval fun _ ↦ Measurable.of_eval fun _ ↦ measurable_pi_apply _)
+  FullyExchangeable μ (arrayCol X) := fun τ ↦
+  by
+    convert h.map_comp hX 1 τ (F := fun x j i ↦ x (i, j))
+      (Measurable.of_eval fun _ ↦ Measurable.of_eval fun _ ↦ measurable_pi_apply _) using 1 <;>
+      congr 1 <;> funext ω i j <;> simp [arrayCol_apply]
 
 /-- **The columns of a separately exchangeable array form an exchangeable sequence** of random
 paths. -/
@@ -313,14 +335,17 @@ is what makes it a useful hypothesis on a jointly exchangeable symmetric array. 
 theorem JointlyExchangeable.fullyExchangeable_arrayDiag {μ : Measure Ω} {X : ℕ × ℕ → Ω → α}
     (h : JointlyExchangeable μ X) (hX : ∀ p, AEMeasurable (X p) μ) :
     FullyExchangeable μ (arrayDiag X) := fun σ ↦
-  h.map_comp hX σ (F := fun x i ↦ x (i, i)) (Measurable.of_eval fun _ ↦
-    measurable_pi_apply _)
+  by
+    simpa only [pathLaw_def, arrayDiag_apply] using
+      h.map_comp hX σ (F := fun x i ↦ x (i, i)) (Measurable.of_eval fun _ ↦
+        measurable_pi_apply _)
 
 /-- **The diagonal of a jointly exchangeable array is an exchangeable sequence.** -/
 theorem JointlyExchangeable.exchangeable_arrayDiag {μ : Measure Ω} {X : ℕ × ℕ → Ω → α}
     (h : JointlyExchangeable μ X) (hX : ∀ p, AEMeasurable (X p) μ) :
     Exchangeable μ (arrayDiag X) :=
-  FullyExchangeable.exchangeable (h.fullyExchangeable_arrayDiag hX) fun i ↦ hX (i, i)
+  FullyExchangeable.exchangeable (h.fullyExchangeable_arrayDiag hX) fun i ↦ by
+    simpa only [arrayDiag_apply] using hX (i, i)
 
 /-! ## The two symmetries are distinct -/
 
@@ -349,7 +374,9 @@ theorem not_fullyExchangeable_arrayRow_diagIndicatorArray (μ : Measure Ω)
     [IsProbabilityMeasure μ] : ¬FullyExchangeable μ (arrayRow (diagIndicatorArray Ω)) := by
   intro h
   have key : (μ.map fun _ : Ω ↦ (fun i j ↦ decide (Equiv.swap 0 1 i = j) : ℕ → ℕ → Bool))
-      = μ.map fun _ : Ω ↦ (fun i j ↦ decide (i = j) : ℕ → ℕ → Bool) := h (Equiv.swap 0 1)
+      = μ.map fun _ : Ω ↦ (fun i j ↦ decide (i = j) : ℕ → ℕ → Bool) := by
+    convert h (Equiv.swap 0 1) using 1 <;>
+      congr 1 <;> funext ω i j <;> simp [arrayRow_apply, diagIndicatorArray_apply]
   rw [Measure.map_const, Measure.map_const, measure_univ, one_smul, one_smul] at key
   refine dirac_ne_dirac (fun hEq ↦ ?_) key
   simpa using congrFun (congrFun hEq 0) 0
