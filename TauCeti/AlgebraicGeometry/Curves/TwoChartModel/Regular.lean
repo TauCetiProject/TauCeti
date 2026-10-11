@@ -47,10 +47,10 @@ function field (`TauCeti.AlgebraicGeometry.CodimensionOnePoint.equivPlace`).
 * `TauCeti.AlgebraicGeometry.twoChartModel.coheight_le_one` and
   `TauCeti.AlgebraicGeometry.twoChartModel.coheight_eq_one_iff_ne_genericPoint`: every point has
   codimension at most one, and exactly one unless it is the generic point.
-* `TauCeti.AlgebraicGeometry.twoChartModel.isDiscreteValuationRing_stalk`: the local ring at a
-  codimension-one point is a discrete valuation ring.
 * `TauCeti.AlgebraicGeometry.twoChartModel.isRegularLocalRing_stalk`: every local ring is a
   regular local ring.
+* `TauCeti.AlgebraicGeometry.twoChartModel.isDiscreteValuationRing_stalk`: the local ring at a
+  codimension-one point is a discrete valuation ring.
 
 ## References
 
@@ -153,20 +153,6 @@ theorem coheight_eq_one_iff_ne_genericPoint (hxt : Transcendental k x)
   rw [← (coheight_le_one hxt p).ge_iff_eq, Order.one_le_iff_pos, Order.coheight_pos, not_iff_not,
     Scheme.isMax_iff_eq_genericPoint]
 
-/-- **The local rings of the two-chart model at its codimension-one points are discrete valuation
-rings**, for `x` transcendental over `k`: they are the local rings of the Dedekind domains `𝒪_x`
-and `𝒪_{x⁻¹}` at their nonzero primes. -/
-theorem isDiscreteValuationRing_stalk (hxt : Transcendental k x)
-    (p : CodimensionOnePoint (twoChartModel hF hx)) :
-    IsDiscreteValuationRing ((twoChartModel hF hx).presheaf.stalk (p : twoChartModel hF hx)) := by
-  have := isDedekindDomain_holomorphyRing_setOf_mem hF hxt
-  have := isDedekindDomain_holomorphyRing_setOf_mem hF fun h ↦ hxt (IsAlgebraic.inv_iff.mp h)
-  obtain ⟨p, hp⟩ := p
-  rcases (Set.ext_iff.mp (range_ιFinite_union_range_ιInfinity hF hx) p).mpr trivial with
-    ⟨q, rfl⟩ | ⟨q, rfl⟩
-  · exact isDiscreteValuationRing_stalk_of_isDedekindDomain _ q hp
-  · exact isDiscreteValuationRing_stalk_of_isDedekindDomain _ q hp
-
 /-- **The two-chart model is regular**, for `x` transcendental over `k`: its local rings are the
 local rings of the Dedekind domains `𝒪_x` and `𝒪_{x⁻¹}`, which are regular. -/
 theorem isRegularLocalRing_stalk (hxt : Transcendental k x) (p : twoChartModel hF hx) :
@@ -177,5 +163,13 @@ theorem isRegularLocalRing_stalk (hxt : Transcendental k x) (p : twoChartModel h
     ⟨q, rfl⟩ | ⟨q, rfl⟩
   · exact (isRegularLocalRing_stalk_iff_of_isOpenImmersion _ q).mpr inferInstance
   · exact (isRegularLocalRing_stalk_iff_of_isOpenImmersion _ q).mpr inferInstance
+
+/-- **The local rings of the two-chart model at its codimension-one points are discrete valuation
+rings**, for `x` transcendental over `k`: they are regular local rings of dimension one. -/
+theorem isDiscreteValuationRing_stalk (hxt : Transcendental k x)
+    (p : CodimensionOnePoint (twoChartModel hF hx)) :
+    IsDiscreteValuationRing ((twoChartModel hF hx).presheaf.stalk (p : twoChartModel hF hx)) := by
+  have := isRegularLocalRing_stalk hxt (p : twoChartModel hF hx)
+  exact CodimensionOnePoint.isDiscreteValuationRing_stalk p
 
 end TauCeti.AlgebraicGeometry.twoChartModel
