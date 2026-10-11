@@ -41,4 +41,35 @@ def finiteGaloisLowerRamificationGroup
     L.toIntermediateField
   exact lowerRamificationGroup K L i
 
+/-- The finite-level adapter is the canonical lower ramification group on the induced local-field
+structure. -/
+theorem finiteGaloisLowerRamificationGroup_def
+    (L : FiniteGaloisIntermediateField K (AlgebraicClosure K)) (i : ℤ) :
+    by
+  letI := finiteIntermediateFieldValuativeRel K (AlgebraicClosure K) L.toIntermediateField
+  letI := finiteIntermediateFieldTopology K (AlgebraicClosure K) L.toIntermediateField
+  haveI := finiteIntermediateField_valuativeExtension K (AlgebraicClosure K)
+    L.toIntermediateField
+  haveI := finiteIntermediateField_isNonarchimedeanLocalField K (AlgebraicClosure K)
+    L.toIntermediateField
+  exact finiteGaloisLowerRamificationGroup K L i = lowerRamificationGroup K L i := by
+  rfl
+
+/-- Membership in the finite-level adapter is membership in the canonical lower ramification
+group for the induced local-field structure. -/
+@[simp]
+theorem mem_finiteGaloisLowerRamificationGroup_iff
+    {L : FiniteGaloisIntermediateField K (AlgebraicClosure K)} {i : ℤ}
+    {σ : L ≃ₐ[K] L} :
+    by
+  letI := finiteIntermediateFieldValuativeRel K (AlgebraicClosure K) L.toIntermediateField
+  letI := finiteIntermediateFieldTopology K (AlgebraicClosure K) L.toIntermediateField
+  haveI := finiteIntermediateField_valuativeExtension K (AlgebraicClosure K)
+    L.toIntermediateField
+  haveI := finiteIntermediateField_isNonarchimedeanLocalField K (AlgebraicClosure K)
+    L.toIntermediateField
+  exact σ ∈ finiteGaloisLowerRamificationGroup K L i ↔
+    σ ∈ lowerRamificationGroup K L i := by
+  rw [finiteGaloisLowerRamificationGroup_def]
+
 end TauCeti.LocalFieldsRamification
