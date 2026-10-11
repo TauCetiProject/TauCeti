@@ -96,10 +96,13 @@ theorem IsTopologicallyFiniteType.isTateRing (hφ : IsTopologicallyFiniteType φ
 
 variable [IsStronglyNoetherian A]
 
+omit [IsTopologicalRing B] in
 /-- **An algebra topologically of finite type over a strongly noetherian Tate ring is Hausdorff**
 (Wedhorn, Proposition 5.58, over a field): `{0}` is closed in it, because its preimage in
-`A⟨X₁, …, Xₖ⟩` is an ideal, and every ideal there is closed. -/
-theorem IsTopologicallyFiniteType.t2Space (hφ : IsTopologicallyFiniteType φ) : T2Space B := by
+`A⟨X₁, …, Xₖ⟩` is an ideal, and every ideal there is closed. Only the additive group of `B` need
+be topological. -/
+theorem IsTopologicallyFiniteType.t2Space [IsTopologicalAddGroup B]
+    (hφ : IsTopologicallyFiniteType φ) : T2Space B := by
   obtain ⟨k, π, hπ, -⟩ :=
     isStrictlyTopologicallyFiniteType_iff.mp hφ.isStrictlyTopologicallyFiniteType
   -- `{0}` is closed in `B`, since its preimage under the quotient map `π` is the closed kernel
