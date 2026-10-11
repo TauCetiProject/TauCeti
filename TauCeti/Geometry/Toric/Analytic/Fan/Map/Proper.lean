@@ -246,24 +246,7 @@ variable {N N' V V' : Type u} [AddCommGroup N] [AddCommGroup N']
 theorem isProperMap_analyticMap_of_isComplete (f : FanHom Φ Ψ) (hΦ : Φ.IsRegular)
     (hΨ : Ψ.IsRegular) (hc : Φ.IsComplete) :
     IsProperMap (f.analyticMap hΦ hΨ) := by
-  have hcompact := Φ.compactSpace_analyticRealization_of_isComplete hΦ hc
-  have ht2 := Ψ.t2Space_analyticRealization hΨ
-  exact @Continuous.isProperMap _ _ _ _ (f.analyticMap hΦ hΨ).hom hcompact ht2
-    (f.analyticMap hΦ hΨ).hom.continuous
+  have := Φ.compactSpace_analyticRealization_of_isComplete hΦ hc
+  exact (f.analyticMap hΦ hΨ).hom.continuous.isProperMap
 
 end TauCeti.Toric.FanHom
-
-namespace TauCeti.Toric.Fan
-
-variable {N V : Type} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
-  {i : N →+ V} (Φ : TauCeti.Toric.Fan i)
-
-/-- A complete regular fan maps properly to the fan of a point. Completeness supplies the
-cone-by-cone support condition for the zero real-linear map. -/
-theorem isProperMap_analyticMap_toPoint_of_isComplete (hΦ : Φ.IsRegular)
-    (hc : Φ.IsComplete) :
-    IsProperMap ((Φ.toPoint).analyticMap hΦ TauCeti.Toric.isRegular_pointFan) := by
-  exact (Φ.toPoint).isProperMap_analyticMap_of_isComplete hΦ
-    TauCeti.Toric.isRegular_pointFan hc
-
-end TauCeti.Toric.Fan

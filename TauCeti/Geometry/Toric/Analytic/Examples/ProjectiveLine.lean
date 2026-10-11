@@ -14,7 +14,8 @@ public import TauCeti.Geometry.Toric.Analytic.Fan.Map.Proper
 
 The two standard rank-one rays cover the real line. The completeness criterion therefore makes
 their regular fan's analytic realization compact, as expected of the projective line. The collapse
-of this fan to the zero-dimensional fan is proper by the cone-by-cone criterion.
+of this fan to the zero-dimensional fan is proper because the source realization is compact and
+the target realization is Hausdorff.
 
 ## References
 
@@ -31,8 +32,8 @@ theorem isProperMap_analyticMap_projectiveLineFan_toPoint :
     IsProperMap
       (projectiveLineFan.toPoint.analyticMap isRegular_projectiveLineFan
         isRegular_pointFan) :=
-  projectiveLineFan.isProperMap_analyticMap_toPoint_of_isComplete isRegular_projectiveLineFan
-    isComplete_projectiveLineFan
+  projectiveLineFan.toPoint.isProperMap_analyticMap_of_isComplete isRegular_projectiveLineFan
+    isRegular_pointFan isComplete_projectiveLineFan
 
 /-- The analytic realization of the standard complete rank-one fan is compact. -/
 theorem compactSpace_projectiveLineFan_analyticRealization :
