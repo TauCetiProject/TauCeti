@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Descent
-public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.LocalCondition
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.BaseChange
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Map
 -- Proof-only: `Point.cast_some`, the coordinates of a point transported along `AddEquiv.cast`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
@@ -38,9 +38,8 @@ cut.
 
 The main result is that restriction is compatible with the Kummer maps
 (`WeierstrassCurve.torsionRes_kummerMap`): the restriction of the Kummer class of `P ∈ E(K)` is
-the Kummer class over `L` of the image of `P` in `E(L)`. The proof is the cocycle computation: if
-`m • Q = P`, then `τ Q` is an `m`th division point of the image of `P`, and the pullback of
-`σ ↦ σ Q - Q` along `(absoluteGaloisGroupMap τ, pointCoeffBaseChange τ)` is `g ↦ g (τ Q) - τ Q`.
+the Kummer class over `L` of the image of `P` in `E(L)`. This is what lets the image of a
+local Kummer map serve as the local condition at `L` of the `m`-Selmer group.
 
 ## Main definitions
 
@@ -202,6 +201,7 @@ theorem torsionRes_eq_explicitMap1 :
 
 /-- **Restriction commutes with `H¹(G, E[m]) → H¹(G, E)`**, the map induced by the inclusion
 `E[m] → E`. -/
+@[simp]
 theorem pointRes_torsionCoeffIncl (c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)) :
     W.pointRes τ (explicitCoeff1 _ _ (W.torsionCoeffIncl m) continuous_of_discreteTopology c) =
       explicitCoeff1 _ _ ((W⁄L).torsionCoeffIncl m) continuous_of_discreteTopology
@@ -216,6 +216,7 @@ variable [DecidableEq K] [DecidableEq L] [W.IsElliptic] {m} (hm : IsUnit (m : K)
 
 /-- **Restriction carries Kummer classes to Kummer classes**: the restriction to `L` of the Kummer
 class of `P ∈ E(K)` is the Kummer class of the image of `P` in `E(L)`. -/
+@[simp]
 theorem torsionRes_kummerMap (P : W.toAffine.Point) :
     W.torsionRes τ m (W.kummerMap m hm P) =
       (W⁄L).kummerMap m (by simpa using hm.map (algebraMap K L)) (W.toAffine.pointMap L P) := by

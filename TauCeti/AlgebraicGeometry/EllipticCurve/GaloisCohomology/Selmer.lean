@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Restriction
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SelmerStructure
 
 /-!
 # The `m`-Selmer group and the Shafarevich–Tate group of an elliptic curve
@@ -23,7 +24,10 @@ Sel_m = ker (H¹(G_K, E(Kˢ)[m]) → ∏ᵢ H¹(G_{L i}, E((L i)ˢ))).
 
 For a number field `K` and the family of its completions at all places, these are the
 Shafarevich–Tate group `Sha(E/K)` and the `m`-Selmer group `Sel_m(E/K)`. Here they are defined for
-an arbitrary family, as `WeierstrassCurve.shafarevichTateGroup` and `WeierstrassCurve.selmerGroup`.
+an arbitrary family, as `WeierstrassCurve.shafarevichTateGroup` and `WeierstrassCurve.selmerGroup`,
+the Selmer groups (`TauCeti.ContCohomology.SelmerStructure.selmerGroup`) of two Selmer structures
+localising along the restriction maps `τ i`: on `E(Kˢ)` with the zero local conditions, and on
+`E(Kˢ)[m]` with the local conditions `ker (H¹(G_{L i}, E[m]) → H¹(G_{L i}, E))`.
 The embeddings are genuine data: restriction to `L i` is pullback along the homomorphism
 `G_{L i} → G_K` that `τ i` induces, and there is no such homomorphism without a choice of
 embedding.
@@ -45,6 +49,10 @@ of `TauCeti/AlgebraicGeometry/EllipticCurve/GaloisCohomology/Descent.lean` to th
 
 ## Main definitions
 
+* `WeierstrassCurve.shaSelmerStructure`: the Selmer structure on `E(Kˢ)` with zero local
+  conditions.
+* `WeierstrassCurve.selmerStructure`: the Selmer structure on `E(Kˢ)[m]` whose local condition at
+  `L i` is the kernel of `H¹(G_{L i}, E[m]) → H¹(G_{L i}, E)`, the image of the local Kummer map.
 * `WeierstrassCurve.shafarevichTateGroup`: the classes in `H¹(G_K, E(Kˢ))` that restrict to zero
   over every `L i`.
 * `WeierstrassCurve.selmerGroup`: the classes in `H¹(G_K, E(Kˢ)[m])` whose image in
@@ -81,35 +89,91 @@ variable {K : Type*} [Field K] (W : WeierstrassCurve K) {ι : Type*} {L : ι →
 
 /-! ### The Shafarevich–Tate group -/
 
+/-- **The Selmer structure of the Shafarevich–Tate group**: on `E(Kˢ)`, localised along the
+restriction maps `τ i`, with the zero local condition at every `L i`. -/
+def shaSelmerStructure :
+    SelmerStructure (AbsoluteGaloisGroup K) W.PointCoeff (fun i => AbsoluteGaloisGroup (L i))
+      (fun i => (W⁄(L i)).PointCoeff) where
+  groupHom i := absoluteGaloisGroupMap (τ i)
+  coeffHom i := W.pointCoeffBaseChange (τ i)
+  continuous_coeffHom _ := continuous_of_discreteTopology
+  coeffHom_smul i := W.pointCoeffBaseChange_smul (τ i)
+  localCondition _ := ⊥
+
+/-- The localisation maps of `shaSelmerStructure τ` are the restriction maps `pointRes (τ i)`. -/
+@[simp]
+theorem shaSelmerStructure_localization (i : ι) :
+    (W.shaSelmerStructure τ).localization i = W.pointRes (τ i) := by
+  rw [SelmerStructure.localization_eq_explicitMap1, pointRes_eq_explicitMap1]
+  rfl
+
+@[simp]
+theorem shaSelmerStructure_localCondition (i : ι) :
+    (W.shaSelmerStructure τ).localCondition i = ⊥ :=
+  (rfl)
+
 /-- **The Shafarevich–Tate group** of `W` relative to the family of extensions `L i` with
-embeddings `τ i`: the classes in `H¹(G_K, E(Kˢ))` whose restriction to every `L i` vanishes. For a
-number field and the family of its completions at all places this is `Sha(E/K)` (Silverman X.4). -/
+embeddings `τ i`: the Selmer group of `shaSelmerStructure τ`, that is, the classes in
+`H¹(G_K, E(Kˢ))` whose restriction to every `L i` vanishes. For a number field and the family of
+its completions at all places this is `Sha(E/K)` (Silverman X.4). -/
 def shafarevichTateGroup : AddSubgroup (H1 (AbsoluteGaloisGroup K) W.PointCoeff) :=
-  ⨅ i, (W.pointRes (τ i)).ker
+  (W.shaSelmerStructure τ).selmerGroup
 
 @[simp]
 theorem mem_shafarevichTateGroup_iff {c : H1 (AbsoluteGaloisGroup K) W.PointCoeff} :
     c ∈ W.shafarevichTateGroup τ ↔ ∀ i, W.pointRes (τ i) c = 0 := by
-  simp only [shafarevichTateGroup, AddSubgroup.mem_iInf, AddMonoidHom.mem_ker]
+  simp only [shafarevichTateGroup, SelmerStructure.mem_selmerGroup_iff,
+    shaSelmerStructure_localization, shaSelmerStructure_localCondition, AddSubgroup.mem_bot]
 
 /-! ### The Selmer group -/
 
 variable (m : ℕ)
 
+/-- **The Selmer structure of the `m`-Selmer group**: on `E(Kˢ)[m]`, localised along the
+restriction maps `τ i`, with local condition at `L i` the kernel of
+`H¹(G_{L i}, E[m]) → H¹(G_{L i}, E)`. For `m` invertible in `K` this kernel is the image of the
+local Kummer map `E(L i) → H¹(G_{L i}, E[m])`
+(`WeierstrassCurve.mem_selmerGroup_iff_forall_torsionRes_mem_range_kummerMap`). -/
+def selmerStructure :
+    SelmerStructure (AbsoluteGaloisGroup K) (W.TorsionCoeff m)
+      (fun i => AbsoluteGaloisGroup (L i)) (fun i => (W⁄(L i)).TorsionCoeff m) where
+  groupHom i := absoluteGaloisGroupMap (τ i)
+  coeffHom i := W.torsionCoeffBaseChange (τ i) m
+  continuous_coeffHom _ := continuous_of_discreteTopology
+  coeffHom_smul i := W.torsionCoeffBaseChange_smul (τ i) m
+  localCondition i :=
+    (explicitCoeff1 _ _ ((W⁄(L i)).torsionCoeffIncl m) continuous_of_discreteTopology).ker
+
+/-- The localisation maps of `selmerStructure τ m` are the restriction maps
+`torsionRes (τ i) m`. -/
+@[simp]
+theorem selmerStructure_localization (i : ι) :
+    (W.selmerStructure τ m).localization i = W.torsionRes (τ i) m := by
+  rw [SelmerStructure.localization_eq_explicitMap1, torsionRes_eq_explicitMap1]
+  rfl
+
+@[simp]
+theorem selmerStructure_localCondition (i : ι) :
+    (W.selmerStructure τ m).localCondition i =
+      (explicitCoeff1 _ _ ((W⁄(L i)).torsionCoeffIncl m) continuous_of_discreteTopology).ker :=
+  (rfl)
+
 /-- **The `m`-Selmer group** of `W` relative to the family of extensions `L i` with embeddings
-`τ i`: the classes in `H¹(G_K, E(Kˢ)[m])` whose image in `H¹(G_K, E(Kˢ))` lies in the
-Shafarevich–Tate group, that is, restricts to zero over every `L i`. For a number field and the
-family of its completions at all places this is `Sel_m(E/K)` (Silverman X.4). -/
+`τ i`: the Selmer group of `selmerStructure τ m`, that is, the classes in `H¹(G_K, E(Kˢ)[m])`
+whose image in `H¹(G_K, E(Kˢ))` lies in the Shafarevich–Tate group (`mem_selmerGroup_iff`). For a
+number field and the family of its completions at all places this is `Sel_m(E/K)`
+(Silverman X.4). -/
 def selmerGroup : AddSubgroup (H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)) :=
-  (W.shafarevichTateGroup τ).comap
-    (explicitCoeff1 _ _ (W.torsionCoeffIncl m) continuous_of_discreteTopology)
+  (W.selmerStructure τ m).selmerGroup
 
 @[simp]
 theorem mem_selmerGroup_iff {c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)} :
     c ∈ W.selmerGroup τ m ↔
       explicitCoeff1 _ _ (W.torsionCoeffIncl m) continuous_of_discreteTopology c ∈
-        W.shafarevichTateGroup τ :=
-  AddSubgroup.mem_comap
+        W.shafarevichTateGroup τ := by
+  simp only [selmerGroup, SelmerStructure.mem_selmerGroup_iff, selmerStructure_localization,
+    selmerStructure_localCondition, AddMonoidHom.mem_ker, mem_shafarevichTateGroup_iff,
+    pointRes_torsionCoeffIncl]
 
 variable {m} in
 /-- **The Selmer group is cut out by the local Kummer images**: a class in `H¹(G_K, E(Kˢ)[m])` is
