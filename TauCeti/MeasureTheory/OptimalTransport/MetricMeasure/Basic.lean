@@ -57,6 +57,17 @@ theorem reference_ofFinite (μ : Measure X) [IsFiniteMeasure μ] :
 /-- The topological support of the reference measure. -/
 def support (M : MetricMeasureSpace X) : Set X := M.reference.support
 
+/-- The support of a metric-measure space is the support of its reference measure. -/
+theorem support_def (M : MetricMeasureSpace X) : M.support = M.reference.support := by
+  unfold support
+  rfl
+
+/-- A point belongs to the support exactly when every neighborhood has positive reference mass. -/
+theorem mem_support_iff (M : MetricMeasureSpace X) (x : X) :
+    x ∈ M.support ↔ ∀ U ∈ nhds x, 0 < M.reference U := by
+  rw [support_def]
+  exact Measure.mem_support_iff_forall x
+
 theorem isClosed_support (M : MetricMeasureSpace X) : IsClosed M.support :=
   Measure.isClosed_support
 
@@ -73,6 +84,17 @@ theorem measure_compl_support (M : MetricMeasureSpace X) :
 /-- The reference measure regarded as a measure on its support. -/
 noncomputable def supportMeasure (M : MetricMeasureSpace X) : Measure M.support :=
   M.reference.comap Subtype.val
+
+/-- The measure on the support is the comap of the reference measure along inclusion. -/
+theorem supportMeasure_def (M : MetricMeasureSpace X) :
+    M.supportMeasure = M.reference.comap Subtype.val := by
+  unfold supportMeasure
+  rfl
+
+/-- The mass of a set in the support is the reference mass of its image in the carrier. -/
+theorem supportMeasure_apply (M : MetricMeasureSpace X) (s : Set M.support) :
+    M.supportMeasure s = M.reference (Subtype.val '' s) := by
+  rw [supportMeasure_def, comap_subtype_coe_apply M.isClosed_support.measurableSet]
 
 /-- Inclusion of the support pushes its restricted measure back to the original measure. -/
 theorem map_supportMeasure (M : MetricMeasureSpace X) :
