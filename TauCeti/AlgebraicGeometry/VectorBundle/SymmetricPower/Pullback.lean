@@ -59,6 +59,37 @@ noncomputable def pullbackSymmetricPowerFreeIso (I : Type u) [Finite I] (n : ℕ
   exact ((pullback f).mapIso eY ≪≫ pSym) ≪≫
     ((symmetricPower X n).mapIso pI ≪≫ eX).symm
 
+/-- The forward map of the pullback comparison is the composite of the free-sheaf
+identifications on both sides. -/
+theorem pullbackSymmetricPowerFreeIso_hom (I : Type u) [Finite I] (n : ℕ) :
+    (pullbackSymmetricPowerFreeIso f I n).hom =
+      (let eY : (symmetricPower Y n).obj (free Y I) ≅ free Y (Sym I n) :=
+          ObjectProperty.isoMk _
+            (eqToIso (by simp only [symmetricPower_obj_obj, free_obj]; rfl) ≪≫
+              SheafOfModules.symmetricPowerFreeIso (R := Y.sheaf) I n ≪≫
+              eqToIso (free_obj Y (Sym I n)).symm)
+       let eX : (symmetricPower X n).obj (free X I) ≅ free X (Sym I n) :=
+          ObjectProperty.isoMk _
+            (eqToIso (by simp only [symmetricPower_obj_obj, free_obj]; rfl) ≪≫
+              SheafOfModules.symmetricPowerFreeIso (R := X.sheaf) I n ≪≫
+              eqToIso (free_obj X (Sym I n)).symm)
+       letI : (SheafOfModules.pushforward f.toRingCatSheafHom).IsRightAdjoint :=
+          inferInstanceAs (Scheme.Modules.pushforward f).IsRightAdjoint
+       let pI : (pullback f).obj (free Y I) ≅ free X I :=
+          ObjectProperty.isoMk _
+            (eqToIso (by rw [pullback_obj_obj, free_obj]; rfl) ≪≫
+              SheafOfModules.pullbackObjFreeIso f.toRingCatSheafHom I ≪≫
+              eqToIso (free_obj X I).symm)
+       let pSym : (pullback f).obj (free Y (Sym I n)) ≅ free X (Sym I n) :=
+          ObjectProperty.isoMk _
+            (eqToIso (by rw [pullback_obj_obj, free_obj]; rfl) ≪≫
+              SheafOfModules.pullbackObjFreeIso f.toRingCatSheafHom (Sym I n) ≪≫
+              eqToIso (free_obj X (Sym I n)).symm)
+       (((pullback f).mapIso eY ≪≫ pSym) ≪≫
+         ((symmetricPower X n).mapIso pI ≪≫ eX).symm).hom) := by
+  classical
+  rfl
+
 end TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf
 
 end
