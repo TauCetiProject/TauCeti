@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.Cyclotomic.Basic
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.InvariantSum
 import Mathlib.NumberTheory.NumberField.InfinitePlace.TotallyRealComplex
+import TauCeti.NumberTheory.NumberField.Cyclotomic.LocalDegree
 import TauCeti.NumberTheory.NumberField.LocalGlobal.Completion
 import TauCeti.RepresentationTheory.Homological.ContCohomology.Torsion
 
@@ -21,6 +22,13 @@ adjoining a primitive `(q^n - 1)`-st root of unity gives an unramified subextens
 nontrivial finite localizations, so one cyclotomic modulus handles them all. A factor of four
 in the modulus makes every infinite place complex.
 
+A class killed by a power `ℓ ^ k` of a prime `ℓ` is already split locally by the cyclotomic
+field of level `ℓ ^ r` for all large `r`: the local degrees of these fields at a given place
+become divisible by `ℓ ^ k` (`IsCyclotomicExtension.eventually_pow_dvd_finrank_adicCompletion`),
+and a local extension of degree divisible by `ℓ ^ k` splits every `ℓ ^ k`-torsion local class.
+For `ℓ` odd this field is a cyclic extension, which is what the computation of the sum of the
+local invariants through the local Artin symbols of a character requires.
+
 The conclusion is local splitting, not global splitting: deducing the latter requires
 injectivity of Brauer localization. The local statement supplies the cyclotomic splitting
 input to the sum-of-local-invariants argument without assuming a global reciprocity law.
@@ -29,6 +37,9 @@ input to the sum-of-local-invariants argument without assuming a global reciproc
 
 * `TauCeti.ClassFieldTheory.exists_cyclotomicField_brLocalization_eq_zero`: one cyclotomic
   extension kills all localizations of a global Brauer class.
+* `TauCeti.ClassFieldTheory.eventually_cyclotomicField_brLocalization_eq_zero`: the cyclotomic
+  fields of level `ℓ ^ r`, for all large `r`, kill all localizations of a Brauer class killed by
+  a power of `ℓ`.
 
 ## References
 
@@ -82,6 +93,42 @@ theorem exists_cyclotomicField_brLocalization_eq_zero (x : Br K) :
     have hroot := hζ.pow (Nat.pos_of_ne_zero hm) (Nat.div_mul_cancel h4).symm
     have : IsTotallyComplex L := nrRealPlaces_eq_zero_iff.mp
       (InfinitePlace.IsPrimitiveRoot.nrRealPlaces_eq_zero_of_two_lt (by decide) hroot)
+    exact brCompletion_eq_zero_of_isComplex w (IsTotallyComplex.isComplex w) _
+
+/-- **The cyclotomic tower of level `ℓ ^ r` splits `ℓ`-primary Brauer classes locally.** A Brauer
+class of a number field killed by a power of a prime `ℓ` has trivial localizations at every place
+after extension to the cyclotomic field of level `ℓ ^ r`, for all large `r`. For `ℓ` odd this
+extension is cyclic (`IsCyclotomicExtension.isCyclic_aut`, with `ZMod.isCyclic_units_of_prime_pow`).
+This theorem makes no assertion that the global base-changed class itself vanishes. -/
+theorem eventually_cyclotomicField_brLocalization_eq_zero {ℓ : ℕ} (hℓ : ℓ.Prime) {k : ℕ}
+    (x : Br K) (hx : ℓ ^ k • x = 0) :
+    ∀ᶠ r in Filter.atTop, brLocalization (CyclotomicField (ℓ ^ r) K)
+      (brBaseChange K (CyclotomicField (ℓ ^ r) K) x) = 0 := by
+  classical
+  -- For large `r`, the local degree at every place above `brauerSupport K x` is divisible by
+  -- `ℓ ^ k`, and `ℓ ^ r > 2`.
+  filter_upwards [Filter.eventually_ge_atTop 2,
+    (Filter.eventually_all_finset (brauerSupport K x)).2 fun v _ =>
+      IsCyclotomicExtension.eventually_pow_dvd_finrank_adicCompletion.{0} hℓ k v] with r hr hloc
+  have : NeZero (ℓ ^ r) := ⟨pow_ne_zero r hℓ.ne_zero⟩
+  let L := CyclotomicField (ℓ ^ r) K
+  refine Prod.ext (DFinsupp.ext fun w => ?_) (funext fun w => ?_)
+  · let v := w.under (𝓞 K)
+    simp only [brLocalization_fst_apply, Prod.fst_zero, DFinsupp.zero_apply]
+    rw [brBaseChange_brBaseChange K L (w.adicCompletion L),
+      ← brBaseChange_brBaseChange K (v.adicCompletion K) (w.adicCompletion L)]
+    by_cases hv : v ∈ brauerSupport K x
+    · exact brBaseChange_eq_zero_of_dvd_finrank _ _ (hloc v hv L w) _
+        (by rw [← map_nsmul, hx, map_zero])
+    · rw [(finiteInvAt_eq_zero_iff K v x).mp
+        (finiteInvAt_eq_zero_of_notMem_brauerSupport K hv), map_zero]
+  · simp only [brLocalization_snd_apply, Prod.snd_zero, Pi.zero_apply]
+    obtain ⟨ζ, hζ⟩ := IsCyclotomicExtension.exists_isPrimitiveRoot K L
+      (Set.mem_singleton (ℓ ^ r)) (NeZero.ne _)
+    have h2 : 2 < ℓ ^ r := lt_of_lt_of_le (by norm_num)
+      ((Nat.pow_le_pow_left hℓ.two_le 2).trans (Nat.pow_le_pow_right hℓ.pos hr))
+    have : IsTotallyComplex L := nrRealPlaces_eq_zero_iff.mp
+      (InfinitePlace.IsPrimitiveRoot.nrRealPlaces_eq_zero_of_two_lt h2 hζ)
     exact brCompletion_eq_zero_of_isComplex w (IsTotallyComplex.isComplex w) _
 
 end TauCeti.ClassFieldTheory
