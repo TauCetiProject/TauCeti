@@ -365,7 +365,8 @@ noncomputable def groupSchemePointMulEquiv :
     (coordinateHopfAlgebra R n) A (groupScheme_def R n)
 
 /-- The underlying map of the spectrum point associated to an algebra point. -/
-@[simp]
+-- Not `@[simp]`: `simp` rewrites with it but then cannot close its own statement, since the two
+-- `eqToHom` endpoints come out in different forms; use it by name.
 lemma groupSchemePointMulEquiv_apply_left
     (f : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) :
     (groupSchemePointMulEquiv n A f).left =

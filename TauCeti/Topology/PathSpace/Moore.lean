@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.Ring.Real
 public import Mathlib.Topology.CompactOpen
 public import Mathlib.Topology.MetricSpace.ProperSpace.Real
@@ -30,9 +29,9 @@ A path does not determine its length: the constant path of any length has the sa
 map.  So a Moore path is not a bundled function, and equality of Moore paths is checked on the
 length and on the path (`MoorePath.ext`).
 
-The Moore loop space is not homeomorphic to Mathlib's loop space `Path x x` of loops parametrized
-by the unit interval: when `X` is a point, the Moore loops at it form a copy of `[0, ∞)`
-(`MooreLoopSpace.lengthHomeomorph`).
+The Moore loop space need not be homeomorphic to Mathlib's loop space `Path x x` of loops
+parametrized by the unit interval: when `X` is a point, the Moore loops at it form a copy of
+`[0, ∞)` (`MooreLoopSpace.lengthHomeomorph`).
 
 ## Main definitions
 
@@ -89,7 +88,7 @@ structure MoorePath (X : Type*) [TopologicalSpace X] extends C(ℝ≥0, X) where
 
 namespace MoorePath
 
-variable {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
+variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 
 instance : CoeFun (MoorePath X) fun _ ↦ ℝ≥0 → X :=
   ⟨fun γ ↦ γ.toContinuousMap⟩
@@ -385,12 +384,9 @@ theorem target_symm (γ : MoorePath X) : γ.symm.target = γ.source := by
   rw [target_def, length_symm, symm_apply, tsub_self, source_def]
 
 @[simp]
-theorem symm_symm (γ : MoorePath X) : γ.symm.symm = γ := by
-  refine ext rfl fun t ↦ ?_
-  rw [symm_apply, symm_apply, length_symm]
-  rcases le_total t γ.length with ht | ht
-  · rw [tsub_tsub_cancel_of_le ht]
-  · rw [tsub_eq_zero_of_le ht, tsub_zero, γ.apply_of_length_le ht, target_def]
+theorem symm_symm (γ : MoorePath X) : γ.symm.symm = γ :=
+  ext rfl fun t ↦ by
+    rw [symm_apply, symm_apply, length_symm, tsub_tsub_eq_min, min_comm, apply_min_length]
 
 @[simp]
 theorem symm_refl (x : X) : (refl x).symm = refl x :=
