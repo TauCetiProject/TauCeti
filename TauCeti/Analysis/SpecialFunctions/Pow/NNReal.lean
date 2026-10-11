@@ -25,6 +25,9 @@ product of three linear factors follow: at infinity the kernel decays like `y ^ 
 three distinct poles the product of the factors `‖z - eᵢ‖ₑ ^ (-1/2)` is controlled by their sum,
 since at most one of them can be large.
 
+For a base in `ℝ≥0` greater than one, power comparisons also express rational bounds and
+closed intervals for a reciprocal radius parameter `α / r`.
+
 ## Main declarations
 
 * `ENNReal.le_of_rpow_le_mul_rpow_sub_one`: `X ^ r ≤ C * X ^ (r - 1)` gives `X ≤ C` for a finite
@@ -34,6 +37,8 @@ since at most one of them can be large.
 * `ENNReal.ofReal_inv_sqrt_le_of_pow_three_le`: `y³ ≤ 2 |d|` gives `1 / √d ≤ √2 y^(-3/2)`.
 * `ENNReal.exists_enorm_sub_rpow_neg_half_mul_le`: for three distinct points `eᵢ`, the product of
   the `‖z - eᵢ‖ₑ ^ (-1/2)` is at most a constant times their sum.
+* `NNReal.rpow_neg_mem_Icc_iff`: an interval of negative powers is equivalent to an interval
+  for the reciprocal parameter `α / r`.
 -/
 
 public section
@@ -139,6 +144,31 @@ theorem rpow_le_rpow_iff_of_one_lt {b : ℝ≥0} (hb : 1 < b) {x y : ℝ} :
   · contrapose!
     exact rpow_lt_rpow_of_exponent_lt hb
   · exact rpow_le_rpow_of_exponent_le hb.le
+
+/-- **Reciprocal radius interval dictionary.** For a base `c > 1`, the interval
+`c ^ (-α/a) ≤ c ^ (-r) ≤ c ^ (-α/b)` is equivalent to `a ≤ α / r ≤ b` when
+`r`, `a`, and `b` are positive. -/
+theorem rpow_neg_mem_Icc_iff {c : ℝ≥0} (hc : 1 < c) (α r a b : ℝ)
+    (hr : 0 < r) (ha : 0 < a) (hb : 0 < b) :
+    c ^ (-r) ∈ Set.Icc (c ^ (-α / a)) (c ^ (-α / b)) ↔
+      α / r ∈ Set.Icc a b := by
+  simp only [Set.mem_Icc]
+  rw [rpow_le_rpow_iff_of_one_lt hc, rpow_le_rpow_iff_of_one_lt hc]
+  constructor
+  · rintro ⟨h₁, h₂⟩
+    constructor
+    · apply (le_div_iff₀ hr).2
+      have := (div_le_iff₀ ha).1 h₁
+      nlinarith
+    · apply (div_le_iff₀ hr).2
+      have := (le_div_iff₀ hb).1 h₂
+      nlinarith
+  · rintro ⟨h₁, h₂⟩
+    constructor
+    · have := (le_div_iff₀ hr).1 h₁
+      exact (div_le_iff₀ ha).2 (by nlinarith)
+    · have := (div_le_iff₀ hr).1 h₂
+      exact (le_div_iff₀ hb).2 (by nlinarith)
 
 /-- A rational lower bound on the ratio `α / r`, expressed as a comparison of powers.
 

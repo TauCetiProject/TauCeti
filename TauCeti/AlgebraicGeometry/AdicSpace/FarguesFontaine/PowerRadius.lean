@@ -39,32 +39,6 @@ variable {p : ℕ} [Fact p.Prime] {K O : Type*} [Field K] [CommRing O] [Algebra 
 private theorem one_lt_prime_nnreal : (1 : ℝ≥0) < p := by
   exact_mod_cast (Fact.out : p.Prime).one_lt
 
-/-- **Reciprocal radius interval dictionary.** With `|ϖ| = p ^ (-α)` and `ρ = p ^ (-r)`,
-the radius interval `|ϖ| ^ (1/a) ≤ ρ ≤ |ϖ| ^ (1/b)` is equivalent to
-`a ≤ α / r ≤ b`. The exponents `α/a` and `α/b` express the endpoints without choosing
-logarithms of valuations. -/
-theorem pPower_radius_mem_Icc_iff (α r a b : ℝ) (hr : 0 < r) (ha : 0 < a) (hb : 0 < b) :
-    (p : ℝ≥0) ^ (-r) ∈ Set.Icc ((p : ℝ≥0) ^ (-α / a)) ((p : ℝ≥0) ^ (-α / b)) ↔
-      α / r ∈ Set.Icc a b := by
-  simp only [Set.mem_Icc]
-  rw [NNReal.rpow_le_rpow_iff_of_one_lt one_lt_prime_nnreal,
-    NNReal.rpow_le_rpow_iff_of_one_lt one_lt_prime_nnreal]
-  constructor
-  · rintro ⟨h₁, h₂⟩
-    constructor
-    · apply (le_div_iff₀ hr).2
-      have := (div_le_iff₀ ha).1 h₁
-      nlinarith
-    · apply (div_le_iff₀ hr).2
-      have := (le_div_iff₀ hb).1 h₂
-      nlinarith
-  · rintro ⟨h₁, h₂⟩
-    constructor
-    · have := (le_div_iff₀ hr).1 h₁
-      exact (div_le_iff₀ ha).2 (by nlinarith)
-    · have := (div_le_iff₀ hr).1 h₂
-      exact (le_div_iff₀ hb).2 (by nlinarith)
-
 /-- For `v(ϖ) = p ^ (-α)` and Gauss radius `ρ = p ^ (-r)`, `q` is a lower radius bound of
 the Gauss point exactly when `q ≤ α / r`. -/
 theorem isRadiusLowerBound_gaussPoint_pPower_iff (hv : v.Integers O) (ϖ : O)
