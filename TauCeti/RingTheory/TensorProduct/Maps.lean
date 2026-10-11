@@ -119,25 +119,25 @@ end Algebra.TensorProduct
 
 namespace AlgHom
 
-variable {A B : Type*} [CommRing A] [CommRing B] [Algebra A B]
+variable {A B : Type*} [CommSemiring A] [Semiring B] [Algebra A B]
 
 /-- The base change `T ⊗[A] B →ₐ[T] T`, `t ⊗ b ↦ t * s b`, of an `A`-algebra map
 `s : B →ₐ[A] A`. Geometrically, `s` is a section of `Spec B → Spec A`, and this is its pullback
 along `Spec T → Spec A`. -/
-noncomputable def sectionBaseChange (s : B →ₐ[A] A) (T : Type*) [CommRing T] [Algebra A T] :
+noncomputable def sectionBaseChange (s : B →ₐ[A] A) (T : Type*) [CommSemiring T] [Algebra A T] :
     T ⊗[A] B →ₐ[T] T :=
   Algebra.TensorProduct.productLeftAlgHom (AlgHom.id T T) ((Algebra.ofId A T).comp s)
 
 @[simp]
-theorem sectionBaseChange_tmul (s : B →ₐ[A] A) {T : Type*} [CommRing T] [Algebra A T] (t : T)
+theorem sectionBaseChange_tmul (s : B →ₐ[A] A) {T : Type*} [CommSemiring T] [Algebra A T] (t : T)
     (b : B) : s.sectionBaseChange T (t ⊗ₜ b) = t * algebraMap A T (s b) := by
   simp [sectionBaseChange]
 
 /-- The base change of a section is natural in the base: it commutes with
 `Algebra.TensorProduct.rTensor B φ` for an `A`-algebra map `φ : T →ₐ[A] T'`. -/
 @[simp]
-theorem sectionBaseChange_rTensor (s : B →ₐ[A] A) {T T' : Type*} [CommRing T] [Algebra A T]
-    [CommRing T'] [Algebra A T'] (φ : T →ₐ[A] T') (x : T ⊗[A] B) :
+theorem sectionBaseChange_rTensor (s : B →ₐ[A] A) {T T' : Type*} [CommSemiring T] [Algebra A T]
+    [CommSemiring T'] [Algebra A T'] (φ : T →ₐ[A] T') (x : T ⊗[A] B) :
     s.sectionBaseChange T' (Algebra.TensorProduct.rTensor B φ x) = φ (s.sectionBaseChange T x) := by
   induction x using TensorProduct.inductionOn with
   | tmul t b => simp

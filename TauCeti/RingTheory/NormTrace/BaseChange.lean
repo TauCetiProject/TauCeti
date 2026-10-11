@@ -24,6 +24,8 @@ This file records the compatibility of algebra norms and traces with scalar exte
   compatible with every `K`-algebra map `φ : P →ₐ[K] T`. Taking `P` to be a polynomial ring and `φ`
   an evaluation map, the norm on every base change `T ⊗[K] B` is a specialization of the generic
   norm form.
+* `TauCeti.Algebra.charpoly_lmul_eq_norm`: the characteristic polynomial of multiplication by
+  `x ∈ T ⊗[K] B` over `T` is the norm of `X - x` over `T[X]`.
 -/
 
 public section
@@ -84,6 +86,24 @@ theorem Algebra.norm_rTensor (φ : P →ₐ[K] T) (x : P ⊗[K] B) :
   rw [Algebra.norm_eq_matrix_det (Algebra.TensorProduct.basis T b),
     Algebra.norm_eq_matrix_det (Algebra.TensorProduct.basis P b), φ.map_det,
     Algebra.leftMulMatrix_rTensor]
+
+/-- The characteristic polynomial of multiplication by `x ∈ T ⊗[K] B` over `T` is the norm of
+`X - x` over `T[X]`. -/
+theorem Algebra.charpoly_lmul_eq_norm (x : T ⊗[K] B) :
+    (Algebra.lmul T (T ⊗[K] B) x).charpoly =
+      Algebra.norm (Polynomial T) (algebraMap (Polynomial T) _ Polynomial.X -
+        Algebra.TensorProduct.rTensor B (IsScalarTower.toAlgHom K T (Polynomial T)) x) := by
+  classical
+  -- In the bases induced by a basis of `B`, both sides are the determinant of `X • 1 - M`, where
+  -- `M` is the matrix of multiplication by `x` over `T`.
+  let b := Module.Free.chooseBasis K B
+  rw [← LinearMap.charpoly_toMatrix _ (Algebra.TensorProduct.basis T b),
+    Algebra.norm_eq_matrix_det (Algebra.TensorProduct.basis (Polynomial T) b), map_sub,
+    AlgHom.commutes, Algebra.leftMulMatrix_rTensor, ← Algebra.leftMulMatrix_apply, Matrix.charpoly]
+  refine congrArg Matrix.det (Matrix.ext fun i j ↦ ?_)
+  by_cases h : i = j
+  · simp [h, Matrix.charmatrix_apply_eq, Matrix.algebraMap_matrix_apply, Polynomial.algebraMap_eq]
+  · simp [h, Matrix.charmatrix_apply_ne, Matrix.algebraMap_matrix_apply, Polynomial.algebraMap_eq]
 
 end Norm
 

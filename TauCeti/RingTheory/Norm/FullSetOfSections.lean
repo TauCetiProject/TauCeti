@@ -95,6 +95,14 @@ theorem isFullSetOfSections_iff : IsFullSetOfSections s ↔
       Algebra.norm T f = ∏ i, (s i).sectionBaseChange T f :=
   Iff.rfl
 
+/-- The base change of a section `s` to `MvPolynomial κ A` takes the generic element
+`∑ j, Xⱼ ⊗ bⱼ` to the linear form `∑ j, s(bⱼ) • Xⱼ`. -/
+private theorem sectionBaseChange_generic (s : B →ₐ[A] A) {κ : Type*} [Fintype κ]
+    (b : Module.Basis κ A B) :
+    s.sectionBaseChange (MvPolynomial κ A) (∑ j, (X j : MvPolynomial κ A) ⊗ₜ[A] b j) =
+      ∑ j, s (b j) • (X j : MvPolynomial κ A) := by
+  simp [Algebra.smul_def, mul_comm]
+
 section Free
 
 variable [Module.Free A B] [Module.Finite A B]
@@ -113,8 +121,9 @@ private theorem norm_eq_prod_of_generic {κ : Type*} [Fintype κ] (b : Module.Ba
       (∑ j, (X j : MvPolynomial κ A) ⊗ₜ[A] b j) = f := by
     conv_rhs => rw [← (Algebra.TensorProduct.basis T b).sum_repr f]
     simp [c, TensorProduct.smul_tmul']
-  rw [← hf, Algebra.norm_rTensor, h]
-  simp [map_prod, Algebra.smul_def, mul_comm]
+  rw [← hf, Algebra.norm_rTensor, h, map_prod]
+  refine Finset.prod_congr rfl fun i _ ↦ ?_
+  rw [AlgHom.sectionBaseChange_rTensor, sectionBaseChange_generic]
 
 /-- The defining identity of a full set of sections holds after base change to a commutative
 `A`-algebra `T` in any universe. -/
@@ -122,7 +131,7 @@ theorem IsFullSetOfSections.norm_eq (h : IsFullSetOfSections s) (T : Type w) [Co
     [Algebra A T] (f : T ⊗[A] B) :
     Algebra.norm T f = ∏ i, (s i).sectionBaseChange T f :=
   norm_eq_prod_of_generic ((Module.Free.chooseBasis A B).reindex (Fintype.equivFin _))
-    ((h _ _).trans (by simp [Algebra.smul_def, mul_comm])) T f
+    ((h _ _).trans (Finset.prod_congr rfl fun _ _ ↦ sectionBaseChange_generic _ _)) T f
 
 /-- **Reduction to the universal case** (Katz–Mazur, proof of 1.9.1). For a basis `b` of `B`
 indexed by `κ`, a family of sections `s` is a full set of sections if and only if the norm of the
@@ -132,7 +141,7 @@ theorem isFullSetOfSections_iff_norm_eq_prod {κ : Type*} [Fintype κ] (b : Modu
     IsFullSetOfSections s ↔
       Algebra.norm (MvPolynomial κ A) (∑ j, (X j : MvPolynomial κ A) ⊗ₜ[A] b j) =
         ∏ i, ∑ j, s i (b j) • (X j : MvPolynomial κ A) :=
-  ⟨fun h ↦ (h.norm_eq _ _).trans (by simp [Algebra.smul_def, mul_comm]),
+  ⟨fun h ↦ (h.norm_eq _ _).trans (Finset.prod_congr rfl fun _ _ ↦ sectionBaseChange_generic _ _),
     fun h T _ _ _ f ↦ norm_eq_prod_of_generic b h T f⟩
 
 omit [Module.Free A B] [Module.Finite A B] in
@@ -182,29 +191,13 @@ theorem IsFullSetOfSections.card_eq_finrank [Nontrivial A] (h : IsFullSetOfSecti
   rw [Algebra.norm_algebraMap, Module.finrank_baseChange] at this
   simpa using congrArg Polynomial.natDegree this.symm
 
-/-- The characteristic polynomial of multiplication by `f ∈ T ⊗[A] B` over `T` is the norm of
-`X - f` over `T[X]`. -/
-private theorem charpoly_lmul_eq_norm (T : Type w) [CommRing T] [Algebra A T] (f : T ⊗[A] B) :
-    (Algebra.lmul T (T ⊗[A] B) f).charpoly =
-      Algebra.norm (Polynomial T) (algebraMap (Polynomial T) _ Polynomial.X -
-        Algebra.TensorProduct.rTensor B (IsScalarTower.toAlgHom A T (Polynomial T)) f) := by
-  classical
-  -- In the bases induced by a basis of `B`, both sides are the determinant of `X • 1 - M`, where
-  -- `M` is the matrix of multiplication by `f` over `T`.
-  let b := Module.Free.chooseBasis A B
-  rw [← LinearMap.charpoly_toMatrix _ (Algebra.TensorProduct.basis T b),
-    Algebra.norm_eq_matrix_det (Algebra.TensorProduct.basis (Polynomial T) b), map_sub,
-    AlgHom.commutes, Algebra.leftMulMatrix_rTensor, ← Algebra.leftMulMatrix_apply,
-    Matrix.charpoly, Matrix.charmatrix, Matrix.algebraMap_eq_diagonal, Matrix.scalar_apply]
-  simp [Polynomial.algebraMap_eq, Pi.algebraMap_def]
-
 /-- The characteristic polynomial of multiplication by `f` on a base change of `B` by a full set
 of sections is `∏ i, (X - sᵢ(f))`, for test algebras in any universe. -/
 theorem IsFullSetOfSections.charpoly_eq (h : IsFullSetOfSections s) (T : Type w) [CommRing T]
     [Algebra A T] (f : T ⊗[A] B) :
     (Algebra.lmul T (T ⊗[A] B) f).charpoly =
       ∏ i, (Polynomial.X - Polynomial.C ((s i).sectionBaseChange T f)) := by
-  rw [charpoly_lmul_eq_norm, h.norm_eq]
+  rw [Algebra.charpoly_lmul_eq_norm, h.norm_eq]
   simp [Polynomial.algebraMap_eq]
 
 /-- **Characteristic-polynomial formulation** (Katz–Mazur 1.8.2). A family of sections `s` is a
