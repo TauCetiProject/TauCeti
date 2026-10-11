@@ -11,8 +11,6 @@ public import Mathlib.RingTheory.Valuation.ValuationRing
 import Mathlib.RingTheory.Flat.TorsionFree
 import Mathlib.RingTheory.LocalRing.Module
 public import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
-public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
-import Mathlib.LinearAlgebra.Determinant
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.RingTheory.Valuation.FinsetDvd
 
@@ -35,9 +33,9 @@ The hypothesis on `2` cannot be dropped: the general divisibility and hyperbolic
 in `TauCeti.LinearAlgebra.BilinearForm.Diagonalization` show that the hyperbolic plane
 `!![0, 1; 1, 0]` has an orthogonal basis only if `2` is a unit. Over `ℤ_2` it has none.
 
-For a form with unit Gram determinant, every coefficient of the orthogonal basis is a unit.
-The form is therefore isometric to a unit diagonal quadratic form, with an explicit determinant
-change-of-basis equation.
+For forms with unit Gram determinant, the stronger local-ring diagonalization theorem in
+`TauCeti.LinearAlgebra.BilinearForm.Diagonalization` gives unit diagonal coefficients without
+requiring a domain or a valuation ring.
 
 ## Main results
 
@@ -47,10 +45,6 @@ change-of-basis equation.
   unit, some self-pairing `B x x` divides every value of a symmetric form.
 * `LinearMap.BilinForm.IsSymm.exists_orthogonal_basis_of_isUnit_two`: over a valuation ring with
   `2` a unit, a symmetric bilinear form on a finite free module has an orthogonal basis.
-* `LinearMap.BilinForm.IsSymm.exists_orthogonal_basis_isUnit_of_isUnit_det`: a unit Gram
-  determinant gives unit self-pairings in an orthogonal basis.
-* `LinearMap.BilinForm.IsSymm.exists_equivalent_weightedSumSquares_of_isUnit_det`: such a form
-  is isometric to a diagonal quadratic form with unit coefficients.
 ## References
 
 * O. T. O'Meara, *Introduction to Quadratic Forms*, §91C and 92:1.
@@ -62,7 +56,7 @@ public section
 namespace LinearMap.BilinForm
 
 open LinearMap (BilinForm)
-open Module QuadraticMap
+open Module
 
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {B : BilinForm R M}
 
@@ -114,49 +108,5 @@ theorem IsSymm.exists_orthogonal_basis_of_isUnit_two [Free R M] [Module.Finite R
     omega
   obtain ⟨v, hv⟩ := ih (B := B.restrict N) (hB.restrict N) hN
   exact hB.isRefl.exists_orthogonal_basis_of_orthogonal_span_singleton hxR (hx x) hv
-
-/-- A symmetric form with unit Gram determinant over a valuation ring with two invertible has
-an orthogonal basis with unit self-pairings. The input basis is arbitrary. -/
-theorem IsSymm.exists_orthogonal_basis_isUnit_of_isUnit_det (hB : B.IsSymm)
-    (h2 : IsUnit (2 : R)) {n : ℕ} (b : Basis (Fin n) R M)
-    (hdet : IsUnit (B.toMatrix b).det) :
-    ∃ c : Basis (Fin n) R M, B.iIsOrtho c ∧ ∀ i, IsUnit (B (c i) (c i)) := by
-  classical
-  let := Free.of_basis b
-  let := Module.Finite.of_basis b
-  obtain ⟨c₀, hc₀⟩ := hB.exists_orthogonal_basis_of_isUnit_two h2
-  have hn : finrank R M = n := by simpa using Module.finrank_eq_card_basis b
-  let c := c₀.reindex (finCongr hn)
-  have hc : B.iIsOrtho c := by
-    apply iIsOrtho_def.mpr
-    intro i j hij
-    simp only [c, Basis.reindex_apply]
-    exact iIsOrtho_def.mp hc₀ _ _ (fun h ↦ hij ((finCongr hn).symm.injective h))
-  have hmatrix := hc.toMatrix_eq_diagonal
-  have hunit : IsUnit (∏ i, B (c i) (c i)) := by
-    rw [← Matrix.det_diagonal, ← hmatrix, det_toMatrix_eq_det_sq_mul_det b c]
-    exact ((b.isUnit_det c).pow 2).mul hdet
-  exact ⟨c, hc, fun i ↦ isUnit_of_dvd_unit
-    (Finset.dvd_prod_of_mem (fun j ↦ B (c j) (c j)) (Finset.mem_univ i)) hunit⟩
-
-/-- A symmetric form with unit Gram determinant over a valuation ring with two invertible is
-isometric to a unit diagonal form. The product of its coefficients equals the original Gram
-determinant times the square of a change-of-basis determinant. -/
-theorem IsSymm.exists_equivalent_weightedSumSquares_of_isUnit_det (hB : B.IsSymm)
-    (h2 : IsUnit (2 : R)) {n : ℕ} (b : Basis (Fin n) R M)
-    (hdet : IsUnit (B.toMatrix b).det) :
-    ∃ w : Fin n → Rˣ, B.toQuadraticMap.Equivalent (weightedSumSquares R w) ∧
-      ∃ d : R, (∏ i, (w i : R)) = d ^ 2 * (B.toMatrix b).det := by
-  classical
-  let := h2.invertible
-  obtain ⟨c, hc, hu⟩ := hB.exists_orthogonal_basis_isUnit_of_isUnit_det h2 b hdet
-  let w : Fin n → Rˣ := fun i ↦ (hu i).unit
-  have hw i : (w i : R) = B (c i) (c i) := (hu i).unit_spec
-  have hmatrix : B.toMatrix c = Matrix.diagonal (fun i ↦ (w i : R)) := by
-    simpa only [hw] using hc.toMatrix_eq_diagonal
-  refine ⟨w, ?_, (b.toMatrix c).det, ?_⟩
-  · simpa only [weightedSumSquares_units, hw] using
-      hB.equivalent_weightedSumSquares_of_iIsOrtho c hc
-  · rw [← Matrix.det_diagonal, ← hmatrix, det_toMatrix_eq_det_sq_mul_det b c]
 
 end LinearMap.BilinForm

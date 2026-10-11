@@ -52,7 +52,7 @@ theorem localIntegralForm_equivalent_imp
   classical
   let b := Module.finBasis ℤ L
   let c := Module.finBasis ℤ M
-  obtain ⟨e⟩ := h
+  obtain ⟨e⟩ := id h
   have hn : finrank ℤ L = finrank ℤ M := by
     have h := e.toLinearEquiv.finrank_eq
     rw [Module.finrank_eq_card_basis (b.baseChange ℤ_[p]),
@@ -62,8 +62,7 @@ theorem localIntegralForm_equivalent_imp
   refine ⟨hn, ?_⟩
   simpa only [det_toMatrix_localIntegralForm] using
     LinearMap.BilinForm.Equivalent.isSquare_det_mul_det
-      (show (L.localIntegralForm p).Equivalent (M.localIntegralForm p) from ⟨e⟩)
-      (b.baseChange ℤ_[p]) (c'.baseChange ℤ_[p])
+      h (b.baseChange ℤ_[p]) (c'.baseChange ℤ_[p])
 
 /-- Localizations unimodular at an odd prime are integrally isometric exactly when their ranks
 and determinant square classes agree. The input lattices need not be globally unimodular. -/

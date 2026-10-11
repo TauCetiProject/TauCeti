@@ -44,7 +44,10 @@ theorem equivalent_binary_one_mul_of_isUnit_two (h2 : IsUnit (2 : R)) (a b : Rˣ
     (weightedSumSquares R ![(a : R), (b : R)]).Equivalent
       (weightedSumSquares R ![(1 : R), (a * b : Rˣ)]) := by
   obtain ⟨x, y, hxy⟩ := exists_mul_sq_add_mul_sq_eq_of_isUnit h2 a.isUnit b.isUnit isUnit_one
-  exact ⟨by simpa using (isometryEquivBinaryNormalForm (a : R) (b : R) x y 1 hxy).symm⟩
+  have h : (weightedSumSquares R ![(a : R), (b : R)]).Equivalent
+      (weightedSumSquares R ![((1 : Rˣ) : R), (a : R) * (b : R) * (1 : Rˣ)]) :=
+    ⟨(isometryEquivBinaryNormalForm (a : R) (b : R) x y 1 hxy).symm⟩
+  simpa only [Units.val_one, mul_one, Units.val_mul] using h
 
 /-- The elementary binary changes of basis reduce a positive-rank unit diagonal form to ones
 followed by its determinant. -/

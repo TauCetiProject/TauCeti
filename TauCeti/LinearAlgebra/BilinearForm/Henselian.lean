@@ -5,19 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.BilinearForm.ValuationRing
+public import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Henselian
 import TauCeti.Algebra.Group.Units.Basic
 
 /-!
-# Unimodular symmetric forms over Henselian valuation rings
+# Unimodular symmetric forms over Henselian local rings
 
-Over a Henselian valuation ring with finite residue field and two invertible, symmetric forms
+Over a Henselian local ring with finite residue field and two invertible, symmetric forms
 with unit Gram determinant are classified by their rank and their determinant modulo squares.
 The determinant may be computed in any caller-provided basis. The conclusion is an isometry
 over the coefficient ring, preserving the bilinear forms themselves.
 
-Diagonalization over the valuation ring gives an orthogonal basis with unit coefficients. The
+Diagonalization over the local ring gives an orthogonal basis with unit coefficients. The
 unit diagonal classification then identifies the forms. This applies to `ℤ_p` for odd `p`,
 including forms which arise by localizing an integral lattice that is unimodular only at `p`.
 
@@ -34,7 +34,7 @@ open LinearMap (BilinForm)
 
 namespace LinearMap.BilinForm
 
-variable {R M N : Type*} [CommRing R] [IsDomain R] [ValuationRing R]
+variable {R M N : Type*} [CommRing R]
   [HenselianLocalRing R] [Finite (IsLocalRing.ResidueField R)]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
 
