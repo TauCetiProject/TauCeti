@@ -67,6 +67,7 @@ theorem weight_zero : weight 0 = 0 := by
   simp [weight_def]
 
 /-- The weight is odd. -/
+@[simp]
 theorem weight_neg (y : ℝ) : weight (-y) = -weight y := by
   rw [weight_def, weight_def, ← Real.tanh_neg]
   ring_nf
