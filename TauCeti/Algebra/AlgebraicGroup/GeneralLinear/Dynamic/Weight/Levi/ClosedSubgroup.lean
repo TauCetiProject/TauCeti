@@ -67,4 +67,36 @@ noncomputable def weightLeviClosedSubgroupPointsIso (w : Fin N → ℤ)
   Cocharacter.leviClosedSubgroupPointsIso φ hφ l _
     (fun _ g ↦ by rw [hl]; exact mem_weightLeviDefiningPointsSubgroup_iff (R := R) w g)
 
+/-- The ambient point underlying the represented closed-subgroup Levi point is induced by the
+quotient coordinate map. -/
+@[simp]
+theorem coe_weightLeviClosedSubgroupPointsIso_hom_app_apply (w : Fin N → ℤ)
+    (φ : coordinateHopfAlgebra R N ⟶ K) (hφ : Function.Surjective φ.hom)
+    (l : K →ₐc[R] LaurentPolynomial R)
+    (hl : l.comp φ.hom = weightCocharacter (R := R) w)
+    (A : CommAlgCat.{v} R)
+    (f : HopfAlgebra.points (R := R)
+      (H := CommHopfAlgCat.quotient K ((weightLeviDefiningHopfIdeal R w).map φ.hom)) A) :
+    (((eqToHom (Cocharacter.leviFunctor_obj l A))
+      ((weightLeviClosedSubgroupPointsIso w φ hφ l hl).hom.app A f) :
+        Cocharacter.levi A l) : HopfAlgebra.points (R := R) (H := K) A) =
+      CommHopfAlgCat.quotientPointsHom K ((weightLeviDefiningHopfIdeal R w).map φ.hom) A f := by
+  unfold weightLeviClosedSubgroupPointsIso
+  exact Cocharacter.coe_leviClosedSubgroupPointsIso_hom_app_apply φ hφ l _
+    (fun _ g ↦ by rw [hl]; exact mem_weightLeviDefiningPointsSubgroup_iff (R := R) w g) A f
+
+/-- Applying the quotient inclusion to the inverse represented point recovers the dynamic-Levi
+point. -/
+@[simp]
+theorem quotientPointsHom_weightLeviClosedSubgroupPointsIso_inv_app_apply (w : Fin N → ℤ)
+    (φ : coordinateHopfAlgebra R N ⟶ K) (hφ : Function.Surjective φ.hom)
+    (l : K →ₐc[R] LaurentPolynomial R)
+    (hl : l.comp φ.hom = weightCocharacter (R := R) w)
+    (A : CommAlgCat.{v} R) (g : Cocharacter.levi A l) :
+    CommHopfAlgCat.quotientPointsHom K ((weightLeviDefiningHopfIdeal R w).map φ.hom) A
+      ((weightLeviClosedSubgroupPointsIso w φ hφ l hl).inv.app A g) = g.1 := by
+  unfold weightLeviClosedSubgroupPointsIso
+  exact Cocharacter.quotientPointsHom_leviClosedSubgroupPointsIso_inv_app_apply φ hφ l _
+    (fun _ g ↦ by rw [hl]; exact mem_weightLeviDefiningPointsSubgroup_iff (R := R) w g) A g
+
 end TauCeti.GeneralLinear.Dynamic

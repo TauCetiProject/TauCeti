@@ -69,8 +69,11 @@ theorem mapDomain_constPoint (φ : H →ₐc[R] K)
     (g : WithConv (K →ₐ[R] A)) :
     AlgHom.mapDomain φ (constPoint A g) =
       constPoint A (AlgHom.mapDomain φ g) := by
-  rw [constPoint_apply, constPoint_apply, AlgHom.mapDomain_apply,
-    AlgHom.mapDomain_apply, AlgHom.comp_assoc]
+  rw [constPoint_apply, constPoint_apply]
+  convert DFunLike.congr_fun
+    (AlgHom.mapValue_mapDomain φ (IsScalarTower.toAlgHom R A (LaurentPolynomial A))) g using 1 <;>
+      simp only [MonoidHom.comp_apply, AlgHom.mapDomain_apply, AlgHom.mapValue_apply,
+        AlgHom.comp_assoc]
 
 /-- Generic conjugation is natural in the coordinate Hopf algebra. -/
 theorem mapDomain_conjugate (φ : H →ₐc[R] K)
@@ -159,5 +162,39 @@ noncomputable def leviClosedSubgroupPointsIso (φ : H ⟶ K)
       leviFunctor l :=
   CommHopfAlgCat.quotientPointsSubgroupRepresentingIso K (J.map φ.hom) (fun A ↦ levi A l)
     (fun A g ↦ mem_quotientPointsSubgroup_map_iff_mem_levi φ hφ l J A (hJ A) g)
+
+/-- The ambient point underlying the represented Levi point is induced by the quotient
+coordinate map. -/
+@[simp]
+theorem coe_leviClosedSubgroupPointsIso_hom_app_apply (φ : H ⟶ K)
+    (hφ : Function.Surjective φ.hom) (l : K →ₐc[R] LaurentPolynomial R) (J : HopfIdeal R H)
+    (hJ : ∀ (A : CommAlgCat.{w} R) (g : HopfAlgebra.points (R := R) (H := H) A),
+      g ∈ CommHopfAlgCat.quotientPointsSubgroup H J A ↔ g ∈ levi A (l.comp φ.hom))
+    (A : CommAlgCat.{w} R)
+    (f : HopfAlgebra.points (R := R) (H := CommHopfAlgCat.quotient K (J.map φ.hom)) A) :
+    (((eqToHom (leviFunctor_obj l A))
+      ((leviClosedSubgroupPointsIso φ hφ l J hJ).hom.app A f) : levi A l) :
+        HopfAlgebra.points (R := R) (H := K) A) =
+      CommHopfAlgCat.quotientPointsHom K (J.map φ.hom) A f := by
+  unfold leviClosedSubgroupPointsIso
+  convert CommHopfAlgCat.coe_quotientPointsSubgroupRepresentingIso_hom_app_apply
+    K (J.map φ.hom) (fun B ↦ levi B l)
+    (fun B g ↦ mem_quotientPointsSubgroup_map_iff_mem_levi φ hφ l J B (hJ B) g) A f using 1
+  rfl
+
+/-- Applying the quotient inclusion to the inverse representing isomorphism recovers the
+dynamic-Levi point. -/
+@[simp]
+theorem quotientPointsHom_leviClosedSubgroupPointsIso_inv_app_apply (φ : H ⟶ K)
+    (hφ : Function.Surjective φ.hom) (l : K →ₐc[R] LaurentPolynomial R) (J : HopfIdeal R H)
+    (hJ : ∀ (A : CommAlgCat.{w} R) (g : HopfAlgebra.points (R := R) (H := H) A),
+      g ∈ CommHopfAlgCat.quotientPointsSubgroup H J A ↔ g ∈ levi A (l.comp φ.hom))
+    (A : CommAlgCat.{w} R) (g : levi A l) :
+    CommHopfAlgCat.quotientPointsHom K (J.map φ.hom) A
+      ((leviClosedSubgroupPointsIso φ hφ l J hJ).inv.app A g) = g.1 := by
+  unfold leviClosedSubgroupPointsIso
+  convert CommHopfAlgCat.quotientPointsHom_quotientPointsSubgroupRepresentingIso_inv_app_apply
+    K (J.map φ.hom) (fun B ↦ levi B l)
+    (fun B g ↦ mem_quotientPointsSubgroup_map_iff_mem_levi φ hφ l J B (hJ B) g) A g using 1
 
 end TauCeti.Cocharacter
