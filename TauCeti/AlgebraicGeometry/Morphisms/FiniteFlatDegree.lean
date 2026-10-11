@@ -9,12 +9,11 @@ public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 public import TauCeti.RingTheory.Flat.GenericRank
 
 /-!
-# Rank and function field degree for finite flat affine morphisms
+# Rank and fraction-ring dimension for finite flat affine morphisms
 
-For a finite flat morphism between affine integral schemes, the rank at every point of the
-target equals the degree of the extension of fraction fields. The fraction fields may be
-realized by any compatible pair of fraction rings; this is useful when the field extension
-is expressed through the function fields of projective curves and affine charts.
+For a finite flat affine morphism with integral target, the rank at every target point equals
+the dimension after passing to compatible fraction rings. When the source is also integral,
+these fraction rings are fields, and the dimension is the function-field extension degree.
 
 The local rank is Mathlib's `Scheme.Hom.finrank`. Its affine formula reduces the result to
 the generic-rank calculation for finite flat modules and the invariance of dimension under
@@ -33,9 +32,10 @@ universe u v w
 
 namespace TauCeti.AlgebraicGeometry
 
-/-- The rank of a finite flat morphism of integral affine schemes is the degree of the induced
-extension of fraction fields. The algebra structures on `K` and `L` record the compatibility
-of this extension with the map of coordinate rings. -/
+/-- The rank of a finite flat affine morphism with integral target is the dimension after
+passing to fraction rings. If `S` is a domain, `K` and `L` are fields and this is the degree
+of the induced function-field extension. The algebra structures record compatibility with the
+map of coordinate rings. -/
 theorem finrank_SpecMap_eq_finrank_fractionRing
     {R S : Type u} {K : Type v} {L : Type w}
     [CommRing R] [IsDomain R] [CommRing S]
