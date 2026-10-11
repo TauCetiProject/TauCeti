@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.FarguesFontaine.Window
 public import TauCeti.RingTheory.WittVector.GaussValuation
-public import Mathlib.Analysis.SpecialFunctions.Log.Basic
+public import TauCeti.Analysis.SpecialFunctions.Log.PowerComparison
 
 /-!
 # Gauss points of `𝒴 = D(p) ∩ D([ϖ])`
@@ -131,26 +131,6 @@ theorem isRadiusUpperBound_gaussPoint_iff (hv : v.Integers O) (hρ : ρ < 1) (ϖ
   rw [isRadiusUpperBound_iff_of_eq_div q.den_ne_zero (NNRat.num_div_den q).symm]
   simp
 
-private theorem pow_le_pow_iff_log_mul {x y : ℝ} (hx : 0 < x) (hy : 0 < y) (a b : ℕ) :
-    x ^ b ≤ y ^ a ↔ (b : ℝ) * Real.log x ≤ (a : ℝ) * Real.log y := by
-  rw [← Real.log_le_log_iff (pow_pos hx _) (pow_pos hy _), Real.log_pow, Real.log_pow]
-
-private theorem pow_le_pow_iff_log_ratio {x y : ℝ} (hx : 0 < x) (hy : 0 < y)
-    (hy1 : y < 1) (a b : ℕ) (hb : 0 < b) :
-    x ^ b ≤ y ^ a ↔ (a : ℝ) / b ≤ Real.log x / Real.log y := by
-  rw [pow_le_pow_iff_log_mul hx hy]
-  rw [le_div_iff_of_neg (Real.log_neg hy hy1), div_mul_eq_mul_div,
-    le_div_iff₀ (Nat.cast_pos.mpr hb)]
-  simp [mul_comm]
-
-private theorem pow_ge_pow_iff_log_ratio {x y : ℝ} (hx : 0 < x) (hy : 0 < y)
-    (hy1 : y < 1) (a b : ℕ) (hb : 0 < b) :
-    y ^ a ≤ x ^ b ↔ Real.log x / Real.log y ≤ (a : ℝ) / b := by
-  rw [pow_le_pow_iff_log_mul hy hx]
-  rw [le_div_iff₀ (Nat.cast_pos.mpr hb), div_mul_eq_mul_div,
-    div_le_iff_of_neg (Real.log_neg hy hy1)]
-  simp [mul_comm]
-
 /-- **The lower radius bound on a Gauss point is a real ratio inequality.** When the coefficient
 norm of `ϖ` is positive and the Gauss radius lies in `(0, 1)`, the order-theoretic condition
 `q ≤ κ(η_ρ)` is equivalent to `q.num / q.den ≤ log(v(ϖ)) / log(ρ)`. This is the real-valued
@@ -163,7 +143,7 @@ theorem isRadiusLowerBound_gaussPoint_iff_log (hv : v.Integers O) (hρ₀ : 0 < 
   rw [isRadiusLowerBound_gaussPoint_iff hv hρ ϖ q]
   rw [← NNReal.coe_le_coe]
   push_cast
-  exact pow_le_pow_iff_log_ratio (by exact_mod_cast hϖ₀) (by exact_mod_cast hρ₀)
+  exact Real.pow_le_pow_iff_log_ratio (by exact_mod_cast hϖ₀) (by exact_mod_cast hρ₀)
     (by exact_mod_cast hρ) q.num q.den q.den_pos
 
 /-- **The upper radius bound on a Gauss point is a real ratio inequality.** Under the same
@@ -177,7 +157,7 @@ theorem isRadiusUpperBound_gaussPoint_iff_log (hv : v.Integers O) (hρ₀ : 0 < 
   rw [isRadiusUpperBound_gaussPoint_iff hv hρ ϖ q]
   rw [← NNReal.coe_le_coe]
   push_cast
-  exact pow_ge_pow_iff_log_ratio (by exact_mod_cast hϖ₀) (by exact_mod_cast hρ₀)
+  exact Real.pow_ge_pow_iff_log_ratio (by exact_mod_cast hϖ₀) (by exact_mod_cast hρ₀)
     (by exact_mod_cast hρ) q.num q.den q.den_pos
 
 end TauCeti.FarguesFontaine
