@@ -19,6 +19,10 @@ This transfers naturality of simplicial vertex classes to singular homology, giv
 of the basepoint section of the augmentation in `TauCeti.singularHomology₀Section_naturality`.
 Along an inducing map, a singular simplex of the target is induced from the source exactly when
 its image lies in the range (`Topology.IsInducing.mem_range_toSSet_map_app_iff`).
+A morphism `Δ[m] ⟶ Sing X` is determined by its underlying continuous map
+(`TauCeti.TopCat.hom_ext_stdSimplex`), its faces are its restrictions to the facets
+(`TauCeti.TopCat.toSSetObjEquiv_yonedaEquiv_δ_comp_apply`), and the constant morphism at a point
+is the constant map (`TauCeti.TopCat.toSSetObjEquiv_yonedaEquiv_const_apply`).
 -/
 
 public section
@@ -82,6 +86,31 @@ lemma toSSetObjEquiv_symm_comp_affineMapMk_δ {X : TopCat.{u}} {m n : ℕ}
   simp only [ConvexSpace.AffineMap.coe_comp, Function.comp_apply,
     StdSimplex.coe_affineMap] at h
   simp [h]
+
+/-- A morphism from a standard simplex to the singular simplicial set of a space is determined by
+the continuous map underlying the corresponding singular simplex. -/
+lemma hom_ext_stdSimplex {X : TopCat.{u}} {m : ℕ} {f g : Δ[m] ⟶ TopCat.toSSet.obj X}
+    (h : ∀ z, X.toSSetObjEquiv _ (SSet.yonedaEquiv f) z =
+      X.toSSetObjEquiv _ (SSet.yonedaEquiv g) z) : f = g :=
+  SSet.yonedaEquiv.injective ((X.toSSetObjEquiv _).injective (ContinuousMap.ext h))
+
+/-- The continuous map underlying the face `δ i ≫ g` of a morphism `g : Δ[m + 1] ⟶ Sing X` is the
+restriction of the continuous map underlying `g` to the facet opposite `i`. -/
+@[simp]
+lemma toSSetObjEquiv_yonedaEquiv_δ_comp_apply {X : TopCat.{u}} {m : ℕ}
+    (g : Δ[m + 1] ⟶ TopCat.toSSet.obj X) (i : Fin (m + 2)) (z : StdSimplex ℝ (Fin (m + 1))) :
+    X.toSSetObjEquiv _ (SSet.yonedaEquiv (SSet.stdSimplex.δ i ≫ g)) z =
+      X.toSSetObjEquiv _ (SSet.yonedaEquiv g) (z.map i.succAbove) := by
+  rw [SSet.stdSimplex.yonedaEquiv_δ_comp, TopCat.toSSetObjEquiv_δ_apply]
+
+/-- The constant morphism `Δ[m] ⟶ Sing X` at the singular vertex of a point `x` is the constant
+map to `x`. -/
+@[simp]
+lemma toSSetObjEquiv_yonedaEquiv_const_apply {X : TopCat.{u}} {m : ℕ} (x : X)
+    (z : StdSimplex ℝ (Fin (m + 1))) :
+    X.toSSetObjEquiv _ (SSet.yonedaEquiv
+      (SSet.const (TopCat.toSSetObj₀Equiv.symm x) : Δ[m] ⟶ TopCat.toSSet.obj X)) z = x :=
+  (rfl)
 
 end TauCeti.TopCat
 

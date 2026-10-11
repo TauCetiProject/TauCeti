@@ -88,7 +88,8 @@ theorem permK0_quotient_alternating_fin_three_eq_two_nsmul_one :
 
 /-- Inducing the trivial line from `A₃` in characteristic two gives twice the trivial
 class of `S₃`. -/
-@[simp]
+-- Compute this induction before the general quotient permutation formula.
+@[simp 1100]
 theorem indK0_one_alternating_fin_three_eq_two_nsmul_one :
     indK0 k (alternatingGroup (Fin 3)) 1 =
       2 • (1 : ExactK0 (finiteModulesExactStructure k[Equiv.Perm (Fin 3)])) := by

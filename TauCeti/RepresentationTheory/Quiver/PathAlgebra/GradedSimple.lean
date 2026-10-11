@@ -220,6 +220,19 @@ abbrev gradedArrowSum : GradedModuleCat.{max u v w} (integerGrade k Q) :=
 
 variable [Finite ((j : Q) × (i ⟶ j))]
 
+/-- The direct sum of the shifted vertex projectives indexed by arrows out of a vertex
+is finitely generated as a graded module. -/
+theorem gradedFiniteModules_gradedArrowSum :
+    gradedFiniteModules (integerGrade k Q) (gradedArrowSum k Q i) := by
+  let _ := integerGradedAlgebra k Q
+  let _ : Fintype ((j : Q) × (i ⟶ j)) := Fintype.ofFinite _
+  let _ : ∀ a : (j : Q) × (i ⟶ j),
+      Module.Finite (pathAlgebra k Q) ((gradedVertexProjective k Q a.1).shiftObj 1) :=
+    fun a => (gradedFiniteProjectiveModules_iff.mp
+      (gradedFiniteProjectiveModules_shiftObj
+        (gradedFiniteProjectiveModules_gradedVertexProjective k Q a.1) 1)).1
+  exact gradedFiniteModules_iff.mpr inferInstance
+
 /-- **The kernel of `kQ eᵢ ↠ Sᵢ` as a direct sum**: the graded map
 `⨁_{a : i ⟶ j} (kQ eⱼ){1} ⟶ kQ eᵢ` whose component at `a` is the morphism
 `TauCeti.PathAlgebra.gradedVertexProjectiveArrowHom` of the arrow `a`. -/
