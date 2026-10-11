@@ -198,24 +198,24 @@ theorem image_cycleData_three :
         ({3}, {3}, {3})} := by
   decide +kernel
 
+private theorem image_unorderedCycleData {n : ℕ} :
+    (Finset.univ : Finset (ConnectedTriple n)).image (fun t => t.1.unorderedCycleData) =
+      ((Finset.univ : Finset (ConnectedTriple n)).image (fun t => t.1.cycleData)).image
+        (fun d => ({d.1, d.2.1, d.2.2} : Multiset (Multiset ℕ))) := by
+  simp only [Finset.image_image, Function.comp_def, ← unorderedCycleData_def]
+
 /-- The unique unordered cycle datum in degree one. -/
 theorem image_unorderedCycleData_one :
     (Finset.univ : Finset (ConnectedTriple 1)).image (fun t => t.1.unorderedCycleData) =
       {{({1} : Multiset ℕ), {1}, {1}}} := by
-  have h := congrArg (Finset.image (fun d : Multiset ℕ × Multiset ℕ × Multiset ℕ =>
-    ({d.1, d.2.1, d.2.2} : Multiset (Multiset ℕ)))) image_cycleData_one
-  simpa only [Finset.image_image, Function.comp_def, ← unorderedCycleData_def,
-    Finset.image_singleton] using h
+  rw [image_unorderedCycleData, image_cycleData_one]
+  rfl
 
 /-- The three ordered degree-two classes form a single branch-point orbit. -/
 theorem image_unorderedCycleData_two :
     (Finset.univ : Finset (ConnectedTriple 2)).image (fun t => t.1.unorderedCycleData) =
       {{({1, 1} : Multiset ℕ), {2}, {2}}} := by
-  have h := congrArg (Finset.image (fun d : Multiset ℕ × Multiset ℕ × Multiset ℕ =>
-    ({d.1, d.2.1, d.2.2} : Multiset (Multiset ℕ)))) image_cycleData_two
-  rw [Finset.image_image] at h
-  simp only [Function.comp_def, ← unorderedCycleData_def] at h
-  rw [h]
+  rw [image_unorderedCycleData, image_cycleData_two]
   decide +kernel
 
 /-- The complete degree-three branch-point orbit table, expressed by unordered full cycle
@@ -223,11 +223,7 @@ partitions. Repeated partitions remain repeated in each datum. -/
 theorem image_unorderedCycleData_three :
     (Finset.univ : Finset (ConnectedTriple 3)).image (fun t => t.1.unorderedCycleData) =
       {{({1, 1, 1} : Multiset ℕ), {3}, {3}}, {{2, 1}, {2, 1}, {3}}, {{3}, {3}, {3}}} := by
-  have h := congrArg (Finset.image (fun d : Multiset ℕ × Multiset ℕ × Multiset ℕ =>
-    ({d.1, d.2.1, d.2.2} : Multiset (Multiset ℕ)))) image_cycleData_three
-  rw [Finset.image_image] at h
-  simp only [Function.comp_def, ← unorderedCycleData_def] at h
-  rw [h]
+  rw [image_unorderedCycleData, image_cycleData_three]
   decide +kernel
 
 /-- The complete degree-four branch-point orbit table: eight unordered full cycle data
@@ -237,11 +233,7 @@ theorem image_unorderedCycleData_four :
       {{({1, 1, 1, 1} : Multiset ℕ), {4}, {4}}, {{2, 1, 1}, {2, 2}, {4}},
         {{2, 1, 1}, {3, 1}, {4}}, {{2, 2}, {2, 2}, {2, 2}}, {{2, 2}, {3, 1}, {3, 1}},
         {{2, 2}, {4}, {4}}, {{3, 1}, {3, 1}, {3, 1}}, {{3, 1}, {4}, {4}}} := by
-  have h := congrArg (Finset.image (fun d : Multiset ℕ × Multiset ℕ × Multiset ℕ =>
-    ({d.1, d.2.1, d.2.2} : Multiset (Multiset ℕ)))) image_cycleData_four
-  rw [Finset.image_image] at h
-  simp only [Function.comp_def, ← unorderedCycleData_def] at h
-  rw [h]
+  rw [image_unorderedCycleData, image_cycleData_four]
   decide +kernel
 
 /-- A connected degree-four triple has Euler characteristic zero precisely for the six cycle

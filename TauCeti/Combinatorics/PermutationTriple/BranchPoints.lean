@@ -10,7 +10,6 @@ public import TauCeti.Combinatorics.PermutationTriple.GeometryType
 public import TauCeti.Combinatorics.PermutationTriple.IsoClass
 public import Mathlib.Logic.Equiv.Fin.Rotate
 import TauCeti.GroupTheory.Perm.FinThree.Basic
-import TauCeti.Data.Sym.Basic
 import Mathlib.Tactic.FinCases
 
 /-!
@@ -571,13 +570,14 @@ theorem isConj_component_reindexBranchPoints (ρ : Perm (Fin 3)) (i : Fin 3) :
 @[simp]
 theorem unorderedCycleData_reindexBranchPoints (ρ : Perm (Fin 3)) :
     (t.reindexBranchPoints ρ).unorderedCycleData = t.unorderedCycleData := by
-  rcases Equiv.Perm.fin_three_cases ρ with rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp only [unorderedCycleData_def, reindexBranchPoints_one,
-      reindexBranchPoints_swap_zero_one, reindexBranchPoints_swap_one_two,
-      reindexBranchPoints_swap_zero_two, reindexBranchPoints_finRotate,
-      reindexBranchPoints_finRotate_inv, cycleData_swap01, cycleData_swap1Inf,
-      cycleData_swap0Inf, cycleData_rot, cycleData_rotInv] <;>
-    dsimp <;> simp only [← Multiset.singleton_add] <;> ac_rfl
+  rw [unorderedCycleData_eq_coe_ofFn, unorderedCycleData_eq_coe_ofFn]
+  have hc : (fun i => ((t.reindexBranchPoints ρ).component i).partition.parts) =
+      (fun i => (t.component i).partition.parts) ∘ ρ := by
+    funext i
+    dsimp only [Function.comp_apply]
+    rw [Equiv.Perm.partition_eq_of_isConj.mp
+      (t.isConj_component_reindexBranchPoints ρ i)]
+  rw [hc, Sym.ofFn_comp_perm]
 
 /-- Equality of unordered cycle data means equality of ordered cycle data after some
 branch-point permutation. This statement does not require connectedness or a degree bound. -/
@@ -590,8 +590,7 @@ theorem unorderedCycleData_eq_iff_exists_reindexBranchPoints (t' : PermutationTr
     have hs : Sym.ofFn (fun i => (t.component i).partition.parts) =
         Sym.ofFn (fun i => (t'.component i).partition.parts) := by
       apply _root_.Sym.coe_injective
-      simpa [-Multiset.coe_eq_coe, ← Multiset.cons_coe, List.ofFn_succ,
-        unorderedCycleData_def] using h
+      simpa only [← unorderedCycleData_eq_coe_ofFn] using h
     obtain ⟨ρ, hρ⟩ := Sym.ofFn_eq_ofFn_iff.mp hs
     have hp (i : Fin 3) : (t.component (ρ i)).partition.parts =
         (t'.component i).partition.parts := congrFun hρ i

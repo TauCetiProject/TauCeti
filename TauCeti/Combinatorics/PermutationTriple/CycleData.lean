@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.PermutationTriple.Basic
+public import TauCeti.Data.Sym.Basic
 public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
 public import TauCeti.GroupTheory.Perm.ComputedCycleType
 
@@ -73,6 +74,18 @@ def unorderedCycleData (t : PermutationTriple n) : Multiset (Multiset ℕ) :=
 /-- Read the unordered cycle data from the ordered cycle partitions. -/
 theorem unorderedCycleData_def (t : PermutationTriple n) :
     t.unorderedCycleData = {t.cycleData.1, t.cycleData.2.1, t.cycleData.2.2} := (rfl)
+
+/-- The unordered full cycle partitions are the symmetric-power image of the component
+partitions, viewed as a multiset. -/
+theorem unorderedCycleData_eq_coe_ofFn (t : PermutationTriple n) :
+    t.unorderedCycleData =
+      (Sym.ofFn (fun i => (t.component i).partition.parts) : Multiset (Multiset ℕ)) := by
+  simp only [Sym.coe_ofFn, List.ofFn_succ, List.ofFn_zero]
+  rw [show Fin.succ (0 : Fin 2) = (1 : Fin 3) by decide,
+    show Fin.succ (Fin.succ (0 : Fin 1)) = (2 : Fin 3) by decide,
+    component_zero, component_one, component_two]
+  rw [unorderedCycleData_def, cycleData_σ0, cycleData_σ1, cycleData_σinf]
+  rfl
 
 /-- The ordered numbers of cycles of the three components, with fixed points included. -/
 noncomputable def cycleCounts (t : PermutationTriple n) : ℕ × ℕ × ℕ :=
@@ -147,6 +160,12 @@ theorem cycleData_eq_of_equivalent {t t' : PermutationTriple n} (h : Equivalent 
     cycleData t = cycleData t' := by
   obtain ⟨τ, rfl⟩ := equivalent_iff_exists_smul_eq.mp h
   exact (cycleData_smul τ t).symm
+
+/-- Isomorphic permutation triples have the same unordered full cycle partitions. -/
+theorem unorderedCycleData_eq_of_equivalent {t t' : PermutationTriple n}
+    (h : Equivalent t t') : t.unorderedCycleData = t'.unorderedCycleData := by
+  obtain ⟨τ, rfl⟩ := equivalent_iff_exists_smul_eq.mp h
+  exact (unorderedCycleData_smul τ t).symm
 
 /-- Isomorphic permutation triples have the same ordered numbers of cycles. -/
 theorem cycleCounts_eq_of_equivalent {t t' : PermutationTriple n} (h : Equivalent t t') :
