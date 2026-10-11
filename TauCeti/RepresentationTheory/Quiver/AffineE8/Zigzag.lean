@@ -23,8 +23,6 @@ namespace TauCeti
 /-- The arm-coordinate labels on the affine `E₈` quiver, in the numbering of
 `zigzagAffineE8Graph`: the centre is `0`, and the short, medium, and long arms are numbered
 outwards. -/
--- The exported evaluation lemmas below require this body to be exposed for reduction.
-@[expose]
 def affineE8VertexEquiv : Quiver.AffineE8 ≃ Fin 9 where
   toFun
     | .center => 0
@@ -51,75 +49,75 @@ def affineE8VertexEquiv : Quiver.AffineE8 ≃ Fin 9 where
 
 /-- The centre has affine `E₈` graph label `0`. -/
 @[simp] theorem affineE8VertexEquiv_center :
-    affineE8VertexEquiv Quiver.AffineE8.center = 0 := rfl
+    affineE8VertexEquiv Quiver.AffineE8.center = 0 := (rfl)
 
 /-- The short-arm vertex has affine `E₈` graph label `1`. -/
 @[simp] theorem affineE8VertexEquiv_short :
-    affineE8VertexEquiv Quiver.AffineE8.short = 1 := rfl
+    affineE8VertexEquiv Quiver.AffineE8.short = 1 := (rfl)
 
 /-- The outer medium-arm vertex has affine `E₈` graph label `2`. -/
 @[simp] theorem affineE8VertexEquiv_medium4 :
-    affineE8VertexEquiv Quiver.AffineE8.medium4 = 2 := rfl
+    affineE8VertexEquiv Quiver.AffineE8.medium4 = 2 := (rfl)
 
 /-- The inner medium-arm vertex has affine `E₈` graph label `3`. -/
 @[simp] theorem affineE8VertexEquiv_medium2 :
-    affineE8VertexEquiv Quiver.AffineE8.medium2 = 3 := rfl
+    affineE8VertexEquiv Quiver.AffineE8.medium2 = 3 := (rfl)
 
 /-- The outer long-arm vertex has affine `E₈` graph label `4`. -/
 @[simp] theorem affineE8VertexEquiv_long5 :
-    affineE8VertexEquiv Quiver.AffineE8.long5 = 4 := rfl
+    affineE8VertexEquiv Quiver.AffineE8.long5 = 4 := (rfl)
 
 /-- The next long-arm vertex has affine `E₈` graph label `5`. -/
 @[simp] theorem affineE8VertexEquiv_long4 :
-    affineE8VertexEquiv Quiver.AffineE8.long4 = 5 := rfl
+    affineE8VertexEquiv Quiver.AffineE8.long4 = 5 := (rfl)
 
 /-- The middle long-arm vertex has affine `E₈` graph label `6`. -/
 @[simp] theorem affineE8VertexEquiv_long3 :
-    affineE8VertexEquiv Quiver.AffineE8.long3 = 6 := rfl
+    affineE8VertexEquiv Quiver.AffineE8.long3 = 6 := (rfl)
 
 /-- The next long-arm vertex has affine `E₈` graph label `7`. -/
 @[simp] theorem affineE8VertexEquiv_long2 :
-    affineE8VertexEquiv Quiver.AffineE8.long2 = 7 := rfl
+    affineE8VertexEquiv Quiver.AffineE8.long2 = 7 := (rfl)
 
 /-- The endpoint of the long arm has affine `E₈` graph label `8`. -/
 @[simp] theorem affineE8VertexEquiv_long1 :
-    affineE8VertexEquiv Quiver.AffineE8.long1 = 8 := rfl
+    affineE8VertexEquiv Quiver.AffineE8.long1 = 8 := (rfl)
 
 /-- Graph label `0` is sent back to the centre. -/
 @[simp] theorem affineE8VertexEquiv_symm_zero :
-    affineE8VertexEquiv.symm 0 = Quiver.AffineE8.center := rfl
+    affineE8VertexEquiv.symm 0 = Quiver.AffineE8.center := (rfl)
 
 /-- Graph label `1` is sent back to the short-arm vertex. -/
 @[simp] theorem affineE8VertexEquiv_symm_one :
-    affineE8VertexEquiv.symm 1 = Quiver.AffineE8.short := rfl
+    affineE8VertexEquiv.symm 1 = Quiver.AffineE8.short := (rfl)
 
 /-- Graph label `2` is sent back to the outer medium-arm vertex. -/
 @[simp] theorem affineE8VertexEquiv_symm_two :
-    affineE8VertexEquiv.symm 2 = Quiver.AffineE8.medium4 := rfl
+    affineE8VertexEquiv.symm 2 = Quiver.AffineE8.medium4 := (rfl)
 
 /-- Graph label `3` is sent back to the inner medium-arm vertex. -/
 @[simp] theorem affineE8VertexEquiv_symm_three :
-    affineE8VertexEquiv.symm 3 = Quiver.AffineE8.medium2 := rfl
+    affineE8VertexEquiv.symm 3 = Quiver.AffineE8.medium2 := (rfl)
 
 /-- Graph label `4` is sent back to the outer long-arm vertex. -/
 @[simp] theorem affineE8VertexEquiv_symm_four :
-    affineE8VertexEquiv.symm 4 = Quiver.AffineE8.long5 := rfl
+    affineE8VertexEquiv.symm 4 = Quiver.AffineE8.long5 := (rfl)
 
 /-- Graph label `5` is sent back to the next long-arm vertex. -/
 @[simp] theorem affineE8VertexEquiv_symm_five :
-    affineE8VertexEquiv.symm 5 = Quiver.AffineE8.long4 := rfl
+    affineE8VertexEquiv.symm 5 = Quiver.AffineE8.long4 := (rfl)
 
 /-- Graph label `6` is sent back to the middle long-arm vertex. -/
 @[simp] theorem affineE8VertexEquiv_symm_six :
-    affineE8VertexEquiv.symm 6 = Quiver.AffineE8.long3 := rfl
+    affineE8VertexEquiv.symm 6 = Quiver.AffineE8.long3 := (rfl)
 
 /-- Graph label `7` is sent back to the next long-arm vertex. -/
 @[simp] theorem affineE8VertexEquiv_symm_seven :
-    affineE8VertexEquiv.symm 7 = Quiver.AffineE8.long2 := rfl
+    affineE8VertexEquiv.symm 7 = Quiver.AffineE8.long2 := (rfl)
 
 /-- Graph label `8` is sent back to the endpoint of the long arm. -/
 @[simp] theorem affineE8VertexEquiv_symm_eight :
-    affineE8VertexEquiv.symm 8 = Quiver.AffineE8.long1 := rfl
+    affineE8VertexEquiv.symm 8 = Quiver.AffineE8.long1 := (rfl)
 
 /-- The explicit relabelling identifies the underlying graph of the inward affine `E₈` quiver
 with the affine `E₈` graph used for its zigzag algebra. -/
