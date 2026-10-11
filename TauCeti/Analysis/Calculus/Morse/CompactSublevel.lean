@@ -41,11 +41,11 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] {f : E → ℝ} {K : ℝ≥0}
 
-/-- Every forward orbit of a globally Morse function with compact sublevels converges to a
-nondegenerate critical point. -/
+/-- Every forward orbit of a globally Morse function converges to a nondegenerate critical
+point when the sublevel at its initial value is compact. -/
 theorem exists_stableSet_of_isCompact_sublevel (hfs : ContDiff ℝ 2 f)
     (hf : LipschitzWith K (∇ f)) (hM : HasNondegenerateCriticalPointsOn f univ)
-    (hcompact : ∀ c : ℝ, IsCompact {z | f z ≤ c}) (y : E) :
+    (y : E) (hcompact : IsCompact {z | f z ≤ f y}) :
     ∃ q, IsNondegenerateCriticalPoint f q ∧
       y ∈ Flow.stableSet (negativeGradientFlow f hf) q := by
   let φ := negativeGradientFlow f hf
@@ -58,7 +58,7 @@ theorem exists_stableSet_of_isCompact_sublevel (hfs : ContDiff ℝ 2 f)
     ((isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve y).isIntegralCurveOn _
   obtain ⟨q, -, hq, hlim⟩ :=
     IsIntegralCurveOn.exists_tendsto_atTop_of_hasNondegenerateCriticalPointsOn
-      hγ (hcompact (f y)) hmaps
+      hγ hcompact hmaps
       (fun _ _ ↦ hfs.differentiable (by norm_num) _)
       (hfs.continuous_fderiv (by norm_num)).continuousOn
       (hM.mono (subset_univ _))
@@ -68,11 +68,11 @@ theorem exists_stableSet_of_isCompact_sublevel (hfs : ContDiff ℝ 2 f)
     Flow.mem_stableSet.mpr hlim⟩
 
 /-- Every backward orbit starting in the closure of an unstable manifold converges to some
-nondegenerate critical point, provided all sublevels are compact. -/
+nondegenerate critical point when the sublevel at the originating point is compact. -/
 theorem exists_unstableSet_of_mem_closure_unstableSet_of_isCompact_sublevel
     (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
     (hM : HasNondegenerateCriticalPointsOn f univ)
-    (hcompact : ∀ c : ℝ, IsCompact {z | f z ≤ c}) {p y : E}
+    {p y : E} (hcompact : IsCompact {z | f z ≤ f p})
     (hy : y ∈ closure (Flow.unstableSet (negativeGradientFlow f hf) p)) :
     ∃ a, IsNondegenerateCriticalPoint f a ∧
       y ∈ Flow.unstableSet (negativeGradientFlow f hf) a := by
@@ -92,7 +92,7 @@ theorem exists_unstableSet_of_mem_closure_unstableSet_of_isCompact_sublevel
     ((isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve y).isIntegralCurveOn _
   obtain ⟨a, -, ha, hlim⟩ :=
     IsIntegralCurveOn.exists_tendsto_atBot_of_hasNondegenerateCriticalPointsOn
-      hγ (hcompact (f p)) hmaps
+      hγ hcompact hmaps
       (fun _ _ ↦ hfs.differentiable (by norm_num) _)
       (hfs.continuous_fderiv (by norm_num)).continuousOn
       (hM.mono (subset_univ _))
@@ -121,9 +121,9 @@ theorem finite_unstableSet_inter_stableSet_inter_level_of_isCompact_sublevel
     (Flow.unstableSet (negativeGradientFlow f hf) p ∩
       Flow.stableSet (negativeGradientFlow f hf) q ∩ {z | f z = c}).Finite := by
   apply hp.finite_unstableSet_inter_stableSet_inter_level hq hfs hf hind hc
-    (fun {_} _ ↦ exists_stableSet_of_isCompact_sublevel hfs hf hM hcompact _)
+    (fun {_} _ ↦ exists_stableSet_of_isCompact_sublevel hfs hf hM _ (hcompact _))
     (fun {_} hy ↦ exists_unstableSet_of_mem_closure_unstableSet_of_isCompact_sublevel
-      hfs hf hM hcompact hy) htr (hcompact c)
+      hfs hf hM (hcompact _) hy) htr (hcompact c)
   intro z hz
   exact hz.2.le
 
