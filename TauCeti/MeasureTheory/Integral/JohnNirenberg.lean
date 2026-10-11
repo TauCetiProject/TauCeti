@@ -7,9 +7,10 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.Decomposition
-import Mathlib.MeasureTheory.Measure.Haar.Unique
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Analysis.Normed.Lp.PiLp
 import TauCeti.Analysis.Normed.Module.Ball
+import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # The John–Nirenberg inequality
@@ -589,29 +590,6 @@ open Metric WithLp
 variable {mu : Measure (EuclideanSpace ℝ ι)} {g : EuclideanSpace ℝ ι → E}
   {x₀ : EuclideanSpace ℝ ι} {r : ℝ}
 
-/-- The coordinate map pushes an additive Haar measure `μ` on `EuclideanSpace ℝ ι` forward to a
-positive multiple of Lebesgue measure on `ι → ℝ`. -/
-private theorem map_toLp_symm_eq_smul (mu : Measure (EuclideanSpace ℝ ι)) [mu.IsAddHaarMeasure] :
-    mu.map (MeasurableEquiv.toLp 2 (ι → ℝ)).symm =
-      ((Measure.addHaarScalarFactor mu volume : ℝ≥0) : ℝ≥0∞) • volume := by
-  conv_lhs => rw [Measure.isAddLeftInvariant_eq_smul mu volume]
-  rw [Measure.map_smul, (EuclideanSpace.volume_preserving_symm_measurableEquiv_toLp ι).map_eq]
-  · rfl
-  · exact (MeasurableEquiv.toLp 2 (ι → ℝ)).symm.measurable.aemeasurable
-
-/-- The coordinate map `EuclideanSpace ℝ ι → (ι → ℝ)` is `1`-Lipschitz for the sup norm. -/
-private theorem dist_ofLp_le (x x' : EuclideanSpace ℝ ι) : dist (ofLp x) (ofLp x') ≤ dist x x' := by
-  simpa using (PiLp.lipschitzWith_ofLp 2 (fun _ : ι => ℝ)).dist_le_mul x x'
-
-/-- The inverse of the coordinate map is `√n`-Lipschitz for the sup norm. -/
-private theorem dist_le_sqrt_mul_dist_ofLp (x x' : EuclideanSpace ℝ ι) :
-    dist x x' ≤ √(Fintype.card ι) * dist (ofLp x) (ofLp x') := by
-  have h := (PiLp.lipschitzWith_toLp 2 (fun _ : ι => ℝ)).dist_le_mul (ofLp x) (ofLp x')
-  simp only [toLp_ofLp, NNReal.coe_rpow, NNReal.coe_natCast] at h
-  convert h using 2
-  rw [Real.sqrt_eq_rpow]
-  norm_num
-
 /-- Mean oscillation at most `M` on the Euclidean balls inside `B(x₀, 2√n r)` gives mean
 oscillation at most `2 (2√n)ⁿ M` on the cubes inside the cube of radius `r` about `x₀`, read in
 coordinates. -/
@@ -637,22 +615,23 @@ private theorem setLAverage_enorm_sub_setAverage_closedBall_le_of_ball [Nonempty
   set Y : EuclideanSpace ℝ ι := toLp 2 y
   set B := ball Y (2 * s * ρ)
   have hpre : e ⁻¹' closedBall y ρ ⊆ B := fun x hx => by
-    have hx : dist (ofLp x) y ≤ ρ := hx
-    have h := dist_le_sqrt_mul_dist_ofLp x Y
+    rw [mem_preimage, MeasurableEquiv.coe_toLp_symm, mem_closedBall] at hx
+    have h := PiLp.dist_le_sqrt_card_mul_dist_ofLp x Y
     rw [ofLp_toLp] at h
     rw [mem_ball]
     nlinarith [mul_le_mul_of_nonneg_left hx hs.le]
   have hinner : ball Y ρ ⊆ e ⁻¹' closedBall y ρ := fun x hx => by
-    have h := dist_ofLp_le x Y
+    rw [mem_preimage, MeasurableEquiv.coe_toLp_symm, mem_closedBall]
+    have h := PiLp.dist_ofLp_le x Y
     rw [ofLp_toLp] at h
     exact h.trans (mem_ball.1 hx).le
   have hB : B ⊆ ball x₀ (2 * s * r) := by
     refine ball_subset_ball' ?_
-    have h := dist_le_sqrt_mul_dist_ofLp Y x₀
+    have h := PiLp.dist_le_sqrt_card_mul_dist_ofLp Y x₀
     rw [ofLp_toLp] at h
     nlinarith [mul_le_mul_of_nonneg_left hdist hs.le, dist_nonneg (x := y) (y := ofLp x₀)]
   -- Read the cube in Euclidean coordinates.
-  have hmap := map_toLp_symm_eq_smul (ι := ι) mu
+  have hmap := EuclideanSpace.map_symm_measurableEquiv_toLp_eq_smul mu
   have ha0 : ((Measure.addHaarScalarFactor mu volume : ℝ≥0) : ℝ≥0∞) ≠ 0 :=
     ENNReal.coe_ne_zero.2 (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure mu volume).ne'
   have havg : ⨍ z in closedBall y ρ, g (toLp 2 z) ∂volume = ⨍ z in e ⁻¹' closedBall y ρ, g z ∂mu :=
@@ -709,16 +688,18 @@ theorem exists_setLIntegral_exp_mul_norm_sub_ball_le [Nonempty ι] [CompleteSpac
   have hs : 0 < s := Real.sqrt_pos.2 (by exact_mod_cast Fintype.card_pos)
   set e := (MeasurableEquiv.toLp 2 (ι → ℝ)).symm
   set a : ℝ≥0∞ := ((Measure.addHaarScalarFactor mu volume : ℝ≥0) : ℝ≥0∞)
-  have hmap : mu.map e = a • volume := map_toLp_symm_eq_smul mu
+  have hmap : mu.map e = a • volume := EuclideanSpace.map_symm_measurableEquiv_toLp_eq_smul mu
   have ha0 : a ≠ 0 :=
     ENNReal.coe_ne_zero.2 (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure mu volume).ne'
   set Q := closedBall (ofLp x₀) r
   set F : (ι → ℝ) → E := fun z => g (toLp 2 z)
   -- The cube `Q` read in Euclidean coordinates lies between `B(x₀, r)` and `B(x₀, 2√n r)`.
   have hQsub : e ⁻¹' Q ⊆ closedBall x₀ (s * r) := fun x hx => by
-    have hx : dist (ofLp x) (ofLp x₀) ≤ r := hx
-    exact (dist_le_sqrt_mul_dist_ofLp x x₀).trans (mul_le_mul_of_nonneg_left hx hs.le)
-  have hballQ : ball x₀ r ⊆ e ⁻¹' Q := fun x hx => (dist_ofLp_le x x₀).trans (mem_ball.1 hx).le
+    rw [mem_preimage, MeasurableEquiv.coe_toLp_symm, mem_closedBall] at hx
+    exact (PiLp.dist_le_sqrt_card_mul_dist_ofLp x x₀).trans (mul_le_mul_of_nonneg_left hx hs.le)
+  have hballQ : ball x₀ r ⊆ e ⁻¹' Q := fun x hx => by
+    rw [mem_preimage, MeasurableEquiv.coe_toLp_symm, mem_closedBall]
+    exact (PiLp.dist_ofLp_le x x₀).trans (mem_ball.1 hx).le
   have hF : IntegrableOn F Q volume := by
     have h : IntegrableOn F Q (mu.map e) := (integrableOn_map_equiv e).2
       (hg.mono_set (hQsub.trans (closedBall_subset_ball (by nlinarith))))

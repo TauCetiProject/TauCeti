@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.MeasureTheory.Integral.Average
 import Mathlib.Analysis.Convex.Integral
 
@@ -36,6 +37,9 @@ such as an affine homothety of a finite-dimensional space with its Haar measure:
 equivalence `e` pushes `μ` forward to `a • ν` with `0 < a < ∞`, then the average of `f ∘ e` over
 `e ⁻¹' s` with respect to `μ` is the average of `f` over `s` with respect to `ν`.
 
+Exponential integrability of `|log v - c|` controls the averages of powers of a positive function
+`v`: if `∫_s exp (σ |log v - c|) ≤ K μ s`, then `⨍_s v^q ≤ e^{qc} K` for every `|q| ≤ σ`.
+
 ## Main results
 
 * `TauCeti.enorm_setAverage_le_setLAverage`: the extended norm of an average over a set is at most
@@ -55,6 +59,8 @@ equivalence `e` pushes `μ` forward to `a • ν` with `0 < a < ∞`, then the a
   `TauCeti.setLAverage_comp_preimage_of_map_eq_smul`,
   `TauCeti.setAverage_comp_preimage_of_map_eq_smul`: integrals and averages under a measurable
   equivalence that rescales the measure by a constant.
+* `TauCeti.setAverage_rpow_le_of_setLIntegral_exp_le`: averages of powers of a positive function
+  from exponential integrability of its logarithm.
 -/
 
 public section
@@ -249,5 +255,53 @@ theorem setAverage_comp_preimage_of_map_eq_smul (he : μ.map e = a • ν) (ha :
     smul_smul, mul_inv_rev, inv_mul_cancel_right₀ (ENNReal.toReal_ne_zero.2 ⟨ha, ha'⟩)]
 
 end ChangeOfVariables
+
+section Rpow
+
+variable {X : Type*} [MeasurableSpace X] {μ : Measure X} {s : Set X} {v : X → ℝ}
+
+/-- If `v > 0` and `exp (σ |log v - c|)` has integral at most `K μ s` over `s`, then for every
+exponent `|q| ≤ σ` the average of `v^q` over `s` is at most `e^{qc} K`, because
+`v^q = e^{qc} e^{q (log v - c)} ≤ e^{qc} exp (σ |log v - c|)`. -/
+theorem setAverage_rpow_le_of_setLIntegral_exp_le (hs : μ s ≠ ⊤)
+    (hv : ∀ᵐ x ∂μ.restrict s, 0 < v x) (hvm : AEMeasurable v (μ.restrict s)) {c K q σ : ℝ}
+    (hK : 0 ≤ K) (hq : |q| ≤ σ)
+    (hJ : ∫⁻ x in s, ENNReal.ofReal (Real.exp (σ * ‖Real.log (v x) - c‖)) ∂μ ≤
+      ENNReal.ofReal K * μ s) :
+    ⨍ x in s, v x ^ q ∂μ ≤ Real.exp (q * c) * K := by
+  have hI : ∫⁻ x in s, ENNReal.ofReal (v x ^ q) ∂μ ≤
+      ENNReal.ofReal (Real.exp (q * c) * K * μ.real s) := by
+    calc ∫⁻ x in s, ENNReal.ofReal (v x ^ q) ∂μ
+        ≤ ∫⁻ x in s, ENNReal.ofReal (Real.exp (q * c)) *
+            ENNReal.ofReal (Real.exp (σ * ‖Real.log (v x) - c‖)) ∂μ := by
+          refine lintegral_mono_ae (hv.mono fun x hx => ?_)
+          rw [← ENNReal.ofReal_mul (Real.exp_pos _).le, ← Real.exp_add, Real.rpow_def_of_pos hx]
+          refine ENNReal.ofReal_le_ofReal (Real.exp_le_exp.2 ?_)
+          have h : q * (Real.log (v x) - c) ≤ σ * ‖Real.log (v x) - c‖ := by
+            rw [Real.norm_eq_abs]
+            calc q * (Real.log (v x) - c) ≤ |q * (Real.log (v x) - c)| := le_abs_self _
+              _ = |q| * |Real.log (v x) - c| := abs_mul _ _
+              _ ≤ σ * |Real.log (v x) - c| := by gcongr
+          linarith
+      _ = ENNReal.ofReal (Real.exp (q * c)) *
+            ∫⁻ x in s, ENNReal.ofReal (Real.exp (σ * ‖Real.log (v x) - c‖)) ∂μ :=
+          lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
+      _ ≤ ENNReal.ofReal (Real.exp (q * c)) * (ENNReal.ofReal K * μ s) := by gcongr
+      _ = ENNReal.ofReal (Real.exp (q * c) * K * μ.real s) := by
+          rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_mul (Real.exp_pos _).le,
+            ofReal_measureReal hs, mul_assoc]
+  have hnn : 0 ≤ᵐ[μ.restrict s] fun x => v x ^ q := hv.mono fun x hx => Real.rpow_nonneg hx.le q
+  rw [setAverage_eq, smul_eq_mul,
+    integral_eq_lintegral_of_nonneg_ae hnn (hvm.pow_const q).aestronglyMeasurable]
+  rcases eq_or_ne (μ.real s) 0 with h0 | h0
+  · rw [h0, inv_zero, zero_mul]
+    positivity
+  calc (μ.real s)⁻¹ * (∫⁻ x in s, ENNReal.ofReal (v x ^ q) ∂μ).toReal
+      ≤ (μ.real s)⁻¹ * (Real.exp (q * c) * K * μ.real s) := by
+        gcongr
+        exact ENNReal.toReal_le_of_le_ofReal (by positivity) hI
+    _ = Real.exp (q * c) * K := by field_simp
+
+end Rpow
 
 end TauCeti

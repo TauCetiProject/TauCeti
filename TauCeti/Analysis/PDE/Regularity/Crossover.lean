@@ -62,48 +62,6 @@ namespace PDE
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
-/-- If `v > 0` and `exp (σ |log v - c|)` has integral at most `K |B|` over `B`, then for every
-exponent `|q| ≤ σ` the average of `v^q` over `B` is at most `e^{qc} K`, because
-`v^q = e^{qc} e^{q (log v - c)} ≤ e^{qc} exp (σ |log v - c|)`. -/
-private theorem setAverage_rpow_le_of_setLIntegral_exp_le {X : Type*} [MeasurableSpace X]
-    {mu : Measure X} {B : Set X} {v : X → ℝ} (hB : mu B ≠ ⊤) (hv : ∀ᵐ x ∂mu.restrict B, 0 < v x)
-    (hvm : AEMeasurable v (mu.restrict B)) {c K q σ : ℝ} (hK : 0 ≤ K) (hq : |q| ≤ σ)
-    (hJ : ∫⁻ x in B, ENNReal.ofReal (Real.exp (σ * ‖Real.log (v x) - c‖)) ∂mu ≤
-      ENNReal.ofReal K * mu B) :
-    ⨍ x in B, v x ^ q ∂mu ≤ Real.exp (q * c) * K := by
-  have hI : ∫⁻ x in B, ENNReal.ofReal (v x ^ q) ∂mu ≤
-      ENNReal.ofReal (Real.exp (q * c) * K * mu.real B) := by
-    calc ∫⁻ x in B, ENNReal.ofReal (v x ^ q) ∂mu
-        ≤ ∫⁻ x in B, ENNReal.ofReal (Real.exp (q * c)) *
-            ENNReal.ofReal (Real.exp (σ * ‖Real.log (v x) - c‖)) ∂mu := by
-          refine lintegral_mono_ae (hv.mono fun x hx => ?_)
-          rw [← ENNReal.ofReal_mul (Real.exp_pos _).le, ← Real.exp_add, Real.rpow_def_of_pos hx]
-          refine ENNReal.ofReal_le_ofReal (Real.exp_le_exp.2 ?_)
-          have h : q * (Real.log (v x) - c) ≤ σ * ‖Real.log (v x) - c‖ := by
-            rw [Real.norm_eq_abs]
-            calc q * (Real.log (v x) - c) ≤ |q * (Real.log (v x) - c)| := le_abs_self _
-              _ = |q| * |Real.log (v x) - c| := abs_mul _ _
-              _ ≤ σ * |Real.log (v x) - c| := by gcongr
-          linarith
-      _ = ENNReal.ofReal (Real.exp (q * c)) *
-            ∫⁻ x in B, ENNReal.ofReal (Real.exp (σ * ‖Real.log (v x) - c‖)) ∂mu :=
-          lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
-      _ ≤ ENNReal.ofReal (Real.exp (q * c)) * (ENNReal.ofReal K * mu B) := by gcongr
-      _ = ENNReal.ofReal (Real.exp (q * c) * K * mu.real B) := by
-          rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_mul (Real.exp_pos _).le,
-            ofReal_measureReal hB, mul_assoc]
-  have hnn : 0 ≤ᵐ[mu.restrict B] fun x => v x ^ q := hv.mono fun x hx => Real.rpow_nonneg hx.le q
-  rw [setAverage_eq, smul_eq_mul,
-    integral_eq_lintegral_of_nonneg_ae hnn (hvm.pow_const q).aestronglyMeasurable]
-  rcases eq_or_ne (mu.real B) 0 with h0 | h0
-  · rw [h0, inv_zero, zero_mul]
-    positivity
-  calc (mu.real B)⁻¹ * (∫⁻ x in B, ENNReal.ofReal (v x ^ q) ∂mu).toReal
-      ≤ (mu.real B)⁻¹ * (Real.exp (q * c) * K * mu.real B) := by
-        gcongr
-        exact ENNReal.toReal_le_of_le_ofReal (by positivity) hI
-    _ = Real.exp (q * c) * K := by field_simp
-
 /-- The exponent condition for the John–Nirenberg step: if `|p| ≤ log (3/2) / (D (C + 1)) · λ/Λ`,
 then `exp (|p| D C Λ/λ) ≤ 3/2`. -/
 private theorem exp_abs_mul_le_three_halves {D C lam Lam p : ℝ} (hD : 0 < D) (hC : 0 ≤ C)

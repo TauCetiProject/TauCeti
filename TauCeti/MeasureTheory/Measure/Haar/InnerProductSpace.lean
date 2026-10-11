@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+public import Mathlib.MeasureTheory.Measure.Haar.Unique
 import Mathlib.Analysis.InnerProductSpace.NormDet
 
 /-!
@@ -22,10 +23,18 @@ measure `b.addHaar` normalized by `b`.
 This converts integrals against a basis-normalized Haar measure, such as the coordinate measure
 in which a Riemannian volume density is expressed, into integrals against the volume measure.
 
+The coordinate map `EuclideanSpace ℝ ι → (ι → ℝ)` carries the volume measure to Lebesgue measure
+(`EuclideanSpace.volume_preserving_symm_measurableEquiv_toLp`), so it carries any additive Haar
+measure `μ` on `EuclideanSpace ℝ ι` to a positive multiple of Lebesgue measure, the multiple being
+the scalar factor of `μ` against the volume measure. Integrals and averages against `μ` therefore
+reduce to integrals and averages against Lebesgue measure on `ι → ℝ`.
+
 ## Main results
 
 * `TauCeti.volume_parallelepiped`: the parallelepiped spanned by `v` has volume `√(det G)`.
 * `Module.Basis.volume_eq_smul_addHaar`: the volume measure is `√(det G) • b.addHaar`.
+* `EuclideanSpace.map_symm_measurableEquiv_toLp_eq_smul`: the coordinate map pushes an additive
+  Haar measure on `EuclideanSpace ℝ ι` forward to a multiple of Lebesgue measure on `ι → ℝ`.
 
 ## References
 
@@ -71,3 +80,18 @@ theorem volume_eq_smul_addHaar (b : Basis ι ℝ E) :
   exact Measure.addHaarMeasure_unique volume b.parallelepiped
 
 end Module.Basis
+
+namespace EuclideanSpace
+
+omit [DecidableEq ι] in
+/-- The coordinate map pushes an additive Haar measure `μ` on `EuclideanSpace ℝ ι` forward to
+Lebesgue measure on `ι → ℝ` scaled by the factor `Measure.addHaarScalarFactor μ volume`. -/
+theorem map_symm_measurableEquiv_toLp_eq_smul (μ : Measure (EuclideanSpace ℝ ι))
+    [μ.IsAddHaarMeasure] :
+    μ.map (MeasurableEquiv.toLp 2 (ι → ℝ)).symm =
+      ((Measure.addHaarScalarFactor μ volume : NNReal) : ENNReal) • volume := by
+  conv_lhs => rw [Measure.isAddLeftInvariant_eq_smul μ volume]
+  rw [Measure.map_smul, (volume_preserving_symm_measurableEquiv_toLp ι).map_eq, ENNReal.smul_def]
+  exact (MeasurableEquiv.toLp 2 (ι → ℝ)).symm.measurable.aemeasurable
+
+end EuclideanSpace
