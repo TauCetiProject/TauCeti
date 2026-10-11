@@ -72,7 +72,7 @@ retaining repeated partitions and fixed points. -/
   {t.σ0.computedCycleType, t.σ1.computedCycleType, t.σinf.computedCycleType}
 
 /-- Read the unordered cycle data from the ordered cycle partitions. -/
-theorem unorderedCycleData_def (t : PermutationTriple n) :
+@[simp] theorem unorderedCycleData_def (t : PermutationTriple n) :
     t.unorderedCycleData = {t.cycleData.1, t.cycleData.2.1, t.cycleData.2.2} := by
   simp [unorderedCycleData, cycleData]
 
