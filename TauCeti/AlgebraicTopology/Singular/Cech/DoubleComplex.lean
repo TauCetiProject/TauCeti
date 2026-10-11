@@ -123,7 +123,7 @@ theorem openCoverSingularAugmentation_f_zero :
   rfl
 
 /-- A map of covered spaces induces a map of their Čech--singular bicomplexes. -/
-@[expose] def openCoverSingularBicomplexMap {Y : TopCat.{u}} {κ : Type u} (V : κ → Opens Y)
+def openCoverSingularBicomplexMap {Y : TopCat.{u}} {κ : Type u} (V : κ → Opens Y)
     (f : X ⟶ Y) (r : ι → κ) (hf : ∀ i, Set.MapsTo f (U i) (V (r i))) :
     openCoverSingularBicomplex U R ⟶ openCoverSingularBicomplex V R :=
   (alternatingFaceMapComplex (ChainComplex C ℕ)).map <|
