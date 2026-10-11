@@ -676,6 +676,7 @@ theorem cubicalChainModuleMap_lof (f : C(Y, Y'))
 omit [Monoid G] [TopologicalSpace G] [ContinuousMul G] [MulAction Gᵐᵒᵖ Y]
   [ContinuousSMul Gᵐᵒᵖ Y] in
 /-- The identity map induces the identity. -/
+@[simp]
 theorem cubicalChainModuleLinearMap_id :
     cubicalChainModuleLinearMap (G := G) R (ContinuousMap.id Y) = LinearMap.id :=
   cubicalChainModule_linearMap_ext fun n c ↦ by
@@ -694,6 +695,7 @@ theorem cubicalChainModuleLinearMap_comp (f : C(Y, Y')) (g : C(Y', Y'')) :
       cubicalChainModuleLinearMap_lof, NormalizedCubicalChain.map_comp, LinearMap.comp_apply]
 
 /-- The identity map induces the identity morphism. -/
+@[simp]
 theorem cubicalChainModuleMap_id :
     cubicalChainModuleMap (G := G) R (ContinuousMap.id Y) (fun _ _ ↦ rfl) =
       𝟙 (cubicalChainModuleDG Y G R) := by
