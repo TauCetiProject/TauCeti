@@ -16,10 +16,10 @@ Suppose a complex has terms `Q`, `A ⊞ (U ⊞ Q)`, `U ⊞ B`, and `Z` in degree
 `-3`, `-2`, `-1`, and `0`. In these coordinates its differentials are
 
 `(α, β, -id)`, `((f,g), (-id,δ), (qU,qB))`,
-and `(δ ≫ ε, ε)`.
+and `(zU, ε)`.
 
-The square-zero identity forces `qU = α ≫ f - β` and
-`qB = α ≫ g + β ≫ δ`; these are conclusions rather than additional hypotheses.
+The square-zero identity forces `qU = α ≫ f - β`, `qB = α ≫ g + β ≫ δ`,
+and `zU = δ ≫ ε`; these are conclusions rather than additional hypotheses.
 
 The two negative identity blocks cancel, leaving the three-term complex
 `A ⟶ B ⟶ Z`, with differentials `f ≫ δ + g` and `ε`. The corrected projection
@@ -82,6 +82,8 @@ structure FourTermCancellationData where
   qSecond : Q ⟶ B
   /-- The second component of the middle differential on `U`. -/
   delta : U ⟶ B
+  /-- The differential out of the cancellable `U`. -/
+  zFirst : U ⟶ Z
   /-- The differential out of the surviving `B`. -/
   epsilon : B ⟶ Z
   /-- The lowest differential has a negative identity in its `Q` component. -/
@@ -91,9 +93,9 @@ structure FourTermCancellationData where
   d_minusTwo : K.d (-2) (-1) ≫ minusOneIso.hom =
     minusTwoIso.hom ≫ biprod.desc (biprod.lift first second)
       (biprod.desc (biprod.lift (-𝟙 U) delta) (biprod.lift qFirst qSecond))
-  /-- The highest source differential is compatible with the surviving `B` projection. -/
+  /-- The highest source differential in the specified coordinates. -/
   d_minusOne : K.d (-1) 0 ≫ zeroIso.hom =
-    minusOneIso.hom ≫ biprod.desc (delta ≫ epsilon) epsilon
+    minusOneIso.hom ≫ biprod.desc zFirst epsilon
   /-- The surviving differential includes the correction through the cancellable `U`. -/
   target_d_minusTwo : L.d (-2) (-1) ≫ targetMinusOneIso.hom =
     targetMinusTwoIso.hom ≫ (first ≫ delta + second)
@@ -118,19 +120,46 @@ private theorem raw_square_zero : d3 h ≫ rawD2 h = 0 := by
   rw [h.d_minusTwo, ← Category.assoc, h.d_minusThree] at hz
   simpa only [Category.assoc, d3, rawD2, comp_zero] using hz
 
-private theorem qFirst_eq : h.qFirst = h.alpha ≫ h.first - h.beta := by
+/-- Square-zero determines the component from `Q` to the next `U`. -/
+@[reassoc]
+theorem qFirst_eq : h.qFirst = h.alpha ≫ h.first - h.beta := by
   have hz : (d3 h ≫ rawD2 h) ≫ (biprod.fst : U ⊞ B ⟶ U) = 0 := by
     rw [raw_square_zero, zero_comp]
   have he : h.alpha ≫ h.first - h.beta - h.qFirst = 0 := by
     simpa [d3, rawD2, Category.assoc, sub_eq_add_neg, add_assoc] using hz
   exact (sub_eq_zero.mp he).symm
 
-private theorem qSecond_eq : h.qSecond = h.alpha ≫ h.second + h.beta ≫ h.delta := by
+/-- Square-zero determines the component from `Q` to the surviving `B`. -/
+@[reassoc]
+theorem qSecond_eq : h.qSecond = h.alpha ≫ h.second + h.beta ≫ h.delta := by
   have hz : (d3 h ≫ rawD2 h) ≫ (biprod.snd : U ⊞ B ⟶ B) = 0 := by
     rw [raw_square_zero, zero_comp]
   have he : h.alpha ≫ h.second + h.beta ≫ h.delta - h.qSecond = 0 := by
     simpa [d3, rawD2, Category.assoc, sub_eq_add_neg, add_assoc] using hz
   exact (sub_eq_zero.mp he).symm
+
+private def rawD1 : U ⊞ B ⟶ Z := biprod.desc h.zFirst h.epsilon
+
+private theorem raw_last_square_zero : rawD2 h ≫ rawD1 h = 0 := by
+  apply (cancel_epi h.minusTwoIso.hom).1
+  have hz : K.d (-2) (-1) ≫ K.d (-1) 0 ≫ h.zeroIso.hom = 0 := by
+    rw [← Category.assoc, K.d_comp_d, zero_comp]
+  rw [h.d_minusOne, ← Category.assoc, h.d_minusTwo] at hz
+  simpa only [Category.assoc, rawD2, rawD1, comp_zero] using hz
+
+/-- Square-zero determines the last differential on the cancellable `U`. -/
+@[reassoc]
+theorem zFirst_eq : h.zFirst = h.delta ≫ h.epsilon := by
+  have hz : (biprod.inl ≫ biprod.inr : U ⟶ A ⊞ (U ⊞ Q)) ≫ rawD2 h ≫ rawD1 h = 0 := by
+    rw [raw_last_square_zero, comp_zero]
+  have he : -h.zFirst + h.delta ≫ h.epsilon = 0 := by
+    simpa [rawD2, rawD1, Category.assoc] using hz
+  have hs : h.delta ≫ h.epsilon - h.zFirst = 0 := by
+    -- The U-component is the sum of the negative direct map and the through-B map.
+    calc
+      h.delta ≫ h.epsilon - h.zFirst = -h.zFirst + h.delta ≫ h.epsilon := by abel
+      _ = 0 := he
+  exact (sub_eq_zero.mp hs).symm
 
 private def d2 : A ⊞ (U ⊞ Q) ⟶ U ⊞ B :=
   biprod.desc (biprod.lift h.first h.second)
@@ -187,7 +216,8 @@ private theorem source_d2_eq : K.d (-2) (-1) =
   simpa only [Category.assoc] using (h.minusOneIso.eq_comp_inv).2 (source_d2 h)
 @[reassoc]
 private theorem source_d1 : K.d (-1) 0 ≫ h.zeroIso.hom =
-    h.minusOneIso.hom ≫ d1 h := h.d_minusOne
+    h.minusOneIso.hom ≫ d1 h := by
+  simpa only [d1, zFirst_eq] using h.d_minusOne
 @[reassoc]
 private theorem target_d2 : L.d (-2) (-1) ≫ h.targetMinusOneIso.hom =
     h.targetMinusTwoIso.hom ≫ (h.first ≫ h.delta + h.second) := h.target_d_minusTwo
@@ -474,10 +504,10 @@ theorem toContraction_homotopy_v_minusTwo :
   simp [toContraction, s2, pQ, Category.assoc]
 
 /-- The upper homotopy sends the second `U` to minus its first copy. -/
-@[simp, reassoc]
+@[reassoc (attr := simp)]
 theorem toContraction_homotopy_v_minusOne :
-    h.toContraction.homotopy.v (-1) (-2) (by decide) =
-      h.minusOneIso.hom ≫ (-(biprod.fst ≫ biprod.inl ≫ biprod.inr)) ≫ h.minusTwoIso.inv := by
+    h.toContraction.homotopy.v (-1) (-2) (by decide) ≫ h.minusTwoIso.hom =
+      h.minusOneIso.hom ≫ (-(biprod.fst ≫ biprod.inl ≫ biprod.inr)) := by
   simp [toContraction, s1, iU, Category.assoc]
 
 /-- All homotopy components outside the two cancelled pairs vanish. -/
