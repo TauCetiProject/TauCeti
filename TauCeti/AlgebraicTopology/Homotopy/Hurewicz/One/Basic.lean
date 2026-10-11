@@ -11,12 +11,8 @@ public import TauCeti.Topology.Homotopy.Path
 public import TauCeti.Algebra.Homology.ModuleCat
 public import TauCeti.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.Geometry.Convex.ConvexSpace.ContractibleSpaceStdSimplex
-public import TauCeti.Geometry.Convex.ConvexSpace.Defs
 public import TauCeti.GroupTheory.Abelianization.Basic
-public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
-public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
-public import Mathlib.GroupTheory.Abelianization.Defs
 
 /-!
 # The Hurewicz theorem in degree one
