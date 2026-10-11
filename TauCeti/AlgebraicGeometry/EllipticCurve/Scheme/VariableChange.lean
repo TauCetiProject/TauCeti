@@ -10,8 +10,8 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.CoordinateRing.LaurentExpa
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.CoordinateRing.VariableChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Eval
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Chart
-import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.GlobalSections
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Points
+import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.TautologicalPoint
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.ZeroSection
 import TauCeti.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
 

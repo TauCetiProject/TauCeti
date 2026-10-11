@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.GlobalSections
 import Mathlib.AlgebraicGeometry.PullbackCarrier
-import Mathlib.Topology.Sheaves.SheafCondition.Sites
+import TauCeti.AlgebraicGeometry.Morphisms.Flat.StructureSheaf
 
 /-!
 # The structure sheaf of an elliptic curve pushes forward to the structure sheaf of the base
@@ -122,13 +122,9 @@ instance isIso_structureMap_app (U : S.Opens) : IsIso (E.structureMap.app U) := 
     refine ⟨B ⟨i, ⟨W, hW⟩⟩, ⟨_, rfl⟩, (hrange _).mpr ⟨x, hxW, rfl⟩, fun t ht ↦ ?_⟩
     obtain ⟨y, hy, rfl⟩ := (hrange t).mp ht
     exact hWV hy
-  -- the unit `𝒪_S ⟶ π_* 𝒪_E` as a morphism of sheaves, an isomorphism on the basis `B`
-  let φ : S.sheaf ⟶ (TopCat.Sheaf.pushforward _ E.structureMap.base).obj E.carrier.sheaf :=
-    ⟨E.structureMap.c⟩
-  have : IsIso φ := TopCat.Sheaf.isIso_iff_isIso_basis hB fun p ↦
-    ((A.chart p.1).restrict p.2).isIso_app_opensRange
-  have : IsIso ((sheafToPresheaf _ _).map φ) := Functor.map_isIso _ φ
-  exact NatIso.isIso_app_of_isIso ((sheafToPresheaf _ _).map φ) (op U)
+  -- `π` induces isomorphisms on sections over the basis `B`, hence over every open
+  exact E.structureMap.isIso_app_of_isBasis hB
+    (fun p ↦ ((A.chart p.1).restrict p.2).isIso_app_opensRange) U
 
 end EllipticCurveGeom
 
