@@ -23,8 +23,9 @@ hyperplane. Fibers on that hyperplane may drop degree or be nullified. No condit
 constant coefficient is needed: an individual root may vanish identically even though each
 pairwise difference has a nonvanishing unit form.
 
-The construction combines `exists_analyticOnNhd_nonmonic_powerSubstitution` with
-`TauCeti.exists_root_sub_eq_zpow_mul_unit`, using analytic roots of integral normalization.
+For Puiseux splittings without root-difference forms, see
+`exists_analyticOnNhd_nonmonic_powerSubstitution`. For Laurent unit forms for a supplied
+splitting, see `TauCeti.exists_root_sub_eq_zpow_mul_unit`.
 
 ## References
 
