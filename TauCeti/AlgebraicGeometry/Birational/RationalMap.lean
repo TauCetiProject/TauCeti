@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Birational.RationalMap
-public import Mathlib.AlgebraicGeometry.Morphisms.Proper
 public import Mathlib.AlgebraicGeometry.ValuativeCriterion
 public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
 public import TauCeti.AlgebraicGeometry.Morphisms.Separated
@@ -73,6 +72,15 @@ theorem Opens.SpecMap_stalkSpecializes_fromSpecStalkOfMem (U : X.Opens) {x y : X
       U.fromSpecStalkOfMem y (h.mem_open U.2 hx) := by
   rw [← cancel_mono U.ι]
   simp [SpecMap_stalkSpecializes_fromSpecStalk]
+
+/-- The morphism `Spec K(X) ⟶ Y` of a partial map is its morphism `Spec 𝒪_{X,x} ⟶ Y` at any point
+`x` of its domain, precomposed with `Spec` of the specialization map from the generic point. -/
+@[reassoc]
+theorem PartialMap.SpecMap_stalkSpecializes_fromSpecStalkOfMem [IrreducibleSpace X]
+    (g : X.PartialMap Y) {x : X} (hx : x ∈ g.domain) :
+    Spec.map (X.presheaf.stalkSpecializes (genericPoint_specializes x)) ≫
+      g.fromSpecStalkOfMem hx = g.fromFunctionField := by
+  simp only [PartialMap.fromSpecStalkOfMem, Opens.SpecMap_stalkSpecializes_fromSpecStalkOfMem_assoc]
 
 /-! ### Rational maps defined everywhere -/
 
@@ -147,8 +155,7 @@ theorem RationalMap.domain_ofFunctionField_eq_top
   refine RationalMap.eq_of_fromFunctionField_eq _ _ ?_
   rw [fromFunctionField_ofFunctionField, fromFunctionField_toRationalMap, ← hl₁,
     ← PartialMap.fromSpecStalkOfMem_ofFromSpecStalk (X ↘ S) (Y ↘ S) l hl₂,
-    PartialMap.fromFunctionField, PartialMap.fromSpecStalkOfMem, PartialMap.fromSpecStalkOfMem,
-    ← Opens.SpecMap_stalkSpecializes_fromSpecStalkOfMem_assoc _ hηx]
+    ← g.SpecMap_stalkSpecializes_fromSpecStalkOfMem]
   rfl
 
 /-- **Rational maps from schemes with valuation rings as local rings into universally closed
@@ -170,13 +177,15 @@ end UniversallyClosed
 
 /-! ### Extending morphisms from the generic point -/
 
-section Proper
+section Separated
 
-variable [X.Over S] [Y.Over S] [IsIntegral X] [S.IsSeparated] [IsProper (Y ↘ S)]
+variable [X.Over S] [Y.Over S] [IsIntegral X] [S.IsSeparated] [UniversallyClosed (Y ↘ S)]
+  [LocallyOfFiniteType (Y ↘ S)] [IsSeparated (Y ↘ S)]
 
 /-- **A morphism from the generic point extends to the whole scheme**: for an integral `S`-scheme
-`X` whose local rings are valuation rings and an `S`-scheme `Y` proper over a separated base `S`,
-the `S`-morphism `X ⟶ Y` extending an `S`-morphism `φ : Spec K(X) ⟶ Y`
+`X` whose local rings are valuation rings and an `S`-scheme `Y` universally closed, locally of
+finite type and separated over a separated base `S` (for instance proper over `S`), the
+`S`-morphism `X ⟶ Y` extending an `S`-morphism `φ : Spec K(X) ⟶ Y`
 (`fromSpecStalk_homOfFunctionField`), which is unique (`eq_homOfFunctionField_iff`). -/
 noncomputable def homOfFunctionField (hX : ∀ x : X, ValuationRing (X.presheaf.stalk x))
     (φ : Spec X.functionField ⟶ Y) (hφ : φ ≫ Y ↘ S = X.fromSpecStalk _ ≫ X ↘ S) : X ⟶ Y :=
@@ -209,6 +218,6 @@ theorem eq_homOfFunctionField_iff (f : X ⟶ Y) [f.IsOver S] :
   exact ext_of_isDominant_of_isSeparated' S (X.fromSpecStalk (genericPoint X))
     (by rw [h, fromSpecStalk_homOfFunctionField])
 
-end Proper
+end Separated
 
 end AlgebraicGeometry.Scheme
