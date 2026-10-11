@@ -99,13 +99,6 @@ private theorem div_sub_one_mul_mul_one_sub_inv (hn : (1 : ℝ) < n) (k : ℕ) :
   have : (n : ℝ) - 1 ≠ 0 := by linarith
   field_simp
 
-/-- `((‖y‖ / c) ^ β) ^ k = ‖y‖ ^ (β k) c ^ (-β k)`, in `ℝ≥0∞`. -/
-private theorem ofReal_rpow_pow_norm_div (y : F) {c β : ℝ} (hc : 0 < c) (hβ : 0 ≤ β) (k : ℕ) :
-    ENNReal.ofReal (((‖y‖ / c) ^ β) ^ k) = ‖y‖ₑ ^ (β * k) * ENNReal.ofReal (c ^ (-(β * k))) := by
-  rw [← Real.rpow_mul_natCast (by positivity), Real.div_rpow (norm_nonneg _) hc.le,
-    div_eq_mul_inv, ← Real.rpow_neg hc.le, ENNReal.ofReal_mul (by positivity),
-    ← ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) (by positivity), ofReal_norm]
-
 /-- The constants of the moment bound at `q = r` with `r (1 - 1/n) = k` combine to
 `(k + 1) ^ (k + 1) (2e) ^ (-k)`. -/
 private theorem add_one_rpow_rpow_mul_rpow_mul_rpow_neg {k : ℕ} {r s : ℝ} (hr : 0 < r)
@@ -121,18 +114,6 @@ private theorem add_one_rpow_rpow_mul_rpow_mul_rpow_neg {k : ℕ} {r s : ℝ} (h
     hs.le, ← Real.rpow_mul (by positivity), hk', Real.rpow_neg (by positivity),
     Real.rpow_neg hs.le, Real.rpow_natCast]
   field_simp
-
-/-- `(a b ^ (1/r) s) ^ r t = a ^ r s ^ r t b` in `ℝ≥0∞`, for real `a, s ≥ 0`, real `t` and
-`r > 0`. -/
-private theorem ofReal_mul_rpow_inv_mul_ofReal_rpow_mul_ofReal {a s r : ℝ} (ha : 0 ≤ a)
-    (hs : 0 ≤ s) (hr : 0 < r) (t : ℝ) (b : ℝ≥0∞) :
-    (ENNReal.ofReal a * b ^ r⁻¹ * ENNReal.ofReal s) ^ r * ENNReal.ofReal t =
-      ENNReal.ofReal (a ^ r * s ^ r * t) * b := by
-  rw [ENNReal.mul_rpow_of_nonneg _ _ hr.le, ENNReal.mul_rpow_of_nonneg _ _ hr.le,
-    ENNReal.rpow_inv_rpow hr.ne', ENNReal.ofReal_rpow_of_nonneg ha hr.le,
-    ENNReal.ofReal_rpow_of_nonneg hs hr.le, ENNReal.ofReal_mul (by positivity),
-    ENNReal.ofReal_mul (by positivity)]
-  ring
 
 /-- The moments behind Trudinger's inequality. If `‖f‖_q ≤ (q (1 - 1/n) + 1) ^ (1 - 1/n + 1/q)
 ν(X) ^ (1/q) S` for every `q ≥ n`, then for `c = (2e) ^ (1 - 1/n) S` and `k ≥ n - 1`,
@@ -161,8 +142,15 @@ private theorem lintegral_ofReal_norm_div_rpow_pow_le (hf : AEStronglyMeasurable
   have hq : (n : ℝ≥0) ≤ q := by rw [← NNReal.coe_le_coe, hqr]; exact_mod_cast hr
   have hq0 : q ≠ 0 := by rw [← NNReal.coe_ne_zero, hqr]; exact hr0.ne'
   have hqk : r * (1 - (n : ℝ)⁻¹) = k := div_sub_one_mul_mul_one_sub_inv hn1 k
-  have hβ : 0 ≤ (n : ℝ) / (n - 1) := div_nonneg (by linarith) (by linarith)
-  simp_rw [ofReal_rpow_pow_norm_div _ hc hβ, ← hr_def]
+  -- The integrand is `‖f‖ₑ ^ r c ^ (-r)`.
+  have hpt (x : X) : ENNReal.ofReal (((‖f x‖ / ((2 * Real.exp 1) ^ (1 - (n : ℝ)⁻¹) *
+      S.toReal)) ^ ((n : ℝ) / (n - 1))) ^ k) = ‖f x‖ₑ ^ r *
+        ENNReal.ofReal (((2 * Real.exp 1) ^ (1 - (n : ℝ)⁻¹) * S.toReal) ^ (-r)) := by
+    rw [← Real.rpow_mul_natCast (by positivity), ← hr_def]
+    simp (disch := positivity) [Real.div_rpow, Real.rpow_neg, ENNReal.ofReal_div_of_pos,
+      ← ofReal_norm, ← ENNReal.ofReal_rpow_of_nonneg _ hr0.le, ENNReal.ofReal_inv_of_pos,
+      ← div_eq_mul_inv]
+  simp_rw [hpt]
   rw [lintegral_mul_const' _ _ ENNReal.ofReal_ne_top, ← hqr,
     ← eLpNorm_nnreal_pow_eq_lintegral hq0 hf, hqr]
   have hkey := h q hq
@@ -173,9 +161,11 @@ private theorem lintegral_ofReal_norm_div_rpow_pow_le (hf : AEStronglyMeasurable
           ENNReal.ofReal (((2 * Real.exp 1) ^ (1 - (n : ℝ)⁻¹) * S.toReal) ^ (-r)) := by
         rw [ENNReal.ofReal_toReal hS]; gcongr
     _ = _ := by
-      rw [ofReal_mul_rpow_inv_mul_ofReal_rpow_mul_ofReal (by positivity) ENNReal.toReal_nonneg
-        hr0, add_one_rpow_rpow_mul_rpow_mul_rpow_neg hr0
-        (pos_of_mul_pos_right hc (by positivity)) hqk]
+      rw [← add_one_rpow_rpow_mul_rpow_mul_rpow_neg hr0 (pos_of_mul_pos_right hc (by positivity))
+        hqk]
+      simp (disch := positivity) [ENNReal.mul_rpow_of_nonneg _ _ hr0.le,
+        ENNReal.rpow_inv_rpow hr0.ne', ENNReal.ofReal_mul, ENNReal.ofReal_rpow_of_nonneg _ hr0.le]
+      ring
 
 /-- The terms of the exponential series in Trudinger's inequality: under the moment bounds,
 `(∫ (‖f‖ / c) ^ (n k / (n - 1))) / k! ≤ ((1 + nⁿ) / k! + e (k + 1) / 2ᵏ) ν(X)`. The first term
