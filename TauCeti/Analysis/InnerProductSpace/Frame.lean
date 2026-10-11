@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
-public import Mathlib.Analysis.InnerProductSpace.Positive
 public import TauCeti.Analysis.InnerProductSpace.SingularValues
 
 /-!
@@ -186,12 +185,14 @@ theorem isSymmetric_gramOperator (v : ι → E) : (gramOperator 𝕜 v).IsSymmet
 /-! ### Orthonormal bases -/
 
 /-- The analysis map of an orthonormal basis is its coordinate map `b.repr`. -/
+@[simp]
 theorem analysisMap_orthonormalBasis (b : OrthonormalBasis ι 𝕜 E) :
     analysisMap 𝕜 b = b.repr.toLinearMap := by
   ext x i
   simp [OrthonormalBasis.repr_apply_apply]
 
 /-- The frame operator of an orthonormal basis is the identity. -/
+@[simp]
 theorem frameOperator_orthonormalBasis (b : OrthonormalBasis ι 𝕜 E) :
     frameOperator 𝕜 b = LinearMap.id := by
   ext x
