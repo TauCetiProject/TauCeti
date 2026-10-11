@@ -43,6 +43,8 @@ universe w v u
 
 namespace TauCeti
 
+namespace TopPair
+
 variable {ι : Type w} (P : ι → TopPair.{w})
   (C : Type u) [Category.{v} C] [Small.{v} ι] [HasCoproducts.{w} C] [Abelian C] (R : C)
   (k : Type*) [Ring k] [Linear k C] (M : C)
@@ -50,7 +52,7 @@ variable {ι : Type w} (P : ι → TopPair.{w})
 /-- **Additivity of relative singular cochains.** The relative cochains of a disjoint union
 of pairs are the product of the relative cochains of the pairs, with restriction along the
 inclusions as projections. -/
-def isLimitFanRelativeSingularCochainComplex :
+def isLimitFanSingularCochainComplex :
     IsLimit (Fan.mk ((TopPair.sigma P).singularCochainComplex R k M)
       (fun i ↦ TopPair.singularCochainComplexMap (TopPair.sigmaι P i)) :
       Fan fun i ↦ (P i).singularCochainComplex R k M) :=
@@ -60,13 +62,15 @@ def isLimitFanRelativeSingularCochainComplex :
 /-- **Additivity of relative singular cohomology.** In every degree the relative cohomology
 of a disjoint union of pairs is the product of the relative cohomologies of the pairs. The
 projections are induced by the inclusions of the pairs. -/
-def isLimitFanRelativeSingularCohomology (n : ℕ) :
+def isLimitFanSingularCohomology (n : ℕ) :
     IsLimit (Fan.mk ((TopPair.sigma P).singularCohomology R k M n)
       (fun i ↦ TopPair.singularCohomologyMap (TopPair.sigmaι P i) n) :
       Fan fun i ↦ (P i).singularCohomology R k M n) := by
   have : HasLimitsOfShape (Discrete ι) (ModuleCat.{v} k) := ModuleCat.hasLimitsOfShape
   exact isLimitFanMkObjOfIsLimit (HomologicalComplex.homologyFunctor
     (ModuleCat.{v} k) (ComplexShape.up ℕ) n) _ _
-      (isLimitFanRelativeSingularCochainComplex P C R k M)
+      (isLimitFanSingularCochainComplex P C R k M)
+
+end TopPair
 
 end TauCeti
