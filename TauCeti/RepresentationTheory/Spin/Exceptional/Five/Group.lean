@@ -82,7 +82,7 @@ theorem
       eFock x = (g : Matrix (Fin 2 ⊕ Fin 2) (Fin 2 ⊕ Fin 2) K) * e x *
         (g : Matrix (Fin 2 ⊕ Fin 2) (Fin 2 ⊕ Fin 2) K)⁻¹ := by
     simpa only [σ, AlgEquiv.trans_apply, AlgEquiv.symm_apply_apply,
-      Matrix.GeneralLinearGroup.innerAut_apply] using
+      Matrix.GeneralLinearGroup.innerAut_apply, Matrix.GeneralLinearGroup.coe_inv] using
       (congrArg (fun τ : Matrix (Fin 2 ⊕ Fin 2) (Fin 2 ⊕ Fin 2) K ≃ₐ[K]
         Matrix (Fin 2 ⊕ Fin 2) (Fin 2 ⊕ Fin 2) K => τ (e x)) hg).symm
   let ψ := (spinFiveExteriorBasis P b).equivFun.trans
