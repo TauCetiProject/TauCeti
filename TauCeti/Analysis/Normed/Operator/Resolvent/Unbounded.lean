@@ -45,7 +45,7 @@ noncomputable section
 
 namespace TauCeti.LinearPMap
 
-open _root_.LinearPMap (IsResolventAt resolvent_eq_of_isResolventAt)
+open _root_.LinearPMap (IsResolventAt)
 
 variable {𝕜 X : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup X]
   [NormedSpace 𝕜 X] [CompleteSpace X]
@@ -61,19 +61,12 @@ theorem _root_.ContinuousLinearMap.isResolventAt_vadd_of_norm_mul_resolvent_lt_o
   ContinuousLinearMap.isResolventAt_vadd_of_isUnit_one_sub_mul_resolvent B h
     (isUnit_one_sub_of_norm_lt_one hB)
 
-private theorem isResolventAt_of_norm_mul_lt_one (h : lambda ∈ A.resolventSet)
-    (hmu : ‖mu - lambda‖ * ‖A.resolvent lambda‖ < 1) :
-    IsResolventAt A mu
-      (A.resolvent lambda * Ring.inverse (1 - (lambda - mu) • A.resolvent lambda)) := by
-  apply isResolventAt_of_isUnit_one_sub_smul_resolvent h
-  apply isUnit_one_sub_of_norm_lt_one
-  rwa [norm_smul, norm_sub_rev]
-
 /-- **The Neumann perturbation of a resolvent point.** If `lambda` lies in the resolvent set and
 `‖mu - lambda‖ * ‖R(lambda)‖ < 1`, then `mu` lies in it too. -/
 theorem mem_resolventSet_of_norm_mul_lt_one (h : lambda ∈ A.resolventSet)
     (hmu : ‖mu - lambda‖ * ‖A.resolvent lambda‖ < 1) : mu ∈ A.resolventSet :=
-  (isResolventAt_of_norm_mul_lt_one h hmu).mem_resolventSet
+  (mem_resolventSet_iff_isUnit_one_sub_smul_resolvent h).mpr
+    (isUnit_one_sub_of_norm_lt_one (by rwa [norm_smul, norm_sub_rev]))
 
 /-- **Local Neumann formula for the resolvent.** Inside the ball
 `‖mu - lambda‖ * ‖R(lambda)‖ < 1`, the resolvent at `mu` is obtained by multiplying
@@ -82,7 +75,8 @@ theorem resolvent_eq_mul_inverse_one_sub (h : lambda ∈ A.resolventSet)
     (hmu : ‖mu - lambda‖ * ‖A.resolvent lambda‖ < 1) :
     A.resolvent mu = A.resolvent lambda *
       Ring.inverse (1 - (lambda - mu) • A.resolvent lambda) :=
-  resolvent_eq_of_isResolventAt (isResolventAt_of_norm_mul_lt_one h hmu)
+  resolvent_eq_mul_inverse_one_sub_smul_resolvent h
+    (isUnit_one_sub_of_norm_lt_one (by rwa [norm_smul, norm_sub_rev]))
 
 /-- **The resolvent set is open.** -/
 theorem _root_.LinearPMap.isOpen_resolventSet (A : X →ₗ.[𝕜] X) : IsOpen (A.resolventSet) := by
