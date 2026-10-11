@@ -38,10 +38,10 @@ The main theorem is that a point of exact order `N` is killed by `N`
 (`EllipticCurveGeom.IsOfExactOrder.pow_eq_one`), so it is an `S`-point of the `N`-torsion `E[N]`.
 The proof is by translation. Since `D` is a subgroup scheme containing `P`, translation by `-P`
 carries `D` onto itself. It also carries each `[(a + 1)P]` to `[aP]`, hence `D` to the divisor
-`[0] + [P] + ⋯ + [(N - 1)P]`. Adding `[NP]` to both expressions of `D` and cancelling the common
-effective Cartier divisor `[P] + ⋯ + [(N - 1)P]` gives `[NP] = [0]`, and a section of a separated
-morphism is determined by its divisor. The argument works over every base, including nonreduced
-ones, and needs neither the finiteness of `D` nor its rank.
+`[0] + [P] + ⋯ + [(N - 1)P]`. Cancelling the common effective Cartier divisor
+`[P] + ⋯ + [(N - 1)P]` from these two expressions of `D` gives `[NP] = [0]`, and a section of a
+separated morphism is determined by its divisor. The argument works over every base, including
+nonreduced ones, and needs neither the finiteness of `D` nor its rank.
 
 Following `EllipticCurveGeom.mulBy`, the group law on points of `E` is written multiplicatively:
 `P ^ a` is the point `aP`, and `1` is the zero section.
@@ -55,6 +55,8 @@ Following `EllipticCurveGeom.mulBy`, the group law on points of `E` is written m
 
 ## Main results
 
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isOfExactOrder_iff`: the closed-subgroup criterion
+  for `IsOfExactOrder`, in terms of the ideal sheaf of `[P] + ⋯ + [NP]`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isRelativeEffectiveCartier_multiplesDivisor`:
   `[P] + ⋯ + [NP]` is a relative effective Cartier divisor on `E` over `S`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.ker_comap_leftTranslation_hom`: translation by
@@ -104,6 +106,27 @@ def IsOfExactOrder (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) (N : ℕ) : P
       Over.mk ((E.multiplesDivisor P N).subschemeι ≫ E.structureMap) ⟶ Over.mk E.structureMap)
 
 variable {E}
+
+/-- **The closed-subgroup criterion for points of exact order `N`.** A point `P` has exact order
+`N` exactly when the ideal sheaf of `D = [P] + ⋯ + [NP]` vanishes on the identity, on the product
+of two points of `D` and on the inverse of a point of `D`. -/
+theorem isOfExactOrder_iff {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap} {N : ℕ} :
+    E.IsOfExactOrder P N ↔
+      E.multiplesDivisor P N ≤ E.zero.ker ∧
+      E.multiplesDivisor P N ≤ (((Over.homMk (E.multiplesDivisor P N).subschemeι :
+          Over.mk ((E.multiplesDivisor P N).subschemeι ≫ E.structureMap) ⟶
+            Over.mk E.structureMap) ⊗ₘ (Over.homMk (E.multiplesDivisor P N).subschemeι :
+          Over.mk ((E.multiplesDivisor P N).subschemeι ≫ E.structureMap) ⟶
+            Over.mk E.structureMap)) ≫ μ[Over.mk E.structureMap]).left.ker ∧
+      E.multiplesDivisor P N ≤ ((Over.homMk (E.multiplesDivisor P N).subschemeι :
+          Over.mk ((E.multiplesDivisor P N).subschemeι ≫ E.structureMap) ⟶
+            Over.mk E.structureMap) ≫ ι[Over.mk E.structureMap]).left.ker := by
+  let i : Over.mk ((E.multiplesDivisor P N).subschemeι ≫ E.structureMap) ⟶
+      Over.mk E.structureMap := Over.homMk (E.multiplesDivisor P N).subschemeι
+  have : IsClosedImmersion i.left :=
+    inferInstanceAs (IsClosedImmersion (E.multiplesDivisor P N).subschemeι)
+  have hi : i.left.ker = E.multiplesDivisor P N := Scheme.IdealSheafData.ker_subschemeι _
+  rw [IsOfExactOrder, GroupScheme.exists_grpObj_isMonHom_iff_ker_le i, hi, one_left]
 
 /-- The divisor of the first zero multiples of a point is empty. -/
 @[simp]
@@ -205,6 +228,7 @@ theorem IsOfExactOrder.comp_mulBy_eq_one {P : 𝟙_ (Over S) ⟶ Over.mk E.struc
 
 /-- **The points of exact order one**: an `S`-point of `E` has exact order one exactly when it is
 the zero section. The divisor `[0]` is the trivial subgroup scheme of `E`. -/
+@[simp]
 theorem isOfExactOrder_one_iff {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap} :
     E.IsOfExactOrder P 1 ↔ P = 1 := by
   refine ⟨fun h ↦ by simpa using h.pow_eq_one, ?_⟩

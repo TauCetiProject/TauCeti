@@ -151,7 +151,7 @@ theorem isCommMonObj_grpObjOfClosedImmersion [IsCommMonObj G]
 /-- **A subgroup scheme is stable under translation by its points.** Let `i : H ⟶ G` be a
 homomorphism of group schemes over `S` and `x` an `S`-point of `H`. Then left translation by
 `x ≫ i` on `G` carries the closed subscheme cut out by the ideal sheaf of `i` into itself: the
-inverse image of that ideal sheaf under the translation contains it. -/
+inverse image of that ideal sheaf under the translation is contained in it. -/
 theorem ker_comap_leftTranslation_le [GrpObj H] (i : H ⟶ G) [IsMonHom i]
     (x : 𝟙_ (Over S) ⟶ H) : i.left.ker.comap (leftTranslation (x ≫ i)).hom.left ≤ i.left.ker := by
   rw [← Scheme.IdealSheafData.le_map_iff_comap_le, Scheme.IdealSheafData.map_ker,

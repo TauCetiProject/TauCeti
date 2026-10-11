@@ -41,17 +41,19 @@ universe u v
 
 variable {C : Type u} [Category.{v} C] [CartesianMonoidalCategory C] {G : C} [GrpObj G]
 
+/-- Translating by `x` and then by `y` is translating by `y * x`. -/
+private theorem translate_comp_translate (x y : 𝟙_ C ⟶ G) :
+    ((toUnit G ≫ x) * 𝟙 G) ≫ ((toUnit G ≫ y) * 𝟙 G) = (toUnit G ≫ (y * x)) * 𝟙 G := by
+  rw [MonObj.comp_mul, comp_toUnit_assoc, Category.comp_id, ← _root_.mul_assoc,
+    ← MonObj.comp_mul]
+
 /-- **Left translation** `y ↦ x * y` on a group object `G` by a global point `x : 𝟙_ C ⟶ G`, as an
 automorphism of `G`. Its inverse is the translation by `x⁻¹`. -/
 noncomputable def leftTranslation (x : 𝟙_ C ⟶ G) : G ≅ G where
   hom := (toUnit G ≫ x) * 𝟙 G
   inv := (toUnit G ≫ x⁻¹) * 𝟙 G
-  hom_inv_id := by
-    rw [MonObj.comp_mul, comp_toUnit_assoc, Category.comp_id, ← _root_.mul_assoc,
-      ← MonObj.comp_mul, inv_mul_cancel, MonObj.comp_one, _root_.one_mul]
-  inv_hom_id := by
-    rw [MonObj.comp_mul, comp_toUnit_assoc, Category.comp_id, ← _root_.mul_assoc,
-      ← MonObj.comp_mul, mul_inv_cancel, MonObj.comp_one, _root_.one_mul]
+  hom_inv_id := by simp [translate_comp_translate]
+  inv_hom_id := by simp [translate_comp_translate]
 
 /-- Translation by `x` is the product of the constant point `x` and the identity of `G`. -/
 theorem leftTranslation_hom (x : 𝟙_ C ⟶ G) : (leftTranslation x).hom = (toUnit G ≫ x) * 𝟙 G :=
