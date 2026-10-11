@@ -76,7 +76,9 @@ variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v} Q] [Fintype Q]
   (σ : ∀ ⦃i j : Q⦄, (i ⟶ j) → Bool)
 
 /-- **The orientation comparison identifies the path-length grading.** A quotient class has
-degree `n` exactly when its image in the original orientation has degree `n`. -/
+degree `n` exactly when its image in the original orientation has degree `n`. This is kept as an
+explicit characterization since `mem_preprojectiveGrade_iff` already supplies the simp normal
+form for grade membership. -/
 theorem reorientPreprojectiveAlgebraEquiv_mem_preprojectiveGrade {n : ℕ}
     {x : preprojectiveAlgebra k (Reorient Q σ)} :
     reorientPreprojectiveAlgebraEquiv k σ x ∈ preprojectiveGrade k Q n ↔
