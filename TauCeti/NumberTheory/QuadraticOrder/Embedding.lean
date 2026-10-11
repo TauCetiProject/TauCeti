@@ -153,12 +153,12 @@ theorem mem_numberFieldOrderOfSqrt_iff (D : ℤ)
   · rintro ⟨z, hz, rfl⟩
     obtain ⟨m, n, rfl⟩ := (mem_toSubalgebra_iff D hD z).mp hz
     refine ⟨m, n, ?_⟩
-    change algEquivOfSqrt D δ hδ hK (m • 1 + n • generator D) = _
-    simp only [map_add, map_zsmul, map_one, algEquivOfSqrt_apply_generator]
+    simp only [AlgHom.restrictScalars_apply, AlgEquiv.toAlgHom_apply, map_add,
+      map_zsmul, map_one, algEquivOfSqrt_apply_generator]
   · rintro ⟨m, n, rfl⟩
     refine ⟨m • 1 + n • generator D, (mem_toSubalgebra_iff D hD _).mpr ⟨m, n, rfl⟩, ?_⟩
-    change algEquivOfSqrt D δ hδ hK (m • 1 + n • generator D) = _
-    simp only [map_add, map_zsmul, map_one, algEquivOfSqrt_apply_generator]
+    simp only [AlgHom.restrictScalars_apply, AlgEquiv.toAlgHom_apply, map_add,
+      map_zsmul, map_one, algEquivOfSqrt_apply_generator]
 
 /-- The order equivalence evaluates its embedded elements at the chosen square root. -/
 @[simp] theorem coe_equivNumberFieldOrderOfSqrt_apply (D : ℤ)
