@@ -463,9 +463,7 @@ theorem fi23Presentation_map_length_relators :
 
 /-- The generator and relator counts recorded for `Fi₂₃` agree with the transcribed data. -/
 theorem fi23Presentation_matchesMetadata : fi23Presentation.matchesMetadata := by
-  simp [GroupPresentation.matchesMetadata_iff, GroupPresentation.generatorCount,
-    fi23Presentation, fi23RelatorList, fi23NodeAndEdgeRelators, fi23NonedgeRelators,
-    fi23AdditionalRelators]
+  simp [GroupPresentation.generatorCount]
 
 /-- The compiled relators of the `Fi₂₃` presentation contain `371` signed letters in total. -/
 theorem fi23Presentation_totalLength : fi23Presentation.totalLength = 371 := by
@@ -475,9 +473,10 @@ theorem fi23Presentation_totalLength : fi23Presentation.totalLength = 371 := by
 /-- Every compiled relator of the `Fi₂₃` presentation is cyclically reduced. -/
 theorem fi23Presentation_relatorsCyclicallyReduced :
     fi23Presentation.relatorsCyclicallyReduced := by
-  simp [GroupPresentation.relatorsCyclicallyReduced_iff, GroupPresentation.relators_def,
-    fi23Presentation, fi23RelatorList, fi23NodeAndEdgeRelators, fi23NonedgeRelators,
-    fi23AdditionalRelators, FreeGroup.IsCyclicallyReduced]
+  simp only [GroupPresentation.relatorsCyclicallyReduced_iff, GroupPresentation.relators_def,
+    fi23Presentation_transcribed, List.map_cons, List.map_nil, Relator.toWord_mul,
+    Relator.toWord_pow, Relator.toWord_gen]
+  decide
 
 /-! ### The row against the Coxeter group of its graph -/
 
