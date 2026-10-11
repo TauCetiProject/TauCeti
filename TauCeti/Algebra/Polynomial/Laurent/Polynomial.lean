@@ -24,12 +24,11 @@ public section
 
 namespace TauCeti
 
-variable {R A H : Type*} [CommSemiring R] [CommSemiring A] [Semiring H]
-variable [Algebra R A] [Algebra R H]
+variable {R A H : Type*}
 
 /-- A Laurent polynomial comes from a polynomial exactly when its negative coefficients vanish. -/
 @[simp]
-theorem exists_toLaurent_eq_iff {p : LaurentPolynomial A} :
+theorem exists_toLaurent_eq_iff [Semiring A] {p : LaurentPolynomial A} :
     (∃ q : Polynomial A, q.toLaurent = p) ↔ ∀ n : ℤ, n < 0 → p.coeff n = 0 := by
   rw [← Set.mem_range]
   have hcast (n : ℤ) : n ∉ Set.range (Nat.cast : ℕ → ℤ) ↔ n < 0 := by
@@ -49,6 +48,9 @@ theorem exists_toLaurent_eq_iff {p : LaurentPolynomial A} :
       exact AddMonoidAlgebra.coeff_injective hq
   rw [hrange, Finsupp.mem_range_mapDomain_iff (Nat.cast : ℕ → ℤ) Nat.cast_injective]
   exact forall_congr' fun n ↦ imp_congr_left (hcast n)
+
+variable [CommSemiring R] [CommSemiring A] [Semiring H]
+variable [Algebra R A] [Algebra R H]
 
 /-- A Laurent-valued algebra homomorphism extends to polynomial values exactly when all its
 negative coefficients vanish. -/
