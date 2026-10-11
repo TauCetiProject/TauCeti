@@ -12,9 +12,13 @@ public import TauCeti.Geometry.Manifold.Boundary.Charts
 
 For a manifold modeled on Mathlib's Euclidean half-space, this file records the sign convention
 for an outward tangent vector.  Mathlib puts the boundary coordinate in slot `0`; outward vectors
-therefore have a negative slot-`0` derivative.  The definition is chartwise through `mfderiv`, so
-it is independent of a choice of coordinates and is the interface used by the boundary orientation
-and Stokes constructions.
+therefore have a negative slot-`0` derivative.  The definition uses the preferred chart through
+`mfderiv`; coordinate independence requires suitable differentiable chart compatibility and an
+invariance theorem.  This is the interface used by the boundary orientation and Stokes
+constructions.
+
+The sign convention follows J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Proposition
+15.33, adapted to Mathlib's convention that the constrained coordinate is in slot `0`.
 
 The standard half-space supplies a concrete witness: the constant negative first-coordinate
 vector is outward at every boundary point.
@@ -39,7 +43,28 @@ def IsOutwardPointing (x : M) (v : TangentSpace (𝓡∂ (n + 1)) x) : Prop :=
       (mfderiv (𝓡∂ (n + 1)) 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1)))
         (extChartAt (𝓡∂ (n + 1)) x) x v)) 0 < 0
 
+@[grind =]
+theorem isOutwardPointing_iff {x : M} {v : TangentSpace (𝓡∂ (n + 1)) x} :
+    IsOutwardPointing x v ↔
+      x ∈ (𝓡∂ (n + 1)).boundary M ∧
+        (NormedSpace.fromTangentSpace (𝕜 := ℝ) (extChartAt (𝓡∂ (n + 1)) x x)
+          (mfderiv (𝓡∂ (n + 1)) 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1)))
+            (extChartAt (𝓡∂ (n + 1)) x) x v)) 0 < 0 := Iff.rfl
+
 namespace IsOutwardPointing
+
+/-- An outward-pointing vector is based at a boundary point. -/
+theorem mem_boundary {x : M} {v : TangentSpace (𝓡∂ (n + 1)) x}
+    (hv : IsOutwardPointing x v) : x ∈ (𝓡∂ (n + 1)).boundary M :=
+  isOutwardPointing_iff.mp hv |>.1
+
+/-- The preferred-chart derivative of an outward-pointing vector is negative in slot `0`. -/
+theorem coordinate_deriv_neg {x : M} {v : TangentSpace (𝓡∂ (n + 1)) x}
+    (hv : IsOutwardPointing x v) :
+    (NormedSpace.fromTangentSpace (𝕜 := ℝ) (extChartAt (𝓡∂ (n + 1)) x x)
+      (mfderiv (𝓡∂ (n + 1)) 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1)))
+        (extChartAt (𝓡∂ (n + 1)) x) x v)) 0 < 0 :=
+  isOutwardPointing_iff.mp hv |>.2
 
 /-- Positive rescaling preserves the outward half-space of tangent vectors. -/
 theorem smul_pos {x : M} {v : TangentSpace (𝓡∂ (n + 1)) x}
@@ -78,6 +103,8 @@ theorem isOutwardPointing_standard_halfSpace
     IsOutwardPointing (n := n) x (-EuclideanSpace.single 0 1) := by
   refine ⟨hx, ?_⟩
   rw [mfderiv_extChartAt_self]
+  -- The tangent space of the model space is definitionally the model space, and
+  -- `NormedSpace.fromTangentSpace` is its canonical definitional identification.
   change (-EuclideanSpace.single (𝕜 := ℝ) 0 1) 0 < 0
   simp
 
