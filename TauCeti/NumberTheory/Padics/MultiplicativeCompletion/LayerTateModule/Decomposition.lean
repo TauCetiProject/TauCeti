@@ -57,13 +57,9 @@ theorem nonempty_linearEquiv_tameFrameModule_prod
   let P₁ := LinearMap.ker f
   let d : P₁ →ₗ[Λ] P₀ := (LinearMap.ker f).subtype
   let ρ : P₀ →ₗ[Λ] Y.carrier := f
-  have hdρ : Function.Exact d ρ := by
-    apply LinearMap.exact_iff.mpr
-    rw [Submodule.range_subtype]
+  have hdρ : Function.Exact d ρ := LinearMap.exact_subtype_ker_map f
   have hd : Function.Injective d := (LinearMap.ker f).subtype_injective
   have hρ : Function.Surjective ρ := hf
-  let : Module.Finite Λ P₀ := Module.Finite.of_basis (Pi.basisFun Λ (Fin n))
-  let : Module.Finite ℤ_[p] Λ := Module.Finite.of_basis (MonoidAlgebra.basis _ _)
   let : IsNoetherianRing Λ := IsNoetherianRing.of_finite ℤ_[p] Λ
   let : Module.Finite Λ Y.carrier := Y.finite
   let : Module.FinitePresentation Λ Y.carrier := Module.finitePresentation_of_finite Λ _
