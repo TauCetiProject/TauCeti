@@ -13,11 +13,10 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.Basic
 
 The open star of a boundary vertex is the local model needed for a combinatorial ball chart.
 This file records its strict coordinate criterion in the standard simplex and proves openness of
-the corresponding subset of the solid orthant.
+the corresponding subset of the coordinate simplex.
 
-Dropping the apex barycentric coordinate turns positivity of that coordinate into the strict
-inequality that the sum of the remaining coordinates is less than one. Constructing the resulting
-homeomorphism and transporting this model to general combinatorial balls remain later steps.
+Dropping the last barycentric coordinate turns positivity of that coordinate into the strict
+inequality that the sum of the remaining coordinates is less than one.
 
 Reference: C. P. Rourke and B. J. Sanderson, *Introduction to PL Topology*, Springer (1972),
 Chapters 1–2 (polyhedral local models).
@@ -29,25 +28,29 @@ open Set TauCeti
 
 namespace AbstractSimplicialComplex
 
-/-- The standard orthant chart target is open in the solid orthant. -/
-theorem isOpen_standardSimplexOpenStarChartTarget (n : ℕ) :
-    IsOpen {q : Set.Ici (0 : (Fin n → ℝ) × ℝ) |
-      (∑ i : Fin n, q.1.1 i) + q.1.2 < 1} := by
-  have hs : Continuous (fun q : Set.Ici (0 : (Fin n → ℝ) × ℝ) =>
-      ∑ i : Fin n, q.1.1 i + q.1.2) := by fun_prop
-  exact isOpen_lt hs continuous_const
-
 /-- In the standard simplex, the open star of the last vertex is described in the dropped
 barycentric coordinates by the strict sum inequality. -/
 theorem mem_standardSimplexOpenStar_iff_sum_lt_one (n : ℕ)
-    (x : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 2)))) :
-    x ∈ openStarRealization (⊤ : AbstractSimplicialComplex (Fin (n + 2)))
-      (Fin.last (n + 1)) ↔
-      ∑ i : Fin (n + 1),
-        (realizationTopHomeomorphCoordinateSimplex (n + 1) x).1 i < 1 := by
-  let c := realizationTopHomeomorphCoordinateSimplex (n + 1)
-  have h := realizationTopHomeomorphCoordinateSimplex_symm_last (n + 1) (c x)
+    (x : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1)))) :
+    x ∈ openStarRealization (⊤ : AbstractSimplicialComplex (Fin (n + 1)))
+      (Fin.last n) ↔
+      ∑ i : Fin n, (realizationTopHomeomorphCoordinateSimplex n x).1 i < 1 := by
+  let c := realizationTopHomeomorphCoordinateSimplex n
+  have h := realizationTopHomeomorphCoordinateSimplex_symm_last n (c x)
   rw [c.symm_apply_apply] at h
   rw [mem_openStarRealization, h, sub_pos]
 
 end AbstractSimplicialComplex
+
+namespace TauCeti
+
+/-- The points of `coordinateSimplex (Fin n)` whose coordinate sum is less than one form an
+open set. Under `realizationTopHomeomorphCoordinateSimplex`, these are exactly the points in the
+open star of the last vertex of the standard `(n + 1)`-simplex. -/
+theorem isOpen_coordinateSimplexOpenStar (n : ℕ) :
+    IsOpen {y : coordinateSimplex (Fin n) | ∑ i : Fin n, y.1 i < 1} := by
+  exact isOpen_lt
+    (continuous_finsetSum _ fun i _ => (continuous_apply i).comp continuous_subtype_val)
+    continuous_const
+
+end TauCeti
