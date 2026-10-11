@@ -317,6 +317,21 @@ private lemma integral_fderiv_eq_zero_of_hasDerivAt {φ : ℝ × E → ℝ} (hφ
   simp only [id, hzero a (by simp), hzero b (by simp), sub_self] at this
   rwa [intervalIntegral.integral_of_le hab.le, integral_Ioc_eq_integral_Ioo] at this
 
+omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
+/-- For a `C¹` compactly supported test function `φ`, the integrand of the continuity equation
+along a time and position `G` and a velocity `Y` is integrable against a finite measure whenever
+`Y` is: it grows at most linearly in `‖Y‖`. -/
+private lemma integrable_fderiv_apply {S : Type*} [MeasurableSpace S] {ν : Measure S}
+    [IsFiniteMeasure ν] {φ : ℝ × E → ℝ} (hφ1 : ContDiff ℝ 1 φ) (hφc : HasCompactSupport φ)
+    {G : S → ℝ × E} (hG : AEStronglyMeasurable G ν) {Y : S → E} (hY : Integrable Y ν) :
+    Integrable (fun q ↦ fderiv ℝ φ (G q) (1, Y q)) ν := by
+  have hDφ := hφ1.continuous_fderiv one_ne_zero
+  obtain ⟨C, hC⟩ := hDφ.bounded_above_of_compact_support (hφc.fderiv ℝ)
+  exact (((integrable_const 1).add hY.norm).const_mul C).mono'
+    (Continuous.comp_aestronglyMeasurable₂ (g := fun (L : ℝ × E →L[ℝ] ℝ) w ↦ L w)
+      (by fun_prop) (hDφ.comp_aestronglyMeasurable hG) (aestronglyMeasurable_const.prodMk hY.1))
+    (.of_forall fun q ↦ (fderiv ℝ φ _).le_of_opNorm_le_of_le (hC _) (by simp [Prod.norm_def]))
+
 /-- **Lagrangian solutions of the continuity equation.** Let `P` be a finite measure on a parameter
 space `Ω` and `γ : Ω → ℝ → E` a jointly measurable family of curves. If `P`-almost every curve is
 absolutely continuous on `[a, b]` and follows the velocity field `v`, in the sense that
@@ -349,8 +364,6 @@ theorem isContinuityEquation_map {Ω : Type*} [MeasurableSpace Ω] (P : Measure 
   have hφ1 : ContDiff ℝ 1 φ := hφ.of_le (by simp)
   have hF : Measurable fun q : ℝ × E ↦ fderiv ℝ φ q (1, v q.1 q.2) :=
     (measurable_fderiv_apply ℝ φ).comp (measurable_id.prodMk (measurable_const.prodMk hv))
-  obtain ⟨C, hC⟩ :=
-    (hφ1.continuous_fderiv one_ne_zero).bounded_above_of_compact_support (hφc.fderiv ℝ)
   have hpush (t : ℝ) : ∫ x, fderiv ℝ φ (t, x) (1, v t x) ∂P.map (γ · t) =
       ∫ ω, fderiv ℝ φ (t, γ ω t) (1, v t (γ ω t)) ∂P :=
     integral_map (hγt t).aemeasurable (hF.comp measurable_prodMk_left).aestronglyMeasurable
@@ -359,13 +372,10 @@ theorem isContinuityEquation_map {Ω : Type*} [MeasurableSpace Ω] (P : Measure 
   have : IsFiniteMeasure (volume.restrict (Ioo a b)) := ⟨by simp⟩
   have hInt : Integrable (uncurry fun t ω ↦ fderiv ℝ φ (t, γ ω t) (1, v t (γ ω t)))
       ((volume.restrict (Ioo a b)).prod P) := by
-    refine Integrable.mono' (g := fun q ↦ C * (1 + ‖v q.1 (γ q.2 q.1)‖)) ?_
-      (hF.comp (measurable_fst.prodMk hγ')).aestronglyMeasurable
-      (.of_forall fun q ↦ (fderiv ℝ φ _).le_of_opNorm_le_of_le (hC _) (by simp [Prod.norm_def]))
-    refine ((integrable_const 1).add ?_).const_mul C
-    refine ⟨(hv.comp (measurable_fst.prodMk hγ')).norm.aestronglyMeasurable, ?_⟩
+    refine integrable_fderiv_apply hφ1 hφc (measurable_fst.prodMk hγ').aestronglyMeasurable
+      ⟨(hv.comp (measurable_fst.prodMk hγ')).aestronglyMeasurable, ?_⟩
     rw [hasFiniteIntegral_iff_enorm]
-    simpa only [enorm_norm, lintegral_prod _ hvγ.aemeasurable] using hint'
+    simpa only [lintegral_prod _ hvγ.aemeasurable] using hint'
   rw [integral_integral_swap hInt]
   refine integral_eq_zero_of_ae ?_
   filter_upwards [hac, hderiv] with ω hω hω'
@@ -378,9 +388,10 @@ function, evaluated at `G`, is a bounded `G`-measurable factor which the conditi
 pulls out. -/
 private lemma integral_fderiv_apply_comp_eq_of_condExp {S : Type*}
     [MeasurableSpace S] {ν : Measure S} [IsFiniteMeasure ν] {G : S → ℝ × E} (hG : Measurable G)
-    {W : S → E} (hW : Measurable W) (hWint : Integrable W ν) {u : ℝ × E → E} (hu : Measurable u)
-    (hcu : ν[W | MeasurableSpace.comap G inferInstance] = u ∘ G) {φ : ℝ × E → ℝ}
-    (hφ1 : ContDiff ℝ 1 φ) (hφc : HasCompactSupport φ) :
+    {W : S → E} (hWint : Integrable W ν) {u : ℝ × E → E}
+    (hcu : ν[W | MeasurableSpace.comap G inferInstance] = u ∘ G)
+    (hcint : Integrable (fun q ↦ u (G q)) ν) {φ : ℝ × E → ℝ} (hφ1 : ContDiff ℝ 1 φ)
+    (hφc : HasCompactSupport φ) :
     ∫ q, fderiv ℝ φ (G q) (1, u (G q)) ∂ν = ∫ q, fderiv ℝ φ (G q) (1, W q) ∂ν := by
   have hm : MeasurableSpace.comap G inferInstance ≤ (inferInstance : MeasurableSpace S) :=
     hG.comap_le
@@ -396,32 +407,37 @@ private lemma integral_fderiv_apply_comp_eq_of_condExp {S : Type*}
     (hDφ.clm_comp continuous_const).stronglyMeasurable.comp_measurable (comap_measurable G)
   have hL_apply (q : S) (w : E) : L q w = fderiv ℝ φ (G q) (0, w) := by simp [L]
   -- the integrand splits into a time part and the space part `L q (Y q)`
-  have hsplit {Y : S → E} (hYm : Measurable Y) (hY : Integrable Y ν) :
+  have hsplit {Y : S → E} (hY : Integrable Y ν) :
       ∫ q, fderiv ℝ φ (G q) (1, Y q) ∂ν =
         ∫ q, fderiv ℝ φ (G q) (1, 0) ∂ν + ∫ q, L q (Y q) ∂ν := by
     have hA : Integrable (fun q ↦ fderiv ℝ φ (G q) (1, 0)) ν :=
-      (integrable_const (C * 1)).mono'
-        ((measurable_fderiv_apply ℝ φ).comp (hG.prodMk measurable_const)).aestronglyMeasurable
-        (.of_forall fun q ↦ (fderiv ℝ φ _).le_of_opNorm_le_of_le (hC _) (by simp [Prod.norm_def]))
-    have hLY : Integrable (fun q ↦ L q (Y q)) ν :=
-      (hY.norm.const_mul C).mono' (by
-          simp_rw [hL_apply]
-          exact ((measurable_fderiv_apply ℝ φ).comp
-            (hG.prodMk (measurable_const.prodMk hYm))).aestronglyMeasurable)
-        (.of_forall fun q ↦ (L q).le_of_opNorm_le_of_le (hLC q) le_rfl)
+      integrable_fderiv_apply hφ1 hφc hG.aestronglyMeasurable (integrable_zero S E ν)
+    have hLY : Integrable (fun q ↦ L q (Y q)) ν := by
+      refine ((integrable_fderiv_apply hφ1 hφc hG.aestronglyMeasurable hY).sub hA).congr
+        (.of_forall fun q ↦ ?_)
+      simp only [Pi.sub_apply, hL_apply, ← map_sub, Prod.mk_sub_mk, sub_self, sub_zero]
     rw [← integral_add hA hLY]
     congr 1 with q
     rw [hL_apply, ← map_add, Prod.mk_add_mk, add_zero, zero_add]
-  have hcint : Integrable (fun q ↦ u (G q)) ν := by
-    rw [← Function.comp_def, ← hcu]
-    exact integrable_condExp
-  rw [hsplit (Y := fun q ↦ u (G q)) (hu.comp hG) hcint, hsplit hW hWint]
+  rw [hsplit hcint, hsplit hWint]
   congr 1
   have := condExp_stronglyMeasurable_bilin_of_bound (ContinuousLinearMap.id ℝ (E →L[ℝ] ℝ)) hm
     hL hWint C (.of_forall hLC)
   simp only [ContinuousLinearMap.id_apply, hcu, Function.comp_apply] at this
   rw [← integral_condExp hm (f := fun q ↦ L q (W q))]
   exact (integral_congr_ae this).symm
+
+omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
+/-- Jensen's inequality for the conditional expectation, as an inequality of `lintegral`s: for
+`1 ≤ p`, the `p`-th power of the norm of `ν[W | m]` integrates to at most that of `W`. -/
+private lemma lintegral_enorm_condExp_rpow_le [CompleteSpace E] {S : Type*}
+    {m m₀ : MeasurableSpace S} {ν : Measure S} {W : S → E} (hW : AEStronglyMeasurable W ν)
+    {p : ℝ} (hp : 1 ≤ p) :
+    ∫⁻ q, ‖(ν[W | m]) q‖ₑ ^ p ∂ν ≤ ∫⁻ q, ‖W q‖ₑ ^ p ∂ν := by
+  have hp₀ : 0 < p := by linarith
+  have h := eLpNorm_condExp_le_eLpNorm (μ := ν) (m := m) W (p := .ofReal p) (by simpa using hp)
+  simpa [eLpNorm_eq_lintegral_rpow_enorm_toReal, hp₀, hp₀.le, integrable_condExp.1, hW,
+    ENNReal.rpow_le_rpow_iff] using h
 
 /-- **The barycentric velocity of a law on curves.** Let `P` be a finite measure on a parameter
 space `Ω` and `γ : Ω → ℝ → E` a jointly measurable family of curves, `P`-almost every one of which
@@ -467,14 +483,9 @@ theorem exists_isContinuityEquation_map {Ω : Type*} [MeasurableSpace Ω] (P : M
   -- Jensen's inequality for the conditional expectation, read on the time slices
   have hbound (p : ℝ) (hp : 1 ≤ p) : ∫⁻ t in Ioo a b, ∫⁻ x, ‖u (t, x)‖ₑ ^ p ∂P.map (γ · t) ≤
       ∫⁻ ω, (∫⁻ t in Ioo a b, ‖V ω t‖ₑ ^ p) ∂P := by
-    have hp₀ : ENNReal.ofReal p ≠ 0 := by simp; linarith
-    have h := eLpNorm_condExp_le_eLpNorm (μ := ν) (m := MeasurableSpace.comap G inferInstance) W
-      (p := ENNReal.ofReal p) (by simpa using hp)
-    rw [hcu, eLpNorm_eq_lintegral_rpow_enorm_toReal hp₀ ENNReal.ofReal_ne_top
-        (hu.measurable.comp hG).aestronglyMeasurable,
-      eLpNorm_eq_lintegral_rpow_enorm_toReal hp₀ ENNReal.ofReal_ne_top hW.aestronglyMeasurable,
-      ENNReal.toReal_ofReal (by linarith),
-      ENNReal.rpow_le_rpow_iff (one_div_pos.2 (by linarith))] at h
+    have h := lintegral_enorm_condExp_rpow_le (ν := ν) (m := MeasurableSpace.comap G inferInstance)
+      hW.aestronglyMeasurable hp
+    rw [hcu] at h
     have hmap (t : ℝ) : ∫⁻ x, ‖u (t, x)‖ₑ ^ p ∂P.map (γ · t) = ∫⁻ ω, ‖u (t, γ ω t)‖ₑ ^ p ∂P :=
       lintegral_map ((hu.measurable.comp measurable_prodMk_left).enorm.pow_const _) (hγt t)
     simp_rw [hmap]
@@ -491,32 +502,23 @@ theorem exists_isContinuityEquation_map {Ω : Type*} [MeasurableSpace Ω] (P : M
     exact h1.trans_lt hint
   -- push the slices back to `(a, b) × Ω`, replace `u ∘ G` by `W`, and integrate along each curve
   have hφ1 : ContDiff ℝ 1 φ := hφ.of_le (by simp)
-  obtain ⟨C, hC⟩ :=
-    (hφ1.continuous_fderiv one_ne_zero).bounded_above_of_compact_support (hφc.fderiv ℝ)
   have hcint : Integrable (fun q ↦ u (G q)) ν := by
     rw [← Function.comp_def, ← hcu]
     exact integrable_condExp
   have hF : Measurable fun q : ℝ × E ↦ fderiv ℝ φ q (1, u q) :=
     (measurable_fderiv_apply ℝ φ).comp
       (measurable_id.prodMk (measurable_const.prodMk hu.measurable))
-  have hFint : Integrable (fun q ↦ fderiv ℝ φ (G q) (1, u (G q))) ν :=
-    (((integrable_const 1).add hcint.norm).const_mul C).mono' (hF.comp hG).aestronglyMeasurable
-      (.of_forall fun q ↦ (fderiv ℝ φ _).le_of_opNorm_le_of_le (hC _) (by simp [Prod.norm_def]))
-  have hFWint : Integrable (fun q ↦ fderiv ℝ φ (G q) (1, W q)) ν :=
-    (((integrable_const 1).add hWint.norm).const_mul C).mono'
-      ((measurable_fderiv_apply ℝ φ).comp
-        (hG.prodMk (measurable_const.prodMk hW))).aestronglyMeasurable
-      (.of_forall fun q ↦ (fderiv ℝ φ _).le_of_opNorm_le_of_le (hC _) (by simp [Prod.norm_def]))
   have hpush (t : ℝ) : ∫ x, fderiv ℝ φ (t, x) (1, u (t, x)) ∂P.map (γ · t) =
       ∫ ω, fderiv ℝ φ (t, γ ω t) (1, u (t, γ ω t)) ∂P :=
     integral_map (hγt t).aemeasurable (hF.comp measurable_prodMk_left).aestronglyMeasurable
   simp_rw [hpush]
   calc ∫ t in Ioo a b, ∫ ω, fderiv ℝ φ (t, γ ω t) (1, u (t, γ ω t)) ∂P
-      = ∫ q, fderiv ℝ φ (G q) (1, u (G q)) ∂ν := (integral_prod _ hFint).symm
+      = ∫ q, fderiv ℝ φ (G q) (1, u (G q)) ∂ν :=
+      (integral_prod _ (integrable_fderiv_apply hφ1 hφc hG.aestronglyMeasurable hcint)).symm
     _ = ∫ q, fderiv ℝ φ (G q) (1, W q) ∂ν :=
-      integral_fderiv_apply_comp_eq_of_condExp hG hW hWint hu.measurable hcu hφ1 hφc
+      integral_fderiv_apply_comp_eq_of_condExp hG hWint hcu hcint hφ1 hφc
     _ = ∫ ω, (∫ t in Ioo a b, fderiv ℝ φ (t, γ ω t) (1, V ω t)) ∂P :=
-      integral_prod_symm _ hFWint
+      integral_prod_symm _ (integrable_fderiv_apply hφ1 hφc hG.aestronglyMeasurable hWint)
     _ = 0 := by
       refine integral_eq_zero_of_ae ?_
       filter_upwards [hac, hderiv] with ω hω hω'
