@@ -145,14 +145,16 @@ theorem infl_mk_descend (f : Cocycle G A) (hf : ∀ n ∈ N, f n = 1) :
     infl N (mk (f.descend N hf)) = mk f := by
   rw [infl_mk, Cocycle.map_descend]
 
-/-- **Inflation is injective**: if two inflated cocycles are cohomologous through `a : A`, the
-cocycle identity at the elements of `N` forces `a ∈ Aᴺ`. -/
+/-- **Inflation is injective**: for every normal subgroup `N` of `G`, the map
+`H¹(G ⧸ N, Aᴺ) → H¹(G, A)` is injective. No continuity of the multiplication of `A` or of the
+action of `G` on `A` is needed. -/
 theorem infl_injective : Function.Injective (infl (A := A) N) := by
   intro c₁ c₂ h
   induction c₁ using induction_on with | mk f₁ =>
   induction c₂ using induction_on with | mk f₂ =>
   rw [infl_mk, infl_mk] at h
   obtain ⟨a, ha⟩ := mk_eq_mk_iff.mp h
+  -- The cocycle identity at the elements of `N` forces the witness `a` into `Aᴺ`.
   have haN : a ∈ FixedPoints.subgroup N A := fun n ↦ by
     have hn := ha n
     simp only [Cocycle.map_apply, ContinuousMonoidHom.quotientMk_apply,
