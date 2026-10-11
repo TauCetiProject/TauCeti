@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge
-import Mathlib.Analysis.Normed.Operator.Mul
+public import Mathlib.Analysis.Normed.Operator.Mul
 
 /-!
 # Scalar and algebra-valued wedge products
@@ -23,16 +23,23 @@ Chapter 14. The underlying paired construction is `TauCeti.wedgeWith`.
 
 public section
 
-namespace TauCeti
+open TauCeti
 
 variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
 variable {k l m : ℕ}
+
+namespace ContinuousAlternatingMap
 
 /-- The real-valued wedge product, normalized so that the wedge of two covectors is their
 two-term determinant. -/
 noncomputable def wedge (φ : E [⋀^Fin k]→L[ℝ] ℝ) (ψ : E [⋀^Fin l]→L[ℝ] ℝ) :
     E [⋀^Fin (k + l)]→L[ℝ] ℝ :=
   wedgeWith (ContinuousLinearMap.mul ℝ ℝ) φ ψ
+
+/-- The real wedge is the paired wedge for multiplication. -/
+theorem wedge_def (φ : E [⋀^Fin k]→L[ℝ] ℝ) (ψ : E [⋀^Fin l]→L[ℝ] ℝ) :
+    wedge φ ψ = TauCeti.wedgeWith (ContinuousLinearMap.mul ℝ ℝ) φ ψ :=
+  wedge.eq_def φ ψ
 
 /-- The wedge of two real one-forms evaluates as a determinant. -/
 @[simp]
@@ -98,6 +105,12 @@ noncomputable def wedgeMul {A : Type*} [NormedRing A] [NormedAlgebra ℝ A]
     E [⋀^Fin (k + l)]→L[ℝ] A :=
   wedgeWith (ContinuousLinearMap.mul ℝ A) φ ψ
 
+/-- The algebra-valued wedge is the paired wedge for multiplication. -/
+theorem wedgeMul_def {A : Type*} [NormedRing A] [NormedAlgebra ℝ A]
+    (φ : E [⋀^Fin k]→L[ℝ] A) (ψ : E [⋀^Fin l]→L[ℝ] A) :
+    wedgeMul φ ψ = TauCeti.wedgeWith (ContinuousLinearMap.mul ℝ A) φ ψ :=
+  wedgeMul.eq_def φ ψ
+
 /-- The algebra-valued wedge of two one-forms is the antisymmetrized product. -/
 @[simp]
 theorem wedgeMul_apply_one_one {A : Type*} [NormedRing A] [NormedAlgebra ℝ A]
@@ -105,6 +118,56 @@ theorem wedgeMul_apply_one_one {A : Type*} [NormedRing A] [NormedAlgebra ℝ A]
     wedgeMul φ ψ ![v, w] = φ ![v] * ψ ![w] - φ ![w] * ψ ![v] := by
   simpa only [wedgeMul, ContinuousLinearMap.mul_apply'] using
     (wedgeWith_apply_one_one (mu := ContinuousLinearMap.mul ℝ A) φ ψ v w)
+
+/-- The algebra-valued wedge is additive in its first argument. -/
+@[simp]
+theorem wedgeMul_add_left {A : Type*} [NormedRing A] [NormedAlgebra ℝ A]
+    (φ φ' : E [⋀^Fin k]→L[ℝ] A) (ψ : E [⋀^Fin l]→L[ℝ] A) :
+    wedgeMul (φ + φ') ψ = wedgeMul φ ψ + wedgeMul φ' ψ :=
+  wedgeWith_add_left _ _ _ _
+
+/-- The algebra-valued wedge is additive in its second argument. -/
+@[simp]
+theorem wedgeMul_add_right {A : Type*} [NormedRing A] [NormedAlgebra ℝ A]
+    (φ : E [⋀^Fin k]→L[ℝ] A) (ψ ψ' : E [⋀^Fin l]→L[ℝ] A) :
+    wedgeMul φ (ψ + ψ') = wedgeMul φ ψ + wedgeMul φ ψ' :=
+  wedgeWith_add_right _ _ _ _
+
+/-- The algebra-valued wedge respects real scalar multiplication in its first argument. -/
+@[simp]
+theorem wedgeMul_smul_left {A : Type*} [NormedRing A] [NormedAlgebra ℝ A] (c : ℝ)
+    (φ : E [⋀^Fin k]→L[ℝ] A) (ψ : E [⋀^Fin l]→L[ℝ] A) :
+    wedgeMul (c • φ) ψ = c • wedgeMul φ ψ :=
+  wedgeWith_smul_left _ _ _ _
+
+/-- The algebra-valued wedge respects real scalar multiplication in its second argument. -/
+@[simp]
+theorem wedgeMul_smul_right {A : Type*} [NormedRing A] [NormedAlgebra ℝ A] (c : ℝ)
+    (φ : E [⋀^Fin k]→L[ℝ] A) (ψ : E [⋀^Fin l]→L[ℝ] A) :
+    wedgeMul φ (c • ψ) = c • wedgeMul φ ψ :=
+  wedgeWith_smul_right _ _ _ _
+
+/-- The algebra-valued wedge obeys the binomial operator-norm bound. -/
+theorem norm_wedgeMul_le {A : Type*} [NormedRing A] [NormedAlgebra ℝ A]
+    (φ : E [⋀^Fin k]→L[ℝ] A) (ψ : E [⋀^Fin l]→L[ℝ] A) :
+    ‖wedgeMul φ ψ‖ ≤ (k + l).choose k * ‖φ‖ * ‖ψ‖ := by
+  calc
+    ‖wedgeMul φ ψ‖ ≤ (k + l).choose k * ‖ContinuousLinearMap.mul ℝ A‖ * ‖φ‖ * ‖ψ‖ :=
+      norm_wedgeWith_le (ContinuousLinearMap.mul ℝ A) φ ψ
+    _ ≤ (k + l).choose k * ‖φ‖ * ‖ψ‖ := by
+      gcongr
+      simpa only [mul_one] using
+        mul_le_mul_of_nonneg_left (ContinuousLinearMap.opNorm_mul_le ℝ A)
+          (show 0 ≤ ((k + l).choose k : ℝ) by positivity)
+
+/-- Pulling both algebra-valued forms back along a continuous linear map commutes with wedge. -/
+@[simp]
+theorem wedgeMul_compContinuousLinearMap {A : Type*} [NormedRing A] [NormedAlgebra ℝ A]
+    {E' : Type*} [SeminormedAddCommGroup E'] [NormedSpace ℝ E']
+    (f : E' →L[ℝ] E) (φ : E [⋀^Fin k]→L[ℝ] A) (ψ : E [⋀^Fin l]→L[ℝ] A) :
+    wedgeMul (φ.compContinuousLinearMap f) (ψ.compContinuousLinearMap f) =
+      (wedgeMul φ ψ).compContinuousLinearMap f :=
+  wedgeWith_compContinuousLinearMap _ _ _ _
 
 /-- The algebra-valued wedge is associative, up to reassociation of its degree. -/
 theorem wedgeMul_assoc {A : Type*} [NormedRing A] [NormedAlgebra ℝ A]
@@ -122,4 +185,4 @@ theorem wedgeMul_comm {A : Type*} [NormedCommRing A] [NormedAlgebra ℝ A]
       wedgeMul ψ φ (v ∘ Fin.cast (Nat.add_comm l k)) := by
   exact wedgeWith_comm (fun a b : A => mul_comm a b) φ ψ v
 
-end TauCeti
+end ContinuousAlternatingMap
