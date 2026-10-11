@@ -35,13 +35,9 @@ sheaf of `D` vanishes on the identity, on the sum of two points of `D` and on th
 point of `D`, scheme-theoretically.
 
 The main theorem is that a point of exact order `N` is killed by `N`
-(`EllipticCurveGeom.IsOfExactOrder.pow_eq_one`), so it is an `S`-point of the `N`-torsion `E[N]`.
-The proof is by translation. Since `D` is a subgroup scheme containing `P`, translation by `-P`
-carries `D` onto itself. It also carries each `[(a + 1)P]` to `[aP]`, hence `D` to the divisor
-`[0] + [P] + ⋯ + [(N - 1)P]`. Cancelling the common effective Cartier divisor
-`[P] + ⋯ + [(N - 1)P]` from these two expressions of `D` gives `[NP] = [0]`, and a section of a
-separated morphism is determined by its divisor. The argument works over every base, including
-nonreduced ones, and needs neither the finiteness of `D` nor its rank.
+(`EllipticCurveGeom.IsOfExactOrder.pow_eq_one`), so it is an `S`-point of the `N`-torsion `E[N]`
+(`EllipticCurveGeom.IsOfExactOrder.comp_mulBy_eq_one`). This holds over every base, including
+nonreduced ones, with no finiteness or rank hypothesis on `D`.
 
 Following `EllipticCurveGeom.mulBy`, the group law on points of `E` is written multiplicatively:
 `P ^ a` is the point `aP`, and `1` is the zero section.
@@ -211,6 +207,8 @@ theorem IsOfExactOrder.pow_eq_one {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap
       Scheme.IdealSheafData.comap_prod]
     simp only [leftTranslation_inv, ker_comap_leftTranslation_hom, inv_inv, ← pow_succ']
     rw [multiplesDivisor, ← Finset.prod_range_succ, Finset.prod_range_succ']
+  -- Cancel the effective Cartier divisor `D`; a section of the separated morphism `E ⟶ S` is
+  -- determined by its ideal sheaf, so `[(n + 1 + 1)P] = [P]` gives `(n + 1 + 1)P = P`.
   have hker := ((isRelativeEffectiveCartier_multiplesDivisor P (n + 1)).isEffectiveCartier
     ).mul_left_cancel hcancel
   rw [Scheme.Hom.ker_eq_ker_iff_of_comp_eq_id (f := E.structureMap) _ _ (Over.w _) (Over.w _)]
