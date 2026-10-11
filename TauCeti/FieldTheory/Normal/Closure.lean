@@ -21,6 +21,10 @@ separable.
 When `F⟮x⟯` is already all of `E`, this says that `E` itself is a splitting field of
 `minpoly F x`; if moreover `E / F` is Galois, the Galois group of `minpoly F x` has order
 `[E : F]`.
+
+For an arbitrary ambient field, the embedding images of an extension into its normal closure
+generate that whole normal closure. This allows properties preserved under composita to be
+proved by working with the embedding images.
 -/
 
 /- The proof uses Mathlib's description of the normal closure as the supremum of the
@@ -31,6 +35,16 @@ public section
 namespace TauCeti
 
 open IntermediateField Polynomial
+
+/-- The images of all `K`-embeddings of `L` into `normalClosure K L Ω` generate that field. -/
+theorem normalClosure_iSup_fieldRange_eq_top (K L Ω : Type*) [Field K] [Field L] [Field Ω]
+    [Algebra K L] [Algebra K Ω] :
+    (⨆ f : L →ₐ[K] normalClosure K L Ω, f.fieldRange) = ⊤ := by
+  apply IntermediateField.map_injective (normalClosure K L Ω).val
+  rw [IntermediateField.map_iSup, ← AlgHom.fieldRange_eq_map,
+    IntermediateField.fieldRange_val]
+  simp_rw [AlgHom.map_fieldRange]
+  exact (normalClosure.algHomEquiv K L Ω).iSup_comp.trans (normalClosure_def K L Ω).symm
 
 variable {F E : Type*} [Field F] [Field E] [Algebra F E] [Normal F E]
 

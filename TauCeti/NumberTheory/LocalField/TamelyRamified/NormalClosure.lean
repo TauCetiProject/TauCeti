@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.TamelyRamified.BaseChange
-public import Mathlib.FieldTheory.Normal.Closure
+public import TauCeti.FieldTheory.Normal.Closure
 
 /-!
 # Tame ramification of normal closures
@@ -68,12 +68,8 @@ theorem IsTamelyRamified.normalClosure (hL : IsTamelyRamified K L) :
   have hrange (f : L →ₐ[K] N) : P f.fieldRange := hL.of_algEquiv f.equivFieldRange
   let _ := Fintype.ofFinite (L →ₐ[K] N)
   have htop : (Finset.univ.sup fun f : L →ₐ[K] N ↦ f.fieldRange) = ⊤ := by
-    apply IntermediateField.lift_injective
-    simp only [Finset.sup_eq_iSup, Finset.mem_univ, iSup_true, IntermediateField.lift,
-      IntermediateField.map_iSup, AlgHom.map_fieldRange, ← AlgHom.fieldRange_eq_map,
-      IntermediateField.fieldRange_val]
-    exact (normalClosure.algHomEquiv K L Ω).iSup_comp.trans
-      (normalClosure_def K L Ω).symm
+    simpa only [Finset.sup_eq_iSup, Finset.mem_univ, iSup_true] using
+      normalClosure_iSup_fieldRange_eq_top K L Ω
   have hPt : P ⊤ := htop ▸ Finset.sup_induction hbot (fun E hE F hF ↦ hsup E F hE hF)
     (fun f _ ↦ hrange f)
   exact hPt.of_algEquiv topEquiv
