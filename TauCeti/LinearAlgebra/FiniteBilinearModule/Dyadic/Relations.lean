@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.RankTwo.Basic
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.Cyclic
 
 import TauCeti.Data.ZMod.BinaryQuadraticForm
+import TauCeti.Data.ZMod.BinaryQuadraticForm.PlaneCyclic
 import TauCeti.Data.ZMod.Two
 import TauCeti.Data.ZMod.UnitSquare
 import TauCeti.Data.ZMod.MulCastHom
@@ -226,52 +227,6 @@ noncomputable def dyadicCyclicProdIsometryFiveMul (k : ℕ) [NeZero k] {θ η : 
           (hxy.trans (Hom.toFiniteBilinearModule_apply g y).symm))
     exact ⟨(g.toIsometry ((Nat.bijective_iff_injective_and_card g).mpr ⟨hinj, rfl⟩)).symm⟩
 
-private theorem exists_dyadic_plane_complement (k : ℕ)
-    {θ t : ZMod (2 ^ (k + 1))} (hq : IsUnit (θ * t ^ 2)) :
-    ∃ a b c d : ZMod (2 ^ (k + 1)), ∀ m n,
-      θ * (-t * (2 * (a * m + b * n) + (c * m + d * n))) ^ 2 +
-        (a * m + b * n) ^ 2 + (a * m + b * n) * (c * m + d * n) +
-        (c * m + d * n) ^ 2 = m * n := by
-  obtain ⟨s, hs⟩ | ⟨s, hs⟩ := ZMod.eq_two_mul_or_eq_two_mul_add_one (θ * t ^ 2)
-  · exact (ZMod.not_isUnit_two_mul s (hs ▸ hq)).elim
-  · have hmid : IsUnit (1 + 4 * θ * t ^ 2) := by
-      convert ZMod.isUnit_two_mul_add (c := 2 * θ * t ^ 2) isUnit_one using 1
-      ring
-    obtain ⟨e₁, e₂, f₁, f₂, h⟩ := ZMod.BinaryQuadraticForm.exists_hyperbolic_of_two_mul
-      (s + 1) (1 + 4 * θ * t ^ 2) hmid
-    refine ⟨e₂, f₂, e₁, f₁, fun m n ↦ ?_⟩
-    linear_combination h m n + (e₁ * m + f₁ * n) ^ 2 * hs
-
-private theorem exists_dyadic_plane_cyclic_coefficients (k : ℕ) {θ : ℤ} (hθ : Odd θ) :
-    ∃ u t a b c d : ZMod (2 ^ (k + 2)),
-      (θ : ZMod (2 ^ (k + 2))) * u ^ 2 + 4 = 5 * θ ∧
-      (θ : ZMod (2 ^ (k + 2))) * u * t = 1 ∧
-      ∀ m n, (θ : ZMod (2 ^ (k + 2))) *
-          (-t * (2 * (a * m + b * n) + (c * m + d * n))) ^ 2 +
-        (a * m + b * n) ^ 2 + (a * m + b * n) * (c * m + d * n) +
-        (c * m + d * n) ^ 2 = m * n := by
-  have hunit : IsUnit (θ : ZMod (2 ^ (k + 2))) := by
-    obtain ⟨s, rfl⟩ := hθ
-    convert ZMod.isUnit_two_mul_add (c := (s : ZMod (2 ^ (k + 2)))) isUnit_one using 1
-    push_cast
-    ring
-  obtain ⟨Θ, hΘ⟩ := hunit
-  obtain ⟨U, hU⟩ := ZMod.exists_unit_sq_eq_five_sub_four_mul (k := k + 1)
-    (Units.isUnit Θ⁻¹)
-  let t : ZMod (2 ^ (k + 2)) := ((Θ * U)⁻¹ : (ZMod (2 ^ (k + 2)))ˣ)
-  have hinv : (θ : ZMod (2 ^ (k + 2))) * (U : ZMod (2 ^ (k + 2))) * t = 1 := by
-    rw [← hΘ]
-    exact Units.mul_inv (Θ * U)
-  have hroot : (θ : ZMod (2 ^ (k + 2))) * (U : ZMod (2 ^ (k + 2))) ^ 2 + 4 = 5 * θ := by
-    rw [hU, ← hΘ]
-    have hcancel := Units.mul_inv Θ
-    linear_combination -(4 : ZMod (2 ^ (k + 2))) * hcancel
-  have hq : IsUnit ((θ : ZMod (2 ^ (k + 2))) * t ^ 2) := by
-    rw [← hΘ]
-    exact (Units.isUnit Θ).mul ((Units.isUnit (Θ * U)⁻¹).pow 2)
-  obtain ⟨a, b, c, d, h⟩ := exists_dyadic_plane_complement (k + 1) hq
-  exact ⟨U, t, a, b, c, d, hroot, hinv, h⟩
-
 private theorem dyadicV_prod_cyclic_succ_quadratic_intCast (k : ℕ) (θ x y z : ℤ) :
     ((dyadicV k).prod (dyadicCyclic (k + 1) θ)).quadratic
         (((x : ZMod (2 ^ k)), (y : ZMod (2 ^ k))), (z : ZMod (2 ^ (k + 1)))) =
@@ -328,27 +283,21 @@ private theorem dyadicPlaneCyclicSuccChange_intCast (k : ℕ) (u t a b c d m n z
       ((c * m + d * n : ℤ) : ZMod (2 ^ k))),
       ((-2 * t * (2 * (a * m + b * n) + (c * m + d * n)) + u * z : ℤ) :
         ZMod (2 ^ (k + 1)))) := by
+  simp only [dyadicPlaneCyclicSuccChange, AddMonoidHom.coe_mk, ZeroHom.coe_mk]
   apply Prod.ext
   · apply Prod.ext
-    · change (a : ZMod (2 ^ k)) * (m : ZMod (2 ^ k)) +
-          (b : ZMod (2 ^ k)) * (n : ZMod (2 ^ k)) +
-          ZMod.castHom (pow_dvd_pow 2 (by omega : k ≤ k + 1)) (ZMod (2 ^ k))
-            (z : ZMod (2 ^ (k + 1))) = _
-      rw [map_intCast]
+    · rw [map_intCast]
       push_cast
       ring
-    · change (c : ZMod (2 ^ k)) * (m : ZMod (2 ^ k)) +
-          (d : ZMod (2 ^ k)) * (n : ZMod (2 ^ k)) = _
-      push_cast
+    · push_cast
       ring
-  · change ZMod.mulCastHom 2 (by simp [pow_succ])
-        (((-t * (2 * a + c) : ℤ) : ZMod (2 ^ k)) * (m : ZMod (2 ^ k)) +
-          ((-t * (2 * b + d) : ℤ) : ZMod (2 ^ k)) * (n : ZMod (2 ^ k))) +
-        (u : ZMod (2 ^ (k + 1))) * (z : ZMod (2 ^ (k + 1))) = _
-    rw [show (((-t * (2 * a + c) : ℤ) : ZMod (2 ^ k)) * (m : ZMod (2 ^ k)) +
+  · -- Combine the reduced linear terms before lifting them by multiplication by two.
+    have hlinear : (((-t * (2 * a + c) : ℤ) : ZMod (2 ^ k)) * (m : ZMod (2 ^ k)) +
         ((-t * (2 * b + d) : ℤ) : ZMod (2 ^ k)) * (n : ZMod (2 ^ k))) =
-      ((-t * (2 * (a * m + b * n) + (c * m + d * n)) : ℤ) : ZMod (2 ^ k)) by
-        push_cast; ring, ZMod.mulCastHom_intCast]
+        ((-t * (2 * (a * m + b * n) + (c * m + d * n)) : ℤ) : ZMod (2 ^ k)) := by
+      push_cast
+      ring
+    rw [hlinear, ZMod.mulCastHom_intCast]
     push_cast
     ring
 
@@ -381,7 +330,7 @@ noncomputable def dyadicVProdCyclicSuccIsometryUProdFiveMul (k : ℕ) {θ : ℤ}
       ((dyadicU k).prod (dyadicCyclic (k + 1) (5 * θ))) :=
   Classical.choice <| by
     obtain ⟨u, t, a, b, c, d, hroot, hinv, hplane⟩ :=
-      exists_dyadic_plane_cyclic_coefficients k hθ
+      ZMod.BinaryQuadraticForm.exists_plane_cyclic_coefficients_of_odd (k + 1) hθ
     let ui : ℤ := u.val
     let ti : ℤ := t.val
     let ai : ℤ := a.val
@@ -424,7 +373,7 @@ private theorem dyadicCyclic_prod_V_succ_quadratic_intCast (k : ℕ) [NeZero k] 
   rw [← AddCircle.coe_add]
   congr 1
   push_cast
-  rw [show k + 2 = (k + 1) + 1 by omega, pow_succ]
+  simp only [pow_add, pow_one, pow_two]
   field_simp
   ring
 
@@ -440,9 +389,8 @@ private theorem dyadicCyclic_prod_U_succ_quadratic_intCast (k : ℕ) [NeZero k] 
   rw [← AddCircle.coe_add]
   congr 1
   push_cast
-  rw [show k + 2 = (k + 1) + 1 by omega, pow_succ]
+  simp only [pow_add, pow_one, pow_two]
   field_simp
-  ring
 
 private def dyadicCyclicPlaneSuccChange (k : ℕ) (u t a b c d : ℤ) :
     (ZMod (2 ^ k) × (ZMod (2 ^ (k + 1)) × ZMod (2 ^ (k + 1)))) →+
@@ -465,24 +413,16 @@ private theorem dyadicCyclicPlaneSuccChange_intCast (k : ℕ) (u t a b c d m n z
     (((u * m - t * (2 * (a * n + b * z) + (c * n + d * z)) : ℤ) : ZMod (2 ^ k)),
       (((2 * m + a * n + b * z : ℤ) : ZMod (2 ^ (k + 1))),
         ((c * n + d * z : ℤ) : ZMod (2 ^ (k + 1))))) := by
+  simp only [dyadicCyclicPlaneSuccChange, AddMonoidHom.coe_mk, ZeroHom.coe_mk]
   apply Prod.ext
-  · change (u : ZMod (2 ^ k)) * (m : ZMod (2 ^ k)) +
-        ZMod.castHom (pow_dvd_pow 2 (by omega : k ≤ k + 1)) (ZMod (2 ^ k))
-          (((-t * (2 * a + c) : ℤ) : ZMod (2 ^ (k + 1))) * (n : ZMod (2 ^ (k + 1))) +
-            ((-t * (2 * b + d) : ℤ) : ZMod (2 ^ (k + 1))) * (z : ZMod (2 ^ (k + 1)))) = _
-    simp only [map_add, map_mul, map_intCast]
+  · simp only [map_add, map_mul, map_intCast]
     push_cast
     ring
   · apply Prod.ext
-    · change ZMod.mulCastHom 2 (by simp [pow_succ]) (m : ZMod (2 ^ k)) +
-          (a : ZMod (2 ^ (k + 1))) * (n : ZMod (2 ^ (k + 1))) +
-          (b : ZMod (2 ^ (k + 1))) * (z : ZMod (2 ^ (k + 1))) = _
-      rw [ZMod.mulCastHom_intCast]
+    · rw [ZMod.mulCastHom_intCast]
       push_cast
       ring
-    · change (c : ZMod (2 ^ (k + 1))) * (n : ZMod (2 ^ (k + 1))) +
-          (d : ZMod (2 ^ (k + 1))) * (z : ZMod (2 ^ (k + 1))) = _
-      push_cast
+    · push_cast
       ring
 
 private theorem dyadicCyclicPlaneSuccChange_quadratic (k : ℕ) [NeZero k] (θ u t a b c d : ℤ)
@@ -515,7 +455,7 @@ noncomputable def dyadicCyclicProdVSuccIsometryFiveMulProdU (k : ℕ) [NeZero k]
       ((dyadicCyclic k (5 * θ)).prod (dyadicU (k + 1))) :=
   Classical.choice <| by
     obtain ⟨u, t, a, b, c, d, hroot, hinv, hplane⟩ :=
-      exists_dyadic_plane_cyclic_coefficients k hθ
+      ZMod.BinaryQuadraticForm.exists_plane_cyclic_coefficients_of_odd (k + 1) hθ
     let ui : ℤ := u.val
     let ti : ℤ := t.val
     let ai : ℤ := a.val
