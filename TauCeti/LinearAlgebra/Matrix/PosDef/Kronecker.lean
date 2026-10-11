@@ -36,7 +36,7 @@ theorem _root_.Matrix.IsSymm.kronecker [CommMagma R] {A : Matrix m m R} {B : Mat
   rw [IsSymm, ← kroneckerMap_transpose, hA.eq, hB.eq]
 
 /-- The quadratic form of `1 ⊗ₖ A` is the sum of the quadratic forms of `A` on the blocks. -/
-private theorem star_dotProduct_one_kronecker_mulVec [CommRing R] [StarRing R] [Fintype m]
+theorem _root_.Matrix.star_dotProduct_one_kronecker_mulVec [CommRing R] [StarRing R] [Fintype m]
     [DecidableEq m] [Fintype n] (A : Matrix n n R) (x : m × n → R) :
     star x ⬝ᵥ (((1 : Matrix m m R) ⊗ₖ A) *ᵥ x) =
       ∑ i, star (fun j => x (i, j)) ⬝ᵥ (A *ᵥ fun j => x (i, j)) := by

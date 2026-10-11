@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.Cartan.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Milgram
+public import TauCeti.LinearAlgebra.IntegralLattice.StandardCoordinates
 import TauCeti.LinearAlgebra.Matrix.PosDef.Kronecker
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.Dynkin
 
@@ -19,15 +21,17 @@ Gram matrix of `k` orthogonal copies of the `E₈` root lattice is the Kronecker
 identity matrix of size `k` with the `E₈` Cartan matrix. This construction includes the rank-zero
 lattice.
 
-The choice of coordinates on `Fin (8 * k)` is immaterial; a finite-type equivalence reindexes
-the natural product coordinates. The resulting lattice is a concrete witness on `Fin n → ℚ`.
+The coordinates on `Fin (8 * k)` are reindexed by `finProdFinEquiv`, so the `E₈` blocks are
+explicitly indexed by `Fin k × Fin 8`. The resulting lattice is a concrete witness on `Fin n → ℚ`.
 
 ## Main results
 
 * `TauCeti.IntegralLattice.e8PowLattice`: the lattice `E₈^k` of `k` orthogonal `E₈` blocks, with
-  `e8PowLattice_isEven`, `e8PowLattice_isUnimodular` and `e8PowLattice_isPosDef`.
+  its block Gram matrix and standard integral carrier; it is even, unimodular and positive definite.
 * `TauCeti.IntegralLattice.exists_isEven_isUnimodular_isPosDef_iff`: a positive definite even
   unimodular lattice on `Fin n → ℚ` exists exactly when `8 ∣ n`.
+* `TauCeti.IntegralLattice.eight_dvd_finrank_of_isEven_isUnimodular_isPosDef`: the rank of any
+  positive definite even unimodular integral lattice is divisible by eight.
 
 ## References
 
@@ -42,15 +46,14 @@ open scoped Kronecker
 
 namespace TauCeti.IntegralLattice
 
-private noncomputable def eightBlockEquiv (k : ℕ) : Fin (8 * k) ≃ Fin k × Fin 8 := by
-  apply Fintype.equivOfCardEq
-  simp [Fintype.card_prod]
-  omega
+/-- The coordinate equivalence identifying `Fin (8 * k)` with `k` blocks of eight coordinates. -/
+def e8PowIndexEquiv (k : ℕ) : Fin (8 * k) ≃ Fin k × Fin 8 :=
+  (finCongr (Nat.mul_comm 8 k)).trans finProdFinEquiv.symm
 
 /-- The Gram matrix of `k` orthogonal copies of the `E₈` root lattice, indexed by `Fin (8*k)`. -/
 private noncomputable def e8PowGram (k : ℕ) : Matrix (Fin (8 * k)) (Fin (8 * k)) ℤ :=
   ((1 : Matrix (Fin k) (Fin k) ℤ) ⊗ₖ CartanMatrix.E 8).submatrix
-    (eightBlockEquiv k) (eightBlockEquiv k)
+    (e8PowIndexEquiv k) (e8PowIndexEquiv k)
 
 private theorem e8PowGram_isSymm (k : ℕ) : (e8PowGram k).IsSymm :=
   (isSymm_one.kronecker (CartanMatrix.E_isSymm 8)).submatrix _
@@ -73,7 +76,7 @@ private theorem e8PowGram_posDef (k : ℕ) :
     ext ⟨i, a⟩ ⟨j, b⟩
     by_cases hij : i = j <;> simp [hij]
   rw [e8PowGram, ← Matrix.submatrix_map, hcast]
-  exact posDef_map_intCast_cartanMatrix_E8.one_kronecker.submatrix (eightBlockEquiv k).injective
+  exact posDef_map_intCast_cartanMatrix_E8.one_kronecker.submatrix (e8PowIndexEquiv k).injective
 
 /-- The lattice `E₈^k`: `k` orthogonal copies of the `E₈` root lattice, as an integral lattice of
 rank `8 * k` on `Fin (8 * k) → ℚ`. Its Gram matrix is `1 ⊗ₖ E₈` up to reindexing. -/
@@ -81,14 +84,14 @@ noncomputable def e8PowLattice (k : ℕ) : IntegralLattice (Fin (8 * k) → ℚ)
   ofGramMatrix (Pi.basisFun ℚ (Fin (8 * k))) (e8PowGram k) (e8PowGram_isSymm k)
 
 /-- The lattice `E₈^k` is even. -/
-theorem e8PowLattice_isEven (k : ℕ) : (e8PowLattice k).IsEven := by
+theorem isEven_e8PowLattice (k : ℕ) : (e8PowLattice k).IsEven := by
   rw [e8PowLattice, isEven_ofGramMatrix_iff]
   intro i
   rw [e8PowGram_diag]
   exact even_two
 
 /-- The lattice `E₈^k` is unimodular. -/
-theorem e8PowLattice_isUnimodular (k : ℕ) : (e8PowLattice k).IsUnimodular := by
+theorem isUnimodular_e8PowLattice (k : ℕ) : (e8PowLattice k).IsUnimodular := by
   have hdet : (e8PowLattice k).determinant = 1 := by
     rw [e8PowLattice, determinant_ofGramMatrix, e8PowGram_det]
   -- `isUnimodular_iff_isUnit_determinant` needs nondegeneracy as an instance.
@@ -98,8 +101,33 @@ theorem e8PowLattice_isUnimodular (k : ℕ) : (e8PowLattice k).IsUnimodular := b
   exact isUnit_one
 
 /-- The lattice `E₈^k` is positive definite. -/
-theorem e8PowLattice_isPosDef (k : ℕ) : (e8PowLattice k).IsPosDef :=
+theorem isPosDef_e8PowLattice (k : ℕ) : (e8PowLattice k).IsPosDef :=
   (isPosDef_ofGramMatrix_iff _ _ _).mpr (e8PowGram_posDef k)
+
+/-- The Gram matrix of `E₈^k` on the basis indexed by `Fin k × Fin 8` is block diagonal, with
+each diagonal block the `E₈` Cartan matrix. -/
+@[simp]
+theorem form_e8PowLattice_basisFun (k : ℕ) (a b : Fin k) (i j : Fin 8) :
+    (e8PowLattice k).form
+        (Pi.basisFun ℚ (Fin (8 * k)) ((e8PowIndexEquiv k).symm (a, i)))
+        (Pi.basisFun ℚ (Fin (8 * k)) ((e8PowIndexEquiv k).symm (b, j))) =
+      if a = b then (((CartanMatrix.E 8) i j : ℤ) : ℚ) else 0 := by
+  rw [e8PowLattice, form_ofGramMatrix_basisFun_basisFun]
+  simp [e8PowGram, one_apply]
+
+/-- The carrier of `E₈^k` is the integral span of its standard basis. -/
+theorem e8PowLattice_carrier (k : ℕ) :
+    (e8PowLattice k).carrier =
+      Submodule.span ℤ (Set.range (Pi.basisFun ℚ (Fin (8 * k)))) := by
+  rw [e8PowLattice]
+  exact ofGramMatrix_carrier _ _ _
+
+/-- A vector belongs to `E₈^k` exactly when all its standard coordinates are integers. -/
+@[simp]
+theorem mem_e8PowLattice_carrier_iff (k : ℕ) (x : Fin (8 * k) → ℚ) :
+    x ∈ (e8PowLattice k).carrier ↔ ∀ i, ∃ z : ℤ, (z : ℚ) = x i := by
+  rw [e8PowLattice]
+  exact mem_ofGramMatrix_basisFun_carrier_iff _ _ x
 
 /-- **Positive definite even unimodular lattices exist exactly in ranks divisible by eight.**
 The witness at rank `8 * k` is `e8PowLattice k`. -/
@@ -111,7 +139,7 @@ theorem exists_isEven_isUnimodular_isPosDef_iff (n : ℕ) :
     simpa [Module.finrank_pi_fintype] using
       L.eight_dvd_finrank_of_isEven_isUnimodular_isPosDef hE hU hP
   · rintro ⟨k, rfl⟩
-    exact ⟨e8PowLattice k, e8PowLattice_isEven k, e8PowLattice_isUnimodular k,
-      e8PowLattice_isPosDef k⟩
+    exact ⟨e8PowLattice k, isEven_e8PowLattice k, isUnimodular_e8PowLattice k,
+      isPosDef_e8PowLattice k⟩
 
 end TauCeti.IntegralLattice
