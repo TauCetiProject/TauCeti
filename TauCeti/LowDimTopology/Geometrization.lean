@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.FundamentalGroup.Incompressible
 public import TauCeti.Geometry.Manifold.Irreducible
-public import TauCeti.Geometry.Manifold.Orientation
+public import TauCeti.Geometry.Manifold.Orientation.Atlas
 public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.FiniteVolume
 public import TauCeti.LowDimTopology.SeifertFibration
 

@@ -13,7 +13,7 @@ public import TauCeti.Analysis.Normed.Module.Ball.LinearIsometry
 public import TauCeti.Geometry.Euclidean.Inversion
 public import TauCeti.Geometry.Manifold.Boundary.Basic
 public import TauCeti.Geometry.Manifold.Immersion.Basic
-public import TauCeti.Geometry.Manifold.Orientation
+public import TauCeti.Geometry.Manifold.Orientation.Atlas
 import TauCeti.Analysis.InnerProductSpace.Reflection
 
 /-!
