@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.One.Basic
 public import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
+public import Mathlib.Algebra.Homology.ConcreteCategory
 
 /-!
 # Naturality of the Hurewicz map in degree one
@@ -40,29 +41,34 @@ namespace TauCeti.HurewiczOne
 
 variable {X Y : TopCat.{0}} (f : X ⟶ Y)
 
+@[simp]
 lemma map_simplex₁ (g : C(I, X)) :
     (TopCat.toSSet.map f).app _ (simplex₁ g) = simplex₁ ((f.hom).comp g) := by
   apply (Y.toSSetObjEquiv _).injective
   rw [TopCat.toSSetObjEquiv_toSSet_map_app, toSSetObjEquiv_simplex₁, toSSetObjEquiv_simplex₁,
     ContinuousMap.comp_assoc]
 
+-- Not a simp lemma: `TauCeti.singularChainComplexFunctor_obj_map` rewrites the chain map inside
+-- the left-hand side first, so the `simpNF` linter rejects it.
 lemma map_chain₁ (g : C(I, X)) :
     ((singularChains ℤ).map f).f 1 (chain₁ g) = chain₁ ((f.hom).comp g) := by
   rw [singularChains_map_f_simplexChain, map_simplex₁]
 
 lemma map_mem_cycles₁ {c : Chains X 1} (hc : c ∈ cycles₁ X) :
     ((singularChains ℤ).map f).f 1 c ∈ cycles₁ Y := by
-  have hc' : ((singularChains ℤ).obj X).d 1 0 c = 0 := AddMonoidHom.mem_ker.1 hc
+  have hc' : ((singularChains ℤ).obj X).d 1 0 c = 0 := hc
   exact mem_cycles₁ (by rw [← singularChains_map_f_d, hc', map_zero])
 
 /-- The map induced on the first homology group of the singular chain complex sends the class of
 a `1`-cycle to the class of its image. -/
 lemma homologyMap_H₁AddEquivHomology_mk (c : cycles₁ X) :
     (HomologicalComplex.homologyMap ((singularChains ℤ).map f) 1).hom
-        (H₁AddEquivHomology X (QuotientAddGroup.mk c)) =
+        (H₁AddEquivHomology X (H₁.mk c)) =
       H₁AddEquivHomology Y
-        (QuotientAddGroup.mk ⟨((singularChains ℤ).map f).f 1 c, map_mem_cycles₁ f c.2⟩) := by
-  obtain ⟨z, hz⟩ := exists_iCycles_eq c
+        (H₁.mk ⟨((singularChains ℤ).map f).f 1 c, map_mem_cycles₁ f c.2⟩) := by
+  let z := ((singularChains ℤ).obj X).cyclesMk (c : Chains X 1) 0 (by simp) c.2
+  have hz : (((singularChains ℤ).obj X).iCycles 1).hom z = c :=
+    ((singularChains ℤ).obj X).i_cyclesMk (c : Chains X 1) 0 (by simp) c.2
   have h₁ := congr($(HomologicalComplex.homologyπ_naturality ((singularChains ℤ).map f) 1).hom z)
   have h₂ := congr($(HomologicalComplex.cyclesMap_i ((singularChains ℤ).map f) 1).hom z)
   simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at h₁ h₂
@@ -70,6 +76,8 @@ lemma homologyMap_H₁AddEquivHomology_mk (c : cycles₁ X) :
   refine (H₁AddEquivHomology_mk _ _ ?_).symm
   rw [h₂, hz]
 
+-- Not a simp lemma: `TauCeti.singularChainComplexFunctor_obj_map` rewrites the chain map inside
+-- the left-hand side first, so the `simpNF` linter rejects it.
 lemma homologyMap_H₁AddEquivHomology_loopClass {x : X} (γ : Path x x) :
     (HomologicalComplex.homologyMap ((singularChains ℤ).map f) 1).hom
         (H₁AddEquivHomology X (loopClass γ)) =
@@ -106,6 +114,8 @@ theorem homologyMap_hurewiczHomologyAddEquiv [PathConnectedSpace X] [PathConnect
 
 /-- **Independence of the base point**: the Hurewicz map is invariant under the change of base
 point along a path. -/
+-- Not a simp lemma: `FundamentalGroup.fundamentalGroupMulEquivOfPath_apply` is a simp lemma and
+-- rewrites the left-hand side first, so the `simpNF` linter rejects it.
 theorem hurewicz₁_fundamentalGroupMulEquivOfPath {x x' : X} (p : Path x x')
     (a : FundamentalGroup X x) :
     hurewicz₁ X x' (FundamentalGroup.fundamentalGroupMulEquivOfPath p a) = hurewicz₁ X x a := by
@@ -114,8 +124,7 @@ theorem hurewicz₁_fundamentalGroupMulEquivOfPath {x x' : X} (p : Path x x')
     ← Path.Homotopic.Quotient.mk_trans, ← Path.Homotopic.Quotient.mk_trans, hurewicz₁_mk,
     hurewicz₁_mk]
   congr 1
-  rw [loopClass_def, loopClass_def, QuotientAddGroup.eq_iff_sub_mem,
-    AddSubgroup.mem_addSubgroupOf, AddSubgroupClass.coe_sub]
+  rw [loopClass_def, loopClass_def, H₁.mk_eq_mk_iff]
   have h₁ := chain₁_add_sub_trans_mem_boundaries₁ p.symm (γ.trans p)
   have h₂ := chain₁_add_sub_trans_mem_boundaries₁ γ p
   have h₃ := chain₁_add_symm_mem_boundaries₁ p.symm
