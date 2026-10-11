@@ -17,14 +17,12 @@ A morphism `φ : X ⟶ Y` of spectral objects induces maps on the objects `opZ^n
 sequences `0 ⟶ opZ^n(f₁, f₂ ≫ f₃) ⟶ opZ^n(f₁ ≫ f₂, f₃) ⟶ E^n(f₁, f₂, f₃) ⟶ 0`. For `EInt`,
 these are the extensions `0 ⟶ F_q H^n ⟶ F_{q+1} H^n ⟶ E∞ ⟶ 0` of the filtration of the abutment
 `H^n(⊥ ≤ ⊤)`; by induction on `q` and the three-lemma, an isomorphism on `E∞` gives one on the
-abutment for finite filtrations. With the stabilization of the pages, so does an isomorphism on
-some page.
+abutment for finite filtrations; by stabilization, so does an isomorphism on some page.
 
 ## Main results
 
 * `CategoryTheory.Abelian.SpectralObject.isIso_hom_app_abutment`: the comparison theorem on `E∞`.
-* `CategoryTheory.Abelian.SpectralObject.isIso_hom_app_abutment_of_isIso_page`: the comparison
-  theorem on a page of the spectral sequences.
+* `CategoryTheory.Abelian.SpectralObject.isIso_hom_app_abutment_of_isIso_page`: on a page.
 -/
 
 public section
