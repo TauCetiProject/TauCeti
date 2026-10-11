@@ -32,6 +32,8 @@ on exactness or equivariance.
 The arithmetic finite-index input is `TauCeti.finiteIndex_range_unitValuation`; the permutation
 module and its action are Mathlib's `Rep.ofMulAction`.
 
+`TauCeti.ordinaryUnitRep` is the integral representation on the ordinary units, using
+Mathlib's `Units.mulDistribMulActionRight` for the induced action on units.
 `TauCeti.sUnitShortComplex` packages the ordinary-unit inclusion and valuation onto
 Mathlib's categorical image as a short exact sequence. The image inclusion has finite categorical
 cokernel, so it can be used with Herbrand-quotient invariance under finite cokernels.
@@ -50,6 +52,12 @@ open scoped Pointwise
 namespace TauCeti
 
 attribute [local instance] Units.mulDistribMulActionRight
+
+/-- The integral representation of field automorphisms on the ordinary units of the ring of
+integers. Its carrier is `Additive (𝓞 L)ˣ`. -/
+abbrev ordinaryUnitRep (K L : Type*) [Field K] [Field L] [Algebra K L] :
+    Rep ℤ (L ≃ₐ[K] L) :=
+  Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (𝓞 L)ˣ
 
 variable {K L : Type*} [Field K] [Field L] [NumberField L] [Algebra K L]
 
@@ -142,7 +150,7 @@ theorem sUnitValuation_coeff
 
 omit [Finite S] in
 /-- The inclusion of ordinary units into S-units, as a morphism of integral representations. -/
-def sUnitInclusion : Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (𝓞 L)ˣ ⟶ sUnitRep S :=
+def sUnitInclusion : ordinaryUnitRep K L ⟶ sUnitRep S :=
   Rep.ofHom
     { toLinearMap := (unitsToUnit (S : Set (HeightOneSpectrum (𝓞 L))) L).toAdditive.toIntLinearMap
       isIntertwining' g := by
@@ -239,7 +247,7 @@ theorem sUnitInclusion_comp_sUnitValuation : sUnitInclusion S ≫ sUnitValuation
 /-- The ordinary-unit inclusion followed by the valuation onto its categorical image.
 Mathlib's `image.ι` embeds the last term into the finite-prime permutation representation. -/
 def sUnitShortComplex : ShortComplex (Rep ℤ (L ≃ₐ[K] L)) where
-  X₁ := Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (𝓞 L)ˣ
+  X₁ := ordinaryUnitRep K L
   X₂ := sUnitRep S
   X₃ := image (sUnitValuation S)
   f := sUnitInclusion S
