@@ -139,9 +139,10 @@ def h1EquivRatCircle :
 /-- On a continuous one-cocycle, the cohomology equivalence returns its value at `gen`. -/
 @[simp] theorem h1EquivRatCircle_apply_mk (f : ContCohomology.Z1 zHat.{0} DiscreteRatCircle) :
     h1EquivRatCircle
-      (ContCohomology.explicitH1AddEquivContinuousCohomology zHat.{0} DiscreteRatCircle
-        (f : ContCohomology.H1 zHat.{0} DiscreteRatCircle)) =
+      ((TopRep.homogeneousCochains (ofDiscreteModule ℤ zHat.{0} DiscreteRatCircle)).homologyπ 1
+        (ContCohomology.cocycleEquiv1 zHat.{0} DiscreteRatCircle f)) =
       discreteRatCircleEquiv ((f : zHat.{0} → DiscreteRatCircle) gen) := by
+  rw [← ContCohomology.explicitH1AddEquivContinuousCohomology_apply]
   simp [h1EquivRatCircle, ContCohomology.H1EquivOfSmulEqSelf_mk,
     ContCohomology.Z1EquivOfSmulEqSelf_apply]
 
