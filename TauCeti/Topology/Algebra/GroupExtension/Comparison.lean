@@ -66,8 +66,8 @@ theorem inl_equivariantKernelMap (m : M) :
       φ (X.toGroupExtension.inl m) :=
   GroupExtension.inl_kernelMap _ _ _ _ m
 
-/-- The restriction of a continuous homomorphism of profinite extensions to compact kernels is
-continuous. -/
+/-- The restriction of a continuous homomorphism of profinite extensions to their kernels is
+continuous when the target kernel is compact. -/
 theorem continuous_equivariantKernelMap [CompactSpace N] :
     Continuous (X.equivariantKernelMap Y φ hright) := by
   let hinl := (Y.continuous_inl.isClosedEmbedding Y.toGroupExtension.inl_injective).isEmbedding
