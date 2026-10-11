@@ -19,15 +19,17 @@ real polynomial in `n + 1` variables whose last variable is the distinguished on
 
 A Lazard delineation of the basis over `S ⊆ ℝⁿ` induces a Lazard delineation of the family with
 exactly the same root functions, provided the content of every member of `F` has constant Lazard
-valuation on `S`. Lazard evaluation is multiplicative, so the Lazard evaluation of a member of `F`
-is a nonzero constant times a product of powers of the Lazard evaluations of the basis members.
+valuation on `S`. For each nonzero member of `F`, Lazard evaluation is multiplicative, so its
+Lazard evaluation is a nonzero constant times a product of powers of the Lazard evaluations of
+the basis members.
 Hence its roots are basis roots, its root multiplicities are fixed weighted sums of the basis
 multiplicities, and its removed base exponents are the content exponents plus a fixed weighted
-sum of the basis exponents. Every section of the basis stack is a root of some nonzero member
-of `F`, since each basis member divides one.
+sum of the basis exponents. Zero members are allowed; the root-coverage condition for a Lazard
+delineation applies only to nonzero members. Every section of the basis stack is a root of some
+nonzero member of `F`, since each basis member divides one.
 
-No connectedness, analyticity or preservation of ordinary fibre degrees is needed. Members of
-`F` may be nullified at points of `S`, their contents may vanish, and zero members are allowed.
+No connectedness, analyticity or preservation of ordinary fibre degrees is needed. Nonzero
+members of `F` may be nullified at points of `S`, and their contents may vanish.
 This is the passage from the basis to the original family in Lazard's lifting: once the basis
 has a Lazard delineation over a cell on which the Lazard projection is valuation-invariant, every
 original input is valuation-invariant, hence sign-invariant, on each section and sector above it
