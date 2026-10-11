@@ -93,20 +93,12 @@ end TwistingCocycle
 section Restrict
 
 variable {M : Type uM} [AddCommGroup M] [Module R M] [Module Bᵐᵒᵖ M]
-  [IsScalarTower R Bᵐᵒᵖ M] [SMulCommClass R Bᵐᵒᵖ M]
+  [IsScalarTower R Bᵐᵒᵖ M]
   {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
   [SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece ℳ]
   {dM : M →ₗ[R] M} (f : DGAlgHom hA hB)
 
-/-- The restricted right action commutes with the ground ring. -/
-instance : SMulCommClass R Aᵐᵒᵖ (DGRightModule.RestrictScalars f M) where
-  smul_comm r a x := by
-    apply DGRightModule.RestrictScalars.ext
-    rw [DGRightModule.RestrictScalars.val_smul, DGRightModule.RestrictScalars.val_smul_eq,
-      DGRightModule.RestrictScalars.val_smul_eq, DGRightModule.RestrictScalars.val_smul,
-      smul_comm]
-
-omit [Module Bᵐᵒᵖ M] [IsScalarTower R Bᵐᵒᵖ M] [SMulCommClass R Bᵐᵒᵖ M]
+omit [Module Bᵐᵒᵖ M] [IsScalarTower R Bᵐᵒᵖ M]
   [SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece ℳ] in
 /-- The identification of a restricted module with the original one preserves degrees. -/
 theorem isHomogeneous_restrictScalars_linearEquiv :
@@ -120,7 +112,7 @@ theorem isHomogeneous_restrictScalars_linearEquiv :
   rw [add_zero, InternalGrading.ofDecomposition_piece]
   exact hx
 
-omit [Module Bᵐᵒᵖ M] [IsScalarTower R Bᵐᵒᵖ M] [SMulCommClass R Bᵐᵒᵖ M]
+omit [Module Bᵐᵒᵖ M] [IsScalarTower R Bᵐᵒᵖ M]
   [SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece ℳ] in
 /-- The Koszul twist of a restricted module is the Koszul twist of the original module. -/
 theorem val_koszulTwist_restrictScalars (q : ℤ) (x : DGRightModule.RestrictScalars f M) :
@@ -136,8 +128,7 @@ theorem val_koszulTwist_restrictScalars (q : ℤ) (x : DGRightModule.RestrictSca
 
 variable (m : P → P → A)
 
-omit [IsScalarTower R Bᵐᵒᵖ M]
-  [SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece ℳ] in
+omit [SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece ℳ] in
 /-- On underlying elements, the twisted differential of a restricted module with the matrix `m` is
 the twisted differential of the original module with the matrix `f ∘ m`. -/
 theorem val_twistedDifferential_restrictScalars (g : P → DGRightModule.RestrictScalars f M)
@@ -158,7 +149,7 @@ def restrictScalarsPiEquiv :
     (P → DGRightModule.RestrictScalars f M) ≃ₗ[R] (P → M) :=
   LinearEquiv.piCongrRight fun _ ↦ DGRightModule.RestrictScalars.linearEquiv f M
 
-omit [Fintype P] [Module Bᵐᵒᵖ M] [IsScalarTower R Bᵐᵒᵖ M] [SMulCommClass R Bᵐᵒᵖ M]
+omit [Fintype P] [Module Bᵐᵒᵖ M] [IsScalarTower R Bᵐᵒᵖ M]
   [DirectSum.Decomposition ℳ]
   [SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece ℳ] in
 @[simp]
@@ -166,7 +157,7 @@ theorem restrictScalarsPiEquiv_apply (g : P → DGRightModule.RestrictScalars f 
     restrictScalarsPiEquiv (M := M) (P := P) f g x = (g x).val := by
   simp [restrictScalarsPiEquiv]
 
-omit [Fintype P] [Module Bᵐᵒᵖ M] [IsScalarTower R Bᵐᵒᵖ M] [SMulCommClass R Bᵐᵒᵖ M]
+omit [Fintype P] [Module Bᵐᵒᵖ M] [IsScalarTower R Bᵐᵒᵖ M]
   [SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece ℳ] in
 /-- The identification of `P → f^* M` with `P → M` matches the total gradings. -/
 theorem map_twistedTotalGrading_restrictScalarsPiEquiv (n : ℤ) :
