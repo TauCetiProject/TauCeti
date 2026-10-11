@@ -12,14 +12,10 @@ public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Naturality
 /-!
 # The comparison theorem for filtered complexes
 
-Let `F : ℤ → Subobject K` and `G : ℤ → Subobject L` be increasing filtrations of cochain
-complexes, and `α : filtrationFunctor F hF ⟶ filtrationFunctor G hG` a morphism of filtered
-complexes (a morphism of the functors `EInt ⥤ CochainComplex C ℤ` of the filtrations, which is
-`α.app ⊤` on the whole complexes and its restrictions to the filtration pieces). It induces the
-morphism of spectral sequences `spectralSequenceMap coreE₂Cohomological (spectralObjectMap α)`.
-If the filtrations are finite (`F_a = G_a = ⊥` and `F_b = G_b = ⊤`) and this morphism is an
-isomorphism on every object of some page `r ≥ 2`, then `α.app ⊤` induces isomorphisms in
-cohomology (`CochainComplex.isIso_homologyMap_of_isIso_spectralSequence_page`).
+A morphism `α : filtrationFunctor F hF ⟶ filtrationFunctor G hG` of filtered complexes induces
+the morphism of spectral sequences `spectralSequenceMap coreE₂Cohomological (spectralObjectMap α)`.
+If the filtrations are finite and this morphism is an isomorphism on some page, then `α.app ⊤`
+induces isomorphisms in cohomology.
 
 ## Main results
 

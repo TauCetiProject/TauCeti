@@ -17,9 +17,7 @@ page, and, by induction, on every object of every page `r' ≥ r`.
 
 ## Main results
 
-* `CategoryTheory.SpectralSequence.Hom.isIso_hom_f_of_le`: a morphism of spectral sequences which
-  is an isomorphism on every object of the `r`th page is an isomorphism on every object of every
-  later page.
+* `CategoryTheory.SpectralSequence.Hom.isIso_hom_f_of_le`: the comparison on later pages.
 -/
 
 public section
