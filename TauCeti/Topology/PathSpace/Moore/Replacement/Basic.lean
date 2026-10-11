@@ -224,12 +224,30 @@ def shrinkHomotopy (p : C(E, B)) : ContinuousMap.Homotopy ((incl p).comp (proj p
   map_zero_left x := ext (by simp) (by simp)
   map_one_left x := ext (by simp) (by simp)
 
+@[simp]
+theorem point_shrinkHomotopy (p : C(E, B)) (y : I × MooreReplacement p) :
+    (shrinkHomotopy p y).point = y.2.point :=
+  point_mk _ _ _
+
+@[simp]
+theorem path_shrinkHomotopy (p : C(E, B)) (y : I × MooreReplacement p) :
+    (shrinkHomotopy p y).path = y.2.path.truncate (toNNReal y.1 * y.2.path.length) :=
+  path_mk _ _ _
+
 /-- The inclusion `E → E'` is a homotopy equivalence, with homotopy inverse the projection. -/
 def homotopyEquiv (p : C(E, B)) : ContinuousMap.HomotopyEquiv E (MooreReplacement p) where
   toFun := incl p
   invFun := proj p
   left_inv := by rw [proj_comp_incl]
   right_inv := ⟨shrinkHomotopy p⟩
+
+@[simp]
+theorem coe_homotopyEquiv (p : C(E, B)) : ⇑(homotopyEquiv p) = incl p :=
+  (rfl)
+
+@[simp]
+theorem coe_homotopyEquiv_symm (p : C(E, B)) : ⇑(homotopyEquiv p).symm = proj p :=
+  (rfl)
 
 /-! ### The fibre and the action of the Moore loops -/
 
@@ -463,6 +481,21 @@ def transportHomotopy {p : C(E, B)} (Φ : MooreLiftingFunction p) (b : B) :
         ContinuousMap.comp_apply, val_fiberIncl, path_incl, coe_transport]
       rw [target_lift, Fiber.target_path_val]
 
+
+@[simp]
+theorem point_val_transportHomotopy {p : C(E, B)} (Φ : MooreLiftingFunction p) (b : B)
+    (y : I × Fiber p b) :
+    (Φ.transportHomotopy b y).val.point =
+      (Φ.lift y.2.val.point (y.2.val.path.truncate (toNNReal y.1 * y.2.val.path.length))
+        (by rw [MoorePath.source_truncate, source_path])).target :=
+  point_mk _ _ _
+
+@[simp]
+theorem path_val_transportHomotopy {p : C(E, B)} (Φ : MooreLiftingFunction p) (b : B)
+    (y : I × Fiber p b) :
+    (Φ.transportHomotopy b y).val.path = y.2.val.path.drop (toNNReal y.1 * y.2.val.path.length) :=
+  path_mk _ _ _
+
 /-- **Transport is a homotopy equivalence** from the fibre `F'` of the Moore-path replacement to
 the fibre of `p`, with homotopy inverse `f ↦ (f, const)`. -/
 def transportHomotopyEquiv {p : C(E, B)} (Φ : MooreLiftingFunction p) (b : B) :
@@ -471,6 +504,16 @@ def transportHomotopyEquiv {p : C(E, B)} (Φ : MooreLiftingFunction p) (b : B) :
   invFun := fiberIncl p b
   left_inv := ⟨(Φ.transportHomotopy b).symm⟩
   right_inv := by rw [transport_comp_fiberIncl]
+
+@[simp]
+theorem coe_transportHomotopyEquiv {p : C(E, B)} (Φ : MooreLiftingFunction p) (b : B) :
+    ⇑(Φ.transportHomotopyEquiv b) = Φ.transport b :=
+  (rfl)
+
+@[simp]
+theorem coe_transportHomotopyEquiv_symm {p : C(E, B)} (Φ : MooreLiftingFunction p) (b : B) :
+    ⇑(Φ.transportHomotopyEquiv b).symm = fiberIncl p b :=
+  (rfl)
 
 end MooreLiftingFunction
 

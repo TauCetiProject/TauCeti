@@ -8,10 +8,9 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Convolution
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.Analysis.SpecialFunctions.PolarCoord
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Integral.Prod
-import Mathlib.Tactic.LinearCombination
 import TauCeti.Analysis.Complex.SmulI
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.MeasureTheory.Integral.NormRpow
@@ -75,19 +74,18 @@ section Polar
 private noncomputable abbrev expI (θ : ℝ) : ℂ := Real.cos θ + Real.sin θ * I
 
 private lemma norm_expI (θ : ℝ) : ‖expI θ‖ = 1 := by
-  rw [expI, ofReal_cos, ofReal_sin, ← Complex.exp_mul_I, Complex.norm_exp_ofReal_mul_I]
+  simpa only [expI, ← ofReal_cos, ← ofReal_sin] using Complex.norm_cos_add_sin_mul_I θ
 
 private lemma hasDerivAt_expI (θ : ℝ) : HasDerivAt expI (I * expI θ) θ := by
-  have h := ((Real.hasDerivAt_cos θ).ofReal_comp).add
-    ((Real.hasDerivAt_sin θ).ofReal_comp.mul_const I)
-  convert h using 1
-  simp only [expI, ofReal_neg]
-  linear_combination (Real.sin θ : ℂ) * I_sq
+  have h := ((hasDerivAt_id θ).ofReal_comp.mul_const I).cexp
+  simp only [id_eq, ofReal_one, one_mul, Complex.exp_mul_I, ← ofReal_cos, ← ofReal_sin] at h
+  exact h.congr_deriv (mul_comm _ _)
 
 /-- In polar coordinates `(r, θ)` about `w`, the integrand `r • (r e^{iθ})⁻¹ • (L 1 + I • L I)`
 of the Cauchy transform becomes `L e^{iθ} + I • L (I e^{iθ})`. For `L` the derivative of `u` at
 `w + r e^{iθ}`, these are `∂ᵣ v` and `r⁻¹ ∂_θ v` for `v (r, θ) = u (w + r e^{iθ})`. -/
-private lemma smul_polarCoord_symm_inv_smul (L : ℂ →L[ℝ] F) {r : ℝ} (hr : r ≠ 0) (θ : ℝ) :
+private lemma smul_polarCoord_symm_inv_smul {G : Type*} [SeminormedAddCommGroup G]
+    [NormedSpace ℂ G] (L : ℂ →L[ℝ] G) {r : ℝ} (hr : r ≠ 0) (θ : ℝ) :
     r • ((Complex.polarCoord.symm (r, θ))⁻¹ • (L 1 + I • L I)) =
       L (expI θ) + I • L (I * expI θ) := by
   have hinv : (r : ℂ) * ((r : ℂ) * expI θ)⁻¹ = conj (expI θ) := by
@@ -206,32 +204,20 @@ theorem
   field_simp [Real.pi_ne_zero]
   simp
 
-/-- Recentring the Cauchy transform at the evaluation point turns it into a convolution with the
-kernel `t ↦ t⁻¹`. -/
-private lemma integral_sub_inv_smul_eq_convolution {G : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℂ G] (g : ℂ → G) (w : ℂ) :
-    ∫ z, (w - z)⁻¹ • g z =
-      ((fun t : ℂ => t⁻¹) ⋆[ContinuousLinearMap.lsmul ℝ ℂ, volume] g) w := by
-  rw [convolution_def, ← integral_sub_left_eq_self (fun z => (w - z)⁻¹ • g z) volume w]
-  simp
-
 omit [CompleteSpace F] in
 /-- The Cauchy transform `w ↦ ∫ (w - z)⁻¹ • f z` of a compactly supported `C¹` map `f` is
 differentiable, and its derivative is the Cauchy transform of the derivative of `f`. -/
 theorem _root_.HasCompactSupport.hasFDerivAt_integral_sub_inv_smul {f : ℂ → F}
     (hc : HasCompactSupport f) (hf : ContDiff ℝ 1 f) (w : ℂ) :
     HasFDerivAt (fun w => ∫ z, (w - z)⁻¹ • f z) (∫ z, (w - z)⁻¹ • fderiv ℝ f z) w := by
-  have h := hc.hasFDerivAt_convolution_right (ContinuousLinearMap.lsmul ℝ ℂ)
-    Complex.locallyIntegrable_inv hf w
-  rw [funext fun w => integral_sub_inv_smul_eq_convolution f w,
-    integral_sub_inv_smul_eq_convolution]
-  convert h using 1
-  -- `(lsmul ℝ ℂ).precompR ℂ t L` is `lsmul ℝ ℂ t ∘L L = t • L`.
-  simp only [convolution_def, ContinuousLinearMap.precompR_apply,
-    ContinuousLinearMap.compL_apply]
-  refine integral_congr_ae (ae_of_all _ fun t => ?_)
-  ext v
-  simp
+  convert hc.hasFDerivAt_convolution_right (ContinuousLinearMap.lsmul ℝ ℂ)
+    Complex.locallyIntegrable_inv hf w using 1
+  · funext z
+    simp only [convolution_eq_swap, ContinuousLinearMap.lsmul_apply]
+  · rw [convolution_eq_swap]
+    refine integral_congr_ae (ae_of_all _ fun z => ?_)
+    ext v
+    simp
 
 /-- The Cauchy transform inverts `D = 2 \bar∂` from the other side: for a compactly supported
 `C¹` map `f : ℂ → F`, the transform `T f w = (2π)⁻¹ ∫ (w - z)⁻¹ • f z` satisfies
@@ -242,13 +228,11 @@ theorem
     (hc : HasCompactSupport f) (hf : ContDiff ℝ 1 f) (w : ℂ) :
     fderiv ℝ (fun w => (2 * π : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • f z) w 1 +
       I • fderiv ℝ (fun w => (2 * π : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • f z) w I = f w := by
-  have hint : ∀ v : ℂ, Integrable fun z => (w - z)⁻¹ • fderiv ℝ f z v := fun v =>
-    (Complex.locallyIntegrable_sub_inv w).integrable_smul_right_of_hasCompactSupport
-      ((hf.continuous_fderiv one_ne_zero).clm_apply continuous_const)
-      ((hc.fderiv ℝ).comp_left (g := fun L : ℂ →L[ℝ] F => L v) rfl)
   have hintL : Integrable fun z => (w - z)⁻¹ • fderiv ℝ f z :=
     (Complex.locallyIntegrable_sub_inv w).integrable_smul_right_of_hasCompactSupport
       (hf.continuous_fderiv one_ne_zero) (hc.fderiv ℝ)
+  have hint (v : ℂ) : Integrable fun z => (w - z)⁻¹ • fderiv ℝ f z v := by
+    simpa only [smul_apply] using hintL.apply_continuousLinearMap v
   have hT : HasFDerivAt (fun w => (2 * π : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • f z)
       ((2 * π : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • fderiv ℝ f z) w :=
     (hc.hasFDerivAt_integral_sub_inv_smul hf w).const_smul _

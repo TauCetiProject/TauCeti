@@ -230,6 +230,42 @@ theorem map_comp (f : M →ₗ[k] M') (g : N →ₗ[k] N')
       (map f' g' hf' hg').comp (map f g hf hg) :=
   hom_ext fun _ _ ↦ rfl
 
+/-- Equivariant linear equivalences of the factors identify their balanced tensor products. -/
+def congr (f : M ≃ₗ[k] M') (g : N ≃ₗ[k] N')
+    (hf : ∀ (a : A) m, f (op a • m) = op a • f m)
+    (hg : ∀ (a : A) n, g (a • n) = a • g n) :
+    BalancedTensorProduct k A M N ≃ₗ[k] BalancedTensorProduct k A M' N' :=
+  LinearEquiv.ofLinearMap (map f.toLinearMap g.toLinearMap hf hg)
+    (map f.symm.toLinearMap g.symm.toLinearMap
+      (fun a m ↦ by
+        apply f.injective
+        simpa only [LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply] using
+          (hf a (f.symm m)).symm)
+      (fun a n ↦ by
+        apply g.injective
+        simpa only [LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply] using
+          (hg a (g.symm n)).symm))
+    (by
+      apply hom_ext
+      intro m n
+      simp)
+    (by
+      apply hom_ext
+      intro m n
+      simp)
+
+@[simp]
+theorem congr_tmul (f : M ≃ₗ[k] M') (g : N ≃ₗ[k] N')
+    (hf : ∀ (a : A) m, f (op a • m) = op a • f m)
+    (hg : ∀ (a : A) n, g (a • n) = a • g n) (m : M) (n : N) :
+    congr f g hf hg (tmul k A m n) = tmul k A (f m) (g n) := (rfl)
+
+@[simp]
+theorem congr_symm_tmul (f : M ≃ₗ[k] M') (g : N ≃ₗ[k] N')
+    (hf : ∀ (a : A) m, f (op a • m) = op a • f m)
+    (hg : ∀ (a : A) n, g (a • n) = a • g n) (m : M') (n : N') :
+    (congr f g hf hg).symm (tmul k A m n) = tmul k A (f.symm m) (g.symm n) := (rfl)
+
 end Map
 
 end BalancedTensorProduct

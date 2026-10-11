@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Basic
 public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Basic
+public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
 public import Mathlib.Algebra.Homology.Opposite
 
@@ -19,6 +21,11 @@ automatic for finite families in an abelian category, and for arbitrary families
 groups. Exactness here is objectwise exactness of presheaves, not exactness only after
 sheafification. For finite families, the exact-product hypothesis is supplied by locally
 enabling `Abelian.hasFiniteBiproducts`.
+
+Only the values at finite products of members matter: a sequence of presheaves that is short
+exact after evaluation at each such product has a short exact sequence of Čech complexes
+(`shortExact_map_cechComplexFunctor`). For an open cover, this asks for exactness only on the
+finite intersections of members.
 
 For a short exact coefficient sequence, acyclicity of its middle and right terms implies
 acyclicity of its left term. This is the coefficient-sequence descent used when iterating
@@ -113,6 +120,22 @@ variable {C : Type u} [Category.{v} C] [HasFiniteProducts C]
   {A : Type u'} [Category.{v'} A] [Abelian A] [HasProducts.{w} A]
   {ι : Type w} (U : ι → C)
   [∀ n : ℕ, HasExactLimitsOfShape (Discrete (Fin (n + 1) → ι)) A]
+
+/-- **The Čech complexes of a coefficient sequence that is short exact on the members.** If a
+sequence of presheaves becomes short exact after evaluation at every finite product
+`U (a 0) × ⋯ × U (a n)` of members of the family `U`, then its sequence of Čech complexes for `U`
+is short exact. No exactness is required at other objects: for an open cover, only the
+intersections of members matter. -/
+theorem shortExact_map_cechComplexFunctor (S : ShortComplex (Cᵒᵖ ⥤ A))
+    (hS : ∀ (n : ℕ) (a : Fin (n + 1) → ι),
+      (S.map ((evaluation Cᵒᵖ A).obj (op (∏ᶜ fun j ↦ U (a j))))).ShortExact) :
+    (S.map (cechComplexFunctor U)).ShortExact := by
+  refine HomologicalComplex.shortExact_of_degreewise_shortExact _ fun n ↦ ?_
+  -- in degree `n`, the sequence of Čech complexes is the product of the evaluations of `S`
+  have h := (ShortComplex.shortExact_of_forall_evaluation (S.map ((Functor.whiskeringLeft
+    (Discrete (Fin (n + 1) → ι)) Cᵒᵖ A).obj (Discrete.functor fun a ↦ op (∏ᶜ fun j ↦ U (a j)))))
+      fun a ↦ hS n a.as).map_of_exact lim
+  exact ShortComplex.shortExact_of_iso (S.mapNatIso (cechEvalIso U n).symm) h
 
 variable {T : C} (hT : IsTerminal T)
 
