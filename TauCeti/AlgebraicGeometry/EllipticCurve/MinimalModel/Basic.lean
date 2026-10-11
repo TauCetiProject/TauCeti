@@ -162,9 +162,12 @@ theorem isMinimal_of_valuation_c₄_eq_one (W : WeierstrassCurve K) [IsIntegral 
     (pow_le_one' ((pow_le_one_iff (by norm_num)).mp hint) 12)
 
 /-- **An integral Weierstrass equation whose discriminant has additive valuation less than `12` is
-minimal.** A change of variables multiplies `v (Δ)` by `v (u⁻¹) ^ 12`; if `v (u⁻¹) > 1` then
-`v (u⁻¹) ≥ exp 1`, and the transformed discriminant would have valuation greater than `1`, so it
-would not be integral. This is the discriminant case of Silverman, *AEC*, Remark VII.1.1. -/
+minimal.** This is the discriminant case of Silverman, *AEC*, Remark VII.1.1.
+
+The hypothesis is stated multiplicatively, through the adic valuation of `W.Δ : K` with values in
+`ℤᵐ⁰`: the inequality `exp (-12) < v (Δ)` says exactly that the additive valuation of `Δ` (its
+order at the place) is less than `12`. For an equation with coefficients in `R`,
+`isMinimal_baseChange_of_not_pow_twelve_dvd_Δ` reads the same condition as `¬ ϖ ^ 12 ∣ Δ`. -/
 theorem isMinimal_of_exp_neg_twelve_lt_valuation_Δ (W : WeierstrassCurve K) [IsIntegral R W]
     (hΔ : WithZero.exp (-12) < valuation K (maximalIdeal R) W.Δ) : IsMinimal R W := by
   refine ⟨⟨by simpa using ‹IsIntegral R W›, ?_⟩⟩
