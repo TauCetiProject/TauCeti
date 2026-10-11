@@ -59,180 +59,89 @@ private def tensorPairRightIso (i j : V) :
     ((F).obj Z).mapIso (zigzagBraidComplexXIso₀ k G j) ≪≫
       zigzagBimoduleLeftUnitor k G (U j)
 
-private theorem isZero_tensorPair_of_not_support (i j : V) (p q : ℤ)
-    (h : ¬ ((p = -1 ∨ p = 0) ∧ (q = -1 ∨ q = 0))) :
-    IsZero (((F).obj ((B i).X p)).obj ((B j).X q)) := by
-  by_cases hp : p = -1 ∨ p = 0
-  · exact ((F).obj ((B i).X p)).map_isZero
-      (isZero_zigzagBraidComplex_X j (by omega) (by omega))
-  · exact ((F).flip.obj ((B j).X q)).map_isZero
-      (isZero_zigzagBraidComplex_X i (by omega) (by omega))
+private theorem tensorPairZeroIso_hom (i j : V) :
+    (tensorPairZeroIso k G i j).hom =
+      ((F).map (zigzagBraidComplexXIso₁ k G i).hom).app ((B j).X 0) ≫
+        ((F).obj Z).map (zigzagBraidComplexXIso₁ k G j).hom ≫
+          (zigzagBimoduleLeftUnitor k G Z).hom := by
+  -- Compute the two mapped components and the unitor of the constructed isomorphism.
+  rfl
 
-private def tensorZeroMap (i j : V) (p q : ℤ) :
-    ((F).obj ((B i).X p)).obj ((B j).X q) ⟶ Z := by
-  by_cases hp : p = 0
-  · subst p
-    by_cases hq : q = 0
-    · subst q
-      exact (tensorPairZeroIso k G i j).hom
-    · exact 0
-  · exact 0
+private theorem tensorPairLeftIso_hom (i j : V) :
+    (tensorPairLeftIso k G i j).hom =
+      ((F).map (zigzagBraidComplexXIso₀ k G i).hom).app ((B j).X 0) ≫
+        ((F).obj (U i)).map (zigzagBraidComplexXIso₁ k G j).hom ≫
+          (zigzagBimoduleRightUnitor k G (U i)).hom := by
+  -- Compute the two mapped components and the unitor of the constructed isomorphism.
+  rfl
 
-private def tensorZeroHom (i j : V) : (T i j).X 0 ⟶ Z :=
-  HomologicalComplex.mapBifunctorDesc (fun p q _ ↦ tensorZeroMap k G i j p q)
-
-private theorem tensorZeroMap_zero_zero (i j : V) :
-    tensorZeroMap k G i j 0 0 = (tensorPairZeroIso k G i j).hom := by
-  simp only [tensorZeroMap, dite_true]
-
-private def tensorZeroInv (i j : V) : Z ⟶ (T i j).X 0 :=
-  (tensorPairZeroIso k G i j).inv ≫
-    HomologicalComplex.ιMapBifunctor (B i) (B j) F c 0 0 0 (by simp)
+private theorem tensorPairRightIso_hom (i j : V) :
+    (tensorPairRightIso k G i j).hom =
+      ((F).map (zigzagBraidComplexXIso₁ k G i).hom).app ((B j).X (-1)) ≫
+        ((F).obj Z).map (zigzagBraidComplexXIso₀ k G j).hom ≫
+          (zigzagBimoduleLeftUnitor k G (U j)).hom := by
+  -- Compute the two mapped components and the unitor of the constructed isomorphism.
+  rfl
 
 /-- The degree-zero term of the actual braid tensor product is the regular bimodule. -/
-def zigzagBraidComplexTensorXZeroIso (i j : V) : (T i j).X 0 ≅ Z where
-  hom := tensorZeroHom k G i j
-  inv := tensorZeroInv k G i j
-  hom_inv_id := by
-    apply HomologicalComplex.mapBifunctor.hom_ext
-    intro p q hpq
-    -- The cochain totalization index is the sum of the two integer degrees.
-    change p + q = 0 at hpq
-    by_cases hp : p = 0
-    · subst p
-      have hq : q = 0 := by omega
-      subst q
-      simp only [tensorZeroHom, tensorZeroInv,
-        HomologicalComplex.ι_mapBifunctorDesc_assoc, tensorZeroMap_zero_zero,
-        Iso.hom_inv_id_assoc, Category.comp_id]
-    · exact (isZero_tensorPair_of_not_support k G i j p q (by omega)).eq_of_src _ _
-  inv_hom_id := by
-    simp only [tensorZeroHom, tensorZeroInv, Category.assoc,
-      HomologicalComplex.ι_mapBifunctorDesc, tensorZeroMap_zero_zero, Iso.inv_hom_id]
+def zigzagBraidComplexTensorXZeroIso (i j : V) : (T i j).X 0 ≅ Z :=
+  HomologicalComplex.mapBifunctorSingleSummandIso (B i) (B j) F c 0 0 0 (by simp) (by
+    intro p q hpq h
+    rw [ComplexShape.π_eq_add] at hpq
+    exact isZero_zigzagBraidComplexTensor_pair k G i j p q (by omega)) ≪≫
+      tensorPairZeroIso k G i j
 
 /-- The regular summand in degree zero evaluates through the two component unit maps. -/
 @[reassoc (attr := simp)]
 theorem ιMapBifunctor_zigzagBraidComplexTensorXZeroIso_hom (i j : V) :
     HomologicalComplex.ιMapBifunctor (B i) (B j) F c 0 0 0 (by simp) ≫
         (zigzagBraidComplexTensorXZeroIso k G i j).hom =
-      ((((F).flip.obj ((B j).X 0)).mapIso (zigzagBraidComplexXIso₁ k G i) ≪≫
-        ((F).obj Z).mapIso (zigzagBraidComplexXIso₁ k G j)) ≪≫
-          zigzagBimoduleLeftUnitor k G Z).hom := by
-  -- Expose the constructed hom projections as the desc map and unit comparison
-  -- so the totalization summand-inclusion equation computes the regular summand.
-  change HomologicalComplex.ιMapBifunctor (B i) (B j) F c 0 0 0 (by simp) ≫
-      tensorZeroHom k G i j = (tensorPairZeroIso k G i j).hom
-  simp only [tensorZeroHom, HomologicalComplex.ι_mapBifunctorDesc,
-    tensorZeroMap_zero_zero]
-
-private def tensorMinusOneMap (i j : V) (p q : ℤ) :
-    ((F).obj ((B i).X p)).obj ((B j).X q) ⟶ U i ⊞ U j := by
-  by_cases hp : p = -1
-  · subst p
-    by_cases hq : q = 0
-    · subst q
-      exact (tensorPairLeftIso k G i j).hom ≫ biprod.inl
-    · exact 0
-  · by_cases hp' : p = 0
-    · subst p
-      by_cases hq : q = -1
-      · subst q
-        exact (tensorPairRightIso k G i j).hom ≫ biprod.inr
-      · exact 0
-    · exact 0
-
-private def tensorMinusOneHom (i j : V) : (T i j).X (-1) ⟶ U i ⊞ U j :=
-  HomologicalComplex.mapBifunctorDesc (fun p q _ ↦ tensorMinusOneMap k G i j p q)
-
-private theorem tensorMinusOneMap_left (i j : V) :
-    tensorMinusOneMap k G i j (-1) 0 = (tensorPairLeftIso k G i j).hom ≫ biprod.inl := by
-  simp only [tensorMinusOneMap, dite_true]
-
-private theorem tensorMinusOneMap_right (i j : V) :
-    tensorMinusOneMap k G i j 0 (-1) = (tensorPairRightIso k G i j).hom ≫ biprod.inr := by
-  simp only [tensorMinusOneMap, show (0 : ℤ) ≠ -1 by decide, dite_false, dite_true]
-
-private def tensorMinusOneInv (i j : V) : U i ⊞ U j ⟶ (T i j).X (-1) :=
-  biprod.desc
-    ((tensorPairLeftIso k G i j).inv ≫
-      HomologicalComplex.ιMapBifunctor (B i) (B j) F c (-1) 0 (-1) (by simp))
-    ((tensorPairRightIso k G i j).inv ≫
-      HomologicalComplex.ιMapBifunctor (B i) (B j) F c 0 (-1) (-1) (by simp))
+      ((F).map (zigzagBraidComplexXIso₁ k G i).hom).app ((B j).X 0) ≫
+        ((F).obj Z).map (zigzagBraidComplexXIso₁ k G j).hom ≫
+          (zigzagBimoduleLeftUnitor k G Z).hom := by
+  simp only [zigzagBraidComplexTensorXZeroIso, Iso.trans_hom,
+    HomologicalComplex.ι_mapBifunctorSingleSummandIso_hom_assoc]
+  rw [tensorPairZeroIso_hom]
 
 /-- The degree-minus-one term is the biproduct of the two actual vertex bimodules. -/
-def zigzagBraidComplexTensorXMinusOneIso (i j : V) : (T i j).X (-1) ≅ U i ⊞ U j where
-  hom := tensorMinusOneHom k G i j
-  inv := tensorMinusOneInv k G i j
-  hom_inv_id := by
-    apply HomologicalComplex.mapBifunctor.hom_ext
-    intro p q hpq
-    -- The cochain totalization index is the sum of the two integer degrees.
-    change p + q = -1 at hpq
-    by_cases hp : p = -1
-    · subst p
-      have hq : q = 0 := by omega
-      subst q
-      simp only [tensorMinusOneHom, tensorMinusOneInv, Category.assoc,
-        HomologicalComplex.ι_mapBifunctorDesc_assoc, tensorMinusOneMap_left,
-        biprod.inl_desc, Iso.hom_inv_id_assoc, Category.comp_id]
-    · by_cases hp' : p = 0
-      · subst p
-        have hq : q = -1 := by omega
-        subst q
-        simp only [tensorMinusOneHom, tensorMinusOneInv, Category.assoc,
-          HomologicalComplex.ι_mapBifunctorDesc_assoc, tensorMinusOneMap_right,
-          biprod.inr_desc, Iso.hom_inv_id_assoc, Category.comp_id]
-      · exact (isZero_tensorPair_of_not_support k G i j p q (by omega)).eq_of_src _ _
-  inv_hom_id := by
-    apply biprod.hom_ext'
-    · simp only [tensorMinusOneHom, tensorMinusOneInv, Category.assoc,
-        biprod.inl_desc_assoc, HomologicalComplex.ι_mapBifunctorDesc,
-        tensorMinusOneMap_left, Iso.inv_hom_id_assoc, Category.comp_id]
-    · simp only [tensorMinusOneHom, tensorMinusOneInv, Category.assoc,
-        biprod.inr_desc_assoc, HomologicalComplex.ι_mapBifunctorDesc,
-        tensorMinusOneMap_right, Iso.inv_hom_id_assoc, Category.comp_id]
+def zigzagBraidComplexTensorXMinusOneIso (i j : V) : (T i j).X (-1) ≅ U i ⊞ U j :=
+  HomologicalComplex.mapBifunctorTwoSummandIso (B i) (B j) F c (-1) 0 0 (-1) (-1)
+    (by simp) (by simp) (by decide) (by
+      intro p q hpq h
+      rw [ComplexShape.π_eq_add] at hpq
+      exact isZero_zigzagBraidComplexTensor_pair k G i j p q (by omega)) ≪≫
+        biprod.mapIso (tensorPairLeftIso k G i j) (tensorPairRightIso k G i j)
 
 /-- The `(-1,0)` summand identifies with the first vertex summand via the right unitor. -/
 @[reassoc (attr := simp)]
 theorem ιMapBifunctor_zigzagBraidComplexTensorXMinusOneIso_hom_left (i j : V) :
     HomologicalComplex.ιMapBifunctor (B i) (B j) F c (-1) 0 (-1) (by simp) ≫
         (zigzagBraidComplexTensorXMinusOneIso k G i j).hom =
-      ((((F).flip.obj ((B j).X 0)).mapIso (zigzagBraidComplexXIso₀ k G i) ≪≫
-        ((F).obj (U i)).mapIso (zigzagBraidComplexXIso₁ k G j)) ≪≫
-          zigzagBimoduleRightUnitor k G (U i)).hom ≫ biprod.inl := by
-  -- Expose the constructed hom projections as the desc map and right-unit comparison
-  -- so the (-1,0) summand-inclusion equation computes the first biproduct summand.
-  change HomologicalComplex.ιMapBifunctor (B i) (B j) F c (-1) 0 (-1) (by simp) ≫
-      tensorMinusOneHom k G i j = (tensorPairLeftIso k G i j).hom ≫ biprod.inl
-  simp only [tensorMinusOneHom, HomologicalComplex.ι_mapBifunctorDesc,
-    tensorMinusOneMap_left]
+      (((F).map (zigzagBraidComplexXIso₀ k G i).hom).app ((B j).X 0) ≫
+        ((F).obj (U i)).map (zigzagBraidComplexXIso₁ k G j).hom ≫
+          (zigzagBimoduleRightUnitor k G (U i)).hom) ≫ biprod.inl := by
+  simp only [zigzagBraidComplexTensorXMinusOneIso, Iso.trans_hom,
+    HomologicalComplex.ι_mapBifunctorTwoSummandIso_hom_left_assoc, biprod.mapIso_hom,
+    biprod.inl_map]
+  rw [tensorPairLeftIso_hom]
 
 /-- The `(0,-1)` summand identifies with the second vertex summand via the left unitor. -/
 @[reassoc (attr := simp)]
 theorem ιMapBifunctor_zigzagBraidComplexTensorXMinusOneIso_hom_right (i j : V) :
     HomologicalComplex.ιMapBifunctor (B i) (B j) F c 0 (-1) (-1) (by simp) ≫
         (zigzagBraidComplexTensorXMinusOneIso k G i j).hom =
-      ((((F).flip.obj ((B j).X (-1))).mapIso (zigzagBraidComplexXIso₁ k G i) ≪≫
-        ((F).obj Z).mapIso (zigzagBraidComplexXIso₀ k G j)) ≪≫
-          zigzagBimoduleLeftUnitor k G (U j)).hom ≫ biprod.inr := by
-  -- Expose the constructed hom projections as the desc map and left-unit comparison
-  -- so the (0,-1) summand-inclusion equation computes the second biproduct summand.
-  change HomologicalComplex.ιMapBifunctor (B i) (B j) F c 0 (-1) (-1) (by simp) ≫
-      tensorMinusOneHom k G i j = (tensorPairRightIso k G i j).hom ≫ biprod.inr
-  simp only [tensorMinusOneHom, HomologicalComplex.ι_mapBifunctorDesc,
-    tensorMinusOneMap_right]
+      (((F).map (zigzagBraidComplexXIso₁ k G i).hom).app ((B j).X (-1)) ≫
+        ((F).obj Z).map (zigzagBraidComplexXIso₀ k G j).hom ≫
+          (zigzagBimoduleLeftUnitor k G (U j)).hom) ≫ biprod.inr := by
+  simp only [zigzagBraidComplexTensorXMinusOneIso, Iso.trans_hom,
+    HomologicalComplex.ι_mapBifunctorTwoSummandIso_hom_right_assoc, biprod.mapIso_hom,
+    biprod.inr_map]
+  rw [tensorPairRightIso_hom]
 
 private theorem tensorPairLeft_d (i j : V) :
     (((F).map ((B i).d (-1) 0)).app ((B j).X 0)) ≫ (tensorPairZeroIso k G i j).hom =
       (tensorPairLeftIso k G i j).hom ≫ zigzagBraidEvaluationHom k G i := by
-  -- Flatten the component isomorphisms to expose the right-unit naturality square.
-  change ((F).map ((B i).d (-1) 0)).app ((B j).X 0) ≫
-      ((F).map (zigzagBraidComplexXIso₁ k G i).hom).app ((B j).X 0) ≫
-        ((F).obj Z).map (zigzagBraidComplexXIso₁ k G j).hom ≫
-          (zigzagBimoduleLeftUnitor k G Z).hom =
-    (((F).map (zigzagBraidComplexXIso₀ k G i).hom).app ((B j).X 0) ≫
-      ((F).obj (U i)).map (zigzagBraidComplexXIso₁ k G j).hom ≫
-        (zigzagBimoduleRightUnitor k G (U i)).hom) ≫ zigzagBraidEvaluationHom k G i
+  rw [tensorPairZeroIso_hom, tensorPairLeftIso_hom]
   simp only [zigzagBraidComplex_d, Functor.map_comp, NatTrans.comp_app, Category.assoc,
     Iso.map_inv_hom_id_app_assoc]
   rw [zigzagBimoduleUnitHom_eq k G,
@@ -250,14 +159,7 @@ private theorem tensorPairLeft_d (i j : V) :
 private theorem tensorPairRight_d (i j : V) :
     ((F).obj ((B i).X 0)).map ((B j).d (-1) 0) ≫ (tensorPairZeroIso k G i j).hom =
       (tensorPairRightIso k G i j).hom ≫ zigzagBraidEvaluationHom k G j := by
-  -- Flatten the component isomorphisms to expose the left-unit naturality square.
-  change ((F).obj ((B i).X 0)).map ((B j).d (-1) 0) ≫
-      ((F).map (zigzagBraidComplexXIso₁ k G i).hom).app ((B j).X 0) ≫
-        ((F).obj Z).map (zigzagBraidComplexXIso₁ k G j).hom ≫
-          (zigzagBimoduleLeftUnitor k G Z).hom =
-    (((F).map (zigzagBraidComplexXIso₁ k G i).hom).app ((B j).X (-1)) ≫
-      ((F).obj Z).map (zigzagBraidComplexXIso₀ k G j).hom ≫
-        (zigzagBimoduleLeftUnitor k G (U j)).hom) ≫ zigzagBraidEvaluationHom k G j
+  rw [tensorPairZeroIso_hom, tensorPairRightIso_hom]
   rw [((F).map (zigzagBraidComplexXIso₁ k G i).hom).naturality_assoc
     ((B j).d (-1) 0)
     (((F).obj Z).map (zigzagBraidComplexXIso₁ k G j).hom ≫
@@ -279,14 +181,9 @@ theorem zigzagBraidComplexTensor_d (i j : V) :
     (T i j).d (-1) 0 ≫ (zigzagBraidComplexTensorXZeroIso k G i j).hom =
       (zigzagBraidComplexTensorXMinusOneIso k G i j).hom ≫
         biprod.desc (zigzagBraidEvaluationHom k G i) (zigzagBraidEvaluationHom k G j) := by
-  -- The component isomorphisms were constructed with these totalization desc maps.
-  change (T i j).d (-1) 0 ≫ tensorZeroHom k G i j =
-    tensorMinusOneHom k G i j ≫
-      biprod.desc (zigzagBraidEvaluationHom k G i) (zigzagBraidEvaluationHom k G j)
   apply HomologicalComplex.mapBifunctor.hom_ext
   intro p q hpq
-  -- The cochain totalization index is the sum of the two integer degrees.
-  change p + q = -1 at hpq
+  rw [ComplexShape.π_eq_add] at hpq
   by_cases hp : p = -1
   · subst p
     have hq : q = 0 := by omega
@@ -302,11 +199,11 @@ theorem zigzagBraidComplexTensor_d (i j : V) :
       zigzagBraidComplex_d_eq_zero₀ j 1 (by decide)]
     simp only [show ComplexShape.ε₁ c c c (-1, 0) = 1 from rfl,
       one_smul, Functor.map_zero, zero_comp, smul_zero, zero_comp, add_zero,
-      tensorZeroHom, tensorMinusOneHom, Category.assoc,
-      HomologicalComplex.ι_mapBifunctorDesc,
-      HomologicalComplex.ι_mapBifunctorDesc_assoc,
-      tensorZeroMap_zero_zero, tensorMinusOneMap_left, biprod.inl_desc]
-    exact tensorPairLeft_d k G i j
+      Category.assoc, ιMapBifunctor_zigzagBraidComplexTensorXZeroIso_hom,
+      ιMapBifunctor_zigzagBraidComplexTensorXMinusOneIso_hom_left_assoc,
+      biprod.inl_desc]
+    simpa only [tensorPairZeroIso_hom, tensorPairLeftIso_hom, Category.assoc] using
+      tensorPairLeft_d k G i j
   · by_cases hp' : p = 0
     · subst p
       have hq : q = -1 := by omega
@@ -322,12 +219,13 @@ theorem zigzagBraidComplexTensor_d (i j : V) :
         zigzagBraidComplex_d_eq_zero₀ i 1 (by decide)]
       simp only [show ComplexShape.ε₂ c c c (0, -1) = 1 from rfl,
         one_smul, Functor.map_zero, NatTrans.app_zero, zero_comp, smul_zero,
-        zero_comp, zero_add, tensorZeroHom, tensorMinusOneHom, Category.assoc,
-        HomologicalComplex.ι_mapBifunctorDesc,
-        HomologicalComplex.ι_mapBifunctorDesc_assoc,
-        tensorZeroMap_zero_zero, tensorMinusOneMap_right, biprod.inr_desc]
-      exact tensorPairRight_d k G i j
-    · exact (isZero_tensorPair_of_not_support k G i j p q (by omega)).eq_of_src _ _
+        zero_comp, zero_add, Category.assoc,
+        ιMapBifunctor_zigzagBraidComplexTensorXZeroIso_hom,
+        ιMapBifunctor_zigzagBraidComplexTensorXMinusOneIso_hom_right_assoc,
+        biprod.inr_desc]
+      simpa only [tensorPairZeroIso_hom, tensorPairRightIso_hom, Category.assoc] using
+        tensorPairRight_d k G i j
+    · exact (isZero_zigzagBraidComplexTensor_pair k G i j p q (by omega)).eq_of_src _ _
 
 private def commutingNormal (i j : V) :
     HomologicalComplex (GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece) c :=
@@ -368,8 +266,7 @@ private def tensorNormalIso (i j : V) (hij : i ≠ j) (hadj : ¬ G.Adj i j) :
     T i j ≅ commutingNormal k G i j :=
   HomologicalComplex.Hom.isoOfComponents (tensorNormalComponentIso k G i j hij hadj) (by
     intro p q hpq
-    -- Successive integer cochain degrees differ by one.
-    change p + 1 = q at hpq
+    rw [ComplexShape.up_Rel] at hpq
     by_cases hp : p = -1
     · subst p
       have hq : q = 0 := by omega
@@ -407,8 +304,7 @@ private def normalSwapComponentIso (i j : V) (p : ℤ) :
 private def normalSwapIso (i j : V) : commutingNormal k G i j ≅ commutingNormal k G j i :=
   HomologicalComplex.Hom.isoOfComponents (normalSwapComponentIso k G i j) (by
     intro p q hpq
-    -- Successive integer cochain degrees differ by one.
-    change p + 1 = q at hpq
+    rw [ComplexShape.up_Rel] at hpq
     by_cases hp : p = -1
     · subst p
       have hq : q = 0 := by omega
