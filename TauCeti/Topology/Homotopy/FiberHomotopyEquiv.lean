@@ -109,6 +109,11 @@ def fiber (b : B) : HomotopyEquiv {e // p e = b} {e' // q e' = b} where
 theorem coe_fiber_apply (b : B) (e : {e // p e = b}) : (Φ.fiber b e : E') = Φ.toFun e :=
   (rfl)
 
+@[simp]
+theorem coe_fiber_symm_apply (b : B) (e' : {e' // q e' = b}) :
+    ((Φ.fiber b).symm e' : E) = Φ.invFun e' :=
+  (rfl)
+
 end FiberHomotopyEquiv
 
 end TauCeti
