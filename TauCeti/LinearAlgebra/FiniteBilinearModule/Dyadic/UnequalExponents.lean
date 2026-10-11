@@ -5,7 +5,7 @@ Authors: Wentao Li
 -/
 module
 
-public import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.Cyclic
+public import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.Classification
 import TauCeti.Data.ZMod.UnitSquare
 import TauCeti.Data.ZMod.MulCastHom
 import Mathlib.Tactic.LinearCombination
@@ -146,6 +146,8 @@ private theorem dyadicCyclic_prod_adjacent_quadratic_intCast (k : ℕ) [NeZero k
       ZMod.toRatAddCircle (2 ^ (k + 2))
         ((2 * θ * x ^ 2 + η * y ^ 2 : ℤ) : ZMod (2 ^ (k + 2))) := by
   rw [ZMod.toRatAddCircle_intCast]
+  -- `prod_quadratic` uses the bundled generator carriers. `erw` identifies them with
+  -- the concrete ZMod coordinate groups in this arithmetic formula.
   erw [prod_quadratic, dyadicCyclic_quadratic_intCast, dyadicCyclic_quadratic_intCast]
   rw [← AddCircle.coe_add]
   congr 1
@@ -166,6 +168,15 @@ private def dyadicAdjacentRotation (k : ℕ) (θ η : ℤ) :
   map_add' x y := by
     ext <;> simp only [Prod.fst_add, Prod.snd_add, map_add] <;> ring
 
+/-- The coordinate action of the adjacent-exponent rotation. -/
+private theorem dyadicAdjacentRotation_apply (k : ℕ) (θ η : ℤ)
+    (x : ZMod (2 ^ k) × ZMod (2 ^ (k + 1))) :
+    dyadicAdjacentRotation k θ η x =
+      (x.1 - (η : ZMod (2 ^ k)) *
+        ZMod.castHom (pow_dvd_pow 2 (by omega : k ≤ k + 1)) (ZMod (2 ^ k)) x.2,
+        ZMod.mulCastHom 2 (by simp [pow_succ]) x.1 + (θ : ZMod (2 ^ (k + 1))) * x.2) :=
+  rfl
+
 private theorem dyadicAdjacentRotation_quadratic (k : ℕ) [NeZero k] (θ η : ℤ)
     (x : ((dyadicCyclic k (θ + 2 * η)).prod
       (dyadicCyclic (k + 1) (θ * η * (θ + 2 * η)))).carrier) :
@@ -180,35 +191,20 @@ private theorem dyadicAdjacentRotation_quadratic (k : ℕ) [NeZero k] (θ η : �
       ((m : ZMod (2 ^ k)), (n : ZMod (2 ^ (k + 1)))) =
     (((m - η * n : ℤ) : ZMod (2 ^ k)),
       ((2 * m + θ * n : ℤ) : ZMod (2 ^ (k + 1)))) := by
-    apply Prod.ext
-    · change (m : ZMod (2 ^ k)) - (η : ZMod (2 ^ k)) *
-          ZMod.castHom (pow_dvd_pow 2 (by omega : k ≤ k + 1)) (ZMod (2 ^ k))
-            (n : ZMod (2 ^ (k + 1))) = _
-      rw [map_intCast]
-      push_cast
-      ring
-    · change ZMod.mulCastHom 2 (by simp [pow_succ]) (m : ZMod (2 ^ k)) +
-          (θ : ZMod (2 ^ (k + 1))) * (n : ZMod (2 ^ (k + 1))) = _
-      rw [ZMod.mulCastHom_intCast]
-      push_cast
-      ring
+    rw [dyadicAdjacentRotation_apply, map_intCast, ZMod.mulCastHom_intCast]
+    ext <;> push_cast <;> ring
+  -- The source product carrier is bundled with the transformed coefficients; `erw`
+  -- unfolds that carrier to the same concrete pair used by `hrot` and the value formulas.
   erw [hrot, dyadicCyclic_prod_adjacent_quadratic_intCast,
     dyadicCyclic_prod_adjacent_quadratic_intCast]
   congr 1
   push_cast
   ring
 
-private theorem odd_sq_eq_one_add_eight_mul {n : ℤ} (hn : Odd n) :
-    ∃ a : ℤ, n ^ 2 = 1 + 8 * a := by
-  obtain ⟨s, rfl⟩ := hn
-  obtain ⟨a, ha⟩ := Int.two_dvd_mul_add_one s
-  refine ⟨a, ?_⟩
-  linear_combination 4 * ha
-
 private theorem dyadic_adjacent_coefficient_modEq {θ η : ℤ} (hθ : Odd θ) (hη : Odd η) :
     θ * η * (θ + 2 * η) ≡ 5 * (η - 2 * θ) [ZMOD 8] := by
-  obtain ⟨a, ha⟩ := odd_sq_eq_one_add_eight_mul hθ
-  obtain ⟨b, hb⟩ := odd_sq_eq_one_add_eight_mul hη
+  obtain ⟨a, ha⟩ := Int.eight_dvd_sq_sub_one_of_odd hθ
+  obtain ⟨b, hb⟩ := Int.eight_dvd_sq_sub_one_of_odd hη
   have hdiff : ∃ d : ℤ, η - θ = 2 * d := by
     obtain ⟨s, rfl⟩ := hθ
     obtain ⟨t, rfl⟩ := hη
@@ -239,12 +235,7 @@ noncomputable def dyadicCyclicProdAdjacentIsometry (k : ℕ) [NeZero k] {θ η :
       (isNondegenerate_prod _ _).mpr
         ⟨(isNondegenerate_dyadicCyclic_iff _ _).mpr hα,
           (isNondegenerate_dyadicCyclic_iff _ _).mpr hβ⟩
-    have hinj : Function.Injective g := fun x y hxy ↦
-      FiniteBilinearModule.Hom.injective g.toFiniteBilinearModule hsource
-        ((Hom.toFiniteBilinearModule_apply g x).trans
-          (hxy.trans (Hom.toFiniteBilinearModule_apply g y).symm))
-    let e := (g.toIsometry
-      ((Nat.bijective_iff_injective_and_card g).mpr ⟨hinj, rfl⟩)).symm
+    let e := (g.toIsometryOfNondegenerate hsource rfl).symm
     let c := dyadicCyclicIsometryOfModEqEight (k + 1) hβ
       (dyadic_adjacent_coefficient_modEq hθ hη)
     let e₁ : Isometry (dyadicCyclic k (θ + 2 * η)) (dyadicCyclic k (θ + 2 * η)) :=
