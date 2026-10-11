@@ -28,15 +28,6 @@ open _root_.AlgebraicGeometry
 
 variable {X Y : _root_.AlgebraicGeometry.Scheme.{u}} (f : X ⟶ Y)
 
-/-- The exterior power of a free sheaf, expressed in the finite locally free category. -/
-noncomputable def exteriorPowerFreeIso (X : _root_.AlgebraicGeometry.Scheme.{u})
-    (I : Type u) [LinearOrder I] [Finite I] (n : ℕ) :
-    (exteriorPower X n).obj (free X I) ≅ free X (Set.powersetCard I n) :=
-  ObjectProperty.isoMk _
-    (eqToIso (by simp only [exteriorPower_obj_obj, free_obj]; rfl) ≪≫
-      SheafOfModules.exteriorPowerFreeIso (R := X.sheaf) I n ≪≫
-      eqToIso (free_obj X (Set.powersetCard I n)).symm)
-
 /-- Pullback of a free sheaf, expressed in the finite locally free category. -/
 noncomputable def pullbackFreeIso (J : Type u) [Finite J] :
     (pullback f).obj (free Y J) ≅ free X J := by
