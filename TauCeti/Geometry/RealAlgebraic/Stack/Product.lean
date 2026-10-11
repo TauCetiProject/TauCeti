@@ -104,7 +104,9 @@ theorem ofProd_root (i : Fin (D.ofProd hc hn hd).count) (x : X) :
   exact ofRoots_root _ _ _ _ _ _ _ _ i x
 
 /-- A factor's multiplicity in the recovered delineation is its root multiplicity
-along the corresponding product section, at any point of the base. -/
+along the corresponding product section, at any point of the base.
+Supply the point `x` explicitly when using this equality as a rewrite rule:
+the multiplicity projection does not determine a point of the base. -/
 theorem ofProd_multiplicity (k : ι) (i : Fin (D.ofProd hc hn hd).count) (x : X) :
     (D.ofProd hc hn hd).multiplicity k i =
       (P k x).rootMultiplicity (D.root (Fin.cast (D.ofProd_count hc hn hd) i) x) := by
