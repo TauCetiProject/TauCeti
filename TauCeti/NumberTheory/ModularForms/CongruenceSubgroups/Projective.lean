@@ -38,7 +38,7 @@ theorem Gamma0Projective_def (N : ℕ) :
 /-- Membership of the image of a matrix in `Γ₀(N)` is unchanged by projectivization. -/
 @[simp]
 theorem mem_Gamma0Projective_mk (N : ℕ) (A : SL(2, ℤ)) :
-    QuotientGroup.mk' (Subgroup.center SL(2, ℤ)) A ∈ Gamma0Projective N ↔
+    (↑A : PSL(2, ℤ)) ∈ Gamma0Projective N ↔
       A ∈ CongruenceSubgroup.Gamma0 N := by
   rw [Gamma0Projective_def, Subgroup.mem_map]
   have hcenter : Subgroup.center SL(2, ℤ) ≤ CongruenceSubgroup.Gamma0 N := by
