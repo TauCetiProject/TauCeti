@@ -62,7 +62,7 @@ by `ε`. -/
         (LinearMap.toSpanSingleton (DualNumbers k) (DualNumbers k) DualNumber.eps) := rfl
 
 /-- The differential sends `x` to `x * ε`. -/
-@[simp] theorem dualNumberDifferentialModule_d_apply (x : DualNumbers k) :
+theorem dualNumberDifferentialModule_d_apply (x : DualNumbers k) :
     (dualNumberDifferentialModule (k := k)).d x = x * DualNumber.eps := by
   change (LinearMap.toSpanSingleton (DualNumbers k) (DualNumbers k) DualNumber.eps) x = _
   simp [LinearMap.toSpanSingleton_apply, smul_eq_mul]
