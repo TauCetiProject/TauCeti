@@ -281,6 +281,14 @@ theorem wedgeWith_smul_pairing {k l : ℕ} (c : ℝ) (mu : F₁ →L[ℝ] F₂ �
   simp only [wedgeWith_apply, ContinuousAlternatingMap.smul_apply, smul_apply,
     Finset.smul_sum, smul_comm _ c]
 
+/-- Negating the pairing negates the paired wedge. -/
+@[simp]
+theorem wedgeWith_neg_pairing {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) :
+    wedgeWith (-mu) phi psi = -wedgeWith mu phi psi := by
+  rw [← neg_one_smul ℝ mu, wedgeWith_smul_pairing]
+  simp
+
 /-- The paired wedge for the zero pairing is zero. -/
 @[simp]
 theorem wedgeWith_zero_pairing {k l : ℕ} (phi : E [⋀^Fin k]→L[ℝ] F₁)
@@ -402,6 +410,23 @@ theorem wedgeWith_flip {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
   match_scalars
   ring_nf
   simp
+
+/-- A skew-symmetric continuous bilinear map is negated by flipping its arguments. -/
+theorem flip_eq_neg_of_skew {mu : F₁ →L[ℝ] F₁ →L[ℝ] F₃}
+    (hmu : ∀ a b, mu a b = -mu b a) : mu.flip = -mu := by
+  ext a b
+  simp only [ContinuousLinearMap.flip_apply, neg_apply]
+  exact hmu b a
+
+/-- Anticommutation of a paired wedge along a skew-symmetric pairing. -/
+theorem wedgeWith_anticomm {k l : ℕ} {mu : F₁ →L[ℝ] F₁ →L[ℝ] F₃}
+    (hmu : ∀ a b, mu a b = -mu b a)
+    (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₁)
+    (v : Fin (k + l) → E) :
+    wedgeWith mu phi psi v =
+      -((-1 : ℝ) ^ (k * l) • wedgeWith mu psi phi (v ∘ Fin.cast (Nat.add_comm l k))) := by
+  rw [wedgeWith_flip, flip_eq_neg_of_skew hmu, wedgeWith_neg_pairing]
+  simp [smul_neg]
 
 /-- Graded commutativity of the paired wedge along a symmetric pairing. -/
 theorem wedgeWith_comm {k l : ℕ} {mu : F₁ →L[ℝ] F₁ →L[ℝ] F₃} (hmu : ∀ a b, mu a b = mu b a)

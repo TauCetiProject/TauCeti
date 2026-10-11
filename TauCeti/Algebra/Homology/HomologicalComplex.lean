@@ -6,14 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.HomologicalComplex
+public import Mathlib.Algebra.Homology.HomologicalComplexLimits
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Homology.ShortComplex.Preadditive
 
 /-!
 # Additional API for homological complexes
 
-This file records additivity of the cycles functor and degreewise recursion for powers of a
-complex endomorphism. It also records the basic properties of the maps
+This file records additivity of the cycles functor, degreewise recursion for powers of a
+complex endomorphism, and the existence of coproducts of complexes, computed degreewise. It also
+records the basic properties of the maps
 `K.toCycles i j : K.X i ⟶ K.cycles j` induced by the differentials: they kill the cycles in degree
 `i`, commute with morphisms of complexes, vanish after a morphism from a complex concentrated in
 degree `i`, and are epimorphisms in degrees where the complex is exact. The sequence
@@ -25,7 +27,7 @@ public section
 
 open CategoryTheory Limits
 
-universe v u
+universe w v u
 
 namespace HomologicalComplex
 
@@ -36,6 +38,11 @@ variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] {ι : Type*}
 lemma pow_f_succ (m : ℕ) (i : ι) :
     (End.of s ^ (m + 1)).f i = (End.of s ^ m).f i ≫ s.f i := by
   rw [pow_succ', End.mul_def, comp_f]
+
+/-- Homological complexes have the coproducts that the underlying category has. They are
+computed degreewise. -/
+instance hasCoproducts [HasCoproducts.{w} C] : HasCoproducts.{w} (HomologicalComplex C c) :=
+  fun _ ↦ inferInstance
 
 /-! ### The maps onto the cycles -/
 

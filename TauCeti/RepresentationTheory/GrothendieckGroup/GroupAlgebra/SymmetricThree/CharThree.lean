@@ -25,7 +25,7 @@ All equalities below are in the integral Grothendieck group, rather than in fiel
 public section
 
 open CategoryTheory
-open scoped MonoidAlgebra
+open scoped MonoidAlgebra MonoidalCategory
 
 namespace TauCeti
 

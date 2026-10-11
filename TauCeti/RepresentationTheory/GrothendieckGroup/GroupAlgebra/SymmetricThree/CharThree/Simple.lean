@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.SimpleBasis
+public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Ring
 public import TauCeti.RepresentationTheory.Symmetric.Modular.Three.Irreducible
 
 /-!
@@ -24,9 +25,9 @@ specialization of `TauCeti.simpleClassBasis` to the classification of simple S�
 
 public section
 
-namespace TauCeti
-
 open scoped MonoidAlgebra
+
+namespace TauCeti
 
 universe u
 
@@ -100,5 +101,32 @@ theorem symmetricThreeCharThreeSimpleClassBasis_repr_apply
         (Representation.ofLinearCharacter
           (if b then signLinearCharacter k (Fin 3) else 1)).asModule x := by
   apply simpleClassBasis_repr_apply
+
+section Ring
+
+variable (k : Type) [Field k] [CharP k 3]
+
+/-- The basis vector indexed by `false` is the trivial class. -/
+-- Simplify before the general basis-vector class formula expands the expression.
+@[simp↓]
+theorem symmetricThreeCharThreeSimpleClassBasis_false :
+    symmetricThreeCharThreeSimpleClassBasis k false = 1 := by
+  have hb : symmetricThreeCharThreeSimpleClassBasis k false =
+      fdRepK0RingEquiv k (Equiv.Perm (Fin 3))
+        (ExactK0.of (FDRep.ofLinearCharacter (1 : Equiv.Perm (Fin 3) →* kˣ))) := by
+    rw [FDRep.ofLinearCharacter_def, fdRepK0RingEquiv_of, FDRep.of_ρ']
+    simp [symmetricThreeCharThreeSimpleClassBasis_apply]
+  rw [hb, FDRep.ofLinearCharacter_def, Representation.ofLinearCharacter_one,
+    fdRepK0RingEquiv_of, FDRep.of_ρ', ← exactK0_one_eq_of_trivial]
+
+/-- The basis vector indexed by `true` is the sign class. -/
+theorem symmetricThreeCharThreeSimpleClassBasis_true :
+    symmetricThreeCharThreeSimpleClassBasis k true =
+      fdRepK0RingEquiv k (Equiv.Perm (Fin 3))
+        (ExactK0.of (FDRep.ofLinearCharacter (signLinearCharacter k (Fin 3)))) := by
+  rw [FDRep.ofLinearCharacter_def, fdRepK0RingEquiv_of, FDRep.of_ρ']
+  simp [symmetricThreeCharThreeSimpleClassBasis_apply]
+
+end Ring
 
 end TauCeti

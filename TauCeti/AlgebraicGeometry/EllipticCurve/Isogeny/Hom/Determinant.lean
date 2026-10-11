@@ -30,7 +30,7 @@ pencil `r π - s` of the Frobenius `π`, for `s` not divisible by the characteri
 
 * `TauCeti.Isogeny.det_eq_of_weilPairing_eq_smul`: an endomorphism of `E[N]` scaling the Weil
   pairing by `d` has determinant `d`.
-* `TauCeti.Isogeny.Hom.det_torsionLinearMap_ofIsogeny`: the determinant of the action of an
+* `TauCeti.Isogeny.Hom.det_torsionLinearMap_ofIsogeny`: the determinant of the action of a
   isogeny on `E[N]` is its degree.
 * `TauCeti.Isogeny.Hom.det_torsionLinearMap`: the same for a nonzero morphism.
 

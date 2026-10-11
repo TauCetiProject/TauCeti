@@ -35,13 +35,10 @@ antipode calculations.
 
 * G. R. Kempf, *Instability in invariant theory*, Annals of Mathematics 108 (1978), §2.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 13.
-* The closed-subgroup packaging specializes the generic construction abstracted from
-  `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.Basic`, which in turn adapts
-  `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Borel` and
-  `TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Basic`.
-
-This advances the dynamic-parabolic route in Layer 7, "Structure theory", of the ReductiveGroups
-roadmap by constructing the scheme-level Levi attached to a weight cocharacter.
+* The closed-subgroup packaging specializes the generic construction of
+  `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.Basic`, which was adapted from
+  the original construction of `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Borel`, itself
+  adapted from `TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Basic`.
 -/
 
 public section

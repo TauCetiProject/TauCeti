@@ -139,18 +139,17 @@ instance (M : (gradedFiniteProjectiveModules 𝒜).FullSubcategory) : Module.Fin
 instance (M : (gradedFiniteProjectiveModules 𝒜).FullSubcategory) : Module.Projective A M.obj :=
   M.property.2
 
+/-- Over an algebra finite as a module over its base ring, a finite graded projective is finite
+over the base ring. -/
+instance [Module.Finite k A] (M : (gradedFiniteProjectiveModules 𝒜).FullSubcategory) :
+    Module.Finite k M.obj :=
+  Module.Finite.trans A M.obj
+
 instance : (gradedFiniteModules 𝒜).IsClosedUnderIsomorphisms where
   of_iso {M N} e hM := by
     let _ : Module.Finite A ↑((GradedModuleCat.toModuleCat (𝒜 := 𝒜)).obj M) := hM
     exact Module.Finite.equiv
       (((GradedModuleCat.toModuleCat (𝒜 := 𝒜)).mapIso e).toLinearEquiv)
-
-instance : (gradedFiniteProjectiveModules 𝒜).IsClosedUnderIsomorphisms where
-  of_iso {M N} e hM := by
-    let _ : Module.Finite A ↑((GradedModuleCat.toModuleCat (𝒜 := 𝒜)).obj M) := hM.1
-    let _ : Module.Projective A ↑((GradedModuleCat.toModuleCat (𝒜 := 𝒜)).obj M) := hM.2
-    let e' := ((GradedModuleCat.toModuleCat (𝒜 := 𝒜)).mapIso e).toLinearEquiv
-    exact ⟨Module.Finite.equiv e', Module.Projective.of_equiv e'⟩
 
 /-- A retract of a finite graded projective is a finite graded projective: its underlying module is
 a direct summand of a finitely generated projective module. -/
@@ -307,14 +306,11 @@ theorem isExtensionClosed_gradedFiniteModules :
       (gradedFiniteModules 𝒜) where
   prop_X₂ {S} hS h₁ h₃ := by
     rw [ExactStructure.abelian_conflation] at hS
-    have hS' : (S.map (GradedModuleCat.toModuleCat (𝒜 := 𝒜))).Exact :=
-      hS.exact.map_of_mono_of_preservesKernel _ hS.mono_f inferInstance
     let _ : Module.Finite A S.X₁ := h₁
     let _ : Module.Finite A S.X₃ := h₃
     exact Module.Finite.of_exact (f := S.f.hom) (g := S.g.hom)
-      ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1 hS')
-      ((GradedModuleCat.epi_iff_surjective S.g).1
-        hS.epi_g)
+      (GradedModuleCat.exact_iff.mp hS.exact)
+      ((GradedModuleCat.epi_iff_surjective S.g).1 hS.epi_g)
 
 /-- Finite graded modules with projective underlying module are extension closed in the abelian
 category of graded modules: a short exact sequence with projective quotient splits on the
@@ -325,10 +321,7 @@ theorem isExtensionClosed_gradedFiniteProjectiveModules :
   prop_X₂ {S} hS h₁ h₃ := by
     refine ⟨isExtensionClosed_gradedFiniteModules.prop_X₂ hS h₁.1 h₃.1, ?_⟩
     rw [ExactStructure.abelian_conflation] at hS
-    have hS' : (S.map (GradedModuleCat.toModuleCat (𝒜 := 𝒜))).Exact :=
-      hS.exact.map_of_mono_of_preservesKernel _ hS.mono_f inferInstance
-    have hex : Function.Exact S.f.hom S.g.hom :=
-      (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1 hS'
+    have hex : Function.Exact S.f.hom S.g.hom := GradedModuleCat.exact_iff.mp hS.exact
     have hf : Function.Injective S.f.hom := (GradedModuleCat.mono_iff_injective S.f).1 hS.mono_f
     let _ : Module.Projective A S.X₁ := h₁.2
     let _ : Module.Projective A S.X₃ := h₃.2

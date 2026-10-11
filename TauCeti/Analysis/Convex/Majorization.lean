@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Normed.Module.Seminorm.Norm
 public import Mathlib.Data.Fin.Tuple.Basic
 
 import Mathlib.Algebra.BigOperators.Fin
+import Mathlib.Algebra.Order.Pi
+import Mathlib.Data.Fin.Tuple.Sort
 import Mathlib.GroupTheory.Perm.Sign
 
 /-!
@@ -51,6 +53,8 @@ compared by their Ky Fan sums, every symmetric gauge of them is compared at once
 * `TauCeti.IsSymmetricConvex.mem_of_prefixSum_le`: transfer descent.
 * `Seminorm.IsSymmetricGauge.apply_le_of_prefixSum_le`, `TauCeti.IsWeaklyMajorizedBy.apply_le`:
   symmetric gauges are monotone for weak majorization.
+* `Seminorm.IsSymmetricGauge.ext_of_antitone`: symmetric gauges are determined by their values
+  on nonincreasing nonnegative tuples.
 
 ## References
 
@@ -518,6 +522,47 @@ theorem isSymmetricGauge_normSeminorm [Fintype ι] :
     rcases eq_or_ne j i with rfl | hj
     · simp
     · simp [update_of_ne hj]
+
+/-- A symmetric gauge takes the same value at a tuple and at its coordinatewise absolute value. -/
+theorem IsSymmetricGauge.map_abs [Finite ι] {p : Seminorm ℝ (ι → ℝ)} (hp : p.IsSymmetricGauge)
+    (x : ι → ℝ) : p |x| = p x := by
+  have h : |(|x|)| = |x| := abs_abs x
+  have h₁ : |x| ∈ {y | p y ≤ p x} :=
+    (hp.isSymmetricConvex_setOf_le (p x)).isSolid (x := x) (by simp) h.le
+  have h₂ : x ∈ {y | p y ≤ p |x|} :=
+    (hp.isSymmetricConvex_setOf_le (p |x|)).isSolid (x := |x|) (by simp) h.ge
+  exact le_antisymm (by simpa using h₁) (by simpa using h₂)
+
+/-- Reindexing the coordinates along an equivalence preserves symmetric gauges. -/
+theorem IsSymmetricGauge.comp_funLeft {κ : Type*} [DecidableEq κ]
+    {p : Seminorm ℝ (ι → ℝ)} (hp : p.IsSymmetricGauge) (e : ι ≃ κ) :
+    (p.comp (LinearMap.funLeft ℝ ℝ e)).IsSymmetricGauge := by
+  have hf (y : κ → ℝ) : LinearMap.funLeft ℝ ℝ e y = y ∘ e := by
+    ext
+    simp
+  refine ⟨fun σ x ↦ ?_, fun x k ↦ ?_⟩
+  · rw [comp_apply, comp_apply, hf, hf]
+    have h : (x ∘ σ) ∘ e = (x ∘ e) ∘ (e.trans (σ.trans e.symm)) := by
+      ext
+      simp
+    rw [h, hp.map_comp_perm]
+  · rw [comp_apply, comp_apply, hf, hf, update_comp_equiv]
+    have h : -x k = -(x ∘ e) (e.symm k) := by simp
+    rw [h, hp.map_update_neg]
+
+/-- Two symmetric gauges on `n`-tuples agree as soon as they agree on the nonincreasing
+nonnegative tuples: every tuple is carried to one of these by changing signs and permuting its
+coordinates. -/
+theorem IsSymmetricGauge.ext_of_antitone {n : ℕ} {p q : Seminorm ℝ (Fin n → ℝ)}
+    (hp : p.IsSymmetricGauge) (hq : q.IsSymmetricGauge)
+    (h : ∀ x : Fin n → ℝ, Antitone x → 0 ≤ x → p x = q x) : p = q := by
+  ext x
+  -- Sort `|x|` into nonincreasing order.
+  set σ := Tuple.sort (OrderDual.toDual ∘ |x|)
+  have hmono := Tuple.monotone_sort (OrderDual.toDual ∘ |x|)
+  have hanti : Antitone (|x| ∘ σ) := fun _ _ hij ↦ OrderDual.toDual_le_toDual.mp (hmono hij)
+  rw [← hp.map_abs, ← hq.map_abs, ← hp.map_comp_perm σ, ← hq.map_comp_perm σ]
+  exact h _ hanti fun i ↦ by simp
 
 /-- **Symmetric gauges are monotone for prefix-sum domination.** If `z` is antitone and
 nonnegative and its prefix sums are bounded by those of `y`, then `p z ≤ p y`. -/
