@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Index
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
+import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import TauCeti.Analysis.Calculus.Morse.LocalNormalForm
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 
@@ -136,6 +137,17 @@ omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
 /-- The critical point is the point with coordinates `0`. -/
 theorem toChart_symm_coord_symm_zero : φ.toChart.symm (φ.coord.symm 0) = x := by
   rw [map_zero, toChart_symm_zero]
+
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- The chart of a Morse chart lies in the maximal atlas of class `C¹`. -/
+theorem mem_maximalAtlas_one : φ.toChart ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 1 M :=
+  IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas
+
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- The chart of a Morse chart is differentiable on its source. -/
+theorem mdifferentiableAt_toChart {y : M} (hy : y ∈ φ.toChart.source) :
+    MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y :=
+  mdifferentiableAt_of_mem_maximalAtlas φ.mem_maximalAtlas_one hy
 
 /-- A Morse chart for `f` at a nondegenerate critical point is a Morse chart for `-f`, with the
 opposite weights. -/
