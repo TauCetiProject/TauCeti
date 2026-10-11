@@ -11,22 +11,20 @@ public import Mathlib.MeasureTheory.MeasurableSpace.Invariants
 public import Mathlib.Probability.Kernel.CondDistrib
 
 /-!
-# The invariant conditional law
+# Shift-invariant conditional laws on path space
 
-On path space, the conditional law of the initial coordinate given the **shift-invariant**
-σ-algebra `MeasurableSpace.invariants (shift α)`, bundled as a random probability measure.
+For a finite measure on one-sided path space, this file bundles the conditional law of the initial
+coordinate given `MeasurableSpace.invariants (shift α)` as a random probability measure. Its
+measurable-set evaluations are conditional expectations of initial-coordinate indicators.
 
-It is named a *conditional law*, not a directing measure: this file does not prove that it directs
-the process, and Tau Ceti reserves "directing measure" for a witness of `ConditionallyIIDWith`.
-That name belongs with the theorem, not here. It is deliberately a separate object from
-`directingProbabilityMeasure`, which conditions on the process tail: the two σ-algebras are not
-interchangeable — `invariants_shift_le_pathTail` is one-sided, and `invariants_shift_lt_pathTail`
-shows the inclusion is strict over `Bool` — so sharing the underlying construction asserts nothing
-about the witnesses being equal. Whether they agree a.e. is a separate question, not settled here.
+No stationarity or exchangeability assumption is needed. The construction supplies a conditional
+law for arguments that condition on shift-invariant events. It does not assert conditional
+independence of coordinates. Conditioning on the process tail is a different construction: the
+tail and shift-invariant σ-algebras need not agree.
 
 ## Main results
 
-* `invariantConditionalProbabilityMeasure` — the witness;
+* `invariantConditionalProbabilityMeasure` — the conditional law;
 * `invariantConditionalProbabilityMeasure_toMeasure` — its underlying measure, the abstraction
   boundary that lets measure-level operations cross without unfolding the definition;
 * `measurable_invariants_invariantConditionalProbabilityMeasure` — measurability relative to the
@@ -36,14 +34,11 @@ about the witnesses being equal. Whether they agree a.e. is a separate question,
   a measurable set, it is a version of the conditional expectation of that set's indicator at
   coordinate `0`, given the invariant σ-algebra.
 
-Nothing here proves that this witness directs the process; that is the Koopman block
-factorization, which is not part of this file.
-
-Adapted from `DeFinetti/DirectingMeasure/Basic.lean`, which carries the attribution to
+Adapted from the tail-conditional-law construction in
+`TauCeti.Probability.DeFinetti.DirectingMeasure.Basic`, following
 `cameronfreer/exchangeability` (`DeFinetti/ViaMartingale/DirectingMeasure.lean`, pin
-`e0532e59ceff23edab44dda9ab0655debbc9cc22`). The specialization here is the conditioning
-σ-algebra: that file conditions on `tailProcess X`, this one on
-`MeasurableSpace.invariants (shift α)`, with the shared bundling factored through
+`e0532e59ceff23edab44dda9ab0655debbc9cc22`). Here the conditioning σ-algebra is
+`MeasurableSpace.invariants (shift α)` rather than `tailProcess X`, and the bundling uses
 `Kernel.probabilityMeasure`.
 -/
 

@@ -6,21 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Ring
-public import TauCeti.RepresentationTheory.LinearCharacter.Basic
-public import TauCeti.RepresentationTheory.Symmetric.SignCharacter
+public import TauCeti.RepresentationTheory.CharacterTwist
 import TauCeti.RepresentationTheory.AsModule
-import TauCeti.RepresentationTheory.CharacterTwist
 
 /-!
-# Linear-character classes in the exact Grothendieck ring
+# Linear characters in the exact Grothendieck ring
 
-The product of two one-dimensional representation classes is the class of the product of
-their linear characters. In particular, the sign class of any finite symmetric group squares
-to the trivial class over every field. These identities allow tensor calculations in the
-group-algebra Grothendieck ring without expanding its representation-to-module dictionary.
-
-The tensor identification uses `Representation.tprodEquivCharTwist` and the multiplication
-law for character twists, `Representation.charTwist_charTwist`.
+The class of a one-dimensional representation is multiplicative in its linear character.
+This lets induction calculations use character multiplication within the integral exact
+Grothendieck ring, in arbitrary characteristic.
 
 ## References
 
@@ -29,55 +23,48 @@ law for character twists, `Representation.charTwist_charTwist`.
 
 public section
 
-open CategoryTheory
-open scoped MonoidalCategory
+open CategoryTheory MonoidalCategory
+open scoped MonoidAlgebra
 
 namespace TauCeti
 
 universe u
 
-variable {k G : Type u} [Field k] [Monoid G] [Finite G]
+-- These are named rewrite rules: `fdRepK0RingEquiv_of` simplifies their left sides, so
+-- registering them as simp lemmas would violate `simpNF`.
+/-- The trivial linear character represents the unit of the exact Grothendieck ring. -/
+theorem exactK0_ofLinearCharacter_one {k G : Type u} [Field k] [Monoid G] [Finite G] :
+    fdRepK0RingEquiv k G
+      (ExactK0.of (FDRep.ofLinearCharacter (1 : G →* kˣ))) = 1 := by
+  rw [FDRep.ofLinearCharacter_def, Representation.ofLinearCharacter_one,
+    fdRepK0RingEquiv_of, FDRep.of_ρ']
+  exact (exactK0_one_eq_of_trivial (k := k) (G := G)).symm
 
-/-- The product of two linear-character classes is the class of their product character
-in the exact Grothendieck ring of a finite monoid algebra. -/
--- Simplify before the representation-to-module dictionary expands the factors.
-@[simp↓]
-theorem fdRepK0RingEquiv_of_ofLinearCharacter_mul (χ ψ : G →* kˣ) :
+/-- The product of the classes of two linear characters is the class of their product. -/
+theorem exactK0_ofLinearCharacter_mul {k G : Type u} [Field k] [Monoid G] [Finite G]
+    (χ ψ : G →* kˣ) :
     fdRepK0RingEquiv k G (ExactK0.of (FDRep.ofLinearCharacter χ)) *
       fdRepK0RingEquiv k G (ExactK0.of (FDRep.ofLinearCharacter ψ)) =
-      fdRepK0RingEquiv k G (ExactK0.of (FDRep.ofLinearCharacter (χ * ψ))) := by
-  have e := Representation.tprodEquivCharTwist χ (Representation.ofLinearCharacter ψ)
-  have htwist : Representation.charTwist χ (Representation.ofLinearCharacter ψ) =
+        fdRepK0RingEquiv k G (ExactK0.of (FDRep.ofLinearCharacter (χ * ψ))) := by
+  have h : Representation.charTwist χ (Representation.ofLinearCharacter ψ) =
       Representation.ofLinearCharacter (χ * ψ) := by
-    rw [← Representation.charTwist_trivial ψ, Representation.charTwist_charTwist,
-      Representation.charTwist_trivial]
-  rw [htwist] at e
-  have he : Nonempty (FDRep.ofLinearCharacter χ ⊗ FDRep.ofLinearCharacter ψ ≅
-      FDRep.ofLinearCharacter (χ * ψ)) := by
-    apply nonempty_fdRepIso_iff.mpr
-    rw [FDRep.ofLinearCharacter_def, FDRep.ofLinearCharacter_def,
-      FDRep.ofLinearCharacter_def]
-    -- The tensor action on bundled finite-dimensional representations is `tprod`.
-    exact ⟨e⟩
-  rw [← map_mul, ExactK0.of_mul_of, ExactK0.of_congr he.some]
-
-/-- The sign class of a finite symmetric group squares to the trivial class in the exact
-Grothendieck ring over every field. -/
--- Reduce the sign product before the general linear-character multiplication rule.
-@[simp↓ 1100]
-theorem fdRepK0RingEquiv_of_ofLinearCharacter_signLinearCharacter_mul_self
-    {α : Type u} [Fintype α] [DecidableEq α] :
-    fdRepK0RingEquiv k (Equiv.Perm α)
-        (ExactK0.of (FDRep.ofLinearCharacter (signLinearCharacter k α))) *
-      fdRepK0RingEquiv k (Equiv.Perm α)
-        (ExactK0.of (FDRep.ofLinearCharacter (signLinearCharacter k α))) = 1 := by
-  have hχ : signLinearCharacter k α * signLinearCharacter k α = 1 := by
-    ext g
-    simp only [MonoidHom.mul_apply, Units.val_mul, MonoidHom.one_apply, Units.val_one,
-      coe_signLinearCharacter_apply, ← Int.cast_mul]
-    simp only [← Units.val_mul, Int.units_mul_self, Units.val_one, Int.cast_one]
-  rw [fdRepK0RingEquiv_of_ofLinearCharacter_mul, hχ, FDRep.ofLinearCharacter_def,
-    Representation.ofLinearCharacter_one, fdRepK0RingEquiv_of, FDRep.of_ρ',
-    ← exactK0_one_eq_of_trivial]
+    rw [← Representation.charTwist_trivial ψ,
+      Representation.charTwist_charTwist, Representation.charTwist_trivial]
+  let e : ((Representation.ofLinearCharacter χ).tprod
+      (Representation.ofLinearCharacter ψ)).Equiv
+      (Representation.ofLinearCharacter (χ * ψ)) := by
+    simpa only [h] using
+      Representation.tprodEquivCharTwist χ (Representation.ofLinearCharacter ψ)
+  have : Module.Finite k[G] (Representation.asModule
+      (FDRep.of (Representation.ofLinearCharacter χ) ⊗
+        FDRep.of (Representation.ofLinearCharacter ψ)).ρ) :=
+    Module.Finite.of_restrictScalars_finite k k[G] _
+  have : Module.Finite k[G] (Representation.asModule
+      (FDRep.of (Representation.ofLinearCharacter (χ * ψ))).ρ) :=
+    Module.Finite.of_restrictScalars_finite k k[G] _
+  rw [FDRep.ofLinearCharacter_def, FDRep.ofLinearCharacter_def,
+    FDRep.ofLinearCharacter_def, fdRepK0RingEquiv_of, fdRepK0RingEquiv_of,
+    fdRepK0RingEquiv_of, of_asModule_mul_of_asModule]
+  exact ExactK0.of_congr (Representation.asModuleLinearEquivOfEquiv e).toFGModuleCatIso
 
 end TauCeti

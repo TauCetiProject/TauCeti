@@ -8,7 +8,7 @@ module
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.SymmetricThree.CharThree
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.SymmetricThree.CharThree.Simple
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.PrimePart
-public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.LinearCharacter
+public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.SymmetricThree.CharThree.Induction
 import TauCeti.GroupTheory.Perm.FinThree.Basic
 import Mathlib.Data.ZMod.Basic
 
@@ -55,10 +55,12 @@ private theorem three_nsmul_one_mem_range_indK0_stabilizer (a : Fin 3) :
   have hAs : indK0 k H (resK0 k H.subtype s) = (2 • (1 : K₀) + s) * s := by
     simpa only [one_mul, hA] using indK0_mul_resK0 (1 :
       ExactK0 (finiteModulesExactStructure k[H])) s
+  have hs : s * s = 1 := by
+    simpa only [symmetricThreeCharThreeSimpleClassBasis_true] using
+      symmetricThreeCharThreeSimpleClassBasis_true_mul_self k
   refine ⟨(2 : ℤ) • 1 - resK0 k H.subtype s, ?_⟩
   rw [map_sub, map_zsmul, hA, hAs]
-  simp only [two_nsmul, add_mul, one_mul,
-    fdRepK0RingEquiv_of_ofLinearCharacter_signLinearCharacter_mul_self]
+  simp only [two_nsmul, add_mul, one_mul, hs]
   module
 
 /-- In characteristic three, induction from any point stabilizer of S₃ has image exactly

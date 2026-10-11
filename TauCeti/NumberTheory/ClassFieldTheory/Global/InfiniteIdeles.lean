@@ -41,6 +41,8 @@ computation `TauCeti.ClassFieldTheory.herbrandQuotient_infiniteSemilocalUnitsRep
 * `TauCeti.ClassFieldTheory.herbrandQuotient_infiniteIdelesRep`: `h(L_∞ˣ) = ∏_v [L_w : K_v]`.
 * `TauCeti.ClassFieldTheory.herbrandQuotient_infiniteIdelesRep_eq_herbrandQuotient_ofMulAction`:
   `h(L_∞ˣ)` is the Herbrand quotient of the permutation lattice on the infinite places of `L`.
+* `TauCeti.ClassFieldTheory.finite_tateCohomology_infiniteIdelesRep`: the Tate cohomology of the
+  infinite ideles is finite in degrees `0` and `-1`.
 
 ## References
 
@@ -92,5 +94,22 @@ theorem herbrandQuotient_infiniteIdelesRep_eq_herbrandQuotient_ofMulAction :
   have := (hw v).choose_spec
   rw [finrank_completion_eq_ite v (hw v).choose]
   split <;> simp
+
+/-- For a cyclic extension `L/K` of number fields, the Herbrand quotient of the infinite ideles
+`L_∞ˣ` is nonzero: it is the power of `2` given by
+`herbrandQuotient_infiniteIdelesRep_eq_herbrandQuotient_ofMulAction`. -/
+theorem herbrandQuotient_infiniteIdelesRep_ne_zero :
+    TateCohomology.herbrandQuotient (infiniteIdelesRep K L) ≠ 0 := by
+  rw [herbrandQuotient_infiniteIdelesRep_eq_herbrandQuotient_ofMulAction,
+    herbrandQuotient_ofMulAction_infinitePlace]
+  exact pow_ne_zero _ two_ne_zero
+
+/-- **The Tate cohomology of the infinite ideles is finite** in degrees `0` and `-1`, for a cyclic
+extension `L/K` of number fields. -/
+theorem finite_tateCohomology_infiniteIdelesRep :
+    Finite (tateCohomology (infiniteIdelesRep K L) 0) ∧
+      Finite (tateCohomology (infiniteIdelesRep K L) (-1)) :=
+  TateCohomology.finite_tateCohomology_of_herbrandQuotient_ne_zero
+    herbrandQuotient_infiniteIdelesRep_ne_zero
 
 end TauCeti.ClassFieldTheory
