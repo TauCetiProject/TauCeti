@@ -30,13 +30,6 @@ namespace CochainComplex
 
 variable {C : Type*} [Category* C] [Abelian C] {K L : CochainComplex C ℤ}
 
-/-- The map `F_⊥ ⟶ F_⊤` of the functor of a filtration vanishes, its source being zero. -/
-lemma filtrationFunctor_map_bot_top (F : ℤ → Subobject K) (hF : Monotone F) :
-    (filtrationFunctor F hF).map (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤)) = 0 := by
-  refine IsZero.eq_of_src ?_ _ _
-  rw [filtrationFunctor_obj, filtrationEInt_bot]
-  exact IsZero.of_iso (isZero_zero _) Subobject.botCoeIsoZero
-
 /-- **The comparison theorem for filtered complexes.** Let `α` be a morphism between the
 functors of finite increasing filtrations `F` of `K` and `G` of `L` (`F_a = G_a = ⊥` and
 `F_b = G_b = ⊤`). If the induced morphism of spectral sequences is an isomorphism on every object
@@ -48,15 +41,15 @@ theorem isIso_homologyMap_of_isIso_spectralSequence_page (F : ℤ → Subobject 
     (h : ∀ pq, IsIso (((spectralSequenceMap coreE₂Cohomological
       (spectralObjectMap α)).hom r hr).f pq)) (n : ℤ) :
     IsIso (HomologicalComplex.homologyMap (α.app ⊤) n) := by
-  have hA := isIso_hom_app_abutment_of_isIso_page (spectralObjectMap α) hab
-    (fun m i hi => isZero_spectralObject_H_bot F hF i m
+  have hA := isIso_hom_app_abutment_of_isIso_page (spectralObjectMap α) hab n
+    (fun m i _ _ hi => isZero_spectralObject_H_bot F hF i m
       (isZero_homology_of_eq_bot F (le_bot_iff.mp (hFa ▸ hF hi)) m))
-    (fun m i hi => isZero_spectralObject_H_bot G hG i m
+    (fun m i _ _ hi => isZero_spectralObject_H_bot G hG i m
       (isZero_homology_of_eq_bot G (le_bot_iff.mp (hGa ▸ hG hi)) m))
-    (fun m i hi => isZero_spectralObject_H_top F hF i m
+    (fun m i _ _ hi => isZero_spectralObject_H_top F hF i m
       (isZero_homology_cokernel_of_eq_top F (top_le_iff.mp (hFb ▸ hF hi)) m))
-    (fun m i hi => isZero_spectralObject_H_top G hG i m
-      (isZero_homology_cokernel_of_eq_top G (top_le_iff.mp (hGb ▸ hG hi)) m)) r hr h n
+    (fun m i _ _ hi => isZero_spectralObject_H_top G hG i m
+      (isZero_homology_cokernel_of_eq_top G (top_le_iff.mp (hGb ▸ hG hi)) m)) r hr h
   have hc := (Iso.eq_inv_comp _).mpr
     (spectralObjectMap_hom_app_spectralObjectHIsoCokernel_hom α
       (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤)) n).symm

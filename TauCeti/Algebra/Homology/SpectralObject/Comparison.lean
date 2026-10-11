@@ -14,10 +14,11 @@ public import TauCeti.Algebra.Homology.SpectralSequence.Comparison
 
 A morphism `φ : X ⟶ Y` of spectral objects induces maps on the objects `opZ^n(f, g)`
 (`CategoryTheory.Abelian.SpectralObject.opcyclesMapOfHom`), compatible with Mathlib's short exact
-sequences `0 ⟶ opZ^n(f₁, f₂ ≫ f₃) ⟶ opZ^n(f₁ ≫ f₂, f₃) ⟶ E^n(f₁, f₂, f₃) ⟶ 0`. For `EInt`,
-these are the extensions `0 ⟶ F_q H^n ⟶ F_{q+1} H^n ⟶ E∞ ⟶ 0` of the filtration of the abutment
-`H^n(⊥ ≤ ⊤)`; by induction on `q` and the three-lemma, an isomorphism on `E∞` gives one on the
-abutment for finite filtrations; by stabilization, so does an isomorphism on some page.
+sequences `0 ⟶ opZ^n(f₁, f₂ ≫ f₃) ⟶ opZ^n(f₁ ≫ f₂, f₃) ⟶ E^n(f₁, f₂, f₃) ⟶ 0`
+(`isIso_opcyclesMapOfHom_of_isIso`). For `EInt`, these are the extensions
+`0 ⟶ F_q H^n ⟶ F_{q+1} H^n ⟶ E∞ ⟶ 0` of the filtration of the abutment `H^n(⊥ ≤ ⊤)`; by induction on
+`q` and the three-lemma, an isomorphism on `E∞` gives one on the abutment for finite filtrations; by
+stabilization, so does an isomorphism on some page.
 
 ## Main results
 
@@ -30,85 +31,6 @@ public section
 namespace CategoryTheory.Abelian.SpectralObject
 
 open ComposableArrows Limits
-
-section Opcycles
-
-variable {C ι : Type*} [Category* C] [Category* ι] [Abelian C]
-  {X Y : SpectralObject C ι} (φ : X ⟶ Y)
-
-section
-
-variable {i j k : ι} (f : i ⟶ j) (g : j ⟶ k) (n : ℤ)
-
-/-- The morphism `X.opcycles f g n ⟶ Y.opcycles f g n` induced by a morphism of spectral
-objects. -/
-noncomputable def opcyclesMapOfHom : X.opcycles f g n ⟶ Y.opcycles f g n :=
-  X.descOpcycles f g (n - 1) n (sub_add_cancel n 1)
-    ((φ.hom n).app (mk₁ f) ≫ Y.pOpcycles f g n) (by
-      rw [← Category.assoc, φ.comm (n - 1) n (sub_add_cancel n 1) f g, Category.assoc,
-        Y.δ_pOpcycles f g (n - 1) n (sub_add_cancel n 1), comp_zero])
-
-@[reassoc (attr := simp)]
-lemma p_opcyclesMapOfHom :
-    X.pOpcycles f g n ≫ opcyclesMapOfHom φ f g n = (φ.hom n).app (mk₁ f) ≫ Y.pOpcycles f g n :=
-  X.p_descOpcycles ..
-
-@[reassoc]
-lemma opcyclesMapOfHom_fromOpcycles (fg : i ⟶ k) (h : f ≫ g = fg) :
-    opcyclesMapOfHom φ f g n ≫ Y.fromOpcycles f g fg h n =
-      X.fromOpcycles f g fg h n ≫ (φ.hom n).app (mk₁ fg) := by
-  rw [← cancel_epi (X.pOpcycles f g n), p_opcyclesMapOfHom_assoc, p_fromOpcycles,
-    p_fromOpcycles_assoc]
-  exact ((φ.hom n).naturality _).symm
-
-@[reassoc]
-lemma opcyclesMap_opcyclesMapOfHom {i' j' k' : ι} (f' : i' ⟶ j') (g' : j' ⟶ k')
-    (α : mk₂ f g ⟶ mk₂ f' g') :
-    X.opcyclesMap f g f' g' α n ≫ opcyclesMapOfHom φ f' g' n =
-      opcyclesMapOfHom φ f g n ≫ Y.opcyclesMap f g f' g' α n := by
-  rw [← cancel_epi (X.pOpcycles f g n),
-    X.p_opcyclesMap_assoc f g f' g' α (homMk₁ (α.app 0) (α.app 1) (naturality' α 0 1)) n,
-    p_opcyclesMapOfHom, p_opcyclesMapOfHom_assoc,
-    Y.p_opcyclesMap f g f' g' α (homMk₁ (α.app 0) (α.app 1) (naturality' α 0 1)) n,
-    ← Category.assoc, ← Category.assoc]
-  exact congrArg (· ≫ Y.pOpcycles f' g' n) ((φ.hom n).naturality _)
-
-end
-
-variable {i₀ i₁ i₂ i₃ : ι} (f₁ : i₀ ⟶ i₁) (f₂ : i₁ ⟶ i₂) (f₃ : i₂ ⟶ i₃)
-  (f₁₂ : i₀ ⟶ i₂) (h₁₂ : f₁ ≫ f₂ = f₁₂) (n₀ n₁ n₂ : ℤ) (hn₁ : n₀ + 1 = n₁) (hn₂ : n₁ + 1 = n₂)
-
-@[reassoc]
-lemma opcyclesMapOfHom_opcyclesToE :
-    opcyclesMapOfHom φ f₁₂ f₃ n₁ ≫ Y.opcyclesToE f₁ f₂ f₃ f₁₂ h₁₂ n₀ n₁ n₂ hn₁ hn₂ =
-      X.opcyclesToE f₁ f₂ f₃ f₁₂ h₁₂ n₀ n₁ n₂ hn₁ hn₂ ≫ EMap φ f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ := by
-  rw [← cancel_epi (X.pOpcycles f₁₂ f₃ n₁), p_opcyclesMapOfHom_assoc,
-    Y.p_opcyclesToE f₁ f₂ f₃ f₁₂ h₁₂ n₀ n₁ n₂ hn₁ hn₂,
-    X.p_opcyclesToE_assoc f₁ f₂ f₃ f₁₂ h₁₂ n₀ n₁ n₂ hn₁ hn₂,
-    πE_EMap φ f₁ f₂ n₁ f₃ n₀ n₂ hn₁ hn₂, toCycles_cyclesMapOfHom_assoc]
-
-variable (f₂₃ : i₁ ⟶ i₃) (h₂₃ : f₂ ≫ f₃ = f₂₃)
-
-include h₁₂ h₂₃ in
-/-- A morphism of spectral objects which is an isomorphism on `opZ^n(f₁, f₂ ≫ f₃)` and on
-`E^n(f₁, f₂, f₃)` is an isomorphism on `opZ^n(f₁ ≫ f₂, f₃)`. -/
-lemma isIso_opcyclesMapOfHom_of_isIso [IsIso (opcyclesMapOfHom φ f₁ f₂₃ n₁)]
-    [IsIso (EMap φ f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂)] :
-    IsIso (opcyclesMapOfHom φ f₁₂ f₃ n₁) := by
-  let γ : X.shortComplexOpcyclesThreeδ₂Toδ₁ f₁ f₂ f₃ f₁₂ f₂₃ h₁₂ h₂₃ n₀ n₁ n₂ hn₁ hn₂ ⟶
-      Y.shortComplexOpcyclesThreeδ₂Toδ₁ f₁ f₂ f₃ f₁₂ f₂₃ h₁₂ h₂₃ n₀ n₁ n₂ hn₁ hn₂ :=
-    { τ₁ := opcyclesMapOfHom φ f₁ f₂₃ n₁
-      τ₂ := opcyclesMapOfHom φ f₁₂ f₃ n₁
-      τ₃ := EMap φ f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂
-      comm₁₂ := (opcyclesMap_opcyclesMapOfHom φ _ _ n₁ _ _ _).symm
-      comm₂₃ := opcyclesMapOfHom_opcyclesToE φ f₁ f₂ f₃ f₁₂ h₁₂ n₀ n₁ n₂ hn₁ hn₂ }
-  have : IsIso γ.τ₁ := ‹_›
-  have : IsIso γ.τ₃ := ‹_›
-  exact ShortComplex.isIso₂_of_shortExact_of_isIso₁₃ γ
-    (X.shortComplexOpcyclesThreeδ₂Toδ₁_shortExact ..)
-    (Y.shortComplexOpcyclesThreeδ₂Toδ₁_shortExact ..)
-
-end Opcycles
 
 variable {C : Type*} [Category* C] [Abelian C] {X Y : SpectralObject C EInt} (φ : X ⟶ Y)
 
@@ -191,27 +113,33 @@ lemma spectralSequencePageXMap_comp_pageXIsoEInfty_hom (r : ℤ) (hr : 2 ≤ r) 
   exact (map_EMap ..).symm
 
 /-- **The comparison theorem.** Let `φ : X ⟶ Y` be a morphism of spectral objects indexed by
-`EInt` and `a ≤ b` such that, in all degrees, `H(⊥ ≤ i)` vanishes for `i ≤ a` and `H(i ≤ ⊤)`
-vanishes for `i ≥ b`, for `X` and `Y`. If the induced morphism of spectral sequences is an
-isomorphism on every object of some page `r ≥ 2`, then `φ` is an isomorphism on the abutments
+`EInt` and `a ≤ b` such that `H^m(⊥ ≤ i)` vanishes for `i ≤ a` and `m ∈ {n, n + 1}`, and
+`H^m(i ≤ ⊤)` vanishes for `i ≥ b` and `m ∈ {n - 1, n}`, for `X` and `Y`. If the induced morphism of
+spectral sequences is an isomorphism on every object of some page `r ≥ 2`, then `φ` is an
+isomorphism on the abutments
 `H^n(⊥ ≤ ⊤)`. -/
-theorem isIso_hom_app_abutment_of_isIso_page {a b : ℤ} (hab : a ≤ b)
-    (hXa : ∀ m i : ℤ, i ≤ a → IsZero ((X.H m).obj (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ i)))))
-    (hYa : ∀ m i : ℤ, i ≤ a → IsZero ((Y.H m).obj (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ i)))))
-    (hXb : ∀ m i : ℤ, b ≤ i → IsZero ((X.H m).obj (mk₁ (homOfLE (le_top : (i : EInt) ≤ ⊤)))))
-    (hYb : ∀ m i : ℤ, b ≤ i → IsZero ((Y.H m).obj (mk₁ (homOfLE (le_top : (i : EInt) ≤ ⊤)))))
+theorem isIso_hom_app_abutment_of_isIso_page {a b : ℤ} (hab : a ≤ b) (n : ℤ)
+    (hXa : ∀ m i : ℤ, n ≤ m → m ≤ n + 1 → i ≤ a →
+      IsZero ((X.H m).obj (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ i)))))
+    (hYa : ∀ m i : ℤ, n ≤ m → m ≤ n + 1 → i ≤ a →
+      IsZero ((Y.H m).obj (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ i)))))
+    (hXb : ∀ m i : ℤ, n - 1 ≤ m → m ≤ n → b ≤ i →
+      IsZero ((X.H m).obj (mk₁ (homOfLE (le_top : (i : EInt) ≤ ⊤)))))
+    (hYb : ∀ m i : ℤ, n - 1 ≤ m → m ≤ n → b ≤ i →
+      IsZero ((Y.H m).obj (mk₁ (homOfLE (le_top : (i : EInt) ≤ ⊤)))))
     (r : ℤ) (hr : 2 ≤ r)
-    (h : ∀ pq, IsIso (((spectralSequenceMap coreE₂Cohomological φ).hom r hr).f pq)) (n : ℤ) :
+    (h : ∀ pq, IsIso (((spectralSequenceMap coreE₂Cohomological φ).hom r hr).f pq)) :
     IsIso ((φ.hom n).app (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤)))) := by
-  refine isIso_hom_app_abutment φ hab (hXa n a le_rfl) (hYa n a le_rfl) (hXb n b le_rfl)
-    (hYb n b le_rfl) (fun q haq hqb => ?_)
+  refine isIso_hom_app_abutment φ hab (hXa n a le_rfl (by lia) le_rfl)
+    (hYa n a le_rfl (by lia) le_rfl) (hXb n b (by lia) le_rfl le_rfl)
+    (hYb n b (by lia) le_rfl le_rfl) (fun q haq hqb => ?_)
   have hr' : r ≤ max r (b - a + 1) := le_max_left _ _
   have h' := SpectralSequence.Hom.isIso_hom_f_of_le _ r hr h _ hr' (n - q, q)
   simp only [spectralSequenceMap_hom, spectralSequencePageMap_f] at h'
   have hn : n = (n - q, q).1 + (n - q, q).2 := by simp
   have e := spectralSequencePageXMap_comp_pageXIsoEInfty_hom φ _ (hr.trans hr') (n - q, q) n hn
-    (hXa _ _ (by simp only; lia)) (hXb _ _ (by simp only; lia))
-    (hYa _ _ (by simp only; lia)) (hYb _ _ (by simp only; lia))
+    (hXa _ _ (by lia) le_rfl (by simp only; lia)) (hXb _ _ le_rfl (by lia) (by simp only; lia))
+    (hYa _ _ (by lia) le_rfl (by simp only; lia)) (hYb _ _ le_rfl (by lia) (by simp only; lia))
   rw [← Iso.inv_comp_eq] at e
   rw [← e]
   infer_instance
