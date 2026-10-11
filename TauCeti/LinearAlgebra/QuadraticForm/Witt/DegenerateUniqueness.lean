@@ -33,9 +33,9 @@ variable {K : Type u} [Field K] [Invertible (2 : K)]
 /-- If a quadratic form is isometric to a zero form orthogonally summed with a regular form, the
 dimension of its radical is the dimension of the zero summand. -/
 theorem finrank_radical_eq_of_equivalent_zero_prod
-    {V R W : Type*} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+    {V R W : Type*} [AddCommGroup V] [Module K V]
     [AddCommGroup R] [Module K R] [FiniteDimensional K R]
-    [AddCommGroup W] [Module K W] [FiniteDimensional K W]
+    [AddCommGroup W] [Module K W]
     (Q : QuadraticForm K V) (A : QuadraticForm K W) (hA : A.Nondegenerate)
     (e : Q.Equivalent ((0 : QuadraticForm K R).prod A)) :
     Module.finrank K Q.radical = Module.finrank K R := by
@@ -58,11 +58,11 @@ theorem finrank_radical_eq_of_equivalent_zero_prod
 /-- The dimensions of the zero summands agree whenever one quadratic form is isometric to two
 orthogonal sums of a zero form and a regular form. -/
 theorem finrank_zeroPart_eq_of_equivalent_zero_prod
-    {V R S W W' : Type*} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+    {V R S W W' : Type*} [AddCommGroup V] [Module K V]
     [AddCommGroup R] [Module K R] [FiniteDimensional K R]
     [AddCommGroup S] [Module K S] [FiniteDimensional K S]
-    [AddCommGroup W] [Module K W] [FiniteDimensional K W]
-    [AddCommGroup W'] [Module K W'] [FiniteDimensional K W']
+    [AddCommGroup W] [Module K W]
+    [AddCommGroup W'] [Module K W']
     (Q : QuadraticForm K V) (A : QuadraticForm K W) (B : QuadraticForm K W')
     (hA : A.Nondegenerate) (hB : B.Nondegenerate)
     (e : Q.Equivalent ((0 : QuadraticForm K R).prod A))
