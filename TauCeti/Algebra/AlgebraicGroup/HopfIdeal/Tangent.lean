@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.Equivariance
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Naturality
 public import TauCeti.Algebra.Bialgebra.Quotient
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Map
+import TauCeti.RingTheory.Derivation.Ideal
 
 /-!
 # The Lie algebra of a closed affine subgroup
@@ -258,11 +259,14 @@ theorem mem_lieSubalgebra_iff_of_toIdeal_eq_span (I : HopfIdeal R H) {S : Set H}
     exact Ideal.subset_span hx
   · intro hd x hx
     apply Derivation.apply_eq_zero_of_mem_span d (hd := hd) (hx := hI ▸ hx)
-    intro y hy
-    apply I.counit_eq_zero
-    apply HopfIdeal.mem_toIdeal.mp
-    rw [hI]
-    exact Ideal.subset_span hy
+    intro y hy m
+    have hyε : Coalgebra.counit (R := R) y = 0 := by
+      apply I.counit_eq_zero
+      apply HopfIdeal.mem_toIdeal.mp
+      rw [hI]
+      exact Ideal.subset_span hy
+    apply (Bialgebra.CounitAlgebra.algEquivSelf R H B).injective
+    simp only [Bialgebra.CounitAlgebra.algEquivSelf_smul, hyε, map_zero, zero_mul]
 
 /-- Taking the inverse image of a closed subgroup commutes with taking its tangent Lie
 algebra. On coordinate rings the inverse image is presented by the image Hopf ideal.
