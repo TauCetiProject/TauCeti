@@ -280,7 +280,7 @@ lemma pathChain_mem_cycles₁ {x : X} (γ : Path x x) : pathChain ℤ γ.toConti
   mem_cycles₁ (by rw [d_pathChain]; simp)
 
 /-- The homology class of the chain of a loop. -/
-def loopClass {x : X} (γ : Path x x) : H₁ X :=
+@[expose] def loopClass {x : X} (γ : Path x x) : H₁ X :=
   H₁.mk ⟨_, pathChain_mem_cycles₁ γ⟩
 
 lemma loopClass_eq_iff {x y : X} (γ : Path x x) (γ' : Path y y) :
