@@ -9,6 +9,7 @@ public import TauCeti.Data.ZMod.BinaryQuadraticForm
 public import Mathlib.Data.Int.ModEq
 
 import TauCeti.Data.ZMod.Two
+import TauCeti.Data.ZMod.Units
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 
@@ -38,13 +39,6 @@ public section
 
 namespace ZMod.BinaryQuadraticForm
 
-private theorem odd_intCast_isUnit (k : ℕ) {θ : ℤ} (hθ : Odd θ) :
-    IsUnit (θ : ZMod (2 ^ (k + 1))) := by
-  obtain ⟨s, rfl⟩ := hθ
-  convert ZMod.isUnit_two_mul_add (c := (s : ZMod (2 ^ (k + 1)))) isUnit_one using 1
-  push_cast
-  ring
-
 /-- Complement coordinates whose diagonal ternary norm with coefficients `θ, θ, η`
 equals `2(m² + mn + n²)` when `θ ≡ η (mod 4)`. -/
 theorem exists_ternary_complement_sq_add_mul_add_sq_of_modEq_four (k : ℕ) {θ η : ℤ}
@@ -58,7 +52,7 @@ theorem exists_ternary_complement_sq_add_mul_add_sq_of_modEq_four (k : ℕ) {θ 
     obtain ⟨s, hs⟩ := hθ
     refine ⟨s + 2 * e, ?_⟩
     omega
-  obtain ⟨Η, hΗ⟩ := odd_intCast_isUnit k hη
+  obtain ⟨Η, hΗ⟩ := ZMod.isUnit_intCast_two_pow_of_odd (k + 1) hη
   obtain ⟨e, he⟩ := Int.modEq_iff_dvd.mp hmod.symm
   let s : ZMod (2 ^ (k + 1)) := (e : ZMod (2 ^ (k + 1))) * (Η⁻¹ : (ZMod (2 ^ (k + 1)))ˣ)
   let r : ZMod (2 ^ (k + 1)) := 1 + 4 * s
@@ -72,11 +66,11 @@ theorem exists_ternary_complement_sq_add_mul_add_sq_of_modEq_four (k : ℕ) {θ 
     dsimp [r]
     linear_combination 4 * hs - he'
   have hA : IsUnit ((θ : ZMod (2 ^ (k + 1))) * (1 + 2 * s)) :=
-    (odd_intCast_isUnit k hθ).mul (by
+    (ZMod.isUnit_intCast_two_pow_of_odd (k + 1) hθ).mul (by
       convert ZMod.isUnit_two_mul_add (c := s) isUnit_one using 1
       ring)
   have hC : IsUnit ((θ : ZMod (2 ^ (k + 1))) * r) :=
-    (odd_intCast_isUnit k hθ).mul (by
+    (ZMod.isUnit_intCast_two_pow_of_odd (k + 1) hθ).mul (by
       convert ZMod.isUnit_two_mul_add (c := 2 * s) isUnit_one using 1
       ring)
   obtain ⟨t, ht⟩ | ⟨t, ht⟩ :=
@@ -104,7 +98,7 @@ theorem exists_ternary_complement_mul_of_modEq_four_neg (k : ℕ) {θ η : ℤ}
     obtain ⟨s, hs⟩ := hθ
     refine ⟨-s - 2 * e - 1, ?_⟩
     omega
-  obtain ⟨Η, hΗ⟩ := odd_intCast_isUnit k hη
+  obtain ⟨Η, hΗ⟩ := ZMod.isUnit_intCast_two_pow_of_odd (k + 1) hη
   obtain ⟨e, he⟩ := Int.modEq_iff_dvd.mp hmod.symm
   let s : ZMod (2 ^ (k + 1)) := (e : ZMod (2 ^ (k + 1))) * (Η⁻¹ : (ZMod (2 ^ (k + 1)))ˣ)
   let r : ZMod (2 ^ (k + 1)) := -1 + 4 * s
@@ -118,7 +112,7 @@ theorem exists_ternary_complement_mul_of_modEq_four_neg (k : ℕ) {θ η : ℤ}
     dsimp [r]
     linear_combination 4 * hs - he'
   have hC : IsUnit ((θ : ZMod (2 ^ (k + 1))) * r) :=
-    (odd_intCast_isUnit k hθ).mul (by
+    (ZMod.isUnit_intCast_two_pow_of_odd (k + 1) hθ).mul (by
       convert ZMod.isUnit_two_mul_add (c := 2 * s) isUnit_one.neg using 1
       ring)
   obtain ⟨a, c, b, d, h⟩ :=

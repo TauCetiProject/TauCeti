@@ -41,10 +41,6 @@ coefficient `η` split as a rank-two plane and a cyclic form. The congruence
 `θ ≡ η (mod 4)` selects `v` and coefficient `-5η`; `θ ≡ -η (mod 4)` selects
 `u` and coefficient `-η`. Both coordinate changes preserve the half-norm quadratic values.
 
-The coordinate maps use concrete `ZMod` products. The generators package these products
-as carriers indexed by their coefficients, so `erw` crosses those definitional wrappers
-when substituting coordinate actions and quadratic value formulas.
-
 ## References
 
 * V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*,
@@ -627,8 +623,7 @@ private noncomputable def dyadicTernaryCyclicIsometryVOfCoefficients
         η * (-r * ((a * m + b * n) + (c * m + d * n))) ^ 2 = 2 * (m ^ 2 + m * n + n ^ 2)) :
     Isometry (((dyadicCyclic k θ).prod (dyadicCyclic k θ)).prod (dyadicCyclic k η))
       ((dyadicV k).prod (dyadicCyclic k (2 * θ + η))) := by
-  have hα : Odd (2 * θ + η) := by
-    simpa only [add_comm] using hη.add_even (show Even (2 * θ) from ⟨θ, by ring⟩)
+  have hα : Odd (2 * θ + η) := (even_two_mul θ).add_odd hη
   let g : Hom ((dyadicV k).prod (dyadicCyclic k (2 * θ + η)))
       (((dyadicCyclic k θ).prod (dyadicCyclic k θ)).prod (dyadicCyclic k η)) :=
     { toLinearMap := (dyadicTernaryCyclicChange k r a b c d).toIntLinearMap
@@ -648,8 +643,7 @@ private noncomputable def dyadicTernaryCyclicIsometryUOfCoefficients
         η * (-r * ((a * m + b * n) + (c * m + d * n))) ^ 2 = 2 * m * n) :
     Isometry (((dyadicCyclic k θ).prod (dyadicCyclic k θ)).prod (dyadicCyclic k η))
       ((dyadicU k).prod (dyadicCyclic k (2 * θ + η))) := by
-  have hα : Odd (2 * θ + η) := by
-    simpa only [add_comm] using hη.add_even (show Even (2 * θ) from ⟨θ, by ring⟩)
+  have hα : Odd (2 * θ + η) := (even_two_mul θ).add_odd hη
   let g : Hom ((dyadicU k).prod (dyadicCyclic k (2 * θ + η)))
       (((dyadicCyclic k θ).prod (dyadicCyclic k θ)).prod (dyadicCyclic k η)) :=
     { toLinearMap := (dyadicTernaryCyclicChange k r a b c d).toIntLinearMap
@@ -683,8 +677,7 @@ noncomputable def dyadicCyclicProdSelfProdIsometryVProdNegFiveMul (k : ℕ) [NeZ
     obtain ⟨c, rfl⟩ := ZMod.intCast_surjective (n := 2 ^ (k + 1)) c
     obtain ⟨d, rfl⟩ := ZMod.intCast_surjective (n := 2 ^ (k + 1)) d
     let e := dyadicTernaryCyclicIsometryVOfCoefficients k θ η r a b c d hη hratio hplane
-    have hα : Odd (2 * θ + η) := by
-      simpa only [add_comm] using hη.add_even (show Even (2 * θ) from ⟨θ, by ring⟩)
+    have hα : Odd (2 * θ + η) := (even_two_mul θ).add_odd hη
     have hmod8 : 2 * θ + η ≡ -5 * η [ZMOD 8] := by
       obtain ⟨e, he⟩ := Int.modEq_iff_dvd.mp hmod.symm
       refine Int.modEq_iff_dvd.mpr ⟨-η - e, ?_⟩
@@ -714,8 +707,7 @@ noncomputable def dyadicCyclicProdSelfProdIsometryUProdNeg (k : ℕ) [NeZero k] 
     obtain ⟨c, rfl⟩ := ZMod.intCast_surjective (n := 2 ^ (k + 1)) c
     obtain ⟨d, rfl⟩ := ZMod.intCast_surjective (n := 2 ^ (k + 1)) d
     let e := dyadicTernaryCyclicIsometryUOfCoefficients k θ η r a b c d hη hratio hplane
-    have hα : Odd (2 * θ + η) := by
-      simpa only [add_comm] using hη.add_even (show Even (2 * θ) from ⟨θ, by ring⟩)
+    have hα : Odd (2 * θ + η) := (even_two_mul θ).add_odd hη
     have hmod8 : 2 * θ + η ≡ -η [ZMOD 8] := by
       obtain ⟨e, he⟩ := Int.modEq_iff_dvd.mp hmod.symm
       refine Int.modEq_iff_dvd.mpr ⟨-e, ?_⟩
