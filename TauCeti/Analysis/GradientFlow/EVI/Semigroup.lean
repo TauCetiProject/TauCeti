@@ -132,12 +132,13 @@ theorem isEVISolution_eviFlow (hx : x ∈ eviDomain lam φ) :
   obtain ⟨u, hu, -, hflow⟩ := exists_isEVISolution_eviFlow_eq hx
   exact hu.congr fun t (ht : 0 ≤ t) ↦ by rw [hflow, Real.coe_toNNReal t ht]
 
-/-- The flow from a point of `TauCeti.eviDomain λ φ` is continuous in time. -/
-theorem continuous_eviFlow (hx : x ∈ eviDomain lam φ) :
-    Continuous fun t : ℝ≥0 ↦ eviFlow lam φ t x := by
-  obtain ⟨u, hu, -, hflow⟩ := exists_isEVISolution_eviFlow_eq hx
-  simp only [hflow]
-  exact hu.continuousOn.comp_continuous NNReal.continuous_coe fun t ↦ mem_Ici.2 t.2
+/-- The flow is continuous in time. -/
+theorem continuous_eviFlow (x : X) : Continuous fun t : ℝ≥0 ↦ eviFlow lam φ t x := by
+  by_cases hx : x ∈ eviDomain lam φ
+  · obtain ⟨u, hu, -, hflow⟩ := exists_isEVISolution_eviFlow_eq hx
+    simp only [hflow]
+    exact hu.continuousOn.comp_continuous NNReal.continuous_coe fun t ↦ mem_Ici.2 t.2
+  · simpa only [eviFlow_of_notMem hx] using continuous_const
 
 /-- The flow preserves `TauCeti.eviDomain λ φ`. -/
 theorem mapsTo_eviFlow (t : ℝ≥0) :
@@ -171,7 +172,7 @@ theorem continuousOn_uncurry_eviFlow (hφ : LowerSemicontinuous φ) :
   have h₂ : Tendsto (fun p : ℝ≥0 × X ↦ dist (eviFlow lam φ p.1 x₀) (eviFlow lam φ t₀ x₀))
       (𝓝 (t₀, x₀)) (𝓝 0) :=
     tendsto_iff_dist_tendsto_zero.1 <|
-      ((continuous_eviFlow hx₀).tendsto t₀).comp (continuous_fst.tendsto (t₀, x₀))
+      ((continuous_eviFlow x₀).tendsto t₀).comp (continuous_fst.tendsto (t₀, x₀))
   refine tendsto_iff_dist_tendsto_zero.2 <| squeeze_zero' (.of_forall fun _ ↦ dist_nonneg) ?_
     (by simpa using (h₁.add h₂).mono_left nhdsWithin_le_nhds)
   filter_upwards [self_mem_nhdsWithin] with ⟨t, x⟩ hp
@@ -190,13 +191,15 @@ theorem IsEVISolution.eviFlow_eq (h : IsEVISolution lam φ u) (hφ : LowerSemico
     (t : ℝ≥0) : eviFlow lam φ t (u 0) = u t := by
   simpa using (isEVISolution_eviFlow ⟨u, h, rfl⟩).eqOn h hφ (by simp) (mem_Ici.2 t.2)
 
-/-- **The semigroup law of the `EVI_λ` flow.** For a lower semicontinuous energy on a metric space
-and a point of `TauCeti.eviDomain λ φ`, `S_{s + t} x = S_s (S_t x)`. -/
-theorem eviFlow_add (hφ : LowerSemicontinuous φ) (hx : x ∈ eviDomain lam φ) (s t : ℝ≥0) :
+/-- **The semigroup law of the `EVI_λ` flow.** For a lower semicontinuous energy on a metric space,
+`S_{s + t} x = S_s (S_t x)`. -/
+theorem eviFlow_add (hφ : LowerSemicontinuous φ) (s t : ℝ≥0) (x : X) :
     eviFlow lam φ (s + t) x = eviFlow lam φ s (eviFlow lam φ t x) := by
-  -- The time translate by `t` of the flow from `x` is the solution starting at `S_t x`.
-  rw [eq_comm]
-  simpa [add_comm] using ((isEVISolution_eviFlow hx).comp_add_const t.2).eviFlow_eq hφ s
+  by_cases hx : x ∈ eviDomain lam φ
+  · -- The time translate by `t` of the flow from `x` is the solution starting at `S_t x`.
+    rw [eq_comm]
+    simpa [add_comm] using ((isEVISolution_eviFlow hx).comp_add_const t.2).eviFlow_eq hφ s
+  · simp only [eviFlow_of_notMem hx]
 
 /-- The `EVI_λ` flow of a lower semicontinuous energy on a metric space, as a continuous semiflow
 on the set `TauCeti.eviDomain λ φ` of initial points of `EVI_λ` solutions. -/
@@ -206,7 +209,7 @@ noncomputable def eviSemiflow (lam : ℝ) (hφ : LowerSemicontinuous φ) :
   cont' := ((continuousOn_uncurry_eviFlow hφ).comp_continuous
     (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))
     fun p ↦ ⟨mem_univ _, p.2.2⟩).subtype_mk _
-  map_add' s t x := Subtype.ext (eviFlow_add hφ x.2 s t)
+  map_add' s t x := Subtype.ext (eviFlow_add hφ s t x)
   map_zero' x := Subtype.ext (eviFlow_zero (x : X))
 
 @[simp]
