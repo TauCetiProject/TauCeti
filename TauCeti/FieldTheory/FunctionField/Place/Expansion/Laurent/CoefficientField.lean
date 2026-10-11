@@ -292,7 +292,14 @@ theorem residueResidueField_mul_inv_uniformizer (u : P.integers) :
     PowerSeries.coeff_zero_eq_constantCoeff_apply, constantCoeff_powerSeriesExpansionResidueField]
 
 /-- The `k`-valued residue at a place with separable residue field: the trace from `F_P` to `k`
-of the residue `res_{P,t}` (Stichtenoth, Remark 4.3.7). -/
+of the residue `res_{P,t}` (Stichtenoth, Remark 4.3.7).
+
+This is the classical residue-field trace precisely when `Module.Finite k P.ResidueField`, which
+`TauCeti.Place.finiteDimensional_residueField` supplies for every place of a function field.
+Absent that, `Algebra.trace` is the junk value `0` (`Algebra.trace_eq_zero_of_not_exists_basis`),
+the convention `TauCeti.Place.normResidue` and `TauCeti.Place.degree` follow as well. -/
+-- Finiteness is documented rather than assumed: `Algebra.trace` consumes no such argument, so a
+-- hypothesis here would be unused, which `unusedArguments` rejects.
 noncomputable def traceResidue : F →ₗ[k] k :=
   (Algebra.trace k P.ResidueField).comp (P.residueResidueField ht)
 
