@@ -352,7 +352,7 @@ private theorem glCliffordHom_single_mul_carHighestWeightVector_eq_zero
       carGenerator (K := K) i k * carGenerator k j *
           carHighestWeightVector K n) = 0 := by
     apply Finset.sum_eq_zero
-    intro k hk
+    intro k _
     exact raisingTerm_mul_carHighestWeightVector_eq_zero hij k
   rw [hsum, smul_zero]
 

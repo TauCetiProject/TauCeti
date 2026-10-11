@@ -163,8 +163,6 @@ private theorem det_hsymmInt_staircase :
   rw [Matrix.det_of_isLowerTriangular _ fun l j (h : l < j) => ?_]
   · exact prod_eq_one fun l _ => by simp
   · rw [Matrix.of_apply, hsymmInt_of_neg]
-    have hl := l.isLt
-    have hj := j.isLt
     have : (l : ℕ) < j := h
     omega
 
@@ -269,7 +267,7 @@ theorem diagramSchurPoly_eq_det_hsymmInt (N : ℕ) (μ : YoungDiagram) {r : ℕ}
   induction d generalizing N with
   | zero => exact diagramSchurPoly_eq_det_of_colLen_le μ hd
   | succ d ih =>
-    rcases le_or_gt (μ.colLen 0) N with hN | hN
+    rcases le_or_gt (μ.colLen 0) N with hN | _
     · exact diagramSchurPoly_eq_det_of_colLen_le μ hN
     · rw [← aeval_snoc_zero_diagramSchurPoly, ih (N := N + 1) (by omega), AlgHom.map_det]
       congr 1

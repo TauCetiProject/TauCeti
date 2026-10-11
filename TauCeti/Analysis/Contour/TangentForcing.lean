@@ -93,7 +93,7 @@ private theorem abs_im_mul_conj_div_le_of_isLittleO {γ : ℝ → ℂ} {t₀ : �
       fun t => ‖γ t - γ t₀‖ ^ n)
     (h_deriv : HasDerivWithinAt γ L (Ioi t₀) t₀) {ε : ℝ} (hε : 0 < ε) :
     |(L * starRingEnd ℂ v).im| / ‖v‖ ≤ ε := by
-  set c : ℝ := |(L * starRingEnd ℂ v).im| / ‖v‖ with hc_def
+  set c : ℝ := |(L * starRingEnd ℂ v).im| / ‖v‖ with _
   have herr : (fun t => γ t - γ t₀ - (t - t₀) • L) =o[𝓝[>] t₀] (fun t => t - t₀) :=
     hasDerivWithinAt_iff_isLittleO.mp h_deriv
   obtain ⟨C, hC, h_pow⟩ := eventually_norm_sub_pow_le_of_hasDerivWithinAt hn h_deriv
@@ -203,7 +203,7 @@ theorem FlatOfOrder.tangentDeviation_isLittleO_right {γ : ℝ → ℂ} {t₀ : 
     (h_deriv : HasDerivWithinAt γ L (Ioi t₀) t₀) :
     (fun t => ‖tangentDeviation (γ t - γ t₀) L‖) =o[𝓝[>] t₀]
       fun t => ‖γ t - γ t₀‖ ^ n := by
-  obtain ⟨vp, vm, hvp, hvm, hr, -⟩ := flatOfOrder_iff.mp hflat
+  obtain ⟨vp, vm, hvp, _, hr, -⟩ := flatOfOrder_iff.mp hflat
   exact tangentDeviation_isLittleO_of_im_mul_conj_eq_zero hvp hL
     (im_mul_conj_eq_zero_of_flat_right hvp hn hr h_deriv) hr
 
@@ -214,7 +214,7 @@ theorem FlatOfOrder.tangentDeviation_isLittleO_left {γ : ℝ → ℂ} {t₀ : �
     (h_deriv : HasDerivWithinAt γ L (Iio t₀) t₀) :
     (fun t => ‖tangentDeviation (γ t - γ t₀) L‖) =o[𝓝[<] t₀]
       fun t => ‖γ t - γ t₀‖ ^ n := by
-  obtain ⟨vp, vm, hvp, hvm, -, hl⟩ := flatOfOrder_iff.mp hflat
+  obtain ⟨vp, vm, _, hvm, -, hl⟩ := flatOfOrder_iff.mp hflat
   exact tangentDeviation_isLittleO_of_im_mul_conj_eq_zero hvm hL
     (im_mul_conj_eq_zero_of_flat_left hvm hn hl h_deriv) hl
 

@@ -29,9 +29,10 @@ of `B` is. In particular, for Morita equivalent algebras `A` and `B` in Mathlib'
 (`IsMoritaEquivalent R A B`), the groups `K₀(proj A)` and `G₀(mod A)` and the bijectivity of the
 Cartan map are Morita invariants.
 
-The special case of the equivalence induced by a ring isomorphism is
-`TauCeti/Algebra/Category/ModuleCat/CartanMap/RingEquiv.lean`, where the induced maps are
-described through restriction of scalars.
+For the equivalence `ModuleCat.restrictScalarsEquivalenceOfRingEquiv e` induced by a ring
+isomorphism `e`, the induced maps send the class of a module to the class of the same module with
+scalars restricted along `e`; their functoriality in `e` is proved in
+`TauCeti/Algebra/Category/ModuleCat/CartanMap/RingEquiv.lean`.
 
 The API is dot notation on the equivalence: use `e.finiteModulesK0Equiv`,
 `e.finiteProjectiveModulesK0Equiv` and `e.cartanMap_bijective_iff`. The two rings may live in

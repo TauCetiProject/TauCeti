@@ -99,9 +99,9 @@ private theorem comul_g2SpecialIsogeny_carrierGenericMatrix :
     simpa only [carrierGenericMatrix_def, BialgHom.coe_toAlgHom, Matrix.map_map] using
       TauCeti.GeneralLinear.map_comul_map_genericMatrix carrierQuotient.hom
   set iL : carrierAlgebra →ₐ[ZMod 3] carrierAlgebra ⊗[ZMod 3] carrierAlgebra :=
-    Algebra.TensorProduct.includeLeft with hiL
+    Algebra.TensorProduct.includeLeft
   set iR : carrierAlgebra →ₐ[ZMod 3] carrierAlgebra ⊗[ZMod 3] carrierAlgebra :=
-    Algebra.TensorProduct.includeRight with hiR
+    Algebra.TensorProduct.includeRight
   have hL : PreservesG2Cross (carrierGenericMatrix.map iL) :=
     preservesG2Cross_carrierGenericMatrix.map iL.toRingHom
   have hR : PreservesG2Cross (carrierGenericMatrix.map iR) :=

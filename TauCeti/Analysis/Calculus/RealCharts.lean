@@ -104,7 +104,6 @@ lemma image_sq_div_const_Ioi (hν : 0 < ν) {y : ℝ} (hy : 0 ≤ y) :
   simp only [mem_image, mem_Ioi]
   constructor
   · rintro ⟨z, hz, rfl⟩
-    have hz0 : 0 < z := hy.trans_lt hz
     have hsq : y ^ 2 < z ^ 2 := by gcongr
     exact div_lt_div_of_pos_right hsq hν
   · intro hw

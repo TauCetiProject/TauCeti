@@ -386,7 +386,7 @@ def smallSingularRetraction :
     (TopCat.toSSet.obj X).chainComplex R ⟶
       (X.smallSingularSubcomplex U : SSet).chainComplex R where
   f := smallSingularRetractionX R U hU hcov
-  comm' i j hij := by
+  comm' i j _ := by
     apply (cancel_mono ((SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R).f j)).1
     rw [Category.assoc, ← HomologicalComplex.Hom.comm, ← Category.assoc,
       smallSingularRetractionX_comp_ι, Category.assoc, smallSingularRetractionX_comp_ι,

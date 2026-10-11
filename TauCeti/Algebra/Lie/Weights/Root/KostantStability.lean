@@ -148,7 +148,7 @@ theorem ad_pow_rootVector_eq_zero_or_exists {α β : Weight K H L} (hα : α.IsN
     · refine Or.inl ?_
       rw [hstep, hx.toIsSl2System.lie_eq_zero_of_rootSpace_add_eq_bot α γ hbot, smul_zero]
     refine Or.inr ?_
-    set δ : Weight K H L := ⟨(α : H → K) + (γ : H → K), hbot⟩ with hδ
+    set δ : Weight K H L := ⟨(α : H → K) + (γ : H → K), hbot⟩
     have hδcoe : (δ : H → K) = (α : H → K) + (γ : H → K) := rfl
     have hδnz : δ.IsNonZero := by
       rw [Weight.IsNonZero, Weight.IsZero, hδcoe]

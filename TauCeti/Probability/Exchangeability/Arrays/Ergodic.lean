@@ -155,7 +155,7 @@ private theorem preimage_pairReindex_eq_of_measurable_arrayTailFamily
       rw [MeasurableSpace.measurableSet_iSup] at hu
       induction hu with
       | basic u hu =>
-          rcases hu with ⟨hp, v, hv, rfl⟩
+          rcases hu with ⟨hp, v, _, rfl⟩
           ext x
           simp only [Set.mem_preimage, pairReindex_apply]
           rw [hσ p.1 hp.1, hτ p.2 hp.2]

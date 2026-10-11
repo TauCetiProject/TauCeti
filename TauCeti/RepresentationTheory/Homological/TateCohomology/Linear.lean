@@ -22,6 +22,8 @@ cohomology in each integer degree is an additive, `k`-linear functor: the map in
   `c • f` is `c • tateComplex.map f`.
 * The `Functor.Linear` instances on `tateComplexFunctor k G` and on `tateCohomologyFunctor n`,
   and the `Functor.Additive` instance on `tateCohomologyFunctor n`.
+* `TauCeti.TateCohomology.smul_bijective`: a bijective scalar action on a representation
+  induces a bijective scalar action on its Tate cohomology.
 -/
 
 public section
@@ -31,6 +33,8 @@ universe u
 open CategoryTheory
 
 namespace TauCeti.TateCohomology
+
+open Representation
 
 variable {k G : Type u} [CommRing k] [Group G] [Fintype G]
 
@@ -67,5 +71,36 @@ instance (n : ℤ) : (tateCohomologyFunctor (R := k) (G := G) n).Additive :=
 instance (n : ℤ) : (tateCohomologyFunctor (R := k) (G := G) n).Linear k :=
   inferInstanceAs <| Functor.Linear k (tateComplexFunctor k G ⋙
     HomologicalComplex.homologyFunctor (ModuleCat k) (ComplexShape.up ℤ) n)
+
+/-- A scalar acting bijectively on a representation acts bijectively on its Tate cohomology. -/
+theorem smul_bijective (c : k) (A : Rep k G)
+    (hA : Function.Bijective fun x : A.V => c • x) (n : ℤ) :
+    Function.Bijective fun x : tateCohomology A n => c • x := by
+  let e : A.V ≃ₗ[k] A.V :=
+    LinearEquiv.ofBijective (c • LinearMap.id) (by
+      -- The underlying function of this scalar multiple of the identity is `c • ·`.
+      change Function.Bijective (fun x : A.V => c • x)
+      exact hA)
+  let eRep : A.ρ.Equiv A.ρ := Representation.Equiv.mk e fun g ↦ by
+    ext x
+    simp [e]
+  let eA : A ≅ A := Rep.mkIso eRep
+  have heA : eA.hom = c • 𝟙 A := by
+    ext x
+    simp [eA, eRep, e, Rep.smul_hom]
+  let F := tateCohomologyFunctor (R := k) (G := G) n
+  let eH := F.mapIso eA
+  have heH : eH.hom = c • 𝟙 (F.obj A) := by
+    rw [Functor.mapIso_hom]
+    calc
+      F.map eA.hom = F.map (c • 𝟙 A) := congrArg F.map heA
+      _ = c • F.map (𝟙 A) := F.map_smul _ _
+      _ = c • 𝟙 (F.obj A) := by rw [F.map_id]
+  have h := ConcreteCategory.bijective_of_isIso eH.hom
+  have hfun : (fun x : F.obj A => c • x) = eH.hom := by
+    funext x
+    simp only [heH, ModuleCat.hom_smul, LinearMap.smul_apply, ModuleCat.hom_id,
+      LinearMap.id_apply]
+  simpa only [← hfun] using h
 
 end TauCeti.TateCohomology

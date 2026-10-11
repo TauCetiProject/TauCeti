@@ -101,8 +101,6 @@ private theorem isZero_groupCohomology_res_splittingModule (S : Subgroup G) [Fin
     (groupCohomology.mapShortComplex₁_exact hX (i := 1) (j := 2) rfl)
   have hex₂ (n : ℕ) := (ShortComplex.moduleCat_exact_iff _).1
     (groupCohomology.mapShortComplex₂_exact hX n)
-  have hex₃ := (ShortComplex.moduleCat_exact_iff _).1
-    (groupCohomology.mapShortComplex₃_exact hX (i := 1) (j := 2) rfl)
   have hzero₁ := fun x ↦ ConcreteCategory.congr_hom
     (groupCohomology.mapShortComplex₁ hX (i := 1) (j := 2) rfl).zero x
   have hzero₃ := fun x ↦ ConcreteCategory.congr_hom

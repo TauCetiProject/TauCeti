@@ -14,7 +14,8 @@ public import Mathlib.Analysis.Calculus.FDeriv.Add
 This file records a zero-value rule for differentiating the pointwise application of a varying
 continuous linear map. At a zero of the vector-valued argument, the variation of the operator
 contributes nothing to the derivative, so the operator-valued map need only be continuous. It also
-records the derivative of the application of a varying continuous linear map to a fixed vector.
+records the derivative of the application of a varying continuous linear map to a fixed vector,
+and the product rule for a varying bilinear map applied to two varying vectors.
 
 ## Main declarations
 
@@ -22,6 +23,7 @@ records the derivative of the application of a varying continuous linear map to 
   `u`, assuming only continuity of `c`.
 * `TauCeti.fderiv_clm_apply_const_apply`: the derivative of `y ↦ c y v` in the direction `w` is
   `Dc(w) v`.
+* `TauCeti.fderiv_bilin_apply`: the product rule for `y ↦ c y (A y) (B y)`.
 -/
 
 public section
@@ -29,9 +31,10 @@ public section
 open Asymptotics Filter Set
 open scoped Topology
 
-variable {𝕜 E F F' : Type*} [NontriviallyNormedField 𝕜]
+variable {𝕜 E F G F' : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [NormedAddCommGroup G] [NormedSpace 𝕜 G]
   [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
 
 namespace TauCeti
@@ -63,6 +66,17 @@ theorem fderiv_clm_apply_const_apply {c : E → F →L[𝕜] F'} {x : E} (hc : D
     fderiv 𝕜 (fun y ↦ c y v) x w = fderiv 𝕜 c x w v := by
   rw [fderiv_clm_apply hc (differentiableAt_const v)]
   simp
+
+/-- The derivative of `y ↦ c y (A y) (B y)` for a field `c` of bilinear maps: the product rule. -/
+theorem fderiv_bilin_apply {c : E → F →L[𝕜] G →L[𝕜] F'} {A : E → F} {B : E → G} {x : E}
+    (hc : DifferentiableAt 𝕜 c x) (hA : DifferentiableAt 𝕜 A x) (hB : DifferentiableAt 𝕜 B x)
+    (u : E) :
+    fderiv 𝕜 (fun y ↦ c y (A y) (B y)) x u =
+      fderiv 𝕜 c x u (A x) (B x) + c x (fderiv 𝕜 A x u) (B x) + c x (A x) (fderiv 𝕜 B x u) := by
+  rw [((hc.hasFDerivAt.clm_apply hA.hasFDerivAt).clm_apply hB.hasFDerivAt).fderiv]
+  simp only [add_apply, ContinuousLinearMap.coe_comp, Function.comp_apply,
+    ContinuousLinearMap.flip_apply]
+  abel
 
 end TauCeti
 

@@ -82,6 +82,14 @@ def rationalRootSystem :
   rootPairingBaseChange ℚ (t.simplyConnectedRootDatum ht)
     (toLinearMap_simplyConnectedRootDatum t ht)
 
+/-- Identify the rational root system with entrywise base change of its integral datum.
+The body of `rationalRootSystem` is not exposed to importing modules, so use this equation
+to apply constructions on base-changed pairings to the rational model. -/
+theorem rationalRootSystem_def :
+    t.rationalRootSystem ht = rootPairingBaseChange ℚ (t.simplyConnectedRootDatum ht)
+      (toLinearMap_simplyConnectedRootDatum t ht) :=
+  (rfl)
+
 /-- The Bourbaki-numbered base of `TauCeti.DynkinType.rationalRootSystem`, supported on the same
 first `t.rank` root indices as the base of the integral datum. -/
 def rationalBase : (t.rationalRootSystem ht).Base :=

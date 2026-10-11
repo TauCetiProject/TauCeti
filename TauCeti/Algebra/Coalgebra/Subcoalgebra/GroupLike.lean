@@ -62,13 +62,13 @@ variable {R C}
         rw [TensorProduct.map_tmul]
         exact g.isGroupLikeElem_val.comul_eq_tmul_self.symm
       · exact ⟨0, by simp⟩
-      · intro x y hx hy hx' hy'
+      · intro x y _ _ hx' hy'
         rcases hx' with ⟨x', hx'⟩
         rcases hy' with ⟨y', hy'⟩
         refine ⟨x' + y', ?_⟩
         rw [LinearMap.map_add, hx', hy']
         exact ((Coalgebra.comul (R := R) (A := C)).map_add x y).symm
-      · intro r x hx hx'
+      · intro r x _ hx'
         rcases hx' with ⟨x', hx'⟩
         refine ⟨r • x', ?_⟩
         rw [LinearMap.map_smul, hx']

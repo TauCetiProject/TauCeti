@@ -449,7 +449,6 @@ theorem lintegral_rpow_maximalFunction_le (μ : Measure E) [μ.IsAddHaarMeasure]
     ∫⁻ x, maximalFunction μ f x ^ p ∂μ ≤
       ENNReal.ofReal (2 * p * 2 ^ (p - 1) / (p - 1)) * 4 ^ finrank ℝ E *
         ∫⁻ x, ‖f x‖ₑ ^ p ∂μ := by
-  have hp0 : (0 : ℝ) < p := by linarith
   have hconst : ENNReal.ofReal (p * (2 : ℝ)⁻¹ ^ (1 - p) / (p - 1)) * (2 * 4 ^ finrank ℝ E) =
       ENNReal.ofReal (2 * p * 2 ^ (p - 1) / (p - 1)) * 4 ^ finrank ℝ E := by
     have hinv : ((2 : ℝ))⁻¹ ^ (1 - p) = 2 ^ (p - 1) := by

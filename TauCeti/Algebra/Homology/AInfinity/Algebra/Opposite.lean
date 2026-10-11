@@ -228,7 +228,7 @@ private theorem evalNat_opOperation (𝒜 : AInfinityAlgebra R A) (n : ℕ) (d :
 /-- The opposite operation of arity zero vanishes, since the original one does. -/
 private theorem opOperation_zero (𝒜 : AInfinityAlgebra R A) : opOperation 𝒜 0 = 0 := by
   apply InternalGrading.multilinearMap_ext (fun _ : Fin 0 ↦ 𝒜.grading)
-  intro d x hx
+  intro d x _
   rw [opOperation_apply 𝒜 (fun _ ↦ 0) x fun i ↦ i.elim0, m_zero]
   simp
 
@@ -435,7 +435,7 @@ theorem StrictUnit.op {𝒜 : AInfinityAlgebra R A} {e : A} (h : 𝒜.StrictUnit
       · subst hj
         simpa [deg] using h.degree_zero
       · simpa [deg, hj] using hy ⟨j, hj⟩
-    have hx : x = fun j ↦ if hj : j ≠ i then x j else e := by
+    have hx : x = fun j ↦ if _ : j ≠ i then x j else e := by
       funext j
       by_cases hj : j = i
       · simp [hj, hi]

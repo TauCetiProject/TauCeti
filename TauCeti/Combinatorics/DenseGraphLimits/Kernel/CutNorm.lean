@@ -335,7 +335,7 @@ private theorem exists_indicator_left_of_mem_Icc (K : SymmKernel Ω μ)
       |K.testIntegral μ u v| ≤ |K.testIntegral μ (S.indicator 1) v| := by
   classical
   have hu1' : ∀ x, u x ∈ Icc (-1 : ℝ) 1 := fun x => ⟨by linarith [(hu1 x).1], (hu1 x).2⟩
-  set g := K.partialIntegral μ v with hgdef
+  set g := K.partialIntegral μ v
   have hgm : Measurable g := K.measurable_partialIntegral μ hv
   set S : Set Ω := {x | 0 ≤ g x} with hSdef
   have hS : MeasurableSet S := measurableSet_le measurable_const hgm

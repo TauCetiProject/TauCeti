@@ -137,7 +137,7 @@ theorem StronglyContinuousSemigroup.existsGrowthBound (S : StronglyContinuousSem
   obtain ⟨M, hM1, hMbound⟩ := S.normBoundedOnUnitInterval
   have hM_pos : 0 < M := by linarith
   refine ⟨Real.log M, M, hM1, fun t ht => ?_⟩
-  set n := ⌊t⌋₊ with hn_def
+  set n := ⌊t⌋₊
   have hn_le : (↑n : ℝ) ≤ t := Nat.floor_le ht
   have hfrac_nn : 0 ≤ t - ↑n := sub_nonneg.mpr hn_le
   have hfrac_le1 : t - ↑n ≤ 1 := by

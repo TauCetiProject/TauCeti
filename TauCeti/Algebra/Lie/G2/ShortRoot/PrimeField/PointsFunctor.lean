@@ -339,7 +339,7 @@ private lemma groupSchemePointMulEquiv_comp_weightTorus
 
 /-- A matrix is a point of the carrier exactly when its associated convolution point kills the
 carrier's defining Hopf ideal. -/
-@[simp]
+-- Not `@[simp]`: rewriting membership into this raw condition defeats the membership lemmas.
 theorem mem_points_iff (A : Type v) [CommRing A] [Algebra (ZMod 3) A]
     (g : _root_.Matrix.GeneralLinearGroup (Fin 7) A) :
     g ∈ points A ↔ ∀ x ∈ definingIdeal,
@@ -621,7 +621,7 @@ theorem weightTorusPoints_conj_rootSubgroupPoints (k : Fin 2 ⊕ Fin 2) (A : Typ
 /-- **The torus-conjugation equation on scheme-valued points of the carrier**: conjugation by a
 point of the weight torus rescales the parameter of each numbered simple root subgroup by the
 corresponding type-`G₂` root character. -/
-@[simp]
+-- Not `@[simp]`: `simp` does not match its left-hand side, even with the lemma alone; use `rw`.
 theorem weightTorus_conj_rootSubgroup (k : Fin 2 ⊕ Fin 2)
     (A : Type) [CommRing A] [Algebra (ZMod 3) A]
     (s : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of (ZMod 3))) ⟶

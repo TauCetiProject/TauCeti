@@ -86,7 +86,7 @@ theorem isTotallyPositive_or_isTotallyPositive_neg_of_isTotallyPositive_div_quad
     IsTotallyPositive z ∨ IsTotallyPositive (-z) := by
   by_cases hsome : ∃ w : InfinitePlace K, w.IsReal
   · obtain ⟨w₀, hw₀⟩ := hsome
-    set φ₀ := embedding_of_isReal hw₀ with hφ₀
+    set φ₀ := embedding_of_isReal hw₀
     -- At the chosen place the values of `z` and `σ z` have the same, nonzero, sign.
     have hsame : 0 < φ₀ z * φ₀ (quadraticConj hmin hgen z) := by
       have hdiv := isTotallyPositive_iff.mp h w₀ hw₀

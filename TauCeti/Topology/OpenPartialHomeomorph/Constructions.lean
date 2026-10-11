@@ -14,7 +14,8 @@ An open partial homeomorphism restricts to a chart on a subtype when membership 
 detected by a parametrized coordinate slice. This file packages that topological construction;
 zero-slice subgroup charts use it after translating an ambient chart. Continuous maps that are
 inverse on open sets also give an open partial homeomorphism on their mutual restrictions
-(`ContinuousOn.toOpenPartialHomeomorph`).
+(`ContinuousOn.toOpenPartialHomeomorph`). Composing with an open partial homeomorphism preserves
+open embeddings whose ranges lie in its source (`OpenPartialHomeomorph.isOpenEmbedding_comp`).
 
 ## Main definitions
 
@@ -39,6 +40,15 @@ open Set Topology
 namespace OpenPartialHomeomorph
 
 variable {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
+
+/-- Composing an open embedding with an open partial homeomorphism gives an open embedding
+when its range lies in the source of the open partial homeomorphism. -/
+theorem isOpenEmbedding_comp (e : OpenPartialHomeomorph X Y) {g : Z → X}
+    (hg : IsOpenEmbedding g) (hgs : range g ⊆ e.source) : IsOpenEmbedding (e ∘ g) := by
+  have hgs' : ∀ z, g z ∈ e.source := fun z => hgs (mem_range_self z)
+  have hgc : IsOpenEmbedding (e.source.codRestrict g hgs') :=
+    .of_isEmbedding_isOpenMap (hg.isEmbedding.codRestrict _ _) (hg.isOpenMap.codRestrict _)
+  simpa only [Set.domRestrict_comp_codRestrict] using e.isOpenEmbedding_restrict.comp hgc
 
 open scoped Classical in
 /-- Restrict an open partial homeomorphism to a subtype represented by a parametrized coordinate

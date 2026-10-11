@@ -16,10 +16,12 @@ public import Mathlib.Algebra.Quaternion
 -- below: `Mathlib.Algebra.Quaternion` supplies `ℍ[·]` over an arbitrary base but not `ℝ` itself.
 public import Mathlib.Basic.Real.Basic
 -- Non-public: the maximal subfield supplying the degree bound
--- (`TauCeti.Algebra.exists_subalgebra_isField_finrank_eq_deg`), the quaternion basis that builds
--- the isomorphism (`QuaternionAlgebra.Basis`), and the classification of the algebraic extensions
--- of `ℝ` are all used only inside proofs.
-import TauCeti.Algebra.CentralSimple.MaximalSubfield
+-- (`TauCeti.Algebra.exists_subalgebra_isField_isSeparable_finrank_eq_deg`), the quaternion
+-- centrality used in the examples, the basis that builds the isomorphism
+-- (`QuaternionAlgebra.Basis`), and the classification of the algebraic extensions of `ℝ`
+-- are all used only inside proofs.
+import TauCeti.Algebra.CentralSimple.MaximalSubfield.Separable
+import TauCeti.Algebra.Central.Quaternion
 import Mathlib.Algebra.QuaternionBasis
 import Mathlib.Analysis.Complex.Polynomial.Basic
 
@@ -34,9 +36,9 @@ are all there are.
 The proof runs in three steps, and only the first uses anything about central simple algebras.
 
 *The degree is at most two.* A central division algebra has a subfield of degree `deg ℝ D`
-(`TauCeti.Algebra.exists_subalgebra_isField_finrank_eq_deg`), and a finite extension of `ℝ` is `ℝ`
-or `ℂ` (Mathlib's `Real.nonempty_algEquiv_or`), so that degree is `1` or `2` and `finrank ℝ D` is
-`1` or `4`.
+(`TauCeti.Algebra.exists_subalgebra_isField_isSeparable_finrank_eq_deg`), and a finite extension
+of `ℝ` is `ℝ` or `ℂ` (Mathlib's `Real.nonempty_algEquiv_or`), so that degree is `1` or `2` and
+`finrank ℝ D` is `1` or `4`.
 
 *Every element satisfies a real quadratic.* For `y : D` the subalgebra `ℝ[y]` is commutative and
 finite-dimensional over `ℝ`, hence a field, hence `ℝ` or `ℂ` again; in either case `y * y` is a real
@@ -279,7 +281,7 @@ namespace Algebra
 `deg ℝ D`, and a finite extension of `ℝ` is `ℝ` or `ℂ`, so that degree is `1` or `2`. -/
 theorem deg_le_two (D : Type*) [DivisionRing D] [Algebra ℝ D] [Algebra.IsCentral ℝ D]
     [FiniteDimensional ℝ D] : deg ℝ D ≤ 2 := by
-  obtain ⟨L, hL, hdeg⟩ := exists_subalgebra_isField_finrank_eq_deg ℝ D
+  obtain ⟨L, hL, _, hdeg⟩ := exists_subalgebra_isField_isSeparable_finrank_eq_deg ℝ D
   let _ : Field L := hL.toField
   have _ : Algebra.IsAlgebraic ℝ L := Algebra.IsAlgebraic.of_finite ℝ L
   rw [← hdeg]
@@ -289,6 +291,32 @@ theorem deg_le_two (D : Type*) [DivisionRing D] [Algebra ℝ D] [Algebra.IsCentr
   · rw [hL'.some.toLinearEquiv.finrank_eq, Complex.finrank_real_complex]
 
 end Algebra
+
+/-! ### Worked example: a maximal subfield of the real quaternions -/
+
+section Examples
+
+/-- **The real quaternions have a subfield of degree `2`.** The general theorem produces one
+without exhibiting a copy of `ℂ` by hand. Which subfield it is takes the classification of the
+finite extensions of `ℝ` to say: every degree-`2` extension of `ℝ` is
+`ℝ`-isomorphic to `ℂ`. The example in `TauCeti/Algebra/CentralSimple/Subfield.lean` exhibits a
+copy of `ℂ` inside `ℍ[ℝ]` by hand instead. -/
+example : ∃ L : Subalgebra ℝ ℍ[ℝ], IsField ↥L ∧ Module.finrank ℝ ↥L = 2 := by
+  have hdeg : Algebra.deg ℝ ℍ[ℝ] = 2 :=
+    Algebra.deg_eq_of_finrank_eq_sq (by rw [Quaternion.finrank_eq_four]; norm_num)
+  obtain ⟨L, hfield, _, hdim⟩ :=
+    Algebra.exists_subalgebra_isField_isSeparable_finrank_eq_deg ℝ ℍ[ℝ]
+  exact ⟨L, hfield, hdim.trans hdeg⟩
+
+/-- **A subalgebra of `ℍ[ℝ]` of degree `2` is not the base field**, so when `deg K D > 1` the
+subfield produced above genuinely enlarges the centre; the existence theorem is not answered by
+`K` itself. -/
+example (L : Subalgebra ℝ ℍ[ℝ]) (h : Module.finrank ℝ ↥L = 2) : L ≠ ⊥ := by
+  rintro rfl
+  rw [Subalgebra.finrank_bot] at h
+  omega
+
+end Examples
 
 /-! ### Frobenius' theorem -/
 

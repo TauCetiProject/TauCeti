@@ -120,8 +120,8 @@ private theorem sum_rectanglePentagonSameSideOrder_eq (x : GridState n) :
       · simpa [D₀] using hX
     have huniq : ∀ D ∈ G.rectanglePentagonSameSideOrder C x, D = D₀ := by
       intro D hD
-      obtain ⟨h₁, h₂, h₃, h₄, -⟩ := hgeom D hD
-      obtain ⟨h₁', h₂', h₃', h₄', -⟩ := hgeom D₀ hD₀
+      obtain ⟨_, _, _, _, -⟩ := hgeom D hD
+      obtain ⟨_, _, _, _, -⟩ := hgeom D₀ hD₀
       apply GridRectanglePentagonDecomposition.toRectangleDecomposition_injective
       ext <;> simp only [GridRectanglePentagonDecomposition.toRectangleDecomposition_first_left,
         GridRectanglePentagonDecomposition.toRectangleDecomposition_first_right,
@@ -178,8 +178,8 @@ private theorem sum_pentagonRectangleSameSideOrder_eq (x : GridState n) :
         rwa [htop]
     have huniq : ∀ D ∈ G.pentagonRectangleSameSideOrder C x, D = D₀ := by
       intro D hD
-      obtain ⟨h₁, h₂, h₃, h₄, -⟩ := hgeom D hD
-      obtain ⟨h₁', h₂', h₃', h₄', -⟩ := hgeom D₀ hD₀
+      obtain ⟨_, _, _, _, -⟩ := hgeom D hD
+      obtain ⟨_, _, _, _, -⟩ := hgeom D₀ hD₀
       apply GridPentagonRectangleDecomposition.toRectangleDecomposition_injective
       ext <;> simp only [GridPentagonRectangleDecomposition.toRectangleDecomposition_first_left,
         GridPentagonRectangleDecomposition.toRectangleDecomposition_first_right,

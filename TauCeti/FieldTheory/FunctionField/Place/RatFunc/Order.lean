@@ -31,7 +31,8 @@ rational function field.
   `TauCeti.Place.ord_adicOfIrreducible_algebraMap_of_squarefree` extends this to squarefree
   polynomials;
   `TauCeti.Place.ord_adicOfIrreducible_X` and its two `simp` specializations spell this out
-  for `X`.
+  for `X`, and `TauCeti.Place.ord_adicOfIrreducible_X_sub_C_self` and
+  `TauCeti.Place.ord_adicOfIrreducible_X_sub_C_of_not_associated` for `X - a`.
 * `TauCeti.Place.valuation_ofIrreducible_le_one_iff` and
   `TauCeti.Place.residue_adicOfIrreducible_eq_zero_iff`: regularity and vanishing in the residue
   field are detected by the denominator and numerator respectively.
@@ -117,6 +118,24 @@ theorem ord_adicOfIrreducible_X_of_not_associated {q : k[X]} (hq : Irreducible q
     (adicOfIrreducible hq).ord (RatFunc.X : RatFunc k) = 0 := by
   classical
   rw [ord_adicOfIrreducible_X, ite_eq_right h]
+
+/-- `X - a` has order one at its own finite place. -/
+@[simp]
+theorem ord_adicOfIrreducible_X_sub_C_self (a : k) :
+    (adicOfIrreducible (irreducible_X_sub_C a)).ord (RatFunc.X - RatFunc.C a) = 1 := by
+  classical
+  rw [← RatFunc.algebraMap_X, ← RatFunc.algebraMap_C, ← map_sub,
+    ord_adicOfIrreducible_algebraMap_irreducible _ (irreducible_X_sub_C a),
+    ite_eq_left (Associated.refl _)]
+
+/-- `X - a` has order zero at every finite place other than its own. -/
+@[simp]
+theorem ord_adicOfIrreducible_X_sub_C_of_not_associated {q : k[X]} (hq : Irreducible q) {a : k}
+    (h : ¬Associated q (X - C a)) :
+    (adicOfIrreducible hq).ord (RatFunc.X - RatFunc.C a) = 0 := by
+  classical
+  rw [← RatFunc.algebraMap_X, ← RatFunc.algebraMap_C, ← map_sub,
+    ord_adicOfIrreducible_algebraMap_irreducible hq (irreducible_X_sub_C a), ite_eq_right h]
 
 /-- The order of a nonzero rational function at the finite place associated to `q` is the
 multiplicity of `q` in its numerator minus its multiplicity in its denominator. -/

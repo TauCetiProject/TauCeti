@@ -91,7 +91,7 @@ variable {R : Type*} [CommRing R] (W : WeierstrassCurve R)
 substitution: both series have zero constant coefficient. -/
 private theorem hasSubst_unitR :
     HasSubst (Sum.elim X (fun _ ↦ 0) : Unit ⊕ Unit → MvPowerSeries Unit R) :=
-  hasSubst_of_constantCoeff_zero (by rintro (j | j) <;> simp)
+  hasSubst_of_constantCoeff_zero (by rintro (_ | _) <;> simp)
 
 /-- The `w`-expansion in the first parameter survives the specialization. -/
 private theorem subst_unitR_toMvPowerSeries_inl :
@@ -256,7 +256,7 @@ theorem subst_unitR_formalAdd :
   have h : (fun _ : Unit ↦ subst
       (Sum.elim X (fun _ ↦ 0) : Unit ⊕ Unit → MvPowerSeries Unit R) (formalThirdRoot W)) =
       fun _ : Unit ↦ (formalInverse W : MvPowerSeries Unit R) := by
-    funext u
+    funext _
     exact subst_unitR_formalThirdRoot W
   rw [h]
   exact subst_formalInverse_self W
@@ -265,7 +265,7 @@ theorem subst_unitR_formalAdd :
 substitution. -/
 private theorem hasSubst_unitL :
     HasSubst (Sum.elim (fun _ ↦ 0) X : Unit ⊕ Unit → MvPowerSeries Unit R) :=
-  hasSubst_of_constantCoeff_zero (by rintro (j | j) <;> simp)
+  hasSubst_of_constantCoeff_zero (by rintro (_ | _) <;> simp)
 
 /-- **The left unit law**: `F(0, z) = z`, by the right unit law and commutativity. -/
 @[simp]

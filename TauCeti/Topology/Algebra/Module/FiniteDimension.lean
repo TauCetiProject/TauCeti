@@ -41,7 +41,7 @@ theorem continuous_of_finiteDimensional (f : MultilinearMap 𝕜 M N) : Continuo
   classical
   cases nonempty_fintype ι
   set b : ∀ i, Module.Basis (Fin (Module.finrank 𝕜 (M i))) 𝕜 (M i) :=
-    fun i ↦ Module.finBasis 𝕜 (M i) with hb
+    fun i ↦ Module.finBasis 𝕜 (M i) with _
   have key : ⇑f = fun m : ∀ i, M i ↦ ∑ r : ∀ i, Fin (Module.finrank 𝕜 (M i)),
       (∏ i, (b i).repr (m i) (r i)) • f fun i ↦ b i (r i) := by
     funext m

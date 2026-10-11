@@ -136,7 +136,7 @@ series `∑_{j < k} (-1)^j (δ h)^j δ`. -/
 theorem perturbationSeries_apply_eq_sum_of_pow_apply_eq_zero {z : M} {k : ℕ}
     (hz : ((δ * c.homotopy) ^ k) (δ z) = 0) :
     c.perturbationSeries δ z = ∑ j ∈ Finset.range k, ((-(δ * c.homotopy)) ^ j) (δ z) := by
-  set u := δ * c.homotopy with hu
+  set u := δ * c.homotopy
   have hgeom : (1 + u) * ∑ j ∈ Finset.range k, (-u) ^ j = 1 - (-u) ^ k := by
     simpa only [sub_neg_eq_add] using mul_neg_geom_sum (-u) k
   have hk : ((-u) ^ k) (δ z) = 0 := by
@@ -156,7 +156,7 @@ perturbation lemma. -/
 theorem perturbationSeries_maurerCartan (hδ : (dM + δ) ∘ₗ (dM + δ) = dM ∘ₗ dM) :
     dM ∘ₗ c.perturbationSeries δ + c.perturbationSeries δ ∘ₗ dM +
       c.perturbationSeries δ ∘ₗ c.incl ∘ₗ c.proj ∘ₗ c.perturbationSeries δ = 0 := by
-  set X := c.perturbationSeries δ with hX
+  set X := c.perturbationSeries δ
   have hT : dM * δ + δ * dM + δ * δ = 0 := by
     calc dM * δ + δ * dM + δ * δ = (dM + δ) * (dM + δ) - dM * dM := by noncomm_ring
       _ = 0 := by simp only [Module.End.mul_eq_comp]; rw [hδ, sub_self]

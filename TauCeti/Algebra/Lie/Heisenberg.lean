@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.GeneralLinear.Borel
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Augmentation
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Augmentation.Basic
 -- Private: `fin_cases` is used only inside proofs.
 import Mathlib.Tactic.FinCases
 

@@ -478,6 +478,34 @@ theorem isRecut_recutRightEqRightFirst
   rw [D.recutRightEqRightFirst_toRectangleDecomposition hcommon hone hrectangle hpentagon hfirst]
   exact D.isRecut_recutOfIsEmpty hone hrectangle hpentagon
 
+/-- Any pentagon--rectangle recut of an empty common-terminal-side rectangle--pentagon domain
+is its first promotion. In particular, the first underlying recut rectangle inherits the
+pentagon's terminal side. -/
+theorem exists_recutRightEqRightFirst_eq_of_isRecut
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (E : GridPentagonRectangleDecomposition a s x z)
+    (hcommon : D.rectangle.right = D.pentagon.right)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hr : D.rectangle.IsEmpty) (hp : D.pentagon.IsEmpty)
+    (hrecut : D.toRectangleDecomposition.IsRecut E.toRectangleDecomposition) :
+    ∃ hfirst : (D.recutOfIsEmpty hone hr hp).first.right = D.pentagon.right,
+      D.recutRightEqRightFirst hcommon hone hr hp hfirst = E := by
+  have hf : D.toRectangleDecomposition.first.IsEmpty := by
+    simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+      D.toRectangleDecomposition_first_toGridRectangle] using hr
+  have hs : D.toRectangleDecomposition.second.IsEmpty := by
+    simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+      D.toRectangleDecomposition_middle, D.toRectangleDecomposition_second_toGridRectangle] using hp
+  have heq := (D.toRectangleDecomposition.existsUnique_isRecut hone hf hs).unique
+    (D.isRecut_recutOfIsEmpty hone hr hp) hrecut
+  have hfirst : (D.recutOfIsEmpty hone hr hp).first.right = D.pentagon.right := by
+    rw [heq]
+    simp [E.pentagon.right_eq, D.pentagon.right_eq]
+  refine ⟨hfirst, ?_⟩
+  apply GridPentagonRectangleDecomposition.toRectangleDecomposition_injective
+  exact (D.toRectangleDecomposition.existsUnique_isRecut hone hf hs).unique
+    (D.isRecut_recutRightEqRightFirst _ _ _ _ _) hrecut
+
 /-- The pentagon promoted from the first recut rectangle remains empty. -/
 @[simp]
 theorem isEmpty_pentagon_recutRightEqRightFirst

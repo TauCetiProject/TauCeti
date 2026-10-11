@@ -132,7 +132,7 @@ theorem add_smul_volume_injective [NeZero (2 : K)] {l : List V} (hlen : Odd l.le
   have even_mem (a : K) : algebraMap K (CliffordAlgebra Q) a ∈ evenOdd Q 0 :=
     SetLike.algebraMap_mem_graded (evenOdd Q) a
   have odd_mem (b : K) : b • ω ∈ evenOdd Q 1 := Submodule.smul_mem _ b hωOdd
-  obtain ⟨e, o, heo, hunique⟩ := Submodule.existsUnique_add_of_isCompl (evenOdd_isCompl Q)
+  obtain ⟨e, o, _, hunique⟩ := Submodule.existsUnique_add_of_isCompl (evenOdd_isCompl Q)
     (algebraMap K (CliffordAlgebra Q) p.1 + p.2 • ω)
   have hp := hunique
     ⟨algebraMap K (CliffordAlgebra Q) p.1, even_mem p.1⟩ ⟨p.2 • ω, odd_mem p.2⟩ rfl

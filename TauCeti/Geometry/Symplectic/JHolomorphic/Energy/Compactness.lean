@@ -65,7 +65,6 @@ theorem exists_pos_forall_lipschitzOnWith_of_small_energy
   obtain ⟨a, ha⟩ := hK.exists_bound_of_continuousOn (hJ.continuousOn.mono hKW)
   refine ⟨δ, hδ, fun r hr ↦ ?_⟩
   let B := 1 + 8 * δ / (Real.pi * (r / 4) ^ 2)
-  have hB : 0 ≤ B := by dsimp [B]; positivity
   let C : ℝ≥0 := ⟨(1 + max a 0) * B, by positivity⟩
   have hCcoe : (C : ℝ) = (1 + max a 0) * B := rfl
   refine ⟨C, fun z₀ u hu hCR huK hInt hE ↦ ?_⟩
@@ -92,7 +91,6 @@ theorem exists_pos_forall_lipschitzOnWith_of_small_energy
     have hsq : ‖fderiv ℝ u z 1‖ ^ 2 ≤ 8 * δ / (Real.pi * (r / 4) ^ 2) := by
       rw [le_div_iff₀ hp]
       nlinarith
-    have hq : 0 ≤ 8 * δ / (Real.pi * (r / 4) ^ 2) := by positivity
     dsimp [B]
     nlinarith [sq_nonneg (‖fderiv ℝ u z 1‖ - 1)]
   -- The Cauchy--Riemann equation converts the real-direction estimate into an operator bound.

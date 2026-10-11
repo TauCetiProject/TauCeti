@@ -43,6 +43,8 @@ connected group scheme of type `G₂`, and no Borel subgroup or pinning is const
   the carrier.
 * `TauCeti.G2ShortRoot.PrimeField.rootVector`: the tangent vector of a numbered simple root
   subgroup.
+* `TauCeti.G2ShortRoot.PrimeField.simpleRootCharacter`: the numbered raising-root character in
+  the chosen split maximal torus coordinates.
 * `TauCeti.G2ShortRoot.PrimeField.rootSpaceEquiv`: the trivialization of a simple root space by its
   root vector.
 
@@ -54,8 +56,14 @@ connected group scheme of type `G₂`, and no Borel subgroup or pinning is const
   root generator.
 * `TauCeti.G2ShortRoot.PrimeField.mem_adjointWeightSpace_iff`: the entrywise weight-space
   criterion.
+* `TauCeti.G2ShortRoot.PrimeField.mem_adjointWeightSpace_splitMaximalTorus_iff`: the same
+  criterion for the chosen split maximal torus.
+* `adjointWeightSpace_splitMaximalTorus_weightCharacter_eq_weightTorus`:
+  transport from lifted torus coordinates to the original numbered root spaces.
 * `TauCeti.G2ShortRoot.PrimeField.adjointWeightSpace_rootGeneratorWeight_eq_span`: each simple root
   space is the line spanned by its root vector.
+* `TauCeti.G2ShortRoot.PrimeField.adjointWeightSpace_simpleRootCharacter_eq_span`: the numbered
+  raising-root space in the chosen split maximal torus coordinates.
 
 ## References
 
@@ -165,6 +173,16 @@ def rootVector (k : Fin 2 ⊕ Fin 2) :
   (Derivation.cotangentLinearEquiv (B := ZMod 3)).symm
     (derivationComp (B := ZMod 3) (CommHopfAlgCat.commonKernelLift generator (.inl k)).hom
       ((AdditiveGroup.gaTangentLinearEquiv (R := ZMod 3) (B := ZMod 3)).symm 1))
+
+/-- Cotangent duality identifies the root vector with the differential of the numbered root
+subgroup at the additive unit tangent vector. -/
+-- Match cotangent duality before its bundled carrier presentation is simplified.
+@[simp↓]
+theorem cotangentLinearEquiv_rootVector (k : Fin 2 ⊕ Fin 2) :
+    Derivation.cotangentLinearEquiv (B := ZMod 3) (rootVector k) =
+      derivationComp (B := ZMod 3) (CommHopfAlgCat.commonKernelLift generator (.inl k)).hom
+        ((AdditiveGroup.gaTangentLinearEquiv (R := ZMod 3) (B := ZMod 3)).symm 1) := by
+  rw [rootVector, LinearEquiv.apply_symm_apply]
 
 /-- **The matrix of the tangent vector of a numbered simple root subgroup is its root
 generator**: the raising generator `Eᵢ` for `k = inl i` and the lowering generator `Fᵢ` for
@@ -367,6 +385,53 @@ theorem mem_adjointWeightSpace_iff (α : Multiplicative (Fin 2 →₀ ℤ))
       GeneralLinear.weightTorusBaseChangeCoordinateMap_eq]
   exact HopfIdeal.mem_adjointWeightSpace_iff_of_weightTorus _ weight _ hπ α x
 
+/-- In the standard lifted torus coordinates, adjoint weight-space membership is characterized
+by the short-root module's matrix weight differences. -/
+theorem mem_adjointWeightSpace_splitMaximalTorus_iff
+    (α : Multiplicative (ULift.{0} (Fin 2) →₀ ℤ))
+    (x : Module.Dual (ZMod 3) (Bialgebra.CotangentSpace (ZMod 3) carrierAlgebra)) :
+    x ∈ Derivation.adjointWeightSpace splitMaximalTorus.coordinateMap.hom α ↔
+      ∀ i j, SplitTorus.weightCharacter
+        (fun l : ULift.{0} (Fin 2) => weight i l.down - weight j l.down) ≠ α →
+          tangentMatrix x i j = 0 := by
+  have hπ : splitMaximalTorus.coordinateMap.hom.comp
+      (Bialgebra.Quotient.mkBialgHom (CommHopfAlgCat.commonKernelHopfIdeal generator).toIdeal) =
+        (GeneralLinear.weightTorusCoordinateMap (R := ZMod 3)
+          (fun (i : Fin 7) (j : ULift.{0} (Fin 2)) => weight i j.down)).hom := by
+    rw [splitMaximalTorus_coordinateMap, ← CommHopfAlgCat.hom_mkQuotient,
+      ← _root_.CommHopfAlgCat.hom_comp, mkQuotient_comp_splitMaximalTorusCoordinateMap]
+  simpa only [← tangentMatrix_apply, Pi.sub_def] using
+    HopfIdeal.mem_adjointWeightSpace_iff_of_weightTorus _ _ _ hπ α x
+
+/-- The chosen split maximal torus has the same adjoint weight spaces as the weight torus,
+with characters indexed by the lifted node type. -/
+theorem adjointWeightSpace_splitMaximalTorus_weightCharacter_eq_weightTorus (μ : Fin 2 → ℤ) :
+    Derivation.adjointWeightSpace splitMaximalTorus.coordinateMap.hom
+        (SplitTorus.weightCharacter (fun j : ULift.{0} (Fin 2) => μ j.down)) =
+      Derivation.adjointWeightSpace weightTorusCoordinateMap.hom
+        (SplitTorus.weightCharacter μ) := by
+  ext x
+  rw [mem_adjointWeightSpace_splitMaximalTorus_iff, mem_adjointWeightSpace_iff]
+  congr! 2
+  constructor
+  · intro h hne
+    apply h
+    intro heq
+    apply hne
+    apply Multiplicative.toAdd.injective
+    ext j
+    have hj := congrArg (fun χ : Multiplicative (ULift.{0} (Fin 2) →₀ ℤ) =>
+      Multiplicative.toAdd χ (ULift.up j)) heq
+    simpa only [SplitTorus.toAdd_weightCharacter, Pi.sub_apply] using hj
+  · intro h hne
+    apply h
+    intro heq
+    apply hne
+    apply Multiplicative.toAdd.injective
+    ext j
+    have hj := congrArg (fun χ : Multiplicative (Fin 2 →₀ ℤ) => Multiplicative.toAdd χ j.down) heq
+    simpa only [SplitTorus.toAdd_weightCharacter, Pi.sub_apply] using hj
+
 /-- The tangent vector of a numbered simple root subgroup has the weight of its root. -/
 theorem rootVector_mem_adjointWeightSpace (k : Fin 2 ⊕ Fin 2) :
     rootVector k ∈ Derivation.adjointWeightSpace weightTorusCoordinateMap.hom
@@ -400,6 +465,48 @@ theorem adjointWeightSpace_rootGeneratorWeight_eq_span (k : Fin 2 ⊕ Fin 2) :
     rw [map_smul, tangentMatrix_rootVector, ht]
   · rw [Submodule.span_singleton_le_iff_mem]
     exact rootVector_mem_adjointWeightSpace k
+
+/-- The numbered positive simple-root character in the lifted coordinates of the chosen split
+maximal torus. Its underlying root is the corresponding Bourbaki root of the simply connected
+`G₂` datum. -/
+def simpleRootCharacter (i : Fin 2) : ULift.{0} (Fin 2) →₀ ℤ :=
+  Finsupp.equivFunOnFinite.symm fun j =>
+    (G2.simplyConnectedRootDatum valid_G2).root (G2.simpleIndex valid_G2 i) j.down
+
+/-- The numbered root character evaluates as the corresponding root of the named datum. -/
+@[simp]
+theorem simpleRootCharacter_apply (i : Fin 2) (j : ULift.{0} (Fin 2)) :
+    simpleRootCharacter i j =
+      (G2.simplyConnectedRootDatum valid_G2).root (G2.simpleIndex valid_G2 i) j.down := by
+  simp [simpleRootCharacter]
+
+/-- The numbered root character agrees with the weight character of its raising generator. -/
+theorem ofAdd_simpleRootCharacter (i : Fin 2) :
+    Multiplicative.ofAdd (simpleRootCharacter i) =
+      SplitTorus.weightCharacter (fun j : ULift.{0} (Fin 2) =>
+        G2.rootGeneratorWeight valid_G2 (.inl i) j.down) := by
+  have hroot : G2.rootGeneratorWeight valid_G2 (.inl i) =
+      (G2.simplyConnectedRootDatum valid_G2).root (G2.simpleIndex valid_G2 i) := by
+    simpa only [rank_G2] using G2.rootGeneratorWeight_inl_eq_root_simpleIndex valid_G2 i
+  apply Multiplicative.toAdd.injective
+  ext j
+  simp only [toAdd_ofAdd, simpleRootCharacter_apply, SplitTorus.toAdd_weightCharacter, hroot]
+
+/-- In the chosen split maximal torus coordinates, the numbered simple root space is the line
+spanned by its raising root vector. -/
+theorem adjointWeightSpace_simpleRootCharacter_eq_span (i : Fin 2) :
+    Derivation.adjointWeightSpace splitMaximalTorus.coordinateMap.hom
+        (Multiplicative.ofAdd (simpleRootCharacter i)) = (ZMod 3) ∙ rootVector (.inl i) := by
+  calc
+    _ = Derivation.adjointWeightSpace splitMaximalTorus.coordinateMap.hom
+        (SplitTorus.weightCharacter (fun j : ULift.{0} (Fin 2) =>
+          G2.rootGeneratorWeight valid_G2 (.inl i) j.down)) :=
+      congrArg (Derivation.adjointWeightSpace splitMaximalTorus.coordinateMap.hom)
+        (ofAdd_simpleRootCharacter i)
+    _ = Derivation.adjointWeightSpace weightTorusCoordinateMap.hom
+        (SplitTorus.weightCharacter (G2.rootGeneratorWeight valid_G2 (.inl i))) :=
+      adjointWeightSpace_splitMaximalTorus_weightCharacter_eq_weightTorus _
+    _ = _ := adjointWeightSpace_rootGeneratorWeight_eq_span (.inl i)
 
 /-- The tangent vector of a numbered simple root subgroup is nonzero. -/
 theorem rootVector_ne_zero (k : Fin 2 ⊕ Fin 2) : rootVector k ≠ 0 := by

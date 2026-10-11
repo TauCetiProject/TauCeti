@@ -218,7 +218,7 @@ private theorem exists_specialLinearGroup_mulVec {v w : Fin m → k} (hm : 2 ≤
     rw [finrank_span_singleton hv, finrank_top, Module.finrank_pi k] at hfin
     simp only [Fintype.card_fin] at hfin
     omega
-  obtain ⟨z, hz⟩ := SetLike.exists_not_mem_of_ne_top (k ∙ v) hspan rfl
+  obtain ⟨z, hz⟩ := SetLike.exists_notMem_of_ne_top (k ∙ v) hspan rfl
   obtain ⟨f, hfz, hfspan⟩ :=
     Submodule.exists_dual_map_eq_bot_of_notMem hz inferInstance
   have hfv : f v = 0 := by

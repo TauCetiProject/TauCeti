@@ -10,7 +10,7 @@ public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.NumberTheory.Padics.ProperSpace
 public import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
 import Mathlib.Data.Finset.Max
-import TauCeti.LinearAlgebra.Quotient.PiSpanSingleton
+import TauCeti.LinearAlgebra.Quotient.Pi.SpanSingleton
 
 /-!
 # Units of the `p`-adic integers
