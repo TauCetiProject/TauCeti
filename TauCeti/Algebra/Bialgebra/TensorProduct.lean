@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Bialgebra.TensorProduct
 public import TauCeti.Algebra.TensorProduct.BaseChange
+import TauCeti.Algebra.Coalgebra.BaseChange
 
 /-!
 # Bialgebra maps and base change for tensor products
@@ -145,19 +146,16 @@ private theorem baseChangeTensorAlgEquiv_map_comp_comul :
   | add x y hx hy =>
       simpa only [TensorProduct.tmul_add, map_add] using congrArg₂ (· + ·) hx hy
   | tmul h l =>
-      simp only [AlgHom.coe_comp, Function.comp_apply]
-      have he :
-          (Algebra.TensorProduct.baseChangeTensorAlgEquiv k K H L).toAlgHom
-              (s ⊗ₜ[k] (h ⊗ₜ[k] l)) =
-            (s ⊗ₜ[k] h) ⊗ₜ[K] (1 ⊗ₜ[k] l) := by
-        simpa only [AlgEquiv.coe_toAlgHom] using
-          Algebra.TensorProduct.baseChangeTensorAlgEquiv_tmul k K H L s h l
-      rw [he]
-      simpa only [Bialgebra.comulAlgHom_apply, TensorProduct.comul_tmul,
-        CommSemiring.comul_apply] using
-        _root_.Algebra.TensorProduct.map_baseChangeTensorAlgEquiv_tensorTensorTensorComm
-          k K H H L L 1 s
-          (Coalgebra.comul (R := k) h) (Coalgebra.comul (R := k) l)
+      simpa only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
+        Algebra.TensorProduct.baseChangeTensorAlgEquiv_tmul, Bialgebra.comulAlgHom_apply,
+        TauCeti.Coalgebra.baseChange_comul_tmul, TensorProduct.comul_tmul,
+        Algebra.TensorProduct.map_tmul, AlgHom.id_apply, ← AlgEquiv.coe_toLinearEquiv,
+        Algebra.TensorProduct.baseChangeTensorAlgEquiv_toLinearEquiv,
+        Algebra.TensorProduct.tensorTensorTensorComm_toLinearEquiv] using
+        DFunLike.congr_fun
+          (Algebra.TensorProduct.map_baseChangeTensorAlgEquiv_comp_tensorTensorTensorComm
+            k K H H L L)
+          (s ⊗ₜ[k] (Coalgebra.comul (R := k) h ⊗ₜ[k] Coalgebra.comul (R := k) l))
 
 /-- **Base change commutes with tensor products of bialgebras.**
 
