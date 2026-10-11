@@ -39,9 +39,6 @@ open AlgebraicGeometry
 
 variable {k F : Type*} [Field k] [Field F] [Algebra (RatFunc k) F]
 variable [Algebra k F] [IsScalarTower k (RatFunc k) F]
-variable [FiniteDimensional (RatFunc k) F]
-
-variable [Algebra.IsSeparable (RatFunc k) F]
 
 /-- **The different of an odd-degree squarefree polynomial model**: away from characteristic
 two, `Diff(F/k(x)) = (y)₀ + P∞`. The zero divisor includes the closed points over all irreducible
@@ -50,10 +47,15 @@ theorem different_ratFunc_eq_zeros_add_of_sq_eq_of_odd (h2 : (2 : k) ≠ 0)
     {f : k[X]} (hf : Squarefree f) (hodd : Odd f.natDegree) {y : Fˣ}
     (hgen : (RatFunc k)⟮(y : F)⟯ = ⊤)
     (hy : (y : F) ^ 2 = algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) f))
-    {P : Place k F} (hP : P.restrict k (RatFunc k) = Place.infty k) :
+    {P : Place k F} :
+    letI := (finiteDimensional_and_isSeparable_of_sq_eq h2 hf hodd.pos hgen hy).1
+    letI := (finiteDimensional_and_isSeparable_of_sq_eq h2 hf hodd.pos hgen hy).2
+    P.restrict k (RatFunc k) = Place.infty k →
     Divisor.different k F (IsFunctionField.ratFunc k) =
       Divisor.zeros (isFunctionField_iff_functionField.mpr inferInstance) y +
         WeilDivisor.ofPoint P := by
+  obtain ⟨_, _⟩ := finiteDimensional_and_isSeparable_of_sq_eq h2 hf hodd.pos hgen hy
+  intro hP
   have htot := P.isTotallyRamified_of_sq_eq_of_odd hodd hgen hy hP
   refine WeilDivisor.ext fun Q ↦ ?_
   have hord := congrArg Q.ord hy
@@ -92,34 +94,41 @@ theorem different_ratFunc_eq_zeros_add_of_sq_eq_of_odd (h2 : (2 : k) ≠ 0)
     · simp only [ite_eq_right hqf, dvd_zero, ite_true, mul_zero, add_zero] at hord ⊢
       omega
 
-/-- Every zero of `y` in an odd-degree squarefree polynomial model has multiplicity one,
-away from characteristic two. -/
-theorem Divisor.coeff_zeros_eq_one_of_sq_eq_of_odd (h2 : (2 : k) ≠ 0)
-    {f : k[X]} (hf : Squarefree f) (hodd : Odd f.natDegree) {y : Fˣ}
+/-- Every zero of `y` in a squarefree polynomial model has multiplicity one,
+in every degree and characteristic. -/
+theorem Divisor.coeff_zeros_eq_one_of_sq_eq (hF : IsFunctionField k F)
+    {f : k[X]} (hf : Squarefree f) {y : Fˣ}
     (hgen : (RatFunc k)⟮(y : F)⟯ = ⊤)
     (hy : (y : F) ^ 2 = algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) f))
-    {Q : Place k F}
-    (hQ : Q ∈ (zeros (isFunctionField_iff_functionField.mpr inferInstance) y).support) :
-    (zeros (isFunctionField_iff_functionField.mpr inferInstance) y).coeff Q = 1 := by
-  let hF : IsFunctionField k F := isFunctionField_iff_functionField.mpr inferInstance
-  obtain ⟨P, hP, -, -⟩ := Place.existsUnique_restrict_eq_infty_of_sq_eq_of_odd hodd hgen hy
-  have hc := congrArg (fun D : Divisor k F ↦ D.coeff Q)
-    (different_ratFunc_eq_zeros_add_of_sq_eq_of_odd h2 hf hodd hgen hy hP)
-  rw [coeff_different, WeilDivisor.coeff_add, coeff_zeros] at hc
-  have hd := Place.differentExponent_eq_of_pow_eq_of_prime k (RatFunc k) (P' := Q)
-    Nat.prime_two hgen hy (by exact_mod_cast h2) (RatFunc.algebraMap_ne_zero hf.ne_zero)
-  have hdle : Place.differentExponent k (RatFunc k) Q ≤ 1 := by
-    rw [hd]
-    split_ifs <;> omega
-  have hpnonneg : 0 ≤ (WeilDivisor.ofPoint P).coeff Q := by
-    by_cases hQP : Q = P
-    · subst Q
-      rw [WeilDivisor.coeff_ofPoint_self]
-      omega
-    · rw [WeilDivisor.coeff_ofPoint_of_ne hQP]
+    {Q : Place k F} (hQ : Q ∈ (zeros hF y).support) :
+    (zeros hF y).coeff Q = 1 := by
+  have : FunctionField k F := isFunctionField_iff_functionField.mp hF
   have hpos := (mem_support_zeros_iff hF).mp hQ
-  rw [coeff_zeros]
-  omega
+  have hord := congrArg Q.ord hy
+  rw [Q.ord_pow, Place.ord_algebraMap_restrict k (RatFunc k)] at hord
+  rcases Place.eq_infty_or_exists_eq_adicOfIrreducible (Q.restrict k (RatFunc k)) with
+    hQinf | ⟨q, hq, hQadic⟩
+  · rw [hQinf, Place.ord_infty, RatFunc.intDegree_polynomial] at hord
+    have hnonpos : (Place.ramificationIdx (RatFunc k) Q : ℤ) * -(f.natDegree : ℤ) ≤ 0 :=
+      mul_nonpos_of_nonneg_of_nonpos (Nat.cast_nonneg _) (neg_nonpos.mpr (Nat.cast_nonneg _))
+    simp only [Nat.cast_ofNat] at hord
+    omega
+  · rw [hQadic, Place.ord_adicOfIrreducible_algebraMap_of_squarefree hq hf] at hord
+    have hqf : q ∣ f := by
+      by_contra hqf
+      rw [ite_eq_right hqf, mul_zero] at hord
+      omega
+    have hdeg : 0 < f.natDegree := lt_of_lt_of_le
+      (natDegree_pos_iff_degree_pos.mpr (degree_pos_of_irreducible hq))
+      (natDegree_le_of_dvd hqf hf.ne_zero)
+    have hrank := finrank_ratFunc_eq_two_of_sq_eq hf hdeg hgen hy
+    have he := Place.ramificationIdx_eq_of_pow_eq_of_gcd_ord_eq_one k (RatFunc k)
+      (P' := Q) hrank hy two_ne_zero (by
+        rw [hQadic, Place.ord_adicOfIrreducible_algebraMap_of_squarefree hq hf, ite_eq_left hqf]
+        exact Int.gcd_one_right _)
+    rw [ite_eq_left hqf, he] at hord
+    rw [coeff_zeros]
+    omega
 
 /-- **The different as the divisor of distinct closed points**: the zeros of `y` in an odd-degree
 squarefree polynomial model each contribute once, together with the unique place at infinity.
@@ -128,11 +137,16 @@ theorem different_ratFunc_eq_ofFinset_add_of_sq_eq_of_odd (h2 : (2 : k) ≠ 0)
     {f : k[X]} (hf : Squarefree f) (hodd : Odd f.natDegree) {y : Fˣ}
     (hgen : (RatFunc k)⟮(y : F)⟯ = ⊤)
     (hy : (y : F) ^ 2 = algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) f))
-    {P : Place k F} (hP : P.restrict k (RatFunc k) = Place.infty k) :
+    {P : Place k F} :
+    letI := (finiteDimensional_and_isSeparable_of_sq_eq h2 hf hodd.pos hgen hy).1
+    letI := (finiteDimensional_and_isSeparable_of_sq_eq h2 hf hodd.pos hgen hy).2
+    P.restrict k (RatFunc k) = Place.infty k →
     Divisor.different k F (IsFunctionField.ratFunc k) =
       WeilDivisor.ofFinset
         (Divisor.zeros (isFunctionField_iff_functionField.mpr inferInstance) y).support +
           WeilDivisor.ofPoint P := by
+  obtain ⟨_, _⟩ := finiteDimensional_and_isSeparable_of_sq_eq h2 hf hodd.pos hgen hy
+  intro hP
   classical
   let hF : IsFunctionField k F := isFunctionField_iff_functionField.mpr inferInstance
   have hdiff := different_ratFunc_eq_zeros_add_of_sq_eq_of_odd h2 hf hodd hgen hy hP
@@ -142,7 +156,7 @@ theorem different_ratFunc_eq_ofFinset_add_of_sq_eq_of_odd (h2 : (2 : k) ≠ 0)
   rw [WeilDivisor.coeff_ofFinset]
   by_cases hQ : Q ∈ (Divisor.zeros hF y).support
   · rw [ite_eq_left hQ]
-    exact Divisor.coeff_zeros_eq_one_of_sq_eq_of_odd h2 hf hodd hgen hy hQ
+    exact Divisor.coeff_zeros_eq_one_of_sq_eq hF hf hgen hy hQ
   · rw [ite_eq_right hQ]
     exact Finsupp.notMem_support_iff.mp hQ
 

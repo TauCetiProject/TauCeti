@@ -65,6 +65,9 @@ a totally ramified place acquires no new constants
 
 * `TauCeti.finrank_ratFunc_eq_two_of_sq_eq` and `TauCeti.isIntegrallyClosedIn_of_sq_eq`: the degree
   of `F / k(x)` and exactness of the constant field `k`.
+* `TauCeti.finiteDimensional_and_isSeparable_of_sq_eq`: squarefree nonconstant models are
+  finite and separable away from characteristic two.
+* `TauCeti.finrank_ratFunc_eq_two_of_sq_eq_of_odd`: odd-degree models have degree two.
 * `TauCeti.isIntegrallyClosedIn_of_sq_eq_of_odd`: odd-degree models have exact constants
   without squarefreeness or characteristic assumptions.
 * `TauCeti.Place.isTotallyRamified_of_sq_eq_of_odd` and
@@ -141,8 +144,9 @@ theorem finrank_ratFunc_eq_two_of_sq_eq {f : k[X]} (hf : Squarefree f) (hdeg : 0
     Place.ord_adicOfIrreducible_algebraMap_of_squarefree hq hf]
   simp [hqf]
 
-/-- Away from characteristic two, `y ^ 2 = f` generates a finite separable extension of `k(x)`. -/
-private theorem finiteDimensional_and_isSeparable (h2 : (2 : k) ≠ 0) {f : k[X]}
+/-- A squarefree nonconstant polynomial model generates a finite separable extension of `k(x)`
+away from characteristic two. -/
+theorem finiteDimensional_and_isSeparable_of_sq_eq (h2 : (2 : k) ≠ 0) {f : k[X]}
     (hf : Squarefree f) (hdeg : 0 < f.natDegree) {y : F} (hgen : (RatFunc k)⟮y⟯ = ⊤)
     (hy : y ^ 2 = algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) f)) :
     FiniteDimensional (RatFunc k) F ∧ Algebra.IsSeparable (RatFunc k) F := by
@@ -150,30 +154,42 @@ private theorem finiteDimensional_and_isSeparable (h2 : (2 : k) ≠ 0) {f : k[X]
   refine ⟨Module.finite_of_finrank_pos (by omega), Algebra.isSeparable_of_finrank_eq_two ?_ hrank⟩
   rwa [← map_ofNat (algebraMap k (RatFunc k)) 2, ne_eq, map_eq_zero]
 
+/-- An odd-degree polynomial model has degree two over `k(x)`, in every characteristic
+and without squarefreeness. -/
+theorem finrank_ratFunc_eq_two_of_sq_eq_of_odd {f : k[X]}
+    (hodd : Odd f.natDegree) {y : F} (hgen : (RatFunc k)⟮y⟯ = ⊤)
+    (hy : y ^ 2 = algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) f)) :
+    Module.finrank (RatFunc k) F = 2 := by
+  refine (Place.infty k).valuation.finrank_eq_of_pow_eq_of_gcd_ord_eq_one
+    hgen hy two_ne_zero ?_
+  rw [Valuation.ord_def, ← Place.ord_def]
+  simp only [Place.ord_infty, RatFunc.intDegree_polynomial, Int.gcd_neg,
+    Int.gcd_natCast_natCast]
+  exact hodd.coprime_two_left.gcd_eq_one
+
 /-! ### Ramification and the different of `y ^ 2 = f` -/
 
 variable [Algebra k F] [IsScalarTower k (RatFunc k) F]
 
 section OddDegree
 
-variable [FiniteDimensional (RatFunc k) F]
-
 /-- In a polynomial model of odd degree, every place above infinity is totally ramified.
 This also holds in characteristic two, without squarefreeness. -/
 theorem Place.isTotallyRamified_of_sq_eq_of_odd {f : k[X]}
     (hodd : Odd f.natDegree) {y : F} (hgen : (RatFunc k)⟮y⟯ = ⊤)
     (hy : y ^ 2 = algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) f))
-    {P : Place k F} (hP : P.restrict k (RatFunc k) = Place.infty k) :
-    P.IsTotallyRamified (RatFunc k) := by
+    {P : Place k F} :
+    letI : FiniteDimensional (RatFunc k) F := Module.finite_of_finrank_pos (by
+      rw [finrank_ratFunc_eq_two_of_sq_eq_of_odd hodd hgen hy]
+      exact Nat.zero_lt_two)
+    P.restrict k (RatFunc k) = Place.infty k → P.IsTotallyRamified (RatFunc k) := by
+  have hrank := finrank_ratFunc_eq_two_of_sq_eq_of_odd hodd hgen hy
+  have : FiniteDimensional (RatFunc k) F := Module.finite_of_finrank_pos (by omega)
+  intro hP
   have hcoprime : Int.gcd (2 : ℕ) ((Place.infty k).ord (algebraMap k[X] (RatFunc k) f)) = 1 := by
     simp only [Place.ord_infty, RatFunc.intDegree_polynomial, Int.gcd_neg,
       Int.gcd_natCast_natCast]
     exact hodd.coprime_two_left.gcd_eq_one
-  have hrank : Module.finrank (RatFunc k) F = 2 := by
-    refine (Place.infty k).valuation.finrank_eq_of_pow_eq_of_gcd_ord_eq_one
-      hgen hy two_ne_zero ?_
-    rw [Valuation.ord_def, ← Place.ord_def]
-    exact hcoprime
   exact Place.isTotallyRamified_of_pow_eq_of_gcd_ord_eq_one k (RatFunc k)
     hrank hy two_ne_zero (by simpa only [hP] using hcoprime)
 
@@ -183,8 +199,13 @@ theorem Place.existsUnique_restrict_eq_infty_of_sq_eq_of_odd {f : k[X]}
     (hodd : Odd f.natDegree) {y : F}
     (hgen : (RatFunc k)⟮y⟯ = ⊤)
     (hy : y ^ 2 = algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) f)) :
+    letI : FiniteDimensional (RatFunc k) F := Module.finite_of_finrank_pos (by
+      rw [finrank_ratFunc_eq_two_of_sq_eq_of_odd hodd hgen hy]
+      exact Nat.zero_lt_two)
     ∃ P : Place k F, P.restrict k (RatFunc k) = Place.infty k ∧ P.degree = 1 ∧
       ∀ Q : Place k F, Q.restrict k (RatFunc k) = Place.infty k → Q = P := by
+  have hrank := finrank_ratFunc_eq_two_of_sq_eq_of_odd hodd hgen hy
+  have : FiniteDimensional (RatFunc k) F := Module.finite_of_finrank_pos (by omega)
   have hF : IsFunctionField k F := isFunctionField_iff_functionField.mpr inferInstance
   obtain ⟨P, hP⟩ := Place.restrict_surjective_of_finiteDimensional
     (IsFunctionField.ratFunc k) hF (Place.infty k)
@@ -305,7 +326,7 @@ theorem isIntegrallyClosedIn_of_sq_eq (h2 : (2 : k) ≠ 0) {f : k[X]} (hf : Squa
     (hdeg : 0 < f.natDegree) {y : F} (hgen : (RatFunc k)⟮y⟯ = ⊤)
     (hy : y ^ 2 = algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) f)) :
     IsIntegrallyClosedIn k F := by
-  obtain ⟨_, _⟩ := finiteDimensional_and_isSeparable h2 hf hdeg hgen hy
+  obtain ⟨_, _⟩ := finiteDimensional_and_isSeparable_of_sq_eq h2 hf hdeg hgen hy
   obtain ⟨P', hP'⟩ := exists_ramificationIdx_eq_two h2 hf hdeg hgen hy
   refine isIntegrallyClosedIn_of_isTotallyRamified (F := RatFunc k) (F' := F) inferInstance
     (P' := P') ?_
@@ -319,7 +340,7 @@ theorem genus_eq_of_sq_eq (h2 : (2 : k) ≠ 0) {f : k[X]} (hf : Squarefree f)
     (hdeg : 0 < f.natDegree) {y : F} (hgen : (RatFunc k)⟮y⟯ = ⊤)
     (hy : y ^ 2 = algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) f)) :
     genus k F = (f.natDegree - 1) / 2 := by
-  obtain ⟨_, _⟩ := finiteDimensional_and_isSeparable h2 hf hdeg hgen hy
+  obtain ⟨_, _⟩ := finiteDimensional_and_isSeparable_of_sq_eq h2 hf hdeg hgen hy
   have h := hurwitz_genus_formula_ratFunc (isIntegrallyClosedIn_of_sq_eq h2 hf hdeg hgen hy)
   rw [finrank_ratFunc_eq_two_of_sq_eq hf hdeg hgen hy,
     degree_different_ratFunc_of_sq_eq h2 hf hdeg hgen hy] at h
@@ -334,7 +355,7 @@ theorem isHyperellipticFunctionField_of_sq_eq (h2 : (2 : k) ≠ 0) {f : k[X]} (h
     (hy : y ^ 2 = algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) f)) :
     IsHyperellipticFunctionField k F := by
   have hdeg0 : 0 < f.natDegree := by omega
-  obtain ⟨_, _⟩ := finiteDimensional_and_isSeparable h2 hf hdeg0 hgen hy
+  obtain ⟨_, _⟩ := finiteDimensional_and_isSeparable_of_sq_eq h2 hf hdeg0 hgen hy
   have hF : IsFunctionField k F := isFunctionField_iff_functionField.mpr inferInstance
   refine ⟨by rw [genus_eq_of_sq_eq h2 hf hdeg0 hgen hy]; omega, ?_⟩
   -- the index-two subfield is `k(x)`: `[F : k(x)]` is the degree of the pole divisor of `x` in
