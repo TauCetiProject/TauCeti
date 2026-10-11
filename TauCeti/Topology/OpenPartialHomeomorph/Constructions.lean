@@ -44,10 +44,11 @@ variable {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalS
 /-- Composing an open embedding with an open partial homeomorphism gives an open embedding
 when its range lies in the source of the open partial homeomorphism. -/
 theorem isOpenEmbedding_comp (e : OpenPartialHomeomorph X Y) {g : Z → X}
-    (hg : IsOpenEmbedding g) (hgs : range g ⊆ e.source) : IsOpenEmbedding (e ∘ g) :=
-  e.isOpenEmbedding_restrict.comp
-    (e.open_source.isOpenEmbedding_subtypeVal.of_comp
-      (e.source.codRestrict g fun z => hgs (mem_range_self z)) hg)
+    (hg : IsOpenEmbedding g) (hgs : range g ⊆ e.source) : IsOpenEmbedding (e ∘ g) := by
+  have hgs' : ∀ z, g z ∈ e.source := fun z => hgs (mem_range_self z)
+  have hgc : IsOpenEmbedding (e.source.codRestrict g hgs') :=
+    .of_isEmbedding_isOpenMap (hg.isEmbedding.codRestrict _ _) (hg.isOpenMap.codRestrict _)
+  simpa only [Set.domRestrict_comp_codRestrict] using e.isOpenEmbedding_restrict.comp hgc
 
 open scoped Classical in
 /-- Restrict an open partial homeomorphism to a subtype represented by a parametrized coordinate
