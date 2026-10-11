@@ -40,6 +40,8 @@ conjugation action.
 * `ConjClasses.ncard_carrier_mk` and `ConjClasses.card_carrier_mk`: the size of a
   conjugacy class is the index of the centralizer of any of its members, in `Set.ncard` and in
   `Nat.card` form.
+* `ConjClasses.card_carrier_mk_pow`: a power coprime to the order of an element preserves the
+  size of its conjugacy class.
 * `ConjClasses.ncard_carrier_mk_of_mem_center`: the class of a central element is a single
   point.
 * `ConjClasses.card_carrier_mul_orderOf_dvd`: the class size times the order of a member
@@ -195,6 +197,25 @@ normalized form is `ConjClasses.ncard_carrier_mk`. -/
 theorem card_carrier_mk (g : G) :
     Nat.card (ConjClasses.mk g).carrier = (Subgroup.centralizer {g}).index := by
   rw [Nat.card_coe_set_eq, ncard_carrier_mk]
+
+/-- Raising an element to a power coprime to its order preserves the size of its conjugacy class.
+The statement also covers infinite groups, using `Nat.card`. -/
+theorem card_carrier_mk_pow (g : G) {n : ℕ}
+    (hn : (orderOf g).Coprime n) :
+    Nat.card (ConjClasses.mk (g ^ n)).carrier = Nat.card (ConjClasses.mk g).carrier := by
+  have hcentral : Subgroup.centralizer ({g ^ n} : Set G) = Subgroup.centralizer {g} := by
+    ext x
+    simp only [Subgroup.mem_centralizer_singleton_iff]
+    constructor
+    · intro hx
+      obtain ⟨m, hm⟩ := Subgroup.mem_zpowers_iff.mp
+        (mem_zpowers_pow_iff.mpr hn.symm.gcd_eq_one : g ∈ Subgroup.zpowers (g ^ n))
+      exact hm ▸ (Commute.zpow_right hx m).eq
+    · exact fun hx ↦ (Commute.pow_right hx n).eq
+  -- At a quotient constructor, the carrier is the set of conjugates by definition.
+  have hcarrier (x : G) : (ConjClasses.mk x).carrier = conjugatesOf x := (rfl)
+  simp only [hcarrier, Nat.card_coe_set_eq]
+  rw [← Subgroup.index_centralizer_eq_ncard, ← Subgroup.index_centralizer_eq_ncard, hcentral]
 
 /-- **The size of a conjugacy class as a `Finset` cardinality**: the members of the class of `g`
 are the elements of the monoid whose class is that of `g`, so in a finite monoid with decidable

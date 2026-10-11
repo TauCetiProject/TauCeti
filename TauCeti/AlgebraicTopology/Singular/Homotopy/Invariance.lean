@@ -82,6 +82,16 @@ lemma isIso_singularHomologyMap (f : P ⟶ P') (f' : P' ⟶ P) (H : Homotopy (f 
   · rw [← Functor.map_comp, ← CategoryTheory.Functor.map_id]
     exact H'.toSSetPair
 
+/-- **A pair whose identity deforms into its subspace has no relative homology**: if the identity
+of `P` is homotopic, as a map of pairs, to a map whose map of ambient spaces factors through the
+subspace, as when the subspace is a strong deformation retract, then the relative singular
+homology of `P` vanishes in every degree. -/
+lemma isZero_singularHomology_of_homotopy {f : P ⟶ P} (H : Homotopy (𝟙 P) f)
+    (g : P.fst ⟶ P.snd) (hg : g ≫ P.map = Hom.fst f) (R : C) (n : ℕ) :
+    IsZero (P.singularHomology R n) := by
+  rw [IsZero.iff_id_eq_zero, ← singularHomologyMap_id, H.congr_singularHomologyMap R n]
+  exact singularHomologyMap_eq_zero_of_fac f R g hg n
+
 end TopPair
 
 namespace ContinuousMap.HomotopyEquiv

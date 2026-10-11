@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.FarguesFontaine.Quotient
+public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Comap
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Transport
 
 import Mathlib.Topology.Sheaves.Functors
@@ -48,6 +49,8 @@ rational subsets covering `𝒴`, it suffices to know that `𝒪` is a sheaf on 
 * `TauCeti.FarguesFontaine.spaYPresheaf` : the structure presheaf `𝒪_𝒴` of `𝒴`.
 * `TauCeti.FarguesFontaine.presentationLimitPresheafFrobeniusIso` : the Frobenius action
   `𝒪 ≅ φ_* 𝒪` on the structure presheaf of `Spa(𝕎 R, 𝕎 R)`.
+* `TauCeti.FarguesFontaine.presentationLimitPreAdicSpaceFrobeniusIso` : Frobenius as an
+  automorphism of the pre-adic space `Spa(𝕎 R, 𝕎 R)`, compatible with the stalk valuations.
 * `TauCeti.FarguesFontaine.spaYPresheafFrobenius` : its restriction `𝒪_𝒴 → φ_* 𝒪_𝒴`.
 * `TauCeti.FarguesFontaine.pushforwardSpaYPresheafFrobenius` : the induced endomorphism of
   `q_* 𝒪_𝒴`.
@@ -202,6 +205,26 @@ abbrev presentationLimitPresheafFrobeniusIso :=
     (TauCeti.WittVector.continuous_frobeniusEquiv_symm hI)
     (fun a ↦ (frobeniusEquiv p R).symm_apply_apply a)
     (fun b ↦ (frobeniusEquiv p R).apply_symm_apply b) (fun _ _ ↦ Subring.mem_top _)
+
+/-- **Witt Frobenius as an automorphism of the pre-adic space `Spa(𝕎 R, 𝕎 R)`**: the isomorphism
+in `𝒱^pre` induced by the automorphism `φ` of the pair `(𝕎 R, 𝕎 R)`. On points it is
+`v ↦ v ∘ φ`, on sections it is `presentationLimitPresheafFrobeniusIso`, and it matches the stalk
+valuations: through the Frobenius map of stalks `𝒪_{v ∘ φ} → 𝒪_v`, the stalk valuation at `v ∘ φ`
+is the pullback of the stalk valuation at `v` (`TauCeti.PreAdicSpace.Hom.stalkValuation_eq_comap`).
+No sheaf condition on `Spa(𝕎 R, 𝕎 R)` is needed. -/
+abbrev presentationLimitPreAdicSpaceFrobeniusIso :=
+  presentationLimitPreAdicSpaceComapIso (P := P) (P' := P)
+    (Aplus := (⊤ : Subring (WittVector p R))) (Bplus := ⊤) frobenius
+    (TauCeti.WittVector.continuous_frobenius hI) (fun _ _ ↦ Subring.mem_top _)
+    ((frobeniusEquiv p R).symm : WittVector p R →+* WittVector p R)
+    (TauCeti.WittVector.continuous_frobeniusEquiv_symm hI)
+    (fun a ↦ (frobeniusEquiv p R).symm_apply_apply a)
+    (fun b ↦ (frobeniusEquiv p R).apply_symm_apply b) (fun _ _ ↦ Subring.mem_top _)
+    -- every element of the `(p, [ϖ])`-adic ring `𝕎 R` is power-bounded
+    (fun _ _ ↦ haveI := hI.isLinearTopology
+      isPowerBounded_iff.mpr (isBounded_of_isLinearTopology _))
+    (fun _ _ ↦ haveI := hI.isLinearTopology
+      isPowerBounded_iff.mpr (isBounded_of_isLinearTopology _)) le_top le_top
 
 /-- **Frobenius acting on `𝒪_𝒴`**: the morphism `𝒪_𝒴 → φ_* 𝒪_𝒴` whose component on an open
 `V ⊆ 𝒴` is the map `𝒪(V) → 𝒪(φ⁻¹V)` induced by the Witt-vector Frobenius `φ`, an automorphism of

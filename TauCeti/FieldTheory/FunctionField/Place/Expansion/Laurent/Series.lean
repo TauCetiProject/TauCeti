@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Expansion.Completion
-public import TauCeti.RingTheory.LaurentSeries
+public import TauCeti.RingTheory.LaurentSeries.Basic
 
 /-!
 # Laurent-series expansions at rational places

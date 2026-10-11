@@ -39,6 +39,8 @@ be proved.
 
 * `TauCeti.E6Minuscule.positiveRootWeight_strict`: positive simple roots strictly raise the
   explicit ordering of minuscule weights.
+* `TauCeti.E6Minuscule.isUpperTriangular_rootSubgroupPoints_inl`: positive simple-root points
+  are upper triangular over every commutative ring.
 * `TauCeti.E6Minuscule.isSolvable_points_positiveSubsystem`: every algebra-valued point group of
   the positive subsystem is solvable.
 
@@ -131,6 +133,20 @@ theorem positiveRootWeight_strict (k : Fin 6 ⊕ Fin 6) (hk : k ∈ positiveSimp
     exact hrs.trans hreflection.symm
   rw [hr_reflection]
   exact (e6MinusculeReflection_lt_iff i s).2 hs_neg
+
+/-- Every positive simple-root point is upper triangular in the ordered minuscule basis. -/
+theorem isUpperTriangular_rootSubgroupPoints_inl (i : Fin 6) (A : Type v) [CommRing A]
+    (u : Multiplicative A) :
+    ((rootSubgroupPoints (.inl i) A u : Matrix.GeneralLinearGroup (Fin 27) A) :
+      Matrix (Fin 27) (Fin 27) A).IsUpperTriangular := by
+  rw [coe_rootSubgroupPoints]
+  exact (isUpperUnitriangular_kostantRootSubgroupMatrix rootGen cartanGen weightTable.rep
+    (Λ).toAddSubgroup weightTable.rep_kostantForm_mem_lattice 𝓑 weightTable.weight (.inl i)
+    (weightTable.isNilpotent_rep_serreRootGenerator (.inl i))
+    weightTable.isCartanWeightVector_coordinateLatticeBasis
+    (lie_cartanGen_rootGen (.inl i))
+    (positiveRootWeight_strict (.inl i) (inl_mem_positiveSimpleRoots i))
+    ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u)).isUpperTriangular
 
 /-! ## The positive subsystem and its generators -/
 

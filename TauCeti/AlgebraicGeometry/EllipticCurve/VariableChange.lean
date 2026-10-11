@@ -89,15 +89,12 @@ def negVariableChange : VariableChange R :=
 over a ring in which `2 = 0` cannot have `a₁ = a₃ = 0`. -/
 lemma negVariableChange_ne_one [Nontrivial R] [E.IsElliptic] : E.negVariableChange ≠ 1 := by
   intro h
-  rcases eq_or_ne (2 : R) 0 with h2 | h2
-  · have hs := congrArg VariableChange.s h
-    have ht := congrArg VariableChange.t h
-    simp only [negVariableChange, VariableChange.one_def, neg_eq_zero] at hs ht
-    grind [a₁_ne_zero_or_a₃_ne_zero_of_Δ_ne_zero_of_two_eq_zero E E.isUnit_Δ.ne_zero]
-  · contrapose h2
-    have hv : (-1 : R) = 1 := by
-      simpa [VariableChange.one_def] using congrArg (fun C : VariableChange R ↦ (C.u : R)) h
-    linear_combination -hv
+  have hv : (-1 : R) = 1 := by
+    simpa [VariableChange.one_def] using congrArg (fun C : VariableChange R ↦ (C.u : R)) h
+  have hs := congrArg VariableChange.s h
+  have ht := congrArg VariableChange.t h
+  simp only [negVariableChange, VariableChange.one_def, neg_eq_zero] at hs ht
+  grind [a₁_ne_zero_or_a₃_ne_zero_of_Δ_ne_zero_of_two_eq_zero E E.isUnit_Δ.ne_zero]
 
 namespace VariableChange
 

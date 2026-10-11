@@ -27,6 +27,8 @@ point of the chart of the intersection cone.
   space of this gluing data.
 * `TauCeti.Toric.Fan.analyticAffineChartι`: the inclusion of an affine analytic chart into the
   realization, an open embedding by `TauCeti.Toric.Fan.isOpenEmbedding_analyticAffineChartι`.
+* `TauCeti.Toric.Fan.analyticAffineChartι_faceAffinePointMap`: face-localization maps commute
+  with the chart inclusions into the realization.
 * `TauCeti.Toric.Fan.exists_analyticAffineChartι_apply_eq`: the affine charts cover the
   realization.
 * `TauCeti.Toric.Fan.analyticAffineChartι_eq_analyticAffineChartι_iff`: points of two charts are
@@ -194,6 +196,21 @@ theorem analyticAffineChartDiagram_map_comp_analyticAffineChartι {τ σ : Φ.co
     have : (homOfLE (le_inf (leOfHom f) le_rfl) : τ ⟶ σ ⊓ τ) ≫ homOfLE inf_le_right = 𝟙 τ :=
       Subsingleton.elim _ _
     rw [this, CategoryTheory.Functor.map_id, TopCat.id_app]
+
+/-- The face-localization map followed by the ambient chart inclusion is the face chart
+inclusion, for any face inclusion in a regular fan. -/
+theorem analyticAffineChartι_faceAffinePointMap {τ σ : Φ.cones} (h : τ ≤ σ)
+    (x : (Φ.analyticAffineChartDiagram).obj τ) :
+    Φ.analyticAffineChartι hΦ σ
+        (faceAffinePointMap Φ.lattice (Φ.isFaceOf_of_le σ.2 τ.2 h) x) =
+      Φ.analyticAffineChartι hΦ τ x := by
+  let f : τ ⟶ σ := homOfLE h
+  have hface : (Φ.analyticAffineChartDiagram).map f x =
+      faceAffinePointMap Φ.lattice (Φ.isFaceOf_of_le σ.2 τ.2 h) x :=
+    Φ.analyticFaceMap_apply f x
+  exact (congrArg (Φ.analyticAffineChartι hΦ σ) hface).symm.trans
+    (ConcreteCategory.congr_hom
+      (Φ.analyticAffineChartDiagram_map_comp_analyticAffineChartι hΦ f) x)
 
 /-- The inclusion of the chart of a face factors through the analytic face map into the chart of
 the ambient cone. -/

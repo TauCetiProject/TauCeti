@@ -61,10 +61,6 @@ theorem eq_or_eq_of_apply_mul_apply_eq_three (h : IsFiniteType A)
     (hconn : (diagramGraph A).Preconnected) {i j : B} (hij : A i j * A j i = 3) (k : B) :
     k = i ∨ k = j := by
   classical
-  have hij_ne : i ≠ j := by
-    rintro rfl
-    rw [h.apply_self] at hij
-    omega
   let H : (diagramGraph A).Subgraph :=
     (⊤ : (diagramGraph A).Subgraph).induce ({i, j} : Set B)
   have hiH : i ∈ H.verts := by

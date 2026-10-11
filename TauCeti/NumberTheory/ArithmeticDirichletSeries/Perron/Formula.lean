@@ -70,7 +70,7 @@ private theorem lintegral_norm_term_mul_perronIntegrand_ne_top (hx : 0 < x) (hc 
       refine ENNReal.ofReal_le_ofReal ((norm_term_mul_perronIntegrand_le hx hc n t).trans ?_)
       have hge : c ≤ Real.sqrt (c ^ 2 + t ^ 2) :=
         (Real.sqrt_sq hc.le).ge.trans (Real.sqrt_le_sqrt (by nlinarith [sq_nonneg t]))
-      have hxc : (0 : ℝ) ≤ x ^ c := Real.rpow_nonneg hx.le c
+      have _ : (0 : ℝ) ≤ x ^ c := Real.rpow_nonneg hx.le c
       gcongr
     calc ∫⁻ t in Set.Ioc (-T) T, ‖LSeries.term f ((c : ℂ) + t * I) n * perronIntegrand x c t‖ₑ
         ≤ ∫⁻ _ in Set.Ioc (-T) T,

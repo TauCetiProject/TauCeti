@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Order.Antidiag.Prod
 public import Mathlib.Topology.MetricSpace.Isometry
 public import TauCeti.Topology.CWComplex.Classical.FiniteCWType
+public import TauCeti.Topology.PiCurry
 
 /-!
 # The product of two finite CW complexes
@@ -36,6 +37,7 @@ condition is automatic (`Topology.CWComplex.mkFinite`).
 * `TauCeti.nat_card_cell_prod`: `C ×ˢ D` has `∑_{p + q = n} #(p-cells of C) · #(q-cells of D)`
   cells of dimension `n`.
 * `TauCeti.FiniteCWType.prod`: a product of two spaces of finite CW type has finite CW type.
+* `TauCeti.FiniteCWType.pi`: a finite product of spaces of finite CW type has finite CW type.
 
 For infinite complexes the product topology can be strictly coarser than the weak topology of the
 product cells (Hatcher, Theorem A.6, gives conditions under which they agree); this file treats
@@ -53,17 +55,18 @@ noncomputable section
 
 open Metric Set Topology Topology.RelCWComplex
 
-universe u
+universe u v
 
 namespace TauCeti
 
-variable {X Y : Type u} [TopologicalSpace X] [TopologicalSpace Y] {C : Set X} {D : Set Y}
+variable {X : Type u} {Y : Type v} [TopologicalSpace X] [TopologicalSpace Y]
+  {C : Set X} {D : Set Y}
   [CWComplex C] [CWComplex D]
 
 variable (C D) in
 /-- The `n`-cells of the product of two CW complexes: a `p`-cell of `C` and a `q`-cell of `D`
 with `p + q = n`. -/
-private abbrev ProdCell (n : ℕ) : Type u :=
+private abbrev ProdCell (n : ℕ) : Type (max u v) :=
   Σ pq : Finset.antidiagonal n, cell C pq.1.1 × cell D pq.1.2
 
 /-- The identification of `Fin n → ℝ` with `(Fin p → ℝ) × (Fin q → ℝ)` used to parametrise the
@@ -274,5 +277,13 @@ instance FiniteCWType.prod [hX : FiniteCWType X] [hY : FiniteCWType Y] :
   obtain ⟨X', _, _, C, _, _, ⟨e⟩⟩ := hX.exists_homotopyEquiv
   obtain ⟨Y', _, _, D, _, _, ⟨f⟩⟩ := hY.exists_homotopyEquiv
   exact ((e.prodCongr f).trans (Homeomorph.Set.prod C D).symm.toHomotopyEquiv).finiteCWType
+
+/-- A finite product of spaces of finite CW type has finite CW type. -/
+instance FiniteCWType.pi {ι : Type v} [Finite ι] (X : ι → Type u) [∀ i, TopologicalSpace (X i)]
+    [∀ i, FiniteCWType (X i)] : FiniteCWType (∀ i, X i) := by
+  induction ι using Finite.induction_empty_option with
+  | of_equiv e ih => exact (Homeomorph.piCongrLeft (Y := X) e).symm.finiteCWType
+  | h_empty => infer_instance
+  | h_option ih => exact (piOptionEquivProdHomeomorph X).finiteCWType
 
 end TauCeti

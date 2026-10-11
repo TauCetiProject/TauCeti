@@ -62,7 +62,7 @@ lemma sqrt_three_div_two_lt_one : Real.sqrt 3 / 2 < 1 := by
 height parameter clears the corner row. -/
 lemma sqrt_three_div_two_le_im_fdBoundary (hH : Real.sqrt 3 / 2 ≤ H)
     (ht : t ∈ Icc (0 : ℝ) 5) : Real.sqrt 3 / 2 ≤ (fdBoundary H t).im := by
-  obtain ⟨ht0, ht5⟩ := ht
+  obtain ⟨_, _⟩ := ht
   rcases le_or_gt t 1 with h1 | h1
   · rw [im_fdBoundary_of_le_one h1]
     nlinarith [mul_nonneg (by linarith : (0 : ℝ) ≤ 1 - t)
@@ -118,7 +118,7 @@ lemma abs_re_fdBoundary_le_half (ht : t ≤ 5) : |(fdBoundary H t).re| ≤ 1 / 2
 /-- The contour stays at or below its height parameter. -/
 lemma im_fdBoundary_le (hH : 1 ≤ H) (ht : t ∈ Icc (0 : ℝ) 5) :
     (fdBoundary H t).im ≤ H := by
-  obtain ⟨ht0, ht5⟩ := ht
+  obtain ⟨ht0, _⟩ := ht
   have h32 : Real.sqrt 3 / 2 ≤ 1 := sqrt_three_div_two_lt_one.le
   rcases le_or_gt t 1 with h1 | h1
   · rw [im_fdBoundary_of_le_one h1]

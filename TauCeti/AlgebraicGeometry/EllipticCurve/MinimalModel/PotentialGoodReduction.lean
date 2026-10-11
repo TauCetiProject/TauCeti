@@ -187,7 +187,7 @@ lives in the universe of `K`, since `HasPotentialGoodReduction` takes `S` there.
 theorem HasGoodReduction.hasPotentialGoodReduction {W : WeierstrassCurve K}
     (h : W.HasGoodReduction R) : W.HasPotentialGoodReduction R := by
   refine .intro R K R (by ext; simp) ?_
-  rw [baseChange, Algebra.algebraMap_self, map_id]
+  rw [WeierstrassCurve.baseChange, Algebra.algebraMap_self, map_id]
   exact h.hasGoodReduction_minimal R
 
 end WeierstrassCurve

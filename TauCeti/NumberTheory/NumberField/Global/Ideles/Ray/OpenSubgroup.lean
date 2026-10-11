@@ -148,7 +148,7 @@ theorem exists_ideleCongruenceSubgroup_ofFiniteIdele_mem_of_mem_nhds
     rw [IdeleGroup.coe_ofFiniteIdele, IdeleGroup.coe_toFiniteIdele]
     refine hWprod ⟨mem_of_mem_nhds hWinf, ?_⟩
     have h := hIn ((y : 𝔸[K]).2 - 1)
-      (fun v ↦ by
+      (FiniteAdeleRing.mem_integralAdeles.mpr fun v ↦ by
         rw [FiniteAdeleRing.sub_apply, FiniteAdeleRing.one_apply]
         exact sub_mem (ideleCongruenceSubgroup.snd_mem_adicCompletionIntegers hy v) (one_mem _))
       (fun v hv ↦ by

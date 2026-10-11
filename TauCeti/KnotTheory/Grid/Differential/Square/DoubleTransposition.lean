@@ -159,7 +159,7 @@ theorem fullyBlockedDifferential_sq_single_apply_swapColumns_swapColumns_eq_zero
   rw [G.fullyBlockedDifferential_sq_single_apply_eq_decompositionCount,
     G.fullyBlockedDecompositionCount_def]
   have hsum :
-      ∑ D ∈ G.fullyBlockedDecompositions x
+      ∑ _ ∈ G.fullyBlockedDecompositions x
           ((x.swapColumns a b).swapColumns c d), (1 : ZMod 2) = 0 := by
     refine Finset.sum_involution
       (fun D _ => D.commute (GridRectangleDecomposition.hasDisjointSides_of_disjoint x hab hcd

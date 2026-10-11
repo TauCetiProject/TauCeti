@@ -154,7 +154,7 @@ theorem mem_boundedIntegralSolutions_iff (B : ℕ) (p : ℤ × ℤ) :
   simp only [boundedIntegralSolutions, Finset.mem_filter, Finset.mem_biUnion,
     Finset.mem_image, Finset.mem_Icc]
   constructor
-  · rintro ⟨⟨x, hx, y, hy, hp⟩, heq⟩
+  · rintro ⟨⟨x, hx, y, _, hp⟩, heq⟩
     have hxy : p = (x, y) := hp.symm
     rcases hxy with rfl
     exact ⟨(W.toAffine.equation_iff _ _).2 heq, hx.1, hx.2⟩

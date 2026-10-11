@@ -274,10 +274,10 @@ private theorem coe_stasheffSum_reducedOperation (ε : 𝒜.Augmentation)
         (n - p - s)) = _
   rw [map_sum]
   apply Finset.sum_congr rfl
-  intro p hp
+  intro p _
   rw [map_sum]
   apply Finset.sum_congr rfl
-  intro s hs
+  intro s _
   exact ε.coe_stasheffTerm_reducedOperation d x p s (n - p - s)
 
 private noncomputable def reducedTaylor (ε : 𝒜.Augmentation) :

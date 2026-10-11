@@ -23,8 +23,10 @@ The transfer `hp.singularTransfer hfin R : C(B; R) ⟶ C(E; R)` sends a singular
 sum of its lifts.  Since faces of lifts are exactly the lifts of faces, this is a chain map.
 Composing with `p_*` counts the lifts: on a simplex `σ` it is multiplication by the cardinality
 of a fibre over a point of `σ`, so `p_* ∘ transfer = d • id` when every fibre has `d` points.
-When `p` is the quotient covering of a free action of a finite group `G`, the lifts of `p ∘ τ`
-are the translates `g • τ`, so `transfer ∘ p_* = ∑_{g ∈ G} g_*`.
+A bijective self-map `f` of `E` over `B`, such as a deck transformation, permutes the lifts of
+each simplex, so `f_* ∘ transfer = transfer`. When `p` is the quotient covering of a free action of
+a finite group `G`, the lifts of `p ∘ τ` are the translates `g • τ`, so
+`transfer ∘ p_* = ∑_{g ∈ G} g_*`.
 
 ## Main declarations
 
@@ -32,11 +34,17 @@ are the translates `g • τ`, so `transfer ∘ p_* = ∑_{g ∈ G} g_*`.
   lifts of a singular simplex with a fibre of `p`.
 * `IsCoveringMap.bijOn_toSSet_obj_map`: restricting lifts along a simplicial operator is a
   bijection onto the lifts of the restricted simplex.
+* `IsCoveringMap.bijOn_toSSet_map_app_of_comp_eq`: a bijective self-map of `E` over `B` permutes
+  the lifts of each singular simplex.
 * `IsCoveringMap.singularTransfer`: the transfer chain map `C(B; R) ⟶ C(E; R)`, with
   `IsCoveringMap.ιChainComplex_singularTransfer_f` its value on a singular simplex.
 * `IsCoveringMap.singularTransfer_comp_chainComplexMap`: `p_* ∘ transfer = d • id` on singular
   chains for a covering whose fibres all have `d` points, and
   `IsCoveringMap.homologyMap_singularTransfer_comp_homologyMap` the same on singular homology.
+* `IsCoveringMap.singularTransfer_comp_chainComplexMap_of_comp_eq`: `f_* ∘ transfer = transfer`
+  on singular chains for a bijective self-map `f` of `E` over `B`, and
+  `IsCoveringMap.homologyMap_singularTransfer_comp_homologyMap_of_comp_eq` the same on singular
+  homology.
 * `IsQuotientCoveringMap.chainComplexMap_comp_singularTransfer`: for the quotient covering of a
   finite group `G`, `transfer ∘ p_* = ∑_{g ∈ G} g_*` on singular chains.
 
@@ -119,6 +127,31 @@ theorem bijOn_toSSet_obj_map {m n : SimplexCategoryᵒᵖ} (α : m ⟶ n)
   · obtain ⟨τ, hτ, hτy⟩ := hy.surjOn (hx.mapsTo hτ')
     refine ⟨τ, hτ, hx.injOn (maps hτ) hτ' ?_⟩
     simpa only [eval] using hτy
+
+/-- A bijective self-map `f` of `E` over `B`, such as a deck transformation of `p`, permutes the
+lifts of every singular simplex of `B` through `p`. -/
+theorem bijOn_toSSet_map_app_of_comp_eq {f : E ⟶ E} (hf : Function.Bijective f)
+    (hfp : f ≫ p = p) {n : SimplexCategoryᵒᵖ} (σ : (TopCat.toSSet.obj B).obj n) :
+    Set.BijOn ((TopCat.toSSet.map f).app n) ((TopCat.toSSet.map p).app n ⁻¹' {σ})
+      ((TopCat.toSSet.map p).app n ⁻¹' {σ}) := by
+  let x : SimplexCategory.toTop.{w}.obj n.unop := SimplexCategory.toTopInitialVertex _
+  have hx := hp.bijOn_simplexMap_apply σ x
+  have maps : Set.MapsTo ((TopCat.toSSet.map f).app n) ((TopCat.toSSet.map p).app n ⁻¹' {σ})
+      ((TopCat.toSSet.map p).app n ⁻¹' {σ}) := by
+    intro τ hτ
+    simp only [Set.mem_preimage, Set.mem_singleton_iff] at hτ ⊢
+    rw [← hτ, ← NatTrans.comp_app_apply, ← Functor.map_comp, hfp]
+  refine ⟨maps, fun τ₁ hτ₁ τ₂ hτ₂ h ↦ hx.injOn hτ₁ hτ₂ (hf.1 ?_), fun τ' hτ' ↦ ?_⟩
+  · simpa using congr_arg (fun τ ↦ simplexMap τ x) h
+  · -- lift `σ` through a preimage under `f` of the value of `τ'` at `x`
+    obtain ⟨e, he⟩ := hf.2 (simplexMap τ' x)
+    have hpe : e ∈ p ⁻¹' {simplexMap σ x} := by
+      have hτ'x := hx.mapsTo hτ'
+      simp only [Set.mem_preimage, Set.mem_singleton_iff] at hτ'x ⊢
+      rw [← hτ'x, ← he, ← ConcreteCategory.comp_apply, hfp]
+    obtain ⟨τ, hτ, hτx⟩ := hx.surjOn hpe
+    refine ⟨τ, hτ, hx.injOn (maps hτ) hτ' ?_⟩
+    simpa [hτx] using he
 
 end Lifts
 
@@ -215,6 +248,37 @@ theorem homologyMap_singularTransfer_comp_homologyMap [CategoryWithHomology C]
   rw [← HomologicalComplex.homologyMap_comp, singularTransfer_comp_chainComplexMap hp hfin R hd]
   exact (HomologicalComplex.homologyFunctor C _ n).map_nsmul.trans
     (congrArg (d • ·) ((HomologicalComplex.homologyFunctor C _ n).map_id _))
+
+/-- **The transfer is invariant under deck transformations**: `f_* ∘ transfer = transfer` on
+singular chains for every bijective self-map `f` of `E` over `B`, since `f` permutes the lifts of
+each singular simplex. -/
+theorem singularTransfer_comp_chainComplexMap_of_comp_eq (hp : IsCoveringMap p)
+    (hfin : ∀ b, Finite ↥(p ⁻¹' {b})) (R : C) {f : E ⟶ E} (hf : Function.Bijective f)
+    (hfp : f ≫ p = p) :
+    hp.singularTransfer hfin R ≫ SSet.chainComplexMap (TopCat.toSSet.map f) R =
+      hp.singularTransfer hfin R := by
+  ext n σ
+  rw [HomologicalComplex.comp_f, ιChainComplex_singularTransfer_f_assoc, Preadditive.sum_comp,
+    ιChainComplex_singularTransfer_f]
+  simp only [SSet.ι_chainComplexMap_f]
+  have hbij := hp.bijOn_toSSet_map_app_of_comp_eq hf hfp σ
+  refine Finset.sum_nbij ((TopCat.toSSet.map f).app _) (fun τ hτ ↦ ?_)
+    (fun τ₁ hτ₁ τ₂ hτ₂ h ↦ ?_) (fun τ' hτ' ↦ ?_) fun _ _ ↦ rfl
+  · simpa using hbij.mapsTo (by simpa using hτ)
+  · exact hbij.injOn (by simpa using hτ₁) (by simpa using hτ₂) h
+  · obtain ⟨τ, hτ, rfl⟩ := hbij.surjOn (by simpa using hτ')
+    exact ⟨τ, by simpa using hτ, rfl⟩
+
+/-- **The transfer is invariant under deck transformations**: `f_* ∘ transfer = transfer` on
+singular homology for every bijective self-map `f` of `E` over `B`. -/
+theorem homologyMap_singularTransfer_comp_homologyMap_of_comp_eq [CategoryWithHomology C]
+    (hp : IsCoveringMap p) (hfin : ∀ b, Finite ↥(p ⁻¹' {b})) (R : C) {f : E ⟶ E}
+    (hf : Function.Bijective f) (hfp : f ≫ p = p) (n : ℕ) :
+    HomologicalComplex.homologyMap (hp.singularTransfer hfin R) n ≫
+        SSet.homologyMap (TopCat.toSSet.map f) R n =
+      HomologicalComplex.homologyMap (hp.singularTransfer hfin R) n := by
+  rw [← HomologicalComplex.homologyMap_comp,
+    singularTransfer_comp_chainComplexMap_of_comp_eq hp hfin R hf hfp]
 
 end IsCoveringMap
 

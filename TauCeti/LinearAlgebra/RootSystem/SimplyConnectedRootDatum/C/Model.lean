@@ -125,14 +125,14 @@ are a basis of the classical lattice. -/
 lemma weight_dotProduct_coweight {a c : ℕ} (ha : a < n) :
     weight n a ⬝ᵥ coweight n c = if a = c then 1 else 0 := by
   have key : ∀ b : ℕ, ∑ k : Fin n, (if b = (k : ℕ) then (1 : ℤ) else 0) *
-      (if c ≤ (k : ℕ) then 1 else 0) = if h : b < n then (if c ≤ b then (1 : ℤ) else 0) else 0 := by
+      (if c ≤ (k : ℕ) then 1 else 0) = if _ : b < n then (if c ≤ b then (1 : ℤ) else 0) else 0 := by
     intro b
     simp only [ite_mul, one_mul, zero_mul]
     simpa only [Nat.add_zero, Nat.sub_zero, Nat.zero_le, and_true] using
       sum_ite_val_add (fun k : Fin n => if c ≤ (k : ℕ) then (1 : ℤ) else 0) b 0
   have key' : ∀ b : ℕ, ∑ k : Fin n, (if b = (k : ℕ) + 1 then (1 : ℤ) else 0) *
       (if c ≤ (k : ℕ) then 1 else 0)
-        = if h : b - 1 < n ∧ 1 ≤ b then (if c ≤ b - 1 then (1 : ℤ) else 0) else 0 := by
+        = if _ : b - 1 < n ∧ 1 ≤ b then (if c ≤ b - 1 then (1 : ℤ) else 0) else 0 := by
     intro b
     simp only [ite_mul, one_mul, zero_mul]
     exact sum_ite_val_add (fun k : Fin n => if c ≤ (k : ℕ) then (1 : ℤ) else 0) b 1
@@ -349,7 +349,7 @@ lemma abs_pairRoot_dotProduct_pairCoroot_le_two {x y p q : Signed n}
     · rw [pairCoroot_of_ne hpq_ne, dotProduct_add,
         signedWeight_dotProduct_signedCoweight,
         signedWeight_dotProduct_signedCoweight, abs_le]
-      have hp_ne_neg_q : p ≠ signedNeg q := ne_signedNeg_of_ne_signedNeg hpq
+      have _ : p ≠ signedNeg q := ne_signedNeg_of_ne_signedNeg hpq
       have hnegp_ne_negq : signedNeg p ≠ signedNeg q := by
         intro h
         exact hpq_ne (by simpa using congrArg signedNeg h)

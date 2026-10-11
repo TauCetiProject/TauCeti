@@ -98,7 +98,6 @@ theorem multivariateGaussianPDF_def (m : EuclideanSpace ℝ ι) (S : Matrix ι �
 covariance, where `Matrix.PosDef.det_pos` supplies the hypothesis. -/
 theorem multivariateGaussianPDFReal_pos (hdet : 0 < S.det) (m : EuclideanSpace ℝ ι)
     (x : EuclideanSpace ℝ ι) : 0 < multivariateGaussianPDFReal m S x := by
-  have hπ : 0 < 2 * π := by positivity
   rw [multivariateGaussianPDFReal]
   positivity
 

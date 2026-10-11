@@ -245,7 +245,7 @@ private theorem under_fixedField_injOn_frobenius
       Q.under (𝓞 ↥(fixedField (Subgroup.zpowers sigma))))
       {Q : HeightOneSpectrum (𝓞 L) |
         Q.under (𝓞 K) = p ∧ IsArithFrobAt (𝓞 K) sigma Q.asIdeal} := by
-  intro Q hQ R hR hQR
+  intro Q hQ R _ hQR
   apply HeightOneSpectrum.ext
   let _ : R.asIdeal.LiesOver
       (Q.asIdeal.under (𝓞 ↥(fixedField (Subgroup.zpowers sigma)))) :=

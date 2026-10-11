@@ -44,8 +44,6 @@ an existence theorem, and it is why a norm subgroup can only determine an abelia
 
 ## Main statements
 
-* `TauCeti.ClassFieldTheory.NormalLayer.toAddMonoidHom_norm`: the norm of a layer is the norm
-  `Formation.levelNorm` between its top and ground levels.
 * `TauCeti.ClassFieldTheory.NormalLayer.norm_apply_coe_eq_explicitCor0Le`: the norm of a layer
   is relative degree-zero corestriction from its top subgroup to its ground subgroup.
 * `TauCeti.ClassFieldTheory.LayerRefinement.topNorm_trans`: top-level norms compose along a
@@ -80,18 +78,6 @@ attribute [local instance] TopRep.distribMulAction Subgroup.fintypeQuotientOfFin
 namespace NormalLayer
 
 variable (L : NormalLayer G) (F : Formation G)
-
-/-- The norm `N_{U/V} : A^V → A^U` of a layer is the norm `Formation.levelNorm` between its top
-and ground levels. -/
-theorem toAddMonoidHom_norm : (L.norm F).toAddMonoidHom = F.levelNorm L.top_le_ground := by
-  ext x
-  rw [LinearMap.toAddMonoidHom_coe, norm_apply_coe, Formation.levelNorm_apply_coe,
-    finsum_eq_sum_of_fintype]
-  -- Both sides sum over the cosets `U ⧸ V`, which is the Galois group of the layer; the term of a
-  -- coset is the action of any of its representatives.
-  refine Fintype.sum_equiv (Equiv.refl _) _ _ fun γ ↦ ?_
-  conv_lhs => rw [← QuotientGroup.out_eq' γ]
-  rw [Equiv.refl_apply, NormalLayer.rep_ρ_mk_apply_coe]
 
 -- `dsimp% only` on the left-hand side, as explained in the implementation notes of
 -- `Formation/Basic.lean`.

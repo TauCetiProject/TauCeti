@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Group.PowerClassGroup
+public import TauCeti.Algebra.Group.PowerClassGroup.Basic
 public import TauCeti.Algebra.GroupWithZero.Units.Basic
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Extension
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Norm
+public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Map
 public import TauCeti.FieldTheory.GaloisCohomology.Coefficients
 public import TauCeti.FieldTheory.GaloisCohomology.Hilbert90
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
@@ -77,6 +78,8 @@ corestriction on the invariant `σ b` of the fixing subgroup is the product of t
 * `TauCeti.kummerCoeffPow`: the power map `μₙ → μₘ`, `ζ ↦ ζ ^ (n / m)`, for `m ∣ n`.
 * `TauCeti.kummerRes`: restriction `H¹(G_K, μₙ) → H¹(G_L, μₙ)` along a `K`-embedding
   `σ : L →ₐ[K] Kˢ`, with its coefficient identification `TauCeti.kummerCoeffMap`.
+* `TauCeti.kummerCoeffBaseChange`: transport of roots-of-unity coefficients along an embedding
+  of separable closures over an arbitrary field extension.
 * `TauCeti.kummerCor`: corestriction `H¹(G_L, μₙ) → H¹(G_K, μₙ)` along a `K`-embedding of a
   finite extension, with its coefficient identifications `TauCeti.kummerCoeffMapSymm` and
   `TauCeti.unitsCoeffMapSymm`; `TauCeti.unitsCoeffMap` is the inverse of the latter.
@@ -100,6 +103,8 @@ corestriction on the invariant `σ b` of the fixing subgroup is the product of t
   `TauCeti.explicitCoeff1_kummerCoeffPow_surjective`: it is surjective on `H¹`.
 * `TauCeti.explicitIso_kummerMap`: the explicit and canonical Kummer maps agree under the
   degree-one comparison isomorphism.
+* `TauCeti.explicitMap1_kummerMap`: pullback along an arbitrary field extension carries the
+  Kummer class of a unit to the Kummer class of its image.
 * `TauCeti.kummerIso_res`: the Kummer isomorphism is natural for restriction along a field
   extension, restriction corresponding to the map of power classes `Kˣ ⧸ (Kˣ)ⁿ → Lˣ ⧸ (Lˣ)ⁿ`;
   `TauCeti.kummerRes_kummerMap` is the same statement on units.
@@ -684,6 +689,70 @@ theorem kummerIso_res (hn : IsUnit (n : K))
   | H a => rw [kummerIso_mk, powerClassMap_mk, kummerIso_mk, kummerRes_kummerMap]
 
 end Restriction
+
+/-! ### Pullback along an arbitrary field extension -/
+
+section BaseChange
+
+variable {K : Type*} [Field K] {L : Type*} [Field L] [Algebra K L]
+variable (n : ℕ) (τ : SeparableClosure K →ₐ[K] SeparableClosure L)
+
+/-- The coefficient map on roots of unity induced by an embedding of separable closures. -/
+def kummerCoeffBaseChange : KummerCoeff K n →+ KummerCoeff L n :=
+  (restrictRootsOfUnity τ n).toAdditive
+
+/-- The coefficient map applies the embedding to the underlying root of unity. -/
+@[simp]
+theorem toMul_kummerCoeffBaseChange (x : KummerCoeff K n) :
+    ((kummerCoeffBaseChange n τ x).toMul : (SeparableClosure L)ˣ) =
+      Units.map (τ : SeparableClosure K →* SeparableClosure L) x.toMul :=
+  (rfl)
+
+/-- The roots-of-unity coefficient map is equivariant along the induced Galois map. -/
+theorem kummerCoeffBaseChange_smul (g : AbsoluteGaloisGroup L) (x : KummerCoeff K n) :
+    kummerCoeffBaseChange n τ (absoluteGaloisGroupMap τ g • x) =
+      g • kummerCoeffBaseChange n τ x := by
+  apply Additive.toMul.injective
+  apply Subtype.ext
+  apply Units.ext
+  simp [kummerCoeffBaseChange, absoluteGaloisGroupMap_commutes]
+
+/-- Pullback transports the class of a chosen Kummer cocycle to the class of its
+transported root. This statement does not require the exponent to be invertible. -/
+theorem explicitMap1_kummerCocycleClass {a : Kˣ} {α : (SeparableClosure K)ˣ}
+    (hα : α ^ n = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a) :
+    explicitMap1 (AbsoluteGaloisGroup K) (KummerCoeff K n) (AbsoluteGaloisGroup L)
+      (KummerCoeff L n) (absoluteGaloisGroupMap τ) (kummerCoeffBaseChange n τ)
+      continuous_of_discreteTopology (kummerCoeffBaseChange_smul n τ)
+      (kummerCocycleClass hα) = kummerCocycleClass (a := Units.map (algebraMap K L : K →* L) a)
+        (α := Units.map (τ : SeparableClosure K →* SeparableClosure L) α) (by
+          rw [← map_pow, hα]
+          apply Units.ext
+          simp [← IsScalarTower.algebraMap_apply]) := by
+  simp only [kummerCocycleClass_def, H1pi, QuotientAddGroup.mk'_apply, explicitMap1_mk]
+  congr 1
+  apply Subtype.ext
+  funext g
+  apply Additive.toMul.injective
+  apply Subtype.ext
+  apply Units.ext
+  simp [cocyclesMap1_apply, absoluteGaloisGroupMap_commutes]
+
+/-- Pullback along an arbitrary field extension carries a Kummer class to the Kummer class
+of the image of its unit. -/
+theorem explicitMap1_kummerMap (hn : IsUnit (n : K)) (a : Kˣ) :
+    explicitMap1 (AbsoluteGaloisGroup K) (KummerCoeff K n) (AbsoluteGaloisGroup L)
+      (KummerCoeff L n) (absoluteGaloisGroupMap τ) (kummerCoeffBaseChange n τ)
+      continuous_of_discreteTopology (kummerCoeffBaseChange_smul n τ)
+      (kummerMap K n hn a).toAdd =
+        (kummerMap L n (by simpa using hn.map (algebraMap K L))
+          (Units.map (algebraMap K L : K →* L) a)).toAdd := by
+  have hnL : IsUnit (n : L) := by simpa using hn.map (algebraMap K L)
+  obtain ⟨α, hα⟩ := exists_pow_eq_units_map hn a
+  rw [kummerMap_eq_kummerCocycleClass hn hα, explicitMap1_kummerCocycleClass n τ hα,
+    ← kummerMap_eq_kummerCocycleClass hnL]
+
+end BaseChange
 
 /-! ### Corestriction along a finite extension, and the norm -/
 

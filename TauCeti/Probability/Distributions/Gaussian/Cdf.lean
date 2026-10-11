@@ -56,7 +56,6 @@ theorem intervalIntegral_gaussianPDFReal (m : ℝ) {v : ℝ≥0} (a b : ℝ) :
   by_cases hv : v = 0
   · subst v
     simp
-  have hv0 : (0 : ℝ) < v := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hv)
   set c : ℝ := √(2 * (v : ℝ)) with hcdef
   have hc : 0 < c := Real.sqrt_pos.2 (by positivity)
   have hc2 : c ^ 2 = 2 * (v : ℝ) := Real.sq_sqrt (by positivity)
@@ -94,7 +93,6 @@ theorem intervalIntegral_gaussianPDFReal (m : ℝ) {v : ℝ≥0} (a b : ℝ) :
 `(1 + erf ((x - m) / √(2 * v))) / 2`. -/
 theorem integral_Iic_gaussianPDFReal (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x : ℝ) :
     (∫ t in Iic x, gaussianPDFReal m v t) = (1 + Real.erf ((x - m) / √(2 * (v : ℝ)))) / 2 := by
-  have hv0 : (0 : ℝ) < v := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hv)
   have hc : 0 < √(2 * (v : ℝ)) := Real.sqrt_pos.2 (by positivity)
   have hlim := MeasureTheory.intervalIntegral_tendsto_integral_Iic (μ := volume)
     (f := gaussianPDFReal m v) x (integrable_gaussianPDFReal m v).integrableOn

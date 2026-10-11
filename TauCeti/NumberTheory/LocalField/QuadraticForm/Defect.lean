@@ -510,8 +510,8 @@ theorem defectExponent_eq_two_mul_natCastValuation_or_odd (h2 : (2 : K) ≠ 0) {
       ∃ k < natCastValuation K 2 h2, defectExponent u = ((2 * k + 1 : ℕ) : ℤ) := by
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (R := 𝒪[K])
   obtain ⟨ξ, x, hx, hxd⟩ := exists_defectExponent_eq hsq
-  set e := natCastValuation K 2 h2 with he
-  set d := (normalizedValuation K x).toAdd with hd
+  set e := natCastValuation K 2 h2
+  set d := (normalizedValuation K x).toAdd
   -- The valuation of `u` is one of the approximation orders, so `0 ≤ δ(u)`.
   have hd0 : 0 ≤ d := by
     have h := toAdd_normalizedValuation_le_defectExponent u

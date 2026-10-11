@@ -440,7 +440,8 @@ section CommRing
 variable (k : Type*) [CommRing k] {n : ℕ}
 
 /-- **Every path of length at least `4 n` vanishes in the signless algebra of `Dₙ`.** -/
-@[simp]
+-- Not `@[simp]`: plain `simp` first rewrites the diagram's rank inside the left-hand side's
+-- types, after which the lemma no longer matches; use it with `exact`.
 theorem signlessPreprojectiveMk_D_ofPath_eq_zero_of_le
     (x : Quiver.TotalPath (DoubledQuiver (diagramGraph (DynkinType.D n).cartanMatrix)))
     (hx : 4 * n ≤ x.2.2.length) :
@@ -461,7 +462,8 @@ variable (o : Orientation (diagramGraph (DynkinType.D n).cartanMatrix))
 
 /-- **Every path of length at least `4 n` vanishes in the preprojective algebra of `Dₙ`**, for
 every orientation of the `Dₙ` graph. -/
-@[simp]
+-- Not `@[simp]`: plain `simp` first rewrites the diagram's rank inside the left-hand side's
+-- types, after which the lemma no longer matches; use it with `exact`.
 theorem preprojectiveMk_D_ofPath_eq_zero_of_le
     (x : Quiver.TotalPath
       (Symmetrify (OrientedQuiver (diagramGraph (DynkinType.D n).cartanMatrix) o)))

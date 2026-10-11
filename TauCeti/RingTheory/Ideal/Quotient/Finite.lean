@@ -90,7 +90,7 @@ theorem span_range_prod_quotient_span_pow_eq_top {s : Set R} (htop : Algebra.adj
         simp [Ideal.Quotient.eq_zero_iff_mem.mpr hmem]
     | zero => simp
     | add a b ha hb iha ihb => simpa [map_add] using Submodule.add_mem _ iha ihb
-    | smul c a ha ih =>
+    | smul c a _ ih =>
       have hsmul : Ideal.Quotient.mk (Ideal.span s ^ n) (c • a)
           = c • Ideal.Quotient.mk (Ideal.span s ^ n) a :=
         (Ideal.Quotient.mkₐ A (Ideal.span s ^ n)).toLinearMap.map_smul c a

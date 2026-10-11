@@ -414,7 +414,7 @@ theorem hasDenominatorPower_of_isOpen_span [IsTopologicalRing A]
     (hT : IsOpen (Ideal.span (T : Set A) : Set A)) :
     HasDenominatorPower P T s S := by
   classical
-  obtain ⟨n, hn⟩ := P.exists_forall_mem_idealImage_exists_sum_eq T hT
+  obtain ⟨n, hn⟩ := P.exists_forall_mem_idealImage_exists_sum_eq T hT 1
   rw [hasDenominatorPower_iff]
   refine ⟨n, fun b hb ↦ ?_⟩
   obtain ⟨w, hw, hsum⟩ := hn (b : A) ((P.mem_idealImage n).mpr ⟨b, hb, rfl⟩)

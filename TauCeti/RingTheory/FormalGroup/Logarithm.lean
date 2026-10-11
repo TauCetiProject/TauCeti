@@ -42,6 +42,8 @@ power series that is additive along `F`.
 
 * `FormalGroup.subst_invariantDifferential_mul_pderiv`: **the invariant differential is
   invariant**, `P(F(X, Y)) · F_X(X, Y) = P(X)`.
+* `FormalGroup.subst_invariantDifferential_mul_pderiv_one`: for commutative `F`, the same in the
+  second variable, `P(F(X, Y)) · F_Y(X, Y) = P(Y)`.
 * `FormalGroup.subst_toPowerSeries_log`: `log_F(F(X, Y)) = log_F(X) + log_F(Y)`.
 * `FormalGroup.subst_subst_toPowerSeries_log`: the same at any pair of power series that can be
   substituted.
@@ -169,6 +171,28 @@ theorem subst_invariantDifferential_mul_pderiv :
         rw [mul_assoc, mul_assoc, mul_comm (PowerSeries.subst (X 0) F.derivZeroX), h₁ _ hX,
           mul_one]
     _ = _ := by rw [pderiv_mul_subst_derivZeroX, h₁ _ hF, one_mul]
+
+/-- **The invariant differential is invariant in the second variable** for a commutative formal
+group law: `P(F(X, Y)) · F_Y(X, Y) = P(Y)`, where `F_Y` is the partial derivative of `F` in its
+second variable. -/
+theorem subst_invariantDifferential_mul_pderiv_one [F.IsComm] :
+    PowerSeries.subst F.toPowerSeries F.invariantDifferential * pderiv 1 F.toPowerSeries =
+      PowerSeries.subst (X 1) F.invariantDifferential := by
+  have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
+  have hsw : HasSubst (![X 1, X 0] : Fin 2 → MvPowerSeries (Fin 2) R) :=
+    hasSubst_of_constantCoeff_zero fun s ↦ by fin_cases s <;> simp
+  have hc : F.toPowerSeries =
+      subst (![X 1, X 0] : Fin 2 → MvPowerSeries (Fin 2) R) F.toPowerSeries := IsComm.comm
+  -- `F_Y(X, Y) = F_X(Y, X)`, differentiating `F(X, Y) = F(Y, X)` in `Y`
+  have hY : pderiv 1 F.toPowerSeries = subst ![X 1, X 0] (pderiv 0 F.toPowerSeries) := by
+    have := congrArg (pderiv (R := R) 1) hc
+    rw [pderiv_subst hsw] at this
+    simpa [Fin.sum_univ_two, pderiv_X_of_ne] using this
+  -- and the invariance `P(F(X, Y)) · F_X(X, Y) = P(X)` read at `(Y, X)`
+  have := congrArg (subst (![X 1, X 0] : Fin 2 → MvPowerSeries (Fin 2) R))
+    F.subst_invariantDifferential_mul_pderiv
+  rwa [subst_mul hsw, subst_powerSeriesSubst hsw hF, ← hc, ← hY,
+    subst_powerSeriesSubst hsw (PowerSeries.HasSubst.X 0), subst_X hsw] at this
 
 /-! ### The logarithm -/
 

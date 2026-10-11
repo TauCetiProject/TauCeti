@@ -95,7 +95,6 @@ theorem vertexPreReflection_apply_self_neg_iff_eq_single (hpd : (titsForm Q).Pos
       conv_lhs => rw [hdr]
       rw [titsForm_add, QuadraticMap.map_smul, titsForm_single_of_isEmpty Q hloop, map_smul,
         hpolar, smul_eq_mul, smul_eq_mul, mul_one]
-    have hkey : titsForm Q r + d i * (d i - S) = 1 := by rw [← hroot, hexpand]; ring
     -- positive definiteness pins both summands
     have hrnn : 0 ≤ titsForm Q r := hpd.nonneg r
     have hprod : 1 ≤ d i * (d i - S) := by nlinarith

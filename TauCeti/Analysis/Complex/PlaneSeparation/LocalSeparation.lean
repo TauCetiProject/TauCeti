@@ -187,7 +187,7 @@ theorem exists_ball_openSegment_eq_line {a b w : ℂ}
     simpa only [Complex.real_smul] using hwt.symm
   constructor
   · intro hseg
-    obtain ⟨s, hs, hzs⟩ := (openSegment_eq_image' ℝ a b ▸ hseg)
+    obtain ⟨s, _, hzs⟩ := (openSegment_eq_image' ℝ a b ▸ hseg)
     have hz' : z = a + (s : ℂ) * (b - a) := by
       simpa only [Complex.real_smul] using hzs.symm
     rw [hz', hw']

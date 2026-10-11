@@ -188,7 +188,6 @@ private theorem hasDerivAt_perronPrimitive (hc : c ≠ 0) (t : ℝ) :
     exact hsq.log hpos.ne'
   have h := harctan.ofReal_comp.sub (hlog.ofReal_comp.const_mul (I / 2))
   refine h.congr_deriv ?_
-  have hne : ((c : ℂ) + t * I) ≠ 0 := ofReal_add_mul_I_ne_zero_of_re hc t
   have hposC : ((c : ℂ) ^ 2 + (t : ℂ) ^ 2) ≠ 0 := by
     exact_mod_cast (by exact_mod_cast hpos.ne' : ((c ^ 2 + t ^ 2 : ℝ) : ℂ) ≠ 0)
   rw [perronIntegrand_one]
@@ -556,7 +555,6 @@ private theorem norm_integral_perronFn_horizontal_le_of_one_lt (hx1 : 1 < x) {a 
   rw [hL, integral_rpow_const_base hx hx1.ne']
   have hxa : 0 < x ^ a := Real.rpow_pos_of_pos hx _
   have hlog : 0 < Real.log x := Real.log_pos hx1
-  have habs : 0 < |u| := abs_pos.2 hu
   calc (x ^ c - x ^ a) / Real.log x / |u| ≤ x ^ c / Real.log x / |u| := by
         gcongr
         linarith

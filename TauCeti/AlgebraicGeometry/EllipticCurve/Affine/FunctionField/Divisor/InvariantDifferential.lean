@@ -246,14 +246,7 @@ theorem weilDifferentialDivisor_invariantDifferential :
       coe_weilDifferentialSpaceModule_smul, Units.val_mk0]
   -- `(ω)` has degree `2g - 2 = 0`, so it suffices to show that `(ω) ≤ 0`.
   refine Divisor.eq_of_le_of_degree_eq hF ?_ ?_
-  · -- The divisor depends only on the differential, not on the proofs it carries.
-    have hcongr {ω₁ ω₂ : Module.Dual F ↥(repartitionSpace F W.FunctionField)} (h : ω₁ = ω₂)
-        {hm₁ : ω₁ ∈ weilDifferentialSpace F W.FunctionField} {hn₁ : ω₁ ≠ 0}
-        {hm₂ : ω₂ ∈ weilDifferentialSpace F W.FunctionField} {hn₂ : ω₂ ≠ 0} :
-        weilDifferentialDivisor hF hex hm₁ hn₁ = weilDifferentialDivisor hF hex hm₂ hn₂ := by
-      subst h
-      rfl
-    rw [(hcongr hω).trans hD, WeilDivisor.le_iff]
+  · rw [(weilDifferentialDivisor_congr hF hex hω _ _ _ _).trans hD, WeilDivisor.le_iff]
     intro P
     have h := differentExponent_le W P
     simp only [WeilDivisor.coeff_add, WeilDivisor.coeff_zsmul, Divisor.coeff_principal,

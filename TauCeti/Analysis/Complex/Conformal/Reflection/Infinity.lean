@@ -435,7 +435,6 @@ theorem tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_comp_neg_inv
   have hdH : ∀ w ∈ V, deriv H w ≠ 0 := fun w hw => deriv_ne_zero_of_injOn hHd hV hHi hw
   -- So `f (-1 / w) = q (-1 / H w)` on the upper part of `V`.
   set T := V ∩ upperHalfPlaneSet
-  have hT : IsOpen T := hV.inter isOpen_upperHalfPlaneSet
   have hFq : EqOn (fun w => f (-w⁻¹)) (fun w => q (-(H w)⁻¹)) T := by
     intro w hw
     simpa only [(hHT w hw.1 hw.2).2] using hgq (hHT w hw.1 hw.2).1

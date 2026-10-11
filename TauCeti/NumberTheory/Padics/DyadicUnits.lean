@@ -376,8 +376,8 @@ theorem exists_topologicalClosure_zpowers_eq_of_isClosed_of_neg_one_notMem {A : 
     rw [Subgroup.zpowers_one_eq_bot]
     exact Subgroup.topologicalClosure_minimal _ le_rfl
       (by rw [Subgroup.coe_bot]; exact isClosed_singleton)
-  rcases closedSubgroup_units_two_classification hA hA' with ⟨f, hf, rfl⟩ | ⟨f, hf, rfl⟩ | rfl |
-    ⟨f, u, hf, hu, rfl⟩
+  rcases closedSubgroup_units_two_classification hA hA' with ⟨f, hf, rfl⟩ | ⟨f, _, rfl⟩ | rfl |
+    ⟨f, u, _, _, rfl⟩
   · exact exists_topologicalClosure_zpowers_eq_unitsPrincipal (by omega) fun _ ↦ hf
   · exact (h1 (neg_one_mem_unitsPlusMinus f)).elim
   · exact (h1 (Subgroup.mem_zpowers _)).elim

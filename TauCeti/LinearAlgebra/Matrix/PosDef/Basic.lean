@@ -80,7 +80,6 @@ private theorem posDef_map_intCast_of_finite [Finite n] {A : Matrix n n ℤ} (hA
     simpa using congrArg (fun m : ℤ ↦ (m : ℚ)) (hA.isHermitian.apply i j)
   -- Clear the denominators of `x`, producing a nonzero integer vector `z = c • x`.
   obtain ⟨c, z, hc0, hzne, hz⟩ := exists_intCast_eq_mul_of_ne_zero hx
-  have hcQ : (c : ℚ) ≠ 0 := Int.cast_ne_zero.mpr hc0
   -- The two quadratic forms differ by the square of the common denominator.
   have key : ((star z ⬝ᵥ (A *ᵥ z) : ℤ) : ℚ) =
       (c : ℚ) ^ 2 * (star x ⬝ᵥ ((A.map (Int.cast : ℤ → ℚ)) *ᵥ x)) := by

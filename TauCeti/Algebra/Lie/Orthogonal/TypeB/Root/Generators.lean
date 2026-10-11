@@ -518,6 +518,15 @@ theorem typeBSimpleNegativeRootMatrix_mem_typeB (i : Fin (n + 1)) :
     exact typeBDifferenceRootMatrix_mem_typeB (K := K) j.succ j.castSucc
       (ne_of_gt j.castSucc_lt_succ)
 
+/-- Every Bourbaki simple coroot matrix belongs to the split type-`B` Lie algebra. -/
+theorem typeBSimpleCorootMatrix_mem_typeB (i : Fin (n + 1)) :
+    typeBSimpleCorootMatrix (K := K) i ∈ LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K := by
+  refine Fin.lastCases ?_ (fun j => ?_) i
+  · rw [typeBSimpleCorootMatrix_last, typeBShortCorootMatrix]
+    exact typeBDiagonalMatrix_mem_typeB _
+  · rw [typeBSimpleCorootMatrix_castSucc, typeBDifferenceCorootMatrix]
+    exact typeBDiagonalMatrix_mem_typeB _
+
 /-- The positive simple-root vector `eᵢ` for the Bourbaki pinning of `Bₙ₊₁`. -/
 def typeBSimpleRootGenerator (i : Fin (n + 1)) :
     LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K :=
@@ -531,8 +540,7 @@ def typeBSimpleNegativeRootGenerator (i : Fin (n + 1)) :
 /-- The simple coroot `hᵢ` for the Bourbaki pinning of `Bₙ₊₁`. -/
 def typeBSimpleCorootGenerator (i : Fin (n + 1)) :
     LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K :=
-  Fin.lastCases (typeBShortCorootGenerator (Fin.last n))
-    (fun j => typeBDifferenceCorootGenerator j.castSucc j.succ (ne_of_lt j.castSucc_lt_succ)) i
+  ⟨typeBSimpleCorootMatrix i, typeBSimpleCorootMatrix_mem_typeB i⟩
 
 @[simp]
 theorem typeBSimpleRootGenerator_last :
@@ -566,12 +574,14 @@ theorem typeBSimpleNegativeRootGenerator_castSucc (j : Fin n) :
 theorem typeBSimpleCorootGenerator_last :
     typeBSimpleCorootGenerator (K := K) (Fin.last n) =
       typeBShortCorootGenerator (Fin.last n) := by
+  apply Subtype.ext
   simp [typeBSimpleCorootGenerator]
 
 @[simp]
 theorem typeBSimpleCorootGenerator_castSucc (j : Fin n) :
     typeBSimpleCorootGenerator (K := K) j.castSucc =
       typeBDifferenceCorootGenerator j.castSucc j.succ (ne_of_lt j.castSucc_lt_succ) := by
+  apply Subtype.ext
   simp [typeBSimpleCorootGenerator]
 
 @[simp]
@@ -593,8 +603,7 @@ theorem coe_typeBSimpleCorootGenerator (i : Fin (n + 1)) :
     (typeBSimpleCorootGenerator (K := K) i :
       Matrix (Unit ⊕ Fin (n + 1) ⊕ Fin (n + 1)) (Unit ⊕ Fin (n + 1) ⊕ Fin (n + 1)) K) =
       typeBSimpleCorootMatrix i := by
-  refine Fin.lastCases ?_ (fun j => ?_) i <;>
-    simp [typeBSimpleCorootGenerator, typeBSimpleCorootMatrix]
+  simp [typeBSimpleCorootGenerator]
 
 /-- Every numbered simple coroot belongs to the split diagonal Cartan. -/
 theorem typeBSimpleCorootGenerator_mem_typeBDiagonalCartan (i : Fin (n + 1)) :

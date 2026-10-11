@@ -121,7 +121,7 @@ private theorem horseshoeData :
         length_le := by simp }⟩
   | S, hS, .base h₁, .step hQ₃ i₃ p₃ z₃ hc₃ r₃ => by
       -- The left resolution has ended; its remaining syzygy and all higher maps are zero.
-      obtain ⟨K, u, a, zu, v, w, zv, hc, hK, ha₁, ha₃, hu₁, hu₃⟩ :=
+      obtain ⟨K, u, a, zu, v, w, zv, hc, hK, ha₁, ha₃, _, hu₃⟩ :=
         E.exists_conflation_biprod_of_conflation_of_projective hS
           (E.conflation_zero_id S.X₁) hc₃ hQ₃
       obtain ⟨h⟩ := horseshoeData hK (.base (E.isProjective.prop_zero)) r₃

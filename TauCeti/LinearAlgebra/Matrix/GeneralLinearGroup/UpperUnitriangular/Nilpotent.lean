@@ -63,7 +63,7 @@ private def VanishesBelow (r : ℕ) (M : Matrix (Fin n) (Fin n) R) : Prop :=
 
 private theorem VanishesBelow.zero (r : ℕ) :
     VanishesBelow (R := R) r (0 : Matrix (Fin n) (Fin n) R) := by
-  intro i j hij
+  intro i j _
   rfl
 
 private theorem VanishesBelow.add {r : ℕ} {M N : Matrix (Fin n) (Fin n) R}

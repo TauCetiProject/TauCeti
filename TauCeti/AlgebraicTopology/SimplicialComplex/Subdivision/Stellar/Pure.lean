@@ -43,7 +43,7 @@ theorem IsPure.stellarSubdivision (h : IsPure K n) (hv : ({v} : Finset ι) ∉ K
     IsPure (stellarSubdivision K σ v) n := by
   rw [isPure_iff]
   intro ρ hρ
-  rcases mem_stellarSubdivision_iff.mp hρ with ⟨hvρ, hρK, havoid⟩ | ⟨hvρ, havoid, hρK⟩
+  rcases mem_stellarSubdivision_iff.mp hρ with ⟨_, hρK, havoid⟩ | ⟨hvρ, havoid, hρK⟩
   · obtain ⟨τ, hτ, hρτ, hcard⟩ := h.exists_coface hρK
     by_cases hστ : σ ⊆ τ
     · obtain ⟨w, hw, hwρ⟩ := not_subset.mp havoid

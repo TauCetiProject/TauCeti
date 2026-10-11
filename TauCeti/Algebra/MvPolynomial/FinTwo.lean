@@ -90,7 +90,6 @@ theorem exists_sum_coeff_mul_pow_ne_zero {φ : MvPolynomial (Fin 2) k} (hφ : φ
     · simp only [↓reduceIte] at this
       exact (MvPolynomial.mem_support_iff.mp hs₀) this
     · have h1 := (Finset.mem_filter.1 hs).2
-      have h2 := (Finset.mem_filter.1 hs₀S).2
       ext i
       fin_cases i <;> simp <;> omega
   obtain ⟨c, hc⟩ := g.exists_eval_ne_zero_of_natDegree_lt_card hg

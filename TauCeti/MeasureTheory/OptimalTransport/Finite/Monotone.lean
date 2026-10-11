@@ -166,7 +166,7 @@ theorem exists_isMonotone_forall_cost_le (c : ι × κ → ℝ) (μ : PMF ι) (�
   by_contra hj
   have hj : j₁ < j₂ := lt_of_not_ge hj
   -- Uncrossing preserves the optimal cost but strictly decreases the negative product score.
-  obtain ⟨B, δ, hδ0, hδ, hB, hcost, hle, -⟩ :=
+  obtain ⟨B, δ, _, hδ, hB, _, hle, -⟩ :=
     A.exists_uncross_cost_le c hi.ne hj.ne (hc hi hj)
   have hδpos : 0 < δ := by
     rw [hδ]

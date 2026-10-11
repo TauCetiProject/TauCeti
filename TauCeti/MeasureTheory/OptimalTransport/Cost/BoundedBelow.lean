@@ -220,7 +220,7 @@ theorem lowerSemicontinuous_planCostBddBelow
       (fun π : Coupling μp νp =>
         ((∫⁻ z, h.residual z ∂(π.1.toMeasure) : ENNReal) : EReal) + A + B) Set.univ := by
     apply hsub.comp continuous_subtype_val.continuousOn
-    intro π hπ; simp
+    intro π _; simp
   have hcomp' : LowerSemicontinuous
       (fun π : Coupling μp νp =>
         ((∫⁻ z, h.residual z ∂(π.1.toMeasure) : ENNReal) : EReal) + A + B) :=
