@@ -14,16 +14,28 @@ public import Mathlib.CategoryTheory.Preadditive.Biproducts
 Suppose a complex has terms `Q`, `A ⊞ (U ⊞ Q)`, `U ⊞ B`, and `Z` in degrees
 `-3`, `-2`, `-1`, and `0`. In these coordinates its differentials are
 
-`(α, 0, -id)`, `((f,g), (-id,δ), α ≫ (f,g))`, and `(δ ≫ ε, ε)`.
+`(α, β, -id)`, `((f,g), (-id,δ), (α ≫ f - β, α ≫ g + β ≫ δ))`,
+and `(δ ≫ ε, ε)`.
 
 The two negative identity blocks cancel, leaving the three-term complex
 `A ⟶ B ⟶ Z`, with differentials `f ≫ δ + g` and `ε`. The corrected projection
 is `(id,0,α)` in degree `-2` and `(δ,id)` in degree `-1`; the corrected inclusion
 is `(id,f,0)` in degree `-2` and the second inclusion in degree `-1`. The homotopy
-is minus the projection to `Q` and minus the map from the first `U` to the second.
+is minus the projection to `Q` and minus the map from the second `U` (degree `-1`)
+to the first `U` (degree `-2`).
 
 The off-diagonal maps need not vanish. This is the two-block form of algebraic
-Gaussian elimination, packaged in the existing `Contraction` interface.
+Gaussian elimination, packaged in the existing `Contraction` interface. The term
+`β ≫ δ` in the final column is required by the square-zero identity. Coordinate
+isomorphisms put the two invertible blocks into the displayed negative-identity form.
+
+The homotopy is constructed directly as a degree `-1` cochain, using Mathlib
+`Cochain.mk` and `δ_v`, rather than a separate degreewise `Homotopy` builder.
+
+## References
+
+* D. Bar-Natan, *Fast Khovanov homology computations*, J. Knot Theory Ramifications
+  16 (2007), 243--255, Lemma 4.2, https://arxiv.org/abs/math/0606318.
 -/
 
 public section
@@ -57,6 +69,8 @@ structure FourTermCancellationData where
   targetVanish : ∀ n, n ≠ -2 → n ≠ -1 → n ≠ 0 → IsZero (L.X n)
   /-- The surviving component of the lowest differential. -/
   alpha : Q ⟶ A
+  /-- The component of the lowest differential into the cancellable `U`. -/
+  beta : Q ⟶ U
   /-- The first component of the middle differential on `A`. -/
   first : A ⟶ U
   /-- The second component of the middle differential on `A`. -/
@@ -67,11 +81,12 @@ structure FourTermCancellationData where
   epsilon : B ⟶ Z
   /-- The lowest differential has a negative identity in its `Q` component. -/
   d_minusThree : K.d (-3) (-2) ≫ minusTwoIso.hom =
-    minusThreeIso.hom ≫ biprod.lift alpha (biprod.lift 0 (-𝟙 Q))
+    minusThreeIso.hom ≫ biprod.lift alpha (biprod.lift beta (-𝟙 Q))
   /-- The middle differential has a negative identity in its `U` component. -/
   d_minusTwo : K.d (-2) (-1) ≫ minusOneIso.hom =
     minusTwoIso.hom ≫ biprod.desc (biprod.lift first second)
-      (biprod.desc (biprod.lift (-𝟙 U) delta) (alpha ≫ biprod.lift first second))
+      (biprod.desc (biprod.lift (-𝟙 U) delta) (biprod.lift (alpha ≫ first - beta)
+        (alpha ≫ second + beta ≫ delta)))
   /-- The highest source differential is compatible with the surviving `B` projection. -/
   d_minusOne : K.d (-1) 0 ≫ zeroIso.hom =
     minusOneIso.hom ≫ biprod.desc (delta ≫ epsilon) epsilon
@@ -87,10 +102,11 @@ variable {K L A U Q B Z} (h : FourTermCancellationData K L A U Q B Z)
 
 private abbrev pQ : A ⊞ (U ⊞ Q) ⟶ Q := biprod.snd ≫ biprod.snd
 private abbrev iU : U ⟶ A ⊞ (U ⊞ Q) := biprod.inl ≫ biprod.inr
-private def d3 : Q ⟶ A ⊞ (U ⊞ Q) := biprod.lift h.alpha (biprod.lift 0 (-𝟙 Q))
+private def d3 : Q ⟶ A ⊞ (U ⊞ Q) := biprod.lift h.alpha (biprod.lift h.beta (-𝟙 Q))
 private def d2 : A ⊞ (U ⊞ Q) ⟶ U ⊞ B :=
   biprod.desc (biprod.lift h.first h.second)
-    (biprod.desc (biprod.lift (-𝟙 U) h.delta) (h.alpha ≫ biprod.lift h.first h.second))
+    (biprod.desc (biprod.lift (-𝟙 U) h.delta) (biprod.lift (h.alpha ≫ h.first - h.beta)
+      (h.alpha ≫ h.second + h.beta ≫ h.delta)))
 private def d1 : U ⊞ B ⟶ Z := biprod.desc (h.delta ≫ h.epsilon) h.epsilon
 private def p2 : A ⊞ (U ⊞ Q) ⟶ A := biprod.fst + pQ ≫ h.alpha
 private def j2 : A ⟶ A ⊞ (U ⊞ Q) := biprod.inl + h.first ≫ iU
@@ -98,7 +114,7 @@ private def p1 : U ⊞ B ⟶ B := biprod.desc h.delta (𝟙 B)
 
 private theorem d3_p2 : d3 h ≫ p2 h = 0 := by simp [d3, p2, pQ, Category.assoc]
 private theorem d2_p1 : d2 h ≫ p1 h = p2 h ≫ (h.first ≫ h.delta + h.second) := by
-  ext <;> simp [d2, p1, p2, pQ, Category.assoc]
+  ext <;> simp [d2, p1, p2, pQ, Category.assoc, Preadditive.sub_comp]
 private theorem j2_d2 : j2 h ≫ d2 h = (h.first ≫ h.delta + h.second) ≫ biprod.inr := by
   ext <;> simp [j2, iU, d2, Category.assoc]
   abel
@@ -114,6 +130,7 @@ private theorem lower_contract :
     d2 h ≫ (-biprod.fst ≫ iU) + (-pQ) ≫ d3 h + p2 h ≫ j2 h =
       𝟙 (A ⊞ (U ⊞ Q)) := by
   ext <;> simp [d2, d3, p2, j2, iU, pQ, Category.assoc]
+  abel
 private theorem upper_contract :
     (-biprod.fst ≫ iU) ≫ d2 h + p1 h ≫ biprod.inr = 𝟙 (U ⊞ B) := by
   ext <;> simp [d2, p1, iU, Category.assoc]
@@ -189,6 +206,40 @@ private def inclusionFamily (n : ℤ) : L.X n ⟶ K.X n := by
       · subst n; exact inclusionZero h
       · exact 0
 
+@[simp]
+private theorem projectionFamily_minusTwo : projectionFamily h (-2) = projectionMinusTwo h := by
+  simp [projectionFamily]
+
+@[simp]
+private theorem projectionFamily_minusOne : projectionFamily h (-1) = projectionMinusOne h := by
+  simp [projectionFamily]
+
+@[simp]
+private theorem projectionFamily_zero : projectionFamily h 0 = projectionZero h := by
+  simp [projectionFamily]
+
+@[simp]
+private theorem projectionFamily_eq_zero (n : ℤ) (h₂ : n ≠ -2) (h₁ : n ≠ -1)
+    (h₀ : n ≠ 0) : projectionFamily h n = 0 := by
+  simp [projectionFamily, h₂, h₁, h₀]
+
+@[simp]
+private theorem inclusionFamily_minusTwo : inclusionFamily h (-2) = inclusionMinusTwo h := by
+  simp [inclusionFamily]
+
+@[simp]
+private theorem inclusionFamily_minusOne : inclusionFamily h (-1) = inclusionMinusOne h := by
+  simp [inclusionFamily]
+
+@[simp]
+private theorem inclusionFamily_zero : inclusionFamily h 0 = inclusionZero h := by
+  simp [inclusionFamily]
+
+@[simp]
+private theorem inclusionFamily_eq_zero (n : ℤ) (h₂ : n ≠ -2) (h₁ : n ≠ -1)
+    (h₀ : n ≠ 0) : inclusionFamily h n = 0 := by
+  simp [inclusionFamily, h₂, h₁, h₀]
+
 private def projection : K ⟶ L where
   f := projectionFamily h
   comm' i j hij := by
@@ -198,17 +249,17 @@ private def projection : K ⟶ L where
     · subst i
       have hj : j = -2 := by omega
       subst j
-      simpa [projectionFamily] using (d3_projection h).symm
+      simpa using (d3_projection h).symm
     · by_cases h₂ : i = -2
       · subst i
         have hj : j = -1 := by omega
         subst j
-        simpa [projectionFamily] using projection_d2 h
+        simpa using projection_d2 h
       · by_cases h₁ : i = -1
         · subst i
           have hj : j = 0 := by omega
           subst j
-          simpa [projectionFamily] using projection_d1 h
+          simpa using projection_d1 h
         · by_cases h₀ : i = 0
           · exact (h.targetVanish j (by omega) (by omega) (by omega)).eq_of_tgt _ _
           · exact (h.vanish i h₃ h₂ h₁ h₀).eq_of_src _ _
@@ -220,12 +271,12 @@ private def inclusion : L ⟶ K where
     · subst i
       have hj : j = -1 := by omega
       subst j
-      simpa [inclusionFamily] using inclusion_d2 h
+      simpa using inclusion_d2 h
     · by_cases h₁ : i = -1
       · subst i
         have hj : j = 0 := by omega
         subst j
-        simpa [inclusionFamily] using inclusion_d1 h
+        simpa using inclusion_d1 h
       · by_cases h₀ : i = 0
         · exact (h.vanish j (by omega) (by omega) (by omega) (by omega)).eq_of_tgt _ _
         · exact (h.targetVanish i h₂ h₁ h₀).eq_of_src _ _
@@ -234,15 +285,15 @@ private theorem inclusion_projection : inclusion h ≫ projection h = 𝟙 L := 
   ext n
   by_cases h₂ : n = -2
   · subst n
-    simp [inclusion, projection, inclusionFamily, projectionFamily,
+    simp [inclusion, projection,
       inclusionMinusTwo, projectionMinusTwo, Category.assoc, j2_p2_assoc]
   · by_cases h₁ : n = -1
     · subst n
-      simp [inclusion, projection, inclusionFamily, projectionFamily,
+      simp [inclusion, projection,
         inclusionMinusOne, projectionMinusOne, Category.assoc, inr_p1_assoc]
     · by_cases h₀ : n = 0
       · subst n
-        simp [inclusion, projection, inclusionFamily, projectionFamily,
+        simp [inclusion, projection,
           inclusionZero, projectionZero]
       · exact (h.targetVanish n h₂ h₁ h₀).eq_of_src _ _
 
@@ -274,92 +325,123 @@ private theorem source_upper_contract :
   simpa only [Preadditive.comp_add, Category.assoc, Category.comp_id] using
     congrArg (h.minusOneIso.hom ≫ ·) (upper_contract h)
 
-private def homFamily (i j : ℤ) : K.X i ⟶ K.X j := by
+private def homotopyCochain : Cochain K K (-1) := Cochain.mk fun i j hij ↦ by
   by_cases h₂ : i = -2
   · subst i
-    by_cases h₃ : j = -3
-    · subst j; exact s2 h
-    · exact 0
+    have hj : j = -3 := by omega
+    subst j
+    exact s2 h
   · by_cases h₁ : i = -1
     · subst i
-      by_cases h₂' : j = -2
-      · subst j; exact s1 h
-      · exact 0
+      have hj : j = -2 := by omega
+      subst j
+      exact s1 h
     · exact 0
-private def contraction : Homotopy (𝟙 K) (projection h ≫ inclusion h) where
-  hom := homFamily h
-  zero i j hn := by
-    by_cases h₂ : i = -2
+
+@[simp]
+private theorem homotopyCochain_v_minusTwo :
+    (homotopyCochain h).v (-2) (-3) (by decide) = s2 h := by
+  simp [homotopyCochain]
+
+@[simp]
+private theorem homotopyCochain_v_minusOne :
+    (homotopyCochain h).v (-1) (-2) (by decide) = s1 h := by
+  simp [homotopyCochain]
+
+@[simp]
+private theorem homotopyCochain_v_eq_zero (i j : ℤ) (hij : i + (-1) = j)
+    (h₂ : i ≠ -2) (h₁ : i ≠ -1) : (homotopyCochain h).v i j hij = 0 := by
+  simp [homotopyCochain, h₂, h₁]
+
+private theorem δ_homotopyCochain :
+    δ (-1) 0 (homotopyCochain h) = Cochain.ofHom (𝟙 K - projection h ≫ inclusion h) := by
+  rw [Cochain.ofHom_sub]
+  apply Cochain.ext
+  intro i j hij
+  have hindex : i = j := by omega
+  cases hindex
+  rw [δ_v (-1) 0 (by decide) _ i i (by omega) (i - 1) (i + 1) rfl rfl]
+  simp only [Int.negOnePow_zero, one_smul, Cochain.sub_v, Cochain.ofHom_v,
+    HomologicalComplex.id_f, HomologicalComplex.comp_f,
+    projection, inclusion]
+  by_cases h₃ : i = -3
+  · subst i
+    simpa using source_bottom_contract h
+  · by_cases h₂ : i = -2
     · subst i
-      by_cases h₃ : j = -3
-      · subst j; exact (hn (by simp)).elim
-      · simp [homFamily, h₃]
+      simpa [add_comm] using (eq_sub_iff_add_eq.2 (source_lower_contract h))
     · by_cases h₁ : i = -1
       · subst i
-        by_cases h₂' : j = -2
-        · subst j; exact (hn (by simp)).elim
-        · simp [homFamily, h₂']
-      · simp [homFamily, h₂, h₁]
-  comm i := by
-    by_cases h₃ : i = -3
-    · subst i
-      rw [dNext_eq _ (by simp : (ComplexShape.up ℤ).Rel (-3) (-2)),
-        prevD_eq _ (by simp : (ComplexShape.up ℤ).Rel (-4) (-3))]
-      simpa [homFamily, projection, projectionFamily] using (source_bottom_contract h).symm
-    · by_cases h₂ : i = -2
-      · subst i
-        rw [dNext_eq _ (by simp : (ComplexShape.up ℤ).Rel (-2) (-1)),
-          prevD_eq _ (by simp : (ComplexShape.up ℤ).Rel (-3) (-2))]
-        simpa [homFamily, projection, inclusion, projectionFamily, inclusionFamily] using
-          (source_lower_contract h).symm
-      · by_cases h₁ : i = -1
+        simpa using (eq_sub_iff_add_eq.2 (source_upper_contract h))
+      · by_cases h₀ : i = 0
         · subst i
-          rw [dNext_eq _ (by simp : (ComplexShape.up ℤ).Rel (-1) 0),
-            prevD_eq _ (by simp : (ComplexShape.up ℤ).Rel (-2) (-1))]
-          simpa [homFamily, projection, inclusion, projectionFamily, inclusionFamily] using
-            (source_upper_contract h).symm
-        · by_cases h₀ : i = 0
-          · subst i
-            rw [dNext_eq _ (by simp : (ComplexShape.up ℤ).Rel 0 1),
-              prevD_eq _ (by simp : (ComplexShape.up ℤ).Rel (-1) 0)]
-            simp [homFamily, projection, inclusion, projectionFamily, inclusionFamily,
-              projectionZero, inclusionZero]
-          · exact (h.vanish i h₃ h₂ h₁ h₀).eq_of_src _ _
+          simp [projectionZero, inclusionZero]
+        · exact (h.vanish i h₃ h₂ h₁ h₀).eq_of_src _ _
 
 /-- Cancel the two negative identity blocks and retract onto the surviving three-term complex. -/
 def toContraction : TauCeti.Contraction K L where
   proj := projection h
   incl := inclusion h
   incl_comp_proj := inclusion_projection h
-  homotopy := Cochain.ofHomotopy (contraction h)
-  δ_homotopy := by
-    rw [Cochain.ofHom_sub]
-    exact δ_ofHomotopy (contraction h)
+  homotopy := homotopyCochain h
+  δ_homotopy := δ_homotopyCochain h
 
 /-- The lowest projection includes the correction through the eliminated `Q`. -/
-@[simp]
+@[reassoc (attr := simp)]
 theorem toContraction_proj_f_minusTwo :
     h.toContraction.proj.f (-2) ≫ h.targetMinusTwoIso.hom =
       h.minusTwoIso.hom ≫ (biprod.fst + (biprod.snd ≫ biprod.snd) ≫ h.alpha) := by
-  simp [toContraction, projection, projectionFamily, projectionMinusTwo, p2, pQ]
+  simp [toContraction, projection, projectionMinusTwo, p2, pQ]
 /-- The middle projection includes the correction through the eliminated `U`. -/
-@[simp]
+@[reassoc (attr := simp)]
 theorem toContraction_proj_f_minusOne :
     h.toContraction.proj.f (-1) ≫ h.targetMinusOneIso.hom =
       h.minusOneIso.hom ≫ biprod.desc h.delta (𝟙 B) := by
-  simp [toContraction, projection, projectionFamily, projectionMinusOne, p1]
+  simp [toContraction, projection, projectionMinusOne, p1]
 /-- The lowest inclusion includes the correction into the eliminated `U`. -/
-@[simp]
+@[reassoc (attr := simp)]
 theorem toContraction_incl_f_minusTwo :
     h.targetMinusTwoIso.inv ≫ h.toContraction.incl.f (-2) =
       (biprod.inl + h.first ≫ (biprod.inl ≫ biprod.inr)) ≫ h.minusTwoIso.inv := by
-  simp [toContraction, inclusion, inclusionFamily, inclusionMinusTwo, j2, iU]
+  simp [toContraction, inclusion, inclusionMinusTwo, j2, iU]
 /-- The middle inclusion is the second biproduct inclusion in source coordinates. -/
-@[simp]
+@[reassoc (attr := simp)]
 theorem toContraction_incl_f_minusOne :
     h.targetMinusOneIso.inv ≫ h.toContraction.incl.f (-1) =
       biprod.inr ≫ h.minusOneIso.inv := by
-  simp [toContraction, inclusion, inclusionFamily, inclusionMinusOne]
+  simp [toContraction, inclusion, inclusionMinusOne]
+
+/-- The degree-zero projection is the specified coordinate identification. -/
+@[reassoc (attr := simp)]
+theorem toContraction_proj_f_zero :
+    h.toContraction.proj.f 0 ≫ h.targetZeroIso.hom = h.zeroIso.hom := by
+  simp [toContraction, projection, projectionZero]
+
+/-- The degree-zero inclusion is the inverse coordinate identification. -/
+@[reassoc (attr := simp)]
+theorem toContraction_incl_f_zero :
+    h.targetZeroIso.inv ≫ h.toContraction.incl.f 0 = h.zeroIso.inv := by
+  simp [toContraction, inclusion, inclusionZero]
+
+/-- The lower homotopy is minus the projection onto the eliminated `Q`. -/
+@[reassoc (attr := simp)]
+theorem toContraction_homotopy_v_minusTwo :
+    h.toContraction.homotopy.v (-2) (-3) (by decide) ≫ h.minusThreeIso.hom =
+      h.minusTwoIso.hom ≫ (-(biprod.snd ≫ biprod.snd)) := by
+  simp [toContraction, s2, pQ, Category.assoc]
+
+/-- The upper homotopy sends the second `U` to minus its first copy. -/
+@[simp, reassoc]
+theorem toContraction_homotopy_v_minusOne :
+    h.toContraction.homotopy.v (-1) (-2) (by decide) =
+      h.minusOneIso.hom ≫ (-(biprod.fst ≫ biprod.inl ≫ biprod.inr)) ≫ h.minusTwoIso.inv := by
+  simp [toContraction, s1, iU, Category.assoc]
+
+/-- All homotopy components outside the two cancelled pairs vanish. -/
+@[simp]
+theorem toContraction_homotopy_v_eq_zero (i j : ℤ) (hij : i + (-1) = j)
+    (h₂ : i ≠ -2) (h₁ : i ≠ -1) : h.toContraction.homotopy.v i j hij = 0 := by
+  simp [toContraction, h₂, h₁]
 
 end FourTermCancellationData
 end TauCeti.Contraction
