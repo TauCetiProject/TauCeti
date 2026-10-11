@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Group.Pointwise
-public import Mathlib.Topology.Maps.Proper.Basic
 
 /-!
 # Closures, closed images, and pointwise quotients
