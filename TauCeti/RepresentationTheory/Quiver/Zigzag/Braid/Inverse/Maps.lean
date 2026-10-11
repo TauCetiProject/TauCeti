@@ -114,6 +114,20 @@ private theorem coe_vertexGenerator (i : V) :
   simp only [vertexGenerator, coe_zigzagBraidBimoduleFactorsEquiv_symm_tmul,
     coe_spanSingletonGenerator]
 
+-- The vertex bimodule inherits its action from the regular enveloping-algebra module:
+-- including a scalar multiple in the left ideal gives multiplication in that algebra.
+private theorem coe_vertex_smul (i : V) (a : E) (x : zigzagBraidBimodule k G i) :
+    ((a • x : zigzagBraidBimodule k G i) : E) = a * (x : E) := by
+  rw [Submodule.coe_smul, smul_eq_mul]
+
+private theorem generator_left_vertex (i : V) :
+    ((zigzagAlgebraBasis k G (.inl i) ⊗ₜ[k] (1 : Zᵐᵒᵖ)) : E) •
+      (vertexGenerator k G i : U i) = (vertexGenerator k G i : U i) := by
+  apply Subtype.ext
+  rw [coe_vertex_smul, coe_vertexGenerator]
+  simp [Algebra.TensorProduct.tmul_mul_tmul,
+    (isIdempotentElem_zigzagAlgebraBasis_inl k G i).eq]
+
 private theorem vertex_linearMap_ext (i : V)
     {M : Type*} [AddCommGroup M] [Module E M]
     {f g : zigzagBraidBimodule k G i →ₗ[E] M}
@@ -122,8 +136,7 @@ private theorem vertex_linearMap_ext (i : V)
   intro x
   have hx : (x : E) • vertexGenerator k G i = x := by
     apply Subtype.ext
-    change (x : E) * ((vertexGenerator k G i : zigzagBraidBimodule k G i) : E) = (x : E)
-    rw [coe_vertexGenerator]
+    rw [coe_vertex_smul, coe_vertexGenerator]
     exact mem_zigzagBraidBimodule_iff.mp x.property
   calc
     f x = f ((x : E) • vertexGenerator k G i) := congrArg f hx.symm
@@ -158,12 +171,7 @@ private theorem coevaluation_vertex (i : V) :
     have hi : i ≠ d.snd := by simpa only [← hd'] using d.fst_ne_snd
     simp [hi]
   apply Subtype.ext
-  change (zigzagBraidCoevaluation k G i (Bimodule.of (AlgHom.id k Z)
-      (zigzagAlgebraBasis k G (.inl i))) : E) =
-    (((1 : Z) ⊗ₜ[k] op (zigzagAlgebraBasis k G (.inr (.inr i)))) *
-      ((vertexGenerator k G i : zigzagBraidBimodule k G i) : E)) +
-    ((zigzagAlgebraBasis k G (.inr (.inr i)) ⊗ₜ[k] (1 : Zᵐᵒᵖ)) *
-      ((vertexGenerator k G i : zigzagBraidBimodule k G i) : E))
+  rw [Submodule.coe_add, rightVolume, leftVolume, coe_vertex_smul, coe_vertex_smul]
   rw [coe_zigzagBraidCoevaluation_of, ha, coe_vertexGenerator]
   simp [Algebra.TensorProduct.tmul_mul_tmul, ← op_mul]
 
@@ -193,9 +201,8 @@ private theorem rightVolume_factors (i : V) :
         (op (zigzagAlgebraBasis k G (.inr (.inr i))) •
           spanSingletonGenerator (op (zigzagAlgebraBasis k G (.inl i))))) := by
   apply Subtype.ext
-  change ((1 : Z) ⊗ₜ[k] op (zigzagAlgebraBasis k G (.inr (.inr i)))) *
-    ((vertexGenerator k G i : zigzagBraidBimodule k G i) : E) = _
-  rw [coe_vertexGenerator, coe_zigzagBraidBimoduleFactorsEquiv_symm_tmul]
+  rw [rightVolume, coe_vertex_smul, coe_vertexGenerator,
+    coe_zigzagBraidBimoduleFactorsEquiv_symm_tmul]
   simp [Algebra.TensorProduct.tmul_mul_tmul]
 
 private theorem leftVolume_factors (i : V) :
@@ -204,9 +211,8 @@ private theorem leftVolume_factors (i : V) :
         spanSingletonGenerator (zigzagAlgebraBasis k G (.inl i))) ⊗ₜ[k]
         spanSingletonGenerator (op (zigzagAlgebraBasis k G (.inl i)))) := by
   apply Subtype.ext
-  change (zigzagAlgebraBasis k G (.inr (.inr i)) ⊗ₜ[k] (1 : Zᵐᵒᵖ)) *
-    ((vertexGenerator k G i : zigzagBraidBimodule k G i) : E) = _
-  rw [coe_vertexGenerator, coe_zigzagBraidBimoduleFactorsEquiv_symm_tmul]
+  rw [leftVolume, coe_vertex_smul, coe_vertexGenerator,
+    coe_zigzagBraidBimoduleFactorsEquiv_symm_tmul]
   simp [Algebra.TensorProduct.tmul_mul_tmul]
 
 private theorem selfVolumeProjection_rightVolume (i : V) :
@@ -257,9 +263,7 @@ private theorem generator_right_vertex (i : V) :
     (((1 : Z) ⊗ₜ[k] op (zigzagAlgebraBasis k G (.inl i))) : E) •
       (vertexGenerator k G i : U i) = (vertexGenerator k G i : U i) := by
   apply Subtype.ext
-  change ((1 : Z) ⊗ₜ[k] op (zigzagAlgebraBasis k G (.inl i))) *
-    ((vertexGenerator k G i : zigzagBraidBimodule k G i) : E) = _
-  rw [coe_vertexGenerator]
+  rw [coe_vertex_smul, coe_vertexGenerator]
   simp [Algebra.TensorProduct.tmul_mul_tmul, ← op_mul,
     (isIdempotentElem_zigzagAlgebraBasis_inl k G i).eq]
 
@@ -404,12 +408,8 @@ theorem zigzagBraidSelfTensorShiftRightInl_evaluation (i : V) :
     have hz : (Bimodule.of (AlgHom.id k Z)).symm z = zigzagAlgebraBasis k G (.inl i) :=
       LinearEquiv.symm_apply_apply _ _
     rw [hz]
-    apply Subtype.ext
-    change (zigzagAlgebraBasis k G (.inl i) ⊗ₜ[k] (1 : Zᵐᵒᵖ)) *
-      ((vertexGenerator k G i : zigzagBraidBimodule k G i) : E) = _
-    rw [coe_vertexGenerator]
-    simp [Algebra.TensorProduct.tmul_mul_tmul,
-      (isIdempotentElem_zigzagAlgebraBasis_inl k G i).eq]
+    -- An internal shift preserves the vertex ideal's carrier and enveloping action.
+    exact generator_left_vertex k G i
   apply GradedModuleCat.hom_ext
   apply vertex_linearMap_ext k G i
   -- Evaluate the composite at the cyclic generator in its internally shifted carrier.
@@ -505,16 +505,6 @@ private theorem selfVolumeProjection_rightVolume_first (i : V) :
     (vertexGenerator k G i) (vertexGenerator k G i)
   exact (congrArg (selfVolumeProjection k G i) h).trans
     (selfVolumeProjection_leftVolume k G i)
-
-private theorem generator_left_vertex (i : V) :
-    ((zigzagAlgebraBasis k G (.inl i) ⊗ₜ[k] (1 : Zᵐᵒᵖ)) : E) •
-      (vertexGenerator k G i : U i) = (vertexGenerator k G i : U i) := by
-  apply Subtype.ext
-  change (zigzagAlgebraBasis k G (.inl i) ⊗ₜ[k] (1 : Zᵐᵒᵖ)) *
-    ((vertexGenerator k G i : zigzagBraidBimodule k G i) : E) = _
-  rw [coe_vertexGenerator]
-  simp [Algebra.TensorProduct.tmul_mul_tmul,
-    (isIdempotentElem_zigzagAlgebraBasis_inl k G i).eq]
 
 private theorem coevaluation_tensor_generator_first (i : V) :
     GradedModuleCat.bimoduleTensorTmul Γ Γ Γ ((U i).shiftObj (-2)) (U i)
