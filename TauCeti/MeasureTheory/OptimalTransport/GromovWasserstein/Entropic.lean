@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Data.Matrix.Scaling
+public import TauCeti.MeasureTheory.OptimalTransport.Finite.Entropy
 public import TauCeti.MeasureTheory.OptimalTransport.GromovWasserstein.Finite
 
 /-!
@@ -15,7 +15,7 @@ Let `μ` and `ν` be probability vectors on finite types `ι` and `κ`, with ker
 `ωX : ι × ι → Z` and `ωY : κ × κ → Z` valued in a pseudometric space. A real transport plan is a
 nonnegative array `f : ι × κ → ℝ` with row sums `μ` and column sums `ν`
 (`TauCeti.RealPlans μ ν`). The finite Gromov–Wasserstein objective
-`TauCeti.gromovWassersteinObjective p ωX ωY f` is the `p`-th power of the distortion of `f`,
+`TauCeti.gromovWassersteinObjective p ωX ωY f` is the four-index sum
 
 `∑ q, ∑ q', d(ωX (q.1, q'.1), ωY (q.2, q'.2)) ^ p * f q * f q'`,
 
@@ -24,12 +24,16 @@ against the product of the marginals:
 
 `∑ q, ∑ q', d(ωX (q.1, q'.1), ωY (q.2, q'.2)) ^ p * f q * f q' + ε * KL(f ‖ μ ⊗ ν)`.
 
-So it is the `p`-th power of the distortion that is regularized, and not its `p`-th root, which is
-the Gromov–Wasserstein distance. At `p = 2` this is the quadratic objective of entropic
+For `0 < p < ∞`, the objective of the real plan of a transport matrix is the `p`-th power of the
+distortion of its coupling (`TauCeti.TransportMatrix.gromovWassersteinObjective_toRealFun`). So it
+is the `p`-th power of the distortion that is regularized, and not the distortion itself. The
+Gromov–Wasserstein distance is the infimum of these distortions over all admissible plans, not the
+distortion of any single plan. At `p = 2` this is the quadratic objective of entropic
 Gromov–Wasserstein. The relative entropy is written with `Matrix.relEntropy`; on real plans it is
 the Kullback–Leibler divergence of the plan from `μ ⊗ ν`, and it equals `H(μ) + H(ν) - H(f)`, where
-`H` is the Shannon entropy. So the regularization `-ε H(f)` used by many sources differs from this
-one by the constant `ε (H(μ) + H(ν))` on real plans, and has the same minimizers.
+`H` is the Shannon entropy (`TauCeti.relEntropy_vecMulVec_eq_of_mem_realPlans`). So the
+regularization `-ε H(f)` used by many sources differs from this one by the constant
+`ε (H(μ) + H(ν))` on real plans, and has the same minimizers.
 
 The regularized objective is continuous, so it attains its minimum on the compact set of real
 plans. The relative entropy of a real plan lies between `0` and `H(μ) + H(ν)`, and this gives the
@@ -46,10 +50,8 @@ objective is not convex in `f`, and nothing here concerns an algorithm for compu
 
 ## Main results
 
-* `TauCeti.relEntropy_vecMulVec_eq_of_mem_realPlans`: the relative entropy of a real plan against
-  the product of its marginals is `H(μ) + H(ν) - H(f)`, and
-  `TauCeti.entropicGromovWassersteinObjective_eq_of_mem_realPlans` is the resulting comparison
-  with the regularization `-ε H(f)`.
+* `TauCeti.entropicGromovWassersteinObjective_eq_of_mem_realPlans`: the comparison with the
+  regularization `-ε H(f)`.
 * `TauCeti.exists_isMinOn_entropicGromovWassersteinObjective`: existence of a global minimizer.
 * `TauCeti.entropicGromovWassersteinObjective_le_of_isMinOn`: the regularized optimal value is at
   most the objective of any real plan plus `ε (H(μ) + H(ν))`.
@@ -113,56 +115,6 @@ theorem continuous_entropicGromovWassersteinObjective (p ε : ℝ) (μ : PMF ι)
   simp_rw [funext (entropicGromovWassersteinObjective_def p ε μ ωX ν ωY)]
   exact (continuous_gromovWassersteinObjective p ωX ωY).add (continuous_const.mul
     ((Matrix.continuous_relEntropy _).comp (by fun_prop)))
-
-/-! ### The relative entropy of a real plan -/
-
-/-- The relative entropy of a real plan `f` against the product of its marginals is
-`H(μ) + H(ν) - H(f)`, where `H` is the Shannon entropy `∑ negMulLog`. In particular it differs from
-the negative entropy `-H(f)` by a constant on the real plans with marginals `μ` and `ν`. -/
-theorem relEntropy_vecMulVec_eq_of_mem_realPlans (hf : f ∈ RealPlans μ ν) :
-    Matrix.relEntropy (Matrix.of fun i j ↦ f (i, j))
-        (Matrix.vecMulVec (fun i ↦ (μ i).toReal) fun j ↦ (ν j).toReal) =
-      ∑ i, negMulLog (μ i).toReal + ∑ j, negMulLog (ν j).toReal - ∑ q, negMulLog (f q) := by
-  -- The logarithm of a product splits on every cell that carries mass.
-  have hcell : ∀ i j, f (i, j) * log ((μ i).toReal * (ν j).toReal) =
-      f (i, j) * log (μ i).toReal + f (i, j) * log (ν j).toReal := fun i j ↦ by
-    rcases (hf.1 (i, j)).eq_or_lt with h | h
-    · simp [← h]
-    · rw [log_mul (h.trans_le (le_toReal_fst_of_mem_realPlans hf (i, j))).ne'
-        (h.trans_le (le_toReal_snd_of_mem_realPlans hf (i, j))).ne', mul_add]
-  have hrow : ∑ i, ∑ j, f (i, j) * log (μ i).toReal = ∑ i, (μ i).toReal * log (μ i).toReal := by
-    simp_rw [← Finset.sum_mul, hf.2.1]
-  have hcol : ∑ i, ∑ j, f (i, j) * log (ν j).toReal = ∑ j, (ν j).toReal * log (ν j).toReal := by
-    rw [Finset.sum_comm]
-    simp_rw [← Finset.sum_mul, hf.2.2]
-  simp only [Matrix.relEntropy_def, Matrix.of_apply, Matrix.vecMulVec_apply, hcell,
-    Finset.sum_sub_distrib, Finset.sum_add_distrib, hrow, hcol, negMulLog, Fintype.sum_prod_type]
-  simp only [neg_mul, Finset.sum_neg_distrib]
-  ring
-
-/-- The relative entropy of a real plan against the product of its marginals is nonnegative. -/
-theorem relEntropy_vecMulVec_nonneg_of_mem_realPlans (hf : f ∈ RealPlans μ ν) :
-    0 ≤ Matrix.relEntropy (Matrix.of fun i j ↦ f (i, j))
-      (Matrix.vecMulVec (fun i ↦ (μ i).toReal) fun j ↦ (ν j).toReal) := by
-  refine Matrix.relEntropy_nonneg_of_nonneg (fun i j ↦ hf.1 (i, j))
-    (fun i j ↦ mul_nonneg ENNReal.toReal_nonneg ENNReal.toReal_nonneg) (fun i j h ↦ ?_) ?_
-  · simp only [Matrix.vecMulVec_apply, mul_eq_zero] at h
-    rcases h with h | h
-    · exact le_antisymm (h ▸ le_toReal_fst_of_mem_realPlans hf (i, j)) (hf.1 (i, j))
-    · exact le_antisymm (h ▸ le_toReal_snd_of_mem_realPlans hf (i, j)) (hf.1 (i, j))
-  · simp only [Matrix.of_apply, Matrix.vecMulVec_apply, ← Finset.mul_sum, ← Finset.sum_mul,
-      hf.2.1, PMF.sum_toReal_eq_one, one_mul]
-
-/-- The relative entropy of a real plan against the product of its marginals is at most
-`H(μ) + H(ν)`. -/
-theorem relEntropy_vecMulVec_le_of_mem_realPlans (hf : f ∈ RealPlans μ ν) :
-    Matrix.relEntropy (Matrix.of fun i j ↦ f (i, j))
-        (Matrix.vecMulVec (fun i ↦ (μ i).toReal) fun j ↦ (ν j).toReal) ≤
-      ∑ i, negMulLog (μ i).toReal + ∑ j, negMulLog (ν j).toReal := by
-  rw [relEntropy_vecMulVec_eq_of_mem_realPlans hf, sub_le_self_iff]
-  refine Finset.sum_nonneg fun q _ ↦ negMulLog_nonneg (hf.1 q) ?_
-  calc f q ≤ (μ q.1).toReal := le_toReal_fst_of_mem_realPlans hf q
-    _ ≤ 1 := ENNReal.toReal_le_of_le_ofReal zero_le_one (by simpa using μ.coe_le_one q.1)
 
 /-- On a real plan, the regularized objective is the unregularized one minus `ε` times the
 Shannon entropy of the plan, up to the constant `ε (H(μ) + H(ν))`. This compares the convention
