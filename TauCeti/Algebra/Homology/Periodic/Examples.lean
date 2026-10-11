@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.DualNumber.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Projective
-public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
@@ -55,8 +54,8 @@ def dualNumberDifferentialModule : DifferentialModule (ModuleCat (DualNumbers k)
     (dualNumberDifferentialModule (k := k)).X =
       ModuleCat.of (DualNumbers k) (DualNumbers k) := (rfl)
 
-/-- The differential of the dual-number differential module is multiplication by `ε`. -/
-private theorem dualNumberDifferentialModule_d_internal :
+/-- Transported to the regular module, the differential is multiplication by `ε`. -/
+@[simp] theorem dualNumberDifferentialModule_d :
     eqToHom (dualNumberDifferentialModule_X (k := k)).symm ≫
       (dualNumberDifferentialModule (k := k)).d ≫
       eqToHom (dualNumberDifferentialModule_X (k := k)) =
@@ -64,15 +63,6 @@ private theorem dualNumberDifferentialModule_d_internal :
         (LinearMap.toSpanSingleton (DualNumbers k) (DualNumbers k) DualNumber.eps) := by
   cases dualNumberDifferentialModule_X (k := k)
   rfl
-
-/-- Transported to the regular module, the differential is multiplication by `ε`. -/
-@[simp] theorem dualNumberDifferentialModule_d :
-    eqToHom (dualNumberDifferentialModule_X (k := k)).symm ≫
-      (dualNumberDifferentialModule (k := k)).d ≫
-      eqToHom (dualNumberDifferentialModule_X (k := k)) =
-      ModuleCat.ofHom
-        (LinearMap.toSpanSingleton (DualNumbers k) (DualNumbers k) DualNumber.eps) :=
-  dualNumberDifferentialModule_d_internal
 
 /-- The differential sends `x` to `x * ε`. -/
 theorem dualNumberDifferentialModule_d_apply (x : DualNumbers k) :
