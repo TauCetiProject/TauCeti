@@ -192,7 +192,7 @@ theorem ext_component {f g : AInfinityHom AA BB}
   intro n z
   have hmaps : f.taylor ∘ₗ ReducedTensorWords.of R A n =
       g.taylor ∘ₗ ReducedTensorWords.of R A n := by
-    apply AA.grading.piTensorProduct_ext
+    apply InternalGrading.piTensorProduct_ext (fun _ ↦ AA.grading)
     intro q
     let d : ℕ → ℤ := fun i ↦ if hi : i < n.1 then (q ⟨i, hi⟩).1 else 0
     let x : ℕ → A := fun i ↦ if hi : i < n.1 then (q ⟨i, hi⟩).2 else 0
