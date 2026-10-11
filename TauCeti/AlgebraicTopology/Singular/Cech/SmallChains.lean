@@ -59,29 +59,6 @@ namespace TauCeti.TopCat
 
 variable {X : TopCat.{u}} {ι : Type u} (U : ι → Opens X)
 
-/-- The singular simplices of a term of the Čech nerve project to small singular simplices of
-the ambient space. -/
-def openCoverSingularNerveBase (n : SimplexCategoryᵒᵖ) :
-    TopCat.toSSet.obj ((openCoverArrow U).cechNerve.obj n) ⟶
-      (X.smallSingularSubcomplex (fun i ↦ (U i : Set X)) : SSet) :=
-  SSet.Subcomplex.lift
-    (TopCat.toSSet.map (WidePullback.base (fun _ : Fin (n.unop.len + 1) ↦ openCoverMap U))) (by
-      rintro m _ ⟨σ, rfl⟩
-      refine (TopCat.mem_smallSingularSubcomplex_iff _ _ _).2 ?_
-      rw [toSSetObjEquiv_toSSet_map_app, ← exists_openCoverMap_comp_eq_iff]
-      refine ⟨(WidePullback.π (fun _ : Fin (n.unop.len + 1) ↦ openCoverMap U) 0).hom.comp
-        (TopCat.toSSetObjEquiv _ _ σ), ?_⟩
-      rw [← ContinuousMap.comp_assoc, ← TopCat.hom_comp]
-      simp)
-
-/-- The projection onto small simplices, followed by their inclusion, is the map induced by the
-projection of the Čech nerve onto the ambient space. -/
-@[reassoc (attr := simp)]
-theorem openCoverSingularNerveBase_ι (n : SimplexCategoryᵒᵖ) :
-    openCoverSingularNerveBase U n ≫ (X.smallSingularSubcomplex (fun i ↦ (U i : Set X))).ι =
-      TopCat.toSSet.map (WidePullback.base (fun _ : Fin (n.unop.len + 1) ↦ openCoverMap U)) :=
-  SSet.Subcomplex.lift_ι _ _
-
 /-- The singular simplices of the Čech nerve of a family of open sets, augmented over the singular
 simplices which are small for the family. Every simplex of the Čech nerve projects to a small
 simplex, because a standard simplex is connected. -/
@@ -89,19 +66,27 @@ simplex, because a standard simplex is connected. -/
   left := ((SimplicialObject.whiskering _ _).obj TopCat.toSSet).obj (openCoverArrow U).cechNerve
   right := X.smallSingularSubcomplex (fun i ↦ (U i : Set X))
   hom :=
-    { app := openCoverSingularNerveBase U
+    { app n := SSet.Subcomplex.lift
+        (TopCat.toSSet.map (WidePullback.base (fun _ : Fin (n.unop.len + 1) ↦ openCoverMap U))) (by
+          rintro m _ ⟨σ, rfl⟩
+          refine (TopCat.mem_smallSingularSubcomplex_iff _ _ _).2 ?_
+          rw [toSSetObjEquiv_toSSet_map_app, ← exists_openCoverMap_comp_eq_iff]
+          refine ⟨(WidePullback.π (fun _ : Fin (n.unop.len + 1) ↦ openCoverMap U) 0).hom.comp
+            (TopCat.toSSetObjEquiv _ _ σ), ?_⟩
+          rw [← ContinuousMap.comp_assoc, ← TopCat.hom_comp]
+          simp)
       naturality n m θ := by
         rw [← cancel_mono (X.smallSingularSubcomplex _).ι]
         simp [← Functor.map_comp] }
 
 /-- The augmentation of the small augmented singular nerve, followed by the inclusion of the small
 simplices, is the map induced by the projection of the Čech nerve onto the ambient space. -/
-@[simp, reassoc]
+@[reassoc (attr := simp)]
 theorem openCoverSmallAugmentedSingularNerve_hom_app_ι (n : SimplexCategoryᵒᵖ) :
     (openCoverSmallAugmentedSingularNerve U).hom.app n ≫
         (X.smallSingularSubcomplex (fun i ↦ (U i : Set X))).ι =
-      TopCat.toSSet.map (WidePullback.base (fun _ : Fin (n.unop.len + 1) ↦ openCoverMap U)) :=
-  openCoverSingularNerveBase_ι U n
+      TopCat.toSSet.map (WidePullback.base (fun _ : Fin (n.unop.len + 1) ↦ openCoverMap U)) := by
+  simp [openCoverSmallAugmentedSingularNerve]
 
 /-- A singular simplex is small for a family of open subsets exactly when, as a map out of the
 topological simplex, it lifts along the map from the disjoint union of the family. -/
