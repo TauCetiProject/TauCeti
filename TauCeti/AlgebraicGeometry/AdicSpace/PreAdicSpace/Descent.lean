@@ -180,16 +180,10 @@ theorem stalkValuation_descend_base (x : X) :
     descendStalkIso_hom]
   exact (ValuationSpectrum.comap_hom_comap_hom _ _ _).symm
 
--- The morphism is exposed for the same reason as `descend`: its underlying morphism of presheafed
--- spaces must unfold to `π`.
-@[expose] public section ToDescendDef
-
 /-- **`π` as a morphism of pre-adic spaces** into the descended space. -/
 noncomputable def toDescend : X ⟶ X.descend π hsurj hiso where
   toHom := π
   stalkValuation_eq x := stalkValuation_descend_base hsurj hiso hcompat x
-
-end ToDescendDef
 
 /-- The morphism of presheafed spaces underlying `toDescend` is `π`. -/
 @[simp]

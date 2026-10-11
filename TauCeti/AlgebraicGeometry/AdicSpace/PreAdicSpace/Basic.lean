@@ -52,18 +52,6 @@ structure PreAdicSpace where
       (((TopCommRingCat.isCompleteSeparated.ι ⋙
         forget₂ TopCommRingCat CommRingCat).mapPresheaf.obj toPresheafedSpace).presheaf.stalk x))
 
-/-- Pulling a valuation on the residue field of `B` back to `A`, along the map of residue fields
-induced by a local homomorphism `f : A → B` and then the residue map of `A`, is pulling it back to
-`B` and then along `f`. -/
-theorem ValuationSpectrum.comap_residue_comap_residueFieldMap {A B : Type*} [CommRing A]
-    [CommRing B] [IsLocalRing A] [IsLocalRing B] (f : A →+* B) [IsLocalHom f]
-    (w : ValuationSpectrum (IsLocalRing.ResidueField B)) :
-    ValuationSpectrum.comap (IsLocalRing.residue A)
-        (ValuationSpectrum.comap (IsLocalRing.ResidueField.map f) w) =
-      ValuationSpectrum.comap f (ValuationSpectrum.comap (IsLocalRing.residue B) w) := by
-  rw [← Function.comp_apply (f := ValuationSpectrum.comap _), ← ValuationSpectrum.comap_comp,
-    IsLocalRing.ResidueField.map_comp_residue, ValuationSpectrum.comap_comp, Function.comp_apply]
-
 namespace PreAdicSpace
 
 /-- The underlying topological space of a pre-adic space. -/
