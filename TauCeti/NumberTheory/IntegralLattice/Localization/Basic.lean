@@ -90,10 +90,12 @@ abbrev LocalCarrier := ℤ_[p] ⊗[ℤ] L.carrier
 
 /-- The integral form of an integral lattice, base-changed from `ℤ` to `ℤ_p`.  This is built from
 the integral form on the carrier, not from the rational form on the ambient space. -/
+@[expose]
 noncomputable def localIntegralForm : LinearMap.BilinForm ℤ_[p] (L.LocalCarrier p) :=
   L.integralForm.baseChange ℤ_[p]
 
 /-- The rational form of an integral lattice, base-changed from `ℚ` to `ℚ_p`. -/
+@[expose]
 noncomputable def completedRationalForm : LinearMap.BilinForm ℚ_[p] (ℚ_[p] ⊗[ℚ] V) :=
   L.form.baseChange ℚ_[p]
 
