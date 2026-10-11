@@ -292,10 +292,7 @@ indexed by `ℤ`, extended by zero in negative degrees. -/
 @[instance_reducible]
 noncomputable def zigzagIntegerGradedAlgebra : GradedAlgebra (zigzagIntegerGrade k G) :=
   let _ := zigzagGradedAlgebra k G
-  { (isInternal_zigzagIntegerGrade k G).chooseDecomposition with
-    one_mem := (zigzagIntegerGrade_ofNat k G 0).ge SetLike.GradedOne.one_mem
-    mul_mem := fun _ _ _ _ hx hy ↦
-      Graded.mul_mem_extendByZero (fun hx' hy' ↦ SetLike.GradedMul.mul_mem hx' hy') hx hy }
+  Graded.gradedAlgebraExtendByZero (zigzagGrade k G)
 
 /-- **An arrow coordinate vanishes off degree one**: the pieces of degree other than one are
 spanned by vertex idempotents and volume classes, which have no arrow component. -/

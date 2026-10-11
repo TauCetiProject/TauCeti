@@ -312,12 +312,12 @@ noncomputable def preprojectiveIntegerGrade (p : ℤ) : Submodule k (preprojecti
   Graded.extendByZero (preprojectiveGrade k Q) p
 
 @[simp]
-theorem preprojectiveIntegerGrade_natCast (n : ℕ) :
+theorem preprojectiveIntegerGrade_ofNat (n : ℕ) :
     preprojectiveIntegerGrade k (Q := Q) n = preprojectiveGrade k Q n :=
   Graded.extendByZero_natCast _ n
 
 @[simp]
-theorem preprojectiveIntegerGrade_of_neg {p : ℤ} (hp : p < 0) :
+theorem preprojectiveIntegerGrade_eq_bot_of_neg {p : ℤ} (hp : p < 0) :
     preprojectiveIntegerGrade k (Q := Q) p = ⊥ :=
   Graded.extendByZero_of_neg _ hp
 
@@ -339,14 +339,14 @@ noncomputable abbrev preprojectiveInternalGrading :
 /-- Vertex idempotent classes have integer degree zero. -/
 theorem preprojectiveMk_vertexIdempotent_mem_preprojectiveIntegerGrade_zero (i : Symmetrify Q) :
     preprojectiveMk k Q (vertexIdempotent k i) ∈ preprojectiveIntegerGrade k (Q := Q) 0 := by
-  rw [← Nat.cast_zero, preprojectiveIntegerGrade_natCast]
+  rw [← Nat.cast_zero, preprojectiveIntegerGrade_ofNat]
   exact preprojectiveMk_mem_preprojectiveGrade k Q (vertexIdempotent_mem_grade_zero i)
 
 /-- Doubled arrow classes have integer degree one. -/
 theorem preprojectiveMk_ofArrow_mem_preprojectiveIntegerGrade_one {i j : Symmetrify Q}
     (b : i ⟶ j) :
     preprojectiveMk k Q (ofArrow b) ∈ preprojectiveIntegerGrade k (Q := Q) 1 := by
-  rw [← Nat.cast_one, preprojectiveIntegerGrade_natCast]
+  rw [← Nat.cast_one, preprojectiveIntegerGrade_ofNat]
   exact preprojectiveMk_mem_preprojectiveGrade k Q (ofArrow_mem_grade_one b)
 
 end IntegerGrade

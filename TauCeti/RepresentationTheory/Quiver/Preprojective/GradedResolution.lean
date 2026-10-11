@@ -349,7 +349,7 @@ noncomputable abbrev preprojectiveGradedKoszulResolution
       preprojectiveGradedKoszulRight_hom, ker_preprojectiveVertexAugmentation]
   exact_d_d := preprojectiveGradedKoszulDifferential_exact k hQ v
 
-/-- The projective terms of the graded resolution are the shifted Koszul terms. -/
+/-- Each resolution term carries the grading of the corresponding shifted Koszul term. -/
 @[simp]
 theorem preprojectiveGradedKoszulResolution_grading
     (hQ : ∀ u : Q, ∃ w, Nonempty (u ⟶ w)) (v : Q) (n : ℕ) :

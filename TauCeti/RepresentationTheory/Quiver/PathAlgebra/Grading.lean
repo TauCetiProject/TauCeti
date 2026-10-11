@@ -690,10 +690,7 @@ theorem isInternal_integerGrade [Finite Q] : DirectSum.IsInternal (integerGrade 
 @[instance_reducible]
 noncomputable def integerGradedAlgebra [Finite Q] : GradedAlgebra (integerGrade k Q) :=
   let _ := gradedAlgebra k Q
-  { (isInternal_integerGrade k Q).chooseDecomposition with
-    one_mem := (integerGrade_ofNat k Q 0).ge SetLike.GradedOne.one_mem
-    mul_mem := fun _ _ _ _ hx hy ↦
-      Graded.mul_mem_extendByZero (fun hx' hy' ↦ SetLike.GradedMul.mul_mem hx' hy') hx hy }
+  Graded.gradedAlgebraExtendByZero (grade k Q)
 
 end IntegerGrade
 
