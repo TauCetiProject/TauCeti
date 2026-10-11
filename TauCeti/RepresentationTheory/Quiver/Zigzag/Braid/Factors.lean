@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Idempotents.TensorProduct
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Basic
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Corner.Basic
 
 /-!
 # Tensor factors of the zigzag vertex bimodule
