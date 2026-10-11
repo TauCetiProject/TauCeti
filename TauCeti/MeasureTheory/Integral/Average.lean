@@ -58,6 +58,12 @@ equivalence `e` pushes `μ` forward to `a • ν` with `0 < a < ∞`, then the a
   `TauCeti.setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq`: in an inner product
   space the square mean oscillation about a constant splits orthogonally, so the average is the
   best constant, with no loss.
+* `MeasureTheory.MemLp.integrableOn_of_subset` and
+  `MeasureTheory.MemLp.integrableOn_norm_sub_sq_of_subset`: a function in `Lᵖ(t)`, `1 ≤ p`, is
+  integrable on every subset of `t` of finite measure, and for `p = 2` so is its squared distance
+  to any constant; these are the integrability side conditions of the square mean oscillation.
+* `TauCeti.sq_setAverage_norm_le_setAverage_norm_sq`: Jensen's inequality
+  `(⨍_s ‖g‖)² ≤ ⨍_s ‖g‖²`, bounding the mean oscillation by the square mean oscillation.
 * `TauCeti.setLIntegral_comp_preimage_of_map_eq_smul`,
   `TauCeti.setIntegral_comp_preimage_of_map_eq_smul`,
   `TauCeti.setLAverage_comp_preimage_of_map_eq_smul`,
@@ -219,6 +225,40 @@ theorem setIntegral_norm_sub_setAverage_sq_le (hs : μ s ≠ ⊤) (hf : Integrab
     _ ≤ 4 * J := by linarith
 
 end Subset
+
+section SquareIntegrable
+
+variable {X F : Type*} [MeasurableSpace X] {μ : Measure X} [NormedAddCommGroup F] {g : X → F}
+  {s t : Set X}
+
+/-- A function in `Lᵖ(t)`, `1 ≤ p`, is integrable on every subset `s ⊆ t` of finite measure. -/
+theorem _root_.MeasureTheory.MemLp.integrableOn_of_subset {p : ℝ≥0∞}
+    (hg : MemLp g p (μ.restrict t)) (hp : 1 ≤ p) (hst : s ⊆ t) (hs : μ s ≠ ⊤) :
+    IntegrableOn g s μ := by
+  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
+  have hgs : MemLp g p (μ.restrict s) := by
+    simpa [Measure.restrict_restrict_of_subset hst] using hg.restrict s
+  exact hgs.integrable hp
+
+/-- For a function `g` in `L²(t)`, the squared distance `‖g - c‖²` to a constant `c` is integrable
+on every subset `s ⊆ t` of finite measure. -/
+theorem _root_.MeasureTheory.MemLp.integrableOn_norm_sub_sq_of_subset
+    (hg : MemLp g 2 (μ.restrict t)) (hst : s ⊆ t) (hs : μ s ≠ ⊤) (c : F) :
+    IntegrableOn (fun x ↦ ‖g x - c‖ ^ 2) s μ := by
+  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
+  have hgs : MemLp g 2 (μ.restrict s) := by
+    simpa [Measure.restrict_restrict_of_subset hst] using hg.restrict s
+  exact (hgs.sub (memLp_const c)).integrable_norm_pow two_ne_zero
+
+/-- **Jensen's inequality for the square of a mean.** On a set `s` of finite nonzero measure, the
+square of the mean of `‖g‖` is at most the mean of `‖g‖²`. -/
+theorem sq_setAverage_norm_le_setAverage_norm_sq (hs0 : μ s ≠ 0) (hs : μ s ≠ ⊤)
+    (hg : IntegrableOn g s μ) (hg2 : IntegrableOn (fun x ↦ ‖g x‖ ^ 2) s μ) :
+    (⨍ x in s, ‖g x‖ ∂μ) ^ 2 ≤ ⨍ x in s, ‖g x‖ ^ 2 ∂μ :=
+  (Even.convexOn_pow even_two).map_set_average_le (continuous_pow 2).continuousOn isClosed_univ
+    hs0 hs (ae_of_all _ fun _ ↦ Set.mem_univ _) hg.norm hg2
+
+end SquareIntegrable
 
 section InnerProduct
 

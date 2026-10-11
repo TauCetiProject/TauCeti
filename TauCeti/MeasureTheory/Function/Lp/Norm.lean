@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
+import Mathlib.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Norm inequalities in `Lᵖ` spaces
@@ -21,6 +22,8 @@ bounds.
   two-term linear combination.
 * `MeasureTheory.Lp.integral_norm_sq_eq_norm_sq`: the integral of the squared pointwise
   norm of an `L²` function is its squared `L²` norm.
+* `MeasureTheory.Lp.setIntegral_norm_sq_le_norm_sq`: so its integral over a subset of the set it
+  lives on is at most its squared `L²` norm.
 -/
 
 public section
@@ -81,5 +84,14 @@ theorem Lp.integral_norm_sq_eq_norm_sq {alpha F : Type*} [MeasurableSpace alpha]
   have h_nonneg : 0 ≤ ∫ x, ‖f x‖ ^ 2 ∂m := integral_nonneg fun x => sq_nonneg _
   rw [h_norm, h_lp, ← Real.rpow_two, ← Real.rpow_mul h_nonneg, inv_mul_cancel₀ (by norm_num),
     Real.rpow_one]
+
+/-- For an `L²` function `f` on `t`, the integral of `‖f‖²` over a subset `s ⊆ t` is at most the
+squared `L²` norm of `f`. -/
+theorem Lp.setIntegral_norm_sq_le_norm_sq {alpha F : Type*} [MeasurableSpace alpha]
+    {m : Measure alpha} [NormedAddCommGroup F] {s t : Set alpha} (f : Lp F 2 (m.restrict t))
+    (hst : s ⊆ t) : ∫ x in s, ‖f x‖ ^ 2 ∂m ≤ ‖f‖ ^ 2 := by
+  rw [← Lp.integral_norm_sq_eq_norm_sq]
+  exact setIntegral_mono_set ((Lp.memLp f).integrable_norm_pow two_ne_zero)
+    (ae_of_all _ fun _ => by positivity) hst.eventuallyLE
 
 end MeasureTheory
