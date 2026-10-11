@@ -134,17 +134,9 @@ theorem gaussValuationAway_mk' (hv : v.Integers O) (hϖ : ϖ ≠ 0) {ρ : ℝ≥
 /-- The extended Gauss valuation vanishes only at zero. -/
 @[simp]
 theorem gaussValuationAway_eq_zero_iff (hv : v.Integers O) (hϖ : ϖ ≠ 0) {ρ : ℝ≥0}
-    (hρ : ρ ∈ Set.Ioo 0 1) {x : B} : gaussValuationAway p hv hϖ ρ hρ B x = 0 ↔ x = 0 := by
-  refine ⟨fun hx ↦ ?_, fun hx ↦ hx ▸ map_zero _⟩
-  obtain ⟨⟨a, s⟩, rfl⟩ := IsLocalization.mk'_surjective
-    (Submonoid.powers ((p : 𝕎 O) * teichmuller p ϖ)) x
-  dsimp only at hx ⊢
-  have hs : gaussValuation p hv ρ hρ.2 s ≠ 0 :=
-    Valuation.powers_le_supp_primeCompl
-      (gaussValuation_natCast_mul_teichmuller_ne_zero hv hϖ hρ) s.2
-  rw [gaussValuationAway_mk', mul_eq_zero, inv_eq_zero, gaussValuation_eq_zero_iff hv hρ.1,
-    or_iff_left hs] at hx
-  rw [hx, IsLocalization.mk'_zero]
+    (hρ : ρ ∈ Set.Ioo 0 1) {x : B} : gaussValuationAway p hv hϖ ρ hρ B x = 0 ↔ x = 0 :=
+  Valuation.extendToLocalization_eq_zero_iff _ _ fun _ ↦
+    (gaussValuation_eq_zero_iff hv hρ.1 hρ.2).mp
 
 end Away
 
