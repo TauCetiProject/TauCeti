@@ -51,7 +51,7 @@ variable {I J C : Type*} [Category* C]
 /-- The map of coproducts over the fibre of `p : I → J` over `j` induced by a morphism of graded
 objects is the map of colimits of the corresponding discrete diagrams. -/
 lemma mapMap_eq_colimMap {X Y : GradedObject I C} (φ : X ⟶ Y) (p : I → J) [X.HasMap p]
-    [Y.HasMap p] (j : J) [HasColimitsOfShape (Discrete (p ⁻¹' {j})) C] :
+    [Y.HasMap p] (j : J) :
     mapMap φ p j = colimMap (Discrete.natTrans fun i ↦ φ i.as.1 :
       Discrete.functor (X.mapObjFun p j) ⟶ Discrete.functor (Y.mapObjFun p j)) := by
   refine mapObj_ext _ _ _ _ fun i hi ↦ ?_
