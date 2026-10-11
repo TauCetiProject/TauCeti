@@ -334,6 +334,23 @@ theorem heq_of_cast_eq {n m : ℕ} (h : n = m) {x : NormalizedCubicalChain X R n
   rw [cast_rfl] at hxy
   exact heq_of_eq hxy
 
+/-- A constant map induces zero on positive-dimensional normalized cubical chains. -/
+@[simp]
+theorem map_const_succ (y : Y) (n : ℕ) :
+    map (X := X) R (ContinuousMap.const X y) (n + 1) = 0 := by
+  refine LinearMap.ext fun c ↦ ?_
+  induction c using Submodule.Quotient.induction_on with
+  | H c =>
+    induction c using Finsupp.induction_linear with
+    | zero => simp
+    | add a b ha hb => simpa using congrArg₂ (· + ·) ha hb
+    | single c a =>
+      rw [map_mk, CubicalChain.map_single, LinearMap.zero_apply, Submodule.Quotient.mk_eq_zero]
+      apply CubicalChain.single_mem_degenerate
+      refine SingularCube.isDegenerate_iff.2 ⟨0, ?_⟩
+      rw [SingularCube.isDegenerateAt_iff]
+      simp
+
 end NormalizedCubicalChain
 
 end TauCeti
