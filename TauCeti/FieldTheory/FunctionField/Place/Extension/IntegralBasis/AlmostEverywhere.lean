@@ -17,10 +17,11 @@ that `b` is an integral basis over the valuation ring of all but finitely many p
 algebraic function field `F / k`. This is Stichtenoth, *Algebraic Function Fields and Codes*,
 2nd ed., Theorem 3.3.6.
 
-There are two finiteness steps. First, any fixed element of `F'` is integral over `𝒪_P` for all
-but finitely many `P`: outside the poles of the finitely many coefficients of its minimal
-polynomial over `F`, that polynomial is defined over `𝒪_P`. Second, apply this simultaneously to
-the vectors of `b` and its trace-dual basis. If both bases are integral at `P`, the trace formula
+There are two finiteness steps. First, any element integral over `F` in a ring algebra is
+integral over `𝒪_P` for all but finitely many `P`: outside the poles of the finitely many
+coefficients of its minimal polynomial over `F`, that polynomial is defined over `𝒪_P`.
+Second, apply this simultaneously to the vectors of `b` and its trace-dual basis. If both bases
+are integral at `P`, the trace formula
 for the coordinates in `b` shows that every integral element has integral coordinates;
 integrality of the vectors of `b` proves the converse.
 
@@ -53,7 +54,7 @@ namespace Place
 universe u v v'
 
 variable {k : Type u} {F : Type v} {F' : Type v'}
-variable [Field k] [Field F] [Field F'] [Algebra k F] [Algebra F F']
+variable [Field k] [Field F] [Algebra k F]
 
 attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
 
@@ -63,7 +64,8 @@ attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExte
 
 Indeed, outside the poles of the coefficients of its minimal polynomial over `F`, that monic
 polynomial has coefficients in `𝒪_P` and witnesses integrality over `𝒪_P`. -/
-theorem finite_setOf_not_isIntegral (hF : IsFunctionField k F) (x : F') (hx : IsIntegral F x) :
+theorem finite_setOf_not_isIntegral [Ring F'] [Algebra F F']
+    (hF : IsFunctionField k F) (x : F') (hx : IsIntegral F x) :
     {P : Place k F | ¬ IsIntegral P.integers x}.Finite := by
   let p : F[X] := minpoly F x
   let S : Set (Place k F) :=
@@ -127,6 +129,8 @@ theorem finite_setOf_not_exists_map_eq_and_separable (hF : IsFunctionField k F) 
   exact ⟨φ, hφ, Polynomial.Separable.map ⟨A, B, hAB⟩⟩
 
 /-! ### Bases integral at almost every place -/
+
+variable [Field F'] [Algebra F F']
 
 /-- **Every basis of a finite separable extension is an integral basis at all but finitely many
 places** (Stichtenoth, Theorem 3.3.6). -/

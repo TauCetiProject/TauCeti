@@ -157,6 +157,22 @@ noncomputable def bimoduleTensorObj :
 def bimoduleTensorTmul (m : M) (n : N) : bimoduleTensorObj Γ Δ Θ M N :=
   BalancedTensorProduct.tmul k B m n
 
+/-- Forgetting the output grading identifies the tensor carrier with the balanced quotient.
+The factor actions in this quotient are the restrictions of the enveloping actions. -/
+noncomputable def bimoduleTensorUnderlyingEquiv :
+    bimoduleTensorObj Γ Δ Θ M N ≃ₗ[k] BalancedTensorProduct k B M N :=
+  LinearEquiv.refl k T
+
+@[simp]
+theorem bimoduleTensorUnderlyingEquiv_tmul (m : M) (n : N) :
+    bimoduleTensorUnderlyingEquiv Γ Δ Θ M N (bimoduleTensorTmul Γ Δ Θ M N m n) =
+      BalancedTensorProduct.tmul k B m n := (rfl)
+
+@[simp]
+theorem bimoduleTensorUnderlyingEquiv_symm_tmul (m : M) (n : N) :
+    (bimoduleTensorUnderlyingEquiv Γ Δ Θ M N).symm (BalancedTensorProduct.tmul k B m n) =
+      bimoduleTensorTmul Γ Δ Θ M N m n := (rfl)
+
 @[simp]
 theorem bimoduleTensorTmul_zero_left (n : N) :
     bimoduleTensorTmul Γ Δ Θ M N 0 n = 0 :=

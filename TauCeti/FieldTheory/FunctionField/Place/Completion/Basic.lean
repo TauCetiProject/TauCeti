@@ -7,13 +7,17 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Filtration
 public import Mathlib.Topology.Algebra.Valued.WithVal
+public import Mathlib.RingTheory.AdicCompletion.Noetherian
 
 /-!
 # Completion at a place
 
 The completion of a field at a place carries the same normalized valuation and constant field
 embedding. Its valuation ring is a complete discrete valuation ring, and a uniformizer of the
-original field is still a uniformizer after completion.
+original field is still a uniformizer after completion. Completeness can be read through the
+order filtration: a sequence whose terms agree to increasing order has a limit to which it agrees
+to the same orders. In particular the completed valuation ring is complete for the adic topology
+of its maximal ideal, hence a Henselian local ring.
 
 The inclusion identifies every finite interval of the order filtration with the corresponding
 interval in the completion. In particular, completion does not change the residue field. These
@@ -109,6 +113,56 @@ instance completeSpace_completionIntegers : CompleteSpace P.completionPlace.inte
     simp only [SetLike.mem_coe, mem_integers_iff, completionPlace_valuation,
       Valuation.mem_valuationSubring_iff]
   exact (h.symm ▸ Valued.isClosed_valuationSubring P.Completion).completeSpace_coe
+
+/-- Each step of the order filtration of the completed field is closed. -/
+theorem isClosed_completionPlace_filtration (a : ℤ) :
+    IsClosed (P.completionPlace.filtration a : Set P.Completion) := by
+  obtain ⟨s, hs0, hs⟩ := P.exists_ne_zero_ord_eq a
+  convert Valued.isClosed_closedBall P.Completion
+    (Valued.v.restrict (P.completionEmbedding s)) using 1
+  ext x
+  simp only [SetLike.mem_coe, mem_filtration_iff, completionPlace_valuation, Set.mem_ofPred_eq,
+    Valuation.restrict_le_iff, valuation_completionEmbedding, P.valuation_eq_exp_neg_ord hs0, hs]
+
+/-- Completeness of the completed field, read through the order filtration: if the terms of a
+sequence agree to increasing order, `g n ≡ g m` to order `m` whenever `m ≤ n`, then some completed
+function agrees with each term `g n` to order `n`. -/
+theorem exists_forall_sub_mem_completionPlace_filtration {g : ℕ → P.Completion}
+    (hg : ∀ ⦃m n : ℕ⦄, m ≤ n → g n - g m ∈ P.completionPlace.filtration m) :
+    ∃ x : P.Completion, ∀ n : ℕ, x - g n ∈ P.completionPlace.filtration n := by
+  have hcauchy : CauchySeq g := by
+    refine (Valued.hasBasis_uniformity P.Completion ℤᵐ⁰).cauchySeq_iff.mpr fun γ _ ↦ ?_
+    obtain ⟨n, hn⟩ := WithZero.exists_exp_neg_natCast_lt
+      (MonoidWithZeroHom.ValueGroup₀.embedding_unit_ne_zero γ)
+    refine ⟨n, fun m hm l hl ↦ ?_⟩
+    have hdiff : g l - g m ∈ P.completionPlace.filtration n := by
+      simpa using (P.completionPlace.filtration n).sub_mem (hg hl) (hg hm)
+    rw [Set.mem_ofPred_eq, Valuation.restrict_lt_iff_lt_embedding]
+    exact (P.completionPlace.mem_filtration_iff.mp hdiff).trans_lt hn
+  obtain ⟨x, hx⟩ := cauchySeq_tendsto_of_complete hcauchy
+  refine ⟨x, fun n ↦ ?_⟩
+  have hclosed := (P.isClosed_completionPlace_filtration n).preimage
+    (continuous_id.sub (continuous_const (y := g n)))
+  exact hclosed.mem_of_tendsto hx (Filter.eventually_ge_atTop n |>.mono fun m hm ↦ hg hm)
+
+/-- The completed valuation ring is complete for the adic topology of its maximal ideal. In
+particular it is a Henselian local ring (`TauCeti.IsAdicComplete.henselianLocalRing`). -/
+instance isAdicComplete_completionIntegers :
+    IsAdicComplete (IsLocalRing.maximalIdeal P.completionPlace.integers)
+      P.completionPlace.integers where
+  toIsHausdorff := inferInstance
+  prec' f hf := by
+    simp only [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top,
+      mem_maximalIdeal_pow_iff_coe_mem_filtration] at hf ⊢
+    obtain ⟨x, hx⟩ := P.exists_forall_sub_mem_completionPlace_filtration
+      (g := fun n ↦ (f n : P.Completion)) fun m n hmn ↦ by
+        simpa using (P.completionPlace.filtration m).neg_mem (hf hmn)
+    have hx0 : x ∈ P.completionPlace.integers := by
+      have h := (P.completionPlace.filtration 0).add_mem (hx 0)
+        (P.completionPlace.mem_filtration_zero_iff.mpr (f 0).2)
+      simpa [P.completionPlace.mem_filtration_zero_iff] using h
+    refine ⟨⟨x, hx0⟩, fun n ↦ ?_⟩
+    simpa using (P.completionPlace.filtration n).neg_mem (hx n)
 
 /-- A completed function can be approximated by a function in `F` to any prescribed order. -/
 theorem exists_sub_completionEmbedding_mem_filtration (x : P.Completion) (b : ℤ) :

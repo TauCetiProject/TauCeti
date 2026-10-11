@@ -65,8 +65,8 @@ a relation between `C` and `Cᵀ`.
 ## Main declarations
 
 * `TauCeti.ConstantForm.relationMatrix`: the matrix of defining relations `X C Xᵀ - C`.
-* `TauCeti.ConstantForm.definingHopfIdeal_toIdeal_le_ker_of_map_genericMatrix_mul_mul_transpose`:
-  a coordinate morphism whose generic matrix `X` satisfies `X C Xᵀ = C` kills the defining ideal.
+* `TauCeti.ConstantForm.definingHopfIdeal_toIdeal_le_ker_iff`: a coordinate morphism kills the
+  defining ideal exactly when its generic matrix `X` satisfies `X C Xᵀ = C`.
 * `TauCeti.ConstantForm.definingHopfIdeal`: the Hopf ideal its entries generate.
 * `TauCeti.ConstantForm.coordinateHopfAlgebra` and `TauCeti.ConstantForm.coordinateMap`: the
   quotient coordinate Hopf algebra and the quotient morphism onto it.
@@ -144,7 +144,7 @@ theorem relationMatrix_mem_relationSet (i j : Fin n) :
 
 /-- Mapping the relation matrix through an algebra morphism gives the relation of the images:
 the generic matrix maps entrywise, and the constant form maps to the constant form. -/
-@[simp] theorem relationMatrix_map {T : Type*} [CommRing T] [Algebra R T]
+@[simp] theorem relationMatrix_map {T : Type*} [Ring T] [Algebra R T]
     (phi : GeneralLinear.coordinateHopfAlgebra R n →ₐ[R] T) :
     (relationMatrix R n C).map phi =
       (GeneralLinear.genericMatrix R n).map phi * C.map (algebraMap R T) *
@@ -275,23 +275,20 @@ theorem definingHopfIdeal_toIdeal :
     (definingHopfIdeal R n C).toIdeal = Ideal.span (relationSet R n C) := by
   rw [definingHopfIdeal, HopfIdeal.ofSpan_toIdeal]
 
-/-- **A coordinate morphism whose generic matrix `X` satisfies `X C Xᵀ = C` kills the defining
-ideal.** This is the criterion by which a subgroup of `GL n` given by generating morphisms is shown
-to lie in the subgroup scheme preserving `C`: it suffices to evaluate the form relation on the
-generic matrix of each generator. -/
-theorem definingHopfIdeal_toIdeal_le_ker_of_map_genericMatrix_mul_mul_transpose
-    {T : Type*} [CommRing T] [Algebra R T]
-    (phi : GeneralLinear.coordinateHopfAlgebra R n →ₐ[R] T)
-    (hphi : (GeneralLinear.genericMatrix R n).map phi * C.map (algebraMap R T) *
-        ((GeneralLinear.genericMatrix R n).map phi)ᵀ = C.map (algebraMap R T)) :
-    (definingHopfIdeal R n C).toIdeal ≤ RingHom.ker (phi : _ →+* T) := by
-  rw [definingHopfIdeal_toIdeal, Ideal.span_le]
-  intro x hx
-  obtain ⟨a, c, rfl⟩ := (mem_relationSet_iff R n C).mp hx
-  have h := congrFun (congrFun (relationMatrix_map R n C phi) a) c
-  rw [Matrix.map_apply] at h
-  simp only [SetLike.mem_coe, RingHom.mem_ker, RingHom.coe_coe]
-  rw [h, hphi, Matrix.sub_apply, sub_self]
+/-- **A coordinate morphism kills the defining ideal exactly when its generic matrix `X`
+satisfies `X C Xᵀ = C`.** This is the criterion by which a subgroup of `GL n` given by generating
+morphisms is shown to lie in the subgroup scheme preserving `C`: it suffices to evaluate the form
+relation on the generic matrix of each generator. -/
+@[simp↓]
+theorem definingHopfIdeal_toIdeal_le_ker_iff {T : Type*} [Ring T] [Algebra R T]
+    (phi : GeneralLinear.coordinateHopfAlgebra R n →ₐ[R] T) :
+    (definingHopfIdeal R n C).toIdeal ≤ RingHom.ker (phi : _ →+* T) ↔
+      (GeneralLinear.genericMatrix R n).map phi * C.map (algebraMap R T) *
+          ((GeneralLinear.genericMatrix R n).map phi)ᵀ = C.map (algebraMap R T) := by
+  rw [definingHopfIdeal_toIdeal, Ideal.span_le, ← sub_eq_zero, ← relationMatrix_map]
+  refine ⟨fun h ↦ Matrix.ext fun i j ↦ h (relationMatrix_mem_relationSet R n C i j), ?_⟩
+  rintro h _ ⟨ij, rfl⟩
+  exact congrFun (congrFun h ij.1) ij.2
 
 /-- The coordinate Hopf algebra of the subgroup scheme of `GL n` preserving `C`. -/
 noncomputable abbrev coordinateHopfAlgebra : _root_.CommHopfAlgCat.{u} R :=
@@ -418,22 +415,6 @@ theorem mapPointsFunctor_coordinateMap_app
   apply WithConv.ext
   rfl
 
-/-- Evaluating the relation matrix at a point gives the form relation of its matrix. -/
-private theorem ofConv_relationMatrix
-    (g : HopfAlgebra.points (R := R)
-      (H := GeneralLinear.coordinateHopfAlgebra R n) (CommAlgCat.of R A)) :
-    (relationMatrix R n C).map g.ofConv =
-      (GeneralLinear.pointToGeneralLinear n g : Matrix (Fin n) (Fin n) A) *
-          C.map (algebraMap R A) *
-          (GeneralLinear.pointToGeneralLinear n g : Matrix (Fin n) (Fin n) A)ᵀ -
-        C.map (algebraMap R A) := by
-  have hg : (GeneralLinear.genericMatrix R n).map g.ofConv =
-      (GeneralLinear.pointToGeneralLinear n g : Matrix (Fin n) (Fin n) A) := by
-    ext i j
-    rw [Matrix.map_apply, GeneralLinear.genericMatrix_apply]
-    exact (GeneralLinear.pointToGeneralLinear_apply n g i j).symm
-  rw [relationMatrix_map R n C g.ofConv, hg]
-
 /-- **The ambient membership criterion**: an ambient point belongs to the subgroup cut out by
 the defining Hopf ideal exactly when its matrix `M` satisfies `M C Mᵀ = C`.
 
@@ -452,29 +433,11 @@ theorem mem_definingPointsSubgroup_iff
           (GeneralLinear.pointsMulEquiv n g : Matrix (Fin n) (Fin n) A)ᵀ =
         C.map (algebraMap R A) := by
   rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff, GeneralLinear.pointsMulEquiv_apply]
-  constructor
-  · intro h
-    have hzero : (relationMatrix R n C).map g.ofConv = 0 := by
-      ext i j
-      rw [Matrix.map_apply, Matrix.zero_apply]
-      exact h _ (HopfIdeal.mem_toIdeal.mp
-        (definingHopfIdeal_toIdeal R n C ▸
-          Ideal.subset_span (relationMatrix_mem_relationSet R n C i j)))
-    rw [ofConv_relationMatrix R n C g] at hzero
-    exact sub_eq_zero.mp hzero
-  · intro h y hy
-    have hzero : (relationMatrix R n C).map g.ofConv = 0 := by
-      rw [ofConv_relationMatrix R n C g]
-      exact sub_eq_zero.mpr h
-    have hle : Ideal.span (relationSet R n C) ≤
-        RingHom.ker (g.ofConv :
-          GeneralLinear.coordinateHopfAlgebra R n →ₐ[R] A) := by
-      rw [Ideal.span_le]
-      rintro _ ⟨ij, rfl⟩
-      have := congrFun (congrFun hzero ij.1) ij.2
-      rw [Matrix.map_apply, Matrix.zero_apply] at this
-      exact this
-    exact hle (definingHopfIdeal_toIdeal R n C ▸ HopfIdeal.mem_toIdeal.mpr hy)
+  have hg : (GeneralLinear.genericMatrix R n).map g.ofConv =
+      (GeneralLinear.pointToGeneralLinear n g : Matrix (Fin n) (Fin n) A) :=
+    GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear n g.ofConv
+  rw [← hg]
+  exact definingHopfIdeal_toIdeal_le_ker_iff R n C g.ofConv
 
 end Points
 

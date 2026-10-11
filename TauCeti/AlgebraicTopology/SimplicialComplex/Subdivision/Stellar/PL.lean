@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Geometry
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Homeomorph
+public import TauCeti.Topology.PL.FiniteInf
 public import TauCeti.Topology.PL.Inverse
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 
@@ -16,6 +18,11 @@ The barycentric identification of a finite stellar subdivision is a piecewise-li
 coordinate polyhedra. Its inverse is piecewise affine on the subdivided simplices, using the
 finite-simplex inverse criterion. These are the local transition maps needed to transport PL
 charts across stellar equivalences.
+
+The inverse also has an explicit extension to arbitrary coordinate spaces: it removes the least
+coordinate on the starred face from each of its vertices and transfers the total removed mass
+to the new vertex. This extension is piecewise affine on minimum-coordinate cells and agrees
+with the inverse of the stellar homeomorphism of finite weak polyhedra.
 
 Reference: Rourke--Sanderson, *Introduction to Piecewise-Linear Topology*, Chapter 2.
 -/
@@ -52,6 +59,15 @@ theorem stellarSubdivisionCoordinateMap_apply (x : ι → ℝ) (i : ι) :
   classical
   simp [stellarSubdivisionCoordinateMap]
 
+/-- The coordinate extension agrees with the finitely supported stellar map. -/
+@[simp]
+theorem stellarSubdivisionCoordinateMap_coe (σ : Finset ι) (v : ι) (x : ι →₀ ℝ) :
+    stellarSubdivisionCoordinateMap σ v x =
+      (stellarSubdivisionLinearMap σ v x : ι → ℝ) := by
+  classical
+  ext i
+  simp
+
 /-- The coordinate-space map agrees with the finitely supported stellar linear map. -/
 @[simp]
 theorem stellarSubdivisionCoordinateMap_on_equiv [Finite ι] (x : ι →₀ ℝ) :
@@ -60,6 +76,103 @@ theorem stellarSubdivisionCoordinateMap_on_equiv [Finite ι] (x : ι →₀ ℝ)
   classical
   ext i
   simp [stellarSubdivisionCoordinateMap, Finset.stellarSubdivisionLinearMap_apply, eq_comm]
+
+section
+
+variable [DecidableEq ι]
+
+open TauCeti
+
+/-- Extend the inverse stellar identification to coordinate space by transferring the least
+coordinate on `σ` to `v`. On an original polyhedron with unused vertex `v`, this is the inverse
+of the barycentric stellar map. -/
+def stellarSubdivisionInverseExtension (σ : Finset ι) (hσ : σ.Nonempty) (v : ι)
+    (x : ι → ℝ) : ι → ℝ :=
+  x + σ.inf' hσ x •
+    (((σ.card : ℝ) • Finsupp.single v 1 - ∑ i ∈ σ, Finsupp.single i 1 : ι →₀ ℝ) : ι → ℝ)
+
+/-- The inverse stellar extension's coordinate formula. -/
+@[simp]
+theorem stellarSubdivisionInverseExtension_apply (σ : Finset ι) (hσ : σ.Nonempty) (v : ι)
+    (x : ι → ℝ) (i : ι) :
+    stellarSubdivisionInverseExtension σ hσ v x i =
+      x i + σ.inf' hσ x *
+        ((if i = v then (σ.card : ℝ) else 0) - if i ∈ σ then 1 else 0) := by
+  simp [stellarSubdivisionInverseExtension, Finsupp.single_apply, eq_comm]
+
+omit [DecidableEq ι] in
+/-- The inverse stellar extension is piecewise affine on the entire coordinate space.
+Its cells are the regions on which one of the starred-face coordinates is least. -/
+theorem isPiecewiseAffineOn_stellarSubdivisionInverseExtension (σ : Finset ι) (hσ : σ.Nonempty)
+    (v : ι) : IsPiecewiseAffineOn (stellarSubdivisionInverseExtension σ hσ v) Set.univ := by
+  let f (i : ι) : (ι → ℝ) →ᴬ[ℝ] ℝ :=
+    (ContinuousLinearMap.proj i).toContinuousAffineMap
+  let d : ι → ℝ :=
+    ((σ.card : ℝ) • Finsupp.single v 1 - ∑ i ∈ σ, Finsupp.single i 1 : ι →₀ ℝ)
+  let A (i : σ) : (ι → ℝ) →ᴬ[ℝ] (ι → ℝ) :=
+    (ContinuousLinearMap.id ℝ (ι → ℝ) +
+      (ContinuousLinearMap.proj (i : ι)).smulRight d).toContinuousAffineMap
+  refine isPiecewiseAffineOn_of_finite (C := σ.infCell f) (A := A)
+    (σ.isConvexPolyhedron_infCell f) (σ.subset_iUnion_infCell hσ f) ?_
+  intro i x hx
+  have hmin : σ.inf' hσ x = x i :=
+    σ.infAffine_eq_of_mem_infCell hσ f i hx.2
+  simp [stellarSubdivisionInverseExtension, A, d, hmin]
+
+omit [DecidableEq ι] in
+/-- The barycentric coordinate extension cancels the inverse extension on coordinates
+vanishing at the new vertex. No positivity, support, or normalization is needed. -/
+@[simp]
+theorem stellarSubdivisionCoordinateMap_stellarSubdivisionInverseExtension
+    {σ : Finset ι} (hσ : σ.Nonempty) {v : ι} (hvσ : v ∉ σ)
+    {x : ι → ℝ} (hxv : x v = 0) :
+    stellarSubdivisionCoordinateMap σ v (stellarSubdivisionInverseExtension σ hσ v x) =
+      x := by
+  classical
+  have hc : (σ.card : ℝ) ≠ 0 := by exact_mod_cast hσ.card_pos.ne'
+  ext i
+  simp only [stellarSubdivisionCoordinateMap_apply, stellarSubdivisionInverseExtension_apply]
+  by_cases hiv : i = v
+  · subst i
+    simp [hvσ, hxv]
+  · by_cases his : i ∈ σ <;> simp [hiv, his, hvσ, hxv, hc]
+
+/-- On nonnegative coordinates supported on a stellar face, the inverse extension cancels
+the barycentric map. No normalization or finiteness of the complex or vertex type is needed. -/
+theorem stellarSubdivisionInverseExtension_stellarSubdivisionLinearMap
+    {K : PreAbstractSimplicialComplex ι} {σ : Finset ι} (hσ : σ.Nonempty)
+    {v : ι} (hvσ : v ∉ σ) {x : ι →₀ ℝ}
+    (hxpos : ∀ i, 0 ≤ x i)
+    (hxface : x.support ∈ PreAbstractSimplicialComplex.stellarSubdivision K σ v) :
+    stellarSubdivisionInverseExtension σ hσ v (stellarSubdivisionLinearMap σ v x) =
+      (x : ι → ℝ) := by
+  have hnot : ¬ σ ⊆ x.support := fun h =>
+    PreAbstractSimplicialComplex.self_notMem_stellarSubdivision hvσ
+      ((PreAbstractSimplicialComplex.stellarSubdivision K σ v).isRelLowerSet_faces.mem_of_le
+        hxface h hσ)
+  obtain ⟨a, ha, hxa⟩ := Finset.not_subset.mp hnot
+  have hc : (σ.card : ℝ) ≠ 0 := by exact_mod_cast hσ.card_pos.ne'
+  have hcoord (i : ι) (hi : i ∈ σ) :
+      stellarSubdivisionLinearMap σ v x i = x i + x v * (σ.card : ℝ)⁻¹ := by
+    have hiv : i ≠ v := fun h => hvσ (h ▸ hi)
+    simp [stellarSubdivisionLinearMap_apply, hi, hiv]
+  have hmin : σ.inf' hσ (stellarSubdivisionLinearMap σ v x) =
+      x v * (σ.card : ℝ)⁻¹ := by
+    apply le_antisymm
+    · exact (σ.inf'_le _ ha).trans_eq (by
+        simp [hcoord a ha, Finsupp.notMem_support_iff.mp hxa])
+    · apply σ.le_inf' hσ
+      intro i hi
+      rw [hcoord i hi]
+      linarith [hxpos i]
+  ext i
+  rw [stellarSubdivisionInverseExtension_apply, hmin, stellarSubdivisionLinearMap_apply]
+  by_cases hiv : i = v
+  · subst i
+    simp [hvσ, hc]
+  · by_cases his : i ∈ σ <;> simp [hiv, his]
+
+end
 
 end Finset
 
@@ -357,5 +470,34 @@ theorem exists_isPLOn_stellarSubdivisionLeftInverse
     exact congrArg (fun t : Set (κ → ℝ) => S '' t) hUCanonical
   · convert hgf using 1
     rw [hSeq, hUCanonical]
+
+section
+
+open AbstractSimplicialComplex
+
+variable [DecidableEq ι] {A : AbstractSimplicialComplex ι}
+
+/-- The finite stellar homeomorphism has the barycentric continuous linear coordinate map
+as its forward extension and the piecewise-affine minimum-transfer map as its inverse extension.
+Thus stellar moves identify finite weak polyhedra by PL maps in both directions. -/
+theorem exists_homeomorph_stellarSubdivision_with_inverse
+    (hσ : σ ∈ K) (hv : ({v} : Finset ι) ∉ K) (hfin : K.faces.Finite)
+    (hK : K ≤ A.toPreAbstractSimplicialComplex)
+    (hS : stellarSubdivision K σ v ≤ A.toPreAbstractSimplicialComplex) :
+    ∃ e : {x : Realization A // x.1.support ∈ stellarSubdivision K σ v} ≃ₜ
+        {x : Realization A // x.1.support ∈ K},
+      (∀ x, ((e x).1.1 : ι → ℝ) = Finset.stellarSubdivisionCoordinateMap σ v x.1.1) ∧
+      ∀ y, ((e.symm y).1.1 : ι → ℝ) =
+        Finset.stellarSubdivisionInverseExtension σ (K.isRelLowerSet_faces hσ).1 v y.1.1 := by
+  obtain ⟨e, he⟩ := exists_homeomorph_stellarSubdivision hσ hv hfin hK hS
+  refine ⟨e, fun x => ?_, fun y => ?_⟩
+  · simp [he x]
+  · obtain ⟨x, rfl⟩ := e.surjective y
+    rw [e.symm_apply_apply, he x]
+    exact (Finset.stellarSubdivisionInverseExtension_stellarSubdivisionLinearMap
+      (K.isRelLowerSet_faces hσ).1 (notMem_of_singleton_notMem hv hσ)
+      (Realization.nonneg A x.1) x.2).symm
+
+end
 
 end PreAbstractSimplicialComplex

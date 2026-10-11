@@ -83,9 +83,14 @@ private theorem baseChangeTowerAlgEquiv_map_comp_comul :
         AlgEquiv.coe_toAlgHom,
         TauCeti.Algebra.TensorProduct.baseChangeTowerAlgEquiv_tmul,
         TauCeti.Coalgebra.baseChange_comul_tmul]
-      exact _root_.Algebra.TensorProduct.map_baseChangeTowerAlgEquiv_distribBaseChange
-        k L H H K s l
-        (Coalgebra.comul (R := k) h)
+      simpa only [AlgHom.comp_apply, Algebra.TensorProduct.map_tmul, AlgHom.id_apply,
+        AlgEquiv.coe_toAlgHom, TauCeti.Algebra.TensorProduct.baseChangeTowerAlgEquiv_tmul,
+        ← AlgEquiv.coe_toLinearEquiv,
+        TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv_toLinearEquiv] using
+        DFunLike.congr_fun
+          (TauCeti.Algebra.TensorProduct.map_baseChangeTowerAlgEquiv_comp_baseChangeTensorAlgEquiv
+            k L H H K)
+          (s ⊗ₜ[L] (l ⊗ₜ[k] Coalgebra.comul (R := k) h))
 
 /-- **Base change of bialgebras composes in stages.** For a tower `k → L → K`, extending a
 `k`-bialgebra `H` to `L` and then to `K` is extending it to `K` in one step.
