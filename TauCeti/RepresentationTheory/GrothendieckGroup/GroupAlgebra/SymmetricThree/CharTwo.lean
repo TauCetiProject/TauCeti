@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Permutation.PrimePower
-import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Projection
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Symmetric.Standard
 public import TauCeti.GroupTheory.Perm.FinThree.Basic
 
@@ -70,7 +69,7 @@ theorem permK0_regular_fin_three_eq_two_nsmul_one_add_standard :
   rw [← permK0_congr k QuotientGroup.quotientBot.toEquiv quotientBot_equivariant,
     ← indK0_of_trivial, ← exactK0_one_eq_of_trivial,
     indK0_one_bot_eq_two_nsmul_stabilizer_fin_three k 0,
-    indK0_one, permK0_quotient_stabilizer_eq_one_add_standard, nsmul_add]
+    indK0_one_stabilizer_eq_one_add_standard, nsmul_add]
 
 /-- The coset permutation module of `A₃` in characteristic two has two trivial
 composition factors, without claiming that the extension splits. -/
@@ -86,5 +85,14 @@ theorem permK0_quotient_alternating_fin_three_eq_two_nsmul_one :
       (Subgroup.pow_index_mem (H := alternatingGroup (Fin 3)) g)
   simpa only [← permK0_def, ← exactK0_one_eq_of_trivial, alternatingGroup.index_eq_two] using
     exactK0_ofMulAction_quotient_eq_index_nsmul (k := k) 2 (alternatingGroup (Fin 3)) hpow
+
+/-- Inducing the trivial line from `A₃` in characteristic two gives twice the trivial
+class of `S₃`. -/
+@[simp]
+theorem indK0_one_alternating_fin_three_eq_two_nsmul_one :
+    indK0 k (alternatingGroup (Fin 3)) 1 =
+      2 • (1 : ExactK0 (finiteModulesExactStructure k[Equiv.Perm (Fin 3)])) := by
+  rw [exactK0_one_eq_of_trivial, indK0_of_trivial,
+    permK0_quotient_alternating_fin_three_eq_two_nsmul_one]
 
 end TauCeti

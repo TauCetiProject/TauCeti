@@ -51,11 +51,7 @@ theorem reverse_eq_neg_of_mem_quadraticLieSubalgebra
     reverse x = -x := by
   rw [mem_quadraticLieSubalgebra_iff] at hx
   obtain ⟨z, rfl⟩ := hx
-  let P := LinearMap.eqLocus (reverse (Q := Q)) (-LinearMap.id)
-  have hle : LinearMap.range (bivectorExterior Q) ≤ P :=
-    bivectorExterior_range_le_of_bivector_mem Q P fun a b =>
-      LinearMap.mem_eqLocus.2 (reverse_bivector Q a b)
-  exact LinearMap.mem_eqLocus.mp (hle ⟨z, rfl⟩)
+  exact reverse_bivectorExterior Q z
 
 end CommRing
 

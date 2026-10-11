@@ -56,14 +56,15 @@ omit [Nonempty α] in
 /-- Inducing the trivial line from any point stabilizer in a finite symmetric group gives
 the natural permutation class, namely the trivial class plus the standard class. -/
 @[simp]
-theorem permK0_quotient_stabilizer_eq_one_add_standard (a : α) :
+theorem indK0_one_stabilizer_eq_one_add_standard (a : α) :
     letI : Module.Finite k[Equiv.Perm α] (standardRepresentation k α).asModule :=
       Module.Finite.of_restrictScalars_finite k k[Equiv.Perm α] _
-    permK0 k (Equiv.Perm α) (Equiv.Perm α ⧸ MulAction.stabilizer (Equiv.Perm α) a) =
+    indK0 k (MulAction.stabilizer (Equiv.Perm α) a) 1 =
       1 + ExactK0.of (FGModuleCat.of k[Equiv.Perm α]
         (standardRepresentation k α).asModule) := by
   let : Nonempty α := ⟨a⟩
-  rw [permK0_congr k (quotientStabilizerEquiv (Equiv.Perm α) a)
+  rw [exactK0_one_eq_of_trivial, indK0_of_trivial,
+    permK0_congr k (quotientStabilizerEquiv (Equiv.Perm α) a)
       (quotientStabilizerEquiv_smul (Equiv.Perm α) a),
     permK0_eq_one_add_standard]
 

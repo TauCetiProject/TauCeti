@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.Characterization
-
 public import Mathlib.FieldTheory.IsSepClosed
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.Five
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Symplectic

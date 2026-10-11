@@ -238,6 +238,15 @@ variable [Invertible (2 : R)]
   rw [bivector_def, map_smul, map_sub, reverse.map_mul, reverse.map_mul, reverse_ι, reverse_ι]
   module
 
+/-- Clifford reversal negates the image of the exterior-square bivector map. -/
+@[simp] theorem reverse_bivectorExterior (q : QuadraticForm R M) (x : ⋀[R]^2 M) :
+    reverse (bivectorExterior q x) = -bivectorExterior q x := by
+  let P := LinearMap.eqLocus (reverse (Q := q)) (-LinearMap.id)
+  have hle : LinearMap.range (bivectorExterior q) ≤ P :=
+    bivectorExterior_range_le_of_bivector_mem q P fun a b =>
+      LinearMap.mem_eqLocus.2 (reverse_bivector q a b)
+  exact LinearMap.mem_eqLocus.mp (hle ⟨x, rfl⟩)
+
 end Bivector
 
 end CliffordAlgebra

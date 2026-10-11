@@ -205,14 +205,6 @@ theorem realCliffordTwoOneEvenEquivMatrix_reverseEven
   CliffordAlgebra.map_reverseEven_eq_adjugate_of_finrank_eq_three
     (realCliffordForm 2 1) (by norm_num) realCliffordTwoOneEvenEquivMatrix x
 
-/-- The matrix model makes the even Clifford algebra Dedekind finite.
-This supplies the inverse API for the low-rank unitary comparisons of
-`OrthogonalSpinGroups/README.md`, Layer 1F. -/
-instance instIsDedekindFiniteMonoidRealCliffordTwoOneEven :
-    IsDedekindFiniteMonoid (CliffordAlgebra.even (realCliffordForm 2 1)) :=
-  IsDedekindFiniteMonoid.of_injective realCliffordTwoOneEvenEquivMatrix.toMonoidHom
-    realCliffordTwoOneEvenEquivMatrix.injective
-
 /-- In the split three-dimensional matrix model, the reverse norm-one equation is determinant
 one. -/
 @[simp]

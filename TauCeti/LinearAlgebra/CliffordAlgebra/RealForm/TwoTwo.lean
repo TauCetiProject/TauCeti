@@ -290,14 +290,6 @@ theorem realCliffordTwoTwoEvenEquivMatrixProd_reverseEven
     realCliffordTwoOneEquivMatrixProd_star]
   rfl
 
-/-- The matrix model makes the even Clifford algebra Dedekind finite.
-This supplies the inverse API for the low-rank unitary comparisons of
-`OrthogonalSpinGroups/README.md`, Layer 1F. -/
-instance instIsDedekindFiniteMonoidRealCliffordTwoTwoEven :
-    IsDedekindFiniteMonoid (CliffordAlgebra.even (realCliffordForm 2 2)) :=
-  IsDedekindFiniteMonoid.of_injective realCliffordTwoTwoEvenEquivMatrixProd.toMonoidHom
-    realCliffordTwoTwoEvenEquivMatrixProd.injective
-
 /-- In the split matrix model of `Cl⁺(2,2)`, the reverse norm-one equation is determinant one in
 both matrix factors. -/
 @[simp]
