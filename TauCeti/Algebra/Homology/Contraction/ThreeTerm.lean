@@ -189,71 +189,45 @@ private theorem middle_contract : K.d 0 1 ≫ s1 h + s0 h ≫ K.d (-1) 0 +
     delta, epsilon, iW, pU,
     Preadditive.comp_add, Preadditive.add_comp, Category.assoc,
     Iso.hom_inv_id_assoc, Iso.hom_inv_id, Category.comp_id, Category.id_comp] using hn
-private def homFamily (i j : ℤ) : K.X i ⟶ K.X j := by
-  by_cases hi : i = 0
-  · subst i
-    by_cases hj : j = -1
-    · subst j
-      exact s0 h
-    · exact 0
-  · by_cases hi' : i = 1
-    · subst i
-      by_cases hj : j = 0
-      · subst j
-        exact s1 h
-      · exact 0
-    · exact 0
-private def contraction : Homotopy (𝟙 K) (projection h ≫ inclusion h) where
-  hom := homFamily h
-  zero i j hn := by
-    by_cases hi : i = 0
-    · subst i
-      by_cases hj : j = -1
-      · subst j
-        exact (hn (by simp)).elim
-      · simp [homFamily, hj]
-    · by_cases hi' : i = 1
-      · subst i
-        by_cases hj : j = 0
-        · subst j
-          exact (hn (by simp)).elim
-        · simp [homFamily, hj]
-      · simp [homFamily, hi, hi']
-  comm i := by
-    by_cases hi : i = -1
-    · subst i
-      rw [dNext_eq _ (by simp : (ComplexShape.up ℤ).Rel (-1) 0),
-        prevD_eq _ (by simp : (ComplexShape.up ℤ).Rel (-2) (-1))]
-      have hp : (projection h).f (-1) = 0 :=
-        (HomologicalComplex.isZero_single_obj_X (ComplexShape.up ℤ) 0 Z (-1)
-          (by decide)).eq_of_tgt _ _
-      simpa [homFamily, HomologicalComplex.comp_f, hp] using (bottom_contract h).symm
-    · by_cases hi' : i = 0
-      · subst i
-        rw [dNext_eq _ (by simp : (ComplexShape.up ℤ).Rel 0 1),
-          prevD_eq _ (by simp : (ComplexShape.up ℤ).Rel (-1) 0)]
-        have hp : (projection h ≫ inclusion h).f 0 = projectionZero h ≫ inclusionZero h := by
-          simp [projection, inclusion, Category.assoc]
-        simpa [homFamily, hp] using (middle_contract h).symm
-      · by_cases hi'' : i = 1
-        · subst i
-          rw [dNext_eq _ (by simp : (ComplexShape.up ℤ).Rel 1 2),
-            prevD_eq _ (by simp : (ComplexShape.up ℤ).Rel 0 1)]
-          have hp : (projection h).f 1 = 0 :=
-            (HomologicalComplex.isZero_single_obj_X (ComplexShape.up ℤ) 0 Z 1
-              (by decide)).eq_of_tgt _ _
-          simpa [homFamily, HomologicalComplex.comp_f, hp] using (top_contract h).symm
-        · exact (h.vanish i hi hi' hi'').eq_of_src _ _
+private theorem δ_singles :
+    δ (-1) 0 (Cochain.single (s0 h) (-1) + Cochain.single (s1 h) (-1)) =
+      Cochain.ofHom (𝟙 K - projection h ≫ inclusion h) := by
+  ext p
+  rw [δ_v (-1) 0 (by norm_num) _ p p (by omega) (p - 1) (p + 1) (by omega) rfl,
+    Cochain.ofHom_v]
+  simp only [Cochain.add_v, Preadditive.add_comp, Preadditive.comp_add,
+    HomologicalComplex.sub_f_apply, HomologicalComplex.id_f, HomologicalComplex.comp_f]
+  by_cases hp : p = -1
+  · subst hp
+    have hp0 : (projection h).f (-1) = 0 :=
+      (HomologicalComplex.isZero_single_obj_X (ComplexShape.up ℤ) 0 Z (-1)
+        (by decide)).eq_of_tgt _ _
+    simp [Cochain.single_v_eq_zero, hp0, bottom_contract]
+  · by_cases hp' : p = 0
+    · subst hp'
+      have hpi : (projection h).f 0 ≫ (inclusion h).f 0 = projectionZero h ≫ inclusionZero h := by
+        simp [projection, inclusion, Category.assoc]
+      simp only [Int.reduceSub, Int.reduceNeg, Cochain.single_v, ne_eq, zero_ne_one,
+        not_false_eq_true, Cochain.single_v_eq_zero, zero_comp, add_zero, Int.negOnePow_zero,
+        Int.reduceAdd, one_ne_zero, comp_zero, zero_add, one_smul, hpi]
+      rw [← middle_contract h]
+      abel
+    · by_cases hp'' : p = 1
+      · subst hp''
+        have hp1 : (projection h).f 1 = 0 :=
+          (HomologicalComplex.isZero_single_obj_X (ComplexShape.up ℤ) 0 Z 1
+            (by decide)).eq_of_tgt _ _
+        simp [Cochain.single_v_eq_zero, hp1, top_contract]
+      · exact (h.vanish p hp hp' hp'').eq_of_src _ _
+
 /-- Cancel the lower and upper identity blocks and retract onto `Z` in degree zero. -/
 def toContraction : TauCeti.Contraction K
     ((HomologicalComplex.single C (ComplexShape.up ℤ) 0).obj Z) where
   proj := projection h
   incl := inclusion h
   incl_comp_proj := inclusion_projection h
-  homotopy := Cochain.ofHomotopy (contraction h)
-  δ_homotopy := by
-    rw [Cochain.ofHom_sub]
-    exact δ_ofHomotopy (contraction h)
+  homotopy := Cochain.single (s0 h) (-1) + Cochain.single (s1 h) (-1)
+  δ_homotopy := δ_singles h
 
 /-- The degree-zero projection is the corrected projection to the surviving summand. -/
 @[simp]

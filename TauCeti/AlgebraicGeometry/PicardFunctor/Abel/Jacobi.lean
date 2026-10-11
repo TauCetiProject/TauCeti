@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Graph
-public import TauCeti.AlgebraicGeometry.PicardFunctor.Abel
+public import TauCeti.AlgebraicGeometry.PicardFunctor.Abel.Basic
 
 /-!
 # The Abel–Jacobi map on functors of points
