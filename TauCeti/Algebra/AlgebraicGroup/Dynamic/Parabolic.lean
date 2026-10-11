@@ -5,17 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Hopf.Map
-public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Points
 
 import Mathlib.Algebra.Group.End
 
 /-!
 # The dynamic parabolic, unipotent and Levi subgroups of a cocharacter
 
-Let `H` be a Hopf algebra over `R`, so that `Spec H` is an affine group scheme `G`, and let
-`l : H →ₐc[R] R[T;T⁻¹]` be a **cocharacter**, that is, a homomorphism of group schemes `𝔾ₘ → G`
-written contravariantly on coordinate rings. The *dynamic method* attaches to `l` three subgroups
+Let `H` be a commutative Hopf algebra over `R`, so that `Spec H` is an affine group scheme `G`,
+and let `l : H →ₐc[R] R[T;T⁻¹]` be a **cocharacter**, that is, a homomorphism of group schemes
+`𝔾ₘ → G` written contravariantly on coordinate rings. The *dynamic method* attaches to `l`
+three subgroups
 of the convolution group `G(A) = H →ₐ[R] A` of `A`-points, for every commutative `R`-algebra `A`,
 using only limits of one-parameter conjugation and no root data:
 
@@ -47,7 +47,6 @@ degenerates: `P(l)` and `Z(l)` are everything and `U(l)` is trivial.
 
 ## Main declarations
 
-* `TauCeti.Cocharacter.pointsHom`: a cocharacter read on points, `𝔾ₘ(A) = Aˣ → G(A)`.
 * `TauCeti.Cocharacter.conjugate`: conjugation by the generic point `l(T)`.
 * `TauCeti.Cocharacter.parabolic`, `TauCeti.Cocharacter.levi` and
   `TauCeti.Cocharacter.unipotent`: the three dynamic subgroups.
@@ -66,9 +65,9 @@ degenerates: `P(l)` and `Z(l)` are everything and `U(l)` is trivial.
 * B. Conrad, O. Gabber, G. Prasad, *Pseudo-reductive Groups*, §2.1.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 13.
 
-The constructions of points over the line and the punctured line, and the map induced by a
-cocharacter, need only a bialgebra structure on `H`. The subgroup constructions additionally
-use its antipode.
+The polynomial and Laurent point maps are developed for bialgebras in
+`TauCeti.Algebra.AlgebraicGroup.Dynamic.Points`. The subgroup constructions here additionally
+use the antipode, and are formulated for possibly noncommutative Hopf algebras as well.
 -/
 
 public section
@@ -81,157 +80,6 @@ namespace Cocharacter
 
 variable {R H A B : Type*} [CommSemiring R] [Semiring H]
 variable [CommSemiring A] [Algebra R A] [CommSemiring B] [Algebra R B]
-
-section Bialgebra
-
-variable [_root_.Bialgebra R H]
-
-/-! ### Points over the line and the punctured line -/
-
-variable (A) in
-/-- The constant-point inclusion `G(A) → G(A[T;T⁻¹])`, pullback of points along the structure
-map `A → A[T;T⁻¹]`. -/
-noncomputable def constPoint :
-    WithConv (H →ₐ[R] A) →* WithConv (H →ₐ[R] LaurentPolynomial A) :=
-  AlgHom.mapValue (IsScalarTower.toAlgHom R A (LaurentPolynomial A))
-
-variable (A) in
-/-- The constant-point inclusion `G(A) → G(A[X])`, pullback of points along `A → A[X]`. -/
-noncomputable def constPolyPoint :
-    WithConv (H →ₐ[R] A) →* WithConv (H →ₐ[R] Polynomial A) :=
-  AlgHom.mapValue (IsScalarTower.toAlgHom R A (Polynomial A))
-
-variable (A) in
-/-- The inclusion `G(A[X]) → G(A[T;T⁻¹])` of points over the affine line into points over the
-punctured affine line, pullback along `Polynomial.toLaurent`. -/
-noncomputable def ofPolyPoint :
-    WithConv (H →ₐ[R] Polynomial A) →* WithConv (H →ₐ[R] LaurentPolynomial A) :=
-  AlgHom.mapValue (Polynomial.toLaurentAlg.restrictScalars R)
-
-variable (A) in
-/-- Evaluation at the origin, `G(A[X]) → G(A)`. -/
-noncomputable def evalZeroPoint :
-    WithConv (H →ₐ[R] Polynomial A) →* WithConv (H →ₐ[R] A) :=
-  AlgHom.mapValue ((Polynomial.aeval (0 : A)).restrictScalars R)
-
-variable (A) in
-/-- The constant-point inclusion post-composes a point with the structure map `A → A[T;T⁻¹]`. -/
-theorem constPoint_apply (g : WithConv (H →ₐ[R] A)) :
-    constPoint A g = toConv ((IsScalarTower.toAlgHom R A (LaurentPolynomial A)).comp g.ofConv) := by
-  rw [constPoint, AlgHom.mapValue_apply]
-
-variable (A) in
-/-- The constant-point inclusion post-composes a point with the structure map `A → A[X]`. -/
-theorem constPolyPoint_apply (g : WithConv (H →ₐ[R] A)) :
-    constPolyPoint A g = toConv ((IsScalarTower.toAlgHom R A (Polynomial A)).comp g.ofConv) := by
-  rw [constPolyPoint, AlgHom.mapValue_apply]
-
-variable (A) in
-/-- The inclusion of points over the affine line post-composes with `Polynomial.toLaurent`. -/
-theorem ofPolyPoint_apply (F : WithConv (H →ₐ[R] Polynomial A)) :
-    ofPolyPoint A F = toConv ((Polynomial.toLaurentAlg.restrictScalars R).comp F.ofConv) := by
-  rw [ofPolyPoint, AlgHom.mapValue_apply]
-
-variable (A) in
-/-- Evaluation at the origin post-composes a point over `A[X]` with `X ↦ 0`. -/
-theorem evalZeroPoint_apply (F : WithConv (H →ₐ[R] Polynomial A)) :
-    evalZeroPoint A F = toConv (((Polynomial.aeval (0 : A)).restrictScalars R).comp F.ofConv) := by
-  rw [evalZeroPoint, AlgHom.mapValue_apply]
-
-variable (A) in
-/-- A point over `A[X]` is determined by the point over `A[T;T⁻¹]` that it induces. -/
-theorem ofPolyPoint_injective :
-    Function.Injective (ofPolyPoint (R := R) (H := H) A) :=
-  AlgHom.mapValue_injective Polynomial.toLaurent_injective
-
-variable (A) in
-/-- A constant point over `A[X]` induces the constant point over `A[T;T⁻¹]`. -/
-@[simp]
-theorem ofPolyPoint_constPolyPoint (g : WithConv (H →ₐ[R] A)) :
-    ofPolyPoint A (constPolyPoint A g) = constPoint A g := by
-  have h : (Polynomial.toLaurentAlg.restrictScalars R).comp
-      (IsScalarTower.toAlgHom R A (Polynomial A)) =
-      IsScalarTower.toAlgHom R A (LaurentPolynomial A) := by ext a; simp
-  rw [ofPolyPoint, constPolyPoint, constPoint, ← MonoidHom.comp_apply, ← AlgHom.mapValue_comp, h]
-
-variable (A) in
-/-- A constant point over `A[X]` evaluates at the origin to the point it came from. -/
-@[simp]
-theorem evalZeroPoint_constPolyPoint (g : WithConv (H →ₐ[R] A)) :
-    evalZeroPoint A (constPolyPoint A g) = g := by
-  have h : ((Polynomial.aeval (0 : A)).restrictScalars R).comp
-      (IsScalarTower.toAlgHom R A (Polynomial A)) = AlgHom.id R A := by ext a; simp
-  rw [evalZeroPoint, constPolyPoint, ← MonoidHom.comp_apply, ← AlgHom.mapValue_comp, h,
-    AlgHom.mapValue_id, MonoidHom.id_apply]
-
-/-! ### The generic point of a cocharacter -/
-
-variable (A) in
-/-- **A cocharacter on points**: the monoid homomorphism `𝔾ₘ(A) = Aˣ → G(A)` obtained from a
-cocharacter `l : 𝔾ₘ → G`, presented contravariantly as a bialgebra homomorphism
-`H →ₐc[R] R[T;T⁻¹]`. -/
-noncomputable def pointsHom (l : H →ₐc[R] LaurentPolynomial R) :
-    Aˣ →* WithConv (H →ₐ[R] A) :=
-  (AlgHom.mapDomain l).comp
-    (MultiplicativeGroup.pointsMulEquiv (R := R) (A := A)).symm.toMonoidHom
-
-/-- A cocharacter sends a unit to the corresponding `𝔾ₘ`-point precomposed with `l`. -/
-theorem pointsHom_apply (l : H →ₐc[R] LaurentPolynomial R) (u : Aˣ) :
-    pointsHom A l u = AlgHom.mapDomain l (toConv (MultiplicativeGroup.point (R := R) u)) := by
-  rw [pointsHom, MonoidHom.comp_apply]
-  congr 1
-
-/-- Values of a cocharacter commute with one another: they lie in the image of the commutative
-group `𝔾ₘ(A)`. -/
-theorem pointsHom_commute (l : H →ₐc[R] LaurentPolynomial R) (u v : Aˣ) :
-    Commute (pointsHom A l u) (pointsHom A l v) :=
-  (Commute.all u v).map (pointsHom A l)
-
-variable (A) in
-/-- The point `l(T)` of the affine group `Spec H` with values in `A[T;T⁻¹]`: the cocharacter `l`
-evaluated at the tautological point `T` of the multiplicative group. -/
-noncomputable def genericPoint (l : H →ₐc[R] LaurentPolynomial R) :
-    WithConv (H →ₐ[R] LaurentPolynomial A) :=
-  pointsHom (LaurentPolynomial A) l (MultiplicativeGroup.genericUnit A)
-
-/-- The generic point is the value of the cocharacter at the generic unit `T`. -/
-theorem genericPoint_eq_pointsHom (l : H →ₐc[R] LaurentPolynomial R) :
-    genericPoint A l =
-      pointsHom (LaurentPolynomial A) l (MultiplicativeGroup.genericUnit A) := by
-  rw [genericPoint]
-
-/-! ### Naturality in the value algebra -/
-
-section Naturality
-
-variable (φ : A →ₐ[R] B) (l : H →ₐc[R] LaurentPolynomial R)
-
-/-- A cocharacter, read on points, is natural in the value algebra. -/
-theorem mapValue_pointsHom (u : Aˣ) :
-    AlgHom.mapValue φ (pointsHom A l u) = pointsHom B l (Units.map φ.toMonoidHom u) := by
-  rw [pointsHom_apply, pointsHom_apply, ← MonoidHom.comp_apply,
-    ← AlgHom.mapValue_mapDomain, MonoidHom.comp_apply]
-  congr 1
-  rw [AlgHom.mapValue_apply, MultiplicativeGroup.comp_point]
-
-/-- The constant-point inclusion is natural in the value algebra. -/
-theorem mapValue_constPoint (g : WithConv (H →ₐ[R] A)) :
-    AlgHom.mapValue (AddMonoidAlgebra.mapAlgHom ℤ φ) (constPoint A g) =
-      constPoint B (AlgHom.mapValue φ g) := by
-  ext h
-  simp [constPoint_apply, apply_ite φ]
-
-/-- The generic point of a cocharacter is natural in the value algebra. -/
-theorem mapValue_genericPoint :
-    AlgHom.mapValue (AddMonoidAlgebra.mapAlgHom ℤ φ) (genericPoint A l) = genericPoint B l := by
-  rw [genericPoint, genericPoint, mapValue_pointsHom]
-  congr 1
-  apply Units.ext
-  simp [LaurentPolynomial.T, -LaurentPolynomial.single_eq_C_mul_T]
-
-end Naturality
-
-end Bialgebra
 
 variable [_root_.HopfAlgebra R H]
 
@@ -262,8 +110,9 @@ theorem mapValue_conjugate {C : Type*} [CommSemiring C] [Algebra R C]
       pointsHom C l (Units.map ψ.toMonoidHom (MultiplicativeGroup.genericUnit A)) *
         AlgHom.mapValue (ψ.comp (IsScalarTower.toAlgHom R A (LaurentPolynomial A))) g *
         (pointsHom C l (Units.map ψ.toMonoidHom (MultiplicativeGroup.genericUnit A)))⁻¹ := by
-  rw [conjugate_apply, map_mul, map_mul, map_inv, genericPoint, mapValue_pointsHom, constPoint,
-    AlgHom.mapValue_comp, MonoidHom.comp_apply]
+  rw [conjugate_apply, map_mul, map_mul, map_inv, genericPoint_eq_pointsHom,
+    mapValue_pointsHom, constPoint_apply, ← AlgHom.mapValue_apply, AlgHom.mapValue_comp,
+    MonoidHom.comp_apply]
 
 /-- **Conjugation by the generic point is natural in the value algebra.** -/
 theorem mapValue_conjugate_mapAlgHom (g : WithConv (H →ₐ[R] A)) :
@@ -392,9 +241,10 @@ theorem unipotent_inf_levi : unipotent A l ⊓ levi A l = ⊥ := by
 point because the multiplicative group is commutative. -/
 theorem pointsHom_mem_levi (u : Aˣ) : pointsHom A l u ∈ levi A l := by
   set v := Units.map (IsScalarTower.toAlgHom R A (LaurentPolynomial A)).toMonoidHom u
-  have h : constPoint A (pointsHom A l u) = pointsHom (LaurentPolynomial A) l v :=
-    mapValue_pointsHom _ l u
-  rw [mem_levi_iff, conjugate_apply, h, genericPoint,
+  have h : constPoint A (pointsHom A l u) = pointsHom (LaurentPolynomial A) l v := by
+    rw [constPoint_apply, ← AlgHom.mapValue_apply]
+    exact mapValue_pointsHom _ l u
+  rw [mem_levi_iff, conjugate_apply, h, genericPoint_eq_pointsHom,
     (pointsHom_commute (A := LaurentPolynomial A) l (MultiplicativeGroup.genericUnit A) v).eq,
     mul_assoc,
     mul_inv_cancel, mul_one]
@@ -422,26 +272,6 @@ theorem unipotent_eq_bot [Coalgebra.IsCocomm R H] : unipotent A l = ⊥ := by
 section Functoriality
 
 variable (φ : A →ₐ[R] B)
-
-/-- The inclusion of points over the affine line is natural in the value algebra. -/
-theorem mapValue_ofPolyPoint (F : WithConv (H →ₐ[R] Polynomial A)) :
-    AlgHom.mapValue (AddMonoidAlgebra.mapAlgHom ℤ φ) (ofPolyPoint A F) =
-      ofPolyPoint B (AlgHom.mapValue (Polynomial.mapAlgHom φ) F) := by
-  have h : (AddMonoidAlgebra.mapAlgHom ℤ φ).comp (Polynomial.toLaurentAlg.restrictScalars R) =
-      (Polynomial.toLaurentAlg.restrictScalars R).comp (Polynomial.mapAlgHom φ) := by
-    ext a <;> simp [apply_ite φ]
-  rw [ofPolyPoint, ofPolyPoint, ← MonoidHom.comp_apply, ← AlgHom.mapValue_comp, h,
-    AlgHom.mapValue_comp, MonoidHom.comp_apply]
-
-/-- Evaluation at the origin is natural in the value algebra. -/
-theorem mapValue_evalZeroPoint (F : WithConv (H →ₐ[R] Polynomial A)) :
-    AlgHom.mapValue φ (evalZeroPoint A F) =
-      evalZeroPoint B (AlgHom.mapValue (Polynomial.mapAlgHom φ) F) := by
-  have h : φ.comp ((Polynomial.aeval (0 : A)).restrictScalars R) =
-      ((Polynomial.aeval (0 : B)).restrictScalars R).comp (Polynomial.mapAlgHom φ) := by
-    ext a <;> simp
-  rw [evalZeroPoint, evalZeroPoint, ← MonoidHom.comp_apply, ← AlgHom.mapValue_comp, h,
-    AlgHom.mapValue_comp, MonoidHom.comp_apply]
 
 /-- **The dynamic parabolic is a subgroup functor**: it is preserved by change of value
 algebra. -/
@@ -546,32 +376,23 @@ private theorem prodSubst_comp_toLaurent :
     (prodSubst R A).comp (Polynomial.toLaurentAlg.restrictScalars R) =
       (AddMonoidAlgebra.mapAlgHom ℤ
         (Polynomial.toLaurentAlg.restrictScalars R)).comp (scaleSubst R A) := by
-  apply Polynomial.algHom_ext'
-  · apply AlgHom.ext
-    intro a
-    simp only [AlgHom.comp_apply, AlgHom.coe_restrictScalars', Polynomial.coe_toLaurentAlg,
-      Polynomial.CAlgHom_apply, Polynomial.toLaurent_C, prodSubst_C, scaleSubst_C]
-    simp [← LaurentPolynomial.single_eq_C, -LaurentPolynomial.single_eq_C_mul_T]
-  · simp only [AlgHom.comp_apply, AlgHom.coe_restrictScalars', Polynomial.coe_toLaurentAlg,
-      Polynomial.toLaurent_X, prodSubst_T, prodUnit_val, scaleSubst_X, map_mul]
-    simp [← LaurentPolynomial.single_eq_C, LaurentPolynomial.T,
-      -LaurentPolynomial.single_eq_C_mul_T]
+  ext a <;>
+    simp [prodSubst_C, prodSubst_T, scaleSubst_C, scaleSubst_X, prodUnit_val]
 
 private theorem mapAlgHom_evalZero_comp_scaleSubst :
     (AddMonoidAlgebra.mapAlgHom ℤ ((Polynomial.aeval (0 : A)).restrictScalars R)).comp
         (scaleSubst R A) =
       (IsScalarTower.toAlgHom R A (LaurentPolynomial A)).comp
         ((Polynomial.aeval (0 : A)).restrictScalars R) := by
-  ext a <;>
-    simp [scaleSubst_C, scaleSubst_X, ← LaurentPolynomial.single_eq_C, LaurentPolynomial.T,
-      -LaurentPolynomial.single_eq_C_mul_T]
+  ext a <;> simp [scaleSubst_C, scaleSubst_X]
 
 /-- **The limit of a point of the dynamic parabolic lies in the Levi subgroup.** Together with
 `limit_of_mem_levi` this exhibits the limit homomorphism as a retraction of the dynamic parabolic
 onto its Levi subgroup. -/
 theorem limit_mem_levi (g : parabolic A l) : limit A l g ∈ levi A l := by
   have hF : AlgHom.mapValue (Polynomial.toLaurentAlg.restrictScalars R) (extend A l g) =
-      conjugate A l (g : WithConv (H →ₐ[R] A)) := ofPolyPoint_extend g
+      conjugate A l (g : WithConv (H →ₐ[R] A)) := by
+    rw [AlgHom.mapValue_apply, ← ofPolyPoint_apply, ofPolyPoint_extend]
   -- The generic identity `l(T) · F(X) · l(T)⁻¹ = F(T · X)` over `A[X][T;T⁻¹]`.
   have key : conjugate (Polynomial A) l (extend A l g) =
       AlgHom.mapValue (scaleSubst R A) (extend A l g) := by
@@ -590,7 +411,8 @@ theorem limit_mem_levi (g : parabolic A l) : limit A l g ∈ levi A l := by
         AlgHom.mapValue (prodSubst R A) (conjugate A l (g : WithConv (H →ₐ[R] A))) := by
       rw [← MonoidHom.comp_apply, ← AlgHom.mapValue_comp, ← prodSubst_comp_toLaurent,
         AlgHom.mapValue_comp, MonoidHom.comp_apply, hF]
-    rw [hl, hr, conjugate_apply, constPoint, mapValue_conjugate, genericPoint]
+    rw [hl, hr, conjugate_apply, constPoint_apply, ← AlgHom.mapValue_apply,
+      mapValue_conjugate, genericPoint_eq_pointsHom]
     have hconj (a b x : WithConv (H →ₐ[R]
         LaurentPolynomial (LaurentPolynomial A))) :
         a * b * x * (a * b)⁻¹ = a * (b * x * b⁻¹) * a⁻¹ := by
@@ -604,7 +426,9 @@ theorem limit_mem_levi (g : parabolic A l) : limit A l g ∈ levi A l := by
           (MultiplicativeGroup.genericUnit A))
         (MultiplicativeGroup.genericUnit (LaurentPolynomial A))]
   -- Specialize the generic identity at `X = 0`.
-  rw [mem_levi_iff, limit_apply, evalZeroPoint, constPoint, ← mapValue_conjugate_mapAlgHom, key,
+  rw [mem_levi_iff, limit_apply]
+  simp only [evalZeroPoint_apply, constPoint_apply, ← AlgHom.mapValue_apply]
+  rw [← mapValue_conjugate_mapAlgHom, key,
     ← MonoidHom.comp_apply, ← AlgHom.mapValue_comp, mapAlgHom_evalZero_comp_scaleSubst,
     AlgHom.mapValue_comp, MonoidHom.comp_apply]
 
