@@ -34,8 +34,6 @@ the upper-triangular subgroup is a Borel subgroup is proved in every rank in
   the lower-left coordinate.
 * `TauCeti.SpecialLinear.Borel.coordinateMap_ker`: the kernel of the quotient coordinate map is
   the lower-left-coordinate ideal.
-* `TauCeti.SpecialLinear.Borel.mem_definingPointsSubgroup_iff`: its algebra-valued points are
-  precisely the matrices in `SL2Borel`.
 * `TauCeti.SpecialLinear.Borel.pointsMulEquiv`: the resulting equivalence from quotient Hopf
   points to `SL2Borel`.
 * `TauCeti.SpecialLinear.Borel.definingHopfIdeal_le_of_le_of_isReduced_of_geometricallySolvable`:
@@ -124,19 +122,6 @@ section Points
 
 variable {A : Type w} [CommRing A] [Algebra R A]
 
-/-- An algebra-valued point belongs to the subgroup cut out in `SL₂` exactly when its matrix is
-upper triangular, equivalently when it belongs to `SL2Borel`. -/
-@[simp↓]
-theorem mem_definingPointsSubgroup_iff
-    (g : HopfAlgebra.points (R := R) (H := SpecialLinear.coordinateHopfAlgebra R 2)
-      (CommAlgCat.of R A)) :
-    g ∈ CommHopfAlgCat.quotientPointsSubgroup
-        (SpecialLinear.coordinateHopfAlgebra R 2) (definingHopfIdeal R)
-        (CommAlgCat.of R A) ↔
-      (SpecialLinear.pointsMulEquiv (R := R) (A := A) 2) g ∈ SL2Borel A := by
-  rw [SpecialLinear.UpperTriangular.mem_definingPointsSubgroup_iff, SL2Borel_def,
-    Subgroup.mem_comap]
-
 /-- The group of algebra-valued points of the upper-triangular special-linear coordinate Hopf
 algebra is the standard Borel subgroup `SL2Borel`. -/
 noncomputable def pointsMulEquiv :
@@ -144,20 +129,6 @@ noncomputable def pointsMulEquiv :
       SL2Borel A :=
   (SpecialLinear.UpperTriangular.pointsMulEquiv R 2 (A := A)).trans
     (MulEquiv.subgroupCongr (SL2Borel_def A).symm)
-
-/-- Under the Borel and special-linear point equivalences, the quotient-point inclusion is the
-ordinary inclusion of the standard Borel into `SL₂`. -/
-@[simp↓]
-theorem pointsMulEquiv_coe
-    (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R)
-      (CommAlgCat.of R A)) :
-    SpecialLinear.pointsMulEquiv (R := R) (A := A) 2
-        (CommHopfAlgCat.quotientPointsHom
-          (SpecialLinear.coordinateHopfAlgebra R 2) (definingHopfIdeal R)
-          (CommAlgCat.of R A) f) =
-      (pointsMulEquiv (R := R) (A := A) f : SL(2, A)) := by
-  rw [pointsMulEquiv, MulEquiv.trans_apply, MulEquiv.subgroupCongr_apply]
-  exact SpecialLinear.UpperTriangular.pointsMulEquiv_coe R 2 f
 
 /-- The ambient point attached to a standard Borel matrix is the special-linear point attached
 to its ordinary inclusion. -/
@@ -168,7 +139,8 @@ theorem quotientPointsHom_pointsMulEquiv_symm (g : SL2Borel A) :
         (CommAlgCat.of R A) ((pointsMulEquiv (R := R) (A := A)).symm g) =
       (SpecialLinear.pointsMulEquiv (R := R) (A := A) 2).symm g.1 := by
   apply (SpecialLinear.pointsMulEquiv (R := R) (A := A) 2).injective
-  rw [pointsMulEquiv_coe, MulEquiv.apply_symm_apply, MulEquiv.apply_symm_apply]
+  rw [SpecialLinear.UpperTriangular.pointsMulEquiv_coe]
+  simp [pointsMulEquiv]
 
 variable {B : Type*} [CommRing B] [Algebra R B]
 
@@ -182,9 +154,12 @@ theorem pointsMulEquiv_mapValue (phi : A →ₐ[R] B)
       SL2Borel.map phi.toRingHom (pointsMulEquiv (R := R) (A := A) f) := by
   rw [← AlgHom.mapValue_apply]
   apply Subtype.ext
-  rw [SL2Borel.coe_map, ← pointsMulEquiv_coe,
+  simp only [pointsMulEquiv, MulEquiv.trans_apply, MulEquiv.subgroupCongr_apply]
+  rw [SL2Borel.coe_map, ← SpecialLinear.UpperTriangular.pointsMulEquiv_coe,
     ← CommHopfAlgCat.mapValue_quotientPointsHom]
-  rw [SpecialLinear.pointsMulEquiv_mapValue, pointsMulEquiv_coe]
+  rw [SpecialLinear.pointsMulEquiv_mapValue,
+    SpecialLinear.UpperTriangular.pointsMulEquiv_coe]
+  rfl
 
 end Points
 
@@ -223,10 +198,18 @@ theorem definingHopfIdeal_le_of_le_of_isReduced_of_geometricallySolvable
   have hBP : SL2Borel K ≤ φ.range := fun g hg ↦ by
     simpa only [MulEquiv.apply_symm_apply] using hφ (e.symm g)
       (CommHopfAlgCat.quotientPointsSubgroup_le_of_le H hIB (CommAlgCat.of k K)
-        ((mem_definingPointsSubgroup_iff k (e.symm g)).mpr (by rwa [MulEquiv.apply_symm_apply])))
+        (by
+          change e.symm g ∈ CommHopfAlgCat.quotientPointsSubgroup
+            (SpecialLinear.coordinateHopfAlgebra k 2) (definingHopfIdeal k) (CommAlgCat.of k K)
+          rw [definingHopfIdeal, SpecialLinear.UpperTriangular.mem_definingPointsSubgroup_iff]
+          simpa only [SL2Borel.mem_iff, UpperTriangularGroup.mem_iff,
+            Matrix.SpecialLinearGroup.coe_GL_coe_matrix, blockTriangular_id_iff,
+            e, MulEquiv.apply_symm_apply] using hg))
   apply HopfIdeal.le_of_quotientPointsSubgroup_le (K := K)
   intro q hq
-  exact (mem_definingPointsSubgroup_iff k q).mpr
+  rw [definingHopfIdeal, SpecialLinear.UpperTriangular.mem_definingPointsSubgroup_iff]
+  simpa only [SL2Borel.mem_iff, UpperTriangularGroup.mem_iff,
+    Matrix.SpecialLinearGroup.coe_GL_coe_matrix, blockTriangular_id_iff] using
     (SL2Borel.le_of_isSolvable_of_infinite φ.range hBP (hφ q hq))
 
 /-- The standard upper-triangular Hopf ideal in `O(SL₂)` is maximal, in the reverse ideal

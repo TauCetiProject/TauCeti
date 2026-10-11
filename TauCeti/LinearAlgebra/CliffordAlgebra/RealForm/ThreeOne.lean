@@ -315,6 +315,14 @@ theorem realCliffordThreeOneEvenEquivComplexMatrix_reverseEven
     realCliffordOneTwoEquivComplexMatrix_star]
   rfl
 
+/-- The matrix model makes the even Clifford algebra Dedekind finite.
+This supplies the inverse API for the low-rank unitary comparisons of
+`OrthogonalSpinGroups/README.md`, Layer 1F. -/
+instance instIsDedekindFiniteMonoidRealCliffordThreeOneEven :
+    IsDedekindFiniteMonoid (CliffordAlgebra.even (realCliffordForm 3 1)) :=
+  IsDedekindFiniteMonoid.of_injective realCliffordThreeOneEvenEquivComplexMatrix.toMonoidHom
+    realCliffordThreeOneEvenEquivComplexMatrix.injective
+
 /-- In the Lorentzian matrix model of `Cl⁺(3,1)`, the reverse norm-one equation is determinant
 one. -/
 @[simp]

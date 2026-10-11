@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Degree
+
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Supersingular
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RelativeFrobenius.Verschiebung
 -- Proof-only: separability is invariant under base change.
@@ -115,7 +117,7 @@ private theorem isSupersingular_of_separableDegree_verschiebungIsogeny_eq_one
     (hV : (verschiebungIsogeny p W.toAffine).separableDegree = 1) : W.IsSupersingular p := by
   set ι := algebraMap K (AlgebraicClosure K)
   set V := verschiebungIsogeny p W.toAffine
-  set Fr := relativeFrobeniusIsogeny p W.toAffine
+  set Fr := relativeFrobeniusIsogeny p W.toAffine with hFr
   have hp : (p : ℤ) ≠ 0 := mod_cast expChar_ne_zero K p
   -- Base change carries `V ∘ F_{W/K} = [p]` to `[p]` over the algebraic closure.
   have hcomp : (V.map ι).comp (Fr.map ι) = mulByIntIsogenyOfNeZero (W.map ι) hp := by
@@ -124,7 +126,8 @@ private theorem isSupersingular_of_separableDegree_verschiebungIsogeny_eq_one
   -- The base change of `V` has degree `p`, by the tower formula against `deg [p] = p ²`.
   have hdeg : (V.map ι).degree = p := by
     have h := congrArg TauCeti.Isogeny.degree hcomp
-    rw [degree_comp, degree_relativeFrobeniusIsogeny_map, degree_mulByIntIsogenyOfNeZero,
+    rw [degree_comp, degree_map Fr ι, hFr, degree_relativeFrobeniusIsogeny,
+      degree_mulByIntIsogenyOfNeZero,
       Int.natAbs_natCast, sq] at h
     exact Nat.eq_of_mul_eq_mul_right (Nat.pos_of_ne_zero (expChar_ne_zero K p)) h
   -- It is purely inseparable: if it were separable then so would `V` be, of degree `p` and
