@@ -158,42 +158,14 @@ section Flat
 
 variable [Module.Flat R K]
 
-/-- With flat codomain and kernel quotient, comultiplication carries the ordinary kernel into
-`ker f ⊗ H + H ⊗ ker f`. -/
-private theorem comul_mem_left_sup_right_of_mem_ker (f : H →ₐc[R] K)
-    [Module.Flat R (H ⧸ RingHom.ker f.toAlgHom)] {x : H}
-    (hx : x ∈ RingHom.ker (f : H →ₐ[R] K)) :
-    Coalgebra.comul (R := R) x ∈
-      leftTensorIdeal (R := R) (H := H) (RingHom.ker (f : H →ₐ[R] K)) ⊔
-        rightTensorIdeal (R := R) (H := H) (RingHom.ker (f : H →ₐ[R] K)) := by
-  let I := RingHom.ker (f : H →ₐ[R] K)
-  let q : H →ₐ[R] H ⧸ I := Ideal.Quotient.mkₐ R I
-  let f' : (H ⧸ I) →ₐ[R] K := Ideal.kerLiftAlg f.toAlgHom
-  have hcomp : f'.comp q = f.toAlgHom := by
-    ext y
-    exact Ideal.kerLiftAlg_mk f.toAlgHom y
-  have hinj : Function.Injective (Algebra.TensorProduct.map f' f').toRingHom :=
-    Algebra.TensorProduct.map_injective_of_flat_flat f' f'
-      (Ideal.kerLiftAlg_injective f.toAlgHom) (Ideal.kerLiftAlg_injective f.toAlgHom)
-  have hmap : Algebra.TensorProduct.map f.toAlgHom f.toAlgHom =
-      (Algebra.TensorProduct.map f' f').comp (Algebra.TensorProduct.map q q) := by
-    rw [← Algebra.TensorProduct.map_comp, hcomp]
-  have hker : RingHom.ker (Algebra.TensorProduct.map f.toAlgHom f.toAlgHom) =
-      leftTensorIdeal (R := R) (H := H) I ⊔ rightTensorIdeal (R := R) (H := H) I := by
-    rw [hmap, AlgHom.ker_coe, AlgHom.comp_toRingHom]
-    simp only [← AlgHom.toRingHom_eq_coe]
-    rw [RingHom.ker_comp_of_injective _ hinj]
-    simpa only [q, AlgHom.ker_coe, AlgHom.toRingHom_eq_coe, Ideal.Quotient.mkₐ_ker] using
-      HopfIdeal.ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal (R := R) q q
-        (Ideal.Quotient.mkₐ_surjective R I) (Ideal.Quotient.mkₐ_surjective R I)
-  rw [← hker]
-  exact f.comul_mem_ker_tensorProduct_map hx
-
 /-- The ordinary kernel of a morphism of Hopf algebras with flat codomain and flat kernel
 quotient, as a Hopf ideal. In particular, these hypotheses hold over a field. -/
 def ker (f : H →ₐc[R] K) [Module.Flat R (H ⧸ RingHom.ker f.toAlgHom)] : HopfIdeal R H :=
-  f.kerOfComul
-    (fun x hx ↦ comul_mem_left_sup_right_of_mem_ker (R := R) f (x := x) hx)
+  f.kerOfComul (by
+    intro x hx
+    simpa only [Algebra.TensorProduct.map_ker_of_flat_flat, leftTensorIdeal_def,
+      rightTensorIdeal_def, AlgHom.coe_ideal_map, AlgHom.toRingHom_eq_coe] using
+      f.comul_mem_ker_tensorProduct_map hx)
 
 /-- The underlying ideal of the kernel Hopf ideal is the ordinary ring-hom kernel. -/
 @[simp]

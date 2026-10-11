@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.Coproducts
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Basic
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Corner
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Corner.Basic
 public import Mathlib.Algebra.Homology.Bifunctor
 
 /-!
