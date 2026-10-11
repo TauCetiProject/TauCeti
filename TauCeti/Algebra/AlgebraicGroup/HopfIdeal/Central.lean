@@ -262,8 +262,8 @@ theorem IsCentral.comapOfSurjective_of_bijective {H K : Type v} [CommRing H] [Co
   intro A g hg
   let e := BialgEquiv.ofBijective f ⟨hinj, hsurj⟩
   let E := AlgHom.mapDomainMulEquiv (A := A) e
-  have hmem := CommHopfAlgCat.mapDomainMulEquiv_mem_quotientPointsSubgroup_comapOfSurjective_iff
-    f hinj hsurj I A
+  have hmem (x) : E x ∈ _ ↔ _ :=
+    CommHopfAlgCat.mapDomain_mem_quotientPointsSubgroup_comapOfSurjective_iff f hsurj I A x
   have hg' : E.symm g ∈ CommHopfAlgCat.quotientPointsSubgroup
       (_root_.CommHopfAlgCat.of R K) I A := by
     apply (hmem (E.symm g)).mp
