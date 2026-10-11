@@ -76,16 +76,6 @@ open Set
 
 variable {G X : Type*} [Group G] [MulAction G X] {U : Set X}
 
-/-- A point in a set disjoint from each of its nontrivial translates has trivial stabilizer. -/
-theorem stabilizer_eq_bot_of_disjoint_smul
-    (hU : ∀ g : G, g ≠ 1 → Disjoint (g • U) U) {x : X} (hx : x ∈ U) :
-    MulAction.stabilizer G x = ⊥ := by
-  apply (Subgroup.eq_bot_iff_forall _).mpr
-  intro g hg
-  have hgx := MulAction.mem_stabilizer_iff.mp hg
-  by_contra hne
-  exact disjoint_left.mp (hU g hne) (hgx ▸ smul_mem_smul_set hx) hx
-
 /-- The orbit projection is injective on a set disjoint from each of its nontrivial translates. -/
 theorem injOn_quotientMk_of_disjoint_smul
     (hU : ∀ g : G, g ≠ 1 → Disjoint (g • U) U) :
