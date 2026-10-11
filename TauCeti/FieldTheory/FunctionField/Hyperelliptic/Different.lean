@@ -5,13 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.FunctionField.Hyperelliptic.Genus
+public import TauCeti.FieldTheory.FunctionField.Hyperelliptic.Genus.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Degree
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Eisenstein
 import TauCeti.FieldTheory.FunctionField.Different.Radical
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Order
 import TauCeti.AlgebraicGeometry.WeilDivisor.FiniteSum
+import TauCeti.FieldTheory.Kummer.Extension
 
 /-!
 # The different of an odd-degree squarefree polynomial model
@@ -44,23 +45,29 @@ variable {k F : Type*} [Field k] [Field F] [Algebra (RatFunc k) F]
 variable [Algebra k F] [IsScalarTower k (RatFunc k) F]
 variable [FiniteDimensional (RatFunc k) F]
 
-/-- In a squarefree polynomial model of odd degree, every place above infinity is totally
-ramified. This also holds in characteristic two. -/
-theorem Place.isTotallyRamified_of_sq_eq_of_odd {f : k[X]} (hf : Squarefree f)
+/-- In a polynomial model of odd degree, every place above infinity is totally ramified.
+This also holds in characteristic two, without squarefreeness. -/
+theorem Place.isTotallyRamified_of_sq_eq_of_odd {f : k[X]}
     (hodd : Odd f.natDegree) {y : F} (hgen : (RatFunc k)⟮y⟯ = ⊤)
     (hy : y ^ 2 = algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) f))
     {P : Place k F} (hP : P.restrict k (RatFunc k) = Place.infty k) :
     P.IsTotallyRamified (RatFunc k) := by
-  refine Place.isTotallyRamified_of_pow_eq_of_gcd_ord_eq_one k (RatFunc k)
-    (finrank_ratFunc_eq_two_of_sq_eq hf hodd.pos hgen hy) hy two_ne_zero ?_
-  simp only [hP, Place.ord_infty, RatFunc.intDegree_polynomial, Int.gcd_neg,
-    Int.gcd_natCast_natCast]
-  exact hodd.coprime_two_left.gcd_eq_one
+  have hcoprime : Int.gcd (2 : ℕ) ((Place.infty k).ord (algebraMap k[X] (RatFunc k) f)) = 1 := by
+    simp only [Place.ord_infty, RatFunc.intDegree_polynomial, Int.gcd_neg,
+      Int.gcd_natCast_natCast]
+    exact hodd.coprime_two_left.gcd_eq_one
+  have hrank : Module.finrank (RatFunc k) F = 2 := by
+    refine (Place.infty k).valuation.finrank_eq_of_pow_eq_of_gcd_ord_eq_one
+      hgen hy two_ne_zero ?_
+    rw [Valuation.ord_def, ← Place.ord_def]
+    exact hcoprime
+  exact Place.isTotallyRamified_of_pow_eq_of_gcd_ord_eq_one k (RatFunc k)
+    hrank hy two_ne_zero (by simpa only [hP] using hcoprime)
 
-/-- An odd-degree squarefree polynomial model has a unique place above infinity; that place
-has degree one. No separability or characteristic assumption is needed. -/
+/-- An odd-degree polynomial model has a unique place above infinity; that place has degree
+one. No squarefreeness, separability, or characteristic assumption is needed. -/
 theorem Place.existsUnique_restrict_eq_infty_of_sq_eq_of_odd {f : k[X]}
-    (hf : Squarefree f) (hodd : Odd f.natDegree) {y : F}
+    (hodd : Odd f.natDegree) {y : F}
     (hgen : (RatFunc k)⟮y⟯ = ⊤)
     (hy : y ^ 2 = algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) f)) :
     ∃ P : Place k F, P.restrict k (RatFunc k) = Place.infty k ∧ P.degree = 1 ∧
@@ -70,7 +77,7 @@ theorem Place.existsUnique_restrict_eq_infty_of_sq_eq_of_odd {f : k[X]}
     (IsFunctionField.ratFunc k) hF (Place.infty k)
   -- Eliminate the lambda in the surjectivity statement before rewriting the restriction.
   have hP : P.restrict k (RatFunc k) = Place.infty k := hP
-  have htot := P.isTotallyRamified_of_sq_eq_of_odd hf hodd hgen hy hP
+  have htot := P.isTotallyRamified_of_sq_eq_of_odd hodd hgen hy hP
   refine ⟨P, hP, ?_, fun Q hQ ↦ Place.eq_of_isTotallyRamified k (RatFunc k) htot
     (hQ.trans hP.symm)⟩
   rw [Place.degree_eq_degree_restrict_mul_relativeDegree k (RatFunc k), hP,
@@ -89,7 +96,7 @@ theorem different_ratFunc_eq_zeros_add_of_sq_eq_of_odd (h2 : (2 : k) ≠ 0)
     Divisor.different k F (IsFunctionField.ratFunc k) =
       Divisor.zeros (isFunctionField_iff_functionField.mpr inferInstance) y +
         WeilDivisor.ofPoint P := by
-  have htot := P.isTotallyRamified_of_sq_eq_of_odd hf hodd hgen hy hP
+  have htot := P.isTotallyRamified_of_sq_eq_of_odd hodd hgen hy hP
   refine WeilDivisor.ext fun Q ↦ ?_
   have hord := congrArg Q.ord hy
   rw [Q.ord_pow, Place.ord_algebraMap_restrict k (RatFunc k)] at hord
