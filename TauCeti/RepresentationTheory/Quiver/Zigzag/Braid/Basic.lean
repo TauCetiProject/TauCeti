@@ -13,7 +13,7 @@ public import TauCeti.Algebra.Module.GradedModule.Opposite
 public import TauCeti.Algebra.Module.GradedModule.TensorProduct
 public import TauCeti.RingTheory.Idempotents.TensorProduct
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Casimir
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Corner
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Corner.Basic
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Grading
 
 /-!
