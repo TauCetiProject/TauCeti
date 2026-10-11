@@ -18,8 +18,8 @@ pre-adic spaces.
 
 Consequently, a cocone of pre-adic spaces with jointly surjective legs is a colimit whenever its
 underlying cocone of presheafed spaces is a colimit. This supplies the universal-property step in
-gluing spaces with local stalks and residue-field valuations; it
-does not construct the valuations on the glued object.
+gluing spaces with local stalks and residue-field valuations. The cocone and its pre-adic point
+are inputs: this result neither constructs the glued object nor proves that it is an adic space.
 
 The descent argument takes place in the category of pre-adic spaces. For gluing adic spaces,
 sheafiness and local affinoidness of the glued object are separate steps from this universal
