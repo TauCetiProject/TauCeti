@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.EllipticCurve.Weierstrass
+public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.InvariantDivisibility
 import Mathlib.Tactic.Ring
 
 /-!
@@ -32,52 +32,15 @@ namespace WeierstrassCurve
 
 variable {R : Type*} [CommRing R] (W : WeierstrassCurve R) (ϖ : R)
 
-private theorem pow_dvd_b₂ (h₁ : ϖ ∣ W.a₁) (h₂ : ϖ ^ 2 ∣ W.a₂) :
-    ϖ ^ 2 ∣ W.b₂ := by
-  obtain ⟨u, hu⟩ := h₁
-  obtain ⟨v, hv⟩ := h₂
-  refine ⟨u ^ 2 + 4 * v, ?_⟩
-  rw [b₂, hu, hv]
-  ring
-
-private theorem pow_dvd_b₄ (h₁ : ϖ ∣ W.a₁) (h₃ : ϖ ^ 2 ∣ W.a₃)
-    (h₄ : ϖ ^ 3 ∣ W.a₄) : ϖ ^ 3 ∣ W.b₄ := by
-  obtain ⟨u, hu⟩ := h₁
-  obtain ⟨v, hv⟩ := h₃
-  obtain ⟨w, hw⟩ := h₄
-  refine ⟨2 * w + u * v, ?_⟩
-  rw [b₄, hu, hv, hw]
-  ring
-
-private theorem pow_dvd_b₆ (h₃ : ϖ ^ 2 ∣ W.a₃) (h₆ : ϖ ^ 4 ∣ W.a₆) :
-    ϖ ^ 4 ∣ W.b₆ := by
-  obtain ⟨u, hu⟩ := h₃
-  obtain ⟨v, hv⟩ := h₆
-  refine ⟨u ^ 2 + 4 * v, ?_⟩
-  rw [b₆, hu, hv]
-  ring
-
-private theorem pow_dvd_b₈ (h₁ : ϖ ∣ W.a₁) (h₂ : ϖ ^ 2 ∣ W.a₂)
-    (h₃ : ϖ ^ 2 ∣ W.a₃) (h₄ : ϖ ^ 3 ∣ W.a₄) (h₆ : ϖ ^ 4 ∣ W.a₆) :
-    ϖ ^ 6 ∣ W.b₈ := by
-  obtain ⟨u, hu⟩ := h₁
-  obtain ⟨v, hv⟩ := h₂
-  obtain ⟨w, hw⟩ := h₃
-  obtain ⟨x, hx⟩ := h₄
-  obtain ⟨y, hy⟩ := h₆
-  refine ⟨u ^ 2 * y + 4 * v * y - u * w * x + v * w ^ 2 - x ^ 2, ?_⟩
-  rw [b₈, hu, hv, hw, hx, hy]
-  ring
-
 /-- In the Step 8 normal form of Tate's algorithm, the discriminant is divisible by `ϖ⁸`.
 The hypotheses on the coefficients are exactly those produced by the triple-root translation. -/
 theorem pow_eight_dvd_Δ_of_stepEight (h₁ : ϖ ∣ W.a₁) (h₂ : ϖ ^ 2 ∣ W.a₂)
     (h₃ : ϖ ^ 2 ∣ W.a₃) (h₄ : ϖ ^ 3 ∣ W.a₄) (h₆ : ϖ ^ 4 ∣ W.a₆) :
     ϖ ^ 8 ∣ W.Δ := by
-  obtain ⟨u, hu⟩ := W.pow_dvd_b₂ ϖ h₁ h₂
-  obtain ⟨v, hv⟩ := W.pow_dvd_b₄ ϖ h₁ h₃ h₄
-  obtain ⟨w, hw⟩ := W.pow_dvd_b₆ ϖ h₃ h₆
-  obtain ⟨z, hz⟩ := W.pow_dvd_b₈ ϖ h₁ h₂ h₃ h₄ h₆
+  obtain ⟨u, hu⟩ := W.pow_two_dvd_b₂ ϖ h₁ h₂
+  obtain ⟨v, hv⟩ := W.pow_three_dvd_b₄ ϖ h₁ h₃ h₄
+  obtain ⟨w, hw⟩ := W.pow_four_dvd_b₆ ϖ h₃ h₆
+  obtain ⟨z, hz⟩ := W.pow_six_dvd_b₈ ϖ h₁ h₂ h₃ h₄ h₆
   refine ⟨-(ϖ ^ 2 * u ^ 2 * z) - 8 * ϖ * v ^ 3 - 27 * w ^ 2 +
     9 * ϖ * u * v * w, ?_⟩
   rw [Δ, hu, hv, hw, hz]
@@ -88,11 +51,11 @@ The stronger divisibility of `a₃` and `a₆` raises that of `b₆` from `ϖ⁴
 theorem pow_nine_dvd_Δ_of_stepNine (h₁ : ϖ ∣ W.a₁) (h₂ : ϖ ^ 2 ∣ W.a₂)
     (h₃ : ϖ ^ 3 ∣ W.a₃) (h₄ : ϖ ^ 3 ∣ W.a₄) (h₆ : ϖ ^ 5 ∣ W.a₆) :
     ϖ ^ 9 ∣ W.Δ := by
-  obtain ⟨u, hu⟩ := W.pow_dvd_b₂ ϖ h₁ h₂
+  obtain ⟨u, hu⟩ := W.pow_two_dvd_b₂ ϖ h₁ h₂
   have h₃' : ϖ ^ 2 ∣ W.a₃ := (pow_dvd_pow ϖ (by norm_num)).trans h₃
   have h₆' : ϖ ^ 4 ∣ W.a₆ := (pow_dvd_pow ϖ (by norm_num)).trans h₆
-  obtain ⟨v, hv⟩ := W.pow_dvd_b₄ ϖ h₁ h₃' h₄
-  obtain ⟨z, hz⟩ := W.pow_dvd_b₈ ϖ h₁ h₂ h₃' h₄ h₆'
+  obtain ⟨v, hv⟩ := W.pow_three_dvd_b₄ ϖ h₁ h₃' h₄
+  obtain ⟨z, hz⟩ := W.pow_six_dvd_b₈ ϖ h₁ h₂ h₃' h₄ h₆'
   obtain ⟨s, hs⟩ := h₃
   obtain ⟨t, ht⟩ := h₆
   have hb₆ : ϖ ^ 5 ∣ W.b₆ := by
@@ -110,7 +73,7 @@ The extra divisibility of `a₄` raises the bounds on both `b₄` and `b₈`. -/
 theorem pow_ten_dvd_Δ_of_stepTen (h₁ : ϖ ∣ W.a₁) (h₂ : ϖ ^ 2 ∣ W.a₂)
     (h₃ : ϖ ^ 3 ∣ W.a₃) (h₄ : ϖ ^ 4 ∣ W.a₄) (h₆ : ϖ ^ 5 ∣ W.a₆) :
     ϖ ^ 10 ∣ W.Δ := by
-  obtain ⟨u, hu⟩ := W.pow_dvd_b₂ ϖ h₁ h₂
+  obtain ⟨u, hu⟩ := W.pow_two_dvd_b₂ ϖ h₁ h₂
   obtain ⟨s, hs⟩ := h₁
   obtain ⟨t, ht⟩ := h₂
   obtain ⟨r, hr⟩ := h₃
