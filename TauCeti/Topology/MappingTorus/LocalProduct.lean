@@ -55,7 +55,9 @@ theorem isOpenEmbedding_mk_Ioo (φ : F ≃ₜ F) (a : ℝ) :
   · simpa using hn.symm
   · exact Subtype.ext ht
 
-private theorem range_mk_Ioo (φ : F ≃ₜ F) (a : ℝ) :
+/-- The cylinder over `(a, a + 1)` covers precisely the part of the mapping torus lying over the
+circle cut at `a`. -/
+theorem range_mk_Ioo (φ : F ≃ₜ F) (a : ℝ) :
     range (fun p : F × Ioo a (a + 1) => mk φ p.1 p.2) =
       (((proj φ) ⁻¹' {(a : UnitAddCircle)})ᶜ : Set (MappingTorus φ)) := by
   let c := AddCircle.openPartialHomeomorphCoe (1 : ℝ) a
