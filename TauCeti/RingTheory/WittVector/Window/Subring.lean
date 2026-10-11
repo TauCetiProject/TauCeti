@@ -49,8 +49,10 @@ the window.
 For the same radii, the integral closure of the window subring in `𝕎 O[1/(p [ϖ])]` is the unit
 ball of `λ_I`, and so the closure of its image in `B^I` is the unit ball `B^{I,+}`. The plus ring
 `A_U⁺` of a rational localisation is the closure of the image of the integral closure of
-`A⁺[T / s]` (`TauCeti.Huber.PairOfDefinition.completedPlusSubring`); with `A⁺ = 𝕎 O` this
-identifies the plus ring of the window with `B^{I,+}`.
+`A⁺[T / s]` (`TauCeti.Huber.PairOfDefinition.completedPlusSubring`). With `A⁺ = 𝕎 O`, this
+equality is the analytic input for identifying the plus ring of the window with `B^{I,+}`; that
+identification still requires transport along the isomorphism between the coordinate ring of the
+window and `B^I`.
 
 ## Proof outline
 
@@ -62,11 +64,6 @@ power of `p` and are reached through `[ϖ] ^ b / p ^ a`. The bound `λ_{ρ₂}(x
 terms with `n ≥ m`, which carry a negative power of `[ϖ]` and are reached through
 `p ^ a' / [ϖ] ^ b'`. In each case the valuation inequality makes a power of `ϖ` divide `yₙ` in
 `O`. The tail `p ^ (M + 1) z` of the expansion is absorbed by a power of `p ^ a' / [ϖ] ^ b'`.
-
-Integrality uses the same expansion without the factor `[ϖ] ^ (b + b')`: the `a`-th power of a
-term `[yₙ] pⁿ / (p [ϖ]) ^ m` with `n < m`, and the `a'`-th power of one with `n ≥ m`, is a power of
-the corresponding fraction times a Teichmüller lift, so every term is integral over the window
-subring, and the tail lies in it.
 
 ## Main definitions
 
@@ -661,9 +658,7 @@ private theorem pow_algebraMap_teichmuller_mul_pow_mul_mono_mem_windowSubring_of
 /-- **The unit ball of the interval norm is integral over the window subring.** If
 `ρ₁ ^ a ≤ v(ϖ) ^ b` and `v(ϖ) ^ b' ≤ ρ₂ ^ a'` for `q = a / b` and `q' = a' / b' ≠ 0` in lowest
 terms, then every `x ∈ 𝕎 O[1/(p [ϖ])]` with `λ_I(x) ≤ 1` is integral over
-`𝕎 O[[ϖ] ^ b / p ^ a, p ^ a' / [ϖ] ^ b']`. Write `x = y / (p [ϖ]) ^ m`; each Teichmüller term
-`[yᵢ] pⁱ / (p [ϖ]) ^ m` of `x` has its `a`-th or its `a'`-th power in the window subring, and the
-tail of the expansion lies in it. -/
+`𝕎 O[[ϖ] ^ b / p ^ a, p ^ a' / [ϖ] ^ b']`. -/
 theorem isIntegral_windowSubring_of_norm_le_one
     (h₁ : ρ₁ ^ q.num ≤ v (algebraMap O K ϖ) ^ q.den)
     (h₂ : v (algebraMap O K ϖ) ^ q'.den ≤ ρ₂ ^ q'.num) (hq' : q' ≠ 0) {x : L} (hx : ‖x‖ ≤ 1) :

@@ -605,11 +605,9 @@ theorem topologicalClosure_map_coeRingHom_le_powerBoundedSubring [IsHuberRing A]
     (AddSubgroup.isClosed_of_isOpen (powerBoundedSubring _).toAddSubgroup
       (isOpen_powerBoundedSubring _))
 
-/-- **`Â⁰` is the closure in `Â` of the image of `A⁰`.** One inclusion is
-`topologicalClosure_map_coeRingHom_le_powerBoundedSubring`. For the other, the closure `G` of the
-image of `A⁰` is open, so a power-bounded `y ∈ Â` has an approximation `a ∈ A` with `a - y ∈ G`;
-then `a` is power-bounded in `Â`, hence in `A` by `isPowerBounded_completion_coe_iff`, and
-`y = a - (a - y) ∈ G`. -/
+/-- **`Â⁰` is the closure in `Â` of the image of `A⁰`**, for a Huber ring `A`. This upgrades the
+inclusion `topologicalClosure_map_coeRingHom_le_powerBoundedSubring`, taken for `R = A⁰`, to an
+equality. -/
 theorem topologicalClosure_map_coeRingHom_powerBoundedSubring [IsHuberRing A] :
     ((powerBoundedSubring A).map (Completion.coeRingHom : A →+* Completion A)).topologicalClosure =
       powerBoundedSubring (Completion A) := by
