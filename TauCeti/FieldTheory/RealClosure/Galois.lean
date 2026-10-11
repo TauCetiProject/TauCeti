@@ -6,7 +6,7 @@ Authors: Kim Morrison
 module
 
 public import TauCeti.FieldTheory.RealClosure.FiniteExtension
-public import Mathlib.FieldTheory.Galois.Basic
+public import TauCeti.FieldTheory.Galois.FixedField
 public import Mathlib.GroupTheory.Nilpotent
 
 /-! # The Galois-theoretic reduction for real closed fields
@@ -33,26 +33,18 @@ variable {R E : Type*} [Field R] [IsRealClosed R] [Field E] [Algebra R E]
     [FiniteDimensional R E] [IsGalois R E]
 
 /-- A finite Galois extension of a real closed field has a 2-group as Galois group. -/
-theorem isPGroup_two_algEquiv : IsPGroup 2 (E ≃ₐ[R] E) := by
-  let P : Sylow 2 (E ≃ₐ[R] E) := Classical.choice inferInstance
-  have hindex : finrank R (fixedField (P : Subgroup (E ≃ₐ[R] E))) = P.index := by
-    rw [finrank_eq_fixingSubgroup_index, fixingSubgroup_fixedField]
-  have hodd : Odd (finrank R (fixedField (P : Subgroup (E ≃ₐ[R] E)))) := by
-    rw [hindex]
-    exact Nat.odd_iff.mpr (by have := P.not_dvd_index; omega)
-  have htop : (P : Subgroup (E ≃ₐ[R] E)) = ⊤ := by
-    apply Subgroup.index_eq_one.mp
-    rw [← hindex]
-    exact finrank_eq_one_of_odd hodd
-  have hP := P.isPGroup'
-  rw [htop] at hP
-  exact hP.of_equiv Subgroup.topEquiv
+theorem isPGroup_two_algEquiv : IsPGroup 2 Gal(E/R) := by
+  apply TauCeti.isPGroup_of_forall_finrank_eq_one_of_not_dvd (p := 2)
+  intro F _ _ _ hnotdvd
+  apply finrank_eq_one_of_odd
+  rw [Nat.odd_iff]
+  omega
 
 /-- A square-closed field of characteristic different from two has no nontrivial finite
 Galois extension whose Galois group is a 2-group. -/
 theorem finrank_eq_one_of_isPGroup {K L : Type*} [Field K] [NeZero (2 : K)]
     [Field L] [Algebra K L] [FiniteDimensional K L] [IsGalois K L]
-    (hsq : ∀ x : K, IsSquare x) (hG : IsPGroup 2 (L ≃ₐ[K] L)) :
+    (hsq : ∀ x : K, IsSquare x) (hG : IsPGroup 2 Gal(L/K)) :
     finrank K L = 1 := by
   have := hG.isNilpotent
   rcases hG.card_eq_or_dvd with hcard | hdvd
