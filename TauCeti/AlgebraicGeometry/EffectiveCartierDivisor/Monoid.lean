@@ -39,9 +39,14 @@ variable {S X : Scheme.{u}} (f : X ⟶ S)
 instance (T : (Over S)ᵒᵖ) :
     CommMonoid ((relativeEffectiveCartierSubfunctor f).toFunctor.obj T) := by
   let M : Submonoid (pullback T.unop.hom f).IdealSheafData := {
-    carrier := {I | I.IsRelativeEffectiveCartier (pullback.fst T.unop.hom f)}
-    one_mem' := Scheme.IdealSheafData.isRelativeEffectiveCartier_top _
-    mul_mem' hI hJ := TauCeti.isRelativeEffectiveCartier_mul hI hJ }
+    carrier := (relativeEffectiveCartierSubfunctor f).obj T
+    one_mem' := top_mem_relativeEffectiveCartierSubfunctor_obj f T
+    mul_mem' := by
+      intro I J hI hJ
+      exact (mem_relativeEffectiveCartierSubfunctor_obj_iff f).mpr
+        (TauCeti.isRelativeEffectiveCartier_mul
+          ((mem_relativeEffectiveCartierSubfunctor_obj_iff f).mp hI)
+          ((mem_relativeEffectiveCartierSubfunctor_obj_iff f).mp hJ)) }
   -- The functor value and the submonoid have the same subtype carrier.
   have h : (relativeEffectiveCartierSubfunctor f).toFunctor.obj T =
       M := rfl
