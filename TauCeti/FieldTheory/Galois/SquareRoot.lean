@@ -8,10 +8,14 @@ module
 public import Mathlib.Algebra.Algebra.Equiv
 public import Mathlib.Algebra.Algebra.Tower
 public import Mathlib.Algebra.Group.Subgroup.Defs
+public import Mathlib.FieldTheory.IntermediateField.Adjoin.Defs
+public import Mathlib.FieldTheory.Separable
+public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.SetTheory.Cardinal.Finite
 import TauCeti.Algebra.Algebra.Equiv
 import Mathlib.Algebra.Ring.Commute
 import Mathlib.Data.Fintype.Pi
+import Mathlib.FieldTheory.Galois.Basic
 import Mathlib.GroupTheory.OrderOfElement
 import Mathlib.Tactic.IntervalCases
 
@@ -22,11 +26,14 @@ An automorphism `σ` of a commutative `F`-algebra `L` without zero divisors send
 of an element of `F` to another square root of it, so `σ x = x` or `σ x = -x`. An algebra tower
 also allows the radicands to come from a smaller semiring. Consequently an automorphism is
 known on such roots once its signs on them are, and a group of automorphisms in which only the
-identity fixes each of `n` square roots has at most `2ⁿ` elements.
+identity fixes each of `n` square roots has at most `2ⁿ` elements. Conversely, a square root
+generating a separable quadratic extension is negated by an automorphism.
 
 ## Main results
 
 * `AlgEquiv.apply_eq_or_eq_neg_of_sq_eq`: `σ x = ± x` when `x ^ 2` comes from the base.
+* `AlgEquiv.exists_apply_eq_neg_of_sq_eq`: some automorphism negates a square root `y` generating
+  a separable quadratic extension `K⟮y⟯ / K`.
 * `Subgroup.card_le_two_pow_of_forall_apply_eq_self`: a subgroup in which only the identity fixes
   each of `n` square roots has at most `2ⁿ` elements.
 * `Subgroup.card_eq_four_of_exists_apply_eq_neg`: a finite subgroup of order at most four
@@ -47,6 +54,29 @@ theorem apply_eq_or_eq_neg_of_sq_eq (σ : L ≃ₐ[F] L) {x : L} {c : R}
     (hx : x ^ 2 = algebraMap R L c) : σ x = x ∨ σ x = -x :=
   sq_eq_sq_iff_eq_or_eq_neg.mp (by
     rw [← map_pow, hx, IsScalarTower.algebraMap_apply R F L, AlgEquiv.commutes])
+
+open scoped IntermediateField in
+/-- **A square root generating a separable quadratic extension is negated by an automorphism**:
+if `L = K⟮y⟯` is a separable extension of degree two and `y ^ 2 ∈ K`, then some `K`-automorphism
+of `L` sends `y` to `-y`. -/
+theorem exists_apply_eq_neg_of_sq_eq {K L : Type*} [Field K] [Field L] [Algebra K L]
+    (hL : Module.finrank K L = 2) [Algebra.IsSeparable K L] {y : L} (hgen : K⟮y⟯ = ⊤) {c : K}
+    (hy : y ^ 2 = algebraMap K L c) : ∃ σ : L ≃ₐ[K] L, σ y = -y := by
+  have : Algebra.IsQuadraticExtension K L := ⟨hL⟩
+  have : FiniteDimensional K L := Module.finite_of_finrank_pos (by omega)
+  have hcard : Nat.card (L ≃ₐ[K] L) = 2 := by rw [IsGalois.card_aut_eq_finrank, hL]
+  obtain ⟨σ, hσ, -⟩ := (Nat.card_eq_two_iff' (1 : L ≃ₐ[K] L)).mp hcard
+  refine ⟨σ, (σ.apply_eq_or_eq_neg_of_sq_eq hy).resolve_left fun h ↦ hσ ?_⟩
+  -- An automorphism fixing the generator `y` fixes every element of `K⟮y⟯ = L`.
+  refine AlgEquiv.ext fun z ↦ ?_
+  rw [AlgEquiv.one_apply]
+  have hz : z ∈ K⟮y⟯ := hgen ▸ IntermediateField.mem_top
+  induction hz using IntermediateField.adjoin_induction with
+  | mem x hx => rwa [Set.mem_singleton_iff.mp hx]
+  | algebraMap x => exact σ.commutes x
+  | add x x' _ _ hx hx' => rw [map_add, hx, hx']
+  | inv x _ hx => rw [map_inv₀, hx]
+  | mul x x' _ _ hx hx' => rw [map_mul, hx, hx']
 
 end AlgEquiv
 
