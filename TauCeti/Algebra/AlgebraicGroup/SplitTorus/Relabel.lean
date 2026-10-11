@@ -157,12 +157,13 @@ theorem pointsMulEquiv_mapDomain_relabelCoordinateMap
     {A : Type w} [CommRing A] [Algebra R A] (τ : Equiv.Perm sigma)
     (p : WithConv (MonoidAlgebra R (Multiplicative (sigma →₀ ℤ)) →ₐ[R] A))
     (i : sigma) :
-    pointsMulEquiv (AlgHom.mapDomain (relabelCoordinateMap R τ).hom p) i =
+    pointsMulEquiv
+        (WithConv.toConv (p.ofConv.comp ↑(relabelCoordinateMap R τ).hom)) i =
       pointsMulEquiv p (τ i) := by
   apply Units.ext
   rw [pointsMulEquiv_apply_coe, pointsMulEquiv_apply_coe,
-    AlgHom.mapDomain_apply, WithConv.ofConv_toConv, AlgHom.comp_apply,
-    BialgHom.coe_toAlgHom, hom_relabelCoordinateMap]
+    WithConv.ofConv_toConv, AlgHom.comp_apply, BialgHom.coe_toAlgHom,
+    hom_relabelCoordinateMap]
   rw [MonoidAlgebra.mapDomainBialgHom_single]
   have h := characterRelabel_ofAdd τ (Finsupp.single i (1 : ℤ))
   rw [Finsupp.equivMapDomain_single] at h

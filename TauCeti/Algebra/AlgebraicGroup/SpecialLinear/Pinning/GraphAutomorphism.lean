@@ -106,8 +106,10 @@ theorem typeAGraphCoordinateIso_hom_comp_diagonalTorusCoordinateMap :
         SplitTorus.pointsMulEquiv p (ULift.up i.down.rev)) := by
     apply (SplitTorus.pointsMulEquiv (R := R) (A := A)).injective
     funext i
-    rw [SplitTorus.pointsMulEquiv_mapDomain_relabelCoordinateMap,
-      diagonalTorusRevPerm_apply, MulEquiv.apply_symm_apply]
+    simpa only [q, AlgHom.mapDomain_apply, WithConv.ofConv_toConv,
+      diagonalTorusRevPerm_apply, MulEquiv.apply_symm_apply] using
+      SplitTorus.pointsMulEquiv_mapDomain_relabelCoordinateMap
+        (R := R) (A := A) (τ := diagonalTorusRevPerm r) p i
   -- After the functorial composites are read as precomposition, the claim is
   -- exactly the point-level diagonal-torus calculation above.
   rw [NatTrans.comp_app, NatTrans.comp_app]
