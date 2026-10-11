@@ -283,14 +283,10 @@ theorem zsmul_typeE₆MinusculeWeightClass_eq_zero_iff (k : ℤ) :
 @[simp]
 theorem addOrderOf_typeE₆MinusculeWeightClass :
     addOrderOf typeE₆MinusculeWeightClass = 3 := by
-  have hiff : ∀ k : ℤ, ((addOrderOf typeE₆MinusculeWeightClass : ℤ) ∣ k) ↔ (3 : ℤ) ∣ k := by
-    intro k
-    rw [addOrderOf_dvd_iff_zsmul_eq_zero]
-    exact zsmul_typeE₆MinusculeWeightClass_eq_zero_iff k
-  have h : (addOrderOf typeE₆MinusculeWeightClass : ℤ) = 3 :=
-    Int.dvd_antisymm (Int.natCast_nonneg _) (by norm_num) ((hiff _).mpr dvd_rfl)
-      ((hiff _).mp dvd_rfl)
-  exact_mod_cast h
+  refine addOrderOf_eq_prime ?_ fun h ↦ ?_
+  · rw [← natCast_zsmul, zsmul_typeE₆MinusculeWeightClass_eq_zero_iff]
+    norm_num
+  · simpa using (zsmul_typeE₆MinusculeWeightClass_eq_zero_iff 1).mp (by simpa using h)
 
 /-- **The class of the minuscule weight `ϖ₁` generates the discriminant group of type `E₆`.** -/
 theorem zmultiples_typeE₆MinusculeWeightClass_eq_top :
@@ -334,7 +330,7 @@ theorem level_typeE₆RootLattice : typeE₆RootLattice.level = 3 := by
 
 /-- **The discriminant bilinear value of the minuscule weight `ϖ₁` of type `E₆` is `1/3`.** -/
 @[simp]
-theorem discriminantPairing_typeE₆MinusculeWeightClass :
+theorem discriminantPairing_typeE₆MinusculeWeightClass_self :
     typeE₆RootLattice.discriminantPairing typeE₆MinusculeWeightClass typeE₆MinusculeWeightClass =
       (((1 : ℚ) / 3 : ℚ) : AddCircle (1 : ℚ)) := by
   rw [typeE₆MinusculeWeightClass, discriminantPairing_mk, coe_typeE₆MinusculeWeightDual,
@@ -568,14 +564,10 @@ theorem zsmul_typeE₇MinusculeWeightClass_eq_zero_iff (k : ℤ) :
 @[simp]
 theorem addOrderOf_typeE₇MinusculeWeightClass :
     addOrderOf typeE₇MinusculeWeightClass = 2 := by
-  have hiff : ∀ k : ℤ, ((addOrderOf typeE₇MinusculeWeightClass : ℤ) ∣ k) ↔ (2 : ℤ) ∣ k := by
-    intro k
-    rw [addOrderOf_dvd_iff_zsmul_eq_zero]
-    exact zsmul_typeE₇MinusculeWeightClass_eq_zero_iff k
-  have h : (addOrderOf typeE₇MinusculeWeightClass : ℤ) = 2 :=
-    Int.dvd_antisymm (Int.natCast_nonneg _) (by norm_num) ((hiff _).mpr dvd_rfl)
-      ((hiff _).mp dvd_rfl)
-  exact_mod_cast h
+  refine addOrderOf_eq_prime ?_ fun h ↦ ?_
+  · rw [← natCast_zsmul, zsmul_typeE₇MinusculeWeightClass_eq_zero_iff]
+    norm_num
+  · simpa using (zsmul_typeE₇MinusculeWeightClass_eq_zero_iff 1).mp (by simpa using h)
 
 /-- **The class of the minuscule weight `ϖ₇` generates the discriminant group of type `E₇`.** -/
 theorem zmultiples_typeE₇MinusculeWeightClass_eq_top :
@@ -619,7 +611,7 @@ theorem level_typeE₇RootLattice : typeE₇RootLattice.level = 4 := by
 
 /-- **The discriminant bilinear value of the minuscule weight `ϖ₇` of type `E₇` is `1/2`.** -/
 @[simp]
-theorem discriminantPairing_typeE₇MinusculeWeightClass :
+theorem discriminantPairing_typeE₇MinusculeWeightClass_self :
     typeE₇RootLattice.discriminantPairing typeE₇MinusculeWeightClass typeE₇MinusculeWeightClass =
       (((1 : ℚ) / 2 : ℚ) : AddCircle (1 : ℚ)) := by
   rw [typeE₇MinusculeWeightClass, discriminantPairing_mk, coe_typeE₇MinusculeWeightDual,

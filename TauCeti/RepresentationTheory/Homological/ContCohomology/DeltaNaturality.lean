@@ -305,7 +305,8 @@ theorem explicitCor_delta0 [ContinuousMul G] (x : H0 U C) :
     (continuous_d0_apply (G := U) b) (proj_d0_eq_zero (hb ▸ x.2))
   have hai' : ∀ u : U, (S.restrict U).incl (a u) = u • b - b := fun u =>
     (hai u).trans (d0_apply b u)
-  have ha : a ∈ Z1 U A := (S.restrict U).mem_Z1_of_incl_comp_eq_d0 hai'
+  have ha : a ∈ Z1 U A := mem_Z1_of_injective_comp_eq_d0 (S.restrict U).incl_injective
+    (S.restrict U).incl_equivariant hai'
   -- The norm `n` of `b` lifts `cor⁰ x`, and `cor¹ a` lies over the coboundary of `n`.
   set n := ∑ u : G ⧸ U, Quotient.out u • b with hn
   have hproj : S.proj n = (explicitCor0 G C U x : C) := by
@@ -337,7 +338,8 @@ theorem explicitCor_delta1 [IsTopologicalGroup G] [ContinuousSMul G C] (y : H1 U
       (continuous_d1_apply hecont) (proj_d1_eq_zero he (mem_Z1_iff.1 f.2).2)
     have hai' : ∀ g h : U, (S.restrict U).incl (a (g, h)) = g • e h - e (g * h) + e g :=
       fun g h => by rw [hai (g, h), d1_apply]
-    have ha : a ∈ Z2 U A := (S.restrict U).mem_Z2_of_incl_comp_eq_d1 hecont hai'
+    have ha : a ∈ Z2 U A := mem_Z2_of_injective_comp_eq_d1 (S.restrict U).incl_injective
+      (S.restrict U).incl_equivariant hecont hai'
     -- `cor¹ e` lifts the corestricted cocycle, and `cor² a` lies over its coboundary.
     have he' : ∀ γ : G, S.proj (cochainsCor1 G B U Quotient.out Quotient.out_eq e γ) =
         (cocyclesCor1 G C U Quotient.out Quotient.out_eq hU f : G → C) γ := fun γ => by
