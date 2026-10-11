@@ -35,6 +35,8 @@ for a filtration, this is the cohomology `H^{p+q}(F_{q+1}/F_q)` of a graded piec
 ## Main definitions
 
 * `CochainComplex.spectralObject F`: the spectral object of `F : ι ⥤ CochainComplex C ℤ`.
+* `CochainComplex.spectralObjectMap α`: the morphism of spectral objects induced by a natural
+  transformation `α : F ⟶ G`, functorial in `α`.
 * `CochainComplex.filtrationFunctor F hF`: the functor `EInt ⥤ CochainComplex C ℤ` of an
   increasing filtration `F : ℤ → Subobject K`.
 * `CochainComplex.spectralSequence F`: the spectral sequence of `F : EInt ⥤ CochainComplex C ℤ`.
@@ -51,6 +53,8 @@ for a filtration, this is the cohomology `H^{p+q}(F_{q+1}/F_q)` of a graded piec
   the first page is `H^{p+q}(F_{q+1}/F_q)`.
 * `CochainComplex.spectralObject_δ`: the connecting maps are those of the triangles of mapping
   cones.
+* `CochainComplex.spectralObjectMap_hom_app_hIso`: on `H^n(f)`, `spectralObjectMap α` is the map
+  in cohomology of the induced morphism of mapping cones.
 
 ## References
 
@@ -94,18 +98,69 @@ lemma precomp_spectralObjectMappingCone_δ {i j k : ι} (f : i ⟶ j) (g : j ⟶
   erw [Category.id_comp, CategoryTheory.Functor.map_id, Category.comp_id]
   rfl
 
+omit [HasZeroObject C] in
+/-- The third morphisms of the distinguished triangles of mapping cones in the homotopy category
+are natural in the pair of composable morphisms. -/
+lemma quotient_mappingConeCompTriangle_mor₃_naturality {X₁ X₂ X₃ Y₁ Y₂ Y₃ : CochainComplex C ℤ}
+    (f : X₁ ⟶ X₂) (g : X₂ ⟶ X₃)
+    (f' : Y₁ ⟶ Y₂) (g' : Y₂ ⟶ Y₃) (a : X₁ ⟶ Y₁) (b : X₂ ⟶ Y₂) (c : X₃ ⟶ Y₃)
+    (h₁ : f ≫ b = a ≫ f') (h₂ : g ≫ c = b ≫ g') :
+    ((quotient C (ComplexShape.up ℤ)).map (mappingConeCompTriangle f g).mor₃ ≫
+        ((quotient C (ComplexShape.up ℤ)).commShiftIso (1 : ℤ)).hom.app (mappingCone f)) ≫
+        ((quotient C (ComplexShape.up ℤ)).map (mappingCone.map f f' a b h₁))⟦(1 : ℤ)⟧' =
+      (quotient C (ComplexShape.up ℤ)).map (mappingCone.map g g' b c h₂) ≫
+        (quotient C (ComplexShape.up ℤ)).map (mappingConeCompTriangle f' g').mor₃ ≫
+          ((quotient C (ComplexShape.up ℤ)).commShiftIso (1 : ℤ)).hom.app (mappingCone f') := by
+  have eq := mappingConeCompTriangle_mor₃_naturality f g f' g' (homMk₂ a b c h₁ h₂)
+  dsimp at eq
+  let Q := quotient C (ComplexShape.up ℤ)
+  exact (Category.assoc _ _ _).trans <|
+    (congrArg (fun t => Q.map (mappingConeCompTriangle f g).mor₃ ≫ t)
+      (Q.commShiftIso_hom_naturality (mappingCone.map f f' a b h₁) (1 : ℤ)).symm).trans <|
+    (Q.map_comp_assoc _ _ _).symm.trans <|
+    (congrArg (fun t => Q.map t ≫ (Q.commShiftIso (1 : ℤ)).hom.app (mappingCone f'))
+      eq.symm).trans (Q.map_comp_assoc _ _ _)
+
+variable {F} {G H : ι ⥤ CochainComplex C ℤ}
+
+/-- The morphism of triangulated spectral objects in the homotopy category induced by a natural
+transformation `α : F ⟶ G`: on `f : i ⟶ j`, the morphism of mapping cones of `F.map f` and
+`G.map f` given by `α.app i` and `α.app j`. -/
+noncomputable def triangulatedSpectralObjectMap (α : F ⟶ G) :
+    (spectralObjectMappingCone C).precomp F ⟶ (spectralObjectMappingCone C).precomp G where
+  hom := Functor.whiskerRight ((Functor.whiskeringRight _ _ _).map α)
+    (spectralObjectMappingCone C).ω₁
+  comm {i j k} f g := by
+    rw [precomp_spectralObjectMappingCone_δ, precomp_spectralObjectMappingCone_δ]
+    exact quotient_mappingConeCompTriangle_mor₃_naturality (F.map f) (F.map g) (G.map f)
+      (G.map g) (α.app i) (α.app j) (α.app k) (α.naturality f) (α.naturality g)
+
+@[simp]
+lemma triangulatedSpectralObjectMap_id (F : ι ⥤ CochainComplex C ℤ) :
+    triangulatedSpectralObjectMap (𝟙 F) = 𝟙 _ := by
+  ext : 1
+  simp [triangulatedSpectralObjectMap]
+  rfl
+
+@[simp]
+lemma triangulatedSpectralObjectMap_comp (α : F ⟶ G) (β : G ⟶ H) :
+    triangulatedSpectralObjectMap (α ≫ β) =
+      triangulatedSpectralObjectMap α ≫ triangulatedSpectralObjectMap β := by
+  ext : 1
+  simp [triangulatedSpectralObjectMap]
+  rfl
+
 end Triangulated
 
 section SpectralObject
 
 variable {ι : Type*} [Category* ι] (F : ι ⥤ CochainComplex C ℤ)
 
-/-- The spectral object of a functor `F : ι ⥤ CochainComplex C ℤ`: to `f : i ⟶ j` and `n : ℤ` it
-attaches the `n`th cohomology of the mapping cone of `F.map f`, and its connecting maps are those
-of the distinguished triangles of mapping cones. Its body is exposed so that its objects
-`H^n(f)` are, definitionally, objects of the homotopy category, as used in the statement of
-`spectralObject_δ`. -/
-@[expose] noncomputable def spectralObject : Abelian.SpectralObject C ι :=
+/-- The spectral object of a functor `F : ι ⥤ CochainComplex C ℤ`: its object `H^n(f)` for
+`f : i ⟶ j` is obtained by applying the cohomology functor of the homotopy category to the mapping
+cone of `F.map f` (see `spectralObjectHIso`), and its connecting maps are those of the
+distinguished triangles of mapping cones (see `spectralObject_δ`). -/
+noncomputable def spectralObject : Abelian.SpectralObject C ι :=
   ((spectralObjectMappingCone C).precomp F).mapHomologicalFunctor
     (homologyFunctor C (ComplexShape.up ℤ) 0)
 
@@ -115,22 +170,57 @@ noncomputable def spectralObjectHIso {i j : ι} (f : i ⟶ j) (n : ℤ) :
     ((spectralObject F).H n).obj (mk₁ f) ≅ (mappingCone (F.map f)).homology n :=
   (homologyFunctorFactors C (ComplexShape.up ℤ) n).app (mappingCone (F.map f))
 
-lemma spectralObjectHIso_hom {i j : ι} (f : i ⟶ j) (n : ℤ) :
-    (spectralObjectHIso F f n).hom =
-      (homologyFunctorFactors C (ComplexShape.up ℤ) n).hom.app (mappingCone (F.map f)) :=
-  (rfl)
-
-/-- The connecting maps of the spectral object of `F` are the connecting maps of the homology
-sequences of the distinguished triangles of mapping cones attached to `F.map f` and `F.map g`. -/
+/-- The connecting maps of the spectral object of `F`, read through `spectralObjectHIso`, are the
+maps in cohomology induced by the third morphisms `cone (F.map g) ⟶ (cone (F.map f))⟦1⟧` of the
+triangles of mapping cones attached to `F.map f` and `F.map g`. -/
 lemma spectralObject_δ {i j k : ι} (f : i ⟶ j) (g : j ⟶ k) (n₀ n₁ : ℤ) (h : n₀ + 1 = n₁) :
     (spectralObject F).δ f g n₀ n₁ h =
-      (homologyFunctor C (ComplexShape.up ℤ) 0).homologySequenceδ
-        ((quotient C (ComplexShape.up ℤ)).mapTriangle.obj
-          (mappingConeCompTriangle (F.map f) (F.map g))) n₀ n₁ h := by
-  refine (Triangulated.SpectralObject.mapHomologicalFunctor_δ _ _ f g n₀ n₁ h).trans ?_
-  dsimp only [Functor.homologySequenceδ]
-  congr 1
-  exact precomp_spectralObjectMappingCone_δ F f g
+      (spectralObjectHIso F g n₀).hom ≫
+        (HomologicalComplex.homologyFunctor C (ComplexShape.up ℤ) 0).shiftMap
+          (mappingConeCompTriangle (F.map f) (F.map g)).mor₃ n₀ n₁ (by lia) ≫
+        (spectralObjectHIso F f n₁).inv := by
+  refine (Triangulated.SpectralObject.mapHomologicalFunctor_δ _ _ f g n₀ n₁ h).trans
+    (Eq.trans (b := (homologyFunctor C (ComplexShape.up ℤ) 0).homologySequenceδ
+      ((quotient C (ComplexShape.up ℤ)).mapTriangle.obj
+        (mappingConeCompTriangle (F.map f) (F.map g))) n₀ n₁ h) ?_ ?_)
+  · dsimp only [Functor.homologySequenceδ]
+    congr 1
+    exact precomp_spectralObjectMappingCone_δ F f g
+  · exact homologySequenceδ_quotient_mapTriangle_obj _ n₀ n₁ h
+
+variable {F} {G H : ι ⥤ CochainComplex C ℤ}
+
+/-- The morphism of spectral objects `spectralObject F ⟶ spectralObject G` induced by a natural
+transformation `α : F ⟶ G`. -/
+noncomputable def spectralObjectMap (α : F ⟶ G) : spectralObject F ⟶ spectralObject G :=
+  (Triangulated.SpectralObject.mapHomologicalFunctorFunctor
+    (homologyFunctor C (ComplexShape.up ℤ) 0) ι).map (triangulatedSpectralObjectMap α)
+
+@[simp]
+lemma spectralObjectMap_id (F : ι ⥤ CochainComplex C ℤ) :
+    spectralObjectMap (𝟙 F) = 𝟙 _ := by
+  simp [spectralObjectMap]
+  rfl
+
+@[simp]
+lemma spectralObjectMap_comp (α : F ⟶ G) (β : G ⟶ H) :
+    spectralObjectMap (α ≫ β) = spectralObjectMap α ≫ spectralObjectMap β := by
+  simp [spectralObjectMap]
+  rfl
+
+/-- On `H^n(f)`, the morphism of spectral objects induced by `α` is the map in cohomology of the
+morphism of mapping cones of `F.map f` and `G.map f`. -/
+lemma spectralObjectMap_hom_app_hIso (α : F ⟶ G) {i j : ι} (f : i ⟶ j) (n : ℤ) :
+    ((spectralObjectMap α).hom n).app (mk₁ f) ≫ (spectralObjectHIso G f n).hom =
+      (spectralObjectHIso F f n).hom ≫
+        HomologicalComplex.homologyMap
+          (mappingCone.map (F.map f) (G.map f) (α.app i) (α.app j) (α.naturality f)) n := by
+  dsimp [spectralObjectMap, triangulatedSpectralObjectMap, spectralObjectHIso]
+  convert ((homologyFunctorFactors C (ComplexShape.up ℤ) n).hom.naturality
+    (mappingCone.map (F.map f) (G.map f) (α.app i) (α.app j) (α.naturality f))) using 2
+  all_goals rfl
+
+variable (F)
 
 /-- When `F.map f` is a monomorphism, `H^n(f)` is the `n`th cohomology of the cokernel of
 `F.map f`, through the quasi-isomorphism `mappingCone.descShortComplex` from the mapping cone of
@@ -186,7 +276,7 @@ lemma monotone_filtrationEInt : Monotone (filtrationEInt F) := by
 
 /-- The functor `EInt ⥤ CochainComplex C ℤ` of an increasing filtration `F : ℤ → Subobject K`:
 it sends `n : ℤ` to the subcomplex `F n`, `⊥` to the zero subcomplex and `⊤` to `K`. -/
-@[expose] noncomputable def filtrationFunctor : EInt ⥤ CochainComplex C ℤ :=
+noncomputable def filtrationFunctor : EInt ⥤ CochainComplex C ℤ :=
   (monotone_filtrationEInt F hF).functor ⋙ Subobject.underlying
 
 @[simp]
@@ -198,11 +288,20 @@ lemma filtrationFunctor_obj_coe (n : ℤ) :
     (filtrationFunctor F hF).obj n = (F n : CochainComplex C ℤ) :=
   (rfl)
 
-@[simp]
-lemma filtrationFunctor_map {a b : EInt} (f : a ⟶ b) :
-    (filtrationFunctor F hF).map f =
-      Subobject.ofLE _ _ (monotone_filtrationEInt F hF (leOfHom f)) :=
-  (rfl)
+/-- The object of the functor of a filtration at `a : EInt` is the subcomplex `filtrationEInt F a`
+of `K`. -/
+noncomputable def filtrationFunctorObjIso (a : EInt) :
+    (filtrationFunctor F hF).obj a ≅ (filtrationEInt F a : CochainComplex C ℤ) :=
+  Iso.refl _
+
+/-- The transition maps of the functor of a filtration are the inclusions of subcomplexes. -/
+lemma filtrationFunctor_map_comp_objIso_hom {a b : EInt} (f : a ⟶ b) :
+    (filtrationFunctor F hF).map f ≫ (filtrationFunctorObjIso F hF b).hom =
+      (filtrationFunctorObjIso F hF a).hom ≫
+        Subobject.ofLE _ _ (monotone_filtrationEInt F hF (leOfHom f)) := by
+  dsimp [filtrationFunctorObjIso, filtrationFunctor]
+  simp only [Category.comp_id, Category.id_comp]
+  rfl
 
 instance {a b : EInt} (f : a ⟶ b) : Mono ((filtrationFunctor F hF).map f) :=
   inferInstanceAs (Mono (Subobject.ofLE _ _ (monotone_filtrationEInt F hF (leOfHom f))))
