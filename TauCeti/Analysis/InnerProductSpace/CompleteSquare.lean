@@ -25,7 +25,11 @@ which we record in `ℝ≥0∞` for use in extended-valued integral estimates.
 ## Main declarations
 
 * `TauCeti.mul_norm_sq_add_mul_norm_sub_sq`: the completed-square identity above.
-* `TauCeti.edist_smul_add_smul_sq_add`: its convex-combination form for extended distances.
+* `TauCeti.norm_sq_div_two_add_norm_sub_sq_div`: its case `a = 1 / 2`, `b = 1 / (2τ)`. For
+  `τ > 0` this objective is minimized exactly at `x / (1 + τ)`, the proximal point of
+  `‖·‖² / 2` at `x`.
+* `TauCeti.edist_smul_add_smul_sq_add`: the convex-combination form of the identity, for extended
+  distances.
 -/
 
 public section
@@ -45,6 +49,21 @@ theorem mul_norm_sq_add_mul_norm_sub_sq {a b : ℝ} (hab : a + b ≠ 0) (x y : F
     real_inner_smul_right, real_inner_comm]
   field_simp
   ring
+
+/-- **Completing the square** for `‖y‖² / 2 + ‖x - y‖² / (2τ)`: if `τ ≠ 0` and `1 + τ ≠ 0`, it is
+`‖x‖² / (2 (1 + τ))` plus `(1 + τ) / (2τ)` times the squared distance from `y` to
+`x / (1 + τ)`. -/
+theorem norm_sq_div_two_add_norm_sub_sq_div {τ : ℝ} (hτ : τ ≠ 0) (hτ' : 1 + τ ≠ 0) (x y : F) :
+    ‖y‖ ^ 2 / 2 + ‖x - y‖ ^ 2 / (2 * τ) =
+      ‖x‖ ^ 2 / (2 * (1 + τ)) + (1 + τ) / (2 * τ) * ‖y - (1 + τ)⁻¹ • x‖ ^ 2 := by
+  have h₀ : 1 / 2 + 1 / (2 * τ) = (1 + τ) / (2 * τ) := by field_simp; ring
+  have h := mul_norm_sq_add_mul_norm_sub_sq (a := 1 / 2) (b := 1 / (2 * τ))
+    (h₀ ▸ div_ne_zero hτ' (mul_ne_zero two_ne_zero hτ)) x y
+  have h₁ : 1 / (2 * τ) / (1 / 2 + 1 / (2 * τ)) = (1 + τ)⁻¹ := by rw [h₀]; field_simp
+  have h₂ : 1 / 2 * (1 / (2 * τ)) / (1 / 2 + 1 / (2 * τ)) = 1 / (2 * (1 + τ)) := by
+    rw [h₀]; field_simp
+  rw [h₁, h₂, h₀] at h
+  linear_combination h
 
 /-- The completed square at the weights `1 - t` and `t`, for extended distances: for `t ∈ [0, 1]`,
 `d(x, (1 - t) a + t b) ^ 2 + t (1 - t) d(a, b) ^ 2 = (1 - t) d(x, a) ^ 2 + t d(x, b) ^ 2`. -/

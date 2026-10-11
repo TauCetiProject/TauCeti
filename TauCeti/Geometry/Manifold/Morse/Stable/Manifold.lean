@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Local
 public import TauCeti.Geometry.Manifold.LinearSlice
-import TauCeti.Geometry.Manifold.Immersion
+import TauCeti.Geometry.Manifold.Immersion.Basic
 import Mathlib.Analysis.Normed.Module.Complemented
 
 /-!
