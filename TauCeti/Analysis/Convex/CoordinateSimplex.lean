@@ -204,6 +204,14 @@ theorem interior_coordinateSimplex : interior (coordinateSimplex ι) =
     ext x
     simp
 
+/-- The points of the coordinate simplex whose coordinate sum is less than one form an open
+set in its subtype topology. -/
+theorem isOpen_setOf_sum_lt_one_coordinateSimplex :
+    IsOpen {y : coordinateSimplex ι | ∑ i, y.1 i < 1} := by
+  exact isOpen_lt
+    (continuous_finsetSum _ fun i _ => (continuous_apply i).comp continuous_subtype_val)
+    continuous_const
+
 /-- A point lies on the frontier exactly when it is in the simplex and at least one of its
 barycentric coordinates, including the missing mass, vanishes. -/
 @[simp]

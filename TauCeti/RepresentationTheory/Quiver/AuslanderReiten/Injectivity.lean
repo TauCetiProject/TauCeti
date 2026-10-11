@@ -37,10 +37,6 @@ universe u v w t
 variable {k : Type u} {Q : Type v} [Field k] [Quiver.{w} Q]
   [Finite (Quiver.TotalPath Q)]
 
-local instance : Finite Q :=
-  Finite.of_injective (fun q : Q ↦ (⟨q, q, Quiver.Path.nil⟩ : Quiver.TotalPath Q))
-    (fun _ _ h ↦ congrArg Sigma.fst h)
-
 /-- Two indecomposable classes with the same defined translate are equal. -/
 theorem eq_of_translate_eq_some
     {a b c : irreducibleMorphismQuiver.{u, v, w, max u v w t} k Q}
