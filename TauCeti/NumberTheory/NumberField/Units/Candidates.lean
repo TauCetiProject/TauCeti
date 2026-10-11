@@ -81,7 +81,7 @@ private theorem finite_setOf_unitCandidate (B : ℝ) :
         exact_mod_cast Nat.choose_le_two_pow _ _
       have hB : B ≤ |B| := le_abs_self B
       have hB0 : 0 ≤ |B| := abs_nonneg B
-      have h2 : (0 : ℝ) ≤ 2 ^ (n - 1) := by positivity
+      have _h2 : (0 : ℝ) ≤ 2 ^ (n - 1) := by positivity
       nlinarith [mul_le_mul_of_nonneg_left hB (Nat.cast_nonneg ((n - 1).choose (n - i - 1)))]
   · have h1 : f.coeff n = 1 := by rw [← hdeg]; exact hmonic.coeff_natDegree
     rw [h1]
@@ -117,7 +117,7 @@ theorem minpoly_mem_unitCandidates_of_adjoin_eq_top (hr : rank K = 1)
     (hhi : w.embedding_of_isReal hw (v : K) ≤ B) :
     minpoly ℤ (v : 𝓞 K) ∈ unitCandidates K B := by
   classical
-  set n := Module.finrank ℚ K with hn
+  set n := Module.finrank ℚ K
   have hwv : w v = w.embedding_of_isReal hw v := by
     rw [← norm_embedding_of_isReal hw, Real.norm_eq_abs, abs_of_pos (zero_lt_one.trans hlo)]
   have hw1 : 1 < w v := hwv ▸ hlo
@@ -152,7 +152,7 @@ theorem minpoly_mem_unitCandidates_of_adjoin_eq_top (hr : rank K = 1)
   have hr_root : r ∈ p.roots := (hroots r).mpr ⟨embedding w, rfl⟩
   have hr_norm : ‖r‖ = w v := norm_embedding_eq w _
   set s : Multiset ℂ := p.roots.erase r with hs
-  set q : ℂ[X] := (s.map fun a => X - C a).prod with hq
+  set q : ℂ[X] := (s.map fun a => X - C a).prod
   have hpq : p = (X - C r) * q := by
     have h : p = ((r ::ₘ s).map fun a => X - C a).prod := by
       rw [hs, Multiset.cons_erase hr_root, prod_multiset_X_sub_C_of_monic_of_roots_card_eq hpmonic

@@ -80,10 +80,10 @@ private theorem ramificationIdx_eq_three_of_minpoly_eq_X_pow_three_sub_two
   let Phi : Fin 1 → ℤ[X] := fun _ ↦ X
   let H : ℤ[X] := -1
   have hphi : ∀ i, Irreducible (phi i) := by
-    intro i
+    intro _
     exact irreducible_X
   have hphim : ∀ i, (phi i).Monic := by
-    intro i
+    intro _
     exact monic_X
   have hinj : Function.Injective phi := by
     intro i j _
@@ -214,7 +214,7 @@ private theorem isCyclotomicExtension_fixedField_stabilizer_root
         subst x
         apply Algebra.subset_adjoin
         exact ⟨3, Set.mem_singleton 3, by decide, hzeta.pow_eq_one⟩
-    · intro x hx
+    · intro x _
       exact Algebra.IsAlgebraic.isAlgebraic x
 
 open IsDedekindDomain (HeightOneSpectrum)

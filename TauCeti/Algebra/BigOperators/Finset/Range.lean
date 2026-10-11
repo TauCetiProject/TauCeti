@@ -110,7 +110,7 @@ theorem sum_range_add_antidiagonal_of_support
     rfl
   · intro ij hij
     rw [Finset.mem_product, Finset.mem_range, Finset.mem_range] at hij
-    let q : (n : ℕ) × (ℕ × ℕ) := ⟨ij.1 + ij.2, ij⟩
+    let q : (_ : ℕ) × (ℕ × ℕ) := ⟨ij.1 + ij.2, ij⟩
     have hsum : ij.1 + ij.2 < k + l := by omega
     have hq : q ∈ t := by
       rw [Finset.mem_filter, Finset.mem_sigma, Finset.mem_range, mem_antidiagonal]

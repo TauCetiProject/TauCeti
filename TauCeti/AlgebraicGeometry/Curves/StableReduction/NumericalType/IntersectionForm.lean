@@ -551,28 +551,17 @@ theorem intersection_five_neg (hcard : 5 < Fintype.card T.Component)
     · exact ⟨c₅, by simp, by rw [e₅]; exact h⟩
   have hsu : ({c₁, c₂, c₃, c₄, c₅} : Finset T.Component) ≠ univ := by
     exact (card_lt_iff_ne_univ _).mp (card_le_five.trans_lt hcard)
-  have hval : ∑ i ∈ ({c₁, c₂, c₃, c₄, c₅} : Finset T.Component),
-      ∑ j ∈ ({c₁, c₂, c₃, c₄, c₅} : Finset T.Component), T.intersection i j * y i * y j =
-      T.intersection c₁ c₁ * y₁ ^ 2 + T.intersection c₂ c₂ * y₂ ^ 2 +
-            T.intersection c₃ c₃ * y₃ ^ 2 + T.intersection c₄ c₄ * y₄ ^ 2 +
-          T.intersection c₅ c₅ * y₅ ^ 2 +
-        2 * (T.intersection c₁ c₂ * y₁ * y₂ + T.intersection c₁ c₃ * y₁ * y₃ +
-          T.intersection c₁ c₄ * y₁ * y₄ + T.intersection c₁ c₅ * y₁ * y₅ +
-          T.intersection c₂ c₃ * y₂ * y₃ + T.intersection c₂ c₄ * y₂ * y₄ +
-          T.intersection c₂ c₅ * y₂ * y₅ + T.intersection c₃ c₄ * y₃ * y₄ +
-          T.intersection c₃ c₅ * y₃ * y₅ + T.intersection c₄ c₅ * y₄ * y₅) := by
-    have n₁ : c₁ ∉ ({c₂, c₃, c₄, c₅} : Finset T.Component) := by simp [h₁₂, h₁₃, h₁₄, h₁₅]
-    have n₂ : c₂ ∉ ({c₃, c₄, c₅} : Finset T.Component) := by simp [h₂₃, h₂₄, h₂₅]
-    have n₃ : c₃ ∉ ({c₄, c₅} : Finset T.Component) := by simp [h₃₄, h₃₅]
-    have n₄ : c₄ ∉ ({c₅} : Finset T.Component) := by simp [h₄₅]
-    simp only [sum_insert n₁, sum_insert n₂, sum_insert n₃, sum_insert n₄, sum_singleton,
-      e₁, e₂, e₃, e₄, e₅, T.intersection_comm c₂ c₁, T.intersection_comm c₃ c₁,
-      T.intersection_comm c₃ c₂, T.intersection_comm c₄ c₁, T.intersection_comm c₄ c₂,
-      T.intersection_comm c₄ c₃, T.intersection_comm c₅ c₁, T.intersection_comm c₅ c₂,
-      T.intersection_comm c₅ c₃, T.intersection_comm c₅ c₄]
-    ring
-  rw [← hval]
-  exact T.sum_sum_intersection_mul_neg hsu hmem
+  have h := T.sum_sum_intersection_mul_neg hsu hmem
+  have n₁ : c₁ ∉ ({c₂, c₃, c₄, c₅} : Finset T.Component) := by simp [h₁₂, h₁₃, h₁₄, h₁₅]
+  have n₂ : c₂ ∉ ({c₃, c₄, c₅} : Finset T.Component) := by simp [h₂₃, h₂₄, h₂₅]
+  have n₃ : c₃ ∉ ({c₄, c₅} : Finset T.Component) := by simp [h₃₄, h₃₅]
+  have n₄ : c₄ ∉ ({c₅} : Finset T.Component) := by simp [h₄₅]
+  simp only [sum_insert n₁, sum_insert n₂, sum_insert n₃, sum_insert n₄, sum_singleton,
+    e₁, e₂, e₃, e₄, e₅, T.intersection_comm c₂ c₁, T.intersection_comm c₃ c₁,
+    T.intersection_comm c₃ c₂, T.intersection_comm c₄ c₁, T.intersection_comm c₄ c₂,
+    T.intersection_comm c₄ c₃, T.intersection_comm c₅ c₁, T.intersection_comm c₅ c₂,
+    T.intersection_comm c₅ c₃, T.intersection_comm c₅ c₄] at h
+  linarith
 
 /-! ### Six components -/
 
@@ -620,41 +609,26 @@ theorem intersection_six_neg (hcard : 6 < Fintype.card T.Component)
     · exact ⟨c₆, by simp, by rw [e₆]; exact h⟩
   have hsu : ({c₁, c₂, c₃, c₄, c₅, c₆} : Finset T.Component) ≠ univ := by
     exact (card_lt_iff_ne_univ _).mp (card_le_six.trans_lt hcard)
-  have hval : ∑ i ∈ ({c₁, c₂, c₃, c₄, c₅, c₆} : Finset T.Component),
-      ∑ j ∈ ({c₁, c₂, c₃, c₄, c₅, c₆} : Finset T.Component),
-        T.intersection i j * y i * y j =
-      T.intersection c₁ c₁ * y₁ ^ 2 + T.intersection c₂ c₂ * y₂ ^ 2 +
-            T.intersection c₃ c₃ * y₃ ^ 2 + T.intersection c₄ c₄ * y₄ ^ 2 +
-          T.intersection c₅ c₅ * y₅ ^ 2 + T.intersection c₆ c₆ * y₆ ^ 2 +
-        2 * (T.intersection c₁ c₂ * y₁ * y₂ + T.intersection c₁ c₃ * y₁ * y₃ +
-          T.intersection c₁ c₄ * y₁ * y₄ + T.intersection c₁ c₅ * y₁ * y₅ +
-          T.intersection c₁ c₆ * y₁ * y₆ + T.intersection c₂ c₃ * y₂ * y₃ +
-          T.intersection c₂ c₄ * y₂ * y₄ + T.intersection c₂ c₅ * y₂ * y₅ +
-          T.intersection c₂ c₆ * y₂ * y₆ + T.intersection c₃ c₄ * y₃ * y₄ +
-          T.intersection c₃ c₅ * y₃ * y₅ + T.intersection c₃ c₆ * y₃ * y₆ +
-          T.intersection c₄ c₅ * y₄ * y₅ + T.intersection c₄ c₆ * y₄ * y₆ +
-          T.intersection c₅ c₆ * y₅ * y₆) := by
-    have n₁ : c₁ ∉ ({c₂, c₃, c₄, c₅, c₆} : Finset T.Component) := by
-      simp [h₁₂, h₁₃, h₁₄, h₁₅, h₁₆]
-    have n₂ : c₂ ∉ ({c₃, c₄, c₅, c₆} : Finset T.Component) := by
-      simp [h₂₃, h₂₄, h₂₅, h₂₆]
-    have n₃ : c₃ ∉ ({c₄, c₅, c₆} : Finset T.Component) := by
-      simp [h₃₄, h₃₅, h₃₆]
-    have n₄ : c₄ ∉ ({c₅, c₆} : Finset T.Component) := by simp [h₄₅, h₄₆]
-    have n₅ : c₅ ∉ ({c₆} : Finset T.Component) := by simp [h₅₆]
-    simp only [sum_insert n₁, sum_insert n₂, sum_insert n₃, sum_insert n₄,
-      sum_insert n₅, sum_singleton, e₁, e₂, e₃, e₄, e₅, e₆,
-      T.intersection_comm c₂ c₁, T.intersection_comm c₃ c₁,
-      T.intersection_comm c₃ c₂, T.intersection_comm c₄ c₁,
-      T.intersection_comm c₄ c₂, T.intersection_comm c₄ c₃,
-      T.intersection_comm c₅ c₁, T.intersection_comm c₅ c₂,
-      T.intersection_comm c₅ c₃, T.intersection_comm c₅ c₄,
-      T.intersection_comm c₆ c₁, T.intersection_comm c₆ c₂,
-      T.intersection_comm c₆ c₃, T.intersection_comm c₆ c₄,
-      T.intersection_comm c₆ c₅]
-    ring
-  rw [← hval]
-  exact T.sum_sum_intersection_mul_neg hsu hmem
+  have h := T.sum_sum_intersection_mul_neg hsu hmem
+  have n₁ : c₁ ∉ ({c₂, c₃, c₄, c₅, c₆} : Finset T.Component) := by
+    simp [h₁₂, h₁₃, h₁₄, h₁₅, h₁₆]
+  have n₂ : c₂ ∉ ({c₃, c₄, c₅, c₆} : Finset T.Component) := by
+    simp [h₂₃, h₂₄, h₂₅, h₂₆]
+  have n₃ : c₃ ∉ ({c₄, c₅, c₆} : Finset T.Component) := by
+    simp [h₃₄, h₃₅, h₃₆]
+  have n₄ : c₄ ∉ ({c₅, c₆} : Finset T.Component) := by simp [h₄₅, h₄₆]
+  have n₅ : c₅ ∉ ({c₆} : Finset T.Component) := by simp [h₅₆]
+  simp only [sum_insert n₁, sum_insert n₂, sum_insert n₃, sum_insert n₄,
+    sum_insert n₅, sum_singleton, e₁, e₂, e₃, e₄, e₅, e₆,
+    T.intersection_comm c₂ c₁, T.intersection_comm c₃ c₁,
+    T.intersection_comm c₃ c₂, T.intersection_comm c₄ c₁,
+    T.intersection_comm c₄ c₂, T.intersection_comm c₄ c₃,
+    T.intersection_comm c₅ c₁, T.intersection_comm c₅ c₂,
+    T.intersection_comm c₅ c₃, T.intersection_comm c₅ c₄,
+    T.intersection_comm c₆ c₁, T.intersection_comm c₆ c₂,
+    T.intersection_comm c₆ c₃, T.intersection_comm c₆ c₄,
+    T.intersection_comm c₆ c₅] at h
+  linarith
 
 end NumericalType
 

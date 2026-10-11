@@ -45,6 +45,8 @@ by the same smooth kernel.
 * `TauCeti.norm_normedBumpLp_le_one`: this averaging operator is an `Lᵖ` contraction.
 * `TauCeti.tendsto_normedBumpLp`: normalized bumps whose radii shrink to zero converge strongly
   to the identity on `Lᵖ`.
+* `TauCeti.tendsto_eLpNorm_normed_convolution_sub`: the same convergence for the classical
+  convolution of a function in `Lᵖ` with these bumps.
 
 ## References
 
@@ -108,7 +110,7 @@ theorem compLpL_normedBumpLp {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ
     [CompleteSpace F] [CompleteSpace G] (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
     (L : F →L[ℝ] G) (f : Lp F p mu) :
     L.compLpL p mu (normedBumpLp hp phi mu f) = normedBumpLp hp phi mu (L.compLpL p mu f) :=
-  normedBumpAverageL_comm _ _ _ _ _ _ _ (Measure.compLpL_translateLp L) f
+  normedBumpAverageL_comm _ _ _ _ _ _ _ L.compLpL_translateLp f
 
 /-- Averaging against a normalized nonnegative bump does not increase the `Lᵖ` norm when
 `p < ∞`. -/
@@ -132,5 +134,20 @@ theorem tendsto_normedBumpLp [CompleteSpace F] {I : Type*} {l : Filter I}
   simpa only [normedBumpLp, Measure.translateLp_zero] using
     tendsto_normedBumpAverageL (F := Lp F p mu) hphi mu (mu.translateLp p)
       (Measure.continuous_translateLp hp) f
+
+/-- **Mollification converges in `Lᵖ`.** For `f ∈ Lᵖ` with `1 ≤ p < ∞` and normalized smooth bumps
+`phi i` centred at zero whose outer radii tend to zero, the classical convolutions
+`(phi i).normed mu ⋆ f` converge to `f` in `Lᵖ`. This is `TauCeti.tendsto_normedBumpLp` read on
+functions rather than on `Lᵖ` classes. -/
+theorem tendsto_eLpNorm_normed_convolution_sub [CompleteSpace F] {I : Type*} {l : Filter I}
+    (hp : p ≠ ∞) {phi : I → ContDiffBump (0 : E)}
+    (hphi : Tendsto (fun i ↦ (phi i).rOut) l (nhds 0)) {f : E → F} (hf : MemLp f p mu) :
+    Tendsto (fun i ↦ eLpNorm ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f - f) p mu) l (nhds 0) := by
+  refine ((Lp.tendsto_Lp_iff_tendsto_eLpNorm' _ _).1
+    (tendsto_normedBumpLp hp hphi (hf.toLp f))).congr fun i ↦ eLpNorm_congr_ae ?_
+  rw [normedBumpLp_eq_convolutionLp]
+  filter_upwards [convolutionLp_ae_eq_convolution hp (phi i).integrable_normed hf, hf.coeFn_toLp]
+    with x h₁ h₂
+  rw [Pi.sub_apply, Pi.sub_apply, h₁, h₂]
 
 end TauCeti

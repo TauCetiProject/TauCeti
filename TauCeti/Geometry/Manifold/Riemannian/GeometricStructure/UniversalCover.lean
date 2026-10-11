@@ -63,7 +63,7 @@ theorem hasGeometricStructure_iff_exists_isQuotientCoveringMap :
 /-- The base of a geometric structure is locally path connected, in its given topology. -/
 theorem HasGeometricStructure.locallyPathConnectedSpace (h : HasGeometricStructure M G) :
     LocallyPathConnectedSpace M := by
-  obtain ⟨Γ, hΓ, p, hp⟩ :=
+  obtain ⟨Γ, _, p, hp⟩ :=
     hasGeometricStructure_iff_exists_isQuotientCoveringMap.mp h
   exact hp.toIsQuotientMap.locallyPathConnectedSpace
 
@@ -71,7 +71,7 @@ theorem HasGeometricStructure.locallyPathConnectedSpace (h : HasGeometricStructu
 universal cover is available without an additional topological hypothesis. -/
 theorem HasGeometricStructure.semilocallySimplyConnectedSpace (h : HasGeometricStructure M G) :
     SemilocallySimplyConnectedSpace M := by
-  obtain ⟨Γ, hΓ, p, hp⟩ :=
+  obtain ⟨Γ, _, p, hp⟩ :=
     hasGeometricStructure_iff_exists_isQuotientCoveringMap.mp h
   exact .of_isCoveringMap hp.isCoveringMap hp.surjective
 

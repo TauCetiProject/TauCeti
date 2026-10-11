@@ -98,7 +98,7 @@ theorem extensionCone.neg_one_notMem_adjoinRoot (p : K[X])
 
 /-- An odd-degree simple field extension admits an order preserving the
 given order of the base field. -/
-theorem _root_.AdjoinRoot.exists_linearOrder (p : K[X]) [hp : Fact (Irreducible p)]
+theorem _root_.AdjoinRoot.exists_linearOrder (p : K[X]) [Fact (Irreducible p)]
     (hodd : Odd p.natDegree) :
     ∃ o : LinearOrder (AdjoinRoot p), letI := o
       IsStrictOrderedRing (AdjoinRoot p) ∧ StrictMono (algebraMap K (AdjoinRoot p)) :=

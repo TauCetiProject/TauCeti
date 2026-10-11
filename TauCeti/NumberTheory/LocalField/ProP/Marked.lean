@@ -8,6 +8,7 @@ module
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.EvenDegree
 public import TauCeti.NumberTheory.LocalField.ProP.QInvariant
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Marked
+import TauCeti.NumberTheory.Padics.Basic
 
 /-!
 # Marked presentations of local maximal pro-`p` Galois groups
@@ -182,8 +183,6 @@ theorem absoluteGaloisGroupProP_two_marked_of_degree_even_plusMinus [FiniteDimen
   have hG := isDemushkin_absoluteGaloisGroupProP_of_mu 2 K hmu
   have hrank : demushkinRank hG = Module.finrank ℚ_[2] K + 2 :=
     demushkinRank_absoluteGaloisGroupProP 2 K hmu
-  -- Instance search for `Nontrivial ℚ_[2]` times out through the Henselian-ring instances.
-  have : Nontrivial ℚ_[2] := DivisionRing.toNontrivial
   have hpos : 0 < Module.finrank ℚ_[2] K := Module.finrank_pos
   have hmarked := isDemushkin_marked_of_q_two_even_unitsPlusMinus hG
     (hrank ▸ heven.add even_two) (hrank ▸ by obtain ⟨m, hm⟩ := heven; omega) hf ha
@@ -219,8 +218,6 @@ theorem absoluteGaloisGroupProP_two_marked_of_degree_even_principal [FiniteDimen
   have hG := isDemushkin_absoluteGaloisGroupProP_of_mu 2 K hmu
   have hrank : demushkinRank hG = Module.finrank ℚ_[2] K + 2 :=
     demushkinRank_absoluteGaloisGroupProP 2 K hmu
-  -- Instance search for `Nontrivial ℚ_[2]` times out through the Henselian-ring instances.
-  have : Nontrivial ℚ_[2] := DivisionRing.toNontrivial
   have hpos : 0 < Module.finrank ℚ_[2] K := Module.finrank_pos
   have hmarked := isDemushkin_marked_of_q_two_even_twisted hG
     (hrank ▸ heven.add even_two) (hrank ▸ by obtain ⟨m, hm⟩ := heven; omega) hk hak hak' hkf hu

@@ -137,9 +137,9 @@ weaken them for no gain.
   weak derivative `0`.
 * `TauCeti.HasWeakLineDerivOn.add`, `.neg`, `.sub`, `.const_smul`, `.sum` and their
   `TauCeti.HasWeakFDerivOn` counterparts: linearity in the function.
-* `TauCeti.HasWeakLineDerivOn.clm_comp`: a continuous linear map on the codomain passes through
-  the weak derivative, which is how a vector-valued weak derivative is read off its scalar
-  components.
+* `TauCeti.HasWeakLineDerivOn.clm_comp` and `TauCeti.HasWeakFDerivOn.clm_comp`: a continuous
+  linear map on the codomain passes through the weak derivative, which is how a vector-valued weak
+  derivative is read off its scalar components.
 * `TauCeti.HasWeakLineDerivOn.add_direction`, `.smul_direction`, `.sum_direction` and
   `TauCeti.hasWeakLineDerivOn_zero_direction`: linearity in the direction, which is what makes
   the `TauCeti.HasWeakFDerivOn` packaging the right one.
@@ -292,6 +292,21 @@ theorem HasWeakFDerivOn.mono {U : E → E →L[ℝ] F} {Ω' : Opens E} (h : HasW
 /-- Every direction of a weak Fréchet derivative is a weak directional derivative. -/
 theorem HasWeakFDerivOn.hasWeakLineDerivOn {U : E → E →L[ℝ] F} (h : HasWeakFDerivOn μ Ω u U)
     (v : E) : HasWeakLineDerivOn μ Ω u (fun x => U x v) v := h v
+
+/-- Integration by parts on the whole space against every `C¹` function with compact support
+makes `U` a weak derivative of `u` on every open set. This is how a function with an integrable
+singularity, such as a fundamental solution, is shown to be weakly differentiable. -/
+theorem hasWeakFDerivOn_of_forall_integral_fderiv_smul [CompleteSpace F] {U : E → E →L[ℝ] F}
+    (hu : LocallyIntegrable u μ) (hU : LocallyIntegrable U μ)
+    (h : ∀ g : E → ℝ, ContDiff ℝ 1 g → HasCompactSupport g → ∀ v,
+      ∫ x, fderiv ℝ g x v • u x ∂μ = -∫ x, g x • U x v ∂μ) (Ω : Opens E) :
+    HasWeakFDerivOn μ Ω u U := by
+  refine fun v ↦ ⟨inferInstance, hu.locallyIntegrableOn _, ?_, fun φ ↦ ?_⟩
+  · simpa [Function.comp_def] using (ContinuousLinearMap.apply ℝ F v).locallyIntegrableOn_comp
+      (hU.locallyIntegrableOn Ω)
+  have hφ : ContDiff ℝ 1 (φ : E → ℝ) := φ.contDiff.of_le (by simp)
+  simp_rw [((hφ.differentiable one_ne_zero) _).lineDeriv_eq_fderiv]
+  exact h φ hφ φ.hasCompactSupport v
 
 /-- The zero function has weak derivative `0` in every direction, for every `μ`: no translation
 invariance is needed, since both sides of the defining identity vanish. Completeness of `F` is
@@ -518,6 +533,18 @@ theorem HasWeakFDerivOn.add {u₁ u₂ : E → F} {U₁ U₂ : E → E →L[ℝ]
 theorem HasWeakFDerivOn.sub {u₁ u₂ : E → F} {U₁ U₂ : E → E →L[ℝ] F}
     (h₁ : HasWeakFDerivOn μ Ω u₁ U₁) (h₂ : HasWeakFDerivOn μ Ω u₂ U₂) :
     HasWeakFDerivOn μ Ω (u₁ - u₂) (U₁ - U₂) := fun v => (h₁ v).sub (h₂ v)
+
+/-- Weak Fréchet differentiation commutes with a finite sum of functions. -/
+theorem HasWeakFDerivOn.sum {ι : Type*} [CompleteSpace F] {w : ι → E → F}
+    {W : ι → E → E →L[ℝ] F} (s : Finset ι) (h : ∀ i ∈ s, HasWeakFDerivOn μ Ω (w i) (W i)) :
+    HasWeakFDerivOn μ Ω (fun x => ∑ i ∈ s, w i x) (fun x => ∑ i ∈ s, W i x) := fun v => by
+  simpa using HasWeakLineDerivOn.sum s fun i hi => h i hi v
+
+/-- Weak Fréchet differentiation commutes with a continuous linear map on the codomain. -/
+theorem HasWeakFDerivOn.clm_comp {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [CompleteSpace G] {U : E → E →L[ℝ] F} (h : HasWeakFDerivOn μ Ω u U) (L : F →L[ℝ] G) :
+    HasWeakFDerivOn μ Ω (fun x => L (u x)) (fun x => L.comp (U x)) := fun v =>
+  (h v).clm_comp L
 
 omit [OpensMeasurableSpace E] in
 /-- In the direction `0` every locally integrable function has weak derivative `0`. -/

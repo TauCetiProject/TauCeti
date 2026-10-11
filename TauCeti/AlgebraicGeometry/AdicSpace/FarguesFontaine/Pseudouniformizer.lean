@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.FarguesFontaine.Quotient
+public import TauCeti.AlgebraicGeometry.AdicSpace.FarguesFontaine.PreAdicSpace
 public import TauCeti.RingTheory.WittVector.AdicTopology
 
 /-!
@@ -24,6 +24,11 @@ Then the ideals `(p, [ϖ])` and `(p, [ϖ'])` define the same adic topology on `�
 * The Frobenius actions on them agree, since both are pullback along the Witt-vector Frobenius.
 * Consequently the two orbit spaces `𝒳` are homeomorphic, compatibly with the projections
   from `𝒴`.
+* As pre-adic spaces, the two restrictions `𝒴` of `Spa(𝕎 R, 𝕎 R)` are isomorphic in `𝒱^pre`,
+  compatibly with their Frobenius endomorphisms. When `𝒪_𝒴` is a sheaf, so that `𝒳` is a pre-adic
+  space, this descends through the universal property of the quotient
+  (`TauCeti.FarguesFontaine.isColimitQuotientPreAdicCofork`) to an isomorphism in `𝒱^pre` of the
+  two pre-adic spaces `𝒳`, which on points is the homeomorphism of orbit spaces.
 
 ## Main results
 
@@ -32,12 +37,21 @@ Then the ideals `(p, [ϖ])` and `(p, [ϖ'])` define the same adic topology on `�
   Frobenius on `𝒴` do not depend on the element used to define `𝒴`.
 * `TauCeti.FarguesFontaine.spaXCongr` : the homeomorphism between the orbit spaces defined by two
   elements with the same `𝒴`.
+* `TauCeti.FarguesFontaine.spaYPreAdicSpaceCongr` and
+  `TauCeti.FarguesFontaine.spaYPreAdicSpaceCongr_hom_comp_spaYFrobenius` : the isomorphism of the
+  pre-adic spaces `𝒴`, which intertwines Frobenius.
+* `TauCeti.FarguesFontaine.isSheaf_spaYPresheaf_of_spaY_eq` : the sheaf condition on `𝒪_𝒴` depends
+  only on the subset `𝒴`.
+* `TauCeti.FarguesFontaine.spaXPreAdicSpaceCongr` : the isomorphism in `𝒱^pre` of the pre-adic
+  spaces `𝒳`, with `quotientPreAdicHom_comp_spaXPreAdicSpaceCongr_hom` and
+  `spaXPreAdicSpaceCongr_hom_base` describing it.
 
 ## References
 
 * L. Fargues and J.-M. Fontaine, *Courbes et fibrés vectoriels en théorie de Hodge p-adique*,
   Astérisque 406 (2018).
 * K. S. Kedlaya, *Sheaves, stacks, and shtukas*, lecture notes, Arizona Winter School 2017, §3.1.
+* T. Wedhorn, *Adic Spaces*, arXiv:1910.05934v1, §8.1, for the category `𝒱^pre`.
 -/
 
 public section
@@ -46,7 +60,7 @@ noncomputable section
 
 namespace TauCeti.FarguesFontaine
 
-open TauCeti.ValuationSpectrum _root_.WittVector
+open TauCeti.Huber TauCeti.ValuationSpectrum _root_.WittVector
 
 variable {p : ℕ} [Fact p.Prime] {R : Type*} [CommRing R] {ϖ ϖ' : R}
 
@@ -72,6 +86,76 @@ theorem spaY_eq_of_radical_eq (h : (Ideal.span {ϖ}).radical = (Ideal.span {ϖ'}
   simp only [mem_spaY_iff]
   exact and_congr_right' <| and_congr_right' <|
     not_congr ⟨teichmuller_mem_supp_of_mem_radical hϖ', teichmuller_mem_supp_of_mem_radical hϖ⟩
+
+section SpaYPreAdic
+
+open AlgebraicGeometry CategoryTheory
+
+/-- The range of the inclusion of `𝒴` into `Spa(𝕎 R, 𝕎 R)` consists of the points of `𝒴`. -/
+private theorem range_spaYInclusion (ϖ : R) :
+    Set.range (spaYInclusion p ϖ) = {w | w.val ∈ spaY p ϖ} := by
+  ext w
+  refine ⟨?_, fun hw ↦ ⟨⟨w.val, hw⟩, Subtype.ext (spaYInclusion_apply_val ϖ _)⟩⟩
+  rintro ⟨v, rfl⟩
+  rw [Set.mem_ofPred_eq, spaYInclusion_apply_val]
+  exact v.property
+
+/-- The inclusions into `Spa(𝕎 R, 𝕎 R)` of the subsets `𝒴` defined by `ϖ` and by `ϖ'` have the
+same range when the two subsets agree. -/
+private theorem range_spaYInclusion_eq (h : spaY p ϖ = spaY p ϖ') :
+    Set.range (spaYInclusion p ϖ) = Set.range (spaYInclusion p ϖ') := by
+  rw [range_spaYInclusion, range_spaYInclusion, h]
+
+variable [IsTopologicalRing (WittVector p R)] (P : PairOfDefinition (WittVector p R))
+  (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ}))
+  (hI' : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ'}))
+
+/-- **`𝒴` as a pre-adic space depends only on the subset `𝒴`.** If `ϖ` and `ϖ'` define the same
+subset `𝒴` of `Spa(𝕎 R, 𝕎 R)`, the two restrictions of the pre-adic space `Spa(𝕎 R, 𝕎 R)` to it
+are isomorphic in `𝒱^pre`, compatibly with the inclusions into `Spa(𝕎 R, 𝕎 R)`
+(`spaYPreAdicSpaceCongr_hom_ofRestrict`). -/
+def spaYPreAdicSpaceCongr (h : spaY p ϖ = spaY p ϖ') :
+    spaYPreAdicSpace P hI ≅ spaYPreAdicSpace P hI' :=
+  (spaPreAdicSpace P hI).restrictIsoOfRangeEq (isOpenEmbedding_spaYInclusion p ϖ)
+    (isOpenEmbedding_spaYInclusion p ϖ') (range_spaYInclusion_eq h)
+
+/-- The isomorphism `spaYPreAdicSpaceCongr` commutes with the inclusions into
+`Spa(𝕎 R, 𝕎 R)`. -/
+@[simp, reassoc]
+theorem spaYPreAdicSpaceCongr_hom_ofRestrict (h : spaY p ϖ = spaY p ϖ') :
+    (spaYPreAdicSpaceCongr P hI hI' h).hom ≫
+        (spaPreAdicSpace P hI').ofRestrict (isOpenEmbedding_spaYInclusion p ϖ') =
+      (spaPreAdicSpace P hI).ofRestrict (isOpenEmbedding_spaYInclusion p ϖ) :=
+  PreAdicSpace.restrictIsoOfRangeEq_hom_ofRestrict ..
+
+/-- On points, `spaYPreAdicSpaceCongr` does not change the underlying valuation. -/
+@[simp]
+theorem spaYPreAdicSpaceCongr_hom_base_val (h : spaY p ϖ = spaY p ϖ') (v : spaY p ϖ) :
+    ((spaYPreAdicSpaceCongr P hI hI' h).hom.base v : spaY p ϖ').val = v.val := by
+  -- both sides are the image in `Spa(𝕎 R, 𝕎 R)`, read off from the compatibility with the
+  -- inclusions; the inclusion of a restriction is the given open embedding
+  have hc := congrArg (fun f ↦ (f.base v).val) (spaYPreAdicSpaceCongr_hom_ofRestrict P hI hI' h)
+  have hι (ϖ₀ : R) (hI₀ : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ₀}))
+      (w : spaY p ϖ₀) :
+      (((spaPreAdicSpace P hI₀).ofRestrict (isOpenEmbedding_spaYInclusion p ϖ₀)).base w).val =
+        w.val :=
+    (congrArg (fun f ↦ (ConcreteCategory.hom f w).val) (PreAdicSpace.ofRestrict_base
+      (spaPreAdicSpace P hI₀) (isOpenEmbedding_spaYInclusion p ϖ₀))).trans
+      (spaYInclusion_apply_val ϖ₀ w)
+  exact (hι ϖ' hI' _).symm.trans (hc.trans (hι ϖ hI v))
+
+/-- **The sheaf condition on `𝒪_𝒴` depends only on the subset `𝒴`.** Both presheaves restrict the
+structure presheaf of `Spa(𝕎 R, 𝕎 R)` to the same open subset. -/
+theorem isSheaf_spaYPresheaf_of_spaY_eq (h : spaY p ϖ = spaY p ϖ')
+    (hY : (spaYPresheaf P ϖ).IsSheaf) : (spaYPresheaf P ϖ').IsSheaf :=
+  -- `Spa(𝕎 R, 𝕎 R)` with its structure presheaf, as a presheafed space
+  let X : PresheafedSpace CompleteSeparatedTopCommRingCat :=
+    ⟨TopCat.of (spa (⊤ : Subring (WittVector p R))), presentationLimitPresheaf P ⊤⟩
+  (PresheafedSpace.IsOpenImmersion.isSheaf_iff_of_range_eq
+    (X.ofRestrict (isOpenEmbedding_spaYInclusion p ϖ))
+    (X.ofRestrict (isOpenEmbedding_spaYInclusion p ϖ')) (range_spaYInclusion_eq h)).mp hY
+
+end SpaYPreAdic
 
 variable [CharP R p] [PerfectRing R p]
 
@@ -158,5 +242,95 @@ theorem spaXCongr_symm
     (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ}))
     (hI' : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ'}))
     (h : spaY p ϖ = spaY p ϖ') : (spaXCongr hI hI' h).symm = spaXCongr hI' hI h.symm := (rfl)
+
+/-! ### The pre-adic spaces `𝒳` -/
+
+section SpaXPreAdic
+
+open CategoryTheory
+
+variable [IsTopologicalRing (WittVector p R)] (P : PairOfDefinition (WittVector p R))
+  (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ}))
+  (hI' : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ'}))
+
+/-- **The identification of the two pre-adic spaces `𝒴` intertwines their Frobenius
+endomorphisms**: both are restrictions of the automorphism of `Spa(𝕎 R, 𝕎 R)` induced by `φ`. -/
+@[reassoc]
+theorem spaYPreAdicSpaceCongr_hom_comp_spaYFrobenius (h : spaY p ϖ = spaY p ϖ') :
+    (spaYPreAdicSpaceCongr P hI hI' h).hom ≫ spaYFrobenius P hI' =
+      spaYFrobenius P hI ≫ (spaYPreAdicSpaceCongr P hI hI' h).hom := by
+  -- the codomain of the inclusion of `𝒴` is not syntactically the space of `Spa(𝕎 R, 𝕎 R)`, so the
+  -- monomorphism instance of the inclusion is supplied by hand
+  have : Mono ((spaPreAdicSpace P hI').ofRestrict (isOpenEmbedding_spaYInclusion p ϖ')) :=
+    @PreAdicSpace.IsOpenImmersion.mono _ _ _ (PreAdicSpace.IsOpenImmersion.ofRestrict _ _)
+  -- after composing with the inclusion `ι'` of `𝒴` into `Spa(𝕎 R, 𝕎 R)`, both sides are the
+  -- inclusion followed by Frobenius on `Spa(𝕎 R, 𝕎 R)`; the two Frobenius automorphisms defined
+  -- from `ϖ` and from `ϖ'` differ only in proofs of continuity
+  refine (cancel_mono ((spaPreAdicSpace P hI').ofRestrict (isOpenEmbedding_spaYInclusion p ϖ'))).mp
+    ((Category.assoc _ _ _).trans <|
+      (congrArg (_ ≫ ·) (spaYFrobenius_comp_ofRestrict P hI')).trans <|
+      (Category.assoc _ _ _).symm.trans <|
+        (congrArg (· ≫ _) (spaYPreAdicSpaceCongr_hom_ofRestrict P hI hI' h)).trans <|
+          (spaYFrobenius_comp_ofRestrict P hI).symm.trans <|
+            (congrArg (_ ≫ ·) (spaYPreAdicSpaceCongr_hom_ofRestrict P hI hI' h).symm).trans
+              (Category.assoc _ _ _).symm)
+
+/-- The inverse of `spaYPreAdicSpaceCongr` also intertwines the Frobenius endomorphisms. -/
+@[reassoc]
+theorem spaYPreAdicSpaceCongr_inv_comp_spaYFrobenius (h : spaY p ϖ = spaY p ϖ') :
+    (spaYPreAdicSpaceCongr P hI hI' h).inv ≫ spaYFrobenius P hI =
+      spaYFrobenius P hI' ≫ (spaYPreAdicSpaceCongr P hI hI' h).inv := by
+  rw [Iso.inv_comp_eq, spaYPreAdicSpaceCongr_hom_comp_spaYFrobenius_assoc, Iso.hom_inv_id,
+    Category.comp_id]
+
+/-- **The pre-adic spaces `𝒳 = 𝒴 / φ^ℤ` for two pseudouniformisers are isomorphic.** If `ϖ` and
+`ϖ'` define the same subset `𝒴` of `Spa(𝕎 R, 𝕎 R)`, as they do when they generate ideals with the
+same radical (`spaY_eq_of_radical_eq`), and `𝒪_𝒴` is a sheaf, then the identification
+`spaYPreAdicSpaceCongr` of the two pre-adic spaces `𝒴` descends to an isomorphism in `𝒱^pre` of the
+Frobenius quotients, by their universal property (`isColimitQuotientPreAdicCofork`). On points it is
+the homeomorphism `spaXCongr` (`spaXPreAdicSpaceCongr_hom_base`). -/
+def spaXPreAdicSpaceCongr (h : spaY p ϖ = spaY p ϖ')
+    (hY : (spaYPresheaf P ϖ).IsSheaf) :
+    spaXPreAdicSpace P hI hY ≅
+      spaXPreAdicSpace P hI' (isSheaf_spaYPresheaf_of_spaY_eq P h hY) where
+  hom := quotientPreAdicDesc ((spaYPreAdicSpaceCongr P hI hI' h).hom ≫ quotientPreAdicHom P hI' _)
+    hY (by rw [← spaYPreAdicSpaceCongr_hom_comp_spaYFrobenius_assoc,
+      spaYFrobenius_comp_quotientPreAdicHom])
+  inv := quotientPreAdicDesc ((spaYPreAdicSpaceCongr P hI hI' h).inv ≫ quotientPreAdicHom P hI hY)
+    _ (by rw [← spaYPreAdicSpaceCongr_inv_comp_spaYFrobenius_assoc,
+      spaYFrobenius_comp_quotientPreAdicHom])
+  hom_inv_id := quotientPreAdicHom_hom_ext (by simp)
+  inv_hom_id := quotientPreAdicHom_hom_ext (by simp)
+
+/-- The isomorphism of the pre-adic spaces `𝒳` is induced by the identification of the pre-adic
+spaces `𝒴`. -/
+@[reassoc (attr := simp)]
+theorem quotientPreAdicHom_comp_spaXPreAdicSpaceCongr_hom (h : spaY p ϖ = spaY p ϖ')
+    (hY : (spaYPresheaf P ϖ).IsSheaf) :
+    quotientPreAdicHom P hI hY ≫ (spaXPreAdicSpaceCongr P hI hI' h hY).hom =
+      (spaYPreAdicSpaceCongr P hI hI' h).hom ≫ quotientPreAdicHom P hI' _ :=
+  quotientPreAdicHom_comp_quotientPreAdicDesc ..
+
+/-- On points, the isomorphism of the pre-adic spaces `𝒳` is the homeomorphism `spaXCongr` of the
+orbit spaces. -/
+@[simp]
+theorem spaXPreAdicSpaceCongr_hom_base (h : spaY p ϖ = spaY p ϖ')
+    (hY : (spaYPresheaf P ϖ).IsSheaf) (x : spaX hI) :
+    (spaXPreAdicSpaceCongr P hI hI' h hY).hom.base x = spaXCongr hI hI' h x := by
+  induction x using spaX.inductionOn with
+  | h v =>
+    -- on points, both projections to the orbit spaces are `quotientMap`
+    have hq (ϖ₀ : R) (hI₀ : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ₀}))
+        (hY₀ : (spaYPresheaf P ϖ₀).IsSheaf) (w : spaY p ϖ₀) :
+        (quotientPreAdicHom P hI₀ hY₀).base w = quotientMap hI₀ w :=
+      congrArg (fun f : (spaYPreAdicSpace P hI₀).toPresheafedSpace ⟶
+        (spaXPreAdicSpace P hI₀ hY₀).toPresheafedSpace ↦ f.base w) (quotientPreAdicHom_toHom hY₀)
+    have hc := congrArg (fun f ↦ f.base v)
+      (quotientPreAdicHom_comp_spaXPreAdicSpaceCongr_hom P hI hI' h hY)
+    rw [spaXCongr_quotientMap]
+    exact (congrArg _ (hq ϖ hI hY v)).symm.trans (hc.trans ((hq ϖ' hI' _ _).trans
+      (congrArg (quotientMap hI') (Subtype.ext (spaYPreAdicSpaceCongr_hom_base_val P hI hI' h v)))))
+
+end SpaXPreAdic
 
 end TauCeti.FarguesFontaine

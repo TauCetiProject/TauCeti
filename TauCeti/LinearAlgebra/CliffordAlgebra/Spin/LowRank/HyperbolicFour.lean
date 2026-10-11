@@ -55,16 +55,6 @@ private theorem hyperbolicFour_finrank :
     finrank K (SplitEvenSpace K 2) = 2 * 2 := by
   simp [SplitEvenSpace]
 
-private theorem nondegenerate_hyperbolicFour :
-    (splitEvenForm K 2).Nondegenerate := by
-  -- `splitEvenForm` is opaque across modules, so compare through its application theorem.
-  have hForm :
-      splitEvenForm K 2 = QuadraticForm.dualProd K (Fin 2 → K) := by
-    ext x
-    rw [splitEvenForm_apply, QuadraticForm.dualProd_apply]
-  rw [hForm]
-  exact nondegenerate_dualProd (Module.eval_apply_injective K)
-
 private theorem hyperbolicFour_W_ne_bot :
     (splitEvenPolarization K 2).W ≠ ⊥ :=
   Submodule.finrank_eq_zero.not.1 <| by
@@ -108,7 +98,7 @@ noncomputable def hyperbolicFourSpinEquivSpecialLinearProd :
     spinGroup (splitEvenForm K 2) ≃*
       Matrix.SpecialLinearGroup (Fin 2) K × Matrix.SpecialLinearGroup (Fin 2) K :=
   spinGroupEquivSpecialLinearProdOfAlgEquiv (splitEvenForm K 2)
-    (nondegenerate_hyperbolicFour K) ((hyperbolicFour_finrank K).trans (by norm_num))
+    (nondegenerate_splitEvenForm K 2) ((hyperbolicFour_finrank K).trans (by norm_num))
       (hyperbolicFourEvenEquivMatrixProd K)
 
 /-- The hyperbolic four-dimensional Spin equivalence evaluates the chosen even-Clifford

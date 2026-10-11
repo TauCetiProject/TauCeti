@@ -259,7 +259,6 @@ theorem proPFrattini_eq_topologicalClosure (hp : p.Prime) :
     le_sup_of_le_left (le_sup_right.trans (Subgroup.le_topologicalClosure _))
   have hWnormal : W.Normal := Subgroup.Normal.of_commutator_le G hcomm
   have hWopen : IsOpen (W : Set G) := Subgroup.isOpen_mono le_sup_right U.isOpen
-  have hWfinite : Finite (G ⧸ W) := Subgroup.quotient_finite_of_isOpen W hWopen
   have hWcomm : IsMulCommutative (G ⧸ W) :=
     Subgroup.Normal.quotient_commutative_iff_commutator_le.mpr hcomm
   have hWexp : Monoid.exponent (G ⧸ W) ∣ p := by

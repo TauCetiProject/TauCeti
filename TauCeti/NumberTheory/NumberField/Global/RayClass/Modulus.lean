@@ -537,7 +537,7 @@ as `I` and the finite part fail to generate the unit ideal. -/
 theorem Modulus.isCoprimeTo_iff_sup_eq_top {𝔪 : Modulus K} {I : Ideal (𝓞 K)} :
     𝔪.IsCoprimeTo I ↔ I ≠ ⊥ ∧ I ⊔ 𝔪.finitePart = ⊤ := by
   rw [isCoprimeTo_iff]
-  refine and_congr_right fun hI ↦ ⟨fun h ↦ ?_, fun h v hv hdvd ↦ ?_⟩
+  refine and_congr_right fun _ ↦ ⟨fun h ↦ ?_, fun h v hv hdvd ↦ ?_⟩
   · refine Ideal.isCoprime_iff_sup_eq.mp (Ideal.coprime_of_no_prime_ge fun 𝔭 h𝔭I h𝔭m h𝔭 ↦ ?_)
     have h𝔭bot : 𝔭 ≠ ⊥ := fun hbot ↦ 𝔪.finitePart_ne_bot (le_bot_iff.mp (hbot ▸ h𝔭m))
     exact h ⟨𝔭, h𝔭, h𝔭bot⟩ ((mem_support_iff _ _).mpr (Ideal.dvd_iff_le.mpr h𝔭m))

@@ -147,7 +147,7 @@ theorem differentExponent_eq_of_pow_sub_self_eq_of_ord_eq_neg
   have hcop : Int.gcd p ((P'.restrict k F).ord u) = 1 :=
     Int.isCoprime_iff_gcd_eq_one.mp
       ((Nat.prime_iff_prime_int.mp (Fact.out : p.Prime)).coprime_iff_not_dvd.mpr hprime)
-  obtain ⟨z, hzgen, hzord, hdisp⟩ :=
+  obtain ⟨z, _, hzord, hdisp⟩ :=
     exists_uniformizer_ord_aut_sub_of_artinSchreier_pole k F p hgen hy huneg hcop
   have htot := isTotallyRamified_of_pow_sub_self_eq_of_gcd_ord_eq_one k F
     (Fact.out : p.Prime).one_lt hgen hy huneg hcop

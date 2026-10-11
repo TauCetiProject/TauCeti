@@ -47,7 +47,7 @@ variable (p : ℕ)
 /-- The inverse limit of the rings `ZMod (p ^ n)`: compatible residue families, with the
 subspace topology inherited from their product. -/
 def inverseLimit : Subring (∀ n : ℕ, ZMod (p ^ n)) where
-  carrier := {x | ∀ ⦃m n : ℕ⦄ (h : m ≤ n),
+  carrier := {x | ∀ ⦃m n : ℕ⦄ (_ : m ≤ n),
     (ZMod.cast (x n) : ZMod (p ^ m)) = x m}
   zero_mem' _ _ _ := by simp
   one_mem' m n h := calc

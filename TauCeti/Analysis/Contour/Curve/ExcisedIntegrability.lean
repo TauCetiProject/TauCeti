@@ -94,7 +94,7 @@ theorem intervalIntegrable_excised_of_continuousOn (hγc : ContinuousOn γ (uIcc
     · exact ((MeasureTheory.nullMeasurableSet_restrict_of_subset
         Set.inter_subset_right).mp hA0).inter measurableSet_uIoc.nullMeasurableSet
   · refine (MeasureTheory.ae_restrict_iff' measurableSet_uIoc).mpr
-      (Filter.Eventually.of_forall fun t ht => ?_)
+      (Filter.Eventually.of_forall fun t _ => ?_)
     by_cases hs : t ∈ survivingParams γ S ε ∩ uIoc a b
     · rw [Set.indicator_of_mem hs]
       exact (hM _ ⟨⟨t, Set.uIoc_subset_uIcc hs.2, rfl⟩,

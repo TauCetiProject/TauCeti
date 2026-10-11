@@ -111,6 +111,19 @@ theorem inseparableDegree_mulByIntIsogenyOfNeZero_pow [W.IsElliptic] {n : ℤ} (
   | zero => rw [mulByIntIsogenyOfNeZero_pow_zero W hn, inseparableDegree_id, pow_zero]
   | succ k ih => rw [mulByIntIsogenyOfNeZero_pow_succ W hn, inseparableDegree_comp, ih, pow_succ]
 
+/-- **In exponential characteristic `p`, `p ^ k` divides the inseparable degree of `[p ^ k]`**,
+since `[p]` is inseparable when `p > 1`. -/
+theorem pow_dvd_inseparableDegree_mulByIntIsogenyOfNeZero_pow [W.IsElliptic] (p : ℕ) [ExpChar F p]
+    (k : ℕ) :
+    p ^ k ∣ (mulByIntIsogenyOfNeZero W
+      (pow_ne_zero k (mod_cast expChar_ne_zero F p : (p : ℤ) ≠ 0))).inseparableDegree := by
+  rcases ‹ExpChar F p› with _ | ⟨hp⟩
+  · -- in characteristic zero, `p ^ k = 1`
+    rw [one_pow]
+    exact one_dvd _
+  · rw [inseparableDegree_mulByIntIsogenyOfNeZero_pow W (mod_cast hp.ne_zero) k]
+    exact pow_dvd_pow_of_dvd (dvd_inseparableDegree_mulByIntIsogeny W p _ (by simp)) k
+
 /-- **The separable degree of `[n ^ k]` is the `k`-th power of that of `[n]`.** -/
 theorem separableDegree_mulByIntIsogenyOfNeZero_pow [W.IsElliptic] {n : ℤ} (hn : n ≠ 0)
     (k : ℕ) :

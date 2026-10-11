@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.RelationIdeal
+public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.BacktrackRelator
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Grading
 
 /-!
@@ -50,6 +50,10 @@ in the Anick-type inequality `TauCeti.PathAlgebra.sum_card_mul_finrank_map_paths
 It fails whenever `Π` is finite-dimensional and nonzero, as for a Dynkin quiver: a nonzero element
 of `e_v Π` of top degree is killed by every arrow.
 
+That the two maps compose to zero and exactness at the middle term are the instances, for the signs
+`ε_b`, of the results for weighted backtrack relators in
+`TauCeti.RepresentationTheory.Quiver.PathAlgebra.BacktrackRelator`.
+
 ## Main results
 
 * `TauCeti.sum_preprojectiveMk_ofArrow_mul_doubledArrowSign_smul_eq_zero`: the two maps compose
@@ -82,11 +86,12 @@ multiplication by the local relator `ρ_v`, which vanishes in the preprojective 
 theorem sum_preprojectiveMk_ofArrow_mul_doubledArrowSign_smul_eq_zero (v : Q)
     (y : preprojectiveAlgebra k Q) :
     ∑ i : Symmetrify Q, ∑ b : i ⟶ Symmetrify.of.obj v, preprojectiveMk k Q (ofArrow b) *
-      (doubledArrowSign k b • (preprojectiveMk k Q (ofArrow (Quiver.reverse b)) * y)) = 0 := by
-  calc _ = preprojectiveMk k Q (localPreprojectiveRelator k v) * y := by
-        simp only [localPreprojectiveRelator_eq_sum_ofArrow_mul, map_sum, Finset.sum_mul,
-          map_mul, map_smul, mul_smul_comm, smul_mul_assoc, mul_assoc]
-    _ = 0 := by rw [preprojectiveMk_localPreprojectiveRelator, zero_mul]
+      (doubledArrowSign k b • (preprojectiveMk k Q (ofArrow (Quiver.reverse b)) * y)) = 0 :=
+  sum_map_ofArrow_mul_smul_map_ofArrow_reverse_mul_eq_zero (R := Symmetrify Q) k
+    (r := localPreprojectiveRelator k (Q := Q))
+    (fun u => localPreprojectiveRelator_eq_sum_ofArrow_mul (Q := Q) k u)
+    (fun u => preprojectiveMk_localPreprojectiveRelator (Q := Q) k u)
+    (Symmetrify.of.obj (V := Q) v) y
 
 /-- **Exactness of the Koszul complex at its middle term.** Let `z_b ∈ e_i Π` for the arrows
 `b : i ⟶ v` of the doubled quiver. Then `∑_b b z_b = 0` exactly when there is one `y ∈ e_v Π` with
@@ -97,39 +102,16 @@ theorem sum_preprojectiveMk_ofArrow_mul_eq_zero_iff (v : Q)
     ∑ i, ∑ b, preprojectiveMk k Q (ofArrow b) * z i b = 0 ↔
       ∃ y, preprojectiveMk k Q (doubledVertexIdempotent k v) * y = y ∧ ∀ i b,
         z i b = doubledArrowSign k b • (preprojectiveMk k Q (ofArrow (Quiver.reverse b)) * y) := by
-  classical
-  refine ⟨fun h => ?_, ?_⟩
-  · choose w hw using fun i b => preprojectiveMk_surjective k Q (z i b)
-    have hI : ∑ i, ∑ b : i ⟶ Symmetrify.of.obj v, ofArrow b * w i b ∈
-        TwoSidedIdeal.span (Set.range (localPreprojectiveRelator k (Q := Q))) := by
-      rw [← preprojectiveIdeal_eq_span_range_localPreprojectiveRelator,
-        ← preprojectiveMk_eq_zero_iff, ← h]
-      simp only [map_sum, map_mul, hw]
-    have hl : ∀ u : Q, vertexIdempotent k (Symmetrify.of.obj u) * localPreprojectiveRelator k u =
-        localPreprojectiveRelator k u := fun u => by
-      rw [← doubledVertexIdempotent_def]
-      exact doubledVertexIdempotent_mul_localPreprojectiveRelator k u
-    obtain ⟨Y, hY⟩ := exists_sub_mul_mem_span_of_sum_ofArrow_mul_mem_span (R := Symmetrify Q)
-      (r := localPreprojectiveRelator k (Q := Q)) (j := Symmetrify.of.obj v)
-      (c := fun _ b => doubledArrowSign k b • ofArrow (Quiver.reverse b)) hl
-      (localPreprojectiveRelator_eq_sum_ofArrow_mul k v) hI
-    refine ⟨preprojectiveMk k Q (doubledVertexIdempotent k v) * preprojectiveMk k Q Y, ?_,
-      fun i b => ?_⟩
-    · rw [← mul_assoc, ← map_mul, doubledVertexIdempotent_def,
-        vertexIdempotent_mul_self]
-    · have hb : vertexIdempotent k i * ofArrow (Quiver.reverse b) = ofArrow (Quiver.reverse b) := by
-        rw [ofArrow_eq_ofPath, vertexIdempotent_mul_ofPath]
-      have hb' : ofArrow (Quiver.reverse b) * vertexIdempotent k (Symmetrify.of.obj v) =
-          ofArrow (Quiver.reverse b) := by
-        rw [ofArrow_eq_ofPath, ofPath_mul_vertexIdempotent]
-      have h := (preprojectiveMk_eq_zero_iff k Q).2
-        ((preprojectiveIdeal_eq_span_range_localPreprojectiveRelator k Q).symm ▸ hY i b)
-      -- Read in `Π`, `hY` says `z_b = e_i z_b = e_i (ε_b b*) Y = ε_b b* Y`.
-      rw [map_sub, sub_eq_zero, map_mul, hw, hz, mul_smul_comm, hb, map_mul, map_smul] at h
-      rw [h, doubledVertexIdempotent_def, ← mul_assoc, ← map_mul, hb', smul_mul_assoc]
-  · rintro ⟨y, -, hy⟩
-    simp only [hy]
-    exact sum_preprojectiveMk_ofArrow_mul_doubledArrowSign_smul_eq_zero k v y
+  rw [doubledVertexIdempotent_def]
+  exact sum_map_ofArrow_mul_eq_zero_iff (R := Symmetrify Q) k
+    (r := localPreprojectiveRelator k (Q := Q))
+    (fun u => localPreprojectiveRelator_eq_sum_ofArrow_mul (Q := Q) k u)
+    (fun f => by
+      rw [preprojectiveMk_eq_zero_iff, preprojectiveIdeal_eq_span_range_localPreprojectiveRelator]
+      -- The two ranges differ only in reading the vertex type `Q` as `Symmetrify Q`.
+      exact Iff.rfl)
+    (preprojectiveMk_surjective k Q)
+    (Symmetrify.of.obj (V := Q) v) hz
 
 /-- **Exactness of the Koszul complex at `e_v Π`.** An element `x ∈ e_v Π` has positive degree,
 so maps to zero in the vertex augmentation module `S_v`, exactly when `x = ∑_b b z_b` for some

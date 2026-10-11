@@ -239,7 +239,7 @@ theorem exists_e8Coroot_eq {v : Fin 8 → ℤ} (hv : (v ᵥ* CartanMatrix.E 8) �
     intro w hw
     exact mem_e8DoubledMinimalSet_of_isDoubledE8 (isDoubledE8_e8DoubledEmbed w)
       (by rw [e8DoubledEmbed_dotProduct_self, hw]; norm_num)
-  set T : Finset (Fin 8 → ℤ) := e8DoubledMinimalSet with hT
+  set T : Finset (Fin 8 → ℤ) := e8DoubledMinimalSet
   set C : Finset (Fin 8 → ℤ) := Finset.univ.image fun k ↦ e8DoubledEmbed (e8Coroot k) with hC
   have hCT : C ⊆ T := by
     rw [hC]

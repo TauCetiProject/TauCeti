@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.FunctionField.Place.Extension.Splitting
+public import TauCeti.FieldTheory.FunctionField.Place.Extension.Splitting.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Tower
 public import TauCeti.FieldTheory.Galois.FixedField
 
@@ -61,6 +61,10 @@ proved here.
   and decomposition fields.
 * `TauCeti.Place.decompositionField_eq_top_iff_isSplitCompletely`: the decomposition field is
   everything exactly when the place below splits completely.
+* `TauCeti.Place.ramificationIdx_mul_relativeDegree_restrict_eq_relIndex`: the local degree in
+  an intermediate field is the index of its fixing subgroup in the decomposition group.
+* `TauCeti.Place.isSplitCompletely_iff_forall_decompositionSubgroup_le`: complete splitting in
+  an intermediate field is detected by all upstairs decomposition groups.
 
 ## References
 
@@ -286,6 +290,80 @@ theorem decompositionField_eq_top_iff_isSplitCompletely (P : Place k F') :
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · rw [← fixingSubgroup_decompositionField F P, h, IntermediateField.fixingSubgroup_top]
   · rw [decompositionField, h, IntermediateField.fixedField_bot]
+
+/-- The local degree in an intermediate field is the index of its fixing subgroup in the
+upstairs decomposition group. No separability of the residue extension is required. -/
+theorem ramificationIdx_mul_relativeDegree_restrict_eq_relIndex
+    (Q : Place k F') (E : IntermediateField F F') :
+    ramificationIdx F (Q.restrict k E) * relativeDegree k F (Q.restrict k E) =
+      E.fixingSubgroup.relIndex (Q.integers.decompositionSubgroup F) := by
+  let f : (F' ≃ₐ[E] F') →* (F' ≃ₐ[F] F') := AlgEquiv.restrictScalarsHom F
+  have hmap : (Q.integers.decompositionSubgroup E).map f =
+      E.fixingSubgroup ⊓ Q.integers.decompositionSubgroup F := by
+    ext σ
+    simp only [Subgroup.mem_map, Subgroup.mem_inf]
+    constructor
+    · rintro ⟨τ, hτ, rfl⟩
+      refine ⟨(IntermediateField.mem_fixingSubgroup_iff _ _).mpr
+        (fun x hx ↦ τ.commutes ⟨x, hx⟩), ?_⟩
+      rw [← stabilizer_eq_decompositionSubgroup, MulAction.mem_stabilizer_iff]
+      simp only [f, AlgEquiv.restrictScalarsHom_apply, restrictScalars_smul]
+      exact (MulAction.mem_stabilizer_iff.mp
+        ((stabilizer_eq_decompositionSubgroup (F := E) Q).symm ▸ hτ))
+    · rintro ⟨hE, hQ⟩
+      refine ⟨E.fixingSubgroupEquiv ⟨σ, hE⟩, ?_, ?_⟩
+      · rw [← stabilizer_eq_decompositionSubgroup, MulAction.mem_stabilizer_iff,
+          ← restrictScalars_smul E]
+        have heq : (E.fixingSubgroupEquiv ⟨σ, hE⟩).restrictScalars F = σ := by
+          ext x
+          exact congrFun (IntermediateField.coe_fixingSubgroupEquiv_apply E ⟨σ, hE⟩) x
+        rw [heq]
+        exact MulAction.mem_stabilizer_iff.mp
+          ((stabilizer_eq_decompositionSubgroup (F := F) Q).symm ▸ hQ)
+      · ext x
+        exact congrFun (IntermediateField.coe_fixingSubgroupEquiv_apply E ⟨σ, hE⟩) x
+  have hcard : Nat.card (E.fixingSubgroup ⊓ Q.integers.decompositionSubgroup F :
+      Subgroup (F' ≃ₐ[F] F')) =
+      ramificationIdx E Q * relativeDegree k E Q := by
+    rw [← hmap, Subgroup.card_map_of_injective (AlgEquiv.restrictScalarsHom_injective F),
+      card_decompositionSubgroup E Q]
+  have hidx := E.fixingSubgroup.relIndex_mul_card (Q.integers.decompositionSubgroup F)
+  rw [hcard, card_decompositionSubgroup F Q,
+    ramificationIdx_restrict_mul (k₁ := k) (F₀ := F) (F₁ := E),
+    relativeDegree_restrict_mul (k₀ := k) (k₁ := k) (F₀ := F) (F₁ := E)] at hidx
+  have hpos := Nat.mul_pos (ramificationIdx_pos E Q) (one_le_relativeDegree k E Q)
+  apply Nat.eq_of_mul_eq_mul_left hpos
+  calc
+    (ramificationIdx E Q * relativeDegree k E Q) *
+        (ramificationIdx F (Q.restrict k E) * relativeDegree k F (Q.restrict k E)) =
+        E.fixingSubgroup.relIndex (Q.integers.decompositionSubgroup F) *
+          (ramificationIdx E Q * relativeDegree k E Q) := by
+      rw [hidx]
+      ring
+    _ = _ := mul_comm _ _
+
+variable {F}
+
+/-- A place splits completely in an intermediate field precisely when every decomposition
+group above it fixes that field pointwise. Testing just one upstairs place is not sufficient
+when the intermediate extension is not Galois. -/
+theorem isSplitCompletely_iff_forall_decompositionSubgroup_le
+    (hF : TauCeti.IsFunctionField k F) (P : Place k F) (E : IntermediateField F F') :
+    P.IsSplitCompletely (k' := k) (F' := E) ↔
+      ∀ Q : Place k F', Q.restrict k F = P →
+        Q.integers.decompositionSubgroup F ≤ E.fixingSubgroup := by
+  rw [isSplitCompletely_iff_forall_ramificationIdx_eq_one_and_relativeDegree_eq_one]
+  have hlocal (Q : Place k F') :
+      (ramificationIdx F (Q.restrict k E) = 1 ∧
+        relativeDegree k F (Q.restrict k E) = 1) ↔
+        Q.integers.decompositionSubgroup F ≤ E.fixingSubgroup := by
+    rw [← mul_eq_one, ramificationIdx_mul_relativeDegree_restrict_eq_relIndex,
+      Subgroup.relIndex_eq_one]
+  refine ⟨fun h Q hQ ↦ (hlocal Q).mp (h _ ?_), fun h R hR ↦ ?_⟩
+  · simpa only [restrict_restrict] using hQ
+  · obtain ⟨Q, rfl⟩ := restrict_surjective_of_finiteDimensional
+      (hF.finite_extension (E := E)) (hF.finite_extension (E := F')) R
+    exact (hlocal Q).mpr (h Q (by simpa only [restrict_restrict] using hR))
 
 end Place
 

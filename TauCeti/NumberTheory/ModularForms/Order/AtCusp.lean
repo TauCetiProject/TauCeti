@@ -210,7 +210,7 @@ lemma qExpansionOrderAtCusp_prod {ι : Type*} {f : ι → ℍ → ℂ} (s : Fins
     exact hf' i hi
   rw [qExpansionOrderAtCusp_def, qExpansion_prod s f hf, PowerSeries.order_prod,
     ENat.toNat_sum hf'', Nat.cast_sum]
-  exact Finset.sum_congr rfl fun i hi ↦ by rw [qExpansionOrderAtCusp_def]
+  exact Finset.sum_congr rfl fun i _ ↦ by rw [qExpansionOrderAtCusp_def]
 
 /-- The `ℚ`-valued cusp order: the width-`2h` exponent, halved. For an `h`-periodic
 function this is the integral order at width `h`

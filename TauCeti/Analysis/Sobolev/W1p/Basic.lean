@@ -157,11 +157,9 @@ jet. -/
 theorem Sobolev1JetLp.value_apply_ae (J : Sobolev1JetLp mu Omega p) :
     ∀ᵐ x ∂mu.restrict Omega,
       Sobolev1JetLp.value J x = WithLp.fst (J x) := by
-  -- `coeFn_compLp` is stated for the unbundled `compLp`; expose that implementation of
-  -- `valueL` so its pointwise theorem applies.
-  change ∀ᵐ x ∂mu.restrict Omega,
-    (WithLp.fstL 2 ℝ ℝ E).compLp J x = (WithLp.fstL 2 ℝ ℝ E) (J x)
-  exact (WithLp.fstL 2 ℝ ℝ E).coeFn_compLp J
+  rw [← Sobolev1JetLp.valueL_apply, Sobolev1JetLp.valueL_eq_compLpL]
+  filter_upwards [(WithLp.fstL 2 ℝ ℝ E).coeFn_compLpL J] with x hx
+  simpa only [WithLp.fstL_apply] using hx
 
 /-- The gradient component of a Sobolev jet is, almost everywhere on `Ω`, the second coordinate of
 the jet. -/
@@ -169,11 +167,9 @@ the jet. -/
 theorem Sobolev1JetLp.gradient_apply_ae (J : Sobolev1JetLp mu Omega p) :
     ∀ᵐ x ∂mu.restrict Omega,
       Sobolev1JetLp.gradient J x = WithLp.snd (J x) := by
-  -- As for `value_apply_ae`, expose the unbundled `compLp` implementation consumed by
-  -- Mathlib's pointwise coercion theorem.
-  change ∀ᵐ x ∂mu.restrict Omega,
-    (WithLp.sndL 2 ℝ ℝ E).compLp J x = (WithLp.sndL 2 ℝ ℝ E) (J x)
-  exact (WithLp.sndL 2 ℝ ℝ E).coeFn_compLp J
+  rw [← Sobolev1JetLp.gradientL_apply, Sobolev1JetLp.gradientL_eq_compLpL]
+  filter_upwards [(WithLp.sndL 2 ℝ ℝ E).coeFn_compLpL J] with x hx
+  simpa only [WithLp.sndL_apply] using hx
 
 -- `Sobolev1JetLp` abbreviates an `Lp` space, and Mathlib's `MeasureTheory.Lp.ext` is `@[ext high]`;
 -- the priority puts this lemma before it.
@@ -451,6 +447,15 @@ gradient. -/
 theorem W1p.norm_le_norm_value_add_norm_gradient (u : W1p mu Omega p) :
     ‖u‖ ≤ ‖W1p.value u‖ + ‖W1p.gradient u‖ :=
   Sobolev1JetLp.norm_le_norm_value_add_norm_gradient u.1
+
+/-- Almost everywhere on `Ω`, the squared norm of the jet of a Sobolev function is the sum of the
+squared norms of its value and its weak gradient. -/
+theorem W1p.norm_apply_sq_ae (u : W1p mu Omega p) :
+    ∀ᵐ x ∂mu.restrict Omega,
+      ‖(u : Sobolev1JetLp mu Omega p) x‖ ^ 2 = ‖W1p.value u x‖ ^ 2 + ‖W1p.gradient u x‖ ^ 2 := by
+  filter_upwards [W1p.value_apply_ae u, W1p.gradient_apply_ae u] with x hv hg
+  rw [hv, hg]
+  exact WithLp.prod_norm_sq_eq_of_L2 _
 
 /-- At exponent two, the norm on `W1p` is the Hilbert graph norm. -/
 theorem W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq (u : W1p mu Omega 2) :

@@ -288,7 +288,7 @@ theorem circleLIntegral_sq_le (ζ : ℂ) (ρ : ℝ)
     (hg : AEMeasurable (fun θ => g (circleMap ζ ρ θ)) (volume.restrict (Ioo (-π) π))) :
     circleLIntegral g ζ ρ ^ 2 ≤
       ENNReal.ofReal (2 * π * ρ) * circleLIntegral (fun z => g z ^ 2) ζ ρ := by
-  rcases le_or_gt ρ 0 with hρ | hρ
+  rcases le_or_gt ρ 0 with hρ | _
   · simp [circleLIntegral_of_nonpos _ _ hρ]
   have h2π : (0 : ℝ) ≤ 2 * π := by positivity
   rw [circleLIntegral_def, circleLIntegral_def, mul_pow, ENNReal.ofReal_mul h2π]

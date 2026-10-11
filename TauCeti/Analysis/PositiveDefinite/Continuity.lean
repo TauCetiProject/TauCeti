@@ -170,9 +170,6 @@ theorem norm_sub_sq_le_two_mul_map_zero_re_mul_re_sub_of_add_star_eq_zero
     exact hF.gram_three_add_star_re_eq hx hy rfl rfl rfl hCpos
   have hmain : Complex.normSq d ≤ (F 0).re *
       (2 * (F 0).re - 2 * (F (x + star y)).re) := by
-    have hnonneg : 0 ≤ 2 * (F 0).re - 2 * (F (x + star y)).re
-        - Complex.normSq d / (F 0).re := by
-      simpa [hQcalc] using hQre
     have hdiv :
         Complex.normSq d / (F 0).re ≤ 2 * (F 0).re - 2 * (F (x + star y)).re := by
       linarith

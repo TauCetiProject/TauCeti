@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Bialgebra.Hom
+public import TauCeti.Algebra.Bialgebra.Hom.Basic
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Kernel
 
 /-!

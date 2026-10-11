@@ -86,6 +86,7 @@ theorem isSimpleModule_iff_exists_isPrimitiveIdempotent_quotient_jacobson_smul_t
   constructor
   · intro hM
     let _ : IsSimpleModule A M := hM
+    have := IsSimpleModule.nontrivial A M
     obtain ⟨n, e, he, hprim⟩ := exists_completeOrthogonalIdempotents_isPrimitiveIdempotent A
     obtain ⟨i, f, hf⟩ := he.exists_surjective_of_isSimpleModule M
     have := (hprim i).isIdempotentElem.projective_span_singleton

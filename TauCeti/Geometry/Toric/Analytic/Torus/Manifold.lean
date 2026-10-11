@@ -86,6 +86,18 @@ theorem contMDiff_complexTorusAmbient (n : ℕ∞ω) :
     ContMDiff 𝓘(ℂ, ι → ℂ) 𝓘(ℂ, ι → ℂ) n (complexTorusAmbient e) :=
   contMDiff_isOpenEmbedding (isOpenEmbedding_complexTorusAmbient e)
 
+/-- A map to the coordinate-free complex torus is holomorphic exactly when its ambient
+coordinates are holomorphic. This criterion works for any charted-space source. -/
+theorem contMDiff_complexTorusAmbient_comp_iff {E H M : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] [TopologicalSpace H] {I : ModelWithCorners ℂ E H}
+    [TopologicalSpace M] [ChartedSpace H M] {f : M → ComplexTorus N} {n : ℕ∞ω} :
+    let _ := complexTorusChartedSpace e
+    ContMDiff I 𝓘(ℂ, ι → ℂ) n (complexTorusAmbient e ∘ f) ↔
+      ContMDiff I 𝓘(ℂ, ι → ℂ) n f := by
+  let _ := complexTorusChartedSpace e
+  exact ⟨ContMDiff.of_comp_isOpenEmbedding (isOpenEmbedding_complexTorusAmbient e),
+    (contMDiff_complexTorusAmbient e n).comp⟩
+
 /-- A Laurent monomial in the ambient coordinates is a holomorphic function on the torus. -/
 theorem contMDiff_prod_zpow_complexTorusAmbient (a : ι → ℤ) (n : ℕ∞ω) :
     let _ := complexTorusChartedSpace e

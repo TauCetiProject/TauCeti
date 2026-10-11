@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.AlgebraicTopology.FundamentalGroup.TopologicalMonoid
+public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Pointed
 public import TauCeti.AlgebraicTopology.UniversalCover.Covering
 
 /-!
@@ -54,6 +55,8 @@ the Eckmann–Hilton argument (`FundamentalGroup.cast_map_prod_mul`).
 * `TauCeti.UniversalCover.isCoveringMap_projHom`: the projection is a covering homomorphism.
 * `TauCeti.UniversalCover.ker_projHom_le_center`: its kernel is central.
 * `TauCeti.UniversalCover.discreteTopology_ker_projHom`: its kernel is discrete.
+* `IsCoveringMap.continuousMulEquivUniversalCover`: a simply connected covering group is
+  continuously isomorphic to the universal covering group over the base.
 
 ## References
 
@@ -298,3 +301,113 @@ instance discreteTopology_ker_projHom :
     (Set.ext fun _ ↦ by simp)).symm.discreteTopology
 
 end TauCeti.UniversalCover
+
+namespace IsCoveringMap
+
+open TauCeti
+
+variable {E G : Type*} [Group E] [TopologicalSpace E]
+  [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [SimplyConnectedSpace E] [LocallyPathConnectedSpace E]
+  [LocallyPathConnectedSpace G] [SemilocallySimplyConnectedSpace G]
+  {p : E →ₜ* G}
+
+/-- A pointed homeomorphism from a simply connected covering group to the universal cover,
+commuting with the two projections. -/
+private theorem exists_universalCoverHomeomorph (hp : IsCoveringMap p) :
+    ∃ h : E ≃ₜ UniversalCover (1 : G), h 1 = 1 ∧ UniversalCover.projHom ∘ h = p :=
+  hp.exists_homeomorph_comp_eq_of_simplyConnectedSpace
+    (q := UniversalCover.projHom) (x := 1) (e₀ := 1) (f₀ := 1)
+      UniversalCover.isCoveringMap_projHom p.map_one (by simp)
+
+/-- The pointed homeomorphism from a simply connected covering group to the universal cover. -/
+private noncomputable def universalCoverHomeomorph (hp : IsCoveringMap p) :
+    E ≃ₜ UniversalCover (1 : G) :=
+  hp.exists_universalCoverHomeomorph.choose
+
+private theorem universalCoverHomeomorph_one (hp : IsCoveringMap p) :
+    hp.universalCoverHomeomorph 1 = 1 :=
+  hp.exists_universalCoverHomeomorph.choose_spec.1
+
+private theorem universalCoverHomeomorph_proj (hp : IsCoveringMap p) :
+    UniversalCover.projHom ∘ hp.universalCoverHomeomorph = p :=
+  hp.exists_universalCoverHomeomorph.choose_spec.2
+
+variable [IsTopologicalGroup E]
+
+/-- A simply connected, locally path-connected covering group is continuously isomorphic to the
+universal covering group of its base. The isomorphism sends the identity to the identity and
+commutes with the covering projections. -/
+noncomputable def continuousMulEquivUniversalCover (hp : IsCoveringMap p) :
+    E ≃ₜ* UniversalCover (1 : G) :=
+  ContinuousMulEquiv.mk' hp.universalCoverHomeomorph fun a b ↦ by
+    -- The underlying pointed homeomorphism is supplied by uniqueness of the universal cover.
+    -- For multiplicativity, compare multiplication before and after this homeomorphism as lifts
+    -- on `E × E`; both lift the same map and send `(1, 1)` to `1`.
+    let f : E × E → UniversalCover (1 : G) :=
+      fun z ↦ hp.universalCoverHomeomorph (z.1 * z.2)
+    let g : E × E → UniversalCover (1 : G) :=
+      fun z ↦ hp.universalCoverHomeomorph z.1 * hp.universalCoverHomeomorph z.2
+    have hfg : f = g := UniversalCover.isCoveringMap_projHom.eq_of_comp_eq
+      (g₁ := f) (g₂ := g) (by fun_prop) (by fun_prop) (by
+        funext z
+        -- The lift-uniqueness goal is phrased using `projHom`; expose its endpoint function so
+        -- the projection law for the chosen homeomorphism and `proj_mul` can be applied.
+        change (hp.universalCoverHomeomorph (z.1 * z.2)).proj =
+          (hp.universalCoverHomeomorph z.1 * hp.universalCoverHomeomorph z.2).proj
+        rw [UniversalCover.proj_mul]
+        have hproj (e : E) : (hp.universalCoverHomeomorph e).proj = p e :=
+          congrFun hp.universalCoverHomeomorph_proj e
+        rw [hproj, hproj, hproj, map_mul])
+      (1, 1) (by simp [f, g, hp.universalCoverHomeomorph_one])
+    exact congrFun hfg (a, b)
+
+/-- The universal-cover projection after the canonical comparison is the original covering
+homomorphism. -/
+@[simp]
+theorem projHom_comp_continuousMulEquivUniversalCover (hp : IsCoveringMap p) :
+    UniversalCover.projHom.comp
+      (hp.continuousMulEquivUniversalCover : E →ₜ* UniversalCover (1 : G)) = p := by
+  ext e
+  exact congrFun hp.universalCoverHomeomorph_proj e
+
+/-- Applying the universal-cover projection to the canonical comparison agrees with the original
+covering homomorphism. -/
+@[simp]
+theorem continuousMulEquivUniversalCover_apply_proj (hp : IsCoveringMap p) (e : E) :
+    UniversalCover.projHom (hp.continuousMulEquivUniversalCover e) = p e :=
+  DFunLike.congr_fun hp.projHom_comp_continuousMulEquivUniversalCover e
+
+/-- Projecting the inverse image under the canonical comparison agrees with the universal-cover
+projection. -/
+@[simp]
+theorem continuousMulEquivUniversalCover_symm_apply_proj (hp : IsCoveringMap p)
+    (x : UniversalCover (1 : G)) :
+    p (hp.continuousMulEquivUniversalCover.symm x) = UniversalCover.projHom x := by
+  -- `ContinuousMulEquiv.mk'` reuses the private homeomorphism definitionally; expose that
+  -- underlying map so its inverse and projection equations apply.
+  change p (hp.universalCoverHomeomorph.symm x) = UniversalCover.projHom x
+  symm
+  calc
+    UniversalCover.projHom x = UniversalCover.projHom
+        (hp.universalCoverHomeomorph (hp.universalCoverHomeomorph.symm x)) := by simp
+    _ = p (hp.universalCoverHomeomorph.symm x) :=
+      congrFun hp.universalCoverHomeomorph_proj _
+
+/-- The canonical comparison is the unique continuous homomorphism to the universal covering
+group that commutes with the covering projections. -/
+theorem continuousMulEquivUniversalCover_unique (hp : IsCoveringMap p)
+    (f : E →ₜ* UniversalCover (1 : G)) (hf : UniversalCover.projHom.comp f = p) :
+    f = (hp.continuousMulEquivUniversalCover : E →ₜ* UniversalCover (1 : G)) := by
+  apply DFunLike.ext _ _
+  intro e
+  have hcomp : (fun e ↦ UniversalCover.projHom (f e)) =
+      fun e ↦ UniversalCover.projHom (hp.continuousMulEquivUniversalCover e) := by
+    funext x
+    exact (DFunLike.congr_fun hf x).trans
+      (DFunLike.congr_fun hp.projHom_comp_continuousMulEquivUniversalCover x).symm
+  exact congrFun (UniversalCover.isCoveringMap_projHom.eq_of_comp_eq
+    f.continuous hp.continuousMulEquivUniversalCover.continuous
+    hcomp 1 (by simp)) e
+
+end IsCoveringMap

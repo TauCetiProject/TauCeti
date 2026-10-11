@@ -46,9 +46,6 @@ names), with weaker assumptions where possible. Further results here include
 and the transport lemmas. The selection and ordering of results follows AINTLIB's `Bounded.lean`,
 a prior formalisation of this theory; its proofs were not used.
 
-Claude contributed the algebraic generalization of `IsPowerBounded.neg` and `isPowerBounded_neg`
-from rings to monoids with zero and distributive negation.
-
 ## Main definitions
 
 * `TauCeti.Huber.IsPowerBounded`: the powers of `a` form a bounded set.

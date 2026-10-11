@@ -80,7 +80,7 @@ private noncomputable def haarFinite : FiniteMeasure G :=
 
 /-- The finite measure used to normalize Haar measure has underlying measure `Measure.haar`. -/
 private theorem haarFinite_toMeasure : (haarFinite G : Measure G) = Measure.haar := by
-  ext s hs
+  ext s _
   rfl
 
 private theorem haarFinite_ne_zero : haarFinite G ≠ 0 := by

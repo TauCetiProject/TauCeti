@@ -31,6 +31,11 @@ In genus two the canonical divisor is such an `A`, since `deg W = 2g - 2 = 2` an
 so every function field of genus two has an index-two rational subfield, and away from
 characteristic two every function field of genus two is hyperelliptic.
 
+Over a perfect constant field the separability clause is automatic in every characteristic,
+including two: an inseparable subextension `F / k(x)` of degree two would make `F` rational.  So
+there the predicate is Stichtenoth's index-two definition, and every function field of genus two
+is hyperelliptic.
+
 ## Main definitions
 
 * `TauCeti.IsHyperellipticFunctionField`: genus at least two together with a separable rational
@@ -45,6 +50,10 @@ characteristic two every function field of genus two is hyperelliptic.
 * `TauCeti.exists_transcendental_finrank_adjoin_eq_two_of_genus_eq_two` and
   `TauCeti.isHyperellipticFunctionField_of_genus_eq_two`: genus two gives an index-two rational
   subfield, and away from characteristic two makes `F` hyperelliptic.
+* `TauCeti.isHyperellipticFunctionField_iff_two_le_genus_and_exists_finrank_adjoin_eq_two`: over
+  a perfect field, the predicate agrees with Stichtenoth's Definition 6.2.1.
+* `TauCeti.isHyperellipticFunctionField_of_genus_eq_two_of_perfectField`: over a perfect field,
+  every function field of genus two is hyperelliptic, in every characteristic.
 
 ## References
 
@@ -71,8 +80,10 @@ Being an algebraic function field is *not* part of the predicate: the hypothesis
 hypothesis on the statements that need it, as everywhere in this development.
 
 In characteristic two an index-two subextension can be purely inseparable, and such an `F` is
-deliberately outside this model class; away from characteristic two the separability clause is
-automatic, so there the predicate agrees with Stichtenoth's index-two definition. -/
+deliberately outside this model class; away from characteristic two, and over a perfect field
+(`TauCeti.isHyperellipticFunctionField_iff_two_le_genus_and_exists_finrank_adjoin_eq_two`), the
+separability clause is automatic, so there the predicate agrees with Stichtenoth's index-two
+definition. -/
 structure IsHyperellipticFunctionField (k F : Type*) [Field k] [Field F] [Algebra k F] :
     Prop where
   /-- A hyperelliptic function field has genus at least two. -/
@@ -194,8 +205,9 @@ theorem exists_degree_eq_two_and_dim_eq_two_of_genus_eq_two (hF : IsFunctionFiel
 
 /-- **Every function field of genus two has a rational subfield of index two** (Stichtenoth,
 Lemma 6.2.2), over an arbitrary constant field.  Separability of that subextension is *not*
-claimed here; away from characteristic two it is automatic, see
-`TauCeti.isHyperellipticFunctionField_of_genus_eq_two`. -/
+claimed here; away from characteristic two or over a perfect field it is automatic, see
+`TauCeti.isHyperellipticFunctionField_of_genus_eq_two` and
+`TauCeti.isHyperellipticFunctionField_of_genus_eq_two_of_perfectField`. -/
 theorem exists_transcendental_finrank_adjoin_eq_two_of_genus_eq_two (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 2) :
     ∃ x : F, Transcendental k x ∧ Module.finrank k⟮x⟯ F = 2 := by
@@ -210,5 +222,27 @@ theorem isHyperellipticFunctionField_of_genus_eq_two (hF : IsFunctionField k F)
   obtain ⟨A, hA, hdim⟩ := exists_degree_eq_two_and_dim_eq_two_of_genus_eq_two hF hex hg
   exact (isHyperellipticFunctionField_iff_two_le_genus_and_exists_degree_eq_two_and_two_le_dim
     hF hex h2).mpr ⟨by omega, A, hA, hdim.ge⟩
+
+/-! ### Over a perfect field -/
+
+/-- **Over a perfect field, hyperelliptic means genus at least two with a rational subfield of
+index two** (Stichtenoth, Definition 6.2.1): the separability of the index-two subextension is
+automatic, in every characteristic. -/
+theorem isHyperellipticFunctionField_iff_two_le_genus_and_exists_finrank_adjoin_eq_two
+    [PerfectField k] :
+    IsHyperellipticFunctionField k F ↔
+      2 ≤ genus k F ∧ ∃ x : F, Transcendental k x ∧ Module.finrank k⟮x⟯ F = 2 := by
+  refine ⟨fun hhyp ↦ ?_, fun ⟨hg, x, hx, hrank⟩ ↦
+    ⟨hg, x, hx, hrank, isSeparable_adjoin_of_finrank_prime (by omega) hx (hrank ▸ Nat.prime_two)⟩⟩
+  obtain ⟨x, hx, hrank, -⟩ := hhyp.exists_separable_finrank_adjoin_eq_two
+  exact ⟨hhyp.two_le_genus, x, hx, hrank⟩
+
+/-- **Every function field of genus two over a perfect field is hyperelliptic** (Stichtenoth,
+Lemma 6.2.2), in every characteristic. -/
+theorem isHyperellipticFunctionField_of_genus_eq_two_of_perfectField [PerfectField k]
+    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 2) :
+    IsHyperellipticFunctionField k F :=
+  isHyperellipticFunctionField_iff_two_le_genus_and_exists_finrank_adjoin_eq_two.mpr
+    ⟨hg.ge, exists_transcendental_finrank_adjoin_eq_two_of_genus_eq_two hF hex hg⟩
 
 end TauCeti

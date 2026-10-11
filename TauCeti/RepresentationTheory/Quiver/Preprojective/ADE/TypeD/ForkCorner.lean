@@ -119,7 +119,7 @@ theorem signlessPreprojectiveDForkWords_mem_cornerSubmodule (hn : 3 ≤ n)
     signlessPreprojectiveDForkWords k hn i ∈
       cornerSubmodule k (e (preprojectiveDForkVertex n hn))
         (e (preprojectiveDForkVertex n hn)) := by
-  rcases i with (_ | ⟨l, t⟩) | u
+  rcases i with (_ | ⟨l, t⟩) | _
   · rw [signlessPreprojectiveDForkWords_inl_none]
     simpa only [signlessPreprojectiveDBranchWord_fork_zero] using
       signlessPreprojectiveDBranchWord_mem_cornerSubmodule k

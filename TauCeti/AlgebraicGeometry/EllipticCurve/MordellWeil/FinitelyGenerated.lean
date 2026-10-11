@@ -34,13 +34,20 @@ The statements are named for their conclusions, per the roadmap: no declaration 
 * `WeierstrassCurve.Affine.fg_point_of_numberField` : **the Mordell–Weil theorem** — `E(K)` is
   finitely generated for an elliptic curve over a number field.
 
+## Instances
+
+Over a number field `F` the per-factor hypotheses of `fg_point` hold for every curve, and are
+registered as instances: `finite_classGroup_ringOfIntegersFactor` (the class number theorem) and
+`fg_units_ringOfIntegersFactor` (Dirichlet's unit theorem).
+
 ## Two divergences from the source, both forced by what is already on `main`
 
 *Unit groups are `Monoid.FG`, not `Group.FG`.* The source states `fg_point` with
 `Group.FG (ringOfIntegersFactor R p)ˣ`, but `main`'s weak Mordell–Weil theorem
 (`finiteIndex_range_nsmulAddMonoidHom_two`) takes `Monoid.FG`. Matching `main` avoids an
 impedance mismatch at the one place the hypothesis is used; `Group.fg_iff_monoid_fg` converts,
-and `fg_point_of_numberField` does exactly that when discharging it from Dirichlet's theorem.
+and the instance `fg_units_ringOfIntegersFactor` does exactly that when discharging it from
+Dirichlet's theorem.
 
 *The finiteness inputs are `TauCeti`'s.* `NumberField.finite_classGroup_integralClosure` and
 `NumberField.fg_units_integralClosure` are in
@@ -109,8 +116,23 @@ end Northcott
 
 section NumberField
 
-variable {F : Type*} [Field F] [NumberField F] [DecidableEq F] {W : Affine F}
-  [W.toAffine.IsElliptic]
+variable {F : Type*} [Field F] [NumberField F]
+
+/-- The **class number theorem** for the field factors of the étale algebra of a curve over a
+number field: the ring of integers of each factor `F[X] ⧸ (p)` has finite class group. -/
+instance finite_classGroup_ringOfIntegersFactor (W : Affine F) (p : W.f.Factors) :
+    Finite (ClassGroup (W.ringOfIntegersFactor (𝓞 F) p)) :=
+  NumberField.finite_classGroup_integralClosure F (AdjoinRoot (p : Polynomial F))
+
+/-- **Dirichlet's unit theorem** for the field factors of the étale algebra of a curve over a
+number field: the ring of integers of each factor `F[X] ⧸ (p)` has finitely generated unit
+group. -/
+instance fg_units_ringOfIntegersFactor (W : Affine F) (p : W.f.Factors) :
+    Monoid.FG (W.ringOfIntegersFactor (𝓞 F) p)ˣ :=
+  Group.fg_iff_monoid_fg.mp
+    (NumberField.fg_units_integralClosure F (AdjoinRoot (p : Polynomial F)))
+
+variable [DecidableEq F] {W : Affine F} [W.toAffine.IsElliptic]
 
 /-- **The Mordell–Weil theorem**: the group `E(K)` of `K`-rational points of an elliptic curve `E`
 over a number field `K` is finitely generated.
@@ -121,13 +143,6 @@ are the class number theorem and Dirichlet's unit theorem. -/
 theorem fg_point_of_numberField : AddGroup.FG W.Point := by
   have := invertibleOfNonzero (two_ne_zero (α := F))
   obtain ⟨C, hC⟩ := exists_variableChange_isCharNeTwoNF (W := W)
-  have (p : (C • W).toAffine.f.Factors) :
-      Finite (ClassGroup ((C • W).toAffine.ringOfIntegersFactor (𝓞 F) p)) :=
-    NumberField.finite_classGroup_integralClosure F (AdjoinRoot (p : Polynomial F))
-  have (p : (C • W).toAffine.f.Factors) :
-      Monoid.FG ((C • W).toAffine.ringOfIntegersFactor (𝓞 F) p)ˣ :=
-    Group.fg_iff_monoid_fg.mp
-      (NumberField.fg_units_integralClosure F (AdjoinRoot (p : Polynomial F)))
   exact fg_point_of_variableChange (𝓞 F) C
 
 end NumberField

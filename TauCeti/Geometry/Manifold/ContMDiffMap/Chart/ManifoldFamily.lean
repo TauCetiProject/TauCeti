@@ -163,7 +163,7 @@ theorem ContMDiff.continuous_manifoldWeakWhitney {f : P → C^n⟮I, M; J, N⟯}
   rw [mem_preimage, ContMDiffMap.mem_chartJetSet] at hp₀
   -- A tube lemma turns pointwise membership in the open derivative test into a parameter
   -- neighbourhood on which the whole compact test set stays inside it.
-  obtain ⟨u, v, huo, hvo, hpu, hKv, huv⟩ := generalized_tube_lemma isCompact_singleton hK
+  obtain ⟨u, v, huo, _, hpu, hKv, huv⟩ := generalized_tube_lemma isCompact_singleton hK
     ((hf.continuousOn_iteratedFDerivWithin_extChartAt x y m hm).isOpen_inter_preimage
       (hf.continuous.isOpen_setOf_mem_extChartAt_source (I := I) (J := J) x y) hV)
     (by

@@ -237,7 +237,7 @@ theorem coeff_formalCharacter_mul_weylDenominator_eq_one_of_isHighestWeightVecto
         (weylDenominator (IsKilling.rootSystem H) b).coeff chi2 else 0) = 0 :=
     fun chi2 _ hne ↦ ite_eq_right fun hsum ↦ hne (by rwa [add_eq_left] at hsum)
   rw [AddMonoidAlgebra.coeff_mul, Finsupp.sum_eq_single lam houter (fun h ↦ by simp [hchar] at h),
-    Finsupp.sum_eq_single 0 hinner (fun h ↦ by rw [mul_zero, ite_self]),
+    Finsupp.sum_eq_single 0 hinner (fun _ ↦ by rw [mul_zero, ite_self]),
     add_zero, ite_eq_left rfl, hchar, coeff_weylDenominator_zero, one_mul]
 
 /-! ### Determination by the dominant integral coefficients -/

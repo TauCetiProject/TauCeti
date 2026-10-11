@@ -1,11 +1,13 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.Cyclic
+import TauCeti.Data.ZMod.UnitSquare
+import Mathlib.Data.ZMod.Units
 
 /-!
 # Classification of cyclic dyadic quadratic modules
@@ -33,6 +35,8 @@ square modulo `2^{k+1}`.
   quadratic module on a cyclic group of order `2^k` has a dyadic cyclic presentation.
 * `TauCeti.FiniteQuadraticModule.exists_dyadicCyclic_isometry`: in the nondegenerate case the
   coefficient can be taken odd.
+* `TauCeti.FiniteQuadraticModule.dyadicCyclicIsometryOfModEqEight`: odd coefficients
+  congruent modulo eight yield isometric cyclic modules at every positive exponent.
 * `TauCeti.FiniteQuadraticModule.nonempty_isometry_dyadicCyclic_iff`: the unit-square
   coefficient criterion modulo `2^{k+1}`.
 
@@ -129,5 +133,35 @@ theorem nonempty_isometry_dyadicCyclic_iff {k : ℕ} [NeZero k] (θ η : ℤ) :
   rw [← (ZMod.toRatAddCircle_injective (2 ^ (k + 1))).eq_iff]
   simp only [ZMod.toRatAddCircle_intCast]
   norm_cast
+
+/-- Odd coefficients congruent modulo eight give isometric cyclic dyadic quadratic forms
+at every positive exponent. -/
+noncomputable def dyadicCyclicIsometryOfModEqEight (k : ℕ) [NeZero k] {θ η : ℤ}
+    (hθ : Odd θ) (h : θ ≡ η [ZMOD 8]) : Isometry (dyadicCyclic k θ) (dyadicCyclic k η) :=
+  Classical.choice <| by
+    have hη : Odd η := by
+      obtain ⟨d, hd⟩ := Int.modEq_iff_dvd.mp h
+      obtain ⟨s, hs⟩ := hθ
+      refine ⟨s + 4 * d, ?_⟩
+      omega
+    obtain ⟨u, hu⟩ := ZMod.exists_unit_sq_mul_intCast_eq_of_modEq_eight k hη h
+    let v := ZMod.unitsMap (pow_dvd_pow 2 k.le_succ) u
+    have hv : ((v.val.val : ℤ) : ZMod (2 ^ k)) =
+        ((u.val.val : ℤ) : ZMod (2 ^ k)) := by
+      simp [v, ZMod.unitsMap, ZMod.castHom_apply]
+    have hq := congrArg (dyadicCyclic k η).quadratic hv
+    rw [dyadicCyclic_quadratic_intCast, dyadicCyclic_quadratic_intCast] at hq
+    -- Equal residue representatives give equal cyclic values. The public value
+    -- formula lifts this equality back to the common dyadic modulus.
+    have hlift : ((η * (v.val.val : ℤ) ^ 2 : ℤ) : ZMod (2 ^ (k + 1))) =
+        ((η * (u.val.val : ℤ) ^ 2 : ℤ) : ZMod (2 ^ (k + 1))) := by
+      apply (ZMod.toRatAddCircle_injective (2 ^ (k + 1))).eq_iff.mp
+      rw [ZMod.toRatAddCircle_intCast, ZMod.toRatAddCircle_intCast]
+      push_cast
+      exact hq
+    refine (nonempty_isometry_dyadicCyclic_iff θ η).mpr ⟨v, ?_⟩
+    rw [hlift]
+    push_cast
+    simpa only [ZMod.natCast_zmod_val] using hu.symm
 
 end TauCeti.FiniteQuadraticModule

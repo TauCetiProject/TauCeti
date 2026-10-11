@@ -214,7 +214,7 @@ theorem absNorm_conductor_finitePart :
     exact η.conductor.finitePart_ne_bot
   generalize Ideal.absNorm η.conductor.finitePart = d at hspan hd ⊢
   -- The conductor divides `(m)·∞` exactly when the Dirichlet character factors through `m`.
-  have hcond : ∀ {m : ℕ} (hm : m ≠ 0) (h : ratModulus m hm ∣ ratModulus n hn),
+  have hcond : ∀ {m : ℕ} (hm : m ≠ 0) (_ : ratModulus m hm ∣ ratModulus n hn),
       η.conductor ∣ ratModulus m hm ↔ (ratDirichletEquiv n hn η).FactorsThrough m :=
     fun _ h ↦ by rw [conductor_dvd_iff h, factorsThrough_ratDirichletEquiv_iff h]
   have hspan_dvd : ∀ {m : ℕ}, η.conductor.finitePart ∣ Ideal.span {(m : 𝓞 ℚ)} ↔ d ∣ m :=

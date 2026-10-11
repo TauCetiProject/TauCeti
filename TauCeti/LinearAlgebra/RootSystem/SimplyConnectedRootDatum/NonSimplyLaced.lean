@@ -61,8 +61,7 @@ private theorem isReduced_of_abs_pairing_le_two {i : Type*} [Finite i]
   have hvalues :
       (P.pairing a b = 2 ∧ P.pairing b a = 2) ∨
         (P.pairing a b = -2 ∧ P.pairing b a = -2) := by
-    interval_cases hab : P.pairing a b <;>
-      interval_cases hba : P.pairing b a <;> omega
+    interval_cases P.pairing a b <;> interval_cases P.pairing b a <;> omega
   rcases hvalues with hpos | hneg
   · left
     exact congrArg P.root ((P.pairing_two_two_iff a b).mp hpos)

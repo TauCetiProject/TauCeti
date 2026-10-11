@@ -106,16 +106,9 @@ private theorem coeff_branchDivisor {f : k[X]} (hf : Squarefree f) (P : Place k 
 /-- The branch divisor has degree `deg f` rounded up to an even number. -/
 private theorem degree_branchDivisor {f : k[X]} (hf : f ≠ 0) :
     Divisor.degree (branchDivisor hf) = f.natDegree + f.natDegree % 2 := by
-  set z := Units.mk0 (algebraMap k[X] (RatFunc k) f) (RatFunc.algebraMap_ne_zero hf)
-  -- by the product formula the zeros of `f` have the degree `deg f` of its poles
-  have hzp : Divisor.degree (Divisor.zeros (IsFunctionField.ratFunc k) z) =
-      Divisor.degree (Divisor.poles (IsFunctionField.ratFunc k) z) := by
-    have := Divisor.degree_principal (IsFunctionField.ratFunc k) z
-    rw [← Divisor.zeros_sub_poles, Divisor.degree_sub] at this
-    omega
   rw [branchDivisor, Divisor.degree_add, Divisor.degree_zsmul, Divisor.degree_ofPoint,
-    Place.degree_infty, hzp, Divisor.degree_poles_eq_max_natDegree]
-  simp [z, RatFunc.num_algebraMap, RatFunc.denom_algebraMap]
+    Place.degree_infty, Divisor.degree_zeros_algebraMap hf]
+  simp
 
 /-! ### The degree of `y ^ 2 = f` -/
 

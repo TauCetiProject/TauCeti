@@ -115,7 +115,7 @@ theorem contDiffAt_toOpenPartialHomeomorph_symm {n : ℕ∞ω}
   rcases eq_or_ne n 0 with rfl | hn
   · exact contDiffAt_zero.2 ⟨_, (hf.toOpenPartialHomeomorph f).open_target.mem_nhds hy,
       (hf.toOpenPartialHomeomorph f).continuousOn_symm⟩
-  set x := (hf.toOpenPartialHomeomorph f).symm y with hx
+  set x := (hf.toOpenPartialHomeomorph f).symm y with _
   have hxs : x ∈ (hf.toOpenPartialHomeomorph f).source :=
     (hf.toOpenPartialHomeomorph f).map_target hy
   have hA : HasFDerivAt f (fderiv 𝕜 f x) x := (hcont.differentiableAt hn).hasFDerivAt

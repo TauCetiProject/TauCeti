@@ -61,12 +61,24 @@ explicit.
   `TauCeti.GridDiagram.OMonomial_swapColumns_eq_prod_swapSquareWeight`, which write the renamed
   rectangle weight and the rectangle weight in the commuted diagram as products of the
   per-square weight `TauCeti.GridDiagram.swapSquareWeight`.
+* `TauCeti.GridDiagram.mem_pentagonRectangleDecompositions_of_forall_notMem_XSet`: a pentagon
+  followed by a rectangle of the commuted diagram, made of empty domains whose squares avoid the
+  `X`-markings, is counted.
+* `TauCeti.GridDiagram.mem_pentagonRectangleDecompositions_of_val_add_val_eq_pentagonRectangle`:
+  a pentagon followed by a rectangle of the commuted diagram, made of empty domains and covering
+  the squares of another counted pentagon followed by a rectangle, is counted.
 * `TauCeti.GridDiagram.mem_pentagonRectangleDecompositions_of_val_add_val_eq`: a pentagon
   followed by a rectangle of the commuted diagram, made of empty domains and covering the squares
   of a counted rectangle followed by a pentagon, is counted.
+  `TauCeti.GridDiagram.mem_rectanglePentagonDecompositions_of_val_add_val_eq` is the same
+  statement for a rectangle followed by a pentagon.
 * `TauCeti.GridRectanglePentagonDecomposition.coveredSquares_val_add_val_eq_of_isRepartition`:
   the column balance criterion for a rectangle--pentagon and a pentagon--rectangle domain to cover
   the same squares with the same multiplicities.
+* `TauCeti.GridRectanglePentagonDecomposition.
+  coveredSquares_val_add_val_eq_of_isRepartition_of_bottom_eq`: two rectangle--pentagon domains
+  repartitioning the same squares cover the same squares with the same multiplicities when their
+  pentagons have the same bottom row.
 
 * `TauCeti.GridDiagram.rectanglePentagonWeight_eq_prod_OColumnsOfSquares_union` and
   `TauCeti.GridDiagram.pentagonRectangleWeight_eq_prod_OColumnsOfSquares_union`: when the
@@ -305,6 +317,18 @@ theorem toRectangleDecomposition_injective :
       (congrArg (fun y => GridPentagonBetween a s x y) hmiddle) D.pentagon E.pentagon
   exact GridPentagonRectangleDecomposition.ext hmiddle hpentagon hrectangle
 
+/-- An empty pentagon is an empty first rectangle of the underlying two-step domain. -/
+theorem underlying_first_isEmpty (D : GridPentagonRectangleDecomposition a s x z)
+    (hp : D.pentagon.IsEmpty) : D.toRectangleDecomposition.first.IsEmpty := by
+  simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+    toRectangleDecomposition_first_toGridRectangle] using hp
+
+/-- An empty rectangle is an empty second rectangle of the underlying two-step domain. -/
+theorem underlying_second_isEmpty (D : GridPentagonRectangleDecomposition a s x z)
+    (hr : D.rectangle.IsEmpty) : D.toRectangleDecomposition.second.IsEmpty := by
+  simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+    toRectangleDecomposition_middle, toRectangleDecomposition_second_toGridRectangle] using hr
+
 end GridPentagonRectangleDecomposition
 
 namespace GridRectanglePentagonDecomposition
@@ -437,6 +461,43 @@ theorem coveredSquares_val_add_val_eq_of_isRepartition
   · have h := hrep' (c, t)
     simp only [Equiv.swap_apply_of_ne_of_ne hca hcb,
       E.pentagon.mem_coveredSquares_iff_of_ne (p := (c, t)) hca hcb,
+      D.pentagon.mem_coveredSquares_iff_of_ne (p := (c, t)) hca hcb]
+    omega
+
+/-- Two rectangle--pentagon decompositions cover the same squares with the same multiplicities
+when their underlying rectangle decompositions are repartitions of each other and their pentagons
+have the same bottom row. -/
+theorem coveredSquares_val_add_val_eq_of_isRepartition_of_bottom_eq
+    (D D' : GridRectanglePentagonDecomposition a s x z)
+    (hrep : D.toRectangleDecomposition.IsRepartition D'.toRectangleDecomposition)
+    (hbottom : D'.pentagon.bottom = D.pentagon.bottom) :
+    D'.rectangle.toGridRectangle.coveredSquares.val + D'.pentagon.coveredSquares.val =
+      D.rectangle.toGridRectangle.coveredSquares.val + D.pentagon.coveredSquares.val := by
+  have hrep' := fun q => congrArg (Multiset.count q) hrep.val_add_val_eq
+  simp only [Multiset.count_add, Multiset.count_eq_of_nodup (Finset.nodup _), Finset.mem_val,
+    toRectangleDecomposition_first_toGridRectangle,
+    toRectangleDecomposition_second_toGridRectangle] at hrep'
+  refine Multiset.ext.mpr fun p => ?_
+  simp only [Multiset.count_add, Multiset.count_eq_of_nodup (Finset.nodup _), Finset.mem_val]
+  obtain ⟨c, t⟩ := p
+  by_cases hca : c = a
+  · subst hca
+    have h := hrep' (c, t)
+    have h₁ := Grid.ite_mem_cIco_eq_add_add D'.pentagon.turn_mem_cIco_bottom_top t
+    have h₂ := Grid.ite_mem_cIco_eq_add_add D.pentagon.turn_mem_cIco_bottom_top t
+    simp only [GridPentagonBetween.mk_mem_coveredSquares_left_column,
+      GridPentagonBetween.mk_mem_toGridRectangle_coveredSquares_left_column] at h ⊢
+    rw [hbottom] at h h₁
+    omega
+  by_cases hcb : c = finRotate n a
+  · subst hcb
+    have h := hrep' (finRotate n a, t)
+    simp only [GridPentagonBetween.mk_mem_coveredSquares_right_column,
+      GridPentagonBetween.mk_notMem_toGridRectangle_coveredSquares_right_column, ↓reduceIte,
+      add_zero, hbottom] at h ⊢
+    omega
+  · have h := hrep' (c, t)
+    simp only [D'.pentagon.mem_coveredSquares_iff_of_ne (p := (c, t)) hca hcb,
       D.pentagon.mem_coveredSquares_iff_of_ne (p := (c, t)) hca hcb]
     omega
 
@@ -648,6 +709,22 @@ theorem pentagonRectangleWeight_eq_of_val_add_val_eq
   simp only [Finset.prod_eq_multiset_prod, ← Multiset.prod_add, ← Multiset.map_add, h]
 
 /-- A pentagon followed by a rectangle of the commuted diagram is counted when its two domains are
+empty and no square of its composite domain, the rectangle of the commuted diagram being read in the
+original diagram, carries an `X`-marking. -/
+theorem mem_pentagonRectangleDecompositions_of_forall_notMem_XSet {x z : GridState n}
+    {D : GridPentagonRectangleDecomposition C.column C.turnRow x z}
+    (hpentagon : D.pentagon.IsEmpty) (hrectangle : D.rectangle.IsEmpty)
+    (hX : ∀ p ∈ D.pentagon.coveredSquares.val +
+        (D.rectangle.toGridRectangle.coveredSquares.map
+          ((Equiv.swap C.column b).prodCongr (Equiv.refl (Fin n))).toEmbedding).val,
+      p ∉ G.XSet) :
+    D ∈ G.pentagonRectangleDecompositions C x z := by
+  rw [mem_pentagonRectangleDecompositions, mem_pentagons,
+    (G.swapColumns C.column b).mem_unblockedRectangles, ← G.disjoint_map_swapColumns_XSet_iff]
+  exact ⟨⟨hpentagon, Finset.disjoint_left.mpr fun p hp => hX p (Multiset.mem_add.mpr (Or.inl hp))⟩,
+    hrectangle, Finset.disjoint_left.mpr fun p hp => hX p (Multiset.mem_add.mpr (Or.inr hp))⟩
+
+/-- A pentagon followed by a rectangle of the commuted diagram is counted when its two domains are
 empty and its composite domain covers, with multiplicity, the squares of a counted rectangle
 followed by a pentagon, the rectangle of the commuted diagram being read in the original diagram:
 every square it covers then avoids the `X`-markings. -/
@@ -662,21 +739,60 @@ theorem mem_pentagonRectangleDecompositions_of_val_add_val_eq {x z : GridState n
       D.rectangle.toGridRectangle.coveredSquares.val + D.pentagon.coveredSquares.val) :
     E ∈ G.pentagonRectangleDecompositions C x z := by
   rw [mem_rectanglePentagonDecompositions, mem_unblockedRectangles, mem_pentagons] at hD
+  refine G.mem_pentagonRectangleDecompositions_of_forall_notMem_XSet C hpentagon hrectangle
+    fun p hp hpX => ?_
+  rw [h] at hp
+  rcases Multiset.mem_add.mp hp with hp' | hp'
+  · exact Finset.disjoint_left.mp hD.1.2 hp' hpX
+  · exact Finset.disjoint_left.mp hD.2.2 hp' hpX
+
+/-- A pentagon followed by a rectangle of the commuted diagram is counted when its two domains are
+empty and its composite domain covers, with multiplicity, the squares of another counted pentagon
+followed by a rectangle, both rectangles being read in the original diagram: every square it
+covers then avoids the `X`-markings. -/
+theorem mem_pentagonRectangleDecompositions_of_val_add_val_eq_pentagonRectangle
+    {x z : GridState n} {E : GridPentagonRectangleDecomposition C.column C.turnRow x z}
+    (hE : E ∈ G.pentagonRectangleDecompositions C x z)
+    {D : GridPentagonRectangleDecomposition C.column C.turnRow x z}
+    (hpentagon : D.pentagon.IsEmpty) (hrectangle : D.rectangle.IsEmpty)
+    (h : D.pentagon.coveredSquares.val +
+        (D.rectangle.toGridRectangle.coveredSquares.map
+          ((Equiv.swap C.column b).prodCongr (Equiv.refl (Fin n))).toEmbedding).val =
+      E.pentagon.coveredSquares.val +
+        (E.rectangle.toGridRectangle.coveredSquares.map
+          ((Equiv.swap C.column b).prodCongr (Equiv.refl (Fin n))).toEmbedding).val) :
+    D ∈ G.pentagonRectangleDecompositions C x z := by
+  rw [mem_pentagonRectangleDecompositions, mem_pentagons,
+    (G.swapColumns C.column b).mem_unblockedRectangles,
+    ← G.disjoint_map_swapColumns_XSet_iff] at hE
+  refine G.mem_pentagonRectangleDecompositions_of_forall_notMem_XSet C hpentagon hrectangle
+    fun p hp hpX => ?_
+  rw [h] at hp
+  rcases Multiset.mem_add.mp hp with hp' | hp'
+  · exact Finset.disjoint_left.mp hE.1.2 hp' hpX
+  · exact Finset.disjoint_left.mp hE.2.2 hp' hpX
+
+/-- A rectangle followed by a pentagon is counted when its two domains are empty and its composite
+domain covers, with multiplicity, the squares of a counted rectangle followed by a pentagon: every
+square it covers then avoids the `X`-markings. -/
+theorem mem_rectanglePentagonDecompositions_of_val_add_val_eq {x z : GridState n}
+    {D : GridRectanglePentagonDecomposition C.column C.turnRow x z}
+    (hD : D ∈ G.rectanglePentagonDecompositions C x z)
+    {D' : GridRectanglePentagonDecomposition C.column C.turnRow x z}
+    (hrectangle : D'.rectangle.IsEmpty) (hpentagon : D'.pentagon.IsEmpty)
+    (h : D'.rectangle.toGridRectangle.coveredSquares.val + D'.pentagon.coveredSquares.val =
+      D.rectangle.toGridRectangle.coveredSquares.val + D.pentagon.coveredSquares.val) :
+    D' ∈ G.rectanglePentagonDecompositions C x z := by
+  rw [mem_rectanglePentagonDecompositions, mem_unblockedRectangles, mem_pentagons] at hD ⊢
   -- A square of the new domain is a square of the original domain, which avoids `X`.
-  have hX : Disjoint (E.pentagon.coveredSquares ∪ E.rectangle.toGridRectangle.coveredSquares.map
-      ((Equiv.swap C.column b).prodCongr (Equiv.refl (Fin n))).toEmbedding) G.XSet := by
-    refine Finset.disjoint_left.mpr fun p hp hpX => ?_
-    have hmem : p ∈ D.rectangle.toGridRectangle.coveredSquares.val +
-        D.pentagon.coveredSquares.val := by
-      rw [← h, Multiset.mem_add]
-      simpa only [Finset.mem_union, Finset.mem_val] using hp
-    rcases Multiset.mem_add.mp hmem with hp' | hp'
+  have hX (p : Fin n × Fin n) (hp : p ∈ D'.rectangle.toGridRectangle.coveredSquares.val +
+      D'.pentagon.coveredSquares.val) : p ∉ G.XSet := fun hpX => by
+    rw [h] at hp
+    rcases Multiset.mem_add.mp hp with hp' | hp'
     · exact Finset.disjoint_left.mp hD.1.2 hp' hpX
     · exact Finset.disjoint_left.mp hD.2.2 hp' hpX
-  rw [mem_pentagonRectangleDecompositions, mem_pentagons,
-    (G.swapColumns C.column b).mem_unblockedRectangles, ← G.disjoint_map_swapColumns_XSet_iff]
-  exact ⟨⟨hpentagon, (Finset.disjoint_union_left.mp hX).1⟩, hrectangle,
-    (Finset.disjoint_union_left.mp hX).2⟩
+  exact ⟨⟨hrectangle, Finset.disjoint_left.mpr fun p hp => hX p (Multiset.mem_add.mpr (Or.inl hp))⟩,
+    hpentagon, Finset.disjoint_left.mpr fun p hp => hX p (Multiset.mem_add.mpr (Or.inr hp))⟩
 
 /-- The matrix product for the pentagon map after the original differential is the sum of the
 weights of the counted rectangle--pentagon decompositions. -/

@@ -51,7 +51,6 @@ theorem exists_linearEquiv_comp_eq_of_range_eq [Module.Projective R F] (hF : IsF
     {a b : F →ₗ[R] E} (h : LinearMap.range a = LinearMap.range b) :
     ∃ θ : F ≃ₗ[R] F, b ∘ₗ θ.toLinearMap = a := by
   -- Corestrict both maps to their common range and lift them to a projective cover of it.
-  let a' : F →ₗ[R] LinearMap.range a := a.rangeRestrict
   let b' : F →ₗ[R] LinearMap.range a := b.codRestrict _ fun x ↦ h ▸ LinearMap.mem_range_self b x
   have hb' : Function.Surjective b' := by
     rintro ⟨y, hy⟩

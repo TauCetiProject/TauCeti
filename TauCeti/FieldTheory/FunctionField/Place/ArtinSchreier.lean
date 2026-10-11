@@ -52,7 +52,6 @@ theorem exists_ord_sub_pow_sub_self_gt_of_dvd_ord {n : ℕ} (hn : 1 < n)
     (hu : P.ord u < 0) (hdiv : (n : ℤ) ∣ P.ord u) :
     ∃ w : F, P.ord u < P.ord (u - (w ^ n - w)) := by
   obtain ⟨q, hq⟩ := hdiv
-  have hn' : (1 : ℤ) < n := by exact_mod_cast hn
   have hqneg : q < 0 := by nlinarith
   have hu0 : u ≠ 0 := by rintro rfl; simp at hu
   -- Normalize the leading term to a unit and lift an n-th root of its residue.

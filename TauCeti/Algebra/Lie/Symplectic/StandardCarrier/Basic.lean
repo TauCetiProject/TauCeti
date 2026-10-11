@@ -73,9 +73,9 @@ is asserted here.
   the numbered generators.
 * `TauCeti.SpStd.lie_cartanGenerator_rootGenerator`: the numbered Cartan generators act on the
   root generators through the rows of the type-`C` Cartan matrix.
-* `TauCeti.SpStd.isNilpotent_rep_rootGenerator` and
-  `TauCeti.SpStd.nilpotencyClass_rep_rootGenerator`: each numbered root generator squares to zero
-  on the standard module, and has nilpotency class exactly two.
+* `TauCeti.SpStd.rootGenerator_mul_self_eq_zero`, `TauCeti.SpStd.isNilpotent_rep_rootGenerator`
+  and `TauCeti.SpStd.nilpotencyClass_rep_rootGenerator`: each numbered root generator squares to
+  zero as a matrix, hence on the standard module, and has nilpotency class exactly two.
 * `TauCeti.SpStd.intCast_latticeBasis_repr`: the coordinate-basis coefficients of a lattice vector
   are its rational coordinates.
 * `TauCeti.SpStd.rep_kostantForm_mem_lattice`: the Kostant `ℤ`-form preserves the standard
@@ -104,13 +104,10 @@ public section
 open Matrix
 open scoped TensorProduct
 
-universe v
-
 namespace TauCeti.SpStd
 
 open LieAlgebra.Symplectic
 
-attribute [local instance] TauCeti.moduleNNRat
 attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable (n : ℕ)
@@ -473,35 +470,6 @@ theorem lie_cartanGenerator_rootGenerator (k : Fin (n + 1) ⊕ Fin (n + 1))
 
 /-! ## The `sl₂` triples of the numbered generators -/
 
-private theorem positiveRootMatrix_ne_zero (i : Fin (n + 1)) : positiveRootMatrix n i ≠ 0 := by
-  by_cases hi : i = Fin.last n
-  · subst hi
-    rw [positiveRootMatrix_last]
-    intro hzero
-    have h := congrFun (congrFun hzero (.inl (Fin.last n))) (.inr (Fin.last n))
-    simp at h
-  · rw [positiveRootMatrix_of_ne_last n i hi]
-    intro hzero
-    have h := congrFun (congrFun hzero (.inl i)) (.inl (Order.succ i))
-    simp at h
-
-private theorem negativeRootMatrix_ne_zero (i : Fin (n + 1)) : negativeRootMatrix n i ≠ 0 := by
-  rw [negativeRootMatrix_eq_transpose, Ne, transpose_eq_zero]
-  exact positiveRootMatrix_ne_zero n i
-
-private theorem rootGenerator_ne_zero (k : Fin (n + 1) ⊕ Fin (n + 1)) :
-    rootGenerator n k ≠ 0 := by
-  intro hzero
-  cases k with
-  | inl i =>
-      apply positiveRootMatrix_ne_zero n i
-      rw [← val_rootGenerator_inl n i, hzero]
-      rfl
-  | inr i =>
-      apply negativeRootMatrix_ne_zero n i
-      rw [← val_rootGenerator_inr n i, hzero]
-      rfl
-
 private theorem lie_rootGenerator_inl_inr_of_ne (i j : Fin (n + 1)) (hij : i ≠ j) :
     ⁅rootGenerator n (.inl i), rootGenerator n (.inr j)⁆ = 0 := by
   apply Subtype.ext
@@ -515,11 +483,10 @@ private theorem lie_cartanGenerator_rootGenerator_inl_self (i : Fin (n + 1)) :
 
 private theorem cartanGenerator_ne_zero (i : Fin (n + 1)) : cartanGenerator n i ≠ 0 := by
   intro hzero
-  have h2 : (2 : ℚ) • rootGenerator n (.inl i) = 0 := by
-    rw [← lie_cartanGenerator_rootGenerator_inl_self, hzero, zero_lie]
-  rcases smul_eq_zero.1 h2 with h | h
-  · norm_num at h
-  · exact rootGenerator_ne_zero n (.inl i) h
+  have h := congrArg (fun x : sp (Fin (n + 1)) ℚ =>
+    (x : Matrix (Fin (n + 1) ⊕ Fin (n + 1)) (Fin (n + 1) ⊕ Fin (n + 1)) ℚ)
+      (.inl i) (.inl i)) hzero
+  simp at h
 
 /-- The numbered raising and lowering generators at a common index, together with the Cartan
 generator at that index, form an `sl₂` triple. -/
@@ -647,24 +614,31 @@ theorem rep_rootGenerator_apply (k : Fin (n + 1) ⊕ Fin (n + 1))
           sub_mulVec, single_mulVec_eq,
           single_mulVec_eq, one_mul, one_mul]
 
+/-- Every numbered root generator squares to zero as a matrix. -/
+theorem rootGenerator_mul_self_eq_zero (k : Fin (n + 1) ⊕ Fin (n + 1)) :
+    (rootGenerator n k : Matrix (Fin (n + 1) ⊕ Fin (n + 1)) (Fin (n + 1) ⊕ Fin (n + 1)) ℚ) *
+      (rootGenerator n k : Matrix _ _ ℚ) = 0 := by
+  cases k with
+  | inl i =>
+      by_cases hi : i = Fin.last n
+      · subst hi
+        simp [positiveRootMatrix_last]
+      · simp [positiveRootMatrix_of_ne_last n i hi, sub_mul, mul_sub, single_mul_single_of_ne,
+          (Order.lt_succ_iff_ne_top.2 hi).ne, (Order.lt_succ_iff_ne_top.2 hi).ne']
+  | inr i =>
+      by_cases hi : i = Fin.last n
+      · subst hi
+        simp [negativeRootMatrix_last]
+      · simp [negativeRootMatrix_of_ne_last n i hi, sub_mul, mul_sub, single_mul_single_of_ne,
+          (Order.lt_succ_iff_ne_top.2 hi).ne, (Order.lt_succ_iff_ne_top.2 hi).ne']
+
 /-- Applying a numbered root generator twice in the standard representation gives zero. -/
 theorem rep_rootGenerator_rep_rootGenerator_eq_zero
     (k : Fin (n + 1) ⊕ Fin (n + 1))
     (v : (Fin (n + 1) ⊕ Fin (n + 1)) → ℚ) :
     rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ (rootGenerator n k))
       (rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ (rootGenerator n k)) v) = 0 := by
-  rw [rep_rootGenerator_apply, rep_rootGenerator_apply]
-  cases k with
-  | inl i =>
-      by_cases hi : i = Fin.last n
-      · subst hi
-        simp
-      · simp [hi, (Order.lt_succ_iff_ne_top.2 hi).ne, (Order.lt_succ_iff_ne_top.2 hi).ne']
-  | inr i =>
-      by_cases hi : i = Fin.last n
-      · subst hi
-        simp
-      · simp [hi, (Order.lt_succ_iff_ne_top.2 hi).ne, (Order.lt_succ_iff_ne_top.2 hi).ne']
+  rw [rep_ι_apply, rep_ι_apply, mulVec_mulVec, rootGenerator_mul_self_eq_zero, zero_mulVec]
 
 /-- Every numbered root generator squares to zero in the standard representation. -/
 theorem pow_two_rep_rootGenerator_eq_zero (k : Fin (n + 1) ⊕ Fin (n + 1)) :

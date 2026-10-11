@@ -66,8 +66,7 @@ theorem hasOneCommonSide_of_initial_self (D : GridRectangleInitialPentagonDecomp
   · simp [GridRectangleBetween.mem_sideColumns, hcommon]
   · intro c hc
     simp only [GridRectangleBetween.mem_sideColumns, hcommon] at hc
-    have hleft := Grid.ne_left_of_mem_cIoo hcol
-    have hright := Grid.ne_right_of_mem_cIoo hcol
+    have _ := Grid.ne_right_of_mem_cIoo hcol
     grind
 
 private theorem underlying_first_isEmpty
@@ -310,27 +309,11 @@ theorem recutInitialSelf_mem_rectangleInitialPentagonDecompositions
     (hD : D ∈ G.rectangleInitialPentagonDecompositions C x z) :
     D.recutInitialSelf hcommon hcol hfirst hsecond ∈
       G.rectangleInitialPentagonDecompositions C x z := by
-  classical
-  let E := D.recutInitialSelf hcommon hcol hfirst hsecond
-  obtain ⟨hR, hP⟩ := (G.mem_rectangleInitialPentagonDecompositions C D).1 hD
-  have hRX := ((G.mem_unblockedRectangles _).1 hR).2
-  have hPX := ((G.mem_initialPentagons _).1 hP).2
-  have hunion := congrArg Multiset.toFinset
-    (D.coveredSquares_val_add_recutInitialSelf hcommon hcol hfirst hsecond)
-  simp only [Multiset.toFinset_add, Finset.val_toFinset] at hunion
-  have hnew : Disjoint (E.first.toGridRectangle.coveredSquares ∪ E.pentagon.coveredSquares)
-      G.XSet := by
-    rw [hunion]
-    exact Finset.disjoint_union_left.mpr ⟨hRX, hPX⟩
-  obtain ⟨hER, hEP⟩ := Finset.disjoint_union_left.mp hnew
   have hrecut := D.isRecut_recutInitialSelf hcommon hcol hfirst hsecond
-  exact (G.mem_rectangleInitialPentagonDecompositions C E).2
-    ⟨(G.mem_unblockedRectangles _).2 ⟨hrecut.isEmpty_first, hER⟩,
-    (G.mem_initialPentagons _).2 ⟨by
-        have hs := hrecut.isEmpty_second
-        rw [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor] at hs ⊢
-        simpa only [E.pentagon_toGridRectangleBetween] using hs,
-      hEP⟩⟩
+  refine G.mem_rectangleInitialPentagonDecompositions_of_val_add_val_eq C hD hrecut.isEmpty_first
+    ?_ (D.coveredSquares_val_add_recutInitialSelf hcommon hcol hfirst hsecond)
+  simpa only [GridRectangleInitialPentagonDecomposition.pentagon_toGridRectangleBetween] using
+    hrecut.isEmpty_second
 
 /-- The same-sum initial-side recut preserves the monomial contribution over any commutative
 semiring. -/

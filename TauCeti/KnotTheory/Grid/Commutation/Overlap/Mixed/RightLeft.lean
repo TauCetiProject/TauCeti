@@ -95,17 +95,9 @@ common side column when its two other sides differ. -/
 theorem hasOneCommonSide_of_right_eq_left (D : GridRectanglePentagonDecomposition a s x z)
     (hcommon : D.rectangle.right = D.pentagon.left)
     (hother : D.rectangle.left ≠ D.pentagon.right) :
-    D.toRectangleDecomposition.HasOneCommonSide := by
-  apply D.toRectangleDecomposition.hasOneCommonSide_iff_existsUnique.mpr
-  refine ⟨D.rectangle.right, ?_, ?_⟩
-  · simp [GridRectangleBetween.mem_sideColumns, hcommon]
-  · intro c hc
-    simp only [GridRectangleBetween.mem_sideColumns, toRectangleDecomposition_first_left,
-      toRectangleDecomposition_first_right, toRectangleDecomposition_second_left,
-      toRectangleDecomposition_second_right] at hc
-    have hfirst := D.rectangle.left_ne_right
-    have hsecond := D.pentagon.left_ne_right
-    grind
+    D.toRectangleDecomposition.HasOneCommonSide :=
+  D.toRectangleDecomposition.hasOneCommonSide_of_right_eq_left (by simpa using hcommon)
+    (by simpa using hother)
 
 /-- The generic recut of a mixed `right = left` overlap whose turn row lies in the rows from the
 rectangle's top to the pentagon's top. -/

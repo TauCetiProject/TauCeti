@@ -129,6 +129,74 @@ structure Delineation (P : ι → X → ℝ[X]) where
 
 namespace Delineation
 
+/-- Construct a delineation from continuous ordered roots with specified constant
+multiplicities. The roots must cover every nonzero member, and each section must have
+positive multiplicity in some member. On a preconnected base these data imply
+sign-invariance on all sections and sectors. -/
+def ofRoots [PreconnectedSpace X] {n : ℕ} {θ : Fin n → X → ℝ} {m : ι → Fin n → ℕ}
+    (hcoeff : ∀ k j, Continuous fun x ↦ (P k x).coeff j)
+    (hnull : ∀ k, (∀ x, P k x = 0) ∨ ∀ x, P k x ≠ 0)
+    (hdeg : ∀ k x y, (P k x).natDegree = (P k y).natDegree)
+    (hθ : ∀ i, Continuous (θ i)) (hmono : ∀ x, StrictMono fun i ↦ θ i x)
+    (hmult : ∀ k i x, (P k x).rootMultiplicity (θ i x) = m k i)
+    (hroots : ∀ k x, P k x ≠ 0 → ∀ t, (P k x).IsRoot t → ∃ i, θ i x = t)
+    (hpos : ∀ i, ∃ k, 0 < m k i) : Delineation P := by
+  have hP (k : ι) : Continuous fun z : X × ℝ ↦ (P k z.1).eval z.2 := by
+    rcases isEmpty_or_nonempty X with hX | hX
+    · exact continuous_of_const fun z ↦ isEmptyElim z.1
+    · obtain ⟨x₀⟩ := hX
+      exact continuous_eval_of_continuous_coeff (fun j _ ↦ hcoeff k j)
+        fun x ↦ (hdeg k x x₀).le
+  exact {
+    count := n
+    root := θ
+    continuous_root := hθ
+    strictMono_root := hmono
+    multiplicity := m
+    rootMultiplicity_root := hmult
+    exists_root_eq := hroots
+    exists_multiplicity_pos := hpos
+    eq_zero_or_ne_zero := hnull
+    natDegree_eq := hdeg
+    signInvariant_sectionSet := fun k i ↦ signInvariant_eval_sectionSet
+      (I := {i | 0 < m k i}) (hP k) (hθ i) (fun x ↦ (hmono x).injective) (hnull k)
+      fun x hk t ↦ (isRoot_iff_of_rootMultiplicity (fun i ↦ hmult k i x)
+        (hroots k x hk) hk t).trans (by simp only [mem_ofPred_eq, and_comm])
+    signInvariant_sectorSet := fun k _ ↦
+      signInvariant_eval_sectorSet (hP k) hθ hmono (hnull k) fun x hk ↦ hroots k x hk }
+
+section
+
+variable [PreconnectedSpace X] {n : ℕ} {θ : Fin n → X → ℝ} {m : ι → Fin n → ℕ}
+  (hcoeff : ∀ k j, Continuous fun x ↦ (P k x).coeff j)
+  (hnull : ∀ k, (∀ x, P k x = 0) ∨ ∀ x, P k x ≠ 0)
+  (hdeg : ∀ k x y, (P k x).natDegree = (P k y).natDegree)
+  (hθ : ∀ i, Continuous (θ i)) (hmono : ∀ x, StrictMono fun i ↦ θ i x)
+  (hmult : ∀ k i x, (P k x).rootMultiplicity (θ i x) = m k i)
+  (hroots : ∀ k x, P k x ≠ 0 → ∀ t, (P k x).IsRoot t → ∃ i, θ i x = t)
+  (hpos : ∀ i, ∃ k, 0 < m k i)
+
+/-- The delineation constructed from ordered roots has the specified number of sections. -/
+@[simp]
+theorem ofRoots_count :
+    (ofRoots hcoeff hnull hdeg hθ hmono hmult hroots hpos).count = n := (rfl)
+
+/-- The delineation constructed from ordered roots has the specified root functions. -/
+@[simp]
+theorem ofRoots_root
+    (i : Fin (ofRoots hcoeff hnull hdeg hθ hmono hmult hroots hpos).count) (x : X) :
+    (ofRoots hcoeff hnull hdeg hθ hmono hmult hroots hpos).root i x =
+      θ (Fin.cast (ofRoots_count hcoeff hnull hdeg hθ hmono hmult hroots hpos) i) x := (rfl)
+
+/-- The delineation constructed from ordered roots has the specified multiplicities. -/
+@[simp]
+theorem ofRoots_multiplicity (k : ι)
+    (i : Fin (ofRoots hcoeff hnull hdeg hθ hmono hmult hroots hpos).count) :
+    (ofRoots hcoeff hnull hdeg hθ hmono hmult hroots hpos).multiplicity k i =
+      m k (Fin.cast (ofRoots_count hcoeff hnull hdeg hθ hmono hmult hroots hpos) i) := (rfl)
+
+end
+
 /-- Any family of real polynomials over an empty base has a delineation. -/
 theorem nonempty_of_isEmpty [IsEmpty X] (P : ι → X → ℝ[X]) : Nonempty (Delineation P) :=
   ⟨{
@@ -281,28 +349,9 @@ theorem nonempty_delineation [Finite ι] [PreconnectedSpace X]
   have hsub (k : ι) (x : X) (hk : P k x ≠ 0) (t : ℝ) (ht : (P k x).IsRoot t) :
       ∃ i, r x i = t :=
     (hroot x t).1 ⟨⟨k, fun y h ↦ hk (hzero (fun h' ↦ h' y h) x)⟩, ht⟩
-  have hP (k : ι) : Continuous fun z : X × ℝ ↦ (P k z.1).eval z.2 :=
-    continuous_eval_of_continuous_coeff (fun i _ ↦ hcoeff k i) (fun x ↦ (hdeg k x x₀).le)
-  refine ⟨{
-    count := n
-    root := fun i x ↦ r x i
-    continuous_root := hrc
-    strictMono_root := hrm
-    multiplicity := m
-    rootMultiplicity_root := hm
-    exists_root_eq := hsub
-    exists_multiplicity_pos := fun i ↦ ?_
-    eq_zero_or_ne_zero := hnull
-    natDegree_eq := hdeg
-    signInvariant_sectionSet := fun k i ↦ ?_
-    signInvariant_sectorSet := fun k j ↦ ?_ }⟩
-  · obtain ⟨⟨k, hk⟩, hki⟩ := (hroot x₀ (r x₀ i)).2 ⟨i, rfl⟩
-    exact ⟨k, (rootMultiplicity_pos (hk x₀)).2 hki⟩
-  · exact signInvariant_eval_sectionSet (I := {i | 0 < m k i}) (hP k) (hrc i)
-      (fun x ↦ (hrm x).injective) (hnull k) fun x hk t ↦
-        (isRoot_iff_of_rootMultiplicity (fun i ↦ hm k i x) (hsub k x hk) hk t).trans <| by
-          simp only [mem_ofPred_eq, and_comm]
-  · exact signInvariant_eval_sectorSet (hP k) hrc hrm (hnull k) fun x hk ↦ hsub k x hk
+  refine ⟨Delineation.ofRoots hcoeff hnull hdeg hrc hrm hm hsub fun i ↦ ?_⟩
+  obtain ⟨⟨k, hk⟩, hki⟩ := (hroot x₀ (r x₀ i)).2 ⟨i, rfl⟩
+  exact ⟨k, (rootMultiplicity_pos (hk x₀)).2 hki⟩
 
 /-- **Delineation from an ordered root enumeration.** Let `F x` be nowhere-zero real polynomials
 of constant degree whose coefficients depend continuously on a parameter `x` in a preconnected
@@ -326,27 +375,9 @@ theorem exists_delineation_of_isRoot_iff [PreconnectedSpace X] {F : X → ℝ[X]
     · obtain ⟨x⟩ := h
       exact hm i x ▸ (rootMultiplicity_pos (hF x)).2 ((hroots x _).2 ⟨i, rfl⟩)
     · simp [m, h]
-  have hP : Continuous fun z : X × ℝ ↦ (F z.1).eval z.2 := by
-    rcases isEmpty_or_nonempty X with hX | hX
-    · exact continuous_of_const fun z ↦ isEmptyElim z.1
-    · obtain ⟨x₀⟩ := hX
-      exact continuous_eval_of_continuous_coeff (fun j _ ↦ hcoeff j) fun x ↦ (hdeg x x₀).le
-  exact ⟨{
-    count := k
-    root := θ
-    continuous_root := hθ
-    strictMono_root := hmono
-    multiplicity := fun _ ↦ m
-    rootMultiplicity_root := fun _ i x ↦ hm i x
-    exists_root_eq := fun _ x _ t ht ↦ (hroots x t).1 ht
-    exists_multiplicity_pos := fun i ↦ ⟨(), hpos i⟩
-    eq_zero_or_ne_zero := fun _ ↦ .inr hF
-    natDegree_eq := fun _ ↦ hdeg
-    signInvariant_sectionSet := fun _ i ↦ signInvariant_eval_sectionSet (I := univ) hP (hθ i)
-      (fun x ↦ (hmono x).injective) (.inr hF) fun x _ t ↦ by
-        simpa only [mem_univ, true_and, IsRoot.def] using hroots x t
-    signInvariant_sectorSet := fun _ _ ↦ signInvariant_eval_sectorSet hP hθ hmono (.inr hF)
-      fun x _ t ht ↦ (hroots x t).1 ht }, fun i ↦ ⟨i, rfl⟩⟩
+  exact ⟨Delineation.ofRoots (fun _ ↦ hcoeff) (fun _ ↦ .inr hF) (fun _ ↦ hdeg)
+    hθ hmono (fun _ ↦ hm) (fun _ x _ t ↦ (hroots x t).1)
+    (fun i ↦ ⟨(), hpos i⟩), fun i ↦ ⟨i, rfl⟩⟩
 
 open Filter Metric Topology in
 /-- **Local delineation from local root data.** Let `F b` be real polynomials over a real

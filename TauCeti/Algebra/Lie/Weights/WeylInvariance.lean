@@ -220,7 +220,7 @@ theorem finrank_weightSpace_neg_sub_zsmul_add {α : Weight K H L} {χ : H → K}
   obtain ⟨h, e, f, ht, he, hf⟩ := IsKilling.exists_isSl2Triple_of_weight_isNonZero hα
   have hh : h = (IsKilling.coroot α : L) := ht.h_eq_coroot hα he hf
   -- Cut the string off beyond both indices `k` and `-k - n`.
-  set B : ℤ := (k.natAbs : ℤ) + (n.natAbs : ℤ) + 1 with hBdef
+  set B : ℤ := (k.natAbs : ℤ) + (n.natAbs : ℤ) + 1
   obtain ⟨q, hqb, hq⟩ := exists_lt_genWeightSpace_zsmul_add_eq_bot (M := M) hα χ B
   obtain ⟨r, hrb, hr⟩ :=
     exists_lt_genWeightSpace_zsmul_add_eq_bot (M := M) (neg_ne_zero.2 hα) χ B
@@ -332,7 +332,7 @@ private theorem finrank_weightSpace_weylGroup_smul_of_mem
     rw [RootPairing.Equiv.reflection_smul]
     exact finrank_weightSpace_rootSystem_reflection i χ
   | one => rw [one_smul]
-  | mul x y hx hy ihx ihy => rw [mul_smul, ihx, ihy]
+  | mul x y _ _ ihx ihy => rw [mul_smul, ihx, ihy]
 
 /-- **Weyl invariance of the weight multiplicities.** For a finite-dimensional module `M` over a
 Killing-semisimple Lie algebra, the function `χ ↦ dim Mχ` on the dual `Module.Dual K H` is

@@ -223,7 +223,7 @@ private lemma exists_seq_klDiv_le_iSup [IsFiniteMeasure μ] [IsFiniteMeasure ν]
     mul_log_sub_sub_one_nonneg (hρ0 x) (clamp_spec (ρ x) n).1 (clamp_spec (ρ x) n).2.1
   have hval : ∀ n, ENNReal.ofReal (∫ x, g n x ∂μ - ∫ x, (exp (g n x) - 1) ∂ν) =
       ∫⁻ x, ENNReal.ofReal (h n x) ∂ν := fun n ↦ by
-    obtain ⟨hgi, hegi⟩ := integrable_and_integrable_exp (μ := μ) (hgm n) (hgC n)
+    obtain ⟨hgi, _⟩ := integrable_and_integrable_exp (μ := μ) (hgm n) (hgC n)
     obtain ⟨-, hegi'⟩ := integrable_and_integrable_exp (μ := ν) (hgm n) (hgC n)
     have heq : (fun x ↦ ρ x * g n x - (exp (g n x) - 1)) = h n := by
       ext x

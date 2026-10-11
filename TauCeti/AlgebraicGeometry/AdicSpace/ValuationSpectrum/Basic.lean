@@ -13,6 +13,7 @@ public import Mathlib.RingTheory.Valuation.ExtendToLocalization
 public import Mathlib.Topology.Order
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
 public import Mathlib.Algebra.Category.Ring.Basic
+public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 
 /-!
 # The valuation spectrum of a ring
@@ -36,6 +37,8 @@ We define the valuation spectrum `Spv A` following Wedhorn, *Adic Spaces*
   rational open presented by the images of its numerators and denominator.
 * `TauCeti.ValuationSpectrum.isClosed_setOfPred_forall_vlt_one` : the sub-unit locus of a set
   of ring elements is closed — the closedness behind Wedhorn's Corollary 7.12.
+* `TauCeti.ValuationSpectrum.specializes_of_forall_mem_basicOpen` : a point specializes to every
+  point whose basic open neighbourhoods all contain it.
 * `TauCeti.ValuationSpectrum.quotientLift 𝔞 h` : Lift the implicitly inferred point `v` with
   `𝔞 ≤ supp v` to `Spv (A ⧸ 𝔞)`.
 * `TauCeti.ValuationSpectrum.localizationComapSection S B v hS` : Lift `v` to a localization
@@ -156,6 +159,16 @@ lemma instTopologicalSpace_eq_generateFrom :
     (instTopologicalSpace : TopologicalSpace (Spv A))
       = TopologicalSpace.generateFrom {U | ∃ f s : A, U = basicOpen f s} := (rfl)
 
+/-- **Specialization from basic opens.** `v` specializes to `w` (that is, `w` lies in the
+closure of `v`) as soon as every basic open containing `w` contains `v`, since the basic opens
+generate the topology. -/
+lemma specializes_of_forall_mem_basicOpen {v w : Spv A}
+    (h : ∀ f s : A, w ∈ basicOpen f s → v ∈ basicOpen f s) : v ⤳ w := by
+  simp only [Specializes, TopologicalSpace.nhds_generateFrom]
+  refine biInf_mono ?_
+  rintro U ⟨hwU, f, s, rfl⟩
+  exact ⟨h f s hwU, f, s, rfl⟩
+
 /-- The valuative relation of a point is determined by its basic opens: `v(f) ≤ v(s)` holds
 iff `v` lies in `basicOpen f s`, or `s` and `f` both lie in the support — the latter being
 detected by the diagonal basic opens `basicOpen s s` and `basicOpen f f`. -/
@@ -272,7 +285,24 @@ theorem comap_hom_comap_hom {X Y Z : CommRingCat} (φ : X ⟶ Y) (ψ : Y ⟶ Z) 
     comap φ.hom (comap ψ.hom w) = comap (φ ≫ ψ).hom w := by
   rw [CommRingCat.hom_comp, comap_comp, Function.comp_apply]
 
+/-- Pulling a valuation back along the identification `eqToHom` of the rings at two equal indices
+is transporting it along the equality: the two valuations are heterogeneously equal. -/
+theorem comap_eqToHom_eq_iff_heq {ι : Type*} (S : ι → CommRingCat) {a b : ι} (h : a = b)
+    (u : Spv (S a)) (u' : Spv (S b)) :
+    u = comap (eqToHom (congrArg S h)).hom u' ↔ HEq u u' := by
+  subst h
+  rw [eqToHom_refl, CommRingCat.hom_id, comap_id, heq_iff_eq, id]
 
+/-- Pulling a valuation on the residue field of `B` back to `A`, along the map of residue fields
+induced by a local homomorphism `f : A → B` and then the residue map of `A`, is pulling it back to
+`B` and then along `f`. -/
+theorem comap_residue_comap_residueFieldMap {A B : Type*} [CommRing A] [CommRing B]
+    [IsLocalRing A] [IsLocalRing B] (f : A →+* B) [IsLocalHom f]
+    (w : Spv (IsLocalRing.ResidueField B)) :
+    comap (IsLocalRing.residue A) (comap (IsLocalRing.ResidueField.map f) w) =
+      comap f (comap (IsLocalRing.residue B) w) := by
+  rw [← Function.comp_apply (f := comap _), ← comap_comp,
+    IsLocalRing.ResidueField.map_comp_residue, comap_comp, Function.comp_apply]
 
 /-- The support ideal `{a ∈ A | v(a) = 0}` of a point `v : Spv A`. -/
 def supp (v : Spv A) : Ideal A :=
@@ -681,8 +711,8 @@ lemma basicOpenFinset_inter (T₁ T₂ : Finset A) (s₁ s₂ : A) :
     basicOpenFinset T₁ s₁ ∩ basicOpenFinset T₂ s₂
       = basicOpenFinset (insert s₁ T₁ * insert s₂ T₂) (s₁ * s₂) := by
   rw [← basicOpenFinset_insert_self T₁ s₁, ← basicOpenFinset_insert_self T₂ s₂]
-  set U₁ := insert s₁ T₁ with hU₁
-  set U₂ := insert s₂ T₂ with hU₂
+  set U₁ := insert s₁ T₁
+  set U₂ := insert s₂ T₂
   have h₁ : s₁ ∈ U₁ := Finset.mem_insert_self _ _
   have h₂ : s₂ ∈ U₂ := Finset.mem_insert_self _ _
   ext v
