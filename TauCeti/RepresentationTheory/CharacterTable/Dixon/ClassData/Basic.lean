@@ -11,12 +11,11 @@ import Mathlib.Data.List.GetD
 /-!
 # Executable conjugacy-class data
 
-The class-algebra theory of a finite group is indexed by `ConjClasses G`, a quotient type. It is
-computable (Mathlib gives it decidable equality and a `Fintype` instance), but nothing numbers the
-classes or picks a representative of each. The Burnside--Dixon--Schneider character-table
-algorithm needs both, because
-its input is the array of structure constants `aᵢⱼₖ` and its output is a table whose rows and
-columns are numbered.
+The class-algebra theory of a finite group is indexed by `ConjClasses G`, a quotient type. For
+`[Fintype G] [DecidableEq G]`, Mathlib makes it a `Fintype` with decidable equality, but nothing
+numbers the classes or picks a representative of each. The Burnside--Dixon--Schneider
+character-table algorithm needs both, because its input is the array of structure constants `aᵢⱼₖ`
+and its output is a table whose rows and columns are numbered.
 
 This file supplies the missing numbering. A `TauCeti.ClassData G` is a list of elements of `G`, one
 from each conjugacy class; the two fields say that no two entries are conjugate and that every
