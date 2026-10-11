@@ -217,8 +217,8 @@ theorem exists_grpObj_isMonHom_comap (D : E.carrier.IdealSheafData)
       Over.homMk ((snd A A).left ≫ ρ) (hw _)
     have key : ((i' ⊗ₘ i') ≫ μ[Over.mk E'.structureMap]).left ≫ g =
         (lift σ₁ σ₂).left ≫ ((i ⊗ₘ i) ≫ μ[Over.mk E.structureMap]).left := by
-      rw [← Over.comp_left, ← lift_fst_comp_snd_comp, ← lift_fst_comp_snd_comp, ← Hom.mul_def,
-        ← Hom.mul_def, MonObj.comp_mul]
+      -- Both sides are composites of tensor products with `μ`, i.e. products of points.
+      simp only [← Over.comp_left, mul_eq_mul, comp_mul, tensorHom_fst, tensorHom_snd]
       exact mul_left_comp_eq_of_isPullback hg h0 (by simp [σ₁, i, i', A, ← hρ])
         (by simp [σ₂, i, i', A, ← hρ])
     rw [key]
