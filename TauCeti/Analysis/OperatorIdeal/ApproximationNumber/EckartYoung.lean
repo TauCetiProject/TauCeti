@@ -43,7 +43,7 @@ values), transferred from the corresponding facts `a₀(T) = ‖T‖` and `|aₙ
 * C. Eckart, G. Young, *The approximation of one matrix by another of lower rank*,
   Psychometrika 1 (1936), 211–218.
 * R. A. Horn, C. R. Johnson, *Matrix Analysis*, 2nd ed., Cambridge University Press (2013),
-  Theorem 7.4.9.1 and Corollary 7.3.5.
+  Chapter 7 (the singular value decomposition and its consequences).
 * A. Pietsch, *Eigenvalues and s-Numbers*, Cambridge Studies in Advanced Mathematics 13,
   Cambridge University Press (1987), Chapter 2.
 -/
