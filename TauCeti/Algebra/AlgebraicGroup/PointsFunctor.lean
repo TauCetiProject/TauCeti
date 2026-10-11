@@ -28,8 +28,8 @@ functor of points has values `A ↦ (H →ₐ[R] A)` and group law given by conv
 * `HopfAlgebra.mapPoints`: the group homomorphism induced by post-composition in the value
   algebra.
 * `HopfAlgebra.pointsFunctor`: the functor `CommAlgCat R ⥤ GrpCat`.
-* `HopfAlgebra.subgroupFunctor`: a functor assembled from point subgroups stable under
-  change of value algebra.
+* `HopfAlgebra.subgroupFunctor`: the functor of a family of point subgroups stable under change
+  of value algebra, with its natural inclusion `HopfAlgebra.subgroupFunctorIncl`.
 
 ## References
 
@@ -190,51 +190,64 @@ lemma pointsFunctor_map_apply_apply {A B : CommAlgCat.{w} R} (φ : A ⟶ B)
   erw [pointsFunctor_map, mapPoints_apply]
   rw [WithConv.ofConv_toConv, AlgHom.comp_apply]
 
-/-- A family of subgroups of the functor of points, equipped with compatible maps between
-value algebras, as a group-valued functor. -/
+/-- The group-valued functor of a family of point subgroups stable under change of value
+algebra: every value-algebra morphism `φ : A ⟶ B` maps `S A` into `S B`, and the functor acts on
+`S A` by the restriction of the point map. -/
 @[expose] noncomputable def subgroupFunctor
     (S : (A : CommAlgCat.{w} R) → Subgroup (points (H := H) A))
-    (map : {A B : CommAlgCat.{w} R} → (A ⟶ B) → S A →* S B)
-    (map_id : ∀ (A : CommAlgCat.{w} R) (g : S A), map (𝟙 A) g = g)
-    (map_comp : ∀ {A B C : CommAlgCat.{w} R} (φ : A ⟶ B) (ψ : B ⟶ C) (g : S A),
-      map (φ ≫ ψ) g = map ψ (map φ g)) :
+    (hS : ∀ {A B : CommAlgCat.{w} R} (φ : A ⟶ B),
+      S A ≤ (S B).comap (AlgHom.mapValue (H := H) φ.hom)) :
     CommAlgCat.{w} R ⥤ GrpCat.{max v w} where
   obj A := GrpCat.of (S A)
-  map φ := GrpCat.ofHom (map φ)
-  map_id A := by
-    apply GrpCat.hom_ext
-    apply MonoidHom.ext
-    intro g
-    exact map_id A g
-  map_comp φ ψ := by
-    apply GrpCat.hom_ext
-    apply MonoidHom.ext
-    intro g
-    exact map_comp φ ψ g
+  map {A B} φ := GrpCat.ofHom
+    (((AlgHom.mapValue (H := H) φ.hom).domRestrict (S A)).codRestrict (S B) fun g ↦ hS φ g.2)
+  map_id A := GrpCat.ext fun g ↦ Subtype.ext <| by
+    simp only [CommAlgCat.hom_id, AlgHom.mapValue_id]
+    rfl
+  map_comp φ ψ := GrpCat.ext fun g ↦ Subtype.ext <| by
+    simp only [CommAlgCat.hom_comp, AlgHom.mapValue_comp]
+    rfl
 
 /-- The object part of a point-subgroup functor is the specified subgroup. -/
 @[simp]
 lemma subgroupFunctor_obj
     (S : (A : CommAlgCat.{w} R) → Subgroup (points (H := H) A))
-    (map : {A B : CommAlgCat.{w} R} → (A ⟶ B) → S A →* S B)
-    (map_id : ∀ (A : CommAlgCat.{w} R) (g : S A), map (𝟙 A) g = g)
-    (map_comp : ∀ {A B C : CommAlgCat.{w} R} (φ : A ⟶ B) (ψ : B ⟶ C) (g : S A),
-      map (φ ≫ ψ) g = map ψ (map φ g))
+    (hS : ∀ {A B : CommAlgCat.{w} R} (φ : A ⟶ B),
+      S A ≤ (S B).comap (AlgHom.mapValue (H := H) φ.hom))
     (A : CommAlgCat.{w} R) :
-    (subgroupFunctor (H := H) S map map_id map_comp).obj A = GrpCat.of (S A) :=
+    (subgroupFunctor (H := H) S hS).obj A = GrpCat.of (S A) :=
   rfl
 
-/-- The map part of a point-subgroup functor is the specified restricted point map. -/
+/-- The map part of a point-subgroup functor is the restriction of the point map. -/
 @[simp]
 lemma subgroupFunctor_map
     (S : (A : CommAlgCat.{w} R) → Subgroup (points (H := H) A))
-    (map : {A B : CommAlgCat.{w} R} → (A ⟶ B) → S A →* S B)
-    (map_id : ∀ (A : CommAlgCat.{w} R) (g : S A), map (𝟙 A) g = g)
-    (map_comp : ∀ {A B C : CommAlgCat.{w} R} (φ : A ⟶ B) (ψ : B ⟶ C) (g : S A),
-      map (φ ≫ ψ) g = map ψ (map φ g))
+    (hS : ∀ {A B : CommAlgCat.{w} R} (φ : A ⟶ B),
+      S A ≤ (S B).comap (AlgHom.mapValue (H := H) φ.hom))
     {A B : CommAlgCat.{w} R} (φ : A ⟶ B) :
-    (subgroupFunctor (H := H) S map map_id map_comp).map φ = GrpCat.ofHom (map φ) :=
+    (subgroupFunctor (H := H) S hS).map φ = GrpCat.ofHom
+      (((AlgHom.mapValue (H := H) φ.hom).domRestrict (S A)).codRestrict (S B)
+        fun g ↦ hS φ g.2) :=
   rfl
+
+/-- The inclusion of a stable family of point subgroups into the functor of points is natural. -/
+noncomputable def subgroupFunctorIncl
+    (S : (A : CommAlgCat.{w} R) → Subgroup (points (H := H) A))
+    (hS : ∀ {A B : CommAlgCat.{w} R} (φ : A ⟶ B),
+      S A ≤ (S B).comap (AlgHom.mapValue (H := H) φ.hom)) :
+    subgroupFunctor (H := H) S hS ⟶ pointsFunctor (H := H) where
+  app A := GrpCat.ofHom (S A).subtype
+  naturality _ _ _ := rfl
+
+/-- The component of the inclusion of a point-subgroup functor is the subgroup inclusion. -/
+@[simp]
+lemma subgroupFunctorIncl_app
+    (S : (A : CommAlgCat.{w} R) → Subgroup (points (H := H) A))
+    (hS : ∀ {A B : CommAlgCat.{w} R} (φ : A ⟶ B),
+      S A ≤ (S B).comap (AlgHom.mapValue (H := H) φ.hom))
+    (A : CommAlgCat.{w} R) :
+    (subgroupFunctorIncl (H := H) S hS).app A = GrpCat.ofHom (S A).subtype :=
+  (rfl)
 
 end HopfAlgebra
 

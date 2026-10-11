@@ -22,6 +22,9 @@ of measures on `C(α, X)` is tight exactly when
   `δ > 0` such that, for every `P ∈ S`, the curves `γ` having two times `s, t` with
   `dist s t < δ` and `η ≤ dist (γ s) (γ t)` have `P`-measure at most `ε`.
 
+The sufficiency result also holds for a Lindelöf pseudometric domain `α`, for instance `ℝ`,
+with the compact-open topology on `C(α, X)`. Compactness of `α` is needed for the converse.
+
 This is the tightness criterion used to extract limits of laws of random curves, for instance in
 the superposition principle for absolutely continuous curves of probability measures. The
 sufficiency of the two conditions is proved by intersecting countably many events of large
@@ -58,7 +61,7 @@ public section
 open Filter MeasureTheory Metric Set Topology
 open scoped ENNReal NNReal
 
-variable {α X : Type*} [PseudoMetricSpace α] [CompactSpace α] [PseudoMetricSpace X]
+variable {α X : Type*} [PseudoMetricSpace α] [PseudoMetricSpace X]
   [MeasurableSpace C(α, X)] {S : Set (Measure C(α, X))}
 
 /-- **A tight set of laws of curves has a uniform modulus of continuity in probability.** If `S`
@@ -66,7 +69,7 @@ is a tight set of measures on `C(α, X)`, then for all `η, ε > 0` there is `δ
 every `P ∈ S`, the curves with two times closer than `δ` at which their values are at least `η`
 apart have `P`-measure at most `ε`. -/
 theorem MeasureTheory.IsTightMeasureSet.exists_measure_continuity_modulus_le
-    (hS : IsTightMeasureSet S) :
+    [CompactSpace α] (hS : IsTightMeasureSet S) :
     ∀ η > 0, ∀ ε > 0, ∃ δ > 0, ∀ P ∈ S,
       P {γ | ∃ s t, dist s t < δ ∧ η ≤ dist (γ s) (γ t)} ≤ ε := by
   intro η hη ε hε
@@ -83,12 +86,13 @@ namespace TauCeti
 
 variable [MeasurableSpace X] [BorelSpace X] [OpensMeasurableSpace C(α, X)] {D : Set α}
 
-/-- **Tightness criterion for laws of curves.** Let `X` be complete and `D ⊆ α` dense. A set `S` of
-measures on `C(α, X)` is tight if its time marginals at the times of `D` are tight and it satisfies
-a uniform modulus of continuity in probability: for all `η, ε > 0` there is `δ > 0` such that, for
-every `P ∈ S`, the curves with two times closer than `δ` at which their values are at least `η`
-apart have `P`-measure at most `ε`. -/
-theorem isTightMeasureSet_of_map_eval_of_continuity_modulus [CompleteSpace X] [T2Space X]
+/-- **Tightness criterion for laws of curves.** Let `α` be a Lindelöf pseudometric space, `X` a
+complete metric space, and `D ⊆ α` dense. A set `S` of measures on `C(α, X)` is tight if its time
+marginals at the times of `D` are tight and it satisfies a uniform modulus of continuity in
+probability: for all `η, ε > 0` there is `δ > 0` such that, for every `P ∈ S`, the curves with two
+times closer than `δ` at which their values are at least `η` apart have `P`-measure at most `ε`. -/
+theorem isTightMeasureSet_of_map_eval_of_continuity_modulus [LindelofSpace α]
+    [CompleteSpace X] [T2Space X]
     (hD : Dense D)
     (h_eval : ∀ t ∈ D, IsTightMeasureSet ((fun P : Measure C(α, X) ↦ P.map fun γ ↦ γ t) '' S))
     (h_mod : ∀ η > 0, ∀ ε > 0, ∃ δ > 0, ∀ P ∈ S,
@@ -134,7 +138,8 @@ theorem isTightMeasureSet_of_map_eval_of_continuity_modulus [CompleteSpace X] [T
 /-- **Characterization of tight laws of curves.** Let `X` be a complete metric space and `D ⊆ α`
 dense. A set `S` of measures on `C(α, X)` is tight if and only if its time marginals at the times
 of `D` are tight and it satisfies a uniform modulus of continuity in probability. -/
-theorem isTightMeasureSet_iff_map_eval_and_continuity_modulus [CompleteSpace X] [T2Space X]
+theorem isTightMeasureSet_iff_map_eval_and_continuity_modulus [CompactSpace α]
+    [CompleteSpace X] [T2Space X]
     (hD : Dense D) :
     IsTightMeasureSet S ↔
       (∀ t ∈ D, IsTightMeasureSet ((fun P : Measure C(α, X) ↦ P.map fun γ ↦ γ t) '' S)) ∧
