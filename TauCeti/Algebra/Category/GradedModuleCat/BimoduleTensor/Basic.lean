@@ -259,8 +259,7 @@ theorem bimoduleModuleTensorMap_smul_right (c : k) (f : M ⟶ M') (g : N ⟶ N')
   exact BalancedTensorProduct.tmul_smul k B _ _ _
 
 /-- Balanced tensor action of graded bimodules on graded left modules. -/
--- Expose the object assignment so the tensor maps have their computed source and target types.
-@[expose, implicit_reducible]
+@[implicit_reducible]
 noncomputable def bimoduleModuleTensor :
     GradedModuleCat.{vM} (Γ.tensorProduct Δ.opposite).piece ⥤
       GradedModuleCat.{vN} Δ.piece ⥤ GradedModuleCat.{max vM vN} Γ.piece where
@@ -272,8 +271,7 @@ noncomputable def bimoduleModuleTensor :
   map f :=
     { app N := bimoduleModuleTensorMap Γ Δ f (𝟙 N)
       naturality N N' g := by
-        change bimoduleModuleTensorMap Γ Δ (𝟙 _) g ≫ bimoduleModuleTensorMap Γ Δ f (𝟙 _) =
-          bimoduleModuleTensorMap Γ Δ f (𝟙 _) ≫ bimoduleModuleTensorMap Γ Δ (𝟙 _) g
+        dsimp only
         simp only [← bimoduleModuleTensorMap_comp, Category.id_comp, Category.comp_id] }
   map_id M := by
     apply NatTrans.ext
@@ -282,21 +280,26 @@ noncomputable def bimoduleModuleTensor :
   map_comp f f' := by
     apply NatTrans.ext
     funext N
-    change bimoduleModuleTensorMap Γ Δ (f ≫ f') (𝟙 N) =
-      bimoduleModuleTensorMap Γ Δ f (𝟙 N) ≫ bimoduleModuleTensorMap Γ Δ f' (𝟙 N)
+    simp only [NatTrans.comp_app]
     rw [← bimoduleModuleTensorMap_comp, Category.id_comp]
 
 @[simp]
 theorem bimoduleModuleTensor_obj_obj : ((bimoduleModuleTensor Γ Δ).obj M).obj N =
-    bimoduleModuleTensorObj Γ Δ M N := rfl
+    bimoduleModuleTensorObj Γ Δ M N := (rfl)
 
-@[simp]
+@[simp, reassoc]
 theorem bimoduleModuleTensor_obj_map (g : N ⟶ N') :
-    ((bimoduleModuleTensor Γ Δ).obj M).map g = bimoduleModuleTensorMap Γ Δ (𝟙 M) g := rfl
+    ((bimoduleModuleTensor Γ Δ).obj M).map g =
+      eqToHom (bimoduleModuleTensor_obj_obj Γ Δ (M := M) (N := N)) ≫
+        bimoduleModuleTensorMap Γ Δ (𝟙 M) g ≫
+        eqToHom (bimoduleModuleTensor_obj_obj Γ Δ (M := M) (N := N')).symm := (rfl)
 
-@[simp]
+@[simp, reassoc]
 theorem bimoduleModuleTensor_map_app (f : M ⟶ M') :
-    ((bimoduleModuleTensor Γ Δ).map f).app N = bimoduleModuleTensorMap Γ Δ f (𝟙 N) := rfl
+    ((bimoduleModuleTensor Γ Δ).map f).app N =
+      eqToHom (bimoduleModuleTensor_obj_obj Γ Δ (M := M) (N := N)) ≫
+        bimoduleModuleTensorMap Γ Δ f (𝟙 N) ≫
+        eqToHom (bimoduleModuleTensor_obj_obj Γ Δ (M := M') (N := N)).symm := (rfl)
 
 instance : ((bimoduleModuleTensor Γ Δ).obj M).Additive where
   map_add := bimoduleModuleTensorMap_add_right Γ Δ (𝟙 M) _ _
