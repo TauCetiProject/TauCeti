@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.FarguesFontaine.WindowSections
+public import TauCeti.AlgebraicGeometry.AdicSpace.FarguesFontaine.Window.Sections
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Descent
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.OpenImmersion
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Sheaf
