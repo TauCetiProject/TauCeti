@@ -277,16 +277,13 @@ theorem hasGoodReduction_freyCurve_one (h2 : IsUnit (2 : R)) {B : K}
 
 /-- **A curve in Deuring normal form with integral `j`-invariant has good reduction** over a
 discrete valuation ring in which `3` is a unit. The curve is `y² + axy + y = x³`, that is
-`WeierstrassCurve.deuringNormalForm a`.
-
-The `j`-invariant `a³ (a³ - 24)³ / (a³ - 27)` forces `a` to be a root of the monic polynomial
-`X³ (X³ - 24)³ - j (X³ - 27)`, so `a` lies in `R`. The discriminant `a³ - 27` of the integral
-equation then divides `3⁶`, as
-`3⁶ = (a³ - 27) (j - a⁹ + 45 a⁶ - 513 a³ - 27)`, so it is a unit (Silverman, *AEC*, VII.5.5). -/
+`WeierstrassCurve.deuringNormalForm a` (Silverman, *AEC*, VII.5.5). -/
 theorem hasGoodReduction_deuringNormalForm (h3 : IsUnit (3 : R)) {a : K}
     [(deuringNormalForm a).IsElliptic]
     (hj : IsLocalization.IsInteger R (deuringNormalForm a).j) :
     (deuringNormalForm a).HasGoodReduction R := by
+  -- `j = a³ (a³ - 24)³ / (a³ - 27)` forces `a` into `R`, and then the discriminant `a³ - 27`
+  -- divides `3⁶ = (a³ - 27) (j - a⁹ + 45 a⁶ - 513 a³ - 27)`
   have hΔ : a ^ 3 - 27 ≠ 0 := ((isElliptic_deuringNormalForm_iff a).mp ‹_›).ne_zero
   obtain ⟨c, hc⟩ := hj
   have key : a ^ 3 * (a ^ 3 - 24) ^ 3 = algebraMap R K c * (a ^ 3 - 27) := by
@@ -367,22 +364,18 @@ private theorem hasPotentialGoodReduction_of_smul_baseChange_eq {W : Weierstrass
   exact (hgood E f hjS).hasGoodReduction_minimal S
 
 /-- **Integral `j`-invariant gives potential good reduction** (Silverman VII.5.5, the sufficient
-direction), in every residue characteristic.
+direction), in every residue characteristic: an elliptic curve over `K` whose `j`-invariant is
+integral, that is lies in the discrete valuation ring `R`, has potential good reduction.
 
-Since `2` and `3` are not both in the maximal ideal of `R`, one of them is a unit. When `2` is a
-unit, over a finite separable extension `L` of `K` the curve takes the Legendre form
-`y² = x (x - 1) (x + B)`
-(`WeierstrassCurve.exists_variableChange_smul_baseChange_eq_freyCurve_one`), and
-`WeierstrassCurve.hasGoodReduction_freyCurve_one` applies. When `3` is a unit, it takes the
-Deuring normal form `y² + axy + y = x³` instead
-(`WeierstrassCurve.exists_variableChange_smul_baseChange_eq_deuringNormalForm`), and
-`WeierstrassCurve.hasGoodReduction_deuringNormalForm` applies. In both cases the `j`-invariant of
-the normal form is still integral at a discrete valuation ring of `L` dominating `R`.
 Here `R` lives in the universe of `K`, as in
-`WeierstrassCurve.HasGoodReduction.hasPotentialGoodReduction`, since that discrete valuation ring
-is built in the universe of `L`. -/
+`WeierstrassCurve.HasGoodReduction.hasPotentialGoodReduction`, since the discrete valuation ring
+witnessing the good reduction is built in the universe of a finite extension of `K`. -/
 theorem hasPotentialGoodReduction_of_isInteger_j {W : WeierstrassCurve K} [W.IsElliptic]
     (hj : IsLocalization.IsInteger R W.j) : W.HasPotentialGoodReduction R := by
+  -- One of `2` and `3` is a unit in `R`. Over a finite separable extension `L` of `K` the curve
+  -- takes the Legendre form `y² = x (x - 1) (x + B)` when `2` is a unit, and the Deuring normal
+  -- form `y² + axy + y = x³` when `3` is a unit. Its `j`-invariant stays integral at a discrete
+  -- valuation ring of `L` dominating `R`, where the normal form then has good reduction.
   by_cases h2 : IsUnit (2 : R)
   · -- the Legendre form
     have h2K : (2 : K) ≠ 0 := by
