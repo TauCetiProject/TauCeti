@@ -149,34 +149,21 @@ lemma spectralSequencePageMap_f (r : ℤ) (hr : r₀ ≤ r) (pq : κ) :
   rw [spectralSequencePageMap]
 
 unseal spectralSequence in
-/-- The morphisms of pages `spectralSequencePageMap` are compatible with the isomorphisms between
-the homology of a page and the next page. -/
-@[reassoc]
-lemma homologyMap_spectralSequencePageMap_comp_iso_hom (r r' : ℤ) (hrr' : r + 1 = r')
-    (hr : r₀ ≤ r) (hr' : r₀ ≤ r') (pq : κ) :
-    HomologicalComplex.homologyMap (spectralSequencePageMap data φ r hr) pq ≫
-        ((Y.spectralSequence data).iso r r' pq hrr' hr).hom =
-      ((X.spectralSequence data).iso r r' pq hrr' hr).hom ≫
-        (spectralSequencePageMap data φ r' hr').f pq := by
-  have hX := X.spectralSequence_iso data r r' hrr' hr _ pq _ rfl rfl _ _ _ _ _ _ rfl rfl rfl rfl
-    rfl rfl (data.deg pq - 1) (data.deg pq) (data.deg pq + 1) rfl (by lia) (by lia)
-  have hY := Y.spectralSequence_iso data r r' hrr' hr _ pq _ rfl rfl _ _ _ _ _ _ rfl rfl rfl rfl
-    rfl rfl (data.deg pq - 1) (data.deg pq) (data.deg pq + 1) rfl (by lia) (by lia)
-  simp only [hX, hY, Iso.trans_hom, Category.assoc]
-  -- Plan: after Mathlib's description `spectralSequence_iso` of the isomorphisms and the
-  -- naturality of `homologyIsoSc'`, it suffices to compare the homology of the `r`th pages
-  -- through the homology data `spectralSequenceHomologyData`. A left homology map data between
-  -- them is given by the maps `EMap φ` on the objects `E`; its compatibilities with `i` and `π`
-  -- are instances of `map_EMap`. (They are stated with the composites `mapFourδ₁Toδ₀' ≫ inv` and
-  -- `mapFourδ₄Toδ₃'`, which are `left.i` and `left.π` by `rfl` after `unseal spectralSequence`:
-  -- rewriting with `spectralSequenceHomologyData_left_i` fails, as the objects `left.K` and
-  -- `X.E …` agree only up to unfolding.)
-  rw [HomologicalComplex.homologyMap_comp_homologyIsoSc'_hom_assoc]
-  congr 1
-  let hX' := X.spectralSequenceHomologyData data r r' hrr' hr _ pq _ rfl rfl _ _ _ _ _ _ rfl rfl
-    rfl rfl rfl rfl (data.deg pq - 1) (data.deg pq) (data.deg pq + 1) rfl
-  let hY' := Y.spectralSequenceHomologyData data r r' hrr' hr _ pq _ rfl rfl _ _ _ _ _ _ rfl rfl
-    rfl rfl rfl rfl (data.deg pq - 1) (data.deg pq) (data.deg pq + 1) rfl
+/-- The left homology map data, between the homology data `spectralSequenceHomologyData` of the
+`r`th pages of the spectral sequences of `X` and `Y`, given by the maps `EMap φ`. Its
+compatibilities with `i` and `π` are instances of `map_EMap`; they are stated with the composites
+`mapFourδ₁Toδ₀' ≫ inv` and `mapFourδ₄Toδ₃'`, which are `left.i` and `left.π` by `rfl` after
+`unseal spectralSequence` (rewriting with `spectralSequenceHomologyData_left_i` fails, as the
+objects `left.K` and `X.E …` agree only up to unfolding). Its type mentions private proofs of
+Mathlib's `SpectralSequence.lean`, hence it is private. -/
+private noncomputable abbrev spectralSequenceHomologyDataLeftHomologyMapData (r r' : ℤ)
+    (hrr' : r + 1 = r') (hr : r₀ ≤ r) (pq : κ) :
+    ShortComplex.LeftHomologyMapData ((HomologicalComplex.shortComplexFunctor' C (c r) _ pq
+      _).map (spectralSequencePageMap data φ r hr))
+      (X.spectralSequenceHomologyData data r r' hrr' hr _ pq _ rfl rfl _ _ _ _ _ _ rfl rfl
+        rfl rfl rfl rfl (data.deg pq - 1) (data.deg pq) (data.deg pq + 1) rfl).left
+      (Y.spectralSequenceHomologyData data r r' hrr' hr _ pq _ rfl rfl _ _ _ _ _ _ rfl rfl
+        rfl rfl rfl rfl (data.deg pq - 1) (data.deg pq) (data.deg pq + 1) rfl).left :=
   have hi : EMap φ _ _ _ (data.deg pq - 1) (data.deg pq) (data.deg pq + 1)
       (sub_add_cancel _ _) rfl ≫
       Y.mapFourδ₁Toδ₀' _ _ _ _ _ (data.i₀_le' hrr' hr pq rfl rfl) (data.le₀₁ r pq)
@@ -199,13 +186,36 @@ lemma homologyMap_spectralSequencePageMap_comp_iso_hom (r r' : ℤ) (hrr' : r + 
           (data.le₁₂ pq) (data.le₂₃ r pq) (data.le₃₃' hrr' hr pq rfl rfl) (data.deg pq - 1)
           (data.deg pq) (data.deg pq + 1) :=
     map_EMap ..
-  let γ : ShortComplex.LeftHomologyMapData ((HomologicalComplex.shortComplexFunctor' C (c r) _ pq
-      _).map (spectralSequencePageMap data φ r hr)) hX'.left hY'.left :=
-    { φK := EMap φ _ _ _ (data.deg pq - 1) (data.deg pq) (data.deg pq + 1) (sub_add_cancel _ _) rfl
-      φH := EMap φ _ _ _ (data.deg pq - 1) (data.deg pq) (data.deg pq + 1) (sub_add_cancel _ _) rfl
-      commi := hi
-      commf' := ShortComplex.LeftHomologyMapData.commf'_of_commi _ hX'.left hY'.left _ hi
-      commπ := hπ }
+  { φK := EMap φ _ _ _ (data.deg pq - 1) (data.deg pq) (data.deg pq + 1) (sub_add_cancel _ _) rfl
+    φH := EMap φ _ _ _ (data.deg pq - 1) (data.deg pq) (data.deg pq + 1) (sub_add_cancel _ _) rfl
+    commi := hi
+    commf' := ShortComplex.LeftHomologyMapData.commf'_of_commi _
+      (X.spectralSequenceHomologyData data r r' hrr' hr _ pq _ rfl rfl _ _ _ _ _ _ rfl rfl
+        rfl rfl rfl rfl (data.deg pq - 1) (data.deg pq) (data.deg pq + 1) rfl).left
+      (Y.spectralSequenceHomologyData data r r' hrr' hr _ pq _ rfl rfl _ _ _ _ _ _ rfl rfl
+        rfl rfl rfl rfl (data.deg pq - 1) (data.deg pq) (data.deg pq + 1) rfl).left _ hi
+    commπ := hπ }
+
+/-- The morphisms of pages `spectralSequencePageMap` are compatible with the isomorphisms between
+the homology of a page and the next page. -/
+@[reassoc]
+lemma homologyMap_spectralSequencePageMap_comp_iso_hom (r r' : ℤ) (hrr' : r + 1 = r')
+    (hr : r₀ ≤ r) (hr' : r₀ ≤ r') (pq : κ) :
+    HomologicalComplex.homologyMap (spectralSequencePageMap data φ r hr) pq ≫
+        ((Y.spectralSequence data).iso r r' pq hrr' hr).hom =
+      ((X.spectralSequence data).iso r r' pq hrr' hr).hom ≫
+        (spectralSequencePageMap data φ r' hr').f pq := by
+  have hX := X.spectralSequence_iso data r r' hrr' hr _ pq _ rfl rfl _ _ _ _ _ _ rfl rfl rfl rfl
+    rfl rfl (data.deg pq - 1) (data.deg pq) (data.deg pq + 1) rfl (by lia) (by lia)
+  have hY := Y.spectralSequence_iso data r r' hrr' hr _ pq _ rfl rfl _ _ _ _ _ _ rfl rfl rfl rfl
+    rfl rfl (data.deg pq - 1) (data.deg pq) (data.deg pq + 1) rfl (by lia) (by lia)
+  simp only [hX, hY, Iso.trans_hom, Category.assoc]
+  -- Plan: after Mathlib's description `spectralSequence_iso` of the isomorphisms and the
+  -- naturality of `homologyIsoSc'`, compare the homology of the `r`th pages through the left
+  -- homology map data `spectralSequenceHomologyDataLeftHomologyMapData`.
+  rw [HomologicalComplex.homologyMap_comp_homologyIsoSc'_hom_assoc]
+  congr 1
+  let γ := spectralSequenceHomologyDataLeftHomologyMapData data φ r r' hrr' hr pq
   have hg : (X.spectralSequencePageXIso data r' hr' pq _ _ _ _ rfl rfl rfl rfl (data.deg pq - 1)
       (data.deg pq) (data.deg pq + 1) rfl (by lia) rfl).hom ≫
         EMap φ _ _ _ (data.deg pq - 1) (data.deg pq) (data.deg pq + 1) (sub_add_cancel _ _) rfl =
@@ -239,14 +249,27 @@ lemma spectralSequencePageXMap_comp (r : ℤ) (hr : r₀ ≤ r) (pq : κ) :
   simp [spectralSequencePageXMap, EMap_comp]
 
 @[simp]
+lemma spectralSequencePageMap_id (r : ℤ) (hr : r₀ ≤ r) :
+    spectralSequencePageMap data (𝟙 X) r hr = 𝟙 _ := by
+  ext pq
+  simp
+
+@[reassoc]
+lemma spectralSequencePageMap_comp (r : ℤ) (hr : r₀ ≤ r) :
+    spectralSequencePageMap data (φ ≫ ψ) r hr =
+      spectralSequencePageMap data φ r hr ≫ spectralSequencePageMap data ψ r hr := by
+  ext pq
+  simp [spectralSequencePageXMap_comp]
+
+@[simp]
 lemma spectralSequenceMap_id : spectralSequenceMap data (𝟙 X) = 𝟙 _ := by
-  ext r hr pq
+  ext r hr : 2
   simp
 
 @[reassoc]
 lemma spectralSequenceMap_comp :
     spectralSequenceMap data (φ ≫ ψ) = spectralSequenceMap data φ ≫ spectralSequenceMap data ψ := by
-  ext r hr pq
-  simp [spectralSequencePageXMap_comp]
+  ext r hr : 2
+  simp [spectralSequencePageMap_comp]
 
 end CategoryTheory.Abelian.SpectralObject

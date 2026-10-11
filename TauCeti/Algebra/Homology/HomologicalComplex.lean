@@ -152,21 +152,25 @@ instance cyclesFunctor_additive [CategoryWithHomology C] (i : ι) :
 
 section HomologyIsoSc'
 
-variable {C : Type*} [Category* C] [HasZeroMorphisms C] [CategoryWithHomology C] {ι : Type*}
+variable {C : Type*} [Category* C] [HasZeroMorphisms C] {ι : Type*}
   {c : ComplexShape ι} {K L : HomologicalComplex C c} (f : K ⟶ L) (i j k : ι)
-  (hi : c.prev j = i) (hk : c.next j = k)
+  (hi : c.prev j = i) (hk : c.next j = k) [K.HasHomology j] [L.HasHomology j]
+  [(K.sc' i j k).HasHomology] [(L.sc' i j k).HasHomology]
 
-/-- The isomorphisms `homologyIsoSc'` are natural (the naturality of Mathlib's
-`homologyFunctorIso'`, without its identity factor). -/
+/-- The isomorphisms `homologyIsoSc'` are natural (this is the naturality of Mathlib's
+`homologyFunctorIso'`, for complexes which only individually have homology). -/
 @[reassoc]
 lemma homologyMap_comp_homologyIsoSc'_hom :
     homologyMap f j ≫ (L.homologyIsoSc' i j k hi hk).hom =
       (K.homologyIsoSc' i j k hi hk).hom ≫
         ShortComplex.homologyMap ((shortComplexFunctor' C c i j k).map f) := by
-  subst hi hk
-  simp only [homologyIsoSc'_eq_refl, Iso.refl_hom]
-  -- `homologyMap f j` is by definition the homology map of `(shortComplexFunctor' C c _ j _).map f`
-  exact (Category.comp_id _).trans (Category.id_comp _).symm
+  -- `homologyMap f j` and `homologyIsoSc'` are homology maps of morphisms of short complexes
+  change ShortComplex.homologyMap ((shortComplexFunctor C c j).map f) ≫
+      ShortComplex.homologyMap ((natIsoSc' C c i j k hi hk).hom.app L) =
+    ShortComplex.homologyMap ((natIsoSc' C c i j k hi hk).hom.app K) ≫
+      ShortComplex.homologyMap ((shortComplexFunctor' C c i j k).map f)
+  rw [← ShortComplex.homologyMap_comp, ← ShortComplex.homologyMap_comp,
+    (natIsoSc' C c i j k hi hk).hom.naturality f]
 
 end HomologyIsoSc'
 
