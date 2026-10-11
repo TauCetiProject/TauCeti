@@ -8,10 +8,10 @@ module
 public import Mathlib.RingTheory.HahnSeries.Multiplication
 
 /-!
-# Leading coefficients of powers of Hahn series
+# Orders and leading coefficients of powers of Hahn series
 
-Over a domain, taking a power raises the leading coefficient to that power. This formula
-detects whether a leading pole term can be cancelled by a power.
+Over a domain, taking a power multiplies the order and raises the leading coefficient to that
+power. These formulas detect whether a leading pole term can be cancelled by a power.
 -/
 
 public section
@@ -23,10 +23,18 @@ variable {Γ R : Type*} [AddCommMonoid Γ] [LinearOrder Γ] [IsOrderedCancelAddM
 
 /-- The leading coefficient of a power is the power of the leading coefficient. -/
 @[simp]
-theorem _root_.HahnSeries.leadingCoeff_pow (f : HahnSeries Γ R) (n : ℕ) :
+theorem HahnSeries.leadingCoeff_pow (f : HahnSeries Γ R) (n : ℕ) :
     (f ^ n).leadingCoeff = f.leadingCoeff ^ n := by
   induction n with
   | zero => simp
   | succ n ih => simp [pow_succ, ih]
+
+/-- The order of a power is the corresponding multiple of the order, including at zero. -/
+@[simp]
+theorem HahnSeries.orderTop_pow [Nontrivial R] (f : HahnSeries Γ R) (n : ℕ) :
+    (f ^ n).orderTop = n • f.orderTop := by
+  induction n with
+  | zero => simp
+  | succ n ih => simp [pow_succ, ih, add_nsmul]
 
 end TauCeti

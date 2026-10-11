@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.LaurentSeries.ArtinSchreier
-public import Mathlib.FieldTheory.RatFunc.Valuation
-public import TauCeti.RingTheory.Valuation.Discrete.Order
+public import TauCeti.FieldTheory.RatFunc.Valuation
 public import Mathlib.Algebra.Field.ZMod
 
 /-!
@@ -32,20 +31,13 @@ namespace TauCeti
 
 /-- In `𝔽_p(a)((T))`, the class of `a T⁻ᵖ` has no reduced Artin–Schreier representative:
 every substitution leaves a pole whose order is divisible by `p`. -/
-theorem artinSchreier_imperfect_residue_counterexample (p : ℕ) [Fact p.Prime] :
+theorem not_exists_reduced_artinSchreier_representative_ratFunc_zmod
+    (p : ℕ) [Fact p.Prime] :
     ¬ ∃ w : (RatFunc (ZMod p))⸨X⸩,
       0 ≤ (HahnSeries.single (-(p : ℤ)) RatFunc.X - (w ^ p - w)).orderTop ∨
         ((HahnSeries.single (-(p : ℤ)) RatFunc.X - (w ^ p - w)).order < 0 ∧
           ¬ (p : ℤ) ∣ (HahnSeries.single (-(p : ℤ)) RatFunc.X - (w ^ p - w)).order) := by
-  classical
-  apply LaurentSeries.not_exists_regular_or_pole_not_dvd (Fact.out : p.Prime).one_lt
-  intro b hb
-  have h := congrArg (RatFunc.inftyValuation (ZMod p)).ord hb
-  rw [Valuation.ord_pow] at h
-  simp only [Valuation.ord_def, RatFunc.inftyValuation.X, WithZero.log_exp] at h
-  have hp : (1 : ℤ) < p := by exact_mod_cast (Fact.out : p.Prime).one_lt
-  have hd : (p : ℤ) ∣ (-1 : ℤ) := ⟨_, h.symm⟩
-  have := Int.le_of_dvd (by omega : (0 : ℤ) < 1) (dvd_neg.mp hd)
-  omega
+  exact LaurentSeries.not_exists_reduced_representative_single_sub_pow_sub_self
+    (Fact.out : p.Prime).one_lt (RatFunc.pow_ne_X (Fact.out : p.Prime).one_lt)
 
 end TauCeti

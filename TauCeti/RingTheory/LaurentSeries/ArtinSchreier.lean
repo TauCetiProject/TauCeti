@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.LaurentSeries
-import Mathlib.RingTheory.HahnSeries.Valuation
 public import TauCeti.RingTheory.HahnSeries.Multiplication
 
 /-!
@@ -29,13 +28,37 @@ open scoped LaurentSeries
 
 namespace TauCeti
 
-open HahnSeries
+open _root_.HahnSeries HahnSeries
 
-variable {k : Type*} [Field k] {n : ℕ} {a : k}
+variable {k : Type*} [Ring k] [IsDomain k] {n : ℕ} {a : k}
+
+/-- At a negative order, the power term determines the order of `wⁿ - w` when `n > 1`. -/
+theorem LaurentSeries.orderTop_pow_sub_self_of_order_neg
+    (hn : 1 < n) {w : k⸨X⸩} (hw : w.order < 0) :
+    (w ^ n - w).orderTop = ((n : ℤ) * w.order : ℤ) := by
+  have hw0 : w ≠ 0 := by rintro rfl; simp at hw
+  have hwtop := (order_eq_orderTop_of_ne_zero hw0).symm
+  have hpow : (w ^ n).orderTop = ((n : ℤ) * w.order : ℤ) := by
+    rw [HahnSeries.orderTop_pow, hwtop, ← WithTop.coe_nsmul, nsmul_eq_mul]
+  have hnZ : (1 : ℤ) < n := by exact_mod_cast hn
+  rw [orderTop_sub (by rw [hpow, hwtop]; exact_mod_cast (by nlinarith :
+    (n : ℤ) * w.order < w.order)), hpow]
+
+/-- At a negative order, the leading coefficient of `wⁿ - w` is that of `w`, raised to `n`. -/
+theorem LaurentSeries.leadingCoeff_pow_sub_self_of_order_neg
+    (hn : 1 < n) {w : k⸨X⸩} (hw : w.order < 0) :
+    (w ^ n - w).leadingCoeff = w.leadingCoeff ^ n := by
+  have hw0 : w ≠ 0 := by rintro rfl; simp at hw
+  have hwtop := (order_eq_orderTop_of_ne_zero hw0).symm
+  have hnZ : (1 : ℤ) < n := by exact_mod_cast hn
+  rw [leadingCoeff_sub (by
+    rw [HahnSeries.orderTop_pow, hwtop, ← WithTop.coe_nsmul, nsmul_eq_mul]
+    exact_mod_cast (by nlinarith : (n : ℤ) * w.order < w.order)),
+    HahnSeries.leadingCoeff_pow]
 
 /-- If the coefficient of `a T⁻ⁿ` is not an `n`-th power, subtracting `wⁿ - w` never
 cancels its pole. A pole of `w` of order greater than one only makes the pole worse. -/
-theorem _root_.LaurentSeries.orderTop_single_sub_pow_sub_self
+theorem LaurentSeries.orderTop_single_sub_pow_sub_self
     (hn : 1 < n) (ha : ∀ b : k, b ^ n ≠ a) (w : k⸨X⸩) :
     (single (-(n : ℤ)) a - (w ^ n - w)).orderTop =
       ((if w.order < -1 then (n : ℤ) * w.order else -(n : ℤ)) : ℤ) := by
@@ -49,35 +72,33 @@ theorem _root_.LaurentSeries.orderTop_single_sub_pow_sub_self
   have hwtop : w.orderTop = (w.order : WithTop ℤ) :=
     (order_eq_orderTop_of_ne_zero hw).symm
   have hpow : (w ^ n).orderTop = ((n : ℤ) * w.order : ℤ) := by
-    rw [← addVal_apply, AddValuation.map_pow, addVal_apply, hwtop,
-      ← WithTop.coe_nsmul, nsmul_eq_mul]
+    rw [HahnSeries.orderTop_pow, hwtop, ← WithTop.coe_nsmul, nsmul_eq_mul]
   by_cases hneg : w.order < 0
-  · have hlt : (n : ℤ) * w.order < w.order := by nlinarith
-    have hv : (w ^ n - w).orderTop = ((n : ℤ) * w.order : ℤ) := by
-      rw [orderTop_sub (by rw [hpow, hwtop]; exact_mod_cast hlt), hpow]
+  · have hv := LaurentSeries.orderTop_pow_sub_self_of_order_neg hn hneg
     split_ifs with hlow
-    · have hlow' : (n : ℤ) * w.order < -(n : ℤ) := by nlinarith
+    · -- A substitution pole of order greater than one dominates the original pole.
+      have hlow' : (n : ℤ) * w.order < -(n : ℤ) := by nlinarith
       rw [← neg_sub (w ^ n - w), orderTop_neg, orderTop_sub (by
         rw [hv, hu]; exact_mod_cast hlow'), hv]
-    · have hw1 : w.order = -1 := by omega
+    · -- At order minus one, the non-power coefficient prevents cancellation.
+      have hw1 : w.order = -1 := by omega
       have hv' : (w ^ n - w).orderTop = (-(n : ℤ) : ℤ) := by
         simpa [hw1] using hv
-      have hlead : (w ^ n - w).leadingCoeff = w.leadingCoeff ^ n := by
-        rw [leadingCoeff_sub (by rw [hpow, hwtop]; exact_mod_cast hlt), leadingCoeff_pow]
+      have hlead := LaurentSeries.leadingCoeff_pow_sub_self_of_order_neg hn hneg
       have hcoeff : (single (-(n : ℤ)) a - (w ^ n - w)).coeff (-(n : ℤ)) ≠ 0 := by
-        have hv0 : w ^ n - w ≠ 0 := by
-          intro hzero
-          rw [hzero, orderTop_zero] at hv'
-          exact WithTop.top_ne_coe hv'
-        have hvord : (w ^ n - w).order = -(n : ℤ) := by
-          exact WithTop.coe_injective ((order_eq_orderTop_of_ne_zero hv0).trans hv')
-        rw [coeff_sub, coeff_single_same, ← hvord, ← leadingCoeff_eq, hlead]
+        have hcoeff_lead : (w ^ n - w).coeff (-(n : ℤ)) =
+            (w ^ n - w).leadingCoeff := by
+          simpa only [hv', WithTop.untop_coe] using
+            (coeff_untop_eq_leadingCoeff (x := w ^ n - w)
+              (by rw [hv']; exact WithTop.coe_ne_top))
+        rw [coeff_sub, coeff_single_same, hcoeff_lead, hlead]
         exact sub_ne_zero.mpr (ha w.leadingCoeff).symm
       apply le_antisymm
       · exact orderTop_le_of_coeff_ne_zero hcoeff
       · simpa [hu, hv'] using (min_orderTop_le_orderTop_sub
           (x := (single (-(n : ℤ)) a : k⸨X⸩)) (y := w ^ n - w))
-  · have hwpos : 0 ≤ w.order := by omega
+  · -- An integral substitution cannot affect the original negative-order term.
+    have hwpos : 0 ≤ w.order := by omega
     have hmin : (-(n : ℤ) : WithTop ℤ) < min (w ^ n).orderTop w.orderTop := by
       rw [hpow, hwtop, lt_min_iff]
       constructor <;> exact_mod_cast (by nlinarith : -(n : ℤ) < _)
@@ -89,15 +110,13 @@ theorem _root_.LaurentSeries.orderTop_single_sub_pow_sub_self
 
 /-- Every translate of `a T⁻ⁿ` by `wⁿ - w` is nonzero, has a pole of order at least `n`,
 and its order is divisible by `n`, if `a` is not an `n`-th power. -/
-theorem _root_.LaurentSeries.single_sub_pow_sub_self_pole
+theorem LaurentSeries.single_sub_pow_sub_self_pole
     (hn : 1 < n) (ha : ∀ b : k, b ^ n ≠ a) (w : k⸨X⸩) :
     single (-(n : ℤ)) a - (w ^ n - w) ≠ 0 ∧
       (single (-(n : ℤ)) a - (w ^ n - w)).order ≤ -(n : ℤ) ∧
       (n : ℤ) ∣ (single (-(n : ℤ)) a - (w ^ n - w)).order := by
   have ht := LaurentSeries.orderTop_single_sub_pow_sub_self hn ha w
-  have hne : single (-(n : ℤ)) a - (w ^ n - w) ≠ 0 := by
-    intro hz
-    simp [hz] at ht
+  have hne := ne_zero_of_coeff_ne_zero (coeff_orderTop_ne ht)
   have ho := WithTop.coe_injective ((order_eq_orderTop_of_ne_zero hne).trans ht)
   refine ⟨hne, ?_, ?_⟩
   · rw [ho]
@@ -107,9 +126,9 @@ theorem _root_.LaurentSeries.single_sub_pow_sub_self_pole
     · exact dvd_mul_right _ _
     · exact dvd_neg.mpr (dvd_refl _)
 
-/-- If `a` is not an `n`-th power, no translate of `a T⁻ⁿ` by `wⁿ - w` is regular or has
-negative order not divisible by `n`. The regular alternative explicitly includes zero. -/
-theorem _root_.LaurentSeries.not_exists_regular_or_pole_not_dvd
+/-- If `a` is not an `n`-th power, no translate of `a T⁻ⁿ` by `wⁿ - w` is integral or has
+negative order not divisible by `n`. The integral alternative explicitly includes zero. -/
+theorem LaurentSeries.not_exists_reduced_representative_single_sub_pow_sub_self
     (hn : 1 < n) (ha : ∀ b : k, b ^ n ≠ a) :
     ¬ ∃ w : k⸨X⸩,
       0 ≤ (single (-(n : ℤ)) a - (w ^ n - w)).orderTop ∨
