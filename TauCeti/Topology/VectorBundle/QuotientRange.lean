@@ -17,6 +17,9 @@ vector in `F ⧸ (A x).range`. With the quotient topology on the total space, th
 map is open whenever `x ↦ A x u` is continuous for every fixed `u`. No injectivity,
 complement, or constant-rank assumption is needed for openness.
 
+The scalars form a ring because Mathlib's `Submodule.hasQuotient` requires one
+to define the fibre quotients, even when the ambient modules are additive groups.
+
 On a domain with a fixed complementary parametrization `B`, the fibre equivalences
 `ContinuousLinearMap.quotientRangeEquiv` assemble into a homeomorphism with the
 product of the base and the complement. These are the topological local coordinates
