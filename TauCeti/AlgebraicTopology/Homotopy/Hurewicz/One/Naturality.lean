@@ -69,7 +69,7 @@ lemma homologyMap_H₁AddEquivHomology_loopClass {x : X} (γ : Path x x) :
     (HomologicalComplex.homologyMap ((singularChains ℤ).map f) 1).hom
         (H₁AddEquivHomology X (loopClass γ)) =
       H₁AddEquivHomology Y (loopClass (γ.map (f.hom).continuous)) := by
-  rw [loopClass, homologyMap_H₁AddEquivHomology_mk, loopClass]
+  rw [loopClass_def, homologyMap_H₁AddEquivHomology_mk, loopClass_def]
   congr 2
   refine Subtype.ext ((singularChains_map_f_pathChain f _).trans
     (congrArg (pathChain ℤ) (ContinuousMap.ext fun t ↦ ?_)))
