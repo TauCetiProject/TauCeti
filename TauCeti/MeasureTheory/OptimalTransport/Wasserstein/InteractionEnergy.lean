@@ -366,17 +366,12 @@ theorem _root_.StrongConvexOn.exists_isGeodesicSegment_interactionEnergy_le
   have hmean : ∫ z, z.1 - z.2 ∂π =
       ∫ x, x ∂((μ₀ : ProbabilityMeasure E) : Measure E) -
         ∫ x, x ∂((μ₁ : ProbabilityMeasure E) : Measure E) := by
-    have h₀ : Integrable (fun z : E × E ↦ z.1) π := by
-      have := (WassersteinSpace.hasFiniteMoment μ₀).memLp_id.integrable one_le_two
-      rwa [← hπ.fst_eq, Measure.fst,
-        integrable_map_measure aestronglyMeasurable_id measurable_fst.aemeasurable] at this
-    have h₁ : Integrable (fun z : E × E ↦ z.2) π := by
-      have := (WassersteinSpace.hasFiniteMoment μ₁).memLp_id.integrable one_le_two
-      rwa [← hπ.snd_eq, Measure.snd,
-        integrable_map_measure aestronglyMeasurable_id measurable_snd.aemeasurable] at this
-    rw [integral_sub h₀ h₁, ← hπ.fst_eq, ← hπ.snd_eq, Measure.fst, Measure.snd,
-      integral_map (f := fun x : E ↦ x) measurable_fst.aemeasurable aestronglyMeasurable_id,
-      integral_map (f := fun x : E ↦ x) measurable_snd.aemeasurable aestronglyMeasurable_id]
+    have h₀ : Integrable (fun z : E × E ↦ z.1) π := hπ.integrable_comp_fst
+      ((WassersteinSpace.hasFiniteMoment μ₀).memLp_id.integrable one_le_two)
+    have h₁ : Integrable (fun z : E × E ↦ z.2) π := hπ.integrable_comp_snd
+      ((WassersteinSpace.hasFiniteMoment μ₁).memLp_id.integrable one_le_two)
+    rw [integral_sub h₀ h₁, hπ.integral_comp_fst (f := fun x ↦ x) aestronglyMeasurable_id,
+      hπ.integral_comp_snd (f := fun x ↦ x) aestronglyMeasurable_id]
   -- The double integral of the remainder is twice the variance of the displacement.
   have hvar : ∫ z, ‖(z.1.1 - z.1.2) - (z.2.1 - z.2.2)‖ ^ 2 ∂π.prod π =
       2 * (dist μ₀ μ₁ ^ 2 -
