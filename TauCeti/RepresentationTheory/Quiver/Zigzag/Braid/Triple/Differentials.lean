@@ -241,8 +241,7 @@ private theorem tripleLowestInclusion_hom (i j l : V) :
   rw [HomologicalComplex.mapBifunctor₁₂.ι_eq F F (B i) (B j) (B l) c c
     (-1) (-1) (-1) (-2) (-3) (by simp) (by simp)]
   simp only [Category.assoc, ιMapBifunctor_zigzagBraidComplexTripleXMinusThreeIso_hom]
-  change ((F).flip.obj ((B l).X (-1))).map _ ≫
-    ((F).flip.obj ((B l).X (-1))).map _ ≫ _ = _
+  simp only [← Functor.flip_obj_map]
   rw [← Category.assoc, ← Functor.map_comp,
     ιMapBifunctor_zigzagBraidComplexTensorXMinusTwoIso_hom]
   simp only [Functor.flip_obj_map, zigzagBimoduleTensor,
@@ -260,8 +259,7 @@ private theorem tripleFirstPairInclusion_hom (i j l : V) :
   rw [HomologicalComplex.mapBifunctor₁₂.ι_eq F F (B i) (B j) (B l) c c
     (-1) (-1) 0 (-2) (-2) (by simp) (by simp)]
   simp only [Category.assoc, ιMapBifunctor_zigzagBraidComplexTripleXMinusTwoIso_hom_left]
-  change ((F).flip.obj ((B l).X 0)).map _ ≫
-    ((F).flip.obj ((B l).X 0)).map _ ≫ _ = _
+  simp only [← Functor.flip_obj_map]
   rw [← Category.assoc, ← Functor.map_comp,
     ιMapBifunctor_zigzagBraidComplexTensorXMinusTwoIso_hom]
   simp only [Functor.flip_obj_map, zigzagBimoduleTensor,
@@ -282,8 +280,7 @@ private theorem tripleLeftPairInclusion_hom (i j l : V) :
   rw [HomologicalComplex.mapBifunctor₁₂.ι_eq F F (B i) (B j) (B l) c c
     (-1) 0 (-1) (-1) (-2) (by simp) (by simp)]
   simp only [Category.assoc, ιMapBifunctor_zigzagBraidComplexTripleXMinusTwoIso_hom_right]
-  change ((F).flip.obj ((B l).X (-1))).map _ ≫
-    ((F).flip.obj ((B l).X (-1))).map _ ≫ _ = _
+  simp only [← Functor.flip_obj_map]
   rw [← Category.assoc, ← Functor.map_comp,
     ιMapBifunctor_zigzagBraidComplexTensorXMinusOneIso_hom_left]
   simp only [Functor.map_comp, Category.assoc]
@@ -292,8 +289,7 @@ private theorem tripleLeftPairInclusion_hom (i j l : V) :
   have hinl : ((F).map (biprod.inl : U i ⟶ U i ⊞ U j)).app (U l) ≫
       biprod.lift (((F).map (biprod.fst : U i ⊞ U j ⟶ U i)).app (U l))
         (((F).map (biprod.snd : U i ⊞ U j ⟶ U j)).app (U l)) = biprod.inl := by
-    change ((F).flip.obj (U l)).map _ ≫
-      biprod.lift (((F).flip.obj (U l)).map _) (((F).flip.obj (U l)).map _) = _
+    simp only [← Functor.flip_obj_map]
     apply biprod.hom_ext
     · rw [Category.assoc, biprod.lift_fst, ← Functor.map_comp, biprod.inl_fst,
         CategoryTheory.Functor.map_id]
@@ -327,8 +323,7 @@ private theorem tripleRightPairInclusion_hom (i j l : V) :
   rw [HomologicalComplex.mapBifunctor₁₂.ι_eq F F (B i) (B j) (B l) c c
     0 (-1) (-1) (-1) (-2) (by simp) (by simp)]
   simp only [Category.assoc, ιMapBifunctor_zigzagBraidComplexTripleXMinusTwoIso_hom_right]
-  change ((F).flip.obj ((B l).X (-1))).map _ ≫
-    ((F).flip.obj ((B l).X (-1))).map _ ≫ _ = _
+  simp only [← Functor.flip_obj_map]
   rw [← Category.assoc, ← Functor.map_comp,
     ιMapBifunctor_zigzagBraidComplexTensorXMinusOneIso_hom_right]
   simp only [Functor.map_comp, Category.assoc]
@@ -337,8 +332,7 @@ private theorem tripleRightPairInclusion_hom (i j l : V) :
   have hinr : ((F).map (biprod.inr : U j ⟶ U i ⊞ U j)).app (U l) ≫
       biprod.lift (((F).map (biprod.fst : U i ⊞ U j ⟶ U i)).app (U l))
         (((F).map (biprod.snd : U i ⊞ U j ⟶ U j)).app (U l)) = biprod.inr := by
-    change ((F).flip.obj (U l)).map _ ≫
-      biprod.lift (((F).flip.obj (U l)).map _) (((F).flip.obj (U l)).map _) = _
+    simp only [← Functor.flip_obj_map]
     apply biprod.hom_ext
     · rw [Category.assoc, biprod.lift_fst, ← Functor.map_comp, biprod.inr_fst,
         Functor.map_zero]
@@ -374,8 +368,7 @@ private theorem tripleFirstVertexInclusion_hom (i j l : V) :
   rw [HomologicalComplex.mapBifunctor₁₂.ι_eq F F (B i) (B j) (B l) c c
     (-1) 0 0 (-1) (-1) (by simp) (by simp)]
   simp only [Category.assoc, ιMapBifunctor_zigzagBraidComplexTripleXMinusOneIso_hom_left]
-  change ((F).flip.obj ((B l).X 0)).map _ ≫
-    ((F).flip.obj ((B l).X 0)).map _ ≫ _ = _
+  simp only [← Functor.flip_obj_map]
   rw [← Category.assoc, ← Functor.map_comp,
     ιMapBifunctor_zigzagBraidComplexTensorXMinusOneIso_hom_left]
   simp only [Functor.map_comp, Category.assoc, Functor.flip_obj_map, NatTrans.comp_app]
@@ -397,8 +390,7 @@ private theorem tripleSecondVertexInclusion_hom (i j l : V) :
   rw [HomologicalComplex.mapBifunctor₁₂.ι_eq F F (B i) (B j) (B l) c c
     0 (-1) 0 (-1) (-1) (by simp) (by simp)]
   simp only [Category.assoc, ιMapBifunctor_zigzagBraidComplexTripleXMinusOneIso_hom_left]
-  change ((F).flip.obj ((B l).X 0)).map _ ≫
-    ((F).flip.obj ((B l).X 0)).map _ ≫ _ = _
+  simp only [← Functor.flip_obj_map]
   rw [← Category.assoc, ← Functor.map_comp,
     ιMapBifunctor_zigzagBraidComplexTensorXMinusOneIso_hom_right]
   simp only [Functor.map_comp, Category.assoc, Functor.flip_obj_map, NatTrans.comp_app]
@@ -420,8 +412,7 @@ private theorem tripleThirdVertexInclusion_hom (i j l : V) :
   rw [HomologicalComplex.mapBifunctor₁₂.ι_eq F F (B i) (B j) (B l) c c
     0 0 (-1) 0 (-1) (by simp) (by simp)]
   simp only [Category.assoc, ιMapBifunctor_zigzagBraidComplexTripleXMinusOneIso_hom_right]
-  change ((F).flip.obj ((B l).X (-1))).map _ ≫
-    ((F).flip.obj ((B l).X (-1))).map _ ≫ _ = _
+  simp only [← Functor.flip_obj_map]
   rw [← Category.assoc, ← Functor.map_comp,
     ιMapBifunctor_zigzagBraidComplexTensorXZeroIso_hom]
   simp only [Functor.flip_obj_map, zigzagBimoduleTensor,
@@ -697,8 +688,7 @@ private theorem tripleZeroInclusion_hom (i j l : V) :
   rw [HomologicalComplex.mapBifunctor₁₂.ι_eq F F (B i) (B j) (B l) c c
     0 0 0 0 0 (by simp) (by simp)]
   simp only [Category.assoc, ιMapBifunctor_zigzagBraidComplexTripleXZeroIso_hom]
-  change ((F).flip.obj ((B l).X 0)).map _ ≫
-    ((F).flip.obj ((B l).X 0)).map _ ≫ _ = _
+  simp only [← Functor.flip_obj_map]
   rw [← Category.assoc, ← Functor.map_comp,
     ιMapBifunctor_zigzagBraidComplexTensorXZeroIso_hom]
   simp only [Functor.flip_obj_map, zigzagBimoduleTensor,
