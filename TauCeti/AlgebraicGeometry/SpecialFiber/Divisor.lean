@@ -11,15 +11,16 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor.FiniteSum
 /-!
 # The divisor of a special fibre
 
-For an integral Noetherian scheme over a one-dimensional local ring, the divisor of the
-pullback of a nonzero element of the maximal ideal is a positive sum of the codimension-one
-components of the special fibre. Its coefficient at a component is the order of vanishing of
-the pulled-back element there. For a DVR uniformizer, these coefficients are the component
-multiplicities of the scheme-theoretic special fibre.
+For an integral Noetherian scheme over a one-dimensional local ring, whose generic point maps
+away from the closed point, the divisor of the pullback of a nonzero element of the maximal
+ideal is a positive sum of the codimension-one components of the special fibre. Its coefficient
+at a component is the order of vanishing of the pulled-back element there. For a DVR
+uniformizer, these coefficients are the component multiplicities of the scheme-theoretic
+special fibre.
 
 The support and positivity facts come from `SpecialFiber.Components`; the sum uses the existing
 finite-sum API for Weil divisors. This is the divisor calculation in the
-[Stacks Project, Section 55.9](https://stacks.math.columbia.edu/tag/0C9U).
+[Stacks Project, Section 55.9](https://stacks.math.columbia.edu/tag/0C5Y).
 -/
 
 public section
@@ -35,13 +36,24 @@ universe u
 variable {R : Type u} [CommRing R] [IsLocalRing R] [Ring.DimensionLEOne R]
 variable {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R)) [IsIntegral X] [IsNoetherian X]
 
-/-- The nonnegative part of the order of vanishing of the pullback of `π` at a codimension-one
-point. For a nonzero `π` in the maximal ideal, this is the multiplicity of a special-fibre
-component, and it is zero away from the special fibre. -/
+/-- The nonnegative order of vanishing of the pullback of `π` at a codimension-one point. When
+the generic point maps away from the closed point and `π` is nonzero in the maximal ideal, this
+is the multiplicity of a special-fibre component, and it is zero away from the special fibre. -/
 noncomputable def _root_.AlgebraicGeometry.Scheme.Hom.specialFiberMultiplicity
     (π : R) (x : CodimensionOnePoint X) : ℕ :=
   (X.ord (X.germToFunctionField ⊤
     (toBase.appTop ((Scheme.ΓSpecIso (.of R)).inv π))) x).toNat
+
+omit [IsLocalRing R] [Ring.DimensionLEOne R] in
+/-- The integer coercion of the special-fibre multiplicity is the order of vanishing of the
+pulled-back section. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.specialFiberMultiplicity_coe
+    (π : R) (x : CodimensionOnePoint X) :
+    (toBase.specialFiberMultiplicity π x : ℤ) = X.ord
+      (X.germToFunctionField ⊤
+        (toBase.appTop ((Scheme.ΓSpecIso (.of R)).inv π))) x := by
+  rw [Scheme.Hom.specialFiberMultiplicity]
+  exact Int.toNat_of_nonneg (Scheme.ord_germToFunctionField_nonneg _ trivial)
 
 /-- At a codimension-one point of the special fibre, the pullback of a nonzero element of the
 maximal ideal has positive multiplicity. -/
@@ -100,9 +112,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.principalDivisor_eq_sum_specialFiber
           (toBase.appTop ((Scheme.ΓSpecIso (.of R)).inv π))) x := by
       simp [D, WeilDivisor.OrderSystem.coeff_principalDivisor,
         WeilDivisor.OrderSystem.ofScheme_ord]
-    congr 1
-    rw [Scheme.Hom.specialFiberMultiplicity, hord]
-    exact (Int.toNat_of_nonneg (hord ▸ hpos)).symm
+    rw [Scheme.Hom.specialFiberMultiplicity_coe, hord]
   exact heq
 
 end TauCeti
