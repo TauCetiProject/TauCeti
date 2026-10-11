@@ -26,8 +26,8 @@ geometric fibre closed under tensor product.
 ## Main results
 
 * `LineBundleClass.eulerDegree_mul_of_smooth`: additivity on connected smooth proper curves;
-* `LineBundleClass.eulerDegree_mul_pullback`: additivity on all field-valued fibres of a smooth
-  proper geometrically connected family of curves.
+* `LineBundleClass.eulerDegree_mul_fieldValuedBaseChange`: additivity on all field-valued fibres
+  of a smooth proper geometrically connected family of curves.
 
 ## References
 
@@ -73,7 +73,8 @@ theorem eulerDegree_mul_of_smooth (k : Type u) [Field k] {X : Scheme.{u}}
 /-- On every field-valued fibre of a smooth proper geometrically connected family of curves,
 the Euler-characteristic degree is additive. The point may have values in an arbitrary field,
 including an imperfect field. -/
-theorem eulerDegree_mul_pullback {X S : Scheme.{u}} (f : X ⟶ S) [IsProper f]
+@[simp]
+theorem eulerDegree_mul_fieldValuedBaseChange {X S : Scheme.{u}} (f : X ⟶ S) [IsProper f]
     [SmoothOfRelativeDimension 1 f] [GeometricallyConnected f]
     (k : Type u) [Field k] (s : Spec (.of k) ⟶ S)
     (a b : LineBundleClass (pullback s f)) :
