@@ -32,7 +32,7 @@ itself, rather than with any of its users.
   `ContinuousLinearMap.isInvertible_of_surjective`: in finite dimensions an injective, equivalently
   a surjective, map into the dual is already invertible, the dual having the same dimension as the
   space (`ContinuousLinearMap.dual_finrank_eq`).
-* `TauCeti.LinearMap.BilinForm.SeparatingLeft.isInvertible_toContinuousBilinearMap`:
+* `TauCeti.isInvertible_toContinuousBilinearMap_of_separatingLeft`:
   contraction with a left-separating bilinear form is invertible in finite dimensions,
   identifying covectors with vectors for local contraction equations.
 -/
@@ -79,7 +79,7 @@ theorem _root_.ContinuousLinearMap.isInvertible_of_surjective
 
 /-- Contraction with a left-separating bilinear form on a finite-dimensional space is
 an invertible continuous linear map to the continuous dual. -/
-theorem LinearMap.BilinForm.SeparatingLeft.isInvertible_toContinuousBilinearMap
+theorem isInvertible_toContinuousBilinearMap_of_separatingLeft
     {b : LinearMap.BilinForm 𝕜 E} (hb : b.SeparatingLeft) :
     b.toContinuousBilinearMap.IsInvertible := by
   apply _root_.ContinuousLinearMap.isInvertible_of_injective
