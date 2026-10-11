@@ -23,7 +23,7 @@ O(T_bar) → O(G_m).
 
 The canonical group-like evaluation equivalence reconstructs the geometric fibre from
 its characters. Full faithfulness of the diagonalizable-group coordinate-ring functor then
-identifies these geometric morphisms with the integral dual of the geometric character lattice.
+identifies these geometric morphisms with the integral dual of the geometric character group.
 This comparison, rather than the definition of cocharacters, supplies the evaluation pairing. The
 dual description is specific to groups of multiplicative type: a semisimple group can have trivial
 character group and nontrivial cocharacters. For tori, the character lattice is finite free and the
@@ -45,13 +45,6 @@ evaluation pairing is invariant under the diagonal action.
 * `TauCeti.MultiplicativeTypeCommHopfAlgCat.characterCocharacterPairing`: the evaluation pairing
   between characters and cocharacters, intrinsically characterized by composition of their
   group-scheme morphisms.
-
-## Roadmap
-
-This completes the lattice-and-pairing part of Layer 4, "Tori: split and non-split; the
-character lattice `X*(T)` and cocharacter lattice `X_*(T)` with their perfect pairing", in the
-reductive-groups roadmap. Continuity of the Galois actions and the descent classification of
-non-split tori remain separate steps.
 
 ## References
 
@@ -196,7 +189,7 @@ abbrev cocharacterLattice (T : MultiplicativeTypeCommHopfAlgCat k) :=
     geometricFiberGroupScheme T
 
 /-- A geometric character, as the corresponding group-scheme morphism from the geometric fibre
-of the torus to the multiplicative group. -/
+of `T` to the multiplicative group. -/
 noncomputable def geometricCharacterGroupSchemeMap (T : MultiplicativeTypeCommHopfAlgCat k)
     (x : CommHopfAlgCat.additiveCharacterGroup T.obj.obj) :
     geometricFiberGroupScheme T ⟶

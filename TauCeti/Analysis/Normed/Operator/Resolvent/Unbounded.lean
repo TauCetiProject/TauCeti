@@ -7,8 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import Mathlib.Analysis.SpecificLimits.Normed
-public import Mathlib.Tactic.Module
-public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Basic
+public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.SpectralMapping
 
 /-!
 # Neumann perturbations of an unbounded operator's resolvent
@@ -46,7 +45,7 @@ noncomputable section
 
 namespace TauCeti.LinearPMap
 
-open _root_.LinearPMap (IsResolventAt resolvent_eq_of_isResolventAt)
+open _root_.LinearPMap (IsResolventAt)
 
 variable {𝕜 X : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup X]
   [NormedSpace 𝕜 X] [CompleteSpace X]
@@ -62,42 +61,12 @@ theorem _root_.ContinuousLinearMap.isResolventAt_vadd_of_norm_mul_resolvent_lt_o
   ContinuousLinearMap.isResolventAt_vadd_of_isUnit_one_sub_mul_resolvent B h
     (isUnit_one_sub_of_norm_lt_one hB)
 
-private theorem isResolventAt_of_norm_mul_lt_one (h : lambda ∈ A.resolventSet)
-    (hmu : ‖mu - lambda‖ * ‖A.resolvent lambda‖ < 1) :
-    IsResolventAt A mu
-      (A.resolvent lambda * Ring.inverse (1 - (lambda - mu) • A.resolvent lambda)) := by
-  let B : X →L[𝕜] X := (lambda - mu) • 1
-  have hBR : B * A.resolvent lambda = (lambda - mu) • A.resolvent lambda := by
-    simp only [B, smul_mul_assoc, one_mul]
-  have hB : ‖B * A.resolvent lambda‖ < 1 := by
-    rwa [hBR, norm_smul, norm_sub_rev]
-  let U : X →L[𝕜] X :=
-    A.resolvent lambda * Ring.inverse (1 - (lambda - mu) • A.resolvent lambda)
-  have hpert : IsResolventAt ((B : X →ₗ[𝕜] X) +ᵥ A) lambda U := by
-    simpa only [U, hBR] using B.isResolventAt_vadd_of_norm_mul_resolvent_lt_one h hB
-  suffices IsResolventAt A mu U by simpa only [U]
-  refine ⟨hpert.mem_domain, fun y => ?_, fun x => ?_⟩
-  · calc
-      mu • _ - A ⟨_, hpert.mem_domain y⟩ =
-          lambda • _ - ((B : X →ₗ[𝕜] X) +ᵥ A) ⟨_, hpert.mem_domain y⟩ := by
-            rw [LinearPMap.vadd_apply]
-            simp only [B, ContinuousLinearMap.coe_coe, one_apply_eq_self, smul_apply]
-            module
-      _ = y := hpert.smul_sub_apply y
-  · calc
-      U (mu • (x : X) - A x) =
-          U (lambda • (x : X) - ((B : X →ₗ[𝕜] X) +ᵥ A) x) := by
-            congr 1
-            rw [LinearPMap.vadd_apply]
-            simp only [B, ContinuousLinearMap.coe_coe, one_apply_eq_self, smul_apply]
-            module
-      _ = (x : X) := hpert.apply_smul_sub x
-
 /-- **The Neumann perturbation of a resolvent point.** If `lambda` lies in the resolvent set and
 `‖mu - lambda‖ * ‖R(lambda)‖ < 1`, then `mu` lies in it too. -/
 theorem mem_resolventSet_of_norm_mul_lt_one (h : lambda ∈ A.resolventSet)
     (hmu : ‖mu - lambda‖ * ‖A.resolvent lambda‖ < 1) : mu ∈ A.resolventSet :=
-  (isResolventAt_of_norm_mul_lt_one h hmu).mem_resolventSet
+  (mem_resolventSet_iff_isUnit_one_sub_smul_resolvent h).mpr
+    (isUnit_one_sub_of_norm_lt_one (by rwa [norm_smul, norm_sub_rev]))
 
 /-- **Local Neumann formula for the resolvent.** Inside the ball
 `‖mu - lambda‖ * ‖R(lambda)‖ < 1`, the resolvent at `mu` is obtained by multiplying
@@ -106,7 +75,8 @@ theorem resolvent_eq_mul_inverse_one_sub (h : lambda ∈ A.resolventSet)
     (hmu : ‖mu - lambda‖ * ‖A.resolvent lambda‖ < 1) :
     A.resolvent mu = A.resolvent lambda *
       Ring.inverse (1 - (lambda - mu) • A.resolvent lambda) :=
-  resolvent_eq_of_isResolventAt (isResolventAt_of_norm_mul_lt_one h hmu)
+  resolvent_eq_mul_inverse_one_sub_smul_resolvent h
+    (isUnit_one_sub_of_norm_lt_one (by rwa [norm_smul, norm_sub_rev]))
 
 /-- **The resolvent set is open.** -/
 theorem _root_.LinearPMap.isOpen_resolventSet (A : X →ₗ.[𝕜] X) : IsOpen (A.resolventSet) := by

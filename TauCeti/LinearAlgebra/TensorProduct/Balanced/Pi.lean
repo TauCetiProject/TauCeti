@@ -78,20 +78,15 @@ noncomputable def piRight : BalancedTensorProduct k A M (P → A) ≃ₗ[k] (P �
     (lift (piRightBilinear k A M P) (piRightBilinear_balanced k A M P))
     (piRightInv k A M P)
     (LinearMap.ext fun f ↦ funext fun y ↦ by
-      simp only [LinearMap.comp_apply, piRightInv_apply, map_sum, Finset.sum_apply, lift_tmul,
-        piRightBilinear_apply, LinearMap.id_apply]
-      rw [Finset.sum_eq_single y (fun x _ hx ↦ by simp [Pi.single_eq_of_ne hx.symm]) (by simp)]
-      simp)
+      simp [LinearMap.comp_apply, piRightInv_apply, map_sum, Finset.sum_apply, lift_tmul,
+        piRightBilinear_apply, Pi.single_apply, apply_ite])
     (by
       apply hom_ext
       intro m g
       simp only [LinearMap.comp_apply, lift_tmul, piRightInv_apply, piRightBilinear_apply,
         LinearMap.id_apply]
-      have hsingle : ∀ x : P, g x • Pi.single x (1 : A) = Pi.single x (g x) := fun x ↦ by
-        ext y
-        simp [Pi.single_apply]
-      simp_rw [balance, hsingle, ← mk_apply]
-      rw [← map_sum, Finset.univ_sum_single])
+      simp_rw [balance, ← mk_apply]
+      rw [← map_sum, ← pi_eq_sum_univ'])
 
 /-- A pure tensor `m ⊗ g` goes to the function `y ↦ m · g y`. -/
 @[simp]
@@ -105,11 +100,7 @@ theorem piRight_tmul (m : M) (g : P → A) :
 theorem piRight_tmul_single [DecidableEq P] (x : P) (m : M) :
     piRight k A M P (tmul k A m (Pi.single x 1)) = Pi.single x m := by
   ext y
-  rw [piRight_tmul]
-  by_cases hy : y = x
-  · subst hy
-    simp
-  · simp [Pi.single_eq_of_ne hy]
+  simp +contextual [piRight_tmul, Pi.single_apply, apply_ite]
 
 /-- The inverse of `piRight` sends `f` to the sum `∑ x, f x ⊗ e_x` over the coordinate
 functions. -/

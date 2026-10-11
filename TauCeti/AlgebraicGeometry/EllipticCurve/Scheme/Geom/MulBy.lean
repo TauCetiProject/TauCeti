@@ -42,12 +42,16 @@ morphism of bases carries `[n]` to `[n]`.
   `[-n] = [n]⁻¹` and `[m * n] = [n] ≫ [m]`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.mulBy_comp`: every homomorphism of elliptic curves
   over `S` commutes with multiplication by `n`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isProper_mulBy_left`: multiplication by `n` is
+  proper.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.mulBy_zero_left`,
   `TauCeti.AlgebraicGeometry.EllipticCurveGeom.mulBy_neg_one_left` and
   `TauCeti.AlgebraicGeometry.EllipticCurveGeom.mulBy_add_left`: `[0]`, `[-1]` and `[m + n]` on
   underlying schemes.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.mulBy_left_comp_of_isPullback`: multiplication by
   `n` commutes with base change.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isPullback_mulBy_left_of_isPullback`: multiplication
+  by `n` on a base change of `E` is the base change of multiplication by `n` on `E`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.mulBy_left_baseChangeIso_hom_fst`: the projection
   from the base change `E.baseChange f` to `E` carries `[n]` to `[n]`.
 
@@ -140,6 +144,13 @@ theorem mulBy_left_structureMap (n : ℤ) :
     (E.mulBy n).left ≫ E.structureMap = E.structureMap :=
   (E.mulBy n).w
 
+/-- **Multiplication by `n` is proper**, as a morphism over `S` between schemes proper over `S`. -/
+instance isProper_mulBy_left (n : ℤ) : IsProper (E.mulBy n).left := by
+  have : IsProper ((E.mulBy n).left ≫ E.structureMap) := by
+    rw [mulBy_left_structureMap]
+    infer_instance
+  exact .of_comp _ E.structureMap
+
 /-- Multiplication by `n` fixes the zero section. -/
 @[reassoc (attr := simp)]
 theorem zero_mulBy_left (n : ℤ) : E.zero ≫ (E.mulBy n).left = E.zero := by
@@ -200,6 +211,15 @@ theorem mulBy_left_comp_of_isPullback (n : ℤ) :
     apply pullback.hom_ext
     · simpa [neg_comp_of_isPullback_assoc hg h0] using ih
     · simp [neg_comp_of_isPullback hg h0]
+
+include hg h0 in
+/-- **Multiplication by `n` on a base change is a base change of multiplication by `n`.** For a
+morphism `g : E' ⟶ E` of elliptic curves forming a pullback square over `f : S' ⟶ S` and carrying
+the zero section of `E'` to that of `E`, the square formed by `g` on both sides and the two
+multiplications by `n` is a pullback square. -/
+theorem isPullback_mulBy_left_of_isPullback (n : ℤ) :
+    IsPullback g (E'.mulBy n).left (E.mulBy n).left g :=
+  .of_bot (by simpa using hg) (mulBy_left_comp_of_isPullback hg h0 n).symm hg
 
 end BaseChange
 

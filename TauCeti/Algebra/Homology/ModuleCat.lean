@@ -15,7 +15,9 @@ public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 For a homological complex `K` of modules over a ring, the inclusion of the degree-`n` cycles into
 `K.X n` is injective and the class map from the cycles onto the degree-`n` homology is surjective.
 These are the elementwise forms of the facts that `K.iCycles n` is a monomorphism and
-`K.homologyπ n` is an epimorphism.  Conversely, an element of `K.X n` killed by the differential
+`K.homologyπ n` is an epimorphism.  Chain maps commute with the differentials and the square of
+the differential vanishes, on elements (`HomologicalComplex.Hom.comm_apply`,
+`HomologicalComplex.d_comp_d_apply`).  Conversely, an element of `K.X n` killed by the differential
 is a cycle, `HomologicalComplex.moduleCatCyclesMk`.  This constructor directly returns
 an element of `K.cycles n` for modules over a ring in any universe, whereas Mathlib's
 `HomologicalComplex.cyclesMk` returns an element of `(forget₂ C Ab).obj (K.cycles n)`.
@@ -31,6 +33,19 @@ open CategoryTheory
 universe u
 
 namespace HomologicalComplex
+
+/-- A chain map of complexes of modules commutes with the differentials, on elements. -/
+theorem Hom.comm_apply {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
+    {K L : HomologicalComplex (ModuleCat R) c} (φ : K ⟶ L) (i j : ι) (x : K.X i) :
+    L.d i j (φ.f i x) = φ.f j (K.d i j x) := by
+  rw [← ModuleCat.comp_apply, φ.comm, ModuleCat.comp_apply]
+
+/-- In a complex of modules the differential of a differential vanishes, on elements. -/
+theorem d_comp_d_apply {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
+    (K : HomologicalComplex (ModuleCat R) c) (i j l : ι) (x : K.X i) :
+    K.d j l (K.d i j x) = 0 := by
+  rw [← ModuleCat.comp_apply, HomologicalComplex.d_comp_d]
+  rfl
 
 variable {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
   (K : HomologicalComplex (ModuleCat R) c) (n : ι)

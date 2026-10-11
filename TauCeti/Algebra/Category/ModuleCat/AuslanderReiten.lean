@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.AuslanderReiten.CocyclePairing
+public import TauCeti.Algebra.Category.ModuleCat.HomCocycle
 public import TauCeti.CategoryTheory.Exact.Stable.Injective
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.EnoughInjectives
@@ -17,6 +18,11 @@ A morphism `N → D Tr(f)` factors through an injective object exactly when its
 Nakayama Hom functional belongs to the image of dual restriction to `ker f`.
 This identifies the subspace killed on the Hom side of Auslander–Reiten duality.
 The cocycle pairing kills exactly the same morphisms as the injective stable quotient.
+It therefore identifies injective stable Hom into the translate with the scalar dual
+of Hom cocycles modulo coboundaries, naturally in the coefficient module.
+Descending cocycles to the presenting image identifies this quotient with `Ext¹`
+of the cokernel. Thus the pairing gives Auslander–Reiten duality
+`stableHom(N, D Tr(f)) ≃ D Ext¹(coker f,N)`, with Hom taken modulo injectives.
 
 The statement uses the existing injective stable category of modules and
 does not depend on a choice of injective envelope. It applies to arbitrary algebras
@@ -78,5 +84,123 @@ theorem auslanderReitenCocyclePairing_eq_zero_iff_injectiveStableFunctor_map_eq_
         (ModuleCat.ofHom g) = 0 := by
   rw [auslanderReitenCocyclePairing_eq_zero_iff,
     auslanderReitenTranslate_injectiveStableFunctor_map_eq_zero_iff]
+
+/-- Injective stable Hom into `D Tr(f)` is the scalar dual of Hom cocycles modulo
+coboundaries. This comparison does not choose an injective embedding. -/
+noncomputable def auslanderReitenStableHomEquiv
+    (f : P₁ →ₗ[A] P₀) (N : ModuleCat.{max u v w} A) :
+    ((ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.obj N ⟶
+      (ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.obj
+        (ModuleCat.of A (AuslanderReitenTranslate k f))) ≃ₗ[k]
+      Module.Dual k (HomCocycleQuotient (k := k) f N) := by
+  let F := (ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor
+  letI : Module k (N ⟶ ModuleCat.of A (AuslanderReitenTranslate k f)) :=
+    Linear.homModule (R := k) N (ModuleCat.of A (AuslanderReitenTranslate k f))
+  let q := F.mapLinearMap k (X := N) (Y := ModuleCat.of A (AuslanderReitenTranslate k f))
+  let p : (N ⟶ ModuleCat.of A (AuslanderReitenTranslate k f)) →ₗ[k]
+      Module.Dual k (HomCocycleQuotient (k := k) f N) :=
+    { toFun := fun g ↦ auslanderReitenCocyclePairing f g.hom
+      map_add' := by intros; simp
+      map_smul' := by
+        intro c g
+        rw [← map_smul]
+        congr 1
+        apply LinearMap.ext
+        intro x
+        -- The categorical scalar action restricts the algebra action on the translate.
+        exact IsScalarTower.algebraMap_smul A c (g.hom x) }
+  have hker : ker q = ker p := by
+    ext g
+    exact (auslanderReitenCocyclePairing_eq_zero_iff_injectiveStableFunctor_map_eq_zero
+      f N g.hom).symm
+  have hp : Function.Surjective p := by
+    intro χ
+    obtain ⟨g, hg⟩ := auslanderReitenCocyclePairing_surjective f χ
+    exact ⟨ModuleCat.ofHom g, hg⟩
+  exact (q.quotKerEquivOfSurjective F.map_surjective).symm.trans
+    ((Submodule.quotEquivOfEq _ _ hker).trans (p.quotKerEquivOfSurjective hp))
+
+/-- The stable Hom comparison sends the stable class of a map to its cocycle pairing. -/
+@[simp]
+theorem auslanderReitenStableHomEquiv_map
+    (f : P₁ →ₗ[A] P₀) (N : ModuleCat.{max u v w} A)
+    (g : N ⟶ ModuleCat.of A (AuslanderReitenTranslate k f)) :
+    auslanderReitenStableHomEquiv f N
+      ((ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.map g) =
+      auslanderReitenCocyclePairing f g.hom := by
+  let : Module k (N ⟶ ModuleCat.of A (AuslanderReitenTranslate k f)) :=
+    Linear.homModule (R := k) N (ModuleCat.of A (AuslanderReitenTranslate k f))
+  dsimp only [auslanderReitenStableHomEquiv, LinearEquiv.trans_apply]
+  -- `mapLinearMap` has the functor map as its underlying function.
+  erw [quotKerEquivOfSurjective_symm_apply]
+  rw [Submodule.quotEquivOfEq_mk]
+  erw [quotKerEquivOfSurjective_apply_mk]
+
+/-- The inverse comparison sends a cocycle pairing to the stable class of its map. -/
+@[simp]
+theorem auslanderReitenStableHomEquiv_symm_pairing
+    (f : P₁ →ₗ[A] P₀) (N : ModuleCat.{max u v w} A)
+    (g : N ⟶ ModuleCat.of A (AuslanderReitenTranslate k f)) :
+    (auslanderReitenStableHomEquiv f N).symm (auslanderReitenCocyclePairing f g.hom) =
+      (ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.map g := by
+  apply (auslanderReitenStableHomEquiv f N).injective
+  simp
+
+/-- Precomposition in the injective stable category corresponds to the dual of
+postcomposition on Hom cocycle classes. -/
+theorem auslanderReitenStableHomEquiv_naturality
+    (f : P₁ →ₗ[A] P₀) {N N' : ModuleCat.{max u v w} A} (g : N ⟶ N')
+    (h : (ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.obj N' ⟶
+      (ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.obj
+        (ModuleCat.of A (AuslanderReitenTranslate k f))) :
+    auslanderReitenStableHomEquiv f N
+        ((ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.map g ≫ h) =
+      (homCocycleQuotientMap (k := k) f g.hom).dualMap
+        (auslanderReitenStableHomEquiv f N' h) := by
+  obtain ⟨h, rfl⟩ :=
+    (ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.map_surjective h
+  rw [← Functor.map_comp, auslanderReitenStableHomEquiv_map,
+    auslanderReitenStableHomEquiv_map]
+  exact (auslanderReitenCocyclePairing_naturality f g.hom h.hom).symm
+
+/-- Auslander–Reiten duality: injective stable Hom into `D Tr(f)` is the scalar
+dual of the first extension group of the cokernel of `f`. -/
+noncomputable def auslanderReitenExtEquiv
+    (f : P₁ →ₗ[A] P₀) (N : ModuleCat.{max u v w} A) :
+    ((ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.obj N ⟶
+      (ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.obj
+        (ModuleCat.of A (AuslanderReitenTranslate k f))) ≃ₗ[k]
+      Module.Dual k (CategoryTheory.Abelian.Ext (ModuleCat.of A (P₀ ⧸ range f)) N 1) := by
+  let e : HomCocycleQuotient (k := k) f N ≃ₗ[k]
+      CategoryTheory.Abelian.Ext (ModuleCat.of A (P₀ ⧸ range f)) N 1 :=
+    homCocycleQuotientEquivExt (k := k) f N
+  exact (auslanderReitenStableHomEquiv (k := k) f N).trans (LinearEquiv.dualMap e.symm)
+
+/-- Evaluate duality at the extension class corresponding to a Hom cocycle class. -/
+@[simp]
+theorem auslanderReitenExtEquiv_apply
+    (f : P₁ →ₗ[A] P₀) (N : ModuleCat.{max u v w} A)
+    (h : (ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.obj N ⟶
+      (ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.obj
+        (ModuleCat.of A (AuslanderReitenTranslate k f)))
+    (x : HomCocycleQuotient (k := k) f N) :
+    auslanderReitenExtEquiv f N h (homCocycleQuotientEquivExt (k := k) f N x) =
+      auslanderReitenStableHomEquiv f N h x := by
+  simp [auslanderReitenExtEquiv]
+
+/-- Precomposition in injective stable Hom is dual to pushforward of extension classes. -/
+theorem auslanderReitenExtEquiv_naturality
+    (f : P₁ →ₗ[A] P₀) {N N' : ModuleCat.{max u v w} A} (g : N ⟶ N')
+    (h : (ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.obj N' ⟶
+      (ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.obj
+        (ModuleCat.of A (AuslanderReitenTranslate k f)))
+    (α : CategoryTheory.Abelian.Ext (ModuleCat.of A (P₀ ⧸ range f)) N 1) :
+    auslanderReitenExtEquiv f N
+        ((ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.map g ≫ h) α =
+      auslanderReitenExtEquiv f N' h (α.comp (CategoryTheory.Abelian.Ext.mk₀ g) (add_zero 1)) := by
+  obtain ⟨x, rfl⟩ := (homCocycleQuotientEquivExt (k := k) f N).surjective α
+  rw [← homCocycleQuotientEquivExt_naturality, auslanderReitenExtEquiv_apply,
+    auslanderReitenExtEquiv_apply, auslanderReitenStableHomEquiv_naturality]
+  rfl
 
 end LinearMap

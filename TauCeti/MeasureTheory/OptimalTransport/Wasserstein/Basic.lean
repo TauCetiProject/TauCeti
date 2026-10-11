@@ -88,6 +88,8 @@ what the gluing lemma consumes.
   the finite-moment hypothesis on the anchor cannot be dropped;
 * `TauCeti.HasFiniteMoment.integrable_of_lipschitzWith` — a Lipschitz real function is integrable
   against a finite measure of finite first moment;
+* `TauCeti.HasFiniteMoment.memLp_id` — on a normed additive group, a finite measure of finite
+  `p`-moment has the identity in `L^p`;
 * `TauCeti.wassersteinEDist_rpow_eq_transportCost` and
   `TauCeti.wassersteinEDist_eq_transportCost_rpow` — for `0 < p < ∞`, the exact bridge to Layer 1's
   transport cost of `edist ^ p`, with `TauCeti.isOptimalCoupling_edist_rpow_iff` identifying the
@@ -766,6 +768,21 @@ theorem hasFiniteMoment_iff_forall_hasFiniteMoment_iff_wassersteinEDist_ne_top
 end Anchor
 
 end MetricMoment
+
+section NormedMoment
+
+variable {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [OpensMeasurableSpace E]
+  [SecondCountableTopology E]
+
+/-- On a normed additive group, a finite measure with finite `p`-moment has the identity in
+`L^p`: its distance from the basepoint `0` is the norm. -/
+theorem HasFiniteMoment.memLp_id {ν : Measure E} [IsFiniteMeasure ν] (h : HasFiniteMoment p ν) :
+    MemLp id p ν :=
+  (memLp_congr_enorm aestronglyMeasurable_id measurable_edist_right.aestronglyMeasurable
+    (.of_forall fun x ↦ by simp [edist_eq_enorm_sub])).2
+    (h.memLp (x := 0) measurable_edist_right.aestronglyMeasurable)
+
+end NormedMoment
 
 section Bridge
 
