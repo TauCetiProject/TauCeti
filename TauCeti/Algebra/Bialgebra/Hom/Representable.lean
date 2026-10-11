@@ -367,7 +367,7 @@ instance instFinitePresentation : Algebra.FinitePresentation R (HomAlgebra R H G
 
 section BaseChange
 
-open TauCeti.Bialgebra.TensorProduct (baseChangeTowerBialgEquiv baseChangeTowerBialgEquiv_symm_map)
+open TauCeti.Bialgebra.TensorProduct (baseChangeTowerBialgEquiv)
 
 variable {S : Type*} [CommRing S] [Algebra R S] [Algebra S T] [IsScalarTower R S T]
 
@@ -394,7 +394,8 @@ private lemma baseChangeHomEquiv_comp {T' : Type*} [CommRing T'] [Algebra R T'] 
   have hk : (AlgHom.liftEquiv R S (HomAlgebra R H G) T').symm (k.comp f) =
       (k.restrictScalars R).comp ((AlgHom.liftEquiv R S (HomAlgebra R H G) T).symm f) := by
     ext; simp
-  simp [baseChangeHomEquiv, homEquiv_comp_one_tmul, hk, baseChangeTowerBialgEquiv_symm_map]
+  simp [baseChangeHomEquiv, homEquiv_comp_one_tmul, hk,
+    _root_.TensorProduct.baseChangeTowerBialgEquiv_symm_map]
 
 -- By naturality, `baseChangeHomEquiv` is precomposition with the image of the identity.
 private lemma baseChangeHomEquiv_eq_comp (f : S ⊗[R] HomAlgebra R H G →ₐ[S] T) :
