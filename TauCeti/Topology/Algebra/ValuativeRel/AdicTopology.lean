@@ -38,6 +38,10 @@ For a nonarchimedean local field the remaining point-set facts are Mathlib's: `�
 (`Valuation.isOpen_integer`) and compact (`CompactSpace 𝒪[K]`), it is `𝓂[K]`-adically complete
 (`IsAdicComplete 𝓂[K] 𝒪[K]`), and `Kˣ` is locally compact.
 
+The proof outline for `isAdic_maximalIdeal` follows
+`IsDedekindDomain.HeightOneSpectrum.isAdic_maximalIdeal_adicCompletionIntegers`, adapted from
+the `Valued` setting of an adic completion to the `ValuativeRel` setting of `K`.
+
 ## References
 
 * [J.-P. Serre, *Corps Locaux*][serre1968], Chapter II, §1.
