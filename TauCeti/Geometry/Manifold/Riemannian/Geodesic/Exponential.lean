@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Trajectory
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Flow
-import TauCeti.Geometry.Manifold.LocalDiffeomorph
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!

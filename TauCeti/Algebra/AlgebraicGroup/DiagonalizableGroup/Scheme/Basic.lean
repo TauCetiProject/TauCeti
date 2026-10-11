@@ -48,6 +48,7 @@ ring in `Type u`.
 * `TauCeti.DiagonalizableGroup.isAffine_groupScheme`: `D(G)` is affine.
 * `TauCeti.DiagonalizableGroup.locallyOfFiniteType_groupScheme`: `D(G) ⟶ Spec R` is
   locally of finite type.
+* `TauCeti.DiagonalizableGroup.isCommMonObj_groupScheme`: `D(G)` is a commutative group scheme.
 * `TauCeti.DiagonalizableGroup.finiteTypeGroupScheme`: `D(G)` bundled as a finite-type affine
   group scheme.
 * `TauCeti.DiagonalizableGroup.finiteTypeGroupSchemeIso`: its comparison with the object produced
@@ -284,6 +285,13 @@ instance locallyOfFiniteType_groupScheme (G : FGCommGrpCat.{u}) :
     LocallyOfFiniteType (groupScheme R G).X.hom :=
   (algebraFiniteType_iff_locallyOfFiniteType_hopfSpec R (coordinateRing R G).obj).mp
     (coordinateRing R G).property
+
+/-- Every diagonalizable group scheme `D(G)` is commutative, since the group algebra `R[G]` of a
+commutative group is cocommutative. -/
+instance isCommMonObj_groupScheme (G : FGCommGrpCat.{u}) :
+    IsCommMonObj (groupScheme R G).X := by
+  unfold groupScheme
+  infer_instance
 
 /-- The diagonalizable group scheme `D(G)` bundled as a finite-type affine group scheme. -/
 noncomputable def finiteTypeGroupScheme (G : FGCommGrpCat.{u}) :

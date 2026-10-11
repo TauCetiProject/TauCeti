@@ -13,16 +13,18 @@ public import TauCeti.RingTheory.DedekindDomain.SInteger.SelmerGroup.Etale
 # Step 6 of the weak Mordell–Weil theorem: the image of the descent map lies in `A(S,2)`
 
 Let `W : y² = f(x) = x³ + a₂x² + a₄x + a₆` be an elliptic curve in characteristic `≠ 2` normal
-form over a field `K`, let `R` be a Dedekind domain with fraction field `K`, and let `S` be the
-set of bad primes of `W` over `R`. The étale algebra `W.A = K[X] ⧸ (f)` splits as a product of
-fields `K[X] ⧸ (p)`, one for each monic irreducible factor `p` of `f`, and correspondingly the
-square classes `W.M` split as a product. Define `A(S,2)` to be the subgroup of `W.M` of classes
-whose component at each factor lies in the `2`-Selmer group of that factor, relative to the
-primes lying above `S`.
+form over a field `K`, let `R` be a Dedekind domain with fraction field `K`, and let `S` be a set
+of primes of `R`. The étale algebra `W.A = K[X] ⧸ (f)` splits as a product of fields
+`K[X] ⧸ (p)`, one for each monic irreducible factor `p` of `f`, and correspondingly the square
+classes `W.M` split as a product. Define `A(S,2)` to be the subgroup of `W.M` of classes whose
+component at each factor lies in the `2`-Selmer group of that factor, relative to the primes
+lying above `S`: the square classes unramified outside `S`.
 
-**Step 6** is `range_μ_le_selmerGroupA`: the image of the descent map `μ` is contained in
-`A(S,2)`. Together with Step 4 (`ker_μ_eq`, the kernel is `2E(K)`) and the finiteness of
-`A(S,2)`, this is what makes `E(K)/2E(K)` finite.
+**Step 6** is `range_μ_le_selmerGroupA`: for `S` the set of bad primes of `W` over `R`, the image
+of the descent map `μ` is contained in `A(S,2)`. Together with Step 4 (`ker_μ_eq`, the kernel is
+`2E(K)`) and the finiteness of `A(S,2)` for finite `S`, this is what makes `E(K)/2E(K)` finite.
+The set `S` is an argument of `selmerGroupA` rather than fixed to the bad primes, because sharper
+bounds on the `2`-Selmer group place it inside `A(S,2)` for smaller sets `S`.
 
 All the arithmetic has already been done in
 `TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.BadPrimes`, which proves that at a prime `w`
@@ -36,15 +38,17 @@ componentwise statement into one about `W.M` along the decomposition `modPowEqui
 ## Main definitions
 
 * `WeierstrassCurve.Affine.selmerGroupFactor`: the `2`-Selmer group of one field factor,
-  relative to the primes above the bad primes.
+  relative to the primes above `S`.
 * `WeierstrassCurve.Affine.selmerGroupA`: `A(S,2)`, as a subgroup of `W.M`. This is
   `IsDedekindDomain.selmerGroupOfEquiv` at the decomposition of `W.A` into its field factors; the
   product over the factors is that file's `selmerGroupPi` and is not re-formed here.
 
 ## Main results
 
+* `WeierstrassCurve.Affine.selmerGroupA_mono`: `A(S,2)` is monotone in `S`.
+* `WeierstrassCurve.Affine.finite_selmerGroupA`: `A(S,2)` is finite when `S` is.
 * `WeierstrassCurve.Affine.mem_selmerGroupFactor_unit_iff`: a class of units lies in the Selmer
-  group of a factor exactly when its valuation is even at every good prime.
+  group of a factor exactly when its valuation is even at every prime not above `S`.
 * `WeierstrassCurve.Affine.μX_component_mem_selmerGroupFactor`: each component of `μX x` lies in
   the Selmer group of its factor.
 * `WeierstrassCurve.Affine.range_μ_le_selmerGroupA`: **Step 6**.
@@ -111,25 +115,27 @@ private lemma projFactor_mk_C_sub_X_add_fCofactor (x : K) (p : W.f.Factors) :
     AdjoinRoot.algebraMap_eq]
 
 variable (R : Type*) [CommRing R] [IsDedekindDomain R] [Algebra R K] [IsFractionRing R K]
+  (S : Set (HeightOneSpectrum R))
 
 /-- The `2`-Selmer group of the field factor `K[X] ⧸ (p)` of `W.A`, relative to the primes of its
-ring of integers lying above the bad primes of `R`. -/
+ring of integers lying above the primes in `S`. -/
 noncomputable def selmerGroupFactor (p : W.f.Factors) :
     Subgroup ((𝕃 p)ˣ ⧸ (powMonoidHom 2 : (𝕃 p)ˣ →* (𝕃 p)ˣ).range) :=
-  selmerGroupAbove R (W.ringOfIntegersFactor R p) (𝕃 p) (W.badPrimes R) 2
+  selmerGroupAbove R (W.ringOfIntegersFactor R p) (𝕃 p) S 2
 
 /-- `A(S,2)`, as a subgroup of `W.M`: the classes whose image in each field factor lies in the
-`2`-Selmer group of that factor. Step 6 asserts that `im μ ≤ A(S,2)`.
+`2`-Selmer group of that factor, relative to the primes above `S`. Step 6 asserts that
+`im μ ≤ A(S,2)` when `S` is the set of bad primes of `W`.
 
 This is `IsDedekindDomain.selmerGroupOfEquiv` — the Selmer group of an étale algebra transported
 along a decomposition into fields — specialised to the decomposition of `W.A` into the factors
 `K[X] ⧸ (p)`. Stating it that way rather than re-forming the product and its comap by hand is
-what makes `Finite (W.selmerGroupA R)` available directly from
+what makes `Finite (W.selmerGroupA R S)` available directly from
 `IsDedekindDomain.finite_selmerGroupOfEquiv`. -/
 noncomputable def selmerGroupA : Subgroup W.M :=
   IsDedekindDomain.selmerGroupOfEquiv (fun p : W.f.Factors ↦ 𝕃 p)
     (fun p ↦ W.ringOfIntegersFactor R p)
-    (fun p ↦ HeightOneSpectrum.primesAbove R (W.ringOfIntegersFactor R p) (W.badPrimes R)) 2
+    (fun p ↦ HeightOneSpectrum.primesAbove R (W.ringOfIntegersFactor R p) S) 2
     (AdjoinRoot.modPowEquivPiFactors W.f_ne_zero W.squarefree_f 2)
 
 /-- Membership in `A(S,2)`, componentwise: a square class lies in it exactly when each of its
@@ -137,35 +143,42 @@ components along the decomposition of `W.A` into field factors lies in the Selme
 factor. -/
 @[simp]
 lemma mem_selmerGroupA_iff (m : W.M) :
-    m ∈ W.selmerGroupA R ↔ ∀ p : W.f.Factors,
+    m ∈ W.selmerGroupA R S ↔ ∀ p : W.f.Factors,
       AdjoinRoot.modPowEquivPiFactors W.f_ne_zero W.squarefree_f 2 m p ∈
-        W.selmerGroupFactor R p := by
+        W.selmerGroupFactor R S p := by
   simp [selmerGroupA, selmerGroupFactor, IsDedekindDomain.selmerGroupAbove_def]
 
-/-- **`A(S,2)` is finite**, given that each factor's ring of integers has finite class group and
-finitely generated unit group.
+/-- `A(S,2)` grows with `S`: allowing ramification at more primes imposes fewer conditions. -/
+theorem selmerGroupA_mono {S T : Set (HeightOneSpectrum R)} (hST : S ⊆ T) :
+    W.selmerGroupA R S ≤ W.selmerGroupA R T := fun m hm ↦ by
+  simp only [mem_selmerGroupA_iff, selmerGroupFactor, selmerGroupAbove_def] at hm ⊢
+  exact fun p ↦ selmerGroup.monotone (HeightOneSpectrum.primesAbove_mono _ _ hST) (hm p)
 
-This is the finiteness that bounds the image of the descent map, and hence `E(K)/2E(K)`. -/
+/-- **`A(S,2)` is finite** for finite `S`, given that each factor's ring of integers has finite
+class group and finitely generated unit group.
+
+At the bad primes this is the finiteness that bounds the image of the descent map, and hence
+`E(K)/2E(K)`. -/
 theorem finite_selmerGroupA
     [(p : W.f.Factors) → Finite (ClassGroup (W.ringOfIntegersFactor R p))]
-    [(p : W.f.Factors) → Monoid.FG (W.ringOfIntegersFactor R p)ˣ] :
-    Finite (W.selmerGroupA R) :=
+    [(p : W.f.Factors) → Monoid.FG (W.ringOfIntegersFactor R p)ˣ] {S : Set (HeightOneSpectrum R)}
+    (hS : S.Finite) :
+    Finite (W.selmerGroupA R S) :=
   have : Finite W.f.Factors := Polynomial.Factors.finite W.f_ne_zero
   IsDedekindDomain.finite_selmerGroupOfEquiv (fun p : W.f.Factors ↦ 𝕃 p)
     (fun p ↦ W.ringOfIntegersFactor R p)
-    (fun p ↦ HeightOneSpectrum.primesAbove R (W.ringOfIntegersFactor R p) (W.badPrimes R)) 2
-    (fun p ↦ HeightOneSpectrum.primesAbove_finite R (W.ringOfIntegersFactor R p)
-      (W.finite_badPrimes R))
+    (fun p ↦ HeightOneSpectrum.primesAbove R (W.ringOfIntegersFactor R p) S) 2
+    (fun p ↦ HeightOneSpectrum.primesAbove_finite R (W.ringOfIntegersFactor R p) hS)
     (AdjoinRoot.modPowEquivPiFactors W.f_ne_zero W.squarefree_f 2)
 
 /-- Membership of the class of a unit in the `2`-Selmer group of a field factor: its valuation is
-even at every prime of the ring of integers not lying above a bad prime. -/
+even at every prime of the ring of integers not lying above a prime in `S`. -/
 @[simp]
 lemma mem_selmerGroupFactor_unit_iff (p : W.f.Factors) (u : (𝕃 p)ˣ) :
     (QuotientGroup.mk u : (𝕃 p)ˣ ⧸ (powMonoidHom 2 : (𝕃 p)ˣ →* (𝕃 p)ˣ).range) ∈
-        W.selmerGroupFactor R p ↔
+        W.selmerGroupFactor R S p ↔
       ∀ w : HeightOneSpectrum (W.ringOfIntegersFactor R p),
-        w ∉ HeightOneSpectrum.primesAbove R (W.ringOfIntegersFactor R p) (W.badPrimes R) →
+        w ∉ HeightOneSpectrum.primesAbove R (W.ringOfIntegersFactor R p) S →
           (2 : ℤ) ∣ Multiplicative.toAdd (w.valuationOfNeZero u) := by
   -- through `mem_selmerGroupAbove_iff` rather than by unfolding: `selmerGroupAbove` is not
   -- `@[expose]`, so only its characterising lemma is available here.
@@ -178,8 +191,9 @@ lemma mem_selmerGroupFactor_of_eval_f_ne_zero {x y : K} (h : W.Equation x y)
     (hx : W.f.eval x ≠ 0) (p : W.f.Factors) :
     (QuotientGroup.mk ((isUnit_mk_sub_X_of_eval_f_ne_zero hx).map
       (AdjoinRoot.projFactor W.f_ne_zero W.squarefree_f p)).unit :
-        (𝕃 p)ˣ ⧸ (powMonoidHom 2 : (𝕃 p)ˣ →* (𝕃 p)ˣ).range) ∈ W.selmerGroupFactor R p := by
-  rw [W.mem_selmerGroupFactor_unit_iff R p]
+        (𝕃 p)ˣ ⧸ (powMonoidHom 2 : (𝕃 p)ˣ →* (𝕃 p)ˣ).range) ∈
+          W.selmerGroupFactor R (W.badPrimes R) p := by
+  rw [W.mem_selmerGroupFactor_unit_iff R _ p]
   refine W.even_valuationOfNeZero_sub_root R p h hx _ ?_
   exact W.projFactor_mk_C_sub_X x p
 
@@ -191,8 +205,9 @@ Its valuation is therefore `0`, in particular even. -/
 lemma mem_selmerGroupFactor_of_eval_f_eq_zero {x : K} (hx : W.f.eval x = 0) (p : W.f.Factors) :
     (QuotientGroup.mk ((isUnit_mk_sub_X_add_fCofactor_of_eval_f_eq_zero hx).map
       (AdjoinRoot.projFactor W.f_ne_zero W.squarefree_f p)).unit :
-        (𝕃 p)ˣ ⧸ (powMonoidHom 2 : (𝕃 p)ˣ →* (𝕃 p)ˣ).range) ∈ W.selmerGroupFactor R p := by
-  rw [W.mem_selmerGroupFactor_unit_iff R p]
+        (𝕃 p)ˣ ⧸ (powMonoidHom 2 : (𝕃 p)ˣ →* (𝕃 p)ˣ).range) ∈
+          W.selmerGroupFactor R (W.badPrimes R) p := by
+  rw [W.mem_selmerGroupFactor_unit_iff R _ p]
   intro w hw
   set u := ((isUnit_mk_sub_X_add_fCofactor_of_eval_f_eq_zero hx).map
     (AdjoinRoot.projFactor W.f_ne_zero W.squarefree_f p)).unit with hudef
@@ -205,7 +220,7 @@ lemma mem_selmerGroupFactor_of_eval_f_eq_zero {x : K} (hx : W.f.eval x = 0) (p :
 the square class of the image of the `x - T` map lies in the `2`-Selmer group of that factor. -/
 lemma μX_component_mem_selmerGroupFactor {x y : K} (h : W.Equation x y) (p : W.f.Factors) :
     AdjoinRoot.modPowEquivPiFactors W.f_ne_zero W.squarefree_f 2 (W.μX x) p ∈
-      W.selmerGroupFactor R p := by
+      W.selmerGroupFactor R (W.badPrimes R) p := by
   rcases eq_or_ne (W.f.eval x) 0 with hx | hx
   · rw [μX_of_eval_f_eq_zero hx, AdjoinRoot.modPowEquivPiFactors_unit]
     exact W.mem_selmerGroupFactor_of_eval_f_eq_zero R hx p
@@ -215,8 +230,8 @@ lemma μX_component_mem_selmerGroupFactor {x y : K} (h : W.Equation x y) (p : W.
 variable [DecidableEq K]
 
 /-- **Step 6 of the weak Mordell–Weil theorem**: the image of the descent map `μ` is contained in
-`A(S,2)`. -/
-theorem range_μ_le_selmerGroupA : (μ (W := W)).range ≤ W.selmerGroupA R := by
+`A(S,2)`, for `S` the set of bad primes of `W` over `R`. -/
+theorem range_μ_le_selmerGroupA : (μ (W := W)).range ≤ W.selmerGroupA R (W.badPrimes R) := by
   rintro _ ⟨P, rfl⟩
   obtain ⟨P, rfl⟩ := Multiplicative.ofAdd.surjective P
   rw [μ_apply]

@@ -35,45 +35,14 @@ namespace TauCeti.Place
 variable {k F : Type*} [Field k] [Field F] [Algebra k F]
 variable (P : Place k F) {t : F} (hP : P.degree = 1) (ht : P.ord t = 1)
 
-private noncomputable def expansionPartialSum (f : PowerSeries k) (n : ℕ) : P.Completion :=
-  ∑ i ∈ Finset.range n, algebraMap k P.Completion (PowerSeries.coeff i f) *
-    P.completionEmbedding t ^ i
-
-include ht in
-private theorem expansionPartialSum_sub_mem (f : PowerSeries k) {n m : ℕ} (hnm : n ≤ m) :
-    P.expansionPartialSum (t := t) f m - P.expansionPartialSum (t := t) f n ∈
-      P.completionPlace.filtration n := by
-  rw [expansionPartialSum, expansionPartialSum, ← Finset.sum_Ico_eq_sub _ hnm]
-  apply Submodule.sum_mem
-  intro i hi
-  have hi' : (n : ℤ) ≤ (i : ℤ) := by exact_mod_cast (Finset.mem_Ico.mp hi).1
-  have hpow := P.completionPlace.mem_filtration_ord (P.completionEmbedding t ^ i)
-  simp only [ord_pow, ord_completionEmbedding, ht, mul_one] at hpow
-  apply P.completionPlace.filtration_antitone hi'
-  simpa only [zero_add] using P.completionPlace.mul_mem_filtration
-    (P.completionPlace.mem_filtration_zero_iff.mpr
-      (P.completionPlace.algebraMap_mem_integers _)) hpow
-
 /-- Every power series over the constants is the uniformizer expansion of an element of
 the completed valuation ring at a rational place. -/
 theorem completionPlace_powerSeriesExpansion_surjective :
     Function.Surjective (P.completionPlace.powerSeriesExpansion
       (by simpa using hP) (by simpa using ht :
-        P.completionPlace.ord (P.completionEmbedding t) = 1)) := by
-  intro f
-  obtain ⟨x, hrem⟩ := P.exists_forall_sub_mem_completionPlace_filtration
-    fun _ _ hmn ↦ P.expansionPartialSum_sub_mem ht f hmn
-  have hxint : x ∈ P.completionPlace.integers := by
-    simpa [expansionPartialSum, mem_filtration_zero_iff] using hrem 0
-  refine ⟨⟨x, hxint⟩, ?_⟩
-  ext n
-  have heq := (P.completionPlace.truncatedExpansion_eq_iff (by simpa using hP)
-    (by simpa using ht : P.completionPlace.ord (P.completionEmbedding t) = 1)
-    (n + 1) ⟨x, hxint⟩ (fun i ↦ PowerSeries.coeff i f)).mpr (by
-      rw [Fin.sum_univ_eq_sum_range (fun i : ℕ ↦
-        algebraMap k P.Completion (PowerSeries.coeff i f) * P.completionEmbedding t ^ i)]
-      exact hrem (n + 1))
-  rw [P.completionPlace.coeff_powerSeriesExpansion _ _ (n + 1) _ ⟨n, by omega⟩, heq]
+        P.completionPlace.ord (P.completionEmbedding t) = 1)) :=
+  P.completionPlace.powerSeriesExpansion_surjective _ _ fun _ ↦
+    P.exists_forall_sub_mem_completionPlace_filtration
 
 /-- Uniformizer expansion identifies the completed valuation ring at a rational place with
 the power-series ring over the constants. -/
