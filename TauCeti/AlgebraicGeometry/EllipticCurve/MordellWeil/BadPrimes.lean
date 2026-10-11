@@ -75,12 +75,6 @@ coefficient helper they share stays `private` there.
 The `Core` section still lives in this file rather than in `SelmerGroupA` because it is the last
 consumer of the `RingOfIntegers` estimates above.
 
-## Roadmap
-
-`TauCetiRoadmap/EllipticCurves/README.md`, Layer 6 (Mordell–Weil), Step 6 of the weak
-Mordell–Weil theorem: the image of the descent map lies in `A(S,2)`, for instance when `S` is the
-set of bad primes defined here.
-
 ## Provenance
 
 Adapted, with the author's proofs, from Michael Stoll's `EllipticCurves` project

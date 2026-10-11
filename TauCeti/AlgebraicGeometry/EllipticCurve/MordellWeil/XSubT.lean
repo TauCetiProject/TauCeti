@@ -352,8 +352,8 @@ lemma discr_f : W.f.discr = W.a₂ ^ 2 * W.a₄ ^ 2 - 4 * W.a₄ ^ 3 - 4 * W.a�
   norm_num
 
 /-- In characteristic `≠ 2` normal form the discriminant of `W` is `16` times that of the cubic
-`f`. The two differ by a unit at a prime not above `2`, but not at a prime above `2`, where
-`Δ` is never a unit while `disc f` can be. -/
+`f`. The two differ by a unit at a prime not above `2`, but not at a prime above `2`: there, if
+`a₂`, `a₄` and `a₆` are integral, `Δ` is never a unit while `disc f` can be. -/
 lemma Δ_eq_sixteen_mul_discr_f [W.IsCharNeTwoNF] : W.Δ = 16 * W.f.discr := by
   rw [Δ_of_isCharNeTwoNF W, W.discr_f]
   ring

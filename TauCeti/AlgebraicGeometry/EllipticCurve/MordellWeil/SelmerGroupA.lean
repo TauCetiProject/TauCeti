@@ -31,7 +31,8 @@ the `2`-Selmer group.
 
 All the arithmetic has already been done in
 `TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.BadPrimes`, which proves that at a prime `w`
-of the ring of integers of a factor lying over a prime outside `S` the `w`-adic valuation of
+of the ring of integers of a factor over which `a₂`, `a₄` and `a₆` are integral and `f' θ` is a
+`w`-unit (for instance, `disc f` is a unit at the prime underneath) the `w`-adic valuation of
 `x - θ` is even (`even_valuationOfNeZero_sub_root`), and that on the `2`-torsion branch of `μ` the
 component is a unit outright (`valuation_projFactor_torsion_eq_one`). What is left, and what this
 file does, is to name the Selmer groups, record that evenness *is* Selmer membership
@@ -191,8 +192,9 @@ lemma mem_selmerGroupFactor_unit_iff (p : W.f.Factors) (u : (𝕃 p)ˣ) :
   exact forall₂_congr fun w _ ↦ HeightOneSpectrum.valuationOfNeZeroMod_mk_eq_one_iff w 2 u
 
 /-! The arithmetic input to Step 6 holds at every prime outside `S` once `a₂`, `a₄` and `a₆` are
-integral and `disc f` is a unit there. Since `disc f` can be a unit at a prime above `2`, where
-`Δ = 16 · disc f` never is, `S` need not contain the primes above `2`. -/
+integral and `disc f` is a unit there. Since `disc f` can be a unit at a prime above `2`, where,
+with integral coefficients, `Δ = 16 · disc f` never is, `S` need not contain the primes above
+`2`. -/
 
 variable {S}
   (ha₂ : ∀ v ∉ S, v.valuation K W.a₂ ≤ 1) (ha₄ : ∀ v ∉ S, v.valuation K W.a₄ ≤ 1)
