@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.One.Basic
 public import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
-public import Mathlib.Algebra.Homology.ConcreteCategory
 
 /-!
 # Naturality of the Hurewicz map in degree one
@@ -57,7 +56,7 @@ lemma map_chain₁ (g : C(I, X)) :
 lemma map_mem_cycles₁ {c : Chains X 1} (hc : c ∈ cycles₁ X) :
     ((singularChains ℤ).map f).f 1 c ∈ cycles₁ Y := by
   have hc' : ((singularChains ℤ).obj X).d 1 0 c = 0 := hc
-  exact mem_cycles₁ (by rw [← singularChains_map_f_d, hc', map_zero])
+  exact mem_cycles₁ (by rw [HomologicalComplex.Hom.comm_apply, hc', map_zero])
 
 /-- The map induced on the first homology group of the singular chain complex sends the class of
 a `1`-cycle to the class of its image. -/
@@ -66,9 +65,9 @@ lemma homologyMap_H₁AddEquivHomology_mk (c : cycles₁ X) :
         (H₁AddEquivHomology X (H₁.mk c)) =
       H₁AddEquivHomology Y
         (H₁.mk ⟨((singularChains ℤ).map f).f 1 c, map_mem_cycles₁ f c.2⟩) := by
-  let z := ((singularChains ℤ).obj X).cyclesMk (c : Chains X 1) 0 (by simp) c.2
+  let z := ((singularChains ℤ).obj X).moduleCatCyclesMk (c : Chains X 1) 0 (by simp) c.2
   have hz : (((singularChains ℤ).obj X).iCycles 1).hom z = c :=
-    ((singularChains ℤ).obj X).i_cyclesMk (c : Chains X 1) 0 (by simp) c.2
+    ((singularChains ℤ).obj X).iCycles_moduleCatCyclesMk 1 (c : Chains X 1) 0 (by simp) c.2
   have h₁ := congr($(HomologicalComplex.homologyπ_naturality ((singularChains ℤ).map f) 1).hom z)
   have h₂ := congr($(HomologicalComplex.cyclesMap_i ((singularChains ℤ).map f) 1).hom z)
   simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at h₁ h₂
