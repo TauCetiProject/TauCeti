@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Boundary.Charts
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback
+public import TauCeti.Geometry.Manifold.Measure
 public import Mathlib.Geometry.Euclidean.Volume.Measure
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 
@@ -28,17 +29,6 @@ open MeasureTheory
 open scoped Manifold
 
 namespace TauCeti
-
-variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [TopologicalSpace H] [TopologicalSpace M] [ChartedSpace H M]
-
-/-- A set is null on a manifold when its image in every extended chart is null for every Haar
-measure on the model.  This definition needs no measurable structure on the manifold itself. -/
-def IsNullSet (I : ModelWithCorners ℝ E H) [MeasurableSpace E] [hE : BorelSpace E]
-    (s : Set M) : Prop :=
-  let _ : BorelSpace E := hE
-  ∀ x : M, ∀ (μ : Measure E) [μ.IsAddHaarMeasure],
-    μ (extChartAt I x '' (s ∩ (extChartAt I x).source)) = 0
 
 variable {n : ℕ} {M : Type*} [TopologicalSpace M]
   [ChartedSpace (EuclideanHalfSpace (n + 1)) M]
@@ -63,6 +53,7 @@ theorem boundaryRestriction_apply (φ : RoughForm (𝓡∂ (n + 1)) M F j)
 /-- The boundary of a finite-dimensional half-space manifold is a chartwise null set. -/
 theorem isNullSet_boundary :
     IsNullSet (𝓡∂ (n + 1)) ((𝓡∂ (n + 1)).boundary M) := by
+  rw [isNullSet_iff]
   intro x μ hμ
   let s : Submodule ℝ (EuclideanSpace ℝ (Fin (n + 1))) := euclideanHalfSpaceBoundary n
   have hs : s ≠ ⊤ := by
