@@ -24,6 +24,27 @@ public section
 
 noncomputable section
 
+namespace MeasureTheory
+
+open scoped ENNReal
+
+variable {α E : Type*} [MeasurableSpace α] {μ : Measure α} [NormedAddCommGroup E]
+  {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- Finite-measure simple functions are in `L²` at every finite exponent `p ≥ 1`. -/
+theorem Lp.simpleFunc.memLp_two (hp : p ≠ ∞) (f : Lp.simpleFunc E p μ) :
+    MemLp (f : α → E) 2 μ := by
+  refine Lp.simpleFunc.induction (by exact (zero_lt_one.trans_le Fact.out).ne') hp ?_ ?_ f
+  · intro c s hs hμ
+    have h : MemLp (s.indicator fun _ : α => c) 2 μ :=
+      memLp_indicator_const 2 hs.nullMeasurableSet c (.inr hμ.ne)
+    exact h.ae_eq (by simpa only [Lp.simpleFunc.coe_indicatorConst] using
+      (indicatorConstLp_coeFn (p := p) (hs := hs) (hμs := hμ.ne) (c := c)).symm)
+  · intro f g hf hg _ hmf hmg
+    exact (hmf.add hmg).ae_eq (Lp.coeFn_add (f.toLp hf : Lp E p μ) (g.toLp hg)).symm
+
+end MeasureTheory
+
 namespace TauCeti
 
 open MeasureTheory
@@ -99,31 +120,18 @@ theorem lpTwoSubmodule.toL2_ae (f : lpTwoSubmodule (E := E) (p := p) (μ := μ))
   have hf := lpTwoSubmodule.memLp f
   exact hf.coeFn_toLp
 
-omit [NormedSpace ℝ E] in
-/-- Finite-measure simple functions are in `L²` at every finite exponent `p ≥ 1`. -/
-theorem memLp_two_simpleFunc (hp : p ≠ ∞) (f : Lp.simpleFunc E p μ) :
-    MemLp (f : α → E) 2 μ := by
-  refine Lp.simpleFunc.induction (by exact (zero_lt_one.trans_le Fact.out).ne') hp ?_ ?_ f
-  · intro c s hs hμ
-    have h : MemLp (s.indicator fun _ : α => c) 2 μ :=
-      memLp_indicator_const 2 hs.nullMeasurableSet c (.inr hμ.ne)
-    exact h.ae_eq (by simpa only [Lp.simpleFunc.coe_indicatorConst] using
-      (indicatorConstLp_coeFn (p := p) (hs := hs) (hμs := hμ.ne) (c := c)).symm)
-  · intro f g hf hg _ hmf hmg
-    exact (hmf.add hmg).ae_eq (Lp.coeFn_add (f.toLp hf : Lp E p μ) (g.toLp hg)).symm
-
 /-- The intersection `Lᵖ ∩ L²` is dense in `Lᵖ` when `p < ∞`. -/
 theorem dense_lpTwoSubmodule (hp : p ≠ ∞) :
     Dense (lpTwoSubmodule (E := E) (p := p) (μ := μ) : Set (Lp E p μ)) := by
   apply (Lp.simpleFunc.dense (E := E) (p := p) (μ := μ) hp).mono
   intro f hf
-  exact memLp_two_simpleFunc hp ⟨f, hf⟩
+  exact Lp.simpleFunc.memLp_two hp ⟨f, hf⟩
 
 end TauCeti
 
-namespace TauCeti
+namespace ContinuousLinearMap
 
-open MeasureTheory
+open MeasureTheory TauCeti
 open scoped ENNReal NNReal
 
 variable {α E F : Type*} [MeasurableSpace α] {μ : Measure α}
@@ -208,11 +216,11 @@ theorem strongTypeOnIntersection_ae (T : Lp E 2 μ →L[ℝ] Lp F 2 μ) (C : ℝ
     (Lp.memLp f.1).ae_eq (lpTwoSubmodule.toL2_ae f).symm
   exact (memLp_apply_of_eLpNorm_le T C hT (lpTwoSubmodule.toL2 f) hf).coeFn_toLp
 
-end TauCeti
+end ContinuousLinearMap
 
-namespace TauCeti
+namespace ContinuousLinearMap
 
-open MeasureTheory
+open MeasureTheory TauCeti
 open scoped ENNReal NNReal
 
 variable {α E F : Type*} [MeasurableSpace α] {μ : Measure α}
@@ -269,11 +277,11 @@ theorem norm_strongTypeExtension_le (T : Lp E 2 μ →L[ℝ] Lp F 2 μ) (C : ℝ
   · exact C.property
   · exact norm_strongTypeOnIntersection_le T C hT
 
-end TauCeti
+end ContinuousLinearMap
 
-namespace TauCeti
+namespace ContinuousLinearMap
 
-open MeasureTheory
+open MeasureTheory TauCeti
 open scoped ENNReal NNReal
 
 variable {α E F : Type*} [MeasurableSpace α] {μ : Measure α}
@@ -295,12 +303,7 @@ theorem strongTypeExtension_apply_of_memLp (T : Lp E 2 μ →L[ℝ] Lp F 2 μ) (
     Lp.ext (h2.coeFn_toLp.trans hf.coeFn_toLp)
   rw [show hf.toLp f = (g : Lp E p μ) from rfl,
     strongTypeExtension_apply T C hT hp g]
-  have hgp : MemLp (lpTwoSubmodule.toL2 g : α → E) p μ := by rw [hg]; exact hf
-  -- Unfold the intersection map to compare its `Lᵖ` representative with the `L²` value.
-  change ((memLp_apply_of_eLpNorm_le T C hT (lpTwoSubmodule.toL2 g) hgp).toLp
-    (T (lpTwoSubmodule.toL2 g)) : α → F) =ᵐ[μ] T f
-  simpa only [hg] using
-    (memLp_apply_of_eLpNorm_le T C hT f hf).coeFn_toLp
+  simpa only [hg] using strongTypeOnIntersection_ae T C hT g
 
 /-- A bounded operator on `Lᵖ` agreeing with the strong-type estimate on the dense intersection
 is the extension constructed above. -/
@@ -340,4 +343,4 @@ theorem strongTypeExtension_unique_of_ae (T : Lp E 2 μ →L[ℝ] Lp F 2 μ) (C 
   rw [heq, strongTypeExtension_apply T C hT hp g] at hEg
   exact Lp.ext (hSg.trans hEg.symm)
 
-end TauCeti
+end ContinuousLinearMap
