@@ -291,7 +291,17 @@ noncomputable def IsometryEquiv.restrictProdRadicalOfIsCompl (Q : QuadraticMap R
 theorem IsometryEquiv.restrictProdRadicalOfIsCompl_apply (Q : QuadraticMap R M P)
     (W : Submodule R M) (hW : IsCompl Q.radical W) (x : W × Q.radical) :
     IsometryEquiv.restrictProdRadicalOfIsCompl Q W hW x = (x.1 : M) + x.2 := by
-  rfl
+  change W.prodEquivOfIsCompl Q.radical hW.symm x = _
+  exact Submodule.coe_prodEquivOfIsCompl' (p := W) (q := Q.radical) hW.symm x
+
+/-- The inverse direct-sum isometry extracts the complement and radical projections. -/
+@[simp]
+theorem IsometryEquiv.restrictProdRadicalOfIsCompl_symm_apply (Q : QuadraticMap R M P)
+    (W : Submodule R M) (hW : IsCompl Q.radical W) (x : M) :
+    (IsometryEquiv.restrictProdRadicalOfIsCompl Q W hW).symm x =
+      (W.projectionOnto Q.radical hW.symm x, Q.radical.projectionOnto W hW x) := by
+  change (W.prodEquivOfIsCompl Q.radical hW.symm).symm x = _
+  exact Submodule.prodEquivOfIsCompl_symm_apply hW.symm x
 
 /-- Given a complement to the radical, a quadratic map is isometric to the product of the zero
 form on its radical and the descended form on the quotient. -/
@@ -305,11 +315,15 @@ noncomputable def IsometryEquiv.prodRadicalLiftOfIsCompl (Q : QuadraticMap R M P
     (IsometryEquiv.restrictProdRadicalOfIsCompl Q W hW)
 
 /-- The decomposition maps a pair to its complement representative plus its radical component. -/
+@[simp]
 theorem IsometryEquiv.prodRadicalLiftOfIsCompl_apply (Q : QuadraticMap R M P)
     (W : Submodule R M) (hW : IsCompl Q.radical W) (x : Q.radical × M ⧸ Q.radical) :
     IsometryEquiv.prodRadicalLiftOfIsCompl Q W hW x =
       (Q.radical.quotientEquivOfIsCompl W hW x.2 : M) + x.1 := by
-  rfl
+  change IsometryEquiv.restrictProdRadicalOfIsCompl Q W hW
+    ((IsometryEquiv.restrictComplementLiftRadical Q W hW).symm x.2, x.1) = _
+  rw [IsometryEquiv.restrictProdRadicalOfIsCompl_apply,
+    IsometryEquiv.restrictComplementLiftRadical_symm_apply]
 
 /-- The decomposition sends a radical vector and zero quotient class to that vector. -/
 @[simp]
@@ -337,6 +351,20 @@ theorem IsometryEquiv.prodRadicalLiftOfIsCompl_symm_apply_snd (Q : QuadraticMap 
       Submodule.Quotient.mk x := by
   simpa using (IsometryEquiv.prodRadicalLiftOfIsCompl_mkQ_apply Q W hW
     ((IsometryEquiv.prodRadicalLiftOfIsCompl Q W hW).symm x)).symm
+
+/-- The inverse decomposition pairs the radical projection with the quotient class. -/
+@[simp]
+theorem IsometryEquiv.prodRadicalLiftOfIsCompl_symm_apply (Q : QuadraticMap R M P)
+    (W : Submodule R M) (hW : IsCompl Q.radical W) (x : M) :
+    (IsometryEquiv.prodRadicalLiftOfIsCompl Q W hW).symm x =
+      (Q.radical.projectionOnto W hW x, Submodule.Quotient.mk x) := by
+  apply Prod.ext
+  · have h := congrArg (Q.radical.projectionOnto W hW)
+      ((IsometryEquiv.prodRadicalLiftOfIsCompl Q W hW).apply_symm_apply x)
+    simpa only [IsometryEquiv.prodRadicalLiftOfIsCompl_apply, map_add, zero_add,
+      Submodule.projectionOnto_apply_right hW,
+      Submodule.projectionOnto_apply_left hW] using h
+  · exact IsometryEquiv.prodRadicalLiftOfIsCompl_symm_apply_snd Q W hW x
 
 end QuotientByRadical
 
@@ -374,6 +402,16 @@ theorem IsometryEquiv.prodRadicalLift_symm_apply_snd {P : Type*} [AddCommGroup P
     ((IsometryEquiv.prodRadicalLift Q).symm x).2 = Submodule.Quotient.mk x := by
   simpa using (IsometryEquiv.prodRadicalLift_mkQ_apply Q
     ((IsometryEquiv.prodRadicalLift Q).symm x)).symm
+
+/-- The inverse field-level decomposition pairs the radical projection with the quotient class. -/
+@[simp]
+theorem IsometryEquiv.prodRadicalLift_symm_apply {P : Type*} [AddCommGroup P] [Module K P]
+    (Q : QuadraticMap K V P) (x : V) :
+    (IsometryEquiv.prodRadicalLift Q).symm x =
+      ((Q.radical.projectionOnto (Submodule.exists_isCompl Q.radical).choose
+        (Submodule.exists_isCompl Q.radical).choose_spec x), Submodule.Quotient.mk x) := by
+  simp only [IsometryEquiv.prodRadicalLift,
+    IsometryEquiv.prodRadicalLiftOfIsCompl_symm_apply]
 
 end QuotientByRadical
 
