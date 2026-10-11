@@ -19,9 +19,7 @@ is passed as a map on the whole square, of which only the values on `J` are used
 This is the form in which families of paths with prescribed end points are lifted: a homotopy of
 paths whose end points stay fixed in `B` lifts to a homotopy of paths whose end points follow
 prescribed lifts, for instance the constant lifts at a base point for loops
-(`TauCeti.IsHurewiczFibration.loopMap`).  It follows from the absolute homotopy lifting property
-through an explicit deformation of the square onto the open box (`TauCeti.OpenBox.deform`), so no
-cofibration theory is needed.
+(`TauCeti.IsHurewiczFibration.loopMap`).  No cofibration theory is needed.
 
 ## Main results
 
@@ -133,8 +131,7 @@ theorem projT_eq_zero_or (u t : I) :
 /-- The deformation `k(s, x) = r(x) + min (φ x, s) (P - x)` of the square, clamped to the square,
 where `P = (1/2, 2)` lies above the square and `r(x) = x + φ(x) (x - P)` is the radial projection of
 `x` from `P` onto the open box: at time `0` it is `r(x)`, at time `φ x` it is `x`, and it is
-constant at the points of the open box.  Lifting a homotopy composed with it from the lift on the
-open box, and evaluating at time `φ x`, gives the relative lift. -/
+constant at the points of the open box. -/
 noncomputable def deform (s : I) (x : I × I) : I × I :=
   (projIcc 0 1 zero_le_one (projU x.1 x.2 + min (time x.1 x.2) s * (1 / 2 - x.1)),
     projIcc 0 1 zero_le_one (projT x.1 x.2 + min (time x.1 x.2) s * (2 - x.2)))
@@ -190,6 +187,7 @@ theorem IsHurewiczFibration.exists_lift_openBox (hp : IsHurewiczFibration.{w} p)
     (hg : ∀ a (x : I × I), x.2 = 0 ∨ x.1 = 0 ∨ x.1 = 1 → p (g (a, x)) = H (a, x)) :
     ∃ G : C(A × (I × I), E), p ∘ G = H ∧
       ∀ a (x : I × I), x.2 = 0 ∨ x.1 = 0 ∨ x.1 = 1 → G (a, x) = g (a, x) := by
+  -- Lift `H ∘ deform` from `g ∘ deform 0` and evaluate the lift at time `time x`.
   let K : C(I × (A × (I × I)), B) :=
     ⟨fun y ↦ H (y.2.1, deform y.1 y.2.2),
       H.continuous.comp ((continuous_fst.comp continuous_snd).prodMk

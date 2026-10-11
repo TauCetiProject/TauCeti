@@ -14,9 +14,9 @@ public import TauCeti.Topology.Homotopy.OpenBoxLifting
 For a Hurewicz fibration `p : E → B` and a point `e : E`, the induced map
 `Ω E e → Ω B (p e)`, `γ ↦ p ∘ γ`, on the fixed-interval loop spaces `Ω X x = Path x x` (with the
 compact-open topology) is again a Hurewicz fibration (`TauCeti.IsHurewiczFibration.loopMap`), and
-so is the induced map on double loop spaces (`TauCeti.IsHurewiczFibration.loopMap_loopMap`).  A
-homotopy of loops is a map from a square whose two sides are at the base point, so a lift is a
-relative lift for the open box (`TauCeti.IsHurewiczFibration.exists_lift_openBox`).
+so is the induced map on double loop spaces (`TauCeti.IsHurewiczFibration.loopMap_loopMap`).  It
+is the case of loops of the relative lifting property for the open box
+(`TauCeti.IsHurewiczFibration.exists_lift_openBox`).
 
 The statement is for the fixed-interval loop space.  The analogous statement for Moore loops,
 through the comparison of Moore loops with fixed-interval loops, is not proved here: lifting a
