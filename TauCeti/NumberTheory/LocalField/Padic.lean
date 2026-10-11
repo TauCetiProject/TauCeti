@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Padics.PadicIntegers
+public import Mathlib.NumberTheory.Padics.ProperSpace
+public import Mathlib.RingTheory.AdicCompletion.Topology
+public import Mathlib.RingTheory.LocalRing.RingHom.Basic
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import Mathlib.NumberTheory.Padics.LocalField
 public import TauCeti.NumberTheory.LocalField.Uniformizer
@@ -114,6 +117,33 @@ the underlying `p`-adic numbers. -/
 theorem coe_integerRingEquiv_symm_apply (x : ℤ_[p]) :
     (((integerRingEquiv p).symm x : 𝒪[ℚ_[p]]) : ℚ_[p]) = x :=
   (rfl)
+
+/-- The integer ring of `ℚ_[p]` is adically complete, via its canonical identification with
+`ℤ_[p]`. -/
+instance integerRingIsAdicComplete :
+    IsAdicComplete (IsLocalRing.maximalIdeal (𝒪[ℚ_[p]])) (𝒪[ℚ_[p]]) := by
+  have h := (IsAdicComplete.congr_ringEquiv
+    (I := IsLocalRing.maximalIdeal ℤ_[p]) (e := (integerRingEquiv p).symm)).2
+      (inferInstance : IsAdicComplete (IsLocalRing.maximalIdeal ℤ_[p]) ℤ_[p])
+  simpa only [IsLocalRing.map_ringEquiv_maximalIdeal] using h
+
+/-- The integer ring of `ℚ_[p]` is compact, since it is identified with `ℤ_[p]`. -/
+instance integerRingCompactSpace : CompactSpace 𝒪[ℚ_[p]] := by
+  have hcoe : Continuous (fun x : 𝒪[ℚ_[p]] =>
+      ((integerRingEquiv p x : ℤ_[p]) : ℚ_[p])) := by
+    rw [show (fun x : 𝒪[ℚ_[p]] => ((integerRingEquiv p x : ℤ_[p]) : ℚ_[p])) =
+      (fun x : 𝒪[ℚ_[p]] => (x : ℚ_[p])) from funext (coe_integerRingEquiv_apply p)]
+    exact continuous_subtype_val
+  have hcoe' : Continuous (fun x : ℤ_[p] =>
+      (((integerRingEquiv p).symm x : 𝒪[ℚ_[p]]) : ℚ_[p])) := by
+    rw [show (fun x : ℤ_[p] => (((integerRingEquiv p).symm x : 𝒪[ℚ_[p]]) : ℚ_[p])) =
+      (fun x : ℤ_[p] => (x : ℚ_[p])) from funext (coe_integerRingEquiv_symm_apply p)]
+    exact continuous_subtype_val
+  let e : 𝒪[ℚ_[p]] ≃ₜ ℤ_[p] :=
+    { toEquiv := (integerRingEquiv p).toEquiv
+      continuous_toFun := continuous_induced_rng.2 hcoe
+      continuous_invFun := continuous_induced_rng.2 hcoe' }
+  exact e.symm.compactSpace
 
 /-- The residue field of `ℚ_[p]` has cardinality `p`. -/
 @[simp high] -- Compute the cardinality before `Nat.card_eq_fintype_card` changes its form.
