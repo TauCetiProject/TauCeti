@@ -150,6 +150,8 @@ structure DescentDatum where
 
 namespace DescentDatum
 
+attribute [simp] counit_coaction
+
 variable {R S B} (D : DescentDatum R S B)
 
 /-- The coaction of a descent datum is injective, being a section of the multiplication map. -/

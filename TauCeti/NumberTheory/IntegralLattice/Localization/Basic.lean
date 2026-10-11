@@ -58,6 +58,8 @@ is.
   form is the restriction of the completed rational form.
 * `TauCeti.IntegralLattice.toMatrix_localIntegralForm`: the Gram matrix of `L_p` is the image of
   the Gram matrix of `L`.
+* `TauCeti.IntegralLattice.det_toMatrix_localIntegralForm`: its determinant in any base-changed
+  carrier basis is the image of the lattice's signed determinant.
 * `TauCeti.IntegralLattice.nondegenerate_localIntegralForm_iff` and
   `TauCeti.IntegralLattice.nondegenerate_completedRationalForm_iff`: both local forms are
   nondegenerate exactly when the rational form of `L` is.
@@ -206,6 +208,13 @@ theorem toMatrix_localIntegralForm (e : Basis ι ℤ L) :
       (L.gramMatrix e).map (Int.cast : ℤ → ℤ_[p]) := by
   rw [localIntegralForm, bilinForm_toMatrix_baseChange, gramMatrix_eq_toMatrix,
     algebraMap_int_eq, Int.coe_castRingHom]
+
+/-- The determinant of the localized integral form in any base-changed carrier basis is the
+image of the lattice's basis-independent signed determinant. -/
+theorem det_toMatrix_localIntegralForm (e : Basis ι ℤ L) :
+    ((L.localIntegralForm p).toMatrix (e.baseChange ℤ_[p])).det =
+      (L.determinant : ℤ_[p]) := by
+  rw [toMatrix_localIntegralForm, L.determinant_eq_gramDet e, gramDet_def, Int.cast_det]
 
 end Gram
 
