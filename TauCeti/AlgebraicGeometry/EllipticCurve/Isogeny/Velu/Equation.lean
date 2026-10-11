@@ -27,8 +27,8 @@ the quotient curve `W / Φ`: its function field, embedded in `F(W)` by sending i
 characteristic divides `#Φ`.
 
 The coefficients `Aᵢ` are characterized here but not computed; Vélu's explicit formulas express
-them through `W` and the coordinates of the points of `Φ`. Nonsingularity of `veluCurve W Φ` is
-not proved here.
+them through `W` and the coordinates of the points of `Φ`. The isogeny `W → veluCurve W Φ`, and
+nonsingularity of `veluCurve W Φ`, are in `Isogeny/Velu/Isogeny.lean`.
 
 ## Main definitions
 

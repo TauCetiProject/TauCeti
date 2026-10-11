@@ -11,6 +11,7 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.CoordinateRing.VariableCha
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Eval
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Chart
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Points
+import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.TautologicalPoint
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.ZeroSection
 import TauCeti.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
 
@@ -359,54 +360,11 @@ private theorem exists_isUnit_zeroFormalPoint_comp_eq (e : W.projModel ≅ W'.pr
 private theorem isUnit_vecCons_two {A : Type*} [CommRing A] (q v : A) : IsUnit (![q, v, 1] 2) := by
   simp
 
--- The coordinate functions `(x, y, 1)` over the affine coordinate ring solve the Weierstrass
--- equation.
-private theorem equation_tautologicalPoint :
-    (W.toProjective.map (algebraMap R W.toAffine.CoordinateRing)).Equation
-      ![AdjoinRoot.of W.toAffine.polynomial Polynomial.X, AdjoinRoot.root W.toAffine.polynomial,
-        1] :=
-  (Projective.equation_some _ _).mpr (Affine.CoordinateRing.equation_X_root W.toAffine)
-
-variable (W) in
--- The tautological point `[x : y : 1]` of the projective model, with values in the affine
--- coordinate ring.
-private noncomputable def tautologicalPoint : Spec (.of W.toAffine.CoordinateRing) ⟶ W.projModel :=
-  W.projModelPoint (algebraMap R _) equation_tautologicalPoint (isUnit_vecCons_two _ _)
-
--- The chart `D₊(Z)` factors through the tautological point.
-private theorem exists_SpecMap_comp_tautologicalPoint_eq_chartι :
-    ∃ k : W.toAffine.CoordinateRing →ₐ[R] W.toProjective.ChartRing 2,
-      Spec.map (CommRingCat.ofHom k.toRingHom) ≫ W.tautologicalPoint = W.chartι 2 := by
-  -- the universal point of the chart is `(X / Z, Y / Z, 1)`
-  have hP : W.toProjective.chartPoint 2 = ![W.toProjective.chartPoint 2 0,
-      W.toProjective.chartPoint 2 1, 1] := funext fun k ↦ by
-    fin_cases k <;> simp
-  have hE := W.toProjective.equation_chartPoint 2
-  rw [hP] at hE
-  refine ⟨Affine.CoordinateRing.evalAlgHom ((Projective.equation_some _ _).mp hE), ?_⟩
-  rw [tautologicalPoint, SpecMap_projModelPoint, chartι_eq_projModelPoint,
-    projModelPoint_eq_projModelPoint_iff]
-  refine ⟨RingHom.ext (Affine.CoordinateRing.evalAlgHom _).commutes, 1, funext fun k ↦ ?_⟩
-  fin_cases k <;> simp
-
--- Expanded in Laurent series at the point at infinity, the tautological point `[x : y : 1]` is
--- the formal point `[-z : 1 : -w(z)]`: its coordinates are `y` times those of the formal point.
-private theorem SpecMap_laurentExpansion_tautologicalPoint :
-    Spec.map (CommRingCat.ofHom (W.laurentExpansion : W.toAffine.CoordinateRing →+* R⸨X⸩)) ≫
-        W.tautologicalPoint =
-      Spec.map (CommRingCat.ofHom (HahnSeries.ofPowerSeries ℤ R)) ≫ W.zeroFormalPoint := by
-  have hy := W.laurentExpansion_root_mul_formalW
-  have hx := W.laurentExpansion_of_X_eq_neg_X_mul_laurentExpansion_root
-  rw [tautologicalPoint, zeroFormalPoint, SpecMap_projModelPoint, SpecMap_projModelPoint,
-    projModelPoint_eq_projModelPoint_iff]
-  refine ⟨(W.laurentExpansion.comp_algebraMap).trans rfl,
-    (IsUnit.of_mul_eq_one (-HahnSeries.ofPowerSeries ℤ R (formalW W))
-      (by rw [mul_neg, hy, neg_neg])).unit, funext fun k ↦ ?_⟩
-  fin_cases k
-  · simp [-laurentExpansion_of_X, -laurentExpansion_root, Units.smul_def, hx]
-    ring
-  · simp
-  · simp [-laurentExpansion_root, Units.smul_def, hy]
+-- The formal point `[z : -1 : w(z)]` of `FormalPoint.lean` is the point `[-z : 1 : -w(z)]`.
+private theorem projModelFormalPoint_eq_zeroFormalPoint :
+    W.projModelFormalPoint = W.zeroFormalPoint := by
+  rw [projModelFormalPoint_def, zeroFormalPoint, projModelPoint_eq_projModelPoint_iff]
+  exact ⟨rfl, -1, funext fun k ↦ by fin_cases k <;> simp⟩
 
 open HahnSeries in
 -- Under a pointed isomorphism over the base, the image `[X' : Y' : 1]` of the tautological point
@@ -440,7 +398,8 @@ private theorem exists_laurentExpansion_eq_of_iso (e : W.projModel ≅ W'.projMo
   -- comparing the two expansions of the image of the tautological point
   have key := congrArg (Spec.map (CommRingCat.ofHom
     (W.laurentExpansion : W.toAffine.CoordinateRing →+* R⸨X⸩)) ≫ ·) hτ
-  rw [← Category.assoc, SpecMap_laurentExpansion_tautologicalPoint, Category.assoc, hfc,
+  rw [← Category.assoc, SpecMap_laurentExpansion_tautologicalPoint,
+    projModelFormalPoint_eq_zeroFormalPoint, Category.assoc, hfc,
     SpecMap_substAlgHom_zeroFormalPoint, SpecMap_projModelPoint, SpecMap_projModelPoint,
     projModelPoint_eq_projModelPoint_iff] at key
   obtain ⟨-, v, hv⟩ := key
@@ -490,6 +449,7 @@ theorem existsUnique_eq_eqToHom_comp_projModelVariableChangeIso_hom
   obtain ⟨Q, hQ, hQ2, hτ⟩ := exists_projModelPoint_comp_eq_projModelPoint h0
     (fun a b hab ↦ e.hom.homeomorph.injective hab) he equation_tautologicalPoint
     (isUnit_vecCons_two _ _)
+  rw [← tautologicalPoint_def] at hτ
   obtain ⟨F, G, hF, hX', hY'⟩ := exists_laurentExpansion_eq_of_iso e he h0 hQ hQ2 hτ
   -- `X'` has a pole of order `2` and `Y'` a pole of order at most `3` at infinity
   have hcoeff (H : R⟦X⟧) {k m : ℤ} (hm : m < k) :
@@ -519,7 +479,7 @@ theorem existsUnique_eq_eqToHom_comp_projModelVariableChangeIso_hom
   · rw [he, Category.assoc, projModelVariableChangeIso_hom_projModelOver]
     subst hC
     simp
-  · rw [← hk, Category.assoc, Category.assoc, tautologicalPoint, hτ,
+  · rw [← hk, Category.assoc, Category.assoc, hτ, tautologicalPoint_def,
       projModelPoint_eqToHom_assoc hC.symm,
       projModelPoint_projModelVariableChangeIso_hom (j := 2) _
         (by rw [VariableChange.toMatrix_mulVec_two]; exact isUnit_vecCons_two _ _)]

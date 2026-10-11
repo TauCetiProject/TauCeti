@@ -23,14 +23,22 @@ all rational points identifies the derived defining ideal with the vanishing ide
 abstract commutator subgroup. Thus the all-points comparison is a specialization of the
 subgroup-closure comparison.
 
-If the rational points of the ambient group have finite derived length, then commutators of
-closures lie in the closure of the commutator
-(`TauCeti.HopfIdeal.commutator_quotientPointsSubgroup_vanishingIdeal_le`), so the rational points
-of the derived subgroup have strictly smaller derived length. This is the measure the Lie--Kolchin
-induction decreases.
+Commutators of closures lie in the closure of the commutator
+(`TauCeti.HopfIdeal.commutator_quotientPointsSubgroup_vanishingIdeal_le`). For a reduced
+finite-type affine group over an algebraically closed field, where the derived subgroup is the
+closure of the commutator subgroup, it follows that if the rational points have derived length at
+most `n + 1`, then those of the derived subgroup have derived length at most `n`. This bound is
+the measure the Lie--Kolchin induction decreases.
 
 ## Main declarations
 
+* `TauCeti.CommHopfAlgCat.
+    comapOfSurjective_derivedDefiningIdeal_quotient_vanishingIdeal_eq_vanishingIdeal_commutator`:
+  over any field, the derived subgroup of the reduced closure of a rational-point subgroup `S` is
+  the reduced closure of `⁅S, S⁆`.
+* `TauCeti.CommHopfAlgCat.derivedDefiningIdeal_eq_vanishingIdeal_commutator_of_dense_points`: if
+  the rational points are schematically dense, the derived subgroup is the closure of their
+  abstract commutator subgroup.
 * `TauCeti.CommHopfAlgCat.derivedDefiningIdeal_eq_vanishingIdeal_commutator`: the derived
   subgroup is the closure of the abstract commutator subgroup of rational points.
 * `TauCeti.CommHopfAlgCat.derivedSeries_points_derived_eq_bot`: if the rational points have
@@ -150,10 +158,10 @@ element of the abstract commutator subgroup of rational points. -/
       ∀ g : commutator (WithConv (H →ₐ[k] k)), g.val.ofConv x = 0 := by
   rw [derivedDefiningIdeal_eq_vanishingIdeal_commutator, HopfIdeal.mem_vanishingIdeal]
 
-/-- **The derived subgroup has strictly shorter derived length.** If the rational points of a
-reduced finite-type affine group over an algebraically closed field have derived length at most
-`n + 1`, then the rational points of its scheme-theoretic derived subgroup have derived length at
-most `n`. -/
+/-- **Passing to the derived subgroup lowers a derived-length bound by one.** If the rational
+points of a reduced finite-type affine group over an algebraically closed field have derived length
+at most `n + 1`, then the rational points of its scheme-theoretic derived subgroup have derived
+length at most `n`. -/
 theorem derivedSeries_points_derived_eq_bot {n : ℕ}
     (hn : derivedSeries (WithConv (H →ₐ[k] k)) (n + 1) = ⊥) :
     derivedSeries (WithConv (quotient (_root_.CommHopfAlgCat.of k H)
