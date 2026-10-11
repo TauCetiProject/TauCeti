@@ -104,7 +104,6 @@ variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A] [Module.Fi
 private theorem finrank_pos_of_not_isZero
     (M : (gradedFiniteProjectiveModules 𝒜).FullSubcategory) (hM : ¬IsZero M) :
     0 < Module.finrank k M.obj := by
-  have : Module.Finite k M.obj := Module.Finite.trans A M.obj
   by_contra h
   have : Subsingleton M.obj := (Module.finrank_zero_iff (R := k)).mp (by omega)
   exact hM <| (IsZero.iff_id_eq_zero M).2 <| ObjectProperty.hom_ext _ <|
@@ -113,8 +112,6 @@ private theorem finrank_pos_of_not_isZero
 private theorem finrank_eq_add_of_iso_biprod
     (M Y Z : (gradedFiniteProjectiveModules 𝒜).FullSubcategory) (e : M ≅ Y ⊞ Z) :
     Module.finrank k M.obj = Module.finrank k Y.obj + Module.finrank k Z.obj := by
-  have : Module.Finite k Y.obj := Module.Finite.trans A Y.obj
-  have : Module.Finite k Z.obj := Module.Finite.trans A Z.obj
   -- Forgetting the grading sends this biproduct decomposition to a product of modules.
   let F := (gradedFiniteProjectiveModules 𝒜).ι ⋙ GradedModuleCat.toModuleCat
   let : PreservesBinaryBiproduct Y Z F :=
@@ -218,10 +215,8 @@ variable [Module.Finite k A]
 /-- **Graded maps between finite graded projectives over a finite-dimensional algebra form a
 finite-dimensional space**, as graded maps between finite-dimensional graded modules. -/
 instance (X Y : (gradedFiniteProjectiveModules 𝒜).FullSubcategory) :
-    Module.Finite k (X ⟶ Y) := by
-  have : Module.Finite k X.obj := Module.Finite.trans A X.obj
-  have : Module.Finite k Y.obj := Module.Finite.trans A Y.obj
-  exact Module.Finite.equiv InducedCategory.homLinearEquiv.symm
+    Module.Finite k (X ⟶ Y) :=
+  Module.Finite.equiv InducedCategory.homLinearEquiv.symm
 
 /-- An indecomposable finite graded projective has a local endomorphism ring. -/
 private theorem isLocalRing_end {X : (gradedFiniteProjectiveModules 𝒜).FullSubcategory}
@@ -234,7 +229,6 @@ private theorem isEmpty_iso_shiftObj (X : (gradedFiniteProjectiveModules 𝒜).F
     (hX : ¬IsZero X) {d : ℤ} (hd : d ≠ 0) :
     IsEmpty (X ≅ ⟨X.obj.shiftObj d, gradedFiniteProjectiveModules_shiftObj X.property d⟩) := by
   refine ⟨fun e ↦ hd ?_⟩
-  have : Module.Finite k X.obj := Module.Finite.trans A X.obj
   have : Nontrivial X.obj := not_subsingleton_iff_nontrivial.1 fun _ ↦ hX <|
     (IsZero.iff_id_eq_zero X).2 <| ObjectProperty.hom_ext _ <|
       GradedModuleCat.hom_ext (LinearMap.ext fun _ ↦ Subsingleton.elim _ _)

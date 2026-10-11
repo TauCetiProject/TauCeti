@@ -139,6 +139,12 @@ instance (M : (gradedFiniteProjectiveModules 𝒜).FullSubcategory) : Module.Fin
 instance (M : (gradedFiniteProjectiveModules 𝒜).FullSubcategory) : Module.Projective A M.obj :=
   M.property.2
 
+/-- Over an algebra finite as a module over its base ring, a finite graded projective is finite
+over the base ring. -/
+instance [Module.Finite k A] (M : (gradedFiniteProjectiveModules 𝒜).FullSubcategory) :
+    Module.Finite k M.obj :=
+  Module.Finite.trans A M.obj
+
 instance : (gradedFiniteModules 𝒜).IsClosedUnderIsomorphisms where
   of_iso {M N} e hM := by
     let _ : Module.Finite A ↑((GradedModuleCat.toModuleCat (𝒜 := 𝒜)).obj M) := hM
