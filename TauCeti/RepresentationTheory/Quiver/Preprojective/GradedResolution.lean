@@ -361,6 +361,13 @@ theorem preprojectiveGradedKoszulResolution_d
     (preprojectiveGradedKoszulResolution k hQ v).d n =
       (preprojectiveGradedKoszulDifferential k v n).hom := (rfl)
 
+/-- The augmentation of the resolution is the vertex augmentation. -/
+@[simp]
+theorem preprojectiveGradedKoszulResolution_π
+    (hQ : ∀ u : Q, ∃ w, Nonempty (u ⟶ w)) (v : Q) :
+    (preprojectiveGradedKoszulResolution k hQ v).π = preprojectiveVertexAugmentation k v :=
+  preprojectiveGradedVertexAugmentation_hom k v
+
 /-- The graded Koszul resolution is linear: its term in homological degree `n` is generated
 in internal degree `n`. The terms beyond degree two are zero. -/
 theorem isLinear_preprojectiveGradedKoszulResolution

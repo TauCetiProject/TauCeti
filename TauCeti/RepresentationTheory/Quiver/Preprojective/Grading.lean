@@ -326,16 +326,8 @@ when using integer-indexed graded algebra or graded module constructions. -/
 @[instance_reducible]
 noncomputable def preprojectiveIntegerGradedAlgebra :
     GradedAlgebra (preprojectiveIntegerGrade k (Q := Q)) := by
-  letI : SetLike.GradedMonoid (preprojectiveIntegerGrade k (Q := Q)) := {
-    one_mem := by
-      rw [← Nat.cast_zero, preprojectiveIntegerGrade_natCast]
-      simpa only [map_one] using
-        preprojectiveMk_mem_preprojectiveGrade k Q (SetLike.one_mem_graded _)
-    mul_mem := fun _ _ _ _ hx hy => Graded.mul_mem_extendByZero
-      (fun hx hy => mul_mem_preprojectiveGrade k Q hx hy) hx hy }
-  have hi : DirectSum.IsInternal (preprojectiveIntegerGrade k (Q := Q)) :=
-    Graded.isInternal_extendByZero (isInternal_preprojectiveGrade k Q)
-  exact hi.gradedAlgebra
+  letI := preprojectiveGradedAlgebra k Q
+  exact Graded.gradedAlgebraExtendByZero (preprojectiveGrade k Q)
 
 attribute [local instance] preprojectiveIntegerGradedAlgebra
 
