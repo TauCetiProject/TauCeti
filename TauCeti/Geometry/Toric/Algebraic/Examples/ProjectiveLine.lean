@@ -124,12 +124,10 @@ theorem mem_projectiveLineFan_cones (σ : PointedCone ℝ (Fin 1 → ℝ)) :
       σ.IsFaceOf affineRayCone ∨ σ.IsFaceOf negativeRayCone := Iff.rfl
 
 /-- The positive affine-ray chart belongs to the projective-line fan. -/
-@[simp]
 theorem affineRayCone_mem_projectiveLineFan : affineRayCone ∈ projectiveLineFan.cones :=
   Or.inl (PointedCone.IsFaceOf.refl _)
 
 /-- The negative affine-ray chart belongs to the projective-line fan. -/
-@[simp]
 theorem negativeRayCone_mem_projectiveLineFan : negativeRayCone ∈ projectiveLineFan.cones :=
   Or.inr (PointedCone.IsFaceOf.refl _)
 
