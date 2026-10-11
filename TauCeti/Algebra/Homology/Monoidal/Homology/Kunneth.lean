@@ -278,7 +278,7 @@ variable {R : Type u} [CommRing R] (K L : ChainComplex (ModuleCat.{u} R) ℕ)
 
 /-- The automorphism of the graded object `H(K)` which is multiplication by the sign
 `ε(p) = (-1)ᵖ` in degree `p`. -/
-private abbrev homologySign : (fun p ↦ K.homology p) ⟶ (fun p ↦ K.homology p) :=
+abbrev homologySign : (fun p ↦ K.homology p) ⟶ (fun p ↦ K.homology p) :=
   fun p ↦ ((ComplexShape.down ℕ).ε p : ℤ) • 𝟙 (K.homology p)
 
 /-- On the summand `Hₚ(K) ⊗ H_{q + 1}(L / Z(L))`, the connecting morphism of
@@ -305,8 +305,7 @@ lemma homologyKunneth_comp_δ
       (GradedObject.Monoidal.tensorObjSuccIso (fun p ↦ K.homology p)
           (fun q ↦ L.cyclesComplexShortComplex.X₃.homology q)
           L.isZero_homology_cyclesComplexShortComplex_X₃_zero m).inv ≫
-        GradedObject.Monoidal.tensorHom
-          (fun p ↦ ((ComplexShape.down ℕ).ε p : ℤ) • 𝟙 (K.homology p))
+        GradedObject.Monoidal.tensorHom (homologySign K)
           (fun q ↦ L.cyclesComplexShortComplex_shortExact.δ (q + 1) q (by simp)) m ≫
         homologyKunneth K L.cyclesComplexShortComplex.X₁ m := by
   refine GradedObject.Monoidal.tensorObj_ext _ _ fun p q h ↦ ?_
@@ -409,9 +408,7 @@ theorem isIso_homologyKunneth_of_d_eq_zero_of_flat (n : ℕ) : IsIso (homologyKu
       L.cyclesComplexShortComplex_X₃_d
     rw [← cancel_epi (homologyKunneth K L.cyclesComplexShortComplex.X₃ (n + 1)),
       reassoc_of% (homologyKunneth_comp_δ (shortExact_tensorLeft_cyclesComplexShortComplex K L) n)]
-    have h₀ := tensorHom_δ_comp_tensorHom K L n
-    dsimp only [homologySign] at h₀
-    simp only [IsIso.hom_inv_id_assoc, T, h₀, comp_zero]
+    simp [T, tensorHom_δ_comp_tensorHom]
   let ψ : (tensorObj K L.cyclesComplexShortComplex.X₂).homology n ⟶
       GradedObject.Monoidal.tensorObj (fun p ↦ K.homology p)
         (fun q ↦ L.cyclesComplexShortComplex.X₂.homology q) n :=

@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Braiding
-public import TauCeti.Algebra.Homology.PrincipalIdealRing
 public import TauCeti.CategoryTheory.Monoidal.Tor
 
 /-!
@@ -40,10 +39,12 @@ the projective presentations
 
 (`HomologicalComplex.homologyPresentation`).  By right exactness the cokernel of such a map is
 `Hₚ(K) ⊗ H_q(L)`, which makes the Künneth map of `K` and `L` a monomorphism
-(`HomologicalComplex.mono_homologyKunneth`).  Its kernel is `Tor₁(Hₚ(K), H_q(L))`
-(`CategoryTheory.ShortComplex.ShortExact.torOneIsoKernel`), and these kernels receive the map
-`HomologicalComplex.homologyToTor` induced by `L ⟶ L / Z(L)`.  Sums over the finitely many pairs
-`(p, q)` preserve these exact sequences (`CategoryTheory.GradedObject.exact_mapMap`).
+(`HomologicalComplex.mono_homologyKunneth`).  The kernel of each tensorized presentation map
+`Hₚ(K) ⊗ H_{q+1}(L / Z(L)) ⟶ Hₚ(K) ⊗ H_q(Z(L))` is `Tor₁(Hₚ(K), H_q(L))`
+(`CategoryTheory.ShortComplex.ShortExact.torOneIsoKernel`).  The map
+`Hₘ₊₁(K ⊗ L) ⟶ ⨁ Hₚ(K) ⊗ H_{q+1}(L / Z(L))` induced by `L ⟶ L / Z(L)` factors through the direct
+sum of these kernels, which defines `HomologicalComplex.homologyToTor`.  Sums over the finitely
+many pairs `(p, q)` preserve these exact sequences (`CategoryTheory.GradedObject.exact_mapMap`).
 
 ## Main definitions and results
 
@@ -193,8 +194,7 @@ private abbrev succIso (m : ℕ) :=
 
 /-- Multiplication by the sign `ε(p) = (-1)ᵖ` on the summand `Hₚ(K) ⊗ H_{q+1}(L / Z(L))`. -/
 private abbrev signHom (m : ℕ) :=
-  GradedObject.Monoidal.tensorHom
-    (fun p ↦ ((ComplexShape.down ℕ).ε p : ℤ) • 𝟙 (K.homology p))
+  GradedObject.Monoidal.tensorHom (homologySign K)
     (𝟙 (fun q ↦ L.cyclesComplexShortComplex.X₃.homology (q + 1))) m
 
 private lemma signHom_comp_signHom (m : ℕ) : signHom K L m ≫ signHom K L m = 𝟙 _ := by

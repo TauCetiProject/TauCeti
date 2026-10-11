@@ -17,7 +17,7 @@ product `x ⊗ y` of cycles of degrees `p` and `q` to `(-1)^(p * q) • y ⊗ x`
 sends the cross product `x × y` to `(-1)^(p * q) • y × x`
 (`TauCeti.NatChainComplex.homologyCross_comp_homologyMap_koszulBraidingHom`).
 
-In a symmetric category, the signed interchange of the summands `Hₚ(K) ⊗ H_q(L)` is an
+In a braided category, the signed interchange of the summands `Hₚ(K) ⊗ H_q(L)` is an
 isomorphism of the sources of the Künneth maps, so the Künneth map of `K` and `L` is an
 isomorphism exactly when that of `L` and `K` is
 (`TauCeti.NatChainComplex.isIso_homologyKunneth_comm`).
@@ -100,7 +100,7 @@ end Braided
 
 section Kunneth
 
-variable [SymmetricCategory C]
+variable [BraidedCategory C]
 
 variable (n : ℕ) [∀ p, K.HasHomology p] [∀ q, L.HasHomology q]
   [(tensorObj K L).HasHomology n] [(tensorObj L K).HasHomology n]
@@ -115,7 +115,7 @@ variable (n : ℕ) [∀ p, K.HasHomology p] [∀ q, L.HasHomology q]
   [GradedObject.HasTensor (fun p ↦ K.homology p) (fun q ↦ L.homology q)]
   [GradedObject.HasTensor (fun q ↦ L.homology q) (fun p ↦ K.homology p)]
 
-/-- **The Künneth map is symmetric**: in a symmetric category, the Künneth map of `K` and `L`
+/-- **The Künneth map is symmetric**: in a braided category, the Künneth map of `K` and `L`
 is an isomorphism exactly when that of `L` and `K` is, since Koszul interchange identifies them. -/
 theorem isIso_homologyKunneth_comm :
     IsIso (homologyKunneth K L n) ↔ IsIso (homologyKunneth L K n) := by
@@ -125,20 +125,33 @@ theorem isIso_homologyKunneth_comm :
       GradedObject.Monoidal.tensorObj X Y n ⟶ GradedObject.Monoidal.tensorObj Y X n :=
     GradedObject.Monoidal.tensorObjDesc fun p q h ↦ ((-1 : ℤ) ^ (p * q)) •
       ((β_ (X p) (Y q)).hom ≫ GradedObject.Monoidal.ιTensorObj Y X q p n (by omega))
-  have hσ (X Y : GradedObject ℕ C) [GradedObject.HasTensor X Y] [GradedObject.HasTensor Y X] :
-      σ X Y ≫ σ Y X = 𝟙 _ := by
+  -- its inverse, the signed inverse interchange
+  let τ (X Y : GradedObject ℕ C) [GradedObject.HasTensor X Y] [GradedObject.HasTensor Y X] :
+      GradedObject.Monoidal.tensorObj Y X n ⟶ GradedObject.Monoidal.tensorObj X Y n :=
+    GradedObject.Monoidal.tensorObjDesc fun q p h ↦ ((-1 : ℤ) ^ (p * q)) •
+      ((β_ (X p) (Y q)).inv ≫ GradedObject.Monoidal.ιTensorObj X Y p q n (by omega))
+  have hστ (X Y : GradedObject ℕ C) [GradedObject.HasTensor X Y] [GradedObject.HasTensor Y X] :
+      σ X Y ≫ τ X Y = 𝟙 _ := by
     refine GradedObject.Monoidal.tensorObj_ext _ _ fun p q h ↦ ?_
-    simp only [σ, GradedObject.Monoidal.ι_tensorObjDesc_assoc, Preadditive.zsmul_comp,
+    simp only [σ, τ, GradedObject.Monoidal.ι_tensorObjDesc_assoc, Preadditive.zsmul_comp,
       Category.assoc, GradedObject.Monoidal.ι_tensorObjDesc, Preadditive.comp_zsmul, smul_smul,
-      SymmetricCategory.symmetry_assoc, Category.comp_id]
-    rw [Nat.mul_comm q p, ← pow_add, ← two_mul, pow_mul]
+      Iso.hom_inv_id_assoc, Category.comp_id]
+    rw [← pow_add, ← two_mul, pow_mul]
+    simp
+  have hτσ (X Y : GradedObject ℕ C) [GradedObject.HasTensor X Y] [GradedObject.HasTensor Y X] :
+      τ X Y ≫ σ X Y = 𝟙 _ := by
+    refine GradedObject.Monoidal.tensorObj_ext _ _ fun q p h ↦ ?_
+    simp only [σ, τ, GradedObject.Monoidal.ι_tensorObjDesc_assoc, Preadditive.zsmul_comp,
+      Category.assoc, GradedObject.Monoidal.ι_tensorObjDesc, Preadditive.comp_zsmul, smul_smul,
+      Iso.inv_hom_id_assoc, Category.comp_id]
+    rw [← pow_add, ← two_mul, pow_mul]
     simp
   -- Koszul interchange carries the Künneth map of `K` and `L` to that of `L` and `K`
   have hκ : homologyKunneth K L n ≫ homologyMap (koszulBraidingHom K L) n =
       σ _ _ ≫ homologyKunneth L K n := by
     refine GradedObject.Monoidal.tensorObj_ext _ _ fun p q h ↦ ?_
     simp [σ, homologyCross_comp_homologyMap_koszulBraidingHom]
-  have : IsIso (σ (fun p ↦ K.homology p) (fun q ↦ L.homology q)) := ⟨σ _ _, hσ _ _, hσ _ _⟩
+  have : IsIso (σ (fun p ↦ K.homology p) (fun q ↦ L.homology q)) := ⟨τ _ _, hστ _ _, hτσ _ _⟩
   rw [← isIso_comp_right_iff _ (homologyMap (koszulBraidingHom K L) n), hκ, isIso_comp_left_iff]
 
 end Kunneth

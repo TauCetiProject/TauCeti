@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Abelian.Basic
-public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Basic
+public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Colim
 public import Mathlib.CategoryTheory.Functor.ReflectsIso.Exact
 public import Mathlib.Data.Set.Finite.Basic
 public import Mathlib.CategoryTheory.GradedObject.Monoidal
@@ -105,9 +105,9 @@ lemma exact_mapMap [Abelian C] (S : ShortComplex (GradedObject I C)) (p : I → 
       ⟨fun f h ↦ have : ∀ i, IsIso (f.app i) := h; NatIso.isIso_of_isIso_app f⟩
     rw [hP.exact_iff]
     exact fun i ↦ hS i.as.1
-  refine (ShortComplex.exact_iff_of_iso (ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _)
-    ?_ ?_)).1 (hT.map colim)
-  all_goals exact mapObj_ext _ _ _ _ fun i hi ↦ by simp
+  exact colim.exact_mapShortComplex hT (colimit.isColimit _) (colimit.isColimit _)
+    (colimit.isColimit _) (mapMap S.f p j) (mapMap S.g p j)
+    (fun i ↦ ι_mapMap S.f p i.as.1 j i.as.2) (fun i ↦ ι_mapMap S.g p i.as.1 j i.as.2)
 
 /-- A short complex of graded objects which is short exact in each degree induces a short exact
 sequence on the coproducts over the fibre of `p : I → J` over `j`, when coproducts of that shape
