@@ -158,8 +158,7 @@ def path₁ (s : (TopCat.toSSet.obj X) _⦋1⦌) : Path (source₁ s) (target₁
 
 lemma path₁_apply (s : (TopCat.toSSet.obj X) _⦋1⦌) (t : I) :
     path₁ s t = X.toSSetObjEquiv _ s (StdSimplex.homeomorphI.symm t) := by
-  rw [path₁]
-  rfl
+  rw [path₁, ← Path.coe_toContinuousMap, ContinuousMap.comp_apply, ContinuousMap.coe_coe]
 
 @[simp]
 lemma simplex₁_path₁ (s : (TopCat.toSSet.obj X) _⦋1⦌) :
