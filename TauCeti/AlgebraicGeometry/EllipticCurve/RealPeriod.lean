@@ -89,16 +89,19 @@ namespace WeierstrassCurve
 variable (W : WeierstrassCurve ℝ)
 
 /-- The integral `∫_{Ψ₂Sq(x) > 0} dx / √Ψ₂Sq(x)` of a Weierstrass curve over `ℝ`, where
-`Ψ₂Sq(x) = 4x³ + b₂x² + 2b₄x + b₆` is the square of `2y + a₁x + a₃` on the curve. It is half the
-real period `WeierstrassCurve.realPeriod`, as a value in `ℝ≥0∞`: it is finite for an elliptic curve
-(`WeierstrassCurve.realPeriodLIntegral_lt_top`). -/
+`Ψ₂Sq(x) = 4x³ + b₂x² + 2b₄x + b₆` is the square of `2y + a₁x + a₃` on the curve, as a value in
+`ℝ≥0∞`. It is finite for an elliptic curve (`WeierstrassCurve.realPeriodLIntegral_lt_top`), and
+whenever it is finite it is half the real period `WeierstrassCurve.realPeriod`
+(`WeierstrassCurve.ofReal_realPeriod`). -/
 noncomputable def realPeriodLIntegral : ℝ≥0∞ :=
   ∫⁻ x in {x | 0 < W.Ψ₂Sq.eval x}, ENNReal.ofReal (√(W.Ψ₂Sq.eval x))⁻¹
 
-/-- The **real period** `Ω(W) = 2 ∫_{Ψ₂Sq(x) > 0} dx / √Ψ₂Sq(x)` of a Weierstrass curve over `ℝ`:
-the integral of `|ω|` over the real points, `ω = dx / (2y + a₁x + a₃)` being the invariant
-differential and the factor `2` counting the two real points over each `x`. It is defined as twice
-the real value of `WeierstrassCurve.realPeriodLIntegral`, which is finite for an elliptic curve. -/
+/-- The **real period** `Ω(W)` of a Weierstrass curve over `ℝ`, defined as twice the real value of
+`WeierstrassCurve.realPeriodLIntegral`. When that integral is finite, for instance for an elliptic
+curve (`WeierstrassCurve.ofReal_realPeriod`), this is `Ω(W) = 2 ∫_{Ψ₂Sq(x) > 0} dx / √Ψ₂Sq(x)`;
+when it diverges, `Ω(W) = 0`. The motivation is that this integral computes `∫ |ω|` over the real
+points, `ω = dx / (2y + a₁x + a₃)` being the invariant differential and the factor `2` counting the
+two real points over each `x`. -/
 noncomputable def realPeriod : ℝ :=
   2 * W.realPeriodLIntegral.toReal
 
@@ -163,21 +166,24 @@ private theorem exists_norm_eval_Ψ₂Sq_eq [W.IsElliptic] :
   rw [hdisc] at hne
   have hprod := pow_ne_zero_iff (n := 2) (by norm_num) |>.mp hne
   simp only [mul_ne_zero_iff, sub_ne_zero] at hprod
-  refine ⟨e₁, e₂, e₃, hprod.1.1.2, hprod.1.2, hprod.2, fun x ↦ ?_⟩
+  obtain ⟨⟨⟨-, h₁₂⟩, h₁₃⟩, h₂₃⟩ := hprod
+  refine ⟨e₁, e₂, e₃, h₁₂, h₁₃, h₂₃, fun x ↦ ?_⟩
   have hx := congrArg (Polynomial.eval (x : ℂ)) (Cubic.eq_prod_three_roots ha h3)
   rw [Cubic.map_toPoly, ← Complex.ofRealHom_eq_coe, Polynomial.eval_map_apply,
     Complex.ofRealHom_eq_coe] at hx
   rw [Ψ₂Sq_eq, ← Complex.norm_real, hx]
   simp [twoTorsionPolynomial, mul_assoc]
 
+/-- `1 / √d = d^(-1/2)` for `d ≥ 0`. -/
+private theorem inv_sqrt_eq_rpow {d : ℝ} (hd : 0 ≤ d) : (√d)⁻¹ = d ^ (-2⁻¹ : ℝ) := by
+  rw [Real.sqrt_eq_rpow, Real.rpow_neg hd, one_div]
+
 /-- The integrand of the real period at `x` is at most `|Ψ₂Sq(x)|^(-1/2)`, as a value in `ℝ≥0∞`
 (where `0^(-1/2) = ∞`). -/
 private theorem ofReal_inv_sqrt_le (d : ℝ) : ENNReal.ofReal (√d)⁻¹ ≤ ‖d‖ₑ ^ (-2⁻¹ : ℝ) := by
   rcases le_or_gt d 0 with hd | hd
   · simp [Real.sqrt_eq_zero'.mpr hd]
-  rw [ENNReal.ofReal_inv_of_pos (Real.sqrt_pos.mpr hd), Real.sqrt_eq_rpow,
-    ← ENNReal.ofReal_rpow_of_nonneg hd.le (by norm_num), Real.enorm_eq_ofReal_abs,
-    abs_of_pos hd, ENNReal.rpow_neg, one_div]
+  rw [inv_sqrt_eq_rpow hd.le, ← ENNReal.ofReal_rpow_of_pos hd, Real.enorm_of_nonneg hd.le]
 
 /-- Near its pole, the singular factor `|x - e|^(-1/2)` is integrable over any bounded interval. -/
 private theorem setLIntegral_closedBall_enorm_sub_rpow_lt_top (e : ℂ) {R : ℝ} (hR : 0 ≤ R) :
@@ -248,13 +254,12 @@ private theorem ofReal_inv_sqrt_le_of_pow_three_le {d y : ℝ} (hy : 0 < y) (h :
   rw [← ENNReal.ofReal_mul (Real.sqrt_nonneg 2)]
   refine ENNReal.ofReal_le_ofReal ?_
   have hy3 : 0 < y ^ 3 / 2 := by positivity
-  calc (√d)⁻¹ = d ^ (-2⁻¹ : ℝ) := by rw [Real.sqrt_eq_rpow, Real.rpow_neg hd.le, one_div]
-    _ ≤ (y ^ 3 / 2) ^ (-2⁻¹ : ℝ) := Real.rpow_le_rpow_of_nonpos hy3 (by linarith) (by norm_num)
+  calc (√d)⁻¹ ≤ (√(y ^ 3 / 2))⁻¹ :=
+        inv_anti₀ (Real.sqrt_pos.mpr hy3) (Real.sqrt_le_sqrt (by linarith))
+    _ = √2 * (y ^ 3) ^ (-2⁻¹ : ℝ) := by
+        rw [Real.sqrt_div' _ zero_le_two, inv_div, div_eq_mul_inv, inv_sqrt_eq_rpow (by positivity)]
     _ = √2 * y ^ (-(3 / 2 : ℝ)) := by
-        rw [Real.div_rpow (by positivity) (by norm_num), ← Real.rpow_natCast,
-          ← Real.rpow_mul hy.le, Real.rpow_neg (by norm_num : (0 : ℝ) ≤ 2), div_inv_eq_mul,
-          Real.sqrt_eq_rpow, mul_comm]
-        norm_num
+        rw [← Real.rpow_natCast_mul hy.le]; norm_num
 
 /-- Near the roots of `Ψ₂Sq`, the integrand of the real period is at most a constant times
 `∑ᵢ |x - eᵢ|^(-1/2)`, so its integral over a bounded interval is finite. -/
@@ -360,13 +365,17 @@ theorem realPeriodLIntegral_variableChange (C : VariableChange ℝ) :
       have habs : |(C.u : ℝ)| ^ 6 = (C.u : ℝ) ^ 6 := (by decide : Even 6).pow_abs _
       rw [Units.val_inv_eq_inv_val, inv_pow, inv_pow, ← pow_mul, habs]
     rw [h6, Real.sqrt_mul (by positivity), Real.sqrt_sq (by positivity), mul_inv, inv_inv]
-  have htrans := lintegral_add_right_eq_self (μ := volume) (fun y ↦ g ((C.u : ℝ) ^ 2 * y))
-    (C.r / (C.u : ℝ) ^ 2)
-  have hdil := (measurableEmbedding_mulLeft₀ hu2).lintegral_map (μ := volume) g
+  -- translation invariance removes the shift by `r / u²`
+  have htrans : ∫⁻ x, g ((C.u : ℝ) ^ 2 * (x + C.r / (C.u : ℝ) ^ 2)) =
+      ∫⁻ x, g ((C.u : ℝ) ^ 2 * x) :=
+    lintegral_add_right_eq_self (fun y ↦ g ((C.u : ℝ) ^ 2 * y)) _
+  -- dilation by `u²` scales the integral by `|u²|⁻¹`
+  have hdil : ∫⁻ x, g ((C.u : ℝ) ^ 2 * x) = ENNReal.ofReal |((C.u : ℝ) ^ 2)⁻¹| * ∫⁻ x, g x := by
+    rw [← (measurableEmbedding_mulLeft₀ hu2).lintegral_map, Real.map_volume_mul_left hu2,
+      lintegral_smul_measure, smul_eq_mul]
   rw [realPeriodLIntegral_eq_lintegral, realPeriodLIntegral_eq_lintegral]
   simp_rw [hpt]
-  rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, htrans, ← hdil,
-    Real.map_volume_mul_left hu2, lintegral_smul_measure, smul_eq_mul, ← mul_assoc,
+  rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, htrans, hdil, ← mul_assoc,
     ← ENNReal.ofReal_mul (by positivity)]
   congr 2
   rw [abs_inv, abs_pow]
