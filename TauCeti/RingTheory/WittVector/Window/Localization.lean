@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Huber.Adic
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Completion
+public import TauCeti.RingTheory.Huber.LocalizationTopology.Plus
 public import TauCeti.RingTheory.WittVector.Window.Subring
 import TauCeti.RingTheory.Huber.OpenIdeal
 import TauCeti.Topology.Algebra.UniformRing
@@ -36,7 +37,8 @@ carries the interval norm `λ_I = max(λ_{ρ₁}, λ_{ρ₂})`
 (`TauCeti.WittVector.IntervalLocalization`). For the radii of the window,
 `ρ₁ = v(ϖ) ^ (1 / q)` and `ρ₂ = v(ϖ) ^ (1 / q')`, the two topologies agree. Consequently the
 completion `𝕎 O⟨T/s⟩` is the interval ring `B^I`, as topological rings and compatibly with the
-maps from `𝕎 O`.
+maps from `𝕎 O`. The isomorphism carries the plus ring `A_U⁺` of the rational localisation of
+`(𝕎 O, 𝕎 O)` onto `B^{I,+}`, so it is an isomorphism of Huber pairs.
 
 ## Proof outline
 
@@ -63,6 +65,7 @@ multiplication by the unit `[ϖ] ^ n`.
   `[ϖ] ^ b / p ^ a` and `p ^ a' / [ϖ] ^ b'`.
 * `TauCeti.WittVector.locSubring_windowNumerators` : the ring of definition `𝕎 O[T/s]` of the
   presentation is the window subring.
+* `TauCeti.WittVector.isOpen_span_windowNumerators` : the numerators span an open ideal.
 * `TauCeti.WittVector.hasDenominatorPower_windowNumerators` : the presentation satisfies the
   standing hypothesis of the localisation topology, for every pair of definition.
 * `TauCeti.WittVector.continuous_algebraMap_intervalLocalization` : the map
@@ -75,13 +78,15 @@ multiplication by the unit `[ϖ] ^ n`.
 * `TauCeti.WittVector.completionLocRingEquivIntervalRing_coe` and
   `TauCeti.WittVector.completionLocRingEquivIntervalRing_toCompletionLoc` : it is the identity on
   `𝕎 O[1/(p [ϖ])]`, hence compatible with the maps from `𝕎 O`.
+* `TauCeti.WittVector.map_completedPlusSubring_completionLocRingEquivIntervalRing` : it carries
+  the plus ring `A_U⁺` onto the power-bounded subring `B^{I,+}` of `B^I`.
 
 ## References
 
 * K. S. Kedlaya, *Sheaves, stacks, and shtukas*, lecture notes, Arizona Winter School 2017,
   §3.1, for the interval rings `B^I` and the windows.
 * [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Proposition and
-  Definition 5.51.
+  Definition 5.51, and §8.1 for the plus ring of a rational localisation.
 -/
 
 public section
@@ -195,14 +200,11 @@ theorem locSubring_windowNumerators [TopologicalSpace (𝕎 O)] (P : PairOfDefin
     exact P.divBy_mem_locSubring _ (windowDenominator p ϖ q q') _
       (mem_windowNumerators_iff.mpr (.inr rfl))
 
-omit [IsLocalization.Away ((p : _root_.WittVector p O) * teichmuller p ϖ) B] in
-/-- **The window presentation satisfies the standing hypothesis** of the localisation topology,
-for every pair of definition of the `(p, [ϖ])`-adic topology: its numerators span an ideal whose
-radical contains `p` and `[ϖ]`, hence an open ideal. -/
-theorem hasDenominatorPower_windowNumerators [TopologicalSpace (𝕎 O)] [IsTopologicalRing (𝕎 O)]
-    (hI : IsAdic (Ideal.span {(p : 𝕎 O), teichmuller p ϖ})) (P : PairOfDefinition (𝕎 O)) :
-    P.HasDenominatorPower (windowNumerators p ϖ q q') (windowDenominator p ϖ q q') B := by
-  refine P.hasDenominatorPower_of_isOpen_span _ _ _ ?_
+/-- **The numerators of a window span an open ideal** of `𝕎 O` for the `(p, [ϖ])`-adic topology:
+the radical of the ideal they span contains `p` and `[ϖ]`. -/
+theorem isOpen_span_windowNumerators [TopologicalSpace (𝕎 O)] [IsTopologicalRing (𝕎 O)]
+    (hI : IsAdic (Ideal.span {(p : 𝕎 O), teichmuller p ϖ})) :
+    IsOpen (Ideal.span (windowNumerators p ϖ q q' : Set (𝕎 O)) : Set (𝕎 O)) := by
   have hfg : (Ideal.span {(p : 𝕎 O), teichmuller p ϖ}).FG := Submodule.fg_span (by simp)
   have hmem {t : 𝕎 O} (ht : t ∈ windowNumerators p ϖ q q') :
       t ∈ Ideal.span (windowNumerators p ϖ q q' : Set (𝕎 O)) :=
@@ -214,6 +216,15 @@ theorem hasDenominatorPower_windowNumerators [TopologicalSpace (𝕎 O)] [IsTopo
       (hmem (mem_windowNumerators_iff.mpr (.inr rfl)))),
     Ideal.mem_radical_of_pow_mem (Ideal.le_radical
       (hmem (mem_windowNumerators_iff.mpr (.inl rfl))))⟩
+
+omit [IsLocalization.Away ((p : _root_.WittVector p O) * teichmuller p ϖ) B] in
+/-- **The window presentation satisfies the standing hypothesis** of the localisation topology,
+for every pair of definition of the `(p, [ϖ])`-adic topology: its numerators span an open ideal
+(`isOpen_span_windowNumerators`). -/
+theorem hasDenominatorPower_windowNumerators [TopologicalSpace (𝕎 O)] [IsTopologicalRing (𝕎 O)]
+    (hI : IsAdic (Ideal.span {(p : 𝕎 O), teichmuller p ϖ})) (P : PairOfDefinition (𝕎 O)) :
+    P.HasDenominatorPower (windowNumerators p ϖ q q') (windowDenominator p ϖ q q') B :=
+  P.hasDenominatorPower_of_isOpen_span _ _ _ (isOpen_span_windowNumerators hI)
 
 end Presentation
 
@@ -443,6 +454,79 @@ theorem completionLocRingEquivIntervalRing_toCompletionLoc [TopologicalSpace (�
       algebraMap (𝕎 O) (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) a := by
   rw [UniformSpace.Completion.algebraMap_def, PairOfDefinition.toCompletionLoc_apply]
   exact completionLocRingEquivIntervalRing_coe hv hϖ hϖ' hρ₁ hρ₂ hI P hden h₁ h₂ h₁₂ _
+
+omit [CharP O p] [PerfectRing O p] in
+/-- The integral closure of the window subring lies in the integral closure of the subring
+`𝕎 O[T/s]` generated over `𝕎 O` by the fractions of the window presentation, which is the
+integral closure defining the plus ring of the rational localisation. -/
+private theorem integralClosure_windowSubring_le
+    [IsLocalization.Away (windowDenominator p ϖ q q') L] :
+    (integralClosure (windowSubring p ϖ L q q') L).toSubring ≤
+      (integralClosure ↥(Algebra.adjoin (⊤ : Subring (𝕎 O))
+        (Set.range fun t : windowNumerators p ϖ q q' ↦
+          (divBy (t : 𝕎 O) (windowDenominator p ϖ q q') : L))) L).toSubring := by
+  set D := Algebra.adjoin (⊤ : Subring (𝕎 O)) (Set.range fun t : windowNumerators p ϖ q q' ↦
+    (divBy (t : 𝕎 O) (windowDenominator p ϖ q q') : L))
+  have hfrac {t : 𝕎 O} (ht : t ∈ windowNumerators p ϖ q q') :
+      (divBy t (windowDenominator p ϖ q q') : L) ∈ D.toSubring :=
+    Algebra.subset_adjoin ⟨⟨t, ht⟩, rfl⟩
+  -- the window subring is generated by the image of `𝕎 O` and the two fractions, all in `D`
+  have hD : windowSubring p ϖ L q q' ≤ D.toSubring := by
+    refine windowSubring_le_iff.mpr ⟨fun a ↦ ?_, ?_, ?_⟩
+    · exact D.algebraMap_mem (⟨a, Subring.mem_top a⟩ : (⊤ : Subring (𝕎 O)))
+    · rw [← divBy_teichmuller_pow_windowDenominator (q' := q')]
+      exact hfrac (mem_windowNumerators_iff.mpr (.inl rfl))
+    · rw [← divBy_natCast_pow_windowDenominator (q := q)]
+      exact hfrac (mem_windowNumerators_iff.mpr (.inr rfl))
+  exact Subring.integralClosure_subring_le_iff.mpr fun x hx ↦
+    isIntegral_algebraMap (R := D) (A := L) (x := ⟨x, hD hx⟩)
+
+/-- **The isomorphism `𝕎 O⟨T/s⟩ ≃+* B^I` carries the plus ring `A_U⁺` onto `B^{I,+}`.** Under the
+hypotheses of `locTopology_windowNumerators`, the plus ring `A_U⁺` of the rational localisation of
+`(𝕎 O, 𝕎 O)` at the window presentation
+(`TauCeti.Huber.PairOfDefinition.completedPlusSubring`, with `A⁺ = 𝕎 O`) is mapped onto the
+power-bounded subring of `B^I`, its unit ball `B^{I,+}`
+(`TauCeti.WittVector.coe_powerBoundedSubring_intervalRing`). So the isomorphism is an isomorphism
+of Huber pairs `(𝕎 O⟨T/s⟩, A_U⁺) ≅ (B^I, B^{I,+})`. -/
+theorem map_completedPlusSubring_completionLocRingEquivIntervalRing [TopologicalSpace (𝕎 O)]
+    [IsTopologicalRing (𝕎 O)] (hI : IsAdic (Ideal.span {(p : 𝕎 O), teichmuller p ϖ}))
+    (P : PairOfDefinition (𝕎 O)) [IsLocalization.Away (windowDenominator p ϖ q q') L]
+    (hden : P.HasDenominatorPower (windowNumerators p ϖ q q') (windowDenominator p ϖ q q') L)
+    (h₁ : ρ₁ ^ q.num = v (algebraMap O K ϖ) ^ q.den)
+    (h₂ : ρ₂ ^ q'.num = v (algebraMap O K ϖ) ^ q'.den) (h₁₂ : ρ₁ ≤ ρ₂) :
+    letI := P.locUniformSpace (windowNumerators p ϖ q q') (windowDenominator p ϖ q q') L hden
+    letI := P.isUniformAddGroup_locUniformSpace _ _ L hden
+    letI := P.isTopologicalRing_locUniformSpace _ _ L hden
+    (P.completedPlusSubring ⊤ (windowNumerators p ϖ q q') (windowDenominator p ϖ q q') L
+        hden).map (completionLocRingEquivIntervalRing hv hϖ hϖ' hρ₁ hρ₂ hI P hden h₁ h₂ h₁₂) =
+      powerBoundedSubring (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) := by
+  let _ := P.locUniformSpace (windowNumerators p ϖ q q') (windowDenominator p ϖ q q') L hden
+  have _ := P.isUniformAddGroup_locUniformSpace (windowNumerators p ϖ q q')
+    (windowDenominator p ϖ q q') L hden
+  have _ := P.isTopologicalRing_locUniformSpace (windowNumerators p ϖ q q')
+    (windowDenominator p ϖ q q') L hden
+  set e := completionLocRingEquivIntervalRing hv hϖ hϖ' hρ₁ hρ₂ hI P hden h₁ h₂ h₁₂
+  have he := continuous_completionLocRingEquivIntervalRing hv hϖ hϖ' hρ₁ hρ₂ hI P hden h₁ h₂ h₁₂
+  have he' :=
+    continuous_completionLocRingEquivIntervalRing_symm hv hϖ hϖ' hρ₁ hρ₂ hI P hden h₁ h₂ h₁₂
+  refine le_antisymm ?_ ?_
+  · -- every element of `A_U⁺` is power-bounded, since every element of `𝕎 O` is
+    rintro _ ⟨x, hx, rfl⟩
+    have := hI.isLinearTopology
+    exact mem_powerBoundedSubring.mpr <| (isPowerBounded_ringEquiv_iff e he he').mpr
+      (P.isPowerBounded_of_mem_completedPlusSubring ⊤
+        (fun a _ ↦ isPowerBounded_iff.mpr (isBounded_of_isLinearTopology _)) _ _ L hden hx)
+  · -- `B^{I,+}` is the closure of the image of the integral closure `C` of the window subring;
+    -- `e` is the identity on the image of `C`, which lies in `A_U⁺`, and `e(A_U⁺)` is closed
+    rw [← topologicalClosure_map_coeRingHom_integralClosure_windowSubring hv hϖ hϖ' hρ₁ hρ₂ h₁ h₂
+      h₁₂]
+    refine Subring.topologicalClosure_minimal _ ?_ ?_
+    · rintro _ ⟨y, hy, rfl⟩
+      exact ⟨_, P.coeRingHom_mem_completedPlusSubring ⊤ _ _ L hden
+        (integralClosure_windowSubring_le hv hϖ hϖ' hρ₁ hρ₂ hy),
+        completionLocRingEquivIntervalRing_coe hv hϖ hϖ' hρ₁ hρ₂ hI P hden h₁ h₂ h₁₂ y⟩
+    · rw [Subring.map_equiv_eq_comap_symm, Subring.coe_comap]
+      exact (P.isClosed_completedPlusSubring ⊤ _ _ L hden).preimage he'
 
 end Interval
 
