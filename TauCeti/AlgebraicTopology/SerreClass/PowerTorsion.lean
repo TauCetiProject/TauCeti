@@ -20,7 +20,7 @@ Such classes are used in Hurewicz theorems modulo a Serre class.
 * J.-P. Serre, *Groupes d'homotopie et classes de groupes abéliens*, Ann. of Math. 58 (1953).
 -/
 
-@[expose] public section
+public section
 
 universe u
 
