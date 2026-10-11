@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import Mathlib.Topology.Algebra.IsUniformGroup.Basic
+public import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 
 /-!
 # Completeness of open quotients of uniform additive groups
@@ -49,7 +50,8 @@ theorem IsOpenQuotientMap.completeSpace (hf : IsOpenQuotientMap f) : CompleteSpa
   have _ : CompleteSpace (G ⧸ N) := QuotientAddGroup.completeSpace_right G N
   let e := QuotientAddGroup.quotientKerEquivOfSurjective (f : G →+ H) hf.surjective
   -- `e` composed with the quotient map is `f`
-  have hef : (e : G ⧸ N → H) ∘ ((↑) : G → G ⧸ N) = f := funext fun _ ↦ rfl
+  have hef : (e : G ⧸ N → H) ∘ ((↑) : G → G ⧸ N) = f :=
+    funext fun g ↦ TauCeti.QuotientAddGroup.quotientKerEquivOfSurjective_apply_mk _ _ g
   have hcont : Continuous e := (QuotientAddGroup.isQuotientMap_mk N).continuous_iff.mpr
     (hef ▸ hf.continuous)
   have hopen : IsOpenMap e := fun U hU ↦ by
