@@ -47,11 +47,6 @@ def point (v : ι) : _root_.PreAbstractSimplicialComplex ι where
     exact Finset.eq_singleton_iff_unique_mem.mpr ⟨hw, fun w hw =>
       Finset.mem_singleton.mp (hτσ hw)⟩
 
-/-- The one-vertex complex has exactly its singleton vertex as a face. -/
-@[simp]
-theorem _root_.TauCeti.faces_point (v : ι) : (point v).faces = {{v}} := by
-  rfl
-
 @[simp]
 theorem mem_point {v : ι} {σ : Finset ι} : σ ∈ point v ↔ σ = {v} := Iff.rfl
 

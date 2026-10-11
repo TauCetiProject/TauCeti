@@ -77,7 +77,7 @@ private theorem gradient_smoothField (u : Wkp mu Omega p 1)
   rw [toDual_gradient]
   have hd := fderiv_indicator_convolution_normed_value u phi x hx
   rw [convolution_flip, convolution_flip] at hd
-  rw [smoothField, value_one, hd]
+  rw [smoothField, hd]
   have hmem := (memLp_indicator_iff_restrict Omega.isOpen.measurableSet.nullMeasurableSet).2
     (Lp.memLp (iteratedGradient 0 u))
   have hi := (phi.hasCompactSupport_normed (μ := mu)).convolutionExists_left
