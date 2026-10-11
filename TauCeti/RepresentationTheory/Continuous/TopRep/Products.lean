@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Continuous.TopRep
+public import Mathlib.CategoryTheory.Limits.Shapes.Products
 
 /-!
 # Products of topological representations
@@ -21,7 +22,7 @@ universe u v w
 
 namespace TopRep
 
-open CategoryTheory
+open CategoryTheory CategoryTheory.Limits
 
 variable {R : Type u} [Ring R] [TopologicalSpace R]
 variable {G : Type v} [Monoid G]
@@ -50,21 +51,21 @@ theorem pi_ρ_apply {ι : Type w} (X : ι → TopRep R G) (g : G) (x : ∀ i, (X
   rfl
 
 /-- The projection from a product representation to one of its factors. -/
-def piπ {ι : Type w} (X : ι → TopRep R G) (i : ι) : pi X ⟶ X i :=
+@[expose] def piπ {ι : Type w} (X : ι → TopRep R G) (i : ι) : pi X ⟶ X i :=
   TopRep.ofHom {
     toContinuousLinearMap := ContinuousLinearMap.proj i
     isIntertwining' g := by
       ext x
-      -- Expose the product operator so the composition with the projection can simplify.
-      change (ContinuousLinearMap.pi (fun j =>
-        (X j).ρ g ∘L ContinuousLinearMap.proj j) x) i =
-          (X i).ρ g ((ContinuousLinearMap.proj i) x)
-      simp
+      exact pi_ρ_apply X g x i
   }
+
+/-- Evaluation of a product projection. -/
+@[simp] theorem piπ_hom_apply {ι : Type w} (X : ι → TopRep R G) (i : ι)
+    (x : (pi X).V) : (piπ X i).hom x = x i := rfl
 
 /-- The morphism into a product representation whose components are a given family of
 equivariant continuous linear maps. -/
-def piLift {ι : Type w} {A : TopRep R G} (X : ι → TopRep R G)
+@[expose] def piLift {ι : Type w} {A : TopRep R G} (X : ι → TopRep R G)
     (f : ∀ i, A ⟶ X i) : A ⟶ pi X :=
   TopRep.ofHom {
     toContinuousLinearMap := ContinuousLinearMap.pi fun i => (f i).hom.toContinuousLinearMap
@@ -72,6 +73,11 @@ def piLift {ι : Type w} {A : TopRep R G} (X : ι → TopRep R G)
       ext x i
       exact (f i).hom.isIntertwining g x
   }
+
+/-- Evaluation of a map into a product. -/
+@[simp] theorem piLift_hom_apply {ι : Type w} {A : TopRep R G}
+    (X : ι → TopRep R G) (f : ∀ i, A ⟶ X i) (a : A.V) (i : ι) :
+    (piLift X f).hom a i = (f i).hom a := rfl
 
 /-- The component of `piLift` at any factor is the specified map. -/
 @[simp]
@@ -81,10 +87,33 @@ theorem piLift_comp_piπ {ι : Type w} {A : TopRep R G} (X : ι → TopRep R G)
   rfl
 
 /-- Morphisms into a product are determined by their components. -/
-theorem pi_hom_ext {ι : Type w} {A : TopRep R G} (X : ι → TopRep R G)
+@[ext] theorem pi_hom_ext {ι : Type w} {A : TopRep R G} (X : ι → TopRep R G)
     {f g : A ⟶ pi X} (h : ∀ i, f ≫ piπ X i = g ≫ piπ X i) : f = g := by
   ext x
   funext i
   exact congrArg (fun q : A ⟶ X i => q.hom x) (h i)
+
+/-- The fan of projections from the pointwise product. -/
+@[expose] def piFan {ι : Type w} (X : ι → TopRep R G) : Fan X :=
+  Fan.mk (pi X) (piπ X)
+
+/-- The pointwise product fan is a limit. -/
+def piFanIsLimit {ι : Type w} (X : ι → TopRep R G) : IsLimit (piFan X) :=
+  Fan.IsLimit.mk _ (fun s => piLift X s.proj)
+    (fun s i => piLift_comp_piπ X s.proj i)
+    (fun s _ hm => pi_hom_ext X (fun i => (hm i).trans
+      (piLift_comp_piπ X s.proj i).symm))
+
+/-- Finite discrete diagrams of topological representations have products. -/
+instance (ι : Type) [Finite ι] : HasProductsOfShape ι (TopRep.{w} R G) where
+  has_limit F := HasLimit.mk
+    ⟨(Cone.postcompose Discrete.natIsoFunctor.inv).obj
+      (piFan fun i => F.obj ⟨i⟩),
+      (IsLimit.postcomposeInvEquiv _ _).symm
+        (piFanIsLimit fun i => F.obj ⟨i⟩)⟩
+
+/-- Topological representations admit finite categorical products. -/
+instance : HasFiniteProducts (TopRep.{w} R G) :=
+  ⟨fun _ => inferInstance⟩
 
 end TopRep
