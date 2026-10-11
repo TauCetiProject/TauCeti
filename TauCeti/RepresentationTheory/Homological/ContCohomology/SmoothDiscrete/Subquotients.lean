@@ -73,14 +73,6 @@ theorem quotient_ρ (X : TopRep R G) (W : Submodule R X.V)
     (quotient X W hW).ρ = X.ρ.quotient W hW :=
   rfl
 
-/-- The quotient action on a class is the class of the ambient action. -/
-@[simp]
-theorem quotient_ρ_apply_mk (X : TopRep R G) (W : Submodule R X.V)
-    (hW : ∀ g x, x ∈ W → X.ρ g x ∈ W) (g : G) (x : X.V) :
-    (quotient X W hW).ρ g (Submodule.Quotient.mk x) =
-      Submodule.Quotient.mk (X.ρ g x) := by
-  rw [quotient_ρ, ContRepresentation.quotient_apply_mk]
-
 /-- The projection from a representation to its quotient by an invariant submodule. -/
 def quotientπ (X : TopRep R G) (W : Submodule R X.V)
     (hW : ∀ g x, x ∈ W → X.ρ g x ∈ W) : X ⟶ quotient X W hW :=
@@ -144,7 +136,8 @@ theorem IsSmoothDiscrete.quotient [SeparatelyContinuousMul G]
       -- Stabilizer membership is written through the derived action, while the quotient formula
       -- is stated for the `TopRep` operators.
       change (TopRep.quotient X W hW).ρ g (W.mkQ x) = _
-      rw [Submodule.mkQ_apply, TopRep.quotient_ρ_apply_mk]
+      rw [Submodule.mkQ_apply, TopRep.quotient_ρ,
+        ContRepresentation.quotient_apply_mk]
       rw [hg']
     · simpa only [← TopRep.coe_stabilizer] using hX.stabilizer_isOpen x
   simpa only [← TopRep.coe_stabilizer (TopRep.quotient X W hW) (W.mkQ x),
