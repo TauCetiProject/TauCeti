@@ -25,7 +25,6 @@ isotropic, and pair to one, so their nonzero coordinates are integer units.
 ## References
 
 * D. A. Cox, *Primes of the Form x² + ny²*, §1.
-* `TauCetiRoadmap/IntegralLattices/Suggested.lean`, `LayerBSplitContract`.
 -/
 
 public section
@@ -66,16 +65,6 @@ def hyperbolicPlaneSwap : Isometry hyperbolicPlane hyperbolicPlane where
 @[simp] theorem hyperbolicPlaneSwap_apply (x : Fin 2 → ℚ) :
     hyperbolicPlaneSwap x = ![x 1, x 0] := (rfl)
 
-private theorem rational_integer_unit_eq_one_or_neg_one (a b : ℚ)
-    (ha : ∃ n : ℤ, (n : ℚ) = a) (hb : ∃ n : ℤ, (n : ℚ) = b)
-    (hab : a * b = 1) : a = 1 ∨ a = -1 := by
-  obtain ⟨n, rfl⟩ := ha
-  obtain ⟨m, rfl⟩ := hb
-  have hnm : n * m = 1 := by exact_mod_cast hab
-  rcases Int.eq_one_or_neg_one_of_mul_eq_one hnm with h | h
-  · left; simp [h]
-  · right; simp [h]
-
 private theorem isometry_eq_of_basis_images
     {e f : Isometry hyperbolicPlane hyperbolicPlane}
     (h0 : e ![1, 0] = f ![1, 0]) (h1 : e ![0, 1] = f ![0, 1]) : e = f := by
@@ -114,30 +103,38 @@ theorem hyperbolicPlane_isometry_eq (e : Isometry hyperbolicPlane hyperbolicPlan
     exact h
   rcases mul_eq_zero.mp hxx with hx0 | hx1
   · have hprod : e ![1, 0] 1 * e ![0, 1] 0 = 1 := by simpa [hx0] using hxy
-    rcases rational_integer_unit_eq_one_or_neg_one _ _ (hx 1) (hy 0) hprod with h | h
-    · have hy0 : e ![0, 1] 0 = 1 := by simpa [h] using hprod
-      have hy1 : e ![0, 1] 1 = 0 := by simpa [hy0] using hyy
+    obtain ⟨n, hn⟩ := hx 1
+    obtain ⟨m, hm⟩ := hy 0
+    have hnm : n * m = 1 := by
+      exact_mod_cast (show (n : ℚ) * (m : ℚ) = 1 from by rw [hn, hm]; exact hprod)
+    have hpair : (e ![1, 0] 1 = 1 ∧ e ![0, 1] 0 = 1) ∨
+        (e ![1, 0] 1 = -1 ∧ e ![0, 1] 0 = -1) := by
+      rw [← hn, ← hm]
+      exact_mod_cast Int.eq_one_or_neg_one_of_mul_eq_one' hnm
+    rcases hpair with ⟨h, hy0⟩ | ⟨h, hy0⟩
+    · have hy1 : e ![0, 1] 1 = 0 := by simpa [hy0] using hyy
       right; right; left
       apply isometry_eq_of_basis_images <;> ext i <;> fin_cases i <;>
         simp [hx0, h, hy0, hy1]
-    · have hy0 : e ![0, 1] 0 = -1 := by
-        have hp : -e ![0, 1] 0 = 1 := by simpa only [h, neg_one_mul] using hprod
-        linarith only [hp]
-      have hy1 : e ![0, 1] 1 = 0 := by simpa [hy0] using hyy
+    · have hy1 : e ![0, 1] 1 = 0 := by simpa [hy0] using hyy
       right; right; right
       apply isometry_eq_of_basis_images <;> ext i <;> fin_cases i <;>
         simp [hx0, h, hy0, hy1]
   · have hprod : e ![1, 0] 0 * e ![0, 1] 1 = 1 := by simpa [hx1] using hxy
-    rcases rational_integer_unit_eq_one_or_neg_one _ _ (hx 0) (hy 1) hprod with h | h
-    · have hy1 : e ![0, 1] 1 = 1 := by simpa [h] using hprod
-      have hy0 : e ![0, 1] 0 = 0 := by simpa [hy1] using hyy
+    obtain ⟨n, hn⟩ := hx 0
+    obtain ⟨m, hm⟩ := hy 1
+    have hnm : n * m = 1 := by
+      exact_mod_cast (show (n : ℚ) * (m : ℚ) = 1 from by rw [hn, hm]; exact hprod)
+    have hpair : (e ![1, 0] 0 = 1 ∧ e ![0, 1] 1 = 1) ∨
+        (e ![1, 0] 0 = -1 ∧ e ![0, 1] 1 = -1) := by
+      rw [← hn, ← hm]
+      exact_mod_cast Int.eq_one_or_neg_one_of_mul_eq_one' hnm
+    rcases hpair with ⟨h, hy1⟩ | ⟨h, hy1⟩
+    · have hy0 : e ![0, 1] 0 = 0 := by simpa [hy1] using hyy
       left
       apply isometry_eq_of_basis_images <;> ext i <;> fin_cases i <;>
         simp [hx1, h, hy0, hy1]
-    · have hy1 : e ![0, 1] 1 = -1 := by
-        have hp : -e ![0, 1] 1 = 1 := by simpa only [h, neg_one_mul] using hprod
-        linarith only [hp]
-      have hy0 : e ![0, 1] 0 = 0 := by simpa [hy1] using hyy
+    · have hy0 : e ![0, 1] 0 = 0 := by simpa [hy1] using hyy
       right; left
       apply isometry_eq_of_basis_images <;> ext i <;> fin_cases i <;>
         simp [hx1, h, hy0, hy1]
