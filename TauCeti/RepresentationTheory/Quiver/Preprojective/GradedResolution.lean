@@ -300,10 +300,10 @@ theorem preprojectiveGradedKoszulDifferential_one (v : Q) :
 theorem preprojectiveGradedKoszulDifferential_add_two (v : Q) (n : ℕ) :
     preprojectiveGradedKoszulDifferential k v (n + 2) = 0 := (rfl)
 
-/-- For quivers without sinks, the graded Koszul sequence is exact at every positive
-homological degree. -/
+/-- If the left Koszul map is injective at the chosen vertex, the graded Koszul sequence
+is exact at every positive homological degree. -/
 theorem preprojectiveGradedKoszulDifferential_exact
-    (hQ : ∀ u : Q, ∃ w, Nonempty (u ⟶ w)) (v : Q) (n : ℕ) :
+    (v : Q) (hinj : Function.Injective (preprojectiveKoszulLeft k v)) (n : ℕ) :
     Function.Exact (preprojectiveGradedKoszulDifferential k v (n + 1)).hom
       (preprojectiveGradedKoszulDifferential k v n).hom := by
   rcases n with _ | (_ | n)
@@ -313,19 +313,20 @@ theorem preprojectiveGradedKoszulDifferential_exact
   · rw [LinearMap.exact_iff]
     simp only [preprojectiveGradedKoszulDifferential_add_two, GradedModuleCat.hom_zero,
       LinearMap.range_zero]
-    exact (LinearMap.ker_eq_bot).2 (preprojectiveKoszulLeft_injective k hQ v)
+    exact (LinearMap.ker_eq_bot).2 hinj
   · rw [LinearMap.exact_iff]
     simp only [preprojectiveGradedKoszulDifferential_add_two, GradedModuleCat.hom_zero,
       LinearMap.range_zero, LinearMap.ker_zero]
     exact Subsingleton.elim _ _
 
-/-- For a finite quiver without sinks, the shifted Koszul complex is a graded projective
-resolution of its vertex augmentation module, over the ordinary opposite algebra.
+/-- If the left Koszul map is injective at the chosen vertex, the shifted Koszul complex
+is a graded projective resolution of its vertex augmentation module, over the ordinary
+opposite algebra.
 This is an abbreviation so the types and module instances of its explicit terms can be used
 without transporting along equalities. Its augmentation is computed by
 `preprojectiveGradedKoszulResolution_π`. -/
 noncomputable abbrev preprojectiveGradedKoszulResolution
-    (hQ : ∀ u : Q, ∃ w, Nonempty (u ⟶ w)) (v : Q) :
+    (v : Q) (hinj : Function.Injective (preprojectiveKoszulLeft k v)) :
     GradedProjectiveResolution 𝒜 (preprojectiveGradedVertexModule k v).grading where
   X n := preprojectiveGradedKoszulTerm k v n
   grading n := (preprojectiveGradedKoszulTerm k v n).grading
@@ -347,40 +348,40 @@ noncomputable abbrev preprojectiveGradedKoszulResolution
   exact_d_π := by
     rw [LinearMap.exact_iff, preprojectiveGradedKoszulDifferential_zero,
       preprojectiveGradedKoszulRight_hom, ker_preprojectiveVertexAugmentation]
-  exact_d_d := preprojectiveGradedKoszulDifferential_exact k hQ v
+  exact_d_d := preprojectiveGradedKoszulDifferential_exact k v hinj
 
 /-- Each resolution term carries the grading of the corresponding shifted Koszul term. -/
 @[simp]
 theorem preprojectiveGradedKoszulResolution_grading
-    (hQ : ∀ u : Q, ∃ w, Nonempty (u ⟶ w)) (v : Q) (n : ℕ) :
-    (preprojectiveGradedKoszulResolution k hQ v).grading n =
+    (v : Q) (hinj : Function.Injective (preprojectiveKoszulLeft k v)) (n : ℕ) :
+    (preprojectiveGradedKoszulResolution k v hinj).grading n =
       (preprojectiveGradedKoszulTerm k v n).grading := (rfl)
 
 /-- The differentials of the resolution are the explicit graded Koszul maps. -/
 @[simp]
 theorem preprojectiveGradedKoszulResolution_d
-    (hQ : ∀ u : Q, ∃ w, Nonempty (u ⟶ w)) (v : Q) (n : ℕ) :
-    (preprojectiveGradedKoszulResolution k hQ v).d n =
+    (v : Q) (hinj : Function.Injective (preprojectiveKoszulLeft k v)) (n : ℕ) :
+    (preprojectiveGradedKoszulResolution k v hinj).d n =
       (preprojectiveGradedKoszulDifferential k v n).hom := (rfl)
 
 /-- The augmentation of the resolution is the vertex augmentation. -/
 @[simp]
 theorem preprojectiveGradedKoszulResolution_π
-    (hQ : ∀ u : Q, ∃ w, Nonempty (u ⟶ w)) (v : Q) :
-    (preprojectiveGradedKoszulResolution k hQ v).π = preprojectiveVertexAugmentation k v := (rfl)
+    (v : Q) (hinj : Function.Injective (preprojectiveKoszulLeft k v)) :
+    (preprojectiveGradedKoszulResolution k v hinj).π = preprojectiveVertexAugmentation k v := (rfl)
 
 /-- The terms of the resolution are the shifted graded Koszul terms. -/
 @[simp]
 theorem preprojectiveGradedKoszulResolution_X
-    (hQ : ∀ u : Q, ∃ w, Nonempty (u ⟶ w)) (v : Q) (n : ℕ) :
-    (preprojectiveGradedKoszulResolution k hQ v).X n =
+    (v : Q) (hinj : Function.Injective (preprojectiveKoszulLeft k v)) (n : ℕ) :
+    (preprojectiveGradedKoszulResolution k v hinj).X n =
       preprojectiveGradedKoszulTerm k v n := (rfl)
 
 /-- The graded Koszul resolution is linear: its term in homological degree `n` is generated
 in internal degree `n`. The terms beyond degree two are zero. -/
 theorem isLinear_preprojectiveGradedKoszulResolution
-    (hQ : ∀ u : Q, ∃ w, Nonempty (u ⟶ w)) (v : Q) :
-    (preprojectiveGradedKoszulResolution k hQ v).IsLinear := by
+    (v : Q) (hinj : Function.Injective (preprojectiveKoszulLeft k v)) :
+    (preprojectiveGradedKoszulResolution k v hinj).IsLinear := by
   rw [GradedProjectiveResolution.isLinear_iff]
   intro n
   rw [preprojectiveGradedKoszulResolution_grading]
@@ -390,5 +391,12 @@ theorem isLinear_preprojectiveGradedKoszulResolution
   · simpa using isGeneratedInDegree_preprojectiveRightProjectiveGrading k (Symmetrify.of.obj v)
   · apply InternalGrading.isGeneratedInDegree_of_piece_eq_top
     exact Subsingleton.elim _ _
+
+/-- For a finite quiver without sinks, the graded Koszul resolution at every vertex is linear. -/
+theorem isLinear_preprojectiveGradedKoszulResolution_of_no_sinks
+    (hQ : ∀ u : Q, ∃ w, Nonempty (u ⟶ w)) (v : Q) :
+    (preprojectiveGradedKoszulResolution k v
+      (preprojectiveKoszulLeft_injective k hQ v)).IsLinear :=
+  isLinear_preprojectiveGradedKoszulResolution k v (preprojectiveKoszulLeft_injective k hQ v)
 
 end TauCeti
