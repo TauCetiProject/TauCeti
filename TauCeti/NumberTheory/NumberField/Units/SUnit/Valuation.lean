@@ -128,6 +128,13 @@ def sUnitValuation : sUnitRep S ⟶ Rep.ofMulAction ℤ (L ≃ₐ[K] L) S :=
         exact HeightOneSpectrum.valuation_apply_eq_of_asIdeal_eq_smul g
           (w := (g⁻¹ • v).val) (w' := v.val) (by simp) _ }
 
+/-- The underlying valuation map is the S-unit valuation transported to the permutation module. -/
+theorem sUnitValuation_hom_apply
+    (u : Additive ((S : Set (HeightOneSpectrum (𝓞 L))).unit L)) :
+    (sUnitValuation S).hom u = TauCeti.funMultiplicativeIntLinearEquiv S
+      (Additive.ofMul (Set.unitValuation (S : Set (HeightOneSpectrum (𝓞 L))) L u.toMul)) :=
+  (rfl)
+
 /-- The coefficient of the valuation vector is the integer attached to the prime valuation. -/
 @[simp]
 theorem sUnitValuation_coeff
@@ -194,13 +201,9 @@ theorem range_sUnitInclusion_eq_ker_sUnitValuation :
   simp only [Representation.IntertwiningMap.toLinearMap_apply]
   have hzero : (sUnitValuation S).hom u = 0 ↔
       u.toMul ∈ (Set.unitValuation (S : Set (HeightOneSpectrum (𝓞 L))) L).ker := by
-    -- The coefficient lemma identifies individual coordinates, not the whole valuation tuple.
-    -- `Rep.hom_ofHom` cannot rewrite through the unexposed `sUnitRep` carrier at rewrite
-    -- transparency; expose the defining composite to apply the equivalence's zero criterion.
-    change TauCeti.funMultiplicativeIntLinearEquiv S
-      ((Set.unitValuation (S : Set (HeightOneSpectrum (𝓞 L))) L).toAdditive u) = 0 ↔ _
-    rw [LinearEquiv.map_eq_zero_iff]
-    exact toMul_eq_one.symm.trans MonoidHom.mem_ker.symm
+    exact (congrArg (· = 0) (sUnitValuation_hom_apply S u)).to_iff.trans
+      ((LinearEquiv.map_eq_zero_iff _).trans
+        (toMul_eq_one.symm.trans MonoidHom.mem_ker.symm))
   rw [hzero, Set.unitValuation_ker]
   -- The opaque `sUnitRep` carrier prevents rewriting `Subgroup.mem_subgroupOf` here;
   -- identify its underlying S-unit explicitly before eliminating the subgroup membership.
@@ -230,9 +233,9 @@ theorem finiteIndex_range_sUnitValuation :
     ext y
     constructor
     · rintro ⟨u, rfl⟩
-      exact ⟨_, ⟨u.toMul, rfl⟩, rfl⟩
+      exact ⟨_, ⟨u.toMul, rfl⟩, (sUnitValuation_hom_apply S u).symm⟩
     · rintro ⟨x, ⟨u, rfl⟩, rfl⟩
-      exact ⟨Additive.ofMul u, rfl⟩
+      exact ⟨Additive.ofMul u, sUnitValuation_hom_apply S (Additive.ofMul u)⟩
   rw [hrange]
   exact AddSubgroup.FiniteIndex.map_of_surjective _
     (TauCeti.funMultiplicativeIntLinearEquiv S).surjective
