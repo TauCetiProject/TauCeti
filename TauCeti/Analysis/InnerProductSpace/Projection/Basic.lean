@@ -8,16 +8,20 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
-# Norms of products of orthogonal projections
+# Products of orthogonal projections
 
 For submodules `U` and `V` of an inner product space admitting orthogonal projections `P_U` and
 `P_V`, the two products `P_U P_V` and `P_V P_U` have the same operator norm. Since
 `P_V P_U = (P_U P_V)†`, this is the identity `‖T‖ = ‖T†‖`, stated here without any completeness
 hypothesis on the ambient space, where the adjoint of a bounded operator need not exist.
 
+A map `T P_U` that factors through the projection onto a finite-dimensional `U` has rank at most
+`dim U`.
+
 ## Main results
 
 * `Submodule.norm_starProjection_comp_starProjection_comm`: `‖P_U P_V‖ = ‖P_V P_U‖`.
+* `Submodule.finrank_range_comp_starProjection_le`: `rank (T P_U) ≤ dim U`.
 -/
 
 public section
@@ -65,5 +69,14 @@ theorem norm_starProjection_comp_starProjection_comm :
     ‖U.starProjection ∘L V.starProjection‖ = ‖V.starProjection ∘L U.starProjection‖ :=
   (norm_starProjection_comp_starProjection_le U V).antisymm
     (norm_starProjection_comp_starProjection_le V U)
+
+/-- A map `T P_U` that factors through the projection onto `U` has rank at most `dim U`. -/
+theorem finrank_range_comp_starProjection_le {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 U] (T : E →L[𝕜] F) :
+    Module.finrank 𝕜 (LinearMap.range ((T ∘L U.starProjection : E →L[𝕜] F) : E →ₗ[𝕜] F)) ≤
+      Module.finrank 𝕜 U := by
+  have hU : LinearMap.range (U.starProjection : E →ₗ[𝕜] E) = U := range_starProjection U
+  rw [ContinuousLinearMap.toLinearMap_comp, LinearMap.range_comp, hU]
+  exact finrank_map_le _ _
 
 end Submodule

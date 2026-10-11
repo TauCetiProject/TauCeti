@@ -28,12 +28,8 @@ theorems) are stated; the operator norm of the directed sine map is the directed
 
 The principal cosines are symmetric in `U` and `V`. The principal sines are symmetric only when
 `U` and `V` have the same finite dimension (`Submodule.principalSines_comm`), the main result of
-this file: the `t`-eigenvectors of the Gram operator `P_U P_{Vᗮ} P_U` of the sine map are, for
-`t ≠ 0, 1`, the `(1 - t)`-eigenvectors of `P_U P_V`, whose nonzero eigenvalues are those of
-`P_V P_U` with the same multiplicities, while its `1`-eigenspace is `U ⊓ Vᗮ`, whose dimension
-matches that of `V ⊓ Uᗮ` exactly when `dim U = dim V`. Without the dimension hypothesis the
-statement fails: for a line `U` inside a plane `V`, all principal sines of `U` and `V` vanish but
-one principal sine of `V` and `U` is `1`.
+this file. Without the dimension hypothesis the statement fails: for a line `U` inside a plane
+`V`, all principal sines of `U` and `V` vanish but one principal sine of `V` and `U` is `1`.
 
 ## Main definitions
 
@@ -205,14 +201,6 @@ theorem sin_principalAngles (i : ℕ) : Real.sin (U.principalAngles V i) = U.pri
   rw [principalAngles_apply, Real.sin_arcsin (by linarith [principalSines_nonneg U V i])
     (principalSines_le_one U V i)]
 
-/-- A map `P U` that factors through the projection onto `U` has rank at most `dim U`. -/
-private theorem finrank_range_comp_starProjection_le (P : E →L[𝕜] E) :
-    finrank 𝕜 (LinearMap.range ((P ∘L U.starProjection : E →L[𝕜] E) : E →ₗ[𝕜] E)) ≤
-      finrank 𝕜 U := by
-  have hU : LinearMap.range (U.starProjection : E →ₗ[𝕜] E) = U := range_starProjection U
-  rw [ContinuousLinearMap.toLinearMap_comp, LinearMap.range_comp, hU]
-  exact finrank_map_le _ _
-
 /-- There are at most `dim U` nonzero principal cosines. -/
 theorem principalCosines_of_finrank_le {i : ℕ} (hi : finrank 𝕜 U ≤ i) :
     U.principalCosines V i = 0 := by
@@ -347,6 +335,10 @@ theorem finrank_inf_orthogonal_comm (h : finrank 𝕜 U = finrank 𝕜 V) :
 principal sines of `U` and `V` are those of `V` and `U`. -/
 theorem principalSines_comm (h : finrank 𝕜 U = finrank 𝕜 V) :
     U.principalSines V = V.principalSines U := by
+  -- The `t`-eigenvectors of the Gram operator `P_U P_{Vᗮ} P_U` of the sine map are, for
+  -- `t ≠ 0, 1`, the `(1 - t)`-eigenvectors of `P_U P_V`, whose nonzero eigenvalues are those of
+  -- `P_V P_U` with the same multiplicities, while its `1`-eigenspace is `U ⊓ Vᗮ`, whose dimension
+  -- matches that of `V ⊓ Uᗮ` when `dim U = dim V`.
   refine Finsupp.eq_of_antitone_of_ncard_eq (principalSines_antitone U V)
     (principalSines_antitone V U) fun s hs ↦ ?_
   rcases hs.lt_or_gt with hs | hs
