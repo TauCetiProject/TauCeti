@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Area.Basic
-import TauCeti.Analysis.Fourier.Wirtinger
 public import TauCeti.MeasureTheory.Integral.CircleLIntegral
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
@@ -26,7 +25,7 @@ dominated convergence passes the annular Stokes formula to the punctured disc. F
 argument in removal of singularities.
 
 The proof reuses `SymplecticForm.integral_fderiv_apply_annulus`,
-`ContinuousLinearMap.norm_integral_apply_apply_le`, and
+`TauCeti.norm_integral_bilinear_apply_circleMap_le`, and
 `TauCeti.exists_integral_norm_deriv_comp_circleMap_sq_lt`.
 
 ## References
@@ -47,7 +46,7 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
 /-- Finite energy gives a sequence of shrinking circles whose symplectic boundary actions
 tend to zero. No boundedness or extension of the map at the puncture is required. -/
-theorem exists_tendsto_integral_apply_circleMap_eq_zero (ω : SymplecticForm V) {u : ℂ → V}
+theorem exists_tendsto_integral_apply_circleMap_nhds_zero (ω : SymplecticForm V) {u : ℂ → V}
     (z₀ : ℂ) {b : ℝ} (hb : 0 < b)
     (hu : ∀ z ∈ {z : ℂ | 0 < ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, ContDiffAt ℝ 1 u z)
     (henergy : IntegrableOn (fun z ↦ ‖fderiv ℝ u z‖ ^ 2)
@@ -56,7 +55,6 @@ theorem exists_tendsto_integral_apply_circleMap_eq_zero (ω : SymplecticForm V) 
       Tendsto (fun n ↦ ∫ θ in -π..π, ω (u (circleMap z₀ (r n) θ))
         (deriv (fun θ ↦ u (circleMap z₀ (r n) θ)) θ)) atTop (𝓝 0) := by
   have : CompleteSpace V := FiniteDimensional.complete ℝ V
-  let D := {z : ℂ | 0 < ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}
   let action (r : ℝ) := ∫ θ in -π..π, ω (u (circleMap z₀ r θ))
     (deriv (fun θ ↦ u (circleMap z₀ r θ)) θ)
   let B := ω.toBilinForm.toContinuousBilinearMap
@@ -77,26 +75,8 @@ theorem exists_tendsto_integral_apply_circleMap_eq_zero (ω : SymplecticForm V) 
     squeeze_zero (fun n ↦ (hr n).1.le) (fun n ↦ (hr n).2.le) hδlim
   -- Wirtinger's inequality controls the action by the angular energy on each chosen circle.
   have haction (n : ℕ) : ‖action (r n)‖ ≤ ‖B‖ * δ n := by
-    have hmem (θ : ℝ) : circleMap z₀ (r n) θ ∈ D := by
-      simpa only [D, mem_ofPred_eq, circleMap_sub_center, norm_circleMap_zero,
-        abs_of_pos (hr n).1] using And.intro (hr n).1 ((hr n).2.le.trans (hδb n))
-    have hc : ContDiff ℝ 1 (fun θ ↦ u (circleMap z₀ (r n) θ)) :=
-      contDiff_iff_contDiffAt.mpr fun θ ↦
-        (hu _ (hmem θ)).comp θ (contDiff_circleMap z₀ (r n)).contDiffAt
-    have hd := hc.continuous_deriv (by norm_num)
-    have hLp : MemLp (deriv (fun θ ↦ u (circleMap z₀ (r n) θ))) 2
-        (volume.restrict (Ioc (-π) π)) :=
-      (memLp_two_iff_integrable_sq_norm hd.aestronglyMeasurable).mpr
-        (hd.norm.pow 2).integrableOn_Ioc
-    have hends : circleMap z₀ (r n) (-π) = circleMap z₀ (r n) π := by
-      convert (periodic_circleMap z₀ (r n) (-π)).symm using 1
-      congr 1
-      ring
-    have h := B.norm_integral_apply_apply_le (by linarith [Real.pi_pos])
-      (fun θ _ ↦ (hc.differentiable (by norm_num) θ).hasDerivAt)
-      (congrArg u hends) hLp
-    have hfactor : (π - -π) / (2 * π) = (1 : ℝ) := by field_simp; ring
-    simp only [hfactor, mul_one] at h
+    have h := norm_integral_bilinear_apply_circleMap_le B z₀ (r n) fun θ ↦
+      hu _ (circleMap_mem_puncturedDisc z₀ (hr n).1 ((hr n).2.le.trans (hδb n)) θ)
     exact h.trans (mul_le_mul_of_nonneg_left (hE n).le (norm_nonneg B))
   have hactionlim : Tendsto (fun n ↦ action (r n)) atTop (𝓝 0) :=
     squeeze_zero_norm haction (by simpa using tendsto_const_nhds.mul hδlim)
@@ -120,16 +100,14 @@ theorem integral_fderiv_apply_punctured_disc (ω : SymplecticForm V) {u : ℂ �
   let area (z : ℂ) := ω (fderiv ℝ u z 1) (fderiv ℝ u z I)
   let action (r : ℝ) := ∫ θ in -π..π, ω (u (circleMap z₀ r θ))
     (deriv (fun θ ↦ u (circleMap z₀ r θ)) θ)
-  have hD : MeasurableSet D :=
-    (isOpen_lt continuous_const (continuous_id.sub continuous_const).norm).measurableSet.inter
-      (isClosed_le (continuous_id.sub continuous_const).norm continuous_const).measurableSet
+  have hD : MeasurableSet D := measurableSet_puncturedDisc z₀ b
   have hA (r : ℝ) : MeasurableSet (A r) :=
     (isClosed_le continuous_const (continuous_id.sub continuous_const).norm).measurableSet.inter
       (isClosed_le (continuous_id.sub continuous_const).norm continuous_const).measurableSet
   have hsub {r : ℝ} (hr : 0 < r) : A r ⊆ D := fun z hz ↦ ⟨hr.trans_le hz.1, hz.2⟩
   have harea : IntegrableOn area D :=
     ω.integrableOn_fderiv_apply_of_integrableOn_norm_fderiv_sq henergy
-  obtain ⟨r, hr, hrlim, hactionlim⟩ := ω.exists_tendsto_integral_apply_circleMap_eq_zero
+  obtain ⟨r, hr, hrlim, hactionlim⟩ := ω.exists_tendsto_integral_apply_circleMap_nhds_zero
     z₀ hb (fun z hz ↦ (hu z hz).of_le one_le_two) henergy
   -- Dominated convergence exhausts the punctured disc even though the radii need not be monotone.
   have hpoint : ∀ᵐ z ∂volume.restrict D,

@@ -57,9 +57,7 @@ theorem integral_norm_fderiv_one_sq_punctured_disc_le {u : ℂ → V}
       (∫ θ in -π..π, ‖deriv (fun θ ↦ u (circleMap z₀ b θ)) θ‖ ^ 2) / (2 * c) := by
   classical
   let D := {z : ℂ | 0 < ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}
-  have hD : MeasurableSet D := by
-    exact (isOpen_lt continuous_const (continuous_id.sub continuous_const).norm).measurableSet.inter
-      (isClosed_le (continuous_id.sub continuous_const).norm continuous_const).measurableSet
+  have hD : MeasurableSet D := measurableSet_puncturedDisc z₀ b
   have : CompleteSpace V := FiniteDimensional.complete ℝ V
   have hE : IntegrableOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) D := by
     have hDu : ContinuousOn (fderiv ℝ u) D := fun z hz ↦
