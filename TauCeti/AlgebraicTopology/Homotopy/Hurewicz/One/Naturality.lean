@@ -34,28 +34,21 @@ public section
 
 noncomputable section
 
-open CategoryTheory Convexity Simplicial unitInterval
+open CategoryTheory Convexity Simplicial unitInterval TauCeti.TopCat
 
 namespace TauCeti.HurewiczOne
 
 variable {X Y : TopCat.{0}} (f : X ⟶ Y)
 
-@[simp]
-lemma map_simplex₁ (g : C(I, X)) :
-    (TopCat.toSSet.map f).app _ (simplex₁ g) = simplex₁ ((f.hom).comp g) := by
-  apply (Y.toSSetObjEquiv _).injective
-  rw [TopCat.toSSetObjEquiv_toSSet_map_app, toSSetObjEquiv_simplex₁, toSSetObjEquiv_simplex₁,
-    ContinuousMap.comp_assoc]
-
 -- Not a simp lemma: `TauCeti.singularChainComplexFunctor_obj_map` rewrites the chain map inside
 -- the left-hand side first, so the `simpNF` linter rejects it.
 lemma map_chain₁ (g : C(I, X)) :
     ((singularChains ℤ).map f).f 1 (chain₁ g) = chain₁ ((f.hom).comp g) := by
-  rw [singularChains_map_f_simplexChain, map_simplex₁]
+  rw [singularChains_map_f_simplexChain, toSSet_map_app_simplex₁]
 
 lemma map_mem_cycles₁ {c : Chains X 1} (hc : c ∈ cycles₁ X) :
     ((singularChains ℤ).map f).f 1 c ∈ cycles₁ Y := by
-  have hc' : ((singularChains ℤ).obj X).d 1 0 c = 0 := hc
+  have hc' : ((singularChains ℤ).obj X).d 1 0 c = 0 := mem_cycles₁_iff.1 hc
   exact mem_cycles₁ (by rw [HomologicalComplex.Hom.comm_apply, hc', map_zero])
 
 /-- The map induced on the first homology group of the singular chain complex sends the class of
