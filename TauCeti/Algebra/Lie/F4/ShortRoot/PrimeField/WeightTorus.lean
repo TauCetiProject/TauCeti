@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.ClosedGenerators
 public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.PointsFunctor
-public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Maximal
+public import TauCeti.Algebra.AlgebraicGroup.Torus.Basic
 import TauCeti.Algebra.AlgebraicGroup.Hopf.KernelPoints
 
 /-!
@@ -35,6 +35,8 @@ open CategoryTheory
 namespace TauCeti.F4ShortRoot.PrimeField
 
 noncomputable section
+
+universe v
 
 local notation "Q" => CommHopfAlgCat.quotient
   (GeneralLinear.coordinateHopfAlgebra (ZMod 2) 26)
@@ -84,7 +86,7 @@ theorem splitTorusCommHopfAlgProperty_quotient_weightTorusDefiningIdeal :
 /-- The torus ideal cuts out exactly the named weight-torus matrix points over every
 commutative `𝔽₂`-algebra. -/
 theorem map_quotientPointsSubgroup_weightTorusDefiningIdeal
-    (A : Type) [CommRing A] [Algebra (ZMod 2) A] :
+    (A : Type v) [CommRing A] [Algebra (ZMod 2) A] :
     (CommHopfAlgCat.quotientPointsSubgroup Q weightTorusDefiningIdeal
       (CommAlgCat.of (ZMod 2) A)).map
         (coordinatePointsEquiv A).toMonoidHom = (weightTorusPoints A).range := by
@@ -94,20 +96,15 @@ theorem map_quotientPointsSubgroup_weightTorusDefiningIdeal
           (AlgHom.mapDomain weightTorusRestriction.hom q) =
         weightTorusPoints A (SplitTorus.pointsMulEquiv q) := by
     apply Subtype.ext
-    have h := CommHopfAlgCat.mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp
-      (CommHopfAlgCat.commonKernelHopfIdeal generator) weightTorusRestriction
-      (generator (.inr ()))
-      (CommHopfAlgCat.mkQuotient_comp_commonKernelLift generator (.inr ()))
-      (CommAlgCat.of (ZMod 2) A) q
     calc
-      _ = GeneralLinear.pointsMulEquiv 26
-          (CommHopfAlgCat.quotientPointsHom _ _ _
-            (AlgHom.mapDomain weightTorusRestriction.hom q)) := by
-        exact (coe_coordinatePointsEquiv A _).trans (congrArg _
-          (CommHopfAlgCat.quotientPointsHom_apply _ _ _ _).symm)
+      _ = (coordinatePointsEquiv A
+          ((CommHopfAlgCat.mapPointsFunctor weightTorusRestriction).app
+            (CommAlgCat.of (ZMod 2) A) q) : GL (Fin 26) A) := by
+        rw [CommHopfAlgCat.mapPointsFunctor_app_apply, AlgHom.mapDomain_apply]
       _ = GeneralLinear.pointsMulEquiv 26
           ((CommHopfAlgCat.mapPointsFunctor (generator (.inr ()))).app
-            (CommAlgCat.of (ZMod 2) A) q) := congrArg _ h.symm
+            (CommAlgCat.of (ZMod 2) A) q) :=
+        coe_coordinatePointsEquiv_commonKernelLift (.inr ()) A q
       _ = _ := (coe_weightTorusPoints_pointsMulEquiv A q).symm
   rw [weightTorusDefiningIdeal,
     HopfIdeal.quotientPointsSubgroup_kerOfSurjective_eq_range_mapPointsFunctor]
@@ -120,10 +117,7 @@ theorem map_quotientPointsSubgroup_weightTorusDefiningIdeal
     let q := (SplitTorus.pointsMulEquiv (R := ZMod 2)
       (A := CommAlgCat.of (ZMod 2) A)).symm s
     refine ⟨_, ⟨q, rfl⟩, ?_⟩
-    -- The subgroup map evaluates the same precomposition as the point functor.
-    change coordinatePointsEquiv A
-      ((CommHopfAlgCat.mapPointsFunctor weightTorusRestriction).app
-        (CommAlgCat.of (ZMod 2) A) q) = weightTorusPoints A s
+    rw [MulEquiv.coe_toMonoidHom]
     calc
       _ = coordinatePointsEquiv A (AlgHom.mapDomain weightTorusRestriction.hom q) := by
         rw [CommHopfAlgCat.mapPointsFunctor_app_apply, AlgHom.mapDomain_apply]
