@@ -30,6 +30,8 @@ measured.
 
 ## Main results
 
+* `WeierstrassCurve.integralModel_minimal_Δ_ne_zero`: the integral discriminant of the chosen
+  minimal equation is nonzero.
 * `WeierstrassCurve.localMinimalDiscriminantValuation_eq_addVal_of_isMinimal_smul`: any minimal
   equation in the orbit computes the valuation.
 * `WeierstrassCurve.valuation_Δ_eq_exp_neg_of_isMinimal_smul`: the multiplicative valuation of the
@@ -60,7 +62,7 @@ variable (R : Type*) [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
 /-- **The integral discriminant of the chosen minimal equation is nonzero.** This is the
 element-level form of `localMinimalDiscriminant_ne_bot`, useful for removing the `∞` value from
 the additive valuation. -/
-private theorem integralModel_minimal_Δ_ne_zero (W : WeierstrassCurve K) [W.IsElliptic] :
+theorem integralModel_minimal_Δ_ne_zero (W : WeierstrassCurve K) [W.IsElliptic] :
     ((W.minimal R).integralModel R).Δ ≠ 0 := by
   obtain ⟨C, hC⟩ := W.exists_smul_eq_minimal R
   simpa [W.localMinimalDiscriminant_eq_span_Δ R C hC] using W.localMinimalDiscriminant_ne_bot R
