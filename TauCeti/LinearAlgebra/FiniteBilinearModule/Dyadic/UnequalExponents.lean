@@ -152,10 +152,9 @@ private theorem dyadicCyclic_prod_adjacent_quadratic_intCast (k : ℕ) [NeZero k
   rw [← AddCircle.coe_add]
   congr 1
   push_cast
-  rw [show k + 2 = k + 1 + 1 by omega, pow_add]
+  simp only [pow_succ]
   norm_num
   field_simp
-  ring
 
 private def dyadicAdjacentRotation (k : ℕ) (θ η : ℤ) :
     (ZMod (2 ^ k) × ZMod (2 ^ (k + 1))) →+
