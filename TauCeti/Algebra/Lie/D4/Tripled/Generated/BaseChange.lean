@@ -109,13 +109,13 @@ theorem baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebra
     let F := CommHopfAlgCat.baseChangeFunctor (k := k) (K := K)
     calc
       _ = F.map (generatedCoordinateMap k) ≫
-          F.map (eqToIso (generatedCoordinateHopfAlgebra_def k)).hom := by
+          F.map (eqToHom (generatedCoordinateHopfAlgebra_def k)) := by
         rw [CommHopfAlgCat.baseChangeFunctor_map]
         congr 1
         simpa only [eqToIso.hom] using
           (eqToHom_map F (generatedCoordinateHopfAlgebra_def k)).symm
       _ = F.map (generatedCoordinateMap k ≫
-          (eqToIso (generatedCoordinateHopfAlgebra_def k)).hom) :=
+          eqToHom (generatedCoordinateHopfAlgebra_def k)) :=
         (F.map_comp _ _).symm
       _ = F.map (CommHopfAlgCat.mkQuotient
           (GeneralLinear.coordinateHopfAlgebra k 24) (generatedDefiningIdeal k)) := by
@@ -125,6 +125,7 @@ theorem baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebra
   rw [← Category.assoc, hbase, ← Category.assoc,
     CommHopfAlgCat.baseChangeMap_mkQuotient_comp_quotientBaseChangeIsoOfMapEq_hom,
     Category.assoc, ← generatedCoordinateMap_comp_eqToIso_hom]
+  apply (cancel_mono (eqToHom (generatedCoordinateHopfAlgebra_def K))).1
   simp
 
 end BaseChange

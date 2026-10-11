@@ -97,7 +97,7 @@ the quotient map for its defining ideal. -/
 @[reassoc (attr := simp)]
 theorem generatedCoordinateMap_comp_eqToIso_hom :
     generatedCoordinateMap k ≫
-        (eqToIso (generatedCoordinateHopfAlgebra_def k)).hom =
+        eqToHom (generatedCoordinateHopfAlgebra_def k) =
       CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra k 24)
         (generatedDefiningIdeal k) := by
   dsimp [generatedCoordinateMap]
