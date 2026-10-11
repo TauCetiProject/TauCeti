@@ -25,8 +25,9 @@ space `G → 𝕜` of all functions on `G`, of dimension `|G|`
 
 The bridge is that **convolution is the integrated operator of the left regular representation**,
 `TauCeti.convolutionOperator_eq_integratedOperator_leftRegularLp`. Both operators are group averages
-of the translates of their argument, and the identity is the substitution `y = g⁻¹x` in the
-convolution integral, run as a reindexing of a finite sum. The *left* regular representation is the
+of the translates of their argument; the identity follows from the strong integral formula
+`TauCeti.convolutionOperator_apply_eq_integral_leftRegularLp`, valid for arbitrary compact groups.
+The *left* regular representation is the
 one that appears, and not the right: left translation moves a matrix coefficient
 `g ↦ ⟪π g v, w⟫` through its second vector `w`
 (`ContRepresentation.matrixCoeff_comp_mulLeft`), on which it depends linearly, so the block
@@ -74,63 +75,17 @@ section Convolution
 variable {𝕜 G : Type*} [RCLike 𝕜] [Group G] [Finite G] [TopologicalSpace G]
   [DiscreteTopology G] [MeasurableSpace G] [BorelSpace G]
 
-/-- On a finite discrete group, left translation on `L²(G)` is left translation of functions, on
-the nose: normalized Haar measure has full support, so an `L²` class is its own function. -/
-private theorem coeFn_leftRegularLp_eq (g : G) (f : Lp 𝕜 2 (haarProb G)) :
-    ⇑(leftRegularLp 𝕜 G g f) = fun x => f (g⁻¹ * x) :=
-  eq_of_ae_eq_haarProb G (coeFn_leftRegularLp g f)
-
-/-- On a finite discrete group, the convolution operator is represented by the continuous
-convolution of its kernel on the nose, for the same reason. -/
-private theorem coeFn_convolutionOperator_eq (k : C(G, 𝕜)) (f : Lp 𝕜 2 (haarProb G)) :
-    ⇑(convolutionOperator k f) = ⇑(convolutionCLM k f) :=
-  eq_of_ae_eq_haarProb G (coeFn_convolutionOperator k f)
-
-section Sum
-
-variable [Fintype G]
-
-/-- The integrated operator of the left regular representation of a finite discrete group is the
-group average of the translates. -/
-private theorem integratedOperator_leftRegularLp_eq_smul_sum (k : C(G, 𝕜))
-    (f : Lp 𝕜 2 (haarProb G)) :
-    ContRepresentation.integratedOperator (leftRegularLp 𝕜 G) continuous_of_discreteTopology k f
-      = (Nat.card G : 𝕜)⁻¹ • ∑ g : G, k g • leftRegularLp 𝕜 G g f := by
-  rw [ContRepresentation.integratedOperator_apply, integral_haarProb,
-    RCLike.real_smul_eq_coe_smul (K := 𝕜)]
-  norm_num
-
-end Sum
-
-/-- **Convolution is the integrated operator of the left regular representation**, for a finite
-discrete group.
-
-Both sides average the translates `x ↦ f (g⁻¹ * x)` of `f` against the kernel: the integrated
-operator does so visibly, and for convolution it is the substitution `y = g⁻¹ * x` in
-`TauCeti.convolutionCLM_apply_apply`, which on a finite group is a reindexing of the sum along the
-bijection `g ↦ g⁻¹ * x`.
-
-Nothing of the sort holds for a general compact group, not because the identity fails but because
-its right-hand side is not available: `TauCeti.ContRepresentation.integratedOperator` asks for a
-norm-continuous representation, and the regular representation of an infinite compact group on
-`L²(G)` is only strongly continuous. -/
+/-- Convolution is the norm-continuous integrated operator of the left regular representation
+for a finite discrete group. The strong integral formula holds for arbitrary compact groups in
+`TauCeti.convolutionOperator_apply_eq_integral_leftRegularLp`; finiteness here ensures that the
+regular representation is also continuous in the operator norm. -/
 theorem convolutionOperator_eq_integratedOperator_leftRegularLp (k : C(G, 𝕜)) :
     convolutionOperator k =
       ContRepresentation.integratedOperator (leftRegularLp 𝕜 G)
         continuous_of_discreteTopology k := by
-  have : Fintype G := Fintype.ofFinite G
-  refine ContinuousLinearMap.ext fun f => (lpHaarProbEquivFun G 𝕜 2).injective ?_
-  rw [integratedOperator_leftRegularLp_eq_smul_sum, map_smul, map_sum]
-  refine funext fun x => ?_
-  simp only [Pi.smul_apply, Finset.sum_apply, smul_eq_mul, lpHaarProbEquivFun_apply,
-    coeFn_leftRegularLp_eq, map_smul]
-  rw [congrFun (coeFn_convolutionOperator_eq k f) x, convolutionCLM_apply_apply,
-    integral_haarProb_eq_inv_mul_sum]
-  congr 1
-  refine (Fintype.sum_bijective (fun g : G => g⁻¹ * x)
-    ((Equiv.inv G).trans (Equiv.mulRight x)).bijective _ _ fun g => ?_).symm
-  congr 2
-  group
+  ext f
+  rw [convolutionOperator_apply_eq_integral_leftRegularLp,
+    ContRepresentation.integratedOperator_apply]
 
 end Convolution
 

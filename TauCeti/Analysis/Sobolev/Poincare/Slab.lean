@@ -356,14 +356,6 @@ theorem eLpNorm_le_eLpNorm_fderiv_of_support_subset_slab (hu : ContDiff ℝ 1 u)
     _ = ENNReal.ofReal ((b - a) ^ r) * ∫⁻ x, ‖fderiv ℝ u x‖ₑ ^ r := by
         rw [lintegral_eq_lintegral_slabChart hmf]
 
-/-- Membership in a Euclidean ball bounds every coordinate by the corresponding slab. -/
-theorem apply_mem_Icc_of_mem_ball {c x : EuclideanSpace ℝ (Fin (n + 1))} {R : ℝ}
-    (hx : x ∈ Metric.ball c R) (i : Fin (n + 1)) : x i ∈ Icc (c i - R) (c i + R) := by
-  have hnorm : ‖x - c‖ < R := by simpa only [Metric.mem_ball, dist_eq_norm] using hx
-  have hi := (PiLp.norm_apply_le (x - c) i).trans hnorm.le
-  rw [Real.norm_eq_abs, WithLp.ofLp_sub, Pi.sub_apply, abs_le] at hi
-  constructor <;> linarith
-
 /-- **The Poincaré inequality on a ball.** A `C¹` function on `ℝ^{n+1}` supported in a ball of
 radius `R` satisfies `‖u‖_p ≤ 2R ‖Du‖_p` for every `1 ≤ p ≤ ∞`.
 
@@ -380,7 +372,9 @@ theorem eLpNorm_le_eLpNorm_fderiv_of_support_subset_ball
     simp [hsupp]
   have hslab : ∀ x ∈ Function.support u,
       x (0 : Fin (n + 1)) ∈ Icc (c 0 - R) (c 0 + R) :=
-    fun x hx => apply_mem_Icc_of_mem_ball (hsupp hx) 0
+    fun x hx => by
+      rw [← Real.closedBall_eq_Icc, Metric.mem_closedBall]
+      exact (PiLp.dist_apply_le x c 0).trans (Metric.mem_ball.1 (hsupp hx)).le
   have hwidth : (c 0 + R) - (c 0 - R) = 2 * R := by ring
   simpa [hwidth] using
     eLpNorm_le_eLpNorm_fderiv_of_support_subset_slab hu

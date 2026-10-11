@@ -8,15 +8,17 @@ module
 public import TauCeti.Geometry.Toric.Algebraic.Regular
 
 /-!
-# The standard affine ray cone
+# The standard affine ray cone and its fan
 
 The positive ray in the standard rank-one lattice is regular. Its primitive generator is the
-single standard integral basis vector. This supplies the cone underlying the affine toric line.
+single standard integral basis vector. Its faces form the standard affine-line fan, used as a
+factor of the affine-plane fan.
 
 ## Main declarations
 
 * `TauCeti.Toric.affineRayCone`: the positive standard ray.
 * `TauCeti.Toric.isRegularCone_affineRayCone`: regularity for the standard integer lattice.
+* `TauCeti.Toric.affineRayFan`: the finite fan of faces of the positive ray.
 
 ## References
 
@@ -50,5 +52,31 @@ theorem isRegularCone_affineRayCone :
     simpa only [standardBasis_apply] using (Pi.basisFun ℤ (Fin 1)).isPrimitive 0
   simpa only [affineRayCone_def, intCast_one] using
     isRegularCone_hull_singleton (isIntegralLattice_intCast 1) hv
+
+/-- The standard fan of the affine line consists of the faces of the positive ray. -/
+abbrev affineRayFan : Fan ((Int.castAddHom ℝ).compLeft (Fin 1)) :=
+  Fan.ofCone (isIntegralLattice_intCast 1) isRegularCone_affineRayCone.toIsToricCone
+
+/-- The standard affine-line fan has exactly the faces of the positive ray. -/
+theorem mem_affineRayFan_cones {σ : PointedCone ℝ (Fin 1 → ℝ)} :
+    σ ∈ affineRayFan.cones ↔ σ.IsFaceOf affineRayCone := by
+  exact Fan.mem_ofCone_cones (isIntegralLattice_intCast 1)
+    isRegularCone_affineRayCone.toIsToricCone
+
+/-- The support of the affine-line fan is its positive ray. -/
+theorem support_affineRayFan : affineRayFan.support = affineRayCone :=
+  Fan.support_ofCone (isIntegralLattice_intCast 1) isRegularCone_affineRayCone.toIsToricCone
+
+/-- The maximal cone of the standard affine-line fan. -/
+abbrev affineRayFanMaxCone : affineRayFan.cones :=
+  ⟨affineRayCone, mem_affineRayFan_cones.mpr (PointedCone.IsFaceOf.refl _)⟩
+
+@[simp]
+theorem coe_affineRayFanMaxCone :
+    (affineRayFanMaxCone : PointedCone ℝ (Fin 1 → ℝ)) = affineRayCone := (rfl)
+
+/-- The standard affine-line fan is regular. -/
+theorem isRegular_affineRayFan : affineRayFan.IsRegular :=
+  Fan.isRegular_ofCone (isIntegralLattice_intCast 1) isRegularCone_affineRayCone
 
 end TauCeti.Toric

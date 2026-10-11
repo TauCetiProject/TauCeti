@@ -127,7 +127,9 @@ theorem W1p.norm_value_le_mul_norm_gradient_of_subset_ball
     simp
   have hslab : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))),
       x (0 : Fin (n + 1)) ∈ Icc (c 0 - R) (c 0 + R) :=
-    fun x hx => apply_mem_Icc_of_mem_ball (hOmega hx) 0
+    fun x hx => by
+      rw [← Real.closedBall_eq_Icc, Metric.mem_closedBall]
+      exact (PiLp.dist_apply_le x c 0).trans (Metric.mem_ball.1 (hOmega hx)).le
   have hwidth : (c 0 + R) - (c 0 - R) = 2 * R := by ring
   simpa only [hwidth] using W1p.norm_value_le_mul_norm_gradient_of_subset_slab
     (by linarith : c 0 - R ≤ c 0 + R) hslab hu

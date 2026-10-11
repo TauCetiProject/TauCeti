@@ -19,7 +19,8 @@ itself assumes neither finite-dimensionality nor boundedness: it is a seminorm o
 linear maps `E →ₗ[𝕜] F`.
 
 When `E` and `F` are finite-dimensional, the operator norm, the Frobenius norm, the Ky Fan norms
-and the nuclear norm are the standard examples. The examples are not formalized here.
+and the nuclear norm are the standard examples; they are constructed in the neighbouring files
+`OpNorm`, `Frobenius` and `KyFan` of this directory.
 
 This file sets up the structure together with the elementary vocabulary for comparing its
 values:

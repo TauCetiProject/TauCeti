@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Gram.Rigidity
 public import TauCeti.Analysis.InnerProductSpace.KyFan
-public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm
+public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Basic
 
 /-!
 # Fan dominance

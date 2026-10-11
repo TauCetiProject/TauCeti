@@ -12,8 +12,7 @@ module
 -- `Algebra.TensorProduct.opAlgEquiv`, used in its body, to be public.
 public import Mathlib.LinearAlgebra.TensorProduct.Opposite
 public import Mathlib.RingTheory.TensorProduct.Basic
--- Non-public: the declarations from `Tower` appear only inside definition bodies and proofs,
--- and no definition below is `@[expose]`d.
+-- `Tower` supplies the underlying linear scalar-extension equivalences.
 import Mathlib.LinearAlgebra.TensorProduct.Tower
 -- Public: `Algebra.TensorProduct.congr` supplies the scalar-automorphism action exported below,
 -- and `TensorProduct.map` occurs in the type of `ScalarAut.comul_smul` downstream.
@@ -44,8 +43,11 @@ with passing to the opposite algebra, and composes in stages:
 
 ## Implementation notes
 
-All four equivalences are opaque: their bodies are not `@[expose]`d, and the `_tmul` and
-`_symm_tmul` simp lemmas below are the whole public interface, in both directions.
+All four equivalences are opaque: their bodies are not `@[expose]`d. The `_tmul` and
+`_symm_tmul` simp lemmas describe their action in both directions. For tensor-product base change,
+`TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv_toLinearEquiv` identifies the underlying
+Mathlib linear equivalence. Equalities of algebra-map composites record compatibility with
+fourfold tensor interchange and with scalar extension in stages.
 
 Mathlib's `Algebra.TensorProduct.cancelBaseChange` is the third equivalence for a **commutative**
 algebra being extended; the algebras this file exists to serve are central simple, so they are not
@@ -124,6 +126,33 @@ theorem baseChangeTensorAlgEquiv_symm_tmul (l₁ l₂ : L) (a : A) (b : B) :
   exact (_root_.TensorProduct.AlgebraTensorModule.distribBaseChange K L A B).symm_apply_eq.mp
     (_root_.TensorProduct.AlgebraTensorModule.distribBaseChange_symm_tmul ..)
 
+/-- The linear equivalence underlying tensor-product base change is Mathlib's distribution
+of scalar extension over a tensor product. -/
+@[simp]
+theorem baseChangeTensorAlgEquiv_toLinearEquiv :
+    (baseChangeTensorAlgEquiv K L A B).toLinearEquiv =
+      _root_.TensorProduct.AlgebraTensorModule.distribBaseChange K L A B := (rfl)
+
+/-- Distributing scalar extension in both tensor factors commutes with interchanging the
+middle two factors of a fourfold tensor product, as an equality of algebra maps. -/
+theorem map_baseChangeTensorAlgEquiv_comp_tensorTensorTensorComm
+    (C D : Type*) [Semiring C] [Algebra K C] [Semiring D] [Algebra K D] :
+    (Algebra.TensorProduct.map
+        (baseChangeTensorAlgEquiv K L A C).toAlgHom
+        (baseChangeTensorAlgEquiv K L B D).toAlgHom).comp
+      ((baseChangeTensorAlgEquiv K L (A ⊗[K] C) (B ⊗[K] D)).toAlgHom.comp
+        (Algebra.TensorProduct.map (AlgHom.id L L)
+          (Algebra.TensorProduct.tensorTensorTensorComm K K K K A B C D).toAlgHom)) =
+      (Algebra.TensorProduct.tensorTensorTensorComm
+        L L L L (L ⊗[K] A) (L ⊗[K] B) (L ⊗[K] C) (L ⊗[K] D)).toAlgHom.comp
+        ((Algebra.TensorProduct.map
+          (baseChangeTensorAlgEquiv K L A B).toAlgHom
+          (baseChangeTensorAlgEquiv K L C D).toAlgHom).comp
+            (baseChangeTensorAlgEquiv K L (A ⊗[K] B) (C ⊗[K] D)).toAlgHom) := by
+  apply AlgHom.toLinearMap_injective
+  ext
+  simp
+
 /-- **Base change commutes with passing to the opposite algebra.** Together with
 `TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv` this is what makes base change respect both
 the multiplication and the inversion of Brauer classes. -/
@@ -171,21 +200,19 @@ theorem baseChangeTowerAlgEquiv_symm_tmul (m : M) (a : A) :
     rw [baseChangeTowerAlgEquiv_tmul, one_smul]
 
 /-- Collapsing a scalar-extension tower in both tensor factors commutes with distributing
-scalar extension over their tensor product. -/
-theorem _root_.Algebra.TensorProduct.map_baseChangeTowerAlgEquiv_distribBaseChange
-    (m : M) (l : L) (x : A ⊗[K] B) :
-    Algebra.TensorProduct.map
+scalar extension over their tensor product, as an equality of algebra maps. -/
+theorem map_baseChangeTowerAlgEquiv_comp_baseChangeTensorAlgEquiv :
+    (Algebra.TensorProduct.map
         (baseChangeTowerAlgEquiv K L A M).toAlgHom
-        (baseChangeTowerAlgEquiv K L B M).toAlgHom
-      (_root_.TensorProduct.AlgebraTensorModule.distribBaseChange L M
-        (L ⊗[K] A) (L ⊗[K] B)
-        (m ⊗ₜ[L] _root_.TensorProduct.AlgebraTensorModule.distribBaseChange K L A B
-          (l ⊗ₜ[K] x))) =
-      _root_.TensorProduct.AlgebraTensorModule.distribBaseChange K M A B ((l • m) ⊗ₜ[K] x) := by
-  induction x using _root_.TensorProduct.inductionOn with
-  | add x y hx hy =>
-      simp only [_root_.TensorProduct.tmul_add, map_add, hx, hy]
-  | tmul a b => simp
+        (baseChangeTowerAlgEquiv K L B M).toAlgHom).comp
+      ((baseChangeTensorAlgEquiv L M (L ⊗[K] A) (L ⊗[K] B)).toAlgHom.comp
+        (Algebra.TensorProduct.map (AlgHom.id M M)
+          (baseChangeTensorAlgEquiv K L A B).toAlgHom)) =
+      (baseChangeTensorAlgEquiv K M A B).toAlgHom.comp
+        (baseChangeTowerAlgEquiv K L (A ⊗[K] B) M).toAlgHom := by
+  apply AlgHom.toLinearMap_injective
+  ext
+  simp
 
 end Tower
 
