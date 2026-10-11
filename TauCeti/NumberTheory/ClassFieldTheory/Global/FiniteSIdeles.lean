@@ -123,6 +123,7 @@ def finiteSIdelesTateCohomologyEquiv (S : Finset (HeightOneSpectrum (𝒪 K)))
 
 /-- The component at `v ∈ S` of `finiteSIdelesTateCohomologyEquiv` is induced by the semi-local
 component at `v`, the factor at `v` of `finiteSIdelesPiIso`. -/
+@[simp]
 theorem finiteSIdelesTateCohomologyEquiv_apply (S : Finset (HeightOneSpectrum (𝒪 K)))
     (hS : ∀ w : HeightOneSpectrum (𝒪 L), w.under (𝒪 K) ∉ S →
       Algebra.IsUnramifiedAt (𝒪 K) w.asIdeal) (n : ℤ)
