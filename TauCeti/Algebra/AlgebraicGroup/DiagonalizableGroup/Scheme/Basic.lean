@@ -48,7 +48,8 @@ ring in `Type u`.
 * `TauCeti.DiagonalizableGroup.isAffine_groupScheme`: `D(G)` is affine.
 * `TauCeti.DiagonalizableGroup.locallyOfFiniteType_groupScheme`: `D(G) ⟶ Spec R` is
   locally of finite type.
-* `TauCeti.DiagonalizableGroup.isCommMonObj_groupScheme`: `D(G)` is a commutative group scheme.
+* `TauCeti.DiagonalizableGroup.isCommMonObj_groupScheme`: `D(G)` is a commutative group scheme, as
+  are the objects of `schemeFunctor` and the finite-type bundle `finiteTypeGroupScheme`.
 * `TauCeti.DiagonalizableGroup.finiteTypeGroupScheme`: `D(G)` bundled as a finite-type affine
   group scheme.
 * `TauCeti.DiagonalizableGroup.finiteTypeGroupSchemeIso`: its comparison with the object produced
@@ -329,6 +330,18 @@ of finite type. -/
 instance locallyOfFiniteType_schemeFunctor_obj (G : (FGCommGrpCat.{u})ᵒᵖ) :
     LocallyOfFiniteType ((schemeFunctor R).obj G).X.hom := by
   rw [schemeFunctor_obj]
+  infer_instance
+
+/-- Every group scheme produced by the diagonalizable group-scheme functor is commutative. -/
+instance isCommMonObj_schemeFunctor_obj (G : (FGCommGrpCat.{u})ᵒᵖ) :
+    IsCommMonObj ((schemeFunctor R).obj G).X := by
+  rw [schemeFunctor_obj]
+  infer_instance
+
+/-- The finite-type bundle of `D(G)` is a commutative group scheme. -/
+instance isCommMonObj_finiteTypeGroupScheme (G : FGCommGrpCat.{u}) :
+    IsCommMonObj (finiteTypeGroupScheme R G).obj.obj.X := by
+  rw [finiteTypeGroupScheme_obj_obj]
   infer_instance
 
 /-- The diagonalizable group-scheme functor is faithful over a nontrivial base ring. -/
