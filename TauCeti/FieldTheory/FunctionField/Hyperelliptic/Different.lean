@@ -6,13 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Hyperelliptic.Genus.Basic
-public import TauCeti.FieldTheory.FunctionField.Place.Extension.Degree
-public import TauCeti.FieldTheory.FunctionField.Place.Extension.Eisenstein
 import TauCeti.FieldTheory.FunctionField.Different.Radical
-import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Order
 import TauCeti.AlgebraicGeometry.WeilDivisor.FiniteSum
-import TauCeti.FieldTheory.Kummer.Extension
 
 /-!
 # The different of an odd-degree squarefree polynomial model
@@ -44,44 +40,6 @@ open AlgebraicGeometry
 variable {k F : Type*} [Field k] [Field F] [Algebra (RatFunc k) F]
 variable [Algebra k F] [IsScalarTower k (RatFunc k) F]
 variable [FiniteDimensional (RatFunc k) F]
-
-/-- In a polynomial model of odd degree, every place above infinity is totally ramified.
-This also holds in characteristic two, without squarefreeness. -/
-theorem Place.isTotallyRamified_of_sq_eq_of_odd {f : k[X]}
-    (hodd : Odd f.natDegree) {y : F} (hgen : (RatFunc k)⟮y⟯ = ⊤)
-    (hy : y ^ 2 = algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) f))
-    {P : Place k F} (hP : P.restrict k (RatFunc k) = Place.infty k) :
-    P.IsTotallyRamified (RatFunc k) := by
-  have hcoprime : Int.gcd (2 : ℕ) ((Place.infty k).ord (algebraMap k[X] (RatFunc k) f)) = 1 := by
-    simp only [Place.ord_infty, RatFunc.intDegree_polynomial, Int.gcd_neg,
-      Int.gcd_natCast_natCast]
-    exact hodd.coprime_two_left.gcd_eq_one
-  have hrank : Module.finrank (RatFunc k) F = 2 := by
-    refine (Place.infty k).valuation.finrank_eq_of_pow_eq_of_gcd_ord_eq_one
-      hgen hy two_ne_zero ?_
-    rw [Valuation.ord_def, ← Place.ord_def]
-    exact hcoprime
-  exact Place.isTotallyRamified_of_pow_eq_of_gcd_ord_eq_one k (RatFunc k)
-    hrank hy two_ne_zero (by simpa only [hP] using hcoprime)
-
-/-- An odd-degree polynomial model has a unique place above infinity; that place has degree
-one. No squarefreeness, separability, or characteristic assumption is needed. -/
-theorem Place.existsUnique_restrict_eq_infty_of_sq_eq_of_odd {f : k[X]}
-    (hodd : Odd f.natDegree) {y : F}
-    (hgen : (RatFunc k)⟮y⟯ = ⊤)
-    (hy : y ^ 2 = algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) f)) :
-    ∃ P : Place k F, P.restrict k (RatFunc k) = Place.infty k ∧ P.degree = 1 ∧
-      ∀ Q : Place k F, Q.restrict k (RatFunc k) = Place.infty k → Q = P := by
-  have hF : IsFunctionField k F := isFunctionField_iff_functionField.mpr inferInstance
-  obtain ⟨P, hP⟩ := Place.restrict_surjective_of_finiteDimensional
-    (IsFunctionField.ratFunc k) hF (Place.infty k)
-  -- Eliminate the lambda in the surjectivity statement before rewriting the restriction.
-  have hP : P.restrict k (RatFunc k) = Place.infty k := hP
-  have htot := P.isTotallyRamified_of_sq_eq_of_odd hodd hgen hy hP
-  refine ⟨P, hP, ?_, fun Q hQ ↦ Place.eq_of_isTotallyRamified k (RatFunc k) htot
-    (hQ.trans hP.symm)⟩
-  rw [Place.degree_eq_degree_restrict_mul_relativeDegree k (RatFunc k), hP,
-    Place.degree_infty, Place.relativeDegree_eq_one_of_isTotallyRamified k (RatFunc k) htot]
 
 variable [Algebra.IsSeparable (RatFunc k) F]
 
@@ -132,40 +90,45 @@ theorem different_ratFunc_eq_zeros_add_of_sq_eq_of_odd (h2 : (2 : k) ≠ 0)
     · simp [hqf] at hord ⊢
       omega
 
-/-- **The different as a sum of distinct closed points**: the zeros of `y` in an odd-degree
+/-- **The different as the divisor of distinct closed points**: the zeros of `y` in an odd-degree
 squarefree polynomial model each contribute once, together with the unique place at infinity.
 No splitting assumption on the polynomial over the constant field is needed. -/
-theorem different_ratFunc_eq_sum_ofPoint_add_of_sq_eq_of_odd (h2 : (2 : k) ≠ 0)
+theorem different_ratFunc_eq_ofFinset_add_of_sq_eq_of_odd (h2 : (2 : k) ≠ 0)
     {f : k[X]} (hf : Squarefree f) (hodd : Odd f.natDegree) {y : Fˣ}
     (hgen : (RatFunc k)⟮(y : F)⟯ = ⊤)
     (hy : (y : F) ^ 2 = algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) f))
     {P : Place k F} (hP : P.restrict k (RatFunc k) = Place.infty k) :
     Divisor.different k F (IsFunctionField.ratFunc k) =
-      (∑ Q ∈ (Divisor.zeros (isFunctionField_iff_functionField.mpr inferInstance) y).support,
-        WeilDivisor.ofPoint Q) + WeilDivisor.ofPoint P := by
+      WeilDivisor.ofFinset
+        (Divisor.zeros (isFunctionField_iff_functionField.mpr inferInstance) y).support +
+          WeilDivisor.ofPoint P := by
   classical
   let hF : IsFunctionField k F := isFunctionField_iff_functionField.mpr inferInstance
   have hdiff := different_ratFunc_eq_zeros_add_of_sq_eq_of_odd h2 hf hodd hgen hy hP
   rw [hdiff]
   congr 1
-  refine (WeilDivisor.eq_sum_coeff_smul_ofPoint (Divisor.zeros hF y)).trans ?_
-  refine Finset.sum_congr rfl fun Q hQ ↦ ?_
-  have hc := congrArg (fun D : Divisor k F ↦ D.coeff Q) hdiff
-  rw [Divisor.coeff_different, WeilDivisor.coeff_add, Divisor.coeff_zeros] at hc
-  have hd := Place.differentExponent_eq_of_pow_eq_of_prime k (RatFunc k) (P' := Q)
-    Nat.prime_two hgen hy (by exact_mod_cast h2) (RatFunc.algebraMap_ne_zero hf.ne_zero)
-  have hdle : Place.differentExponent k (RatFunc k) Q ≤ 1 := by
-    rw [hd]
-    split_ifs <;> omega
-  have hpnonneg : 0 ≤ (WeilDivisor.ofPoint P).coeff Q := by
-    by_cases hQP : Q = P
-    · subst Q
-      simp
-    · simp [WeilDivisor.coeff_ofPoint_of_ne hQP]
-  have hpos := (Divisor.mem_support_zeros_iff hF).mp hQ
-  have hcoeff : (Divisor.zeros hF y).coeff Q = 1 := by
-    rw [Divisor.coeff_zeros]
-    omega
-  rw [hcoeff, one_smul]
+  refine WeilDivisor.ext fun Q ↦ ?_
+  rw [WeilDivisor.coeff_ofFinset]
+  by_cases hQ : Q ∈ (Divisor.zeros hF y).support
+  · rw [ite_eq_left hQ]
+    have hc := congrArg (fun D : Divisor k F ↦ D.coeff Q) hdiff
+    rw [Divisor.coeff_different, WeilDivisor.coeff_add, Divisor.coeff_zeros] at hc
+    have hd := Place.differentExponent_eq_of_pow_eq_of_prime k (RatFunc k) (P' := Q)
+      Nat.prime_two hgen hy (by exact_mod_cast h2) (RatFunc.algebraMap_ne_zero hf.ne_zero)
+    have hdle : Place.differentExponent k (RatFunc k) Q ≤ 1 := by
+      rw [hd]
+      split_ifs <;> omega
+    have hpnonneg : 0 ≤ (WeilDivisor.ofPoint P).coeff Q := by
+      by_cases hQP : Q = P
+      · subst Q
+        simp
+      · simp [WeilDivisor.coeff_ofPoint_of_ne hQP]
+    have hpos := (Divisor.mem_support_zeros_iff hF).mp hQ
+    have hcoeff : (Divisor.zeros hF y).coeff Q = 1 := by
+      rw [Divisor.coeff_zeros]
+      omega
+    exact hcoeff
+  · rw [ite_eq_right hQ]
+    exact Finsupp.notMem_support_iff.mp hQ
 
 end TauCeti

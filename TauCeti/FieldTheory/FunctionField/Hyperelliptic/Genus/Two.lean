@@ -7,13 +7,15 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Hyperelliptic.Different
 import Mathlib.FieldTheory.KummerPolynomial
+import TauCeti.FieldTheory.FunctionField.ConstantExtension.Unramified
 
 /-!
 # The genus-two field `y² = x⁵ - 1`
 
-Construct the quadratic field given by `y² = x⁵ - 1`. Over a constant field of characteristic
-other than two and five, it has genus two and exact constants. Its different is the sum of
-the distinct zeros of `y` and its rational place at infinity, with total degree six. Thus the
+Construct the quadratic field given by `y² = x⁵ - 1`. Its constants are exact in every
+characteristic other than two. In characteristic other than two and five, it has genus two,
+and its different is the sum of the distinct zeros of `y` and its rational place at infinity,
+with total degree six. Thus the
 finite branch places contribute degree five whether or not the fifth roots of unity are
 rational over the constants.
 
@@ -97,12 +99,6 @@ theorem genus_eq_two (h2 : (2 : k) ≠ 0) (h5 : (5 : k) ≠ 0) :
     (by rw [natDegree_X_pow_sub_C]; decide) (adjoin_genY_eq_top k) (genY_sq k)
   simpa only [natDegree_X_pow_sub_C, Nat.reduceSub, Nat.reduceDiv] using h
 
-/-- The constants of the genus-two model are exactly `k`. -/
-theorem isIntegrallyClosedIn (h2 : (2 : k) ≠ 0) (h5 : (5 : k) ≠ 0) :
-    IsIntegrallyClosedIn k (FunctionField k) :=
-  isIntegrallyClosedIn_of_sq_eq h2 (separable_X_pow_sub_C (1 : k) h5 one_ne_zero).squarefree
-    (by rw [natDegree_X_pow_sub_C]; decide) (adjoin_genY_eq_top k) (genY_sq k)
-
 /-- The `y`-coordinate is nonzero. -/
 @[simp]
 theorem genY_ne_zero : genY k ≠ 0 := by
@@ -126,6 +122,16 @@ instance [NeZero (2 : k)] : Algebra.IsSeparable (RatFunc k) (FunctionField k) :=
       exact NeZero.ne (2 : k) (FaithfulSMul.algebraMap_injective k (RatFunc k)
         (by simpa only [map_ofNat, map_zero] using h))) (finrank_eq_two k)
 
+/-- The constants of `y² = x⁵ - 1` are exactly `k` in every characteristic other than two. -/
+theorem isIntegrallyClosedIn (h2 : (2 : k) ≠ 0) :
+    IsIntegrallyClosedIn k (FunctionField k) := by
+  let : NeZero (2 : k) := ⟨h2⟩
+  have hodd : Odd (X ^ 5 - C 1 : k[X]).natDegree := by rw [natDegree_X_pow_sub_C]; decide
+  obtain ⟨P, hP, -, -⟩ := Place.existsUnique_restrict_eq_infty_of_sq_eq_of_odd
+    hodd (adjoin_genY_eq_top k) (genY_sq k)
+  exact isIntegrallyClosedIn_of_isTotallyRamified (F := RatFunc k) inferInstance
+    (P.isTotallyRamified_of_sq_eq_of_odd hodd (adjoin_genY_eq_top k) (genY_sq k) hP)
+
 section Different
 
 variable [NeZero (2 : k)]
@@ -143,12 +149,13 @@ theorem degree_different (h5 : (5 : k) ≠ 0) :
 
 /-- **The different consists of the distinct zeros of `y` and a rational place at infinity**.
 The finite part has degree five, independently of the splitting of `x⁵ - 1` over `k`. -/
-theorem exists_different_eq_sum (h5 : (5 : k) ≠ 0) :
+theorem exists_different_eq_ofFinset (h5 : (5 : k) ≠ 0) :
     ∃ P : Place k (FunctionField k), P.degree = 1 ∧
       P.restrict k (RatFunc k) = Place.infty k ∧
       Divisor.different k (FunctionField k) (IsFunctionField.ratFunc k) =
-        (∑ Q ∈ (Divisor.zeros (isFunctionField k) (Units.mk0 (genY k) (genY_ne_zero k))).support,
-          WeilDivisor.ofPoint Q) + WeilDivisor.ofPoint P ∧
+        WeilDivisor.ofFinset
+          (Divisor.zeros (isFunctionField k) (Units.mk0 (genY k) (genY_ne_zero k))).support +
+            WeilDivisor.ofPoint P ∧
       Divisor.degree (Divisor.zeros (isFunctionField k)
         (Units.mk0 (genY k) (genY_ne_zero k))) = 5 := by
   have hf := (separable_X_pow_sub_C (1 : k) h5 one_ne_zero).squarefree
@@ -158,7 +165,7 @@ theorem exists_different_eq_sum (h5 : (5 : k) ≠ 0) :
   have hgen : (RatFunc k)⟮(Units.mk0 (genY k) (genY_ne_zero k) : FunctionField k)⟯ = ⊤ :=
     by simpa only [Units.val_mk0] using adjoin_genY_eq_top k
   refine ⟨P, hdegree, hP,
-    different_ratFunc_eq_sum_ofPoint_add_of_sq_eq_of_odd (NeZero.ne (2 : k))
+    different_ratFunc_eq_ofFinset_add_of_sq_eq_of_odd (NeZero.ne (2 : k))
       hf hodd hgen (genY_sq k) hP, ?_⟩
   have heq := different_ratFunc_eq_zeros_add_of_sq_eq_of_odd (NeZero.ne (2 : k))
     hf hodd hgen (genY_sq k) hP
