@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Toric.Algebraic.Examples.ProjectiveLine
+public import TauCeti.Geometry.Toric.Algebraic.Fan.Point
 public import TauCeti.Geometry.Toric.Analytic.Fan.Compact
 public import TauCeti.Geometry.Toric.Analytic.Fan.Map.Proper
 

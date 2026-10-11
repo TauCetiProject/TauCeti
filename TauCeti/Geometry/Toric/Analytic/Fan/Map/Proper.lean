@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Convex.Cone.ErrorBound
-public import TauCeti.Geometry.Toric.Algebraic.Fan.Point
 public import TauCeti.Geometry.Toric.Analytic.Fan.Compact
 public import TauCeti.Geometry.Toric.Analytic.Fan.Map.Orbit
 public import Mathlib.Topology.Maps.Proper.CompactlyGenerated
