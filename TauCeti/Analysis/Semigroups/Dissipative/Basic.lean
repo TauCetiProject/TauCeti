@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Semigroups.Resolvent.Identity
-public import TauCeti.LinearAlgebra.LinearPMap.SmulSub
 public import TauCeti.Analysis.Normed.Operator.Resolvent.LowerBound
 
 /-!
