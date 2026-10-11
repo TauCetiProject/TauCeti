@@ -81,7 +81,10 @@ simplex, because a standard simplex is connected. -/
 
 /-- The augmentation of the small augmented singular nerve, followed by the inclusion of the small
 simplices, is the map induced by the projection of the Čech nerve onto the ambient space. -/
-@[reassoc (attr := simp)]
+-- No `reassoc` form: the augmentation's target `.right` matches the source of `ι` only after
+-- unfolding `openCoverSmallAugmentedSingularNerve`, so `Category.assoc` cannot fire and the
+-- generated `_assoc` lemma would be this one composed on the right, not in simp normal form.
+@[simp]
 theorem openCoverSmallAugmentedSingularNerve_hom_app_ι (n : SimplexCategoryᵒᵖ) :
     (openCoverSmallAugmentedSingularNerve U).hom.app n ≫
         (X.smallSingularSubcomplex (fun i ↦ (U i : Set X))).ι =
