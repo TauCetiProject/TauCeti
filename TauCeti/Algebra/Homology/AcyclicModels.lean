@@ -278,6 +278,7 @@ def chainMap : F ⟶ G where
     exact B.extend_map _ f x
 
 /-- In degree zero the natural chain map is the map determined by `t₀`. -/
+@[simp]
 theorem chainMap_app_f_zero_apply (X : C) (x : (F.obj X).X 0) :
     ((B.chainMap hG hεF t₀ ht₀).app X).f 0 x = B.extend t₀ X x :=
   (rfl)
@@ -397,6 +398,7 @@ private theorem homotopy_hom (X : C) : (B.homotopy hG f g hfg X).hom = B.homotop
   (rfl)
 
 /-- The components of the chain homotopy vanish off the shape of the complexes. -/
+@[simp]
 theorem homotopy_hom_eq_zero (X : C) {i j : ℕ} (h : i + 1 ≠ j) :
     (B.homotopy hG f g hfg X).hom i j = 0 := by
   simp only [homotopy_hom, homotopyHom, h, ↓reduceDIte]
