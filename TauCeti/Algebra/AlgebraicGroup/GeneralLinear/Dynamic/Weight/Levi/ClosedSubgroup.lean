@@ -1,0 +1,83 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Codex
+-/
+module
+
+public import TauCeti.Algebra.AlgebraicGroup.Dynamic.ClosedImmersion
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Dynamic.Weight.Levi.Basic
+
+/-!
+# Levis of closed subgroups of a general linear group
+
+Let a closed subgroup of `GL_N` carry a cocharacter whose composite with the inclusion is the
+weight cocharacter `t ↦ diag(t ^ w i)`. The dynamic Levi of the subgroup is represented by the
+image, in its coordinate Hopf algebra, of the weight-Levi ideal of `GL_N`. Its points over every
+commutative algebra are precisely the subgroup's points that preserve the weight spaces.
+
+This includes nonreduced closed subgroups and nonreduced value algebras. It supplies a concrete
+closed-subgroup step for constructing dynamic Levis from faithful representations.
+
+## Main result
+
+* `TauCeti.GeneralLinear.Dynamic.mem_weightLeviImagePointsSubgroup_iff`: the image ideal cuts
+  out the dynamic Levi of the closed subgroup.
+* `TauCeti.GeneralLinear.Dynamic.weightLeviClosedSubgroupPointsIso`: the resulting natural
+  representing isomorphism.
+
+## References
+
+* G. R. Kempf, *Instability in invariant theory*, Annals of Mathematics 108 (1978), §2.
+-/
+
+public section
+
+open CategoryTheory
+
+namespace TauCeti.GeneralLinear.Dynamic
+
+universe u v
+
+variable {R : Type u} [CommRing R] {N : ℕ}
+variable {K : _root_.CommHopfAlgCat.{u} R}
+
+/-- A closed subgroup of `GL_N` with a weight cocharacter has dynamic Levi cut out by the
+image of the weight-Levi ideal. -/
+theorem mem_weightLeviImagePointsSubgroup_iff (w : Fin N → ℤ)
+    (φ : coordinateHopfAlgebra R N ⟶ K) (hφ : Function.Surjective φ.hom)
+    (l : K →ₐc[R] LaurentPolynomial R)
+    (hl : l.comp φ.hom = weightCocharacter (R := R) w)
+    (A : CommAlgCat.{v} R) (g : HopfAlgebra.points (R := R) (H := K) A) :
+    g ∈ CommHopfAlgCat.quotientPointsSubgroup K
+        ((weightLeviDefiningHopfIdeal R w).map φ.hom) A ↔
+      g ∈ Cocharacter.levi A l := by
+  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_map_iff φ,
+    CommHopfAlgCat.mapPointsFunctor_app_apply]
+  have h := mem_weightLeviDefiningPointsSubgroup_iff (R := R) w
+    ((CommHopfAlgCat.mapPointsFunctor φ).app A g)
+  rw [← hl] at h
+  have hpoint : Function.Injective
+      (AlgHom.mapDomain (A := LaurentPolynomial A) φ.hom) := by
+    intro a b hab
+    apply CommHopfAlgCat.mapPointsFunctor_app_injective_of_surjective φ hφ
+      (CommAlgCat.of R (LaurentPolynomial A))
+    -- The categorical point map and `AlgHom.mapDomain` use different point wrappers.
+    change AlgHom.mapDomain φ.hom a = AlgHom.mapDomain φ.hom b
+    exact hab
+  exact h.trans (Cocharacter.mem_levi_iff_of_injective φ.hom hpoint l _).symm
+
+/-- The quotient by the image of the ambient weight-Levi ideal represents the dynamic Levi of
+the closed subgroup, naturally in the commutative value algebra. -/
+noncomputable def weightLeviClosedSubgroupPointsIso (w : Fin N → ℤ)
+    (φ : coordinateHopfAlgebra R N ⟶ K) (hφ : Function.Surjective φ.hom)
+    (l : K →ₐc[R] LaurentPolynomial R)
+    (hl : l.comp φ.hom = weightCocharacter (R := R) w) :
+    HopfAlgebra.pointsFunctor (R := R)
+        (H := CommHopfAlgCat.quotient K ((weightLeviDefiningHopfIdeal R w).map φ.hom)) ≅
+      Cocharacter.leviFunctor l :=
+  CommHopfAlgCat.quotientPointsSubgroupRepresentingIso K
+    ((weightLeviDefiningHopfIdeal R w).map φ.hom) (fun A ↦ Cocharacter.levi A l)
+    (fun A g ↦ mem_weightLeviImagePointsSubgroup_iff w φ hφ l hl A g)
+
+end TauCeti.GeneralLinear.Dynamic
