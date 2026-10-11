@@ -120,21 +120,6 @@ theorem energyFormH1_one_zero_zero_eq_setIntegral_neg_laplacian_mul {u : W1p mu 
     rw [hx, Pi.neg_apply]
 
 omit [DecidableEq ι] in
-/-- On an open set `V` contained in a compact subset of `Ω`, a function of class `C¹` on `Ω`
-is an element of `W^{1,2}(V)` with its classical gradient. -/
-private theorem exists_w1p_value_gradient_ae_eq {V : Opens (EuclideanSpace ℝ ι)}
-    {L : Set (EuclideanSpace ℝ ι)} (hL : IsCompact L) (hVL : (V : Set (EuclideanSpace ℝ ι)) ⊆ L)
-    (hLO : L ⊆ Omega) (hw : ContDiffOn ℝ 1 w Omega) :
-    ∃ U : W1p mu V 2, W1p.value U =ᵐ[mu.restrict V] w ∧
-      W1p.gradient U =ᵐ[mu.restrict V] ∇ w := by
-  have hgrad : ContinuousOn (∇ w) Omega :=
-    (toDual ℝ (EuclideanSpace ℝ ι)).symm.continuous.comp_continuousOn
-      (hw.continuousOn_fderiv_of_isOpen Omega.isOpen le_rfl)
-  exact W1p.exists_value_gradient_ae_eq_of_contDiffOn (hw.mono (hVL.trans hLO))
-    ((hw.continuousOn.mono hLO).memLp_restrict_of_subset_isCompact hL V.isOpen.measurableSet hVL 2)
-    ((hgrad.mono hLO).memLp_restrict_of_subset_isCompact hL V.isOpen.measurableSet hVL 2)
-
-omit [DecidableEq ι] in
 /-- **The energy of a classical solution above a positive level.** Let `w` be of class `C²` on a
 bounded open set `Ω`, continuous on its closure, zero on its frontier, with `|w| ≤ S` on `Ω` and
 `Δw` integrable on `Ω`. Then for `ε > 0`, testing `-Δw` against the truncation `(w - ε)⁺`, which
@@ -158,8 +143,8 @@ private theorem setLIntegral_enorm_gradient_sq_le
   have hVL : (V : Set (EuclideanSpace ℝ ι)) ⊆ closure V' := subset_closure
   have hVO : (V : Set (EuclideanSpace ℝ ι)) ⊆ Omega := hVL.trans hVO'
   have hV : MeasurableSet (V : Set (EuclideanSpace ℝ ι)) := V.isOpen.measurableSet
-  obtain ⟨U, hUv, hUg⟩ :=
-    exists_w1p_value_gradient_ae_eq (mu := mu) hL hVL hVO' (hw.of_le one_le_two)
+  obtain ⟨U, hUv, hUg⟩ := W1p.exists_value_gradient_ae_eq_of_contDiffOn_of_isCompact (mu := mu)
+    (p := 2) hO (hw.of_le one_le_two) hL hVL hVO'
   -- The truncation `(w - ε)⁺` vanishes off `K`, so it has zero boundary values on `V`.
   have hP : W1p.posPartAbove h2 hε.le U ∈ w1p0Submodule mu V 2 := by
     refine W1p.mem_w1p0Submodule_of_isCompact h2 hK hKV ?_
@@ -222,36 +207,6 @@ private theorem setLIntegral_enorm_gradient_sq_le
         ENNReal.ofReal_le_ofReal (hleft ▸ hgreen ▸ hright)
 
 omit [DecidableEq ι] in
-/-- The classical gradient of a `C¹` function vanishes almost everywhere on its zero set. This is
-read off from the corresponding statement for weak gradients on small balls. -/
-private theorem ae_gradient_eq_zero_of_eq_zero (hw : ContDiffOn ℝ 1 w Omega) :
-    ∀ᵐ x ∂mu.restrict Omega, w x = 0 → ∇ w x = 0 := by
-  have hO := Omega.isOpen
-  set N := {x | x ∈ (Omega : Set (EuclideanSpace ℝ ι)) ∧ w x = 0 ∧ ∇ w x ≠ 0}
-  have hN : mu N = 0 := by
-    refine measure_null_of_locally_null N fun x hx => ?_
-    obtain ⟨r, hr, hrO⟩ := Metric.isOpen_iff.1 hO x hx.1
-    set V : Opens (EuclideanSpace ℝ ι) := ⟨ball x (r / 2), isOpen_ball⟩
-    obtain ⟨U, hUv, hUg⟩ := exists_w1p_value_gradient_ae_eq (mu := mu) (V := V)
-      (isCompact_closedBall x (r / 2)) ball_subset_closedBall
-      ((closedBall_subset_ball (by linarith)).trans hrO) hw
-    refine ⟨N ∩ V, inter_mem_nhdsWithin N (isOpen_ball.mem_nhds (mem_ball_self (by linarith))),
-      ?_⟩
-    have hae : ∀ᵐ y ∂mu.restrict V, w y = 0 → ∇ w y = 0 := by
-      filter_upwards [W1p.gradient_ae_eq_zero_on_level_set ENNReal.ofNat_ne_top U 0, hUv, hUg]
-        with y hy hv hg hy0
-      rw [← hg]
-      exact hy (hv.trans hy0)
-    rw [ae_restrict_iff' V.isOpen.measurableSet, ae_iff] at hae
-    refine measure_mono_null (fun y hy => ?_) hae
-    obtain ⟨⟨-, hy0, hyg⟩, hyV⟩ := hy
-    exact fun h => hyg (h hyV hy0)
-  filter_upwards [ae_restrict_of_ae (measure_eq_zero_iff_ae_notMem.1 hN),
-    ae_restrict_mem hO.measurableSet] with x hx hxO hx0
-  by_contra h
-  exact hx ⟨hxO, hx0, h⟩
-
-omit [DecidableEq ι] in
 /-- **The Dirichlet energy of a classical solution is finite.** Under the hypotheses of
 `setLIntegral_enorm_gradient_sq_le`, `∫_Ω ‖∇w‖² ≤ 2 S ∫_Ω |Δw|`: the bound above each level `ε > 0`
 of `w` and of `-w`, in the limit `ε → 0`, controls the energy on `{w ≠ 0}`, and `∇w = 0` almost
@@ -309,7 +264,7 @@ private theorem setLIntegral_enorm_gradient_sq_le_add
       = ∫⁻ x in Omega, ((Omega : Set (EuclideanSpace ℝ ι)) ∩ {x | w x ≠ 0}).indicator
           (fun x => ‖∇ w x‖ₑ ^ 2) x ∂mu := by
         refine lintegral_congr_ae ?_
-        filter_upwards [ae_gradient_eq_zero_of_eq_zero (hw.of_le one_le_two),
+        filter_upwards [gradient_ae_eq_zero_on_level_set_of_contDiffOn (hw.of_le one_le_two) 0,
           ae_restrict_mem hO.measurableSet] with x hx hxO
         by_cases h : w x = 0
         · rw [indicator_of_notMem (s := (Omega : Set (EuclideanSpace ℝ ι)) ∩ {x | w x ≠ 0})
