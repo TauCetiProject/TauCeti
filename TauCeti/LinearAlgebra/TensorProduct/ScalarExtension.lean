@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.TensorProduct.Maps
 
 /-!
-# Cancelling scalar extension on the right
+# Cancelling scalar extension
 
 The canonical identification `(E ⊗[K] L) ⊗[L] V ≃ E ⊗[K] V` is linear over `E`, although
 `L` acts on the right component of the scalar-extended algebra. This identification compares
@@ -17,6 +17,13 @@ when a construction over `L/K` is transported along `K → E`.
 
 The construction uses Mathlib's `Algebra.TensorProduct.commRight`,
 `TensorProduct.AlgebraTensorModule.cancelBaseChange`, and `TensorProduct.comm`.
+
+With `B` acting on the left factor instead, `TensorProduct.cancelBaseChangeLeft` is the
+`R`-linear identification `(B ⊗[R] P) ⊗[B] N ≃ P ⊗[R] N` for an `R`-module `P`. Under it,
+extending a `B`-linear map along `B → B ⊗[R] P` becomes tensoring the underlying `R`-linear map
+with `P` (`TensorProduct.cancelBaseChangeLeft_lTensor`), so the two are injective together
+(`LinearMap.injective_lTensor_iff_injective_lTensor_restrictScalars`). For a field `P = κ(p)`,
+this compares base change to the fibre ring `B ⊗[R] κ(p)` with base change to `κ(p)`.
 -/
 
 public section
@@ -64,3 +71,63 @@ theorem _root_.TensorProduct.cancelBaseChangeRight_symm_tmul (e : E) (v : V) :
       (e ⊗ₜ[K] (1 : L)) ⊗ₜ[L] v := (rfl)
 
 end TauCeti
+
+namespace TensorProduct
+
+variable (R B P : Type*) [CommSemiring R] [CommSemiring B] [Algebra R B]
+  [AddCommMonoid P] [Module R P]
+
+/-- Cancelling `B` on the left identifies extension of a `B`-module `N` along `B → B ⊗[R] P`
+with the tensor product over `R` of `P` and the underlying `R`-module of `N`. The map sends
+`(b ⊗ p) ⊗ n` to `p ⊗ (b • n)`. -/
+def cancelBaseChangeLeft (N : Type*) [AddCommMonoid N] [Module R N] [Module B N]
+    [IsScalarTower R B N] : (B ⊗[R] P) ⊗[B] N ≃ₗ[R] P ⊗[R] N :=
+  (TensorProduct.comm B (B ⊗[R] P) N).restrictScalars R ≪≫ₗ
+    (AlgebraTensorModule.cancelBaseChange R B B N P).restrictScalars R ≪≫ₗ
+    TensorProduct.comm R N P
+
+variable {N N' : Type*} [AddCommMonoid N] [Module R N] [Module B N] [IsScalarTower R B N]
+  [AddCommMonoid N'] [Module R N'] [Module B N'] [IsScalarTower R B N']
+
+/-- The left cancellation equivalence moves the `B`-scalar onto the module component. -/
+@[simp]
+theorem cancelBaseChangeLeft_tmul (b : B) (p : P) (n : N) :
+    cancelBaseChangeLeft R B P N ((b ⊗ₜ[R] p) ⊗ₜ[B] n) = p ⊗ₜ[R] (b • n) := by
+  simp [cancelBaseChangeLeft]
+
+variable {R B P}
+
+/-- Through `cancelBaseChangeLeft`, extending a `B`-linear map `f` along `B → B ⊗[R] P` is
+tensoring the underlying `R`-linear map of `f` with `P`. -/
+theorem cancelBaseChangeLeft_lTensor (f : N →ₗ[B] N') (z : (B ⊗[R] P) ⊗[B] N) :
+    cancelBaseChangeLeft R B P N' (f.lTensor (B ⊗[R] P) z) =
+      (f.restrictScalars R).lTensor P (cancelBaseChangeLeft R B P N z) := by
+  induction z with
+  | tmul y n =>
+    induction y with
+    | tmul b p => simp
+    | add x y hx hy => simp_all [add_tmul]
+  | add x y hx hy => simp_all
+
+end TensorProduct
+
+namespace LinearMap
+
+open TensorProduct
+
+variable {R B : Type*} [CommSemiring R] [CommSemiring B] [Algebra R B] (P : Type*)
+  [AddCommMonoid P] [Module R P] {N N' : Type*} [AddCommMonoid N] [Module R N] [Module B N]
+  [IsScalarTower R B N] [AddCommMonoid N'] [Module R N'] [Module B N'] [IsScalarTower R B N']
+
+/-- Extending a `B`-linear map along `B → B ⊗[R] P` gives an injective map exactly when
+tensoring its underlying `R`-linear map with `P` does. -/
+theorem injective_lTensor_iff_injective_lTensor_restrictScalars (f : N →ₗ[B] N') :
+    Function.Injective (f.lTensor (B ⊗[R] P)) ↔
+      Function.Injective ((f.restrictScalars R).lTensor P) := by
+  have : ⇑((f.restrictScalars R).lTensor P) = cancelBaseChangeLeft R B P N' ∘
+      f.lTensor (B ⊗[R] P) ∘ (cancelBaseChangeLeft R B P N).symm := by
+    ext z
+    simp [cancelBaseChangeLeft_lTensor]
+  rw [this, EquivLike.comp_injective, EquivLike.injective_comp]
+
+end LinearMap

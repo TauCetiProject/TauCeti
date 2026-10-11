@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Flat.Localization
 public import Mathlib.RingTheory.LocalRing.Module
 public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 public import TauCeti.RingTheory.Flat.TensorProduct
+import TauCeti.LinearAlgebra.TensorProduct.ScalarExtension
 
 /-!
 # The fibrewise criterion for flatness of finitely presented modules
@@ -54,37 +55,8 @@ open TensorProduct IsLocalRing
 
 namespace Module
 
-universe v
-
 variable {R B M : Type*} [CommRing R] [CommRing B] [Algebra R B]
   [AddCommGroup M] [Module R M] [Module B M] [IsScalarTower R B M]
-
-/-- For an `R`-algebra `k`, base change of a `B`-linear map along `B → B ⊗[R] k` is base change
-of the underlying `R`-linear map along `R → k`, through `(B ⊗[R] k) ⊗[B] N ≃ k ⊗[R] N`. So the
-first is injective when the second is. -/
-private theorem injective_lTensor_of_injective_lTensor_restrictScalars (k : Type*) [CommRing k]
-    [Algebra R k] {N N' : Type v} [AddCommGroup N] [Module R N] [Module B N] [IsScalarTower R B N]
-    [AddCommGroup N'] [Module R N'] [Module B N'] [IsScalarTower R B N'] (f : N →ₗ[B] N')
-    (hf : Function.Injective ((f.restrictScalars R).lTensor k)) :
-    Function.Injective (f.lTensor (B ⊗[R] k)) := by
-  -- `(B ⊗[R] k) ⊗[B] N ≃ N ⊗[B] (B ⊗[R] k) ≃ N ⊗[R] k ≃ k ⊗[R] N`
-  let e (N : Type v) [AddCommGroup N] [Module R N] [Module B N] [IsScalarTower R B N] :
-      (B ⊗[R] k) ⊗[B] N ≃ₗ[R] k ⊗[R] N :=
-    ((TensorProduct.comm B (B ⊗[R] k) N).restrictScalars R ≪≫ₗ
-      (AlgebraTensorModule.cancelBaseChange R B B N k).restrictScalars R) ≪≫ₗ
-      TensorProduct.comm R N k
-  have key (z : (B ⊗[R] k) ⊗[B] N) :
-      e N' (f.lTensor (B ⊗[R] k) z) = (f.restrictScalars R).lTensor k (e N z) := by
-    induction z with
-    | tmul y n =>
-      induction y with
-      | tmul b x => simp [e]
-      | add x y hx hy => simp_all [add_tmul]
-    | add x y hx hy => simp_all
-  intro x y hxy
-  apply (e N).injective
-  apply hf
-  rw [← key, ← key, hxy]
 
 /-- **The fibrewise criterion for flatness, local form.** Let `B` be a local `R`-algebra and `p`
 the inverse image in `R` of the maximal ideal of `B`. A finitely presented `B`-module `M` which
@@ -118,7 +90,7 @@ theorem Free.of_flat_fiber [IsLocalRing B] [Module.FinitePresentation B M] [Flat
   -- `F ⊗[B] K → F ⊗[B] Bⁿ` is injective, since `M` is flat over `R`.
   have h₁ : Function.Injective ((LinearMap.ker g).subtype.baseChange F) := by
     rw [LinearMap.baseChange_eq_ltensor]
-    exact injective_lTensor_of_injective_lTensor_restrictScalars k _ <|
+    exact (LinearMap.injective_lTensor_iff_injective_lTensor_restrictScalars k _).mpr <|
       LinearMap.lTensor_injective_of_exact_of_flat (g.restrictScalars R) hg _
         Subtype.val_injective hex k
   -- The fibre `F ⊗[B] M` is flat over `F`, so `κ(B) ⊗[F] (F ⊗[B] K) → κ(B) ⊗[F] (F ⊗[B] Bⁿ)` is
@@ -156,12 +128,9 @@ theorem Flat.of_flat_fiber [Module.FinitePresentation B M] [Flat R M]
   set p := (maximalIdeal Bq).comap (algebraMap R Bq)
   let F := B ⊗[R] p.ResidueField
   let F' := Bq ⊗[R] p.ResidueField
-  let : Algebra F F' :=
-    (Algebra.TensorProduct.map (IsScalarTower.toAlgHom R B Bq) (AlgHom.id R _)).toAlgebra
-  have : IsScalarTower B F F' := .of_algebraMap_eq fun b ↦ by
-    rw [RingHom.algebraMap_toAlgebra, Algebra.TensorProduct.algebraMap_apply,
-      Algebra.TensorProduct.algebraMap_apply, Algebra.algebraMap_self, RingHom.id_apply]
-    exact (Algebra.TensorProduct.map_tmul (IsScalarTower.toAlgHom R B Bq) (AlgHom.id R _) b 1).symm
+  let ψ : F →ₐ[B] F' := Algebra.TensorProduct.map (IsScalarTower.toAlgHom B B Bq) (AlgHom.id R _)
+  let : Algebra F F' := ψ.toAlgebra
+  have : IsScalarTower B F F' := .of_algebraMap_eq fun b ↦ (ψ.commutes b).symm
   have := h p
   have : Free Bq (Bq ⊗[B] M) := Free.of_flat_fiber (R := R) <| Flat.of_linearEquiv
     ((AlgebraTensorModule.cancelBaseChange B Bq F' F' M).trans

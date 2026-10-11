@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
 import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
+import TauCeti.CategoryTheory.MorphismProperty.Limits
 import TauCeti.RingTheory.Flat.Fiber
 
 /-!
@@ -18,7 +19,8 @@ import TauCeti.RingTheory.Flat.Fiber
 Let `f : X ⟶ Y` and `g : Y ⟶ S` be morphisms of schemes, with `f` finite and locally of finite
 presentation and `X` flat over `S`. If for every point `s` of `S` the base change of `f` to the
 fibre `Y_s = g.fiber s`, that is `X ×_Y Y_s ⟶ Y_s`, is flat, then `f` is flat
-(`AlgebraicGeometry.Scheme.Hom.flat_of_flat_fiber`). No Noetherian hypothesis is needed.
+(`AlgebraicGeometry.Scheme.Hom.flat_of_flat_pullback_fiberι`). No Noetherian hypothesis is
+needed.
 
 This turns flatness over fields into flatness over an arbitrary base: for a finite morphism
 between two families over `S` (for instance multiplication by a nonzero integer on an elliptic
@@ -33,8 +35,8 @@ morphism factors through the residue field of its image point.
 
 ## Main results
 
-* `AlgebraicGeometry.Scheme.Hom.flat_of_flat_fiber`: the fibrewise criterion for flatness of a
-  finite, locally finitely presented morphism.
+* `AlgebraicGeometry.Scheme.Hom.flat_of_flat_pullback_fiberι`: the fibrewise criterion for
+  flatness of a finite, locally finitely presented morphism.
 
 ## References
 
@@ -54,26 +56,12 @@ universe u
 
 variable {X Y S : Scheme.{u}}
 
-/-- A base change of `pullback.snd f k` is again flat. -/
-private lemma flat_pullback_snd_comp (f : X ⟶ Y) {W W' : Scheme.{u}} (k : W ⟶ Y) (e : W' ⟶ W)
-    (h : Flat (pullback.snd f k)) : Flat (pullback.snd f (e ≫ k)) := by
-  rw [← (Iso.inv_comp_eq _).mpr (pullbackLeftPullbackSndIso_hom_snd f k e).symm]
-  infer_instance
-
-/-- Precomposing `f` with a flat morphism keeps `pullback.snd f k` flat. -/
-private lemma flat_pullback_snd_comp_left (f : X ⟶ Y) {X' W : Scheme.{u}} (k : W ⟶ Y)
-    (e : X' ⟶ X) [Flat e] (h : Flat (pullback.snd f k)) : Flat (pullback.snd (e ≫ f) k) := by
-  rw [← (Iso.inv_comp_eq _).mpr (pullbackRightPullbackFstIso_hom_snd f k e).symm]
-  infer_instance
-
 /-- Flatness of `X ×_Y (Y ×_S T) ⟶ Y ×_S T` passes to every `T' ⟶ T`. -/
 private lemma flat_pullback_snd_fst_comp (f : X ⟶ Y) (g : Y ⟶ S) {T T' : Scheme.{u}} (r : T ⟶ S)
     (t : T' ⟶ T) (h : Flat (pullback.snd f (pullback.fst g r))) :
-    Flat (pullback.snd f (pullback.fst g (t ≫ r))) := by
-  have : pullback.fst g (t ≫ r) =
-      ((pullbackLeftPullbackSndIso g r t).inv ≫ pullback.fst _ _) ≫ pullback.fst g r := by simp
-  rw [this]
-  exact flat_pullback_snd_comp f _ _ h
+    Flat (pullback.snd f (pullback.fst g (t ≫ r))) :=
+  MorphismProperty.pullback_snd_of_comp_eq (P := @Flat) f _
+    ((pullbackLeftPullbackSndIso g r t).inv ≫ pullback.fst _ _) (by simp) h
 
 /-- Precomposition with an isomorphism keeps a morphism flat. Inside the main proof below, instance
 search for this times out, so it is stated separately. -/
@@ -105,16 +93,16 @@ private lemma flat_SpecMap_of_flat_baseChange_field {R B A : CommRingCat.{u}} (�
   have e₂ : φ = CommRingCat.ofHom (algebraMap B A) := rfl
   -- The base change of `Spec A ⟶ Spec B` to the fibre `Spec F` is `Spec` of `F ⟶ A ⊗[B] F`.
   rw [e₁, e₂, ← pullbackSpecIso_hom_fst' R B κ] at h₁
-  have h₂ := flat_pullback_snd_comp _ _ (pullbackSpecIso R B κ).inv h₁
-  rw [Iso.inv_hom_id_assoc, ← pullbackSpecIso_hom_snd B A F] at h₂
+  have h₂ := MorphismProperty.pullback_snd_of_comp_eq (P := @Flat) _ _ _
+    (Iso.inv_hom_id_assoc (pullbackSpecIso R B κ) _) h₁
+  rw [← pullbackSpecIso_hom_snd B A F] at h₂
   have h₃ := flat_iso_hom_comp (pullbackSpecIso B A F).symm _ h₂
   rw [Iso.symm_hom, Iso.inv_hom_id_assoc, Flat.SpecMap_iff] at h₃
   rw [← RingHom.flat_algebraMap_iff]
   have : algebraMap F (F ⊗[B] A) =
       (Algebra.TensorProduct.comm B A F).toRingHom.comp
         (Algebra.TensorProduct.includeRight (R := B) (A := A) (B := F)).toRingHom := by
-    -- both sides send `x ⊗ₜ 1 : F` to `(x ⊗ₜ 1) ⊗ₜ 1`
-    ext x <;> rfl
+    ext x <;> simp [F, κ]
   rw [this]
   exact .comp h₃ (.of_bijective (Algebra.TensorProduct.comm B A F).bijective)
 
@@ -135,12 +123,8 @@ private theorem flat_of_flat_baseChange_field (f : X ⟶ Y) (g : Y ⟶ S) [IsFin
       rw [← pullbackRightPullbackFstIso_hom_snd]
       exact flat_iso_hom_comp _ _ inferInstance
     refine H (pullback.snd f (pullback.fst g u)) (pullback.snd g u) (fun K _ s ↦ ?_) ⟨_, rfl⟩
-    rw [← pullbackLeftPullbackSndIso_hom_snd]
-    have hfst : pullback.fst (pullback.snd g u) s ≫ pullback.fst g u =
-        (pullbackLeftPullbackSndIso g u s).hom ≫ pullback.fst g (s ≫ u) := by simp
-    have := flat_pullback_snd_comp f _ (pullbackLeftPullbackSndIso g u s).hom (h K (s ≫ u))
-    rw [← hfst] at this
-    exact flat_iso_hom_comp _ _ this
+    exact MorphismProperty.pullback_snd_pullback_snd (P := @Flat) f _ _ _
+      (pullbackLeftPullbackSndIso g u s).hom (by simp) (h K (s ≫ u))
   obtain ⟨R, rfl⟩ := hS
   wlog hY : ∃ B, Y = Spec B generalizing X Y with H
   · rw [IsZariskiLocalAtTarget.iff_of_openCover (P := @Flat.{u}) Y.affineCover]
@@ -151,21 +135,16 @@ private theorem flat_of_flat_baseChange_field (f : X ⟶ Y) (g : Y ⟶ S) [IsFin
       rw [← Category.assoc, ← pullback.condition, Category.assoc]
       exact Flat.comp _ _
     refine H (pullback.snd f v) (v ≫ g) (fun K _ s ↦ ?_) ⟨_, rfl⟩
-    rw [← pullbackLeftPullbackSndIso_hom_snd]
-    have hfst : pullback.fst (v ≫ g) s ≫ v =
-        ((pullbackRightPullbackFstIso g s v).inv ≫ pullback.snd v (pullback.fst g s)) ≫
-          pullback.fst g s := by
-      rw [Category.assoc, ← pullback.condition, ← Category.assoc,
-        pullbackRightPullbackFstIso_inv_fst]
-    have := flat_pullback_snd_comp f _ ((pullbackRightPullbackFstIso g s v).inv ≫
-      pullback.snd v (pullback.fst g s)) (h K s)
-    rw [← hfst] at this
-    exact flat_iso_hom_comp _ _ this
+    refine MorphismProperty.pullback_snd_pullback_snd (P := @Flat) f _ _ _
+      ((pullbackRightPullbackFstIso g s v).inv ≫ pullback.snd v (pullback.fst g s)) ?_ (h K s)
+    rw [Category.assoc, ← pullback.condition, ← Category.assoc,
+      pullbackRightPullbackFstIso_inv_fst]
   obtain ⟨B, rfl⟩ := hY
   wlog hX : ∃ A, X = Spec A generalizing X with H
   · have : IsAffine X := isAffine_of_isAffineHom f
     have : Flat ((X.isoSpec.inv ≫ f) ≫ g) := by rw [Category.assoc]; infer_instance
-    have := H (X.isoSpec.inv ≫ f) (fun K _ s ↦ flat_pullback_snd_comp_left f _ _ (h K s))
+    have := H (X.isoSpec.inv ≫ f)
+      (fun K _ s ↦ MorphismProperty.pullback_snd_comp_left (P := @Flat) f _ _ inferInstance (h K s))
       ⟨_, rfl⟩
     rw [← X.isoSpec.hom_inv_id_assoc f]
     infer_instance
@@ -178,7 +157,7 @@ private theorem flat_of_flat_baseChange_field (f : X ⟶ Y) (g : Y ⟶ S) [IsFin
 locally of finite presentation, and `g : Y ⟶ S` such that `X` is flat over `S`. If for every
 point `s` of `S` the base change `X ×_Y Y_s ⟶ Y_s` of `f` to the fibre `Y_s` of `g` is flat, then
 `f` is flat. -/
-theorem Scheme.Hom.flat_of_flat_fiber (f : X ⟶ Y) (g : Y ⟶ S) [IsFinite f]
+theorem Scheme.Hom.flat_of_flat_pullback_fiberι (f : X ⟶ Y) (g : Y ⟶ S) [IsFinite f]
     [LocallyOfFinitePresentation f] [Flat (f ≫ g)]
     (h : ∀ s : S, Flat (pullback.snd f (g.fiberι s))) : Flat f := by
   refine flat_of_flat_baseChange_field f g fun K _ s ↦ ?_

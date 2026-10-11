@@ -134,7 +134,7 @@ theorem Flat.tensorProduct_of_flat (A : Type*) [AddCommGroup A] [Module R A] [Mo
         ((AlgebraTensorModule.assoc R B B A M N).restrictScalars R).toLinearMap := by
     refine TensorProduct.ext' fun x n ↦ ?_
     induction x with
-    | tmul a m => rfl
+    | tmul a m => simp
     | add x y hx hy => simp only [add_tmul, map_add, hx, hy]
   rw [h]
   simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, LinearMap.coe_restrictScalars,
