@@ -81,7 +81,8 @@ noncomputable def awayRingAut : G →* RingAut (Localization.Away (r : A)) where
       simp
 
 /-- The action of `G` on `A[1/r]` given by `awayRingAut`. -/
-noncomputable instance : MulSemiringAction G (Localization.Away (r : A)) :=
+noncomputable instance instMulSemiringActionAway :
+    MulSemiringAction G (Localization.Away (r : A)) :=
   MulSemiringAction.compHom _ (awayRingAut r)
 
 /-- The action of `G` on `A[1/r]` extends the action on `A`. -/
@@ -98,7 +99,7 @@ theorem algebraMap_mem_fixedPoints (a : FixedPoints.subring A G) :
   rw [smul_algebraMap_away, a.2 g]
 
 /-- The algebra structure of `A[1/r]ᴳ` over `Aᴳ` given by the localization map `A → A[1/r]`. -/
-noncomputable instance :
+noncomputable instance instAlgebraAway :
     Algebra (FixedPoints.subring A G) (FixedPoints.subring (Localization.Away (r : A)) G) :=
   (((algebraMap A (Localization.Away (r : A))).comp (FixedPoints.subring A G).subtype).codRestrict
     _ (algebraMap_mem_fixedPoints r)).toAlgebra
