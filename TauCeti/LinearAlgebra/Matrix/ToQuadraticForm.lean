@@ -93,10 +93,10 @@ theorem toQuadraticForm'_diagonal (d : ι → R) :
 /-- The polar form of the quadratic form of `A` is the bilinear form of `A + Aᵀ`. -/
 theorem polarBilin_toQuadraticForm'_apply (A : Matrix ι ι R) (x y : ι → R) :
     A.toQuadraticForm'.polarBilin x y = x ⬝ᵥ (A + Aᵀ) *ᵥ y := by
-  rw [polarBilin_apply_apply, Matrix.toQuadraticForm', LinearMap.BilinMap.polar_toQuadraticMap,
-    toLinearMap₂'_apply', toLinearMap₂'_apply', add_mulVec, dotProduct_add]
-  congr 1
-  rw [mulVec_transpose, dotProduct_comm x, dotProduct_mulVec]
+  simp only [polarBilin_apply_apply, polar, toQuadraticForm'_apply, mulVec_add,
+    add_dotProduct, add_mulVec, dotProduct_add, mulVec_transpose]
+  simp only [dotProduct_comm x (y ᵥ* A), dotProduct_mulVec]
+  ring
 
 /-- The quadratic form of `A` is nondegenerate when the matrix `A + Aᵀ` of its polar form is
 invertible. -/
