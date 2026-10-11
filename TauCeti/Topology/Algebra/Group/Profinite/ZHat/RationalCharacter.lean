@@ -109,6 +109,8 @@ def ratCharacterEquiv :
       intro a
       obtain ⟨χ, hχ⟩ := exists_ratCharacter_gen (discreteRatCircleEquiv.symm a)
       refine ⟨Additive.ofMul χ, ?_⟩
+      -- `AddEquiv.ofBijective` has `ratCharacterEvaluation` as its forward map; expose that
+      -- map's value so `hχ` can rewrite the evaluation at `gen`.
       change discreteRatCircleEquiv (Multiplicative.toAdd (χ gen)) = a
       rw [hχ, toAdd_ofAdd, discreteRatCircleEquiv.apply_symm_apply]⟩
 
@@ -116,6 +118,7 @@ def ratCharacterEquiv :
 @[simp] theorem ratCharacterEquiv_apply
     (χ : Additive (zHat.{u} →ₜ* Multiplicative DiscreteRatCircle)) :
     ratCharacterEquiv χ = discreteRatCircleEquiv (Multiplicative.toAdd (Additive.toMul χ gen)) :=
+  -- Unfold only the forward-map application of `AddEquiv.ofBijective`, then the evaluation map.
   by change ratCharacterEvaluation χ = _; rfl
 
 /-- The unique character taking the value `a` at the generator is the inverse of evaluation. -/
