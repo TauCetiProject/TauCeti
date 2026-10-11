@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Basic
 
-import TauCeti.RingTheory.Huber.ClosedSubmodule
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
 import TauCeti.Topology.Algebra.IsUniformGroup.Quotient
 
@@ -26,8 +25,8 @@ asked of `B`. This file shows that `B` then has the structure that Wedhorn's def
   open bounded subring of `B`, and the image of a pseudouniformiser of `A` is a pseudouniformiser
   of `B`.
 * Over a strongly noetherian Tate ring, `A⟨X₁, …, Xₖ⟩` is a complete metrisable noetherian Tate
-  ring, so every ideal of it is closed, the kernel of `π` among them. Hence `B` is Hausdorff, and
-  it is noetherian.
+  ring, so every ideal of it is closed (`Ideal.isClosed_restrictedMvPowerSeriesCompletion`), the
+  kernel of `π` among them. Hence `B` is Hausdorff, and it is noetherian.
 
 Over a complete nonarchimedean field `k` these are Wedhorn's Propositions 5.58 and 5.59. A
 topological `k`-algebra `B` is *topologically of finite type* (Wedhorn, Definition 5.57) when it
@@ -44,8 +43,6 @@ makes its adic spectrum an affinoid adic space.
   topologically of finite type is complete for any uniformity compatible with its additive group
   structure.
 * `TauCeti.Huber.IsTopologicallyFiniteType.isTateRing`: over a Tate ring, it is a Tate ring.
-* `Ideal.isClosed_restrictedMvPowerSeriesCompletion`: over a strongly noetherian Tate ring, every
-  ideal of `A⟨X₁, …, Xₖ⟩` is closed.
 * `TauCeti.Huber.IsTopologicallyFiniteType.t2Space`: over a strongly noetherian Tate ring, an
   algebra topologically of finite type is Hausdorff.
 * `TauCeti.Huber.IsTopologicallyFiniteType.isNoetherianRing`: over a strongly noetherian Tate
@@ -98,19 +95,6 @@ theorem IsTopologicallyFiniteType.isTateRing (hφ : IsTopologicallyFiniteType φ
     exact P.isBounded_ringOfDefinition.image_of_isOpenMap hπ.continuous.continuousAt hπ.isOpenMap
 
 variable [IsStronglyNoetherian A]
-
-/-- **Every ideal of `A⟨X₁, …, Xₖ⟩` is closed**, for a strongly noetherian Tate ring `A`, which
-need not be complete or Hausdorff: `A⟨X₁, …, Xₖ⟩` is a complete metrisable noetherian Tate ring.
-Compare `Ideal.isClosed_weightedRestrictedSubring_one_weight`, the same statement for the
-uncompleted algebra over a complete Hausdorff `A`. -/
-theorem _root_.Ideal.isClosed_restrictedMvPowerSeriesCompletion {k : ℕ}
-    (I : Ideal (restrictedMvPowerSeriesCompletion k A)) :
-    IsClosed (I : Set (restrictedMvPowerSeriesCompletion k A)) := by
-  have : IsTateRing (restrictedMvPowerSeriesCompletion k A) :=
-    IsTateRing.of_continuous (continuous_algebraMap_restrictedMvPowerSeriesCompletion k A)
-  have : (𝓤 (restrictedMvPowerSeriesCompletion k A)).IsCountablyGenerated :=
-    IsUniformAddGroup.uniformity_countably_generated
-  exact isClosed_of_isNoetherian I
 
 /-- **An algebra topologically of finite type over a strongly noetherian Tate ring is Hausdorff**
 (Wedhorn, Proposition 5.58, over a field): `{0}` is closed in it, because its preimage in
