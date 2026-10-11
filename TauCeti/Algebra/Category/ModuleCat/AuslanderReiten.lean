@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.AuslanderReiten.CocyclePairing
+public import TauCeti.Algebra.Category.ModuleCat.HomCocycle
 public import TauCeti.CategoryTheory.Exact.Stable.Injective
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.EnoughInjectives
@@ -19,6 +20,9 @@ This identifies the subspace killed on the Hom side of Auslander–Reiten dualit
 The cocycle pairing kills exactly the same morphisms as the injective stable quotient.
 It therefore identifies injective stable Hom into the translate with the scalar dual
 of Hom cocycles modulo coboundaries, naturally in the coefficient module.
+Descending cocycles to the presenting image identifies this quotient with `Ext¹`
+of the cokernel. Thus the pairing gives Auslander–Reiten duality
+`stableHom(N, D Tr(f)) ≃ D Ext¹(coker f,N)`, with Hom taken modulo injectives.
 
 The statement uses the existing injective stable category of modules and
 does not depend on a choice of injective envelope. It applies to arbitrary algebras
@@ -158,5 +162,45 @@ theorem auslanderReitenStableHomEquiv_naturality
   rw [← Functor.map_comp, auslanderReitenStableHomEquiv_map,
     auslanderReitenStableHomEquiv_map]
   exact (auslanderReitenCocyclePairing_naturality f g.hom h.hom).symm
+
+/-- Auslander–Reiten duality: injective stable Hom into `D Tr(f)` is the scalar
+dual of the first extension group of the cokernel of `f`. -/
+noncomputable def auslanderReitenExtEquiv
+    (f : P₁ →ₗ[A] P₀) (N : ModuleCat.{max u v w} A) :
+    ((ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.obj N ⟶
+      (ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.obj
+        (ModuleCat.of A (AuslanderReitenTranslate k f))) ≃ₗ[k]
+      Module.Dual k (CategoryTheory.Abelian.Ext (ModuleCat.of A (P₀ ⧸ range f)) N 1) := by
+  let e : HomCocycleQuotient (k := k) f N ≃ₗ[k]
+      CategoryTheory.Abelian.Ext (ModuleCat.of A (P₀ ⧸ range f)) N 1 :=
+    homCocycleQuotientEquivExt (k := k) f N
+  exact (auslanderReitenStableHomEquiv (k := k) f N).trans (LinearEquiv.dualMap e.symm)
+
+/-- Evaluate duality at the extension class corresponding to a Hom cocycle class. -/
+@[simp]
+theorem auslanderReitenExtEquiv_apply
+    (f : P₁ →ₗ[A] P₀) (N : ModuleCat.{max u v w} A)
+    (h : (ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.obj N ⟶
+      (ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.obj
+        (ModuleCat.of A (AuslanderReitenTranslate k f)))
+    (x : HomCocycleQuotient (k := k) f N) :
+    auslanderReitenExtEquiv f N h (homCocycleQuotientEquivExt (k := k) f N x) =
+      auslanderReitenStableHomEquiv f N h x := by
+  simp [auslanderReitenExtEquiv]
+
+/-- Precomposition in injective stable Hom is dual to pushforward of extension classes. -/
+theorem auslanderReitenExtEquiv_naturality
+    (f : P₁ →ₗ[A] P₀) {N N' : ModuleCat.{max u v w} A} (g : N ⟶ N')
+    (h : (ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.obj N' ⟶
+      (ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.obj
+        (ModuleCat.of A (AuslanderReitenTranslate k f)))
+    (α : CategoryTheory.Abelian.Ext (ModuleCat.of A (P₀ ⧸ range f)) N 1) :
+    auslanderReitenExtEquiv f N
+        ((ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.map g ≫ h) α =
+      auslanderReitenExtEquiv f N' h (α.comp (CategoryTheory.Abelian.Ext.mk₀ g) (add_zero 1)) := by
+  obtain ⟨x, rfl⟩ := (homCocycleQuotientEquivExt (k := k) f N).surjective α
+  rw [← homCocycleQuotientEquivExt_naturality, auslanderReitenExtEquiv_apply,
+    auslanderReitenExtEquiv_apply, auslanderReitenStableHomEquiv_naturality]
+  rfl
 
 end LinearMap

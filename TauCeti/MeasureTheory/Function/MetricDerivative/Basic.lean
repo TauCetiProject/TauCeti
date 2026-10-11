@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Measurable
+public import Mathlib.MeasureTheory.Constructions.BorelSpace.ContinuousMap
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.DerivIntegrable
 public import TauCeti.MeasureTheory.Function.AbsolutelyContinuous
@@ -47,6 +48,13 @@ makes `m` an upper bound for the `limsup`. Finiteness of `∫⁻ m` comes from t
 of `γ`, a monotone real function whose increments dominate the distances along `γ`, so that its
 integrable derivative bounds the metric derivative almost everywhere.
 
+For continuous curves the `limsup` defining the metric derivative can be taken along rational
+increments, which makes the metric derivative jointly measurable in the time and in the parameter
+of a measurable family of continuous curves, and absolute continuity can be tested on rational
+times. On the space `C([a, b], X)` of continuous paths with its Borel structure, the space on which
+dynamic transport plans live, this gives the measurability of the metric derivative and of the
+set of absolutely continuous paths, which the action functional of a dynamic plan integrates.
+
 ## Main definitions
 
 * `TauCeti.metricDerivative γ t`: the metric derivative of `γ` at `t`, as an extended nonnegative
@@ -70,6 +78,16 @@ integrable derivative bounds the metric derivative almost everywhere.
   for absolutely continuous curves.
 * `TauCeti.absolutelyContinuousOnInterval_iff_exists_edist_le_lintegral`: absolute continuity as
   the existence of an integrable density bounding the distances along a curve.
+* `TauCeti.measurable_metricDerivative` and `Continuous.measurable_metricDerivative`: joint
+  measurability of the metric derivative in a measurable family of continuous curves, and
+  measurability for a single continuous curve.
+* `TauCeti.absolutelyContinuousOnInterval_iff_forall_rat_edist_le_lintegral` and
+  `TauCeti.measurableSet_absolutelyContinuousOnInterval`: absolute continuity of a continuous curve
+  tested on rational times, and the measurability of the absolutely continuous members of a
+  measurable family of continuous curves.
+* `TauCeti.measurable_metricDerivative_IccExtend` and
+  `TauCeti.measurableSet_absolutelyContinuousOnInterval_IccExtend`: the same statements on the
+  path space `C([a, b], X)`.
 
 ## References
 
@@ -403,5 +421,170 @@ theorem absolutelyContinuousOnInterval_iff_exists_edist_le_lintegral :
     fun ⟨_, hfin, h⟩ ↦ absolutelyContinuousOnInterval_of_edist_le_lintegral hfin h⟩
 
 end Converse
+
+section Measurable
+
+variable {X : Type*} [PseudoEMetricSpace X] {γ : ℝ → X} {α : Type*} [MeasurableSpace α]
+  {F : α → ℝ → X}
+
+/-- For a continuous curve, the upper limit defining the metric derivative can be taken along
+rational increments: `|γ'|(t)` is the infimum over `n` of the supremum of the difference quotients
+`edist (γ (t + r)) (γ t) / |r|` over the rationals `0 < |r| < 1 / (n + 1)`. -/
+theorem metricDerivative_eq_iInf_iSup_rat (hγ : Continuous γ) (t : ℝ) :
+    metricDerivative γ t = ⨅ n : ℕ, ⨆ r ∈ {r : ℚ | r ≠ 0 ∧ |(r : ℝ)| < 1 / (n + 1)},
+      edist (γ (t + r)) (γ t) / ‖(r : ℝ)‖ₑ := by
+  have hden (r : ℝ) : edist (t + r) t = ‖r‖ₑ := by
+    rw [edist_dist, Real.dist_eq, add_sub_cancel_left, Real.enorm_eq_ofReal_abs]
+  rw [metricDerivative_def,
+    (nhdsWithin_hasBasis Metric.nhds_basis_ball_inv_nat_succ {t}ᶜ).limsup_eq_iInf_iSup]
+  simp only [iInf_true]
+  refine iInf_congr fun n ↦ le_antisymm (iSup₂_le fun s hs ↦ ?_) (iSup₂_le fun r hr ↦ ?_)
+  · -- The difference quotient is continuous at `s ≠ t`, and the times `t + r` with `r` rational
+    -- are dense in the open set over which the supremum is taken.
+    have hU : IsOpen (Metric.ball t (1 / (n + 1)) ∩ {t}ᶜ) :=
+      Metric.isOpen_ball.inter isOpen_compl_singleton
+    have hD : DenseRange fun r : ℚ ↦ t + r :=
+      (Homeomorph.addLeft t).surjective.denseRange.comp Rat.denseRange_cast
+        (continuous_const_add t)
+    have hcl := hD.open_subset_closure_inter hU hs
+    rw [mem_closure_iff_nhdsWithin_neBot] at hcl
+    set V := Metric.ball t (1 / (n + 1)) ∩ {t}ᶜ ∩ range fun r : ℚ ↦ t + r
+    have hq : ContinuousAt (fun x ↦ edist (γ x) (γ t) / edist x t) s :=
+      ENNReal.Tendsto.div ((hγ.tendsto s).edist tendsto_const_nhds)
+        (Or.inr (edist_pos.2 hs.2).ne') (tendsto_id.edist tendsto_const_nhds)
+        (Or.inl (edist_ne_top s t))
+    refine le_of_tendsto (hq.tendsto.mono_left (nhdsWithin_le_nhds (s := V))) ?_
+    filter_upwards [self_mem_nhdsWithin] with x ⟨⟨hxb, hxt⟩, r, hr⟩
+    subst hr
+    refine le_iSup₂_of_le r ⟨?_, ?_⟩ (by rw [hden])
+    · rintro rfl
+      simp at hxt
+    · rwa [Metric.mem_ball, Real.dist_eq, add_sub_cancel_left] at hxb
+  · refine le_iSup₂_of_le (t + r) ⟨?_, ?_⟩ (by rw [hden])
+    · rw [Metric.mem_ball, Real.dist_eq, add_sub_cancel_left]
+      exact hr.2
+    · simpa using hr.1
+
+/-- **Joint measurability of the metric derivative** of a measurable family of continuous curves:
+if each curve `F x` is continuous and the distances `edist (F x s) (F x u)` depend measurably on
+`x`, then `(x, t) ↦ |(F x)'|(t)` is measurable. -/
+theorem measurable_metricDerivative (hF : ∀ x, Continuous (F x))
+    (hm : ∀ s u, Measurable fun x ↦ edist (F x s) (F x u)) :
+    Measurable fun q : α × ℝ ↦ metricDerivative (F q.1) q.2 := by
+  have h : (fun q : α × ℝ ↦ metricDerivative (F q.1) q.2) = fun q ↦ ⨅ n : ℕ,
+      ⨆ r ∈ {r : ℚ | r ≠ 0 ∧ |(r : ℝ)| < 1 / (n + 1)},
+        edist (F q.1 (q.2 + r)) (F q.1 q.2) / ‖(r : ℝ)‖ₑ :=
+    funext fun q ↦ metricDerivative_eq_iInf_iSup_rat (hF q.1) q.2
+  rw [h]
+  refine Measurable.iInf fun n ↦ Measurable.biSup _ (Set.to_countable _) fun r _ ↦ ?_
+  -- Each difference quotient is continuous in time and measurable in the parameter.
+  have hc (x : α) : Continuous fun t : ℝ ↦ edist (F x (t + r)) (F x t) :=
+    ((hF x).comp (continuous_id.add continuous_const)).edist (hF x)
+  have : Measurable (Function.uncurry fun (t : ℝ) (x : α) ↦ edist (F x (t + r)) (F x t)) :=
+    measurable_uncurry_of_continuous_of_measurable hc fun t ↦ hm _ _
+  exact (this.comp (f := Prod.swap) measurable_swap).div_const _
+
+/-- The metric derivative of a continuous curve is measurable. -/
+theorem _root_.Continuous.measurable_metricDerivative (hγ : Continuous γ) :
+    Measurable (metricDerivative γ) := by
+  have h := TauCeti.measurable_metricDerivative (α := Unit) (F := fun _ ↦ γ) (fun _ ↦ hγ)
+    fun _ _ ↦ measurable_const
+  exact h.comp (f := fun t : ℝ ↦ ((), t)) measurable_prodMk_left
+
+/-- On the space `C([a, b], X)` of continuous paths with its Borel structure, the metric
+derivative `(γ, t) ↦ |γ'|(t)` of the path extended by constants outside `[a, b]` is jointly
+measurable. -/
+theorem measurable_metricDerivative_IccExtend {a b : ℝ} (hab : a ≤ b) :
+    Measurable fun q : C(Icc a b, X) × ℝ ↦ metricDerivative (IccExtend hab q.1) q.2 :=
+  measurable_metricDerivative (F := fun γ : C(Icc a b, X) ↦ IccExtend hab γ)
+    (fun γ ↦ γ.continuous.Icc_extend') fun s u ↦ by
+      simp only [IccExtend_apply]
+      exact ((continuous_eval_const _).edist (continuous_eval_const _)).measurable
+
+end Measurable
+
+section MeasurableSet
+
+variable {X : Type*} [PseudoMetricSpace X] {γ : ℝ → X} {a b : ℝ} {α : Type*}
+  [MeasurableSpace α] {F : α → ℝ → X}
+
+/-- **Absolute continuity on rational times.** A curve continuous on `[a, b]` is absolutely
+continuous there exactly when its metric derivative has finite integral over `[a, b]` and bounds
+the distances between the rational times of `[a, b]`:
+`edist (γ q) (γ r) ≤ ∫⁻ x in Ι q r, |γ'|(x)`. -/
+theorem absolutelyContinuousOnInterval_iff_forall_rat_edist_le_lintegral
+    (hγ : ContinuousOn γ (uIcc a b)) :
+    AbsolutelyContinuousOnInterval γ a b ↔ ∫⁻ r in Ι a b, metricDerivative γ r ≠ ∞ ∧
+      ∀ q r : ℚ, (q : ℝ) ∈ uIcc a b → (r : ℝ) ∈ uIcc a b →
+        edist (γ q) (γ r) ≤ ∫⁻ x in Ι (q : ℝ) r, metricDerivative γ x := by
+  refine ⟨fun h ↦ ⟨h.lintegral_metricDerivative_lt_top.ne,
+    fun q r hq hr ↦ h.edist_le_lintegral_metricDerivative hq hr⟩, fun ⟨hfin, h⟩ ↦
+    absolutelyContinuousOnInterval_of_edist_le_lintegral hfin ?_⟩
+  -- It suffices to bound the distance between times `s < u`. It is the limit of the distances
+  -- between rational times of `(s, u)`, each bounded by the integral over `(s, u]`.
+  have key : ∀ s ∈ uIcc a b, ∀ u ∈ uIcc a b, s < u →
+      edist (γ s) (γ u) ≤ ∫⁻ x in Ι s u, metricDerivative γ x := by
+    intro s hs u hu hsu
+    have hsub : Icc s u ⊆ uIcc a b := Icc_subset_uIcc.trans (uIcc_subset_uIcc hs hu)
+    set S := Ioo s u ×ˢ Ioo s u
+    set D := range fun q : ℚ × ℚ ↦ ((q.1 : ℝ), (q.2 : ℝ))
+    have hD : Dense D := Rat.denseRange_cast.prodMap Rat.denseRange_cast
+    have hcl : (s, u) ∈ closure (S ∩ D) := by
+      refine closure_mono (hD.open_subset_closure_inter (isOpen_Ioo.prod isOpen_Ioo))
+        ?_ |> closure_closure.subset
+      rw [closure_prod_eq, closure_Ioo hsu.ne]
+      exact ⟨⟨le_rfl, hsu.le⟩, hsu.le, le_rfl⟩
+    rw [mem_closure_iff_nhdsWithin_neBot] at hcl
+    have hγ' : ContinuousOn γ (Icc s u) := hγ.mono hsub
+    have h1 : ContinuousWithinAt (fun z : ℝ × ℝ ↦ γ z.1) (S ∩ D) (s, u) :=
+      (hγ' s ⟨le_rfl, hsu.le⟩).comp continuousWithinAt_fst
+        fun z (hz : z ∈ S ∩ D) ↦ Ioo_subset_Icc_self hz.1.1
+    have h2 : ContinuousWithinAt (fun z : ℝ × ℝ ↦ γ z.2) (S ∩ D) (s, u) :=
+      (hγ' u ⟨hsu.le, le_rfl⟩).comp continuousWithinAt_snd
+        fun z (hz : z ∈ S ∩ D) ↦ Ioo_subset_Icc_self hz.1.2
+    refine le_of_tendsto (h1.edist h2) ?_
+    filter_upwards [self_mem_nhdsWithin] with z ⟨⟨hz1, hz2⟩, q, hq⟩
+    subst hq
+    refine (h q.1 q.2 (hsub (Ioo_subset_Icc_self hz1)) (hsub (Ioo_subset_Icc_self hz2))).trans
+      (lintegral_mono_set (uIoc_subset_uIoc_of_uIcc_subset_uIcc
+        (uIcc_subset_uIcc (Icc_subset_uIcc (Ioo_subset_Icc_self hz1))
+          (Icc_subset_uIcc (Ioo_subset_Icc_self hz2)))))
+  intro s hs u hu
+  rcases lt_trichotomy s u with hsu | rfl | hus
+  · exact key s hs u hu hsu
+  · simp
+  · rw [edist_comm, uIoc_comm]
+    exact key u hu s hs hus
+
+/-- **Measurability of absolute continuity** in a measurable family of continuous curves: if each
+curve `F x` is continuous and the distances `edist (F x s) (F x u)` depend measurably on `x`, then
+the parameters `x` for which `F x` is absolutely continuous on `[a, b]` form a measurable set. -/
+theorem measurableSet_absolutelyContinuousOnInterval (hF : ∀ x, Continuous (F x))
+    (hm : ∀ s u, Measurable fun x ↦ edist (F x s) (F x u)) (a b : ℝ) :
+    MeasurableSet {x | AbsolutelyContinuousOnInterval (F x) a b} := by
+  have hint (s u : ℝ) : Measurable fun x ↦ ∫⁻ r in Ι s u, metricDerivative (F x) r :=
+    (measurable_metricDerivative hF hm).lintegral_prod_right'
+      (f := fun q : α × ℝ ↦ metricDerivative (F q.1) q.2)
+  simp_rw [absolutelyContinuousOnInterval_iff_forall_rat_edist_le_lintegral (hF _).continuousOn,
+    ofPred_and, ofPred_forall]
+  refine ((hint a b) (measurableSet_singleton ∞).compl).inter
+    (.iInter fun q ↦ .iInter fun r ↦ ?_)
+  by_cases hq : (q : ℝ) ∈ uIcc a b
+  · by_cases hr : (r : ℝ) ∈ uIcc a b
+    · simpa [hq, hr] using measurableSet_le (hm q r) (hint q r)
+    · simp [hr]
+  · simp [hq]
+
+/-- On the space `C([a, b], X)` of continuous paths with its Borel structure, the paths whose
+extension by constants outside `[a, b]` is absolutely continuous on `[s, u]` form a measurable
+set. -/
+theorem measurableSet_absolutelyContinuousOnInterval_IccExtend (hab : a ≤ b) (s u : ℝ) :
+    MeasurableSet {γ : C(Icc a b, X) | AbsolutelyContinuousOnInterval (IccExtend hab γ) s u} :=
+  measurableSet_absolutelyContinuousOnInterval (F := fun γ : C(Icc a b, X) ↦ IccExtend hab γ)
+    (fun γ ↦ γ.continuous.Icc_extend') (fun s u ↦ by
+      simp only [IccExtend_apply]
+      exact ((continuous_eval_const _).edist (continuous_eval_const _)).measurable) s u
+
+end MeasurableSet
 
 end TauCeti

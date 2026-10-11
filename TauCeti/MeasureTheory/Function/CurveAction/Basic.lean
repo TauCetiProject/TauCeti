@@ -36,6 +36,10 @@ The main results concern an absolutely continuous curve `γ` on `[a, b]` and `1 
   finite lower limit is itself absolutely continuous, by the Hölder estimate on finite unions of
   intervals. Lower semicontinuity therefore holds with no hypothesis on the limit curve.
 
+The action is moreover a measurable function of the curve in a measurable family of continuous
+curves, in particular on the path space `C([a, b], X)` with its Borel structure, so that it can be
+integrated against a dynamic plan.
+
 The difference-quotient formula is the metric counterpart of the characterisation of the Sobolev
 space `W^{1,p}` on an interval by difference quotients.
 
@@ -53,6 +57,8 @@ space `W^{1,p}` on an interval by difference quotients.
   limits of curves with bounded actions are absolutely continuous.
 * `TauCeti.curveAction_le_liminf` and `TauCeti.curveAction_le_liminf_of_one_lt`: lower
   semicontinuity of the action under pointwise convergence.
+* `TauCeti.measurable_curveAction` and `TauCeti.measurable_curveAction_IccExtend`: measurability
+  of the action in a measurable family of continuous curves and on the path space `C([a, b], X)`.
 
 ## References
 
@@ -125,6 +131,33 @@ theorem _root_.LipschitzWith.curveAction_le {K : ℝ≥0} (hγ : LipschitzWith K
         lintegral_mono fun t ↦ ENNReal.rpow_le_rpow (hγ.metricDerivative_le t) hp
     _ = (K : ℝ≥0∞) ^ p * edist a b := by
         rw [setLIntegral_const, Real.volume_uIoc, edist_dist a b, Real.dist_eq, abs_sub_comm]
+
+section Measurable
+
+variable {α : Type*} [MeasurableSpace α] {F : α → ℝ → X}
+
+/-- **Measurability of the action** in a measurable family of continuous curves: if each curve
+`F x` is continuous and the distances `edist (F x s) (F x u)` depend measurably on `x`, then
+`x ↦ A_p(F x)` is measurable. -/
+theorem measurable_curveAction (hF : ∀ x, Continuous (F x))
+    (hm : ∀ s u, Measurable fun x ↦ edist (F x s) (F x u)) (p a b : ℝ) :
+    Measurable fun x ↦ curveAction p (F x) a b := by
+  have h : Measurable fun q : α × ℝ ↦ metricDerivative (F q.1) q.2 ^ p :=
+    (measurable_metricDerivative hF hm).pow_const p
+  simp only [curveAction_def]
+  exact h.lintegral_prod_right' (ν := volume.restrict (Ι a b))
+
+/-- On the space `C([a, b], X)` of continuous paths with its Borel structure, the `p`-action over
+`[s, u]` of the path extended by constants outside `[a, b]` is a measurable function of the
+path. -/
+theorem measurable_curveAction_IccExtend {a b : ℝ} (hab : a ≤ b) (p s u : ℝ) :
+    Measurable fun γ : C(Icc a b, X) ↦ curveAction p (IccExtend hab γ) s u := by
+  have h : Measurable fun q : C(Icc a b, X) × ℝ ↦ metricDerivative (IccExtend hab q.1) q.2 ^ p :=
+    (measurable_metricDerivative_IccExtend hab).pow_const p
+  simp only [curveAction_def]
+  exact h.lintegral_prod_right' (ν := volume.restrict (Ι s u))
+
+end Measurable
 
 end PseudoEMetricSpace
 
