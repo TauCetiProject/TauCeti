@@ -186,6 +186,7 @@ variable {K L : Type u} [Field K] [Field L] [Algebra K L]
 
 /-- **Scalar extension of a quaternion symbol**: the Brauer class of a quaternion algebra is
 carried to the class with the same parameters viewed in the extension field. -/
+@[simp]
 theorem baseChange_quaternionClass (a b : Kˣ) :
     baseChange K L (quaternionClass a b) =
       quaternionClass (Units.map (algebraMap K L).toMonoidHom a)
