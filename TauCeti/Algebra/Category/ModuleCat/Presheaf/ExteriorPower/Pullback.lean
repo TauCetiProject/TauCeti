@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Presheaf.ExteriorPower.Basic
+public import TauCeti.Algebra.Category.ModuleCat.ExteriorPower.RestrictScalars
+public import Mathlib.CategoryTheory.Adjunction.Mates
 
 /-!
 # The exterior-power pullback comparison for module presheaves
@@ -18,9 +20,9 @@ presheaves. This supplies the sectionwise input to exterior-power pullback compa
 sheaves. Unlike precomposition alone, restriction of scalars does not generally give an
 isomorphism of exterior powers; no invertibility assertion is made here.
 
-The construction uses Mathlib's `ModuleCat.exteriorPower.desc` and the pullback--pushforward
-adjunction. The wedge formula specifies the pushforward comparison, and the unit equation
-specifies the pullback comparison.
+The construction uses the module-level restriction-of-scalars comparison and Mathlib's
+`CategoryTheory.mateEquiv` for the pullback--pushforward adjunction. The wedge formula specifies
+the pushforward comparison, and the unit equation specifies the pullback comparison.
 
 ## References
 
@@ -41,49 +43,34 @@ variable {C : Type v} [Category.{w} C] {D : Type v'} [Category.{w'} D]
   {F : C ⥤ D} {S : Cᵒᵖ ⥤ CommRingCat.{u}} {R : Dᵒᵖ ⥤ CommRingCat.{u}}
   (α : S ⟶ F.op ⋙ R)
 
-private def exteriorPowerPushforwardApp (n : ℕ)
-    (M : PresheafOfModulesOfCommRing.{u} R) (U : Cᵒᵖ) :
-    PresheafOfModulesOfCommRing.obj ((PresheafOfModulesOfCommRing.exteriorPower n).obj
-      ((PresheafOfModulesOfCommRing.pushforward α).obj M)) U ⟶
-      PresheafOfModulesOfCommRing.obj ((PresheafOfModulesOfCommRing.pushforward α).obj
-        ((PresheafOfModulesOfCommRing.exteriorPower n).obj M)) U :=
-  ModuleCat.exteriorPower.desc
-    { toFun m := ModuleCat.exteriorPower.mk (M := M.obj (F.op.obj U)) m
-      map_update_add' m i a b :=
-        (ModuleCat.exteriorPower.mk (M := M.obj (F.op.obj U))).map_update_add m i a b
-      map_update_smul' m i r a :=
-        (ModuleCat.exteriorPower.mk (M := M.obj (F.op.obj U))).map_update_smul m i (α.app U r) a
-      map_eq_zero_of_eq' m _ _ h hij :=
-        (ModuleCat.exteriorPower.mk (M := M.obj (F.op.obj U))).map_eq_zero_of_eq m h hij }
-
-private lemma exteriorPowerPushforwardApp_mk (n : ℕ)
-    (M : PresheafOfModulesOfCommRing.{u} R) (U : Cᵒᵖ)
-    (m : Fin n → PresheafOfModulesOfCommRing.obj
-      ((PresheafOfModulesOfCommRing.pushforward α).obj M) U) :
-    exteriorPowerPushforwardApp α n M U (ModuleCat.exteriorPower.mk m) =
-      ModuleCat.exteriorPower.mk (M := M.obj (F.op.obj U)) m :=
-  ModuleCat.exteriorPower.desc_mk _ _
-
 private def exteriorPowerPushforwardMap (n : ℕ)
     (M : PresheafOfModulesOfCommRing.{u} R) :
     (PresheafOfModulesOfCommRing.exteriorPower n).obj
         ((PresheafOfModulesOfCommRing.pushforward α).obj M) ⟶
       (PresheafOfModulesOfCommRing.pushforward α).obj
         ((PresheafOfModulesOfCommRing.exteriorPower n).obj M) where
-  app U := exteriorPowerPushforwardApp α n M U
+  app U := (ModuleCat.restrictScalarsExteriorPowerComparison (α.app U).hom n).app
+    (M.obj (F.op.obj U))
   naturality {U V} f := by
     apply ModuleCat.exteriorPower.hom_ext (R := S.obj U)
     apply ModuleCat.AlternatingMap.ext
     intro m
     let P := (PresheafOfModulesOfCommRing.pushforward α).obj M
-    have h₁ := congrArg (exteriorPowerPushforwardApp α n M V)
+    let cV := (ModuleCat.restrictScalarsExteriorPowerComparison (α.app V).hom n).app
+      (M.obj (F.op.obj V))
+    have h₁ := congrArg cV
       (PresheafOfModulesOfCommRing.exteriorPower_obj_map_mk n P f m)
-    have h₂ := exteriorPowerPushforwardApp_mk α n M V (fun j ↦ P.map f (m j))
+    have h₂ := ModuleCat.restrictScalarsExteriorPowerComparison_app_mk (α.app V).hom n
+      (M.obj (F.op.obj V)) (fun j ↦ P.map f (m j))
     have h₃ := congrArg
       (((PresheafOfModulesOfCommRing.pushforward α).obj
         ((PresheafOfModulesOfCommRing.exteriorPower n).obj M)).map f)
-      (exteriorPowerPushforwardApp_mk α n M U m)
+      (ModuleCat.restrictScalarsExteriorPowerComparison_app_mk (α.app U).hom n
+        (M.obj (F.op.obj U)) m)
     have h₄ := PresheafOfModulesOfCommRing.exteriorPower_obj_map_mk n M (F.op.map f) m
+    -- `pushforward_obj_map_apply` identifies `P.map f` with `M.map (F.op.map f)`
+    -- on elements. Restriction of scalars changes only the scalar action, so these
+    -- section maps and the corresponding exterior-power maps are definitionally equal.
     exact (h₁.trans h₂).trans (h₃.trans h₄).symm
 
 /-- Pushforward of module presheaves carries the canonical exterior-power comparison.
@@ -96,18 +83,10 @@ def pushforwardExteriorPowerComparison (n : ℕ) :
   app := exteriorPowerPushforwardMap α n
   naturality {M N} φ := by
     ext U : 1
-    apply ModuleCat.exteriorPower.hom_ext (R := S.obj U)
-    apply ModuleCat.AlternatingMap.ext
-    intro m
-    have h₁ := congrArg (exteriorPowerPushforwardApp α n N U)
-      (ModuleCat.exteriorPower.map_mk
-        (((PresheafOfModulesOfCommRing.pushforward α).map φ).app' U) m)
-    have h₂ := exteriorPowerPushforwardApp_mk α n N U
-      (fun j ↦ φ.app' (F.op.obj U) (m j))
-    have h₃ := congrArg (ModuleCat.exteriorPower.map (φ.app' (F.op.obj U)) n)
-      (exteriorPowerPushforwardApp_mk α n M U m)
-    have h₄ := ModuleCat.exteriorPower.map_mk (φ.app' (F.op.obj U)) m
-    exact (h₁.trans h₂).trans (h₃.trans h₄).symm
+    -- Pushforward evaluates a presheaf morphism at `F.op.obj U`; its section map is
+    -- restriction of scalars of that module morphism. Exterior powers also evaluate sectionwise.
+    exact (ModuleCat.restrictScalarsExteriorPowerComparison (α.app U).hom n).naturality
+      (φ.app' (F.op.obj U))
 
 /-- The presheaf comparison sends a decomposable wedge to the wedge with the same factors,
 now balanced over the target ring. -/
@@ -121,7 +100,8 @@ theorem pushforwardExteriorPowerComparison_app_app_mk (n : ℕ)
         (ModuleCat.exteriorPower.mk (M := PresheafOfModulesOfCommRing.obj
           ((PresheafOfModulesOfCommRing.pushforward α).obj M) U) m) =
       ModuleCat.exteriorPower.mk (M := M.obj (F.op.obj U)) m) :=
-  exteriorPowerPushforwardApp_mk α n M U m
+  ModuleCat.restrictScalarsExteriorPowerComparison_app_mk (α.app U).hom n
+    (M.obj (F.op.obj U)) m
 
 variable [(PresheafOfModulesOfCommRing.pushforward.{u} α).IsRightAdjoint]
 
@@ -129,24 +109,10 @@ variable [(PresheafOfModulesOfCommRing.pushforward.{u} α).IsRightAdjoint]
 pullback, characterized by compatibility with the pullback unit and wedges. -/
 def pullbackExteriorPowerComparison (n : ℕ) :
     PresheafOfModulesOfCommRing.exteriorPower n ⋙ PresheafOfModulesOfCommRing.pullback α ⟶
-      PresheafOfModulesOfCommRing.pullback α ⋙ PresheafOfModulesOfCommRing.exteriorPower n where
-  app M := ((PresheafOfModulesOfCommRing.pullbackPushforwardAdjunction α).homEquiv _ _).symm
-    ((PresheafOfModulesOfCommRing.exteriorPower n).map
-        ((PresheafOfModulesOfCommRing.pullbackPushforwardAdjunction α).unit.app M) ≫
-      (pushforwardExteriorPowerComparison α n).app
-        ((PresheafOfModulesOfCommRing.pullback α).obj M))
-  naturality {M N} f := by
-    dsimp only [Functor.comp_map]
-    apply ((PresheafOfModulesOfCommRing.pullbackPushforwardAdjunction α).homEquiv _ _).injective
-    rw [Adjunction.homEquiv_naturality_left, Adjunction.homEquiv_naturality_right]
-    simp only [Equiv.apply_symm_apply]
-    rw [← Category.assoc, ← Functor.map_comp,
-      ← (PresheafOfModulesOfCommRing.pullbackPushforwardAdjunction α).unit_naturality,
-      Functor.map_comp, Category.assoc]
-    exact congrArg (fun g ↦ (PresheafOfModulesOfCommRing.exteriorPower n).map
-      ((PresheafOfModulesOfCommRing.pullbackPushforwardAdjunction α).unit.app M) ≫ g)
-      ((pushforwardExteriorPowerComparison α n).naturality
-        ((PresheafOfModulesOfCommRing.pullback α).map f))
+      PresheafOfModulesOfCommRing.pullback α ⋙ PresheafOfModulesOfCommRing.exteriorPower n :=
+  let A := PresheafOfModulesOfCommRing.pullbackPushforwardAdjunction α
+  ((mateEquiv A A).symm (TwoSquare.mk _ _ _ _
+    (pushforwardExteriorPowerComparison α n))).natTrans
 
 /-- The adjunction equation characterizes the canonical pullback comparison. -/
 @[reassoc (attr := simp)]
@@ -160,7 +126,9 @@ theorem unit_comp_pushforward_pullbackExteriorPowerComparison (n : ℕ)
         ((PresheafOfModulesOfCommRing.pullbackPushforwardAdjunction α).unit.app M) ≫
       (pushforwardExteriorPowerComparison α n).app
         ((PresheafOfModulesOfCommRing.pullback α).obj M) :=
-  ((PresheafOfModulesOfCommRing.pullbackPushforwardAdjunction α).homEquiv _ _).apply_symm_apply _
+  (unit_mateEquiv_symm (PresheafOfModulesOfCommRing.pullbackPushforwardAdjunction α)
+    (PresheafOfModulesOfCommRing.pullbackPushforwardAdjunction α)
+    (TwoSquare.mk _ _ _ _ (pushforwardExteriorPowerComparison α n)) M).symm
 
 /-- On a wedge in the image of the pullback unit, the pullback comparison takes the wedge
 of the images of its factors under the unit. -/
