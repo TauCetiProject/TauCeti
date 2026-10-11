@@ -76,6 +76,30 @@ theorem zigzagBraidTensorEvaluationRight_tmul (i j : V) (x : U i) (y : U j) :
     GradedModuleCat.bimoduleTensorMap_tmul, GradedModuleCat.hom_id,
     LinearMap.id_apply, zigzagBimoduleRightUnitor_hom_tmul]
 
+/-- Left evaluation is the tensor of evaluation with the identity, followed by the unitor. -/
+@[reassoc]
+theorem zigzagBraidTensorEvaluationLeft_eq (i j : V) :
+    zigzagBraidTensorEvaluationLeft k G i j =
+      GradedModuleCat.bimoduleTensorMap Γ Γ Γ (E i) (𝟙 (U j)) ≫
+        (zigzagBimoduleLeftUnitor k G (U j)).hom := by
+  apply GradedModuleCat.bimoduleTensor_hom_ext Γ Γ Γ
+  intro x y
+  simp only [zigzagBraidTensorEvaluationLeft_tmul, GradedModuleCat.hom_comp,
+    LinearMap.comp_apply, GradedModuleCat.bimoduleTensorMap_tmul,
+    GradedModuleCat.hom_id, LinearMap.id_apply, zigzagBimoduleLeftUnitor_hom_tmul]
+
+/-- Right evaluation is the tensor of the identity with evaluation, followed by the unitor. -/
+@[reassoc]
+theorem zigzagBraidTensorEvaluationRight_eq (i j : V) :
+    zigzagBraidTensorEvaluationRight k G i j =
+      GradedModuleCat.bimoduleTensorMap Γ Γ Γ (𝟙 (U i)) (E j) ≫
+        (zigzagBimoduleRightUnitor k G (U i)).hom := by
+  apply GradedModuleCat.bimoduleTensor_hom_ext Γ Γ Γ
+  intro x y
+  simp only [zigzagBraidTensorEvaluationRight_tmul, GradedModuleCat.hom_comp,
+    LinearMap.comp_apply, GradedModuleCat.bimoduleTensorMap_tmul,
+    GradedModuleCat.hom_id, LinearMap.id_apply, zigzagBimoduleRightUnitor_hom_tmul]
+
 /-- Both orders of factor evaluation give the same map to the regular bimodule. -/
 @[reassoc]
 theorem zigzagBraidTensorEvaluation_comm (i j : V) :
