@@ -153,7 +153,7 @@ theorem finite (hp : IsCoveringMap p) (ν : p ⁻¹' {basePt} ≃ Fin n) :
     Finite.of_equiv _ (hp.sameCycleQuotientσ1EquivConnectedComponents ν)
   have : Finite (ConnectedComponents (p ⁻¹' puncturedNeighborhoodInf)) :=
     Finite.of_equiv _ (hp.sameCycleQuotientσinfEquivConnectedComponents ν)
-  change Finite (_ ⊕ _ ⊕ _)
+  rw [FilledPoint]
   infer_instance
 
 variable (hp : IsCoveringMap p) (ν : p ⁻¹' {basePt} ≃ Fin n)
