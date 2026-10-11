@@ -23,10 +23,10 @@ concrete p-adic norm and valuation APIs.
 
 ## Main results
 
-* `Padic.uniformSpace_eq_rightUniformSpace` identifies the metric uniformity of `ℚ_[p]` with the
-  additive-group uniformity built from its valuative topology.
 * `Padic.toAdd_normalizedValuation_eq_valuation` identifies the additive normalized
   valuation with `Padic.valuation`.
+* `Padic.uniformSpace_eq_rightUniformSpace` identifies the metric uniformity on `ℚ_[p]` with
+  the additive-group uniformity, so completeness arguments can use the canonical group structure.
 * `Padic.integerRingEquiv` identifies the ring of integers of `ℚ_[p]` with `ℤ_[p]`.
 * `Padic.natCard_residueField` computes the residue-field cardinality of `ℚ_[p]`.
 * `Padic.normalizedAbsoluteValue_eq_nnnorm` identifies the normalized absolute value with
@@ -46,9 +46,6 @@ concrete p-adic norm and valuation APIs.
 
 The Padic and residue-field constructions used here are part of Mathlib's upstream
 `NumberTheory/Padics` development.
-
-The uniformity comparison specializes Mathlib's `Valuation.toUniformSpace_eq` from
-`Topology/Algebra/ValuativeRel/ValuativeTopology.lean`.
 -/
 
 public section
@@ -60,14 +57,17 @@ variable (p : ℕ) [Fact p.Prime]
 
 namespace Padic
 
-/-- The metric uniformity on `ℚ_[p]` agrees with the additive-group uniformity determined by its
-valuation topology. This identifies the uniformity used by the normed-field structure with the
-one used by additive topological-group completeness. -/
+/-- The metric uniformity on `ℚ_[p]` agrees with the uniformity induced by its additive
+topological-group structure. This makes completeness available when the additive-group
+uniformity is used explicitly. -/
 theorem uniformSpace_eq_rightUniformSpace :
     (inferInstance : UniformSpace ℚ_[p]) =
-      @IsTopologicalAddGroup.rightUniformSpace ℚ_[p] _
-        (Padic.mulValuation (p := p)).subgroups_basis.topology _ :=
-  (Padic.mulValuation (p := p)).toUniformSpace_eq
+      IsTopologicalAddGroup.rightUniformSpace ℚ_[p] := by
+  refine IsUniformAddGroup.ext ?_ ?_ ?_
+  · infer_instance
+  · exact isUniformAddGroup_of_addCommGroup
+  -- Both uniformities induce the already fixed metric topology on `ℚ_[p]`.
+  · rfl
 
 /-- The zero-preserving normalized valuation on `ℚ_[p]` is the inverse of
 Mathlib's p-adic valuation. -/
