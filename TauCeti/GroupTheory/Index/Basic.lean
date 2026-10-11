@@ -289,7 +289,7 @@ has the same relative index in `H ⊔ N` as in `N`, that is `[H ⊔ N : H] = [N 
 
 This is the counterpart of Mathlib's `Subgroup.relIndex_sup_right`, which measures the index of the
 normal factor instead. -/
-@[to_additive TauCeti.AddSubgroup.relIndex_sup_of_le_normalizer]
+@[to_additive TauCeti.addSubgroup_relIndex_sup_of_le_normalizer]
 theorem relIndex_sup_of_le_normalizer {H N : Subgroup G} (hH : H ≤ normalizer N) :
     H.relIndex (H ⊔ N) = H.relIndex N := by
   -- The inclusion `N → H ⊔ N` induces a bijection on cosets of `H`.

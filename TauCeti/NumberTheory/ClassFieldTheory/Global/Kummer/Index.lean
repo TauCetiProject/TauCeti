@@ -68,7 +68,7 @@ theorem index_kummerIdeleClassSubgroup_mul_relIndex (S : Finset (HeightOneSpectr
     dsimp only [E, Subgroup.subgroupOf]
     rw [Subgroup.relIndex_comap, hker, ← comap_unitEmbedding_kummerIdeleSubgroup_one,
       Subgroup.relIndex_comap, Subgroup.map_comap_eq, inf_comm]
-  have hmul := TauCeti.Subgroup.index_map_mul_relIndex_ker E f hf
+  have hmul := TauCeti.subgroup_index_map_mul_relIndex_ker E f hf
   rw [hmap, hprincipal] at hmul
   exact hmul.trans (relIndex_kummerIdeleSubgroup S n)
 
