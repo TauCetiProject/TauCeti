@@ -40,7 +40,7 @@ variable {X : Scheme.{u}} (A : CommMon X.Modules) [A.X.IsQuasicoherent]
 
 The isomorphism is induced by identifying the inverse image of the affine open with the range
 of its relative-Spec chart, then using the ordinary affine identification of global functions. -/
-def relativeSpecCover_functionAlgebraSectionsRingEquiv (U : X.AffineZariskiSite) :
+def relativeSpecCoverFunctionAlgebraSectionsRingEquiv (U : X.AffineZariskiSite) :
     Γ(A.relativeSpecToBase.pushforwardStructureAlgebra.X, U.1) ≃+* Γ(A.X, U.1) := by
   let ι := A.relativeSpecCover.f U
   have hpre : A.relativeSpecToBase ⁻¹ᵁ U.1 = ι ''ᵁ ⊤ := by
