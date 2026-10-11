@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.Contraction.Basic
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
+public import Mathlib.CategoryTheory.Conj
 
 /-!
 # Cancelling two blocks of a four-term cochain complex
@@ -14,8 +15,11 @@ public import Mathlib.CategoryTheory.Preadditive.Biproducts
 Suppose a complex has terms `Q`, `A ⊞ (U ⊞ Q)`, `U ⊞ B`, and `Z` in degrees
 `-3`, `-2`, `-1`, and `0`. In these coordinates its differentials are
 
-`(α, β, -id)`, `((f,g), (-id,δ), (α ≫ f - β, α ≫ g + β ≫ δ))`,
+`(α, β, -id)`, `((f,g), (-id,δ), (qU,qB))`,
 and `(δ ≫ ε, ε)`.
+
+The square-zero identity forces `qU = α ≫ f - β` and
+`qB = α ≫ g + β ≫ δ`; these are conclusions rather than additional hypotheses.
 
 The two negative identity blocks cancel, leaving the three-term complex
 `A ⟶ B ⟶ Z`, with differentials `f ≫ δ + g` and `ε`. The corrected projection
@@ -25,12 +29,9 @@ is minus the projection to `Q` and minus the map from the second `U` (degree `-1
 to the first `U` (degree `-2`).
 
 The off-diagonal maps need not vanish. This is the two-block form of algebraic
-Gaussian elimination, packaged in the existing `Contraction` interface. The term
-`β ≫ δ` in the final column is required by the square-zero identity. Coordinate
-isomorphisms put the two invertible blocks into the displayed negative-identity form.
-
-The homotopy is constructed directly as a degree `-1` cochain, using Mathlib
-`Cochain.mk` and `δ_v`, rather than a separate degreewise `Homotopy` builder.
+Gaussian elimination, and its result is a `Contraction K L`. When the two blocks
+are invertible, the caller supplies coordinate isomorphisms bringing them into
+the displayed negative-identity form.
 
 ## References
 
@@ -75,6 +76,10 @@ structure FourTermCancellationData where
   first : A ⟶ U
   /-- The second component of the middle differential on `A`. -/
   second : A ⟶ B
+  /-- The first component of the middle differential on `Q`. -/
+  qFirst : Q ⟶ U
+  /-- The second component of the middle differential on `Q`. -/
+  qSecond : Q ⟶ B
   /-- The second component of the middle differential on `U`. -/
   delta : U ⟶ B
   /-- The differential out of the surviving `B`. -/
@@ -85,8 +90,7 @@ structure FourTermCancellationData where
   /-- The middle differential has a negative identity in its `U` component. -/
   d_minusTwo : K.d (-2) (-1) ≫ minusOneIso.hom =
     minusTwoIso.hom ≫ biprod.desc (biprod.lift first second)
-      (biprod.desc (biprod.lift (-𝟙 U) delta) (biprod.lift (alpha ≫ first - beta)
-        (alpha ≫ second + beta ≫ delta)))
+      (biprod.desc (biprod.lift (-𝟙 U) delta) (biprod.lift qFirst qSecond))
   /-- The highest source differential is compatible with the surviving `B` projection. -/
   d_minusOne : K.d (-1) 0 ≫ zeroIso.hom =
     minusOneIso.hom ≫ biprod.desc (delta ≫ epsilon) epsilon
@@ -103,6 +107,31 @@ variable {K L A U Q B Z} (h : FourTermCancellationData K L A U Q B Z)
 private abbrev pQ : A ⊞ (U ⊞ Q) ⟶ Q := biprod.snd ≫ biprod.snd
 private abbrev iU : U ⟶ A ⊞ (U ⊞ Q) := biprod.inl ≫ biprod.inr
 private def d3 : Q ⟶ A ⊞ (U ⊞ Q) := biprod.lift h.alpha (biprod.lift h.beta (-𝟙 Q))
+private def rawD2 : A ⊞ (U ⊞ Q) ⟶ U ⊞ B :=
+  biprod.desc (biprod.lift h.first h.second)
+    (biprod.desc (biprod.lift (-𝟙 U) h.delta) (biprod.lift h.qFirst h.qSecond))
+
+private theorem raw_square_zero : d3 h ≫ rawD2 h = 0 := by
+  apply (cancel_epi h.minusThreeIso.hom).1
+  have hz : K.d (-3) (-2) ≫ K.d (-2) (-1) ≫ h.minusOneIso.hom = 0 := by
+    rw [← Category.assoc, K.d_comp_d, zero_comp]
+  rw [h.d_minusTwo, ← Category.assoc, h.d_minusThree] at hz
+  simpa only [Category.assoc, d3, rawD2, comp_zero] using hz
+
+private theorem qFirst_eq : h.qFirst = h.alpha ≫ h.first - h.beta := by
+  have hz : (d3 h ≫ rawD2 h) ≫ (biprod.fst : U ⊞ B ⟶ U) = 0 := by
+    rw [raw_square_zero, zero_comp]
+  have he : h.alpha ≫ h.first - h.beta - h.qFirst = 0 := by
+    simpa [d3, rawD2, Category.assoc, sub_eq_add_neg, add_assoc] using hz
+  exact (sub_eq_zero.mp he).symm
+
+private theorem qSecond_eq : h.qSecond = h.alpha ≫ h.second + h.beta ≫ h.delta := by
+  have hz : (d3 h ≫ rawD2 h) ≫ (biprod.snd : U ⊞ B ⟶ B) = 0 := by
+    rw [raw_square_zero, zero_comp]
+  have he : h.alpha ≫ h.second + h.beta ≫ h.delta - h.qSecond = 0 := by
+    simpa [d3, rawD2, Category.assoc, sub_eq_add_neg, add_assoc] using hz
+  exact (sub_eq_zero.mp he).symm
+
 private def d2 : A ⊞ (U ⊞ Q) ⟶ U ⊞ B :=
   biprod.desc (biprod.lift h.first h.second)
     (biprod.desc (biprod.lift (-𝟙 U) h.delta) (biprod.lift (h.alpha ≫ h.first - h.beta)
@@ -113,11 +142,15 @@ private def j2 : A ⟶ A ⊞ (U ⊞ Q) := biprod.inl + h.first ≫ iU
 private def p1 : U ⊞ B ⟶ B := biprod.desc h.delta (𝟙 B)
 
 private theorem d3_p2 : d3 h ≫ p2 h = 0 := by simp [d3, p2, pQ, Category.assoc]
+@[reassoc]
 private theorem d2_p1 : d2 h ≫ p1 h = p2 h ≫ (h.first ≫ h.delta + h.second) := by
   ext <;> simp [d2, p1, p2, pQ, Category.assoc, Preadditive.sub_comp]
+@[reassoc]
 private theorem j2_d2 : j2 h ≫ d2 h = (h.first ≫ h.delta + h.second) ≫ biprod.inr := by
   ext <;> simp [j2, iU, d2, Category.assoc]
-  abel
+  · -- The component into B adds the direct and through-U maps.
+    abel
+@[reassoc]
 private theorem p1_epsilon : p1 h ≫ h.epsilon = d1 h := by
   ext <;> simp [p1, d1]
 @[reassoc]
@@ -125,12 +158,16 @@ private theorem j2_p2 : j2 h ≫ p2 h = 𝟙 A := by simp [j2, iU, p2, pQ, Categ
 @[reassoc]
 private theorem inr_p1 : (biprod.inr : B ⟶ U ⊞ B) ≫ p1 h = 𝟙 B := by simp [p1]
 
+@[reassoc]
 private theorem bottom_contract : d3 h ≫ (-pQ) = 𝟙 Q := by simp [d3, pQ]
+@[reassoc]
 private theorem lower_contract :
     d2 h ≫ (-biprod.fst ≫ iU) + (-pQ) ≫ d3 h + p2 h ≫ j2 h =
       𝟙 (A ⊞ (U ⊞ Q)) := by
   ext <;> simp [d2, d3, p2, j2, iU, pQ, Category.assoc]
-  abel
+  · -- The Q-to-U component cancels the two off-diagonal contributions.
+    abel
+@[reassoc]
 private theorem upper_contract :
     (-biprod.fst ≫ iU) ≫ d2 h + p1 h ≫ biprod.inr = 𝟙 (U ⊞ B) := by
   ext <;> simp [d2, p1, iU, Category.assoc]
@@ -140,7 +177,14 @@ private theorem source_d3 : K.d (-3) (-2) ≫ h.minusTwoIso.hom =
     h.minusThreeIso.hom ≫ d3 h := h.d_minusThree
 @[reassoc]
 private theorem source_d2 : K.d (-2) (-1) ≫ h.minusOneIso.hom =
-    h.minusTwoIso.hom ≫ d2 h := h.d_minusTwo
+    h.minusTwoIso.hom ≫ d2 h := by
+  simpa only [d2, qFirst_eq, qSecond_eq] using h.d_minusTwo
+private theorem source_d3_eq : K.d (-3) (-2) =
+    h.minusThreeIso.hom ≫ d3 h ≫ h.minusTwoIso.inv := by
+  simpa only [Category.assoc] using (h.minusTwoIso.eq_comp_inv).2 (source_d3 h)
+private theorem source_d2_eq : K.d (-2) (-1) =
+    h.minusTwoIso.hom ≫ d2 h ≫ h.minusOneIso.inv := by
+  simpa only [Category.assoc] using (h.minusOneIso.eq_comp_inv).2 (source_d2 h)
 @[reassoc]
 private theorem source_d1 : K.d (-1) 0 ≫ h.zeroIso.hom =
     h.minusOneIso.hom ≫ d1 h := h.d_minusOne
@@ -169,21 +213,18 @@ private theorem d3_projection : K.d (-3) (-2) ≫ projectionMinusTwo h = 0 := by
 private theorem projection_d2 :
     projectionMinusTwo h ≫ L.d (-2) (-1) = K.d (-2) (-1) ≫ projectionMinusOne h := by
   rw [← cancel_mono h.targetMinusOneIso.hom]
-  simp only [projectionMinusTwo, projectionMinusOne, Category.assoc, target_d2,
-    Iso.inv_hom_id_assoc, Iso.inv_hom_id, Category.comp_id, source_d2_assoc]
-  exact congrArg (h.minusTwoIso.hom ≫ ·) (d2_p1 h).symm
+  simp [projectionMinusTwo, projectionMinusOne, Category.assoc, source_d2_assoc,
+    target_d2, d2_p1]
 private theorem projection_d1 :
     projectionMinusOne h ≫ L.d (-1) 0 = K.d (-1) 0 ≫ projectionZero h := by
   rw [← cancel_mono h.targetZeroIso.hom]
-  simp only [projectionMinusOne, projectionZero, Category.assoc, target_d1,
-    Iso.inv_hom_id_assoc, Iso.inv_hom_id, Category.comp_id, source_d1]
-  exact congrArg (h.minusOneIso.hom ≫ ·) (p1_epsilon h)
+  simp [projectionMinusOne, projectionZero, Category.assoc, source_d1,
+    target_d1, p1_epsilon]
 private theorem inclusion_d2 :
     inclusionMinusTwo h ≫ K.d (-2) (-1) = L.d (-2) (-1) ≫ inclusionMinusOne h := by
   rw [← cancel_mono h.minusOneIso.hom]
-  simp only [inclusionMinusTwo, inclusionMinusOne, Category.assoc, source_d2,
-    Iso.inv_hom_id_assoc, Iso.inv_hom_id, Category.comp_id, target_d2_assoc]
-  exact congrArg (h.targetMinusTwoIso.hom ≫ ·) (j2_d2 h)
+  simp [inclusionMinusTwo, inclusionMinusOne, Category.assoc, source_d2,
+    target_d2_assoc, j2_d2]
 private theorem inclusion_d1 :
     inclusionMinusOne h ≫ K.d (-1) 0 = L.d (-1) 0 ≫ inclusionZero h := by
   rw [← cancel_mono h.zeroIso.hom]
@@ -303,27 +344,29 @@ private def s1 : K.X (-1) ⟶ K.X (-2) :=
   h.minusOneIso.hom ≫ (-biprod.fst ≫ iU) ≫ h.minusTwoIso.inv
 
 private theorem source_bottom_contract : K.d (-3) (-2) ≫ s2 h = 𝟙 _ := by
-  rw [← cancel_mono h.minusThreeIso.hom]
-  simp only [s2, Category.assoc, Iso.inv_hom_id, Category.comp_id,
-    Category.id_comp, source_d3_assoc]
-  exact (congrArg (h.minusThreeIso.hom ≫ ·) (bottom_contract h)).trans (by simp)
+  calc
+    _ = h.minusThreeIso.symm.conj (d3 h ≫ (-pQ)) := by
+      simp [Iso.conj_apply, s2, source_d3_eq h, Category.assoc]
+    _ = 𝟙 _ := by rw [bottom_contract, Iso.conj_id]
 private theorem source_lower_contract :
     K.d (-2) (-1) ≫ s1 h + s2 h ≫ K.d (-3) (-2) +
       projectionMinusTwo h ≫ inclusionMinusTwo h = 𝟙 _ := by
-  rw [← cancel_mono h.minusTwoIso.hom]
-  simp only [Preadditive.add_comp, s1, s2, projectionMinusTwo, inclusionMinusTwo,
-    Category.assoc, Iso.inv_hom_id_assoc, Iso.inv_hom_id, Category.comp_id,
-    Category.id_comp, source_d3, source_d2_assoc]
-  simpa only [Preadditive.comp_add, Category.assoc, Category.comp_id] using
-    congrArg (h.minusTwoIso.hom ≫ ·) (lower_contract h)
+  calc
+    _ = h.minusTwoIso.symm.conj
+        ((d2 h ≫ (-biprod.fst ≫ iU) + (-pQ) ≫ d3 h + p2 h ≫ j2 h) :
+          A ⊞ (U ⊞ Q) ⟶ A ⊞ (U ⊞ Q)) := by
+      simp [Iso.conj_apply, s1, s2, projectionMinusTwo, inclusionMinusTwo,
+        source_d3_eq h, source_d2_eq h, Preadditive.comp_add,
+        Preadditive.add_comp, Category.assoc]
+    _ = 𝟙 _ := by rw [lower_contract, Iso.conj_id]
 private theorem source_upper_contract :
     s1 h ≫ K.d (-2) (-1) + projectionMinusOne h ≫ inclusionMinusOne h = 𝟙 _ := by
-  rw [← cancel_mono h.minusOneIso.hom]
-  simp only [Preadditive.add_comp, s1, projectionMinusOne, inclusionMinusOne,
-    Category.assoc, Iso.inv_hom_id_assoc, Iso.inv_hom_id, Category.comp_id,
-    Category.id_comp, source_d2]
-  simpa only [Preadditive.comp_add, Category.assoc, Category.comp_id] using
-    congrArg (h.minusOneIso.hom ≫ ·) (upper_contract h)
+  calc
+    _ = h.minusOneIso.symm.conj
+        (((-biprod.fst ≫ iU) ≫ d2 h + p1 h ≫ biprod.inr) : U ⊞ B ⟶ U ⊞ B) := by
+      simp [Iso.conj_apply, s1, projectionMinusOne, inclusionMinusOne,
+        source_d2_eq h, Preadditive.comp_add, Preadditive.add_comp, Category.assoc]
+    _ = 𝟙 _ := by rw [upper_contract, Iso.conj_id]
 
 private def homotopyCochain : Cochain K K (-1) := Cochain.mk fun i j hij ↦ by
   by_cases h₂ : i = -2
