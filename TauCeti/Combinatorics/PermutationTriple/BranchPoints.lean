@@ -567,6 +567,8 @@ theorem isConj_component_reindexBranchPoints (ρ : Perm (Fin 3)) (i : Fin 3) :
       hneg]
 
 /-- Permuting branch points leaves the unordered full cycle partitions unchanged. -/
+-- Use this as an explicit rewrite: `unorderedCycleData_def` already expands the left-hand
+-- side during simplification, so a `simp` attribute here would fail the `simpNF` linter.
 theorem unorderedCycleData_reindexBranchPoints (ρ : Perm (Fin 3)) :
     (t.reindexBranchPoints ρ).unorderedCycleData = t.unorderedCycleData := by
   rw [unorderedCycleData_eq_coe_ofFn, unorderedCycleData_eq_coe_ofFn]
