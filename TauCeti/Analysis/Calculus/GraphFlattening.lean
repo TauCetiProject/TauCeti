@@ -29,8 +29,9 @@ The homeomorphism is the whole-space instance of
 `ContinuousLinearEquiv.skewProd`.
 
 The ambient product is `WithLp 2 (ℝ × E)`, so it has the Euclidean norm when `E`
-is an inner product space. The topological and differential results do not require
-finite dimension or an inner product.
+is an inner product space. The topology, derivative and norm estimates do not require
+finite dimension or an inner product. The determinant results require finite dimension;
+volume preservation additionally requires an inner product.
 
 ## References
 
@@ -113,8 +114,7 @@ private theorem coe_graphFlattening_eq_comp (γ : E → ℝ) (hγ : Continuous �
   simp
 
 /-- The linear shear subtracting `L z` from the normal coordinate. This is the derivative of
-`graphFlattening` when the graph height has derivative `L`.
-Use `TauCeti.graphFlatteningL L` to construct the shear from a continuous linear functional. -/
+`graphFlattening` when the graph height has derivative `L`. -/
 def graphFlatteningL (L : E →L[ℝ] ℝ) :
     WithLp 2 (ℝ × E) ≃L[ℝ] WithLp 2 (ℝ × E) :=
   let c := (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).trans
@@ -171,7 +171,7 @@ theorem fderiv_graphFlattening {γ : E → ℝ} (hγ : Continuous γ)
       (graphFlatteningL (fderiv ℝ γ x.snd)).toContinuousLinearMap :=
   (hasFDerivAt_graphFlattening hγ hx.hasFDerivAt).fderiv
 
-/-- Graph flattening has the same differentiability class as its height function. -/
+/-- Graph flattening is `C^n` whenever the height function `γ` is `C^n`. -/
 theorem contDiff_graphFlattening {n : WithTop ℕ∞} {γ : E → ℝ}
     (hγ : ContDiff ℝ n γ) : ContDiff ℝ n (graphFlattening γ hγ.continuous) := by
   rw [coe_graphFlattening_eq_comp]
@@ -180,7 +180,7 @@ theorem contDiff_graphFlattening {n : WithTop ℕ∞} {γ : E → ℝ}
       (hγ.comp (WithLp.sndL 2 ℝ ℝ E).contDiff)).prodMk
         (WithLp.sndL 2 ℝ ℝ E).contDiff)
 
-/-- The inverse graph chart has the same differentiability class as its height function. -/
+/-- The inverse graph chart is `C^n` whenever the height function `γ` is `C^n`. -/
 theorem contDiff_graphFlattening_symm {n : WithTop ℕ∞} {γ : E → ℝ}
     (hγ : ContDiff ℝ n γ) : ContDiff ℝ n (graphFlattening γ hγ.continuous).symm := by
   rw [graphFlattening_symm]
