@@ -49,16 +49,17 @@ and products add the two divisor bounds.
   is meromorphic.
 * `TauCeti.RiemannSurface.MeromorphicAt.comp` and `TauCeti.RiemannSurface.meromorphicOrderAt_comp`:
   pullback along a holomorphic map, with the order formula.
-* `TauCeti.RiemannSurface.MeromorphicAt.add`, `TauCeti.RiemannSurface.MeromorphicAt.mul`,
-  `TauCeti.RiemannSurface.meromorphicOrderAt_add` and
-  `TauCeti.RiemannSurface.meromorphicOrderAt_mul`: arithmetic of local meromorphic sections and
-  their orders.
+* `TauCeti.RiemannSurface.MeromorphicAt.add`, `.neg`, `.sub`, `.smul`, and `.mul`:
+  arithmetic of local meromorphic sections.
+* `TauCeti.RiemannSurface.meromorphicOrderAt_add`, `_neg`, `_smul`, and `_mul`:
+  arithmetic of their orders.
 
 ## References
 
 * Otto Forster, *Lectures on Riemann Surfaces*, Graduate Texts in Mathematics 81, Springer, 1981,
   §1 (meromorphic functions) and §16 (divisors).
-* Mathlib's `meromorphicOrderAt_mul` and `meromorphicOrderAt_add` in
+* Mathlib's `meromorphicOrderAt_add`, `meromorphicOrderAt_neg`, and
+  `meromorphicOrderAt_smul` in
   `Mathlib/Analysis/Meromorphic/Order.lean`, transferred through the Riemann-surface charts.
 * Rick Miranda, *Algebraic Curves and Riemann Surfaces*, Graduate Studies in Mathematics 5,
   American Mathematical Society, 1995, Chapter II §§1 and 4.
@@ -222,15 +223,29 @@ variable {f g : X → E}
 
 omit [IsManifold 𝓘(ℂ) 1 X] in
 /-- The sum of functions meromorphic at a point of a Riemann surface is meromorphic there. -/
+@[to_fun]
 theorem MeromorphicAt.add (hf : MeromorphicAt f x) (hg : MeromorphicAt g x) :
     MeromorphicAt (f + g) x := by
   rw [meromorphicAt_def] at hf hg ⊢
-  have hadd : (f + g) ∘ (chartAt ℂ x).symm =
-      (f ∘ (chartAt ℂ x).symm) + (g ∘ (chartAt ℂ x).symm) := by
-    funext z
-    rfl
-  rw [hadd]
+  rw [Pi.add_comp]
   exact hf.add hg
+
+omit [IsManifold 𝓘(ℂ) 1 X] in
+/-- Negation preserves meromorphy at a point of a Riemann surface. -/
+@[to_fun]
+theorem MeromorphicAt.neg (hf : MeromorphicAt f x) : MeromorphicAt (-f) x := by
+  rw [meromorphicAt_def] at hf ⊢
+  rw [Pi.neg_comp]
+  exact hf.neg
+
+omit [IsManifold 𝓘(ℂ) 1 X] in
+/-- The difference of functions meromorphic at a point is meromorphic there. -/
+@[to_fun]
+theorem MeromorphicAt.sub (hf : MeromorphicAt f x) (hg : MeromorphicAt g x) :
+    MeromorphicAt (f - g) x := by
+  rw [meromorphicAt_def] at hf hg ⊢
+  rw [Pi.sub_comp]
+  exact hf.sub hg
 
 omit [IsManifold 𝓘(ℂ) 1 X] in
 /-- The order of a sum of meromorphic functions on a Riemann surface is at least the minimum of
@@ -240,14 +255,41 @@ theorem meromorphicOrderAt_add
     min (meromorphicOrderAt f x) (meromorphicOrderAt g x) ≤
       meromorphicOrderAt (f + g) x := by
   rw [meromorphicAt_def] at hf hg
-  have hadd : (f + g) ∘ (chartAt ℂ x).symm =
-      (f ∘ (chartAt ℂ x).symm) + (g ∘ (chartAt ℂ x).symm) := by
-    funext z
-    rfl
-  simp only [meromorphicOrderAt_def, hadd]
+  simp only [meromorphicOrderAt_def, Pi.add_comp]
   exact _root_.meromorphicOrderAt_add hf hg
 
+omit [IsManifold 𝓘(ℂ) 1 X] in
+/-- Negation preserves the meromorphic order at a point of a Riemann surface. -/
+theorem meromorphicOrderAt_neg : meromorphicOrderAt f x = meromorphicOrderAt (-f) x := by
+  simp only [meromorphicOrderAt_def, Pi.neg_comp]
+  exact _root_.meromorphicOrderAt_neg
+
 end Additive
+
+section Scalar
+
+variable {f : X → ℂ} {g : X → E}
+
+omit [IsManifold 𝓘(ℂ) 1 X] in
+/-- A scalar meromorphic function times a vector-valued meromorphic function is meromorphic. -/
+@[to_fun]
+theorem MeromorphicAt.smul (hf : MeromorphicAt f x) (hg : MeromorphicAt g x) :
+    MeromorphicAt (f • g) x := by
+  rw [meromorphicAt_def] at hf hg ⊢
+  exact hf.smul hg
+
+omit [IsManifold 𝓘(ℂ) 1 X] in
+/-- The order of a scalar times a vector-valued meromorphic function is the sum of their
+orders. -/
+@[to_fun]
+theorem meromorphicOrderAt_smul (hf : MeromorphicAt f x) (hg : MeromorphicAt g x) :
+    meromorphicOrderAt (f • g) x =
+      meromorphicOrderAt f x + meromorphicOrderAt g x := by
+  rw [meromorphicAt_def] at hf hg
+  simp only [meromorphicOrderAt_def]
+  exact _root_.meromorphicOrderAt_smul hf hg
+
+end Scalar
 
 section Multiplicative
 
@@ -255,15 +297,10 @@ variable {f g : X → ℂ}
 
 omit [IsManifold 𝓘(ℂ) 1 X] in
 /-- The product of functions meromorphic at a point of a Riemann surface is meromorphic there. -/
+@[to_fun]
 theorem MeromorphicAt.mul (hf : MeromorphicAt f x) (hg : MeromorphicAt g x) :
     MeromorphicAt (f * g) x := by
-  rw [meromorphicAt_def] at hf hg ⊢
-  have hmul : (f * g) ∘ (chartAt ℂ x).symm =
-      (f ∘ (chartAt ℂ x).symm) * (g ∘ (chartAt ℂ x).symm) := by
-    funext z
-    rfl
-  rw [hmul]
-  exact hf.mul hg
+  simpa only [smul_eq_mul] using hf.smul hg
 
 omit [IsManifold 𝓘(ℂ) 1 X] in
 /-- The order of a product of meromorphic functions on a Riemann surface is the sum of their
@@ -272,13 +309,7 @@ orders. -/
 theorem meromorphicOrderAt_mul (hf : MeromorphicAt f x) (hg : MeromorphicAt g x) :
     meromorphicOrderAt (f * g) x =
       meromorphicOrderAt f x + meromorphicOrderAt g x := by
-  rw [meromorphicAt_def] at hf hg
-  have hmul : (f * g) ∘ (chartAt ℂ x).symm =
-      (f ∘ (chartAt ℂ x).symm) * (g ∘ (chartAt ℂ x).symm) := by
-    funext z
-    rfl
-  simp only [meromorphicOrderAt_def, hmul]
-  exact _root_.meromorphicOrderAt_mul hf hg
+  simpa only [smul_eq_mul] using meromorphicOrderAt_smul hf hg
 
 end Multiplicative
 
