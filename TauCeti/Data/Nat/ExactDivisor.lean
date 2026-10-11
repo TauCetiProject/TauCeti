@@ -278,6 +278,35 @@ theorem IsExactDivisor.mul_div_gcd_sq (hQ : IsExactDivisor Q N) (hR : IsExactDiv
   rw [sq, ← Nat.div_mul_div_comm (Nat.gcd_dvd_left Q R) (Nat.gcd_dvd_right Q R)]
   exact (hQ.div_gcd hR).mul hRdiv hcop
 
+/-- The least common multiple of two exact divisors of a common number is an exact divisor. -/
+theorem IsExactDivisor.lcm {Q R N : ℕ} (hQ : TauCeti.Nat.IsExactDivisor Q N)
+    (hR : TauCeti.Nat.IsExactDivisor R N) :
+    TauCeti.Nat.IsExactDivisor (Nat.lcm Q R) N := by
+  rcases eq_or_ne N 0 with rfl | hN
+  · rw [isExactDivisor_zero_iff.mp hQ, isExactDivisor_zero_iff.mp hR, Nat.lcm_one_left]
+    exact isExactDivisor_one
+  · have hQ' := (isExactDivisor_iff_factorization hN).mp hQ
+    have hR' := (isExactDivisor_iff_factorization hN).mp hR
+    rw [isExactDivisor_iff_factorization hN]
+    constructor
+    · exact Nat.lcm_dvd hQ'.1 hR'.1
+    · intro p
+      have hfac : (Nat.lcm Q R).factorization p = max (Q.factorization p) (R.factorization p) := by
+        rw [Nat.factorization_lcm hQ.ne_zero hR.ne_zero, Finsupp.sup_apply]
+      rcases hQ'.2 p with hQp | hQp <;> rcases hR'.2 p with hRp | hRp
+      · left
+        rw [hfac]
+        simp [hQp, hRp]
+      · right
+        rw [hfac]
+        simp [hQp, hRp]
+      · right
+        rw [hfac]
+        simp [hQp, hRp]
+      · right
+        rw [hfac]
+        simp [hQp, hRp]
+
 /-! ### Exact divisors from sets of primes -/
 
 /-- **The exact divisor of `N` supported on a set of primes:** the product
