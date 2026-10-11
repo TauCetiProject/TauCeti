@@ -24,12 +24,13 @@ variable {G : Type*} [Group G]
 /-- Conjugate elements have the same image in the abelianization. -/
 @[simp]
 lemma of_inv_mul_mul (p q : G) : of (p⁻¹ * q * p) = of q := by
-  rw [map_mul, map_mul, map_inv, mul_comm, ← mul_assoc, mul_inv_cancel, one_mul]
+  simp only [map_mul, map_inv, inv_mul_cancel_comm]
 
 /-- Written additively, the abelianization map sends the product `q * p` to the sum of the images
 of `p` and `q`. -/
 lemma ofMul_of_add_ofMul_of (p q : G) :
     Additive.ofMul (of p) + Additive.ofMul (of q) = Additive.ofMul (of (q * p)) := by
-  rw [← ofMul_mul, mul_comm, ← map_mul]
+  rw [← ofMul_mul]
+  simp [mul_comm]
 
 end Abelianization
