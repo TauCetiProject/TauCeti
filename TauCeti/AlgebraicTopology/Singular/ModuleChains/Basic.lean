@@ -90,7 +90,67 @@ theorem singularChains_map_f_simplexChain {X Y : TopCat.{u}} (f : X ⟶ Y) {n : 
       (TopCat.toSSet.obj Y).ιChainComplex (R := ModuleCat.of k k) _ a
   rw [← ModuleCat.comp_apply, SSet.ι_chainComplexMap_f]
 
+/-- Pushing chains forward along a continuous map commutes with the boundary. -/
+theorem singularChains_map_f_d {X Y : TopCat.{u}} (f : X ⟶ Y) (n m : ℕ)
+    (c : ((singularChains k).obj X).X n) :
+    ((singularChains k).map f).f m (((singularChains k).obj X).d n m c) =
+      ((singularChains k).obj Y).d n m (((singularChains k).map f).f n c) :=
+  congr($(((singularChains k).map f).comm n m).hom c).symm
+
+/-- The linear map out of the singular `n`-chains with the given values on singular simplices. -/
+def chainsDesc {X : TopCat.{u}} {n : ℕ} {V : Type u} [AddCommGroup V] [Module k V]
+    (f : (TopCat.toSSet.obj X) _⦋n⦌ → V) : ((singularChains k).obj X).X n →ₗ[k] V :=
+  (Cofan.IsColimit.desc ((TopCat.toSSet.obj X).isColimitChainComplexXCofan (ModuleCat.of k k) n)
+    (fun s ↦ ModuleCat.ofHom (LinearMap.toSpanSingleton k V (f s)))).hom
+
+/-- The linear map with given values on simplices takes the chain of a simplex with coefficient
+`a` to `a` times the value on the simplex. -/
+@[simp]
+theorem chainsDesc_simplexChain {X : TopCat.{u}} {n : ℕ} {V : Type u} [AddCommGroup V]
+    [Module k V] (f : (TopCat.toSSet.obj X) _⦋n⦌ → V) (s : (TopCat.toSSet.obj X) _⦋n⦌) (a : k) :
+    chainsDesc f (simplexChain s a) = a • f s := by
+  have h := Cofan.IsColimit.fac
+    ((TopCat.toSSet.obj X).isColimitChainComplexXCofan (ModuleCat.of k k) n)
+    (fun s ↦ ModuleCat.ofHom (LinearMap.toSpanSingleton k V (f s))) s
+  simp only [SSet.chainComplexXCofan, Cofan.inj, Cofan.mk_ι_app] at h
+  exact congrArg (fun g ↦ g.hom a) h
+
+/-- The linear map with given values on simplices takes the chain of a simplex to the value on
+the simplex. -/
+theorem chainsDesc_simplexChain_one {X : TopCat.{u}} {n : ℕ} {V : Type u} [AddCommGroup V]
+    [Module k V] (f : (TopCat.toSSet.obj X) _⦋n⦌ → V) (s : (TopCat.toSSet.obj X) _⦋n⦌) :
+    chainsDesc f (simplexChain s (1 : k)) = f s := by
+  rw [chainsDesc_simplexChain, one_smul]
+
 end Singular
+
+/-- An additive map out of a `ℤ`-module, as a `ℤ`-linear map for the given module structure.
+Mathlib's `AddMonoidHom.toIntLinearMap` uses the module structure `AddCommGroup.toIntModule`,
+which is only propositionally equal to the module structure of the carrier of an object of
+`ModuleCat ℤ`; the module structure here is an implicit argument, so that it is unified with the
+one of the expected type rather than synthesized. -/
+def intLinearMapOfAddMonoidHom {M V : Type*} [AddCommGroup M] {_ : Module ℤ M} [AddCommGroup V]
+    (f : M →+ V) : M →ₗ[ℤ] V where
+  toFun := f
+  map_add' := f.map_add
+  map_smul' a c := by
+    rw [RingHom.id_apply]
+    exact (congrArg f (int_smul_eq_zsmul _ a c)).trans (map_zsmul f a c)
+
+@[simp]
+theorem intLinearMapOfAddMonoidHom_apply {M V : Type*} [AddCommGroup M] {inst : Module ℤ M}
+    [AddCommGroup V] (f : M →+ V) (c : M) :
+    @intLinearMapOfAddMonoidHom M V _ inst _ f c = f c := by
+  rw [intLinearMapOfAddMonoidHom]
+  rfl
+
+/-- Additive maps out of the singular chains with integer coefficients agree when they agree on
+simplices. -/
+theorem singularChains_addMonoidHom_ext {X : TopCat.{0}} {n : ℕ} {V : Type} [AddCommGroup V]
+    {f g : ((singularChains ℤ).obj X).X n →+ V}
+    (h : ∀ s, f (simplexChain s 1) = g (simplexChain s 1)) : f = g :=
+  AddMonoidHom.ext fun c ↦ LinearMap.congr_fun (singularChains_linearMap_ext
+    (L := intLinearMapOfAddMonoidHom f) (L' := intLinearMapOfAddMonoidHom g) h) c
 
 /-- The augmentation of the simplicial singular chains: the sum of the coefficients. -/
 def singularAugment (X : TopCat.{u}) : ((singularChains k).obj X).X 0 →ₗ[k] k :=
