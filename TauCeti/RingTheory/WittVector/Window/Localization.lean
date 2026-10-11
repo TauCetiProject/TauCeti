@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.Huber.Adic
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Completion
-public import TauCeti.RingTheory.WittVector.WindowSubring
+public import TauCeti.RingTheory.WittVector.Window.Subring
 import TauCeti.RingTheory.Huber.OpenIdeal
 import TauCeti.Topology.Algebra.UniformRing
 
