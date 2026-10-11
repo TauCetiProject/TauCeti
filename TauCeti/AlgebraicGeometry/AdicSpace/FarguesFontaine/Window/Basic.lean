@@ -313,7 +313,7 @@ private theorem isOpen_of_span_le_radical
 /-- The set `{v ∈ 𝒴 : q ≤ κ(v) ≤ q'}`, for `q ≠ 0`, is the intersection of the rational subsets
 `R({[ϖ] ^ b, p ^ a} / p ^ a)` and `R({p ^ a', [ϖ] ^ b'} / [ϖ] ^ b')`, where `q = a / b` and
 `q' = a' / b'` in lowest terms. -/
-private theorem setOf_isRadiusLowerBound_isRadiusUpperBound_eq [DecidableEq (WittVector p R)]
+theorem setOf_isRadiusLowerBound_isRadiusUpperBound_eq [DecidableEq (WittVector p R)]
     {q q' : ℚ≥0} (hq : q ≠ 0) :
     {v | v ∈ spaY p ϖ ∧ IsRadiusLowerBound p ϖ q v ∧ IsRadiusUpperBound p ϖ q' v} =
       rationalSubset ⊤ {teichmuller p ϖ ^ q.den, (p : WittVector p R) ^ q.num}

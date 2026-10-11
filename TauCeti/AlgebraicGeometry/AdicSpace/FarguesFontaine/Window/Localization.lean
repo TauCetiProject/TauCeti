@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.FarguesFontaine.Window
+public import TauCeti.AlgebraicGeometry.AdicSpace.FarguesFontaine.Window.Basic
 public import TauCeti.RingTheory.WittVector.Window.Localization
 
 /-!
@@ -34,33 +34,22 @@ local notation "𝕎" => _root_.WittVector p
 
 /-- **A closed radius interval is one rational subset.** For positive lower endpoint `q`, the
 points of `𝒴` satisfying `q ≤ κ(v) ≤ q'` form the rational subset with numerators and denominator
-`windowNumerators p ϖ q q'` and `windowDenominator p ϖ q q'`. The nonvanishing conditions at `p` and
-`[ϖ]` let the two defining inequalities be combined and then recovered by cancellation. -/
+`windowNumerators p ϖ q q'` and `windowDenominator p ϖ q q'`. -/
 theorem radiusInterval_eq_rationalSubset (q q' : ℚ≥0) (hq : q ≠ 0) :
     {v : Spv (𝕎 R) | v ∈ spaY p ϖ ∧ IsRadiusLowerBound p ϖ q v ∧
       IsRadiusUpperBound p ϖ q' v} =
-    {v : Spv (𝕎 R) | v ∈ rationalSubset ⊤
-      (windowNumerators p ϖ q q') (windowDenominator p ϖ q q')} := by
+    rationalSubset ⊤ (windowNumerators p ϖ q q') (windowDenominator p ϖ q q') := by
   apply Set.ext
   intro v
-  rw [Set.mem_ofPred_eq, Set.mem_ofPred_eq, mem_rationalSubset_iff]
+  rw [mem_rationalSubset_iff]
+  have hsupp {x : 𝕎 R} {k : ℕ} (hk : k ≠ 0) :
+      ¬ v.toValuativeRel.vle (x ^ k) 0 ↔ x ∉ v.supp := by
+    rw [← mem_supp_iff, Ideal.IsPrime.pow_mem_iff_mem inferInstance k (Nat.pos_of_ne_zero hk)]
   constructor
   · rintro ⟨hvY, hlow, hupp⟩
     obtain ⟨hvSpa, hp, hϖ⟩ := (mem_spaY_iff p ϖ v).mp hvY
-    have hp0 : ¬ v.toValuativeRel.vle (p : 𝕎 R) 0 := by
-      simpa only [mem_supp_iff] using hp
-    have hϖ0 : ¬ v.toValuativeRel.vle (teichmuller p ϖ) 0 := by
-      simpa only [mem_supp_iff] using hϖ
-    have hϖpow : ¬ v.toValuativeRel.vle (teichmuller p ϖ ^ q'.den) 0 := by
-      intro h
-      apply hϖ0
-      exact (mem_supp_iff v _).mp ((instIsPrimeSupp v).mem_of_pow_mem q'.den
-        ((mem_supp_iff v _).mpr h))
-    have hppow : ¬ v.toValuativeRel.vle ((p : 𝕎 R) ^ q.num) 0 := by
-      intro h
-      apply hp0
-      exact (mem_supp_iff v _).mp ((instIsPrimeSupp v).mem_of_pow_mem q.num
-        ((mem_supp_iff v _).mpr h))
+    have hϖpow := (hsupp q'.den_ne_zero).mpr hϖ
+    have hppow := (hsupp (NNRat.num_ne_zero.mpr hq)).mpr hp
     refine ⟨hvSpa, ?_, ?_⟩
     · intro t ht
       rw [mem_windowNumerators_iff] at ht
@@ -98,14 +87,8 @@ theorem radiusInterval_eq_rationalSubset (q q' : ℚ≥0) (hq : q ≠ 0) :
     have hvY : v ∈ spaY p ϖ := by
       rw [mem_spaY_iff]
       exact ⟨hvSpa, hp, hϖ⟩
-    have hϖpow : ¬ v.toValuativeRel.vle (teichmuller p ϖ ^ q'.den) 0 := by
-      simpa only [mem_supp_iff] using
-        (fun h ↦ hϖ ((instIsPrimeSupp v).mem_of_pow_mem q'.den
-          ((mem_supp_iff v _).mpr h)))
-    have hppow : ¬ v.toValuativeRel.vle ((p : 𝕎 R) ^ q.num) 0 := by
-      simpa only [mem_supp_iff] using
-        (fun h ↦ hp ((instIsPrimeSupp v).mem_of_pow_mem q.num
-          ((mem_supp_iff v _).mpr h)))
+    have hϖpow := (hsupp q'.den_ne_zero).mpr hϖ
+    have hppow := (hsupp (NNRat.num_ne_zero.mpr hq)).mpr hp
     have hlower : v.toValuativeRel.vle (teichmuller p ϖ ^ q.den)
         ((p : 𝕎 R) ^ q.num) := by
       have h := hT _ (mem_windowNumerators_iff.mpr (Or.inl rfl))
