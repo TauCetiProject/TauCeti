@@ -36,6 +36,8 @@ there for an abstract presentation of `E / H` rather than for a fixed model.
 ## Main declarations
 
 * `TauCeti.BalancedProduct`: the quotient of `E × A` by the diagonal action of `G`.
+* `TauCeti.BalancedProduct.equivSelf` and `homeomorphSelf`: the regular label action recovers
+  `E`, sending `⟦e, g⟧` to `g⁻¹ • e`.
 * `TauCeti.isQuotientCoveringMap_quotientMk_of_smul_disjoint`: an action with locally pairwise
   disjoint translates presents its orbit space as a quotient covering map.
 * `TauCeti.BalancedProduct.isQuotientCoveringMap_mk`: the class map `E × A → E ×_G A` is one such.
@@ -96,6 +98,62 @@ in the second. -/
 @[simp]
 theorem mk_smul_left (g : G) (e : E) (a : A) : mk G (g • e) a = mk G e (g⁻¹ • a) :=
   Quotient.sound ⟨g, by simp⟩
+
+/-! ### The regular label action -/
+
+/-- The balanced product with the left regular action of `G` recovers `E`.
+The class of `(e, g)` is sent to `g⁻¹ • e`. -/
+def equivSelf : BalancedProduct G E G ≃ E where
+  toFun := Quotient.lift (fun p : E × G => p.2⁻¹ • p.1) fun _ _ ⟨g, hg⟩ => by
+    rw [← hg]
+    simp [mul_smul]
+  invFun e := mk G e 1
+  left_inv z := by
+    induction z using Quotient.inductionOn with
+    | h p => simp
+  right_inv e := by simp
+
+/-- On representatives, the regular-action comparison applies the inverse label to the
+first coordinate. -/
+@[simp]
+theorem equivSelf_mk (e : E) (g : G) :
+    equivSelf (mk G e g) = g⁻¹ • e :=
+  (rfl)
+
+/-- The inverse regular-action comparison attaches the identity label. -/
+@[simp]
+theorem equivSelf_symm_apply (e : E) :
+    (equivSelf (G := G) (E := E)).symm e = mk G e 1 :=
+  (rfl)
+
+/-- The regular-action comparison is a homeomorphism when inversion and the action are
+continuous. No freeness or covering hypothesis is needed. -/
+def homeomorphSelf [TopologicalSpace E] [TopologicalSpace G] [ContinuousInv G]
+    [ContinuousSMul G E] : BalancedProduct G E G ≃ₜ E where
+  toEquiv := equivSelf
+  continuous_toFun := (continuous_snd.inv.smul continuous_fst).quotient_lift _
+  continuous_invFun := continuous_quotient_mk'.comp (continuous_id.prodMk continuous_const)
+
+/-- The topological regular-action comparison has underlying equivalence `equivSelf`. -/
+@[simp]
+theorem homeomorphSelf_toEquiv [TopologicalSpace E] [TopologicalSpace G] [ContinuousInv G]
+    [ContinuousSMul G E] :
+    (homeomorphSelf (G := G) (E := E)).toEquiv = equivSelf :=
+  (rfl)
+
+/-- On representatives, the topological comparison applies the inverse label. -/
+@[simp]
+theorem homeomorphSelf_mk [TopologicalSpace E] [TopologicalSpace G] [ContinuousInv G]
+    [ContinuousSMul G E] (e : E) (g : G) :
+    homeomorphSelf (mk G e g) = g⁻¹ • e :=
+  (rfl)
+
+/-- The inverse topological comparison attaches the identity label. -/
+@[simp]
+theorem homeomorphSelf_symm_apply [TopologicalSpace E] [TopologicalSpace G] [ContinuousInv G]
+    [ContinuousSMul G E] (e : E) :
+    (homeomorphSelf (G := G) (E := E)).symm e = mk G e 1 :=
+  (rfl)
 
 section Map
 
