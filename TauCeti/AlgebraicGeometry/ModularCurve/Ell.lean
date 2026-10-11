@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.GroupLaw
 public import Mathlib.CategoryTheory.FiberedCategory.Fibered
 
 /-!
@@ -33,8 +33,7 @@ category fibred in groupoids over `Sch/B`:
 
 An arrow of `Ell/B` is determined by its morphism of total spaces (`EllObj.hom_ext`): the morphism
 of bases is recovered through the zero section (`EllObj.Hom.base_eq`). It is automatically
-compatible with the group laws, by `EllipticCurveGeom.addition_comp_of_isPullback` and
-`EllipticCurveGeom.neg_comp_of_isPullback`.
+compatible with the group laws (`EllObj.Hom.addition_total` and `EllObj.Hom.neg_total`).
 
 ## Main definitions
 
@@ -112,6 +111,20 @@ theorem total_structureMap (f : Hom X Y) :
     f.total ≫ Y.curve.structureMap = X.curve.structureMap ≫ f.base :=
   f.isPullback.w
 
+/-- The morphism of total spaces of an arrow of `Ell/B` carries the addition morphism of its
+source to that of its target. -/
+@[reassoc]
+theorem addition_total (f : Hom X Y) :
+    X.curve.addition ≫ f.total = pullback.map _ _ _ _ f.total f.total f.base
+      f.isPullback.w.symm f.isPullback.w.symm ≫ Y.curve.addition :=
+  EllipticCurveGeom.addition_comp_of_isPullback f.isPullback f.zero_total
+
+/-- The morphism of total spaces of an arrow of `Ell/B` carries the negation morphism of its
+source to that of its target. -/
+@[reassoc]
+theorem neg_total (f : Hom X Y) : X.curve.neg ≫ f.total = f.total ≫ Y.curve.neg :=
+  EllipticCurveGeom.neg_comp_of_isPullback f.isPullback f.zero_total
+
 /-- The morphism of bases of an arrow of `Ell/B` is determined by its morphism of total spaces:
 it is the composite of the zero section, the morphism of total spaces and the structure
 morphism. -/
@@ -126,7 +139,7 @@ theorem ext_total {f g : Hom X Y} (h : f.total = g.total) : f = g := by
   simp_all
 
 /-- The identity arrow of an object of `Ell/B`. -/
-@[expose] def id (X : EllObj B) : Hom X X where
+def id (X : EllObj B) : Hom X X where
   base := 𝟙 X.base
   base_structureMap := Category.id_comp _
   total := 𝟙 X.curve.carrier
@@ -134,12 +147,28 @@ theorem ext_total {f g : Hom X Y} (h : f.total = g.total) : f = g := by
   zero_total := by simp
 
 /-- The composite of two arrows of `Ell/B`: cartesian squares paste to a cartesian square. -/
-@[expose] def comp (f : Hom X Y) (g : Hom Y Z) : Hom X Z where
+def comp (f : Hom X Y) (g : Hom Y Z) : Hom X Z where
   base := f.base ≫ g.base
   base_structureMap := by simp
   total := f.total ≫ g.total
   isPullback := f.isPullback.paste_horiz g.isPullback
   zero_total := by simp
+
+/-! The arrows `Hom.id X` and `f.comp g` are written `𝟙 X` and `f ≫ g` in the category `Ell/B`,
+where `EllObj.id_base`, `EllObj.id_total`, `EllObj.comp_base` and `EllObj.comp_total` are the
+`simp` lemmas. -/
+
+theorem id_base (X : EllObj B) : (Hom.id X).base = 𝟙 X.base :=
+  (rfl)
+
+theorem id_total (X : EllObj B) : (Hom.id X).total = 𝟙 X.curve.carrier :=
+  (rfl)
+
+theorem comp_base (f : Hom X Y) (g : Hom Y Z) : (f.comp g).base = f.base ≫ g.base :=
+  (rfl)
+
+theorem comp_total (f : Hom X Y) (g : Hom Y Z) : (f.comp g).total = f.total ≫ g.total :=
+  (rfl)
 
 end Hom
 
@@ -148,9 +177,9 @@ instance category : Category.{u} (EllObj B) where
   Hom := Hom
   id := Hom.id
   comp := Hom.comp
-  id_comp _ := Hom.ext_total (Category.id_comp _)
-  comp_id _ := Hom.ext_total (Category.comp_id _)
-  assoc _ _ _ := Hom.ext_total (Category.assoc _ _ _)
+  id_comp _ := Hom.ext_total (by rw [Hom.comp_total, Hom.id_total, Category.id_comp])
+  comp_id _ := Hom.ext_total (by rw [Hom.comp_total, Hom.id_total, Category.comp_id])
+  assoc _ _ _ := Hom.ext_total (by simp only [Hom.comp_total, Category.assoc])
 
 variable {X Y Z : EllObj B}
 
@@ -162,19 +191,19 @@ theorem hom_ext {f g : X ⟶ Y} (h : f.total = g.total) : f = g :=
 
 @[simp]
 theorem id_base (X : EllObj B) : Hom.base (𝟙 X) = 𝟙 X.base :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem id_total (X : EllObj B) : Hom.total (𝟙 X) = 𝟙 X.curve.carrier :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem comp_base (f : X ⟶ Y) (g : Y ⟶ Z) : (f ≫ g).base = f.base ≫ g.base :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem comp_total (f : X ⟶ Y) (g : Y ⟶ Z) : (f ≫ g).total = f.total ≫ g.total :=
-  rfl
+  (rfl)
 
 /-! ### The cartesian factorisation -/
 
@@ -251,7 +280,7 @@ instance isStronglyCartesian {R S : Over B} (g : R ⟶ S) (f : X ⟶ Y) [(forget
 
 /-- The **base change** of an object `X = (S, E)` of `Ell/B` along a morphism `g : T ⟶ S` of
 `B`-schemes: the elliptic curve `E.baseChange g.left` over `T`. -/
-@[expose]
+@[expose, simps]
 noncomputable def baseChange (X : EllObj B) {T : Over B} (g : T ⟶ (forget B).obj X) : EllObj B where
   base := T.left
   structureMap := T.hom

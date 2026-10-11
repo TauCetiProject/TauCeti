@@ -82,7 +82,8 @@ theorem isRigid_of_isRepresentable (P : ModuliProblem.{v} B) [P.IsRepresentable]
   obtain ⟨a, rfl⟩ := e.homEquiv.surjective α
   have ha : σ ≫ a = a := e.homEquiv.injective (by rw [e.homEquiv_comp, hα])
   rw [EllObj.Hom.eq_lift a a (𝟙 X.base) (Category.id_comp _) σ ha hσ,
-    EllObj.Hom.eq_lift a a (𝟙 X.base) (Category.id_comp _) (𝟙 X) (Category.id_comp _) rfl]
+    EllObj.Hom.eq_lift a a (𝟙 X.base) (Category.id_comp _) (𝟙 X) (Category.id_comp _)
+      (EllObj.id_base X)]
 
 /-- **Rigidity pulls back along morphisms of moduli problems.** If `η : P ⟶ Q` is a morphism of
 moduli problems and `Q` is rigid, then `P` is rigid: an automorphism fixing a `P`-structure `α`
