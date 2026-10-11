@@ -35,21 +35,16 @@ noncomputable section
 
 variable {S X : Scheme.{u}} (f : X ⟶ S)
 
-/-- The relative effective Cartier divisors on `X_T` form a submonoid of ideal sheaves, with
-the empty divisor as identity and product of ideals as addition. -/
-@[expose]
-def relativeEffectiveCartierSubmonoid (T : (Over S)ᵒᵖ) :
-    Submonoid (pullback T.unop.hom f).IdealSheafData where
-  carrier := {I | I.IsRelativeEffectiveCartier (pullback.fst T.unop.hom f)}
-  one_mem' := Scheme.IdealSheafData.isRelativeEffectiveCartier_top _
-  mul_mem' hI hJ := TauCeti.isRelativeEffectiveCartier_mul hI hJ
-
 /-- Pointwise addition of relative effective Cartier divisors is a commutative monoid. -/
 instance (T : (Over S)ᵒᵖ) :
     CommMonoid ((relativeEffectiveCartierSubfunctor f).toFunctor.obj T) := by
+  let M : Submonoid (pullback T.unop.hom f).IdealSheafData := {
+    carrier := {I | I.IsRelativeEffectiveCartier (pullback.fst T.unop.hom f)}
+    one_mem' := Scheme.IdealSheafData.isRelativeEffectiveCartier_top _
+    mul_mem' hI hJ := TauCeti.isRelativeEffectiveCartier_mul hI hJ }
   -- The functor value and the submonoid have the same subtype carrier.
   have h : (relativeEffectiveCartierSubfunctor f).toFunctor.obj T =
-      relativeEffectiveCartierSubmonoid f T := rfl
+      M := rfl
   exact h.symm ▸ inferInstance
 
 /-- Pullback of relative effective Cartier divisors preserves the empty divisor. -/
