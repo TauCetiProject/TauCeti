@@ -28,6 +28,8 @@ by the finite relative index (`ModularForm.traceₗ_ofLe`).
 
 ## Main results
 
+* `TauCeti.EisensteinSeries.translateₗ_eisensteinSeriesMF`: integral slash operators permute the
+  primitive residue-class Eisenstein generators.
 * `TauCeti.EisensteinSeries.congruenceEisensteinSubspace`: the Eisenstein subspace of `M_k(Γ)`
   detected after restriction to `Γ(N)`.
 * `TauCeti.EisensteinSeries.isCompl_congruenceEisensteinSubspace_cuspFormSubmodule`: the
@@ -43,11 +45,44 @@ public noncomputable section
 open Matrix Matrix.SpecialLinearGroup ModularForm CongruenceSubgroup
 open UpperHalfPlane
 open _root_.EisensteinSeries
-open scoped MatrixGroups
+open scoped MatrixGroups Pointwise
 
 namespace TauCeti.EisensteinSeries
 
+/-- The real image of `Γ(N)` is invariant under conjugation by every integral determinant-one
+matrix. This identifies the carrier of its translated modular forms with the original level. -/
+theorem Gamma_map_inv_conjAct_eq (N : ℕ) (γ : SL(2, ℤ)) :
+    ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Gamma N).map (mapGL ℝ) =
+      (Gamma N).map (mapGL ℝ) := by
+  let := Gamma_normal N
+  apply Subgroup.conjAct_pointwise_smul_eq_self
+  apply Subgroup.inv_mem
+  exact Subgroup.le_normalizer_map (H := Gamma N) (mapGL ℝ)
+    (Subgroup.mem_map.mpr ⟨γ, by simp [Subgroup.normalizer_eq_top], rfl⟩)
+
+/-- Slashing a primitive residue-class Eisenstein series by an integral determinant-one matrix
+permutes its residue class, with the matrix viewed in the real general linear group. -/
+theorem eisensteinSeries_slash_mapGL {N : ℕ} (a : Fin 2 → ZMod N) (k : ℤ)
+    (γ : SL(2, ℤ)) :
+    eisensteinSeries a k ∣[k] mapGL ℝ γ =
+      eisensteinSeries (a ᵥ* SpecialLinearGroup.map (Int.castRingHom (ZMod N)) γ) k := by
+  exact (ModularForm.SL_slash (eisensteinSeries a k) γ).symm.trans
+    (eisensteinSeries_slash_apply a k γ)
+
 variable {N : ℕ} {k : ℤ} [NeZero N] {Γ : Subgroup SL(2, ℤ)}
+
+/-- The principal-level slash operator sends a bundled primitive Eisenstein generator to the
+generator with right-translated residue. Restriction identifies the translated level using
+the normality of `Γ(N)`. -/
+theorem translateₗ_eisensteinSeriesMF (hk : 3 ≤ k) (a : Fin 2 → ZMod N) (γ : SL(2, ℤ)) :
+    ((ModularForm.ofLeₗ (Gamma_map_inv_conjAct_eq N γ).ge).comp
+      (ModularForm.translateₗ (mapGL ℝ γ) (by simp))) (eisensteinSeriesMF hk a) =
+        eisensteinSeriesMF hk
+          (a ᵥ* SpecialLinearGroup.map (Int.castRingHom (ZMod N)) γ) := by
+  apply DFunLike.coe_injective
+  rw [LinearMap.comp_apply, ModularForm.ofLeₗ_apply, ModularForm.coe_ofLe,
+    ModularForm.translateₗ_apply, ModularForm.coe_translate, coe_eisensteinSeriesMF,
+    coe_eisensteinSeriesMF, eisensteinSeries_slash_mapGL]
 
 private abbrev gammaMap (N : ℕ) : Subgroup (GL (Fin 2) ℝ) :=
   (Gamma N).map (mapGL ℝ)
@@ -63,10 +98,7 @@ private lemma quotientFunc_eisensteinSeriesMF (Γ : Subgroup SL(2, ℤ)) (hk : 3
       obtain ⟨γ, -, hmap⟩ := h.property
       refine ⟨a ᵥ* (SpecialLinearGroup.map (Int.castRingHom (ZMod N)) γ⁻¹), ?_⟩
       rw [SlashInvariantForm.quotientFunc_mk, coe_eisensteinSeriesMF, ← hmap, ← map_inv]
-      have hslash : eisensteinSeries a k ∣[k] mapGL ℝ γ⁻¹ =
-          eisensteinSeries a k ∣[k] γ⁻¹ :=
-        (ModularForm.SL_slash (eisensteinSeries a k) γ⁻¹).symm
-      rw [hslash, eisensteinSeries_slash_apply]
+      rw [eisensteinSeries_slash_mapGL]
 
 private lemma traceₗ_eisensteinSeriesMF_mem (hΓ : Gamma N ≤ Γ) (hk : 3 ≤ k)
     (a : Fin 2 → ZMod N) :
