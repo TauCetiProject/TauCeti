@@ -25,6 +25,10 @@ copying their definitions.
 ## References
 
 * B. Keller, *Deriving DG categories*, Section 1.
+* David Wärn and the Mathlib contributors, `Mathlib.CategoryTheory.Quotient`, especially
+  `Quotient.natTransLift`, `Quotient.full_whiskeringLeft_functor`, and
+  `Quotient.faithful_whiskeringLeft_functor`. The descent proofs below adapt their lifting
+  argument to `dgClosedToHomotopy`.
 -/
 
 public section
