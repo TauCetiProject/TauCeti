@@ -78,7 +78,7 @@ noncomputable def rootSubgroupPoints (root : GLSymplecticFin.RootSubgroupIndex m
     (root.hom.comp (AdditiveGroup.gaPointsMulEquiv (R := R) (A := A)).toMonoidHom)
 
 /-- Under the symplectic point equivalence, a root point is the selected matrix homomorphism. -/
-@[simp]
+@[simp↓]
 theorem pointsMulEquiv_rootSubgroupPoints (root : GLSymplecticFin.RootSubgroupIndex m)
     (q : WithConv (AdditiveGroup.coordinateHopfAlgebra R →ₐ[R] A)) :
     pointsMulEquiv (R := R) (A := A) m (rootSubgroupPoints root q) =
@@ -130,7 +130,7 @@ noncomputable def shortRootSubgroupPoints (family : GLSymplecticFin.ShortRootFam
 
 /-- Under the symplectic point equivalence, the positive long-root point is its elementary
 transvection. -/
-@[simp]
+@[simp↓]
 theorem pointsMulEquiv_positiveLongRootSubgroupPoints (i : Fin m)
     (f : WithConv (AdditiveGroup.coordinateHopfAlgebra R →ₐ[R] A)) :
     pointsMulEquiv (R := R) (A := A) m (positiveLongRootSubgroupPoints i f) =
@@ -142,7 +142,7 @@ theorem pointsMulEquiv_positiveLongRootSubgroupPoints (i : Fin m)
 
 /-- Under the symplectic point equivalence, the negative long-root point is its elementary
 transvection. -/
-@[simp]
+@[simp↓]
 theorem pointsMulEquiv_negativeLongRootSubgroupPoints (i : Fin m)
     (f : WithConv (AdditiveGroup.coordinateHopfAlgebra R →ₐ[R] A)) :
     pointsMulEquiv (R := R) (A := A) m (negativeLongRootSubgroupPoints i f) =
@@ -154,7 +154,7 @@ theorem pointsMulEquiv_negativeLongRootSubgroupPoints (i : Fin m)
 
 /-- Under the symplectic point equivalence, a short-root point is its paired elementary-matrix
 one-parameter subgroup. -/
-@[simp]
+@[simp↓]
 theorem pointsMulEquiv_shortRootSubgroupPoints
     (family : GLSymplecticFin.ShortRootFamily) (hij : i ≠ j)
     (q : WithConv (AdditiveGroup.coordinateHopfAlgebra R →ₐ[R] A)) :
@@ -342,7 +342,7 @@ theorem mapPointsFunctor_shortRootSubgroupCoordinateMap
 
 /-- Over any value-algebra universe, a root coordinate morphism induces the constructed
 point map. -/
-@[simp]
+@[simp↓]
 theorem mapPointsFunctor_rootSubgroupCoordinateMap_app
     (root : GLSymplecticFin.RootSubgroupIndex m) (A : CommAlgCat.{w} R)
     (q : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) A) :
@@ -365,7 +365,7 @@ theorem mapPointsFunctor_rootSubgroupCoordinateMap_app
 
 /-- Over any value algebra, the positive coordinate morphism induces the constructed point
 homomorphism. -/
-@[simp]
+@[simp↓]
 theorem mapPointsFunctor_positiveLongRootSubgroupCoordinateMap_app (i : Fin m)
     (A : CommAlgCat.{w} R)
     (f : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) A) :
@@ -377,7 +377,7 @@ theorem mapPointsFunctor_positiveLongRootSubgroupCoordinateMap_app (i : Fin m)
 
 /-- Over any value algebra, the negative coordinate morphism induces the constructed point
 homomorphism. -/
-@[simp]
+@[simp↓]
 theorem mapPointsFunctor_negativeLongRootSubgroupCoordinateMap_app (i : Fin m)
     (A : CommAlgCat.{w} R)
     (f : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) A) :
@@ -388,7 +388,7 @@ theorem mapPointsFunctor_negativeLongRootSubgroupCoordinateMap_app (i : Fin m)
     mapPointsFunctor_rootSubgroupCoordinateMap_app]
 
 /-- Over any value algebra, a short-root coordinate morphism induces its point homomorphism. -/
-@[simp]
+@[simp↓]
 theorem mapPointsFunctor_shortRootSubgroupCoordinateMap_app
     (family : GLSymplecticFin.ShortRootFamily) (hij : i ≠ j) (A : CommAlgCat.{w} R)
     (q : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) A) :
@@ -400,7 +400,7 @@ theorem mapPointsFunctor_shortRootSubgroupCoordinateMap_app
 
 /-- A root coordinate morphism sends the generic symplectic matrix to the identity
 plus its normalized linear term. Entries are indexed in paired coordinates. -/
-@[simp]
+@[simp↓]
 theorem rootSubgroupCoordinateMap_apply_X (root : GLSymplecticFin.RootSubgroupIndex m)
     (a b : Fin m ⊕ Fin m) :
     (rootSubgroupCoordinateMap (R := R) root).hom
