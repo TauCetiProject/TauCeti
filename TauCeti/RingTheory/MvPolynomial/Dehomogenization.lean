@@ -97,6 +97,20 @@ theorem pderiv_dehomogenize (i : Fin (n + 1)) (j : Fin n)
     · simp [h, dehomogenize_X, Pi.single_apply, apply_ite,
         Fin.succAbove_right_injective.eq_iff]
 
+/-- Euler's identity at a zero in an affine chart: the omitted partial derivative plus
+the coordinate-weighted sum of the retained partial derivatives is zero. -/
+theorem eval_pderiv_add_sum_dehomogenize (i : Fin (n + 1))
+    {p : MvPolynomial (Fin (n + 1)) R} {d : ℕ} (hp : p.IsHomogeneous d)
+    (a : Fin n → R) (ha : eval a (dehomogenize i p) = 0) :
+    eval (i.insertNth 1 a) (pderiv i p) +
+      ∑ j : Fin n, a j * eval a (pderiv j (dehomogenize i p)) = 0 := by
+  have he := congrArg (eval (i.insertNth 1 a)) hp.sum_X_mul_pderiv
+  rw [map_sum, Fin.sum_univ_succAbove _ i] at he
+  simp only [map_mul, eval_X, Fin.insertNth_apply_same, one_mul,
+    Fin.insertNth_apply_succAbove, map_nsmul] at he
+  rw [← eval_dehomogenize i p a, ha, nsmul_zero] at he
+  simpa only [pderiv_dehomogenize, eval_dehomogenize] using he
+
 /-- At a zero of a homogeneous equation, the homogeneous gradient vanishes if and only
 if the gradient of the equation in any chosen affine chart vanishes. -/
 theorem forall_eval_pderiv_eq_zero_iff_dehomogenize (i : Fin (n + 1))
@@ -109,10 +123,9 @@ theorem forall_eval_pderiv_eq_zero_iff_dehomogenize (i : Fin (n + 1))
     rw [pderiv_dehomogenize, eval_dehomogenize]
     exact h _
   · intro h l
-    have he := congrArg (eval (i.insertNth 1 a)) hp.sum_X_mul_pderiv
-    rw [map_sum, Fin.sum_univ_succAbove _ i] at he
     refine Fin.succAboveCases i ?_ (fun j ↦ ?_) l
-    · simpa [← pderiv_dehomogenize, ← eval_dehomogenize, h, ha] using he
+    · simpa only [h, mul_zero, Finset.sum_const_zero, add_zero] using
+        eval_pderiv_add_sum_dehomogenize i hp a ha
     · rw [← eval_dehomogenize, ← pderiv_dehomogenize]
       exact h j
 
@@ -139,13 +152,7 @@ theorem eval_pderiv_eq_neg_sum_dehomogenize (i : Fin (n + 1))
     (a : Fin n → R) (ha : eval a (dehomogenize i p) = 0) :
     eval (i.insertNth 1 a) (pderiv i p) =
       -∑ j : Fin n, a j * eval a (pderiv j (dehomogenize i p)) := by
-  have h := congrArg (eval (i.insertNth 1 a)) hp.sum_X_mul_pderiv
-  rw [map_sum, Fin.sum_univ_succAbove _ i] at h
-  simp only [map_mul, eval_X, Fin.insertNth_apply_same, one_mul,
-    Fin.insertNth_apply_succAbove, map_nsmul, ← eval_dehomogenize, ha, nsmul_zero,
-    ← pderiv_dehomogenize] at h
-  rw [eval_dehomogenize i (pderiv i p) a] at h
-  exact eq_neg_of_add_eq_zero_left h
+  exact eq_neg_of_add_eq_zero_left (eval_pderiv_add_sum_dehomogenize i hp a ha)
 
 end CommRing
 
