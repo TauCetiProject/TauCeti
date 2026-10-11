@@ -37,6 +37,8 @@ separable, and for irreducible `p` this follows from `p.Separable`.
 * `TauCeti.stabilizer_eq_bot_iff_adjoin_simple_eq_top`,
   `TauCeti.stabilizer_eq_top_iff_adjoin_simple_eq_bot`: the two ends of the correspondence, a
   root that generates the whole splitting field and a root that lies in the base field.
+* `TauCeti.rootSetEquivOrbit`: identify the intrinsic root action of an irreducible polynomial
+  with the orbit of a chosen root in its splitting field.
 * `TauCeti.coe_rootSet_eq_orbit_of_irreducible`, `TauCeti.rootSetEquivQuotientStabilizer`: for the
   action of `Gal(M/F)` on the roots in a normal extension `M / F` of an irreducible polynomial,
   the roots form one orbit and are identified equivariantly with the cosets of the stabilizer of
@@ -236,5 +238,36 @@ theorem rootSetEquivQuotientStabilizer_smul {q : F[X]} (hq : Irreducible q) {α 
   simp only [rootSetEquivQuotientStabilizer, Equiv.trans_apply, h1, h2]
 
 end Normal
+
+/-- The roots of an irreducible polynomial in its splitting field are identified with the orbit
+of a chosen root, preserving the underlying field element. -/
+def rootSetEquivOrbit (hp : Irreducible p) {α : p.SplittingField}
+    (hα : α ∈ p.rootSet p.SplittingField) : p.rootSet p.SplittingField ≃ orbit p.Gal α :=
+  Set.equivOfEq (coe_rootSet_eq_orbit_of_irreducible hp hα)
+
+/-- The root-to-orbit identification preserves the underlying field element. -/
+@[simp]
+theorem coe_rootSetEquivOrbit_apply (hp : Irreducible p) {α : p.SplittingField}
+    (hα : α ∈ p.rootSet p.SplittingField) (y : p.rootSet p.SplittingField) :
+    (rootSetEquivOrbit hp hα y : p.SplittingField) = y := by
+  unfold rootSetEquivOrbit
+  rfl
+
+/-- The inverse orbit-to-root identification preserves the underlying field element. -/
+@[simp]
+theorem coe_rootSetEquivOrbit_symm_apply (hp : Irreducible p) {α : p.SplittingField}
+    (hα : α ∈ p.rootSet p.SplittingField) (y : orbit p.Gal α) :
+    ((rootSetEquivOrbit hp hα).symm y : p.SplittingField) = y := by
+  unfold rootSetEquivOrbit
+  rfl
+
+/-- The identification of the roots with the orbit of a chosen root is equivariant. -/
+@[simp]
+theorem rootSetEquivOrbit_smul (hp : Irreducible p) {α : p.SplittingField}
+    (hα : α ∈ p.rootSet p.SplittingField) (g : p.Gal) (y : p.rootSet p.SplittingField) :
+    rootSetEquivOrbit hp hα (g • y) = g • rootSetEquivOrbit hp hα y := by
+  apply Subtype.ext
+  simp only [coe_rootSetEquivOrbit_apply, Gal.coe_smul, orbit.coe_smul]
+  rfl
 
 end TauCeti
