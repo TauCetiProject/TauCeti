@@ -120,11 +120,8 @@ theorem exists_contDiffOn_moserField (hL : L.IsInvertible) {n : WithTop ℕ∞}
     hinv.clm_apply (hα.comp contDiffOn_snd (fun p hp ↦ hUW hp.2)).neg
   refine ⟨T, U, X, hT, hU, hIT, hxU, hUW, hXs, ?_⟩
   intro p hp v
-  -- Fold the local definitions `A` and `X`, and express scalar negation as covector negation
-  -- so that covector extensionality applies to the pointwise contraction equation.
-  change (∀ w : V, A p v w = (-α p.2) w) ↔ v = X p
+  simp only [A, X, ← neg_apply]
   rw [← ContinuousLinearMap.ext_iff]
-  simpa only [eq_comm] using
-    ((hA p hp).inverse_apply_eq (x := v) (y := -α p.2)).symm
+  exact eq_comm.trans ((hA p hp).inverse_apply_eq.symm.trans eq_comm)
 
 end TauCeti
