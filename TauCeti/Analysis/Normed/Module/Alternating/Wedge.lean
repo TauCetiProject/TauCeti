@@ -16,9 +16,9 @@ import TauCeti.GroupTheory.Perm.Inversion
 /-!
 # Wedge products of continuous alternating maps
 
-This file defines the paired wedge product of continuous alternating maps. Given a continuous
-bilinear pairing `μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃`, it combines a `k`-form with values in `F₁`
-and an `l`-form with values in `F₂` into a `(k + l)`-form with values in `F₃`.
+This file defines the paired wedge product of continuous alternating maps on real seminormed
+spaces. Given a continuous bilinear pairing `μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃`, it combines a `k`-form
+with values in `F₁` and an `l`-form with values in `F₂` into a `(k + l)`-form with values in `F₃`.
 
 The normalization is the determinant convention: the signed sum over all permutations is divided
 by `k! l!`. Equivalently, this is the unscaled sum over `(k, l)`-shuffles. In particular, the wedge
@@ -70,17 +70,14 @@ namespace TauCeti
 
 section
 
-variable {E F₁ F₂ F₃ : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
-  [NormedAddCommGroup F₂] [NormedSpace ℝ F₂]
-  [NormedAddCommGroup F₃] [NormedSpace ℝ F₃]
+variable {E F₁ F₂ F₃ : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+  [SeminormedAddCommGroup F₁] [NormedSpace ℝ F₁]
+  [SeminormedAddCommGroup F₂] [NormedSpace ℝ F₂]
+  [SeminormedAddCommGroup F₃] [NormedSpace ℝ F₃]
 
 private noncomputable def pairingLinear (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃) :
     F₁ ⊗[ℝ] F₂ →ₗ[ℝ] F₃ :=
-  TensorProduct.lift
-    { toFun := fun x => (mu x).toLinearMap
-      map_add' := fun x y => by rw [map_add]; rfl
-      map_smul' := fun c x => by rw [map_smul]; rfl }
+  TensorProduct.lift ((ContinuousLinearMap.coeLM ℝ).comp mu.toLinearMap)
 
 @[simp]
 private lemma pairingLinear_tmul (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (x : F₁) (y : F₂) :
@@ -253,7 +250,7 @@ theorem wedgeWith_apply_one_one (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
 
 /-- Postcomposing the pairing postcomposes the paired wedge. -/
 @[simp]
-theorem wedgeWith_postcomp {F₄ : Type*} [NormedAddCommGroup F₄] [NormedSpace ℝ F₄]
+theorem wedgeWith_postcomp {F₄ : Type*} [SeminormedAddCommGroup F₄] [NormedSpace ℝ F₄]
     {k l : ℕ} (nu : F₃ →L[ℝ] F₄) (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) :
     wedgeWith ((ContinuousLinearMap.compL ℝ F₂ F₃ F₄ nu).comp mu) phi psi =
@@ -281,13 +278,8 @@ theorem wedgeWith_smul_pairing {k l : ℕ} (c : ℝ) (mu : F₁ →L[ℝ] F₂ �
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) :
     wedgeWith (c • mu) phi psi = c • wedgeWith mu phi psi := by
   ext v
-  simp only [wedgeWith_apply, ContinuousAlternatingMap.smul_apply,
-    Finset.smul_sum, smul_smul]
-  apply Finset.sum_congr rfl
-  intro sigma _
-  rw [smul_apply, smul_apply, smul_comm (Equiv.Perm.sign sigma) c]
-  simp only [smul_smul]
-  ring_nf
+  simp only [wedgeWith_apply, ContinuousAlternatingMap.smul_apply, smul_apply,
+    Finset.smul_sum, smul_comm _ c]
 
 /-- The paired wedge for the zero pairing is zero. -/
 @[simp]
@@ -304,11 +296,8 @@ theorem wedgeWith_add_left {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (phi phi' : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) :
     wedgeWith mu (phi + phi') psi = wedgeWith mu phi psi + wedgeWith mu phi' psi := by
   ext v
-  simp only [wedgeWith_apply, ContinuousAlternatingMap.add_apply, map_add, Finset.smul_sum]
-  rw [← Finset.sum_add_distrib]
-  apply Finset.sum_congr rfl
-  intro sigma _
-  simp only [add_apply, smul_add]
+  simp only [wedgeWith_apply, ContinuousAlternatingMap.add_apply, map_add, add_apply,
+    smul_add, Finset.sum_add_distrib]
 
 /-- The paired wedge is additive in its second form. -/
 @[simp]
@@ -316,11 +305,8 @@ theorem wedgeWith_add_right {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi psi' : E [⋀^Fin l]→L[ℝ] F₂) :
     wedgeWith mu phi (psi + psi') = wedgeWith mu phi psi + wedgeWith mu phi psi' := by
   ext v
-  simp only [wedgeWith_apply, ContinuousAlternatingMap.add_apply, map_add, Finset.smul_sum]
-  rw [← Finset.sum_add_distrib]
-  apply Finset.sum_congr rfl
-  intro sigma _
-  simp only [smul_add]
+  simp only [wedgeWith_apply, ContinuousAlternatingMap.add_apply, map_add,
+    smul_add, Finset.sum_add_distrib]
 
 /-- The paired wedge respects scalar multiplication in its first form. -/
 @[simp]
@@ -328,13 +314,8 @@ theorem wedgeWith_smul_left {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) :
     wedgeWith mu (c • phi) psi = c • wedgeWith mu phi psi := by
   ext v
-  simp only [wedgeWith_apply, ContinuousAlternatingMap.smul_apply, map_smul,
-    Finset.smul_sum, smul_smul]
-  apply Finset.sum_congr rfl
-  intro sigma _
-  rw [smul_apply, smul_comm (Equiv.Perm.sign sigma) c]
-  simp only [smul_smul]
-  ring_nf
+  simp only [wedgeWith_apply, ContinuousAlternatingMap.smul_apply, map_smul, smul_apply,
+    Finset.smul_sum, smul_comm _ c]
 
 /-- The paired wedge respects scalar multiplication in its second form. -/
 @[simp]
@@ -343,12 +324,7 @@ theorem wedgeWith_smul_right {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F�
     wedgeWith mu phi (c • psi) = c • wedgeWith mu phi psi := by
   ext v
   simp only [wedgeWith_apply, ContinuousAlternatingMap.smul_apply, map_smul,
-    Finset.smul_sum, smul_smul]
-  apply Finset.sum_congr rfl
-  intro sigma _
-  rw [smul_comm (Equiv.Perm.sign sigma) c]
-  simp only [smul_smul]
-  ring_nf
+    Finset.smul_sum, smul_comm _ c]
 
 /-- Wedge with the zero form on the left is zero. -/
 @[simp]
@@ -378,7 +354,7 @@ theorem norm_wedgeWith_le {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
 /-- Pulling both arguments of a paired wedge back by a continuous linear map is the same as pulling
 back their wedge. -/
 @[simp]
-theorem wedgeWith_compContinuousLinearMap {E' : Type*} [NormedAddCommGroup E']
+theorem wedgeWith_compContinuousLinearMap {E' : Type*} [SeminormedAddCommGroup E']
     [NormedSpace ℝ E'] {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (f : E' →L[ℝ] E)
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) :
     wedgeWith mu (phi.compContinuousLinearMap f) (psi.compContinuousLinearMap f) =
@@ -443,10 +419,10 @@ section Assoc
 
 open Equiv
 
-variable {E F₁ F₂ F₃ F₁₂ F₂₃ G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [NormedAddCommGroup F₁] [NormedSpace ℝ F₁] [NormedAddCommGroup F₂] [NormedSpace ℝ F₂]
-  [NormedAddCommGroup F₃] [NormedSpace ℝ F₃] [NormedAddCommGroup F₁₂] [NormedSpace ℝ F₁₂]
-  [NormedAddCommGroup F₂₃] [NormedSpace ℝ F₂₃] [NormedAddCommGroup G] [NormedSpace ℝ G]
+variable {E F₁ F₂ F₃ F₁₂ F₂₃ G : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+  [SeminormedAddCommGroup F₁] [NormedSpace ℝ F₁] [SeminormedAddCommGroup F₂] [NormedSpace ℝ F₂]
+  [SeminormedAddCommGroup F₃] [NormedSpace ℝ F₃] [SeminormedAddCommGroup F₁₂] [NormedSpace ℝ F₁₂]
+  [SeminormedAddCommGroup F₂₃] [NormedSpace ℝ F₂₃] [SeminormedAddCommGroup G] [NormedSpace ℝ G]
   {k l m : ℕ}
 
 /-- A paired wedge whose left factor is itself a paired wedge is the signed sum over all

@@ -44,9 +44,7 @@ variable [LinearOrderedCommMonoidWithZero Γ₀] [Nontrivial Γ₀]
 
 /-- The powers of an element with nonzero valuation avoid the support.
 This holds for monoid-valued valuations; for group-valued valuations it supplies the side
-condition for `Valuation.extendToLocalization` away from that element.
-
-The value-monoid generalization is due to Claude Opus 5, in commit `7d80f5396`. -/
+condition for `Valuation.extendToLocalization` away from that element. -/
 theorem powers_le_supp_primeCompl {v : Valuation A Γ₀} {s : A} (hs : v s ≠ 0) :
     Submonoid.powers s ≤ v.supp.primeCompl := by
   simpa only [Submonoid.powers_le, Ideal.mem_primeCompl_iff, mem_supp_iff] using hs

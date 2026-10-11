@@ -14,7 +14,7 @@ Two facts about `unitInterval.toNNReal : I → ℝ≥0`, the inclusion of the un
 nonnegative reals: its values are at most one, and clamping a nonnegative real `t` to the unit
 interval with `Set.projIcc` and reading it back in `ℝ≥0` gives `min t 1`.  They let paths
 parametrized by the unit interval be reparametrized by a nonnegative time, as in
-`TauCeti.Topology.PathSpace.Moore.Comparison`.
+`TauCeti.Topology.PathSpace.Moore.Comparison.Basic`.
 -/
 
 public section

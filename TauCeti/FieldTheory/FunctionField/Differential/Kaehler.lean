@@ -185,6 +185,14 @@ theorem derivativeOfSeparating_sub_algebraMap {a : k}
   rw [(derivativeOfSeparating hxa).apply_eq_derivativeOfSeparating_smul hx y, h1, smul_eq_mul,
     mul_one]
 
+/-- The derivative of a separating element `y` with respect to a separating element `x` is
+nonzero. -/
+theorem derivativeOfSeparating_ne_zero {y : F} (hy : Transcendental k y)
+    [Algebra.IsSeparable k⟮y⟯ F] : derivativeOfSeparating hx y ≠ 0 := fun h ↦ by
+  have hD := derivativeOfSeparating_smul_D hx y
+  rw [h, zero_smul] at hD
+  exact D_ne_zero_of_separating hy hD.symm
+
 end Separating
 
 /-- Differentiation with respect to a separating element kills exactly the constants of

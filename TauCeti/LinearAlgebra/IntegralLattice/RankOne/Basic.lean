@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
@@ -13,6 +13,7 @@ public import TauCeti.LinearAlgebra.IntegralLattice.Unimodular
 # Rank-one integral lattices
 
 The lattice `rankOne a` is `ℤ ⊂ ℚ` with bilinear form `B(x,y) = axy`, for any integer `a`.
+Integer representatives evaluate the integral form as `akl` and the integral norm as `ak²`.
 Its rank is one, its signed determinant is `a`, and it is even exactly when `a` is even.
 It is unimodular exactly when `a` is a unit. The sign of `a` determines definiteness and
 signature, including the degenerate zero form.
@@ -66,6 +67,21 @@ theorem rankOne_form_apply (a : ℤ) (x y : ℚ) : (rankOne a).form x y = a * x 
 theorem rankOne_norm_apply (a : ℤ) (x : ℚ) : (rankOne a).norm x = a * x ^ 2 := by
   rw [norm_apply, rankOne_form_apply]
   ring
+
+/-- Evaluate the integral restriction using integer representatives of actual carrier vectors. -/
+theorem integralForm_rankOne_eq {a : ℤ} (w x : rankOne a) {k l : ℤ}
+    (hw : (w : ℚ) = k) (hx : (x : ℚ) = l) :
+    (rankOne a).integralForm w x = a * k * l := by
+  have h : ((rankOne a).integralForm w x : ℚ) = (a * k * l : ℤ) := by
+    rw [integralForm_cast, rankOne_form_apply, hw, hx]
+    push_cast
+    rfl
+  exact_mod_cast h
+
+/-- Evaluate the integral norm using an integer representative in the actual carrier. -/
+theorem integralNorm_rankOne_eq {a : ℤ} (w : rankOne a) {k : ℤ}
+    (hw : (w : ℚ) = k) : (rankOne a).integralNorm w = a * k ^ 2 := by
+  rw [integralNorm_apply, integralForm_rankOne_eq w w hw hw, pow_two, mul_assoc]
 
 /-- Every member of the family has rank one, including the zero form. -/
 @[simp]

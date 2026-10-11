@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold.Basic
+public import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold.Star
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Homeomorph
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Ball
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.BoundarySphere
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Relabel.Basic
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.Basic
 
 /-!
 # Geometric balls and spheres from combinatorial complexes
@@ -67,5 +70,32 @@ theorem IsCombinatorialSphere.nonempty_homeomorph_sphere [DecidableEq ι]
   obtain ⟨s⟩ := he.nonempty_homeomorph h.finite_faces
   obtain ⟨t⟩ := nonempty_homeomorph_simplexBoundary_sphere hV (le_top _)
   exact ⟨r.symm.trans (s.trans t)⟩
+
+/-! ### Vertex-star ball models -/
+
+/-- The weak polyhedron of a vertex's closed star in a combinatorial `n`-manifold is homeomorphic
+to the Euclidean closed `n`-ball, providing the local closed-ball model for its vertex charts.
+
+The statement uses the weak realization topology and allows an arbitrary ambient vertex type;
+unused ambient vertices contribute no points. -/
+theorem IsCombinatorialManifold.nonempty_homeomorph_closedStar_closedBall
+    [DecidableEq ι] (h : IsCombinatorialManifold K.toPreAbstractSimplicialComplex n)
+    {v : ι} (hv : ({v} : Finset ι) ∈ K) :
+    Nonempty (closedStarRealization K {v} ≃ₜ
+      Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1) := by
+  let P : PreAbstractSimplicialComplex ι :=
+    closedStar K.toPreAbstractSimplicialComplex {v}
+  let e : ι ↪ ι ⊕ ι := TauCeti.partitionEmbedding (· ∈ ({v} : Finset ι))
+  let L : AbstractSimplicialComplex (ι ⊕ ι) := ⊤
+  have hP : P.map e ≤ L.toPreAbstractSimplicialComplex := le_top _
+  have hball : IsCombinatorialBall (P.map e) n := by
+    simpa only [P, e] using h.isCombinatorialBall_map_closedStar hv
+  obtain ⟨b⟩ := hball.nonempty_homeomorph_closedBall hP
+  let r := P.relabelingHomeomorph e (PreAbstractSimplicialComplex.closedStar_le) hP
+  have hset : (K.closedStarRealization {v} : Set (Realization K)) =
+      {x : Realization K | x.1.support ∈ P} := by
+    ext x
+    simp only [P, mem_closedStarRealization, Set.mem_ofPred_eq]
+  exact ⟨(Homeomorph.setCongr hset).trans (r.trans b)⟩
 
 end PreAbstractSimplicialComplex

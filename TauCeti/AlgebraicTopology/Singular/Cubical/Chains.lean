@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Basic
 import Mathlib.Data.Fin.Parity
+import Mathlib.Topology.CompactOpen
 
 /-!
 # Unnormalized cubical chains
@@ -33,6 +34,7 @@ only the central signs `(-1) ^ i` enter the boundary.
 * `TauCeti.CubicalChain.boundary X R n`: the boundary
   `CubicalChain X R (n + 1) →ₗ[R] CubicalChain X R n`.
 * `TauCeti.CubicalChain.map R f n`: the chains pushed forward along a continuous map.
+* `TauCeti.CubicalChain.cast R h`: reindexing of chains along an equality of dimensions.
 
 ## Main results
 
@@ -77,6 +79,19 @@ variable (R : Type*) [Semiring R]
 def map (f : C(X, Y)) (n : ℕ) : CubicalChain X R n →ₗ[R] CubicalChain Y R n :=
   lmapDomain R R f.comp
 
+/-- An injective map of spaces preserves the coefficient of each cube at its image. -/
+theorem map_apply_comp_of_injective (f : C(X, Y)) (hf : Function.Injective f)
+    {n : ℕ} (g : CubicalChain X R n) (c : SingularCube X n) :
+    map R f n g (f.comp c) = g c := by
+  rw [map, lmapDomain_apply,
+    mapDomain_apply_of_injective (ContinuousMap.postcomp_injective f hf)]
+
+/-- An injective continuous map induces an injective push-forward on cubical chains. -/
+theorem map_injective (f : C(X, Y)) (hf : Function.Injective f) (n : ℕ) :
+    Function.Injective (map R f n) := by
+  rw [map, coe_lmapDomain]
+  exact mapDomain_injective (ContinuousMap.postcomp_injective f hf)
+
 @[simp]
 theorem map_single (f : C(X, Y)) {n : ℕ} (c : SingularCube X n) (a : R) :
     map R f n (single c a) = single (f.comp c) a := by
@@ -93,6 +108,37 @@ theorem map_comp (g : C(Y, Z)) (f : C(X, Y)) (n : ℕ) :
   simp [ContinuousMap.comp_assoc]
 
 end Map
+
+section Cast
+
+variable (R : Type*) [Semiring R]
+
+/-- Reindex cubical chains along an equality of dimensions. -/
+def cast {n m : ℕ} (h : n = m) : CubicalChain X R n →ₗ[R] CubicalChain X R m :=
+  lmapDomain R R (SingularCube.cast h)
+
+@[simp]
+theorem cast_single {n m : ℕ} (h : n = m) (c : SingularCube X n) (a : R) :
+    cast R h (single c a) = single (SingularCube.cast h c) a := by
+  rw [cast, lmapDomain_apply, mapDomain_single]
+
+@[simp]
+theorem cast_rfl {n : ℕ} (f : CubicalChain X R n) : cast R rfl f = f := by
+  induction f using Finsupp.induction_linear <;> simp_all
+
+/-- Reindexing along successive dimension equalities is reindexing along their composite. -/
+@[simp]
+theorem cast_cast {n m k : ℕ} (h : n = m) (h' : m = k) (f : CubicalChain X R n) :
+    cast R h' (cast R h f) = cast R (h.trans h') f := by
+  induction f using Finsupp.induction_linear <;> simp_all
+
+/-- Reindexing commutes with the push-forward. -/
+theorem map_cast (f : C(X, Y)) {n m : ℕ} (h : n = m) (c : CubicalChain X R n) :
+    map R f m (cast R h c) = cast R h (map R f n c) := by
+  subst h
+  simp
+
+end Cast
 
 section Boundary
 

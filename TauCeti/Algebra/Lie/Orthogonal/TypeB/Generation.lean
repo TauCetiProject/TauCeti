@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.Root.SumGenerators
+import TauCeti.Algebra.Lie.Orthogonal.TypeB.CartanBasis
 
 /-!
 # Generation of the split odd orthogonal Lie algebra
@@ -343,33 +344,12 @@ theorem lieSpan_range_typeBSimpleRootGenerator_union_range_typeBSimpleNegativeRo
     convert hscaled using 1
     simp [smul_smul, NeZero.ne (2 : K)]
   have hcartan : typeBDiagonalCartan K (Fin (n + 1)) ≤ S := by
-    intro A hA
-    let Ac : typeBDiagonalCartan K (Fin (n + 1)) := ⟨A, hA⟩
-    -- Bundle the Cartan-membership witness so its coordinate basis can expand the ambient element.
-    change (Ac : LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K) ∈ S
-    let B := typeBDiagonalCartanBasis (K := K) (ι := Fin (n + 1))
-    rw [← B.sum_repr Ac]
-    simp only [AddSubmonoidClass.coe_finsetSum, SetLike.val_smul]
-    apply S.sum_mem
-    intro i _
-    apply S.smul_mem
-    have hbracket := S.lie_mem (hshort i) (hshortNeg i)
-    rw [typeBShortRootGenerator_lie_negative, typeBShortCorootGenerator_eq_diagonal] at hbracket
-    have hscaled := S.smul_mem ((2 : K)⁻¹) hbracket
-    have hscale :
-        (2 : K)⁻¹ •
-            ((typeBDiagonalEquiv (K := K) (ι := Fin (n + 1)) (2 • Pi.single i 1) :
-              typeBDiagonalCartan K (Fin (n + 1))) :
-                LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K) =
-          ((B i : typeBDiagonalCartan K (Fin (n + 1))) :
-            LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K) := by
-      apply Subtype.ext
-      simp only [SetLike.val_smul, coe_typeBDiagonalEquiv_apply,
-        B, coe_typeBDiagonalCartanBasis_apply]
-      ext (a | (a | a)) (b | (b | b)) <;>
-        simp [typeBDiagonalMatrix_apply, NeZero.ne (2 : K)]
-    rw [hscale] at hscaled
-    exact hscaled
+    have := invertibleOfNonzero (NeZero.ne (2 : K))
+    rw [typeBDiagonalCartan_eq_lieSpan_typeBSimpleCorootGenerator, LieSubalgebra.lieSpan_le]
+    rintro _ ⟨i, rfl⟩
+    rw [← typeBSimpleRootGenerator_lie_negative]
+    exact S.lie_mem (LieSubalgebra.subset_lieSpan (Or.inl ⟨i, rfl⟩))
+      (LieSubalgebra.subset_lieSpan (Or.inr ⟨i, rfl⟩))
   have hblock (i j : Fin (n + 1)) : typeBBlockGenerator (K := K) n i j ∈ S := by
     by_cases hij : i = j
     · subst j

@@ -125,9 +125,8 @@ noncomputable abbrev coordinateMap :
 theorem coordinateMap_def :
     coordinateMap R n =
       CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra R n)
-        (definingHopfIdeal R n) := by
-  ext h
-  exact GeneralLinear.weightParabolicCoordinateMap_apply R (weights n) h
+        (definingHopfIdeal R n) :=
+  GeneralLinear.weightParabolicCoordinateMap_def R (weights n)
 
 /-- The upper-triangular coordinate morphism sends an ambient coordinate to its quotient
 class. -/
@@ -172,10 +171,9 @@ theorem definingHopfIdeal_toIdeal_le_ker
     (hf : ∀ i j, j < i → f (GeneralLinear.coordinateHopfAlgebraAlgEquiv R n
       (GeneralLinear.coordinateRingMap R n (MvPolynomial.X (i, j)))) = 0) :
     (definingHopfIdeal R n).toIdeal ≤ RingHom.ker f.toRingHom := by
-  rw [definingHopfIdeal_toIdeal, Ideal.span_le]
-  rintro x ⟨i, j, hji, rfl⟩
-  rw [SetLike.mem_coe, RingHom.mem_ker]
-  exact hf i j hji
+  rw [definingHopfIdeal]
+  exact GeneralLinear.weightParabolicDefiningHopfIdeal_toIdeal_le_ker R (weights n) f
+    fun i j h ↦ hf i j ((weights_lt_weights_iff n i j).mp h)
 
 /-- A morphism out of the coordinate algebra of `GL_n` whose tautological matrix point is upper
 triangular kills the upper-triangular defining Hopf ideal. -/

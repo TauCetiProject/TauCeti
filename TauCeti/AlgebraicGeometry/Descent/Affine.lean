@@ -7,6 +7,8 @@ module
 
 public import Mathlib.AlgebraicGeometry.GammaSpecAdjunction
 public import Mathlib.AlgebraicGeometry.Pullbacks
+public import Mathlib.AlgebraicGeometry.Sites.Fpqc
+public import TauCeti.CategoryTheory.EffectiveEpi.Descent
 public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.DescentDatum
 public import TauCeti.RingTheory.Flat.EffectiveDescent
 
@@ -38,6 +40,14 @@ effective descent for affine schemes.
   datum on `Spec B` relative to `p` is isomorphic to the canonical descent datum on the base
   change of the affine scheme `Spec D.descended` over `Spec R`; transporting along
   `X ≅ Spec Γ(X, ⊤)`, the same holds for every affine scheme `X` over `Spec S`.
+* `TauCeti.effectiveEpi_pullback_fst_specAlgebraMap`: if `S` is faithfully flat
+  over `R`, every base change of `Spec S ⟶ Spec R` is an effective epimorphism. Hence descent of
+  morphisms applies to `Spec S ⟶ Spec R`, and in particular the **uniqueness** half of effective
+  descent: base change is fully faithful into descent data
+  (`TauCeti.DescentDatum.baseChangeHomEquiv`), so the scheme `X₀` over `Spec R` produced by
+  `exists_isAffine_baseChange_hom_isIso` is unique up to a unique isomorphism compatible with
+  the descent data (`TauCeti.DescentDatum.Hom.descendIso`,
+  `TauCeti.DescentDatum.Hom.eq_descendIso`).
 
 ## References
 
@@ -507,5 +517,22 @@ theorem exists_isAffine_baseChange_hom_isIso [Module.Flat R S] {X : Over (Spec (
   infer_instance
 
 end DescentDatum
+
+section FaithfullyFlat
+
+variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S] [Module.FaithfullyFlat R S]
+
+/-- If `S` is faithfully flat over `R`, then the base change `X ×_{Spec R} Spec S ⟶ X` of
+`Spec S ⟶ Spec R` along any `f : X ⟶ Spec R` is an effective epimorphism, being flat, surjective
+and quasi-compact. This is the hypothesis of descent of morphisms (`TauCeti.homDescentEquiv`,
+`TauCeti.DescentDatum.baseChangeHomEquiv`) along `Spec S ⟶ Spec R`. -/
+instance effectiveEpi_pullback_fst_specAlgebraMap {X : Scheme.{u}} (f : X ⟶ Spec (.of R)) :
+    EffectiveEpi (pullback.fst f (Spec.algebraMap R S)) := by
+  obtain ⟨_, _⟩ : Flat (Spec.algebraMap R S) ∧ Surjective (Spec.algebraMap R S) :=
+    (flat_and_surjective_SpecMap_iff _).mpr
+      (RingHom.faithfullyFlat_algebraMap_iff.mpr inferInstance)
+  infer_instance
+
+end FaithfullyFlat
 
 end TauCeti

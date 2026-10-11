@@ -50,54 +50,15 @@ local notation "J" => 𝓘(ℝ, P)
 private def coordinateMap (Φ : Isom J Sol) : P → P :=
   (toProd ∘ Φ) ∘ toProd.symm
 
-private theorem contDiff_isometry (Φ : Isom J Sol) : ContDiff ℝ ∞ (coordinateMap Φ) := by
-  simpa only [coordinateMap, Diffeomorph.coe_trans, coe_toProdDiffeomorph,
-    coe_toProdDiffeomorph_symm, RiemannianIsometry.coe_toDiffeomorph] using
-    (toProdDiffeomorph.symm.trans (Φ.toDiffeomorph.trans toProdDiffeomorph)).contMDiff.contDiff
-
-private theorem coordinate_derivative (Φ : Isom J Sol) (p : Sol)
-    (u : TangentSpace J p) :
-    fderiv ℝ (coordinateMap Φ) (toProd p) (tangentSpaceCastModel J p u) =
-      tangentSpaceCastModel J (Φ p) (mfderiv J J Φ p u) := by
-  have hf : MDifferentiable J J toProd := by
-    simpa only [coe_toProdDiffeomorph] using toProdDiffeomorph.mdifferentiable (by simp)
-  have hg : MDifferentiable J J toProd.symm := by
-    simpa only [coe_toProdDiffeomorph_symm] using toProdDiffeomorph.symm.mdifferentiable (by simp)
-  have hm := ((contDiff_isometry Φ).differentiable (by simp)
-    (toProd p)).hasFDerivAt.hasMFDerivAt.mfderiv
-  rw [← hm]
-  -- The derivative between coordinate spaces has canonical tangent identifications.
-  -- Insert them before rewriting, so no rewrite relies on their underlying types.
-  change tangentSpaceCastModel J (coordinateMap Φ (toProd p))
-    (mfderiv J J (coordinateMap Φ) (toProd p)
-      ((tangentSpaceCastModel J (toProd p)).symm (tangentSpaceCastModel J p u))) = _
-  unfold coordinateMap
-  -- Apply the chain rule to tangent vectors before simplifying the intermediate
-  -- base points; this keeps the dependent tangent-space types aligned.
-  rw [mfderiv_comp_apply (toProd p) (hf.comp Φ.mdifferentiable _) (hg _),
-    mfderiv_comp_apply (toProd.symm (toProd p)) (hf _) (Φ.mdifferentiableAt _)]
-  rw [mfderiv_toProd_apply]
-  -- The outer coordinate-space cast is the identity on its model vector.
-  change tangentSpaceCastModel J (Φ p)
-    (mfderiv J J Φ p
-      (mfderiv J J toProd.symm (toProd p)
-        ((tangentSpaceCastModel J (toProd p)).symm (tangentSpaceCastModel J p u)))) = _
-  have hu : mfderiv J J toProd.symm (toProd p)
-      ((tangentSpaceCastModel J (toProd p)).symm (tangentSpaceCastModel J p u)) = u :=
-    by
-      have h := toProdDiffeomorph.mfderiv_symm_apply_mfderiv_apply (by simp) p u
-      rw [coe_toProdDiffeomorph_symm, coe_toProdDiffeomorph, mfderiv_toProd_apply] at h
-      exact h
-  exact congrArg (fun v => tangentSpaceCastModel J (Φ p) (mfderiv J J Φ p v)) hu
-
 private theorem height_derivative_mul (Φ : Isom J Sol) (p : P) (u v : P) :
     (fderiv ℝ (coordinateMap Φ) p u).2.2 * (fderiv ℝ (coordinateMap Φ) p v).2.2 =
       u.2.2 * v.2.2 := by
+  simp only [coordinateMap]
   have h := Φ.ricciTensor_mfderiv (toProd.symm p)
     ((tangentSpaceCastModel J (toProd.symm p)).symm u)
     ((tangentSpaceCastModel J (toProd.symm p)).symm v)
   rw [ricciTensor_eq, ricciTensor_eq] at h
-  rw [← coordinate_derivative, ← coordinate_derivative] at h
+  rw [← fderiv_toProd_isometry_apply, ← fderiv_toProd_isometry_apply] at h
   simp only [ContinuousLinearEquiv.apply_symm_apply, Equiv.apply_symm_apply] at h
   linarith
 
@@ -116,7 +77,7 @@ private theorem height_derivative_sign_constant (Φ : Isom J Sol) (p : P) :
       (fderiv ℝ (coordinateMap Φ) 0 (0, 0, 1)).2.2 := by
   let a : P → ℝ := fun p => (fderiv ℝ (coordinateMap Φ) p (0, 0, 1)).2.2
   have ha : Continuous a :=
-    (((contDiff_isometry Φ).continuous_fderiv_apply (by simp)).comp
+    (((contDiff_toProd_isometry Φ).continuous_fderiv_apply (by simp)).comp
       (continuous_id.prodMk continuous_const)).snd.snd
   have hz : ∀ p, a p ≠ 0 := fun p => by
     rcases height_derivative_sign Φ p with h | h <;> simp [a, h]
@@ -140,9 +101,11 @@ theorem exists_mfderiv_height_eq (Φ : Isom J Sol) :
   refine ⟨(fderiv ℝ (coordinateMap Φ) 0 (0, 0, 1)).2.2, height_derivative_sign Φ 0, ?_⟩
   intro p u
   have h := height_derivative_mul Φ (toProd p) (tangentSpaceCastModel J p u) (0, 0, 1)
-  rw [height_derivative_sign_constant Φ (toProd p), coordinate_derivative] at h
+  rw [height_derivative_sign_constant Φ (toProd p)] at h
+  simp only [coordinateMap] at h
+  rw [fderiv_toProd_isometry_apply] at h
   have hs := height_derivative_sign Φ 0
-  dsimp only at h
+  simp only [coordinateMap] at hs ⊢
   rcases hs with hs | hs <;> rw [hs] at h ⊢ <;> linarith
 
 /-- Every Sol isometry either preserves or reverses height, up to the height of its
@@ -150,17 +113,18 @@ image of the identity. The same sign applies to every point. -/
 theorem exists_height_eq (Φ : Isom J Sol) :
     ∃ ε : ℝ, (ε = 1 ∨ ε = -1) ∧ ∀ p : Sol, (Φ p).z = ε * p.z + (Φ 1).z := by
   obtain ⟨ε, hε, hd⟩ := exists_mfderiv_height_eq Φ
+  have hfc : ContDiff ℝ ∞ (coordinateMap Φ) := contDiff_toProd_isometry Φ
   have hf : Differentiable ℝ (fun p : P => (coordinateMap Φ p).2.2) :=
-    (contDiff_isometry Φ).differentiable (by simp) |>.snd.snd
+    hfc.differentiable (by simp) |>.snd.snd
   have hg : Differentiable ℝ (fun p : P => ε * p.2.2 + (Φ 1).z) := by fun_prop
   have heq := eq_of_fderiv_eq hf hg (fun p => by
     apply ContinuousLinearMap.ext
     intro u
     have h := hd (toProd.symm p) ((tangentSpaceCastModel J (toProd.symm p)).symm u)
-    rw [← coordinate_derivative] at h
+    rw [← fderiv_toProd_isometry_apply] at h
     simp only [ContinuousLinearEquiv.apply_symm_apply, Equiv.apply_symm_apply] at h
-    rw [fderiv.snd ((contDiff_isometry Φ).differentiable (by simp) p).snd,
-      fderiv.snd ((contDiff_isometry Φ).differentiable (by simp) p),
+    rw [fderiv.snd (hfc.differentiable (by simp) p).snd,
+      fderiv.snd (hfc.differentiable (by simp) p),
       fderiv_add_const, fderiv_const_mul (differentiable_snd.snd p) ε,
       fderiv.snd differentiable_snd.differentiableAt, fderiv_snd]
     exact h)

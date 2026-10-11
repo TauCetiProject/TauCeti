@@ -86,7 +86,8 @@ theorem explicitIso_delta0 (x : H0 G C) :
   obtain ⟨b, hb⟩ := S.proj_surjective (x : C)
   obtain ⟨a, -, hab⟩ := S.exists_continuous_incl_comp_eq (continuous_d0_apply (M := B) b)
     (proj_d0_eq_zero (hb ▸ x.2))
-  have ha : a ∈ Z1 G A := S.mem_Z1_of_incl_comp_eq_d0 fun g ↦ (hab g).trans (d0_apply b g)
+  have ha : a ∈ Z1 G A := mem_Z1_of_injective_comp_eq_d0 S.incl_injective S.incl_equivariant
+    fun g ↦ (hab g).trans (d0_apply b g)
   -- A canonical `0`-cocycle representing `x`: it is the homogeneous cochain `g ↦ g • x`.
   obtain ⟨z₃, hz₃⟩ := HomologicalComplex.homologyπ_surjective
     (TopRep.homogeneousCochains (ofDiscreteModule ℤ G C)) 0
@@ -147,7 +148,8 @@ theorem explicitIso_delta1 (x : DiscreteH1 G C) :
     (proj_d1_eq_zero he hfcoc)
   have hae' (g h : G) : S.incl (a (g, h)) = g • e h - e (g * h) + e g :=
     (hae (g, h)).trans (d1_apply e g h)
-  have ha : a ∈ Z2 G A := S.mem_Z2_of_incl_comp_eq_d1 hec hae'
+  have ha : a ∈ Z2 G A :=
+    mem_Z2_of_injective_comp_eq_d1 S.incl_injective S.incl_equivariant hec hae'
   have hec' : e ∈ C1 G B := mem_C1_iff.2 hec
   -- The homogeneous form of `e` lifts the canonical cocycle of `f`, and the homogeneous form of
   -- `a` lies over the differential of that lift.

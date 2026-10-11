@@ -43,6 +43,9 @@ by the class-group interface and the multiplicative value can be read off from o
 * `IsDedekindDomain.HeightOneSpectrum.neg_log_valuation_eq_one_iff`: order of vanishing `1` at `v`
   is the value `WithZero.exp (-1)`, which relates the multiplicative value group of the adic
   valuation to the additive order of vanishing used by the class-group interface.
+* `IsDedekindDomain.HeightOneSpectrum.algebraMap_mem_maximalIdeal_valuationSubring_iff`: an
+  element of `R` lies in `v` exactly when its image in the valuation ring of `K` at `v` lies in
+  the maximal ideal.
 * `IsDedekindDomain.HeightOneSpectrum.isTrivialOn_valuation`: adic valuations are trivial on
   semifield constants.
 * `IsDedekindDomain.HeightOneSpectrum.exists_mem_intValuation_eq_exp_neg_one`: a set generating a
@@ -209,6 +212,18 @@ theorem neg_log_valuation_eq_one_iff (v : HeightOneSpectrum R) (x : K) :
       _ = WithZero.exp (-1) := by rw [hlog]
   · intro h
     rw [h, WithZero.log_exp, neg_neg]
+
+/-- An element of `R` lies in the prime `v` exactly when its image in the valuation ring of `K` at
+`v` lies in the maximal ideal. The algebra structure of `R` on the valuation ring is taken as a
+hypothesis, compatible with `K`, since there is no such instance in general; for `R = ℤ` it is
+the canonical one. -/
+theorem algebraMap_mem_maximalIdeal_valuationSubring_iff (v : HeightOneSpectrum R)
+    [Algebra R (v.valuation K).valuationSubring]
+    [IsScalarTower R (v.valuation K).valuationSubring K] (r : R) :
+    algebraMap R (v.valuation K).valuationSubring r ∈ IsLocalRing.maximalIdeal _ ↔
+      r ∈ v.asIdeal := by
+  rw [Valuation.mem_maximalIdeal_iff, ← ValuationSubring.algebraMap_apply,
+    ← IsScalarTower.algebraMap_apply, v.valuation_lt_one_iff_mem]
 
 end IsDedekindDomain.HeightOneSpectrum
 

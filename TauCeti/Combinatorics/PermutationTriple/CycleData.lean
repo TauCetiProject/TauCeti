@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.PermutationTriple.Basic
+public import TauCeti.Data.Sym.Basic
 public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
 public import TauCeti.GroupTheory.Perm.ComputedCycleType
 
@@ -17,7 +18,9 @@ The cycle data of a permutation triple records, in the ordered branch-point conv
 `Equiv.Perm.partition`, rather than `Equiv.Perm.cycleType`: fixed points therefore appear as
 parts equal to one.
 
-`TauCeti.PermutationTriple.cycleData` packages the three partitions, computed using
+`TauCeti.PermutationTriple.unorderedCycleData` forgets their branch-point ordering while
+retaining multiplicities. `TauCeti.PermutationTriple.cycleData` packages the three partitions,
+computed using
 `Equiv.Perm.computedCycleType`, and
 `TauCeti.PermutationTriple.cycleCounts` packages their numbers of parts. The latter is expressed
 using `TauCeti.orbitCount`, and `cycleCounts_eq_card_cycleData` identifies the two descriptions.
@@ -63,6 +66,25 @@ theorem cycleData_σinf (t : PermutationTriple n) :
     t.cycleData.2.2 = t.σinf.partition.parts := by
   simp [cycleData, Equiv.Perm.fullCycleType_def]
 
+/-- The multiset of full cycle partitions, forgetting the ordering of the branch points but
+retaining repeated partitions and fixed points. -/
+def unorderedCycleData (t : PermutationTriple n) : Multiset (Multiset ℕ) :=
+  (Sym.ofFn (fun i => (t.component i).partition.parts) : Multiset (Multiset ℕ))
+
+/-- Read the unordered cycle data from the ordered cycle partitions. -/
+theorem unorderedCycleData_def (t : PermutationTriple n) :
+    t.unorderedCycleData = {t.cycleData.1, t.cycleData.2.1, t.cycleData.2.2} := by
+  simp only [unorderedCycleData, Sym.coe_ofFn, List.ofFn_succ, List.ofFn_zero,
+    Fin.succ_zero_eq_one, Fin.succ_one_eq_two, component_zero, component_one, component_two,
+    cycleData_σ0, cycleData_σ1, cycleData_σinf]
+  rfl
+
+/-- The unordered full cycle partitions are the symmetric-power image of the component
+partitions, viewed as a multiset. -/
+theorem unorderedCycleData_eq_coe_ofFn (t : PermutationTriple n) :
+    t.unorderedCycleData =
+      (Sym.ofFn (fun i => (t.component i).partition.parts) : Multiset (Multiset ℕ)) := (rfl)
+
 /-- The ordered numbers of cycles of the three components, with fixed points included. -/
 noncomputable def cycleCounts (t : PermutationTriple n) : ℕ × ℕ × ℕ :=
   (orbitCount t.σ0, orbitCount t.σ1, orbitCount t.σinf)
@@ -94,6 +116,12 @@ theorem sum_cycleData (t : PermutationTriple n) :
 theorem cycleData_smul (τ : Perm (Fin n)) (t : PermutationTriple n) :
     cycleData (τ • t) = cycleData t := by
   simp [Prod.ext_iff]
+
+/-- Simultaneous relabeling leaves the unordered full cycle partitions unchanged. -/
+@[simp]
+theorem unorderedCycleData_smul (τ : Perm (Fin n)) (t : PermutationTriple n) :
+    unorderedCycleData (τ • t) = unorderedCycleData t := by
+  simp only [unorderedCycleData_def, cycleData_smul]
 
 /-- Simultaneous relabeling leaves all three cycle counts unchanged. -/
 @[simp]
@@ -130,6 +158,12 @@ theorem cycleData_eq_of_equivalent {t t' : PermutationTriple n} (h : Equivalent 
     cycleData t = cycleData t' := by
   obtain ⟨τ, rfl⟩ := equivalent_iff_exists_smul_eq.mp h
   exact (cycleData_smul τ t).symm
+
+/-- Isomorphic permutation triples have the same unordered full cycle partitions. -/
+theorem unorderedCycleData_eq_of_equivalent {t t' : PermutationTriple n}
+    (h : Equivalent t t') : t.unorderedCycleData = t'.unorderedCycleData := by
+  obtain ⟨τ, rfl⟩ := equivalent_iff_exists_smul_eq.mp h
+  exact (unorderedCycleData_smul τ t).symm
 
 /-- Isomorphic permutation triples have the same ordered numbers of cycles. -/
 theorem cycleCounts_eq_of_equivalent {t t' : PermutationTriple n} (h : Equivalent t t') :
