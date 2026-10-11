@@ -48,6 +48,32 @@ def AtWorstNodalOfRelativeDimensionOne (f : X ⟶ Spec (.of R)) : Prop :=
         (SyntomicOfRelativeDimension.locallyOfFinitePresentation 1 f)
         (PureRelativeDimension.of_syntomicOfRelativeDimension f)).subschemeι ≫ f)
 
+/-- A relative curve is at worst nodal exactly when it is syntomic of relative dimension one
+and its singular subscheme is formally unramified over the base. -/
+theorem AtWorstNodalOfRelativeDimensionOne_iff {f : X ⟶ Spec (.of R)} :
+    AtWorstNodalOfRelativeDimensionOne f ↔
+      ∃ h : SyntomicOfRelativeDimension 1 f,
+        letI : SyntomicOfRelativeDimension 1 f := h
+        FormallyUnramified
+          ((@Scheme.singularLocus R _ X ⟨f⟩
+            (SyntomicOfRelativeDimension.flat 1 f)
+            (SyntomicOfRelativeDimension.locallyOfFinitePresentation 1 f)
+            (PureRelativeDimension.of_syntomicOfRelativeDimension f)).subschemeι ≫ f) :=
+  Iff.rfl
+
+/-- Construct a nodal relative curve from syntomicity and formal unramifiedness of its
+singular subscheme. -/
+theorem AtWorstNodalOfRelativeDimensionOne.mk {f : X ⟶ Spec (.of R)}
+    (hf : SyntomicOfRelativeDimension 1 f)
+    (hs : letI : SyntomicOfRelativeDimension 1 f := hf
+      FormallyUnramified
+        ((@Scheme.singularLocus R _ X ⟨f⟩
+          (SyntomicOfRelativeDimension.flat 1 f)
+          (SyntomicOfRelativeDimension.locallyOfFinitePresentation 1 f)
+          (PureRelativeDimension.of_syntomicOfRelativeDimension f)).subschemeι ≫ f)) :
+    AtWorstNodalOfRelativeDimensionOne f :=
+  ⟨hf, hs⟩
+
 /-- A nodal relative curve is syntomic of relative dimension one. -/
 theorem AtWorstNodalOfRelativeDimensionOne.syntomic
     {f : X ⟶ Spec (.of R)} (h : AtWorstNodalOfRelativeDimensionOne f) :
