@@ -156,6 +156,11 @@ morphism `𝒫_{E/S} ⟶ S` has `W`. -/
 def HasProperty (W : MorphismProperty Scheme.{u}) : Prop :=
   ∀ X : EllObj B, W (D.rep X).hom
 
+/-- The defining condition of `RelRepData.HasProperty`: every representing morphism has `W`. -/
+theorem hasProperty_iff {W : MorphismProperty Scheme.{u}} :
+    D.HasProperty W ↔ ∀ X : EllObj B, W (D.rep X).hom :=
+  Iff.rfl
+
 /-- For a property `W` respecting isomorphisms, `HasProperty W` does not depend on the choice of
 representing schemes. -/
 theorem hasProperty_congr (D' : P.RelRepData) (W : MorphismProperty Scheme.{u}) [W.RespectsIso] :
@@ -216,6 +221,12 @@ structure `α ∈ 𝒫(X)` is the identity. -/
 def IsRigid : Prop :=
   ∀ ⦃X : EllObj B⦄ (σ : X ⟶ X), σ.base = 𝟙 X.base →
     ∀ α : P.obj (op X), P.map σ.op α = α → σ = 𝟙 X
+
+/-- The defining condition of `IsRigid`: an arrow over the identity of the base fixing some level
+structure is the identity. -/
+theorem isRigid_iff : P.IsRigid ↔ ∀ ⦃X : EllObj B⦄ (σ : X ⟶ X), σ.base = 𝟙 X.base →
+    ∀ α : P.obj (op X), P.map σ.op α = α → σ = 𝟙 X :=
+  Iff.rfl
 
 variable {P Q}
 
