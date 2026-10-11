@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.GaloisGroups.Stabilizer
+public import TauCeti.FieldTheory.GaloisGroups.Orbits
 public import TauCeti.FieldTheory.Galois.Blocks
 public import TauCeti.GroupTheory.Perm.Blocks
 import Mathlib.GroupTheory.GroupAction.Pointwise
