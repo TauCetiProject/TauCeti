@@ -8,8 +8,6 @@ module
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 public import TauCeti.Geometry.Symplectic.Cotangent.StrongDual
 public import TauCeti.LinearAlgebra.BilinearForm.Multilinear
-public import TauCeti.Analysis.Calculus.DifferentialForm.Basic
-public import TauCeti.Analysis.Normed.Module.Alternating.Bilinear
 
 /-!
 # The Liouville form on a linear cotangent space
@@ -55,12 +53,6 @@ namespace TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
-private def cotangentLiouvilleBilinearCLM :
-    (V × StrongDual ℝ V) →L[ℝ] (V × StrongDual ℝ V) →L[ℝ] ℝ :=
-  ((ContinuousLinearMap.compL ℝ (V × StrongDual ℝ V) V ℝ).flip
-    (ContinuousLinearMap.fst ℝ V (StrongDual ℝ V))).comp <|
-      ContinuousLinearMap.snd ℝ V (StrongDual ℝ V)
-
 /-- The Liouville form read as a continuous linear map of the base point: `(q, p)` is sent to the
 one-form `(δq, δp) ↦ p(δq)`, which depends linearly and continuously on `(q, p)`. This packaging
 is what gives the smoothness of `TauCeti.cotangentLiouvilleForm`. -/
@@ -69,8 +61,10 @@ noncomputable def cotangentLiouvilleFormCLM :
       ((V × StrongDual ℝ V) [⋀^Fin 1]→L[ℝ] ℝ) :=
   (LinearIsometryEquiv.toContinuousLinearEquiv <|
     ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ)
-      (E := V × StrongDual ℝ V) (F := ℝ) (0 : Fin 1)).toContinuousLinearMap.comp
-        cotangentLiouvilleBilinearCLM
+      (E := V × StrongDual ℝ V) (F := ℝ) (0 : Fin 1)).toContinuousLinearMap.comp <|
+    ((ContinuousLinearMap.compL ℝ (V × StrongDual ℝ V) V ℝ).flip
+      (ContinuousLinearMap.fst ℝ V (StrongDual ℝ V))).comp <|
+        ContinuousLinearMap.snd ℝ V (StrongDual ℝ V)
 
 /-- The tautological one-form on the linear cotangent space. At `(q, p)`, it evaluates a tangent
 vector `(δq, δp)` by `p(δq)`. -/
@@ -91,8 +85,7 @@ component of the tangent vector. -/
 lemma cotangentLiouvilleForm_apply (x : V × StrongDual ℝ V)
     (v : Fin 1 → V × StrongDual ℝ V) :
     cotangentLiouvilleForm x v = x.2 (v 0).1 := by
-  simp [cotangentLiouvilleForm, cotangentLiouvilleFormCLM, cotangentLiouvilleBilinearCLM,
-    ContinuousLinearMap.compL_apply]
+  simp [cotangentLiouvilleForm, cotangentLiouvilleFormCLM]
 
 /-- The Liouville one-form is smooth as a form-valued function of its base point, being a
 continuous linear function of that point. -/
@@ -112,6 +105,22 @@ lemma differentiableAt_cotangentLiouvilleForm (x : V × StrongDual ℝ V) :
     DifferentiableAt ℝ (cotangentLiouvilleForm (V := V)) x :=
   differentiable_cotangentLiouvilleForm x
 
+/-- The scalar coefficient obtained by evaluating the Liouville form on a fixed vector has the
+expected derivative: only the covector coordinate of the base point varies. -/
+private lemma hasFDerivAt_cotangentLiouvilleForm_apply
+    (v : Fin 1 → V × StrongDual ℝ V)
+    (x : V × StrongDual ℝ V) :
+    HasFDerivAt (fun y ↦ cotangentLiouvilleForm y v)
+      ((ContinuousLinearMap.apply ℝ ℝ (v 0).1).comp
+        (ContinuousLinearMap.snd ℝ V (StrongDual ℝ V))) x := by
+  let L := (ContinuousLinearMap.apply ℝ ℝ (v 0).1).comp
+    (ContinuousLinearMap.snd ℝ V (StrongDual ℝ V))
+  have hfun : (fun y ↦ cotangentLiouvilleForm y v) = L := by
+    funext y
+    simp [L]
+  rw [hfun]
+  exact L.hasFDerivAt
+
 /-- Coordinate formula for the exterior derivative of the Liouville form, evaluated on two
 tangent vectors: `dλ_x(v, w) = δp_v(δq_w) - δp_w(δq_v)`. -/
 @[simp]
@@ -119,10 +128,14 @@ lemma extDeriv_cotangentLiouvilleForm_apply (x : V × StrongDual ℝ V)
     (v : Fin 2 → V × StrongDual ℝ V) :
     extDeriv cotangentLiouvilleForm x v =
       (v 0).2 (v 1).1 - (v 1).2 (v 0).1 := by
-  rw [cotangentLiouvilleForm_eq_coe, ContinuousLinearMap.extDeriv_eq]
-  simp [cotangentLiouvilleFormCLM, cotangentLiouvilleBilinearCLM,
-    ContinuousAlternatingMap.alternatizeUncurryFin_ofSubsingletonLIE_comp,
-    TauCeti.ContinuousAlternatingMap.alternatizeBilinCLM_apply]
+  rw [extDeriv_apply]
+  · rw [Fin.sum_univ_two]
+    simp only [Fin.isValue, Fin.val_zero, pow_zero, one_smul,
+      Fin.val_one, pow_one, neg_smul, one_smul]
+    rw [(hasFDerivAt_cotangentLiouvilleForm_apply (Fin.removeNth 0 v) x).fderiv,
+      (hasFDerivAt_cotangentLiouvilleForm_apply (Fin.removeNth 1 v) x).fderiv]
+    simp [Fin.removeNth, sub_eq_add_neg]
+  · exact differentiableAt_cotangentLiouvilleForm x
 
 /-- The canonical cotangent symplectic form is minus the exterior derivative of the Liouville
 form, with the identity stated in the direction of the convention `ω = -dλ`. -/
