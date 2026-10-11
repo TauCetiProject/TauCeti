@@ -6,17 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.HomologicalComplex
+public import Mathlib.Algebra.Homology.HomologicalComplexLimits
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Homology.ShortComplex.Preadditive
 
 /-!
 # Additional API for homological complexes
 
-This file records additivity of the cycles functor and degreewise recursion for powers of a
-complex endomorphism. It also records the basic properties of the maps
+This file records additivity of the cycles functor, degreewise recursion for powers of a
+complex endomorphism, and the existence of coproducts of complexes, computed degreewise. It also
+records the basic properties of the maps
 `K.toCycles i j : K.X i ⟶ K.cycles j` induced by the differentials: they kill the cycles in degree
 `i`, commute with morphisms of complexes, vanish after a morphism from a complex concentrated in
-degree `i`, and are epimorphisms in degrees where the complex is exact. The sequence
+degree `i`, and are epimorphisms in degrees where the complex is exact. In a degree with no nonzero
+differential into it, the identification of the homology with the cycles is natural
+(`HomologicalComplex.isoHomologyπ_inv_naturality`). The sequence
 `Zᵢ ⟶ Kᵢ ⟶ Zⱼ` of cycles is exact (`HomologicalComplex.exact_iCycles_toCycles`), so the cycles of
 a complex exact in degree `j` fit into short exact sequences `0 ⟶ Zᵢ ⟶ Kᵢ ⟶ Zⱼ ⟶ 0`.
 -/
@@ -25,7 +29,7 @@ public section
 
 open CategoryTheory Limits
 
-universe v u
+universe w v u
 
 namespace HomologicalComplex
 
@@ -36,6 +40,11 @@ variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] {ι : Type*}
 lemma pow_f_succ (m : ℕ) (i : ι) :
     (End.of s ^ (m + 1)).f i = (End.of s ^ m).f i ≫ s.f i := by
   rw [pow_succ', End.mul_def, comp_f]
+
+/-- Homological complexes have the coproducts that the underlying category has. They are
+computed degreewise. -/
+instance hasCoproducts [HasCoproducts.{w} C] : HasCoproducts.{w} (HomologicalComplex C c) :=
+  fun _ ↦ inferInstance
 
 /-! ### The maps onto the cycles -/
 
@@ -57,6 +66,17 @@ variable {K}
 lemma toCycles_cyclesMap (φ : K ⟶ L) (i j : ι) [K.HasHomology j] [L.HasHomology j] :
     K.toCycles i j ≫ cyclesMap φ j = φ.f i ≫ L.toCycles i j :=
   (cancel_mono (L.iCycles j)).1 <| by simp
+
+/-- In a degree `j` with no nonzero differential into it, the identifications
+`K.isoHomologyπ i j` of the homology with the cycles commute with the maps induced by a morphism of
+complexes. -/
+@[reassoc]
+lemma isoHomologyπ_inv_naturality (φ : K ⟶ L) (i j : ι) (hi : c.prev j = i) (hK : K.d i j = 0)
+    (hL : L.d i j = 0) [K.HasHomology j] [L.HasHomology j] :
+    homologyMap φ j ≫ (L.isoHomologyπ i j hi hL).inv =
+      (K.isoHomologyπ i j hi hK).inv ≫ cyclesMap φ j := by
+  rw [← cancel_epi (K.isoHomologyπ i j hi hK).hom]
+  simp
 
 variable [HasZeroObject C] [DecidableEq ι] {i : ι} {X : C}
 

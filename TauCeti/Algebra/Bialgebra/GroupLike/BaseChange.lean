@@ -105,7 +105,8 @@ theorem groupLikeBaseChange_bijective
       GroupLike.val_mapEquiv, TauCeti.MonoidAlgebra.val_groupLikeEquiv_symm,
       TauCeti.MonoidAlgebra.scalarTensorBialgEquiv_symm_single,
       BialgEquiv.ofBijective_apply, Bialgebra.TensorProduct.map_tmul,
-      BialgHom.id_apply, GroupLike.evaluationBialgHom_single, one_smul, val_groupLikeBaseChange]
+      BialgHom.id_apply, MonoidAlgebra.liftGroupLikeBialgHom_single, one_smul,
+      val_groupLikeBaseChange]
   have hfun : (q : _ → _) = groupLikeBaseChange (R := R) (K := K) (A := A) := funext hq
   rw [← hfun]
   exact q.bijective

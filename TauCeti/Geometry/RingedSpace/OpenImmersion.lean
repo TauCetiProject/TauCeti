@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.RingedSpace.OpenImmersion
+public import TauCeti.Topology.Sheaves.Functors
 
 /-!
 # Open immersions of presheafed spaces under a change of coefficients
@@ -24,6 +25,8 @@ presheafed spaces of rings, whose stalk maps are isomorphisms
 * `AlgebraicGeometry.PresheafedSpace.isIso_stalkMap_of_isOpenImmersion_comp`: if `f ≫ g` is an
   open immersion and the stalk map of `f` at `x` is invertible, so is the stalk map of `g` at
   `f x`.
+* `AlgebraicGeometry.PresheafedSpace.IsOpenImmersion.isSheaf_iff_of_range_eq`: the sources of two
+  open immersions with the same range satisfy the sheaf condition together.
 -/
 
 public section
@@ -47,6 +50,15 @@ theorem mapPresheaf_map (F : C ⥤ D) {X Y : PresheafedSpace C} (f : X ⟶ Y)
   c_iso U :=
     have := H.c_iso U
     Functor.map_isIso F (f.c.app (Opposite.op (H.base_open.functor.obj U)))
+
+/-- **The sheaf condition depends only on the range of an open immersion.** If two open immersions
+`f : X ⟶ Z` and `g : Y ⟶ Z` have the same range, then the presheaf of `X` is a sheaf exactly when
+that of `Y` is: `isoOfRangeEq` identifies `X` with `Y`. -/
+theorem isSheaf_iff_of_range_eq {X Y Z : PresheafedSpace C} (f : X ⟶ Z) [IsOpenImmersion f]
+    (g : Y ⟶ Z) [IsOpenImmersion g] (e : Set.range f.base = Set.range g.base) :
+    X.presheaf.IsSheaf ↔ Y.presheaf.IsSheaf :=
+  (TopCat.Presheaf.isSheaf_iff_of_iso_pushforward ((forget C).mapIso (isoOfRangeEq f g e))
+    (sheafIsoOfIso (isoOfRangeEq f g e))).symm
 
 end IsOpenImmersion
 

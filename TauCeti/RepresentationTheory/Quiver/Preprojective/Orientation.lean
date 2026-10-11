@@ -155,6 +155,26 @@ noncomputable def reorientDoubledEquiv :
     (reorientSymmetrify_comp_reorientSymmetrifyInv σ)
     (reorientSymmetrifyInv_comp_reorientSymmetrify σ)
 
+/-- The doubled path-algebra comparison acts by the homomorphism induced by the reorientation
+comparison of quivers. -/
+theorem reorientDoubledEquiv_apply (x : pathAlgebra k (Symmetrify (Reorient Q σ))) :
+    reorientDoubledEquiv k σ x =
+      mapAlgHom k (reorientSymmetrify σ)
+        ((reorientSymmetrify σ).obj_bijective_of_comp_eq_id (reorientSymmetrifyInv σ)
+          (reorientSymmetrify_comp_reorientSymmetrifyInv σ)
+          (reorientSymmetrifyInv_comp_reorientSymmetrify σ)) x := by
+  rw [reorientDoubledEquiv, mapAlgEquiv_apply]
+
+/-- The inverse doubled path-algebra comparison acts by the homomorphism induced by the inverse
+reorientation comparison of quivers. -/
+theorem reorientDoubledEquiv_symm_apply (x : pathAlgebra k (Symmetrify Q)) :
+    (reorientDoubledEquiv k σ).symm x =
+      mapAlgHom k (reorientSymmetrifyInv σ)
+        ((reorientSymmetrifyInv σ).obj_bijective_of_comp_eq_id (reorientSymmetrify σ)
+          (reorientSymmetrifyInv_comp_reorientSymmetrify σ)
+          (reorientSymmetrify_comp_reorientSymmetrifyInv σ)) x := by
+  rw [reorientDoubledEquiv, mapAlgEquiv_symm_apply]
+
 /-- The doubled path-algebra comparison maps a path of two arrows by mapping each arrow. -/
 private theorem reorientDoubledEquiv_ofArrowComp {i j l : Symmetrify (Reorient Q σ)} (a : i ⟶ j)
     (b : j ⟶ l) :
