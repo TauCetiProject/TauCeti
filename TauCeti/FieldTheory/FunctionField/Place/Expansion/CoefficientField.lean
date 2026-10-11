@@ -250,13 +250,11 @@ theorem constantCoeff_completionIntegersEquivPowerSeriesResidueField
   simpa using P.sub_sum_coeff_completionIntegersEquivPowerSeriesResidueField_mem_filtration ht x 1
 
 /-- The constant coefficient of the expansion of a function regular at `P` is its value at `P`. -/
-@[simp]
 theorem constantCoeff_completionIntegersEquivPowerSeriesResidueField_completionIntegersEmbedding
     (x : P.integers) :
     PowerSeries.constantCoeff (P.completionIntegersEquivPowerSeriesResidueField ht
       (P.completionIntegersEmbedding x)) = residue P.integers x := by
-  rw [constantCoeff_completionIntegersEquivPowerSeriesResidueField,
-    ← residueFieldEquivCompletion_apply_residue, AlgEquiv.symm_apply_apply]
+  simp
 
 /-- Vanishing to order `n` is vanishing of the first `n` coefficients of the expansion. -/
 theorem mem_filtration_iff_le_order_completionIntegersEquivPowerSeriesResidueField (n : ℕ)
