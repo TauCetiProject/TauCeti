@@ -32,7 +32,8 @@ require a commutative target.
   reassociating `y ⊗ 1` is the base change of `b ↦ f (b ⊗ 1)`.
 * `AlgHom.sectionBaseChange`: the base change `T ⊗[A] B →ₐ[T] T` of an `A`-algebra map
   `s : B →ₐ[A] A`, that is, the pullback to `Spec T` of the section of `Spec B → Spec A` given by
-  `s`, with its naturality `AlgHom.sectionBaseChange_rTensor` in `T`.
+  `s`, with its value `AlgHom.sectionBaseChange_sum_tmul` on sums of pure tensors and its
+  naturality `AlgHom.sectionBaseChange_rTensor` in `T`.
 -/
 
 public section
@@ -132,6 +133,14 @@ noncomputable def sectionBaseChange (s : B →ₐ[A] A) (T : Type*) [CommSemirin
 theorem sectionBaseChange_tmul (s : B →ₐ[A] A) {T : Type*} [CommSemiring T] [Algebra A T] (t : T)
     (b : B) : s.sectionBaseChange T (t ⊗ₜ b) = t * algebraMap A T (s b) := by
   simp [sectionBaseChange]
+
+/-- The base change of a section `s` takes `∑ j ∈ u, tⱼ ⊗ bⱼ` to `∑ j ∈ u, s(bⱼ) • tⱼ`; for
+`tⱼ = Xⱼ` and a basis `b`, the generic element goes to the linear form with coefficients
+`s(bⱼ)`. -/
+theorem sectionBaseChange_sum_tmul (s : B →ₐ[A] A) {T : Type*} [CommSemiring T] [Algebra A T]
+    {κ : Type*} (u : Finset κ) (t : κ → T) (b : κ → B) :
+    s.sectionBaseChange T (∑ j ∈ u, t j ⊗ₜ b j) = ∑ j ∈ u, s (b j) • t j := by
+  simp [Algebra.smul_def, mul_comm]
 
 /-- The base change of a section is natural in the base: it commutes with
 `Algebra.TensorProduct.rTensor B φ` for an `A`-algebra map `φ : T →ₐ[A] T'`. -/

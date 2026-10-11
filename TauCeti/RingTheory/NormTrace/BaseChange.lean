@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.MvPolynomial.Eval
 public import Mathlib.RingTheory.Norm.Basic
 public import Mathlib.RingTheory.Trace.Basic
 public import Mathlib.RingTheory.TensorProduct.Free
@@ -24,6 +25,8 @@ This file records the compatibility of algebra norms and traces with scalar exte
   compatible with every `K`-algebra map `φ : P →ₐ[K] T`. Taking `P` to be a polynomial ring and `φ`
   an evaluation map, the norm on every base change `T ⊗[K] B` is a specialization of the generic
   norm form.
+* `TauCeti.Algebra.norm_sum_X_tmul_tensorProductBasis`: the generic norm form of `T ⊗[K] B` over
+  `T` is the image of that of `B` over `K`.
 * `TauCeti.Algebra.charpoly_lmul_eq_norm`: the characteristic polynomial of multiplication by
   `x ∈ T ⊗[K] B` over `T` is the norm of `X - x` over `T[X]`.
 -/
@@ -106,6 +109,27 @@ theorem Algebra.charpoly_lmul_eq_norm (x : T ⊗[K] B) :
   · simp [h, Matrix.charmatrix_apply_ne, Matrix.algebraMap_matrix_apply, Polynomial.algebraMap_eq]
 
 end Norm
+
+section GenericNorm
+
+variable [CommRing B] [Algebra K B] [Module.Free K B] [Module.Finite K B]
+variable {T : Type*} [CommRing T] [Algebra K T]
+
+/-- The generic norm form of `T ⊗[K] B` over `T`, the norm of `∑ j, Xⱼ ⊗ bⱼ` for the basis of
+`T ⊗[K] B` induced by a basis `b` of `B`, is the image under `K → T` of the generic norm form of `B`
+in the basis `b`. -/
+theorem Algebra.norm_sum_X_tmul_tensorProductBasis {ι : Type*} [Fintype ι]
+    (b : Module.Basis ι K B) :
+    Algebra.norm (MvPolynomial ι T)
+        (∑ j, (MvPolynomial.X j : MvPolynomial ι T) ⊗ₜ[T] Algebra.TensorProduct.basis T b j) =
+      MvPolynomial.map (algebraMap K T) (Algebra.norm (MvPolynomial ι K)
+        (∑ j, (MvPolynomial.X j : MvPolynomial ι K) ⊗ₜ[K] b j)) := by
+  refine Eq.trans ?_ (Algebra.norm_rTensor (MvPolynomial.mapAlgHom (Algebra.ofId K T)) _)
+  rw [← Algebra.norm_eq_of_algEquiv
+    (Algebra.TensorProduct.cancelBaseChange K T (MvPolynomial ι T) (MvPolynomial ι T) B)]
+  simp
+
+end GenericNorm
 
 section Trace
 

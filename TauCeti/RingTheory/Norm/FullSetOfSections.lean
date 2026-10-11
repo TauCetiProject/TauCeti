@@ -95,14 +95,6 @@ theorem isFullSetOfSections_iff : IsFullSetOfSections s ↔
       Algebra.norm T f = ∏ i, (s i).sectionBaseChange T f :=
   Iff.rfl
 
-/-- The base change of a section `s` to `MvPolynomial κ A` takes the generic element
-`∑ j, Xⱼ ⊗ bⱼ` to the linear form `∑ j, s(bⱼ) • Xⱼ`. -/
-private theorem sectionBaseChange_generic (s : B →ₐ[A] A) {κ : Type*} [Fintype κ]
-    (b : Module.Basis κ A B) :
-    s.sectionBaseChange (MvPolynomial κ A) (∑ j, (X j : MvPolynomial κ A) ⊗ₜ[A] b j) =
-      ∑ j, s (b j) • (X j : MvPolynomial κ A) := by
-  simp [Algebra.smul_def, mul_comm]
-
 section Free
 
 variable [Module.Free A B] [Module.Finite A B]
@@ -123,7 +115,7 @@ private theorem norm_eq_prod_of_generic {κ : Type*} [Fintype κ] (b : Module.Ba
     simp [c, TensorProduct.smul_tmul']
   rw [← hf, Algebra.norm_rTensor, h, map_prod]
   refine Finset.prod_congr rfl fun i _ ↦ ?_
-  rw [AlgHom.sectionBaseChange_rTensor, sectionBaseChange_generic]
+  rw [AlgHom.sectionBaseChange_rTensor, AlgHom.sectionBaseChange_sum_tmul]
 
 /-- The defining identity of a full set of sections holds after base change to a commutative
 `A`-algebra `T` in any universe. -/
@@ -131,7 +123,7 @@ theorem IsFullSetOfSections.norm_eq (h : IsFullSetOfSections s) (T : Type w) [Co
     [Algebra A T] (f : T ⊗[A] B) :
     Algebra.norm T f = ∏ i, (s i).sectionBaseChange T f :=
   norm_eq_prod_of_generic ((Module.Free.chooseBasis A B).reindex (Fintype.equivFin _))
-    ((h _ _).trans (Finset.prod_congr rfl fun _ _ ↦ sectionBaseChange_generic _ _)) T f
+    ((h _ _).trans (Finset.prod_congr rfl fun _ _ ↦ AlgHom.sectionBaseChange_sum_tmul _ _ _ _)) T f
 
 /-- **Reduction to the universal case** (Katz–Mazur, proof of 1.9.1). For a basis `b` of `B`
 indexed by `κ`, a family of sections `s` is a full set of sections if and only if the norm of the
@@ -141,29 +133,17 @@ theorem isFullSetOfSections_iff_norm_eq_prod {κ : Type*} [Fintype κ] (b : Modu
     IsFullSetOfSections s ↔
       Algebra.norm (MvPolynomial κ A) (∑ j, (X j : MvPolynomial κ A) ⊗ₜ[A] b j) =
         ∏ i, ∑ j, s i (b j) • (X j : MvPolynomial κ A) :=
-  ⟨fun h ↦ (h.norm_eq _ _).trans (Finset.prod_congr rfl fun _ _ ↦ sectionBaseChange_generic _ _),
+  ⟨fun h ↦ (h.norm_eq _ _).trans
+      (Finset.prod_congr rfl fun _ _ ↦ AlgHom.sectionBaseChange_sum_tmul _ _ _ _),
     fun h T _ _ _ f ↦ norm_eq_prod_of_generic b h T f⟩
-
-omit [Module.Free A B] [Module.Finite A B] in
-/-- The generic element of `T ⊗[A] B` over `T`, in the basis induced by `b`, has the same norm as
-the image of the generic element of `B` in `MvPolynomial κ T ⊗[A] B`. -/
-private theorem norm_generic_baseChange {κ : Type*} [Fintype κ] (b : Module.Basis κ A B)
-    (T : Type w) [CommRing T] [Algebra A T] :
-    Algebra.norm (MvPolynomial κ T)
-        (∑ j, (X j : MvPolynomial κ T) ⊗ₜ[T] Algebra.TensorProduct.basis T b j) =
-      Algebra.norm (MvPolynomial κ T) (Algebra.TensorProduct.rTensor B
-        (mapAlgHom (Algebra.ofId A T)) (∑ j, (X j : MvPolynomial κ A) ⊗ₜ[A] b j)) := by
-  rw [← Algebra.norm_eq_of_algEquiv
-    (Algebra.TensorProduct.cancelBaseChange A T (MvPolynomial κ T) (MvPolynomial κ T) B)]
-  simp
 
 /-- A full set of sections remains one after an arbitrary base change `A → T`. -/
 theorem IsFullSetOfSections.baseChange (h : IsFullSetOfSections s) (T : Type w) [CommRing T]
     [Algebra A T] : IsFullSetOfSections fun i ↦ (s i).sectionBaseChange T := by
   let b := Module.Free.chooseBasis A B
   rw [isFullSetOfSections_iff_norm_eq_prod (Algebra.TensorProduct.basis T b),
-    norm_generic_baseChange, Algebra.norm_rTensor, (isFullSetOfSections_iff_norm_eq_prod b).1 h]
-  simp [map_prod]
+    Algebra.norm_sum_X_tmul_tensorProductBasis, (isFullSetOfSections_iff_norm_eq_prod b).1 h]
+  simp [map_prod, Algebra.smul_def]
 
 /-- Being a full set of sections descends along an injective ring map `A → T`, in particular
 along a faithfully flat one. -/
@@ -174,7 +154,7 @@ theorem IsFullSetOfSections.of_baseChange {T : Type w} [CommRing T] [Algebra A T
   rw [isFullSetOfSections_iff_norm_eq_prod b]
   apply MvPolynomial.map_injective _ hT
   have := (isFullSetOfSections_iff_norm_eq_prod (Algebra.TensorProduct.basis T b)).1 h
-  rw [norm_generic_baseChange, Algebra.norm_rTensor] at this
+  rw [Algebra.norm_sum_X_tmul_tensorProductBasis] at this
   simpa [map_prod, Algebra.smul_def] using this
 
 /-- Over a base change which is injective, being a full set of sections can be checked after the
