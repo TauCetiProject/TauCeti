@@ -40,6 +40,15 @@ def schwarzChristoffelFiniteBoundary (a e : ι → ℝ) (z₀ : UpperHalfPlane) 
   schwarzChristoffelBoundary a e z₀ '' {p | -1 < ∑ i with a i = p, e i} ∪
     if ∑ i, e i < -1 then {schwarzChristoffelVertexAtInfinity a e z₀} else ∅
 
+/-- Membership in the finite boundary trace is an ordinary boundary value at an integrable
+parameter, or the vertex at infinity when that vertex is finite. -/
+@[simp]
+theorem mem_schwarzChristoffelFiniteBoundary (a e : ι → ℝ) (z₀ : UpperHalfPlane) (w : ℂ) :
+    w ∈ schwarzChristoffelFiniteBoundary a e z₀ ↔
+      (∃ p, -1 < ∑ i with a i = p, e i ∧ schwarzChristoffelBoundary a e z₀ p = w) ∨
+        (∑ i, e i < -1 ∧ w = schwarzChristoffelVertexAtInfinity a e z₀) := by
+  simp [schwarzChristoffelFiniteBoundary]
+
 /-- The finite trace is exactly the preimage in `ℂ` of the sphere-valued boundary range.
 Logarithmic prevertices contribute no finite value. -/
 theorem schwarzChristoffelFiniteBoundary_eq_preimage_range (a e : ι → ℝ)
