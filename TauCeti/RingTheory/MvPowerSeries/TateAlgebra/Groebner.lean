@@ -32,8 +32,8 @@ proves it for the completion `A^r` of `W(𝒪_L)[[x] : x ∈ L]` for the Gauss n
 Euclidean in this sense for the degree read off from its Newton polygon (his Remark 2.7 and
 Proposition 2.9), and deduces that the rings `B^I` of the Fargues–Fontaine curve are strongly
 noetherian. A complete nonarchimedean field satisfies the
-hypotheses with `deg = 0`; this recovers the noetherianity of its Tate algebras, now at
-arbitrary radii.
+hypotheses with `deg = 0`, so its Tate algebras at arbitrary radii are noetherian
+(`TauCeti.MvPowerSeries.isNoetherianRing_isRestricted_subring`).
 
 ## Proof
 
@@ -65,6 +65,8 @@ contradiction on an infinite reduction sequence is replaced by the well-founded 
 * `TauCeti.MvPowerSeries.isNoetherianRing_isRestricted_subring_of_division`: restricted power
   series at arbitrary positive radii in finitely many variables over a complete ring with a
   multiplicative ultrametric norm and a compatible Euclidean degree form a noetherian ring.
+* `TauCeti.MvPowerSeries.isNoetherianRing_isRestricted_subring`: Tate algebras in finitely many
+  variables at arbitrary positive radii over a complete nonarchimedean field are noetherian.
 
 ## References
 
@@ -82,16 +84,6 @@ open _root_.MvPowerSeries Filter Topology
 variable {σ R : Type*} [NormedCommRing R] [IsUltrametricDist R] {c : σ → ℝ}
   [∀ i, Fact (0 < c i)]
 
-/-- An exponent's weight `∏ i, c i ^ t i` is positive. -/
-private theorem weight_pos (t : σ →₀ ℕ) : 0 < t.prod (c · ^ ·) :=
-  Finset.prod_pos fun i _ ↦ pow_pos (Fact.out : 0 < c i) _
-
-omit [∀ i, Fact (0 < c i)] in
-/-- Exponent weights are multiplicative. -/
-private theorem weight_add (s t : σ →₀ ℕ) :
-    (s + t).prod (c · ^ ·) = s.prod (c · ^ ·) * t.prod (c · ^ ·) :=
-  Finsupp.prod_add_index' (fun _ ↦ pow_zero _) fun _ _ _ ↦ pow_add _ _ _
-
 /-- `J` is the *leading index* of `f` for the monomial order `m`: the weighted coefficient norm
 of `f` attains the Gauss norm at `J`, and at no exponent above `J`. -/
 private def IsLeadingIndex (m : MonomialOrder σ) (f : IsRestricted.subring (R := R) c)
@@ -101,17 +93,8 @@ private def IsLeadingIndex (m : MonomialOrder σ) (f : IsRestricted.subring (R :
 
 /-- A nonzero restricted series has a leading index. -/
 private theorem exists_isLeadingIndex (m : MonomialOrder σ)
-    {f : IsRestricted.subring (R := R) c} (hf : f ≠ 0) : ∃ J, IsLeadingIndex m f J := by
-  have hpos : 0 < ‖f‖ := norm_pos_iff.mpr hf
-  set S := {t | ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) = ‖f‖}
-  have hS : S.Finite := by
-    have h : {t | ¬ ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) < ‖f‖}.Finite :=
-      f.2.eventually (gt_mem_nhds hpos)
-    exact h.subset fun t (ht : _ = _) ↦ ht.not_lt
-  obtain ⟨t₀, ht₀⟩ := exists_achievesGaussNorm f
-  obtain ⟨J, hJS, hJmax⟩ := hS.exists_maximalFor m.toSyn S ⟨t₀, ht₀⟩
-  exact ⟨J, hJS, fun J' hJ' ↦ (norm_coeff_mul_prod_le f J').lt_of_ne fun h ↦
-    hJ'.not_ge (hJmax h hJ'.le)⟩
+    {f : IsRestricted.subring (R := R) c} (hf : f ≠ 0) : ∃ J, IsLeadingIndex m f J :=
+  f.2.exists_achievesGaussNorm_max m fun h ↦ hf (Subtype.ext h)
 
 /-- **Finite Gröbner data.** Every ideal `H` contains finitely many nonzero elements such that
 each nonzero `y ∈ H` with leading index `J` has one of them with leading index `I ≤ J` and leading
@@ -188,7 +171,64 @@ private theorem potential_apply (m : MonomialOrder σ) (deg : R → ℕ) {θ : �
         deg (coeff t (y : MvPowerSeries σ R)) + 1 else 0 := by
   simp [potential]
 
+/-- A change of weighted norm at most `θ` in the coefficient at `t` leaves the potential entry at
+`t` unchanged: by the ultrametric inequality, a coefficient above the threshold keeps its norm,
+hence its degree, and one below the threshold stays below. -/
+private theorem potential_apply_eq_of_le (m : MonomialOrder σ) (deg : R → ℕ)
+    (hdeg : ∀ x y : R, ‖x - y‖ < ‖x‖ → deg y = deg x) {θ : ℝ} (hθ : 0 < θ)
+    {y y' : IsRestricted.subring (R := R) c} {t : σ →₀ ℕ}
+    (h : ‖coeff t (y : MvPowerSeries σ R) - coeff t (y' : MvPowerSeries σ R)‖ *
+      t.prod (c · ^ ·) ≤ θ) :
+    potential m deg hθ y' (m.toSyn t) = potential m deg hθ y (m.toSyn t) := by
+  have hw := (prod_pow_pos (c := c) t).le
+  rw [potential_apply, potential_apply]
+  set u := coeff t (y : MvPowerSeries σ R)
+  set v := coeff t (y' : MvPowerSeries σ R)
+  by_cases hu : θ < ‖u‖ * t.prod (c · ^ ·)
+  · have huv : ‖u - v‖ < ‖u‖ := lt_of_mul_lt_mul_right (h.trans_lt hu) hw
+    have hv : ‖u‖ ≤ ‖v‖ := by
+      have := IsUltrametricDist.norm_add_le_max v (u - v)
+      rw [add_sub_cancel] at this
+      exact (le_max_iff.mp this).resolve_right huv.not_ge
+    rw [ite_eq_left (hu.trans_le (mul_le_mul_of_nonneg_right hv hw)), ite_eq_left hu,
+      hdeg u v huv]
+  · have hv : ‖v‖ * t.prod (c · ^ ·) ≤ θ := by
+      have := IsUltrametricDist.norm_sub_le_max u (u - v)
+      rw [sub_sub_cancel] at this
+      refine (mul_le_mul_of_nonneg_right this hw).trans ?_
+      rw [max_mul_of_nonneg _ _ hw]
+      exact max_le (not_lt.mp hu) h
+    rw [ite_eq_right hv.not_gt, ite_eq_right hu]
+
 variable [NormMulClass R]
+
+/-- Above `K + I`, where `I` is a leading index of `x`, the monomial multiple `z X^K * x` has
+weighted coefficient norms at most `ε` times its norm `‖z‖ ∏ i, c i ^ K i * ‖x‖`, provided the
+weighted coefficient norms of `x` smaller than `‖x‖` are at most `ε ‖x‖`. -/
+private theorem norm_coeff_monomial_mul_le (m : MonomialOrder σ)
+    {x : IsRestricted.subring (R := R) c} {I : σ →₀ ℕ} (hI : IsLeadingIndex m x I) {ε : ℝ}
+    (hε0 : 0 ≤ ε) (hε : ∀ t, ‖coeff t (x : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) < ‖x‖ →
+      ‖coeff t (x : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) ≤ ε * ‖x‖)
+    (z : R) (K : σ →₀ ℕ) {t : σ →₀ ℕ} (ht : m.toSyn (K + I) < m.toSyn t) :
+    ‖if K ≤ t then z * coeff (t - K) (x : MvPowerSeries σ R) else 0‖ * t.prod (c · ^ ·) ≤
+      ε * (‖z‖ * K.prod (c · ^ ·) * ‖x‖) := by
+  have hzK := mul_nonneg (norm_nonneg z) (prod_pow_pos (c := c) K).le
+  split_ifs with hKt
+  · have hlt : m.toSyn I < m.toSyn (t - K) := by
+      by_contra! h
+      have := add_le_add_right h (m.toSyn K)
+      rw [← map_add, ← map_add, add_tsub_cancel_of_le hKt] at this
+      exact ht.not_ge this
+    calc ‖z * coeff (t - K) (x : MvPowerSeries σ R)‖ * t.prod (c · ^ ·)
+        = ‖z‖ * K.prod (c · ^ ·) * (‖coeff (t - K) (x : MvPowerSeries σ R)‖ *
+            (t - K).prod (c · ^ ·)) := by
+          rw [norm_mul, ← tsub_add_cancel_of_le hKt, add_tsub_cancel_right, add_comm,
+            prod_pow_add]
+          ring
+      _ ≤ ‖z‖ * K.prod (c · ^ ·) * (ε * ‖x‖) :=
+          mul_le_mul_of_nonneg_left (hε _ (hI.2 _ hlt)) hzK
+      _ = _ := by ring
+  · simpa using mul_nonneg hε0 (mul_nonneg hzK (norm_nonneg x))
 
 /-- **One reduction step**, from the proof of Kedlaya's Lemma 3.8. If `y ∈ H` has
 `ε M < ‖y‖ ≤ M`, subtracting a monomial multiple `a * x` of a suitable `x ∈ F` keeps the norm at
@@ -211,7 +251,8 @@ private theorem exists_reduction_step (m : MonomialOrder σ) (deg : R → ℕ)
     rintro rfl
     exact (hθ.trans (by simpa using hyθ)).false
   obtain ⟨J, hJ⟩ := exists_isLeadingIndex m hy0
-  obtain ⟨x, hxF, I, ⟨hI₁, hI₂⟩, hIJ, hdegI⟩ := hF y hy hy0 J hJ
+  obtain ⟨x, hxF, I, hI, hIJ, hdegI⟩ := hF y hy hy0 J hJ
+  have hI₁ := hI.1
   have hxpos : 0 < ‖x‖ := norm_pos_iff.mpr (hF0 x hxF)
   set cx := coeff I (x : MvPowerSeries σ R)
   have hc0 : cx ≠ 0 := by
@@ -235,7 +276,7 @@ private theorem exists_reduction_step (m : MonomialOrder σ) (deg : R → ℕ)
     rw [AddSubgroupClass.coe_sub, Subring.coe_mul, ha, map_sub, coeff_monomial_mul]
   -- The size `‖z * cx‖ wJ = ‖a‖ ‖x‖` of the subtracted multiple.
   have hax : ‖a‖ * ‖x‖ = ‖z * cx‖ * J.prod (c · ^ ·) := by
-    rw [hna, ← hI₁, norm_mul, ← hKI, weight_add]
+    rw [hna, ← hI₁, norm_mul, ← hKI, prod_pow_add]
     ring
   have hzc : ‖z * cx‖ ≤ ‖coeff J (y : MvPowerSeries σ R)‖ := by
     have : z * cx = coeff J (y : MvPowerSeries σ R) - w := by rw [hzw]; ring
@@ -243,54 +284,21 @@ private theorem exists_reduction_step (m : MonomialOrder σ) (deg : R → ℕ)
     exact (IsUltrametricDist.norm_sub_le_max _ _).trans (max_le le_rfl hwle)
   have haxM : ‖a‖ * ‖x‖ ≤ M := by
     rw [hax]
-    exact (mul_le_mul_of_nonneg_right hzc (weight_pos J).le).trans (hJ.1.le.trans hyM)
-  -- Above the leading index of `y`, the subtracted coefficients have weighted norm `≤ ε M`.
-  have hsmall (t : σ →₀ ℕ) (ht : m.toSyn J < m.toSyn t) :
-      ‖if K ≤ t then z * coeff (t - K) (x : MvPowerSeries σ R) else 0‖ * t.prod (c · ^ ·) ≤
-        ε * M := by
-    split_ifs with hKt
-    · have hlt : m.toSyn I < m.toSyn (t - K) := by
-        by_contra! h
-        have := add_le_add_right h (m.toSyn K)
-        rw [← map_add, ← map_add, add_tsub_cancel_of_le hKt, hKI] at this
-        exact ht.not_ge this
-      have hxt := hε x hxF _ (hI₂ _ hlt)
-      calc ‖z * coeff (t - K) (x : MvPowerSeries σ R)‖ * t.prod (c · ^ ·)
-          = ‖z‖ * K.prod (c · ^ ·) * (‖coeff (t - K) (x : MvPowerSeries σ R)‖ *
-              (t - K).prod (c · ^ ·)) := by
-            rw [norm_mul, ← tsub_add_cancel_of_le hKt, add_tsub_cancel_right, add_comm,
-              weight_add]
-            ring
-        _ ≤ ‖z‖ * K.prod (c · ^ ·) * (ε * ‖x‖) :=
-            mul_le_mul_of_nonneg_left hxt (mul_nonneg (norm_nonneg z) (weight_pos K).le)
-        _ = ε * (‖a‖ * ‖x‖) := by rw [hna]; ring
-        _ ≤ ε * M := mul_le_mul_of_nonneg_left haxM hε0.le
-    · simpa using hθ.le
+    exact (mul_le_mul_of_nonneg_right hzc (prod_pow_pos J).le).trans (hJ.1.le.trans hyM)
   refine ⟨x, hxF, a, haxM, ?_, ?_⟩
   · rw [← norm_mul] at haxM
     exact (IsUltrametricDist.norm_sub_le_max _ _).trans (max_le hyM haxM)
   rw [Finsupp.Colex.lt_iff]
   refine ⟨m.toSyn J, fun s hs ↦ ?_, ?_⟩
-  · -- Above `J` the potential is unchanged.
+  · -- Above `J` the potential is unchanged: the subtracted coefficients have weighted norm
+    -- at most `ε M`.
     obtain ⟨t, rfl⟩ := m.toSyn.surjective s
-    have hΔ := hsmall t hs
-    have hw := weight_pos (c := c) t
-    simp only [ofColex_toColex, potential_apply, hcoeff]
-    set u := coeff t (y : MvPowerSeries σ R)
-    set Δ := if K ≤ t then z * coeff (t - K) (x : MvPowerSeries σ R) else 0
-    by_cases hu : ε * M < ‖u‖ * t.prod (c · ^ ·)
-    · have hΔu : ‖Δ‖ < ‖u‖ := lt_of_mul_lt_mul_right (hΔ.trans_lt hu) hw.le
-      have huv : ‖u‖ ≤ ‖u - Δ‖ := by
-        have := IsUltrametricDist.norm_add_le_max (u - Δ) Δ
-        rw [sub_add_cancel] at this
-        exact (le_max_iff.mp this).resolve_right hΔu.not_ge
-      rw [ite_eq_left (hu.trans_le (mul_le_mul_of_nonneg_right huv hw.le)), ite_eq_left hu,
-        hdeg u (u - Δ) (by rwa [sub_sub_cancel])]
-    · have hv : ‖u - Δ‖ * t.prod (c · ^ ·) ≤ ε * M := by
-        refine (mul_le_mul_of_nonneg_right (IsUltrametricDist.norm_sub_le_max u Δ) hw.le).trans ?_
-        rw [max_mul_of_nonneg _ _ hw.le]
-        exact max_le (not_lt.mp hu) hΔ
-      rw [ite_eq_right hv.not_gt, ite_eq_right hu]
+    simp only [ofColex_toColex]
+    refine potential_apply_eq_of_le m deg hdeg hθ ?_
+    rw [hcoeff, sub_sub_cancel]
+    refine (norm_coeff_monomial_mul_le m hI hε0.le (hε x hxF) z K (by rwa [hKI])).trans ?_
+    rw [← hna]
+    exact mul_le_mul_of_nonneg_left haxM hε0.le
   · -- At `J` it drops: the leading coefficient of `y` is replaced by the remainder `w`.
     have hwJ : coeff J ((y - a * x : IsRestricted.subring (R := R) c) : MvPowerSeries σ R) = w := by
       rw [hcoeff, ite_eq_left hKJ, hJK, hzw]
@@ -364,10 +372,12 @@ theorem isNoetherianRing_isRestricted_subring_of_division [CompleteSpace R] [Fin
   · exact ⟨0, fun x _ ↦ by simp, by simp⟩
   exact exists_approx m deg hdeg hdiv hFH hF hε0 hε (mul_pos hε0 (norm_pos_iff.mpr hy0)) y hy le_rfl
 
-/-- A complete nonarchimedean field satisfies the hypotheses with the zero degree, so its Tate
-algebras at arbitrary positive radii are noetherian. -/
-example {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K] [Finite σ]
-    {c : σ → ℝ} [∀ i, Fact (0 < c i)] : IsNoetherianRing (IsRestricted.subring (R := K) c) :=
+/-- **Tate algebras are noetherian.** Over a complete nonarchimedean field `K`, the ring of
+restricted power series in finitely many variables at arbitrary positive radii `c` is noetherian:
+`K` satisfies the hypotheses of `isNoetherianRing_isRestricted_subring_of_division` with the zero
+degree. -/
+theorem isNoetherianRing_isRestricted_subring {K : Type*} [NormedField K] [IsUltrametricDist K]
+    [CompleteSpace K] [Finite σ] : IsNoetherianRing (IsRestricted.subring (R := K) c) :=
   isNoetherianRing_isRestricted_subring_of_division (fun _ ↦ 0) (fun _ _ _ ↦ rfl)
     fun x y hx ↦ ⟨y * x⁻¹, 0, by rw [add_zero, inv_mul_cancel_right₀ hx], by simp, Or.inl rfl⟩
 

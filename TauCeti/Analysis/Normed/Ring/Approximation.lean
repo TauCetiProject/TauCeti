@@ -12,7 +12,7 @@ import Mathlib.Analysis.SpecificLimits.Normed
 /-!
 # Generating an ideal by successive approximation
 
-In a complete normed commutative ring, a finite subset `F` of an ideal `H` generates `H` as soon
+In a complete normed ring, a finite subset `F` of a left ideal `H` generates `H` as soon
 as every element `y` of `H` can be approximated by a combination of `F` up to an error of at most
 `ε ‖y‖`, for a fixed `ε < 1`, with coefficients bounded in terms of `‖y‖`
 (`Ideal.le_span_of_approx`). Iterating the approximation on the errors gives convergent
@@ -30,10 +30,10 @@ public section
 
 open Filter Topology
 
-/-- **Successive approximation.** In a complete normed commutative ring, let `F` be a finite
-subset of an ideal `H`, and `0 ≤ ε < 1`. If every `y ∈ H` is within `ε ‖y‖` of a
+/-- **Successive approximation.** In a complete normed ring, let `F` be a finite subset of a
+left ideal `H`, and `0 ≤ ε < 1`. If every `y ∈ H` is within `ε ‖y‖` of a
 combination `∑ x ∈ F, b x * x` with `‖b x‖ * ‖x‖ ≤ ‖y‖`, then `F` generates `H`. -/
-theorem Ideal.le_span_of_approx {A : Type*} [NormedCommRing A] [CompleteSpace A]
+theorem Ideal.le_span_of_approx {A : Type*} [NormedRing A] [CompleteSpace A]
     {H : Ideal A} {F : Finset A} (hFH : ∀ x ∈ F, x ∈ H) {ε : ℝ} (hε0 : 0 ≤ ε)
     (hε1 : ε < 1) (happrox : ∀ y ∈ H, ∃ b : A → A,
       (∀ x ∈ F, ‖b x‖ * ‖x‖ ≤ ‖y‖) ∧ ‖y - ∑ x ∈ F, b x * x‖ ≤ ε * ‖y‖) :
