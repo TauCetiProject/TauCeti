@@ -40,7 +40,7 @@ variable {k : Type*} [CommRing k]
 
 /-- The differential module on the regular dual-number module with differential multiplication
 by `ε`. -/
-@[expose] def dualNumberDifferentialModule : DifferentialModule (ModuleCat (DualNumbers k)) where
+def dualNumberDifferentialModule : DifferentialModule (ModuleCat (DualNumbers k)) where
   X := ModuleCat.of (DualNumbers k) (DualNumbers k)
   d := ModuleCat.ofHom
     (LinearMap.toSpanSingleton (DualNumbers k) (DualNumbers k) DualNumber.eps)
@@ -53,18 +53,34 @@ by `ε`. -/
 /-- The underlying object of the dual-number differential module is the regular module. -/
 @[simp] theorem dualNumberDifferentialModule_X :
     (dualNumberDifferentialModule (k := k)).X =
-      ModuleCat.of (DualNumbers k) (DualNumbers k) := rfl
+      ModuleCat.of (DualNumbers k) (DualNumbers k) := (rfl)
 
 /-- The differential of the dual-number differential module is multiplication by `ε`. -/
-@[simp] theorem dualNumberDifferentialModule_d :
-    (dualNumberDifferentialModule (k := k)).d =
+private theorem dualNumberDifferentialModule_d_internal :
+    eqToHom (dualNumberDifferentialModule_X (k := k)).symm ≫
+      (dualNumberDifferentialModule (k := k)).d ≫
+      eqToHom (dualNumberDifferentialModule_X (k := k)) =
       ModuleCat.ofHom
-        (LinearMap.toSpanSingleton (DualNumbers k) (DualNumbers k) DualNumber.eps) := rfl
+        (LinearMap.toSpanSingleton (DualNumbers k) (DualNumbers k) DualNumber.eps) := by
+  cases dualNumberDifferentialModule_X (k := k)
+  rfl
+
+/-- Transported to the regular module, the differential is multiplication by `ε`. -/
+@[simp] theorem dualNumberDifferentialModule_d :
+    eqToHom (dualNumberDifferentialModule_X (k := k)).symm ≫
+      (dualNumberDifferentialModule (k := k)).d ≫
+      eqToHom (dualNumberDifferentialModule_X (k := k)) =
+      ModuleCat.ofHom
+        (LinearMap.toSpanSingleton (DualNumbers k) (DualNumbers k) DualNumber.eps) :=
+  dualNumberDifferentialModule_d_internal
 
 /-- The differential sends `x` to `x * ε`. -/
 theorem dualNumberDifferentialModule_d_apply (x : DualNumbers k) :
-    (dualNumberDifferentialModule (k := k)).d x = x * DualNumber.eps := by
-  change (LinearMap.toSpanSingleton (DualNumbers k) (DualNumbers k) DualNumber.eps) x = _
+    ((eqToHom (dualNumberDifferentialModule_X (k := k)).symm ≫
+      (dualNumberDifferentialModule (k := k)).d ≫
+      eqToHom (dualNumberDifferentialModule_X (k := k))) :
+      ModuleCat.of (DualNumbers k) (DualNumbers k) ⟶
+        ModuleCat.of (DualNumbers k) (DualNumbers k)) x = x * DualNumber.eps := by
   simp [LinearMap.toSpanSingleton_apply, smul_eq_mul]
 
 /-- The underlying module of `dualNumberDifferentialModule` is projective. -/
