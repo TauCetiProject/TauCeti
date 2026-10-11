@@ -31,6 +31,10 @@ category fibred in groupoids over `Sch/B`:
   (`EllObj.isIso_iff_isIso_base`), and the fibre of `Ell/B` over a `B`-scheme `S` is the groupoid
   of elliptic curves over `S`.
 
+Base change of a fixed object `X = (S, E)` is functorial in the scheme over `S`
+(`EllObj.baseChangeFunctor`), with the canonical morphisms `EllipticCurveGeom.baseChangeMap`
+between base changes as the morphisms of total spaces.
+
 An arrow of `Ell/B` is determined by its morphism of total spaces (`EllObj.hom_ext`): the morphism
 of bases is recovered through the zero section (`EllObj.Hom.base_eq`). It is automatically
 compatible with the group laws (`EllObj.Hom.addition_total` and `EllObj.Hom.neg_total`).
@@ -44,6 +48,8 @@ compatible with the group laws (`EllObj.Hom.addition_total` and `EllObj.Hom.neg_
 * `TauCeti.AlgebraicGeometry.EllObj.baseChange` and
   `TauCeti.AlgebraicGeometry.EllObj.baseChangeHom`: the base change of an object along a morphism
   of `B`-schemes, with its arrow to the object.
+* `TauCeti.AlgebraicGeometry.EllObj.baseChangeFunctor X`: base change of an object `X = (S, E)`
+  of `Ell/B` as a functor from schemes over `S` to `Ell/B`.
 
 ## Main results
 
@@ -317,6 +323,23 @@ of `Ell/B` is cartesian, `Ell/B` is a category fibred in groupoids. -/
 instance isFibered_forget : (forget B).IsFibered :=
   .of_exists_isStronglyCartesian fun X _ g ↦
     ⟨X.baseChange g, X.baseChangeHom g, inferInstance⟩
+
+/-- The **base-change functor** of an object `X = (S, E)` of `Ell/B`: it sends a scheme `T` over
+`S`, through `t : T ⟶ S`, to the elliptic curve `E.baseChange t` over the `B`-scheme `T`, and a
+morphism `k : T' ⟶ T` of schemes over `S` to the arrow of `Ell/B` over `k` whose morphism of total
+spaces is the canonical morphism `E.baseChangeMap k` between the base changes. -/
+@[expose, simps obj_base obj_structureMap obj_curve map_base map_total]
+noncomputable def baseChangeFunctor (X : EllObj B) : Over X.base ⥤ EllObj B where
+  obj T := ⟨T.left, T.hom ≫ X.structureMap, X.curve.baseChange T.hom⟩
+  map {T' T} k :=
+    { base := k.left
+      base_structureMap := by simp
+      total := X.curve.baseChangeMap k.left (Over.w k)
+      isPullback := .of_right (by simpa using X.curve.isPullback_baseChange T'.hom) (by simp)
+        (X.curve.isPullback_baseChange T.hom)
+      zero_total := X.curve.zero_baseChangeMap _ _ }
+  map_id T := hom_ext (by simp)
+  map_comp k l := hom_ext (by simp)
 
 /-- **An arrow of `Ell/B` is an isomorphism if and only if its morphism of bases is.** In
 particular, every arrow of `Ell/B` lying over the identity of its base is an automorphism, so the
