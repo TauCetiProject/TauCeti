@@ -474,12 +474,6 @@ noncomputable def gaussDegree (hv : v.Integers O) (ρ : ℝ≥0) (hρ : ρ < 1) 
 theorem gaussDegree_zero (hv : v.Integers O) (hρ : ρ < 1) : gaussDegree p hv ρ hρ 0 = 0 := by
   simp [gaussDegree]
 
-/-- Near `ρ` on the right, a strict inequality `a ρ ^ n < b ρ ^ m` persists. -/
-private theorem eventually_mul_pow_lt {a b : ℝ≥0} {n m : ℕ} (h : a * ρ ^ n < b * ρ ^ m) :
-    ∀ᶠ ρ' in 𝓝[≥] ρ, a * ρ' ^ n < b * ρ' ^ m :=
-  (((continuous_const.mul (continuous_pow n)).tendsto ρ).eventually_lt
-    ((continuous_const.mul (continuous_pow m)).tendsto ρ) h).filter_mono nhdsWithin_le_nhds
-
 /-- The indices at which a nonzero Witt vector attains its Gauss valuation are bounded. -/
 private theorem bddAbove_setOf_eq_gaussValuation (hv : v.Integers O) (hρ₀ : 0 < ρ) (hρ : ρ < 1)
     {x : 𝕎 O} (hx : x ≠ 0) :
@@ -556,7 +550,9 @@ theorem eventually_gaussValuation_eq_mul_pow_gaussDegree (hv : v.Integers O) (h�
       exact key _ _ k h
     · have hlt : a n * ρ ^ n < a d * ρ ^ d :=
         hM ▸ mul_pow_lt_gaussValuation_of_gaussDegree_lt hv hρ₀ hρ hx hdn
-      exact (eventually_mul_pow_lt hlt).mono fun _ h ↦ h.le
+      exact (((continuous_const.mul (continuous_pow n)).continuousAt.eventually_lt
+        (continuous_const.mul (continuous_pow d)).continuousAt hlt).filter_mono
+          nhdsWithin_le_nhds).mono fun _ h ↦ h.le
   filter_upwards [hfin, self_mem_nhdsWithin, nhdsWithin_le_nhds (Iio_mem_nhds hρρ₁)] with
     ρ' hfin (hρ' : ρ ≤ ρ') (hρ'₁ : ρ' < ρ₁) hρ'1
   -- The indices from `N` on are dominated uniformly for `ρ ≤ ρ' < ρ₁`.
@@ -618,7 +614,9 @@ theorem gaussDegree_eq_of_gaussValuation_sub_lt (hv : v.Integers O) (hρ₀ : 0 
   have hlt : b * ρ ^ e < a * ρ ^ d := by
     rwa [gaussValuation_eq_mul_pow_gaussDegree hv hρ₀ hρ hx,
       gaussValuation_eq_mul_pow_gaussDegree hv hρ₀ hρ hxy'] at h
-  have hlt' : ∀ᶠ ρ' in 𝓝[≥] ρ, b * ρ' ^ e < a * ρ' ^ d := eventually_mul_pow_lt hlt
+  have hlt' : ∀ᶠ ρ' in 𝓝[≥] ρ, b * ρ' ^ e < a * ρ' ^ d :=
+    ((continuous_const.mul (continuous_pow e)).continuousAt.eventually_lt
+      (continuous_const.mul (continuous_pow d)).continuousAt hlt).filter_mono nhdsWithin_le_nhds
   refine gaussDegree_eq_of_eventually_eq_mul_pow (c := a) hv hρ₀ hρ hy ?_
   filter_upwards [hlt', eventually_gaussValuation_eq_mul_pow_gaussDegree hv hρ₀ hρ hx,
     eventually_gaussValuation_eq_mul_pow_gaussDegree hv hρ₀ hρ hxy'] with ρ' hlt' hx' hxy' hρ'
