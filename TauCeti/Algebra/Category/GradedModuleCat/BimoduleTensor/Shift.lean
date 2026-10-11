@@ -198,14 +198,7 @@ theorem bimoduleTensorShiftIso_naturality
         (shiftFunctor (a + b)).map (bimoduleTensorMap Γ Δ Θ f g) := by
   apply bimoduleTensor_hom_ext
   intro m n
-  change (bimoduleTensorShiftIso Γ Δ Θ M' N' a b).hom.hom
-      ((bimoduleTensorMap Γ Δ Θ (M := M.shiftObj a) (N := N.shiftObj b)
-        (M' := M'.shiftObj a) (N' := N'.shiftObj b)
-        ((shiftFunctor a).map f) ((shiftFunctor b).map g)).hom
-        (bimoduleTensorTmul Γ Δ Θ (M.shiftObj a) (N.shiftObj b) m n)) =
-    (bimoduleTensorMap Γ Δ Θ f g).hom
-      ((bimoduleTensorShiftIso Γ Δ Θ M N a b).hom.hom
-        (bimoduleTensorTmul Γ Δ Θ (M.shiftObj a) (N.shiftObj b) m n))
+  simp only [hom_comp, LinearMap.comp_apply, hom_shiftFunctor_map]
   rw [bimoduleTensorMap_tmul Γ Δ Θ (M := M.shiftObj a) (N := N.shiftObj b)
     (M' := M'.shiftObj a) (N' := N'.shiftObj b)
     ((shiftFunctor a).map f) ((shiftFunctor b).map g)]
