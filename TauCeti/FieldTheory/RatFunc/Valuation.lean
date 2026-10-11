@@ -21,7 +21,7 @@ public section
 namespace TauCeti
 
 /-- The rational-function variable is not an `n`-th power when `n > 1`. -/
-theorem RatFunc.pow_ne_X {K : Type*} [Field K] {n : ℕ} (hn : 1 < n)
+theorem ratFunc_pow_ne_X {K : Type*} [Field K] {n : ℕ} (hn : 1 < n)
     (b : RatFunc K) : b ^ n ≠ RatFunc.X := by
   classical
   intro hb

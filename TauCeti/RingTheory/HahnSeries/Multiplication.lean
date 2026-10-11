@@ -23,7 +23,7 @@ variable {Γ R : Type*} [AddCommMonoid Γ] [LinearOrder Γ] [IsOrderedCancelAddM
 
 /-- The leading coefficient of a power is the power of the leading coefficient. -/
 @[simp]
-theorem HahnSeries.leadingCoeff_pow (f : HahnSeries Γ R) (n : ℕ) :
+theorem hahnSeries_leadingCoeff_pow (f : HahnSeries Γ R) (n : ℕ) :
     (f ^ n).leadingCoeff = f.leadingCoeff ^ n := by
   induction n with
   | zero => simp
@@ -31,7 +31,7 @@ theorem HahnSeries.leadingCoeff_pow (f : HahnSeries Γ R) (n : ℕ) :
 
 /-- The order of a power is the corresponding multiple of the order, including at zero. -/
 @[simp]
-theorem HahnSeries.orderTop_pow [Nontrivial R] (f : HahnSeries Γ R) (n : ℕ) :
+theorem hahnSeries_orderTop_pow [Nontrivial R] (f : HahnSeries Γ R) (n : ℕ) :
     (f ^ n).orderTop = n • f.orderTop := by
   induction n with
   | zero => simp

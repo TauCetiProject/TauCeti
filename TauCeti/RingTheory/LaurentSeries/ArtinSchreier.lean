@@ -28,7 +28,7 @@ open scoped LaurentSeries
 
 namespace TauCeti
 
-open _root_.HahnSeries HahnSeries
+open _root_.HahnSeries
 
 variable {k : Type*} [Ring k] [IsDomain k] {n : ℕ} {a : k}
 
@@ -39,7 +39,7 @@ theorem LaurentSeries.orderTop_pow_sub_self_of_order_neg
   have hw0 : w ≠ 0 := by rintro rfl; simp at hw
   have hwtop := (order_eq_orderTop_of_ne_zero hw0).symm
   have hpow : (w ^ n).orderTop = ((n : ℤ) * w.order : ℤ) := by
-    rw [HahnSeries.orderTop_pow, hwtop, ← WithTop.coe_nsmul, nsmul_eq_mul]
+    rw [hahnSeries_orderTop_pow, hwtop, ← WithTop.coe_nsmul, nsmul_eq_mul]
   have hnZ : (1 : ℤ) < n := by exact_mod_cast hn
   rw [orderTop_sub (by rw [hpow, hwtop]; exact_mod_cast (by nlinarith :
     (n : ℤ) * w.order < w.order)), hpow]
@@ -52,9 +52,9 @@ theorem LaurentSeries.leadingCoeff_pow_sub_self_of_order_neg
   have hwtop := (order_eq_orderTop_of_ne_zero hw0).symm
   have hnZ : (1 : ℤ) < n := by exact_mod_cast hn
   rw [leadingCoeff_sub (by
-    rw [HahnSeries.orderTop_pow, hwtop, ← WithTop.coe_nsmul, nsmul_eq_mul]
+    rw [hahnSeries_orderTop_pow, hwtop, ← WithTop.coe_nsmul, nsmul_eq_mul]
     exact_mod_cast (by nlinarith : (n : ℤ) * w.order < w.order)),
-    HahnSeries.leadingCoeff_pow]
+    hahnSeries_leadingCoeff_pow]
 
 /-- If the coefficient of `a T⁻ⁿ` is not an `n`-th power, subtracting `wⁿ - w` never
 cancels its pole. A pole of `w` of order greater than one only makes the pole worse. -/
@@ -72,7 +72,7 @@ theorem LaurentSeries.orderTop_single_sub_pow_sub_self
   have hwtop : w.orderTop = (w.order : WithTop ℤ) :=
     (order_eq_orderTop_of_ne_zero hw).symm
   have hpow : (w ^ n).orderTop = ((n : ℤ) * w.order : ℤ) := by
-    rw [HahnSeries.orderTop_pow, hwtop, ← WithTop.coe_nsmul, nsmul_eq_mul]
+    rw [hahnSeries_orderTop_pow, hwtop, ← WithTop.coe_nsmul, nsmul_eq_mul]
   by_cases hneg : w.order < 0
   · have hv := LaurentSeries.orderTop_pow_sub_self_of_order_neg hn hneg
     split_ifs with hlow
