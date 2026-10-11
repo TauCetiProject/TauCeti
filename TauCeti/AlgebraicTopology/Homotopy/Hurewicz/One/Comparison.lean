@@ -123,8 +123,8 @@ lemma ιHomology₁_hom_one (p : Ω^ (Fin 1) X x) :
     (TauCeti.SSet.ιHomology₁ (ModuleCat.of ℤ ℤ) (pairSSet x) (simplex₁ p) (δ_simplex₁ p)).hom 1 =
       HurewiczOne.H₁AddEquivHomology (TopCat.of X)
         (HurewiczOne.loopClass (genLoopEquivOfUnique (Fin 1) p)) := by
-  rw [TauCeti.SSet.ιHomology₁_eq, HurewiczOne.loopClass_def]
-  refine (HurewiczOne.H₁AddEquivHomology_mk _ _ ?_).symm
+  rw [TauCeti.SSet.ιHomology₁_eq]
+  refine (HurewiczOne.H₁AddEquivHomology_loopClass _ _ ?_).symm
   refine (congr($(HomologicalComplex.liftCycles_i
     ((pairSSet x).chainComplex (ModuleCat.of ℤ ℤ)) ((pairSSet x).ιChainComplex (simplex₁ p)) 0
       (by simp) _).hom 1)).trans ?_
@@ -178,7 +178,7 @@ theorem hurewiczHom_hom_one_eq_neg_hurewiczHomologyAddEquiv [PathConnectedSpace 
       -hurewiczHomologyAddEquiv (X := TopCat.of X) x (Additive.ofMul (Abelianization.of
         (homotopyGroupOfUniqueMulEquivFundamentalGroup (Fin 1) a.toMul))) := by
   refine (hurewiczHom_hom_one_eq_neg_hurewicz₁ a).trans (congrArg Neg.neg ?_)
-  exact (congrArg (H₁AddEquivHomology (TopCat.of X)) (hurewiczAb_ofMul_of_eq x _).symm).trans
+  exact (congrArg (H₁AddEquivHomology (TopCat.of X)) (hurewiczAb_ofMul_of x _).symm).trans
     (hurewiczHomologyAddEquiv_apply _).symm
 
 end HomotopyGroup
