@@ -26,6 +26,9 @@ needed only for existence of the exact scaling, not for defining the certificate
 plan generally does not have both prescribed marginals, so these are approximation certificates,
 not objective-gap bounds for a feasible plan.
 
+Use `TauCeti.sinkhornErrorBound K a b u` to evaluate the certificate. Its characteristic
+and error lemmas are also in `TauCeti`; the iteration and plan operations are in `Matrix`.
+
 ## References
 
 * J. Franklin and J. Lorenz, *On the scaling of multidimensional matrices*, Linear Algebra Appl.
