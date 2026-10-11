@@ -10,6 +10,7 @@ import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
 public import TauCeti.LowDimTopology.Plumbing.NegativeDefinite
 public import TauCeti.LowDimTopology.Plumbing.Tower
+import TauCeti.LowDimTopology.Plumbing.Weight.MinusTwo
 
 /-!
 # The negative-definite E₈ plumbing
@@ -33,6 +34,8 @@ for checking later computations on this example.
 * `TauCeti.e8Plumbing_neg_intersectionForm`: the completed-square identity for the negative
   intersection form.
 * `TauCeti.e8Plumbing_isNegativeDefinite`: the `E₈` plumbing is negative definite.
+* `TauCeti.e8Plumbing_sInfCharacteristicWeight_canonical_eq_zero`: the canonical characteristic
+  weight has minimum zero, attained only at the zero lattice point.
 * `TauCeti.e8Plumbing_not_isZero_latticeHomology`: its characteristic-two lattice homology is
   nonzero in every spin^c structure.
 
@@ -206,6 +209,28 @@ theorem e8Plumbing_isNegativeDefinite : e8Plumbing.IsNegativeDefinite := by
       Finset.sum_nonneg fun i _ => e8SquareTerm_nonneg x i
     nlinarith
   exact hx (eq_zero_of_e8SquareTerm_sum_eq_zero x hR)
+
+/-- In the canonical spin^c structure, the `E₈` characteristic weight vanishes only at the zero
+lattice point. This identifies the unique bottom lattice point that generates the canonical
+`U`-tower in lattice homology. -/
+@[simp]
+theorem e8Plumbing_characteristicWeight_canonical_eq_zero_iff (x : Fin 8 → ℤ) :
+    e8Plumbing.characteristicWeight
+      ⟨e8Plumbing.canonicalCharacteristic,
+        e8Plumbing.isCharacteristicVector_canonicalCharacteristic⟩ x = 0 ↔ x = 0 := by
+  exact PlumbingGraph.characteristicWeight_canonical_eq_zero_iff_of_weight_eq_neg_two
+    e8Plumbing e8Plumbing_isNegativeDefinite e8Plumbing_weight x
+
+/-- The minimum canonical characteristic weight of the negative-definite `E₈` plumbing is zero.
+Its unique minimizer is the origin, so the canonical free tower starts at this lattice point. -/
+@[simp]
+theorem e8Plumbing_sInfCharacteristicWeight_canonical_eq_zero :
+    e8Plumbing.sInfCharacteristicWeight
+      ⟨e8Plumbing.canonicalCharacteristic,
+        e8Plumbing.isCharacteristicVector_canonicalCharacteristic⟩ = 0 := by
+  exact PlumbingGraph.sInfCharacteristicWeight_canonical_eq_zero_of_weight_eq_neg_two
+    e8Plumbing (fun x => e8Plumbing_isNegativeDefinite.intersectionForm_self_nonpos x)
+    e8Plumbing_weight
 
 /-- The characteristic-two lattice homology of the `E₈` plumbing is nonzero in every spin^c
 structure. This is the roadmap's concrete negative-definite plumbing, the one whose lattice
