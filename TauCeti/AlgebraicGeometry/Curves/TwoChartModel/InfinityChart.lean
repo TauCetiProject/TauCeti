@@ -80,7 +80,6 @@ theorem polynomialChartMap_inv_X_surjective :
     (ratFuncInfinityChartAlgEquiv k).surjective
 
 /-- The coordinate of the chart at infinity is the inverse of the rational variable. -/
-@[simp]
 theorem coe_ratFuncInfinityChartAlgEquiv_X :
     ((ratFuncInfinityChartAlgEquiv k Polynomial.X :
       holomorphyRing {P : Place k (RatFunc k) | (RatFunc.X : RatFunc k)⁻¹ ∈ P.integers}) :
