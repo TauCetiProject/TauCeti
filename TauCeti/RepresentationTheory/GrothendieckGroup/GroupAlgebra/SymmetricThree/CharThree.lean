@@ -8,6 +8,8 @@ module
 public import TauCeti.RepresentationTheory.Symmetric.Modular.Three
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Projection
 import TauCeti.RepresentationTheory.Induction.PointStabilizer
+import TauCeti.RepresentationTheory.CharacterTwist
+import TauCeti.RepresentationTheory.Intertwining
 
 /-!
 # Composition factors of the S₃ permutation module in characteristic three
@@ -25,7 +27,7 @@ All equalities below are in the integral Grothendieck group, rather than in fiel
 public section
 
 open CategoryTheory
-open scoped MonoidAlgebra
+open scoped MonoidAlgebra MonoidalCategory
 
 namespace TauCeti
 
@@ -126,6 +128,36 @@ theorem permK0_fin_three_char_three :
   rw [hc, fdRepK0RingEquiv_of_standard_perm_fin_three_char_three]
   simp only [two_nsmul]
   abel
+
+omit [CharP k 3] in
+/-- The sign class of S₃ squares to the trivial class in the exact Grothendieck ring. -/
+-- Simplify before the representation-to-module dictionary expands the factors.
+@[simp↓]
+theorem signClass_mul_self_perm_fin_three :
+    fdRepK0RingEquiv k (Equiv.Perm (Fin 3))
+        (ExactK0.of (FDRep.ofLinearCharacter (signLinearCharacter k (Fin 3)))) *
+      fdRepK0RingEquiv k (Equiv.Perm (Fin 3))
+        (ExactK0.of (FDRep.ofLinearCharacter (signLinearCharacter k (Fin 3)))) = 1 := by
+  let χ := signLinearCharacter k (Fin 3)
+  have hχ : χ * χ = 1 := by
+    ext g
+    simp only [MonoidHom.mul_apply, Units.val_mul, MonoidHom.one_apply, Units.val_one,
+      χ, coe_signLinearCharacter_apply, ← Int.cast_mul]
+    simp only [← Units.val_mul, Int.units_mul_self, Units.val_one, Int.cast_one]
+  have e := Representation.tprodEquivCharTwist χ (Representation.ofLinearCharacter χ)
+  have htwist : Representation.charTwist χ (Representation.ofLinearCharacter χ) =
+      Representation.trivial k (Equiv.Perm (Fin 3)) k := by
+    rw [← Representation.charTwist_trivial χ, Representation.charTwist_charTwist,
+      hχ, Representation.charTwist_one]
+  rw [htwist] at e
+  have he : Nonempty (FDRep.ofLinearCharacter χ ⊗ FDRep.ofLinearCharacter χ ≅
+      FDRep.of (Representation.trivial k (Equiv.Perm (Fin 3)) k)) := by
+    apply nonempty_fdRepIso_iff.mpr
+    rw [FDRep.ofLinearCharacter_def]
+    -- The tensor action on bundled finite-dimensional representations is `tprod`.
+    exact ⟨e⟩
+  rw [← map_mul, ExactK0.of_mul_of, ExactK0.of_congr he.some,
+    fdRepK0RingEquiv_of, FDRep.of_ρ', ← exactK0_one_eq_of_trivial]
 
 /-- Inducing the trivial line from any point stabilizer of S₃ gives two trivial factors
 and one sign factor in characteristic three. -/

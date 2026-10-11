@@ -8,8 +8,6 @@ module
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.SymmetricThree.CharThree
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.SymmetricThree.CharThree.Simple
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.PrimePart
-import TauCeti.RepresentationTheory.CharacterTwist
-import TauCeti.RepresentationTheory.Intertwining
 import TauCeti.GroupTheory.Perm.FinThree.Basic
 import TauCeti.GroupTheory.GroupAction.Transitive
 import Mathlib.Data.ZMod.Basic
@@ -44,35 +42,14 @@ variable (k : Type) [Field k] [CharP k 3]
 
 local notation "G" => Equiv.Perm (Fin 3)
 local notation "K₀" => ExactK0 (finiteModulesExactStructure k[G])
+local notation "s" => fdRepK0RingEquiv k G
+  (ExactK0.of (FDRep.ofLinearCharacter (signLinearCharacter k (Fin 3))))
 local notation "I" => ⨆ (S : Subgroup G) (_ : IsCyclic S ∧ ¬ 3 ∣ Nat.card S),
   AddMonoidHom.range (indK0 k S)
 
 private theorem three_nsmul_one_mem_range_indK0_stabilizer (a : Fin 3) :
     3 • (1 : K₀) ∈ (indK0 k (MulAction.stabilizer G a)).range := by
   let H := MulAction.stabilizer G a
-  let χ := signLinearCharacter k (Fin 3)
-  let s : K₀ := fdRepK0RingEquiv k G (ExactK0.of (FDRep.ofLinearCharacter χ))
-  have hs : s * s = 1 := by
-    have hχ : χ * χ = 1 := by
-      ext g
-      simp only [MonoidHom.mul_apply, Units.val_mul, MonoidHom.one_apply, Units.val_one,
-        χ, coe_signLinearCharacter_apply, ← Int.cast_mul]
-      simp only [← Units.val_mul, Int.units_mul_self, Units.val_one, Int.cast_one]
-    have e := Representation.tprodEquivCharTwist χ (Representation.ofLinearCharacter χ)
-    have htwist : Representation.charTwist χ (Representation.ofLinearCharacter χ) =
-        Representation.trivial k G k := by
-      rw [← Representation.charTwist_trivial χ, Representation.charTwist_charTwist,
-        hχ, Representation.charTwist_one]
-    rw [htwist] at e
-    have he : Nonempty (FDRep.ofLinearCharacter χ ⊗ FDRep.ofLinearCharacter χ ≅
-        FDRep.of (Representation.trivial k G k)) := by
-      apply nonempty_fdRepIso_iff.mpr
-      rw [FDRep.ofLinearCharacter_def]
-      -- The tensor action on bundled finite-dimensional representations is `tprod`.
-      exact ⟨e⟩
-    dsimp only [s]
-    rw [← map_mul, ExactK0.of_mul_of, ExactK0.of_congr he.some,
-      fdRepK0RingEquiv_of, FDRep.of_ρ', ← exactK0_one_eq_of_trivial]
   have hA : indK0 k H 1 = 2 • (1 : K₀) + s :=
     indK0_one_stabilizer_perm_fin_three_char_three k a
   have hAs : indK0 k H (resK0 k H.subtype s) = (2 • (1 : K₀) + s) * s := by
@@ -80,7 +57,7 @@ private theorem three_nsmul_one_mem_range_indK0_stabilizer (a : Fin 3) :
       ExactK0 (finiteModulesExactStructure k[H])) s
   refine ⟨(2 : ℤ) • 1 - resK0 k H.subtype s, ?_⟩
   rw [map_sub, map_zsmul, hA, hAs]
-  simp only [two_nsmul, add_mul, one_mul, hs]
+  simp only [two_nsmul, add_mul, one_mul, signClass_mul_self_perm_fin_three]
   module
 
 /-- In characteristic three, induction from any point stabilizer of S₃ has image exactly
@@ -99,25 +76,13 @@ theorem mem_range_indK0_stabilizer_perm_fin_three_char_three_iff (a : Fin 3) (x 
   · intro hx
     -- Expand in the two simple classes and read dimension as the sum of their coefficients.
     let b := symmetricThreeCharThreeSimpleClassBasis k
-    let s : K₀ := fdRepK0RingEquiv k G
-      (ExactK0.of (FDRep.ofLinearCharacter (signLinearCharacter k (Fin 3))))
-    have hb₀ : b false = (1 : K₀) := by
-      have hb : b false = fdRepK0RingEquiv k G
-          (ExactK0.of (FDRep.ofLinearCharacter (1 : G →* kˣ))) := by
-        rw [FDRep.ofLinearCharacter_def, fdRepK0RingEquiv_of, FDRep.of_ρ']
-        simp [b, symmetricThreeCharThreeSimpleClassBasis_apply]
-      rw [hb, FDRep.ofLinearCharacter_def, Representation.ofLinearCharacter_one,
-        fdRepK0RingEquiv_of, FDRep.of_ρ', ← exactK0_one_eq_of_trivial]
-    have hb₁ : b true = s := by
-      dsimp only [s]
-      rw [FDRep.ofLinearCharacter_def, fdRepK0RingEquiv_of, FDRep.of_ρ']
-      simp [b, symmetricThreeCharThreeSimpleClassBasis_apply]
     have hdim : finrankK0 k k[G] s = 1 := by
-      dsimp only [s]
       rw [finrankK0_fdRepK0RingEquiv_of, FDRep.finrank_ofLinearCharacter]
       norm_num
     have hex : x = b.repr x false • (1 : K₀) + b.repr x true • s := by
-      simpa only [Fintype.sum_bool, hb₀, hb₁, add_comm] using (b.sum_repr x).symm
+      simpa only [b, Fintype.sum_bool,
+        symmetricThreeCharThreeSimpleClassBasis_false,
+        symmetricThreeCharThreeSimpleClassBasis_true, add_comm] using (b.sum_repr x).symm
     have hd : finrankK0 k k[G] x = b.repr x false + b.repr x true := by
       simpa only [map_add, map_zsmul, finrankK0_one, hdim, smul_eq_mul, mul_one] using
         congrArg (finrankK0 k k[G]) hex
