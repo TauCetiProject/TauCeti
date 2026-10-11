@@ -7,10 +7,8 @@ module
 
 public import TauCeti.Algebra.Group.PowerClassGroup.Basic
 public import TauCeti.Algebra.GroupWithZero.Units.Basic
-public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Extension
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Norm
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Map
-public import TauCeti.FieldTheory.GaloisCohomology.Coefficients
 public import TauCeti.FieldTheory.GaloisCohomology.Hilbert90
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.DeltaNaturality
@@ -173,17 +171,9 @@ theorem kummerCoeffIncl_kummerCocycle
 /-- **The Kummer ratio `g ↦ g α / α` is a continuous `1`-cocycle** with values in `μₙ`. -/
 theorem kummerCocycle_mem_Z1
     (hα : α ^ n = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a) :
-    kummerCocycle hα ∈ Z1 (AbsoluteGaloisGroup K) (KummerCoeff K n) := by
-  have hd0 : ∀ g : AbsoluteGaloisGroup K, kummerCoeffIncl K n (kummerCocycle hα g) =
-      d0 (AbsoluteGaloisGroup K) (UnitsCoeff K) (Additive.ofMul α) g := fun g =>
-    (kummerCoeffIncl_kummerCocycle hα g).trans (d0_apply _ g).symm
-  refine mem_Z1_iff.2 ⟨continuous_of_injective_comp (kummerCoeffIncl_injective K n) ?_,
-    fun g h => kummerCoeffIncl_injective K n ?_⟩
-  · simpa only [hd0] using
-      continuous_d0_apply (G := AbsoluteGaloisGroup K) (Additive.ofMul α : UnitsCoeff K)
-  · rw [map_add, kummerCoeffIncl_equivariant, kummerCoeffIncl_kummerCocycle,
-      kummerCoeffIncl_kummerCocycle, kummerCoeffIncl_kummerCocycle, smul_sub, smul_smul]
-    abel
+    kummerCocycle hα ∈ Z1 (AbsoluteGaloisGroup K) (KummerCoeff K n) :=
+  ContCohomology.mem_Z1_of_injective_comp_eq_d0 (kummerCoeffIncl_injective K n)
+    (kummerCoeffIncl_equivariant K n) (kummerCoeffIncl_kummerCocycle hα)
 
 /-- The class in `H¹(G_K, μₙ)` of the Kummer cocycle of a chosen `n`th root. -/
 def kummerCocycleClass
@@ -348,8 +338,8 @@ def kummerClassMap (hn : IsUnit (n : K)) :
 /-- The quotient Kummer map agrees with `kummerMap` on representatives. -/
 @[simp]
 theorem kummerClassMap_mk (hn : IsUnit (n : K)) (a : Kˣ) :
-    kummerClassMap K n hn (QuotientGroup.mk a) = kummerMap K n hn a := by
-  exact QuotientGroup.lift_mk' (powerSubgroup Kˣ n) (by rw [ker_kummerMap hn]) a
+    kummerClassMap K n hn (QuotientGroup.mk a) = kummerMap K n hn a :=
+  QuotientGroup.lift_mk' (powerSubgroup Kˣ n) (by rw [ker_kummerMap hn]) a
 
 /-- The quotient Kummer map sends the named power class of `a` to its Kummer class. -/
 theorem kummerClassMap_powerClassHom (hn : IsUnit (n : K)) (a : Kˣ) :
@@ -359,8 +349,8 @@ theorem kummerClassMap_powerClassHom (hn : IsUnit (n : K)) (a : Kˣ) :
 /-- **`Kˣ ⧸ (Kˣ)ⁿ` injects into `H¹(G_K, μₙ)`**, the kernel of the Kummer map being exactly the
 `n`th powers. -/
 theorem kummerClassMap_injective (hn : IsUnit (n : K)) :
-    Function.Injective (kummerClassMap K n hn) := by
-  exact (QuotientGroup.injective_lift_iff _ _ _).2 (ker_kummerMap hn).symm
+    Function.Injective (kummerClassMap K n hn) :=
+  (QuotientGroup.injective_lift_iff _ _ _).2 (ker_kummerMap hn).symm
 
 /-! ### Surjectivity and the Kummer isomorphism -/
 
@@ -422,9 +412,7 @@ theorem finite_H1_of_isPrimitiveRoot_of_natCard_eq [NeZero n] {ζ : K}
   have := hζ.neZero'
   have := finite_H1_kummerCoeff K n (NeZero.ne (n : K)).isUnit
   have hcard : Nat.card (KummerCoeff K n) = Nat.card M :=
-    (Nat.card_congr Additive.toMul).trans
-      (((hζ.map_of_injective (algebraMap K (SeparableClosure K)).injective).card_rootsOfUnity).trans
-        hM.symm)
+    (natCard_kummerCoeff (NeZero.ne (n : K)).isUnit).trans hM.symm
   exact Finite.of_equiv _ (explicitMap1Equiv H M (AbsoluteGaloisGroup K) (KummerCoeff K n) φ
     (addEquivOfAddCyclicCardEq hcard.symm) continuous_of_discreteTopology
     continuous_of_discreteTopology fun g m ↦ by
@@ -494,7 +482,7 @@ variable (K n)
 /-- **The canonical Kummer map** from units of `K` to Mathlib's continuous cohomology of the
 Kummer coefficient module. It is the explicit Kummer map transported through the degree-one
 comparison isomorphism. -/
-noncomputable def kummerMapCanonical (hn : IsUnit (n : K)) :
+def kummerMapCanonical (hn : IsUnit (n : K)) :
     Kˣ →* Multiplicative
       (continuousCohomology 1
         (ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (KummerCoeff K n))) :=
@@ -524,12 +512,9 @@ theorem kummerIsoTransportContinuousSMul
     (e : KummerCoeff K n ≃+ μ)
     (hequiv : ∀ (g : AbsoluteGaloisGroup K) (x : KummerCoeff K n), e (g • x) = g • e x) :
     ContinuousSMul (AbsoluteGaloisGroup K) μ := by
-  have hinv (g : AbsoluteGaloisGroup K) (x : μ) : e.symm (g • x) = g • e.symm x := by
-    exact AddEquiv.symm_map_smul_of_map_smul e hequiv g x
-  let h : μ ≃ₜ KummerCoeff K n :=
-    { toEquiv := e.symm.toEquiv
-      continuous_toFun := continuous_of_discreteTopology
-      continuous_invFun := continuous_of_discreteTopology }
+  have hinv (g : AbsoluteGaloisGroup K) (x : μ) : e.symm (g • x) = g • e.symm x :=
+    AddEquiv.symm_map_smul_of_map_smul e hequiv g x
+  let h : μ ≃ₜ KummerCoeff K n := Homeomorph.ofDiscrete e.symm.toEquiv
   exact h.isInducing.continuousSMul continuous_id fun {g x} => hinv g x
 
 /-- **The Kummer isomorphism transported to another discrete model of `μₙ`.** The identification
@@ -605,8 +590,10 @@ theorem kummerCoeffMap_smul (g : AbsoluteGaloisGroup L) (x : KummerCoeff K n) :
 /-- **Restriction on the Kummer `H¹` along a `K`-embedding `σ : L →ₐ[K] Kˢ`**,
 `H¹(G_K, μₙ) → H¹(G_L, μₙ)`: restriction to the subgroup `Gal(Kˢ/σ(L)) ≤ G_K` fixing `σ(L)`,
 followed by the pullback along `absoluteGaloisGroupEquivFixingSubgroup K L σ : G_L ≃ₜ* Gal(Kˢ/σ(L))`
-with the coefficient identification `kummerCoeffMap`. The embedding is genuine data: without one
-there is no map `G_L → G_K`. Written multiplicatively, like `TauCeti.kummerIso`. -/
+with the coefficient identification `kummerCoeffMap`. The embedding realises `G_L` as the subgroup
+of `G_K` fixing `σ(L)`, so `L` is algebraic and separable over `K`; pullback along an arbitrary
+extension is `TauCeti.explicitMap1_kummerMap`. Written multiplicatively, like `TauCeti.kummerIso`.
+-/
 def kummerRes :
     Multiplicative (H1 (AbsoluteGaloisGroup K) (KummerCoeff K n)) →*
       Multiplicative (H1 (AbsoluteGaloisGroup L) (KummerCoeff L n)) :=
@@ -633,8 +620,8 @@ theorem toAdd_kummerRes (x : Multiplicative (H1 (AbsoluteGaloisGroup K) (KummerC
 
 variable {K n L} in
 /-- **Transporting an `n`th root to `Lˢ`**: if `α ∈ Kˢ` is an `n`th root of `a ∈ Kˣ`, its image
-under the identification `separableClosureRingEquiv K L σ` of separable closures is an `n`th root
-of the image of `a` in `Lˣ`. -/
+under the inverse of the identification `separableClosureRingEquiv K L σ : Lˢ ≃+* Kˢ` is an `n`th
+root of the image of `a` in `Lˣ`. -/
 theorem units_map_separableClosureRingEquiv_symm_pow
     (hα : α ^ n = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a) :
     Units.map (separableClosureRingEquiv K L σ).symm.toMonoidHom α ^ n =

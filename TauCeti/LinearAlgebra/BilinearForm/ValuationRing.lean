@@ -33,6 +33,10 @@ The hypothesis on `2` cannot be dropped: the general divisibility and hyperbolic
 in `TauCeti.LinearAlgebra.BilinearForm.Diagonalization` show that the hyperbolic plane
 `!![0, 1; 1, 0]` has an orthogonal basis only if `2` is a unit. Over `ℤ_2` it has none.
 
+For forms with unit Gram determinant, the stronger local-ring diagonalization theorem in
+`TauCeti.LinearAlgebra.BilinearForm.Diagonalization` gives unit diagonal coefficients without
+requiring a domain or a valuation ring.
+
 ## Main results
 
 * `LinearMap.BilinForm.IsSymm.exists_forall_apply_self_dvd_of_forall_dvd`: over a local ring with

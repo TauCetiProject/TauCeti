@@ -250,6 +250,14 @@ def _root_.CategoryTheory.CommMon.relativeSpecGluingData :
     (directedCover X).RelativeGluingData :=
   relativeGluingData A.coequifibered_toSectionsPresheaf
 
+/-- The transition map between relative-spectrum charts is the spectrum of restriction
+of sections along the corresponding inclusion of affine opens. -/
+lemma _root_.CategoryTheory.CommMon.relativeSpecGluingData_functor_map
+    {U U' : X.AffineZariskiSite} (h : U ⟶ U') :
+    A.relativeSpecGluingData.functor.map h =
+      Spec.map (A.sectionsPresheaf.map ((toOpensFunctor X).map h).op) :=
+  (rfl)
+
 /-- The gluing diagram of the relative spectrum is locally directed. -/
 instance _root_.CategoryTheory.CommMon.isLocallyDirected_relativeSpecGluingData :
     (A.relativeSpecGluingData.functor ⋙ Scheme.forget).IsLocallyDirected :=

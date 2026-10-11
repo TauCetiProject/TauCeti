@@ -119,12 +119,9 @@ of `Q`. -/
 theorem kummerCocycle_mem_Z1 {P : W.toAffine.Point} {Q : W.PointCoeff}
     (hQ : m • Q = W.basePointCoeff P) :
     kummerCocycle hQ ∈ Z1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m) :=
-  -- The sequence `0 → E[m] → E → E ⧸ E[m] → 0` needs no hypothesis on `W` or `m`.
-  letI := (AddSubgroup.torsionBy W.PointCoeff m).quotientDistribMulAction
-    fun σ _ => smul_mem_torsionCoeff σ
-  (DiscreteShortExact.ofAddSubgroup (AddSubgroup.torsionBy W.PointCoeff m)
-    fun σ _ => smul_mem_torsionCoeff σ).mem_Z1_of_incl_comp_eq_d0 fun σ => by
-    rw [DiscreteShortExact.ofAddSubgroup_incl, AddSubgroup.coe_subtype, coe_kummerCocycle]
+  mem_Z1_of_injective_comp_eq_d0 (φ := (AddSubgroup.torsionBy W.PointCoeff m).subtype)
+    Subtype.val_injective (fun _ _ ↦ rfl) fun σ => by
+    rw [AddSubgroup.coe_subtype, coe_kummerCocycle]
 
 /-! ### The Kummer map -/
 

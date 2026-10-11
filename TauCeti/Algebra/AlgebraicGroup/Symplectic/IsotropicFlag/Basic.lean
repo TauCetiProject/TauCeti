@@ -131,7 +131,7 @@ variable {A : Type w} [CommRing A] [Algebra R A]
 
 /-- A symplectic point belongs to the isotropic flag subgroup precisely when its matrix
 is upper triangular after reversing the dual half of the basis. -/
-@[simp]
+@[simp↓]
 theorem mem_definingPointsSubgroup_iff
     (g : HopfAlgebra.points (R := R) (H := Symplectic.coordinateHopfAlgebra R m)
       (CommAlgCat.of R A)) :

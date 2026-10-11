@@ -254,6 +254,13 @@ def congr (f : M ≃ₗ[k] M') (g : N ≃ₗ[k] N')
       intro m n
       simp)
 
+/-- The carrier map of tensor congruence is the balanced tensor of the two factor maps. -/
+theorem congr_apply (f : M ≃ₗ[k] M') (g : N ≃ₗ[k] N')
+    (hf : ∀ (a : A) m, f (op a • m) = op a • f m)
+    (hg : ∀ (a : A) n, g (a • n) = a • g n) (z : BalancedTensorProduct k A M N) :
+    congr f g hf hg z = map f.toLinearMap g.toLinearMap hf hg z := by
+  simp only [congr, LinearEquiv.coe_ofLinearMap]
+
 @[simp]
 theorem congr_tmul (f : M ≃ₗ[k] M') (g : N ≃ₗ[k] N')
     (hf : ∀ (a : A) m, f (op a • m) = op a • f m)
