@@ -53,6 +53,11 @@ noncomputable abbrev abutmentFiltration (q n : ℤ) : C :=
 noncomputable def abutmentFiltrationι (q n : ℤ) : X.abutmentFiltration q n ⟶ X.abutment n :=
   X.fromOpcycles _ _ _ (Subsingleton.elim _ _) n
 
+lemma abutmentFiltrationι_eq (q n : ℤ) :
+    X.abutmentFiltrationι q n = X.fromOpcycles (homOfLE (bot_le : (⊥ : EInt) ≤ q))
+      (homOfLE (le_top : (q : EInt) ≤ ⊤)) (homOfLE bot_le) (Subsingleton.elim _ _) n := by
+  rw [abutmentFiltrationι]
+
 instance (q n : ℤ) : Mono (X.abutmentFiltrationι q n) :=
   (ShortComplex.exact_iff_mono_cokernel_desc _).1
     (X.exact₁ _ _ _ (Subsingleton.elim _ _) (n - 1) n)
