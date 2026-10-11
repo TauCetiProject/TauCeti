@@ -41,6 +41,17 @@ def prodRightUnitor : prod.functor.flip.obj T ≅ 𝟭 C :=
        hom_inv_id := prod.hom_ext (by simp) (hT.hom_ext _ _) } : X ⨯ T ≅ X))
     fun f ↦ prod.map_fst f (𝟙 T)
 
+/-- The component of `prodRightUnitor` at `X` is the first projection `X ⨯ T ⟶ X`. -/
+@[simp]
+lemma prodRightUnitor_hom_app (X : C) : hT.prodRightUnitor.hom.app X = (prod.fst : X ⨯ T ⟶ X) := by
+  rfl
+
+/-- The inverse component of `prodRightUnitor` at `X` is `prod.lift (𝟙 X) (hT.from X)`. -/
+@[simp]
+lemma prodRightUnitor_inv_app (X : C) :
+    hT.prodRightUnitor.inv.app X = (prod.lift (𝟙 X) (hT.from X) : X ⟶ X ⨯ T) := by
+  rfl
+
 /-- For a terminal object `T`, the projections `T ⨯ X ⟶ X` onto the second factor form a natural
 isomorphism `(T ⨯ -) ≅ 𝟭 C`. -/
 def prodLeftUnitor : prod.functor.obj T ≅ 𝟭 C :=
@@ -49,5 +60,16 @@ def prodLeftUnitor : prod.functor.obj T ≅ 𝟭 C :=
        inv := prod.lift (hT.from X) (𝟙 X)
        hom_inv_id := prod.hom_ext (hT.hom_ext _ _) (by simp) } : T ⨯ X ≅ X))
     fun f ↦ prod.map_snd (𝟙 T) f
+
+/-- The component of `prodLeftUnitor` at `X` is the second projection `T ⨯ X ⟶ X`. -/
+@[simp]
+lemma prodLeftUnitor_hom_app (X : C) : hT.prodLeftUnitor.hom.app X = (prod.snd : T ⨯ X ⟶ X) := by
+  rfl
+
+/-- The inverse component of `prodLeftUnitor` at `X` is `prod.lift (hT.from X) (𝟙 X)`. -/
+@[simp]
+lemma prodLeftUnitor_inv_app (X : C) :
+    hT.prodLeftUnitor.inv.app X = (prod.lift (hT.from X) (𝟙 X) : X ⟶ T ⨯ X) := by
+  rfl
 
 end CategoryTheory.Limits.IsTerminal
