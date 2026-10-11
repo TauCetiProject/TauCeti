@@ -35,7 +35,6 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
   {n : ℕ}
 
 /-- The exterior derivative of a continuous linear differential form is its alternatization. -/
-@[simp]
 lemma extDeriv_eq (ω : E →L[𝕜] E [⋀^Fin n]→L[𝕜] F) (x : E) :
     extDeriv ω x = ContinuousAlternatingMap.alternatizeUncurryFin ω := by
   simp [extDeriv]
