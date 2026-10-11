@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.FarguesFontaine.Window
+public import TauCeti.AlgebraicGeometry.AdicSpace.FarguesFontaine.Window.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Comap
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.RationalOpen
 public import TauCeti.RingTheory.WittVector.Window.Localization
@@ -50,6 +50,8 @@ isomorphism of Huber pairs and induces an isomorphism of pre-adic spaces
 * `TauCeti.FarguesFontaine.range_spaComapLoc_windowNumerators` : the image of `j` is the window.
 * `TauCeti.FarguesFontaine.presentationLimitPreAdicSpaceWindowIso_hom_base_val` : on points, the
   isomorphism is `v ↦ v ∘ e⁻¹` for the ring isomorphism `e : 𝕎 O⟨T/s⟩ ≃+* B^I`.
+* `TauCeti.FarguesFontaine.presentationLimitPreAdicSpaceWindowIso_inv_base_val` : on points, the
+  inverse isomorphism is `w ↦ w ∘ e`.
 
 ## References
 
@@ -237,6 +239,37 @@ theorem presentationLimitPreAdicSpaceWindowIso_hom_base_val [TopologicalSpace (�
   -- unfolding that coercion, hence `erw`
   erw [Category.id_comp, presentationLimitPreAdicSpaceComapIso_hom_base]
   exact spaComap_val _ _ _ _ _ _
+
+/-- On points, the inverse of the window chart `presentationLimitPreAdicSpaceWindowIso` is
+`w ↦ w ∘ e`, the map of adic spectra induced by the ring isomorphism `e : 𝕎 O⟨T/s⟩ ≃+* B^I`. -/
+@[simp]
+theorem presentationLimitPreAdicSpaceWindowIso_inv_base_val [TopologicalSpace (𝕎 O)]
+    [IsTopologicalRing (𝕎 O)] (hI : IsAdic (Ideal.span {(p : 𝕎 O), teichmuller p ϖ}))
+    (P : PairOfDefinition (𝕎 O)) [IsLocalization.Away (windowDenominator p ϖ q q') L]
+    (hden : P.HasDenominatorPower (windowNumerators p ϖ q q') (windowDenominator p ϖ q q') L)
+    (h₁ : ρ₁ ^ q.num = v (algebraMap O K ϖ) ^ q.den)
+    (h₂ : ρ₂ ^ q'.num = v (algebraMap O K ϖ) ^ q'.den) (h₁₂ : ρ₁ ≤ ρ₂)
+    (P' : PairOfDefinition (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)) :
+    letI := P.locUniformSpace (windowNumerators p ϖ q q') (windowDenominator p ϖ q q') L hden
+    letI := P.isUniformAddGroup_locUniformSpace _ _ L hden
+    letI := P.isTopologicalRing_locUniformSpace _ _ L hden
+    ∀ y, ((presentationLimitPreAdicSpaceWindowIso hv hϖ hϖ' hρ₁ hρ₂ hI P hden h₁ h₂ h₁₂
+        P').inv.base y).val =
+      comap (completionLocRingEquivIntervalRing hv hϖ hϖ' hρ₁ hρ₂ hI P hden h₁ h₂ h₁₂ :
+        _ →+* IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) y.val := by
+  let _ := P.locUniformSpace (windowNumerators p ϖ q q') (windowDenominator p ϖ q q') L hden
+  have _ := P.isUniformAddGroup_locUniformSpace (windowNumerators p ϖ q q')
+    (windowDenominator p ϖ q q') L hden
+  have _ := P.isTopologicalRing_locUniformSpace (windowNumerators p ϖ q q')
+    (windowDenominator p ϖ q q') L hden
+  intro y
+  -- `y` is the image of `inv y` under the forward map, which `_hom_base_val` describes
+  set f := presentationLimitPreAdicSpaceWindowIso hv hϖ hϖ' hρ₁ hρ₂ hI P hden h₁ h₂ h₁₂ P'
+  have hy : f.hom.base (f.inv.base y) = y := by
+    rw [← ConcreteCategory.comp_apply, ← PreAdicSpace.comp_base, f.inv_hom_id]
+    rfl
+  conv_rhs => rw [← hy, presentationLimitPreAdicSpaceWindowIso_hom_base_val]
+  rw [← Function.comp_apply (f := comap _), ← comap_comp, RingEquiv.symm_comp, comap_id, id_eq]
 
 end Chart
 
