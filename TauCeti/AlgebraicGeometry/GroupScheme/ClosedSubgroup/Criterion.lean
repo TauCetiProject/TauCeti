@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Basic
-public import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion
+public import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Basic
 public import TauCeti.CategoryTheory.Monoidal.Grp.Subobject
 public import TauCeti.CategoryTheory.Monoidal.Grp.Translation
 public import Mathlib.AlgebraicGeometry.IdealSheaf.Functorial
