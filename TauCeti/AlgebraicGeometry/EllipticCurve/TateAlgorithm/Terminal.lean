@@ -61,6 +61,8 @@ at least `2`.
 * `WeierstrassCurve.exists_isTateTerminal`: **Tate's algorithm terminates.** Over a discrete
   valuation ring with perfect residue field, a minimal equation with nonzero discriminant is carried
   by a change of variables over `R` to an equation on which the algorithm stops.
+* `WeierstrassCurve.isTateTerminal_map_iff`: the stopping conditions transfer along a ring map
+  that reflects divisibility by powers of the uniformiser.
 * `WeierstrassCurve.IsTateTerminal.addVal_Δ_eq`: at a symbol `Iₙ`, the discriminant has valuation
   `n`.
 * `WeierstrassCurve.IsTateTerminal.pow_componentCount_add_one_dvd_Δ`: at an additive symbol with
@@ -163,6 +165,24 @@ theorem isTateTerminal_IIIStar : W.IsTateTerminal ϖ .IIIStar ↔
 theorem isTateTerminal_IIStar : W.IsTateTerminal ϖ .IIStar ↔
     ϖ ∣ W.a₁ ∧ ϖ ^ 2 ∣ W.a₂ ∧ ϖ ^ 3 ∣ W.a₃ ∧ ϖ ^ 4 ∣ W.a₄ ∧ ϖ ^ 5 ∣ W.a₆ ∧ ¬ ϖ ^ 6 ∣ W.a₆ :=
   Iff.rfl
+
+/-- **The stopping conditions are read along a ring map that reflects divisibility by powers of
+the uniformiser.** If `f ϖ ^ n ∣ f x ↔ ϖ ^ n ∣ x` for all `n` and `x`, then Tate's algorithm stops
+on `W.map f` with uniformiser `f ϖ` exactly where it stops on `W` with uniformiser `ϖ`. For
+instance the cast from `ℤ` to a discrete valuation ring with uniformiser a prime `p` reflects
+divisibility by powers of `p` (`Nat.Prime.pow_dvd_intCast_iff`), so the symbol of an integral
+equation over `ℤ` can be computed over `ℤ`. -/
+theorem isTateTerminal_map_iff {S : Type*} [CommRing S] (f : R →+* S)
+    (hf : ∀ (n : ℕ) (x : R), f ϖ ^ n ∣ f x ↔ ϖ ^ n ∣ x) {s : ReductionSymbol} :
+    (W.map f).IsTateTerminal (f ϖ) s ↔ W.IsTateTerminal ϖ s := by
+  have hf₁ (x : R) : f ϖ ∣ f x ↔ ϖ ∣ x := by simpa using hf 1 x
+  have hd : (Cubic.mk 1 (f W.a₂) (f W.a₄) (f W.a₆)).discr =
+      f (Cubic.mk 1 W.a₂ W.a₄ W.a₆).discr := by
+    simp [Cubic.discr, map_ofNat]
+  have hq : discrim (f W.a₂) (f W.a₄) (f W.a₆) = f (discrim W.a₂ W.a₄ W.a₆) := by
+    simp [discrim, map_ofNat]
+  rcases s with (_ | n) | _ | _ | _ | (_ | n) | _ | _ | _ <;>
+    simp [IsTateTerminal, hd, hq, hf, hf₁]
 
 /-- At a stopping symbol other than `Iₙ` with `m` components, `ϖ^(m+1)` divides the
 discriminant. This is the bound that makes the algorithmic Ogg exponent at least `2` there. -/
