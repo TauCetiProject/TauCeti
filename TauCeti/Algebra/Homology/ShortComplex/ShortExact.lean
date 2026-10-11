@@ -78,7 +78,6 @@ lemma kernelCokernelCompSequence_snakeInput_L₃_shortExact [Mono b] :
 /-- The morphism of short complexes from `Y ⟶ Z ⟶ cokernel b` to
 `cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b` given by the cokernel projections of `a` and
 `a ≫ b` and the identity of `cokernel b`. -/
-@[expose, simps]
 noncomputable def cokernelSequenceToSnakeInputL₃ :
     ShortComplex.cokernelSequence b ⟶ (kernelCokernelCompSequence.snakeInput a b).L₃ where
   τ₁ := cokernel.π a
@@ -86,6 +85,20 @@ noncomputable def cokernelSequenceToSnakeInputL₃ :
   τ₃ := 𝟙 _
   comm₁₂ := cokernel.π_desc _ _ _
   comm₂₃ := (cokernel.π_desc _ _ _).trans ((Category.id_comp _).trans (Category.comp_id _).symm)
+
+@[simp]
+lemma cokernelSequenceToSnakeInputL₃_τ₁ :
+    (cokernelSequenceToSnakeInputL₃ a b).τ₁ = cokernel.π a := by
+  rw [cokernelSequenceToSnakeInputL₃]
+
+@[simp]
+lemma cokernelSequenceToSnakeInputL₃_τ₂ :
+    (cokernelSequenceToSnakeInputL₃ a b).τ₂ = cokernel.π (a ≫ b) := by
+  rw [cokernelSequenceToSnakeInputL₃]
+
+@[simp]
+lemma cokernelSequenceToSnakeInputL₃_τ₃ : (cokernelSequenceToSnakeInputL₃ a b).τ₃ = 𝟙 _ := by
+  rw [cokernelSequenceToSnakeInputL₃]
 
 end Comp
 
