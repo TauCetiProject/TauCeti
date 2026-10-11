@@ -35,6 +35,15 @@ open AlgebraicGeometry
 
 variable (k : Type*) [Field k]
 
+/-- The quintic `x⁵ - 1` has odd degree over every field. -/
+theorem odd_natDegree : Odd (X ^ 5 - C 1 : k[X]).natDegree := by
+  rw [natDegree_X_pow_sub_C]
+  decide
+
+/-- The quintic `x⁵ - 1` is squarefree in characteristic other than five. -/
+theorem squarefree (h5 : (5 : k) ≠ 0) : Squarefree (X ^ 5 - C 1 : k[X]) :=
+  (separable_X_pow_sub_C (1 : k) h5 one_ne_zero).squarefree
+
 /-- The quadratic equation over `k(x)` defining `y² = x⁵ - 1`. -/
 def equationPolynomial : (RatFunc k)[X] :=
   X ^ 2 - C (algebraMap k[X] (RatFunc k) (X ^ 5 - C 1))
@@ -90,8 +99,8 @@ theorem isFunctionField : IsFunctionField k (FunctionField k) :=
 /-- **The genus of `y² = x⁵ - 1` is two** in characteristic other than two and five. -/
 theorem genus_eq_two (h2 : (2 : k) ≠ 0) (h5 : (5 : k) ≠ 0) :
     genus k (FunctionField k) = 2 := by
-  have h := genus_eq_of_sq_eq h2 (separable_X_pow_sub_C (1 : k) h5 one_ne_zero).squarefree
-    (by rw [natDegree_X_pow_sub_C]; decide) (adjoin_genY_eq_top k) (genY_sq k)
+  have h := genus_eq_of_sq_eq h2 (squarefree k h5)
+    (odd_natDegree k).pos (adjoin_genY_eq_top k) (genY_sq k)
   simpa only [natDegree_X_pow_sub_C, Nat.reduceSub, Nat.reduceDiv] using h
 
 /-- The `y`-coordinate is nonzero. -/
@@ -121,7 +130,7 @@ instance [NeZero (2 : k)] : Algebra.IsSeparable (RatFunc k) (FunctionField k) :=
 theorem isIntegrallyClosedIn :
     IsIntegrallyClosedIn k (FunctionField k) := by
   exact isIntegrallyClosedIn_of_sq_eq_of_odd
-    (by rw [natDegree_X_pow_sub_C]; decide) (adjoin_genY_eq_top k) (genY_sq k)
+    (odd_natDegree k) (adjoin_genY_eq_top k) (genY_sq k)
 
 section Different
 
@@ -131,8 +140,7 @@ variable [NeZero (2 : k)]
 theorem degree_different (h5 : (5 : k) ≠ 0) :
     Divisor.degree (Divisor.different k (FunctionField k) (IsFunctionField.ratFunc k)) = 6 := by
   have h := degree_different_ratFunc_of_sq_eq (NeZero.ne (2 : k))
-    (separable_X_pow_sub_C (1 : k) h5 one_ne_zero).squarefree
-    (by rw [natDegree_X_pow_sub_C]; decide)
+    (squarefree k h5) (odd_natDegree k).pos
     (adjoin_genY_eq_top k) (genY_sq k)
   simp only [natDegree_X_pow_sub_C] at h
   norm_num at h
@@ -149,8 +157,8 @@ theorem exists_different_eq_ofFinset (h5 : (5 : k) ≠ 0) :
             WeilDivisor.ofPoint P ∧
       Divisor.degree (Divisor.zeros (isFunctionField k)
         (Units.mk0 (genY k) (genY_ne_zero k))) = 5 := by
-  have hf := (separable_X_pow_sub_C (1 : k) h5 one_ne_zero).squarefree
-  have hodd : Odd (X ^ 5 - C 1 : k[X]).natDegree := by rw [natDegree_X_pow_sub_C]; decide
+  have hf := squarefree k h5
+  have hodd := odd_natDegree k
   obtain ⟨P, hP, hdegree, -⟩ := Place.existsUnique_restrict_eq_infty_of_sq_eq_of_odd
     hodd (adjoin_genY_eq_top k) (genY_sq k)
   have hgen : (RatFunc k)⟮(Units.mk0 (genY k) (genY_ne_zero k) : FunctionField k)⟯ = ⊤ :=

@@ -43,6 +43,9 @@ This file computes the invariants of `F / k` from the ramification of `F / k(x)`
   `2g - 2 = -2 · 2 + deg Diff(F / k(x))` gives `g = ⌊(m - 1) / 2⌋`;
 * for `m ≥ 5`, `F / k` is a hyperelliptic function field.
 
+For odd `m`, the place at infinity is totally ramified with a unique rational place above it
+in every characteristic, without squarefreeness; these models also have exact constants.
+
 The local input is the ramification of the radical extension `y ^ 2 = f` at a place `P` of `k(x)`
 (`TauCeti.Place.ramificationIdx_eq_of_pow_eq_of_prime` and
 `TauCeti.Place.differentExponent_eq_of_pow_eq_of_prime`): the places above `P` are ramified, with
@@ -64,6 +67,10 @@ a totally ramified place acquires no new constants
   of `F / k(x)` and exactness of the constant field `k`.
 * `TauCeti.isIntegrallyClosedIn_of_sq_eq_of_odd`: odd-degree models have exact constants
   without squarefreeness or characteristic assumptions.
+* `TauCeti.Place.isTotallyRamified_of_sq_eq_of_odd` and
+  `TauCeti.Place.existsUnique_restrict_eq_infty_of_sq_eq_of_odd`: total ramification at infinity
+  and the unique rational place above it for odd-degree models, without squarefreeness or
+  characteristic assumptions.
 * `TauCeti.Place.one_lt_ramificationIdx_iff_of_sq_eq`: the ramified places.
 * `TauCeti.degree_different_ratFunc_of_sq_eq`: `deg Diff(F / k(x)) = m + (m mod 2)`.
 * `TauCeti.genus_eq_of_sq_eq`: **the genus of `y ^ 2 = f(x)` is `⌊(m - 1) / 2⌋`**.

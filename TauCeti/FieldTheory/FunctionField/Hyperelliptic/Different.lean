@@ -19,8 +19,8 @@ of `y` plus that place. In particular, every zero of `y` occurs with coefficient
 identifies the different itself, not just its degree, and applies over arbitrary constant
 fields, without requiring the roots of `f` to be rational.
 
-This gives an explicit branch divisor for odd-degree hyperelliptic models, including the
-genus-two model `y² = x⁵ - 1`.
+This gives an explicit ramification divisor (the different) for odd-degree hyperelliptic
+models, including the genus-two model `y² = x⁵ - 1`.
 
 ## References
 
