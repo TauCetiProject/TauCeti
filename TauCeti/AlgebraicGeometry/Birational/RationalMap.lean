@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Birational.RationalMap
 public import Mathlib.AlgebraicGeometry.Morphisms.Proper
 public import Mathlib.AlgebraicGeometry.ValuativeCriterion
 public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
+public import TauCeti.AlgebraicGeometry.Morphisms.Separated
 
 /-!
 # Rational maps into proper schemes from schemes with valuation rings as local rings
@@ -104,8 +105,7 @@ theorem RationalMap.fromSpecStalk_genericPoint_toHom [IsIntegral X] [Y.IsSeparat
     (hf : f.domain = ⊤) :
     X.fromSpecStalk (genericPoint X) ≫ f.toHom hf = f.fromFunctionField := by
   rw [fromSpecStalk_toHom]
-  conv_rhs => rw [← f.toRationalMap_toPartialMap]
-  rfl
+  conv_rhs => rw [← f.toRationalMap_toPartialMap, fromFunctionField_toRationalMap]
 
 /-- The morphism `RationalMap.toHom` represents the rational map. -/
 @[simp]
@@ -174,18 +174,13 @@ section Proper
 
 variable [X.Over S] [Y.Over S] [IsIntegral X] [S.IsSeparated] [IsProper (Y ↘ S)]
 
-include S in
-/-- A scheme proper over a separated base is separated. -/
-private theorem isSeparated_of_isProper : Y.IsSeparated :=
-  ⟨by rw [← terminal.comp_from (Y ↘ S)]; infer_instance⟩
-
 /-- **A morphism from the generic point extends to the whole scheme**: for an integral `S`-scheme
 `X` whose local rings are valuation rings and an `S`-scheme `Y` proper over a separated base `S`,
 the `S`-morphism `X ⟶ Y` extending an `S`-morphism `φ : Spec K(X) ⟶ Y`
 (`fromSpecStalk_homOfFunctionField`), which is unique (`eq_homOfFunctionField_iff`). -/
 noncomputable def homOfFunctionField (hX : ∀ x : X, ValuationRing (X.presheaf.stalk x))
     (φ : Spec X.functionField ⟶ Y) (hφ : φ ≫ Y ↘ S = X.fromSpecStalk _ ≫ X ↘ S) : X ⟶ Y :=
-  have := isSeparated_of_isProper (Y := Y) (S := S)
+  have := Scheme.IsSeparated.of_isSeparated (Y ↘ S)
   (RationalMap.ofFunctionField (X ↘ S) (Y ↘ S) φ hφ).toHom
     (RationalMap.domain_ofFunctionField_eq_top hX φ hφ)
 
@@ -196,7 +191,7 @@ variable (hX : ∀ x : X, ValuationRing (X.presheaf.stalk x)) (φ : Spec X.funct
 @[reassoc (attr := simp)]
 theorem fromSpecStalk_homOfFunctionField :
     X.fromSpecStalk (genericPoint X) ≫ homOfFunctionField hX φ hφ = φ := by
-  have := isSeparated_of_isProper (Y := Y) (S := S)
+  have := Scheme.IsSeparated.of_isSeparated (Y ↘ S)
   rw [homOfFunctionField, RationalMap.fromSpecStalk_genericPoint_toHom,
     RationalMap.fromFunctionField_ofFunctionField]
 
