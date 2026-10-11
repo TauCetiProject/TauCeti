@@ -63,34 +63,6 @@ variable {𝕜 E F G H : Type*} [NontriviallyNormedField 𝕜]
   [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
   [SeminormedAddCommGroup G] [NormedSpace 𝕜 G] [SeminormedAddCommGroup H] [NormedSpace 𝕜 H]
 
-section Rank
-
-/-! ### Rank bounds for sums and compositions of bounded maps -/
-
-private theorem rank_zero_le (n : ℕ) : (0 : E →L[𝕜] F).rank ≤ n := by
-  simp
-
-private theorem rank_add_le_add {R₁ R₂ : E →L[𝕜] F} {m n : ℕ} (h₁ : R₁.rank ≤ m)
-    (h₂ : R₂.rank ≤ n) : (R₁ + R₂).rank ≤ ↑(m + n) := by
-  rw [Nat.cast_add]
-  exact (LinearMap.rank_add_le (R₁ : E →ₗ[𝕜] F) R₂).trans (add_le_add h₁ h₂)
-
-private theorem rank_comp_le_left {R : F →L[𝕜] G} {n : ℕ} (h : R.rank ≤ n) (B : E →L[𝕜] F) :
-    (R.comp B).rank ≤ n :=
-  (LinearMap.rank_comp_le_left (B : E →ₗ[𝕜] F) (R : F →ₗ[𝕜] G)).trans h
-
-private theorem rank_comp_le_right (A : F →L[𝕜] G) {R : E →L[𝕜] F} {n : ℕ} (h : R.rank ≤ n) :
-    (A.comp R).rank ≤ n := by
-  have := (LinearMap.lift_rank_comp_le_right (R : E →ₗ[𝕜] F) (A : F →ₗ[𝕜] G)).trans
-    (Cardinal.lift_le.mpr h)
-  rwa [Cardinal.lift_natCast, Cardinal.lift_le_nat_iff] at this
-
-private theorem rank_smul_le (c : 𝕜) {R : E →L[𝕜] F} {n : ℕ} (h : R.rank ≤ n) :
-    (c • R).rank ≤ n :=
-  (Submodule.rank_mono (LinearMap.range_smul_le_range (R : E →ₗ[𝕜] F) c)).trans h
-
-end Rank
-
 /-! ### The approximation numbers -/
 
 /-- The `n`-th approximation number `aₙ(T)` of a bounded linear map `T`: the infimum of the
@@ -149,7 +121,7 @@ theorem singularValue_eq_nnnorm_sub {T R : E →L[𝕜] F} {n : ℕ} (hR : R.ran
 
 /-- The approximation numbers are bounded by the operator norm. -/
 theorem singularValue_le_nnnorm (T : E →L[𝕜] F) (n : ℕ) : T.singularValue n ≤ ‖T‖₊ := by
-  simpa using T.singularValue_le_nnnorm_sub (rank_zero_le n)
+  simpa using T.singularValue_le_nnnorm_sub (R := 0) (by simp)
 
 /-- **Zeroth approximation number.** `a₀(T) = ‖T‖`, since only the zero map has rank `0`. -/
 @[simp]
@@ -173,7 +145,9 @@ theorem zero_singularValue (n : ℕ) : (0 : E →L[𝕜] F).singularValue n = 0 
 theorem singularValue_add_index_le (S T : E →L[𝕜] F) (m n : ℕ) :
     (S + T).singularValue (m + n) ≤ S.singularValue m + T.singularValue n :=
   NNReal.le_iInf_add_iInf fun R₁ R₂ ↦
-    ((S + T).singularValue_le_nnnorm_sub (rank_add_le_add R₁.2 R₂.2)).trans <| by
+    ((S + T).singularValue_le_nnnorm_sub (R := R₁.1 + R₂.1) <| by
+      rw [Nat.cast_add]
+      exact (LinearMap.rank_add_le _ _).trans (add_le_add R₁.2 R₂.2)).trans <| by
       rw [add_sub_add_comm]
       exact nnnorm_add_le _ _
 
@@ -208,8 +182,11 @@ theorem singularValue_comp_le_left (A : F →L[𝕜] G) (T : E →L[𝕜] F) (n 
     (A.comp T).singularValue n ≤ ‖A‖₊ * T.singularValue n := by
   unfold singularValue
   rw [NNReal.mul_iInf]
-  refine le_ciInf fun R ↦ ((A.comp T).singularValue_le_nnnorm_sub
-    (rank_comp_le_right A R.2)).trans ?_
+  refine le_ciInf fun R ↦ ?_
+  have hR := (LinearMap.lift_rank_comp_le_right (R.1 : E →ₗ[𝕜] F) (A : F →ₗ[𝕜] G)).trans
+    (Cardinal.lift_le.mpr R.2)
+  rw [Cardinal.lift_natCast, Cardinal.lift_le_nat_iff] at hR
+  refine ((A.comp T).singularValue_le_nnnorm_sub (R := A.comp R.1) hR).trans ?_
   rw [← comp_sub]
   exact opNNNorm_comp_le _ _
 
@@ -218,8 +195,8 @@ theorem singularValue_comp_le_right (T : F →L[𝕜] G) (B : E →L[𝕜] F) (n
     (T.comp B).singularValue n ≤ T.singularValue n * ‖B‖₊ := by
   unfold singularValue
   rw [NNReal.iInf_mul]
-  refine le_ciInf fun R ↦ ((T.comp B).singularValue_le_nnnorm_sub
-    (rank_comp_le_left R.2 B)).trans ?_
+  refine le_ciInf fun R ↦ ((T.comp B).singularValue_le_nnnorm_sub (R := R.1.comp B)
+    ((LinearMap.rank_comp_le_left _ _).trans R.2)).trans ?_
   rw [← sub_comp]
   exact opNNNorm_comp_le _ _
 
@@ -240,8 +217,13 @@ theorem singularValue_comp_add_le_mul (S : F →L[𝕜] G) (T : E →L[𝕜] F) 
   rw [NNReal.mul_iInf]
   refine le_ciInf fun R₂ ↦ ?_
   -- `S T - (R₁ T + (S - R₁) R₂) = (S - R₁)(T - R₂)`, and the subtracted map has rank `≤ m + n`.
-  have hrank : (R₁.1.comp T + (S - R₁.1).comp R₂.1).rank ≤ ↑(m + n) :=
-    rank_add_le_add (rank_comp_le_left R₁.2 T) (rank_comp_le_right _ R₂.2)
+  have h₂ := (LinearMap.lift_rank_comp_le_right (R₂.1 : E →ₗ[𝕜] F)
+    ((S - R₁.1 : F →L[𝕜] G) : F →ₗ[𝕜] G)).trans (Cardinal.lift_le.mpr R₂.2)
+  rw [Cardinal.lift_natCast, Cardinal.lift_le_nat_iff] at h₂
+  have hrank : (R₁.1.comp T + (S - R₁.1).comp R₂.1).rank ≤ ↑(m + n) := by
+    rw [Nat.cast_add]
+    exact (LinearMap.rank_add_le _ _).trans
+      (add_le_add ((LinearMap.rank_comp_le_left _ _).trans R₁.2) h₂)
   refine ((S.comp T).singularValue_le_nnnorm_sub hrank).trans ?_
   have : S.comp T - (R₁.1.comp T + (S - R₁.1).comp R₂.1) = (S - R₁.1).comp (T - R₂.1) := by
     simp only [comp_sub, sub_comp]
@@ -256,7 +238,8 @@ theorem singularValue_smul (c : 𝕜) (T : E →L[𝕜] F) (n : ℕ) :
   have hle (c : 𝕜) (T : E →L[𝕜] F) : (c • T).singularValue n ≤ ‖c‖₊ * T.singularValue n := by
     unfold singularValue
     rw [NNReal.mul_iInf]
-    refine le_ciInf fun R ↦ ((c • T).singularValue_le_nnnorm_sub (rank_smul_le c R.2)).trans ?_
+    refine le_ciInf fun R ↦ ((c • T).singularValue_le_nnnorm_sub (R := c • R.1)
+      ((Submodule.rank_mono (LinearMap.range_smul_le_range _ c)).trans R.2)).trans ?_
     rw [← smul_sub]
     exact nnnorm_smul_le _ _
   refine (hle c T).antisymm ?_
