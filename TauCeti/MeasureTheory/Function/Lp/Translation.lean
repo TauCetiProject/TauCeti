@@ -36,7 +36,7 @@ this continuity for a `C¹` function, and needs no integrability of the function
   of `Lᵖ`.
 * `MeasureTheory.Measure.coeFn_translateLp`, `MeasureTheory.MemLp.coeFn_translateLp_toLp`:
   translation is almost everywhere precomposition by addition.
-* `MeasureTheory.Measure.compLpL_translateLp`: translation commutes with postcomposition by a
+* `ContinuousLinearMap.compLpL_translateLp`: translation commutes with postcomposition by a
   continuous linear map.
 * `MeasureTheory.Measure.translateLp_zero`, `MeasureTheory.Measure.translateLp_symm`,
   `MeasureTheory.Measure.translateLp_add`: translation is an action of the additive group of
@@ -114,8 +114,8 @@ theorem coeFn_translateLp (h : E) (f : Lp F p mu) :
   exact Lp.coeFn_compMeasurePreservingₗᵢEquiv ℝ _ _ _ f
 
 /-- Translation commutes with postcomposition by a continuous linear map. -/
-theorem compLpL_translateLp {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-    (L : F →L[ℝ] G) (h : E) (f : Lp F p mu) :
+theorem _root_.ContinuousLinearMap.compLpL_translateLp {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] (L : F →L[ℝ] G) (h : E) (f : Lp F p mu) :
     L.compLpL p mu (translateLp mu p h f) = translateLp mu p h (L.compLpL p mu f) := by
   apply Lp.ext
   filter_upwards [L.coeFn_compLpL (translateLp mu p h f), coeFn_translateLp (mu := mu) h f,
