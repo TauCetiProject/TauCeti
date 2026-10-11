@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Basic
 public import Mathlib.RingTheory.Localization.Away.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Basic
 
 /-!
 # Tate normal form
@@ -41,7 +41,8 @@ change (`WeierstrassCurve.toTateNormalForm_map`).
 Finally, `WeierstrassCurve.UniversalTate.curve` is the Tate normal form with indeterminate
 coefficients over `ℤ[A, B][Δ⁻¹]`. It is elliptic, and every elliptic Tate normal form over a
 commutative ring is its base change along exactly one ring homomorphism
-(`WeierstrassCurve.UniversalTate.map_lift`, `WeierstrassCurve.UniversalTate.eq_lift`).
+(`WeierstrassCurve.UniversalTate.map_lift`, `WeierstrassCurve.UniversalTate.eq_lift`), naturally in
+the base ring (`WeierstrassCurve.UniversalTate.comp_lift`).
 
 ## Main definitions
 
@@ -63,6 +64,17 @@ commutative ring is its base change along exactly one ring homomorphism
 * `WeierstrassCurve.existsUnique_variableChange_tateNormalForm`: existence and uniqueness together.
 * `WeierstrassCurve.exists_variableChange_tateNormalForm_iff`: for elliptic `W`, such a change of
   variables exists exactly when `(x, y)` lies on `W` and `ψ₂` and `Ψ₃` are units there.
+
+## Provenance
+
+The `UniversalTate` namespace adapts the construction of the universal elliptic Weierstrass curve in
+`TauCeti/AlgebraicGeometry/EllipticCurve/Universal.lean` to two coefficients: `UniversalTate.Ring`
+is `Localization.Away` of the discriminant as `Universal.EllipticRing` is, `UniversalTate.curve` is
+the base change of the polynomial curve as `Universal.ellipticCurve` is, `Ring.ringHom_ext` follows
+`Universal.EllipticRing.ringHom_ext`, and `lift`, `lift_comp_algebraMap`, `lift_algebraMap`,
+`map_lift`, `comp_lift` and `eq_lift` follow the classifying homomorphism `specializeElliptic` and
+its lemmas `specializeElliptic_comp_algebraMap`, `specializeElliptic_algebraMap`,
+`map_specializeElliptic`, `specializeElliptic_map` and `specializeElliptic_map_ellipticCurve`.
 
 ## References
 
@@ -143,11 +155,6 @@ theorem map_tateNormalForm {A : Type*} [CommRing A] (φ : R →+* A) :
 
 variable (W : WeierstrassCurve R)
 
-/-- The `3`-division polynomial `Ψ₃ = 3X⁴ + b₂X³ + 3b₄X² + 3b₆X + b₈` at a point. -/
-theorem eval_Ψ₃ (x : R) :
-    W.Ψ₃.eval x = 3 * x ^ 4 + W.b₂ * x ^ 3 + 3 * W.b₄ * x ^ 2 + 3 * W.b₆ * x + W.b₈ := by
-  simp [Ψ₃]
-
 /-- On the Tate normal form, the `2`-division polynomial `ψ₂` takes the value `b` at `(0, 0)`. -/
 @[simp]
 theorem evalEval_ψ₂_tateNormalForm_zero : (tateNormalForm a b).ψ₂.evalEval 0 0 = b := by
@@ -158,24 +165,7 @@ theorem evalEval_ψ₂_tateNormalForm_zero : (tateNormalForm a b).ψ₂.evalEval
 theorem eval_Ψ₃_tateNormalForm_zero : (tateNormalForm a b).Ψ₃.eval 0 = b ^ 3 := by
   simp [eval_Ψ₃]
 
-/-- After a change of variables `C`, the invariant `b₈` is `u⁻⁸ Ψ₃(r)`. -/
-theorem variableChange_b₈_eq_eval_Ψ₃ (C : VariableChange R) :
-    (C • W).b₈ = C.u⁻¹ ^ 8 * W.Ψ₃.eval C.r := by
-  rw [variableChange_b₈, eval_Ψ₃]
-  ring
-
 variable {W} {x y : R}
-
-/-- The algebraic identity behind the normalisation `a₂ = a₃`: if `(x, y)` lies on `W` and
-`sψ₂ = a₄ + 2a₂x - a₁y + 3x²`, where `ψ₂ = 2y + a₁x + a₃`, then `(a₂ - sa₁ + 3x - s²) ψ₂² = Ψ₃(x)`.
--/
-private theorem a₂_mul_ψ₂_sq (h : W.toAffine.Equation x y) {s : R}
-    (hs : s * (2 * y + W.a₁ * x + W.a₃) = W.a₄ + 2 * x * W.a₂ - y * W.a₁ + 3 * x ^ 2) :
-    (W.a₂ - s * W.a₁ + 3 * x - s ^ 2) * (2 * y + W.a₁ * x + W.a₃) ^ 2 = W.Ψ₃.eval x := by
-  rw [Affine.equation_iff] at h
-  rw [eval_Ψ₃, b₂, b₄, b₆, b₈]
-  linear_combination (-W.a₁ * (2 * y + W.a₁ * x + W.a₃) - (s * (2 * y + W.a₁ * x + W.a₃) +
-    (W.a₄ + 2 * x * W.a₂ - y * W.a₁ + 3 * x ^ 2))) * hs + (W.a₁ ^ 2 + 4 * W.a₂ + 12 * x) * h
 
 variable (hψ₂ : IsUnit (W.ψ₂.evalEval x y)) (hΨ₃ : IsUnit (W.Ψ₃.eval x))
 
@@ -217,7 +207,7 @@ theorem toTateNormalForm_smul (h : W.toAffine.Equation x y) :
       W.a₄ + 2 * x * W.a₂ - y * W.a₁ + 3 * x ^ 2 := by
     rw [toTateNormalForm_s]
     linear_combination (W.a₄ + 2 * x * W.a₂ - y * W.a₁ + 3 * x ^ 2) * hψ
-  have hm := a₂_mul_ψ₂_sq h hs
+  have hm := a₂_mul_ψ₂_sq_eq_eval_Ψ₃ h hs
   have hu : (↑(toTateNormalForm hψ₂ hΨ₃).u⁻¹ : R) = W.Ψ₃.eval x * ↑hψ₂.unit⁻¹ ^ 3 := by
     simp
   rw [Affine.equation_iff] at h
@@ -259,7 +249,7 @@ theorem eq_toTateNormalForm {C : VariableChange R} (hr : C.r = x) (ht : C.t = y)
   have hmw : W.a₂ - C.s * W.a₁ + 3 * x - C.s ^ 2 = ↑C.u⁻¹ * (2 * y + W.a₁ * x + W.a₃) :=
     (hw.pow 2).mul_left_cancel (by linear_combination h₂)
   have hΨ : W.Ψ₃.eval x = ↑C.u⁻¹ * (2 * y + W.a₁ * x + W.a₃) ^ 3 := by
-    rw [← a₂_mul_ψ₂_sq h hs, hmw]
+    rw [← a₂_mul_ψ₂_sq_eq_eval_Ψ₃ h hs, hmw]
     ring
   ext : 1
   · -- `u (Ψ₃/ψ₂³) = 1`, using `Ψ₃ = u⁻¹ψ₂³` (`hΨ`)
@@ -302,18 +292,29 @@ theorem exists_variableChange_tateNormalForm_iff [W.IsElliptic] :
   refine ⟨?_, ?_, isUnit_of_mul_isUnit_right (h₈ ▸ hb.pow 3)⟩
   · rw [Affine.equation_iff]
     linear_combination -h₆
-  · rw [ψ₂, Affine.evalEval_polynomialY,
-      show 2 * y + W.a₁ * x + W.a₃ = W.a₃ + x * W.a₁ + 2 * y by ring]
-    exact isUnit_of_mul_isUnit_right (h₃ ▸ hb)
+  · -- `h₃` gives `u⁻³ (a₃ + x a₁ + 2y) = b`, a unit; the factor is `ψ₂(x, y)` up to reordering
+    rw [ψ₂, Affine.evalEval_polynomialY]
+    convert isUnit_of_mul_isUnit_right (h₃ ▸ hb) using 1
+    ring
 
 /-- **Tate normal form commutes with base change.** The image of `toTateNormalForm` under a ring
-homomorphism `φ` is the change of variables to Tate normal form of `W.map φ` at `(φ x, φ y)`. -/
-theorem toTateNormalForm_map {A : Type*} [CommRing A] (φ : R →+* A) (h : W.toAffine.Equation x y)
-    (hψ₂ : IsUnit (W.ψ₂.evalEval x y)) (hΨ₃ : IsUnit (W.Ψ₃.eval x))
-    (hψ₂' : IsUnit ((W.map φ).ψ₂.evalEval (φ x) (φ y))) (hΨ₃' : IsUnit ((W.map φ).Ψ₃.eval (φ x))) :
-    (toTateNormalForm hψ₂ hΨ₃).map φ = toTateNormalForm hψ₂' hΨ₃' :=
-  eq_toTateNormalForm hψ₂' hΨ₃' (by simp [VariableChange.map]) (by simp [VariableChange.map]) <| by
-    rw [map_variableChange, toTateNormalForm_smul hψ₂ hΨ₃ h, map_tateNormalForm]
+homomorphism `φ` is the change of variables to Tate normal form of `W.map φ` at `(φ x, φ y)`, where
+`ψ₂` and `Ψ₃` are again units since they are the images under `φ` of their values on `W`. -/
+theorem toTateNormalForm_map {A : Type*} [CommRing A] (φ : R →+* A) :
+    (toTateNormalForm hψ₂ hΨ₃).map φ =
+      toTateNormalForm (W := W.map φ) (x := φ x) (y := φ y)
+        (by rw [map_ψ₂, Polynomial.map_mapRingHom_evalEval]; exact hψ₂.map φ)
+        (by rw [map_Ψ₃, Polynomial.eval_map_apply]; exact hΨ₃.map φ) := by
+  generalize_proofs hψ₂' hΨ₃'
+  have e₂ : Units.map φ hψ₂.unit = hψ₂'.unit :=
+    Units.ext <| by simp [map_ψ₂, Polynomial.map_mapRingHom_evalEval]
+  have e₃ : Units.map φ hΨ₃.unit = hΨ₃'.unit := Units.ext <| by simp [map_Ψ₃]
+  ext : 1
+  · simp only [VariableChange.map, toTateNormalForm_u, map_inv, map_mul, map_pow, e₂, e₃]
+  · rfl
+  · simp only [VariableChange.map, toTateNormalForm_s, ← e₂, Units.coe_map_inv,
+      MonoidHom.coe_ofClass, map_add, map_sub, map_mul, map_pow, map_ofNat, map_a₁, map_a₂, map_a₄]
+  · rfl
 
 /-! ### The universal Tate normal form over `ℤ[A, B][Δ⁻¹]` -/
 
@@ -370,6 +371,20 @@ noncomputable def lift (h : IsUnit (tateNormalForm a b).Δ) : Ring →+* R :=
     (g := MvPolynomial.eval₂Hom (Int.castRingHom R) ![a, b]) <| by
     rwa [← map_Δ, map_polyCurve]
 
+/-- Restricted to the polynomial ring `ℤ[A, B]`, the classifying homomorphism substitutes `a` and
+`b` for the indeterminates. Use this shape when composing ring maps and `lift_algebraMap` when
+rewriting underneath an application. -/
+theorem lift_comp_algebraMap (h : IsUnit (tateNormalForm a b).Δ) :
+    (lift h).comp (algebraMap (MvPolynomial (Fin 2) ℤ) Ring) =
+      MvPolynomial.eval₂Hom (Int.castRingHom R) ![a, b] :=
+  IsLocalization.Away.lift_comp ..
+
+/-- The pointwise form of `lift_comp_algebraMap`. -/
+theorem lift_algebraMap (h : IsUnit (tateNormalForm a b).Δ) (p : MvPolynomial (Fin 2) ℤ) :
+    lift h (algebraMap (MvPolynomial (Fin 2) ℤ) Ring p) =
+      MvPolynomial.eval₂Hom (Int.castRingHom R) ![a, b] p :=
+  IsLocalization.Away.lift_eq ..
+
 @[simp]
 theorem lift_algebraMap_X_zero (h : IsUnit (tateNormalForm a b).Δ) :
     lift h (algebraMap (MvPolynomial (Fin 2) ℤ) Ring (X 0)) = a := by
@@ -385,6 +400,14 @@ homomorphism. -/
 @[simp]
 theorem map_lift (h : IsUnit (tateNormalForm a b).Δ) : curve.map (lift h) = tateNormalForm a b := by
   simp [baseChange]
+
+/-- The classifying homomorphism is natural in the base ring: followed by a ring homomorphism
+`φ : R →+* S`, the classifying homomorphism of `Y² + aXY + bY = X³ + bX²` is that of its base change
+`Y² + φ(a)XY + φ(b)Y = X³ + φ(b)X²`, whose discriminant is the unit `φ(Δ)`. -/
+theorem comp_lift {S : Type*} [CommRing S] (φ : R →+* S) (h : IsUnit (tateNormalForm a b).Δ) :
+    φ.comp (lift h) = lift (a := φ a) (b := φ b)
+      (by rw [← map_tateNormalForm, map_Δ]; exact h.map φ) := by
+  ext <;> simp
 
 /-- The classifying homomorphism is unique: a ring homomorphism out of `ℤ[A, B][Δ⁻¹]` along which
 the universal Tate normal form becomes `Y² + aXY + bY = X³ + bX²` is `lift`. -/
