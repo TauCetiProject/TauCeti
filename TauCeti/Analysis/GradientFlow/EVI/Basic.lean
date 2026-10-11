@@ -45,6 +45,8 @@ For a lower semicontinuous energy, the results below are the basic structural pr
 
 ## Main results
 
+* `TauCeti.IsEVISolution.comp_add_const`: a time translate `t ↦ u (t + s)`, `s ≥ 0`, of a
+  solution is a solution.
 * `TauCeti.IsEVISolution.antitoneOn`: the energy is nonincreasing along a solution.
 * `TauCeti.IsEVISolution.exp_mul_dist_sq_sub_le`: the integrated form of the evolution variational
   inequality.
@@ -112,6 +114,42 @@ theorem mono (h : IsEVISolution lam φ u) (hlam : lam' ≤ lam) : IsEVISolution 
   apply_ne_bot := h.apply_ne_bot
   limsup_slope_add_le hy _ ht := (add_le_add_right (EReal.coe_le_coe_iff.2 <|
     mul_le_mul_of_nonneg_right hlam (by positivity)) _).trans (h.limsup_slope_add_le hy ht)
+
+/-- Being an `EVI_λ` solution depends only on the values of the curve at nonnegative times. -/
+theorem congr (h : IsEVISolution lam φ u) (huv : EqOn u v (Ici 0)) : IsEVISolution lam φ v where
+  continuousOn := h.continuousOn.congr huv.symm
+  apply_ne_top ht := huv (mem_Ici.2 ht.le) ▸ h.apply_ne_top ht
+  apply_ne_bot ht := huv (mem_Ici.2 ht.le) ▸ h.apply_ne_bot ht
+  limsup_slope_add_le {y} hy {t} ht := by
+    have hev : (fun s ↦ ((slope (fun r ↦ dist (v r) y ^ 2 / 2) t s : ℝ) : EReal)) =ᶠ[𝓝[>] t]
+        fun s ↦ ((slope (fun r ↦ dist (u r) y ^ 2 / 2) t s : ℝ) : EReal) := by
+      filter_upwards [self_mem_nhdsWithin] with s (hs : t < s)
+      simp only [slope_def_field, huv (mem_Ici.2 ht.le), huv (mem_Ici.2 (ht.trans hs).le)]
+    rw [limsup_congr hev, ← huv (mem_Ici.2 ht.le)]
+    exact h.limsup_slope_add_le hy ht
+
+/-- **Time translation.** For `s ≥ 0`, the curve `t ↦ u (t + s)` started at time `s` along an
+`EVI_λ` solution `u` is again an `EVI_λ` solution. -/
+theorem comp_add_const (h : IsEVISolution lam φ u) (hs : 0 ≤ s) :
+    IsEVISolution lam φ (fun t ↦ u (t + s)) where
+  continuousOn := h.continuousOn.comp (by fun_prop) fun t (ht : 0 ≤ t) ↦
+    mem_Ici.2 (add_nonneg ht hs)
+  apply_ne_top ht := h.apply_ne_top (add_pos_of_pos_of_nonneg ht hs)
+  apply_ne_bot ht := h.apply_ne_bot (add_pos_of_pos_of_nonneg ht hs)
+  limsup_slope_add_le {y} hy {t} ht := by
+    -- The difference quotients of the translated curve at `t` are those of `u` at `t + s`.
+    have hslope : (fun z ↦ ((slope (fun r ↦ dist (u (r + s)) y ^ 2 / 2) t z : ℝ) : EReal)) =
+        (fun z ↦ ((slope (fun r ↦ dist (u r) y ^ 2 / 2) (t + s) z : ℝ) : EReal)) ∘ (· + s) := by
+      ext z
+      simp only [Function.comp_apply, slope_def_field, add_sub_add_right_eq_sub]
+    have hmap : Tendsto (· + s) (𝓝[>] t) (𝓝[>] (t + s)) :=
+      tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
+        ((by fun_prop : Continuous (· + s)).tendsto' t (t + s) rfl |>.mono_left nhdsWithin_le_nhds)
+        (eventually_nhdsWithin_of_forall fun z (hz : t < z) ↦ mem_Ioi.2 (by linarith))
+    rw [hslope, limsup_comp]
+    exact (add_le_add (limsup_le_limsup_of_le hmap (u := fun z ↦
+      ((slope (fun r ↦ dist (u r) y ^ 2 / 2) (t + s) z : ℝ) : EReal))) le_rfl).trans
+      (h.limsup_slope_add_le hy (add_pos_of_pos_of_nonneg ht hs))
 
 /-- The evolution variational inequality bounds the difference quotients of `d(u ·, y)² / 2`
 eventually from the right: for `t > 0` and any real `r > c - λ d(u t, y)² / 2`, where `c` bounds
