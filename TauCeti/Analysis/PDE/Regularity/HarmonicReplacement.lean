@@ -42,6 +42,8 @@ bounded domain are the Dirichlet problem with boundary values in `H¹(Ω)`,
   `λ ‖∇(u - w)‖ ≤ ‖G‖` for the replacement relative to a general elliptic `a`.
 * `TauCeti.PDE.exists_harmonicOnNhd_ae_eq_of_forall_energyFormH1_eq_zero`: a function of `H¹(Ω)`
   that solves `Δw = 0` weakly agrees almost everywhere with a harmonic function.
+* `TauCeti.PDE.W1p.exists_harmonicOnNhd_ae_eq_gradient`: so does its weak gradient, since the
+  weak derivatives of a weakly harmonic function are weakly harmonic.
 * `TauCeti.PDE.exists_sub_mem_w1p0Submodule_harmonicOnNhd_ae_eq_of_subset_ball`: **harmonic
   replacement** on a bounded domain, with its harmonic representative and the energy estimate.
 
@@ -126,6 +128,38 @@ theorem exists_harmonicOnNhd_ae_eq_of_forall_energyFormH1_eq_zero {w : W1p mu Om
   · have hφ : fderiv ℝ (φ : EuclideanSpace ℝ ι → ℝ) x = 0 :=
       fderiv_of_notMem_tsupport ℝ fun hx' => hx (φ.tsupport_subset hx')
     simp [gradient, hφ]
+
+omit [DecidableEq ι] in
+/-- **The weak gradient of a weakly harmonic Sobolev function is harmonic.** If the value of
+`w ∈ W^{1,p}(Ω)` is weakly harmonic on `Ω`, then the weak gradient of `w` agrees almost
+everywhere on `Ω` with a function `Ω → ℝⁿ` harmonic on `Ω`. -/
+theorem W1p.exists_harmonicOnNhd_ae_eq_gradient {p : ENNReal} [Fact (1 ≤ p)]
+    {w : W1p mu Omega p} (hw : WeaklyHarmonicOn mu Omega (W1p.value w)) :
+    ∃ H : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι, HarmonicOnNhd H Omega ∧
+      (W1p.gradient w : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) =ᵐ[mu.restrict Omega] H := by
+  classical
+  set b := EuclideanSpace.basisFun ι ℝ
+  -- Each coordinate `⟪bᵢ, ∇w⟫` is a weak derivative of the weakly harmonic `w`, so it is weakly
+  -- harmonic, and Weyl's lemma gives it a harmonic representative.
+  have hi : ∀ i, ∃ h : EuclideanSpace ℝ ι → ℝ, HarmonicOnNhd h Omega ∧
+      (fun x => ⟪b i, W1p.gradient w x⟫_ℝ) =ᵐ[mu.restrict Omega] h := fun i => by
+    have hd := (hasWeakFDerivOn_iff.1 (W1p.hasWeakFDerivOn w)) (b i)
+    simp only [innerSL_apply_apply, real_inner_comm (b i)] at hd
+    exact (hd.weaklyHarmonicOn hw).exists_harmonicOnNhd_ae_eq
+  choose h hh hae using hi
+  have hsum : ∀ s : Finset ι, HarmonicOnNhd (fun x => ∑ i ∈ s, h i x • b i) Omega := by
+    intro s
+    induction s using Finset.induction_on with
+    | empty => simp
+    | insert j s hj ih =>
+      have hj' := ((hh j).comp_CLM (ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (b j))).add ih
+      convert hj' using 1
+      ext1 x
+      simp [Finset.sum_insert hj]
+  refine ⟨fun x => ∑ i, h i x • b i, hsum Finset.univ, ?_⟩
+  filter_upwards [ae_all_iff.2 hae] with x hx
+  conv_lhs => rw [← b.sum_repr' (W1p.gradient w x)]
+  exact Finset.sum_congr rfl fun i _ => by rw [hx i]
 
 /-- **Harmonic replacement.** Let `Ω ⊆ ℝ^{n+1}` be an open set contained in a ball, and let
 `u ∈ H¹(Ω)`. There is `w ∈ H¹(Ω)` with the same boundary values, `u - w ∈ H¹₀(Ω)`, solving
