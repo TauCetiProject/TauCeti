@@ -149,44 +149,6 @@ theorem pairwise_disjoint_preimage_zpow
   -- the translate by `k - l` of `φ^l v` is `φ^k v`
   simpa [Set.mem_preimage, ← Homeomorph.mul_apply, ← zpow_add] using hk
 
-private theorem injOn_quotientMap_of_disjoint_iterates
-    (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ}))
-    (S : Set (Spv (WittVector p R)))
-    (hS : ∀ k : ℕ, k ≠ 0 → Disjoint ((comap frobenius)^[k] '' S) S) :
-    Set.InjOn (quotientMap hI) (Subtype.val ⁻¹' S) := by
-  intro v hv w hw heq
-  obtain ⟨n, hn⟩ := (quotientMap_eq_iff hI v w).mp heq
-  obtain ⟨k, rfl | rfl⟩ := n.eq_nat_or_neg
-  · rw [zpow_natCast] at hn
-    by_cases hk : k = 0
-    · simpa [hk] using hn.symm
-    · exact ((hS k hk).notMem_of_mem_left
-        ⟨w.val, hw, (frobeniusHomeomorph_pow_apply_val hI k w).symm.trans
-          (congrArg Subtype.val hn)⟩ hv).elim
-  · rw [zpow_neg, zpow_natCast] at hn
-    have hn' : (frobeniusHomeomorph hI ^ k) v = w := by
-      rw [← hn]
-      exact (frobeniusHomeomorph hI ^ k).apply_symm_apply w
-    by_cases hk : k = 0
-    · simpa [hk] using hn'
-    · exact ((hS k hk).notMem_of_mem_left
-        ⟨v.val, hv, (frobeniusHomeomorph_pow_apply_val hI k v).symm.trans
-          (congrArg Subtype.val hn')⟩ hw).elim
-
-/-- The orbit projection is injective on every `U` window. -/
-theorem injOn_quotientMap_windowU
-    (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ})) (n : ℤ) :
-    Set.InjOn (quotientMap hI) (Subtype.val ⁻¹' windowU p ϖ n) :=
-  injOn_quotientMap_of_disjoint_iterates hI _ fun _ hk ↦
-    disjoint_image_iterate_comap_frobenius_windowU hI n hk
-
-/-- The orbit projection is injective on every `V` window. -/
-theorem injOn_quotientMap_windowV
-    (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ})) (n : ℤ) :
-    Set.InjOn (quotientMap hI) (Subtype.val ⁻¹' windowV p ϖ n) :=
-  injOn_quotientMap_of_disjoint_iterates hI _ fun _ hk ↦
-    disjoint_image_iterate_comap_frobenius_windowV hI n hk
-
 /-- **The `U` windows wander**: no nontrivial integer Frobenius translate of `U_n` meets `U_n`. -/
 theorem disjoint_preimage_zpow_windowU
     (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ})) (n : ℤ) {k : ℤ}
@@ -211,7 +173,33 @@ theorem disjoint_preimage_zpow_windowV
     (disjoint_windowV hI hnk).notMem_of_mem_left
       ((frobeniusHomeomorph_zpow_mem_windowV_iff hI k (n - k) v).mp (by simpa using hv)) hv'
 
-private theorem isOpenEmbedding_quotientMap_restrict
+/-- **The orbit projection is injective on a wandering set**: on a set meeting none of its
+nontrivial integer Frobenius translates, no two points lie in one orbit. -/
+theorem injOn_quotientMap_of_disjoint_preimage_zpow
+    (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ})) {V : Set (spaY p ϖ)}
+    (hV : ∀ k : ℤ, k ≠ 0 → Disjoint (⇑(frobeniusHomeomorph hI ^ k) ⁻¹' V) V) :
+    Set.InjOn (quotientMap hI) V := by
+  intro v hv w hw hvw
+  obtain ⟨n, hn⟩ := (quotientMap_eq_iff hI v w).mp hvw
+  rcases eq_or_ne n 0 with rfl | hn0
+  · simpa using hn.symm
+  · exact ((hV n hn0).notMem_of_mem_left (by simpa [Set.mem_preimage, hn] using hv) hw).elim
+
+/-- The orbit projection is injective on every `U` window. -/
+theorem injOn_quotientMap_windowU
+    (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ})) (n : ℤ) :
+    Set.InjOn (quotientMap hI) (Subtype.val ⁻¹' windowU p ϖ n) :=
+  injOn_quotientMap_of_disjoint_preimage_zpow hI fun _ hk ↦ disjoint_preimage_zpow_windowU hI n hk
+
+/-- The orbit projection is injective on every `V` window. -/
+theorem injOn_quotientMap_windowV
+    (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ})) (n : ℤ) :
+    Set.InjOn (quotientMap hI) (Subtype.val ⁻¹' windowV p ϖ n) :=
+  injOn_quotientMap_of_disjoint_preimage_zpow hI fun _ hk ↦ disjoint_preimage_zpow_windowV hI n hk
+
+/-- The restriction of the orbit projection to an open set on which it is injective is an open
+embedding. -/
+theorem isOpenEmbedding_quotientMap_restrict
     (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ}))
     (S : Set (spaY p ϖ)) (hS : IsOpen S) (hinj : Set.InjOn (quotientMap hI) S) :
     IsOpenEmbedding (fun v : S ↦ quotientMap hI v.val) := by
