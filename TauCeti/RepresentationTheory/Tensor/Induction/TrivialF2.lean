@@ -7,15 +7,13 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialF2
 import TauCeti.LinearAlgebra.PiTensorProduct.ZMod
-public import TauCeti.RepresentationTheory.Tensor.Induction.Discrete
+public import TauCeti.RepresentationTheory.Tensor.Induction.Smooth
 
 /-!
 # Smooth tensor induction of trivial F₂ coefficients
 
-Tensor induction along an open finite-index subgroup acts on smooth discrete representations by
-passing through the equivalent category of discrete continuous representations. For the canonical
-trivial `𝔽₂` coefficient object, the resulting tensor power is again the canonical trivial
-coefficient object of the ambient group.
+Smooth tensor induction (`TauCeti.smoothTensorInductionFunctor`) of the canonical trivial `𝔽₂`
+coefficient object is again the canonical trivial coefficient object of the ambient group.
 
 The isomorphism multiplies the tensor factors. It is the coefficient identification needed before
 the cochain-level Evens norm can be read as a class in `TauCeti.cohomF2 G` rather than in the
@@ -23,7 +21,6 @@ cohomology of an abstract tensor-induced coefficient object.
 
 ## Main definitions
 
-* `TauCeti.smoothTensorInductionFunctor`: tensor induction on smooth discrete coefficients.
 * `TauCeti.smoothTensorInducedTrivialF2Iso`: tensor induction of trivial `𝔽₂` coefficients
   is the canonical trivial `𝔽₂` coefficient object.
 
@@ -38,49 +35,9 @@ public section
 open CategoryTheory
 open scoped TensorProduct
 
-universe u v w
+universe v
 
 namespace TauCeti
-
-section Functor
-
-variable (R : Type u) [CommRing R] [TopologicalSpace R] [DiscreteTopology R]
-  (G : Type v) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  (U : Subgroup G) (hU : IsOpen (U : Set G)) (s : U.LeftTransversal) [U.FiniteIndex]
-
-/-- Tensor induction on smooth discrete representations along an open finite-index subgroup.
-
-The functor passes through the equivalent category of discrete continuous representations, where
-the tensor power has the discrete topology and continuity of the induced action is available. -/
-@[expose] noncomputable def smoothTensorInductionFunctor :
-    SmoothDiscreteTopRep.{u, v, w} R U ⥤
-      SmoothDiscreteTopRep.{u, v, max u v w} R G :=
-  ofSmoothDiscrete R U ⋙
-    DiscreteRep.tensorInductionFunctor U hU s ⋙
-      toSmoothDiscrete R G
-
-/-- The object map of smooth tensor induction is discrete tensor induction of the coefficient
-module underlying the smooth representation. -/
-@[simp]
-theorem smoothTensorInductionFunctor_obj (A : SmoothDiscreteTopRep.{u, v, w} R U) :
-    (smoothTensorInductionFunctor R G U hU s).obj A =
-      (toSmoothDiscrete R G).obj
-        (DiscreteRep.tensorInduced U hU s ((ofSmoothDiscrete R U).obj A)) :=
-  rfl
-
-/-- The morphism map of smooth tensor induction applies discrete tensor induction to the
-underlying equivariant linear map, then returns through the smooth-discrete dictionary. -/
-@[simp]
-theorem smoothTensorInductionFunctor_map {A B : SmoothDiscreteTopRep.{u, v, w} R U}
-    (f : A ⟶ B) :
-    (smoothTensorInductionFunctor R G U hU s).map f =
-      (toSmoothDiscrete R G).map
-        ((DiscreteRep.tensorInductionFunctor U hU s).map ((ofSmoothDiscrete R U).map f)) :=
-  rfl
-
-end Functor
-
-section TrivialF2
 
 variable (G : Type v) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   (U : Subgroup G) (hU : IsOpen (U : Set G)) (s : U.LeftTransversal)
@@ -90,73 +47,90 @@ variable (G : Type v) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 noncomputable local instance quotientFintype : Fintype (G ⧸ U) :=
   U.fintypeQuotientOfFiniteIndex
 
+/-- The pure tensor in the smooth tensor induction of trivial `𝔽₂` coefficients. -/
+noncomputable def smoothTensorInducedTrivialF2Tprod
+    (x : G ⧸ U → (DiscreteRep.trivialF2 U).V) :
+    (DiscreteRep.tensorInduced U hU s
+      (DiscreteRep.trivialF2 U)).V := by
+  let A := DiscreteRep.trivialF2 U
+  letI : Module ℤ A.V := A.module
+  exact cast (DiscreteRep.tensorInduced_V U hU s A).symm
+    (PiTensorProduct.tprod ℤ x)
+
+/-- The coefficient calculation on the tensor power: read every tensor factor in `ZMod 2` and
+multiply the factors. The factors carry the `ℤ`-module structure of the `DiscreteRep`, which is the
+one the tensor induction is formed with. -/
+private noncomputable def tensorInducedTrivialF2LinearEquiv :=
+  @PiTensorProduct.congr (G ⧸ U) ℤ _ (fun _ ↦ (DiscreteRep.trivialF2 U).V) _
+      (fun _ ↦ (DiscreteRep.trivialF2 U).module) (fun _ ↦ ZMod 2) _
+      (fun _ ↦ AddCommGroup.toIntModule (ZMod 2))
+      (fun _ ↦ (trivialF2Equiv U).toIntLinearEquiv
+        (modM := (DiscreteRep.trivialF2 U).module)
+        (modM₂ := AddCommGroup.toIntModule (ZMod 2))) ≪≫ₗ
+    PiTensorProduct.zmodEquiv 2
+
+private theorem tensorInducedTrivialF2LinearEquiv_tprod
+    (x : G ⧸ U → (DiscreteRep.trivialF2 U).V) :
+    tensorInducedTrivialF2LinearEquiv G U (smoothTensorInducedTrivialF2Tprod G U hU s x) =
+      ∏ i, trivialF2Equiv U (x i) := by
+  let _ : Module ℤ (DiscreteRep.trivialF2 U).V := (DiscreteRep.trivialF2 U).module
+  -- `smoothTensorInducedTrivialF2Tprod` is a cast along the definitional equality
+  -- `DiscreteRep.tensorInduced_V`.
+  change tensorInducedTrivialF2LinearEquiv G U (PiTensorProduct.tprod ℤ x) = _
+  simp only [tensorInducedTrivialF2LinearEquiv, LinearEquiv.trans_apply,
+    PiTensorProduct.congr_tprod, PiTensorProduct.zmodEquiv_tprod]
+  rfl
+
+private theorem tensorInducedTrivialF2LinearEquiv_ρ (g : G)
+    (z : (DiscreteRep.tensorInduced U hU s (DiscreteRep.trivialF2 U)).V) :
+    tensorInducedTrivialF2LinearEquiv G U
+        ((DiscreteRep.tensorInduced U hU s (DiscreteRep.trivialF2 U)).ρ g z) =
+      tensorInducedTrivialF2LinearEquiv G U z := by
+  let _ : Module ℤ (DiscreteRep.trivialF2 U).V := (DiscreteRep.trivialF2 U).module
+  rw [show (DiscreteRep.tensorInduced U hU s (DiscreteRep.trivialF2 U)).ρ g z =
+      U.tensorInducedRepresentation s (DiscreteRep.trivialF2 U).ρ g z from
+    DiscreteRep.tensorInduced_ρ_apply U hU s _ g z]
+  induction z using PiTensorProduct.induction_on with
+  | smul_tprod r x =>
+    rw [map_smul, LinearEquiv.map_smul, LinearEquiv.map_smul,
+      Subgroup.tensorInducedRepresentation_apply_tprod]
+    congr 1
+    simp only [show ∀ (u : U) y, (DiscreteRep.trivialF2 U).ρ u y = y from
+      trivialF2_ρ_apply_apply U]
+    exact (tensorInducedTrivialF2LinearEquiv_tprod G U hU s _).trans
+      ((Equiv.prod_comp (MulAction.toPerm g⁻¹) fun i ↦ trivialF2Equiv U (x i)).trans
+        (tensorInducedTrivialF2LinearEquiv_tprod G U hU s x).symm)
+  | add z z' hz hz' => rw [map_add, LinearEquiv.map_add, hz, hz', LinearEquiv.map_add]
+
+/-- The carrier map of the coefficient identification, landing in the carrier of
+`trivialF2 G`. -/
+private noncomputable def tensorInducedTrivialF2AddEquiv :
+    (DiscreteRep.tensorInduced U hU s (DiscreteRep.trivialF2 U)).V ≃+
+      (DiscreteRep.trivialF2 G).V :=
+  (tensorInducedTrivialF2LinearEquiv G U).toAddEquiv.trans (trivialF2Equiv G).symm
+
+private theorem tensorInducedTrivialF2AddEquiv_ρ (g : G)
+    (z : (DiscreteRep.tensorInduced U hU s (DiscreteRep.trivialF2 U)).V) :
+    tensorInducedTrivialF2AddEquiv G U hU s
+        ((DiscreteRep.tensorInduced U hU s (DiscreteRep.trivialF2 U)).ρ g z) =
+      (DiscreteRep.trivialF2 G).ρ g (tensorInducedTrivialF2AddEquiv G U hU s z) := by
+  rw [show ∀ y, (DiscreteRep.trivialF2 G).ρ g y = y from trivialF2_ρ_apply_apply G g]
+  exact congrArg (trivialF2Equiv G).symm (tensorInducedTrivialF2LinearEquiv_ρ G U hU s g z)
+
 private noncomputable def tensorInducedTrivialF2DiscreteIso :
-    DiscreteRep.tensorInduced U hU s
-        ((ofSmoothDiscrete ℤ U).obj ⟨trivialF2 U, isSmoothDiscrete_trivialF2 U⟩) ≅
-      (ofSmoothDiscrete ℤ G).obj ⟨trivialF2 G, isSmoothDiscrete_trivialF2 G⟩ := by
-  let AU := (ofSmoothDiscrete ℤ U).obj
-    ⟨trivialF2 U, isSmoothDiscrete_trivialF2 U⟩
+    DiscreteRep.tensorInduced U hU s (DiscreteRep.trivialF2 U) ≅ DiscreteRep.trivialF2 G := by
+  let TI := DiscreteRep.tensorInduced U hU s (DiscreteRep.trivialF2 U)
   let AG := DiscreteRep.trivialF2 G
-  let TI := DiscreteRep.tensorInduced U hU s AU
-  change TI ≅ AG
-  let _ : Module ℤ AU.V := AU.module
-  let _ : Module ℤ AG.V := AG.module
-  let cU := (trivialF2Equiv U).toIntLinearEquiv
-    (modM := AU.module)
-    (modM₂ := AddCommGroup.toIntModule (ZMod 2))
-  let cG := (trivialF2Equiv G).toIntLinearEquiv
-    (modM := AG.module)
-    (modM₂ := AddCommGroup.toIntModule (ZMod 2))
-  let e :=
-    (@PiTensorProduct.congr (G ⧸ U) ℤ _ (fun _ ↦ AU.V)
-      (fun _ ↦ AU.addCommGroup.toAddCommMonoid) (fun _ ↦ AU.module)
-      (fun _ ↦ ZMod 2) (fun _ ↦ inferInstance) (fun _ ↦ AddCommGroup.toIntModule (ZMod 2))
-      (fun _ ↦ cU)) ≪≫ₗ
-      PiTensorProduct.zmodEquiv 2 ≪≫ₗ cG.symm
-  let f : TI.V →ₗ[ℤ] AG.V :=
-    { toFun := e
-      map_add' := e.map_add
-      map_smul' := e.map_smul }
-  let fInv : AG.V →ₗ[ℤ] TI.V :=
-    { toFun := e.symm
-      map_add' := e.symm.map_add
-      map_smul' := e.symm.map_smul }
-  let fe : TI.V ≃ₗ[ℤ] AG.V :=
-    { toLinearMap := f
-      invFun := fInv
-      left_inv := e.symm_apply_apply
-      right_inv := e.apply_symm_apply }
-  have hAU (u : U) (x : AU.V) : AU.ρ u x = x := by
-    change (trivialF2 U).ρ u x = x
-    exact trivialF2_ρ_apply_apply U u x
-  have hAG (g : G) (x : AG.V) : AG.ρ g x = x := by
-    change (trivialF2 G).ρ g x = x
-    exact trivialF2_ρ_apply_apply G g x
-  have hfe (g : G) (z : TI.V) : fe (TI.ρ g z) = AG.ρ g (fe z) := by
-    change e (U.tensorInducedRepresentation s AU.ρ g z) = AG.ρ g (e z)
-    induction z using PiTensorProduct.induction_on with
-    | smul_tprod r x =>
-      rw [map_smul, e.map_smul, e.map_smul, (AG.ρ g).map_smul]
-      congr 1
-      rw [Subgroup.tensorInducedRepresentation_apply_tprod]
-      simp only [e, LinearEquiv.trans_apply, PiTensorProduct.congr_tprod,
-        PiTensorProduct.zmodEquiv_tprod]
-      rw [hAG]
-      congr 1
-      simp_rw [hAU]
-      exact Equiv.prod_comp (MulAction.toPerm g⁻¹) fun i ↦ cU (x i)
-    | add z z' hz hz' =>
-      rw [map_add, e.map_add, hz, hz', e.map_add, (AG.ρ g).map_add]
-  let hom := fe.toLinearMap.intertwiningMap_of_isIntertwiningMap TI.ρ AG.ρ hfe
-  let inv := fe.symm.toLinearMap.intertwiningMap_of_isIntertwiningMap AG.ρ TI.ρ
-    fun g x ↦ by
-      change fe.symm (g • x) = g • fe.symm x
-      simpa only [MulActionHom.inverse_apply, LinearEquiv.coe_coe] using
-        (MulActionHom.inverse (M := G) ⟨fe, hfe⟩ fe.symm fe.symm_apply_apply
-          fe.apply_symm_apply).map_smul g x
+  -- Instance search would pick `AddCommGroup.toIntModule`, which is not the module structure
+  -- that `AG.ρ` is linear for.
+  letI : Module ℤ AG.V := AG.module
+  let fe := (tensorInducedTrivialF2AddEquiv G U hU s).toIntLinearEquiv
+    (modM := TI.module) (modM₂ := AG.module)
+  have hfe : ∀ g z, fe (TI.ρ g z) = AG.ρ g (fe z) := tensorInducedTrivialF2AddEquiv_ρ G U hU s
   exact
-    { hom := hom
-      inv := inv
+    { hom := fe.toLinearMap.intertwiningMap_of_isIntertwiningMap TI.ρ AG.ρ hfe
+      inv := fe.symm.toLinearMap.intertwiningMap_of_isIntertwiningMap AG.ρ TI.ρ fun g x ↦
+        fe.injective (by simp only [LinearEquiv.coe_coe, hfe, LinearEquiv.apply_symm_apply])
       hom_inv_id := Representation.IntertwiningMap.ext (LinearMap.ext fe.symm_apply_apply)
       inv_hom_id := Representation.IntertwiningMap.ext (LinearMap.ext fe.apply_symm_apply) }
 
@@ -170,16 +144,6 @@ noncomputable def smoothTensorInducedTrivialF2Iso :
       ⟨trivialF2 G, isSmoothDiscrete_trivialF2 G⟩ :=
   (toSmoothDiscrete ℤ G).mapIso (tensorInducedTrivialF2DiscreteIso G U hU s)
 
-/-- The pure tensor in the smooth tensor induction of trivial `𝔽₂` coefficients. -/
-noncomputable def smoothTensorInducedTrivialF2Tprod
-    (x : G ⧸ U → (DiscreteRep.trivialF2 U).V) :
-    (DiscreteRep.tensorInduced U hU s
-      (DiscreteRep.trivialF2 U)).V := by
-  let A := DiscreteRep.trivialF2 U
-  letI : Module ℤ A.V := A.module
-  exact cast (DiscreteRep.tensorInduced_V U hU s A).symm
-    (PiTensorProduct.tprod ℤ x)
-
 /-- On a pure tensor, the smooth trivial-`𝔽₂` tensor-induction isomorphism multiplies
 the underlying `ZMod 2` values. -/
 theorem smoothTensorInducedTrivialF2Iso_hom_apply_tprod
@@ -188,27 +152,7 @@ theorem smoothTensorInducedTrivialF2Iso_hom_apply_tprod
         (smoothTensorInducedTrivialF2Tprod G U hU s x)) =
       ∏ i, trivialF2Equiv U (x i) := by
   rw [smoothTensorInducedTrivialF2Iso, Functor.mapIso_hom]
-  change trivialF2Equiv G
-    (((toSmoothDiscrete ℤ G).map
-      (tensorInducedTrivialF2DiscreteIso G U hU s).hom).hom.hom
-        (smoothTensorInducedTrivialF2Tprod G U hU s x)) = _
-  rw [toSmoothDiscrete_map_hom_hom_apply]
-  let AU := DiscreteRep.trivialF2 U
-  let AG := DiscreteRep.trivialF2 G
-  let _ : Module ℤ AU.V := AU.module
-  let _ : Module ℤ AG.V := AG.module
-  let cU := (trivialF2Equiv U).toIntLinearEquiv
-    (modM := AU.module) (modM₂ := AddCommGroup.toIntModule (ZMod 2))
-  let cG := (trivialF2Equiv G).toIntLinearEquiv
-    (modM := AG.module) (modM₂ := AddCommGroup.toIntModule (ZMod 2))
-  change trivialF2Equiv G
-    (cG.symm (PiTensorProduct.zmodEquiv 2
-      (PiTensorProduct.congr (fun _ ↦ cU) (PiTensorProduct.tprod ℤ x)))) = _
-  simp only [PiTensorProduct.congr_tprod, PiTensorProduct.zmodEquiv_tprod]
-  change trivialF2Equiv G
-    ((trivialF2Equiv G).symm (∏ i, trivialF2Equiv U (x i))) = _
-  exact (trivialF2Equiv G).apply_symm_apply _
-
-end TrivialF2
+  exact ((trivialF2Equiv G).apply_symm_apply _).trans
+    (tensorInducedTrivialF2LinearEquiv_tprod G U hU s x)
 
 end TauCeti
