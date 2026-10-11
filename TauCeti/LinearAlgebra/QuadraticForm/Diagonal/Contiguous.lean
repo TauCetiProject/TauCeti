@@ -21,6 +21,8 @@ vector specified by its two indices. The coefficient families are supplied as un
 evaluation equations, so the statement needs no separate nondegeneracy hypothesis. The theorem
 compares a contiguous step with diagonal chains; it does not assert Serre's theorem that any two
 orthogonal bases of a regular form of rank at least three are connected by contiguous steps.
+The theorem `Module.Basis.exists_isOrtho_basis_of_diagonalChain` also realizes the endpoint family
+of any diagonal chain as an orthogonal basis of the original form.
 
 The rank bound matters even for contiguous bases: rescaling the other vector of a rank-two
 basis changes its coefficient by a square, whereas a rank-one diagonal chain requires equality.
@@ -73,5 +75,44 @@ theorem diagonalChain_tail_of_isOrtho_of_apply_eq {n : ℕ}
     rw [hw, hw', hshared]
   exact diagonalChain_iff_equivalent.mpr
     (equivalent_weightedSumSquares_tail_of_head_eq hhead hpermuted)
+
+/-- A diagonal chain can be realized by an orthogonal basis with its final coefficients.
+Given an orthogonal basis whose coefficient family is `w`, any family joined to `w` by
+`DiagonalChain` is the coefficient family of another orthogonal basis of the same form. -/
+theorem exists_isOrtho_basis_of_diagonalChain {n : ℕ}
+    (b : Basis (Fin n) K V) (hb : Q.associated.IsOrthoᵢ b)
+    (w w' : Fin n → Kˣ) (hw : ∀ i, Q (b i) = (w i : K))
+    (hchain : DiagonalChain w w') :
+    ∃ b' : Basis (Fin n) K V, Q.associated.IsOrthoᵢ b' ∧
+      ∀ i, Q (b' i) = (w' i : K) := by
+  have hdiag : Q.basisRepr b = weightedSumSquares K fun i => (w i : K) := by
+    rw [basisRepr_eq_of_iIsOrtho Q b hb]
+    congr 1
+    funext i
+    rw [hw i]
+  let e : Q.IsometryEquiv (weightedSumSquares K fun i => (w' i : K)) :=
+    (Q.isometryEquivBasisRepr b).trans
+      (Classical.choice (hdiag.symm ▸ hchain.equivalent))
+  let b' : Basis (Fin n) K V := (Pi.basisFun K (Fin n)).map e.symm
+  have heval (x : Fin n → K) :
+      Q (e.symm.toLinearEquiv x) = weightedSumSquares K (fun i => (w' i : K)) x := by
+    exact e.symm.map_app x
+  refine ⟨b', ?_, ?_⟩
+  · intro i j hij
+    apply (associated_isOrtho).2
+    rw [isOrtho_def]
+    simp only [b', Basis.map_apply]
+    rw [← map_add e.symm.toLinearEquiv, heval, heval, heval]
+    simp only [Pi.basisFun_apply, weightedSumSquares_apply, Pi.single_apply]
+    classical
+    rw [← Finset.sum_subset (Finset.subset_univ ({i, j} : Finset (Fin n)))]
+    · simp [hij]
+    · intro k _ hk
+      simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hk
+      simp [hk.1, hk.2]
+  · intro i
+    simp only [b', Basis.map_apply]
+    rw [heval]
+    simp [Pi.basisFun_apply, weightedSumSquares_apply, Pi.single_apply]
 
 end Module.Basis
