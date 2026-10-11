@@ -51,12 +51,15 @@ theorem pullbackIhomComparison_id (M N : X.Modules) [M.IsQuasicoherent] :
         (pre ((Scheme.Modules.pullbackId X).hom.app M)).app N := by
   apply uncurry_injective
   rw [uncurry_natural_right, uncurry_natural_left]
-  -- The closed structures on `X.Modules` and on its underlying sheaf category coincide.
-  erw [uncurry_pre, uncurry_eq]
+  -- Instantiate precomposition before normalizing the identity functor objects.
+  rw [uncurry_pre ((Scheme.Modules.pullbackId X).hom.app M) N, uncurry_eq]
+  dsimp only [Functor.id_obj]
   rw [whiskerLeft_pullbackIhomComparison_app_comp_ev]
   rw [← cancel_epi (δ (Scheme.Modules.pullback (𝟙 X)) M ((ihom M).obj N))]
   simp only [Category.assoc, IsIso.hom_inv_id_assoc]
-  erw [← tensorHom_def'_assoc]
+  rw [← dsimp% tensorHom_def'_assoc (C := X.Modules)
+    ((Scheme.Modules.pullbackId X).hom.app M)
+    ((Scheme.Modules.pullbackId X).hom.app ((ihom M).obj N))]
   rw [Scheme.Modules.pullback_id_δ_assoc]
   exact (Scheme.Modules.pullbackId X).hom.naturality ((ihom.ev M).app N)
 
@@ -74,34 +77,31 @@ theorem pullbackIhomComparison_comp (f : X ⟶ Y) (g : Y ⟶ Z)
         (pullbackIhomComparison M (f ≫ g)).app N ≫
         (pre ((Scheme.Modules.pullbackComp f g).hom.app M)).app
           ((Scheme.Modules.pullback (f ≫ g)).obj N) := by
-  -- Compare both routes after evaluation. Scheme-module closed structures are the
-  -- underlying sheaf structures, which the `erw` steps below normalize.
+  -- Compare both routes after evaluation, normalizing composite functor objects.
   apply uncurry_injective
   simp only [uncurry_eq, MonoidalCategory.whiskerLeft_comp, Category.assoc]
-  erw [ihom.ev_naturality
+  rw [ihom.ev_naturality
     ((Scheme.Modules.pullback f).obj ((Scheme.Modules.pullback g).obj M))
     ((Scheme.Modules.pullbackComp f g).hom.app N)]
-  erw [id_tensor_pre_app_comp_ev ((Scheme.Modules.pullbackComp f g).hom.app M)
+  rw [dsimp% id_tensor_pre_app_comp_ev
+    ((Scheme.Modules.pullbackComp f g).hom.app M)
     ((Scheme.Modules.pullback (f ≫ g)).obj N)]
-  erw [whiskerLeft_pullbackIhomComparison_app_comp_ev_assoc
+  dsimp only [Functor.comp_obj]
+  rw [whiskerLeft_pullbackIhomComparison_app_comp_ev_assoc
     ((Scheme.Modules.pullback g).obj M) f ((Scheme.Modules.pullback g).obj N)]
-  erw [whisker_exchange_assoc]
+  rw [whisker_exchange_assoc]
   rw [whiskerLeft_pullbackIhomComparison_app_comp_ev]
   -- Cancel the two tensor comparisons to reduce to monoidal composition coherence.
   rw [← cancel_epi (δ (Scheme.Modules.pullback f) ((Scheme.Modules.pullback g).obj M)
     ((Scheme.Modules.pullback g).obj ((ihom M).obj N)))]
   rw [δ_natural_right_assoc]
-  dsimp only [Functor.comp_obj]
   rw [IsIso.hom_inv_id_assoc, ← Functor.map_comp_assoc,
     whiskerLeft_pullbackIhomComparison_app_comp_ev]
-  erw [← tensorHom_def'_assoc]
+  rw [← tensorHom_def'_assoc]
   rw [← cancel_epi ((Scheme.Modules.pullback f).map
     (δ (Scheme.Modules.pullback g) M ((ihom M).obj N)))]
   simp only [← Functor.map_comp_assoc, IsIso.hom_inv_id_assoc]
-  have hd := Scheme.Modules.pullback_comp_δ f g M ((ihom M).obj N)
-  rw [← cancel_epi ((Scheme.Modules.pullbackComp f g).hom.app
-    (M ⊗ (ihom M).obj N)), Iso.hom_inv_id_app_assoc] at hd
-  rw [← reassoc_of% hd]
+  rw [← pullbackComp_hom_app_comp_δ_assoc]
   simp only [IsIso.hom_inv_id_assoc]
   exact (Scheme.Modules.pullbackComp f g).hom.naturality ((ihom.ev M).app N)
 
