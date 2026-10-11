@@ -168,15 +168,23 @@ variable {C : Type u} [Category.{v} C] (f : Arrow C)
         simp }
 
 /-- The simplicial operators act on maps into the Čech nerve by postcomposition. -/
+@[simp]
 theorem augmentedCechNerveMapsFrom_left_map (T : C) {n m : SimplexCategoryᵒᵖ} (θ : n ⟶ m)
     (σ : T ⟶ f.cechNerve.obj n) :
     (f.augmentedCechNerveMapsFrom T).left.map θ σ = σ ≫ f.cechNerve.map θ :=
   (rfl)
 
-/-- The augmentation sends a map into the Čech nerve to its composite with the base. -/
+/-- The augmentation sends a map into the Čech nerve to its composite with the base.
+
+The source and target of `ConcreteCategory.hom` are given explicitly, as `left.obj n` and
+`right`, so that the left-hand side is in simp normal form: elaborated directly they would be
+`(𝟭 _).obj left` and `(const.obj right).obj n`, which simp rewrites first. -/
+@[simp]
 theorem augmentedCechNerveMapsFrom_hom_app_coe (T : C) (n : SimplexCategoryᵒᵖ)
     (σ : T ⟶ f.cechNerve.obj n) :
-    Subtype.val ((f.augmentedCechNerveMapsFrom T).hom.app n σ) = σ ≫ WidePullback.base _ :=
+    Subtype.val (ConcreteCategory.hom (X := (f.augmentedCechNerveMapsFrom T).left.obj n)
+      (Y := (f.augmentedCechNerveMapsFrom T).right) ((f.augmentedCechNerveMapsFrom T).hom.app n)
+      σ) = σ ≫ WidePullback.base _ :=
   (rfl)
 
 namespace AugmentedCechNerveMapsFrom
