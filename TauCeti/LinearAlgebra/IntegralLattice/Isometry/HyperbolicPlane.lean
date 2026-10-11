@@ -19,9 +19,6 @@ is the identity, simultaneous negation, coordinate exchange, or their composite.
 Consequently its full integral isometry group has four elements, although its
 rational isometry group is infinite.
 
-The proof uses the two isotropic coordinate vectors. Their images are integral,
-isotropic, and pair to one, so their nonzero coordinates are integer units.
-
 ## References
 
 * D. A. Cox, *Primes of the Form x² + ny²*, §1.
