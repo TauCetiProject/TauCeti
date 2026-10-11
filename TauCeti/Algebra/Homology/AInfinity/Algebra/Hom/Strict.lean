@@ -281,7 +281,7 @@ private theorem taylor_comp_barMap (f : AInfinityStrictHom AA BB) :
     simp only [y, Fin.isLt, dite_true] at hBB hAA
     simp only [LinearMap.comp_apply, barMap_of_tprod]
     rw [hBB, hAA]
-    rw [AInfinity.evalNat_suspend, AInfinity.evalNat_suspend, map_smul]
+    rw [MultilinearMap.evalNat_suspend, MultilinearMap.evalNat_suspend, map_smul]
     simp only [MultilinearMap.evalNat_def]
     congr 1
     exact (f.map_m n.1 fun i ↦ y i).symm
@@ -472,7 +472,7 @@ noncomputable def IsStrict.toStrictHom {f : AInfinityHom AA BB} (hf : f.IsStrict
     have h := LinearMap.congr_fun htaylor
       (ReducedTensorWords.of R A ⟨n, hn⟩ (PiTensorProduct.tprod R fun i : Fin n ↦ y i))
     rw [LinearMap.comp_apply, LinearMap.comp_apply, ReducedTensorWords.map_of_tprod, hB, hA,
-      AInfinity.evalNat_suspend, AInfinity.evalNat_suspend, map_smul] at h
+      MultilinearMap.evalNat_suspend, MultilinearMap.evalNat_suspend, map_smul] at h
     simp only [MultilinearMap.evalNat_def, hxy] at h
     have h' := congrArg (negOnePowCast R (MultilinearMap.suspExp n e) • ·) h
     simp only [smul_smul, ← negOnePowCast_add, ← two_mul, negOnePowCast_two_mul, one_smul] at h'
