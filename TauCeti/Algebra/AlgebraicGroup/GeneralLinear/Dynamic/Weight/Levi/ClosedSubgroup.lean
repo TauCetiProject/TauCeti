@@ -51,21 +51,9 @@ theorem mem_weightLeviImagePointsSubgroup_iff (w : Fin N → ℤ)
     (A : CommAlgCat.{v} R) (g : HopfAlgebra.points (R := R) (H := K) A) :
     g ∈ CommHopfAlgCat.quotientPointsSubgroup K
         ((weightLeviDefiningHopfIdeal R w).map φ.hom) A ↔
-      g ∈ Cocharacter.levi A l := by
-  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_map_iff φ,
-    CommHopfAlgCat.mapPointsFunctor_app_apply]
-  have h := mem_weightLeviDefiningPointsSubgroup_iff (R := R) w
-    ((CommHopfAlgCat.mapPointsFunctor φ).app A g)
-  rw [← hl] at h
-  have hpoint : Function.Injective
-      (AlgHom.mapDomain (A := LaurentPolynomial A) φ.hom) := by
-    intro a b hab
-    apply CommHopfAlgCat.mapPointsFunctor_app_injective_of_surjective φ hφ
-      (CommAlgCat.of R (LaurentPolynomial A))
-    -- The categorical point map and `AlgHom.mapDomain` use different point wrappers.
-    change AlgHom.mapDomain φ.hom a = AlgHom.mapDomain φ.hom b
-    exact hab
-  exact h.trans (Cocharacter.mem_levi_iff_of_injective φ.hom hpoint l _).symm
+      g ∈ Cocharacter.levi A l :=
+  Cocharacter.mem_quotientPointsSubgroup_map_iff_mem_levi φ hφ l _ A
+    (fun g ↦ by rw [hl]; exact mem_weightLeviDefiningPointsSubgroup_iff (R := R) w g) g
 
 /-- The quotient by the image of the ambient weight-Levi ideal represents the dynamic Levi of
 the closed subgroup, naturally in the commutative value algebra. -/
@@ -76,8 +64,7 @@ noncomputable def weightLeviClosedSubgroupPointsIso (w : Fin N → ℤ)
     HopfAlgebra.pointsFunctor (R := R)
         (H := CommHopfAlgCat.quotient K ((weightLeviDefiningHopfIdeal R w).map φ.hom)) ≅
       Cocharacter.leviFunctor l :=
-  CommHopfAlgCat.quotientPointsSubgroupRepresentingIso K
-    ((weightLeviDefiningHopfIdeal R w).map φ.hom) (fun A ↦ Cocharacter.levi A l)
-    (fun A g ↦ mem_weightLeviImagePointsSubgroup_iff w φ hφ l hl A g)
+  Cocharacter.leviClosedSubgroupPointsIso φ hφ l _
+    (fun _ g ↦ by rw [hl]; exact mem_weightLeviDefiningPointsSubgroup_iff (R := R) w g)
 
 end TauCeti.GeneralLinear.Dynamic
