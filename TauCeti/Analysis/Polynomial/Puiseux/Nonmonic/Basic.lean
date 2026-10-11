@@ -178,4 +178,56 @@ theorem exists_analyticOnNhd_nonmonic_powerSubstitution [FiniteDimensional ℂ E
       (hra i) (hroot i)
   exact ⟨r, g, hra, fun i ↦ ⟨hga i, by simpa only [sub_zero] using hgeq i⟩, hr⟩
 
+/-- Multiplying pole-removed branches of a nonmonic power-substituted splitting by the
+leading-coefficient unit gives analytic functions on the full product and a complete splitting
+of integral normalization off the hyperplane, with the same labels. No degree condition on
+the central fibers, distinctness of the branches, or analyticity of the original branches
+is required. -/
+theorem exists_analyticOnNhd_integralNormalization_eq_prod_X_sub_C_powerSubstitution
+    {r g : Fin d → E × ℂ → ℂ}
+    (hn : n ≠ 0) (hR : R' ^ n ≤ R)
+    (hdeg : ∀ b ∈ U ×ˢ (ball 0 R \ {0}), (F b).natDegree = d)
+    (hu : AnalyticOnNhd ℂ u (U ×ˢ ball 0 R))
+    (hu0 : ∀ b ∈ U ×ˢ (ball 0 R \ {0}), u b ≠ 0)
+    (hlead : ∀ b ∈ U ×ˢ (ball 0 R \ {0}), (F b).coeff d = b.2 ^ a * u b)
+    (hg : ∀ i, AnalyticOnNhd ℂ (g i) (U ×ˢ ball 0 R') ∧
+      EqOn (g i) (fun b ↦ b.2 ^ (n * a) * r i b) (U ×ˢ (ball 0 R' \ {0})))
+    (hr : ∀ b ∈ U ×ˢ (ball 0 R' \ {0}),
+      F (b.1, b.2 ^ n) = C ((F (b.1, b.2 ^ n)).coeff d) * ∏ i, (X - C (r i b))) :
+    ∃ s : Fin d → E × ℂ → ℂ,
+      (∀ i, AnalyticOnNhd ℂ (s i) (U ×ˢ ball 0 R')) ∧
+      (∀ b ∈ U ×ˢ (ball 0 R' \ {0}), ∀ i,
+        (F (b.1, b.2 ^ n)).coeff d * r i b = s i b) ∧
+      ∀ b ∈ U ×ˢ (ball 0 R' \ {0}),
+        (F (b.1, b.2 ^ n)).integralNormalization = ∏ i, (X - C (s i b)) := by
+  let q : E × ℂ → E × ℂ := fun b ↦ (b.1, b.2 ^ n)
+  have hq : AnalyticOnNhd ℂ q (U ×ˢ ball 0 R') := fun _ _ ↦
+    analyticAt_fst.prod (analyticAt_snd.pow n)
+  have hqfull : MapsTo q (U ×ˢ ball 0 R') (U ×ˢ ball 0 R) := by
+    intro b hb
+    refine ⟨hb.1, ?_⟩
+    rw [mem_ball_zero_iff, norm_pow]
+    exact (pow_lt_pow_left₀ (mem_ball_zero_iff.mp hb.2) (norm_nonneg _) hn).trans_le hR
+  have hqpunct : MapsTo q (U ×ˢ (ball 0 R' \ {0})) (U ×ˢ (ball 0 R \ {0})) :=
+    fun b hb ↦ ⟨hb.1, (hqfull ⟨hb.1, hb.2.1⟩).2, pow_ne_zero n hb.2.2⟩
+  let s : Fin d → E × ℂ → ℂ := fun i b ↦ g i b * u (q b)
+  have hscale : ∀ b ∈ U ×ˢ (ball 0 R' \ {0}), ∀ i,
+      (F (q b)).coeff d * r i b = s i b := by
+    intro b hb i
+    have hl := hlead _ (hqpunct hb)
+    have hgb := (hg i).2 hb
+    simp only [q, ← pow_mul] at hl
+    simp only [s, q, hgb, hl, mul_right_comm]
+  refine ⟨s, fun i ↦ ((hg i).1).mul (hu.comp hq hqfull), hscale, ?_⟩
+  intro b hb
+  have hbq := hqpunct hb
+  have hlc : (F (q b)).coeff d = (F (q b)).leadingCoeff := by
+    rw [← hdeg _ hbq, coeff_natDegree]
+  have hl0 : (F (q b)).leadingCoeff ≠ 0 := by
+    rw [← hlc, hlead _ hbq]
+    exact mul_ne_zero (pow_ne_zero _ hbq.2.2) (hu0 _ hbq)
+  rw [(F (q b)).integralNormalization_eq_prod_X_sub_C (fun i ↦ r i b)
+    (leadingCoeff_ne_zero.mp hl0) (by simpa only [q, hlc] using hr b hb)]
+  simp only [← hlc, mul_comm _ ((F (q b)).coeff d), hscale b hb]
+
 end TauCeti.Polynomial

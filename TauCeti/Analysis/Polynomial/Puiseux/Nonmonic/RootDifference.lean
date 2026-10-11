@@ -77,6 +77,10 @@ theorem exists_analyticOnNhd_nonmonic_root_sub_eq_zpow_mul_unit
     exact mul_ne_zero (pow_ne_zero _ hb.2.2) (hv0 b ⟨hb.1, hb.2.1⟩)
   obtain ⟨r, g, hra, hg, hr⟩ := exists_analyticOnNhd_nonmonic_powerSubstitution
     hU hR' hn hR hdvd hF hdeg hdiscr0 hu hu0 hlead
+  obtain ⟨s, hsa, hscale, hnorm⟩ :=
+    exists_analyticOnNhd_integralNormalization_eq_prod_X_sub_C_powerSubstitution
+      hn hR hdeg hu (fun b hb ↦ hu0 b ⟨hb.1, hb.2.1⟩) hlead hg
+      (fun b hb ↦ (hr b hb).2)
   refine ⟨r, g, hra, hg, hr, ?_⟩
   intro x hx i j hij
   let q : E × ℂ → E × ℂ := fun b ↦ (b.1, b.2 ^ n)
@@ -92,29 +96,15 @@ theorem exists_analyticOnNhd_nonmonic_root_sub_eq_zpow_mul_unit
   have hx' : (x, (0 : ℂ)) ∈ U ×ˢ ball 0 R' := ⟨hx, mem_ball_self hR'⟩
   have huq : AnalyticAt ℂ (u ∘ q) (x, 0) := (hq0 ▸ hu _ hxR).comp hq
   have hvq : AnalyticAt ℂ (v ∘ q) (x, 0) := (hq0 ▸ hv _ hxR).comp hq
-  -- The pole-removed branches, multiplied by the leading-coefficient unit, are
-  -- analytic roots of integral normalization. This does not specialize its degree at zero.
-  let s : Fin d → E × ℂ → ℂ := fun k b ↦ g k b * u (q b)
-  have hs : ∀ k, AnalyticAt ℂ (s k) (x, 0) := fun k ↦ ((hg k).1 _ hx').mul huq
-  have hscale : ∀ᶠ b in 𝓝 (x, (0 : ℂ)), b.2 ≠ 0 →
+  have hs : ∀ k, AnalyticAt ℂ (s k) (x, 0) := fun k ↦ hsa k _ hx'
+  have hscale' : ∀ᶠ b in 𝓝 (x, (0 : ℂ)), b.2 ≠ 0 →
       ∀ k, (F (q b)).coeff d * r k b = s k b := by
-    filter_upwards [(hU.prod isOpen_ball).mem_nhds hx'] with b hb hb0 k
-    have hl := hlead _ (hqmem ⟨hb.1, hb.2, hb0⟩)
-    have hgb := (hg k).2 ⟨hb.1, hb.2, hb0⟩
-    simp only [q, ← pow_mul] at hl
-    simp only [s, q, hgb, hl, mul_right_comm]
-  have hnorm : ∀ᶠ b in 𝓝 (x, (0 : ℂ)), b.2 ≠ 0 →
+    filter_upwards [(hU.prod isOpen_ball).mem_nhds hx'] with b hb hb0
+    exact hscale b ⟨hb.1, hb.2, hb0⟩
+  have hnorm' : ∀ᶠ b in 𝓝 (x, (0 : ℂ)), b.2 ≠ 0 →
       (F (q b)).integralNormalization = ∏ k, (X - C (s k b)) := by
-    filter_upwards [(hU.prod isOpen_ball).mem_nhds hx', hscale] with b hb hsb hb0
-    have hbq := hqmem ⟨hb.1, hb.2, hb0⟩
-    have hlc : (F (q b)).coeff d = (F (q b)).leadingCoeff := by
-      rw [← hdeg _ hbq, coeff_natDegree]
-    have hl0 : (F (q b)).leadingCoeff ≠ 0 := by
-      rw [← hlc, hlead _ hbq]
-      exact mul_ne_zero (pow_ne_zero _ hbq.2.2) (hu0 _ ⟨hbq.1, hbq.2.1⟩)
-    rw [(F (q b)).integralNormalization_eq_prod_X_sub_C (fun k ↦ r k b)
-      (leadingCoeff_ne_zero.mp hl0) (by simpa only [q, hlc] using (hr b ⟨hb.1, hb.2, hb0⟩).2)]
-    simp only [← hlc, mul_comm _ ((F (q b)).coeff d), hsb hb0]
+    filter_upwards [(hU.prod isOpen_ball).mem_nhds hx'] with b hb hb0
+    exact hnorm b ⟨hb.1, hb.2, hb0⟩
   -- Apply the Laurent difference theorem to this constructed normalized splitting.
   have hl : ∀ᶠ b in 𝓝 (x, (0 : ℂ)), b.2 ≠ 0 →
       (F (q b)).coeff d = b.2 ^ (n * a) * u (q b) := by
@@ -126,9 +116,9 @@ theorem exists_analyticOnNhd_nonmonic_root_sub_eq_zpow_mul_unit
     simpa only [q, ← pow_mul] using hdiscr _ (hqmem ⟨hb.1, hb.2, hb0⟩)
   simpa only [sub_zero] using TauCeti.exists_root_sub_eq_zpow_mul_unit hs hvq
     (by simpa only [comp_apply, hq0] using hv0 _ hxR) huq
-    (by simpa only [comp_apply, hq0] using hu0 _ hxR) hnorm
+    (by simpa only [comp_apply, hq0] using hu0 _ hxR) hnorm'
     (by simpa only [sub_zero, comp_apply] using hl)
     (by simpa only [sub_zero, comp_apply] using hD)
-    (hscale.mono fun b hb hb0 ↦ ⟨hb hb0 i, hb hb0 j⟩) hij
+    (hscale'.mono fun b hb hb0 ↦ ⟨hb hb0 i, hb hb0 j⟩) hij
 
 end TauCeti.Polynomial
