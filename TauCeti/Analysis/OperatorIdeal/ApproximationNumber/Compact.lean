@@ -101,7 +101,7 @@ theorem singularValue_eq_zero_iff_rank_le {T : E →L[𝕜] F} {n : ℕ} :
     exact Order.succ_le_of_lt (not_le.mp hlt)
   obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp (isOpen_setOfPred_nat_le_rank (n + 1)) T hT
   obtain ⟨R, hR, hRT⟩ :=
-    exists_rank_le_nnnorm_sub_lt (T := T) (n := n) (c := ⟨ε, hε.le⟩) (h ▸ hε)
+    exists_rank_le_nnnorm_sub_lt (T := T) (n := n) (c := ⟨ε, hε.le⟩) (by rw [h]; exact_mod_cast hε)
   have hRε : R ∈ Metric.ball T ε := by
     rw [Metric.mem_ball, dist_eq_norm, norm_sub_rev]
     exact_mod_cast hRT
@@ -124,7 +124,7 @@ theorem isCompactOperator_of_tendsto_singularValue {T : E →L[𝕜] F}
   refine isCompactOperator_of_tendsto hRT (.of_forall fun n ↦ ?_)
   have : Module.Finite 𝕜 (LinearMap.range (R n : E →ₗ[𝕜] F)) :=
     Module.rank_lt_aleph0_iff.mp ((hR n).trans_lt (Cardinal.natCast_lt_aleph0))
-  exact isCompactOperator_of_hasFiniteRange (Module.Finite.iff_fg.mp this)
+  exact LinearMap.HasFiniteRange.isCompactOperator (Module.Finite.iff_fg.mp this)
 
 end ContinuousLinearMap
 

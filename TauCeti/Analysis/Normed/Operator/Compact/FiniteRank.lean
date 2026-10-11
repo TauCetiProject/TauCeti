@@ -23,7 +23,7 @@ Finiteness of the rank is spelled with Mathlib's `LinearMap.HasFiniteRange`.
 
 ## Main declarations
 
-* `isCompactOperator_of_hasFiniteRange`: over a locally compact nontrivially normed field, a
+* `LinearMap.HasFiniteRange.isCompactOperator`: over a locally compact nontrivially normed field, a
   bounded linear map of finite rank is a compact operator.
 -/
 
@@ -34,7 +34,7 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [LocallyCompactSpace 
 
 /-- Over a locally compact nontrivially normed field, a bounded linear map with finite-dimensional
 range is a compact operator. -/
-theorem isCompactOperator_of_hasFiniteRange {T : E →L[𝕜] F}
+theorem LinearMap.HasFiniteRange.isCompactOperator {T : E →L[𝕜] F}
     (hT : (T : E →ₗ[𝕜] F).HasFiniteRange) : IsCompactOperator T := by
   have : FiniteDimensional 𝕜 (LinearMap.range (T : E →ₗ[𝕜] F)) := Module.Finite.iff_fg.mpr hT
   have : ProperSpace (LinearMap.range (T : E →ₗ[𝕜] F)) := FiniteDimensional.proper 𝕜 _
