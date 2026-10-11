@@ -109,9 +109,10 @@ each diagonal block the `E₈` Cartan matrix. -/
 @[simp]
 theorem form_e8PowLattice_basisFun (k : ℕ) (a b : Fin k) (i j : Fin 8) :
     (e8PowLattice k).form
-        (Pi.basisFun ℚ (Fin (8 * k)) ((e8PowIndexEquiv k).symm (a, i)))
-        (Pi.basisFun ℚ (Fin (8 * k)) ((e8PowIndexEquiv k).symm (b, j))) =
+        (Pi.single ((e8PowIndexEquiv k).symm (a, i)) 1)
+        (Pi.single ((e8PowIndexEquiv k).symm (b, j)) 1) =
       if a = b then (((CartanMatrix.E 8) i j : ℤ) : ℚ) else 0 := by
+  rw [← Pi.basisFun_apply, ← Pi.basisFun_apply]
   rw [e8PowLattice, form_ofGramMatrix_basisFun_basisFun]
   simp [e8PowGram, one_apply]
 
