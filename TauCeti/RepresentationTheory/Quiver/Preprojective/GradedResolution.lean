@@ -208,7 +208,9 @@ noncomputable abbrev preprojectiveGradedKoszulMiddle (v : Q) :
   ({ carrier := preprojectiveKoszulMiddle k v
      grading := preprojectiveKoszulMiddleGrading k v } : GradedModuleCat 𝒜).shiftObj 1
 
-/-- The incoming-arrow differential, as a degree-zero map from the shifted middle term. -/
+/-- The incoming-arrow differential, as a degree-zero map from the shifted middle term.
+This is an abbreviation so its cokernel has the carrier of the existing vertex module
+without transporting along an equality of ranges. -/
 noncomputable abbrev preprojectiveGradedKoszulRight (v : Q) :
     preprojectiveGradedKoszulMiddle k v ⟶
       preprojectiveGradedRightProjective k (Symmetrify.of.obj v) :=
@@ -320,7 +322,8 @@ theorem preprojectiveGradedKoszulDifferential_exact
 /-- For a finite quiver without sinks, the shifted Koszul complex is a graded projective
 resolution of its vertex augmentation module, over the ordinary opposite algebra.
 This is an abbreviation so the types and module instances of its explicit terms can be used
-without transporting along equalities. -/
+without transporting along equalities. Its augmentation is computed by
+`preprojectiveGradedVertexAugmentation_hom`. -/
 noncomputable abbrev preprojectiveGradedKoszulResolution
     (hQ : ∀ u : Q, ∃ w, Nonempty (u ⟶ w)) (v : Q) :
     GradedProjectiveResolution 𝒜 (preprojectiveGradedVertexModule k v).grading where
@@ -360,6 +363,13 @@ theorem preprojectiveGradedKoszulResolution_d
     (hQ : ∀ u : Q, ∃ w, Nonempty (u ⟶ w)) (v : Q) (n : ℕ) :
     (preprojectiveGradedKoszulResolution k hQ v).d n =
       (preprojectiveGradedKoszulDifferential k v n).hom := (rfl)
+
+/-- The terms of the resolution are the shifted graded Koszul terms. -/
+@[simp]
+theorem preprojectiveGradedKoszulResolution_X
+    (hQ : ∀ u : Q, ∃ w, Nonempty (u ⟶ w)) (v : Q) (n : ℕ) :
+    (preprojectiveGradedKoszulResolution k hQ v).X n =
+      preprojectiveGradedKoszulTerm k v n := (rfl)
 
 /-- The graded Koszul resolution is linear: its term in homological degree `n` is generated
 in internal degree `n`. The terms beyond degree two are zero. -/
