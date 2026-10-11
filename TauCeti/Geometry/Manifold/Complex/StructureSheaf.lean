@@ -455,20 +455,20 @@ def globalSectionsEquiv :
     ℂ ≃ₐ[ℂ] ((holomorphicStructureSheaf I X).obj.obj (op ⊤)) :=
   AlgEquiv.ofBijective (Algebra.ofId ℂ _) (algebraMap_bijective I X)
 
+-- Avoid indexing on the unexposed section representation inside the equivalence type.
 @[simp]
-theorem globalSectionsEquiv_apply (c : ℂ) (x : X) :
-    globalSectionsEquiv I X c ⟨x, trivial⟩ = c := by
-  simpa only [Algebra.algebraMap_self_apply, algebraMap_apply] using
-    congrArg (fun f : (holomorphicStructureSheaf I X).obj.obj (op ⊤) ↦ f ⟨x, trivial⟩)
-      ((globalSectionsEquiv I X).commutes c)
+theorem globalSectionsEquiv_apply (c : ℂ) :
+    DFunLike.coe (F := no_index (ℂ ≃ₐ[ℂ]
+      ((holomorphicStructureSheaf I X).obj.obj (op ⊤))))
+      (globalSectionsEquiv I X) c = algebraMap ℂ _ c := by
+  simpa only [Algebra.algebraMap_self_apply] using (globalSectionsEquiv I X).commutes c
 
 /-- Evaluation at any point is the inverse of the constant-section isomorphism. -/
 theorem globalSectionsEquiv_symm_apply
-    (f : (holomorphicStructureSheaf I X).obj.obj (op ⊤)) (x : X) :
-    (globalSectionsEquiv I X).symm f = f ⟨x, trivial⟩ := by
+    (f : (holomorphicStructureSheaf I X).obj.obj (op ⊤)) (x : (⊤ : Opens X)) :
+    (globalSectionsEquiv I X).symm f = f x := by
   obtain ⟨c, rfl⟩ := (globalSectionsEquiv I X).surjective f
-  rw [AlgEquiv.symm_apply_apply]
-  exact (globalSectionsEquiv_apply I X c x).symm
+  rw [AlgEquiv.symm_apply_apply, globalSectionsEquiv_apply, algebraMap_apply]
 
 instance : FiniteDimensional ℂ ((holomorphicStructureSheaf I X).obj.obj (op ⊤)) :=
   (globalSectionsEquiv I X).toLinearEquiv.finiteDimensional
