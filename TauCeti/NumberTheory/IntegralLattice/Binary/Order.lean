@@ -84,7 +84,7 @@ theorem etale_binaryQuadraticAlgebra [L.IsNondegenerate] :
     exact_mod_cast L.binaryDiscriminant_ne_zero hV
   simpa [QuadraticAlgebra.discr_def] using h
 
-/-- A nonsquare primitive discriminant returns the supplier's actual number-field order. -/
+/-- A nonsquare primitive discriminant determines the actual number-field order. -/
 noncomputable def binaryNumberFieldOrder [Fact (¬ IsSquare (L.binaryDiscriminant hV))] :
     GlobalNumberFields.NumberFieldOrder
       (QuadraticAlgebra ℚ (L.binaryDiscriminant hV : ℚ) 0) :=
@@ -97,7 +97,7 @@ noncomputable def binaryNumberFieldOrder [Fact (¬ IsSquare (L.binaryDiscriminan
   unfold binaryNumberFieldOrder binaryOrder
   exact QuadraticOrder.numberFieldOrder_toSubalgebra _ _
 
-/-- The supplier order's discriminant equals the primitive lattice discriminant. -/
+/-- The field order's discriminant equals the primitive lattice discriminant. -/
 @[simp] theorem binaryNumberFieldOrder_discr [Fact (¬ IsSquare (L.binaryDiscriminant hV))] :
     (L.binaryNumberFieldOrder hV).discr = L.binaryDiscriminant hV := by
   simp [binaryNumberFieldOrder]
