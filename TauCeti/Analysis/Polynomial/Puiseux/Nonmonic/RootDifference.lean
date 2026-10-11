@@ -48,7 +48,7 @@ the exceptional hyperplane. The leading coefficient and discriminant need their 
 power-times-unit forms only off the hyperplane. Any positive substitution power divisible
 by the factorial of the punctured-fiber degree is allowed. The difference exponents are
 fixed on a neighborhood of the chosen parameter point; degree zero and one are included. -/
-theorem exists_analyticOnNhd_nonmonic_root_differences
+theorem exists_analyticOnNhd_nonmonic_root_sub_eq_zpow_mul_unit
     (hU : IsOpen U) (hR' : 0 < R') (hn : n ≠ 0) (hR : R' ^ n ≤ R)
     (hdvd : d.factorial ∣ n)
     (hF : ∀ i ≤ d, AnalyticOnNhd ℂ (fun b ↦ (F b).coeff i) (U ×ˢ ball 0 R))
