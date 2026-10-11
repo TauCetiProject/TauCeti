@@ -60,7 +60,7 @@ noncomputable def projectiveStableProdFunctorCommShift :
   letI := (stableConflationExact_fst_prod E E').stableFunctorCommShift (hE.prod hE') hE
   letI := (stableConflationExact_snd_prod E E').stableFunctorCommShift (hE.prod hE') hE'
   exact Functor.CommShift.ofIso
-    (eqToIso (projectiveStableProdFunctor_eq_prod' E E' hE hE')).symm ℤ
+    (projectiveStableProdFunctorIsoProd' E E' hE hE').symm ℤ
 
 /-- The stable product shift comparison is obtained from the paired projection comparisons
 by the canonical identification of the two underlying functors. -/
@@ -73,11 +73,11 @@ theorem projectiveStableProdFunctorCommShift_iso (n : ℤ) :
     letI := projectiveStableProdFunctorCommShift hE hE'
     (projectiveStableProdFunctor E E').commShiftIso n =
       Functor.isoWhiskerLeft (shiftFunctor (E.prod E').ProjectiveStableCategory n)
-        (eqToIso (projectiveStableProdFunctor_eq_prod' E E' hE hE')) ≪≫
+        (projectiveStableProdFunctorIsoProd' E E' hE hE') ≪≫
       (((stableConflationExact_fst_prod E E').stableFunctor (hE.prod hE')).prod'
         ((stableConflationExact_snd_prod E E').stableFunctor (hE.prod hE'))).commShiftIso n ≪≫
       Functor.isoWhiskerRight
-        (eqToIso (projectiveStableProdFunctor_eq_prod' E E' hE hE')).symm
+        (projectiveStableProdFunctorIsoProd' E E' hE hE').symm
         (shiftFunctor (E.ProjectiveStableCategory × E'.ProjectiveStableCategory) n) :=
   (rfl)
 
@@ -116,9 +116,100 @@ theorem projectiveStableProdFunctorIsTriangulated :
   let := (stableConflationExact_snd_prod E E').stableFunctorIsTriangulated (hE.prod hE') hE'
   let := projectiveStableProdFunctorCommShift hE hE'
   have := Functor.CommShift.ofIso_compatibility
-    (eqToIso (projectiveStableProdFunctor_eq_prod' E E' hE hE')).symm ℤ
+    (projectiveStableProdFunctorIsoProd' E E' hE hE').symm ℤ
   exact Functor.isTriangulated_of_iso
-    (eqToIso (projectiveStableProdFunctor_eq_prod' E E' hE hE')).symm
+    (projectiveStableProdFunctorIsoProd' E E' hE hE').symm
+
+/-- A stable triangle for the product exact structure is distinguished precisely when its
+images under both descended exact projections are distinguished. -/
+theorem mem_distTriang_projectiveStableProd_iff :
+    letI := (hE.prod hE').stableHasShift
+    letI := hE.stableHasShift
+    letI := hE'.stableHasShift
+    letI : ∀ n : ℤ, (shiftFunctor (E.prod E').ProjectiveStableCategory n).Additive :=
+      (hE.prod hE').stableShiftFunctor_additive
+    letI : ∀ n : ℤ, (shiftFunctor E.ProjectiveStableCategory n).Additive :=
+      hE.stableShiftFunctor_additive
+    letI : ∀ n : ℤ, (shiftFunctor E'.ProjectiveStableCategory n).Additive :=
+      hE'.stableShiftFunctor_additive
+    letI := (hE.prod hE').stablePretriangulated
+    letI := hE.stablePretriangulated
+    letI := hE'.stablePretriangulated
+    letI := (stableConflationExact_fst_prod E E').stableFunctorCommShift (hE.prod hE') hE
+    letI := (stableConflationExact_snd_prod E E').stableFunctorCommShift (hE.prod hE') hE'
+    ∀ T : Triangle (E.prod E').ProjectiveStableCategory,
+      T ∈ distTriang (E.prod E').ProjectiveStableCategory ↔
+        ((stableConflationExact_fst_prod E E').stableFunctor (hE.prod hE')).mapTriangle.obj T ∈
+          distTriang E.ProjectiveStableCategory ∧
+        ((stableConflationExact_snd_prod E E').stableFunctor (hE.prod hE')).mapTriangle.obj T ∈
+          distTriang E'.ProjectiveStableCategory := by
+  let := (hE.prod hE').stableHasShift
+  let := hE.stableHasShift
+  let := hE'.stableHasShift
+  let : ∀ n : ℤ, (shiftFunctor (E.prod E').ProjectiveStableCategory n).Additive :=
+    (hE.prod hE').stableShiftFunctor_additive
+  let : ∀ n : ℤ, (shiftFunctor E.ProjectiveStableCategory n).Additive :=
+    hE.stableShiftFunctor_additive
+  let : ∀ n : ℤ, (shiftFunctor E'.ProjectiveStableCategory n).Additive :=
+    hE'.stableShiftFunctor_additive
+  let := (hE.prod hE').stablePretriangulated
+  let := hE.stablePretriangulated
+  let := hE'.stablePretriangulated
+  let := (stableConflationExact_fst_prod E E').stableFunctorCommShift (hE.prod hE') hE
+  let := (stableConflationExact_snd_prod E E').stableFunctorCommShift (hE.prod hE') hE'
+  let := projectiveStableProdFunctorCommShift hE hE'
+  have := projectiveStableProdFunctorIsTriangulated hE hE'
+  have := Functor.CommShift.ofIso_compatibility
+    (projectiveStableProdFunctorIsoProd' E E' hE hE').symm ℤ
+  let F := (stableConflationExact_fst_prod E E').stableFunctor (hE.prod hE')
+  let G := (stableConflationExact_snd_prod E E').stableFunctor (hE.prod hE')
+  have : NatTrans.CommShift (Functor.prod'CompFst F G).hom ℤ :=
+    ⟨fun n => by ext X; simp [Functor.commShiftIso_comp_hom_app]⟩
+  have : NatTrans.CommShift (Functor.prod'CompSnd F G).hom ℤ :=
+    ⟨fun n => by ext X; simp [Functor.commShiftIso_comp_hom_app]⟩
+  intro T
+  rw [← (projectiveStableProdFunctor E E').map_distinguished_iff T]
+  exact (distinguished_iff_of_iso
+    ((Functor.mapTriangleIso
+      (projectiveStableProdFunctorIsoProd' E E' hE hE').symm).app T)).symm.trans
+    ((mem_distTriang_prod_iff _).trans (and_congr
+      (distinguished_iff_of_iso
+        ((Functor.mapTriangleCompIso (F.prod' G)
+          (CategoryTheory.Prod.fst _ _)).symm.app T ≪≫
+          (Functor.mapTriangleIso (Functor.prod'CompFst F G)).app T))
+      (distinguished_iff_of_iso
+        ((Functor.mapTriangleCompIso (F.prod' G)
+          (CategoryTheory.Prod.snd _ _)).symm.app T ≪≫
+          (Functor.mapTriangleIso (Functor.prod'CompSnd F G)).app T))))
+
+/-- The forward functor of the stable product equivalence commutes with integral shifts,
+using the paired comparisons of the descended projections. -/
+@[instance_reducible]
+noncomputable def projectiveStableProdEquivalenceFunctorCommShift :
+    letI := (hE.prod hE').stableHasShift
+    letI := hE.stableHasShift
+    letI := hE'.stableHasShift
+    (projectiveStableProdEquivalence E E').functor.CommShift ℤ := by
+  letI := (hE.prod hE').stableHasShift
+  letI := hE.stableHasShift
+  letI := hE'.stableHasShift
+  letI := projectiveStableProdFunctorCommShift hE hE'
+  exact Functor.CommShift.ofIso
+    (eqToIso (projectiveStableProdEquivalence_functor E E')).symm ℤ
+
+/-- The inverse stable product equivalence commutes with integral shifts via the canonical
+mate of its forward comparison. -/
+@[instance_reducible]
+noncomputable def projectiveStableProdEquivalenceInverseCommShift :
+    letI := (hE.prod hE').stableHasShift
+    letI := hE.stableHasShift
+    letI := hE'.stableHasShift
+    (projectiveStableProdEquivalence E E').inverse.CommShift ℤ := by
+  letI := (hE.prod hE').stableHasShift
+  letI := hE.stableHasShift
+  letI := hE'.stableHasShift
+  letI := projectiveStableProdEquivalenceFunctorCommShift hE hE'
+  exact (projectiveStableProdEquivalence E E').commShiftInverse ℤ
 
 /-- The additive stable product equivalence is a triangle equivalence. The inverse shift
 comparison is the canonical mate of the forward comparison. -/
@@ -136,10 +227,8 @@ theorem projectiveStableProdEquivalenceIsTriangulated :
     letI := hE.stablePretriangulated
     letI := hE'.stablePretriangulated
     letI := projectiveStableProdFunctorCommShift hE hE'
-    letI : (projectiveStableProdEquivalence E E').functor.CommShift ℤ :=
-      Functor.CommShift.ofIso
-        (eqToIso (projectiveStableProdEquivalence_functor E E')).symm ℤ
-    letI := (projectiveStableProdEquivalence E E').commShiftInverse ℤ
+    letI := projectiveStableProdEquivalenceFunctorCommShift hE hE'
+    letI := projectiveStableProdEquivalenceInverseCommShift hE hE'
     letI := (projectiveStableProdEquivalence E E').commShift_of_functor ℤ
     (projectiveStableProdEquivalence E E').IsTriangulated := by
   let := (hE.prod hE').stableHasShift
@@ -155,10 +244,8 @@ theorem projectiveStableProdEquivalenceIsTriangulated :
   let := hE.stablePretriangulated
   let := hE'.stablePretriangulated
   let := projectiveStableProdFunctorCommShift hE hE'
-  let : (projectiveStableProdEquivalence E E').functor.CommShift ℤ :=
-    Functor.CommShift.ofIso
-      (eqToIso (projectiveStableProdEquivalence_functor E E')).symm ℤ
-  let := (projectiveStableProdEquivalence E E').commShiftInverse ℤ
+  let := projectiveStableProdEquivalenceFunctorCommShift hE hE'
+  let := projectiveStableProdEquivalenceInverseCommShift hE hE'
   let := (projectiveStableProdEquivalence E E').commShift_of_functor ℤ
   have := projectiveStableProdFunctorIsTriangulated hE hE'
   have := Functor.CommShift.ofIso_compatibility
@@ -192,10 +279,8 @@ theorem stableProdIsTriangulated :
   let := hE'.stablePretriangulated
   have := (hE.prod hE').stableIsTriangulated
   let := projectiveStableProdFunctorCommShift hE hE'
-  let : (projectiveStableProdEquivalence E E').functor.CommShift ℤ :=
-    Functor.CommShift.ofIso
-      (eqToIso (projectiveStableProdEquivalence_functor E E')).symm ℤ
-  let := (projectiveStableProdEquivalence E E').commShiftInverse ℤ
+  let := projectiveStableProdEquivalenceFunctorCommShift hE hE'
+  let := projectiveStableProdEquivalenceInverseCommShift hE hE'
   have := (projectiveStableProdEquivalence E E').commShift_of_functor ℤ
   have := projectiveStableProdEquivalenceIsTriangulated hE hE'
   exact IsTriangulated.of_fully_faithful_triangulated_functor
