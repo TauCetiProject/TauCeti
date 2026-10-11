@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.FarguesFontaine.Window
 public import TauCeti.RingTheory.WittVector.GaussValuation
+public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 
 /-!
 # Gauss points of `𝒴 = D(p) ∩ D([ϖ])`
@@ -40,7 +41,9 @@ particular `𝒴` is nonempty. Its support is trivial, and its radius `κ(η_ρ)
 * `TauCeti.FarguesFontaine.gaussPoint_mem_spaY` : `η_ρ` is a point of `𝒴`.
 * `TauCeti.FarguesFontaine.spaY_nonempty` : `𝒴` is nonempty.
 * `TauCeti.FarguesFontaine.isRadiusLowerBound_gaussPoint_iff` and its upper analogue : the radius
-  of `η_ρ`.
+  of `η_ρ` as a valuation inequality.
+* `TauCeti.FarguesFontaine.isRadiusLowerBound_gaussPoint_iff_log` and its upper analogue : the
+  real-valued radius dictionary for `η_ρ`.
 
 ## References
 
@@ -48,6 +51,8 @@ particular `𝒴` is nonempty. Its support is trivial, and its radius `κ(η_ρ)
   Astérisque 406 (2018), Chapter 1.
 * K. S. Kedlaya, *Sheaves, stacks, and shtukas*, lecture notes, Arizona Winter School 2017,
   §3.1.
+* K. S. Kedlaya, *Noetherian properties of Fargues–Fontaine curves*, IMRN 2016, no. 8,
+  §2, for the radius parametrisation of the interval rings.
 -/
 
 public section
@@ -125,5 +130,42 @@ theorem isRadiusUpperBound_gaussPoint_iff (hv : v.Integers O) (hρ : ρ < 1) (ϖ
       ρ ^ q.num ≤ v (algebraMap O K ϖ) ^ q.den := by
   rw [isRadiusUpperBound_iff_of_eq_div q.den_ne_zero (NNRat.num_div_den q).symm]
   simp
+
+/-- **The lower radius bound on a Gauss point is a real ratio inequality.** When the coefficient
+norm of `ϖ` is positive and the Gauss radius lies in `(0, 1)`, the order-theoretic condition
+`q ≤ κ(η_ρ)` is equivalent to `q.num / q.den ≤ log(v(ϖ)) / log(ρ)`. This is the real-valued
+form of the radius dictionary used for interval rings. -/
+@[simp]
+theorem isRadiusLowerBound_gaussPoint_iff_log (hv : v.Integers O) (hρ₀ : 0 < ρ) (hρ : ρ < 1)
+    (ϖ : O) (hϖ₀ : 0 < v (algebraMap O K ϖ)) (q : ℚ≥0) :
+    IsRadiusLowerBound p ϖ q (gaussPoint p hv ρ hρ) ↔
+      (q.num : ℝ) / q.den ≤ Real.log (v (algebraMap O K ϖ)) / Real.log (ρ : ℝ) := by
+  rw [isRadiusLowerBound_gaussPoint_iff hv hρ ϖ q]
+  rw [← NNReal.coe_le_coe]
+  push_cast
+  rw [← Real.log_le_log_iff (by positivity) (by positivity),
+    Real.log_pow, Real.log_pow]
+  rw [← le_div_iff_of_neg (Real.log_neg (by exact_mod_cast hρ₀) (by exact_mod_cast hρ))]
+  rw [div_le_iff₀ (by positivity)]
+  rw [mul_div_assoc]
+  simp [mul_comm]
+
+/-- **The upper radius bound on a Gauss point is a real ratio inequality.** Under the same
+positivity hypotheses, `κ(η_ρ) ≤ q` is equivalent to
+`log(v(ϖ)) / log(ρ) ≤ q.num / q.den`. -/
+@[simp]
+theorem isRadiusUpperBound_gaussPoint_iff_log (hv : v.Integers O) (hρ₀ : 0 < ρ) (hρ : ρ < 1)
+    (ϖ : O) (hϖ₀ : 0 < v (algebraMap O K ϖ)) (q : ℚ≥0) :
+    IsRadiusUpperBound p ϖ q (gaussPoint p hv ρ hρ) ↔
+      Real.log (v (algebraMap O K ϖ)) / Real.log (ρ : ℝ) ≤ (q.num : ℝ) / q.den := by
+  rw [isRadiusUpperBound_gaussPoint_iff hv hρ ϖ q]
+  rw [← NNReal.coe_le_coe]
+  push_cast
+  rw [← Real.log_le_log_iff (by positivity) (by positivity),
+    Real.log_pow, Real.log_pow]
+  rw [← div_le_iff_of_neg (Real.log_neg (by exact_mod_cast hρ₀) (by exact_mod_cast hρ))]
+  rw [le_div_iff₀ (by positivity)]
+  rw [mul_div_assoc]
+  simp [mul_comm]
 
 end TauCeti.FarguesFontaine
