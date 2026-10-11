@@ -78,16 +78,13 @@ the maps `F.map f`. -/
     ((spectralObject F).H n).obj (mk₁ f) ≅ (mappingCone (F.map f)).homology n :=
   (homologyFunctorFactors C (ComplexShape.up ℤ) n).app (mappingCone (F.map f))
 
-/-- The connecting maps of the spectral object of `F` are the connecting maps of the homology
-sequences of the distinguished triangles of mapping cones attached to `F.map f` and `F.map g`. -/
-lemma spectralObject_δ {i j k : ι} (f : i ⟶ j) (g : j ⟶ k) (n₀ n₁ : ℤ) (h : n₀ + 1 = n₁) :
-    (spectralObject F).δ f g n₀ n₁ h =
-      (homologyFunctor C (ComplexShape.up ℤ) 0).homologySequenceδ
-        ((quotient C (ComplexShape.up ℤ)).mapTriangle.obj
-          (mappingConeCompTriangle (F.map f) (F.map g))) n₀ n₁ h := by
-  refine (Triangulated.SpectralObject.mapHomologicalFunctor_δ _ _ f g n₀ n₁ h).trans ?_
-  dsimp only [Functor.homologySequenceδ]
-  congr 1
+/-- The connecting maps of the triangulated spectral object
+`(spectralObjectMappingCone C).precomp F` are the third morphisms of the distinguished
+triangles of mapping cones attached to `F.map f` and `F.map g`. -/
+lemma precomp_spectralObjectMappingCone_δ {i j k : ι} (f : i ⟶ j) (g : j ⟶ k) :
+    ((spectralObjectMappingCone C).precomp F).δ f g =
+      ((quotient C (ComplexShape.up ℤ)).mapTriangle.obj
+        (mappingConeCompTriangle (F.map f) (F.map g))).mor₃ := by
   have e (a b : ι) (u : a ⟶ b) :
       (spectralObjectMappingCone C).ω₁.map (F.mapComposableArrowsObjMk₁Iso u).hom = 𝟙 _ :=
     (congrArg (quotient C (ComplexShape.up ℤ)).map (mappingCone.map_id (F.map u))).trans
@@ -100,6 +97,18 @@ lemma spectralObject_δ {i j k : ι} (f : i ⟶ j) (g : j ⟶ k) (n₀ n₁ : �
   rw [e, e']
   erw [Category.id_comp, CategoryTheory.Functor.map_id, Category.comp_id]
   rfl
+
+/-- The connecting maps of the spectral object of `F` are the connecting maps of the homology
+sequences of the distinguished triangles of mapping cones attached to `F.map f` and `F.map g`. -/
+lemma spectralObject_δ {i j k : ι} (f : i ⟶ j) (g : j ⟶ k) (n₀ n₁ : ℤ) (h : n₀ + 1 = n₁) :
+    (spectralObject F).δ f g n₀ n₁ h =
+      (homologyFunctor C (ComplexShape.up ℤ) 0).homologySequenceδ
+        ((quotient C (ComplexShape.up ℤ)).mapTriangle.obj
+          (mappingConeCompTriangle (F.map f) (F.map g))) n₀ n₁ h := by
+  refine (Triangulated.SpectralObject.mapHomologicalFunctor_δ _ _ f g n₀ n₁ h).trans ?_
+  dsimp only [Functor.homologySequenceδ]
+  congr 1
+  exact precomp_spectralObjectMappingCone_δ F f g
 
 /-- The short exact sequence `F i ⟶ F j ⟶ cokernel (F.map f)` of a monomorphism `F.map f`. -/
 noncomputable abbrev cokernelShortComplex {i j : ι} (f : i ⟶ j) :
