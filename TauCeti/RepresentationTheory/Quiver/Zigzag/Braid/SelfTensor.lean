@@ -46,14 +46,13 @@ local notation "U" => zigzagGradedBraidBimodule k G
 local notation "e" => fun i : V ↦ zigzagAlgebraBasis k G (Sum.inl i)
 local notation "L" => fun i : V ↦ (Ideal.span {e i} : Ideal Z)
 local notation "R" => fun i : V ↦ (Ideal.span {op (e i)} : Ideal Zᵐᵒᵖ)
-/-- The signed path-length grading used by the balanced tensor bifunctor. -/
-local instance : GradedAlgebra (zigzagAlgebraInternalGrading k G).piece :=
-  zigzagAlgebraIntegerGradedAlgebra k G
+-- Use the canonical signed path-length graded-algebra instance.
+attribute [local instance] zigzagAlgebraIntegerGradedAlgebra
 /-- Restrict the enveloping action to the right factor. -/
-local instance (i : V) : Module Zᵐᵒᵖ (U i) :=
+private local instance selfTensorRightModule (i : V) : Module Zᵐᵒᵖ (U i) :=
   TauCeti.Algebra.TensorProduct.moduleRight (k := k) (A := Z) (B := Zᵐᵒᵖ) (U i)
 /-- Restrict the enveloping action to the left factor. -/
-local instance (i : V) : Module Z (U i) :=
+private local instance selfTensorLeftModule (i : V) : Module Z (U i) :=
   TauCeti.Algebra.TensorProduct.moduleLeft (k := k) (A := Z) (B := Zᵐᵒᵖ) (U i)
 
 private def vertexFactors (i : V) : U i ≃ₗ[k] L i ⊗[k] R i where
