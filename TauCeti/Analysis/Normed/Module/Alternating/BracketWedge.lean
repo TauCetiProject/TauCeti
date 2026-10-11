@@ -35,6 +35,7 @@ noncomputable def bracketWedge (β : F →L[ℝ] F →L[ℝ] F)
     E [⋀^Fin (k + l)]→L[ℝ] F :=
   wedgeWith β φ ψ
 
+-- Certify the definitional equality locally: the exported theorem cannot unfold the definition.
 private theorem bracketWedge_def_aux (β : F →L[ℝ] F →L[ℝ] F)
     (φ : E [⋀^Fin k]→L[ℝ] F) (ψ : E [⋀^Fin l]→L[ℝ] F) :
     bracketWedge β φ ψ = wedgeWith β φ ψ := rfl
