@@ -51,17 +51,18 @@ variable {k F : Type*} [Field k] [Field F] [Algebra (RatFunc k) F] [Algebra k F]
 characteristic two, if `F = k(x, y)` with `y² = f(x)` for a squarefree `f` of positive degree, and
 `(a, b)` is a point of the curve with `b ≠ 0`, then some place `P` of `F` over the place `x = a`
 of `k(x)` is rational, unramified over `k(x)`, and has both `x - a` and `y - b` vanishing at it. -/
-theorem exists_ord_sub_pos_of_sq_eq [FiniteDimensional (RatFunc k) F] (h2 : (2 : k) ≠ 0)
-    {f : k[X]} (hf : Squarefree f)
+theorem exists_ord_sub_pos_of_sq_eq (h2 : (2 : k) ≠ 0) {f : k[X]} (hf : Squarefree f)
     (hdeg : 0 < f.natDegree) {y : F} (hgen : (RatFunc k)⟮y⟯ = ⊤)
     (hy : y ^ 2 = algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) f)) {a b : k}
     (hb : b ≠ 0) (hab : b ^ 2 = f.eval a) :
+    letI : FiniteDimensional (RatFunc k) F :=
+      (finiteDimensional_and_isSeparable_of_sq_eq h2 hf hdeg hgen hy).1
     ∃ P : Place k F, P.restrict k (RatFunc k) = adicOfIrreducible (irreducible_X_sub_C a) ∧
       P.degree = 1 ∧ ramificationIdx (RatFunc k) P = 1 ∧
       0 < P.ord (algebraMap (RatFunc k) F RatFunc.X - algebraMap k F a) ∧
       0 < P.ord (y - algebraMap k F b) := by
   classical
-  have := (finiteDimensional_and_isSeparable_of_sq_eq h2 hf hdeg hgen hy).2
+  obtain ⟨_, _⟩ := finiteDimensional_and_isSeparable_of_sq_eq h2 hf hdeg hgen hy
   have hF : IsFunctionField k F := isFunctionField_iff_functionField.mpr inferInstance
   set Q₀ := adicOfIrreducible (irreducible_X_sub_C a)
   set D := y - algebraMap k F b
