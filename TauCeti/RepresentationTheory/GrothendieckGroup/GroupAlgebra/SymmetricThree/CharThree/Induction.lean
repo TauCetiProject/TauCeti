@@ -55,7 +55,7 @@ private theorem simpleClassBasis_eq_linearCharacter (b : Bool) :
   -- Both sides take the same representation through the two Grothendieck-group presentations.
   rw [symmetricThreeCharThreeSimpleClassBasis_apply,
     fdRepK0RingEquiv_of, FDRep.ofLinearCharacter_def]
-  rfl
+  simp only [FDRep.of_ρ']
 
 private theorem signClass_eq :
     symmetricThreeCharThreeSimpleClassBasis k true =
