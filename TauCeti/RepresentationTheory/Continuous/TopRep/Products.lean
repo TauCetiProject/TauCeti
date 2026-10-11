@@ -46,7 +46,7 @@ variable {G : Type v} [Monoid G]
 
 /-- The underlying module of a pointwise product is the pointwise product of the underlying
 modules. -/
-@[simp] theorem pi_V {ι : Type w} (X : ι → TopRep R G) :
+theorem pi_V {ι : Type w} (X : ι → TopRep R G) :
     (pi X).V = ∀ i, (X i).V := rfl
 
 /-- The action on a product representation is pointwise. -/
