@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Caccioppoli.Power
 public import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Algebra.Order.Archimedean.Basic
 import TauCeti.Analysis.Sobolev.Embedding
 
 /-!
@@ -258,30 +259,6 @@ theorem exists_eLpNorm_le_ofReal_rpow_mul_eLpNorm :
 section Iteration
 
 variable {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure] {lam Lam : ℝ}
-
-/-- The exponents of Moser's iteration. For `χ > 1`, `0 < s < χ` and `p > 0` there is a number
-`M ≥ 1` of steps such that the starting exponent `p₀ = s / χ^M` is at most `p`, and the exponents
-`p₀ χ^k` of the steps `k < M` stay below `1`, where the Caccioppoli inequality for powers
-applies. -/
-private theorem exists_div_pow_le_and_forall_mul_pow_lt_one {χ s p : ℝ} (hχ : 1 < χ)
-    (hs : 0 < s) (hsχ : s < χ) (hp : 0 < p) :
-    ∃ M : ℕ, 0 < M ∧ s / χ ^ M ≤ p ∧ ∀ k < M, s / χ ^ M * χ ^ k < 1 := by
-  have hχ0 : 0 < χ := zero_lt_one.trans hχ
-  obtain ⟨m, hm⟩ := pow_unbounded_of_one_lt (s / p) hχ
-  refine ⟨m + 1, m.succ_pos, ?_, fun k hk => ?_⟩
-  · calc s / χ ^ (m + 1) ≤ s / χ ^ m :=
-          div_le_div_of_nonneg_left hs.le (by positivity) (pow_le_pow_right₀ hχ.le m.le_succ)
-      _ ≤ p := by
-          rw [div_le_iff₀ (by positivity), mul_comm, ← div_le_iff₀ hp]
-          exact hm.le
-  · calc s / χ ^ (m + 1) * χ ^ k ≤ s / χ ^ (m + 1) * χ ^ m := by
-          gcongr
-          · exact hχ.le
-          · omega
-      _ = s / χ := by
-          rw [pow_succ]
-          field_simp
-      _ < 1 := (div_lt_one hχ0).2 hsχ
 
 /-- **Moser's iteration for small positive powers of a supersolution (dimension `n ≥ 3`).** Let
 `2*` be the Sobolev exponent of `W^{1,2}` in dimension `n`, so that `1/2* + 1/n = 1/2` and
