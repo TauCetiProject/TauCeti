@@ -13,6 +13,7 @@ public import Mathlib.Algebra.Polynomial.Roots
 public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.FieldTheory.Minpoly.Field
 public import Mathlib.SetTheory.Cardinal.ENat
+public import TauCeti.RingTheory.MvPolynomial.Dehomogenization
 
 /-!
 # Polynomials in two variables
@@ -30,6 +31,10 @@ largest `s 0 + s 1` over its support.  These are the forms in which a plane curv
   total degree of `φ`.
 * `MvPolynomial.exists_mem_support_add_eq_totalDegree`: a nonzero `φ` has a monomial of degree
   exactly its total degree.
+* `MvPolynomial.eq_single_one_of_mem_support`: if `φ` has total degree at most `n`, its only
+  possible monomial with exponent `n` in `X₁` is `X₁ ^ n`.
+* `MvPolynomial.totalDegree_pos_of_aeval_eq_zero`: if the coefficient of `X₁ ^ n` in `φ` is `1`,
+  where `n` is the total degree of `φ`, and `φ` has a zero, then `n` is positive.
 * `MvPolynomial.exists_sum_coeff_mul_pow_ne_zero`: over a field with more than `deg φ` elements,
   the leading form `φ_n` of `φ` satisfies `φ_n(c, 1) ≠ 0` for some `c`.
 * `MvPolynomial.natDegree_minpoly_le_totalDegree`: if `φ(u + c y, y) = 0` with `u ∈ K` and
@@ -37,6 +42,8 @@ largest `s 0 + s 1` over its support.  These are the forms in which a plane curv
 * `Polynomial.Bivariate.aeval_equivMvPolynomial`: evaluating `p ∈ R[X][Y]` at `y` over an
   `R[X]`-algebra is evaluating the corresponding `φ ∈ R[X₀, X₁]` at `(X, y)`; this reads a plane
   curve equation `φ` as a polynomial in `X₁` over `R[X₀]`.
+* `Polynomial.Bivariate.aeval_map_eq_aeval_equivMvPolynomial`: the same, after mapping `p` to
+  `K[Y]` for an `R[X]`-algebra `K`.
 * `Polynomial.Bivariate.monic_equivMvPolynomial_symm` and
   `Polynomial.Bivariate.natDegree_equivMvPolynomial_symm`: if `φ` has total degree at most `n` and
   the coefficient of `X₁ ^ n` is `1`, then `φ`, read as a polynomial in `X₁` over `R[X₀]`, is monic
@@ -52,6 +59,11 @@ that is `X₀ ^ n φ(1 / X₀, X₁ / X₀)`.  This chart contains the points at
 other than `(0 : 1 : 0)`, and when the coefficient of `X₁ ^ n` is nonzero that point is not on
 the curve.
 
+* `MvPolynomial.coeff_inftyChart` and `MvPolynomial.inftyChart_monomial`: the coefficients of
+  the chart equation.
+* `MvPolynomial.inftyChart_dehomogenize`: for `G` homogeneous of degree `n` in three variables,
+  the chart at infinity of the affine equation `TauCeti.dehomogenize 2 G` is the dehomogenization
+  `TauCeti.dehomogenize 0 G` with its two coordinates swapped.
 * `MvPolynomial.aeval_inftyChart`: `ψ(x⁻¹, y x⁻¹) = x⁻ⁿ φ(x, y)` for `ψ = inftyChart n φ`.
 * `MvPolynomial.aeval_pderiv_one_inftyChart`: `∂ψ/∂X₁ (x⁻¹, y x⁻¹) = x^(1 - n) ∂φ/∂X₁ (x, y)`.
 * `MvPolynomial.totalDegree_inftyChart_le` and `MvPolynomial.coeff_single_one_inftyChart`: the
@@ -86,12 +98,21 @@ theorem exists_mem_support_add_eq_totalDegree {φ : MvPolynomial (Fin 2) R} (hφ
 
 /-- A monomial of a polynomial in two variables of total degree at most `n` whose exponent of
 `X₁` is `n` is `X₁ ^ n`. -/
-private theorem eq_single_one_of_mem_support {φ : MvPolynomial (Fin 2) R} {n : ℕ}
+theorem eq_single_one_of_mem_support {φ : MvPolynomial (Fin 2) R} {n : ℕ}
     (hφ : φ.totalDegree ≤ n) {s : Fin 2 →₀ ℕ} (hs : s ∈ φ.support) (h1 : s 1 = n) :
     s = Finsupp.single 1 n := by
   have := (add_le_totalDegree_of_mem_support hs).trans hφ
   ext i
   fin_cases i <;> simp <;> omega
+
+/-- If the coefficient of `X₁ ^ n` in a polynomial in two variables of total degree `n` is `1`,
+and the polynomial has a zero, then `n` is positive. -/
+theorem totalDegree_pos_of_aeval_eq_zero {φ : MvPolynomial (Fin 2) R}
+    (hc : φ.coeff (Finsupp.single 1 φ.totalDegree) = 1) {A : Type*} [CommSemiring A]
+    [Nontrivial A] [Algebra R A] {v : Fin 2 → A} (hv : aeval v φ = 0) : 0 < φ.totalDegree := by
+  refine Nat.pos_of_ne_zero fun h0 ↦ one_ne_zero (α := A) ?_
+  rw [h0, Finsupp.single_zero] at hc
+  rw [← hv, totalDegree_eq_zero_iff_eq_C.mp h0, hc, map_one, map_one]
 
 /-! ### The chart at infinity -/
 
@@ -103,6 +124,85 @@ vanish. -/
 noncomputable def inftyChart (n : ℕ) (φ : MvPolynomial (Fin 2) R) : MvPolynomial (Fin 2) R :=
   ∑ s ∈ φ.support, monomial (Finsupp.single 0 (n - (s 0 + s 1)) + Finsupp.single 1 (s 1))
     (φ.coeff s)
+
+/-- Passing to the chart at infinity is additive. -/
+theorem inftyChart_add (n : ℕ) (φ ψ : MvPolynomial (Fin 2) R) :
+    inftyChart n (φ + ψ) = inftyChart n φ + inftyChart n ψ :=
+  Finsupp.sum_add_index' (fun _ ↦ by simp) (fun _ _ _ ↦ by simp)
+
+/-- The chart equation at infinity of the monomial `c X₀ ^ s 0 X₁ ^ s 1` is
+`c X₀ ^ (n - s 0 - s 1) X₁ ^ s 1`. -/
+theorem inftyChart_monomial (n : ℕ) (s : Fin 2 →₀ ℕ) (c : R) :
+    inftyChart n (monomial s c) =
+      monomial (Finsupp.single 0 (n - (s 0 + s 1)) + Finsupp.single 1 (s 1)) c := by
+  classical
+  by_cases hc : c = 0
+  · simp [hc, inftyChart]
+  · simp [inftyChart, support_monomial, hc]
+
+/-- **The coefficients of the chart equation at infinity**: for `φ` of total degree at most `n`,
+the coefficient of `X₀ ^ a X₁ ^ b` in `inftyChart n φ` is the coefficient of
+`X₀ ^ (n - a - b) X₁ ^ b` in `φ` if `a + b ≤ n`, and `0` otherwise. -/
+theorem coeff_inftyChart {φ : MvPolynomial (Fin 2) R} {n : ℕ} (hφ : φ.totalDegree ≤ n)
+    (s : Fin 2 →₀ ℕ) :
+    (inftyChart n φ).coeff s = if s 0 + s 1 ≤ n then
+      φ.coeff (Finsupp.single 0 (n - (s 0 + s 1)) + Finsupp.single 1 (s 1)) else 0 := by
+  classical
+  rw [inftyChart, coeff_sum]
+  simp_rw [coeff_monomial]
+  split_ifs with hs
+  · rw [Finset.sum_eq_single (Finsupp.single 0 (n - (s 0 + s 1)) + Finsupp.single 1 (s 1))]
+    · rw [ite_eq_left_iff]
+      intro h
+      exact (h (by ext i; fin_cases i <;> simp; omega)).elim
+    · refine fun t ht hne ↦ ite_eq_right_iff.mpr fun h ↦ (hne ?_).elim
+      have := (add_le_totalDegree_of_mem_support ht).trans hφ
+      have h0 := congrArg (· 0) h
+      have h1 := congrArg (· 1) h
+      simp at h0 h1
+      ext i
+      fin_cases i <;> simp <;> omega
+    · intro h
+      rw [notMem_support_iff.mp h]
+      simp
+  · refine Finset.sum_eq_zero fun t ht ↦ ite_eq_right_iff.mpr fun h ↦ (hs ?_).elim
+    have := (add_le_totalDegree_of_mem_support ht).trans hφ
+    rw [← h]
+    simp
+    omega
+
+/-- **The chart at infinity as a dehomogenization**: let `G` be homogeneous of degree `n` in the
+homogeneous coordinates `(X₀ : X₁ : X₂)`. The chart at infinity of the affine equation
+`G(X₀, X₁, 1)` is `G(1, X₁, X₀)`, that is the dehomogenization of `G` at the first coordinate
+with its two remaining coordinates swapped. -/
+theorem inftyChart_dehomogenize {G : MvPolynomial (Fin 3) R} {n : ℕ} (hG : G.IsHomogeneous n) :
+    inftyChart n (TauCeti.dehomogenize 2 G) =
+      rename (Equiv.swap 0 1) (TauCeti.dehomogenize 0 G) := by
+  -- Both sides are additive in `G`, so it suffices to compare them on the monomials of `G`.
+  let L : MvPolynomial (Fin 2) R →+ MvPolynomial (Fin 2) R :=
+    { toFun := inftyChart n, map_zero' := by simp [inftyChart], map_add' := inftyChart_add n }
+  change L _ = _
+  conv_lhs => rw [G.as_sum]
+  conv_rhs => rw [G.as_sum]
+  simp only [map_sum]
+  refine Finset.sum_congr rfl fun s hs ↦ ?_
+  have hs : s 0 + s 1 + s 2 = n := by
+    simpa [Finsupp.weight_apply, Finsupp.sum_fintype, Fin.sum_univ_three] using
+      hG (mem_support_iff.mp hs)
+  have h2 : TauCeti.dehomogenize 2 (monomial s (G.coeff s)) =
+      monomial (Finsupp.single 0 (s 0) + Finsupp.single 1 (s 1)) (G.coeff s) := by
+    simp [monomial_eq, Finsupp.prod_fintype, Fin.prod_univ_three, algHom_C]
+    rfl
+  have h0 : TauCeti.dehomogenize 0 (monomial s (G.coeff s)) =
+      monomial (Finsupp.single 0 (s 1) + Finsupp.single 1 (s 2)) (G.coeff s) := by
+    simp [monomial_eq, Finsupp.prod_fintype, Fin.prod_univ_three, algHom_C]
+    rfl
+  simp only [L, AddMonoidHom.coe_mk, ZeroHom.coe_mk, h2, h0, inftyChart_monomial, rename_monomial]
+  refine congrArg (fun t ↦ monomial t (G.coeff s)) ?_
+  rw [Finsupp.mapDomain_add, Finsupp.mapDomain_single, Finsupp.mapDomain_single]
+  ext i
+  fin_cases i <;> simp
+  omega
 
 /-- The chart equation at infinity of a polynomial of total degree at most `n` again has total
 degree at most `n`. -/
@@ -274,6 +374,21 @@ theorem aeval_equivMvPolynomial (y : A) (p : R[X][Y]) :
     | monomial m c =>
       simp_rw [← C_mul_X_pow_eq_monomial]
       simp [equivMvPolynomial, IsScalarTower.algebraMap_apply R R[X] A]
+
+/-- Evaluating `p ∈ R[X][Y]`, mapped to `K[Y]` for an `R[X]`-algebra `K`, at `y` in a `K`-algebra
+`F` is evaluating the corresponding polynomial in two variables at the image of `X` and at `y`. -/
+theorem aeval_map_eq_aeval_equivMvPolynomial {K F : Type*} [CommSemiring K] [CommSemiring F]
+    [Algebra R K] [Algebra R[X] K] [IsScalarTower R R[X] K] [Algebra K F] [Algebra R F]
+    [IsScalarTower R K F] (p : R[X][X]) (y : F) :
+    aeval y (p.map (algebraMap R[X] K)) =
+      MvPolynomial.aeval ![algebraMap K F (algebraMap R[X] K X), y] (equivMvPolynomial R p) := by
+  -- View `F` as an `R[X]`-algebra through `K`.
+  let _ : Algebra R[X] F := ((algebraMap K F).comp (algebraMap R[X] K)).toAlgebra
+  have : IsScalarTower R[X] K F := .of_algebraMap_eq fun _ ↦ rfl
+  have : IsScalarTower R R[X] F := .of_algebraMap_eq fun c ↦ by
+    rw [IsScalarTower.algebraMap_apply R[X] K F, ← IsScalarTower.algebraMap_apply R R[X] K,
+      ← IsScalarTower.algebraMap_apply R K F]
+  rw [aeval_map_algebraMap, ← aeval_equivMvPolynomial, IsScalarTower.algebraMap_apply R[X] K F]
 
 section MvPolynomial
 
