@@ -47,9 +47,29 @@ lemma unramified_eq : @Unramified =
 
 namespace Unramified
 
-lemma of_locallyOfFiniteType {X Y : Scheme} (f : X ⟶ Y) [LocallyOfFiniteType f]
-    [FormallyUnramified f] : Unramified f := by
+instance : HasRingHomProperty @Unramified
+    (fun f ↦ f.FiniteType ∧ f.FormallyUnramified) := by
+  rw [unramified_eq]
+  exact HasRingHomProperty.inf
+
+/-- The affine criterion for an unramified morphism. -/
+theorem Spec_iff {R S : CommRingCat.{u}} {φ : R ⟶ S} :
+    Unramified (Spec.map φ) ↔
+      letI := φ.hom.toAlgebra
+      Algebra.Unramified R S := by
+  rw [HasRingHomProperty.Spec_iff (P := @Unramified)]
+  algebraize [φ.hom]
   constructor
+  · rintro ⟨hft, hfu⟩
+    exact ⟨hfu, hft⟩
+  · intro h
+    exact ⟨h.finiteType, h.formallyUnramified⟩
+
+/-- If a composite is unramified, then its first map is unramified. -/
+theorem of_comp {Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
+    [Unramified (f ≫ g)] : Unramified f :=
+  { toLocallyOfFiniteType := locallyOfFiniteType_of_comp f g
+    toFormallyUnramified := FormallyUnramified.of_comp f g }
 
 instance : MorphismProperty.IsStableUnderComposition @Unramified := by
   rw [unramified_eq]
@@ -65,39 +85,23 @@ instance : MorphismProperty.IsMultiplicative @Unramified := by
 
 instance : IsZariskiLocalAtSource @Unramified := by
   rw [unramified_eq]
-  have h₁ : IsZariskiLocalAtSource @LocallyOfFiniteType := by
-    have h : HasRingHomProperty @LocallyOfFiniteType RingHom.FiniteType :=
-      AlgebraicGeometry.instHasRingHomPropertyLocallyOfFiniteTypeFiniteType
-    exact @HasRingHomProperty.instIsZariskiLocalAtSource _ _ h
-  have h₂ : IsZariskiLocalAtSource @FormallyUnramified := by
-    have h : HasRingHomProperty @FormallyUnramified RingHom.FormallyUnramified := inferInstance
-    exact @HasRingHomProperty.instIsZariskiLocalAtSource _ _ h
-  exact @CategoryTheory.MorphismProperty.IsLocalAtSource.inf Scheme inferInstance
-    _ @LocallyOfFiniteType @FormallyUnramified h₁ h₂
+  have h : HasRingHomProperty (@LocallyOfFiniteType ⊓ @FormallyUnramified)
+      (fun f ↦ f.FiniteType ∧ f.FormallyUnramified) := HasRingHomProperty.inf
+  infer_instance
 
 instance : IsZariskiLocalAtTarget @Unramified := by
   rw [unramified_eq]
-  have h₁ : IsZariskiLocalAtTarget @LocallyOfFiniteType := by
-    have h : HasRingHomProperty @LocallyOfFiniteType RingHom.FiniteType :=
-      AlgebraicGeometry.instHasRingHomPropertyLocallyOfFiniteTypeFiniteType
-    exact @HasRingHomProperty.instIsZariskiLocalAtTarget _ _ h
-  have h₂ : IsZariskiLocalAtTarget @FormallyUnramified := by
-    have h : HasRingHomProperty @FormallyUnramified RingHom.FormallyUnramified := inferInstance
-    exact @HasRingHomProperty.instIsZariskiLocalAtTarget _ _ h
-  exact @CategoryTheory.MorphismProperty.IsLocalAtTarget.inf Scheme inferInstance
-    _ @LocallyOfFiniteType @FormallyUnramified h₁ h₂
-
-instance (priority := 900) {X Y : Scheme} (f : X ⟶ Y) [IsClosedImmersion f] :
-    Unramified f := by
-  apply of_locallyOfFiniteType
+  have h : HasRingHomProperty (@LocallyOfFiniteType ⊓ @FormallyUnramified)
+      (fun f ↦ f.FiniteType ∧ f.FormallyUnramified) := HasRingHomProperty.inf
+  infer_instance
 
 instance (priority := 900) {X Y : Scheme} (f : X ⟶ Y)
     [AlgebraicGeometry.IsImmersion f] :
     Unramified f := by
-  apply of_locallyOfFiniteType
+  exact ⟨⟩
 
 instance (priority := 900) {X Y : Scheme} (f : X ⟶ Y) [Etale f] : Unramified f := by
-  apply of_locallyOfFiniteType
+  exact ⟨⟩
 
 end Unramified
 
