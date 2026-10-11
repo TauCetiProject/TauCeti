@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Polynomial.Puiseux.RootDifference.Nonmonic
-public import TauCeti.Analysis.Polynomial.Puiseux.Laurent.Conjugation
+public import TauCeti.Analysis.Analytic.LaurentConjugation
 
 /-!
 # Conjugation-compatible Laurent forms of root differences
@@ -30,7 +30,7 @@ public section
 
 open Filter Polynomial Topology ComplexConjugate
 
-namespace TauCeti.Polynomial
+namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
@@ -64,6 +64,7 @@ theorem exists_root_sub_eq_zpow_mul_unit_conj {d a c : ℕ}
         w i j p ≠ 0 ∧ (p.2 ≠ 0 →
           r i p - r j p = p.2 ^ e i j * w i j p) ∧
           w (σ i) (σ j) p = conj (w i j (τ p.1, conj p.2)) := by
+  -- Choose a Laurent form for each off-diagonal pair and pad the diagonal.
   let hpair (i j : Fin d) (hij : i ≠ j) :=
     exists_root_sub_eq_zpow_mul_unit hs hu hu0 hv hv0 hnorm
       (by filter_upwards [hlead] with p hp hp0; simpa using hp hp0)
@@ -74,26 +75,24 @@ theorem exists_root_sub_eq_zpow_mul_unit_conj {d a c : ℕ}
   let w : Fin d → Fin d → E × ℂ → ℂ := fun i j ↦
     if hij : i ≠ j then w₀ i j hij else fun _ ↦ 0
   let T : E × ℂ → E × ℂ := fun p ↦ (τ p.1, conj p.2)
-  have hT : ContinuousAt T (x₀, 0) := (hτ.comp continuousAt_fst).prodMk
-    (Complex.continuous_conj.continuousAt.comp continuousAt_snd)
-  have hT0 : T (x₀, 0) = (x₀, 0) := by simp [T, hτ0]
-  have hTt : Tendsto T (𝓝 (x₀, (0 : ℂ))) (𝓝 (x₀, (0 : ℂ))) := by
-    simpa only [hT0] using hT.tendsto
-  have hcompat (i j : Fin d) (hij : i ≠ j) :
-      e₀ (σ i) (σ j) (fun h ↦ hij (σ.injective h)) = e₀ i j hij ∧
+  have hTt : Tendsto T (𝓝 (x₀, (0 : ℂ))) (𝓝 (x₀, (0 : ℂ))) :=
+    tendsto_conjParam hτ hτ0
+  -- Compare the two forms for each pair using conjugation of the roots.
+  have hcompat (i j : Fin d) (hij : i ≠ j) (hσij : σ i ≠ σ j) :
+      e₀ (σ i) (σ j) hσij = e₀ i j hij ∧
         ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)),
-          w₀ (σ i) (σ j) (fun h ↦ hij (σ.injective h)) p =
+          w₀ (σ i) (σ j) hσij p =
             conj (w₀ i j hij (T p)) := by
     have hrelation : ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)), p.2 ≠ 0 →
-        p.2 ^ e₀ (σ i) (σ j) (fun h ↦ hij (σ.injective h)) *
-            w₀ (σ i) (σ j) (fun h ↦ hij (σ.injective h)) p =
+        p.2 ^ e₀ (σ i) (σ j) hσij *
+            w₀ (σ i) (σ j) hσij p =
           conj ((conj p.2) ^ e₀ i j hij * w₀ i j hij (T p)) := by
-      filter_upwards [hform (σ i) (σ j) (fun h ↦ hij (σ.injective h)),
+      filter_upwards [hform (σ i) (σ j) hσij,
         hTt.eventually (hform i j hij), hσ] with p hp hTp hsigma hp0
       have hTp0 : (T p).2 ≠ 0 := by simpa [T] using hp0
       have h1 : r (σ i) p - r (σ j) p = p.2 ^
-          e₀ (σ i) (σ j) (fun h ↦ hij (σ.injective h)) *
-            w₀ (σ i) (σ j) (fun h ↦ hij (σ.injective h)) p := by
+          e₀ (σ i) (σ j) hσij *
+            w₀ (σ i) (σ j) hσij p := by
         simpa only [sub_zero] using hp.2 hp0
       have h2 : r i (T p) - r j (T p) = (T p).2 ^ e₀ i j hij * w₀ i j hij (T p) := by
         simpa only [sub_zero] using hTp.2 hTp0
@@ -105,9 +104,10 @@ theorem exists_root_sub_eq_zpow_mul_unit_conj {d a c : ℕ}
         _ = conj ((T p).2 ^ e₀ i j hij * w₀ i j hij (T p)) :=
           congrArg conj h2
         _ = _ := by simp [T, map_mul, map_zpow₀]
-    exact (hw (σ i) (σ j) _).restrictScalars (𝕜 := ℝ) |>.laurent_eq_of_conj
-      (hw0 (σ i) (σ j) _) ((hw i j hij).restrictScalars (𝕜 := ℝ)) (hw0 i j hij)
+    exact (hw (σ i) (σ j) hσij).restrictScalars (𝕜 := ℝ) |>.laurent_eq_of_conj
+      (hw0 (σ i) (σ j) hσij) ((hw i j hij).restrictScalars (𝕜 := ℝ)) (hw0 i j hij)
       hτ hτ0 hrelation
+  -- Assemble the paired forms into the indexed result.
   refine ⟨e, w, ?_, ?_, ?_, ?_⟩
   · intro i j hij
     simpa [w, hij] using hw i j hij
@@ -115,13 +115,13 @@ theorem exists_root_sub_eq_zpow_mul_unit_conj {d a c : ℕ}
     simpa [w, hij] using hw0 i j hij
   · intro i j hij
     simpa [e, hij] using
-      (hcompat i j hij).1
+      (hcompat i j hij (σ.injective.ne hij)).1
   · intro i j hij
-    have hcomp := (hcompat i j hij).2
+    have hcomp := (hcompat i j hij (σ.injective.ne hij)).2
     filter_upwards [hcomp, hform i j hij] with p hp hf
     refine ⟨?_, ?_, ?_⟩
     · simpa [w, hij] using hf.1
     · simpa [e, w, hij, sub_zero] using hf.2
     · simpa [w, e, hij, sub_zero, T] using hp
 
-end TauCeti.Polynomial
+end TauCeti
