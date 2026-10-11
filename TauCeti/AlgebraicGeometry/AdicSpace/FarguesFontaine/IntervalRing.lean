@@ -187,7 +187,7 @@ theorem comap_algebraMap_intervalRing_mem_windowV {n : ℤ}
   (mem_windowV_iff _ _).mpr <| comap_algebraMap_intervalRing_mem_radiusBand hv hϖ hϖ' hρ₁ hρ₂ hI
     ((mem_windowV_iff _ _).mp h₁).2 ((mem_windowV_iff _ _).mp h₂).2 hw
 
-variable [IsTopologicalRing (WittVector p O)] (P : PairOfDefinition (WittVector p O))
+variable (P : PairOfDefinition (WittVector p O))
   (T : Finset (WittVector p O)) (s : WittVector p O) (S : Type*) [CommRing S]
   [Algebra (WittVector p O) S] [IsLocalization.Away s S]
   (hden : PairOfDefinition.HasDenominatorPower P T s S)
@@ -209,12 +209,14 @@ Gauss points satisfy `q ≤ κ(η_{ρᵢ}) ≤ q'` and the band `{v ∈ 𝒴 : q
 `𝕎 O⟨T/s⟩ → B^I`. The windows `U_n` and `V_n` are the cases
 `existsUnique_continuous_ringHom_intervalRing_of_windowU_subset` and its `V` analogue. -/
 theorem existsUnique_continuous_ringHom_intervalRing_of_radiusBand_subset :
+    haveI : IsTopologicalRing (𝕎 O) := hI ▸ (Ideal.span _).nonarchimedean.toIsTopologicalRing
     letI := PairOfDefinition.locUniformSpace P T s S hden
     letI := PairOfDefinition.isUniformAddGroup_locUniformSpace P T s S hden
     letI := PairOfDefinition.isTopologicalRing_locUniformSpace P T s S hden
     ∃! g : UniformSpace.Completion S →+* B^I,
       Continuous g ∧ g.comp (PairOfDefinition.toCompletionLoc P T s S hden) =
         algebraMap (𝕎 O) B^I :=
+  have : IsTopologicalRing (𝕎 O) := hI ▸ (Ideal.span _).nonarchimedean.toIsTopologicalRing
   existsUnique_continuous_ringHom_of_forall_comap_mem_rationalSubset P ⊤ T s S hden
     (powerBoundedSubring B^I)
     (Pair.powerBounded_plus (A := B^I) ▸ (Pair.powerBounded B^I).isRingOfIntegralElements)
@@ -230,6 +232,7 @@ band `{v ∈ 𝒴 : q ≤ κ(v) ≤ q'}` (such as a window `U_n` or `V_n`) whose
 The body is not exported: consumers use `continuous_ringHomIntervalRing`,
 `ringHomIntervalRing_comp_toCompletionLoc` and `eq_ringHomIntervalRing`. -/
 noncomputable def ringHomIntervalRing :
+    haveI : IsTopologicalRing (𝕎 O) := hI ▸ (Ideal.span _).nonarchimedean.toIsTopologicalRing
     letI := PairOfDefinition.locUniformSpace P T s S hden
     letI := PairOfDefinition.isUniformAddGroup_locUniformSpace P T s S hden
     letI := PairOfDefinition.isTopologicalRing_locUniformSpace P T s S hden
@@ -241,6 +244,7 @@ noncomputable def ringHomIntervalRing :
 
 /-- The comparison map `𝕎 O⟨T/s⟩ → B^I` is continuous. -/
 theorem continuous_ringHomIntervalRing :
+    haveI : IsTopologicalRing (𝕎 O) := hI ▸ (Ideal.span _).nonarchimedean.toIsTopologicalRing
     letI := PairOfDefinition.locUniformSpace P T s S hden
     letI := PairOfDefinition.isUniformAddGroup_locUniformSpace P T s S hden
     letI := PairOfDefinition.isTopologicalRing_locUniformSpace P T s S hden
@@ -251,6 +255,7 @@ theorem continuous_ringHomIntervalRing :
 /-- The comparison map `𝕎 O⟨T/s⟩ → B^I` is compatible with the structure maps from `𝕎 O`. -/
 @[simp]
 theorem ringHomIntervalRing_comp_toCompletionLoc :
+    haveI : IsTopologicalRing (𝕎 O) := hI ▸ (Ideal.span _).nonarchimedean.toIsTopologicalRing
     letI := PairOfDefinition.locUniformSpace P T s S hden
     letI := PairOfDefinition.isUniformAddGroup_locUniformSpace P T s S hden
     letI := PairOfDefinition.isTopologicalRing_locUniformSpace P T s S hden
@@ -262,6 +267,7 @@ theorem ringHomIntervalRing_comp_toCompletionLoc :
 /-- **Uniqueness of the comparison map**: `ringHomIntervalRing` is the only continuous ring
 homomorphism `𝕎 O⟨T/s⟩ → B^I` compatible with the structure maps from `𝕎 O`. -/
 theorem eq_ringHomIntervalRing :
+    haveI : IsTopologicalRing (𝕎 O) := hI ▸ (Ideal.span _).nonarchimedean.toIsTopologicalRing
     letI := PairOfDefinition.locUniformSpace P T s S hden
     letI := PairOfDefinition.isUniformAddGroup_locUniformSpace P T s S hden
     letI := PairOfDefinition.isTopologicalRing_locUniformSpace P T s S hden
@@ -280,6 +286,7 @@ exactly one way to a continuous ring homomorphism `𝕎 O⟨T/s⟩ → B^I`. -/
 theorem existsUnique_continuous_ringHom_intervalRing_of_windowU_subset {n : ℤ}
     (hU : windowU p ϖ n ⊆ rationalSubset ⊤ T s) (h₁ : gaussPoint p hv ρ₁ hρ₁.2 ∈ windowU p ϖ n)
     (h₂ : gaussPoint p hv ρ₂ hρ₂.2 ∈ windowU p ϖ n) :
+    haveI : IsTopologicalRing (𝕎 O) := hI ▸ (Ideal.span _).nonarchimedean.toIsTopologicalRing
     letI := PairOfDefinition.locUniformSpace P T s S hden
     letI := PairOfDefinition.isUniformAddGroup_locUniformSpace P T s S hden
     letI := PairOfDefinition.isTopologicalRing_locUniformSpace P T s S hden
@@ -297,6 +304,7 @@ exactly one way to a continuous ring homomorphism `𝕎 O⟨T/s⟩ → B^I`. -/
 theorem existsUnique_continuous_ringHom_intervalRing_of_windowV_subset {n : ℤ}
     (hV : windowV p ϖ n ⊆ rationalSubset ⊤ T s) (h₁ : gaussPoint p hv ρ₁ hρ₁.2 ∈ windowV p ϖ n)
     (h₂ : gaussPoint p hv ρ₂ hρ₂.2 ∈ windowV p ϖ n) :
+    haveI : IsTopologicalRing (𝕎 O) := hI ▸ (Ideal.span _).nonarchimedean.toIsTopologicalRing
     letI := PairOfDefinition.locUniformSpace P T s S hden
     letI := PairOfDefinition.isUniformAddGroup_locUniformSpace P T s S hden
     letI := PairOfDefinition.isTopologicalRing_locUniformSpace P T s S hden
