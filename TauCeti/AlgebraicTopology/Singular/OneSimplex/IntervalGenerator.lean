@@ -28,7 +28,7 @@ The standard simplex is sent to `[1] - [0]` (`TauCeti.cubeRelClass_singularHomol
 ## Main definitions and results
 
 * `TauCeti.cubeSimplex`, `TauCeti.cubeRelClass`: the standard `1`-simplex of `I¹` and its class in
-  `H₁(I¹, ∂I¹; R)`.
+  `H₁(I¹, ∂I¹; R)`; `TauCeti.cubeRelClass_singularHomologyMap`: its image under a map of pairs.
 * `TauCeti.reducedSingularHomologyTopCatSphereIso_zero_inv_ι`: the generator of `H̃₀(S⁰)` is
   `[-e₀] - [e₀]` on `TopCat.sphere 0`.
 * `TauCeti.singularHomologyCubeBoundaryPairIso_one_inv`: the generator of `H₁(I¹, ∂I¹; R)` is
@@ -162,6 +162,19 @@ lemma cubeRelClass_singularHomologyδ :
         singularHomology₀Section R (cubeEnd.{w} 0 (Or.inl rfl)) := by
   rw [cubeRelClass, singularHomology₀Section_def, singularHomology₀Section_def]
   exact SSetPair.relClass₁_homologyδ R _ _ _ _ _ _
+
+/-- A map of pairs `f : (I¹, ∂I¹) ⟶ P` sends the relative class of the standard simplex of `I¹`
+to the relative class of the image simplex. -/
+lemma cubeRelClass_singularHomologyMap {P : TopPair.{w}} (f : cubeBoundaryPair.{w} 1 ⟶ P) :
+    cubeRelClass R ≫ TopPair.singularHomologyMap f R 1 =
+      SSetPair.relClass₁ R (TopPair.toSSetPair.obj P)
+        ((TopPair.toSSetPair.map f).right.app _ cubeSimplex)
+        ((TopPair.toSSetPair.map f).left.app _ (cubeEndVertex 0 (Or.inl rfl)))
+        ((TopPair.toSSetPair.map f).left.app _ (cubeEndVertex 1 (Or.inr rfl)))
+        (SSetPair.δ_map_eq _ _ 1 _ δ_one_cubeSimplex)
+        (SSetPair.δ_map_eq _ _ 0 _ δ_zero_cubeSimplex) := by
+  rw [cubeRelClass]
+  exact SSetPair.relClass₁_homologyMap R _ _ _ _ _ _
 
 end Cube
 
