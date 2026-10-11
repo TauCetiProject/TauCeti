@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.CharP.Invertible
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
+public import Mathlib.LinearAlgebra.Dimension.Constructions
+public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.LinearAlgebra.QuadraticForm.Prod
 import Mathlib.LinearAlgebra.Isomorphisms
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
@@ -27,6 +29,9 @@ its polar form is `2 • B`, and nondegeneracy passes from `B` to it as soon as 
 * `QuadraticMap.radical_smul`, `QuadraticMap.nondegenerate_smul_iff`: scaling a quadratic map by a
   unit does not change its radical or its nondegeneracy.
 * `QuadraticMap.radical_prod`: the radical of an orthogonal product is the product of the radicals.
+* `QuadraticForm.finrank_radical_eq_of_equivalent_zero_prod` and
+  `QuadraticForm.finrank_zeroPart_eq_of_equivalent_zero_prod`: the zero summand in a decomposition
+  into a zero form and a regular form has dimension equal to the radical.
 * `QuadraticMap.nondegenerate_of_ker_polarBilin_eq_bot`: a quadratic map whose polar form has
   trivial kernel is nondegenerate.
 * `QuadraticMap.isSymm_polarBilin`: the polar form is symmetric.
@@ -188,6 +193,35 @@ theorem Isometry.injective_of_radical_eq_bot {Q₁ : QuadraticMap R M P} {Q₂ :
     ⟨by rw [← f.map_app, hx, map_zero], fun n => by rw [← f.map_app, ← f.map_app, map_add, hx,
       zero_add]⟩
   simpa [h] using hmem
+
+section QuotientRadicalIsometry
+
+variable {K : Type*} [Field K] {V W : Type*} [AddCommGroup V] [Module K V]
+  [AddCommGroup W] [Module K W] {Q : QuadraticForm K V} {S : QuadraticForm K W}
+
+/-- An isometry of quadratic forms descends to an isometry of their quotients by the radical. -/
+noncomputable def IsometryEquiv.quotientRadical (e : Q.IsometryEquiv S) :
+    (Q.lift Q.radical le_rfl).IsometryEquiv (S.lift S.radical le_rfl) where
+  __ := Submodule.Quotient.equiv Q.radical S.radical e.toLinearEquiv e.map_radical
+  map_app' x := by
+    induction x using Submodule.Quotient.induction_on with
+    | _ x => simp [Submodule.Quotient.equiv_apply, QuadraticMap.lift_mk]
+
+/-- The quotient isometry sends the class of a vector to the class of its image. -/
+@[simp]
+theorem IsometryEquiv.quotientRadical_mk (e : Q.IsometryEquiv S) (x : V) :
+    e.quotientRadical (Submodule.Quotient.mk x : V ⧸ Q.radical) =
+      (Submodule.Quotient.mk (e x) : W ⧸ S.radical) := by
+  dsimp [IsometryEquiv.quotientRadical]
+  rfl
+
+/-- Equivalent quadratic forms have equivalent quotients by their radicals. -/
+theorem Equivalent.lift_radical (h : Q.Equivalent S) :
+    (Q.lift Q.radical le_rfl).Equivalent (S.lift S.radical le_rfl) := by
+  obtain ⟨e⟩ := h
+  exact ⟨e.quotientRadical⟩
+
+end QuotientRadicalIsometry
 
 /-- A nonzero quadratic form over a semifield has a vector of unit norm. -/
 theorem exists_isUnit_of_ne_zero {K V : Type*} [Semifield K] [AddCommMonoid V] [Module K V]
@@ -407,3 +441,52 @@ theorem _root_.QuadraticMap.nondegenerate_smul_sq {a : R} (ha : a ≠ 0) :
   nondegenerate_of_span_singleton_eq_top (v := 1) (by simp) (by simpa using ha)
 
 end TauCeti
+
+namespace QuadraticForm
+
+universe u
+
+variable {K : Type u} [Field K] [Invertible (2 : K)]
+
+/-- If a quadratic form is isometric to a zero form orthogonally summed with a regular form, the
+dimension of its radical is the dimension of the zero summand. -/
+theorem finrank_radical_eq_of_equivalent_zero_prod
+    {V R W : Type*} [AddCommGroup V] [Module K V]
+    [AddCommGroup R] [Module K R] [FiniteDimensional K R]
+    [AddCommGroup W] [Module K W]
+    (Q : QuadraticForm K V) (A : QuadraticForm K W) (hA : A.Nondegenerate)
+    (e : Q.Equivalent ((0 : QuadraticForm K R).prod A)) :
+    Module.finrank K Q.radical = Module.finrank K R := by
+  have hzeroR : (0 : QuadraticForm K R).radical = ⊤ := by
+    ext x
+    simp [QuadraticMap.mem_radical_iff']
+  have hradA : ((0 : QuadraticForm K R).prod A).radical =
+      (⊤ : Submodule K R).prod (⊥ : Submodule K W) := by
+    rw [QuadraticMap.radical_prod, hzeroR, hA.radical_eq_bot]
+  have hdimA : Module.finrank K R = Module.finrank K ((0 : QuadraticForm K R).prod A).radical := by
+    rw [hradA]
+    calc
+      Module.finrank K R = Module.finrank K
+          ((⊤ : Submodule K R) × (⊥ : Submodule K W)) := by
+        rw [Module.finrank_prod, finrank_top, finrank_bot, add_zero]
+      _ = Module.finrank K ((⊤ : Submodule K R).prod (⊥ : Submodule K W)) :=
+        (Submodule.prodEquiv _ _).finrank_eq.symm
+  exact (QuadraticMap.Equivalent.rank_radical_eq e).trans hdimA.symm
+
+/-- The dimensions of the zero summands agree whenever one quadratic form is isometric to two
+orthogonal sums of a zero form and a regular form. -/
+theorem finrank_zeroPart_eq_of_equivalent_zero_prod
+    {V R S W W' : Type*} [AddCommGroup V] [Module K V]
+    [AddCommGroup R] [Module K R] [FiniteDimensional K R]
+    [AddCommGroup S] [Module K S] [FiniteDimensional K S]
+    [AddCommGroup W] [Module K W]
+    [AddCommGroup W'] [Module K W']
+    (Q : QuadraticForm K V) (A : QuadraticForm K W) (B : QuadraticForm K W')
+    (hA : A.Nondegenerate) (hB : B.Nondegenerate)
+    (e : Q.Equivalent ((0 : QuadraticForm K R).prod A))
+    (e' : Q.Equivalent ((0 : QuadraticForm K S).prod B)) :
+    Module.finrank K R = Module.finrank K S := by
+  rw [← finrank_radical_eq_of_equivalent_zero_prod Q A hA e,
+    ← finrank_radical_eq_of_equivalent_zero_prod Q B hB e']
+
+end QuadraticForm

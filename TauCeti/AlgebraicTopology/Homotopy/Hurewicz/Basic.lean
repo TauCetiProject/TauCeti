@@ -62,6 +62,9 @@ cube, so by excision and the long exact sequence of the triple `(Iⁿ⁺¹, U, A
 `Hₖ(Iⁿ⁺¹, A)` is determined by its images in `Hₖ(Iⁿ⁺¹, U)` and `Hₖ(Iⁿ⁺¹, V)`
 (`TopPair.singularHomology_inter_hom_ext`).  In `(Iⁿ⁺¹, U)` the inclusion is homotopic to the
 left half, while the right half lands in `U` and induces zero; symmetrically in `(Iⁿ⁺¹, V)`.
+The pinch identity is stated for any map of pairs out of `(Iⁿ⁺¹, ∂Iⁿ⁺¹)` sending the slab into the
+subspace (`TauCeti.singularHomologyMap_cubeBoundaryPair_eq_add`), so it applies to relative cubes
+as well.
 
 ## Main declarations
 
@@ -69,6 +72,8 @@ left half, while the right half lands in `U` and induces zero; symmetrically in 
 * `GenLoop.hurewicz`: the Hurewicz class of a generalized loop, characterized by
   `GenLoop.hurewicz_comp_singularHomologyIsoOfSubsetSingleton_hom`.
 * `HomotopyGroup.hurewicz`: the Hurewicz map on homotopy classes.
+* `TauCeti.singularHomologyMap_cubeBoundaryPair_eq_add`: the pinch identity for maps of pairs out
+  of the cube.
 * `HomotopyGroup.hurewicz_mul`, `HomotopyGroup.hurewiczHom`: the Hurewicz map is a homomorphism
   from `π_{n+1}(X, x)`, written additively, to the group of morphisms `R ⟶ Hₙ₊₁(X; R)`.
 
@@ -313,6 +318,19 @@ private def upperHalf : C(I, I) :=
 
 @[simp] private lemma coe_upperHalf (s : I) : (upperHalf s : ℝ) = (s + 1) / 2 := (rfl)
 
+/-- The quarter stretch, written with `Set.projIcc`. -/
+private lemma stretch_quarter_eq (z : cubeSpace.{w} m) :
+    stretch i quarter z = ⟨Function.update z.down i (Set.projIcc 0 1 zero_le_one (z.down i / 4))⟩ :=
+  ULift.ext (congrArg (Function.update z.down i) (Set.projIcc_of_mem zero_le_one
+    ⟨by linarith [(z.down i).2.1], by linarith [(z.down i).2.2]⟩).symm)
+
+/-- The upper half stretch, written with `Set.projIcc`. -/
+private lemma stretch_upperHalf_eq (z : cubeSpace.{w} m) :
+    stretch i upperHalf z =
+      ⟨Function.update z.down i (Set.projIcc 0 1 zero_le_one ((z.down i + 1) / 2))⟩ :=
+  ULift.ext (congrArg (Function.update z.down i) (Set.projIcc_of_mem zero_le_one
+    ⟨by linarith [(z.down i).2.1], by linarith [(z.down i).2.2]⟩).symm)
+
 /-- The cube relative to its boundary and the slab `1/4 ≤ zᵢ ≤ 1/2`. -/
 private abbrev slabPair : TopPair.{w} := ofSubset (upperSet.{w} i ∩ lowerSet.{w} i)
 
@@ -513,6 +531,58 @@ end FatConcatenation
 
 end Hurewicz
 
+section Pinch
+
+open Hurewicz TopPair
+
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C]
+
+/-- **The pinch identity for maps of pairs out of the cube.** Let `f : (Iᵐ, ∂Iᵐ) ⟶ (Y, B)` send
+the slab `1/4 ≤ zᵢ ≤ 1/2` into `B`, and let `g` and `h` be its restrictions to the two halves
+`zᵢ ≤ 1/4` and `zᵢ ≥ 1/2` of the complement of the slab, reparametrised along the `i`-th
+coordinate by `zᵢ ↦ zᵢ / 4` and `zᵢ ↦ (zᵢ + 1) / 2`.  Then `f_* = g_* + h_*` on relative singular
+homology.  This is what makes Hurewicz maps additive. -/
+theorem singularHomologyMap_cubeBoundaryPair_eq_add (R : C) {m : ℕ} (i : Fin m) {Y : TopPair.{w}}
+    {f g h : cubeBoundaryPair.{w} m ⟶ Y}
+    (hf : ∀ z : (cubeBoundaryPair.{w} m).fst, (1 / 4 : ℝ) ≤ z.down i → (z.down i : ℝ) ≤ 1 / 2 →
+      Hom.fst f z ∈ Set.range Y.map)
+    (hg : ∀ z : (cubeBoundaryPair.{w} m).fst, Hom.fst g z = Hom.fst f
+      (⟨Function.update z.down i (Set.projIcc 0 1 zero_le_one (z.down i / 4))⟩ :
+        (cubeBoundaryPair.{w} m).fst))
+    (hh : ∀ z : (cubeBoundaryPair.{w} m).fst, Hom.fst h z = Hom.fst f
+      (⟨Function.update z.down i (Set.projIcc 0 1 zero_le_one ((z.down i + 1) / 2))⟩ :
+        (cubeBoundaryPair.{w} m).fst))
+    (k : ℕ) :
+    TopPair.singularHomologyMap f R k =
+      TopPair.singularHomologyMap g R k + TopPair.singularHomologyMap h R k := by
+  -- `f` sends the boundary and the slab into `B`, so it factors through the cube modulo both.
+  let φ : cubeSpace.{w} m ⟶ Y.fst := Hom.fst f
+  have hφ (z : (slabPair.{w} i).snd) : φ z.1 ∈ Set.range Y.map := by
+    obtain ⟨hU | hU, hV | hV⟩ := z.2
+    · exact ⟨Hom.snd f ⟨z.1, hU⟩, Hom.w_apply f _⟩
+    · exact ⟨Hom.snd f ⟨z.1, hU⟩, Hom.w_apply f _⟩
+    · exact ⟨Hom.snd f ⟨z.1, hV⟩, Hom.w_apply f _⟩
+    · exact hf _ hU hV
+  let F : slabPair.{w} i ⟶ Y := TopPair.ofHom φ
+    (TopCat.ofHom (Y.liftSnd (φ.hom.comp ⟨Subtype.val, continuous_subtype_val⟩) hφ))
+    (by ext z; exact map_liftSnd _ hφ z)
+  have h₁ : f = ofSubsetMap (𝟙 _) (boundary_subset_inter i) ≫ F :=
+    hom_ext_of_fst _ (by rw [Hom.fst_comp, ofSubsetMap_fst]; exact (Category.id_comp φ).symm)
+  have h₂ : g = ofSubsetMap (stretch i quarter) (mapsTo_stretch_quarter i) ≫ F :=
+    hom_ext_of_fst _ (by
+      ext z
+      rw [Hom.fst_comp, ofSubsetMap_fst]
+      exact (hg z).trans (congrArg φ (stretch_quarter_eq i z).symm))
+  have h₃ : h = ofSubsetMap (stretch i upperHalf) (mapsTo_stretch_upperHalf i) ≫ F :=
+    hom_ext_of_fst _ (by
+      ext z
+      rw [Hom.fst_comp, ofSubsetMap_fst]
+      exact (hh z).trans (congrArg φ (stretch_upperHalf_eq i z).symm))
+  rw [h₁, h₂, h₃, singularHomologyMap_comp, singularHomologyMap_comp, singularHomologyMap_comp,
+    singularHomologyMap_inclusion_eq_add, Preadditive.add_comp]
+
+end Pinch
+
 end TauCeti
 
 namespace GenLoop
@@ -523,38 +593,26 @@ variable {X : Type w} [TopologicalSpace X] {x : X}
   {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C) {n : ℕ}
 
 /-- The Hurewicz class of the fat concatenation of `p` and `q` is the sum of their Hurewicz
-classes: the fat concatenation is a map of pairs from the cube modulo its boundary and the slab,
-whose restrictions to the two halves are `p` and `q`, so this is the pinch identity
-`TauCeti.Hurewicz.singularHomologyMap_inclusion_eq_add` pushed forward to `X`. -/
+classes: the fat concatenation sends the slab to the base point and restricts to `p` and `q` on
+the two halves, so this is the pinch identity
+`TauCeti.singularHomologyMap_cubeBoundaryPair_eq_add` pushed forward to `X`. -/
 private lemma hurewicz_fatTrans (p q : Ω^ (Fin (n + 1)) X x) :
     hurewicz R (fatTrans 0 p q) = hurewicz R p + hurewicz R q := by
-  let F : cubeSpace.{w} (n + 1) ⟶ TopCat.of X :=
-    TopCat.ofHom ((fatTrans 0 p q).1.comp ⟨ULift.down, continuous_uliftDown⟩)
-  have hF : Set.MapsTo F (upperSet 0 ∩ lowerSet 0) {x} :=
-    fun _ hz ↦ fatTrans_apply_of_mem 0 p q hz
-  have h₁ : toCubeBoundaryPairHom (fatTrans 0 p q) =
-      ofSubsetMap (𝟙 _) (boundary_subset_inter 0) ≫ ofSubsetMap F hF :=
-    ofSubsetMap_comp (𝟙 _) F (boundary_subset_inter 0) hF (hF.comp (boundary_subset_inter 0))
-  have h₂ : toCubeBoundaryPairHom p =
-      ofSubsetMap (stretch 0 quarter) (mapsTo_stretch_quarter 0) ≫ ofSubsetMap F hF :=
-    calc toCubeBoundaryPairHom p
-        _ = ofSubsetMap (stretch 0 quarter ≫ F) (hF.comp (mapsTo_stretch_quarter 0)) := by
-          rw [toCubeBoundaryPairHom]
-          congr 1
-          ext z
-          exact (fatTrans_stretch_quarter 0 p q z).symm
-        _ = _ := ofSubsetMap_comp _ _ _ _ _
-  have h₃ : toCubeBoundaryPairHom q =
-      ofSubsetMap (stretch 0 upperHalf) (mapsTo_stretch_upperHalf 0) ≫ ofSubsetMap F hF :=
-    calc toCubeBoundaryPairHom q
-        _ = ofSubsetMap (stretch 0 upperHalf ≫ F) (hF.comp (mapsTo_stretch_upperHalf 0)) := by
-          rw [toCubeBoundaryPairHom]
-          congr 1
-          ext z
-          exact (fatTrans_stretch_upperHalf 0 p q z).symm
-        _ = _ := ofSubsetMap_comp _ _ _ _ _
-  simp only [hurewicz, h₁, h₂, h₃, singularHomologyMap_comp,
-    singularHomologyMap_inclusion_eq_add, Preadditive.add_comp, Preadditive.comp_add]
+  have h := singularHomologyMap_cubeBoundaryPair_eq_add R 0
+    (f := toCubeBoundaryPairHom (fatTrans 0 p q)) (g := toCubeBoundaryPairHom p)
+    (h := toCubeBoundaryPairHom q)
+    (fun z h₁ h₂ ↦ by
+      rw [toCubeBoundaryPairHom_fst_apply, fatTrans_apply_of_mem 0 p q ⟨Or.inr h₁, Or.inr h₂⟩]
+      exact ⟨⟨x, rfl⟩, rfl⟩)
+    (fun z ↦ (toCubeBoundaryPairHom_fst_apply p z).trans <|
+      (fatTrans_stretch_quarter 0 p q z).symm.trans <|
+        (congrArg (fun w ↦ fatTrans 0 p q (ULift.down w)) (stretch_quarter_eq 0 z)).trans
+          (toCubeBoundaryPairHom_fst_apply _ _).symm)
+    (fun z ↦ (toCubeBoundaryPairHom_fst_apply q z).trans <|
+      (fatTrans_stretch_upperHalf 0 p q z).symm.trans <|
+        (congrArg (fun w ↦ fatTrans 0 p q (ULift.down w)) (stretch_upperHalf_eq 0 z)).trans
+          (toCubeBoundaryPairHom_fst_apply _ _).symm) (n + 1)
+  simp only [hurewicz, h, Preadditive.add_comp, Preadditive.comp_add]
 
 end GenLoop
 

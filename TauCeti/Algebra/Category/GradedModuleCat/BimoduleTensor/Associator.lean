@@ -129,10 +129,8 @@ private theorem leftUnderlying_smul_left (a : A) (x : L) :
     leftUnderlying Γ Δ Θ Ψ M N P (a • x) = a • leftUnderlying Γ Δ Θ Ψ M N P x := by
   simp only [leftUnderlying, LinearEquiv.trans_apply,
     bimoduleTensorUnderlyingEquiv_smul_left]
-  -- Match the reflexive factor equivalence in the transported congruence.
-  erw [BalancedTensorProduct.congr_apply, BalancedTensorProduct.congr_apply]
-  exact BalancedTensorProduct.map_smul_left A
-    (bimoduleTensorUnderlyingEquiv Γ Δ Θ M N).toLinearMap (LinearEquiv.refl k P).toLinearMap
+  exact BalancedTensorProduct.congr_smul_left A
+    (bimoduleTensorUnderlyingEquiv Γ Δ Θ M N) (LinearEquiv.refl k P)
     (fun c y ↦ bimoduleTensorUnderlyingEquiv_smul_right Γ Δ Θ M N (op c) y)
     (fun _ _ ↦ rfl) (fun a y ↦ bimoduleTensorUnderlyingEquiv_smul_left Γ Δ Θ M N a y) a _
 
@@ -140,10 +138,8 @@ private theorem leftUnderlying_smul_right (d : Dᵐᵒᵖ) (x : L) :
     leftUnderlying Γ Δ Θ Ψ M N P (d • x) = d • leftUnderlying Γ Δ Θ Ψ M N P x := by
   simp only [leftUnderlying, LinearEquiv.trans_apply,
     bimoduleTensorUnderlyingEquiv_smul_right]
-  -- Match the reflexive factor equivalence in the transported congruence.
-  erw [BalancedTensorProduct.congr_apply, BalancedTensorProduct.congr_apply]
-  exact BalancedTensorProduct.map_smul_right Dᵐᵒᵖ
-    (bimoduleTensorUnderlyingEquiv Γ Δ Θ M N).toLinearMap (LinearEquiv.refl k P).toLinearMap
+  exact BalancedTensorProduct.congr_smul_right Dᵐᵒᵖ
+    (bimoduleTensorUnderlyingEquiv Γ Δ Θ M N) (LinearEquiv.refl k P)
     (fun c y ↦ bimoduleTensorUnderlyingEquiv_smul_right Γ Δ Θ M N (op c) y)
     (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) d _
 
@@ -151,10 +147,8 @@ private theorem rightUnderlying_smul_left (a : A) (x : R) :
     rightUnderlying Γ Δ Θ Ψ M N P (a • x) = a • rightUnderlying Γ Δ Θ Ψ M N P x := by
   simp only [rightUnderlying, LinearEquiv.trans_apply,
     bimoduleTensorUnderlyingEquiv_smul_left]
-  -- Match the reflexive factor equivalence in the transported congruence.
-  erw [BalancedTensorProduct.congr_apply, BalancedTensorProduct.congr_apply]
-  exact BalancedTensorProduct.map_smul_left A
-    (LinearEquiv.refl k M).toLinearMap (bimoduleTensorUnderlyingEquiv Δ Θ Ψ N P).toLinearMap
+  exact BalancedTensorProduct.congr_smul_left A
+    (LinearEquiv.refl k M) (bimoduleTensorUnderlyingEquiv Δ Θ Ψ N P)
     (fun _ _ ↦ rfl) (fun b y ↦ bimoduleTensorUnderlyingEquiv_smul_left Δ Θ Ψ N P b y)
     (fun _ _ ↦ rfl) a _
 
@@ -162,10 +156,8 @@ private theorem rightUnderlying_smul_right (d : Dᵐᵒᵖ) (x : R) :
     rightUnderlying Γ Δ Θ Ψ M N P (d • x) = d • rightUnderlying Γ Δ Θ Ψ M N P x := by
   simp only [rightUnderlying, LinearEquiv.trans_apply,
     bimoduleTensorUnderlyingEquiv_smul_right]
-  -- Match the reflexive factor equivalence in the transported congruence.
-  erw [BalancedTensorProduct.congr_apply, BalancedTensorProduct.congr_apply]
-  exact BalancedTensorProduct.map_smul_right Dᵐᵒᵖ
-    (LinearEquiv.refl k M).toLinearMap (bimoduleTensorUnderlyingEquiv Δ Θ Ψ N P).toLinearMap
+  exact BalancedTensorProduct.congr_smul_right Dᵐᵒᵖ
+    (LinearEquiv.refl k M) (bimoduleTensorUnderlyingEquiv Δ Θ Ψ N P)
     (fun _ _ ↦ rfl) (fun b y ↦ bimoduleTensorUnderlyingEquiv_smul_left Δ Θ Ψ N P b y)
     (fun d y ↦ bimoduleTensorUnderlyingEquiv_smul_right Δ Θ Ψ N P d y) d _
 
