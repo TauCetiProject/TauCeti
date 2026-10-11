@@ -96,11 +96,11 @@ simplex, because a standard simplex is connected. -/
 
 /-- The augmentation of the small augmented singular nerve, followed by the inclusion of the small
 simplices, is the map induced by the projection of the Čech nerve onto the ambient space. -/
-@[reassoc (attr := simp)]
+@[simp, reassoc]
 theorem openCoverSmallAugmentedSingularNerve_hom_app_ι (n : SimplexCategoryᵒᵖ) :
     (openCoverSmallAugmentedSingularNerve U).hom.app n ≫
         (X.smallSingularSubcomplex (fun i ↦ (U i : Set X))).ι =
-      TopCat.toSSet.map ((openCoverArrow U).augmentedCechNerve.hom.app n) :=
+      TopCat.toSSet.map (WidePullback.base (fun _ : Fin (n.unop.len + 1) ↦ openCoverMap U)) :=
   openCoverSingularNerveBase_ι U n
 
 /-- A singular simplex is small for a family of open subsets exactly when, as a map out of the
