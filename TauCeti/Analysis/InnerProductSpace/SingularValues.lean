@@ -457,6 +457,20 @@ theorem singularValues_comp_linearIsometryEquiv (A : E →ₗ[𝕜] F) (V : G �
   rw [← singularValues_adjoint, adjoint_comp, V.adjoint_coe_eq_symm,
     singularValues_linearIsometryEquiv_comp, singularValues_adjoint]
 
+/-- Scaling a map by `c` scales its singular values by `‖c‖`. -/
+@[simp]
+theorem singularValues_smul (c : 𝕜) (A : E →ₗ[𝕜] F) :
+    (c • A).singularValues = ‖c‖ • A.singularValues := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · simp
+  have hc' : 0 < ‖c‖ := norm_pos_iff.mpr hc
+  ext i
+  rw [Finsupp.smul_apply, smul_eq_mul]
+  refine le_antisymm (singularValues_le_mul_of_norm_apply_le (fun x ↦ by simp [norm_smul]) i) ?_
+  have h := singularValues_le_mul_of_norm_apply_le (A := c • A) (B := A) (c := ‖c‖⁻¹)
+    (fun x ↦ by simp [norm_smul, inv_mul_cancel_left₀ hc'.ne']) i
+  rwa [le_inv_mul_iff₀ hc'] at h
+
 end Comparison
 
 section Diagonal
