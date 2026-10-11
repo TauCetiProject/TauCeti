@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.Functor
+public import TauCeti.Geometry.Lie.Exponential.Units.Compatibility
 public import TauCeti.Geometry.Lie.Subgroup.Embedded
 
 /-!
@@ -25,6 +26,8 @@ one-parameter-subgroup description inside the ambient Lie algebra.
 ## Main results
 
 * `TauCeti.Lie.EmbeddedLieSubgroupData.lieMapSubtypeVal`: the Lie map induced by inclusion.
+* `TauCeti.Lie.EmbeddedLieSubgroupData.coe_lieExp_smul`: the subgroup exponential, coerced to an
+  ambient algebra, is its Banach-algebra exponential.
 * `TauCeti.Lie.EmbeddedLieSubgroupData.injective_lieMapSubtypeVal`: this Lie map is injective.
 * `TauCeti.Lie.EmbeddedLieSubgroupData.range_lieMapSubtypeVal_le`: its range lies in
   `lieSubalgebraOfSubgroup K`.
@@ -97,6 +100,39 @@ theorem lieMapSubtypeVal_apply (d : EmbeddedLieSubgroupData I K E') :
   dsimp only
   intro X
   rfl
+
+section Units
+
+variable {R : Type*} [NormedRing R] [NormedAlgebra ℝ R] [CompleteSpace R]
+  {K : Subgroup Rˣ} {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  [FiniteDimensional ℝ R] [FiniteDimensional ℝ E']
+
+/-- Coercing the exponential of an embedded subgroup of algebra units to the ambient algebra gives
+the Banach-algebra exponential of its inclusion differential. -/
+theorem coe_lieExp_smul
+    (d : EmbeddedLieSubgroupData (modelWithCornersSelf ℝ R) K E') :
+    let _ : ChartedSpace E' K := d.chartedSpace
+    let _ : LieGroup (modelWithCornersSelf ℝ E') ∞ K := d.lieGroup
+    ∀ (X : LeftInvariantDerivation (modelWithCornersSelf ℝ E') K) (t : ℝ),
+      (((d.subtypeVal (lieExp (t • X)) : Rˣ) : R)) =
+        NormedSpace.exp (t • unitsLieAlgebraEquiv (d.lieMapSubtypeVal X)) := by
+  let _ : ChartedSpace E' K := d.chartedSpace
+  let _ : LieGroup (modelWithCornersSelf ℝ E') ∞ K := d.lieGroup
+  dsimp only
+  intro X t
+  have hmap : d.subtypeVal (lieExp (t • X)) =
+      lieExp (d.lieMapSubtypeVal (t • X)) := by
+    simpa only [lieMapSubtypeVal_apply] using map_lieExp d.subtypeVal (t • X)
+  calc
+    _ = ((lieExp (d.lieMapSubtypeVal (t • X)) : Rˣ) : R) := congrArg Units.val hmap
+    _ = NormedSpace.exp (unitsLieAlgebraEquiv (d.lieMapSubtypeVal (t • X))) := by
+      simpa only [TauCeti.expUnit_coe] using congrArg Units.val
+        (lieExp_eq_expUnit (d.lieMapSubtypeVal (t • X)))
+    _ = NormedSpace.exp (t • unitsLieAlgebraEquiv (d.lieMapSubtypeVal X)) := by
+      congr 2
+      rw [map_smul, map_smul]
+
+end Units
 
 omit [T2Space G] in
 /-- The Lie map induced by an embedded subgroup inclusion is injective. -/

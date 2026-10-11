@@ -105,6 +105,13 @@ theorem coe_prodCone (σ : Φ.cones) (τ : Ψ.cones) :
     (Φ.prodCone Ψ σ τ : PointedCone ℝ (V × V')) = σ.1.prod τ.1 :=
   rfl
 
+/-- Intersections of product cones are computed componentwise. -/
+@[simp]
+theorem prodCone_inf_prodCone (σ σ' : Φ.cones) (τ τ' : Ψ.cones) :
+    Φ.prodCone Ψ σ τ ⊓ Φ.prodCone Ψ σ' τ' = Φ.prodCone Ψ (σ ⊓ σ') (τ ⊓ τ') := by
+  apply Subtype.ext
+  simp only [coe_inf, Submodule.prod_inf_prod]
+
 /-- Every cone of a product fan is the product cone of a pair of factor cones. -/
 theorem exists_prodCone_eq (ξ : (Φ.prod Ψ).cones) :
     ∃ (σ : Φ.cones) (τ : Ψ.cones), Φ.prodCone Ψ σ τ = ξ := by
@@ -330,6 +337,24 @@ theorem prodMap_latticeMap (f : FanHom Φ₁ Ψ₁) (g : FanHom Φ₂ Ψ₂) :
 theorem prodMap_realMap (f : FanHom Φ₁ Ψ₁) (g : FanHom Φ₂ Ψ₂) :
     (f.prodMap g).realMap = f.realMap.prodMap g.realMap := by
   rw [prodMap]
+
+/-- The first projection commutes with componentwise products of fan morphisms. -/
+@[simp]
+theorem fst_comp_prodMap (f : FanHom Φ₁ Ψ₁) (g : FanHom Φ₂ Ψ₂) :
+    (fst Ψ₁ Ψ₂).comp (f.prodMap g) = f.comp (fst Φ₁ Φ₂) := by
+  apply FanHom.ext
+  simp only [comp_latticeMap, fst_latticeMap, prodMap_latticeMap]
+  ext x
+  rfl
+
+/-- The second projection commutes with componentwise products of fan morphisms. -/
+@[simp]
+theorem snd_comp_prodMap (f : FanHom Φ₁ Ψ₁) (g : FanHom Φ₂ Ψ₂) :
+    (snd Ψ₁ Ψ₂).comp (f.prodMap g) = g.comp (snd Φ₁ Φ₂) := by
+  apply FanHom.ext
+  simp only [comp_latticeMap, snd_latticeMap, prodMap_latticeMap]
+  ext x
+  rfl
 
 /-- Products of identity fan morphisms are identity fan morphisms. -/
 @[simp]

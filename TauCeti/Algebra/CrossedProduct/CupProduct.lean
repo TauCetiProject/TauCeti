@@ -113,14 +113,6 @@ private theorem eqToHom_comp_kummerCoeffIsoTrivialF2_inv :
   rw [eqToHom_ofDiscreteModule_trivialF2_apply, kummerCoeffIsoTrivialF2_inv_apply]
   rfl
 
-/-- `h2MuToUnits K` is the inverse coefficient transport followed by the Kummer-sequence map. -/
-private theorem h2MuToUnits_eq_coeffMap_comp :
-    h2MuToUnits K = TauCeti.ContinuousCohomology.coeffMap (kummerCoeffIsoTrivialF2 K).inv 2 ≫
-      h2KummerToUnits K 2 := by
-  rw [← kummerCoeffIsoTrivialF2_hom_comp_h2MuToUnits, ← Category.assoc,
-    ← TauCeti.ContinuousCohomology.coeffMap_comp, Iso.inv_hom_id,
-    TauCeti.ContinuousCohomology.coeffMap_id, Category.id_comp]
-
 /-- On an explicit class of `H²(G_K, 𝔽₂)`, `h2MuToUnits K` is the explicit coefficient map along
 `𝔽₂ ≃ μ₂ ⊆ (Kˢ)ˣ`. -/
 private theorem h2MuToUnits_explicitH2
@@ -132,8 +124,9 @@ private theorem h2MuToUnits_explicitH2
         (explicitCoeff2 _ _ (kummerShortExact K 2 (isUnit_of_invertible _)).inclDistribMulActionHom
           continuous_of_discreteTopology
           (explicitCoeff2 _ _ (trivialF2ToMu2 K) continuous_of_discreteTopology z)) := by
-  rw [h2MuToUnits_eq_coeffMap_comp, ← TauCeti.ContinuousCohomology.coeffMap_eqToHom,
-    ← h2KummerToUnits_explicitH2AddEquivContinuousCohomology (isUnit_of_invertible _),
+  rw [kummerShortExact_inclDistribMulActionHom, h2MuToUnits_def,
+    ← TauCeti.ContinuousCohomology.coeffMap_eqToHom,
+    ← h2KummerToUnits_explicitH2AddEquivContinuousCohomology,
     ← explicitH2AddEquivContinuousCohomology_coeffMap, ← eqToHom_comp_kummerCoeffIsoTrivialF2_inv,
     TauCeti.ContinuousCohomology.coeffMap_comp]
   -- the two sides apply the same composite of coefficient maps, once as a composite morphism and

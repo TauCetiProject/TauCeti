@@ -15,7 +15,7 @@ Detectors (each names the infra failure it implies):
 
   1. stuck-bump      The last-known-good bump PR (branch hopscotch/lkg-bump) has a
                      RED `build` check that has stayed red past a grace window. The
-                     daily bump cannot cross a mathlib breaking change on its own;
+                     hourly bump cannot cross a mathlib breaking change on its own;
                      something needs a fix, e.g. a proof, scripts/lint-env.sh, or a
                      guard.
   2. stale-pin       main's mathlib pin has not moved in several days. The bump has
@@ -160,7 +160,7 @@ ABANDONED_CANCEL_HOURS = 24
 FKB_STALE_DAYS = 3
 SCHEDULERS = {
     # workflow file            (human name,               max age hours)
-    "update.yml":            ("daily mathlib bump",       30),
+    "update.yml":            ("hourly mathlib bump",       4),
     "lint-full.yml":         ("daily full lint",          30),
     "pages.yml":             ("pages / doc-gen publish",  30),
     # Hourly, but a run after a pin bump re-analyzes all of TauCeti and holds the
@@ -258,10 +258,10 @@ def detect_stuck_bump():
         # Clock off the PR's age, not the build-status timestamp. A HEALTHY LKG
         # bump PR merges within hours and a fresh one is created per advance, so an
         # open LKG PR older than the window is reliably stuck. The build-status
-        # `updated_at` is the wrong clock here: the daily bump force-pushes this
-        # branch, re-running the SAME red build and resetting that timestamp every
-        # day -- which would permanently mask a genuine multi-day wedge (observed
-        # on PR #1057). Requiring the build to be currently red avoids firing on a
+        # `updated_at` is the wrong clock here: repeated branch updates can
+        # re-run the same red build and reset that timestamp, masking a
+        # genuine multi-day wedge (observed on PR #1057). Requiring the build to
+        # be currently red avoids firing on a
         # PR that has since gone green and is merging.
         if state in ("failure", "error") and hours_since(pr["created_at"]) >= BUMP_STUCK_HOURS:
             out.append({
@@ -270,7 +270,7 @@ def detect_stuck_bump():
                 "body": (
                     f"The last-known-good bump PR "
                     f"https://github.com/{REPO}/pull/{pr['number']} has had a red "
-                    f"`build` check and has been open over {BUMP_STUCK_HOURS}h. The daily bump cannot "
+                    f"`build` check and has been open over {BUMP_STUCK_HOURS}h. The hourly bump cannot "
                     f"cross a mathlib breaking change on its own.\n\n"
                     f"**Fix:** open the failing build, and land whatever fix it needs "
                     f"together with the pin move in one human-owned PR, so the bump "
@@ -327,7 +327,7 @@ def detect_stale_pin():
         "title": "Mathlib pin has stopped advancing",
         "body": (
             f"`lake-manifest.json` on main{pin} has not changed in over "
-            f"{PIN_STALE_DAYS} days; the daily bump has stalled.\n\n"
+            f"{PIN_STALE_DAYS} days; the hourly bump has stalled.\n\n"
             f"**Fix:** find why — a wedged bump PR (see any stuck-bump alert), an "
             f"unresolved first-known-bad freeze, or `update.yml` failing — and clear "
             f"it so `hopscotch/lkg-bump` can move forward again."),
@@ -842,7 +842,7 @@ def detect_stale_fkb():
                 f"over {FKB_STALE_DAYS} days: https://github.com/{REPO}/issues/{i['number']}. "
                 f"The pin is frozen at the last-known-good commit until it is fixed.\n\n"
                 f"**Fix:** land the fix PR whose manifest is pinned at the first-known-bad commit so the "
-                f"freeze lifts and the daily bump resumes toward master."),
+                f"freeze lifts and the hourly bump resumes toward master."),
         })
     return out
 

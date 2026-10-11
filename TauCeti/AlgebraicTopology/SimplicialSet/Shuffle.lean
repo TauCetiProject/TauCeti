@@ -49,6 +49,8 @@ map is a morphism of chain complexes.
 
 ## Main definitions and results
 
+* `SSet.stdSimplex.coneChain`: the cone from the vertex `0` on the simplicial chains of `Δ[a]`,
+  with `SSet.stdSimplex.coneChain_d` and `SSet.stdSimplex.coneChain_zero_d` its boundary formulas.
 * `SSet.stdSimplex.prodConeChain`: the cone from the vertex `(0, 0)` on the simplicial chains of
   `Δ[a] ⊗ Δ[b]`, with `SSet.stdSimplex.prodConeChain_d` its boundary formula.
 * `SSet.shuffleChain`: the shuffle chain of `Δ[p] ⊗ Δ[q]`, with its defining recursion
@@ -114,6 +116,13 @@ lemma δ_succ_cone {a m : ℕ} (x : (Δ[a] : SSet.{w}) _⦋m + 1⦌) (i : Fin (m
   | zero => simp [δ_apply]
   | succ j => simp [δ_apply, Fin.succ_succAbove_succ]
 
+/-- The second face (index `1`) of the cone on a vertex `x` is the vertex `0`. -/
+lemma δ_one_cone {a : ℕ} (x : (Δ[a] : SSet.{w}) _⦋0⦌) : Δ[a].δ 1 (cone x) = const a 0 _ := by
+  ext j
+  fin_cases j
+  -- both vertices are `0`
+  rfl
+
 /-- A map of standard simplices which fixes the vertex `0` commutes with cones. -/
 lemma map_cone {a b m : ℕ} (g : ⦋a⦌ ⟶ ⦋b⦌) (hg : g.toOrderHom 0 = 0)
     (x : (Δ[a] : SSet.{w}) _⦋m⦌) :
@@ -146,6 +155,59 @@ section Chain
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C]
 
 variable (a b : ℕ) (T : C)
+
+/-- The cone from the vertex `0`, as a map raising the degree of the simplicial chains of `Δ[a]`
+by one.  It is a contracting homotopy in positive degrees (`SSet.stdSimplex.coneChain_d`), and in
+degree zero it contracts onto the vertex `0` (`SSet.stdSimplex.coneChain_zero_d`). -/
+def coneChain (m : ℕ) :
+    ((Δ[a] : SSet.{w}).chainComplex T).X m ⟶ ((Δ[a] : SSet.{w}).chainComplex T).X (m + 1) :=
+  Cofan.IsColimit.desc (isColimitChainComplexXCofan _ T m) fun x ↦
+    (Δ[a] : SSet.{w}).ιChainComplex (cone x)
+
+@[reassoc (attr := simp)]
+lemma ιChainComplex_coneChain {m : ℕ} (x : (Δ[a] : SSet.{w}) _⦋m⦌) :
+    (Δ[a] : SSet.{w}).ιChainComplex (R := T) x ≫ coneChain a T m =
+      (Δ[a] : SSet.{w}).ιChainComplex (cone x) :=
+  Cofan.IsColimit.fac _ _ x
+
+/-- The cone on the simplicial chains of `Δ[a]` is a contracting homotopy in positive degrees:
+`∂ (c ∘ σ) = σ - c ∘ ∂ σ` for a chain `σ` of positive degree. -/
+lemma coneChain_d (m : ℕ) :
+    coneChain a T (m + 1) ≫ ((Δ[a] : SSet.{w}).chainComplex T).d (m + 1 + 1) (m + 1) =
+      𝟙 _ - ((Δ[a] : SSet.{w}).chainComplex T).d (m + 1) m ≫ coneChain a T m := by
+  ext x
+  simp only [ιChainComplex_coneChain_assoc, ιChainComplex_d, Preadditive.comp_sub,
+    Category.comp_id, ιChainComplex_d_assoc, Preadditive.sum_comp, Preadditive.zsmul_comp,
+    ιChainComplex_coneChain]
+  rw [Fin.sum_univ_succ, δ_zero_cone, Fin.val_zero, pow_zero, one_smul]
+  simp only [Fin.val_succ, pow_succ, mul_neg_one, neg_smul, Finset.sum_neg_distrib,
+    sub_eq_add_neg, δ_succ_cone]
+
+/-- The map on the `0`-chains of `Δ[a]` which sends the summand of every vertex to the summand of
+the vertex `0`. -/
+def constZeroChain :
+    ((Δ[a] : SSet.{w}).chainComplex T).X 0 ⟶ ((Δ[a] : SSet.{w}).chainComplex T).X 0 :=
+  Cofan.IsColimit.desc (isColimitChainComplexXCofan _ T 0) fun _ ↦
+    (Δ[a] : SSet.{w}).ιChainComplex (const a 0 _)
+
+@[reassoc (attr := simp)]
+lemma ιChainComplex_constZeroChain (x : (Δ[a] : SSet.{w}) _⦋0⦌) :
+    (Δ[a] : SSet.{w}).ιChainComplex (R := T) x ≫ constZeroChain a T =
+      (Δ[a] : SSet.{w}).ιChainComplex (const a 0 _) :=
+  Cofan.IsColimit.fac _ _ x
+
+/-- In degree zero, the boundary of the cone on a vertex `x` is `x` minus the vertex `0`. -/
+lemma coneChain_zero_d :
+    coneChain a T 0 ≫ ((Δ[a] : SSet.{w}).chainComplex T).d 1 0 = 𝟙 _ - constZeroChain a T := by
+  ext x
+  simp [ιChainComplex_d, Fin.sum_univ_two, δ_one_cone, sub_eq_add_neg]
+
+/-- Collapsing every vertex onto the vertex `0` kills boundaries. -/
+@[reassoc (attr := simp)]
+lemma d_constZeroChain :
+    ((Δ[a] : SSet.{w}).chainComplex T).d 1 0 ≫ constZeroChain a T = 0 := by
+  ext x
+  simp [Fin.sum_univ_two]
 
 /-- The cone from the vertex `(0, 0)`, as a map raising the degree of the simplicial chains of
 `Δ[a] ⊗ Δ[b]` by one.  It is a contracting homotopy in positive degrees

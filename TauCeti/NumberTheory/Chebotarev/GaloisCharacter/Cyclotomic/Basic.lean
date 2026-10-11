@@ -7,10 +7,10 @@ module
 
 public import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Weight
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Basic
+public import TauCeti.NumberTheory.NumberField.Ideal.ArtinMap
 import Mathlib.NumberTheory.Cyclotomic.Gal
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Frobenius
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Ramification
-import TauCeti.NumberTheory.NumberField.Ideal.ArtinMap
 import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 import TauCeti.RingTheory.Norm.Congruence
 
@@ -222,6 +222,17 @@ not unfold outside this file; it sends the ray class of a prime `𝔭 ∤ m` to 
 (`cyclotomicArtin_idealClass_of_isArithFrobAt`). -/
 noncomputable def cyclotomicArtin : RayClassGroup (cyclotomicModulus K m) →* (F ≃ₐ[K] F) :=
   rayClassLift (cyclotomicArtinAway F m) (ray_le_ker_cyclotomicArtinAway F m)
+
+/-- The cyclotomic Artin map composed with the ray class map is the ideal-theoretic Artin map
+on fractional ideals prime to the cyclotomic modulus. -/
+theorem cyclotomicArtin_comp_rayClassMk :
+    (cyclotomicArtin K F m).comp (rayClassMk (cyclotomicModulus K m)) =
+      artinHomAway (IsCyclotomicExtension.isMulCommutative {m} K F).is_comm.comm
+        (cyclotomicModulus K m).support fun _ hv Q _ _ ↦
+          isUnramifiedAt_of_notMem_cyclotomicModulus_support F m hv Q := by
+  apply MonoidHom.ext
+  intro I
+  rw [MonoidHom.comp_apply, cyclotomicArtin, rayClassLift_rayClassMk, cyclotomicArtinAway]
 
 -- On the ray class of an integral ideal, `cyclotomicArtin` is the integral Artin map.
 private theorem cyclotomicArtin_idealClass (I : integralIdealsPrimeTo (cyclotomicModulus K m)) :

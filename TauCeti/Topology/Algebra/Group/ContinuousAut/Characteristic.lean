@@ -188,16 +188,8 @@ theorem map_subtype_normal [SeparatelyContinuousMul G] {H : Subgroup G} [H.Norma
     {K : Subgroup H} (hK : IsTopCharacteristic H K) : (K.map H.subtype).Normal where
   conj_mem := by
     rintro _ ⟨k, hk, rfl⟩ g
-    -- Conjugation by `g` restricts to a continuous automorphism of the normal subgroup `H`.
-    have hconj (g : G) : Continuous (MulAut.conjNormal (H := H) g) :=
-      continuous_induced_rng.mpr <| (continuous_subtype_val.const_mul g).mul_const g⁻¹ |>.congr
-        fun h ↦ (MulAut.conjNormal_apply g h).symm
-    let φ : ContinuousAut H :=
-      { MulAut.conjNormal g with
-        continuous_toFun := hconj g
-        continuous_invFun := (hconj g⁻¹).congr fun h ↦ Subtype.ext <| by simp }
-    exact ⟨φ k, isTopCharacteristic_iff_map_le.mp hK φ ⟨k, hk, rfl⟩,
-      MulAut.conjNormal_apply g k⟩
+    exact ⟨ContinuousAut.conjNormal g k,
+      isTopCharacteristic_iff_map_le.mp hK _ ⟨k, hk, rfl⟩, ContinuousAut.conjNormal_apply g k⟩
 
 end IsTopCharacteristic
 

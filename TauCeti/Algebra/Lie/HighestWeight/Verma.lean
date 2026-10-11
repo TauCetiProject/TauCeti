@@ -8,6 +8,10 @@ module
 public import TauCeti.Algebra.Lie.HighestWeight.Maximal
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Module
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Character
+-- Non-public: `U(n⁻)` is a domain containing `n⁻`, used only to prove that lowering the canonical
+-- generator never gives zero.
+import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Domain
+import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Embedding
 
 /-!
 # Verma modules
@@ -108,6 +112,8 @@ is a linear equivalence (`TauCeti.universalEnvelopingEquivVermaModule`). Through
   `TauCeti.universalEnvelopingEquivVermaModule_apply` and
   `TauCeti.universalEnvelopingEquivVermaModule_mul`: **`M(lam)` is a free `U(n⁻)`-module of rank
   one on `v_lam`**, the map `y ↦ y · v_lam` being a `U(n⁻)`-linear equivalence `U(n⁻) ≃ M(lam)`.
+* `TauCeti.pow_toEnd_vermaGenerator_ne_zero`: lowering `v_lam` by a nonzero element of `n⁻`, any
+  number of times, never gives zero.
 * `TauCeti.irreducibleQuotientMk_surjective` and
   `TauCeti.lieSpan_irreducibleQuotientGenerator_eq_top`: every vector of `L(lam)` is the class of
   one of `M(lam)`, and the canonical generator generates `L(lam)`.
@@ -211,6 +217,17 @@ noncomputable instance : LieModule K L (VermaModule b lam) :=
 This is the compatibility hypothesis the enveloping-algebra dictionary consumes. -/
 theorem vermaModule_ι_smul (x : L) (m : VermaModule b lam) : (ι K x : U) • m = ⁅x, m⁆ :=
   (UniversalEnvelopingAlgebra.asLieRingModule_bracket K L (VermaModule b lam) x m).symm
+
+/-- **The enveloping representation of the Verma module is its `U(L)`-module structure**: the
+action of `U(L)` induced by the `L`-action, `TauCeti.UniversalEnvelopingAlgebra.representation`,
+is the scalar action of `U(L)` on the quotient `U(L) ⧸ vermaIdeal b lam`. -/
+theorem representation_vermaModule_apply (u : U) (m : VermaModule b lam) :
+    UniversalEnvelopingAlgebra.representation K L (VermaModule b lam) u m = u • m := by
+  induction u using UniversalEnvelopingAlgebra.induction_ι generalizing m with
+  | ι x => rw [UniversalEnvelopingAlgebra.representation_ι_apply, vermaModule_ι_smul]
+  | algebraMap r => rw [AlgHom.commutes, Module.algebraMap_end_apply, algebraMap_smul]
+  | add u w hu hw => rw [map_add, LinearMap.add_apply, hu, hw, add_smul]
+  | mul u w hu hw => rw [map_mul, Module.End.mul_apply, hw, hu, mul_smul]
 
 /-- **The canonical projection** `U(L) → M(lam)`, bundled as a `U(L)`-linear map so that its
 algebraic behaviour — `map_zero`, `map_add`, `map_smul` — is available from the `LinearMap` API
@@ -473,6 +490,27 @@ theorem universalEnvelopingEquivVermaModule_mul
       UniversalEnvelopingAlgebra.map K (negativeNilradical H b).incl y •
         universalEnvelopingEquivVermaModule b lam z := by
   simp [mul_smul]
+
+/-- **Lowering the canonical generator never gives zero**: for a nonzero `f` in the negative
+nilradical, `f^k · v_lam ≠ 0` in `M(lam)` for every `k`. Through the freeness `U(n⁻) ≃ M(lam)` the
+vector is the image of `(ι f)^k`, which is nonzero because `U(n⁻)` is a domain containing `n⁻`, by
+Poincaré--Birkhoff--Witt. -/
+theorem pow_toEnd_vermaGenerator_ne_zero {f : L} (hf : f ∈ negativeNilradical H b) (hf0 : f ≠ 0)
+    (k : ℕ) : ((toEnd K L (VermaModule b lam) f) ^ k) (vermaGenerator b lam) ≠ 0 := by
+  have key : ((toEnd K L (VermaModule b lam) f) ^ k) (vermaGenerator b lam) =
+      universalEnvelopingEquivVermaModule b lam
+        ((_root_.UniversalEnvelopingAlgebra.ι K (⟨f, hf⟩ : negativeNilradical H b)) ^ k) := by
+    rw [universalEnvelopingEquivVermaModule_apply, map_pow, UniversalEnvelopingAlgebra.map_ι]
+    induction k with
+    | zero => simp
+    | succ k ih =>
+      rw [pow_succ', Module.End.mul_apply, ih, pow_succ', mul_smul, LieSubalgebra.coe_incl,
+        vermaModule_ι_smul, toEnd_apply_apply]
+  rw [key, LinearEquiv.map_ne_zero_iff]
+  refine pow_ne_zero _ fun h ↦ hf0 ?_
+  have := UniversalEnvelopingAlgebra.ι_injective K (negativeNilradical H b)
+    (h.trans (map_zero _).symm)
+  simpa using congrArg Subtype.val this
 
 /-- **The irreducible quotient `L(lam)`**: the quotient of the Verma module by the maximal
 submodule of `TauCeti/Algebra/Lie/HighestWeight/Maximal.lean`. As with

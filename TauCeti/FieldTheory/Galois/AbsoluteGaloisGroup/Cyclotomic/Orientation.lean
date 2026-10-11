@@ -21,12 +21,14 @@ with `σ ζ = ζ ^ j`. Hence every value of `localCyclotomicCharacter p K` is a 
 homomorphism to the profinite pro-`p` group `1 + pℤ_p` kills the pro-`p` kernel of the absolute
 Galois group, so the character descends to its maximal pro-`p` quotient `G_K(p)`.
 
-The descended character `cyclotomicOrientation p K hmu : G_K(p) →* ℤ_pˣ` is the arithmetic
+The descended character `cyclotomicOrientation p K hmu : G_K(p) →ₜ* ℤ_pˣ` is the arithmetic
 orientation of `G_K(p)`, the character to compare with the canonical character of `G_K(p)` when
-it is a Demushkin group. It takes the roots-of-unity witness `hmu` as an explicit argument, and no
-unconditional descent of the full character is provided: for odd `p` and `K = ℚ_p` the character
-reduced modulo `p` maps the absolute Galois group onto `(ℤ/pℤ)ˣ`, a nontrivial group of order
-prime to `p`, so it does not factor through any pro-`p` group.
+it is a Demushkin group. It is a continuous homomorphism, the form taken by the twisted
+coefficients `ZModTwist` and the prescription property `HasPrescriptionProperty`. It takes the
+roots-of-unity witness `hmu` as an explicit argument, and no unconditional descent of the full
+character is provided: for odd `p` and `K = ℚ_p` the character reduced modulo `p` maps the
+absolute Galois group onto `(ℤ/pℤ)ˣ`, a nontrivial group of order prime to `p`, so it does not
+factor through any pro-`p` group.
 
 ## Main definitions
 
@@ -39,9 +41,11 @@ prime to `p`, so it does not factor through any pro-`p` group.
   character is pro-`p`.
 * `TauCeti.proPKernel_le_ker_localCyclotomicCharacter`: if `μ_p ⊆ K`, the pro-`p` kernel of the
   absolute Galois group lies in the kernel of the cyclotomic character.
-* `TauCeti.cyclotomicOrientation_mk`, `TauCeti.cyclotomicOrientation_continuous`,
+* `TauCeti.cyclotomicOrientation_mk`,
+  `TauCeti.cyclotomicOrientation_comp_absoluteGaloisGroupProPQuotientMap`,
   `TauCeti.cyclotomicOrientation_range`: the orientation agrees with the character on classes,
-  is continuous, and has the same image as the character.
+  pulls back to the continuous character along the quotient map, and has the same image as the
+  character.
 -/
 
 public section
@@ -72,45 +76,44 @@ theorem proPKernel_le_ker_localCyclotomicCharacter (hmu : ∃ ζ : K, IsPrimitiv
 
 variable (p K) in
 /-- The **cyclotomic orientation** of the maximal pro-`p` Galois group: when `K` contains a
-primitive `p`-th root of unity, the cyclotomic character `localCyclotomicCharacter p K` descends
-to `absoluteGaloisGroupProP p K`. -/
+primitive `p`-th root of unity, the continuous cyclotomic character
+`continuousLocalCyclotomicCharacter p K` descends to a continuous homomorphism on
+`absoluteGaloisGroupProP p K`. -/
 noncomputable def cyclotomicOrientation (hmu : ∃ ζ : K, IsPrimitiveRoot ζ p) :
-    absoluteGaloisGroupProP p K →* ℤ_[p]ˣ :=
-  (ContinuousMonoidHom.quotientLift _
-    ⟨localCyclotomicCharacter p K, localCyclotomicCharacter_continuous p K⟩
-    (proPKernel_le_ker_localCyclotomicCharacter p K hmu)).toMonoidHom
+    absoluteGaloisGroupProP p K →ₜ* ℤ_[p]ˣ :=
+  ContinuousMonoidHom.quotientLift _ (continuousLocalCyclotomicCharacter p K) fun g hg ↦ by
+    -- The two kernels agree, since the bundled character has the values of the plain one.
+    simpa using proPKernel_le_ker_localCyclotomicCharacter p K hmu hg
 
 /-- The cyclotomic orientation of the class of `g` is the cyclotomic character of `g`. -/
 @[simp]
 theorem cyclotomicOrientation_mk (hmu : ∃ ζ : K, IsPrimitiveRoot ζ p)
     (g : Field.absoluteGaloisGroup K) :
-    cyclotomicOrientation p K hmu (QuotientGroup.mk g) = localCyclotomicCharacter p K g :=
-  ContinuousMonoidHom.quotientLift_mk _ _ _ g
+    cyclotomicOrientation p K hmu (QuotientGroup.mk g) = localCyclotomicCharacter p K g := by
+  simp [cyclotomicOrientation]
 
-/-- The cyclotomic orientation restricts to the cyclotomic character along the quotient map. -/
+/-- The cyclotomic orientation pulls back to the continuous cyclotomic character along the
+quotient map from the absolute Galois group to its maximal pro-`p` quotient. -/
 @[simp]
-theorem cyclotomicOrientation_comp_mk (hmu : ∃ ζ : K, IsPrimitiveRoot ζ p) :
-    (cyclotomicOrientation p K hmu).comp
-        (maximalProPQuotient.mk p (Field.absoluteGaloisGroup K)) =
-      localCyclotomicCharacter p K :=
-  congrArg ContinuousMonoidHom.toMonoidHom
-    (ContinuousMonoidHom.quotientLift_comp_quotientMk _ _
-      (proPKernel_le_ker_localCyclotomicCharacter p K hmu))
-
-/-- The cyclotomic orientation is continuous for the quotient topology on the maximal pro-`p`
-Galois group. -/
-theorem cyclotomicOrientation_continuous (hmu : ∃ ζ : K, IsPrimitiveRoot ζ p) :
-    Continuous (cyclotomicOrientation p K hmu) :=
-  (ContinuousMonoidHom.quotientLift _ _
-    (proPKernel_le_ker_localCyclotomicCharacter p K hmu)).continuous
+theorem cyclotomicOrientation_comp_absoluteGaloisGroupProPQuotientMap
+    (hmu : ∃ ζ : K, IsPrimitiveRoot ζ p) :
+    (cyclotomicOrientation p K hmu).comp (absoluteGaloisGroupProPQuotientMap p K) =
+      continuousLocalCyclotomicCharacter p K := by
+  ext g
+  simp
 
 /-- The cyclotomic orientation and the cyclotomic character have the same image in `ℤ_pˣ`,
 because the quotient map onto the maximal pro-`p` Galois group is surjective. -/
 @[simp]
 theorem cyclotomicOrientation_range (hmu : ∃ ζ : K, IsPrimitiveRoot ζ p) :
-    (cyclotomicOrientation p K hmu).range = (localCyclotomicCharacter p K).range := by
-  rw [← cyclotomicOrientation_comp_mk hmu, MonoidHom.range_comp,
-    MonoidHom.range_eq_top_of_surjective _ (maximalProPQuotient.mk_surjective p _),
-    ← MonoidHom.range_eq_map]
+    (cyclotomicOrientation p K hmu : absoluteGaloisGroupProP p K →* ℤ_[p]ˣ).range =
+      (localCyclotomicCharacter p K).range := by
+  ext u
+  constructor
+  · rintro ⟨q, rfl⟩
+    induction q using QuotientGroup.induction_on with
+    | H g => exact ⟨g, (cyclotomicOrientation_mk hmu g).symm⟩
+  · rintro ⟨g, rfl⟩
+    exact ⟨QuotientGroup.mk g, cyclotomicOrientation_mk hmu g⟩
 
 end TauCeti

@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import Mathlib.Analysis.Normed.Module.Connected
+public import TauCeti.Geometry.Sphere.Connected
 public import Mathlib.Topology.Covering.Quotient
 public import TauCeti.Analysis.Normed.Module.Ball.IntUnitsAction
 
@@ -29,9 +28,8 @@ provided by `TauCeti.Analysis.Normed.Module.Ball.IntUnitsAction`.
 ## Main declarations
 
 * `TauCeti.RealProjectiveSpace`: real projective `n`-space as an antipodal quotient of `Sⁿ`.
-* `TauCeti.RealProjectiveSpace.instNonemptySphere` and
-  `TauCeti.RealProjectiveSpace.connectedSpace_sphere`: the covering sphere `Sⁿ` is nonempty, and
-  connected once `1 ≤ n`.
+* `TauCeti.RealProjectiveSpace.instNonemptySphere`: the covering sphere `Sⁿ` is nonempty.
+  Its connectedness for `1 ≤ n` is supplied by `TauCeti.connectedSpace_euclideanSphere`.
 * `TauCeti.RealProjectiveSpace.instCompactSpace`: real projective space is compact.
 * `TauCeti.RealProjectiveSpace.inductionOn`, `TauCeti.RealProjectiveSpace.lift`, and
   `TauCeti.RealProjectiveSpace.lift_unique`: elimination principles for the antipodal quotient.
@@ -68,15 +66,6 @@ variable (n : ℕ)
 instance instNonemptySphere :
     Nonempty (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :=
   (NormedSpace.sphere_nonempty.mpr zero_le_one).to_subtype
-
-/-- The unit sphere of `EuclideanSpace ℝ (Fin (n + 1))` is connected once `1 ≤ n`, that is,
-from the circle `S¹` on. This is the standing hypothesis behind the identification of the
-deck group of the antipodal cover. -/
-theorem connectedSpace_sphere (hn : 1 ≤ n) :
-    ConnectedSpace (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) := by
-  refine Subtype.connectedSpace (isConnected_sphere ?_ 0 zero_le_one)
-  rw [← Module.finrank_eq_rank, finrank_euclideanSpace_fin, Nat.one_lt_cast]
-  omega
 
 /-- The quotient topology on real projective space. -/
 instance instTopologicalSpace : TopologicalSpace (RealProjectiveSpace n) :=
@@ -202,7 +191,6 @@ instance instUniqueZero : Unique (RealProjectiveSpace 0) := by
       have hsq : ‖w‖^2 = (w 0)^2 := by
         rw [EuclideanSpace.norm_sq_eq, Fin.sum_univ_one, Real.norm_eq_abs, sq_abs]
       have h2 : |w 0|^2 = (w 0)^2 := sq_abs (w 0)
-      have h3 : ‖w‖^2 = |w 0|^2 := by rw [hsq, h2]
       have hpos1 : 0 ≤ ‖w‖ := norm_nonneg w
       have hpos2 : 0 ≤ |w 0| := abs_nonneg (w 0)
       nlinarith

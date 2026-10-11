@@ -24,7 +24,8 @@ extension, and in degree `2` it has exactly one such place.
 
 Restricting a real place along a field embedding gives a real place, and the real embedding of the
 restriction is the composite of the embeddings. For an extension `L / k`, every place of `L` lies
-over its restriction to `k`.
+over its restriction to `k`. If `w` lies over `v`, then `w.embedding` and its conjugate restrict to
+`v.embedding` and its conjugate, in one order or the other.
 
 ## Main results
 
@@ -51,6 +52,9 @@ over its restriction to `k`.
   place.
 * `NumberField.InfinitePlace.liesOver_comap`: a place lies over its restriction.
 * `NumberField.InfinitePlace.LiesOver.trans`: lying over is transitive in a field tower.
+* `NumberField.InfinitePlace.LiesOver.embedding_comp_eq_and_conjugate_embedding_comp_eq_or`: the
+  embedding of a place and its conjugate restrict to the embedding of the place below and its
+  conjugate, in one order or the other.
 -/
 
 public section
@@ -238,5 +242,23 @@ theorem InfinitePlace.LiesOver.trans {k L M : Type*} [Field k] [Field L] [Field 
     rw [IsScalarTower.algebraMap_eq k L M, InfinitePlace.comap_comp,
       InfinitePlace.LiesOver.comap_eq u w, InfinitePlace.LiesOver.comap_eq w v]
   exact ⟨congrArg Subtype.val h⟩
+
+/-- If `w` lies over `v`, the embedding of `w` and its conjugate restrict to the embedding of `v`
+and its conjugate, in one order or the other. This pairs the restriction of `w.embedding` given by
+`InfinitePlace.LiesOver.embedding_comp_eq_or_conjugate_embedding_comp_eq` with the matching
+restriction of its conjugate. -/
+theorem InfinitePlace.LiesOver.embedding_comp_eq_and_conjugate_embedding_comp_eq_or
+    {k L : Type*} [Field k] [Field L] [Algebra k L]
+    (w : InfinitePlace L) (v : InfinitePlace k) [w.LiesOver v] :
+    (w.embedding.comp (algebraMap k L) = v.embedding ∧
+      (ComplexEmbedding.conjugate w.embedding).comp (algebraMap k L) =
+        ComplexEmbedding.conjugate v.embedding) ∨
+    (w.embedding.comp (algebraMap k L) = ComplexEmbedding.conjugate v.embedding ∧
+      (ComplexEmbedding.conjugate w.embedding).comp (algebraMap k L) = v.embedding) := by
+  rcases embedding_comp_eq_or_conjugate_embedding_comp_eq w v with h | h
+  · exact .inl ⟨h, by rw [ComplexEmbedding.conjugate_comp, h]⟩
+  · refine .inr ⟨?_, h⟩
+    rw [← h, ComplexEmbedding.conjugate_comp]
+    exact (ComplexEmbedding.involutive_conjugate k _).symm
 
 end NumberField

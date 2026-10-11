@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Differential.HalfTurn
-public import TauCeti.KnotTheory.Grid.Homology.Unblocked
+public import TauCeti.KnotTheory.Grid.Homology.Tau
+public import TauCeti.KnotTheory.Grid.Grading.HalfTurn
 
 /-!
 # The half-turn on unblocked grid homology
@@ -15,7 +16,8 @@ The half-turn of the torus carries a grid diagram `G` to `G.rotate` and its grid
 images under `GridState.halfTurn`, and it intertwines the unblocked differentials once the
 variables are renamed along `Fin.rev` (`Differential/HalfTurn.lean`). This file descends that
 symmetry to unblocked grid homology: `GH⁻(G)` and `GH⁻(G.rotate)` are identified by a
-semilinear equivalence along the renaming of the variables.
+semilinear equivalence along the renaming of the variables. It preserves the Alexander
+grading, so it also preserves the knot invariant `τ`.
 
 ## Main definitions
 
@@ -78,5 +80,57 @@ theorem unblockedHomologyRotateEquiv_symm_unblockedHomologyClass
   exact congrArg _ (Subtype.ext (GridChain.halfTurnRenameEquiv_halfTurnRenameEquiv R _).symm)
 
 end GridDiagram
+
+namespace OddComponentGridDiagram
+
+section Chains
+
+variable {n : ℕ} (G : OddComponentGridDiagram n) (R : Type*) [CommSemiring R]
+
+/-- The half-turn, including reversal of coefficient-variable indices, preserves the Alexander
+grading of unblocked chains. -/
+theorem halfTurnRenameEquiv_mem_alexanderChainMinusPiece {a : ℤ} {c : GridChainMinus R n}
+    (hc : c ∈ G.alexanderChainMinusPiece R a) :
+    GridChain.halfTurnRenameEquiv R c ∈ G.rotate.alexanderChainMinusPiece R a := by
+  classical
+  rw [mem_alexanderChainMinusPiece] at hc ⊢
+  intro x e he
+  rw [GridChain.halfTurnRenameEquiv_apply,
+    support_rename_of_injective Fin.rev_injective, Finset.mem_image] at he
+  obtain ⟨e, he, rfl⟩ := he
+  have hx := G.alexanderℤ_rotate_halfTurn x.halfTurn
+  rw [GridState.halfTurn_halfTurn] at hx
+  rw [hx, Finsupp.degree_mapDomain]
+  exact hc x.halfTurn e he
+
+end Chains
+
+variable {n : ℕ} (G : OddComponentGridDiagram n) (R : Type*) [CommRing R] [CharP R 2]
+
+/-- The equivalence induced by the half-turn preserves the Alexander grading on homology. -/
+theorem unblockedHomologyRotateEquiv_mem_piece {a : ℤ} {y : G.1.unblockedHomology R}
+    (hy : y ∈ (G.alexanderUnblockedHomologyGrading R).piece a) :
+    G.1.unblockedHomologyRotateEquiv R y ∈
+      (G.rotate.alexanderUnblockedHomologyGrading R).piece a :=
+  G.unblockedHomologyEquivOfIntertwining_mem_piece R G.rotate _ _
+    (fun _ _ hc => G.halfTurnRenameEquiv_mem_alexanderChainMinusPiece R hc) hy
+
+end OddComponentGridDiagram
+
+namespace GridDiagram.IsKnot
+
+variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot) (K : Type*) [CommRing K] [CharP K 2]
+
+/-- The knot invariant `τ` is unchanged by the half-turn of the torus. -/
+theorem tau_rotate : ((G.isKnot_rotate).mpr hG).tau K = hG.tau K := by
+  refine (hG.tau_eq_of_semilinearMap K _ (fun p => ?_)
+    (G.unblockedHomologyRotateEquiv K).toLinearMap
+    (G.unblockedHomologyRotateEquiv K).bijective fun a y hy => ?_).symm
+  · simp [aeval_rename, Function.comp_def]
+  · rw [mem_alexanderUnblockedHomologyGrading_piece_iff,
+      ← OddComponentGridDiagram.mem_alexanderUnblockedHomologyGrading_piece_iff] at hy ⊢
+    exact hG.toOddComponentGridDiagram.unblockedHomologyRotateEquiv_mem_piece K hy
+
+end GridDiagram.IsKnot
 
 end TauCeti

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.UpperTriangular.Basic
-public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Tangent
+public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Tangent.Basic
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.DiagonalTorus.Base
 public import TauCeti.Algebra.Lie.GeneralLinear.Borel
 

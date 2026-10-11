@@ -163,7 +163,7 @@ theorem apply_eq_of_forall_isCrossedHom_eq_zero_padicPow_mul_labuteComm_mul (hn 
       (χ (freeProPGen 2 n 3) : ℤ_[2]) * (1 - q) = 1 := by
   set x := freeProPGen 2 n with hx
   set P := (isProP_freeProP 2 (Fin n)).padicPow (x 0) (2 + α) with hP
-  set C := labuteComm (x 0) (x 1) with hC
+  set C := labuteComm (x 0) (x 1)
   set T := demushkinWordNeTwo q (n - 2) (fun i ↦ x (i + 2)) with hT
   obtain ⟨m, hm⟩ := hn
   -- The Kronecker crossed homomorphisms `D_k`, with `D_k (x_j) = δ_{kj}`: `D_k` at the partner
@@ -229,7 +229,7 @@ theorem apply_eq_of_forall_isCrossedHom_eq_zero_padicPow_mul_labuteComm_mul (hn 
     have h := hkill _ (hDc 3 hn3) (hD 3 hn3)
     rw [hexp _ (hD 3 hn3), hFP _ (hD 3 hn3) (hDc 3 hn3) (hDv0 _ _ 0 (by omega)),
       hFC _ (hD 3 hn3) (hDv0 _ _ 0 (by omega)) (hDv0 _ _ 1 (by omega)),
-      hFT1 0 (by omega) _ (hD 3 hn3) (fun j hj hj₂ hj₃ ↦ hDv0 _ _ j (by omega)),
+      hFT1 0 (by omega) _ (hD 3 hn3) (fun j _ _ _ ↦ hDv0 _ _ j (by omega)),
       hDv0 _ _ 2 (by omega)] at h
     simp only [Nat.zero_add, mul_zero, add_zero] at h
     exact (hD 3 hn3).eq_one_of_map_labuteComm_eq_zero_right (hDv0 _ _ _ (by omega))
@@ -241,8 +241,7 @@ theorem apply_eq_of_forall_isCrossedHom_eq_zero_padicPow_mul_labuteComm_mul (hn 
     · -- `x_j = x_{2i+1}`, with partner `x_{2i+2}`.
       have hk : 2 * i + 1 < n := by omega
       have h := hkill _ (hDc _ hk) (hD _ hk)
-      have hT' := hFT1 (i - 1) (by omega) _ (hD _ hk) fun j' hj' hj'₂ hj'₃ ↦
-        hDv0 _ hk j' (by omega)
+      have hT' := hFT1 (i - 1) (by omega) _ (hD _ hk) fun j' _ _ _ ↦ hDv0 _ hk j' (by omega)
       rw [show 2 * (i - 1) + 2 = 2 * i by omega, show 2 * (i - 1) + 3 = 2 * i + 1 by omega,
         hDv0 _ hk 2 (by omega), mul_zero, add_zero] at hT'
       rw [hexp _ (hD _ hk), hFP _ (hD _ hk) (hDc _ hk) (hDv0 _ _ 0 (by omega)),
@@ -254,8 +253,7 @@ theorem apply_eq_of_forall_isCrossedHom_eq_zero_padicPow_mul_labuteComm_mul (hn 
     · -- `x_j = x_{2i+2}`, with partner `x_{2i+1}`.
       have hk : 2 * i < n := by omega
       have h := hkill _ (hDc _ hk) (hD _ hk)
-      have hT' := hFT1 (i - 1) (by omega) _ (hD _ hk) fun j' hj' hj'₂ hj'₃ ↦
-        hDv0 _ hk j' (by omega)
+      have hT' := hFT1 (i - 1) (by omega) _ (hD _ hk) fun j' _ _ _ ↦ hDv0 _ hk j' (by omega)
       rw [show 2 * (i - 1) + 2 = 2 * i by omega, show 2 * (i - 1) + 3 = 2 * i + 1 by omega,
         hDv0 _ hk 2 (by omega), mul_zero, add_zero] at hT'
       rw [hexp _ (hD _ hk), hFP _ (hD _ hk) (hDc _ hk) (hDv0 _ _ 0 (by omega)),
@@ -295,7 +293,7 @@ theorem apply_eq_of_forall_isCrossedHom_eq_zero_padicPow_mul_labuteComm_mul (hn 
     rw [hexp _ (hD 2 (by omega)),
       hFP _ (hD 2 (by omega)) (hDc 2 (by omega)) (hDv0 _ _ 0 (by omega)),
       hFC _ (hD 2 (by omega)) (hDv0 _ _ 0 (by omega)) (hDv0 _ _ 1 (by omega)),
-      hFT1 0 (by omega) _ (hD 2 (by omega)) (fun j hj hj₂ hj₃ ↦ hDv0 _ _ j (by omega)),
+      hFT1 0 (by omega) _ (hD 2 (by omega)) (fun j _ _ _ ↦ hDv0 _ _ j (by omega)),
       hDv1 2 (by omega), h2] at h
     simp only [Nat.zero_add, Units.val_one, one_pow, one_mul, mul_one, mul_zero, add_zero,
       Finset.sum_const, Finset.card_range, nsmul_eq_mul] at h
@@ -473,7 +471,7 @@ theorem exists_continuousMulEquiv_apply_eq_demushkinWordTwoEven_of_range_eq
     · rw [hχ₂apply, symplecticTransvection_freeProPGen_of_ne hn3 d j hj₁ hj₂]
       exact hv j hj₁ hj₃
   -- The relator `r₂` in the new basis: every crossed homomorphism for `χ₂` kills it.
-  set r₂ := (symplecticTransvection hn3 d).symm rex with hr₂
+  set r₂ := (symplecticTransvection hn3 d).symm rex
   have hr₂₁ : r₂ ∈ pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1 :=
     MonoidHom.map_pLowerCentralSeries_le
       ((symplecticTransvection hn3 d).symm : freeProP 2 (Fin n) →ₜ* freeProP 2 (Fin n)).toMonoidHom

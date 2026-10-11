@@ -238,6 +238,23 @@ variable [AddCommMonoid M] [Module k M] [Module A M] [IsScalarTower k A M]
 variable (𝒜 : ℤ → Submodule k A) [GradedAlgebra 𝒜]
 variable {G : InternalGrading k M} [SetLike.GradedSMul 𝒜 G.piece] {d : ℤ}
 
+include 𝒜 in
+omit [IsScalarTower k A M] in
+/-- The span of a homogeneous piece is a homogeneous submodule over a graded algebra. -/
+theorem isHomogeneous_span_piece (d : ℤ) :
+    _root_.DirectSum.SetLike.IsHomogeneous G.piece
+      (Submodule.span A (G.piece d : Set M)) := by
+  classical
+  intro p x hx
+  obtain ⟨n, c, g, rfl⟩ := Submodule.mem_span_set'.mp hx
+  rw [DirectSum.decompose_sum, DFinsupp.finsetSum_apply, AddSubmonoidClass.coe_finsetSum]
+  refine Submodule.sum_mem _ fun i _ => ?_
+  have h := DirectSum.coe_decompose_smul_add_of_right_mem 𝒜 G.piece (g i).property
+    (a := c i) (i := p - d)
+  rw [sub_add_cancel] at h
+  rw [h]
+  exact Submodule.smul_mem _ _ (Submodule.subset_span (g i).property)
+
 /-- Over a graded algebra `𝒜`, a graded module generated in degree `d` has degree-`m + d` piece
 `𝒜 m • M_d`: its homogeneous elements of degree `m + d` are exactly the sums of products of
 degree-`m` elements of the algebra with degree-`d` elements of the module. -/

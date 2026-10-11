@@ -52,6 +52,8 @@ angular frequency `k` of a character of `ℂˣ` from its restriction to the unit
   the positive reals and unit circle and extensionality for characters of `ℂˣ`.
 * `TauCeti.exists_eq_complexUnitsCharacter`, `TauCeti.complexUnitsCharacter_injective2`: the
   classification of the continuous characters of `ℂˣ`.
+* `TauCeti.realUnitsCharacter_map_normSq`, `TauCeti.complexUnitsCharacter_map_conj`: the
+  pullbacks of these characters along the norm `ℂˣ → ℝˣ` and along complex conjugation.
 
 ## References
 
@@ -297,6 +299,33 @@ theorem complexUnitsCharacter_add (s t : ℂ) (k l : ℤ) :
   rw [complexUnitsCharacter, complexUnitsCharacter, complexUnitsCharacter, normCpowCharacter_add,
     zpow_add]
   exact mul_mul_mul_comm (normCpowCharacter ℂ s) _ _ _
+
+/-- Pulling back `x ↦ |x| ^ s * sgn(x) ^ ε` along the norm `z ↦ |z|²` of `ℂ / ℝ` gives
+`z ↦ |z| ^ (2 * s)`: the sign character is trivial on the positive values of the norm. -/
+theorem realUnitsCharacter_map_normSq (s : ℂ) (ε : ZMod 2) (z : ℂˣ) :
+    realUnitsCharacter s ε (Units.map (normSq : ℂ →* ℝ) z) =
+      complexUnitsCharacter (2 * s) 0 z := by
+  apply Units.ext
+  have hz : 0 < normSq (z : ℂ) := normSq_pos.2 z.ne_zero
+  rw [coe_realUnitsCharacter_apply, coe_complexUnitsCharacter_apply, Units.coe_map,
+    MonoidHom.coe_ofClass, abs_of_pos hz, sign_pos hz, normSq_eq_norm_sq, ofReal_pow,
+    ofReal_pow_cpow (norm_nonneg _)]
+  simp
+
+/-- Precomposing `z ↦ |z| ^ s * (z / |z|) ^ k` with complex conjugation negates the angular
+frequency. -/
+theorem complexUnitsCharacter_map_conj (s : ℂ) (k : ℤ) (z : ℂˣ) :
+    complexUnitsCharacter s k (Units.map (starRingEnd ℂ : ℂ →* ℂ) z) =
+      complexUnitsCharacter s (-k) z := by
+  apply Units.ext
+  have hz : (z : ℂ) ≠ 0 := z.ne_zero
+  have hn : (‖(z : ℂ)‖ : ℂ) ≠ 0 := by simp [hz]
+  -- On the unit circle, conjugation is inversion.
+  have hconj : (starRingEnd ℂ) (z : ℂ) / ‖(z : ℂ)‖ = ((z : ℂ) / ‖(z : ℂ)‖)⁻¹ := by
+    rw [inv_div, div_eq_div_iff hn hz, ← sq, ← ofReal_pow, ← normSq_eq_norm_sq, ← mul_conj,
+      mul_comm]
+  rw [coe_complexUnitsCharacter_apply, coe_complexUnitsCharacter_apply, Units.coe_map,
+    MonoidHom.coe_ofClass, RCLike.norm_conj, hconj, inv_zpow', zpow_neg]
 
 /-- Restricting `complexUnitsCharacter s k` to the positive reals gives `expUnitHom s`; the
 angular frequency is invisible there. -/

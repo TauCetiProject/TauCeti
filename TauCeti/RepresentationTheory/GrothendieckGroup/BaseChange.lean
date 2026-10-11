@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.BaseChange
 public import TauCeti.RepresentationTheory.GrothendieckGroup.FDRep
--- Non-public: the isomorphism constructor `TauCeti.fdRepIsoOfEquivariant` is used only inside the
+-- Non-public: the isomorphism constructor `LinearEquiv.toFDRepIso` is used only inside the
 -- proofs of `TauCeti.baseChangeK0_id`, `baseChangeK0_of_ofMulAction` and `baseChangeK0_comp`.
 import TauCeti.RepresentationTheory.FDRep
 
@@ -150,7 +150,7 @@ theorem baseChangeK0_of (V : FDRep k G) :
 theorem baseChangeK0_id : baseChangeK0 (k := k) k (G := G) = RingHom.id _ :=
   ExactK0.ringHom_ext fun V => by
     rw [baseChangeK0_of, RingHom.id_apply]
-    exact ExactK0.of_congr (fdRepIsoOfEquivariant (TensorProduct.lid k V) fun g z => by
+    exact ExactK0.of_congr ((TensorProduct.lid k V).toFDRepIso fun g z => by
       rw [FDRep.of_ρ', Representation.baseChange_apply]
       induction z using TensorProduct.inductionOn with
       | tmul a x => simp
@@ -163,8 +163,8 @@ theorem baseChangeK0_of_ofMulAction (X : Type u) [MulAction G X] [Finite X] :
     baseChangeK0 k' (ExactK0.of (FDRep.of (Representation.ofMulAction k G X))) =
       ExactK0.of (FDRep.of (Representation.ofMulAction k' G X)) := by
   rw [baseChangeK0_of, FDRep.of_ρ']
-  refine ExactK0.of_congr (fdRepIsoOfEquivariant
-    (baseChangeOfMulActionEquiv k k' G X).toLinearEquiv fun g x => ?_)
+  refine ExactK0.of_congr ((baseChangeOfMulActionEquiv k k' G X).toLinearEquiv.toFDRepIso
+    fun g x => ?_)
   rw [FDRep.of_ρ', FDRep.of_ρ']
   exact Representation.IntertwiningMap.isIntertwining _ _
     (baseChangeOfMulActionEquiv k k' G X).toIntertwiningMap g x
@@ -180,8 +180,8 @@ theorem baseChangeK0_comp :
       baseChangeK0 (k := k) k'' :=
   ExactK0.ringHom_ext fun V => by
     rw [RingHom.comp_apply, baseChangeK0_of, baseChangeK0_of, baseChangeK0_of, FDRep.of_ρ']
-    exact ExactK0.of_congr (fdRepIsoOfEquivariant
-      (AlgebraTensorModule.cancelBaseChange k k' k'' k'' V) fun g z => by
+    exact ExactK0.of_congr ((AlgebraTensorModule.cancelBaseChange k k' k'' k'' V).toFDRepIso
+      fun g z => by
         rw [FDRep.of_ρ', Representation.baseChange_apply]
         induction z using TensorProduct.inductionOn with
         | tmul a x =>

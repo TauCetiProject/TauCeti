@@ -36,6 +36,8 @@ the last basis vector.
 
 * `Matrix.blockSucc_mulVec`: the extended matrix acts on the first `n` coordinates by `M` and
   fixes the last one.
+* `Matrix.transpose_blockSucc`: extending a matrix commutes with transposing it, the last row and
+  column of the identity matrix being exchanged with each other.
 * `Matrix.trace_blockSucc` and `Matrix.det_blockSucc`: the trace grows by one and the determinant
   is unchanged.
 -/
@@ -89,6 +91,24 @@ theorem blockSucc_one : blockSucc (1 : Matrix (Fin n) (Fin n) k) = 1 := by
     induction j using Fin.lastCases with
     | last => simp [(Fin.castSucc_lt_last i).ne]
     | cast j => simp [Matrix.one_apply, Fin.castSucc_inj]
+
+/-- **Extending a matrix commutes with transposing it**: the last row and the last column of
+`Matrix.blockSucc M` are those of the identity matrix, so transposing exchanges them with each
+other and transposes the upper-left block.  This is what carries orthogonality of a matrix to
+orthogonality of its extension. -/
+@[simp]
+theorem transpose_blockSucc (M : Matrix (Fin n) (Fin n) k) :
+    (blockSucc M)ᵀ = blockSucc Mᵀ := by
+  ext i j
+  induction i using Fin.lastCases with
+  | last =>
+    induction j using Fin.lastCases with
+    | last => simp
+    | cast j => simp
+  | cast i =>
+    induction j using Fin.lastCases with
+    | last => simp
+    | cast j => simp
 
 /-- Extending a product is the product of the extensions: the last row and column of
 `Matrix.blockSucc M` are those of the identity matrix, so the extra index contributes only its own

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
 -- Non-public: `eLpNorm_condExp_le_eLpNorm` (the Lᵖ contraction of conditional expectation) is
--- used only inside the proof of the L¹-continuity lemma below, not in any public signature.
+-- used only inside proofs below, not in any public signature.
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
 
 /-!
@@ -28,6 +28,9 @@ import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
   coarser one, then so does conditioning on every σ-algebra between them.
 - `condExp_ae_eq_of_forall_exists_ae_eq`: conditioning on two nested σ-algebras gives a.e. the
   same result when every set of the finer one agrees a.e. with a set of the coarser one.
+- `lintegral_enorm_condExp_rpow_le`: Jensen's inequality for the conditional expectation as an
+  inequality of `lintegral`s, `∫⁻ ‖μ[f | m]‖ₑ ^ p ≤ ∫⁻ ‖f‖ₑ ^ p` for `1 ≤ p`, with no
+  integrability hypothesis.
 
 All are generic conditional-expectation facts (no exchangeability/tail/directing-measure
 hypotheses), each the bridge for a downstream construction.
@@ -229,6 +232,18 @@ theorem condExp_ae_eq_of_forall_exists_ae_eq {Ω E : Type*} [NormedAddCommGroup 
   obtain ⟨t, ht, hst⟩ := h s hs
   rw [setIntegral_congr_set hst, setIntegral_congr_set hst,
     setIntegral_condExp (h₁₂.trans h₂) hf ht]
+
+/-- **Jensen's inequality for the conditional expectation**, as an inequality of `lintegral`s: for
+`1 ≤ p`, the `p`-th power of the norm of `μ[f | m]` integrates to at most that of `f`. Unlike
+Mathlib's `integral_norm_condExp_rpow_le`, this needs no integrability of `‖f‖ ^ p`. -/
+theorem lintegral_enorm_condExp_rpow_le {Ω E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [CompleteSpace E] {m m₀ : MeasurableSpace Ω} {μ : Measure Ω} {f : Ω → E}
+    (hf : AEStronglyMeasurable f μ) {p : ℝ} (hp : 1 ≤ p) :
+    ∫⁻ ω, ‖(μ[f | m]) ω‖ₑ ^ p ∂μ ≤ ∫⁻ ω, ‖f ω‖ₑ ^ p ∂μ := by
+  have hp₀ : 0 < p := by linarith
+  have h := eLpNorm_condExp_le_eLpNorm (μ := μ) (m := m) f (p := .ofReal p) (by simpa using hp)
+  simpa [eLpNorm_eq_lintegral_rpow_enorm_toReal, hp₀, hp₀.le, integrable_condExp.1, hf,
+    ENNReal.rpow_le_rpow_iff] using h
 
 end MeasureTheory
 

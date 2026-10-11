@@ -18,9 +18,10 @@ topological commutative ring `R`. Forgetting the scalars gives a pairing `P.rest
 the underlying additive representations, with the same underlying biadditive map, and continuous
 cohomology does not see the scalars either
 (`TauCeti.ContCohomology.restrictScalarsIntEquiv`). This file proves that the two are compatible
-in bidegree `(1, 1)`: the cup product of `P.restrictScalarsInt` is the cup product of `P`, read
-through `restrictScalarsIntEquiv` (`TauCeti.TopPairing.cup_one_one_restrictScalarsInt`), and
-already on one-cocycles (`TauCeti.TopPairing.cupCocycles_one_one_restrictScalarsInt`). The reason
+in the bidegrees `(1, 1)`, `(0, 2)` and `(2, 0)` of total degree two: the cup product of
+`P.restrictScalarsInt` is the cup product of `P`, read through `restrictScalarsIntEquiv`
+(`TauCeti.TopPairing.cup_one_one_restrictScalarsInt` and its companions), and already on cocycles
+(`TauCeti.TopPairing.cupCocycles_one_one_restrictScalarsInt` and its companions). The reason
 is that both cup products are the Alexander–Whitney formula on the same iterated function spaces,
 and the identification of the cocycles does not change their values.
 
@@ -45,10 +46,15 @@ need in order to compute their cup product on explicit cocycles.
 
 * `TauCeti.TopPairing.cupCocycles_one_one_restrictScalarsInt`,
   `TauCeti.TopPairing.cup_one_one_restrictScalarsInt`: **the cup product does not see the
-  scalars**, on one-cocycles and on cohomology in bidegree `(1, 1)`.
-* `TauCeti.TopPairing.cup_one_one_ofDiscreteModuleRestrictScalarsInt`: for discrete
-  representations, the cup product of the associated pairing of discrete `ℤ`-modules is the cup
-  product of `P`, under `TauCeti.ContCohomology.ofDiscreteModuleRestrictScalarsIntEquiv`.
+  scalars**, on one-cocycles and on cohomology in bidegree `(1, 1)`;
+  `cupCocycles_zero_two_restrictScalarsInt`, `cup_zero_two_restrictScalarsInt`,
+  `cupCocycles_two_zero_restrictScalarsInt` and `cup_two_zero_restrictScalarsInt` are the same in
+  bidegrees `(0, 2)` and `(2, 0)`.
+* `TauCeti.TopPairing.cup_one_one_ofDiscreteModuleRestrictScalarsInt`,
+  `cup_zero_two_ofDiscreteModuleRestrictScalarsInt` and
+  `cup_two_zero_ofDiscreteModuleRestrictScalarsInt`: for discrete representations, the cup product
+  of the associated pairing of discrete `ℤ`-modules is the cup product of `P`, under
+  `TauCeti.ContCohomology.ofDiscreteModuleRestrictScalarsIntEquiv`.
 * `TauCeti.TopPairing.cup_one_one_explicitH1AddEquivContinuousCohomologyOfDiscrete`: **the
   canonical cup product of a pairing of discrete representations over any scalars is the explicit
   `(1,1)` cup product on their carriers**, `(a ⌣ b) (g, h) = μ (a g) (g • b h)`.
@@ -119,10 +125,10 @@ theorem cupCocycles_one_one_restrictScalarsInt (a : cocycles (TopRep.restrictSca
   ext g₀ g₁ g₂
   -- both sides evaluated at `(g₀, g₁, g₂)` are `μ (a g₀ g₁) (b g₁ g₂)`: the identifications do not
   -- change the values of the cocycles, and both cup products are the Alexander–Whitney formula
-  rw [iCycles_cocyclesRestrictScalarsIntEquiv_two_apply, iCycles_cupCocycles, iCycles_cupCocycles,
-    coe_cupCochain, coe_cupCochain, resolutionCupPairing_one_one_apply,
-    resolutionCupPairing_one_one_apply, restrictScalarsInt_bil,
-    iCycles_cocyclesRestrictScalarsIntEquiv_one_apply,
+  rw [iCycles_cocyclesRestrictScalarsIntEquiv_two_apply,
+    iCycles_cupCocycles P.restrictScalarsInt 1 1, iCycles_cupCocycles, coe_cupCochain,
+    coe_cupCochain, resolutionCupPairing_one_one_apply, resolutionCupPairing_one_one_apply,
+    restrictScalarsInt_bil, iCycles_cocyclesRestrictScalarsIntEquiv_one_apply,
     iCycles_cocyclesRestrictScalarsIntEquiv_one_apply]
 
 /-- **The cup product in bidegree `(1, 1)` does not see the scalars**: under
@@ -139,6 +145,70 @@ theorem cup_one_one_restrictScalarsInt
     (homogeneousCochains (TopRep.restrictScalarsInt.obj Y)).homologyπ_surjective 1 b
   rw [cup_π, restrictScalarsIntEquiv_π, restrictScalarsIntEquiv_π, restrictScalarsIntEquiv_π,
     cup_π, cupCocycles_one_one_restrictScalarsInt]
+
+/-- **The cup product of a zero-cocycle and a two-cocycle does not see the scalars**: under
+`TauCeti.ContCohomology.cocyclesRestrictScalarsIntEquiv`, the cup product for the pairing of the
+underlying additive representations is the cup product for `P`. -/
+theorem cupCocycles_zero_two_restrictScalarsInt (a : cocycles (TopRep.restrictScalarsInt.obj X) 0)
+    (b : cocycles (TopRep.restrictScalarsInt.obj Y) 2) :
+    cocyclesRestrictScalarsIntEquiv Z (0 + 2) (P.restrictScalarsInt.cupCocycles 0 2 a b) =
+      P.cupCocycles 0 2 (cocyclesRestrictScalarsIntEquiv X 0 a)
+        (cocyclesRestrictScalarsIntEquiv Y 2 b) := by
+  refine (homogeneousCochains Z).iCycles_injective (0 + 2) (Subtype.ext ?_)
+  ext g₀ g₁ g₂
+  -- both sides evaluated at `(g₀, g₁, g₂)` are `μ (a g₀) (b g₀ g₁ g₂)`
+  rw [iCycles_cocyclesRestrictScalarsIntEquiv_two_apply,
+    iCycles_cupCocycles P.restrictScalarsInt 0 2, iCycles_cupCocycles, coe_cupCochain,
+    coe_cupCochain, resolutionCupPairing_zero_two_apply, resolutionCupPairing_zero_two_apply,
+    restrictScalarsInt_bil, iCycles_cocyclesRestrictScalarsIntEquiv_zero_apply,
+    iCycles_cocyclesRestrictScalarsIntEquiv_two_apply]
+
+/-- **The cup product of a two-cocycle and a zero-cocycle does not see the scalars**: under
+`TauCeti.ContCohomology.cocyclesRestrictScalarsIntEquiv`, the cup product for the pairing of the
+underlying additive representations is the cup product for `P`. -/
+theorem cupCocycles_two_zero_restrictScalarsInt (a : cocycles (TopRep.restrictScalarsInt.obj X) 2)
+    (b : cocycles (TopRep.restrictScalarsInt.obj Y) 0) :
+    cocyclesRestrictScalarsIntEquiv Z (2 + 0) (P.restrictScalarsInt.cupCocycles 2 0 a b) =
+      P.cupCocycles 2 0 (cocyclesRestrictScalarsIntEquiv X 2 a)
+        (cocyclesRestrictScalarsIntEquiv Y 0 b) := by
+  refine (homogeneousCochains Z).iCycles_injective (2 + 0) (Subtype.ext ?_)
+  ext g₀ g₁ g₂
+  -- both sides evaluated at `(g₀, g₁, g₂)` are `μ (a g₀ g₁ g₂) (b g₂)`
+  rw [iCycles_cocyclesRestrictScalarsIntEquiv_two_apply,
+    iCycles_cupCocycles P.restrictScalarsInt 2 0, iCycles_cupCocycles, coe_cupCochain,
+    coe_cupCochain, resolutionCupPairing_two_zero_apply, resolutionCupPairing_two_zero_apply,
+    restrictScalarsInt_bil, iCycles_cocyclesRestrictScalarsIntEquiv_zero_apply,
+    iCycles_cocyclesRestrictScalarsIntEquiv_two_apply]
+
+/-- **The cup product in bidegree `(0, 2)` does not see the scalars**: under
+`TauCeti.ContCohomology.restrictScalarsIntEquiv`, the cup product of the pairing of the underlying
+additive representations is the cup product of `P`. -/
+theorem cup_zero_two_restrictScalarsInt
+    (a : continuousCohomology 0 (TopRep.restrictScalarsInt.obj X))
+    (b : continuousCohomology 2 (TopRep.restrictScalarsInt.obj Y)) :
+    restrictScalarsIntEquiv Z (0 + 2) (P.restrictScalarsInt.cup 0 2 a b) =
+      P.cup 0 2 (restrictScalarsIntEquiv X 0 a) (restrictScalarsIntEquiv Y 2 b) := by
+  obtain ⟨a, rfl⟩ :=
+    (homogeneousCochains (TopRep.restrictScalarsInt.obj X)).homologyπ_surjective 0 a
+  obtain ⟨b, rfl⟩ :=
+    (homogeneousCochains (TopRep.restrictScalarsInt.obj Y)).homologyπ_surjective 2 b
+  rw [cup_π, restrictScalarsIntEquiv_π, restrictScalarsIntEquiv_π, restrictScalarsIntEquiv_π,
+    cup_π, cupCocycles_zero_two_restrictScalarsInt]
+
+/-- **The cup product in bidegree `(2, 0)` does not see the scalars**: under
+`TauCeti.ContCohomology.restrictScalarsIntEquiv`, the cup product of the pairing of the underlying
+additive representations is the cup product of `P`. -/
+theorem cup_two_zero_restrictScalarsInt
+    (a : continuousCohomology 2 (TopRep.restrictScalarsInt.obj X))
+    (b : continuousCohomology 0 (TopRep.restrictScalarsInt.obj Y)) :
+    restrictScalarsIntEquiv Z (2 + 0) (P.restrictScalarsInt.cup 2 0 a b) =
+      P.cup 2 0 (restrictScalarsIntEquiv X 2 a) (restrictScalarsIntEquiv Y 0 b) := by
+  obtain ⟨a, rfl⟩ :=
+    (homogeneousCochains (TopRep.restrictScalarsInt.obj X)).homologyπ_surjective 2 a
+  obtain ⟨b, rfl⟩ :=
+    (homogeneousCochains (TopRep.restrictScalarsInt.obj Y)).homologyπ_surjective 0 b
+  rw [cup_π, restrictScalarsIntEquiv_π, restrictScalarsIntEquiv_π, restrictScalarsIntEquiv_π,
+    cup_π, cupCocycles_two_zero_restrictScalarsInt]
 
 end RestrictScalars
 
@@ -184,6 +254,31 @@ theorem eqToHom_ofDiscreteModulePairing_bil (x : X.V) (y : Y.V) :
       (TopRep.eqToHom_hom_apply (ofDiscreteModule_eq_restrictScalarsInt_obj X) x).symm
       (TopRep.eqToHom_hom_apply (ofDiscreteModule_eq_restrictScalarsInt_obj Y) y).symm)
 
+/-- For discrete representations, the cup product of the pairing of discrete `ℤ`-modules is the
+cup product of `P`, under `TauCeti.ContCohomology.ofDiscreteModuleRestrictScalarsIntEquiv`, in
+every bidegree in which the cup product of `P.restrictScalarsInt` is that of `P`. -/
+private theorem cup_ofDiscreteModuleRestrictScalarsInt_of_restrictScalarsInt (i j : ℕ)
+    (h : ∀ (a : continuousCohomology i (TopRep.restrictScalarsInt.obj X))
+      (b : continuousCohomology j (TopRep.restrictScalarsInt.obj Y)),
+      restrictScalarsIntEquiv Z (i + j) (P.restrictScalarsInt.cup i j a b) =
+        P.cup i j (restrictScalarsIntEquiv X i a) (restrictScalarsIntEquiv Y j b))
+    (a : continuousCohomology i (ofDiscreteModule ℤ G X.V))
+    (b : continuousCohomology j (ofDiscreteModule ℤ G Y.V)) :
+    ofDiscreteModuleRestrictScalarsIntEquiv Z (i + j)
+        ((ofDiscreteModulePairing μ (P.equivariant_of_eq μ hμ)).cup i j a b) =
+      P.cup i j (ofDiscreteModuleRestrictScalarsIntEquiv X i a)
+        (ofDiscreteModuleRestrictScalarsIntEquiv Y j b) := by
+  -- transport along the equality of objects, a coefficient map, then forget the scalars
+  have key := (ofDiscreteModulePairing μ (P.equivariant_of_eq μ hμ)).cup_coeffMap
+    P.restrictScalarsInt (eqToHom (ofDiscreteModule_eq_restrictScalarsInt_obj X))
+    (eqToHom (ofDiscreteModule_eq_restrictScalarsInt_obj Y))
+    (eqToHom (ofDiscreteModule_eq_restrictScalarsInt_obj Z))
+    (P.eqToHom_ofDiscreteModulePairing_bil μ hμ) i j a b
+  rw [coeffMap_eqToHom, coeffMap_eqToHom, coeffMap_eqToHom] at key
+  rw [ofDiscreteModuleRestrictScalarsIntEquiv_apply X i a,
+    ofDiscreteModuleRestrictScalarsIntEquiv_apply Y j b,
+    ofDiscreteModuleRestrictScalarsIntEquiv_apply Z (i + j), key, h]
+
 /-- **For discrete representations, the cup product of the pairing of discrete `ℤ`-modules is the
 cup product of `P`**, under `TauCeti.ContCohomology.ofDiscreteModuleRestrictScalarsIntEquiv`, in
 bidegree `(1, 1)`. -/
@@ -193,17 +288,35 @@ theorem cup_one_one_ofDiscreteModuleRestrictScalarsInt
     ofDiscreteModuleRestrictScalarsIntEquiv Z (1 + 1)
         ((ofDiscreteModulePairing μ (P.equivariant_of_eq μ hμ)).cup 1 1 a b) =
       P.cup 1 1 (ofDiscreteModuleRestrictScalarsIntEquiv X 1 a)
-        (ofDiscreteModuleRestrictScalarsIntEquiv Y 1 b) := by
-  -- transport along the equality of objects, a coefficient map, then forget the scalars
-  have key := (ofDiscreteModulePairing μ (P.equivariant_of_eq μ hμ)).cup_coeffMap
-    P.restrictScalarsInt (eqToHom (ofDiscreteModule_eq_restrictScalarsInt_obj X))
-    (eqToHom (ofDiscreteModule_eq_restrictScalarsInt_obj Y))
-    (eqToHom (ofDiscreteModule_eq_restrictScalarsInt_obj Z))
-    (P.eqToHom_ofDiscreteModulePairing_bil μ hμ) 1 1 a b
-  rw [coeffMap_eqToHom, coeffMap_eqToHom, coeffMap_eqToHom] at key
-  rw [ofDiscreteModuleRestrictScalarsIntEquiv_apply X 1 a,
-    ofDiscreteModuleRestrictScalarsIntEquiv_apply Y 1 b,
-    ofDiscreteModuleRestrictScalarsIntEquiv_apply Z (1 + 1), key, cup_one_one_restrictScalarsInt]
+        (ofDiscreteModuleRestrictScalarsIntEquiv Y 1 b) :=
+  P.cup_ofDiscreteModuleRestrictScalarsInt_of_restrictScalarsInt μ hμ 1 1
+    P.cup_one_one_restrictScalarsInt a b
+
+/-- **For discrete representations, the cup product of the pairing of discrete `ℤ`-modules is the
+cup product of `P`**, under `TauCeti.ContCohomology.ofDiscreteModuleRestrictScalarsIntEquiv`, in
+bidegree `(0, 2)`. -/
+theorem cup_zero_two_ofDiscreteModuleRestrictScalarsInt
+    (a : continuousCohomology 0 (ofDiscreteModule ℤ G X.V))
+    (b : continuousCohomology 2 (ofDiscreteModule ℤ G Y.V)) :
+    ofDiscreteModuleRestrictScalarsIntEquiv Z (0 + 2)
+        ((ofDiscreteModulePairing μ (P.equivariant_of_eq μ hμ)).cup 0 2 a b) =
+      P.cup 0 2 (ofDiscreteModuleRestrictScalarsIntEquiv X 0 a)
+        (ofDiscreteModuleRestrictScalarsIntEquiv Y 2 b) :=
+  P.cup_ofDiscreteModuleRestrictScalarsInt_of_restrictScalarsInt μ hμ 0 2
+    P.cup_zero_two_restrictScalarsInt a b
+
+/-- **For discrete representations, the cup product of the pairing of discrete `ℤ`-modules is the
+cup product of `P`**, under `TauCeti.ContCohomology.ofDiscreteModuleRestrictScalarsIntEquiv`, in
+bidegree `(2, 0)`. -/
+theorem cup_two_zero_ofDiscreteModuleRestrictScalarsInt
+    (a : continuousCohomology 2 (ofDiscreteModule ℤ G X.V))
+    (b : continuousCohomology 0 (ofDiscreteModule ℤ G Y.V)) :
+    ofDiscreteModuleRestrictScalarsIntEquiv Z (2 + 0)
+        ((ofDiscreteModulePairing μ (P.equivariant_of_eq μ hμ)).cup 2 0 a b) =
+      P.cup 2 0 (ofDiscreteModuleRestrictScalarsIntEquiv X 2 a)
+        (ofDiscreteModuleRestrictScalarsIntEquiv Y 0 b) :=
+  P.cup_ofDiscreteModuleRestrictScalarsInt_of_restrictScalarsInt μ hμ 2 0
+    P.cup_two_zero_restrictScalarsInt a b
 
 variable [ContinuousSMul G X.V] [ContinuousSMul G Y.V] [ContinuousSMul G Z.V]
   [LocallyCompactSpace G]

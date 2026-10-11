@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 public import Mathlib.Data.Matrix.Mul
 public import Mathlib.Topology.Instances.Matrix
+public import TauCeti.Data.Matrix.BirkhoffContraction
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.MulLog
 import TauCeti.Data.Finset.Basic
@@ -81,6 +82,9 @@ plan with `PMF` marginals is `TauCeti.TransportMatrix`.
 * `Matrix.IsDiagonalScaling.eq_of_hasMarginals` and
   `Matrix.IsDiagonalScaling.exists_eq_rescale_factors`: the scaled matrix is unique, and its
   factors are unique up to a common scalar.
+* `Matrix.IsDiagonalScaling.apply_le_exp_hilbertProjectiveDist_mul`: two diagonal scalings of a
+  strictly positive kernel with the same row sums agree entrywise up to the factor `exp d`, where
+  `d` is the Hilbert projective distance between their column factors.
 
 ## References
 
@@ -160,6 +164,15 @@ theorem IsDiagonalScaling.pos {P K : Matrix ι κ ℝ} {u : ι → ℝ} {v : κ 
   rw [h i j]
   exact mul_pos (mul_pos (hu i) (hK i j)) (hv j)
 
+omit [Fintype ι] [Fintype κ] in
+/-- Transposing a diagonal scaling exchanges the roles of the row and the column factors: if `P` is
+the diagonal scaling of `K` by `u` and `v`, then `Pᵀ` is the diagonal scaling of `Kᵀ` by `v` and
+`u`. -/
+theorem IsDiagonalScaling.transpose {P K : Matrix ι κ ℝ} {u : ι → ℝ} {v : κ → ℝ}
+    (h : IsDiagonalScaling P K u v) : IsDiagonalScaling Pᵀ Kᵀ v u := fun j i => by
+  rw [transpose_apply, transpose_apply, h i j]
+  ring
+
 /-! ### The relative entropy of a matrix against a kernel -/
 
 /-- `Matrix.relEntropy P K` is the real number
@@ -204,11 +217,6 @@ theorem exists_relEntropy_minOn (K : Matrix ι κ ℝ) (a : ι → ℝ) (b : κ 
         relEntropy P K ≤ relEntropy Q K := by
   obtain ⟨Pfeas, hPfeas0, hPfeasa⟩ := hfeas
   set A : ℝ := ∑ i, a i with hA
-  have hA0 : 0 ≤ A := by
-    rw [hA]
-    calc (0 : ℝ) ≤ ∑ i, ∑ j, Pfeas i j :=
-          Finset.sum_nonneg fun i _ => Finset.sum_nonneg fun j _ => hPfeas0 i j
-      _ = ∑ i, a i := Finset.sum_congr rfl fun i _ => hPfeasa.1 i
   have hnonneg : IsClosed {P : Matrix ι κ ℝ | ∀ i j, 0 ≤ P i j} := by
     have key : {P : Matrix ι κ ℝ | ∀ i j, 0 ≤ P i j}
         = ⋂ i : ι, ⋂ j : κ, {P : Matrix ι κ ℝ | 0 ≤ P i j} := by
@@ -712,8 +720,6 @@ theorem pos_of_relEntropy_minOn (K : Matrix ι κ ℝ) (a : ι → ℝ) (b : κ 
     calc (min (min (min y z) 1) (Real.exp (-(C + 1)))) / 2
         ≤ Real.exp (-(C + 1)) / 2 := div_le_div_of_nonneg_right hminE (by norm_num)
       _ ≤ Real.exp (-(C + 1)) := div_le_self (by positivity) (by norm_num)
-  have hty0 : 0 < y - t := by linarith
-  have htz0 : 0 < z - t := by linarith
   have hqt0 : 0 < q + t := by linarith
   have hqt1 : 0 < q + 1 := by linarith
   have htmin : t ≤ min y z := le_min
@@ -1028,5 +1034,62 @@ theorem IsDiagonalScaling.exists_eq_rescale_factors [Nonempty ι] [Nonempty κ]
     exact mul_right_cancel₀ (hv j₀) hcross
   · rw [inv_div, div_mul_eq_mul_div, eq_div_iff (hu i₀)]
     linear_combination huv i₀ j
+
+/-! ### Comparison of diagonal scalings with the same row sums -/
+
+omit [Fintype ι] in
+open Real TauCeti in
+/-- Two diagonal scalings whose kernel is strictly positive in row `i`, with the same `i`-th row
+sum, agree on that row up to the factor `exp d`, where `d` is the Hilbert projective distance
+between their column factors: if `P` is the diagonal scaling of `K` by `u` and `v > 0`, with
+`u i ≥ 0`, and `Q` that by `u'` and `v' > 0`, then
+`P i j ≤ exp (hilbertProjectiveDist v v') * Q i j`. -/
+theorem IsDiagonalScaling.apply_le_exp_hilbertProjectiveDist_mul {P Q K : Matrix ι κ ℝ}
+    {u u' : ι → ℝ} {v v' : κ → ℝ} (hP : IsDiagonalScaling P K u v)
+    (hQ : IsDiagonalScaling Q K u' v') {i : ι} (hK : ∀ j, 0 < K i j) (hu : 0 ≤ u i)
+    (hv : ∀ j, 0 < v j) (hv' : ∀ j, 0 < v' j) (hrow : ∑ j, P i j = ∑ j, Q i j)
+    (j : κ) : P i j ≤ exp (hilbertProjectiveDist v v') * Q i j := by
+  rw [isDiagonalScaling_def] at hP hQ
+  have : Nonempty κ := ⟨j⟩
+  -- the extreme ratios `m ≤ v j / v' j ≤ M` of the column factors, attained at `j₂` and `j₁`
+  obtain ⟨j₁, hj₁⟩ := Finite.exists_max fun j ↦ v j / v' j
+  obtain ⟨j₂, hj₂⟩ := Finite.exists_min fun j ↦ v j / v' j
+  have hM : 0 < v j₁ / v' j₁ := div_pos (hv j₁) (hv' j₁)
+  have hm : 0 < v j₂ / v' j₂ := div_pos (hv j₂) (hv' j₂)
+  have hupper : ∀ j, v j ≤ v j₁ / v' j₁ * v' j := fun j ↦ (div_le_iff₀ (hv' j)).1 (hj₁ j)
+  have hlower : ∀ j, v j₂ / v' j₂ * v' j ≤ v j := fun j ↦ (le_div_iff₀ (hv' j)).1 (hj₂ j)
+  -- `M / m ≤ exp d`
+  have hMm : v j₁ / v' j₁ / (v j₂ / v' j₂) ≤ exp (hilbertProjectiveDist v v') := by
+    rw [← exp_log (div_pos hM hm), div_div_div_eq]
+    exact exp_le_exp.2 (log_le_hilbertProjectiveDist v v' j₁ j₂)
+  -- the equal row sums give `u i * m ≤ u' i`
+  have hrow' : u i * ∑ j, K i j * v j = u' i * ∑ j, K i j * v' j := by
+    simpa only [hP i, hQ i, mul_assoc, ← Finset.mul_sum] using hrow
+  have hum : u i * (v j₂ / v' j₂) ≤ u' i := by
+    refine le_of_mul_le_mul_right ?_
+      (Finset.sum_pos (fun j _ ↦ mul_pos (hK j) (hv' j)) Finset.univ_nonempty)
+    calc u i * (v j₂ / v' j₂) * ∑ j, K i j * v' j
+        = u i * ∑ j, K i j * (v j₂ / v' j₂ * v' j) := by
+          rw [mul_assoc, Finset.mul_sum]
+          exact congrArg (u i * ·) (Finset.sum_congr rfl fun j _ ↦ by ring)
+      _ ≤ u i * ∑ j, K i j * v j :=
+          mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun j _ ↦
+            mul_le_mul_of_nonneg_left (hlower j) (hK j).le) hu
+      _ = u' i * ∑ j, K i j * v' j := hrow'
+  have hQ0 : 0 ≤ Q i j := by
+    rw [hQ i j]
+    exact mul_nonneg (mul_nonneg ((mul_nonneg hu hm.le).trans hum) (hK j).le) (hv' j).le
+  calc P i j = u i * K i j * v j := hP i j
+    _ ≤ u i * K i j * (v j₁ / v' j₁ * v' j) :=
+        mul_le_mul_of_nonneg_left (hupper j) (mul_nonneg hu (hK j).le)
+    _ = u i * (v j₂ / v' j₂) * K i j * v' j * (v j₁ / v' j₁ / (v j₂ / v' j₂)) := by
+        have := (hv j₂).ne'
+        have := (hv' j₂).ne'
+        field_simp
+    _ ≤ u' i * K i j * v' j * (v j₁ / v' j₁ / (v j₂ / v' j₂)) :=
+        mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right
+          (mul_le_mul_of_nonneg_right hum (hK j).le) (hv' j).le) (div_pos hM hm).le
+    _ = v j₁ / v' j₁ / (v j₂ / v' j₂) * Q i j := by rw [hQ i j]; ring
+    _ ≤ exp (hilbertProjectiveDist v v') * Q i j := mul_le_mul_of_nonneg_right hMm hQ0
 
 end Matrix

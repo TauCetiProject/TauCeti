@@ -57,6 +57,8 @@ restrictions.
   vanishes is killed by `[G : S]`.
 * `groupCohomology.natCard_nsmul_eq_zero`: positive-degree cohomology of a finite group is killed
   by the order of the group.
+* `groupCohomology.subsingleton_of_isUnit_natCard`: positive-degree cohomology of a finite group
+  vanishes when the order of the group is a unit of the coefficient ring.
 * `TauCeti.groupCohomology.corestriction_trans`: corestriction from `A` to `B` followed by
   corestriction from `B` to `C` is corestriction from `A` to `C`.
 
@@ -226,12 +228,6 @@ private theorem resCoindAdjunction_counit_app_hom_apply
     ((resCoindAdjunction k f).counit.app N).hom x = x.1 1 :=
   rfl
 
-private theorem coind_ρ_apply_coe_apply
-    {D E V : Type u} [Group D] [Group E] [AddCommGroup V] [Module k V] (f : D →* E)
-    (N : Representation k D V) (x : Representation.coindV f N) (e e' : E) :
-    ((Representation.coind f N e) x).1 e' = x.1 (e' * e) :=
-  rfl
-
 private theorem evalOne_hom_apply (f : coindComp φ₁ φ₂ M) :
     (evalOne φ₁ φ₂ M).hom f = f.1 1 :=
   rfl
@@ -246,7 +242,7 @@ private theorem restrictCoind_hom_apply_coe (f : coindComp φ₁ φ₂ M) (b : B
   rw [Rep.hom_comp, Representation.IntertwiningMap.comp_apply, Rep.resMap_hom_apply,
     hom_comm_apply, resCoindAdjunction_counit_app_hom_apply, evalOne_hom_apply] at h
   simpa only [res_obj_ρ, MonoidHom.coe_comp, Function.comp_apply, Rep.of_ρ,
-    coind_ρ_apply_coe_apply, one_mul] using h
+    Representation.coind_apply_coe_apply, one_mul] using h
 
 open scoped Classical in
 /-- The trace of `φ₁.range` after `restrictCoind`, a `B`-equivariant map
@@ -295,7 +291,7 @@ private theorem coindTrace_hom_apply_coe [φ₁.range.FiniteIndex] (f : coindCom
     traceRestrictRange_hom_apply] at h
   have h' : ((coindTrace φ₁ φ₂ M).hom f).1 c =
       (traceRestrict φ₁ φ₂ M).hom ((coindComp φ₁ φ₂ M).ρ c f) := by
-    simpa only [Rep.of_ρ, coind_ρ_apply_coe_apply, one_mul] using h
+    simpa only [Rep.of_ρ, Representation.coind_apply_coe_apply, one_mul] using h
   rw [h', traceRestrict, Rep.hom_comp, Representation.IntertwiningMap.comp_apply,
     Subgroup.coindResAdjunction_counit_app_hom_apply]
   refine Finset.sum_congr rfl fun q _ => ?_
@@ -442,6 +438,14 @@ theorem natCard_nsmul_eq_zero {A : Rep k G} {n : ℕ} (x : groupCohomology A (n 
     (ModuleCat.subsingleton_of_isZero
       (isZero_groupCohomology_succ_of_subsingleton (res (⊥ : Subgroup G).subtype A) n)).allEq _ _
 
+/-- Positive-degree cohomology of a finite group vanishes when the order of the group is a unit
+of the coefficient ring. -/
+theorem subsingleton_of_isUnit_natCard (A : Rep k G) (h : IsUnit (Nat.card G : k)) (n : ℕ) :
+    Subsingleton (groupCohomology A (n + 1)) := by
+  refine subsingleton_of_forall_eq 0 fun x ↦ ?_
+  obtain ⟨c, hc⟩ := h.exists_left_inv
+  rw [← one_smul k x, ← hc, mul_smul, Nat.cast_smul_eq_nsmul, natCard_nsmul_eq_zero, smul_zero]
+
 end groupCohomology
 
 namespace Rep
@@ -490,7 +494,8 @@ theorem H0Iso_inv_comp_corestriction_comp_H0Iso_hom (M : Rep.{u} k G)
   refine Fintype.sum_equiv (QuotientGroup.quotientRightRelEquivQuotientLeftRel H) _ _
     fun q => ?_
   rw [hf, ← hx]
-  apply Representation.apply_eq_apply_of_quotientGroup_mk_eq x.2
+  apply M.ρ.apply_eq_apply_of_quotientGroup_mk_eq
+    ((Representation.mem_invariants _ _).1 x.2)
   calc ((q.out⁻¹ : G) : G ⧸ H) =
       QuotientGroup.quotientRightRelEquivQuotientLeftRel H q :=
         congrArg (QuotientGroup.quotientRightRelEquivQuotientLeftRel H) q.out_eq

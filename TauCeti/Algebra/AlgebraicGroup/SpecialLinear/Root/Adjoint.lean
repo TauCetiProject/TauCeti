@@ -5,11 +5,11 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Adjoint.Comodule
+public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Adjoint.Classification
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Root.Differential
 
 /-!
-# Root-subgroup differentials and adjoint root spaces of `SLₙ`
+# Adjoint roots, root spaces, and root-subgroup differentials of `SLₙ`
 
 The differential of the elementary root subgroup `xᵢⱼ : 𝔾ₐ → SLₙ` identifies
 `Lie(𝔾ₐ)` with the corresponding weight space of the integral adjoint comodule.
@@ -20,6 +20,11 @@ The identification persists after extension to every commutative coefficient alg
 the differential's image is the scalar extension of the adjoint root line. The base
 ring and coefficient algebra may have nilpotents or zero divisors.
 
+Over every nontrivial commutative base ring, the nontrivial adjoint weights of
+`SL_{r+1}` are exactly the roots of `diagonalRootDatum`. The root indices are
+canonically equivalent to the full nontrivial weight set, identifying the root
+lines to which a pinning assigns generators.
+
 The calculation combines `tangentMatrix_derivationComp_rootSubgroup` with
 `adjointWeightSpace_root_eq_span` and the existing cotangent-duality and tangent
 scalar-extension equivalences.
@@ -28,6 +33,8 @@ scalar-extension equivalences.
 
 * J. S. Milne, *Algebraic Groups* (2017), §21.1 and Example 21.2.
 * B. Conrad, *Reductive Group Schemes*, §5.1 (root subgroups and pinnings).
+* The root-index API follows
+  `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Root.Adjoint`.
 -/
 
 public section
@@ -152,6 +159,92 @@ theorem range_derivationCompLieHom_rootSubgroup_eq_adjointWeightSpace_baseChange
   congr 1
   exact congrArg (fun d => ({d} : Set _))
     (tangentScalarExtensionEquiv_tmul_rootVector (R := R) p (1 : B)).symm
+
+variable [Nontrivial R]
+
+/-- Every root of the diagonal root datum occurs as a nontrivial adjoint weight of
+`SL_{r+1}`. -/
+@[simp↓ 1100]
+theorem ofAdd_root_mem_nontrivialAdjointWeights
+    (p : SplitTorus.CoordinateRootIndex (Fin (r + 1))) :
+    Multiplicative.ofAdd ((diagonalRootDatum.{u} r).root p) ∈
+      Derivation.nontrivialAdjointWeights (diagonalTorusCoordinateMap r R).hom := by
+  rw [Derivation.mem_nontrivialAdjointWeights]
+  refine ⟨?_, ?_⟩
+  · intro h
+    exact (diagonalRootDatum.{u} r).ne_zero p (congrArg Multiplicative.toAdd h)
+  · -- The torus characters are stored as the indexed copy of the exponent lattice.
+    erw [adjointWeightSpace_root_eq_span]
+    exact (Submodule.ne_bot_iff _).mpr
+      ⟨rootVector p, Submodule.mem_span_singleton_self _, rootVector_ne_zero p⟩
+
+/-- The nontrivial adjoint weights of `SL_{r+1}` relative to its diagonal torus are
+exactly the roots of its diagonal root datum. No field or reducedness assumption is needed. -/
+theorem mem_nontrivialAdjointWeights_iff_exists_diagonalRoot
+    (α : Multiplicative (ULift.{u} (Fin r) →₀ ℤ)) :
+    α ∈ Derivation.nontrivialAdjointWeights (diagonalTorusCoordinateMap r R).hom ↔
+      ∃ p : SplitTorus.CoordinateRootIndex (Fin (r + 1)),
+        α = Multiplicative.ofAdd ((diagonalRootDatum.{u} r).root p) := by
+  constructor
+  · rw [Derivation.mem_nontrivialAdjointWeights]
+    rintro ⟨hα, hspace⟩
+    obtain ⟨x, hx, hx0⟩ := (Submodule.ne_bot_iff _).mp hspace
+    have hmatrix : (tangentMatrix (r + 1) (Derivation.cotangentLinearEquiv (B := R) x) :
+        Matrix (Fin (r + 1)) (Fin (r + 1)) R) ≠ 0 := by
+      intro hzero
+      apply hx0
+      apply (Derivation.cotangentLinearEquiv (R := R)
+        (A := coordinateHopfAlgebra R (r + 1)) (B := R)).injective
+      apply (tangentLieEquivSl (R := R) (B := R) (r + 1)).injective
+      simp only [map_zero, LieEquiv.coe_toLieHom]
+      -- The Lie equivalence stores the quotient-indexed coordinate presentation.
+      erw [tangentLieEquivSl_apply]
+      exact Subtype.ext hzero
+    obtain ⟨i, hi⟩ := Function.ne_iff.mp hmatrix
+    obtain ⟨j, hij⟩ := Function.ne_iff.mp hi
+    have hweight := weightCharacter_eq_of_mem_adjointWeightSpace_of_apply_ne_zero hx hij
+    have hne : i ≠ j := by
+      rintro rfl
+      apply hα
+      rw [← hweight]
+      apply Multiplicative.toAdd.injective
+      ext k
+      simp
+    refine ⟨⟨(i, j), hne⟩, ?_⟩
+    exact hweight.symm.trans
+      ((weightCharacter_diagonalTorusWeight_sub_eq_root_iff ⟨(i, j), hne⟩ i j).mpr
+        ⟨rfl, rfl⟩)
+  · rintro ⟨p, rfl⟩
+    exact ofAdd_root_mem_nontrivialAdjointWeights p
+
+/-- The root set of the diagonal root datum is the entire nontrivial adjoint weight
+set of the special linear group. -/
+theorem range_ofAdd_diagonalRootDatum_root_eq_nontrivialAdjointWeights :
+    Set.range (fun p : SplitTorus.CoordinateRootIndex (Fin (r + 1)) ↦
+        Multiplicative.ofAdd ((diagonalRootDatum.{u} r).root p)) =
+      Derivation.nontrivialAdjointWeights (diagonalTorusCoordinateMap r R).hom := by
+  ext α
+  rw [Set.mem_range, mem_nontrivialAdjointWeights_iff_exists_diagonalRoot]
+  exact exists_congr fun p ↦ eq_comm
+
+/-- Ordered pairs of distinct matrix indices canonically index all nontrivial adjoint
+weights of `SL_{r+1}`. -/
+def diagonalRootIndexEquivNontrivialAdjointWeights :
+    SplitTorus.CoordinateRootIndex (Fin (r + 1)) ≃
+      {α // α ∈ Derivation.nontrivialAdjointWeights (diagonalTorusCoordinateMap r R).hom} :=
+  (Equiv.ofInjective
+    (fun p ↦ Multiplicative.ofAdd ((diagonalRootDatum.{u} r).root p))
+    (Multiplicative.ofAdd.injective.comp (diagonalRootDatum.{u} r).root.injective)).trans
+    (Set.equivOfEq range_ofAdd_diagonalRootDatum_root_eq_nontrivialAdjointWeights)
+
+/-- The root-index equivalence sends an index to its root character. -/
+@[simp]
+theorem diagonalRootIndexEquivNontrivialAdjointWeights_apply
+    (p : SplitTorus.CoordinateRootIndex (Fin (r + 1))) :
+    (diagonalRootIndexEquivNontrivialAdjointWeights (R := R) p :
+      Multiplicative (ULift.{u} (Fin r) →₀ ℤ)) =
+      Multiplicative.ofAdd ((diagonalRootDatum.{u} r).root p) :=
+  (rfl)
 
 end
 

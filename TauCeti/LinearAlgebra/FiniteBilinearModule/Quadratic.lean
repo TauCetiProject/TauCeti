@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
@@ -31,6 +31,8 @@ the polar pairing is therefore `B(x, y)` modulo `ℤ`.
 * `TauCeti.FiniteQuadraticModule.toFiniteBilinearModule`: the canonical polar bilinear module.
 * `TauCeti.FiniteQuadraticModule.Hom`: a quadratic-map-preserving additive homomorphism.
 * `TauCeti.FiniteQuadraticModule.Isometry`: a quadratic-map isometric equivalence.
+* `TauCeti.FiniteQuadraticModule.Hom.toIsometryOfNondegenerate`: a morphism from a
+  nondegenerate source of the same finite cardinality, packaged as an isometry.
 * `TauCeti.FiniteQuadraticModule.IsIsotropic`: quadratic isotropy of an additive subgroup.
 * `TauCeti.FiniteQuadraticModule.isIsotropic_prod_iff`: quadratic isotropy of a product subgroup
   in an orthogonal direct sum is quadratic isotropy of each factor subgroup.
@@ -106,6 +108,15 @@ variable (A : FiniteQuadraticModule)
 theorem polar_eq_pairing (x y : A) :
     QuadraticMap.polar A.quadratic x y = A.toFiniteBilinearModule.pairing x y :=
   A.polar_eq_pairing' x y
+
+/-- The quadratic value of an integral combination `m • x + n • y`, expanded in terms of the
+quadratic values of `x` and `y` and their pairing. -/
+theorem quadratic_zsmul_add_zsmul (x y : A) (m n : ℤ) :
+    A.quadratic (m • x + n • y) = (m * m) • A.quadratic x +
+      (m * n) • A.toFiniteBilinearModule.pairing x y + (n * n) • A.quadratic y := by
+  rw [QuadraticMap.map_add A.quadratic, QuadraticMap.map_smul, QuadraticMap.map_smul,
+    QuadraticMap.polar_smul_left, QuadraticMap.polar_smul_right, polar_eq_pairing, smul_smul]
+  abel
 
 /-- If `n` kills an element, then `2 * n` kills its quadratic value. -/
 theorem two_mul_nsmul_quadratic_of_nsmul_eq_zero {n : ℕ} (x : A) (hx : n • x = 0) :
@@ -309,6 +320,12 @@ namespace Hom
 
 variable {A : FiniteQuadraticModule.{u}} {B : FiniteQuadraticModule.{v}}
 
+/-- A quadratic morphism from a nondegenerate finite module is injective. -/
+theorem injective (f : Hom A B) (hA : A.IsNondegenerate) : Function.Injective f :=
+  fun x y hxy ↦ FiniteBilinearModule.Hom.injective f.toFiniteBilinearModule hA
+    ((toFiniteBilinearModule_apply f x).trans
+      (hxy.trans (toFiniteBilinearModule_apply f y).symm))
+
 /-- A bijective morphism of finite quadratic modules is an isometry. -/
 noncomputable def toIsometry (f : Hom A B) (hf : Function.Bijective f) : Isometry A B where
   toLinearEquiv := (AddEquiv.ofBijective f.toLinearMap.toAddMonoidHom hf).toIntLinearEquiv
@@ -324,6 +341,26 @@ theorem toIsometry_toHom (f : Hom A B) (hf : Function.Bijective f) :
     (f.toIsometry hf).toHom = f := by
   ext
   rfl
+
+/-- A quadratic morphism from a nondegenerate source is an isometry when the two
+finite modules have the same cardinality. -/
+noncomputable def toIsometryOfNondegenerate (f : Hom A B) (hA : A.IsNondegenerate)
+    (hcard : Nat.card A = Nat.card B) : Isometry A B :=
+  f.toIsometry ((Nat.bijective_iff_injective_and_card f).mpr ⟨f.injective hA, hcard⟩)
+
+/-- Packaging the morphism with nondegeneracy and equal cardinality preserves its action. -/
+@[simp]
+theorem toIsometryOfNondegenerate_apply (f : Hom A B) (hA : A.IsNondegenerate)
+    (hcard : Nat.card A = Nat.card B) (x : A) :
+    f.toIsometryOfNondegenerate hA hcard x = f x :=
+  toIsometry_apply f _ x
+
+/-- Forgetting the isometry constructed from nondegeneracy recovers the morphism. -/
+@[simp]
+theorem toIsometryOfNondegenerate_toHom (f : Hom A B) (hA : A.IsNondegenerate)
+    (hcard : Nat.card A = Nat.card B) :
+    (f.toIsometryOfNondegenerate hA hcard).toHom = f :=
+  toIsometry_toHom f _
 
 end Hom
 

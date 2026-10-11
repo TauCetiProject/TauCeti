@@ -7,8 +7,11 @@ module
 
 public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoriality
+import Mathlib.FieldTheory.Galois.Infinite
+import TauCeti.Algebra.GroupWithZero.Units.Basic
 import TauCeti.FieldTheory.Galois.Restriction
 import TauCeti.FieldTheory.GaloisCohomology.Hilbert90
+import TauCeti.RepresentationTheory.Homological.GroupCohomology.Functoriality
 import TauCeti.RepresentationTheory.Homological.GroupCohomology.InflationRestriction
 
 /-!
@@ -53,6 +56,8 @@ language of relative Brauer groups, `Br(M/K) ∩ ker(res_{M/L}) = Br(L/K)`.
 
 ## Main results
 
+* `TauCeti.exists_unitsMap_eq_of_forall_apply_eq`: a Galois-fixed unit of `E` comes from the base
+  field, for any Galois extension `E/F`.
 * `TauCeti.map_unitsInflationHom_comp_map_unitsBaseChangeHom`: inflation followed by restriction
   is base change.
 * `TauCeti.map_unitsInflationHom_two_injective`: inflation `H²(Gal(L/K), Lˣ) → H²(Gal(M/K), Mˣ)`
@@ -71,6 +76,19 @@ public section
 namespace TauCeti
 
 universe u
+
+section Fixed
+
+variable {F E : Type*} [Field F] [Field E] [Algebra F E] [IsGalois F E]
+
+/-- **A Galois-fixed unit comes from the base field**: a unit of a Galois extension `E/F`, not
+necessarily finite, that is fixed by `Gal(E/F)` is the image of a unit of `F`. -/
+theorem exists_unitsMap_eq_of_forall_apply_eq {x : Eˣ} (hx : ∀ σ : Gal(E/F), σ (x : E) = x) :
+    ∃ a : Fˣ, Units.map (algebraMap F E : F →* E) a = x :=
+  (mem_range_iff_exists_units_map_eq (algebraMap F E) x).1
+    ((InfiniteGalois.mem_range_algebraMap_iff_fixed (x : E)).2 hx)
+
+end Fixed
 
 variable (K L M : Type u) [Field K] [Field L] [Field M] [Algebra K L] [Algebra K M] [Algebra L M]
   [IsScalarTower K L M] [Normal K L]
@@ -154,6 +172,21 @@ section Composition
 variable (K E L M : Type) [Field K] [Field E] [Field L] [Field M] [Algebra K E] [Algebra K L]
   [Algebra K M] [Algebra E M] [Algebra L M] [IsScalarTower K E M] [IsScalarTower K L M]
   [Normal K E] [Normal K M]
+
+omit [Normal K M] in
+/-- The values of a `2`-cocycle pushed along `unitsBaseChangeHom K E L M` are the images in `Mˣ`
+of its values at the restrictions to `E`. -/
+theorem toMul_mapCocycles₂_unitsBaseChangeHom
+    (c : groupCohomology.cocycles₂ (Rep.ofMulDistribMulAction Gal(E/K) Eˣ)) (g h : Gal(M/L)) :
+    Additive.toMul (Rep.toAdditive ((groupCohomology.mapCocycles₂
+        ((AlgEquiv.restrictNormalHom E).comp (AlgEquiv.restrictScalarsHom K))
+        (unitsBaseChangeHom K E L M) c) (g, h))) =
+      Units.map (algebraMap E M : E →* M) (Additive.toMul (Rep.toAdditive
+        (c ((AlgEquiv.restrictNormalHom E).comp (AlgEquiv.restrictScalarsHom K) g,
+          (AlgEquiv.restrictNormalHom E).comp (AlgEquiv.restrictScalarsHom K) h)))) := by
+  have h := congrFun (toAdditive_comp_unitsBaseChangeHom K E L M)
+  simp only [Function.comp_apply] at h
+  rw [groupCohomology.mapCocycles₂_apply, h, toMul_ofMul]
 
 /-- Including `Eˣ` into `Mˣ` and then base changing from `M/K` to `M/L` is base change from `E/K`
 to `M/L`. -/
@@ -255,15 +288,12 @@ private theorem range_unitsInflationHom :
       congrArg (fun w => ((Additive.toMul (Rep.toAdditive (M := Gal(M/K)) (G := Mˣ) w) : Mˣ) : M))
         (hv ⟨τ.restrictScalars K,
           AlgEquiv.range_restrictScalarsHom_eq_ker_restrictNormalHom K L M ▸ ⟨τ, rfl⟩⟩)
-    obtain ⟨a, ha⟩ := IntermediateField.mem_bot.1 ((IsGalois.mem_bot_iff_fixed (u : M)).2 hfix)
-    have ha0 : a ≠ 0 := by
-      rintro rfl
-      exact u.ne_zero (by rw [← ha, map_zero])
-    refine ⟨(Rep.toAdditive (M := Gal(L/K)) (G := Lˣ)).symm (Additive.ofMul (Units.mk0 a ha0)),
+    obtain ⟨a, ha⟩ := exists_unitsMap_eq_of_forall_apply_eq hfix
+    refine ⟨(Rep.toAdditive (M := Gal(L/K)) (G := Lˣ)).symm (Additive.ofMul a),
       (Rep.toAdditive (M := Gal(M/K)) (G := Mˣ)).injective <| Additive.toMul.injective <|
         Units.ext ?_⟩
-    rw [coe_toMul_unitsInflationHom_apply, AddEquiv.apply_symm_apply, toMul_ofMul, Units.val_mk0]
-    exact ha
+    rw [coe_toMul_unitsInflationHom_apply, AddEquiv.apply_symm_apply, toMul_ofMul]
+    exact congrArg Units.val ha
 
 /-- **Inflation into `H²(Gal(M/K), Mˣ)` is injective.** For a tower `K ⊆ L ⊆ M` with `M/K` finite
 Galois and `L/K` normal, inflation `H²(Gal(L/K), Lˣ) → H²(Gal(M/K), Mˣ)` is injective: by

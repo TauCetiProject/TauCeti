@@ -142,8 +142,6 @@ private theorem two_mul_genus_sub_one_le_sub_one_mul_degree (hF : IsFunctionFiel
     2 * (genus k F : ℤ) - 1 ≤ ((n : ℤ) - 1) * P.degree := by
   have hPdeg : (1 : ℤ) ≤ P.degree := by
     exact_mod_cast P.one_le_degree_of_isFunctionField hF
-  have hncast : 2 * (genus k F : ℤ) ≤ n := by
-    exact_mod_cast hn
   have hnsub_le_mul : (n : ℤ) - 1 ≤ ((n : ℤ) - 1) * P.degree :=
     le_mul_of_one_le_right (by omega) hPdeg
   omega

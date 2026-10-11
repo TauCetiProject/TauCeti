@@ -8,6 +8,10 @@ module
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Topology
 public import Mathlib.Analysis.Complex.UnitDisc.Basic
 public import TauCeti.Analysis.Complex.AtInfinity
+import Mathlib.Analysis.Normed.Module.Connected
+import Mathlib.Analysis.SpecialFunctions.Log.Basic
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import Mathlib.Topology.Algebra.Module.Cardinality
 
 /-!
 # Topology of the upper half-plane
@@ -21,7 +25,7 @@ decay along the whole plane, provided it is continuous at sufficiently distant r
 
 A continuous injection of the closed upper half-plane sends every real point to the frontier of
 the image of the open half-plane.  The inversion `w ↦ -w⁻¹` preserves the closed upper
-half-plane.
+half-plane, and so transfers limits at infinity in it to limits at `0`.
 
 A function on the upper half-plane, extended to `ℂ` by `ofComplex`, is periodic with a real
 period exactly when the original function is invariant under the corresponding translation.
@@ -30,6 +34,10 @@ The real-part map `re : ℍ → ℝ` is continuous and open, so taking closures 
 preimages under it. In particular the closure of the open half-plane `{z | a < z.re}` is the
 closed half-plane `{z | a ≤ z.re}`, and likewise for `{z | z.re < a}`; transported by the
 `PSL(2, ℝ)`-action, this identifies the boundary of a half-plane bounded by a geodesic line.
+
+Since `w ↦ re w + exp (im w) i` is a continuous bijection from `ℂ` onto `ℍ`, the complement of a
+countable subset of `ℍ` is path connected and dense, as it is in the plane. Removing countably
+many points, such as the vertices of a tessellation, therefore keeps `ℍ` connected.
 
 ## Main declarations
 
@@ -42,9 +50,13 @@ closed half-plane `{z | a ≤ z.re}`, and likewise for `{z | z.re < a}`; transpo
 * `TauCeti.mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero`.
 * `TauCeti.not_mem_image_upperHalfPlaneSet_of_im_eq_zero`.
 * `TauCeti.im_neg_inv_nonneg`.
+* `TauCeti.bijOn_const_sub_inv_upperHalfPlaneSet`.
+* `TauCeti.tendsto_comp_neg_inv_cobounded`.
 * `TauCeti.UpperHalfPlane.periodic_comp_ofComplex_iff`.
 * `TauCeti.UpperHalfPlane.closure_preimage_re`, `closure_setOfPred_lt_re`,
   `closure_setOfPred_re_lt`.
+* `Set.Countable.isPathConnected_compl_upperHalfPlane`,
+  `Set.Countable.dense_compl_upperHalfPlane`: complements of countable sets.
 
 ## References
 
@@ -188,6 +200,25 @@ theorem im_neg_inv_pos {w : ℂ} : 0 < (-w⁻¹).im ↔ 0 < w.im := by
   · have him : (-w⁻¹).im = w.im / normSq w := by simp [neg_div]
     rw [him, lt_div_iff₀ (normSq_pos.mpr hw), zero_mul]
 
+/-- For real `c`, the Möbius map `z ↦ c - z⁻¹`, which sends `0` to infinity and infinity to `c`, is
+a bijection of the open upper half-plane. -/
+theorem bijOn_const_sub_inv_upperHalfPlaneSet (c : ℝ) :
+    BijOn (fun z : ℂ => (c : ℂ) - z⁻¹) upperHalfPlaneSet upperHalfPlaneSet := by
+  refine ⟨fun z (hz : 0 < z.im) => ?_, (sub_right_injective.comp inv_injective).injOn,
+    fun w (hw : 0 < w.im) => ⟨-(w - c)⁻¹, im_neg_inv_pos.mpr (by simpa using hw), by simp⟩⟩
+  simpa [upperHalfPlaneSet] using im_neg_inv_pos.mpr hz
+
+/-- `w ↦ -w⁻¹` carries the closed upper half-plane near `0` to the closed upper half-plane near
+infinity, so a limit of `f` at infinity in the closed upper half-plane is a limit of `w ↦ f (-w⁻¹)`
+at `0` in the punctured closed upper half-plane. -/
+theorem tendsto_comp_neg_inv_cobounded {α : Type*} {l : Filter α} {f : ℂ → α}
+    (hp : Tendsto f (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) l) :
+    Tendsto (fun w => f (-w⁻¹)) (𝓝[{w : ℂ | 0 ≤ w.im} \ {0}] 0) l := by
+  refine hp.comp (tendsto_inf.mpr ⟨?_, tendsto_principal.mpr ?_⟩)
+  · exact (tendsto_neg_cobounded.comp tendsto_inv₀_nhdsNE_zero).mono_left
+      (nhdsWithin_mono _ fun w hw => hw.2)
+  · exact eventually_nhdsWithin_of_forall fun w hw => im_neg_inv_nonneg.mpr hw.1
+
 end TauCeti
 
 namespace TauCeti.UpperHalfPlane
@@ -245,6 +276,38 @@ theorem closure_setOfPred_re_lt (a : ℝ) : closure {z : ℍ | z.re < a} = {z : 
   -- `re ⁻¹' Set.Iic a` unfolds to `{z | z.re ≤ a}` for the same reason, in the other direction.
   rfl
 
+/-- There is a continuous bijection from `ℂ` onto `ℍ`, namely `w ↦ re w + exp (im w) i`. -/
+theorem exists_continuous_bijective_complex :
+    ∃ f : ℂ → ℍ, Continuous f ∧ Function.Bijective f := by
+  refine ⟨fun w ↦ ⟨w.re + Real.exp w.im * Complex.I,
+    by simp [-Complex.ofReal_exp, Real.exp_pos]⟩, by fun_prop, fun w w' h ↦ ?_, fun z ↦
+    ⟨z.re + Real.log z.im * Complex.I, UpperHalfPlane.ext (by
+      apply Complex.ext <;> simp [-Complex.ofReal_exp, Real.exp_log z.im_pos])⟩⟩
+  have h' := congrArg (fun z : ℍ ↦ (z : ℂ)) h
+  apply Complex.ext
+  · simpa [-Complex.ofReal_exp] using congrArg Complex.re h'
+  · simpa [-Complex.ofReal_exp] using congrArg Complex.im h'
+
 end TauCeti.UpperHalfPlane
+
+namespace Set.Countable
+
+/-- The complement of a countable subset of the upper half-plane is path connected, the analogue
+for `ℍ` of `Set.Countable.isPathConnected_compl_of_one_lt_rank`. -/
+theorem isPathConnected_compl_upperHalfPlane {s : Set ℍ} (hs : s.Countable) :
+    IsPathConnected sᶜ := by
+  obtain ⟨f, hf, hinj, hsurj⟩ := TauCeti.UpperHalfPlane.exists_continuous_bijective_complex
+  have := ((hs.preimage hinj).isPathConnected_compl_of_one_lt_rank
+    (by rw [Complex.rank_real_complex]; exact Nat.one_lt_ofNat)).image hf
+  rwa [← preimage_compl, image_preimage_eq _ hsurj] at this
+
+/-- The complement of a countable subset of the upper half-plane is dense, the analogue for `ℍ`
+of `Set.Countable.dense_compl`. -/
+theorem dense_compl_upperHalfPlane {s : Set ℍ} (hs : s.Countable) : Dense sᶜ := by
+  obtain ⟨f, hf, hinj, hsurj⟩ := TauCeti.UpperHalfPlane.exists_continuous_bijective_complex
+  have := hsurj.denseRange.dense_image hf ((hs.preimage hinj).dense_compl ℝ)
+  rwa [← preimage_compl, image_preimage_eq _ hsurj] at this
+
+end Set.Countable
 
 end

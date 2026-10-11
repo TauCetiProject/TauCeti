@@ -101,8 +101,7 @@ theorem stabilizer_cocharacterLattice_isOpen (T : MultiplicativeTypeCommHopfAlgC
   · intro σ hσ
     rw [Subgroup.mem_iInf] at hσ
     rw [MulAction.mem_stabilizer_iff]
-    apply (cocharacterLatticeLinearEquivDual T).injective
-    apply LinearMap.ext
+    apply cocharacterLattice_ext
     intro x
     rw [cocharacterLattice_smul_def, cocharacterGaloisRepresentation_apply_apply]
     -- `ofMulDistribMulAction_apply_apply` evaluates in `Additive` notation, whereas the

@@ -7,9 +7,11 @@ module
 
 public import Mathlib.Topology.Homotopy.HomotopyGroup
 public import Mathlib.Topology.Connected.PathConnected
+public import Mathlib.Topology.Homotopy.Contractible
+public import TauCeti.Topology.PiCurry
 
 /-!
-# Path-connectedness of the cube and its boundary
+# The cube and its boundary
 
 Mathlib's higher homotopy groups `π_ n X x` are built from generalized loops `Ω^ N X x`,
 continuous maps `I^N → X` sending the cube boundary `Cube.boundary N`
@@ -24,6 +26,14 @@ This file supplies that missing input:
 * its boundary is path connected as soon as the index type has at least two elements
   (`TauCeti.isPathConnected_cubeBoundary`).
 
+It also records how the boundary of a cube with one extra direction splits, mirroring Mathlib's
+`Cube.boundary_sum_iff`: a point of `I^(Option N)` is on the boundary exactly when its `none`
+coordinate is `0` or `1` or its remaining coordinates are on the boundary of `I^N`
+(`Cube.boundary_option_iff`), and likewise for the first coordinate of `I^(Fin (n + 1))`
+(`Cube.boundary_fin_succ_iff`). This is how a cube `I × I^N` with a distinguished first direction,
+as used for relative homotopy groups, is compared with the absolute cube `I^(Option N)` along
+`TauCeti.piOptionEquivProdHomeomorph` (`TauCeti.piOptionEquivProdHomeomorph_symm_mem_boundary`).
+
 The resulting path-connectedness declarations expose `JoinedIn` witnesses through their
 `.joinedIn` methods, so callers can use the generic connectedness API directly.
 
@@ -36,13 +46,46 @@ at `0` while releasing the first.
 ## Main declarations
 
 * `TauCeti.pathTowardZero`: the straight-line path in `I` from `a` to `0`.
+* `TauCeti.cubeContraction`: the straight-line homotopy from the corner `0` to the identity; so
+  the cube is contractible.
 * `TauCeti.isPathConnected_cube`: `I^N` is path connected.
 * `TauCeti.zero_mem_cubeBoundary`: the corner `0` lies on the boundary.
 * `TauCeti.isPathConnected_cubeBoundary`: for `[Nontrivial N]`, `Cube.boundary N` is path
   connected.
+* `Cube.boundary_option_iff`, `Cube.boundary_fin_succ_iff`: the boundaries of `I^(Option N)`
+  and `I^(Fin (n + 1))`.
+* `TauCeti.piOptionEquivProdHomeomorph_symm_mem_boundary`: a point of `I × I^N` whose first
+  coordinate is `0` or `1`, or whose second lies on the boundary of `I^N`, is sent to the boundary
+  of `I^(Option N)`.
 -/
 
 public section
+
+open scoped Topology unitInterval in
+/-- A point of the cube `I^(Option N)` lies on its boundary exactly when its `none` coordinate is
+`0` or `1`, or its remaining coordinates lie on the boundary of `I^N`. -/
+theorem Cube.boundary_option_iff {N : Type*} {y : I^(Option N)} :
+    y ∈ Cube.boundary (Option N) ↔
+      (y none = 0 ∨ y none = 1) ∨ (fun k => y (some k)) ∈ Cube.boundary N := by
+  constructor
+  · rintro ⟨_ | k, hk⟩
+    exacts [Or.inl hk, Or.inr ⟨k, hk⟩]
+  · rintro (h | ⟨k, hk⟩)
+    exacts [⟨none, h⟩, ⟨some k, hk⟩]
+
+open scoped Topology unitInterval in
+/-- A point of the cube `I^(Fin (n + 1))` lies on its boundary exactly when its first coordinate
+is `0` or `1`, or its remaining coordinates `Fin.tail y` lie on the boundary of `I^(Fin n)`. -/
+theorem Cube.boundary_fin_succ_iff {n : ℕ} {y : I^(Fin (n + 1))} :
+    y ∈ Cube.boundary (Fin (n + 1)) ↔
+      (y 0 = 0 ∨ y 0 = 1) ∨ Fin.tail y ∈ Cube.boundary (Fin n) := by
+  constructor
+  · rintro ⟨j, hj⟩
+    cases j using Fin.cases with
+    | zero => exact Or.inl hj
+    | succ k => exact Or.inr ⟨k, hj⟩
+  · rintro (h | ⟨k, hk⟩)
+    exacts [⟨0, h⟩, ⟨k.succ, hk⟩]
 
 namespace TauCeti
 
@@ -50,6 +93,13 @@ open scoped Topology
 open unitInterval
 
 variable {N : Type*}
+
+/-- A point `(s, t)` of `I × I^N` whose first coordinate is `0` or `1`, or whose second coordinate
+lies on the boundary of `I^N`, corresponds to a point on the boundary of `I^(Option N)`. -/
+theorem piOptionEquivProdHomeomorph_symm_mem_boundary {s : I} {t : I^N}
+    (h : (s = 0 ∨ s = 1) ∨ t ∈ Cube.boundary N) :
+    (piOptionEquivProdHomeomorph fun _ : Option N => I).symm (s, t) ∈ Cube.boundary (Option N) :=
+  Cube.boundary_option_iff.2 (by simpa using h)
 
 /-- The straight-line path in the unit interval `I` from `a` to `0`, given by `t ↦ a * σ t`
 where `σ` is the interval symmetry `t ↦ 1 - t`. -/
@@ -64,6 +114,28 @@ where `σ` is the interval symmetry `t ↦ 1 - t`. -/
 
 @[simp]
 theorem pathTowardZero_apply (a t : I) : pathTowardZero a t = a * σ t := rfl
+
+/-- The straight-line homotopy from the zero vertex to the identity on a standard cube. -/
+def cubeContraction (N : Type*) :
+    ContinuousMap.Homotopy (ContinuousMap.const (N → I) (fun _ ↦ 0))
+      (ContinuousMap.id (N → I)) where
+  toFun p i := Set.Icc.convexComb 0 (p.2 i) p.1
+  continuous_toFun := by
+    apply continuous_pi
+    intro i
+    have hc : Continuous (fun p : I × (N → I) ↦ ((0 : I), p.2 i, p.1)) := by fun_prop
+    exact Set.Icc.continuous_convexComb_prod.comp hc
+  map_zero_left := by intro x; ext i; simp
+  map_one_left := by intro x; ext i; simp
+
+@[simp]
+theorem cubeContraction_apply (N : Type*) (t : I) (x : N → I) (i : N) :
+    cubeContraction N (t, x) i = Set.Icc.convexComb 0 (x i) t :=
+  (rfl)
+
+/-- The cube `I^N` is contractible, by the straight-line contraction onto its corner `0`. -/
+instance (N : Type*) : ContractibleSpace (N → I) :=
+  (contractible_iff_id_nullhomotopic _).2 ⟨fun _ ↦ 0, ⟨(cubeContraction N).symm⟩⟩
 
 /-- The cube `I^N` is path connected: every point is joined to the corner `0` by the pointwise
 product of the coordinate paths `pathTowardZero`. -/

@@ -8,9 +8,11 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Conjugation
 public import TauCeti.Algebra.AlgebraicGroup.Representation.PointConjugation
 public import TauCeti.Algebra.Bialgebra.GroupLike.Map
+public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Comul
 public import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
 public import TauCeti.Algebra.Coalgebra.Comodule.Weight.Space
 public import TauCeti.Algebra.Coalgebra.Subcomodule.PointSeparation
+public import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
 
 /-!
 # Weight spaces of a closed subgroup in a representation
@@ -19,7 +21,8 @@ Let `H` be the coordinate Hopf algebra of an affine group `G`, let the Hopf idea
 closed subgroup `N`, and let `V` be a representation of `G`. A character of `N` is a group-like
 element `χ` of `H ⧸ I`, and the `χ`-weight space of `V` consists of the vectors on which `N` acts
 through `χ`: those whose coaction, restricted to `N`, is `v ↦ v ⊗ χ`. Characters and weight spaces
-are scheme-theoretic, so nonreduced subgroups such as `μ_p` are allowed.
+are scheme-theoretic, so nonreduced subgroups such as `μ_p` are allowed. Matrix coefficients
+of a weight vector are right semi-invariants with the same character.
 
 A rational point `g` of `G` normalizing `N` restricts to an automorphism of `N`, whose coordinate
 map is a bialgebra endomorphism of `H ⧸ I`. Acting by `g` carries the `χ`-weight space into the
@@ -43,6 +46,10 @@ kernel `N`.
 * `TauCeti.HopfIdeal.IsNormal.iSupWeightSpaceSubcomodule`: the sum of the weight spaces of a
   normal subgroup, as a subrepresentation.
 * `TauCeti.HopfIdeal.iSupIndep_weightSpace`: over a field the weight spaces are independent.
+* `TauCeti.HopfIdeal.weightSpace_subcomodule`: weight spaces restrict to subrepresentations
+  when the ambient and subgroup coordinate algebras are flat over the base.
+* `TauCeti.HopfIdeal.IsNormal.iSup_weightSpace_iSupWeightSpaceSubcomodule_eq_top`: the
+  weight-sum subrepresentation is spanned by its own subgroup weight spaces.
 
 ## References
 
@@ -87,6 +94,21 @@ theorem mem_weightSpace {χ : GroupLike R (H ⧸ I.toIdeal)} {v : V} :
   letI : Comodule R (H ⧸ I.toIdeal) V :=
     Comodule.Corestrict (Bialgebra.Quotient.mkBialgHom I.toIdeal).toCoalgHom
   _root_.GroupLike.mem_weightSpace
+
+/-- A matrix coefficient of a subgroup weight vector is a right semi-invariant, with the
+same subgroup character. -/
+theorem map_comul_matrixCoefficient_of_mem_weightSpace
+    (I : HopfIdeal R H) (χ : GroupLike R (H ⧸ I.toIdeal))
+    {m : V} (hm : m ∈ I.weightSpace V χ) (φ : Module.Dual R V) :
+    TensorProduct.map LinearMap.id (Ideal.Quotient.mkₐ R I.toIdeal).toLinearMap
+        (Coalgebra.comul (R := R) (Comodule.matrixCoefficient (C := H) φ m)) =
+      Comodule.matrixCoefficient (C := H) φ m ⊗ₜ[R] χ.val := by
+  rw [Comodule.comul_matrixCoefficient]
+  have h := congrArg
+    (TensorProduct.map (Comodule.matrixCoefficientLinear (C := H) φ) LinearMap.id)
+    (mem_weightSpace.mp hm)
+  simpa only [TensorProduct.map_map, LinearMap.id_comp, LinearMap.comp_id,
+    TensorProduct.map_tmul, LinearMap.id_apply, Comodule.matrixCoefficientLinear_apply] using h
 
 /-- A weight vector of a closed subgroup is detected by the universal point of the subgroup, the
 quotient map `H → H ⧸ I`, even over a nonreduced base ring. -/
@@ -167,6 +189,26 @@ theorem IsNormal.map_basePointsRepresentation_weightSpace (hI : I.IsNormal)
     rw [hχ] at hv'
     exact hv'
 
+/-- The weight space of a closed subgroup in a subrepresentation is the preimage of its
+weight space in the ambient representation, when the coordinate algebras of the group and
+subgroup are flat over the base. -/
+@[simp]
+theorem weightSpace_subcomodule [Module.Flat R H] (I : HopfIdeal R H)
+    [Module.Flat R (H ⧸ I.toIdeal)] (W : Subcomodule R H V)
+    (χ : GroupLike R (H ⧸ I.toIdeal)) :
+    I.weightSpace W χ = (I.weightSpace V χ).comap (SMulMemClass.subtype W) := by
+  have hinj : Function.Injective ((SMulMemClass.subtype W).baseChange (H ⧸ I.toIdeal)) :=
+    Module.Flat.lTensor_preserves_injective_linearMap _ Subtype.val_injective
+  ext w
+  rw [Submodule.mem_comap, mem_weightSpace_iff_endOfPoint,
+    mem_weightSpace_iff_endOfPoint, ← hinj.eq_iff]
+  have h := LinearMap.congr_fun
+    (Comodule.baseChange_comp_endOfPoint W.subtype (Ideal.Quotient.mkₐ R I.toIdeal))
+    (1 ⊗ₜ[R] w)
+  simp only [LinearMap.comp_apply, Subcomodule.subtype_toLinearMap,
+    LinearMap.baseChange_tmul, SMulMemClass.subtype_apply] at h ⊢
+  rw [h]
+
 end Weights
 
 section Field
@@ -201,6 +243,24 @@ underlying subspace. -/
 theorem IsNormal.iSupWeightSpaceSubcomodule_toSubmodule {I : HopfIdeal k H} (hI : I.IsNormal) :
     (hI.iSupWeightSpaceSubcomodule V).toSubmodule = ⨆ χ, I.weightSpace V χ :=
   Subcomodule.ofEndOfPointStable_toSubmodule _ _
+
+/-- The weight-sum subrepresentation is spanned by its own subgroup weight spaces. -/
+-- Simplify the sum before restricting its individual weight spaces to the subrepresentation.
+@[simp↓]
+theorem IsNormal.iSup_weightSpace_iSupWeightSpaceSubcomodule_eq_top {I : HopfIdeal k H}
+    (hI : I.IsNormal) :
+    (⨆ χ, I.weightSpace (hI.iSupWeightSpaceSubcomodule V) χ) = ⊤ := by
+  let W := hI.iSupWeightSpaceSubcomodule V
+  let : AddCommGroup W := Module.addCommMonoidToAddCommGroup k
+  have hrange : LinearMap.range (SMulMemClass.subtype W) =
+      ⨆ χ ∈ (Set.univ : Set (GroupLike k (H ⧸ I.toIdeal))), I.weightSpace V χ := by
+    simp only [iSup_univ]
+    exact (Submodule.range_subtype W.toSubmodule).trans
+      (hI.iSupWeightSpaceSubcomodule_toSubmodule V)
+  have htop := Submodule.biSup_comap_eq_top_of_range_eq_biSup
+    (τ₁₂ := RingHom.id k) Set.univ ⟨1, Set.mem_univ _⟩
+    (I.weightSpace V) (SMulMemClass.subtype W) hrange
+  simpa only [iSup_univ, ← weightSpace_subcomodule] using htop
 
 end Field
 

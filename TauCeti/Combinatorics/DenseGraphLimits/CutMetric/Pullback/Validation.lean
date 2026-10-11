@@ -32,7 +32,9 @@ and no rectangle does better (`cutDist_finiteGraphGraphonOnFin_top_two_const_hal
 
 These examples compare the map form with independently computed distances on carriers with
 different atomic structures. In each case the nonzero value witnesses that the map form includes
-the relevant pullbacks.
+the relevant pullbacks. `CutMetric.Pullback.Constant` computes the same values from the definition
+of the map form, without the equivalence (`cutDistPullback_dirac_dirac`,
+`cutDistPullback_finiteGraphGraphonOnFin_top_two_const_half`).
 
 ## Main results
 

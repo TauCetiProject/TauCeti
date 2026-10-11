@@ -38,6 +38,8 @@ see `TauCeti/Combinatorics/Brauer/Diagram.lean`.
 
 ## Main results
 
+* `TauCeti.PerfectMatching.ext_of_eqOn`: two perfect matchings agreeing on a set containing a
+  partner of every point are equal.
 * `TauCeti.even_card_of_nonempty_perfectMatching`: a matched type has even cardinality.
 * `TauCeti.card_perfectMatching`: a type of cardinality `2 * m` has `(2 * m - 1)‼` perfect
   matchings.
@@ -124,6 +126,16 @@ theorem apply_ne (D : PerfectMatching α) (x : α) : D.val x ≠ x := D.prop.2 x
 /-- The two ends of an arc determine each other. -/
 theorem apply_eq_of_apply_eq (D : PerfectMatching α) {x y : α} (h : D.val x = y) :
     D.val y = x := by rw [← h, D.apply_apply]
+
+/-- Two perfect matchings are equal as soon as they agree on a set `s` containing the partner, under
+the first matching, of every point outside `s`. For instance `s` may be the set of half-edges
+pointing away from their crossing in an oriented diagram, since every arc has one end there. -/
+theorem ext_of_eqOn {D D' : PerfectMatching α} {s : Set α} (hs : ∀ a ∉ s, D.val a ∈ s)
+    (h : Set.EqOn D.val D'.val s) : D = D' := by
+  refine Subtype.ext (Equiv.ext fun a ↦ ?_)
+  by_cases ha : a ∈ s
+  · exact h ha
+  · rw [← D'.apply_eq_of_apply_eq (h (hs a ha)).symm, D.apply_apply]
 
 /-- A perfect matching that joins `a` to `b` preserves the complement of `{a, b}`. -/
 theorem apply_ne_and_ne_iff (hab : D.val a = b) (x : α) :

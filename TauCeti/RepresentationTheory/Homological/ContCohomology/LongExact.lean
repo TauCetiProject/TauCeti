@@ -24,11 +24,12 @@ The two leftmost nodes need no topology on `G` at all; the remaining six carry e
 hypotheses their maps require, so the three nodes touching `H²` also ask for a continuous
 multiplication on `G`.
 
-The arguments are the ordinary diagram chases, run on continuous cochains. The topological input
-is entirely in `ShortExact.lean`: a continuous cochain into the discrete `C` lifts to a continuous
-cochain into `B`, and a continuous cochain into `B` killed by the projection retracts to a
-continuous cochain into `A`. Once a chase has produced a cochain, `mem_Z1_of_incl_comp_mem_Z1`
-and `mem_Z2_of_incl_comp_mem_Z2` are what put it back into the continuous cocycles.
+The arguments are the ordinary diagram chases, run on continuous cochains. The lifting and
+retraction input is in `ShortExact.lean`: a continuous cochain into the discrete `C` lifts to a
+continuous cochain into `B`, and a continuous cochain into `B` killed by the projection retracts
+to a continuous cochain into `A`. Once a chase has produced a cochain, the cocycle descent of
+`LowDegree.lean`, `mem_Z1_of_injective_comp_mem_Z1` and `mem_Z2_of_injective_comp_mem_Z2` applied
+to the inclusion, puts it back into the continuous cocycles.
 
 ## Main statements
 
@@ -44,6 +45,8 @@ and `mem_Z2_of_incl_comp_mem_Z2` are what put it back into the continuous cocycl
 * `TauCeti.ContCohomology.DiscreteShortExact.explicitDelta0_surjective_of_subsingleton` and
   `explicitDelta1_bijective_of_subsingleton`: when `H¹(G, B)` and `H²(G, B)` vanish, `δ⁰` is onto
   and `δ¹` is bijective.
+* `TauCeti.ContCohomology.DiscreteShortExact.explicitCoeff0_surjective_of_subsingleton`: when
+  `H¹(G, A)` vanishes, `H⁰(G, B) → H⁰(G, C)` is onto.
 
 The maps and their normalization are those of
 `TauCeti/RepresentationTheory/Homological/ContCohomology/LowDegree.lean`,
@@ -186,8 +189,7 @@ private theorem range_coeff0_le_ker_delta0 :
   have hb : S.proj (b : B) =
       ((explicitCoeff0 G B S.projDistribMulActionHom b : H0 G C) : C) := by
     simp only [coe_explicitCoeff0, projDistribMulActionHom_apply]
-  have hzero : (0 : G → A) ∈ Z1 G A := zero_mem _
-  rw [S.explicitDelta0_apply (explicitCoeff0 G B S.projDistribMulActionHom b) hb hzero]
+  rw [S.explicitDelta0_apply (explicitCoeff0 G B S.projDistribMulActionHom b) hb (a := 0)]
   · exact map_zero (H1pi G A)
   · intro g
     rw [Pi.zero_apply, map_zero, (FixedPoints.mem_addSubgroup G B (b : B)).1 b.2 g,
@@ -204,10 +206,11 @@ private theorem ker_delta0_le_range_coeff0 :
   obtain ⟨a, _, ha_incl⟩ :=
     S.exists_continuous_incl_comp_eq (continuous_d0_apply (G := G) b)
       (S.proj_d0_eq_zero hb_fixed)
-  have ha_cocycle : a ∈ Z1 G A := S.mem_Z1_of_incl_comp_eq_d0 fun g => by
-    simpa only [d0_apply] using ha_incl g
+  have ha_cocycle : a ∈ Z1 G A :=
+    mem_Z1_of_injective_comp_eq_d0 S.incl_injective S.incl_equivariant fun g => by
+      simpa only [d0_apply] using ha_incl g
   have ha_class : H1pi G A ⟨a, ha_cocycle⟩ = 0 := by
-    rw [← S.explicitDelta0_apply c hb ha_cocycle (fun g => by
+    rw [← S.explicitDelta0_apply c hb (a := a) (fun g => by
       simpa only [d0_apply] using ha_incl g)]
     exact AddMonoidHom.mem_ker.1 hc
   obtain ⟨a₀, ha₀⟩ := mem_B1_iff.1 (H1pi_eq_zero_iff.1 ha_class)
@@ -262,10 +265,11 @@ private theorem range_delta0_le_ker_coeff1 :
   have hab : ∀ g : G, S.incl (a g) = g • b - b := fun g => (haincl g).trans (d0_apply b g)
   have hd0 : d0 G B b ∈ B1 G B := mem_B1_iff.2 ⟨b, fun g => (d0_apply b g).symm⟩
   refine AddMonoidHom.mem_ker.2 ?_
-  rw [S.explicitDelta0_apply c hb (S.mem_Z1_of_incl_comp_eq_d0 hab) hab,
+  rw [S.explicitDelta0_apply c hb hab,
     QuotientAddGroup.mk'_apply,
     explicitCoeff1_eq_of_apply G S.inclDistribMulActionHom continuous_of_discreteTopology
-      ⟨a, S.mem_Z1_of_incl_comp_eq_d0 hab⟩ ⟨d0 G B b, B1_le_Z1 G B hd0⟩
+      ⟨a, mem_Z1_of_injective_comp_eq_d0 S.incl_injective S.incl_equivariant hab⟩
+      ⟨d0 G B b, B1_le_Z1 G B hd0⟩
       fun g => by rw [inclDistribMulActionHom_apply, haincl g]]
   exact H1pi_eq_zero_iff.2 hd0
 
@@ -290,7 +294,7 @@ private theorem ker_coeff1_le_range_delta0 :
       rw [S.proj_incl, map_sub, S.proj_equivariant] at h
       exact sub_eq_zero.1 h.symm
     exact ⟨⟨S.proj b, hbinv⟩, by
-      rw [S.explicitDelta0_apply ⟨S.proj b, hbinv⟩ rfl a.2 hab, QuotientAddGroup.mk'_apply]⟩
+      rw [S.explicitDelta0_apply ⟨S.proj b, hbinv⟩ rfl hab, QuotientAddGroup.mk'_apply]⟩
 
 omit [ContinuousSMul G C] in
 /-- **Exactness at `H¹(G, A)`**, the node where `δ⁰` lands. -/
@@ -338,9 +342,11 @@ private theorem ker_coeff1_le_range_coeff1 :
       rw [hcoe, Pi.sub_apply, map_sub, d0_apply, map_sub, S.proj_equivariant, hb₀,
         ← projDistribMulActionHom_apply, ← hc₀ g, sub_self]
     obtain ⟨a, -, haincl⟩ := S.exists_continuous_incl_comp_eq (mem_Z1_iff.1 e'.2).1 hproj
-    refine ⟨(⟨a, mem_Z1_of_incl_comp_mem_Z1 haincl e'.2⟩ : Z1 G A), ?_⟩
+    have ha_mem : a ∈ Z1 G A :=
+      mem_Z1_of_injective_comp_mem_Z1 S.incl_injective S.incl_equivariant haincl e'.2
+    refine ⟨(⟨a, ha_mem⟩ : Z1 G A), ?_⟩
     rw [explicitCoeff1_eq_of_apply G S.inclDistribMulActionHom continuous_of_discreteTopology
-      ⟨a, mem_Z1_of_incl_comp_mem_Z1 haincl e'.2⟩ e'
+      ⟨a, ha_mem⟩ e'
       (fun g => by rw [inclDistribMulActionHom_apply, haincl g])]
     refine H1pi_eq_iff.2 ?_
     rw [hcoe, sub_sub_cancel_left]
@@ -383,8 +389,7 @@ private theorem range_coeff1_le_ker_delta1 :
         simp only [(mem_Z1_iff.1 e.2).2 g h, map_add, S.proj_equivariant]⟩
     have hdelta : S.explicitDelta1 ((⟨_, hmem⟩ : Z1 G C) : H1 G C) =
         H2pi G A ⟨0, zero_mem (Z2 G A)⟩ :=
-      S.explicitDelta1_apply ⟨_, hmem⟩ (mem_Z1_iff.1 e.2).1 (fun _ => rfl) (zero_mem (Z2 G A))
-        fun g h => by
+      S.explicitDelta1_apply ⟨_, hmem⟩ (mem_Z1_iff.1 e.2).1 (fun _ => rfl) fun g h => by
           rw [Pi.zero_apply, map_zero, (mem_Z1_iff.1 e.2).2 g h]
           abel
     refine AddMonoidHom.mem_ker.2 ?_
@@ -407,10 +412,11 @@ private theorem ker_delta1_le_range_coeff1 :
       (proj_d1_eq_zero hef (mem_Z1_iff.1 f.2).2)
     have hae : ∀ g h : G, S.incl (a (g, h)) = g • e h - e (g * h) + e g := fun g h =>
       (haincl (g, h)).trans (d1_apply e g h)
-    have hdelta : S.explicitDelta1 (f : H1 G C) =
-        H2pi G A ⟨a, S.mem_Z2_of_incl_comp_eq_d1 hecont hae⟩ :=
-      S.explicitDelta1_apply f hecont hef (S.mem_Z2_of_incl_comp_eq_d1 hecont hae) hae
-    have hzero : ((⟨a, S.mem_Z2_of_incl_comp_eq_d1 hecont hae⟩ : Z2 G A) : H2 G A) = 0 :=
+    have ha_mem : a ∈ Z2 G A :=
+      mem_Z2_of_injective_comp_eq_d1 S.incl_injective S.incl_equivariant hecont hae
+    have hdelta : S.explicitDelta1 (f : H1 G C) = H2pi G A ⟨a, ha_mem⟩ :=
+      S.explicitDelta1_apply f hecont hef hae
+    have hzero : ((⟨a, ha_mem⟩ : Z2 G A) : H2 G A) = 0 :=
       hdelta.symm.trans (AddMonoidHom.mem_ker.1 hx)
     have hcob : a ∈ B2 G A := H2pi_eq_zero_iff.1 hzero
     obtain ⟨u, hu, hcu⟩ := mem_B2_iff'.1 hcob
@@ -453,13 +459,14 @@ private theorem range_delta1_le_ker_coeff2 :
     have hae : ∀ g h : G, S.incl (a (g, h)) = g • e h - e (g * h) + e g := fun g h =>
       (haincl (g, h)).trans (d1_apply e g h)
     have hd1 : d1 G B e ∈ B2 G B := mem_B2_iff.2 ⟨e, hecont, rfl⟩
-    have hdelta : S.explicitDelta1 (f : H1 G C) =
-        H2pi G A ⟨a, S.mem_Z2_of_incl_comp_eq_d1 hecont hae⟩ :=
-      S.explicitDelta1_apply f hecont hef (S.mem_Z2_of_incl_comp_eq_d1 hecont hae) hae
+    have ha_mem : a ∈ Z2 G A :=
+      mem_Z2_of_injective_comp_eq_d1 S.incl_injective S.incl_equivariant hecont hae
+    have hdelta : S.explicitDelta1 (f : H1 G C) = H2pi G A ⟨a, ha_mem⟩ :=
+      S.explicitDelta1_apply f hecont hef hae
     refine AddMonoidHom.mem_ker.2 ?_
     rw [hdelta, QuotientAddGroup.mk'_apply,
       explicitCoeff2_eq_of_apply G S.inclDistribMulActionHom continuous_of_discreteTopology
-        ⟨a, S.mem_Z2_of_incl_comp_eq_d1 hecont hae⟩ ⟨d1 G B e, B2_le_Z2 G B hd1⟩
+        ⟨a, ha_mem⟩ ⟨d1 G B e, B2_le_Z2 G B hd1⟩
         fun p => by rw [inclDistribMulActionHom_apply, haincl p]]
     exact H2pi_eq_zero_iff.2 hd1
 
@@ -488,7 +495,7 @@ private theorem ker_coeff2_le_range_delta1 :
           abel
         exact (sub_eq_zero.1 h₁).symm⟩
     exact ⟨((⟨_, hmem⟩ : Z1 G C) : H1 G C),
-      S.explicitDelta1_apply ⟨_, hmem⟩ hecont (fun _ => rfl) a.2 hae'⟩
+      S.explicitDelta1_apply ⟨_, hmem⟩ hecont (fun _ => rfl) hae'⟩
 
 /-- **Exactness at `H²(G, A)`**, the node where `δ¹` lands. -/
 theorem explicitLongExact_H2A :
@@ -537,9 +544,11 @@ private theorem ker_coeff2_le_range_coeff2 :
       simp only [hwv]
       rw [← projDistribMulActionHom_apply, ← hvz g h, sub_self]
     obtain ⟨a, -, haincl⟩ := S.exists_continuous_incl_comp_eq (mem_Z2_iff.1 z'.2).1 hproj
-    refine ⟨(⟨a, mem_Z2_of_incl_comp_mem_Z2 haincl z'.2⟩ : Z2 G A), ?_⟩
+    have ha_mem : a ∈ Z2 G A :=
+      mem_Z2_of_injective_comp_mem_Z2 S.incl_injective S.incl_equivariant haincl z'.2
+    refine ⟨(⟨a, ha_mem⟩ : Z2 G A), ?_⟩
     rw [explicitCoeff2_eq_of_apply G S.inclDistribMulActionHom continuous_of_discreteTopology
-      ⟨a, mem_Z2_of_incl_comp_mem_Z2 haincl z'.2⟩ z'
+      ⟨a, ha_mem⟩ z'
       (fun p => by rw [inclDistribMulActionHom_apply, haincl p])]
     refine H2pi_eq_iff.2 ?_
     rw [hcoe, sub_sub_cancel_left]
@@ -592,6 +601,30 @@ theorem explicitDelta1_bijective_of_subsingleton [ContinuousMul G] [ContinuousSM
     rwa [← S.explicitLongExact_H2A] at hx
 
 end AcyclicMiddle
+
+/-! ### An acyclic first term
+
+When `A` has vanishing `H¹`, the connecting map `δ⁰` is zero, so taking invariants is exact on the
+right: every invariant of `C` is the image of an invariant of `B`. -/
+
+section AcyclicLeft
+
+variable {G : Type u} [Group G] [TopologicalSpace G]
+  {A : Type vA} [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
+    [DistribMulAction G A] [ContinuousSMul G A]
+  {B : Type vB} [AddCommGroup B] [TopologicalSpace B] [DiscreteTopology B]
+    [DistribMulAction G B] [ContinuousSMul G B]
+  {C : Type vC} [AddCommGroup C] [TopologicalSpace C] [DiscreteTopology C]
+    [DistribMulAction G C]
+  (S : DiscreteShortExact G A B C)
+
+/-- If the first term has vanishing `H¹`, then `H⁰(G, B) → H⁰(G, C)` is surjective. -/
+theorem explicitCoeff0_surjective_of_subsingleton [Subsingleton (H1 G A)] :
+    Function.Surjective (explicitCoeff0 G B S.projDistribMulActionHom) := fun c => by
+  have hc : c ∈ S.explicitDelta0.ker := Subsingleton.elim _ _
+  rwa [← S.explicitLongExact_H0C] at hc
+
+end AcyclicLeft
 
 end DiscreteShortExact
 

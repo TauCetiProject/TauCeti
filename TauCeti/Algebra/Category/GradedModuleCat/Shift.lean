@@ -33,7 +33,7 @@ variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
 
 /-- The internal shift by zero is naturally isomorphic to the identity functor. -/
 def shiftFunctorZeroIso : shiftFunctor (𝒜 := 𝒜) 0 ≅ 𝟭 (GradedModuleCat.{v} 𝒜) :=
-  NatIso.ofComponents (fun M ↦ isoMk (LinearEquiv.refl A M) fun p x ↦ by simp; rfl)
+  NatIso.ofComponents (fun M ↦ isoMk (LinearEquiv.refl A M) fun p x ↦ by simp)
     fun _ ↦ by ext; rfl
 
 @[simp]
@@ -51,7 +51,7 @@ linear maps. -/
 def shiftFunctorAddIso (a b : ℤ) :
     shiftFunctor (𝒜 := 𝒜) a ⋙ shiftFunctor b ≅ shiftFunctor (a + b) :=
   NatIso.ofComponents (fun M ↦ isoMk (LinearEquiv.refl A M) fun p x ↦ by
-    simp [add_comm]; rfl) fun _ ↦ by ext; rfl
+    simp [add_comm]) fun _ ↦ by ext; rfl
 
 @[simp]
 theorem hom_shiftFunctorAddIso_hom_app (a b : ℤ) (M : GradedModuleCat.{v} 𝒜) :
@@ -89,5 +89,25 @@ shifted grading. -/
 def shiftPowIso : ∀ d : ℤ, ((shift 𝒜) ^ d).functor ≅ shiftFunctor (𝒜 := 𝒜) d
   | Int.ofNat n => shiftPowNatIso 𝒜 n
   | Int.negSucc n => shiftInversePowNatIso 𝒜 (n + 1)
+
+/-- Morphisms into the categorical `d`-th power of the grading shift are linearly equivalent to
+morphisms into the explicit internal shift by `d`. -/
+def homShiftPowEquiv (P M : GradedModuleCat.{v} 𝒜) (d : ℤ) :
+    (P ⟶ ((shift 𝒜) ^ d).functor.obj M) ≃ₗ[k] (P ⟶ M.shiftObj d) :=
+  Linear.homCongr k (Iso.refl P) ((shiftPowIso 𝒜 d).app M)
+
+@[simp]
+theorem homShiftPowEquiv_apply (P M : GradedModuleCat.{v} 𝒜) (d : ℤ)
+    (f : P ⟶ ((shift 𝒜) ^ d).functor.obj M) :
+    homShiftPowEquiv 𝒜 P M d f = f ≫ (shiftPowIso 𝒜 d).hom.app M := by
+  rw [homShiftPowEquiv]
+  exact (Linear.homCongr_apply k _ _ f).trans (by simp)
+
+@[simp]
+theorem homShiftPowEquiv_symm_apply (P M : GradedModuleCat.{v} 𝒜) (d : ℤ)
+    (f : P ⟶ M.shiftObj d) :
+    (homShiftPowEquiv 𝒜 P M d).symm f = f ≫ (shiftPowIso 𝒜 d).inv.app M := by
+  rw [homShiftPowEquiv]
+  exact (Linear.homCongr_symm_apply k _ _ f).trans (by simp)
 
 end TauCeti.GradedModuleCat

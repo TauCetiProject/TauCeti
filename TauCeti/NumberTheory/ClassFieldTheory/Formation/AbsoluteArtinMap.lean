@@ -56,6 +56,8 @@ homomorphism.
   restrictions of the absolute Artin map are the finite Artin maps.
 * `TauCeti.ClassFieldTheory.ClassFormation.eq_absoluteArtinMap_of_forall_abelianizationRestrict`:
   the absolute Artin map is the unique homomorphism with these restrictions.
+* `TauCeti.ClassFieldTheory.NormalLayer.eq_of_forall_le_abelianizationRestrict_eq`: elements of
+  `G^ab` are determined by their projections to the layers below any fixed open normal subgroup.
 * `TauCeti.ClassFieldTheory.ClassFormation.denseRange_absoluteArtinMap`: the absolute Artin map
   has dense image.
 * `TauCeti.ClassFieldTheory.ClassFormation.exists_absoluteArtinMap_mem_iff`: the preimage of an
@@ -133,6 +135,25 @@ theorem abelianizationRestrict_surjective (V : OpenNormalSubgroup G) :
   exact ⟨_, (abelianizationRestrict_mk V g).trans (congrArg Additive.ofMul hγ)⟩
 
 end NormalLayer
+
+/-- **The projections of `G^ab` are compatible with refinement**: for open normal subgroups
+`W ≤ V` of `G`, projecting to `(G/W)^ab` and then to the quotient `(G/V)^ab` is the projection to
+`(G/V)^ab`. -/
+@[simp]
+theorem LayerRefinement.quotientHom_abelianizationRestrict {V W : OpenNormalSubgroup G}
+    (T : LayerRefinement (NormalLayer.ofOpenNormal V) (NormalLayer.ofOpenNormal W))
+    (x : Additive (TopologicalAbelianization G)) :
+    T.quotientHom (NormalLayer.abelianizationRestrict W x) =
+      NormalLayer.abelianizationRestrict V x := by
+  obtain ⟨x, rfl⟩ : ∃ y, Additive.ofMul y = x := ⟨x.toMul, ofMul_toMul x⟩
+  induction x using QuotientGroup.induction_on with
+  | H g =>
+    have hg (U : OpenNormalSubgroup G) : g ∈ (NormalLayer.ofOpenNormal U).ground := by simp
+    rw [NormalLayer.abelianizationRestrict_mk W ⟨g, hg W⟩,
+      NormalLayer.abelianizationRestrict_mk V ⟨g, hg V⟩, quotientHom_of, galHom_mk]
+    exact congrArg (fun w ↦ Additive.ofMul (Abelianization.of
+      (QuotientGroup.mk w : (NormalLayer.ofOpenNormal V).Gal)))
+      (Subtype.ext (Subgroup.coe_inclusion _ _))
 
 /-! ### Finite quotients of the topological abelianization -/
 
@@ -334,6 +355,16 @@ theorem _root_.TauCeti.ClassFieldTheory.NormalLayer.eq_of_forall_abelianizationR
   refine Additive.toMul.injective (eq_of_forall_mk_eq fun U ↦ ?_)
   rw [← quotientOfAbelianizationGal_abelianizationRestrict,
     ← quotientOfAbelianizationGal_abelianizationRestrict, ofMul_toMul, ofMul_toMul, h]
+
+/-- Elements of `G^ab` with the same projection to `(G/V)^ab` for every open normal subgroup `V`
+of `G` contained in a fixed open normal subgroup `N` are equal: the layers below `N` are cofinal. -/
+theorem _root_.TauCeti.ClassFieldTheory.NormalLayer.eq_of_forall_le_abelianizationRestrict_eq
+    (N : OpenNormalSubgroup G) {x y : Additive (TopologicalAbelianization G)}
+    (h : ∀ V ≤ N, abelianizationRestrict V x = abelianizationRestrict V y) : x = y :=
+  eq_of_forall_abelianizationRestrict_eq fun V ↦ by
+    have T := LayerRefinement.ofOpenNormal (inf_le_left : V ⊓ N ≤ V)
+    rw [← T.quotientHom_abelianizationRestrict, h _ inf_le_right,
+      T.quotientHom_abelianizationRestrict]
 
 /-- **Uniqueness of the absolute Artin map**: a homomorphism `A^G → G^ab` whose projection to
 `(G/V)^ab` is the finite Artin map of the layer `V ◁ G`, for every open normal subgroup `V`, is

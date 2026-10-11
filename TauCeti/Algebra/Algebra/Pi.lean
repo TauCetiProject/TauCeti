@@ -6,7 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 -- Public: `Pi.evalAlgHom` and `AlgHom.eq_piEvalAlgHom` both occur in the statements below.
+public import Mathlib.Algebra.Algebra.Pi
 public import Mathlib.LinearAlgebra.StdBasis
+public import Mathlib.RingTheory.Finiteness.Defs
+import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
+import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
 # The algebra homomorphisms out of a finite power of the base ring
@@ -22,8 +27,20 @@ makes the equivalence useful for counting: a split commutative algebra has exact
 characters as it has factors. The Burnside--Dixon--Schneider algorithm consumes it in that form, to
 count the central characters of a group algebra whose centre has been split into coordinates.
 
+For any algebra over a field, `AlgHom.surjective_pi_of_injective` supplies finite
+interpolation at distinct augmentations, without commutativity or finite generation. It follows
+from Mathlib's `linearIndependent_monoidHom` (Dedekind independence) and
+`span_flip_eq_top_iff_linearIndependent` (finite duality). This supplies polynomial interpolation
+on finite Weyl orbits for the Harish-Chandra central-character theorem.
+
+For a finite-dimensional algebra over a field, `TauCeti.AlgHom.pi_bijective_of_injective`
+identifies evaluation at a finite family of distinct characters with the function algebra,
+provided those characters separate elements.
+
 ## Main definitions
 
+* `AlgHom.surjective_pi_of_injective`: distinct finitely many augmentations admit arbitrary
+  simultaneous values.
 * `Pi.evalAlgHom_injective`: distinct coordinates give distinct evaluation homomorphisms.
 * `Pi.evalAlgHomEquiv`: the coordinates of `ι → R` are exactly the `R`-algebra homomorphisms
   `(ι → R) →ₐ[R] R`.
@@ -63,3 +80,49 @@ theorem evalAlgHomEquiv_apply (s : ι) :
   (rfl)
 
 end Pi
+
+namespace AlgHom
+
+/-- Distinct finitely many augmentations to the ground field admit arbitrary simultaneous
+values: their product algebra homomorphism is surjective. -/
+theorem surjective_pi_of_injective {K A ι : Type*} [Field K] [Semiring A] [Algebra K A]
+    [_root_.Finite ι] (f : ι → A →ₐ[K] K) (hf : Function.Injective f) :
+    Function.Surjective (AlgHom.pi f) := by
+  have hli : LinearIndependent K (fun i : ι ↦ (f i : A → K)) :=
+    (linearIndependent_monoidHom A K).comp
+      (fun i ↦ (f i).toRingHom.toMonoidHom)
+      (fun i j hij ↦ hf <| AlgHom.ext fun x ↦ congrArg (fun m : A →* K ↦ m x) hij)
+  have hspan : Submodule.span K (Set.range (AlgHom.pi f).toLinearMap) = ⊤ :=
+    span_flip_eq_top_iff_linearIndependent.mpr hli
+  have hr : LinearMap.range (AlgHom.pi f).toLinearMap = ⊤ := by
+    simpa only [← LinearMap.coe_range, Submodule.span_eq] using hspan
+  exact LinearMap.range_eq_top.mp hr
+
+end AlgHom
+
+namespace TauCeti
+
+variable {K A ι : Type*} [Field K] [Ring A] [Algebra K A]
+  [Module.Finite K A]
+
+/-- Evaluation at distinct characters that separate elements identifies a finite-dimensional
+algebra with the algebra of functions on the character index set. -/
+theorem AlgHom.pi_bijective_of_injective (χ : ι → A →ₐ[K] K)
+    (hχ : Function.Injective χ) (hinj : Function.Injective (AlgHom.pi χ)) :
+    Function.Bijective (AlgHom.pi χ) := by
+  classical
+  let := Finite.algHom K A K
+  let := Finite.of_injective χ hχ
+  let := Fintype.ofFinite ι
+  have hle : Module.finrank K (ι → K) ≤ Module.finrank K A := by
+    have h := (Nat.card_le_card_of_injective χ hχ).trans
+      (card_algHom_le_finrank K A K)
+    simpa [Module.finrank_pi] using h
+  have hdim : Module.finrank K A = Module.finrank K (ι → K) :=
+    le_antisymm (LinearMap.finrank_le_finrank_of_injective
+      (f := (AlgHom.pi χ).toLinearMap) hinj) hle
+  exact ⟨hinj,
+    (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
+      (f := (AlgHom.pi χ).toLinearMap) hdim).mp hinj⟩
+
+end TauCeti

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GeneratedByY
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Map.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.PowerTower
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.RelativeFrobenius
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Separability
@@ -61,6 +62,9 @@ that factorisation.
   `TauCeti.Isogeny.inseparableDegree_relativeFrobeniusIsogeny` splitting that as `1 · p`.
 * `TauCeti.Isogeny.degree_iterateRelativeFrobeniusIsogeny`: the `n`-fold iterate has degree
   `p ^ n` and is purely inseparable.
+* `TauCeti.Isogeny.fieldPullback_iterateRelativeFrobeniusIsogeny_map` and
+  `TauCeti.Isogeny.fieldPullback_relativeFrobeniusIsogeny_map`: coefficient Frobenius followed
+  by the relative pullback is the power map on the whole function field.
 * `TauCeti.Isogeny.fieldRange_relativeFrobeniusIsogeny` and
   `TauCeti.Isogeny.fieldRange_iterateRelativeFrobeniusIsogeny`: the pulled-back copy of
   `F(W⁽ᵖ⁾)` is `F(F(W)ᵖ)`, the subfield generated over the constants by the `p`-th powers, and
@@ -328,6 +332,19 @@ theorem iterateRelativeFrobeniusIsogeny_pullback (n : ℕ) :
     (iterateRelativeFrobeniusIsogeny p W n).pullback =
       iterateRelativeFrobeniusPullback p W n := (rfl)
 
+/-- The first iterated relative Frobenius is the one-step relative Frobenius, after
+identifying their target curves via `iterateFrobenius_one`. -/
+@[simp]
+theorem iterateRelativeFrobeniusIsogeny_one :
+    iterateRelativeFrobeniusIsogeny p W 1 =
+      (congrArg W.map (iterateFrobenius_one (R := F) p).symm ▸
+        relativeFrobeniusIsogeny p W) := by
+  symm
+  apply eq_of_pullback_coords
+  · simp [iterateRelativeFrobeniusPullback_apply, relativeFrobeniusPullback_apply,
+      CoordinateRing.iterateRelativeFrobenius_of, CoordinateRing.relativeFrobenius_of]
+  · simp [iterateRelativeFrobeniusPullback_apply, relativeFrobeniusPullback_apply]
+
 /-- The function-field pullback of a base-changed coordinate function is its
 `p ^ n`-th power. -/
 theorem fieldPullback_iterateRelativeFrobeniusIsogeny_coordinateRingMap (n : ℕ)
@@ -341,6 +358,58 @@ theorem fieldPullback_iterateRelativeFrobeniusIsogeny_coordinateRingMap (n : ℕ
   rw [Isogeny.fieldPullback_algebraMap, iterateRelativeFrobeniusIsogeny_pullback,
     iterateRelativeFrobeniusPullback_apply,
     CoordinateRing.iterateRelativeFrobenius_map, map_pow]
+
+/-- The coefficient Frobenius followed by the iterated relative Frobenius pullback is
+iterated Frobenius on the function field, as an equality of ring homomorphisms. -/
+theorem fieldPullback_iterateRelativeFrobeniusIsogeny_comp_map
+    (W : WeierstrassCurve.Affine F) (n : ℕ) :
+    let := expChar_of_injective_algebraMap (algebraMap F W.FunctionField).injective p
+    (iterateRelativeFrobeniusIsogeny p W n).fieldPullback.toRingHom.comp
+        (FunctionField.map W (iterateFrobenius F p n)) =
+      iterateFrobenius W.FunctionField p n := by
+  let := expChar_of_injective_algebraMap (algebraMap F W.FunctionField).injective p
+  apply IsFractionRing.ringHom_ext (A := W.CoordinateRing)
+  intro z
+  simp [iterateFrobenius_def]
+
+/-- The coefficient Frobenius followed by the iterated relative Frobenius pullback is
+the `p ^ n`-power map on the function field, including its rational functions. -/
+@[simp]
+theorem fieldPullback_iterateRelativeFrobeniusIsogeny_map
+    (W : WeierstrassCurve.Affine F) (n : ℕ) (z : W.FunctionField) :
+    (iterateRelativeFrobeniusIsogeny p W n).fieldPullback
+        (FunctionField.map W (iterateFrobenius F p n) z) = z ^ p ^ n :=
+  RingHom.congr_fun (fieldPullback_iterateRelativeFrobeniusIsogeny_comp_map p W n) z
+
+/-- The coefficient Frobenius followed by relative Frobenius is Frobenius on the
+function field, as an equality of ring homomorphisms. -/
+theorem fieldPullback_relativeFrobeniusIsogeny_comp_map
+    (W : WeierstrassCurve.Affine F) :
+    let := expChar_of_injective_algebraMap (algebraMap F W.FunctionField).injective p
+    (relativeFrobeniusIsogeny p W).fieldPullback.toRingHom.comp
+        (FunctionField.map W (frobenius F p)) = frobenius W.FunctionField p := by
+  let := expChar_of_injective_algebraMap (algebraMap F W.FunctionField).injective p
+  have h := fieldPullback_iterateRelativeFrobeniusIsogeny_comp_map p W 1
+  dsimp only at h
+  rw [iterateFrobenius_one (R := W.FunctionField) p] at h
+  simp only [iterateRelativeFrobeniusIsogeny_one] at h
+  have e := iterateFrobenius_one (R := F) p
+  -- Name the equality used in the target cast so that generalizing the ring homomorphism
+  -- also generalizes its proof; dependent casts prevent a direct rewrite in `h`.
+  change (congrArg W.map e.symm ▸ relativeFrobeniusIsogeny p W).fieldPullback.toRingHom.comp
+    (FunctionField.map W (iterateFrobenius F p 1)) = frobenius W.FunctionField p at h
+  generalize hf : iterateFrobenius F p 1 = f at e h
+  cases e
+  exact h
+
+/-- The coefficient Frobenius followed by relative Frobenius is the `p`-power map on
+the function field. -/
+@[simp]
+theorem fieldPullback_relativeFrobeniusIsogeny_map
+    (W : WeierstrassCurve.Affine F) (z : W.FunctionField) :
+    (relativeFrobeniusIsogeny p W).fieldPullback
+        (FunctionField.map W (frobenius F p) z) = z ^ p :=
+  RingHom.congr_fun (fieldPullback_relativeFrobeniusIsogeny_comp_map p W) z
 
 /-- **Every `p ^ n`-th power in `F(W)` lies in the pulled-back function field of the `n`-th
 Frobenius twist.** -/

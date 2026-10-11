@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.DirectSum.Module
+public import Mathlib.RingTheory.GradedAlgebra.Basic
 
 /-!
 # Extending an `ℕ`-indexed grading by zero to `ℤ`
@@ -18,6 +19,7 @@ module enters the signed-degree API.
 ## Main definitions
 
 * `TauCeti.Graded.extendByZero`: the extension by `⊥` of an `ℕ`-indexed family to `ℤ`.
+* `TauCeti.Graded.gradedAlgebraExtendByZero`: the induced integer-graded algebra structure.
 
 ## Main results
 
@@ -106,6 +108,16 @@ theorem mul_mem_extendByZero {R A : Type*} [Semiring R] [NonUnitalNonAssocSemiri
   rw [extendByZero_natCast] at hx hy
   rw [← Nat.cast_add, extendByZero_natCast]
   exact h𝒜 hx hy
+
+/-- An `ℕ`-graded algebra is `ℤ`-graded after extending its grading by zero in negative degrees. -/
+@[instance_reducible]
+noncomputable def gradedAlgebraExtendByZero {R A : Type*} [CommSemiring R] [Semiring A]
+    [Algebra R A] (𝒜 : ℕ → Submodule R A) [GradedAlgebra 𝒜] :
+    GradedAlgebra (extendByZero 𝒜) :=
+  { (isInternal_extendByZero (DirectSum.Decomposition.isInternal 𝒜)).chooseDecomposition with
+    one_mem := (extendByZero_natCast 𝒜 0).ge SetLike.GradedOne.one_mem
+    mul_mem := fun _ _ _ _ hx hy =>
+      mul_mem_extendByZero (fun hx' hy' => SetLike.GradedMul.mul_mem hx' hy') hx hy }
 
 end Graded
 

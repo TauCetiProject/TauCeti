@@ -103,6 +103,15 @@ namespace TauCeti.UniversalEnvelopingAlgebra
 
 universe u v w
 
+-- Match tensor products to the `ℤ`-algebra instance stored by `CommAlgCat` objects.
+attribute [local instance high] Algebra.toModule
+
+-- Mathlib does not register the Lie ring of an associative ring as a global instance; the
+-- commutator of two elements of the enveloping algebra is written with it below.
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+section Representation
+
 variable {L : Type u} [LieRing L] [LieAlgebra ℚ L]
 variable {ι : Type*} {κ : Type*}
 variable {V : Type v} [AddCommGroup V] [Module ℚ V]
@@ -111,13 +120,6 @@ variable (e : ι → L) (h : κ → L)
 variable (ρ : _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ V)
 variable (M : AddSubgroup V)
 variable (hM : ∀ u ∈ kostantForm e h, ∀ v ∈ M, ρ u v ∈ M)
-
--- Match tensor products to the `ℤ`-algebra instance stored by `CommAlgCat` objects.
-attribute [local instance high] Algebra.toModule
-
--- Mathlib does not register the Lie ring of an associative ring as a global instance; the
--- commutator of two elements of the enveloping algebra is written with it below.
-attribute [local instance 100] LieRing.ofAssociativeRing
 
 /-! ## Weight vectors -/
 
@@ -294,11 +296,16 @@ theorem isCartanWeightVector_coe_kostantRootOperator {α μ : κ → ℤ} {v : M
 
 end RootOperator
 
+end Representation
+
 /-! ## The split torus on points -/
 
 section Torus
 
-variable [Fintype κ]
+variable {κ : Type*} [Fintype κ]
+variable {V : Type v} [AddCommGroup V]
+variable (M : AddSubgroup V)
+variable {η : Type*} (b : Module.Basis η ℤ M) (wt : η → κ → ℤ)
 
 /-- The split maximal torus of rank `κ` on the `A`-points of a Kostant-stable lattice presented in
 a weight basis: the point `s` scales the base-changed basis vector `b x` by the value at `s` of the
@@ -315,12 +322,10 @@ noncomputable def kostantTorusSubgroup (A : Type*) [CommRing A] [Algebra ℤ A] 
 
 -- The public defining equation below cannot itself be `rfl`: the module does not expose the body
 -- of `kostantTorusSubgroup`, so the proof is delegated to this private helper.
-omit [Module ℚ V] in
 private theorem kostantTorusSubgroup_eq_range_def (A : Type*) [CommRing A] [Algebra ℤ A] :
     kostantTorusSubgroup M b wt A = (kostantTorusPoints M b wt A).range :=
   rfl
 
-omit [Module ℚ V] in
 /-- The defining equation of `kostantTorusSubgroup`: it is the range of the torus points
 homomorphism, so Mathlib's `MonoidHom.mem_range` characterizes its elements. -/
 theorem kostantTorusSubgroup_eq_range (A : Type*) [CommRing A] [Algebra ℤ A] :
@@ -331,20 +336,17 @@ section Pointwise
 
 variable {A : Type*} [CommRing A] [Algebra ℤ A]
 
-omit [Module ℚ V] in
 /-- The linear automorphism underlying a torus point is the diagonal weight automorphism. -/
 @[simp] theorem kostantTorusPoints_toLinearEquiv (s : κ → Aˣ) :
     (kostantTorusPoints M b wt A s).toLinearEquiv = basisWeightTorus (b.baseChange A) wt s := by
   rw [kostantTorusPoints]
   exact (LinearMap.GeneralLinearGroup.generalLinearEquiv A (A ⊗[ℤ] M)).apply_symm_apply _
 
-omit [Module ℚ V] in
 /-- A torus point acts by the diagonal weight automorphism of the base-changed basis. -/
 theorem kostantTorusPoints_apply (s : κ → Aˣ) (z : A ⊗[ℤ] M) :
     (kostantTorusPoints M b wt A s).val z = basisWeightTorus (b.baseChange A) wt s z := by
   rw [← LinearMap.GeneralLinearGroup.coe_toLinearEquiv, kostantTorusPoints_toLinearEquiv]
 
-omit [Module ℚ V] in
 /-- **Spanning weights make the split torus a monomorphism on points.** When the weights of the
 basis generate the whole character lattice, distinct torus points act differently on the
 base-changed lattice, over every value ring. -/
@@ -356,22 +358,6 @@ theorem kostantTorusPoints_injective
   rw [← kostantTorusPoints_toLinearEquiv M b wt s, ← kostantTorusPoints_toLinearEquiv M b wt t,
     hst]
 
-include e hM in
-/-- A torus point acts on a weight vector by the value of the corresponding character. -/
-theorem kostantTorusPoints_tmul_of_isCartanWeightVector
-    (hwt : ∀ x, IsCartanWeightVector h ρ (wt x) ((b x : M) : V))
-    {μ : κ → ℤ} {m : M} (hm : IsCartanWeightVector h ρ μ (m : V)) (s : κ → Aˣ) (a : A) :
-    (kostantTorusPoints M b wt A s).val (a ⊗ₜ[ℤ] m) =
-      ((torusCharacter s μ : A) * a) ⊗ₜ[ℤ] m := by
-  rw [kostantTorusPoints_apply,
-    basisWeightTorus_apply_of_repr_eq_zero (b.baseChange A) wt s (μ := μ) (m := a ⊗ₜ[ℤ] m)
-      (fun x hx => by
-        rw [Module.Basis.baseChange_repr_tmul,
-          repr_eq_zero_of_isCartanWeightVector e h ρ M hM b wt hwt hm hx]
-        simp [Algebra.smul_def]),
-    smul_tmul', smul_eq_mul]
-
-omit [Module ℚ V] in
 /-- A torus point scales a base-changed basis vector by the value of its weight character. -/
 @[simp] theorem kostantTorusPoints_tmul_basis (s : κ → Aˣ) (a : A) (x : η) :
     (kostantTorusPoints M b wt A s).val (a ⊗ₜ[ℤ] b x) =
@@ -401,12 +387,10 @@ noncomputable def kostantCoordinateCocharacter (c : κ) :
 
 -- The public evaluation equation below cannot unfold `kostantCoordinateCocharacter` itself: the
 -- module system only lets an exported theorem unfold exposed definitions.
-omit [Module ℚ V] in
 private theorem kostantCoordinateCocharacter_apply_def (c : κ) (u : Aˣ) :
     kostantCoordinateCocharacter M b wt A c u =
       kostantTorusPoints M b wt A (Pi.mulSingle c u) := rfl
 
-omit [Module ℚ V] in
 /-- Evaluating the coordinate cocharacter at `u` gives the torus point supported at `c`. -/
 -- Not `@[simp]`: it would rewrite under `kostantCoordinateCocharacter_tmul_basis`, whose left-hand
 -- side simp would then reach through `kostantTorusPoints_tmul_basis`, so `simpNF` rejects that
@@ -416,7 +400,6 @@ theorem kostantCoordinateCocharacter_apply (c : κ) (u : Aˣ) :
       kostantTorusPoints M b wt A (Pi.mulSingle c u) :=
   kostantCoordinateCocharacter_apply_def M b wt A c u
 
-omit [Module ℚ V] in
 /-- The coordinate cocharacter scales a weight vector by the corresponding weight coordinate. -/
 @[simp] theorem kostantCoordinateCocharacter_tmul_basis (c : κ)
     (u : Aˣ) (a : A) (x : η) :
@@ -425,7 +408,6 @@ omit [Module ℚ V] in
   rw [kostantCoordinateCocharacter_apply, kostantTorusPoints_tmul_basis,
     torusCharacter_mulSingle]
 
-omit [Module ℚ V] in
 /-- **A torus point divided by its Weyl reflection is a coordinate-cocharacter value.** The
 reflection `s_α` changes only the `c`-th coordinate of a point, dividing it by the value `α(s)`, so
 the quotient is the value at `α(s)` of the cocharacter supported at `c`. This is the image under
@@ -443,7 +425,6 @@ section Naturality
 
 variable {A B : Type*} [CommRing A] [CommRing B]
 
-omit [Module ℚ V] in
 /-- Naturality of the torus in the value ring, on a base-changed basis vector. -/
 theorem map_kostantTorusPoints_tmul_basis (φ : A →+* B) (s : κ → Aˣ)
     (a : A) (x : η) :
@@ -457,7 +438,6 @@ theorem map_kostantTorusPoints_tmul_basis (φ : A →+* B) (s : κ → Aˣ)
   rw [← map_torusCharacter φ s (wt x)]
   simp
 
-omit [Module ℚ V] in
 /-- The torus on points is natural in the value ring. -/
 theorem map_kostantTorusPoints (φ : A →+* B) (s : κ → Aˣ) (z : A ⊗[ℤ] M) :
     TensorProduct.map φ.toIntAlgHom.toLinearMap LinearMap.id
@@ -483,7 +463,6 @@ section CommAlgCatNaturality
 
 variable {A B : CommAlgCat.{w} ℤ}
 
-omit [Module ℚ V] in
 /-- **Scalar extension of a torus point.** Extending the scalars of the torus point `s` along a
 morphism of value rings gives the torus point whose parameter is mapped into the target ring. -/
 theorem mapScalarExtensionAutomorphisms_kostantTorusPoints (φ : A ⟶ B) (s : κ → Aˣ) :
@@ -506,17 +485,18 @@ end Torus
 
 section Matrix
 
+variable {κ : Type*}
+variable {V : Type v} [AddCommGroup V]
+variable (M : AddSubgroup V)
 variable [Fintype κ] {n : ℕ} (b : Module.Basis (Fin n) ℤ M) (wt : Fin n → κ → ℤ)
 variable {A : Type*} [CommRing A] [Algebra ℤ A]
 
-omit [Module ℚ V] in
 /-- The torus attached to a weight basis, in the matrix coordinates of that basis. -/
 noncomputable def kostantTorusMatrix :
     (κ → Aˣ) →* Matrix.GeneralLinearGroup (Fin n) A :=
   (Units.map (LinearMap.toMatrixAlgEquiv (b.baseChange A)).toMonoidHom).comp
     (kostantTorusPoints M b wt A)
 
-omit [Module ℚ V] in
 /-- Writing a Kostant torus point in the chosen basis gives `kostantTorusMatrix`. -/
 @[simp]
 theorem basisMatrix_kostantTorusPoints (s : κ → Aˣ) :
@@ -525,14 +505,12 @@ theorem basisMatrix_kostantTorusPoints (s : κ → Aˣ) :
       kostantTorusMatrix M b wt s := by
   rw [kostantTorusMatrix, MonoidHom.comp_apply, MulEquiv.toMonoidHom_eq_coe]
 
-omit [Module ℚ V] in
 private theorem kostantTorusMatrix_coe (s : κ → Aˣ) :
     (kostantTorusMatrix M b wt s : Matrix (Fin n) (Fin n) A) =
       LinearMap.toMatrix (b.baseChange A) (b.baseChange A)
         (kostantTorusPoints M b wt A s).toLinearEquiv.toLinearMap :=
   rfl
 
-omit [Module ℚ V] in
 /-- In a weight basis, a torus point is the diagonal matrix of its weight characters. -/
 @[simp]
 theorem kostantTorusMatrix_apply (s : κ → Aˣ) :
@@ -544,7 +522,6 @@ theorem kostantTorusMatrix_apply (s : κ → Aˣ) :
     (kostantTorusPoints_toLinearEquiv M b wt s)
   rw [hlinear, basisWeightTorus_apply, toMatrix_basisDiagonal, diagGL_coe]
 
-omit [Module ℚ V] in
 /-- **The matrix torus is natural in the value ring.** Applying a ring homomorphism entrywise to a
 torus point written in a weight basis gives the torus point of the transported parameters. The
 `p ^ k`-power Frobenius is the case
@@ -562,11 +539,39 @@ theorem map_kostantTorusMatrix {B : Type*} [CommRing B] [Algebra ℤ B] (φ : A 
 
 end Matrix
 
+section Representation
+
+variable {L : Type u} [LieRing L] [LieAlgebra ℚ L]
+variable {ι : Type*} {κ : Type*}
+variable {V : Type v} [AddCommGroup V] [Module ℚ V]
+
+variable (e : ι → L) (h : κ → L)
+variable (ρ : _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ V)
+variable (M : AddSubgroup V)
+variable (hM : ∀ u ∈ kostantForm e h, ∀ v ∈ M, ρ u v ∈ M)
+
+variable [Fintype κ]
+variable {η : Type*} (b : Module.Basis η ℤ M) (wt : η → κ → ℤ)
+variable {A : Type*} [CommRing A] [Algebra ℤ A]
+
+include e hM in
+/-- A torus point acts on a weight vector by the value of the corresponding character. -/
+theorem kostantTorusPoints_tmul_of_isCartanWeightVector
+    (hwt : ∀ x, IsCartanWeightVector h ρ (wt x) ((b x : M) : V))
+    {μ : κ → ℤ} {m : M} (hm : IsCartanWeightVector h ρ μ (m : V)) (s : κ → Aˣ) (a : A) :
+    (kostantTorusPoints M b wt A s).val (a ⊗ₜ[ℤ] m) =
+      ((torusCharacter s μ : A) * a) ⊗ₜ[ℤ] m := by
+  rw [kostantTorusPoints_apply,
+    basisWeightTorus_apply_of_repr_eq_zero (b.baseChange A) wt s (μ := μ) (m := a ⊗ₜ[ℤ] m)
+      (fun x hx => by
+        rw [Module.Basis.baseChange_repr_tmul,
+          repr_eq_zero_of_isCartanWeightVector e h ρ M hM b wt hwt hm hx]
+        simp [Algebra.smul_def]),
+    smul_tmul', smul_eq_mul]
+
 /-! ## The pinning equation -/
 
 section Pinning
-
-variable [Fintype κ] {A : Type*} [CommRing A] [Algebra ℤ A]
 
 /-- **The pinning equation for the torus and a root subgroup.** If the designated root vector `eᵢ`
 has weight `α`, then the torus point `s` conjugates the root-subgroup element with parameter `u`
@@ -661,8 +666,6 @@ end Pinning
 
 section Elementary
 
-variable [Fintype κ]
-
 /-- **The pinning equation with the parameter read in the value ring.** Conjugation by the torus
 point `s` carries the root-subgroup element `xᵢ(u)` to `xᵢ(α(s) u)`, where `α` is the weight of the
 root vector `eᵢ`. -/
@@ -714,5 +717,7 @@ theorem map_kostantElementarySubgroup_conj_kostantTorusPoints
     simp only [toAdd_ofAdd, ← mul_assoc, Units.mul_inv, one_mul, ofAdd_toAdd]
 
 end Elementary
+
+end Representation
 
 end TauCeti.UniversalEnvelopingAlgebra

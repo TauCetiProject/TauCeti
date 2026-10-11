@@ -136,7 +136,7 @@ theorem linearMap_eq_zero_of_comp_intertwiningMap_eq_zero (V : FDRep k N)
 source to `N` with the conjugate by `s` of the restriction of its target: the Mackey subgroup
 contains `N`, and on `N` the map `TauCeti.mackeyToH` is conjugation by `s⁻¹`. -/
 theorem mackey_hom_apply_inclusion {V : FDRep k N} {A B : FDRep k (inertia V)} {s : G}
-    (φ : resFDRep ((mackeySubgroup s (inertia V) (inertia V)).subgroupOf (inertia V)) A ⟶
+    (φ : Subgroup.resFDRep ((mackeySubgroup s (inertia V) (inertia V)).subgroupOf (inertia V)) A ⟶
       (Action.res (FGModuleCat k) (mackeyToH s (inertia V) (inertia V))).obj B)
     (n : N) (a : A) :
     φ.hom.hom.hom (A.ρ (Subgroup.inclusion (le_inertia V) n) a) =
@@ -190,11 +190,12 @@ theorem subsingleton_hom_res_mackeyToH_of_not_mem_inertia [Finite N]
     (hB : B.LiesOver (Subgroup.inclusion (le_inertia V)) V)
     {s : G} (hs : s ∉ inertia V) :
     Subsingleton
-      (resFDRep ((mackeySubgroup s (inertia V) (inertia V)).subgroupOf (inertia V)) A ⟶
+      (Subgroup.resFDRep ((mackeySubgroup s (inertia V) (inertia V)).subgroupOf (inertia V)) A ⟶
         (Action.res (FGModuleCat k) (mackeyToH s (inertia V) (inertia V))).obj B) := by
   refine subsingleton_of_forall_eq 0 fun φ => ?_
   suffices φ.hom.hom.hom = 0 from Action.Hom.ext (FGModuleCat.hom_ext this)
-  -- `resFDRep` and `Action.res` keep the carriers of `A` and `B`, so `φ` is a linear map `A → B`.
+  -- `Subgroup.resFDRep` and `Action.res` keep the carriers of `A` and `B`, so `φ` is a linear map
+  -- `A → B`.
   let f : A →ₗ[k] B := φ.hom.hom.hom
   refine linearMap_eq_zero_of_comp_intertwiningMap_eq_zero V A hA f fun g => ?_
   by_contra hg

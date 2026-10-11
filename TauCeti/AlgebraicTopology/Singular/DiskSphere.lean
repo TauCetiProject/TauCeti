@@ -15,23 +15,26 @@ The relative singular homology of the `n`-disk modulo its boundary is one copy o
 object in degree `n` and vanishes in every other degree.
 
 The degree-zero relative homology of a positive-dimensional disk vanishes relative to its
-boundary.  For the one-dimensional disk, both boundary points determine the same zeroth-homology
-class of the disk; in higher dimensions the boundary itself is path-connected.  The lower bound is
+boundary, since the disk is path connected and its boundary is nonempty
+(`TopPair.isZero_singularHomology_zero`).  The lower bound is
 sharp: for `n = 0`, the disk is a point and its boundary is empty, so the degree-zero group is one
 copy of the coefficient object, identified by the augmentation.
 
 In positive degrees, the disk is contractible, so the reduced connecting morphism of the pair
 identifies `Hₖ₊₁(Dⁿ, Sⁿ⁻¹)` with the reduced homology `H~ₖ(Sⁿ⁻¹)` of the boundary sphere, which is
 computed in `TauCeti/AlgebraicTopology/Singular/Sphere.lean`.  The isomorphism
-`Hₙ(Dⁿ, Sⁿ⁻¹) ≅ R` in the top degree is this connecting morphism followed by the chosen generator
-of `H~ₙ₋₁(Sⁿ⁻¹)`, so the connecting morphism carries the generator of the pair to the generator of
-the sphere.
+`Hₙ(Dⁿ, Sⁿ⁻¹) ≅ R` in the top degree is this connecting morphism followed by the standard generator
+`TauCeti.reducedSingularHomologyTopCatSphereIso` of `H~ₙ₋₁(Sⁿ⁻¹)`, so the connecting morphism
+carries the generator of the pair to the standard generator of the sphere.
 
 ## Main results
 
 * `TauCeti.isZero_singularHomology_diskBoundaryPair_zero`: `H₀(Dⁿ, Sⁿ⁻¹) = 0` for `n ≥ 1`.
 * `TauCeti.isZero_singularHomology_diskBoundaryPair_of_ne`: `Hₖ(Dⁿ, Sⁿ⁻¹) = 0` for `k ≠ n`.
 * `TauCeti.singularHomologyDiskBoundaryPairIso`: `Hₙ(Dⁿ, Sⁿ⁻¹) ≅ R`.
+* `TauCeti.singularHomologyCubeBoundaryPairIso` and
+  `TauCeti.isZero_singularHomology_cubeBoundaryPair_of_ne`: the same for the cube pair
+  `(Iⁿ, ∂Iⁿ)`, transported along `TauCeti.diskBoundaryPairIsoCube`.
 
 ## References
 
@@ -47,39 +50,6 @@ universe w v u
 namespace TauCeti
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
-
-private lemma diskBoundary_singularHomologyMap_zero_epi {n : ℕ} (hn : 1 ≤ n) :
-    Epi (((AlgebraicTopology.singularHomologyFunctor C 0).obj R).map
-      (TopCat.diskBoundaryInclusion (n := n) :
-        (TopCat.diskBoundary n : TopCat.{w}) ⟶ (TopCat.disk n : TopCat.{w}))) := by
-  let i : (TopCat.diskBoundary n : TopCat.{w}) ⟶ (TopCat.disk n : TopCat.{w}) :=
-    TopCat.diskBoundaryInclusion n
-  have hne : Nonempty (TopCat.diskBoundary n) := by
-    -- Unfolding `TopCat.diskBoundary` exposes its metric-sphere carrier.
-    change Nonempty (ULift (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1))
-    let i : Fin n := ⟨0, Nat.pos_of_ne_zero (Nat.one_le_iff_ne_zero.mp hn)⟩
-    let x : EuclideanSpace ℝ (Fin n) := EuclideanSpace.single i 1
-    have hx : x ∈ Metric.sphere 0 1 := by simp [x]
-    exact ⟨⟨x, hx⟩⟩
-  let x : (TopCat.diskBoundary n : TopCat.{w}) := Classical.choice hne
-  let hsplit : IsSplitEpi
-      (TopCat.singularHomology₀ε (TopCat.diskBoundary n : TopCat.{w}) R) := by
-    refine IsSplitEpi.mk' { section_ := TauCeti.singularHomology₀Section R x, id := ?_ }
-    exact TauCeti.singularHomology₀Section_singularHomology₀ε R x
-  let hε : Epi (TopCat.singularHomology₀ε (TopCat.diskBoundary n : TopCat.{w}) R) := by
-    infer_instance
-  let hp : IsIso (TopCat.singularHomology₀ε (TopCat.disk n : TopCat.{w}) R) := by
-    let _ : ContractibleSpace (TopCat.disk n : TopCat.{w}) :=
-      TauCeti.TopCat.contractibleSpace_disk n
-    infer_instance
-  let hεcomp : Epi
-      (((AlgebraicTopology.singularHomologyFunctor C 0).obj R).map i ≫
-        TopCat.singularHomology₀ε (TopCat.disk n : TopCat.{w}) R) := by
-    rw [TauCeti.singularHomologyMap_singularHomology₀ε R i]
-    exact hε
-  exact (CategoryTheory.epi_comp_iff_of_isIso
-    (((AlgebraicTopology.singularHomologyFunctor C 0).obj R).map i)
-    (TopCat.singularHomology₀ε (TopCat.disk n : TopCat.{w}) R)).mp hεcomp
 
 /-- The inclusion from the boundary of a disk of dimension at least two is an isomorphism on
 zeroth singular homology. -/
@@ -109,47 +79,11 @@ lemma diskBoundary_singularHomologyMap_zero_isIso {n : ℕ} (hn : 2 ≤ n) :
 /-- The degree-zero relative homology of a positive-dimensional disk and its boundary vanishes. -/
 lemma isZero_singularHomology_diskBoundaryPair_zero {n : ℕ} (hn : 1 ≤ n) :
     IsZero ((diskBoundaryPair n).singularHomology R 0) := by
-  let P : TopPair.{w} := diskBoundaryPair n
-  -- The singular homology functor is the composite of `TopCat.toSSet` and the simplicial
-  -- homology functor; this records that composite on the boundary inclusion.
-  have hmapBridge :
-      SSet.homologyMap
-          (TopCat.toSSet.map
-            (TopCat.diskBoundaryInclusion (n := n) :
-              (TopCat.diskBoundary n : TopCat.{w}) ⟶ (TopCat.disk n : TopCat.{w}))) R 0 =
-        ((AlgebraicTopology.singularHomologyFunctor C 0).obj R).map
-          (TopCat.diskBoundaryInclusion (n := n) :
-            (TopCat.diskBoundary n : TopCat.{w}) ⟶ (TopCat.disk n : TopCat.{w})) := rfl
-  have hmap :
-      Epi (SSet.homologyMap
-        (TopCat.toSSet.map
-          (TopCat.diskBoundaryInclusion (n := n) :
-            (TopCat.diskBoundary n : TopCat.{w}) ⟶ (TopCat.disk n : TopCat.{w}))) R 0) := by
-    rw [hmapBridge]
-    exact diskBoundary_singularHomologyMap_zero_epi (R := R) hn
-  let S : ShortComplex C :=
-    ShortComplex.mk
-      (SSet.homologyMap (TopCat.toSSet.map P.map) R 0)
-      (P.singularHomologyπ R 0) (P.homologyMap_comp_singularHomologyπ R 0)
-  have hPmap : P.map = TopCat.diskBoundaryInclusion n := by
-    simpa only [P] using (diskBoundaryPair_map n)
-  have hEpiF : Epi S.f := by
-    dsimp [S]
-    rw [hPmap]
-    exact hmap
-  have hEpiG : Epi S.g := by
-    simpa only [S, P, TopPair.toSSetPair_obj_right] using
-      (inferInstance : Epi (P.singularHomologyπ R 0))
-  -- `S.zero` is the short-complex relation `S.f ≫ S.g = 0`; epi of `S.f` forces
-  -- `S.g = 0`, and epi of `S.g` then makes the target zero.
-  have hgzero : S.g = 0 := zero_of_epi_comp S.f S.zero
-  have hzero : IsZero S.X₃ := by
-    have hz : (0 : S.X₂ ⟶ S.X₃) = S.g := hgzero.symm
-    have hepiZero : Epi (0 : S.X₂ ⟶ S.X₃) := by
-      rw [hz]
-      exact hEpiG
-    exact IsZero.of_epi_zero S.X₂ S.X₃
-  simpa only [S] using hzero
+  have : Nonempty (diskBoundaryPair.{w} n).snd := by
+    -- Unfolding `TopCat.diskBoundary` exposes its metric-sphere carrier.
+    change Nonempty (ULift (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1))
+    exact ⟨⟨EuclideanSpace.single ⟨0, hn⟩ 1, by simp⟩⟩
+  exact TopPair.isZero_singularHomology_zero _ R
 
 section HigherDegrees
 
@@ -193,7 +127,7 @@ theorem isZero_singularHomology_diskBoundaryPair_of_ne {n k : ℕ} (hk : k ≠ n
           (TopPair.isIso_reducedSingularHomologyδ_of_contractibleSpace _ R k))
 
 /-- **The relative homology of a disk modulo its boundary in its dimension**: `Hₙ(Dⁿ, Sⁿ⁻¹) ≅ R`.
-For `n = m + 1` it is the reduced connecting isomorphism onto `H~ₘ(Sᵐ)` followed by the chosen
+For `n = m + 1` it is the reduced connecting isomorphism onto `H~ₘ(Sᵐ)` followed by the standard
 generator `TauCeti.reducedSingularHomologyTopCatSphereIso` of the sphere
 (`TauCeti.singularHomologyDiskBoundaryPairIso_succ_hom`); for `n = 0` the pair is a point modulo
 the empty set and the isomorphism is the augmentation. -/
@@ -208,7 +142,7 @@ def singularHomologyDiskBoundaryPairIso :
       reducedSingularHomologyTopCatSphereIso R m
 
 /-- In positive dimension, the identification `Hₘ₊₁(Dᵐ⁺¹, Sᵐ) ≅ R` is the reduced connecting
-morphism of the pair followed by the chosen generator of `H~ₘ(Sᵐ)`. -/
+morphism of the pair followed by the standard generator of `H~ₘ(Sᵐ)`. -/
 @[simp]
 lemma singularHomologyDiskBoundaryPairIso_succ_hom (m : ℕ) :
     (singularHomologyDiskBoundaryPairIso R (m + 1)).hom =
@@ -247,5 +181,37 @@ lemma singularHomologyDiskBoundaryPairIso_zero_hom :
   rfl
 
 end HigherDegrees
+
+section CubePairHomology
+
+variable (n : ℕ)
+
+/-- **The relative homology of a cube modulo its boundary in its dimension**:
+`Hₙ(Iⁿ, ∂Iⁿ; R) ≅ R`, transported from `TauCeti.singularHomologyDiskBoundaryPairIso` along the
+isomorphism of pairs `TauCeti.diskBoundaryPairIsoCube`. -/
+def singularHomologyCubeBoundaryPairIso : (cubeBoundaryPair.{w} n).singularHomology R n ≅ R :=
+  (SSetPair.homologyFunctor R n).mapIso
+      (TopPair.toSSetPair.mapIso (diskBoundaryPairIsoCube n)).symm ≪≫
+    singularHomologyDiskBoundaryPairIso R n
+
+/-- The generator of `Hₙ(Iⁿ, ∂Iⁿ; R)` is the image of the generator of `Hₙ(Dⁿ, Sⁿ⁻¹; R)` under
+`TauCeti.diskBoundaryPairToCube`. -/
+lemma singularHomologyCubeBoundaryPairIso_inv :
+    (singularHomologyCubeBoundaryPairIso R n).inv =
+      (singularHomologyDiskBoundaryPairIso R n).inv ≫
+        TopPair.singularHomologyMap (diskBoundaryPairToCube.{w} n) R n := by
+  rw [← diskBoundaryPairIsoCube_hom]
+  -- This is the inverse of the composite defining `singularHomologyCubeBoundaryPairIso`.
+  rfl
+
+/-- The relative homology of a cube modulo its boundary vanishes outside its dimension:
+`Hₖ(Iⁿ, ∂Iⁿ; R) = 0` for `k ≠ n`. -/
+theorem isZero_singularHomology_cubeBoundaryPair_of_ne {k : ℕ} (hk : k ≠ n) :
+    IsZero ((cubeBoundaryPair.{w} n).singularHomology R k) :=
+  (isZero_singularHomology_diskBoundaryPair_of_ne R hk).of_iso
+    ((SSetPair.homologyFunctor R k).mapIso
+      (TopPair.toSSetPair.mapIso (diskBoundaryPairIsoCube n))).symm
+
+end CubePairHomology
 
 end TauCeti

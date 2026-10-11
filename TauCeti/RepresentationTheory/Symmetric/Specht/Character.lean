@@ -54,6 +54,8 @@ orthogonality relations and the specification `TauCeti.IsCharacterTableSpec` —
 * `TauCeti.spechtChar_eq_of_partition_eq`: it depends only on the cycle type.
 * `TauCeti.spechtChar_one`: the value at the identity is the degree `dim_ℚ S^μ`.
 * `TauCeti.spechtChar_one_pos`: that degree is positive.
+* `TauCeti.spechtChar_shapePartition`: the character of the Specht module of a Young diagram `D`
+  is `χ^μ` for the shape partition `μ` of `D`.
 * `TauCeti.spechtChar_eq_value`: the character is read off the character table.
 * `TauCeti.intCast_symmetricCharacterTable_apply`: conversely the table recovers the rational
   character, so no information is lost in passing to `ℤ`.
@@ -128,6 +130,24 @@ theorem spechtChar_one (μ : n.Partition) : spechtChar μ 1 = finrank ℚ (spech
 theorem spechtChar_one_pos (μ : n.Partition) : 0 < spechtChar μ 1 := by
   rw [spechtChar_one]
   exact_mod_cast finrank_spechtModule_pos μ
+
+/-- **The character of the Specht module of a diagram**: for a Young diagram `D`, the character of
+`TauCeti.spechtSubrepresentation D`, a representation of the permutations of its `D.card` cells,
+is the integer character of the Specht module of the shape partition of `D`.  This is
+`TauCeti.character_spechtModule_apply` with the transport along
+`diagramOf (shapePartition D) = D` removed, which is what lets results about the diagram-indexed
+Specht modules be read against `χ^μ`. -/
+theorem spechtChar_shapePartition (D : YoungDiagram) (σ : Equiv.Perm (Fin D.card)) :
+    (spechtChar (shapePartition D) σ : ℚ) =
+      (spechtSubrepresentation D).toRepresentation.character σ := by
+  rw [spechtChar_cast, character_spechtModule_apply]
+  -- transport along an equality of diagrams is the identity once the equality is `rfl`
+  suffices h : ∀ (D' : YoungDiagram), D' = D → ∀ (p : D.card = D'.card),
+      (spechtSubrepresentation D').toRepresentation.character ((finCongr p).permCongr σ) =
+        (spechtSubrepresentation D).toRepresentation.character σ from
+    h _ (diagramOf_shapePartition D) _
+  rintro D' rfl p
+  rw [finCongr_refl, Equiv.permCongr_def, Equiv.refl_symm, Equiv.refl_trans, Equiv.trans_refl]
 
 /-! ## Descent to the conjugacy classes -/
 

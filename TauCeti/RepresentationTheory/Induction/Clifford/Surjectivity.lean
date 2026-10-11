@@ -7,7 +7,7 @@ module
 
 -- `TauCeti.RepresentationTheory.Induction.Clifford.Injectivity` is imported publicly: it
 -- re-exports `TauCeti.inertia`, `TauCeti.le_inertia`, `FDRep.LiesOver`, `TauCeti.indFDRep` and
--- `TauCeti.resFDRep`, all of which occur in the statement below, together with
+-- `Subgroup.resFDRep`, all of which occur in the statement below, together with
 -- `FDRep.simple_indFDRep_of_inertia`, the irreducibility of the induced representation that the
 -- proof uses to upgrade a nonzero intertwiner to an isomorphism.
 public import TauCeti.RepresentationTheory.Induction.Clifford.Injectivity
@@ -66,7 +66,7 @@ variable {k G : Type u} [Field k] [Group G] {N : Subgroup G} [N.Normal]
 
 /-- The restriction to `N` of a representation of the inertia group of `V`, along the inclusion
 `N ≤ inertia V`.  This is the shape in which `FDRep.LiesOver` reads the restriction of a
-representation of the inertia group; it is not a `TauCeti.resFDRep`, the inclusion of `N` into
+representation of the inertia group; it is not a `Subgroup.resFDRep`, the inclusion of `N` into
 `inertia V` not being the inclusion of a subgroup of `N`. -/
 private noncomputable abbrev resInertia (V : FDRep k N) (U : FDRep k (inertia V)) : FDRep k N :=
   (Action.res (FGModuleCat k) (Subgroup.inclusion (le_inertia V))).obj U
@@ -89,16 +89,17 @@ representations of `T = inertia V`.  Then `dim Hom_N(V, Res_N W) = ∑ᵢ aᵢ �
 `aᵢ = dim Hom_T(Uᵢ, Res_T W)` is the multiplicity of `Uᵢ` in `Res_T W` and
 `bᵢ = dim Hom_N(V, Res_N Uᵢ)`.  When `V` is simple these dimensions are multiplicities. -/
 private theorem finrank_hom_resFDRep_eq_sum (V : FDRep k N) (W : FDRep k G)
-    [Invertible (Nat.card (inertia V) : k)] : Module.finrank k (V ⟶ resFDRep N W) =
-      ∑ i, Module.finrank k (FDRep.of (irreducibleRepresentation k i) ⟶ resFDRep (inertia V) W) *
+    [Invertible (Nat.card (inertia V) : k)] : Module.finrank k (V ⟶ Subgroup.resFDRep N W) =
+      ∑ i, Module.finrank k
+        (FDRep.of (irreducibleRepresentation k i) ⟶ Subgroup.resFDRep (inertia V) W) *
         Module.finrank k (V ⟶ resInertia V (FDRep.of (irreducibleRepresentation k i))) := by
   let _ : Fintype (inertia V) := Fintype.ofFinite _
   -- Restricted to `N`, the expansion of the character of `Res_T W` in the irreducible characters
   -- of `T` is an expansion of the character of `Res_N W`: read `χ_{Res_N W}` at `n` as
   -- `χ_{Res_T W}` at the image `t` of `n` in `T`, and expand the latter.
   refine finrank_hom_eq_sum_of_character_eq V <| funext fun n => ?_
-  rw [show (resFDRep N W).character n =
-        (resFDRep (inertia V) W).character (Subgroup.inclusion (le_inertia V) n) from rfl,
+  rw [show (Subgroup.resFDRep N W).character n =
+        (Subgroup.resFDRep (inertia V) W).character (Subgroup.inclusion (le_inertia V) n) from rfl,
     character_eq_sum_nsmul_irreducibleCharacter, Finset.sum_apply, Finset.sum_apply]
   refine Finset.sum_congr rfl fun i _ => ?_
   -- The character of `Res_N Uᵢ` at `n` is `χᵢ(t)`, and the coefficient `dim Hom_T(Res_T W, Uᵢ)`
@@ -118,7 +119,8 @@ occurs in the restriction of the irreducible representation `W` to `inertia V`. 
 private theorem nonempty_iso_indFDRep_of_finrank_hom_ne_zero (V : FDRep k N) [Simple V]
     (W : FDRep k G) [Simple W] (U : FDRep k (inertia V)) [Simple U]
     (hU : U.LiesOver (Subgroup.inclusion (le_inertia V)) V)
-    (hne : Module.finrank k (U ⟶ resFDRep (inertia V) W) ≠ 0) : Nonempty (indFDRep U ≅ W) := by
+    (hne : Module.finrank k (U ⟶ Subgroup.resFDRep (inertia V) W) ≠ 0) :
+    Nonempty (indFDRep U ≅ W) := by
   have := simple_indFDRep_of_inertia V U hU
   -- Frobenius reciprocity moves the nonzero multiplicity to `Hom_G(Ind U, W)`, and Schur's lemma
   -- makes a nonzero intertwiner between the irreducibles `Ind U` and `W` an isomorphism.

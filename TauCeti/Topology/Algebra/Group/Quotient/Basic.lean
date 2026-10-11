@@ -26,6 +26,10 @@ Generic facts about quotients by subgroups of topological groups. Most results u
 * `TauCeti.quotientOpenSubgroup`: the image of an open subgroup of `G` in `G ⧸ N`, as an open
   subgroup.
 * `TauCeti.quotientOpenSubgroupMap`: the quotient homomorphism restricted to an open subgroup.
+* `TauCeti.quotientSubgroupOfEquivMap`: for an open normal subgroup `V`, the quotient
+  `W ⧸ V.subgroupOf W` is isomorphic, as a topological group, to the image of `W` in `G ⧸ V`.
+* `TauCeti.quotientQuotientContinuousMulEquiv`: for an open normal subgroup `V` contained in a
+  normal subgroup `W`, the third isomorphism theorem `(G ⧸ V) ⧸ W.map (mk' V) ≃ₜ* G ⧸ W`.
 
 ## Main results
 
@@ -237,5 +241,55 @@ theorem continuous_quotientOpenSubgroupMap (U : OpenSubgroup G) :
   continuous_induced_rng.2 (QuotientGroup.continuous_mk.comp continuous_subtype_val)
 
 end OpenSubgroup
+
+section SubgroupOf
+
+variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+
+/-- For an open normal subgroup `V` and any subgroup `W` of `G`, the quotient `W ⧸ V.subgroupOf W`
+is isomorphic, as a topological group, to the image `W.map (mk' V)` of `W` in `G ⧸ V`. This is
+Noether's first isomorphism theorem for the composite `W → G → G ⧸ V`, whose kernel is
+`V.subgroupOf W`; both groups are discrete because `V` is open. -/
+noncomputable def quotientSubgroupOfEquivMap (V W : Subgroup G) [V.Normal]
+    (hV : IsOpen (V : Set G)) : W ⧸ V.subgroupOf W ≃ₜ* W.map (QuotientGroup.mk' V) :=
+  haveI : DiscreteTopology (G ⧸ V) := QuotientGroup.discreteTopology hV
+  haveI : DiscreteTopology (W ⧸ V.subgroupOf W) :=
+    QuotientGroup.discreteTopology (W.subgroupOf_isOpen V hV)
+  { QuotientGroup.liftEquiv (V.subgroupOf W) ((QuotientGroup.mk' V).subgroupMap_surjective W)
+      (by rw [Subgroup.ker_subgroupMap, QuotientGroup.ker_mk']) with
+    continuous_toFun := continuous_of_discreteTopology
+    continuous_invFun := continuous_of_discreteTopology }
+
+/-- `quotientSubgroupOfEquivMap` sends the class of `w : W` to the class of `w` in `G ⧸ V`. -/
+@[simp]
+theorem coe_quotientSubgroupOfEquivMap_mk (V W : Subgroup G) [V.Normal]
+    (hV : IsOpen (V : Set G)) (w : W) :
+    ((quotientSubgroupOfEquivMap V W hV (w : W ⧸ V.subgroupOf W) : W.map (QuotientGroup.mk' V)) :
+      G ⧸ V) = ((w : G) : G ⧸ V) :=
+  (rfl)
+
+/-- For an open normal subgroup `V` contained in a normal subgroup `W`, the third isomorphism
+theorem `(G ⧸ V) ⧸ W.map (mk' V) ≃* G ⧸ W` is an isomorphism of topological groups, both groups
+being discrete. -/
+noncomputable def quotientQuotientContinuousMulEquiv (V W : Subgroup G) [V.Normal] [W.Normal]
+    (hVW : V ≤ W) (hV : IsOpen (V : Set G)) :
+    (G ⧸ V) ⧸ W.map (QuotientGroup.mk' V) ≃ₜ* G ⧸ W :=
+  haveI : DiscreteTopology (G ⧸ V) := QuotientGroup.discreteTopology hV
+  haveI : DiscreteTopology (G ⧸ W) :=
+    QuotientGroup.discreteTopology (Subgroup.isOpen_mono hVW hV)
+  { QuotientGroup.quotientQuotientEquivQuotient V W hVW with
+    continuous_toFun := continuous_of_discreteTopology
+    continuous_invFun := continuous_of_discreteTopology }
+
+/-- `quotientQuotientContinuousMulEquiv` sends the class of the class of `g` to the class of
+`g`. -/
+@[simp]
+theorem quotientQuotientContinuousMulEquiv_mk (V W : Subgroup G) [V.Normal] [W.Normal]
+    (hVW : V ≤ W) (hV : IsOpen (V : Set G)) (g : G) :
+    quotientQuotientContinuousMulEquiv V W hVW hV
+        ((g : G ⧸ V) : (G ⧸ V) ⧸ W.map (QuotientGroup.mk' V)) = (g : G ⧸ W) :=
+  QuotientGroup.quotientQuotientEquivQuotient_apply_mk V W hVW g
+
+end SubgroupOf
 
 end TauCeti

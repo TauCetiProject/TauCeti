@@ -21,7 +21,8 @@ closure, `geometricNormalSubgroupFreeCommHopfAlgProperty k P` says that the ambi
 smooth and geometrically connected and that every connected normal closed subgroup satisfying
 `P` is trivial.
 
-The construction is invariant under isomorphism. Its shared API also shows that, when the whole
+The construction is invariant under isomorphism and can be established using an isomorphic
+coordinate model of the geometric fibre. Its shared API also shows that, when the whole
 geometric fibre satisfies `P`, its zero Hopf ideal is the augmentation ideal and its coordinate
 algebra is bialgebra-equivalent to the algebraic closure via the counit.
 
@@ -29,6 +30,8 @@ algebra is bialgebra-equivalent to the algebraic closure via the counit.
 
 * `TauCeti.geometricNormalSubgroupFreeCommHopfAlgProperty`: the generic normal-subgroup-freeness
   property.
+* `TauCeti.geometricNormalSubgroupFreeCommHopfAlgProperty_of_geometricFiber_iso`: establish the
+  property using an isomorphic coordinate model of the geometric fibre.
 * `TauCeti.geometricNormalSubgroupFreeCommHopfAlgProperty.eq_augmentation`: candidate normal
   subgroups are trivial.
 * `TauCeti.geometricNormalSubgroupFreeCommHopfAlgProperty.geometricFiberCounitBialgEquiv`: a
@@ -134,6 +137,42 @@ instance (k : Type u) [Field k]
     rw [← HopfIdeal.comapOfSurjective_eq_comapOfSurjective_iff f hfsurjective,
       HopfIdeal.comapOfSurjective_augmentation]
     exact hJ
+
+/-- Establish geometric normal-subgroup-freeness using an isomorphic coordinate model of the
+geometric fibre and an isomorphism-invariant candidate property on commutative Hopf algebras. -/
+theorem geometricNormalSubgroupFreeCommHopfAlgProperty_of_geometricFiber_iso
+    (k : Type u) [Field k]
+    (P : ObjectProperty (CommHopfAlgCat.{u} (AlgebraicClosure k)))
+    [P.IsClosedUnderIsomorphisms]
+    (H : FiniteTypeCommHopfAlgCat.{u, u} k)
+    (G : CommHopfAlgCat.{u} (AlgebraicClosure k))
+    (hsmooth : Algebra.Smooth k H)
+    (hconnected : geometricallyConnectedCommHopfAlgProperty k H.obj)
+    (e : (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H).obj ≅ G)
+    (htrivial : ∀ (I : HopfIdeal (AlgebraicClosure k) G), I.IsNormal →
+      geometricallyConnectedCommHopfAlgProperty (AlgebraicClosure k)
+        (CommHopfAlgCat.quotient G I) →
+      P (CommHopfAlgCat.quotient G I) →
+      I = HopfIdeal.augmentation (AlgebraicClosure k) G) :
+    geometricNormalSubgroupFreeCommHopfAlgProperty k
+      (P.inverseImage (forget₂ (FiniteTypeCommHopfAlgCat.{u, u} (AlgebraicClosure k))
+        (CommHopfAlgCat.{u} (AlgebraicClosure k)))) H := by
+  refine ⟨hsmooth, hconnected, ?_⟩
+  intro I hI hconn hP
+  let f : G →ₐc[AlgebraicClosure k]
+      FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H :=
+    CommHopfAlgCat.ofIso e.symm
+  have hf : Function.Bijective f := ConcreteCategory.bijective_of_isIso e.inv
+  let J := I.comapOfSurjective f hf.2
+  let qIso := CommHopfAlgCat.quotientIsoOfIso e.symm I
+  have hJ : J = HopfIdeal.augmentation (AlgebraicClosure k) G :=
+    htrivial J (hI.comapOfSurjective_of_bijective f hf.1 hf.2)
+      ((geometricallyConnectedCommHopfAlgProperty (AlgebraicClosure k)).prop_of_iso
+        qIso.symm hconn)
+      (P.prop_of_iso qIso.symm hP)
+  rw [← HopfIdeal.comapOfSurjective_eq_comapOfSurjective_iff f hf.2,
+    HopfIdeal.comapOfSurjective_augmentation]
+  exact hJ
 
 namespace geometricNormalSubgroupFreeCommHopfAlgProperty
 

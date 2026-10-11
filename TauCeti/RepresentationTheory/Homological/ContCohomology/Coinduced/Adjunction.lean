@@ -45,9 +45,6 @@ variable (R : Type u) [Ring R] [TopologicalSpace R]
   (G : Type v) [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
   (U : Subgroup G)
 
-local instance (X : SmoothDiscreteTopRep.{u, v, max v w} R G) : DiscreteTopology X.obj.V :=
-  X.property.discreteTopology
-
 local instance (X : SmoothDiscreteTopRep.{u, v, max v w} R G) : ContinuousSMul G X.obj.V :=
   X.property.continuousSMul
 

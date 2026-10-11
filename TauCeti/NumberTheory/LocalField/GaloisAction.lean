@@ -46,6 +46,8 @@ The homomorphism from field automorphisms to residue-field automorphisms is Math
 * `TauCeti.integerRingSMulCommClass`: the action on `𝒪[L]` is by `𝒪[K]`-algebra automorphisms.
 * `AlgEquiv.toAlgHom_residueFieldHom`: for an automorphism, the residue-field embedding
   `AlgHom.residueFieldHom` is the induced automorphism `AlgEquiv.residueFieldEquiv`.
+* `AlgEquiv.normalizedValuation_unitsMap`: an extension automorphism preserves the normalized
+  valuation of a unit.
 
 ## References
 
@@ -210,6 +212,16 @@ theorem toAlgHom_residueFieldHom (σ : L ≃ₐ[K] L) :
     ← IsLocalRing.ResidueField.residue_smul]
   congr 1
   exact Subtype.ext (by simp)
+
+/-- Every automorphism of a finite extension of a nonarchimedean local field preserves the
+normalized valuation of a unit. The action of `σ` on `Lˣ` is `Units.map σ`, so this is also the
+statement that `normalizedValuation L (σ • x) = normalizedValuation L x`. -/
+@[simp]
+theorem normalizedValuation_unitsMap (σ : L ≃ₐ[K] L) (x : Lˣ) :
+    normalizedValuation L (Units.map (σ : L →* L) x) = normalizedValuation L x := by
+  apply le_antisymm <;>
+    rw [← Multiplicative.toAdd_le, toAdd_normalizedValuation_le_iff_valuation_le] <;>
+    simp [σ.valuation_eq]
 
 end AlgEquiv
 

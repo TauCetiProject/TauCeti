@@ -106,7 +106,10 @@ private theorem ker_toIdealsAway_le_idealCharacterLift (χ : HeckeCharacter K) :
     apply IdeleGroup.ext
     · intro w
       simp [x, z]
-    · simp
+    · intro v
+      apply Units.ext
+      simp only [HeightOneSpectrum.coe_ideleFiniteCoord, IdeleGroup.coe_ofFiniteIdele,
+        IdeleGroup.coe_toFiniteIdele]
   rw [hfinite] at hχ
   rw [MonoidHom.mem_ker, MonoidHom.comp_apply, Subgroup.subtype_apply,
     idealCharacterLift_eq]
@@ -178,7 +181,10 @@ theorem idealCharacter_apply_prime (χ : HeckeCharacter K)
     apply IdeleGroup.ext
     · intro w
       simp [x]
-    · simp
+    · intro v
+      apply Units.ext
+      simp only [HeightOneSpectrum.coe_ideleFiniteCoord, IdeleGroup.coe_ofFiniteIdele,
+        IdeleGroup.coe_toFiniteIdele]
   have hv : v ∉ 𝔣.support := by
     intro hv
     have hzero := (NumberFieldArithmetic.mem_idealsAway_iff.mp I.property) v hv

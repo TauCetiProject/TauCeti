@@ -60,11 +60,13 @@ parent law.
   moment;
 * `TauCeti.Probability.integrableExpSet_id_cauchyMeasure` — its exponential-integrability domain is
   `{0}`;
+* `TauCeti.Probability.integrable_exp_mul_id_cauchyMeasure_iff` — an exponential integrand is
+  integrable exactly when its scale or rate is zero;
 * `TauCeti.Probability.integral_id_cauchyMeasure_zero_scale` and
-  `TauCeti.Probability.variance_id_cauchyMeasure_zero_scale` — its mean and variance;
+  `TauCeti.Probability.variance_id_cauchyMeasure_zero_scale` — the zero-scale mean and variance;
 * `TauCeti.Probability.integrableExpSet_id_cauchyMeasure_zero_scale`,
   `TauCeti.Probability.mgf_id_cauchyMeasure_zero_scale`, and
-  `TauCeti.Probability.cgf_id_cauchyMeasure_zero_scale` — its exponential moments;
+  `TauCeti.Probability.cgf_id_cauchyMeasure_zero_scale` — the zero-scale exponential moments;
 * `TauCeti.Probability.fourier_exp_neg_mul_abs_eq_cauchyPDFReal_zero_loc` and
   `TauCeti.Probability.integral_exp_mul_I_mul_cauchyPDFReal_zero_loc` — the Fourier pair behind the
   transform;
@@ -75,7 +77,6 @@ parent law.
 
 ## References
 
-* Tau Ceti roadmap, `StandardDistributions`, Layer 1, "Cauchy".
 * N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 1,
   2nd ed., Wiley, 1994.
 -/
@@ -102,8 +103,8 @@ theorem hasDerivAt_arctan_div_pi (x₀ : ℝ) (γ : ℝ≥0) (y : ℝ) :
     ring
   simpa only [Function.comp_apply, hvalue] using h
 
-/-- The Cauchy density has the expected antiderivative on a left half-line. This is the analytic
-calculation behind `cdf_cauchyMeasure_of_scale_ne_zero`. -/
+/-- The integral of a nondegenerate Cauchy density over a left half-line is given by the scaled
+arctangent. -/
 theorem integral_Iic_cauchyPDFReal (x₀ : ℝ) {γ : ℝ≥0} (hγ : γ ≠ 0) (x : ℝ) :
     ∫ y in Iic x, cauchyPDFReal x₀ γ y =
       1 / 2 + Real.arctan ((x - x₀) / (γ : ℝ)) / Real.pi := by
@@ -129,13 +130,9 @@ theorem integral_Iic_cauchyPDFReal (x₀ : ℝ) {γ : ℝ≥0} (hγ : γ ≠ 0) 
 theorem cdf_cauchyMeasure_of_scale_ne_zero (x₀ : ℝ) {γ : ℝ≥0} (hγ : γ ≠ 0) (x : ℝ) :
     cdf (cauchyMeasure x₀ γ) x =
       1 / 2 + Real.arctan ((x - x₀) / (γ : ℝ)) / Real.pi := by
-  rw [cdf_eq_real, cauchyMeasure_of_scale_ne_zero x₀ hγ, measureReal_def,
-    withDensity_apply _ measurableSet_Iic]
-  have hnonneg : 0 ≤ᵐ[volume.restrict (Iic x)] cauchyPDFReal x₀ γ :=
-    ae_of_all _ fun y => (cauchyPDF_pos x₀ hγ y).le
-  simp_rw [cauchyPDF_def]
-  rw [← integral_eq_lintegral_of_nonneg_ae hnonneg
-    (measurable_cauchyPDFReal x₀ γ).aestronglyMeasurable]
+  rw [cdf_eq_real, cauchyMeasure_of_scale_ne_zero x₀ hγ, funext (cauchyPDF_def x₀ γ)]
+  rw [measureReal_withDensity_ofReal (ae_of_all _ fun y ↦ (cauchyPDF_pos x₀ hγ y).le)
+    measurableSet_Iic (integrable_cauchyPDFReal x₀).integrableOn]
   exact integral_Iic_cauchyPDFReal x₀ hγ x
 
 /-- **The cumulative distribution function at zero scale.** Mathlib totalizes the Cauchy family
@@ -293,10 +290,17 @@ theorem not_integrable_exp_mul_id_cauchyMeasure (x₀ : ℝ) (hγ : γ ≠ 0) {t
     simpa only [Function.comp_apply] using hpoint x
   · exact not_integrable_exp_mul_cauchyPDFReal_of_pos x₀ hγ ht hint
 
-/-- The exponential integrand of a nondegenerate Cauchy law is integrable exactly at rate zero. -/
+/-- The exponential integrand of a Cauchy law is integrable exactly when the scale or rate is
+zero. -/
 @[simp]
-theorem integrable_exp_mul_id_cauchyMeasure_iff (x₀ : ℝ) (hγ : γ ≠ 0) (t : ℝ) :
-    Integrable (fun x : ℝ ↦ Real.exp (t * x)) (cauchyMeasure x₀ γ) ↔ t = 0 := by
+theorem integrable_exp_mul_id_cauchyMeasure_iff (x₀ : ℝ) (γ : ℝ≥0) (t : ℝ) :
+    Integrable (fun x : ℝ ↦ Real.exp (t * x)) (cauchyMeasure x₀ γ) ↔ γ = 0 ∨ t = 0 := by
+  by_cases hγ : γ = 0
+  · subst γ
+    rw [cauchyMeasure_zero_scale]
+    simp only [true_or, iff_true]
+    exact integrable_dirac (by simp)
+  simp only [hγ, false_or]
   refine ⟨fun h ↦ not_ne_iff.mp fun ht ↦ not_integrable_exp_mul_id_cauchyMeasure x₀ hγ ht h,
     fun ht ↦ ?_⟩
   subst t
@@ -308,7 +312,7 @@ theorem integrable_exp_mul_id_cauchyMeasure_iff (x₀ : ℝ) (hγ : γ ≠ 0) (t
 theorem integrableExpSet_id_cauchyMeasure (x₀ : ℝ) (hγ : γ ≠ 0) :
     integrableExpSet id (cauchyMeasure x₀ γ) = {0} := by
   ext t
-  simpa [integrableExpSet, id_eq] using integrable_exp_mul_id_cauchyMeasure_iff x₀ hγ t
+  simp [integrableExpSet, id_eq, hγ]
 
 end Integrability
 
@@ -337,17 +341,11 @@ theorem fourier_exp_neg_mul_abs_eq_cauchyPDFReal_zero_loc (hγ : γ ≠ 0) (ξ :
     𝓕 (fun x : ℝ ↦ (Real.exp (-(2 * Real.pi * γ * |x|)) : ℂ)) ξ = (cauchyPDFReal 0 γ ξ : ℂ) := by
   have hγ' : (0 : ℝ) < (γ : ℝ) := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hγ)
   have ha : (0 : ℝ) < 2 * Real.pi * γ := mul_pos (by positivity) hγ'
-  have h₁ : (0 : ℝ) < (2 * Real.pi * (γ : ℝ)) ^ 2 + (2 * Real.pi * ξ) ^ 2 :=
-    add_pos_of_pos_of_nonneg (pow_pos ha 2) (sq_nonneg _)
-  have h₂ : (0 : ℝ) < (ξ - 0) ^ 2 + (γ : ℝ) ^ 2 :=
-    add_pos_of_nonneg_of_pos (sq_nonneg _) (pow_pos hγ' 2)
   rw [fourier_exp_neg_mul_abs ha, Complex.ofReal_inj, cauchyPDFReal_def]
   field_simp
   ring
 
-/-- **The oscillatory integral of the centred Cauchy density.** Fourier inversion turns
-`TauCeti.Probability.fourier_exp_neg_mul_abs_eq_cauchyPDFReal_zero_loc` around: pairing the Cauchy
-density of
+/-- **The oscillatory integral of the centred Cauchy density.** Pairing the Cauchy density of
 scale `γ` against `exp (i t x)` returns the two-sided exponential `exp (-(γ * |t|))`. -/
 theorem integral_exp_mul_I_mul_cauchyPDFReal_zero_loc (hγ : γ ≠ 0) (t : ℝ) :
     (∫ x : ℝ, Complex.exp ((t : ℂ) * x * Complex.I) * (cauchyPDFReal 0 γ x : ℂ))
@@ -403,13 +401,13 @@ theorem charFun_cauchyMeasure (x₀ : ℝ) (γ : ℝ≥0) (t : ℝ) :
     push_cast
     ring
 
-/-- **The Cauchy family is stable under averaging.** The sample mean of `n` independent Cauchy
-variables with common location `x₀` and scale `γ` has exactly the same law. -/
-theorem hasLaw_average_of_iIndepFun_cauchyMeasure {Ω : Type*} [MeasurableSpace Ω]
-    {P : Measure Ω} [IsProbabilityMeasure P] {n : ℕ} (hn : 0 < n) {x₀ : ℝ} {γ : ℝ≥0}
-    {X : Fin n → Ω → ℝ} (hindep : iIndepFun X P)
+/-- **The Cauchy family is stable under averaging.** The sample mean of a nonempty finite family
+of independent Cauchy variables with common location `x₀` and scale `γ` has exactly the same law. -/
+theorem hasLaw_average_of_iIndepFun_cauchyMeasure {Ω ι : Type*} [MeasurableSpace Ω]
+    [Fintype ι] [Nonempty ι] {P : Measure Ω} [IsProbabilityMeasure P] {x₀ : ℝ} {γ : ℝ≥0}
+    {X : ι → Ω → ℝ} (hindep : iIndepFun X P)
     (hlaw : ∀ i, HasLaw (X i) (cauchyMeasure x₀ γ) P) :
-    HasLaw (fun ω ↦ (n : ℝ)⁻¹ * ∑ i, X i ω) (cauchyMeasure x₀ γ) P where
+    HasLaw (fun ω ↦ (Fintype.card ι : ℝ)⁻¹ * ∑ i, X i ω) (cauchyMeasure x₀ γ) P where
   aemeasurable :=
     (Finset.aemeasurable_fun_sum _ fun i _ ↦ (hlaw i).aemeasurable).const_mul _
   map_eq := by
@@ -418,17 +416,12 @@ theorem hasLaw_average_of_iIndepFun_cauchyMeasure {Ω : Type*} [MeasurableSpace 
     refine Measure.ext_of_charFun (funext fun t ↦ ?_)
     rw [charFun_map_mul_comp hmeas,
       hindep.charFun_map_fun_sum_eq_prod (fun i ↦ (hlaw i).aemeasurable)]
-    have hone : ∀ i : Fin n, charFun (P.map (X i)) ((n : ℝ)⁻¹ * t)
-        = Complex.exp ((((n : ℝ)⁻¹ * t : ℝ) : ℂ) * x₀ * Complex.I
-          - ((γ : ℝ) : ℂ) * |(n : ℝ)⁻¹ * t|) := fun i ↦ by
-      rw [(hlaw i).map_eq, charFun_cauchyMeasure]
-    rw [Finset.prod_apply, Finset.prod_congr rfl fun i _ ↦ hone i, Finset.prod_const,
-      Finset.card_univ, Fintype.card_fin, ← Complex.exp_nat_mul, charFun_cauchyMeasure]
+    simp only [(hlaw _).map_eq, charFun_cauchyMeasure, Finset.prod_apply, Finset.prod_const,
+      Finset.card_univ, ← Complex.exp_nat_mul]
     congr 1
-    have hnpos : (0 : ℝ) < (n : ℝ) := Nat.cast_pos.mpr hn
-    have habs : |(n : ℝ)⁻¹ * t| = (n : ℝ)⁻¹ * |t| := by
+    have habs : |(Fintype.card ι : ℝ)⁻¹ * t| = (Fintype.card ι : ℝ)⁻¹ * |t| := by
       rw [abs_mul, abs_of_pos (by positivity)]
-    have hnc : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'
+    have hnc : (Fintype.card ι : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
     rw [habs]
     push_cast
     field_simp

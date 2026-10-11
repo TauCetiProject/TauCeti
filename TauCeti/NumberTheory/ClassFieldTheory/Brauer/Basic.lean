@@ -67,7 +67,9 @@ underlying subgroup the fixing subgroup of `σ(L)` by definition, which is what 
   fixing `σ(L)`.
 * `TauCeti.ClassFieldTheory.relBrInfl`: inflation `H²(Gal(L/K), Lˣ) → Br K`.
 * `TauCeti.ClassFieldTheory.relBrCocycle`: the cocycle on `G_K` obtained from a relative
-  Brauer cocycle, with `relBrInfl_H2π` identifying its class with `relBrInfl`.
+  Brauer cocycle, with `relBrInfl_H2π` identifying its class with `relBrInfl`; conversely, a
+  cocycle on `G_K` read off `Gal(L/K)` with values in `σ(Lˣ)` is one of them
+  (`exists_relBrCocycle_eq`).
 
 ## Main results
 
@@ -389,6 +391,46 @@ theorem relBrInfl_H2π
     relBrLevelEquiv_H2π K L σ c _ (relBrLevelCocycle_apply K L σ c),
     brLevelInfl_apply, explicitInfl2_mk]
   rfl
+
+/-- **A cocycle on `G_K` read off `Gal(L/K)` is a relative Brauer cocycle.** If a continuous
+`2`-cocycle `z` on `G_K` with values in `(Kˢ)ˣ` takes at `(g, h)` the value `σ (u (g|_L, h|_L))`
+for some function `u` on `Gal(L/K) × Gal(L/K)` with values in `Lˣ`, then `u` is a `2`-cocycle `c`
+and `z = relBrCocycle K L σ c`, so that the class of `z` is `relBrInfl K L σ [c]`
+(`relBrInfl_H2π`). -/
+theorem exists_relBrCocycle_eq (z : Z2 (AbsoluteGaloisGroup K) (UnitsCoeff K))
+    (u : Gal(L/K) × Gal(L/K) → Lˣ)
+    (hz : ∀ g h : AbsoluteGaloisGroup K, (z.1 (g, h) : UnitsCoeff K) =
+      embeddedUnitsEquivInvariants K L σ
+        (.ofMul (u (σ.restrictNormalHom g, σ.restrictNormalHom h)))) :
+    ∃ c : groupCohomology.cocycles₂ (Rep.ofMulDistribMulAction Gal(L/K) Lˣ),
+      (∀ p, (Rep.toAdditive (c p)).toMul = u p) ∧ relBrCocycle K L σ c = z := by
+  -- The embedding `Lˣ → (Kˢ)ˣ` by `σ` is injective and equivariant along `σ.restrictNormalHom`,
+  -- which is surjective, so the cocycle identity of `z` gives that of `u`.
+  let Φ : Rep.ofMulDistribMulAction Gal(L/K) Lˣ →+ UnitsCoeff K :=
+    ((AddSubgroup.subtype _).comp (embeddedUnitsEquivInvariants K L σ).toAddMonoidHom).comp
+      Rep.toAdditive.toAddMonoidHom
+  have hΦ : Function.Injective Φ :=
+    Subtype.val_injective.comp ((embeddedUnitsEquivInvariants K L σ).injective.comp
+      Rep.toAdditive.injective)
+  let f : Gal(L/K) × Gal(L/K) → Rep.ofMulDistribMulAction Gal(L/K) Lˣ :=
+    fun p ↦ Rep.toAdditive.symm (.ofMul (u p))
+  have hf : f ∈ groupCohomology.cocycles₂ (Rep.ofMulDistribMulAction Gal(L/K) Lˣ) := by
+    rw [groupCohomology.mem_cocycles₂_iff]
+    intro s t r
+    obtain ⟨g, rfl⟩ := σ.restrictNormalHom_surjective s
+    obtain ⟨h, rfl⟩ := σ.restrictNormalHom_surjective t
+    obtain ⟨j, rfl⟩ := σ.restrictNormalHom_surjective r
+    have hΦf (a b : AbsoluteGaloisGroup K) :
+        Φ (f (σ.restrictNormalHom a, σ.restrictNormalHom b)) = z.1 (a, b) :=
+      (hz a b).symm
+    have hΦρ (a : AbsoluteGaloisGroup K) (m : Rep.ofMulDistribMulAction Gal(L/K) Lˣ) :
+        Φ ((Rep.ofMulDistribMulAction Gal(L/K) Lˣ).ρ (σ.restrictNormalHom a) m) = a • Φ m :=
+      embeddedUnitsEquivInvariants_restrictNormalHom_smul K L σ a (Rep.toAdditive m)
+    apply hΦ
+    rw [← map_mul, ← map_mul, map_add, map_add, hΦρ, hΦf, hΦf, hΦf, hΦf]
+    exact (mem_Z2_iff.1 z.2).2 g h j
+  refine ⟨⟨f, hf⟩, fun _ ↦ rfl, Subtype.ext (funext fun ⟨g, h⟩ ↦ ?_)⟩
+  exact (relBrCocycle_apply K L σ _ g h).trans (hz g h).symm
 
 section Tower
 

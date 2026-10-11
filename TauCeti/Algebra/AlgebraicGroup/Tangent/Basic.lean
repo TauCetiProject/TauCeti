@@ -229,10 +229,11 @@ end BialgebraPointScalar
 section DerivationCoefficients
 
 variable {R A B : Type*} [CommSemiring R] [CommSemiring A] [Bialgebra R A]
-  [CommSemiring B] [Algebra R B]
+  [Semiring B] [Algebra R B]
 
 /-- Counit-valued derivations carry their pointwise `B`-module structure through the
-coefficient type synonym. -/
+coefficient type synonym. This keeps the coefficient action compatible with the base action
+when the two rings coincide. -/
 noncomputable instance : Module B
     (Derivation R A (Bialgebra.CounitAlgebra R A B)) := by
   letI : Algebra A B :=
@@ -245,8 +246,8 @@ lemma algEquivSelf_derivation_smul_apply
     (b : B) (d : Derivation R A (Bialgebra.CounitAlgebra R A B)) (a : A) :
     Bialgebra.CounitAlgebra.algEquivSelf R A B ((b • d) a) =
       b * Bialgebra.CounitAlgebra.algEquivSelf R A B (d a) := by
-  -- The derivation module is transferred from `B`, so this `rfl` isolates the necessary
-  -- coefficient-synonym reduction.
+  -- Pointwise scalar multiplication reduces to the inherited `B`-action on the
+  -- coefficient synonym.
   rfl
 
 /-- The Leibniz rule of a counit-valued derivation, read in the coefficient algebra. -/
@@ -318,6 +319,15 @@ algebras. -/
 noncomputable def mapAlgHom (phi : B →ₐ[R] C) :
     CounitAlgebra R A B →ₐ[R] CounitAlgebra R A C :=
   (algEquivSelf R A C).symm.toAlgHom.comp (phi.comp (algEquivSelf R A B).toAlgHom)
+
+omit [CommSemiring A] [Bialgebra R A] in
+/-- Identifying counit coefficient algebras with their coefficient rings commutes with
+an algebra homomorphism of coefficients. -/
+@[simp]
+lemma algEquivSelf_map (phi : B →ₐ[R] C) (b : CounitAlgebra R A B) :
+    algEquivSelf R A C (phi b) = phi (algEquivSelf R A B b) := by
+  exact (algEquivSelf_apply R A C _).trans
+    (congrArg phi (algEquivSelf_apply R A B b).symm)
 
 omit [CommSemiring A] [Bialgebra R A] in
 /-- Transport of counit coefficient algebras acts pointwise by the original

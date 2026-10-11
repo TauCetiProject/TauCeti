@@ -58,9 +58,9 @@ theorem isTriangularizable (b : LieAlgebra.Basis ι H) :
     intro k
     fin_cases k
     · exact (toLieSubmodule_le_rootSpace_zero K L H).trans (le_iSup _ 0)
-    · exact b.borelLower_le_biSup.trans <| iSup_le fun n => iSup_le fun hn =>
+    · exact b.borelLower_le_biSup.trans <| iSup_le fun n => iSup_le fun _ =>
         le_iSup (fun chi : H → K => genWeightSpace L chi) _
-    · exact b.borelUpper_le_biSup.trans <| iSup_le fun n => iSup_le fun hn =>
+    · exact b.borelUpper_le_biSup.trans <| iSup_le fun n => iSup_le fun _ =>
         le_iSup (fun chi : H → K => genWeightSpace L chi) _
   refine ⟨fun z => top_unique ?_⟩
   calc
@@ -87,19 +87,17 @@ universe u v
 
 variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
   [IsKilling K L] [FiniteDimensional K L]
-  {H : LieSubalgebra K L} {ι : Type*} [Finite ι]
+  {H : LieSubalgebra K L} {ι : Type*} [Fintype ι]
 
 /-- A positive root for the base associated to a Lie algebra basis is a nonzero natural-number
 combination of the basis's simple roots. -/
 theorem exists_root_eq_sum_nat_baseSupp_of_mem_posRoots
     (b : LieAlgebra.Basis ι H) :
-    letI : Fintype ι := Fintype.ofFinite ι
     letI := b.isCartanSubalgebra
     letI := b.isTriangularizable
     ∀ {α : H.root}, α ∈ TauCeti.posRoots (IsKilling.rootSystem H) b.base →
       ∃ n : ι → ℕ, n ≠ 0 ∧
         (α : H → K) = ∑ i, n i • (b.baseSupp i : H → K) := by
-  let _ : Fintype ι := Fintype.ofFinite ι
   let _ := b.isCartanSubalgebra
   let _ := b.isTriangularizable
   intro α hα

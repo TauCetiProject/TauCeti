@@ -18,7 +18,13 @@ of `X`.  This file makes the construction a contravariant functor of `X`, shows 
 chain homotopy to a cochain homotopy, and shows that it takes a short exact sequence of chain
 complexes which is split in each degree to a short exact sequence of cochain complexes.  It also
 records elementwise descriptions of the differential, cocycles, coboundaries and cohomology classes
-of `Hom(X, Y)`, and of the maps between them induced by chain maps.
+of `Hom(X, Y)`, and of the maps between them induced by chain maps. Postcomposition
+with coefficient morphisms is provided by `ChainComplex.linearYonedaObjMap`.
+
+The functor and its action on homotopies require only a preadditive `k`-linear category.
+Preservation of degreewise split short exact sequences additionally uses kernels,
+cokernels and balancedness. The elementwise API uses Mathlib's
+`ChainComplex.linearYonedaObj`, which is defined for abelian categories.
 
 The functor `Hom(-, Y)` is only left exact, so the splitting hypothesis cannot be dropped.  It
 holds for the singular chains of a pair of spaces, which is how the long exact sequence in
@@ -31,6 +37,8 @@ singular cohomology is obtained from the one of chain complexes.
 * `TauCeti.ChainComplex.shortExact_map_linearYonedaFunctor`: `Hom(-, Y)` preserves short
   exactness of degreewise split sequences.
 * `Homotopy.linearYonedaFunctorMap`: `Hom(-, Y)` takes a chain homotopy to a cochain homotopy.
+* `HomotopyEquiv.linearYonedaFunctorMap`: `Hom(-, Y)` takes a chain homotopy
+  equivalence to a cochain homotopy equivalence in the opposite direction.
 -/
 
 public section
@@ -68,6 +76,57 @@ noncomputable def _root_.Homotopy.linearYonedaFunctorMap {X X' : ChainComplex C 
     Homotopy ((linearYonedaFunctor k Y).map φ.op) ((linearYonedaFunctor k Y).map ψ.op) :=
   (((linearYoneda k C).obj Y).rightOp.mapHomotopy h).unop
 
+/-- `Hom(-, Y)` takes a chain homotopy equivalence to a cochain homotopy equivalence in
+the opposite direction, with maps given by precomposition. -/
+noncomputable def _root_.HomotopyEquiv.linearYonedaFunctorMap
+    {X X' : ChainComplex C α} (h : _root_.HomotopyEquiv X X') :
+    _root_.HomotopyEquiv ((linearYonedaFunctor k Y).obj (op X'))
+      ((linearYonedaFunctor k Y).obj (op X)) where
+  hom := (linearYonedaFunctor k Y).map h.hom.op
+  inv := (linearYonedaFunctor k Y).map h.inv.op
+  homotopyHomInvId := by
+    simpa only [← Functor.map_comp, ← op_comp] using
+      (h.homotopyInvHomId.linearYonedaFunctorMap k Y).trans
+        (Homotopy.ofEq ((linearYonedaFunctor k Y).map_id _))
+  homotopyInvHomId := by
+    simpa only [← Functor.map_comp, ← op_comp] using
+      (h.homotopyHomInvId.linearYonedaFunctorMap k Y).trans
+        (Homotopy.ofEq ((linearYonedaFunctor k Y).map_id _))
+
+/-- The forward map of the induced homotopy equivalence is precomposition with `h.hom`. -/
+@[simp]
+lemma _root_.HomotopyEquiv.linearYonedaFunctorMap_hom
+    {X X' : ChainComplex C α} (h : _root_.HomotopyEquiv X X') :
+    (h.linearYonedaFunctorMap k Y).hom =
+      (linearYonedaFunctor k Y).map h.hom.op := (rfl)
+
+/-- The inverse map of the induced homotopy equivalence is precomposition with `h.inv`. -/
+@[simp]
+lemma _root_.HomotopyEquiv.linearYonedaFunctorMap_inv
+    {X X' : ChainComplex C α} (h : _root_.HomotopyEquiv X X') :
+    (h.linearYonedaFunctorMap k Y).inv =
+      (linearYonedaFunctor k Y).map h.inv.op := (rfl)
+
+/-- The functor `Hom(-, Y)` takes a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of chain
+complexes which is split in each degree to a short exact sequence
+`0 ⟶ Hom(X₃, Y) ⟶ Hom(X₂, Y) ⟶ Hom(X₁, Y) ⟶ 0` of cochain complexes. -/
+lemma shortExact_map_linearYonedaFunctor
+    [HasKernels C] [HasCokernels C] [Balanced C] {S : ShortComplex (ChainComplex C α)}
+    (hS : S.ShortExact) [∀ i, IsSplitMono (S.f.f i)] :
+    (S.op.map (linearYonedaFunctor k Y)).ShortExact := by
+  let := Preadditive.hasEqualizers_of_hasKernels (C := C)
+  let := Preadditive.hasCoequalizers_of_hasCokernels (C := C)
+  have := hS.exact.hasZeroObject
+  have := hS.epi_g
+  refine HomologicalComplex.shortExact_of_degreewise_shortExact _ fun i ↦ ?_
+  let : (HomologicalComplex.eval C (ComplexShape.down α) i).PreservesHomology := {}
+  have hi := hS.exact.map (HomologicalComplex.eval C _ i)
+  have := hi.hasZeroObject
+  exact ((ShortComplex.Splitting.ofExactOfRetraction _ hi (retraction (S.f.f i))
+    (IsSplitMono.id (S.f.f i))
+    (inferInstance : Epi ((HomologicalComplex.eval C _ i).map S.g))).op.map
+      ((linearYoneda k C).obj Y)).shortExact
+
 end Preadditive
 
 section Abelian
@@ -93,16 +152,57 @@ lemma _root_.Homotopy.linearYonedaFunctorMap_hom_apply {X X' : ChainComplex C α
     ConcreteCategory.hom (X := (X'.linearYonedaObj k Y).X i) (Y := (X.linearYonedaObj k Y).X j)
       ((h.linearYonedaFunctorMap k Y).hom i j) g = h.hom j i ≫ g := (rfl)
 
-/-- The functor `Hom(-, Y)` takes a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of chain
-complexes which is split in each degree to a short exact sequence
-`0 ⟶ Hom(X₃, Y) ⟶ Hom(X₂, Y) ⟶ Hom(X₁, Y) ⟶ 0` of cochain complexes. -/
-lemma shortExact_map_linearYonedaFunctor {S : ShortComplex (ChainComplex C α)}
-    (hS : S.ShortExact) [∀ i, IsSplitMono (S.f.f i)] :
-    (S.op.map (linearYonedaFunctor k Y)).ShortExact := by
-  refine HomologicalComplex.shortExact_of_degreewise_shortExact _ fun i ↦ ?_
-  have hi := hS.map_of_exact (HomologicalComplex.eval C _ i)
-  exact ((ShortComplex.Splitting.ofExactOfRetraction _ hi.exact (retraction (S.f.f i))
-    (IsSplitMono.id (S.f.f i)) hi.epi_g).op.map ((linearYoneda k C).obj Y)).shortExact
+/-- Postcomposition with a coefficient morphism induces a map of cochain complexes
+`Hom(X, Y) ⟶ Hom(X, Z)`. -/
+noncomputable def _root_.ChainComplex.linearYonedaObjMap (X : ChainComplex C α)
+    {Y Z : C} (g : Y ⟶ Z) : X.linearYonedaObj k Y ⟶ X.linearYonedaObj k Z :=
+  (HomologicalComplex.unopFunctor _ _).map
+    ((((linearYoneda k C).map g).rightOp.mapHomologicalComplex _).app X).op
+
+/-- The coefficient map on cochains is postcomposition. -/
+@[simp↓]
+lemma _root_.ChainComplex.linearYonedaObjMap_f_hom_apply (X : ChainComplex C α)
+    {Y Z : C} (g : Y ⟶ Z) (i : α) (a : X.X i ⟶ Y) :
+    (X.linearYonedaObjMap k g).f i a = a ≫ g := (rfl)
+
+/-- Identity coefficient maps induce identity maps of cochain complexes. -/
+@[simp]
+lemma _root_.ChainComplex.linearYonedaObjMap_id (X : ChainComplex C α) (Y : C) :
+    X.linearYonedaObjMap k (𝟙 Y) = 𝟙 (X.linearYonedaObj k Y) := by
+  ext i (a : X.X i ⟶ Y)
+  simp only [ChainComplex.linearYonedaObjMap_f_hom_apply, Category.comp_id]
+  rfl
+
+/-- Coefficient maps on cochain complexes preserve composition. -/
+@[simp]
+lemma _root_.ChainComplex.linearYonedaObjMap_comp (X : ChainComplex C α)
+    {Y Z T : C} (g : Y ⟶ Z) (h : Z ⟶ T) :
+    X.linearYonedaObjMap k (g ≫ h) = X.linearYonedaObjMap k g ≫ X.linearYonedaObjMap k h := by
+  simp only [ChainComplex.linearYonedaObjMap, Functor.map_comp, NatTrans.rightOp_comp,
+    NatTrans.mapHomologicalComplex_comp, NatTrans.comp_app, op_comp]
+  rfl
+
+/-- The coefficient map sends the class of a cocycle to the class of its image. -/
+@[simp]
+lemma _root_.ChainComplex.homologyMap_linearYonedaObjMap_homologyπ_apply
+    (X : ChainComplex C α) {Y Z : C} (g : Y ⟶ Z) (i : α)
+    (a : (X.linearYonedaObj k Y).cycles i) :
+    HomologicalComplex.homologyMap (X.linearYonedaObjMap k g) i
+        ((X.linearYonedaObj k Y).homologyπ i a) =
+      (X.linearYonedaObj k Z).homologyπ i
+        (HomologicalComplex.cyclesMap (X.linearYonedaObjMap k g) i a) :=
+  ConcreteCategory.congr_hom (HomologicalComplex.homologyπ_naturality _ i) a
+
+/-- The coefficient map on cocycles is postcomposition. -/
+@[simp↓]
+lemma _root_.ChainComplex.iCycles_cyclesMap_linearYonedaObjMap_apply
+    (X : ChainComplex C α) {Y Z : C} (g : Y ⟶ Z) (i : α)
+    (a : (X.linearYonedaObj k Y).cycles i) :
+    (X.linearYonedaObj k Z).iCycles i
+        (HomologicalComplex.cyclesMap (X.linearYonedaObjMap k g) i a) =
+      (X.linearYonedaObj k Y).iCycles i a ≫ g := by
+  exact (ConcreteCategory.congr_hom (HomologicalComplex.cyclesMap_i _ i) a).trans
+    (X.linearYonedaObjMap_f_hom_apply k g i _)
 
 section Elementwise
 

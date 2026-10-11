@@ -24,7 +24,9 @@ So the kernel of `θ` is the image, under the vector representation, of the Lips
 Clifford norm is a square. That set is open because the Clifford norm is continuous and the squares
 are open, and its image is open because the vector representation is an open map.
 
-The openness of the squares cannot be dropped, and it does not follow from the topology on `V`:
+Equivalently, both spinor-norm homomorphisms are continuous when their square-class codomain has
+the quotient topology. The openness of the squares cannot be dropped, and it does not follow from
+the topology on `V`:
 over `ℝ` the squares are the positive reals, while over `ℚ_p` it is the local-field fact that the
 units deep enough in the unit filtration are squares. Discreteness of the square-class group alone
 would only show that a *continuous* map into it is locally constant.
@@ -36,6 +38,8 @@ would only show that a *continuous* map into it is locally constant.
 * `CliffordAlgebra.isOpen_ker_spinorNorm`: the kernel of the spinor norm on `SO(Q)` is open.
 * `CliffordAlgebra.isOpen_range_spinToSpecialOrthogonal`: the image of the Spin group in `SO(Q)`
   is open.
+* `CliffordAlgebra.continuous_orthogonalSpinorNorm`,
+  `CliffordAlgebra.continuous_spinorNorm`: the spinor norms on `O(Q)` and `SO(Q)` are continuous.
 
 ## References
 
@@ -93,5 +97,21 @@ theorem isOpen_range_spinToSpecialOrthogonal (hQ : Q.Nondegenerate)
     IsOpen ((spinToSpecialOrthogonal Q).range : Set (QuadraticMap.specialOrthogonalGroup Q)) := by
   rw [range_spinToSpecialOrthogonal_eq_ker_spinorNorm Q hQ]
   exact isOpen_ker_spinorNorm Q hQ hsq
+
+/-- **The spinor norm on `O(Q)` is continuous.** If `Q` is nondegenerate and the squares are open
+in `Kˣ`, then the spinor norm `O(Q) → Kˣ ⧸ (Kˣ)²` is continuous, where the square-class group
+carries its quotient topology from `Kˣ`. -/
+theorem continuous_orthogonalSpinorNorm (hQ : Q.Nondegenerate)
+    (hsq : IsOpen (Subgroup.square Kˣ : Set Kˣ)) :
+    Continuous (orthogonalSpinorNorm Q hQ) :=
+  (orthogonalSpinorNorm Q hQ).continuous_of_isOpen_ker (isOpen_ker_orthogonalSpinorNorm Q hQ hsq)
+
+/-- **The spinor norm on `SO(Q)` is continuous.** If `Q` is nondegenerate and the squares are
+open in `Kˣ`, then the spinor norm `SO(Q) → Kˣ ⧸ (Kˣ)²` is continuous, where the square-class group
+carries its quotient topology from `Kˣ`. -/
+theorem continuous_spinorNorm (hQ : Q.Nondegenerate)
+    (hsq : IsOpen (Subgroup.square Kˣ : Set Kˣ)) :
+    Continuous (spinorNorm Q hQ) :=
+  (spinorNorm Q hQ).continuous_of_isOpen_ker (isOpen_ker_spinorNorm Q hQ hsq)
 
 end CliffordAlgebra

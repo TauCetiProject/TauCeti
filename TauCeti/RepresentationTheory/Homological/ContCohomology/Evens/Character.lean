@@ -15,9 +15,10 @@ An open subgroup `U` of index two in a topological group `G` determines a contin
 `G → Multiplicative (ZMod 2)`, equal to one precisely on `U`. This file places that character in
 canonical continuous cohomology with trivial `𝔽₂` coefficients.
 
-The definition uses the explicit degree-one comparison: the multiplicative character is first
-viewed as a continuous additive `1`-cocycle by `TauCeti.ContCohomology.evensHomCocycle`, then its
-explicit class is transported to Mathlib's canonical continuous cohomology object. This is the
+The definition is the class `TauCeti.ContCohomology.homClass` of the continuous character, which
+uses the explicit degree-one comparison: the multiplicative character is first viewed as a
+continuous additive `1`-cocycle by `TauCeti.ContCohomology.evensHomCocycle`, then its explicit
+class is transported to Mathlib's canonical continuous cohomology object. This is the
 character class that appears in the index-two exact sequence and in the norm-of-restriction
 identity for the Evens norm.
 
@@ -49,14 +50,13 @@ attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
 local instance continuousSMul_trivialF2_character : ContinuousSMul G (trivialF2 G).V :=
   (isSmoothDiscrete_trivialF2 G).continuousSMul
 
-/-- **The class of the character of an index-two open subgroup.** It is the canonical
-continuous-cohomology class of `Subgroup.indexTwoCharacter`, whose kernel is the subgroup. -/
+/-- **The class of the character of an index-two open subgroup.** It is the class
+`TauCeti.ContCohomology.homClass` of the continuous character `Subgroup.indexTwoCharacter`, whose
+kernel is the subgroup. -/
 noncomputable def indexTwoCharacterClass (U : OpenSubgroup G)
     (hU : U.toSubgroup.index = 2) : continuousCohomology 1 (trivialF2 G) :=
-  (eqToHom (congrArg (continuousCohomology 1) (ofDiscreteModule_trivialF2 G))).hom
-    (explicitH1AddEquivContinuousCohomology G (trivialF2 G).V
-      (evensHomCocycle (U.toSubgroup.indexTwoCharacter hU)
-        (Subgroup.continuous_indexTwoCharacter hU U.isOpen')))
+  homClass G (U.toSubgroup.indexTwoCharacter hU)
+    (Subgroup.continuous_indexTwoCharacter hU U.isOpen')
 
 /-- The index-two character class is obtained from the explicit class of the continuous character
 by the degree-one comparison and the canonical identification of trivial coefficients. -/
@@ -67,7 +67,7 @@ theorem indexTwoCharacterClass_def (U : OpenSubgroup G)
         (explicitH1AddEquivContinuousCohomology G (trivialF2 G).V
           (evensHomCocycle (U.toSubgroup.indexTwoCharacter hU)
             (Subgroup.continuous_indexTwoCharacter hU U.isOpen'))) :=
-  (rfl)
+  homClass_def G _ _
 
 /-- The index-two character class depends only on the open subgroup, not on the proof that its
 index is two. -/

@@ -33,6 +33,8 @@ from `R`.
 
 The converse of the last statement, that every definable set is semialgebraic, is quantifier
 elimination; over a real closed field it is the Tarski–Seidenberg theorem.
+`TauCeti.Geometry.RealAlgebraic.Semialgebraic.QuantifierElimination` derives it from closure of
+semialgebraic sets under projection.
 
 To apply these results to a concrete ordered field such as `ℝ`, install the structures
 `FirstOrder.Ring.compatibleRingOfRing ℝ` and `FirstOrder.Language.orderStructure ℝ`; the

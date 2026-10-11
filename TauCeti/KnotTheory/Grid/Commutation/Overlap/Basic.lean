@@ -44,6 +44,8 @@ replaced grid line, and the branch data below identifies which one from the colu
   decomposition retains the generic recut relation, including its covered-square repartition.
 * `TauCeti.GridRectanglePentagonDecomposition.OMonomial_mul_OMonomial_recutLeftEqLeft`: the
   product of the two underlying rectangle weights is preserved.
+* `TauCeti.GridRectanglePentagonDecomposition.hasOneCommonSide_of_right_eq_right`: a common
+  terminal side with distinct initial sides is the only common side column.
 * `TauCeti.GridRectanglePentagonDecomposition.isRecutOfRightEqRight_recut`: the generic recut
   is classified by the common-terminal-side orientation of the original rectangle and pentagon.
 * `TauCeti.GridRectanglePentagonDecomposition.recut_first_or_second_right_eq_pentagon_right`:
@@ -85,6 +87,27 @@ namespace TauCeti
 namespace GridPentagonRectangleDecomposition
 
 variable {n : ℕ} {a s : Fin n} {x z : GridState n}
+
+/-- The turn row lies outside the following rectangle when two empty pieces share their
+initial side and have distinct terminal sides. -/
+theorem turn_notMem_cIco_rectangle_of_left_eq_left
+    (E : GridPentagonRectangleDecomposition a s x z)
+    (hcommon : E.pentagon.left = E.rectangle.left)
+    (hother : E.pentagon.right ≠ E.rectangle.right)
+    (hp : E.pentagon.IsEmpty) (hr : E.rectangle.IsEmpty) :
+    s ∉ Grid.cIco E.rectangle.bottom E.rectangle.top := by
+  have hrow := (E.toRectangleDecomposition.cyclicOrder_of_isEmpty_of_left_eq_left
+    (by simpa using hcommon) (by simpa using hother)
+    (E.underlying_first_isEmpty hp) (E.underlying_second_isEmpty hr)).2
+  have hb := E.toRectangleDecomposition.second_bottom_eq_first_top_of_left_eq_left
+    (by simpa using hcommon)
+  simp only [GridRectangleBetween.bottom_def, GridRectangleBetween.top_def,
+    toRectangleDecomposition_first_left, toRectangleDecomposition_first_right,
+    toRectangleDecomposition_second_left, toRectangleDecomposition_second_right,
+    toRectangleDecomposition_middle] at hrow hb
+  rw [GridRectangleBetween.bottom_def, GridRectangleBetween.top_def, hb]
+  exact fun hs => Finset.disjoint_left.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hrow)
+    E.pentagon.turn_mem hs
 
 /-- A recut into a pentagon followed by a rectangle has an empty pentagon. -/
 theorem isEmpty_pentagon_of_isRecut (E : GridPentagonRectangleDecomposition a s x z)
@@ -472,6 +495,21 @@ end GridRectanglePentagonDecomposition
 namespace GridRectanglePentagonDecomposition
 
 variable {n : ℕ} {a s : Fin n} {x z : GridState n}
+
+/-- A rectangle and pentagon sharing their terminal side have exactly one common side column when
+their initial sides differ. -/
+theorem hasOneCommonSide_of_right_eq_right (D : GridRectanglePentagonDecomposition a s x z)
+    (hcommon : D.rectangle.right = D.pentagon.right)
+    (hother : D.rectangle.left ≠ D.pentagon.left) :
+    D.toRectangleDecomposition.HasOneCommonSide := by
+  apply D.toRectangleDecomposition.hasOneCommonSide_iff_existsUnique.mpr
+  refine ⟨D.pentagon.right, ?_, ?_⟩
+  · simp [GridRectangleBetween.mem_sideColumns, hcommon]
+  · intro c hc
+    simp only [GridRectangleBetween.mem_sideColumns, toRectangleDecomposition_first_left,
+      toRectangleDecomposition_first_right, toRectangleDecomposition_second_left,
+      toRectangleDecomposition_second_right, hcommon] at hc
+    grind
 
 /-- When the rectangle and pentagon share their terminal side, their underlying rectangle
 decomposition's recut is classified by the original common-terminal-side orientation. -/

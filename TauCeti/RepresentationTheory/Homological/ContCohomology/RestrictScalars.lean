@@ -79,7 +79,8 @@ what lets every result of the first kind be applied to coefficients of the secon
   `TauCeti.ContCohomology.ofDiscreteModuleRestrictScalarsIntEquiv` between the carriers are the
   isomorphisms on elements; they act through the values of the iterated function spaces
   (`TopRep.resolutionXRestrictScalarsIntIso_succ_hom_apply`,
-  `TauCeti.ContCohomology.iCycles_cocyclesRestrictScalarsIntEquiv_one_apply`,
+  `TauCeti.ContCohomology.iCycles_cocyclesRestrictScalarsIntEquiv_zero_apply` and its analogues
+  in degrees one and two,
   `TauCeti.ContCohomology.restrictScalarsIntEquiv_π`).
 * `TauCeti.ContCohomology.coeffMap_comp_restrictScalarsIntIso_hom`: the isomorphism is natural in
   the representation, with respect to the coefficient maps
@@ -385,6 +386,17 @@ theorem coe_iCycles_cocyclesRestrictScalarsIntEquiv (v : cocycles (restrictScala
     congr($(cocyclesRestrictScalarsIntIso_hom_comp_map_iCycles X n) v)
   rw [h, coe_homogeneousCochainsRestrictScalarsIntIso_hom_f]
 
+/-- In degree zero, `cocyclesRestrictScalarsIntEquiv` does not change the values of a homogeneous
+cocycle: both sides are the function `C(G, X.V)` underlying the cocycle. -/
+theorem iCycles_cocyclesRestrictScalarsIntEquiv_zero_apply
+    (v : cocycles (restrictScalarsInt.obj X) 0) (g₀ : G) :
+    ((homogeneousCochains X).iCycles 0 (cocyclesRestrictScalarsIntEquiv X 0 v)).val g₀ =
+      ((homogeneousCochains (restrictScalarsInt.obj X)).iCycles 0 v).val g₀ :=
+  (congrArg (fun w : C(G, X.V) ↦ w g₀)
+    (coe_iCycles_cocyclesRestrictScalarsIntEquiv X 0 v)).trans
+    ((resolutionXRestrictScalarsIntIso_succ_hom_apply X 0 _ g₀).trans
+      (resolutionXRestrictScalarsIntIso_zero_hom_apply X _))
+
 /-- In degree one, `cocyclesRestrictScalarsIntEquiv` does not change the values of a homogeneous
 cocycle: both sides are the function `C(G, C(G, X.V))` underlying the cocycle. -/
 -- Not a `simp` lemma: the carriers of the cocycles sit in the implicit arguments of `Subtype.val`,
@@ -406,15 +418,14 @@ theorem iCycles_cocyclesRestrictScalarsIntEquiv_one_apply
 /-- In degree two, `cocyclesRestrictScalarsIntEquiv` does not change the values of a homogeneous
 cocycle. -/
 theorem iCycles_cocyclesRestrictScalarsIntEquiv_two_apply
-    (v : cocycles (restrictScalarsInt.obj X) (1 + 1)) (g₀ g₁ g₂ : G) :
-    ((homogeneousCochains X).iCycles (1 + 1) (cocyclesRestrictScalarsIntEquiv X (1 + 1) v)).val
-        g₀ g₁ g₂ =
-      ((homogeneousCochains (restrictScalarsInt.obj X)).iCycles (1 + 1) v).val g₀ g₁ g₂ :=
+    (v : cocycles (restrictScalarsInt.obj X) 2) (g₀ g₁ g₂ : G) :
+    ((homogeneousCochains X).iCycles 2 (cocyclesRestrictScalarsIntEquiv X 2 v)).val g₀ g₁ g₂ =
+      ((homogeneousCochains (restrictScalarsInt.obj X)).iCycles 2 v).val g₀ g₁ g₂ :=
   -- The identification of the resolutions is the identity on values, one function-space level at
   -- a time; the composite is assembled as a term because the intermediate values live in the
   -- carriers of `restrictScalarsInt.obj _`, which `rw` does not see as function spaces.
   (congrArg (fun w : C(G, C(G, C(G, X.V))) ↦ w g₀ g₁ g₂)
-    (coe_iCycles_cocyclesRestrictScalarsIntEquiv X (1 + 1) v)).trans
+    (coe_iCycles_cocyclesRestrictScalarsIntEquiv X 2 v)).trans
     ((congrArg (fun w : C(G, C(G, X.V)) ↦ w g₁ g₂)
       (resolutionXRestrictScalarsIntIso_succ_hom_apply X (1 + 1) _ g₀)).trans
       ((congrArg (fun w : C(G, X.V) ↦ w g₂)

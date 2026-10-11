@@ -130,12 +130,8 @@ theorem subgroupCover_proj [LocallyPathConnectedSpace X] [SemilocallySimplyConne
     (subgroupCover x₀ H).proj =
       eqToHom (subgroupCover_coe x₀ H) ≫
         TopCat.ofHom
-          ⟨subgroupQuotientProj x₀ H, continuous_subgroupQuotientProj x₀ H⟩ := by
-  simpa only [subgroupCover] using
-    ConnectedCoveringSpace.mk_proj
-      (TopCat.ofHom
-        ⟨subgroupQuotientProj x₀ H, continuous_subgroupQuotientProj x₀ H⟩)
-      (isCoveringMap_subgroupQuotientProj x₀ H)
+          ⟨subgroupQuotientProj x₀ H, continuous_subgroupQuotientProj x₀ H⟩ :=
+  (rfl)
 
 /-- The characteristic equality of total spaces for `subgroupCover`, viewed as a
 homeomorphism. -/

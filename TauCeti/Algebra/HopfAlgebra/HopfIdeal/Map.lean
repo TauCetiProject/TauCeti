@@ -51,6 +51,8 @@ augmentation ideal under `f`.
   `TauCeti.HopfIdeal.map_comapOfSurjective`, `TauCeti.HopfIdeal.comapOfSurjective_map`,
   `TauCeti.HopfIdeal.comapOfSurjective_map_of_bijective`, and
   `TauCeti.HopfIdeal.map_eq_bot_iff_le_ker`.
+* `TauCeti.HopfIdeal.comapOfSurjective_map_mkBialgHom`: pulling the image of `J` back from
+  `H ⧸ I` along the quotient morphism recovers `J`, provided `I ≤ J`.
 
 ## References
 
@@ -336,6 +338,26 @@ theorem map_eq_bot_iff_le_ker (I : HopfIdeal R H) (f : H →ₐc[R] K)
     exact RingHom.mem_ker.mpr ((mem_kerOfSurjective f hf).mp (h (mem_toIdeal.mp hx)))
 
 end Adjunction
+
+section Quotient
+
+variable {R : Type u} [CommRing R]
+variable {H : Type v} [CommRing H] [HopfAlgebra R H]
+
+/-- Pulling the image of `J` in `H ⧸ I` back along the quotient morphism recovers `J`
+when `I ≤ J`. -/
+@[simp]
+theorem comapOfSurjective_map_mkBialgHom {I J : HopfIdeal R H} (hIJ : I ≤ J) :
+    (J.map (Bialgebra.Quotient.mkBialgHom I.toIdeal)).comapOfSurjective
+        (Bialgebra.Quotient.mkBialgHom I.toIdeal)
+        (by
+          intro q
+          obtain ⟨h, rfl⟩ := Ideal.Quotient.mk_surjective q
+          exact ⟨h, Bialgebra.Quotient.mkBialgHom_apply I.toIdeal h⟩) = J := by
+  rw [comapOfSurjective_map, kerOfSurjective_mkBialgHom, sup_eq_left]
+  exact hIJ
+
+end Quotient
 
 end HopfIdeal
 

@@ -79,9 +79,6 @@ The regularity threshold is inherited unchanged from the finite-dimensional theo
 * `TauCeti.dense_compl_image_criticalPoints_of_isFredholm`: the regular values of a Fredholm map
   are dense, the form transversality arguments consume.
 
-This is Lane F0 of the analytic Heegaard Floer roadmap, where Sard--Smale is the gateway to every
-transversality argument downstream.
-
 ## References
 
 * S. Smale, *An infinite dimensional version of Sard's theorem*, Amer. J. Math. 87 (1965),
@@ -160,20 +157,6 @@ section Local
 variable [CompleteSpace E] [CompleteSpace F] {T : E →L[ℝ] F} {f : E → F} {a : E}
 
 omit [CompleteSpace F] in
-/-- Fixing the essential coordinate differentiates the obstruction along the inclusion of the
-inessential domain summand as the second normal-form factor: the derivative of
-`ContinuousLinearMap.FredholmPackage.obstructionSlice` is the derivative of the obstruction map
-precomposed with `ContinuousLinearMap.inr`. -/
-private theorem hasFDerivAt_obstructionSlice (pkg : ContinuousLinearMap.FredholmPackage T)
-    (hT : HasStrictFDerivAt f T a) {y : pkg.decCodom.X₁ × pkg.decDom.X₀}
-    (hq : DifferentiableAt ℝ (pkg.obstructionMap hT) y) :
-    HasFDerivAt (pkg.obstructionSlice hT y.1)
-      ((fderiv ℝ (pkg.obstructionMap hT) y).comp
-        (ContinuousLinearMap.inr ℝ pkg.decCodom.X₁ pkg.decDom.X₀)) y.2 := by
-  rw [funext (pkg.obstructionSlice_apply hT y.1)]
-  exact hq.hasFDerivAt.comp y.2 ((hasFDerivAt_const y.1 y.2).prodMk (hasFDerivAt_id y.2))
-
-omit [CompleteSpace F] in
 /-- **Lyapunov--Schmidt reduction of regularity.** At a point of the normal-form chart where the
 chart, the obstruction and the map itself are all differentiable and the chart has invertible
 derivative, the derivative of `f` is surjective exactly when the derivative of the
@@ -191,7 +174,7 @@ private theorem surjective_fderiv_iff_slice (pkg : ContinuousLinearMap.FredholmP
     Surjective (fderiv ℝ f ((pkg.normalFormOpenPartialHomeomorph hT).symm y)) ↔
       Surjective (fderiv ℝ (pkg.obstructionSlice hT y.1) y.2) := by
   obtain ⟨e, he⟩ := hinv
-  set Φ := pkg.normalFormOpenPartialHomeomorph hT with hΦ
+  set Φ := pkg.normalFormOpenPartialHomeomorph hT
   set q := pkg.obstructionMap hT with hqdef
   have hsym' : HasFDerivAt Φ.symm (e : (pkg.decCodom.X₁ × pkg.decDom.X₀) →L[ℝ] E) y := by
     rw [he]; exact hsym.hasFDerivAt
@@ -228,7 +211,7 @@ private theorem surjective_fderiv_iff_slice (pkg : ContinuousLinearMap.FredholmP
   have hslice : HasFDerivAt (pkg.obstructionSlice hT y.1)
       ((fderiv ℝ q y).comp (ContinuousLinearMap.inr ℝ pkg.decCodom.X₁ pkg.decDom.X₀)) y.2 := by
     rw [hqdef]
-    exact hasFDerivAt_obstructionSlice pkg hT hq
+    exact pkg.hasFDerivAt_obstructionSlice hT hq
   rw [hstep₁, hufun, surjective_add_coe_iff pkg.decCodom.isTopCompl, hslice.fderiv]
   simp [ContinuousLinearMap.coe_comp, Function.comp_def]
 
@@ -250,7 +233,7 @@ theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints
     (hU : U ∈ 𝓝 a) :
     ∃ N ∈ 𝓝 a, N ⊆ U ∧ IsClosed (f '' (N ∩ {x | ¬ Surjective (fderiv ℝ f x)})) ∧
       IsNowhereDense (f '' (N ∩ {x | ¬ Surjective (fderiv ℝ f x)})) := by
-  set T := fderiv ℝ f a with hTdef
+  set T := fderiv ℝ f a
   set k : ℕ := finrank ℝ T.ker * finrank ℝ T.ker + 1 with hkdef
   have hk1 : (1 : ℕ∞ω) ≤ (k : ℕ∞ω) := by
     have : (1 : ℕ) ≤ k := by omega
@@ -313,7 +296,7 @@ theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints
   obtain ⟨V₀, hV₀, hV₀P⟩ := hgood
   obtain ⟨V, hVV₀, hVopen, hy₀V⟩ := mem_nhds_iff.1 hV₀
   have hVP := fun y (hy : y ∈ V) ↦ hV₀P y (hVV₀ hy)
-  set N : Set E := Φ.source ∩ Φ ⁻¹' V with hNdef
+  set N : Set E := Φ.source ∩ Φ ⁻¹' V
   have hNopen : IsOpen N := Φ.isOpen_inter_preimage hVopen
   have haN : a ∈ N := ⟨ha, by rw [Set.mem_preimage, hΦa]; exact hy₀V⟩
   have hNV : ∀ x ∈ N, Φ x ∈ V := fun x hx ↦ hx.2
@@ -327,7 +310,7 @@ theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints
       fderiv ℝ (pkg.obstructionSlice hT y.1) y.2 = (fderiv ℝ q y).comp ι := by
     intro y hy
     rw [hqdef, hιdef]
-    exact (hasFDerivAt_obstructionSlice pkg hT ((hVP y hy).2.1.differentiableAt hk0)).fderiv
+    exact (pkg.hasFDerivAt_obstructionSlice hT ((hVP y hy).2.1.differentiableAt hk0)).fderiv
   -- Regularity of `f` on `N` is regularity of the finite-dimensional obstruction slice.
   have hcrit : ∀ x ∈ N, (Surjective (fderiv ℝ f x) ↔
       Surjective (fderiv ℝ (pkg.obstructionSlice hT (Φ x).1) (Φ x).2)) := by
@@ -407,7 +390,7 @@ theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints
     hFred.isClosed_range hFred.finite_ker hFred.closedComplemented_ker
   obtain ⟨r, hr, hball⟩ := Metric.mem_nhds_iff.1
     (Filter.inter_mem (Filter.inter_mem (hNopen.mem_nhds haN) hN₂) hU)
-  set N' : Set E := Metric.closedBall a (r / 2) with hN'def
+  set N' : Set E := Metric.closedBall a (r / 2)
   have hN'sub : N' ⊆ N ∩ N₂ ∩ U := (Metric.closedBall_subset_ball (by linarith)).trans hball
   have hN'ball : N' ⊆ N ∩ N₂ := fun z hz ↦ (hN'sub hz).1
   have hN'U : N' ⊆ U := fun z hz ↦ (hN'sub hz).2
@@ -470,13 +453,13 @@ theorem isMeagre_image_criticalPoints_of_isFredholm {n : ℕ∞ω} (hU : IsOpen 
     (hn : ∀ x ∈ U, ((finrank ℝ (fderiv ℝ f x).ker * finrank ℝ (fderiv ℝ f x).ker + 1 : ℕ) : ℕ∞ω)
       ≤ n) :
     IsMeagre (f '' (U ∩ {x | ¬ Surjective (fderiv ℝ f x)})) := by
-  have hloc : ∀ x ∈ U, ∃ N ⊆ U, N ∈ 𝓝 x ∧
+  have hloc : ∀ x ∈ U, ∃ N, N ∈ 𝓝 x ∧
       IsNowhereDense (f '' (N ∩ {x | ¬ Surjective (fderiv ℝ f x)})) := by
     intro x hx
-    obtain ⟨N, hN, hNU, -, hNnd⟩ := exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints
+    obtain ⟨N, hN, -, -, hNnd⟩ := exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints
       (hf x hx) (hFred x hx) (hn x hx) (hU.mem_nhds hx)
-    exact ⟨N, hNU, hN, hNnd⟩
-  choose! N hNU hNnhds hNnd using hloc
+    exact ⟨N, hN, hNnd⟩
+  choose! N hNnhds hNnd using hloc
   obtain ⟨t, htU, htc, htcover⟩ := TopologicalSpace.countable_cover_nhdsWithin
     (f := N) (s := U) fun x hx ↦ nhdsWithin_le_nhds (hNnhds x hx)
   have hsub : f '' (U ∩ {x | ¬ Surjective (fderiv ℝ f x)}) ⊆

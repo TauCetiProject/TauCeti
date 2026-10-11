@@ -10,10 +10,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.SignSwitch
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Prod
 public import Mathlib.RingTheory.MatrixAlgebra
 
-import TauCeti.LinearAlgebra.Matrix.TensorProduct
--- Private: `CliffordAlgebra.prod_map_ι_mul_ι_of_even_length` is used only inside the proof of
--- `CliffordAlgebra.hyperbolicVolume_anticomm_rightGenerator`.
-import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
+public import TauCeti.LinearAlgebra.Matrix.TensorProduct
 
 /-!
 # Hyperbolic Bott periodicity for real Clifford algebras
@@ -30,21 +27,17 @@ signature-switch recurrence `Cliff(p + 2, q) ≅ Cliff(q, p) ⊗ M₂(ℝ)` from
 * `TauCeti.realCliffordBottEquiv`: the corresponding equivalence for the standard signature forms;
 * `TauCeti.realCliffordBottIterEquiv`: the iterated standard-signature equivalence, with matrix
   size `2 ^ n` after adjoining `n` hyperbolic planes;
-* `TauCeti.realCliffordSignatureReductionEquiv`: the reduction of a standard signature by its
-  common positive and negative part;
 * `TauCeti.realCliffordSignatureSwitchRecurrenceEquiv`: the recurrence which switches a real
   signature while adding two positive generators.
 
 ## References
 
-* [Clifford algebras, Pin and Spin, and spin representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md),
-  Layer 7;
-* H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I.
+* H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I. Their `Cl(r, s)` is
+  `CliffordAlgebra (realCliffordForm s r)` here.
 -/
 
 public section
 
-open Module QuadraticMap
 open scoped Matrix TensorProduct
 
 namespace CliffordAlgebra
@@ -85,8 +78,8 @@ private def hyperbolicToMatrix :
 private theorem hyperbolicToMatrix_ι (x : M × (Fin (1 + 1) → ℝ)) :
     hyperbolicToMatrix Q (_root_.CliffordAlgebra.ι _ x) =
       !![algebraMap ℝ _ (x.2 0), _root_.CliffordAlgebra.ι Q x.1 + algebraMap ℝ _ (x.2 1);
-         _root_.CliffordAlgebra.ι Q x.1 - algebraMap ℝ _ (x.2 1), -algebraMap ℝ _ (x.2 0)] := by
-  exact _root_.CliffordAlgebra.lift_ι_apply _ _ x
+         _root_.CliffordAlgebra.ι Q x.1 - algebraMap ℝ _ (x.2 1), -algebraMap ℝ _ (x.2 0)] :=
+  _root_.CliffordAlgebra.lift_ι_apply _ _ x
 
 private def hyperbolicToTensor :
     _root_.CliffordAlgebra (Q.prod (TauCeti.realCliffordForm 1 1)) →ₐ[ℝ]
@@ -153,9 +146,8 @@ private theorem hyperbolicMatrixInclusion_apply
 private theorem hyperbolicMatrixInclusion_comp_oneOneEquiv :
     (hyperbolicMatrixInclusion Q).comp
         TauCeti.realCliffordOneOneEquivMatrix.toAlgHom =
-      hyperbolicRightInclusion Q := by
-  apply AlgHom.ext
-  exact hyperbolicMatrixInclusion_apply Q
+      hyperbolicRightInclusion Q :=
+  AlgHom.ext (hyperbolicMatrixInclusion_apply Q)
 
 private theorem hyperbolicMatrixInclusion_sigmaX :
     hyperbolicMatrixInclusion Q !![(0 : ℝ), 1; 1, 0] = hyperbolicVolume Q := by
@@ -167,8 +159,7 @@ private theorem hyperbolicMatrixInclusion_sigmaX :
 
 private theorem sigmaX_sq :
     (!![(0 : ℝ), 1; 1, 0] : Matrix (Fin 2) (Fin 2) ℝ) * !![0, 1; 1, 0] = 1 := by
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two]
+  simp [Matrix.one_fin_two]
 
 private theorem hyperbolicVolume_sq : hyperbolicVolume Q * hyperbolicVolume Q = 1 := by
   rw [← hyperbolicMatrixInclusion_sigmaX, ← map_mul, sigmaX_sq, map_one]
@@ -209,37 +200,26 @@ private theorem hyperbolicBaseInclusion_ι (m : M) :
   rw [hyperbolicBaseInclusion, _root_.CliffordAlgebra.lift_ι_apply]
   simp [hyperbolicBaseGenerator]
 
+private theorem hyperbolicMatrixInclusion_hyperbolic (v : Fin (1 + 1) → ℝ) :
+    hyperbolicMatrixInclusion Q !![v 0, v 1; -v 1, -v 0] =
+      _root_.CliffordAlgebra.ι _ (0, v) := by
+  rw [← TauCeti.realCliffordOneOneEquivMatrix_ι v,
+    hyperbolicMatrixInclusion_apply]
+  simp [hyperbolicRightInclusion]
+
 /-- The hyperbolic volume element anticommutes with every generator coming from the hyperbolic
 factor. -/
 private theorem hyperbolicVolume_anticomm_rightGenerator (v : Fin (1 + 1) → ℝ) :
     hyperbolicVolume Q * _root_.CliffordAlgebra.ι _ (0, v) =
       -(_root_.CliffordAlgebra.ι _ (0, v) * hyperbolicVolume Q) := by
-  -- The hyperbolic volume element is the ordered product of the two orthogonal vectors `(0, e₀)`
-  -- and `(0, e₁)`, so the even half of the volume-element dichotomy applies to it.
-  have hpair : ([((0 : M), Pi.single 0 (1 : ℝ)), ((0 : M), Pi.single 1 (1 : ℝ))] :
-      List (M × (Fin (1 + 1) → ℝ))).Pairwise
-        (Q.prod (TauCeti.realCliffordForm 1 1)).IsOrtho := by
-    simp [QuadraticMap.isOrtho_def]
-  have hmem : ((0 : M), v) ∈ Submodule.span ℝ
-      {x : M × (Fin (1 + 1) → ℝ) |
-        x ∈ ([((0 : M), Pi.single 0 (1 : ℝ)), ((0 : M), Pi.single 1 (1 : ℝ))] :
-          List (M × (Fin (1 + 1) → ℝ)))} := by
-    have hv : v 0 • ((0 : M), Pi.single 0 (1 : ℝ)) + v 1 • ((0 : M), Pi.single 1 (1 : ℝ))
-        = ((0 : M), v) := by
-      refine Prod.ext (by simp) ?_
-      funext i
-      fin_cases i <;> simp
-    -- The membership set of a two-element list is the pair itself.
-    have hset : {x : M × (Fin (1 + 1) → ℝ) |
-        x ∈ ([((0 : M), Pi.single 0 (1 : ℝ)), ((0 : M), Pi.single 1 (1 : ℝ))] :
-          List (M × (Fin (1 + 1) → ℝ)))}
-        = {((0 : M), Pi.single 0 (1 : ℝ)), ((0 : M), Pi.single 1 (1 : ℝ))} := by
-      ext x
-      simp
-    rw [hset]
-    exact Submodule.mem_span_pair.mpr ⟨v 0, v 1, hv⟩
-  have h := _root_.CliffordAlgebra.prod_map_ι_mul_ι_of_even_length hpair ⟨1, rfl⟩ hmem
-  simpa [hyperbolicVolume, hyperbolicE₀, hyperbolicE₁] using h
+  -- Both factors come from the `(1, 1)` factor, so the identity is the matrix identity
+  -- `σₓ A = -(A σₓ)` transported through `hyperbolicMatrixInclusion`.
+  have h : (!![(0 : ℝ), 1; 1, 0] : Matrix (Fin 2) (Fin 2) ℝ) * !![v 0, v 1; -v 1, -v 0] =
+      -(!![v 0, v 1; -v 1, -v 0] * !![0, 1; 1, 0]) := by
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two]
+  rw [← hyperbolicMatrixInclusion_sigmaX, ← hyperbolicMatrixInclusion_hyperbolic, ← map_mul, h,
+    map_neg, map_mul]
 
 private theorem hyperbolicBaseInclusion_comm_rightInclusion
     (x : _root_.CliffordAlgebra Q)
@@ -258,21 +238,13 @@ private theorem hyperbolicBaseInclusion_comm_rightInclusion
         simp only [hyperbolicBaseGenerator, LinearMap.comp_apply, LinearMap.mulRight_apply,
           LinearMap.inl_apply, hyperbolicRightInclusion,
           _root_.CliffordAlgebra.map_apply_ι, QuadraticMap.Isometry.inr_apply]
-        rw [Commute]
+        -- `ι (0, v)` anticommutes with both `ι (m, 0)` (orthogonal summands) and the volume
+        -- element, so it commutes with their product.
         have hic := _root_.CliffordAlgebra.ι_mul_ι_comm_of_isOrtho
           (QuadraticMap.IsOrtho.inl_inr (Q₁ := Q)
             (Q₂ := TauCeti.realCliffordForm 1 1) m v)
-        have hoc := hyperbolicVolume_anticomm_rightGenerator Q v
-        calc
-          _ = _root_.CliffordAlgebra.ι _ (m, 0) *
-              (hyperbolicVolume Q * _root_.CliffordAlgebra.ι _ (0, v)) := by simp [mul_assoc]
-          _ = _root_.CliffordAlgebra.ι _ (m, 0) *
-              (-(_root_.CliffordAlgebra.ι _ (0, v) * hyperbolicVolume Q)) := by rw [hoc]
-          _ = -(_root_.CliffordAlgebra.ι _ (m, 0) *
-              _root_.CliffordAlgebra.ι _ (0, v)) * hyperbolicVolume Q := by simp [mul_assoc]
-          _ = -(-(_root_.CliffordAlgebra.ι _ (0, v) *
-              _root_.CliffordAlgebra.ι _ (m, 0))) * hyperbolicVolume Q := by rw [hic]
-          _ = _ := by simp [mul_assoc]
+        rw [Commute, SemiconjBy, mul_assoc, hyperbolicVolume_anticomm_rightGenerator, mul_neg,
+          ← mul_assoc, hic, neg_mul, neg_neg, mul_assoc]
     | mul a b ha hb => simpa only [map_mul] using ha.mul_right hb
     | add a b ha hb => simpa only [map_add] using ha.add_right hb
   induction x using _root_.CliffordAlgebra.induction with
@@ -291,13 +263,6 @@ private noncomputable def tensorToHyperbolic :
     simpa only [hyperbolicMatrixInclusion, AlgHom.comp_apply] using
       hyperbolicBaseInclusion_comm_rightInclusion Q x
         (TauCeti.realCliffordOneOneEquivMatrix.symm.toAlgHom y))
-
-private theorem hyperbolicMatrixInclusion_hyperbolic (v : Fin (1 + 1) → ℝ) :
-    hyperbolicMatrixInclusion Q !![v 0, v 1; -v 1, -v 0] =
-      _root_.CliffordAlgebra.ι _ (0, v) := by
-  rw [← TauCeti.realCliffordOneOneEquivMatrix_ι v,
-    hyperbolicMatrixInclusion_apply]
-  simp [hyperbolicRightInclusion]
 
 private theorem tensorToHyperbolic_ι_base (m : M) :
     tensorToHyperbolic Q
@@ -347,8 +312,8 @@ private theorem hyperbolicToTensor_baseInclusion (x : _root_.CliffordAlgebra Q) 
     hyperbolicToTensor Q (hyperbolicBaseInclusion Q x) =
       (Algebra.TensorProduct.includeLeft :
         _root_.CliffordAlgebra Q →ₐ[ℝ]
-          (_root_.CliffordAlgebra Q ⊗[ℝ] Matrix (Fin 2) (Fin 2) ℝ)) x := by
-  exact DFunLike.congr_fun (hyperbolicToTensor_comp_baseInclusion Q) x
+          (_root_.CliffordAlgebra Q ⊗[ℝ] Matrix (Fin 2) (Fin 2) ℝ)) x :=
+  DFunLike.congr_fun (hyperbolicToTensor_comp_baseInclusion Q) x
 
 private theorem hyperbolicToTensor_comp_matrixInclusion :
     (hyperbolicToTensor Q).comp (hyperbolicMatrixInclusion Q) =
@@ -369,15 +334,13 @@ private theorem hyperbolicToTensor_comp_matrixInclusion :
 private theorem hyperbolicToTensor_matrixInclusion
     (x : Matrix (Fin 2) (Fin 2) ℝ) :
     hyperbolicToTensor Q (hyperbolicMatrixInclusion Q x) =
-      Algebra.TensorProduct.includeRight x := by
-  exact DFunLike.congr_fun (hyperbolicToTensor_comp_matrixInclusion Q) x
+      Algebra.TensorProduct.includeRight x :=
+  DFunLike.congr_fun (hyperbolicToTensor_comp_matrixInclusion Q) x
 
 private theorem hyperbolicToTensor_comp_tensorToHyperbolic :
     (hyperbolicToTensor Q).comp (tensorToHyperbolic Q) = AlgHom.id ℝ _ := by
-  apply AlgHom.toLinearMap_injective
-  apply TensorProduct.ext'
+  apply Algebra.TensorProduct.ext'
   intro x y
-  simp only [AlgHom.toLinearMap_apply]
   rw [AlgHom.comp_apply, tensorToHyperbolic, Algebra.TensorProduct.lift_tmul, map_mul,
     hyperbolicToTensor_baseInclusion, hyperbolicToTensor_matrixInclusion]
   simp
@@ -390,15 +353,6 @@ noncomputable def hyperbolicEquivTensor :
   AlgEquiv.ofAlgHom (hyperbolicToTensor Q) (tensorToHyperbolic Q)
     (hyperbolicToTensor_comp_tensorToHyperbolic Q)
     (tensorToHyperbolic_comp_hyperbolicToTensor Q)
-
-@[simp]
-private theorem one_tmul_zeroMatrix :
-    (1 : _root_.CliffordAlgebra Q) ⊗ₜ[ℝ]
-      !![(0 : ℝ), 0; 0, 0] = 0 := by
-  rw [← TensorProduct.tmul_zero (Matrix (Fin 2) (Fin 2) ℝ) 1]
-  congr 1
-  ext i j
-  fin_cases i <;> fin_cases j <;> rfl
 
 /-- The image of a generator under `hyperbolicEquivTensor`, split into its original-module and
 hyperbolic-plane components. -/
@@ -419,20 +373,16 @@ theorem hyperbolicEquivTensor_ι
 theorem hyperbolicEquivTensor_symm_apply_ι_base (m : M) :
     (hyperbolicEquivTensor Q).symm
         (_root_.CliffordAlgebra.ι Q m ⊗ₜ[ℝ] !![0, 1; 1, 0]) =
-      _root_.CliffordAlgebra.ι _ (m, 0) := by
-  apply (hyperbolicEquivTensor Q).injective
-  rw [AlgEquiv.apply_symm_apply, hyperbolicEquivTensor_ι]
-  simp only [Pi.zero_apply, neg_zero, one_tmul_zeroMatrix, add_zero]
+      _root_.CliffordAlgebra.ι _ (m, 0) :=
+  tensorToHyperbolic_ι_base Q m
 
 /-- The inverse of `hyperbolicEquivTensor` on a tensor representing a hyperbolic generator. -/
 @[simp]
 theorem hyperbolicEquivTensor_symm_apply_ι_hyperbolic
     (v : Fin (1 + 1) → ℝ) :
     (hyperbolicEquivTensor Q).symm (1 ⊗ₜ[ℝ] !![v 0, v 1; -v 1, -v 0]) =
-      _root_.CliffordAlgebra.ι _ (0, v) := by
-  apply (hyperbolicEquivTensor Q).injective
-  rw [AlgEquiv.apply_symm_apply, hyperbolicEquivTensor_ι]
-  simp
+      _root_.CliffordAlgebra.ι _ (0, v) :=
+  tensorToHyperbolic_ι_hyperbolic Q v
 
 end CliffordAlgebra
 
@@ -471,9 +421,7 @@ private def tensorMatrixMulEquiv (R A : Type*) [CommSemiring R] [Semiring A] [Al
       A ⊗[R] Matrix (Fin (m * n)) (Fin (m * n)) R :=
   (Algebra.TensorProduct.assoc R R R A
       (Matrix (Fin m) (Fin m) R) (Matrix (Fin n) (Fin n) R)).trans
-    (Algebra.TensorProduct.congr (AlgEquiv.refl : A ≃ₐ[R] A)
-      ((Matrix.kroneckerAlgEquiv (Fin m) (Fin n) R).trans
-        (Matrix.reindexAlgEquiv R R finProdFinEquiv)))
+    (Algebra.TensorProduct.congr (AlgEquiv.refl : A ≃ₐ[R] A) (Matrix.kroneckerFinAlgEquiv m n R))
 
 private def tensorMatrixOneEquiv (R A : Type*) [CommSemiring R] [Semiring A] [Algebra R A] :
     A ≃ₐ[R] A ⊗[R] Matrix (Fin 1) (Fin 1) R :=
@@ -500,48 +448,6 @@ noncomputable def realCliffordBottIterEquiv (p q n : ℕ) :
       _root_.CliffordAlgebra (realCliffordForm p q) ⊗[ℝ]
         Matrix (Fin (2 ^ n)) (Fin (2 ^ n)) ℝ :=
   realCliffordBottIterEquivImpl p q n
-
-private noncomputable def castRealCliffordMatrixEquiv
-    {p q p' q' r s r' s' n n' : ℕ}
-    (hp : p = p') (hq : q = q') (hr : r = r') (hs : s = s') (hn : n = n')
-    (e : _root_.CliffordAlgebra (realCliffordForm p q) ≃ₐ[ℝ]
-      _root_.CliffordAlgebra (realCliffordForm r s) ⊗[ℝ]
-        Matrix (Fin (2 ^ n)) (Fin (2 ^ n)) ℝ) :
-    _root_.CliffordAlgebra (realCliffordForm p' q') ≃ₐ[ℝ]
-      _root_.CliffordAlgebra (realCliffordForm r' s') ⊗[ℝ]
-        Matrix (Fin (2 ^ n')) (Fin (2 ^ n')) ℝ :=
-  hp ▸ hq ▸ hr ▸ hs ▸ hn ▸ e
-
-/-- Removing the common positive and negative part of a real Clifford signature leaves a
-one-sided signature and a matrix factor of size `2 ^ min p q`. -/
-noncomputable def realCliffordSignatureReductionEquiv (p q : ℕ) :
-    _root_.CliffordAlgebra (realCliffordForm p q) ≃ₐ[ℝ]
-      _root_.CliffordAlgebra (realCliffordForm (p - min p q) (q - min p q)) ⊗[ℝ]
-        Matrix (Fin (2 ^ min p q)) (Fin (2 ^ min p q)) ℝ :=
-  castRealCliffordMatrixEquiv
-    (Nat.sub_add_cancel (Nat.min_le_left p q))
-    (Nat.sub_add_cancel (Nat.min_le_right p q)) rfl rfl rfl
-    (realCliffordBottIterEquiv (p - min p q) (q - min p q) (min p q))
-
-/-- If `p ≤ q`, reducing the common part of a real Clifford signature leaves only negative
-generators. -/
-noncomputable def realCliffordNegativeAxisReductionEquiv (p q : ℕ) (h : p ≤ q) :
-    _root_.CliffordAlgebra (realCliffordForm p q) ≃ₐ[ℝ]
-      _root_.CliffordAlgebra (realCliffordForm 0 (q - p)) ⊗[ℝ]
-        Matrix (Fin (2 ^ p)) (Fin (2 ^ p)) ℝ :=
-  castRealCliffordMatrixEquiv rfl rfl (by simp [Nat.min_eq_left h])
-    (by simp [Nat.min_eq_left h]) (Nat.min_eq_left h)
-    (realCliffordSignatureReductionEquiv p q)
-
-/-- If `q ≤ p`, reducing the common part of a real Clifford signature leaves only positive
-generators. -/
-noncomputable def realCliffordPositiveAxisReductionEquiv (p q : ℕ) (h : q ≤ p) :
-    _root_.CliffordAlgebra (realCliffordForm p q) ≃ₐ[ℝ]
-      _root_.CliffordAlgebra (realCliffordForm (p - q) 0) ⊗[ℝ]
-        Matrix (Fin (2 ^ q)) (Fin (2 ^ q)) ℝ :=
-  castRealCliffordMatrixEquiv rfl rfl (by simp [Nat.min_eq_right h])
-    (by simp [Nat.min_eq_right h]) (Nat.min_eq_right h)
-    (realCliffordSignatureReductionEquiv p q)
 
 /-- At zero iterations, `realCliffordBottIterEquiv` is the canonical identification with a
 one-by-one matrix tensor factor. -/
@@ -581,8 +487,7 @@ theorem realCliffordBottIterEquiv_succ (p q n : ℕ) :
               (Matrix (Fin 2) (Fin 2) ℝ)).trans
             (Algebra.TensorProduct.congr
               (AlgEquiv.refl : _root_.CliffordAlgebra (realCliffordForm p q) ≃ₐ[ℝ] _)
-              ((Matrix.kroneckerAlgEquiv (Fin (2 ^ n)) (Fin 2) ℝ).trans
-                (Matrix.reindexAlgEquiv ℝ ℝ finProdFinEquiv))))) := by
+              (Matrix.kroneckerFinAlgEquiv (2 ^ n) 2 ℝ)))) := by
   unfold realCliffordBottIterEquiv
   rw [realCliffordBottIterEquivImpl]
   rfl
@@ -617,10 +522,8 @@ theorem realCliffordSignatureSwitchRecurrenceEquiv_ι (p q : ℕ)
             realCliffordBottEquiv q p (_root_.CliffordAlgebra.ι _
               (realCliffordSignSwitchStandardIsometry (p + 1) q (0, 1))) := by
   simp only [realCliffordSignatureSwitchRecurrenceEquiv, AlgEquiv.trans_apply,
-    _root_.CliffordAlgebra.equivOfIsometry_apply,
-    _root_.CliffordAlgebra.map_apply_ι, AlgEquiv.trans_apply,
+    _root_.CliffordAlgebra.equivOfIsometry_apply, _root_.CliffordAlgebra.map_apply_ι,
     CliffordAlgebra.signSwitchEquiv_ι, map_add, map_mul, map_smul,
-    AlgEquiv.trans_apply, _root_.CliffordAlgebra.equivOfIsometry_apply,
-    _root_.CliffordAlgebra.map_apply_ι, QuadraticMap.IsometryEquiv.toIsometry_apply]
+    QuadraticMap.IsometryEquiv.toIsometry_apply]
 
 end TauCeti

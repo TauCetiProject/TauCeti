@@ -44,68 +44,63 @@ namespace TauCeti.ConstantGroup
 
 universe u v w
 
-variable (R : Type u) [CommRing R] (G : Type v) [Group G] [Finite G]
+variable (R : Type u) [CommRing R] (G : Type v) [Finite G]
 
 /-- The coordinate ring of the constant group attached to a finite group `G` over `R`.
 
 It is defined as the finite Hopf dual of the group algebra. -/
 abbrev coordinateRing := ConvolutionDual R (MonoidAlgebra R G)
 
-omit [Group G] in
 /-- The underlying linear equivalence between the coordinate ring and the algebra of functions
 on `G`. -/
 noncomputable def functionLinearEquiv : coordinateRing R G ≃ₗ[R] (G → R) := by
   classical
   exact (WithConv.linearEquiv R _).trans (MonoidAlgebra.basis G R).dualBasis.equivFun
 
-omit [Group G] in
 @[simp]
 theorem functionLinearEquiv_apply (f : coordinateRing R G) (g : G) :
     functionLinearEquiv R G f g = f.ofConv (MonoidAlgebra.single g 1) := by
   classical
   exact (MonoidAlgebra.basis G R).dualBasis_equivFun f.ofConv g
 
-omit [Group G] in
 private theorem functionLinearEquiv_map_one :
     functionLinearEquiv R G (1 : coordinateRing R G) = 1 := by
   ext g
   simp [functionLinearEquiv_apply, LinearMap.convOne_apply]
 
-omit [Group G] in
 private theorem functionLinearEquiv_map_mul (f h : coordinateRing R G) :
     functionLinearEquiv R G (f * h) = functionLinearEquiv R G f * functionLinearEquiv R G h := by
   ext g
   rw [Pi.mul_apply]
   simp [functionLinearEquiv_apply, LinearMap.convMul_apply]
 
-omit [Group G] in
 /-- The coordinate ring of a finite constant group is canonically the function algebra `G → R`.
 -/
 noncomputable def functionAlgEquiv : coordinateRing R G ≃ₐ[R] (G → R) :=
   AlgEquiv.ofLinearEquiv (functionLinearEquiv R G) (functionLinearEquiv_map_one R G)
     (functionLinearEquiv_map_mul R G)
 
-omit [Group G] in
 @[simp]
 theorem functionAlgEquiv_apply (f : coordinateRing R G) (g : G) :
     functionAlgEquiv R G f g = f.ofConv (MonoidAlgebra.single g 1) := by
   simp [functionAlgEquiv, functionLinearEquiv_apply]
 
-omit [Group G] in
 /-- The coordinate ring of a finite constant group is finite étale over the base ring. -/
 noncomputable instance instEtale : Algebra.Etale R (coordinateRing R G) :=
   Algebra.Etale.of_equiv (functionAlgEquiv R G).symm
 
-omit [Group G] in
 /-- Evaluation at a group element, regarded as an algebra point of the constant group. -/
 noncomputable def eval (g : G) : coordinateRing R G →ₐ[R] R :=
   (Pi.evalAlgHom R (fun _ : G ↦ R) g).comp (functionAlgEquiv R G).toAlgHom
 
-omit [Group G] in
 @[simp]
 theorem eval_apply (g : G) (f : coordinateRing R G) :
     eval R G g f = functionAlgEquiv R G f g := by
   simp [eval]
+
+section Group
+
+variable [Group G]
 
 /-- Comultiplication on the coordinate ring is dual to multiplication in `G`. -/
 theorem comul_apply (f : coordinateRing R G) (g h : G) :
@@ -182,23 +177,6 @@ section Functoriality
 
 variable (H : Type w) [Group H] [Finite H]
 
-omit [Group G] [Finite G] [Group H] [Finite H] in
-/-- Pull functions back along a map of types. -/
-def functionPullback (f : G → H) : (H → R) →ₐ[R] (G → R) where
-  toFun a := a ∘ f
-  map_one' := rfl
-  map_mul' _ _ := rfl
-  map_zero' := rfl
-  map_add' _ _ := rfl
-  commutes' _ := rfl
-
-omit [Group G] [Finite G] [Group H] [Finite H] in
-@[simp]
-theorem functionPullback_apply (f : G → H) (a : H → R) (g : G) :
-    functionPullback R G H f a g = a (f g) := by
-  unfold functionPullback
-  rfl
-
 /-- A group homomorphism induces a contravariant bialgebra morphism of constant-group coordinate
 rings. -/
 noncomputable def coordinateBialgHom (f : G →* H) :
@@ -255,5 +233,7 @@ theorem eval_comp_coordinateMap (f : G →* H) (g : G) :
   rw [AlgHom.comp_apply, eval_apply, functionAlgEquiv_coordinateMap_apply, eval_apply]
 
 end Functoriality
+
+end Group
 
 end TauCeti.ConstantGroup

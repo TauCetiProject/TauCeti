@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.E7.Minuscule.BaseChange
-public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup
+public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Basic
 
 /-!
 # Closed generators of the type-E7 minuscule carrier after base change

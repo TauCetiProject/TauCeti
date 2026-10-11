@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.GradedModuleCat.Projective
+public import TauCeti.Algebra.Category.GradedModuleCat.Ideal
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.QHom
 
 /-!
@@ -52,47 +52,33 @@ theorem zigzagVertexIdempotent_mem_zigzagIntegerGrade_zero (i : V) :
 /-- The vertex projective is a homogeneous submodule of the regular module: homogeneous
 projection preserves the fixed-point equation `x * e_i = x`. -/
 theorem isHomogeneous_zigzagProjective
-    [DirectSum.Decomposition (zigzagIntegerGrade k G)] (i : V) :
-    DirectSum.SetLike.IsHomogeneous (zigzagIntegerGrade k G)
-      ((zigzagProjective k G i).restrictScalars k) := by
+    [GradedAlgebra (zigzagIntegerGrade k G)] (i : V) :
+    (zigzagProjective k G i).IsHomogeneous (zigzagIntegerGrade k G) := by
   have he := zigzagVertexIdempotent_mem_zigzagIntegerGrade_zero k G i
   have hm : LinearMap.IsHomogeneous (LinearMap.mulRight k (zigzagVertexIdempotent k G i))
       (zigzagIntegerGrade k G) (zigzagIntegerGrade k G) 0 :=
     LinearMap.isHomogeneous_def.2 fun _ _ hx => mul_mem_zigzagIntegerGrade k G hx he
   intro p x hx
-  rw [Submodule.restrictScalars_mem, mem_zigzagProjective_iff] at hx ⊢
+  rw [mem_zigzagProjective_iff] at hx ⊢
   have h := hm.map_decompose p x
   rw [Int.add_zero] at h
   simpa only [LinearMap.mulRight_apply, hx] using h
 
-/-- The restricted grading of `Z e_i` is an internal direct sum. -/
-theorem isInternal_zigzagProjectiveGrade (i : V) :
-    DirectSum.IsInternal (zigzagProjectiveGrade k G i) := by
-  classical
-  let _ := (isInternal_zigzagIntegerGrade k G).chooseDecomposition
-  exact DirectSum.isInternal_comap (zigzagIntegerGrade k G) _
-    ((zigzagProjective k G i).restrictScalars k).subtype Subtype.val_injective
-    (fun _ _ => mem_zigzagProjectiveGrade_iff k G) fun p x =>
-      ⟨⟨_, isHomogeneous_zigzagProjective k G i p x.2⟩, rfl⟩
-
 /-- The graded left vertex projective `Z e_i`, with its induced path-length grading.
 This is an abbreviation so its carrier and module structures remain those of the principal ideal. -/
 noncomputable abbrev zigzagGradedProjective (i : V) :
-    GradedModuleCat.{max u w} (zigzagIntegerGrade k G) where
-  carrier := zigzagProjective k G i
-  isAddCommGroup := Submodule.addCommGroup _
-  isModule := Submodule.module _
-  isModuleBase := Submodule.module' _
-  grading := ⟨zigzagProjectiveGrade k G i, isInternal_zigzagProjectiveGrade k G i⟩
-  gradedSMul := ⟨fun {_ _} _ _ ha hx =>
-    (mem_zigzagProjectiveGrade_iff k G).2
-      (mul_mem_zigzagIntegerGrade k G ha ((mem_zigzagProjectiveGrade_iff k G).1 hx))⟩
+    GradedModuleCat.{max u w} (zigzagIntegerGrade k G) :=
+  let _ := zigzagIntegerGradedAlgebra k G
+  GradedModuleCat.ofIdeal (zigzagIntegerGrade k G) (zigzagProjective k G i)
+    (isHomogeneous_zigzagProjective k G i)
 
 /-- The grading of the categorical projective is the restricted path-length grading. -/
-@[simp]
 theorem zigzagGradedProjective_piece (i : V) (p : ℤ) :
-    (zigzagGradedProjective k G i).grading.piece p = zigzagProjectiveGrade k G i p :=
-  (rfl)
+    (zigzagGradedProjective k G i).grading.piece p = zigzagProjectiveGrade k G i p := by
+  let _ := zigzagIntegerGradedAlgebra k G
+  ext x
+  rw [GradedModuleCat.mem_ofIdeal_piece_iff (isHomogeneous_zigzagProjective k G i),
+    mem_zigzagProjectiveGrade_iff]
 
 -- This is not a simp lemma: `InternalGrading.shift_piece` already gives the unshifted normal form.
 /-- Shifting the categorical projective agrees with the previously defined projective shift. -/
@@ -105,16 +91,22 @@ theorem zigzagGradedProjective_shift_piece (i : V) (d p : ℤ) :
 /-- Every internally shifted vertex projective is projective in the graded-module category. -/
 instance projective_zigzagGradedProjective_shift (i : V) (d : ℤ) :
     Projective ((zigzagGradedProjective k G i).shiftObj d) := by
-  let _ := (isInternal_zigzagIntegerGrade k G).chooseDecomposition
-  have := zigzagProjective_projective k G i
+  let _ := zigzagIntegerGradedAlgebra k G
+  let _ : Module.Projective (nonisolatedZigzagQuotient k G) (zigzagProjective k G i) :=
+    zigzagProjective_projective k G i
   exact GradedModuleCat.projective_of_module_projective _
 
 /-- The vertex projective is projective in the graded-module category. -/
 instance projective_zigzagGradedProjective (i : V) :
     Projective (zigzagGradedProjective k G i) := by
-  let _ := (isInternal_zigzagIntegerGrade k G).chooseDecomposition
-  have := zigzagProjective_projective k G i
-  exact GradedModuleCat.projective_of_module_projective _
+  let _ := zigzagIntegerGradedAlgebra k G
+  have hI := isHomogeneous_zigzagProjective k G i
+  rw [zigzagProjective_def] at hI
+  simpa only [zigzagGradedProjective, zigzagProjective_def] using
+    GradedModuleCat.projective_ofIdeal_span_singleton
+    (𝒜 := zigzagIntegerGrade k G)
+    (isIdempotentElem_zigzagVertexIdempotent k G i)
+    hI
 
 /-- Categorical graded maps `P_i → P_j{d}` are exactly the homogeneous maps in
 `zigzagProjectiveTargetShiftHom`. The equivalence does not change the underlying linear map. -/
@@ -124,11 +116,13 @@ noncomputable def zigzagGradedProjectiveHomEquiv (i j : V) (d : ℤ) :
   toFun f := ⟨f.hom, by
     rw [mem_zigzagProjectiveTargetShiftHom_iff_isHomogeneous, LinearMap.isHomogeneous_def]
     intro p x hx
+    rw [← zigzagGradedProjective_piece] at hx
     have h := f.isHomogeneous.map_mem hx
     rw [zigzagGradedProjective_shift_piece, zigzagProjectiveShiftGrade_apply] at h
     simpa only [Int.add_zero, sub_eq_add_neg] using h⟩
   invFun f := GradedModuleCat.ofHom f.1 <| LinearMap.isHomogeneous_def.2 fun p x hx => by
     rw [zigzagGradedProjective_shift_piece, zigzagProjectiveShiftGrade_apply]
+    rw [zigzagGradedProjective_piece] at hx
     simpa only [sub_eq_add_neg, add_zero] using
       ((mem_zigzagProjectiveTargetShiftHom_iff_isHomogeneous k G).1 f.2).map_mem hx
   left_inv _ := GradedModuleCat.hom_ext rfl

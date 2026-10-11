@@ -50,6 +50,8 @@ Herbrand quotient, such as `h(Lˣ) = [L : K]` for local fields, bounds `H²`.
 
 ## Main results
 
+* `TauCeti.exists_unitsMap_eq_of_smul_eq`: a unit of `L` fixed by a generator of `Gal(L/K)` comes
+  from `K`.
 * `TauCeti.cyclicClass_apply`: the cyclic class is the explicit two-periodicity class of the
   embedded ground-field unit.
 * `TauCeti.cyclicClass_surjective`: every class in `H²(Gal(L/K), Lˣ)` is the class of an element
@@ -90,6 +92,17 @@ include hg in
 private theorem isCyclic_of_forall_mem_zpowers : IsCyclic (L ≃ₐ[K] L) :=
   ⟨g, fun σ ↦ Subgroup.mem_zpowers_iff.1 (hg σ)⟩
 
+omit [FiniteDimensional K L] in
+include hg in
+/-- **A unit fixed by a generator comes from the base field**: if `g` generates `Gal(L/K)`, a unit
+of `L` fixed by `g` is the image of a unit of `K`. -/
+theorem exists_unitsMap_eq_of_smul_eq {x : Lˣ} (hx : g • x = x) :
+    ∃ a : Kˣ, Units.map (algebraMap K L : K →* L) a = x :=
+  exists_unitsMap_eq_of_forall_apply_eq fun σ ↦ by
+    obtain ⟨k, rfl⟩ := Subgroup.mem_zpowers_iff.1 (hg σ)
+    have h : (g ^ k) • x = x := (MulAction.stabilizer _ x).zpow_mem hx k
+    exact congr(((($h : Lˣ)) : L))
+
 section Periodic
 
 attribute [local instance] IsCyclic.commGroup
@@ -129,26 +142,15 @@ private theorem coe_unitsToFixedUnits (a : Kˣ) :
       Rep.toAdditive.symm (Additive.ofMul (Units.map (algebraMap K L : K →* L) a)) :=
   (rfl)
 
+omit [FiniteDimensional K L] in
 include hg in
 /-- A `g`-fixed element of `Lˣ` lies in `Kˣ`, since `g` generates `Gal(L/K)`. -/
 private theorem unitsToFixedUnits_surjective : Function.Surjective (unitsToFixedUnits g) := by
   rintro ⟨x, hx⟩
-  have hfix : ∀ σ : L ≃ₐ[K] L,
-      σ ((Rep.toAdditive x).toMul : L) = (Rep.toAdditive x).toMul := by
-    intro σ
-    obtain ⟨k, rfl⟩ := Subgroup.mem_zpowers_iff.1 (hg σ)
-    have h : (g ^ k) • (Rep.toAdditive x).toMul = (Rep.toAdditive x).toMul :=
-      (MulAction.stabilizer _ (Rep.toAdditive x).toMul).zpow_mem
-        ((mem_fixedUnits_iff x).1 hx) k
-    exact congr(((($h : Lˣ)) : L))
-  obtain ⟨b, hb⟩ := (IsGalois.mem_range_algebraMap_iff_fixed (F := K) _).2 hfix
-  have hb0 : b ≠ 0 := by
-    rintro rfl
-    exact (Additive.toMul (Rep.toAdditive x)).ne_zero (by simpa using hb.symm)
-  refine ⟨Additive.ofMul (Units.mk0 b hb0), Subtype.ext ?_⟩
+  obtain ⟨b, hb⟩ := exists_unitsMap_eq_of_smul_eq hg ((mem_fixedUnits_iff x).1 hx)
+  refine ⟨Additive.ofMul b, Subtype.ext ?_⟩
   apply Rep.toAdditive.injective
   apply Additive.toMul.injective
-  apply Units.ext
   exact hb
 
 end Fixed

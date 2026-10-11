@@ -9,13 +9,12 @@ public import TauCeti.RepresentationTheory.Quiver.FiniteRepType.Cycle
 public import TauCeti.RepresentationTheory.Quiver.FiniteRepType.PosDef
 
 /-!
-# Conditional Gabriel equivalences
+# Gabriel equivalences
 
 **Gabriel's theorem** says that a finite connected quiver has only finitely many isomorphism classes
 of finite-dimensional indecomposable representations exactly when its underlying graph is a
 Dynkin diagram of type `A`, `D` or `E`, equivalently exactly when its Tits form is positive
-definite. This file states conditional forms of the dichotomy, for a finite connected quiver with
-no pair of opposite arrows `a ⟶ b`, `b ⟶ a`:
+definite. This file proves both forms of the dichotomy for every finite connected quiver:
 
 * `TauCeti.isFiniteRepType_iff_titsForm_posDef`: finite representation type is equivalent to
   positive definiteness of the Tits form;
@@ -41,9 +40,9 @@ exactly when the graph is a simply-laced Dynkin diagram
   form of a finite connected quiver is positive definite exactly when the quiver is a simply-laced
   Dynkin diagram, oriented.
 * `TauCeti.isFiniteRepType_iff_titsForm_posDef`: the Tits form version of **Gabriel's theorem**
-  for quivers with no pair of opposite arrows.
+  for finite connected quivers.
 * `TauCeti.isFiniteRepType_iff_card_hom_add_card_hom_le_one_and_exists_dynkinType_iso`:
-  the Dynkin diagram version of **Gabriel's theorem** for quivers with no pair of opposite arrows.
+  the Dynkin diagram version of **Gabriel's theorem** for finite connected quivers.
 
 ## Implementation notes
 
@@ -52,16 +51,9 @@ base field, the universe in which the infinite families of indecomposables over 
 Dynkin quivers are built. The finiteness proved from a positive definite Tits form holds for vertex
 spaces in a larger universe and descends (`TauCeti.IsFiniteRepType.of_ulift`).
 
-A pair of opposite arrows `a ⟶ b`, `b ⟶ a` is excluded by hypothesis. It is the cyclically
-oriented quiver of type `Ã₁`, which the underlying simple graph records as a single edge. The cycle
-obstruction `TauCeti.not_isFiniteRepType_of_injective_of_nonempty_hom_sum` requires `n + 3`
-distinct vertices, so it cannot detect this two-vertex quiver. A positive definite Tits form
-excludes it on its own
-(`TauCeti.card_hom_add_card_hom_le_one_of_titsForm_posDef`).
-The opposite-arrow hypothesis is used only in the implication from finite representation type to
-positive definiteness. Removing it requires the additional obstruction that an oriented two-cycle
-has infinite representation type; the converse and the purely combinatorial equivalence do not
-require this hypothesis.
+The obstructions include loops, parallel arrows, opposite arrows and cycles of length at least
+three. Opposite arrows require a separate representation-theoretic argument because the
+underlying simple graph records an oriented two-cycle as a single edge.
 
 ## References
 
@@ -103,30 +95,28 @@ theorem titsForm_posDef_iff_card_hom_add_card_hom_le_one_and_exists_dynkinType_i
 
 variable {k : Type u} [Field k]
 
-/-- **Gabriel's theorem, Tits form version.** A finite connected quiver with no pair of opposite
-arrows has finite representation type exactly when its Tits form is positive definite. -/
+/-- **Gabriel's theorem, Tits form version.** A finite connected quiver has finite
+representation type exactly when its Tits form is positive definite. -/
 theorem isFiniteRepType_iff_titsForm_posDef
-    (hopp : ∀ ⦃a b : Q⦄, a ≠ b → (a ⟶ b) → IsEmpty (b ⟶ a))
     (hconn : (underlyingGraph Q).Connected) :
     IsFiniteRepType.{u, v, w, u} k Q ↔ (titsForm Q).PosDef :=
-  ⟨fun h ↦ h.posDef_titsForm_of_connected hopp hconn,
+  ⟨fun h ↦ h.posDef_titsForm_of_connected hconn,
     fun hpd ↦ IsFiniteRepType.of_ulift.{u, v, w, u, max v w}
       (isFiniteRepType_of_titsForm_posDef.{u, v, w, u} hpd)⟩
 
 omit [Fintype Q] in
-/-- **Gabriel's theorem.** A finite connected quiver with no pair of opposite arrows has finite
+/-- **Gabriel's theorem.** A finite connected quiver has finite
 representation type exactly when it is an oriented simply-laced Dynkin diagram: when it has no
 loop, at most one arrow between any two vertices, counting both directions, and an underlying
 graph isomorphic to the diagram of a valid Dynkin type of type `A`, `D` or `E`. -/
 theorem isFiniteRepType_iff_card_hom_add_card_hom_le_one_and_exists_dynkinType_iso [Finite Q]
-    (hopp : ∀ ⦃a b : Q⦄, a ≠ b → (a ⟶ b) → IsEmpty (b ⟶ a))
     (hconn : (underlyingGraph Q).Connected) :
     IsFiniteRepType.{u, v, w, u} k Q ↔
       (∀ a b : Q, Fintype.card (a ⟶ b) + Fintype.card (b ⟶ a) ≤ 1) ∧
         ∃ t : DynkinType, t.Valid ∧ t.IsSimplyLaced ∧
           Nonempty (underlyingGraph Q ≃g diagramGraph t.cartanMatrix) := by
   have := Fintype.ofFinite Q
-  exact (isFiniteRepType_iff_titsForm_posDef hopp hconn).trans
+  exact (isFiniteRepType_iff_titsForm_posDef hconn).trans
     (titsForm_posDef_iff_card_hom_add_card_hom_le_one_and_exists_dynkinType_iso hconn)
 
 end TauCeti

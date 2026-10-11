@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Divergence
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.UnboundedEdge
+import TauCeti.Algebra.BigOperators.Finset.Fiber
 import TauCeti.Data.Fin.Basic
 
 /-!
@@ -22,12 +23,18 @@ give the complete range of the boundary map. This identifies the polygonal chain
 by that map; it does not assert simplicity, interior injectivity, or equality with the frontier
 of the interior image.
 
+When the total exponent is `-1` or `1`, both rays point to the right, so far enough to the right
+the boundary range is a pair of horizontal lines. This describes the boundary of an end with
+parallel outer sides, of opening `0` or `2π`.
+
 ## Main results
 
 * `TauCeti.schwarzChristoffelBoundary_image_Ici_eq_ray` and
   `TauCeti.schwarzChristoffelBoundary_image_Iic_eq_ray` identify the two outer edge images.
 * `TauCeti.range_schwarzChristoffelBoundary_of_neg_one_le_sum` identifies the entire boundary
   range as the union of the finite sides and the two infinite rays.
+* `TauCeti.exists_mem_range_schwarzChristoffelBoundary_iff_of_sum_eq_neg_one_or_eq_one`
+  describes the boundary range far to the right when both rays point to the right.
 
 ## References
 
@@ -179,5 +186,59 @@ theorem range_schwarzChristoffelBoundary_of_neg_one_le_sum {n : ℕ}
     (hfinite (Fin.last n)) (fun i _ => ha i.le_last) hS
   rw [← image_univ, hcover, image_union, image_union, image_iUnion, hleft, hright]
   simp_rw [hbounded]
+
+/-- **Far to the right, a boundary with two rightward outer rays is a pair of lines.** When the
+total exponent is `-1` or `1`, both outer rays point in the positive real direction. If every
+finite prevertex is integrable and all prevertices with nonzero exponent lie between `p` and `q`,
+then sufficiently far to the right the boundary range consists exactly of the points at the
+heights of the boundary values at `q` and `p`. The boundary chain need not be simple. -/
+theorem exists_mem_range_schwarzChristoffelBoundary_iff_of_sum_eq_neg_one_or_eq_one
+    (a e : ι → ℝ) (z₀ : UpperHalfPlane) (hfinite : ∀ j, -1 < ∑ i with a i = a j, e i)
+    {p q : ℝ} (hleft : ∀ i, e i ≠ 0 → p ≤ a i) (hright : ∀ i, e i ≠ 0 → a i ≤ q)
+    (hsum : ∑ i, e i = -1 ∨ ∑ i, e i = 1) :
+    ∃ R : ℝ, ∀ w : ℂ, R < w.re →
+      (w ∈ range (schwarzChristoffelBoundary a e z₀) ↔
+        w.im = (schwarzChristoffelBoundary a e z₀ q).im ∨
+          w.im = (schwarzChristoffelBoundary a e z₀ p).im) := by
+  let B := schwarzChristoffelBoundary a e z₀
+  have hS : -1 ≤ ∑ i, e i := by rcases hsum with h | h <;> linarith
+  have hp := lt_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite p
+  have hq := lt_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite q
+  have hexp : Complex.exp ((Real.pi * ∑ i, e i) * Complex.I) = -1 := by
+    rcases hsum with h | h <;> simp [h, neg_mul, Complex.exp_neg, Complex.exp_pi_mul_I]
+  have hleftRay : B '' Iic p = (fun t : ℝ => B p + (t : ℂ)) '' Ici 0 := by
+    dsimp only [B]
+    rw [schwarzChristoffelBoundary_image_Iic_eq_ray a e z₀ hp hleft hS, hexp]
+    simp only [mul_neg_one, sub_neg_eq_add]
+  have hrightRay : B '' Ici q = (fun t : ℝ => B q + (t : ℂ)) '' Ici 0 :=
+    schwarzChristoffelBoundary_image_Ici_eq_ray a e z₀ hq hright hS
+  -- The compact middle arc has bounded image; beyond its bound only the outer rays remain.
+  obtain ⟨M, _, hM⟩ := ((isCompact_Icc : IsCompact (Icc p q)).image
+    (isProperMap_schwarzChristoffelBoundary a e z₀ hfinite hS).continuous).isBounded
+    |>.exists_pos_norm_le
+  refine ⟨max M (max (B p).re (B q).re), fun w hw => ⟨?_, ?_⟩⟩
+  · rintro ⟨x, rfl⟩
+    by_cases hxp : x ≤ p
+    · obtain ⟨t, _, ht⟩ := hleftRay ▸ mem_image_of_mem B (mem_Iic.mpr hxp)
+      exact Or.inr (by simpa using (congrArg Complex.im ht).symm)
+    by_cases hxq : q ≤ x
+    · obtain ⟨t, _, ht⟩ := hrightRay ▸ mem_image_of_mem B (mem_Ici.mpr hxq)
+      exact Or.inl (by simpa using (congrArg Complex.im ht).symm)
+    have hbound := hM _ (mem_image_of_mem B ⟨(not_le.mp hxp).le, (not_le.mp hxq).le⟩)
+    exact ((not_lt_of_ge ((re_le_norm _).trans hbound)) ((le_max_left _ _).trans_lt hw)).elim
+  · -- Both full horizontal rays have begun before the chosen real-part bound.
+    have hwp : (B p).re < w.re := ((le_max_left _ _).trans (le_max_right _ _)).trans_lt hw
+    have hwq : (B q).re < w.re := ((le_max_right _ _).trans (le_max_right _ _)).trans_lt hw
+    rintro (hwq' | hwp')
+    · have hmem : w ∈ B '' Ici q := by
+        rw [hrightRay]
+        refine ⟨w.re - (B q).re, by simp only [mem_Ici]; linarith, ?_⟩
+        apply Complex.ext <;> simp [B, hwq']
+      exact image_subset_range B _ hmem
+    · have hmem : w ∈ B '' Iic p := by
+        rw [hleftRay]
+        refine ⟨w.re - (B p).re, by simp only [mem_Ici]; linarith, ?_⟩
+        apply Complex.ext <;> simp [B, hwp']
+      exact image_subset_range B _ hmem
 
 end TauCeti

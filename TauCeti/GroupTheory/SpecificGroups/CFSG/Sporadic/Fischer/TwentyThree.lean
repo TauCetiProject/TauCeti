@@ -10,11 +10,9 @@ public import TauCeti.GroupTheory.Presentation.Coxeter
 /-!
 # A transcribed presentation of the second Fischer group
 
-This file carries the `Fi₂₃` row of the sporadic presentation data required by milestone S1 of
-`TauCetiRoadmap/CFSGStatement/README.md`. It records presentation `GPLTable.Fi23.1` from Roderik
-Lindenbergh's Group Presentations Library as a `TauCeti.GroupPresentation`, together with the exact
-source, generator convention, transcription notes, expected counts, and decidable checks on the
-transcription.
+This file records presentation `GPLTable.Fi23.1` from Roderik Lindenbergh's Group Presentations
+Library as a `TauCeti.GroupPresentation`, together with the exact source, generator convention,
+transcription notes, expected counts, and decidable checks on the transcription.
 
 The presentation uses the Coxeter graph
 
@@ -69,8 +67,7 @@ df,dg,di,dj, eg,eh,ei,ej, fh,fi,fj, gh,gi, hj,ij.
 Entries 56 and 57 are `(dcbdefdhi)¹⁰` and `(abcdefh)⁹`. Translating source letters to zero-based
 generator indices gives exactly `fi23Presentation_relatorLetters`: there is no change to any word
 or exponent and no dropped or duplicated relation, only the presentation-irrelevant regrouping by
-kind just described. This closes the row's S1 source-to-Lean read-through. The separate
-`FiniteSimpleGroups` comparison does not apply because that development does not cover `Fi₂₃`.
+kind just described.
 
 The row publishes an equation for each of its fields: the transcribed relator expressions with
 their generator indices written out, and the provenance a manifest row exists to record. Together
@@ -466,9 +463,7 @@ theorem fi23Presentation_map_length_relators :
 
 /-- The generator and relator counts recorded for `Fi₂₃` agree with the transcribed data. -/
 theorem fi23Presentation_matchesMetadata : fi23Presentation.matchesMetadata := by
-  simp [GroupPresentation.matchesMetadata_iff, GroupPresentation.generatorCount,
-    fi23Presentation, fi23RelatorList, fi23NodeAndEdgeRelators, fi23NonedgeRelators,
-    fi23AdditionalRelators]
+  simp [GroupPresentation.generatorCount]
 
 /-- The compiled relators of the `Fi₂₃` presentation contain `371` signed letters in total. -/
 theorem fi23Presentation_totalLength : fi23Presentation.totalLength = 371 := by
@@ -478,9 +473,10 @@ theorem fi23Presentation_totalLength : fi23Presentation.totalLength = 371 := by
 /-- Every compiled relator of the `Fi₂₃` presentation is cyclically reduced. -/
 theorem fi23Presentation_relatorsCyclicallyReduced :
     fi23Presentation.relatorsCyclicallyReduced := by
-  simp [GroupPresentation.relatorsCyclicallyReduced_iff, GroupPresentation.relators_def,
-    fi23Presentation, fi23RelatorList, fi23NodeAndEdgeRelators, fi23NonedgeRelators,
-    fi23AdditionalRelators, FreeGroup.IsCyclicallyReduced]
+  simp only [GroupPresentation.relatorsCyclicallyReduced_iff, GroupPresentation.relators_def,
+    fi23Presentation_transcribed, List.map_cons, List.map_nil, Relator.toWord_mul,
+    Relator.toWord_pow, Relator.toWord_gen]
+  decide
 
 /-! ### The row against the Coxeter group of its graph -/
 

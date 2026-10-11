@@ -15,7 +15,9 @@ public import TauCeti.Topology.Sheaves.Stalks
 Mathlib endows the stalk of a presheaf of modules with a module structure over the stalk of
 its ring presheaf, without requiring commutativity. This file gives its linear universal property:
 compatible additive maps on sections that respect scalar multiplication by germs induce a linear
-map from the stalk.
+map from the stalk. Over commutative coefficients, `germSemilinear` bundles the germ map of
+sections as a map semilinear along the ring germ map, and `stalkMapCommRing` is the stalk map of a
+morphism, linear over the commutative-ring stalk.
 It also constructs the stalk map of a morphism defined on a neighborhood, for use with
 local morphisms such as sections of an internal Hom.
 -/
@@ -106,6 +108,56 @@ theorem stalkLiftCommRing_germ
     (U : Opens X) (hx : x ∈ U) (m : N.obj (op U)) :
     N.stalkLiftCommRing x f hf hs (TopCat.Presheaf.germ N.presheaf U x hx m) = f U hx m :=
   TopCat.Presheaf.stalkLiftAddHom_germ N.presheaf x f hf U hx m
+
+/-- The germ map of a presheaf of modules over a presheaf of commutative rings, as a map
+semilinear along the ring germ map. -/
+def germSemilinear (U : Opens X) (hx : x ∈ U) :
+    N.obj (op U) →ₛₗ[(S.germ U x hx).hom] ↑(TopCat.Presheaf.stalk N.presheaf x) where
+  toFun := TopCat.Presheaf.germ N.presheaf U x hx
+  map_add' := map_add _
+  map_smul' r m := N.germ_smul x U hx r m
+
+/-- The semilinear germ map is the germ map. -/
+@[simp]
+theorem germSemilinear_apply (U : Opens X) (hx : x ∈ U) (m : N.obj (op U)) :
+    N.germSemilinear x U hx m = TopCat.Presheaf.germ N.presheaf U x hx m :=
+  (rfl)
+
+variable {N} {N' : PresheafOfModules.{u} (S ⋙ forget₂ CommRingCat RingCat.{u})}
+
+private def stalkMapCommRingSection (f : N ⟶ N') (U : Opens X) (hx : x ∈ U) :
+    N.obj (op U) →+ ↑(TopCat.Presheaf.stalk N'.presheaf x) :=
+  (N'.germSemilinear x U hx).toAddMonoidHom.comp (f.app (op U)).hom.toAddMonoidHom
+
+private theorem stalkMapCommRingSection_res (f : N ⟶ N') {U V : Opens X} (i : U ⟶ V)
+    (hx : x ∈ U) (m : N.obj (op V)) :
+    stalkMapCommRingSection x f U hx (N.map i.op m) =
+      stalkMapCommRingSection x f V (i.le hx) m :=
+  (congrArg (TopCat.Presheaf.germ N'.presheaf _ x hx) (naturality_apply f i.op m)).trans
+    (TopCat.Presheaf.germ_res_apply N'.presheaf i x hx _)
+
+private theorem stalkMapCommRingSection_smul (f : N ⟶ N') (U : Opens X) (hx : x ∈ U)
+    (r : S.obj (op U)) (m : N.obj (op U)) :
+    stalkMapCommRingSection x f U hx (r • m) =
+      S.germ U x hx r • stalkMapCommRingSection x f U hx m :=
+  (congrArg (TopCat.Presheaf.germ N'.presheaf U x hx) ((f.app (op U)).hom.map_smul r m)).trans
+    (N'.germ_smul x U hx r _)
+
+/-- A morphism of presheaves of modules over a presheaf of commutative rings induces a map on
+stalks, linear over the commutative-ring stalk. -/
+def stalkMapCommRing (f : N ⟶ N') :
+    ↑(TopCat.Presheaf.stalk N.presheaf x) →ₗ[S.stalk x] ↑(TopCat.Presheaf.stalk N'.presheaf x) :=
+  N.stalkLiftCommRing x (stalkMapCommRingSection x f)
+    (stalkMapCommRingSection_res x f) (stalkMapCommRingSection_smul x f)
+
+/-- The stalk map of a morphism sends a germ to the germ of its image. -/
+@[simp]
+theorem stalkMapCommRing_germ (f : N ⟶ N') (U : Opens X) (hx : x ∈ U) (m : N.obj (op U)) :
+    dsimp% only [presheaf_obj_coe]
+    (stalkMapCommRing x f (TopCat.Presheaf.germ N.presheaf U x hx m) =
+      TopCat.Presheaf.germ N'.presheaf U x hx (f.app (op U) m)) :=
+  N.stalkLiftCommRing_germ x (stalkMapCommRingSection x f)
+    (stalkMapCommRingSection_res x f) (stalkMapCommRingSection_smul x f) U hx m
 
 end CommRing
 

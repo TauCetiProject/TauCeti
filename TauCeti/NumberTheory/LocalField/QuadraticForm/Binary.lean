@@ -56,7 +56,7 @@ theorem equivalent_binary_iff_isSquare_and_hilbertSymbol_eq (a b c d : Kˣ) :
     (weightedSumSquares K ![(a : K), (b : K)]).Equivalent
       (weightedSumSquares K ![(c : K), (d : K)]) ↔
       IsSquare (a * b * (c * d)) ∧ hilbertSymbol a b = hilbertSymbol c d := by
-  refine ⟨fun h => ⟨isSquare_mul_mul_of_equivalent_binary h,
+  refine ⟨fun h => ⟨((equivalent_binary_iff a b c d).mp h).1,
     hilbertSymbol_eq_of_equivalent_binary h⟩, ?_⟩
   rintro ⟨hd, hs⟩
   refine equivalent_binary_of_isSquare_of_mem_unitValueSet hd ?_

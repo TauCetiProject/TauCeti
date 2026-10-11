@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
+public import TauCeti.RingTheory.DedekindDomain.PrimesAbove
 
 /-!
 # Nonzero prime ideals lying over a prime
@@ -15,6 +16,9 @@ lying over a nonzero prime `v` of `R` correspond to `Ideal.primesOver v.asIdeal 
 The correspondence is `IsDedekindDomain.HeightOneSpectrum.liesOverEquivPrimesOver`.
 It uses Mathlib's type of nonzero prime ideals, `IsDedekindDomain.HeightOneSpectrum`,
 without requiring either ring to be Dedekind or the extension to be integral.
+For an integral extension of domains, `TauCeti.sigmaPrimesOverEquivPrimesAbove` assembles these
+fibres into the canonical carrier of primes above a set; its forward map keeps the top prime,
+and its inverse indexes that prime by its contraction.
 -/
 
 public section
@@ -56,3 +60,47 @@ theorem liesOverEquivPrimesOver_symm_apply (v : HeightOneSpectrum R)
 end IsDedekindDomain.HeightOneSpectrum
 
 end
+
+public section
+
+namespace TauCeti
+
+open IsDedekindDomain
+
+variable (R B : Type*) [CommRing R] [IsDomain R] [CommRing B] [IsDomain B]
+  [Algebra R B] [Algebra.IsIntegral R B] [FaithfulSMul R B]
+
+/-- Primes above a set correspond to the sigma family of primes over each member of that set.
+The forward map keeps the top prime; the inverse indexes it by its contraction. -/
+def sigmaPrimesOverEquivPrimesAbove (S : Set (HeightOneSpectrum R)) :
+    (Σ v : S, v.1.asIdeal.primesOver B) ≃ ↥(HeightOneSpectrum.primesAbove R B S) :=
+  (Equiv.sigmaCongrRight fun v : S ↦
+    (HeightOneSpectrum.liesOverEquivPrimesOver B v.1).symm.trans
+      (Equiv.subtypeEquivRight fun _ ↦
+        ⟨fun h ↦ HeightOneSpectrum.asIdeal_injective h.over.symm,
+          fun h ↦ ⟨congrArg HeightOneSpectrum.asIdeal h.symm⟩⟩)).trans
+    (Equiv.sigmaSubtypeFiberEquivSubtype (HeightOneSpectrum.under R)
+      (fun w ↦ HeightOneSpectrum.mem_primesAbove_iff R B S w))
+
+/-- The sigma-to-primes-above equivalence preserves the underlying top ideal. -/
+@[simp]
+theorem sigmaPrimesOverEquivPrimesAbove_apply_asIdeal (S : Set (HeightOneSpectrum R))
+    (p : Σ v : S, v.1.asIdeal.primesOver B) :
+    (sigmaPrimesOverEquivPrimesAbove R B S p).1.asIdeal = p.2.1 :=
+  (rfl)
+
+/-- The inverse indexes a prime above the set by its contraction. -/
+@[simp]
+theorem sigmaPrimesOverEquivPrimesAbove_symm_apply_fst (S : Set (HeightOneSpectrum R))
+    (w : ↥(HeightOneSpectrum.primesAbove R B S)) :
+    ((sigmaPrimesOverEquivPrimesAbove R B S).symm w).1.1 = w.1.under R :=
+  (rfl)
+
+/-- The inverse preserves the underlying top ideal. -/
+@[simp]
+theorem sigmaPrimesOverEquivPrimesAbove_symm_apply_snd (S : Set (HeightOneSpectrum R))
+    (w : ↥(HeightOneSpectrum.primesAbove R B S)) :
+    ((sigmaPrimesOverEquivPrimesAbove R B S).symm w).2.1 = w.1.asIdeal :=
+  (rfl)
+
+end TauCeti

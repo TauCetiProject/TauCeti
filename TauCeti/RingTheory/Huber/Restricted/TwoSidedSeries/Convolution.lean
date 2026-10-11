@@ -62,8 +62,8 @@ theorem addConvolutionExists_of_mem_twoSidedRestrictedSubmodule
     {f g : ℤ → A} (hf : f ∈ twoSidedRestrictedSubmodule A A)
     (hg : g ∈ twoSidedRestrictedSubmodule A A) :
     DiscreteConvolution.AddConvolutionExists (.mul ℕ A) f g :=
-  TauCeti.addConvolutionExists_of_zeroAtFilter_cofinite
-    (mem_twoSidedRestrictedSubmodule.mp hf) (mem_twoSidedRestrictedSubmodule.mp hg)
+  (mem_twoSidedRestrictedSubmodule.mp hf).addConvolutionExists
+    (mem_twoSidedRestrictedSubmodule.mp hg)
 
 end Summability
 
@@ -77,8 +77,8 @@ theorem addRingConvolution_mem_twoSidedRestrictedSubmodule
     (hg : g ∈ twoSidedRestrictedSubmodule A A) :
     f ⋆ᵣ₊ g ∈ twoSidedRestrictedSubmodule A A :=
   mem_twoSidedRestrictedSubmodule.mpr <|
-    TauCeti.ZeroAtFilter.addRingConvolution
-      (mem_twoSidedRestrictedSubmodule.mp hf) (mem_twoSidedRestrictedSubmodule.mp hg)
+    (mem_twoSidedRestrictedSubmodule.mp hf).addRingConvolution
+      (mem_twoSidedRestrictedSubmodule.mp hg)
 
 end Preservation
 

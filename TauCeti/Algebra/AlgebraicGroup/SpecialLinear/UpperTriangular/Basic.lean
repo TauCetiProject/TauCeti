@@ -102,18 +102,13 @@ noncomputable abbrev coordinateMap :
     SpecialLinear.coordinateHopfAlgebra R n ⟶ coordinateHopfAlgebra R n :=
   CommHopfAlgCat.mkQuotient (SpecialLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n)
 
-/-- The upper-triangular special-linear coordinate Hopf algebra is finite type. -/
-instance instAlgebraFiniteTypeCoordinateHopfAlgebra :
-    Algebra.FiniteType R (coordinateHopfAlgebra R n) :=
-  Algebra.FiniteType.quotient R (definingHopfIdeal R n).toIdeal
-
 section Points
 
 variable {A : Type w} [CommRing A] [Algebra R A]
 
 /-- An `SLₙ`-point belongs to the upper-triangular closed subgroup exactly when its matrix is
 upper triangular. -/
-@[simp]
+@[simp↓]
 theorem mem_definingPointsSubgroup_iff
     (g : HopfAlgebra.points (R := R) (H := SpecialLinear.coordinateHopfAlgebra R n)
       (CommAlgCat.of R A)) :
@@ -123,10 +118,7 @@ theorem mem_definingPointsSubgroup_iff
       Matrix.SpecialLinearGroup.toGL (SpecialLinear.pointsMulEquiv (R := R) (A := A) n g) ∈
         upperTriangularGroup (Fin n) A := by
   rw [definingHopfIdeal_def,
-    CommHopfAlgCat.mem_quotientPointsSubgroup_map_iff_of_surjective
-      (SpecialLinear.coordinateMap R n)
-      (CommHopfAlgCat.mkQuotient_surjective
-        (GeneralLinear.coordinateHopfAlgebra R n) (SpecialLinear.definingHopfIdeal R n)),
+    CommHopfAlgCat.mem_quotientPointsSubgroup_map_iff (SpecialLinear.coordinateMap R n),
     GeneralLinear.UpperTriangular.mem_definingPointsSubgroup_iff,
     CommHopfAlgCat.mapPointsFunctor_app_apply,
     ← CommHopfAlgCat.quotientPointsHom_apply
@@ -159,7 +151,7 @@ noncomputable def pointsMulEquiv :
 
 /-- Under the upper-triangular and special-linear point equivalences, the quotient-point
 inclusion is the ordinary inclusion of upper-triangular matrices into `SLₙ`. -/
-@[simp]
+@[simp↓]
 theorem pointsMulEquiv_coe
     (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n) (CommAlgCat.of R A)) :
     SpecialLinear.pointsMulEquiv (R := R) (A := A) n
@@ -180,7 +172,7 @@ theorem pointsMulEquiv_coe
 
 /-- The ambient point attached to an upper-triangular determinant-one matrix is the
 special-linear point attached to that matrix. -/
-@[simp]
+@[simp↓]
 theorem quotientPointsHom_pointsMulEquiv_symm
     (g : (upperTriangularGroup (Fin n) A).comap Matrix.SpecialLinearGroup.toGL) :
     CommHopfAlgCat.quotientPointsHom
@@ -194,6 +186,7 @@ variable {B : Type w'} [CommRing B] [Algebra R B]
 
 /-- The upper-triangular point equivalence of `SLₙ` is natural in the value algebra:
 postcomposition of points agrees with entrywise mapping of matrices. -/
+@[simp↓]
 theorem pointsMulEquiv_mapValue (phi : A →ₐ[R] B)
     (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n) (CommAlgCat.of R A)) :
     (pointsMulEquiv R n (A := B) (AlgHom.mapValue (H := coordinateHopfAlgebra R n) phi f) :

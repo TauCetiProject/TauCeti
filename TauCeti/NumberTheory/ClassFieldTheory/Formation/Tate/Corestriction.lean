@@ -240,8 +240,9 @@ theorem tateCor_zero_H0π (T : LayerRestriction small big) (F : Formation G)
       (QuotientGroup.mk (s := big.relativeTop) q.out) := by
     conv_lhs => rw [← q.out_eq']
     rfl
-  rw [Representation.apply_eq_apply_of_quotientGroup_mk_eq
-    (TauCeti.TateCohomology.mapInvariants (T.isIntertwiningMap_repIso_range F) x).2
+  rw [Representation.apply_eq_apply_of_quotientGroup_mk_eq _
+    ((Representation.mem_invariants _ _).1
+      (TauCeti.TateCohomology.mapInvariants (T.isIntertwiningMap_repIso_range F) x).2)
     (a := (e q).out)
     (b := QuotientGroup.mk (s := big.relativeTop) q.out) (by rw [QuotientGroup.out_eq']; exact hq),
     NormalLayer.rep_ρ_mk_apply_coe, TauCeti.TateCohomology.mapInvariants_apply_coe,
@@ -360,7 +361,7 @@ theorem trivialTateCor_zero_H0π (T : LayerRestriction small big)
     trivialTateRangeIso_hom_H0π, TauCeti.TateCohomology.H0π_comp_H0Cor_apply]
   congr 1
   apply Subtype.ext
-  rw [Representation.coe_relNormInvariants, Representation.relNorm_apply_of_mem_invariants]
+  rw [Representation.coe_relNormInvariants, Representation.relNorm_apply_of_forall_apply_eq]
   · simp only [T.index_range_galHom]
     simp
   · exact fun _ ↦ rfl

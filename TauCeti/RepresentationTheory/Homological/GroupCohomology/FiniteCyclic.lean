@@ -52,6 +52,8 @@ Frobenius.
 
 * `Rep.FiniteCyclicGroup.groupCohomologyπEven_surjective`: in positive even degree every class is
   represented by an element fixed by the generator.
+* `Rep.FiniteCyclicGroup.ρ_apply_of_mem_ker`: an element of the kernel of `ρ(g) - 1` is fixed
+  by `g`.
 * `Rep.FiniteCyclicGroup.carryCocycle_apply_pow`: the values of the carry cocycle.
 * `Rep.FiniteCyclicGroup.groupCohomologyπEven_two`,
   `Rep.FiniteCyclicGroup.groupCohomologyπEven_two_apply`: in degree `2`, `groupCohomologyπEven`
@@ -175,7 +177,7 @@ private theorem barToPeriodic₂_comm :
   have h₀ : Fin.contractNth 0 (· * ·) x 0 = x 0 * x 1 := rfl
   have h₁ : Fin.contractNth 1 (· * ·) x 0 = x 0 := rfl
   set i := cyclicLog g hg (x 0) with hi
-  set j := cyclicLog g hg (x 1) with hj
+  set j := cyclicLog g hg (x 1) with _
   have hmul : cyclicLog g hg (x 0 * x 1) = (i + j) % orderOf g := cyclicLog_mul g hg _ _
   -- As in `barToPeriodic₁_comm`, left multiplication is matched up to the instance path.
   simp only [Representation.ofMulAction_single, smul_eq_mul]
@@ -265,7 +267,9 @@ private noncomputable abbrev barToPeriodicCochains :
       (barToPeriodic k g hg)).op ≫ (inhomogeneousCochainsIso A).inv
 
 omit [Fintype G] in
-private theorem ρ_apply_of_mem_ker (x : LinearMap.ker (applyAsHom A g - 𝟙 A).hom.toLinearMap) :
+/-- An element of the kernel of `ρ(g) - 1`, the degree-`2` cycles of the periodic complex, is fixed
+by `g`. -/
+theorem ρ_apply_of_mem_ker (x : LinearMap.ker (applyAsHom A g - 𝟙 A).hom.toLinearMap) :
     A.ρ g x.1 = x.1 := by
   have := x.2
   rw [LinearMap.mem_ker] at this

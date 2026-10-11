@@ -132,6 +132,15 @@ theorem map_comp (f : LieHom R L M) (g : LieHom R M N) :
   intro x
   simp only [map_ι, LieHom.comp_apply, AlgHom.coe_toLieHom, AlgHom.comp_apply]
 
+/-- For Lie subalgebras `A ≤ B` of `L`, mapping `U(A)` into `U(B)` and then into `U(L)` is the map
+induced by the inclusion of `A` in `L`. -/
+@[simp]
+theorem map_incl_comp_map_inclusion {A B : LieSubalgebra R L} (h : A ≤ B) :
+    (map R B.incl).comp (map R (LieSubalgebra.inclusion h)) = map R A.incl := by
+  rw [← map_comp]
+  -- `B.incl ∘ inclusion h` and `A.incl` are both the coercion `A → L`
+  rfl
+
 /-- A left inverse of Lie homomorphisms induces a left inverse of the corresponding
 enveloping-algebra maps. -/
 theorem map_leftInverse {f : LieHom R L M} {g : LieHom R M L}

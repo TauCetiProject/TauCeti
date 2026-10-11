@@ -203,6 +203,12 @@ theorem replaceBlock_of_gt {α : Type*} (x : ℕ → α) (p s : ℕ) (v : α) {i
   · exact absurd h₂ (by omega)
   · rfl
 
+/-- A function applied entrywise commutes with replacing a block of entries. -/
+theorem apply_replaceBlock {α β : Type*} (g : α → β) (x : ℕ → α) (p s : ℕ) (v : α) (i : ℕ) :
+    g (replaceBlock x p s v i) = replaceBlock (fun j ↦ g (x j)) p s (g v) i := by
+  simp only [replaceBlock]
+  split_ifs <;> rfl
+
 end TauCeti
 
 namespace Fin

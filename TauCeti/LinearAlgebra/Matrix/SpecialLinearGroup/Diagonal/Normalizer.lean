@@ -269,17 +269,17 @@ torus separates coordinates, its normalizer modulo the torus is canonically the 
 on the coordinate lines. -/
 def diagonalNormalizerQuotientMulEquivPerm
     (hsep : DiagonalTorusSeparatesCoordinates k n) :
-    TauCeti.Subgroup.normalizerQuotient (diagonalTorus k n) ≃* Equiv.Perm (Fin n) := by
+    Subgroup.normalizerQuotient (diagonalTorus k n) ≃* Equiv.Perm (Fin n) := by
   let φ := diagonalNormalizerPerm (k := k) (n := n) hsep
   have hkill : ∀ g : Subgroup.normalizer
       (diagonalTorus k n : Set (SpecialLinearGroup (Fin n) k)),
       (g : SpecialLinearGroup (Fin n) k) ∈ diagonalTorus k n → φ g = 1 :=
     fun g hg ↦ (diagonalNormalizerPerm_eq_one_iff hsep g).mpr hg
-  apply MulEquiv.ofBijective (TauCeti.Subgroup.normalizerQuotientLift (diagonalTorus k n) φ hkill)
+  apply MulEquiv.ofBijective (Subgroup.normalizerQuotientLift (diagonalTorus k n) φ hkill)
   constructor
-  · exact (TauCeti.Subgroup.normalizerQuotientLift_injective_iff
+  · exact (Subgroup.normalizerQuotientLift_injective_iff
       (diagonalTorus k n) φ hkill).mpr (diagonalNormalizerPerm_eq_one_iff hsep)
-  · exact TauCeti.Subgroup.normalizerQuotientLift_surjective_of_surjective
+  · exact Subgroup.normalizerQuotientLift_surjective_of_surjective
       (diagonalTorus k n) φ hkill (diagonalNormalizerPerm_surjective hsep)
 
 /-- The quotient equivalence sends the class of a normalizer element to its coordinate
@@ -289,7 +289,7 @@ theorem diagonalNormalizerQuotientMulEquivPerm_mk
     (hsep : DiagonalTorusSeparatesCoordinates k n)
     (g : Subgroup.normalizer (diagonalTorus k n : Set (SpecialLinearGroup (Fin n) k))) :
     diagonalNormalizerQuotientMulEquivPerm hsep
-        (g : TauCeti.Subgroup.normalizerQuotient (diagonalTorus k n)) =
+        (g : Subgroup.normalizerQuotient (diagonalTorus k n)) =
       diagonalNormalizerPerm hsep g :=
   (rfl)
 

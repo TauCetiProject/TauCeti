@@ -49,6 +49,12 @@ theorem unitAtFinitePlace_apply [NumberField K] (v : HeightOneSpectrum (𝓞 K))
       algebraMap K (v.adicCompletion K) (a : K) := by
   rfl
 
+/-- The valuation of a localized unit is the `v`-adic valuation of the global element. -/
+theorem valued_unitAtFinitePlace [NumberField K] (v : HeightOneSpectrum (𝓞 K)) (a : Kˣ) :
+    Valued.v (unitAtFinitePlace v a : v.adicCompletion K) = v.valuation K (a : K) := by
+  rw [unitAtFinitePlace_apply, algebraMap_adicCompletion, Function.comp_apply,
+    Algebra.algebraMap_self_apply, valuedAdicCompletion_eq_valuation']
+
 end IsDedekindDomain.HeightOneSpectrum
 
 namespace TauCeti

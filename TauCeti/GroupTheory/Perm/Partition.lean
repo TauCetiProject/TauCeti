@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Perm.Cycle.Type
+import Mathlib.Data.ZMod.QuotientGroup
 import Mathlib.GroupTheory.Perm.Cycle.PossibleTypes
 import Mathlib.GroupTheory.Perm.Fin
 
@@ -52,6 +53,10 @@ the API that a comparison with a multiset of factor degrees needs, on that multi
   cycle type.
 * `Equiv.Perm.fullCycleType_eq_map_card_filter`: the full cycle type is the multiset of orbit
   sizes, read through any function whose fibres are the orbits.
+* `Equiv.Perm.fullCycleType_eq_sum_subtypePerm`: the full cycle type is additive over the fibres
+  of any function that `σ` preserves.
+* `Equiv.Perm.ncard_setOf_sameCycle`: the cycle through `x` has `Function.minimalPeriod σ x`
+  points.
 * `Equiv.Perm.orbitQuotientEquivCycleFactorsSumFixedPoints`: the classes of `Equiv.Perm.SameCycle`
   are the nontrivial cycle factors together with the fixed points, via the point-level map
   `Equiv.Perm.cycleFactorOrFixedPoint`.
@@ -489,6 +494,66 @@ theorem fullCycleType_eq_map_card_filter {γ : Type*}
   rw [fullCycleType, ← hcycle, ← hfixed, ← Multiset.map_add, Finset.filter_val,
     Finset.filter_val, Multiset.filter_add_not]
 
+open scoped Classical in
+/-- **The full cycle type is additive along an invariant decomposition.** If `σ` preserves the
+fibres of `π : α → ι`, then the full cycle type of `σ` is the sum, over the fibres, of the full
+cycle types of the restrictions of `σ` to them. -/
+theorem fullCycleType_eq_sum_subtypePerm {ι : Type*} [Fintype ι]
+    (σ : Equiv.Perm α) (π : α → ι) (hπ : ∀ x, π (σ x) = π x) :
+    σ.fullCycleType =
+      ∑ i, (σ.subtypePerm (p := fun x => π x = i) fun x => by rw [hπ]).fullCycleType := by
+  classical
+  -- `π` is constant along every cycle of `σ`.
+  have hpow : ∀ k : ℤ, ∀ x, π ((σ ^ k) x) = π x := by
+    intro k
+    induction k using Int.induction_on with
+    | zero => exact fun _ => rfl
+    | succ k ih => intro x; rw [zpow_add_one, Perm.mul_apply, ih, hπ]
+    | pred k ih =>
+      intro x
+      rw [zpow_sub_one, Perm.mul_apply, ih]
+      simpa using (hπ (σ⁻¹ x)).symm
+  -- The cycle classes of `σ`; each lies in a single fibre of `π`.
+  let c : α → Quotient (SameCycle.setoid σ) := Quotient.mk _
+  have hc : ∀ x y, c x = c y ↔ σ.SameCycle x y := fun x y => Quotient.eq
+  have hπc : ∀ x y, c x = c y → π x = π y := by
+    intro x y hxy
+    obtain ⟨k, rfl⟩ := (hc x y).mp hxy
+    exact (hpow k x).symm
+  -- The full cycle type of each restriction lists the sizes of the classes inside its fibre.
+  have hτ : ∀ i, (σ.subtypePerm (p := fun x => π x = i) fun x => by rw [hπ]).fullCycleType =
+      (Finset.univ.image fun x : {x // π x = i} => c x).val.map
+        fun q => (Finset.univ.filter fun x => c x = q).card := by
+    intro i
+    rw [fullCycleType_eq_map_card_filter _ (fun x : {x // π x = i} => c x)
+      fun x y => by rw [sameCycle_subtypePerm, hc]]
+    refine Multiset.map_congr (by congr!) fun q hq => ?_
+    obtain ⟨y, -, rfl⟩ := Finset.mem_image.mp hq
+    refine Finset.card_bij (fun x _ => x.1) (by simp) (fun _ _ _ _ h => Subtype.ext h) ?_
+    intro x hx
+    have hxy := (Finset.mem_filter.mp hx).2
+    exact ⟨⟨x, (hπc x y hxy).trans y.2⟩, by simpa using hxy, rfl⟩
+  have hdisj : ((Finset.univ : Finset ι) : Set ι).PairwiseDisjoint
+      fun i => Finset.univ.image fun x : {x // π x = i} => c x := by
+    intro i _ j _ hij
+    refine Finset.disjoint_left.mpr fun q hi hj => hij ?_
+    obtain ⟨x, -, rfl⟩ := Finset.mem_image.mp hi
+    obtain ⟨y, -, hxy⟩ := Finset.mem_image.mp hj
+    exact (y.2.symm.trans ((hπc y x hxy).trans x.2)).symm
+  have hval : (Finset.univ.disjiUnion _ hdisj).val =
+      ∑ i, (Finset.univ.image fun x : {x // π x = i} => c x).val := by
+    rw [Finset.disjiUnion_val, Multiset.bind, Multiset.join, Finset.sum_eq_multiset_sum]
+  rw [fullCycleType_eq_map_card_filter σ c fun x y => (hc x y).symm, Finset.sum_congr rfl
+    fun i _ => hτ i]
+  simp only [← Multiset.coe_mapAddMonoidHom, ← map_sum, ← hval]
+  congr 2
+  · ext q
+    congr 1
+    exact Finset.filter_congr_decidable _ _ _
+  ext q
+  simp only [Finset.mem_disjiUnion, Finset.mem_univ, true_and, Finset.mem_image]
+  exact ⟨fun ⟨x, hx⟩ => ⟨π x, ⟨x, rfl⟩, hx⟩, fun ⟨_, x, hx⟩ => ⟨x, hx⟩⟩
+
 /-! ### Orbit sizes -/
 
 section OrbitSizes
@@ -534,6 +599,17 @@ theorem orbit_zpowers_eq_singleton {x : α} (hx : σ x = x) :
     exact zpow_apply_eq_self_of_apply_eq_self hx i
   · rintro rfl
     exact SameCycle.refl σ y
+
+omit [Fintype α] [DecidableEq α] in
+/-- **The length of a cycle is the minimal period of its points.** The cycle of `σ` through `x`
+has `Function.minimalPeriod σ x` points; a fixed point is a cycle of length one. -/
+theorem ncard_setOf_sameCycle [Finite α] (x : α) :
+    {y | σ.SameCycle x y}.ncard = Function.minimalPeriod σ x := by
+  classical
+  have := Fintype.ofFinite α
+  simp_rw [sameCycle_iff_mem_orbit_zpowers, Set.ofPred_mem_eq, ← Nat.card_coe_set_eq,
+    Nat.card_eq_fintype_card]
+  exact (minimalPeriod_eq_card (a := σ) (b := x)).symm
 
 /-- The fixed points of a permutation are the complement of its support. -/
 theorem card_subtype_apply_eq :

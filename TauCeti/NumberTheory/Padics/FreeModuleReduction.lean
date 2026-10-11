@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.Padics.RingHoms
 import Mathlib.Algebra.Module.Submodule.Pointwise
 import Mathlib.LinearAlgebra.Quotient.Pi
 import Mathlib.RingTheory.QuotSMulTop
+import Mathlib.Tactic.LinearCombination
 import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
@@ -18,10 +19,19 @@ import TauCeti.NumberTheory.Padics.RingHoms
 A finite free `ℤ_p`-module `M` of rank `r` is isomorphic to `ℤ_p ^ r`, so its reduction
 `M / pM` is isomorphic to `(ℤ_p / p) ^ r ≃ 𝔽_p ^ r` and has `p ^ r` elements.
 
+For the free `ℤ_p`-module `ℤ_p[X] = X →₀ ℤ_[p]`, the integral lattice `ℤ[X] = X →₀ ℤ`, embedded
+by the integral cast `Finsupp.mapRange.addMonoidHom (Int.castAddHom ℤ_[p])`, already surjects
+onto `ℤ_p[X] / p ℤ_p[X]`, and it is `p`-saturated in `ℤ_p[X]`. So the cokernel of
+`ℤ[X] → ℤ_p[X]` is uniquely `p`-divisible.
+
 ## Main results
 
 * `TauCeti.natCard_quotient_padicInt_smul_top`: reduction modulo `p` of a finite free
   `ℤ_p`-module of rank `r` has `p^r` elements.
+* `TauCeti.PadicInt.exists_finsupp_eq_mapRange_intCast_add`: every element of `ℤ_p[X]` lies in
+  `ℤ[X]` modulo `p`.
+* `TauCeti.PadicInt.mem_range_finsupp_mapRange_intCast_of_smul_mem`: an element of `ℤ_p[X]`
+  whose `p`-fold lies in `ℤ[X]` lies in `ℤ[X]`.
 -/
 
 public section
@@ -66,5 +76,52 @@ theorem natCard_quotient_padicInt_smul_top (M : Type u) [AddCommGroup M] [Module
     PadicInt.natCard_quotient_span (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero),
     PadicInt.valuation_p, pow_one, Finset.prod_const, Finset.card_univ,
     ← Module.finrank_eq_card_chooseBasisIndex]
+
+namespace PadicInt
+
+variable {p} {X : Type*}
+
+/-- Every element of `ℤ_p[X] = X →₀ ℤ_[p]` lies in the integral lattice `ℤ[X]` modulo `p`: every
+`p`-adic integer is congruent to an integer modulo `p`. -/
+theorem exists_finsupp_eq_mapRange_intCast_add (v : X →₀ ℤ_[p]) :
+    ∃ w : X →₀ ℤ, ∃ y : X →₀ ℤ_[p],
+      v = Finsupp.mapRange.addMonoidHom (Int.castAddHom ℤ_[p]) w + (p : ℤ) • y := by
+  classical
+  have h (a : ℤ_[p]) : ∃ n : ℤ, ∃ z, a = n + p * z := by
+    obtain ⟨n, -, hn⟩ := PadicInt.exists_mem_range a
+    rw [PadicInt.maximalIdeal_eq_span_p (p := p)] at hn
+    obtain ⟨z, hz⟩ := Ideal.mem_span_singleton'.mp hn
+    exact ⟨n, z, by push_cast; linear_combination -hz⟩
+  choose n z hz using h
+  -- choose the decomposition `0 = 0 + p • 0` at `0`, so that both parts are finitely supported
+  refine ⟨v.mapRange (fun a ↦ if a = 0 then 0 else n a) (by simp),
+    v.mapRange (fun a ↦ if a = 0 then 0 else z a) (by simp), Finsupp.ext fun x ↦ ?_⟩
+  by_cases hx : v x = 0
+  · simp [hx]
+  · simpa [hx] using hz (v x)
+
+/-- An element of `ℤ_p[X] = X →₀ ℤ_[p]` whose `p`-fold lies in the integral lattice `ℤ[X]` lies
+in `ℤ[X]` itself: if `p a = n` for an integer `n`, then `‖n‖ < 1`, so `p ∣ n` and `a = n / p`. -/
+theorem mem_range_finsupp_mapRange_intCast_of_smul_mem {v : X →₀ ℤ_[p]}
+    (h : (p : ℤ) • v ∈ (Finsupp.mapRange.addMonoidHom (Int.castAddHom ℤ_[p])).range) :
+    v ∈ (Finsupp.mapRange.addMonoidHom (Int.castAddHom ℤ_[p])).range := by
+  obtain ⟨w, hw⟩ := h
+  refine ⟨w.mapRange (· / (p : ℤ)) (Int.zero_ediv _), Finsupp.ext fun x ↦ ?_⟩
+  have hx : (p : ℤ_[p]) * v x = w x := by
+    have := DFunLike.congr_fun hw x
+    simp only [Finsupp.mapRange.addMonoidHom_apply, Finsupp.mapRange_apply,
+      Int.coe_castAddHom] at this
+    rw [this, Finsupp.smul_apply, zsmul_eq_mul, Int.cast_natCast]
+  obtain ⟨m, hm⟩ := (PadicInt.norm_int_lt_one_iff_dvd (w x)).mp <|
+    (PadicInt.norm_lt_one_iff_dvd _).mpr ⟨v x, hx.symm⟩
+  have hp : (p : ℤ) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
+  simp only [Finsupp.mapRange.addMonoidHom_apply, Finsupp.mapRange_apply, Int.coe_castAddHom, hm,
+    Int.mul_ediv_cancel_left _ hp]
+  refine mul_left_cancel₀ (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero) ?_
+  rw [hx, hm]
+  push_cast
+  ring
+
+end PadicInt
 
 end TauCeti

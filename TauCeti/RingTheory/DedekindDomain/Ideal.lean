@@ -41,7 +41,9 @@ one primes is `Ideal.map e` on underlying ideals
 input to the adic-valuation transport in
 `TauCeti/RingTheory/DedekindDomain/AdicValuation/Transport.lean`; they are adapted from
 [AINTLIB](https://github.com/CBirkbeck/AINTLIB) (Apache-2.0), commit `513e83879e2f`,
-`projects/HasseWeil/HasseWeil/WeilPairing/DivisorGalois.lean`.
+`projects/HasseWeil/HasseWeil/WeilPairing/DivisorGalois.lean`. The inverse transport
+`(equivOfRingEquiv e).symm` is `Ideal.comap e` on underlying ideals
+(`IsDedekindDomain.HeightOneSpectrum.asIdeal_equivOfRingEquiv_symm`).
 
 `Ideal.IsPrimeTo` generalizes the `IsGood` predicate of
 `TauCetiRoadmap/ArithmeticDirichletSeries/Suggested.lean`, where it is stated for the bad primes
@@ -231,6 +233,11 @@ theorem asIdeal_equivOfRingEquiv (e : R ≃+* R') (v : HeightOneSpectrum R) :
   -- `Ideal.symm_apply_mem_of_equiv_iff`.
   change e.symm x ∈ v.asIdeal ↔ x ∈ Ideal.map e v.asIdeal
   exact Ideal.symm_apply_mem_of_equiv_iff
+
+/-- The inverse transport `(equivOfRingEquiv e).symm` pulls the underlying ideal back along `e`:
+`((equivOfRingEquiv e).symm w).asIdeal = Ideal.comap e w.asIdeal`. -/
+theorem asIdeal_equivOfRingEquiv_symm (e : R ≃+* R') (w : HeightOneSpectrum R') :
+    ((equivOfRingEquiv e).symm w).asIdeal = Ideal.comap e w.asIdeal := rfl
 
 end RingEquivTransport
 

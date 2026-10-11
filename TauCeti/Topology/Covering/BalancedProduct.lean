@@ -36,6 +36,8 @@ there for an abstract presentation of `E / H` rather than for a fixed model.
 ## Main declarations
 
 * `TauCeti.BalancedProduct`: the quotient of `E × A` by the diagonal action of `G`.
+* `TauCeti.BalancedProduct.equivSelf` and `homeomorphSelf`: the regular label action recovers
+  `E`, sending `⟦e, g⟧` to `g⁻¹ • e`.
 * `TauCeti.isQuotientCoveringMap_quotientMk_of_smul_disjoint`: an action with locally pairwise
   disjoint translates presents its orbit space as a quotient covering map.
 * `TauCeti.BalancedProduct.isQuotientCoveringMap_mk`: the class map `E × A → E ×_G A` is one such.
@@ -97,6 +99,103 @@ in the second. -/
 theorem mk_smul_left (g : G) (e : E) (a : A) : mk G (g • e) a = mk G e (g⁻¹ • a) :=
   Quotient.sound ⟨g, by simp⟩
 
+/-! ### The regular label action -/
+
+/-- The balanced product with the left regular action of `G` recovers `E`.
+The class of `(e, g)` is sent to `g⁻¹ • e`. -/
+def equivSelf : BalancedProduct G E G ≃ E where
+  toFun := Quotient.lift (fun p : E × G => p.2⁻¹ • p.1) fun _ _ ⟨g, hg⟩ => by
+    rw [← hg]
+    simp [mul_smul]
+  invFun e := mk G e 1
+  left_inv z := by
+    induction z using Quotient.inductionOn with
+    | h p => simp
+  right_inv e := by simp
+
+/-- On representatives, the regular-action comparison applies the inverse label to the
+first coordinate. -/
+@[simp]
+theorem equivSelf_mk (e : E) (g : G) :
+    equivSelf (mk G e g) = g⁻¹ • e :=
+  (rfl)
+
+/-- The inverse regular-action comparison attaches the identity label. -/
+@[simp]
+theorem equivSelf_symm_apply (e : E) :
+    (equivSelf (G := G) (E := E)).symm e = mk G e 1 :=
+  (rfl)
+
+/-- The regular-action comparison is a homeomorphism when inversion and the action are
+continuous. No freeness or covering hypothesis is needed. -/
+def homeomorphSelf [TopologicalSpace E] [TopologicalSpace G] [ContinuousInv G]
+    [ContinuousSMul G E] : BalancedProduct G E G ≃ₜ E where
+  toEquiv := equivSelf
+  continuous_toFun := (continuous_snd.inv.smul continuous_fst).quotient_lift _
+  continuous_invFun := continuous_quotient_mk'.comp (continuous_id.prodMk continuous_const)
+
+/-- The topological regular-action comparison has underlying equivalence `equivSelf`. -/
+@[simp]
+theorem homeomorphSelf_toEquiv [TopologicalSpace E] [TopologicalSpace G] [ContinuousInv G]
+    [ContinuousSMul G E] :
+    (homeomorphSelf (G := G) (E := E)).toEquiv = equivSelf :=
+  (rfl)
+
+/-- On representatives, the topological comparison applies the inverse label. -/
+@[simp]
+theorem homeomorphSelf_mk [TopologicalSpace E] [TopologicalSpace G] [ContinuousInv G]
+    [ContinuousSMul G E] (e : E) (g : G) :
+    homeomorphSelf (mk G e g) = g⁻¹ • e :=
+  (rfl)
+
+/-- The inverse topological comparison attaches the identity label. -/
+@[simp]
+theorem homeomorphSelf_symm_apply [TopologicalSpace E] [TopologicalSpace G] [ContinuousInv G]
+    [ContinuousSMul G E] (e : E) :
+    (homeomorphSelf (G := G) (E := E)).symm e = mk G e 1 :=
+  (rfl)
+
+section Map
+
+variable {B C : Type*} [MulAction G B] [MulAction G C]
+
+/-- An equivariant map of labels induces a map of balanced products, keeping the first
+coordinate fixed. -/
+def mapRight (f : A → B) (hf : ∀ (g : G) a, f (g • a) = g • f a) :
+    BalancedProduct G E A → BalancedProduct G E B :=
+  Quotient.map' (Prod.map id f) fun _ _ ⟨g, hg⟩ => by
+    refine ⟨g, ?_⟩
+    rw [← hg]
+    exact Prod.ext rfl (hf g _).symm
+
+@[simp]
+theorem mapRight_mk (f : A → B) (hf : ∀ (g : G) a, f (g • a) = g • f a) (e : E) (a : A) :
+    mapRight f hf (mk G e a) = mk G e (f a) :=
+  (rfl)
+
+@[simp]
+theorem mapRight_id : mapRight (G := G) (E := E) (id : A → A) (fun _ _ => rfl) = id := by
+  funext z
+  induction z using Quotient.inductionOn with
+  | h p => rfl
+
+@[simp]
+theorem mapRight_comp (f : A → B) (hf : ∀ (g : G) a, f (g • a) = g • f a)
+    (k : B → C) (hk : ∀ (g : G) b, k (g • b) = g • k b) :
+    mapRight (G := G) (E := E) (k ∘ f) (fun g a => by simp only [Function.comp_apply, hf, hk]) =
+      mapRight k hk ∘ mapRight f hf := by
+  funext z
+  induction z using Quotient.inductionOn with
+  | h p => rfl
+
+/-- The map induced by a continuous equivariant label map is continuous. -/
+theorem continuous_mapRight [TopologicalSpace E] [TopologicalSpace A] [TopologicalSpace B]
+    (f : A → B) (hf : ∀ (g : G) a, f (g • a) = g • f a) (hfc : Continuous f) :
+    Continuous (mapRight (G := G) (E := E) f hf) :=
+  (continuous_id.prodMap hfc).quotient_map' _
+
+end Map
+
 variable (hq : ∀ (g : G) (e : E), q (g • e) = q e)
 
 variable (A) in
@@ -111,6 +210,14 @@ variable (A) in
 @[simp]
 theorem proj_mk (e : E) (a : A) : proj A hq (mk G e a) = q e :=
   (rfl)
+
+/-- A map of labels commutes with the balanced-product projections. -/
+@[simp]
+theorem proj_mapRight {B : Type*} [MulAction G B] (f : A → B)
+    (hf : ∀ (g : G) a, f (g • a) = g • f a) (z : BalancedProduct G E A) :
+    proj B hq (mapRight f hf z) = proj A hq z := by
+  induction z using Quotient.inductionOn with
+  | h p => rfl
 
 section Covering
 

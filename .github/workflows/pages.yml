@@ -31,8 +31,10 @@ on:
     branches: [main]
     paths:
       - 'web/**'
+      - 'scripts/arxiv_categories.py'
       - 'scripts/chart_style.py'
       - 'scripts/loc_graph.py'
+      - 'scripts/roadmap_completion.py'
       - 'scripts/loc_roadmap_graph.py'
       - 'scripts/participant_graph.py'
       - 'scripts/pr_stats_graphs.py'
@@ -183,12 +185,16 @@ jobs:
             --repo . --ref HEAD \
             --title "Tau Ceti — lines of Lean" --accent "#ff9d4d" \
             --out web/static_files/loc-tauceti.svg \
+            --dump-data "$RUNNER_TEMP/library-loc.json" \
             TauCeti TauCeti.lean
-          python3 scripts/loc_graph.py \
-            --repo /tmp/roadmap --ref HEAD \
-            --title "Tau Ceti Roadmap — lines written" --accent "#5eead4" \
-            --out web/static_files/loc-roadmap.svg \
-            TauCetiRoadmap TauCetiRoadmap.lean
+          python3 scripts/roadmap_completion.py \
+            --roadmap-repo /tmp/roadmap --code-repo . \
+            --code-data "$RUNNER_TEMP/library-loc.json" \
+            --out-dir web/static_files \
+          || {
+            echo "::warning::roadmap completion generation failed; keeping the previous assets"
+            echo "roadmap completion" >> "$RUNNER_TEMP/data-failures"
+          }
 
       # Walking every pull request's label timeline costs one GraphQL request each, against a
       # budget of 5000 an hour. At ~4600 open-or-recently-closed pull requests that no longer
@@ -221,6 +227,7 @@ jobs:
           # it fully before writing anything, so naming one path for both is safe.
           python3 scripts/pr_stats_graphs.py \
             --repo "${{ github.repository }}" \
+            --roadmap-dir /tmp/roadmap \
             --out-dir web/static_files \
             --since-data "$RUNNER_TEMP/pr-snapshot.json" \
             --dump-data "$RUNNER_TEMP/pr-snapshot.json" \

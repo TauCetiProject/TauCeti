@@ -57,6 +57,17 @@ theorem IsTopologicallyFinitelyGenerated.isOpen_proPFrattini
   rw [proPFrattini_def, Subgroup.coe_iInf]
   exact isOpen_iInter_of_finite fun U ↦ U.1.isOpen
 
+/-- In a topologically finitely generated compact group, the topologically characteristic open
+normal subgroups contained in the pro-`p` Frattini subgroup are cofinal among the open subgroups:
+the pro-`p` Frattini subgroup is itself open. -/
+theorem IsTopologicallyFinitelyGenerated.exists_isTopCharacteristic_le_proPFrattini
+    (hG : IsTopologicallyFinitelyGenerated G) (p : ℕ) (U : OpenSubgroup G) :
+    ∃ N : OpenNormalSubgroup G, IsTopCharacteristic G N ∧ (N : Subgroup G) ≤ proPFrattini p G ∧
+      (N : Subgroup G) ≤ U := by
+  obtain ⟨N, hN, hle⟩ :=
+    hG.exists_isTopCharacteristic_le (U ⊓ ⟨proPFrattini p G, hG.isOpen_proPFrattini p⟩)
+  exact ⟨N, hN, fun x hx ↦ (hle hx).2, fun x hx ↦ (hle hx).1⟩
+
 /-- The pro-`p` Frattini subgroup of an open subgroup `U` of a compact topologically finitely
 generated group is open in the ambient group: `U` is again topologically finitely generated and
 compact, so its Frattini subgroup is open in `U`, and `U` is open in the ambient group. -/

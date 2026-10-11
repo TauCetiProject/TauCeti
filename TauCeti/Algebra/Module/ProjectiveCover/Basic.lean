@@ -68,7 +68,8 @@ Nothing here proves or assumes it; every statement below is conditional on a cov
 * `TauCeti.isProjectiveCover_mkQ_iff`: the concrete family of covers, `P ↠ P ⧸ N` is a projective
   cover of a projective `P` exactly when `N` is superfluous; over a coatomic submodule lattice
   `TauCeti.isProjectiveCover_mkQ_iff_le_jacobson` reads this off the radical, so that `R ↠ R ⧸ I`
-  is a projective cover exactly when `I ≤ Ring.jacobson R`.
+  is a projective cover exactly when `I ≤ Ring.jacobson R`. For a nilpotent ideal `I`,
+  `TauCeti.isProjectiveCover_mkQ_smul_top_of_isNilpotent` covers the top `P ⧸ I • P` by `P`.
 * `TauCeti.IsProjectiveCover.exists_comp_eq`: every map from a covering module into a semisimple
   module factors through the cover, and `TauCeti.IsProjectiveCover.homEquivOfIsSemisimpleModule`:
   precomposition with a projective cover `f : P →ₗ[R] M` is an isomorphism
@@ -253,6 +254,13 @@ theorem isProjectiveCover_mkQ_iff_le_jacobson [Module.Projective R P]
     IsProjectiveCover N.mkQ ↔ N ≤ Module.jacobson R P :=
   isProjectiveCover_mkQ_iff.trans isSuperfluous_iff_le_jacobson
 
+/-- **The top of a projective module modulo a nilpotent ideal.** If `I` is nilpotent, the quotient
+map `P →ₗ[R] P ⧸ I • P` of a projective module is a projective cover. Over a semiprimary ring this
+covers the radical top `P ⧸ J • P` by `P`. -/
+theorem isProjectiveCover_mkQ_smul_top_of_isNilpotent [Module.Projective R P] {I : Ideal R}
+    (hI : IsNilpotent I) : IsProjectiveCover (I • (⊤ : Submodule R P)).mkQ :=
+  isProjectiveCover_mkQ_iff.mpr (isSuperfluous_smul_top_of_isNilpotent hI)
+
 /-! ### A projective cover is invisible to a semisimple target -/
 
 section Semisimple
@@ -270,11 +278,13 @@ theorem IsProjectiveCover.exists_comp_eq {f : P →ₗ[R] M} (hf : IsProjectiveC
   ext p
   simp
 
-variable (k : Type*) [CommSemiring k] [Algebra k R] [Module k T] [IsScalarTower k R T]
+variable (k : Type*) [Semiring k] [Module k T] [SMulCommClass R k T]
 
 /-- **A projective cover is invisible to a semisimple target.** Precomposition with a projective
 cover `f : P →ₗ[R] M` is a `k`-linear isomorphism from `Hom_R(M, T)` to `Hom_R(P, T)` for every
-semisimple `R`-module `T`: it is injective because `f` is onto, and surjective by
+semisimple `R`-module `T` with commuting `R`- and `k`-actions. In particular, `k` can be the
+endomorphism ring `Module.End R T`, acting by postcomposition. The map is injective because `f` is
+onto, and surjective by
 `TauCeti.IsProjectiveCover.exists_comp_eq`.
 
 Compare `TauCeti.homCongrRight`, which transports a hom space along an isomorphism of its target:

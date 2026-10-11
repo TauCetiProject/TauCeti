@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.Cyclic
-public import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.RankTwo
+public import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.RankTwo.Basic
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Orthogonal.GaussSum
 import TauCeti.Data.ZMod.Torsion
 

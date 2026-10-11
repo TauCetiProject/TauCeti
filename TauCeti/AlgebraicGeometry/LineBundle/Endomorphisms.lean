@@ -123,7 +123,7 @@ theorem Hom.map_trivializationScalar_eq (φ : M ⟶ M) {V₁ V₂ W : X.Opens}
 function to the trivializing open. -/
 @[simp]
 theorem Hom.trivializationScalar_globalSectionsSmul (r : Γ(X, ⊤)) :
-    (globalSectionsSmul M r).trivializationScalar t = X.presheaf.map V.leTop.op r := by
+    (M.globalSectionsSmul r).trivializationScalar t = X.presheaf.map V.leTop.op r := by
   simp only [Hom.trivializationScalar, globalSectionsSmul_app, smul_apply, LinearEquiv.map_smul,
     trivializationCoordinate_trivializationGenerator, smul_eq_mul, mul_one]
 
@@ -196,7 +196,7 @@ theorem globalSectionsAction_bijective : Function.Bijective (globalSectionsActio
 
 /-- Every endomorphism of an invertible sheaf is multiplication by a unique global function. -/
 theorem existsUnique_globalSectionsSmul_eq (φ : M ⟶ M) :
-    ∃! r : Γ(X, ⊤), globalSectionsSmul M r = φ := by
+    ∃! r : Γ(X, ⊤), M.globalSectionsSmul r = φ := by
   simpa only [globalSectionsAction_apply] using (globalSectionsAction_bijective M).existsUnique φ
 
 /-- **Endomorphisms of a line bundle are global functions.** For an invertible sheaf `M` on a
@@ -206,12 +206,12 @@ def globalSectionsActionRingEquiv : Γ(X, ⊤) ≃+* End M :=
 
 @[simp]
 lemma globalSectionsActionRingEquiv_apply (r : Γ(X, ⊤)) :
-    globalSectionsActionRingEquiv M r = globalSectionsSmul M r := by
+    globalSectionsActionRingEquiv M r = M.globalSectionsSmul r := by
   rw [globalSectionsActionRingEquiv, RingEquiv.ofBijective_apply, globalSectionsAction_apply]
 
 @[simp]
 lemma globalSectionsSmul_globalSectionsActionRingEquiv_symm (φ : M ⟶ M) :
-    globalSectionsSmul M ((globalSectionsActionRingEquiv M).symm φ) = φ := by
+    M.globalSectionsSmul ((globalSectionsActionRingEquiv M).symm φ) = φ := by
   rw [← globalSectionsActionRingEquiv_apply, RingEquiv.apply_symm_apply]
 
 /-- **Automorphisms of a line bundle are global units.** For an invertible sheaf `M` on a scheme
@@ -224,13 +224,13 @@ def unitsGlobalSectionsMulEquivAut : Γ(X, ⊤)ˣ ≃* Aut M :=
 -- `u` and `u⁻¹` under the ring isomorphism.
 @[simp]
 lemma unitsGlobalSectionsMulEquivAut_apply_hom (u : Γ(X, ⊤)ˣ) :
-    (unitsGlobalSectionsMulEquivAut M u).hom = globalSectionsSmul M u := by
+    (unitsGlobalSectionsMulEquivAut M u).hom = M.globalSectionsSmul u := by
   have h : (unitsGlobalSectionsMulEquivAut M u).hom = globalSectionsActionRingEquiv M u := rfl
   rw [h, globalSectionsActionRingEquiv_apply]
 
 @[simp]
 lemma unitsGlobalSectionsMulEquivAut_apply_inv (u : Γ(X, ⊤)ˣ) :
-    (unitsGlobalSectionsMulEquivAut M u).inv = globalSectionsSmul M ↑u⁻¹ := by
+    (unitsGlobalSectionsMulEquivAut M u).inv = M.globalSectionsSmul ↑u⁻¹ := by
   have h : (unitsGlobalSectionsMulEquivAut M u).inv = globalSectionsActionRingEquiv M ↑u⁻¹ := rfl
   rw [h, globalSectionsActionRingEquiv_apply]
 
@@ -238,7 +238,7 @@ lemma unitsGlobalSectionsMulEquivAut_apply_inv (u : Γ(X, ⊤)ˣ) :
 it. -/
 @[simp]
 lemma globalSectionsSmul_unitsGlobalSectionsMulEquivAut_symm (f : Aut M) :
-    globalSectionsSmul M ((unitsGlobalSectionsMulEquivAut M).symm f) = f.hom := by
+    M.globalSectionsSmul ((unitsGlobalSectionsMulEquivAut M).symm f) = f.hom := by
   rw [← unitsGlobalSectionsMulEquivAut_apply_hom, MulEquiv.apply_symm_apply]
 
 end Invertible
