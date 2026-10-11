@@ -18,6 +18,7 @@ for the canonical affine base-change spelling `W⁄A`, so consumers of the point
 base-change APIs do not have to unfold that abbreviation. It also records that base change along
 the identity algebra map returns the original curve, together with the resulting identification
 `WeierstrassCurve.Affine.Point.equivBaseChangeSelf` of the point groups of `W` and `W⁄F`, the
+Weierstrass equation of `W⁄A` written with the coefficients of `W` mapped along `algebraMap`, the
 base-change homomorphism `WeierstrassCurve.Affine.pointMap : W(K) →+ W(L)` on points along a
 field extension `L/K`, and a coordinate descent lemma for points whose abscissa is already
 rational.
@@ -58,6 +59,18 @@ lemma baseChange_self : (W⁄R).toAffine = W := by
   change W.map (algebraMap R R) = W
   rw [show algebraMap R R = RingHom.id R from Algebra.algebraMap_self]
   exact W.map_id
+
+variable {A : Type*} [CommRing A] [Algebra R A]
+
+/-- **The Weierstrass equation of a base change**, with the coefficients of `W` mapped into `A`
+along `algebraMap`. -/
+lemma equation_baseChange_iff (x y : A) :
+    (W⁄A).Equation x y ↔
+      y ^ 2 + algebraMap R A W.a₁ * x * y + algebraMap R A W.a₃ * y =
+        x ^ 3 + algebraMap R A W.a₂ * x ^ 2 + algebraMap R A W.a₄ * x + algebraMap R A W.a₆ := by
+  rw [equation_iff]
+  simp only [WeierstrassCurve.baseChange, WeierstrassCurve.map_a₁, WeierstrassCurve.map_a₂,
+    WeierstrassCurve.map_a₃, WeierstrassCurve.map_a₄, WeierstrassCurve.map_a₆]
 
 end WeierstrassCurve.Affine
 
