@@ -31,7 +31,7 @@ open CategoryTheory
 
 universe u v t
 
-variable (R : Type t) [Ring R] {C : Type u} [Category.{v} C] [Abelian C]
+variable (R : Type t) [Ring R] {C : Type u} [Category.{v} C] [Preadditive C] [Balanced C]
   [Linear R C] {S : ShortComplex C} {P Y : C}
 
 /-- The Hom-cokernel sequence associated to an exact sequence ending in an epimorphism
@@ -68,13 +68,5 @@ noncomputable def equivKerRestrict (hS : S.Exact) [Epi S.g] (i : S.X₃ ⟶ P) :
 theorem equivKerRestrict_apply (hS : S.Exact) [Epi S.g] (i : S.X₃ ⟶ P)
     (x : HomCokernel R i Y) :
     (equivKerRestrict R hS i x).val = precomp R i S.g x := (rfl)
-
-/-- The inverse kernel comparison recovers a class from its precomposition. -/
-@[simp]
-theorem equivKerRestrict_symm_precomp (hS : S.Exact) [Epi S.g] (i : S.X₃ ⟶ P)
-    (x : HomCokernel R i Y)
-    (hx : restrict R (S.g ≫ i) S.f (by simp) (precomp R i S.g x) = 0) :
-    (equivKerRestrict R hS i).symm ⟨precomp R i S.g x, hx⟩ = x :=
-  (equivKerRestrict R hS i).symm_apply_apply x
 
 end TauCeti.HomCokernel
