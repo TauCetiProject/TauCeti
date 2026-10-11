@@ -25,6 +25,11 @@ that every finite-dimensional representation of `Sp₂ₘ` is completely reducib
 This is a concrete case of, but does not prove, the general equivalence between reductivity and
 linear reductivity in characteristic zero.
 
+The argument follows the special-linear case in
+`TauCeti/Algebra/AlgebraicGroup/SpecialLinear/LinearlyReductive.lean`
+(`TauCeti.SpecialLinear.linearlyReductiveCommHopfAlgProperty_coordinateHopfAlgebra`), with the
+symplectic Lie algebra in place of `slₙ`.
+
 ## Main declaration
 
 * `TauCeti.Symplectic.linearlyReductiveCommHopfAlgProperty_coordinateHopfAlgebra`:
