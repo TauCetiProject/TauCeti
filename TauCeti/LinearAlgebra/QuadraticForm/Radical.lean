@@ -326,7 +326,6 @@ theorem IsometryEquiv.prodRadicalLiftOfIsCompl_apply (Q : QuadraticMap R M P)
     IsometryEquiv.restrictComplementLiftRadical_symm_apply]
 
 /-- The decomposition sends a radical vector and zero quotient class to that vector. -/
-@[simp]
 theorem IsometryEquiv.prodRadicalLiftOfIsCompl_apply_radical (Q : QuadraticMap R M P)
     (W : Submodule R M) (hW : IsCompl Q.radical W) (x : Q.radical) :
     IsometryEquiv.prodRadicalLiftOfIsCompl Q W hW (x, 0) = x := by
@@ -335,7 +334,6 @@ theorem IsometryEquiv.prodRadicalLiftOfIsCompl_apply_radical (Q : QuadraticMap R
 
 /-- The quotient component of the image under the complement-based decomposition is the input
 class. -/
-@[simp]
 theorem IsometryEquiv.prodRadicalLiftOfIsCompl_mkQ_apply (Q : QuadraticMap R M P)
     (W : Submodule R M) (hW : IsCompl Q.radical W)
     (x : Q.radical × M ⧸ Q.radical) :
@@ -344,7 +342,6 @@ theorem IsometryEquiv.prodRadicalLiftOfIsCompl_mkQ_apply (Q : QuadraticMap R M P
   simp
 
 /-- The quotient component of the inverse decomposition is the quotient class of its input. -/
-@[simp]
 theorem IsometryEquiv.prodRadicalLiftOfIsCompl_symm_apply_snd (Q : QuadraticMap R M P)
     (W : Submodule R M) (hW : IsCompl Q.radical W) (x : M) :
     ((IsometryEquiv.prodRadicalLiftOfIsCompl Q W hW).symm x).2 =
@@ -396,7 +393,6 @@ theorem IsometryEquiv.prodRadicalLift_mkQ_apply {P : Type*} [AddCommGroup P] [Mo
   simp [IsometryEquiv.prodRadicalLift]
 
 /-- The quotient component of the inverse field-level decomposition is the quotient class. -/
-@[simp]
 theorem IsometryEquiv.prodRadicalLift_symm_apply_snd {P : Type*} [AddCommGroup P] [Module K P]
     (Q : QuadraticMap K V P) (x : V) :
     ((IsometryEquiv.prodRadicalLift Q).symm x).2 = Submodule.Quotient.mk x := by
