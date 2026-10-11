@@ -134,6 +134,14 @@ theorem herbrandQuotient_eq_zero_iff {M : Rep R G} :
       Infinite (tateCohomology M 0) ∨ Infinite (tateCohomology M (-1)) := by
   simp [herbrandQuotient_def, Nat.card_eq_zero]
 
+/-- A representation with nonzero Herbrand quotient has finite Tate cohomology in degrees `0` and
+`-1`. -/
+theorem finite_tateCohomology_of_herbrandQuotient_ne_zero {M : Rep R G}
+    (h : herbrandQuotient M ≠ 0) :
+    Finite (tateCohomology M 0) ∧ Finite (tateCohomology M (-1)) := by
+  rwa [Ne, herbrandQuotient_eq_zero_iff, not_or, not_infinite_iff_finite,
+    not_infinite_iff_finite] at h
+
 /-- For a finite representation of a finite cyclic group the two low-degree Tate groups have the
 same order. -/
 theorem natCard_tateCohomology_zero_eq_natCard_tateCohomology_negOne_of_finite [IsCyclic G]

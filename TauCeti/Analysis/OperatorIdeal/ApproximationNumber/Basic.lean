@@ -36,6 +36,7 @@ laws apply to rectangular maps.
 * `ContinuousLinearMap.singularValue`: the approximation numbers `aₙ(T)`.
 * `ContinuousLinearMap.isGLB_singularValue`: `aₙ(T)` is the infimum of `‖T - R‖` over bounded
   maps `R` of rank at most `n`.
+* `ContinuousLinearMap.singularValue_eq_zero_of_rank_le`: `aₙ(T) = 0` when `rank T ≤ n`.
 * `ContinuousLinearMap.singularValue_zero`: `a₀(T) = ‖T‖`.
 * `ContinuousLinearMap.antitone_singularValue`: `n ↦ aₙ(T)` is antitone.
 * `ContinuousLinearMap.singularValue_add_index_le`: `a_{m+n}(S + T) ≤ aₘ(S) + aₙ(T)`.
@@ -122,6 +123,11 @@ theorem singularValue_eq_nnnorm_sub {T R : E →L[𝕜] F} {n : ℕ} (hR : R.ran
 /-- The approximation numbers are bounded by the operator norm. -/
 theorem singularValue_le_nnnorm (T : E →L[𝕜] F) (n : ℕ) : T.singularValue n ≤ ‖T‖₊ := by
   simpa using T.singularValue_le_nnnorm_sub (R := 0) (by simp)
+
+/-- **Vanishing from rank.** A bounded map of rank at most `n` has `aₙ(T) = 0`. -/
+theorem singularValue_eq_zero_of_rank_le {T : E →L[𝕜] F} {n : ℕ} (hT : T.rank ≤ n) :
+    T.singularValue n = 0 := by
+  simpa using T.singularValue_le_nnnorm_sub hT
 
 /-- **Zeroth approximation number.** `a₀(T) = ‖T‖`, since only the zero map has rank `0`. -/
 @[simp]

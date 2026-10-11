@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Restrict
+public import TauCeti.Geometry.RingedSpace.OpenImmersion
 
 /-!
 # Open immersions of pre-adic spaces
@@ -89,16 +90,9 @@ instance mono (f : X ⟶ Y) [IsOpenImmersion f] : Mono f :=
 
 /-- Forgetting the topology on sections, the underlying morphism of presheafed spaces of rings of
 an open immersion is an open immersion. -/
-instance toRingPresheafedSpaceHom_isOpenImmersion (f : X ⟶ Y) [H : IsOpenImmersion f] :
-    PresheafedSpace.IsOpenImmersion (toRingPresheafedSpaceHom f.toHom) where
-  base_open := H.base_open
-  c_iso U := by
-    -- the component of the whiskered presheaf map is the image of the component of `f.c`, which
-    -- is an isomorphism, under the forgetful functor
-    have : IsIso (f.toHom.c.app (Opposite.op (H.base_open.functor.obj U))) := H.c_iso U
-    exact Functor.map_isIso
-      (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat)
-      (f.toHom.c.app (Opposite.op (H.base_open.functor.obj U)))
+instance toRingPresheafedSpaceHom_isOpenImmersion (f : X ⟶ Y) [IsOpenImmersion f] :
+    PresheafedSpace.IsOpenImmersion (toRingPresheafedSpaceHom f.toHom) :=
+  PresheafedSpace.IsOpenImmersion.mapPresheaf_map _ f.toHom
 
 /-- The stalk maps of an open immersion are isomorphisms. -/
 instance isIso_stalkMap (f : X ⟶ Y) [IsOpenImmersion f] (x : X) : IsIso (f.stalkMap x) :=
