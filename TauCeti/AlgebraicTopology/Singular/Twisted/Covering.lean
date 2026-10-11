@@ -63,7 +63,6 @@ theorem permutationLocalSystem_map_apply (hp : IsCoveringMap p) (R : Type v) [Ri
   rfl
 
 /-- Transport sends each basis vector to the basis vector of the lifted endpoint. -/
-@[simp]
 theorem permutationLocalSystem_map_single (hp : IsCoveringMap p) (R : Type v) [Ring R]
     {x y : FundamentalGroupoid B} (γ : x ⟶ y) (e : p ⁻¹' {x.as}) (r : R) :
     ((hp.permutationLocalSystem R).map γ).hom (Finsupp.single e r) =
