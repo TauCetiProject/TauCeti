@@ -83,19 +83,21 @@ private def assocInverseTrilinear : N →ₗ[k] P →ₗ[k] M →ₗ[k] L where
   map_add' n n' := by ext p m; simp [tmul_add, add_tmul]
   map_smul' c n := by ext p m; simp
 
+omit [SMulCommClass B k N] in
+private theorem assocInverseTrilinear_apply (n : N) (p : P) (m : M) :
+    assocInverseTrilinear n p m = tmul k C (tmul k B m n) p := rfl
+
 private def assocInversePre : BalancedTensorProduct k C N P →ₗ[k] M →ₗ[k] L :=
   lift assocInverseTrilinear (by
     intro c n p
     ext m
-    change tmul k C (tmul k B m (op c • n)) p =
-      tmul k C (tmul k B m n) (c • p)
-    rw [← smul_tmul_right, balance])
+    rw [assocInverseTrilinear_apply, assocInverseTrilinear_apply,
+      ← smul_tmul_right, balance])
 
 omit [SMulCommClass B k N] in
 private theorem assocInversePre_tmul (m : M) (n : N) (p : P) :
     assocInversePre (tmul k C n p) m = tmul k C (tmul k B m n) p := by
-  rw [assocInversePre, lift_tmul]
-  rfl
+  rw [assocInversePre, lift_tmul, assocInverseTrilinear_apply]
 
 private def assocBackward : R →ₗ[k] L :=
   lift assocInversePre.flip (by
