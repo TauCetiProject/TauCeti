@@ -10,6 +10,7 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Discriminant
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
+import TauCeti.RingTheory.Multiplicity
 
 /-!
 # Tate's algorithm: the output does not depend on the choices
@@ -33,9 +34,10 @@ first statement.
   equations whose reductions modulo a prime are singular at the origin fixes the origin modulo
   that prime.
 * `WeierstrassCurve.IsTateTerminal.eq_of_smul`: if the algorithm stops on `W` with a symbol `s`
-  other than `Iₙ*` with `n ≥ 1`, then it stops on every `C • W`, for `C` over `R`, with `s` only.
+  other than `Iₙ*` with `n ≥ 1`, and on `C • W`, for `C` over `R`, with a symbol `s'`, then
+  `s' = s`.
 * `WeierstrassCurve.IsTateTerminal.exists_eq_IStar_of_smul`: if it stops on `W` with `Iₙ*`,
-  `n ≥ 1`, then it stops on every `C • W` with some `Iₘ*`, `m ≥ 1`.
+  `n ≥ 1`, and on `C • W` with a symbol `s'`, then `s'` is some `Iₘ*` with `m ≥ 1`.
 * `WeierstrassCurve.isTateTerminal_iff_of_associated`: the stopping conditions do not depend on
   the uniformiser.
 * `WeierstrassCurve.IsTateTerminal.eq_of_isMinimal_smul` and
@@ -198,10 +200,6 @@ section DiscreteValuationRing
 variable {R : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R] {ϖ : R}
   {W : WeierstrassCurve R}
 
-private theorem residue_eq_zero_iff_dvd (hϖ : Irreducible ϖ) (x : R) :
-    residue R x = 0 ↔ ϖ ∣ x := by
-  rw [residue_eq_zero_iff, hϖ.maximalIdeal_eq, Ideal.mem_span_singleton]
-
 /-- The test separating the double-root branch (Step 7) from the triple-root branch (Step 8) is the
 residue-cubic test `b² = 3c`: if `a₂ = ϖ A₂` and `a₄ = ϖ² A₄`, then `ϖ³ ∣ a₂² - 3 a₄` exactly when
 `A₂² - 3 A₄` vanishes in the residue field. -/
@@ -209,7 +207,7 @@ private theorem pow_three_dvd_sq_sub_iff (hϖ : Irreducible ϖ) {A₂ A₄ : R} 
     (hA₄ : W.a₄ = ϖ ^ 2 * A₄) :
     ϖ ^ 3 ∣ W.a₂ ^ 2 - 3 * W.a₄ ↔ residue R A₂ ^ 2 - 3 * residue R A₄ = 0 := by
   rw [hA₂, hA₄, show (ϖ * A₂) ^ 2 - 3 * (ϖ ^ 2 * A₄) = ϖ ^ 2 * (A₂ ^ 2 - 3 * A₄) by ring,
-    pow_succ, mul_dvd_mul_iff_left (pow_ne_zero 2 hϖ.ne_zero), ← residue_eq_zero_iff_dvd hϖ]
+    pow_succ, mul_dvd_mul_iff_left (pow_ne_zero 2 hϖ.ne_zero), ← hϖ.residue_eq_zero_iff_dvd]
   simp [map_ofNat]
 
 /-- Between two equations in the normal form of Step 6, a change of variables has `ϖ ∣ r`,
@@ -233,7 +231,7 @@ private theorem dvd_r_s_t_of_stepSix (hϖ : Irreducible ϖ) {C : VariableChange 
   rw [hx₁, hx₂, hr₁] at he₂
   rw [hx₁, hx₂, hx₃, hx₄, hx₆, hr₁, ht₁] at he₆
   refine ⟨⟨r₁, hr₁⟩, hϖ.prime.dvd_of_dvd_pow (n := 2) ⟨x₂ - C.s * x₁ + 3 * r₁ - e₂, ?_⟩,
-    hϖ.pow_succ_dvd_of_pow_mul_add_one_dvd_pow (n := 2) (k := 1)
+    hϖ.prime.pow_succ_dvd_of_pow_mul_add_one_dvd_pow (n := 2) (k := 1)
       ⟨x₆ + r₁ * x₄ + r₁ ^ 2 * x₂ + r₁ ^ 3 - t₁ * x₃ - r₁ * t₁ * x₁ - e₆, ?_⟩⟩
   · linear_combination -he₂
   · rw [ht₁]
@@ -256,7 +254,7 @@ private theorem residue_stepSix_smul (hϖ : Irreducible ϖ) {C : VariableChange 
   obtain ⟨s₁, hs₁⟩ := hs
   obtain ⟨t₁, ht₁⟩ := ht
   have hϖ0 := hϖ.ne_zero
-  have hres : residue R ϖ = 0 := (residue_eq_zero_iff_dvd hϖ ϖ).2 dvd_rfl
+  have hres : residue R ϖ = 0 := (hϖ.residue_eq_zero_iff_dvd ϖ).2 dvd_rfl
   rw [variableChange_a₂, hA₂, hx₁, hr, hs₁] at hB₂
   rw [variableChange_a₄, hA₂, hA₄, hx₁, hx₃, hr, hs₁, ht₁] at hB₄
   rw [variableChange_a₆, hA₂, hA₄, hA₆, hx₁, hx₃, hr, ht₁] at hB₆
@@ -283,7 +281,7 @@ private theorem tateTest_five_six_of_stepEight (hϖ : Irreducible ϖ) (h₂ : ϖ
   obtain ⟨y₂, hy₂⟩ := h₂
   obtain ⟨y₄, hy₄⟩ := h₄
   obtain ⟨y₆, hy₆⟩ := h₆
-  have hres : residue R ϖ = 0 := (residue_eq_zero_iff_dvd hϖ ϖ).2 dvd_rfl
+  have hres : residue R ϖ = 0 := (hϖ.residue_eq_zero_iff_dvd ϖ).2 dvd_rfl
   have hA₂ : W.a₂ = ϖ * (ϖ * y₂) := by rw [hy₂]; ring
   have hA₄ : W.a₄ = ϖ ^ 2 * (ϖ * y₄) := by rw [hy₄]; ring
   have hA₆ : W.a₆ = ϖ ^ 3 * (ϖ * y₆) := by rw [hy₆]; ring
@@ -303,7 +301,7 @@ private theorem tateContext_six_of_doubleRoot (hϖ : Irreducible ϖ) (h₁ : ϖ 
   obtain ⟨A₂, hA₂⟩ := h₂
   obtain ⟨y₄, hy₄⟩ := h₄
   obtain ⟨y₆, hy₆⟩ := h₆
-  have hres : residue R ϖ = 0 := (residue_eq_zero_iff_dvd hϖ ϖ).2 dvd_rfl
+  have hres : residue R ϖ = 0 := (hϖ.residue_eq_zero_iff_dvd ϖ).2 dvd_rfl
   have hA₄ : W.a₄ = ϖ ^ 2 * (ϖ * y₄) := by rw [hy₄]; ring
   have hA₆ : W.a₆ = ϖ ^ 3 * (ϖ * y₆) := by rw [hy₆]; ring
   refine ⟨⟨fun k hk ↦ ?_, fun _ ↦ ⟨hp 1 h₃, hp 1 h₄', hp 2 h₆'⟩,
@@ -316,7 +314,7 @@ private theorem tateContext_six_of_doubleRoot (hϖ : Irreducible ϖ) (h₁ : ϖ 
     simp only [tateTest]
     rw [pow_three_dvd_sq_sub_iff hϖ hA₂ hA₄]
     have : residue R A₂ ≠ 0 := by
-      rw [ne_eq, residue_eq_zero_iff_dvd hϖ]
+      rw [ne_eq, hϖ.residue_eq_zero_iff_dvd]
       rintro ⟨B, rfl⟩
       exact h₂' ⟨B, by rw [hA₂]; ring⟩
     simpa [hres] using this
@@ -456,7 +454,7 @@ private theorem tateTest_smul (hϖ : Irreducible ϖ) (C : VariableChange R) {i :
     obtain ⟨⟨y₂, hy₂⟩, ⟨y₄, hy₄⟩, ⟨y₆, hy₆⟩⟩ := h.2.2.2.1 hi
     obtain ⟨-, -, ⟨y₆', hy₆'⟩⟩ := h'.2.2.2.1 hi
     have hϖ0 := hϖ.ne_zero
-    have hres : residue R ϖ = 0 := (residue_eq_zero_iff_dvd hϖ ϖ).2 dvd_rfl
+    have hres : residue R ϖ = 0 := (hϖ.residue_eq_zero_iff_dvd ϖ).2 dvd_rfl
     have hA (n : ℕ) (A y : R) (hA : ϖ ^ (n + 1) * A = ϖ ^ (n + 2) * y) : residue R A = 0 := by
       rw [mul_left_cancel₀ (pow_ne_zero (n + 1) hϖ0) (hA.trans (by ring) :
         _ = ϖ ^ (n + 1) * (ϖ * y))]
@@ -466,7 +464,7 @@ private theorem tateTest_smul (hϖ : Irreducible ϖ) (C : VariableChange R) {i :
       hA 2 A₆ y₆ (by linear_combination hA₆.symm.trans hy₆),
       hA 2 B₆ y₆' (by linear_combination hB₆.symm.trans hy₆')] at e₆
     obtain ⟨r₂, rfl⟩ : ϖ ∣ r₁ := by
-      rw [← residue_eq_zero_iff_dvd hϖ]
+      rw [← hϖ.residue_eq_zero_iff_dvd]
       simpa [(C.u⁻¹.isUnit.map (residue R)).ne_zero] using e₆.symm
     exact ⟨r₂, by rw [hr]; ring⟩
   match i, h, h', ht with
@@ -501,10 +499,11 @@ private theorem tateTest_smul (hϖ : Irreducible ϖ) (C : VariableChange R) {i :
     obtain ⟨β₈, hβ₈⟩ : ϖ ^ 3 ∣ W.b₈ := h.1 3 (by norm_num)
     have hb₆ : W.b₆ = ϖ ^ 2 * (x₃ ^ 2 + 4 * y₆) := by rw [b₆, hx₃, hy₆]; ring
     -- `4 b₈ = b₂ b₆ - b₄²` gives `ϖ² ∣ b₄`.
-    obtain ⟨β₄, hβ₄⟩ : ϖ ^ 2 ∣ W.b₄ := hϖ.pow_succ_dvd_of_pow_mul_add_one_dvd_pow (n := 2) (k := 1)
-      ⟨β₂ * (x₃ ^ 2 + 4 * y₆) - 4 * β₈, by
-        linear_combination W.b_relation + W.b₂ * hb₆ + ϖ ^ 2 * (x₃ ^ 2 + 4 * y₆) * hβ₂ -
-          4 * hβ₈⟩
+    obtain ⟨β₄, hβ₄⟩ : ϖ ^ 2 ∣ W.b₄ :=
+      hϖ.prime.pow_succ_dvd_of_pow_mul_add_one_dvd_pow (n := 2) (k := 1)
+        ⟨β₂ * (x₃ ^ 2 + 4 * y₆) - 4 * β₈, by
+          linear_combination W.b_relation + W.b₂ * hb₆ + ϖ ^ 2 * (x₃ ^ 2 + 4 * y₆) * hβ₂ -
+            4 * hβ₈⟩
     refine (dvd_iff_of_eq_mul_add (hv 6) (2 * r₁ * β₄ + r₁ ^ 2 * β₂ + 4 * r₁ ^ 3) ?_).2 ht
     rw [variableChange_b₆, hr₁, hβ₂, hβ₄]
     ring
@@ -545,7 +544,7 @@ private theorem tateTest_smul (hϖ : Irreducible ϖ) (C : VariableChange R) {i :
     rw [variableChange_a₆, (hv 6).dvd_mul_left] at h₆'
     obtain ⟨e₆, he₆⟩ := h₆'
     obtain ⟨t₃, ht₃⟩ : ϖ ^ 3 ∣ C.t := by
-      refine hϖ.pow_succ_dvd_of_pow_mul_add_one_dvd_pow (n := 2) (k := 2)
+      refine hϖ.prime.pow_succ_dvd_of_pow_mul_add_one_dvd_pow (n := 2) (k := 2)
         ⟨z₆ + r₂ * y₄ + ϖ * r₂ ^ 2 * y₂ + ϖ * r₂ ^ 3 - t₁ * z₃ - r₂ * t₁ * x₁ - e₆, ?_⟩
       rw [hr₂, hx₁, hy₂, hy₄, hz₃, hz₆, ht₁] at he₆
       rw [ht₁]
@@ -591,8 +590,8 @@ theorem IsTateTerminal.eq_of_smul (hϖ : Irreducible ϖ) {C : VariableChange R}
   · exact absurd rfl (hs _)
 
 /-- **The `Iₙ*` branch of Tate's algorithm does not depend on the changes of variables.** If the
-algorithm stops on `W` with a symbol `Iₙ*` with `n ≥ 1`, then it stops on every `C • W`, for `C`
-over `R`, with a symbol `Iₘ*` with `m ≥ 1`. -/
+algorithm stops on `W` with a symbol `Iₙ*` with `n ≥ 1`, and on `C • W`, for a change of variables
+`C` over `R`, with a symbol `s'`, then `s'` is a symbol `Iₘ*` with `m ≥ 1`. -/
 theorem IsTateTerminal.exists_eq_IStar_of_smul (hϖ : Irreducible ϖ) {C : VariableChange R}
     {n : ℕ} {s' : ReductionSymbol} (h : W.IsTateTerminal ϖ (.IStar (n + 1)))
     (h' : (C • W).IsTateTerminal ϖ s') : ∃ m, s' = .IStar (m + 1) := by
@@ -626,8 +625,8 @@ theorem IsTateTerminal.eq_of_isMinimal_smul (hϖ : Irreducible ϖ) (hϖ' : Irred
     ((isTateTerminal_iff_of_associated (associated_of_irreducible R hϖ hϖ')).2 h₂) hs
 
 /-- If Tate's algorithm stops on a minimal equation of an elliptic curve over `K` with a symbol
-`Iₙ*` with `n ≥ 1`, then it stops on every minimal equation, with any uniformiser, with a symbol
-`Iₘ*` with `m ≥ 1`. -/
+`Iₙ*` with `n ≥ 1`, and on a second minimal equation of the same curve, with any uniformiser, with
+a symbol `s₂`, then `s₂` is a symbol `Iₘ*` with `m ≥ 1`. -/
 theorem IsTateTerminal.exists_eq_IStar_of_isMinimal_smul (hϖ : Irreducible ϖ)
     (hϖ' : Irreducible ϖ') (D : VariableChange K) (hD : D • W₁.baseChange K = W₂.baseChange K)
     {n : ℕ} {s₂ : ReductionSymbol} (h₁ : W₁.IsTateTerminal ϖ (.IStar (n + 1)))
