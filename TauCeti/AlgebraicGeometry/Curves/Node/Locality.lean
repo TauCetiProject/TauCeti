@@ -51,15 +51,14 @@ theorem AtWorstNodalOfRelativeDimensionOne.comp_of_isOpenImmersion
     IsZariskiLocalAtSource.comp h.syntomic i
   have : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of R)) := hs
   refine AtWorstNodalOfRelativeDimensionOne.mk hs ?_
+  -- The local `Over` instance has structure map `i ≫ f`; its inferred flatness, finite
+  -- presentation, and relative dimension proofs agree by proof irrelevance with those in `mk`.
   suffices hsing : FormallyUnramified ((X.singularLocus R).subschemeι ≫ i ≫ f) from hsing
   have H := Scheme.isPullback_singularLocus_of_isOpenImmersion (R := R) i
   have hi := MorphismProperty.of_isPullback (P := @IsOpenImmersion) H
     (inferInstanceAs (IsOpenImmersion i))
-  have : FormallyUnramified ((Y.singularLocus R).subschemeι ≫ f) :=
-    h.singular_formallyUnramified
   rw [H.w_assoc]
-  exact IsZariskiLocalAtSource.comp
-    (inferInstanceAs (FormallyUnramified ((Y.singularLocus R).subschemeι ≫ f))) _
+  exact IsZariskiLocalAtSource.comp h.singular_formallyUnramified _
 
 /-- The nodal-curve criterion over an affine base can be checked on an open cover of the
 source. -/
@@ -72,6 +71,8 @@ theorem AtWorstNodalOfRelativeDimensionOne.of_openCover
     IsZariskiLocalAtSource.of_openCover 𝒰 fun j ↦ (h j).syntomic
   have : SyntomicOfRelativeDimension 1 (Y ↘ Spec (.of R)) := hs
   refine AtWorstNodalOfRelativeDimensionOne.mk hs ?_
+  -- The local `Over` instance has structure map `f`; its inferred flatness, finite
+  -- presentation, and relative dimension proofs agree by proof irrelevance with those in `mk`.
   suffices hsing : FormallyUnramified ((Y.singularLocus R).subschemeι ≫ f) from hsing
   refine IsZariskiLocalAtSource.of_openCover
     (𝒰.pullback₁ (Y.singularLocus R).subschemeι) fun j ↦ ?_
@@ -84,6 +85,8 @@ theorem AtWorstNodalOfRelativeDimensionOne.of_openCover
       (P := @FormallyUnramified.{u}) (K := Scheme.zariskiPrecoverage)
   have H := (Scheme.isPullback_singularLocus_of_isOpenImmersion
     (R := R) (𝒰.f j)).flip
+  -- The cover index and the source of its map depend on these projections. The generated
+  -- projection lemmas do not simplify this dependent goal, so reduce just the two wrappers.
   dsimp only [Precoverage.ZeroHypercover.pullback₁, PreZeroHypercover.pullback₁]
   rw [← MorphismProperty.cancel_left_of_respectsIso (P := @FormallyUnramified.{u})
     H.isoPullback.hom, H.isoPullback_hom_fst_assoc, H.w_assoc]
