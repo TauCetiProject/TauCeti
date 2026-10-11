@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Combinatorics.DenseGraphLimits.Graphon.StandardBorelModel
+public import TauCeti.Combinatorics.DenseGraphLimits.Graphon.StandardBorelModel.Basic
 
 /-!
 # Regression for the carrier-free graphon representation
