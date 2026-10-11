@@ -174,6 +174,12 @@ theorem orthantProjection_orthantLift (y : ι → ℝ) :
   ext i
   simp [orthantLift]
 
+/-- Subtracting the last lifted coordinate recovers each original coordinate. -/
+@[simp]
+theorem orthantLift_fst_sub_snd (y : ι → ℝ) (i : ι) :
+    (orthantLift y).1 i - (orthantLift y).2 = y i := by
+  simpa only [orthantProjection_apply] using congrFun (orthantProjection_orthantLift y) i
+
 private theorem orthantMin_orthantProjection {p : (ι → ℝ) × ℝ}
     (hp : p ∈ frontier (Ici (0 : (ι → ℝ) × ℝ))) :
     orthantMin (orthantProjection p) = -p.2 := by

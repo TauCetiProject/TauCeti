@@ -329,4 +329,10 @@ theorem isIrreducible_standardRepresentation (h2 : 2 ≤ Fintype.card α)
 
 end Standard
 
+/-- The two-dimensional standard representation of S₃ is irreducible over a field in which
+`3` is nonzero. -/
+theorem isIrreducible_standardRepresentation_fin_three {k : Type*} [Field k]
+    (h : (3 : k) ≠ 0) : (standardRepresentation k (Fin 3)).IsIrreducible :=
+  isIrreducible_standardRepresentation (by decide) (Or.inr (by simpa using h))
+
 end TauCeti
