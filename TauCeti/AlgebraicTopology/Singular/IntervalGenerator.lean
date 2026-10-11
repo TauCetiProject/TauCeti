@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.DiskSphere
-public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.RelativeClass
+public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative.Class
 
 /-!
 # The generator of the relative homology of the interval modulo its endpoints

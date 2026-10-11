@@ -114,21 +114,19 @@ private noncomputable def toRestrictedSubring (hr : |r| ≤ 1) :
       PowerSeries.IsRestricted.subring (R := R) r :=
   (Subring.inclusion
     (TauCeti.PowerSeries.isRestrictedSubring_le_of_abs_le (by simpa using hr))).comp
-    (restrictedMvPowerSeriesSubringOneEquiv.toRingHom.comp
-      (RingEquiv.subringCongr weightedRestrictedSubring_one_weight).toRingHom)
+    weightedRestrictedSubringOneEquiv.toRingHom
 
 private theorem coe_toRestrictedSubring (hr : |r| ≤ 1)
     (f : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight) :
     (toRestrictedSubring hr f : PowerSeries R) =
       MvPowerSeries.rename finOneEquiv (f : MvPowerSeries (Fin 1) R) := by
   rw [toRestrictedSubring, RingHom.comp_apply, Subring.coe_inclusion]
-  simp
+  simp [coe_weightedRestrictedSubringOneEquiv]
 
 private theorem toRestrictedSubring_injective (hr : |r| ≤ 1) :
-    Function.Injective (toRestrictedSubring (R := R) hr) := fun f g h ↦ by
-  have h' := congrArg Subtype.val h
-  rw [coe_toRestrictedSubring, coe_toRestrictedSubring] at h'
-  exact Subtype.ext (MvPowerSeries.rename_injective (finOneEquiv : Fin 1 ↪ Unit) h')
+    Function.Injective (toRestrictedSubring (R := R) hr) := by
+  rw [toRestrictedSubring, RingHom.coe_comp, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom]
+  exact (Subring.inclusion_injective _).comp weightedRestrictedSubringOneEquiv.injective
 
 private theorem toRestrictedSubring_weightedC (hr : |r| ≤ 1) (a : R) :
     toRestrictedSubring hr
@@ -136,9 +134,8 @@ private theorem toRestrictedSubring_weightedC (hr : |r| ≤ 1) (a : R) :
       (⟨PowerSeries.C a, PowerSeries.isRestricted_C r a⟩ :
         PowerSeries.IsRestricted.subring (R := R) r) := by
   apply Subtype.ext
-  simpa only [coe_toRestrictedSubring, coe_weightedC, MvPowerSeries.rename_C] using
-    -- `PowerSeries R` is `MvPowerSeries Unit R`; the constant series are definitionally equal.
-    (show MvPowerSeries.C a = (PowerSeries.C a : PowerSeries R) from rfl)
+  rw [toRestrictedSubring, RingHom.comp_apply, Subring.coe_inclusion]
+  exact coe_weightedRestrictedSubringOneEquiv_weightedC a
 
 private theorem toRestrictedSubring_weightedX (hr : |r| ≤ 1) :
     toRestrictedSubring hr
@@ -148,10 +145,8 @@ private theorem toRestrictedSubring_weightedX (hr : |r| ≤ 1) :
           exact PowerSeries.isRestricted_monomial r 1 (1 : R)⟩ :
         PowerSeries.IsRestricted.subring (R := R) r) := by
   apply Subtype.ext
-  simpa only [coe_toRestrictedSubring, coe_weightedX, MvPowerSeries.rename_X] using
-    -- Renaming sends the sole `Fin 1` variable to `Unit`; both series use that same variable.
-    (show MvPowerSeries.X (finOneEquiv (0 : Fin 1)) =
-      (PowerSeries.X : PowerSeries R) from rfl)
+  rw [toRestrictedSubring, RingHom.comp_apply, Subring.coe_inclusion]
+  exact coe_weightedRestrictedSubringOneEquiv_weightedX
 
 variable [NormMulClass R] [NormOneClass R]
 

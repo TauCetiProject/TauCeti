@@ -45,7 +45,10 @@ full set of sections of a finite locally free subgroup scheme.
 
 ## Main results
 
-Throughout, `B` is free of finite rank over `A`.
+* `TauCeti.isFullSetOfSections_comp_algEquiv_iff`: being a full set of sections is invariant under
+  isomorphisms of `B`.
+
+In the remaining results, `B` is free of finite rank over `A`.
 
 * `TauCeti.IsFullSetOfSections.norm_eq`: the defining identity holds for test algebras in every
   universe.
@@ -107,6 +110,26 @@ theorem isFullSetOfSections_iff : IsFullSetOfSections s ↔
     ∀ (T : Type u) [CommRing T] [Algebra A T] [Module.Free T (T ⊗[A] B)] (f : T ⊗[A] B),
       Algebra.norm T f = ∏ i, (s i).sectionBaseChange T f :=
   Iff.rfl
+
+-- The base change of `e : B ≃ₐ[A] B'` identifies the norms and the values at the sections.
+private theorem IsFullSetOfSections.of_comp_algEquiv {B' : Type*} [CommRing B'] [Algebra A B']
+    (e : B ≃ₐ[A] B') {s : ι → B' →ₐ[A] A}
+    (h : IsFullSetOfSections fun i ↦ (s i).comp e.toAlgHom) : IsFullSetOfSections s := by
+  intro T _ _ _ f
+  let eT := Algebra.TensorProduct.congr (AlgEquiv.refl : T ≃ₐ[T] T) e
+  have : Module.Free T (T ⊗[A] B) := .of_equiv eT.symm.toLinearEquiv
+  rw [← Algebra.norm_eq_of_algEquiv eT.symm, h T]
+  refine Finset.prod_congr rfl fun i _ ↦ ?_
+  induction f using TensorProduct.inductionOn with
+  | tmul x y => simp [eT]
+  | add x y hx hy => simp only [map_add, hx, hy]
+
+/-- Being a full set of sections is invariant under isomorphism: for `e : B ≃ₐ[A] B'` and sections
+`s` of `B'`, the sections `sᵢ ∘ e` of `B` form a full set if and only if the `sᵢ` do. -/
+theorem isFullSetOfSections_comp_algEquiv_iff {B' : Type*} [CommRing B'] [Algebra A B']
+    (e : B ≃ₐ[A] B') {s : ι → B' →ₐ[A] A} :
+    (IsFullSetOfSections fun i ↦ (s i).comp e.toAlgHom) ↔ IsFullSetOfSections s :=
+  ⟨.of_comp_algEquiv e, fun h ↦ .of_comp_algEquiv e.symm (by simpa [AlgHom.comp_assoc] using h)⟩
 
 section Free
 
