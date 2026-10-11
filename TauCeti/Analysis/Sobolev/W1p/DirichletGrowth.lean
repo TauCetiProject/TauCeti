@@ -19,8 +19,8 @@ gradient of `u` grows on balls like
 
 `∫_{B(x, r)} ‖∇u‖ ≤ M r^(n - 1 + α)`,
 
-then `u` is `α`-Hölder continuous, with Hölder constant a dimensional multiple of `M`. More
-precisely the Hölder continuous function is the precise representative
+then `u` is `α`-Hölder continuous, with Hölder constant a multiple of `M` depending only on `n`,
+`α` and `μ(B(0, 1))`. More precisely the Hölder continuous function is the precise representative
 `TauCeti.MeasureTheory.preciseRepresentative` of `u`, the limit of its averages over shrinking
 balls, which agrees with `u` almost everywhere on `Ω` by
 `TauCeti.W1p.ae_eq_preciseRepresentative`.
@@ -114,10 +114,11 @@ private theorem setAverage_norm_value_sub_setAverage_closedBall_le_of_setIntegra
       ≤ 2 ^ (finrank ℝ E + 1) * r *
           ((r ^ finrank ℝ E * mu.real (ball (0 : E) 1))⁻¹ *
             (M * r ^ ((finrank ℝ E : ℝ) - 1 + α))) := by gcongr
+    _ = 2 ^ (finrank ℝ E + 1) * ((r ^ finrank ℝ E * mu.real (ball (0 : E) 1))⁻¹ *
+          (M * (r * r ^ ((finrank ℝ E : ℝ) - 1 + α)))) := by ring
     _ = 2 ^ (finrank ℝ E + 1) / mu.real (ball (0 : E) 1) * M * r ^ α := by
+        rw [hpow]
         field_simp
-        rw [mul_comm r, mul_assoc M, hpow]
-        ring
 
 /-- **The pointwise Morrey estimate.** Let `u ∈ W^{1,p}(Ω)`, `α > 0`, `d = dist x y`, and
 suppose that `closedBall x (2 d) ⊆ Ω` and that the gradient of `u` satisfies the growth condition
