@@ -95,6 +95,12 @@ theorem cancelBaseChangeLeft_tmul (b : B) (p : P) (n : N) :
     cancelBaseChangeLeft R B P N ((b ⊗ₜ[R] p) ⊗ₜ[B] n) = p ⊗ₜ[R] (b • n) := by
   simp [cancelBaseChangeLeft]
 
+/-- The inverse left cancellation inserts the unit of `B` in the scalar-extended algebra. -/
+@[simp]
+theorem cancelBaseChangeLeft_symm_tmul (p : P) (n : N) :
+    (cancelBaseChangeLeft R B P N).symm (p ⊗ₜ[R] n) = (1 ⊗ₜ[R] p) ⊗ₜ[B] n := by
+  simp [LinearEquiv.symm_apply_eq]
+
 variable {R B P}
 
 /-- Through `cancelBaseChangeLeft`, extending a `B`-linear map `f` along `B → B ⊗[R] P` is
