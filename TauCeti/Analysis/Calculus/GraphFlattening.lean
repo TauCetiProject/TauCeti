@@ -113,7 +113,8 @@ private theorem coe_graphFlattening_eq_comp (γ : E → ℝ) (hγ : Continuous �
   simp
 
 /-- The linear shear subtracting `L z` from the normal coordinate. This is the derivative of
-`graphFlattening` when the graph height has derivative `L`. -/
+`graphFlattening` when the graph height has derivative `L`.
+Use `TauCeti.graphFlatteningL L` to construct the shear from a continuous linear functional. -/
 def graphFlatteningL (L : E →L[ℝ] ℝ) :
     WithLp 2 (ℝ × E) ≃L[ℝ] WithLp 2 (ℝ × E) :=
   let c := (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).trans
