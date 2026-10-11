@@ -110,7 +110,7 @@ theorem compLpL_normedBumpLp {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ
     [CompleteSpace F] [CompleteSpace G] (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
     (L : F →L[ℝ] G) (f : Lp F p mu) :
     L.compLpL p mu (normedBumpLp hp phi mu f) = normedBumpLp hp phi mu (L.compLpL p mu f) :=
-  normedBumpAverageL_comm _ _ _ _ _ _ _ (Measure.compLpL_translateLp L) f
+  normedBumpAverageL_comm _ _ _ _ _ _ _ L.compLpL_translateLp f
 
 /-- Averaging against a normalized nonnegative bump does not increase the `Lᵖ` norm when
 `p < ∞`. -/

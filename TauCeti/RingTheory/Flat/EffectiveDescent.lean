@@ -875,24 +875,8 @@ private theorem mulLeft_iso_tmul_one (b : B) : mulLeft (E.iso (b ⊗ₜ 1)) = b 
       simpa using congr($hmul.symm (E.iso.symm (1 ⊗ₜ b)))⟩
   -- `c` is idempotent, by the cocycle condition.
   have hidem : ∀ a, c (c a) = c a := fun a ↦ by
-    have hθ (θ : B →ₐ[S] S ⊗[R] B) (y : S ⊗[R] B) :
-        mulLeft (Algebra.TensorProduct.map (AlgHom.id R S) (mulLeft.restrictScalars R)
-          (Algebra.TensorProduct.map (AlgHom.id R S) (θ.restrictScalars R) y)) =
-          mulLeft (θ (mulLeft y)) := by
-      induction y using TensorProduct.inductionOn with
-      | tmul s b => simp [Algebra.TensorProduct.algebraMap_apply]
-      | add x y hx hy => simp only [map_add, hx, hy]
-    have hR (y : S ⊗[R] B) :
-        mulLeft (Algebra.TensorProduct.map (AlgHom.id R S)
-          ((mulLeft : S ⊗[R] B →ₐ[S] B).restrictScalars R)
-          (Algebra.TensorProduct.map (AlgHom.id R S) Algebra.TensorProduct.includeRight y)) =
-          mulLeft y := by
-      induction y using TensorProduct.inductionOn with
-      | tmul s b => simp
-      | add x y hx hy => simp only [map_add, hx, hy]
     have h := congr(mulLeft (Algebra.TensorProduct.map (AlgHom.id R S)
       (mulLeft.restrictScalars R) $(E.coassoc a)))
-    rw [hθ, hR] at h
     simpa [hc] using h
   obtain ⟨a, rfl⟩ := hsurj b
   simpa [hc] using hidem a

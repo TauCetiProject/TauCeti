@@ -44,9 +44,15 @@ relative homotopy invariance of cubical homology is transported from the simplic
   comparison maps are quasi-isomorphisms.
 * `TopPair.Homotopy.congr_homologyMap_cubicalChainComplexMap`: homotopic maps of pairs induce the
   same map on relative cubical homology.
+
+## References
+
+* W. S. Massey, *Singular Homology Theory*, GTM 70, Springer, 1980, Chapter VII.
+* S. Eilenberg and N. Steenrod, *Foundations of Algebraic Topology*, Princeton, 1952,
+  Chapters I–III.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -54,34 +60,6 @@ open CategoryTheory Limits AlgebraicTopology TauCeti
 
 universe u
 
-namespace TauCeti
-
-section Injective
-
-variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] (R : Type*) [Ring R]
-
-theorem CubicalChain.map_eq_mapDomain (f : C(X, Y)) {n : ℕ} (c : CubicalChain X R n) :
-    CubicalChain.map R f n c = Finsupp.mapDomain f.comp c := by
-  induction c using Finsupp.induction_linear with
-  | zero => simp
-  | add c d hc hd => rw [map_add, hc, hd, Finsupp.mapDomain_add]
-  | single c a => rw [CubicalChain.map_single, Finsupp.mapDomain_single]
-
-/-- The push-forward of normalized cubical chains along an injective map is injective. -/
-theorem NormalizedCubicalChain.map_injective {f : C(X, Y)} (hf : Function.Injective f)
-    (n : ℕ) : Function.Injective (NormalizedCubicalChain.map R f n) := by
-  intro x y h
-  have h' := congrArg (NormalizedCubicalChain.toCubicalChain Y R n) h
-  rw [NormalizedCubicalChain.toCubicalChain_map, NormalizedCubicalChain.toCubicalChain_map,
-    CubicalChain.map_eq_mapDomain, CubicalChain.map_eq_mapDomain] at h'
-  have hinj : Function.Injective (f.comp : SingularCube X n → SingularCube Y n) :=
-    fun c c' hcc' ↦ ContinuousMap.ext fun t ↦ hf (DFunLike.congr_fun hcc' t)
-  rw [← NormalizedCubicalChain.mk_toCubicalChain R x,
-    ← NormalizedCubicalChain.mk_toCubicalChain R y, Finsupp.mapDomain_injective hinj h']
-
-end Injective
-
-end TauCeti
 
 namespace TopPair
 
@@ -90,7 +68,7 @@ variable (k : Type u) [Ring k]
 instance mono_normalizedCubicalChainComplex_map (P : TopPair.{u}) :
     Mono ((normalizedCubicalChainComplex k).map P.map) :=
   HomologicalComplex.mono_of_mono_f _ fun n ↦ (ModuleCat.mono_iff_injective _).2
-    (NormalizedCubicalChain.map_injective k P.isEmbedding_map.injective n)
+    (NormalizedCubicalChain.map_injective k P.map.hom P.isEmbedding_map.injective n)
 
 /-- The **relative normalized cubical chain complex** of a topological pair `(X, A)`: the
 cokernel of the map of normalized cubical chains induced by the inclusion `A → X`. -/
@@ -120,6 +98,16 @@ theorem π_cubicalChainComplexMap {P P' : TopPair.{u}} (f : P ⟶ P') :
     cokernel.π _ ≫ cubicalChainComplexMap k f =
       (normalizedCubicalChainComplex k).map (Hom.fst f) ≫ cokernel.π _ := by
   simp [cubicalChainComplexMap]
+
+@[simp]
+theorem cubicalChainComplexMap_id (P : TopPair.{u}) :
+    cubicalChainComplexMap k (𝟙 P) = 𝟙 (P.cubicalChainComplex k) :=
+  coequalizer.hom_ext (by simp)
+
+@[simp]
+theorem cubicalChainComplexMap_comp {P P' P'' : TopPair.{u}} (f : P ⟶ P') (g : P' ⟶ P'') :
+    cubicalChainComplexMap k (f ≫ g) = cubicalChainComplexMap k f ≫ cubicalChainComplexMap k g :=
+  coequalizer.hom_ext (by simp)
 
 /-! ### The relative comparison maps -/
 
@@ -182,6 +170,21 @@ def singularToCubicalShortComplex (P : TopPair.{u}) :
   comm₁₂ := ((singularToCubical k).naturality P.map).symm
   comm₂₃ := (singularRelπ_singularToCubicalRel k P).symm
 
+@[simp]
+theorem singularToCubicalShortComplex_τ₁ (P : TopPair.{u}) :
+    (singularToCubicalShortComplex k P).τ₁ = (singularToCubical k).app P.snd :=
+  (rfl)
+
+@[simp]
+theorem singularToCubicalShortComplex_τ₂ (P : TopPair.{u}) :
+    (singularToCubicalShortComplex k P).τ₂ = (singularToCubical k).app P.fst :=
+  (rfl)
+
+@[simp]
+theorem singularToCubicalShortComplex_τ₃ (P : TopPair.{u}) :
+    (singularToCubicalShortComplex k P).τ₃ = singularToCubicalRel k P :=
+  (rfl)
+
 /-- The comparison maps as a morphism of short complexes from the cubical chain sequence of a
 pair to the simplicial one. -/
 def cubicalToSingularShortComplex (P : TopPair.{u}) :
@@ -192,14 +195,6 @@ def cubicalToSingularShortComplex (P : TopPair.{u}) :
   τ₃ := cubicalToSingularRel k P
   comm₁₂ := ((cubicalToSingular k).naturality P.map).symm
   comm₂₃ := (π_cubicalToSingularRel k P).symm
-
-instance (X : TopCat.{u}) : QuasiIso ((singularToCubical k).app X) := by
-  rw [← cubicalSingularHomotopyEquiv_hom]
-  infer_instance
-
-instance (X : TopCat.{u}) : QuasiIso ((cubicalToSingular k).app X) := by
-  rw [← cubicalSingularHomotopyEquiv_inv]
-  infer_instance
 
 /-- **The relative comparison map to cubical chains is a quasi-isomorphism.** -/
 instance quasiIso_singularToCubicalRel (P : TopPair.{u}) : QuasiIso (singularToCubicalRel k P) :=

@@ -69,6 +69,8 @@ inverse tangent-bundle trivializations act componentwise.
   inverse tangent-bundle trivializations agree through this equivalence.
 * `TauCeti.Manifold.tangentSpaceProdEquiv`: the canonical continuous linear equivalence between
   the tangent space of a product and the product of the tangent spaces.
+* `TauCeti.Manifold.mfderiv_prodMap_apply`: differentials of product maps act componentwise
+  under this equivalence.
 * `TauCeti.Manifold.tangentCoordChange_prod`: the tangent coordinate change of a product is the
   product of the tangent coordinate changes of the factors.
 * `TauCeti.Manifold.tangentSpaceProdEquiv_symmL_trivializationAt`: the inverse tangent-bundle
@@ -688,6 +690,25 @@ theorem tangentSpaceProdEquiv_symm_apply (p : M × N)
     (v : TangentSpace I p.1 × TangentSpace J p.2) :
     (tangentSpaceProdEquiv (I := I) (J := J) p).symm v = v := by
   exact (rfl)
+
+/-- The differential of a product map acts componentwise under the canonical
+identifications of the product tangent spaces. -/
+theorem mfderiv_prodMap_apply
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M']
+    {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+    {G' : Type*} [TopologicalSpace G'] {J' : ModelWithCorners 𝕜 F' G'}
+    {N' : Type*} [TopologicalSpace N'] [ChartedSpace G' N']
+    {f : M → M'} {g : N → N'} {p : M × N}
+    (hf : MDifferentiableAt I I' f p.1) (hg : MDifferentiableAt J J' g p.2)
+    (v : TangentSpace I p.1 × TangentSpace J p.2) :
+    mfderiv (I.prod J) (I'.prod J') (Prod.map f g) p
+        ((tangentSpaceProdEquiv p).symm v) =
+      (tangentSpaceProdEquiv (f p.1, g p.2)).symm
+        (mfderiv I I' f p.1 v.1, mfderiv J J' g p.2 v.2) := by
+  rw [mfderiv_prodMap hf hg]
+  rfl
 
 /-- On the common domain of two product charts, the tangent coordinate change of a product
 manifold is the product of the tangent coordinate changes of the factors. -/
