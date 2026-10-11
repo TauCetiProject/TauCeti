@@ -92,6 +92,8 @@ theorem computedCycleData_nodup : (smallDegreeRecords.map computedCycleData).Nod
 /-- No two frozen records lie in the same branch-point orbit of cycle data. -/
 theorem computedUnorderedCycleData_nodup :
     (smallDegreeRecords.map computedUnorderedCycleData).Nodup := by
+  unfold computedUnorderedCycleData
+  simp only [unorderedCycleData_def]
   decide +kernel
 
 /-- The unordered cycle data of the frozen records give the explicit thirteen-entry
@@ -111,6 +113,8 @@ theorem computedUnorderedCycleData_eq_small_degree_table :
         (4, {{3, 1}, {3, 1}, {3, 1}}),
         (4, {{3, 1}, {4}, {4}}),
         (4, {{2, 1, 1}, {3, 1}, {4}}) } := by
+  unfold computedUnorderedCycleData
+  simp only [unorderedCycleData_def]
   decide +kernel
 
 /-- The displayed unordered data are precisely the degree-at-most-four branch-point orbits
@@ -123,12 +127,20 @@ theorem unorderedCycleData_eq_classification (n : ℕ) (hn : n ≤ 4) :
   interval_cases n
   · decide +kernel
   · rw [PermutationTriple.image_unorderedCycleData_one]
+    unfold computedUnorderedCycleData
+    simp only [unorderedCycleData_def]
     decide +kernel
   · rw [PermutationTriple.image_unorderedCycleData_two]
+    unfold computedUnorderedCycleData
+    simp only [unorderedCycleData_def]
     decide +kernel
   · rw [PermutationTriple.image_unorderedCycleData_three]
+    unfold computedUnorderedCycleData
+    simp only [unorderedCycleData_def]
     decide +kernel
   · rw [PermutationTriple.image_unorderedCycleData_four]
+    unfold computedUnorderedCycleData
+    simp only [unorderedCycleData_def]
     decide +kernel
 
 end LMFDB

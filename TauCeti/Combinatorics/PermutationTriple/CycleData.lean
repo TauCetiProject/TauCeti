@@ -68,7 +68,7 @@ theorem cycleData_σinf (t : PermutationTriple n) :
 
 /-- The multiset of full cycle partitions, forgetting the ordering of the branch points but
 retaining repeated partitions and fixed points. -/
-@[expose] def unorderedCycleData (t : PermutationTriple n) : Multiset (Multiset ℕ) :=
+def unorderedCycleData (t : PermutationTriple n) : Multiset (Multiset ℕ) :=
   {t.σ0.computedCycleType, t.σ1.computedCycleType, t.σinf.computedCycleType}
 
 /-- Read the unordered cycle data from the ordered cycle partitions. -/
