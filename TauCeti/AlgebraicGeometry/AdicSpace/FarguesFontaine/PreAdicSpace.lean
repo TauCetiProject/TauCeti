@@ -10,6 +10,8 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Descent
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.OpenImmersion
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Sheaf
 
+import TauCeti.CategoryTheory.Thin
+
 /-!
 # The Frobenius orbit space as a pre-adic space
 
@@ -74,7 +76,7 @@ universe v
 
 namespace TauCeti.FarguesFontaine
 
-open AlgebraicGeometry CategoryTheory Opposite _root_.TopologicalSpace Topology
+open AlgebraicGeometry _root_.CategoryTheory Opposite _root_.TopologicalSpace Topology
 open TauCeti.Huber TauCeti.ValuationSpectrum _root_.WittVector
 
 variable {p : ℕ} [Fact p.Prime] {R : Type v} [CommRing R] [TopologicalSpace (WittVector p R)]
@@ -121,23 +123,6 @@ def spaYFrobeniusHom :
   base := frobeniusTopHom hI
   c := spaYPresheafFrobenius P hI
 
-/-- Moving a natural transformation `η : P ⟶ G ⋙ P` of functors on a thin category past a map
-`P.map a`: both sides of the equation are `η.app W` followed by the image under `P` of the unique
-morphism. -/
--- The reflexive `h₁` and `h₂` match the casts `eqToHom (spaYPresheaf_obj ..)` in
--- `spaYPresheafFrobenius_app`. Those relate `𝒪_𝒴(V)` to the presentation-limit sections over the
--- image of `V`, so their two sides are syntactically different, and `eqToHom_refl` cannot remove
--- them at the use site. Applying this lemma identifies the two sides by unification instead.
-private theorem map_comp_app_comp_map_comp_map {𝒞 𝒟 : Type*} [Category 𝒞] [Category 𝒟]
-    [Quiver.IsThin 𝒟] (Q : 𝒟 ⥤ 𝒞) (G : 𝒟 ⥤ 𝒟) (η : Q ⟶ G ⋙ Q) {W B Z₁ Z₂ : 𝒟} (a : W ⟶ B)
-    (h₁ : Q.obj B = Q.obj B) (k₁ : G.obj B ⟶ Z₁) (h₂ : Q.obj Z₁ = Q.obj Z₁) (k₂ : Z₁ ⟶ Z₂)
-    (l : G.obj W ⟶ Z₂) :
-    (Q.map a ≫ eqToHom h₁ ≫ η.app B ≫ Q.map k₁ ≫ eqToHom h₂) ≫ Q.map k₂ =
-      η.app W ≫ Q.map l := by
-  simp only [eqToHom_refl, Category.id_comp, Category.comp_id, Category.assoc,
-    η.naturality_assoc, Functor.comp_map, ← Q.map_comp]
-  exact congrArg (η.app W ≫ Q.map ·) (Subsingleton.elim _ _)
-
 /-- Frobenius on `𝒴` is compatible with Frobenius on `Spa(𝕎 R, 𝕎 R)` along the inclusion. -/
 private theorem spaYFrobeniusHom_comp_ofRestrict :
     spaYFrobeniusHom P hI ≫ ((spaPreAdicSpace P hI).ofRestrict
@@ -156,7 +141,10 @@ private theorem spaYFrobeniusHom_comp_ofRestrict :
           (spaComap_val ..).symm)))
   · refine NatTrans.ext (funext fun W ↦ ?_)
     refine Eq.trans (congrArg (fun t ↦ (_ ≫ t) ≫ _) (spaYPresheafFrobenius_app P hI _)) ?_
-    exact map_comp_app_comp_map_comp_map _ _ _ _ _ _ _ _ _
+    -- the casts in `spaYPresheafFrobenius_app` relate objects that are only definitionally
+    -- equal, so `eqToHom_refl` cannot remove them; unification absorbs them instead
+    exact (presentationLimitPresheafFrobeniusIso P hI).hom.map_comp_app_comp_map_comp_map
+      _ rfl _ rfl _ _
 
 /-- **Witt Frobenius as an endomorphism of the pre-adic space `𝒴`**: on points it is `v ↦ v ∘ φ`
 and on sections it is `spaYPresheafFrobenius` (`spaYFrobenius_toHom`). It is compatible with the
@@ -271,24 +259,12 @@ theorem isOpenImmersion_ofRestrict_comp_quotientPresheafedHom (h : (spaYPresheaf
         (injOn_quotientMap_of_disjoint_preimage_zpow hI hV).injective
       exact Opens.ext (congrArg (Subtype.val '' ·) (hinj.preimage_image _))
 
-omit [IsTopologicalRing (WittVector p R)] in
-/-- Every point of `𝒴` lies in a wandering open, namely a Frobenius window. -/
-theorem exists_wandering_open_mem (y : spaY p ϖ) :
-    ∃ V : Opens (spaY p ϖ), (∀ k : ℤ, k ≠ 0 →
-      Disjoint (⇑(frobeniusHomeomorph hI ^ k) ⁻¹' (V : Set (spaY p ϖ))) V) ∧ y ∈ V := by
-  obtain ⟨n, hn | hn⟩ := Set.mem_iUnion.mp
-    ((Set.ext_iff.mp (iUnion_windowU_union_windowV hI) y.val).mpr y.property)
-  · exact ⟨⟨_, isOpen_val_preimage_windowU hI n⟩,
-      fun k hk ↦ disjoint_preimage_zpow_windowU hI n hk, hn⟩
-  · exact ⟨⟨_, isOpen_val_preimage_windowV hI n⟩,
-      fun k hk ↦ disjoint_preimage_zpow_windowV hI n hk, hn⟩
-
 /-- **The stalk maps of the projection are isomorphisms** when `𝒪_𝒴` is a sheaf: every point of
 `𝒴` lies in a wandering window, on which the projection is an open immersion. -/
 theorem isIso_stalkMap_quotientPresheafedHom (h : (spaYPresheaf P ϖ).IsSheaf) (y : spaY p ϖ) :
     IsIso ((PreAdicSpace.toRingPresheafedSpaceHom
       (X := spaYPreAdicSpace P hI) (quotientPresheafedHom P hI)).stalkMap y) := by
-  obtain ⟨V, hV, hy⟩ := exists_wandering_open_mem (hI := hI) y
+  obtain ⟨V, hV, hy⟩ := exists_wandering_open_mem hI y
   let o := (spaYPreAdicSpace P hI).ofRestrict V.isOpenEmbedding
   let y' : (spaYPreAdicSpace P hI).restrict V.isOpenEmbedding := ⟨y, hy⟩
   have := isOpenImmersion_ofRestrict_comp_quotientPresheafedHom h hV

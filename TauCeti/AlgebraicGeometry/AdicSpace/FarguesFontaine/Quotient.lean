@@ -19,10 +19,11 @@ coefficient ring is perfect of characteristic `p` and the Witt vectors carry the
 `spaX` carries the quotient topology, and its projection is open.
 
 The preimage of the image of a set of `𝒴` is the union of its integer Frobenius translates, and
-these are pairwise disjoint when the set wanders, as the Frobenius windows do. The wandering
-Frobenius windows embed openly into this orbit space. The images of `U₀` and
-`V₀` cover it, so it is quasi-compact and `T0`. These topological charts are the inputs for
-constructing the quotient sheaf and identifying its affinoid charts.
+these are pairwise disjoint when the set wanders, as the Frobenius windows do. Every point of `𝒴`
+lies in a window, hence in a wandering open. The wandering Frobenius windows embed openly into this
+orbit space. The images of `U₀` and `V₀` cover it, so it is quasi-compact and `T0`. These
+topological charts are the inputs for constructing the quotient sheaf and identifying its affinoid
+charts.
 
 The adic curve additionally requires a sheaf of complete separated topological rings on this
 orbit space and identifications of its window charts with affinoid adic spaces.
@@ -222,6 +223,19 @@ theorem isOpenEmbedding_quotientMap_windowV
       quotientMap hI v.val) :=
   isOpenEmbedding_quotientMap_restrict hI _ (isOpen_val_preimage_windowV hI n)
     (injOn_quotientMap_windowV hI n)
+
+/-- **Every point of `𝒴` lies in a wandering open**, namely a Frobenius window: an open meeting
+none of its nontrivial integer Frobenius translates. -/
+theorem exists_wandering_open_mem
+    (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ})) (y : spaY p ϖ) :
+    ∃ V : TopologicalSpace.Opens (spaY p ϖ), (∀ k : ℤ, k ≠ 0 →
+      Disjoint (⇑(frobeniusHomeomorph hI ^ k) ⁻¹' (V : Set (spaY p ϖ))) V) ∧ y ∈ V := by
+  obtain ⟨n, hn | hn⟩ := Set.mem_iUnion.mp
+    ((Set.ext_iff.mp (iUnion_windowU_union_windowV hI) y.val).mpr y.property)
+  · exact ⟨⟨_, isOpen_val_preimage_windowU hI n⟩,
+      fun k hk ↦ disjoint_preimage_zpow_windowU hI n hk, hn⟩
+  · exact ⟨⟨_, isOpen_val_preimage_windowV hI n⟩,
+      fun k hk ↦ disjoint_preimage_zpow_windowV hI n hk, hn⟩
 
 /-- The images of the two windows of index zero cover the Frobenius orbit space. -/
 theorem image_windowU_zero_union_image_windowV_zero
