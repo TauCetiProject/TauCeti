@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Connected.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.Reductive.Basic
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Generated.Connected
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Generated.UnipotentRadical
+import Mathlib.RingTheory.Etale.Descent
 
 /-!
 # Reductivity of the generated type-Bₙ₊₁ spin subgroup
@@ -47,6 +48,7 @@ The argument follows the short-root type-`G₂` carrier in
 public section
 
 open CategoryTheory
+open scoped TensorProduct
 
 namespace TauCeti.TypeBSpinCarrier
 
@@ -63,10 +65,22 @@ theorem reductiveCommHopfAlgProperty_generatedCoordinateHopfAlgebra :
       (FiniteTypeCommHopfAlgCat.of k (generatedCoordinateHopfAlgebra n k)) := by
   let K := AlgebraicClosure k
   let e := generatedCoordinateHopfAlgebraBaseChangeIso.{u, u} n k K
-  exact reductiveCommHopfAlgProperty_of_geometricFiber_iso_of_smooth_connected k _
+  have hsmooth : smoothCommHopfAlgProperty K
+      (CommHopfAlgCat.baseChange (K := K) (generatedCoordinateHopfAlgebra n k)) :=
+    (smoothCommHopfAlgProperty K).prop_of_iso e.symm
+      (smoothCommHopfAlgProperty_generatedCoordinateHopfAlgebra n K)
+  -- `baseChange` bundles the tensor product; `coe_of` identifies its underlying algebra.
+  let _ : Algebra.Smooth K (K ⊗[k] generatedCoordinateHopfAlgebra n k) := by
+    simpa only [CommHopfAlgCat.baseChange, _root_.CommHopfAlgCat.coe_of] using
+      (smoothCommHopfAlgProperty_iff _).mp hsmooth
+  exact reductiveCommHopfAlgProperty_of_geometricFiber_iso k _
     (FiniteTypeCommHopfAlgCat.of K (generatedCoordinateHopfAlgebra n K))
-    (ObjectProperty.isoMk _ e) (smoothCommHopfAlgProperty_generatedCoordinateHopfAlgebra n K)
-    (geometricallyConnectedCommHopfAlgProperty_generatedCoordinateHopfAlgebra n K)
+    (Algebra.Smooth.of_smooth_tensorProduct_of_faithfullyFlat
+      (R := k) (S := generatedCoordinateHopfAlgebra n k) K)
+    (geometricallyConnectedCommHopfAlgProperty.of_baseChange k K _
+      ((geometricallyConnectedCommHopfAlgProperty K).prop_of_iso e.symm
+        (geometricallyConnectedCommHopfAlgProperty_generatedCoordinateHopfAlgebra n K)))
+    (ObjectProperty.isoMk _ e)
     (eq_augmentation_generated_of_isNormal_of_smoothUnipotent n K)
 
 end TauCeti.TypeBSpinCarrier
