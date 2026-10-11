@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Gluing
 public import TauCeti.AlgebraicGeometry.Quotient.FiniteGroup.Affine
 public import TauCeti.RingTheory.Invariant.Localization
 import Mathlib.Algebra.Category.Ring.Constructions
@@ -28,11 +27,12 @@ For existence, `f` is constant on the fibres of `π`, which are the `G`-orbits, 
 continuous map `b : Spec Aᴳ → X` because `π` is a topological quotient map. Cover `Spec Aᴳ` by basic
 opens `D(r)` with `r` invariant and `b(D(r))` inside an affine open `V` of `X`. Over `D(r)`, the
 projection is the affine invariant quotient of the localization `A[1/r]`: invariants commute with
-this localization (`TauCeti.FixedPoints.isLocalization_away`), so the square formed by
+this localization (`TauCeti.FixedPoints.isLocalization`), so the square formed by
 `Spec A[1/r] ⟶ Spec A`, the two projections and `Spec A[1/r]ᴳ ⟶ Spec Aᴳ` is a pullback square
 (`TauCeti.AffineInvariantQuotient.isPullback_away`). The restriction of `f` to `Spec A[1/r]` lands
 in `V`, so it descends by the affine universal property. The local descents agree on overlaps
-because `π` remains an epimorphism over every open subscheme of `Spec Aᴳ`, and they glue.
+because `π` remains an epimorphism over every open subscheme of `Spec Aᴳ`, and they glue
+(`AlgebraicGeometry.Scheme.Hom.exists_comp_eq_of_openCover`).
 
 The construction follows the proof of Mathlib's
 `AlgebraicGeometry.isRegularEpi_of_flat_of_surjective_of_isAffine`, where flat descent plays the
@@ -50,6 +50,8 @@ role of the affine invariant quotient.
 * `TauCeti.AffineInvariantQuotient.instEpiProjection`: the projection is an epimorphism of schemes.
 * `TauCeti.AffineInvariantQuotient.isPullback_away`: over the basic open `D(r)`, the projection is
   the projection of `A[1/r]`.
+* `TauCeti.AffineInvariantQuotient.hom_ext_of_finite`: morphisms out of the quotient to an
+  arbitrary scheme are determined by their composition with the projection.
 * `TauCeti.AffineInvariantQuotient.existsUnique_desc_of_finite`: the universal property for
   arbitrary target schemes.
 
@@ -95,32 +97,32 @@ variable {A} in
 projection of the localization `A[1/r]`: the square formed by the two projections and the maps
 induced by `A → A[1/r]` and `Aᴳ → A[1/r]ᴳ` is a pullback square. -/
 theorem isPullback_away (r : FixedPoints.subring A G) :
-    IsPullback (Spec.algebraMap A (Localization.Away (r : A)))
-      (projection (Localization.Away (r : A)) G) (projection A G)
+    IsPullback (Spec.algebraMap A (Localization (Algebra.algebraMapSubmonoid A (.powers r))))
+      (projection (Localization (Algebra.algebraMapSubmonoid A (.powers r))) G) (projection A G)
       (Spec.algebraMap (FixedPoints.subring A G)
-        (FixedPoints.subring (Localization.Away (r : A)) G)) := by
+        (FixedPoints.subring (Localization (Algebra.algebraMapSubmonoid A (.powers r))) G)) := by
   have : IsLocalization ((Submonoid.powers r).map (algebraMap (FixedPoints.subring A G) A))
-      (Localization.Away (r : A)) := by
-    rw [Submonoid.map_powers]
-    exact Localization.isLocalization
+      (Localization (Algebra.algebraMapSubmonoid A (.powers r))) :=
+    Localization.isLocalization
   rw [projection_def, projection_def]
   exact isPullback_SpecMap_of_isPushout _ _ _ _ <| CommRingCat.isPushout_of_isLocalization
     (algebraMap (FixedPoints.subring A G) A)
-    (algebraMap (FixedPoints.subring (Localization.Away (r : A)) G) (Localization.Away (r : A)))
+    (algebraMap (FixedPoints.subring (Localization (Algebra.algebraMapSubmonoid A (.powers r))) G)
+      (Localization (Algebra.algebraMapSubmonoid A (.powers r))))
     rfl (Submonoid.powers r)
 
 variable {A} in
 /-- The map `Spec A[1/r]ᴳ ⟶ Spec Aᴳ` is an open immersion. -/
 instance isOpenImmersion_away (r : FixedPoints.subring A G) :
     IsOpenImmersion (Spec.algebraMap (FixedPoints.subring A G)
-      (FixedPoints.subring (Localization.Away (r : A)) G)) :=
+      (FixedPoints.subring (Localization (Algebra.algebraMapSubmonoid A (.powers r))) G)) :=
   IsOpenImmersion.of_isLocalization r
 
 variable {A} in
 /-- The image of `Spec A[1/r]ᴳ ⟶ Spec Aᴳ` is the basic open `D(r)`. -/
 theorem range_specAlgebraMap_away (r : FixedPoints.subring A G) :
     Set.range (Spec.algebraMap (FixedPoints.subring A G)
-      (FixedPoints.subring (Localization.Away (r : A)) G)) =
+      (FixedPoints.subring (Localization (Algebra.algebraMapSubmonoid A (.powers r))) G)) =
       (PrimeSpectrum.basicOpen r : Set (PrimeSpectrum (FixedPoints.subring A G))) :=
   PrimeSpectrum.localization_away_comap_range _ r
 
@@ -129,12 +131,14 @@ variable {A G} in
 /-- The map `Spec A[1/r] ⟶ Spec A` is equivariant. -/
 @[reassoc]
 theorem specComap_comp_specAlgebraMap_away (r : FixedPoints.subring A G) (g : G) :
-    specComap (Localization.Away (r : A)) G g ≫ Spec.algebraMap A (Localization.Away (r : A)) =
-      Spec.algebraMap A (Localization.Away (r : A)) ≫ specComap A G g := by
+    specComap (Localization (Algebra.algebraMapSubmonoid A (.powers r))) G g ≫
+        Spec.algebraMap A (Localization (Algebra.algebraMapSubmonoid A (.powers r))) =
+      Spec.algebraMap A (Localization (Algebra.algebraMapSubmonoid A (.powers r))) ≫
+        specComap A G g := by
   rw [specComap_def, specComap_def, ← Spec.map_comp, ← Spec.map_comp]
   congr 1
   ext a
-  exact FixedPoints.smul_algebraMap_away r g a
+  exact FixedPoints.smul_algebraMap_localization _ g a
 
 variable {A G}
 
@@ -159,18 +163,21 @@ private theorem exists_desc_away {X : Scheme.{u}} (f : Spec (CommRingCat.of A) �
     (hf : ∀ g : G, specComap A G g ≫ f = f) (b : C(quotient A G, X))
     (hb : ∀ x, b (projection A G x) = f x) (r : FixedPoints.subring A G) (V : X.affineOpens)
     (hrV : ∀ y ∈ PrimeSpectrum.basicOpen r, b y ∈ (V : Set X)) :
-    ∃ u : quotient (Localization.Away (r : A)) G ⟶ X,
+    ∃ u : quotient (Localization (Algebra.algebraMapSubmonoid A (.powers r))) G ⟶ X,
       pullback.fst (projection A G) (Spec.algebraMap (FixedPoints.subring A G)
-        (FixedPoints.subring (Localization.Away (r : A)) G)) ≫ f = pullback.snd _ _ ≫ u := by
+        (FixedPoints.subring (Localization (Algebra.algebraMapSubmonoid A (.powers r))) G)) ≫ f =
+        pullback.snd _ _ ≫ u := by
   have hpb := isPullback_away G r
-  have hV : Set.range (Spec.algebraMap A (Localization.Away (r : A)) ≫ f) ⊆
+  have hV : Set.range
+      (Spec.algebraMap A (Localization (Algebra.algebraMapSubmonoid A (.powers r))) ≫ f) ⊆
       Set.range V.1.ι := by
     rintro _ ⟨z, rfl⟩
     rw [Scheme.Opens.range_ι, Scheme.Hom.comp_apply, ← hb, ← Scheme.Hom.comp_apply, hpb.w,
       Scheme.Hom.comp_apply]
     exact hrV _ ((range_specAlgebraMap_away G r).le ⟨_, rfl⟩)
   let f' := IsOpenImmersion.lift V.1.ι _ hV
-  have hf' (g : G) : specComap (Localization.Away (r : A)) G g ≫ f' = f' := by
+  have hf' (g : G) :
+      specComap (Localization (Algebra.algebraMapSubmonoid A (.powers r))) G g ≫ f' = f' := by
     rw [← cancel_mono V.1.ι]
     simp [f', specComap_comp_specAlgebraMap_away_assoc, hf]
   refine ⟨desc f' hf' ≫ V.1.ι, ?_⟩
@@ -194,9 +201,9 @@ private theorem exists_projection_comp_eq {X : Scheme.{u}} (f : Spec (CommRingCa
     exact ⟨⟨(r, ⟨V, hV⟩), fun z hz ↦ hrV hz⟩, hyr⟩
   let 𝒰 : (quotient A G).OpenCover :=
     { I₀ := I
-      X i := quotient (Localization.Away (i.1.1 : A)) G
+      X i := quotient (Localization (Algebra.algebraMapSubmonoid A (.powers i.1.1))) G
       f i := Spec.algebraMap (FixedPoints.subring A G)
-        (FixedPoints.subring (Localization.Away (i.1.1 : A)) G)
+        (FixedPoints.subring (Localization (Algebra.algebraMapSubmonoid A (.powers i.1.1))) G)
       mem₀ := by
         rw [Scheme.presieve₀_mem_precoverage_iff]
         refine ⟨fun y ↦ ?_, inferInstance⟩
@@ -204,34 +211,23 @@ private theorem exists_projection_comp_eq {X : Scheme.{u}} (f : Spec (CommRingCa
         obtain ⟨z, hz⟩ := (range_specAlgebraMap_away G i.1.1).ge hi
         exact ⟨i, z, hz⟩ }
   choose u hu using fun i : I ↦ exists_desc_away f hf b hb i.1.1 i.1.2 i.2
-  replace hu (i : 𝒰.I₀) :
-      pullback.fst (projection A G) (𝒰.f i) ≫ f = pullback.snd _ (𝒰.f i) ≫ u i :=
-    hu i
-  -- The local descents agree on overlaps, since the projection stays an epimorphism there.
-  refine ⟨𝒰.glueMorphisms u fun i k ↦ ?_, ?_⟩
-  · have : Epi (pullback.snd (projection A G) (pullback.fst (𝒰.f i) (𝒰.f k) ≫ 𝒰.f i)) :=
-      Scheme.Hom.epi_pullback_snd_of_isOpenImmersion _ _ (stalkMap_projection_injective A G)
-    rw [← cancel_epi (pullback.snd (projection A G) (pullback.fst (𝒰.f i) (𝒰.f k) ≫ 𝒰.f i)),
-      ← cancel_epi (pullback.congrHom rfl pullback.condition.symm).hom]
-    conv_rhs =>
-      simp only [pullback.congrHom_hom, limit.lift_π_assoc, PullbackCone.mk_pt, cospan_right,
-        PullbackCone.mk_π_app, Category.comp_id]
-    rw [← pullbackLeftPullbackSndIso_inv_snd_snd, Category.assoc,
-      ← pullbackLeftPullbackSndIso_inv_snd_snd, Category.assoc, ← pullback.condition_assoc,
-      ← hu i, ← pullback.condition_assoc, ← hu k]
-    simp
-  · refine Scheme.Cover.hom_ext (𝒰.pullback₁ (projection A G)) _ _ fun (i : 𝒰.I₀) ↦ ?_
-    -- The components of the pulled-back cover are `pullback.fst` by definition
-    -- (`PreZeroHypercover.pullback₁_f`); that `simps` lemma does not fire through `Scheme.Cover.f`.
-    calc _ = pullback.fst (projection A G) (𝒰.f i) ≫ projection A G ≫ 𝒰.glueMorphisms u _ := rfl
-      _ = pullback.fst (projection A G) (𝒰.f i) ≫ f := by
-        rw [pullback.condition_assoc, Scheme.Cover.ι_glueMorphisms, hu i]
+  -- The local descents glue, since the projection stays an epimorphism over open subschemes.
+  exact Scheme.Hom.exists_comp_eq_of_openCover (projection A G)
+    (fun _ g _ ↦ Scheme.Hom.epi_pullback_snd_of_isOpenImmersion _ g
+      (stalkMap_projection_injective A G)) 𝒰 f u hu
 
 /-- The morphism `Spec Aᴳ ⟶ X` induced by a `G`-invariant morphism `Spec A ⟶ X` to an arbitrary
 scheme, for a finite group `G`. -/
 noncomputable def descOfFinite {X : Scheme.{u}} (f : Spec (CommRingCat.of A) ⟶ X)
     (hf : ∀ g : G, specComap A G g ≫ f = f) : quotient A G ⟶ X :=
   (exists_projection_comp_eq f hf).choose
+
+/-- Morphisms from the invariant quotient by a finite group to an arbitrary scheme are determined by
+their composition with the projection. -/
+@[ext]
+theorem hom_ext_of_finite {X : Scheme.{u}} {f h : quotient A G ⟶ X}
+    (e : projection A G ≫ f = projection A G ≫ h) : f = h :=
+  (cancel_epi (projection A G)).mp e
 
 /-- The induced morphism factors the given invariant morphism. -/
 @[reassoc (attr := simp)]
@@ -247,12 +243,19 @@ theorem existsUnique_desc_of_finite {X : Scheme.{u}} (f : Spec (CommRingCat.of A
     (hf : ∀ g : G, specComap A G g ≫ f = f) :
     ∃! h : quotient A G ⟶ X, projection A G ≫ h = f :=
   ⟨descOfFinite f hf, projection_descOfFinite f hf, fun _ hh ↦
-    (cancel_epi (projection A G)).mp (hh.trans (projection_descOfFinite f hf).symm)⟩
+    hom_ext_of_finite (hh.trans (projection_descOfFinite f hf).symm)⟩
+
+/-- Descending the composite of the projection with a morphism to an arbitrary scheme recovers
+that morphism. -/
+@[simp]
+theorem descOfFinite_projection {X : Scheme.{u}} (f : quotient A G ⟶ X) :
+    descOfFinite (projection A G ≫ f) (fun g ↦ by simp) = f :=
+  hom_ext_of_finite (projection_descOfFinite _ _)
 
 /-- For an affine target, `descOfFinite` is the affine descent `desc`. -/
 theorem descOfFinite_eq_desc {X : Scheme.{u}} [IsAffine X] (f : Spec (CommRingCat.of A) ⟶ X)
     (hf : ∀ g : G, specComap A G g ≫ f = f) :
     descOfFinite f hf = desc f hf :=
-  (cancel_epi (projection A G)).mp (by simp)
+  hom_ext_of_finite (by simp)
 
 end TauCeti.AffineInvariantQuotient

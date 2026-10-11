@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Gluing
 public import Mathlib.AlgebraicGeometry.Morphisms.OpenImmersion
 public import Mathlib.AlgebraicGeometry.Morphisms.UnderlyingMap
 public import Mathlib.AlgebraicGeometry.PullbackCarrier
@@ -23,7 +24,10 @@ quotient of an affine scheme by a finite group, whose stalk maps are injective b
 Both hypotheses survive base change along an open immersion `U ⟶ Y`: surjectivity is stable under
 base change, and the stalk maps of `X ×_Y U ⟶ U` are those of `f`, up to the stalk isomorphisms of
 the two open immersions `X ×_Y U ⟶ X` and `U ⟶ Y`. So such an `f` remains an epimorphism over
-every open subscheme of `Y`, which is what gluing arguments over an open cover of `Y` need.
+every open subscheme of `Y`, which is what gluing arguments over an open cover of `Y` need: a
+morphism out of `X` which factors locally over an open cover of `Y` then factors through `f`.
+This gluing step follows the proof of Mathlib's
+`AlgebraicGeometry.isRegularEpi_of_flat_of_surjective_of_isAffine`.
 
 ## Main results
 
@@ -33,6 +37,8 @@ every open subscheme of `Y`, which is what gluing arguments over an open cover o
   along an open immersion are injective when those of `f` are.
 * `AlgebraicGeometry.Scheme.Hom.epi_pullback_snd_of_isOpenImmersion`: the base change of such an
   `f` along an open immersion is again an epimorphism.
+* `AlgebraicGeometry.Scheme.Hom.exists_comp_eq_of_openCover`: if every base change of `π` along an
+  open immersion is an epimorphism, local factorizations through `π` over an open cover glue.
 
 ## References
 
@@ -63,16 +69,14 @@ theorem stalkMap_pullback_snd_injective (f : X ⟶ Y) (g : Z ⟶ Y) [IsOpenImmer
     (h : ∀ x, Function.Injective (f.stalkMap x)) (z : ↥(pullback f g)) :
     Function.Injective ((pullback.snd f g).stalkMap z) := by
   -- The stalk map of `pullback.fst ≫ f` is injective, since `pullback.fst` is an open immersion.
-  have : Mono (f.stalkMap (pullback.fst f g z)) := ConcreteCategory.mono_of_injective _ (h _)
   have hfst : Mono ((pullback.fst f g ≫ f).stalkMap z) := by
     rw [stalkMap_comp]
-    exact @mono_comp _ _ _ _ _ _ this _ inferInstance
+    exact mono_comp' (ConcreteCategory.mono_of_injective _ (h _)) inferInstance
   -- It is the stalk map of `pullback.snd ≫ g`, which first applies the bijective stalk map of `g`.
-  rw [stalkMap_congr_hom _ _ pullback.condition, stalkMap_comp] at hfst
-  have hg : IsIso (g.stalkMap (pullback.snd f g z)) := inferInstance
-  have : Mono ((pullback.snd f g).stalkMap z) :=
-    (@mono_comp_iff_of_isIso _ _ _ _ _ _ (by exact hg) _).mp
-      ((mono_comp_iff_of_isIso _ _).mp hfst)
+  have hsnd : Mono (g.stalkMap (pullback.snd f g z) ≫ (pullback.snd f g).stalkMap z) := by
+    rw [← stalkMap_comp, stalkMap_congr_hom _ _ pullback.condition.symm]
+    exact (mono_comp_iff_of_isIso (Y.presheaf.stalkCongr _).hom _).mpr hfst
+  rw [mono_comp_iff_of_isIso] at hsnd
   exact ConcreteCategory.injective_of_mono_of_preservesPullback _
 
 /-- The base change of a surjective morphism with injective stalk maps along an open immersion is
@@ -81,5 +85,37 @@ theorem epi_pullback_snd_of_isOpenImmersion (f : X ⟶ Y) [Surjective f] (g : Z 
     [IsOpenImmersion g] (h : ∀ x, Function.Injective (f.stalkMap x)) :
     Epi (pullback.snd f g) :=
   epi_of_surjective_of_stalkMap_injective _ (stalkMap_pullback_snd_injective f g h)
+
+/-- **Descent along a morphism which stays an epimorphism over open subschemes.** Let `π : X ⟶ Y`
+be a morphism whose base change along every open immersion is an epimorphism, and let `f : X ⟶ Z`.
+If over each member `U_i` of an open cover of `Y` the base change of `f` factors through
+`X ×_Y U_i ⟶ U_i`, then `f` factors through `π`. The local factorizations agree on overlaps
+because the base change of `π` to an overlap is an epimorphism, so they glue. -/
+theorem exists_comp_eq_of_openCover (π : X ⟶ Y)
+    (hπ : ∀ ⦃U : Scheme.{u}⦄ (g : U ⟶ Y), IsOpenImmersion g → Epi (pullback.snd π g))
+    (𝒰 : Y.OpenCover) (f : X ⟶ Z) (u : ∀ i, 𝒰.X i ⟶ Z)
+    (hu : ∀ i, pullback.fst π (𝒰.f i) ≫ f = pullback.snd π (𝒰.f i) ≫ u i) :
+    ∃ h : Y ⟶ Z, π ≫ h = f := by
+  refine ⟨𝒰.glueMorphisms u fun i k ↦ ?_, ?_⟩
+  · -- Over the overlap `V = U_i ×_Y U_k`, both restrictions agree with `f` on `X ×_Y V`.
+    have := hπ (pullback.fst (𝒰.f i) (𝒰.f k) ≫ 𝒰.f i) inferInstance
+    have key (j : 𝒰.I₀) (p : pullback (𝒰.f i) (𝒰.f k) ⟶ 𝒰.X j)
+        (hp : p ≫ 𝒰.f j = pullback.fst (𝒰.f i) (𝒰.f k) ≫ 𝒰.f i) :
+        pullback.snd π (pullback.fst (𝒰.f i) (𝒰.f k) ≫ 𝒰.f i) ≫ p ≫ u j =
+          pullback.fst π (pullback.fst (𝒰.f i) (𝒰.f k) ≫ 𝒰.f i) ≫ f := by
+      have w : pullback.fst π (pullback.fst (𝒰.f i) (𝒰.f k) ≫ 𝒰.f i) ≫ π =
+          (pullback.snd π (pullback.fst (𝒰.f i) (𝒰.f k) ≫ 𝒰.f i) ≫ p) ≫ 𝒰.f j := by
+        rw [Category.assoc, hp]
+        exact pullback.condition
+      rw [← Category.assoc, ← pullback.lift_snd _ _ w, Category.assoc, ← hu j,
+        pullback.lift_fst_assoc]
+    rw [← cancel_epi (pullback.snd π (pullback.fst (𝒰.f i) (𝒰.f k) ≫ 𝒰.f i)), key i _ rfl,
+      key k _ pullback.condition.symm]
+  · refine Cover.hom_ext (𝒰.pullback₁ π) _ _ fun (i : 𝒰.I₀) ↦ ?_
+    -- The components of the pulled-back cover are `pullback.fst` by definition
+    -- (`PreZeroHypercover.pullback₁_f`); that `simps` lemma does not fire through `Scheme.Cover.f`.
+    calc _ = pullback.fst π (𝒰.f i) ≫ π ≫ 𝒰.glueMorphisms u _ := rfl
+      _ = pullback.fst π (𝒰.f i) ≫ f := by
+        rw [pullback.condition_assoc, Cover.ι_glueMorphisms, hu i]
 
 end AlgebraicGeometry.Scheme.Hom

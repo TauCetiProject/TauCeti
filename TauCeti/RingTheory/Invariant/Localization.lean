@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Algebra.Subalgebra.Operations
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
-public import Mathlib.RingTheory.Localization.Away.Basic
+public import Mathlib.RingTheory.Localization.Basic
 import Mathlib.RingTheory.Ideal.Operations
 
 /-!
@@ -16,12 +16,13 @@ import Mathlib.RingTheory.Ideal.Operations
 Let a group `G` act on a commutative ring `A` by ring automorphisms, and write `Aᴳ` for the
 invariant subring `FixedPoints.subring A G`. This file compares invariants with localization.
 
-For an invariant element `r`, the action extends to the localization `A[1/r]`
-(`Localization.Away (r : A)`), compatibly with `A → A[1/r]`. When `G` is finite, taking invariants
-commutes with this localization: `A[1/r]ᴳ` is the localization of `Aᴳ` away from `r`. A fraction
-`a / rⁿ` fixed by every `g` satisfies `rᵐ (g • a - a) = 0` for some `m`, which can be chosen
-independently of `g` because `G` is finite, and then `a / rⁿ = rᵐ a / rⁿ⁺ᵐ` with `rᵐ a`
-invariant.
+For a submonoid `M` of invariant elements, the action extends to the localization `M⁻¹A`
+(`Localization (Algebra.algebraMapSubmonoid A M)`), compatibly with `A → M⁻¹A`. When `G` is
+finite, taking invariants commutes with this localization: `(M⁻¹A)ᴳ` is the localization of `Aᴳ`
+at `M`. A fraction `a / s` fixed by every `g` satisfies `t_g (g • a - a) = 0` for some `t_g ∈ M`,
+which can be replaced by the product `t` of the `t_g` because `G` is finite, and then
+`a / s = t a / (s t)` with `t a` invariant. Taking `M` to be the powers of an invariant `r` gives
+the localization `A[1/r]` of `A` at `r`.
 
 Also for finite `G`, the local homomorphism `(Aᴳ)_P → A_Q` induced by `Aᴳ ⊆ A` at a prime `Q` of
 `A` lying over a prime `P` of `Aᴳ` is injective. If an invariant `a` is killed by some `t ∉ Q`,
@@ -34,16 +35,17 @@ quotient `Spec A ⟶ Spec Aᴳ` for arbitrary target schemes.
 
 ## Main definitions
 
-* `TauCeti.FixedPoints.awayRingAut r`: the action of `G` on `A[1/r]` for an invariant `r`, which
-  provides the instance `MulSemiringAction G (Localization.Away (r : A))`.
-* The instance `Algebra (FixedPoints.subring A G) (FixedPoints.subring (Localization.Away (r : A))
-  G)` given by `A → A[1/r]`.
+* `TauCeti.FixedPoints.localizationRingAut M`: the action of `G` on `M⁻¹A` for a submonoid `M`
+  of invariants, which provides the instance
+  `MulSemiringAction G (Localization (Algebra.algebraMapSubmonoid A M))`.
+* The instance `Algebra (FixedPoints.subring A G)
+  (FixedPoints.subring (Localization (Algebra.algebraMapSubmonoid A M)) G)` given by `A → M⁻¹A`.
 
 ## Main results
 
-* `TauCeti.FixedPoints.smul_algebraMap_away`: `A → A[1/r]` is `G`-equivariant.
-* `TauCeti.FixedPoints.isLocalization_away`: for finite `G`, `A[1/r]ᴳ` is the localization of
-  `Aᴳ` away from `r`.
+* `TauCeti.FixedPoints.smul_algebraMap_localization`: `A → M⁻¹A` is `G`-equivariant.
+* `TauCeti.FixedPoints.isLocalization`: for finite `G`, `(M⁻¹A)ᴳ` is the localization of `Aᴳ`
+  at `M`.
 * `TauCeti.FixedPoints.localRingHom_injective`: for finite `G`, `(Aᴳ)_P → A_Q` is injective.
 
 ## References
@@ -57,112 +59,121 @@ namespace TauCeti.FixedPoints
 
 variable {A G : Type*} [CommRing A] [Group G] [MulSemiringAction G A]
 
-section Away
+section Localization
 
-variable (r : FixedPoints.subring A G)
+variable (M : Submonoid (FixedPoints.subring A G))
 
-/-- An element of `G` maps the powers of an invariant element to themselves. -/
-private theorem map_powers_toRingEquiv (g : G) :
-    (Submonoid.powers (r : A)).map (MulSemiringAction.toRingEquiv G A g).toMonoidHom =
-      Submonoid.powers (r : A) := by
-  rw [Submonoid.map_powers]
-  congr 1
-  exact r.2 g
+/-- An element of `G` maps the image in `A` of a submonoid of invariants to itself. -/
+private theorem map_algebraMapSubmonoid_toRingEquiv (g : G) :
+    (Algebra.algebraMapSubmonoid A M).map (MulSemiringAction.toRingEquiv G A g).toMonoidHom =
+      Algebra.algebraMapSubmonoid A M := by
+  ext x
+  simp only [Algebra.algebraMapSubmonoid, Submonoid.mem_map]
+  constructor
+  · rintro ⟨_, ⟨m, hm, rfl⟩, rfl⟩
+    exact ⟨m, hm, (m.2 g).symm⟩
+  · rintro ⟨m, hm, rfl⟩
+    exact ⟨_, ⟨m, hm, rfl⟩, m.2 g⟩
 
-/-- The action of `G` on the localization `A[1/r]` at an invariant element `r`, induced by its
+/-- The action of `G` on the localization `M⁻¹A` at a submonoid `M` of invariants, induced by its
 action on `A`. -/
-noncomputable def awayRingAut : G →* RingAut (Localization.Away (r : A)) where
+noncomputable def localizationRingAut :
+    G →* RingAut (Localization (Algebra.algebraMapSubmonoid A M)) where
   toFun g := IsLocalization.ringEquivOfRingEquiv _ _ (MulSemiringAction.toRingEquiv G A g)
-    (map_powers_toRingEquiv r g)
+    (map_algebraMapSubmonoid_toRingEquiv M g)
   map_one' := RingEquiv.toRingHom_injective <|
-    IsLocalization.ringHom_ext (Submonoid.powers (r : A)) <| RingHom.ext fun a ↦ by simp
+    IsLocalization.ringHom_ext (Algebra.algebraMapSubmonoid A M) <| RingHom.ext fun a ↦ by simp
   map_mul' g h := RingEquiv.toRingHom_injective <|
-    IsLocalization.ringHom_ext (Submonoid.powers (r : A)) <| RingHom.ext fun a ↦ by
+    IsLocalization.ringHom_ext (Algebra.algebraMapSubmonoid A M) <| RingHom.ext fun a ↦ by
       simp
 
-/-- The action of `G` on `A[1/r]` given by `awayRingAut`. -/
-noncomputable instance instMulSemiringActionAway :
-    MulSemiringAction G (Localization.Away (r : A)) :=
-  MulSemiringAction.compHom _ (awayRingAut r)
+/-- The action of `G` on `M⁻¹A` given by `localizationRingAut`. -/
+noncomputable instance instMulSemiringActionLocalization :
+    MulSemiringAction G (Localization (Algebra.algebraMapSubmonoid A M)) :=
+  MulSemiringAction.compHom _ (localizationRingAut M)
 
-/-- The action of `G` on `A[1/r]` extends the action on `A`. -/
+/-- The action of `G` on `M⁻¹A` extends the action on `A`. -/
 @[simp]
-theorem smul_algebraMap_away (g : G) (a : A) :
-    g • algebraMap A (Localization.Away (r : A)) a =
-      algebraMap A (Localization.Away (r : A)) (g • a) :=
-  IsLocalization.ringEquivOfRingEquiv_eq (map_powers_toRingEquiv r g) a
+theorem smul_algebraMap_localization (g : G) (a : A) :
+    g • algebraMap A (Localization (Algebra.algebraMapSubmonoid A M)) a =
+      algebraMap A (Localization (Algebra.algebraMapSubmonoid A M)) (g • a) :=
+  IsLocalization.ringEquivOfRingEquiv_eq (map_algebraMapSubmonoid_toRingEquiv M g) a
 
-/-- The localization map `A → A[1/r]` sends invariants to invariants. -/
+/-- The localization map `A → M⁻¹A` sends invariants to invariants. -/
 theorem algebraMap_mem_fixedPoints (a : FixedPoints.subring A G) :
-    algebraMap A (Localization.Away (r : A)) a ∈
-      FixedPoints.subring (Localization.Away (r : A)) G := fun g ↦ by
-  rw [smul_algebraMap_away, a.2 g]
+    algebraMap A (Localization (Algebra.algebraMapSubmonoid A M)) a ∈
+      FixedPoints.subring (Localization (Algebra.algebraMapSubmonoid A M)) G := fun g ↦ by
+  rw [smul_algebraMap_localization, a.2 g]
 
-/-- The algebra structure of `A[1/r]ᴳ` over `Aᴳ` given by the localization map `A → A[1/r]`. -/
-noncomputable instance instAlgebraAway :
-    Algebra (FixedPoints.subring A G) (FixedPoints.subring (Localization.Away (r : A)) G) :=
-  (((algebraMap A (Localization.Away (r : A))).comp (FixedPoints.subring A G).subtype).codRestrict
-    _ (algebraMap_mem_fixedPoints r)).toAlgebra
+/-- The algebra structure of `(M⁻¹A)ᴳ` over `Aᴳ` given by the localization map `A → M⁻¹A`. -/
+noncomputable instance instAlgebraLocalization :
+    Algebra (FixedPoints.subring A G)
+      (FixedPoints.subring (Localization (Algebra.algebraMapSubmonoid A M)) G) :=
+  (((algebraMap A (Localization (Algebra.algebraMapSubmonoid A M))).comp
+    (FixedPoints.subring A G).subtype).codRestrict _ (algebraMap_mem_fixedPoints M)).toAlgebra
 
-/-- The algebra map `Aᴳ → A[1/r]ᴳ` is the localization map `A → A[1/r]`. -/
+/-- The algebra map `Aᴳ → (M⁻¹A)ᴳ` is the localization map `A → M⁻¹A`. -/
 @[simp]
-theorem coe_algebraMap_away (a : FixedPoints.subring A G) :
-    (algebraMap (FixedPoints.subring A G) (FixedPoints.subring (Localization.Away (r : A)) G) a :
-      Localization.Away (r : A)) = algebraMap A (Localization.Away (r : A)) a :=
+theorem coe_algebraMap_localization (a : FixedPoints.subring A G) :
+    (algebraMap (FixedPoints.subring A G)
+        (FixedPoints.subring (Localization (Algebra.algebraMapSubmonoid A M)) G) a :
+      Localization (Algebra.algebraMapSubmonoid A M)) =
+      algebraMap A (Localization (Algebra.algebraMapSubmonoid A M)) a :=
   rfl
 
-/-- **Invariants commute with localization at an invariant element.** For a finite group `G`,
-the invariants of `A[1/r]` are the localization of the invariants `Aᴳ` away from `r`. -/
-instance isLocalization_away [Finite G] :
-    IsLocalization.Away r (FixedPoints.subring (Localization.Away (r : A)) G) := by
+/-- **Invariants commute with localization at invariant elements.** For a finite group `G` and a
+submonoid `M` of the invariants `Aᴳ`, the invariants of `M⁻¹A` are the localization of `Aᴳ`
+at `M`. -/
+instance isLocalization [Finite G] :
+    IsLocalization M (FixedPoints.subring (Localization (Algebra.algebraMapSubmonoid A M)) G) := by
   have hinj : Function.Injective
-      ((↑) : FixedPoints.subring (Localization.Away (r : A)) G → Localization.Away (r : A)) :=
+      ((↑) : FixedPoints.subring (Localization (Algebra.algebraMapSubmonoid A M)) G →
+        Localization (Algebra.algebraMapSubmonoid A M)) :=
     Subtype.val_injective
   refine (_root_.isLocalization_iff _ _).mpr ⟨?_, ?_, ?_⟩
-  · -- The image of `r` is a unit of `A[1/r]` whose inverse is again invariant.
-    rintro ⟨_, n, rfl⟩
-    rw [map_pow]
-    refine IsUnit.pow n ?_
-    have hu : IsUnit (algebraMap A (Localization.Away (r : A)) r) :=
-      IsLocalization.Away.algebraMap_isUnit (r : A)
-    have hg (g : G) : g • (hu.unit : Localization.Away (r : A)) = hu.unit := by
-      simp only [IsUnit.unit_spec, smul_algebraMap_away, r.2 g]
+  · -- The image of `m ∈ M` is a unit of `M⁻¹A` whose inverse is again invariant.
+    intro m
+    have hu : IsUnit (algebraMap A (Localization (Algebra.algebraMapSubmonoid A M)) m) :=
+      IsLocalization.map_units _ ⟨_, Algebra.mem_algebraMapSubmonoid_of_mem m⟩
+    have hg (g : G) :
+        g • (hu.unit : Localization (Algebra.algebraMapSubmonoid A M)) = hu.unit := by
+      simp only [IsUnit.unit_spec, smul_algebraMap_localization, (m : FixedPoints.subring A G).2 g]
     refine isUnit_iff_exists_inv.mpr
-      ⟨⟨(hu.unit⁻¹ : (Localization.Away (r : A))ˣ), fun g ↦ ?_⟩, hinj ?_⟩
+      ⟨⟨(hu.unit⁻¹ : (Localization (Algebra.algebraMapSubmonoid A M))ˣ), fun g ↦ ?_⟩, hinj ?_⟩
     · refine Units.eq_inv_of_mul_eq_one_left ?_
       rw [← hg g, ← smul_mul', Units.mul_inv, smul_one]
-    · simp only [Subring.coe_mul, coe_algebraMap_away, Subring.coe_one]
+    · simp only [Subring.coe_mul, coe_algebraMap_localization, Subring.coe_one]
       exact hu.mul_val_inv
-  · -- A fixed fraction `a / rⁿ` equals `rᴹ a / rⁿ⁺ᴹ` with `rᴹ a` invariant.
+  · -- A fixed fraction `a / s` equals `t a / (s t)` with `t ∈ M` and `t a` invariant.
     rintro ⟨z, hz⟩
-    obtain ⟨⟨a, _, n, rfl⟩, ha⟩ := IsLocalization.surj (Submonoid.powers (r : A)) z
-    simp only at ha
-    have hfix (g : G) : ∃ m : ℕ, (r : A) ^ m * a = (r : A) ^ m * (g • a) := by
+    obtain ⟨⟨a, _, ⟨s, hs, rfl⟩⟩, ha⟩ := IsLocalization.surj (Algebra.algebraMapSubmonoid A M) z
+    replace ha : z * algebraMap A _ (s : A) = algebraMap A _ a := ha
+    have hfix (g : G) : ∃ t ∈ M, (t : A) * a = t * (g • a) := by
       have h := congrArg (g • ·) ha
-      simp only [smul_mul', hz g, smul_algebraMap_away, smul_pow', r.2 g] at h
-      obtain ⟨⟨_, m, rfl⟩, hm⟩ := IsLocalization.exists_of_eq (M := Submonoid.powers (r : A))
-        (ha.symm.trans h)
-      exact ⟨m, hm⟩
-    choose m hm using hfix
+      simp only [smul_mul', hz g, smul_algebraMap_localization, s.2 g] at h
+      obtain ⟨⟨_, t, ht, rfl⟩, htg⟩ :=
+        IsLocalization.exists_of_eq (M := Algebra.algebraMapSubmonoid A M) (ha.symm.trans h)
+      exact ⟨t, ht, htg⟩
+    choose t ht htg using hfix
     have := Fintype.ofFinite G
-    set M := ∑ g, m g
-    have hM (g : G) : (r : A) ^ M * a = (r : A) ^ M * (g • a) := by
-      obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_le
-        (Finset.single_le_sum (fun _ _ ↦ Nat.zero_le _) (Finset.mem_univ g) : m g ≤ M)
-      rw [show M = m g + k from hk, pow_add, mul_comm ((r : A) ^ m g), mul_assoc, mul_assoc, hm g]
-    have hb : (r : A) ^ M * a ∈ FixedPoints.subring A G := fun g ↦ by
-      rw [smul_mul', smul_pow', r.2 g, ← hM g]
-    refine ⟨(⟨_, hb⟩, ⟨r ^ (n + M), n + M, rfl⟩), hinj ?_⟩
-    simp only [Subring.coe_mul, coe_algebraMap_away, SubmonoidClass.coe_pow, pow_add, map_mul,
-      map_pow]
-    rw [← mul_assoc, ← map_pow, ha, ← map_pow, ← map_mul, mul_comm]
-    exact map_mul _ _ _
+    set T := ∏ g, t g
+    have hTM : T ∈ M := prod_mem fun g _ ↦ ht g
+    have hT (g : G) : (T : A) * a = T * (g • a) := by
+      obtain ⟨c, hc⟩ := Finset.dvd_prod_of_mem t (Finset.mem_univ g)
+      rw [show T = t g * c from hc, Subring.coe_mul, mul_comm (t g : A), mul_assoc, mul_assoc,
+        htg g]
+    have hb : (T : A) * a ∈ FixedPoints.subring A G := fun g ↦ by
+      rw [smul_mul', T.2 g, ← hT g]
+    refine ⟨(⟨_, hb⟩, ⟨s * T, mul_mem hs hTM⟩), hinj ?_⟩
+    simp only [Subring.coe_mul, coe_algebraMap_localization, map_mul]
+    rw [← ha]
+    ring
   · intro x y hxy
-    obtain ⟨⟨_, m, rfl⟩, hm⟩ := IsLocalization.exists_of_eq (M := Submonoid.powers (r : A))
-      (congrArg Subtype.val hxy)
-    exact ⟨⟨r ^ m, m, rfl⟩, Subtype.ext (by simpa using hm)⟩
+    obtain ⟨⟨_, t, ht, rfl⟩, htxy⟩ := IsLocalization.exists_of_eq
+      (M := Algebra.algebraMapSubmonoid A M) (congrArg Subtype.val hxy)
+    exact ⟨⟨t, ht⟩, Subtype.ext htxy⟩
 
-end Away
+end Localization
 
 section LocalRingHom
 
