@@ -77,34 +77,19 @@ theorem exists_analyticOnNhd_nonmonic_root_sub_eq_zpow_mul_unit
     exact mul_ne_zero (pow_ne_zero _ hb.2.2) (hv0 b ⟨hb.1, hb.2.1⟩)
   obtain ⟨r, g, hra, hg, hr⟩ := exists_analyticOnNhd_nonmonic_powerSubstitution
     hU hR' hn hR hdvd hF hdeg hdiscr0 hu hu0 hlead
-  obtain ⟨s, hsa, hscale, hnorm⟩ :=
+  obtain ⟨s, _, _, _, hs⟩ :=
     exists_analyticOnNhd_integralNormalization_eq_prod_X_sub_C_powerSubstitution
-      hn hR hdeg hu (fun b hb ↦ hu0 b ⟨hb.1, hb.2.1⟩) hlead hg
+      hU hR' hn hR hdeg hu (fun b hb ↦ hu0 b ⟨hb.1, hb.2.1⟩) hlead hg
       (fun b hb ↦ (hr b hb).2)
   refine ⟨r, g, hra, hg, hr, ?_⟩
   intro x hx i j hij
   let q : E × ℂ → E × ℂ := fun b ↦ (b.1, b.2 ^ n)
-  have hq : AnalyticAt ℂ q (x, 0) := analyticAt_fst.prod (analyticAt_snd.pow n)
-  have hq0 : q (x, 0) = (x, 0) := by simp [q, hn]
-  have hqmem : MapsTo q (U ×ˢ (ball 0 R' \ {0})) (U ×ˢ (ball 0 R \ {0})) := by
-    intro b hb
-    refine ⟨hb.1, ?_, pow_ne_zero n hb.2.2⟩
-    rw [mem_ball_zero_iff, norm_pow]
-    exact (pow_lt_pow_left₀ (mem_ball_zero_iff.mp hb.2.1) (norm_nonneg _) hn).trans_le hR
+  obtain ⟨hsa, ha, hscale, hnorm⟩ := hs x hx
+  have hqmem : MapsTo q (U ×ˢ (ball 0 R' \ {0})) (U ×ˢ (ball 0 R \ {0})) :=
+    (mapsTo_id U).prodMap (mapsTo_pow_ball_zero_diff_singleton hn hR)
   have hRpos : 0 < R := lt_of_lt_of_le (pow_pos hR' n) hR
   have hxR : (x, (0 : ℂ)) ∈ U ×ˢ ball 0 R := ⟨hx, mem_ball_self hRpos⟩
   have hx' : (x, (0 : ℂ)) ∈ U ×ˢ ball 0 R' := ⟨hx, mem_ball_self hR'⟩
-  have huq : AnalyticAt ℂ (u ∘ q) (x, 0) := (hq0 ▸ hu _ hxR).comp hq
-  have hvq : AnalyticAt ℂ (v ∘ q) (x, 0) := (hq0 ▸ hv _ hxR).comp hq
-  have hs : ∀ k, AnalyticAt ℂ (s k) (x, 0) := fun k ↦ hsa k _ hx'
-  have hscale' : ∀ᶠ b in 𝓝 (x, (0 : ℂ)), b.2 ≠ 0 →
-      ∀ k, (F (q b)).coeff d * r k b = s k b := by
-    filter_upwards [(hU.prod isOpen_ball).mem_nhds hx'] with b hb hb0
-    exact hscale b ⟨hb.1, hb.2, hb0⟩
-  have hnorm' : ∀ᶠ b in 𝓝 (x, (0 : ℂ)), b.2 ≠ 0 →
-      (F (q b)).integralNormalization = ∏ k, (X - C (s k b)) := by
-    filter_upwards [(hU.prod isOpen_ball).mem_nhds hx'] with b hb hb0
-    exact hnorm b ⟨hb.1, hb.2, hb0⟩
   -- Apply the Laurent difference theorem to this constructed normalized splitting.
   have hl : ∀ᶠ b in 𝓝 (x, (0 : ℂ)), b.2 ≠ 0 →
       (F (q b)).coeff d = b.2 ^ (n * a) * u (q b) := by
@@ -114,11 +99,11 @@ theorem exists_analyticOnNhd_nonmonic_root_sub_eq_zpow_mul_unit
       (F (q b)).discr = b.2 ^ (n * c) * v (q b) := by
     filter_upwards [(hU.prod isOpen_ball).mem_nhds hx'] with b hb hb0
     simpa only [q, ← pow_mul] using hdiscr _ (hqmem ⟨hb.1, hb.2, hb0⟩)
-  simpa only [sub_zero] using TauCeti.exists_root_sub_eq_zpow_mul_unit hs hvq
-    (by simpa only [comp_apply, hq0] using hv0 _ hxR) huq
-    (by simpa only [comp_apply, hq0] using hu0 _ hxR) hnorm'
+  simpa only [sub_zero] using TauCeti.exists_root_sub_eq_zpow_mul_unit hsa (ha v hv)
+    (by simpa only [comp_apply, q, zero_pow hn] using hv0 _ hxR) (ha u hu)
+    (by simpa only [comp_apply, q, zero_pow hn] using hu0 _ hxR) hnorm
     (by simpa only [sub_zero, comp_apply] using hl)
     (by simpa only [sub_zero, comp_apply] using hD)
-    (hscale'.mono fun b hb hb0 ↦ ⟨hb hb0 i, hb hb0 j⟩) hij
+    (hscale.mono fun b hb hb0 ↦ ⟨hb hb0 i, hb hb0 j⟩) hij
 
 end TauCeti.Polynomial

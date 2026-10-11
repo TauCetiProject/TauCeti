@@ -38,7 +38,7 @@ coefficient is needed to extract nonvanishing Laurent units from the extended br
 
 public section
 
-open Function Metric Polynomial Set
+open Filter Function Metric Polynomial Set Topology
 
 namespace TauCeti.Polynomial
 
@@ -66,11 +66,8 @@ theorem exists_analyticOnNhd_eq_C_mul_prod_X_sub_C_powerSubstitution [CompleteSp
   let q : E × ℂ → E × ℂ := fun b ↦ (b.1, b.2 ^ n)
   have hq : AnalyticOnNhd ℂ q (U ×ˢ (ball 0 R' \ {0})) := fun _ _ ↦
     analyticAt_fst.prod (analyticAt_snd.pow n)
-  have hqpunct : MapsTo q (U ×ˢ (ball 0 R' \ {0})) (U ×ˢ (ball 0 R \ {0})) := by
-    intro b hb
-    refine ⟨hb.1, ?_, pow_ne_zero n hb.2.2⟩
-    rw [mem_ball_zero_iff, norm_pow]
-    exact (pow_lt_pow_left₀ (mem_ball_zero_iff.1 hb.2.1) (norm_nonneg _) hn).trans_le hR
+  have hqpunct : MapsTo q (U ×ˢ (ball 0 R' \ {0})) (U ×ˢ (ball 0 R \ {0})) :=
+    (mapsTo_id U).prodMap (mapsTo_pow_ball_zero_diff_singleton hn hR)
   -- Integral normalization preserves separability without division by coefficients.
   obtain ⟨Q, hQ, hQa, hQeq⟩ := exists_analytic_monic_normalization hF
   have hQsep : ∀ b ∈ U ×ˢ (ball 0 R \ {0}), (Q b).Separable := by
@@ -154,14 +151,10 @@ theorem exists_analyticOnNhd_nonmonic_powerSubstitution [FiniteDimensional ℂ E
   let q : E × ℂ → E × ℂ := fun b ↦ (b.1, b.2 ^ n)
   have hq : AnalyticOnNhd ℂ q (U ×ˢ ball 0 R') := fun _ _ ↦
     analyticAt_fst.prod (analyticAt_snd.pow n)
-  have hqfull : MapsTo q (U ×ˢ ball 0 R') (U ×ˢ ball 0 R) := by
-    intro b hb
-    refine ⟨hb.1, ?_⟩
-    rw [mem_ball_zero_iff, norm_pow]
-    exact (pow_lt_pow_left₀ (mem_ball_zero_iff.1 hb.2) (norm_nonneg _) hn).trans_le hR
+  have hqfull : MapsTo q (U ×ˢ ball 0 R') (U ×ˢ ball 0 R) :=
+    (mapsTo_id U).prodMap (mapsTo_pow_ball_zero hn hR)
   have hqpunct : MapsTo q (U ×ˢ (ball 0 R' \ {0})) (U ×ˢ (ball 0 R \ {0})) :=
-    fun b hb ↦ ⟨hb.1, (hqfull (prod_mono subset_rfl sdiff_subset hb)).2,
-      pow_ne_zero n hb.2.2⟩
+    (mapsTo_id U).prodMap (mapsTo_pow_ball_zero_diff_singleton hn hR)
   have hroot : ∀ i b, b ∈ U ×ˢ (ball 0 R' \ {0}) → (F (q b)).IsRoot (r i b) := by
     intro i b hb
     rw [(hr b hb).2]
@@ -180,12 +173,14 @@ theorem exists_analyticOnNhd_nonmonic_powerSubstitution [FiniteDimensional ℂ E
 
 /-- Multiplying pole-removed branches of a nonmonic power-substituted splitting by the
 leading-coefficient unit gives analytic functions on the full product and a complete splitting
-of integral normalization off the hyperplane, with the same labels. No degree condition on
+of integral normalization off the hyperplane, with the same labels. Near each point of the
+hyperplane, the scaling and factorization identities also hold eventually away from it,
+and power substitution preserves analyticity of scalar functions. No degree condition on
 the central fibers, distinctness of the branches, or analyticity of the original branches
 is required. -/
 theorem exists_analyticOnNhd_integralNormalization_eq_prod_X_sub_C_powerSubstitution
     {r g : Fin d → E × ℂ → ℂ}
-    (hn : n ≠ 0) (hR : R' ^ n ≤ R)
+    (hU : IsOpen U) (hR' : 0 < R') (hn : n ≠ 0) (hR : R' ^ n ≤ R)
     (hdeg : ∀ b ∈ U ×ˢ (ball 0 R \ {0}), (F b).natDegree = d)
     (hu : AnalyticOnNhd ℂ u (U ×ˢ ball 0 R))
     (hu0 : ∀ b ∈ U ×ˢ (ball 0 R \ {0}), u b ≠ 0)
@@ -198,18 +193,23 @@ theorem exists_analyticOnNhd_integralNormalization_eq_prod_X_sub_C_powerSubstitu
       (∀ i, AnalyticOnNhd ℂ (s i) (U ×ˢ ball 0 R')) ∧
       (∀ b ∈ U ×ˢ (ball 0 R' \ {0}), ∀ i,
         (F (b.1, b.2 ^ n)).coeff d * r i b = s i b) ∧
-      ∀ b ∈ U ×ˢ (ball 0 R' \ {0}),
-        (F (b.1, b.2 ^ n)).integralNormalization = ∏ i, (X - C (s i b)) := by
+      (∀ b ∈ U ×ˢ (ball 0 R' \ {0}),
+        (F (b.1, b.2 ^ n)).integralNormalization = ∏ i, (X - C (s i b))) ∧
+      ∀ x ∈ U,
+        (∀ i, AnalyticAt ℂ (s i) (x, 0)) ∧
+        (∀ w : E × ℂ → ℂ, AnalyticOnNhd ℂ w (U ×ˢ ball 0 R) →
+          AnalyticAt ℂ (w ∘ fun b ↦ (b.1, b.2 ^ n)) (x, 0)) ∧
+        (∀ᶠ b in 𝓝 (x, (0 : ℂ)), b.2 ≠ 0 → ∀ i,
+          (F (b.1, b.2 ^ n)).coeff d * r i b = s i b) ∧
+        ∀ᶠ b in 𝓝 (x, (0 : ℂ)), b.2 ≠ 0 →
+          (F (b.1, b.2 ^ n)).integralNormalization = ∏ i, (X - C (s i b)) := by
   let q : E × ℂ → E × ℂ := fun b ↦ (b.1, b.2 ^ n)
   have hq : AnalyticOnNhd ℂ q (U ×ˢ ball 0 R') := fun _ _ ↦
     analyticAt_fst.prod (analyticAt_snd.pow n)
-  have hqfull : MapsTo q (U ×ˢ ball 0 R') (U ×ˢ ball 0 R) := by
-    intro b hb
-    refine ⟨hb.1, ?_⟩
-    rw [mem_ball_zero_iff, norm_pow]
-    exact (pow_lt_pow_left₀ (mem_ball_zero_iff.mp hb.2) (norm_nonneg _) hn).trans_le hR
+  have hqfull : MapsTo q (U ×ˢ ball 0 R') (U ×ˢ ball 0 R) :=
+    (mapsTo_id U).prodMap (mapsTo_pow_ball_zero hn hR)
   have hqpunct : MapsTo q (U ×ˢ (ball 0 R' \ {0})) (U ×ˢ (ball 0 R \ {0})) :=
-    fun b hb ↦ ⟨hb.1, (hqfull ⟨hb.1, hb.2.1⟩).2, pow_ne_zero n hb.2.2⟩
+    (mapsTo_id U).prodMap (mapsTo_pow_ball_zero_diff_singleton hn hR)
   let s : Fin d → E × ℂ → ℂ := fun i b ↦ g i b * u (q b)
   have hscale : ∀ b ∈ U ×ˢ (ball 0 R' \ {0}), ∀ i,
       (F (q b)).coeff d * r i b = s i b := by
@@ -218,16 +218,26 @@ theorem exists_analyticOnNhd_integralNormalization_eq_prod_X_sub_C_powerSubstitu
     have hgb := (hg i).2 hb
     simp only [q, ← pow_mul] at hl
     simp only [s, q, hgb, hl, mul_right_comm]
-  refine ⟨s, fun i ↦ ((hg i).1).mul (hu.comp hq hqfull), hscale, ?_⟩
-  intro b hb
-  have hbq := hqpunct hb
-  have hlc : (F (q b)).coeff d = (F (q b)).leadingCoeff := by
-    rw [← hdeg _ hbq, coeff_natDegree]
-  have hl0 : (F (q b)).leadingCoeff ≠ 0 := by
-    rw [← hlc, hlead _ hbq]
-    exact mul_ne_zero (pow_ne_zero _ hbq.2.2) (hu0 _ hbq)
-  rw [(F (q b)).integralNormalization_eq_prod_X_sub_C (fun i ↦ r i b)
-    (leadingCoeff_ne_zero.mp hl0) (by simpa only [q, hlc] using hr b hb)]
-  simp only [← hlc, mul_comm _ ((F (q b)).coeff d), hscale b hb]
+  have hsa : ∀ i, AnalyticOnNhd ℂ (s i) (U ×ˢ ball 0 R') :=
+    fun i ↦ ((hg i).1).mul (hu.comp hq hqfull)
+  have hnorm : ∀ b ∈ U ×ˢ (ball 0 R' \ {0}),
+      (F (q b)).integralNormalization = ∏ i, (X - C (s i b)) := by
+    intro b hb
+    have hbq := hqpunct hb
+    have hlc : (F (q b)).coeff d = (F (q b)).leadingCoeff := by
+      rw [← hdeg _ hbq, coeff_natDegree]
+    have hl0 : (F (q b)).leadingCoeff ≠ 0 := by
+      rw [← hlc, hlead _ hbq]
+      exact mul_ne_zero (pow_ne_zero _ hbq.2.2) (hu0 _ hbq)
+    rw [(F (q b)).integralNormalization_eq_prod_X_sub_C (fun i ↦ r i b)
+      (leadingCoeff_ne_zero.mp hl0) (by simpa only [q, hlc] using hr b hb)]
+    simp only [← hlc, mul_comm _ ((F (q b)).coeff d), hscale b hb]
+  refine ⟨s, hsa, hscale, hnorm, fun x hx ↦ ?_⟩
+  have hx' : (x, (0 : ℂ)) ∈ U ×ˢ ball 0 R' := ⟨hx, mem_ball_self hR'⟩
+  refine ⟨fun i ↦ hsa i _ hx', fun w hw ↦ (hw.comp hq hqfull) _ hx', ?_, ?_⟩
+  · filter_upwards [(hU.prod isOpen_ball).mem_nhds hx'] with b hb hb0
+    exact hscale b ⟨hb.1, hb.2, hb0⟩
+  · filter_upwards [(hU.prod isOpen_ball).mem_nhds hx'] with b hb hb0
+    exact hnorm b ⟨hb.1, hb.2, hb0⟩
 
 end TauCeti.Polynomial
