@@ -5,7 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.Decomposition
+import Mathlib.MeasureTheory.Measure.Haar.Unique
+import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Analysis.Normed.Module.Ball
 
 /-!
 # The John–Nirenberg inequality
@@ -37,6 +41,14 @@ the dyadic case by the affine change of variables carrying the unit dyadic cube 
 `closedBall c r`, which rescales Lebesgue measure by a constant and so preserves averages. For
 `r ≤ 0` the closed ball is null and both bounds are immediate.
 
+On a Euclidean ball, mean oscillation at most `M` on every ball inside `B(x₀, 2√n r)` gives
+`∫_{B(x₀, r)} exp (σ ‖f - c‖) ≤ (1 + 2ρ / (2 - ρ)) √nⁿ |B(x₀, r)|` for some constant `c`, whenever
+`exp (2ⁿ⁺² (2√n)ⁿ σ M) ≤ ρ < 2`, for any additive Haar measure on `EuclideanSpace ℝ ι`
+(`TauCeti.exists_setLIntegral_exp_mul_norm_sub_ball_le`). This follows from the cube case: the cube
+of radius `r` about `x₀` contains `B(x₀, r)` and lies in the closed ball of radius `√n r`, and each
+cube inside it lies between two concentric Euclidean balls whose radii have ratio `2√n`, so the
+mean oscillation of `f` on cubes is at most `2 (2√n)ⁿ M`.
+
 The proof iterates the Calderón–Zygmund decomposition. At height `2M`, the Calderón–Zygmund
 cubes of `‖f - f_{Q₀}‖` restricted to `Q₀` lie inside `Q₀`, cover at most half of it, and carry
 averages within `2ⁿ⁺¹ M` of `f_{Q₀}`, while `‖f - f_{Q₀}‖ ≤ 2M` almost everywhere off them. Each
@@ -53,6 +65,8 @@ step of size `2ⁿ⁺¹ M` in the level therefore halves the measure of the supe
 * `TauCeti.volume_lt_norm_sub_setAverage_closedBall_le`,
   `TauCeti.setLIntegral_exp_mul_norm_sub_setAverage_closedBall_le`: the same two statements on an
   arbitrary cube `closedBall c r`.
+* `TauCeti.exists_setLIntegral_exp_mul_norm_sub_ball_le`: exponential integrability on Euclidean
+  balls, for functions of bounded mean oscillation on Euclidean balls.
 
 ## References
 
@@ -556,5 +570,191 @@ theorem setLIntegral_exp_mul_norm_sub_setAverage_closedBall_le [Nonempty ι] [Co
     _ = _ := by rw [measure_congr hB]
 
 end ClosedBall
+
+section EuclideanBall
+
+/-! ### Euclidean balls
+
+The coordinate map `WithLp.ofLp : EuclideanSpace ℝ ι → (ι → ℝ)` is `1`-Lipschitz, and its inverse
+is `√n`-Lipschitz for the sup norm, `n = card ι`. So the cube of radius `ρ` about `y` read in
+Euclidean coordinates contains the Euclidean ball `B(y, ρ)` and lies in `B(y, 2√n ρ)`, whose measure
+is `(2√n)ⁿ` times that of `B(y, ρ)`. Mean oscillation on Euclidean balls therefore controls mean
+oscillation on cubes (`TauCeti.setLAverage_enorm_sub_setAverage_le_of_subset`), and the cube case
+of the John–Nirenberg inequality transfers back to Euclidean balls. Averages and integrals move
+between an additive Haar measure on `EuclideanSpace ℝ ι` and Lebesgue measure on `ι → ℝ` because
+the coordinate map pushes the one forward to a positive multiple of the other. -/
+
+open Metric WithLp
+
+variable {mu : Measure (EuclideanSpace ℝ ι)} {g : EuclideanSpace ℝ ι → E}
+  {x₀ : EuclideanSpace ℝ ι} {r : ℝ}
+
+/-- The coordinate map pushes an additive Haar measure `μ` on `EuclideanSpace ℝ ι` forward to a
+positive multiple of Lebesgue measure on `ι → ℝ`. -/
+private theorem map_toLp_symm_eq_smul (mu : Measure (EuclideanSpace ℝ ι)) [mu.IsAddHaarMeasure] :
+    mu.map (MeasurableEquiv.toLp 2 (ι → ℝ)).symm =
+      ((Measure.addHaarScalarFactor mu volume : ℝ≥0) : ℝ≥0∞) • volume := by
+  conv_lhs => rw [Measure.isAddLeftInvariant_eq_smul mu volume]
+  rw [Measure.map_smul, (EuclideanSpace.volume_preserving_symm_measurableEquiv_toLp ι).map_eq]
+  · rfl
+  · exact (MeasurableEquiv.toLp 2 (ι → ℝ)).symm.measurable.aemeasurable
+
+/-- The coordinate map `EuclideanSpace ℝ ι → (ι → ℝ)` is `1`-Lipschitz for the sup norm. -/
+private theorem dist_ofLp_le (x x' : EuclideanSpace ℝ ι) : dist (ofLp x) (ofLp x') ≤ dist x x' := by
+  simpa using (PiLp.lipschitzWith_ofLp 2 (fun _ : ι => ℝ)).dist_le_mul x x'
+
+/-- The inverse of the coordinate map is `√n`-Lipschitz for the sup norm. -/
+private theorem dist_le_sqrt_mul_dist_ofLp (x x' : EuclideanSpace ℝ ι) :
+    dist x x' ≤ √(Fintype.card ι) * dist (ofLp x) (ofLp x') := by
+  have h := (PiLp.lipschitzWith_toLp 2 (fun _ : ι => ℝ)).dist_le_mul (ofLp x) (ofLp x')
+  simp only [toLp_ofLp, NNReal.coe_rpow, NNReal.coe_natCast] at h
+  convert h using 2
+  rw [Real.sqrt_eq_rpow]
+  norm_num
+
+/-- Mean oscillation at most `M` on the Euclidean balls inside `B(x₀, 2√n r)` gives mean
+oscillation at most `2 (2√n)ⁿ M` on the cubes inside the cube of radius `r` about `x₀`, read in
+coordinates. -/
+private theorem setLAverage_enorm_sub_setAverage_closedBall_le_of_ball [Nonempty ι]
+    [CompleteSpace E] [mu.IsAddHaarMeasure]
+    (hg : IntegrableOn g (ball x₀ (2 * √(Fintype.card ι) * r)) mu)
+    (hM : ∀ y ρ, 0 < ρ → ball y ρ ⊆ ball x₀ (2 * √(Fintype.card ι) * r) →
+      ⨍⁻ x in ball y ρ, ‖g x - ⨍ z in ball y ρ, g z ∂mu‖ₑ ∂mu ≤ M)
+    {y : ι → ℝ} {ρ : ℝ} (hsub : closedBall y ρ ⊆ closedBall (ofLp x₀) r) :
+    ⨍⁻ x in closedBall y ρ,
+        ‖g (toLp 2 x) - ⨍ z in closedBall y ρ, g (toLp 2 z) ∂volume‖ₑ ∂volume ≤
+      ENNReal.ofReal (2 * (2 * √(Fintype.card ι)) ^ Fintype.card ι * M) := by
+  set n := Fintype.card ι
+  set s := √(n : ℝ)
+  set e := (MeasurableEquiv.toLp 2 (ι → ℝ)).symm
+  rcases le_or_gt ρ 0 with hρ | hρ
+  · rw [setLAverage_eq, setLIntegral_measure_zero _ _ (volume_closedBall_eq_zero_of_nonpos y hρ),
+      ENNReal.zero_div]
+    exact zero_le
+  have hs : 0 < s := Real.sqrt_pos.2 (by exact_mod_cast Fintype.card_pos)
+  have hdist : ρ + dist y (ofLp x₀) ≤ r := (closedBall_subset_closedBall_iff hρ.le).1 hsub
+  -- The cube of radius `ρ` about `y` lies between the Euclidean balls `B(Y, ρ)` and `B(Y, 2√n ρ)`.
+  set Y : EuclideanSpace ℝ ι := toLp 2 y
+  set B := ball Y (2 * s * ρ)
+  have hpre : e ⁻¹' closedBall y ρ ⊆ B := fun x hx => by
+    have hx : dist (ofLp x) y ≤ ρ := hx
+    have h := dist_le_sqrt_mul_dist_ofLp x Y
+    rw [ofLp_toLp] at h
+    rw [mem_ball]
+    nlinarith [mul_le_mul_of_nonneg_left hx hs.le]
+  have hinner : ball Y ρ ⊆ e ⁻¹' closedBall y ρ := fun x hx => by
+    have h := dist_ofLp_le x Y
+    rw [ofLp_toLp] at h
+    exact h.trans (mem_ball.1 hx).le
+  have hB : B ⊆ ball x₀ (2 * s * r) := by
+    refine ball_subset_ball' ?_
+    have h := dist_le_sqrt_mul_dist_ofLp Y x₀
+    rw [ofLp_toLp] at h
+    nlinarith [mul_le_mul_of_nonneg_left hdist hs.le, dist_nonneg (x := y) (y := ofLp x₀)]
+  -- Read the cube in Euclidean coordinates.
+  have hmap := map_toLp_symm_eq_smul (ι := ι) mu
+  have ha0 : ((Measure.addHaarScalarFactor mu volume : ℝ≥0) : ℝ≥0∞) ≠ 0 :=
+    ENNReal.coe_ne_zero.2 (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure mu volume).ne'
+  have havg : ⨍ z in closedBall y ρ, g (toLp 2 z) ∂volume = ⨍ z in e ⁻¹' closedBall y ρ, g z ∂mu :=
+    (setAverage_comp_preimage_of_map_eq_smul hmap ha0 ENNReal.coe_ne_top
+      (fun z => g (toLp 2 z)) _).symm
+  have hlavg : ⨍⁻ x in closedBall y ρ,
+        ‖g (toLp 2 x) - ⨍ z in closedBall y ρ, g (toLp 2 z) ∂volume‖ₑ ∂volume =
+      ⨍⁻ x in e ⁻¹' closedBall y ρ, ‖g x - ⨍ z in e ⁻¹' closedBall y ρ, g z ∂mu‖ₑ ∂mu := by
+    rw [havg]
+    exact (setLAverage_comp_preimage_of_map_eq_smul hmap ha0 ENNReal.coe_ne_top
+      (fun z => ‖g (toLp 2 z) - ⨍ z in e ⁻¹' closedBall y ρ, g z ∂mu‖ₑ) _).symm
+  -- The ball `B(Y, 2√n ρ)` has `(2√n)ⁿ` times the measure of `B(Y, ρ)`.
+  have hratio : mu B / mu (e ⁻¹' closedBall y ρ) ≤ ENNReal.ofReal ((2 * s) ^ n) := by
+    have hBY : mu B = ENNReal.ofReal ((2 * s) ^ n) * mu (ball Y ρ) := by
+      rw [Measure.addHaar_ball_of_pos mu Y (by positivity), Measure.addHaar_ball_of_pos mu Y hρ,
+        finrank_euclideanSpace, mul_pow, ENNReal.ofReal_mul (by positivity), mul_assoc]
+    calc mu B / mu (e ⁻¹' closedBall y ρ) ≤ mu B / mu (ball Y ρ) :=
+          ENNReal.div_le_div_left (measure_mono hinner) _
+      _ = ENNReal.ofReal ((2 * s) ^ n) := by
+          rw [hBY, ENNReal.mul_div_cancel_right (measure_ball_pos mu Y hρ).ne'
+            measure_ball_lt_top.ne]
+  calc ⨍⁻ x in closedBall y ρ,
+        ‖g (toLp 2 x) - ⨍ z in closedBall y ρ, g (toLp 2 z) ∂volume‖ₑ ∂volume
+      = ⨍⁻ x in e ⁻¹' closedBall y ρ, ‖g x - ⨍ z in e ⁻¹' closedBall y ρ, g z ∂mu‖ₑ ∂mu := hlavg
+    _ ≤ 2 * (mu B / mu (e ⁻¹' closedBall y ρ)) * ⨍⁻ x in B, ‖g x - ⨍ z in B, g z ∂mu‖ₑ ∂mu :=
+        setLAverage_enorm_sub_setAverage_le_of_subset hpre measure_ball_lt_top.ne
+          (hg.mono_set hB)
+    _ ≤ 2 * ENNReal.ofReal ((2 * s) ^ n) * M := by
+        gcongr
+        exact hM Y _ (by positivity) hB
+    _ = ENNReal.ofReal (2 * (2 * s) ^ n * M) := by
+        rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_mul zero_le_two,
+          ENNReal.ofReal_ofNat, ENNReal.ofReal_coe_nnreal]
+
+/-- **The John–Nirenberg inequality** on a Euclidean ball. Let `μ` be an additive Haar measure on
+`ℝⁿ = EuclideanSpace ℝ ι`, `n ≥ 1`, and let `g` be integrable on the ball `B(x₀, 2√n r)` with mean
+oscillation `⨍_B ‖g - g_B‖ ≤ M` on every ball `B ⊆ B(x₀, 2√n r)`. If
+`exp (2ⁿ⁺² (2√n)ⁿ σ M) ≤ ρ < 2`, then there is a constant `c` with
+
+`∫_{B(x₀, r)} exp (σ ‖g - c‖) ≤ (1 + 2ρ / (2 - ρ)) √nⁿ |B(x₀, r)|`. -/
+theorem exists_setLIntegral_exp_mul_norm_sub_ball_le [Nonempty ι] [CompleteSpace E]
+    [mu.IsAddHaarMeasure] (hg : IntegrableOn g (ball x₀ (2 * √(Fintype.card ι) * r)) mu)
+    (hM : ∀ y ρ, 0 < ρ → ball y ρ ⊆ ball x₀ (2 * √(Fintype.card ι) * r) →
+      ⨍⁻ x in ball y ρ, ‖g x - ⨍ z in ball y ρ, g z ∂mu‖ₑ ∂mu ≤ M)
+    {σ ρ : ℝ} (hσ : Real.exp (σ * (2 ^ (Fintype.card ι + 1) *
+      (2 * (2 * √(Fintype.card ι)) ^ Fintype.card ι * M))) ≤ ρ) (hρ : ρ < 2) :
+    ∃ c : E, ∫⁻ x in ball x₀ r, ENNReal.ofReal (Real.exp (σ * ‖g x - c‖)) ∂mu ≤
+      ENNReal.ofReal ((1 + 2 * ρ / (2 - ρ)) * √(Fintype.card ι) ^ Fintype.card ι) *
+        mu (ball x₀ r) := by
+  set n := Fintype.card ι
+  set s := √(n : ℝ)
+  rcases le_or_gt r 0 with hr | hr
+  · exact ⟨0, by simp [ball_eq_empty.2 hr]⟩
+  have hs : 0 < s := Real.sqrt_pos.2 (by exact_mod_cast Fintype.card_pos)
+  set e := (MeasurableEquiv.toLp 2 (ι → ℝ)).symm
+  set a : ℝ≥0∞ := ((Measure.addHaarScalarFactor mu volume : ℝ≥0) : ℝ≥0∞)
+  have hmap : mu.map e = a • volume := map_toLp_symm_eq_smul mu
+  have ha0 : a ≠ 0 :=
+    ENNReal.coe_ne_zero.2 (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure mu volume).ne'
+  set Q := closedBall (ofLp x₀) r
+  set F : (ι → ℝ) → E := fun z => g (toLp 2 z)
+  -- The cube `Q` read in Euclidean coordinates lies between `B(x₀, r)` and `B(x₀, 2√n r)`.
+  have hQsub : e ⁻¹' Q ⊆ closedBall x₀ (s * r) := fun x hx => by
+    have hx : dist (ofLp x) (ofLp x₀) ≤ r := hx
+    exact (dist_le_sqrt_mul_dist_ofLp x x₀).trans (mul_le_mul_of_nonneg_left hx hs.le)
+  have hballQ : ball x₀ r ⊆ e ⁻¹' Q := fun x hx => (dist_ofLp_le x x₀).trans (mem_ball.1 hx).le
+  have hF : IntegrableOn F Q volume := by
+    have h : IntegrableOn F Q (mu.map e) := (integrableOn_map_equiv e).2
+      (hg.mono_set (hQsub.trans (closedBall_subset_ball (by nlinarith))))
+    rw [hmap, IntegrableOn, Measure.restrict_smul] at h
+    exact (integrable_smul_measure ha0 ENNReal.coe_ne_top).1 h
+  set M' : ℝ≥0 := (2 * (2 * s) ^ n * M).toNNReal
+  have hM' : (M' : ℝ) = 2 * (2 * s) ^ n * M := Real.coe_toNNReal _ (by positivity)
+  set ρ₀ := Real.exp (σ * (2 ^ (n + 1) * M')) with hρ₀def
+  have hρ₀ : ρ₀ ≤ ρ := by rwa [hρ₀def, hM']
+  have hρ₀0 : 0 < ρ₀ := Real.exp_pos _
+  have hJN := setLIntegral_exp_mul_norm_sub_setAverage_closedBall_le hF
+    (fun y ρ' h => setLAverage_enorm_sub_setAverage_closedBall_le_of_ball hg hM h)
+    (hρ₀.trans_lt hρ)
+  have hK : 1 + 2 * ρ₀ / (2 - ρ₀) ≤ 1 + 2 * ρ / (2 - ρ) := by
+    gcongr 1 + ?_
+    exact div_le_div₀ (by linarith) (by linarith) (by linarith) (by linarith)
+  refine ⟨⨍ z in Q, F z ∂volume, ?_⟩
+  set c := ⨍ z in Q, F z ∂volume
+  calc ∫⁻ x in ball x₀ r, ENNReal.ofReal (Real.exp (σ * ‖g x - c‖)) ∂mu
+      ≤ ∫⁻ x in e ⁻¹' Q, ENNReal.ofReal (Real.exp (σ * ‖g x - c‖)) ∂mu := lintegral_mono_set hballQ
+    _ = a * ∫⁻ z in Q, ENNReal.ofReal (Real.exp (σ * ‖F z - c‖)) ∂volume :=
+        setLIntegral_comp_preimage_of_map_eq_smul hmap
+          (fun z => ENNReal.ofReal (Real.exp (σ * ‖F z - c‖))) Q
+    _ ≤ a * (ENNReal.ofReal (1 + 2 * ρ₀ / (2 - ρ₀)) * volume Q) := by gcongr
+    _ = ENNReal.ofReal (1 + 2 * ρ₀ / (2 - ρ₀)) * mu (e ⁻¹' Q) := by
+        rw [← e.map_apply, hmap, Measure.smul_apply, smul_eq_mul, mul_left_comm]
+    _ ≤ ENNReal.ofReal (1 + 2 * ρ / (2 - ρ)) * mu (closedBall x₀ (s * r)) := by
+        gcongr
+    _ = ENNReal.ofReal ((1 + 2 * ρ / (2 - ρ)) * s ^ n) * mu (ball x₀ r) := by
+        have hK0 : 0 ≤ 1 + 2 * ρ / (2 - ρ) :=
+          add_nonneg zero_le_one (div_nonneg (by linarith) (by linarith))
+        rw [Measure.addHaar_closedBall mu x₀ (by positivity), Measure.addHaar_ball_of_pos mu x₀ hr,
+          finrank_euclideanSpace, mul_pow, ENNReal.ofReal_mul hK0,
+          ENNReal.ofReal_mul (by positivity)]
+        ring
+
+end EuclideanBall
 
 end TauCeti

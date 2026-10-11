@@ -27,6 +27,9 @@ inequality.
 The average of a function over a set `s` is also controlled by its average over a larger set
 `t ⊇ s`, at the cost of the ratio `μ t / μ s` of their measures. In square mean the same
 comparison with a constant reads `∫_s ‖f - f_s‖² ≤ 4 ∫_s ‖f - c‖²` on a set of finite measure.
+In the same way, the mean oscillation of `f` on `s` is at most `2 μ t / μ s` times its mean
+oscillation on `t`, which transfers a bound on mean oscillations from one family of sets to a
+comparable one, such as from balls to cubes.
 
 Averages are unchanged by a change of variables that rescales the measure by a constant factor,
 such as an affine homothety of a finite-dimensional space with its Haar measure: if a measurable
@@ -43,6 +46,8 @@ equivalence `e` pushes `μ` forward to `a • ν` with `0 < a < ∞`, then the a
   average is at most twice its mean oscillation about any constant.
 * `TauCeti.norm_setAverage_sub_le_of_subset`: the average over a subset `s ⊆ t`
   differs from a constant `c` by at most `μ t / μ s` times the average of `‖f - c‖` over `t`.
+* `TauCeti.setLAverage_enorm_sub_setAverage_le_of_subset`: the mean oscillation of `f` on a
+  subset `s ⊆ t` is at most `2 μ t / μ s` times its mean oscillation on `t`.
 * `TauCeti.setIntegral_norm_sub_setAverage_sq_le`: the square mean oscillation of `f` about its
   average is at most four times its square mean oscillation about any constant.
 * `TauCeti.setLIntegral_comp_preimage_of_map_eq_smul`,
@@ -145,6 +150,22 @@ theorem norm_setAverage_sub_le_of_subset (hst : s ⊆ t) (hs : μ s ≠ 0) (ht :
     _ = μ.real t / μ.real s * ⨍ x in t, ‖f x - c‖ ∂μ := by
         rw [setAverage_eq, smul_eq_mul]
         field_simp
+
+/-- The mean oscillation of `f` on a subset `s` of a set `t` of finite measure is at most
+`2 μ t / μ s` times its mean oscillation on `t`:
+`⨍_s ‖f - f_s‖ ≤ 2 (μ t / μ s) ⨍_t ‖f - f_t‖`. -/
+theorem setLAverage_enorm_sub_setAverage_le_of_subset (hst : s ⊆ t) (ht : μ t ≠ ⊤)
+    (hf : IntegrableOn f t μ) :
+    ⨍⁻ x in s, ‖f x - ⨍ y in s, f y ∂μ‖ₑ ∂μ ≤
+      2 * (μ t / μ s) * ⨍⁻ x in t, ‖f x - ⨍ y in t, f y ∂μ‖ₑ ∂μ := by
+  set c := ⨍ y in t, f y ∂μ
+  calc ⨍⁻ x in s, ‖f x - ⨍ y in s, f y ∂μ‖ₑ ∂μ
+      ≤ 2 * ⨍⁻ x in s, ‖f x - c‖ₑ ∂μ := setLAverage_enorm_sub_setAverage_le (hf.mono_set hst) c
+    _ ≤ 2 * (μ t / μ s * ⨍⁻ x in t, ‖f x - c‖ₑ ∂μ) := by
+        gcongr
+        rw [setLAverage_eq, ← ENNReal.mul_div_right_comm, measure_mul_setLAverage _ ht]
+        gcongr
+    _ = 2 * (μ t / μ s) * ⨍⁻ x in t, ‖f x - c‖ₑ ∂μ := (mul_assoc _ _ _).symm
 
 /-- The square mean oscillation of `f` on a set `s` of finite measure about its own average is at
 most four times its square mean oscillation about any constant `c`:
