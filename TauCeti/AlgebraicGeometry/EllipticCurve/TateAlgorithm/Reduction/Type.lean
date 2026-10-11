@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Semistable
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Valuation
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Terminal
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
+import TauCeti.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
 
 /-!
 # The reduction type read off Tate's algorithm, and semistability
@@ -25,8 +26,10 @@ type of `W` in Mathlib's good/multiplicative/additive trichotomy:
 * it is additive exactly when `s` is none of the `Iₙ`.
 
 The additive symbols are recognised by divisibilities alone: at each of them `ϖ` divides `b₂`, `a₃`,
-`a₄` and `a₆`, hence `c₄` and `Δ`. At `Iₙ` with `n ≥ 1` the stopping test asks for `ϖ ∤ b₂`, and
-since `c₄ ≡ b₂² (mod ϖ)` there, `ϖ ∤ c₄`.
+`a₄` and `a₆`, hence `c₄` and `Δ` (`WeierstrassCurve.IsTateTerminal.dvd_c₄` and
+`WeierstrassCurve.IsTateTerminal.dvd_Δ_iff`). At `Iₙ` with `n ≥ 1` the reduction is singular at the
+origin and the stopping test asks for `ϖ ∤ b₂`, which is Tate's test for multiplicative reduction
+(`WeierstrassCurve.hasMultiplicativeReduction_iff_reduction_b₂_ne_zero`).
 
 Since the reduction type and the valuation of the minimal discriminant are invariants of the curve,
 the output of the algorithm is independent of the choices made along the way whenever one run of it
@@ -41,9 +44,6 @@ the residue fields to be perfect, so that the algorithm runs at all.
 
 ## Main results
 
-* `WeierstrassCurve.IsTateTerminal.dvd_c₄`: at an additive symbol, `ϖ ∣ c₄`.
-* `WeierstrassCurve.IsTateTerminal.dvd_Δ_iff`: the algorithm stops at a symbol other than `I₀`
-  exactly when `ϖ ∣ Δ`.
 * `WeierstrassCurve.IsTateTerminal.hasGoodReduction_iff`,
   `WeierstrassCurve.IsTateTerminal.hasMultiplicativeReduction_iff` and
   `WeierstrassCurve.IsTateTerminal.hasAdditiveReduction_iff`: the reduction type of a minimal
@@ -73,163 +73,32 @@ namespace WeierstrassCurve
 open IsLocalRing IsDiscreteValuationRing IsDedekindDomain IsDedekindDomain.HeightOneSpectrum
   Polynomial TauCeti
 
-section CommRing
-
-variable {R : Type*} [CommRing R] {W : WeierstrassCurve R} {ϖ : R} {s : ReductionSymbol}
-
-/-- At a stopping symbol other than `Iₙ`, the equation is in the additive normal form of Step 2 of
-Tate's algorithm: `ϖ` divides `b₂`, `a₃`, `a₄` and `a₆`. -/
-theorem IsTateTerminal.dvd_b₂_and_dvd_a₃_and_dvd_a₄_and_dvd_a₆ (h : W.IsTateTerminal ϖ s)
-    (hs : ∀ n, s ≠ .I n) : ϖ ∣ W.b₂ ∧ ϖ ∣ W.a₃ ∧ ϖ ∣ W.a₄ ∧ ϖ ∣ W.a₆ := by
-  have hb₂ (h₁ : ϖ ∣ W.a₁) (h₂ : ϖ ∣ W.a₂) : ϖ ∣ W.b₂ := by
-    rw [b₂]
-    exact dvd_add (dvd_pow h₁ two_ne_zero) (dvd_mul_of_dvd_right h₂ 4)
-  have hp {k : ℕ} {x : R} (hk : k ≠ 0) (hx : ϖ ^ k ∣ x) : ϖ ∣ x := (dvd_pow_self ϖ hk).trans hx
-  match s, h with
-  | .I n, _ => exact absurd rfl (hs n)
-  | .II, h =>
-    obtain ⟨hb₂, h₃, h₄, h₆, -⟩ := isTateTerminal_II.1 h
-    exact ⟨hb₂, h₃, h₄, h₆⟩
-  | .III, h =>
-    obtain ⟨hb₂, h₃, h₄, h₆, -⟩ := isTateTerminal_III.1 h
-    exact ⟨hb₂, h₃, h₄, hp (by omega) h₆⟩
-  | .IV, h =>
-    obtain ⟨hb₂, h₃, h₄, h₆, -⟩ := isTateTerminal_IV.1 h
-    exact ⟨hb₂, h₃, h₄, hp (by omega) h₆⟩
-  | .IStar 0, h =>
-    obtain ⟨h₁, h₂, h₃, h₄, h₆, -⟩ := isTateTerminal_IStar_zero.1 h
-    exact ⟨hb₂ h₁ h₂, hp (by omega) h₃, hp (by omega) h₄, hp (by omega) h₆⟩
-  | .IStar (_ + 1), h =>
-    rcases isTateTerminal_IStar_add_one.1 h with ⟨_, -, hW, -⟩ | ⟨_, -, hW, -⟩
-    · obtain ⟨h₁, h₂, -, h₃, h₄, h₆⟩ := isTateOddStage_iff.1 hW
-      exact ⟨hb₂ h₁ h₂, hp (by omega) h₃, hp (by omega) h₄, hp (by omega) h₆⟩
-    · obtain ⟨h₁, h₂, -, h₃, h₄, h₆⟩ := isTateEvenStage_iff.1 hW
-      exact ⟨hb₂ h₁ h₂, hp (by omega) h₃, hp (by omega) h₄, hp (by omega) h₆⟩
-  | .IVStar, h =>
-    obtain ⟨h₁, h₂, h₃, h₄, h₆, -⟩ := isTateTerminal_IVStar.1 h
-    exact ⟨hb₂ h₁ (hp (by omega) h₂), hp (by omega) h₃, hp (by omega) h₄, hp (by omega) h₆⟩
-  | .IIIStar, h =>
-    obtain ⟨h₁, h₂, h₃, h₄, h₆, -⟩ := isTateTerminal_IIIStar.1 h
-    exact ⟨hb₂ h₁ (hp (by omega) h₂), hp (by omega) h₃, hp (by omega) h₄, hp (by omega) h₆⟩
-  | .IIStar, h =>
-    obtain ⟨h₁, h₂, h₃, h₄, h₆, -⟩ := isTateTerminal_IIStar.1 h
-    exact ⟨hb₂ h₁ (hp (by omega) h₂), hp (by omega) h₃, hp (by omega) h₄, hp (by omega) h₆⟩
-
-/-- **At a stopping symbol other than `Iₙ`, `ϖ` divides `c₄`.** In the additive normal form `ϖ`
-divides `b₂` and `b₄`, and `c₄ = b₂² − 24 b₄`. -/
-theorem IsTateTerminal.dvd_c₄ (h : W.IsTateTerminal ϖ s) (hs : ∀ n, s ≠ .I n) : ϖ ∣ W.c₄ := by
-  obtain ⟨hb₂, h₃, h₄, h₆⟩ := h.dvd_b₂_and_dvd_a₃_and_dvd_a₄_and_dvd_a₆ hs
-  have hb₄ := (W.dvd_b₄_and_dvd_b₆_and_sq_dvd_b₈_of_dvd_b₂_of_dvd_a₃_of_dvd_a₄_of_dvd_a₆
-    ϖ hb₂ h₃ h₄ h₆).1
-  rw [c₄]
-  exact dvd_sub (dvd_pow hb₂ two_ne_zero) (dvd_mul_of_dvd_right hb₄ _)
-
-/-- **At a symbol `Iₙ` with `n ≥ 1`, `ϖ` does not divide `c₄`.** The reduction is singular at the
-origin, so `ϖ ∣ b₄` and `c₄ ≡ b₂² (mod ϖ)`, while the stopping test asks for `ϖ ∤ b₂`. -/
-theorem IsTateTerminal.not_dvd_c₄ (hϖ : Prime ϖ) {n : ℕ} (h : W.IsTateTerminal ϖ (.I (n + 1))) :
-    ¬ ϖ ∣ W.c₄ := by
-  obtain ⟨h₃, h₄, -, hb₂, -⟩ := isTateTerminal_I_add_one.1 h
-  have hb₄ : ϖ ∣ W.b₄ := by
-    rw [b₄]
-    exact dvd_add (dvd_mul_of_dvd_right h₄ _) (dvd_mul_of_dvd_right h₃ _)
-  refine fun hc₄ ↦ hb₂ (hϖ.dvd_of_dvd_pow (n := 2) ?_)
-  have hb₂c₄ : W.b₂ ^ 2 = W.c₄ + 24 * W.b₄ := by rw [c₄]; ring
-  rw [hb₂c₄]
-  exact dvd_add hc₄ (dvd_mul_of_dvd_right hb₄ _)
-
-/-- **Tate's algorithm stops at a symbol other than `I₀` exactly when `ϖ` divides the
-discriminant.** -/
-theorem IsTateTerminal.dvd_Δ_iff [IsDomain R] (hϖ : Prime ϖ) (h : W.IsTateTerminal ϖ s) :
-    ϖ ∣ W.Δ ↔ s ≠ .I 0 := by
-  refine ⟨fun hΔ hs ↦ (isTateTerminal_I_zero.1 (hs ▸ h)) hΔ, fun hs ↦ ?_⟩
-  by_cases hI : ∃ n, s = .I n
-  · obtain ⟨n, rfl⟩ := hI
-    cases n with
-    | zero => exact absurd rfl hs
-    | succ n => exact (dvd_pow_self ϖ n.succ_ne_zero).trans (isTateTerminal_I_add_one.1 h).2.2.2.2.1
-  · simp only [not_exists] at hI
-    exact (dvd_pow_self ϖ (Nat.succ_ne_zero _)).trans (h.pow_componentCount_add_one_dvd_Δ hϖ hI)
-
-end CommRing
-
 section DiscreteValuationRing
 
 variable {R : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
   {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
   {W : WeierstrassCurve R} {ϖ : R} {s : ReductionSymbol}
 
-/-- An element of `R` has valuation less than one in `K` exactly when the uniformiser divides it. -/
-private theorem valuation_algebraMap_lt_one_iff_dvd (hϖ : Irreducible ϖ) (r : R) :
-    valuation K (maximalIdeal R) (algebraMap R K r) < 1 ↔ ϖ ∣ r := by
-  rw [valuation_lt_one_iff_mem, ← Ideal.mem_span_singleton, ← hϖ.maximalIdeal_eq]
-  -- `(maximalIdeal R).asIdeal` is by definition `IsLocalRing.maximalIdeal R`
-  rfl
-
-/-- An element of `R` has valuation one in `K` exactly when the uniformiser does not divide it. -/
-private theorem valuation_algebraMap_eq_one_iff_not_dvd (hϖ : Irreducible ϖ) (r : R) :
-    valuation K (maximalIdeal R) (algebraMap R K r) = 1 ↔ ¬ ϖ ∣ r := by
-  rw [← valuation_algebraMap_lt_one_iff_dvd (K := K) hϖ,
-    (valuation_le_one (K := K) _ r).lt_iff_ne, not_not]
-
-omit [IsDomain R] [IsDiscreteValuationRing R] in
-/-- The integral model of the base change of an equation over `R` is that equation. -/
-private theorem integralModel_baseChange_self [IsIntegral R (W.baseChange K)] :
-    (W.baseChange K).integralModel R = W :=
-  integralModel_eq_of_baseChange_eq rfl
-
 variable [IsMinimal R (W.baseChange K)]
+
+/-- At `Iₙ` with `n ≥ 1`, the reduction of a minimal equation is singular at the origin. -/
+private theorem IsTateTerminal.reduction_isSingular_zero (hϖ : Irreducible ϖ) {n : ℕ}
+    (h : W.IsTateTerminal ϖ (.I (n + 1))) :
+    ((W.baseChange K).reduction R).toAffine.IsSingular 0 0 := by
+  obtain ⟨h₃, h₄, h₆, -⟩ := isTateTerminal_I_add_one.1 h
+  rw [reduction, integralModel_baseChange_self, map_residue_isSingular_zero_iff,
+    hϖ.maximalIdeal_eq, Ideal.mem_span_singleton, Ideal.mem_span_singleton,
+    Ideal.mem_span_singleton]
+  exact ⟨h₆, h₄, h₃⟩
 
 /-- **Tate's algorithm detects good reduction.** On a minimal equation, the algorithm stops at
 `I₀` exactly when the reduction is good. -/
 theorem IsTateTerminal.hasGoodReduction_iff (hϖ : Irreducible ϖ) (h : W.IsTateTerminal ϖ s) :
     (W.baseChange K).HasGoodReduction R ↔ s = .I 0 := by
   have hΔ : (W.baseChange K).Δ = algebraMap R K W.Δ := map_Δ W _
-  rw [WeierstrassCurve.hasGoodReduction_iff, hΔ, valuation_algebraMap_eq_one_iff_not_dvd hϖ,
+  rw [WeierstrassCurve.hasGoodReduction_iff, hΔ, hϖ.valuation_algebraMap_eq_one_iff_not_dvd,
     h.dvd_Δ_iff hϖ.prime, not_not]
   exact and_iff_right inferInstance
-
-/-- **Tate's algorithm detects multiplicative reduction.** On a minimal equation, the algorithm
-stops at some `Iₙ` with `n ≥ 1` exactly when the reduction is multiplicative. -/
-theorem IsTateTerminal.hasMultiplicativeReduction_iff (hϖ : Irreducible ϖ)
-    (h : W.IsTateTerminal ϖ s) :
-    (W.baseChange K).HasMultiplicativeReduction R ↔ ∃ n, s = .I (n + 1) := by
-  have hΔ : (W.baseChange K).Δ = algebraMap R K W.Δ := map_Δ W _
-  have hc₄ : (W.baseChange K).c₄ = algebraMap R K W.c₄ := map_c₄ W _
-  rw [WeierstrassCurve.hasMultiplicativeReduction_iff, hΔ, hc₄,
-    valuation_algebraMap_lt_one_iff_dvd hϖ, valuation_algebraMap_eq_one_iff_not_dvd hϖ,
-    h.dvd_Δ_iff hϖ.prime]
-  constructor
-  · rintro ⟨-, hs₀, hc₄⟩
-    by_contra hne
-    simp only [not_exists] at hne
-    refine hc₄ (h.dvd_c₄ fun n hn ↦ ?_)
-    cases n with
-    | zero => exact hs₀ hn
-    | succ n => exact hne n hn
-  · rintro ⟨n, rfl⟩
-    exact ⟨inferInstance, by simp, h.not_dvd_c₄ hϖ.prime⟩
-
-/-- **Tate's algorithm detects additive reduction.** On a minimal equation, the algorithm stops at
-a symbol other than every `Iₙ` exactly when the reduction is additive. -/
-theorem IsTateTerminal.hasAdditiveReduction_iff (hϖ : Irreducible ϖ) (h : W.IsTateTerminal ϖ s) :
-    (W.baseChange K).HasAdditiveReduction R ↔ ∀ n, s ≠ .I n := by
-  have hΔ : (W.baseChange K).Δ = algebraMap R K W.Δ := map_Δ W _
-  have hc₄ : (W.baseChange K).c₄ = algebraMap R K W.c₄ := map_c₄ W _
-  rw [WeierstrassCurve.hasAdditiveReduction_iff, hΔ, hc₄, valuation_algebraMap_lt_one_iff_dvd hϖ,
-    valuation_algebraMap_lt_one_iff_dvd hϖ, h.dvd_Δ_iff hϖ.prime]
-  constructor
-  · rintro ⟨-, hs₀, hc₄⟩ n rfl
-    cases n with
-    | zero => exact hs₀ rfl
-    | succ n => exact h.not_dvd_c₄ hϖ.prime hc₄
-  · exact fun hs ↦ ⟨inferInstance, hs 0, h.dvd_c₄ hs⟩
-
-/-- On a minimal equation, the reduction is good or multiplicative exactly when Tate's algorithm
-stops at some `Iₙ`. -/
-theorem IsTateTerminal.not_hasAdditiveReduction_iff (hϖ : Irreducible ϖ)
-    (h : W.IsTateTerminal ϖ s) :
-    ¬ (W.baseChange K).HasAdditiveReduction R ↔ ∃ n, s = .I n := by
-  simp only [h.hasAdditiveReduction_iff hϖ, ne_eq, not_forall_not]
 
 /-- **Tate's split test.** On a minimal equation at which the algorithm stops at `Iₙ` with
 `n ≥ 1`, the reduction is split multiplicative exactly when the tangent quadratic
@@ -238,18 +107,59 @@ theorem IsTateTerminal.hasSplitMultiplicativeReduction_iff (hϖ : Irreducible ϖ
     (h : W.IsTateTerminal ϖ (.I (n + 1))) :
     (W.baseChange K).HasSplitMultiplicativeReduction R ↔
       (X ^ 2 + C (residue R W.a₁) * X - C (residue R W.a₂)).Splits := by
-  have key (x : R) : residue R x = 0 ↔ ϖ ∣ x := by
-    rw [residue_eq_zero_iff, hϖ.maximalIdeal_eq, Ideal.mem_span_singleton]
-  have hred : (W.baseChange K).reduction R = W.map (residue R) := by
-    rw [reduction, integralModel_baseChange_self]
-  obtain ⟨h₃, h₄, h₆, hb₂, -⟩ := isTateTerminal_I_add_one.1 h
-  have hsing : ((W.baseChange K).reduction R).toAffine.IsSingular 0 0 := by
-    rw [hred, map_residue_isSingular_zero_iff, ← residue_eq_zero_iff, ← residue_eq_zero_iff,
-      ← residue_eq_zero_iff, key, key, key]
-    exact ⟨h₆, h₄, h₃⟩
-  rw [hasSplitMultiplicativeReduction_iff_reduction_b₂_ne_zero_and_splits R hsing, hred, map_b₂,
-    map_a₁, map_a₂, Ne, key]
-  exact and_iff_right hb₂
+  rw [hasSplitMultiplicativeReduction_iff_reduction_b₂_ne_zero_and_splits R
+    (h.reduction_isSingular_zero hϖ), reduction, integralModel_baseChange_self, map_b₂, map_a₁,
+    map_a₂, Ne, residue_eq_zero_iff, hϖ.maximalIdeal_eq, Ideal.mem_span_singleton]
+  exact and_iff_right (isTateTerminal_I_add_one.1 h).2.2.2.1
+
+/-- At `Iₙ` with `n ≥ 1`, the reduction of a minimal equation is multiplicative. -/
+private theorem IsTateTerminal.hasMultiplicativeReduction (hϖ : Irreducible ϖ) {n : ℕ}
+    (h : W.IsTateTerminal ϖ (.I (n + 1))) : (W.baseChange K).HasMultiplicativeReduction R := by
+  rw [hasMultiplicativeReduction_iff_reduction_b₂_ne_zero R (h.reduction_isSingular_zero hϖ),
+    reduction, integralModel_baseChange_self, map_b₂, Ne, residue_eq_zero_iff,
+    hϖ.maximalIdeal_eq, Ideal.mem_span_singleton]
+  exact (isTateTerminal_I_add_one.1 h).2.2.2.1
+
+/-- **Tate's algorithm detects multiplicative reduction.** On a minimal equation, the algorithm
+stops at some `Iₙ` with `n ≥ 1` exactly when the reduction is multiplicative. -/
+theorem IsTateTerminal.hasMultiplicativeReduction_iff (hϖ : Irreducible ϖ)
+    (h : W.IsTateTerminal ϖ s) :
+    (W.baseChange K).HasMultiplicativeReduction R ↔ ∃ n, s = .I (n + 1) := by
+  refine ⟨fun hm ↦ ?_, fun ⟨n, hn⟩ ↦ (hn ▸ h).hasMultiplicativeReduction hϖ⟩
+  have hΔ : (W.baseChange K).Δ = algebraMap R K W.Δ := map_Δ W _
+  have hc₄ : (W.baseChange K).c₄ = algebraMap R K W.c₄ := map_c₄ W _
+  rw [WeierstrassCurve.hasMultiplicativeReduction_iff, hΔ, hc₄,
+    hϖ.valuation_algebraMap_lt_one_iff_dvd, hϖ.valuation_algebraMap_eq_one_iff_not_dvd,
+    h.dvd_Δ_iff hϖ.prime] at hm
+  obtain ⟨-, hs₀, hc₄⟩ := hm
+  by_contra hne
+  simp only [not_exists] at hne
+  refine hc₄ (h.dvd_c₄ fun n hn ↦ ?_)
+  cases n with
+  | zero => exact hs₀ hn
+  | succ n => exact hne n hn
+
+/-- **Tate's algorithm detects additive reduction.** On a minimal equation, the algorithm stops at
+a symbol other than every `Iₙ` exactly when the reduction is additive. -/
+theorem IsTateTerminal.hasAdditiveReduction_iff (hϖ : Irreducible ϖ) (h : W.IsTateTerminal ϖ s) :
+    (W.baseChange K).HasAdditiveReduction R ↔ ∀ n, s ≠ .I n := by
+  refine ⟨fun ha n hn ↦ ?_, fun hs ↦ ?_⟩
+  · subst hn
+    cases n with
+    | zero => exact ha.not_hasGoodReduction R ((h.hasGoodReduction_iff hϖ).2 rfl)
+    | succ n => exact ha.not_hasMultiplicativeReduction R (h.hasMultiplicativeReduction hϖ)
+  have hΔ : (W.baseChange K).Δ = algebraMap R K W.Δ := map_Δ W _
+  have hc₄ : (W.baseChange K).c₄ = algebraMap R K W.c₄ := map_c₄ W _
+  rw [WeierstrassCurve.hasAdditiveReduction_iff, hΔ, hc₄, hϖ.valuation_algebraMap_lt_one_iff_dvd,
+    hϖ.valuation_algebraMap_lt_one_iff_dvd, h.dvd_Δ_iff hϖ.prime]
+  exact ⟨inferInstance, hs 0, h.dvd_c₄ hs⟩
+
+/-- On a minimal equation, the reduction is good or multiplicative exactly when Tate's algorithm
+stops at some `Iₙ`. -/
+theorem IsTateTerminal.not_hasAdditiveReduction_iff (hϖ : Irreducible ϖ)
+    (h : W.IsTateTerminal ϖ s) :
+    ¬ (W.baseChange K).HasAdditiveReduction R ↔ ∃ n, s = .I n := by
+  simp only [h.hasAdditiveReduction_iff hϖ, ne_eq, not_forall_not]
 
 /-- **At `Iₙ`, the index is the valuation of the minimal discriminant.** -/
 theorem IsTateTerminal.localMinimalDiscriminantValuation_eq [(W.baseChange K).IsElliptic]
@@ -332,8 +242,7 @@ theorem isSemistable_iff_forall_isTateTerminal
   set W₀ := (W.minimal Rv).integralModel Rv
   have hW₀ : W₀.baseChange F = W.minimal Rv := baseChange_integralModel_eq Rv _
   have : IsMinimal Rv (W₀.baseChange F) := hW₀ ▸ inferInstance
-  have hΔ : W₀.Δ ≠ 0 := fun hΔ ↦ (W.minimal Rv).isUnit_Δ.ne_zero <| by
-    rw [← hW₀, baseChange, map_Δ, hΔ, map_zero]
+  have hΔ : W₀.Δ ≠ 0 := integralModel_minimal_Δ_ne_zero Rv W
   obtain ⟨ϖ, hϖ⟩ := exists_irreducible Rv
   obtain ⟨C, s, hs⟩ := exists_isTateTerminal (K := F) hϖ W₀ hΔ
   -- The equation it stops on is again minimal, and in the orbit of `W`.

@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.CubicDiscriminant
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.DoubleRoot
-public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.ReductionSymbol
+public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Reduction.Symbol
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.TripleRoot
 import TauCeti.Algebra.Polynomial.Cubic.RepeatedRoot
 import TauCeti.Algebra.Polynomial.Cubic.TripleRoot
@@ -65,6 +65,11 @@ at least `2`.
   `n`.
 * `WeierstrassCurve.IsTateTerminal.pow_componentCount_add_one_dvd_Δ`: at an additive symbol with
   `m` components, `ϖ^(m+1) ∣ Δ`.
+* `WeierstrassCurve.IsTateTerminal.dvd_b₂_and_dvd_a₃_and_dvd_a₄_and_dvd_a₆` and
+  `WeierstrassCurve.IsTateTerminal.dvd_c₄`: at an additive symbol, `ϖ` divides `b₂`, `a₃`, `a₄`,
+  `a₆` and hence `c₄`.
+* `WeierstrassCurve.IsTateTerminal.dvd_Δ_iff`: the algorithm stops at a symbol other than `I₀`
+  exactly when `ϖ ∣ Δ`.
 * `WeierstrassCurve.IsTateTerminal.two_le_algorithmicOggExponent`: at an additive symbol, the
   algorithmic Ogg exponent is at least `2`.
 
@@ -190,6 +195,68 @@ theorem IsTateTerminal.pow_componentCount_add_one_dvd_Δ [IsDomain R] (hϖ : Pri
   | .IVStar, ⟨h₁, h₂, h₃, h₄, h₆, _⟩ => simpa using W.pow_eight_dvd_Δ_of_stepEight ϖ h₁ h₂ h₃ h₄ h₆
   | .IIIStar, ⟨h₁, h₂, h₃, h₄, h₆, _⟩ => simpa using W.pow_nine_dvd_Δ_of_stepNine ϖ h₁ h₂ h₃ h₄ h₆
   | .IIStar, ⟨h₁, h₂, h₃, h₄, h₆, _⟩ => simpa using W.pow_ten_dvd_Δ_of_stepTen ϖ h₁ h₂ h₃ h₄ h₆
+
+/-- At a stopping symbol other than `Iₙ`, the equation is in the additive normal form of Step 2 of
+Tate's algorithm: `ϖ` divides `b₂`, `a₃`, `a₄` and `a₆`. -/
+theorem IsTateTerminal.dvd_b₂_and_dvd_a₃_and_dvd_a₄_and_dvd_a₆ {s : ReductionSymbol}
+    (h : W.IsTateTerminal ϖ s) (hs : ∀ n, s ≠ .I n) :
+    ϖ ∣ W.b₂ ∧ ϖ ∣ W.a₃ ∧ ϖ ∣ W.a₄ ∧ ϖ ∣ W.a₆ := by
+  have hb₂ (h₁ : ϖ ∣ W.a₁) (h₂ : ϖ ∣ W.a₂) : ϖ ∣ W.b₂ := by
+    rw [b₂]
+    exact dvd_add (dvd_pow h₁ two_ne_zero) (dvd_mul_of_dvd_right h₂ 4)
+  have hp {k : ℕ} {x : R} (hk : k ≠ 0) (hx : ϖ ^ k ∣ x) : ϖ ∣ x := (dvd_pow_self ϖ hk).trans hx
+  match s, h with
+  | .I n, _ => exact absurd rfl (hs n)
+  | .II, h =>
+    obtain ⟨hb₂, h₃, h₄, h₆, -⟩ := isTateTerminal_II.1 h
+    exact ⟨hb₂, h₃, h₄, h₆⟩
+  | .III, h =>
+    obtain ⟨hb₂, h₃, h₄, h₆, -⟩ := isTateTerminal_III.1 h
+    exact ⟨hb₂, h₃, h₄, hp (by omega) h₆⟩
+  | .IV, h =>
+    obtain ⟨hb₂, h₃, h₄, h₆, -⟩ := isTateTerminal_IV.1 h
+    exact ⟨hb₂, h₃, h₄, hp (by omega) h₆⟩
+  | .IStar 0, h =>
+    obtain ⟨h₁, h₂, h₃, h₄, h₆, -⟩ := isTateTerminal_IStar_zero.1 h
+    exact ⟨hb₂ h₁ h₂, hp (by omega) h₃, hp (by omega) h₄, hp (by omega) h₆⟩
+  | .IStar (_ + 1), h =>
+    rcases isTateTerminal_IStar_add_one.1 h with ⟨_, -, hW, -⟩ | ⟨_, -, hW, -⟩
+    · obtain ⟨h₁, h₂, -, h₃, h₄, h₆⟩ := isTateOddStage_iff.1 hW
+      exact ⟨hb₂ h₁ h₂, hp (by omega) h₃, hp (by omega) h₄, hp (by omega) h₆⟩
+    · obtain ⟨h₁, h₂, -, h₃, h₄, h₆⟩ := isTateEvenStage_iff.1 hW
+      exact ⟨hb₂ h₁ h₂, hp (by omega) h₃, hp (by omega) h₄, hp (by omega) h₆⟩
+  | .IVStar, h =>
+    obtain ⟨h₁, h₂, h₃, h₄, h₆, -⟩ := isTateTerminal_IVStar.1 h
+    exact ⟨hb₂ h₁ (hp (by omega) h₂), hp (by omega) h₃, hp (by omega) h₄, hp (by omega) h₆⟩
+  | .IIIStar, h =>
+    obtain ⟨h₁, h₂, h₃, h₄, h₆, -⟩ := isTateTerminal_IIIStar.1 h
+    exact ⟨hb₂ h₁ (hp (by omega) h₂), hp (by omega) h₃, hp (by omega) h₄, hp (by omega) h₆⟩
+  | .IIStar, h =>
+    obtain ⟨h₁, h₂, h₃, h₄, h₆, -⟩ := isTateTerminal_IIStar.1 h
+    exact ⟨hb₂ h₁ (hp (by omega) h₂), hp (by omega) h₃, hp (by omega) h₄, hp (by omega) h₆⟩
+
+/-- **At a stopping symbol other than `Iₙ`, `ϖ` divides `c₄`.** In the additive normal form `ϖ`
+divides `b₂` and `b₄`, and `c₄ = b₂² − 24 b₄`. -/
+theorem IsTateTerminal.dvd_c₄ {s : ReductionSymbol} (h : W.IsTateTerminal ϖ s)
+    (hs : ∀ n, s ≠ .I n) : ϖ ∣ W.c₄ := by
+  obtain ⟨hb₂, h₃, h₄, h₆⟩ := h.dvd_b₂_and_dvd_a₃_and_dvd_a₄_and_dvd_a₆ hs
+  have hb₄ := (W.dvd_b₄_and_dvd_b₆_and_sq_dvd_b₈_of_dvd_b₂_of_dvd_a₃_of_dvd_a₄_of_dvd_a₆
+    ϖ hb₂ h₃ h₄ h₆).1
+  rw [c₄]
+  exact dvd_sub (dvd_pow hb₂ two_ne_zero) (dvd_mul_of_dvd_right hb₄ _)
+
+/-- **Tate's algorithm stops at a symbol other than `I₀` exactly when `ϖ` divides the
+discriminant.** -/
+theorem IsTateTerminal.dvd_Δ_iff [IsDomain R] (hϖ : Prime ϖ) {s : ReductionSymbol}
+    (h : W.IsTateTerminal ϖ s) : ϖ ∣ W.Δ ↔ s ≠ .I 0 := by
+  refine ⟨fun hΔ hs ↦ (isTateTerminal_I_zero.1 (hs ▸ h)) hΔ, fun hs ↦ ?_⟩
+  by_cases hI : ∃ n, s = .I n
+  · obtain ⟨n, rfl⟩ := hI
+    cases n with
+    | zero => exact absurd rfl hs
+    | succ n => exact (dvd_pow_self ϖ n.succ_ne_zero).trans (isTateTerminal_I_add_one.1 h).2.2.2.2.1
+  · simp only [not_exists] at hI
+    exact (dvd_pow_self ϖ (Nat.succ_ne_zero _)).trans (h.pow_componentCount_add_one_dvd_Δ hϖ hI)
 
 end CommRing
 
