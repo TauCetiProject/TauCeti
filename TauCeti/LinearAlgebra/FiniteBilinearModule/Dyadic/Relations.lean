@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.RankTwo.Basic
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.Cyclic
 
+import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.Classification
 import TauCeti.Data.ZMod.BinaryQuadraticForm
 import TauCeti.Data.ZMod.BinaryQuadraticForm.PlaneCyclic
 import TauCeti.Data.ZMod.BinaryQuadraticForm.TernaryCyclic
