@@ -33,7 +33,7 @@ namespace Polynomial
 
 /-- If `y` and `r y` tend to `y₀` and `x₀`, respectively, then evaluating a polynomial with
 polynomial coefficients first at `C y` and then at `r y` tends to its value at `(y₀, x₀)`. -/
-theorem tendsto_eval_C_eval {α : Type*} [TopologicalSpace α] {𝕜 : Type*}
+theorem tendsto_eval_C_eval {α : Type*} {𝕜 : Type*}
     [NontriviallyNormedField 𝕜] {l : Filter α} (R : Polynomial (Polynomial 𝕜))
     {y r : α → 𝕜} {y₀ x₀ : 𝕜} (hy : Tendsto y l (𝓝 y₀)) (hr : Tendsto r l (𝓝 x₀)) :
     Tendsto (fun t ↦ (R.eval (C (y t))).eval (r t)) l
