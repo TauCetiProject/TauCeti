@@ -46,6 +46,8 @@ excision identifies both thickened pairs with the same pair on the open cylinder
 ## Main declarations
 
 * `TauCeti.MappingTorus.fiberPair φ`: the pair `(T, F)`.
+* `TauCeti.MappingTorus.fiberPairIncl φ`: the fibre inclusion `F ⟶ fiber φ`, an isomorphism
+  (`TauCeti.MappingTorus.isIso_fiberPairIncl`).
 * `TauCeti.MappingTorus.cylinderPairMap φ`: the map of pairs `(F × I, F × ∂I) ⟶ (T, F)`.
 * `TauCeti.MappingTorus.isIso_singularHomologyMap_cylinderPairMap`: it induces isomorphisms on
   relative singular homology.
@@ -80,6 +82,14 @@ def fiberPairIncl : TopCat.of F ⟶ (fiberPair φ).snd :=
 
 @[simp]
 lemma fiberPairIncl_apply (x : F) : (fiberPairIncl φ x).1 = incl φ x := (rfl)
+
+/-- The fibre inclusion is an isomorphism onto the fibre: it is `MappingTorus.fiberHomeomorph`. -/
+instance isIso_fiberPairIncl : IsIso (fiberPairIncl φ) := by
+  have h : fiberPairIncl φ =
+      (TopCat.isoOfHomeo (X := TopCat.of F) (Y := (fiberPair φ).snd) (fiberHomeomorph φ)).hom :=
+    TopCat.ext fun x ↦ Subtype.ext (coe_fiberHomeomorph_apply φ x).symm
+  rw [h]
+  infer_instance
 
 /-- The map `(x, t) ↦ [φ x, t]` from the cylinder onto the mapping torus.  It is the monodromy
 homotopy `MappingTorus.monodromyHomotopy`, read as a map out of the cylinder `F × I`. -/
@@ -137,19 +147,16 @@ section Thickening
 
 /-! ### Thickening the fibre and the ends of the cylinder -/
 
-/-- The reparametrisation `u ↦ max 0 (min 1 (3u - 1))` of `ℝ`, which is `0` up to `1/3` and `1`
-from `2/3` on. -/
-private def collapse (u : ℝ) : ℝ := max 0 (min 1 (3 * u - 1))
+/-- The reparametrisation `u ↦ projIcc 0 1 (3u - 1)` of `ℝ` onto `I`, which is `0` up to `1/3`
+and `1` from `2/3` on. -/
+private def collapse : C(ℝ, I) :=
+  ⟨fun u ↦ projIcc 0 1 zero_le_one (3 * u - 1), continuous_projIcc.comp (by fun_prop)⟩
 
-private lemma collapse_of_le {u : ℝ} (hu : u ≤ 1 / 3) : collapse u = 0 := by
-  rw [collapse, min_eq_right (by linarith), max_eq_left (by linarith)]
+private lemma collapse_of_le {u : ℝ} (hu : u ≤ 1 / 3) : collapse u = 0 :=
+  projIcc_of_le_left zero_le_one (by linarith)
 
-private lemma collapse_of_ge {u : ℝ} (hu : 2 / 3 ≤ u) : collapse u = 1 := by
-  rw [collapse, min_eq_left (by linarith), max_eq_right zero_le_one]
-
-private lemma continuous_collapse : Continuous collapse := by
-  unfold collapse
-  fun_prop
+private lemma collapse_of_ge {u : ℝ} (hu : 2 / 3 ≤ u) : collapse u = 1 :=
+  projIcc_of_right_le zero_le_one (by linarith)
 
 /-- A real number lies within `1/3` of an integer exactly when its fractional part lies within
 `1/3` of `0` or of `1`. -/
@@ -191,44 +198,31 @@ private lemma mapsTo_cylinderBoundary_cylinderEnds :
   · exact Or.inl (by norm_num [h])
   · exact Or.inr (by norm_num [h])
 
-/-- The reparametrisation of `I` collapsing `[0, 1/3]` to `0` and `[2/3, 1]` to `1`. -/
-private def collapseI : C(I, I) :=
-  ⟨fun t ↦ projIcc 0 1 zero_le_one (3 * t - 1), continuous_projIcc.comp (by fun_prop)⟩
-
-private lemma coe_collapseI (t : I) : (collapseI t : ℝ) = collapse t :=
-  coe_projIcc 0 1 zero_le_one _
-
-private lemma collapseI_of_le {t : I} (ht : (t : ℝ) ≤ 1 / 3) : collapseI t = 0 :=
-  Subtype.ext ((coe_collapseI t).trans (collapse_of_le ht))
-
-private lemma collapseI_of_ge {t : I} (ht : 2 / 3 ≤ (t : ℝ)) : collapseI t = 1 :=
-  Subtype.ext ((coe_collapseI t).trans (collapse_of_ge ht))
-
 /-- The retraction of the cylinder collapsing the heights within `1/3` of the ends onto the
 ends. -/
 private def cylinderRetract : TopCat.of (X × I) ⟶ TopCat.of (X × I) :=
-  TopCat.ofHom ((ContinuousMap.id X).prodMap collapseI)
+  TopCat.ofHom ((ContinuousMap.id X).prodMap (collapse.comp (ContinuousMap.subtypeVal _)))
 
 /-- The straight-line homotopy from the identity of the cylinder to `cylinderRetract`. -/
 private def cylinderHomotopy :
     (TopCat.Hom.hom (𝟙 (TopCat.of (X × I)))).Homotopy (cylinderRetract X).hom where
-  toFun q := (q.2.1, Icc.convexComb q.2.2 (collapseI q.2.2) q.1)
+  toFun q := (q.2.1, Icc.convexComb q.2.2 (collapse q.2.2) q.1)
   continuous_toFun := by
-    have := collapseI.continuous
+    have := collapse.continuous
     fun_prop
   map_zero_left p := Prod.ext (rfl) (Icc.convexComb_zero _ _)
   map_one_left p := Prod.ext (rfl) (Icc.convexComb_one _ _)
 
 private lemma cylinderHomotopy_apply_snd (τ : I) (p : TopCat.of (X × I)) :
-    (cylinderHomotopy X (τ, p)).2 = Icc.convexComb p.2 (collapseI p.2) τ := (rfl)
+    (cylinderHomotopy X (τ, p)).2 = Icc.convexComb p.2 (collapse p.2) τ := (rfl)
 
 private lemma cylinderHomotopy_mem_cylinderBoundary (τ : I) (p : TopCat.of (X × I))
     (hp : p ∈ cylinderBoundary X) : cylinderHomotopy X (τ, p) ∈ cylinderBoundary X := by
   rcases (mem_cylinderBoundary X).1 hp with h | h
   · refine (mem_cylinderBoundary X).2 (Or.inl ?_)
-    rw [cylinderHomotopy_apply_snd, h, collapseI_of_le (by norm_num), Icc.convexComb_eq]
+    rw [cylinderHomotopy_apply_snd, h, collapse_of_le (by norm_num), Icc.convexComb_eq]
   · refine (mem_cylinderBoundary X).2 (Or.inr ?_)
-    rw [cylinderHomotopy_apply_snd, h, collapseI_of_ge (by norm_num), Icc.convexComb_eq]
+    rw [cylinderHomotopy_apply_snd, h, collapse_of_ge (by norm_num), Icc.convexComb_eq]
 
 private lemma cylinderHomotopy_mem_cylinderEnds (τ : I) (p : TopCat.of (X × I))
     (hp : p ∈ cylinderEnds X) : cylinderHomotopy X (τ, p) ∈ cylinderEnds X := by
@@ -236,22 +230,22 @@ private lemma cylinderHomotopy_mem_cylinderEnds (τ : I) (p : TopCat.of (X × I)
   have hτ₁ := τ.2.2
   have ht₀ := p.2.2.1
   have ht₁ := p.2.2.2
-  have hval : ((cylinderHomotopy X (τ, p)).2 : ℝ) = (1 - τ) * p.2 + τ * collapseI p.2 := by
+  have hval : ((cylinderHomotopy X (τ, p)).2 : ℝ) = (1 - τ) * p.2 + τ * collapse p.2 := by
     rw [cylinderHomotopy_apply_snd, Icc.coe_convexComb]
   rcases hp with h | h
   · refine Or.inl ?_
-    rw [hval, collapseI_of_le h.le, Icc.coe_zero]
+    rw [hval, collapse_of_le h.le, Icc.coe_zero]
     nlinarith
   · refine Or.inr ?_
-    rw [hval, collapseI_of_ge h.le, Icc.coe_one]
+    rw [hval, collapse_of_ge h.le, Icc.coe_one]
     nlinarith
 
 private lemma mapsTo_cylinderRetract :
     MapsTo (cylinderRetract X) (cylinderEnds X) (cylinderBoundary X) := by
   intro p hp
   rcases hp with h | h
-  · exact (mem_cylinderBoundary X).2 (Or.inl (collapseI_of_le h.le))
-  · exact (mem_cylinderBoundary X).2 (Or.inr (collapseI_of_ge h.le))
+  · exact (mem_cylinderBoundary X).2 (Or.inl (collapse_of_le h.le))
+  · exact (mem_cylinderBoundary X).2 (Or.inr (collapse_of_ge h.le))
 
 variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
 
@@ -285,7 +279,7 @@ private def heightShift (t : ℝ) : ℝ := Int.fract t - collapse (Int.fract t)
 
 private lemma continuous_heightShift : Continuous heightShift :=
   ContinuousOn.comp_fract'' (f := fun u ↦ u - collapse u)
-    (continuous_id.sub continuous_collapse).continuousOn
+    (by fun_prop : Continuous fun u ↦ u - (collapse u : ℝ)).continuousOn
     (by rw [collapse_of_le (by norm_num), collapse_of_ge (by norm_num)]; norm_num)
 
 private lemma heightShift_add_intCast (t : ℝ) (n : ℤ) :
@@ -303,8 +297,8 @@ private lemma coe_sub_heightShift {t : ℝ} (ht : ‖(t : UnitAddCircle)‖ < 1 
   have hft := Int.floor_add_fract t
   obtain ⟨m, hm⟩ : ∃ m : ℤ, t - heightShift t = m := by
     rcases (norm_coe_lt_iff t).1 ht with h | h
-    · exact ⟨⌊t⌋, by rw [heightShift, collapse_of_le h.le]; linarith⟩
-    · exact ⟨⌊t⌋ + 1, by rw [heightShift, collapse_of_ge h.le]; push_cast; linarith⟩
+    · exact ⟨⌊t⌋, by rw [heightShift, collapse_of_le h.le, Icc.coe_zero]; linarith⟩
+    · exact ⟨⌊t⌋ + 1, by rw [heightShift, collapse_of_ge h.le, Icc.coe_one]; push_cast; linarith⟩
   rw [hm]
   exact (AddCircle.coe_eq_zero_iff 1).2 ⟨m, by simp⟩
 
@@ -319,12 +313,12 @@ private lemma norm_coe_sub_mul_heightShift_lt (s : I) {t : ℝ}
   have hf₁ := Int.fract_lt_one t
   rcases (norm_coe_lt_iff t).1 ht with h | h
   · have heq : t - s * heightShift t = (⌊t⌋ : ℝ) + (1 - s) * Int.fract t := by
-      rw [heightShift, collapse_of_le h.le]
+      rw [heightShift, collapse_of_le h.le, Icc.coe_zero]
       linarith
     rw [heq]
     exact norm_coe_intCast_add_lt _ (abs_lt.2 ⟨by nlinarith, by nlinarith⟩)
   · have heq : t - s * heightShift t = ((⌊t⌋ + 1 : ℤ) : ℝ) + (1 - s) * (Int.fract t - 1) := by
-      rw [heightShift, collapse_of_ge h.le]
+      rw [heightShift, collapse_of_ge h.le, Icc.coe_one]
       push_cast
       linarith
     rw [heq]
