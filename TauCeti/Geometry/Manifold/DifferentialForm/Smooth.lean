@@ -16,8 +16,7 @@ This file packages smooth sections of the bundle of alternating maps on tangent 
 underlying rough form remains an unbundled dependent function, while `IsSmoothBundleForm` records
 that its graph is a smooth section of the alternating bundle.  The corresponding `Submodule`
 provides the bundled carrier `SmoothBundleForm`; fixed coefficients are the `SmoothForm`
-specialization.  These carriers are the input for smooth wedge products, pullbacks, and the
-migration of the existing smooth two-form API.
+specialization.  These carriers are the input for smooth wedge products and pullbacks.
 
 Smoothness is expressed through the total-space charts of the topological alternating bundle.  The
 module operations use Mathlib's smooth-section API, so this carrier does not require a chosen
@@ -42,8 +41,8 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
   {k : ℕ}
 
-/-- A rough bundle-valued form is smooth when its graph is a smooth section of the alternating
-bundle with fibres `TangentSpace I x [⋀^Fin k]→L[ℝ] V x`. -/
+/-- A rough bundle-valued form has `C^n` regularity when its graph is a `C^n` section of the
+alternating bundle with fibres `TangentSpace I x [⋀^Fin k]→L[ℝ] V x`; `n = ∞` gives smoothness. -/
 def IsSmoothBundleForm (I : ModelWithCorners ℝ E H) (F : Type*)
     [NormedAddCommGroup F] [NormedSpace ℝ F] (V : M → Type*)
     [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
@@ -52,6 +51,14 @@ def IsSmoothBundleForm (I : ModelWithCorners ℝ E H) (F : Type*)
     [IsManifold I 1 M] (n : WithTop ℕ∞) (φ : RoughBundleForm I M V k) : Prop :=
   ContMDiff I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) n
     (fun x ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) x (φ x))
+
+/-- The defining characterization of `IsSmoothBundleForm`. -/
+theorem isSmoothBundleForm_def [IsManifold I 1 M] (n : WithTop ℕ∞)
+    (φ : RoughBundleForm I M V k) :
+    IsSmoothBundleForm (I := I) (F := F) (V := V) (k := k) n φ ↔
+      ContMDiff I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) n
+        (fun x ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) x (φ x)) :=
+  Iff.rfl
 
 private lemma smoothSection_zero [IsManifold I 1 M] :
     IsSmoothBundleForm (I := I) (F := F) (V := V) (k := k) (n := ∞)
@@ -69,8 +76,7 @@ private lemma smoothSection_add [IsManifold I 1 M]
   let sψ : ContMDiffSection I (E [⋀^Fin k]→L[ℝ] F) ∞
       (fun x ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] V x) :=
     ⟨ψ, hψ⟩
-  change ContMDiff I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) ∞
-    (fun x ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) x ((φ + ψ) x))
+  rw [isSmoothBundleForm_def]
   convert (sφ + sψ).contMDiff using 1
 
 private lemma smoothSection_smul [IsManifold I 1 M] (c : ℝ)
@@ -80,8 +86,7 @@ private lemma smoothSection_smul [IsManifold I 1 M] (c : ℝ)
   let sφ : ContMDiffSection I (E [⋀^Fin k]→L[ℝ] F) ∞
       (fun x ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] V x) :=
     ⟨φ, hφ⟩
-  change ContMDiff I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) ∞
-    (fun x ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) x ((c • φ) x))
+  rw [isSmoothBundleForm_def]
   convert (c • sφ).contMDiff using 1
 
 /-- The submodule of smooth `V`-valued rough `k`-forms. -/
@@ -98,7 +103,7 @@ def smoothBundleForms (I : ModelWithCorners ℝ E H) [IsManifold I 1 M] (F : Typ
   smul_mem' := fun c _φ hφ ↦ smoothSection_smul (I := I) (V := V) (k := k) c hφ
 
 /-- Membership in `smoothBundleForms` is exactly smoothness of the corresponding section. -/
-theorem mem_smoothBundleForms [IsManifold I 1 M] {φ : RoughBundleForm I M V k} :
+@[simp] theorem mem_smoothBundleForms [IsManifold I 1 M] {φ : RoughBundleForm I M V k} :
     φ ∈ smoothBundleForms (I := I) F V k ↔
       IsSmoothBundleForm (I := I) (F := F) (V := V) (k := k) (n := ∞) φ :=
   Iff.rfl
@@ -122,7 +127,7 @@ def smoothForms (I : ModelWithCorners ℝ E H) (M : Type*) [TopologicalSpace M]
   smoothBundleForms (I := I) F (Bundle.Trivial M F) k
 
 /-- Membership in `smoothForms` is smoothness of the fixed-coefficient form as a section. -/
-theorem mem_smoothForms {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
+@[simp] theorem mem_smoothForms {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 1 M] {F : Type*}
     [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ} {φ : RoughForm I M F k} :
     φ ∈ smoothForms I M F k ↔
