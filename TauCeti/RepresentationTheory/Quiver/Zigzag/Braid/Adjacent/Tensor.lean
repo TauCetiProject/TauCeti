@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Factors
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Adjacent
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Adjacent.Basic
 
 /-!
 # The top tensor term of an adjacent braid product
@@ -77,6 +77,9 @@ private theorem adjacentPairRightFactors_equivariant {i j : V} (h : G.Adj j i)
           TensorProduct.smul_tmul']
       | add t t' ht ht' => simp only [map_add, TensorProduct.tmul_add, smul_add, ht, ht']
     | add x x' hx hx' => simp only [map_add, smul_add, hx, hx']
+  -- The local right module restricts the enveloping action along a ↦ 1 ⊗ op a.
+  -- Its scalar operation is definitional; the corner-action equation below instead
+  -- takes the enveloping scalar explicitly, so identify that action here.
   change adjacentPairRightFactors k G h (((1 : Z) ⊗ₜ[k] op a) • m) = _
   exact (congrArg (fun x ↦ TensorProduct.comm k (L i) (R j)
     (TensorProduct.lid k (L i ⊗[k] R j)
@@ -332,6 +335,9 @@ theorem zigzagBraidAdjacentTripleIso_hom_apply {i j : V} (h : G.Adj j i)
     (zigzagBraidAdjacentTripleIso k G h).hom.hom t =
       zigzagBraidAdjacentTripleUnderlyingEquiv k G h t := by
   obtain ⟨u, hu⟩ := (adjacentTripleInsertEquiv k G h).surjective t
+  -- LinearEquiv.ofBijective retains adjacentTripleInsert as its forward function.
+  -- Unbundle that application: this private equivalence has no separate computation
+  -- equation to rewrite before using the public insertion and inverse equations.
   change adjacentTripleInsert k G h u = t at hu
   rw [← hu, adjacentTripleUnderlyingEquiv_insert]
   have heq := congrArg (fun f : (U i).shiftObj 2 ⟶ (U i).shiftObj 2 ↦ f.hom u)
