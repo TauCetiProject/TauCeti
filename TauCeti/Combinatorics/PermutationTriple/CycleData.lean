@@ -69,23 +69,21 @@ theorem cycleData_σinf (t : PermutationTriple n) :
 /-- The multiset of full cycle partitions, forgetting the ordering of the branch points but
 retaining repeated partitions and fixed points. -/
 def unorderedCycleData (t : PermutationTriple n) : Multiset (Multiset ℕ) :=
-  {t.cycleData.1, t.cycleData.2.1, t.cycleData.2.2}
+  (Sym.ofFn (fun i => (t.component i).partition.parts) : Multiset (Multiset ℕ))
 
 /-- Read the unordered cycle data from the ordered cycle partitions. -/
 theorem unorderedCycleData_def (t : PermutationTriple n) :
-    t.unorderedCycleData = {t.cycleData.1, t.cycleData.2.1, t.cycleData.2.2} := (rfl)
+    t.unorderedCycleData = {t.cycleData.1, t.cycleData.2.1, t.cycleData.2.2} := by
+  simp only [unorderedCycleData, Sym.coe_ofFn, List.ofFn_succ, List.ofFn_zero,
+    Fin.succ_zero_eq_one, Fin.succ_one_eq_two, component_zero, component_one, component_two,
+    cycleData_σ0, cycleData_σ1, cycleData_σinf]
+  rfl
 
 /-- The unordered full cycle partitions are the symmetric-power image of the component
 partitions, viewed as a multiset. -/
 theorem unorderedCycleData_eq_coe_ofFn (t : PermutationTriple n) :
     t.unorderedCycleData =
-      (Sym.ofFn (fun i => (t.component i).partition.parts) : Multiset (Multiset ℕ)) := by
-  simp only [Sym.coe_ofFn, List.ofFn_succ, List.ofFn_zero]
-  rw [show Fin.succ (0 : Fin 2) = (1 : Fin 3) by decide,
-    show Fin.succ (Fin.succ (0 : Fin 1)) = (2 : Fin 3) by decide,
-    component_zero, component_one, component_two]
-  rw [unorderedCycleData_def, cycleData_σ0, cycleData_σ1, cycleData_σinf]
-  rfl
+      (Sym.ofFn (fun i => (t.component i).partition.parts) : Multiset (Multiset ℕ)) := (rfl)
 
 /-- The ordered numbers of cycles of the three components, with fixed points included. -/
 noncomputable def cycleCounts (t : PermutationTriple n) : ℕ × ℕ × ℕ :=
