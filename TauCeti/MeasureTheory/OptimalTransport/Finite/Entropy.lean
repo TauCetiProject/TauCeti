@@ -27,7 +27,7 @@ public section
 open MeasureTheory InformationTheory Matrix
 open scoped ENNReal
 
-namespace TauCeti
+namespace MeasureTheory.Measure
 
 variable {ι κ : Type*} [Fintype ι] [Fintype κ]
   [MeasurableSpace ι] [MeasurableSingletonClass ι]
@@ -50,7 +50,7 @@ theorem klDiv_eq_ofReal_relEntropy_add_mass_correction_of_real_singleton
     have h := hK i j
     rw [← hR i j] at h
     simp [Measure.real, hzero] at h
-  rw [klDiv_eq_ofReal_sum_log_singleton hRpos]
+  rw [TauCeti.klDiv_eq_ofReal_sum_log_singleton hRpos]
   have hsum :
       (∑ q : ι × κ, π.real {q} * Real.log (π.real {q} / R.real {q})) =
         Matrix.relEntropy P K := by
@@ -64,4 +64,4 @@ theorem klDiv_eq_ofReal_relEntropy_add_mass_correction_of_real_singleton
       ring
   rw [hsum]
 
-end TauCeti
+end MeasureTheory.Measure
