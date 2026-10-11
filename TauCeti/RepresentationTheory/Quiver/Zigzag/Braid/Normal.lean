@@ -14,6 +14,10 @@ public import Mathlib.Algebra.Homology.HomotopyCategory.MappingCone
 The pair of vertex tensor products maps to the two vertex bimodules by a signed
 evaluation matrix, followed by the sum of the vertex evaluations to the regular
 bimodule. The two composites of factor evaluations agree, so this is a complex.
+For adjacent vertices `i` and `j`, the intended contraction target for
+`B_i B_j B_i` and `B_j B_i B_j` is this common evaluation complex.
+The swap isomorphism exchanges the two vertex orders in that common target.
+
 It is constructed as Mathlib's mapping cone of a map from a two-term complex to
 the regular bimodule in degree zero. The negated differential in that two-term
 complex cancels the mapping-cone sign.
@@ -88,57 +92,47 @@ theorem zigzagBraidTensorEvaluation_comm (i j : V) :
 /-- The signed evaluation matrix from the two ordered vertex tensor products. -/
 def zigzagBraidNormalFirstDifferential (i j : V) :
     T (U i) (U j) ⊞ T (U j) (U i) ⟶ U i ⊞ U j :=
-  biprod.desc
-    (biprod.lift (-zigzagBraidTensorEvaluationRight k G i j)
-      (zigzagBraidTensorEvaluationLeft k G i j))
-    (biprod.lift (zigzagBraidTensorEvaluationLeft k G j i)
-      (-zigzagBraidTensorEvaluationRight k G j i))
+  Biprod.ofComponents (-zigzagBraidTensorEvaluationRight k G i j)
+    (zigzagBraidTensorEvaluationLeft k G i j) (zigzagBraidTensorEvaluationLeft k G j i)
+    (-zigzagBraidTensorEvaluationRight k G j i)
 
 /-- The first-column first-row component of the signed evaluation matrix. -/
 @[simp, reassoc]
 theorem zigzagBraidNormalFirstDifferential_inl_fst (i j : V) :
     biprod.inl ≫ zigzagBraidNormalFirstDifferential k G i j ≫ biprod.fst =
       -zigzagBraidTensorEvaluationRight k G i j := by
-  simp only [zigzagBraidNormalFirstDifferential, biprod.inl_desc_assoc,
-    biprod.lift_fst]
+  simp [zigzagBraidNormalFirstDifferential]
 
 /-- The first-column second-row component of the signed evaluation matrix. -/
 @[simp, reassoc]
 theorem zigzagBraidNormalFirstDifferential_inl_snd (i j : V) :
     biprod.inl ≫ zigzagBraidNormalFirstDifferential k G i j ≫ biprod.snd =
       zigzagBraidTensorEvaluationLeft k G i j := by
-  simp only [zigzagBraidNormalFirstDifferential, biprod.inl_desc_assoc,
-    biprod.lift_snd]
+  simp [zigzagBraidNormalFirstDifferential]
 
 /-- The second-column first-row component of the signed evaluation matrix. -/
 @[simp, reassoc]
 theorem zigzagBraidNormalFirstDifferential_inr_fst (i j : V) :
     biprod.inr ≫ zigzagBraidNormalFirstDifferential k G i j ≫ biprod.fst =
       zigzagBraidTensorEvaluationLeft k G j i := by
-  simp only [zigzagBraidNormalFirstDifferential, biprod.inr_desc_assoc,
-    biprod.lift_fst]
+  simp [zigzagBraidNormalFirstDifferential]
 
 /-- The second-column second-row component of the signed evaluation matrix. -/
 @[simp, reassoc]
 theorem zigzagBraidNormalFirstDifferential_inr_snd (i j : V) :
     biprod.inr ≫ zigzagBraidNormalFirstDifferential k G i j ≫ biprod.snd =
       -zigzagBraidTensorEvaluationRight k G j i := by
-  simp only [zigzagBraidNormalFirstDifferential, biprod.inr_desc_assoc,
-    biprod.lift_snd]
+  simp [zigzagBraidNormalFirstDifferential]
 
 /-- The signed matrix is annihilated by the sum of the vertex evaluations. -/
 @[reassoc]
 theorem zigzagBraidNormalFirstDifferential_comp_evaluations (i j : V) :
     zigzagBraidNormalFirstDifferential k G i j ≫ biprod.desc (E i) (E j) = 0 := by
   apply biprod.hom_ext'
-  · simp only [zigzagBraidNormalFirstDifferential, biprod.inl_desc_assoc,
-      biprod.lift_desc, Preadditive.neg_comp, comp_zero]
-    rw [zigzagBraidTensorEvaluation_comm]
-    exact neg_add_cancel _
-  · simp only [zigzagBraidNormalFirstDifferential, biprod.inr_desc_assoc,
-      biprod.lift_desc, Preadditive.neg_comp, comp_zero]
-    rw [zigzagBraidTensorEvaluation_comm]
-    exact add_neg_cancel _
+  · simp [zigzagBraidNormalFirstDifferential, ← Category.assoc]
+    simp [Category.assoc, zigzagBraidTensorEvaluation_comm]
+  · simp [zigzagBraidNormalFirstDifferential, ← Category.assoc]
+    simp [Category.assoc, zigzagBraidTensorEvaluation_comm]
 
 private abbrev normalDouble (i j : V) :
     CochainComplex (GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece) ℤ :=
@@ -244,7 +238,7 @@ private theorem normalInrXZeroIso_hom (i j : V) :
     biprod.inr_snd_assoc]
 
 /-- The first differential is the signed pair-evaluation matrix. -/
-@[reassoc]
+@[simp, reassoc]
 theorem zigzagBraidNormalComplex_d_minusTwo (i j : V) :
     (zigzagBraidNormalComplex k G i j).d (-2) (-1) ≫
         (zigzagBraidNormalComplexXMinusOneIso k G i j).hom =
@@ -270,7 +264,7 @@ theorem zigzagBraidNormalComplex_d_minusTwo (i j : V) :
       (normalInlXMinusOneIso_hom k G i j) |>.trans (by simp)
 
 /-- The last differential is the sum of the two vertex evaluations. -/
-@[reassoc]
+@[simp, reassoc]
 theorem zigzagBraidNormalComplex_d_minusOne (i j : V) :
     (zigzagBraidNormalComplex k G i j).d (-1) 0 ≫
         (zigzagBraidNormalComplexXZeroIso k G i j).hom =
@@ -298,6 +292,42 @@ theorem zigzagBraidNormalComplex_d_minusOne (i j : V) :
   dsimp only [normalEvaluation]
   rw [HomologicalComplex.mkHomToSingle_f]
   simp only [Category.assoc, Iso.inv_hom_id_assoc, Iso.inv_hom_id, Category.comp_id]
+
+/-- A differential with source outside the two nonzero differential degrees vanishes. -/
+@[simp]
+theorem zigzagBraidNormalComplex_d_eq_zero₀ (i j : V) {a : ℤ} (b : ℤ)
+    (ha₂ : a ≠ -2) (ha₁ : a ≠ -1) :
+    (zigzagBraidNormalComplex k G i j).d a b = 0 := by
+  by_cases ha₀ : a = 0
+  · subst a
+    by_cases hb : b = 1
+    · subst b
+      exact (isZero_zigzagBraidNormalComplex_X k G i j
+        (by decide) (by decide) (by decide)).eq_of_tgt _ _
+    · apply HomologicalComplex.shape
+      -- The shape definition gives the arithmetic relation needed to exclude this differential.
+      intro h
+      have h' : (0 : ℤ) + 1 = b := h
+      omega
+  · exact (isZero_zigzagBraidNormalComplex_X k G i j ha₂ ha₁ ha₀).eq_of_src _ _
+
+/-- A differential with target outside the two nonzero differential degrees vanishes. -/
+@[simp]
+theorem zigzagBraidNormalComplex_d_eq_zero₁ (i j : V) (a : ℤ) {b : ℤ}
+    (hb₁ : b ≠ -1) (hb₀ : b ≠ 0) :
+    (zigzagBraidNormalComplex k G i j).d a b = 0 := by
+  by_cases hb₂ : b = -2
+  · subst b
+    by_cases ha : a = -3
+    · subst a
+      exact (isZero_zigzagBraidNormalComplex_X k G i j
+        (by decide) (by decide) (by decide)).eq_of_src _ _
+    · apply HomologicalComplex.shape
+      -- The shape definition gives the arithmetic relation needed to exclude this differential.
+      intro h
+      have h' : a + 1 = (-2 : ℤ) := h
+      omega
+  · exact (isZero_zigzagBraidNormalComplex_X k G i j hb₂ hb₁ hb₀).eq_of_tgt _ _
 
 /-- Swapping both pairs of summands preserves the signed evaluation matrix. -/
 @[reassoc]
@@ -349,7 +379,9 @@ def zigzagBraidNormalSwapIso (i j : V) :
     zigzagBraidNormalComplex k G i j ≅ zigzagBraidNormalComplex k G j i :=
   HomologicalComplex.Hom.isoOfComponents (normalSwapComponentIso k G i j) (by
     intro p q hpq
-    change p + 1 = q at hpq
+    -- The cochain shape relation is definitionally `p + 1 = q`; use its arithmetic form
+    -- to select the supported degree components. Mathlib supplies only the reverse constructor.
+    have hpq' : p + 1 = q := hpq
     by_cases h₂ : p = -2
     · subst p
       have : q = -1 := by omega
@@ -391,7 +423,7 @@ def zigzagBraidNormalSwapIso (i j : V) :
         · exact (isZero_zigzagBraidNormalComplex_X k G i j h₂ h₁ h₀).eq_of_src _ _)
 
 /-- In degree minus two the swap exchanges the two ordered tensor-product summands. -/
-@[reassoc]
+@[simp, reassoc]
 theorem zigzagBraidNormalSwapIso_hom_f_minusTwo (i j : V) :
     (zigzagBraidNormalSwapIso k G i j).hom.f (-2) ≫
         (zigzagBraidNormalComplexXMinusTwoIso k G j i).hom =
@@ -406,7 +438,7 @@ theorem zigzagBraidNormalSwapIso_hom_f_minusTwo (i j : V) :
   simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
 
 /-- In degree minus one the swap exchanges the two vertex summands. -/
-@[reassoc]
+@[simp, reassoc]
 theorem zigzagBraidNormalSwapIso_hom_f_minusOne (i j : V) :
     (zigzagBraidNormalSwapIso k G i j).hom.f (-1) ≫
         (zigzagBraidNormalComplexXMinusOneIso k G j i).hom =
@@ -420,7 +452,7 @@ theorem zigzagBraidNormalSwapIso_hom_f_minusOne (i j : V) :
   simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
 
 /-- The swap acts as the identity on the regular bimodule in degree zero. -/
-@[reassoc]
+@[simp, reassoc]
 theorem zigzagBraidNormalSwapIso_hom_f_zero (i j : V) :
     (zigzagBraidNormalSwapIso k G i j).hom.f 0 ≫
         (zigzagBraidNormalComplexXZeroIso k G j i).hom =
