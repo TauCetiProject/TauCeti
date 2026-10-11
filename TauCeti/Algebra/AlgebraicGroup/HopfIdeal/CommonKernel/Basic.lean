@@ -288,8 +288,10 @@ subfamily. -/
 theorem kerOfSurjective_eq_commonKernelHopfIdeal_of_comp {Q : _root_.CommHopfAlgCat.{v} R}
     (p : H ⟶ Q) (hp : Function.Surjective p.hom) (f : ∀ i, H ⟶ K i) (c : ∀ i, Q ⟶ K i)
     (hc : ∀ i, p ≫ c i = f i) (r : Q ⟶ quotient H (commonKernelHopfIdeal f))
-    (hr : p ≫ r = mkQuotient H (commonKernelHopfIdeal f)) (hrs : Function.Surjective r.hom) :
-    HopfIdeal.kerOfSurjective r.hom hrs = commonKernelHopfIdeal c := by
+    (hr : p ≫ r = mkQuotient H (commonKernelHopfIdeal f)) :
+    HopfIdeal.kerOfSurjective r.hom
+      (Function.Surjective.of_comp (hr ▸ mkQuotient_surjective H _)) =
+        commonKernelHopfIdeal c := by
   have hf : commonKernelHopfIdeal f = (commonKernelHopfIdeal c).comapOfSurjective p.hom hp := by
     rw [comapOfSurjective_commonKernelHopfIdeal c p hp]
     simp only [hc]

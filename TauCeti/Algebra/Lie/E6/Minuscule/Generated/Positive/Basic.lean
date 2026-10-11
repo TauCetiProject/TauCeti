@@ -131,7 +131,7 @@ theorem kerOfSurjective_restriction :
   CommHopfAlgCat.kerOfSurjective_eq_commonKernelHopfIdeal_of_comp (generatedCoordinateMap A)
     (generatedCoordinateMap_surjective A) (generator A) _
     (by rintro (i | ⟨⟩) <;> exact generatedCoordinateMap_comp_generatedCoordinateLift A _)
-    (restriction A) (generatedCoordinateMap_comp_restriction A) (restriction_surjective A)
+    (restriction A) (generatedCoordinateMap_comp_restriction A)
 
 @[simp]
 theorem mem_carrierDefiningIdeal (x : generatedCoordinateHopfAlgebra A) :

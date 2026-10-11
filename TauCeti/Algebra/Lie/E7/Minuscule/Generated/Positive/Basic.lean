@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.E7.Minuscule.Generated.Basic
+public import TauCeti.Algebra.Lie.E7.Minuscule.Generated.Smooth
+public import TauCeti.Algebra.Lie.E7.Minuscule.Generated.Connected
 public import TauCeti.Algebra.AlgebraicGroup.Connected.Generated
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.CommonKernel.GeometricallyReduced
 import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.SmoothConnected
@@ -133,7 +135,7 @@ theorem kerOfSurjective_restriction :
   CommHopfAlgCat.kerOfSurjective_eq_commonKernelHopfIdeal_of_comp (generatedCoordinateMap A)
     (generatedCoordinateMap_surjective A) (generator A) _
     (by rintro (i | ⟨⟩) <;> exact generatedCoordinateMap_comp_generatedCoordinateLift A _)
-    (restriction A) (generatedCoordinateMap_comp_restriction A) (restriction_surjective A)
+    (restriction A) (generatedCoordinateMap_comp_restriction A)
 
 @[simp]
 theorem mem_carrierDefiningIdeal (x : generatedCoordinateHopfAlgebra A) :
@@ -175,11 +177,8 @@ variable (k : Type u) [Field k]
 /-- The positive subgroup generated over any field is smooth, including over imperfect fields. -/
 theorem smooth_coordinateHopfAlgebra :
     smoothCommHopfAlgProperty k (coordinateHopfAlgebra k) := by
-  let : ∀ j, Algebra.IsGeometricallyReduced k (generatorCodomain k j) := by
-    rintro (i | ⟨⟩)
-    · exact isGeometricallyReduced_of_smooth k _
-    · exact (DiagonalizableGroup.geometricallyReduced_coordinateRing k
-        (SplitTorus.characterGroup (Fin 7))).isGeometricallyReduced
+  let : ∀ j, Algebra.IsGeometricallyReduced k (generatorCodomain k j) := fun _ ↦
+    isGeometricallyReduced_generatorCoordinateAlgebra k _
   exact
     CommHopfAlgCat.smoothCommHopfAlgProperty_quotient_commonKernelHopfIdeal_of_geometricallyReduced
       (generator k)
@@ -187,16 +186,8 @@ theorem smooth_coordinateHopfAlgebra :
 /-- The positive subgroup generated over any field is geometrically connected. -/
 theorem geometricallyConnected_coordinateHopfAlgebra :
     geometricallyConnectedCommHopfAlgProperty k (coordinateHopfAlgebra k) := by
-  apply geometricallyConnectedCommHopfAlgProperty_commonKernelQuotient_of_geometricallyConnected
-    (generator k)
-  rintro (i | ⟨⟩)
-  · rw [geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace_of_isAlgClosed]
-    intro K _ _ _
-    have := AdditiveGroup.connectedSpace_primeSpectrum_baseChange_coordinateHopfAlgebra k K
-    let e := Algebra.TensorProduct.comm k (AdditiveGroup.coordinateHopfAlgebra k) K
-    exact connectedSpace_primeSpectrum_of_injective e.toRingHom e.injective
-  · exact DiagonalizableGroup.geometricallyConnected_coordinateRing k
-      (SplitTorus.characterGroup (Fin 7))
+  exact geometricallyConnectedCommHopfAlgProperty_commonKernelQuotient_of_geometricallyConnected
+    (generator k) (fun _ ↦ geometricallyConnected_generatorCoordinateAlgebra k _)
 
 end
 
