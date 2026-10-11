@@ -27,7 +27,9 @@ terms has bijective multiplication by a prime `p`. If `p` is bijective on `X₁`
 `H_Tateⁿ(G, X₁) → H_Tateⁿ(G, X₂)` (`TauCeti.TateCohomology.bijOn_pPowerTorsion_map_f`). The torsion
 argument is `TauCeti.injOn_pPowerTorsion_of_exact` and `TauCeti.surjOn_pPowerTorsion_of_exact`,
 which use that all the groups involved are torsion, being killed by `|G|`
-(`TauCeti.TateCohomology.natCard_nsmul_eq_zero`).
+(`TauCeti.TateCohomology.natCard_nsmul_eq_zero`). Factoring a morphism through its image, it
+follows that a morphism whose kernel and cokernel have bijective multiplication by `p` induces
+bijections of `p`-primary components (`TauCeti.TateCohomology.bijOn_pPowerTorsion_map`).
 
 ## Main statements
 
@@ -39,6 +41,8 @@ which use that all the groups involved are torsion, being killed by `|G|`
   `TauCeti.TateCohomology.bijOn_pPowerTorsion_map_f`: along a short exact sequence whose first,
   respectively last, term has bijective multiplication by a prime `p`, the induced maps are
   bijections of `p`-primary components.
+* `TauCeti.TateCohomology.bijOn_pPowerTorsion_map`: a morphism whose kernel and cokernel have
+  bijective multiplication by a prime `p` induces bijections of `p`-primary components.
 
 ## References
 
@@ -133,5 +137,33 @@ theorem bijOn_pPowerTorsion_map_f (hp : Function.Bijective fun a : S.X₃.V ↦ 
       (pPowerTorsion_tateCohomology_eq_bot hp n)
 
 end ShortExact
+
+/-- **Morphisms with uniquely `p`-divisible kernel and cokernel.** If multiplication by a prime `p`
+is bijective on the kernel and on the cokernel of a morphism `f : A ⟶ B` of representations of a
+finite group `G`, then `H_Tateⁿ(G, A) → H_Tateⁿ(G, B)` is a bijection of `p`-primary
+components. -/
+theorem bijOn_pPowerTorsion_map [Fintype G] {A B : Rep k G} (f : A ⟶ B) {p : ℕ} [Fact p.Prime]
+    (hK : Function.Bijective fun a : (kernel f).V ↦ p • a)
+    (hC : Function.Bijective fun a : (cokernel f).V ↦ p • a) (n : ℤ) :
+    Set.BijOn ((tateCohomologyFunctor n).map f) (pPowerTorsion p k (tateCohomology A n))
+      (pPowerTorsion p k (tateCohomology B n)) := by
+  -- `f` factors as `A ↠ coimage f ≅ image f ↪ B`, where the outer maps sit in the short exact
+  -- sequences `0 → kernel f → A → coimage f → 0` and `0 → image f → B → cokernel f → 0`.
+  have hπ := bijOn_pPowerTorsion_map_g (S := .mk _ _ (cokernel.condition (kernel.ι f)))
+    { exact := ShortComplex.exact_of_g_is_cokernel _ (cokernelIsCokernel _) } hK n
+  have hι := bijOn_pPowerTorsion_map_f (S := .mk _ _ (kernel.condition (cokernel.π f)))
+    { exact := ShortComplex.exact_of_f_is_kernel _ (kernelIsKernel _) } hC n
+  have hmaps {X Y : Rep k G} (g : X ⟶ Y) : Set.MapsTo ((tateCohomologyFunctor n).map g)
+      (pPowerTorsion p k (tateCohomology X n)) (pPowerTorsion p k (tateCohomology Y n)) :=
+    fun x hx ↦ by
+      obtain ⟨j, hj⟩ := mem_pPowerTorsion_iff.mp hx
+      exact mem_pPowerTorsion_iff.mpr ⟨j, by rw [← map_nsmul, hj, map_zero]⟩
+  let e := (tateCohomologyFunctor n).mapIso (Abelian.coimageIsoImage f)
+  have hc : Set.BijOn e.hom (pPowerTorsion p k (tateCohomology (Abelian.coimage f) n))
+      (pPowerTorsion p k (tateCohomology (Abelian.image f) n)) :=
+    Set.InvOn.bijOn ⟨fun x _ ↦ e.hom_inv_id_apply x, fun y _ ↦ e.inv_hom_id_apply y⟩
+      (hmaps _) (hmaps _)
+  rw [← Abelian.coimage_image_factorisation f, Functor.map_comp, Functor.map_comp]
+  exact (hι.comp hc).comp hπ
 
 end TauCeti.TateCohomology
