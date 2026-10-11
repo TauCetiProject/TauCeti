@@ -170,9 +170,9 @@ theorem isClosedEmbedding_ofAdicCompletion (v : HeightOneSpectrum R) :
 integers. -/
 @[simp]
 theorem single_mem_integralAdeles_iff (v : HeightOneSpectrum R) {x : v.adicCompletion K} :
-    single K v x ∈ integralAdeles R K ↔ x ∈ v.adicCompletionIntegers K := by
-  refine ⟨fun h ↦ single_apply_self v x ▸ mem_integralAdeles.mp h v, fun hx ↦ ?_⟩
-  refine mem_integralAdeles.mpr fun w ↦ ?_
+    (∀ w, single K v x w ∈ w.adicCompletionIntegers K) ↔
+      x ∈ v.adicCompletionIntegers K := by
+  refine ⟨fun h ↦ single_apply_self v x ▸ h v, fun hx w ↦ ?_⟩
   rcases eq_or_ne w v with rfl | hw
   · rwa [single_apply_self]
   · rw [single_apply_of_ne hw]
@@ -200,8 +200,8 @@ theorem isOpenQuotientMap_proj (v : HeightOneSpectrum R) :
 theorem image_proj_integralAdeles (v : HeightOneSpectrum R) :
     proj K v '' (integralAdeles R K : Set (FiniteAdeleRing R K)) = v.adicCompletionIntegers K := by
   ext x
-  refine ⟨?_, fun hx ↦ ⟨single K v x, (single_mem_integralAdeles_iff v).mpr hx,
-    single_apply_self v x⟩⟩
+  refine ⟨?_, fun hx ↦ ⟨single K v x,
+    mem_integralAdeles.mpr ((single_mem_integralAdeles_iff v).mpr hx), single_apply_self v x⟩⟩
   rintro ⟨a, ha, rfl⟩
   exact mem_integralAdeles.mp ha v
 
