@@ -234,27 +234,19 @@ theorem isSheafFor_ofArrows_inf_spaBasicOpen_of_subset_laurentPiece_of_isSheafFo
     exact ⟨fun h ↦ h.2, fun h ↦ ⟨h.1, h⟩⟩
   -- the pieces of sign `≤` are empty on `V`
   have hempty (t : T) (ht : t ∉ J) : V ⊓ spaBasicOpen Aplus T t = ⊥ :=
-    eq_bot_iff.mpr fun v hv ↦ (Set.eq_empty_iff_forall_notMem.mp
-      (rationalSubset_inter_laurentPiece_inv_mul_eq_empty hϖ ht) v.1
-        ⟨mem_spaBasicOpen.mp hv.2, hVJ hv.1⟩).elim
+    inf_spaBasicOpen_eq_bot_of_subset_laurentPiece hϖ hVJ ht
   -- the pieces of sign `≥` are cut out by `TJ`
   have hpiece (t : T) (ht : t ∈ J) :
-      V ⊓ spaBasicOpen Aplus T t = V ⊓ spaBasicOpen Aplus TJ t := by
-    refine SetLike.ext fun v ↦ ?_
-    simp only [Opens.mem_inf, mem_spaBasicOpen]
-    refine and_congr_right fun hv ↦ ⟨fun h ↦ rationalSubset_subset_rationalSubset_of_subset Aplus
-      (Finset.filter_subset _ T) t h, fun h ↦ ?_⟩
-    exact (mem_rationalSubset_iff_of_mem_laurentPiece_inv_mul ϖ ht (hVJ hv)).mpr fun t' ht' ↦
-      ((mem_rationalSubset_iff _ _ _ _).mp h).2.1 t' (hmemTJ.mpr ⟨t'.2, ht'⟩)
+      V ⊓ spaBasicOpen Aplus T t = V ⊓ spaBasicOpen Aplus TJ t :=
+    inf_spaBasicOpen_eq_inf_of_subset_laurentPiece (fun _ ↦ hmemTJ) hVJ ht
   rw [Presieve.isSheafFor_iff_generate]
   rcases TJ.eq_empty_or_nonempty with hTJ | hTJ
   · -- no generator has sign `≥`, so `V` is empty and the cover is trivial
     obtain ⟨t₀, ht₀⟩ := hT
-    have hV₀ : V ≤ V ⊓ spaBasicOpen Aplus T t₀ := fun v hv ↦ by
-      obtain ⟨t, ht, hlt⟩ := hϖ v.1 v.2
-      have htJ : (⟨t, ht⟩ : T) ∉ J := fun h ↦ by simpa [hTJ] using hmemTJ.mpr ⟨ht, h⟩
-      exact (hlt (@TauCeti.ValuativeRel.vle_of_inv_mul_vle A _ v.1.toValuativeRel ϖ t
-        ((((mem_laurentPiece_iff _ _ _ _).mp (hVJ hv)).2 ⟨t, ht⟩).2 htJ))).elim
+    have hJ : J = ∅ := Set.eq_empty_iff_forall_notMem.mpr fun t ht ↦ by
+      simpa [hTJ] using hmemTJ.mpr ⟨t.2, ht⟩
+    have hV : V = ⊥ := eq_bot_of_subset_laurentPiece_empty hϖ (hJ ▸ hVJ)
+    have hV₀ : V ≤ V ⊓ spaBasicOpen Aplus T t₀ := by simp [hV]
     rw [(Sieve.id_mem_iff_eq_top (S := Sieve.generate _)).mp
       ⟨_, homOfLE hV₀, _, Presieve.ofArrows.mk (⟨t₀, ht₀⟩ : T), rfl⟩]
     exact Presieve.isSheafFor_top _
