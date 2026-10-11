@@ -30,21 +30,15 @@ variable {C κ : Type*} [Category* C] [Abelian C] {c : ℤ → ComplexShape κ} 
   {E E' : SpectralSequence C c r₀} (f : E ⟶ E')
 
 /-- A morphism of spectral sequences which is an isomorphism on every object of the `r`th page is
-an isomorphism on every object of the `(r + 1)`st page. -/
-lemma isIso_hom_f_succ (r : ℤ) (hr : r₀ ≤ r) (hr' : r₀ ≤ r + 1)
-    (h : ∀ pq, IsIso ((f.hom r hr).f pq)) (pq : κ) :
-    IsIso ((f.hom (r + 1) hr').f pq) := by
-  have := HomologicalComplex.Hom.isIso_of_components (f.hom r hr)
-  rw [(Iso.eq_inv_comp _).mpr (f.comm r (r + 1) pq rfl hr).symm]
-  infer_instance
-
-/-- A morphism of spectral sequences which is an isomorphism on every object of the `r`th page is
 an isomorphism on every object of every page `r' ≥ r`. -/
 lemma isIso_hom_f_of_le (r : ℤ) (hr : r₀ ≤ r) (h : ∀ pq, IsIso ((f.hom r hr).f pq))
     (r' : ℤ) (hrr' : r ≤ r') (pq : κ) :
     IsIso ((f.hom r' (hr.trans hrr')).f pq) := by
   induction r', hrr' using Int.leInduction generalizing pq with
   | base => exact h pq
-  | succ r' hrr' ih => exact f.isIso_hom_f_succ r' (hr.trans hrr') _ ih pq
+  | succ r' hrr' ih =>
+    have := HomologicalComplex.Hom.isIso_of_components (f.hom r' (hr.trans hrr'))
+    rw [(Iso.eq_inv_comp _).mpr (f.comm r' (r' + 1) pq rfl (hr.trans hrr')).symm]
+    infer_instance
 
 end CategoryTheory.SpectralSequence.Hom

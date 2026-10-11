@@ -12,24 +12,13 @@ public import TauCeti.Algebra.Homology.SpectralSequence.Comparison
 /-!
 # The comparison theorem for spectral objects indexed by `EInt`
 
-Let `φ : X ⟶ Y` be a morphism of spectral objects in an abelian category. It induces maps on the
-objects `opZ^n(f, g)` (`CategoryTheory.Abelian.SpectralObject.opcyclesMapOfHom`), compatible with
-the maps of Mathlib's short exact sequences
-`0 ⟶ opZ^n(f₁, f₂ ≫ f₃) ⟶ opZ^n(f₁ ≫ f₂, f₃) ⟶ E^n(f₁, f₂, f₃) ⟶ 0`.
-
-For spectral objects indexed by `EInt`, these short exact sequences are the extensions
-`0 ⟶ F_q H^n ⟶ F_{q+1} H^n ⟶ E∞ ⟶ 0` of the filtration of the abutment `H^n(⊥ ≤ ⊤)`. By
-induction on `q`, if `φ` is an isomorphism on the objects `X.EInfty q n` for `a ≤ q < b` and the
-filtrations of `X` and `Y` in degree `n` start at `a` and end at `b`, then `φ` is an isomorphism on
-the abutments (`CategoryTheory.Abelian.SpectralObject.isIso_hom_app_abutment`). Combined with the
-stabilization of the pages and with `SpectralSequence.Hom.isIso_hom_f_of_le`, an isomorphism on
-some page of the spectral sequences gives an isomorphism on the abutments
-(`CategoryTheory.Abelian.SpectralObject.isIso_hom_app_abutment_of_isIso_page`).
-
-## Main definitions
-
-* `CategoryTheory.Abelian.SpectralObject.opcyclesMapOfHom φ f g n`: the map
-  `X.opcycles f g n ⟶ Y.opcycles f g n`.
+A morphism `φ : X ⟶ Y` of spectral objects induces maps on the objects `opZ^n(f, g)`
+(`CategoryTheory.Abelian.SpectralObject.opcyclesMapOfHom`), compatible with Mathlib's short exact
+sequences `0 ⟶ opZ^n(f₁, f₂ ≫ f₃) ⟶ opZ^n(f₁ ≫ f₂, f₃) ⟶ E^n(f₁, f₂, f₃) ⟶ 0`. For `EInt`,
+these are the extensions `0 ⟶ F_q H^n ⟶ F_{q+1} H^n ⟶ E∞ ⟶ 0` of the filtration of the abutment
+`H^n(⊥ ≤ ⊤)`; by induction on `q` and the three-lemma, an isomorphism on `E∞` gives one on the
+abutment for finite filtrations. With the stabilization of the pages, so does an isomorphism on
+some page.
 
 ## Main results
 
