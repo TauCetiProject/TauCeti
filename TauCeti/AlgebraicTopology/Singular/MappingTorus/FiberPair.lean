@@ -91,6 +91,13 @@ lemma fiberPairIncl_comp_map :
       TopCat.ofHom (incl φ) :=
   TopCat.ext fun x ↦ fiberPairIncl_apply φ x
 
+/-- The fibre inclusion into the subspace, followed by the pair map, is the usual fibre
+inclusion. -/
+@[reassoc (attr := simp)]
+lemma fiberPairIncl_comp_fiberPair_map :
+    fiberPairIncl φ ≫ (fiberPair φ).map = TopCat.ofHom (incl φ) :=
+  TopCat.ext fun x ↦ fiberPairIncl_apply φ x
+
 /-- The fibre inclusion is an isomorphism onto the fibre: it is `MappingTorus.fiberHomeomorph`. -/
 instance isIso_fiberPairIncl : IsIso (fiberPairIncl φ) := by
   have h : fiberPairIncl φ =
