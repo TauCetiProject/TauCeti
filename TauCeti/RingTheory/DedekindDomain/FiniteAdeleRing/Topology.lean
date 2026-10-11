@@ -25,6 +25,15 @@ This file supplies the topological part of the arithmetic dictionary established
 is stated without assigning a topology to either ideal carrier. The open-quotient
 statements apply to any discrete topology on those carriers.
 
+The topological theorems are in the `TauCeti` namespace. For the arithmetic maps in
+`IsDedekindDomain.FiniteAdeleRing`, use:
+
+* `TauCeti.isOpen_integralUnits` and `TauCeti.isCompact_integralUnits` for `integralUnits`;
+* `TauCeti.isLocallyConstant_toFractionalIdeal` and
+  `TauCeti.isOpenQuotientMap_toFractionalIdeal` for `toFractionalIdeal`;
+* `TauCeti.isLocallyConstant_toClassGroup` and `TauCeti.isOpenQuotientMap_toClassGroup`
+  for `toClassGroup`.
+
 ## References
 
 * J. W. S. Cassels and A. Fröhlich, eds., *Algebraic Number Theory*, Chapter II, §16.
