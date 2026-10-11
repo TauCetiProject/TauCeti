@@ -78,6 +78,8 @@ theorem mem_preprojectiveRightProjectiveGrading_piece_iff (i : Symmetrify Q) (p 
       (x : Π) ∈ preprojectiveIntegerGrade k (Q := Q) p := by
   simp only [preprojectiveRightProjectiveGrading, InternalGrading.submodule_piece,
     InternalGrading.ofDecomposition_piece]
+  -- Restricting scalars preserves the underlying subtype; membership in the comap along
+  -- its subtype map is definitionally membership of the underlying algebra element.
   exact Iff.rfl
 
 /-- Right multiplication respects the restricted path-length grading. -/
@@ -251,8 +253,8 @@ noncomputable def preprojectiveGradedVertexAugmentation (v : Q) :
 theorem preprojectiveGradedVertexAugmentation_hom (v : Q) :
     (preprojectiveGradedVertexAugmentation k v).hom = preprojectiveVertexAugmentation k v := by
   ext x
-  rw [preprojectiveVertexAugmentation_apply]
-  rfl
+  simp only [preprojectiveGradedVertexAugmentation, GradedModuleCat.cokernelπ,
+    GradedModuleCat.hom_ofHom, Submodule.mkQ_apply, preprojectiveVertexAugmentation_apply]
 
 /-- The homogeneous vectors of the vertex module are precisely the classes of homogeneous
 vectors of its vertex projective. -/

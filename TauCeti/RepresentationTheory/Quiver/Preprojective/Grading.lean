@@ -328,7 +328,7 @@ noncomputable def preprojectiveIntegerGradedAlgebra :
     GradedAlgebra (preprojectiveIntegerGrade k (Q := Q)) := by
   letI : SetLike.GradedMonoid (preprojectiveIntegerGrade k (Q := Q)) := {
     one_mem := by
-      rw [show (0 : ℤ) = (0 : ℕ) from rfl, preprojectiveIntegerGrade_natCast]
+      rw [← Nat.cast_zero, preprojectiveIntegerGrade_natCast]
       simpa only [map_one] using
         preprojectiveMk_mem_preprojectiveGrade k Q (SetLike.one_mem_graded _)
     mul_mem := fun _ _ _ _ hx hy => Graded.mul_mem_extendByZero
@@ -347,16 +347,14 @@ noncomputable abbrev preprojectiveInternalGrading :
 /-- Vertex idempotent classes have integer degree zero. -/
 theorem preprojectiveMk_vertexIdempotent_mem_preprojectiveIntegerGrade_zero (i : Symmetrify Q) :
     preprojectiveMk k Q (vertexIdempotent k i) ∈ preprojectiveIntegerGrade k (Q := Q) 0 := by
-  -- Normalize integer zero to the natural-number cast in the grading comparison.
-  rw [show (0 : ℤ) = (0 : ℕ) from rfl, preprojectiveIntegerGrade_natCast]
+  rw [← Nat.cast_zero, preprojectiveIntegerGrade_natCast]
   exact preprojectiveMk_mem_preprojectiveGrade k Q (vertexIdempotent_mem_grade_zero i)
 
 /-- Doubled arrow classes have integer degree one. -/
 theorem preprojectiveMk_ofArrow_mem_preprojectiveIntegerGrade_one {i j : Symmetrify Q}
     (b : i ⟶ j) :
     preprojectiveMk k Q (ofArrow b) ∈ preprojectiveIntegerGrade k (Q := Q) 1 := by
-  -- Normalize integer one to the natural-number cast in the grading comparison.
-  rw [show (1 : ℤ) = (1 : ℕ) from rfl, preprojectiveIntegerGrade_natCast]
+  rw [← Nat.cast_one, preprojectiveIntegerGrade_natCast]
   exact preprojectiveMk_mem_preprojectiveGrade k Q (ofArrow_mem_grade_one b)
 
 end IntegerGrade
