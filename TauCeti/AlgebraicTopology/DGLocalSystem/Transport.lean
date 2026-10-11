@@ -53,9 +53,11 @@ theorem isQuasiIso_transportLocalSystemHom {Φ : MooreLiftingFunction p} (hΦ : 
     (b : B) : DGRightModuleCat.IsQuasiIso (transportLocalSystemHom (R := R) hΦ b) := by
   let := hΦ.mulAction b
   let := hΦ.continuousSMul b
-  exact isQuasiIso_cubicalChainModuleMap (G := MooreLoopSpace B b) R (Φ.transport b) _
-    (Φ.transportHomotopyEquiv b)
-    (ContinuousMap.ext fun x ↦ congrFun (Φ.coe_transportHomotopyEquiv b) x)
+  exact isQuasiIso_of_apply_eq (G' := MooreLoopSpace B b) R (transportLocalSystemHom hΦ b)
+    (Φ.transportHomotopyEquiv b) fun x ↦ by
+      rw [transportLocalSystemHom_apply]
+      exact congrArg (fun k : C(_, _) ↦ cubicalChainModuleLinearMap R k x)
+        (ContinuousMap.ext fun y ↦ congrFun (Φ.coe_transportHomotopyEquiv b) y).symm
 
 /-- **The zigzag comparing two transitive lifting functions**: the strict quasi-isomorphisms
 `C_*(F)_{Φ₀} ← C_*(F') → C_*(F)_{Φ₁}` induced by transport, with no homotopy between `Φ₀` and

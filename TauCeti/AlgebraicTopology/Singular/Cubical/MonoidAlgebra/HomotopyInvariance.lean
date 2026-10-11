@@ -140,19 +140,30 @@ theorem cubicalChainModuleHomotopy_spec (e : Y ≃ₕ Y') (x : cubicalChainModul
         homotopyEquivChainHomotopy_spec_succ, map_add, map_add]
       abel
 
+/-- **A morphism of DG modules of chains which pushes chains forward along a homotopy equivalence
+is a quasi-isomorphism.**  The homotopy inverse and the homotopies need not be equivariant. -/
+theorem isQuasiIso_of_apply_eq {G' : Type*} [Monoid G'] [TopologicalSpace G'] [ContinuousMul G']
+    [MulAction G'ᵐᵒᵖ Y] [ContinuousSMul G'ᵐᵒᵖ Y] [MulAction G'ᵐᵒᵖ Y']
+    [ContinuousSMul G'ᵐᵒᵖ Y']
+    (φ : cubicalChainModuleDG Y G' R ⟶ cubicalChainModuleDG Y' G' R) (e : Y ≃ₕ Y')
+    (hφ : ∀ x, φ x = cubicalChainModuleLinearMap R e.toFun x) :
+    DGRightModuleHom.IsQuasiIso φ := by
+  refine DGRightModuleHom.isQuasiIso_of_homotopyInverse φ
+    (cubicalChainModuleLinearMap R e.invFun)
+    (cubicalChainModuleHomotopy R e) (cubicalChainModuleHomotopy R e.symm)
+    (cubicalChainModuleDifferential_linearMap e.invFun) (fun x ↦ ?_) (fun y ↦ ?_)
+  · rw [hφ]
+    exact cubicalChainModuleHomotopy_spec R e x
+  · rw [hφ]
+    exact cubicalChainModuleHomotopy_spec R e.symm y
+
 /-- **An equivariant homotopy equivalence induces a quasi-isomorphism** of the DG right modules
 of cubical chains.  The homotopy inverse and the homotopies need not be equivariant. -/
 theorem isQuasiIso_cubicalChainModuleMap (f : C(Y, Y'))
     (hf : ∀ (g : G) (y : Y), f (op g • y) = op g • f y) (e : Y ≃ₕ Y') (he : e.toFun = f) :
     DGRightModuleHom.IsQuasiIso (cubicalChainModuleMap R f hf) := by
   subst he
-  refine DGRightModuleHom.isQuasiIso_of_homotopyInverse _ (cubicalChainModuleLinearMap R e.invFun)
-    (cubicalChainModuleHomotopy R e) (cubicalChainModuleHomotopy R e.symm)
-    (cubicalChainModuleDifferential_linearMap e.invFun) (fun x ↦ ?_) (fun y ↦ ?_)
-  · rw [cubicalChainModuleMap_apply]
-    exact cubicalChainModuleHomotopy_spec R e x
-  · rw [cubicalChainModuleMap_apply]
-    exact cubicalChainModuleHomotopy_spec R e.symm y
+  exact isQuasiIso_of_apply_eq (G' := G) R _ e fun x ↦ cubicalChainModuleMap_apply _ hf x
 
 end Module
 
