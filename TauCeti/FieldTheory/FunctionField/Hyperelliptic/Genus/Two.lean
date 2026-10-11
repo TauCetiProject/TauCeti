@@ -88,9 +88,13 @@ theorem adjoin_genY_eq_top : (RatFunc k)⟮genY k⟯ = ⊤ := by
   rw [genY_def]
   exact IntermediateField.adjoin_root_eq_top (equationPolynomial k)
 
+/-- The field extension over `k(x)` is quadratic. -/
+theorem finrank_eq_two : Module.finrank (RatFunc k) (FunctionField k) = 2 :=
+  finrank_ratFunc_eq_two_of_sq_eq_of_odd (odd_natDegree k) (adjoin_genY_eq_top k) (genY_sq k)
+
 /-- The model is finite-dimensional over the rational function field. -/
 instance : FiniteDimensional (RatFunc k) (FunctionField k) :=
-  Module.Finite.of_basis (AdjoinRoot.powerBasis (irreducible_equationPolynomial k).ne_zero).basis
+  Module.finite_of_finrank_pos (by rw [finrank_eq_two k]; exact Nat.zero_lt_two)
 
 /-- The constructed field is an algebraic function field over `k`. -/
 theorem isFunctionField : IsFunctionField k (FunctionField k) :=
@@ -110,13 +114,6 @@ theorem genY_ne_zero : genY k ≠ 0 := by
     (algebraMap k[X] (RatFunc k) (X ^ 5 - C 1))
   rw [← equationPolynomial_def] at hroot
   simpa only [genY_def] using hroot
-
-/-- The field extension over `k(x)` is quadratic. -/
-theorem finrank_eq_two : Module.finrank (RatFunc k) (FunctionField k) = 2 := by
-  rw [(AdjoinRoot.powerBasis (irreducible_equationPolynomial k).ne_zero).finrank,
-    AdjoinRoot.powerBasis_dim]
-  conv_lhs => arg 1; rw [equationPolynomial_def]
-  exact natDegree_X_pow_sub_C
 
 /-- Away from characteristic two the quadratic model is separable over `k(x)`. -/
 instance [NeZero (2 : k)] : Algebra.IsSeparable (RatFunc k) (FunctionField k) :=
