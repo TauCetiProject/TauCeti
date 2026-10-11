@@ -133,18 +133,13 @@ private theorem integralMatrixSublattice_relIndex (P : Matrix (Fin 2) (Fin 2) �
       P.map (Int.castRingHom ℚ) := by
     ext i j
     simp [Basis.toMatrix_apply, integralMatrixBasis_apply, Pi.basisFun_repr]
-  have hunit : (unitLattice (Fin 2)).carrier =
-      Submodule.span ℤ (Set.range (Pi.basisFun ℚ (Fin 2))) := by
-    ext x
-    rw [mem_unitLattice_carrier_iff, Basis.mem_span_iff_repr_mem]
-    simp [Pi.basisFun_repr]
   have h := AddSubgroup.relIndex_eq_abs_det
     (integralMatrixSublattice P hP).carrier.toAddSubgroup
     (unitLattice (Fin 2)).carrier.toAddSubgroup
     (integralMatrixSublattice_carrier_le P hP) (integralMatrixBasis P hP)
     (Pi.basisFun ℚ (Fin 2))
     (by rw [integralMatrixSublattice_carrier, Submodule.span_int_eq_addSubgroupClosure])
-    (by rw [hunit, Submodule.span_int_eq_addSubgroupClosure])
+    (by rw [unitLattice_carrier_eq_span_basisFun, Submodule.span_int_eq_addSubgroupClosure])
   have hdet : (P.map (Int.castRingHom ℚ)).det = (P.det : ℚ) := (Int.cast_det P).symm
   rw [Basis.det_apply, hmat, hdet] at h
   have hidx : ((integralMatrixSublattice P hP).carrier.toAddSubgroup.relIndex
@@ -212,8 +207,7 @@ coordinate. -/
 @[simp] theorem mem_coordinateIndexTwoSublattice_carrier_iff (x : Fin 2 → ℚ) :
     x ∈ coordinateIndexTwoSublattice.carrier ↔
       (∃ m : ℤ, ((2 * m : ℤ) : ℚ) = x 0) ∧ ∃ n : ℤ, (n : ℚ) = x 1 := by
-  change x ∈ (integralMatrixSublattice !![2, 0; 0, 1] coordinateMatrix_det_unit).carrier ↔ _
-  rw [mem_integralMatrixSublattice_iff]
+  rw [coordinateIndexTwoSublattice, mem_integralMatrixSublattice_iff]
   constructor
   · rintro ⟨m, n, h⟩
     exact ⟨⟨m, by simpa using (h 0).symm⟩, ⟨n, by simpa using (h 1).symm⟩⟩
@@ -225,8 +219,7 @@ coordinate. -/
 @[simp] theorem mem_diagonalIndexTwoSublattice_carrier_iff (x : Fin 2 → ℚ) :
     x ∈ diagonalIndexTwoSublattice.carrier ↔
       ∃ m n : ℤ, (m : ℚ) = x 0 ∧ (n : ℚ) = x 1 ∧ Even (m + n) := by
-  change x ∈ (integralMatrixSublattice !![1, 1; 1, -1] diagonalMatrix_det_unit).carrier ↔ _
-  rw [mem_integralMatrixSublattice_iff]
+  rw [diagonalIndexTwoSublattice, mem_integralMatrixSublattice_iff]
   constructor
   · rintro ⟨m, n, h⟩
     refine ⟨m + n, m - n, ?_, ?_, ⟨m, by ring⟩⟩
