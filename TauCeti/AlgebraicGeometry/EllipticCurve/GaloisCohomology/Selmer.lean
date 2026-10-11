@@ -17,12 +17,12 @@ Let `W` be an elliptic curve over a field `K`, with Galois cohomology taken in t
 (X.4):
 
 ```text
-Ш = ker (H¹(G_K, E(Kˢ)) → ∏ᵢ H¹(G_{L i}, E((L i)ˢ))),
+Sha = ker (H¹(G_K, E(Kˢ)) → ∏ᵢ H¹(G_{L i}, E((L i)ˢ))),
 Sel_m = ker (H¹(G_K, E(Kˢ)[m]) → ∏ᵢ H¹(G_{L i}, E((L i)ˢ))).
 ```
 
 For a number field `K` and the family of its completions at all places, these are the
-Shafarevich–Tate group `Ш(E/K)` and the `m`-Selmer group `Sel_m(E/K)`. Here they are defined for
+Shafarevich–Tate group `Sha(E/K)` and the `m`-Selmer group `Sel_m(E/K)`. Here they are defined for
 an arbitrary family, as `WeierstrassCurve.shafarevichTateGroup` and `WeierstrassCurve.selmerGroup`.
 The embeddings are genuine data: restriction to `L i` is pullback along the homomorphism
 `G_{L i} → G_K` that `τ i` induces, and there is no such homomorphism without a choice of
@@ -37,7 +37,7 @@ restriction with the Kummer maps and from the local `m`-descent sequence.
 The main result is the **`m`-descent sequence** (Silverman X.4.2)
 
 ```text
-0 ⟶ E(K) ⧸ m E(K) ⟶ Sel_m ⟶ Ш[m] ⟶ 0,
+0 ⟶ E(K) ⧸ m E(K) ⟶ Sel_m ⟶ Sha[m] ⟶ 0,
 ```
 
 obtained by restricting the global sequence `0 → E(K) ⧸ m E(K) → H¹(G_K, E[m]) → H¹(G_K, E)[m] → 0`
@@ -50,7 +50,7 @@ of `TauCeti/AlgebraicGeometry/EllipticCurve/GaloisCohomology/Descent.lean` to th
 * `WeierstrassCurve.selmerGroup`: the classes in `H¹(G_K, E(Kˢ)[m])` whose image in
   `H¹(G_K, E(Kˢ))` lies in the Shafarevich–Tate group.
 * `WeierstrassCurve.kummerSelmerMap`: the Kummer map `E(K) ⧸ m E(K) → Sel_m`.
-* `WeierstrassCurve.selmerShaMap`: the map `Sel_m → Ш[m]`.
+* `WeierstrassCurve.selmerShaMap`: the map `Sel_m → Sha[m]`.
 
 ## Main results
 
@@ -60,7 +60,7 @@ of `TauCeti/AlgebraicGeometry/EllipticCurve/GaloisCohomology/Descent.lean` to th
 * `WeierstrassCurve.kummerSelmerMap_injective`,
   `WeierstrassCurve.exact_kummerSelmerMap_selmerShaMap` and
   `WeierstrassCurve.selmerShaMap_surjective`: the `m`-descent sequence
-  `0 → E(K) ⧸ m E(K) → Sel_m → Ш[m] → 0` is exact.
+  `0 → E(K) ⧸ m E(K) → Sel_m → Sha[m] → 0` is exact.
 
 ## References
 
@@ -83,7 +83,7 @@ variable {K : Type*} [Field K] (W : WeierstrassCurve K) {ι : Type*} {L : ι →
 
 /-- **The Shafarevich–Tate group** of `W` relative to the family of extensions `L i` with
 embeddings `τ i`: the classes in `H¹(G_K, E(Kˢ))` whose restriction to every `L i` vanishes. For a
-number field and the family of its completions at all places this is `Ш(E/K)` (Silverman X.4). -/
+number field and the family of its completions at all places this is `Sha(E/K)` (Silverman X.4). -/
 def shafarevichTateGroup : AddSubgroup (H1 (AbsoluteGaloisGroup K) W.PointCoeff) :=
   ⨅ i, (W.pointRes (τ i)).ker
 
@@ -159,7 +159,7 @@ theorem kummerSelmerMap_injective : Function.Injective (W.kummerSelmerMap τ hm)
 
 omit [DecidableEq K] [W.IsElliptic] in
 variable (m) in
-/-- **The map `Sel_m → Ш[m]`**, the second map of the `m`-descent sequence: the map induced by
+/-- **The map `Sel_m → Sha[m]`**, the second map of the `m`-descent sequence: the map induced by
 the inclusion `E(Kˢ)[m] → E(Kˢ)`, restricted to the Selmer group. -/
 def selmerShaMap :
     W.selmerGroup τ m →+ AddSubgroup.torsionBy (W.shafarevichTateGroup τ) m where
@@ -181,7 +181,7 @@ theorem coe_selmerShaMap (c : W.selmerGroup τ m) :
       explicitCoeff1 _ _ (W.torsionCoeffIncl m) continuous_of_discreteTopology c :=
   (rfl)
 
-/-- **The `m`-descent sequence is exact at `Sel_m`**: the kernel of `Sel_m → Ш[m]` is the image of
+/-- **The `m`-descent sequence is exact at `Sel_m`**: the kernel of `Sel_m → Sha[m]` is the image of
 `E(K) ⧸ m E(K)` under the Kummer map. -/
 theorem exact_kummerSelmerMap_selmerShaMap :
     Function.Exact (W.kummerSelmerMap τ hm) (W.selmerShaMap τ m) := by
@@ -197,7 +197,7 @@ theorem exact_kummerSelmerMap_selmerShaMap :
 
 omit [DecidableEq K] in
 include hm in
-/-- **`Sel_m → Ш[m]` is surjective**, the right end of the `m`-descent sequence: a class of `Ш`
+/-- **`Sel_m → Sha[m]` is surjective**, the right end of the `m`-descent sequence: a class of `Sha`
 killed by `m` lifts to `H¹(G_K, E(Kˢ)[m])` by the global descent sequence, and every lift is
 Selmer. -/
 theorem selmerShaMap_surjective : Function.Surjective (W.selmerShaMap τ m) := by
