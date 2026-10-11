@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.PDeriv
+public import Mathlib.Algebra.Polynomial.Bivariate
+public import Mathlib.FieldTheory.Minpoly.IsIntegrallyClosed
 public import Mathlib.RingTheory.DedekindDomain.Dvr
 public import Mathlib.RingTheory.KrullDimension.NonZeroDivisors
 public import Mathlib.RingTheory.KrullDimension.Polynomial
@@ -38,6 +40,8 @@ of the function field over `k(x)` are computed from `∂f/∂Y`.
   `A ⧸ (f)` at a prime over `Q` is a regular local ring when `A_Q` is regular and `D f ∉ Q`.
 * `MvPolynomial.isDedekindDomain_quotient_span_singleton`: the coordinate ring of a smooth
   irreducible affine plane curve over a field is a Dedekind domain.
+* `MvPolynomial.isIntegrallyClosed_adjoin_singleton`: if the minimal polynomial of `y` over `k[X]`
+  is the equation of a smooth affine plane curve, then `k[X][y]` is integrally closed.
 
 ## References
 
@@ -121,5 +125,28 @@ theorem isDedekindDomain_quotient_span_singleton {f : MvPolynomial (Fin 2) k} (h
   rw [TauCeti.IsRegularLocalRing.isDiscreteValuationRing_iff_ringKrullDim_eq_one,
     IsLocalization.AtPrime.ringKrullDim_eq_height P, hheight]
   rfl
+
+open scoped Polynomial in
+/-- **The coordinate ring `k[x][y]` of a smooth affine plane curve is integrally closed.** Let `y`
+be integral over `k[X]`, and suppose its minimal polynomial, read as a polynomial `f ∈ k[X, Y]`,
+has `f`, `∂f/∂X`, `∂f/∂Y` generating the unit ideal. Then `k[X][y] ≅ k[X, Y] ⧸ (f)` is integrally
+closed. -/
+theorem isIntegrallyClosed_adjoin_singleton {S : Type*} [CommRing S] [IsDomain S] [Algebra k[X] S]
+    [Module.IsTorsionFree k[X] S] {f : MvPolynomial (Fin 2) k} {y : S}
+    (hy : IsIntegral k[X] y) (hf : Polynomial.Bivariate.equivMvPolynomial k (minpoly k[X] y) = f)
+    (hsm : span {f, pderiv 0 f, pderiv 1 f} = ⊤) :
+    IsIntegrallyClosed (Algebra.adjoin k[X] {y}) := by
+  let e₁ : Algebra.adjoin k[X] {y} ≃ₐ[k[X]] k[X][X] ⧸ span {minpoly k[X] y} :=
+    (Subalgebra.equivOfEq _ _ (Algebra.adjoin_singleton_eq_range_aeval k[X] y)).trans
+      ((Ideal.quotientKerEquivRange (Polynomial.aeval y)).symm.trans
+        (Ideal.quotientEquivAlgOfEq k[X] (minpoly.ker_eval hy)))
+  let e₂ : k[X][X] ⧸ span {minpoly k[X] y} ≃+* MvPolynomial (Fin 2) k ⧸ span {f} :=
+    Ideal.quotientEquiv _ _ (Polynomial.Bivariate.equivMvPolynomial k).toRingEquiv <| by
+      rw [Ideal.map_span, Set.image_singleton]
+      exact congrArg (fun p ↦ span {p}) hf.symm
+  have := isDedekindDomain_quotient_span_singleton
+    (hf ▸ (MulEquiv.irreducible_iff (Polynomial.Bivariate.equivMvPolynomial k)).mpr
+      (minpoly.irreducible hy)) hsm
+  exact .of_equiv (e₁.toRingEquiv.trans e₂).symm
 
 end MvPolynomial
