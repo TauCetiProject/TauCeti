@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.LeftInverse
 
 /-!
 # Derivatives of maps that factor through a projection
@@ -26,6 +27,8 @@ fields on a product manifold.
   through a projection.
 * `TauCeti.mvfderiv_comp_fst_apply` and `TauCeti.mvfderiv_comp_snd_apply`: the same for
   vector-valued functions, applied to a tangent vector.
+* `MDifferentiableAt.hasLeftInverse_mfderiv_fst_prod_iff`: the differential of a
+  parameter-preserving map splits exactly when the differential of its slice splits.
 -/
 
 public section
@@ -101,3 +104,39 @@ theorem mvfderiv_comp_snd_apply (g : N → F) (p : M × N) (v : TangentSpace (I.
   rfl
 
 end TauCeti
+
+open scoped Manifold
+
+section ParameterPreserving
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E E' F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {H H' G : Type*} [TopologicalSpace H] [TopologicalSpace H'] [TopologicalSpace G]
+  {I : ModelWithCorners 𝕜 E H} {I' : ModelWithCorners 𝕜 E' H'}
+  {J : ModelWithCorners 𝕜 F G}
+  {M M' N : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [TopologicalSpace M'] [ChartedSpace H' M'] [TopologicalSpace N] [ChartedSpace G N]
+  {f : M × M' → N} {p : M × M'}
+
+/-- The differential of a parameter-preserving map has a continuous linear left inverse
+if and only if the differential of its slice at the fixed parameter does.
+This holds for manifolds with corners and infinite-dimensional models. -/
+theorem MDifferentiableAt.hasLeftInverse_mfderiv_fst_prod_iff
+    (hf : MDifferentiableAt (I.prod I') J f p) :
+    (mfderiv (I.prod I') (I.prod J) (fun q => (q.1, f q)) p).HasLeftInverse ↔
+      (mfderiv I' J (fun x => f (p.1, x)) p.2).HasLeftInverse := by
+  rw [mfderiv_prodMk mdifferentiableAt_fst hf, mfderiv_fst]
+  -- Product tangent spaces use the model product, but their instance definitions
+  -- require reducible unfolding to apply the operator-level product criterion.
+  erw [ContinuousLinearMap.hasLeftInverse_fst_prod_iff]
+  have hι : MDifferentiableAt I' (I.prod I') (fun x : M' => (p.1, x)) p.2 :=
+    mdifferentiableAt_const.prodMk mdifferentiableAt_id
+  have hslice := mfderiv_comp_of_eq hf hι (Prod.mk.eta (p := p))
+  rw [mfderiv_prod_right] at hslice
+  -- The composite with the fixed-parameter inclusion is precisely the slice; the
+  -- tangent-space indices at `p` and `(p.1, p.2)` agree by the product eta law.
+  exact (congrArg ContinuousLinearMap.HasLeftInverse hslice.symm).to_iff
+
+end ParameterPreserving

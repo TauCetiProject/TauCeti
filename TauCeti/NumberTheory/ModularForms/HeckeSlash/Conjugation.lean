@@ -48,6 +48,8 @@ variable (k : ℤ) {Δ : Submonoid (GL (Fin 2) ℚ)} {Γ₁ Γ₂ : Subgroup (GL
   (D : HeckeCoset Δ Γ₁ Γ₂) [Finite (DecompQuotient Γ₂ Γ₁ (D.out : GL (Fin 2) ℚ)⁻¹)]
   {g : GL (Fin 2) ℚ}
 
+attribute [local instance] fintypeDecompQuotient
+
 /-- **The slash by an element of the normalizers commutes with a Hecke operator whose double
 coset it fixes.** If `g` normalizes `Γ₁` and `Γ₂` and `g⁻¹ δ g ∈ Γ₁ δ Γ₂`, where `δ` represents
 `D`, then for every `Γ₁`-invariant `f`,
@@ -63,7 +65,6 @@ theorem heckeSlashSum_slash_of_mem_normalizer
     (f : ℍ → ℂ) (hf : ∀ γ ∈ Γ₁, f ∣[k] γ = f) :
     heckeSlashSum k D f ∣[k] g = heckeSlashSum k D (f ∣[k] g) := by
   classical
-  let _ : Fintype (DecompQuotient Γ₂ Γ₁ (D.out : GL (Fin 2) ℚ)⁻¹) := Fintype.ofFinite _
   have hdc : doubleCoset (g⁻¹ * D.out * g) (Γ₁ : Set (GL (Fin 2) ℚ)) Γ₂ =
       doubleCoset (D.out : GL (Fin 2) ℚ) (Γ₁ : Set (GL (Fin 2) ℚ)) Γ₂ :=
     doubleCoset_eq_of_mem hD

@@ -58,6 +58,11 @@ nothing more.
 * `TauCeti.Octonion.self_mul_conj` and `TauCeti.Octonion.conj_mul_self`:
   `x * conj x = conj x * x = N x • 1`.
 * `TauCeti.Octonion.norm_mul`: the norm is **multiplicative**, so `𝕆` is a composition algebra.
+* `TauCeti.Octonion.trace_mul_assoc`: the trace of a triple product is independent of bracketing.
+* `TauCeti.Octonion.polar_normQuadraticForm_mul_left` and
+  `TauCeti.Octonion.polar_normQuadraticForm_mul_right`: multiplication is adjoint to multiplication
+  by the conjugate for the polar form of the norm. The corresponding associated-form identities
+  require that `2` be invertible.
 * `TauCeti.Octonion.normQuadraticForm`: the norm, bundled as a `QuadraticForm`, so that Mathlib's
   `QuadraticMap.polar` API supplies the associated symmetric bilinear form. That form is visible
   inside the algebra as `TauCeti.Octonion.mul_conj_add_mul_conj`,
@@ -376,6 +381,14 @@ theorem trace_mul_comm (x y : Octonion R) : trace (x * y) = trace (y * x) := by
   simp [dotProduct_comm, mul_comm]
   ring
 
+/-- The trace of a triple octonion product is independent of its bracketing. -/
+theorem trace_mul_assoc (x y z : Octonion R) : trace (x * y * z) = trace (x * (y * z)) := by
+  simp only [trace_apply, mul_a, mul_b, mul_v, mul_w, add_dotProduct, sub_dotProduct,
+    dotProduct_add, dotProduct_sub, smul_dotProduct, dotProduct_smul, smul_eq_mul]
+  rw [dotProduct_comm (x.w ⨯₃ y.w) z.w, dotProduct_comm (x.v ⨯₃ y.v) z.v,
+    triple_product_permutation z.w x.w y.w, triple_product_permutation z.v x.v y.v]
+  ring
+
 /-- **The norm** `⟨a, b, v, w⟩ ↦ a * b - v ⬝ᵥ w` of a vector matrix: the determinant of the matrix,
 and the norm form of the composition algebra `𝕆`. -/
 def norm (x : Octonion R) : R := x.a * x.b - x.v ⬝ᵥ x.w
@@ -469,6 +482,42 @@ theorem trace_mul_conj (x y : Octonion R) :
     trace (x * conj y) = QuadraticMap.polar (normQuadraticForm R) x y := by
   simp [polar_normQuadraticForm, dotProduct_comm]
   ring
+
+/-- Left multiplication by `x` is adjoint to left multiplication by `conj x` for the polar
+form of the norm. This identity does not require that `2` be invertible. -/
+theorem polar_normQuadraticForm_mul_left (x y z : Octonion R) :
+    QuadraticMap.polar (normQuadraticForm R) (x * y) z =
+      QuadraticMap.polar (normQuadraticForm R) y (conj x * z) := by
+  rw [← trace_mul_conj, ← trace_mul_conj, conj_mul, conj_conj]
+  calc
+    trace (x * y * conj z) = trace (x * (y * conj z)) := trace_mul_assoc _ _ _
+    _ = trace ((y * conj z) * x) := trace_mul_comm _ _
+    _ = trace (y * (conj z * x)) := trace_mul_assoc _ _ _
+
+/-- Right multiplication by `y` is adjoint to right multiplication by `conj y` for the polar
+form of the norm. This identity does not require that `2` be invertible. -/
+theorem polar_normQuadraticForm_mul_right (x y z : Octonion R) :
+    QuadraticMap.polar (normQuadraticForm R) (x * y) z =
+      QuadraticMap.polar (normQuadraticForm R) x (z * conj y) := by
+  rw [← trace_mul_conj, ← trace_mul_conj, conj_mul, conj_conj, trace_mul_assoc]
+
+/-- Left multiplication and conjugate left multiplication are adjoint for the associated
+bilinear form of the norm when `2` is invertible. -/
+theorem associated_normQuadraticForm_mul_left [Invertible (2 : R)] (x y z : Octonion R) :
+    QuadraticMap.associated (normQuadraticForm R) (x * y) z =
+      QuadraticMap.associated (normQuadraticForm R) y (conj x * z) := by
+  simpa only [QuadraticMap.associated_apply, QuadraticMap.polar] using
+    congrArg (fun t : R => ⅟(2 : Module.End R R) • t)
+      (polar_normQuadraticForm_mul_left x y z)
+
+/-- Right multiplication and conjugate right multiplication are adjoint for the associated
+bilinear form of the norm when `2` is invertible. -/
+theorem associated_normQuadraticForm_mul_right [Invertible (2 : R)] (x y z : Octonion R) :
+    QuadraticMap.associated (normQuadraticForm R) (x * y) z =
+      QuadraticMap.associated (normQuadraticForm R) x (z * conj y) := by
+  simpa only [QuadraticMap.associated_apply, QuadraticMap.polar] using
+    congrArg (fun t : R => ⅟(2 : Module.End R R) • t)
+      (polar_normQuadraticForm_mul_right x y z)
 
 /-- **The polar form of the norm is visible inside the algebra**: `x * conj y + y * conj x` is the
 scalar `QuadraticMap.polar (normQuadraticForm R) x y · 1`. Together with

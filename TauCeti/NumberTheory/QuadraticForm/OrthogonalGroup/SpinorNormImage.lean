@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.CompactOpen
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.LowRank
+public import TauCeti.NumberTheory.Padics.Basic
 import Mathlib.NumberTheory.Padics.LocalField
 import TauCeti.Algebra.Group.PowMonoidHom
 import TauCeti.NumberTheory.LocalField.PowerSubgroup.Open
@@ -48,10 +49,6 @@ noncomputable section
 
 /-- The canonical invertibility witness for two over the rationals. -/
 local instance spinorNormImageInvertibleTwoRat : Invertible (2 : ℚ) :=
-  invertibleOfNonzero two_ne_zero
-
-/-- The canonical invertibility witness for two over a `p`-adic field. -/
-local instance spinorNormImageInvertibleTwoPadic (p : Nat.Primes) : Invertible (2 : ℚ_[p]) :=
   invertibleOfNonzero two_ne_zero
 
 variable {V : Type*} [AddCommGroup V] [Module ℚ V] [FiniteDimensional ℚ V]

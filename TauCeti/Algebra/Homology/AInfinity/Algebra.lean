@@ -642,103 +642,10 @@ theorem m_one_m_three (𝒜 : AInfinityAlgebra R A) (x y z : A) :
 theorem m_two_assoc_of_m_three_eq_zero (𝒜 : AInfinityAlgebra R A) (h₃ : 𝒜.m 3 = 0)
     (x y z : A) :
     𝒜.m 2 ![𝒜.m 2 ![x, y], z] = 𝒜.m 2 ![x, 𝒜.m 2 ![y, z]] := by
-  -- Package the left- and right-associated products as trilinear maps. It then suffices to
-  -- compare them on homogeneous first and second inputs via `stasheff_arity_three`.
-  let L : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
-    (((𝒜.m 2).domDomCongr (Fin.oneSlotEquiv 0 1).symm).oneSlot (𝒜.m 2)).domDomCongr
-      (Fin.blockEquiv 0 2 1)
-  let Q : MultilinearMap R (fun _ : Fin 3 ↦ A) A :=
-    (((𝒜.m 2).domDomCongr (Fin.oneSlotEquiv 1 0).symm).oneSlot (𝒜.m 2)).domDomCongr
-      (Fin.blockEquiv 1 2 0)
-  have L_apply (a b c : A) : L ![a, b, c] = 𝒜.m 2 ![𝒜.m 2 ![a, b], c] := by
-    simp only [L, MultilinearMap.domDomCongr_apply, MultilinearMap.oneSlot_apply]
-    congr 1
-    funext i
-    obtain ⟨j, rfl⟩ := (Fin.oneSlotEquiv 0 1).surjective i
-    rcases j with j | (j | j)
-    · exact Fin.elim0 j
-    · rcases j with ⟨⟩
-      simp only [Equiv.symm_apply_apply, Sum.elim_inr, Sum.elim_inl]
-      have hout : Fin.oneSlotEquiv 0 1 (.inr (.inl ())) = (0 : Fin 2) := by
-        apply Fin.ext
-        exact Fin.oneSlotEquiv_middle_val 0 1
-      rw [hout]
-      -- Expose the inner tuple selected by `oneSlot` so that `blockEquiv` can be evaluated
-      -- coordinatewise; simplification does not unfold vector notation to this form.
-      change (𝒜.m 2) (fun j ↦ ![a, b, c] (Fin.blockEquiv 0 2 1 (.inr (.inl j)))) =
-        𝒜.m 2 ![a, b]
-      congr 1
-      funext k
-      have hi : Fin.blockEquiv 0 2 1 (.inr (.inl k)) =
-          ⟨k, by omega⟩ := by
-        apply Fin.ext
-        simpa only [Nat.zero_add] using Fin.blockEquiv_middle_val 0 2 1 k
-      rw [hi]
-      fin_cases k <;> rfl
-    · simp only [Equiv.symm_apply_apply, Sum.elim_inr]
-      have hout : Fin.oneSlotEquiv 0 1 (.inr (.inr j)) = ⟨1 + j, by omega⟩ := by
-        apply Fin.ext
-        exact Fin.oneSlotEquiv_suffix_val 0 1 j
-      have hin : Fin.blockEquiv 0 2 1 (.inr (.inr j)) = ⟨2 + j, by omega⟩ := by
-        apply Fin.ext
-        exact Fin.blockEquiv_suffix_val 0 2 1 j
-      rw [hout, hin]
-      fin_cases j
-      rfl
-  have Q_apply (a b c : A) : Q ![a, b, c] = 𝒜.m 2 ![a, 𝒜.m 2 ![b, c]] := by
-    simp only [Q, MultilinearMap.domDomCongr_apply, MultilinearMap.oneSlot_apply]
-    congr 1
-    funext i
-    obtain ⟨j, rfl⟩ := (Fin.oneSlotEquiv 1 0).surjective i
-    rcases j with j | (j | j)
-    · simp only [Equiv.symm_apply_apply, Sum.elim_inl]
-      have hout : Fin.oneSlotEquiv 1 0 (.inl j) = ⟨j, by omega⟩ := by
-        apply Fin.ext
-        exact Fin.oneSlotEquiv_inl_val 1 0 j
-      have hin : Fin.blockEquiv 1 2 0 (.inl j) = ⟨j, by omega⟩ := by
-        apply Fin.ext
-        exact Fin.blockEquiv_inl_val 1 2 0 j
-      rw [hout, hin]
-      fin_cases j
-      rfl
-    · rcases j with ⟨⟩
-      simp only [Equiv.symm_apply_apply, Sum.elim_inr, Sum.elim_inl]
-      have hout : Fin.oneSlotEquiv 1 0 (.inr (.inl ())) = (1 : Fin 2) := by
-        apply Fin.ext
-        exact Fin.oneSlotEquiv_middle_val 1 0
-      rw [hout]
-      -- As above, expose the inner tuple; the coordinate proof below identifies this middle
-      -- block with the final two entries of the original tuple.
-      change (𝒜.m 2) (fun j ↦ ![a, b, c] (Fin.blockEquiv 1 2 0 (.inr (.inl j)))) =
-        𝒜.m 2 ![b, c]
-      congr 1
-      funext k
-      have hi : Fin.blockEquiv 1 2 0 (.inr (.inl k)) = ⟨1 + k, by omega⟩ := by
-        apply Fin.ext
-        exact Fin.blockEquiv_middle_val 1 2 0 k
-      rw [hi]
-      fin_cases k <;> rfl
-    · exact Fin.elim0 j
-  have hcurry : L.curryRight = Q.curryRight := by
-    apply InternalGrading.multilinearMap_ext (fun _ ↦ 𝒜.grading)
-    intro d a ha
-    ext c
-    have h := 𝒜.stasheff_arity_three (a 0) (a 1) c (d 0) (d 1) (ha 0) (ha 1)
-    rw [h₃] at h
-    have hz : 𝒜.m 1 ![(0 : A)] = 0 := (𝒜.m 1).map_coord_zero 0 rfl
-    simp only [MultilinearMap.curryRight_apply]
-    have hac : Fin.snoc a c = ![a 0, a 1, c] := by
-      funext i
-      fin_cases i <;> rfl
-    rw [hac]
-    rw [L_apply, Q_apply]
-    apply sub_eq_zero.mp
-    simpa only [_root_.zero_apply, hz, smul_zero, add_zero, zero_add] using h
-  have hLQ : L = Q := by
-    rw [← MultilinearMap.uncurry_curryRight L, ← MultilinearMap.uncurry_curryRight Q,
-      hcurry]
-  rw [← L_apply, ← Q_apply]
-  exact MultilinearMap.congr_fun hLQ ![x, y, z]
+  have h := 𝒜.m_one_m_three x y z
+  have hz : 𝒜.m 1 ![(0 : A)] = 0 := (𝒜.m 1).map_coord_zero 0 rfl
+  simp only [h₃, _root_.zero_apply, hz, sub_zero] at h
+  exact (sub_eq_zero.mp h.symm).symm
 
 end AInfinityAlgebra
 

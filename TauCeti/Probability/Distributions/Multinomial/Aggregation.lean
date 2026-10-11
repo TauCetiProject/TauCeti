@@ -61,7 +61,7 @@ private theorem inner_multinomialToEuclidean_funOnFinite_map (f : ι → κ) (k 
   calc
     _ = ∑ j, ∑ i with f i = j, (k i : ℝ) * t (f i) := by
       apply Finset.sum_congr rfl
-      intro j hj
+      intro j _
       apply Finset.sum_congr rfl
       intro i hi
       rw [(Finset.mem_filter.mp hi).2, mul_comm]

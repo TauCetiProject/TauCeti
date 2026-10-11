@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.Completion
 public import Mathlib.Analysis.Normed.Unbundled.RingSeminorm
 public import TauCeti.Analysis.Normed.Ring.Completion
-public import TauCeti.RingTheory.Huber.Completion
+public import TauCeti.RingTheory.Huber.Completion.Basic
 public import TauCeti.RingTheory.Huber.Normed
 public import TauCeti.RingTheory.Valuation.ExtendToLocalization
 public import TauCeti.RingTheory.WittVector.GaussValuation
@@ -63,7 +63,8 @@ extension to `B^I`. Hence the power-bounded elements of `B^I` are exactly its un
 * `TauCeti.WittVector.isPseudoUniformizer_teichmuller_intervalRing` : `[ϖ]` is a pseudouniformiser
   of `B^I`.
 * `TauCeti.WittVector.coe_powerBoundedSubring_intervalRing` : the power-bounded subring of `B^I`
-  is its unit ball `B^{I,+}`.
+  is its unit ball `B^{I,+}`; `TauCeti.WittVector.IntervalLocalization.coe_powerBoundedSubring` is
+  the same statement on `𝕎 O[1/(p [ϖ])]`.
 * `TauCeti.WittVector.isUniform_intervalRing` : `B^I` is uniform.
 * `TauCeti.WittVector.continuous_algebraMap_intervalRing` : `𝕎 O → B^I` is continuous for the
   `(p, [ϖ])`-adic topology on `𝕎 O`.
@@ -277,6 +278,16 @@ instance instIsTateRing : IsTateRing (IntervalLocalization p hv hϖ hϖ' hρ₁ 
 theorem isPowMul_norm : IsPowMul (‖·‖ : IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂ → ℝ) :=
   fun x n _ ↦ by
     simp only [norm_def, map_pow, ← NNReal.coe_pow, ← NNReal.coe_max, (pow_left_mono n).map_max]
+
+/-- **The power-bounded elements of `𝕎 O[1/(p [ϖ])]` are the unit ball of `λ_I`**, since `λ_I` is
+power-multiplicative and `p` is a unit of norm less than one. -/
+theorem coe_powerBoundedSubring :
+    (powerBoundedSubring (IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂) :
+      Set (IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂)) = Metric.closedBall 0 1 :=
+  IsPseudoUniformizer.coe_powerBoundedSubring_eq_closedBall
+    (IsPseudoUniformizer.of_norm_lt_one (isUnit_natCast p hv hϖ hϖ' hρ₁ hρ₂)
+      (norm_natCast_lt_one p hv hϖ hϖ' hρ₁ hρ₂))
+    (isPowMul_norm p hv hϖ hϖ' hρ₁ hρ₂)
 
 /-- Scalar multiplication by `𝕎 O` is uniformly continuous, so that the `𝕎 O`-algebra structure
 extends to the completion `B^I`. -/

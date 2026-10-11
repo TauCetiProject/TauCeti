@@ -82,6 +82,9 @@ addition, exactly as in the ring case.
   with the composite taken in either order.
 * `TauCeti.comp_mem_jacobsonRadical_left` and `TauCeti.comp_mem_jacobsonRadical_right`: the
   radical is a **two-sided ideal** of the category.
+* `TauCeti.mem_jacobsonRadical_biproduct_left_iff` and
+  `TauCeti.mem_jacobsonRadical_biproduct_right_iff`: radical membership for a finite biproduct
+  is checked componentwise in either argument.
 * `TauCeti.jacobsonRadical_self_eq_jacobson`: on a single object the radical is the **Jacobson
   radical of the endomorphism ring**, `Ring.jacobson (End X)`.
 * `TauCeti.mem_jacobsonRadical_iff_not_isIso`: between objects with local endomorphism rings, the
@@ -257,6 +260,36 @@ theorem comp_mem_jacobsonRadical_right {X Y Z : C} {f : X ⟶ Y}
   rw [Category.assoc]
   exact hf (h ≫ g)
 
+open CategoryTheory.Limits in
+/-- A morphism from a finite biproduct is radical exactly when each restriction to a summand
+is radical. -/
+theorem mem_jacobsonRadical_biproduct_left_iff {J : Type*} [Finite J]
+    (P : J → C) [HasBiproduct P] {Y : C} {f : ⨁ P ⟶ Y} :
+    f ∈ jacobsonRadical (⨁ P) Y ↔ ∀ j, biproduct.ι P j ≫ f ∈ jacobsonRadical (P j) Y := by
+  classical
+  let := Fintype.ofFinite J
+  refine ⟨fun hf j ↦ comp_mem_jacobsonRadical_left _ hf, fun hf ↦ ?_⟩
+  have heq : f = ∑ j, biproduct.π P j ≫ biproduct.ι P j ≫ f := by
+    simp [← Category.assoc, ← Preadditive.sum_comp, biproduct.total]
+  rw [heq]
+  exact (jacobsonRadical (⨁ P) Y).sum_mem fun j _ ↦
+    comp_mem_jacobsonRadical_left _ (hf j)
+
+open CategoryTheory.Limits in
+/-- A morphism into a finite biproduct is radical exactly when each projection to a summand
+is radical. -/
+theorem mem_jacobsonRadical_biproduct_right_iff {J : Type*} [Finite J]
+    (P : J → C) [HasBiproduct P] {Y : C} {f : Y ⟶ ⨁ P} :
+    f ∈ jacobsonRadical Y (⨁ P) ↔ ∀ j, f ≫ biproduct.π P j ∈ jacobsonRadical Y (P j) := by
+  classical
+  let := Fintype.ofFinite J
+  refine ⟨fun hf j ↦ comp_mem_jacobsonRadical_right hf _, fun hf ↦ ?_⟩
+  have heq : f = ∑ j, (f ≫ biproduct.π P j) ≫ biproduct.ι P j := by
+    simp [Category.assoc, ← Preadditive.comp_sum, biproduct.total]
+  rw [heq]
+  exact (jacobsonRadical Y (⨁ P)).sum_mem fun j _ ↦
+    comp_mem_jacobsonRadical_right (hf j) _
+
 /-! ### On a single object: the Jacobson radical of the endomorphism ring -/
 
 /-- **On a single object the radical is the Jacobson radical of the endomorphism ring**, in
@@ -298,6 +331,26 @@ theorem id_eq_zero_of_isIso_of_mem_jacobsonRadical {X Y : C} {f : X ⟶ Y}
   rw [IsIso.hom_inv_id, sub_self] at h
   exact Limits.isIsoZeroSelfEquiv X h
 
+/-- A split monomorphism in the radical has a zero source: composing with its retraction
+puts the identity in the radical. -/
+theorem isZero_of_isSplitMono_of_mem_jacobsonRadical {X Y : C} {f : X ⟶ Y}
+    (hf : f ∈ jacobsonRadical X Y) [IsSplitMono f] : Limits.IsZero X := by
+  have hmem : 𝟙 X ∈ jacobsonRadical X X := by
+    rw [← IsSplitMono.id f]
+    exact comp_mem_jacobsonRadical_right hf (retraction f)
+  exact (Limits.IsZero.iff_id_eq_zero X).mpr
+    (id_eq_zero_of_isIso_of_mem_jacobsonRadical hmem)
+
+/-- A split epimorphism in the radical has a zero target: composing with its section
+puts the identity in the radical. -/
+theorem isZero_of_isSplitEpi_of_mem_jacobsonRadical {X Y : C} {f : X ⟶ Y}
+    (hf : f ∈ jacobsonRadical X Y) [IsSplitEpi f] : Limits.IsZero Y := by
+  have hmem : 𝟙 Y ∈ jacobsonRadical Y Y := by
+    rw [← IsSplitEpi.id f]
+    exact comp_mem_jacobsonRadical_left (section_ f) hf
+  exact (Limits.IsZero.iff_id_eq_zero Y).mpr
+    (id_eq_zero_of_isIso_of_mem_jacobsonRadical hmem)
+
 /-- **A radical morphism out of an object with a nonzero identity is not an isomorphism.** -/
 theorem not_isIso_of_mem_jacobsonRadical {X Y : C} {f : X ⟶ Y} (hX : 𝟙 X ≠ 0)
     (hf : f ∈ jacobsonRadical X Y) : ¬ IsIso f :=
@@ -328,10 +381,8 @@ retraction of a radical `f` exhibits `𝟙 X` itself as radical, which forces `�
 theorem mem_jacobsonRadical_iff_not_isSplitMono {f : X ⟶ Y} :
     f ∈ jacobsonRadical X Y ↔ ¬ IsSplitMono f := by
   refine ⟨fun hf hsm => ?_, fun hf g => ?_⟩
-  · have hmem : 𝟙 X ∈ jacobsonRadical X X := by
-      rw [← IsSplitMono.id f]
-      exact comp_mem_jacobsonRadical_right hf (retraction f)
-    exact id_ne_zero X (id_eq_zero_of_isIso_of_mem_jacobsonRadical hmem)
+  · exact id_ne_zero X ((Limits.IsZero.iff_id_eq_zero X).mp
+      (isZero_of_isSplitMono_of_mem_jacobsonRadical hf))
   · obtain ⟨e, he⟩ : ∃ e : End X, e = f ≫ g := ⟨f ≫ g, rfl⟩
     have hnu : ¬ IsUnit e := fun hu => by
       have : IsIso (f ≫ g) := he ▸ (isUnit_iff_isIso e).1 hu
@@ -349,10 +400,8 @@ the target is constrained, and the defining condition is read in its left-hand f
 theorem mem_jacobsonRadical_iff_not_isSplitEpi {f : X ⟶ Y} :
     f ∈ jacobsonRadical X Y ↔ ¬ IsSplitEpi f := by
   refine ⟨fun hf hse => ?_, fun hf => mem_jacobsonRadical_iff_isIso_id_sub_comp_left.2 fun g => ?_⟩
-  · have hmem : 𝟙 Y ∈ jacobsonRadical Y Y := by
-      rw [← IsSplitEpi.id f]
-      exact comp_mem_jacobsonRadical_left (section_ f) hf
-    exact id_ne_zero Y (id_eq_zero_of_isIso_of_mem_jacobsonRadical hmem)
+  · exact id_ne_zero Y ((Limits.IsZero.iff_id_eq_zero Y).mp
+      (isZero_of_isSplitEpi_of_mem_jacobsonRadical hf))
   · obtain ⟨e, he⟩ : ∃ e : End Y, e = g ≫ f := ⟨g ≫ f, rfl⟩
     have hnu : ¬ IsUnit e := fun hu => by
       have : IsIso (g ≫ f) := he ▸ (isUnit_iff_isIso e).1 hu

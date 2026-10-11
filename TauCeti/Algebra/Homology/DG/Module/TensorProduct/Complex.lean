@@ -100,6 +100,19 @@ theorem cochainComplex_X (hM : IsDGRightModule hA ℳ dM)
         (InternalGrading.ofDecomposition 𝒩)).piece p) := by
   rw [cochainComplex, gradedCochainComplex_X]
 
+/-- The degree-`p` differential is the restriction of the balanced tensor differential,
+transported along the canonical identifications of the complex terms. -/
+@[simp]
+theorem cochainComplex_d (hM : IsDGRightModule hA ℳ dM)
+    (hN : IsDGLeftModule hA 𝒩 dN) (p : ℤ) :
+    (cochainComplex hM hN).d p (p + 1) =
+      eqToHom (cochainComplex_X hM hN p) ≫
+        ModuleCat.ofHom ((differential hM hN).restrict
+          (fun _ hz ↦ (isHomogeneous_differential hM hN).map_mem hz)) ≫
+        eqToHom (cochainComplex_X hM hN (p + 1)).symm := by
+  unfold cochainComplex
+  rw [gradedCochainComplex_d]
+
 /-- On a homogeneous element, the complex differential is the balanced tensor differential,
 using the canonical identifications of the complex terms with the grading pieces. -/
 theorem cochainComplex_d_apply (hM : IsDGRightModule hA ℳ dM)

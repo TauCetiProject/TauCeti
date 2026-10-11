@@ -336,7 +336,7 @@ theorem IsUnimodular.level_eq_two_iff {L : IntegralLattice V} (hL : L.IsUnimodul
   have h0 := L.level_pos
   have : L.level ≤ 2 := Nat.le_of_dvd two_pos h2
   rw [← h1]
-  interval_cases h : L.level <;> simp_all
+  interval_cases _ : L.level <;> simp_all
 
 /-! ## Isometry invariance -/
 

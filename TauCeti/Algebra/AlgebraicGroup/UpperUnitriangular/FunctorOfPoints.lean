@@ -263,7 +263,7 @@ theorem upperUnitriangularFunctor_map {A B : CommAlgCat.{w} R} (φ : A ⟶ B) :
   (rfl)
 
 /-- Entrywise computation of a value-algebra map on the upper-unitriangular functor. -/
-@[simp]
+-- Not `@[simp]`: `simp` never matches the `eqToHom` applied to an element; use `rw`.
 theorem upperUnitriangularFunctor_map_apply_apply {A B : CommAlgCat.{w} R} (φ : A ⟶ B)
     (g : ULift.{u, max v w} (upperUnitriangularGroup m A)) (i j : m) :
     (eqToHom (upperUnitriangularFunctor_obj (R := R) m B)
@@ -288,7 +288,7 @@ noncomputable def pointsNatIso :
 
 /-- After transport along `upperUnitriangularFunctor_obj`, the forward component of
 `pointsNatIso` is the pointwise upper-unitriangular equivalence. -/
-@[simp]
+-- Not `@[simp]`: `simp` never matches the `eqToHom` applied to an element; use `rw`.
 theorem pointsNatIso_hom_app_apply (A : CommAlgCat.{w} R)
     (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R m) A) :
     (eqToHom (upperUnitriangularFunctor_obj (R := R) m A)
@@ -297,7 +297,7 @@ theorem pointsNatIso_hom_app_apply (A : CommAlgCat.{w} R)
 
 /-- After transport back along `upperUnitriangularFunctor_obj`, the inverse component of
 `pointsNatIso` is polynomial evaluation on strict-upper entries. -/
-@[simp]
+-- Not `@[simp]`: `simp` never matches the `eqToHom` applied to an element; use `rw`.
 theorem pointsNatIso_inv_app_apply (A : CommAlgCat.{w} R)
     (g : ULift.{u, max v w} (upperUnitriangularGroup m A)) :
     (pointsNatIso (R := R) m).inv.app A

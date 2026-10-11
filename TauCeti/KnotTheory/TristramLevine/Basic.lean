@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.HermitianSignature
+public import TauCeti.Analysis.Matrix.HermitianSignature.Basic
 public import TauCeti.KnotTheory.Signature
 
 /-!

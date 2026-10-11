@@ -166,7 +166,7 @@ theorem exists_isCompl_torsion_of_X_smul_mem_piece (G : InternalGrading k M) (hd
   have he₀T (x : M) : e₀ x ∈ T := by
     rw [← DirectSum.sum_support_decompose G.piece x, map_sum]
     apply T.sum_mem
-    intro p hp
+    intro p _
     rw [G.homogeneousPart_apply_of_mem G hshift hshift e 0
       (DirectSum.decompose G.piece x p).property, add_zero]
     exact hT p (heT _)
@@ -179,7 +179,7 @@ theorem exists_isCompl_torsion_of_X_smul_mem_piece (G : InternalGrading k M) (hd
     rw [map_sum]
     conv_rhs => rw [← DirectSum.sum_support_decompose G.piece (x : M)]
     apply Finset.sum_congr rfl
-    intro p hp
+    intro p _
     rw [G.homogeneousPart_apply_of_mem G hshift hshift e 0
       (DirectSum.decompose G.piece (x : M) p).property, add_zero]
     rw [hefix ⟨_, hT p x.property⟩]
@@ -308,7 +308,7 @@ example : ∃ (G : InternalGrading k Q) (L : Submodule k[X] Q),
   obtain ⟨G, hX, _, _, _, _, hann, _⟩ := quotient_X_sq_example k
   obtain ⟨L, hL, hhom⟩ := G.exists_isCompl_torsion_of_X_smul_mem_piece one_ne_zero hX
   refine ⟨G, L, eq_top_iff.mpr ?_, hL, hhom⟩
-  intro x hx
+  intro x _
   exact (Submodule.mem_torsion_iff x).mpr
     ⟨⟨X ^ 2, pow_mem X_mem_nonZeroDivisors 2⟩, hann x⟩
 

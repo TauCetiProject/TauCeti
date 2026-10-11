@@ -486,8 +486,15 @@ def ofDiscreteModuleIso (e : M ≃ₗ[R] N) (he : ∀ (g : G) (m : M), e (g • 
     (he : ∀ (g : G) (m : M), e (g • m) = g • e m) :
     (ofDiscreteModuleIso e he).hom = ofDiscreteModuleMap e.toLinearMap he := (rfl)
 
+/-- The inverse direction of `ofDiscreteModuleIso e he` is `ofDiscreteModuleMap` of `e.symm`. -/
+@[simp] lemma ofDiscreteModuleIso_inv (e : M ≃ₗ[R] N)
+    (he : ∀ (g : G) (m : M), e (g • m) = g • e m) :
+    (ofDiscreteModuleIso e he).inv = ofDiscreteModuleMap e.symm.toLinearMap
+      (fun g n ↦ e.injective (by rw [he]; simp)) := (rfl)
+
 /-- The inverse direction of `ofDiscreteModuleIso e he` acts on underlying modules as `e.symm`. -/
-@[simp] lemma ofDiscreteModuleIso_inv_hom_apply (e : M ≃ₗ[R] N)
+-- Not `@[simp]`: `ofDiscreteModuleIso_inv` rewrites the inverse in its left-hand side first.
+lemma ofDiscreteModuleIso_inv_hom_apply (e : M ≃ₗ[R] N)
     (he : ∀ (g : G) (m : M), e (g • m) = g • e m) (n : N) :
     (ofDiscreteModuleIso e he).inv.hom n = e.symm n := (rfl)
 
@@ -886,6 +893,14 @@ morphism. -/
 @[simp] lemma discreteRepEquivSmoothTopRep_counitIso_inv_app
     (X : SmoothDiscreteTopRep.{u, v, w} R G) :
     (discreteRepEquivSmoothTopRep R G).counitIso.inv.app X = 𝟙 X := (rfl)
+
+/-- `toSmoothDiscrete` is an equivalence of categories, with inverse `ofSmoothDiscrete`. -/
+instance isEquivalence_toSmoothDiscrete : (toSmoothDiscrete.{u, v, w} R G).IsEquivalence :=
+  (discreteRepEquivSmoothTopRep R G).isEquivalence_functor
+
+/-- `ofSmoothDiscrete` is an equivalence of categories, with inverse `toSmoothDiscrete`. -/
+instance isEquivalence_ofSmoothDiscrete : (ofSmoothDiscrete.{u, v, w} R G).IsEquivalence :=
+  (discreteRepEquivSmoothTopRep R G).isEquivalence_inverse
 
 end CoefficientEquivalence
 

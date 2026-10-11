@@ -179,6 +179,15 @@ lemma singularHomology_exact_outer (n m : ℕ) (h : m + 1 = n := by lia) :
     (ShortComplex.mk _ _ (T.comp_singularHomologyδ R n m h)).Exact :=
   (T.shortExact_singularChainComplexShortComplex R).homology_exact₃ n m (by simpa)
 
+/-- **The connecting morphism of a triple is an isomorphism when `(X, B)` is acyclic in the
+adjacent degrees**: if `Hₙ(X, B)` and `Hₘ(X, B)` vanish, then `Hₙ(X, A) ⟶ Hₘ(A, B)` is an
+isomorphism. -/
+theorem isIso_singularHomologyδ_of_isZero (n m : ℕ)
+    (hn : IsZero ((totalPair.obj T).singularHomology R n))
+    (hm : IsZero ((totalPair.obj T).singularHomology R m)) (h : m + 1 = n := by lia) :
+    IsIso (T.singularHomologyδ R n m h) :=
+  (T.shortExact_singularChainComplexShortComplex R).isIso_δ n m (by simpa) hn hm
+
 /-- The connecting morphism of a triple `(X, A, B)` is the connecting morphism of the pair
 `(X, A)` followed by the map `Hₘ(A) ⟶ Hₘ(A, B)`.  This factorization is what makes two consecutive
 connecting morphisms of a filtration compose to zero. -/

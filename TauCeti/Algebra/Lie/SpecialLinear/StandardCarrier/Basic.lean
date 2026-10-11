@@ -252,7 +252,7 @@ theorem weight_def (k : Fin (r + 1)) (i : Fin r) :
   by rw [weight]
 
 /-- A standard-module weight as the difference of its possible adjacent basis characters. -/
-theorem weight_eq_ite_single_sub_ite_single (k : Fin (r + 1)) :
+theorem weight_eq_dite_single_sub_dite_single (k : Fin (r + 1)) :
     weight r k =
       (if hk : (k : ℕ) < r then Pi.single ⟨k, hk⟩ 1 else 0) -
         (if hk : 0 < (k : ℕ) then Pi.single ⟨k - 1, by omega⟩ 1 else 0) := by
@@ -314,7 +314,8 @@ theorem isCartanWeightVector_single (k : Fin (r + 1)) :
 /-- The Kronecker coefficient produced by bracketing a numbered Cartan generator with a numbered
 root generator is the corresponding entry of the type `A` Cartan matrix, with a sign for the
 lowering generators. -/
-private theorem cartanCoeff (k : Fin r ⊕ Fin r) (j : Fin r) :
+private theorem ite_sub_ite_sub_ite_sub_ite_eq_rootGeneratorWeight (k : Fin r ⊕ Fin r)
+    (j : Fin r) :
     ((if j.castSucc = rootTarget r k then (1 : ℤ) else 0) -
         (if j.succ = rootTarget r k then 1 else 0)) -
       ((if rootSource r k = j.castSucc then (1 : ℤ) else 0) -
@@ -346,7 +347,8 @@ theorem lie_cartanGenerator_rootGenerator (k : Fin r ⊕ Fin r) (j : Fin r) :
   rw [val_cartanGenerator, val_rootGenerator,
     lie_single_of_mem_diagonalCartan
       (sub_mem (single_self_mem_diagonalCartan j.castSucc 1)
-        (single_self_mem_diagonalCartan j.succ 1)), ← cartanCoeff r k j]
+        (single_self_mem_diagonalCartan j.succ 1)),
+    ← ite_sub_ite_sub_ite_sub_ite_eq_rootGeneratorWeight r k j]
   simp only [Matrix.sub_apply, Matrix.single_apply, and_self, Int.cast_sub,
     apply_ite (fun z : ℤ => (z : ℚ)), Int.cast_one, Int.cast_zero, eq_comm]
 
@@ -625,7 +627,7 @@ theorem coe_weightTorusPoints (A : Type v) [CommRing A] (s : Fin r → Aˣ) :
 
 /-- A matrix is a point of the type `A_r` carrier exactly when the associated convolution point
 kills its toral defining Hopf ideal. -/
-@[simp]
+-- Not `@[simp]`: rewriting membership into this raw condition defeats the membership lemmas.
 theorem mem_points_iff (A : Type v) [CommRing A]
     (g : Matrix.GeneralLinearGroup (Fin (r + 1)) A) :
     g ∈ points r A ↔
@@ -657,7 +659,7 @@ theorem rep_rootGenerator_latticeBasis_apply (k : Fin r ⊕ Fin r) (s : Fin (r +
 
 /-- A numbered root generator carries the coordinate basis vector at its source to the one at its
 target. This is the root step that makes the root subgroup a closed copy of `𝔾ₐ`. -/
-theorem rep_rootGenerator_latticeBasis (k : Fin r ⊕ Fin r) :
+private theorem rep_rootGenerator_latticeBasis (k : Fin r ⊕ Fin r) :
     rep r (_root_.UniversalEnvelopingAlgebra.ι ℚ (rootGenerator r k))
         ((latticeBasis r (rootSource r k) : (lattice r).toAddSubgroup) : Fin (r + 1) → ℚ) =
       (1 : ℤ) • ((latticeBasis r (rootTarget r k) : (lattice r).toAddSubgroup) :

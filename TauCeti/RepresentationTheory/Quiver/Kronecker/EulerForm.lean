@@ -100,7 +100,6 @@ private theorem two_mul_titsForm (d : Kronecker A → ℤ) :
 /-- With at most two arrows the Tits form is positive semidefinite. -/
 theorem titsForm_nonneg (h : Fintype.card A ≤ 2) (d : Kronecker A → ℤ) :
     0 ≤ titsForm (Kronecker A) d := by
-  have hn : (Fintype.card A : ℤ) ≤ 2 := by exact_mod_cast h
   have h₁ : 0 ≤ (2 - (Fintype.card A : ℤ)) * (d src ^ 2 + d tgt ^ 2) :=
     mul_nonneg (by linarith) (by positivity)
   have h₂ : 0 ≤ (Fintype.card A : ℤ) * (d src - d tgt) ^ 2 :=
@@ -121,7 +120,6 @@ theorem titsForm_nonneg_iff : (∀ d, 0 ≤ titsForm (Kronecker A) d) ↔ Fintyp
 `A₁ ⊔ A₁` (no arrow) and `A₂` (one arrow). -/
 theorem titsForm_posDef (h : Fintype.card A ≤ 1) : (titsForm (Kronecker A)).PosDef := by
   intro d hd
-  have hn : (Fintype.card A : ℤ) ≤ 1 := by exact_mod_cast h
   have hpos : 0 < d src ^ 2 + d tgt ^ 2 := by
     rcases eq_or_ne (d src) 0 with hs | hs
     · have ht : d tgt ≠ 0 := fun ht => hd (eq_zero_iff.mpr ⟨hs, ht⟩)

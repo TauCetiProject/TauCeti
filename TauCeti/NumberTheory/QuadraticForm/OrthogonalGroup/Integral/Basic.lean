@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 public import TauCeti.Topology.Algebra.QuadraticForm.OrthogonalGroup.Closed
 public import Mathlib.NumberTheory.Padics.PadicIntegers
+public import TauCeti.NumberTheory.Padics.Basic
 import Mathlib.NumberTheory.Padics.ProperSpace
 import Mathlib.Topology.Instances.Matrix
 import TauCeti.LinearAlgebra.QuadraticForm.SpecialOrthogonal.Hyperbolic
@@ -168,7 +169,6 @@ theorem isOpen_integralOrthogonalSubgroup :
 theorem isCompact_integralOrthogonalSubgroup :
     IsCompact (integralOrthogonalSubgroup Q b : Set (orthogonalGroup Q)) := by
   let : FiniteDimensional ℚ_[p] V := Module.Finite.of_basis b
-  let : Invertible (2 : ℚ_[p]) := invertibleOfNonzero two_ne_zero
   let : IsModuleTopology ℚ_[p] (Matrix ι ι ℚ_[p]) :=
     inferInstanceAs (IsModuleTopology ℚ_[p] (ι → ι → ℚ_[p]))
   let : CompactSpace (Matrix ι ι ℤ_[p]) := inferInstanceAs (CompactSpace (ι → ι → ℤ_[p]))

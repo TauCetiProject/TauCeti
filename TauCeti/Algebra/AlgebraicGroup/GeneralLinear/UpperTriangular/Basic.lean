@@ -125,9 +125,8 @@ noncomputable abbrev coordinateMap :
 theorem coordinateMap_def :
     coordinateMap R n =
       CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra R n)
-        (definingHopfIdeal R n) := by
-  ext h
-  exact GeneralLinear.weightParabolicCoordinateMap_apply R (weights n) h
+        (definingHopfIdeal R n) :=
+  GeneralLinear.weightParabolicCoordinateMap_def R (weights n)
 
 /-- The upper-triangular coordinate morphism sends an ambient coordinate to its quotient
 class. -/
@@ -172,10 +171,9 @@ theorem definingHopfIdeal_toIdeal_le_ker
     (hf : ∀ i j, j < i → f (GeneralLinear.coordinateHopfAlgebraAlgEquiv R n
       (GeneralLinear.coordinateRingMap R n (MvPolynomial.X (i, j)))) = 0) :
     (definingHopfIdeal R n).toIdeal ≤ RingHom.ker f.toRingHom := by
-  rw [definingHopfIdeal_toIdeal, Ideal.span_le]
-  rintro x ⟨i, j, hji, rfl⟩
-  rw [SetLike.mem_coe, RingHom.mem_ker]
-  exact hf i j hji
+  rw [definingHopfIdeal]
+  exact GeneralLinear.weightParabolicDefiningHopfIdeal_toIdeal_le_ker R (weights n) f
+    fun i j h ↦ hf i j ((weights_lt_weights_iff n i j).mp h)
 
 /-- A morphism out of the coordinate algebra of `GL_n` whose tautological matrix point is upper
 triangular kills the upper-triangular defining Hopf ideal. -/
@@ -189,7 +187,7 @@ theorem definingHopfIdeal_toIdeal_le_ker_of_isUpperTriangular
 
 /-- An ambient `GL_n`-point belongs to the upper-triangular closed subgroup exactly when its
 matrix is upper triangular. -/
-@[simp]
+@[simp↓ high]
 theorem mem_definingPointsSubgroup_iff
     (g : HopfAlgebra.points (R := R)
       (H := GeneralLinear.coordinateHopfAlgebra R n) (CommAlgCat.of R A)) :
@@ -342,7 +340,7 @@ theorem upperTriangularFunctor_map {A B : CommAlgCat.{w} R} (phi : A ⟶ B) :
   rfl
 
 /-- The morphism part of the upper-triangular functor applies an algebra morphism entrywise. -/
-@[simp]
+-- Not `@[simp]`: `simp` never matches the `eqToHom` applied to an element; use `rw`.
 theorem upperTriangularFunctor_map_apply_apply {A B : CommAlgCat.{w} R} (phi : A ⟶ B)
     (g : ULift.{u, w} (upperTriangularGroup (Fin n) A)) (i j : Fin n) :
     (((eqToHom (upperTriangularFunctor_obj (R := R) n B)
@@ -370,7 +368,7 @@ noncomputable def pointsNatIso :
           (pointsMulEquiv_mapValue (R := R) (n := n) phi.hom f))
 
 /-- The forward component of `pointsNatIso` is the pointwise upper-triangular equivalence. -/
-@[simp]
+-- Not `@[simp]`: `simp` never matches the `eqToHom` applied to an element; use `rw`.
 theorem pointsNatIso_hom_app_apply (A : CommAlgCat.{w} R)
     (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n) A) :
     (eqToHom (upperTriangularFunctor_obj (R := R) n A)
@@ -380,7 +378,7 @@ theorem pointsNatIso_hom_app_apply (A : CommAlgCat.{w} R)
 
 /-- The inverse component of `pointsNatIso` is the inverse pointwise upper-triangular
 equivalence. -/
-@[simp]
+-- Not `@[simp]`: `simp` never matches the `eqToHom` applied to an element; use `rw`.
 theorem pointsNatIso_inv_app_apply (A : CommAlgCat.{w} R)
     (g : ULift.{u, w} (upperTriangularGroup (Fin n) A)) :
     (pointsNatIso (R := R) n).inv.app A
@@ -433,7 +431,7 @@ theorem coordinateMap_comp_rootSubgroupCoordinateMap (hij : i < j) :
 
 /-- Under the upper-triangular and general-linear point equivalences, the factored positive-root
 coordinate morphism gives the same transvection as the ambient root-subgroup morphism. -/
-@[simp]
+-- Not `@[simp]`: `simp` does not match its left-hand side, even with the lemma alone; use `rw`.
 theorem pointsMulEquiv_rootSubgroupCoordinateMap (hij : i < j)
     {A : Type w} [CommRing A] [Algebra R A]
     (f : HopfAlgebra.points

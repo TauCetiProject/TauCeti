@@ -217,11 +217,6 @@ theorem exists_relEntropy_minOn (K : Matrix ι κ ℝ) (a : ι → ℝ) (b : κ 
         relEntropy P K ≤ relEntropy Q K := by
   obtain ⟨Pfeas, hPfeas0, hPfeasa⟩ := hfeas
   set A : ℝ := ∑ i, a i with hA
-  have hA0 : 0 ≤ A := by
-    rw [hA]
-    calc (0 : ℝ) ≤ ∑ i, ∑ j, Pfeas i j :=
-          Finset.sum_nonneg fun i _ => Finset.sum_nonneg fun j _ => hPfeas0 i j
-      _ = ∑ i, a i := Finset.sum_congr rfl fun i _ => hPfeasa.1 i
   have hnonneg : IsClosed {P : Matrix ι κ ℝ | ∀ i j, 0 ≤ P i j} := by
     have key : {P : Matrix ι κ ℝ | ∀ i j, 0 ≤ P i j}
         = ⋂ i : ι, ⋂ j : κ, {P : Matrix ι κ ℝ | 0 ≤ P i j} := by
@@ -725,8 +720,6 @@ theorem pos_of_relEntropy_minOn (K : Matrix ι κ ℝ) (a : ι → ℝ) (b : κ 
     calc (min (min (min y z) 1) (Real.exp (-(C + 1)))) / 2
         ≤ Real.exp (-(C + 1)) / 2 := div_le_div_of_nonneg_right hminE (by norm_num)
       _ ≤ Real.exp (-(C + 1)) := div_le_self (by positivity) (by norm_num)
-  have hty0 : 0 < y - t := by linarith
-  have htz0 : 0 < z - t := by linarith
   have hqt0 : 0 < q + t := by linarith
   have hqt1 : 0 < q + 1 := by linarith
   have htmin : t ≤ min y z := le_min

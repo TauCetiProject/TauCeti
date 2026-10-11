@@ -18,10 +18,12 @@ A change of variables `D : VariableChange K` carrying one integral Weierstrass m
 need not be integral itself: its scaling factor `D.u` is a unit of `K`, and `D.r`, `D.s`, `D.t` are
 elements of `K`. This file shows that when `R` is integrally closed in `K`, as soon as `D.u` lies
 in `R` so do `D.r`, `D.s` and `D.t`, and hence that when `D.u` comes from a unit of `R`, `D` is the
-base change of a `VariableChange R`. Three further facts about integral models sit beside it: over a
+base change of a `VariableChange R`. Further facts about integral models sit beside it: over a
 domain with fraction field `K` every equation has an integral model, obtained by clearing a common
 denominator of the coefficients; a change of variables whose `u⁻¹`, `r`, `s` and `t` lie in `R`
-preserves integrality; and integrality is inherited by a larger ring of a tower.
+preserves integrality, and one defined over `R` acts on the integral model; integrality is
+inherited by a larger ring of a tower; and when `R → K` is injective the integral model is unique,
+and it commutes with base change along a map `R → S` compatible with `K → L`.
 
 ## Main results
 
@@ -35,8 +37,16 @@ preserves integrality; and integrality is inherited by a larger ring of a tower.
   ring `R` with fraction field `K`.
 * `WeierstrassCurve.isIntegral_smul_of_exists_lift`: a change of variables whose `u⁻¹`, `r`, `s`
   and `t` lie in `R` preserves integrality.
+* `WeierstrassCurve.isIntegral_baseChange_smul` and
+  `WeierstrassCurve.integralModel_baseChange_smul`: a change of variables defined over `R` preserves
+  integrality, and acts on the integral model.
 * `WeierstrassCurve.IsIntegral.of_isScalarTower`: integrality passes to a larger ring of the
   tower.
+* `WeierstrassCurve.integralModel_eq_of_baseChange_eq`: the integral model is the equation over
+  `R` with the given base change.
+* `WeierstrassCurve.IsIntegral.baseChange` and `WeierstrassCurve.integralModel_baseChange`:
+  integrality is preserved by base change along a map `R → S` compatible with `K → L`, and the
+  integral model of the base change is the image of the integral model.
 
 The integral-closedness hypothesis is what the proof actually consumes. A discrete valuation ring
 with its fraction field is the intended application and satisfies it through
@@ -78,8 +88,8 @@ The descent is ported from FLT, https://github.com/ImperialCollegeLondon/FLT
 @ `bc2fe8ff7396469a16c2a6d51d6117f5825d93a0` (Apache-2.0), file
 `FLT/Mathlib/AlgebraicGeometry/EllipticCurve/Reduction.lean`, declaration
 `WeierstrassCurve.exists_variableChange_baseChange_eq_of_smul_eq`, by Kevin Buzzard;
-`exists_smul_isIntegral`, `isIntegral_smul_of_exists_lift` and `IsIntegral.of_isScalarTower` are
-not from that source. The source
+`exists_smul_isIntegral`, `isIntegral_smul_of_exists_lift`, `IsIntegral.of_isScalarTower` and the
+base-change lemmas are not from that source. The source
 commit is FLT PR #1088, "Quadratic twist to split multiplicative reduction". The mathematics is
 unchanged: the same three polynomials, the same `linear_combination` certificates. The single
 66-line proof is split into the three integrality arguments plus their assembly, so that no
@@ -258,6 +268,29 @@ theorem isIntegral_smul_of_exists_lift {R : Type*} [CommRing R] {K : Type*} [Fie
   simp [variableChange_a₁, variableChange_a₂, variableChange_a₃, variableChange_a₄,
     variableChange_a₆, baseChange, map_ofNat, hu, hr, hs, ht]
 
+/-- Base change to `K` carries `C` applied to an integral model of `W` to `C • W`. -/
+private theorem baseChange_smul_integralModel (R : Type*) [CommRing R] {K : Type*} [Field K]
+    [Algebra R K] (W : WeierstrassCurve K) [IsIntegral R W] (C : VariableChange R) :
+    (C • W.integralModel R)⁄K = C.baseChange K • W := by
+  conv_rhs => rw [← baseChange_integralModel_eq R W]
+  rw [baseChange, baseChange, VariableChange.baseChange, map_variableChange]
+
+/-- **A change of variables defined over `R` preserves integrality**: an integral model of
+`C • W` is `C` applied to an integral model of `W`. -/
+instance isIntegral_baseChange_smul (R : Type*) [CommRing R] {K : Type*} [Field K]
+    [Algebra R K] (W : WeierstrassCurve K) [IsIntegral R W] (C : VariableChange R) :
+    IsIntegral R (C.baseChange K • W) :=
+  ⟨⟨C • W.integralModel R, (baseChange_smul_integralModel R W C).symm⟩⟩
+
+/-- **The integral model of `C • W`, for a change of variables `C` defined over `R`, is `C`
+applied to the integral model of `W`.** Over a domain with fraction field `K` an integral model is
+unique, since base change to `K` is injective on Weierstrass curves. -/
+theorem integralModel_baseChange_smul (R : Type*) [CommRing R] {K : Type*} [Field K]
+    [Algebra R K] [IsFractionRing R K] (W : WeierstrassCurve K) [IsIntegral R W]
+    (C : VariableChange R) : (C.baseChange K • W).integralModel R = C • W.integralModel R :=
+  map_injective (IsFractionRing.injective R K) <|
+    (baseChange_integralModel_eq R _).trans (baseChange_smul_integralModel R W C).symm
+
 /-- **An integral model stays integral over a larger ring of the tower.** If `W` has coefficients
 in `R` and `R` maps to `S` compatibly with their maps to `K`, then `W` has coefficients in `S`.
 In particular, global integrality over a Dedekind domain gives integrality at each localisation. -/
@@ -267,6 +300,44 @@ theorem IsIntegral.of_isScalarTower {R S K : Type*} [CommRing R] [CommRing S] [F
   ⟨(integralModel R W).map (algebraMap R S), by
     rw [baseChange, map_map, ← IsScalarTower.algebraMap_eq, ← baseChange,
       baseChange_integralModel_eq R W]⟩
+
+/-- **The integral model is determined by its base change.** When `R → K` is injective, an
+equation over `R` whose base change to `K` is `W` is the integral model of `W`. -/
+theorem integralModel_eq_of_baseChange_eq {R : Type*} [CommRing R] {K : Type*} [Field K]
+    [Algebra R K] [FaithfulSMul R K] {W : WeierstrassCurve K} [IsIntegral R W]
+    {W₀ : WeierstrassCurve R} (h : W₀.baseChange K = W) : integralModel R W = W₀ :=
+  map_injective (FaithfulSMul.algebraMap_injective R K)
+    ((baseChange_integralModel_eq R W).trans h.symm)
+
+section BaseChange
+
+variable {R S K L : Type*} [CommRing R] [CommRing S] [Field K] [Field L] [Algebra R K]
+  [Algebra R S] [Algebra S L] [Algebra K L]
+
+/-- **Base change of an integral model.** If `R → S` is compatible with `K → L`, then mapping the
+integral model of `W` to `S` and base changing to `L` gives the base change of `W` to `L`. -/
+theorem baseChange_map_integralModel
+    (hRS : (algebraMap S L).comp (algebraMap R S) = (algebraMap K L).comp (algebraMap R K))
+    (W : WeierstrassCurve K) [IsIntegral R W] :
+    ((integralModel R W).map (algebraMap R S)).baseChange L = W.baseChange L := by
+  conv_rhs => rw [← baseChange_integralModel_eq R W]
+  rw [baseChange, baseChange, baseChange, map_map, map_map, hRS]
+
+/-- **Integrality is preserved by base change.** If `W` has coefficients in `R` and `R → S` is
+compatible with `K → L`, then the base change of `W` to `L` has coefficients in `S`. -/
+theorem IsIntegral.baseChange
+    (hRS : (algebraMap S L).comp (algebraMap R S) = (algebraMap K L).comp (algebraMap R K))
+    (W : WeierstrassCurve K) [IsIntegral R W] : IsIntegral S (W.baseChange L) :=
+  ⟨(integralModel R W).map (algebraMap R S), (baseChange_map_integralModel hRS W).symm⟩
+
+/-- **The integral model of a base change is the image of the integral model.** -/
+theorem integralModel_baseChange [FaithfulSMul S L]
+    (hRS : (algebraMap S L).comp (algebraMap R S) = (algebraMap K L).comp (algebraMap R K))
+    (W : WeierstrassCurve K) [IsIntegral R W] [IsIntegral S (W.baseChange L)] :
+    integralModel S (W.baseChange L) = (integralModel R W).map (algebraMap R S) :=
+  integralModel_eq_of_baseChange_eq (baseChange_map_integralModel hRS W)
+
+end BaseChange
 
 end WeierstrassCurve
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
 public import Mathlib.AlgebraicGeometry.EllipticCurve.NormalForms
 public import Mathlib.RingTheory.Polynomial.Quotient
+public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 public import Mathlib.RingTheory.Polynomial.SmallDegreeVieta
 public import Mathlib.Tactic.Algebra.Basic
 public import Mathlib.Tactic.ComputeDegree
@@ -61,6 +62,8 @@ what makes the corrected element a unit. Both branches are packaged in `μX`, an
 * `WeierstrassCurve.Affine.normM`, `WeierstrassCurve.Affine.range_μ_le_ker_normM`: the norm map
   on square classes, and **the norm condition on the image of the descent map** — every square
   class in the image of `μ` has square norm. This is what the `2`-descent tests a class against.
+* `WeierstrassCurve.Affine.discr_f` and `WeierstrassCurve.Affine.Δ_eq_sixteen_mul_discr_f`: the
+  discriminant of the cubic `f`, and `Δ = 16 · disc f`.
 * `WeierstrassCurve.Affine.norm_mk_C_sub_X_add_fCofactor`: at a root of `f`, the corrected
   representative `x - T + fCofactor x` has norm `(f' x) ^ 2`. This is the value the norm condition
   on the image of the descent map is read off from at the `2`-torsion.
@@ -99,7 +102,8 @@ the induced norm map on square classes and the containment of the image of `μ` 
 `WeakMordellWeil.lean` lines 873-919. It is adapted rather than copied: Stoll builds the map as
 `Units.modPow.map (Algebra.norm K) 2` through his local square-class abbreviation, and the single
 spelling this repo carries makes it a `QuotientGroup.map` into `Kˣ ⧸ (powMonoidHom 2).range`
-instead.
+instead. `discr_f` and `Δ_eq_sixteen_mul_discr_f` are the source's `discr_f` and `Δ_eq_discr_f` at
+its later revision `3bfe124`.
 -/
 
 public section
@@ -335,6 +339,24 @@ lemma natDegree_f : W.f.natDegree = 3 := by
   compute_degree!
 
 lemma f_ne_zero : W.f ≠ 0 := W.monic_f.ne_zero
+
+lemma degree_f : W.f.degree = 3 := by
+  rw [degree_eq_natDegree W.f_ne_zero, natDegree_f]
+  rfl
+
+/-- The discriminant of the cubic `f`, in terms of the coefficients of `W`. -/
+lemma discr_f : W.f.discr = W.a₂ ^ 2 * W.a₄ ^ 2 - 4 * W.a₄ ^ 3 - 4 * W.a₂ ^ 3 * W.a₆
+    - 27 * W.a₆ ^ 2 + 18 * W.a₂ * W.a₄ * W.a₆ := by
+  rw [discr_of_degree_eq_three W.degree_f]
+  simp only [f, coeff_add, coeff_C_mul, coeff_X_pow, coeff_C, coeff_X]
+  norm_num
+
+/-- In characteristic `≠ 2` normal form the discriminant of `W` is `16` times that of the cubic
+`f`. The two differ by a unit at a prime not above `2`, but not at a prime above `2`: there, if
+`a₂`, `a₄` and `a₆` are integral, `Δ` is never a unit while `disc f` can be. -/
+lemma Δ_eq_sixteen_mul_discr_f [W.IsCharNeTwoNF] : W.Δ = 16 * W.f.discr := by
+  rw [Δ_of_isCharNeTwoNF W, W.discr_f]
+  ring
 
 /-- A polynomial of degree at most `2` has degree less than that of `f`, which has degree `3`.
 Supplies the degree side conditions of `AdjoinRoot.mk_eq_mk_iff_of_degree_lt` for the relator
@@ -766,7 +788,7 @@ lemma μX_mul_mul_eq_one : W.μX xP * W.μX xQ * W.μX xR = 1 := by
     exact μX_mul_mul_eq_one_of_eval_f_eq_zero hR hP hQ hPQR HR
   rw [μX_of_eval_f_ne_zero HP, μX_of_eval_f_ne_zero HQ, μX_of_eval_f_ne_zero HR,
     M.mk_mul_mk_mul_mk_eq_one_iff]
-  obtain ⟨pol, hpol, hpol₁⟩ :=
+  obtain ⟨pol, hpol, _⟩ :=
     Point.exists_polynomial_factorization_of_some_add_some_add_some_eq_zero hP hQ hR hPQR
   simp only [← map_mul, hpol, neg_sub, C_sub_X_mul_mul_eq_neg]
   simp

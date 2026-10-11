@@ -37,6 +37,7 @@ such as the count of its power classes, to the group of principal units `U(K,1)`
 * `TauCeti.ker_normalizedValuation` and `TauCeti.continuous_normalizedValuation`: the normalized
   valuation is a continuous homomorphism with kernel `U(K,0)`.
 * `TauCeti.normalizedValuation_comp_zpowersHom`: a uniformizer splits the normalized valuation.
+* `TauCeti.instSigmaCompactSpaceUnits`: `Kˣ` is σ-compact.
 * `TauCeti.existsUnique_eq_zpow_mul`: every `x : Kˣ` is uniquely `ϖ ^ n * u` with `u ∈ U(K,0)`.
 * `TauCeti.coe_unitsEquivIntProd_apply_snd_eq_mul`: how the splitting changes with the uniformizer.
 * `TauCeti.unitFiltration_sup_zpowers_inf_unitFiltration_zero` and
@@ -155,6 +156,16 @@ theorem unitsEquivIntProd_symm_apply (hϖ : normalizedValuation K ϖ = .ofAdd 1)
     (p : Multiplicative ℤ × unitFiltration K 0) :
     (unitsEquivIntProd K ϖ hϖ).symm p = ϖ ^ p.1.toAdd * p.2 :=
   (rfl)
+
+variable (K) in
+/-- The multiplicative group of a nonarchimedean local field is σ-compact: a uniformizer splitting
+identifies it with `ℤ × U(K,0)`, a countable discrete group times a compact one. -/
+instance instSigmaCompactSpaceUnits : SigmaCompactSpace Kˣ := by
+  obtain ⟨ϖ, hϖ⟩ := normalizedValuation_surjective (K := K) (.ofAdd 1)
+  have : CompactSpace (unitFiltration K 0) :=
+    isCompact_iff_compactSpace.1 (isCompact_unitFiltration 0)
+  exact isSigmaCompact_univ_iff.1 <| by
+    simpa using isSigmaCompact_range (unitsEquivIntProd K ϖ hϖ).symm.continuous
 
 /-- **Uniqueness of the decomposition.** Every `x : Kˣ` is uniquely `ϖ ^ n * u` with `n : ℤ` and
 `u ∈ U(K,0)`. -/

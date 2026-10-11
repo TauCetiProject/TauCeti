@@ -154,37 +154,22 @@ theorem commutatorElement_jacobi_mem_pLowerCentralSeries {i j k : ℕ} {a b c : 
     (ha : a ∈ pLowerCentralSeries p G i) (hb : b ∈ pLowerCentralSeries p G j)
     (hc : c ∈ pLowerCentralSeries p G k) :
     ⁅⁅a, b⁆, c⁆ * ⁅⁅b, c⁆, a⁆ * ⁅⁅c, a⁆, b⁆ ∈ pLowerCentralSeries p G (i + j + k + 2 + 1) := by
-  -- Work in `Q = G ⧸ λ_{m+1}` with `m = i + j + k + 2`.
-  set N := pLowerCentralSeries p G (i + j + k + 2 + 1) with hN
-  -- `⁅u, v * w⁆ ≡ ⁅u, w⁆` when `⁅u, v⁆ ∈ λ_{m+1}` and `⁅u, w⁆ ∈ λ_m`.
-  have key : ∀ {u v w : G}, ⁅u, v⁆ ∈ N → ⁅u, w⁆ ∈ pLowerCentralSeries p G (i + j + k + 2) →
-      ((⁅u, v * w⁆ : G) : G ⧸ N) = ((⁅u, w⁆ : G) : G ⧸ N) := by
-    intro u v w huv huw
-    have h : ⁅u, v * w⁆ = ⁅u, v⁆ * (v * ⁅u, w⁆ * v⁻¹) := by
-      rw [commutatorElement_mul_right_eq_mul_conj]; group
-    rw [h, QuotientGroup.mk_mul, (QuotientGroup.eq_one_iff _).mpr huv, one_mul,
-      mk_conj_of_mem_pLowerCentralSeries huw]
-  have hab := commutator_mem_pLowerCentralSeries ha hb
-  have hbc := commutator_mem_pLowerCentralSeries hb hc
-  have hca := commutator_mem_pLowerCentralSeries hc ha
-  have e₁ : ((⁅⁅a, b⁆, b * c * b⁻¹⁆ : G) : G ⧸ N) = ((⁅⁅a, b⁆, c⁆ : G) : G ⧸ N) := by
-    have h : b * c * b⁻¹ = ⁅b, c⁆ * c := by group
-    rw [h]
-    exact key (pLowerCentralSeries_antitone (by omega) (commutator_mem_pLowerCentralSeries hab hbc))
-      (pLowerCentralSeries_antitone (by omega) (commutator_mem_pLowerCentralSeries hab hc))
-  have e₂ : ((⁅⁅b, c⁆, c * a * c⁻¹⁆ : G) : G ⧸ N) = ((⁅⁅b, c⁆, a⁆ : G) : G ⧸ N) := by
-    have h : c * a * c⁻¹ = ⁅c, a⁆ * a := by group
-    rw [h]
-    exact key (pLowerCentralSeries_antitone (by omega) (commutator_mem_pLowerCentralSeries hbc hca))
-      (pLowerCentralSeries_antitone (by omega) (commutator_mem_pLowerCentralSeries hbc ha))
-  have e₃ : ((⁅⁅c, a⁆, a * b * a⁻¹⁆ : G) : G ⧸ N) = ((⁅⁅c, a⁆, b⁆ : G) : G ⧸ N) := by
-    have h : a * b * a⁻¹ = ⁅a, b⁆ * b := by group
-    rw [h]
-    exact key (pLowerCentralSeries_antitone (by omega) (commutator_mem_pLowerCentralSeries hca hab))
-      (pLowerCentralSeries_antitone (by omega) (commutator_mem_pLowerCentralSeries hca hb))
-  rw [← QuotientGroup.eq_one_iff (N := N), QuotientGroup.mk_mul, QuotientGroup.mk_mul, ← e₁, ← e₂,
-    ← e₃, ← QuotientGroup.mk_mul, ← QuotientGroup.mk_mul,
-    commutatorElement_commutatorElement_conj_mul, QuotientGroup.mk_one]
+  -- `⁅⁅u, v⁆, v * w * v⁻¹⁆ ≡ ⁅⁅u, v⁆, w⁆` modulo `λ_{i+j+k+3}`, for each cyclic permutation.
+  have e {i' j' k' : ℕ} {u v w : G} (hs : i' + j' + k' = i + j + k)
+      (hu : u ∈ pLowerCentralSeries p G i') (hv : v ∈ pLowerCentralSeries p G j')
+      (hw : w ∈ pLowerCentralSeries p G k') :
+      ((⁅⁅u, v⁆, v * w * v⁻¹⁆ : G) : G ⧸ pLowerCentralSeries p G (i + j + k + 2 + 1)) =
+        ⁅⁅u, v⁆, w⁆ := by
+    have huv := commutator_mem_pLowerCentralSeries hu hv
+    rw [show v * w * v⁻¹ = ⁅v, w⁆ * w by group, mk_eq_mk_mul_mk_of_le (i + j + k + 2 + 1)
+      (by omega) (mk_commutatorElement_mul_right huv hw _),
+      mk_eq_one_of_mem_pLowerCentralSeries_of_le (i + j + k + 2 + 1)
+        (commutator_mem_pLowerCentralSeries huv (commutator_mem_pLowerCentralSeries hv hw))
+        (by omega), one_mul]
+  rw [← QuotientGroup.eq_one_iff, QuotientGroup.mk_mul, QuotientGroup.mk_mul,
+    ← e (by omega) ha hb hc, ← e (by omega) hb hc ha, ← e (by omega) hc ha hb,
+    ← QuotientGroup.mk_mul, ← QuotientGroup.mk_mul, commutatorElement_commutatorElement_conj_mul,
+    QuotientGroup.mk_one]
 
 /-! ### The graded pieces -/
 
@@ -451,6 +436,13 @@ def gradedCast {j k : ℕ} (h : j = k) : gradedPiece p G j → gradedPiece p G k
 @[simp]
 theorem gradedCast_rfl {k : ℕ} (x : gradedPiece p G k) : gradedCast p G rfl x = x := by
   rw [gradedCast]
+
+@[simp]
+theorem gradedCast_gradedCast {i j k : ℕ} (hij : i = j) (hjk : j = k) (x : gradedPiece p G i) :
+    gradedCast p G hjk (gradedCast p G hij x) = gradedCast p G (hij.trans hjk) x := by
+  subst hij
+  subst hjk
+  simp only [gradedCast_rfl]
 
 @[simp]
 theorem gradedCast_gradedMk {j k : ℕ} (h : j = k) (x : pLowerCentralSeries p G j) :
@@ -799,8 +791,7 @@ theorem gradedPow_add_zero_of_two (hp : p = 2) (x y : gradedPiece p G 0) :
   -- Since `gr_1(G)` is killed by `2`, `[y, x] = -[x, y] = [x, y]`.
   have h := gradedCast_gradedBracket_swap x y
   rw [gradedCast_rfl] at h
-  rw [h, neg_eq_iff_add_eq_zero]
-  exact (two_nsmul _).symm.trans (nsmul_gradedPiece_eq_zero _)
+  rw [h, ZModModule.neg_eq_self]
 
 /-- **`π` against the bracket on the left**, away from degree zero: `π [x, y] = [π x, y]` for
 `x ∈ gr_j(G)` with `j ≥ 1`. The correction term `⁅x, ⁅x, y⁆⁆` has degree `2j + k + 2`, which is
@@ -899,7 +890,8 @@ theorem gradedMap_id (k : ℕ) :
 
 /-- The graded map induced by a composite is the composite of the graded maps: `gr_k` is a
 functor. -/
-@[simp]
+-- Not `@[simp]`: on the left-hand side `hg` and `hf` occur only inside the proof `hg.comp hf`,
+-- so `simp` cannot instantiate them.
 theorem gradedMap_comp (g : H →* K) (hg : Continuous g) (f : G →* H) (hf : Continuous f) (k : ℕ) :
     gradedMap p (g.comp f) (hg.comp hf) k = (gradedMap p g hg k).comp (gradedMap p f hf k) := by
   refine AddMonoidHom.ext fun x => ?_
