@@ -37,9 +37,9 @@ open CategoryTheory _root_.Rep
 
 variable {p : ℕ} [Fact p.Prime] {L : Type} [Field L] {K : Type} [Field K] [Algebra K L]
 
-/-- The tame-frame relation-module surjection induces an isomorphism on `H²`. The kernel is
-isomorphic to the free rank-one group-algebra module, hence projective; the isomorphism follows
-from `groupCohomology.isIso_map_of_surjective_of_projective_ker`. -/
+/-- There is a surjective tame-frame relation-module map to the completed multiplicative module
+whose kernel is isomorphic to the free rank-one group-algebra module, and whose induced map on
+degree-two group cohomology is an isomorphism. -/
 theorem exists_relationModule_surjective_of_tameFrame_h2Iso
     [Algebra ℚ_[p] L] [Module.Finite ℚ_[p] L] [Algebra ℚ_[p] K]
     [IsScalarTower ℚ_[p] K L] [IsGalois K L]
