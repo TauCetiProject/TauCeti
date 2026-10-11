@@ -52,9 +52,8 @@ theorem isOpen_restrictedProduct_iff {s : Set (Πʳ i, [R i, A i]_[𝓕])} :
   simp only [isOpen_iff_continuous_mem]
   exact RestrictedProduct.continuous_dom
 
-/-- Evaluation at an index is an open map on a restricted product over the cofinite filter: through
-every point `x` passes the continuous section `y ↦ Function.update x i y` of the evaluation at
-`i`. No algebraic structure and no condition on the reference sets is needed. -/
+/-- Evaluation at any index is an open map from a restricted product over the cofinite filter to
+that factor. -/
 theorem isOpenMap_restrictedProduct_eval (i : ι) :
     IsOpenMap (fun x : Πʳ j, [R j, A j] ↦ x i) := by
   classical
@@ -97,11 +96,11 @@ theorem continuous_restrictedProduct_mulSingle (i : ι) :
     RestrictedProduct.continuous_rng_of_principal.2 (continuous_mulSingle i)
   exact (RestrictedProduct.continuous_inclusion h).comp hf
 
-/-- Inserting a single factor into a restricted product of Hausdorff spaces is a closed
-embedding: evaluation at the same index is a continuous left inverse. -/
+/-- The map `RestrictedProduct.mulSingle B i`, which inserts a factor at `i` and takes value `1`
+elsewhere, is a closed embedding when all factors are Hausdorff. -/
 @[to_additive
-  /-- Inserting a single factor into a restricted product of Hausdorff spaces is a closed
-  embedding: evaluation at the same index is a continuous left inverse. -/]
+  /-- The map `RestrictedProduct.single B i`, which inserts a factor at `i` and takes value `0`
+  elsewhere, is a closed embedding when all factors are Hausdorff. -/]
 theorem isClosedEmbedding_restrictedProduct_mulSingle [∀ i, T2Space (G i)] (i : ι) :
     IsClosedEmbedding (RestrictedProduct.mulSingle B i) :=
   Function.LeftInverse.isClosedEmbedding (f := fun x : Πʳ j, [G j, B j] ↦ x i)
