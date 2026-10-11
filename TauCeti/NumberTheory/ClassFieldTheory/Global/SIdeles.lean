@@ -88,13 +88,23 @@ private theorem coe_infiniteIdelesToSIdelesHom (x : (InfiniteAdeleRing L)ˣ) :
       ((x : InfiniteAdeleRing L), (1 : FiniteAdeleRing (𝓞 L) L)) :=
   IdeleGroup.coe_ofInfiniteIdele _ _ x
 
+omit [NumberField K] in
+private theorem fst_infiniteIdelesToSIdelesHom (x : (InfiniteAdeleRing L)ˣ) :
+    ((infiniteIdelesToSIdelesHom L S x : IdeleGroup (𝓞 L) L) : AdeleRing (𝓞 L) L).1 = x := by
+  rw [coe_infiniteIdelesToSIdelesHom]
+
+omit [NumberField K] in
+private theorem snd_infiniteIdelesToSIdelesHom (x : (InfiniteAdeleRing L)ˣ) :
+    ((infiniteIdelesToSIdelesHom L S x : IdeleGroup (𝓞 L) L) : AdeleRing (𝓞 L) L).2 = 1 := by
+  rw [coe_infiniteIdelesToSIdelesHom]
+
 private theorem infiniteIdelesToSIdelesHom_smul (σ : L ≃ₐ[K] L) (x : (InfiniteAdeleRing L)ˣ) :
     infiniteIdelesToSIdelesHom L S (σ • x) = σ • infiniteIdelesToSIdelesHom L S x := by
   refine Subtype.ext <| Units.ext <| Prod.ext ?_ ?_
-  · rw [coe_smul_sIdeles, coe_idele_smul, adeleGaloisAction_fst, coe_infiniteIdelesToSIdelesHom,
-      coe_infiniteIdelesToSIdelesHom, coe_infiniteIdele_smul]
-  · rw [coe_smul_sIdeles, coe_idele_smul, adeleGaloisAction_snd, coe_infiniteIdelesToSIdelesHom,
-      coe_infiniteIdelesToSIdelesHom, map_one]
+  · simp only [coe_smul_sIdeles, coe_idele_smul, adeleGaloisAction_fst,
+      fst_infiniteIdelesToSIdelesHom, coe_infiniteIdele_smul]
+  · simp only [coe_smul_sIdeles, coe_idele_smul, adeleGaloisAction_snd,
+      snd_infiniteIdelesToSIdelesHom, map_one]
 
 /-- The finite part of an `S`-idele, a finite `S`-idele. -/
 private def sIdelesToFiniteSIdelesHom : sIdeles (K := K) L S →* finiteSIdeles L S :=
@@ -109,9 +119,8 @@ private theorem coe_sIdelesToFiniteSIdelesHom (x : sIdeles (K := K) L S) :
 private theorem sIdelesToFiniteSIdelesHom_smul (σ : L ≃ₐ[K] L) (x : sIdeles (K := K) L S) :
     sIdelesToFiniteSIdelesHom L S (σ • x) = σ • sIdelesToFiniteSIdelesHom L S x := by
   refine Subtype.ext <| Units.ext ?_
-  rw [coe_sIdelesToFiniteSIdelesHom, coe_smul_finiteSIdeles, Units.coe_map,
-    coe_sIdelesToFiniteSIdelesHom, coe_smul_sIdeles, coe_idele_smul, adeleGaloisAction_snd]
-  rfl
+  simp only [coe_sIdelesToFiniteSIdelesHom, coe_smul_finiteSIdeles, Units.coe_map,
+    MonoidHom.coe_ofClass, coe_smul_sIdeles, coe_idele_smul, adeleGaloisAction_snd]
 
 /-- An `S`-idele with trivial finite part is the idele of its infinite part. -/
 private theorem sIdelesToFiniteSIdelesHom_eq_one_iff (x : sIdeles (K := K) L S) :
@@ -122,11 +131,15 @@ private theorem sIdelesToFiniteSIdelesHom_eq_one_iff (x : sIdeles (K := K) L S) 
     rw [coe_sIdelesToFiniteSIdelesHom] at hx
     refine Subtype.ext <| Units.ext ?_
     rw [coe_infiniteIdelesToSIdelesHom]
+    -- `Units.map (MonoidHom.fst _ _)` takes the infinite component of the underlying adele by
+    -- definition, as `IdeleGroup.toFiniteIdele` takes the finite one (`coe_toFiniteIdele`); the
+    -- product structure `MonoidHom.fst` expects is `AdeleRing` only up to unfolding, so
+    -- `Units.coe_map` does not rewrite here.
     exact Prod.ext (rfl) hx.symm
   · rintro ⟨y, rfl⟩
     exact Subtype.ext <| Units.ext <| by
-      rw [coe_sIdelesToFiniteSIdelesHom, coe_infiniteIdelesToSIdelesHom]
-      rfl
+      simp only [coe_sIdelesToFiniteSIdelesHom, coe_infiniteIdelesToSIdelesHom,
+        OneMemClass.coe_one, Units.val_one]
 
 omit [NumberField K] in
 private theorem infiniteIdelesToSIdelesHom_injective :
@@ -208,12 +221,6 @@ open scoped AdicCompletionExtension NumberField.LiesOver
 
 variable [IsGalois K L] [IsCyclic (L ≃ₐ[K] L)]
 
-private theorem herbrandQuotient_infiniteIdelesRep_ne_zero :
-    TateCohomology.herbrandQuotient (infiniteIdelesRep K L) ≠ 0 := by
-  rw [herbrandQuotient_infiniteIdelesRep_eq_herbrandQuotient_ofMulAction,
-    herbrandQuotient_ofMulAction_infinitePlace]
-  exact pow_ne_zero _ two_ne_zero
-
 /-- A choice of a place of `L` above each place of `S`. -/
 private def placeAbove (v : S) :
     {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.1.asIdeal} :=
@@ -223,16 +230,6 @@ private def placeAbove (v : S) :
   ⟨hw.choose, hw.choose_spec⟩
 
 variable {L S}
-
-private theorem herbrandQuotient_finiteSIdelesRep_ne_zero
-    (hS : ∀ w : HeightOneSpectrum (𝓞 L), w.under (𝓞 K) ∉ S →
-      Algebra.IsUnramifiedAt (𝓞 K) w.asIdeal) :
-    TateCohomology.herbrandQuotient (finiteSIdelesRep L S) ≠ 0 := by
-  rw [herbrandQuotient_finiteSIdelesRep S hS (placeAbove L S), Finset.prod_ne_zero_iff]
-  intro v _
-  have := (placeAbove L S v).2
-  rw [Nat.cast_ne_zero, ← card_stabilizer_eq_finrank_adicCompletion v.1]
-  exact Nat.card_pos.ne'
 
 /-- The Herbrand quotient of the `S`-ideles is that of the infinite ideles times that of the
 finite `S`-ideles. -/
@@ -245,11 +242,9 @@ private theorem herbrandQuotient_sIdelesRep_eq_mul
   -- The outer terms of `sIdelesInfiniteShortComplex L S` are `infiniteIdelesRep K L` and
   -- `finiteSIdelesRep L S` by definition, which instance search does not see through.
   have : Finite (tateCohomology (sIdelesInfiniteShortComplex L S).X₁ (-1)) :=
-    (TateCohomology.finite_tateCohomology_of_herbrandQuotient_ne_zero
-      (herbrandQuotient_infiniteIdelesRep_ne_zero L)).2
+    finite_tateCohomology_infiniteIdelesRep.2
   have : Finite (tateCohomology (sIdelesInfiniteShortComplex L S).X₃ (-1)) :=
-    (TateCohomology.finite_tateCohomology_of_herbrandQuotient_ne_zero
-      (herbrandQuotient_finiteSIdelesRep_ne_zero hS)).2
+    (finite_tateCohomology_finiteSIdelesRep S hS).2
   exact TateCohomology.herbrandQuotient_eq_mul_of_shortExact
     (sIdelesInfiniteShortComplex_shortExact L S)
 
@@ -296,8 +291,8 @@ theorem finite_tateCohomology_sIdelesRep
       Finite (tateCohomology (sIdelesRep (K := K) L S) (-1)) := by
   refine TateCohomology.finite_tateCohomology_of_herbrandQuotient_ne_zero ?_
   rw [herbrandQuotient_sIdelesRep_eq_mul hS]
-  exact mul_ne_zero (herbrandQuotient_infiniteIdelesRep_ne_zero L)
-    (herbrandQuotient_finiteSIdelesRep_ne_zero hS)
+  exact mul_ne_zero herbrandQuotient_infiniteIdelesRep_ne_zero
+    (herbrandQuotient_finiteSIdelesRep_ne_zero S hS)
 
 end Herbrand
 
