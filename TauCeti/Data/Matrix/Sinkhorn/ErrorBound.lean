@@ -59,19 +59,12 @@ theorem sinkhornErrorBound_def (K : Matrix ι κ ℝ) (a : ι → ℝ) (b : κ �
         (1 - tanh (K.projectiveDiameter / 4) ^ 2) :=
   (rfl)
 
-omit [Fintype ι] [Fintype κ] in
-/-- The denominator of the Sinkhorn error certificate is strictly positive. -/
-theorem one_sub_sq_tanh_projectiveDiameter_pos [Finite ι] (K : Matrix ι κ ℝ) :
-    0 < 1 - tanh (K.projectiveDiameter / 4) ^ 2 :=
-  sub_pos.mpr (pow_lt_one₀ (tanh_projectiveDiameter_div_four_nonneg K)
-    (tanh_lt_one _) two_ne_zero)
-
 /-- The a posteriori certificate is nonnegative. -/
 theorem sinkhornErrorBound_nonneg (K : Matrix ι κ ℝ) (a : ι → ℝ) (b : κ → ℝ) (u : ι → ℝ) :
     0 ≤ sinkhornErrorBound K a b u := by
   rw [sinkhornErrorBound_def]
   exact div_nonneg (mul_nonneg (tanh_projectiveDiameter_div_four_nonneg K)
-    (hilbertProjectiveDist_nonneg _ _)) (one_sub_sq_tanh_projectiveDiameter_pos K).le
+    (hilbertProjectiveDist_nonneg _ _)) (sub_pos.mpr (Real.tanh_sq_lt_one _)).le
 
 /-- The certificate vanishes at a fixed point of the Sinkhorn step. -/
 @[simp]
@@ -95,7 +88,7 @@ theorem hilbertProjectiveDist_le_div_sinkhornStep {K : Matrix ι κ ℝ}
       simp only [sinkhornStep_def, Subsingleton.elim (Kᵀ.sinkhornUpdate b u)
         (Kᵀ.sinkhornUpdate b uStar)]
     rw [hstep, hfixed]
-    exact le_div_iff₀ (one_sub_sq_tanh_projectiveDiameter_pos K) |>.mpr (by
+    exact le_div_iff₀ (sub_pos.mpr (Real.tanh_sq_lt_one _)) |>.mpr (by
       nlinarith [sq_nonneg (tanh (K.projectiveDiameter / 4)),
         hilbertProjectiveDist_nonneg u uStar])
   have hnext : ∀ i, K.sinkhornStep a b u i ≠ 0 := by
@@ -107,7 +100,7 @@ theorem hilbertProjectiveDist_le_div_sinkhornStep {K : Matrix ι κ ℝ}
       exact (Finset.sum_pos (fun j _ ↦ mul_pos (hK i j)
         (sinkhornUpdate_pos (fun j i ↦ hK i j) hb hu j)) Finset.univ_nonempty).ne')
   have htriangle := hilbertProjectiveDist_triangle u uStar hnext
-  rw [le_div_iff₀ (one_sub_sq_tanh_projectiveDiameter_pos K)]
+  rw [le_div_iff₀ (sub_pos.mpr (Real.tanh_sq_lt_one _))]
   nlinarith
 
 /-- Every computed entry is at most `exp E` times the corresponding exact scaling entry. -/
@@ -167,7 +160,7 @@ theorem sinkhornErrorBound_iterate_le {K : Matrix ι κ ℝ} (hK : ∀ i j, 0 < 
       (1 - tanh (K.projectiveDiameter / 4) ^ 2) :=
         div_le_div_of_nonneg_right
           (mul_le_mul_of_nonneg_left h (tanh_projectiveDiameter_div_four_nonneg K))
-          (one_sub_sq_tanh_projectiveDiameter_pos K).le
+          (sub_pos.mpr (Real.tanh_sq_lt_one _)).le
     _ = _ := by ring
 
 /-- **Certified entrywise absolute error.** The right-hand side uses only the computed plan
