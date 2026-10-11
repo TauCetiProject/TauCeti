@@ -21,6 +21,8 @@ where `f` itself has `P`.
 * `CategoryTheory.MorphismProperty.pullback_snd_comp`: `P (pullback.snd f k)` implies
   `P (pullback.snd f (e ≫ k))`; `pullback_snd_of_comp_eq` is the same for a morphism equal to
   `e ≫ k`.
+* `CategoryTheory.MorphismProperty.pullback_snd_pullback_fst_comp`: the base change of `f` along
+  `Y ×_S T ⟶ Y` passes its property to the base change along `Y ×_S T' ⟶ Y` for any `T' ⟶ T`.
 * `CategoryTheory.MorphismProperty.pullback_snd_pullback_snd`: `P (pullback.snd f k)` implies
   `P (pullback.snd (pullback.snd f v) a)` whenever `a ≫ v` factors through `k`.
 * `CategoryTheory.MorphismProperty.pullback_snd_comp_left`: if `P` is moreover stable under
@@ -50,6 +52,14 @@ theorem pullback_snd_of_comp_eq (f : X ⟶ Y) (k : W ⟶ Y) (e : W' ⟶ W) {a : 
     (hfac : e ≫ k = a) (h : P (pullback.snd f k)) : P (pullback.snd f a) := by
   subst hfac
   exact pullback_snd_comp f k e h
+
+/-- If the base change of `f` along `Y ×_S T ⟶ Y` has `P`, then so does its base change along
+`Y ×_S T' ⟶ Y` for every `t : T' ⟶ T`, since the latter factors through the former. -/
+theorem pullback_snd_pullback_fst_comp {S T T' : C} (f : X ⟶ Y) (g : Y ⟶ S) (r : T ⟶ S)
+    (t : T' ⟶ T) (h : P (pullback.snd f (pullback.fst g r))) :
+    P (pullback.snd f (pullback.fst g (t ≫ r))) :=
+  pullback_snd_of_comp_eq f _ ((pullbackLeftPullbackSndIso g r t).inv ≫ pullback.fst _ _)
+    (by simp) h
 
 /-- If `a ≫ v` factors as `e ≫ k`, then the base change of `pullback.snd f v` along `a` inherits
 from `pullback.snd f k` every property stable under base change. -/

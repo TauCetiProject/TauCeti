@@ -56,13 +56,6 @@ universe u
 
 variable {X Y S : Scheme.{u}}
 
-/-- Flatness of `X ×_Y (Y ×_S T) ⟶ Y ×_S T` passes to every `T' ⟶ T`. -/
-private lemma flat_pullback_snd_fst_comp (f : X ⟶ Y) (g : Y ⟶ S) {T T' : Scheme.{u}} (r : T ⟶ S)
-    (t : T' ⟶ T) (h : Flat (pullback.snd f (pullback.fst g r))) :
-    Flat (pullback.snd f (pullback.fst g (t ≫ r))) :=
-  MorphismProperty.pullback_snd_of_comp_eq (P := @Flat) f _
-    ((pullbackLeftPullbackSndIso g r t).inv ≫ pullback.fst _ _) (by simp) h
-
 /-- Precomposition with an isomorphism keeps a morphism flat. Inside the main proof below, instance
 search for this times out, so it is stated separately. -/
 private lemma flat_iso_hom_comp {X' Z : Scheme.{u}} (e : X' ≅ X) (k : X ⟶ Z) (h : Flat k) :
@@ -162,6 +155,6 @@ theorem Scheme.Hom.flat_of_flat_pullback_fiberι (f : X ⟶ Y) (g : Y ⟶ S) [Is
     (h : ∀ s : S, Flat (pullback.snd f (g.fiberι s))) : Flat f := by
   refine flat_of_flat_baseChange_field f g fun K _ s ↦ ?_
   rw [← Scheme.descResidueField_stalkClosedPointTo_fromSpecResidueField K S s]
-  exact flat_pullback_snd_fst_comp f g _ _ (h _)
+  exact MorphismProperty.pullback_snd_pullback_fst_comp (P := @Flat) f g _ _ (h _)
 
 end AlgebraicGeometry
