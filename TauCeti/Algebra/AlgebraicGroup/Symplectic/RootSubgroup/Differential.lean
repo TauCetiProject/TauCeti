@@ -152,7 +152,7 @@ root-subgroup tangent vector. -/
 theorem mapValue_rootVector (root : GLSymplecticFin.RootSubgroupIndex m) :
     Derivation.mapValue (Algebra.ofId R B) (rootVector (R := R) (B := R) root) =
       rootVector (R := R) (B := B) root := by
-  exact AdditiveGroup.mapValue_derivationComp_gaUnit (Algebra.ofId R B) _
+  exact AdditiveGroup.mapValue_derivationComp_gaTangentLinearEquiv_symm_one (Algebra.ofId R B) _
 
 /-- The normalized root vector is nonzero whenever the coefficient algebra is nontrivial. -/
 theorem rootVector_ne_zero [Nontrivial B] (root : GLSymplecticFin.RootSubgroupIndex m) :

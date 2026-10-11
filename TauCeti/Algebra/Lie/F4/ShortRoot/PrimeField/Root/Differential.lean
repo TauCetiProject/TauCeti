@@ -175,7 +175,7 @@ theorem rootVector_ne_zero (k : Fin 4 ⊕ Fin 4) : rootVector k ≠ 0 := by
   intro h
   have hd := congrArg (Derivation.cotangentLinearEquiv (B := ZMod 2)) h
   rw [cotangentLinearEquiv_rootVector, map_zero] at hd
-  exact AdditiveGroup.derivationComp_gaUnit_ne_zero _
+  exact AdditiveGroup.derivationComp_gaTangentLinearEquiv_symm_one_ne_zero _
     (derivationComp_injective_of_surjective (B := ZMod 2)
       (CommHopfAlgCat.commonKernelLift generator (.inl k)).hom
       (CommHopfAlgCat.commonKernelLift_surjective_of_surjective generator (.inl k)

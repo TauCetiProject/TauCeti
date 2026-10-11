@@ -120,7 +120,7 @@ theorem derivationComp_rootSubgroup_eq_smul_rootVector (k : Fin 6 ⊕ Fin 6)
 theorem mapValue_rootVector {C : Type*} [CommRing C] (φ : B →ₐ[ℤ] C)
     (k : Fin 6 ⊕ Fin 6) :
     Derivation.mapValue φ (rootVector (B := B) k) = rootVector (B := C) k := by
-  exact AdditiveGroup.mapValue_derivationComp_gaUnit φ _
+  exact AdditiveGroup.mapValue_derivationComp_gaTangentLinearEquiv_symm_one φ _
 
 /-- The image of each root-subgroup differential is precisely its normalized root line. -/
 theorem range_derivationCompLieHom_rootSubgroup_eq_span (k : Fin 6 ⊕ Fin 6) :
@@ -134,7 +134,7 @@ Use this directly: simplification changes the inherited integer module in the ze
 before this statement can match. -/
 theorem rootVector_ne_zero [Nontrivial B] (k : Fin 6 ⊕ Fin 6) :
     rootVector (B := B) k ≠ 0 := by
-  exact AdditiveGroup.derivationComp_gaUnit_ne_zero _
+  exact AdditiveGroup.derivationComp_gaTangentLinearEquiv_symm_one_ne_zero _
     (derivationComp_rootSubgroup_injective (B := B) k)
 
 end
