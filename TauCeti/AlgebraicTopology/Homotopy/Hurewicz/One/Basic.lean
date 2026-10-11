@@ -571,6 +571,13 @@ def hurewiczAb : Additive (Abelianization (FundamentalGroup X x)) →+ H₁ X :=
   MonoidHom.toAdditiveLeft (Abelianization.lift (hurewicz₁ X x))
 
 omit [PathConnectedSpace X] in
+/-- On the abelianization, the Hurewicz map is induced by `TauCeti.HurewiczOne.hurewicz₁`. -/
+lemma hurewiczAb_ofMul_of_eq (g : FundamentalGroup X x) :
+    hurewiczAb x (Additive.ofMul (Abelianization.of g)) =
+      Multiplicative.toAdd (hurewicz₁ X x g) := by
+  simp [hurewiczAb]
+
+omit [PathConnectedSpace X] in
 lemma hurewiczAb_ofMul_of (γ : Path x x) :
     hurewiczAb x (Additive.ofMul ((Abelianization.of : FundamentalGroup X x →* _)
       (Path.Homotopic.Quotient.mk γ))) = loopClass γ := by
