@@ -15,8 +15,9 @@ public import TauCeti.Analysis.Normed.Module.Alternating.Bilinear
 Every continuous bilinear form on a normed space over a nontrivially normed field determines a
 linear one-form by `λₓ(v) = B(x, v) / 2`. Its exterior derivative is one half of the
 alternatization of `B`; when
-`B` is skew-symmetric, this says that the corresponding constant two-form is exact. This is the
-explicit primitive for the constant model form in the local Darboux construction.
+`B` is skew-symmetric and `(2 : 𝕜) ≠ 0`, this says that the corresponding constant two-form is
+exact. This is the explicit primitive for the constant model form in the local Darboux
+construction.
 
 The coordinate calculation follows the convention for exterior derivatives in
 `Mathlib.Analysis.Calculus.DifferentialForm.Basic` and parallels the evaluation calculation for the
@@ -67,8 +68,8 @@ lemma extDeriv_liouvilleFormCLM_apply (B : V →L[𝕜] V →L[𝕜] F) (x : V)
   rw [extDeriv_liouvilleFormCLM]
   simp [TauCeti.ContinuousAlternatingMap.alternatizeBilinCLM_apply]
 
-/-- If `B` is skew-symmetric, the radial one-form `λₓ(v) = B(x, v) / 2` is a primitive of the
-constant two-form `B`. -/
+/-- If `B` is skew-symmetric and `(2 : 𝕜) ≠ 0`, the radial one-form
+`λₓ(v) = B(x, v) / 2` is a primitive of the constant two-form `B`. -/
 lemma extDeriv_liouvilleFormCLM_apply_of_skew (B : V →L[𝕜] V →L[𝕜] F)
     (h2 : (2 : 𝕜) ≠ 0) (hB : ∀ v w, B v w = -B w v) (x : V) (v : Fin 2 → V) :
     extDeriv (liouvilleFormCLM B) x v = B (v 0) (v 1) := by
