@@ -21,14 +21,15 @@ finite `q`, with the explicit bound
 
 for every `q ≥ n`. For `n = 1` the constant is bounded in `q`, in line with the embedding of
 `W^{1,1}_0` in `L^∞`. For `n ≥ 2` it grows like `q ^ (1 - 1/n)` as `q → ∞`, and summing these
-bounds in the exponential series gives **Trudinger's inequality**: `|u| ^ (n / (n - 1))` is
-exponentially integrable, with
+bounds in the exponential series gives **Trudinger's inequality**
 
 `∫_Ω exp ((|u| / (c ‖Du‖_{Lⁿ})) ^ (n / (n - 1))) ≤ e (nⁿ + 5) μ(Ω)`,
 `c = (2e) ^ (1 - 1/n) n⁻¹ ω ^ (-1/n)`.
 
-So the substitute for the failed embedding in `L^∞` is an embedding in an exponential Orlicz
-space.
+This inequality in `ℝ≥0∞` needs no finiteness assumption on `μ(Ω)`, and is trivial when
+`μ(Ω) = ∞`. When `μ(Ω) < ∞` it makes `|u| ^ (n / (n - 1))` exponentially integrable on `Ω`, so on
+sets of finite measure the substitute for the failed embedding in `L^∞` is an embedding in an
+exponential Orlicz space.
 
 The proof of the moment bound is that of Gilbarg–Trudinger, Theorem 7.15. A `C¹` function `u`
 with compact support in `Ω` is bounded pointwise by the Riesz potential of `‖Du‖` of order one,
