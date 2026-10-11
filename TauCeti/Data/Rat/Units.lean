@@ -43,20 +43,16 @@ theorem ext_units_rat {f g : ℚˣ →* M} (h_neg_one : f (-1) = g (-1))
   have hnat (n : ℕ) (hn : (n : ℚ) ≠ 0) : f (Units.mk0 n hn) = g (Units.mk0 n hn) := by
     induction n using induction_on_primes with
     | zero => exact absurd Nat.cast_zero hn
-    | one => rw [show Units.mk0 ((1 : ℕ) : ℚ) hn = 1 from Units.ext (by simp), map_one, map_one]
-    | prime_mul q n hq ih =>
-      have hn' : (n : ℚ) ≠ 0 := right_ne_zero_of_mul (by rwa [← Nat.cast_mul])
-      rw [show Units.mk0 ((q * n : ℕ) : ℚ) hn =
-          Units.mk0 (q : ℚ) (Nat.cast_ne_zero.2 hq.ne_zero) * Units.mk0 (n : ℚ) hn' from
-          Units.ext (by simp), map_mul, map_mul, h_prime q hq, ih hn']
-  -- Nonzero integers, by their sign.
+    | one => simp only [Nat.cast_one, Units.mk0_one, map_one]
+    | prime_mul q n hq ih => simp only [Nat.cast_mul, Units.mk0_mul, map_mul, h_prime q hq, ih]
+  -- Nonzero integers, by their sign, writing `-n` as `-1 * n`.
   have hint (z : ℤ) (hz : (z : ℚ) ≠ 0) : f (Units.mk0 z hz) = g (Units.mk0 z hz) := by
+    -- Mathlib has no `Units.mk0_neg_one`.
+    have hmk0 (h : (-1 : ℚ) ≠ 0) : Units.mk0 (-1 : ℚ) h = -1 := Units.ext rfl
     obtain ⟨n, rfl | rfl⟩ := Int.eq_nat_or_neg z
-    · have hn : (n : ℚ) ≠ 0 := by exact_mod_cast hz
-      rw [show Units.mk0 ((n : ℤ) : ℚ) hz = Units.mk0 _ hn from Units.ext (by simp), hnat]
-    · have hn : (n : ℚ) ≠ 0 := by simpa using hz
-      rw [show Units.mk0 ((-n : ℤ) : ℚ) hz = -1 * Units.mk0 _ hn from Units.ext (by simp),
-        map_mul, map_mul, h_neg_one, hnat]
+    · simp only [Int.cast_natCast, hnat]
+    · simp only [Int.cast_neg, Int.cast_natCast, neg_eq_neg_one_mul (n : ℚ), Units.mk0_mul, hmk0,
+        map_mul, h_neg_one, hnat]
   -- Agreement at a unit gives agreement at its inverse, in any monoid.
   have hinv (d : ℚˣ) (hd : f d = g d) : f d⁻¹ = g d⁻¹ :=
     calc f d⁻¹ = f d⁻¹ * g (d * d⁻¹) := by rw [mul_inv_cancel, map_one, mul_one]
