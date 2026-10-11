@@ -42,6 +42,8 @@ convex.
   automatic and membership is the subgradient inequality, and
   `TauCeti.mem_subdifferential_iff_forall_toReal_add_le` is the same statement between real
   representatives for an `f` that is never `⊥`;
+* `TauCeti.mem_subdifferential_ite_iff` — for a real function extended by `⊤` off `Ω`, a
+  subgradient at a point of `Ω` is a `y` satisfying the subgradient inequality on `Ω`;
 * `TauCeti.apply_le_apply_of_mem_subdifferential` — the subdifferential is monotone;
 * `TauCeti.convex_subdifferential` and `TauCeti.isClosed_subdifferential` — the subdifferential
   is convex, and closed for a topology making every `B x` continuous;
@@ -124,6 +126,22 @@ theorem mem_subdifferential_coe_iff (f : E → ℝ) :
     y ∈ subdifferential B (fun x => (f x : EReal)) x ↔ ∀ x', f x + B (x' - x) y ≤ f x' := by
   simp only [mem_subdifferential_iff, ne_eq, EReal.coe_ne_bot, EReal.coe_ne_top,
     not_false_eq_true, true_and, ← EReal.coe_add, EReal.coe_le_coe_iff]
+
+/-- For a real function `u` extended by `⊤` off `Ω`, a subgradient at a point `x ∈ Ω` is a `y`
+satisfying the subgradient inequality `u x + B (x' - x) y ≤ u x'` at every `x' ∈ Ω`. -/
+-- Not `@[simp]`: `mem_subdifferential_iff` already rewrites the left-hand side.
+theorem mem_subdifferential_ite_iff {Ω : Set E} [DecidablePred (· ∈ Ω)] {u : E → ℝ}
+    (hx : x ∈ Ω) :
+    y ∈ subdifferential B (fun x => if x ∈ Ω then (u x : EReal) else ⊤) x ↔
+      ∀ x' ∈ Ω, u x + B (x' - x) y ≤ u x' := by
+  simp only [mem_subdifferential_iff, hx, ite_true, ne_eq, EReal.coe_ne_bot,
+    EReal.coe_ne_top, not_false_eq_true, true_and]
+  refine ⟨fun h x' hx' => by
+    simpa only [hx', ite_true, ← EReal.coe_add, EReal.coe_le_coe_iff] using h x',
+    fun h x' => ?_⟩
+  by_cases hx' : x' ∈ Ω
+  · simpa only [hx', ite_true, ← EReal.coe_add, EReal.coe_le_coe_iff] using h x' hx'
+  · simp [hx']
 
 /-- If `f` never takes the value `⊥` and is finite at `x`, then `y` is a subgradient at `x` exactly
 when the subgradient inequality holds between real representatives at every point of the

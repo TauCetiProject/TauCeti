@@ -164,7 +164,7 @@ theorem equivPi_apply (n : ℕ) (hn : n ≠ 0) (x : ZMod n) (p : n.primeFactors)
 divides `x`; and `g = d * d⁻¹` is a multiple of `d` in `ZMod n` (`ZMod.mul_inv_eq_gcd`). -/
 theorem dvd_of_forall_mul_eq_zero {n : ℕ} [NeZero n] {d x : ZMod n}
     (h : ∀ r : ZMod n, r * d = 0 → r * x = 0) : d ∣ x := by
-  set g := Nat.gcd d.val n with hg
+  set g := Nat.gcd d.val n
   obtain ⟨m, hm⟩ : g ∣ n := Nat.gcd_dvd_right _ _
   have hmpos : 0 < m := Nat.pos_of_ne_zero fun h0 => NeZero.ne n (by rw [hm, h0, mul_zero])
   -- `m = n / g` kills `d`

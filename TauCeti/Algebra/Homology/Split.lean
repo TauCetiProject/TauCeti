@@ -20,12 +20,12 @@ a split monomorphism and the projection `Zᵢ ⟶ Hᵢ` onto the homology is a s
 
 Both hypotheses hold for every complex of vector spaces, and more generally of semisimple modules
 (see `TauCeti.Algebra.Homology.Semisimple`).  The second holds whenever the homology objects are
-projective (`HomologicalComplex.isSplitEpi_homologyπ_of_projective`).  As a mathematical remark
-not formalized here, the first holds for a complex of projective modules over a principal ideal
-domain, or over any hereditary ring, since the image of the differential out of `Kᵢ` is then
-projective.  The result therefore reduces statements
-about the homology of such complexes, such as the Künneth theorem, to complexes with zero
-differential.
+projective (`HomologicalComplex.isSplitEpi_homologyπ_of_projective`).  The first holds for a
+complex of projective modules over a principal ideal domain, since the image of the differential
+out of `Kᵢ` is then projective (`HomologicalComplex.isSplitMono_iCycles_of_isPrincipalIdealRing`);
+mathematically, the same argument works over any hereditary ring.  The result therefore reduces
+statements about the homology of such complexes, such as the Künneth theorem, to complexes with
+zero differential.
 
 The construction is the classical splitting.  Choose a retraction `r : Kᵢ ⟶ Zᵢ` of the inclusion
 `ι : Zᵢ ⟶ Kᵢ` and a section `s : Hᵢ ⟶ Zᵢ` of the projection `π : Zᵢ ⟶ Hᵢ`.  The chain maps are
@@ -57,13 +57,16 @@ open CategoryTheory Limits
 
 namespace HomologicalComplex
 
-variable {C : Type*} [Category* C] [Abelian C] {ι : Type*} {c : ComplexShape ι}
-  (K : HomologicalComplex C c)
+variable {C : Type*} [Category* C] {ι : Type*} {c : ComplexShape ι}
 
-/-- The projection from the cycles onto a projective homology object is a split epimorphism. -/
-instance isSplitEpi_homologyπ_of_projective (i : ι) [Projective (K.homology i)] :
+/-- The projection from the cycles onto a projective homology object is a split epimorphism.
+This only requires homology in degree `i`, in a category with zero morphisms. -/
+instance isSplitEpi_homologyπ_of_projective [HasZeroMorphisms C]
+    (K : HomologicalComplex C c) (i : ι) [K.HasHomology i] [Projective (K.homology i)] :
     IsSplitEpi (K.homologyπ i) :=
   ⟨⟨Projective.factorThru (𝟙 _) (K.homologyπ i), Projective.factorThru_comp _ _⟩⟩
+
+variable [Abelian C] (K : HomologicalComplex C c)
 
 namespace Split
 

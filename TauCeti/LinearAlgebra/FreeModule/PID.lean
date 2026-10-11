@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Projective
 public import Mathlib.LinearAlgebra.FreeModule.Basic
 public import Mathlib.RingTheory.PrincipalIdealDomain
 import Mathlib.SetTheory.Cardinal.Order
@@ -18,7 +19,10 @@ and chooses a pivot for each nonzero ideal of possible leading coordinates. The 
 of the submodule by elimination of the greatest coordinate in the finite support of each vector.
 
 This is the arbitrary-rank form of Lang, *Algebra*, Chapter III, Theorem 7.1.  Mathlib's
-`Submodule.nonempty_basis_of_pid` is the finite-rank form.
+`Submodule.nonempty_basis_of_pid` is the finite-rank form.  A projective module embeds in a free
+module, so every submodule of a projective module is free as well
+(`Submodule.free_of_projective_of_isPrincipalIdealRing`), and so is every module that injects into
+a projective module (`Module.Free.of_injective_of_projective_of_isPrincipalIdealRing`).
 -/
 
 public section
@@ -159,4 +163,27 @@ theorem free_of_isPrincipalIdealRing (N : Submodule R M) [Module.Free R M] :
   apply Basis.mk pivot_linearIndependent
   simpa [P] using span_pivot_eq_top.ge
 
+/-- Every submodule of a projective module over a principal ideal ring without zero divisors is
+free: a projective module `M` embeds in the free module `M →₀ R`, and the image of the submodule
+is a submodule of a free module. -/
+theorem free_of_projective_of_isPrincipalIdealRing (N : Submodule R M) [Module.Projective R M] :
+    Module.Free R N := by
+  obtain ⟨s, hs⟩ := Module.projective_def.mp ‹Module.Projective R M›
+  have := (N.map s).free_of_isPrincipalIdealRing
+  exact .of_equiv (N.equivMapOfInjective s hs.injective).symm
+
 end Submodule
+
+namespace Module.Free
+
+variable {R : Type*} {M N : Type*} [CommRing R] [NoZeroDivisors R] [IsPrincipalIdealRing R]
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+
+/-- A module that injects into a projective module over a principal ideal ring without zero
+divisors is free: it is isomorphic to the range, a submodule of the projective module. -/
+theorem of_injective_of_projective_of_isPrincipalIdealRing [Module.Projective R M]
+    (f : N →ₗ[R] M) (hf : Function.Injective f) : Module.Free R N :=
+  have := (LinearMap.range f).free_of_projective_of_isPrincipalIdealRing
+  .of_equiv (LinearEquiv.ofInjective f hf).symm
+
+end Module.Free

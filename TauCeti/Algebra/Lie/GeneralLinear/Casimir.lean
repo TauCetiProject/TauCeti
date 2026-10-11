@@ -213,7 +213,7 @@ private theorem glCasimir_eigenvalue_eq (mu : Fin N → K) :
       ∑ i : Fin N, mu i * (mu i + (N : K) - 1 - 2 * (i : K)) := by
   have hswap :
       (∑ i : Fin N, ∑ j ∈ Finset.Ioi i, mu j) =
-        ∑ j : Fin N, ∑ i ∈ Finset.Iio j, mu j := by
+        ∑ j : Fin N, ∑ _ ∈ Finset.Iio j, mu j := by
     simp_rw [← Finset.filter_lt_eq_Ioi, Finset.sum_filter]
     rw [Finset.sum_comm]
     simp_rw [← Finset.sum_filter, Finset.filter_gt_eq_Iio]

@@ -113,7 +113,7 @@ theorem W1p.setIntegral_sq_mul_norm_gradient_sq_le_of_pointwise (hlam : 0 < lam)
   set X := ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu
   set Y := ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu
   set F := ∫ x in Omega, force x ∂mu
-  have hmain : lam * X ≤ F + lam / 2 * X + 2 * Lam ^ 2 / lam * Y := by
+  have _ : lam * X ≤ F + lam / 2 * X + 2 * Lam ^ 2 / lam * Y := by
     calc
       lam * X ≤ (∫ x in Omega, e x ∂mu) + lam / 2 * X + 2 * Lam ^ 2 / lam * Y := by
         simpa [X, Y] using hint

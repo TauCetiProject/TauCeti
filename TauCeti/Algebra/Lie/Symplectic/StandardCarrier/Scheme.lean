@@ -300,7 +300,8 @@ instance isClosedImmersion_weightTorus : IsClosedImmersion (weightTorus n).hom.h
 /-- The scheme-level pinning equation: conjugation by the weight torus acts on each numbered root
 subgroup through the corresponding row of the type-`C` Cartan matrix, with negative rows on
 lowering generators. -/
-@[simp] theorem weightTorus_conj_rootSubgroup (k : Fin (n + 1) ⊕ Fin (n + 1))
+-- Not `@[simp]`: `simp` does not match its left-hand side, even with the lemma alone; use `rw`.
+theorem weightTorus_conj_rootSubgroup (k : Fin (n + 1) ⊕ Fin (n + 1))
     (A : Type) [CommRing A]
     (s : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
       (SplitTorus.groupScheme ℤ (Fin (n + 1))).X)

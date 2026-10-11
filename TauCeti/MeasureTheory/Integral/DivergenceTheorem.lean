@@ -7,10 +7,13 @@ module
 
 public import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
+public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
+import TauCeti.MeasureTheory.Integral.PolarCoord
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import TauCeti.Analysis.Calculus.Bilinear
 
 /-!
-# Green's formula for a bilinear pairing of partial derivatives on a rectangle
+# Green's formula for bilinear pairings on rectangles and annuli
 
 Let `u : ℝ × ℝ → V` be a `C²` map near a closed rectangle `R = [a₁, b₁] × [a₂, b₂]` and let `B` be
 a continuous bilinear map. Writing `∂s u` and `∂t u` for the derivatives of `u` in the directions
@@ -32,17 +35,24 @@ vanishes (`TauCeti.integral_bilinear_fderiv_apply_comm`). With boundary, this is
 expresses the symplectic area of a map from a rectangle into an exact symplectic vector space by
 integrals of a primitive along its four sides.
 
+The annular form applies the rectangle formula to the polar pullback. Its angular seam terms
+cancel, and the radial Jacobian converts the interior integral to the annulus. Neither the map
+nor its derivatives need be defined regularly on the inner disc.
+
 ## Main results
 
 * `ContinuousLinearMap.integral_bilinear_fderiv_sub_prod_Icc`: Green's formula above, over
   `Set.Icc a b` for points `a ≤ b` of `ℝ × ℝ`.
+* `ContinuousLinearMap.integral_bilinear_fderiv_sub_annulus`: the corresponding formula on a
+  translated annulus of positive inner radius, with outer minus inner circle boundary terms.
 -/
 
 public section
 
 namespace TauCeti
 
-open MeasureTheory Set
+open MeasureTheory Set Complex
+open scoped Real
 
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   [NormedAddCommGroup W] [NormedSpace ℝ W]
@@ -99,5 +109,89 @@ theorem _root_.ContinuousLinearMap.integral_bilinear_fderiv_sub_prod_Icc
   rw [setIntegral_congr_fun measurableSet_Icc hdiv] at hgreen
   rw [hgreen, intervalIntegral.integral_neg, intervalIntegral.integral_neg]
   abel
+
+/-- **Green's formula on a closed annulus.** For a `C²` map near the annulus of positive radii
+`a ≤ b`, the integral of the alternating part of a bilinear pairing of its derivatives equals
+the outer circle integral of `B u du` minus the inner circle integral. Both circles are
+parametrized counterclockwise; their difference gives the boundary orientation. -/
+theorem _root_.ContinuousLinearMap.integral_bilinear_fderiv_sub_annulus
+    (B : V →L[ℝ] V →L[ℝ] W) {u : ℂ → V} (z₀ : ℂ) {a b : ℝ}
+    (ha : 0 < a) (hab : a ≤ b)
+    (hu : ∀ z ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, ContDiffAt ℝ 2 u z) :
+    ∫ z in {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b},
+      (B (fderiv ℝ u z 1) (fderiv ℝ u z I) -
+        B (fderiv ℝ u z I) (fderiv ℝ u z 1)) =
+      (∫ θ in -π..π, B (u (circleMap z₀ b θ))
+        (fderiv ℝ u (circleMap z₀ b θ) (circleMap 0 b θ * I))) -
+      (∫ θ in -π..π, B (u (circleMap z₀ a θ))
+        (fderiv ℝ u (circleMap z₀ a θ) (circleMap 0 a θ * I))) := by
+  let P : ℝ × ℝ → ℂ := fun p ↦ z₀ + Complex.polarCoord.symm p
+  let v := u ∘ P
+  have hP : ContDiff ℝ 2 P := by
+    simp only [P, Complex.polarCoord_symm_apply, ← Complex.ofRealCLM_apply]
+    fun_prop
+  have hπ : (-π : ℝ) ≤ π := by linarith [Real.pi_pos]
+  have hmem : ∀ p ∈ Icc (a, -π) (b, π),
+      P p ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} := by
+    intro p hp
+    simp only [mem_Icc, Prod.le_def] at hp
+    simpa only [mem_ofPred_eq, P, add_sub_cancel_left, Complex.norm_polarCoord_symm,
+      abs_of_nonneg (le_trans ha.le hp.1.1)] using And.intro hp.1.1 hp.2.1
+  have hv : ∀ p ∈ Icc (a, -π) (b, π), ContDiffAt ℝ 2 v p :=
+    fun p hp ↦ (hu _ (hmem p hp)).comp p hP.contDiffAt
+  -- Apply rectangular Green to the polar pullback.
+  have hgreen := B.integral_bilinear_fderiv_sub_prod_Icc
+    (a := (a, -π)) (b := (b, π)) ⟨hab, by linarith [Real.pi_pos]⟩ hv
+  -- Mathlib supplies the polar derivative; compose it with the derivative of `u`.
+  have hd : ∀ p ∈ Icc (a, -π) (b, π), fderiv ℝ v p =
+      (fderiv ℝ u (P p)).comp
+        (Complex.equivRealProdCLM.symm.toContinuousLinearMap.comp (fderivPolarCoordSymm p)) :=
+    fun p hp ↦ ((hu _ (hmem p hp)).differentiableAt (by norm_num)).hasFDerivAt.comp p
+      (hasFDerivAt_add_polarCoord_symm p z₀) |>.fderiv
+  have hdr : ∀ p ∈ Icc (a, -π) (b, π), fderiv ℝ v p (1, 0) =
+      fderiv ℝ u (P p) (Complex.exp (p.2 * I)) := by
+    intro p hp
+    simp only [hd p hp, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+      equivRealProd_symm_fderivPolarCoordSymm_apply_one_zero]
+  have hdt : ∀ p ∈ Icc (a, -π) (b, π), fderiv ℝ v p (0, 1) =
+      fderiv ℝ u (P p) (circleMap 0 p.1 p.2 * I) := by
+    intro p hp
+    simp only [hd p hp, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+      equivRealProd_symm_fderivPolarCoordSymm_apply_zero_one]
+  -- The alternating pairing has exactly the radial Jacobian of polar integration.
+  have harea : (∫ p in Icc (a, -π) (b, π),
+      B (fderiv ℝ v p (1, 0)) (fderiv ℝ v p (0, 1)) -
+        B (fderiv ℝ v p (0, 1)) (fderiv ℝ v p (1, 0))) =
+      ∫ z in {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b},
+        B (fderiv ℝ u z 1) (fderiv ℝ u z I) - B (fderiv ℝ u z I) (fderiv ℝ u z 1) := by
+    rw [← Complex.integral_comp_polarCoord_symm_Icc _ z₀ ha]
+    exact setIntegral_congr_fun measurableSet_Icc fun p hp ↦ by
+      rw [hdr p hp, hdt p hp]
+      exact B.apply_exp_circleMap_sub_swap (fderiv ℝ u (P p)) p.1 p.2
+  have hPc (r θ : ℝ) : P (r, θ) = circleMap z₀ r θ := by
+    simp [P, Complex.polarCoord_symm_apply, circleMap, Complex.exp_mul_I]
+  -- The radial edges of the rectangle give the two circle integrals.
+  have hcircle (r : ℝ) (hr : r ∈ Icc a b) :
+      (∫ θ in -π..π, B (v (r, θ)) (fderiv ℝ v (r, θ) (0, 1))) =
+        ∫ θ in -π..π, B (u (circleMap z₀ r θ))
+          (fderiv ℝ u (circleMap z₀ r θ) (circleMap 0 r θ * I)) := by
+    apply intervalIntegral.integral_congr
+    intro θ hθ
+    have hθ' : -π ≤ θ ∧ θ ≤ π := by
+      simpa only [uIcc_of_le hπ, mem_Icc] using hθ
+    simp only [hdt (r, θ) ⟨⟨hr.1, hθ'.1⟩, ⟨hr.2, hθ'.2⟩⟩]
+    simp [v, hPc]
+  -- At the angular seam the map and its radial derivative agree, so these edges cancel.
+  have hseam : (∫ r in a..b, B (v (r, π)) (fderiv ℝ v (r, π) (1, 0))) =
+      ∫ r in a..b, B (v (r, -π)) (fderiv ℝ v (r, -π) (1, 0)) := by
+    apply intervalIntegral.integral_congr
+    intro r hr
+    have hr' : a ≤ r ∧ r ≤ b := by simpa only [uIcc_of_le hab, mem_Icc] using hr
+    simp only [hdr (r, π) ⟨⟨hr'.1, by linarith [Real.pi_pos]⟩, ⟨hr'.2, le_rfl⟩⟩,
+      hdr (r, -π) ⟨⟨hr'.1, le_rfl⟩, ⟨hr'.2, by linarith [Real.pi_pos]⟩⟩]
+    simp [v, P, Complex.polarCoord_symm_apply, Complex.exp_mul_I]
+  rw [harea, hcircle b ⟨hab, le_rfl⟩, hcircle a ⟨le_rfl, hab⟩,
+    hseam, sub_self, sub_zero] at hgreen
+  exact hgreen
 
 end TauCeti

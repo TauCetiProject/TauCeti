@@ -12,6 +12,7 @@ import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Distribution
 import TauCeti.MeasureTheory.Constructions.HaarToSphere
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
+import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 
 /-!
 # The Newtonian kernel is a fundamental solution of `-Δ`
@@ -203,44 +204,11 @@ theorem integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul (hn : 3 ≤ n)
 /-- **The Newtonian kernel is weakly differentiable.** For `n ≥ 3`, on every open set the
 classical derivative of `Gₙ`, which exists away from the origin, is a weak derivative of `Gₙ`. -/
 theorem hasWeakFDerivOn_newtonianKernel (hn : 3 ≤ n) (Ω : Opens (EuclideanSpace ℝ (Fin n))) :
-    HasWeakFDerivOn volume Ω (newtonianKernel n) (fderiv ℝ (newtonianKernel n)) := by
-  refine hasWeakFDerivOn_iff.mpr fun v ↦ hasWeakLineDerivOn_iff_testFunction.mpr ⟨inferInstance,
-    (locallyIntegrable_newtonianKernel n).locallyIntegrableOn _, ?_, fun φ ↦ ?_⟩
-  · simpa [Function.comp_def] using (ContinuousLinearMap.apply ℝ ℝ v).locallyIntegrableOn_comp
-      ((locallyIntegrable_fderiv_newtonianKernel n).locallyIntegrableOn Ω)
-  have hφ : ContDiff ℝ 1 (φ : EuclideanSpace ℝ (Fin n) → ℝ) := φ.contDiff.of_le (by simp)
-  have h := integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul hn hφ φ.hasCompactSupport v
-  simp_rw [((hφ.differentiable one_ne_zero) _).lineDeriv_eq_fderiv, smul_eq_mul]
-  simpa only [mul_comm] using h
-
-/-- Integration by parts in each coordinate direction turns `∫ Δ f · Gₙ` into the negative of
-the integrated gradient pairing `∇Gₙ · ∇f`. -/
-private lemma integral_laplacian_mul_newtonianKernel_eq_neg_integral_sum (hn : 3 ≤ n)
-    {f : EuclideanSpace ℝ (Fin n) → ℝ} (hf : ContDiff ℝ 2 f) (hc : HasCompactSupport f)
-    (b : OrthonormalBasis (Fin n) ℝ (EuclideanSpace ℝ (Fin n))) :
-    ∫ x, Δ f x * newtonianKernel n x =
-      -∫ x, ∑ i, fderiv ℝ (newtonianKernel n) x (b i) * fderiv ℝ f x (b i) := by
-  have hf1 : ContDiff ℝ 1 (fderiv ℝ f) := hf.fderiv_right (by norm_num)
-  have hgi : ∀ i, ContDiff ℝ 1 fun y ↦ fderiv ℝ f y (b i) := fun i ↦
-    hf1.clm_apply contDiff_const
-  have hci : ∀ i, HasCompactSupport fun y ↦ fderiv ℝ f y (b i) := fun i ↦
-    (hc.fderiv ℝ).comp_left (g := fun L : EuclideanSpace ℝ (Fin n) →L[ℝ] ℝ ↦ L (b i)) rfl
-  -- The Laplacian as a sum of iterated directional derivatives.
-  have hΔ : ∀ x, Δ f x = ∑ i, fderiv ℝ (fun y ↦ fderiv ℝ f y (b i)) x (b i) := fun x ↦ by
-    rw [laplacian_eq_iteratedFDeriv_orthonormalBasis f b]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [iteratedFDeriv_two_apply, fderiv_clm_apply
-      ((hf1.differentiable one_ne_zero) x) (differentiableAt_const _)]
-    simp
-  simp_rw [hΔ, Finset.sum_mul]
-  rw [integral_finsetSum _ fun i _ ↦ ?_, integral_finsetSum _ fun i _ ↦
-    integrable_fderiv_newtonianKernel_mul _ (hgi i).continuous (hci i), ← Finset.sum_neg_distrib]
-  · refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [← integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul hn (hgi i) (hci i) (b i)]
-    simp_rw [mul_comm]
-  · simpa [mul_comm] using integrable_newtonianKernel_mul
-      (((hgi i).continuous_fderiv one_ne_zero).clm_apply continuous_const)
-      (((hci i).fderiv ℝ).comp_left (g := fun L : EuclideanSpace ℝ (Fin n) →L[ℝ] ℝ ↦ L (b i)) rfl)
+    HasWeakFDerivOn volume Ω (newtonianKernel n) (fderiv ℝ (newtonianKernel n)) :=
+  hasWeakFDerivOn_of_forall_integral_fderiv_smul (locallyIntegrable_newtonianKernel n)
+    (locallyIntegrable_fderiv_newtonianKernel n) (fun _ hg hc v ↦ by
+      simpa only [smul_eq_mul, mul_comm] using
+        integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul hn hg hc v) Ω
 
 /-- Away from the pole, the gradient pairing `∇Gₙ · ∇f` is `-(n ωₙ)⁻¹ ‖x‖⁻ⁿ f' x x`. -/
 private lemma sum_fderiv_newtonianKernel_mul_fderiv (hn : 3 ≤ n)
@@ -274,7 +242,9 @@ theorem integral_laplacian_mul_newtonianKernel (hn : 3 ≤ n)
         (‖x‖ ^ (-(n : ℝ)) * fderiv ℝ f x x) := by
     filter_upwards [volume.ae_ne 0] with x hx
     exact sum_fderiv_newtonianKernel_mul_fderiv hn b f hx
-  rw [integral_laplacian_mul_newtonianKernel_eq_neg_integral_sum hn hf hc b,
+  rw [integral_laplacian_mul_eq_neg_integral_sum (locallyIntegrable_newtonianKernel n)
+      (locallyIntegrable_fderiv_newtonianKernel n)
+      (fun _ ↦ integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul hn) hf hc b,
     integral_congr_ae hsum, integral_const_mul, hrad]
   have h0 : (n : ℝ) ≠ 0 := by linarith
   field_simp

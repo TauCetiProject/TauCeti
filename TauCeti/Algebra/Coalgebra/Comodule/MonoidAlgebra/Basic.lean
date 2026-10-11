@@ -465,7 +465,7 @@ noncomputable def ofMapWeightSpace (f : V →ₗ[R] W)
     rw [← weightDecomposition_sum (R := R) (G := G) (V := V) v]
     simp only [Finsupp.sum, map_sum, LinearMap.coe_comp, Function.comp_apply]
     apply Finset.sum_congr rfl
-    intro g hg
+    intro g _
     rw [weightDecomposition_apply,
       mem_weightSpace.mp (weightProj_mem_weightSpace g v), TensorProduct.map_tmul,
       mem_weightSpace.mp (hf g (weightProj_mem_weightSpace g v))]

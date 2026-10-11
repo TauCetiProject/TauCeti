@@ -8,7 +8,7 @@ module
 public import Mathlib.Topology.Algebra.MetricSpace.Lipschitz
 public import TauCeti.Analysis.GradientFlow.Slope
 public import TauCeti.Data.EReal.Operations
-public import TauCeti.MeasureTheory.Function.MetricDerivative
+public import TauCeti.MeasureTheory.Function.MetricDerivative.Basic
 
 /-!
 # Strong upper gradients

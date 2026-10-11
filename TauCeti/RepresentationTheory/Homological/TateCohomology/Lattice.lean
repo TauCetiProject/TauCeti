@@ -26,7 +26,7 @@ The Herbrand quotient of a lattice therefore depends only on the representation 
 how the Herbrand quotient of a unit lattice is computed: Dirichlet's logarithmic embedding makes
 the `S`-units, together with a copy of `ℤ`, a lattice in the same real representation as the
 permutation lattice on the places in `S`, whose Herbrand quotient is computed in
-`TauCeti.RepresentationTheory.Homological.TateCohomology.Permutation`.
+`TauCeti.RepresentationTheory.Homological.TateCohomology.Permutation.Basic`.
 
 The identity of `V`, written in the two bases coming from `M` and from `N`, is a nonsingular
 matrix over `K` intertwining the integer matrices of the actions on `M` and on `N`. By

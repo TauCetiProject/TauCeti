@@ -63,7 +63,6 @@ theorem dixonH2_norm_le {R M : ℝ}
     ‖dixonH2 f γ a b w‖ ≤ M / (‖w‖ - R) * |b - a| := by
   rw [dixonH2_def]
   have hM_nn : 0 ≤ M := (norm_nonneg _).trans (hM a Set.left_mem_uIcc)
-  have hpos : 0 < ‖w‖ - R := by linarith
   have h_ptwise : ∀ t ∈ Set.uIoc a b,
       ‖f (γ t) / (γ t - w) * deriv γ t‖ ≤ M / (‖w‖ - R) := by
     intro t ht_ui

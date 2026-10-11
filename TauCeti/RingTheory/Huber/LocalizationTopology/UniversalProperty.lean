@@ -101,7 +101,7 @@ private theorem exists_pow_mul_locSubring_mem {B : Type*} [Ring B] [TopologicalS
     intro _ G
     obtain ⟨m, hm⟩ := exists_pow_mul_algebraMap_mem P S f hf G
     exact ⟨m, fun x hx b hb ↦ hm x (locSubring_empty P s S ▸ hx) b hb⟩
-  | insert t U' ht ih =>
+  | insert t U' _ ih =>
     intro hpowU G
     obtain ⟨V, hV, hzV⟩ := isBounded_iff.mp (isPowerBounded_iff.mp
       (hpowU t (Finset.mem_insert_self t U'))) (G : Set B) (G.isOpen.mem_nhds G.zero_mem)

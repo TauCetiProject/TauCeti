@@ -477,7 +477,7 @@ theorem divisorClass_eq_canonicalClass_iff (hF : IsFunctionField k F)
   -- `D` has the class of `W`.  Conversely such a `D` is itself a Riemann–Roch divisor, whose
   -- degree and dimension are `2g - 2` and `g` by Corollary 1.5.16.
   obtain ⟨ω, hωmem, hω0⟩ := (Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF hex)
-  refine ⟨fun hD ↦ ?_, fun ⟨hdeg, hdim⟩ ↦ ?_⟩
+  refine ⟨fun hD ↦ ?_, fun ⟨hdeg, _⟩ ↦ ?_⟩
   · have hRR := isRiemannRochDivisor_of_divisorClass_eq_canonicalClass hF hex hD
     exact ⟨hRR.degree_eq hF hex, (hRR.dim_eq hF hex).ge⟩
   · have hid := Divisor.isRiemannRochDivisor_iff.mp

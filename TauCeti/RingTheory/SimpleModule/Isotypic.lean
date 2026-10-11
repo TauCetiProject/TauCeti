@@ -20,7 +20,8 @@ many components, for instance when the module is Noetherian, composing with
 
 Maps from a simple module `S` into `M` land in its `S`-isotypic component. Restricting the
 codomain therefore gives an equivalence of hom spaces, without any semisimplicity or
-finiteness assumption on `M`.
+finiteness assumption on `M`. A map from a simple module into an isotypic module of a different
+type is zero (`IsIsotypicOfType.linearMap_eq_zero`).
 
 ## Main definitions
 
@@ -92,6 +93,23 @@ theorem linearMapIsotypicComponentEquiv_symm_apply (f : S →ₗ[R] M) (s : S) :
 end Hom
 
 end TauCeti
+
+namespace IsIsotypicOfType
+
+variable {R M N S : Type*} [Ring R] [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N] [AddCommGroup S] [Module R S]
+  [IsSimpleModule R S]
+
+/-- A map from a simple module into an isotypic module of a different type is zero. -/
+theorem linearMap_eq_zero (h : IsIsotypicOfType R M N)
+    (hne : ¬ Nonempty (S ≃ₗ[R] N)) (f : S →ₗ[R] M) : f = 0 := by
+  obtain hinj | hzero := f.injective_or_eq_zero
+  · let e := LinearEquiv.ofInjective f hinj
+    have : IsSimpleModule R (LinearMap.range f) := .congr e.symm
+    exact False.elim (hne ⟨e.trans (h (LinearMap.range f)).some⟩)
+  · exact hzero
+
+end IsIsotypicOfType
 
 namespace TauCeti.IsSemisimpleModule
 

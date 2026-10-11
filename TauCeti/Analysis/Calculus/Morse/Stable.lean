@@ -236,11 +236,6 @@ theorem IsNegativeGradient.dist_le_of_mem_stableSet (hφ : IsNegativeGradient φ
     hφ.value_le_of_mem_stableSet (isInvariant_stableSet φ x τ hz)
       (fun t' ↦ by simpa only [hγdef, ← _root_.Flow.map_add] using hf (t' + τ)) hfx
   by_contra! hcon
-  have hsr : s < r := by
-    by_contra! hrs
-    have h0 := hlow 0
-    rw [hγ0] at h0
-    nlinarith
   -- `b` is the first time at which the trajectory reaches distance `r`.
   set A : Set ℝ := {τ ∈ Icc 0 t | r ≤ dist (γ τ) x}
   have hAbdd : BddBelow A := ⟨0, fun τ hτ ↦ hτ.1.1⟩

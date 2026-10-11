@@ -169,6 +169,13 @@ theorem eval_single (P : Place k F) (n : ℤ) (f : Fˣ) :
     eval (Finsupp.single P n : Divisor k F) f = P.normResidueOrOne f ^ n := by
   simp [eval_eq_finsuppProd]
 
+/-- On the point divisor of a place, `f(P)` is the local factor at `P`. -/
+@[simp]
+theorem eval_ofPoint (P : Place k F) (f : Fˣ) :
+    eval (WeilDivisor.ofPoint P : Divisor k F) f = P.normResidueOrOne f := by
+  rw [← one_zsmul (WeilDivisor.ofPoint P), ← WeilDivisor.single_eq_zsmul_ofPoint, eval_single,
+    zpow_one]
+
 /-- **`f` is a unit at every place of `D`** — the condition under which no local factor is
 replaced by `1`, and the one Weil reciprocity is stated against. It is what makes `f(D)` a product
 of genuine norms; those norms are the classical ones under the separate finiteness condition

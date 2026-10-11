@@ -117,8 +117,6 @@ private theorem characteristicWeight_add_single_sub_le (hw : P.weight default < 
     P.characteristicWeight k (x + Pi.single default 1) - P.characteristicWeight k x ≤
       P.characteristicWeight k (y + Pi.single default 1) - P.characteristicWeight k y := by
   rw [characteristicWeight_add_single_sub, characteristicWeight_add_single_sub]
-  have h1 : (0 : ℤ) ≤ y default - x default := by omega
-  have h2 : (0 : ℤ) < -P.weight default := by omega
   nlinarith
 
 variable {x₀ : V → ℤ}

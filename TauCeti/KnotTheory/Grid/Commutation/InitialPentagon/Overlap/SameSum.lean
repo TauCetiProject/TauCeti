@@ -66,8 +66,7 @@ theorem hasOneCommonSide_of_initial_self (D : GridRectangleInitialPentagonDecomp
   · simp [GridRectangleBetween.mem_sideColumns, hcommon]
   · intro c hc
     simp only [GridRectangleBetween.mem_sideColumns, hcommon] at hc
-    have hleft := Grid.ne_left_of_mem_cIoo hcol
-    have hright := Grid.ne_right_of_mem_cIoo hcol
+    have _ := Grid.ne_right_of_mem_cIoo hcol
     grind
 
 private theorem underlying_first_isEmpty

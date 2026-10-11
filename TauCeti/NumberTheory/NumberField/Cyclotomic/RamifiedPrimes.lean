@@ -115,7 +115,7 @@ omit [NeZero n] in
 theorem ramifiedPrimes_eq_primeFactors_div_two (hn : n % 4 = 2) :
     ramifiedPrimes K = (n / 2).primeFactors := by
   have : IsCyclotomicExtension {n / 2} ℚ K :=
-    IsCyclotomicExtension.singleton_div_two_of_mod_four_eq_two hn two_ne_zero
+    IsCyclotomicExtension.singleton_div_two_of_mod_four_eq_two hn
   have : NeZero (n / 2) := ⟨by omega⟩
   exact ramifiedPrimes_eq_primeFactors (by omega)
 

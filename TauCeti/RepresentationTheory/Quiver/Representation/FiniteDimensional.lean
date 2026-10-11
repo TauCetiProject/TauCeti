@@ -10,9 +10,13 @@ public import TauCeti.RepresentationTheory.Quiver.Representation.AsModule
 public import Mathlib.Algebra.Category.FGModuleCat.EssentiallySmall
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.CategoryTheory.Abelian.FunctorCategory
+public import Mathlib.CategoryTheory.Abelian.Subcategory
 public import Mathlib.LinearAlgebra.DirectSum.Finite
--- Non-public: a monomorphism of functors into a category with pullbacks is a monomorphism at every
--- object.
+import Mathlib.Algebra.Category.ModuleCat.Biproducts
+import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Biproducts
+import Mathlib.CategoryTheory.Preadditive.LeftExact
+-- Non-public: monomorphisms and epimorphisms of functors into an abelian category are
+-- monomorphisms and epimorphisms at every object.
 import Mathlib.CategoryTheory.Limits.FunctorCategory.EpiMono
 
 /-!
@@ -20,9 +24,9 @@ import Mathlib.CategoryTheory.Limits.FunctorCategory.EpiMono
 
 A representation of a quiver is **pointwise finite-dimensional** when the vector space it puts at
 every vertex is finite-dimensional. This file defines that property, `TauCeti.IsFinDim`, proves
-that it transports along an isomorphism, equips its full subcategory with an exact structure,
-proves essential smallness for a finite vertex set, and shows that a path algebra module
-finite-dimensional over the base field gives such a representation.
+that it is stable under subobjects and quotients, equips its full subcategory with an abelian
+structure and an exact inclusion, proves essential smallness for a finite vertex set, and shows
+that a path algebra module finite-dimensional over the base field gives such a representation.
 
 ## Main definitions
 
@@ -31,8 +35,13 @@ finite-dimensional over the base field gives such a representation.
 ## Main results
 
 * `TauCeti.IsFinDim.of_iso`: pointwise finite-dimensionality transports along an isomorphism.
-* `TauCeti.IsFinDim.of_mono`: a subobject of a pointwise finite-dimensional representation is
-  pointwise finite-dimensional.
+* `TauCeti.IsFinDim.of_mono` and `TauCeti.IsFinDim.of_epi`: subobjects and quotients of pointwise
+  finite-dimensional representations are pointwise finite-dimensional.
+* The full subcategory of `IsFinDim` representations is abelian, by Mathlib's abelian
+  full-subcategory construction. Its inclusion preserves finite limits and colimits, so kernels,
+  cokernels and short exact sequences have their ambient pointwise meaning.
+* `TauCeti.isFinDim_biproduct`: finite biproducts of finite-dimensional representations are
+  finite-dimensional.
 * The full subcategory of `IsFinDim` representations is essentially small for finite `Q`.
 * `TauCeti.module_finite_asModule_of_isFinDim`: a pointwise finite-dimensional representation
   gives a finite module over the path algebra when the vertex set is finite.
@@ -96,6 +105,32 @@ theorem IsFinDim.of_mono {M N : QuiverRep.{u, v, w, t} k Q} (hM : IsFinDim k Q M
   rw [ModuleCat.mono_iff_injective] at hmono
   exact FiniteDimensional.of_injective (f.app x).hom hmono
 
+/-- A quotient of a pointwise finite-dimensional representation is pointwise finite-dimensional.
+No finiteness of the quiver is required. -/
+theorem IsFinDim.of_epi {M N : QuiverRep.{u, v, w, t} k Q} (hM : IsFinDim k Q M)
+    (f : M ⟶ N) [Epi f] : IsFinDim k Q N := by
+  intro x
+  have := hM x
+  exact Module.Finite.of_surjective (f.app x).hom
+    ((ModuleCat.epi_iff_surjective (f.app x)).mp inferInstance)
+
+/-- A finite biproduct of pointwise finite-dimensional representations is pointwise
+finite-dimensional. No finiteness of the quiver is required. -/
+theorem isFinDim_biproduct {ι : Type*} [Finite ι]
+    (M : ι → QuiverRep.{u, v, w, t} k Q) (hM : ∀ i, IsFinDim k Q (M i)) :
+    IsFinDim k Q (Limits.biproduct M) := by
+  intro v
+  -- Reindex to `Fin n` because `ModuleCat.biproductIsoPi` requires an index type in `Type`.
+  obtain ⟨n, ⟨r⟩⟩ := Finite.exists_equiv_fin ι
+  let M' (i : Fin n) := M (r.symm i)
+  have (i : Fin n) : FiniteDimensional k ((M' i).obj v) := hM (r.symm i) v
+  let i : Limits.biproduct M ≅ Limits.biproduct M' :=
+    Limits.biproduct.whiskerEquiv r (fun j ↦ eqToIso (by simp [M']))
+  let E := (evaluation (Paths Q) (ModuleCat k)).obj v
+  let e := E.mapIso i ≪≫ E.mapBiproduct M' ≪≫
+    ModuleCat.biproductIsoPi (fun i ↦ (M' i).obj v)
+  exact Module.Finite.equiv e.toLinearEquiv.symm
+
 section ExactStructure
 
 variable (k : Type u) (Q : Type v) [Field k] [Quiver.{w} Q]
@@ -103,10 +138,13 @@ variable (k : Type u) (Q : Type v) [Field k] [Quiver.{w} Q]
 open CategoryTheory.Limits CategoryTheory.ObjectProperty
 open scoped ZeroObject
 
-/-- Isomorphism closure makes pointwise finite-dimensionality a replete object property. -/
-instance : ObjectProperty.IsClosedUnderIsomorphisms (IsFinDim.{u, v, w, t} k Q)
-    where
-  of_iso := fun e h => h.of_iso e
+/-- Subobjects stay in the pointwise finite-dimensional subcategory. -/
+instance : ObjectProperty.IsClosedUnderSubobjects (IsFinDim.{u, v, w, t} k Q) where
+  prop_of_mono f _ h := h.of_mono f
+
+/-- Quotients stay in the pointwise finite-dimensional subcategory. -/
+instance : ObjectProperty.IsClosedUnderQuotients (IsFinDim.{u, v, w, t} k Q) where
+  prop_of_epi f _ h := h.of_epi f
 
 /-- The zero representation belongs to the finite-dimensional full subcategory. -/
 instance : ObjectProperty.ContainsZero (IsFinDim.{u, v, w, t} k Q) where
@@ -144,6 +182,21 @@ induced exact structure. -/
 instance : ObjectProperty.IsClosedUnderBinaryProducts (IsFinDim.{u, v, w, t} k Q) := by
   have h := isExtensionClosed_pointwiseFiniteDimensionalQuiverRepresentations k Q
   exact h.isClosedUnderBinaryProducts
+
+/-- Finite products stay in the pointwise finite-dimensional subcategory. Together with closure
+under subobjects and quotients, this makes the full subcategory abelian. -/
+instance : ObjectProperty.IsClosedUnderFiniteProducts (IsFinDim.{u, v, w, t} k Q) :=
+  ObjectProperty.IsClosedUnderFiniteProducts.mk'
+
+/-- The inclusion of pointwise finite-dimensional representations preserves finite limits. -/
+instance : PreservesFiniteLimits (ObjectProperty.ι (IsFinDim.{u, v, w, t} k Q)) := by
+  have := ObjectProperty.preservesKernels_ι (IsFinDim.{u, v, w, t} k Q)
+  exact Functor.preservesFiniteLimits_of_preservesKernels _
+
+/-- The inclusion of pointwise finite-dimensional representations preserves finite colimits. -/
+instance : PreservesFiniteColimits (ObjectProperty.ι (IsFinDim.{u, v, w, t} k Q)) := by
+  have := ObjectProperty.preservesCokernels_ι (IsFinDim.{u, v, w, t} k Q)
+  exact Functor.preservesFiniteColimits_of_preservesCokernels _
 
 /-- The exact structure on pointwise finite-dimensional quiver representations. -/
 noncomputable def pointwiseFiniteDimensionalQuiverRepresentationsExactStructure :

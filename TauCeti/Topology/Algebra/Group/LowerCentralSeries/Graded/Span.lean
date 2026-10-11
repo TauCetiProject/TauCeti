@@ -152,7 +152,7 @@ theorem span_gradedPow_gradedMkZero_union_gradedBracket_eq_top
         (s ×ˢ s)) = ⊤ := by
   set W := span (ZMod p) ((fun g ↦ gradedPow p G 0 (gradedMkZero p G g)) '' s ∪
     (fun gh : G × G ↦ gradedBracket p G 0 0 (gradedMkZero p G gh.1) (gradedMkZero p G gh.2)) ''
-      (s ×ˢ s)) with hW
+      (s ×ˢ s))
   have h₁ : IsOpen (pLowerCentralSeries p G 1 : Set G) :=
     Subgroup.isOpen_mono (pLowerCentralSeries_antitone (by omega)) h₂
   have hmem (x : gradedPiece p G 0) : x ∈ span (ZMod p) (gradedMkZero p G '' s) := by
@@ -223,7 +223,7 @@ theorem span_range_gradedPow_union_range_gradedBracket_eq_top {k : ℕ}
         gradedBracket p G k 0 xy.1 xy.2) = ⊤ := by
   set W := span (ZMod p) (Set.range (gradedPow p G k) ∪
     Set.range fun xy : gradedPiece p G k × gradedPiece p G 0 ↦
-      gradedBracket p G k 0 xy.1 xy.2) with hW
+      gradedBracket p G k 0 xy.1 xy.2)
   -- The preimage of `W` in `G`: a union of cosets of the open subgroup `λ_{k+2}`, hence closed.
   let U : Subgroup G :=
     { carrier := {g | ∃ w ∈ W, gradedPieceInclusion p G (k + 1) w =

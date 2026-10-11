@@ -144,8 +144,6 @@ private theorem monodromy_mapOfEq_subgroupQuotientProj
     rw [FundamentalGroup.mapOfEq_apply]
     let r : C(SubgroupQuotient x₀ H, X) :=
       ⟨subgroupQuotientProj x₀ H, continuous_subgroupQuotientProj x₀ H⟩
-    let q : C(UniversalCover x₀, SubgroupQuotient x₀ H) :=
-      ⟨subgroupQuotientMap x₀ H, hq.continuous⟩
     dsimp only [Γ]
     rw [Path.Homotopic.Quotient.map_cast]
     have hmapped := congrArg (fun δ ↦ δ.map r)

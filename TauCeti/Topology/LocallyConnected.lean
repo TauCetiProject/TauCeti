@@ -24,11 +24,11 @@ through `IsQuotientMap.isCoinducing` and is strictly more general, since coinduc
 for surjectivity. What is added here is the passage from that to a continuous surjection out of a
 compact space, which is closed and therefore a quotient map.
 
-The intended consumer is layer **L5** of the conformal-mapping roadmap, Carathéodory's boundary
-correspondence: a conformal map that extends continuously to the closure of its domain carries a
-locally connected boundary to a locally connected boundary, which is the necessary half of
-Carathéodory's continuity theorem. That application is in
-`TauCeti/Analysis/Complex/Conformal/LocallyConnectedBoundary.lean`; nothing here is specific to it.
+One application is the necessary half of Carathéodory's continuity theorem: a conformal map on a
+bounded domain with locally connected boundary that extends continuously to the closure has
+locally connected image boundary. The extension maps the compact source boundary onto the image
+boundary, so the set-level result applies. This application is in
+`TauCeti/Analysis/Complex/Conformal/LocallyConnectedBoundary.lean`.
 
 ## Main results
 

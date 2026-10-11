@@ -233,7 +233,7 @@ private theorem residue_eq_of_eventuallyEq_zpow_smul_of_order_lt_zero {f g : ℂ
   have hle : (n : WithTop ℤ) ≤ meromorphicOrderAt f z₀ :=
     hord_eq ▸ le_add_of_nonneg_right hg.meromorphicOrderAt_nonneg
   obtain ⟨g₀, hg₀_an, hg₀_ne, hf_eq⟩ := (meromorphicOrderAt_ne_top_iff hf).1 (ne_top_of_lt ha)
-  set a := (meromorphicOrderAt f z₀).untop₀ with ha_def
+  set a := (meromorphicOrderAt f z₀).untop₀ with _
   have hcoe : (a : WithTop ℤ) = meromorphicOrderAt f z₀ :=
     WithTop.coe_untop₀_of_ne_top (ne_top_of_lt ha)
   have ha_lt : a < 0 := by
@@ -325,7 +325,7 @@ lemma exists_analyticAt_eventuallyEq_zpow_smul {f : ℂ → ℂ} {z₀ : ℂ} {m
     filter_upwards [meromorphicOrderAt_eq_top_iff.1 htop] with z hz
     simp [hz]
   · obtain ⟨g₀, hg₀_an, _, hf_eq⟩ := (meromorphicOrderAt_ne_top_iff hf).1 htop
-    set a := (meromorphicOrderAt f z₀).untop₀ with ha_def
+    set a := (meromorphicOrderAt f z₀).untop₀ with _
     have hma : m ≤ a := by
       rw [← WithTop.coe_le_coe, WithTop.coe_untop₀_of_ne_top htop]
       exact hm

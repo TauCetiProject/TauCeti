@@ -636,6 +636,16 @@ theorem cartanMap_apply (x : ExactK0.{u} (finiteProjectiveModulesExactStructure 
   rcases M with ⟨M, hM⟩
   simp
 
+/-- The Cartan map sends the alternating class of a finite resolution of `M` by finitely
+generated projectives to the class of `M`. -/
+@[simp] theorem cartanMap_moduleEulerClassOf {M : ModuleCat.{u} R}
+    (hM : (ExactStructure.abelian (ModuleCat.{u} R)).admitsFiniteResolution
+      (finiteProjectiveModules R) M) :
+    cartanMap R (moduleEulerClassOf R hM) =
+      ExactK0.of ⟨M, admitsFiniteResolution_le_finiteModules R M hM⟩ := by
+  rw [cartanMap_apply, ← moduleResolutionEquiv_symm_of, AddEquiv.apply_symm_apply,
+    fromFiniteProjectiveResolution_of]
+
 section Inverse
 
 variable (h : ModuleCat.isFG R ≤

@@ -92,10 +92,7 @@ theorem exists_pos_forall_mem_image_inter_ball_and_image_sdiff_closedBall {U : S
   have hgf : ∀ z ∈ U, g (f z) = z := fun z hz => hinj.leftInvOn_invFunOn hz
   have hfg : ∀ w ∈ f '' U, f (g w) = w := fun w hw => Function.invFunOn_eq hw
   have hgmem : ∀ w ∈ f '' U, g w ∈ U := fun w hw => Function.invFunOn_mem hw
-  have hd0 : deriv f z₀ ≠ 0 :=
-    deriv_ne_zero_of_injOn hf hU hinj hz₀b
-  have hzζ : z₀ - ζ ≠ 0 := sub_ne_zero.mpr (Metric.ne_of_mem_sphere hz₀s hρ.ne')
-  set v := deriv f z₀ * (z₀ - ζ) with hv_def
+  set v := deriv f z₀ * (z₀ - ζ)
   -- the pulled-back segment has velocity `z₀ - ζ` at `t = 0`
   have hφ : HasDerivAt (fun t : ℝ => g (v * t + f z₀)) (z₀ - ζ) 0 :=
     hasDerivAt_invFunOn_comp_segment hf hU hinj hz₀b (z₀ - ζ)
@@ -171,7 +168,7 @@ theorem mem_closure_image_inter_sphere_inter_setOf_im_pos_and_mem_closure_inter_
   obtain ⟨θ₀, -, hθ₀⟩ := exists_mem_Icc_circleMap_eq 0 hz₀s
   rw [zero_add] at hθ₀
   -- the imaginary coordinate of the crosscut, as a function of the angle
-  set χ : ℝ → ℝ := fun θ => ((f (circleMap ζ ρ θ) - f z₀) / v).im with hχ_def
+  set χ : ℝ → ℝ := fun θ => ((f (circleMap ζ ρ θ) - f z₀) / v).im
   have hχ : HasDerivAt χ 1 θ₀ := by
     have h1 : HasDerivAt (circleMap ζ ρ) (circleMap 0 ρ θ₀ * I) θ₀ :=
       hasDerivAt_circleMap ζ ρ θ₀
@@ -267,8 +264,8 @@ theorem image_inter_ball_subset_filledHull_or_image_sdiff_closedBall_subset_fill
       f '' (U \ closedBall ζ ρ) ⊆ filledHull K := by
   have hγKcl : closure (f '' (U ∩ sphere ζ ρ)) ⊆ K :=
     hK.closure_subset_iff.mpr hγK
-  set p := f z₀ with hp_def
-  set v := deriv f z₀ * (z₀ - ζ) with hv_def
+  set p := f z₀
+  set v := deriv f z₀ * (z₀ - ζ)
   have hv : v ≠ 0 :=
     mul_ne_zero (deriv_ne_zero_of_injOn hf hUo hinj hz₀.1)
       (sub_ne_zero.mpr (Metric.ne_of_mem_sphere hz₀.2 hρ.ne'))
@@ -285,8 +282,6 @@ theorem image_inter_ball_subset_filledHull_or_image_sdiff_closedBall_subset_fill
     disjoint_image_of_subset_closure_image_inter_sphere_union_frontier_image
       hUo hf hinj sdiff_subset disjoint_sdiff_closedBall_inter_sphere hKsub
   -- the two-sidedness theorem, applied to `K` and the segment on `[-η/2, η/2]`
-  have hpγ : p ∈ f '' (U ∩ sphere ζ ρ) := mem_image_of_mem f hz₀
-  have hpK : p ∈ K := hγKcl (subset_closure hpγ)
   have hseg : ∀ t ∈ Icc (-(η / 2)) (η / 2), v * t + p ∈ K → t = 0 := by
     intro t ht hKt
     by_contra ht0

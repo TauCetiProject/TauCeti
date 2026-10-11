@@ -66,7 +66,6 @@ private theorem trace_depth_after_break {t v : ℕ} (hvt : t < v)
   have hm : v + 1 ≤ psiNat K L v := by
     rw [hψ]
     have h₁ : v - t + t = v := Nat.sub_add_cancel hvt.le
-    have h₂ : 1 ≤ v - t := by omega
     nlinarith
   refine ⟨?_, hm, ?_⟩
   · rw [he, hsum, Nat.mul_add_div hpos,

@@ -71,7 +71,7 @@ theorem exists_apply_mem_gradedBracketSpan_basisModificationDelta_eq {k : ℕ}
   -- `W` is the set of values `δ_ρ(ω)` with `ω_{x₀} ∈ C_{k+1}(F)`; the claim is `Im δ_ρ ≤ W`.
   set W : Submodule (ZMod p) (gradedPiece p (freeProP p X) (k + 1 + 1)) :=
     ((gradedBracketSpan p (freeProP p X) k).comap (LinearMap.proj x₀)).map
-      (basisModificationDelta p X (Nat.le_add_left 1 k) ρ) with hW
+      (basisModificationDelta p X (Nat.le_add_left 1 k) ρ)
   have hmemW : ∀ ω : X → gradedPiece p (freeProP p X) (k + 1),
       ω x₀ ∈ gradedBracketSpan p (freeProP p X) k →
         basisModificationDelta p X (Nat.le_add_left 1 k) ρ ω ∈ W := fun ω hω ↦

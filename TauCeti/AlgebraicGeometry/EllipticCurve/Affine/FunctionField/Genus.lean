@@ -55,7 +55,7 @@ public section
 
 open Polynomial TauCeti AlgebraicGeometry IsDedekindDomain
 
-open scoped Polynomial.Bivariate
+open scoped Polynomial.Bivariate RatFunc
 
 namespace WeierstrassCurve.Affine
 
@@ -92,14 +92,10 @@ private theorem infinityPlace_add_mul_mk_Y_le_exp_iff (p q : F[X]) (n : ℕ) :
   · simp only [map_zero, zero_add, infinityPlace_algebraMap_mul_mk_Y W hq, WithZero.exp_le_exp,
       natDegree_zero, mul_zero, zero_le, hq, false_or, true_and]
     omega
-  have hne : W.infinityPlace (algebraMap F[X] W.FunctionField p) ≠
-      W.infinityPlace (algebraMap F[X] W.FunctionField q *
-        algebraMap W.CoordinateRing W.FunctionField (CoordinateRing.mk W Y)) := by
-    rw [infinityPlace_algebraMap_polynomial W hp, infinityPlace_algebraMap_mul_mk_Y W hq]
-    intro h
-    have := WithZero.exp_injective h
-    omega
-  rw [W.infinityPlace.map_add_of_distinct_val hne, max_le_iff,
+  rw [IsScalarTower.algebraMap_apply F[X] (RatFunc F) W.FunctionField p,
+    IsScalarTower.algebraMap_apply F[X] (RatFunc F) W.FunctionField q,
+    val_add_mul_mk_Y W.infinityPlace (one_lt_infinityPlace_X W),
+    ← IsScalarTower.algebraMap_apply, ← IsScalarTower.algebraMap_apply, max_le_iff,
     infinityPlace_algebraMap_polynomial W hp, infinityPlace_algebraMap_mul_mk_Y W hq,
     WithZero.exp_le_exp, WithZero.exp_le_exp]
   simp only [hq, false_or]
