@@ -479,15 +479,14 @@ private lemma isIso_homologyZeroBiprod
     IsIso (homologyZeroBiprod V W hT P) := by
   have := isIso_homologyZeroRestr W hT P h₀
   have := isIso_homologyZeroRestr W hT P h₁
-  -- degree `0` cohomology commutes with the biproduct
+  -- degree `0` cohomology commutes with the biproduct, being an additive functor
   have : IsIso (biprod.desc (HomologicalComplex.homologyMap
       (biprod.inl : (cechComplexFunctor W).obj (restr P (V 0)) ⟶ _) 0)
       (HomologicalComplex.homologyMap
         (biprod.inr : (cechComplexFunctor W).obj (restr P (V 1)) ⟶ _) 0)) :=
-    ⟨⟨biprod.lift (HomologicalComplex.homologyMap biprod.fst 0)
-        (HomologicalComplex.homologyMap biprod.snd 0),
-      by ext <;> simp [← HomologicalComplex.homologyMap_comp],
-      by simp [← HomologicalComplex.homologyMap_comp, ← HomologicalComplex.homologyMap_add]⟩⟩
+    haveI := preservesBinaryBiproducts_of_preservesBiproducts
+      (HomologicalComplex.homologyFunctor A (ComplexShape.up ℕ) 0)
+    ((HomologicalComplex.homologyFunctor A (ComplexShape.up ℕ) 0).mapBiprod _ _).isIso_inv
   rw [homologyZeroBiprod_eq]
   have : IsIso (biprod.map (homologyZeroRestr W hT P (V 0)) (homologyZeroRestr W hT P (V 1))) :=
     (biprod.mapIso (asIso (homologyZeroRestr W hT P (V 0)))
