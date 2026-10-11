@@ -68,7 +68,7 @@ theorem sinkhornErrorBound_nonneg (K : Matrix ι κ ℝ) (a : ι → ℝ) (b : �
 
 /-- The certificate vanishes at a fixed point of the Sinkhorn step. -/
 @[simp]
-theorem sinkhornErrorBound_of_sinkhornStep_eq {K : Matrix ι κ ℝ} {a : ι → ℝ} {b : κ → ℝ}
+theorem sinkhornErrorBound_eq_zero_of_sinkhornStep_eq {K : Matrix ι κ ℝ} {a : ι → ℝ} {b : κ → ℝ}
     {u : ι → ℝ} (h : K.sinkhornStep a b u = u) : sinkhornErrorBound K a b u = 0 := by
   simp [sinkhornErrorBound_def, h]
 
@@ -103,6 +103,26 @@ theorem hilbertProjectiveDist_le_div_sinkhornStep {K : Matrix ι κ ℝ}
   rw [le_div_iff₀ (sub_pos.mpr (Real.tanh_sq_lt_one _))]
   nlinarith
 
+/-- **A posteriori column-factor error.** The column update is within the computable
+certificate of any positive exact scaling with the prescribed marginals. -/
+theorem hilbertProjectiveDist_sinkhornUpdate_le_errorBound {K : Matrix ι κ ℝ}
+    (hK : ∀ i j, 0 < K i j) {a : ι → ℝ} (ha : ∀ i, 0 < a i)
+    {b : κ → ℝ} (hb : ∀ j, 0 < b j) {P : Matrix ι κ ℝ} {uStar : ι → ℝ}
+    {vStar : κ → ℝ} (hP : IsDiagonalScaling P K uStar vStar)
+    (hPm : HasMarginals P a b) (huStar : ∀ i, 0 < uStar i) (hvStar : ∀ j, 0 < vStar j)
+    {u : ι → ℝ} (hu : ∀ i, 0 < u i) :
+    hilbertProjectiveDist (Kᵀ.sinkhornUpdate b u) vStar ≤ sinkhornErrorBound K a b u := by
+  rcases isEmpty_or_nonempty κ with hκ | hκ
+  · simpa [hilbertProjectiveDist_def] using sinkhornErrorBound_nonneg K a b u
+  have herr := hilbertProjectiveDist_le_div_sinkhornStep hK (fun i ↦ (ha i).ne') hb hu
+    huStar (hP.sinkhornStep_eq hPm hK huStar hvStar)
+  have hcol := hP.hilbertProjectiveDist_sinkhornUpdate_iterate_le hPm hK ha hb huStar
+    hvStar hu 0
+  simp only [Function.iterate_zero, id_eq, Nat.mul_zero, zero_add, pow_one] at hcol
+  refine hcol.trans ?_
+  rw [sinkhornErrorBound_def, mul_div_assoc]
+  exact mul_le_mul_of_nonneg_left herr (tanh_projectiveDiameter_div_four_nonneg K)
+
 /-- Every computed entry is at most `exp E` times the corresponding exact scaling entry. -/
 theorem sinkhornPlan_apply_le_exp_errorBound {K : Matrix ι κ ℝ}
     (hK : ∀ i j, 0 < K i j) {a : ι → ℝ} (ha : ∀ i, 0 < a i)
@@ -111,15 +131,16 @@ theorem sinkhornPlan_apply_le_exp_errorBound {K : Matrix ι κ ℝ}
     (hPm : HasMarginals P a b) (huStar : ∀ i, 0 < uStar i) (hvStar : ∀ j, 0 < vStar j)
     {u : ι → ℝ} (hu : ∀ i, 0 < u i) (i : ι) (j : κ) :
     K.sinkhornPlan a b u i j ≤ exp (sinkhornErrorBound K a b u) * P i j := by
+  have : Nonempty ι := ⟨i⟩
   have : Nonempty κ := ⟨j⟩
-  have herr := hilbertProjectiveDist_le_div_sinkhornStep hK (fun i ↦ (ha i).ne') hb hu
-    huStar (hP.sinkhornStep_eq hPm hK huStar hvStar)
-  have hbound := sinkhornPlan_iterate_apply_le_exp_mul hK ha hb hP hPm huStar hvStar hu 0 i j
-  simp only [Function.iterate_zero, id_eq, Nat.mul_zero, zero_add, pow_one] at hbound
-  refine hbound.trans (mul_le_mul_of_nonneg_right (exp_le_exp.mpr ?_)
-    (hP.pos hK huStar hvStar i j).le)
-  rw [sinkhornErrorBound_def, mul_div_assoc]
-  exact mul_le_mul_of_nonneg_left herr (tanh_projectiveDiameter_div_four_nonneg K)
+  refine ((isDiagonalScaling_sinkhornPlan K a b u).apply_le_exp_hilbertProjectiveDist_mul
+    hP (hK i) (sinkhornStep_pos hK ha hb hu i).le
+    (sinkhornUpdate_pos (fun j i ↦ hK i j) hb hu) hvStar
+    ((sum_sinkhornPlan_apply hK a hb hu i).trans (((hasMarginals_def P a b).mp hPm).1 i).symm)
+    j).trans ?_
+  exact mul_le_mul_of_nonneg_right
+    (exp_le_exp.mpr (hilbertProjectiveDist_sinkhornUpdate_le_errorBound hK ha hb hP hPm
+      huStar hvStar hu)) (hP.pos hK huStar hvStar i j).le
 
 /-- Every exact scaling entry is at most `exp E` times the corresponding computed entry. -/
 theorem le_exp_errorBound_mul_sinkhornPlan_apply {K : Matrix ι κ ℝ}
@@ -131,15 +152,15 @@ theorem le_exp_errorBound_mul_sinkhornPlan_apply {K : Matrix ι κ ℝ}
     P i j ≤ exp (sinkhornErrorBound K a b u) * K.sinkhornPlan a b u i j := by
   have : Nonempty ι := ⟨i⟩
   have : Nonempty κ := ⟨j⟩
-  have herr := hilbertProjectiveDist_le_div_sinkhornStep hK (fun i ↦ (ha i).ne') hb hu
-    huStar (hP.sinkhornStep_eq hPm hK huStar hvStar)
-  have hbound := le_exp_mul_sinkhornPlan_iterate_apply hK ha hb hP hPm huStar hvStar hu 0 i j
-  simp only [Function.iterate_zero, id_eq, Nat.mul_zero, zero_add, pow_one] at hbound
-  refine hbound.trans (mul_le_mul_of_nonneg_right (exp_le_exp.mpr ?_) ?_)
-  · rw [sinkhornErrorBound_def, mul_div_assoc]
-    exact mul_le_mul_of_nonneg_left herr (tanh_projectiveDiameter_div_four_nonneg K)
-  · exact ((isDiagonalScaling_sinkhornPlan K a b u).pos hK (sinkhornStep_pos hK ha hb hu)
-      (sinkhornUpdate_pos (fun j i ↦ hK i j) hb hu) i j).le
+  have hw := sinkhornUpdate_pos (fun j i ↦ hK i j) hb hu
+  refine (hP.apply_le_exp_hilbertProjectiveDist_mul (isDiagonalScaling_sinkhornPlan K a b u)
+    (hK i) (huStar i).le hvStar hw ((((hasMarginals_def P a b).mp hPm).1 i).trans
+      (sum_sinkhornPlan_apply hK a hb hu i).symm) j).trans ?_
+  rw [hilbertProjectiveDist_comm]
+  exact mul_le_mul_of_nonneg_right
+    (exp_le_exp.mpr (hilbertProjectiveDist_sinkhornUpdate_le_errorBound hK ha hb hP hPm
+      huStar hvStar hu))
+    ((isDiagonalScaling_sinkhornPlan K a b u).pos hK (sinkhornStep_pos hK ha hb hu) hw i j).le
 
 /-- The certificate itself decreases geometrically along the iteration, starting from the
 observed initial step rather than the unknown limiting factors. -/
