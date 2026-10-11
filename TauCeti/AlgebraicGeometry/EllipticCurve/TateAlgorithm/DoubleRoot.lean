@@ -101,12 +101,14 @@ def IsTateEvenStage (ϖ : R) (k : ℕ) (W : WeierstrassCurve R) : Prop :=
     ϖ ^ (2 * k + 5) ∣ W.a₆
 
 /-- Unfolding `IsTateOddStage`. -/
+@[simp]
 theorem isTateOddStage_iff {k : ℕ} {W : WeierstrassCurve R} :
     IsTateOddStage ϖ k W ↔ ϖ ∣ W.a₁ ∧ ϖ ∣ W.a₂ ∧ ¬ ϖ ^ 2 ∣ W.a₂ ∧ ϖ ^ (k + 2) ∣ W.a₃ ∧
       ϖ ^ (k + 3) ∣ W.a₄ ∧ ϖ ^ (2 * k + 4) ∣ W.a₆ :=
   Iff.rfl
 
 /-- Unfolding `IsTateEvenStage`. -/
+@[simp]
 theorem isTateEvenStage_iff {k : ℕ} {W : WeierstrassCurve R} :
     IsTateEvenStage ϖ k W ↔ ϖ ∣ W.a₁ ∧ ϖ ∣ W.a₂ ∧ ¬ ϖ ^ 2 ∣ W.a₂ ∧ ϖ ^ (k + 3) ∣ W.a₃ ∧
       ϖ ^ (k + 3) ∣ W.a₄ ∧ ϖ ^ (2 * k + 5) ∣ W.a₆ :=
