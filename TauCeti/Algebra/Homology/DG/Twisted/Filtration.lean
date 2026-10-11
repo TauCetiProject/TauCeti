@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.Complex
+-- Reuse its graded-complex construction privately; callers use the characteristic equations.
+import all TauCeti.Algebra.Homology.DG.Twisted.Complex
 public import Mathlib.LinearAlgebra.Isomorphisms
 public import Mathlib.CategoryTheory.Subobject.Lattice
 import Mathlib.Algebra.Category.ModuleCat.EpiMono
@@ -63,7 +65,7 @@ theorem twistedIndexFiltration_mono : Monotone (twistedIndexFiltration (R := R) 
   fun _ _ hp _ hf ↦ (mem_twistedIndexFiltration_iff (R := R) ind).mpr fun x hx ↦
     (mem_twistedIndexFiltration_iff (R := R) ind).mp hf x (lt_of_le_of_lt hp hx)
 
-/-- Above every generator index the filtration is the whole coefficient module. -/
+/-- Above every generator index the filtration stage is all of `P → M`. -/
 theorem twistedIndexFiltration_eq_top {p : ℤ} (hp : ∀ x, ind x ≤ p) :
     twistedIndexFiltration (R := R) (M := M) ind p = ⊤ := by
   ext f
@@ -81,15 +83,20 @@ section FiniteIndexFiltration
 
 variable [Finite P]
 
+private theorem exists_index_bounds :
+    ∃ a b : ℤ, (∀ x, a < ind x) ∧ ∀ x, ind x ≤ b := by
+  obtain ⟨a, ha⟩ := (Set.finite_range ind).bddBelow
+  obtain ⟨b, hb⟩ := (Set.finite_range ind).bddAbove
+  exact ⟨a - 1, b, fun x ↦ by
+    have := ha (Set.mem_range_self x)
+    omega, fun x ↦ hb (Set.mem_range_self x)⟩
+
 /-- A finite index filtration is bounded, including when there are no generators. -/
 theorem twistedIndexFiltration_bounded :
     ∃ a b : ℤ, twistedIndexFiltration (R := R) (M := M) ind a = ⊥ ∧
       twistedIndexFiltration (R := R) (M := M) ind b = ⊤ := by
-  obtain ⟨a, ha⟩ := (Set.finite_range ind).bddBelow
-  obtain ⟨b, hb⟩ := (Set.finite_range ind).bddAbove
-  exact ⟨a - 1, b, twistedIndexFiltration_eq_bot ind (fun x ↦ by
-    have := ha (Set.mem_range_self x)
-    omega), twistedIndexFiltration_eq_top ind (fun x ↦ hb (Set.mem_range_self x))⟩
+  obtain ⟨a, b, ha, hb⟩ := exists_index_bounds ind
+  exact ⟨a, b, twistedIndexFiltration_eq_bot ind ha, twistedIndexFiltration_eq_top ind hb⟩
 
 /-- Every element lies in some stage of a finite index filtration. -/
 theorem iSup_twistedIndexFiltration_eq_top :
@@ -117,12 +124,12 @@ theorem mem_twistedIndexGrading_iff {p n : ℤ} {f : P → M} :
   simp [twistedIndexGrading]
 
 /-- The index filtration on each total degree is increasing. -/
-theorem twistedIndexGrading_le {p q n : ℤ} (hpq : p ≤ q) :
+theorem twistedIndexGrading_mono {p q n : ℤ} (hpq : p ≤ q) :
     twistedIndexGrading ℳ ind p n ≤ twistedIndexGrading ℳ ind q n :=
   inf_le_inf_right _ (twistedIndexFiltration_mono ind hpq)
 
 /-- A homogeneous filtration stage is contained in the corresponding total-degree piece. -/
-theorem twistedIndexGrading_le_totalGrading (p n : ℤ) :
+theorem twistedIndexGrading_le_twistedTotalGrading (p n : ℤ) :
     twistedIndexGrading ℳ ind p n ≤ twistedTotalGrading ℳ ind n :=
   inf_le_right
 
@@ -133,41 +140,46 @@ end IndexFiltration
 section Differential
 
 variable {R : Type uR} {A : Type uA} {M : Type uM} {P : Type uP}
-  [CommRing R] [Ring A] [Algebra R A] [AddCommMonoid M] [Module R M]
+  [CommRing R] [Semiring A] [AddCommMonoid M] [Module R M]
   [Module Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M] [Fintype P]
-  {𝒜 : ℤ → Submodule R A} {d : A →ₗ[R] A} {ind : P → ℤ}
-  {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
-  (m : TwistingCocycle 𝒜 d P ind) (dM : M →ₗ[R] M)
+  {ind : P → ℤ} {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
+  (m : P → P → A) (hm : ∀ x y, ind x ≤ ind y → m x y = 0)
 
-/-- One-sidedness makes the twisted differential preserve every index-filtration stage. -/
-theorem TwistingCocycle.twistedDifferential_mem_indexFiltration {p : ℤ} {f : P → M}
-    (hf : f ∈ twistedIndexFiltration (R := R) (M := M) ind p) :
-    twistedDifferential m.m ℳ dM f ∈ twistedIndexFiltration (R := R) (M := M) ind p := by
-  rw [mem_twistedIndexFiltration_iff] at hf ⊢
-  intro y hy
-  rw [twistedDifferential_apply, hf y hy, map_zero, zero_add]
+include hm
+
+omit [SMulCommClass R Aᵐᵒᵖ M] in
+/-- Every twisting contribution from `F_p` vanishes at a generator of index at least `p`. -/
+theorem twistingSum_eq_zero_of_mem_twistedIndexFiltration {p : ℤ} {f : P → M}
+    (hf : f ∈ twistedIndexFiltration (R := R) (M := M) ind p)
+    {y : P} (hy : p ≤ ind y) :
+    (∑ x, op (m x y) • (InternalGrading.ofDecomposition ℳ).koszulTwist 1 (f x)) = 0 := by
+  rw [mem_twistedIndexFiltration_iff] at hf
   apply Finset.sum_eq_zero
   intro x _
   by_cases hx : p < ind x
   · simp [hf x hx]
-  · rw [m.one_sided x y (by omega)]
+  · rw [hm x y (by omega)]
     simp
+
+variable (dM : M →ₗ[R] M)
+
+/-- One-sidedness makes the twisted differential preserve every index-filtration stage. -/
+theorem twistedDifferential_mem_twistedIndexFiltration {p : ℤ} {f : P → M}
+    (hf : f ∈ twistedIndexFiltration (R := R) (M := M) ind p) :
+    twistedDifferential m ℳ dM f ∈ twistedIndexFiltration (R := R) (M := M) ind p := by
+  rw [mem_twistedIndexFiltration_iff]
+  intro y hy
+  rw [twistedDifferential_apply,
+    twistingSum_eq_zero_of_mem_twistedIndexFiltration m hm hf hy.le,
+    (mem_twistedIndexFiltration_iff (R := R) ind).mp hf y hy, map_zero, zero_add]
 
 /-- At index `p`, the differential of an element of `F_p` is its coefficient differential.
 Every twisting contribution has strictly smaller generator index. -/
-theorem TwistingCocycle.twistedDifferential_apply_of_mem_indexFiltration
+theorem twistedDifferential_apply_of_mem_twistedIndexFiltration
     {p : ℤ} {f : P → M} (hf : f ∈ twistedIndexFiltration (R := R) (M := M) ind p)
-    {y : P} (hy : ind y = p) : twistedDifferential m.m ℳ dM f y = dM (f y) := by
-  rw [mem_twistedIndexFiltration_iff] at hf
-  rw [twistedDifferential_apply]
-  suffices hsum : (∑ x, op (m.m x y) •
-      (InternalGrading.ofDecomposition ℳ).koszulTwist 1 (f x)) = 0 by rw [hsum, add_zero]
-  apply Finset.sum_eq_zero
-  intro x _
-  by_cases hx : p < ind x
-  · simp [hf x hx]
-  · rw [m.one_sided x y (by omega)]
-    simp
+    {y : P} (hy : ind y = p) : twistedDifferential m ℳ dM f y = dM (f y) := by
+  rw [twistedDifferential_apply,
+    twistingSum_eq_zero_of_mem_twistedIndexFiltration m hm hf hy.ge, add_zero]
 
 end Differential
 
@@ -248,76 +260,90 @@ end AssociatedGraded
 section FilteredDifferential
 
 variable {R : Type uR} {A : Type uA} {M : Type uM} {P : Type uP}
-  [CommRing R] [Ring A] [Algebra R A] [AddCommGroup M] [Module R M]
+  [CommRing R] [Semiring A] [AddCommMonoid M] [Module R M]
   [Module Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M] [Fintype P]
-  {𝒜 : ℤ → Submodule R A} {d : A →ₗ[R] A} {ind : P → ℤ}
+  {ind : P → ℤ}
   {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
-  (m : TwistingCocycle 𝒜 d P ind) (dM : M →ₗ[R] M) (p : ℤ)
+  (m : P → P → A) (hm : ∀ x y, ind x ≤ ind y → m x y = 0)
+  (dM : M →ₗ[R] M) (p : ℤ)
 
 /-- The restriction of the twisted differential to `F_p`. -/
-noncomputable def TwistingCocycle.twistedIndexDifferential :
+noncomputable def twistedIndexDifferential :
     twistedIndexFiltration (R := R) (M := M) ind p →ₗ[R]
       twistedIndexFiltration (R := R) (M := M) ind p :=
-  (twistedDifferential m.m ℳ dM).restrict fun _ hf ↦
-    m.twistedDifferential_mem_indexFiltration dM hf
+  (twistedDifferential m ℳ dM).restrict fun _ hf ↦
+    twistedDifferential_mem_twistedIndexFiltration m hm dM hf
 
 @[simp]
-theorem TwistingCocycle.twistedIndexDifferential_apply
+theorem twistedIndexDifferential_apply
     (f : twistedIndexFiltration (R := R) (M := M) ind p) :
-    (m.twistedIndexDifferential (ℳ := ℳ) dM p f : P → M) = twistedDifferential m.m ℳ dM f :=
+    (twistedIndexDifferential (ℳ := ℳ) m hm dM p f : P → M) = twistedDifferential m ℳ dM f :=
   (rfl)
 
+end FilteredDifferential
+
+section AssociatedGradedDifferential
+
+variable {R : Type uR} {A : Type uA} {M : Type uM} {P : Type uP}
+  [CommRing R] [Semiring A] [AddCommGroup M] [Module R M]
+  [Module Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M] [Fintype P]
+  {ind : P → ℤ}
+  {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
+  (m : P → P → A) (hm : ∀ x y, ind x ≤ ind y → m x y = 0)
+  (dM : M →ₗ[R] M) (p : ℤ)
+
 /-- The differential induced on `F_p / F_{p-1}` by the twisted differential. -/
-noncomputable def TwistingCocycle.twistedIndexGradedDifferential :
+noncomputable def twistedIndexGradedDifferential :
     (twistedIndexFiltration (R := R) (M := M) ind p ⧸
       twistedIndexLower (R := R) (M := M) ind p) →ₗ[R]
       (twistedIndexFiltration (R := R) (M := M) ind p ⧸
       twistedIndexLower (R := R) (M := M) ind p) :=
   (twistedIndexLower (R := R) (M := M) ind p).mapQ (twistedIndexLower (R := R) (M := M) ind p)
-    (m.twistedIndexDifferential (ℳ := ℳ) dM p) fun f hf ↦ by
+    (twistedIndexDifferential (ℳ := ℳ) m hm dM p) fun f hf ↦ by
       rw [Submodule.mem_comap, mem_twistedIndexLower_iff]
       rw [mem_twistedIndexLower_iff] at hf
       exact (mem_twistedIndexFiltration_iff (R := R) ind).mp
-        (m.twistedDifferential_mem_indexFiltration dM
+        (twistedDifferential_mem_twistedIndexFiltration m hm dM
           ((mem_twistedIndexFiltration_iff (R := R) ind).mpr hf))
 
 /-- The quotient differential sends the class of `f` to the class of its twisted differential. -/
 @[simp]
-theorem TwistingCocycle.twistedIndexGradedDifferential_mk
+theorem twistedIndexGradedDifferential_mk
     (f : twistedIndexFiltration (R := R) (M := M) ind p) :
-    m.twistedIndexGradedDifferential (ℳ := ℳ) dM p (Submodule.Quotient.mk f) =
-      Submodule.Quotient.mk (m.twistedIndexDifferential (ℳ := ℳ) dM p f) := by
-  rw [TwistingCocycle.twistedIndexGradedDifferential, Submodule.mapQ_apply]
+    twistedIndexGradedDifferential (ℳ := ℳ) m hm dM p (Submodule.Quotient.mk f) =
+      Submodule.Quotient.mk (twistedIndexDifferential (ℳ := ℳ) m hm dM p f) := by
+  rw [twistedIndexGradedDifferential, Submodule.mapQ_apply]
 
 /-- Under the associated graded equivalence, the induced differential is the coefficient
 differential on each generator of index exactly `p`. -/
-theorem TwistingCocycle.twistedIndexGradedEquiv_d
+@[simp]
+theorem twistedIndexGradedEquiv_d
     (f : twistedIndexFiltration (R := R) (M := M) ind p ⧸
       twistedIndexLower (R := R) (M := M) ind p)
     (x : {x : P // ind x = p}) :
     twistedIndexGradedEquiv (R := R) (M := M) ind p
-      (m.twistedIndexGradedDifferential (ℳ := ℳ) dM p f) x =
+      (twistedIndexGradedDifferential (ℳ := ℳ) m hm dM p f) x =
       dM (twistedIndexGradedEquiv (R := R) (M := M) ind p f x) := by
   induction f using Submodule.Quotient.induction_on with
   | H f =>
-    rw [m.twistedIndexGradedDifferential_mk (ℳ := ℳ), twistedIndexGradedEquiv_mk,
+    rw [twistedIndexGradedDifferential_mk, twistedIndexGradedEquiv_mk,
       twistedIndexGradedEquiv_mk]
-    exact m.twistedDifferential_apply_of_mem_indexFiltration dM f.property x.property
+    exact twistedDifferential_apply_of_mem_twistedIndexFiltration m hm dM f.property x.property
 
 /-- The induced associated graded differential squares to zero whenever the coefficient
 differential does. -/
-theorem TwistingCocycle.twistedIndexGradedDifferential_sq_zero
+theorem twistedIndexGradedDifferential_sq_zero
     (hdM : ∀ x, dM (dM x) = 0)
     (f : twistedIndexFiltration (R := R) (M := M) ind p ⧸
       twistedIndexLower (R := R) (M := M) ind p) :
-    m.twistedIndexGradedDifferential (ℳ := ℳ) dM p
-      (m.twistedIndexGradedDifferential (ℳ := ℳ) dM p f) = 0 := by
+    twistedIndexGradedDifferential (ℳ := ℳ) m hm dM p
+      (twistedIndexGradedDifferential (ℳ := ℳ) m hm dM p f) = 0 := by
   apply (twistedIndexGradedEquiv (R := R) (M := M) ind p).injective
   funext x
-  rw [m.twistedIndexGradedEquiv_d, m.twistedIndexGradedEquiv_d, hdM]
+  rw [twistedIndexGradedEquiv_d, twistedIndexGradedEquiv_d, hdM]
   simp
 
-end FilteredDifferential
+end AssociatedGradedDifferential
 
 section FilteredComplex
 
@@ -332,11 +358,11 @@ variable {R : Type uR} {A : Type uA} {M : Type uM} {P : Type uP}
 
 omit [IsScalarTower R Aᵐᵒᵖ M] in
 /-- The twisted differential carries the degree-`n` part of `F_p` into degree `n+1` in `F_p`. -/
-theorem TwistingCocycle.twistedDifferential_mem_indexGrading
+theorem TwistingCocycle.twistedDifferential_mem_twistedIndexGrading
     (hdM : LinearMap.IsHomogeneous dM ℳ ℳ 1) {p n : ℤ} {f : P → M}
     (hf : f ∈ twistedIndexGrading ℳ ind p n) :
     twistedDifferential m.m ℳ dM f ∈ twistedIndexGrading ℳ ind p (n + 1) :=
-  ⟨m.twistedDifferential_mem_indexFiltration dM hf.1,
+  ⟨twistedDifferential_mem_twistedIndexFiltration m.m m.one_sided dM hf.1,
     m.twistedDifferential_mem_twistedTotalGrading dM hdM hf.2⟩
 
 /-- The `p`th stage of the index filtration as a cochain complex of modules. -/
@@ -344,7 +370,7 @@ noncomputable def TwistingCocycle.twistedIndexCochainComplex (p : ℤ) :
     CochainComplex (ModuleCat.{max uP uM} R) ℤ :=
   gradedCochainComplex (twistedIndexGrading ℳ ind p) (twistedDifferential m.m ℳ dM)
     (LinearMap.isHomogeneous_def.mpr fun _ _ hf ↦
-      m.twistedDifferential_mem_indexGrading hM.isHomogeneous hf)
+      m.twistedDifferential_mem_twistedIndexGrading hM.isHomogeneous hf)
     fun _ f ↦ m.twistedDifferential_sq_zero dM hM f
 
 /-- The degree terms of the filtered complex are the intersections of filtration and grading. -/
@@ -371,54 +397,30 @@ theorem TwistingCocycle.twistedIndexCochainComplexXEquiv_d (p n : ℤ)
 /-- The canonical cochain inclusion of a filtration stage into a later stage. -/
 noncomputable def TwistingCocycle.twistedIndexCochainComplexMap {p q : ℤ} (hpq : p ≤ q) :
     m.twistedIndexCochainComplex hM p ⟶ m.twistedIndexCochainComplex hM q :=
-  CochainComplex.ofHom (fun n ↦ ModuleCat.ofHom <|
-    (m.twistedIndexCochainComplexXEquiv hM q n).symm.toLinearMap.comp <|
-      (Submodule.inclusion (twistedIndexGrading_le hpq)).comp
-        (m.twistedIndexCochainComplexXEquiv hM p n).toLinearMap) (fun n ↦ by
-      apply ModuleCat.hom_ext
-      apply LinearMap.ext
-      intro f
-      apply (m.twistedIndexCochainComplexXEquiv hM q (n + 1)).injective
-      apply Subtype.ext
-      simp only [ModuleCat.hom_comp, LinearMap.comp_apply]
-      rw [m.twistedIndexCochainComplexXEquiv_d]
-      simp only [ModuleCat.hom_ofHom, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
-        LinearEquiv.apply_symm_apply, Submodule.coe_inclusion]
-      rw [m.twistedIndexCochainComplexXEquiv_d])
+  gradedCochainComplexInclusion (fun _ ↦ twistedIndexGrading_mono hpq)
 
 /-- The transition map is inclusion on the underlying homogeneous functions. -/
+@[simp]
 theorem TwistingCocycle.twistedIndexCochainComplexMap_apply {p q : ℤ} (hpq : p ≤ q)
     (n : ℤ) (f : (m.twistedIndexCochainComplex hM p).X n) :
     (m.twistedIndexCochainComplexXEquiv hM q n
       (((m.twistedIndexCochainComplexMap hM hpq).f n).hom f) : P → M) =
       m.twistedIndexCochainComplexXEquiv hM p n f := by
-  simp [TwistingCocycle.twistedIndexCochainComplexMap]
+  exact gradedCochainComplexInclusion_apply (fun _ ↦ twistedIndexGrading_mono hpq) n f
 
 /-- The canonical inclusion of an index-filtration stage into the twisted complex. -/
 noncomputable def TwistingCocycle.twistedIndexCochainComplexι (p : ℤ) :
     m.twistedIndexCochainComplex hM p ⟶ m.twistedCochainComplex dM hM :=
-  CochainComplex.ofHom (fun n ↦ ModuleCat.ofHom <|
-    (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n).symm.toLinearMap.comp <|
-      (Submodule.inclusion (twistedIndexGrading_le_totalGrading p n)).comp
-        (m.twistedIndexCochainComplexXEquiv hM p n).toLinearMap) (fun n ↦ by
-      apply ModuleCat.hom_ext
-      apply LinearMap.ext
-      intro f
-      apply (twistedCochainComplexXEquiv m.mem_graded m.twisting hM (n + 1)).injective
-      apply Subtype.ext
-      simp only [ModuleCat.hom_comp, LinearMap.comp_apply]
-      rw [twistedCochainComplexXEquiv_d]
-      simp only [ModuleCat.hom_ofHom, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
-        LinearEquiv.apply_symm_apply, Submodule.coe_inclusion]
-      rw [m.twistedIndexCochainComplexXEquiv_d])
+  gradedCochainComplexInclusion (twistedIndexGrading_le_twistedTotalGrading p)
 
 /-- The stage inclusion preserves the underlying homogeneous function. -/
+@[simp]
 theorem TwistingCocycle.twistedIndexCochainComplexι_apply (p n : ℤ)
     (f : (m.twistedIndexCochainComplex hM p).X n) :
     (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n
       (((m.twistedIndexCochainComplexι hM p).f n).hom f) : P → M) =
       m.twistedIndexCochainComplexXEquiv hM p n f := by
-  simp [TwistingCocycle.twistedIndexCochainComplexι]
+  exact gradedCochainComplexInclusion_apply (twistedIndexGrading_le_twistedTotalGrading p) n f
 
 /-- Each filtration stage embeds as a subcomplex of the twisted complex. -/
 instance TwistingCocycle.mono_twistedIndexCochainComplexι (p : ℤ) :
@@ -434,6 +436,7 @@ instance TwistingCocycle.mono_twistedIndexCochainComplexι (p : ℤ) :
   simpa only [m.twistedIndexCochainComplexι_apply] using h
 
 /-- Transition maps commute with the inclusions into the twisted complex. -/
+@[reassoc (attr := simp)]
 theorem TwistingCocycle.twistedIndexCochainComplexMap_ι {p q : ℤ} (hpq : p ≤ q) :
     m.twistedIndexCochainComplexMap hM hpq ≫ m.twistedIndexCochainComplexι hM q =
       m.twistedIndexCochainComplexι hM p := by
@@ -456,6 +459,7 @@ theorem TwistingCocycle.twistedIndexCochainComplexMap_id (p : ℤ) :
   simp only [m.twistedIndexCochainComplexMap_ι, Category.id_comp]
 
 /-- The transition maps of the index filtration compose. -/
+@[reassoc (attr := simp)]
 theorem TwistingCocycle.twistedIndexCochainComplexMap_comp {p q r : ℤ}
     (hpq : p ≤ q) (hqr : q ≤ r) :
     m.twistedIndexCochainComplexMap hM hpq ≫ m.twistedIndexCochainComplexMap hM hqr =
@@ -482,8 +486,7 @@ theorem TwistingCocycle.twistedIndexSubobject_eq_top {p : ℤ} (hp : ∀ x, ind 
     let g := twistedCochainComplexXEquiv m.mem_graded m.twisting hM n f
     have hg : (g : P → M) ∈ twistedIndexGrading ℳ ind p n := by
       refine ⟨?_, g.property⟩
-      exact (mem_twistedIndexFiltration_iff (R := R) ind).mpr
-        fun x hx ↦ False.elim (not_lt_of_ge (hp x) hx)
+      exact twistedIndexFiltration_eq_top (R := R) (M := M) ind hp ▸ Submodule.mem_top
     refine ⟨(m.twistedIndexCochainComplexXEquiv hM p n).symm ⟨g, hg⟩, ?_⟩
     apply (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n).injective
     apply Subtype.ext
@@ -516,11 +519,8 @@ theorem TwistingCocycle.twistedIndexSubobject_eq_bot {p : ℤ} (hp : ∀ x, p < 
 /-- The actual subcomplex filtration is bounded below and exhaustive for finite generators. -/
 theorem TwistingCocycle.twistedIndexSubobject_bounded :
     ∃ a b : ℤ, m.twistedIndexSubobject hM a = ⊥ ∧ m.twistedIndexSubobject hM b = ⊤ := by
-  obtain ⟨a, ha⟩ := (Set.finite_range ind).bddBelow
-  obtain ⟨b, hb⟩ := (Set.finite_range ind).bddAbove
-  exact ⟨a - 1, b, m.twistedIndexSubobject_eq_bot hM (fun x ↦ by
-    have := ha (Set.mem_range_self x)
-    omega), m.twistedIndexSubobject_eq_top hM (fun x ↦ hb (Set.mem_range_self x))⟩
+  obtain ⟨a, b, ha, hb⟩ := exists_index_bounds ind
+  exact ⟨a, b, m.twistedIndexSubobject_eq_bot hM ha, m.twistedIndexSubobject_eq_top hM hb⟩
 
 end FilteredComplex
 
