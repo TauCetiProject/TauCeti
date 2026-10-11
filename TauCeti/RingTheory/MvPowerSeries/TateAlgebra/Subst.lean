@@ -30,9 +30,7 @@ here.
 ## Main results
 
 * `MvPowerSeries.hasSubst_coe`: polynomials without constant term in finitely many variables
-  form a substitutable family, and `MvPolynomial.coe_finsuppProd_pow`: the coercion to power
-  series commutes with the products of powers that appear in the coefficients of a
-  substitution.
+  form a substitutable family.
 * `MvPowerSeries.norm_coeff_subst_le`: each coefficient of a substitution is bounded by the
   supremum of the terms contributing to it, in any ultrametric seminormed commutative ring.
 * `MvPowerSeries.norm_coeff_subst_coe_le` and `MvPowerSeries.norm_coeff_subst_coe_sub_le`: for a
@@ -61,13 +59,6 @@ open scoped Topology
 section CommRing
 
 variable {σ τ R : Type*} [CommRing R]
-
-/-- The coercion of polynomials to power series commutes with products of powers. -/
-theorem _root_.MvPolynomial.coe_finsuppProd_pow (a : σ → MvPolynomial τ R) (d : σ →₀ ℕ) :
-    ((d.prod fun s n ↦ a s ^ n : MvPolynomial τ R) : MvPowerSeries τ R) =
-      d.prod fun s n ↦ (a s : MvPowerSeries τ R) ^ n := by
-  simp only [Finsupp.prod, ← MvPolynomial.coe_pow]
-  exact map_prod (MvPolynomial.coeToMvPowerSeries.ringHom (σ := τ) (R := R)) _ _
 
 /-- Polynomials without constant term form a substitutable family over finitely many
 variables. -/
@@ -105,7 +96,9 @@ theorem norm_coeff_subst_coe_le [Finite σ] {a : σ → MvPolynomial τ R}
     (h : ∀ d, (d.prod fun s n ↦ a s ^ n).coeff e ≠ 0 → ‖coeff d f‖ ≤ r) :
     ‖coeff e (subst (fun s ↦ (a s : MvPowerSeries τ R)) f)‖ ≤ r := by
   refine norm_coeff_subst_le (hasSubst_coe ha₀) f e hr fun d ↦ ?_
-  rw [← MvPolynomial.coe_finsuppProd_pow, MvPolynomial.coeff_coe]
+  simp_rw [← MvPolynomial.coe_pow, ← MvPolynomial.coeToMvPowerSeries.ringHom_apply,
+    ← map_finsuppProd]
+  rw [MvPolynomial.coeToMvPowerSeries.ringHom_apply, MvPolynomial.coeff_coe]
   by_cases hd : (d.prod fun s n ↦ a s ^ n).coeff e = 0
   · simp [hd, hr]
   · exact (norm_mul_le _ _).trans <| (mul_le_of_le_one_right (norm_nonneg _)
@@ -125,9 +118,11 @@ theorem norm_coeff_subst_coe_sub_le [Finite σ] {a : σ → MvPolynomial τ R}
   have hsub : coeff e (f.subst fun s ↦ (a s : MvPowerSeries τ R)) -
       coeff ν f * (ν.prod fun s n ↦ a s ^ n).coeff e =
       coeff e ((f - monomial ν (coeff ν f)).subst fun s ↦ (a s : MvPowerSeries τ R)) := by
-    rw [subst_sub (hasSubst_coe ha₀), subst_monomial (hasSubst_coe ha₀),
-      ← MvPolynomial.coe_finsuppProd_pow, map_sub, ← MvPolynomial.coeff_coe, algebraMap_apply,
-      coeff_C_mul]
+    rw [subst_sub (hasSubst_coe ha₀), subst_monomial (hasSubst_coe ha₀)]
+    simp_rw [← MvPolynomial.coe_pow, ← MvPolynomial.coeToMvPowerSeries.ringHom_apply,
+      ← map_finsuppProd]
+    rw [MvPolynomial.coeToMvPowerSeries.ringHom_apply, map_sub, ← MvPolynomial.coeff_coe,
+      algebraMap_apply, coeff_C_mul]
     simp
   rw [hsub]
   refine norm_coeff_subst_coe_le ha₀ ha₁ _ e hr fun d hd ↦ ?_
