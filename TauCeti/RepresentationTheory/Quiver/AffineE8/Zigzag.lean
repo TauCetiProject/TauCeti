@@ -23,6 +23,7 @@ namespace TauCeti
 /-- The arm-coordinate labels on the affine `E₈` quiver, in the numbering of
 `zigzagAffineE8Graph`: the centre is `0`, and the short, medium, and long arms are numbered
 outwards. -/
+@[expose]
 def affineE8VertexEquiv : Quiver.AffineE8 ≃ Fin 9 where
   toFun
     | .center => 0
@@ -104,20 +105,17 @@ theorem affineE8UnderlyingGraphIso_apply (v : Quiver.AffineE8) :
 /-- The trivalent vertex of the affine `E₈` quiver has zigzag graph label `0`. -/
 @[simp]
 theorem affineE8UnderlyingGraphIso_center :
-    affineE8UnderlyingGraphIso Quiver.AffineE8.center = 0 := by
-  rw [affineE8UnderlyingGraphIso_apply]
-  rfl
+    affineE8VertexEquiv Quiver.AffineE8.center = 0 := rfl
 
 /-- The affine node is the endpoint of the arm of length five in the representation-quiver
 labeling. -/
 @[simp]
 theorem affineE8UnderlyingGraphIso_long1 :
-    affineE8UnderlyingGraphIso Quiver.AffineE8.long1 =
+    affineE8VertexEquiv Quiver.AffineE8.long1 =
       Fin.cast (show AffineDynkinType.E8.nodes = 9 by rfl)
         AffineDynkinType.E8.affineNode := by
   apply Fin.ext
-  rw [affineE8UnderlyingGraphIso_apply, Fin.val_cast,
-    AffineDynkinType.affineNode_E8]
+  rw [Fin.val_cast, AffineDynkinType.affineNode_E8]
   rfl
 
 end TauCeti
