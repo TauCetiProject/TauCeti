@@ -270,8 +270,7 @@ theorem equivConjClasses_symm_apply (C : ConjClasses G) :
 
 omit [DecidableRel (IsConj : G → G → Prop)] in
 /-- **The numbering has the expected length**: `d.reps` lists as many elements as `G` has
-conjugacy classes. The count needs neither a finite `G` nor a decidable conjugacy; the bijection
-`TauCeti.ClassData.equivConjClasses` is used with classical decidability. -/
+conjugacy classes. The statement assumes neither a finite `G` nor a decidable conjugacy. -/
 theorem numClasses_eq_card_conjClasses : d.numClasses = Nat.card (ConjClasses G) := by
   classical
   simpa only [Nat.card_fin] using Nat.card_congr d.equivConjClasses
