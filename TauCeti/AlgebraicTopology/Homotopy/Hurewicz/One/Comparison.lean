@@ -21,7 +21,7 @@ Two Hurewicz maps are defined in degree one:
   sending a loop to the homology class of the singular `1`-simplex it traces.
 
 They differ by a **sign**: the generator of `H₁(I¹, ∂I¹; R)`, transported from the generator
-`[-e₀] - [e₀]` of `H̃₀(S⁰)`, is minus the class of the standard simplex `t ↦ t`
+`[-e₀] - [e₀]` of reduced `H₀(S⁰)`, is minus the class of the standard simplex `t ↦ t`
 (`TauCeti.singularHomologyCubeBoundaryPairIso_one_inv`). Hence the Hurewicz class of a loop is
 minus the class of the simplex it traces (`GenLoop.hurewicz_eq_neg_absClass₁`), and with integer
 coefficients `HomotopyGroup.hurewiczHom ℤ 0`, evaluated at `1`, is `-hurewicz₁` under the
