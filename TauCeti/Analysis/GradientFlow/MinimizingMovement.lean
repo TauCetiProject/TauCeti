@@ -11,6 +11,7 @@ public import Mathlib.Topology.MetricSpace.Holder
 import Mathlib.Algebra.Order.Chebyshev
 import TauCeti.Data.EReal.Operations
 import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
+import TauCeti.Analysis.SpecificLimits.DiscreteGronwall
 
 /-!
 # Generalized minimizing movements
@@ -36,9 +37,10 @@ time step. Summing the one-step energy estimates and applying the Cauchy–Schwa
 bounds the distance travelled in `n - m` steps by the energy dissipated:
 `d(u m, u n)² ≤ 2 (n - m) τ (φ (u m) - φ (u n))`. The energy is not assumed to be bounded below;
 coercivity, in the form `φ_{τ'}(u 0) = A > -∞`, bounds it below by `A - d(u 0, ·)² / (2τ')`. A
-discrete Gronwall argument combines the two into
-`d(u 0, u n)² ≤ 2τ' (E - A) (1 + 8τ / τ')ⁿ` for `4τ ≤ τ'`, where `E = φ (u 0)`. Up to a time `T`
-this is at most `2τ' (E - A) exp (8 (T + τ) / τ')`, independently of `τ`. Hence the
+discrete Gronwall argument (`TauCeti.sq_le_mul_one_add_div_pow_of_sq_le_mul_sub`) combines the
+two into `d(u 0, u n)² ≤ 2τ' (E - A) (1 + 8τ / τ')ⁿ` for `4τ ≤ τ'`, where `E = φ (u 0)`. Up to a
+time `T` this is at most `2τ' (E - A) exp (8 (T + τ) / τ')`, independently of `τ`
+(`TauCeti.one_add_mul_pow_ceil_div_le_exp`). Hence the
 interpolants are uniformly bounded, have energy at most `E`, and are asymptotically
 `1/2`-Hölder:
 `d(u ⌈s / τ⌉₊, u ⌈t / τ⌉₊)² ≤ 2 (t - s + τ) (E - A) (1 + exp (8 (t + τ) / τ'))`.
@@ -127,57 +129,6 @@ theorem apply_add_edist_sq_div_le_of_forall_mem_moreauYosidaResolvent
         rw [ENNReal.mul_div_mul_left _ _ hN' (ENNReal.natCast_ne_top N), ENNReal.sum_div]
         simp [hd]
 
-/-- The discrete Gronwall argument behind `TauCeti.edist_sq_le_of_forall_mem_moreauYosidaResolvent`,
-for real sequences. Here `D n` is the distance from the start, `d n` the length of step `n`, and
-`e n` the energy after `n` steps. With `c = τ + τ' / 4`, the quantity
-`N n = D n ² + 2c (e n - A)` dominates `D n ² / 2` by the coercivity bound, and grows at most by
-the factor `1 + 8τ / τ'` per step by the triangle inequality, Young's inequality and the energy
-decrease along a step. -/
-private theorem sq_le_of_forall_step {D d e : ℕ → ℝ} {τ τ' A : ℝ} (hτ : 0 < τ)
-    (hττ' : 4 * τ ≤ τ') (hD0 : D 0 = 0) (hD : ∀ n, 0 ≤ D n) (htri : ∀ n, D (n + 1) ≤ D n + d n)
-    (hstep : ∀ n, d n ^ 2 ≤ 2 * τ * (e n - e (n + 1)))
-    (hcoer : ∀ n, 2 * τ' * (A - e n) ≤ D n ^ 2) (n : ℕ) :
-    D n ^ 2 ≤ 2 * τ' * (e 0 - A) * (1 + 8 * τ / τ') ^ n := by
-  have hτ' : 0 < τ' := by linarith
-  set c := τ + τ' / 4 with hc
-  set N : ℕ → ℝ := fun n ↦ D n ^ 2 + 2 * c * (e n - A) with hN
-  -- `N` dominates `D ² / 2`.
-  have hQ n : D n ^ 2 ≤ 2 * N n := by
-    have h1 := mul_le_mul_of_nonneg_left (hcoer n) (by positivity : (0 : ℝ) ≤ 2 * c)
-    have h2 : 0 ≤ τ' * (D n ^ 2 + 4 * c * (e n - A)) := by
-      nlinarith [mul_nonneg (sq_nonneg (D n)) (by linarith : (0 : ℝ) ≤ τ' - 2 * c)]
-    have h3 := (mul_nonneg_iff_of_pos_left hτ').1 h2
-    simp only [hN]
-    linarith
-  -- One step multiplies `N` by at most `1 + 8τ / τ'`.
-  have hNstep n : N (n + 1) ≤ (1 + 8 * τ / τ') * N n := by
-    have h1 : D (n + 1) ^ 2 ≤ (D n + d n) ^ 2 := pow_le_pow_left₀ (hD _) (htri n) 2
-    have hY : (D n + d n) ^ 2 ≤ (1 + 4 * τ / τ') * D n ^ 2 + c / τ * d n ^ 2 := by
-      rw [hc]
-      field_simp
-      nlinarith [sq_nonneg (4 * τ * D n - τ' * d n)]
-    have hd' : c / τ * d n ^ 2 ≤ 2 * c * (e n - e (n + 1)) := by
-      rw [div_mul_eq_mul_div, div_le_iff₀ hτ]
-      nlinarith [hstep n, (by positivity : (0 : ℝ) ≤ c)]
-    have hQ' : 4 * τ / τ' * D n ^ 2 ≤ 8 * τ / τ' * N n := by
-      have := mul_le_mul_of_nonneg_left (hQ n) (by positivity : (0 : ℝ) ≤ 4 * τ / τ')
-      linarith [show 4 * τ / τ' * (2 * N n) = 8 * τ / τ' * N n by ring]
-    simp only [hN] at hQ' ⊢
-    nlinarith
-  -- Iterating from `N 0 = 2c (e 0 - A) ≤ τ' (e 0 - A)`.
-  have hA0 : A ≤ e 0 := by nlinarith [hcoer 0, hD0]
-  have hNn : N n ≤ (1 + 8 * τ / τ') ^ n * (τ' * (e 0 - A)) := by
-    induction n with
-    | zero =>
-      simp only [hN, hD0, pow_zero, one_mul]
-      nlinarith
-    | succ n ih =>
-      calc N (n + 1) ≤ (1 + 8 * τ / τ') * N n := hNstep n
-        _ ≤ (1 + 8 * τ / τ') * ((1 + 8 * τ / τ') ^ n * (τ' * (e 0 - A))) :=
-          mul_le_mul_of_nonneg_left ih (by positivity)
-        _ = _ := by ring
-  nlinarith [hQ n]
-
 /-- Along a minimizing movement sequence started at energy `E` with `φ_{τ'}(u 0) = A`, every
 point is at finite distance from the start and has real energy `e` with
 `2τ' (A - e) ≤ d(u 0, u n)²`. -/
@@ -229,8 +180,9 @@ private theorem toReal_edist_sq_le (hu : ∀ n, u (n + 1) ∈ moreauYosidaResolv
     rw [hE] at this
     exact_mod_cast this.symm
   refine ⟨hfin n, e n, he n, hcoer n, ?_⟩
-  have key := sq_le_of_forall_step (D := fun n ↦ (edist (u 0) (u n)).toReal)
-    (d := fun n ↦ (edist (u n) (u (n + 1))).toReal) (e := e) (τ := τ) (τ' := τ') (A := A)
+  have key := sq_le_mul_one_add_div_pow_of_sq_le_mul_sub
+    (D := fun n ↦ (edist (u 0) (u n)).toReal) (d := fun n ↦ (edist (u n) (u (n + 1))).toReal)
+    (e := e) (τ := τ) (τ' := τ') (A := A)
     (NNReal.coe_pos.2 hτ) (by exact_mod_cast hττ') (by simp) (fun _ ↦ ENNReal.toReal_nonneg)
     (fun n ↦ ENNReal.toReal_le_add (edist_triangle _ _ _) (hfin n)
       (edist_ne_top_of_mem_moreauYosidaResolvent (hu n)))
@@ -271,21 +223,6 @@ theorem le_apply_of_forall_mem_moreauYosidaResolvent
     lt_of_lt_of_le (by positivity : (0 : ℝ) < 4 * τ) (by exact_mod_cast hττ')
   rw [he, EReal.coe_le_coe_iff]
   nlinarith
-
-/-- `(1 + 8τ / τ') ^ ⌈t / τ⌉₊ ≤ exp (8 (t + τ) / τ')`: after `⌈t / τ⌉₊` steps of length `τ`,
-less than `t + τ` time has passed. -/
-private theorem one_add_pow_ceil_le_exp {τ τ' t : ℝ} (hτ : 0 < τ) (hτ' : 0 < τ') (ht : 0 ≤ t) :
-    (1 + 8 * τ / τ') ^ ⌈t / τ⌉₊ ≤ Real.exp (8 * (t + τ) / τ') := by
-  have h1 : (⌈t / τ⌉₊ : ℝ) * τ ≤ t + τ := by
-    have := mul_lt_mul_of_pos_right (Nat.ceil_lt_add_one (div_nonneg ht hτ.le)) hτ
-    rw [add_mul, div_mul_cancel₀ _ hτ.ne', one_mul] at this
-    exact this.le
-  calc (1 + 8 * τ / τ') ^ ⌈t / τ⌉₊ ≤ Real.exp (8 * τ / τ') ^ ⌈t / τ⌉₊ :=
-        pow_le_pow_left₀ (by positivity) (by linarith [Real.add_one_le_exp (8 * τ / τ')]) _
-    _ = Real.exp (⌈t / τ⌉₊ * (8 * τ / τ')) := (Real.exp_nat_mul _ _).symm
-    _ ≤ Real.exp (8 * (t + τ) / τ') := by
-        rw [Real.exp_le_exp, show (⌈t / τ⌉₊ : ℝ) * (8 * τ / τ') = 8 * (⌈t / τ⌉₊ * τ) / τ' by ring]
-        gcongr
 
 /-- **Hölder estimate for the piecewise constant interpolant.** Under the hypotheses of
 `TauCeti.edist_sq_le_of_forall_mem_moreauYosidaResolvent`, the piecewise constant interpolant
@@ -343,7 +280,9 @@ theorem edist_ceil_sq_le_of_forall_mem_moreauYosidaResolvent
     have := le_apply_of_forall_mem_moreauYosidaResolvent hu hτ hττ' hA hE n
     rw [hen] at this
     exact_mod_cast this
-  have hexp := one_add_pow_ceil_le_exp hτr hτ'r (hs.trans hst)
+  have hexp : (1 + 8 * τ / τ') ^ n ≤ Real.exp (8 * (t + τ) / τ') := by
+    have := one_add_mul_pow_ceil_div_le_exp (a := 8 / τ') (by positivity) hτr (hs.trans hst)
+    rwa [div_mul_eq_mul_div, div_mul_eq_mul_div] at this
   have hdiff : em - en ≤ (E - A) * (1 + Real.exp (8 * (t + τ) / τ')) := by
     nlinarith [mul_le_mul_of_nonneg_left hexp (sub_nonneg.2 hAE)]
   have hD0 : 0 ≤ em - en := by
@@ -457,7 +396,10 @@ theorem tendsto_subseq_of_forall_mem_moreauYosidaResolvent
       rw [ENNReal.rpow_two]
       refine h1.trans (ENNReal.ofReal_le_ofReal (mul_le_mul_of_nonneg_left ?_
         (mul_nonneg (by positivity) hEA)))
-      exact (one_add_pow_ceil_le_exp (NNReal.coe_pos.2 (hτ k)) hτ' t.2).trans (hexpk k t)
+      have := one_add_mul_pow_ceil_div_le_exp (a := 8 / τ') (by positivity)
+        (NNReal.coe_pos.2 (hτ k)) t.2
+      rw [div_mul_eq_mul_div, div_mul_eq_mul_div] at this
+      exact this.trans (hexpk k t)
   have hK t ⦃w : ℕ → X⦄ (hw : ∀ n, w n ∈ K t) :
       ∃ y, ∃ ψ : ℕ → ℕ, StrictMono ψ ∧ Tendsto (w ∘ ψ) atTop (l y) := by
     refine hcpt E (ne_top_of_le_ne_top (b := ENNReal.ofReal (2 * τ' * (E - A) * B t) ^ (2⁻¹ : ℝ) +
