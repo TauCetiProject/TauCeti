@@ -23,7 +23,8 @@ at `x₀` is a pointwise limit of such interpolants along time steps `τ k → 0
 tending to `x₀` (`TauCeti.IsGeneralizedMinimizingMovement`). Convergence is taken for an
 auxiliary convergence `y_n ⇀ y` on `X`, given by filters `l y`, as in
 `TauCeti.moreauYosidaResolvent_nonempty`: in the Wasserstein space it is narrow convergence,
-which is what makes bounded sets of finite energy relatively compact.
+for which bounded energy sublevels can be relatively compact (for instance over a proper
+underlying space) even though they are not relatively compact for the metric.
 
 This file proves that generalized minimizing movements exist, under the hypotheses of
 Ambrosio–Gigli–Savaré: coercivity of `φ`, lower semicontinuity, compactness of bounded sublevels

@@ -28,8 +28,10 @@ pointwise for `⇀` to a map `u` with `d(u s, u t) ≤ ω s t`
 This is the compactness theorem behind the convergence of the minimizing movement scheme. The
 piecewise constant interpolants of the scheme jump at every time step, so they are not
 equicontinuous, but the jumps vanish as the time step tends to zero. In the Wasserstein space the
-auxiliary convergence is narrow convergence, for which bounded sets of finite energy are
-relatively compact although they are not relatively compact for the metric.
+auxiliary convergence is narrow convergence. Relative narrow compactness of bounded energy
+sublevels is then a hypothesis on the energy and the underlying space; it holds, for instance,
+over a proper underlying space, where bounded sets are tight, although they need not be
+relatively compact for the metric.
 
 The proof extracts, by a diagonal argument, a subsequence converging at the points of a countable
 dense set. At any other time `t`, two limits of further subsequences are both within `ω t s` of
