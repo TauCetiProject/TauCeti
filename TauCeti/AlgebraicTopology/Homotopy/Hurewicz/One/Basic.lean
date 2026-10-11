@@ -116,7 +116,7 @@ variable (a : StdSimplex ℝ (Fin 2))
 end FaceWeights
 
 /-- The chain of a singular `2`-simplex given as a continuous map from the standard simplex. -/
-abbrev chain₂ (f : C(StdSimplex ℝ (Fin 3), X)) : ((singularChains ℤ).obj X).X 2 :=
+private abbrev chain₂ (f : C(StdSimplex ℝ (Fin 3), X)) : ((singularChains ℤ).obj X).X 2 :=
   simplexChain ((X.toSSetObjEquiv (.op ⦋2⦌)).symm f) 1
 
 private lemma δ_toSSetObjEquiv_symm (f : C(StdSimplex ℝ (Fin 3), X)) (i : Fin 3)
@@ -277,11 +277,15 @@ lemma H₁.mk_surjective : Function.Surjective (H₁.mk (X := X)) := by
   exact ⟨c, by rw [H₁.mk]; exact hc⟩
 
 lemma pathChain_mem_cycles₁ {x : X} (γ : Path x x) : pathChain ℤ γ.toContinuousMap ∈ cycles₁ X :=
-  mem_cycles₁ (by rw [d_pathChain]; simp)
+  mem_cycles₁ (by rw [singularChains_d_pathChain]; simp)
 
 /-- The homology class of the chain of a loop. -/
-@[expose] def loopClass {x : X} (γ : Path x x) : H₁ X :=
+def loopClass {x : X} (γ : Path x x) : H₁ X :=
   H₁.mk ⟨_, pathChain_mem_cycles₁ γ⟩
+
+lemma loopClass_def {x : X} (γ : Path x x) :
+    loopClass γ = H₁.mk ⟨pathChain ℤ γ.toContinuousMap, pathChain_mem_cycles₁ γ⟩ :=
+  (rfl)
 
 lemma loopClass_eq_iff {x y : X} (γ : Path x x) (γ' : Path y y) :
     loopClass γ = loopClass γ' ↔
@@ -480,10 +484,8 @@ private lemma inverse₁_loopClass (γ : Path x x) :
     inverse₁ x (loopClass γ) =
       Additive.ofMul ((Abelianization.of : FundamentalGroup X x →* _)
         (Path.Homotopic.Quotient.mk γ)) := by
-  have hs : source₁ (simplex₁ γ.toContinuousMap) = x := by
-    simpa using path₁_simplex₁_apply γ.toContinuousMap 0
-  have ht : target₁ (simplex₁ γ.toContinuousMap) = x := by
-    simpa using path₁_simplex₁_apply γ.toContinuousMap 1
+  have hs : source₁ (simplex₁ γ.toContinuousMap) = x := (source₁_simplex₁ _).trans γ.source
+  have ht : target₁ (simplex₁ γ.toContinuousMap) = x := (target₁_simplex₁ _).trans γ.target
   have hγ : path₁ (simplex₁ γ.toContinuousMap) = γ.cast hs ht := by
     ext t
     simp
@@ -546,7 +548,7 @@ private lemma loopChains_sub_mem_boundaries₁ (c : ((singularChains ℤ).obj X)
     (QuotientAddGroup.mk' _).comp (loopChains x - LinearMap.id +
       pathChains x ∘ₗ (((singularChains ℤ).obj X).d 1 0).hom).toAddMonoidHom
   have : φ = 0 := singularChains_addMonoidHom_ext fun s ↦ by
-    rw [AddMonoidHom.zero_apply, AddMonoidHom.comp_apply, QuotientAddGroup.mk'_apply,
+    simp only [φ, AddMonoidHom.zero_apply, AddMonoidHom.comp_apply, QuotientAddGroup.mk'_apply,
       QuotientAddGroup.eq_zero_iff, Submodule.mem_toAddSubgroup, LinearMap.toAddMonoidHom_coe,
       LinearMap.add_apply, LinearMap.sub_apply, LinearMap.id_apply, LinearMap.comp_apply]
     -- The boundary of `s` is `[target₁ s] - [source₁ s]`, so `pathChains` sends it to the
@@ -575,6 +577,7 @@ def hurewiczAb : Additive (Abelianization (FundamentalGroup X x)) →+ H₁ X :=
 
 omit [PathConnectedSpace X] in
 /-- On the abelianization, the Hurewicz map is induced by `TauCeti.HurewiczOne.hurewicz₁`. -/
+@[simp]
 lemma hurewiczAb_ofMul_of (g : FundamentalGroup X x) :
     hurewiczAb x (Additive.ofMul (Abelianization.of g)) =
       Multiplicative.toAdd (hurewicz₁ X x g) := by

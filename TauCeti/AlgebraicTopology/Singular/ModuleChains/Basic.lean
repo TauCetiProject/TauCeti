@@ -202,7 +202,7 @@ abbrev pathChain {X : TopCat.{u}} (g : C(I, X)) : ((singularChains k).obj X).X 1
 variable {k}
 
 /-- The boundary of the chain of a path is the difference of the chains of its endpoints. -/
-theorem d_pathChain {X : TopCat.{u}} (g : C(I, X)) :
+theorem singularChains_d_pathChain {X : TopCat.{u}} (g : C(I, X)) :
     ((singularChains k).obj X).d 1 0 (pathChain k g) =
       pointChain k (g 1) - pointChain k (g 0) := by
   rw [singularChains_d_simplexChain (n := 0), Fin.sum_univ_two, TopCat.δ_zero_simplex₁,

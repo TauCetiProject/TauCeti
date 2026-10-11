@@ -30,6 +30,6 @@ lemma of_inv_mul_mul (p q : G) : of (p⁻¹ * q * p) = of q := by
 of `p` and `q`. -/
 lemma ofMul_of_add_ofMul_of (p q : G) :
     Additive.ofMul (of p) + Additive.ofMul (of q) = Additive.ofMul (of (q * p)) := by
-  rw [← ofMul_mul, ← map_mul, map_mul, mul_comm, ← map_mul]
+  rw [← ofMul_mul, mul_comm, ← map_mul]
 
 end Abelianization
