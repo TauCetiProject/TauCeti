@@ -53,6 +53,8 @@ between them has a scaling factor of valuation `1`, and they have the same `c₄
   factor of such a change of variables satisfies `v (u) = 1`.
 * `WeierstrassCurve.valuation_c₄_eq_of_isMinimal_smul`: hence the two minimal models have equal
   `v (c₄)`.
+* `WeierstrassCurve.hasAdditiveReduction_iff_of_isMinimal_smul`: so they have additive reduction
+  together.
 * `WeierstrassCurve.VariableChange.exists_unit_algebraMap_eq_u_of_isMinimal_smul`: the scaling
   factor is the image of a unit of the discrete valuation ring.
 * `VariableChange.exists_baseChange_eq_and_smul_integralModel_eq_of_isMinimal_smul`: so the
@@ -341,6 +343,15 @@ theorem valuation_c₄_eq_of_isMinimal_smul {W₁ W₂ : WeierstrassCurve K} [Is
   rw [← hD, variableChange_c₄, map_mul, map_pow, Units.val_inv_eq_inv_val, map_inv₀,
     valuation_u_eq_one_of_isMinimal_smul R D hD]
   simp
+
+/-- **Additive reduction is an isomorphism invariant of minimal models.** Two minimal models of an
+elliptic curve related by a change of variables have the same valuations of `Δ` and of `c₄`, so
+they have additive reduction together. -/
+theorem hasAdditiveReduction_iff_of_isMinimal_smul {W₁ W₂ : WeierstrassCurve K} [IsMinimal R W₁]
+    [IsMinimal R W₂] [W₁.IsElliptic] (D : VariableChange K) (hD : D • W₁ = W₂) :
+    W₂.HasAdditiveReduction R ↔ W₁.HasAdditiveReduction R := by
+  simp only [hasAdditiveReduction_iff, valuation_Δ_eq_of_isMinimal_smul R D hD,
+    valuation_c₄_eq_of_isMinimal_smul R D hD, ‹IsMinimal R W₁›, ‹IsMinimal R W₂›, true_and]
 
 namespace VariableChange
 
