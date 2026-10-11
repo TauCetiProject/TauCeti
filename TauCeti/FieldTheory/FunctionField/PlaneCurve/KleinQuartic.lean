@@ -223,8 +223,9 @@ private theorem aeval_affineEquation (h : x ^ 3 * y + y ^ 3 + x = 0) :
 /-- If `x` and `y` generate `F` over `k`, then `x` generates `F` over `k(u)`. -/
 private theorem adjoin_simple_eq_top (hgen : k⟮x, y⟯ = ⊤) : (RatFunc k)⟮x⟯ = ⊤ := by
   have hxK : x ∈ (RatFunc k)⟮x⟯ := IntermediateField.mem_adjoin_simple_self (RatFunc k) x
+  have hy : y = algebraMap (RatFunc k) F RatFunc.X + x := by rw [hX]; ring
   have hyK : y ∈ (RatFunc k)⟮x⟯ := by
-    rw [show y = algebraMap (RatFunc k) F RatFunc.X + x by rw [hX]; ring]
+    rw [hy]
     exact add_mem (IntermediateField.algebraMap_mem _ _) hxK
   have hle : k⟮x, y⟯ ≤ ((RatFunc k)⟮x⟯).restrictScalars k := by
     rw [IntermediateField.adjoin_le_iff, Set.insert_subset_iff, Set.singleton_subset_iff]
