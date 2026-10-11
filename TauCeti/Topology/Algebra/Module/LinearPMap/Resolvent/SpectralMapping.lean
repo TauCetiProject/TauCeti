@@ -14,8 +14,10 @@ public import Mathlib.Tactic.Module
 At a resolvent point `z` of a partial linear map `A`, another scalar `w` is a
 resolvent point precisely when `1 - (z - w) • A.resolvent z` is invertible.
 This gives spectral mapping for the continuous operator `A.resolvent z`: for
-`μ ≠ 0`, `μ` is outside its algebraic spectrum exactly when `z - μ⁻¹` belongs
-to the resolvent set of `A`.
+a unit `u` over a commutative ring, `↑u` is outside its algebraic spectrum
+exactly when `z - ↑u⁻¹` belongs to the resolvent set of `A`. Over a field, this
+says that for `μ ≠ 0`, `μ` is outside the spectrum exactly when `z - μ⁻¹`
+is a resolvent point.
 
 The results use only a topological module with continuous addition and constant
 scalar multiplication. In particular, they apply to bounded resolvents of
@@ -111,6 +113,15 @@ theorem inverse_one_sub_smul_resolvent (hz : z ∈ A.resolventSet)
     ← resolvent_eq_mul_inverse_one_sub_smul_resolvent hz h] at hcancel
   exact sub_eq_iff_eq_add.mp hcancel
 
+/-- **Resolvent spectral mapping** for a unit over a commutative ring: `↑u` lies
+outside the spectrum of `R(z)` exactly when `z - ↑u⁻¹` is a resolvent point of `A`. -/
+theorem notMem_spectrum_resolvent_iff_of_unit (hz : z ∈ A.resolventSet) (u : 𝕜ˣ) :
+    (u : 𝕜) ∉ spectrum 𝕜 (A.resolvent z) ↔ z - (↑u⁻¹ : 𝕜) ∈ A.resolventSet := by
+  rw [spectrum.notMem_iff,
+    mem_resolventSet_iff_isUnit_one_sub_smul_resolvent hz, sub_sub_cancel]
+  simpa only [Units.smul_def, Algebra.algebraMap_eq_smul_one] using
+    (IsUnit.smul_sub_iff_sub_inv_smul u (A.resolvent z))
+
 end CommRing
 
 section Field
@@ -123,11 +134,8 @@ variable {A : X →ₗ.[𝕜] X} {z μ : 𝕜}
 of `R(z)` exactly when `z - μ⁻¹` is a resolvent point of `A`. -/
 theorem notMem_spectrum_resolvent_iff (hz : z ∈ A.resolventSet) (hμ : μ ≠ 0) :
     μ ∉ spectrum 𝕜 (A.resolvent z) ↔ z - μ⁻¹ ∈ A.resolventSet := by
-  rw [spectrum.notMem_iff,
-    mem_resolventSet_iff_isUnit_one_sub_smul_resolvent hz, sub_sub_cancel]
-  simpa only [Units.smul_def, Units.val_mk0, Units.val_inv_eq_inv_val,
-    Algebra.algebraMap_eq_smul_one] using
-    (IsUnit.smul_sub_iff_sub_inv_smul (Units.mk0 μ hμ) (A.resolvent z))
+  simpa only [Units.val_mk0, Units.val_inv_eq_inv_val] using
+    notMem_spectrum_resolvent_iff_of_unit hz (Units.mk0 μ hμ)
 
 end Field
 
