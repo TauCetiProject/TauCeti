@@ -31,9 +31,7 @@ universe u w
 
 variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V) [Finite V]
 
-/-- The integer-graded algebra structure used by the braid-complex tensor product. -/
-local instance : GradedAlgebra (zigzagAlgebraInternalGrading k G).piece :=
-  zigzagAlgebraIntegerGradedAlgebra k G
+attribute [local instance] zigzagAlgebraIntegerGradedAlgebra
 
 local notation "F" => zigzagBimoduleTensor k G
 local notation "Z" => zigzagGradedBimodule k G
