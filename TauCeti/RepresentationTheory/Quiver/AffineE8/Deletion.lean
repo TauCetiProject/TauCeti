@@ -83,7 +83,7 @@ private theorem nonempty_hom_iff (a b : AffineE8) : Nonempty (a ⟶ b) ↔
 /-- **Deleting the affine vertex from the affine `E₈` quiver gives the finite Bourbaki `E₈`
 diagram.** The isomorphism sends finite nodes `0,1,2,3,4,5,6,7` to
 `medium2, short, medium4, center, long5, long4, long3, long2`, respectively. -/
-@[expose] def deletedGraphIso :
+def deletedGraphIso :
     diagramGraph (CartanMatrix.E 8) ≃g deletedGraph where
   toEquiv :=
     { toFun := bourbakiVertex
@@ -108,6 +108,6 @@ diagram.** The isomorphism sends finite nodes `0,1,2,3,4,5,6,7` to
 
 /-- The graph isomorphism acts on vertices by the explicit Bourbaki relabelling. -/
 @[simp] theorem deletedGraphIso_apply (i : Fin 8) :
-    deletedGraphIso i = bourbakiVertex i := rfl
+    deletedGraphIso i = bourbakiVertex i := (rfl)
 
 end TauCeti.Quiver.AffineE8
