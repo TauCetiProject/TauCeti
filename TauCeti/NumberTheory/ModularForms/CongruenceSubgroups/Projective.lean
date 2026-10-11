@@ -34,22 +34,25 @@ theorem Gamma0Projective_def (N : ℕ) :
       (CongruenceSubgroup.Gamma0 N).map
         (QuotientGroup.mk' (Subgroup.center SL(2, ℤ))) := (rfl)
 
+/-- The center of `SL₂(ℤ)` is contained in every congruence subgroup `Γ₀(N)`. -/
+theorem center_le_Gamma0 (N : ℕ) :
+    Subgroup.center SL(2, ℤ) ≤ CongruenceSubgroup.Gamma0 N := by
+  intro z hz
+  rcases Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one.mp hz with hz | hz
+  · simp [hz]
+  · simp [hz]
+
 /-- Membership of the image of a matrix in `Γ₀(N)` is unchanged by projectivization. -/
 @[simp]
 theorem mem_Gamma0Projective_mk (N : ℕ) (A : SL(2, ℤ)) :
     (↑A : PSL(2, ℤ)) ∈ Gamma0Projective N ↔
       A ∈ CongruenceSubgroup.Gamma0 N := by
   rw [Gamma0Projective_def, Subgroup.mem_map]
-  have hcenter : Subgroup.center SL(2, ℤ) ≤ CongruenceSubgroup.Gamma0 N := by
-    intro z hz
-    rcases Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one.mp hz with hz | hz
-    · simp [hz]
-    · simp [hz]
   constructor
   · rintro ⟨B, hB, hBA⟩
     obtain ⟨C, hC, hBC⟩ := (QuotientGroup.mk'_eq_mk' (Subgroup.center SL(2, ℤ))).mp hBA
     rw [← hBC]
-    exact mul_mem hB (hcenter hC)
+    exact mul_mem hB (center_le_Gamma0 N hC)
   · intro hA
     exact ⟨A, hA, rfl⟩
 
@@ -75,11 +78,6 @@ theorem Gamma0Projective_index (N : ℕ) :
     (f := QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))
     (QuotientGroup.mk'_surjective (Subgroup.center SL(2, ℤ))) (by
       rw [QuotientGroup.ker_mk']
-      intro A hA
-      rcases Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one.mp hA with hA | hA
-      · subst A
-        simp
-      · subst A
-        simp)
+      exact center_le_Gamma0 N)
 
 end TauCeti.CongruenceSubgroup
