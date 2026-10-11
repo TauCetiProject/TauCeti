@@ -58,16 +58,35 @@ variable (k : Type u) [Ring k] (P : TopPair.{u})
 
 /-- The **connecting morphism** `Hₙ(X, A) ⟶ Hₘ(A)` of the long exact sequence of a pair in cubical
 homology, for `m + 1 = n`. -/
-@[expose] def cubicalHomologyδ (n m : ℕ) (h : m + 1 = n := by lia) :
+def cubicalHomologyδ (n m : ℕ) (h : m + 1 = n := by lia) :
     (P.cubicalChainComplex k).homology n ⟶
       ((normalizedCubicalChainComplex k).obj P.snd).homology m :=
   (shortExact_cubicalChainComplexShortComplex k P).δ n m h
+
+theorem cubicalHomologyδ_def (n m : ℕ) (h : m + 1 = n := by lia) :
+    P.cubicalHomologyδ k n m h = (shortExact_cubicalChainComplexShortComplex k P).δ n m h :=
+  (rfl)
+
+/-- The connecting morphism followed by the map induced by the inclusion of the subspace is
+zero. -/
+@[reassoc (attr := simp)]
+theorem cubicalHomologyδ_comp (n m : ℕ) (h : m + 1 = n := by lia) :
+    P.cubicalHomologyδ k n m h ≫
+      HomologicalComplex.homologyMap ((normalizedCubicalChainComplex k).map P.map) m = 0 :=
+  (shortExact_cubicalChainComplexShortComplex k P).δ_comp n m h
+
+/-- The map to relative homology followed by the connecting morphism is zero. -/
+@[reassoc (attr := simp)]
+theorem comp_cubicalHomologyδ (n m : ℕ) (h : m + 1 = n := by lia) :
+    HomologicalComplex.homologyMap (cokernel.π ((normalizedCubicalChainComplex k).map P.map)) n ≫
+      P.cubicalHomologyδ k n m h = 0 :=
+  (shortExact_cubicalChainComplexShortComplex k P).comp_δ n m h
 
 /-- Exactness at the cubical homology of the subspace. -/
 theorem cubicalHomology_exact_subspace (n m : ℕ) (h : m + 1 = n := by lia) :
     (ShortComplex.mk (P.cubicalHomologyδ k n m h)
       (HomologicalComplex.homologyMap ((normalizedCubicalChainComplex k).map P.map) m)
-      ((shortExact_cubicalChainComplexShortComplex k P).δ_comp n m h)).Exact :=
+      (P.cubicalHomologyδ_comp k n m h)).Exact :=
   (shortExact_cubicalChainComplexShortComplex k P).homology_exact₁ n m h
 
 /-- Exactness at the cubical homology of the ambient space. -/
@@ -84,7 +103,7 @@ theorem cubicalHomology_exact_relative (n m : ℕ) (h : m + 1 = n := by lia) :
     (ShortComplex.mk
       (HomologicalComplex.homologyMap (cokernel.π ((normalizedCubicalChainComplex k).map P.map)) n)
       (P.cubicalHomologyδ k n m h)
-      ((shortExact_cubicalChainComplexShortComplex k P).comp_δ n m h)).Exact :=
+      (P.comp_cubicalHomologyδ k n m h)).Exact :=
   (shortExact_cubicalChainComplexShortComplex k P).homology_exact₃ n m h
 
 /-- **The connecting morphisms of cubical and singular homology correspond** under the comparison
