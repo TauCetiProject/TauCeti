@@ -14,14 +14,14 @@ import TauCeti.Algebra.QuadraticDiscriminant
 
 In a rank-two carrier basis, a lattice with Gram matrix `!![A, B; B, C]` has binary norm
 form `A x² + 2B x y + C y²`. Its discriminant is `-4 * determinant`. Dividing by its
-positive content produces a primitive form. The content and primitive discriminant are
-basis-independent, although the polynomial depends on the basis.
+content produces a primitive form when the ambient form is nonzero. The content and primitive
+discriminant are basis-independent, although the polynomial depends on the basis.
 
-The intrinsic invariants `binaryContent` and `binaryDiscriminant` are characterized by
-computation in any carrier basis. Nondegeneracy gives positive content and nonzero primitive
-discriminant. The latter is zero or one modulo four, negative for either definite sign,
-and positive for an indefinite lattice. A separate integer twist of the form multiplies
-its content by the absolute scalar.
+The intrinsic nonnegative content `binaryContent` and the primitive discriminant
+`binaryDiscriminant` are characterized by computation in any carrier basis. Nondegeneracy gives
+positive content and nonzero primitive discriminant. The latter is zero or one modulo four,
+negative for either definite sign, and positive for an indefinite lattice. A separate integer twist
+of the form multiplies its content by the absolute scalar.
 
 ## References
 
@@ -57,6 +57,7 @@ theorem binaryNormForm_c : (L.binaryNormForm b).c = L.gramMatrix b 1 1 := by
   simp [binaryNormForm, gramMatrix_apply, integralNorm_apply]
 
 /-- The binary form evaluates to the integral norm of the vector with the given coordinates. -/
+@[simp]
 theorem eval_binaryNormForm (x y : ℤ) :
     (L.binaryNormForm b).eval x y = L.integralNorm (x • b 0 + y • b 1) := by
   simp only [BinaryQuadraticForm.eval_def, binaryNormForm_a, binaryNormForm_b, binaryNormForm_c,
@@ -80,6 +81,7 @@ theorem norm_eq_binaryNormForm (z : V) :
   ring
 
 /-- The discriminant of the norm form is minus four times the lattice determinant. -/
+@[simp]
 theorem discrim_binaryNormForm :
     (L.binaryNormForm b).discrim = -4 * L.determinant := by
   have hs := L.isSymm_integralForm.eq (b 0) (b 1)
@@ -130,22 +132,42 @@ theorem discrim_binaryNormForm_ne_zero [L.IsNondegenerate] :
   rw [discrim_binaryNormForm]
   exact mul_ne_zero (by decide) (L.determinant_ne_zero_iff.mpr L.form_nondegenerate)
 
-/-- The norm form of a nondegenerate rank-two lattice is nonzero. -/
-theorem binaryNormForm_ne_zero [L.IsNondegenerate] : L.binaryNormForm b ≠ 0 := by
-  intro h
-  apply discrim_binaryNormForm_ne_zero L b
-  simp [h, BinaryQuadraticForm.discrim_def, discrim]
+/-- The binary norm form vanishes exactly when the ambient lattice form vanishes. -/
+@[simp]
+theorem binaryNormForm_eq_zero_iff : L.binaryNormForm b = 0 ↔ L.form = 0 := by
+  constructor
+  · intro hf
+    have hnorm (z : V) : L.norm z = 0 := by
+      rw [norm_eq_binaryNormForm L b]
+      simp [hf]
+    ext x y
+    change L.form x y = 0
+    have h := L.norm_add x y
+    simp only [hnorm] at h
+    linarith
+  · intro hf
+    have hpair (x y : L) : L.integralForm x y = 0 := by
+      apply Int.cast_injective (α := ℚ)
+      rw [integralForm_cast, hf]
+      simp
+    ext <;> simp [binaryNormForm, integralNorm_apply, hpair]
 
-/-- The norm form of a nondegenerate rank-two lattice has positive content. -/
-theorem content_binaryNormForm_pos [L.IsNondegenerate] : 0 < (L.binaryNormForm b).content :=
-  (L.binaryNormForm b).content_pos_iff.mpr (binaryNormForm_ne_zero L b)
+/-- A nonzero ambient form has a nonzero binary norm form, including the degenerate case. -/
+theorem binaryNormForm_ne_zero (hL : L.form ≠ 0) : L.binaryNormForm b ≠ 0 :=
+  (binaryNormForm_eq_zero_iff L b).not.mpr hL
 
-/-- Dividing the norm form of a nondegenerate lattice by its content gives a primitive form. -/
-theorem isPrimitive_binaryNormForm_primPart [L.IsNondegenerate] :
+/-- A nonzero ambient form has a binary norm form of positive content. -/
+theorem content_binaryNormForm_pos (hL : L.form ≠ 0) : 0 < (L.binaryNormForm b).content :=
+  (L.binaryNormForm b).content_pos_iff.mpr (binaryNormForm_ne_zero L b hL)
+
+/-- Dividing the norm form by its content gives a primitive form whenever the ambient form
+is nonzero. -/
+theorem isPrimitive_binaryNormForm_primPart (hL : L.form ≠ 0) :
     (L.binaryNormForm b).primPart.IsPrimitive :=
-  (L.binaryNormForm b).isPrimitive_primPart (binaryNormForm_ne_zero L b)
+  (L.binaryNormForm b).isPrimitive_primPart (binaryNormForm_ne_zero L b hL)
 
-/-- The basis-independent positive content of a rank-two lattice; it is zero for the zero form. -/
+/-- The basis-independent nonnegative content of a rank-two lattice; it is positive for a
+nonzero ambient form. -/
 noncomputable def binaryContent (hV : Module.finrank ℚ V = 2) : ℕ :=
   (L.binaryNormForm (Module.finBasisOfFinrankEq ℤ L (L.finrank_carrier.trans hV))).content
 
@@ -165,31 +187,31 @@ theorem binaryDiscriminant_eq_discrim_primPart (hV : Module.finrank ℚ V = 2) :
   L.discrim_binaryNormForm_primPart_eq _ b
 
 /-- The primitive discriminant times the squared content is minus four times the determinant. -/
-theorem binaryDiscriminant_mul_content_sq (hV : Module.finrank ℚ V = 2) :
+theorem binaryContent_sq_mul_binaryDiscriminant (hV : Module.finrank ℚ V = 2) :
     (L.binaryContent hV : ℤ) ^ 2 * L.binaryDiscriminant hV = -4 * L.determinant := by
   let b := Module.finBasisOfFinrankEq ℤ L (L.finrank_carrier.trans hV)
   rw [binaryContent_eq_content_binaryNormForm L b hV,
     binaryDiscriminant_eq_discrim_primPart L b hV,
     ← BinaryQuadraticForm.discrim_eq_content_sq_mul, discrim_binaryNormForm]
 
-/-- A nondegenerate rank-two lattice has positive content. -/
-theorem binaryContent_pos (hV : Module.finrank ℚ V = 2) [L.IsNondegenerate] :
+/-- A rank-two lattice with nonzero ambient form has positive content. -/
+theorem binaryContent_pos (hV : Module.finrank ℚ V = 2) (hL : L.form ≠ 0) :
     0 < L.binaryContent hV := by
   let b := Module.finBasisOfFinrankEq ℤ L (L.finrank_carrier.trans hV)
   rw [binaryContent_eq_content_binaryNormForm L b hV]
-  exact content_binaryNormForm_pos L b
+  exact content_binaryNormForm_pos L b hL
 
 /-- The primitive discriminant of a nondegenerate rank-two lattice is nonzero. -/
 theorem binaryDiscriminant_ne_zero (hV : Module.finrank ℚ V = 2) [L.IsNondegenerate] :
     L.binaryDiscriminant hV ≠ 0 := by
   intro h
-  have he := binaryDiscriminant_mul_content_sq L hV
+  have he := binaryContent_sq_mul_binaryDiscriminant L hV
   rw [h, mul_zero] at he
   exact (mul_ne_zero (by decide : (-4 : ℤ) ≠ 0)
     (L.determinant_ne_zero_iff.mpr L.form_nondegenerate)) he.symm
 
 /-- An integral primitive discriminant is zero or one modulo four. -/
-theorem binaryDiscriminant_emod_four (hV : Module.finrank ℚ V = 2) :
+theorem binaryDiscriminant_emod_four_eq_zero_or_one (hV : Module.finrank ℚ V = 2) :
     L.binaryDiscriminant hV % 4 = 0 ∨ L.binaryDiscriminant hV % 4 = 1 := by
   let b := Module.finBasisOfFinrankEq ℤ L (L.finrank_carrier.trans hV)
   rw [binaryDiscriminant_eq_discrim_primPart L b hV,
@@ -221,28 +243,30 @@ theorem binaryDiscriminant_neg_of_isPosDef (hV : Module.finrank ℚ V = 2)
       (b.extendOfIsLattice ℚ) L.form L.isSymm).mp hL
     rw [L.determinant_eq_gramDet b]
     exact_mod_cast (L.intCast_gramDet b).symm ▸ hm.det_pos
-  have he := L.binaryDiscriminant_mul_content_sq hV
+  have he := L.binaryContent_sq_mul_binaryDiscriminant hV
   have hsq := sq_nonneg (L.binaryContent hV : ℤ)
   nlinarith
+
+/-- Negating the lattice form preserves the primitive discriminant. -/
+@[simp]
+theorem binaryDiscriminant_neg (hV : Module.finrank ℚ V = 2) :
+    (-L).binaryDiscriminant hV = L.binaryDiscriminant hV := by
+  let b := Module.finBasisOfFinrankEq ℤ L (L.finrank_carrier.trans hV)
+  rw [neg_def, binaryDiscriminant_eq_discrim_primPart ((-1 : ℤ) • L) b hV,
+    binaryDiscriminant_eq_discrim_primPart L b hV, binaryNormForm_smul, neg_one_smul,
+    BinaryQuadraticForm.primPart_neg]
+  simpa only [neg_one_smul, neg_one_sq, one_mul] using
+    BinaryQuadraticForm.discrim_smul' (-1 : ℤ) (L.binaryNormForm b).primPart
 
 /-- The primitive discriminant of a negative definite rank-two lattice is negative. -/
 theorem binaryDiscriminant_neg_of_isNegDef (hV : Module.finrank ℚ V = 2)
     (hL : L.IsNegDef) : L.binaryDiscriminant hV < 0 := by
-  let b := Module.finBasisOfFinrankEq ℤ L (L.finrank_carrier.trans hV)
   have hneg : (-L).IsPosDef := by
     rw [(-L).isPosDef_iff]
     intro x hx
     simpa only [neg_form, LinearMap.neg_apply, neg_pos] using L.isNegDef_iff.mp hL x hx
-  have hdet : 0 < (-L).determinant := by
-    have hm := (LinearMap.BilinForm.posDef_toQuadraticMap_iff_matrix
-      (b.extendOfIsLattice ℚ) (-L).form (-L).isSymm).mp hneg
-    rw [(-L).determinant_eq_gramDet b]
-    exact_mod_cast ((-L).intCast_gramDet b).symm ▸ hm.det_pos
-  rw [determinant_neg, L.finrank_carrier, hV] at hdet
-  norm_num only [even_two, Even.neg_pow, one_pow, one_mul] at hdet
-  have he := L.binaryDiscriminant_mul_content_sq hV
-  have hsq := sq_nonneg (L.binaryContent hV : ℤ)
-  nlinarith
+  rw [← binaryDiscriminant_neg L hV]
+  exact (-L).binaryDiscriminant_neg_of_isPosDef hV hneg
 
 /-- The primitive discriminant of an indefinite rank-two lattice is positive. -/
 theorem binaryDiscriminant_pos_of_isIndefinite (hV : Module.finrank ℚ V = 2)
