@@ -743,7 +743,7 @@ variable {R : Type u} [CommSemiring R] {n : Type v} [Fintype n] [DecidableEq n]
   {N : Type w} [AddCommMonoid N] [Module R N]
 
 /-- The coordinate inclusion of an orthogonal group into `GL(n, R)`. -/
-noncomputable def orthogonalToGeneralLinear
+def orthogonalToGeneralLinear
     (Q : QuadraticMap R (n → R) N) :
     orthogonalGroup Q →* Matrix.GeneralLinearGroup n R :=
   (matrixGeneralLinearEquiv (n := n) (R := R)).symm.toMonoidHom.comp
