@@ -120,8 +120,8 @@ theorem map_toSubalgebra_of_sq (s : ℤ) (hs : s ≠ 0) :
     rw [← hvz]
     exact equivProductOfSq_commutes s hs z
 
-/-- The units of the actual square-discriminant order are four for a modulus dividing two,
-and otherwise are the two diagonal signs. -/
+/-- The unit group of the square-discriminant order has cardinality four when `s ∣ 2`,
+and two otherwise. -/
 theorem card_units_toSubalgebra_sq (s : ℤ) (hs : s ≠ 0) :
     Nat.card (Units (toSubalgebra (s ^ 2) (by rw [Int.sq_emod_four]; omega))) =
       if s ∣ 2 then 4 else 2 := by
