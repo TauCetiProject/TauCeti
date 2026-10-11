@@ -87,7 +87,8 @@ theorem singularCubicalHomologyIso_hom_cubicalHomologyδ (n m : ℕ) (h : m + 1 
     (singularCubicalHomologyIso k P n).hom ≫ P.cubicalHomologyδ k n m h =
       (P.shortExact_singularChainComplexShortComplex (ModuleCat.of k k)).δ n m h ≫
         (TauCeti.singularCubicalHomologyIso k P.snd m).hom := by
-  rw [singularCubicalHomologyIso_hom, TauCeti.singularCubicalHomologyIso_hom]
+  rw [singularCubicalHomologyIso_hom, TauCeti.singularCubicalHomologyIso_hom,
+    ← singularToCubicalShortComplex_τ₁, ← singularToCubicalShortComplex_τ₃]
   exact (HomologicalComplex.HomologySequence.δ_naturality (singularToCubicalShortComplex k P)
     (P.shortExact_singularChainComplexShortComplex _)
     (shortExact_cubicalChainComplexShortComplex k P) n m h).symm
