@@ -138,54 +138,34 @@ theorem base_eq (f : Hom X Y) : f.base = X.curve.zero ≫ f.total ≫ Y.curve.st
   simp
 
 /-- Two arrows of `Ell/B` with the same morphism of total spaces are equal. -/
-theorem ext_total {f g : Hom X Y} (h : f.total = g.total) : f = g := by
+private theorem ext_total {f g : Hom X Y} (h : f.total = g.total) : f = g := by
   have hb : f.base = g.base := by rw [f.base_eq, g.base_eq, h]
   cases f
   cases g
   simp_all
 
-/-- The identity arrow of an object of `Ell/B`. -/
-def id (X : EllObj B) : Hom X X where
-  base := 𝟙 X.base
-  base_structureMap := Category.id_comp _
-  total := 𝟙 X.curve.carrier
-  isPullback := IsPullback.of_horiz_isIso ⟨by simp⟩
-  zero_total := by simp
-
-/-- The composite of two arrows of `Ell/B`: cartesian squares paste to a cartesian square. -/
-def comp (f : Hom X Y) (g : Hom Y Z) : Hom X Z where
-  base := f.base ≫ g.base
-  base_structureMap := by simp
-  total := f.total ≫ g.total
-  isPullback := f.isPullback.paste_horiz g.isPullback
-  zero_total := by simp
-
-/-! The arrows `Hom.id X` and `f.comp g` are written `𝟙 X` and `f ≫ g` in the category `Ell/B`,
-where `EllObj.id_base`, `EllObj.id_total`, `EllObj.comp_base` and `EllObj.comp_total` are the
-`simp` lemmas. -/
-
-theorem id_base (X : EllObj B) : (Hom.id X).base = 𝟙 X.base :=
-  (rfl)
-
-theorem id_total (X : EllObj B) : (Hom.id X).total = 𝟙 X.curve.carrier :=
-  (rfl)
-
-theorem comp_base (f : Hom X Y) (g : Hom Y Z) : (f.comp g).base = f.base ≫ g.base :=
-  (rfl)
-
-theorem comp_total (f : Hom X Y) (g : Hom Y Z) : (f.comp g).total = f.total ≫ g.total :=
-  (rfl)
-
 end Hom
 
-/-- The category `Ell/B`, whose arrows are the cartesian pointed morphisms `EllObj.Hom`. -/
+/-- The category `Ell/B`, whose arrows are the cartesian pointed morphisms `EllObj.Hom`. The
+composite of two arrows pastes their cartesian squares. -/
 instance category : Category.{u} (EllObj B) where
   Hom := Hom
-  id := Hom.id
-  comp := Hom.comp
-  id_comp _ := Hom.ext_total (by rw [Hom.comp_total, Hom.id_total, Category.id_comp])
-  comp_id _ := Hom.ext_total (by rw [Hom.comp_total, Hom.id_total, Category.comp_id])
-  assoc _ _ _ := Hom.ext_total (by simp only [Hom.comp_total, Category.assoc])
+  id X :=
+    { base := 𝟙 X.base
+      base_structureMap := Category.id_comp _
+      total := 𝟙 X.curve.carrier
+      isPullback := IsPullback.of_horiz_isIso ⟨by simp⟩
+      zero_total := by simp }
+  comp f g :=
+    { base := f.base ≫ g.base
+      base_structureMap := by simp
+      total := f.total ≫ g.total
+      isPullback := f.isPullback.paste_horiz g.isPullback
+      zero_total := by simp }
+  -- the private `Hom.ext_total` is only visible from tactic proofs here
+  id_comp f := by exact Hom.ext_total (Category.id_comp f.total)
+  comp_id f := by exact Hom.ext_total (Category.comp_id f.total)
+  assoc f g h := by exact Hom.ext_total (Category.assoc f.total g.total h.total)
 
 variable {X Y Z : EllObj B}
 
