@@ -84,6 +84,8 @@ inseparable extension can only be indexed by the intermediate fields of the sepa
 * `FixedPoints.isCyclic_algEquiv`
 * `AlgEquiv.toFixedFieldAlgEquiv`, with `AlgEquiv.zpowers_toFixedFieldAlgEquiv_eq_top` and
   `AlgEquiv.card_algEquiv_fixedField_zpowers`
+* `AlgEquiv.fixedField_zpowers_mul_comm` and `AlgEquiv.restrictScalars_mem_zpowers`: the
+  automorphisms over a finite cyclic fixed field commute and restrict to powers of its generator
 * `TauCeti.natCard_algEquiv_dvd_finrank`: the automorphism group of a finite extension has order
   dividing the degree, since that order is the degree over the field fixed by all automorphisms
 -/
@@ -513,6 +515,24 @@ theorem card_algEquiv_fixedField_zpowers (σ : M ≃ₐ[K] M) [Finite (Subgroup.
       AlgEquiv.restrictScalarsHom_apply, restrictScalars_toFixedFieldAlgEquiv]
   rw [← Subgroup.card_top (G := M ≃ₐ[IntermediateField.fixedField (Subgroup.zpowers σ)] M),
     ← zpowers_toFixedFieldAlgEquiv_eq_top σ, Nat.card_zpowers, horder]
+
+/-- Every automorphism of `M` over `M ^ ⟨σ⟩` commutes with every other when `⟨σ⟩` is finite.
+Neither finiteness nor Galoisness of `M / K` is required. -/
+theorem fixedField_zpowers_mul_comm (σ : M ≃ₐ[K] M) [Finite (Subgroup.zpowers σ)]
+    (a b : M ≃ₐ[↥(fixedField (Subgroup.zpowers σ))] M) : a * b = b * a :=
+  have : IsCyclic (M ≃ₐ[↥(fixedField (Subgroup.zpowers σ))] M) :=
+    isCyclic_iff_exists_zpowers_eq_top.mpr ⟨_, σ.zpowers_toFixedFieldAlgEquiv_eq_top⟩
+  IsCyclic.commGroup.mul_comm a b
+
+/-- Read over `K`, an automorphism of `M` over `M ^ ⟨σ⟩` is a power of `σ` when `⟨σ⟩` is finite.
+Neither finiteness nor Galoisness of `M / K` is required. -/
+theorem restrictScalars_mem_zpowers (σ : M ≃ₐ[K] M) [Finite (Subgroup.zpowers σ)]
+    (τ : M ≃ₐ[↥(fixedField (Subgroup.zpowers σ))] M) :
+    AlgEquiv.restrictScalars K τ ∈ Subgroup.zpowers σ := by
+  refine (IntermediateField.fixingSubgroup_fixedField_of_finite (Subgroup.zpowers σ)).le ?_
+  rw [IntermediateField.mem_fixingSubgroup_iff]
+  intro x hx
+  exact τ.commutes ⟨x, hx⟩
 
 end AlgEquiv
 
