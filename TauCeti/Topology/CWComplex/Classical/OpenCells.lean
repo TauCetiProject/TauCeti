@@ -245,6 +245,19 @@ lemma openCellChart_apply (i : cell C n) (x : (skeletonLT C ((n + 1 : ℕ) : ℕ
     openCellChart n i x = (map n i).symm x :=
   (rfl)
 
+/-- The inverse of the chart of an open cell is the characteristic map, precomposed with the
+radial retraction onto the closed unit ball. -/
+@[simp]
+lemma openCellChart_symm_apply_coe (i : cell C n) (y : Fin n → ℝ) :
+    ((openCellChart n i).symm y : X) = map n i (radialRetraction 1 y) :=
+  (rfl)
+
+/-- On the closed unit ball, the inverse of the chart of an open cell is the characteristic
+map. -/
+lemma openCellChart_symm_apply_coe_of_norm_le (i : cell C n) {y : Fin n → ℝ} (hy : ‖y‖ ≤ 1) :
+    ((openCellChart n i).symm y : X) = map n i y := by
+  rw [openCellChart_symm_apply_coe, radialRetraction_of_norm_le hy]
+
 /-- The source of the chart of an open cell is the open cell. -/
 @[simp]
 lemma openCellChart_source (i : cell C n) :

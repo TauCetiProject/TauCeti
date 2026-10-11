@@ -64,44 +64,6 @@ namespace TauCeti
 
 variable {X : Type u} [TopologicalSpace X] [T2Space X] {C D : Set X} [RelCWComplex C D] {k : ℕ}
 
-/-- **A deformation of the closed unit ball fixing the unit sphere, read through the
-characteristic map of a `k`-cell `j`, deforms maps into the `k`-skeleton relative to the points
-not sent into the open cell `j`.** A point `z` sent into the open cell, at `map k j y`, ends at
-`map k j (g y)`. -/
-private lemma exists_homotopicRel_openCell (j : cell C k) {g : C(Fin k → ℝ, Fin k → ℝ)}
-    (Ψ : (ContinuousMap.id _).HomotopyRel g (frontier (closedBall 0 1)))
-    (hΨb : ∀ t y, ‖y‖ ≤ 1 → ‖Ψ (t, y)‖ ≤ 1) {Z : Type*} [TopologicalSpace Z]
-    (f : C(Z, (skeletonLT C ((k + 1 : ℕ) : ℕ∞) : Set X))) {S : Set Z}
-    (hS : ∀ z ∈ S, (f z : X) ∉ openCell k j) :
-    ∃ f' : C(Z, (skeletonLT C ((k + 1 : ℕ) : ℕ∞) : Set X)), f.HomotopicRel f' S ∧
-      (∀ z, (f z : X) ∈ openCell k j → (f' z : X) = map k j (g ((map k j).symm (f z)))) ∧
-      ∀ z, (f z : X) ∉ openCell k j → f' z = f z := by
-  have hΨ (t : I) (y : Fin k → ℝ) (hy : ‖y‖ = 1) : Ψ (t, y) = y :=
-    Ψ.eq_fst t (frontier_closedBall (0 : Fin k → ℝ) one_ne_zero ▸ mem_sphere_zero_iff_norm.2 hy)
-  have hfix {t : I} {x : X} (hx : x ∉ openCell k j) :
-      cellDeformation {j} Ψ.toContinuousMap (t, x) = x :=
-    cellDeformation_of_notMem fun i hi ↦ by rwa [mem_singleton_iff.1 hi]
-  let Q : C(I × Z, (skeletonLT C ((k + 1 : ℕ) : ℕ∞) : Set X)) :=
-    ⟨fun q ↦ ⟨cellDeformation {j} Ψ.toContinuousMap (q.1, f q.2),
-        cellDeformation_mem hΨb q.1 (f q.2).2⟩,
-      ((continuous_cellDeformation {j} hΨ hΨb).comp
-        (continuous_fst.prodMk (f.continuous.comp continuous_snd))).subtype_mk _⟩
-  have hQ (q : I × Z) : (Q q : X) = cellDeformation {j} Ψ.toContinuousMap (q.1, f q.2) := rfl
-  have h0 (z : Z) : Q (0, z) = f z := by
-    refine Subtype.ext ?_
-    by_cases hz : (f z : X) ∈ openCell k j
-    · -- At time `0` the deformation `Ψ` is the identity.
-      rw [hQ, cellDeformation_of_mem (mem_singleton j) hz,
-        ContinuousMap.HomotopyWith.coe_toContinuousMap, Ψ.apply_zero, ContinuousMap.id_apply,
-        map_map_symm k hz]
-    · exact hfix hz
-  refine ⟨Q.curry 1, ⟨⟨⟨Q, h0, fun _ ↦ rfl⟩, fun t z hz ↦ Subtype.ext ?_⟩⟩, fun z hz ↦ ?_,
-    fun z hz ↦ Subtype.ext ?_⟩
-  · exact hfix (hS z hz)
-  · rw [ContinuousMap.curry_apply, hQ, cellDeformation_of_mem (mem_singleton j) hz,
-      ContinuousMap.HomotopyWith.coe_toContinuousMap, Ψ.apply_one]
-  · exact hfix hz
-
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
 
 /-- **Pushing a map off a cell of higher dimension** (Hatcher, Lemma 4.10 together with the
@@ -140,7 +102,9 @@ theorem exists_homotopicRel_cellFrontier {K : Set E} (hK : IsCompact K) (hk : fi
   let val : C((skeletonLT C ((k + 1 : ℕ) : ℕ∞) : Set X), X) :=
     ⟨Subtype.val, continuous_subtype_val⟩
   have h := (ContinuousMap.HomotopicRel.trans ⟨H₁⟩ hg₂).comp_continuousMap val
-  rw [show val.comp f' = f from ContinuousMap.ext fun _ ↦ rfl] at h
+  -- Composing `f'` with the inclusion of the skeleton recovers `f`.
+  have hvf : val.comp f' = f := ContinuousMap.ext fun _ ↦ rfl
+  rw [hvf] at h
   refine ⟨val.comp g₂, h, fun x hx ↦ ?_⟩
   -- A point sent into the open cell is sent by `g₁` into the open cell, but outside
   -- `φ.symm (ball p ε)`, so the radial push sends it to the frontier.
