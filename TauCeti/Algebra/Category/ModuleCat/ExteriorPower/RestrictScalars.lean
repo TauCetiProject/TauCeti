@@ -65,12 +65,15 @@ def restrictScalarsExteriorPowerComparison (n : ℕ) :
       (ModuleCat.exteriorPower.map_mk φ m).symm
 
 /-- The restriction-of-scalars comparison preserves the factors of a decomposable wedge. -/
+-- Explicit objects keep the coercion to a function in simp normal form.
 @[simp]
 theorem restrictScalarsExteriorPowerComparison_app_mk (n : ℕ)
     (M : ModuleCat.{max u v w} R) (m : Fin n → (ModuleCat.restrictScalars f).obj M) :
-    dsimp% only [Functor.comp_obj]
-    ((restrictScalarsExteriorPowerComparison f n).app M (ModuleCat.exteriorPower.mk m) =
-      ModuleCat.exteriorPower.mk (M := M) m) :=
+    (ConcreteCategory.hom
+      (X := (ModuleCat.exteriorPower.functor S n).obj ((ModuleCat.restrictScalars f).obj M))
+      (Y := (ModuleCat.restrictScalars f).obj ((ModuleCat.exteriorPower.functor R n).obj M))
+      ((restrictScalarsExteriorPowerComparison f n).app M))
+      (ModuleCat.exteriorPower.mk m) = ModuleCat.exteriorPower.mk (M := M) m :=
   restrictScalarsExteriorPowerApp_mk f n M m
 
 end
