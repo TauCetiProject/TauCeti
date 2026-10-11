@@ -90,10 +90,7 @@ theorem mem_initialPentagonRightLeftOverlapPartners_of_right_eq_right
     (hcommon : E.first.right = E.second.right)
     (hcol : E.first.left ∈ Grid.cIoo E.second.left E.first.right) :
     E ∈ G.initialPentagonRightLeftOverlapPartners C x z := by
-  obtain ⟨hP, hR⟩ := (G.mem_initialPentagonRectangleDecompositions C E).1 hE
-  have hf : E.first.IsEmpty := by
-    simpa only [E.pentagon_toGridRectangleBetween] using ((G.mem_initialPentagons _).1 hP).1
-  have hs := (((G.swapColumns C.column (finRotate n C.column)).mem_unblockedRectangles _).1 hR).1
+  obtain ⟨hf, hs⟩ := G.isEmpty_of_mem_initialPentagonRectangleDecompositions C hE
   have hone := E.hasOneCommonSide_of_right_eq_right hcommon (Grid.ne_left_of_mem_cIoo hcol)
   let D := E.rightLeftInverse hcommon hcol hf hs
   have hDrect := E.rightLeftInverse_toGridRectangleDecomposition hcommon hcol hf hs
@@ -140,7 +137,7 @@ theorem mem_initialPentagonRightLeftOverlapPartners_iff_sides
     obtain ⟨D, hD, hrecut⟩ := (G.mem_initialPentagonRightLeftOverlapPartners C E).1 hE
     obtain ⟨hcounted, hcommon, hturn⟩ := (G.mem_initialPentagonRightLeftOverlapSources C D).1 hD
     obtain ⟨hR, hP⟩ := (G.mem_rectangleInitialPentagonDecompositions C D).1 hcounted
-    have hf := ((G.mem_unblockedRectangles _).1 hR).1
+    have hf := G.isEmpty_of_mem_unblockedRectangles hR
     have hp := ((G.mem_initialPentagons _).1 hP).1
     have hs : D.second.IsEmpty := by
       simpa only [D.pentagon_toGridRectangleBetween] using hp
@@ -150,24 +147,11 @@ theorem mem_initialPentagonRightLeftOverlapPartners_iff_sides
       apply GridInitialPentagonRectangleDecomposition.toGridRectangleDecomposition_injective
       exact (D.existsUnique_isRecut hone hf hs).unique
         (D.isRecut_recutRightEqLeft hcommon hf hp hturn) hrecut
-    obtain ⟨-, hfl, hfb, hft, hsb, hst⟩ := D.recutRightEqLeft_geometry hcommon hf hp hturn
-    rw [hEq] at hfl hfb hft hsb hst
+    obtain ⟨-, hfl, -⟩ := D.recutRightEqLeft_geometry hcommon hf hp hturn
+    obtain ⟨hfr, hsl, hsr⟩ := D.recutRightEqLeft_sides hcommon hf hp hturn
+    rw [hEq] at hfl hfr hsl hsr
     have hother := D.first_left_ne_second_right_of_right_eq_left hcommon hturn
-    have hfr : E.first.right = D.second.right := by
-      apply x.toPerm.injective
-      rw [← GridRectangleBetween.top_def, hft, GridRectangleBetween.top_def]
-      exact D.first.map_of_ne _ hother.symm
-        (fun h => D.second.left_ne_right (hcommon.symm.trans h.symm))
-    have hsl : E.second.left = D.first.left := by
-      apply E.middle.toPerm.injective
-      rw [← GridRectangleBetween.bottom_def, hsb, GridRectangleBetween.bottom_def]
-      exact (E.first.map_of_ne _
-        (by rw [hfl, ← hcommon]; exact D.first.left_ne_right)
-        (by rw [hfr]; exact hother)).symm
-    have hsr : E.first.right = E.second.right :=
-      E.middle.toPerm.injective (E.first.map_right.trans
-        (hfb.trans (hst.symm.trans E.second.top_def)))
-    refine ⟨hsr, ?_⟩
+    refine ⟨hfr.trans hsr.symm, ?_⟩
     rw [hfl, hsl, hfr, ← hcommon]
     exact (D.cyclicOrder_of_isEmpty_of_right_eq_left hcommon hother hf hs).1
   · rintro ⟨hE, hcommon, hcol⟩
