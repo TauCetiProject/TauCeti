@@ -33,54 +33,62 @@ namespace TauCeti.MappingTorus
 variable {F : Type w} [TopologicalSpace F] (φ : F ≃ₜ F)
   {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
 
-/-- The map on singular homology induced by including the fibre of a mapping torus into its total
-space, with the fibre represented by the subspace object of `fiberPair`. -/
+/-- The map `Hₙ(F) ⟶ Hₙ(T)` on singular homology induced by the fibre inclusion
+`MappingTorus.incl` of a mapping torus. -/
 noncomputable def wangInclusion (n : ℕ) :
-    (TopPair.toSSetPair.obj (fiberPair φ)).left.homology R n ⟶
-      (TopPair.toSSetPair.obj (fiberPair φ)).right.homology R n :=
-  SSet.homologyMap (TopPair.toSSetPair.obj (fiberPair φ)).hom R n
+    ((singularHomologyFunctor A n).obj R).obj (TopCat.of F) ⟶
+      ((singularHomologyFunctor A n).obj R).obj (TopCat.of (MappingTorus φ)) :=
+  ((singularHomologyFunctor A n).obj R).map (TopCat.ofHom (incl φ))
 
 /-- The connecting map in the Wang sequence, obtained from the pair sequence and the relative
 homology identification `Hₙ₊₁(T, F) ≅ Hₙ(F)`. -/
 noncomputable def wangConnecting (n : ℕ) :
-    (TopPair.toSSetPair.obj (fiberPair φ)).right.homology R (n + 1) ⟶
-      ((singularHomologyFunctor A n).obj R).obj (TopCat.of F) := by
-  exact (TopPair.toSSetPair.obj (fiberPair φ)).homologyπ R (n + 1) ≫
-    (singularHomologyFiberPairIso φ R n).hom
+    ((singularHomologyFunctor A (n + 1)).obj R).obj (TopCat.of (MappingTorus φ)) ⟶
+      ((singularHomologyFunctor A n).obj R).obj (TopCat.of F) :=
+  (fiberPair φ).singularHomologyπ R (n + 1) ≫ (singularHomologyFiberPairIso φ R n).hom
 
-/-- The homology map induced by the fibre inclusion, followed by the map from ambient to relative
-homology, is zero under the relative homology identification. -/
+/-- The fibre inclusion factors through the subspace of `fiberPair φ`. -/
+private lemma fiberPairIncl_comp_map :
+    fiberPairIncl φ ≫ (fiberPair φ).map = TopCat.ofHom (incl φ) :=
+  TopCat.ext fun x ↦ fiberPairIncl_apply φ x
+
+/-- The Wang inclusion factors through the homology of the subspace of `fiberPair φ`. -/
+private lemma wangInclusion_eq (n : ℕ) :
+    wangInclusion φ R n = ((singularHomologyFunctor A n).obj R).map (fiberPairIncl φ) ≫
+      ((singularHomologyFunctor A n).obj R).map (fiberPair φ).map := by
+  rw [wangInclusion, ← fiberPairIncl_comp_map]
+  exact Functor.map_comp _ _ _
+
+/-- The ambient-to-relative composite of the pair sequence of `fiberPair φ` vanishes. -/
+private lemma map_comp_wangConnecting (n : ℕ) :
+    ((singularHomologyFunctor A (n + 1)).obj R).map (fiberPair φ).map ≫
+      wangConnecting φ R n = 0 :=
+  ((Category.assoc _ _ _).symm.trans
+    (congrArg (· ≫ _) ((fiberPair φ).homologyMap_comp_singularHomologyπ R (n + 1)))).trans
+    zero_comp
+
+/-- The map on homology induced by the fibre inclusion, followed by the Wang connecting map, is
+zero. -/
 @[reassoc (attr := simp)]
 theorem wangInclusion_comp_wangConnecting (n : ℕ) :
     wangInclusion φ R (n + 1) ≫ wangConnecting φ R n = 0 := by
-  simp only [wangInclusion, wangConnecting]
-  let Q := TopPair.toSSetPair.obj (fiberPair φ)
-  let f := SSet.homologyMap Q.hom R (n + 1)
-  let g := Q.homologyπ R (n + 1)
-  calc
-    f ≫ g ≫ (singularHomologyFiberPairIso φ R n).hom =
-        (f ≫ g) ≫ (singularHomologyFiberPairIso φ R n).hom := by
-          exact (Category.assoc f g _).symm
-    _ = 0 := by rw [Q.homologyMap_hom_homologyπ, zero_comp]
+  rw [wangInclusion_eq]
+  exact (Category.assoc _ _ _).trans
+    ((congrArg _ (map_comp_wangConnecting φ R n)).trans comp_zero)
 
-/-- The exact portion `Hₙ₊₁(F) → Hₙ₊₁(T) → Hₙ(F)` of the Wang sequence. -/
+/-- The exact portion `Hₙ₊₁(F) → Hₙ₊₁(T) → Hₙ(F)` of the Wang sequence, transported from the
+exactness of the pair sequence of `fiberPair φ` at ambient homology. -/
 theorem wang_exact_total (n : ℕ) :
     (ShortComplex.mk (wangInclusion φ R (n + 1)) (wangConnecting φ R n)
       (wangInclusion_comp_wangConnecting φ R n)).Exact := by
-  let Q := TopPair.toSSetPair.obj (fiberPair φ)
-  let S₁ := ShortComplex.mk (SSet.homologyMap Q.hom R (n + 1))
-    (Q.homologyπ R (n + 1)) (Q.homologyMap_hom_homologyπ R (n + 1))
-  have hS : S₁.Exact := Q.homology_exact₂ R (n + 1)
-  let S₂ := ShortComplex.mk (wangInclusion φ R (n + 1)) (wangConnecting φ R n)
-    (wangInclusion_comp_wangConnecting φ R n)
-  let e : S₁ ≅ S₂ := ShortComplex.isoMk (Iso.refl _) (Iso.refl _)
-    (asIso (singularHomologyFiberPairIso φ R n).hom)
-    (by
-      simp [S₁, S₂, wangInclusion, Q, TopPair.toSSetPair_obj_hom,
-        TopPair.toSSetPair_obj_left, TopPair.toSSetPair_obj_right])
-    (by
-      simp [S₁, S₂, wangConnecting, Q])
-  exact ShortComplex.exact_of_iso e hS
+  refine ShortComplex.exact_of_iso ?_ ((fiberPair φ).singularHomology_exact_space R (n + 1))
+  exact ShortComplex.isoMk
+    (((singularHomologyFunctor A (n + 1)).obj R).mapIso (asIso (fiberPairIncl φ))).symm
+    (Iso.refl _) (singularHomologyFiberPairIso φ R n)
+    ((congrArg _ (wangInclusion_eq φ R (n + 1))).trans
+      ((((singularHomologyFunctor A (n + 1)).obj R).mapIso
+        (asIso (fiberPairIncl φ))).inv_hom_id_assoc _ |>.trans (Category.comp_id _).symm))
+    (Category.id_comp _)
 
 end TauCeti.MappingTorus
 
