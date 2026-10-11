@@ -39,8 +39,9 @@ private theorem finiteRelIndex_map_sl2zToPSL2R :
     ext x
     simp
   rw [← htop]
-  exact (show H.IsFiniteRelIndex (⊤ : Subgroup SL(2, ℤ)) from
-    Subgroup.isFiniteRelIndex_iff_finiteIndex.mpr inferInstance).map sl2zToPSL2R
+  have hH : H.IsFiniteRelIndex (⊤ : Subgroup SL(2, ℤ)) :=
+    Subgroup.isFiniteRelIndex_iff_finiteIndex.mpr inferInstance
+  exact hH.map sl2zToPSL2R
 
 /-- A finite-index subgroup of `SL(2, ℤ)` has cofinite effective image in `PSL(2, ℝ)`.
 This formulation applies directly to `Γ(N)`, `Γ₀(N)`, and `Γ₁(N)`. -/
