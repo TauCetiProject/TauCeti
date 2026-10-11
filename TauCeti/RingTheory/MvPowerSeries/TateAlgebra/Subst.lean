@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
+public import TauCeti.RingTheory.MvPowerSeries.Basic
 public import Mathlib.RingTheory.MvPowerSeries.Substitution
 public import TauCeti.RingTheory.MvPolynomial.NormCoeff
 
@@ -96,9 +97,7 @@ theorem norm_coeff_subst_coe_le [Finite σ] {a : σ → MvPolynomial τ R}
     (h : ∀ d, (d.prod fun s n ↦ a s ^ n).coeff e ≠ 0 → ‖coeff d f‖ ≤ r) :
     ‖coeff e (subst (fun s ↦ (a s : MvPowerSeries τ R)) f)‖ ≤ r := by
   refine norm_coeff_subst_le (hasSubst_coe ha₀) f e hr fun d ↦ ?_
-  simp_rw [← MvPolynomial.coe_pow, ← MvPolynomial.coeToMvPowerSeries.ringHom_apply,
-    ← map_finsuppProd]
-  rw [MvPolynomial.coeToMvPowerSeries.ringHom_apply, MvPolynomial.coeff_coe]
+  rw [← MvPolynomial.coe_finsuppProd_pow, MvPolynomial.coeff_coe]
   by_cases hd : (d.prod fun s n ↦ a s ^ n).coeff e = 0
   · simp [hd, hr]
   · exact (norm_mul_le _ _).trans <| (mul_le_of_le_one_right (norm_nonneg _)
@@ -118,11 +117,9 @@ theorem norm_coeff_subst_coe_sub_le [Finite σ] {a : σ → MvPolynomial τ R}
   have hsub : coeff e (f.subst fun s ↦ (a s : MvPowerSeries τ R)) -
       coeff ν f * (ν.prod fun s n ↦ a s ^ n).coeff e =
       coeff e ((f - monomial ν (coeff ν f)).subst fun s ↦ (a s : MvPowerSeries τ R)) := by
-    rw [subst_sub (hasSubst_coe ha₀), subst_monomial (hasSubst_coe ha₀)]
-    simp_rw [← MvPolynomial.coe_pow, ← MvPolynomial.coeToMvPowerSeries.ringHom_apply,
-      ← map_finsuppProd]
-    rw [MvPolynomial.coeToMvPowerSeries.ringHom_apply, map_sub, ← MvPolynomial.coeff_coe,
-      algebraMap_apply, coeff_C_mul]
+    rw [subst_sub (hasSubst_coe ha₀), subst_monomial (hasSubst_coe ha₀),
+      ← MvPolynomial.coe_finsuppProd_pow, map_sub, ← MvPolynomial.coeff_coe, algebraMap_apply,
+      coeff_C_mul]
     simp
   rw [hsub]
   refine norm_coeff_subst_coe_le ha₀ ha₁ _ e hr fun d hd ↦ ?_
