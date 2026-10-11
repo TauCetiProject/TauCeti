@@ -177,9 +177,8 @@ theorem decompositionRestrict_mk (j : L →ₐ[K] AlgebraicClosure F)
       Abelianization.of σ := by
   -- Two embeddings differ by an automorphism `ρ`, and the restrictions by conjugation by `ρ`.
   obtain ⟨ρ, rfl⟩ := (IsAlgClosed.lift : L →ₐ[K] AlgebraicClosure F).exists_comp_eq_of_normal j
-  rw [← (restrictAlong_eq_iff _).2 hσ, restrictAlong_comp, map_mul, map_mul, map_inv,
-    mul_comm _ (Abelianization.of ρ), ← mul_assoc, mul_inv_cancel, one_mul]
-  exact decompositionRestrict_mk_lift τ
+  rw [← (restrictAlong_eq_iff _).2 hσ, restrictAlong_comp]
+  simp [decompositionRestrict_mk_lift]
 
 /-- `decompositionRestrict` on the class of `τ`, computed along any `K`-embedding
 `j : L →ₐ[K] Fᵃˡᵍ` as the class of the restriction of `τ` to `j(L)`. -/
