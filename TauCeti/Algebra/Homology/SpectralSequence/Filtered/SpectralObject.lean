@@ -74,7 +74,7 @@ of the distinguished triangles of mapping cones. -/
 
 /-- The objects `H^n(f)` of the spectral object of `F` are the cohomology of the mapping cones of
 the maps `F.map f`. -/
-noncomputable def spectralObjectHIso {i j : ι} (f : i ⟶ j) (n : ℤ) :
+@[expose] noncomputable def spectralObjectHIso {i j : ι} (f : i ⟶ j) (n : ℤ) :
     ((spectralObject F).H n).obj (mk₁ f) ≅ (mappingCone (F.map f)).homology n :=
   (homologyFunctorFactors C (ComplexShape.up ℤ) n).app (mappingCone (F.map f))
 
@@ -113,7 +113,8 @@ lemma cokernelShortComplex_shortExact {i j : ι} (f : i ⟶ j) [Mono (F.map f)] 
 
 /-- When `F.map f` is a monomorphism, `H^n(f)` is the `n`th cohomology of the cokernel of
 `F.map f`. -/
-noncomputable def spectralObjectHIsoCokernel {i j : ι} (f : i ⟶ j) [Mono (F.map f)] (n : ℤ) :
+@[expose] noncomputable def spectralObjectHIsoCokernel {i j : ι} (f : i ⟶ j) [Mono (F.map f)]
+    (n : ℤ) :
     ((spectralObject F).H n).obj (mk₁ f) ≅ (cokernel (F.map f)).homology n :=
   have := mappingCone.quasiIso_descShortComplex (cokernelShortComplex_shortExact F f)
   spectralObjectHIso F f n ≪≫
@@ -179,7 +180,7 @@ noncomputable abbrev spectralSequence :=
 /-- The objects on the first page of the spectral sequence of `F`: at `pq = (p, q)`, the
 `(p + q)`th cohomology of the mapping cone of `F_q ⟶ F_{q+1}`. The indices `q`, `q + 1` and
 `p + q` are given as `i₁`, `i₂` and `n` together with equations, for flexibility. -/
-noncomputable def spectralSequenceFirstPageXIso (pq : ℤ × ℤ) (i₁ i₂ : ℤ) (hi₁ : i₁ = pq.2)
+@[expose] noncomputable def spectralSequenceFirstPageXIso (pq : ℤ × ℤ) (i₁ i₂ : ℤ) (hi₁ : i₁ = pq.2)
     (hi₂ : i₂ = pq.2 + 1) (n : ℤ) (hn : n = pq.1 + pq.2) :
     ((spectralSequence F).page 2).X pq ≅
       (mappingCone (F.map (homOfLE (show (i₁ : EInt) ≤ i₂ by simp [hi₁, hi₂])))).homology n :=
@@ -189,7 +190,7 @@ noncomputable def spectralSequenceFirstPageXIso (pq : ℤ × ℤ) (i₁ i₂ : �
 /-- The objects on the first page of the spectral sequence of `F` when the transition maps of
 `F` are monomorphisms: at `pq = (p, q)`, the `(p + q)`th cohomology of the graded piece
 `F_{q+1}/F_q`. -/
-noncomputable def spectralSequenceFirstPageXIsoCokernel (pq : ℤ × ℤ) (i₁ i₂ : ℤ)
+@[expose] noncomputable def spectralSequenceFirstPageXIsoCokernel (pq : ℤ × ℤ) (i₁ i₂ : ℤ)
     (hi₁ : i₁ = pq.2) (hi₂ : i₂ = pq.2 + 1) (n : ℤ) (hn : n = pq.1 + pq.2)
     [Mono (F.map (homOfLE (show (i₁ : EInt) ≤ i₂ by simp [hi₁, hi₂])))] :
     ((spectralSequence F).page 2).X pq ≅
