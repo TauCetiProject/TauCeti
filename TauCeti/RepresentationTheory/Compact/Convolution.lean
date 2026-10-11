@@ -7,10 +7,10 @@ module
 
 public import TauCeti.RepresentationTheory.Compact.Averaging
 public import Mathlib.MeasureTheory.Function.ContinuousMapDense
-public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.Analysis.InnerProductSpace.Spectrum
 public import Mathlib.Topology.ContinuousMap.Bounded.ArzelaAscoli
-import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
+public import TauCeti.RepresentationTheory.Compact.RegularRepresentation
+import TauCeti.RepresentationTheory.Continuous.Integrated.Basic
 
 /-!
 # Convolution operators on `L²` of a compact group
@@ -50,6 +50,8 @@ presupposing that any exist.
   `(k * f) x = ∫ z, k z * f (z⁻¹ * x)` when `f` is continuous.
 * `TauCeti.norm_convolutionCLM_apply_le`: `‖k * f‖_∞ ≤ ‖k‖_∞ * ‖f‖₂`, so convolution against a
   continuous kernel is bounded from `L²(G)` into the uniform norm of `C(G)`.
+* `TauCeti.convolutionOperator_apply_eq_integral_leftRegularLp`: convolution is the strong
+  integral of weighted left translations, including for infinite compact groups.
 * `TauCeti.isSelfAdjoint_convolutionOperator`: a symmetric kernel gives a self-adjoint operator.
 * `TauCeti.convolutionCLM_compMeasurePreserving_mul_right`: convolution commutes with right
   translation.
@@ -357,6 +359,58 @@ theorem norm_convolutionOperator_le (k : C(G, 𝕜)) : ‖convolutionOperator (G
   ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg k) fun f => by
     rw [convolutionOperator_apply]
     exact (norm_toLp_le _).trans (norm_convolutionCLM_apply_le k f)
+
+private noncomputable def weightedLeftTranslate (k f : C(G, 𝕜)) : C(G, C(G, 𝕜)) :=
+  ContinuousMap.curry ⟨fun p : G × G => k p.1 * f (p.1⁻¹ * p.2), by fun_prop⟩
+
+omit [CompactSpace G] [MeasurableSpace G] [BorelSpace G] in
+private theorem weightedLeftTranslate_apply (k f : C(G, 𝕜)) (g : G) :
+    weightedLeftTranslate k f g = k g • f.comp (.mulLeft g⁻¹) := by
+  ext x
+  simp [weightedLeftTranslate, smul_eq_mul]
+
+private theorem convolutionOperator_toLp_eq_integral (k f : C(G, 𝕜)) :
+    convolutionOperator k (ContinuousMap.toLp 2 (haarProb G) 𝕜 f) =
+      ∫ g, k g • leftRegularLp 𝕜 G g (ContinuousMap.toLp 2 (haarProb G) 𝕜 f) ∂haarProb G := by
+  have hint := integrable_continuousMap G (weightedLeftTranslate k f)
+  have heq : convolutionCLM k (ContinuousMap.toLp 2 (haarProb G) 𝕜 f) =
+      ∫ g, weightedLeftTranslate k f g ∂haarProb G := by
+    ext x
+    rw [convolutionCLM_toLp_apply]
+    have h := (ContinuousMap.evalCLM 𝕜 x).integral_comp_comm hint
+    simpa [weightedLeftTranslate] using h
+  rw [convolutionOperator_apply, heq,
+    ← (ContinuousMap.toLp 2 (haarProb G) 𝕜).integral_comp_comm hint]
+  apply integral_congr_ae
+  filter_upwards [] with g
+  rw [weightedLeftTranslate_apply, map_smul, leftRegularLp_toLp]
+
+/-- Convolution is the strong integrated action of its kernel in the left regular representation.
+The integral is taken in `L²(G)` after applying each translation to `f`; this formula applies to
+infinite compact groups, whose regular representation need only be strongly continuous. -/
+theorem convolutionOperator_apply_eq_integral_leftRegularLp (k : C(G, 𝕜))
+    (f : Lp 𝕜 2 (haarProb G)) :
+    convolutionOperator k f = ∫ g, k g • leftRegularLp 𝕜 G g f ∂haarProb G := by
+  let : MeasurableSpace (Additive G) := ‹MeasurableSpace G›
+  let : BorelSpace (Additive G) := ‹BorelSpace G›
+  -- Transfer the measure instances to the additive tag used by the strong integrated form.
+  let μ : Measure (Additive G) := haarProb G
+  let : μ.InnerRegularCompactLTTop :=
+    inferInstanceAs ((haarProb G).InnerRegularCompactLTTop)
+  let T : Lp 𝕜 2 (haarProb G) →L[𝕜] Lp 𝕜 2 (haarProb G) :=
+    ContRepresentation.integratedOperatorL1 (G := Additive G) (leftRegularLp 𝕜 G)
+      continuous_leftRegularLp_apply (isUnitary_leftRegularLp 𝕜 G).exists_norm_le μ
+      ((integrable_continuousMap G k).toL1 k)
+  have hT (v : Lp 𝕜 2 (haarProb G)) :
+      T v = ∫ g, k g • leftRegularLp 𝕜 G g v ∂haarProb G :=
+    ContRepresentation.integratedOperatorL1_toL1 (G := Additive G) (μ := μ)
+      (π := leftRegularLp 𝕜 G) (integrable_continuousMap G k) v
+  have heq : (convolutionOperator k : Lp 𝕜 2 (haarProb G) → Lp 𝕜 2 (haarProb G)) = T :=
+    (ContinuousMap.toLp_denseRange (E := 𝕜) (p := 2) (haarProb G) 𝕜 (by simp)).equalizer
+      (convolutionOperator k).continuous T.continuous (funext fun F => by
+        rw [Function.comp_apply, Function.comp_apply, hT]
+        exact convolutionOperator_toLp_eq_integral k F)
+  rw [← hT, congrFun heq f]
 
 /-! ### Self-adjointness for a symmetric kernel
 

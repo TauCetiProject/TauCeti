@@ -52,9 +52,11 @@ universe u v
 
 section RootSet
 
-variable {F : Type u} [CommRing F] {E : Type v} [Field E] [Algebra F E] {a : F}
+variable {F : Type u} [CommRing F] {E : Type v} [CommRing E] [IsDomain E]
+  [Algebra F E] {a : F}
 
-/-- A point of an extension is a root of `X ^ n - C a` exactly when its `n`-th power is `a`. -/
+/-- An element of a domain algebra is a root of `X ^ n - C a` exactly when its `n`-th power
+is `a`. -/
 @[simp]
 theorem _root_.Polynomial.mem_rootSet_X_pow_sub_C {n : ℕ} (hn : n ≠ 0) {x : E} :
     x ∈ ((X : F[X]) ^ n - C a).rootSet E ↔ x ^ n = algebraMap F E a := by

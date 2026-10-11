@@ -23,9 +23,9 @@ Renamings of the variables are the simplest examples. The triangular substitutio
 `Xᵢ ↦ Xᵢ + Yᵅⁱ` used to make a restricted series distinguished in one variable are the examples
 this file is written for.
 
-The constant terms are required to vanish because the formal substitution is only defined for
-such families. Evaluating a Tate algebra at arbitrary elements of norm at most `1` requires the
-completeness of the target and is not treated here.
+Vanishing constant terms ensure that the formal substitution is defined. Evaluating a Tate algebra
+at arbitrary elements of norm at most `1` requires the completeness of the target and is not treated
+here.
 
 ## Main results
 
@@ -34,7 +34,7 @@ completeness of the target and is not treated here.
   series commutes with the products of powers that appear in the coefficients of a
   substitution.
 * `MvPowerSeries.norm_coeff_subst_le`: each coefficient of a substitution is bounded by the
-  supremum of the terms contributing to it, in any ultrametric normed commutative ring.
+  supremum of the terms contributing to it, in any ultrametric seminormed commutative ring.
 * `MvPowerSeries.norm_coeff_subst_coe_le` and `MvPowerSeries.norm_coeff_subst_coe_sub_le`: for a
   substitution of unit-ball polynomials, a coefficient is controlled by the coefficients of the
   substituted series at the exponents contributing to it, possibly after isolating one of them.
@@ -80,7 +80,9 @@ theorem hasSubst_coe [Finite σ] {a : σ → MvPolynomial τ R}
 
 end CommRing
 
-variable {σ τ R : Type*} [NormedCommRing R] [IsUltrametricDist R]
+section SeminormedCommRing
+
+variable {σ τ R : Type*} [SeminormedCommRing R] [IsUltrametricDist R]
 
 /-- **Ultrametric bound for the coefficients of a substitution.** The coefficient of a
 substitution is a finite sum of the products `coeff d f * coeff e (∏ₛ (a s) ^ (d s))`, so it is
@@ -91,12 +93,6 @@ theorem norm_coeff_subst_le {a : σ → MvPowerSeries τ R} (ha : HasSubst a)
     ‖coeff e (subst a f)‖ ≤ r := by
   rw [coeff_subst ha, finsum_eq_sum _ (coeff_subst_finite ha f e)]
   exact IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg hr fun d _ ↦ h d
-
-omit [IsUltrametricDist R] in
-/-- Restrictedness at the unit radius is convergence of the coefficient norms to zero. -/
-theorem isRestricted_one_iff {f : MvPowerSeries σ R} :
-    IsRestricted (fun _ ↦ 1) f ↔ Tendsto (fun t ↦ ‖coeff t f‖) cofinite (𝓝 0) := by
-  simp [IsRestricted]
 
 variable [NormOneClass R]
 
@@ -139,6 +135,18 @@ theorem norm_coeff_subst_coe_sub_le [Finite σ] {a : σ → MvPolynomial τ R}
   · subst hdν
     simp [hr]
   · simpa [coeff_monomial_ne hdν] using h d hdν hd
+
+end SeminormedCommRing
+
+variable {σ τ R : Type*} [NormedCommRing R] [IsUltrametricDist R]
+
+omit [IsUltrametricDist R] in
+/-- Restrictedness at the unit radius is convergence of the coefficient norms to zero. -/
+theorem isRestricted_one_iff {f : MvPowerSeries σ R} :
+    IsRestricted (fun _ ↦ 1) f ↔ Tendsto (fun t ↦ ‖coeff t f‖) cofinite (𝓝 0) := by
+  simp [IsRestricted]
+
+variable [NormOneClass R]
 
 /-- **Substitution of unit-ball polynomials preserves restrictedness.** If finitely many
 polynomials without constant term have all coefficients of norm at most `1`, then substituting

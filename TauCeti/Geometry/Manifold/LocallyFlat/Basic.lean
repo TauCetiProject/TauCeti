@@ -796,9 +796,11 @@ end StandardSlice
 
 section Graph
 
-/-- The graph of a continuous map is locally flat, with complementary model `F`. -/
+/-- The graph of a continuous map from a topological space to a topological additive group is
+locally flat, with complementary model `F`. -/
 theorem isLocallyFlat_graph
-    {E F : Type*} [NormedAddCommGroup E] [NormedAddCommGroup F] (f : E → F) (hf : Continuous f) :
+    {E F : Type*} [TopologicalSpace E] [TopologicalSpace F] [AddGroup F] [IsTopologicalAddGroup F]
+    (f : E → F) (hf : Continuous f) :
     IsLocallyFlat E F (fun x : E => (x, f x)) := by
   let shear : E × F ≃ₜ E × F :=
     { toFun := fun p => (p.1, p.2 + f p.1)
@@ -822,7 +824,8 @@ theorem isLocallyFlat_graph
 The section equation `(Φ (f x)).1 = x` identifies `f` with the graph of the second coordinate of
 `Φ ∘ f`, and the conclusion gives local flatness with complementary model `F`. -/
 theorem _root_.Continuous.isLocallyFlat_of_homeomorph_graph
-    {E M F : Type*} [NormedAddCommGroup E] [TopologicalSpace M] [NormedAddCommGroup F]
+    {E M F : Type*} [TopologicalSpace E] [TopologicalSpace M]
+    [TopologicalSpace F] [AddGroup F] [IsTopologicalAddGroup F]
     {f : E → M} (hf : Continuous f) (Φ : M ≃ₜ E × F)
     (hΦ : ∀ x, (Φ (f x)).1 = x) :
     IsLocallyFlat E F f := by

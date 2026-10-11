@@ -197,7 +197,7 @@ theorem genus_le_finrank_mul_genus_add_finrank_mul_genus_add_of_isAlgClosed [IsA
   set y := (IsScalarTower.toAlgHom k F₂ F).toLinearMap y₂
   have hy' : y = algebraMap F₂ F y₂ := by simp [y]
   have := Place.infinite hF₁
-  obtain ⟨P₁, hP₁⟩ := (Place.finite_setOf_not_exists_map_eq_minpoly_and_separable hF₁ y
+  obtain ⟨P₁, hP₁⟩ := (Place.finite_setOf_not_exists_map_eq_and_separable hF₁ (minpoly F₁ y)
     (Algebra.IsSeparable.isSeparable F₁ y)).infinite_compl.nonempty
   obtain ⟨φ, hmin, hsep⟩ := not_not.mp hP₁
   obtain ⟨s, hs, hsP⟩ :=
