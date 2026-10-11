@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import Mathlib.Analysis.SpecificLimits.Normed
-public import TauCeti.Topology.Algebra.Module.LinearPMap.SpectralMapping
+public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.SpectralMapping
 
 /-!
 # Neumann perturbations of an unbounded operator's resolvent
