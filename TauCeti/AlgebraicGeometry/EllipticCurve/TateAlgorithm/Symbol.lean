@@ -49,13 +49,14 @@ variable {R K : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
   [Field K] [Algebra R K] [IsFractionRing R K]
 
 /-- **The output of Tate's good-reduction branch** is `I₀`. -/
-def goodReductionSymbol (W : WeierstrassCurve K) [W.HasGoodReduction R] : TauCeti.ReductionSymbol :=
+def goodReductionSymbol (_W : WeierstrassCurve K) : TauCeti.ReductionSymbol :=
   TauCeti.ReductionSymbol.I 0
 
+omit [Field K] in
 /-- The good-reduction branch returns the symbol `I₀`. -/
-@[simp]
-theorem goodReductionSymbol_eq_I0 (W : WeierstrassCurve K) [W.HasGoodReduction R] :
-    W.goodReductionSymbol (R := R) = TauCeti.ReductionSymbol.I 0 := (rfl)
+theorem goodReductionSymbol_eq_I0 (W : WeierstrassCurve K) :
+    W.goodReductionSymbol = TauCeti.ReductionSymbol.I 0 := (rfl)
+attribute [simp] goodReductionSymbol_eq_I0
 
 private theorem not_hasGoodReduction_minimal_of_hasMultiplicativeReduction
     (W : WeierstrassCurve K) [W.HasMultiplicativeReduction R] :
@@ -69,14 +70,13 @@ private theorem not_hasGoodReduction_minimal_of_hasMultiplicativeReduction
 /-- **The output of Tate's multiplicative branch**: a curve with multiplicative reduction has
 symbol `Iₙ`, where `n = v(Δ_min)`. The local minimal-discriminant valuation makes the symbol
 independent of the chosen integral equation. -/
-noncomputable def multiplicativeReductionSymbol (W : WeierstrassCurve K) [W.IsElliptic]
-    [W.HasMultiplicativeReduction R] : TauCeti.ReductionSymbol :=
+noncomputable def multiplicativeReductionSymbol (W : WeierstrassCurve K) [W.IsElliptic] :
+    TauCeti.ReductionSymbol :=
   TauCeti.ReductionSymbol.I (W.localMinimalDiscriminantValuation R)
 
 /-- The index in the multiplicative reduction symbol is the minimal discriminant valuation. -/
 @[simp]
-theorem multiplicativeReductionSymbol_eq_I (W : WeierstrassCurve K) [W.IsElliptic]
-    [W.HasMultiplicativeReduction R] :
+theorem multiplicativeReductionSymbol_eq_I (W : WeierstrassCurve K) [W.IsElliptic] :
     W.multiplicativeReductionSymbol (R := R) =
       TauCeti.ReductionSymbol.I (W.localMinimalDiscriminantValuation R) := (rfl)
 
