@@ -13,7 +13,7 @@ public import TauCeti.AlgebraicTopology.Singular.OneSimplex.RelativeClass
 
 The identification `TauCeti.singularHomologyCubeBoundaryPairIso R 1 : H₁(I¹, ∂I¹; R) ≅ R` is
 transported from the disk pair `(D¹, S⁰)`, whose generator is sent by the connecting morphism to
-the standard generator `[-e₀] - [e₀]` of `H̃₀(S⁰)`
+the standard generator `[-e₀] - [e₀]` of reduced `H₀(S⁰)`
 (`TauCeti.reducedSingularHomologyTopCatSphereIso`).
 This file computes the generator explicitly: it is the **negative** of the relative class of the
 standard singular simplex `t ↦ t` of the interval, that is, the class of the simplex running from
@@ -29,7 +29,7 @@ The standard simplex is sent to `[1] - [0]` (`TauCeti.cubeRelClass_singularHomol
 
 * `TauCeti.cubeSimplex`, `TauCeti.cubeRelClass`: the standard `1`-simplex of `I¹` and its class in
   `H₁(I¹, ∂I¹; R)`; `TauCeti.cubeRelClass_singularHomologyMap`: its image under a map of pairs.
-* `TauCeti.reducedSingularHomologyTopCatSphereIso_zero_inv_ι`: the generator of `H̃₀(S⁰)` is
+* `TauCeti.reducedSingularHomologyTopCatSphereIso_zero_inv_ι`: the generator of reduced `H₀(S⁰)` is
   `[-e₀] - [e₀]` on `TopCat.sphere 0`.
 * `TauCeti.singularHomologyCubeBoundaryPairIso_one_inv`: the generator of `H₁(I¹, ∂I¹; R)` is
   `-cubeRelClass R`.
@@ -195,7 +195,7 @@ section Sphere
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
 
 /-- The standard orthonormal basis of `EuclideanSpace ℝ (ULift (Fin 1))`, which determines the
-generator of `H̃₀(S⁰)`. -/
+generator of reduced `H₀(S⁰)`. -/
 abbrev sphereZeroBasis : OrthonormalBasis (Fin 1) ℝ (EuclideanSpace ℝ (ULift.{w} (Fin 1))) :=
   (EuclideanSpace.basisFun (ULift.{w} (Fin 1)) ℝ).reindex Equiv.ulift
 
@@ -207,7 +207,7 @@ def spherePlus : TopCat.diskBoundary.{w} 1 :=
 def sphereMinus : TopCat.diskBoundary.{w} 1 :=
   (diskBoundaryHomeomorph 1).symm (-⟨sphereZeroBasis 0, by simp⟩)
 
-/-- **The standard generator of `H̃₀(S⁰)`** is the class `[-e₀] - [e₀]`. -/
+/-- **The standard generator of reduced `H₀(S⁰)`** is the class `[-e₀] - [e₀]`. -/
 lemma reducedSingularHomologyTopCatSphereIso_zero_inv_ι :
     (reducedSingularHomologyTopCatSphereIso R 0).inv ≫
         (reducedSingularHomologyι R 0).app (TopCat.sphere.{w} 0) =
@@ -318,7 +318,7 @@ lemma singularHomologyCubeBoundaryPairIso_one_inv_singularHomologyδ :
 /-- **The generator of `H₁(I¹, ∂I¹; R)`** is the negative of the relative class of the standard
 singular simplex `t ↦ t` of the interval: it is the class of the simplex running from `1` to `0`.
 Indeed the connecting morphism sends the generator to `[0] - [1]`, the transport of the standard
-generator `[-e₀] - [e₀]` of `H̃₀(S⁰)`, and the standard simplex to `[1] - [0]`. -/
+generator `[-e₀] - [e₀]` of reduced `H₀(S⁰)`, and the standard simplex to `[1] - [0]`. -/
 theorem singularHomologyCubeBoundaryPairIso_one_inv :
     (singularHomologyCubeBoundaryPairIso R 1).inv = -cubeRelClass.{w} R := by
   rw [← cancel_mono ((cubeBoundaryPair.{w} 1).singularHomologyδ R 1 0 rfl)]
