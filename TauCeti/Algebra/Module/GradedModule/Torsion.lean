@@ -72,7 +72,7 @@ theorem torsion_eq_torsion'_powers_X (hd : d ≠ 0)
     simp only [C_0, sub_zero] at hab hb
     have hb0 : b.coeff 0 ≠ 0 := fun h ↦ hb (X_dvd_iff.mpr h)
     refine ⟨⟨X ^ a.rootMultiplicity 0, ⟨a.rootMultiplicity 0, rfl⟩⟩, ?_⟩
-    apply smul_injective_of_coeff_zero_ne_zero hd hX hb0
+    apply isSMulRegular_of_coeff_zero hd hX (IsSMulRegular.of_ne_zero hb0)
     simp only [Submonoid.smul_def] at hax
     rw [hab, mul_smul, smul_comm] at hax
     simpa only [Submonoid.smul_def, smul_zero] using hax
