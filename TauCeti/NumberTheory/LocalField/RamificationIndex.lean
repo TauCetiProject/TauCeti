@@ -506,7 +506,7 @@ theorem isTamelyRamified_tower_iff (M : Type*) [Field M] [ValuativeRel M]
 
 /-- An intermediate extension of a tamely ramified tower of nonarchimedean local fields is
 tamely ramified over the base field. -/
-theorem IsTamelyRamified.of_isScalarTower {M : Type*} [Field M] [ValuativeRel M]
+theorem IsTamelyRamified.tower_bot {M : Type*} [Field M] [ValuativeRel M]
     [TopologicalSpace M] [IsNonarchimedeanLocalField M] [Algebra L M] [Algebra K M]
     [IsScalarTower K L M] [ValuativeExtension L M] (h : IsTamelyRamified K M) :
     IsTamelyRamified K L :=

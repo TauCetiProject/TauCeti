@@ -685,6 +685,6 @@ theorem le_maximalTameExtension_iff [Algebra.IsSeparable K L] :
   have : IsGalois K N := ⟨⟩
   have : ValuativeExtension L N := (IsScalarTower.toAlgHom K L N).valuativeExtension
   rw [← normalClosure_le_iff_of_normal, le_maximalTameExtension_iff_of_isGalois N]
-  exact ⟨fun h ↦ h.of_isScalarTower (L := L), fun h ↦ h.normalClosure⟩
+  exact ⟨fun h ↦ h.tower_bot (L := L), fun h ↦ h.normalClosure⟩
 
 end TauCeti
