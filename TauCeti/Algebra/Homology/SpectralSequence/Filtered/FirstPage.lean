@@ -22,8 +22,8 @@ We show that this differential is the connecting map
 `H^{p+q}(F_{q+1}/F_q) ⟶ H^{p+q+1}(F_q/F_{q-1})` of the short exact sequence
 `F_q/F_{q-1} ⟶ F_{q+1}/F_{q-1} ⟶ F_{q+1}/F_q`
 (`CochainComplex.spectralSequence_first_page_d_eq`). In McCleary's conventions, for the decreasing
-filtration `F^s = F_{-s}`, the object at `(p, q)` is `E_1^{s,t}` with `s = -q` and `t = p + 2q`,
-and this differential is `d_1 : E_1^{s,t} ⟶ E_1^{s+1,t}`.
+filtration `F^s = F_{-s}`, the object at `(p, q)` is `E_1^{s,t} = H^{s+t}(F^s/F^{s+1})` with
+`s = -q - 1` and `t = p + 2q + 1`, and this differential is `d_1 : E_1^{s,t} ⟶ E_1^{s+1,t}`.
 
 The connecting maps of the spectral object of a functor with monomorphic transition maps are the
 connecting maps of the short exact sequences of graded pieces
