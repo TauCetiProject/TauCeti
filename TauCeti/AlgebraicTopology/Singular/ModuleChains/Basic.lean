@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
 public import TauCeti.AlgebraicTopology.TopologicalSimplex
+public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 
 /-!
 # Singular chains with coefficients in a ring, on elements
@@ -17,7 +18,8 @@ For a ring `k`, the simplicial singular chain complex with coefficients in `k` i
 gives the element-level interface to it: the chain `simplexChain σ a` of a simplex with a
 coefficient, the extensionality of linear maps out of the chains (and, for integer coefficients,
 of additive maps), the linear map with prescribed values on simplices, the push-forward and the
-boundary of a simplex, and the augmentation, the sum of the coefficients of a `0`-chain, natural
+boundary of a simplex, the chains of points and paths (`TauCeti.pointChain`,
+`TauCeti.pathChain`), and the augmentation, the sum of the coefficients of a `0`-chain, natural
 and vanishing on boundaries.
 
 ## Main definitions
@@ -181,5 +183,32 @@ theorem singularAugment_d (X : TopCat.{u}) (x : ((singularChains k).obj X).X 1) 
       rw [LinearMap.comp_apply, singularChains_d_simplexChain, map_sum]
       simp [Fin.sum_univ_succ, singularAugment_simplexChain]
   exact LinearMap.congr_fun this x
+
+section Paths
+
+open unitInterval
+
+variable (k)
+
+/-- The chain of the singular `0`-simplex at a point. -/
+abbrev pointChain {X : TopCat.{u}} (p : X) : ((singularChains k).obj X).X 0 :=
+  simplexChain (TopCat.toSSetObj₀Equiv.symm p) 1
+
+/-- The chain of the singular `1`-simplex of a map from the unit interval
+(`TauCeti.TopCat.simplex₁`). -/
+abbrev pathChain {X : TopCat.{u}} (g : C(I, X)) : ((singularChains k).obj X).X 1 :=
+  simplexChain (TopCat.simplex₁ g) 1
+
+variable {k}
+
+/-- The boundary of the chain of a path is the difference of the chains of its endpoints. -/
+theorem d_pathChain {X : TopCat.{u}} (g : C(I, X)) :
+    ((singularChains k).obj X).d 1 0 (pathChain k g) =
+      pointChain k (g 1) - pointChain k (g 0) := by
+  rw [singularChains_d_simplexChain (n := 0), Fin.sum_univ_two, TopCat.δ_zero_simplex₁,
+    TopCat.δ_one_simplex₁]
+  simp [sub_eq_add_neg]
+
+end Paths
 
 end TauCeti
