@@ -112,13 +112,11 @@ private theorem toZModPow_localCyclotomicCharacter_of_mk_eq_artinMap {u : ℤ_[p
   have hdP : p ^ n ∣ m := dvd_mul_right _ N
   -- `p u` is a uniformizer, so `g` is an arithmetic Frobenius lift: it raises the `N`-th roots of
   -- unity to the `p`-th power.
+  have hv : (x : ℚ_[p]).valuation = 1 := by
+    simp [hx, Padic.valuation_mul, hp.ne_zero, PadicInt.valuation_eq_zero_of_isUnit u.isUnit]
   have hπ : IsUniformizer ℚ_[p] x := by
-    rw [isUniformizer_def]
-    apply Multiplicative.toAdd.injective
-    rw [_root_.Padic.toAdd_normalizedValuation_eq_valuation, hx, toAdd_ofAdd,
-      Padic.valuation_mul (by simp [hp.ne_zero]) (by simp), Padic.valuation_p,
-      PadicInt.valuation_coe, add_eq_left, Nat.cast_eq_zero]
-    exact PadicInt.valuation_eq_zero_of_isUnit u.isUnit
+    rw [isUniformizer_def, ← ofAdd_toAdd (normalizedValuation ℚ_[p] x),
+      _root_.Padic.toAdd_normalizedValuation_eq_valuation, hv]
   have hgF := isArithFrobeniusLift_of_mk_eq_artinMap_uniformizer ℚ_[p] hπ g hg
   have hgN (t : AlgebraicClosure ℚ_[p]) (ht : t ^ N = 1) :
       DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) g t = t ^ p := by
@@ -159,23 +157,20 @@ private theorem toZModPow_localCyclotomicCharacter_of_mk_eq_artinMap {u : ℤ_[p
       ZMod.natCast_zmod_val, ← hρχ, localCyclotomicCharacter_apply]
   have hgN' : ((hζ'.autToPow ℚ_[p] gE : ZMod m).cast : ZMod N) = p := hcast hdN g hgN
   have hρN' : ((hζ'.autToPow ℚ_[p] ρE : ZMod m).cast : ZMod N) = p := hcast hdN ρ hρN
-  -- `ρ` acts on the `m`-th roots of unity through the explicit symbol of `p u`.
+  -- The reductions of the explicit symbol of `p u` modulo `pⁿ` and modulo `N`.
+  have hsP : ZMod.unitsMap hdP (cyclotomicSymbol m p x) =
+      (Units.map (PadicInt.toZModPow n : ℤ_[p] →+* ZMod (p ^ n)).toMonoidHom u)⁻¹ :=
+    unitsMap_cyclotomicSymbol_primePow m p hdP x 1 u (by simp [hx])
+  have hsN : ZMod.unitsMap hdN (cyclotomicSymbol m p x) = ZMod.unitOfCoprime p hpN := by
+    simpa using unitsMap_cyclotomicSymbol_of_coprime m p hdN hpN x 1 u (by simp [hx])
+  -- `ρ` acts on the `m`-th roots of unity through the explicit symbol of `p u`, as the two agree
+  -- modulo the coprime factors `pⁿ` and `N` of `m`.
   set r := hζ'.autToPow ℚ_[p] ρE
   have hrs : (r : ZMod m) = cyclotomicSymbol m p x := by
-    -- Compare the reductions modulo the coprime factors `pⁿ` and `N` of `m`.
-    have h₁ : ((r : ZMod m).cast : ZMod (p ^ n)) = (cyclotomicSymbol m p x : ZMod m).cast := by
-      rw [hρP, ← ZMod.unitsMap_val hdP,
-        unitsMap_cyclotomicSymbol_primePow m p hdP x 1 u (by rw [hx, zpow_one]), ← map_inv,
-        Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass]
-    have h₂ : ((r : ZMod m).cast : ZMod N) = (cyclotomicSymbol m p x : ZMod m).cast := by
-      rw [hρN', ← ZMod.unitsMap_val hdN,
-        unitsMap_cyclotomicSymbol_of_coprime m p hdN hpN x 1 u (by rw [hx, zpow_one]), zpow_one,
-        ZMod.coe_unitOfCoprime]
-    -- The value of the difference is divisible by both factors, hence by `m`.
-    rw [← sub_eq_zero, ← ZMod.natCast_zmod_val (_ - _), ZMod.natCast_eq_zero_iff]
-    refine hcop.mul_dvd_of_dvd_of_dvd ?_ ?_ <;>
-      rw [← ZMod.natCast_eq_zero_iff, ZMod.natCast_val, ZMod.cast_sub ‹_›, sub_eq_zero]
-    exacts [h₁, h₂]
+    refine ZMod.eq_of_cast_eq_of_coprime hcop ?_ ?_
+    · rw [hρP, ← ZMod.unitsMap_val hdP, hsP]
+      simp
+    · rw [hρN', ← ZMod.unitsMap_val hdN, hsN, ZMod.coe_unitOfCoprime]
   have hρm (z : AlgebraicClosure ℚ_[p]) (hz : z ^ m = 1) :
       ρ.toRingEquiv z = z ^ ((cyclotomicSymbol m p x : ZMod m).val) := by
     have hρζ :

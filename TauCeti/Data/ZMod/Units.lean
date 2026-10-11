@@ -39,6 +39,10 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
 * `ZMod.zmultiples_coe_unit_eq_top` — a unit of `ZMod d` generates `ZMod d` additively, so that
   translation by it is a single cycle; its consumer is the genus-one Heegaard diagram of a lens
   space in `TauCeti/LowDimTopology/Heegaard/LensSpace.lean`.
+* `ZMod.eq_of_cast_eq_of_coprime` — the uniqueness half of the Chinese remainder theorem: two
+  residues modulo `a * b`, with `a` and `b` coprime, that agree modulo `a` and modulo `b` are
+  equal. Its consumer is the cyclotomic normalization of the local Artin map in
+  `TauCeti/NumberTheory/ClassFieldTheory/Local/ExplicitCyclotomicSymbol/ArtinMap.lean`.
 * `TauCeti.ZMod.orderOf_unitOfCoprime_pow_sub_one` — for `q > 1` and `N > 0`, the class of `q`
   in `(ZMod (q ^ N - 1))ˣ` has exact order `N`; the coprimality it needs is
   `Nat.coprime_pow_sub_one` from `TauCeti/Data/Nat/GCD.lean`. Its consumers are the cyclotomic
@@ -154,6 +158,19 @@ theorem ZMod.zmultiples_coe_unit_eq_top (u : (ZMod d)ˣ) :
   refine (AddSubgroup.eq_top_iff' _).mpr fun y => ?_
   obtain ⟨k, hk⟩ := ZMod.intCast_surjective (y * ((u⁻¹ : (ZMod d)ˣ) : ZMod d))
   exact AddSubgroup.mem_zmultiples_iff.mpr ⟨k, by rw [zsmul_eq_mul, hk, Units.inv_mul_cancel_right]⟩
+
+/-- **Chinese remainder uniqueness.** If `a` and `b` are coprime, two elements of `ZMod (a * b)`
+with the same reductions modulo `a` and modulo `b` are equal. -/
+theorem ZMod.eq_of_cast_eq_of_coprime {a b : ℕ} (h : a.Coprime b) {x y : ZMod (a * b)}
+    (ha : (x.cast : ZMod a) = y.cast) (hb : (x.cast : ZMod b) = y.cast) : x = y := by
+  obtain ⟨x, rfl⟩ := ZMod.intCast_surjective x
+  obtain ⟨y, rfl⟩ := ZMod.intCast_surjective y
+  rw [ZMod.cast_intCast (dvd_mul_right a b), ZMod.cast_intCast (dvd_mul_right a b),
+    ZMod.intCast_eq_intCast_iff_dvd_sub] at ha
+  rw [ZMod.cast_intCast (dvd_mul_left b a), ZMod.cast_intCast (dvd_mul_left b a),
+    ZMod.intCast_eq_intCast_iff_dvd_sub] at hb
+  rw [ZMod.intCast_eq_intCast_iff_dvd_sub, Nat.cast_mul]
+  exact h.isCoprime.mul_dvd ha hb
 
 namespace TauCeti
 
