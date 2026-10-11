@@ -32,6 +32,7 @@ matrix past `J`.
   `A * J + J * Aᵀ = 0`.
 * `Matrix.mem_symplecticLieAlgebra_iff`: the entrywise block criterion, with symmetric
   off-diagonal blocks and opposite transposed diagonal blocks.
+* `LieAlgebra.Symplectic.trace_eq_zero_of_mem_sp`: symplectic Lie matrices have trace zero.
 -/
 
 public section
@@ -105,3 +106,16 @@ theorem mem_symplecticLieAlgebra_iff (A : Matrix (l ⊕ l) (l ⊕ l) R) :
   grind
 
 end Matrix
+
+namespace LieAlgebra.Symplectic
+
+variable {l : Type*} [DecidableEq l] [Fintype l] {R : Type*} [CommRing R]
+
+/-- **Symplectic Lie matrices have trace zero**, over every commutative ring: the two diagonal
+blocks are negatives of each other's transposes. -/
+theorem trace_eq_zero_of_mem_sp {A : Matrix (l ⊕ l) (l ⊕ l) R} (hA : A ∈ sp l R) :
+    A.trace = 0 := by
+  obtain ⟨-, -, h⟩ := (Matrix.mem_symplecticLieAlgebra_iff A).mp hA
+  simp [Matrix.trace, Fintype.sum_sum_type, h]
+
+end LieAlgebra.Symplectic
