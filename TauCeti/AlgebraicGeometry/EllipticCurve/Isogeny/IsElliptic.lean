@@ -30,9 +30,9 @@ rational. So `F(W₂)` would be rational, of genus zero (`TauCeti.genus_eq_zero_
 while the function field of an elliptic curve has genus one.
 
 Over an arbitrary field a singular point need not be rational, so the general case is reduced to
-the perfect one by base change to an algebraic closure `F̄`: the base-changed isogeny
-`W₁ ⊗ F̄ → W₂ ⊗ F̄` (`TauCeti.Isogeny.map`) has elliptic target, hence elliptic source, and the
-discriminant of `W₁ ⊗ F̄` is the image of that of `W₁`.
+the perfect one by base change to the algebraic closure `K := AlgebraicClosure F`: the
+base-changed isogeny `W₁ ⊗ K → W₂ ⊗ K` (`TauCeti.Isogeny.map`) has elliptic target, hence elliptic
+source, and the discriminant of `W₁ ⊗ K` is the image of that of `W₁`.
 
 ## Main results
 
