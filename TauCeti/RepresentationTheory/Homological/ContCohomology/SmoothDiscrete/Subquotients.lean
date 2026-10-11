@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Continuous.Subrepresentation
+public import TauCeti.RepresentationTheory.Continuous.TopRep.Subquotients
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
 
 /-!
@@ -18,87 +18,6 @@ coefficient modules used with continuous cohomology.
 -/
 
 public section
-
-namespace TopRep
-
-variable {R : Type*} [Ring R] [TopologicalSpace R]
-  {G : Type*} [Monoid G] {X : TopRep R G}
-
-/-- Restrict a continuous representation to an invariant submodule, with the induced topology. -/
-abbrev subrepresentation (X : TopRep R G) (W : Submodule R X.V)
-    (hW : ∀ g x, x ∈ W → X.ρ g x ∈ W) : TopRep R G :=
-  .of (X.ρ.subrepresentation W hW)
-
-/-- The action on a subrepresentation is the ambient action with its membership proof. -/
-@[simp]
-theorem subrepresentation_ρ_apply (X : TopRep R G) (W : Submodule R X.V)
-    (hW : ∀ g x, x ∈ W → X.ρ g x ∈ W) (g : G)
-    (x : subrepresentation X W hW) :
-    (subrepresentation X W hW).ρ g x = ⟨X.ρ g x.1, hW g x.1 x.2⟩ := by
-  apply Subtype.ext
-  exact ContRepresentation.coe_subrepresentation_apply g x
-
-/-- The inclusion of an invariant subrepresentation into its ambient representation. -/
-noncomputable def subrepresentationι (X : TopRep R G) (W : Submodule R X.V)
-    (hW : ∀ g x, x ∈ W → X.ρ g x ∈ W) : subrepresentation X W hW ⟶ X :=
-  ofHom (X.ρ.subrepresentationInclusion ⟨W, fun g x hx ↦ hW g x hx⟩)
-
-/-- The inclusion of a subrepresentation is the subtype map. -/
-@[simp]
-theorem subrepresentationι_apply (X : TopRep R G) (W : Submodule R X.V)
-    (hW : ∀ g x, x ∈ W → X.ρ g x ∈ W) (x : subrepresentation X W hW) :
-    (subrepresentationι X W hW).hom x = x.1 :=
-  by simpa [subrepresentationι] using
-    ContRepresentation.subrepresentationInclusion_apply X.ρ
-      ⟨W, fun g x hx ↦ hW g x hx⟩ x
-
-/-- The inclusion of a subrepresentation is injective. -/
-theorem subrepresentationι_injective (X : TopRep R G) (W : Submodule R X.V)
-    (hW : ∀ g x, x ∈ W → X.ρ g x ∈ W) :
-  Function.Injective (subrepresentationι X W hW).hom :=
-  fun x y h ↦ Subtype.ext <| calc
-    x.1 = (subrepresentationι X W hW).hom x := (subrepresentationι_apply X W hW x).symm
-    _ = (subrepresentationι X W hW).hom y := h
-    _ = y.1 := subrepresentationι_apply X W hW y
-
-/-- Descend a continuous representation to the quotient by an invariant submodule. -/
-abbrev quotient (X : TopRep R G) (W : Submodule R X.V)
-    (hW : ∀ g x, x ∈ W → X.ρ g x ∈ W) : TopRep R G :=
-  .of (X.ρ.quotient W hW)
-
-/-- The operators of a quotient representation are the descended operators. -/
-@[simp]
-theorem quotient_ρ (X : TopRep R G) (W : Submodule R X.V)
-    (hW : ∀ g x, x ∈ W → X.ρ g x ∈ W) :
-    (quotient X W hW).ρ = X.ρ.quotient W hW :=
-  rfl
-
-/-- The projection from a representation to its quotient by an invariant submodule. -/
-def quotientπ (X : TopRep R G) (W : Submodule R X.V)
-    (hW : ∀ g x, x ∈ W → X.ρ g x ∈ W) : X ⟶ quotient X W hW :=
-  ofHom
-    { toContinuousLinearMap := W.mkQL
-      isIntertwining' g := by
-        ext x
-        simp [ContRepresentation.quotient_apply_mk] }
-
-/-- The quotient projection sends a vector to its class. -/
-@[simp]
-theorem quotientπ_apply (X : TopRep R G) (W : Submodule R X.V)
-    (hW : ∀ g x, x ∈ W → X.ρ g x ∈ W) (x : X) :
-    (quotientπ X W hW).hom x = Submodule.Quotient.mk x :=
-  by
-    -- `ofHom` hides the continuous linear map, so expose it before applying `mkQL`'s formula.
-    change W.mkQL x = _
-    simp [Submodule.mkQL_apply, Submodule.mkQ_apply]
-
-/-- The quotient projection is surjective. -/
-theorem quotientπ_surjective (X : TopRep R G) (W : Submodule R X.V)
-    (hW : ∀ g x, x ∈ W → X.ρ g x ∈ W) :
-    Function.Surjective (quotientπ X W hW).hom :=
-  Submodule.mkQ_surjective W
-
-end TopRep
 
 namespace TauCeti
 
