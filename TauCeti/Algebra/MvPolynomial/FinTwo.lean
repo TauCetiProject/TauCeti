@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Algebra.MvPolynomial.Degrees
+public import Mathlib.Algebra.MvPolynomial.PDeriv
 public import Mathlib.Algebra.Polynomial.Bivariate
 public import Mathlib.Algebra.Polynomial.Roots
 public import Mathlib.Data.Fin.VecNotation
@@ -36,6 +37,25 @@ largest `s 0 + s 1` over its support.  These are the forms in which a plane curv
 * `Polynomial.Bivariate.aeval_equivMvPolynomial`: evaluating `p ∈ R[X][Y]` at `y` over an
   `R[X]`-algebra is evaluating the corresponding `φ ∈ R[X₀, X₁]` at `(X, y)`; this reads a plane
   curve equation `φ` as a polynomial in `X₁` over `R[X₀]`.
+* `Polynomial.Bivariate.monic_equivMvPolynomial_symm` and
+  `Polynomial.Bivariate.natDegree_equivMvPolynomial_symm`: if `φ` has total degree at most `n` and
+  the coefficient of `X₁ ^ n` is `1`, then `φ`, read as a polynomial in `X₁` over `R[X₀]`, is monic
+  of degree `n`.
+
+## The chart at infinity
+
+For `n` at least the total degree of `φ`, the projective closure of the curve `φ = 0` is
+`Φ(X₀, X₁, X₂) = ∑ₛ cₛ X₀ ^ s 0 X₁ ^ s 1 X₂ ^ (n - s 0 - s 1)`, and `φ = Φ(X₀, X₁, 1)`.  In the
+affine chart where the first homogeneous coordinate does not vanish, with coordinates
+`(X₂ / X₀, X₁ / X₀)`, the curve has the equation `MvPolynomial.inftyChart n φ = Φ(1, X₁, X₀)`,
+that is `X₀ ^ n φ(1 / X₀, X₁ / X₀)`.  This chart contains the points at infinity of `φ = 0`
+other than `(0 : 1 : 0)`, and when the coefficient of `X₁ ^ n` is nonzero that point is not on
+the curve.
+
+* `MvPolynomial.aeval_inftyChart`: `ψ(x⁻¹, y x⁻¹) = x⁻ⁿ φ(x, y)` for `ψ = inftyChart n φ`.
+* `MvPolynomial.aeval_pderiv_one_inftyChart`: `∂ψ/∂X₁ (x⁻¹, y x⁻¹) = x^(1 - n) ∂φ/∂X₁ (x, y)`.
+* `MvPolynomial.totalDegree_inftyChart_le` and `MvPolynomial.coeff_single_one_inftyChart`: the
+  chart equation again has total degree at most `n`, with the same coefficient of `X₁ ^ n`.
 -/
 
 public section
@@ -63,6 +83,95 @@ theorem exists_mem_support_add_eq_totalDegree {φ : MvPolynomial (Fin 2) R} (hφ
   obtain ⟨s, hs, hsup⟩ := Finset.exists_mem_eq_sup φ.support
     (Finset.nonempty_iff_ne_empty.mpr (mt support_eq_empty.mp hφ)) fun s ↦ s.sum fun _ e ↦ e
   exact ⟨s, hs, by simpa [totalDegree, Finsupp.sum_fintype, Fin.sum_univ_two] using hsup.symm⟩
+
+/-- A monomial of a polynomial in two variables of total degree at most `n` whose exponent of
+`X₁` is `n` is `X₁ ^ n`. -/
+private theorem eq_single_one_of_mem_support {φ : MvPolynomial (Fin 2) R} {n : ℕ}
+    (hφ : φ.totalDegree ≤ n) {s : Fin 2 →₀ ℕ} (hs : s ∈ φ.support) (h1 : s 1 = n) :
+    s = Finsupp.single 1 n := by
+  have := (add_le_totalDegree_of_mem_support hs).trans hφ
+  ext i
+  fin_cases i <;> simp <;> omega
+
+/-! ### The chart at infinity -/
+
+/-- **The equation of a plane curve in the chart at infinity**: for `φ = ∑ₛ cₛ X₀ ^ s 0 X₁ ^ s 1`,
+`inftyChart n φ = ∑ₛ cₛ X₀ ^ (n - s 0 - s 1) X₁ ^ s 1`, which is `X₀ ^ n φ(1 / X₀, X₁ / X₀)` when
+`n` is at least the total degree of `φ`.  It is the projective closure of `φ = 0`, as a curve of
+degree `n`, dehomogenized in the affine chart where the first homogeneous coordinate does not
+vanish. -/
+noncomputable def inftyChart (n : ℕ) (φ : MvPolynomial (Fin 2) R) : MvPolynomial (Fin 2) R :=
+  ∑ s ∈ φ.support, monomial (Finsupp.single 0 (n - (s 0 + s 1)) + Finsupp.single 1 (s 1))
+    (φ.coeff s)
+
+/-- The chart equation at infinity of a polynomial of total degree at most `n` again has total
+degree at most `n`. -/
+theorem totalDegree_inftyChart_le {φ : MvPolynomial (Fin 2) R} {n : ℕ}
+    (hφ : φ.totalDegree ≤ n) : (inftyChart n φ).totalDegree ≤ n := by
+  refine (totalDegree_finsetSum _ _).trans (Finset.sup_le fun s hs ↦ ?_)
+  refine (totalDegree_monomial_le _ _).trans ?_
+  rw [Finsupp.sum_add_index' (by simp) (by simp), Finsupp.sum_single_index rfl,
+    Finsupp.sum_single_index rfl, id_eq, id_eq]
+  have := (add_le_totalDegree_of_mem_support hs).trans hφ
+  omega
+
+/-- Passing to the chart at infinity keeps the coefficient of `X₁ ^ n`. -/
+theorem coeff_single_one_inftyChart {φ : MvPolynomial (Fin 2) R} {n : ℕ}
+    (hφ : φ.totalDegree ≤ n) :
+    (inftyChart n φ).coeff (Finsupp.single 1 n) = φ.coeff (Finsupp.single 1 n) := by
+  classical
+  rw [inftyChart, coeff_sum]
+  simp_rw [coeff_monomial]
+  rw [Finset.sum_eq_single (Finsupp.single 1 n)]
+  · simp
+  · refine fun s hs hne ↦ ite_eq_right_iff.mpr fun h ↦ (hne ?_).elim
+    exact eq_single_one_of_mem_support hφ hs (by simpa using congrArg (· 1) h)
+  · intro h
+    rw [notMem_support_iff.mp h]
+    simp
+
+section Field
+
+variable {L : Type*} [Field L] [Algebra R L] {φ : MvPolynomial (Fin 2) R} {n : ℕ}
+
+/-- **Evaluating the chart equation at infinity**: for `x ≠ 0` and `φ` of total degree at most
+`n`, `inftyChart n φ (x⁻¹, y x⁻¹) = x⁻ⁿ φ(x, y)`. -/
+theorem aeval_inftyChart (hφ : φ.totalDegree ≤ n) {x : L} (hx : x ≠ 0) (y : L) :
+    aeval ![x⁻¹, y * x⁻¹] (inftyChart n φ) = x⁻¹ ^ n * aeval ![x, y] φ := by
+  rw [inftyChart, map_sum, aeval_fin_two_eq_sum, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun s hs ↦ ?_
+  obtain ⟨m, hm⟩ := Nat.exists_eq_add_of_le ((add_le_totalDegree_of_mem_support hs).trans hφ)
+  rw [aeval_monomial, Finsupp.prod_add_index' (by simp) (by simp [pow_add]),
+    Finsupp.prod_single_index (by simp), Finsupp.prod_single_index (by simp), hm,
+    Nat.add_sub_cancel_left]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
+  have h : x ^ s 0 * x⁻¹ ^ s 0 = 1 := by rw [← mul_pow, mul_inv_cancel₀ hx, one_pow]
+  linear_combination (-(algebraMap R L (φ.coeff s) * x⁻¹ ^ m * x⁻¹ ^ s 1 * y ^ s 1)) * h
+
+/-- **The partial derivative in `X₁` in the chart at infinity**: for `x ≠ 0` and `φ` of total
+degree at most `n`, `∂(inftyChart n φ)/∂X₁ (x⁻¹, y x⁻¹) = x^(1 - n) ∂φ/∂X₁ (x, y)`. -/
+theorem aeval_pderiv_one_inftyChart (hφ : φ.totalDegree ≤ n) {x : L} (hx : x ≠ 0) (y : L) :
+    aeval ![x⁻¹, y * x⁻¹] (pderiv 1 (inftyChart n φ)) =
+      x⁻¹ ^ (n - 1) * aeval ![x, y] (pderiv 1 φ) := by
+  conv_rhs => rw [φ.as_sum]
+  rw [inftyChart, map_sum, map_sum, map_sum, map_sum, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun s hs ↦ ?_
+  obtain ⟨m, hm⟩ := Nat.exists_eq_add_of_le ((add_le_totalDegree_of_mem_support hs).trans hφ)
+  simp only [pderiv_monomial, aeval_monomial]
+  rw [Finsupp.prod_fintype _ _ (by simp), Finsupp.prod_fintype _ _ (by simp)]
+  simp only [Fin.prod_univ_two, Finsupp.tsub_apply, Finsupp.add_apply, Finsupp.single_apply]
+  simp only [Fin.isValue, zero_ne_one, one_ne_zero, ite_true, ite_false, Matrix.cons_val_zero,
+    Matrix.cons_val_one, add_zero, zero_add, tsub_zero, map_mul, map_natCast]
+  rcases Nat.eq_zero_or_eq_succ_pred (s 1) with h0 | hj
+  · simp [h0]
+  · set j := (s 1).pred
+    rw [hm, hj, Nat.succ_sub_one, show s 0 + j.succ + m - 1 = s 0 + j + m by omega,
+      show s 0 + j.succ + m - (s 0 + j.succ) = m by omega]
+    have h : x ^ s 0 * x⁻¹ ^ s 0 = 1 := by rw [← mul_pow, mul_inv_cancel₀ hx, one_pow]
+    linear_combination (-(algebraMap R L (φ.coeff s) * (j.succ : L) * x⁻¹ ^ m * x⁻¹ ^ j *
+      y ^ j)) * h
+
+end Field
 
 section Field
 
@@ -165,5 +274,61 @@ theorem aeval_equivMvPolynomial (y : A) (p : R[X][Y]) :
     | monomial m c =>
       simp_rw [← C_mul_X_pow_eq_monomial]
       simp [equivMvPolynomial, IsScalarTower.algebraMap_apply R R[X] A]
+
+section MvPolynomial
+
+variable {R : Type*} [CommSemiring R]
+
+/-- The monomial `c X₀ ^ s 0 X₁ ^ s 1`, read as a polynomial in `X₁` over `R[X₀]`. -/
+@[simp]
+theorem equivMvPolynomial_symm_monomial (s : Fin 2 →₀ ℕ) (c : R) :
+    (equivMvPolynomial R).symm (MvPolynomial.monomial s c) = C (C c * X ^ s 0) * X ^ s 1 := by
+  rw [MvPolynomial.monomial_eq]
+  simp [Finsupp.prod_fintype, Fin.prod_univ_two, mul_assoc]
+
+/-- A polynomial in two variables of total degree at most `n` has degree at most `n` in `X₁`. -/
+theorem natDegree_equivMvPolynomial_symm_le {φ : MvPolynomial (Fin 2) R} {n : ℕ}
+    (hφ : φ.totalDegree ≤ n) : ((equivMvPolynomial R).symm φ).natDegree ≤ n := by
+  conv_lhs => rw [φ.as_sum]
+  rw [map_sum]
+  refine natDegree_sum_le_of_forall_le _ _ fun s hs ↦ ?_
+  rw [equivMvPolynomial_symm_monomial]
+  exact (natDegree_C_mul_X_pow_le _ _).trans
+    (by have := (MvPolynomial.add_le_totalDegree_of_mem_support hs).trans hφ; omega)
+
+/-- For a polynomial in two variables of total degree at most `n`, the coefficient of `X₁ ^ n`
+over `R[X₀]` is the constant coefficient of the monomial `X₁ ^ n`. -/
+theorem coeff_equivMvPolynomial_symm_of_totalDegree_le {φ : MvPolynomial (Fin 2) R} {n : ℕ}
+    (hφ : φ.totalDegree ≤ n) :
+    ((equivMvPolynomial R).symm φ).coeff n = C (φ.coeff (Finsupp.single 1 n)) := by
+  classical
+  conv_lhs => rw [φ.as_sum]
+  rw [map_sum, finsetSum_coeff]
+  simp_rw [equivMvPolynomial_symm_monomial, coeff_C_mul_X_pow]
+  rw [Finset.sum_eq_single (Finsupp.single 1 n)]
+  · simp
+  · exact fun s hs hne ↦ ite_eq_right_iff.mpr fun h ↦
+      (hne (MvPolynomial.eq_single_one_of_mem_support hφ hs h.symm)).elim
+  · intro h
+    rw [MvPolynomial.notMem_support_iff.mp h]
+    simp
+
+/-- A polynomial in two variables of total degree at most `n` in which `X₁ ^ n` has coefficient
+`1` is monic as a polynomial in `X₁` over `R[X₀]`. -/
+theorem monic_equivMvPolynomial_symm {φ : MvPolynomial (Fin 2) R} {n : ℕ}
+    (hφ : φ.totalDegree ≤ n) (hc : φ.coeff (Finsupp.single 1 n) = 1) :
+    ((equivMvPolynomial R).symm φ).Monic :=
+  monic_of_natDegree_le_of_coeff_eq_one n (natDegree_equivMvPolynomial_symm_le hφ)
+    (by rw [coeff_equivMvPolynomial_symm_of_totalDegree_le hφ, hc, map_one])
+
+/-- A polynomial in two variables of total degree at most `n` in which `X₁ ^ n` has coefficient
+`1` has degree `n` as a polynomial in `X₁` over `R[X₀]`. -/
+theorem natDegree_equivMvPolynomial_symm [Nontrivial R] {φ : MvPolynomial (Fin 2) R} {n : ℕ}
+    (hφ : φ.totalDegree ≤ n) (hc : φ.coeff (Finsupp.single 1 n) = 1) :
+    ((equivMvPolynomial R).symm φ).natDegree = n :=
+  natDegree_eq_of_le_of_coeff_ne_zero (natDegree_equivMvPolynomial_symm_le hφ)
+    (by rw [coeff_equivMvPolynomial_symm_of_totalDegree_le hφ, hc, map_one]; exact one_ne_zero)
+
+end MvPolynomial
 
 end Polynomial.Bivariate
