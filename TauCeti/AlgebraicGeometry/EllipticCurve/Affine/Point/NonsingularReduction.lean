@@ -210,6 +210,7 @@ theorem nonsingularReductionHom_some_of_valuation_le_one {x y : F} (h : W.Nonsin
 /-- **The kernel of the reduction homomorphism is the kernel of reduction** `E₁(F)`: a point with
 nonsingular reduction reduces to the point at infinity exactly when it is the point at infinity or
 its `x`-coordinate has a pole. -/
+@[simp]
 theorem nonsingularReductionHom_eq_zero_iff (P : W.nonsingularReduction v) :
     W.nonsingularReductionHom v P = 0 ↔ (P : W.Point) = 0 ∨ 1 < v (P : W.Point).xCoord := by
   rw [← Point.reduction_eq_zero_iff, ← nonsingularReductionHom_toProjective_point,
@@ -220,7 +221,6 @@ theorem nonsingularReductionHom_eq_zero_iff (P : W.nonsingularReduction v) :
 /-- **The kernel of reduction `E₁(F)` as a subgroup of `E₀(F)`**: a point with nonsingular reduction
 lies in the kernel of the reduction homomorphism exactly when it is the point at infinity or its
 `x`-coordinate has a pole. -/
-@[simp]
 theorem mem_ker_nonsingularReductionHom_iff (P : W.nonsingularReduction v) :
     P ∈ (W.nonsingularReductionHom v).ker ↔ (P : W.Point) = 0 ∨ 1 < v (P : W.Point).xCoord := by
   rw [AddMonoidHom.mem_ker, nonsingularReductionHom_eq_zero_iff]
