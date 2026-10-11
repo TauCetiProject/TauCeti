@@ -135,13 +135,13 @@ noncomputable def d4SpinMinusIndexEquiv :
 
 /-- The underlying tripled-table index of an even exterior subset is `d4SpinIndex`. -/
 @[simp]
-theorem coe_d4SpinPlusIndexEquiv_apply (s : {s : Finset (Fin 4) // Even s.card}) :
+theorem coe_d4SpinPlusIndexEquiv (s : {s : Finset (Fin 4) // Even s.card}) :
     (d4SpinPlusIndexEquiv s : Fin 24) = d4SpinIndex s := by
   simp [d4SpinPlusIndexEquiv]
 
 /-- The underlying tripled-table index of an odd exterior subset is `d4SpinIndex`. -/
 @[simp]
-theorem coe_d4SpinMinusIndexEquiv_apply (s : {s : Finset (Fin 4) // Odd s.card}) :
+theorem coe_d4SpinMinusIndexEquiv (s : {s : Finset (Fin 4) // Odd s.card}) :
     (d4SpinMinusIndexEquiv s : Fin 24) = d4SpinIndex s := by
   simp [d4SpinMinusIndexEquiv]
 
@@ -354,7 +354,7 @@ private theorem d4SpinPlusBlockEquiv_serreE_exteriorBasis (hline : P.line = ⊥)
       P.d4SpinPlusBlockEquiv_exteriorBasis]
     simpa only [hs, ↓reduceIte] using
       d4Block_raisingMatrixQ_mulVec_single d4SpinPlusIndexEquiv
-      coe_d4SpinPlusIndexEquiv_apply
+      coe_d4SpinPlusIndexEquiv
       (fun i s hs ↦ (even_card_typeDSpinReflection_iff (n := 4) (by omega) i s).2 hs) i s
   · have hact :
         P.typeDSpinPlusLieRep b hline (TypeDStd.rootGenerator 4 (by omega) (.inl i))
@@ -368,7 +368,7 @@ private theorem d4SpinPlusBlockEquiv_serreE_exteriorBasis (hline : P.line = ⊥)
     rw [hact, map_zero, P.d4SpinPlusBlockEquiv_exteriorBasis]
     simpa only [hs, ↓reduceIte] using
       d4Block_raisingMatrixQ_mulVec_single d4SpinPlusIndexEquiv
-      coe_d4SpinPlusIndexEquiv_apply
+      coe_d4SpinPlusIndexEquiv
       (fun i s hs ↦ (even_card_typeDSpinReflection_iff (n := 4) (by omega) i s).2 hs) i s
 
 private theorem d4SpinPlusBlockEquiv_serreF_exteriorBasis (hline : P.line = ⊥)
@@ -396,7 +396,7 @@ private theorem d4SpinPlusBlockEquiv_serreF_exteriorBasis (hline : P.line = ⊥)
       P.d4SpinPlusBlockEquiv_exteriorBasis]
     simpa only [hs, ↓reduceIte] using
       d4Block_loweringMatrixQ_mulVec_single d4SpinPlusIndexEquiv
-      coe_d4SpinPlusIndexEquiv_apply
+      coe_d4SpinPlusIndexEquiv
       (fun i s hs ↦ (even_card_typeDSpinReflection_iff (n := 4) (by omega) i s).2 hs) i s
   · have hact :
         P.typeDSpinPlusLieRep b hline (TypeDStd.rootGenerator 4 (by omega) (.inr i))
@@ -410,7 +410,7 @@ private theorem d4SpinPlusBlockEquiv_serreF_exteriorBasis (hline : P.line = ⊥)
     rw [hact, map_zero, P.d4SpinPlusBlockEquiv_exteriorBasis]
     simpa only [hs, ↓reduceIte] using
       d4Block_loweringMatrixQ_mulVec_single d4SpinPlusIndexEquiv
-      coe_d4SpinPlusIndexEquiv_apply
+      coe_d4SpinPlusIndexEquiv
       (fun i s hs ↦ (even_card_typeDSpinReflection_iff (n := 4) (by omega) i s).2 hs) i s
 
 
@@ -474,7 +474,7 @@ private theorem d4SpinPlusBlockEquiv_serreH_exteriorBasis (hline : P.line = ⊥)
   rw [hact, map_smul, P.d4SpinPlusBlockEquiv_exteriorBasis]
   exact
     d4Block_cartanGeneratorMatrixQ_mulVec_single d4SpinPlusIndexEquiv
-      coe_d4SpinPlusIndexEquiv_apply i s
+      coe_d4SpinPlusIndexEquiv i s
 
 /-- The even half-spin coordinate equivalence intertwines each Cartan generator with the diagonal
 weight matrix on the `V(ϖ₄)` block of the tripled table. -/
@@ -520,7 +520,7 @@ private theorem d4SpinMinusBlockEquiv_serreE_exteriorBasis (hline : P.line = ⊥
       P.d4SpinMinusBlockEquiv_exteriorBasis]
     simpa only [hs, ↓reduceIte] using
       d4Block_raisingMatrixQ_mulVec_single d4SpinMinusIndexEquiv
-      coe_d4SpinMinusIndexEquiv_apply
+      coe_d4SpinMinusIndexEquiv
       (fun i s hs ↦ (odd_card_typeDSpinReflection_iff i s).2 hs) i s
   · have hact :
         P.typeDSpinMinusLieRep b hline (TypeDStd.rootGenerator 4 (by omega) (.inl i))
@@ -534,7 +534,7 @@ private theorem d4SpinMinusBlockEquiv_serreE_exteriorBasis (hline : P.line = ⊥
     rw [hact, map_zero, P.d4SpinMinusBlockEquiv_exteriorBasis]
     simpa only [hs, ↓reduceIte] using
       d4Block_raisingMatrixQ_mulVec_single d4SpinMinusIndexEquiv
-      coe_d4SpinMinusIndexEquiv_apply
+      coe_d4SpinMinusIndexEquiv
       (fun i s hs ↦ (odd_card_typeDSpinReflection_iff i s).2 hs) i s
 
 private theorem d4SpinMinusBlockEquiv_serreF_exteriorBasis (hline : P.line = ⊥)
@@ -561,7 +561,7 @@ private theorem d4SpinMinusBlockEquiv_serreF_exteriorBasis (hline : P.line = ⊥
       P.d4SpinMinusBlockEquiv_exteriorBasis]
     simpa only [hs, ↓reduceIte] using
       d4Block_loweringMatrixQ_mulVec_single d4SpinMinusIndexEquiv
-      coe_d4SpinMinusIndexEquiv_apply
+      coe_d4SpinMinusIndexEquiv
       (fun i s hs ↦ (odd_card_typeDSpinReflection_iff i s).2 hs) i s
   · have hact :
         P.typeDSpinMinusLieRep b hline (TypeDStd.rootGenerator 4 (by omega) (.inr i))
@@ -575,7 +575,7 @@ private theorem d4SpinMinusBlockEquiv_serreF_exteriorBasis (hline : P.line = ⊥
     rw [hact, map_zero, P.d4SpinMinusBlockEquiv_exteriorBasis]
     simpa only [hs, ↓reduceIte] using
       d4Block_loweringMatrixQ_mulVec_single d4SpinMinusIndexEquiv
-      coe_d4SpinMinusIndexEquiv_apply
+      coe_d4SpinMinusIndexEquiv
       (fun i s hs ↦ (odd_card_typeDSpinReflection_iff i s).2 hs) i s
 
 /-- The odd half-spin coordinate equivalence intertwines each positive simple-root operator with
@@ -638,7 +638,7 @@ private theorem d4SpinMinusBlockEquiv_serreH_exteriorBasis (hline : P.line = ⊥
   rw [hact, map_smul, P.d4SpinMinusBlockEquiv_exteriorBasis]
   exact
     d4Block_cartanGeneratorMatrixQ_mulVec_single d4SpinMinusIndexEquiv
-      coe_d4SpinMinusIndexEquiv_apply i s
+      coe_d4SpinMinusIndexEquiv i s
 
 /-- The odd half-spin coordinate equivalence intertwines each Cartan generator with the diagonal
 weight matrix on the `V(ϖ₃)` block of the tripled table. -/
