@@ -374,13 +374,8 @@ theorem explicitMap1_id (hid : ∀ (g : G) (m : M),
       fun _ _ => rfl) :
     explicitMap1 G M G M (ContinuousMonoidHom.id G) (AddMonoidHom.id M) continuous_id hid =
       AddMonoidHom.id _ := by
-  apply AddMonoidHom.ext
-  intro x
-  induction x using QuotientAddGroup.induction_on with
-  | _ c =>
-      rw [explicitMap1_mk, AddMonoidHom.id_apply]
-      exact congrArg (fun z : Z1 G M => (z : H1 G M))
-        (DFunLike.congr_fun (cocyclesMap1_id G M hid) c)
+  simp only [explicitMap1, cocyclesMap1_id G M hid]
+  exact QuotientAddGroup.map_id _
 
 /-- Pullback on explicit `H¹` respects composition of compatible pairs: it is contravariant in the
 group homomorphism and covariant in the coefficient map. The compatibility of the composite pair
@@ -398,14 +393,8 @@ theorem explicitMap1_comp
     explicitMap1 G M K P (φ.comp ψ) (q.comp f) (hq.comp hf) hcomp =
       (explicitMap1 H N K P ψ q hq hequivq).comp
         (explicitMap1 G M H N φ f hf hequiv) := by
-  apply AddMonoidHom.ext
-  intro x
-  induction x using QuotientAddGroup.induction_on with
-  | _ c =>
-      rw [explicitMap1_mk, AddMonoidHom.comp_apply, explicitMap1_mk, explicitMap1_mk]
-      exact congrArg (fun z : Z1 K P => (z : H1 K P))
-        (DFunLike.congr_fun
-          (cocyclesMap1_comp G M H N φ f hf hequiv K P ψ q hq hequivq hcomp) c)
+  simp only [explicitMap1, cocyclesMap1_comp G M H N φ f hf hequiv K P ψ q hq hequivq hcomp]
+  exact (QuotientAddGroup.map_comp_map _ _ _ _ _ _ _).symm
 
 /-- **Commuting squares of compatible pairs commute on explicit `H¹`**: if the composites
 `φ ∘ ψ = φ' ∘ ψ'` of the group homomorphisms and `q ∘ f = q' ∘ f'` of the coefficient maps agree,
@@ -521,13 +510,8 @@ theorem explicitMap2_id [ContinuousMul G] (hid : ∀ (g : G) (m : M),
       fun _ _ => rfl) :
     explicitMap2 G M G M (ContinuousMonoidHom.id G) (AddMonoidHom.id M) continuous_id hid =
       AddMonoidHom.id _ := by
-  apply AddMonoidHom.ext
-  intro x
-  induction x using QuotientAddGroup.induction_on with
-  | _ c =>
-      rw [explicitMap2_mk, AddMonoidHom.id_apply]
-      exact congrArg (fun z : Z2 G M => (z : H2 G M))
-        (DFunLike.congr_fun (cocyclesMap2_id G M hid) c)
+  simp only [explicitMap2, cocyclesMap2_id G M hid]
+  exact QuotientAddGroup.map_id _
 
 /-- Pullback on explicit `H²` respects composition of compatible pairs. -/
 theorem explicitMap2_comp
@@ -544,14 +528,8 @@ theorem explicitMap2_comp
     explicitMap2 G M K P (φ.comp ψ) (q.comp f) (hq.comp hf) hcomp =
       (explicitMap2 H N K P ψ q hq hequivq).comp
         (explicitMap2 G M H N φ f hf hequiv) := by
-  apply AddMonoidHom.ext
-  intro x
-  induction x using QuotientAddGroup.induction_on with
-  | _ c =>
-      rw [explicitMap2_mk, AddMonoidHom.comp_apply, explicitMap2_mk, explicitMap2_mk]
-      exact congrArg (fun z : Z2 K P => (z : H2 K P))
-        (DFunLike.congr_fun
-          (cocyclesMap2_comp G M H N φ f hf hequiv K P ψ q hq hequivq hcomp) c)
+  simp only [explicitMap2, cocyclesMap2_comp G M H N φ f hf hequiv K P ψ q hq hequivq hcomp]
+  exact (QuotientAddGroup.map_comp_map _ _ _ _ _ _ _).symm
 
 /-- Pullback along a compatible pair made of a continuous multiplicative equivalence and an additive
 equivalence of coefficients is an additive equivalence on explicit second continuous cohomology.
