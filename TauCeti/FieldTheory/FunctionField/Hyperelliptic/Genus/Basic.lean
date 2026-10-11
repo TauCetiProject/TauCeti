@@ -20,6 +20,8 @@ import TauCeti.FieldTheory.FunctionField.Divisor.RatFunc
 import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Order
 -- Proof-only: every place of `k(x)` has a place of `F` above it.
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
+-- Proof-only: a rational place forces exact constants in every characteristic.
+import TauCeti.FieldTheory.FunctionField.Place.ConstantField
 -- Proof-only: a totally ramified finite separable extension has no new constants.
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.Unramified
 -- Proof-only: the degree of a radical extension from the order of the radicand.
@@ -59,6 +61,8 @@ a totally ramified place acquires no new constants
 
 * `TauCeti.finrank_ratFunc_eq_two_of_sq_eq` and `TauCeti.isIntegrallyClosedIn_of_sq_eq`: the degree
   of `F / k(x)` and exactness of the constant field `k`.
+* `TauCeti.isIntegrallyClosedIn_of_sq_eq_of_odd`: odd-degree models have exact constants
+  without squarefreeness or characteristic assumptions.
 * `TauCeti.Place.one_lt_ramificationIdx_iff_of_sq_eq`: the ramified places.
 * `TauCeti.degree_different_ratFunc_of_sq_eq`: `deg Diff(F / k(x)) = m + (m mod 2)`.
 * `TauCeti.genus_eq_of_sq_eq`: **the genus of `y ^ 2 = f(x)` is `⌊(m - 1) / 2⌋`**.
@@ -183,6 +187,16 @@ theorem Place.existsUnique_restrict_eq_infty_of_sq_eq_of_odd {f : k[X]}
     (hQ.trans hP.symm)⟩
   rw [Place.degree_eq_degree_restrict_mul_relativeDegree k (RatFunc k), hP,
     Place.degree_infty, Place.relativeDegree_eq_one_of_isTotallyRamified k (RatFunc k) htot]
+
+/-- The constants of an odd-degree polynomial model are exactly `k`.
+No squarefreeness, separability, or characteristic assumption is needed. -/
+theorem isIntegrallyClosedIn_of_sq_eq_of_odd {f : k[X]} (hodd : Odd f.natDegree) {y : F}
+    (hgen : (RatFunc k)⟮y⟯ = ⊤)
+    (hy : y ^ 2 = algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) f)) :
+    IsIntegrallyClosedIn k F := by
+  obtain ⟨P, -, hdegree, -⟩ := Place.existsUnique_restrict_eq_infty_of_sq_eq_of_odd
+    hodd hgen hy
+  exact P.isIntegrallyClosedIn_of_degree_eq_one hdegree
 
 end OddDegree
 
