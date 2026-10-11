@@ -19,6 +19,15 @@ localizations are isometric exactly when they have equal ranks and their determi
 modulo squares in `ℤ_p`. Global unimodularity is unnecessary: the hypotheses concern the local
 determinants alone. The isometry preserves the actual integral forms on `ℤ_p ⊗[ℤ] L`.
 
+The forward implication holds at every prime and without any determinant-unit hypothesis.
+
+## Main results
+
+* `TauCeti.IntegralLattice.localIntegralForm_equivalent_imp`: integral local isometry preserves
+  the rank and determinant square class at every prime.
+* `TauCeti.IntegralLattice.localIntegralForm_equivalent_iff`: for local unit determinants at an
+  odd prime, these invariants classify the integral local forms.
+
 ## References
 
 * O. T. O'Meara, *Introduction to Quadratic Forms*, 92:1--92:2.
@@ -33,6 +42,29 @@ namespace TauCeti.IntegralLattice
 
 variable {V W : Type*} [AddCommGroup V] [Module ℚ V] [AddCommGroup W] [Module ℚ W]
 
+/-- Integrally isometric localizations have equal ranks and determinant products that are
+squares, at every prime and without any determinant-unit hypothesis. -/
+theorem localIntegralForm_equivalent_imp
+    (L : IntegralLattice V) (M : IntegralLattice W) (p : ℕ) [Fact p.Prime]
+    (h : (L.localIntegralForm p).Equivalent (M.localIntegralForm p)) :
+    finrank ℤ L = finrank ℤ M ∧
+      IsSquare ((L.determinant : ℤ_[p]) * (M.determinant : ℤ_[p])) := by
+  classical
+  let b := Module.finBasis ℤ L
+  let c := Module.finBasis ℤ M
+  obtain ⟨e⟩ := h
+  have hn : finrank ℤ L = finrank ℤ M := by
+    have h := e.toLinearEquiv.finrank_eq
+    rw [Module.finrank_eq_card_basis (b.baseChange ℤ_[p]),
+      Module.finrank_eq_card_basis (c.baseChange ℤ_[p])] at h
+    simpa using h
+  let c' := c.reindex (finCongr hn.symm)
+  refine ⟨hn, ?_⟩
+  simpa only [det_toMatrix_localIntegralForm] using
+    LinearMap.BilinForm.Equivalent.isSquare_det_mul_det
+      (show (L.localIntegralForm p).Equivalent (M.localIntegralForm p) from ⟨e⟩)
+      (b.baseChange ℤ_[p]) (c'.baseChange ℤ_[p])
+
 /-- Localizations unimodular at an odd prime are integrally isometric exactly when their ranks
 and determinant square classes agree. The input lattices need not be globally unimodular. -/
 theorem localIntegralForm_equivalent_iff
@@ -45,27 +77,19 @@ theorem localIntegralForm_equivalent_iff
   let b := Module.finBasis ℤ L
   let c := Module.finBasis ℤ M
   have hdetL : ((L.localIntegralForm p).toMatrix (b.baseChange ℤ_[p])).det =
-      (L.determinant : ℤ_[p]) := by
-    rw [toMatrix_localIntegralForm, L.determinant_eq_gramDet b, gramDet_def, Int.cast_det]
+      (L.determinant : ℤ_[p]) := L.det_toMatrix_localIntegralForm p b
   have hsame (hn : finrank ℤ L = finrank ℤ M) :
       (L.localIntegralForm p).Equivalent (M.localIntegralForm p) ↔
         IsSquare ((L.determinant : ℤ_[p]) * (M.determinant : ℤ_[p])) := by
     let c' := c.reindex (finCongr hn.symm)
     have hdetM' : ((M.localIntegralForm p).toMatrix (c'.baseChange ℤ_[p])).det =
-        (M.determinant : ℤ_[p]) := by
-      rw [toMatrix_localIntegralForm, M.determinant_eq_gramDet c', gramDet_def, Int.cast_det]
+        (M.determinant : ℤ_[p]) := M.det_toMatrix_localIntegralForm p c'
     simpa only [hdetL, hdetM'] using
       (L.isSymm_localIntegralForm p).equivalent_iff_isSquare_det_mul_det
         (M.isSymm_localIntegralForm p) (PadicInt.isUnit_two hp) (b.baseChange ℤ_[p])
         (c'.baseChange ℤ_[p]) (hdetL.symm ▸ hL) (hdetM'.symm ▸ hM)
   constructor
-  · rintro ⟨e⟩
-    have hn : finrank ℤ L = finrank ℤ M := by
-      have h := e.toLinearEquiv.finrank_eq
-      rw [Module.finrank_eq_card_basis (b.baseChange ℤ_[p]),
-        Module.finrank_eq_card_basis (c.baseChange ℤ_[p])] at h
-      simpa using h
-    exact ⟨hn, (hsame hn).mp ⟨e⟩⟩
+  · exact L.localIntegralForm_equivalent_imp M p
   · rintro ⟨hn, hs⟩
     exact (hsame hn).mpr hs
 

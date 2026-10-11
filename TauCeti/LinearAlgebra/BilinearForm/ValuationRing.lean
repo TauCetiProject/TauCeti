@@ -133,13 +133,9 @@ theorem IsSymm.exists_orthogonal_basis_isUnit_of_isUnit_det (hB : B.IsSymm)
     simp only [c, Basis.reindex_apply]
     exact iIsOrtho_def.mp hc₀ _ _ (fun h ↦ hij ((finCongr hn).symm.injective h))
   have hmatrix := hc.toMatrix_eq_diagonal
-  have hchange : (B.toMatrix c).det = (b.toMatrix c).det * (B.toMatrix b).det *
-      (b.toMatrix c).det := by
-    rw [← toMatrix_mul_basis_toMatrix b c B, Matrix.det_mul, Matrix.det_mul,
-      Matrix.det_transpose]
   have hunit : IsUnit (∏ i, B (c i) (c i)) := by
-    rw [← Matrix.det_diagonal, ← hmatrix, hchange]
-    exact ((b.isUnit_det c).mul hdet).mul (b.isUnit_det c)
+    rw [← Matrix.det_diagonal, ← hmatrix, det_toMatrix_eq_det_sq_mul_det b c]
+    exact ((b.isUnit_det c).pow 2).mul hdet
   exact ⟨c, hc, fun i ↦ isUnit_of_dvd_unit
     (Finset.dvd_prod_of_mem (fun j ↦ B (c j) (c j)) (Finset.mem_univ i)) hunit⟩
 
@@ -161,8 +157,6 @@ theorem IsSymm.exists_equivalent_weightedSumSquares_of_isUnit_det (hB : B.IsSymm
   refine ⟨w, ?_, (b.toMatrix c).det, ?_⟩
   · simpa only [weightedSumSquares_units, hw] using
       hB.equivalent_weightedSumSquares_of_iIsOrtho c hc
-  · rw [← Matrix.det_diagonal, ← hmatrix, ← toMatrix_mul_basis_toMatrix b c B,
-      Matrix.det_mul, Matrix.det_mul, Matrix.det_transpose]
-    ring
+  · rw [← Matrix.det_diagonal, ← hmatrix, det_toMatrix_eq_det_sq_mul_det b c]
 
 end LinearMap.BilinForm

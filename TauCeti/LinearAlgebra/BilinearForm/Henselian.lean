@@ -50,18 +50,7 @@ theorem IsSymm.equivalent_iff_isSquare_det_mul_det
   classical
   let := h2.invertible
   constructor
-  · rintro ⟨e⟩
-    have hform : B = C.comp e.toLinearEquiv.toLinearMap e.toLinearEquiv.toLinearMap := by
-      ext x y
-      exact (e.map_app y x).symm
-    have hdet : (B.toMatrix b).det = (LinearMap.toMatrix b c e.toLinearEquiv).det ^ 2 *
-        (C.toMatrix c).det := by
-      conv_lhs => rw [hform]
-      rw [toMatrix_comp c b, Matrix.det_mul, Matrix.det_mul, Matrix.det_transpose]
-      ring
-    refine ⟨(LinearMap.toMatrix b c e.toLinearEquiv).det * (C.toMatrix c).det, ?_⟩
-    rw [hdet]
-    ring
+  · exact fun h ↦ h.isSquare_det_mul_det b c
   · intro hdet
     -- Orthogonal diagonalization retains an explicit determinant change-of-basis equation.
     obtain ⟨w, hw, d, hd⟩ := hB.exists_equivalent_weightedSumSquares_of_isUnit_det h2 b hBdet
@@ -74,15 +63,7 @@ theorem IsSymm.equivalent_iff_isSquare_det_mul_det
       ring
     have hdiag := (TauCeti.equivalent_weightedSumSquares_iff_isSquare_prod_mul_prod_of_isUnit_two
       h2 w v).mpr hsq
-    obtain ⟨f⟩ := hw.trans (hdiag.trans hv.symm)
-    -- Recover the symmetric bilinear form through the associated-form computation.
-    have hform : B.toQuadraticMap = C.toQuadraticMap.comp f.toLinearEquiv.toLinearMap := by
-      ext x
-      exact (f.map_app x).symm
-    have hassoc := congrArg (QuadraticMap.associated (R := R)) hform
-    rw [QuadraticMap.associated_comp, QuadraticMap.associated_left_inverse R hB.eq,
-      QuadraticMap.associated_left_inverse R hC.eq] at hassoc
-    exact ⟨{ toLinearEquiv := f.toLinearEquiv
-             map_app' := fun x y ↦ (LinearMap.congr_fun (LinearMap.congr_fun hassoc x) y).symm }⟩
+    exact (hB.equivalent_iff_toQuadraticMap_equivalent hC).mpr
+      (hw.trans (hdiag.trans hv.symm))
 
 end LinearMap.BilinForm
