@@ -8,8 +8,8 @@ module
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.SymmetricThree.CharThree
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.SymmetricThree.CharThree.Simple
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.PrimePart
+public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.LinearCharacter
 import TauCeti.GroupTheory.Perm.FinThree.Basic
-import TauCeti.GroupTheory.GroupAction.Transitive
 import Mathlib.Data.ZMod.Basic
 
 /-!
@@ -57,7 +57,8 @@ private theorem three_nsmul_one_mem_range_indK0_stabilizer (a : Fin 3) :
       ExactK0 (finiteModulesExactStructure k[H])) s
   refine ⟨(2 : ℤ) • 1 - resK0 k H.subtype s, ?_⟩
   rw [map_sub, map_zsmul, hA, hAs]
-  simp only [two_nsmul, add_mul, one_mul, signClass_mul_self_perm_fin_three]
+  simp only [two_nsmul, add_mul, one_mul,
+    fdRepK0RingEquiv_of_ofLinearCharacter_signLinearCharacter_mul_self]
   module
 
 /-- In characteristic three, induction from any point stabilizer of S₃ has image exactly
@@ -67,7 +68,7 @@ the virtual classes of dimension divisible by three. -/
 theorem mem_range_indK0_stabilizer_perm_fin_three_char_three_iff (a : Fin 3) (x : K₀) :
     x ∈ (indK0 k (MulAction.stabilizer G a)).range ↔ (3 : ℤ) ∣ finrankK0 k k[G] x := by
   have hindex : (MulAction.stabilizer G a).index = 3 := by
-    rw [Subgroup.index_eq_card, Nat.card_congr (quotientStabilizerEquiv G a)]
+    rw [MulAction.index_stabilizer_of_transitive]
     simp
   constructor
   · intro hx
@@ -114,10 +115,8 @@ theorem mem_iSup_range_indK0_cyclic_coprime_perm_fin_three_char_three_iff (x : K
       (by decide : Nat.Prime 3) (fun S hS ↦ hS.2) hx
     have hg : Nat.card G = 6 := by
       norm_num [Nat.card_eq_fintype_card, Fintype.card_perm, Nat.factorial]
-    have hpow : 1 ≤ (Nat.card G).factorization 3 :=
-      ((by decide : Nat.Prime 3).dvd_iff_one_le_factorization Nat.card_pos.ne').mp
-        (by rw [hg]; decide)
-    exact (Int.natCast_dvd_natCast.mpr (dvd_pow_self 3 (by omega))).trans h
+    exact (Int.natCast_dvd_natCast.mpr (Nat.dvd_ordProj_of_dvd Nat.card_pos.ne'
+      (by decide) (by rw [hg]; decide))).trans h
   · intro hx
     let H := MulAction.stabilizer G (0 : Fin 3)
     have hcard : Nat.card H = 2 := card_stabilizer_perm_fin_three 0
