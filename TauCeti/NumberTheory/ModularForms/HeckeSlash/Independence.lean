@@ -59,9 +59,9 @@ double coset contributes to the multiplicity-weighted composite `∑_D m(D₁, D
   `(aᵢ)` whose right cosets `Γ₁ aᵢ` are distinct and cover the double coset.
 * `HeckeRing.GL2.heckeSlashSum_eq_sum_of_mem_doubleCoset`: the special case that fixes the
   choice of double-coset representative only: any `δ ∈ Γ₁ D.out Γ₂` gives the same sum.
-* `HeckeRing.GL2.sum_slash_eq_nsmul_heckeSlashSum`: **the weighted collapse.** A family naming
-  each right coset of the double coset exactly `m` times — repetitions allowed, covering not
-  assumed — sums to `m • heckeSlashSum k D f`.
+* `HeckeRing.GL2.sum_slash_eq_nsmul_heckeSlashSum`: **the weighted collapse.** A family of
+  elements of the double coset naming each of its right cosets exactly `m` times — repetitions
+  allowed, covering not assumed — sums to `m • heckeSlashSum k D f`.
 * `HeckeRing.GL2.sum_slash_coe_eq_nsmul_heckeSlashSum`: the weighted collapse for a form,
   whose slash-invariance discharges `hf`.
 * `HeckeRing.GL2.heckeSlashSum_coe_eq_sum_of_rightCosets`: the same description for a form of
@@ -147,9 +147,9 @@ theorem heckeSlashSum_eq_sum_of_mem_doubleCoset {δ : GL (Fin 2) ℚ}
   exact doubleCoset_eq_iUnion_rightCosets Γ₁ Γ₂ δ
 
 /-- **A family naming each right coset the same number of times sums to a multiple of the slash
-sum.** In place of the injectivity of `heckeSlashSum_eq_sum_of_rightCosets`, ask that every right
-coset of the double coset be named by exactly `m` members of the family: then the sum over the
-family is `m • heckeSlashSum k D f`.
+sum.** In place of the injectivity of `heckeSlashSum_eq_sum_of_rightCosets`, ask that every member
+of the family lie in the double coset and that every right coset of the double coset be named by
+exactly `m` members of the family: then the sum over the family is `m • heckeSlashSum k D f`.
 
 Covering is not a hypothesis. A right coset named by no member forces `m = 0`, and then both
 sides vanish; for `m ≠ 0` the family does cover, so nothing is lost by leaving it out and a user
