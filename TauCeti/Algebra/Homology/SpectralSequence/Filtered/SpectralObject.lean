@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Homology.HomotopyCategory.SpectralObject
 public import Mathlib.Algebra.Homology.SpectralObject.FirstPage
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.CategoryTheory.Subobject.Lattice
+public import TauCeti.Algebra.Homology.HomotopyCategory.Triangulated
 public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 
 /-!
@@ -97,29 +98,6 @@ lemma precomp_spectralObjectMappingCone_δ {i j k : ι} (f : i ⟶ j) (g : j ⟶
   rw [e, e']
   erw [Category.id_comp, CategoryTheory.Functor.map_id, Category.comp_id]
   rfl
-
-omit [HasZeroObject C] in
-/-- The third morphisms of the distinguished triangles of mapping cones in the homotopy category
-are natural in the pair of composable morphisms. -/
-lemma quotient_mappingConeCompTriangle_mor₃_naturality {X₁ X₂ X₃ Y₁ Y₂ Y₃ : CochainComplex C ℤ}
-    (f : X₁ ⟶ X₂) (g : X₂ ⟶ X₃)
-    (f' : Y₁ ⟶ Y₂) (g' : Y₂ ⟶ Y₃) (a : X₁ ⟶ Y₁) (b : X₂ ⟶ Y₂) (c : X₃ ⟶ Y₃)
-    (h₁ : f ≫ b = a ≫ f') (h₂ : g ≫ c = b ≫ g') :
-    ((quotient C (ComplexShape.up ℤ)).map (mappingConeCompTriangle f g).mor₃ ≫
-        ((quotient C (ComplexShape.up ℤ)).commShiftIso (1 : ℤ)).hom.app (mappingCone f)) ≫
-        ((quotient C (ComplexShape.up ℤ)).map (mappingCone.map f f' a b h₁))⟦(1 : ℤ)⟧' =
-      (quotient C (ComplexShape.up ℤ)).map (mappingCone.map g g' b c h₂) ≫
-        (quotient C (ComplexShape.up ℤ)).map (mappingConeCompTriangle f' g').mor₃ ≫
-          ((quotient C (ComplexShape.up ℤ)).commShiftIso (1 : ℤ)).hom.app (mappingCone f') := by
-  have eq := mappingConeCompTriangle_mor₃_naturality f g f' g' (homMk₂ a b c h₁ h₂)
-  dsimp at eq
-  let Q := quotient C (ComplexShape.up ℤ)
-  exact (Category.assoc _ _ _).trans <|
-    (congrArg (fun t => Q.map (mappingConeCompTriangle f g).mor₃ ≫ t)
-      (Q.commShiftIso_hom_naturality (mappingCone.map f f' a b h₁) (1 : ℤ)).symm).trans <|
-    (Q.map_comp_assoc _ _ _).symm.trans <|
-    (congrArg (fun t => Q.map t ≫ (Q.commShiftIso (1 : ℤ)).hom.app (mappingCone f'))
-      eq.symm).trans (Q.map_comp_assoc _ _ _)
 
 variable {F} {G H : ι ⥤ CochainComplex C ℤ}
 
