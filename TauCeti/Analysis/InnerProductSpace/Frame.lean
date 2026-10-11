@@ -40,7 +40,7 @@ adjoints and eigenvalues assume `E` finite-dimensional.
 * `TauCeti.gramOperator_eq_toEuclideanLin_gram`: the Gram operator is the Gram matrix acting on
   coefficient space.
 * `TauCeti.isPositive_frameOperator`, `TauCeti.isPositive_gramOperator`: both are positive.
-* `TauCeti.frameOperator_orthonormalBasis`: an orthonormal basis has the identity as frame
+* `OrthonormalBasis.frameOperator_eq_id`: an orthonormal basis has the identity as frame
   operator.
 * `TauCeti.norm_analysisMap_sq`: `‖analysis x‖² = ∑ᵢ ‖⟪vᵢ, x⟫‖²`.
 * `TauCeti.eigenvalues_frameOperator_eq_eigenvalues_gramOperator`: the two sorted spectra agree
@@ -182,22 +182,6 @@ theorem isPositive_gramOperator (v : ι → E) : (gramOperator 𝕜 v).IsPositiv
 theorem isSymmetric_gramOperator (v : ι → E) : (gramOperator 𝕜 v).IsSymmetric :=
   (isPositive_gramOperator v).isSymmetric
 
-/-! ### Orthonormal bases -/
-
-/-- The analysis map of an orthonormal basis is its coordinate map `b.repr`. -/
-@[simp]
-theorem analysisMap_orthonormalBasis (b : OrthonormalBasis ι 𝕜 E) :
-    analysisMap 𝕜 b = b.repr.toLinearMap := by
-  ext x i
-  simp [OrthonormalBasis.repr_apply_apply]
-
-/-- The frame operator of an orthonormal basis is the identity. -/
-@[simp]
-theorem frameOperator_orthonormalBasis (b : OrthonormalBasis ι 𝕜 E) :
-    frameOperator 𝕜 b = LinearMap.id := by
-  ext x
-  simpa using b.sum_repr' x
-
 /-! ### Adjoints in finite dimension -/
 
 section FiniteDimensional
@@ -280,3 +264,27 @@ theorem mul_norm_sq_le_sum_norm_inner_sq_of_le_eigenvalues_gramOperator (v : ι 
 end FiniteDimensional
 
 end TauCeti
+
+/-! ### Orthonormal bases -/
+
+namespace OrthonormalBasis
+
+open TauCeti
+
+variable {𝕜 E ι : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [Fintype ι]
+
+/-- The analysis map of an orthonormal basis is its coordinate map `b.repr`. -/
+@[simp]
+theorem analysisMap_eq_repr (b : OrthonormalBasis ι 𝕜 E) :
+    analysisMap 𝕜 b = b.repr.toLinearMap := by
+  ext x i
+  simp [OrthonormalBasis.repr_apply_apply]
+
+/-- The frame operator of an orthonormal basis is the identity. -/
+@[simp]
+theorem frameOperator_eq_id (b : OrthonormalBasis ι 𝕜 E) :
+    frameOperator 𝕜 b = LinearMap.id := by
+  ext x
+  simpa using b.sum_repr' x
+
+end OrthonormalBasis
