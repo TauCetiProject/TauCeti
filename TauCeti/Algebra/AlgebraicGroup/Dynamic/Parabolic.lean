@@ -66,9 +66,9 @@ degenerates: `P(l)` and `Z(l)` are everything and `U(l)` is trivial.
 * B. Conrad, O. Gabber, G. Prasad, *Pseudo-reductive Groups*, §2.1.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 13.
 
-This is the "dynamic" route to parabolic, Levi and unipotent subgroups asked for in Layer 7,
-"Structure theory", of the ReductiveGroups roadmap, which keeps it as a parallel route that
-avoids full root data.
+The constructions of points over the line and the punctured line, and the map induced by a
+cocharacter, need only a bialgebra structure on `H`. The subgroup constructions additionally
+use its antipode.
 -/
 
 public section
@@ -79,23 +79,12 @@ namespace TauCeti
 
 namespace Cocharacter
 
-variable {R H A B : Type*} [CommSemiring R] [Semiring H] [_root_.HopfAlgebra R H]
+variable {R H A B : Type*} [CommSemiring R] [Semiring H]
 variable [CommSemiring A] [Algebra R A] [CommSemiring B] [Algebra R B]
 
-/-! ### Auxiliary lemmas -/
+section Bialgebra
 
-private theorem mapAlgHom_C {C : Type*} [CommSemiring C] [Algebra R C] (φ : A →ₐ[R] C) (a : A) :
-    (AddMonoidAlgebra.mapAlgHom ℤ φ) (LaurentPolynomial.C a) = LaurentPolynomial.C (φ a) :=
-  AddMonoidAlgebra.mapAlgHom_single φ (0 : ℤ) a
-
-private theorem mapAlgHom_T {C : Type*} [CommSemiring C] [Algebra R C] (φ : A →ₐ[R] C) (n : ℤ) :
-    (AddMonoidAlgebra.mapAlgHom ℤ φ) (LaurentPolynomial.T n) = LaurentPolynomial.T n :=
-  (AddMonoidAlgebra.mapAlgHom_single φ n 1).trans (by rw [map_one]; rfl)
-
-private theorem mapAlgHom_comp_const {C : Type*} [CommSemiring C] [Algebra R C] (φ : A →ₐ[R] C) :
-    (AddMonoidAlgebra.mapAlgHom ℤ φ).comp (IsScalarTower.toAlgHom R A (LaurentPolynomial A)) =
-      (IsScalarTower.toAlgHom R C (LaurentPolynomial C)).comp φ :=
-  AlgHom.ext fun a => AddMonoidAlgebra.mapAlgHom_single φ (0 : ℤ) a
+variable [_root_.Bialgebra R H]
 
 /-! ### Points over the line and the punctured line -/
 
@@ -175,10 +164,10 @@ theorem evalZeroPoint_constPolyPoint (g : WithConv (H →ₐ[R] A)) :
   rw [evalZeroPoint, constPolyPoint, ← MonoidHom.comp_apply, ← AlgHom.mapValue_comp, h,
     AlgHom.mapValue_id, MonoidHom.id_apply]
 
-/-! ### The generic point of a cocharacter and conjugation by it -/
+/-! ### The generic point of a cocharacter -/
 
 variable (A) in
-/-- **A cocharacter on points**: the group homomorphism `𝔾ₘ(A) = Aˣ → G(A)` obtained from a
+/-- **A cocharacter on points**: the monoid homomorphism `𝔾ₘ(A) = Aˣ → G(A)` obtained from a
 cocharacter `l : 𝔾ₘ → G`, presented contravariantly as a bialgebra homomorphism
 `H →ₐc[R] R[T;T⁻¹]`. -/
 noncomputable def pointsHom (l : H →ₐc[R] LaurentPolynomial R) :
@@ -211,6 +200,43 @@ theorem genericPoint_eq_pointsHom (l : H →ₐc[R] LaurentPolynomial R) :
       pointsHom (LaurentPolynomial A) l (MultiplicativeGroup.genericUnit A) := by
   rw [genericPoint]
 
+/-! ### Naturality in the value algebra -/
+
+section Naturality
+
+variable (φ : A →ₐ[R] B) (l : H →ₐc[R] LaurentPolynomial R)
+
+/-- A cocharacter, read on points, is natural in the value algebra. -/
+theorem mapValue_pointsHom (u : Aˣ) :
+    AlgHom.mapValue φ (pointsHom A l u) = pointsHom B l (Units.map φ.toMonoidHom u) := by
+  rw [pointsHom_apply, pointsHom_apply, ← MonoidHom.comp_apply,
+    ← AlgHom.mapValue_mapDomain, MonoidHom.comp_apply]
+  congr 1
+  rw [AlgHom.mapValue_apply, MultiplicativeGroup.comp_point]
+
+/-- The constant-point inclusion is natural in the value algebra. -/
+theorem mapValue_constPoint (g : WithConv (H →ₐ[R] A)) :
+    AlgHom.mapValue (AddMonoidAlgebra.mapAlgHom ℤ φ) (constPoint A g) =
+      constPoint B (AlgHom.mapValue φ g) := by
+  ext h
+  simp [constPoint_apply, apply_ite φ]
+
+/-- The generic point of a cocharacter is natural in the value algebra. -/
+theorem mapValue_genericPoint :
+    AlgHom.mapValue (AddMonoidAlgebra.mapAlgHom ℤ φ) (genericPoint A l) = genericPoint B l := by
+  rw [genericPoint, genericPoint, mapValue_pointsHom]
+  congr 1
+  apply Units.ext
+  simp [LaurentPolynomial.T, -LaurentPolynomial.single_eq_C_mul_T]
+
+end Naturality
+
+end Bialgebra
+
+variable [_root_.HopfAlgebra R H]
+
+/-! ### Conjugation by the generic point -/
+
 variable (A) in
 /-- **Conjugation by the generic point of a cocharacter**: the group homomorphism
 `G(A) → G(A[T;T⁻¹])` sending an `A`-point `g` to `l(T) · g · l(T)⁻¹`. -/
@@ -224,44 +250,9 @@ theorem conjugate_apply (l : H →ₐc[R] LaurentPolynomial R) (g : WithConv (H 
     conjugate A l g = genericPoint A l * constPoint A g * (genericPoint A l)⁻¹ := by
   rw [conjugate, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulAut.conj_apply]
 
-/-! ### Naturality in the value algebra -/
-
 section Naturality
 
 variable (φ : A →ₐ[R] B) (l : H →ₐc[R] LaurentPolynomial R)
-
-/-- Change of value algebra commutes with change of source Hopf algebra on points. -/
-theorem mapValue_mapDomain (x : WithConv (LaurentPolynomial R →ₐ[R] A)) :
-    AlgHom.mapValue φ (AlgHom.mapDomain l x) = AlgHom.mapDomain l (AlgHom.mapValue φ x) := by
-  simp only [AlgHom.mapValue_apply, AlgHom.mapDomain_apply, AlgHom.comp_assoc]
-
-/-- A cocharacter, read on points, is natural in the value algebra. -/
-theorem mapValue_pointsHom (u : Aˣ) :
-    AlgHom.mapValue φ (pointsHom A l u) = pointsHom B l (Units.map φ.toMonoidHom u) := by
-  rw [pointsHom_apply, pointsHom_apply, mapValue_mapDomain]
-  congr 1
-  rw [AlgHom.mapValue_apply, MultiplicativeGroup.comp_point]
-
-/-- The induced map on Laurent coefficient algebras fixes the Laurent variable. -/
-theorem map_genericUnit :
-    Units.map (AddMonoidAlgebra.mapAlgHom ℤ φ).toMonoidHom
-        (MultiplicativeGroup.genericUnit A) = MultiplicativeGroup.genericUnit B := by
-  apply Units.ext
-  rw [Units.coe_map, MultiplicativeGroup.genericUnit_val,
-    MultiplicativeGroup.genericUnit_val]
-  exact mapAlgHom_T φ 1
-
-/-- The constant-point inclusion is natural in the value algebra. -/
-theorem mapValue_constPoint (g : WithConv (H →ₐ[R] A)) :
-    AlgHom.mapValue (AddMonoidAlgebra.mapAlgHom ℤ φ) (constPoint A g) =
-      constPoint B (AlgHom.mapValue φ g) := by
-  rw [constPoint, constPoint, ← MonoidHom.comp_apply, ← AlgHom.mapValue_comp,
-    mapAlgHom_comp_const, AlgHom.mapValue_comp, MonoidHom.comp_apply]
-
-/-- The generic point of a cocharacter is natural in the value algebra. -/
-theorem mapValue_genericPoint :
-    AlgHom.mapValue (AddMonoidAlgebra.mapAlgHom ℤ φ) (genericPoint A l) = genericPoint B l := by
-  rw [genericPoint, genericPoint, mapValue_pointsHom, map_genericUnit]
 
 /-- **Conjugation by the generic point, pushed forward along an arbitrary homomorphism `ψ` out of
 `A[T;T⁻¹]`**: it becomes conjugation by the value of the cocharacter at the image of `T`. -/
@@ -278,8 +269,7 @@ theorem mapValue_conjugate {C : Type*} [CommSemiring C] [Algebra R C]
 theorem mapValue_conjugate_mapAlgHom (g : WithConv (H →ₐ[R] A)) :
     AlgHom.mapValue (AddMonoidAlgebra.mapAlgHom ℤ φ) (conjugate A l g) =
       conjugate B l (AlgHom.mapValue φ g) := by
-  rw [mapValue_conjugate, map_genericUnit, conjugate_apply, genericPoint,
-    mapAlgHom_comp_const, AlgHom.mapValue_comp, MonoidHom.comp_apply, constPoint]
+  simp only [conjugate_apply, map_mul, map_inv, mapValue_genericPoint, mapValue_constPoint]
 
 end Naturality
 
@@ -292,7 +282,7 @@ the `A[X]`-points. Geometrically, these are the points for which `lim_{t → 0} 
 exists. -/
 noncomputable def parabolic (l : H →ₐc[R] LaurentPolynomial R) :
     Subgroup (WithConv (H →ₐ[R] A)) :=
-  (ofPolyPoint A).range.comap (conjugate A l)
+  (ofPolyPoint (R := R) (H := H) A).range.comap (conjugate A l)
 
 variable {l : H →ₐc[R] LaurentPolynomial R}
 
@@ -317,7 +307,7 @@ noncomputable def extend : parabolic A l →* WithConv (H →ₐ[R] Polynomial A
 theorem ofPolyPoint_extend (g : parabolic A l) :
     ofPolyPoint A (extend A l g) = conjugate A l (g : WithConv (H →ₐ[R] A)) := by
   have := (MonoidHom.ofInjective (ofPolyPoint_injective (R := R) (H := H) A)).apply_symm_apply
-    (⟨conjugate A l (g : WithConv (H →ₐ[R] A)), g.2⟩ : (ofPolyPoint A).range)
+    (⟨conjugate A l (g : WithConv (H →ₐ[R] A)), g.2⟩ : (ofPolyPoint (R := R) (H := H) A).range)
   exact congrArg Subtype.val this
 
 /-- The extension over the origin is unique. -/
@@ -556,16 +546,25 @@ private theorem prodSubst_comp_toLaurent :
     (prodSubst R A).comp (Polynomial.toLaurentAlg.restrictScalars R) =
       (AddMonoidAlgebra.mapAlgHom ℤ
         (Polynomial.toLaurentAlg.restrictScalars R)).comp (scaleSubst R A) := by
-  ext a <;>
-    simp [prodSubst_C, prodSubst_T, scaleSubst_C, scaleSubst_X, prodUnit_val, mapAlgHom_C,
-      mapAlgHom_T]
+  apply Polynomial.algHom_ext'
+  · apply AlgHom.ext
+    intro a
+    simp only [AlgHom.comp_apply, AlgHom.coe_restrictScalars', Polynomial.coe_toLaurentAlg,
+      Polynomial.CAlgHom_apply, Polynomial.toLaurent_C, prodSubst_C, scaleSubst_C]
+    simp [← LaurentPolynomial.single_eq_C, -LaurentPolynomial.single_eq_C_mul_T]
+  · simp only [AlgHom.comp_apply, AlgHom.coe_restrictScalars', Polynomial.coe_toLaurentAlg,
+      Polynomial.toLaurent_X, prodSubst_T, prodUnit_val, scaleSubst_X, map_mul]
+    simp [← LaurentPolynomial.single_eq_C, LaurentPolynomial.T,
+      -LaurentPolynomial.single_eq_C_mul_T]
 
 private theorem mapAlgHom_evalZero_comp_scaleSubst :
     (AddMonoidAlgebra.mapAlgHom ℤ ((Polynomial.aeval (0 : A)).restrictScalars R)).comp
         (scaleSubst R A) =
       (IsScalarTower.toAlgHom R A (LaurentPolynomial A)).comp
         ((Polynomial.aeval (0 : A)).restrictScalars R) := by
-  ext a <;> simp [scaleSubst_C, scaleSubst_X, mapAlgHom_C, mapAlgHom_T]
+  ext a <;>
+    simp [scaleSubst_C, scaleSubst_X, ← LaurentPolynomial.single_eq_C, LaurentPolynomial.T,
+      -LaurentPolynomial.single_eq_C_mul_T]
 
 /-- **The limit of a point of the dynamic parabolic lies in the Levi subgroup.** Together with
 `limit_of_mem_levi` this exhibits the limit homomorphism as a retraction of the dynamic parabolic
