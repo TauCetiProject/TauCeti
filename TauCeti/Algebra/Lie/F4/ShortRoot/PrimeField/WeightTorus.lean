@@ -23,9 +23,10 @@ This supplies the torus subgroup used in the carrier's root datum and pinning. M
 a separate question: the standard representation has a two-dimensional zero-weight space,
 so character separation alone does not determine the torus centralizer.
 
-The proof follows the analogous intrinsic construction for the short-root `G₂` carrier in
-`TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.MaximalTorus`. For the Hopf-ideal and quotient
-interpretation, see J. S. Milne, *Algebraic Groups* (2017), Chapter 3.
+This intrinsic construction of the weight torus parallels the analogous construction for
+the short-root `G₂` carrier in `TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.MaximalTorus`.
+For the Hopf-ideal and quotient interpretation, see J. S. Milne, *Algebraic Groups* (2017),
+Chapter 3.
 -/
 
 public section
