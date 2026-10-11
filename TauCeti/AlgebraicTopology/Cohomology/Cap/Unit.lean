@@ -43,8 +43,9 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C]
 
 /-- Capping with a constant degree-zero cochain is the map on chains induced by the coefficient
 morphism `u ≫ e ▷ S ≫ μ`. -/
-lemma capChain_constCochain (k : Type*) [Semiring k] [Linear k C] [MonoidalLinear k C]
-    {X : TopCat.{w}} {R S T M P : C}
+@[simp]
+lemma capChain_constCochain (X : TopCat.{w}) (k : Type*) [Semiring k] [Linear k C]
+    [MonoidalLinear k C] {R S T M P : C}
     [∀ J : Type w, PreservesColimitsOfShape (Discrete J) (tensorLeft M)]
     (u : T ⟶ R ⊗ S) (μ : M ⊗ S ⟶ P) (e : R ⟶ M) (n : ℕ) :
     ChainComplex.capChain k (X.alexanderWhitneyDiagonal u)
@@ -79,8 +80,8 @@ variable {C : Type u} [Category.{v} C] [Abelian C] [HasCoproducts.{w} C]
 /-- Capping with the class of a constant degree-zero cocycle is the map on singular homology
 induced by the coefficient morphism `u ≫ e ▷ S ≫ μ`. -/
 @[simp]
-lemma singularCap_constSingularCocycle (k : Type*) [Ring k] [Linear k C] [MonoidalLinear k C]
-    {X : TopCat.{w}} {R S T M P : C}
+lemma singularCap_constSingularCocycle (X : TopCat.{w}) (k : Type*) [Ring k] [Linear k C]
+    [MonoidalLinear k C] {R S T M P : C}
     [∀ J : Type w, PreservesColimitsOfShape (Discrete J) (tensorLeft M)]
     (u : T ⟶ R ⊗ S) (μ : M ⊗ S ⟶ P) (e : R ⟶ M) (n : ℕ) :
     X.singularCap k u μ 0 n n (Nat.zero_add n)
@@ -95,9 +96,10 @@ lemma singularCap_constSingularCocycle (k : Type*) [Ring k] [Linear k C] [Monoid
     rw [ChainComplex.capCycles_i, cyclesMap_i, TopCat.iCycles_constSingularCocycle,
       capChain_constCochain]
   apply (cancel_epi (((TopCat.toSSet.obj X).chainComplex T).homologyπ n)).1
-  exact (TopCat.singularCap_homologyπ X k u μ 0 n n (Nat.zero_add n) _).trans
-    ((congrArg (· ≫ ((TopCat.toSSet.obj X).chainComplex P).homologyπ n) hc).trans
-      (homologyπ_naturality f n).symm)
+  rw [TopCat.singularCap_homologyπ, hc]
+  -- The coefficient map of `singularHomologyFunctor` is definitionally `homologyMap f n`,
+  -- since this functor is obtained by postcomposing singular chains with `homologyFunctor`.
+  exact (homologyπ_naturality f n).symm
 
 -- The unit law `x ⌢ 1 = x`, including degree zero, is a specialization of the coefficient formula.
 example (k : Type*) [Ring k] [Linear k C]
