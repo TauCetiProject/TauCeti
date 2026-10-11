@@ -351,9 +351,9 @@ private lemma mono_δ (m : ℕ) :
     GradedObject.Monoidal.mono_tensorHom _ _ m ((Finset.antidiagonal m).finite_toSet.subset
       fun x hx ↦ by simpa using hx)
   have := isIso_homologyKunneth_of_d_eq_zero m hK (L := L.cyclesComplexShortComplex.X₁)
-    fun _ _ ↦ rfl
+    L.cyclesComplexShortComplex_X₁_d
   have := isIso_homologyKunneth_of_d_eq_zero (m + 1) hK (L := L.cyclesComplexShortComplex.X₃)
-    fun _ _ ↦ rfl
+    L.cyclesComplexShortComplex_X₃_d
   rw [← mono_comp_iff_of_isIso (homologyKunneth K L.cyclesComplexShortComplex.X₃ (m + 1)),
     homologyKunneth_comp_δ]
   infer_instance
@@ -366,7 +366,7 @@ private lemma homologyMap_tensorHom_g_eq_zero (m : ℕ) :
   cases m with
   | zero =>
     have := isIso_homologyKunneth_of_d_eq_zero 0 hK (L := L.cyclesComplexShortComplex.X₃)
-      fun _ _ ↦ rfl
+      L.cyclesComplexShortComplex_X₃_d
     refine IsZero.eq_of_tgt (IsZero.of_iso ?_
       (asIso (homologyKunneth K L.cyclesComplexShortComplex.X₃ 0)).symm) _ _
     rw [IsZero.iff_id_eq_zero]
@@ -389,10 +389,10 @@ isomorphism.  For instance, for a flat module `M` placed in degree zero this say
 theorem isIso_homologyKunneth_of_d_eq_zero_of_flat (n : ℕ) : IsIso (homologyKunneth K L n) := by
   -- `L` is the middle term of `S = L.cyclesComplexShortComplex`; we write it as such so that the
   -- three terms of `S` appear uniformly
-  suffices IsIso (homologyKunneth K L.cyclesComplexShortComplex.X₂ n) from this
+  rw [← L.cyclesComplexShortComplex_X₂]
   have hKS := shortExact_tensorLeft_cyclesComplexShortComplex K L
   have := isIso_homologyKunneth_of_d_eq_zero n hK (L := L.cyclesComplexShortComplex.X₁)
-    fun _ _ ↦ rfl
+    L.cyclesComplexShortComplex_X₁_d
   -- `Hₙ(K ⊗ L)` is the cokernel of `δ : Hₙ₊₁(K ⊗ (L / Z(L))) ⟶ Hₙ(K ⊗ Z(L))`, since the map
   -- `Hₙ(K ⊗ L) ⟶ Hₙ(K ⊗ (L / Z(L)))` vanishes
   have (m : ℕ) : Epi (homologyMap (tensorHom (𝟙 K) L.cyclesComplexShortComplex.f) m) :=
@@ -405,7 +405,7 @@ theorem isIso_homologyKunneth_of_d_eq_zero_of_flat (n : ℕ) : IsIso (homologyKu
   have hT : hKS.δ (n + 1) n hn ≫ inv (homologyKunneth K L.cyclesComplexShortComplex.X₁ n) ≫ T =
       0 := by
     have := isIso_homologyKunneth_of_d_eq_zero (n + 1) hK (L := L.cyclesComplexShortComplex.X₃)
-      fun _ _ ↦ rfl
+      L.cyclesComplexShortComplex_X₃_d
     rw [← cancel_epi (homologyKunneth K L.cyclesComplexShortComplex.X₃ (n + 1)),
       reassoc_of% (homologyKunneth_comp_δ K L n)]
     simp [T, tensorHom_δ_comp_tensorHom]

@@ -42,8 +42,9 @@ tensor products of homology, which is how it enters the Künneth formula.
 
 The two complexes are reducible, so that their terms are seen to be the cycles and their cokernels
 when typing the components `K.iCycles i` and `cokernel.π (K.iCycles i)` of the chain maps, here
-and in the files using them.  For the same reason `HomologicalComplex.cyclesComplexShortComplex`
-is exposed.
+and in the files using them.  The body of `HomologicalComplex.cyclesComplexShortComplex` is not
+exposed; it is characterised by the lemmas `cyclesComplexShortComplex_X₁` and its siblings, which
+identify its terms, differentials and components.
 
 ## References
 
@@ -75,7 +76,6 @@ abbrev cyclesCokernelComplex : HomologicalComplex C c where
 
 /-- The short exact sequence of complexes `0 ⟶ Z(K) ⟶ K ⟶ K / Z(K) ⟶ 0` given by the inclusions
 of the cycles and the projections onto their cokernels. -/
-@[expose, simps]
 def cyclesComplexShortComplex : ShortComplex (HomologicalComplex C c) where
   X₁ := K.cyclesComplex
   X₂ := K
@@ -87,6 +87,38 @@ def cyclesComplexShortComplex : ShortComplex (HomologicalComplex C c) where
     { f i := cokernel.π (K.iCycles i)
       comm' i j _ := by simp [← K.toCycles_i_assoc] }
   zero := by ext; simp
+
+/-- The first term of the cycle sequence of `K` is the complex of cycles `Z(K)`. -/
+@[simp] lemma cyclesComplexShortComplex_X₁ : K.cyclesComplexShortComplex.X₁ = K.cyclesComplex :=
+  (rfl)
+
+/-- The middle term of the cycle sequence of `K` is `K` itself. -/
+@[simp] lemma cyclesComplexShortComplex_X₂ : K.cyclesComplexShortComplex.X₂ = K := (rfl)
+
+/-- The last term of the cycle sequence of `K` is the complex `K / Z(K)`. -/
+@[simp] lemma cyclesComplexShortComplex_X₃ :
+    K.cyclesComplexShortComplex.X₃ = K.cyclesCokernelComplex :=
+  (rfl)
+
+/-- The first term `Z(K)` of the cycle sequence has zero differential. -/
+@[simp] lemma cyclesComplexShortComplex_X₁_d (i j : ι) : K.cyclesComplexShortComplex.X₁.d i j = 0 :=
+  (rfl)
+
+/-- The last term `K / Z(K)` of the cycle sequence has zero differential. -/
+@[simp] lemma cyclesComplexShortComplex_X₃_d (i j : ι) : K.cyclesComplexShortComplex.X₃.d i j = 0 :=
+  (rfl)
+
+/-- In each degree, the first map of the cycle sequence is the inclusion of the cycles. -/
+lemma cyclesComplexShortComplex_f_f (i : ι) :
+    K.cyclesComplexShortComplex.f.f i = eqToHom (by simp) ≫ K.iCycles i ≫ eqToHom (by simp) :=
+  (Category.comp_id _).symm.trans (Category.id_comp _).symm
+
+/-- In each degree, the second map of the cycle sequence is the projection onto the cokernel of
+the inclusion of the cycles. -/
+lemma cyclesComplexShortComplex_g_f (i : ι) :
+    K.cyclesComplexShortComplex.g.f i =
+      eqToHom (by simp) ≫ cokernel.π (K.iCycles i) ≫ eqToHom (by simp) :=
+  (Category.comp_id _).symm.trans (Category.id_comp _).symm
 
 /-- The sequence of complexes `0 ⟶ Z(K) ⟶ K ⟶ K / Z(K) ⟶ 0` is short exact. -/
 lemma cyclesComplexShortComplex_shortExact : K.cyclesComplexShortComplex.ShortExact :=
