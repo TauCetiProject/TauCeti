@@ -19,7 +19,7 @@ Let `A` be a finite algebra over a field `k`. Then `A` is Artinian, hence the pr
 finitely many localizations `A_q` at primes, so every `A`-module `M` is the product of the
 `A_q ⊗[A] M`, and its `k`-dimension is the sum of theirs
 (`TauCeti.Module.finrank_eq_finsum_finrank_localization_tensorProduct`). For a quotient `A ⧸ 𝔞`
-the factors are the quotients `A_q ⧸ 𝔞 A_q` (`TauCeti.Ideal.finrank_quotient_eq_finsum`).
+the factors are the quotients `A_q ⧸ 𝔞 A_q` (`Ideal.finrank_quotient_eq_finsum`).
 
 The second half of the file is a local-to-global criterion for the additivity
 `dim A = dim (A ⧸ 𝔞) + dim (A ⧸ 𝔟)`. Over any finite-dimensional `k`-algebra `L`, multiplication
@@ -78,6 +78,8 @@ theorem finrank_eq_finsum_finrank_localization_tensorProduct :
 
 end Module
 
+end TauCeti
+
 namespace Ideal
 
 variable (k : Type*) {A : Type*} [Field k] [CommRing A] [Algebra k A] [Module.Finite k A]
@@ -88,12 +90,15 @@ theorem finrank_quotient_eq_finsum (𝔞 : Ideal A) :
     finrank k (A ⧸ 𝔞) = ∑ᶠ q : PrimeSpectrum A,
       finrank k (Localization.AtPrime q.asIdeal ⧸
         𝔞.map (algebraMap A (Localization.AtPrime q.asIdeal))) := by
-  rw [Module.finrank_eq_finsum_finrank_localization_tensorProduct k (A := A) (A ⧸ 𝔞)]
+  rw [TauCeti.Module.finrank_eq_finsum_finrank_localization_tensorProduct k (A := A)
+    (A ⧸ 𝔞)]
   refine finsum_congr fun q ↦ ?_
   exact ((Algebra.TensorProduct.quotIdealMapEquivTensorQuot (Localization.AtPrime q.asIdeal)
     𝔞).toLinearEquiv.restrictScalars k).finrank_eq.symm
 
 end Ideal
+
+namespace TauCeti
 
 /-- **Multiplication by `a` splits a finite-dimensional algebra.** Over a finite-dimensional
 commutative `k`-algebra `L`, multiplication by `a` identifies `L ⧸ Ann(a)` with the principal ideal
@@ -157,7 +162,7 @@ theorem finrank_quotient_add_finrank_quotient_of_forall {k A : Type*} [Field k] 
       𝔟.map (algebraMap A (L q)) = (Ideal.span {a}).annihilator) :
     finrank k (A ⧸ 𝔞) + finrank k (A ⧸ 𝔟) = finrank k A := by
   have : IsArtinianRing A := IsArtinianRing.of_finite k A
-  rw [Ideal.finrank_quotient_eq_finsum, Ideal.finrank_quotient_eq_finsum,
+  rw [_root_.Ideal.finrank_quotient_eq_finsum, _root_.Ideal.finrank_quotient_eq_finsum,
     ← finsum_add_distrib (Set.toFinite _) (Set.toFinite _),
     Module.finrank_eq_finsum_finrank_localization_tensorProduct k (A := A) A]
   refine finsum_congr fun q ↦ ?_
