@@ -431,6 +431,7 @@ theorem eq_localHomologyTransport (k : ℕ)
         obtain ⟨P, hP⟩ := Patch.exists_domain_mem_nhds (E := E) x.as
         have hx := mem_of_mem_nhds hP
         -- The identity of `x` is the class of the constant path, which lies in `P`.
+        rw [FundamentalGroupoid.id_eq_path_refl]
         refine (hpatch P (Path.refl x.as) fun _ ↦ hx).trans ?_
         exact Iso.inv_hom_id _
       map_comp := ht }
