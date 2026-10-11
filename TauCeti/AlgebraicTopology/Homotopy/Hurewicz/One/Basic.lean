@@ -283,7 +283,7 @@ lemma pathChain_mem_cycles₁ {x : X} (γ : Path x x) : pathChain ℤ γ.toConti
 def loopClass {x : X} (γ : Path x x) : H₁ X :=
   H₁.mk ⟨_, pathChain_mem_cycles₁ γ⟩
 
-lemma loopClass_eq_iff {x : X} (γ γ' : Path x x) :
+lemma loopClass_eq_iff {x y : X} (γ : Path x x) (γ' : Path y y) :
     loopClass γ = loopClass γ' ↔
       pathChain ℤ γ.toContinuousMap - pathChain ℤ γ'.toContinuousMap ∈ boundaries₁ X := by
   rw [loopClass, loopClass, H₁.mk_eq_mk_iff]
