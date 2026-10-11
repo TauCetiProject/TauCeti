@@ -136,6 +136,7 @@ factor is
 
 The root-space dimension count identifies the number of these factors with
 `(dim L - dim H) / 2`. -/
+@[simp]
 theorem finrank_irreducibleQuotient_weylVector
     (b : (IsKilling.rootSystem H).Base) :
     finrank K (irreducibleQuotient b (weylVector (IsKilling.rootSystem H) b)) =
@@ -165,10 +166,10 @@ theorem finrank_irreducibleQuotient_weylVector
         2 ^ (posRoots (IsKilling.rootSystem H) b).ncard := by
     rw [← card_posRootsFinset (IsKilling.rootSystem H) b]
     exact_mod_cast hdim
-  rw [show (finrank K L - finrank K H) / 2 =
-      (posRoots (IsKilling.rootSystem H) b).ncard by
+  have hExponent : (finrank K L - finrank K H) / 2 =
+      (posRoots (IsKilling.rootSystem H) b).ncard := by
     have h := finrank_eq_finrank_cartan_add_two_mul_ncard_posRoots H b
-    omega]
-  exact hcard
+    omega
+  simpa only [hExponent] using hcard
 
 end TauCeti
