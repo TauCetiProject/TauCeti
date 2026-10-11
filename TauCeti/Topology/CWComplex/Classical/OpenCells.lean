@@ -33,7 +33,10 @@ difference of the two skeleta.
   to the `(n-1)`-skeleton gives a closed set.
 * `TauCeti.skeletonLT_succ_diff_skeletonLT`: the difference of two consecutive skeleta is the
   union of the open cells of the top dimension.
-* `TauCeti.isOpen_preimage_val_openCell`: each open `n`-cell is open in that union.
+* `TauCeti.disjoint_closedCell_openCell_of_ne`: a closed cell of dimension at most `n` other than
+  a given `n`-cell misses its open cell.
+* `TauCeti.isOpen_preimage_val_openCell`: each open `n`-cell is open in that union, and more
+  generally in every subset of the `n`-skeleton.
 * `TauCeti.iUnionOpenCellHomeomorph`: that union is homeomorphic to the disjoint union of one
   open unit ball for each cell of the top dimension.
 
@@ -94,6 +97,15 @@ lemma openCellHomeomorph_symm_apply (i : cell C n) (x : (openCell (C := C) n i))
     ((openCellHomeomorph n i).symm x : Fin n → ℝ) = (map n i).symm x := (rfl)
 
 variable [T2Space X]
+
+/-- A closed `m`-cell other than the `n`-cell `j` misses the open cell of `j` when `m ≤ n`: its
+frontier lies in the `(m-1)`-skeleton and its open cell is a different open cell. -/
+lemma disjoint_closedCell_openCell_of_ne {m : ℕ} (hm : m ≤ n) {i : cell C m} {j : cell C n}
+    (hij : (⟨m, i⟩ : Σ n, cell C n) ≠ ⟨n, j⟩) : Disjoint (closedCell m i) (openCell n j) := by
+  rw [← cellFrontier_union_openCell_eq_closedCell, disjoint_union_left]
+  exact ⟨(disjoint_skeletonLT_openCell le_rfl).mono_left
+      ((cellFrontier_subset_skeletonLT m i).trans (skeletonLT_mono (by exact_mod_cast hm))),
+    disjoint_openCell_of_ne hij⟩
 
 /-- Adjoining any family of closed `n`-cells to the `(n-1)`-skeleton gives a closed set.  Taking
 the family of all `n`-cells gives the `n`-skeleton; the point of the general statement is that
@@ -158,18 +170,17 @@ lemma mem_skeletonLT_of_forall_notMem_openCell {x : X}
   obtain ⟨j, hj⟩ := mem_iUnion.1 hmem
   exact h j hj
 
-/-- Each open `n`-cell is open in the union of all open `n`-cells: its complement there is cut out
-by the closed set obtained by adjoining the remaining closed `n`-cells to the
+/-- Each open `n`-cell is open in every subset of the `n`-skeleton `skeletonLT C (n + 1)`, for
+instance in the `n`-skeleton itself or in the union of all open `n`-cells: its trace there is the
+complement of the closed set obtained by adjoining the remaining closed `n`-cells to the
 `(n-1)`-skeleton. -/
-lemma isOpen_preimage_val_openCell (i : cell C n) :
-    IsOpen (Subtype.val ⁻¹' openCell (C := C) n i :
-      Set (⋃ k : cell C n, openCell (C := C) n k : Set X)) := by
-  have hcompl : (Subtype.val ⁻¹' openCell (C := C) n i :
-      Set (⋃ k : cell C n, openCell (C := C) n k : Set X)) =
+lemma isOpen_preimage_val_openCell {S : Set X}
+    (hS : S ⊆ (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X)) (i : cell C n) :
+    IsOpen (Subtype.val ⁻¹' openCell (C := C) n i : Set S) := by
+  have hcompl : (Subtype.val ⁻¹' openCell (C := C) n i : Set S) =
       (Subtype.val ⁻¹' ((skeletonLT C (n : ℕ∞) : Set X) ∪
         ⋃ j ∈ ({i}ᶜ : Set (cell C n)), closedCell n j))ᶜ := by
     ext x
-    obtain ⟨k, hk⟩ := mem_iUnion.1 x.2
     simp only [mem_preimage, mem_compl_iff, mem_union, not_or, not_exists, mem_iUnion]
     constructor
     · intro hx
@@ -181,10 +192,14 @@ lemma isOpen_preimage_val_openCell (i : cell C n) :
           (cellFrontier_subset_skeletonLT n j hj)
       · exact (disjoint_openCell_of_ne fun hh ↦
           hji (eq_of_heq (Sigma.mk.inj_iff.1 hh).2)).notMem_of_mem_left hj hx
-    · rintro ⟨-, h⟩
+    · rintro ⟨hxn, h⟩
+      -- A point of the `n`-skeleton outside the `(n-1)`-skeleton lies in some open `n`-cell, and
+      -- the open cells other than `i` lie in the excluded closed cells.
+      by_contra hxi
+      refine hxn (mem_skeletonLT_of_forall_notMem_openCell n (hS x.2) fun k hk ↦ ?_)
       by_cases hki : k = i
-      · exact hki ▸ hk
-      · exact (h k (by simpa using hki) (openCell_subset_closedCell n k hk)).elim
+      · exact hxi (hki ▸ hk)
+      · exact h k (by simpa using hki) (openCell_subset_closedCell n k hk)
   rw [hcompl]
   exact ((isClosed_skeletonLT_union_iUnion_closedCell n _).preimage
     continuous_subtype_val).isOpen_compl
@@ -236,7 +251,8 @@ noncomputable def iUnionOpenCellHomeomorph :
           Subtype.val ⁻¹' openCell (C := C) n i := by
         ext x
         exact ⟨fun ⟨y, hy⟩ ↦ hy ▸ ⟨y, y.2, rfl⟩, fun ⟨y, hy, hxy⟩ ↦ ⟨⟨y, hy⟩, Subtype.ext hxy⟩⟩
-      exact (IsOpenEmbedding.mk hemb (hrange ▸ isOpen_preimage_val_openCell n i)).isOpenMap)
+      exact (IsOpenEmbedding.mk hemb (hrange ▸ isOpen_preimage_val_openCell n
+        (iUnion_subset fun k ↦ openCell_subset_skeletonLT n k) i)).isOpenMap)
 
 /-- The homeomorphism onto the union of the open `n`-cells is the assembled characteristic map. -/
 @[simp]
