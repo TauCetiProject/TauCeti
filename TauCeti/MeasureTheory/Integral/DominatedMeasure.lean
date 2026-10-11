@@ -40,7 +40,7 @@ theorem exists_lintegral_le_mul_measure_add_of_ne_top
     exact (lintegral_mono' hν le_rfl).trans (by simp [hzero])
   have happrox : (∫⁻ x, f x ∂μ) - η < ∫⁻ x, f x ∂μ :=
     ENNReal.sub_lt_self hf hzero hη.ne'
-  rw [lintegral_eq_nnreal] at happrox
+  conv_rhs at happrox => rw [lintegral_eq_nnreal]
   obtain ⟨φ, hφint⟩ := lt_iSup_iff.mp happrox
   obtain ⟨hle, hlt⟩ := lt_iSup_iff.mp hφint
   have hφle : ∀ x, (φ x : ℝ≥0∞) ≤ f x := hle
@@ -50,12 +50,9 @@ theorem exists_lintegral_le_mul_measure_add_of_ne_top
     rw [lintegral_sub φ.measurable.coe_nnreal_ennreal hφfinite (ae_of_all _ hφle)]
     apply ENNReal.sub_lt_of_lt_add (lintegral_mono hφle)
     apply ENNReal.lt_add_of_sub_lt_left (.inl hf)
-    rw [← lintegral_eq_nnreal] at hlt
     simpa only [← SimpleFunc.lintegral_eq_lintegral, SimpleFunc.coe_map,
       Function.comp_apply] using hlt
-  let C : ℝ≥0 := φ.range.sup id
-  have hC (x : X) : (φ x : ℝ≥0∞) ≤ C := by
-    exact_mod_cast (Finset.le_sup (f := id) (φ.mem_range_self x))
+  obtain ⟨C, hC⟩ := φ.exists_forall_le
   refine ⟨C, fun ν hν ↦ ?_⟩
   calc
     ∫⁻ x, f x ∂ν = ∫⁻ x, (f x - φ x) + φ x ∂ν := by
@@ -66,7 +63,7 @@ theorem exists_lintegral_le_mul_measure_add_of_ne_top
       lintegral_add_right _ φ.measurable.coe_nnreal_ennreal
     _ ≤ η + C * ν univ := add_le_add
       ((lintegral_mono' hν le_rfl).trans hres.le)
-      ((lintegral_mono hC).trans_eq (lintegral_const C))
+      ((lintegral_mono fun x ↦ ENNReal.coe_le_coe.mpr (hC x)).trans_eq (lintegral_const C))
     _ = C * ν univ + η := add_comm _ _
 
 end TauCeti
