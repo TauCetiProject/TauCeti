@@ -129,7 +129,7 @@ theorem exists_harmonicOnNhd_ae_eq_of_forall_energyFormH1_eq_zero {w : W1p mu Om
   rw [(W1p.hasWeakFDerivOn w).integral_laplacian_smul_eq_neg_integral_inner φ, neg_eq_zero,
     ← hw φ, energyFormH1_const_eq_setIntegral]
   simp_rw [real_inner_comm (W1p.gradient w _)]
-  rw [← setIntegral_inner_gradient_eq_integral_inner_gradient φ _ φ.tsupport_subset]
+  rw [← φ.setIntegral_inner_gradient_eq_integral_inner_gradient _ φ.tsupport_subset]
   refine integral_congr_ae ?_
   filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) 2 φ] with x hx
   rw [W1p.gradient_ofTestFunctionₗ, hx, matrixBilinearForm_one_apply]
@@ -223,7 +223,7 @@ theorem inner_toLp_gradient_ofTestFunctionₗ {B : Opens (EuclideanSpace ℝ ι)
     simpa [hpt] using (integrable_lineDeriv_smul_of_locallyIntegrableOn
       (locallyIntegrableOn_const (1 : ℝ) (μ := mu) (s := B)) φ c).integrableOn
   have hc : ∫ x in B, ⟪c, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu = 0 := by
-    rw [setIntegral_inner_gradient_eq_integral_inner_gradient φ _ φ.tsupport_subset]
+    rw [φ.setIntegral_inner_gradient_eq_integral_inner_gradient _ φ.tsupport_subset]
     simpa only [hpt] using TestFunction.integral_lineDeriv_eq_zero (μ := mu) φ c
   have hGint : IntegrableOn (fun x => ⟪G x - c, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ) B mu := by
     refine (L2.integrable_inner hGc.toLp
@@ -275,8 +275,8 @@ theorem forall_energyFormH1_restrictL_eq_inner {B : Opens (EuclideanSpace ℝ ι
   have hΩ : energyFormH1 (fun _ => 1) 0 0 u (W1p.ofTestFunctionₗ mu Omega 2 φ') =
       ∫ x in Omega, ⟪G x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu := hu φ'
   rw [energyFormH1_one_zero_zero_eq_inner, L2.inner_def] at hΩ ⊢
-  rw [setIntegral_inner_gradient_eq_integral_inner_gradient φ G hφB,
-    ← setIntegral_inner_gradient_eq_integral_inner_gradient φ G hφΩ, ← hΩ]
+  rw [φ.setIntegral_inner_gradient_eq_integral_inner_gradient G hφB,
+    ← φ.setIntegral_inner_gradient_eq_integral_inner_gradient G hφΩ, ← hΩ]
   calc ∫ x in B, ⟪W1p.gradient (W1p.restrictL hB u) x,
         W1p.gradient (W1p.ofTestFunctionₗ mu B 2 φ) x⟫_ℝ ∂mu
       = ∫ x in B, ⟪W1p.gradient u x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu := by
@@ -285,8 +285,8 @@ theorem forall_energyFormH1_restrictL_eq_inner {B : Opens (EuclideanSpace ℝ ι
           gradientTestFunctionLp_apply_ae (mu := mu) (Omega := B) 2 φ] with x hx hφx
         rw [W1p.gradient_ofTestFunctionₗ, hx, hφx]
     _ = ∫ x in Omega, ⟪W1p.gradient u x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu := by
-        rw [setIntegral_inner_gradient_eq_integral_inner_gradient φ _ hφB,
-          setIntegral_inner_gradient_eq_integral_inner_gradient φ _ hφΩ]
+        rw [φ.setIntegral_inner_gradient_eq_integral_inner_gradient _ hφB,
+          φ.setIntegral_inner_gradient_eq_integral_inner_gradient _ hφΩ]
     _ = ∫ x in Omega, ⟪W1p.gradient u x,
           W1p.gradient (W1p.ofTestFunctionₗ mu Omega 2 φ') x⟫_ℝ ∂mu := by
         refine integral_congr_ae ?_

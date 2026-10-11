@@ -134,6 +134,21 @@ theorem setLAverage_enorm_sub_setAverage_le (hf : IntegrableOn f s μ) (c : F) :
 
 end Oscillation
 
+section SquareIntegrable
+
+variable {X F : Type*} [MeasurableSpace X] {μ : Measure X} [NormedAddCommGroup F] {g : X → F}
+  {s : Set X}
+
+/-- **Jensen's inequality for the square of a mean.** On a set `s` of finite nonzero measure, the
+square of the mean of `‖g‖` is at most the mean of `‖g‖²`. -/
+theorem sq_setAverage_norm_le_setAverage_norm_sq (hs0 : μ s ≠ 0) (hs : μ s ≠ ⊤)
+    (hg : IntegrableOn g s μ) (hg2 : IntegrableOn (fun x ↦ ‖g x‖ ^ 2) s μ) :
+    (⨍ x in s, ‖g x‖ ∂μ) ^ 2 ≤ ⨍ x in s, ‖g x‖ ^ 2 ∂μ :=
+  (Even.convexOn_pow even_two).map_set_average_le (continuous_pow 2).continuousOn isClosed_univ
+    hs0 hs (ae_of_all _ fun _ ↦ Set.mem_univ _) hg.norm hg2
+
+end SquareIntegrable
+
 section Subset
 
 variable {X F : Type*} [MeasurableSpace X] {μ : Measure X} [NormedAddCommGroup F]
@@ -196,8 +211,7 @@ theorem setIntegral_norm_sub_setAverage_sq_le (hs : μ s ≠ ⊤) (hf : Integrab
   have ha : a ≤ ⨍ x in s, ‖f x - c‖ ∂μ := by
     simpa [div_self hm.ne'] using norm_setAverage_sub_le_of_subset subset_rfl h0 hs hf c
   have hJ : (⨍ x in s, ‖f x - c‖ ∂μ) ^ 2 ≤ ⨍ x in s, ‖f x - c‖ ^ 2 ∂μ :=
-    (Even.convexOn_pow even_two).map_set_average_le (continuous_pow 2).continuousOn isClosed_univ
-      h0 hs (ae_of_all _ fun _ ↦ Set.mem_univ _) (hf.sub (integrableOn_const hs)).norm hfc
+    sq_setAverage_norm_le_setAverage_norm_sq h0 hs (hf.sub (integrableOn_const hs)) hfc
   have haJ : μ.real s * a ^ 2 ≤ J := by
     calc μ.real s * a ^ 2 ≤ μ.real s * ⨍ x in s, ‖f x - c‖ ^ 2 ∂μ := by
           gcongr
@@ -221,21 +235,6 @@ theorem setIntegral_norm_sub_setAverage_sq_le (hs : μ s ≠ ⊤) (hf : Integrab
     _ ≤ 4 * J := by linarith
 
 end Subset
-
-section SquareIntegrable
-
-variable {X F : Type*} [MeasurableSpace X] {μ : Measure X} [NormedAddCommGroup F] {g : X → F}
-  {s : Set X}
-
-/-- **Jensen's inequality for the square of a mean.** On a set `s` of finite nonzero measure, the
-square of the mean of `‖g‖` is at most the mean of `‖g‖²`. -/
-theorem sq_setAverage_norm_le_setAverage_norm_sq (hs0 : μ s ≠ 0) (hs : μ s ≠ ⊤)
-    (hg : IntegrableOn g s μ) (hg2 : IntegrableOn (fun x ↦ ‖g x‖ ^ 2) s μ) :
-    (⨍ x in s, ‖g x‖ ∂μ) ^ 2 ≤ ⨍ x in s, ‖g x‖ ^ 2 ∂μ :=
-  (Even.convexOn_pow even_two).map_set_average_le (continuous_pow 2).continuousOn isClosed_univ
-    hs0 hs (ae_of_all _ fun _ ↦ Set.mem_univ _) hg.norm hg2
-
-end SquareIntegrable
 
 section InnerProduct
 

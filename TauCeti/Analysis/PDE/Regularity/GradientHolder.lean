@@ -10,6 +10,7 @@ public import TauCeti.MeasureTheory.Function.Campanato
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Decay
 import TauCeti.Analysis.SpecificLimits.DecayIteration
 import TauCeti.Analysis.Sobolev.W1p.Restriction
+import TauCeti.MeasureTheory.Function.Lp.BallAverage
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
@@ -366,38 +367,22 @@ private theorem norm_setAverage_closedBall_gradient_le
         (R ^ (-((n : ℝ) + 1) / 2) * ‖W1p.gradient u‖) := by
   have hω : 0 < volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :=
     measureReal_ball_pos _ _ one_pos
-  have hint := (Lp.memLp (W1p.gradient u)).integrableOn_of_subset one_le_two hball
-    measure_ball_lt_top.ne
-  have hint2 := (Lp.memLp (W1p.gradient u)).integrableOn_norm_sub_sq_of_subset hball
-    measure_ball_lt_top.ne 0
-  simp only [sub_zero] at hint2
-  have h1 : ‖⨍ y in closedBall z R, W1p.gradient u y‖ ≤
-      ⨍ y in closedBall z R, ‖W1p.gradient u y‖ := by
-    rw [setAverage_eq, setAverage_eq, norm_smul, smul_eq_mul,
-      Real.norm_of_nonneg (by positivity)]
-    exact mul_le_mul_of_nonneg_left (norm_integral_le_integral_norm _) (by positivity)
-  refine h1.trans ?_
-  rw [← pow_le_pow_iff_left₀ (average_nonneg fun _ => norm_nonneg _) (by positivity)
-    two_ne_zero]
-  -- Jensen's inequality, after replacing `closedBall z R` by `ball z R`.
   rw [Measure.restrict_congr_set (volume.addHaar_closedBall_ae_eq_ball z hR)]
-  refine (sq_setAverage_norm_le_setAverage_norm_sq (measure_ball_pos volume z hR).ne'
-    measure_ball_lt_top.ne hint hint2).trans ?_
-  rw [setAverage_eq, smul_eq_mul, ← div_eq_inv_mul]
-  have hL2 := Lp.setIntegral_norm_sq_le_norm_sq (W1p.gradient u) hball
-  have hR2 : (R ^ (-((n : ℝ) + 1) / 2)) ^ 2 = (R ^ (n + 1))⁻¹ := by
-    rw [← Real.rpow_natCast, ← Real.rpow_mul hR.le, ← Real.rpow_natCast R (n + 1),
-      ← Real.rpow_neg hR.le]
-    congr 1
-    push_cast
-    ring
-  rw [measureReal_ball_eq z hR, mul_pow, mul_pow, inv_pow, Real.sq_sqrt hω.le, hR2]
-  calc (∫ y in ball z R, ‖W1p.gradient u y‖ ^ 2) /
-        (R ^ (n + 1) * volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1))
-      ≤ ‖W1p.gradient u‖ ^ 2 /
-        (R ^ (n + 1) * volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)) := by
-        gcongr
-    _ = _ := by field_simp
+  -- Hölder's bound `‖⨍_B f‖ ≤ |B|^{-1/2} ‖f‖_{L²(B)}` on an average, with
+  -- `‖f‖_{L²(B)} ≤ ‖f‖_{L²(Ω)}`.
+  have h := (enorm_setAverage_le (mu := volume) (p := 2) one_le_two ENNReal.ofNat_ne_top
+    (Lp.stronglyMeasurable (W1p.gradient u)).aestronglyMeasurable
+    (measure_ball_pos volume z hR).ne' measure_ball_lt_top.ne).trans
+    (mul_le_mul' le_rfl (eLpNorm_mono_measure _ (Measure.restrict_mono hball le_rfl)))
+  replace h := ENNReal.toReal_mono (ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_ne_zero
+    (measure_ball_pos volume z hR).ne' measure_ball_lt_top.ne) (Lp.eLpNorm_ne_top _)) h
+  rw [toReal_enorm, ENNReal.toReal_mul, ← Lp.norm_def, ← ENNReal.toReal_rpow, ← measureReal_def,
+    measureReal_ball_eq z hR] at h
+  refine h.trans_eq ?_
+  rw [ENNReal.toReal_ofNat, Real.mul_rpow (by positivity) hω.le, ← Real.rpow_natCast,
+    ← Real.rpow_mul hR.le, Real.sqrt_eq_rpow, ← Real.rpow_neg hω.le]
+  push_cast
+  ring_nf
 
 /-- The precise representative of `∇u` at `z` is controlled by the mean oscillation of `∇u` near
 `z` and by `‖∇u‖_{L²(Ω)}`. If `ball z R ⊆ Ω` and the mean oscillation of `∇u` on `closedBall z t`
