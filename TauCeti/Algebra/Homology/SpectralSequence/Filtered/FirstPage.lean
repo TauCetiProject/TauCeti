@@ -6,37 +6,35 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.SpectralObject
-public import Mathlib.Algebra.Homology.HomologySequenceLemmas
-public import Mathlib.CategoryTheory.Abelian.DiagramLemmas.KernelCokernelComp
+public import TauCeti.Algebra.Homology.HomotopyCategory.ShortExact
 
 /-!
 # The first differential of the spectral sequence of a filtered complex
 
-For monomorphisms `a : X ⟶ Y` and `b : Y ⟶ Z` of cochain complexes, the sequence
-`cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b` is short exact
-(`CochainComplex.cokernelCompShortComplex_shortExact`). Under the canonical maps from the mapping
-cones of `a` and `b` to their cokernels (`mappingCone.descShortComplex`, quasi-isomorphisms since
-`a` and `b` are monomorphisms), the
-connecting map of the distinguished triangle of mapping cones attached to `a` and `b` is the
-connecting map of this short exact sequence
-(`CochainComplex.homologySequenceδ_mappingConeCompTriangleh`), so the connecting maps of the
-spectral object of a functor with monomorphic transition maps are those of the short exact
-sequences of graded pieces (`CochainComplex.spectralObject_δ_comp_hIsoCokernel`).
+Let `F : EInt ⥤ CochainComplex C ℤ` be a functor, for instance the functor of a filtration
+(`CochainComplex.filtrationFunctor`). Its spectral sequence `CochainComplex.spectralSequence F`
+uses Mathlib's recipe `coreE₂Cohomological`, in which the first page is numbered `2`: the object at
+`(p, q)` is the cohomology `H^{p+q}` of the graded piece `F_{q+1}/F_q` (when `F_q ⟶ F_{q+1}` is a
+monomorphism, `CochainComplex.spectralSequenceFirstPageXIsoCokernel`), so `q` is the filtration
+index and `p + q` the total degree, and the differential goes from `(p, q)` to `(p + 2, q - 1)`.
 
-For the spectral sequence of a functor `F : EInt ⥤ CochainComplex C ℤ` whose transition maps
-are monomorphisms (for instance the functor of a filtration), the differential of the first page
-from `(p, q)` to `(p + 2, q - 1)` is therefore the connecting map
+We show that this differential is the connecting map
 `H^{p+q}(F_{q+1}/F_q) ⟶ H^{p+q+1}(F_q/F_{q-1})` of the short exact sequence
-`F_q/F_{q-1} ⟶ F_{q+1}/F_{q-1} ⟶ F_{q+1}/F_q` (`CochainComplex.spectralSequence_page_two_d_eq`).
+`F_q/F_{q-1} ⟶ F_{q+1}/F_{q-1} ⟶ F_{q+1}/F_q`
+(`CochainComplex.spectralSequence_first_page_d_eq`). In McCleary's conventions, for the decreasing
+filtration `F^s = F_{-s}`, the object at `(p, q)` is `E_1^{s,t}` with `s = -q` and `t = p + 2q`,
+and this differential is `d_1 : E_1^{s,t} ⟶ E_1^{s+1,t}`.
+
+The connecting maps of the spectral object of a functor with monomorphic transition maps are the
+connecting maps of the short exact sequences of graded pieces
+(`CochainComplex.spectralObject_δ_comp_spectralObjectHIsoCokernel_hom`), by
+`CochainComplex.mappingCone.shiftMap_mappingConeCompTriangle_mor₃`.
 
 ## Main results
 
-* `CochainComplex.cokernelCompShortComplex_shortExact`: the short exact sequence of cokernels.
-* `CochainComplex.homologySequenceδ_mappingConeCompTriangleh`: the connecting map of the triangle
-  of mapping cones is the connecting map of the short exact sequence of cokernels.
-* `CochainComplex.spectralObject_δ_comp_hIsoCokernel`: the same for the spectral object of a
-  functor.
-* `CochainComplex.spectralSequence_page_two_d_eq`: the first differential of the spectral
+* `CochainComplex.spectralObject_δ_comp_spectralObjectHIsoCokernel_hom`: the connecting maps of the
+  spectral object, for monomorphic transition maps.
+* `CochainComplex.spectralSequence_first_page_d_eq`: the first differential of the spectral
   sequence of a filtered complex.
 
 ## References
@@ -46,125 +44,11 @@ from `(p, q)` to `(p + 2, q - 1)` is therefore the connecting map
 
 public section
 
-open CategoryTheory Limits ComposableArrows HomotopyCategory
+open CategoryTheory Limits ComposableArrows
 
 namespace CochainComplex
 
 variable {C : Type*} [Category* C] [Abelian C]
-
-section Cokernels
-
-variable {X Y Z : CochainComplex C ℤ} (a : X ⟶ Y) (b : Y ⟶ Z)
-
-/-- The short complex `cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b` of two composable morphisms
-of cochain complexes. -/
-noncomputable abbrev cokernelCompShortComplex : ShortComplex (CochainComplex C ℤ) :=
-  ShortComplex.mk (cokernel.map a (a ≫ b) (𝟙 _) b (by simp))
-    (cokernel.map (a ≫ b) b a (𝟙 _) (by simp))
-    ((cancel_epi (cokernel.π a)).1 (by simp))
-
-/-- The sequence `cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b` is short exact when `b` is a
-monomorphism. -/
-lemma cokernelCompShortComplex_shortExact [Mono b] :
-    (cokernelCompShortComplex a b).ShortExact := by
-  have hE := kernelCokernelCompSequence_exact a b
-  have h₂ : ((kernelCokernelCompSequence a b).sc hE.toIsComplex 2).Exact := hE.exact 2
-  have h₃ : ((kernelCokernelCompSequence a b).sc hE.toIsComplex 3).Exact := hE.exact 3
-  refine ShortComplex.ShortExact.mk' h₃ ?_ ?_
-  · refine h₂.mono_g ?_
-    dsimp
-    rw [kernelCokernelCompSequence.δ_fac, kernel.ι_of_mono, zero_comp, neg_zero]
-  · exact epi_of_epi_fac (cokernel.π_desc _ _ _)
-
-/-- The morphism from the short complex `Y ⟶ Z ⟶ cokernel b` to the short complex
-`cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b` (both short exact when `b` is a monomorphism). -/
-noncomputable def cokernelShortComplexToCompShortComplex :
-    ShortComplex.cokernelSequence b ⟶ cokernelCompShortComplex a b where
-  τ₁ := cokernel.π a
-  τ₂ := cokernel.π (a ≫ b)
-  τ₃ := 𝟙 _
-  comm₁₂ := cokernel.π_desc _ _ _
-  comm₂₃ := (cokernel.π_desc _ _ _).trans ((Category.id_comp _).trans (Category.comp_id _).symm)
-
-end Cokernels
-
-section Connecting
-
-variable {X Y Z : CochainComplex C ℤ} (a : X ⟶ Y) (b : Y ⟶ Z) [Mono a] [Mono b]
-
-omit [Mono a] in
-/-- The connecting map in cohomology of the triangle of mapping cones
-`cone a ⟶ cone (a ≫ b) ⟶ cone b ⟶ (cone a)⟦1⟧`, read through the canonical maps
-`cone a ⟶ cokernel a` and `cone b ⟶ cokernel b` (`mappingCone.descShortComplex`), is the
-connecting map of the short exact sequence `cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b`; version
-in the category of cochain complexes. The map `cone b ⟶ cokernel b` is a quasi-isomorphism since
-`b` is a monomorphism, and so is `cone a ⟶ cokernel a` when `a` is one. -/
-lemma shiftMap_mappingConeCompTriangle_mor₃ (n₀ n₁ : ℤ) (h : 1 + n₀ = n₁) :
-    (HomologicalComplex.homologyFunctor C (ComplexShape.up ℤ) 0).shiftMap
-        (mappingConeCompTriangle a b).mor₃ n₀ n₁ h ≫
-      HomologicalComplex.homologyMap
-        (mappingCone.descShortComplex (ShortComplex.cokernelSequence a)) n₁ =
-    HomologicalComplex.homologyMap
-        (mappingCone.descShortComplex (ShortComplex.cokernelSequence b)) n₀ ≫
-      (cokernelCompShortComplex_shortExact a b).δ n₀ n₁ (by simp [← h, add_comm]) := by
-  -- The connecting map of the triangle of `b` alone, through `homologySequenceδ_triangleh`.
-  have hb := mappingCone.homologySequenceδ_triangleh (TauCeti.cokernelSequence_shortExact b) n₀ n₁
-    (by lia)
-  rw [homologySequenceδ_quotient_mapTriangle_obj] at hb
-  have hb' : (HomologicalComplex.homologyFunctor C (ComplexShape.up ℤ) 0).shiftMap
-      (mappingCone.triangle b).mor₃ n₀ n₁ h =
-      HomologicalComplex.homologyMap
-        (mappingCone.descShortComplex (ShortComplex.cokernelSequence b)) n₀ ≫
-        (TauCeti.cokernelSequence_shortExact b).δ n₀ n₁ (by simp [← h, add_comm]) := by
-    have h₁ := (Iso.cancel_iso_hom_left
-      ((homologyFunctorFactors C (ComplexShape.up ℤ) n₀).app (mappingCone b)) _ _).1 hb
-    exact (Iso.cancel_iso_inv_right _ _
-      ((homologyFunctorFactors C (ComplexShape.up ℤ) n₁).app Y)).1
-        (h₁.trans (Category.assoc _ _ _).symm)
-  have hnat := HomologicalComplex.HomologySequence.δ_naturality
-    (cokernelShortComplexToCompShortComplex a b) (TauCeti.cokernelSequence_shortExact b)
-    (cokernelCompShortComplex_shortExact a b) n₀ n₁ (by simp [← h, add_comm])
-  dsimp [cokernelShortComplexToCompShortComplex] at hnat
-  erw [HomologicalComplex.homologyMap_id, Category.id_comp] at hnat
-  dsimp only [mappingConeCompTriangle, Pretriangulated.Triangle.mk_mor₃]
-  erw [Functor.shiftMap_comp]
-  -- The shifted cohomology functor `(homologyFunctor 0).shift n₁` is, by definition of its shift
-  -- sequence, `homologyFunctor n₁`; we restate the goal with `homologyMap` to rewrite with `hb'`.
-  change ((HomologicalComplex.homologyFunctor C (ComplexShape.up ℤ) 0).shiftMap
-      (mappingCone.triangle b).mor₃ n₀ n₁ h ≫
-        HomologicalComplex.homologyMap (mappingCone.inr a) n₁) ≫
-      HomologicalComplex.homologyMap
-        (mappingCone.descShortComplex (ShortComplex.cokernelSequence a)) n₁ = _
-  rw [hb']
-  erw [Category.assoc, Category.assoc]
-  erw [← HomologicalComplex.homologyMap_comp]
-  erw [mappingCone.inr_descShortComplex (ShortComplex.cokernelSequence a)]
-  rw [← hnat]
-  rfl
-
-omit [Mono a] in
-/-- The connecting map in cohomology of the distinguished triangle of mapping cones
-`cone a ⟶ cone (a ≫ b) ⟶ cone b ⟶ (cone a)⟦1⟧` in the homotopy category, read through the
-canonical maps `cone a ⟶ cokernel a` and `cone b ⟶ cokernel b` (quasi-isomorphisms for
-monomorphisms), is the connecting map of the short exact sequence
-`cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b`. -/
-lemma homologySequenceδ_mappingConeCompTriangleh (n₀ n₁ : ℤ) (h : n₀ + 1 = n₁) :
-    (homologyFunctor C (ComplexShape.up ℤ) 0).homologySequenceδ
-        ((quotient C (ComplexShape.up ℤ)).mapTriangle.obj (mappingConeCompTriangle a b))
-        n₀ n₁ h ≫
-      (homologyFunctorFactors C (ComplexShape.up ℤ) n₁).hom.app (mappingCone a) ≫
-        HomologicalComplex.homologyMap
-        (mappingCone.descShortComplex (ShortComplex.cokernelSequence a)) n₁ =
-    (homologyFunctorFactors C (ComplexShape.up ℤ) n₀).hom.app (mappingCone b) ≫
-      HomologicalComplex.homologyMap
-        (mappingCone.descShortComplex (ShortComplex.cokernelSequence b)) n₀ ≫
-        (cokernelCompShortComplex_shortExact a b).δ n₀ n₁ (by simp [← h]) := by
-  rw [homologySequenceδ_quotient_mapTriangle_obj]
-  erw [Category.assoc, Category.assoc, Iso.inv_hom_id_app_assoc,
-    shiftMap_mappingConeCompTriangle_mor₃ a b n₀ n₁ (by lia)]
-  rfl
-
-end Connecting
 
 section SpectralObject
 
@@ -173,46 +57,61 @@ variable {ι : Type*} [Category* ι] (F : ι ⥤ CochainComplex C ℤ)
 /-- The connecting maps of the spectral object of `F`, for monomorphisms `F.map f` and `F.map g`,
 are the connecting maps of the short exact sequences of cokernels
 `cokernel (F.map f) ⟶ cokernel (F.map f ≫ F.map g) ⟶ cokernel (F.map g)`. -/
-lemma spectralObject_δ_comp_hIsoCokernel {i j k : ι} (f : i ⟶ j) (g : j ⟶ k)
+lemma spectralObject_δ_comp_spectralObjectHIsoCokernel_hom {i j k : ι} (f : i ⟶ j) (g : j ⟶ k)
     [Mono (F.map f)] [Mono (F.map g)] (n₀ n₁ : ℤ) (h : n₀ + 1 = n₁) :
     (spectralObject F).δ f g n₀ n₁ h ≫ (spectralObjectHIsoCokernel F f n₁).hom =
       (spectralObjectHIsoCokernel F g n₀).hom ≫
-        (cokernelCompShortComplex_shortExact (F.map f) (F.map g)).δ n₀ n₁ (by simp [← h]) := by
-  rw [spectralObject_δ, spectralObjectHIsoCokernel_hom, spectralObjectHIsoCokernel_hom,
-    spectralObjectHIso_hom, spectralObjectHIso_hom]
-  exact (homologySequenceδ_mappingConeCompTriangleh (F.map f) (F.map g) n₀ n₁ h).trans
-    (Category.assoc _ _ _).symm
+        (TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact (F.map f) (F.map g)).δ
+          n₀ n₁ (by simp [← h]) := by
+  rw [spectralObject_δ, spectralObjectHIsoCokernel_hom, spectralObjectHIsoCokernel_hom]
+  let A := (spectralObjectHIso F g n₀).hom
+  let S := (HomologicalComplex.homologyFunctor C (ComplexShape.up ℤ) 0).shiftMap
+    (mappingConeCompTriangle (F.map f) (F.map g)).mor₃ n₀ n₁ (by lia)
+  exact (Category.assoc _ _ _).trans <|
+    (congrArg (fun t => A ≫ t) ((Category.assoc _ _ _).trans
+      (congrArg (fun t => S ≫ t) (Iso.inv_hom_id_assoc _ _)))).trans <|
+    (congrArg (fun t => A ≫ t)
+      (mappingCone.shiftMap_mappingConeCompTriangle_mor₃ (F.map f) (F.map g) n₀ n₁
+        (by lia))).trans (Category.assoc _ _ _).symm
 
 end SpectralObject
 
 section SpectralSequence
 
-variable (F : EInt ⥤ CochainComplex C ℤ) [∀ ⦃a b : EInt⦄ (u : a ⟶ b), Mono (F.map u)]
+variable (F : EInt ⥤ CochainComplex C ℤ)
 
-/-- **The first differential of the spectral sequence of a filtered complex.** When the
-transition maps of `F : EInt ⥤ CochainComplex C ℤ` are monomorphisms, the differential of the
-first page from `(p, q)` to `(p + 2, q - 1)` is, under the identifications of the first page with
-the cohomology of the graded pieces, the connecting map
+/-- **The first differential of the spectral sequence of a filtered complex.** When
+`F_{q-1} ⟶ F_q` and `F_q ⟶ F_{q+1}` are monomorphisms, the differential of the first page (page
+`2` in Mathlib's numbering) from `(p, q)` to `(p + 2, q - 1)` is, under the identifications of the
+first page with the cohomology of the graded pieces, the connecting map
 `H^{p+q}(F_{q+1}/F_q) ⟶ H^{p+q+1}(F_q/F_{q-1})` of the short exact sequence
 `F_q/F_{q-1} ⟶ F_{q+1}/F_{q-1} ⟶ F_{q+1}/F_q`. -/
-theorem spectralSequence_page_two_d_eq (p q : ℤ) :
+theorem spectralSequence_first_page_d_eq (p q : ℤ)
+    [Mono (F.map (homOfLE (coe_le_coe_of_eq_add_one (show q - 1 = q - 1 from rfl)
+      (show q = q - 1 + 1 by lia))))]
+    [Mono (F.map (homOfLE (coe_le_coe_of_eq_add_one (show q = q from rfl) rfl)))] :
     ((spectralSequence F).page 2).d (p, q) (p + 2, q - 1) =
       (spectralSequenceFirstPageXIsoCokernel F (p, q) q (q + 1) rfl rfl (p + q) rfl).hom ≫
-        (cokernelCompShortComplex_shortExact
-          (F.map (homOfLE (show ((q - 1 : ℤ) : EInt) ≤ q by simp)))
-          (F.map (homOfLE (show (q : EInt) ≤ (q + 1 : ℤ) by simp)))).δ (p + q) (p + q + 1)
-            rfl ≫
+        (TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact
+          (F.map (homOfLE (coe_le_coe_of_eq_add_one (show q - 1 = q - 1 from rfl)
+            (show q = q - 1 + 1 by lia))))
+          (F.map (homOfLE (coe_le_coe_of_eq_add_one (show q = q from rfl) rfl)))).δ
+            (p + q) (p + q + 1) rfl ≫
         (spectralSequenceFirstPageXIsoCokernel F (p + 2, q - 1) (q - 1) q rfl (by lia)
           (p + q + 1) (by lia)).inv := by
-  have key := spectralObject_δ_comp_hIsoCokernel F
-    (homOfLE (show ((q - 1 : ℤ) : EInt) ≤ q by simp))
-    (homOfLE (show (q : EInt) ≤ (q + 1 : ℤ) by simp)) (p + q) (p + q + 1) rfl
-  rw [← Iso.eq_comp_inv] at key
+  have key := spectralObject_δ_comp_spectralObjectHIsoCokernel_hom F
+    (homOfLE (coe_le_coe_of_eq_add_one (show q - 1 = q - 1 from rfl)
+      (show q = q - 1 + 1 by lia)))
+    (homOfLE (coe_le_coe_of_eq_add_one (show q = q from rfl) rfl)) (p + q) (p + q + 1) rfl
+  replace key := (Iso.eq_comp_inv _).2 key
   rw [Abelian.SpectralObject.spectralSequence_first_page_d_eq (spectralObject F)
     Abelian.SpectralObject.coreE₂Cohomological (p, q) (p + 2, q - 1)
     (by simp [ComplexShape.up']; lia) ((q - 1 : ℤ) : EInt) q ((q + 1 : ℤ) : EInt) rfl rfl rfl
     (p + q) (p + q + 1) rfl, key]
-  simp [spectralSequenceFirstPageXIsoCokernel_eq]
+  rw [spectralSequenceFirstPageXIsoCokernel_eq, spectralSequenceFirstPageXIsoCokernel_eq,
+    Iso.trans_hom, Iso.trans_inv, Category.assoc]
+  congr 1
+  exact (Category.assoc _ _ _).trans (Category.assoc _ _ _)
 
 end SpectralSequence
 
