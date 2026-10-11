@@ -89,7 +89,7 @@ variable {X : Type*} [PseudoEMetricSpace X] {φ : X → EReal} {τ τ' τ₀ : �
 /-- For time steps `τ < τ₀`, the penalty `d(x₀, z)² / (2τ₀)` is at most
 `d(x, z)² / (2τ) + d(x, x₀)² / (2 (τ₀ - τ))`. With `a = d(x, z)`, `b = d(x, x₀)` and `s = τ₀ - τ`,
 this is the triangle inequality followed by `(a + b)² / (τ + s) ≤ a² / τ + b² / s`. -/
-private theorem edist_sq_div_le_add (hττ₀ : τ < τ₀) (x x₀ z : X) :
+theorem edist_sq_div_le_add (hττ₀ : τ < τ₀) (x x₀ z : X) :
     edist x₀ z ^ 2 / (2 * τ₀) ≤ edist x z ^ 2 / (2 * τ) + edist x x₀ ^ 2 / (2 * (τ₀ - τ)) := by
   have hs : (τ₀ : ℝ≥0∞) - τ ≠ 0 := (tsub_pos_of_lt (ENNReal.coe_lt_coe.2 hττ₀)).ne'
   have hτ₀ : (τ₀ : ℝ≥0∞) ≠ 0 := ENNReal.coe_ne_zero.2 (pos_of_gt hττ₀).ne'
