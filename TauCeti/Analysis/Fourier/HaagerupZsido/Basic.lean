@@ -175,8 +175,9 @@ noncomputable def realKernel (t : ℝ) : ℝ :=
 theorem realKernel_def (t : ℝ) : realKernel t = Real.sin t / 2 * weightLaplaceTransform t :=
   (rfl)
 
-/-- The Haagerup–Zsidó kernel `k(t) = -i r(t)`. The rotation by `-i` turns the Fourier integral
-`∫ r(t) e^{itx} dt = i / x` of the odd real kernel into `∫ k(t) e^{itx} dt = 1 / x`. -/
+/-- The Haagerup–Zsidó kernel `k(t) = -i r(t)`. For `|x| ≥ 1`, the rotation by `-i` turns the
+Fourier integral `∫ r(t) e^{itx} dt = i / x` of the odd real kernel into
+`∫ k(t) e^{itx} dt = 1 / x`. -/
 noncomputable def reciprocalKernel (t : ℝ) : ℂ :=
   -Complex.I * realKernel t
 
