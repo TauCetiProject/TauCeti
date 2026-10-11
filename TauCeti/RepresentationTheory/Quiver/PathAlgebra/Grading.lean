@@ -677,6 +677,11 @@ theorem vertexIdempotent_mem_integerGrade_zero (i : Q) :
   rw [← Nat.cast_zero, integerGrade_ofNat]
   exact vertexIdempotent_mem_grade_zero i
 
+/-- **Integer degree `0` is the span of the vertex idempotents.** -/
+theorem integerGrade_zero_eq_span_range_vertexIdempotent :
+    integerGrade k Q 0 = Submodule.span k (Set.range (vertexIdempotent k)) := by
+  rw [← Nat.cast_zero, integerGrade_ofNat, grade_zero_eq_span_range_vertexIdempotent]
+
 /-- The integer-indexed path-length pieces form an internal direct sum. -/
 theorem isInternal_integerGrade [Finite Q] : DirectSum.IsInternal (integerGrade k Q) :=
   Graded.isInternal_extendByZero (isInternal_grade k Q)

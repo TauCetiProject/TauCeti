@@ -81,7 +81,7 @@ theorem semilocallySimplyConnectedAt_of_isLocalHomeomorph (hp : IsLocalHomeomorp
     exact hp.apply_localInverseAt_of_mem (hmem t)
   have hrefl : ((Path.refl (φ (p e))).map (map_continuous (⟨p, hp.continuous⟩ : C(E, X)))).cast
       hpu.symm hpu.symm = Path.refl (p e) := by
-    ext t
+    ext _
     exact hpu
   obtain ⟨F⟩ := key.map (⟨p, hp.continuous⟩ : C(E, X))
   exact ⟨(F.pathCast hpu.symm hpu.symm).cast hdesc hrefl⟩

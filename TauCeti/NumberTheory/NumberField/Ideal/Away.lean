@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Basic
+public import Mathlib.GroupTheory.MonoidLocalization.Maps
 public import TauCeti.RingTheory.DedekindDomain.Factorization
 public import TauCeti.RingTheory.DedekindDomain.Ideal
 
@@ -20,7 +21,9 @@ induced by enlarging `S`.
 
 The integral counterpart `integralIdealsAway S` consists of the nonzero integral ideals divisible
 by no prime in `S`, that is, the ideals that are `Ideal.IsPrimeTo S`. Its map to `idealsAway S`
-is the restriction of Mathlib's `FractionalIdeal.mk0`.
+is the restriction of Mathlib's `FractionalIdeal.mk0`. Every fractional ideal away from `S` is
+a quotient of two such integral ideals, and `integralIdealsAwayLocalizationMap` packages this
+as the universal property of localization at all elements of the integral monoid.
 
 Generation comes from `FractionalIdeal.mem_closure_unitOfPrime_of_count_eq_zero`, the unit-level
 form of Mathlib's unique factorization of a nonzero fractional ideal.
@@ -41,6 +44,10 @@ form of Mathlib's unique factorization of a nonzero fractional ideal.
 * `NumberFieldArithmetic.idealsAway_hom_ext`, `NumberFieldArithmetic.integralIdealsAway_hom_ext`:
   a monoid homomorphism out of `idealsAway S` or `integralIdealsAway S` is determined by its
   values on the primes outside `S`.
+* `NumberFieldArithmetic.exists_integralIdealsAway_div`: every fractional ideal away from `S`
+  has an integral numerator and denominator away from `S`.
+* `NumberFieldArithmetic.integralIdealsAwayLocalizationMap`: the fractional ideal group is the
+  localization of the integral ideal monoid at all of its elements.
 
 ## References
 
@@ -241,5 +248,64 @@ theorem coe_integralIdealsAwayHom (S : Finset (HeightOneSpectrum (𝓞 K)))
         (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K) = I := by
   simp only [integralIdealsAwayHom, MonoidHom.codRestrict_apply, MonoidHom.comp_apply,
     FractionalIdeal.coe_mk0, Submonoid.coe_inclusion]
+
+/-- The integral-to-fractional ideal map is injective. -/
+theorem integralIdealsAwayHom_injective (S : Finset (HeightOneSpectrum (𝓞 K))) :
+    Function.Injective (integralIdealsAwayHom (K := K) S) := by
+  intro I J h
+  apply Subtype.ext
+  apply FractionalIdeal.coeIdeal_injective (K := K)
+  simpa only [coe_integralIdealsAwayHom] using
+    congrArg (fun x : idealsAway S ↦ ((x : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
+      FractionalIdeal (𝓞 K)⁰ K)) h
+
+/-- Every fractional ideal away from `S` is a quotient of two integral ideals away from `S`. -/
+theorem exists_integralIdealsAway_div (S : Finset (HeightOneSpectrum (𝓞 K)))
+    (I : idealsAway (K := K) S) :
+    ∃ A B : integralIdealsAway S,
+      I = integralIdealsAwayHom S A / integralIdealsAwayHom S B := by
+  have h : ∀ x ∈ idealsAway (K := K) S,
+      ∃ A B : integralIdealsAway S,
+        x = (integralIdealsAwayHom S A : (FractionalIdeal (𝓞 K)⁰ K)ˣ) /
+          (integralIdealsAwayHom S B : (FractionalIdeal (𝓞 K)⁰ K)ˣ) := by
+    intro x hx
+    rw [idealsAway_eq_closure_primes] at hx
+    induction hx using Subgroup.closure_induction with
+    | mem x hx =>
+      obtain ⟨v, hv, hval⟩ := hx
+      have hv' : v.asIdeal ∈ integralIdealsAway S :=
+        mem_integralIdealsAway_iff_isPrimeTo.mpr (Ideal.isPrimeTo_asIdeal_iff.mpr hv)
+      refine ⟨⟨v.asIdeal, hv'⟩, 1, ?_⟩
+      apply Units.ext
+      simpa only [map_one, Subgroup.coe_one, div_one, coe_integralIdealsAwayHom] using hval
+    | one => exact ⟨1, 1, by simp⟩
+    | mul x y hx hy ihx ihy =>
+      obtain ⟨A, B, rfl⟩ := ihx
+      obtain ⟨C, D, rfl⟩ := ihy
+      exact ⟨A * C, B * D, by simp [div_mul_div_comm]⟩
+    | inv x hx ih =>
+      obtain ⟨A, B, rfl⟩ := ih
+      exact ⟨B, A, by simp⟩
+  obtain ⟨A, B, hAB⟩ := h I I.2
+  exact ⟨A, B, Subtype.ext hAB⟩
+
+/-- The group of fractional ideals away from `S` is the localization of its integral ideal monoid
+at all its elements. This supplies the universal property for extending multiplicative maps on
+integral ideals to fractional ideals. -/
+noncomputable def integralIdealsAwayLocalizationMap (S : Finset (HeightOneSpectrum (𝓞 K))) :
+    Submonoid.LocalizationMap (⊤ : Submonoid (integralIdealsAway (K := K) S))
+      (idealsAway (K := K) S) where
+  toMulHom := (integralIdealsAwayHom S).toMulHom
+  isLocalizationMap := Submonoid.isLocalizationMap_of_group
+    (integralIdealsAwayHom_injective S) fun I ↦ by
+      obtain ⟨A, B, h⟩ := exists_integralIdealsAway_div S I
+      exact ⟨A, B, Submonoid.mem_top _, h⟩
+
+/-- The localization map is the canonical integral-to-fractional ideal map. -/
+@[simp]
+theorem integralIdealsAwayLocalizationMap_apply (S : Finset (HeightOneSpectrum (𝓞 K)))
+    (I : integralIdealsAway S) :
+    integralIdealsAwayLocalizationMap S I = integralIdealsAwayHom S I :=
+  (rfl)
 
 end TauCeti.NumberFieldArithmetic

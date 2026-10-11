@@ -124,7 +124,7 @@ noncomputable def diagonalTorusCoordinateMap :
         (SplitTorus.characterGroup (ULift.{u} (Fin r)))).obj :=
   CommHopfAlgCat.liftQuotient (definingHopfIdeal R (r + 1))
     (GeneralLinear.weightTorusCoordinateMap (diagonalTorusWeight r))
-    (definingHopfIdeal_toIdeal_le_ker_of_map_determinant_eq_one R (r + 1) _
+    ((definingHopfIdeal_toIdeal_le_ker_iff R (r + 1) _).2
       (weightTorusCoordinateMap_determinantGroupLike_diagonalTorusWeight r R))
 
 /-- Restricting from `GL_{r+1}` to `SL_{r+1}` and then to the diagonal torus is the general-linear

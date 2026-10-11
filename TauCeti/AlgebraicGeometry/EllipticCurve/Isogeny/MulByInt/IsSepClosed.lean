@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.MapAlong
 public import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Torsion.IsSepClosed
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Torsion.Rank
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Torsion.Surjective
@@ -23,6 +24,8 @@ with the division-polynomial torsion theory in `DivisionPolynomial.Torsion.IsSep
   `#E[n] = n ²`, in the kernel and the torsion-subgroup forms.
 * `WeierstrassCurve.natCard_torsionBy`: the same count read on `W.toAffine.Point` itself,
   rather than on the trivial base change `W⁄K`.
+* `WeierstrassCurve.torsionMapAlong_bijective`: the `N`-torsion does not grow from one separably
+  closed field to another.
 * `TauCeti.Isogeny.card_ker_mulByPrimeIsogeny`,
   `TauCeti.Isogeny.finrank_ker_mulByPrimeIsogeny` and
   `TauCeti.Isogeny.nonempty_linearEquiv_ker_mulByPrimeIsogeny`: `E[ℓ] ≅ (ZMod ℓ) ²` at a prime.
@@ -171,6 +174,36 @@ theorem natCard_torsionBy {n : ℤ} (hn : (n : K) ≠ 0) :
     Nat.card (AddSubgroup.torsionBy W.toAffine.Point n) = n.natAbs ^ 2 := by
   have h := W.toAffine.natCard_torsionBy hn
   rwa [Affine.baseChange_self] at h
+
+section MapAlong
+
+variable {F : Type*} [Field F] [DecidableEq F] [IsSepClosed F] [DecidableEq K]
+  (W : WeierstrassCurve F) [W.IsElliptic] (f : F →+* K)
+
+/-- **The `N`-torsion does not grow from one separably closed field to another**: for `N`
+invertible, `E[N](F) → E[N](K)` is bijective, both groups having `N²` elements. -/
+theorem torsionMapAlong_bijective {N : ℤ} (hN : (N : F) ≠ 0) :
+    Function.Bijective (W.torsionMapAlong f N) := by
+  have hinj : Function.Injective (W.torsionMapAlong f N) := fun S T h ↦ by
+    have h' := congrArg Subtype.val h
+    rw [coe_torsionMapAlong_apply, coe_torsionMapAlong_apply] at h'
+    exact Subtype.ext (Affine.Point.mapAlong_injective f f.injective h')
+  -- both groups have `N²` elements
+  have hK : Nat.card (Submodule.torsionBy ℤ (W.map f).toAffine.Point N) = N.natAbs ^ 2 := by
+    convert (W.map f).natCard_torsionBy (by rwa [← map_intCast f, map_ne_zero] : (N : K) ≠ 0) with P
+    simp only [Submodule.mem_torsionBy_iff, AddSubgroup.torsionBy, Submodule.mem_toAddSubgroup]
+    convert Iff.rfl
+  have hF : Nat.card (Submodule.torsionBy ℤ W.toAffine.Point N) = N.natAbs ^ 2 := by
+    convert W.natCard_torsionBy hN with P
+    simp only [Submodule.mem_torsionBy_iff, AddSubgroup.torsionBy, Submodule.mem_toAddSubgroup]
+    convert Iff.rfl
+  have : Finite (Submodule.torsionBy ℤ (W.map f).toAffine.Point N) :=
+    Nat.finite_of_card_ne_zero (by
+      rw [hK]
+      exact pow_ne_zero 2 (Int.natAbs_ne_zero.mpr (by rintro rfl; exact hN Int.cast_zero)))
+  exact hinj.bijective_of_nat_card_le (hK.trans hF.symm).le
+
+end MapAlong
 
 end WeierstrassCurve
 

@@ -38,6 +38,8 @@ valued in the closed unit ball.
   open unit balls and the unit spheres.
 * `TauCeti.isOpenEmbedding_inclusion_comp_unitBall`: `E` embeds openly in its closed unit ball.
 * `Homeomorph.unitBall_symm_apply_coe`: the inverse radial map in explicit coordinates.
+* `TauCeti.cubeHomeomorphClosedBall`: the cube `I^N` is the closed unit ball of the sup norm on
+  `N → ℝ`, through `t ↦ 2 * t - 1` in every coordinate.
 * `TauCeti.nonempty_homeomorph_cube_closedBall`: the closed unit ball of a real normed space of
   finite dimension `k` is homeomorphic to the cube `Iᵏ`.
 * `TauCeti.sphereHomeomorphOfFinrankEq`: the unit spheres of two finite-dimensional real normed
@@ -132,6 +134,48 @@ theorem isOpenEmbedding_inclusion_comp_unitBall :
   (IsOpenEmbedding.inclusion _ (isOpen_ball.preimage continuous_subtype_val)).comp
     Homeomorph.unitBall.isOpenEmbedding
 
+section Cube
+
+open unitInterval
+
+variable (N : Type*) [Fintype N]
+
+/-- The cube `I^N` is the closed unit ball of the sup norm on `N → ℝ`, through the affine
+homeomorphism `t ↦ 2 * t - 1` of `I` onto `[-1, 1]` in every coordinate
+(`TauCeti.coe_cubeHomeomorphClosedBall_apply`). -/
+def cubeHomeomorphClosedBall : (N → I) ≃ₜ closedBall (0 : N → ℝ) 1 :=
+  -- Apply the affine interval homeomorphism coordinatewise, then identify the product of
+  -- intervals with the closed unit ball of the sup norm.
+  let a : (N → I) ≃ₜ (N → Icc (-1 : ℝ) 1) :=
+    Homeomorph.piCongrRight fun _ ↦ (iccHomeoI (-1 : ℝ) 1 (by norm_num)).symm
+  let b : (N → Icc (-1 : ℝ) 1) ≃ₜ univ.pi (fun _ : N ↦ Icc (-1 : ℝ) 1) :=
+    { toEquiv := (Equiv.Set.univPi _).symm
+      continuous_toFun := by fun_prop
+      continuous_invFun := continuous_pi fun i ↦
+        ((continuous_apply i).comp continuous_subtype_val).subtype_mk _ }
+  have h : univ.pi (fun _ : N ↦ Icc (-1 : ℝ) 1) = closedBall (0 : N → ℝ) 1 := by
+    simp [closedBall_pi _ zero_le_one, Real.closedBall_eq_Icc]
+  a.trans <| b.trans <| Homeomorph.setCongr h
+
+variable {N}
+
+@[simp]
+theorem coe_cubeHomeomorphClosedBall_apply (y : N → I) (i : N) :
+    (cubeHomeomorphClosedBall N y : N → ℝ) i = 2 * (y i : ℝ) - 1 := by
+  -- The last two homeomorphisms only forget the coordinatewise interval membership proofs.
+  have h : (cubeHomeomorphClosedBall N y : N → ℝ) i =
+      ((iccHomeoI (-1 : ℝ) 1 (by norm_num)).symm (y i) : ℝ) :=
+    rfl
+  rw [h, iccHomeoI_symm_apply_coe]
+  ring
+
+@[simp]
+theorem coe_cubeHomeomorphClosedBall_symm_apply (z : closedBall (0 : N → ℝ) 1) (i : N) :
+    (((cubeHomeomorphClosedBall N).symm z i : I) : ℝ) = ((z : N → ℝ) i + 1) / 2 := by
+  have h := coe_cubeHomeomorphClosedBall_apply ((cubeHomeomorphClosedBall N).symm z) i
+  rw [Homeomorph.apply_symm_apply] at h
+  linarith
+
 open unitInterval in
 /-- **The closed unit ball of a finite-dimensional real normed space is a cube.** The closed unit
 ball of a real normed space of finite dimension `k` is homeomorphic to the cube `Iᵏ`. -/
@@ -140,21 +184,10 @@ theorem nonempty_homeomorph_cube_closedBall (F : Type*) [NormedAddCommGroup F] [
     Nonempty ((Fin (Module.finrank ℝ F) → I) ≃ₜ closedBall (0 : F) 1) := by
   set k := Module.finrank ℝ F
   let L : (Fin k → ℝ) ≃L[ℝ] F := ContinuousLinearEquiv.ofFinrankEq (by simp [k])
-  let e : closedBall (0 : Fin k → ℝ) 1 ≃ₜ closedBall (0 : F) 1 :=
-    (L.unitBallHomeomorph.image _).trans
-      (Homeomorph.setCongr L.image_unitBallHomeomorph_closedBall)
-  -- Apply the affine interval homeomorphism coordinatewise, then identify the product of
-  -- intervals with the closed unit ball of the sup norm.
-  let a : (Fin k → I) ≃ₜ (Fin k → Icc (-1 : ℝ) 1) :=
-    Homeomorph.piCongrRight fun _ ↦ (iccHomeoI (-1 : ℝ) 1 (by norm_num)).symm
-  let b : (Fin k → Icc (-1 : ℝ) 1) ≃ₜ univ.pi (fun _ : Fin k ↦ Icc (-1 : ℝ) 1) :=
-    { toEquiv := (Equiv.Set.univPi _).symm
-      continuous_toFun := by fun_prop
-      continuous_invFun := continuous_pi fun i ↦
-        ((continuous_apply i).comp continuous_subtype_val).subtype_mk _ }
-  have h : univ.pi (fun _ : Fin k ↦ Icc (-1 : ℝ) 1) = closedBall (0 : Fin k → ℝ) 1 := by
-    simp [closedBall_pi _ zero_le_one, Real.closedBall_eq_Icc]
-  exact ⟨a.trans <| b.trans <| (Homeomorph.setCongr h).trans e⟩
+  exact ⟨(cubeHomeomorphClosedBall (Fin k)).trans <| (L.unitBallHomeomorph.image _).trans
+    (Homeomorph.setCongr L.image_unitBallHomeomorph_closedBall)⟩
+
+end Cube
 
 section Sphere
 

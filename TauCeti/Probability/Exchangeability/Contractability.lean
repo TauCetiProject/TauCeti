@@ -155,8 +155,7 @@ theorem Exchangeable.blockLaw_eq_prefixLaw_of_injective {μ : Measure Ω} {X : �
     (hX : Exchangeable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ)
     {n : ℕ} (k : Fin n → ℕ) (hk : Function.Injective k) :
     blockLaw μ X k = prefixLaw μ X n := by
-  set N := max n (Finset.univ.sup k + 1) with hN
-  have hnN : n ≤ N := le_max_left _ _
+  set N := max n (Finset.univ.sup k + 1)
   have hk_bound : ∀ i, k i < N := by
     intro i
     have h1 : k i ≤ Finset.univ.sup k := Finset.le_sup (Finset.mem_univ i)

@@ -624,7 +624,7 @@ theorem exists_germToFunctionField_eq_of_forall_mem_range {U : X.Opens} [Nonempt
   -- The generic point lies in every nonempty open subset, so germs there see every overlap.
   have hgen : ∀ V : X.Opens, Nonempty V → genericPoint X ∈ V := fun V _ ↦ genericPoint_mem V
   -- Every point of `U` has a neighbourhood inside `U` on which `f` is regular.
-  have key : ∀ y : U, ∃ V : X.Opens, ∃ _ : (y : X) ∈ V, ∃ hV : V ≤ U,
+  have key : ∀ y : U, ∃ V : X.Opens, ∃ _ : (y : X) ∈ V, ∃ _ : V ≤ U,
       ∃ s : Γ(X, V), X.presheaf.germ V (genericPoint X) (hgen V ⟨⟨(y : X), ‹_›⟩⟩) s = f := by
     intro y
     obtain ⟨g, hgf⟩ := hf y y.2

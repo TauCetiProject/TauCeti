@@ -138,7 +138,7 @@ private theorem mul_rootStringSeries (hxy : x * y = y * x + z) (hxz : x * z = z 
           (if 0 < p.1 then
             (2 * (p.2 + 1)) • (dividedPower (n - (p.1 - 1) - (p.2 + 1)) y *
               dividedPower (p.1 - 1) z * dividedPower (p.2 + 1) w) else 0) := by
-    intro p hp
+    intro p _
     have h1 : n - (p.1 + 1) - p.2 = n - p.1 - p.2 - 1 := by omega
     have h2 : 0 < p.1 → n - (p.1 - 1) - (p.2 + 1) = n - p.1 - p.2 := by omega
     rw [mul_dividedPower_triple hxy hxz hxw hyz hzw (n - p.1 - p.2) p.1 p.2, h1]

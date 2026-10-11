@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 
 /-!
 # Elementary bounds on real powers
@@ -17,10 +18,21 @@ denominator `1 - y ^ (-s)` stays bounded below.
 For any `θ < 1` and any exponent `β`, some base `τ ∈ (0, 1)` has `θ < τ ^ β`. This is how a
 geometric ratio is chosen in iteration arguments, such as the absorption lemma.
 
+For `1 ≤ p`, the graph of `u ↦ u ^ p` on `[0, ∞)` lies above each of its tangent lines:
+`v ^ p + p * v ^ (p - 1) * (u - v) ≤ u ^ p`, strictly so when `1 < p` and `u ≠ v`. This is
+Bernoulli's inequality made homogeneous, and it is the first-order optimality test for weighted
+sums of powers.
+
+For `t ∈ [0, 1]` and any exponent `r`, the sum `(1 - t) ^ r + t ^ r` is positive, so it can be
+used as the normalizing denominator of a pair of weights.
+
 ## Main results
 
 * `Real.rpow_neg_le_half`: `y ^ (-s) ≤ 1 / 2` for `2 ≤ y` and `1 ≤ s`.
 * `Real.exists_pos_lt_one_lt_rpow`: for `θ < 1` and any `β`, some `τ ∈ (0, 1)` has `θ < τ ^ β`.
+* `Real.rpow_add_mul_rpow_sub_one_mul_sub_le_rpow` and
+  `Real.rpow_add_mul_rpow_sub_one_mul_sub_lt_rpow`: the tangent-line inequalities for `u ↦ u ^ p`.
+* `Real.one_sub_rpow_add_rpow_pos`: `0 < (1 - t) ^ r + t ^ r` for `t ∈ [0, 1]`.
 -/
 
 public section
@@ -45,5 +57,44 @@ theorem exists_pos_lt_one_lt_rpow {θ : ℝ} (hθ : θ < 1) (β : ℝ) :
     refine ⟨c ^ β⁻¹, rpow_pos_of_pos hc0 _, rpow_lt_one hc0.le hc1 (inv_pos.2 hβ), ?_⟩
     rw [← rpow_mul hc0.le, inv_mul_cancel₀ hβ.ne', rpow_one]
     exact lt_max_of_lt_left (by linarith)
+
+/-- **The strict tangent-line inequality for real powers.** For `1 < p` and distinct `u, v ≥ 0`,
+`u ↦ u ^ p` lies strictly above its tangent line at `v`. -/
+theorem rpow_add_mul_rpow_sub_one_mul_sub_lt_rpow {p u v : ℝ} (hp : 1 < p) (hu : 0 ≤ u)
+    (hv : 0 ≤ v) (huv : u ≠ v) : v ^ p + p * v ^ (p - 1) * (u - v) < u ^ p := by
+  rcases hv.eq_or_lt with rfl | hv
+  · rw [zero_rpow (by linarith), zero_rpow (by linarith)]
+    simpa using rpow_pos_of_pos (hu.lt_of_ne' huv) p
+  · have hs : -1 ≤ (u - v) / v := by
+      rw [le_div_iff₀ hv]
+      linarith
+    have h := one_add_mul_self_lt_rpow_one_add hs (div_ne_zero (sub_ne_zero.2 huv) hv.ne') hp
+    have hu_div : 1 + (u - v) / v = u / v := by
+      field_simp
+      ring
+    rw [hu_div, div_rpow hu hv.le, lt_div_iff₀ (rpow_pos_of_pos hv p)] at h
+    rw [rpow_sub_one hv.ne']
+    calc v ^ p + p * (v ^ p / v) * (u - v) = (1 + p * ((u - v) / v)) * v ^ p := by
+          field_simp
+      _ < u ^ p := h
+
+/-- **The tangent-line inequality for real powers.** For `1 ≤ p` and `u, v ≥ 0`, `u ↦ u ^ p` lies
+above its tangent line at `v`. This is Bernoulli's inequality
+`one_add_mul_self_le_rpow_one_add` made homogeneous. -/
+theorem rpow_add_mul_rpow_sub_one_mul_sub_le_rpow {p u v : ℝ} (hp : 1 ≤ p) (hu : 0 ≤ u)
+    (hv : 0 ≤ v) : v ^ p + p * v ^ (p - 1) * (u - v) ≤ u ^ p := by
+  rcases hp.eq_or_lt with rfl | hp
+  · simp
+  rcases eq_or_ne u v with rfl | huv
+  · simp
+  exact (rpow_add_mul_rpow_sub_one_mul_sub_lt_rpow hp hu hv huv).le
+
+/-- For `t ∈ [0, 1]` and any exponent `r`, `(1 - t) ^ r + t ^ r` is positive: at least one of the
+two bases is positive. -/
+theorem one_sub_rpow_add_rpow_pos (r : ℝ) {t : ℝ} (ht : t ∈ Set.Icc (0 : ℝ) 1) :
+    0 < (1 - t) ^ r + t ^ r := by
+  rcases ht.1.eq_or_lt with rfl | ht₀
+  · simpa using add_pos_of_pos_of_nonneg zero_lt_one (rpow_nonneg le_rfl r)
+  · exact add_pos_of_nonneg_of_pos (rpow_nonneg (sub_nonneg.2 ht.2) r) (rpow_pos_of_pos ht₀ r)
 
 end Real

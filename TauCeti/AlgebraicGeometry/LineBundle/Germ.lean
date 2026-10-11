@@ -117,7 +117,7 @@ theorem mem_range_genericPoint_germ_iff (L : InvertibleSheaf X) {U : X.Opens}
     exact ConcreteCategory.congr_hom (L.obj.presheaf.germ_stalkSpecializes hx _) s
   · intro hq
     -- Represent each local preimage by a section on a neighbourhood inside `U`.
-    have hlocal : ∀ x : U, ∃ V : X.Opens, ∃ hx : (x : X) ∈ V, ∃ hVU : V ≤ U,
+    have hlocal : ∀ x : U, ∃ V : X.Opens, ∃ hx : (x : X) ∈ V, ∃ _ : V ≤ U,
         ∃ s : Γ(L.obj, V),
           L.obj.presheaf.germ V (genericPoint X)
             (((genericPoint_spec X).specializes (Set.mem_univ (x : X))).mem_open V.isOpen hx) s =

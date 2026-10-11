@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.MvPolynomial.DirectionalOrder
 public import TauCeti.Analysis.Polynomial.Order
-public import TauCeti.Analysis.Analytic.ConstantOrder
+public import TauCeti.Analysis.Analytic.ConstantOrder.Basic
 
 /-!
 # Analytic preparation along a fixed direction

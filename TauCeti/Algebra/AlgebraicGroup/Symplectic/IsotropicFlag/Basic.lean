@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.UpperTriangular.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Solvable.Basic
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.IsotropicFlag
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.IsotropicFlag.Basic
 
 /-!
 # The standard complete isotropic flag subgroup of the symplectic group
@@ -131,7 +131,7 @@ variable {A : Type w} [CommRing A] [Algebra R A]
 
 /-- A symplectic point belongs to the isotropic flag subgroup precisely when its matrix
 is upper triangular after reversing the dual half of the basis. -/
-@[simp]
+@[simp↓]
 theorem mem_definingPointsSubgroup_iff
     (g : HopfAlgebra.points (R := R) (H := Symplectic.coordinateHopfAlgebra R m)
       (CommAlgCat.of R A)) :
@@ -169,6 +169,7 @@ theorem mem_definingPointsSubgroup_iff
       simp only [Matrix.BlockTriangular, Function.comp_apply, OrderDual.toDual_lt_toDual,
         weights_lt_weights_iff]
 
+/-- Identify the defining point subgroup with the flag-preserving symplectic matrices. -/
 private noncomputable def definingPointsSubgroupMulEquiv :
     CommHopfAlgCat.quotientPointsSubgroup
         (Symplectic.coordinateHopfAlgebra R m) (definingHopfIdeal R m)

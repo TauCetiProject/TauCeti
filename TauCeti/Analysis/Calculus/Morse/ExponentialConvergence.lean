@@ -304,7 +304,7 @@ theorem exists_norm_sub_le_mul_exp_atTop (hγ : IsIntegralCurveOn γ (fun _ x �
     linarith
   -- summing the geometric series over the times `t, t + 1, t + 2, …`
   set r : ℝ := Real.exp (-(lam / 2)) with hrdef
-  have hr0 : 0 < r := Real.exp_pos _
+  have _ : 0 < r := Real.exp_pos _
   have hr1 : r < 1 := by
     rw [hrdef]
     exact Real.exp_lt_one_iff.2 (by linarith)
@@ -318,7 +318,7 @@ theorem exists_norm_sub_le_mul_exp_atTop (hγ : IsIntegralCurveOn γ (fun _ x �
       intro t ht
       have hcast : ((n + 1 : ℕ) : ℝ) = (n : ℝ) + 1 := by push_cast; ring
       have hmem : t + (n : ℝ) ∈ Ici T := by
-        have hn : (0 : ℝ) ≤ (n : ℝ) := Nat.cast_nonneg n
+        have _ : (0 : ℝ) ≤ (n : ℝ) := Nat.cast_nonneg n
         simp only [mem_Ici] at ht ⊢
         linarith
       have hexpn : Real.exp (-(lam / 2 * (t + (n : ℝ) - T)))

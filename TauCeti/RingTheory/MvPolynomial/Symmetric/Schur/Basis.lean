@@ -316,6 +316,20 @@ theorem coe_schurPolyBasis (μ : {ν : n.Partition // ν.parts.card ≤ Fintype.
   rw [h]
   rfl
 
+/-- In an alphabet with at least `n` letters, the Schur polynomials of all partitions of
+`n` are linearly independent. Thus their coefficients in a finite expansion are unique. -/
+theorem linearIndependent_schurPoly (h : n ≤ Fintype.card σ) :
+    LinearIndependent R (schurPoly σ R : n.Partition → MvPolynomial σ R) := by
+  let f (μ : n.Partition) : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ} :=
+    ⟨μ, by
+      have hc := μ.parts.card_nsmul_le_sum (a := 1) (fun x hx ↦ μ.parts_pos hx)
+      have : μ.parts.card ≤ n := by simpa [μ.parts_sum] using hc
+      exact this.trans h⟩
+  have hf : Function.Injective f := fun _ _ he ↦ congrArg Subtype.val he
+  simpa only [Function.comp_def, Submodule.subtype_apply, coe_schurPolyBasis, f] using
+    ((schurPolyBasis σ R n).linearIndependent.comp f hf).map'
+      (symmetricHomogeneousSubmodule σ R n).subtype (Submodule.ker_subtype _)
+
 end CommRing
 
 end TauCeti

@@ -135,9 +135,8 @@ theorem coeff_laurentSeriesExpansion_sum (s : Finset ℤ) (c : ℤ → k) (i : �
       if i ∈ s then c i else 0 := by
   -- `HahnSeries.coeff_single` is stated with classical decidability of equality.
   simp only [map_sum, map_mul, AlgHom.commutes, laurentSeriesExpansion_zpow_uniformizer,
-    HahnSeries.coeff_sum, HahnSeries.algebraMap_apply', PowerSeries.algebraMap_eq,
-    HahnSeries.ofPowerSeries_C, HahnSeries.C_mul_eq_smul, HahnSeries.coeff_smul,
-    HahnSeries.coeff_single, smul_eq_mul, mul_ite, mul_one, mul_zero]
+    HahnSeries.coeff_sum, TauCeti.LaurentSeries.coeff_algebraMap_mul, HahnSeries.coeff_single,
+    mul_ite, mul_one, mul_zero]
   convert Finset.sum_ite_eq s i c
 
 /-- Uniqueness of finite Laurent expansions: if a function agrees with `∑ cⱼ tʲ` modulo the

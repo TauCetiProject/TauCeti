@@ -102,7 +102,7 @@ discrete case below is proved through it.
 
 What is not here is the assembly that turns the result above into Wedhorn's statement: that a
 ring topologically of finite type over a strongly noetherian `A` is again strongly noetherian.
-It lives in `TauCeti.RingTheory.Huber.TopologicallyFiniteType`:
+It lives in `TauCeti.RingTheory.Huber.TopologicallyFiniteType.Basic`:
 `TauCeti.Huber.IsStrictlyTopologicallyFiniteType.isStronglyNoetherian` unfolds a strict
 presentation to its open quotient `A⟨X₁,…,Xₖ⟩ ↠ B` and applies the result above, and
 `TauCeti.Huber.IsTopologicallyFiniteType.isStronglyNoetherian` reduces a presentation by a

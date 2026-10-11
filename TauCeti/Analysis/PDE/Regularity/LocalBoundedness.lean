@@ -307,8 +307,6 @@ private theorem setIntegral_ball_max_sub_sq_succ_le
       ((Metric.ball_subset_ball hr₀R).trans hball))
       (Eventually.of_forall fun x => hnn k x)
       ((inter_subset_right.trans (hψts.trans (Metric.closedBall_subset_ball hρr₀))).eventuallyLE)
-  have hI0 : 0 ≤ ∫ x in (Omega : Set (EuclideanSpace ℝ ι)) ∩ tsupport ψ,
-      max (W1p.value u x - k) 0 ^ 2 ∂mu := integral_nonneg (hnn k)
   refine hlhs.trans (hstep.trans ?_)
   rw [hρr₁, hlk]
   calc 2 * (1 + (2 * Lam / lam) ^ 2) * S ^ 2 * (c / (R / 2 ^ (j + 3))) ^ 2 *
@@ -717,7 +715,7 @@ private theorem ae_le_mul_sub_rpow_mul_sqrt_setIntegral {w : EuclideanSpace ℝ 
   rw [ae_restrict_iff' measurableSet_ball, ae_iff] at hy
   refine ⟨_, inter_mem_nhdsWithin _ (Metric.ball_mem_nhds y (by linarith : 0 < (ρ - r) / 2)),
     measure_mono_null (fun x hx => ?_) hy⟩
-  obtain ⟨hxr, hxw⟩ := not_imp.1 hx.1
+  obtain ⟨_, hxw⟩ := not_imp.1 hx.1
   refine not_imp.2 ⟨hx.2, fun hle => hxw (hle.trans ?_)⟩
   -- The `L²` norm over the smaller ball is at most that over `B(x₀, ρ)`.
   exact mul_le_mul_of_nonneg_left (Real.sqrt_le_sqrt (setIntegral_mono_set
@@ -772,7 +770,7 @@ private theorem toReal_eLpNormEssSup_le_half_add {w : EuclideanSpace ℝ ι → 
   set F := (eLpNormEssSup w (mu.restrict (Metric.ball x₀ ρ))).toReal
   set J := ∫ x in Metric.ball x₀ R, w x ^ p ∂mu
   have hF : 0 ≤ F := ENNReal.toReal_nonneg
-  have hJ : 0 ≤ J := integral_nonneg fun x => Real.rpow_nonneg (hw0 x) p
+  have _hJ : 0 ≤ J := integral_nonneg fun x => Real.rpow_nonneg (hw0 x) p
   -- `w ≤ F` almost everywhere on `B(x₀, ρ)`, since `w` is bounded there.
   have hρr : 0 < ρ - r := sub_pos.2 hrρ
   have hwF : ∀ᵐ x ∂mu.restrict (Metric.ball x₀ ρ), w x ≤ F :=
@@ -804,7 +802,7 @@ private theorem toReal_eLpNormEssSup_le_half_add {w : EuclideanSpace ℝ ι → 
   set Y₀ := 2 ^ (1 - p / 2) * D * √J
   set Z := Y₀ * (ρ - r) ^ e
   have hZ : 0 ≤ Z := mul_nonneg (by positivity) (Real.rpow_nonneg hρr.le e)
-  have h2 : (0 : ℝ) < 2 ^ (1 - p / 2) := by positivity
+  have _h2 : (0 : ℝ) < 2 ^ (1 - p / 2) := by positivity
   have hb : D * (ρ - r) ^ e * √(∫ x in Metric.ball x₀ ρ, w x ^ 2 ∂mu) ≤
       (F / 2) ^ (1 - p / 2) * (Z ^ (2 / p)) ^ (p / 2) := by
     rw [← Real.rpow_mul hZ, div_mul_div_cancel₀ hp.ne', div_self two_ne_zero, Real.rpow_one,

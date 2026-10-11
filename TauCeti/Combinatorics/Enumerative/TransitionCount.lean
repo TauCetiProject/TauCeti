@@ -223,15 +223,10 @@ theorem occCount_eq_of_transitionCount_eq {n : ℕ} {u v : Fin (n + 1) → α} (
     occCount u a = occCount v a := by
   classical
   obtain ⟨S, hSu, hSv⟩ := exists_finset_forall_mem u v
-  have hout : occCount (u ∘ Fin.castSucc) a = occCount (v ∘ Fin.castSucc) a := by
-    rw [← sum_transitionCount_right u (fun i => hSu i.succ) a,
-      ← sum_transitionCount_right v (fun i => hSv i.succ) a]
-    exact sum_congr rfl fun b _ => h a b
   have hin : occCount (u ∘ Fin.succ) a = occCount (v ∘ Fin.succ) a := by
     rw [← sum_transitionCount_left u (fun i => hSu i.castSucc) a,
       ← sum_transitionCount_left v (fun i => hSv i.castSucc) a]
     exact sum_congr rfl fun c _ => h c a
-  have hu_last := occCount_castSucc u a
   have hu_zero := occCount_succ u a
   have hv_last := occCount_castSucc v a
   have hv_zero := occCount_succ v a

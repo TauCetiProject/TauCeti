@@ -11,6 +11,7 @@ import TauCeti.Algebra.CharP.LocalRing
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.NumberTheory.LocalField.Unramified.Factorization
+import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
 
 /-!
 # Base change and composita of tamely ramified extensions of local fields
@@ -36,9 +37,13 @@ base change is a tower of two such radical extensions.
   `n` is prime to the residue characteristic.
 * `TauCeti.IsTamelyRamified.of_adjoin_range_eq_top`: **base change**; if `L/K` is tamely ramified
   and `M` is generated over `F` by the image of `L`, then `M/F` is tamely ramified.
+* `TauCeti.IsTamelyRamified.of_algEquiv`: tameness is preserved by a base-field algebra
+  equivalence.
 * `TauCeti.IsTamelyRamified.of_fieldRange_sup_fieldRange_eq_top`: **composita**; if `M` is the
   compositum of the images of two tamely ramified extensions of `K`, then `M/K` is tamely
   ramified.
+* `TauCeti.isTamelyRamified_sup_iff`: an intermediate-field compositum is tame exactly when
+  both factors are tame, without a Galois hypothesis.
 
 ## References
 
@@ -199,6 +204,24 @@ theorem IsTamelyRamified.of_adjoin_range_eq_top (hL : IsTamelyRamified K L) (ι 
 
 end BaseChange
 
+section AlgEquiv
+
+variable {K L M : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K]
+  [Field L] [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
+  [Algebra K L] [ValuativeExtension K L]
+  [Field M] [ValuativeRel M] [TopologicalSpace M] [IsNonarchimedeanLocalField M]
+  [Algebra K M] [ValuativeExtension K M]
+
+/-- Tame ramification is preserved by an algebra equivalence over the base field. -/
+theorem IsTamelyRamified.of_algEquiv (hL : IsTamelyRamified K L) (e : L ≃ₐ[K] M) :
+    IsTamelyRamified K M := by
+  let g := e.toAlgHom
+  have hg : Function.Surjective g := e.surjective
+  exact hL.of_adjoin_range_eq_top g (by rw [Set.range_eq_univ.2 hg, adjoin_univ])
+
+end AlgEquiv
+
 section Compositum
 
 variable {K L₁ L₂ M : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
@@ -229,5 +252,47 @@ theorem IsTamelyRamified.of_fieldRange_sup_fieldRange_eq_top (h₁ : IsTamelyRam
   exact (isTamelyRamified_tower_iff (K := K) (L := L₂) M).2 ⟨h₂, hM⟩
 
 end Compositum
+
+section IntermediateField
+
+variable {K Ω : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] [Field Ω] [Algebra K Ω]
+  {L M : IntermediateField K Ω}
+  [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
+  [ValuativeExtension K L]
+  [ValuativeRel M] [TopologicalSpace M] [IsNonarchimedeanLocalField M]
+  [ValuativeExtension K M]
+  [ValuativeRel ↥(L ⊔ M)] [TopologicalSpace ↥(L ⊔ M)]
+  [IsNonarchimedeanLocalField ↥(L ⊔ M)] [ValuativeExtension K ↥(L ⊔ M)]
+
+/-- A compositum of finite local-field extensions is tamely ramified exactly when both factors
+are tamely ramified. No Galois hypothesis or local-field structure on the ambient field is
+needed. -/
+@[simp]
+theorem isTamelyRamified_sup_iff :
+    IsTamelyRamified K ↥(L ⊔ M) ↔ IsTamelyRamified K L ∧ IsTamelyRamified K M := by
+  have := finite_of_valuativeExtension K ↥(L ⊔ M)
+  have := finite_of_valuativeExtension K L
+  have := finite_of_valuativeExtension K M
+  let _ := (IntermediateField.inclusion (le_sup_left : L ≤ L ⊔ M)).toAlgebra
+  let _ := (IntermediateField.inclusion (le_sup_right : M ≤ L ⊔ M)).toAlgebra
+  have : IsScalarTower K L ↥(L ⊔ M) := .of_algebraMap_eq fun _ ↦ rfl
+  have : IsScalarTower K M ↥(L ⊔ M) := .of_algebraMap_eq fun _ ↦ rfl
+  have : ValuativeExtension L ↥(L ⊔ M) :=
+    (IntermediateField.inclusion le_sup_left).valuativeExtension
+  have : ValuativeExtension M ↥(L ⊔ M) :=
+    (IntermediateField.inclusion le_sup_right).valuativeExtension
+  refine ⟨fun h ↦ ⟨h.tower_bot (L := L), h.tower_bot (L := M)⟩,
+    fun ⟨hL, hM⟩ ↦ ?_⟩
+  refine hL.of_fieldRange_sup_fieldRange_eq_top hM
+    (IntermediateField.inclusion le_sup_left) (IntermediateField.inclusion le_sup_right) ?_
+  apply IntermediateField.lift_injective
+  have hLrange : lift (IntermediateField.inclusion (le_sup_left : L ≤ L ⊔ M)).fieldRange = L :=
+    IntermediateField.lift_restrict _
+  have hMrange : lift (IntermediateField.inclusion (le_sup_right : M ≤ L ⊔ M)).fieldRange = M :=
+    IntermediateField.lift_restrict _
+  simp only [IntermediateField.lift_sup, hLrange, hMrange, IntermediateField.lift_top]
+
+end IntermediateField
 
 end TauCeti

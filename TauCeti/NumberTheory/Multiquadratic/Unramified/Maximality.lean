@@ -143,10 +143,6 @@ theorem exists_mem_candidateGenusField_sq_eq_intCast {d a : ℤ} (hd : Squarefre
   · -- Otherwise the two ramification constraints apply, and cut `u` down to a subset.
     obtain ⟨c, e, hsfc, he, hce⟩ :=
       Int.exists_squarefree_mul_sq (mul_ne_zero hsfa.ne_zero hd.ne_zero)
-    have hnsqc : ¬ IsSquare ((c : ℤ) : ℚ) := fun h => hsq <| by
-      have hcast : ((a * d : ℤ) : ℚ) = ((c : ℤ) : ℚ) * ((e : ℤ) : ℚ) ^ 2 := by
-        exact_mod_cast congrArg (fun n : ℤ => (n : ℚ)) hce
-      exact hcast ▸ (isSquare_mul_sq_iff (Int.cast_ne_zero.mpr he)).mpr h
     obtain ⟨u, hu, hue, huprod⟩ :=
       (isFundamentalDiscriminant_fundamentalDiscriminant hsfa).exists_finset_primeDiscriminant
     obtain ⟨hs, hse, hsprod⟩ := genusPrimeDiscriminants_spec hd

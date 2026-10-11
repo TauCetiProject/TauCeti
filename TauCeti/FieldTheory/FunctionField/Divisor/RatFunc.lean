@@ -32,6 +32,8 @@ poles.
 * `TauCeti.Divisor.poles_X`: the pole divisor of `x` is `P_∞`.
 * `TauCeti.Divisor.degree_poles_eq_max_natDegree`: the pole divisor of `z ∈ k(x)ˣ` has degree
   `max (deg z.num) (deg z.denom)`, which for nonconstant `z` is the degree of `k(x) / k(z)`.
+* `TauCeti.Divisor.degree_zeros_algebraMap`: the zero divisor of a nonzero polynomial has
+  degree equal to its polynomial degree.
 
 ## References
 
@@ -123,5 +125,20 @@ theorem Divisor.degree_poles_eq_max_natDegree (z : (RatFunc k)ˣ) :
     rw [hpoles, hc]
     simp
   · rw [Divisor.degree_poles _ _ hz, RatFunc.finrank_eq_max_natDegree]
+
+/-- The zero divisor of a nonzero polynomial in `k(x)` has degree equal to the degree of the
+polynomial. By the product formula its zeros and poles have equal degrees. -/
+theorem Divisor.degree_zeros_algebraMap {f : k[X]} (hf : f ≠ 0) :
+    Divisor.degree (Divisor.zeros (IsFunctionField.ratFunc k)
+      (Units.mk0 (algebraMap k[X] (RatFunc k) f) (RatFunc.algebraMap_ne_zero hf))) =
+        (f.natDegree : ℤ) := by
+  set z := Units.mk0 (algebraMap k[X] (RatFunc k) f) (RatFunc.algebraMap_ne_zero hf)
+  have hzp : Divisor.degree (Divisor.zeros (IsFunctionField.ratFunc k) z) =
+      Divisor.degree (Divisor.poles (IsFunctionField.ratFunc k) z) := by
+    have := Divisor.degree_principal (IsFunctionField.ratFunc k) z
+    rw [← Divisor.zeros_sub_poles, Divisor.degree_sub] at this
+    omega
+  rw [hzp, Divisor.degree_poles_eq_max_natDegree]
+  simp [z, RatFunc.num_algebraMap, RatFunc.denom_algebraMap]
 
 end TauCeti

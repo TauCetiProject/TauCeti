@@ -411,8 +411,6 @@ theorem finrank_shorten_eq (C : LinearCode F ι) (s : Set ι) :
       Module.finrank F
         (((C : Submodule F (ι → F)) ⊓
           (Submodule.pi sᶜ fun _ ↦ (⊥ : Submodule F F))) : Submodule F (ι → F)) := by
-  let P : Submodule F (ι → F) :=
-    (C : Submodule F (ι → F)) ⊓ (Submodule.pi sᶜ fun _ ↦ (⊥ : Submodule F F))
   let f := LinearMap.funLeft F F (Subtype.val : s → ι)
   rw [shorten, ← LinearMap.range_domRestrict]
   apply LinearMap.finrank_range_of_inj

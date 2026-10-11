@@ -187,7 +187,7 @@ theorem exists_isChevalleySystem (hn : hx.IsChevalleyNormalized) :
     rw [hωdef]
     simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, hsymm, DirectSum.toModule_lof]
   -- On the zero weight space the map is `-1`.
-  have hzero : ∀ (χ : Weight K H L), χ.IsZero → ∀ (v : L) (hv : v ∈ A χ), ω v = -v := by
+  have hzero : ∀ (χ : Weight K H L), χ.IsZero → ∀ (v : L) (_ : v ∈ A χ), ω v = -v := by
     intro χ hχ v hv
     rw [hmem χ v hv, hg]
     simp only [ite_eq_right (fun h : χ.IsNonZero ↦ h hχ), LinearMap.neg_apply,
@@ -207,7 +207,7 @@ theorem exists_isChevalleySystem (hn : hx.IsChevalleyNormalized) :
       rw [hAzero _ hχ0]
       exact h.2
   -- On the weight space of a root the map is the prescribed rescaling of the opposite root vector.
-  have hnonzero : ∀ (χ : Weight K H L), χ.IsNonZero → ∀ (v : L) (hv : v ∈ A χ),
+  have hnonzero : ∀ (χ : Weight K H L), χ.IsNonZero → ∀ (v : L) (_ : v ∈ A χ),
       ω v = (-(killingForm K L (x χ) (x (-χ)))⁻¹ * killingForm K L v (x (-χ))) • x (-χ) := by
     intro χ hχ v hv
     rw [hmem χ v hv, hg]
@@ -220,8 +220,7 @@ theorem exists_isChevalleySystem (hn : hx.IsChevalleyNormalized) :
       killingForm_ne_zero_of_mem_rootSpace hχ (hx.mem_rootSpace χ) (hx.ne_zero χ hχ)
         (hx.mem_rootSpace (-χ)) (hx.ne_zero (-χ) hχ.neg)
     rw [hnonzero χ hχ (x χ) (hx.mem_rootSpace χ), neg_mul, inv_mul_cancel₀ hkill, neg_one_smul]
-  have hωmem : ∀ (χ : Weight K H L), χ.IsNonZero → ∀ (v : L) (hv : v ∈ A χ),
-      ω v ∈ A (-χ) := by
+  have hωmem : ∀ (χ : Weight K H L), χ.IsNonZero → ∀ (v : L) (_ : v ∈ A χ), ω v ∈ A (-χ) := by
     intro χ hχ v hv
     rw [hnonzero χ hχ v hv]
     exact Submodule.smul_mem _ _ (hx.mem_rootSpace (-χ))

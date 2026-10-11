@@ -28,6 +28,8 @@ critical points `x`, and also of their unstable sets `W^u(x)`.
 * `TauCeti.IsAdaptedPseudoGradient.contMDiff_flow_uncurry` and
   `TauCeti.IsAdaptedPseudoGradient.flowDiffeomorph`: the flow is smooth in time and space, and its
   time-`t` map is a diffeomorphism.
+* `TauCeti.IsAdaptedPseudoGradient.neg_flow`: the flow of `-X` is the reversed flow, so the unstable
+  sets of `X` are the stable sets of `-X`.
 * `TauCeti.IsAdaptedPseudoGradient.hasDerivAt_comp_flow`: the derivative of `f` along an orbit is
   `df(X)`.
 * `TauCeti.IsAdaptedPseudoGradient.flow_apply_of_mfderiv_eq_zero`: critical points are rest points.
@@ -39,6 +41,9 @@ critical points `x`, and also of their unstable sets `W^u(x)`.
   cover the manifold, and so do their unstable sets. Together with
   `Flow.disjoint_stableSet` and `Flow.disjoint_unstableSet`, these are the
   partitions `M = ⊔ₓ W^s(x) = ⊔ₓ W^u(x)` over the critical points.
+* `TauCeti.IsAdaptedPseudoGradient.stableSet_eq_singleton_of_lt` and
+  `TauCeti.IsAdaptedPseudoGradient.unstableSet_eq_singleton_of_lt`: the stable set of a strict
+  maximum, and the unstable set of a strict minimum, is a point.
 * `TauCeti.IsAdaptedPseudoGradient.stableSet_eq_compl_of_critical_eq_or_eq` and
   `TauCeti.IsAdaptedPseudoGradient.unstableSet_eq_compl_of_critical_eq_or_eq`: with at most two
   critical points, one of which has a trivial stable (respectively unstable) set, the stable
@@ -179,6 +184,18 @@ theorem iUnion_unstableSet (hf : IsMorse 𝓘(ℝ, E) f) :
   obtain ⟨x, hx, htend⟩ := hX.exists_tendsto_atBot hf y
   exact mem_iUnion₂.2 ⟨x, hx, Flow.mem_unstableSet.2 htend⟩
 
+/-- **The stable set of a strict maximum is a point.** If `f` is differentiable and has a strict
+global maximum at `a`, then no other orbit of the flow converges to `a` in forward time. -/
+theorem stableSet_eq_singleton_of_lt (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {a : M}
+    (hmax : ∀ y, y ≠ a → f y < f a) : hX.flow.stableSet a = {a} :=
+  Flow.stableSet_eq_singleton_of_antitone hf.continuous.continuousAt (hX.antitone_flow hf) hmax
+
+/-- **The unstable set of a strict minimum is a point.** If `f` is differentiable and has a strict
+global minimum at `a`, then no other orbit of the flow converges to `a` in backward time. -/
+theorem unstableSet_eq_singleton_of_lt (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {a : M}
+    (hmin : ∀ y, y ≠ a → f a < f y) : hX.flow.unstableSet a = {a} :=
+  Flow.unstableSet_eq_singleton_of_antitone hf.continuous.continuousAt (hX.antitone_flow hf) hmin
+
 /-- **Two critical points.** If every critical point of a Morse function is one of two distinct
 points `a` and `b`, and the stable set of `a` is `{a}`, then the stable set of `b` is everything
 else. -/
@@ -212,6 +229,23 @@ theorem unstableSet_eq_compl_of_critical_eq_or_eq (hf : IsMorse 𝓘(ℝ, E) f) 
     rcases hcrit c hc with rfl | rfl
     · exact hpc
     · exact absurd (hb ▸ hpc) hpb
+
+/-- The flow of `-X` is the flow of `X` run backwards. -/
+theorem neg_flow (hf : IsMorse 𝓘(ℝ, E) f) :
+    (hX.neg hf).flow = hX.flow.reverse := by
+  ext t y
+  have hγ : IsMIntegralCurve ((fun s ↦ hX.flow s y) ∘ (· * (-1 : ℝ))) (-X) := by
+    have := (hX.isMIntegralCurve_flow y).comp_mul (-1)
+    rwa [neg_one_smul] at this
+  have h := globalFlow_eq_of_isMIntegralCurve ((hX.neg hf).contMDiff.of_le (by simp))
+    (hX.neg hf).maximalIntegralCurveInterval_eq_univ hγ t
+  simp only [comp_apply, mul_neg_one, neg_zero, Flow.map_zero_apply] at h
+  rw [Flow.reverse_apply, ← h, (hX.neg hf).flow_apply, globalFlow_apply]
+
+/-- The unstable set of a critical point is its stable set for the reversed pseudo-gradient. -/
+theorem unstableSet_eq_stableSet_neg (hf : IsMorse 𝓘(ℝ, E) f) (x : M) :
+    hX.flow.unstableSet x = (hX.neg hf).flow.stableSet x := by
+  rw [hX.neg_flow hf, Flow.stableSet_reverse]
 
 end IsAdaptedPseudoGradient
 

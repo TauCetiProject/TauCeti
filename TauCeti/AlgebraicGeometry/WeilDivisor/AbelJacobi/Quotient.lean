@@ -139,7 +139,7 @@ lemma weightedAbelJacobiQuotientClass_eq_sum (w : X → ℤ) {x₀ : X} (hx₀ :
       rw [S.weightedAbelJacobiQuotientClass_add w hx₀, Finsupp.sum_add_index, hD, hE]
       · intro x
         simp
-      · intro x a b
+      · intro x _ b
         simp [add_zsmul]
 
 /-- The base-point divisor represents zero in the degree-zero quotient. -/

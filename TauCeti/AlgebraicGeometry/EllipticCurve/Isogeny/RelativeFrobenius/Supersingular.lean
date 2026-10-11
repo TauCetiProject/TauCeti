@@ -11,6 +11,8 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RelativeFrobenius.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Separability
 -- Proof-only: `deg [n] = n ²`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Degree
+-- Proof-only: the separable degree of `[n ^ k]`.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Separability
 -- Proof-only: `[p]` and relative Frobenius under base change.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.BaseChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RelativeFrobenius.Naturality
@@ -47,12 +49,17 @@ separable degree, which connects the two.
 
 ## Main results
 
-* `WeierstrassCurve.isSupersingular_iff_separableDegree_mulByIntIsogenyOfNeZero_eq_one`: `W` is
-  supersingular exactly when `[p]` has separable degree `1`.
+* `WeierstrassCurve.isSupersingular_iff_separableDegree_mulByIntIsogenyOfNeZero_eq_one` and
+  `WeierstrassCurve.isSupersingular_iff_separableDegree_mulByIntIsogenyOfNeZero_pow_eq_one`: `W`
+  is supersingular exactly when `[p]`, or any `[p ^ k]` with `k ≠ 0`, has separable degree `1`.
 * `WeierstrassCurve.isSupersingular_iff_isPurelyInseparable_verschiebungIsogeny`: `W` is
   supersingular exactly when its Verschiebung is purely inseparable.
 * `WeierstrassCurve.isOrdinary_iff_isSeparable_verschiebungIsogeny`: in characteristic `p > 0`,
   `W` is ordinary exactly when its Verschiebung is separable.
+* `WeierstrassCurve.isOrdinary_iff_separableDegree_mulByIntIsogenyOfNeZero_eq` and
+  `WeierstrassCurve.isOrdinary_iff_separableDegree_mulByIntIsogenyOfNeZero_pow_eq`: in
+  characteristic `p > 0`, `W` is ordinary exactly when `[p ^ k]` has separable degree `p ^ k`, for
+  `k = 1` or any `k ≠ 0`.
 
 ## References
 
@@ -151,6 +158,16 @@ theorem isSupersingular_iff_separableDegree_mulByIntIsogenyOfNeZero_eq_one :
   exact isSupersingular_of_separableDegree_verschiebungIsogeny_eq_one p W
     ((separableDegree_verschiebungIsogeny p W.toAffine).trans h)
 
+/-- **Supersingularity is pure inseparability of `[p ^ k]`**: for `k ≠ 0`, `W` is supersingular
+exactly when multiplication by `p ^ k` has separable degree `1` (Silverman V.3.1). -/
+theorem isSupersingular_iff_separableDegree_mulByIntIsogenyOfNeZero_pow_eq_one {k : ℕ}
+    (hk : k ≠ 0) :
+    W.IsSupersingular p ↔ (mulByIntIsogenyOfNeZero W.toAffine
+      (pow_ne_zero k (mod_cast expChar_ne_zero K p : (p : ℤ) ≠ 0))).separableDegree = 1 := by
+  rw [separableDegree_mulByIntIsogenyOfNeZero_pow _ (mod_cast expChar_ne_zero K p), Nat.pow_eq_one,
+    or_iff_left hk,
+    isSupersingular_iff_separableDegree_mulByIntIsogenyOfNeZero_eq_one]
+
 /-- **Supersingularity is pure inseparability of the Verschiebung**: `W` is supersingular exactly
 when `V : W⁽ᵖ⁾ → W`, the dual of relative Frobenius, is purely inseparable (Silverman V.3.1). -/
 theorem isSupersingular_iff_isPurelyInseparable_verschiebungIsogeny :
@@ -172,6 +189,26 @@ theorem isOrdinary_iff_isSeparable_verschiebungIsogeny (hp : p.Prime) :
   exact ⟨(isSeparable_or_isPurelyInseparable_verschiebungIsogeny p W.toAffine).resolve_right,
     fun hsep hpi ↦ not_isSeparable_verschiebungIsogeny_of_separableDegree_eq_one p W hp
       ((separableDegree_eq_one_iff_isPurelyInseparable _).2 hpi) hsep⟩
+
+/-- **Ordinarity in terms of the separable degree of `[p]`**: in characteristic `p > 0`, `W` is
+ordinary exactly when multiplication by `p` has separable degree `p`, the degree of the
+Verschiebung (Silverman V.3.1). -/
+theorem isOrdinary_iff_separableDegree_mulByIntIsogenyOfNeZero_eq (hp : p.Prime) :
+    W.IsOrdinary p ↔ (mulByIntIsogenyOfNeZero W.toAffine (n := p)
+      (mod_cast expChar_ne_zero K p)).separableDegree = p := by
+  rw [isOrdinary_iff_isSeparable_verschiebungIsogeny p W hp, ← separableDegree_verschiebungIsogeny,
+    ← separableDegree_eq_degree_iff_isSeparable, degree_verschiebungIsogeny]
+
+/-- **Ordinarity in terms of the separable degree of `[p ^ k]`**: in characteristic `p > 0` and for
+`k ≠ 0`, `W` is ordinary exactly when multiplication by `p ^ k` has separable degree `p ^ k`
+(Silverman V.3.1). -/
+theorem isOrdinary_iff_separableDegree_mulByIntIsogenyOfNeZero_pow_eq (hp : p.Prime) {k : ℕ}
+    (hk : k ≠ 0) :
+    W.IsOrdinary p ↔ (mulByIntIsogenyOfNeZero W.toAffine
+      (pow_ne_zero k (mod_cast expChar_ne_zero K p : (p : ℤ) ≠ 0))).separableDegree = p ^ k := by
+  rw [separableDegree_mulByIntIsogenyOfNeZero_pow _ (mod_cast expChar_ne_zero K p),
+    Nat.pow_left_injective hk |>.eq_iff,
+    isOrdinary_iff_separableDegree_mulByIntIsogenyOfNeZero_eq p W hp]
 
 end WeierstrassCurve
 

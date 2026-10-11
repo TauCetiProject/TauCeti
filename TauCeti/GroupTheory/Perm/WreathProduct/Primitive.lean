@@ -141,9 +141,6 @@ theorem isPreprimitive_product [Finite ι] [Nontrivial Λ] [FaithfulSMul D Λ]
     · subst j
       simpa [s, baseSingle, c] using mem_stabilizer_iff.mp hda
     · simp [s, baseSingle, c, hji]
-  have hsy_ne : s • y ≠ y := by
-    intro h
-    exact hdy (by simpa [s, baseSingle] using congrFun h i)
   have hsB : s • B = B := hB.smul_eq_of_mem hc (hsc.symm ▸ hc)
   have hsy : s • y ∈ B := hsB ▸ Set.smul_mem_smul_set hy
   choose t ht using fun j ↦ exists_smul_eq D (y j) a

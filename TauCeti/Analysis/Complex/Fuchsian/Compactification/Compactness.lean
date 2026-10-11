@@ -62,7 +62,7 @@ theorem compactSpace_of_compact_truncations
   obtain ⟨K, hK, hcoverK⟩ := htrunc A
   have hcompact : IsCompact ((fun z : ℍ ↦ ofQuotient (Quotient.mk (orbitRel Γ ℍ) z)) '' K) :=
     hK.image (continuous_ofQuotient.comp continuous_quotient_mk')
-  obtain ⟨t, ht⟩ := hcompact.elim_finite_subcover U hU fun x hx ↦
+  obtain ⟨t, ht⟩ := hcompact.elim_finite_subcover U hU fun x _ ↦
     hcover (mem_univ x)
   refine ⟨t ∪ Finset.univ.image i, ?_⟩
   intro x _

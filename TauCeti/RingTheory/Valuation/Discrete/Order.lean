@@ -117,6 +117,16 @@ theorem ord_surjective (v : _root_.Valuation F ℤᵐ⁰) (hv : Function.Surject
   have hf0 : f ≠ 0 := v.ne_zero_iff.mp (by simp [hf])
   exact ⟨f, (ord_eq_iff_valuation_eq_exp_neg v hf0).mpr hf⟩
 
+/-- **A valuation that takes the value `exp (-1)` is surjective onto `ℤᵐ⁰`**: the integer powers
+of an element of value `exp (-1)` take every nonzero value. -/
+theorem surjective_of_map_eq_exp_neg_one (v : _root_.Valuation F ℤᵐ⁰) {t : F}
+    (ht : v t = WithZero.exp (-1)) : Function.Surjective v := by
+  intro x
+  induction x using WithZero.expRecOn with
+  | zero => exact ⟨0, map_zero v⟩
+  | exp n => exact ⟨t ^ (-n), by rw [map_zpow₀, ht, ← WithZero.exp_zsmul, smul_eq_mul, neg_mul_neg,
+      mul_one]⟩
+
 theorem mem_valuationSubring_iff_ord_nonneg (v : _root_.Valuation F ℤᵐ⁰) {f : F} :
     f ∈ v.valuationSubring ↔ 0 ≤ ord v f := by
   rcases eq_or_ne f 0 with rfl | hf

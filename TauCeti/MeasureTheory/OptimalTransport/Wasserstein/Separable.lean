@@ -139,7 +139,7 @@ theorem separableSpace (hp_top : p ≠ ∞) :
       exact Finset.sum_congr rfl fun x _ ↦ by simp
     rw [hν₃_def, Measure.smul_apply, hmass, smul_eq_mul, hmsum,
       ENNReal.inv_mul_cancel (Nat.cast_ne_zero.2 hmpos.ne') (ENNReal.natCast_ne_top _)]
-  obtain ⟨x₁, hx₁⟩ : (s.image T).Nonempty := by
+  obtain ⟨x₁, _⟩ : (s.image T).Nonempty := by
     rw [Finset.nonempty_iff_ne_empty]
     rintro he
     rw [he] at hmpos

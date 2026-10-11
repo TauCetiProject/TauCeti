@@ -31,7 +31,10 @@ In a category with zero morphisms, a zero object and binary biproducts give all 
 `Option J` splits off its `none` summand (`TauCeti.biproductOptionIso`); the latter is the
 inductive step for computing additive invariants of finite biproducts. An additive functor which
 kills one summand of a binary biproduct inverts the projection onto the other
-(`CategoryTheory.Functor.isIso_map_biprod_fst_of_isZero`).
+(`CategoryTheory.Functor.isIso_map_biprod_fst_of_isZero`). For a functor out of `Cᵒᵖ`, the
+comparison `F.obj (op (X ⊞ Y)) ≅ F.obj (op X) ⊞ F.obj (op Y)` through `biprod.opIso` has inverse
+given by the images of the projections
+(`CategoryTheory.Functor.mapIso_biprod_opIso_trans_mapBiprod_inv`).
 -/
 
 public section
@@ -262,6 +265,27 @@ theorem isIso_map_biprod_fst_of_isZero (X Y : C) [HasBinaryBiproduct X Y]
   · rw [← F.map_comp, eq_sub_of_add_eq biprod.total]
     simp [hY.eq_zero_of_tgt (F.map biprod.snd)]
   · rw [← F.map_comp, biprod.inl_fst, F.map_id]
+
+section Op
+
+open Opposite
+
+variable {C : Type u} {D : Type v} [Category.{w} C] [Category.{w'} D] [HasZeroMorphisms C]
+  [HasZeroMorphisms D] (F : Cᵒᵖ ⥤ D) (X Y : C) [HasBinaryBiproduct X Y]
+  [F.PreservesZeroMorphisms] [PreservesBinaryBiproduct (op X) (op Y) F]
+
+/-- For a functor `F` out of `Cᵒᵖ`, the inverse of the comparison
+`F.obj (op (X ⊞ Y)) ≅ F.obj (op X) ⊞ F.obj (op Y)` through `biprod.opIso` is given by the images
+of the opposites of the projections. -/
+theorem mapIso_biprod_opIso_trans_mapBiprod_inv :
+    (F.mapIso (biprod.opIso X Y) ≪≫ F.mapBiprod (op X) (op Y)).inv =
+      biprod.desc (F.map (biprod.fst : X ⊞ Y ⟶ X).op) (F.map (biprod.snd : X ⊞ Y ⟶ Y).op) := by
+  rw [Iso.trans_inv, Functor.mapIso_inv, Functor.mapBiprod_inv]
+  apply biprod.hom_ext'
+  · rw [biprod.inl_desc_assoc, ← F.map_comp, biprod.inl_opIso_inv, biprod.inl_desc]
+  · rw [biprod.inr_desc_assoc, ← F.map_comp, biprod.inr_opIso_inv, biprod.inr_desc]
+
+end Op
 
 end CategoryTheory.Functor
 

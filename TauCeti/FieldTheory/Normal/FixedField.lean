@@ -61,7 +61,7 @@ theorem IntermediateField.isPurelyInseparable_fixedField_top (F E : Type*) [Fiel
     exact (IntermediateField.mem_fixedField_iff _ _).mp x.2 σ (Subgroup.mem_top σ)
   -- `minpoly F y` splits in `E` and is separable, so it has `natDegree` many distinct roots;
   -- all of them are `y`, so that degree is one.
-  set q : Polynomial E := (minpoly F y).map (algebraMap F E) with hq
+  set q : Polynomial E := (minpoly F y).map (algebraMap F E)
   have hq0 : q ≠ 0 := ((minpoly.monic hint).map (algebraMap F E)).ne_zero
   have hcard : Multiset.card q.roots = q.natDegree :=
     Polynomial.splits_iff_card_roots.mp (Normal.splits ‹Normal F E› y)

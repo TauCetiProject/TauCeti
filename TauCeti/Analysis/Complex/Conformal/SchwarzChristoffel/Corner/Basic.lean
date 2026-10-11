@@ -238,7 +238,6 @@ private theorem norm_schwarzChristoffelCornerRemainder_sub_le (a e : ι → ℝ)
     rw [intervalIntegral.integral_const_mul,
       integral_rpow (Or.inl (by simpa [T] using he)), Real.one_rpow]
     have hδpow : 0 ≤ δ ^ (T + 1) := Real.rpow_nonneg hδ.1.le _
-    have hden : 0 < T + 1 := hT1
     calc
       ε * ‖z - q‖ ^ (T + 1) * ((1 - δ ^ (T + 1)) / (T + 1))
           ≤ ε * ‖z - q‖ ^ (T + 1) * (1 / (T + 1)) := by

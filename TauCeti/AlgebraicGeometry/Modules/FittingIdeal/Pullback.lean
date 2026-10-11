@@ -7,17 +7,26 @@ module
 
 public import TauCeti.AlgebraicGeometry.Modules.FittingIdeal.Basic
 public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation
+public import TauCeti.AlgebraicGeometry.Modules.Differentials.Quasicoherent
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Locality
+import Mathlib.AlgebraicGeometry.Morphisms.Flat
 
 /-!
 # Pullback of Fitting ideal sheaves
 
 Fitting ideal sheaves of quasicoherent modules of finite type commute with pullback.
 Their affine computation is the algebraic identity `Fitt_k(S ⊗_R M) = Fitt_k(M) S`.
-This compatibility is an ingredient for base change of relative singular subschemes.
-That application also requires a pullback comparison for relative differentials,
-which is not established here.
+For a cartesian square over affine schemes, the Fitting ideals of relative Kähler differentials
+on corresponding affine charts are related by the same extension-of-scalars identity.
+
+## Main results
+
+* `AlgebraicGeometry.Scheme.fittingIdeal_kaehlerDifferential_preimage_eq_map`: on an affine chart
+  of a cartesian square over affine bases, `Fitt_k` of the relative differentials is the extension
+  of the corresponding Fitting ideal on the original chart.
+* `AlgebraicGeometry.Scheme.Modules.fittingIdeal_pullback`: Fitting ideal sheaves commute with
+  arbitrary pullback.
 
 ## References
 
@@ -30,11 +39,70 @@ public section
 
 noncomputable section
 
-open CategoryTheory AlgebraicGeometry
+open CategoryTheory AlgebraicGeometry Opposite TauCeti.AlgebraicGeometry
+
+open scoped TensorProduct
 
 namespace TauCeti
 
 universe u
+
+section Differentials
+
+variable {R R' : Type u} [CommRing R] [CommRing R'] [Algebra R R']
+  {X X' : Scheme.{u}} [X.Over (Spec (.of R))] [X'.Over (Spec (.of R'))] {g : X' ⟶ X}
+
+/-- Let `X'` be the base change of `X` along `Spec R' → Spec R`, with projection `g : X' ⟶ X`.
+Over an affine open `U` of `X`, the `k`-th Fitting ideal of
+`Ω[Γ(X', g⁻¹ U)⁄R']` is the extension of that of `Ω[Γ(X, U)⁄R]`. -/
+theorem _root_.AlgebraicGeometry.Scheme.fittingIdeal_kaehlerDifferential_preimage_eq_map
+    (H : IsPullback g (X' ↘ Spec (.of R')) (X ↘ Spec (.of R))
+      (Spec.map (CommRingCat.ofHom (algebraMap R R')))) {U : X.Opens} (hU : IsAffineOpen U)
+    [LocallyOfFiniteType (X ↘ Spec (.of R))] [LocallyOfFiniteType (X' ↘ Spec (.of R'))]
+    [IsAffineHom g] (k : ℕ) :
+    letI : Algebra R Γ(X, U) := ((X.baseRingToStructurePresheaf R).app (op U)).hom.toAlgebra
+    letI : Algebra R' Γ(X', g ⁻¹ᵁ U) :=
+      ((X'.baseRingToStructurePresheaf R').app (op (g ⁻¹ᵁ U))).hom.toAlgebra
+    haveI := finiteType_sections_of_locallyOfFiniteType R X ⟨U, hU⟩
+    haveI := finiteType_sections_of_locallyOfFiniteType R' X' ⟨g ⁻¹ᵁ U, hU.preimage g⟩
+    fittingIdeal Γ(X', g ⁻¹ᵁ U) Ω[Γ(X', g ⁻¹ᵁ U)⁄R'] k =
+      (fittingIdeal Γ(X, U) Ω[Γ(X, U)⁄R] k).map (g.appLE U (g ⁻¹ᵁ U) le_rfl).hom := by
+  let : Algebra R Γ(X, U) := ((X.baseRingToStructurePresheaf R).app (op U)).hom.toAlgebra
+  let : Algebra R' Γ(X', g ⁻¹ᵁ U) :=
+    ((X'.baseRingToStructurePresheaf R').app (op (g ⁻¹ᵁ U))).hom.toAlgebra
+  let : Algebra Γ(X, U) Γ(X', g ⁻¹ᵁ U) := (g.appLE U (g ⁻¹ᵁ U) le_rfl).hom.toAlgebra
+  have := finiteType_sections_of_locallyOfFiniteType R X ⟨U, hU⟩
+  have := finiteType_sections_of_locallyOfFiniteType R' X' ⟨g ⁻¹ᵁ U, hU.preimage g⟩
+  -- Sections over affine opens of a fibre product of schemes form the pushout of rings; replace
+  -- `Γ(Spec R, ⊤)` and `Γ(Spec R', ⊤)` by `R` and `R'`.
+  have hpush : IsPushout (CommRingCat.ofHom (algebraMap R R'))
+      (CommRingCat.ofHom (algebraMap R Γ(X, U))) (CommRingCat.ofHom (algebraMap R' Γ(X', g ⁻¹ᵁ U)))
+      (CommRingCat.ofHom (algebraMap Γ(X, U) Γ(X', g ⁻¹ᵁ U))) := by
+    have := isIso_pushoutSection_of_isAffineOpen H (US := ⊤) (UT := ⊤) (UX := U)
+      (UY := g ⁻¹ᵁ U) le_top le_top (by simp) (isAffineOpen_top _) (isAffineOpen_top _) hU
+    refine ((isIso_pushoutSection_iff ..).mp this).flip.of_iso (Scheme.ΓSpecIso (.of R))
+      (Scheme.ΓSpecIso (.of R')) (Iso.refl _) (Iso.refl _) ?_ ?_ ?_ ?_
+    · rw [← Scheme.ΓSpecIso_naturality]
+      exact congrArg (· ≫ _) (Scheme.Hom.appLE_eq_app _)
+    · simp only [RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom,
+        Scheme.baseRingToStructurePresheaf_app_eq_appLE, Iso.hom_inv_id_assoc, Iso.refl_hom,
+        Category.comp_id]
+    · simp only [RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom,
+        Scheme.baseRingToStructurePresheaf_app_eq_appLE, Iso.hom_inv_id_assoc, Iso.refl_hom,
+        Category.comp_id]
+    · simp only [RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom, Iso.refl_hom,
+        Category.comp_id, Category.id_comp]
+  let : Algebra R Γ(X', g ⁻¹ᵁ U) :=
+    ((algebraMap R' Γ(X', g ⁻¹ᵁ U)).comp (algebraMap R R')).toAlgebra
+  have : IsScalarTower R R' Γ(X', g ⁻¹ᵁ U) := .of_algebraMap_eq' rfl
+  have hw := congrArg CommRingCat.Hom.hom hpush.w
+  simp only [CommRingCat.hom_comp, CommRingCat.hom_ofHom] at hw
+  have : IsScalarTower R Γ(X, U) Γ(X', g ⁻¹ᵁ U) := .of_algebraMap_eq' hw
+  have : Algebra.IsPushout R R' Γ(X, U) Γ(X', g ⁻¹ᵁ U) :=
+    CommRingCat.isPushout_iff_isPushout.mp hpush
+  exact fittingIdeal_kaehlerDifferential_eq_map R R' Γ(X, U) Γ(X', g ⁻¹ᵁ U) k
+
+end Differentials
 
 /-- The affine calculation used to glue the pullback identity. -/
 private theorem fittingIdeal_pullback_SpecMap

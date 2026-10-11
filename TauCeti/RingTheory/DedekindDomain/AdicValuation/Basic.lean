@@ -43,8 +43,13 @@ by the class-group interface and the multiplicative value can be read off from o
 * `IsDedekindDomain.HeightOneSpectrum.neg_log_valuation_eq_one_iff`: order of vanishing `1` at `v`
   is the value `WithZero.exp (-1)`, which relates the multiplicative value group of the adic
   valuation to the additive order of vanishing used by the class-group interface.
+* `IsDedekindDomain.HeightOneSpectrum.algebraMap_mem_maximalIdeal_valuationSubring_iff`: an
+  element of `R` lies in `v` exactly when its image in the valuation ring of `K` at `v` lies in
+  the maximal ideal.
 * `IsDedekindDomain.HeightOneSpectrum.isTrivialOn_valuation`: adic valuations are trivial on
   semifield constants.
+* `IsDedekindDomain.HeightOneSpectrum.exists_mem_intValuation_eq_exp_neg_one`: a set generating a
+  height one prime contains an element of order of vanishing `1`.
 
 ## Implementation notes
 
@@ -208,6 +213,18 @@ theorem neg_log_valuation_eq_one_iff (v : HeightOneSpectrum R) (x : K) :
   · intro h
     rw [h, WithZero.log_exp, neg_neg]
 
+/-- An element of `R` lies in the prime `v` exactly when its image in the valuation ring of `K` at
+`v` lies in the maximal ideal. The algebra structure of `R` on the valuation ring is taken as a
+hypothesis, compatible with `K`, since there is no such instance in general; for `R = ℤ` it is
+the canonical one. -/
+theorem algebraMap_mem_maximalIdeal_valuationSubring_iff (v : HeightOneSpectrum R)
+    [Algebra R (v.valuation K).valuationSubring]
+    [IsScalarTower R (v.valuation K).valuationSubring K] (r : R) :
+    algebraMap R (v.valuation K).valuationSubring r ∈ IsLocalRing.maximalIdeal _ ↔
+      r ∈ v.asIdeal := by
+  rw [Valuation.mem_maximalIdeal_iff, ← ValuationSubring.algebraMap_apply,
+    ← IsScalarTower.algebraMap_apply, v.valuation_lt_one_iff_mem]
+
 end IsDedekindDomain.HeightOneSpectrum
 
 end ValueGroup
@@ -225,5 +242,35 @@ instance isTrivialOn_valuation (p : HeightOneSpectrum R) :
   eq_one c hc := by
     rw [IsScalarTower.algebraMap_apply k R F, valuation_eq_one_iff_notMem]
     exact Ideal.notMem_of_isUnit _ ((isUnit_iff_ne_zero.mpr hc).map (algebraMap k R))
+
+end IsDedekindDomain.HeightOneSpectrum
+
+namespace IsDedekindDomain.HeightOneSpectrum
+
+variable {R : Type*} [CommRing R] [IsDedekindDomain R] (v : HeightOneSpectrum R)
+
+/-- **An element of a height one prime outside its square has order of vanishing `1`.** -/
+theorem intValuation_eq_exp_neg_one_of_mem_of_notMem_sq {r : R} (hr : r ∈ v.asIdeal)
+    (hr2 : r ∉ v.asIdeal ^ 2) : v.intValuation r = WithZero.exp (-1) := by
+  have h1 := (v.intValuation_le_pow_iff_mem r 1).mpr (by rwa [pow_one])
+  have h2 := mt (v.intValuation_le_pow_iff_mem r 2).mp hr2
+  have hne : v.intValuation r ≠ 0 :=
+    v.intValuation_ne_zero r fun h0 ↦ hr2 (h0 ▸ Ideal.zero_mem _)
+  rw [← WithZero.exp_log hne, WithZero.exp_le_exp] at h1 h2
+  rw [← WithZero.exp_log hne, WithZero.exp_inj]
+  push_cast at h1 h2
+  omega
+
+/-- **A set generating a height one prime contains an element of order of vanishing `1`**:
+otherwise the prime would lie in its own square. -/
+theorem exists_mem_intValuation_eq_exp_neg_one {s : Set R} (hs : Ideal.span s = v.asIdeal) :
+    ∃ r ∈ s, v.intValuation r = WithZero.exp (-1) := by
+  by_contra! h
+  have hle : v.asIdeal ≤ v.asIdeal ^ 2 := by
+    refine hs.symm.trans_le (Ideal.span_le.mpr fun r hr ↦ ?_)
+    by_contra hr2
+    exact h r hr (v.intValuation_eq_exp_neg_one_of_mem_of_notMem_sq (hs ▸ Ideal.subset_span hr)
+      hr2)
+  exact (Ideal.pow_succ_lt_pow v.ne_bot 1).not_ge (by rwa [pow_one])
 
 end IsDedekindDomain.HeightOneSpectrum

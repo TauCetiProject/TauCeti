@@ -12,6 +12,7 @@ public import TauCeti.RepresentationTheory.Induction.FiniteDimensional.Basic
 public import TauCeti.RepresentationTheory.Induction.Restriction
 public import Mathlib.CategoryTheory.Linear.Basic
 public import Mathlib.RepresentationTheory.Character
+import TauCeti.RepresentationTheory.Invariants
 
 /-!
 # Frobenius reciprocity as a character identity
@@ -39,6 +40,7 @@ representation is involved, so it also covers class functions that are not chara
   phrased against `TauCeti.ClassFunction.characterPairing`.
 * `TauCeti.card_inv_mul_sum_character_indFDRep`: reciprocity against the trivial representation,
   which says that induction does not change the (normalized) average of a character.
+* `TauCeti.finrank_invariants_indFDRep`: induction does not change the dimension of invariants.
 * `TauCeti.frobenius_reciprocity_classFunction` and `TauCeti.characterPairing_ind`: the class
   function form, `⟨Ind f, h⟩_G = ⟨f, Res h⟩_S`, for arbitrary class functions `f` on `S` and `h`
   on `G`.  `TauCeti.frobenius_reciprocity` is its special case for two characters and follows
@@ -133,6 +135,20 @@ private noncomputable def resIndFDRepHomEquiv [S.FiniteIndex] (A : FDRep k S) (B
 theorem finrank_hom_resFDRep [S.FiniteIndex] (A : FDRep k S) (B : FDRep k G) :
     Module.finrank k (Subgroup.resFDRep S B ⟶ A) = Module.finrank k (B ⟶ indFDRep A) :=
   (resIndFDRepHomEquiv A B).finrank_eq
+
+/-- **Induction preserves the dimension of invariants.** The invariant subspace of
+`Ind_S^G A` has the same dimension as the invariant subspace of `A`. -/
+theorem finrank_invariants_indFDRep [S.FiniteIndex] (A : FDRep k S) :
+    Module.finrank k (Representation.invariants (indFDRep A).ρ) =
+      Module.finrank k (Representation.invariants A.ρ) := by
+  -- Intertwiners in `FDRep` out of the trivial line are the invariant vectors.
+  have h {H : Type u} [Group H] (B : FDRep k H) :
+      Module.finrank k (FDRep.of (Representation.trivial k H k) ⟶ B) =
+        Module.finrank k (Representation.invariants B.ρ) :=
+    ((FDRep.forget₂HomLinearEquiv _ B).symm.trans
+      (Rep.trivialHomEquivInvariants ((forget₂ (FDRep k H) (Rep k H)).obj B))).finrank_eq
+  rw [← h, ← h]
+  exact (finrank_hom_resFDRep A (FDRep.of (Representation.trivial k G k))).symm
 
 end HomSpaces
 

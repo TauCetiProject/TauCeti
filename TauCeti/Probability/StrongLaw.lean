@@ -71,7 +71,7 @@ theorem strong_law_ae_infinitePi (Q : Measure α) [IsProbabilityMeasure Q] {f : 
     ∀ᵐ x ∂(Measure.infinitePi fun _ : ℕ => Q),
       Tendsto (fun n : ℕ => (n : ℝ)⁻¹ • ∑ i ∈ Finset.range n, f (x i)) atTop
         (𝓝 (∫ y, f y ∂Q)) := by
-  set P : Measure (ℕ → α) := Measure.infinitePi fun _ : ℕ => Q with hP
+  set P : Measure (ℕ → α) := Measure.infinitePi fun _ : ℕ => Q
   -- Every coordinate is measure preserving onto `Q`; integrability, identical distribution and the
   -- value of the limit all come from that one fact.
   have heval : ∀ i : ℕ, MeasurePreserving (fun x : ℕ → α => x i) P Q := fun i =>

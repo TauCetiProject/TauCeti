@@ -95,7 +95,7 @@ private theorem lpMultiplicationOperator_continuousAt_zero (hp : p ≠ ∞)
   rintro y ⟨s, a, rfl⟩
   simp_rw [map_sum]
   simpa only [hzero, ContinuousLinearMap.id_apply] using
-    (tendsto_finsetSum s fun i hi => (hsingle i (a i)).tendsto)
+    (tendsto_finsetSum s fun i _ => (hsingle i (a i)).tendsto)
 
 /-- The contraction semigroup of multiplication by `exp (-t * m)` on real ℓᵖ, for
 `1 ≤ p < ∞`. The nonnegative multiplier `m` may be unbounded. -/

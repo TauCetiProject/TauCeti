@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.LocalExistence.UpwardClosure
-public import TauCeti.Algebra.Group.PowerClassGroup
+public import TauCeti.Algebra.Group.PowerClassGroup.Basic
 
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic

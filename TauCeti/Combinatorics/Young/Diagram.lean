@@ -66,6 +66,11 @@ theorem rowLen_eq_zero_of_colLen_le {μ : YoungDiagram} {i : ℕ} (hi : μ.colLe
   exact absurd (_root_.YoungDiagram.mem_iff_lt_colLen.mp
     (_root_.YoungDiagram.mem_iff_lt_rowLen.mpr (Nat.pos_of_ne_zero h))) (Nat.not_lt.mpr hi)
 
+/-- The row of a cell is one of the rows of the diagram. -/
+theorem lt_colLen_zero_of_mem {μ : YoungDiagram} {i j : ℕ} (h : (i, j) ∈ μ) :
+    i < μ.colLen 0 :=
+  _root_.YoungDiagram.mem_iff_lt_colLen.mp (μ.up_left_mem le_rfl (Nat.zero_le j) h)
+
 /-- The empty Young diagram has no cells, so every row of it is empty. -/
 @[simp]
 theorem rowLen_bot (i : ℕ) : (⊥ : YoungDiagram).rowLen i = 0 := by

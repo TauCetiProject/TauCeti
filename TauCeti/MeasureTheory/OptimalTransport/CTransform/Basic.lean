@@ -712,7 +712,7 @@ theorem IsCConcave.exists_real_conjugate (hφ : IsCConcave c φ)
   have hm' : ∀ z, m ≤ c z := fun z ↦ hm (Set.mem_range_self z)
   have hM' : ∀ z, c z ≤ M := fun z ↦ hM (Set.mem_range_self z)
   obtain ⟨x₀, a, ha⟩ := hfin
-  set ψ := cTransform c φ with hψ
+  set ψ := cTransform c φ
   have hφψ : cTransformSymm c ψ = φ := hφ.cTransformSymm_cTransform
   -- The finite value of `φ` bounds its transform from above.
   have hψ_le (y : Y) : ψ y ≤ ((M - a : ℝ) : EReal) := by

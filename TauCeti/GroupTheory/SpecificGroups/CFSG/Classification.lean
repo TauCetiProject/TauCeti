@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.GroupTheory.SimpleGroupUniverse
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.Assembly.LieType
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.Assembly.HalfFrobenius
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Presentation
 public import Mathlib.GroupTheory.SpecificGroups.Alternating
 

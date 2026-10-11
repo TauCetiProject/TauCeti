@@ -72,7 +72,7 @@ then `disc b = d_K` exactly (over `ℚ`). -/
 theorem discr_eq_of_basis_isIntegral_of_span_eq_top (b : Basis ι ℚ K) (hb : ∀ i, IsIntegral ℤ (b i))
     (hspan : Submodule.span ℤ (Set.range fun i => (⟨b i, hb i⟩ : 𝓞 K)) = ⊤) :
     Algebra.discr ℚ (b : ι → K) = (NumberField.discr K : ℚ) := by
-  set v : ι → 𝓞 K := fun i => ⟨b i, hb i⟩ with hv
+  set v : ι → 𝓞 K := fun i => ⟨b i, hb i⟩
   -- The `𝒪_K`-valued family is `ℤ`-linearly independent: it maps to the `ℚ`-basis `b` under the
   -- (injective, `ℤ`-linear) inclusion `𝒪_K → K`.
   have hli : LinearIndependent ℤ v := by

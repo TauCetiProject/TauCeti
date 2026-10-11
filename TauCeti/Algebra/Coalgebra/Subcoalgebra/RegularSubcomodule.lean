@@ -157,7 +157,7 @@ theorem toRegularSubcomodule_finset_sup {ι : Type*} (s : Finset ι) (D : ι →
   classical
   induction s using Finset.induction_on with
   | empty => simp
-  | insert i s hi ih => simp [ih]
+  | insert i s _ ih => simp [ih]
 
 /-- A finite subcoalgebra is finite as a regular subcomodule. -/
 theorem toRegularSubcomodule_finite (D : Subcoalgebra R C) [Module.Finite R D.toSubmodule] :

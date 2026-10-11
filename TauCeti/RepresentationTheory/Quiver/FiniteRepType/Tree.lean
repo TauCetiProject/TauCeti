@@ -291,7 +291,7 @@ private theorem posDef_map_of_eq_starCartanMatrix
   rcases (by omega : (ℓ (σ 0) = 1 ∧ ℓ (σ 1) = 1) ∨
       (ℓ (σ 0) = 1 ∧ ℓ (σ 1) = 2 ∧ ℓ (σ 2) ≤ 4) ∨ 2 ≤ ℓ (σ 0) ∨
       (ℓ (σ 0) = 1 ∧ 3 ≤ ℓ (σ 1)) ∨ (ℓ (σ 0) = 1 ∧ ℓ (σ 1) = 2 ∧ 5 ≤ ℓ (σ 2))) with
-    ⟨ha, hb⟩ | ⟨ha, hb, hc⟩ | ha | ⟨ha, hb⟩ | ⟨ha, hb, hc⟩
+    ⟨ha, hb⟩ | ⟨ha, hb, hc⟩ | _ | ⟨_, hb⟩ | ⟨_, hb, hc⟩
   · rw [ha, hb] at hpos
     exact hpos (DynkinType.isSimplyLaced_D _) (starHasCartanType_D _)
   · rw [ha, hb] at hpos

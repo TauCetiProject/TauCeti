@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.InformationTheory.KullbackLeibler.DataProcessing
+public import TauCeti.MeasureTheory.Measure.Decomposition.Lebesgue
 public import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
@@ -25,10 +26,10 @@ proportional fitting.
 The measure `π.fitLaw f μ` satisfies a Pythagorean identity: for every finite measure `σ` with
 `σ.map f = μ`,
 `klDiv σ π = klDiv μ (π.map f) + klDiv σ (π.fitLaw f μ)`.
-It holds in `ℝ≥0∞` with no absolute-continuity or integrability hypothesis, and, when
-`μ ≪ π.map f`, contains both the minimality of the projection and its uniqueness as a minimiser.
-The first summand is the error of the law of `f` under `π`; the second measures how far `σ` still
-is from `π.fitLaw f μ`.
+It holds in `ℝ≥0∞` with no absolute-continuity or integrability hypothesis. When
+`μ ≪ π.map f`, it gives minimality of the projection, and uniqueness when the minimum relative
+entropy is finite. The first summand is the error of the law of `f` under `π`; the second measures
+how far `σ` is from `π.fitLaw f μ`.
 
 ## Main definitions
 
@@ -41,6 +42,9 @@ is from `π.fitLaw f μ`.
   law `μ` under `π.fitLaw f μ`.
 * `MeasureTheory.Measure.fitLaw_eq_self`: a measure under which `f` already has law `μ` is its
   own projection.
+* `MeasureTheory.Measure.fitLaw_apply_singleton`: on spaces with measurable singletons, the
+  projection multiplies the mass of each point `ω` by `μ {f ω} / π.map f {f ω}`;
+  `MeasureTheory.Measure.fitLaw_real_singleton` is the same for real masses.
 * `TauCeti.klDiv_eq_klDiv_map_add_klDiv_fitLaw`: the Pythagorean identity above.
 * `TauCeti.klDiv_fitLaw`: if `μ ≪ π.map f`, the projection lies at relative entropy
   `klDiv μ (π.map f)` from `π`.
@@ -73,9 +77,10 @@ variable {Ω X : Type*} [MeasurableSpace Ω] [MeasurableSpace X] {π σ : Measur
   {μ : Measure X}
 
 /-- The measure `π` reweighted along `f` by the density `dμ/d(f₊π)` of `μ` against the law of `f`
-under `π`. When `μ ≪ π.map f`, the law of `f` under `π.fitLaw f μ` is `μ`
-(`MeasureTheory.Measure.map_fitLaw_of_absolutelyContinuous`), and among all measures with this
-property it is the closest to `π` in relative entropy (`TauCeti.klDiv_fitLaw_le`). -/
+under `π`. When `μ ≪ π.map f` and `μ` has a Lebesgue decomposition with respect to `π.map f`,
+the law of `f` under `π.fitLaw f μ` is `μ`
+(`MeasureTheory.Measure.map_fitLaw_of_absolutelyContinuous`). For finite measures, it is closest
+to `π` in relative entropy among all measures with this law (`TauCeti.klDiv_fitLaw_le`). -/
 def fitLaw (π : Measure Ω) (f : Ω → X) (μ : Measure X) : Measure Ω :=
   π.withDensity fun ω ↦ μ.rnDeriv (π.map f) (f ω)
 
@@ -88,16 +93,18 @@ theorem fitLaw_absolutelyContinuous : π.fitLaw f μ ≪ π :=
   withDensity_absolutelyContinuous _ _
 
 /-- The law of `f` under `π.fitLaw f μ` is the law of `f` under `π` reweighted by `dμ/d(f₊π)`,
-which is the part of `μ` absolutely continuous with respect to `π.map f`. -/
+which is the absolutely continuous part of `μ` when `μ` has a Lebesgue decomposition with
+respect to `π.map f`. -/
 theorem map_fitLaw (hf : Measurable f) :
     (π.fitLaw f μ).map f = (π.map f).withDensity (μ.rnDeriv (π.map f)) := by
   rw [fitLaw_def]
   exact map_withDensity_eq_withDensity (jac := 1) hf measurable_const (measurable_rnDeriv _ _)
     (by simp) (by simp)
 
-/-- If `μ ≪ π.map f`, then `f` has law `μ` under `π.fitLaw f μ`. -/
+/-- If `μ ≪ π.map f` and `μ` has a Lebesgue decomposition with respect to `π.map f`, then
+`f` has law `μ` under `π.fitLaw f μ`. -/
 @[simp]
-theorem map_fitLaw_of_absolutelyContinuous [SigmaFinite μ] [SigmaFinite (π.map f)]
+theorem map_fitLaw_of_absolutelyContinuous [μ.HaveLebesgueDecomposition (π.map f)]
     (hf : Measurable f) (hμ : μ ≪ π.map f) : (π.fitLaw f μ).map f = μ := by
   rw [map_fitLaw hf, withDensity_rnDeriv_eq _ _ hμ]
 
@@ -119,10 +126,33 @@ theorem fitLaw_eq_self [SigmaFinite μ] (hf : Measurable f) (h : π.map f = μ) 
   conv_rhs => rw [← withDensity_one (μ := π)]
   exact withDensity_congr_ae (ae_of_ae_map hf.aemeasurable (rnDeriv_self _))
 
+/-- On spaces with measurable singletons, the projection reweights the mass of each point `ω` by
+the ratio of the masses that `μ` and the law of `f` under `π` give to `f ω`. -/
+theorem fitLaw_apply_singleton [MeasurableSingletonClass Ω] [MeasurableSingletonClass X]
+    [SigmaFinite (π.map f)] [μ.HaveLebesgueDecomposition (π.map f)]
+    (hf : Measurable f) (ω : Ω) :
+    π.fitLaw f μ {ω} = μ {f ω} / π.map f {f ω} * π {ω} := by
+  rw [fitLaw_def, withDensity_apply _ (measurableSet_singleton ω), lintegral_singleton]
+  rcases eq_or_ne (π {ω}) 0 with h | h
+  · rw [h, mul_zero, mul_zero]
+  have hle : π {ω} ≤ π.map f {f ω} := by
+    rw [map_apply hf (measurableSet_singleton _)]
+    exact measure_mono (Set.singleton_subset_iff.2 rfl)
+  rw [rnDeriv_eq_measure_singleton_div (ne_bot_of_le_ne_bot h hle) measure_singleton_lt_top.ne]
+
+/-- The real-mass form of `MeasureTheory.Measure.fitLaw_apply_singleton`: the projection reweights
+the real mass of each point `ω` by `μ.real {f ω} / (π.map f).real {f ω}`. -/
+theorem fitLaw_real_singleton [MeasurableSingletonClass Ω] [MeasurableSingletonClass X]
+    [SigmaFinite (π.map f)] [μ.HaveLebesgueDecomposition (π.map f)]
+    (hf : Measurable f) (ω : Ω) :
+    (π.fitLaw f μ).real {ω} = μ.real {f ω} / (π.map f).real {f ω} * π.real {ω} := by
+  rw [measureReal_def, fitLaw_apply_singleton hf, ENNReal.toReal_mul, ENNReal.toReal_div]
+  rfl
+
 /-- A measure `σ ≪ π` under which `f` has law `μ` is absolutely continuous with respect to the
 projection `π.fitLaw f μ`: the reweighting only removes mass on which `dμ/d(f₊π) ∘ f` vanishes,
 which `σ` does not charge. -/
-theorem absolutelyContinuous_fitLaw [SigmaFinite μ] [SigmaFinite (π.map f)]
+theorem absolutelyContinuous_fitLaw [μ.HaveLebesgueDecomposition (π.map f)]
     (hf : Measurable f) (hσ : σ.map f = μ) (hμ : μ ≪ π.map f) (h : σ ≪ π) :
     σ ≪ π.fitLaw f μ := by
   refine AbsolutelyContinuous.mk fun s hs hs0 ↦ ?_

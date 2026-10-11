@@ -64,6 +64,8 @@ fibre-constant for `F₁ / F₀`, and the traces compose, so the cotrace is tran
   `Con (ω) + Diff(F'/F) ≤ (Cotr ω)` for a nonzero Weil differential `ω`.
 * `TauCeti.weilDifferentialDivisor_weilDifferentialCotrace`: **the divisor of the cotrace**,
   `(Cotr ω) = Con (ω) + Diff(F'/F)` (Stichtenoth, Theorem 3.4.6).
+* `TauCeti.trace_finsum_repartitionDualComponent_weilDifferentialCotrace`: the local components of
+  `Cotr ω` at the places over `P` sum to `ω_P ∘ Tr_{F'/F}`, up to `Tr_{k'/k}`.
 * `TauCeti.weilDifferentialCotrace_smul`: the cotrace is `F`-semilinear,
   `Cotr (f · ω) = f · Cotr ω` (Stichtenoth, Proposition 3.4.11(a)).
 * `TauCeti.weilDifferentialCotrace_weilDifferentialCotrace`: the cotrace is transitive in
@@ -418,6 +420,40 @@ theorem weilDifferentialDivisor_weilDifferentialCotrace (hF : IsFunctionField k 
   apply hωx
   rw [repartitionDualComponent_apply, ← htrβ, ← trace_weilDifferentialCotrace_apply hF hF' ω,
     weilDifferentialFiltration_apply_eq_zero_of_mem_adeleFiltration hbound _ hpull, map_zero]
+
+/-- **The local components of a cotrace over one fibre**: for a place `P` of `F` and `v ∈ F'`,
+the local components at the places `P'` over `P` of `Cotr ω`, evaluated at `v`, sum to the local
+component of `ω` at `P` evaluated at `Tr_{F'/F} v`, up to the trace of `k' / k`:
+
+`Tr_{k'/k} (∑_{P' ∣ P} (Cotr ω)_{P'} v) = ω_P (Tr_{F'/F} v)`.
+
+This is the defining identity of the cotrace on the fibre-constant repartition that is `v` over `P`
+and `0` elsewhere. -/
+theorem trace_finsum_repartitionDualComponent_weilDifferentialCotrace (hF : IsFunctionField k F)
+    (hF' : IsFunctionField k' F') (ω : ↥(weilDifferentialSpace k F)) (P : Place k F) (v : F') :
+    Algebra.trace k k' (∑ᶠ (P' : Place k' F') (_ : P'.restrict k F = P),
+        repartitionDualComponent (weilDifferentialCotrace k' F' hF hF' ω :
+          Module.Dual k' ↥(repartitionSpace k' F')) P' v) =
+      repartitionDualComponent (ω : Module.Dual k ↥(repartitionSpace k F)) P
+        (Algebra.trace F F' v) := by
+  classical
+  let β : ↥(relativeRepartitionSpace k F F') :=
+    ⟨Pi.single P v, mem_relativeRepartitionSpace_iff.mpr <| Filter.eventually_cofinite.mpr <|
+      (Set.finite_singleton P).subset fun Q hQ ↦ by
+        by_contra hne
+        exact hQ (by simp [Pi.single_eq_of_ne (Set.mem_singleton_iff.not.mp hne)])⟩
+  have htr : repartitionTrace k F F' hF β = singleRepartition P (Algebra.trace F F' v) :=
+    Subtype.ext <| funext fun Q ↦ by
+      rw [repartitionTrace_apply]
+      rcases eq_or_ne Q P with rfl | hQ
+      · simp [β]
+      · simp [β, hQ, singleRepartition_of_ne hQ]
+  rw [repartitionDualComponent_apply, ← htr, ← trace_weilDifferentialCotrace_apply hF hF' ω β,
+    apply_eq_finsum_repartitionDualComponent (weilDifferentialCotrace k' F' hF hF' ω).2]
+  congr 1
+  refine finsum_congr fun P' ↦ ?_
+  rw [relativeRepartitionPullback_apply]
+  by_cases hP' : P'.restrict k F = P <;> simp [β, hP']
 
 end Cotrace
 

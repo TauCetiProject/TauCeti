@@ -57,6 +57,8 @@ restrictions.
   vanishes is killed by `[G : S]`.
 * `groupCohomology.natCard_nsmul_eq_zero`: positive-degree cohomology of a finite group is killed
   by the order of the group.
+* `groupCohomology.subsingleton_of_isUnit_natCard`: positive-degree cohomology of a finite group
+  vanishes when the order of the group is a unit of the coefficient ring.
 * `TauCeti.groupCohomology.corestriction_trans`: corestriction from `A` to `B` followed by
   corestriction from `B` to `C` is corestriction from `A` to `C`.
 
@@ -435,6 +437,14 @@ theorem natCard_nsmul_eq_zero {A : Rep k G} {n : ℕ} (x : groupCohomology A (n 
   simpa using TauCeti.groupCohomology.index_nsmul_eq_zero_of_map_eq_zero ⊥ <|
     (ModuleCat.subsingleton_of_isZero
       (isZero_groupCohomology_succ_of_subsingleton (res (⊥ : Subgroup G).subtype A) n)).allEq _ _
+
+/-- Positive-degree cohomology of a finite group vanishes when the order of the group is a unit
+of the coefficient ring. -/
+theorem subsingleton_of_isUnit_natCard (A : Rep k G) (h : IsUnit (Nat.card G : k)) (n : ℕ) :
+    Subsingleton (groupCohomology A (n + 1)) := by
+  refine subsingleton_of_forall_eq 0 fun x ↦ ?_
+  obtain ⟨c, hc⟩ := h.exists_left_inv
+  rw [← one_smul k x, ← hc, mul_smul, Nat.cast_smul_eq_nsmul, natCard_nsmul_eq_zero, smul_zero]
 
 end groupCohomology
 

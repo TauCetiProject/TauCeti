@@ -44,6 +44,8 @@ carried out after a finite constant field extension.
 * `TauCeti.isIntegrallyClosedIn_of_constantCompositum_eq_top`: for a separable constant field
   extension by a perfect `k'`, in particular over a perfect `k`, `k'` is the exact constant field
   of `F · k'` (Stichtenoth, Proposition 3.6.1(a)).
+* `TauCeti.adjoin_image_eq_top_of_constantCompositum_eq_top`: generators of `F` over `k` generate
+  `F · k'` over `k'`.
 
 ## Reference
 
@@ -141,6 +143,25 @@ theorem isIntegrallyClosedIn_of_constantCompositum_eq_top [Algebra.IsSeparable k
   refine isIntegrallyClosedIn_iff_forall_isAlgebraic.2 fun z hz ↦ IntermediateField.mem_bot.1 ?_
   rw [← separableClosure_eq_bot_of_constantCompositum_eq_top hex h]
   exact PerfectField.separable_of_irreducible (minpoly.irreducible hz.isIntegral)
+
+/-- **Generators of `F` generate the compositum over `k'`**: if a set `S` generates `F` over `k`,
+then its image generates the compositum `F' = F · k'` over `k'`.  For instance, if
+`F = k(x, y)` then `F · k' = k'(x, y)`. -/
+theorem adjoin_image_eq_top_of_constantCompositum_eq_top {S : Set F}
+    (hS : IntermediateField.adjoin k S = ⊤) (h : constantCompositum F k' F' = ⊤) :
+    IntermediateField.adjoin k' (algebraMap F F' '' S) = ⊤ := by
+  set E := IntermediateField.adjoin k' (algebraMap F F' '' S)
+  -- `E` contains the image of `F = k(S)`, so it is an intermediate field of `F' / F`.
+  have hFE : ∀ f : F, algebraMap F F' f ∈ E := by
+    have hle : IntermediateField.adjoin k S ≤
+        (E.restrictScalars k).comap (IsScalarTower.toAlgHom k F F') :=
+      IntermediateField.adjoin_le_iff.mpr fun z hz ↦
+        IntermediateField.subset_adjoin k' _ ⟨z, hz, rfl⟩
+    exact fun f ↦ hle (hS ▸ IntermediateField.mem_top)
+  have hle := (constantCompositum_le_iff F k' F'
+    (K := E.toSubfield.toIntermediateField hFE)).mpr fun c ↦ E.algebraMap_mem c
+  rw [h] at hle
+  exact top_le_iff.mp fun z _ ↦ hle IntermediateField.mem_top
 
 /-! ### Large finite extensions of constants -/
 

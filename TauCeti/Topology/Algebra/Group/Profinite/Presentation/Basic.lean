@@ -105,7 +105,7 @@ namespace presentedProfiniteGroup
 /-- The canonical quotient map from the free profinite group to the presented profinite group. -/
 noncomputable def mk {X : Type u} (rels : Set (freeProfiniteGroup X)) :
     freeProfiniteGroup X →ₜ* presentedProfiniteGroup X rels :=
-  ⟨QuotientGroup.mk' _, QuotientGroup.continuous_mk⟩
+  ContinuousMonoidHom.quotientMk _
 
 /-- The canonical quotient map onto a presented profinite group is surjective. -/
 theorem mk_surjective {X : Type u} (rels : Set (freeProfiniteGroup X)) :
@@ -149,17 +149,12 @@ theorem dense_closure_range_of :
     Dense ((Subgroup.closure (Set.range (of rels)) : Subgroup (presentedProfiniteGroup X rels)) :
       Set (presentedProfiniteGroup X rels)) := by
   -- The generators are the image of the free generators under the continuous surjection `mk`.
-  have hfree : (Subgroup.closure
-      (Set.range (freeProfiniteGroup.of : X → freeProfiniteGroup X))).topologicalClosure = ⊤ := by
-    rw [← SetLike.coe_set_eq, Subgroup.topologicalClosure_coe, Subgroup.coe_top,
-      ← dense_iff_closure_eq]
-    exact freeProfiniteGroup.dense_closure_range_of X
-  have h := topologicalClosure_closure_image_eq_top hfree
+  have h := topologicalClosure_closure_image_eq_top
+    (Subgroup.dense_iff_topologicalClosure_eq_top.mp (freeProfiniteGroup.dense_closure_range_of X))
     (f := (mk rels : freeProfiniteGroup X →* presentedProfiniteGroup X rels))
     (map_continuous (mk rels)) (mk_surjective rels).denseRange
-  rw [← Set.range_comp, ← SetLike.coe_set_eq, Subgroup.topologicalClosure_coe, Subgroup.coe_top,
-    ← dense_iff_closure_eq] at h
-  exact h
+  rw [← Set.range_comp] at h
+  exact Subgroup.dense_iff_topologicalClosure_eq_top.mpr h
 
 /-- A continuous homomorphism from the free profinite group that kills the relators factors through
 the presented profinite group. -/
@@ -204,15 +199,9 @@ theorem lift_of {G : Type v} [Monoid G] [TopologicalSpace G] [T1Space G]
 precomposition with its quotient map. -/
 theorem hom_ext {G : Type v} [Monoid G] [TopologicalSpace G]
     {φ ψ : presentedProfiniteGroup X rels →ₜ* G}
-    (h : φ.comp (mk rels) = ψ.comp (mk rels)) : φ = ψ := by
-  let R : Subgroup (freeProfiniteGroup X) :=
-    (Subgroup.normalClosure rels).topologicalClosure
-  let f := ψ.comp (mk rels)
-  have hR : R ≤ f.ker := ContinuousMonoidHom.le_ker_comp_quotientMk R ψ
-  have hφ := ContinuousMonoidHom.quotientLift_unique R f hR φ (fun x => by
-    exact DFunLike.congr_fun h x)
-  have hψ := ContinuousMonoidHom.quotientLift_unique R f hR ψ (fun _ => rfl)
-  exact hφ.trans hψ.symm
+    (h : φ.comp (mk rels) = ψ.comp (mk rels)) : φ = ψ :=
+  DFunLike.coe_injective <| (mk_surjective rels).injective_comp_right <| by
+    simpa only [ContinuousMonoidHom.coe_comp] using congrArg DFunLike.coe h
 
 /-- Two continuous homomorphisms out of a presented profinite group are equal if they agree on
 the canonical generators. -/
@@ -253,9 +242,8 @@ theorem lift_surjective {G : Type v} [Monoid G] [TopologicalSpace G] [T1Space G]
 /-- A profinite group presented on a finite type is topologically finitely generated. -/
 theorem isTopologicallyFinitelyGenerated [Finite X] :
     IsTopologicallyFinitelyGenerated (presentedProfiniteGroup X rels) :=
-  (Set.finite_range (of rels)).isTopologicallyFinitelyGenerated <|
-    SetLike.coe_injective <| by
-      rw [Subgroup.topologicalClosure_coe, dense_closure_range_of.closure_eq, Subgroup.coe_top]
+  (Set.finite_range (of rels)).isTopologicallyFinitelyGenerated
+    (Subgroup.dense_iff_topologicalClosure_eq_top.mp dense_closure_range_of)
 
 /-! ## Functoriality in the generators and the relators
 
@@ -479,7 +467,7 @@ namespace presentedProP
 /-- The canonical quotient map from the free pro-`p` group to the presented pro-`p` group. -/
 noncomputable def mk (p : ℕ) {X : Type u} (rels : Set (freeProP p X)) :
     freeProP p X →ₜ* presentedProP p X rels :=
-  ⟨QuotientGroup.mk' _, QuotientGroup.continuous_mk⟩
+  ContinuousMonoidHom.quotientMk _
 
 /-- The canonical quotient map onto a presented pro-`p` group is surjective. -/
 theorem mk_surjective (p : ℕ) {X : Type u} (rels : Set (freeProP p X)) :
@@ -527,28 +515,25 @@ theorem mk_eq_one_iff (r : freeProP p X) :
 the relators. -/
 @[simp] theorem ker_mk :
     (mk p rels : freeProP p X →* presentedProP p X rels).ker =
-      (Subgroup.normalClosure rels).topologicalClosure :=
-  Subgroup.ext fun r ↦ MonoidHom.mem_ker.trans (mk_eq_one_iff r)
+      (Subgroup.normalClosure rels).topologicalClosure := by
+  rw [mk, ContinuousMonoidHom.coe_quotientMk, QuotientGroup.ker_mk']
 
-/-- The generators generate the presented pro-`p` group topologically. -/
-theorem dense_closure_range_of :
-    Dense ((Subgroup.closure (Set.range (of p rels)) : Subgroup (presentedProP p X rels)) :
-      Set (presentedProP p X rels)) := by
+/-- The generators generate the presented pro-`p` group topologically, as an equation of
+subgroups. -/
+theorem topologicalClosure_closure_range_of_eq_top :
+    (Subgroup.closure (Set.range (of p rels))).topologicalClosure = ⊤ := by
   -- The generators are the image of the free generators under the continuous surjection `mk`.
   have h := topologicalClosure_closure_image_eq_top
     (freeProP.topologicalClosure_closure_range_of_eq_top p X)
     (f := (mk p rels : freeProP p X →* presentedProP p X rels))
     (map_continuous (mk p rels)) (mk_surjective p rels).denseRange
-  rw [← Set.range_comp, ← SetLike.coe_set_eq, Subgroup.topologicalClosure_coe, Subgroup.coe_top,
-    ← dense_iff_closure_eq] at h
-  exact h
+  rwa [← Set.range_comp] at h
 
-/-- The generators generate the presented pro-`p` group topologically, as an equation of
-subgroups. -/
-theorem topologicalClosure_closure_range_of_eq_top :
-    (Subgroup.closure (Set.range (of p rels))).topologicalClosure = ⊤ :=
-  SetLike.coe_injective <| by
-    rw [Subgroup.topologicalClosure_coe, dense_closure_range_of.closure_eq, Subgroup.coe_top]
+/-- The generators generate the presented pro-`p` group topologically. -/
+theorem dense_closure_range_of :
+    Dense ((Subgroup.closure (Set.range (of p rels)) : Subgroup (presentedProP p X rels)) :
+      Set (presentedProP p X rels)) :=
+  Subgroup.dense_iff_topologicalClosure_eq_top.mpr topologicalClosure_closure_range_of_eq_top
 
 /-- A pro-`p` group presented on a finite type is topologically finitely generated. -/
 theorem isTopologicallyFinitelyGenerated [Finite X] :
@@ -599,14 +584,9 @@ theorem lift_of {P : Type v} [Monoid P] [TopologicalSpace P] [T1Space P]
 precomposition with its quotient map. -/
 theorem hom_ext {P : Type v} [Monoid P] [TopologicalSpace P]
     {φ ψ : presentedProP p X rels →ₜ* P}
-    (h : φ.comp (mk p rels) = ψ.comp (mk p rels)) : φ = ψ := by
-  let R : Subgroup (freeProP p X) := (Subgroup.normalClosure rels).topologicalClosure
-  let f := ψ.comp (mk p rels)
-  have hR : R ≤ f.ker := ContinuousMonoidHom.le_ker_comp_quotientMk R ψ
-  have hφ := ContinuousMonoidHom.quotientLift_unique R f hR φ (fun x => by
-    exact DFunLike.congr_fun h x)
-  have hψ := ContinuousMonoidHom.quotientLift_unique R f hR ψ (fun _ => rfl)
-  exact hφ.trans hψ.symm
+    (h : φ.comp (mk p rels) = ψ.comp (mk p rels)) : φ = ψ :=
+  DFunLike.coe_injective <| (mk_surjective p rels).injective_comp_right <| by
+    simpa only [ContinuousMonoidHom.coe_comp] using congrArg DFunLike.coe h
 
 /-- Two continuous homomorphisms out of a presented pro-`p` group are equal if they agree on
 the canonical generators. -/
