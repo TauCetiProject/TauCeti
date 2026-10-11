@@ -105,8 +105,7 @@ variable {R}
 /-- The **DG local system `C_*(F)_Φ` of a transitive lifting function** `Φ` for `p` at `b`: the
 normalized cubical chains of the fibre `F = p⁻¹(b)`, with the strict action of the Moore loops
 `f · ω = Φ (f, ω)(end)`. -/
-@[expose]
-def liftingLocalSystem {p : C(E, B)} {Φ : MooreLiftingFunction p} (hΦ : Φ.IsTransitive) (b : B) :
+abbrev liftingLocalSystem {p : C(E, B)} {Φ : MooreLiftingFunction p} (hΦ : Φ.IsTransitive) (b : B) :
     DGLocalSystem B b R :=
   letI := hΦ.mulAction b
   letI := hΦ.continuousSMul b
@@ -115,7 +114,6 @@ def liftingLocalSystem {p : C(E, B)} {Φ : MooreLiftingFunction p} (hΦ : Φ.IsT
 /-- **Transport as a strict morphism of DG local systems**: transport `F' → F`,
 `(e, γ) ↦ Φ (e, γ)(end)`, along a transitive lifting function is strictly equivariant, so it
 induces a morphism `C_*(F') → C_*(F)_Φ` of right DG modules over `C_*(Ω_b B)`. -/
-@[expose]
 def transportLocalSystemHom {p : C(E, B)} {Φ : MooreLiftingFunction p} (hΦ : Φ.IsTransitive)
     (b : B) : fibrationLocalSystem R p b ⟶ liftingLocalSystem hΦ b :=
   letI := hΦ.mulAction b
