@@ -42,17 +42,6 @@ open scoped IntermediateField
 
 namespace TauCeti.DyadicSqrtNegOne
 
-instance : ValuativeRel DyadicSqrtNegOne := finiteExtensionValuativeRel ℚ_[2] DyadicSqrtNegOne
-
-instance : TopologicalSpace DyadicSqrtNegOne :=
-  finiteExtensionNormedFieldTopology ℚ_[2] DyadicSqrtNegOne
-
-instance : ValuativeExtension ℚ_[2] DyadicSqrtNegOne :=
-  finiteExtension_valuativeExtension ℚ_[2] DyadicSqrtNegOne
-
-instance : IsNonarchimedeanLocalField DyadicSqrtNegOne :=
-  finiteExtension_isNonarchimedeanLocalField ℚ_[2] DyadicSqrtNegOne
-
 private theorem integral_one_add_i : IsIntegral 𝒪[ℚ_[2]] (1 + i : DyadicSqrtNegOne) := by
   refine ⟨X ^ 2 - C 2 * X + C 2, by monicity!, ?_⟩
   simp [map_ofNat]

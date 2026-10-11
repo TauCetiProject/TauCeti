@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.QuadraticAlgebra.NormTrace
+public import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.CupPadicTwo
 public import TauCeti.FieldTheory.GaloisCohomology.MuTwo.Transfer
 public import TauCeti.FieldTheory.QuadraticForm.StiefelWhitney.Evens.Kummer.Value
@@ -82,6 +83,17 @@ instance : Algebra.IsSeparable ℚ_[2] DyadicSqrtNegOne := by
   let : Algebra.IsAlgebraic ℚ_[2] DyadicSqrtNegOne := Algebra.IsAlgebraic.of_finite _ _
   let : PerfectField ℚ_[2] := PerfectField.ofCharZero
   exact Algebra.IsAlgebraic.isSeparable_of_perfectField
+
+instance : ValuativeRel DyadicSqrtNegOne := finiteExtensionValuativeRel ℚ_[2] DyadicSqrtNegOne
+
+instance : TopologicalSpace DyadicSqrtNegOne :=
+  finiteExtensionNormedFieldTopology ℚ_[2] DyadicSqrtNegOne
+
+instance : ValuativeExtension ℚ_[2] DyadicSqrtNegOne :=
+  finiteExtension_valuativeExtension ℚ_[2] DyadicSqrtNegOne
+
+instance : IsNonarchimedeanLocalField DyadicSqrtNegOne :=
+  finiteExtension_isNonarchimedeanLocalField ℚ_[2] DyadicSqrtNegOne
 
 /-- Two is invertible in the quadratic dyadic field `ℚ_2(i)`. -/
 instance instInvertibleTwo : Invertible (2 : DyadicSqrtNegOne) :=
