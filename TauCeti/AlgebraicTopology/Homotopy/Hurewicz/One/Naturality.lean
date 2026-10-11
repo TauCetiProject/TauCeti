@@ -69,17 +69,11 @@ lemma homologyMap_H₁AddEquivHomology_loopClass {x : X} (γ : Path x x) :
     (HomologicalComplex.homologyMap ((singularChains ℤ).map f) 1).hom
         (H₁AddEquivHomology X (loopClass γ)) =
       H₁AddEquivHomology Y (loopClass (γ.map (f.hom).continuous)) := by
-  let z := ((singularChains ℤ).obj X).moduleCatCyclesMk (pathChain ℤ γ.toContinuousMap) 0
-    (by simp) (mem_cycles₁_iff.1 (pathChain_mem_cycles₁ γ))
-  have hz : (((singularChains ℤ).obj X).iCycles 1).hom z = pathChain ℤ γ.toContinuousMap :=
-    ((singularChains ℤ).obj X).iCycles_moduleCatCyclesMk 1 _ 0 (by simp) _
-  have h₁ := congr($(HomologicalComplex.homologyπ_naturality ((singularChains ℤ).map f) 1).hom z)
-  have h₂ := congr($(HomologicalComplex.cyclesMap_i ((singularChains ℤ).map f) 1).hom z)
-  simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at h₁ h₂
-  rw [H₁AddEquivHomology_loopClass γ z hz, h₁]
-  refine (H₁AddEquivHomology_loopClass _ _ ?_).symm
-  rw [h₂, hz, singularChains_map_f_pathChain]
-  rfl
+  rw [loopClass, homologyMap_H₁AddEquivHomology_mk, loopClass]
+  congr 2
+  refine Subtype.ext ((singularChains_map_f_pathChain f _).trans
+    (congrArg (pathChain ℤ) (ContinuousMap.ext fun t ↦ ?_)))
+  simp
 
 /-- **Naturality of the Hurewicz map**: for a continuous map `f`, the map induced on the first
 homology group of the singular chain complex corresponds to the map induced on fundamental
