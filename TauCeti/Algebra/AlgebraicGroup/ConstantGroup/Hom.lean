@@ -174,12 +174,13 @@ theorem ofConv_bialgHomEquiv_apply (g : H →ₐc[R] coordinateRing R A) (a : A)
   simp [bialgHomEquiv]
 
 /-- The bialgebra homomorphism attached to `φ : A →* G(R)` takes `x` to the function
-`a ↦ φ a x`. -/
+`a ↦ φ a x`: its value at `a`, the pairing with `MonoidAlgebra.single a 1`, is `φ a x`. -/
 @[simp]
-theorem eval_bialgHomEquiv_symm_apply (φ : A →* WithConv (H →ₐ[R] R)) (a : A) (x : H) :
-    eval R A a ((bialgHomEquiv R H A).symm φ x) = (φ a).ofConv x := by
+theorem bialgHomEquiv_symm_apply_ofConv_single (φ : A →* WithConv (H →ₐ[R] R)) (a : A) (x : H) :
+    ((bialgHomEquiv R H A).symm φ x).ofConv (MonoidAlgebra.single a 1) = (φ a).ofConv x := by
   have h := congrArg (fun ψ ↦ (ψ a).ofConv x) ((bialgHomEquiv R H A).apply_symm_apply φ)
-  rwa [ofConv_bialgHomEquiv_apply] at h
+  simpa only [ofConv_bialgHomEquiv_apply, AlgHom.comp_apply, BialgHom.coe_toAlgHom, eval_apply,
+    functionAlgEquiv_apply] using h
 
 end Universal
 
