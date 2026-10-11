@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Basic
-public import TauCeti.MeasureTheory.Constructions.UnitInterval
+public import Mathlib.MeasureTheory.Constructions.UnitInterval
 
 /-!
 # A computed constant graphon density
