@@ -61,11 +61,13 @@ theorem wedge_add_right (φ : E [⋀^Fin k]→L[ℝ] ℝ) (ψ ψ' : E [⋀^Fin l
   wedgeWith_add_right _ _ _ _
 
 /-- The real wedge respects scalar multiplication in its first argument. -/
+@[simp]
 theorem wedge_smul_left (c : ℝ) (φ : E [⋀^Fin k]→L[ℝ] ℝ)
     (ψ : E [⋀^Fin l]→L[ℝ] ℝ) : wedge (c • φ) ψ = c • wedge φ ψ :=
   wedgeWith_smul_left _ _ _ _
 
 /-- The real wedge respects scalar multiplication in its second argument. -/
+@[simp]
 theorem wedge_smul_right (c : ℝ) (φ : E [⋀^Fin k]→L[ℝ] ℝ)
     (ψ : E [⋀^Fin l]→L[ℝ] ℝ) : wedge φ (c • ψ) = c • wedge φ ψ :=
   wedgeWith_smul_right _ _ _ _
