@@ -152,3 +152,52 @@ theorem ShortExact.isAlmostSplit_of_isLeftAlmostSplit (hS : S.ShortExact)
   ⟨hS, hf, hf.isRightAlmostSplit_of_minimal hS hmin⟩
 
 end CategoryTheory.ShortComplex
+
+namespace TauCeti
+
+open CategoryTheory
+
+variable {C : Type u} [Category.{v} C]
+
+/-- Two right minimal right almost-split morphisms with the same target are isomorphic
+under that target. The factorization property gives comparison maps in both directions,
+and right minimality makes their composites invertible. -/
+theorem IsRightAlmostSplit.exists_iso_of_minimal {X X' Y : C}
+    {f : X ⟶ Y} {g : X' ⟶ Y} (hf : IsRightAlmostSplit f) (hg : IsRightAlmostSplit g)
+    (hminf : ∀ b : X ⟶ X, b ≫ f = f → IsIso b)
+    (hming : ∀ b : X' ⟶ X', b ≫ g = g → IsIso b) :
+    ∃ e : X ≅ X', e.hom ≫ g = f := by
+  obtain ⟨a, hag⟩ := hg.factors X f hf.not_isSplitEpi
+  obtain ⟨b, hbf⟩ := hf.factors X' g hg.not_isSplitEpi
+  have hab : (a ≫ b) ≫ f = f := by
+    rw [Category.assoc, hbf, hag]
+  have hba : (b ≫ a) ≫ g = g := by
+    rw [Category.assoc, hag, hbf]
+  let eab : X ≅ X :=
+    { hom := a ≫ b
+      inv := Classical.choose (hminf (a ≫ b) hab).out
+      hom_inv_id := (Classical.choose_spec (hminf (a ≫ b) hab).out).1
+      inv_hom_id := (Classical.choose_spec (hminf (a ≫ b) hab).out).2 }
+  let eba : X' ≅ X' :=
+    { hom := b ≫ a
+      inv := Classical.choose (hming (b ≫ a) hba).out
+      hom_inv_id := (Classical.choose_spec (hming (b ≫ a) hba).out).1
+      inv_hom_id := (Classical.choose_spec (hming (b ≫ a) hba).out).2 }
+  have hright : a ≫ (b ≫ eab.inv) = 𝟙 X := by
+    rw [← Category.assoc, eab.hom_inv_id]
+  have hleft : (eba.inv ≫ b) ≫ a = 𝟙 X' := by
+    rw [Category.assoc, eba.inv_hom_id]
+  let c := eba.inv ≫ b
+  let d := b ≫ eab.inv
+  have hc : c ≫ a = 𝟙 X' := hleft
+  have hd : a ≫ d = 𝟙 X := hright
+  have hcd : c = d := by
+    calc
+      c = c ≫ (a ≫ d) := by rw [hd]; simp
+      _ = (c ≫ a) ≫ d := by simp [Category.assoc]
+      _ = d := by rw [hc]; simp
+  have hinv : b ≫ eab.inv = eba.inv ≫ b := hcd.symm
+  refine ⟨⟨a, b ≫ eab.inv, hright, hinv.symm ▸ hleft⟩, ?_⟩
+  exact hag
+
+end TauCeti
