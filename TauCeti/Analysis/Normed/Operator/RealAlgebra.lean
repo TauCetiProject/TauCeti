@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 public import Mathlib.Analysis.RCLike.Basic
 
 /-!
@@ -20,20 +19,21 @@ real algebra structure on the bounded endomorphisms `E →L[𝕜] E`, compatible
   restricting scalars along `ℝ → 𝕜`.
 * `ContinuousLinearMap.realIsScalarTower`: with this structure, `IsScalarTower ℝ 𝕜 (E →L[𝕜] E)`.
 
-Neither is a global instance: at `𝕜 = ℝ` and `𝕜 = ℂ`, and whenever `E` carries its own real
-structure, Mathlib's `ContinuousLinearMap.algebra` already provides a real algebra structure.
-Enable them locally with `attribute [local instance] ContinuousLinearMap.realAlgebra`.
+Neither declaration is registered as a global typeclass instance when this module is imported.
+At `𝕜 = ℝ` and `𝕜 = ℂ`, and whenever `E` carries its own real structure, Mathlib's
+`ContinuousLinearMap.algebra` already provides a real algebra structure. Enable the real algebra
+locally with `attribute [local instance] ContinuousLinearMap.realAlgebra`.
 -/
 
 public section
 
 namespace ContinuousLinearMap
 
-variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+variable {𝕜 E : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
 
 /-- The real algebra structure on bounded endomorphisms of a normed space over an `RCLike`
 field, obtained by restricting scalars along `ℝ → 𝕜`, so that `r • T = (r : 𝕜) • T`. -/
-@[instance_reducible]
+@[reducible]
 def realAlgebra : Algebra ℝ (E →L[𝕜] E) :=
   Algebra.restrictScalars ℝ 𝕜 (E →L[𝕜] E)
 
