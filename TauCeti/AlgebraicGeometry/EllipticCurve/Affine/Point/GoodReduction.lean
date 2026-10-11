@@ -42,6 +42,8 @@ nonsingular reduction. The reduction homomorphism is then the homomorphism
   addition.
 * `WeierstrassCurve.Affine.Point.reductionHom_eq_zero_iff`: the kernel of the reduction
   homomorphism consists of the point at infinity and the points whose `x`-coordinate has a pole.
+* `WeierstrassCurve.Affine.Point.reductionHom_surjective`: over a Henselian valuation ring, the
+  reduction homomorphism is surjective.
 
 ## References
 
@@ -138,6 +140,13 @@ theorem reductionHom_eq_zero_iff (P : W.Point) :
 theorem reductionHom_some_of_one_lt {x y : F} (h : W.Nonsingular x y) (hx : 1 < v x) :
     reductionHom v (some x y h) = 0 :=
   (reductionHom_eq_zero_iff v _).mpr (.inr (by rwa [xCoord_some]))
+
+/-- **At good reduction over a Henselian valuation ring, reduction is surjective**: every point of
+the reduced curve is the reduction of a point of `W(F)`. -/
+theorem reductionHom_surjective [HenselianLocalRing v.valuationSubring] :
+    Function.Surjective (reductionHom v (W := W)) := fun Q ↦ by
+  obtain ⟨⟨P, hP⟩, rfl⟩ := W.nonsingularReductionHom_surjective v Q
+  exact ⟨P, reductionHom_apply v P hP⟩
 
 end WeierstrassCurve.Affine.Point
 
