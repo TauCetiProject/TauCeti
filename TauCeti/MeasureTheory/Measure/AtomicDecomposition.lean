@@ -29,6 +29,12 @@ variable {X : Type*} [MeasurableSpace X] [MeasurableSingletonClass X]
 /-- The set of points carrying positive singleton mass. -/
 def positiveSingletons (μ : Measure X) : Set X := {x | μ {x} ≠ 0}
 
+omit [MeasurableSingletonClass X] in
+/-- Membership in `positiveSingletons` means that the singleton has nonzero mass. -/
+@[simp]
+theorem mem_positiveSingletons_iff (μ : Measure X) (x : X) :
+    x ∈ positiveSingletons μ ↔ μ {x} ≠ 0 := Iff.rfl
+
 /-- A finite measure has at most countably many positive-mass singleton sets. -/
 theorem countable_positiveSingletons (μ : Measure X) [IsFiniteMeasure μ] :
     (positiveSingletons μ).Countable := by
@@ -66,6 +72,7 @@ theorem countable_positiveSingletons (μ : Measure X) [IsFiniteMeasure μ] :
     have hxpos : 0 < μ.real {x} := lt_of_le_of_ne ENNReal.toReal_nonneg (Ne.symm hxne)
     obtain ⟨n, hn⟩ := exists_nat_gt (μ.real {x})⁻¹
     refine mem_iUnion.mpr ⟨n, ?_⟩
+    -- Unfold the local set `A` to expose its threshold condition at this point.
     change (1 / (n + 1 : ℝ) : ℝ) ≤ μ.real {x}
     have hn' : (μ.real {x})⁻¹ < (n + 1 : ℝ) := by
       have hncast : (μ.real {x})⁻¹ < (n : ℝ) := by exact_mod_cast hn
@@ -84,6 +91,19 @@ theorem measurableSet_positiveSingletons (μ : Measure X) [IsFiniteMeasure μ] :
 /-- The restriction of a finite measure to all of its positive-mass singleton points. -/
 def atomicPart (μ : Measure X) : Measure X := μ.restrict (positiveSingletons μ)
 
+omit [MeasurableSingletonClass X] in
+/-- The atomic part is the restriction to the positive-mass singleton points. -/
+theorem atomicPart_def (μ : Measure X) :
+    atomicPart μ = μ.restrict (positiveSingletons μ) := by
+  rw [atomicPart]
+
+omit [MeasurableSingletonClass X] in
+/-- Evaluate the atomic part on a measurable set. -/
+@[simp]
+theorem atomicPart_apply (μ : Measure X) (s : Set X) (hs : MeasurableSet s) :
+    atomicPart μ s = μ (s ∩ positiveSingletons μ) := by
+  rw [atomicPart, restrict_apply hs]
+
 /-- The atomic part preserves the mass of every singleton. -/
 @[simp]
 theorem atomicPart_apply_singleton (μ : Measure X) (x : X) :
@@ -98,13 +118,26 @@ theorem atomicPart_apply_singleton (μ : Measure X) (x : X) :
 /-- The complementary restriction to the points with zero singleton mass. -/
 def diffusePart (μ : Measure X) : Measure X := μ.restrict (positiveSingletons μ)ᶜ
 
+omit [MeasurableSingletonClass X] in
+/-- The diffuse part is the restriction to the complement of the positive-mass points. -/
+theorem diffusePart_def (μ : Measure X) :
+    diffusePart μ = μ.restrict (positiveSingletons μ)ᶜ := by
+  rw [diffusePart]
+
+omit [MeasurableSingletonClass X] in
+/-- Evaluate the diffuse part on a measurable set. -/
+@[simp]
+theorem diffusePart_apply (μ : Measure X) (s : Set X) (hs : MeasurableSet s) :
+    diffusePart μ s = μ (s ∩ (positiveSingletons μ)ᶜ) := by
+  rw [diffusePart, restrict_apply hs]
+
 /-- The point-mass part and the diffuse remainder sum to the original finite measure. -/
 theorem atomicPart_add_diffusePart (μ : Measure X) [IsFiniteMeasure μ] :
     atomicPart μ + diffusePart μ = μ := by
   rw [atomicPart, diffusePart, restrict_add_restrict_compl (measurableSet_positiveSingletons μ)]
 
 /-- The diffuse remainder has zero mass on every singleton. -/
-theorem diffusePart_nullSingletonClass (μ : Measure X) :
+instance diffusePart_nullSingletonClass (μ : Measure X) :
     NullSingletonClass (diffusePart μ) := by
   refine ⟨fun x ↦ ?_⟩
   rw [diffusePart, restrict_apply (measurableSet_singleton x)]
