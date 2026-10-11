@@ -195,6 +195,51 @@ theorem liftOfSurjective_apply (Q : QuadraticMap R M P) (f : M →ₗ[R] N)
 
 end LiftOfSurjective
 
+section QuotientByRadical
+
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
+
+/-- The restriction of a quadratic form to a complement of its radical is isometric to the
+quadratic form descended to the quotient by the radical. -/
+noncomputable def IsometryEquiv.restrictComplementLiftRadical (Q : QuadraticForm K V)
+    (W : Subspace K V) (hW : IsCompl Q.radical W) :
+    (Q.restrict W).IsometryEquiv (Q.lift Q.radical le_rfl) where
+  toLinearEquiv := (Q.radical.quotientEquivOfIsCompl W hW).symm
+  map_app' x := by
+    have he : (Q.radical.quotientEquivOfIsCompl W hW).symm x =
+        (Submodule.Quotient.mk (x : V) : V ⧸ Q.radical) :=
+      LinearMap.congr_fun (Submodule.toLinearMap_symm_quotientEquivOfIsCompl hW) x
+    -- Expose the quotient equivalence hidden by the isometry-equivalence coercion.
+    change Q.lift Q.radical le_rfl ((Q.radical.quotientEquivOfIsCompl W hW).symm x) = _
+    rw [he]
+    simp only [QuadraticMap.lift_mk, QuadraticMap.restrict_apply]
+
+/-- Every quadratic form splits as the zero form on its radical and the descended form on the
+quotient by the radical. The complement used to construct the isometry is noncanonical. -/
+noncomputable def IsometryEquiv.prodRadicalLift (Q : QuadraticForm K V) :
+    ((0 : QuadraticForm K Q.radical).prod (Q.lift Q.radical le_rfl)).IsometryEquiv Q := by
+  let W := (Submodule.exists_isCompl Q.radical).choose
+  have hW : IsCompl Q.radical W := (Submodule.exists_isCompl Q.radical).choose_spec
+  let e := IsometryEquiv.restrictComplementLiftRadical Q W hW
+  let f : ((Q.restrict W).prod (0 : QuadraticForm K Q.radical)).IsometryEquiv Q := {
+    toLinearEquiv := W.prodEquivOfIsCompl Q.radical hW.symm
+    map_app' x := by
+      -- The complement equivalence sends a pair to the sum of its components.
+      change Q ((x.1 : V) + x.2) = Q x.1 + 0
+      rw [QuadraticMap.map_add Q]
+      have hr := (QuadraticMap.mem_radical_iff'.mp x.2.2).1
+      have hp : Q.polarBilin x.1 x.2 = 0 := by
+        rw [Q.isSymm_polarBilin.eq]
+        exact DFunLike.congr_fun (LinearMap.mem_ker.mp
+          (Q.radical_le_ker_polarBilin x.2.2)) (x.1 : V)
+      rw [← QuadraticMap.polarBilin_apply_apply, hp, hr, add_zero, add_zero]
+  }
+  exact ((QuadraticMap.IsometryEquiv.prodComm (0 : QuadraticForm K Q.radical)
+      (Q.lift Q.radical le_rfl)).trans
+      ((e.symm).prod (QuadraticMap.IsometryEquiv.refl (0 : QuadraticForm K Q.radical)))).trans f
+
+end QuotientByRadical
+
 end QuadraticMap
 
 namespace QuadraticMap.Nondegenerate
