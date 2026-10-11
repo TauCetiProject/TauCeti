@@ -182,13 +182,6 @@ abbrev geckCoordinateHopfAlgebra : _root_.CommHopfAlgCat ℤ :=
   CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht))
     (t.geckDefiningIdeal ht)
 
-/-- The coordinate Hopf algebra is the quotient by the Geck defining ideal. -/
-theorem geckCoordinateHopfAlgebra_def :
-    t.geckCoordinateHopfAlgebra ht =
-      CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht))
-        (t.geckDefiningIdeal ht) :=
-  (rfl)
-
 /-- The Geck carrier is the Hopf spectrum of its coordinate Hopf algebra. -/
 theorem geckGroupScheme_eq_hopfSpec :
     t.geckGroupScheme ht =
@@ -307,7 +300,7 @@ theorem isClosedImmersion_geckWeightTorus
 /-- **The intrinsic pinning equation for the Geck carrier.** On points over a commutative ring,
 conjugation by a weight-torus point rescales the parameter of a numbered root subgroup by the
 corresponding root character. -/
-@[simp]
+-- Not `@[simp]`: `simp` does not rewrite with it, even on its own left-hand side.
 theorem geckWeightTorus_conj_geckRootSubgroup (i : Fin t.rank ⊕ Fin t.rank)
     (A : Type) [CommRing A]
     (s : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
