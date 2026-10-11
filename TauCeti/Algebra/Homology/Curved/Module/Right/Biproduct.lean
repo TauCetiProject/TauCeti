@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Homology.Curved.Module.Right.ClosedCategory
 public import TauCeti.Algebra.Module.GradedModule.Prod
-public import TauCeti.CategoryTheory.DG.Preadditive
 public import Mathlib.CategoryTheory.Limits.Shapes.BinaryBiproducts
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Zero
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
@@ -45,7 +44,10 @@ noncomputable def zero (h : IsCurvedDGAlgebra 𝒜 d w) :
         fun _ ↦ ⟨0, Subsingleton.elim _ _⟩⟩ }
   letI : DirectSum.Decomposition G.piece := G.isInternal.chooseDecomposition
   letI : SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece G.piece :=
-    ⟨fun _ _ _ _ _ _ ↦ by change _ ∈ (⊥ : Submodule R PUnit.{uM + 1}); simp⟩
+    ⟨fun _ _ _ _ _ _ ↦ by
+      -- Reduce the locally chosen grading in this membership goal to its bottom piece.
+      change _ ∈ (⊥ : Submodule R PUnit.{uM + 1})
+      simp⟩
   exact
     { carrier := PUnit.{uM + 1}
       grading := G.piece
@@ -122,24 +124,6 @@ variable {R A : Type u} [CommRing R] [Ring A] [Algebra R A]
   {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A} {w : A}
   {h : IsCurvedDGAlgebra 𝒜 d w}
 
-/-- The zero closed morphism has zero underlying linear map. -/
-@[simp]
-theorem closedHom_zero (M N : CurvedDGRightModuleCat.{u, u, u} h) :
-    closedHom (0 : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
-      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N) = 0 := by
-  rw [closedHom_eq, dgClosedHom_zero R _ _, map_zero]
-  rfl
-
-/-- Addition of closed morphisms is addition of their underlying linear maps. -/
-@[simp]
-theorem closedHom_add {M N : CurvedDGRightModuleCat.{u, u, u} h}
-    (f g : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
-      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N) :
-    closedHom (f + g) = closedHom f + closedHom g := by
-  simp only [closedHom_eq]
-  rw [dgClosedHom_add R f g, map_add]
-  rfl
-
 /-- The zero curved module is a zero object in the closed category. -/
 theorem isZero_closed_zero :
     IsZero (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (zero h)) := by
@@ -183,6 +167,8 @@ noncomputable def closedProdInl :
   closedHomOf (LinearMap.inl Aᵐᵒᵖ M N)
     (fun p x hx ↦ by rw [prod_grading]; exact ⟨hx, (N.grading p).zero_mem⟩)
     (fun x ↦ by
+      -- The bundled product carrier hides the pair types, so inclusion rewrites do not match
+      -- until the carrier and the componentwise differential are reduced.
       change (M.differential x, N.differential 0) = (M.differential x, 0)
       rw [map_zero])
 
@@ -193,6 +179,8 @@ noncomputable def closedProdInr :
   closedHomOf (LinearMap.inr Aᵐᵒᵖ M N)
     (fun p x hx ↦ by rw [prod_grading]; exact ⟨(M.grading p).zero_mem, hx⟩)
     (fun x ↦ by
+      -- The bundled product carrier hides the pair types, so inclusion rewrites do not match
+      -- until the carrier and the componentwise differential are reduced.
       change (M.differential 0, N.differential x) = (0, N.differential x)
       rw [map_zero])
 
@@ -225,7 +213,6 @@ theorem closedHom_closedProdInr :
   exact closedHom_closedHomOf _ _ _
 
 /-- The four componentwise maps form a binary bicone in the closed category. -/
-@[expose, implicit_reducible]
 noncomputable def closedProdBicone :
     BinaryBicone (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M)
       (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N) where
@@ -246,6 +233,38 @@ theorem closedProdBicone_pt :
       ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (M.prod N) :=
   (rfl)
 
+/-- The first projection of the closed bicone is the componentwise closed map. -/
+@[simp]
+theorem closedProdBicone_fst :
+    (closedProdBicone M N).fst =
+      eqToHom (closedProdBicone_pt M N) ≫ closedProdFst M N := by
+  dsimp only [closedProdBicone]
+  erw [eqToHom_refl, Category.id_comp]
+
+/-- The second projection of the closed bicone is the componentwise closed map. -/
+@[simp]
+theorem closedProdBicone_snd :
+    (closedProdBicone M N).snd =
+      eqToHom (closedProdBicone_pt M N) ≫ closedProdSnd M N := by
+  dsimp only [closedProdBicone]
+  erw [eqToHom_refl, Category.id_comp]
+
+/-- The first inclusion of the closed bicone is the componentwise closed map. -/
+@[simp]
+theorem closedProdBicone_inl :
+    (closedProdBicone M N).inl =
+      closedProdInl M N ≫ eqToHom (closedProdBicone_pt M N).symm := by
+  dsimp only [closedProdBicone]
+  erw [eqToHom_refl, Category.comp_id]
+
+/-- The second inclusion of the closed bicone is the componentwise closed map. -/
+@[simp]
+theorem closedProdBicone_inr :
+    (closedProdBicone M N).inr =
+      closedProdInr M N ≫ eqToHom (closedProdBicone_pt M N).symm := by
+  dsimp only [closedProdBicone]
+  erw [eqToHom_refl, Category.comp_id]
+
 /-- The componentwise bicone is both a limit and a colimit. -/
 noncomputable def closedProdBiconeIsBilimit : (closedProdBicone M N).IsBilimit :=
   isBinaryBilimitOfTotal _ (by
@@ -255,6 +274,8 @@ noncomputable def closedProdBiconeIsBilimit : (closedProdBicone M N).IsBilimit :
     erw [closedHom_add, closedHom_comp, closedHom_comp, closedHom_closedProdFst,
       closedHom_closedProdSnd, closedHom_closedProdInl, closedHom_closedProdInr, closedHom_id]
     simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.id_apply]
+    -- The bundled carrier hides the pair types in these linear-map applications; expose them
+    -- to identify the remaining inclusions and projections with their coordinate formulas.
     change (x.1, 0) + (0, x.2) = x
     exact Prod.ext (add_zero _) (zero_add _))
 
@@ -303,7 +324,6 @@ noncomputable instance : HasZeroObject
 variable (M N : CurvedDGRightModuleCat.{u, u, u} h)
 
 /-- The componentwise product bicone in the curved homotopy category. -/
-@[expose, implicit_reducible]
 noncomputable def homotopyProdBicone :
     BinaryBicone (DGHomotopyCategory.of R M) (DGHomotopyCategory.of R N) :=
   (dgClosedToHomotopy R).mapBinaryBicone (closedProdBicone M N)
@@ -317,26 +337,40 @@ theorem homotopyProdBicone_pt :
 /-- The first homotopy projection is the class of the first closed projection. -/
 @[simp]
 theorem homotopyProdBicone_fst :
-    (homotopyProdBicone M N).fst = (dgClosedToHomotopy R).map (closedProdFst M N) :=
-  (rfl)
+    (homotopyProdBicone M N).fst =
+      eqToHom (homotopyProdBicone_pt M N) ≫ (dgClosedToHomotopy R).map (closedProdFst M N) := by
+  dsimp only [homotopyProdBicone, Functor.mapBinaryBicone,
+    BinaryBicones.functoriality, closedProdBicone]
+  erw [eqToHom_refl, Category.id_comp]
 
 /-- The second homotopy projection is the class of the second closed projection. -/
 @[simp]
 theorem homotopyProdBicone_snd :
-    (homotopyProdBicone M N).snd = (dgClosedToHomotopy R).map (closedProdSnd M N) :=
-  (rfl)
+    (homotopyProdBicone M N).snd =
+      eqToHom (homotopyProdBicone_pt M N) ≫ (dgClosedToHomotopy R).map (closedProdSnd M N) := by
+  dsimp only [homotopyProdBicone, Functor.mapBinaryBicone,
+    BinaryBicones.functoriality, closedProdBicone]
+  erw [eqToHom_refl, Category.id_comp]
 
 /-- The first homotopy inclusion is the class of the first closed inclusion. -/
 @[simp]
 theorem homotopyProdBicone_inl :
-    (homotopyProdBicone M N).inl = (dgClosedToHomotopy R).map (closedProdInl M N) :=
-  (rfl)
+    (homotopyProdBicone M N).inl =
+      (dgClosedToHomotopy R).map (closedProdInl M N) ≫
+        eqToHom (homotopyProdBicone_pt M N).symm := by
+  dsimp only [homotopyProdBicone, Functor.mapBinaryBicone,
+    BinaryBicones.functoriality, closedProdBicone]
+  erw [eqToHom_refl, Category.comp_id]
 
 /-- The second homotopy inclusion is the class of the second closed inclusion. -/
 @[simp]
 theorem homotopyProdBicone_inr :
-    (homotopyProdBicone M N).inr = (dgClosedToHomotopy R).map (closedProdInr M N) :=
-  (rfl)
+    (homotopyProdBicone M N).inr =
+      (dgClosedToHomotopy R).map (closedProdInr M N) ≫
+        eqToHom (homotopyProdBicone_pt M N).symm := by
+  dsimp only [homotopyProdBicone, Functor.mapBinaryBicone,
+    BinaryBicones.functoriality, closedProdBicone]
+  erw [eqToHom_refl, Category.comp_id]
 
 /-- The componentwise bicone is a biproduct in the homotopy category. -/
 noncomputable def homotopyProdBiconeIsBilimit : (homotopyProdBicone M N).IsBilimit := by

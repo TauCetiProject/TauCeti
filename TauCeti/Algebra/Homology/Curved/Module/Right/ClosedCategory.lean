@@ -6,6 +6,7 @@ Authors: Wentao Li
 module
 
 public import TauCeti.Algebra.Homology.Curved.Module.Right.DGCategory
+public import TauCeti.CategoryTheory.DG.Preadditive
 
 /-!
 # Closed morphisms of curved differential graded right modules
@@ -26,6 +27,9 @@ open CategoryTheory MulOpposite
 namespace TauCeti.CurvedDGRightModuleCat
 
 universe u
+
+-- The closed category keeps the original enriched object carrier.
+attribute [local implicit_reducible] ForgetEnrichment
 
 variable {R A : Type u} [CommRing R] [Ring A] [Algebra R A]
   {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A} {w : A}
@@ -125,6 +129,24 @@ theorem closedHom_comp
     congrArg (fun c : dgRightModuleCochains (R := R) (A := A)
     (ℳ := M.grading) (ℳN := P.grading) 0 ↦ c.1 x)
       (dgClosedHomEquivZeroCocycles_comp f g)
+
+/-- The zero closed morphism has zero underlying linear map. -/
+@[simp]
+theorem closedHom_zero (M N : CurvedDGRightModuleCat.{u, u, u} h) :
+    closedHom (0 : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N) = 0 := by
+  rw [closedHom_eq, dgClosedHom_zero R _ _, map_zero]
+  rfl
+
+/-- Addition of closed morphisms is addition of their underlying linear maps. -/
+@[simp]
+theorem closedHom_add {M N : CurvedDGRightModuleCat.{u, u, u} h}
+    (f g : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N) :
+    closedHom (f + g) = closedHom f + closedHom g := by
+  simp only [closedHom_eq]
+  rw [dgClosedHom_add R f g, map_add]
+  rfl
 
 /-- A graded right-linear equivalence commuting with differentials is a closed isomorphism. -/
 noncomputable def closedIsoOf (e : M ≃ₗ[Aᵐᵒᵖ] N)

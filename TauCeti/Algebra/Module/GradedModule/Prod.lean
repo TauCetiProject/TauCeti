@@ -53,6 +53,7 @@ private theorem prodDecompose_of_mem (p : ℤ) (x : M) (y : N)
     DirectSum.lmap_lof, DirectSum.lmap_lof, ← map_add]
   congr 1
   apply Subtype.ext
+  -- Reduce the private restricted inclusions and their subtype coercions to pair inclusions.
   change (x, 0) + (0, y) = (x, y)
   simp
 
