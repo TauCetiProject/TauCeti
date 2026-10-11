@@ -19,7 +19,9 @@ root-string coefficients `RootPairing.chainTopCoeff` and `RootPairing.chainBotCo
 
 The weight map need not be surjective: these results also apply when the target has extra toral
 directions outside the span of its roots. An equivalence of root pairings supplies the injectivity
-hypothesis through `g.bijective_weightMap.injective`.
+hypothesis through `g.bijective_weightMap.injective`. Coefficient-valuedness is transported by
+`RootPairing.Hom.isValuedIn`; the root-string results likewise derive target finiteness from the
+index bijection. Only the source coefficient-valuedness and finiteness instances are required.
 
 Mathlib's `RootPairing.Hom.pairing` gives the pairing in the coefficient ring. The invariance
 lemmas here also apply to combinatorial expressions in the index bijection, without introducing
@@ -29,6 +31,8 @@ weight-space vectors.
 
 * `RootPairing.Hom.weightMap_mem_range_root_iff`: the weight map carries roots to roots and
   nothing else to a root.
+* `RootPairing.Hom.isValuedIn`: the target root pairing takes values in any coefficient ring in
+  which the source root pairing takes values.
 * `RootPairing.Hom.pairingIn_indexEquiv`: the index bijection preserves pairings valued in a
   coefficient subring.
 * `RootPairing.Hom.indexEquiv_reflectionPerm`: it commutes with `RootPairing.reflectionPerm`, and
@@ -63,12 +67,24 @@ variable {ι ι₂ R M N M₂ N₂ : Type*} [CommRing R]
 
 namespace Hom
 
+/-- A homomorphism of root pairings transports the property that all root-coroot pairings take
+values in a given coefficient ring. -/
+theorem isValuedIn (f : P.Hom P₂) (S : Type*) [CommRing S] [Algebra S R]
+    [P.IsValuedIn S] : P₂.IsValuedIn S where
+  exists_value i j := by
+    obtain ⟨i, rfl⟩ := f.indexEquiv.surjective i
+    obtain ⟨j, rfl⟩ := f.indexEquiv.surjective j
+    rw [f.pairing]
+    exact P.exists_value i j
+
 /-- The index bijection of a homomorphism of root pairings preserves the pairing valued in a
 coefficient subring. -/
 @[simp]
 theorem pairingIn_indexEquiv (f : P.Hom P₂) (S : Type*) [CommRing S] [Algebra S R]
-    [FaithfulSMul S R] [P.IsValuedIn S] [P₂.IsValuedIn S] (i j : ι) :
+    [FaithfulSMul S R] [P.IsValuedIn S] (i j : ι) :
+    letI := f.isValuedIn S
     P₂.pairingIn S (f.indexEquiv i) (f.indexEquiv j) = P.pairingIn S i j := by
+  let := f.isValuedIn S
   refine FaithfulSMul.algebraMap_injective S R ?_
   rw [algebraMap_pairingIn, algebraMap_pairingIn, f.pairing]
 
@@ -130,14 +146,17 @@ theorem linearIndependent_root_indexEquiv_iff (i j : ι) :
 
 section Chain
 
-variable [Finite ι] [Finite ι₂] [CharZero R] [IsDomain R]
-  [P.IsCrystallographic] [P₂.IsCrystallographic]
+variable [Finite ι] [CharZero R] [IsDomain R] [P.IsCrystallographic]
 
 /-- The index bijection of a homomorphism with injective weight map preserves the number of steps
 one may add `α` to `β` and stay among the roots. -/
 @[simp]
 theorem chainTopCoeff_indexEquiv (i j : ι) :
+    letI := Finite.of_equiv ι f.indexEquiv
+    letI := f.isValuedIn ℤ
     P₂.chainTopCoeff (f.indexEquiv i) (f.indexEquiv j) = P.chainTopCoeff i j := by
+  let := Finite.of_equiv ι f.indexEquiv
+  let := f.isValuedIn ℤ
   by_cases h : LinearIndependent R ![P.root i, P.root j]
   · have h' := (f.linearIndependent_root_indexEquiv_iff hf i j).mpr h
     have key : ∀ n : ℕ, P₂.root (f.indexEquiv j) + n • P₂.root (f.indexEquiv i) ∈ range P₂.root ↔
@@ -156,7 +175,11 @@ theorem chainTopCoeff_indexEquiv (i j : ι) :
 one may subtract `α` from `β` and stay among the roots. -/
 @[simp]
 theorem chainBotCoeff_indexEquiv (i j : ι) :
+    letI := Finite.of_equiv ι f.indexEquiv
+    letI := f.isValuedIn ℤ
     P₂.chainBotCoeff (f.indexEquiv i) (f.indexEquiv j) = P.chainBotCoeff i j := by
+  let := Finite.of_equiv ι f.indexEquiv
+  let := f.isValuedIn ℤ
   rw [← P₂.chainTopCoeff_reflectionPerm_left, ← P.chainTopCoeff_reflectionPerm_left,
     ← f.indexEquiv_reflectionPerm, f.chainTopCoeff_indexEquiv hf]
 
