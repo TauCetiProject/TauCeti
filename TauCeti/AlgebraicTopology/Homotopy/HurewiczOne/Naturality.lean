@@ -70,6 +70,12 @@ def H₁Map : H₁ X →+ H₁ Y :=
     fun _ hc ↦ AddSubgroup.mem_comap.2 (AddSubgroup.mem_addSubgroupOf.2
       (map_mem_boundaries₁ f (AddSubgroup.mem_addSubgroupOf.1 hc)))
 
+lemma H₁Map_mk (c : cycles₁ X) :
+    H₁Map f (QuotientAddGroup.mk c) =
+      QuotientAddGroup.mk ⟨((singularChains ℤ).map f).f 1 c, map_mem_cycles₁ f c.2⟩ := by
+  rw [H₁Map, QuotientAddGroup.map_mk]
+  rfl
+
 lemma H₁Map_loopClass {x : X} (γ : Path x x) :
     H₁Map f (loopClass γ) = loopClass (γ.map (f.hom).continuous) := by
   rw [loopClass_def, loopClass_def, H₁Map, QuotientAddGroup.map_mk]
