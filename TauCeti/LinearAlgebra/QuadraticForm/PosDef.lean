@@ -12,7 +12,10 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import Mathlib.Data.Int.Interval
 
 /-!
-# Vectors of bounded value for a positive definite integral quadratic form
+# Positive definite quadratic forms
+
+Multiplication by a positive scalar preserves positive-definiteness over a linearly ordered
+commutative ring.
 
 A positive definite quadratic form on a finitely generated free `ℤ`-module takes each of its values
 only finitely often: the sets `{x | q x ≤ n}` and `{x | q x = n}` are finite. This is the
@@ -21,17 +24,19 @@ the one that turns an orbit lying in a level set into a periodic orbit.
 
 ## Main results
 
+* `QuadraticForm.posDef_smul_iff_of_pos`: a quadratic form is positive definite if and only if
+  its multiple by a positive scalar is positive definite.
 * `QuadraticMap.PosDef.finite_setOf_apply_le`: a positive definite quadratic form on a
   finitely generated free `ℤ`-module has only finitely many vectors of value at most `n`.
 * `QuadraticMap.PosDef.finite_setOf_apply_eq`: consequently only finitely many vectors of
   value exactly `n`.
 
-These results live in the root `QuadraticMap.PosDef` namespace so that they are available by dot
-notation on a `QuadraticForm.PosDef` hypothesis.
+The finiteness results live in the root `QuadraticMap.PosDef` namespace so that they are
+available by dot notation on a `QuadraticForm.PosDef` hypothesis.
 
 ## Implementation notes
 
-The argument stays inside `ℤ`; no rational or real coefficients, no compactness, and no
+The finiteness argument stays inside `ℤ`; no rational or real coefficients, no compactness, and no
 diagonalization enter. Write `B` for the polar form, which is symmetric with `B x x = 2 * q x`,
 hence nonnegative, and let `b` be a basis. The coordinates of `x` in the dual-like map
 `T x = fun i ↦ B x (b i)` are bounded by Cauchy-Schwarz for a positive semidefinite symmetric form
@@ -46,6 +51,25 @@ uses.
 -/
 
 public section
+
+namespace QuadraticForm
+
+variable {R M : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
+  [AddCommGroup M] [Module R M]
+
+/-- Multiplication by a positive scalar preserves positive-definiteness. Thus a quadratic form is
+positive-definite if and only if its positive scalar multiple is. -/
+@[simp]
+theorem posDef_smul_iff_of_pos (Q : _root_.QuadraticForm R M) {a : R} (ha : 0 < a) :
+    (a • Q).PosDef ↔ Q.PosDef := by
+  constructor
+  · intro hQ x hx
+    have h := hQ x hx
+    simp only [smul_apply, smul_eq_mul] at h
+    exact pos_of_mul_pos_right h ha.le
+  · exact fun hQ ↦ hQ.smul ha
+
+end QuadraticForm
 
 namespace TauCeti
 

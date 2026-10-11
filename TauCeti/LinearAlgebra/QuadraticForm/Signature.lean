@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 import Mathlib.LinearAlgebra.Projection
 public import Mathlib.LinearAlgebra.QuadraticForm.Signature
 public import TauCeti.LinearAlgebra.BilinearForm.PosSemidef
+public import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.LinearAlgebra.Submodule.Prod
 
@@ -63,19 +64,6 @@ namespace QuadraticForm
 
 variable {K M : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
   [AddCommGroup M] [Module K M] [FiniteDimensional K M]
-
-omit [FiniteDimensional K M] in
-/-- Multiplication by a positive scalar preserves positive-definiteness. Thus a quadratic form is
-positive-definite if and only if its positive scalar multiple is. -/
-@[simp]
-theorem posDef_smul_iff_of_pos (Q : _root_.QuadraticForm K M) {a : K} (ha : 0 < a) :
-    (a • Q).PosDef ↔ Q.PosDef := by
-  constructor
-  · intro hQ x hx
-    have h := hQ x hx
-    simp only [smul_apply, smul_eq_mul] at h
-    exact pos_of_mul_pos_right h ha.le
-  · exact fun hQ ↦ hQ.smul ha
 
 /-- Multiplication by a positive scalar preserves the positive index of inertia. -/
 @[simp]
