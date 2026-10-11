@@ -56,23 +56,15 @@ namespace PreAdicSpace
 local notation "forgetTop" =>
   TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat
 
-variable (X : PreAdicSpace.{u}) {Z : PresheafedSpace CompleteSeparatedTopCommRingCat.{u}}
-  (π : X.toPresheafedSpace ⟶ Z)
-
-/-- The morphism of presheafed spaces of rings underlying `π`, forgetting the topology on
-sections. Its stalk maps are the stalk maps of `π` in the sense of `PreAdicSpace.Hom.stalkMap`. -/
-noncomputable abbrev ringPresheafedSpaceMap :
-    X.toRingPresheafedSpace ⟶ (forgetTop).mapPresheaf.obj Z :=
-  (forgetTop).mapPresheaf.map π
-
-variable {X π}
+variable {X : PreAdicSpace.{u}} {Z : PresheafedSpace CompleteSeparatedTopCommRingCat.{u}}
+  {π : X.toPresheafedSpace ⟶ Z}
 variable (hsurj : Function.Surjective π.base)
-  (hiso : ∀ x, IsIso ((X.ringPresheafedSpaceMap π).stalkMap x))
+  (hiso : ∀ x, IsIso ((toRingPresheafedSpaceHom π).stalkMap x))
   (hcompat : ∀ (x x' : X) (h : π.base x = π.base x'),
-    ValuationSpectrum.comap ((X.ringPresheafedSpaceMap π).stalkMap x').hom (X.stalkValuation x') =
+    ValuationSpectrum.comap ((toRingPresheafedSpaceHom π).stalkMap x').hom (X.stalkValuation x') =
       ValuationSpectrum.comap (eqToHom (congrArg ((forgetTop).mapPresheaf.obj Z).presheaf.stalk
           h.symm)).hom
-        (ValuationSpectrum.comap ((X.ringPresheafedSpaceMap π).stalkMap x).hom
+        (ValuationSpectrum.comap ((toRingPresheafedSpaceHom π).stalkMap x).hom
           (X.stalkValuation x)))
 
 -- The construction is exposed, as `PreAdicSpace.restrict` is: a point of `X.descend π` must be a
@@ -88,7 +80,7 @@ noncomputable def descendStalkIso (z : Z) :
       X.toRingPresheafedSpace.presheaf.stalk (Function.surjInv hsurj z) :=
   eqToIso (congrArg ((forgetTop).mapPresheaf.obj Z).presheaf.stalk
       (Function.surjInv_eq hsurj z).symm) ≪≫
-    @asIso _ _ _ _ ((X.ringPresheafedSpaceMap π).stalkMap (Function.surjInv hsurj z))
+    @asIso _ _ _ _ ((toRingPresheafedSpaceHom π).stalkMap (Function.surjInv hsurj z))
       (hiso (Function.surjInv hsurj z))
 
 variable (X π) in
@@ -104,7 +96,7 @@ noncomputable def descend : PreAdicSpace.{u} where
   isLocalRing z := by
     obtain ⟨x, rfl⟩ := hsurj z
     have := hiso x
-    exact (asIso ((X.ringPresheafedSpaceMap π).stalkMap x)).symm.commRingCatIsoToRingEquiv
+    exact (asIso ((toRingPresheafedSpaceHom π).stalkMap x)).symm.commRingCatIsoToRingEquiv
       |>.isLocalRing
   valuation z :=
     letI : IsLocalRing (X.toRingPresheafedSpace.presheaf.stalk (Function.surjInv hsurj z)) :=
@@ -123,7 +115,7 @@ theorem descendStalkIso_hom (z : Z) :
     (descendStalkIso hsurj hiso z).hom =
       eqToHom (congrArg ((forgetTop).mapPresheaf.obj Z).presheaf.stalk
         (Function.surjInv_eq hsurj z).symm) ≫
-        (X.ringPresheafedSpaceMap π).stalkMap (Function.surjInv hsurj z) :=
+        (toRingPresheafedSpaceHom π).stalkMap (Function.surjInv hsurj z) :=
   (rfl)
 
 /-- The presheafed space underlying the descended pre-adic space is `Z`. -/
@@ -153,19 +145,19 @@ from `g x` is the one descended from `x`. This supplies the compatibility hypoth
 when such endomorphisms act transitively on the fibres of `π`. -/
 theorem comap_stalkMap_base_eq_of_comp_eq (g : X ⟶ X) (hg : g.toHom ≫ π = π) (x : X)
     (h : π.base x = π.base (g.base x)) :
-    ValuationSpectrum.comap ((X.ringPresheafedSpaceMap π).stalkMap (g.base x)).hom
+    ValuationSpectrum.comap ((toRingPresheafedSpaceHom π).stalkMap (g.base x)).hom
         (X.stalkValuation (g.base x)) =
       ValuationSpectrum.comap (eqToHom (congrArg ((forgetTop).mapPresheaf.obj Z).presheaf.stalk
           h.symm)).hom
-        (ValuationSpectrum.comap ((X.ringPresheafedSpaceMap π).stalkMap x).hom
+        (ValuationSpectrum.comap ((toRingPresheafedSpaceHom π).stalkMap x).hom
           (X.stalkValuation x)) := by
   -- the stalk map of `g ≫ π` at `x`, computed once as a composite and once from `g ≫ π = π`
-  have hcomp : (X.ringPresheafedSpaceMap π).stalkMap (g.base x) ≫
+  have hcomp : (toRingPresheafedSpaceHom π).stalkMap (g.base x) ≫
       (toRingPresheafedSpaceHom g.toHom).stalkMap x =
       eqToHom (congrArg ((forgetTop).mapPresheaf.obj Z).presheaf.stalk h.symm) ≫
-        (X.ringPresheafedSpaceMap π).stalkMap x :=
+        (toRingPresheafedSpaceHom π).stalkMap x :=
     (PresheafedSpace.stalkMap.comp (toRingPresheafedSpaceHom g.toHom)
-      (X.ringPresheafedSpaceMap π) x).symm.trans
+      (toRingPresheafedSpaceHom π) x).symm.trans
       (PresheafedSpace.stalkMap.congr_hom _ _
         (((forgetTop).mapPresheaf.map_comp g.toHom π).symm.trans
           (congrArg (forgetTop).mapPresheaf.map hg)) x)
@@ -181,7 +173,7 @@ include hcompat in
 pulled back along the stalk map of `π`. -/
 theorem stalkValuation_descend_base (x : X) :
     (X.descend π hsurj hiso).stalkValuation (π.base x) =
-      ValuationSpectrum.comap ((X.ringPresheafedSpaceMap π).stalkMap x).hom
+      ValuationSpectrum.comap ((toRingPresheafedSpaceHom π).stalkMap x).hom
         (X.stalkValuation x) := by
   refine (stalkValuation_descend hsurj hiso (π.base x)).trans ?_
   rw [hcompat (Function.surjInv hsurj (π.base x)) x (Function.surjInv_eq hsurj _),

@@ -124,15 +124,19 @@ def spaYFrobeniusHom :
 /-- Moving a natural transformation `η : P ⟶ G ⋙ P` of functors on a thin category past a map
 `P.map a`: both sides of the equation are `η.app W` followed by the image under `P` of the unique
 morphism. -/
+-- The reflexive `h₁` and `h₂` match the casts `eqToHom (spaYPresheaf_obj ..)` in
+-- `spaYPresheafFrobenius_app`. Those relate `𝒪_𝒴(V)` to the presentation-limit sections over the
+-- image of `V`, so their two sides are syntactically different, and `eqToHom_refl` cannot remove
+-- them at the use site. Applying this lemma identifies the two sides by unification instead.
 private theorem map_comp_app_comp_map_comp_map {𝒞 𝒟 : Type*} [Category 𝒞] [Category 𝒟]
     [Quiver.IsThin 𝒟] (Q : 𝒟 ⥤ 𝒞) (G : 𝒟 ⥤ 𝒟) (η : Q ⟶ G ⋙ Q) {W B Z₁ Z₂ : 𝒟} (a : W ⟶ B)
     (h₁ : Q.obj B = Q.obj B) (k₁ : G.obj B ⟶ Z₁) (h₂ : Q.obj Z₁ = Q.obj Z₁) (k₂ : Z₁ ⟶ Z₂)
     (l : G.obj W ⟶ Z₂) :
     (Q.map a ≫ eqToHom h₁ ≫ η.app B ≫ Q.map k₁ ≫ eqToHom h₂) ≫ Q.map k₂ =
       η.app W ≫ Q.map l := by
-  rw [eqToHom_refl, eqToHom_refl, Category.id_comp, Category.comp_id, ← Category.assoc,
-    η.naturality, Functor.comp_map, Category.assoc, Category.assoc, ← Q.map_comp, ← Q.map_comp,
-    Subsingleton.elim (G.map a ≫ k₁ ≫ k₂) l]
+  simp only [eqToHom_refl, Category.id_comp, Category.comp_id, Category.assoc,
+    η.naturality_assoc, Functor.comp_map, ← Q.map_comp]
+  exact congrArg (η.app W ≫ Q.map ·) (Subsingleton.elim _ _)
 
 /-- Frobenius on `𝒴` is compatible with Frobenius on `Spa(𝕎 R, 𝕎 R)` along the inclusion. -/
 private theorem spaYFrobeniusHom_comp_ofRestrict :
@@ -173,6 +177,9 @@ def spaYFrobenius : spaYPreAdicSpace P hI ⟶ spaYPreAdicSpace P hI :=
 /-- The underlying morphism of presheafed spaces of `spaYFrobenius`. -/
 @[simp]
 theorem spaYFrobenius_toHom : (spaYFrobenius P hI).toHom = spaYFrobeniusHom P hI := by
+  -- instance search cannot find the stalk-isomorphism instance that `spaYFrobenius` supplies by
+  -- hand, so `PreAdicSpace.Hom.ofFac_toHom` is applied to the unfolded definition with all of its
+  -- arguments, including that instance, read off by unification
   unfold spaYFrobenius
   exact @PreAdicSpace.Hom.ofFac_toHom ..
 
@@ -266,7 +273,7 @@ theorem isOpenImmersion_ofRestrict_comp_quotientPresheafedHom (h : (spaYPresheaf
 
 omit [IsTopologicalRing (WittVector p R)] in
 /-- Every point of `𝒴` lies in a wandering open, namely a Frobenius window. -/
-private theorem exists_wandering_mem (y : spaY p ϖ) :
+theorem exists_wandering_open_mem (y : spaY p ϖ) :
     ∃ V : Opens (spaY p ϖ), (∀ k : ℤ, k ≠ 0 →
       Disjoint (⇑(frobeniusHomeomorph hI ^ k) ⁻¹' (V : Set (spaY p ϖ))) V) ∧ y ∈ V := by
   obtain ⟨n, hn | hn⟩ := Set.mem_iUnion.mp
@@ -279,36 +286,26 @@ private theorem exists_wandering_mem (y : spaY p ϖ) :
 /-- **The stalk maps of the projection are isomorphisms** when `𝒪_𝒴` is a sheaf: every point of
 `𝒴` lies in a wandering window, on which the projection is an open immersion. -/
 theorem isIso_stalkMap_quotientPresheafedHom (h : (spaYPresheaf P ϖ).IsSheaf) (y : spaY p ϖ) :
-    IsIso (((spaYPreAdicSpace P hI).ringPresheafedSpaceMap
-      (quotientPresheafedHom P hI)).stalkMap y) := by
-  obtain ⟨V, hV, hy⟩ := exists_wandering_mem (hI := hI) y
+    IsIso ((PreAdicSpace.toRingPresheafedSpaceHom
+      (X := spaYPreAdicSpace P hI) (quotientPresheafedHom P hI)).stalkMap y) := by
+  obtain ⟨V, hV, hy⟩ := exists_wandering_open_mem (hI := hI) y
   let o := (spaYPreAdicSpace P hI).ofRestrict V.isOpenEmbedding
   let y' : (spaYPreAdicSpace P hI).restrict V.isOpenEmbedding := ⟨y, hy⟩
   have := isOpenImmersion_ofRestrict_comp_quotientPresheafedHom h hV
-  -- the open immersion `V → 𝒳` stays one after forgetting the topology on sections, so its stalk
-  -- map at `y` is invertible
-  have h₁ := PresheafedSpace.IsOpenImmersion.stalk_iso
-    (H := PresheafedSpace.IsOpenImmersion.mapPresheaf_map
-      (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat)
-      (o.toHom ≫ quotientPresheafedHom P hI) (H := this)) _ y'
-  -- that stalk map is the stalk map of the projection at `y` followed by the invertible stalk map
-  -- of the inclusion of `V`; the points involved are typed differently, so the identification is
-  -- transported along `Eq.subst` rather than rewritten
-  have e₁ := PresheafedSpace.stalkMap.congr_hom _ _ (Functor.map_comp
-    (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).mapPresheaf
-    o.toHom (quotientPresheafedHom P hI)) y'
-  rw [e₁] at h₁
-  have h₂ := @IsIso.of_isIso_comp_left _ _ _ _ _ _ _ _ h₁
-  have e₂ := PresheafedSpace.stalkMap.comp
-    ((TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).mapPresheaf.map
-      o.toHom)
-    ((TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).mapPresheaf.map
-      (quotientPresheafedHom P hI)) y'
-  replace h₂ := Eq.subst (motive := IsIso) e₂ h₂
+  -- the open immersion `V → 𝒳` stays one after forgetting the topology on sections
+  have : PresheafedSpace.IsOpenImmersion (PreAdicSpace.toRingPresheafedSpaceHom o.toHom ≫
+      PreAdicSpace.toRingPresheafedSpaceHom (quotientPresheafedHom P hI)) :=
+    Functor.map_comp (TopCommRingCat.isCompleteSeparated.ι ⋙
+      forget₂ TopCommRingCat CommRingCat).mapPresheaf o.toHom (quotientPresheafedHom P hI) ▸
+      PresheafedSpace.IsOpenImmersion.mapPresheaf_map _ (o.toHom ≫ quotientPresheafedHom P hI)
+        (H := this)
+  -- the stalk maps of the inclusion of `V`, an open immersion of pre-adic spaces, are invertible
   have : IsIso ((PreAdicSpace.toRingPresheafedSpaceHom o.toHom).stalkMap y') :=
     PreAdicSpace.Hom.stalkMap_def o y' ▸
       PreAdicSpace.IsOpenImmersion.isIso_stalkMap ((spaYPreAdicSpace P hI).ofRestrict _) y'
-  exact @IsIso.of_isIso_comp_right _ _ _ _ _ _ _ this h₂
+  exact PresheafedSpace.isIso_stalkMap_of_isOpenImmersion_comp
+    (PreAdicSpace.toRingPresheafedSpaceHom o.toHom)
+    (PreAdicSpace.toRingPresheafedSpaceHom (quotientPresheafedHom P hI)) y'
 
 end Wandering
 
@@ -318,20 +315,12 @@ section SpaX
 
 variable {P hI}
 
-/-- Pulling a valuation on a stalk back along the identification `eqToHom` of the stalks at two
-equal points is transporting it along the equality: the two valuations are heterogeneously equal. -/
-private theorem comap_eqToHom_eq_iff_heq {ι : Type*} (S : ι → CommRingCat) {a b : ι} (h : a = b)
-    (u : ValuationSpectrum (S a)) (u' : ValuationSpectrum (S b)) :
-    u = ValuationSpectrum.comap (eqToHom (congrArg S h)).hom u' ↔ HEq u u' := by
-  subst h
-  rw [eqToHom_refl, CommRingCat.hom_id, ValuationSpectrum.comap_id, heq_iff_eq, id]
-
 variable (P hI) in
 /-- The valuation on the stalk of `𝒳` at `q y` descended from `y`: the stalk valuation of `𝒴` at
 `y`, pulled back along the stalk map of the projection. -/
 private def descendedValuation (y : spaY p ϖ) :=
   ValuationSpectrum.comap
-    (((spaYPreAdicSpace P hI).ringPresheafedSpaceMap (quotientPresheafedHom P hI)).stalkMap y).hom
+    ((PreAdicSpace.toRingPresheafedSpaceHom (quotientPresheafedHom P hI)).stalkMap y).hom
     ((spaYPreAdicSpace P hI).stalkValuation y)
 
 /-- Frobenius does not change the descended valuation. -/
@@ -343,7 +332,7 @@ private theorem heq_descendedValuation_frobenius (y : spaY p ϖ) :
       (quotientPresheafedHom P hI).base ((spaYFrobenius P hI).base y) :=
     (congrArg (fun f ↦ f.base y) (spaYFrobenius_toHom_comp_quotientPresheafedHom P hI)).symm
   exact (congr_arg_heq (descendedValuation P hI) hb).symm.trans
-    ((comap_eqToHom_eq_iff_heq _ h₀.symm _ _).mp
+    ((ValuationSpectrum.comap_eqToHom_eq_iff_heq _ h₀.symm _ _).mp
       (PreAdicSpace.comap_stalkMap_base_eq_of_comp_eq (spaYFrobenius P hI)
         (spaYFrobenius_toHom_comp_quotientPresheafedHom P hI) y h₀))
 
@@ -372,7 +361,8 @@ private theorem comap_stalkMap_quotientPresheafedHom_eq (y y' : spaY p ϖ)
       ((TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).mapPresheaf.obj
         (spaXPresheafedSpace P hI)).presheaf.stalk h.symm)).hom (descendedValuation P hI y) := by
   obtain ⟨n, rfl⟩ := (quotientMap_eq_iff hI y y').mp h
-  exact (comap_eqToHom_eq_iff_heq _ h.symm _ _).mpr (heq_descendedValuation_zpow n y').symm
+  exact (ValuationSpectrum.comap_eqToHom_eq_iff_heq _ h.symm _ _).mpr
+    (heq_descendedValuation_zpow n y').symm
 
 -- The pre-adic space is exposed, as `PreAdicSpace.descend` is: a point of `𝒳` must be a point of
 -- this pre-adic space for the projection and its charts on wandering opens to be stated.

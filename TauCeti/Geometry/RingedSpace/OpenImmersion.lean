@@ -21,13 +21,20 @@ presheafed spaces of rings, whose stalk maps are isomorphisms
 
 * `AlgebraicGeometry.PresheafedSpace.IsOpenImmersion.mapPresheaf_map`: the image of an open
   immersion under `F.mapPresheaf` is an open immersion.
+* `AlgebraicGeometry.PresheafedSpace.isIso_stalkMap_of_isOpenImmersion_comp`: if `f ≫ g` is an
+  open immersion and the stalk map of `f` at `x` is invertible, so is the stalk map of `g` at
+  `f x`.
 -/
 
 public section
 
 open CategoryTheory
 
-namespace AlgebraicGeometry.PresheafedSpace.IsOpenImmersion
+universe u v
+
+namespace AlgebraicGeometry.PresheafedSpace
+
+namespace IsOpenImmersion
 
 variable {C : Type*} [Category* C] {D : Type*} [Category* D]
 
@@ -41,4 +48,18 @@ theorem mapPresheaf_map (F : C ⥤ D) {X Y : PresheafedSpace C} (f : X ⟶ Y)
     have := H.c_iso U
     Functor.map_isIso F (f.c.app (Opposite.op (H.base_open.functor.obj U)))
 
-end AlgebraicGeometry.PresheafedSpace.IsOpenImmersion
+end IsOpenImmersion
+
+/-- **Cancelling an invertible stalk map against an open immersion.** If `f ≫ g` is an open
+immersion of presheafed spaces and the stalk map of `f` at `x` is an isomorphism, then so is the
+stalk map of `g` at `f x`: the stalk map of `f ≫ g` at `x`, an isomorphism, is that of `g`
+followed by that of `f`. -/
+theorem isIso_stalkMap_of_isOpenImmersion_comp {C : Type u} [Category.{v} C]
+    [Limits.HasColimits C] {X Y Z : PresheafedSpace.{_, _, v} C} (f : X ⟶ Y) (g : Y ⟶ Z)
+    [PresheafedSpace.IsOpenImmersion (f ≫ g)] (x : X) [IsIso (f.stalkMap x)] :
+    IsIso (g.stalkMap (f.base x)) := by
+  have := PresheafedSpace.IsOpenImmersion.stalk_iso (f ≫ g) x
+  rw [PresheafedSpace.stalkMap.comp] at this
+  exact (isIso_comp_right_iff _ (f.stalkMap x)).mp this
+
+end AlgebraicGeometry.PresheafedSpace

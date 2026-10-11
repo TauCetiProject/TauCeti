@@ -284,6 +284,14 @@ theorem comap_hom_comap_hom {X Y Z : CommRingCat} (φ : X ⟶ Y) (ψ : Y ⟶ Z) 
     comap φ.hom (comap ψ.hom w) = comap (φ ≫ ψ).hom w := by
   rw [CommRingCat.hom_comp, comap_comp, Function.comp_apply]
 
+/-- Pulling a valuation back along the identification `eqToHom` of the rings at two equal indices
+is transporting it along the equality: the two valuations are heterogeneously equal. -/
+theorem comap_eqToHom_eq_iff_heq {ι : Type*} (S : ι → CommRingCat) {a b : ι} (h : a = b)
+    (u : Spv (S a)) (u' : Spv (S b)) :
+    u = comap (eqToHom (congrArg S h)).hom u' ↔ HEq u u' := by
+  subst h
+  rw [eqToHom_refl, CommRingCat.hom_id, comap_id, heq_iff_eq, id]
+
 
 
 /-- The support ideal `{a ∈ A | v(a) = 0}` of a point `v : Spv A`. -/
