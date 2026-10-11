@@ -90,7 +90,6 @@ theorem monic_additivePolynomial_sub_C [Nontrivial R] (u : R) :
   rw [degree_additivePolynomial]
   exact_mod_cast Fintype.card_pos
 
-@[simp]
 theorem natDegree_additivePolynomial_sub_C [Nontrivial R] (u : R) :
     (V.additivePolynomial - C u).natDegree = Fintype.card V := by
   rw [natDegree_sub_C, natDegree_additivePolynomial]
