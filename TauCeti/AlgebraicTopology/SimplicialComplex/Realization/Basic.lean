@@ -395,6 +395,13 @@ theorem vertex_val (K : AbstractSimplicialComplex ι) (v : ι) :
     (vertex K v : ι →₀ ℝ) = Finsupp.single v 1 :=
   (rfl)
 
+/-- The barycentric support of a realization vertex is its singleton vertex set. -/
+-- Simplify the support before vertex_val rewrites the vertex's coordinates.
+@[simp↓]
+theorem support_vertex (K : AbstractSimplicialComplex ι) (v : ι) :
+    (vertex K v : ι →₀ ℝ).support = {v} := by
+  rw [vertex_val, Finsupp.support_single _ one_ne_zero]
+
 /-- A realization point is a vertex exactly when its coordinate at that vertex is one. -/
 @[simp]
 theorem Realization.eq_vertex_iff (K : AbstractSimplicialComplex ι) (x : Realization K) (v : ι) :
@@ -421,6 +428,16 @@ theorem Realization.eq_vertex_iff (K : AbstractSimplicialComplex ι) (x : Realiz
       simp only [Finsupp.support_erase, Finset.mem_erase]
       exact ⟨by simpa only [Finset.mem_singleton] using h, hw⟩
     exact (Finsupp.mem_support_iff.mp hw') (hzero w hw')
+
+/-- A realization point supported on a singleton is the corresponding vertex. -/
+theorem Realization.eq_vertex_of_support_eq (K : AbstractSimplicialComplex ι)
+    (x : Realization K) {v : ι} (h : x.1.support = {v}) : x = vertex K v := by
+  apply Subtype.ext
+  rw [vertex_val]
+  let w : Convexity.StdSimplex ℝ ι :=
+    ⟨x.1, Realization.nonneg K x, Realization.sum_eq_one K x⟩
+  exact congrArg Convexity.StdSimplex.weights
+    ((Convexity.StdSimplex.support_weights_eq_singleton (w := w)).mp h)
 
 /-- Distinct vertices give distinct points in the geometric realization. -/
 theorem vertex_injective (K : AbstractSimplicialComplex ι) :

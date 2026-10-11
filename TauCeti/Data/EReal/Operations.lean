@@ -36,6 +36,8 @@ to a real number is real addition.
   negated term by term;
 * `EReal.coe_le_coe_add_coe_ennreal_iff` — an inequality `x ≤ y + I` with `x`, `y` real and `I` a
   finite extended nonnegative real is the corresponding inequality between reals.
+* `EReal.coe_add_coe_ennreal_le_coe_add_coe_ennreal_iff` — likewise for an inequality
+  `x + I ≤ y + J` with `I`, `J` finite extended nonnegative reals.
 -/
 
 public section
@@ -120,6 +122,14 @@ theorem _root_.EReal.add_eq_coe_iff_neg_add_neg_eq {x y : EReal} {r : ℝ} :
 theorem _root_.EReal.coe_le_coe_add_coe_ennreal_iff {x y : ℝ} {I : ℝ≥0∞} (hI : I ≠ ∞) :
     (x : EReal) ≤ y + I ↔ x ≤ y + I.toReal := by
   rw [← EReal.coe_ennreal_toReal hI, ← EReal.coe_add, EReal.coe_le_coe_iff]
+
+/-- Adding finite elements of `ℝ≥0∞` to real numbers in `EReal` is real addition: the inequality
+`x + I ≤ y + J` between extended reals is `x + I.toReal ≤ y + J.toReal` between reals. -/
+theorem _root_.EReal.coe_add_coe_ennreal_le_coe_add_coe_ennreal_iff {x y : ℝ} {I J : ℝ≥0∞}
+    (hI : I ≠ ∞) (hJ : J ≠ ∞) :
+    (x : EReal) + I ≤ y + J ↔ x + I.toReal ≤ y + J.toReal := by
+  rw [← EReal.coe_ennreal_toReal hI, ← EReal.coe_ennreal_toReal hJ, ← EReal.coe_add,
+    ← EReal.coe_add, EReal.coe_le_coe_iff]
 
 end TauCeti
 

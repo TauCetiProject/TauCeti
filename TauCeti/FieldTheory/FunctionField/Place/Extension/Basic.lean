@@ -33,8 +33,8 @@ that are independent over `F_P`, multiplied by the powers `t^j` of a prime eleme
 `0 ≤ j < e`, are independent over `F`, because the orders of the resulting blocks are pairwise
 distinct modulo `e`.
 
-The file also records the action of the valuation ring `𝒪_P` of a place `P` of `F / k` on the
-extension field `F'`, through `F`.  That action is not a global instance — for `F' = F` it would
+The file also records the action of the valuation ring `𝒪_P` of a place `P` of `F / k` on any
+`F`-algebra `F'`, through `F`. That action is not a global instance — for `F' = F` it would
 compete with the action of a valuation subring on its own field — so it, and the scalar tower it
 sits in, are provided to be reinstalled by consumers with `attribute [local instance 10]`.
 For a finite extension, it also records the standard local integral-closure model
@@ -47,7 +47,7 @@ to the canonical fraction fields used by Mathlib's different API.
 * `TauCeti.Place.constantsEquiv`: the places of `F' / k` are the places of `F' / k'`, for `k'`
   integral over `k`; enlarging the constants by an algebraic extension changes nothing.
 * `TauCeti.Place.algebraIntegersExtension` and `TauCeti.Place.isScalarTowerIntegersExtension`: the
-  action of the valuation ring of a place of `F / k` on an extension field `F'`, to be installed
+  action of the valuation ring of a place of `F / k` on an `F`-algebra `F'`, to be installed
   with `attribute [local instance 10]`.
 * `TauCeti.Place.restrict`: the place of `F / k` that a place of `F' / k'` lies over.
 * `TauCeti.Place.ramificationIdx`: the ramification index `e(P' | P)`.
@@ -116,18 +116,17 @@ namespace Place
 universe u u' v v'
 
 variable {k : Type u} {k' : Type u'} {F : Type v} {F' : Type v'}
-variable [Field k] [Field k'] [Field F] [Field F']
-variable [Algebra k k'] [Algebra k F] [Algebra k' F'] [Algebra F F'] [Algebra k F']
-variable [IsScalarTower k k' F'] [IsScalarTower k F F']
+variable [Field k] [Field F] [Algebra k F]
 
 section LocalModel
 
-omit [Field k'] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [IsScalarTower k k' F']
-  [IsScalarTower k F F']
-
 variable (F') (P : Place k F)
 
-/-- **The valuation ring of a place of `F / k` acts on an extension field `F'`**, through `F`.
+section
+
+variable [Semiring F'] [Algebra F F']
+
+/-- **The valuation ring of a place of `F / k` acts on any `F`-algebra `F'`**, through `F`.
 
 This is not a global instance: for `F' = F` it would compete with the action of a valuation
 subring on its own field.  Install it, together with
@@ -137,24 +136,34 @@ that works with the local model of the extension at `P` — at low priority, so 
 expect. -/
 @[instance_reducible]
 noncomputable def algebraIntegersExtension : Algebra (P.integers) F' :=
-  ((algebraMap F F').comp (algebraMap (P.integers) F)).toAlgebra
+  Algebra.compHom F' (algebraMap (P.integers) F)
 
 attribute [local instance 10] algebraIntegersExtension
 
 /-- The action of `TauCeti.Place.algebraIntegersExtension` on `F'` factors through `F`. -/
 theorem isScalarTowerIntegersExtension : IsScalarTower (P.integers) F F' :=
-  .of_algebraMap_eq fun _ ↦ rfl
+  .of_compHom (P.integers) F F'
 
 attribute [local instance 10] isScalarTowerIntegersExtension
 
-theorem algebraMap_integersExtension_injective :
+/-- An `F`-algebra is torsion-free over the valuation ring of a place of `F / k`. -/
+instance isTorsionFree_integersExtension : Module.IsTorsionFree (P.integers) F' :=
+  Module.IsTorsionFree.trans F
+
+theorem algebraMap_integersExtension_injective [Nontrivial F'] :
     Function.Injective (algebraMap (P.integers) F') := by
   rw [IsScalarTower.algebraMap_eq (P.integers) F F', RingHom.coe_comp]
   exact (algebraMap F F').injective.comp (FaithfulSMul.algebraMap_injective (P.integers) F)
 
-/-- **`𝒪'_P` contracts to `𝒪_P`**: a function of `F` is integral over `𝒪_P` in the extension `F'`
-exactly when it is regular at `P`. So enlarging the field does not enlarge the ring of functions
-of `F` integral over `𝒪_P`, and `𝒪'_P ∩ F = 𝒪_P`. -/
+end
+
+variable [Ring F'] [Algebra F F'] [Nontrivial F']
+
+attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
+
+/-- **Integrality of functions of `F` is reflected by a nontrivial ring algebra `F'`**: the image
+of a function of `F` is integral over `𝒪_P` exactly when it is regular at `P`. In particular,
+the local integral closure in a field extension contracts to `𝒪_P`. -/
 @[simp]
 theorem isIntegral_algebraMap_iff_mem_integers {x : F} :
     IsIntegral ↥P.integers (algebraMap F F' x) ↔ x ∈ P.integers :=
@@ -163,11 +172,11 @@ theorem isIntegral_algebraMap_iff_mem_integers {x : F} :
     ⟨fun hx ↦ P.mem_integers_of_isIntegral (fun r ↦ r.2) hx,
       fun hx ↦ isIntegral_algebraMap (x := (⟨x, hx⟩ : P.integers))⟩
 
-instance isTorsionFree_integersExtension : Module.IsTorsionFree (P.integers) F' :=
-  Module.isTorsionFree_iff_algebraMap_injective.mpr
-    (algebraMap_integersExtension_injective F' P)
-
 end LocalModel
+
+variable [Field k'] [Field F']
+variable [Algebra k k'] [Algebra k' F'] [Algebra F F'] [Algebra k F']
+variable [IsScalarTower k k' F'] [IsScalarTower k F F']
 
 section LocalIntegralClosure
 

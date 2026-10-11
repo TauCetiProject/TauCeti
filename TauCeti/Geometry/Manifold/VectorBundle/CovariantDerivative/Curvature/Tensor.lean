@@ -203,4 +203,14 @@ theorem curvatureTensor_self (x : M) (u : TangentSpace I x) :
   obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I F w
   simp [curvatureTensor_apply cov x hX hX hσ]
 
+/-- On a base of tangent dimension at most one, every smooth connection has zero
+curvature: the alternating pair of tangent arguments is necessarily dependent. -/
+theorem curvatureTensor_eq_zero_of_finrank_le_one (x : M)
+    (hdim : Module.finrank ℝ (TangentSpace I x) ≤ 1) : cov.curvatureTensor x = 0 := by
+  obtain ⟨z, hz⟩ := finrank_le_one_iff.mp hdim
+  ext u v w
+  obtain ⟨a, rfl⟩ := hz u
+  obtain ⟨b, rfl⟩ := hz v
+  simp
+
 end CovariantDerivative

@@ -165,6 +165,13 @@ section isIso
 
 variable {P Q : TopPair.{u}} (f : P ⟶ Q)
 
+/-- A map of topological pairs is determined by its map of ambient spaces, because the subspace
+of the target is embedded. -/
+lemma hom_ext_of_fst {g : P ⟶ Q} (h : Hom.fst f = Hom.fst g) : f = g := by
+  ext a : 2
+  · exact Q.isEmbedding_map.injective (by rw [Hom.w_apply, Hom.w_apply, h])
+  · exact ConcreteCategory.congr_hom h a
+
 /-- A map of topological pairs which is an isomorphism of the ambient spaces and is surjective
 on the subspaces is an isomorphism of pairs.  The inverse on the subspaces is continuous because
 the subspace of the source is embedded in its ambient space. -/

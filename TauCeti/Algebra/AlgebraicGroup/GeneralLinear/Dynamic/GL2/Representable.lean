@@ -113,6 +113,7 @@ noncomputable def splitTorusPointsIsoLeviFunctor :
     (fun A ↦ (splitTorusLeviMulEquiv A).toGrpIso)
     (by
       intro A B φ
+      rw [Cocharacter.leviFunctor_map]
       apply GrpCat.hom_ext
       apply MonoidHom.ext
       intro (f : HopfAlgebra.points
@@ -120,7 +121,7 @@ noncomputable def splitTorusPointsIsoLeviFunctor :
         (H := MonoidAlgebra R (Multiplicative (ULift.{u} (Fin 2) →₀ ℤ))) A)
       apply Subtype.ext
       -- Both component maps are restrictions of the corresponding ambient point maps.
-      unfold HopfAlgebra.pointsFunctor Cocharacter.leviFunctor
+      unfold HopfAlgebra.pointsFunctor
       change ((splitTorusLeviMulEquiv B
           (HopfAlgebra.mapPoints
             (H := MonoidAlgebra R (Multiplicative (ULift.{u} (Fin 2) →₀ ℤ))) φ f) :
@@ -198,13 +199,14 @@ noncomputable def additivePointsIsoUnipotentFunctor :
     (fun A ↦ (additiveUnipotentMulEquiv A).toGrpIso)
     (by
       intro A B φ
+      rw [Cocharacter.unipotentFunctor_map]
       apply GrpCat.hom_ext
       apply MonoidHom.ext
       intro (f : HopfAlgebra.points
         (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) A)
       apply Subtype.ext
       -- Both component maps are restrictions of the corresponding ambient point maps.
-      unfold HopfAlgebra.pointsFunctor Cocharacter.unipotentFunctor
+      unfold HopfAlgebra.pointsFunctor
       change ((additiveUnipotentMulEquiv B
           (HopfAlgebra.mapPoints (H := AdditiveGroup.coordinateHopfAlgebra R) φ f) :
             Cocharacter.unipotent B (dynamicCocharacter (R := R))) :

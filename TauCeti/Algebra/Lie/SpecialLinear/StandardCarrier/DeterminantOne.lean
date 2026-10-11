@@ -132,9 +132,9 @@ theorem specialLinearDefiningHopfIdeal_le_kostantToralDefiningIdeal :
   rw [TauCeti.UniversalEnvelopingAlgebra.le_kostantToralDefiningIdeal_iff]
   constructor
   · intro k
-    exact SpecialLinear.definingHopfIdeal_toIdeal_le_ker_of_map_determinant_eq_one ℤ (r + 1) _
+    exact (SpecialLinear.definingHopfIdeal_toIdeal_le_ker_iff ℤ (r + 1) _).2
       (rootCoordinateMap_determinantGroupLike r k)
-  · exact SpecialLinear.definingHopfIdeal_toIdeal_le_ker_of_map_determinant_eq_one ℤ (r + 1) _
+  · exact (SpecialLinear.definingHopfIdeal_toIdeal_le_ker_iff ℤ (r + 1) _).2
       (GeneralLinear.weightTorusCoordinateMap_determinantGroupLike (R := ℤ) (weight r)
         (sum_weight_eq_zero r))
 

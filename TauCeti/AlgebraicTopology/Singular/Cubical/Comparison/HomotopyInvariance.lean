@@ -33,11 +33,16 @@ equivalence `TauCeti.cubicalSingularHomotopyEquiv`.  If `f` and `g` are homotopi
 
 ## Main results
 
-* `TauCeti.singularCubicalHomologyIso`: cubical singular homology is singular homology.
+* `TauCeti.singularCubicalHomologyIso`, `TauCeti.singularCubicalHomologyNatIso`: cubical singular
+  homology is naturally isomorphic to singular homology.
 * `TopCat.Homotopy.congr_homologyMap_normalizedCubicalChainComplex`: homotopic maps induce the same
   map on cubical homology.
 * `ContinuousMap.HomotopyEquiv.quasiIso_normalizedCubicalChainComplex_map`: a homotopy
   equivalence induces a quasi-isomorphism of normalized cubical chains.
+
+## References
+
+* W. S. Massey, *Singular Homology Theory*, GTM 70, Springer, 1980, Chapter VII.
 -/
 
 public section
@@ -72,6 +77,30 @@ theorem singularCubicalHomologyIso_inv (X : TopCat.{u}) (n : ℕ) :
       HomologicalComplex.homologyMap ((cubicalToSingular k).app X) n := by
   rw [← cubicalSingularHomotopyEquiv_inv]
   rfl
+
+/-- The comparison isomorphism on homology is natural. -/
+@[reassoc]
+theorem singularCubicalHomologyIso_hom_naturality {X Y : TopCat.{u}} (f : X ⟶ Y) (n : ℕ) :
+    HomologicalComplex.homologyMap ((singularChains k).map f) n ≫
+        (singularCubicalHomologyIso k Y n).hom =
+      (singularCubicalHomologyIso k X n).hom ≫
+        HomologicalComplex.homologyMap ((normalizedCubicalChainComplex k).map f) n := by
+  simp only [singularCubicalHomologyIso_hom, ← HomologicalComplex.homologyMap_comp,
+    (singularToCubical k).naturality]
+
+variable (k) in
+/-- **Cubical singular homology is naturally isomorphic to singular homology**, as functors on
+topological spaces. -/
+def singularCubicalHomologyNatIso (n : ℕ) :
+    singularChains k ⋙ HomologicalComplex.homologyFunctor _ _ n ≅
+      normalizedCubicalChainComplex k ⋙ HomologicalComplex.homologyFunctor _ _ n :=
+  NatIso.ofComponents (fun X ↦ singularCubicalHomologyIso k X n)
+    fun f ↦ singularCubicalHomologyIso_hom_naturality f n
+
+@[simp]
+theorem singularCubicalHomologyNatIso_app (n : ℕ) (X : TopCat.{u}) :
+    (singularCubicalHomologyNatIso k n).app X = singularCubicalHomologyIso k X n :=
+  (rfl)
 
 end TauCeti
 
