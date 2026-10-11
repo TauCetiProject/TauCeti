@@ -120,7 +120,7 @@ noncomputable def binaryOrderEquivProductOfSq [L.IsNondegenerate] (s : ℤ)
   have e (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 1) (h : D = s ^ 2) :
       QuadraticOrder.toSubalgebra D hD ≃ₐ[ℤ] QuadraticOrder.productSubalgebra s := by
     subst D
-    exact QuadraticOrder.equivProductOfSq s hs hD
+    exact QuadraticOrder.equivProductOfSq s hs
   exact e _ (L.binaryDiscriminant_emod_four_eq_zero_or_one hV) hSq
 
 end TauCeti.IntegralLattice
