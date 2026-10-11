@@ -46,7 +46,7 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [CompleteSpace V
 contraction maps on one neighbourhood, uniformly for all times in `[0, 1]`.
 The returned time neighbourhood is open, so subsequent smoothness is ordinary local
 smoothness, including at the endpoints. -/
-theorem exists_isOpen_isInvertible_lineMap (hL : L.IsInvertible)
+theorem exists_isOpen_isInvertible_sub_smul_add_smul (hL : L.IsInvertible)
     (hW : IsOpen W) (hx₀ : x₀ ∈ W) (hB : ContinuousOn B W)
     (hB₀ : B x₀ = L) :
     ∃ (T : Set ℝ) (U : Set V), IsOpen T ∧ IsOpen U ∧ Icc 0 1 ⊆ T ∧
@@ -103,7 +103,7 @@ theorem exists_contDiffOn_moserField (hL : L.IsInvertible) {n : WithTop ℕ∞}
   let : IsBoundedSMul ℝ (V →L[ℝ] V →L[ℝ] ℝ) :=
     NormedSpace.toIsBoundedSMul (𝕜 := ℝ) (E := V →L[ℝ] V →L[ℝ] ℝ)
   obtain ⟨T, U, hT, hU, hIT, hxU, hUW, hA⟩ :=
-    exists_isOpen_isInvertible_lineMap hL hW hx₀ hB.continuousOn hB₀
+    exists_isOpen_isInvertible_sub_smul_add_smul hL hW hx₀ hB.continuousOn hB₀
   let A : ℝ × V → V →L[ℝ] V →L[ℝ] ℝ :=
     fun p ↦ (1 - p.1) • L + p.1 • B p.2
   let X : ℝ × V → V := fun p ↦ (A p).inverse (-α p.2)
