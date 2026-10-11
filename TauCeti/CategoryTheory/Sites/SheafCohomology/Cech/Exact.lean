@@ -5,12 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Basic
 public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Basic
-public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
-public import Mathlib.Algebra.Homology.HomologySequenceLemmas
-public import Mathlib.Algebra.Homology.Opposite
+public import TauCeti.Algebra.Homology.HomologicalComplex
 public import TauCeti.Algebra.Homology.HomologySequenceLemmas
 
 /-!
@@ -150,49 +147,6 @@ section Resolution
 
 variable {C : Type u} [Category.{v} C] {A : Type u'} [Category.{v'} A] [Abelian A]
 
-private lemma iCycles_comp_toCycles (L : CochainComplex A ℕ) (k : ℕ) :
-    L.iCycles k ≫ L.toCycles k (k + 1) = 0 := by
-  rw [← cancel_mono (L.iCycles (k + 1)), Category.assoc, HomologicalComplex.toCycles_i,
-    HomologicalComplex.iCycles_d, zero_comp]
-
-private lemma single₀_f_zero_comp_d {L : CochainComplex A ℕ} {X : A}
-    (g : (CochainComplex.single₀ A).obj X ⟶ L) : g.f 0 ≫ L.d 0 1 = 0 := by
-  rw [g.comm 0 1, HomologicalComplex.single_obj_d, zero_comp]
-
-private lemma augmentation_comp_toCycles {L : CochainComplex A ℕ} {X : A}
-    (g : (CochainComplex.single₀ A).obj X ⟶ L) :
-    ((HomologicalComplex.singleObjXSelf (ComplexShape.up ℕ) 0 X).inv ≫ g.f 0) ≫
-      L.toCycles 0 1 = 0 := by
-  rw [← cancel_mono (L.iCycles 1), Category.assoc, Category.assoc, HomologicalComplex.toCycles_i,
-    single₀_f_zero_comp_d, comp_zero, zero_comp]
-
-/-- In a cochain complex exact in degree `k + 1`, the map onto the `(k + 1)`-cycles is
-surjective. -/
-private lemma epi_toCycles {L : CochainComplex A ℕ} {k : ℕ} (h : L.ExactAt (k + 1)) :
-    Epi (L.toCycles k (k + 1)) := by
-  rw [HomologicalComplex.exactAt_iff' _ k (k + 1) (k + 2) (by simp) (by simp)] at h
-  rw [← epi_comp_iff_of_isIso _ (L.cyclesIsoSc' k (k + 1) (k + 2) (by simp) (by simp)).hom,
-    L.toCycles_cyclesIsoSc'_hom]
-  exact h.epi_toCycles
-
-/-- The sequence `0 ⟶ Zᵏ ⟶ Lᵏ ⟶ Zᵏ⁺¹ ⟶ 0` of the cycles of a cochain complex `L` is exact in the
-middle: the `k`-cycles are the kernel of the differential. -/
-private lemma exact_iCycles_toCycles (L : CochainComplex A ℕ) (k : ℕ) :
-    (ShortComplex.mk _ _ (iCycles_comp_toCycles L k)).Exact := by
-  refine (ShortComplex.exact_iff_of_epi_of_isIso_of_mono
-    (S₁ := ShortComplex.mk _ _ (iCycles_comp_toCycles L k))
-    (S₂ := ShortComplex.mk _ _ (L.iCycles_d k (k + 1)))
-    { τ₁ := 𝟙 _
-      τ₂ := 𝟙 _
-      τ₃ := L.iCycles (k + 1)
-      comm₁₂ := by simp
-      comm₂₃ := (Category.id_comp _).trans (HomologicalComplex.toCycles_i _ _ _).symm }).2 ?_
-  exact ShortComplex.exact_of_f_is_kernel _ (L.cyclesIsKernel k (k + 1) (by simp))
-
-private lemma f_comp_toCycles {L L' : CochainComplex A ℕ} (φ : L ⟶ L') (k : ℕ) :
-    φ.f k ≫ L'.toCycles k (k + 1) = L.toCycles k (k + 1) ≫ HomologicalComplex.cyclesMap φ (k + 1) :=
-  (cancel_mono (L'.iCycles (k + 1))).1 <| by simp
-
 variable (K : Cᵒᵖ ⥤ CochainComplex A ℕ)
 
 /-- The inclusion `Zᵏ ⟶ Kᵏ` of the presheaf of cycles. -/
@@ -205,19 +159,20 @@ private def cyclesι (k : ℕ) :
 private def cyclesπ (k : ℕ) :
     K ⋙ HomologicalComplex.eval A _ k ⟶ K ⋙ HomologicalComplex.cyclesFunctor A _ (k + 1) where
   app Y := (K.obj Y).toCycles k (k + 1)
-  naturality _ _ f := f_comp_toCycles (K.map f) k
+  naturality _ _ f := ((K.obj _).toCycles_cyclesMap (K.map f) k (k + 1)).symm
 
 /-- The sequence `0 ⟶ Zᵏ ⟶ Kᵏ ⟶ Zᵏ⁺¹ ⟶ 0` of presheaves of cycles. -/
 private def cyclesSC (k : ℕ) : ShortComplex (Cᵒᵖ ⥤ A) :=
   ShortComplex.mk (cyclesι K k) (cyclesπ K k) <|
-    NatTrans.ext <| funext fun Y ↦ iCycles_comp_toCycles (K.obj Y) k
+    NatTrans.ext <| funext fun Y ↦ (K.obj Y).iCycles_toCycles k (k + 1)
 
 /-- The sequence of cycles in degree `k` is short exact at every object `Y` at which `K` is exact
 in degree `k + 1`. -/
 private lemma cyclesSC_shortExact (k : ℕ) {Y : Cᵒᵖ} (hY : (K.obj Y).ExactAt (k + 1)) :
     ((cyclesSC K k).map ((evaluation Cᵒᵖ A).obj Y)).ShortExact :=
-  have : Epi ((K.obj Y).toCycles k (k + 1)) := epi_toCycles hY
-  { exact := exact_iCycles_toCycles (K.obj Y) k
+  have : Epi ((K.obj Y).toCycles k (k + 1)) :=
+    HomologicalComplex.epi_toCycles_of_exactAt hY (by simp)
+  { exact := (K.obj Y).exact_iCycles_toCycles k (k + 1) (by simp)
     mono_f := inferInstanceAs (Mono ((K.obj Y).iCycles k))
     epi_g := inferInstanceAs (Epi ((K.obj Y).toCycles k (k + 1))) }
 
@@ -236,7 +191,8 @@ private def augmentationι : P ⟶ K ⋙ HomologicalComplex.eval A _ 0 where
 /-- The sequence `0 ⟶ P ⟶ K⁰ ⟶ Z¹ ⟶ 0` of the augmented resolution. -/
 private def augmentationSC : ShortComplex (Cᵒᵖ ⥤ A) :=
   ShortComplex.mk (augmentationι ε) (cyclesπ K 0) <|
-    NatTrans.ext <| funext fun Y ↦ augmentation_comp_toCycles (ε.app Y)
+    NatTrans.ext <| funext fun Y ↦ (Category.assoc _ _ _).trans <|
+      (congrArg (_ ≫ ·) (HomologicalComplex.single_f_toCycles (ε.app Y) 1)).trans comp_zero
 
 /-- The augmented sequence is short exact at every object `Y` at which `ε` is a
 quasi-isomorphism. -/
@@ -251,10 +207,11 @@ private lemma augmentationSC_shortExact {Y : Cᵒᵖ} (hY : QuasiIso (ε.app Y))
       ((CochainComplex.quasiIsoAt₀_iff (ε.app Y)).1 (hY.quasiIsoAt 0))
   have h₁ : (K.obj Y).ExactAt 1 := (quasiIsoAt_iff_exactAt (ε.app Y) 1
     (CochainComplex.exactAt_succ_single_obj _ 0)).1 (hY.quasiIsoAt 1)
-  have : Epi ((K.obj Y).toCycles 0 1) := epi_toCycles h₁
+  have : Epi ((K.obj Y).toCycles 0 1) :=
+    HomologicalComplex.epi_toCycles_of_exactAt h₁ (by simp)
   -- compare with the sequence `P(Y) ⟶ K⁰(Y) ⟶ K¹(Y)` whose exactness is `hexact`
   let φ : (augmentationSC ε).map ((evaluation Cᵒᵖ A).obj Y) ⟶ ShortComplex.mk ((ε.app Y).f 0)
-      ((K.obj Y).d 0 1) (single₀_f_zero_comp_d (ε.app Y)) :=
+      ((K.obj Y).d 0 1) (HomologicalComplex.single_f_d (ε.app Y) 1) :=
     { τ₁ := e.inv
       τ₂ := 𝟙 _
       τ₃ := (K.obj Y).iCycles 1

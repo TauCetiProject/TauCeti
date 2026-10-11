@@ -8,17 +8,14 @@ module
 public import Mathlib.Algebra.Homology.HomologicalComplexLimits
 public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.Algebra.Homology.ShortComplex.FunctorEquivalence
-public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
-public import Mathlib.Algebra.Homology.ShortComplex.Limits
-public import Mathlib.Algebra.Homology.ShortComplex.PreservesHomology
 public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Basic
 
 /-!
 # Homology and exact limits
 
 This file proves that homology of short complexes, and hence homology of homological complexes,
-commutes with limits of every shape whose limits are exact. Consequently a product of
-quasi-isomorphisms is a quasi-isomorphism when products of that shape are exact.
+commutes with limits of every shape whose limits are exact. Consequently a limit of
+quasi-isomorphisms is a quasi-isomorphism when limits of that shape are exact.
 
 ## Main results
 
@@ -28,6 +25,8 @@ quasi-isomorphisms is a quasi-isomorphism when products of that shape are exact.
   associated to a homological complex preserves all existing limits.
 * `TauCeti.homologicalComplexHomologyFunctor_preservesLimitsOfShape`: homology of homological
   complexes preserves limits of any exact shape.
+* `TauCeti.quasiIso_limMap`: a limit of quasi-isomorphisms of homological complexes is a
+  quasi-isomorphism when limits of that shape are exact.
 * `TauCeti.quasiIso_pi_map`: a product of quasi-isomorphisms of homological complexes is a
   quasi-isomorphism when products of that shape are exact.
 
@@ -257,28 +256,37 @@ instance homologicalComplexHomologyFunctor_preservesLimitsOfShape :
   exact preservesLimitsOfShape_of_natIso
     (HomologicalComplex.homologyFunctorIso C c q).symm
 
-variable {c} in
-omit [HasLimitsOfShape J C] [HasExactLimitsOfShape J C] in
-/-- **Products of quasi-isomorphisms.** If products indexed by `β` are exact, the product of a
-family of quasi-isomorphisms of homological complexes is a quasi-isomorphism: homology commutes
-with these products. -/
-theorem quasiIso_pi_map {β : Type w} [HasLimitsOfShape (Discrete β) C]
-    [HasExactLimitsOfShape (Discrete β) C] {K L : β → HomologicalComplex C c}
-    (φ : ∀ b, K b ⟶ L b) (hφ : ∀ b, QuasiIso (φ b)) : QuasiIso (Limits.Pi.map φ) := by
+variable {c}
+
+/-- **Limits of quasi-isomorphisms.** If limits of shape `J` are exact, a morphism of `J`-shaped
+diagrams of homological complexes which is a quasi-isomorphism at every index induces a
+quasi-isomorphism on limits: homology commutes with these limits. -/
+theorem quasiIso_limMap {F G : J ⥤ HomologicalComplex C c} (φ : F ⟶ G)
+    (hφ : ∀ j, QuasiIso (φ.app j)) : QuasiIso (limMap φ) := by
   rw [quasiIso_iff]
   intro q
   rw [quasiIsoAt_iff_isIso_homologyMap]
   let H := HomologicalComplex.homologyFunctor C c q
-  -- `H` commutes with the products, through the comparison isomorphisms `piComparison`
-  have h : H.map (Limits.Pi.map φ) ≫ piComparison H L =
-      piComparison H K ≫ Limits.Pi.map fun b ↦ H.map (φ b) := by
-    ext b
+  -- `H` commutes with the limits, through the comparison isomorphisms `limit.post`
+  have h : H.map (limMap φ) ≫ limit.post G H =
+      limit.post F H ≫ limMap (Functor.whiskerRight φ H) := by
+    ext j
     simp [← Functor.map_comp]
-  have (b : β) : IsIso (H.map (φ b)) :=
-    (quasiIsoAt_iff_isIso_homologyMap (φ b) q).mp ((hφ b).quasiIsoAt q)
-  have : IsIso (H.map (Limits.Pi.map φ) ≫ piComparison H L) := by
+  have (j : J) : IsIso ((Functor.whiskerRight φ H).app j) :=
+    (quasiIsoAt_iff_isIso_homologyMap (φ.app j) q).mp ((hφ j).quasiIsoAt q)
+  have : IsIso (Functor.whiskerRight φ H) := NatIso.isIso_of_isIso_app _
+  have : IsIso (H.map (limMap φ) ≫ limit.post G H) := by
     rw [h]
     infer_instance
-  exact IsIso.of_isIso_comp_right (H.map (Limits.Pi.map φ)) (piComparison H L)
+  exact IsIso.of_isIso_comp_right (H.map (limMap φ)) (limit.post G H)
+
+omit [HasLimitsOfShape J C] [HasExactLimitsOfShape J C] in
+/-- **Products of quasi-isomorphisms.** If products indexed by `β` are exact, the product of a
+family of quasi-isomorphisms of homological complexes is a quasi-isomorphism. -/
+theorem quasiIso_pi_map {β : Type w} [HasLimitsOfShape (Discrete β) C]
+    [HasExactLimitsOfShape (Discrete β) C] {K L : β → HomologicalComplex C c}
+    (φ : ∀ b, K b ⟶ L b) (hφ : ∀ b, QuasiIso (φ b)) : QuasiIso (Limits.Pi.map φ) :=
+  quasiIso_limMap (F := Discrete.functor K) (G := Discrete.functor L)
+    (Discrete.natTrans fun b ↦ φ b.as) fun b ↦ hφ b.as
 
 end TauCeti

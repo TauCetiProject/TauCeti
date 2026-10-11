@@ -7,7 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Limits.FunctorCategory.Shapes.Products
 public import TauCeti.Algebra.Homology.ShortComplex.Limit
-public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Exact
+public import TauCeti.CategoryTheory.Limits.Shapes.BinaryProducts
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.MayerVietoris
 
 /-!
@@ -39,6 +39,8 @@ replaces the usual double complex argument by dimension shifting along the resol
 
 ## Main results
 
+* `TauCeti.CategoryTheory.quasiIso_cechAugmentation_limit`: a limit of acyclic presheaves is
+  acyclic, when limits of that shape are exact.
 * `TauCeti.CategoryTheory.quasiIso_cechAugmentation_pi`: a product of acyclic presheaves is
   acyclic, when products of that shape are exact.
 * `TauCeti.CategoryTheory.quasiIso_cechAugmentation_iff_of_quasiIso_prod`: two families each
@@ -69,24 +71,40 @@ variable {C : Type u} [Category.{v} C] [HasFiniteProducts C]
   {A : Type u'} [Category.{v'} A] [Abelian A] [HasProducts.{w} A]
   {ι : Type w} (U : ι → C) {T : C} (hT : IsTerminal T)
 
-/-! ### Products of acyclic presheaves -/
+/-! ### Limits of acyclic presheaves -/
+
+/-- The augmentation of the Čech complex for `U`, as a natural transformation in the presheaf. -/
+private def cechAugmentationNatTrans :
+    (evaluation Cᵒᵖ A).obj (op T) ⋙ CochainComplex.single₀ A ⟶ cechComplexFunctor (A := A) U where
+  app Q := cechAugmentation U hT Q
+  naturality _ _ α := (cechAugmentation_naturality U hT _ α).symm
+
+/-- **Limits of acyclic presheaves are acyclic.** If limits of shape `J` are exact in `A`, a limit
+of a `J`-shaped diagram of presheaves whose augmented Čech complexes for `U` are exact has an exact
+augmented Čech complex for `U`. -/
+theorem quasiIso_cechAugmentation_limit {J : Type*} [Category J] [HasLimitsOfShape J A]
+    [HasExactLimitsOfShape J A] (F : J ⥤ Cᵒᵖ ⥤ A)
+    (hF : ∀ j, QuasiIso (cechAugmentation U hT (F.obj j))) :
+    QuasiIso (cechAugmentation U hT (limit F)) := by
+  -- both the Čech complex and the complex concentrated in degree `0` preserve the limit
+  have h : cechAugmentation U hT (limit F) ≫ limit.post F (cechComplexFunctor U) =
+      limit.post F ((evaluation Cᵒᵖ A).obj (op T) ⋙ CochainComplex.single₀ A) ≫
+        limMap (Functor.whiskerLeft F (cechAugmentationNatTrans U hT)) := by
+    refine limit.hom_ext fun j ↦ ?_
+    rw [Category.assoc, Category.assoc, limit.post_π, limMap_π, limit.post_π_assoc,
+      Functor.whiskerLeft_app]
+    exact cechAugmentation_naturality U hT _ (limit.π F j)
+  rw [← quasiIso_iff_comp_right _ (limit.post F (cechComplexFunctor U)), h,
+    quasiIso_iff_comp_left]
+  exact quasiIso_limMap _ hF
 
 /-- **Products of acyclic presheaves are acyclic.** If products indexed by `J` are exact in `A`,
 a product of presheaves whose augmented Čech complexes for `U` are exact has an exact augmented
 Čech complex for `U`. -/
 theorem quasiIso_cechAugmentation_pi {J : Type w} [HasExactLimitsOfShape (Discrete J) A]
     (G : J → Cᵒᵖ ⥤ A) (hG : ∀ j, QuasiIso (cechAugmentation U hT (G j))) :
-    QuasiIso (cechAugmentation U hT (∏ᶜ G)) := by
-  -- both the Čech complex and the complex concentrated in degree `0` preserve the product
-  have h : cechAugmentation U hT (∏ᶜ G) ≫ piComparison (cechComplexFunctor U) G =
-      piComparison ((evaluation Cᵒᵖ A).obj (op T) ⋙ CochainComplex.single₀ A) G ≫
-        Limits.Pi.map fun j ↦ cechAugmentation U hT (G j) := by
-    ext1 j
-    rw [Category.assoc, Category.assoc, piComparison_comp_π, Limits.Pi.map_π,
-      piComparison_comp_π_assoc, cechAugmentation_naturality, Functor.comp_map, evaluation_obj_map]
-  rw [← quasiIso_iff_comp_right _ (piComparison (cechComplexFunctor U) G), h,
-    quasiIso_iff_comp_left]
-  exact quasiIso_pi_map _ hG
+    QuasiIso (cechAugmentation U hT (∏ᶜ G)) :=
+  quasiIso_cechAugmentation_limit U hT (Discrete.functor G) fun j ↦ hG j.as
 
 /-! ### Comparing two families
 
@@ -104,33 +122,17 @@ variable (P : Cᵒᵖ ⥤ A)
 private abbrev restrictionFunctor : Cᵒᵖ ⥤ Cᵒᵖ ⥤ A :=
   prod.functor.op ⋙ Functor.opHom C C ⋙ (Functor.whiskeringRight Cᵒᵖ Cᵒᵖ A).obj P
 
-/-- The projections `X × T ⟶ X` onto the first factor. -/
-private def prodTerminalIso : prod.functor.flip.obj T ≅ 𝟭 C :=
-  NatIso.ofComponents (fun X ↦
-    ({ hom := prod.fst
-       inv := prod.lift (𝟙 X) (hT.from X)
-       hom_inv_id := prod.hom_ext (by simp) (hT.hom_ext _ _) } : X ⨯ T ≅ X))
-    fun f ↦ prod.map_fst f (𝟙 T)
-
-/-- The projections `T × X ⟶ X` onto the second factor. -/
-private def terminalProdIso : prod.functor.obj T ≅ 𝟭 C :=
-  NatIso.ofComponents (fun X ↦
-    ({ hom := prod.snd
-       inv := prod.lift (hT.from X) (𝟙 X)
-       hom_inv_id := prod.hom_ext (hT.hom_ext _ _) (by simp) } : T ⨯ X ≅ X))
-    fun f ↦ prod.map_snd (𝟙 T) f
-
 /-- The isomorphism `P(Y × T) ≅ P(Y)` of presheaves in `Y`. -/
 private def restrictionFunctorTerminalIso :
     restrictionFunctor P ⋙ (evaluation Cᵒᵖ A).obj (op T) ≅ P :=
   -- evaluating `P(Y × -)` at `T` is `P(- × T)` by unfolding the composite
-  (Functor.isoWhiskerRight (NatIso.op (prodTerminalIso hT)).symm P ≪≫
+  (Functor.isoWhiskerRight (NatIso.op hT.prodRightUnitor).symm P ≪≫
     Functor.isoWhiskerRight (Functor.opId C) P ≪≫ Functor.leftUnitor P :
       (prod.functor.flip.obj T).op ⋙ P ≅ P)
 
 /-- The isomorphism `P(T × X) ≅ P(X)` of presheaves in `X`. -/
 private def terminalRestrictionIso : (prod.functor.obj T).op ⋙ P ≅ P :=
-  Functor.isoWhiskerRight (NatIso.op (terminalProdIso hT)).symm P ≪≫
+  Functor.isoWhiskerRight (NatIso.op hT.prodLeftUnitor).symm P ≪≫
     Functor.isoWhiskerRight (Functor.opId C) P ≪≫ Functor.leftUnitor P
 
 /-- The isomorphism `P(Y × X) ≅ P(X × Y)` of presheaves in `Y` induced by the braiding. -/
@@ -140,12 +142,6 @@ private def restrictionBraidingIso (X : C) :
     fun f ↦ braid_natural (𝟙 X) f)) P
 
 variable {κ : Type w} (V : κ → C)
-
-/-- The augmentation of the Čech complex for `V`, as a natural transformation in the presheaf. -/
-private def cechAugmentationNatTrans :
-    (evaluation Cᵒᵖ A).obj (op T) ⋙ CochainComplex.single₀ A ⟶ cechComplexFunctor (A := A) V where
-  app Q := cechAugmentation V hT Q
-  naturality _ _ α := (cechAugmentation_naturality V hT _ α).symm
 
 /-- In degree `k`, the Čech complex of `P(Y × -)` for `V` is the product, over
 `b : Fin (k + 1) → κ`, of the presheaves `P(Y × V (b 0) × ⋯ × V (b k))` in `Y`. -/
@@ -186,7 +182,7 @@ private lemma quasiIso_cechAugmentation_of_quasiIso_prod
   -- resolve `P(- × T) ≅ P` by the Čech complexes of the presheaves `P(Y × -)` for `V`
   refine quasiIso_cechAugmentation_of_resolution U hT
     (P := restrictionFunctor P ⋙ (evaluation Cᵒᵖ A).obj (op T))
-    (Functor.whiskerLeft (restrictionFunctor P) (cechAugmentationNatTrans hT V)) ?_ hVU
+    (Functor.whiskerLeft (restrictionFunctor P) (cechAugmentationNatTrans V hT)) ?_ hVU
     fun k ↦ ?_
   · exact (quasiIso_cechAugmentation_iff_of_iso V hT _ (terminalRestrictionIso hT P)).2 hV
   · rw [quasiIso_cechAugmentation_iff_of_iso U hT _ (cechTermIso P V k)]
