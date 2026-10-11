@@ -57,6 +57,8 @@ field, but nothing here assumes it, so the ring-of-integers notation is delibera
 
 `TauCeti.unitsToUnit` includes ordinary units into `S`-units for any set `S` of primes;
 `TauCeti.unitsToUnit_val` identifies their underlying units in the fraction field.
+`TauCeti.unitsToUnit_injective` and `TauCeti.range_unitsToUnit` identify this inclusion
+with the valuation kernel.
 
 ## Relation to mathlib4#40791
 
@@ -235,6 +237,17 @@ theorem unitsToUnit_val (u : Rˣ) :
   exact (Set.algebraMap_unitEmptyEquivUnits_apply K
     ((Set.unitEmptyEquivUnits (R := R) K).symm u)).symm.trans
       (by simp)
+
+/-- Ordinary units embed injectively into the `S`-units. -/
+theorem unitsToUnit_injective : Function.Injective (unitsToUnit S K) :=
+  (Subgroup.inclusion_injective (Set.unit_mono K (Set.empty_subset _))).comp
+    (Set.unitEmptyEquivUnits (R := R) K).symm.injective
+
+/-- The image of the ordinary units is exactly the kernel of the `S`-unit valuation. -/
+theorem range_unitsToUnit : (unitsToUnit S K).range = (Set.unitValuation S K).ker := by
+  rw [unitsToUnit, MonoidHom.range_comp,
+    MonoidHom.range_eq_top_of_surjective _ (Set.unitEmptyEquivUnits (R := R) K).symm.surjective,
+    Subgroup.map_top, Subgroup.inclusion_range, Set.unitValuation_ker]
 
 end TauCeti
 

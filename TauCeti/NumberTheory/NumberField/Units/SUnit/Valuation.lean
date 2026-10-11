@@ -68,7 +68,7 @@ theorem smul_mem_sUnits (S : SubMulAction (L ≃ₐ[K] L) (HeightOneSpectrum (�
     hval.trans ((Set.mem_unit_iff _ _).mp hu _ hnot)
 
 /-- The natural automorphism action on the group of S-units. -/
-abbrev sUnitAction (S : SubMulAction (L ≃ₐ[K] L) (HeightOneSpectrum (𝓞 L))) :
+instance sUnitAction (S : SubMulAction (L ≃ₐ[K] L) (HeightOneSpectrum (𝓞 L))) :
     MulDistribMulAction (L ≃ₐ[K] L) ((S : Set (HeightOneSpectrum (𝓞 L))).unit L) where
   smul g u := ⟨g • u.val, smul_mem_sUnits S g u.property⟩
   one_smul u := Subtype.ext (one_smul (L ≃ₐ[K] L) u.val)
@@ -80,7 +80,6 @@ abbrev sUnitAction (S : SubMulAction (L ≃ₐ[K] L) (HeightOneSpectrum (𝓞 L)
 additive version of Mathlib's `Set.unit`, not a new S-unit group. -/
 abbrev sUnitRep (S : SubMulAction (L ≃ₐ[K] L) (HeightOneSpectrum (𝓞 L))) :
     Rep ℤ (L ≃ₐ[K] L) :=
-  letI := sUnitAction S
   Rep.ofMulDistribMulAction (L ≃ₐ[K] L) ((S : Set (HeightOneSpectrum (𝓞 L))).unit L)
 
 /-- The action on an S-unit is the restriction of the field automorphism. -/
@@ -88,7 +87,6 @@ abbrev sUnitRep (S : SubMulAction (L ≃ₐ[K] L) (HeightOneSpectrum (𝓞 L))) 
 theorem sUnitAction_smul_val
     (S : SubMulAction (L ≃ₐ[K] L) (HeightOneSpectrum (𝓞 L))) (g : L ≃ₐ[K] L)
     (u : (S : Set (HeightOneSpectrum (𝓞 L))).unit L) :
-    letI := sUnitAction S
     (g • u).val = g • u.val :=
   (rfl)
 
@@ -113,7 +111,6 @@ def sUnitValuation : sUnitRep S ⟶ Rep.ofMulAction ℤ (L ≃ₐ[K] L) S :=
   Rep.ofHom
     { toLinearMap := valuationVector S
       isIntertwining' g := by
-        let := sUnitAction S
         apply LinearMap.ext
         intro u
         apply MonoidAlgebra.ext
@@ -149,7 +146,6 @@ def sUnitInclusion : Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (𝓞 L)ˣ ⟶ sU
   Rep.ofHom
     { toLinearMap := (unitsToUnit (S : Set (HeightOneSpectrum (𝓞 L))) L).toAdditive.toIntLinearMap
       isIntertwining' g := by
-        let := sUnitAction S
         apply LinearMap.ext
         intro u
         simp only [LinearMap.comp_apply, Representation.ofMulDistribMulAction_apply_apply,
@@ -175,10 +171,8 @@ omit [Finite S] in
 theorem sUnitInclusion_injective : Function.Injective (sUnitInclusion S).hom := by
   intro u v h
   apply Additive.toMul.injective
-  apply Units.map_injective (IsFractionRing.injective (𝓞 L) L)
-  have hval := congrArg
-    (fun x : Additive ((S : Set (HeightOneSpectrum (𝓞 L))).unit L) => x.toMul.val) h
-  exact (sUnitInclusion_val S u).symm.trans (hval.trans (sUnitInclusion_val S v))
+  exact unitsToUnit_injective (S : Set (HeightOneSpectrum (𝓞 L))) L
+    (congrArg Additive.toMul h)
 
 /-- The kernel of the S-unit valuation map is exactly the image of the ordinary units. -/
 theorem range_sUnitInclusion_eq_ker_sUnitValuation :
@@ -191,30 +185,12 @@ theorem range_sUnitInclusion_eq_ker_sUnitValuation :
     exact (congrArg (· = 0) (sUnitValuation_hom_apply S u)).to_iff.trans
       ((LinearEquiv.map_eq_zero_iff _).trans
         (toMul_eq_one.symm.trans MonoidHom.mem_ker.symm))
-  rw [hzero, Set.unitValuation_ker]
-  -- The opaque `sUnitRep` carrier prevents rewriting `Subgroup.mem_subgroupOf` here;
-  -- identify its underlying S-unit explicitly before eliminating the subgroup membership.
-  change (∃ y : Additive (𝓞 L)ˣ, (sUnitInclusion S).hom y = u) ↔ u.toMul.val ∈
-    (∅ : Set (HeightOneSpectrum (𝓞 L))).unit L
+  rw [hzero, ← range_unitsToUnit]
   constructor
   · rintro ⟨v, rfl⟩
-    rw [sUnitInclusion_val]
-    have hv : Units.map (algebraMap (𝓞 L) L) v.toMul =
-        ((Set.unitEmptyEquivUnits (R := 𝓞 L) L).symm v.toMul).val := by
-      apply Units.ext
-      simpa only [Units.coe_map, MonoidHom.coe_ofClass, MulEquiv.apply_symm_apply] using
-        Set.algebraMap_unitEmptyEquivUnits_apply L
-          ((Set.unitEmptyEquivUnits (R := 𝓞 L) L).symm v.toMul)
-    rw [hv]
-    exact ((Set.unitEmptyEquivUnits (R := 𝓞 L) L).symm v.toMul).property
-  · intro hu
-    refine ⟨Additive.ofMul (Set.unitEmptyEquivUnits L ⟨u.toMul.val, hu⟩), ?_⟩
-    apply Additive.toMul.injective
-    apply Subtype.ext
-    rw [sUnitInclusion_val]
-    apply Units.ext
-    simpa only [Units.coe_map, MonoidHom.coe_ofClass, toMul_ofMul] using
-      Set.algebraMap_unitEmptyEquivUnits_apply L ⟨u.toMul.val, hu⟩
+    exact ⟨v.toMul, rfl⟩
+  · rintro ⟨v, hv⟩
+    exact ⟨Additive.ofMul v, Additive.toMul.injective hv⟩
 
 /-- The finite-prime valuation image has finite index in the permutation module. -/
 theorem finiteIndex_range_sUnitValuation :
