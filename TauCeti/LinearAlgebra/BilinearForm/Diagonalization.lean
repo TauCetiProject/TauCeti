@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
+public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
 import Mathlib.LinearAlgebra.Basis.SMul
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.RingTheory.LocalRing.Module
@@ -72,6 +73,35 @@ bilinear forms, which is the input to the normal forms of one-relator pro-`2` gr
 public section
 
 namespace LinearMap.BilinForm
+
+/-- The Gram matrix in an orthogonal basis is the diagonal matrix of the self-pairings. -/
+theorem iIsOrtho.toMatrix_eq_diagonal {R M ι : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R M] [Fintype ι] [DecidableEq ι] {B : LinearMap.BilinForm R M}
+    {b : Module.Basis ι R M} (hb : B.iIsOrtho b) :
+    B.toMatrix b = Matrix.diagonal (fun i ↦ B (b i) (b i)) := by
+  ext i j
+  obtain rfl | hij := eq_or_ne i j
+  · simp [toMatrix_apply]
+  · simp [toMatrix_apply, iIsOrtho_def.mp hb i j hij, hij]
+
+/-- The quadratic form of a symmetric bilinear form in an orthogonal basis is isometric to
+the diagonal form of its self-pairings. -/
+theorem IsSymm.equivalent_weightedSumSquares_of_iIsOrtho
+    {R M ι : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Fintype ι]
+    [Invertible (2 : R)] {B : LinearMap.BilinForm R M} (hB : B.IsSymm)
+    (b : Module.Basis ι R M)
+    (hb : B.iIsOrtho b) :
+    B.toQuadraticMap.Equivalent
+      (QuadraticMap.weightedSumSquares R (fun i ↦ B (b i) (b i))) := by
+  have hassoc : QuadraticMap.associated B.toQuadraticMap = B :=
+    QuadraticMap.associated_left_inverse R hB.eq
+  have horth : (QuadraticMap.associated B.toQuadraticMap).IsOrthoᵢ b := by
+    rw [hassoc]
+    exact hb
+  have heq := QuadraticMap.basisRepr_eq_of_iIsOrtho B.toQuadraticMap b horth
+  simp only [BilinMap.toQuadraticMap_apply] at heq
+  rw [← heq]
+  exact ⟨QuadraticMap.isometryEquivBasisRepr B.toQuadraticMap b⟩
 
 open LinearMap (BilinForm)
 open Module
