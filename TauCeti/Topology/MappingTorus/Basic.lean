@@ -36,7 +36,8 @@ inclusion itself.
 A continuous map `g : F → G` intertwining monodromies `φ` and `ψ` induces
 `MappingTorus.map φ ψ g h : C(MappingTorus φ, MappingTorus ψ)`, acting on cylinder representatives
 by `g` in the fibre coordinate and the identity in the height coordinate. These induced maps lie
-over the circle (`MappingTorus.proj_comp_map`), restrict to `g` on the fibres at height zero
+over the circle (`MappingTorus.proj_comp_map`), so carry the fibre over `0` into the fibre over `0`
+(`MappingTorus.mapsTo_map_fiber`), restrict to `g` on the fibres at height zero
 (`MappingTorus.map_comp_incl`), and are functorial (`MappingTorus.map_id`,
 `MappingTorus.map_comp`). They are the maps needed to state naturality of constructions on mapping
 tori under commuting squares of monodromies.
@@ -310,6 +311,12 @@ lemma proj_comp_map (φ : F ≃ₜ F) (ψ : G ≃ₜ G) (g : C(F, G))
   ext z
   obtain ⟨⟨x, t⟩, rfl⟩ := mk_surjective φ z
   simp
+
+/-- A map of mapping tori carries the fibre over `0` into the fibre over `0`. -/
+lemma mapsTo_map_fiber (φ : F ≃ₜ F) (ψ : G ≃ₜ G) (g : C(F, G))
+    (h : Function.Semiconj g φ ψ) : Set.MapsTo (map φ ψ g h) (fiber φ) (fiber ψ) := fun z hz ↦
+  (mem_fiber_iff ψ).2 ((DFunLike.congr_fun (proj_comp_map φ ψ g h) z).trans
+    ((mem_fiber_iff φ).1 hz))
 
 end Map
 

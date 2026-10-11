@@ -51,7 +51,9 @@ excision identifies both thickened pairs with the same pair on the open cylinder
 * `TauCeti.MappingTorus.cylinderPairMap φ`: the map of pairs `(F × I, F × ∂I) ⟶ (T, F)`.
 * `TauCeti.MappingTorus.isIso_singularHomologyMap_cylinderPairMap`: it induces isomorphisms on
   relative singular homology.
-* `TauCeti.MappingTorus.singularHomologyFiberPairIso`: `Hₙ₊₁(T, F) ≅ Hₙ(F)`.
+* `TauCeti.MappingTorus.singularHomologyFiberPairIso`: `Hₙ₊₁(T, F) ≅ Hₙ(F)`, natural under the
+  maps of pairs `TauCeti.MappingTorus.fiberPairMap` induced by maps intertwining monodromies
+  (`TauCeti.MappingTorus.singularHomologyFiberPairIso_hom_naturality`).
 * `TauCeti.MappingTorus.singularHomologyδ_fiberPair`: the connecting morphism of `(T, F)` is
   `id - φ_*` followed by the fibre inclusion.
 
@@ -90,6 +92,12 @@ instance isIso_fiberPairIncl : IsIso (fiberPairIncl φ) := by
     TopCat.ext fun x ↦ Subtype.ext (coe_fiberHomeomorph_apply φ x).symm
   rw [h]
   infer_instance
+
+/-- The fibre inclusion into the subspace, followed by the inclusion of the subspace, is the
+fibre inclusion `MappingTorus.incl`. -/
+@[reassoc]
+lemma fiberPairIncl_comp_map : fiberPairIncl φ ≫ (fiberPair φ).map = TopCat.ofHom (incl φ) :=
+  (rfl)
 
 /-- The map `(x, t) ↦ [φ x, t]` from the cylinder onto the mapping torus.  It is the monodromy
 homotopy `MappingTorus.monodromyHomotopy`, read as a map out of the cylinder `F × I`. -/
@@ -584,5 +592,69 @@ theorem singularHomologyδ_fiberPair (n : ℕ) :
     simp only [H, Category.assoc, Preadditive.sub_comp, Category.id_comp, ← Functor.map_comp,
       cylinderBoundaryι₀_comp_cylinderPairMap, cylinderBoundaryι₁_comp_cylinderPairMap]
   exact key
+
+section Naturality
+
+variable {G : Type w} [TopologicalSpace G] (ψ : G ≃ₜ G) (g : C(F, G))
+  (h : Function.Semiconj g φ ψ)
+
+/-- The map of pairs `(T_φ, F) ⟶ (T_ψ, G)` induced by a map `g : F ⟶ G` intertwining the
+monodromies. -/
+def fiberPairMap : fiberPair φ ⟶ fiberPair ψ :=
+  TopPair.ofSubsetMap (TopCat.ofHom (map φ ψ g h)) (mapsTo_map_fiber φ ψ g h)
+
+lemma fiberPairMap_fst : TopPair.Hom.fst (fiberPairMap φ ψ g h) = TopCat.ofHom (map φ ψ g h) :=
+  TopPair.ofSubsetMap_fst _ _
+
+@[simp]
+lemma fiberPairMap_fst_apply (z : MappingTorus φ) :
+    TopPair.Hom.fst (fiberPairMap φ ψ g h) z = map φ ψ g h z :=
+  TopPair.ofSubsetMap_fst_apply (X := TopCat.of (MappingTorus φ)) _ _ z
+
+@[simp]
+lemma fiberPairMap_snd_apply (z : (fiberPair φ).snd) :
+    (TopPair.Hom.snd (fiberPairMap φ ψ g h) z).1 = map φ ψ g h z.1 :=
+  TopPair.ofSubsetMap_snd_apply _ _ z
+
+/-- On fibres, the map of pairs induced by `g` is `g`. -/
+@[reassoc (attr := simp)]
+lemma fiberPairIncl_comp_fiberPairMap_snd :
+    fiberPairIncl φ ≫ TopPair.Hom.snd (fiberPairMap φ ψ g h) =
+      TopCat.ofHom g ≫ fiberPairIncl ψ := by
+  refine TopCat.ext fun x ↦ Subtype.ext ?_
+  rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, fiberPairMap_snd_apply,
+    fiberPairIncl_apply, fiberPairIncl_apply]
+  exact DFunLike.congr_fun (map_comp_incl φ ψ g h) x
+
+/-- The cylinder maps of two mapping tori are compatible with the maps of pairs induced by `g`. -/
+@[reassoc]
+lemma cylinderPairMap_comp_fiberPairMap :
+    cylinderPairMap φ ≫ fiberPairMap φ ψ g h =
+      cylinderBoundaryPairMap (TopCat.ofHom g) ≫ cylinderPairMap ψ :=
+  -- Both maps send `(x, t)` to `[ψ (g x), t] = [g (φ x), t]`.
+  TopPair.hom_ext_of_fst _ (TopCat.ext fun p : F × I ↦
+    ((fiberPairMap_fst_apply φ ψ g h _).trans ((congrArg (map φ ψ g h)
+      (cylinderPairMap_fst_apply φ p)).trans ((map_mk φ ψ g h _ _).trans
+        (congrArg (fun y ↦ mk ψ y (p.2 : ℝ)) (h p.1))))).trans
+    ((congrArg (fun q : G × I ↦ TopPair.Hom.fst (cylinderPairMap ψ) q)
+      (cylinderBoundaryPairMap_fst_apply (TopCat.ofHom g) p)).trans
+      (cylinderPairMap_fst_apply ψ (g p.1, p.2))).symm)
+
+/-- **Naturality of `Hₙ₊₁(T, F) ≅ Hₙ(F)`** under maps intertwining the monodromies. -/
+@[reassoc]
+theorem singularHomologyFiberPairIso_hom_naturality (n : ℕ) :
+    TopPair.singularHomologyMap (fiberPairMap φ ψ g h) R (n + 1) ≫
+        (singularHomologyFiberPairIso ψ R n).hom =
+      (singularHomologyFiberPairIso φ R n).hom ≫
+        ((singularHomologyFunctor A n).obj R).map (TopCat.ofHom g) := by
+  have := isIso_singularHomologyMap_cylinderPairMap φ R (n + 1)
+  rw [← cancel_epi (TopPair.singularHomologyMap (cylinderPairMap φ) R (n + 1)),
+    singularHomologyMap_cylinderPairMap_comp_singularHomologyFiberPairIso_hom_assoc,
+    ← TopPair.singularHomologyMap_comp_assoc, cylinderPairMap_comp_fiberPairMap,
+    TopPair.singularHomologyMap_comp_assoc,
+    singularHomologyMap_cylinderPairMap_comp_singularHomologyFiberPairIso_hom,
+    singularHomologyCylinderBoundaryPairIso_hom_naturality]
+
+end Naturality
 
 end TauCeti.MappingTorus
