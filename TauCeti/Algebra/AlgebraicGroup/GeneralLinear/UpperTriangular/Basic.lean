@@ -187,7 +187,8 @@ theorem definingHopfIdeal_toIdeal_le_ker_of_isUpperTriangular
 
 /-- An ambient `GL_n`-point belongs to the upper-triangular closed subgroup exactly when its
 matrix is upper triangular. -/
-@[simp]
+-- Not `@[simp]`: tagged either way, `simp` does not rewrite with it in importing modules;
+-- use `rw` or `simp [↓mem_definingPointsSubgroup_iff]`.
 theorem mem_definingPointsSubgroup_iff
     (g : HopfAlgebra.points (R := R)
       (H := GeneralLinear.coordinateHopfAlgebra R n) (CommAlgCat.of R A)) :
