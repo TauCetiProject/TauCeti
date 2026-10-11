@@ -24,7 +24,7 @@ with nonnegative Weil order. Over an algebraically closed field all places are r
 the infinitude and exact-constant-field conditions are automatic. Thus a nonzero Weil
 differential corresponds to a regular section on the open subset exactly when it has no poles
 there. This supplies the local-lattice comparison for identifying the differential line bundle
-with a canonical divisor sheaf; no arbitrary-degree Kähler–Weil local comparison is asserted.
+with a canonical divisor sheaf.
 
 ## References
 

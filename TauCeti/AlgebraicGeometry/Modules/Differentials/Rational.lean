@@ -166,8 +166,7 @@ lemma rationalDifferentialStalk_symm_D (x : X) (a : X.presheaf.stalk x) :
     rationalDifferential_d, X.algebraMap_germ_eq_germToFunctionField]
 
 /-- The rational value of a differential stalk is the usual Kähler map from the local ring to
-the function field, under the differential-stalk comparison. This remains a named rewrite:
-the specialized `D` equation is the existing simplification rule. -/
+the function field, under the differential-stalk comparison. -/
 theorem rationalDifferentialStalk_symm_apply (x : X) (η : Ω[X.presheaf.stalk x⁄R]) :
     rationalDifferentialStalk R x ((X.relativeDifferentialsStalkEquiv R x).symm η) =
       KaehlerDifferential.map R R (X.presheaf.stalk x) X.functionField η := by
