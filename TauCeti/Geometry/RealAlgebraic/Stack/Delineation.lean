@@ -375,27 +375,9 @@ theorem exists_delineation_of_isRoot_iff [PreconnectedSpace X] {F : X → ℝ[X]
     · obtain ⟨x⟩ := h
       exact hm i x ▸ (rootMultiplicity_pos (hF x)).2 ((hroots x _).2 ⟨i, rfl⟩)
     · simp [m, h]
-  have hP : Continuous fun z : X × ℝ ↦ (F z.1).eval z.2 := by
-    rcases isEmpty_or_nonempty X with hX | hX
-    · exact continuous_of_const fun z ↦ isEmptyElim z.1
-    · obtain ⟨x₀⟩ := hX
-      exact continuous_eval_of_continuous_coeff (fun j _ ↦ hcoeff j) fun x ↦ (hdeg x x₀).le
-  exact ⟨{
-    count := k
-    root := θ
-    continuous_root := hθ
-    strictMono_root := hmono
-    multiplicity := fun _ ↦ m
-    rootMultiplicity_root := fun _ i x ↦ hm i x
-    exists_root_eq := fun _ x _ t ht ↦ (hroots x t).1 ht
-    exists_multiplicity_pos := fun i ↦ ⟨(), hpos i⟩
-    eq_zero_or_ne_zero := fun _ ↦ .inr hF
-    natDegree_eq := fun _ ↦ hdeg
-    signInvariant_sectionSet := fun _ i ↦ signInvariant_eval_sectionSet (I := univ) hP (hθ i)
-      (fun x ↦ (hmono x).injective) (.inr hF) fun x _ t ↦ by
-        simpa only [mem_univ, true_and, IsRoot.def] using hroots x t
-    signInvariant_sectorSet := fun _ _ ↦ signInvariant_eval_sectorSet hP hθ hmono (.inr hF)
-      fun x _ t ht ↦ (hroots x t).1 ht }, fun i ↦ ⟨i, rfl⟩⟩
+  exact ⟨Delineation.ofRoots (fun _ ↦ hcoeff) (fun _ ↦ .inr hF) (fun _ ↦ hdeg)
+    hθ hmono (fun _ ↦ hm) (fun _ x _ t ↦ (hroots x t).1)
+    (fun i ↦ ⟨(), hpos i⟩), fun i ↦ ⟨i, rfl⟩⟩
 
 open Filter Metric Topology in
 /-- **Local delineation from local root data.** Let `F b` be real polynomials over a real

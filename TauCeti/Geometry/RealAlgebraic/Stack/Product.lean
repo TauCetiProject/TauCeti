@@ -44,18 +44,18 @@ variable {X ι : Type*} [TopologicalSpace X] [PreconnectedSpace X] [Fintype ι]
   (D : Delineation fun (_ : Unit) x ↦ ∏ k, P k x)
 
 /-- Along each root section of a delineated product, the multiplicity in every
-nowhere-zero factor is constant on a preconnected base. No coprimality of factors
+nowhere-zero factor is constant on a preconnected base. Only degree bounds and
+continuity of coefficients through those bounds are needed; no coprimality of factors
 is required. -/
-theorem rootMultiplicity_eq_of_prod
-    (hc : ∀ k j, Continuous fun x ↦ (P k x).coeff j)
+theorem rootMultiplicity_eq_of_prod {d : ι → ℕ}
+    (hc : ∀ k, ∀ j ≤ d k, Continuous fun x ↦ (P k x).coeff j)
     (hn : ∀ k x, P k x ≠ 0)
-    (hd : ∀ k x y, (P k x).natDegree = (P k y).natDegree)
+    (hd : ∀ k x, (P k x).natDegree ≤ d k)
     (k : ι) (i : Fin D.count) (x y : X) :
     (P k x).rootMultiplicity (D.root i x) =
       (P k y).rootMultiplicity (D.root i y) := by
   exact TauCeti.Polynomial.rootMultiplicity_eq_of_prod Finset.univ
-    (d := fun k ↦ (P k x).natDegree) (fun k _ j _ ↦ hc k j)
-    (fun k _ y ↦ (hd k y x).le) (D.continuous_root i) (fun k _ ↦ hn k)
+    (fun k _ ↦ hc k) (fun k _ ↦ hd k) (D.continuous_root i) (fun k _ ↦ hn k)
     (fun x y ↦ (D.rootMultiplicity_root () i x).trans
       (D.rootMultiplicity_root () i y).symm) k (Finset.mem_univ k) x y
 
@@ -74,7 +74,8 @@ noncomputable def ofProd
   let m (k : ι) (i : Fin D.count) := (P k x₀).rootMultiplicity (D.root i x₀)
   have hm (k : ι) (i : Fin D.count) (x : X) :
       (P k x).rootMultiplicity (D.root i x) = m k i :=
-    D.rootMultiplicity_eq_of_prod hc hn hd k i x x₀
+    D.rootMultiplicity_eq_of_prod (d := fun k ↦ (P k x₀).natDegree)
+      (fun k j _ ↦ hc k j) hn (fun k x ↦ (hd k x x₀).le) k i x x₀
   have hroots (k : ι) (x : X) (t : ℝ) (ht : (P k x).IsRoot t) :
       ∃ i, D.root i x = t := by
     apply D.exists_root_eq () x (Finset.prod_ne_zero_iff.mpr fun k _ ↦ hn k x) t
