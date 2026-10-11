@@ -52,7 +52,7 @@ the branch points `1` and `∞` on permutation triples.
   `TauCeti.ThricePuncturedSphere.periphInf_eq_fromPath`: `periph1 * periph0` is the class of
   `α₊ · δ · α₊.symm`, and `periphInf` is the class of `α₊ · δ.symm · α₊.symm`.
 * `TauCeti.ThricePuncturedSphere.αMob1Inf`: the path from `−1` to `1/2` through the upper
-  half-plane, with `range_αMob1Inf`.
+  half-plane, with `range_αMob1Inf_subset`.
 * `TauCeti.ThricePuncturedSphere.mob1InfMulAut`: the automorphism of `π₁(ℂ ∖ {0, 1}, 1/2)` induced
   by `z ↦ z / (z − 1)` and `α₋₁`, with `mob1InfMulAut_periph0`, `mob1InfMulAut_periph1` and
   `mob1InfMulAut_periphInf`, and the values `mob1InfMulAut_symm_periph0` and
@@ -249,7 +249,7 @@ private noncomputable def realSegment (z w : ThricePuncturedSphere) (a b : ℝ) 
   source' := Subtype.ext (by simp [hz])
   target' := Subtype.ext (by simp [hw])
 
-private theorem range_realSegment (z w : ThricePuncturedSphere) (a b : ℝ) (hz : (z : ℂ) = a)
+private theorem range_realSegment_subset (z w : ThricePuncturedSphere) (a b : ℝ) (hz : (z : ℂ) = a)
     (hw : (w : ℂ) = b) (h₀ : 0 < a * b) (h₁ : 0 < (a - 1) * (b - 1)) :
     range (realSegment z w a b hz hw h₀ h₁) ⊆ {z | (z : ℂ).im = 0} := by
   rintro _ ⟨t, rfl⟩
@@ -332,7 +332,7 @@ private theorem mk_γ1 : Path.Homotopic.Quotient.mk γ1 =
   rw [γ1₁, γ1₂, Path.Homotopic.Quotient.subpath_cast_trans]
   simp
 
-private theorem range_αPlus : range αPlus ⊆ {z | 0 ≤ (z : ℂ).im} := by
+private theorem range_αPlus_subset : range αPlus ⊆ {z | 0 ≤ (z : ℂ).im} := by
   rintro _ ⟨t, rfl⟩
   simpa using mul_nonneg t.2.1 (by positivity : (0 : ℝ) ≤ √35 / 2)
 
@@ -350,41 +350,41 @@ private theorem _root_.Path.range_subpath_subset_of_im {x y : ThricePuncturedSph
   rw [mem_ofPred_eq, hp]
   exact h _ (by gcongr) (by gcongr)
 
-private theorem range_δ₁ : range δ₁ ⊆ {z | 0 ≤ (z : ℂ).im} :=
+private theorem range_δ₁_subset : range δ₁ ⊆ {z | 0 ≤ (z : ℂ).im} :=
   δ.range_subpath_subset_of_im im_coe_δ unitInterval.nonneg' (P := (0 ≤ ·)) fun _ h₁ h₂ ↦
     mul_nonneg (by norm_num) (sin_nonneg_of_nonneg_of_le_pi (by simp at h₁; linarith [θ₀_pos])
       (by linarith [θ₀_add_two_pi_mul_tNeg]))
 
-private theorem range_δ₂ : range δ₂ ⊆ {z | (z : ℂ).im ≤ 0} :=
+private theorem range_δ₂_subset : range δ₂ ⊆ {z | (z : ℂ).im ≤ 0} :=
   δ.range_subpath_subset_of_im im_coe_δ tNeg_le_tPos (P := (· ≤ 0)) fun _ h₁ h₂ ↦
     mul_nonpos_of_nonneg_of_nonpos (by norm_num) (sin_nonpos_of_pi_le
       (by linarith [θ₀_add_two_pi_mul_tNeg]) (by linarith [θ₀_add_two_pi_mul_tPos]))
 
-private theorem range_δ₃ : range δ₃ ⊆ {z | 0 ≤ (z : ℂ).im} :=
+private theorem range_δ₃_subset : range δ₃ ⊆ {z | 0 ≤ (z : ℂ).im} :=
   δ.range_subpath_subset_of_im im_coe_δ unitInterval.le_one' (P := (0 ≤ ·)) fun _ h₁ h₂ ↦ by
     rw [← Real.sin_sub_two_pi]
     exact mul_nonneg (by norm_num) (sin_nonneg_of_nonneg_of_le_pi
       (by linarith [θ₀_add_two_pi_mul_tPos]) (by simp at h₂; linarith [θ₀_lt_pi]))
 
-private theorem range_γ0₁ : range γ0₁ ⊆ {z | 0 ≤ (z : ℂ).im} :=
+private theorem range_γ0₁_subset : range γ0₁ ⊆ {z | 0 ≤ (z : ℂ).im} :=
   γ0.range_subpath_subset_of_im (a := 0) (fun u ↦ by rw [im_coe_γ0, zero_add])
     unitInterval.nonneg' (P := (0 ≤ ·)) fun _ h₁ h₂ ↦
     mul_nonneg (by norm_num) (sin_nonneg_of_nonneg_of_le_pi
       (by simpa using h₁) (by linarith [two_pi_mul_tHalf]))
 
-private theorem range_γ0₂ : range γ0₂ ⊆ {z | (z : ℂ).im ≤ 0} :=
+private theorem range_γ0₂_subset : range γ0₂ ⊆ {z | (z : ℂ).im ≤ 0} :=
   γ0.range_subpath_subset_of_im (a := 0) (fun u ↦ by rw [im_coe_γ0, zero_add])
     unitInterval.le_one' (P := (· ≤ 0)) fun _ h₁ h₂ ↦
     mul_nonpos_of_nonneg_of_nonpos (by norm_num) (sin_nonpos_of_pi_le
       (by linarith [two_pi_mul_tHalf]) (by simpa using h₂))
 
-private theorem range_γ1₁ : range γ1₁ ⊆ {z | (z : ℂ).im ≤ 0} :=
+private theorem range_γ1₁_subset : range γ1₁ ⊆ {z | (z : ℂ).im ≤ 0} :=
   γ1.range_subpath_subset_of_im (a := 0) (fun u ↦ by rw [im_coe_γ1, zero_add])
     unitInterval.nonneg' (P := (· ≤ 0)) fun _ h₁ h₂ ↦
     mul_nonpos_of_nonpos_of_nonneg (by norm_num) (sin_nonneg_of_nonneg_of_le_pi
       (by simpa using h₁) (by linarith [two_pi_mul_tHalf]))
 
-private theorem range_γ1₂ : range γ1₂ ⊆ {z | 0 ≤ (z : ℂ).im} :=
+private theorem range_γ1₂_subset : range γ1₂ ⊆ {z | 0 ≤ (z : ℂ).im} :=
   γ1.range_subpath_subset_of_im (a := 0) (fun u ↦ by rw [im_coe_γ1, zero_add])
     unitInterval.le_one' (P := (0 ≤ ·)) fun _ h₁ h₂ ↦
     mul_nonneg_of_nonpos_of_nonpos (by norm_num) (sin_nonpos_of_pi_le
@@ -406,25 +406,28 @@ theorem αPlus_trans_δ_trans_symm_homotopic_γ0_trans_γ1 :
   -- the three pairs of pieces, each pair in a common closed half-plane
   have hA : (αPlus.trans δ₁).Homotopic (γ0₁.trans segNeg) :=
     isPathHomotopyTrivial_def.mp isSimplyConnected_upper.isPathHomotopyTrivial _ _
-      (by rw [Path.trans_range]; exact union_subset range_αPlus range_δ₁)
+      (by rw [Path.trans_range]; exact union_subset range_αPlus_subset range_δ₁_subset)
       (by
         rw [Path.trans_range]
-        exact union_subset range_γ0₁ (subset_halfPlanes_of_real (range_realSegment ..)).1)
+        exact union_subset range_γ0₁_subset
+          (subset_halfPlanes_of_real (range_realSegment_subset ..)).1)
   have hB : δ₂.Homotopic (segNeg.symm.trans (γ0₂.trans (γ1₁.trans segPos))) :=
-    isPathHomotopyTrivial_def.mp isSimplyConnected_lower.isPathHomotopyTrivial _ _ range_δ₂
+    isPathHomotopyTrivial_def.mp isSimplyConnected_lower.isPathHomotopyTrivial _ _ range_δ₂_subset
       (by
         simp only [Path.trans_range, Path.symm_range]
-        exact union_subset (subset_halfPlanes_of_real (range_realSegment ..)).2 <|
-          union_subset range_γ0₂ <|
-            union_subset range_γ1₁ (subset_halfPlanes_of_real (range_realSegment ..)).2)
+        exact union_subset (subset_halfPlanes_of_real (range_realSegment_subset ..)).2 <|
+          union_subset range_γ0₂_subset <|
+            union_subset range_γ1₁_subset
+              (subset_halfPlanes_of_real (range_realSegment_subset ..)).2)
   have hC : (δ₃.trans αPlus.symm).Homotopic (segPos.symm.trans γ1₂) :=
     isPathHomotopyTrivial_def.mp isSimplyConnected_upper.isPathHomotopyTrivial _ _
       (by
         rw [Path.trans_range, Path.symm_range]
-        exact union_subset range_δ₃ range_αPlus)
+        exact union_subset range_δ₃_subset range_αPlus_subset)
       (by
         rw [Path.trans_range, Path.symm_range]
-        exact union_subset (subset_halfPlanes_of_real (range_realSegment ..)).1 range_γ1₂)
+        exact union_subset (subset_halfPlanes_of_real (range_realSegment_subset ..)).1
+          range_γ1₂_subset)
   -- assemble the pieces in the fundamental groupoid; the connecting segments cancel
   rw [← Path.Homotopic.Quotient.eq] at hA hB hC ⊢
   simp only [Path.Homotopic.Quotient.mk_trans, Path.Homotopic.Quotient.mk_symm] at hA hB hC ⊢
@@ -501,15 +504,15 @@ private noncomputable def segRight : Path (γ1 tHalf) (mob1Inf (γ1 tHalf)) :=
 
 /-- The path `α₋₁` from `−1 = mob1Inf (1/2)` to the basepoint `1/2` through the closed upper
 half-plane: along the real axis to `−1/2`, then along the upper half of the circle `|z| = 1/2`
-(`range_αMob1Inf`). Any two such paths are homotopic, the closed upper half-plane of `ℂ ∖ {0, 1}`
-being simply connected. -/
+(`range_αMob1Inf_subset`). Any two such paths are homotopic, the closed upper half-plane of
+`ℂ ∖ {0, 1}` being simply connected. -/
 noncomputable def αMob1Inf : Path (mob1Inf basePt) basePt :=
   segLeft.trans γ0₁.symm
 
 /-- The path `α₋₁` runs in the closed upper half-plane. -/
-theorem range_αMob1Inf : range αMob1Inf ⊆ {z | 0 ≤ (z : ℂ).im} := by
+theorem range_αMob1Inf_subset : range αMob1Inf ⊆ {z | 0 ≤ (z : ℂ).im} := by
   rw [αMob1Inf, Path.trans_range, Path.symm_range]
-  exact union_subset (subset_halfPlanes_of_real (range_realSegment ..)).1 range_γ0₁
+  exact union_subset (subset_halfPlanes_of_real (range_realSegment_subset ..)).1 range_γ0₁_subset
 
 /-- The automorphism of `π₁(ℂ ∖ {0, 1}, 1/2)` induced by `z ↦ z / (z − 1)`: the isomorphism onto
 `π₁(ℂ ∖ {0, 1}, −1)` induced by the map, followed by the change of basepoint back to `1/2` along
@@ -559,20 +562,20 @@ theorem mob1InfMulAut_periph0 : mob1InfMulAut periph0 = periph0 := by
     isPathHomotopyTrivial_def.mp isSimplyConnected_lower.isPathHomotopyTrivial _ _
       (by
         rintro _ ⟨t, rfl⟩
-        exact im_coe_mob1Inf_nonpos (range_γ0₁ ⟨t, rfl⟩))
+        exact im_coe_mob1Inf_nonpos (range_γ0₁_subset ⟨t, rfl⟩))
       (by
         simp only [Path.trans_range, Path.symm_range]
-        exact union_subset (union_subset (subset_halfPlanes_of_real (range_realSegment ..)).2
-          range_γ0₂) (subset_halfPlanes_of_real (range_realSegment ..)).2)
+        exact union_subset (union_subset (subset_halfPlanes_of_real (range_realSegment_subset ..)).2
+          range_γ0₂_subset) (subset_halfPlanes_of_real (range_realSegment_subset ..)).2)
   have hU : (γ0₂.map mob1Inf.continuous).Homotopic ((segMid.trans γ0₁).trans segLeft.symm) :=
     isPathHomotopyTrivial_def.mp isSimplyConnected_upper.isPathHomotopyTrivial _ _
       (by
         rintro _ ⟨t, rfl⟩
-        exact im_coe_mob1Inf_nonneg (range_γ0₂ ⟨t, rfl⟩))
+        exact im_coe_mob1Inf_nonneg (range_γ0₂_subset ⟨t, rfl⟩))
       (by
         simp only [Path.trans_range, Path.symm_range]
-        exact union_subset (union_subset (subset_halfPlanes_of_real (range_realSegment ..)).1
-          range_γ0₁) (subset_halfPlanes_of_real (range_realSegment ..)).1)
+        exact union_subset (union_subset (subset_halfPlanes_of_real (range_realSegment_subset ..)).1
+          range_γ0₁_subset) (subset_halfPlanes_of_real (range_realSegment_subset ..)).1)
   rw [← Path.Homotopic.Quotient.eq] at hL hU
   -- `periph0` is by definition the class of `γ0`
   have h0 : periph0 = FundamentalGroup.fromPath (.mk γ0) := periph0_def
@@ -594,23 +597,25 @@ theorem mob1InfMulAut_periph1 : mob1InfMulAut periph1 = periphInf := by
     isPathHomotopyTrivial_def.mp isSimplyConnected_upper.isPathHomotopyTrivial _ _
       (by
         rintro _ ⟨t, rfl⟩
-        exact im_coe_mob1Inf_nonneg (range_γ1₁ ⟨t, rfl⟩))
+        exact im_coe_mob1Inf_nonneg (range_γ1₁_subset ⟨t, rfl⟩))
       (by
         simp only [Path.trans_range, Path.symm_range]
         exact union_subset (union_subset (union_subset
-          (subset_halfPlanes_of_real (range_realSegment ..)).1 range_γ0₁) range_γ1₂)
-          (subset_halfPlanes_of_real (range_realSegment ..)).1)
+          (subset_halfPlanes_of_real (range_realSegment_subset ..)).1 range_γ0₁_subset)
+            range_γ1₂_subset)
+          (subset_halfPlanes_of_real (range_realSegment_subset ..)).1)
   have hL : (γ1₂.map mob1Inf.continuous).Homotopic
       (((segRight.symm.trans γ1₁.symm).trans γ0₂.symm).trans segLeft.symm) :=
     isPathHomotopyTrivial_def.mp isSimplyConnected_lower.isPathHomotopyTrivial _ _
       (by
         rintro _ ⟨t, rfl⟩
-        exact im_coe_mob1Inf_nonpos (range_γ1₂ ⟨t, rfl⟩))
+        exact im_coe_mob1Inf_nonpos (range_γ1₂_subset ⟨t, rfl⟩))
       (by
         simp only [Path.trans_range, Path.symm_range]
         exact union_subset (union_subset (union_subset
-          (subset_halfPlanes_of_real (range_realSegment ..)).2 range_γ1₁) range_γ0₂)
-          (subset_halfPlanes_of_real (range_realSegment ..)).2)
+          (subset_halfPlanes_of_real (range_realSegment_subset ..)).2 range_γ1₁_subset)
+            range_γ0₂_subset)
+          (subset_halfPlanes_of_real (range_realSegment_subset ..)).2)
   rw [← Path.Homotopic.Quotient.eq] at hL hU
   -- `periph0` and `periph1` are by definition the classes of `γ0` and `γ1`
   have h0 : periph0 = FundamentalGroup.fromPath (.mk γ0) := periph0_def
