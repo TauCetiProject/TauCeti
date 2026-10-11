@@ -129,3 +129,37 @@ theorem exists_enorm_sub_rpow_neg_half_mul_le {E : Type*} [NormedAddCommGroup E]
       _ ≤ k * k * (h₁ + h₂ + h₃) := by gcongr; exact le_self_add.trans le_self_add
 
 end ENNReal
+
+namespace NNReal
+
+/-- For a base greater than one, real powers are ordered exactly by their exponents. -/
+theorem rpow_le_rpow_iff_of_one_lt {b : ℝ≥0} (hb : 1 < b) {x y : ℝ} :
+    b ^ x ≤ b ^ y ↔ x ≤ y := by
+  constructor
+  · contrapose!
+    exact rpow_lt_rpow_of_exponent_lt hb
+  · exact rpow_le_rpow_of_exponent_le hb.le
+
+/-- A rational lower bound on the ratio `α / r`, expressed as a comparison of powers.
+
+For `r > 0`, the inequality `(b ^ (-α)) ^ q.den ≤ (b ^ (-r)) ^ q.num` is equivalent to
+`q ≤ α / r`; the base is arbitrary above one. -/
+theorem rpow_num_den_le_iff {b : ℝ≥0} (hb : 1 < b) (r : ℝ) (hr : 0 < r)
+    (α : ℝ) (q : ℚ≥0) :
+    (b ^ (-α)) ^ q.den ≤ (b ^ (-r)) ^ q.num ↔ (q : ℝ) ≤ α / r := by
+  rw [← rpow_mul_natCast, ← rpow_mul_natCast, rpow_le_rpow_iff_of_one_lt hb,
+    NNRat.cast_def, div_le_div_iff₀ (by exact_mod_cast q.den_pos) hr]
+  constructor <;> intro h <;> nlinarith
+
+/-- A rational upper bound on the ratio `α / r`, expressed as a comparison of powers.
+
+For `r > 0`, the inequality `(b ^ (-r)) ^ q.num ≤ (b ^ (-α)) ^ q.den` is equivalent to
+`α / r ≤ q`; the base is arbitrary above one. -/
+theorem rpow_den_num_le_iff {b : ℝ≥0} (hb : 1 < b) (r : ℝ) (hr : 0 < r)
+    (α : ℝ) (q : ℚ≥0) :
+    (b ^ (-r)) ^ q.num ≤ (b ^ (-α)) ^ q.den ↔ α / r ≤ (q : ℝ) := by
+  rw [← rpow_mul_natCast, ← rpow_mul_natCast, rpow_le_rpow_iff_of_one_lt hb,
+    NNRat.cast_def, div_le_div_iff₀ hr (by exact_mod_cast q.den_pos)]
+  constructor <;> intro h <;> nlinarith
+
+end NNReal

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.FarguesFontaine.GaussPoint
-public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
+public import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 
 /-!
 # The reciprocal radius parameter of a Gauss point
@@ -39,27 +39,6 @@ variable {p : ℕ} [Fact p.Prime] {K O : Type*} [Field K] [CommRing O] [Algebra 
 private theorem one_lt_prime_nnreal : (1 : ℝ≥0) < p := by
   exact_mod_cast (Fact.out : p.Prime).one_lt
 
-private theorem pPower_le_pPower_iff {x y : ℝ} :
-    (p : ℝ≥0) ^ x ≤ (p : ℝ≥0) ^ y ↔ x ≤ y := by
-  constructor
-  · contrapose!
-    exact NNReal.rpow_lt_rpow_of_exponent_lt one_lt_prime_nnreal
-  · exact NNReal.rpow_le_rpow_of_exponent_le one_lt_prime_nnreal.le
-
-private theorem pPower_inequality_iff (r : ℝ) (hr : 0 < r) (α : ℝ) (q : ℚ≥0) :
-    ((p : ℝ≥0) ^ (-α)) ^ q.den ≤ ((p : ℝ≥0) ^ (-r)) ^ q.num ↔
-      (q : ℝ) ≤ α / r := by
-  rw [← NNReal.rpow_mul_natCast, ← NNReal.rpow_mul_natCast, pPower_le_pPower_iff,
-    NNRat.cast_def, div_le_div_iff₀ (by exact_mod_cast q.den_pos) hr]
-  constructor <;> intro h <;> nlinarith
-
-private theorem pPower_inequality_iff' (r : ℝ) (hr : 0 < r) (α : ℝ) (q : ℚ≥0) :
-    ((p : ℝ≥0) ^ (-r)) ^ q.num ≤ ((p : ℝ≥0) ^ (-α)) ^ q.den ↔
-      α / r ≤ (q : ℝ) := by
-  rw [← NNReal.rpow_mul_natCast, ← NNReal.rpow_mul_natCast, pPower_le_pPower_iff,
-    NNRat.cast_def, div_le_div_iff₀ hr (by exact_mod_cast q.den_pos)]
-  constructor <;> intro h <;> nlinarith
-
 /-- **Reciprocal radius interval dictionary.** With `|ϖ| = p ^ (-α)` and `ρ = p ^ (-r)`,
 the radius interval `|ϖ| ^ (1/a) ≤ ρ ≤ |ϖ| ^ (1/b)` is equivalent to
 `a ≤ α / r ≤ b`. The exponents `α/a` and `α/b` express the endpoints without choosing
@@ -68,7 +47,8 @@ theorem pPower_radius_mem_Icc_iff (α r a b : ℝ) (hr : 0 < r) (ha : 0 < a) (hb
     (p : ℝ≥0) ^ (-r) ∈ Set.Icc ((p : ℝ≥0) ^ (-α / a)) ((p : ℝ≥0) ^ (-α / b)) ↔
       α / r ∈ Set.Icc a b := by
   simp only [Set.mem_Icc]
-  rw [pPower_le_pPower_iff, pPower_le_pPower_iff]
+  rw [NNReal.rpow_le_rpow_iff_of_one_lt one_lt_prime_nnreal,
+    NNReal.rpow_le_rpow_iff_of_one_lt one_lt_prime_nnreal]
   constructor
   · rintro ⟨h₁, h₂⟩
     constructor
@@ -96,7 +76,7 @@ theorem isRadiusLowerBound_gaussPoint_pPower_iff (hv : v.Integers O) (ϖ : O)
           (by exact_mod_cast (Fact.out : p.Prime).one_lt) (neg_neg_of_pos hr))) ↔
       (q : ℝ) ≤ α / r := by
   rw [isRadiusLowerBound_gaussPoint_iff, hϖ]
-  exact pPower_inequality_iff r hr α q
+  exact NNReal.rpow_num_den_le_iff one_lt_prime_nnreal r hr α q
 
 /-- For `v(ϖ) = p ^ (-α)` and Gauss radius `ρ = p ^ (-r)`, `q` is an upper radius bound of
 the Gauss point exactly when `α / r ≤ q`. -/
@@ -109,7 +89,7 @@ theorem isRadiusUpperBound_gaussPoint_pPower_iff (hv : v.Integers O) (ϖ : O)
           (by exact_mod_cast (Fact.out : p.Prime).one_lt) (neg_neg_of_pos hr))) ↔
       α / r ≤ (q : ℝ) := by
   rw [isRadiusUpperBound_gaussPoint_iff, hϖ]
-  exact pPower_inequality_iff' r hr α q
+  exact NNReal.rpow_den_num_le_iff one_lt_prime_nnreal r hr α q
 
 end TauCeti.FarguesFontaine
 
