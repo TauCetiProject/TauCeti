@@ -32,6 +32,8 @@ variable {K : Type*} [Field K] (W : WeierstrassCurve K) [W.IsElliptic]
 
 noncomputable section
 
+/-- The algebra structure on the projective function field transported from the affine
+function field. -/
 local instance : Algebra K W.projModel.functionField := by
   let f : K →+* W.projModel.functionField :=
     W.projModelFunctionFieldEquiv.symm.toRingHom.comp (algebraMap K W.toAffine.FunctionField)
@@ -59,7 +61,7 @@ noncomputable def projModelMulByFunctionFieldAlgHom (n : ℤ) [NeZero n] :
 induced by the scheme morphism `[n]`. -/
 @[simp]
 theorem projModelMulByFunctionFieldAlgHom_toRingHom (n : ℤ) [NeZero n] :
-    (W.projModelMulByFunctionFieldAlgHom n).toRingHom = W.mulByFunctionFieldPullback n := by
+    ↑(W.projModelMulByFunctionFieldAlgHom n) = W.mulByFunctionFieldPullback n := by
   ext x
   apply W.projModelFunctionFieldEquiv.injective
   simp [projModelMulByFunctionFieldAlgHom, projModelFunctionFieldAlgEquiv,
