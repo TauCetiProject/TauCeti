@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Sheaf.PullbackFree
 public import TauCeti.AlgebraicGeometry.VectorBundle.ExteriorPower.Basic
 
 /-!
@@ -27,16 +26,6 @@ universe u
 open _root_.AlgebraicGeometry
 
 variable {X Y : _root_.AlgebraicGeometry.Scheme.{u}} (f : X ⟶ Y)
-
-/-- Pullback of a free sheaf, expressed in the finite locally free category. -/
-noncomputable def pullbackFreeIso (J : Type u) [Finite J] :
-    (pullback f).obj (free Y J) ≅ free X J := by
-  letI : (SheafOfModules.pushforward f.toRingCatSheafHom).IsRightAdjoint :=
-    inferInstanceAs (Scheme.Modules.pushforward f).IsRightAdjoint
-  exact ObjectProperty.isoMk _
-    (eqToIso (by rw [pullback_obj_obj, free_obj]; rfl) ≪≫
-      SheafOfModules.pullbackObjFreeIso f.toRingCatSheafHom J ≪≫
-      eqToIso (free_obj X J).symm)
 
 /-- Pullback commutes with exterior powers of a finite free sheaf, by identifying both sides with
 the free sheaf on subsets of the chosen basis. -/
