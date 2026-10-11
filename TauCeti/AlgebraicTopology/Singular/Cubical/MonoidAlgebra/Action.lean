@@ -256,6 +256,18 @@ theorem cubicalChainModule.induction_on {motive : cubicalChainModule Y G R → P
   DirectSum.induction_on (β := fun n ↦ NormalizedCubicalChain Y R n) (motive := motive) m zero
     (fun n c ↦ lof n c) add
 
+/-- The linear map out of the module given by linear maps out of its homogeneous parts. -/
+def cubicalChainModuleDesc {N : Type*} [AddCommMonoid N] [Module R N]
+    (φ : ∀ n, NormalizedCubicalChain Y R n →ₗ[R] N) : cubicalChainModule Y G R →ₗ[R] N :=
+  DirectSum.toModule R ℕ N φ
+
+/-- The linear map given by homogeneous parts, on a homogeneous chain. -/
+@[simp]
+theorem cubicalChainModuleDesc_lof {N : Type*} [AddCommMonoid N] [Module R N]
+    (φ : ∀ n, NormalizedCubicalChain Y R n →ₗ[R] N) {n : ℕ} (c : NormalizedCubicalChain Y R n) :
+    cubicalChainModuleDesc (G := G) φ (cubicalChainModuleLof Y G R n c) = φ n c :=
+  DirectSum.toModule_lof R n c
+
 /-- Two linear maps out of the module agree when they agree on homogeneous chains. -/
 theorem cubicalChainModule_linearMap_ext {N : Type*} [AddCommMonoid N] [Module R N]
     {f g : cubicalChainModule Y G R →ₗ[R] N}
