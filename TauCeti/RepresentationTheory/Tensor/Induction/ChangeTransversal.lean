@@ -103,9 +103,7 @@ underlying map. -/
 theorem tensorInducedChangeTransversal_apply (z : ⨂[R] _ : G ⧸ U, M) :
     tensorInducedChangeTransversal U s t ρ z =
       tensorInducedChangeTransversalLinearEquiv U s t ρ z :=
-  by
-    change (tensorInducedChangeTransversal U s t ρ).toLinearEquiv z = _
-    rw [tensorInducedChangeTransversal_toLinearEquiv]
+  by simp only [tensorInducedChangeTransversal, Representation.Equiv.mk_apply]
 
 /-- On a pure tensor, changing the transversal applies the difference of representatives to
 each factor at its coset. -/
