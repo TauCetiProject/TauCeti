@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.UniversalCover.Action
-public import TauCeti.Topology.Covering.BalancedProduct
+public import TauCeti.Topology.Covering.BalancedProduct.Basic
 public import TauCeti.Topology.Covering.Category
 public import TauCeti.Topology.Homotopy.Monodromy.Functoriality
 
