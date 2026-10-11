@@ -44,7 +44,7 @@ def algEquivProdOfIdempotent {R : Type*} [CommRing R] :
 
 /-- Evaluation of the idempotent-generator algebra at the roots `1` and `0`. -/
 @[simp]
-theorem algEquivProdOfIdempotent_apply {R : Type*} [CommRing R]
+theorem _root_.QuadraticAlgebra.algEquivProdOfIdempotent_apply {R : Type*} [CommRing R]
     (z : QuadraticAlgebra R 0 1) :
     algEquivProdOfIdempotent z = (z.re + z.im, z.re) := by
   simp [algEquivProdOfIdempotent]
@@ -70,7 +70,8 @@ private theorem algEquivProdOfRoots_omega {R : Type*} [CommRing R] {a b : R} (r 
 
 /-- Splitting evaluates each element at the two roots. -/
 @[simp]
-theorem algEquivProdOfRoots_apply {R : Type*} [CommRing R] {a b : R} (r s : R)
+theorem _root_.QuadraticAlgebra.algEquivProdOfRoots_apply
+    {R : Type*} [CommRing R] {a b : R} (r s : R)
     (h : IsUnit (r - s)) (ha : a = -(r * s)) (hb : b = r + s)
     (z : QuadraticAlgebra R a b) :
     algEquivProdOfRoots r s h ha hb z = (z.re + r * z.im, z.re + s * z.im) := by
@@ -100,7 +101,8 @@ noncomputable def algEquivProdOfSq {R : Type*} [CommRing R] [Invertible (2 : R)]
 
 /-- The unit-square specialization evaluates at the two opposite square roots. -/
 @[simp]
-theorem algEquivProdOfSq_apply {R : Type*} [CommRing R] [Invertible (2 : R)] {a : R}
+theorem _root_.QuadraticAlgebra.algEquivProdOfSq_apply
+    {R : Type*} [CommRing R] [Invertible (2 : R)] {a : R}
     (u : Rˣ) (ha : a = (u : R) ^ 2) (z : QuadraticAlgebra R a 0) :
     algEquivProdOfSq u ha z = (z.re + (u : R) * z.im, z.re - (u : R) * z.im) := by
   simp [algEquivProdOfSq, sub_eq_add_neg]
