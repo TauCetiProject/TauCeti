@@ -209,6 +209,14 @@ theorem d_pathChain {X : TopCat.{u}} (g : C(I, X)) :
     TopCat.δ_one_simplex₁]
   simp [sub_eq_add_neg]
 
+/-- Pushing the chain of a path forward along a continuous map gives the chain of the composite. -/
+-- Not a simp lemma: `TauCeti.singularChainComplexFunctor_obj_map` rewrites the chain map inside
+-- the left-hand side first, so the `simpNF` linter rejects it.
+theorem singularChains_map_f_pathChain {X Y : TopCat.{u}} (f : X ⟶ Y) (g : C(I, X)) :
+    ((singularChains k).map f).f 1 (pathChain k g) =
+      pathChain k ((ConcreteCategory.hom f).comp g) := by
+  rw [singularChains_map_f_simplexChain, TopCat.toSSet_map_app_simplex₁]
+
 end Paths
 
 end TauCeti
