@@ -70,19 +70,23 @@ theorem lieEquivProjHom_apply (X : LeftInvariantDerivation I (UniversalCover (1 
       lieMap ((projHom : UniversalCover (1 : G) →ₜ* G).toContMDiffMonoidMorphism I I) X := by
   simp [lieEquivProjHom]
 
+/-- The Lie homomorphism underlying the universal-cover Lie-algebra equivalence is the Lie map of
+the covering projection. -/
+@[simp]
+theorem lieEquivProjHom_toLieHom :
+    (lieEquivProjHom I G).toLieHom =
+      lieMap ((projHom : UniversalCover (1 : G) →ₜ* G).toContMDiffMonoidMorphism I I) := by
+  simpa only [lieEquivProjHom] using Lie.lieEquivOfIsLocalDiffeomorphAt_toLieHom
+    ((projHom : UniversalCover (1 : G) →ₜ* G).toContMDiffMonoidMorphism I I)
+    (isLocalDiffeomorphAt_projHom_one I G)
+
 variable (I G) in
 /-- The covering homomorphism of the universal cover of a Lie group induces a bijection, hence a
 Lie-algebra isomorphism, between the Lie algebras of left-invariant derivations. -/
 theorem lieMap_projHom_bijective :
     Function.Bijective
       (lieMap ((projHom : UniversalCover (1 : G) →ₜ* G).toContMDiffMonoidMorphism I I)) := by
-  have h :
-      lieMap ((projHom : UniversalCover (1 : G) →ₜ* G).toContMDiffMonoidMorphism I I) =
-        (lieEquivProjHom I G).toLieHom := by
-    apply LieHom.ext
-    intro X
-    exact (lieEquivProjHom_apply X).symm
-  rw [h]
+  rw [← lieEquivProjHom_toLieHom]
   exact (lieEquivProjHom I G).bijective
 
 /-- The inverse of the Lie-algebra equivalence induced by the universal covering projection sends

@@ -369,6 +369,17 @@ theorem lieEquivOfIsLocalDiffeomorphAt_apply
     lieEquivOfIsLocalDiffeomorphAt φ hφ X = lieMap φ X := by
   simp [lieEquivOfIsLocalDiffeomorphAt]
 
+/-- The Lie homomorphism underlying the equivalence induced by a local diffeomorphism is its Lie
+map. -/
+@[simp]
+theorem lieEquivOfIsLocalDiffeomorphAt_toLieHom
+    [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
+    (φ : ContMDiffMonoidMorphism I I' ∞ G G') (hφ : IsLocalDiffeomorphAt I I' ∞ φ 1) :
+    (lieEquivOfIsLocalDiffeomorphAt φ hφ).toLieHom = lieMap φ := by
+  apply LieHom.ext
+  intro X
+  exact lieEquivOfIsLocalDiffeomorphAt_apply φ hφ X
+
 /-- The inverse Lie-algebra equivalence of a local diffeomorphism sends the Lie map of a derivation
 back to that derivation. -/
 @[simp]
