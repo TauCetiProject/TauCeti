@@ -10,13 +10,14 @@ public import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasur
 /-!
 # Measurability of Carathéodory compositions
 
-A family `g : α → X → G` is a *Carathéodory function* if `t ↦ g t x` is measurable for each `x`
-and `x ↦ g t x` is continuous for each `t`. Then `t ↦ g t (u t)` is almost everywhere strongly
-measurable for every almost everywhere strongly measurable `u : α → X`
-(`MeasureTheory.AEStronglyMeasurable.apply_of_forall_of_continuous`).
+Let `g : α → X → G` be a *Carathéodory function*: `t ↦ g t x` is almost everywhere strongly
+measurable for each `x` and `x ↦ g t x` is continuous for each `t`. Then `t ↦ g t (u t)` is almost
+everywhere strongly measurable for every almost everywhere strongly measurable `u : α → X`
+(`MeasureTheory.AEStronglyMeasurable.apply_of_forall_of_continuous`). For a real-valued `g`, as in
+the application below, measurability of each section `t ↦ g t x` already suffices.
 
 No separability or metrizability is asked of `X`: `u` is approximated by simple functions, on
-whose finitely many fibres `t ↦ g t (u t)` is one of the measurable functions `t ↦ g t x`. This
+whose finitely many fibres `t ↦ g t (u t)` is one of the sections `t ↦ g t x`. This
 is what weak measurability of a time-dependent operator `A(t) : V →L[ℝ] V*` in parabolic problems
 needs: `t ↦ A(t) u(t) φ(t)` is measurable as soon as `t ↦ A(t) u v` is for all fixed `u, v`, for
 an arbitrary Hilbert space `V`. Mathlib's
