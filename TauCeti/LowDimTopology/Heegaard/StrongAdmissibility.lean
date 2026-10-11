@@ -35,15 +35,23 @@ public section
 namespace TauCeti.HeegaardRegionSystem
 
 variable {n : ℕ} {Point Region Basepoint : Type*}
-  (H : HeegaardRegionSystem n Point Region Basepoint)
+  {H : HeegaardRegionSystem n Point Region Basepoint}
   [Fintype Point] [Fintype Region] [DecidableEq Region]
 
+variable (H) in
 /-- Strong admissibility at a generator `x`: every nonzero periodic domain `P` of nonnegative
 Maslov index has a coefficient strictly greater than half its index. The Euler characteristics
 of the regions are supplied by `χ`. -/
 def StronglyAdmissible (χ : Region → ℤ) (x : H.Generator) : Prop :=
   ∀ P ∈ H.periodicDomains, P ≠ 0 → 0 ≤ H.maslovIndex χ x x P →
     ∃ r, H.maslovIndex χ x x P / 2 < (P r : ℚ)
+
+/-- Strong admissibility at `x` means every nonzero periodic domain of nonnegative Maslov
+index has a coefficient strictly greater than half its index. -/
+theorem stronglyAdmissible_iff {χ : Region → ℤ} {x : H.Generator} :
+    H.StronglyAdmissible χ x ↔
+      ∀ P ∈ H.periodicDomains, P ≠ 0 → 0 ≤ H.maslovIndex χ x x P →
+        ∃ r, H.maslovIndex χ x x P / 2 < (P r : ℚ) := Iff.rfl
 
 /-- Strong admissibility has the same value at generators joined by a domain: the Maslov
 index of a periodic domain is independent of the generator within that class. -/
@@ -84,14 +92,15 @@ theorem StronglyAdmissible.eq_zero_of_nonneg_index_zero {χ : Region → ℤ} {x
     (hP : P ∈ H.periodicDomains) (hindex : H.maslovIndex χ x x P = 0)
     (hPnonneg : 0 ≤ P) : P = 0 := by
   by_contra hne
-  obtain ⟨r, hr⟩ := (StronglyAdmissible.signs_of_index_zero H hH hP hindex hne).2
+  obtain ⟨r, hr⟩ := hH.signs_of_index_zero hP hindex hne |>.2
   exact (hPnonneg r).not_gt hr
 
-/-- In a strongly admissible diagram with finitely many regions, there are only finitely many
-nonnegative domains from `x` to `y` with prescribed basepoint multiplicities and Maslov index.
-The strong condition is needed only at the terminal generator `y`. -/
-theorem StronglyAdmissible.finite_setOf_isDomainBetween_basepoint_eq_nonneg_index
-    {χ : Region → ℤ} {y : H.Generator} (hH : H.StronglyAdmissible χ y)
+/-- If every nonnegative periodic domain of Maslov index zero vanishes, then there are only
+finitely many nonnegative domains from `x` to `y` with prescribed basepoint multiplicities and
+Maslov index. -/
+theorem finite_setOf_isDomainBetween_basepoint_eq_nonneg_index_of_eq_zero
+    {χ : Region → ℤ} {y : H.Generator}
+    (hzero : ∀ P ∈ H.periodicDomains, H.maslovIndex χ y y P = 0 → 0 ≤ P → P = 0)
     (x : H.Generator) (k : Basepoint → ℤ) (m : ℚ) :
     {D : Region → ℤ | H.IsDomainBetween x y D ∧
       (∀ z, D (H.basepoint z) = k z) ∧ 0 ≤ D ∧ H.maslovIndex χ x y D = m}.Finite := by
@@ -104,15 +113,26 @@ theorem StronglyAdmissible.finite_setOf_isDomainBetween_basepoint_eq_nonneg_inde
       (H.isDomainBetween_self_iff.mpr hP).1
     have hsum := hD.maslovIndex_add χ hself
     have hindex : H.maslovIndex χ y y (D' - D) = 0 := by
-      rw [show D + (D' - D) = D' by abel] at hsum
+      rw [add_comm D (D' - D), sub_add_cancel] at hsum
       rw [hDm, hD'm] at hsum
       linarith
-    have hzero := StronglyAdmissible.eq_zero_of_nonneg_index_zero H hH hP hindex
-      (sub_nonneg.mpr hle)
-    exact hne (sub_eq_zero.mp hzero).symm
+    have hvanish := hzero (D' - D) hP hindex (sub_nonneg.mpr hle)
+    exact hne (sub_eq_zero.mp hvanish).symm
   · refine ((Set.isPWO_of_wellQuasiOrderedLE (Set.univ : Set (Region → ℕ))).image_of_monotone
       (f := fun a r => (a r : ℤ)) fun a b hab r => Int.ofNat_le.mpr (hab r)).mono ?_
     rintro D ⟨-, -, hD, -⟩
     exact ⟨fun r => (D r).toNat, trivial, funext fun r => Int.toNat_of_nonneg (hD r)⟩
+
+/-- In a strongly admissible diagram with finitely many regions, there are only finitely many
+nonnegative domains from `x` to `y` with prescribed basepoint multiplicities and Maslov index.
+The strong condition is needed only at the terminal generator `y`. -/
+theorem StronglyAdmissible.finite_setOf_isDomainBetween_basepoint_eq_nonneg_index
+    {χ : Region → ℤ} {y : H.Generator} (hH : H.StronglyAdmissible χ y)
+    (x : H.Generator) (k : Basepoint → ℤ) (m : ℚ) :
+    {D : Region → ℤ | H.IsDomainBetween x y D ∧
+      (∀ z, D (H.basepoint z) = k z) ∧ 0 ≤ D ∧ H.maslovIndex χ x y D = m}.Finite := by
+  exact finite_setOf_isDomainBetween_basepoint_eq_nonneg_index_of_eq_zero
+    (fun P hP hindex hnonneg => hH.eq_zero_of_nonneg_index_zero hP hindex hnonneg)
+    x k m
 
 end TauCeti.HeegaardRegionSystem
