@@ -13,8 +13,8 @@ public import Mathlib.RingTheory.Discriminant
 
 The algebra discriminant of the basis `1, ω` is `b² + 4a`, where `ω² = a + bω`.
 This identifies Mathlib's explicit quadratic discriminant with the discriminant computed
-from the trace pairing. In particular it computes the discriminant of an integral basis
-in the quadratic orders attached to binary lattices.
+from the trace pairing. Over `ℤ`, choosing `a` and `b` with `b² + 4a = Δ` gives `Δ` as the
+discriminant of the basis `1, ω` of `QuadraticAlgebra ℤ a b`.
 -/
 
 public section
@@ -22,7 +22,7 @@ public section
 namespace QuadraticAlgebra
 
 /-- The discriminant of the standard basis `1, ω` is the explicit quadratic discriminant. -/
-theorem algebraDiscr_basis {R : Type*} [CommRing R] (a b : R) :
+@[simp] theorem algebraDiscr_basis {R : Type*} [CommRing R] (a b : R) :
     Algebra.discr R (basis a b) = discr a b := by
   simp [Algebra.discr_def, Matrix.det_fin_two, Algebra.traceMatrix_apply,
     Algebra.traceForm_apply, basis_apply_zero, basis_apply_one, trace_def, discr_def]
