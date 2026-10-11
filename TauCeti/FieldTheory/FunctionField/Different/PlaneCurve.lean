@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.MvPolynomial.PDeriv
+public import Mathlib.Algebra.Polynomial.Bivariate
 public import Mathlib.FieldTheory.RatFunc.AsPolynomial
-public import TauCeti.Algebra.MvPolynomial.FinTwo
 public import TauCeti.FieldTheory.FunctionField.Different.Derivative
-public import TauCeti.RingTheory.RegularLocalRing.Hypersurface
+import TauCeti.Algebra.MvPolynomial.FinTwo
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
+import TauCeti.RingTheory.RegularLocalRing.Hypersurface
 
 /-!
 # The different of a smooth affine plane curve over `k(x)`
@@ -103,7 +105,7 @@ theorem differentExponent_eq_ord_aeval_pderiv_one {g : MvPolynomial (Fin 2) k}
   have : IsIntegrallyClosed C :=
     MvPolynomial.isIntegrallyClosed_adjoin_singleton hint (hmin ▸ hgf) hsm
   have : IsFractionRing C F := IntermediateField.isFractionRing_algebra_adjoin_of_adjoin_eq_top
-    (by simpa using hint.tower_top.isAlgebraic) hgen
+    hgen
   have : Algebra.IsIntegral k[X] C := Algebra.IsIntegral.adjoin (by simpa using hint)
   have : IsDedekindDomain C := IsIntegralClosure.isDedekindDomain k[X] (RatFunc k) F C
   have hgenC : Algebra.adjoin k[X] {(⟨y, Algebra.self_mem_adjoin_singleton k[X] y⟩ : C)} = ⊤ :=

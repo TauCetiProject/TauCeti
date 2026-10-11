@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Different.Complementary
-public import TauCeti.FieldTheory.FunctionField.Different.Localization
 public import TauCeti.RingTheory.DedekindDomain.Different.Monogenic
+import TauCeti.FieldTheory.FunctionField.Different.Localization
 
 /-!
 # The different exponent and derivatives of generating equations
@@ -158,9 +158,9 @@ theorem differentExponent_eq_ord_aeval_derivative_minpoly
 section AffineModel
 
 variable {B : Type*} {C : Type*} [CommRing B] [IsDedekindDomain B] [Algebra B F]
-  [IsFractionRing B F] [CommRing C] [IsDedekindDomain C] [Algebra C F'] [IsFractionRing C F']
-  [Algebra B C] [Algebra B F'] [IsScalarTower B C F'] [IsScalarTower B F F']
-  [IsIntegralClosure C B F'] [Module.IsTorsionFree B C]
+  [IsFractionRing B F] [CommRing C] [Algebra C F'] [Algebra B C] [Algebra B F']
+  [IsScalarTower B C F'] [IsScalarTower B F F'] [IsIntegralClosure C B F']
+  [Module.IsTorsionFree B C]
 
 /-- **The different exponent from a generator of an affine model**: if `y` generates the integral
 closure `C` in `F'` of an affine model `B` of `F` as a `B`-algebra, then at every place `P'`
@@ -170,6 +170,9 @@ theorem differentExponent_eq_ord_aeval_derivative_minpoly_of_isIntegralClosure (
     (hC : ∀ c : C, algebraMap C F' c ∈ P'.integers) {y : C} (hy : Algebra.adjoin B {y} = ⊤) :
     (differentExponent k F P' : ℤ) =
       P'.ord (aeval (algebraMap C F' y) (derivative (minpoly F (algebraMap C F' y)))) := by
+  have : IsDomain C := (IsIntegralClosure.algebraMap_injective C B F').isDomain
+  have := IsIntegralClosure.isFractionRing_of_finite_extension B F F' C
+  have := IsIntegralClosure.isDedekindDomain B F F' C
   have hmap : algebraMap C F' (aeval y (derivative (minpoly B y))) =
       aeval (algebraMap C F' y) (derivative (minpoly F (algebraMap C F' y))) := by
     rw [minpoly.isIntegrallyClosed_eq_field_fractions F F'
