@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
+public import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Basic
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 import Mathlib.RingTheory.Flat.LocallyFree
 

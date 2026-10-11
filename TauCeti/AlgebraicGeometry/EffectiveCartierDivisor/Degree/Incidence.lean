@@ -73,8 +73,6 @@ theorem relativeEffectiveCartierDegreeSubfunctor_le_iff_eq {d : ℕ} {T : (Over 
       ((mem_relativeEffectiveCartierDegreeSubfunctor_obj_iff (f := f)).mp E.2).symm
   refine ⟨fun h ↦ Subtype.ext (Subtype.ext ?_), fun h ↦ h ▸ le_rfl⟩
   have := hD.isFinite
-  have := hD.flat
-  have := hE.flat
-  exact Scheme.IdealSheafData.eq_of_le_of_finrank_eq h (pullback.fst T.unop.hom f) hrank
+  exact (hD.le_iff_eq_of_finrank_eq hE hrank).mp h
 
 end TauCeti.AlgebraicGeometry
