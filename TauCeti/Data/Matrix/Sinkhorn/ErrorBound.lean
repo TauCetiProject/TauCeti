@@ -108,7 +108,7 @@ theorem hilbertProjectiveDist_le_div_sinkhornStep {K : Matrix ι κ ℝ}
 
 /-- **A posteriori column-factor error.** The column update is within the computable
 certificate of any positive exact scaling with the prescribed marginals. -/
-theorem hilbertProjectiveDist_sinkhornUpdate_le_errorBound {K : Matrix ι κ ℝ}
+theorem hilbertProjectiveDist_sinkhornUpdate_le_sinkhornErrorBound {K : Matrix ι κ ℝ}
     (hK : ∀ i j, 0 < K i j) {a : ι → ℝ} (ha : ∀ i, 0 < a i)
     {b : κ → ℝ} (hb : ∀ j, 0 < b j) {P : Matrix ι κ ℝ} {uStar : ι → ℝ}
     {vStar : κ → ℝ} (hP : IsDiagonalScaling P K uStar vStar)
@@ -127,7 +127,7 @@ theorem hilbertProjectiveDist_sinkhornUpdate_le_errorBound {K : Matrix ι κ ℝ
   exact mul_le_mul_of_nonneg_left herr (tanh_projectiveDiameter_div_four_nonneg K)
 
 /-- Every computed entry is at most `exp E` times the corresponding exact scaling entry. -/
-theorem sinkhornPlan_apply_le_exp_errorBound {K : Matrix ι κ ℝ}
+theorem sinkhornPlan_apply_le_exp_sinkhornErrorBound_mul {K : Matrix ι κ ℝ}
     (hK : ∀ i j, 0 < K i j) {a : ι → ℝ} (ha : ∀ i, 0 < a i)
     {b : κ → ℝ} (hb : ∀ j, 0 < b j) {P : Matrix ι κ ℝ} {uStar : ι → ℝ}
     {vStar : κ → ℝ} (hP : IsDiagonalScaling P K uStar vStar)
@@ -142,11 +142,11 @@ theorem sinkhornPlan_apply_le_exp_errorBound {K : Matrix ι κ ℝ}
     ((sum_sinkhornPlan_apply hK a hb hu i).trans (((hasMarginals_def P a b).mp hPm).1 i).symm)
     j).trans ?_
   exact mul_le_mul_of_nonneg_right
-    (exp_le_exp.mpr (hilbertProjectiveDist_sinkhornUpdate_le_errorBound hK ha hb hP hPm
+    (exp_le_exp.mpr (hilbertProjectiveDist_sinkhornUpdate_le_sinkhornErrorBound hK ha hb hP hPm
       huStar hvStar hu)) (hP.pos hK huStar hvStar i j).le
 
 /-- Every exact scaling entry is at most `exp E` times the corresponding computed entry. -/
-theorem le_exp_errorBound_mul_sinkhornPlan_apply {K : Matrix ι κ ℝ}
+theorem le_exp_sinkhornErrorBound_mul_sinkhornPlan_apply {K : Matrix ι κ ℝ}
     (hK : ∀ i j, 0 < K i j) {a : ι → ℝ} (ha : ∀ i, 0 < a i)
     {b : κ → ℝ} (hb : ∀ j, 0 < b j) {P : Matrix ι κ ℝ} {uStar : ι → ℝ}
     {vStar : κ → ℝ} (hP : IsDiagonalScaling P K uStar vStar)
@@ -161,7 +161,7 @@ theorem le_exp_errorBound_mul_sinkhornPlan_apply {K : Matrix ι κ ℝ}
       (sum_sinkhornPlan_apply hK a hb hu i).symm) j).trans ?_
   rw [hilbertProjectiveDist_comm]
   exact mul_le_mul_of_nonneg_right
-    (exp_le_exp.mpr (hilbertProjectiveDist_sinkhornUpdate_le_errorBound hK ha hb hP hPm
+    (exp_le_exp.mpr (hilbertProjectiveDist_sinkhornUpdate_le_sinkhornErrorBound hK ha hb hP hPm
       huStar hvStar hu))
     ((isDiagonalScaling_sinkhornPlan K a b u).pos hK (sinkhornStep_pos hK ha hb hu) hw i j).le
 
@@ -189,7 +189,7 @@ theorem sinkhornErrorBound_iterate_le {K : Matrix ι κ ℝ} (hK : ∀ i j, 0 < 
 
 /-- **Certified entrywise absolute error.** The right-hand side uses only the computed plan
 and one additional Sinkhorn step, not the exact scaling factors. -/
-theorem abs_sinkhornPlan_sub_le_errorBound {K : Matrix ι κ ℝ}
+theorem abs_sinkhornPlan_apply_sub_le_exp_sinkhornErrorBound_sub_one_mul {K : Matrix ι κ ℝ}
     (hK : ∀ i j, 0 < K i j) {a : ι → ℝ} (ha : ∀ i, 0 < a i)
     {b : κ → ℝ} (hb : ∀ j, 0 < b j) {P : Matrix ι κ ℝ} {uStar : ι → ℝ}
     {vStar : κ → ℝ} (hP : IsDiagonalScaling P K uStar vStar)
@@ -197,8 +197,8 @@ theorem abs_sinkhornPlan_sub_le_errorBound {K : Matrix ι κ ℝ}
     {u : ι → ℝ} (hu : ∀ i, 0 < u i) (i : ι) (j : κ) :
     |K.sinkhornPlan a b u i j - P i j| ≤
       (exp (sinkhornErrorBound K a b u) - 1) * K.sinkhornPlan a b u i j := by
-  have hup := sinkhornPlan_apply_le_exp_errorBound hK ha hb hP hPm huStar hvStar hu i j
-  have hlow := le_exp_errorBound_mul_sinkhornPlan_apply hK ha hb hP hPm huStar hvStar hu i j
+  have hup := sinkhornPlan_apply_le_exp_sinkhornErrorBound_mul hK ha hb hP hPm huStar hvStar hu i j
+  have hlow := le_exp_sinkhornErrorBound_mul_sinkhornPlan_apply hK ha hb hP hPm huStar hvStar hu i j
   have hexp : 1 ≤ exp (sinkhornErrorBound K a b u) :=
     one_le_exp_iff.mpr (sinkhornErrorBound_nonneg K a b u)
   rw [abs_sub_le_iff]
@@ -212,7 +212,7 @@ theorem abs_sinkhornPlan_sub_le_errorBound {K : Matrix ι κ ℝ}
 
 /-- **Certified total plan error.** The sum of absolute entry errors is at most the total
 marginal mass times `exp E - 1`. -/
-theorem sum_sum_abs_sinkhornPlan_sub_le_errorBound {K : Matrix ι κ ℝ}
+theorem sum_sum_abs_sinkhornPlan_apply_sub_le_exp_sinkhornErrorBound_sub_one_mul {K : Matrix ι κ ℝ}
     (hK : ∀ i j, 0 < K i j) {a : ι → ℝ} (ha : ∀ i, 0 < a i)
     {b : κ → ℝ} (hb : ∀ j, 0 < b j) {P : Matrix ι κ ℝ} {uStar : ι → ℝ}
     {vStar : κ → ℝ} (hP : IsDiagonalScaling P K uStar vStar)
@@ -227,13 +227,14 @@ theorem sum_sum_abs_sinkhornPlan_sub_le_errorBound {K : Matrix ι κ ℝ}
   calc _ ≤ ∑ i, ∑ j, (exp (sinkhornErrorBound K a b u) - 1) *
       K.sinkhornPlan a b u i j :=
         Finset.sum_le_sum fun i _ ↦ Finset.sum_le_sum fun j _ ↦
-          abs_sinkhornPlan_sub_le_errorBound hK ha hb hP hPm huStar hvStar hu i j
+          abs_sinkhornPlan_apply_sub_le_exp_sinkhornErrorBound_sub_one_mul
+            hK ha hb hP hPm huStar hvStar hu i j
     _ = _ := by simp only [← Finset.mul_sum, sum_sinkhornPlan_apply hK a hb hu]
 
 /-- **Certified column residual.** For positive marginals of equal mass, the sum of absolute
 column-marginal errors is bounded by the computable a posteriori certificate. Row marginals
 are already exact by `Matrix.sum_sinkhornPlan_apply`. -/
-theorem sum_abs_sum_sinkhornPlan_sub_le_errorBound {K : Matrix ι κ ℝ}
+theorem sum_abs_sum_sinkhornPlan_apply_sub_le_exp_sinkhornErrorBound_sub_one_mul {K : Matrix ι κ ℝ}
     (hK : ∀ i j, 0 < K i j) {a : ι → ℝ} (ha : ∀ i, 0 < a i)
     {b : κ → ℝ} (hb : ∀ j, 0 < b j) (hmass : ∑ i, a i = ∑ j, b j)
     {u : ι → ℝ} (hu : ∀ i, 0 < u i) :
@@ -249,6 +250,7 @@ theorem sum_abs_sum_sinkhornPlan_sub_le_errorBound {K : Matrix ι κ ℝ}
     _ ≤ ∑ j, ∑ i, |K.sinkhornPlan a b u i j - P i j| :=
           Finset.sum_le_sum fun j _ ↦ Finset.abs_sum_le_sum_abs _ _
     _ = ∑ i, ∑ j, |K.sinkhornPlan a b u i j - P i j| := Finset.sum_comm
-    _ ≤ _ := sum_sum_abs_sinkhornPlan_sub_le_errorBound hK ha hb hP hPm huStar hvStar hu
+    _ ≤ _ := sum_sum_abs_sinkhornPlan_apply_sub_le_exp_sinkhornErrorBound_sub_one_mul
+      hK ha hb hP hPm huStar hvStar hu
 
 end TauCeti
