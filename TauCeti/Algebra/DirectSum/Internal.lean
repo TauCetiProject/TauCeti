@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.DirectSum.Decomposition
+public import Mathlib.Algebra.GradedMulAction
 public import Mathlib.RingTheory.Finiteness.Basic
 import TauCeti.Order.CompactlyGenerated
 
@@ -34,8 +35,11 @@ The file also specializes the compactness bound
 `TauCeti.finite_ne_bot_of_iSupIndep_of_isCompactElement` to submodules,
 `TauCeti.Submodule.finite_ne_bot_of_iSupIndep_of_fg`.
 
-Finally, `DirectSum.IsInternal.iSup_inf_eq_of_component_mem` restricts an internal decomposition
-to any submodule that contains the canonical components of each of its elements.
+`DirectSum.IsInternal.iSup_inf_eq_of_component_mem` restricts an internal decomposition to any
+submodule that contains the canonical components of each of its elements.
+
+Finally, `DirectSum.coe_decompose_smul_add_of_right_mem` computes the components of a scalar
+action on a homogeneous element when the scalar and module decompositions are compatible.
 -/
 
 public section
@@ -383,3 +387,29 @@ theorem iSup_inf_eq_of_component_mem
     Submodule.mem_iSup_of_mem i ⟨hp m hm i, (e.symm m i).2⟩
 
 end DirectSum.IsInternal
+
+namespace DirectSum
+
+variable {ι A M σA σM : Type*} [DecidableEq ι] [Add ι] [IsRightCancelAdd ι]
+  [Semiring A] [AddCommMonoid M] [Module A M]
+  [SetLike σA A] [AddSubmonoidClass σA A] (𝒜 : ι → σA) [Decomposition 𝒜]
+  [SetLike σM M] [AddSubmonoidClass σM M] (ℳ : ι → σM) [Decomposition ℳ]
+  [SetLike.GradedSMul 𝒜 ℳ]
+
+/-- For compatible decompositions of a semiring and its module, the degree-`i + j` component of
+`a • x`, for `x` homogeneous of degree `j`, is the degree-`i` component of `a` acting on `x`.
+Only right cancellation of addition on the degrees is needed. -/
+theorem coe_decompose_smul_add_of_right_mem {a : A} {x : M} {i j : ι} (hx : x ∈ ℳ j) :
+    (decompose ℳ (a • x) (i + j) : M) = (decompose 𝒜 a i : A) • x := by
+  induction a using Decomposition.inductionOn 𝒜 with
+  | zero => simp
+  | @homogeneous k a =>
+    have hmem : (a : A) • x ∈ ℳ (k + j) := SetLike.GradedSMul.smul_mem a.2 hx
+    by_cases hki : k = i
+    · subst k
+      rw [decompose_of_mem_same ℳ hmem, decompose_of_mem_same 𝒜 a.2]
+    · rw [decompose_of_mem_ne ℳ hmem (fun h ↦ hki (add_right_cancel h)),
+        decompose_of_mem_ne 𝒜 a.2 hki, zero_smul]
+  | add a b ha hb => simp [add_smul, ha, hb]
+
+end DirectSum
