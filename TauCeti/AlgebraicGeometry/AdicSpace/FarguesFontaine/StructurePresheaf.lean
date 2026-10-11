@@ -66,7 +66,8 @@ rational subsets covering `𝒴`, it suffices to know that `𝒪` is a sheaf on 
   Frobenius on `q_* 𝒪_𝒴`.
 * `TauCeti.FarguesFontaine.isClosedEmbedding_spaXPresheafι_app` and
   `TauCeti.FarguesFontaine.range_spaXPresheafι_app` : on each open `U ⊆ 𝒳`, the inclusion
-  `𝒪_𝒳(U) → 𝒪_𝒴(q⁻¹U)` is a closed embedding onto the Frobenius-invariant sections.
+  `𝒪_𝒳(U) → 𝒪_𝒴(q⁻¹U)` is a closed embedding onto the Frobenius-invariant sections, and
+  `TauCeti.FarguesFontaine.mono_spaXPresheafι_app` records that it is a monomorphism.
 * `TauCeti.FarguesFontaine.isSheaf_spaXPresheaf` : `𝒪_𝒳` is a sheaf when `𝒪_𝒴` is.
 
 ## References
@@ -344,6 +345,14 @@ private theorem exists_homeomorph_eqLocus (U : (Opens (spaX hI))ᵒᵖ) :
     WalkingParallelPair.zero
   refine ⟨TopCat.homeoOfIso ((forget₂ _root_.TopCommRingCat TopCat).mapIso e), funext fun x ↦ ?_⟩
   exact (ConcreteCategory.congr_hom he x).symm
+
+/-- On each open `U ⊆ 𝒳`, the inclusion `𝒪_𝒳(U) → 𝒪_𝒴(q⁻¹U)` is a monomorphism: evaluation at `U`
+preserves the equalizer defining `𝒪_𝒳`. -/
+instance mono_spaXPresheafι_app (U : (Opens (spaX hI))ᵒᵖ) :
+    Mono ((spaXPresheafι P hI).app U) :=
+  Fork.IsLimit.mono (isLimitMapConeForkEquiv _ _
+    (isLimitOfPreserves ((evaluation _ CompleteSeparatedTopCommRingCat.{v}).obj U)
+      (isLimitSpaXPresheafFork P hI)))
 
 /-- **The sections of `𝒪_𝒳` embed in those of `𝒪_𝒴`**: on each open `U ⊆ 𝒳`, the inclusion
 `𝒪_𝒳(U) → 𝒪_𝒴(q⁻¹U)` is a closed embedding. -/
