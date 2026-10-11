@@ -44,8 +44,8 @@ ordinary interval integrals.
 * `TauCeti.countable_not_hasDerivAt_toReal_moreauYosida`: this derivative formula holds at all
   but countably many times of an interval.
 * `TauCeti.moreauYosida_eq_add_integral`: `φ_τ(x) = φ_σ(x) + ∫_τ^σ d(x, y_r)² / (2r²) dr`.
-* `TauCeti.tendsto_moreauYosida_nhdsGT_zero`: for `φ` lower semicontinuous at `x`, `φ_τ(x) → φ(x)`
-  as `τ → 0⁺`.
+* `TauCeti.tendsto_moreauYosida_nhdsGT_zero`: for `φ` lower semicontinuous at `x` with
+  `φ_σ(x) ≠ ⊥` for some `σ > 0`, `φ_τ(x) → φ(x)` as `τ → 0⁺`.
 * `TauCeti.moreauYosida_add_integral_eq`: the De Giorgi energy identity
   `φ_σ(x) + ∫₀^σ d(x, y_r)² / (2r²) dr = φ(x)`, with
   `TauCeti.intervalIntegrable_edist_sq_div_of_forall_mem_moreauYosidaResolvent` for the
