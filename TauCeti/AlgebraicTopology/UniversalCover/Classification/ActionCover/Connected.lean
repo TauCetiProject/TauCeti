@@ -31,6 +31,7 @@ variable {X : Type u} [TopologicalSpace X] [PathConnectedSpace X]
   (x₀ : X) (A : Type u) [MulAction (FundamentalGroup X x₀) A]
   [TopologicalSpace A] [DiscreteTopology A]
 
+/-- The monodromy action on the fibre of the associated action cover. -/
 local instance actionCoverFiberMulAction :
     MulAction (FundamentalGroup X x₀) (actionCoverProj x₀ A ⁻¹' {x₀}) :=
   (isCoveringMap_actionCoverProj x₀ A).fundamentalGroupMulAction x₀
