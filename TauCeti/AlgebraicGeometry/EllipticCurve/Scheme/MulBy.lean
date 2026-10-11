@@ -5,12 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.MapsInfinity
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.FunctionField
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.OfWeierstrass
 public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Degree
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Addition.BaseChange
+import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Integral
+import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Smooth
+import TauCeti.AlgebraicGeometry.Morphisms.Flat.Dominant
+import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.Smooth
 
 /-!
 # Multiplication by an integer on the projective Weierstrass model
@@ -31,7 +37,12 @@ is dominant, and its pullback of rational functions `[n]^* : K(E) ⟶ K(E)`
 (`AlgebraicGeometry.Scheme.Hom.functionFieldMap`) is the equation-level pullback, read through the
 identification `projModelFunctionFieldEquiv` of `K(E)` with `W.toAffine.FunctionField`. This
 identifies the extension of function fields induced by the scheme `[n]` with the one whose degree
-`n²` is computed from the equations (`TauCeti.Isogeny.degree_mulByIntIsogenyOfNeZero`).
+`n²` is computed from the equations (`TauCeti.Isogeny.degree_mulByIntIsogenyOfNeZero`), so
+`[K(E) : [n]^* K(E)] = n²`. Over a field `[n]` is also flat, being a dominant morphism to a curve
+smooth over the field. For a finite flat dominant morphism of integral schemes the rank at every
+point is the degree of the function-field extension
+(`AlgebraicGeometry.Scheme.Hom.finrank_eq_finrank_fieldRange_functionFieldMap`), so together with
+the finiteness of `[n]` these compute the rank of `[n]` over a field as `n²`.
 
 ## Main definitions
 
@@ -48,6 +59,9 @@ identifies the extension of function fields induced by the scheme `[n]` with the
 * `WeierstrassCurve.projModelFunctionFieldEquiv_mulByFunctionFieldPullback`: over a field, for
   `n ≠ 0`, the pullback of rational functions along `[n]` is the equation-level pullback
   `(TauCeti.Isogeny.mulByIntIsogenyOfNeZero W hn).fieldPullback`.
+* `WeierstrassCurve.flat_projModelMulBy`: over a field, for `n ≠ 0`, `[n]` is flat.
+* `WeierstrassCurve.finrank_fieldRange_mulByFunctionFieldPullback`: over a field, for `n ≠ 0`,
+  `[K(E) : [n]^* K(E)] = n²`.
 
 ## References
 
@@ -262,6 +276,33 @@ theorem projModelFunctionFieldEquiv_mulByFunctionFieldPullback (n : ℤ) [NeZero
   rw [mulByFunctionFieldPullback, ← ((W.projModelMulBy n).eq_functionFieldMap_iff _).mpr
     (W.SpecMap_comp_fromSpecStalk_genericPoint (NeZero.ne n))]
   simp
+
+/-- Over a field, multiplication by a nonzero integer on the projective Weierstrass model is
+flat, as is every dominant morphism to a curve smooth over a field. -/
+instance flat_projModelMulBy (n : ℤ) [NeZero n] : Flat (W.projModelMulBy n) :=
+  (W.projModelMulBy n).flat_of_isDominant_of_smooth W.projModelOver
+
+/-- **The degree of the function-field extension of `[n]` is `n²`.** Over a field, for `n ≠ 0`,
+the function field `K(E)` of the projective Weierstrass model `E` has degree `n²` over its
+image `[n]^* K(E)` under the pullback of rational functions along multiplication by `n`. Through
+`projModelFunctionFieldEquiv`, this is the degree of the equation-level multiplication by `n`
+(`TauCeti.Isogeny.degree_mulByIntIsogenyOfNeZero`). -/
+@[simp]
+theorem finrank_fieldRange_mulByFunctionFieldPullback (n : ℤ) [NeZero n] :
+    Module.finrank (W.mulByFunctionFieldPullback n).fieldRange W.projModel.functionField =
+      n.natAbs ^ 2 := by
+  set φ := TauCeti.Isogeny.mulByIntIsogenyOfNeZero W (NeZero.ne n)
+  rw [← TauCeti.Isogeny.degree_mulByIntIsogenyOfNeZero W (NeZero.ne n),
+    TauCeti.Isogeny.degree_def]
+  -- `projModelFunctionFieldEquiv` carries `[n]^* K(E)` onto the image of the equation-level
+  -- pullback.
+  refine Algebra.finrank_eq_of_equiv_equiv
+    (((W.mulByFunctionFieldPullback n).rangeRestrictFieldEquiv.symm.trans
+      W.projModelFunctionFieldEquiv).trans φ.fieldPullback.equivFieldRange.toRingEquiv)
+    W.projModelFunctionFieldEquiv ?_
+  -- both sides send `[n]^* f` to the image of `[n]^* f` under `projModelFunctionFieldEquiv`
+  ext x
+  simp [φ, ← projModelFunctionFieldEquiv_mulByFunctionFieldPullback, Subfield.algebraMap_ofSubfield]
 
 end GenericPoint
 
