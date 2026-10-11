@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.SpinorNormImage
 import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.Witt.Decomposition
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Proper
-import TauCeti.Topology.Algebra.QuadraticForm.OrthogonalGroup.Compact
+import TauCeti.Topology.Algebra.QuadraticForm.OrthogonalGroup.Compact.Basic
 
 /-!
 # Low-rank compact-open reference families

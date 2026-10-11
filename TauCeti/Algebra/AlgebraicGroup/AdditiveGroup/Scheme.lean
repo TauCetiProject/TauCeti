@@ -50,9 +50,6 @@ affine-space APIs.
 * `TauCeti.AdditiveGroup.groupScheme`: the additive group scheme over `Spec R`.
 * `TauCeti.AdditiveGroup.groupSchemeAffineSpaceIso`: its canonical identification with affine
   one-space over the base.
-* `TauCeti.AdditiveGroup.groupScheme_one_left`,
-  `TauCeti.AdditiveGroup.groupScheme_mul_left`, and
-  `TauCeti.AdditiveGroup.groupScheme_inv_left`: the underlying scheme maps of its operations.
 * `TauCeti.AdditiveGroup.isAffine_groupScheme` and
   `TauCeti.AdditiveGroup.locallyOfFinitePresentation_groupScheme`: affineness and local finite
   presentation. Local finite type follows by instance search.
@@ -182,53 +179,6 @@ lemma groupScheme_X_hom :
   unfold groupScheme
   convert hopfSpec_obj_X_hom R (coordinateHopfAlgebra R) using 1
 
-/-- The source of multiplication is the standard affine fibre product of two copies of the
-coordinate spectrum over `Spec R`. -/
-@[simp↓]
-lemma groupScheme_tensor_X_left :
-    ((groupScheme R).X ⊗ (groupScheme R).X).left =
-      Limits.pullback
-        (Spec.map (CommRingCat.ofHom (algebraMap R (SymmetricAlgebra R R))))
-        (Spec.map (CommRingCat.ofHom (algebraMap R (SymmetricAlgebra R R)))) := by
-  unfold groupScheme
-  convert hopfSpec_obj_tensor_X_left R (coordinateHopfAlgebra R) using 1
-
-/-- The unit of the additive group scheme is induced contravariantly by the symmetric-algebra
-counit. -/
-@[simp]
-lemma groupScheme_one_left :
-    η[(groupScheme R).X].left =
-      Spec.map (CommRingCat.ofHom
-        (Bialgebra.counitAlgHom R (SymmetricAlgebra R R))) ≫
-      eqToHom (groupScheme_X_left R).symm := by
-  unfold groupScheme
-  convert hopfSpec_obj_one_left R (coordinateHopfAlgebra R) using 1
-
-/-- Multiplication on the additive group scheme is induced contravariantly by the primitive
-comultiplication. The first two maps identify its source with the spectrum of the tensor square. -/
-@[simp]
-lemma groupScheme_mul_left :
-    μ[(groupScheme R).X].left =
-      eqToHom (groupScheme_tensor_X_left R) ≫
-        (pullbackSpecIso R (SymmetricAlgebra R R) (SymmetricAlgebra R R)).hom ≫
-        Spec.map (CommRingCat.ofHom
-          (Bialgebra.comulAlgHom R (SymmetricAlgebra R R))) ≫
-        eqToHom (groupScheme_X_left R).symm := by
-  unfold groupScheme
-  convert hopfSpec_obj_mul_left R (coordinateHopfAlgebra R) using 1
-
-/-- Inversion on the additive group scheme is induced contravariantly by the antipode
-`x ↦ -x`. -/
-@[simp]
-lemma groupScheme_inv_left :
-    ι[(groupScheme R).X].left =
-      eqToHom (groupScheme_X_left R) ≫
-        Spec.map (CommRingCat.ofHom
-          (HopfAlgebra.antipodeAlgHom R (SymmetricAlgebra R R))) ≫
-        eqToHom (groupScheme_X_left R).symm := by
-  unfold groupScheme
-  convert hopfSpec_obj_inv_left R (coordinateHopfAlgebra R) using 1
-
 /-- The underlying scheme isomorphism from the additive group to affine one-space. -/
 private noncomputable def groupSchemeAffineSpaceIsoLeft :
     (groupScheme R).X.left ≅
@@ -302,7 +252,8 @@ noncomputable def groupSchemePointMulEquiv :
     (coordinateHopfAlgebra R) A (groupScheme_def R)
 
 /-- The underlying map of the spectrum point associated to an algebra point. -/
-@[simp]
+-- Not `@[simp]`: `simp` rewrites with it but then cannot close its own statement, since the two
+-- `eqToHom` endpoints come out in different forms; use it by name.
 lemma groupSchemePointMulEquiv_apply_left
     (f : WithConv (SymmetricAlgebra R R →ₐ[R] A)) :
     (groupSchemePointMulEquiv A f).left =

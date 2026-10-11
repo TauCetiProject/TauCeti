@@ -161,6 +161,14 @@ theorem mem_sIdeles_iff {x : IdeleGroup (𝓞 L) L} :
   simp [sIdeles]
 
 variable (S) in
+/-- An idele whose finite components are all `1` is an `S`-idele. -/
+theorem ofInfiniteIdele_mem_sIdeles (x : (InfiniteAdeleRing L)ˣ) :
+    IdeleGroup.ofInfiniteIdele (𝓞 L) L x ∈ sIdeles L S :=
+  mem_sIdeles_iff.2 fun w _ ↦ by
+    rw [coe_ideleFiniteCoord, IdeleGroup.coe_ofInfiniteIdele]
+    exact map_one _
+
+variable (S) in
 /-- A principal idele is an `S`-idele exactly when it comes from an `S`-unit of `L`, a unit at
 every finite place of `L` not above `S`. -/
 theorem unitEmbedding_mem_sIdeles_iff (a : Lˣ) :
