@@ -54,7 +54,7 @@ def goodReductionSymbol (_W : WeierstrassCurve K)
     TauCeti.ReductionSymbol :=
   TauCeti.ReductionSymbol.I 0
 
-/-- The good-reduction symbol is `I₀`. -/
+/-- The simplification rule evaluating the good-reduction symbol to `I₀`. -/
 @[simp]
 theorem goodReductionSymbol_eq (W : WeierstrassCurve K)
     [WeierstrassCurve.HasGoodReduction R W] :
@@ -67,7 +67,8 @@ noncomputable def multiplicativeReductionSymbol (W : WeierstrassCurve K) [W.IsEl
     [_hmult : WeierstrassCurve.HasMultiplicativeReduction R W] : TauCeti.ReductionSymbol :=
   TauCeti.ReductionSymbol.I (W.localMinimalDiscriminantValuation R)
 
-/-- The multiplicative-reduction symbol has index `v(Δ_min)`. -/
+/-- The simplification rule identifying the multiplicative-reduction symbol with `Iₙ`, where
+`n = v(Δ_min)`. -/
 @[simp]
 theorem multiplicativeReductionSymbol_eq (W : WeierstrassCurve K) [W.IsElliptic]
     [WeierstrassCurve.HasMultiplicativeReduction R W] :
