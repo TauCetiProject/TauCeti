@@ -113,20 +113,16 @@ variable (A) in
 @[simp]
 theorem ofPolyPoint_constPolyPoint (g : WithConv (H →ₐ[R] A)) :
     ofPolyPoint A (constPolyPoint A g) = constPoint A g := by
-  have h : (Polynomial.toLaurentAlg.restrictScalars R).comp
-      (IsScalarTower.toAlgHom R A (Polynomial A)) =
-      IsScalarTower.toAlgHom R A (LaurentPolynomial A) := by ext a; simp
-  rw [ofPolyPoint, constPolyPoint, constPoint, ← MonoidHom.comp_apply, ← AlgHom.mapValue_comp, h]
+  ext h
+  simp [ofPolyPoint_apply, constPolyPoint_apply, constPoint_apply]
 
 variable (A) in
 /-- A constant point over `A[X]` evaluates at the origin to the point it came from. -/
 @[simp]
 theorem evalZeroPoint_constPolyPoint (g : WithConv (H →ₐ[R] A)) :
     evalZeroPoint A (constPolyPoint A g) = g := by
-  have h : ((Polynomial.aeval (0 : A)).restrictScalars R).comp
-      (IsScalarTower.toAlgHom R A (Polynomial A)) = AlgHom.id R A := by ext a; simp
-  rw [evalZeroPoint, constPolyPoint, ← MonoidHom.comp_apply, ← AlgHom.mapValue_comp, h,
-    AlgHom.mapValue_id, MonoidHom.id_apply]
+  ext h
+  simp [evalZeroPoint_apply, constPolyPoint_apply]
 
 /-! ### Multiplicative-group morphisms on points -/
 
@@ -200,21 +196,16 @@ theorem mapValue_genericPoint :
 theorem mapValue_ofPolyPoint (F : WithConv (H →ₐ[R] Polynomial A)) :
     AlgHom.mapValue (AddMonoidAlgebra.mapAlgHom ℤ φ) (ofPolyPoint A F) =
       ofPolyPoint B (AlgHom.mapValue (Polynomial.mapAlgHom φ) F) := by
-  have h : (AddMonoidAlgebra.mapAlgHom ℤ φ).comp (Polynomial.toLaurentAlg.restrictScalars R) =
-      (Polynomial.toLaurentAlg.restrictScalars R).comp (Polynomial.mapAlgHom φ) := by
-    ext a <;> simp
-  rw [ofPolyPoint, ofPolyPoint, ← MonoidHom.comp_apply, ← AlgHom.mapValue_comp, h,
-    AlgHom.mapValue_comp, MonoidHom.comp_apply]
+  ext h : 2
+  simp [ofPolyPoint_apply]
+  induction F.ofConv h using Polynomial.induction_on' <;> simp_all
 
 /-- Evaluation at the origin is natural in the value algebra. -/
 theorem mapValue_evalZeroPoint (F : WithConv (H →ₐ[R] Polynomial A)) :
     AlgHom.mapValue φ (evalZeroPoint A F) =
       evalZeroPoint B (AlgHom.mapValue (Polynomial.mapAlgHom φ) F) := by
-  have h : φ.comp ((Polynomial.aeval (0 : A)).restrictScalars R) =
-      ((Polynomial.aeval (0 : B)).restrictScalars R).comp (Polynomial.mapAlgHom φ) := by
-    ext a <;> simp
-  rw [evalZeroPoint, evalZeroPoint, ← MonoidHom.comp_apply, ← AlgHom.mapValue_comp, h,
-    AlgHom.mapValue_comp, MonoidHom.comp_apply]
+  ext h
+  simp [evalZeroPoint_apply]
 
 end Naturality
 
