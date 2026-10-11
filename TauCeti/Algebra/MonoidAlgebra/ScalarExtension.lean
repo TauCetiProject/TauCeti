@@ -20,46 +20,47 @@ The construction uses Mathlib's `Finsupp.mapRange.linearMap` and `IsBaseChange.f
 
 public noncomputable section
 
-namespace TauCeti.MonoidAlgebra
+namespace TauCeti
 
 variable (R S : Type*) [CommSemiring R] [CommSemiring S] [Algebra R S] (X : Type*)
 
 /-- Extend every coefficient along `R → S` in the free module on `X`. -/
-def scalarMap : MonoidAlgebra R X →ₗ[R] MonoidAlgebra S X :=
+def monoidAlgebraScalarMap : MonoidAlgebra R X →ₗ[R] MonoidAlgebra S X :=
   (MonoidAlgebra.coeffLinearEquiv R).symm.toLinearMap ∘ₗ
     Finsupp.mapRange.linearMap (Algebra.linearMap R S) ∘ₗ
       (MonoidAlgebra.coeffLinearEquiv R).toLinearMap
 
 /-- The coefficients of scalar extension are the images of the original coefficients. -/
 @[simp]
-theorem coeff_scalarMap (v : MonoidAlgebra R X) (x : X) :
-    (scalarMap R S X v).coeff x = algebraMap R S (v.coeff x) := by
-  simp [scalarMap]
+theorem coeff_monoidAlgebraScalarMap (v : MonoidAlgebra R X) (x : X) :
+    (monoidAlgebraScalarMap R S X v).coeff x = algebraMap R S (v.coeff x) := by
+  simp [monoidAlgebraScalarMap]
 
 /-- Scalar extension sends a basis vector to the same basis vector with extended coefficient. -/
 @[simp]
-theorem scalarMap_single (x : X) (r : R) :
-    scalarMap R S X (MonoidAlgebra.single x r) = MonoidAlgebra.single x (algebraMap R S r) := by
+theorem monoidAlgebraScalarMap_single (x : X) (r : R) :
+    monoidAlgebraScalarMap R S X (MonoidAlgebra.single x r) =
+      MonoidAlgebra.single x (algebraMap R S r) := by
   classical
   ext y
   by_cases h : x = y <;> simp [h]
 
 /-- The free module on `X` commutes with extension of scalars. -/
-theorem isBaseChange_scalarMap : IsBaseChange S (scalarMap R S X) := by
+theorem isBaseChange_monoidAlgebraScalarMap : IsBaseChange S (monoidAlgebraScalarMap R S X) := by
   have h := (IsBaseChange.linearMap R S).finsuppPow X
   exact (IsBaseChange.iff_of_equiv_comm
     (MonoidAlgebra.coeffLinearEquiv R).symm
     (MonoidAlgebra.coeffLinearEquiv S).symm
-    (LinearMap.ext fun v => by simp [scalarMap])).mp h
+    (LinearMap.ext fun v => by simp [monoidAlgebraScalarMap])).mp h
 
 /-- Scalar extension preserves augmentation, that is, the sum of all coefficients. -/
 @[simp]
-theorem sumCoords_scalarMap (v : MonoidAlgebra R X) :
-    (MonoidAlgebra.basis X S).sumCoords (scalarMap R S X v) =
+theorem sumCoords_monoidAlgebraScalarMap (v : MonoidAlgebra R X) :
+    (MonoidAlgebra.basis X S).sumCoords (monoidAlgebraScalarMap R S X v) =
       algebraMap R S ((MonoidAlgebra.basis X R).sumCoords v) := by
   induction v using MonoidAlgebra.induction_linear with
   | zero => simp
   | add v w hv hw => simp only [map_add, hv, hw]
   | single x r => simp
 
-end TauCeti.MonoidAlgebra
+end TauCeti
