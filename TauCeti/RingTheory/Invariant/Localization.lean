@@ -44,6 +44,7 @@ quotient `Spec A ⟶ Spec Aᴳ` for arbitrary target schemes.
 ## Main results
 
 * `TauCeti.FixedPoints.smul_algebraMap_localization`: `A → M⁻¹A` is `G`-equivariant.
+* `TauCeti.FixedPoints.smul_mk'`: `G` acts on a fraction `a / s` through its numerator.
 * `TauCeti.FixedPoints.isLocalization`: for finite `G`, `(M⁻¹A)ᴳ` is the localization of `Aᴳ`
   at `M`.
 * `TauCeti.FixedPoints.localRingHom_injective`: for finite `G`, `(Aᴳ)_P → A_Q` is injective.
@@ -92,12 +93,28 @@ noncomputable instance instMulSemiringActionLocalization :
     MulSemiringAction G (Localization (Algebra.algebraMapSubmonoid A M)) :=
   MulSemiringAction.compHom _ (localizationRingAut M)
 
+/-- `localizationRingAut M g` is the action of `g` on `M⁻¹A`. -/
+theorem localizationRingAut_apply (g : G) (x : Localization (Algebra.algebraMapSubmonoid A M)) :
+    localizationRingAut M g x = g • x :=
+  rfl
+
 /-- The action of `G` on `M⁻¹A` extends the action on `A`. -/
 @[simp]
 theorem smul_algebraMap_localization (g : G) (a : A) :
     g • algebraMap A (Localization (Algebra.algebraMapSubmonoid A M)) a =
       algebraMap A (Localization (Algebra.algebraMapSubmonoid A M)) (g • a) :=
   IsLocalization.ringEquivOfRingEquiv_eq (map_algebraMapSubmonoid_toRingEquiv M g) a
+
+/-- The action of `G` on `M⁻¹A` on fractions: `g • (a / s) = (g • a) / s`, since the
+denominator `s` is invariant. -/
+@[simp]
+theorem smul_mk' (g : G) (a : A) (s : Algebra.algebraMapSubmonoid A M) :
+    g • IsLocalization.mk' (Localization (Algebra.algebraMapSubmonoid A M)) a s =
+      IsLocalization.mk' _ (g • a) s := by
+  obtain ⟨m, -, hm⟩ := s.2
+  have hs : g • (s : A) = s := hm ▸ m.2 g
+  rw [IsLocalization.eq_mk'_iff_mul_eq, ← hs, ← smul_algebraMap_localization,
+    ← smul_algebraMap_localization, ← smul_mul', IsLocalization.mk'_spec]
 
 /-- The localization map `A → M⁻¹A` sends invariants to invariants. -/
 theorem algebraMap_mem_fixedPoints (a : FixedPoints.subring A G) :
