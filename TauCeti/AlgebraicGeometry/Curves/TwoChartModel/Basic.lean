@@ -59,6 +59,9 @@ two charts, and that for transcendental `x` its function field is `F` as a `k`-a
   overlap.
 * the instance `IsIntegral (twoChartModel hF hx)`: the scheme is integral.
 * the instance `CompactSpace (twoChartModel hF hx)`: the scheme is quasi-compact.
+* `TauCeti.AlgebraicGeometry.twoChartModel.fromSpec_isAffineOpen_image_ιFinite_top`: the
+  canonical morphism from the spectrum of the sections of the finite chart factors through the
+  chart.
 * `TauCeti.AlgebraicGeometry.twoChartModel.functionFieldEquiv_germToFunctionField`: the
   isomorphism `k(X) ≃ F` sends the germ of a function on the finite chart to that function.
 
@@ -332,6 +335,13 @@ noncomputable def finiteChartSectionsEquiv :
       holomorphyRing {P : Place k F | x ∈ P.integers} :=
   ((ιFinite hF hx).appIso ⊤ ≪≫ Scheme.ΓSpecIso _).commRingCatIsoToRingEquiv
 
+/-- `TauCeti.AlgebraicGeometry.twoChartModel.finiteChartSectionsEquiv` restricts a function on the
+finite chart along the chart and reads it as an element of `𝒪_x`. -/
+theorem finiteChartSectionsEquiv_apply (a : Γ(twoChartModel hF hx, ιFinite hF hx ''ᵁ ⊤)) :
+    finiteChartSectionsEquiv hF hx a =
+      (Scheme.ΓSpecIso _).hom (((ιFinite hF hx).appIso ⊤).hom a) :=
+  (rfl)
+
 /-- On the finite chart, the functions on `Spec k` pulled back along the structure morphism are
 the constants of `𝒪_x`. -/
 @[simp]
@@ -355,6 +365,22 @@ theorem finiteChartSectionsEquiv_appLE (a : Γ(Spec (.of k), ⊤)) :
   intro e
   rw [show Scheme.Hom.appLE _ ⊤ ⊤ e = Scheme.Hom.appTop _ from Scheme.Hom.appLE_eq_app _,
     Scheme.ΓSpecIso_naturality, Iso.inv_hom_id_assoc]
+
+/-- The canonical morphism from the spectrum of the sections of the finite chart is `Spec` of the
+identification of these sections with `𝒪_x`, followed by the chart inclusion. -/
+theorem fromSpec_isAffineOpen_image_ιFinite_top :
+    (isAffineOpen_image_ιFinite_top hF hx).fromSpec =
+      Spec.map (CommRingCat.ofHom (finiteChartSectionsEquiv hF hx).symm.toRingHom) ≫
+        ιFinite hF hx := by
+  have h := IsAffineOpen.SpecMap_appLE_fromSpec (ιFinite hF hx)
+    (isAffineOpen_image_ιFinite_top hF hx) (isAffineOpen_top _)
+    (Scheme.Hom.preimage_image_eq _ _).ge
+  rw [IsAffineOpen.fromSpec_top, Scheme.isoSpec_Spec_inv, ← Scheme.Hom.appIso_hom'] at h
+  -- By definition, the inverse of `finiteChartSectionsEquiv` is the inverse of the isomorphism
+  -- `Γ(X, ιFinite ''ᵁ ⊤) ≅ Γ(Spec 𝒪_x, ⊤) ≅ 𝒪_x`.
+  change _ = Spec.map ((ιFinite hF hx).appIso ⊤ ≪≫ Scheme.ΓSpecIso _).inv ≫ _
+  rw [Iso.trans_inv, Spec.map_comp, Category.assoc, ← h, ← Spec.map_comp_assoc,
+    Iso.hom_inv_id, Spec.map_id, Category.id_comp]
 
 variable {hF hx}
 
