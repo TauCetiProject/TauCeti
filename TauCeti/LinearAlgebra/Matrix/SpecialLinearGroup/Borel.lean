@@ -165,14 +165,8 @@ theorem toGL2Borel_injective : Function.Injective (toGL2Borel (R := R)) :=
   MonoidHom.restrict_injective _ Matrix.SpecialLinearGroup.toGL_injective
 
 /-- The upper-left diagonal entry of an `SL₂` Borel matrix, bundled as a unit. -/
-def diag : SL2Borel R →* Rˣ where
-  toFun g := (GL2Borel.diag (toGL2Borel g)).1
-  map_one' := by
-    rw [map_one, map_one]
-    rfl
-  map_mul' g h := by
-    rw [map_mul, map_mul]
-    rfl
+def diag : SL2Borel R →* Rˣ :=
+  (MonoidHom.fst Rˣ Rˣ).comp (GL2Borel.diag.comp toGL2Borel)
 
 /-- The value of the diagonal parameter is the upper-left matrix entry. -/
 @[simp]

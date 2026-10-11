@@ -165,6 +165,21 @@ theorem property_of_elementaryCollapsesTo {p : _root_.PreAbstractSimplicialCompl
   | refl => exact hK
   | tail _ hBC ih => exact hp hBC ih
 
+/-- A complex that collapses to a complex with finitely many faces also has finitely many
+faces: each elementary collapse removes just its free pair. -/
+theorem finite_faces (h : CollapsesTo K L) (hL : L.faces.Finite) : K.faces.Finite := by
+  induction h using Relation.ReflTransGen.head_induction_on with
+  | refl => exact hL
+  | @head A B hAB _ ih =>
+    obtain ⟨σ, τ, _, _, hmem⟩ := hAB.exists_pair
+    refine (ih.union ((Set.finite_singleton τ).insert σ)).subset ?_
+    intro ω hω
+    by_cases hωσ : ω = σ
+    · exact Or.inr (by simp [hωσ])
+    by_cases hωτ : ω = τ
+    · exact Or.inr (by simp [hωτ])
+    exact Or.inl ((hmem ω).mpr ⟨hω, hωσ, hωτ⟩)
+
 end CollapsesTo
 
 /-- A simplicial complex is collapsible when it collapses to a one-vertex complex. -/
@@ -207,6 +222,13 @@ theorem ne_bot (h : Collapsible K) : K ≠ ⊥ := by
 theorem exists_vertex (h : Collapsible K) : ∃ v : ι, ({v} : Finset ι) ∈ K := by
   obtain ⟨v, hv⟩ := h
   exact ⟨v, point_le_iff.mp hv.le⟩
+
+/-- A collapsible complex has finitely many faces. -/
+theorem finite_faces (h : Collapsible K) : K.faces.Finite := by
+  obtain ⟨v, hv⟩ := h
+  apply hv.finite_faces
+  rw [← simplex_singleton]
+  exact finite_faces_simplex {v}
 
 end Collapsible
 

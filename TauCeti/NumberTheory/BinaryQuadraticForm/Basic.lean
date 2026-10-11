@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Chris Birkbeck
+Authors: Chris Birkbeck, Wentao Li
 -/
 module
 
@@ -66,6 +66,8 @@ associated bilinear form and so requires `2` to be invertible in `R`, which fail
   `TauCeti.BinaryQuadraticForm.smul_c`: the coefficients of `γ • f`.
 * `TauCeti.BinaryQuadraticForm.eval_smul`: `γ • f` is `f ∘ γ⁻¹`.
 * `TauCeti.BinaryQuadraticForm.discrim_smul`: the discriminant is invariant under `SL(2, R)`.
+* `TauCeti.BinaryQuadraticForm.isUnit_det_of_quadratic_identity`: a coordinate change
+  producing a unit discriminant has unit determinant over any commutative ring.
 * `TauCeti.BinaryQuadraticForm.mem_posDef`: membership in `posDef D`.
 
 ## Implementation notes
@@ -140,6 +142,22 @@ theorem eval_zero_one (f : BinaryQuadraticForm R) : f.eval 0 1 = f.c := by
 end Semiring
 
 variable {R : Type*} [CommRing R]
+
+/-- If the binary form `am² + umn + bn²` becomes `Am² + Cmn + Bn²` under the
+coordinate change with matrix `!![e₁, f₁; e₂, f₂]`, and `4AB - C²` is a unit, then that matrix
+has unit determinant: the discriminants satisfy `4AB - C² = (e₁f₂ - f₁e₂)² (4ab - u²)`. -/
+theorem isUnit_det_of_quadratic_identity {a b u e₁ e₂ f₁ f₂ A B C : R}
+    (hdisc : IsUnit (4 * A * B - C ^ 2))
+    (h : ∀ m n, a * (m * e₁ + n * f₁) ^ 2 + u * (m * e₁ + n * f₁) * (m * e₂ + n * f₂) +
+      b * (m * e₂ + n * f₂) ^ 2 = A * m ^ 2 + C * m * n + B * n ^ 2) :
+    IsUnit (e₁ * f₂ - f₁ * e₂) := by
+  have hdet : (e₁ * f₂ - f₁ * e₂) ^ 2 * (4 * a * b - u ^ 2) = 4 * A * B - C ^ 2 := by
+    linear_combination 4 * (a * e₁ ^ 2 + u * e₁ * e₂ + b * e₂ ^ 2) * h 0 1 + 4 * B * h 1 0 -
+      (2 * a * e₁ * f₁ + u * (e₁ * f₂ + f₁ * e₂) + 2 * b * e₂ * f₂ + C) *
+        (h 1 1 - h 1 0 - h 0 1)
+  rw [← hdet] at hdisc
+  exact (isUnit_pow_iff two_ne_zero).1 (isUnit_of_mul_isUnit_left hdisc)
+
 
 /-- The discriminant `b² - 4 a c` of the form `a x² + b x y + c y²`. -/
 @[expose]
