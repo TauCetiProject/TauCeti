@@ -209,6 +209,8 @@ theorem zigzagBraidComplexTensor_d (i j : V) :
       HomologicalComplex.mapBifunctor.d₂_eq (B i) (B j) F c (-1)
         (by simp : (c).Rel 0 1) 0 (by simp),
       zigzagBraidComplex_d_eq_zero₀ j 1 (by decide)]
+    -- For a cochain totalization, ε₁ is constantly +1. Reduction computes
+    -- this scalar in ℤ before applying the first-factor differential.
     simp only [show ComplexShape.ε₁ c c c (-1, 0) = 1 from rfl,
       one_smul, Functor.map_zero, zero_comp, smul_zero, zero_comp, add_zero,
       Category.assoc, ιMapBifunctor_zigzagBraidComplexTensorXZeroIso_hom,
@@ -229,6 +231,8 @@ theorem zigzagBraidComplexTensor_d (i j : V) :
         HomologicalComplex.mapBifunctor.d₂_eq (B i) (B j) F c 0
           (by simp : (c).Rel (-1) 0) 0 (by simp),
         zigzagBraidComplex_d_eq_zero₀ i 1 (by decide)]
+      -- The second-factor sign is (-1)^p; here the first degree p is 0.
+      -- Reduction therefore computes the integer scalar (-1)^0 = +1.
       simp only [show ComplexShape.ε₂ c c c (0, -1) = 1 from rfl,
         one_smul, Functor.map_zero, NatTrans.app_zero, zero_comp, smul_zero,
         zero_comp, zero_add, Category.assoc,
