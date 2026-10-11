@@ -99,6 +99,10 @@ def simplex₀ (p : X) : (TopCat.toSSet.obj X) _⦋0⦌ :=
 def simplex₁ (g : C(I, X)) : (TopCat.toSSet.obj X) _⦋1⦌ :=
   (X.toSSetObjEquiv _).symm (g.comp param₁)
 
+lemma toSSetObjEquiv_simplex₁ (g : C(I, X)) :
+    X.toSSetObjEquiv _ (simplex₁ g) = g.comp param₁ :=
+  Equiv.apply_symm_apply _ _
+
 lemma δ_zero_simplex₁ (g : C(I, X)) : (TopCat.toSSet.obj X).δ 0 (simplex₁ g) = simplex₀ (g 1) := by
   apply (X.toSSetObjEquiv _).injective
   ext w
@@ -388,6 +392,10 @@ lemma chain₁_mem_cycles₁ {x : X} (γ : Path x x) : chain₁ γ.toContinuousM
 /-- The homology class of the chain of a loop. -/
 def loopClass {x : X} (γ : Path x x) : H₁ X :=
   QuotientAddGroup.mk ⟨_, chain₁_mem_cycles₁ γ⟩
+
+lemma loopClass_def {x : X} (γ : Path x x) :
+    loopClass γ = QuotientAddGroup.mk ⟨_, chain₁_mem_cycles₁ γ⟩ := by
+  rw [loopClass]
 
 lemma loopClass_eq_iff {x : X} (γ γ' : Path x x) :
     loopClass γ = loopClass γ' ↔
