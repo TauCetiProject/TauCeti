@@ -40,6 +40,10 @@ coefficient `η` split as a rank-two plane and a cyclic form. The congruence
 `θ ≡ η (mod 4)` selects `v` and coefficient `-5η`; `θ ≡ -η (mod 4)` selects
 `u` and coefficient `-η`. Both coordinate changes preserve the half-norm quadratic values.
 
+The coordinate maps use concrete `ZMod` products. The generators package these products
+as carriers indexed by their coefficients, so `erw` crosses those definitional wrappers
+when substituting coordinate actions and quadratic value formulas.
+
 ## References
 
 * V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*,
@@ -512,6 +516,7 @@ private theorem dyadicCyclic_prod_self_prod_quadratic_intCast (k : ℕ) [NeZero 
       ZMod.toRatAddCircle (2 ^ (k + 1))
         ((θ * x ^ 2 + θ * y ^ 2 + η * z ^ 2 : ℤ) : ZMod (2 ^ (k + 1))) := by
   rw [ZMod.toRatAddCircle_intCast]
+  -- Unfold the bundled cyclic carriers to use the three concrete residue coordinates.
   erw [prod_quadratic, prod_quadratic, dyadicCyclic_quadratic_intCast,
     dyadicCyclic_quadratic_intCast, dyadicCyclic_quadratic_intCast]
   rw [← AddCircle.coe_add, ← AddCircle.coe_add]
