@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.ModuleChains
+public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 public import TauCeti.Geometry.Convex.ConvexSpace.ContractibleSpaceStdSimplex
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
@@ -23,7 +23,7 @@ the fundamental group `π₁(X, x)` with the first singular homology group `H₁
 
 The proof is the one of Hatcher, Theorem 2A.1, carried out on the singular chains with integer
 coefficients through the element-level interface of
-`TauCeti.AlgebraicTopology.Singular.ModuleChains`.
+`TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic`.
 Paths `γ : I → X` are read as singular `1`-simplices along the parameter of the standard
 `1`-simplex, and three kinds of explicit singular `2`-simplices give the relations:
 
