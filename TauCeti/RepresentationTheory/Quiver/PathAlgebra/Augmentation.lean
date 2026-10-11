@@ -45,7 +45,7 @@ variable [CommRing k] [Finite Q] {I : Ideal (pathAlgebra k Q)} [I.IsTwoSided]
 being a sum of incoming arrows. This identifies the augmentation kernel, independently
 of exactness at the earlier terms of a projective resolution. -/
 theorem quotientTrivialCoeff_eq_zero_iff_exists_eq_sum
-    [Fintype Q] [∀ i j : Q, Fintype (i ⟶ j)] (hI : I ≤ arrowIdeal k Q) (v : Q)
+    [Fintype Q] (hI : I ≤ arrowIdeal k Q) (v : Q) [∀ i : Q, Fintype (i ⟶ v)]
     {x : pathAlgebra k Q ⧸ I}
     (hx : Ideal.Quotient.mk I (vertexIdempotent k v) * x = x) :
     quotientTrivialCoeff hI x = 0 ↔
@@ -83,7 +83,7 @@ theorem quotientTrivialCoeff_eq_single_of_vertexIdempotent_mul [DecidableEq Q]
 
 /-- The augmentation kernel in `e_v A` can be tested using its single vertex coordinate. -/
 theorem quotientTrivialCoeff_apply_eq_zero_iff_exists_eq_sum
-    [Fintype Q] [∀ i j : Q, Fintype (i ⟶ j)] (hI : I ≤ arrowIdeal k Q) (v : Q)
+    [Fintype Q] (hI : I ≤ arrowIdeal k Q) (v : Q) [∀ i : Q, Fintype (i ⟶ v)]
     {x : pathAlgebra k Q ⧸ I}
     (hx : Ideal.Quotient.mk I (vertexIdempotent k v) * x = x) :
     quotientTrivialCoeff hI x v = 0 ↔

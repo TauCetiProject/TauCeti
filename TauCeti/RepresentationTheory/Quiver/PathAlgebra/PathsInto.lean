@@ -269,7 +269,8 @@ private theorem ofArrow_mul_mem_pathsInto {n : ℕ} {i j : R} (b : i ⟶ j) {x :
 /-- **Last-arrow decomposition.** An element of the span of the paths of length `n + 1` into `j`
 is a sum, over the arrows `b : i ⟶ j`, of `b` times an element of the span of the paths of length
 `n` into `i`. -/
-theorem exists_eq_sum_ofArrow_mul [Fintype R] [∀ a b : R, Fintype (a ⟶ b)] {n : ℕ} {j : R}
+theorem exists_eq_sum_ofArrow_mul [Fintype R] {n : ℕ} {j : R}
+    [∀ i : R, Fintype (i ⟶ j)]
     {x : pathAlgebra k R} (hx : x ∈ pathsInto k (n + 1) j) :
     ∃ z : (i : R) → (i ⟶ j) → pathAlgebra k R, (∀ i b, z i b ∈ pathsInto k n i) ∧
       x = ∑ i, ∑ b : i ⟶ j, ofArrow b * z i b := by
@@ -312,7 +313,7 @@ theorem exists_eq_sum_ofArrow_mul [Fintype R] [∀ a b : R, Fintype (a ⟶ b)] {
 /-- An element of the arrow ideal, projected to the corner ending at `v`, is a sum of
 incoming arrows times elements ending at their sources. -/
 theorem exists_eq_sum_ofArrow_mul_of_mem_arrowIdeal [Fintype R]
-    [∀ i j : R, Fintype (i ⟶ j)] (v : R) {f : pathAlgebra k R}
+    (v : R) [∀ i : R, Fintype (i ⟶ v)] {f : pathAlgebra k R}
     (hf : f ∈ arrowIdeal k R) :
     ∃ z : (i : R) → (i ⟶ v) → pathAlgebra k R,
       (∀ i b, vertexIdempotent k i * z i b = z i b) ∧
