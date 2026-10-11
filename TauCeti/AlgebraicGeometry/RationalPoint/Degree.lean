@@ -10,13 +10,13 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Degree
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.EulerCharacteristic
 
 /-!
-# Divisor degrees at a rational point
+# Divisor and line-bundle degrees at a rational point
 
 `TauCeti.AlgebraicGeometry.RationalPoint.Basic` shows that a section `s` of a morphism of schemes
 `f : X ⟶ S` has residue degree one at every point of the base — for `S = Spec k` the statement
 `[κ(x₀) : k] = 1` at a `k`-rational point `x₀`. This file draws the consequences for the relative
 degree of a Weil divisor, whose weight at a codimension-one point `x` is exactly that residue
-degree.
+degree, and for the Euler-characteristic degree of the associated line-bundle class.
 
 ## Main results
 
@@ -25,6 +25,8 @@ degree.
 * `relativeDegree_zsmul_ofPoint_of_section`: hence `deg (d · x₀) = d`.
 * `relativeDegree_sub_zsmul_ofPoint_of_section`: hence `deg (D - (deg D) · x₀) = 0`, so
   subtracting a multiple of `x₀` normalizes an arbitrary Weil divisor to relative degree zero.
+* `eulerDegree_toLineBundleClass_ofPoint_of_section`: on a proper integral curve, the
+  line-bundle class `𝒪_X(x₀)` of a rational point has Euler-characteristic degree `1`.
 
 This is the geometric source of the weight-one base point hypothesis that the Layer A degree
 theory runs on: the weight of a point of a curve over `k` is its residue degree `[κ(x) : k]`
@@ -33,13 +35,10 @@ theory runs on: the weight of a point of a curve over `k` is its residue degree 
 `OrderSystem.weightedAbelJacobiClass` require a base point of weight one. So this file records
 precisely why a `k`-rational point supplies that hypothesis, instead of it having to be assumed.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, "Standing hypotheses" ("A chosen
-`k`-rational point `x₀`. ... the `k`-point *rigidifies/normalizes* the Picard functor and supplies
-the Abel-Jacobi morphism") and Layer A ("Degree", `Σ_x [κ(x):k]·ord_x`).
-
 No external mathematics is vendored; the proofs reuse `SchemeWeilDivisor.relativeDegree_ofPoint`,
 the `AddMonoidHom` structure of `SchemeWeilDivisor.relativeDegree`, and
-`residueDegree_eq_one_of_section` from `RationalPoint.Basic`.
+`residueDegree_eq_one_of_section` from `RationalPoint.Basic`, as well as
+`LineBundleClass.eulerDegree_toLineBundleClass` from `WeilDivisor.Scheme.EulerCharacteristic`.
 -/
 
 public section
