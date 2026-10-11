@@ -47,9 +47,8 @@ if the form is positive or negative definite. This includes dimension zero. -/
 theorem isCompact_specialOrthogonalGroup_iff_posDef_or_negDef
     (Q : _root_.QuadraticForm ℝ V) (hQ : Q.Nondegenerate) :
     IsCompact (TauCeti.QuadraticMap.specialOrthogonalGroup Q : Set (V ≃ₗ[ℝ] V)) ↔
-      Q.PosDef ∨ (-Q).PosDef := by
-  let _ : Invertible (2 : ℝ) := invertibleOfNonzero two_ne_zero
-  exact (isCompact_specialOrthogonalGroup_iff Q hQ.radical_eq_bot).trans
+      Q.PosDef ∨ (-Q).PosDef :=
+  (isCompact_specialOrthogonalGroup_iff Q hQ.radical_eq_bot).trans
     (_root_.QuadraticForm.anisotropic_iff_posDef_or_negDef Q)
 
 end TauCeti.QuadraticMap
