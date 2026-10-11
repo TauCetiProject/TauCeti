@@ -171,7 +171,7 @@ private theorem infinityPlace_normalized_sum_sub_le_one (r : W.CoordinateRing) (
   exact valuation_translation_le_one W (fun h ↦ (Finset.mem_erase.mp hQ).1 (Subtype.ext h)) r
 
 /-- `Y² - X³` has a pole of order at most five at infinity, since `X - x` and `Y - y` are regular
-there and `y² - x³` has a pole of order five. -/
+there and `y² - x³` has a pole of order at most five. -/
 private theorem infinityPlace_veluY_sq_sub_veluX_pow_three_le :
     W.infinityPlace (veluY W Φ ^ 2 - veluX W Φ ^ 3) ≤ WithZero.exp 5 := by
   classical
@@ -390,6 +390,7 @@ theorem _root_.WeierstrassCurve.Affine.eq_veluCurve_of_equation {W' : Weierstras
 
 /-- Vélu's coordinates satisfy the affine equation of a Weierstrass curve over `F` exactly when it
 is the quotient curve `veluCurve W Φ`. -/
+@[simp]
 theorem _root_.WeierstrassCurve.Affine.equation_veluX_veluY_iff {W' : WeierstrassCurve F} :
     (W'.baseChange W.FunctionField).toAffine.Equation (veluX W Φ) (veluY W Φ) ↔
       W' = veluCurve W Φ :=
