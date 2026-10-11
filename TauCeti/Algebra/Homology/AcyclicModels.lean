@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Algebra.Homology.Homotopy
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
+public import TauCeti.Algebra.Homology.ModuleCat
 
 /-!
 # The method of acyclic models
@@ -142,27 +143,6 @@ theorem NatLinear.sub_app {m n : ℕ} (φ ψ : NatLinear F G n m) (X : C) (x : (
     (φ.sub ψ).app X x = φ.app X x - ψ.app X x :=
   (rfl)
 
-/-- A witness chosen by `Exists.choose` when there is one, and `0` otherwise, satisfies the
-predicate as soon as some element does. -/
-theorem _root_.TauCeti.dite_exists_choose_spec {α : Type*} [Zero α] {p : α → Prop}
-    [Decidable (∃ a, p a)]
-    (h : ∃ a, p a) : p (if h' : ∃ a, p a then h'.choose else 0) := by
-  simp only [h, ↓reduceDIte]
-  exact h.choose_spec
-
-/-- A chain map of complexes of modules commutes with the boundaries, on elements. -/
-theorem _root_.HomologicalComplex.Hom.comm_apply {ι : Type*} {c : ComplexShape ι}
-    {K L : HomologicalComplex (ModuleCat.{u} k) c} (φ : K ⟶ L) (i j : ι) (x : K.X i) :
-    L.d i j (φ.f i x) = φ.f j (K.d i j x) := by
-  rw [← ModuleCat.comp_apply, φ.comm, ModuleCat.comp_apply]
-
-/-- In a complex of modules the boundary of a boundary vanishes, on elements. -/
-theorem _root_.HomologicalComplex.d_comp_d_apply {ι : Type*} {c : ComplexShape ι}
-    (K : HomologicalComplex (ModuleCat.{u} k) c) (i j l : ι) (x : K.X i) :
-    K.d j l (K.d i j x) = 0 := by
-  rw [← ModuleCat.comp_apply, HomologicalComplex.d_comp_d]
-  rfl
-
 namespace ModelPresentation
 
 variable (B : ModelPresentation F)
@@ -247,13 +227,17 @@ private theorem d_chainMapGen (n : ℕ) :
   classical
   induction n with
   | zero =>
-    rw [chainMapGen]
-    refine dite_exists_choose_spec (p := fun b ↦ _ = _) ?_
+    rw [chainMapGen.eq_2]
+    split_ifs with hex
+    · exact hex.choose_spec
+    refine absurd ?_ hex
     refine hG.exists_d_eq_of_augment_eq_zero 1 _ ?_
-    rw [chainMapGen, ht₀, hεF]
+    rw [chainMapGen.eq_1, ht₀, hεF]
   | succ n ih =>
-    rw [chainMapGen]
-    refine dite_exists_choose_spec (p := fun b ↦ _ = _) ?_
+    rw [chainMapGen.eq_2]
+    split_ifs with hex
+    · exact hex.choose_spec
+    refine absurd ?_ hex
     refine hG.exists_d_eq_of_d_eq_zero (n + 2) n _ ?_
     rw [B.d_extend _ (B.extendNat (B.chainMapGen t₀ n)).compD ih, NatLinear.compD_app,
       HomologicalComplex.d_comp_d_apply, map_zero]
@@ -314,8 +298,10 @@ private theorem d_extend_homotopyGen_zero (X : C) (x : (F.obj X).X 0) :
   classical
   have h := B.d_extend (B.homotopyGen f g 0) ((NatLinear.ofHom f 0).sub (NatLinear.ofHom g 0))
     (by
-      rw [homotopyGen]
-      refine dite_exists_choose_spec (p := fun b ↦ _ = _) ?_
+      rw [homotopyGen.eq_1]
+      split_ifs with hex
+      · exact hex.choose_spec
+      refine absurd ?_ hex
       refine hG.exists_d_eq_of_augment_eq_zero 0 _ ?_
       simp [hfg]) X x
   simpa using h
@@ -332,14 +318,18 @@ private theorem d_homotopyGen_succ (n : ℕ) :
   classical
   induction n with
   | zero =>
-    rw [homotopyGen]
-    refine dite_exists_choose_spec (p := fun b ↦ _ = _) ?_
+    rw [homotopyGen.eq_2]
+    split_ifs with hex
+    · exact hex.choose_spec
+    refine absurd ?_ hex
     refine hG.exists_d_eq_of_d_eq_zero 1 0 _ ?_
     rw [map_sub, map_sub, B.d_extend_homotopyGen_zero hG f g hfg,
       HomologicalComplex.Hom.comm_apply, HomologicalComplex.Hom.comm_apply, sub_self]
   | succ n ih =>
-    rw [homotopyGen]
-    refine dite_exists_choose_spec (p := fun b ↦ _ = _) ?_
+    rw [homotopyGen.eq_2]
+    split_ifs with hex
+    · exact hex.choose_spec
+    refine absurd ?_ hex
     refine hG.exists_d_eq_of_d_eq_zero (n + 2) (n + 1) _ ?_
     have h := B.d_extend _ (target B f g n) ih (B.model (n + 2))
       ((F.obj (B.model (n + 2))).d (n + 2) (n + 1) (B.gen (n + 2)))
