@@ -231,15 +231,37 @@ theorem _root_.HeckeRing.GL2.Newform.atkinLehnerTransform_one (f : Newform N k)
   apply DFunLike.coe_injective
   rw [coe_atkinLehnerOperatorGamma1Cusp, hGL, SlashAction.slash_one]
 
-/-- At a good prime `p`, transport multiplies the Fourier coefficient by the inverse of
+/-- Transporting twice by the same exact divisor fixes every newform. -/
+@[simp]
+theorem _root_.HeckeRing.GL2.Newform.atkinLehnerTransform_atkinLehnerTransform
+    (f : Newform N k) (h : Q ∥ N) :
+    (f.atkinLehnerTransform h).atkinLehnerTransform h = f := by
+  let hW := isAtkinLehnerMatrix_atkinLehnerMatrix h
+  obtain ⟨γ, hγ, hsq⟩ := hW.exists_mem_Gamma0_mul_self h.ne_zero h.dvd
+  let u : (ZMod N)ˣ := (Gamma0Map N).toHomUnits ⟨γ, hγ⟩
+  have hu : ZMod.unitsMap h.dvd u = -1 :=
+    hW.unitsMap_toHomUnits_gamma0Map_of_mul_self_eq h.ne_zero h.dvd hγ hsq
+  have hu' : (Q : ZMod N) * u = (((atkinLehnerMatrix N Q) 1 1 : ℤ) : ZMod N) ^ 2 :=
+    hW.natCast_mul_toHomUnits_gamma0Map_of_mul_self_eq hγ hsq
+  apply ((f.atkinLehnerTransform h).atkinLehnerTransform_eq_iff f h hW).mpr
+  refine ⟨((qExpansion 1
+    (atkinLehnerOperatorGamma1Cusp h.pos h.dvd hW k f.toCuspForm)).coeff 1)⁻¹ *
+      (Q : ℂ) ^ (k - 2) * (f.χ u : ℂ), ?_⟩
+  rw [f.toCuspForm_atkinLehnerTransform h, map_smul,
+    atkinLehnerOperatorGamma1Cusp_atkinLehnerOperatorGamma1Cusp h.pos h.dvd hW hu hu',
+    diamondOpCusp_apply_of_mem_cuspFormCharSpace k f.χ u f.mem_charSpace,
+    smul_smul, smul_smul]
+
+/-- At a good prime `p`, transport multiplies the Hecke eigenvalue by the inverse of
 `f.χ` at the CRT unit with components `p` modulo `Q` and `1` modulo `N / Q`. -/
-theorem _root_.HeckeRing.GL2.Newform.qExpansion_coeff_prime_atkinLehnerTransform
+@[simp]
+theorem _root_.HeckeRing.GL2.Newform.eigenvalue_atkinLehnerTransform
     (f : Newform N k) (h : Q ∥ N)
     {p : ℕ} (hp : p.Prime) (hpN : p.Coprime N) :
-    (qExpansion 1 (f.atkinLehnerTransform h).toCuspForm).coeff p =
+    (f.atkinLehnerTransform h).eigenvalue ⟨p, hp.pos⟩ hpN =
       (f.χ (h.unitsEquivProd.symm
         (ZMod.unitOfCoprime p (hpN.coprime_dvd_right h.dvd), 1)) : ℂ)⁻¹ *
-        (qExpansion 1 f.toCuspForm).coeff p := by
+        f.eigenvalue ⟨p, hp.pos⟩ hpN := by
   have : NeZero p := ⟨hp.ne_zero⟩
   let g := f.atkinLehnerTransform h
   obtain ⟨c, hc⟩ :=
@@ -253,13 +275,21 @@ theorem _root_.HeckeRing.GL2.Newform.qExpansion_coeff_prime_atkinLehnerTransform
   have hT := atkinLehner_newform_prime_eigen f h
     (isAtkinLehnerMatrix_atkinLehnerMatrix h) hp hpN
   rw [hc, map_smul, g.heckeTCuspNat_eq_eigenvalue_smul hp hpN, smul_smul, smul_smul] at hT
-  have heig : g.eigenvalue ⟨p, hp.pos⟩ hpN =
+  apply mul_left_cancel₀ hc0
+  simpa only [mul_comm c] using smul_left_injective ℂ g.ne_zero hT
+
+/-- At a good prime `p`, transport multiplies the Fourier coefficient by the inverse of
+`f.χ` at the CRT unit with components `p` modulo `Q` and `1` modulo `N / Q`. -/
+theorem _root_.HeckeRing.GL2.Newform.qExpansion_coeff_prime_atkinLehnerTransform
+    (f : Newform N k) (h : Q ∥ N)
+    {p : ℕ} (hp : p.Prime) (hpN : p.Coprime N) :
+    (qExpansion 1 (f.atkinLehnerTransform h).toCuspForm).coeff p =
       (f.χ (h.unitsEquivProd.symm
         (ZMod.unitOfCoprime p (hpN.coprime_dvd_right h.dvd), 1)) : ℂ)⁻¹ *
-        f.eigenvalue ⟨p, hp.pos⟩ hpN := by
-    apply mul_left_cancel₀ hc0
-    simpa only [mul_comm c] using smul_left_injective ℂ g.ne_zero hT
-  rw [← g.toEigenformAwayFromLevel.qExpansion_coeff_eq_eigenvalue g.isNorm ⟨p, hp.pos⟩ hpN,
+        (qExpansion 1 f.toCuspForm).coeff p := by
+  have heig := f.eigenvalue_atkinLehnerTransform h hp hpN
+  rw [← (f.atkinLehnerTransform h).toEigenformAwayFromLevel.qExpansion_coeff_eq_eigenvalue
+      (f.atkinLehnerTransform h).isNorm ⟨p, hp.pos⟩ hpN,
     ← f.toEigenformAwayFromLevel.qExpansion_coeff_eq_eigenvalue f.isNorm ⟨p, hp.pos⟩ hpN] at heig
   exact heig
 
