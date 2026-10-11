@@ -155,6 +155,20 @@ noncomputable def reorientDoubledEquiv :
     (reorientSymmetrify_comp_reorientSymmetrifyInv σ)
     (reorientSymmetrifyInv_comp_reorientSymmetrify σ)
 
+/-- **The doubled-quiver comparison preserves path length.** Its prefunctor maps every arrow to
+one arrow, so the induced path-algebra isomorphism preserves each homogeneous path-length piece. -/
+theorem reorientDoubledEquiv_mem_grade {n : ℕ}
+    {x : pathAlgebra k (Symmetrify (Reorient Q σ))}
+    (hx : x ∈ PathAlgebra.grade k (Symmetrify (Reorient Q σ)) n) :
+    reorientDoubledEquiv k σ x ∈ PathAlgebra.grade k (Symmetrify Q) n := by
+  rw [← PathAlgebra.gradeBy_const_one] at hx ⊢
+  have hφ : Function.Bijective (reorientSymmetrify σ).obj := by
+    change Function.Bijective (fun x : Symmetrify Q => x)
+    exact ⟨fun _ _ h => h, fun y => ⟨y, rfl⟩⟩
+  rw [reorientDoubledEquiv, PathAlgebra.mapAlgEquiv_apply]
+  exact PathAlgebra.mapAlgHom_mem_gradeBy k (reorientSymmetrify σ) hφ
+    (fun {_ _} _ => (1 : ℕ)) hx
+
 /-- The doubled path-algebra comparison maps a path of two arrows by mapping each arrow. -/
 private theorem reorientDoubledEquiv_ofArrowComp {i j l : Symmetrify (Reorient Q σ)} (a : i ⟶ j)
     (b : j ⟶ l) :
