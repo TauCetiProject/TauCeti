@@ -16,7 +16,7 @@ public import TauCeti.Algebra.Homology.AcyclicModels
 
 The simplicial singular chains are free on the topological simplices `Δⁿ`, with generator the
 identity simplex, and the normalized cubical chains are free on the cubes `Iⁿ` in the sense of
-`TauCeti.AcyclicModels.ModelBasis`, through the normalization of
+`TauCeti.AcyclicModels.ModelPresentation`, through the normalization of
 `TauCeti.AlgebraicTopology.Singular.Cubical.Normalization`.  Both are acyclic on every
 contractible space, in particular on both kinds of models: the cubical chains by the cone of
 `TauCeti.AlgebraicTopology.Singular.Cubical.Cone`, the simplicial chains by the vanishing of the
@@ -25,8 +25,8 @@ set.
 
 ## Main definitions
 
-* `TauCeti.singularModelBasis k`, `TauCeti.cubicalModelBasis k`: the two functors are free on
-  models.
+* `TauCeti.singularModelPresentation k`, `TauCeti.cubicalModelPresentation k`: the two functors
+  are free on models.
 
 ## Main results
 
@@ -64,7 +64,7 @@ theorem singularCoord_simplexChain (X : TopCat.{u}) {n : ℕ} (σ : (TopCat.toSS
   exact congrArg (fun g ↦ g.hom a) h
 
 /-- **The simplicial singular chains are free on the topological simplices.** -/
-def singularModelBasis : AcyclicModels.ModelBasis (singularChains k) where
+def singularModelPresentation : AcyclicModels.ModelPresentation (singularChains k) where
   model := simplexModel
   gen n := simplexChain (idSimplex n) 1
   coord := singularCoord k
@@ -143,7 +143,8 @@ theorem sum_cubicalCoord {X : TopCat.{u}} {n : ℕ} (x : NormalizedCubicalChain 
     exact NormalizedCubicalChain.sum_toCubicalChain k x
 
 /-- **The normalized cubical chains are free on the cubes**, through the normalization. -/
-def cubicalModelBasis : AcyclicModels.ModelBasis (normalizedCubicalChainComplex.{u} k) where
+def cubicalModelPresentation :
+    AcyclicModels.ModelPresentation (normalizedCubicalChainComplex.{u} k) where
   model := cubeModel
   gen n := NormalizedCubicalChain.ofCube (cubeModel n) k (upCube n)
   coord := cubicalCoord k
@@ -193,27 +194,29 @@ theorem isAcyclicOn_singularChains (M : ℕ → TopCat.{u}) [∀ n, Contractible
 
 variable (k) in
 /-- The simplicial singular chains are acyclic on the models of the normalized cubical chains. -/
-theorem isAcyclicOn_singularChains_cubicalModelBasis :
-    AcyclicModels.IsAcyclicOn (singularChains k) (cubicalModelBasis k).model (singularAugment k) :=
+theorem isAcyclicOn_singularChains_cubicalModelPresentation :
+    AcyclicModels.IsAcyclicOn (singularChains k) (cubicalModelPresentation k).model
+      (singularAugment k) :=
   isAcyclicOn_singularChains cubeModel
 
 variable (k) in
 /-- The normalized cubical chains are acyclic on the models of the simplicial singular chains. -/
-theorem isAcyclicOn_normalizedCubicalChainComplex_singularModelBasis :
-    AcyclicModels.IsAcyclicOn (normalizedCubicalChainComplex k) (singularModelBasis k).model
+theorem isAcyclicOn_normalizedCubicalChainComplex_singularModelPresentation :
+    AcyclicModels.IsAcyclicOn (normalizedCubicalChainComplex k) (singularModelPresentation k).model
       (cubicalAugment k) :=
   isAcyclicOn_normalizedCubicalChainComplex simplexModel
 
 variable (k) in
 /-- The simplicial singular chains are acyclic on their own models. -/
-theorem isAcyclicOn_singularChains_singularModelBasis :
-    AcyclicModels.IsAcyclicOn (singularChains k) (singularModelBasis k).model (singularAugment k) :=
+theorem isAcyclicOn_singularChains_singularModelPresentation :
+    AcyclicModels.IsAcyclicOn (singularChains k) (singularModelPresentation k).model
+      (singularAugment k) :=
   isAcyclicOn_singularChains simplexModel
 
 variable (k) in
 /-- The normalized cubical chains are acyclic on their own models. -/
-theorem isAcyclicOn_normalizedCubicalChainComplex_cubicalModelBasis :
-    AcyclicModels.IsAcyclicOn (normalizedCubicalChainComplex k) (cubicalModelBasis k).model
+theorem isAcyclicOn_normalizedCubicalChainComplex_cubicalModelPresentation :
+    AcyclicModels.IsAcyclicOn (normalizedCubicalChainComplex k) (cubicalModelPresentation k).model
       (cubicalAugment k) :=
   isAcyclicOn_normalizedCubicalChainComplex cubeModel
 
