@@ -56,7 +56,6 @@ private theorem signClass_eq :
   rfl
 
 /-- The sign basis vector squares to the unit in the characteristic-three Grothendieck ring. -/
-@[simp]
 theorem symmetricThreeCharThreeSimpleClassBasis_true_mul_self :
     symmetricThreeCharThreeSimpleClassBasis k true *
         symmetricThreeCharThreeSimpleClassBasis k true = 1 := by
@@ -65,7 +64,6 @@ theorem symmetricThreeCharThreeSimpleClassBasis_true_mul_self :
 
 /-- Induction of the restricted sign line from any point stabilizer of S₃ has one
 trivial and two sign composition factors in characteristic three. -/
-@[simp]
 theorem indK0_sign_stabilizer_perm_fin_three_char_three :
     indK0 k (MulAction.stabilizer (Equiv.Perm (Fin 3)) a)
         (symmetricThreeStabilizerSimpleClassBasis k a true) =

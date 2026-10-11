@@ -31,7 +31,6 @@ namespace TauCeti
 universe u
 
 /-- The trivial linear character represents the unit of the exact Grothendieck ring. -/
-@[simp]
 theorem exactK0_ofLinearCharacter_one {k G : Type u} [Field k] [Group G] [Finite G] :
     fdRepK0RingEquiv k G
       (ExactK0.of (FDRep.ofLinearCharacter (1 : G →* kˣ))) = 1 := by
@@ -40,7 +39,6 @@ theorem exactK0_ofLinearCharacter_one {k G : Type u} [Field k] [Group G] [Finite
   exact (exactK0_one_eq_of_trivial (k := k) (G := G)).symm
 
 /-- The product of the classes of two linear characters is the class of their product. -/
-@[simp]
 theorem exactK0_ofLinearCharacter_mul {k G : Type u} [Field k] [Group G] [Finite G]
     (χ ψ : G →* kˣ) :
     fdRepK0RingEquiv k G (ExactK0.of (FDRep.ofLinearCharacter χ)) *
