@@ -71,8 +71,11 @@ private theorem hasLift_of_mem_range (hF : IsFunctionField k F) {X : Scheme.{u}}
   obtain ⟨κ, hκ⟩ := Spec.map_surjective S.i₂
   have hk : CommRingCat.ofHom (algebraMap k _) ≫ φ =
       κ ≫ CommRingCat.ofHom (algebraMap S.R S.K) := by
-    rw [← Spec.map_inj, Spec.map_comp, Spec.map_comp, hκ, ← hc, ← S.commSq.w, ← hφ,
-      Category.assoc]
+    -- Both sides induce the composite `Spec K ⟶ Spec k` around the valuative square.
+    have h : Spec.map φ ≫ c ≫ (X ↘ Spec (.of k)) = S.i₁ ≫ (X ↘ Spec (.of k)) := by
+      rw [reassoc_of% hφ]
+    rw [← Spec.map_inj]
+    simpa [hκ, ← hc, h] using S.commSq.w
   refine S.hasLift_of_specMap_comp c φ hφ fun a ↦ IsIntegrallyClosed.isIntegral_iff.mp <|
     isIntegral_map_holomorphyRing_setOf_mem hF φ.hom (fun c ↦ ?_) ?_ a
   · exact IsIntegrallyClosed.isIntegral_iff.mpr ⟨κ c, congr($hk c).symm⟩
@@ -116,7 +119,11 @@ private theorem exists_specMap_comp_eq (hF : IsFunctionField k F) {X : Scheme.{u
     refine congrArg l (Subtype.ext ?_)
     rw [Subalgebra.coe_mul, hs, hs', mul_comm, hss', Subalgebra.coe_one]
   refine ⟨CommRingCat.ofHom ι₂.toRingHom ≫ CommRingCat.ofHom l, ?_, eq_inv_of_mul_eq_one_left hls⟩
-  rw [Spec.map_comp, Category.assoc, ← w, ← Category.assoc, ← Spec.map_comp, hl]
+  -- Factor `Spec φ ≫ c₁` through the overlap using `hl`, then move to the second chart by `w`.
+  have h : Spec.map φ ≫ c₁ =
+      Spec.map (CommRingCat.ofHom l) ≫ Spec.map (CommRingCat.ofHom ι₁.toRingHom) ≫ c₁ := by
+    rw [← hl, Spec.map_comp_assoc]
+  rw [Spec.map_comp_assoc, h, w]
 
 variable {hF : IsFunctionField k F} {x : F} {hx : x ≠ 0}
 

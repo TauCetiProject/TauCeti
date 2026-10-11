@@ -57,12 +57,14 @@ theorem hasLift_of_specMap_comp {X : Scheme.{u}} {B : CommRingCat.{u}} {f : X �
   have hσ : σ ≫ CommRingCat.ofHom (algebraMap S.R S.K) = φ := by
     ext a
     exact congrArg Subtype.val (e.apply_symm_apply ⟨φ a, hR a⟩)
-  refine ⟨⟨⟨Spec.map σ ≫ c, by rw [← Spec.map_comp_assoc, hσ, hφ], ?_⟩⟩⟩
+  have hσφ : Spec.map (CommRingCat.ofHom (algebraMap S.R S.K)) ≫ Spec.map σ = Spec.map φ := by
+    rw [← Spec.map_comp, hσ]
+  refine ⟨⟨⟨Spec.map σ ≫ c, by rw [reassoc_of% hσφ, hφ], ?_⟩⟩⟩
   -- Both morphisms `Spec R ⟶ Spec B` come from ring maps `B ⟶ R`, which agree after composing
   -- with the injection `R → K` since the two morphisms agree on `Spec K`.
   have hK : Spec.map (CommRingCat.ofHom (algebraMap S.R S.K)) ≫ (Spec.map σ ≫ c) ≫ f =
       Spec.map (CommRingCat.ofHom (algebraMap S.R S.K)) ≫ S.i₂ := by
-    rw [← Category.assoc, ← Spec.map_comp_assoc, hσ, hφ, S.commSq.w]
+    simpa only [Category.assoc, reassoc_of% hσφ, reassoc_of% hφ] using S.commSq.w
   obtain ⟨g₁, hg₁⟩ := Spec.map_surjective ((Spec.map σ ≫ c) ≫ f)
   obtain ⟨g₂, hg₂⟩ := Spec.map_surjective S.i₂
   rw [← hg₁, ← hg₂, ← Spec.map_comp, ← Spec.map_comp, Spec.map_inj] at hK
