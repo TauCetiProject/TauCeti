@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.Node.Nodal
+public import TauCeti.AlgebraicGeometry.Morphisms.FormallyUnramified
 
 /-!
 # Source locality of nodal relative curves
@@ -29,10 +30,6 @@ open CategoryTheory Limits AlgebraicGeometry
 namespace TauCeti.AlgebraicGeometry
 
 universe u
-
-local instance : IsZariskiLocalAtSource @FormallyUnramified.{u} :=
-  HasRingHomProperty.instIsZariskiLocalAtSource
-    (P := @FormallyUnramified.{u}) (Q := RingHom.FormallyUnramified)
 
 section Nodal
 
