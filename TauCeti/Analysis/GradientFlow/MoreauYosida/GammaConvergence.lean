@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.MetricSpace.ProperSpace
 public import TauCeti.Analysis.GradientFlow.MoreauYosida.Existence
 public import TauCeti.Topology.Semicontinuity.GammaConvergence
+import TauCeti.Algebra.Order.Field.Basic
 
 /-!
 # Stability of resolvents under Γ-convergence
@@ -120,30 +121,6 @@ theorem exists_tendsto_mem_moreauYosidaResolvent (h : TendstoGamma Φ φ)
     h.mem_moreauYosidaResolvent_of_tendsto hx hτ hy hψ.tendsto_atTop hψy₀⟩
 
 end TendstoGamma
-
-/-- If `a ≤ R + b` and `b² / (2τ) - a² / (2τ₀) ≤ D` with `0 < τ < τ₀` and `R ≥ 0`, then `a` is
-bounded by a constant depending only on `R`, `D`, `τ` and `τ₀`. -/
-private theorem le_of_sq_div_sub_sq_div_le {τ τ₀ a b R D : ℝ} (hτ : 0 < τ) (hττ₀ : τ < τ₀)
-    (hR : 0 ≤ R) (hab : a ≤ R + b) (h : b ^ 2 / (2 * τ) - a ^ 2 / (2 * τ₀) ≤ D) :
-    a ≤ R + 1 + (2 * τ₀ * R + 2 * τ * τ₀ * |D|) / (τ₀ - τ) := by
-  have hτ₀ : 0 < τ₀ := hτ.trans hττ₀
-  have hs : 0 < τ₀ - τ := sub_pos.2 hττ₀
-  have hq : 0 ≤ (2 * τ₀ * R + 2 * τ * τ₀ * |D|) / (τ₀ - τ) := by positivity
-  by_contra! ha
-  have ha₁ : 1 ≤ a := by linarith
-  have hb : (a - R) ^ 2 ≤ b ^ 2 := pow_le_pow_left₀ (by linarith) (by linarith) 2
-  -- Clearing denominators, `τ₀ b² - τ a² ≤ 2ττ₀ |D|`.
-  have h' : τ₀ * b ^ 2 - τ * a ^ 2 ≤ 2 * τ * τ₀ * |D| := by
-    rw [div_sub_div _ _ (by positivity) (by positivity), div_le_iff₀ (by positivity)] at h
-    nlinarith [mul_le_mul_of_nonneg_left (le_abs_self D) (by positivity : (0 : ℝ) ≤ τ * τ₀)]
-  -- Hence `(τ₀ - τ) a² ≤ (2τ₀ R + 2ττ₀ |D|) a`, and dividing by `a ≥ 1` contradicts `ha`.
-  have key : (τ₀ - τ) * a ≤ 2 * τ₀ * R + 2 * τ * τ₀ * |D| := by
-    have : (τ₀ - τ) * a * a ≤ (2 * τ₀ * R + 2 * τ * τ₀ * |D|) * a := by
-      nlinarith [mul_le_mul_of_nonneg_left hb hτ₀.le, mul_nonneg hτ₀.le (sq_nonneg R),
-        mul_le_mul_of_nonneg_left ha₁ (by positivity : (0 : ℝ) ≤ 2 * τ * τ₀ * |D|)]
-    exact le_of_mul_le_mul_right this (by linarith)
-  rw [← le_div_iff₀' hs] at key
-  linarith
 
 /-- **Equicoercivity of the penalized energies.** On a proper space, let the base points `x n`
 stay in a bounded set and let the energies be uniformly coercive: `c ≤ (Φ n)_{τ₀}(z)` for all `n`,
