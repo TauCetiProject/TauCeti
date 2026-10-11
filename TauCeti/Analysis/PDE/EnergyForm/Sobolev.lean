@@ -546,6 +546,14 @@ theorem energyFormH1_add_left
   rw [← energyFormH1L_apply hcoeff]
   simp only [map_add, add_apply, energyFormH1L_apply]
 
+/-- Subtractivity of the Sobolev energy form in its left argument. -/
+theorem energyFormH1_sub_left
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (u v w : W1p mu Omega 2) :
+    energyFormH1 a b c (u - w) v = energyFormH1 a b c u v - energyFormH1 a b c w v := by
+  rw [← energyFormH1L_apply hcoeff]
+  simp only [map_sub, sub_apply, energyFormH1L_apply]
+
 /-- Additivity of the Sobolev energy form in its right argument. -/
 theorem energyFormH1_add_right
     (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))

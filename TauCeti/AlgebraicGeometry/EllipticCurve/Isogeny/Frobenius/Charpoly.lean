@@ -78,14 +78,11 @@ private theorem torsionLinearMap_baseChangeFrobenius_comp [DecidableEq K] {ℓ :
   have hdet : M.det = (Nat.card F : ZMod ℓ) := by
     rw [LinearMap.det_toMatrix]
     exact det_torsionLinearMap_ofIsogeny_baseChangeFrobenius W hℓK
-  -- `id - π` is the separable pencil at `r = s = -1`, so its determinant is its degree `#E(𝔽_q)`
+  -- the determinant of `id - π` is its degree `#E(𝔽_q)`
   have hdetOneSub : (1 - M).det = (W.pointCount : ZMod ℓ) := by
-    have h := det_torsionLinearMap_zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id W hℓK
-      (-1) (-1) (by simp)
-    rw [neg_one_zsmul, neg_one_zsmul, neg_sub_neg,
-      degree_id_sub_ofIsogeny_baseChangeFrobenius_eq_pointCount] at h
-    rw [← h, ← LinearMap.det_toMatrix b, torsionLinearMap_sub, torsionLinearMap_id,
-      _root_.map_sub, LinearMap.toMatrix_id]
+    rw [← degree_id_sub_ofIsogeny_baseChangeFrobenius_eq_pointCount (K := K) W,
+      ← det_torsionLinearMap hℓK, ← LinearMap.det_toMatrix b, torsionLinearMap_sub,
+      torsionLinearMap_id, _root_.map_sub, LinearMap.toMatrix_id]
   -- so the trace of `M` is `q + 1 - #E(𝔽_q) = a_q`
   have htrace : M.trace = (W.frobeniusTrace : ZMod ℓ) := by
     have h := TauCeti.Matrix.det_smul_sub_smul_one_fin_two M (-1) (-1)

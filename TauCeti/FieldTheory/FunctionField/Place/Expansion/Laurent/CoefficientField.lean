@@ -34,6 +34,8 @@ residue (`TauCeti.Place.traceResidue_eq_residue`).
 * `TauCeti.Place.residueResidueField`: the residue `res_{P,t} : F → F_P`, the coefficient of
   `t⁻¹`.
 * `TauCeti.Place.traceResidue`: the `k`-valued residue `Tr_{F_P/k} ∘ res_{P,t}`.
+* `TauCeti.Place.traceResidue_mul_inv_uniformizer`: for an integral numerator `u`, the
+  `k`-valued residue of `u / t` is the trace of its value at `P`.
 
 ## Main results
 
@@ -308,6 +310,15 @@ noncomputable def traceResidue : F →ₗ[k] k :=
 /-- The `k`-valued residue is the trace of the residue. -/
 theorem traceResidue_apply (z : F) :
     P.traceResidue ht z = Algebra.trace k P.ResidueField (P.residueResidueField ht z) := (rfl)
+
+/-- **The trace residue of `u / t` is the trace of the value of `u` at `P`**, for a function `u`
+regular at `P`. This is the `k`-valued form of
+`TauCeti.Place.residueResidueField_mul_inv_uniformizer`, used when local components are expressed
+as trace residues at places with nontrivial residue field. -/
+theorem traceResidue_mul_inv_uniformizer (u : P.integers) :
+    P.traceResidue ht (u * t⁻¹) =
+      Algebra.trace k P.ResidueField (IsLocalRing.residue P.integers u) := by
+  rw [traceResidue_apply, residueResidueField_mul_inv_uniformizer]
 
 /-! ### Comparison with residues at rational places -/
 
