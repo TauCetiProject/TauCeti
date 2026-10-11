@@ -130,10 +130,10 @@ private def functionChartIso (U : X.AffineZariskiSite) :
 private lemma functionChartIso_hom_ι (U : X.AffineZariskiSite) :
     (functionChartIso p U).hom ≫ (p ⁻¹ᵁ U.1).ι =
       p.pushforwardStructureAlgebra.relativeSpecCover.f U ≫ p.relativeSpecFunctionsToScheme := by
-  -- The hom of the composite chart iso is `Spec.map` followed by `isoSpec.inv`,
-  -- and `fromSpec` is `isoSpec.inv` followed by the open inclusion.
-  exact (Category.assoc _ _ _).trans
-    (p.relativeSpecCover_f_relativeSpecFunctionsToScheme U).symm
+  dsimp only [functionChartIso, Iso.trans, Functor.mapIso, Iso.op, Iso.symm, Iso.app,
+    Scheme.Spec_map]
+  simp only [Category.assoc, IsAffineOpen.isoSpec_inv_ι]
+  exact (p.relativeSpecCover_f_relativeSpecFunctionsToScheme U).symm
 
 /-- An affine scheme over a base is recovered from its actual algebra of regular functions. -/
 instance _root_.AlgebraicGeometry.Scheme.Hom.isIso_relativeSpecFunctionsToScheme :
@@ -262,7 +262,9 @@ def relativeSpecCounit (X : Scheme.{u}) :
       V.hom.relativeSpecFunctionsToScheme_comp)
     (fun {V W} g ↦ by
       apply MorphismProperty.Over.Hom.ext
-      -- Both functors act on over-morphisms by their underlying scheme maps.
+      -- `rw [MorphismProperty.Comma.comp_left]` rejects this goal at implicit
+      -- transparency: `@IsAffineHom` is not accepted as a `MorphismProperty Scheme`.
+      -- `change` identifies these presentations before comparing the scheme maps.
       change CommMon.relativeSpecMap
           (Scheme.Hom.pushforwardStructureAlgebraMap g.left (MorphismProperty.Over.w g)) ≫
             W.hom.relativeSpecFunctionsIso.hom =
