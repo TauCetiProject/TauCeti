@@ -35,9 +35,7 @@ variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V) [Finite V]
 local notation "Z" => AlgCat.carrier (zigzagAlgebra k G)
 local notation "Γ" => zigzagAlgebraInternalGrading k G
 
-/-- Use the signed path-length grading for the regular bimodule unit. -/
-local instance : GradedAlgebra (zigzagAlgebraInternalGrading k G).piece :=
-  zigzagAlgebraIntegerGradedAlgebra k G
+attribute [local instance] zigzagAlgebraIntegerGradedAlgebra
 
 /-- The existing graded zigzag bimodule is the regular graded unit. -/
 def zigzagGradedBimoduleUnitIso :
@@ -80,13 +78,13 @@ theorem zigzagBimoduleLeftUnitor_hom_tmul (z : zigzagGradedBimodule k G) (m : M)
       (zigzagGradedBimoduleUnitIso k G).inv (𝟙 M) ≫
     (GradedModuleCat.bimoduleTensorLeftUnitor.{0} Γ Γ M).hom).hom _ = _
   rw [GradedModuleCat.bimoduleTensorLeftUnitor_hom]
-  rw [GradedModuleCat.hom_comp, LinearMap.comp_apply,
+  simp only [GradedModuleCat.hom_comp, LinearMap.comp_apply,
     GradedModuleCat.bimoduleTensorMap_tmul Γ Γ Γ
       (zigzagGradedBimoduleUnitIso k G).inv (𝟙 M) z m,
-    GradedModuleCat.hom_id, LinearMap.id_apply]
-  rw [GradedModuleCat.bimoduleTensorLeftUnitorHom_tmul.{0} Γ Γ M,
+    GradedModuleCat.hom_id, LinearMap.id_apply,
+    GradedModuleCat.bimoduleTensorLeftUnitorHom_tmul.{0} Γ Γ M,
     GradedModuleCat.bimoduleUnitEquiv_symm_apply.{0} Γ]
-  rfl
+  simp only [zigzagGradedBimoduleUnitIso_inv_apply]
 
 @[simp]
 theorem zigzagBimoduleRightUnitor_hom_tmul (m : M) (z : zigzagGradedBimodule k G) :
@@ -98,13 +96,13 @@ theorem zigzagBimoduleRightUnitor_hom_tmul (m : M) (z : zigzagGradedBimodule k G
       (zigzagGradedBimoduleUnitIso k G).inv ≫
     (GradedModuleCat.bimoduleTensorRightUnitor.{0} Γ Γ M).hom).hom _ = _
   rw [GradedModuleCat.bimoduleTensorRightUnitor_hom]
-  rw [GradedModuleCat.hom_comp, LinearMap.comp_apply,
+  simp only [GradedModuleCat.hom_comp, LinearMap.comp_apply,
     GradedModuleCat.bimoduleTensorMap_tmul Γ Γ Γ
       (𝟙 M) (zigzagGradedBimoduleUnitIso k G).inv m z,
-    GradedModuleCat.hom_id, LinearMap.id_apply]
-  rw [GradedModuleCat.bimoduleTensorRightUnitorHom_tmul.{0} Γ Γ M,
+    GradedModuleCat.hom_id, LinearMap.id_apply,
+    GradedModuleCat.bimoduleTensorRightUnitorHom_tmul.{0} Γ Γ M,
     GradedModuleCat.bimoduleUnitEquiv_symm_apply.{0} Γ]
-  rfl
+  simp only [zigzagGradedBimoduleUnitIso_inv_apply]
 
 @[simp]
 theorem zigzagBimoduleLeftUnitor_inv_apply (m : M) :
@@ -116,14 +114,12 @@ theorem zigzagBimoduleLeftUnitor_inv_apply (m : M) :
     GradedModuleCat.bimoduleTensorMap Γ Γ Γ
       (zigzagGradedBimoduleUnitIso k G).hom (𝟙 M)).hom m = _
   rw [GradedModuleCat.bimoduleTensorLeftUnitor_inv]
-  rw [GradedModuleCat.hom_comp, LinearMap.comp_apply,
+  simp only [GradedModuleCat.hom_comp, LinearMap.comp_apply,
     GradedModuleCat.bimoduleTensorLeftUnitorInv_apply.{0} Γ Γ M,
     GradedModuleCat.bimoduleTensorMap_tmul Γ Γ Γ
-      (zigzagGradedBimoduleUnitIso k G).hom (𝟙 M)
-      (GradedModuleCat.bimoduleUnitEquiv.{0} Γ 1) m,
-    GradedModuleCat.hom_id, LinearMap.id_apply,
-    GradedModuleCat.bimoduleUnitEquiv_apply.{0} Γ]
-  rfl
+      (zigzagGradedBimoduleUnitIso k G).hom (𝟙 M),
+    GradedModuleCat.hom_id, LinearMap.id_apply, zigzagGradedBimoduleUnitIso_hom_apply]
+  simp only [GradedModuleCat.bimoduleUnitEquiv_apply.{0} Γ]
 
 @[simp]
 theorem zigzagBimoduleRightUnitor_inv_apply (m : M) :
@@ -135,14 +131,12 @@ theorem zigzagBimoduleRightUnitor_inv_apply (m : M) :
     GradedModuleCat.bimoduleTensorMap Γ Γ Γ (𝟙 M)
       (zigzagGradedBimoduleUnitIso k G).hom).hom m = _
   rw [GradedModuleCat.bimoduleTensorRightUnitor_inv]
-  rw [GradedModuleCat.hom_comp, LinearMap.comp_apply,
+  simp only [GradedModuleCat.hom_comp, LinearMap.comp_apply,
     GradedModuleCat.bimoduleTensorRightUnitorInv_apply.{0} Γ Γ M,
     GradedModuleCat.bimoduleTensorMap_tmul Γ Γ Γ
-      (𝟙 M) (zigzagGradedBimoduleUnitIso k G).hom m
-      (GradedModuleCat.bimoduleUnitEquiv.{0} Γ 1),
-    GradedModuleCat.hom_id, LinearMap.id_apply,
-    GradedModuleCat.bimoduleUnitEquiv_apply.{0} Γ]
-  rfl
+      (𝟙 M) (zigzagGradedBimoduleUnitIso k G).hom,
+    GradedModuleCat.hom_id, LinearMap.id_apply, zigzagGradedBimoduleUnitIso_hom_apply]
+  simp only [GradedModuleCat.bimoduleUnitEquiv_apply.{0} Γ]
 
 /-- The actual left unit identification commutes with graded bimodule maps. -/
 @[reassoc (attr := simp)]

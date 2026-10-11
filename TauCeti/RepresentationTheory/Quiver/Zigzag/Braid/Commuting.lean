@@ -16,8 +16,10 @@ only the mixed vertex terms and the regular bimodule term. Unit identifications 
 these terms in the two-term complex with differential given by the two evaluations.
 Swapping the two vertex summands then gives commutation.
 
-The component constructions use `HomologicalComplex.mapBifunctorDesc`,
-`HomologicalComplex.mapBifunctor.hom_ext`, and the binary biproduct universal property.
+The component identifications describe the commuting map explicitly: in degree zero it
+is the identity of the regular bimodule, and in degree minus one it exchanges the two
+vertex summands by the biproduct braiding. The supported totalization-inclusion formulas
+identify each individual tensor summand with its unit or vertex component.
 -/
 
 public section
@@ -108,6 +110,19 @@ def zigzagBraidComplexTensorXZeroIso (i j : V) : (T i j).X 0 ≅ Z where
     simp only [tensorZeroHom, tensorZeroInv, Category.assoc,
       HomologicalComplex.ι_mapBifunctorDesc, tensorZeroMap_zero_zero, Iso.inv_hom_id]
 
+/-- The regular summand in degree zero evaluates through the two component unit maps. -/
+@[reassoc (attr := simp)]
+theorem ιMapBifunctor_zigzagBraidComplexTensorXZeroIso_hom (i j : V) :
+    HomologicalComplex.ιMapBifunctor (B i) (B j) F c 0 0 0 (by simp) ≫
+        (zigzagBraidComplexTensorXZeroIso k G i j).hom =
+      ((((F).flip.obj ((B j).X 0)).mapIso (zigzagBraidComplexXIso₁ k G i) ≪≫
+        ((F).obj Z).mapIso (zigzagBraidComplexXIso₁ k G j)) ≪≫
+          zigzagBimoduleLeftUnitor k G Z).hom := by
+  change HomologicalComplex.ιMapBifunctor (B i) (B j) F c 0 0 0 (by simp) ≫
+      tensorZeroHom k G i j = (tensorPairZeroIso k G i j).hom
+  simp only [tensorZeroHom, HomologicalComplex.ι_mapBifunctorDesc,
+    tensorZeroMap_zero_zero]
+
 private def tensorMinusOneMap (i j : V) (p q : ℤ) :
     ((F).obj ((B i).X p)).obj ((B j).X q) ⟶ U i ⊞ U j := by
   by_cases hp : p = -1
@@ -174,6 +189,32 @@ def zigzagBraidComplexTensorXMinusOneIso (i j : V) : (T i j).X (-1) ≅ U i ⊞ 
     · simp only [tensorMinusOneHom, tensorMinusOneInv, Category.assoc,
         biprod.inr_desc_assoc, HomologicalComplex.ι_mapBifunctorDesc,
         tensorMinusOneMap_right, Iso.inv_hom_id_assoc, Category.comp_id]
+
+/-- The `(-1,0)` summand identifies with the first vertex summand via the right unitor. -/
+@[reassoc (attr := simp)]
+theorem ιMapBifunctor_zigzagBraidComplexTensorXMinusOneIso_hom_left (i j : V) :
+    HomologicalComplex.ιMapBifunctor (B i) (B j) F c (-1) 0 (-1) (by simp) ≫
+        (zigzagBraidComplexTensorXMinusOneIso k G i j).hom =
+      ((((F).flip.obj ((B j).X 0)).mapIso (zigzagBraidComplexXIso₀ k G i) ≪≫
+        ((F).obj (U i)).mapIso (zigzagBraidComplexXIso₁ k G j)) ≪≫
+          zigzagBimoduleRightUnitor k G (U i)).hom ≫ biprod.inl := by
+  change HomologicalComplex.ιMapBifunctor (B i) (B j) F c (-1) 0 (-1) (by simp) ≫
+      tensorMinusOneHom k G i j = (tensorPairLeftIso k G i j).hom ≫ biprod.inl
+  simp only [tensorMinusOneHom, HomologicalComplex.ι_mapBifunctorDesc,
+    tensorMinusOneMap_left]
+
+/-- The `(0,-1)` summand identifies with the second vertex summand via the left unitor. -/
+@[reassoc (attr := simp)]
+theorem ιMapBifunctor_zigzagBraidComplexTensorXMinusOneIso_hom_right (i j : V) :
+    HomologicalComplex.ιMapBifunctor (B i) (B j) F c 0 (-1) (-1) (by simp) ≫
+        (zigzagBraidComplexTensorXMinusOneIso k G i j).hom =
+      ((((F).flip.obj ((B j).X (-1))).mapIso (zigzagBraidComplexXIso₁ k G i) ≪≫
+        ((F).obj Z).mapIso (zigzagBraidComplexXIso₀ k G j)) ≪≫
+          zigzagBimoduleLeftUnitor k G (U j)).hom ≫ biprod.inr := by
+  change HomologicalComplex.ιMapBifunctor (B i) (B j) F c 0 (-1) (-1) (by simp) ≫
+      tensorMinusOneHom k G i j = (tensorPairRightIso k G i j).hom ≫ biprod.inr
+  simp only [tensorMinusOneHom, HomologicalComplex.ι_mapBifunctorDesc,
+    tensorMinusOneMap_right]
 
 private theorem tensorPairLeft_d (i j : V) :
     (((F).map ((B i).d (-1) 0)).app ((B j).X 0)) ≫ (tensorPairZeroIso k G i j).hom =
@@ -391,6 +432,7 @@ def zigzagBraidComplexTensorCommHomotopyEquiv (i j : V) (hij : i ≠ j) (hadj : 
     HomotopyEquiv (T i j) (T j i) :=
   HomotopyEquiv.ofIso (zigzagBraidComplexTensorCommIso k G i j hij hadj)
 
+/-- In degree zero the commuting map is the identity under the regular-bimodule identifications. -/
 @[reassoc (attr := simp)]
 theorem zigzagBraidComplexTensorCommIso_hom_f_zero
     (i j : V) (hij : i ≠ j) (hadj : ¬ G.Adj i j) :
@@ -404,6 +446,7 @@ theorem zigzagBraidComplexTensorCommIso_hom_f_zero
           (zigzagBraidComplexTensorXZeroIso k G j i).hom = _
   simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
 
+/-- In degree minus one the commuting map exchanges the vertex summands by biproduct braiding. -/
 @[reassoc (attr := simp)]
 theorem zigzagBraidComplexTensorCommIso_hom_f_minus_one
     (i j : V) (hij : i ≠ j) (hadj : ¬ G.Adj i j) :
