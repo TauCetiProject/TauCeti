@@ -116,27 +116,14 @@ theorem restriction_surjective : Function.Surjective (restriction A).hom := by
   rw [← generatedCoordinateMap_comp_restriction] at h
   exact Function.Surjective.of_comp h
 
-/-- The positive subgroup's defining ideal inside the full generated carrier: the common
-kernel of the positive numbered root and weight-torus coordinate lifts. -/
+/-- The positive subgroup's defining ideal inside the full generated carrier. -/
 def carrierDefiningIdeal : HopfIdeal A (generatedCoordinateHopfAlgebra A) :=
-  CommHopfAlgCat.commonKernelHopfIdeal fun j : Fin 6 ⊕ Unit ↦
-    generatedCoordinateLift A (match j with
-      | .inl i => .inl (.inl i)
-      | .inr u => .inr u)
-
-/-- The positive subgroup's defining ideal is the kernel of restriction to it. -/
-theorem kerOfSurjective_restriction :
-    HopfIdeal.kerOfSurjective (restriction A).hom (restriction_surjective A) =
-      carrierDefiningIdeal A :=
-  CommHopfAlgCat.kerOfSurjective_eq_commonKernelHopfIdeal_of_comp (generatedCoordinateMap A)
-    (generatedCoordinateMap_surjective A) (generator A) _
-    (by rintro (i | ⟨⟩) <;> exact generatedCoordinateMap_comp_generatedCoordinateLift A _)
-    (restriction A) (generatedCoordinateMap_comp_restriction A)
+  HopfIdeal.kerOfSurjective (restriction A).hom (restriction_surjective A)
 
 @[simp]
 theorem mem_carrierDefiningIdeal (x : generatedCoordinateHopfAlgebra A) :
-    x ∈ carrierDefiningIdeal A ↔ (restriction A).hom x = 0 := by
-  rw [← kerOfSurjective_restriction, HopfIdeal.mem_kerOfSurjective]
+    x ∈ carrierDefiningIdeal A ↔ (restriction A).hom x = 0 :=
+  HopfIdeal.mem_kerOfSurjective _ _
 
 /-- The full carrier's generators restrict to the positive subgroup's generator lifts. -/
 @[reassoc (attr := simp)]
@@ -155,8 +142,14 @@ theorem carrierDefiningIdeal_toIdeal_le_ker_generatedCoordinateLift (j : Fin 6 �
     (carrierDefiningIdeal A).toIdeal ≤ RingHom.ker
       (generatedCoordinateLift A (match j with
         | .inl i => .inl (.inl i)
-        | .inr u => .inr u)).hom.toAlgHom.toRingHom :=
-  CommHopfAlgCat.commonKernelHopfIdeal_toIdeal_le_ker _ j
+        | .inr u => .inr u)).hom.toAlgHom.toRingHom := by
+  intro x hx
+  rw [HopfIdeal.mem_toIdeal, mem_carrierDefiningIdeal] at hx
+  rw [RingHom.mem_ker, ← restriction_comp_commonKernelLift]
+  simpa only [AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom,
+    _root_.CommHopfAlgCat.hom_comp, BialgHom.coe_toAlgHom, BialgHom.coe_comp,
+    Function.comp_apply, map_zero] using
+    congrArg (CommHopfAlgCat.commonKernelLift (generator A) j).hom hx
 
 /-- A Hopf ideal of the generated carrier lies below the positive subgroup's defining ideal
 exactly when the positive numbered root and weight-torus coordinate lifts kill it. -/
@@ -165,8 +158,28 @@ theorem le_carrierDefiningIdeal_iff (I : HopfIdeal A (generatedCoordinateHopfAlg
       ∀ j : Fin 6 ⊕ Unit, I.toIdeal ≤ RingHom.ker
         (generatedCoordinateLift A (match j with
           | .inl i => .inl (.inl i)
-          | .inr u => .inr u)).hom.toAlgHom.toRingHom :=
-  CommHopfAlgCat.le_commonKernelHopfIdeal_iff _ I
+          | .inr u => .inr u)).hom.toAlgHom.toRingHom := by
+  constructor
+  · intro h j
+    exact (HopfIdeal.toIdeal_le_toIdeal.mpr h).trans
+      (carrierDefiningIdeal_toIdeal_le_ker_generatedCoordinateLift A j)
+  · intro h
+    have hpre : I.comapOfSurjective (generatedCoordinateMap A).hom
+        (generatedCoordinateMap_surjective A) ≤ definingIdeal A := by
+      apply (CommHopfAlgCat.le_commonKernelHopfIdeal_iff _ _).mpr
+      intro j x hx
+      have hxI := HopfIdeal.mem_comapOfSurjective.mp hx
+      have hx0 : (generatedCoordinateMap A ≫ generatedCoordinateLift A (match j with
+        | .inl i => .inl (.inl i)
+        | .inr u => .inr u)).hom x = 0 := RingHom.mem_ker.mp (h j hxI)
+      rw [generatedCoordinateMap_comp_generatedCoordinateLift] at hx0
+      cases j <;> exact hx0
+    intro x hx
+    obtain ⟨y, rfl⟩ := generatedCoordinateMap_surjective A x
+    rw [mem_carrierDefiningIdeal]
+    have hy := hpre (HopfIdeal.mem_comapOfSurjective.mpr hx)
+    exact (congrArg (fun f ↦ f.hom y) (generatedCoordinateMap_comp_restriction A)).trans
+      ((CommHopfAlgCat.mkQuotient_eq_zero_iff _ _ y).mpr hy)
 
 variable (k : Type u) [Field k]
 
