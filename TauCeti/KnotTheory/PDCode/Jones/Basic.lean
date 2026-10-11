@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Polynomial.Laurent.Basic
 public import TauCeti.KnotTheory.PDCode.Circle
 public import TauCeti.KnotTheory.PDCode.Oriented.ClaspInsertion
-public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Circle
+public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Circle.Basic
 public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Two.Basic
 public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Two.Circles
 public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.One

@@ -66,11 +66,6 @@ commutative ring is the base change of that curve.
   `pointedCurve`. Named rather than left definitional, because the module system does not expose
   `polyToField`'s body; this is what lands a Jacobian formula transported from `Poly` on
   `pointedCurve` rather than on an unreduced base change.
-* `WeierstrassCurve.Universal.ringHom_ext`: two homomorphisms out of `Universal.Ring` agreeing on
-  the coefficient ring and on the two distinguished coordinates are equal — the uniqueness half of
-  the universal property, since those generate.
-* `WeierstrassCurve.Universal.algebraMap_field_injective`: `ℤ[A₁,⋯,A₆]` embeds in
-  `Universal.Field`, which is what makes `pointedCurve` an elliptic curve.
 * `WeierstrassCurve.map_specializeElliptic`: every elliptic Weierstrass curve is the base change of
   `Universal.ellipticCurve` along its classifying homomorphism.
 * `WeierstrassCurve.specializeElliptic_map_ellipticCurve`: a homomorphism out of
@@ -116,8 +111,8 @@ roadmap pins for the Nagell–Lutz strand. **Most** declarations here come from 
 their lemmas), and the specialization API (`specialize`, `polyEval`, `ringEval` with their
 compatibility lemmas).
 
-Three groups are **not** simple ports, and are listed among the adaptations below: `ringHom_ext`
-is new, and so is `map_polyToField` — upstream that identity is definitional and is taken as `rfl`
+Three groups are **not** simple ports, and are listed among the adaptations below:
+`map_polyToField` is new — upstream that identity is definitional and is taken as `rfl`
 inside the `ZSMul.lean` proofs that need it, which this repository's unexposed `polyToField` makes
 impossible; the `CharZero Universal.Ring` instance **replaces** the source's `Poly.two_ne_zero` and
 `Field.two_ne_zero` rather than porting them, and carries the field case with it — Mathlib derives
@@ -138,8 +133,8 @@ Four adaptations were made. The file was converted to this repository's module s
 `FaithfulSMul.algebraMap_injective` applied to Mathlib's own `FaithfulSMul` instances on the
 coordinate ring, and the third is the `Iff` reading of the auto-generated `some.injEq`, which `simp`
 proves alone. This repository declines such wrappers, and had already declined the analogous
-instances in `Affine/FunctionField/Finrank.lean`; the one internal use, in
-`algebraMap_field_injective`, calls `FaithfulSMul.algebraMap_injective` directly. Dropping them also
+instances in `Affine/FunctionField/Finrank.lean`; the one internal use, in the `IsElliptic`
+instance on `pointedCurve`, calls `FaithfulSMul.algebraMap_injective` directly. Dropping them also
 removes the source's `set_option backward.isDefEq.respectTransparency false in`, which existed only
 for the first of them and which `TauCeti/` forbids in any case.
 No definition in this file is exposed. `polyToField_apply`, `algebraMap_field_eq_comp`, the five
@@ -246,7 +241,8 @@ open MvPolynomial (X) in
 
 /-- The discriminant of the universal Weierstrass curve is a nonzero polynomial in `ℤ[A₁,⋯,A₆]`,
 i.e. a Weierstrass equation is not singular *identically* in its coefficients. Transported along
-`algebraMap_field_injective`, this is what makes `pointedCurve` elliptic over `Universal.Field`. -/
+the injective `algebraMap` into `Universal.Field`, this is what makes `pointedCurve` elliptic over
+`Universal.Field`. -/
 lemma curve_Δ_ne_zero : curve.Δ ≠ 0 :=
   -- specialize `A₆ ↦ 1` and the rest to `0`: the curve `Y² = X³ + 1`, whose `Δ` is `-432`
   ne_of_apply_ne (MvPolynomial.eval (Coeff.rec 0 0 0 0 1)) <| by simp [Δ, b₂, b₄, b₆, b₈, curve]
@@ -258,8 +254,9 @@ abbrev Poly : Type := (MvPolynomial Coeff ℤ)[X][Y]
 /-- The universal ring for **pointed** Weierstrass curves: `ℤ[A₁,⋯,A₆,X,Y]/⟨P⟩`, for `P` the
 Weierstrass polynomial. A Weierstrass curve over `R` together with an affine point on it determines
 a ring homomorphism out of it — `ringEval` — and determines it uniquely, since the coefficients and
-the two coordinates generate (`ringHom_ext`). Being an `abbrev` for `curve.CoordinateRing`, it
-inherits Mathlib's `Affine.CoordinateRing` API. -/
+the two coordinates generate (Mathlib's `AdjoinRoot.ringHom_ext`, through which `ext` reduces to
+them). Being an `abbrev` for `curve.CoordinateRing`, it inherits Mathlib's `Affine.CoordinateRing`
+API. -/
 protected abbrev Ring : Type := curve.CoordinateRing
 /-- The universal field for pointed Weierstrass curves is
 the field of fractions of the universal ring. -/
@@ -297,14 +294,6 @@ lemma algebraMap_ring_eq_comp :
     algebraMap (MvPolynomial Coeff ℤ) Universal.Ring = (AdjoinRoot.mk _).comp (algebraMap _ _) :=
   (rfl)
 
-/-- The coefficient ring `ℤ[A₁,⋯,A₆]` embeds in the universal field: the five indeterminates stay
-algebraically independent after adjoining a point and passing to fractions. This is what carries
-`curve_Δ_ne_zero` over to `pointedCurve`, giving the `IsElliptic` instance below. -/
-lemma algebraMap_field_injective :
-    Function.Injective (algebraMap (MvPolynomial Coeff ℤ) Universal.Field) :=
-  (IsFractionRing.injective Universal.Ring Universal.Field).comp
-    (FaithfulSMul.algebraMap_injective _ _)
-
 /-- The universal **pointed** Weierstrass curve: the universal curve base-changed to the universal
 field, over which it is an elliptic curve (instance below) carrying the distinguished point `(X, Y)`
 (`equation_point`, packaged as `Affine.point`). It is the base change to `Universal.Field`, and so
@@ -324,7 +313,7 @@ universal field. -/
 instance : pointedCurve.IsElliptic where
   isUnit := by
     rw [pointedCurve_Δ]
-    exact ((map_ne_zero_iff _ algebraMap_field_injective).mpr curve_Δ_ne_zero).isUnit
+    exact ((map_ne_zero_iff _ (FaithfulSMul.algebraMap_injective _ _)).mpr curve_Δ_ne_zero).isUnit
 
 open Polynomial in
 /-- The pair `(X, Y)` — the images of the two adjoined variables in the universal field — satisfies
@@ -495,31 +484,6 @@ point does not disturb the substitution of `W`'s coefficients. -/
 @[simp]
 lemma polyEval_comp_eq_specialize : (polyEval W x y).comp (algebraMap _ _) = W.specialize := by
   ext <;> simp [polyEval]
-
-section RingHomExt
-
-variable {R : Type*} [Semiring R]
-
-/-- **Extensionality for homomorphisms out of the universal ring.** Two ring homomorphisms out of
-`Universal.Ring` are equal as soon as they agree on the coefficient ring `ℤ[A₁,⋯,A₆]` and on the two
-distinguished coordinates `X` and `Y` — that is, on generators.
-
-Together with `ringEval_comp_eq_specialize`, `ringEval_of_X` and `ringEval_root` this is the
-uniqueness half of the universal property: `ringEval` is not merely *a* homomorphism carrying the
-universal curve and its point to `W` and `(x, y)`, it is the *only* one. That is what licenses
-proving an identity once over `curveRing` and reading it off for every curve and every point.
-
-Agreement after composing with `AdjoinRoot.mk` would **not** do: `mk` is surjective, so that
-hypothesis is merely a restatement of the conclusion and proves nothing about generators. -/
-@[ext]
-lemma ringHom_ext {f g : Universal.Ring →+* R}
-    (hcoeff : f.comp (algebraMap (MvPolynomial Coeff ℤ) Universal.Ring)
-      = g.comp (algebraMap (MvPolynomial Coeff ℤ) Universal.Ring))
-    (hX : f (AdjoinRoot.of _ Polynomial.X) = g (AdjoinRoot.of _ Polynomial.X))
-    (hY : f (AdjoinRoot.root _) = g (AdjoinRoot.root _)) : f = g := by
-  exact AdjoinRoot.ringHom_ext (Polynomial.ringHom_ext' hcoeff hX) hY
-
-end RingHomExt
 
 /-- The `Universal.Ring` counterpart of `polyEval_comp_eq_specialize`: `ringEval eqn` also restricts
 to `W.specialize` on the coefficient ring. This is the compatibility that makes
