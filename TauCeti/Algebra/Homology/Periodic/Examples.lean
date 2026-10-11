@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.DualNumber
+public import TauCeti.Algebra.DualNumber.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
@@ -16,10 +16,10 @@ public import TauCeti.Algebra.Homology.Periodic.DifferentialModule
 /-!
 # Acyclic differential modules need not be contractible
 
-Over the dual numbers over any field `k`, multiplication by `ε` gives a differential module whose
-one-periodic complex is exact and whose underlying module is free. No linear homotopy contracts
-the differential. This example separates acyclicity from contractibility at the boundary between
-homotopy and derived categories.
+Over the dual numbers over any commutative ring `k`, multiplication by `ε` gives a differential
+module whose one-periodic complex is exact and whose underlying module is free. When `k` is
+nontrivial, no linear homotopy contracts the differential. This example separates acyclicity from
+contractibility at the boundary between homotopy and derived categories.
 
 ## References
 
@@ -36,11 +36,11 @@ open CategoryTheory CategoryTheory.Limits
 /-- The algebra of dual numbers over `k`. -/
 abbrev DualNumbers (k : Type*) := DualNumber k
 
-variable {k : Type*} [Field k]
+variable {k : Type*} [CommRing k]
 
 /-- The differential module on the regular dual-number module with differential multiplication
 by `ε`. -/
-def dualNumberDifferentialModule : DifferentialModule (ModuleCat (DualNumbers k)) where
+@[expose] def dualNumberDifferentialModule : DifferentialModule (ModuleCat (DualNumbers k)) where
   X := ModuleCat.of (DualNumbers k) (DualNumbers k)
   d := ModuleCat.ofHom
     (LinearMap.toSpanSingleton (DualNumbers k) (DualNumbers k) DualNumber.eps)
@@ -49,6 +49,23 @@ def dualNumberDifferentialModule : DifferentialModule (ModuleCat (DualNumbers k)
     apply LinearMap.ext
     intro x
     simp [LinearMap.toSpanSingleton_apply, smul_eq_mul, mul_assoc]
+
+/-- The underlying object of the dual-number differential module is the regular module. -/
+@[simp] theorem dualNumberDifferentialModule_X :
+    (dualNumberDifferentialModule (k := k)).X =
+      ModuleCat.of (DualNumbers k) (DualNumbers k) := rfl
+
+/-- The differential of the dual-number differential module is multiplication by `ε`. -/
+@[simp] theorem dualNumberDifferentialModule_d :
+    (dualNumberDifferentialModule (k := k)).d =
+      ModuleCat.ofHom
+        (LinearMap.toSpanSingleton (DualNumbers k) (DualNumbers k) DualNumber.eps) := rfl
+
+/-- The differential sends `x` to `x * ε`. -/
+@[simp] theorem dualNumberDifferentialModule_d_apply (x : DualNumbers k) :
+    (dualNumberDifferentialModule (k := k)).d x = x * DualNumber.eps := by
+  change (LinearMap.toSpanSingleton (DualNumbers k) (DualNumbers k) DualNumber.eps) x = _
+  simp [LinearMap.toSpanSingleton_apply, smul_eq_mul]
 
 /-- The underlying module of `dualNumberDifferentialModule` is projective. -/
 theorem dualNumberDifferentialModule_projective :
@@ -64,23 +81,6 @@ abbrev dualNumberPeriodicComplex :=
   (DifferentialModule.toOnePeriodicComplex (ModuleCat (DualNumbers k))).obj
     dualNumberDifferentialModule
 
-private theorem dualNumber_mul_eps_exact :
-    Function.Exact
-      (LinearMap.toSpanSingleton (DualNumbers k) (DualNumbers k) DualNumber.eps)
-      (LinearMap.toSpanSingleton (DualNumbers k) (DualNumbers k) DualNumber.eps) := by
-  intro x
-  constructor
-  · intro hx
-    have hx' : x.fst = 0 := by
-      have h := congrArg TrivSqZeroExt.snd hx
-      simpa [LinearMap.toSpanSingleton_apply] using h
-    refine ⟨TrivSqZeroExt.inl x.snd, ?_⟩
-    rw [← TrivSqZeroExt.inl_fst_add_inr_snd_eq x, hx']
-    simp [LinearMap.toSpanSingleton_apply, DualNumber.inr_eq_smul_eps,
-      ← TrivSqZeroExt.inl_mul_eq_smul]
-  · rintro ⟨y, rfl⟩
-    simp [LinearMap.toSpanSingleton_apply, smul_eq_mul, mul_assoc]
-
 /-- The one-periodic complex of the dual-number differential module is acyclic. -/
 theorem dualNumberPeriodicComplex_acyclic :
     (dualNumberPeriodicComplex (k := k)).Acyclic := by
@@ -95,7 +95,7 @@ theorem dualNumberPeriodicComplex_acyclic :
 
 /-- Multiplication by `ε` on the regular module admits no contracting homotopy: there is no
 linear map `h` with `d h + h d = 1`. -/
-theorem dualNumberDifferentialModule_not_contractible :
+theorem dualNumberDifferentialModule_not_contractible [Nontrivial k] :
     ¬ ∃ h : (DualNumbers k) →ₗ[DualNumbers k] (DualNumbers k),
       LinearMap.id =
         (LinearMap.toSpanSingleton (DualNumbers k) (DualNumbers k) DualNumber.eps).comp h +
