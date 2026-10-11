@@ -423,8 +423,9 @@ theorem finite_H1_of_isPrimitiveRoot_of_natCard_eq [NeZero n] {ζ : K}
 For `m ∣ n` with `n ≠ 0`, raising to the power `n / m` maps `μₙ` onto `μₘ` (at `n = 0` it is the
 zero map, since `0 / m = 0`). On Kummer classes it is the change of level: an `n`th root `α` of
 `a` gives the `m`th root `α ^ (n / m)` of the same `a`, and
-`(g α / α) ^ (n / m) = g α ^ (n / m) / α ^ (n / m)`. As every class at level `m` is a Kummer
-class, the induced map on `H¹` is surjective. -/
+`(g α / α) ^ (n / m) = g α ^ (n / m) / α ^ (n / m)`. When `n` is invertible in `K`, every class
+at level `m` is a Kummer class, so the induced map on `H¹` is surjective
+(`TauCeti.explicitCoeff1_kummerCoeffPow_surjective`). -/
 
 variable {K n}
 
