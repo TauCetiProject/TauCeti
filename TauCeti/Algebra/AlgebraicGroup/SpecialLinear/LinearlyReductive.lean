@@ -20,13 +20,12 @@ In characteristic zero, the Lie algebra of `SLₙ` is semisimple: its tangent Li
 nondegenerate Killing form. Weyl's complete reducibility theorem for comodules then proves that
 every finite-dimensional representation of `SLₙ` is completely reducible.
 
-This supplies the characteristic-zero complete-reducibility route for the `SLₙ` worked example
-in the reductive-groups roadmap. It is a concrete case of, but does not prove, the general
-equivalence between reductivity and linear reductivity.
+This is a concrete case of, but does not prove, the general equivalence between reductivity and
+linear reductivity in characteristic zero.
 
 ## Main declaration
 
-* `TauCeti.SpecialLinear.linearlyReductiveCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra`:
+* `TauCeti.SpecialLinear.linearlyReductiveCommHopfAlgProperty_coordinateHopfAlgebra`:
   the coordinate Hopf algebra of `SLₙ` is linearly reductive in characteristic zero.
 
 ## References
@@ -45,22 +44,28 @@ universe u
 
 variable (k : Type u) [Field k] [CharZero k]
 
+/-- The tangent Lie algebra of `SLₙ` has nondegenerate Killing form in characteristic zero. -/
+instance (n : ℕ) : LieAlgebra.IsKilling k
+    (Derivation k (coordinateHopfAlgebra k n)
+      (Bialgebra.CounitAlgebra k (coordinateHopfAlgebra k n) k)) :=
+  LieEquiv.isKilling (tangentLieEquivSl (R := k) (B := k) n).symm
+
 /-- **`SLₙ` is linearly reductive in characteristic zero.** Every finite-dimensional comodule
 over its coordinate Hopf algebra is completely reducible. -/
-theorem linearlyReductiveCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra (n : ℕ) :
+theorem linearlyReductiveCommHopfAlgProperty_coordinateHopfAlgebra (n : ℕ) :
     linearlyReductiveCommHopfAlgProperty k (coordinateHopfAlgebra k n) := by
+  -- The packaged quotient carries structure instances that cannot be transported across
+  -- `finiteTypeCoordinateHopfAlgebra_obj`; this wrapper keeps its object definitionally equal
+  -- to the coordinate Hopf algebra while reusing the existing finite-type property.
   let H : FiniteTypeCommHopfAlgCat k :=
     ⟨coordinateHopfAlgebra k n, by
       rw [← finiteTypeCoordinateHopfAlgebra_obj]
       exact (finiteTypeCoordinateHopfAlgebra k n).property⟩
-  let _ : LieAlgebra.HasTrivialRadical k (LieAlgebra.SpecialLinear.sl (Fin n) k) := inferInstance
-  let _ : LieAlgebra.IsKilling k (LieAlgebra.SpecialLinear.sl (Fin n) k) := inferInstance
-  let _ : LieAlgebra.IsKilling k
-      (Derivation k H.obj (Bialgebra.CounitAlgebra k H.obj k)) :=
-    LieEquiv.isKilling (tangentLieEquivSl (R := k) (B := k) n).symm
   have hconnected : geometricallyConnectedCommHopfAlgProperty k H.obj :=
     SpecialLinear.geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k n
-  exact linearlyReductiveCommHopfAlgProperty.of_geometricallyConnected_of_isKilling hconnected
+  exact @linearlyReductiveCommHopfAlgProperty.of_geometricallyConnected_of_isKilling k _ _ H
+    (inferInstance : LieAlgebra.IsKilling k
+      (Derivation k H.obj (Bialgebra.CounitAlgebra k H.obj k))) hconnected
 
 end SpecialLinear
 
