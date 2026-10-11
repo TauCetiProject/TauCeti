@@ -31,6 +31,8 @@ which use that all the groups involved are torsion, being killed by `|G|`
 
 ## Main statements
 
+* `TauCeti.TateCohomology.pPowerTorsion_tateCohomology_eq_bot`: the `p`-power torsion of
+  `H_Tateⁿ(G, A)` is trivial when multiplication by `p` is bijective on `A`.
 * `TauCeti.TateCohomology.primaryComponent_tateCohomology_eq_bot`: the `p`-primary component of
   `H_Tateⁿ(S, A)` is trivial when multiplication by `p` is bijective on `A`.
 * `TauCeti.TateCohomology.bijOn_pPowerTorsion_map_g`,
@@ -54,26 +56,9 @@ universe u
 
 variable {k G : Type u} [CommRing k] [Group G]
 
-/-- **An invertible scalar contributes no primary Tate cohomology.** If multiplication by a natural
-number `p` is bijective on a representation `A`, then the `p`-primary component of
-`H_Tateⁿ(S, A)` is zero for every finite subgroup `S` and every integer degree `n`. -/
-theorem primaryComponent_tateCohomology_eq_bot (p : ℕ) (A : Rep k G)
-    (hA : Function.Bijective fun x : A.V => (p : k) • x) (S : Subgroup G) [Fintype S]
-    (n : ℤ) :
-    AddCommGroup.primaryComponent (tateCohomology (Rep.res S.subtype A) n) p = ⊥ := by
-  have hp : Function.Bijective fun x : tateCohomology (Rep.res S.subtype A) n =>
-      (p : k) • x :=
-    smul_bijective (p : k) (Rep.res S.subtype A) (by simpa using hA) n
-  apply TauCeti.primaryComponent_eq_bot_of_injective_nsmul
-  simpa only [Nat.cast_smul_eq_nsmul] using hp.1
-
-section ShortExact
-
-variable [Fintype G]
-
 /-- The `p`-power torsion of every Tate cohomology group of a representation of a finite group on
 which multiplication by `p` is bijective is trivial. -/
-private theorem pPowerTorsion_tateCohomology_eq_bot {A : Rep k G} {p : ℕ}
+theorem pPowerTorsion_tateCohomology_eq_bot [Fintype G] {A : Rep k G} {p : ℕ}
     (hp : Function.Bijective fun a : A.V ↦ p • a) (n : ℤ) :
     pPowerTorsion p k (tateCohomology A n) = ⊥ := by
   have hinj : Function.Injective fun x : tateCohomology A n ↦ p • x := by
@@ -84,6 +69,24 @@ private theorem pPowerTorsion_tateCohomology_eq_bot {A : Rep k G} {p : ℕ}
   have hx' : x ∈ AddCommGroup.primaryComponent (tateCohomology A n) p :=
     AddCommGroup.mem_primaryComponent.mpr (mem_pPowerTorsion_iff.mp hx)
   rwa [h, AddSubgroup.mem_bot] at hx'
+
+/-- **An invertible scalar contributes no primary Tate cohomology.** If multiplication by a natural
+number `p` is bijective on a representation `A`, then the `p`-primary component of
+`H_Tateⁿ(S, A)` is zero for every finite subgroup `S` and every integer degree `n`. -/
+theorem primaryComponent_tateCohomology_eq_bot (p : ℕ) (A : Rep k G)
+    (hA : Function.Bijective fun x : A.V => (p : k) • x) (S : Subgroup G) [Fintype S]
+    (n : ℤ) :
+    AddCommGroup.primaryComponent (tateCohomology (Rep.res S.subtype A) n) p = ⊥ := by
+  have h := pPowerTorsion_tateCohomology_eq_bot (A := Rep.res S.subtype A)
+    (by simpa only [Nat.cast_smul_eq_nsmul] using hA) n
+  refine (AddSubgroup.eq_bot_iff_forall _).mpr fun x hx ↦ ?_
+  have hx' : x ∈ pPowerTorsion p k (tateCohomology (Rep.res S.subtype A) n) :=
+    mem_pPowerTorsion_iff.mpr (AddCommGroup.mem_primaryComponent.mp hx)
+  rwa [h, Submodule.mem_bot] at hx'
+
+section ShortExact
+
+variable [Fintype G]
 
 variable {S : ShortComplex (Rep k G)} (hS : S.ShortExact) {p : ℕ} [Fact p.Prime]
 include hS
