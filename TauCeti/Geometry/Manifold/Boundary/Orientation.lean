@@ -43,6 +43,8 @@ def IsOutwardPointing (x : M) (v : TangentSpace (𝓡∂ (n + 1)) x) : Prop :=
       (mfderiv (𝓡∂ (n + 1)) 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1)))
         (extChartAt (𝓡∂ (n + 1)) x) x v)) 0 < 0
 
+/-- An outward-pointing vector is based at the boundary, with negative zeroth coordinate
+derivative in the preferred half-space chart. -/
 @[grind =]
 theorem isOutwardPointing_iff {x : M} {v : TangentSpace (𝓡∂ (n + 1)) x} :
     IsOutwardPointing x v ↔
