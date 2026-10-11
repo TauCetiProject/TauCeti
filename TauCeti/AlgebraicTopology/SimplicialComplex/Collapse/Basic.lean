@@ -118,6 +118,17 @@ theorem head (hKL : ElementaryCollapsesTo K L) (hLP : CollapsesTo L P) : Collaps
 theorem tail (hKL : CollapsesTo K L) (hLP : ElementaryCollapsesTo L P) : CollapsesTo K P :=
   Relation.ReflTransGen.tail hKL hLP
 
+/-- Prove a property of collapse sequences by treating the empty sequence, a single
+elementary collapse, and concatenation. -/
+@[elab_as_elim]
+theorem trans_induction_on
+    {motive : ∀ {K L : _root_.PreAbstractSimplicialComplex ι}, CollapsesTo K L → Prop}
+    (h : CollapsesTo K L) (refl : ∀ K, motive (CollapsesTo.refl K))
+    (single : ∀ {K L} (h : ElementaryCollapsesTo K L), motive (CollapsesTo.single h))
+    (trans : ∀ {K L P} (hKL : CollapsesTo K L) (hLP : CollapsesTo L P),
+      motive hKL → motive hLP → motive (hKL.trans hLP)) : motive h :=
+  Relation.ReflTransGen.trans_induction_on h refl single trans
+
 /-- The endpoint of a collapse is a subcomplex of its starting complex. -/
 theorem le (h : CollapsesTo K L) : L ≤ K := by
   induction h with

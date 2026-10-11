@@ -43,9 +43,13 @@ nonzero local invariant at only finitely many places, `χ (Art_v a) = 0` for all
 many finite places `v` (`finite_setOf_apply_absoluteGaloisGroupMap_ne_zero`), and the sum of the
 local invariants of `a ∪ δχ` is the sum of the values of `χ` on the local Artin symbols of `a`
 (`sumLocalInv_brLocalization_characterCarryCocycle`,
-`sumLocalInv_brLocalization_characterCarryCocycle_eq_finsum`). This is how the sum of the local
-invariants of a class split by a cyclic extension is computed from a product formula for the
-local Artin symbols.
+`sumLocalInv_brLocalization_characterCarryCocycle_eq_finsum`).
+
+If `E/K` is cyclic and `χ` sends a generator of `Gal(E/K)` to `1 / [E : K]`, every Brauer class
+split by `E` is such a carry class (`exists_characterCarryCocycle_eq_relBrInfl`). So the sum of the
+local invariants vanishes on all classes split by `E` exactly when the local Artin symbols of every
+`a ∈ Kˣ` satisfy the product formula `∑_v χ (Art_v a) = 0`
+(`forall_sumLocalInv_brLocalization_relBrInfl_eq_zero_iff`).
 
 ## Main results
 
@@ -60,6 +64,9 @@ local Artin symbols.
 * `TauCeti.ClassFieldTheory.sumLocalInv_brLocalization_characterCarryCocycle`,
   `TauCeti.ClassFieldTheory.sumLocalInv_brLocalization_characterCarryCocycle_eq_finsum`: the sum
   of the local invariants of `a ∪ δχ` is `∑_v χ (Art_v a)`.
+* `TauCeti.ClassFieldTheory.forall_sumLocalInv_brLocalization_relBrInfl_eq_zero_iff`: for a
+  cyclic extension `E/K`, the sum of the local invariants vanishes on the classes split by `E`
+  exactly when the local Artin symbols satisfy the product formula.
 
 ## References
 
@@ -339,5 +346,51 @@ theorem sumLocalInv_brLocalization_characterCarryCocycle_eq_finsum
     fun v hv ↦ by simpa using hv
 
 end Brauer
+
+/-! ### Classes split by a cyclic extension -/
+
+section Cyclic
+
+variable [NumberField K] (E : IntermediateField K (SeparableClosure K)) [FiniteDimensional K E]
+  [IsGalois K E] {g : Gal(E/K)} (hg : ∀ σ, σ ∈ Subgroup.zpowers g)
+  {χ : Additive Gal(E/K) →+ AddCircle (1 : ℚ)}
+  (τ : ∀ v : HeightOneSpectrum (𝓞 K),
+    SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
+  (τ' : ∀ w : InfinitePlace K, SeparableClosure K →ₐ[K] SeparableClosure w.Completion)
+  (σ : Kˣ → ∀ v : HeightOneSpectrum (𝓞 K), Field.absoluteGaloisGroup (v.adicCompletion K))
+  (σ' : Kˣ → ∀ w : InfinitePlace K, Field.absoluteGaloisGroup w.Completion)
+
+include hg in
+/-- **The sum of the local invariants on the classes split by a cyclic extension.** Let `E/K` be a
+cyclic Galois extension of a number field inside `Kˢ`, with generator `g`, and `χ` the character of
+`Gal(E/K)` with `χ(g) = 1 / [E : K]`. For every `a ∈ Kˣ`, choose at every place a representative
+of the local Artin symbol of `a` and read it in `Gal(E/K)` through a decomposition map. Then the
+sum of the local invariants vanishes on every Brauer class split by `E` exactly when the product
+formula `∑_v χ (Art_v a) = 0` holds for every `a ∈ Kˣ`. -/
+theorem forall_sumLocalInv_brLocalization_relBrInfl_eq_zero_iff
+    (hχ : χ (.ofMul g) = ((1 / Module.finrank K E : ℚ) : AddCircle (1 : ℚ)))
+    (hσ : ∀ a v, (σ a v : Field.absoluteGaloisGroupAbelianization (v.adicCompletion K)) =
+      artinMap (v.adicCompletion K) (Units.map (algebraMap K (v.adicCompletion K)) a))
+    (hσ' : ∀ a w, (σ' a w : Field.absoluteGaloisGroupAbelianization w.Completion) =
+      infiniteArtinAt w (Units.map (algebraMap K w.Completion) a)) :
+    (∀ y : groupCohomology (Rep.ofMulDistribMulAction Gal(E/K) Eˣ) 2,
+        sumLocalInv K (brLocalization K (relBrInfl K E E.val y)) = 0) ↔
+      ∀ a : Kˣ, ∑ᶠ v, χ (.ofMul (AlgEquiv.restrictNormalHom E (absoluteGaloisGroupMap (τ v)
+          (absoluteGaloisGroupRestrictEquiv (v.adicCompletion K) (σ a v))))) +
+        ∑ w, χ (.ofMul (AlgEquiv.restrictNormalHom E (absoluteGaloisGroupMap (τ' w)
+          (absoluteGaloisGroupRestrictEquiv w.Completion (σ' a w))))) = 0 := by
+  -- The sum of the local invariants of the carry class of `a` is the sum in the statement.
+  have hsum (a : Kˣ) := sumLocalInv_brLocalization_characterCarryCocycle_eq_finsum
+    (χ.comp (AlgEquiv.restrictNormalHom (K₁ := SeparableClosure K) E).toAdditive)
+    (E.isOpen_ker_comp_restrictNormalHom χ) a τ (σ a) τ' (σ' a) (hσ a) (hσ' a)
+  simp only [AddMonoidHom.comp_apply, MonoidHom.toAdditive_apply_apply, toMul_ofMul] at hsum
+  refine ⟨fun h a ↦ ?_, fun h y ↦ ?_⟩
+  · rw [← hsum, ← relBrInfl_cyclicClass E hg hχ]
+    exact h _
+  · obtain ⟨a, ha⟩ := exists_characterCarryCocycle_eq_relBrInfl E hg hχ y
+    rw [← ha, hsum]
+    exact h a
+
+end Cyclic
 
 end TauCeti.ClassFieldTheory

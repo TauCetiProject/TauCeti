@@ -47,8 +47,12 @@ namespace Representation
 
 section Semiring
 
-variable {k G ι : Type*} [CommSemiring k] [Monoid G] {V : ι → Type*}
-  [∀ i, AddCommMonoid (V i)] [∀ i, Module k (V i)] (ρ : ∀ i, Representation k G (V i))
+variable {k G ι : Type*} [Semiring k] {V : ι → Type*}
+  [∀ i, AddCommMonoid (V i)] [∀ i, Module k (V i)]
+
+section Monoid
+
+variable [Monoid G] (ρ : ∀ i, Representation k G (V i))
 
 /-- The product of a family of representations `ρ i` on `V i`: the representation of `G` on
 `∀ i, V i` acting on each component by `ρ i`. -/
@@ -59,6 +63,20 @@ noncomputable def pi : Representation k G (∀ i, V i) where
 
 @[simp]
 theorem pi_apply (g : G) (x : ∀ i, V i) (i : ι) : pi ρ g x i = ρ i g (x i) := (rfl)
+
+end Monoid
+
+/-- The norm of a product of representations of a finite group acts factor by factor. -/
+@[simp]
+theorem norm_pi_apply [Group G] [Fintype G] (ρ : ∀ i, Representation k G (V i)) (x : ∀ i, V i)
+    (i : ι) : (pi ρ).norm x i = (ρ i).norm (x i) := by
+  simp [Representation.norm, Finset.sum_apply]
+
+/-- An element of a product of representations of a finite group has norm zero exactly when each
+of its components does. -/
+theorem mem_ker_norm_pi_iff [Group G] [Fintype G] (ρ : ∀ i, Representation k G (V i))
+    {x : ∀ i, V i} : x ∈ LinearMap.ker (pi ρ).norm ↔ ∀ i, x i ∈ LinearMap.ker (ρ i).norm := by
+  simp only [LinearMap.mem_ker, funext_iff, norm_pi_apply, Pi.zero_apply]
 
 end Semiring
 
@@ -73,18 +91,6 @@ theorem mem_invariants_pi_iff [Group G] (ρ : ∀ i, Representation k G (V i)) {
     x ∈ (pi ρ).invariants ↔ ∀ i, x i ∈ (ρ i).invariants := by
   simp only [mem_invariants, funext_iff, pi_apply]
   exact forall_comm
-
-/-- The norm of a product of representations of a finite group acts factor by factor. -/
-@[simp]
-theorem norm_pi_apply [Group G] [Fintype G] (ρ : ∀ i, Representation k G (V i)) (x : ∀ i, V i)
-    (i : ι) : (pi ρ).norm x i = (ρ i).norm (x i) := by
-  simp [Representation.norm, Finset.sum_apply]
-
-/-- An element of a product of representations of a finite group has norm zero exactly when each
-of its components does. -/
-theorem mem_ker_norm_pi_iff [Group G] [Fintype G] (ρ : ∀ i, Representation k G (V i))
-    {x : ∀ i, V i} : x ∈ LinearMap.ker (pi ρ).norm ↔ ∀ i, x i ∈ LinearMap.ker (ρ i).norm := by
-  simp only [LinearMap.mem_ker, funext_iff, norm_pi_apply, Pi.zero_apply]
 
 /-- For a finite monoid, an element of a product of representations lies in the coinvariant
 kernel exactly when each of its components does. -/
@@ -108,7 +114,7 @@ namespace Rep
 
 universe w
 
-variable {k G : Type*} [CommRing k] [Monoid G] {ι : Type w} (M : ι → Rep.{w} k G)
+variable {k G : Type*} [Semiring k] [Monoid G] {ι : Type w} (M : ι → Rep.{w} k G)
 
 /-- The product of a family of representations, as an object of `Rep k G`. -/
 noncomputable abbrev pi : Rep.{w} k G := Rep.of (Representation.pi fun i ↦ (M i).ρ)
