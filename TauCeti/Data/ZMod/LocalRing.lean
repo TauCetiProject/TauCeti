@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Data.ZMod.Units
 public import Mathlib.RingTheory.LocalRing.Basic
-import Mathlib.Tactic.NthRewrite
 
 /-!
 # Local rings modulo prime powers
@@ -28,6 +27,7 @@ namespace ZMod
 
 /-- A residue modulo a positive prime power is a unit exactly when its reduction
 modulo the prime is nonzero. -/
+@[simp]
 theorem isUnit_prime_pow_iff_castHom_ne_zero (p k : ℕ) [Fact p.Prime] (hk : 0 < k)
     (x : ZMod (p ^ k)) :
     IsUnit x ↔ ZMod.castHom (dvd_pow_self p (Nat.ne_of_gt hk)) (ZMod p) x ≠ 0 := by
@@ -36,8 +36,7 @@ theorem isUnit_prime_pow_iff_castHom_ne_zero (p k : ℕ) [Fact p.Prime] (hk : 0 
   rw [h]
   have hx : ZMod.castHom (dvd_pow_self p (Nat.ne_of_gt hk)) (ZMod p) x =
       (x.val : ZMod p) := by
-    nth_rw 1 [← ZMod.natCast_zmod_val x]
-    rw [map_natCast]
+    rw [ZMod.castHom_apply, ZMod.cast_eq_val]
   rw [hx, Ne, ZMod.natCast_eq_zero_iff]
 
 /-- The residue ring modulo a positive power of a prime is a local ring. -/
