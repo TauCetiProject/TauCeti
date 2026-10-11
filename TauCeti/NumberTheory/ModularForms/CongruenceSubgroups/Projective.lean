@@ -24,7 +24,6 @@ open scoped MatrixGroups
 namespace TauCeti.CongruenceSubgroup
 
 /-- The image of `Γ₀(N)` in `PSL₂(ℤ)`, the group acting effectively on the upper half-plane. -/
-@[expose]
 def Gamma0Projective (N : ℕ) : Subgroup PSL(2, ℤ) :=
   (CongruenceSubgroup.Gamma0 N).map
     (QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))
@@ -33,7 +32,7 @@ def Gamma0Projective (N : ℕ) : Subgroup PSL(2, ℤ) :=
 theorem Gamma0Projective_def (N : ℕ) :
     Gamma0Projective N =
       (CongruenceSubgroup.Gamma0 N).map
-        (QuotientGroup.mk' (Subgroup.center SL(2, ℤ))) := rfl
+        (QuotientGroup.mk' (Subgroup.center SL(2, ℤ))) := (rfl)
 
 /-- Membership of the image of a matrix in `Γ₀(N)` is unchanged by projectivization. -/
 @[simp]
