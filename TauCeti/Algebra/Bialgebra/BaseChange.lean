@@ -33,6 +33,7 @@ Galois extension be recognised over an algebraic closure.
   tensors.
 * `TauCeti.Bialgebra.TensorProduct.baseChangeTowerBialgEquiv_symm_tmul`: the value of its
   inverse on pure tensors.
+* `TensorProduct.baseChangeTowerBialgEquiv_symm_map`: its inverse is natural in the outer ring.
 
 ## References
 
@@ -83,9 +84,14 @@ private theorem baseChangeTowerAlgEquiv_map_comp_comul :
         AlgEquiv.coe_toAlgHom,
         TauCeti.Algebra.TensorProduct.baseChangeTowerAlgEquiv_tmul,
         TauCeti.Coalgebra.baseChange_comul_tmul]
-      exact _root_.Algebra.TensorProduct.map_baseChangeTowerAlgEquiv_distribBaseChange
-        k L H H K s l
-        (Coalgebra.comul (R := k) h)
+      simpa only [AlgHom.comp_apply, Algebra.TensorProduct.map_tmul, AlgHom.id_apply,
+        AlgEquiv.coe_toAlgHom, TauCeti.Algebra.TensorProduct.baseChangeTowerAlgEquiv_tmul,
+        ← AlgEquiv.coe_toLinearEquiv,
+        TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv_toLinearEquiv] using
+        DFunLike.congr_fun
+          (TauCeti.Algebra.TensorProduct.map_baseChangeTowerAlgEquiv_comp_baseChangeTensorAlgEquiv
+            k L H H K)
+          (s ⊗ₜ[L] (l ⊗ₜ[k] Coalgebra.comul (R := k) h))
 
 /-- **Base change of bialgebras composes in stages.** For a tower `k → L → K`, extending a
 `k`-bialgebra `H` to `L` and then to `K` is extending it to `K` in one step.
@@ -128,6 +134,18 @@ theorem baseChangeTowerBialgEquiv_symm_tmul (s : K) (h : H) :
     (baseChangeTowerBialgEquiv k L H K).symm (s ⊗ₜ[k] h) = s ⊗ₜ[L] (1 ⊗ₜ[k] h) := by
   apply EquivLike.injective (baseChangeTowerBialgEquiv k L H K)
   simp only [BialgEquiv.apply_symm_apply, baseChangeTowerBialgEquiv_tmul, one_smul]
+
+/-- The inverse tower comparison is natural in the outer ring: for an `L`-algebra homomorphism
+`f : K →ₐ[L] K'`, it intertwines the two scalar extensions along `f`. -/
+theorem _root_.TensorProduct.baseChangeTowerBialgEquiv_symm_map {K' : Type*} [CommSemiring K']
+    [Algebra k K'] [Algebra L K'] [IsScalarTower k L K'] (f : K →ₐ[L] K') (x : K ⊗[k] H) :
+    (baseChangeTowerBialgEquiv k L H K').symm
+        (Algebra.TensorProduct.map (f.restrictScalars k) (AlgHom.id k H) x) =
+      Algebra.TensorProduct.map f (AlgHom.id L (L ⊗[k] H))
+        ((baseChangeTowerBialgEquiv k L H K).symm x) := by
+  induction x using _root_.TensorProduct.inductionOn with
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | tmul s h => simp
 
 end Tower
 

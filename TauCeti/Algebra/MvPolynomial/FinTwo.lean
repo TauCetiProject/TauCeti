@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Algebra.MvPolynomial.Degrees
+public import Mathlib.Algebra.Polynomial.Bivariate
 public import Mathlib.Algebra.Polynomial.Roots
 public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.FieldTheory.Minpoly.Field
@@ -32,6 +33,9 @@ largest `s 0 + s 1` over its support.  These are the forms in which a plane curv
   the leading form `φ_n` of `φ` satisfies `φ_n(c, 1) ≠ 0` for some `c`.
 * `MvPolynomial.natDegree_minpoly_le_totalDegree`: if `φ(u + c y, y) = 0` with `u ∈ K` and
   `φ_n(c, 1) ≠ 0`, then `y` has degree at most `deg φ` over `K`.
+* `Polynomial.Bivariate.aeval_equivMvPolynomial`: evaluating `p ∈ R[X][Y]` at `y` over an
+  `R[X]`-algebra is evaluating the corresponding `φ ∈ R[X₀, X₁]` at `(X, y)`; this reads a plane
+  curve equation `φ` as a polynomial in `X₁` over `R[X₀]`.
 -/
 
 public section
@@ -140,3 +144,26 @@ theorem natDegree_minpoly_le_totalDegree {K F : Type*} [Field K] [Field F] [Alge
 end Field
 
 end MvPolynomial
+
+namespace Polynomial.Bivariate
+
+open scoped Polynomial
+
+variable {R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A] [Algebra R[X] A]
+  [IsScalarTower R R[X] A]
+
+/-- Evaluating `p ∈ R[X][Y]` at `y` in an `R[X]`-algebra `A` is evaluating the corresponding
+polynomial in two variables at the image of `X` and at `y`. -/
+@[simp]
+theorem aeval_equivMvPolynomial (y : A) (p : R[X][Y]) :
+    MvPolynomial.aeval ![algebraMap R[X] A X, y] (equivMvPolynomial R p) = aeval y p := by
+  induction p using Polynomial.induction_on' with
+  | add p q hp hq => simp [hp, hq]
+  | monomial n a =>
+    induction a using Polynomial.induction_on' with
+    | add a b ha hb => simp_all
+    | monomial m c =>
+      simp_rw [← C_mul_X_pow_eq_monomial]
+      simp [equivMvPolynomial, IsScalarTower.algebraMap_apply R R[X] A]
+
+end Polynomial.Bivariate

@@ -12,12 +12,15 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 
 In a finite-dimensional real normed space, the real measure of a positive-radius ball is its
 radius raised to the dimension times the real measure of the unit ball, independently of its
-centre. Consequently the ratio of the measures of two closed balls is controlled by the ratio of
-their radii raised to the dimension.
+centre. It agrees with the measure of the closed ball, which therefore differs from the open ball
+by a null set. Consequently the ratio of the measures of two closed balls is controlled by the
+ratio of their radii raised to the dimension.
 
 ## Main results
 
 * `MeasureTheory.Measure.addHaar_real_ball_of_pos`: the real measure of a positive-radius ball.
+* `MeasureTheory.Measure.addHaar_closedBall_ae_eq_ball`: a closed ball of positive radius agrees
+  with the open ball up to a null set.
 * `MeasureTheory.Measure.addHaar_real_closedBall_div_le`: a closed ball of radius `R ≤ c r` has
   at most `cⁿ` times the measure of a closed ball of radius `r`.
 -/
@@ -37,6 +40,17 @@ theorem _root_.MeasureTheory.Measure.addHaar_real_ball_of_pos
     mu.real (ball x r) = r ^ finrank ℝ E * mu.real (ball 0 1) := by
   rw [measureReal_def, mu.addHaar_ball_of_pos x hr, ENNReal.toReal_mul,
     ENNReal.toReal_ofReal (by positivity), ← measureReal_def]
+
+/-- A closed ball of positive radius agrees with the open ball of the same radius up to a null
+set. -/
+theorem _root_.MeasureTheory.Measure.addHaar_closedBall_ae_eq_ball
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    (x : E) {r : ℝ} (hr : 0 < r) :
+    closedBall x r =ᵐ[mu] ball x r :=
+  (ae_eq_of_subset_of_measure_ge ball_subset_closedBall
+    (by rw [mu.addHaar_closedBall x hr.le, mu.addHaar_ball_of_pos x hr])
+    measurableSet_ball.nullMeasurableSet measure_closedBall_lt_top.ne).symm
 
 /-- A closed ball of radius `R ≤ c r` has at most `cⁿ` times the real measure of a closed ball of
 radius `r > 0`, whatever their centres, where `n` is the dimension. -/

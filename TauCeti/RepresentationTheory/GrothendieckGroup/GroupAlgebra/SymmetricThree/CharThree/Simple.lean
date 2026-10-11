@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.GrothendieckGroup.SimpleBasis
+public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.SimpleBasis
+public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Ring
 public import TauCeti.RepresentationTheory.Symmetric.Modular.Three.Irreducible
-import TauCeti.RepresentationTheory.AsModule
-import TauCeti.RepresentationTheory.OfModule
 
 /-!
 # The simple-class basis for S₃ in characteristic three
@@ -26,9 +25,9 @@ specialization of `TauCeti.simpleClassBasis` to the classification of simple S�
 
 public section
 
-namespace TauCeti
-
 open scoped MonoidAlgebra
+
+namespace TauCeti
 
 universe u
 
@@ -71,28 +70,16 @@ noncomputable def symmetricThreeCharThreeSimpleClassBasis :
     · exact ⟨fun e ↦ (trivial_sign_not_equiv k).false e.symm⟩
     · exact (hbc rfl).elim
   have hexhaustive : IsExhaustiveSimpleFamily S := by
-    rw [isExhaustiveSimpleFamily_iff]
-    intro M hM
-    let := hM
-    let := Module.restrictScalars k k[Equiv.Perm (Fin 3)] M
-    let := IsScalarTower.restrictScalars k k[Equiv.Perm (Fin 3)] M
-    let ρ := Representation.ofModule' (k := k) (G := Equiv.Perm (Fin 3)) M
-    have hρ : ρ.IsIrreducible :=
-      (Representation.isIrreducible_ofModule'_iff M).mpr hM
+    apply isExhaustiveSimpleFamily_of_forall_isIrreducible
+    intro V _ _ ρ hρ
     rcases hρ.nonempty_equiv_trivial_or_sign_perm_fin_three with h | h
     · obtain ⟨e⟩ := h
       rw [← Representation.ofLinearCharacter_one] at e
-      have he : Nonempty (M ≃ₗ[k[Equiv.Perm (Fin 3)]]
-          (Representation.ofLinearCharacter (1 : Equiv.Perm (Fin 3) →* kˣ)).asModule) :=
-        ⟨(Representation.ofModule'AsModuleEquiv M).symm.trans
-          (Representation.asModuleLinearEquivOfEquiv e)⟩
-      exact ⟨false, he⟩
+      have he := Representation.asModuleLinearEquivOfEquiv e
+      exact ⟨false, ⟨he⟩⟩
     · obtain ⟨e⟩ := h
-      have he : Nonempty (M ≃ₗ[k[Equiv.Perm (Fin 3)]]
-          (Representation.ofLinearCharacter (signLinearCharacter k (Fin 3))).asModule) :=
-        ⟨(Representation.ofModule'AsModuleEquiv M).symm.trans
-          (Representation.asModuleLinearEquivOfEquiv e)⟩
-      exact ⟨true, he⟩
+      have he := Representation.asModuleLinearEquivOfEquiv e
+      exact ⟨true, ⟨he⟩⟩
   exact simpleClassBasis S hnoniso hexhaustive
 
 /-- Each basis vector is the class of its one-dimensional representation. -/
@@ -114,5 +101,32 @@ theorem symmetricThreeCharThreeSimpleClassBasis_repr_apply
         (Representation.ofLinearCharacter
           (if b then signLinearCharacter k (Fin 3) else 1)).asModule x := by
   apply simpleClassBasis_repr_apply
+
+section Ring
+
+variable (k : Type) [Field k] [CharP k 3]
+
+/-- The basis vector indexed by `false` is the trivial class. -/
+-- Simplify before the general basis-vector class formula expands the expression.
+@[simp↓]
+theorem symmetricThreeCharThreeSimpleClassBasis_false :
+    symmetricThreeCharThreeSimpleClassBasis k false = 1 := by
+  have hb : symmetricThreeCharThreeSimpleClassBasis k false =
+      fdRepK0RingEquiv k (Equiv.Perm (Fin 3))
+        (ExactK0.of (FDRep.ofLinearCharacter (1 : Equiv.Perm (Fin 3) →* kˣ))) := by
+    rw [FDRep.ofLinearCharacter_def, fdRepK0RingEquiv_of, FDRep.of_ρ']
+    simp [symmetricThreeCharThreeSimpleClassBasis_apply]
+  rw [hb, FDRep.ofLinearCharacter_def, Representation.ofLinearCharacter_one,
+    fdRepK0RingEquiv_of, FDRep.of_ρ', ← exactK0_one_eq_of_trivial]
+
+/-- The basis vector indexed by `true` is the sign class. -/
+theorem symmetricThreeCharThreeSimpleClassBasis_true :
+    symmetricThreeCharThreeSimpleClassBasis k true =
+      fdRepK0RingEquiv k (Equiv.Perm (Fin 3))
+        (ExactK0.of (FDRep.ofLinearCharacter (signLinearCharacter k (Fin 3)))) := by
+  rw [FDRep.ofLinearCharacter_def, fdRepK0RingEquiv_of, FDRep.of_ρ']
+  simp [symmetricThreeCharThreeSimpleClassBasis_apply]
+
+end Ring
 
 end TauCeti

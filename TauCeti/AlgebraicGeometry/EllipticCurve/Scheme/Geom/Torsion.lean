@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Hom
 public import TauCeti.AlgebraicGeometry.GroupScheme.Kernel
 
 /-!
@@ -42,6 +42,8 @@ free of rank `n²`, which rests on the finiteness and flatness of `[n]`.
 
 ## Main results
 
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.torsion_eq_kernel`: `E[n]` is the kernel of the
+  integer `n` of the endomorphism ring of `E`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isPullback_torsion`: `E[n]` is the fibre of `[n]`
   over the zero section.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isCommMonObj_torsion`: `E[n]` is a commutative group
@@ -75,6 +77,15 @@ variable {S : Scheme.{u}} (E : EllipticCurveGeom S) (n : ℤ)
 kernel of multiplication by `n`, as a group object of `Over S`. -/
 noncomputable def torsion : Grp (Over S) :=
   kernel (Grp.ofHom (E.mulBy n))
+
+/-- **The `n`-torsion is the kernel of the endomorphism `n`.** The `n`-torsion of `E` is the kernel
+of the image in `Grp (Over S)` of the integer `n` of the endomorphism ring `End E.toCommGrp`. -/
+theorem torsion_eq_kernel :
+    E.torsion n = kernel ((CommGrp.forget₂Grp (Over S)).map (n : End E.toCommGrp)) := by
+  rw [forget₂Grp_map_intCast]
+  -- `(CommGrp.forget₂Grp (Over S)).obj E.toCommGrp` is `Grp.mk (Over.mk E.structureMap)` by
+  -- definition, so both sides are the kernel of `Grp.ofHom (E.mulBy n)`
+  rfl
 
 /-- The inclusion `E[n] ⟶ E` of the `n`-torsion of `E`, a morphism of `Over S`. -/
 noncomputable def torsionι : (E.torsion n).X ⟶ Over.mk E.structureMap :=
