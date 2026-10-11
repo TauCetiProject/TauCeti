@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SingularHomology.HomotopyInvariance
-public import Mathlib.Algebra.Homology.QuasiIso
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Basic
 
 /-!

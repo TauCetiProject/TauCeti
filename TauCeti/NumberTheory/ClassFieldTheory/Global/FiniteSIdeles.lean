@@ -34,6 +34,8 @@ idele classes, from which the first fundamental inequality for cyclic extensions
 * `TauCeti.ClassFieldTheory.herbrandQuotient_finiteSIdelesRep`: for `L/K` cyclic and unramified
   outside `S`, `h(I_{L,S}^f) = ∏_{v ∈ S} [L_w : K_v]`, for any choice of places `w` above the
   places of `S`.
+* `TauCeti.ClassFieldTheory.finite_tateCohomology_finiteSIdelesRep`: the Tate cohomology of the
+  finite `S`-ideles is finite in degrees `0` and `-1`.
 
 ## References
 
@@ -86,5 +88,33 @@ theorem herbrandQuotient_finiteSIdelesRep (S : Finset (HeightOneSpectrum (𝒪 K
   refine Finset.prod_congr rfl fun v _ ↦ ?_
   have := (w v).2
   exact herbrandQuotient_semilocalUnitsRep v.1 (w v).1
+
+/-- For a cyclic extension `L/K` of number fields unramified outside a finite set `S` of finite
+places of `K`, the Herbrand quotient of the finite `S`-ideles is nonzero: by
+`herbrandQuotient_finiteSIdelesRep` it is a product of local degrees. -/
+theorem herbrandQuotient_finiteSIdelesRep_ne_zero (S : Finset (HeightOneSpectrum (𝒪 K)))
+    (hS : ∀ w : HeightOneSpectrum (𝒪 L), w.under (𝒪 K) ∉ S →
+      Algebra.IsUnramifiedAt (𝒪 K) w.asIdeal) :
+    TateCohomology.herbrandQuotient (finiteSIdelesRep L S) ≠ 0 := by
+  have hw (v : S) : ∃ w : HeightOneSpectrum (𝒪 L), w.asIdeal.LiesOver v.1.asIdeal := by
+    obtain ⟨w, hw⟩ := under_surjective (𝒪 K) (𝒪 L) v.1
+    exact ⟨w, ⟨congrArg HeightOneSpectrum.asIdeal hw.symm⟩⟩
+  rw [herbrandQuotient_finiteSIdelesRep S hS fun v ↦ ⟨(hw v).choose, (hw v).choose_spec⟩,
+    Finset.prod_ne_zero_iff]
+  intro v _
+  have := (hw v).choose_spec
+  rw [Nat.cast_ne_zero, ← card_stabilizer_eq_finrank_adicCompletion v.1]
+  exact Nat.card_pos.ne'
+
+/-- **The Tate cohomology of the finite `S`-ideles is finite** in degrees `0` and `-1`, for a
+cyclic extension `L/K` of number fields unramified outside a finite set `S` of finite places of
+`K`. -/
+theorem finite_tateCohomology_finiteSIdelesRep (S : Finset (HeightOneSpectrum (𝒪 K)))
+    (hS : ∀ w : HeightOneSpectrum (𝒪 L), w.under (𝒪 K) ∉ S →
+      Algebra.IsUnramifiedAt (𝒪 K) w.asIdeal) :
+    Finite (tateCohomology (finiteSIdelesRep L S) 0) ∧
+      Finite (tateCohomology (finiteSIdelesRep L S) (-1)) :=
+  TateCohomology.finite_tateCohomology_of_herbrandQuotient_ne_zero
+    (herbrandQuotient_finiteSIdelesRep_ne_zero S hS)
 
 end TauCeti.ClassFieldTheory

@@ -55,6 +55,8 @@ and that for transcendental `x` its function field is `F` as a `k`-algebra.
 * `TauCeti.AlgebraicGeometry.twoChartModel.isPushout`: the two charts glue along their overlap.
 * `TauCeti.AlgebraicGeometry.twoChartModel.range_ιFinite_union_range_ιInfinity`: the two charts
   cover the scheme.
+* `TauCeti.AlgebraicGeometry.twoChartModel.isPullback`: the two charts meet exactly in their
+  overlap.
 * the instance `IsIntegral (twoChartModel hF hx)`: the scheme is integral.
 * `TauCeti.AlgebraicGeometry.twoChartModel.functionFieldEquiv_germToFunctionField`: the
   isomorphism `k(X) ≃ F` sends the germ of a function on the finite chart to that function.
@@ -216,6 +218,32 @@ theorem range_ιInfinity_inter_range_ιFinite_nonempty :
     ⟨Spec.map (CommRingCat.ofHom (infinityChartRestriction (k := k) x).toRingHom) p, ?_⟩,
     ⟨_, rfl⟩⟩
   rw [← Scheme.Hom.comp_apply, ← Scheme.Hom.comp_apply, condition]
+
+/-- **The two charts meet exactly in their overlap**: the square of the gluing is also a pullback,
+so `Spec 𝒪_{x, x⁻¹}` is the intersection of `Spec 𝒪_x` and `Spec 𝒪_{x⁻¹}` in `twoChartModel`. -/
+theorem isPullback :
+    IsPullback (Spec.map (CommRingCat.ofHom (finiteChartRestriction (k := k) x).toRingHom))
+      (Spec.map (CommRingCat.ofHom (infinityChartRestriction (k := k) x).toRingHom))
+      (ιFinite hF hx) (ιInfinity hF hx) := by
+  have := isOpenImmersion_specMap_finiteChartRestriction hF hx
+  have := isOpenImmersion_specMap_infinityChartRestriction hF hx
+  refine IsOpenImmersion.isPullback _ _ _ _ (condition hF hx).symm (le_antisymm ?_ ?_)
+  · rintro q ⟨p, hp⟩
+    -- `ιFinite` and `ιInfinity` are the colimit inclusions of the two legs of the span, and a
+    -- point of both legs comes from the apex, the overlap.
+    let D := span
+      (Spec.map (CommRingCat.ofHom (finiteChartRestriction (k := k) x).toRingHom))
+      (Spec.map (CommRingCat.ofHom (infinityChartRestriction (k := k) x).toRingHom))
+    have hp' : colimit.ι D WalkingSpan.left p = colimit.ι D WalkingSpan.right q := hp
+    obtain ⟨j, fp, fq, z, rfl, rfl⟩ := (Scheme.IsLocallyDirected.ι_eq_ι_iff _).mp hp'
+    rcases j with _ | _ | _
+    · cases fq
+      exact ⟨z, rfl⟩
+    · cases fq
+    · cases fp
+  · rintro _ ⟨p, rfl⟩
+    exact ⟨Spec.map (CommRingCat.ofHom (finiteChartRestriction (k := k) x).toRingHom) p, by
+      rw [← Scheme.Hom.comp_apply, ← Scheme.Hom.comp_apply, condition]⟩
 
 instance : IsReduced (twoChartModel hF hx) := by
   -- Every stalk is a stalk of one of the two charts, which are spectra of domains.

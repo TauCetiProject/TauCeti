@@ -104,6 +104,8 @@ lemma slash_eq_of_rightCoset_eq {f : ℍ → ℂ} (hf : ∀ γ ∈ Γ₁, f ∣[
 
 variable [Finite (DecompQuotient Γ₂ Γ₁ (D.out : GL (Fin 2) ℚ)⁻¹)]
 
+attribute [local instance] fintypeDecompQuotient
+
 /-- **The slash sum of a `Γ₁`-invariant function is the sum over any decomposition of the double
 coset into right cosets.** If the right cosets `Γ₁ aᵢ` are pairwise distinct and cover
 `Γ₁ D.out Γ₂`, then `heckeSlashSum k D f = ∑ᵢ f ∣[k] aᵢ`.
@@ -122,7 +124,6 @@ theorem heckeSlashSum_eq_sum_of_rightCosets {ι : Type*} [Fintype ι] (a : ι �
     (f : ℍ → ℂ) (hf : ∀ γ ∈ Γ₁, f ∣[k] γ = f) :
     heckeSlashSum k D f = ∑ i, f ∣[k] a i := by
   classical
-  let _ : Fintype (DecompQuotient Γ₂ Γ₁ (D.out : GL (Fin 2) ℚ)⁻¹) := Fintype.ofFinite _
   obtain ⟨φ, hbij, hφ⟩ := exists_bijective_rightCosetRep_smul_eq D a hcover hinj
   rw [heckeSlashSum_def]
   exact (Fintype.sum_bijective φ hbij _ _ fun i ↦ slash_eq_of_rightCoset_eq k hf (hφ i)).symm
@@ -168,7 +169,6 @@ theorem sum_slash_eq_nsmul_heckeSlashSum {ι : Type*} [Fintype ι] (a : ι → G
     (f : ℍ → ℂ) (hf : ∀ γ ∈ Γ₁, f ∣[k] γ = f) :
     ∑ i, f ∣[k] a i = m • heckeSlashSum k D f := by
   classical
-  let _ : Fintype (DecompQuotient Γ₂ Γ₁ (D.out : GL (Fin 2) ℚ)⁻¹) := Fintype.ofFinite _
   choose g hg using fun i ↦ exists_rightCosetRep_smul_eq D (hmem i)
   rw [heckeSlashSum_def, Finset.smul_sum,
     ← Finset.sum_fiberwise_of_maps_to (fun i _ ↦ Finset.mem_univ (g i)) fun i ↦ f ∣[k] a i]

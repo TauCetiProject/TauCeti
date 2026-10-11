@@ -1,12 +1,13 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
 public import Mathlib.LinearAlgebra.FreeModule.PID
 public import TauCeti.LinearAlgebra.IntegralLattice.Even
+public import TauCeti.LinearAlgebra.IntegralLattice.Ideals
 public import TauCeti.LinearAlgebra.IntegralLattice.Rationalization
 public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
@@ -108,6 +109,28 @@ theorem integralForm_restrictCarrierEquiv (L : IntegralLattice V) (S : Submodule
 theorem integralNorm_restrictCarrierEquiv (L : IntegralLattice V) (S : Submodule ℤ L) (s : S) :
     (L.restrict S).integralNorm (L.restrictCarrierEquiv S s) = L.integralNorm s := by
   rw [integralNorm_apply, integralForm_restrictCarrierEquiv, integralNorm_apply]
+
+/-- Restriction to any carrier submodule gives containment of scale ideals. -/
+theorem scaleIdeal_restrict_le (L : IntegralLattice V) (S : Submodule ℤ L) :
+    (L.restrict S).scaleIdeal ≤ L.scaleIdeal := by
+  apply (L.restrict S).scaleIdeal_le_of_integralForm_eq
+    (S.subtype.comp (L.restrictCarrierEquiv S).symm.toLinearMap)
+  intro x y
+  simpa only [LinearEquiv.apply_symm_apply, LinearMap.comp_apply,
+    LinearEquiv.coe_toLinearMap, Submodule.subtype_apply] using
+    L.integralForm_restrictCarrierEquiv S
+      ((L.restrictCarrierEquiv S).symm x) ((L.restrictCarrierEquiv S).symm y)
+
+/-- Restriction to any carrier submodule gives containment of norm ideals. -/
+theorem normIdeal_restrict_le (L : IntegralLattice V) (S : Submodule ℤ L) :
+    (L.restrict S).normIdeal ≤ L.normIdeal := by
+  apply (L.restrict S).normIdeal_le_of_integralForm_eq
+    (S.subtype.comp (L.restrictCarrierEquiv S).symm.toLinearMap)
+  intro x y
+  simpa only [LinearEquiv.apply_symm_apply, LinearMap.comp_apply,
+    LinearEquiv.coe_toLinearMap, Submodule.subtype_apply] using
+    L.integralForm_restrictCarrierEquiv S
+      ((L.restrictCarrierEquiv S).symm x) ((L.restrictCarrierEquiv S).symm y)
 
 /-- A restricted lattice is even exactly when the original integral norm is even on the
 submodule. In particular restriction preserves evenness. -/

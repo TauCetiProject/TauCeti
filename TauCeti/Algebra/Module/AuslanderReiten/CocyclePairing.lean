@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.AuslanderReiten.InjectivelyTrivial
+public import TauCeti.Algebra.Module.HomCocycle
 
 /-!
 # The Auslander–Reiten pairing on Hom cocycles
@@ -22,6 +23,8 @@ the dual of the cocycle quotient. Unlike the full Hom cokernel, `Z / B` imposes 
 cocycle condition required for a projective presentation with nonzero kernel.
 The pairing is defined over a commutative ring; surjectivity and the kernel criterion
 use a field. No minimality or finite-dimensionality of the algebra or `N` is required.
+Postcomposition on Hom cocycle classes is dual to precomposition on translate Hom,
+so the pairing is contravariantly natural in the coefficient module.
 
 In presentation-level Auslander–Reiten duality, identifying the cocycle quotient
 with `Ext¹` gives a pairing between extension classes and maps into the translate
@@ -68,9 +71,7 @@ private theorem translate_functional_mem_annihilator (f : P₁ →ₗ[A] P₀)
 cocycles and descends it modulo the coboundaries. -/
 noncomputable def auslanderReitenCocyclePairing (f : P₁ →ₗ[A] P₀) :
     (N →ₗ[A] AuslanderReitenTranslate k f) →ₗ[k]
-      Module.Dual k
-        (ker ((ker f).subtype.lcomp k N) ⧸
-          (range (f.lcomp k N)).comap (ker ((ker f).subtype.lcomp k N)).subtype) := by
+      Module.Dual k (HomCocycleQuotient (k := k) f N) := by
   let Z := ker ((ker f).subtype.lcomp k N)
   let B := (range (f.lcomp k N)).comap Z.subtype
   let χ := (nakayamaHomEquiv k A P₁ N).symm.toLinearMap.comp
@@ -95,6 +96,27 @@ theorem auslanderReitenCocyclePairing_apply_mk (f : P₁ →ₗ[A] P₀)
   simp only [auslanderReitenCocyclePairing, comp_apply, Submodule.dualCopairing_apply]
   -- The codomain restriction stores exactly the restricted functional.
   rfl
+
+/-- Dualizing postcomposition on Hom cocycle classes agrees with precomposition
+on the translate side of the Auslander–Reiten pairing. -/
+theorem auslanderReitenCocyclePairing_naturality
+    {N' : Type*} [AddCommGroup N'] [Module A N'] [Module k N'] [IsScalarTower k A N']
+    (f : P₁ →ₗ[A] P₀) (g : N →ₗ[A] N')
+    (h : N' →ₗ[A] AuslanderReitenTranslate k f) :
+    (homCocycleQuotientMap (k := k) f g).dualMap (auslanderReitenCocyclePairing f h) =
+      auslanderReitenCocyclePairing f (h.comp g) := by
+  have hnat :
+      (nakayamaHomEquiv k A P₁ N).symm
+          ((auslanderReitenTranslateToNakayama f).comp (h.comp g)) =
+        (g.compRight k).dualMap
+          ((nakayamaHomEquiv k A P₁ N').symm
+            ((auslanderReitenTranslateToNakayama f).comp h)) := by
+    apply (nakayamaHomEquiv k A P₁ N).injective
+    simp [nakayamaHomEquiv_dualMap_compRight, comp_assoc]
+  apply LinearMap.ext
+  intro x
+  induction x using Submodule.Quotient.induction_on with
+  | _ a => simp [hnat]
 
 end CommRing
 
@@ -188,9 +210,7 @@ noncomputable def auslanderReitenCocycleQuotientEquiv
     (f : P₁ →ₗ[A] P₀) (j : N →ₗ[A] I) (hj : Function.Injective j) :
     ((N →ₗ[A] AuslanderReitenTranslate k f) ⧸
       range (j.lcomp k (AuslanderReitenTranslate k f))) ≃ₗ[k]
-      Module.Dual k
-        (ker ((ker f).subtype.lcomp k N) ⧸
-          (range (f.lcomp k N)).comap (ker ((ker f).subtype.lcomp k N)).subtype) := by
+      Module.Dual k (HomCocycleQuotient (k := k) f N) := by
   have hker : ker (auslanderReitenCocyclePairing (k := k) (N := N) f) =
       range (j.lcomp k (AuslanderReitenTranslate k f)) := by
     ext g
