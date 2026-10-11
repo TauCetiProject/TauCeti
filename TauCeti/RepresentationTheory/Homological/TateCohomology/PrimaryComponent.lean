@@ -22,9 +22,9 @@ group; this excludes nonzero elements killed by a power of `p`.
 With the long exact sequence, the `p`-primary components of Tate cohomology of a finite group `G`
 are therefore unchanged along a short exact sequence `0 → X₁ → X₂ → X₃ → 0` one of whose outer
 terms has bijective multiplication by a prime `p`. If `p` is bijective on `X₁`, the map
-`Ĥⁿ(G, X₂) → Ĥⁿ(G, X₃)` is a bijection of `p`-primary components
+`H_Tateⁿ(G, X₂) → H_Tateⁿ(G, X₃)` is a bijection of `p`-primary components
 (`TauCeti.TateCohomology.bijOn_pPowerTorsion_map_g`); if it is bijective on `X₃`, so is
-`Ĥⁿ(G, X₁) → Ĥⁿ(G, X₂)` (`TauCeti.TateCohomology.bijOn_pPowerTorsion_map_f`). The torsion
+`H_Tateⁿ(G, X₁) → H_Tateⁿ(G, X₂)` (`TauCeti.TateCohomology.bijOn_pPowerTorsion_map_f`). The torsion
 argument is `TauCeti.injOn_pPowerTorsion_of_exact` and `TauCeti.surjOn_pPowerTorsion_of_exact`,
 which use that all the groups involved are torsion, being killed by `|G|`
 (`TauCeti.TateCohomology.natCard_nsmul_eq_zero`).
@@ -32,7 +32,7 @@ which use that all the groups involved are torsion, being killed by `|G|`
 ## Main statements
 
 * `TauCeti.TateCohomology.primaryComponent_tateCohomology_eq_bot`: the `p`-primary component of
-  `Ĥⁿ(S, A)` is trivial when multiplication by `p` is bijective on `A`.
+  `H_Tateⁿ(S, A)` is trivial when multiplication by `p` is bijective on `A`.
 * `TauCeti.TateCohomology.bijOn_pPowerTorsion_map_g`,
   `TauCeti.TateCohomology.bijOn_pPowerTorsion_map_f`: along a short exact sequence whose first,
   respectively last, term has bijective multiplication by a prime `p`, the induced maps are
@@ -55,8 +55,8 @@ universe u
 variable {k G : Type u} [CommRing k] [Group G]
 
 /-- **An invertible scalar contributes no primary Tate cohomology.** If multiplication by a natural
-number `p` is bijective on a representation `A`, then the `p`-primary component of `Ĥⁿ(S, A)` is
-zero for every finite subgroup `S` and every integer degree `n`. -/
+number `p` is bijective on a representation `A`, then the `p`-primary component of
+`H_Tateⁿ(S, A)` is zero for every finite subgroup `S` and every integer degree `n`. -/
 theorem primaryComponent_tateCohomology_eq_bot (p : ℕ) (A : Rep k G)
     (hA : Function.Bijective fun x : A.V => (p : k) • x) (S : Subgroup G) [Fintype S]
     (n : ℤ) :
@@ -89,7 +89,7 @@ variable {S : ShortComplex (Rep k G)} (hS : S.ShortExact) {p : ℕ} [Fact p.Prim
 include hS
 
 /-- Along a short exact sequence `0 → X₁ → X₂ → X₃ → 0` on whose first term multiplication by a
-prime `p` is bijective, the map `Ĥⁿ(G, X₂) → Ĥⁿ(G, X₃)` is a bijection of `p`-primary
+prime `p` is bijective, the map `H_Tateⁿ(G, X₂) → H_Tateⁿ(G, X₃)` is a bijection of `p`-primary
 components. -/
 theorem bijOn_pPowerTorsion_map_g (hp : Function.Bijective fun a : S.X₁.V ↦ p • a) (n : ℤ) :
     Set.BijOn ((tateCohomologyFunctor n).map S.g) (pPowerTorsion p k (tateCohomology S.X₂ n))
@@ -109,7 +109,7 @@ theorem bijOn_pPowerTorsion_map_g (hp : Function.Bijective fun a : S.X₁.V ↦ 
       (pPowerTorsion_tateCohomology_eq_bot hp (n + 1))
 
 /-- Along a short exact sequence `0 → X₁ → X₂ → X₃ → 0` on whose last term multiplication by a
-prime `p` is bijective, the map `Ĥⁿ(G, X₁) → Ĥⁿ(G, X₂)` is a bijection of `p`-primary
+prime `p` is bijective, the map `H_Tateⁿ(G, X₁) → H_Tateⁿ(G, X₂)` is a bijection of `p`-primary
 components. -/
 theorem bijOn_pPowerTorsion_map_f (hp : Function.Bijective fun a : S.X₃.V ↦ p • a) (n : ℤ) :
     Set.BijOn ((tateCohomologyFunctor n).map S.f) (pPowerTorsion p k (tateCohomology S.X₁ n))
