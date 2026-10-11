@@ -263,13 +263,29 @@ def sUnitShortComplex : ShortComplex (Rep ℤ (L ≃ₐ[K] L)) where
   g := factorThruImage (sUnitValuation S)
   zero := comp_factorThruImage_eq_zero (sUnitInclusion_comp_sUnitValuation S)
 
-/-- The S-unit sequence consists of the ordinary-unit inclusion and the canonical valuation
-image factorization. This equality also identifies its objects and arrows. -/
+/-- The first object of the S-unit sequence is the ordinary-unit representation. -/
 @[simp]
-theorem sUnitShortComplex_eq_mk :
-    sUnitShortComplex S = ShortComplex.mk (sUnitInclusion S)
-      (factorThruImage (sUnitValuation S))
-      (comp_factorThruImage_eq_zero (sUnitInclusion_comp_sUnitValuation S)) := (rfl)
+theorem sUnitShortComplex_X₁ : (sUnitShortComplex S).X₁ = ordinaryUnitRep K L := (rfl)
+
+/-- The second object of the S-unit sequence is the S-unit representation. -/
+@[simp]
+theorem sUnitShortComplex_X₂ : (sUnitShortComplex S).X₂ = sUnitRep S := (rfl)
+
+/-- The third object of the S-unit sequence is the categorical image of the valuation. -/
+@[simp]
+theorem sUnitShortComplex_X₃ : (sUnitShortComplex S).X₃ = image (sUnitValuation S) := (rfl)
+
+/-- The first arrow is the ordinary-unit inclusion, transported along the object formulas. -/
+@[simp]
+theorem sUnitShortComplex_f :
+    (sUnitShortComplex S).f = eqToHom (sUnitShortComplex_X₁ S) ≫ sUnitInclusion S ≫
+      eqToHom (sUnitShortComplex_X₂ S).symm := (rfl)
+
+/-- The second arrow is the valuation onto its image, transported along the object formulas. -/
+@[simp]
+theorem sUnitShortComplex_g :
+    (sUnitShortComplex S).g = eqToHom (sUnitShortComplex_X₂ S) ≫
+      factorThruImage (sUnitValuation S) ≫ eqToHom (sUnitShortComplex_X₃ S).symm := (rfl)
 
 /-- Ordinary units, S-units, and the valuation image form a short exact sequence. -/
 theorem shortExact_sUnitShortComplex : (sUnitShortComplex S).ShortExact := by
