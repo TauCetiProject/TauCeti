@@ -100,7 +100,7 @@ subring, and the tail lies in it.
 * K. S. Kedlaya, *Sheaves, stacks, and shtukas*, lecture notes, Arizona Winter School 2017,
   §3.1, for the interval rings `B^I` and the windows.
 * [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Lemma 6.2 and
-  Proposition and Definition 5.51.
+  Proposition and Definition 5.51, and §8.1 for the plus ring of a rational localisation.
 -/
 
 public section
