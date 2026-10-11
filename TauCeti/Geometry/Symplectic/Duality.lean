@@ -30,7 +30,7 @@ continuous dual. -/
 @[simp]
 theorem isInvertible_toContinuousBilinearMap (ω : SymplecticForm V) :
     ω.toBilinForm.toContinuousBilinearMap.IsInvertible :=
-  TauCeti.isInvertible_toContinuousBilinearMap_of_separatingLeft
+  TauCeti.isInvertible_toContinuousBilinearMap_iff_separatingLeft.mpr
     ω.nondegenerate.1
 
 end TauCeti.SymplecticForm
