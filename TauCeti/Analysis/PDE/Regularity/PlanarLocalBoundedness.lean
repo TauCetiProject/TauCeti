@@ -77,8 +77,7 @@ theorem exists_ae_value_le_add_mul_sqrt_setIntegral_ball_half
   let U : Opens (EuclideanSpace ℝ (Fin 2)) := ⟨Metric.ball x₀ 2, Metric.isOpen_ball⟩
   have hU : U ≤ Omega := hball
   have hfinite : mu (U : Set (EuclideanSpace ℝ (Fin 2))) ≠ ∞ := by
-    change mu (Metric.ball x₀ 2) ≠ ∞
-    exact measure_ball_lt_top.ne
+    simpa only [U, Opens.coe_mk] using measure_ball_lt_top.ne
   have hS : ∀ v ∈ w1p0Submodule mu U 2,
       eLpNorm (W1p.value v) 4 (mu.restrict U) ≤ S * ‖W1p.gradient v‖ₑ := by
     intro v hv
