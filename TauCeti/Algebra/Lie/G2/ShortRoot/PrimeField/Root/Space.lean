@@ -131,9 +131,8 @@ theorem tangentMatrix_symm_lie
     tangentMatrix ((Derivation.cotangentLinearEquiv (B := ZMod 3)).symm ⁅d, e⁆) =
       ⁅tangentMatrix ((Derivation.cotangentLinearEquiv (B := ZMod 3)).symm d),
         tangentMatrix ((Derivation.cotangentLinearEquiv (B := ZMod 3)).symm e)⁆ := by
-  rw [tangentMatrix_apply, tangentMatrix_apply, tangentMatrix_apply,
-    LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply,
-    LieHom.map_lie, GeneralLinear.tangentMatrix_lie]
+  rw [tangentMatrix_apply, tangentMatrix_apply, tangentMatrix_apply]
+  simp only [LinearEquiv.apply_symm_apply, LieHom.map_lie, GeneralLinear.tangentMatrix_lie]
 
 /-- **The tangent matrices of the carrier are derivations of the cross product.** Differentiating
 `g (u × v) = (g u) × (g v)` at the identity gives `X (eₖ × v) = (X eₖ) × v + eₖ × (X v)`. -/
