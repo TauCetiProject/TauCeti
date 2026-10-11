@@ -104,16 +104,16 @@ def piFanIsLimit {ι : Type w} (X : ι → TopRep R G) : IsLimit (piFan X) :=
     (fun s _ hm => pi_hom_ext X (fun i => (hm i).trans
       (piLift_comp_piπ X s.proj i).symm))
 
-/-- Finite discrete diagrams of topological representations have products. -/
-instance (ι : Type) [Finite ι] : HasProductsOfShape ι (TopRep.{w} R G) where
-  has_limit F := HasLimit.mk
-    ⟨(Cone.postcompose Discrete.natIsoFunctor.inv).obj
-      (piFan fun i => F.obj ⟨i⟩),
-      (IsLimit.postcomposeInvEquiv _ _).symm
-        (piFanIsLimit fun i => F.obj ⟨i⟩)⟩
+/-- Topological representations admit products indexed by types in their universe. -/
+instance : HasProducts.{w} (TopRep.{w} R G) := fun _ =>
+  { has_limit F := HasLimit.mk
+      ⟨(Cone.postcompose Discrete.natIsoFunctor.inv).obj
+        (piFan fun i => F.obj ⟨i⟩),
+        (IsLimit.postcomposeInvEquiv _ _).symm
+          (piFanIsLimit fun i => F.obj ⟨i⟩)⟩ }
 
 /-- Topological representations admit finite categorical products. -/
 instance : HasFiniteProducts (TopRep.{w} R G) :=
-  ⟨fun _ => inferInstance⟩
+  hasFiniteProducts_of_hasProducts.{w} _
 
 end TopRep
