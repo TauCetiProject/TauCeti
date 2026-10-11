@@ -22,15 +22,13 @@ and unitors into `bimoduleMonoidalCategory`. The structure is chosen explicitly 
 factor grading and carrier universe remain visible. Its curried tensor functor is the existing
 `bimoduleTensor`.
 
-This is the coherent graded tensor structure needed by the zigzag braid action.
-The cochain tensor category and the Artin action are subsequent constructions.
 -/
 
 public section
 
 noncomputable section
 open CategoryTheory MulOpposite
-open scoped TensorProduct
+open scoped TensorProduct MonoidalCategory
 namespace TauCeti.GradedModuleCat
 universe v vM vN vP vQ uk uA uB uC uD uE
 variable {k : Type uk} {A : Type uA} {B : Type uB} {C : Type uC}
@@ -87,7 +85,7 @@ theorem bimoduleTensorAssociator_triangle
   | ha x y hx hy => simp only [bimoduleTensorTmul_add_left, map_add, hx, hy]
 
 /-- The chosen monoidal structure on graded endobimodules, with regular bimodule unit. -/
--- The tensor data must compute to the existing object and morphism assignments.
+-- Expose the chosen object assignments so dependent morphism and isomorphism types compute.
 @[expose, instance_reducible]
 def bimoduleMonoidalCategory :
     MonoidalCategory (GradedModuleCat.{max v uA} (Γ.tensorProduct Γ.opposite).piece) :=
@@ -123,10 +121,66 @@ def bimoduleMonoidalCategory :
     (bimoduleTensorAssociator_pentagon Γ Γ Γ Γ Γ)
     (bimoduleTensorAssociator_triangle.{v} Γ Γ Γ)
 
+section Components
+
+variable (M N P Q : GradedModuleCat.{max v uA} (Γ.tensorProduct Γ.opposite).piece)
+
+/-- The chosen tensor object is balanced graded bimodule composition. -/
+@[simp]
+theorem bimoduleMonoidalCategory_tensorObj :
+    let _ := bimoduleMonoidalCategory.{v} Γ
+    M ⊗ N = bimoduleTensorObj Γ Γ Γ M N := (rfl)
+
+/-- The chosen tensor morphism is the map induced on the balanced tensor product. -/
+@[simp]
+theorem bimoduleMonoidalCategory_tensorHom (f : M ⟶ N) (g : P ⟶ Q) :
+    let _ := bimoduleMonoidalCategory.{v} Γ
+    f ⊗ₘ g = bimoduleTensorMap Γ Γ Γ f g := (rfl)
+
+/-- Left whiskering maps the second balanced tensor factor. -/
+@[simp]
+theorem bimoduleMonoidalCategory_whiskerLeft (f : N ⟶ P) :
+    let _ := bimoduleMonoidalCategory.{v} Γ
+    M ◁ f = bimoduleTensorMap Γ Γ Γ (𝟙 M) f := (rfl)
+
+/-- Right whiskering maps the first balanced tensor factor. -/
+@[simp]
+theorem bimoduleMonoidalCategory_whiskerRight (f : M ⟶ N) :
+    let _ := bimoduleMonoidalCategory.{v} Γ
+    f ▷ P = bimoduleTensorMap Γ Γ Γ f (𝟙 P) := (rfl)
+
+/-- The chosen associator is graded balanced-tensor reassociation. -/
+@[simp]
+theorem bimoduleMonoidalCategory_associator :
+    let _ := bimoduleMonoidalCategory.{v} Γ
+    α_ M N P = bimoduleTensorAssociator Γ Γ Γ Γ M N P := (rfl)
+
+/-- The chosen left unitor evaluates the regular left factor. -/
+@[simp]
+theorem bimoduleMonoidalCategory_leftUnitor :
+    let _ := bimoduleMonoidalCategory.{v} Γ
+    λ_ M = bimoduleTensorLeftUnitor.{v} Γ Γ M := (rfl)
+
+/-- The chosen right unitor evaluates the regular right factor. -/
+@[simp]
+theorem bimoduleMonoidalCategory_rightUnitor :
+    let _ := bimoduleMonoidalCategory.{v} Γ
+    ρ_ M = bimoduleTensorRightUnitor.{v} Γ Γ M := (rfl)
+
+end Components
+
+/-- The chosen tensor unit is the universe-lifted regular graded bimodule. -/
+@[simp]
+theorem bimoduleMonoidalCategory_tensorUnit :
+    let _ := bimoduleMonoidalCategory.{v} Γ
+    𝟙_ (GradedModuleCat.{max v uA} (Γ.tensorProduct Γ.opposite).piece) =
+      bimoduleUnit.{v} Γ := (rfl)
+
 /-- The chosen monoidal tensor functor is the canonical balanced bimodule bifunctor. -/
+@[simp]
 theorem bimoduleMonoidalCategory_curriedTensor :
     let _ := bimoduleMonoidalCategory.{v} Γ
     MonoidalCategory.curriedTensor (GradedModuleCat.{max v uA} (Γ.tensorProduct Γ.opposite).piece) =
-      bimoduleTensor Γ Γ Γ := rfl
+      bimoduleTensor Γ Γ Γ := (rfl)
 
 end TauCeti.GradedModuleCat
