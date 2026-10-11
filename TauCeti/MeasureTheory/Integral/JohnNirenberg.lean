@@ -587,7 +587,8 @@ the cube of half-side `r₀ = R / (3s)` centred at `x₀`. A cube `Q ⊆ Q₀` o
 `B(x₀, R)`. Since `B` lies in the cube of half-side `2sρ` about the same centre,
 `μ B ≤ (2s)ⁿ μ Q`, and comparing mean oscillations on `Q ⊆ B` shows that `f` has mean oscillation
 at most `2 (2s)ⁿ M` on every cube inside `Q₀`. The John–Nirenberg inequality on `Q₀`, read through
-the measure-preserving equivalence `ofLp` between `EuclideanSpace ℝ ι` and `ι → ℝ`, then gives
+the measurable equivalence `ofLp` between `EuclideanSpace ℝ ι` and `ι → ℝ` (which pushes `μ`
+forward to a positive finite multiple of `volume`, and therefore preserves averages), then gives
 exponential integrability on `Q₀`, and hence on the Euclidean ball `B(x₀, r₀) ⊆ Q₀`. This ball
 contains the cube of half-side `r₀ / s`, so `μ Q₀ ≤ sⁿ μ B(x₀, r₀)`, and the averages of `f` over
 `Q₀` and over `B(x₀, r₀)` differ by at most `sⁿ` times the mean oscillation on `Q₀`. -/
