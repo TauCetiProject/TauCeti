@@ -116,11 +116,11 @@ theorem coordinateMap_comp_typeAGraphCoordinateIso_hom :
 theorem typeAGraphCoordinateIso_hom_comp_self :
     (typeAGraphCoordinateIso R r).hom ≫ (typeAGraphCoordinateIso R r).hom =
       𝟙 (coordinateHopfAlgebra R (r + 1)) := by
-  apply CommHopfAlgCat.mkQuotient_hom_ext
-  -- The quotient morphism is the named upper-triangular coordinate restriction.
-  erw [← Category.assoc, coordinateMap_comp_typeAGraphCoordinateIso_hom,
-    Category.assoc, coordinateMap_comp_typeAGraphCoordinateIso_hom]
-  rw [← Category.assoc, SpecialLinear.typeAGraphCoordinateIso_hom_comp_self]
+  let _ : Epi (coordinateMap R (r + 1)) := CommHopfAlgCat.mkQuotient_epi
+  rw [← cancel_epi (coordinateMap R (r + 1)),
+    coordinateMap_comp_typeAGraphCoordinateIso_hom_assoc,
+    coordinateMap_comp_typeAGraphCoordinateIso_hom, ← Category.assoc,
+    SpecialLinear.typeAGraphCoordinateIso_hom_comp_self]
   simp
 
 /-- The inverse restricted graph map is its forward map. -/
