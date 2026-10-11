@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Young.RowInsertion
 public import Mathlib.Data.List.Chain
+import Mathlib.Data.List.GetD
 
 /-!
 # Schensted row insertion into a tableau
@@ -133,6 +134,11 @@ theorem isTableauRows_cons {row : List α} {rows : List (List α)} :
 theorem IsTableauRows.tail {row : List α} {rows : List (List α)}
     (h : IsTableauRows (row :: rows)) : IsTableauRows rows :=
   (isTableauRows_cons.mp h).2.2.2
+
+/-- The row lengths of a tableau form a weakly decreasing list. -/
+theorem IsTableauRows.sortedGE_map_length {rows : List (List α)} (h : IsTableauRows rows) :
+    (rows.map List.length).SortedGE :=
+  (isChain_map_of_isChain List.length (fun _ _ habove => habove.length_le) h.isChain).sortedGE
 
 /-- The row lengths of a tableau weakly decrease. Rows beyond the last one are read as empty. -/
 theorem IsTableauRows.length_getD_succ_le {rows : List (List α)} (h : IsTableauRows rows)
@@ -346,13 +352,24 @@ theorem _root_.List.IsTableauRows.rowInsert {rows : List (List α)} (h : rows.Is
       rw [headD_rowInsert]
       exact isRowAbove_rowBump habove hb
 
-/-- **The new cell of `T ← x` is a corner**: the row below it is strictly shorter. -/
-theorem length_getD_succ_rowInsertIndex_lt {rows : List (List α)} (h : rows.IsTableauRows)
-    (x : α) :
+/-- The row below the new cell of `T ← x` is strictly shorter than the row gaining the cell.
+Only weakly decreasing original row lengths are needed. -/
+theorem length_getD_succ_rowInsertIndex_lt {rows : List (List α)}
+    (h : (rows.map List.length).SortedGE) (x : α) :
     ((rowInsert x rows).getD (rowInsertIndex x rows + 1) []).length <
       ((rowInsert x rows).getD (rowInsertIndex x rows) []).length := by
   rw [length_getD_rowInsert, length_getD_rowInsert, ite_eq_right (by omega), ite_eq_left rfl]
-  exact Nat.lt_succ_of_le (h.length_getD_succ_le _)
+  simp only [Nat.add_zero]
+  apply Nat.lt_succ_of_le
+  by_cases hi : rowInsertIndex x rows + 1 < rows.length
+  · have hj : rowInsertIndex x rows < rows.length := by omega
+    rw [List.getD_eq_getElem rows [] hi, List.getD_eq_getElem rows [] hj]
+    have hlen := h.getElem_ge_getElem_of_le (hi := by simpa using hi)
+      (hj := by simpa using hj) (Nat.le_succ _)
+    rw [List.getElem_map, List.getElem_map] at hlen
+    exact hlen
+  · rw [List.getD_eq_default rows [] (Nat.le_of_not_gt hi)]
+    simp
 
 /-- **A new cell below the first row sits under a longer row**: if `T ← x` adds its cell in row
 `i + 1`, then row `i + 1` of `T` is strictly shorter than row `i`. -/
@@ -595,7 +612,7 @@ def rowInsertEquiv :
       {p : List (List α) × ℕ //
         p.1.IsTableauRows ∧ (p.1.getD (p.2 + 1) []).length < (p.1.getD p.2 []).length} where
   toFun p := ⟨(rowInsert p.2 p.1.1, rowInsertIndex p.2 p.1.1), p.1.2.rowInsert p.2,
-    length_getD_succ_rowInsertIndex_lt p.1.2 p.2⟩
+    length_getD_succ_rowInsertIndex_lt p.1.2.sortedGE_map_length p.2⟩
   invFun p := (⟨(reverseRowInsert p.1.2 p.1.1).1, p.2.1.reverseRowInsert p.2.2⟩,
     (reverseRowInsert p.1.2 p.1.1).2.get
       (Option.isSome_iff_exists.mpr ((rowInsert_reverseRowInsert p.2.1 p.2.2).imp fun _ h => h.1)))
