@@ -12,42 +12,43 @@ import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 /-!
 # The Monge–Ampère measure of a cone
 
-Let `E` be a finite-dimensional real inner product space, `a : E` and `0 ≤ r`. The *cone*
-`u x = r * ‖x - a‖` with vertex `a` and slope `r` is the basic example of a convex function whose
-Aleksandrov Monge–Ampère measure is singular: all of its mass sits at the vertex,
+Let `E` be a finite-dimensional real inner product space, `a : E` and `0 ≤ r`, and let `μ` be a
+measure on `E` absolutely continuous with respect to a Haar measure. In positive dimension, the
+*cone* `u x = r * ‖x - a‖` with vertex `a` and slope `r` is the basic example of a convex function
+whose Aleksandrov Monge–Ampère measure is singular: all of its mass sits at the vertex,
 
   `MA_u = μ (closedBall 0 r) • δ_a`
 
-(`TauCeti.mongeAmpereMeasure_mul_norm_sub`). The subdifferential of the cone at `x` is the set of
-`y` with `‖y‖ ≤ r` and `⟪x - a, y⟫ = r * ‖x - a‖`
+(`TauCeti.mongeAmpereMeasure_mul_norm_sub`; this formula holds in every dimension). The
+subdifferential of the cone at `x` is the set of `y` with `‖y‖ ≤ r` and `⟪x - a, y⟫ = r * ‖x - a‖`
 (`TauCeti.mem_subdifferential_mul_norm_sub_iff`). At the vertex this is the whole closed ball of
 radius `r`, while at every other point it is the single gradient `(r / ‖x - a‖) • (x - a)`, which
-lies on the sphere of radius `r`. Spheres are null for a Haar measure, so only the vertex carries
-mass.
+lies on the sphere of radius `r`. In positive dimension spheres are null for a Haar measure, so
+only the vertex carries mass.
 
 The cone is also the standard example showing that the pointwise Hessian determinant does not
 determine the Aleksandrov measure. The cone is twice differentiable away from its vertex, and there
 its Hessian has determinant `0`, because the gradient is constant along each ray from `a`
-(`TauCeti.det_fderiv_gradient_mul_norm_sub_eq_zero`). So `det D²u = 0` almost everywhere, yet for
-`r > 0` the Aleksandrov measure is not `det (D²u) dx`
-(`TauCeti.mongeAmpereMeasure_mul_norm_sub_ne_withDensity_det`): it is mutually singular with the
-Haar measure (`TauCeti.mutuallySingular_mongeAmpereMeasure_mul_norm_sub`). So an identity
-`det D²u = f` almost everywhere is strictly weaker than `MA_u = f dx`.
+(`TauCeti.det_fderiv_gradient_mul_norm_sub_eq_zero`). In positive dimension and for a Haar measure
+`μ`, this gives `det D²u = 0` almost everywhere, yet for `r > 0` the Aleksandrov measure is not
+`det (D²u) dμ` (`TauCeti.mongeAmpereMeasure_mul_norm_sub_ne_withDensity_det`): it is mutually
+singular with `μ` (`TauCeti.mutuallySingular_mongeAmpereMeasure_mul_norm_sub`). So an identity
+`det D²u = f` almost everywhere is strictly weaker than `MA_u = f dμ`.
 
 ## Main statements
 
 * `TauCeti.mem_subdifferential_mul_norm_sub_iff` — the subdifferential of the cone;
 * `TauCeti.subdifferential_mul_norm_sub_self` and `TauCeti.subdifferential_mul_norm_sub_of_ne` —
   it is the closed ball of radius `r` at the vertex and the gradient elsewhere;
-* `TauCeti.mongeAmpereMeasure_mul_norm_sub` — the Monge–Ampère measure of the cone is
-  `μ (closedBall 0 r) • δ_a`;
+* `TauCeti.mongeAmpereMeasure_mul_norm_sub` — for `μ` absolutely continuous with respect to a Haar
+  measure, the Monge–Ampère measure of the cone is `μ (closedBall 0 r) • δ_a`;
 * `TauCeti.mutuallySingular_mongeAmpereMeasure_mul_norm_sub` — in positive dimension this measure
-  is mutually singular with the Haar measure;
+  is mutually singular with `μ`;
 * `TauCeti.differentiableAt_gradient_mul_norm_sub` and
   `TauCeti.det_fderiv_gradient_mul_norm_sub_eq_zero` — away from the vertex the cone is twice
   differentiable and its Hessian has determinant `0`;
-* `TauCeti.mongeAmpereMeasure_mul_norm_sub_ne_withDensity_det` — for `r > 0` the Monge–Ampère
-  measure of the cone is not `det (D²u) dx`.
+* `TauCeti.mongeAmpereMeasure_mul_norm_sub_ne_withDensity_det` — in positive dimension, for a Haar
+  measure `μ` and `r > 0`, the Monge–Ampère measure of the cone is not `det (D²u) dμ`.
 
 ## References
 
@@ -161,6 +162,7 @@ theorem hasGradientAt_mul_norm_sub (r : ℝ) (hx : x ≠ a) :
 
 /-- Away from its vertex, the gradient of the cone `x ↦ r * ‖x - a‖` is
 `(r / ‖x - a‖) • (x - a)`. -/
+@[simp]
 theorem gradient_mul_norm_sub (r : ℝ) (hx : x ≠ a) :
     ∇ (fun x => r * ‖x - a‖) x = (r / ‖x - a‖) • (x - a) :=
   (hasGradientAt_mul_norm_sub r hx).gradient
@@ -178,6 +180,7 @@ theorem differentiableAt_gradient_mul_norm_sub (r : ℝ) (hx : x ≠ a) :
 
 /-- The gradient of the cone `x ↦ r * ‖x - a‖` is constant along each open ray from the vertex `a`,
 so away from `a` its derivative vanishes in the radial direction `x - a`. -/
+@[simp]
 theorem fderiv_gradient_mul_norm_sub_apply_sub (r : ℝ) (hx : x ≠ a) :
     fderiv ℝ (∇ fun x => r * ‖x - a‖) x (x - a) = 0 := by
   have hd : 0 < ‖x - a‖ := norm_pos_iff.2 (sub_ne_zero.2 hx)
@@ -204,6 +207,7 @@ theorem fderiv_gradient_mul_norm_sub_apply_sub (r : ℝ) (hx : x ≠ a) :
 
 /-- **The Hessian of a cone is degenerate.** Away from its vertex `a`, the Hessian of the cone
 `x ↦ r * ‖x - a‖` has determinant `0`, since it annihilates the radial direction `x - a`. -/
+@[simp]
 theorem det_fderiv_gradient_mul_norm_sub_eq_zero [FiniteDimensional ℝ E] (r : ℝ) (hx : x ≠ a) :
     (fderiv ℝ (∇ fun x => r * ‖x - a‖) x).det = 0 := by
   rw [LinearMap.det_eq_zero_iff_ker_ne_bot, Submodule.ne_bot_iff]
