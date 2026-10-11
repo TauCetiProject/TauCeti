@@ -43,6 +43,8 @@ in which the method of acyclic models applies to them.
 ## References
 
 * W. S. Massey, *Singular Homology Theory*, GTM 70, Springer, 1980, Chapter II.
+* S. Eilenberg and S. Mac Lane, *Acyclic models*, Amer. J. Math. 75 (1953), for normalized chains
+  as a natural retract of free ones.
 -/
 
 public section
@@ -81,7 +83,8 @@ theorem isDegenerateAt_comp_zeroOn {n : ℕ} (c : SingularCube X n) {S : Finset 
     ext i
     by_cases hi : i ∈ S
     · simp [hi]
-    · simp [hi, Function.update_of_ne (show i ≠ j by rintro rfl; exact hi hj)]
+    · have hij : i ≠ j := fun h ↦ hi (h ▸ hj)
+      simp [hi, Function.update_of_ne hij]
 
 /-- Setting one more coordinate, on which the cube does not depend, to `0` does not change the
 cube. -/
@@ -111,6 +114,7 @@ def normalize (n : ℕ) : CubicalChain X R n →ₗ[R] CubicalChain X R n :=
   linearCombination R fun c ↦
     ∑ S : Finset (Fin n), (-1 : R) ^ S.card • single (c.comp (zeroOn S)) (1 : R)
 
+@[simp]
 theorem normalize_single {n : ℕ} (c : SingularCube X n) (a : R) :
     normalize R n (single c a) =
       ∑ S : Finset (Fin n), (-1 : R) ^ S.card • single (c.comp (zeroOn S)) a := by
