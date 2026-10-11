@@ -23,6 +23,8 @@ concrete p-adic norm and valuation APIs.
 
 ## Main results
 
+* `Padic.uniformSpace_eq_rightUniformSpace` identifies the metric uniformity of `ℚ_[p]` with the
+  additive-group uniformity built from its valuative topology.
 * `Padic.toAdd_normalizedValuation_eq_valuation` identifies the additive normalized
   valuation with `Padic.valuation`.
 * `Padic.integerRingEquiv` identifies the ring of integers of `ℚ_[p]` with `ℤ_[p]`.
@@ -44,6 +46,9 @@ concrete p-adic norm and valuation APIs.
 
 The Padic and residue-field constructions used here are part of Mathlib's upstream
 `NumberTheory/Padics` development.
+
+The uniformity comparison specializes Mathlib's `Valuation.toUniformSpace_eq` from
+`Topology/Algebra/ValuativeRel/ValuativeTopology.lean`.
 -/
 
 public section
@@ -54,6 +59,15 @@ open scoped WithZero
 variable (p : ℕ) [Fact p.Prime]
 
 namespace Padic
+
+/-- The metric uniformity on `ℚ_[p]` agrees with the additive-group uniformity determined by its
+valuation topology. This identifies the uniformity used by the normed-field structure with the
+one used by additive topological-group completeness. -/
+theorem uniformSpace_eq_rightUniformSpace :
+    (inferInstance : UniformSpace ℚ_[p]) =
+      @IsTopologicalAddGroup.rightUniformSpace ℚ_[p] _
+        (Padic.mulValuation (p := p)).subgroups_basis.topology _ :=
+  (Padic.mulValuation (p := p)).toUniformSpace_eq
 
 /-- The zero-preserving normalized valuation on `ℚ_[p]` is the inverse of
 Mathlib's p-adic valuation. -/
