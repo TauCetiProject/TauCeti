@@ -28,9 +28,9 @@ the two chart maps agree on the overlap, so they glue to a morphism of schemes o
 the function fields of the two models with `F` and `F'`. The construction is functorial: the
 identity of `F` induces the identity, and a tower `F → F' → F''` induces the composite.
 
-This is the morphism of normalized models of the projective line attached to an embedding of
-function fields, the morphism part of the correspondence between function fields and regular
-projective curves.
+For `x` transcendental over `k`, this is the morphism of normalized models of the projective line
+attached to an embedding of function fields, the morphism part of the correspondence between
+function fields and regular projective curves.
 
 ## Main definitions
 
@@ -130,15 +130,27 @@ private theorem specMap_finiteChartMap_ιFinite_eq :
       Spec.map (CommRingCat.ofHom (infinityChartRestriction (k := k) x').toRingHom) ≫
         Spec.map (CommRingCat.ofHom (infinityChartMap h)) ≫ ιInfinity hF hx := by
   -- Both composites factor through `Spec` of the map of overlap rings.
-  have hfin : (finiteChartRestriction (k := k) x').toRingHom.comp (finiteChartMap h) =
-      (overlapMap h).comp (finiteChartRestriction (k := k) x).toRingHom :=
-    RingHom.ext fun _ ↦ Subtype.ext (by simp)
-  have hinf : (infinityChartRestriction (k := k) x').toRingHom.comp (infinityChartMap h) =
-      (overlapMap h).comp (infinityChartRestriction (k := k) x).toRingHom :=
-    RingHom.ext fun _ ↦ Subtype.ext (by simp)
-  rw [← Spec.map_comp_assoc, ← Spec.map_comp_assoc, ← CommRingCat.ofHom_comp,
-    ← CommRingCat.ofHom_comp, hfin, hinf, CommRingCat.ofHom_comp, CommRingCat.ofHom_comp,
-    Spec.map_comp_assoc, Spec.map_comp_assoc, condition]
+  have hfin : Spec.map (CommRingCat.ofHom (finiteChartRestriction (k := k) x').toRingHom) ≫
+        Spec.map (CommRingCat.ofHom (finiteChartMap h)) =
+      Spec.map (CommRingCat.ofHom (overlapMap h)) ≫
+        Spec.map (CommRingCat.ofHom (finiteChartRestriction (k := k) x).toRingHom) := by
+    simp only [← Spec.map_comp, ← CommRingCat.ofHom_comp]
+    congr 2
+    exact RingHom.ext fun _ ↦ Subtype.ext (by simp)
+  have hinf : Spec.map (CommRingCat.ofHom (infinityChartRestriction (k := k) x').toRingHom) ≫
+        Spec.map (CommRingCat.ofHom (infinityChartMap h)) =
+      Spec.map (CommRingCat.ofHom (overlapMap h)) ≫
+        Spec.map (CommRingCat.ofHom (infinityChartRestriction (k := k) x).toRingHom) := by
+    simp only [← Spec.map_comp, ← CommRingCat.ofHom_comp]
+    congr 2
+    exact RingHom.ext fun _ ↦ Subtype.ext (by simp)
+  calc _ = Spec.map (CommRingCat.ofHom (overlapMap h)) ≫
+        Spec.map (CommRingCat.ofHom (finiteChartRestriction (k := k) x).toRingHom) ≫
+          ιFinite hF hx := by rw [reassoc_of% hfin]
+    _ = Spec.map (CommRingCat.ofHom (overlapMap h)) ≫
+        Spec.map (CommRingCat.ofHom (infinityChartRestriction (k := k) x).toRingHom) ≫
+          ιInfinity hF hx := by rw [condition]
+    _ = _ := by rw [reassoc_of% hinf]
 
 /-- **The morphism of two-chart models induced by `F → F'`**: for `x' ∈ F'` the image of
 `x ∈ F`, the morphism `twoChartModel hF' hx' ⟶ twoChartModel hF hx` glued from `Spec` of the
@@ -214,21 +226,34 @@ theorem finiteChartSectionsEquiv_map_appLE (s : Γ(twoChartModel hF hx, ιFinite
       f.appLE U V e = g.appLE U V (hfg ▸ e) := by
     subst hfg
     rfl
-  rw [Scheme.Hom.appIso_hom', Scheme.Hom.appIso_hom', Scheme.Hom.appLE_comp_appLE_assoc,
-    appLE_eq (ιFinite_map hF hF' hx hx' h),
-    ← Scheme.Hom.appLE_comp_appLE (Spec.map _) (ιFinite hF hx) _ ⊤ ⊤
-      (Scheme.Hom.preimage_image_eq _ _).ge le_top, Category.assoc,
-    show Scheme.Hom.appLE _ ⊤ ⊤ le_top = Scheme.Hom.appTop _ from Scheme.Hom.appLE_eq_app _,
-    Scheme.ΓSpecIso_naturality]
+  have hle : ⊤ ≤ (Spec.map (CommRingCat.ofHom (finiteChartMap h)) ≫ ιFinite hF hx) ⁻¹ᵁ
+      (ιFinite hF hx ''ᵁ ⊤) := by
+    rw [Scheme.Hom.comp_preimage, Scheme.Hom.preimage_image_eq]
+    exact le_top
+  calc _ = (ιFinite hF' hx' ≫ map hF hF' hx hx' h).appLE (ιFinite hF hx ''ᵁ ⊤) ⊤
+          (ιFinite_map hF hF' hx hx' h ▸ hle) ≫ (Scheme.ΓSpecIso _).hom := by
+        rw [Scheme.Hom.appIso_hom', Scheme.Hom.appLE_comp_appLE_assoc]
+    _ = (Spec.map (CommRingCat.ofHom (finiteChartMap h)) ≫ ιFinite hF hx).appLE
+          (ιFinite hF hx ''ᵁ ⊤) ⊤ hle ≫ (Scheme.ΓSpecIso _).hom := by
+        rw [appLE_eq (ιFinite_map hF hF' hx hx' h)]
+    _ = ((ιFinite hF hx).appIso ⊤).hom ≫
+          (Spec.map (CommRingCat.ofHom (finiteChartMap h))).appTop ≫ (Scheme.ΓSpecIso _).hom := by
+        rw [← Scheme.Hom.appLE_comp_appLE (Spec.map _) (ιFinite hF hx) _ ⊤ ⊤
+            (Scheme.Hom.preimage_image_eq _ _).ge le_top, Category.assoc,
+          show Scheme.Hom.appLE _ ⊤ ⊤ le_top = Scheme.Hom.appTop _ from Scheme.Hom.appLE_eq_app _,
+          Scheme.Hom.appIso_hom']
+    _ = _ := by rw [Scheme.ΓSpecIso_naturality]
 
 /-- **The pullback of rational functions along `map` is `F → F'`**: for `x` transcendental over
 `k`, under the identifications `k(X) ≃ F` and `k(X') ≃ F'` of the function fields of the two
 models, the pullback along `map : X' ⟶ X` is the algebra map `F → F'`. -/
 @[simp]
-theorem functionFieldEquiv_functionFieldMap_map (hxt : Transcendental k x)
-    (hxt' : Transcendental k x') (z : F) :
-    functionFieldEquiv hxt' ((map hF hF' hx hx' h).functionFieldMap
-      ((functionFieldEquiv hxt).symm z)) = algebraMap F F' z := by
+theorem functionFieldEquiv_functionFieldMap_map (hxt : Transcendental k x) (z : F) :
+    functionFieldEquiv (h ▸ (transcendental_algebraMap_iff (algebraMap F F').injective).mpr hxt)
+      ((map hF hF' hx hx' h).functionFieldMap ((functionFieldEquiv hxt).symm z)) =
+      algebraMap F F' z := by
+  have hxt' : Transcendental k x' :=
+    h ▸ (transcendental_algebraMap_iff (algebraMap F F').injective).mpr hxt
   -- On a function `a` of `𝒪_x`: `a` is the germ of a section `s` over the finite chart, its
   -- pullback is the germ of the pulled-back section, and that section restricts on the finite
   -- chart of the other model to the image of `a` (`finiteChartSectionsEquiv_map_appLE`).
