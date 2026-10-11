@@ -18,8 +18,18 @@ for the canonical affine base-change spelling `W⁄A`, so consumers of the point
 base-change APIs do not have to unfold that abbreviation. It also records that base change along
 the identity algebra map returns the original curve, together with the resulting identification
 `WeierstrassCurve.Affine.Point.equivBaseChangeSelf` of the point groups of `W` and `W⁄F`, the
-Weierstrass equation of `W⁄A` written with the coefficients of `W` mapped along `algebraMap`, and a
-coordinate descent lemma for points whose abscissa is already rational.
+Weierstrass equation of `W⁄A` written with the coefficients of `W` mapped along `algebraMap`, the
+base-change homomorphism `WeierstrassCurve.Affine.pointMap : W(K) →+ W(L)` on points along a
+field extension `L/K`, and a coordinate descent lemma for points whose abscissa is already
+rational.
+
+`pointMap` is Mathlib's `WeierstrassCurve.Affine.Point.map` and is not a new construction: the
+only content is the alignment of `W` with `W⁄K`, which `baseChange_self` supplies and Mathlib's
+`AddEquiv.cast` transports along. It and `pointMap_some` were adapted, with the author's proofs,
+from the `BaseChange` section of `EllipticCurves/SelmerGroup.lean` in Michael Stoll's
+`EllipticCurves` project (`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0), together
+with the local `2`-descent condition of
+`TauCeti/AlgebraicGeometry/EllipticCurve/MordellWeil/LocalCondition.lean`.
 
 This is infrastructure for the base-change lane of
 `TauCetiRoadmap/EllipticCurves/README.md`, Layer 0.5.
@@ -82,6 +92,35 @@ theorem equivBaseChangeSelf_some {x y : F} (h : W.Nonsingular x y) :
   exact Point.cast_some W.baseChange_self.symm h
 
 end WeierstrassCurve.Affine.Point
+
+namespace WeierstrassCurve.Affine
+
+variable {K : Type*} [Field K] (W : Affine K) (L : Type*) [Field L] [Algebra K L]
+
+open scoped Classical in
+/-- The base-change homomorphism on points, `W(K) →+ W(L)`: Mathlib's
+`WeierstrassCurve.Affine.Point.map`, aligned with the plain base change `W⁄L` via
+`baseChange_self`. -/
+noncomputable def pointMap : W.Point →+ (W⁄L).toAffine.Point :=
+  (Point.map (W' := W) (Algebra.ofId K L)).comp
+    (AddEquiv.cast (M := fun W' : Affine K => W'.Point) W.baseChange_self.symm).toAddMonoidHom
+
+open scoped Classical in
+/-- The base-change map on an affine point carries its coordinates along `algebraMap K L`. -/
+@[simp]
+lemma pointMap_some {x y : K} (h : W.Nonsingular x y) : W.pointMap L (Point.some x y h) =
+      Point.some (W' := (W⁄L).toAffine) (algebraMap K L x) (algebraMap K L y)
+        (show (W⁄L).toAffine.Nonsingular (algebraMap K L x) (algebraMap K L y) from
+          (W.map_nonsingular (algebraMap K L).injective x y).mpr h) := by
+  -- The type ascription above is load-bearing: `map_nonsingular` produces the nonsingularity
+  -- proof at `W.map (algebraMap K L)`, and although `W⁄L` is a reducible abbreviation for
+  -- exactly that, the elaborator does not unfold it at `instances` transparency, so the two
+  -- identically-printing types do not unify without being told the target.
+  rw [pointMap, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, AddEquiv.cast_apply,
+    Point.cast_some W.baseChange_self.symm, Point.map_some]
+  rfl
+
+end WeierstrassCurve.Affine
 
 namespace WeierstrassCurve
 

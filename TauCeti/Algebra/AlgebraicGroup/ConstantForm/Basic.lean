@@ -22,7 +22,9 @@ X C Xᵀ - C
 — `X` the localized generic matrix of `GL n`, `C` read in the coordinate Hopf algebra through
 the structure morphism — generate a Hopf ideal in the coordinate Hopf algebra of `GL n`. Its
 quotient represents the closed subgroup scheme of `GL n` preserving `C`. On every commutative
-`R`-algebra `A`, its points are the invertible matrices `M` with `M C Mᵀ = C`.
+`R`-algebra `A`, its points are the invertible matrices `M` with `M C Mᵀ = C`. This is the row
+convention of Mathlib's `Matrix.symplecticGroup`; the column convention `Mᵀ C M = C` defines the
+same group for `C = 1` and `C = Jₘ`, but not for a general `C`.
 
 Nothing is assumed of `C`: it is an arbitrary square matrix over the base, not required to be
 invertible, symmetric, alternating, or nondegenerate, and the construction includes `n = 0` and
@@ -79,20 +81,16 @@ a relation between `C` and `Cᵀ`.
 
 ## References
 
-* J. S. Milne, *Algebraic Groups* (2017), §2.3, where the orthogonal and symplectic groups are
-  introduced as the subgroups of `GLₙ` cut out by the entries of a form relation.
+* J. S. Milne, *Algebraic Groups* (2017), 2.10, the group-valued functor
+  `R ↦ {A ∈ GLₙ(R) | AᵗCA = C}` (in the column convention).
 * W. C. Waterhouse, *Introduction to Affine Group Schemes* (1979), Chapter 1, for such groups
   as representable functors on commutative rings.
 * The Stacks Project, [Tag 022W](https://stacks.math.columbia.edu/tag/022W), for the ambient
   general linear group scheme.
 
 The matrix form of the closure computations is standard, and the framing identities above are
-not adapted from either reference. The proofs themselves are those of the merged worked
-examples `TauCeti.Symplectic` (for `C = Jₘ`) and `TauCeti.Orthogonal` (for `C = 1`),
-generalized here to an arbitrary `C`: the declaration order and proof plan are theirs, and
-those two files now consume this one rather than repeating it. `TauCeti.Symplectic` recorded
-the generalization in its own module docstring — that the computations "apply verbatim to
-`X C Xᵀ - C` for any constant matrix `C`" — before it was carried out.
+not adapted from either reference. The proofs generalize those for `TauCeti.Symplectic`
+(`C = Jₘ`) and `TauCeti.Orthogonal` (`C = 1`), which specialize this file.
 -/
 
 public section
@@ -210,7 +208,7 @@ private theorem comul_relationMatrix_mem (i j : Fin n) :
       (Ideal.subset_span (relationMatrix_mem_relationSet R n C i j))
 
 /-- The antipode image of the relation matrix is the negative of the relation matrix framed by
-the bundled inverse: `X⁻¹ C (X⁻¹)ᵀ - C = -(X⁻¹ (X C Xᵀ - C) (X⁻¹)ᵀ)`. -/
+the inverse matrix: `X⁻¹ C (X⁻¹)ᵀ - C = -(X⁻¹ (X C Xᵀ - C) (X⁻¹)ᵀ)`. -/
 private theorem relationMatrix_map_antipode :
     (relationMatrix R n C).map
         (HopfAlgebra.antipodeAlgHom (R := R)

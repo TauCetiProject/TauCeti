@@ -21,6 +21,9 @@ choosing a metric or a complement.
 The square need only commute near the chosen base point. This local formulation allows the
 construction to be applied to coordinate maps and to their restrictions.
 
+A globally commuting square of differentiable maps also induces a map of intrinsic normal total
+spaces, acting on each fibre by the normal map; these maps respect identities and composition.
+
 ## References
 
 * M. Hirsch, *Differential Topology*, Springer GTM 33 (1976), Chapter 4, §§5–6, for the
@@ -56,7 +59,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   [TopologicalSpace N'] [ChartedSpace G' N']
   {n m : ℕ∞ω}
   (f : SmoothEmbedding I J n M N) (g : SmoothEmbedding I' J' m M' N')
-  {u : M → M'} {v : N → N'} {x : M}
+  {u : M → M'} {v : N → N'} {x : M} {K K' : Type*}
 
 /-- The differentials in a square commuting near `x` commute at `x`. -/
 private theorem mfderiv_comp_eq_of_eventuallyEq (hn : n ≠ 0) (hm : m ≠ 0)
@@ -138,6 +141,31 @@ theorem normalMap_id (hn : n ≠ 0) (x : M) :
   obtain ⟨w, rfl⟩ := f.normalClass_surjective x hn z
   simp [tangentSpaceCast]
 
+/-- A differentiable commuting square induces a map of intrinsic normal total spaces.
+On each fibre it is the normal map induced by the ambient differential. -/
+def normalBundleMap (hn : n ≠ 0) (hm : m ≠ 0)
+    (hu : MDifferentiable I I' u) (hv : MDifferentiable J J' v)
+    (h : v ∘ f = g ∘ u) (p : Bundle.TotalSpace K (fun x => f.NormalSpace x hn)) :
+    Bundle.TotalSpace K' (fun x => g.NormalSpace x hm) :=
+  ⟨u p.proj, f.normalMap g hn hm (hu p.proj) (hv (f p.proj)) (EventuallyEq.of_eq h) p.2⟩
+
+/-- The induced total map applies the normal map in each fibre. -/
+@[simp] theorem normalBundleMap_apply (hn : n ≠ 0) (hm : m ≠ 0)
+    (hu : MDifferentiable I I' u) (hv : MDifferentiable J J' v)
+    (h : v ∘ f = g ∘ u) (p : Bundle.TotalSpace K (fun x => f.NormalSpace x hn)) :
+    f.normalBundleMap (K' := K') g hn hm hu hv h p =
+      ⟨u p.proj, f.normalMap g hn hm (hu p.proj) (hv (f p.proj)) (EventuallyEq.of_eq h) p.2⟩ :=
+  (rfl)
+
+/-- The identity square induces the identity of the normal bundle. -/
+@[simp] theorem normalBundleMap_id (hn : n ≠ 0) :
+    f.normalBundleMap (K := K) (K' := K) f hn hn (u := _root_.id) (v := _root_.id)
+      mdifferentiable_id mdifferentiable_id rfl =
+      _root_.id := by
+  funext p
+  simp only [normalBundleMap_apply, normalMap_id, ContinuousLinearMap.id_apply]
+  rfl
+
 section Composition
 
 variable {E'' F'' H'' G'' M'' N'' : Type*}
@@ -148,7 +176,7 @@ variable {E'' F'' H'' G'' M'' N'' : Type*}
   [TopologicalSpace M''] [ChartedSpace H'' M'']
   [TopologicalSpace N''] [ChartedSpace G'' N'']
   {r : ℕ∞ω} (q : SmoothEmbedding I'' J'' r M'' N'')
-  {u' : M' → M''} {v' : N' → N''}
+  {u' : M' → M''} {v' : N' → N''} {K'' : Type*}
 
 /-- Composing locally commuting squares composes their induced normal maps.
 The composite square is obtained from the two given germs. -/
@@ -174,6 +202,24 @@ theorem normalMap_comp (hn : n ≠ 0) (hm : m ≠ 0) (hr : r ≠ 0)
     (fun L => tangentSpaceCast J'' (v' (g (u x))) (q (u' (u x)))
       (L (tangentSpaceCast J' (v (f x)) (g (u x)) (mfderiv J J' v (f x) w)))) hd using 1 <;>
     rfl
+
+/-- Composing commuting squares composes their induced maps on normal total spaces. -/
+theorem normalBundleMap_comp (hn : n ≠ 0) (hm : m ≠ 0) (hr : r ≠ 0)
+    (hu : MDifferentiable I I' u) (hv : MDifferentiable J J' v)
+    (hu' : MDifferentiable I' I'' u') (hv' : MDifferentiable J' J'' v')
+    (h : v ∘ f = g ∘ u) (h' : v' ∘ g = q ∘ u') :
+    f.normalBundleMap (K := K) (K' := K'') q hn hr (hu'.comp hu) (hv'.comp hv)
+        (by
+          funext x
+          exact (congrArg v' (congrFun h x)).trans (congrFun h' (u x))) =
+      g.normalBundleMap (K := K') (K' := K'') q hm hr hu' hv' h' ∘
+        f.normalBundleMap g hn hm hu hv h := by
+  funext p
+  simp only [Function.comp_apply, normalBundleMap_apply]
+  have hc := f.normalMap_comp g q hn hm hr (hu p.proj) (hv (f p.proj))
+    (hu' (u p.proj)) (hv' (g (u p.proj)))
+    (EventuallyEq.of_eq h) (EventuallyEq.of_eq h')
+  exact congrArg (Bundle.TotalSpace.mk (u' (u p.proj))) (congrArg (fun L => L p.2) hc)
 
 end Composition
 

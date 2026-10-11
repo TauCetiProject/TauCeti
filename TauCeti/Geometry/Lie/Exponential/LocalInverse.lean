@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 public import TauCeti.Geometry.Lie.Exponential.Derivative.Basic
 import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
-public import TauCeti.Geometry.Manifold.LocalDiffeomorph
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 /-!
 # Local inverse of the Lie-group exponential
 
