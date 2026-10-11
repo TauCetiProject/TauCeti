@@ -221,10 +221,12 @@ structure cubicalChainModule (Y : Type*) [TopologicalSpace Y] (_G : Type*) (R : 
 
 variable (Y G : Type*) [TopologicalSpace Y] (R : Type*) [CommRing R]
 
+/-- The additive group structure, transported from the direct sum. -/
 instance : AddCommGroup (cubicalChainModule Y G R) :=
   fast_instance% (⟨cubicalChainModule.toSum, cubicalChainModule.ofSum, fun _ ↦ rfl, fun _ ↦ rfl⟩ :
     cubicalChainModule Y G R ≃ normalizedCubicalChainAlgebra Y R).addCommGroup
 
+/-- The `R`-module structure, transported from the direct sum. -/
 instance : Module R (cubicalChainModule Y G R) :=
   (⟨⟨cubicalChainModule.toSum, cubicalChainModule.ofSum, fun _ ↦ rfl, fun _ ↦ rfl⟩,
     fun _ _ ↦ rfl⟩ : cubicalChainModule Y G R ≃+ normalizedCubicalChainAlgebra Y R).module R
@@ -332,6 +334,8 @@ def cubicalChainModuleDecompose :
     (DirectSum.lof R ℤ (fun i ↦ cubicalChainModuleGrading Y G R i) (-(n : ℤ))).comp
       ((cubicalChainModuleLof Y G R n).codRestrict _ cubicalChainModuleLof_mem)
 
+/-- The module is the internal direct sum of its graded pieces: an element decomposes into its
+homogeneous chains, the chains of dimension `n` lying in cohomological degree `-n`. -/
 instance : DirectSum.Decomposition (cubicalChainModuleGrading Y G R) :=
   DirectSum.Decomposition.ofLinearMap _ (cubicalChainModuleDecompose Y G R)
     (cubicalChainModule_linearMap_ext fun n c ↦ by
@@ -475,11 +479,15 @@ theorem op_lof_smul_cubicalChainModuleLof {p q : ℕ} (c : NormalizedCubicalChai
       cubicalChainModuleLof Y G R (p + q) (act Y G R p q c a) :=
   cubicalChainActBilin_lof_lof c a
 
+/-- The ground ring and the chains of `G` act compatibly: `(r • a)` acts as `r` times the action of
+`a`, since the action is bilinear. -/
 instance : IsScalarTower R (normalizedCubicalChainAlgebra G R)ᵐᵒᵖ (cubicalChainModule Y G R) where
   smul_assoc r a m := by
     rw [← op_unop a, ← MulOpposite.op_smul, op_smul_cubicalChainModule,
       op_smul_cubicalChainModule, map_smul]
 
+/-- The action is graded: a chain of `G` of cohomological degree `i` sends the chains of `Y` of
+degree `j` to degree `i + j`, as the action adds dimensions. -/
 instance : SetLike.GradedSMul
     (InternalGrading.ofDecomposition (cubicalChainGrading G R)).opposite.piece
     (cubicalChainModuleGrading Y G R) where
