@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Conformal.Jordan.TwoPointNormalization
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Uniqueness
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Power
+import TauCeti.Analysis.Complex.UpperHalfPlane.Affine
 
 /-!
 # Uniqueness of Schwarz--Christoffel representations with a vertex at infinity
@@ -88,9 +89,9 @@ theorem eq_and_eqOn_of_bijOn_schwarzChristoffelPrimitive_of_isJordanCurve_insert
       (fun z => A * schwarzChristoffelPrimitive a e z₀ z + B) upperHalfPlaneSet :=
     eqOn_upperHalfPlaneSet_of_tendsto_of_bijOn_of_isJordanCurve_insert_infty hq hUJ hd' hd hf' hf
       (tendsto_const_mul_schwarzChristoffelPrimitive_add_cobounded a' e' z₀' hsum'
-        (ne_zero_of_injOn_const_mul_schwarzChristoffelPrimitive_add hf'.injOn) B')
+        (ne_zero_of_injOn_const_mul_add hf'.injOn) B')
       (tendsto_const_mul_schwarzChristoffelPrimitive_add_cobounded a e z₀ hsum
-        (ne_zero_of_injOn_const_mul_schwarzChristoffelPrimitive_add hf.injOn) B)
+        (ne_zero_of_injOn_const_mul_add hf.injOn) B)
       hij (hi ▸ ht' i) (hj ▸ ht' j) (ht i) (ht j)
   refine ⟨funext fun m => ?_, heq⟩
   -- the second map also tends to the `m`-th vertex at `a m`, so `a' m = a m`
@@ -122,7 +123,7 @@ theorem param_eq_of_bijOn_schwarzChristoffelPrimitive_of_isJordanCurve_insert_in
     eq_and_eqOn_of_bijOn_schwarzChristoffelPrimitive_of_isJordanCurve_insert_infty
       hq hUJ he he' hsum hsum' z₀ z₀' hf hf' hv (ha.ne hij) hi hj
   exact ⟨rfl, (eqOn_const_mul_schwarzChristoffelPrimitive_add_iff ha z₀ z₀'
-    (ne_zero_of_injOn_const_mul_schwarzChristoffelPrimitive_add hf.injOn)).mp heq⟩
+    (ne_zero_of_injOn_const_mul_add hf.injOn)).mp heq⟩
 
 end TauCeti
 

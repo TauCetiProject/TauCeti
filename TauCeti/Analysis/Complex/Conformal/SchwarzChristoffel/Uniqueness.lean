@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.PrevertexUniqueness
+import TauCeti.Analysis.Complex.UpperHalfPlane.Affine
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.Analysis.Contour.PolarPart.PartialFraction
 
@@ -109,17 +110,6 @@ theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_iff {a : ι → ℝ} (ha 
     simp only [schwarzChristoffelPrimitive_change_base a e' z₀' z₀ hz]
     ring
 
-/-- An affine image `A * F + B` of a Schwarz--Christoffel primitive that is injective on the upper
-half-plane has `A ≠ 0`: for `A = 0` the map is constant. -/
-theorem ne_zero_of_injOn_const_mul_schwarzChristoffelPrimitive_add {a e : ι → ℝ}
-    {z₀ : UpperHalfPlane} {A B : ℂ}
-    (hf : InjOn (fun z => A * schwarzChristoffelPrimitive a e z₀ z + B) upperHalfPlaneSet) :
-    A ≠ 0 := by
-  rintro rfl
-  have h := hf (x₁ := I) (x₂ := 2 * I) (by simp [UpperHalfPlane.upperHalfPlaneSet])
-    (by simp [UpperHalfPlane.upperHalfPlaneSet]) (by simp)
-  exact I_ne_zero (by linear_combination -h)
-
 /-- **Uniqueness of the Schwarz--Christoffel parameters.** Let `A * F + B` and `A' * F' + B'` be
 affine images of normalized Schwarz--Christoffel primitives, for `(a, e, z₀)` and
 `(a', e', z₀')`, whose total exponents at each prevertex are greater than `-1`. Suppose both map
@@ -142,7 +132,7 @@ theorem param_eq_of_bijOn_schwarzChristoffelPrimitive {U : Set ℂ} (hUb : IsBou
   obtain ⟨rfl, heq⟩ := eq_and_eqOn_of_bijOn_schwarzChristoffelPrimitive hUb hUJ he he' z₀ z₀'
     hf hf' hv (ha.ne hij) (ha.ne hik) (ha.ne hjk) hi hj hk
   exact ⟨rfl, (eqOn_const_mul_schwarzChristoffelPrimitive_add_iff ha z₀ z₀'
-    (ne_zero_of_injOn_const_mul_schwarzChristoffelPrimitive_add hf.injOn)).mp heq⟩
+    (ne_zero_of_injOn_const_mul_add hf.injOn)).mp heq⟩
 
 end TauCeti
 
