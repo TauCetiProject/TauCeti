@@ -1,0 +1,218 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Geometry.Toric.Algebraic.TorusAction.Coaction
+public import Mathlib.AlgebraicGeometry.Group.Affine
+
+/-!
+# The affine toric scheme action map
+
+The grading coaction of an affine toric coordinate ring gives a morphism from the product of
+the dense torus and the affine toric scheme to the affine toric scheme. The product is the fibre
+product over `Spec ℂ`, identified with the spectrum of the tensor product of coordinate rings.
+This is the affine action map that the global fan-scheme action glues along face opens.
+
+The defining equation on the tensor-product affine chart keeps the construction tied to the
+coordinate-ring coaction, whose counit, coassociativity, and face-compatibility laws are proved
+in `Coaction`.
+
+## References
+
+* W. Fulton, *Introduction to Toric Varieties*, §§1.2--1.3.
+* D. Cox, J. Little and H. Schenck, *Toric Varieties*, §§1.1 and 3.1.
+-/
+
+public section
+
+open AlgebraicGeometry CategoryTheory Limits MonoidalCategory MonObj
+open scoped TensorProduct
+
+namespace TauCeti.Toric
+
+variable {N : Type} {V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
+  {i : N →+ V} (hi : IsIntegralLattice i) (σ : PointedCone ℝ V)
+
+/-- The affine toric scheme action induced by the character-grading coaction. The dense torus
+acts on the affine chart via the common base `Spec ℂ`. -/
+noncomputable def affineToricSchemeAction :
+    pullback
+      (Spec.map (CommRingCat.ofHom (algebraMap ℂ
+        (affineCoordinateRing hi (⊥ : PointedCone ℝ V)))))
+      (Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing hi σ)))) ⟶
+        affineToricScheme hi σ :=
+  (pullbackSpecIso ℂ
+    (affineCoordinateRing hi (⊥ : PointedCone ℝ V))
+    (affineCoordinateRing hi σ)).hom ≫
+      Spec.map (CommRingCat.ofHom (affineCoordinateRingCoaction hi σ).toRingHom)
+
+/-- On the tensor-product affine chart, the scheme action is `Spec` of the toric coaction. -/
+@[reassoc (attr := simp)]
+theorem pullbackSpecIso_inv_comp_affineToricSchemeAction :
+    (pullbackSpecIso ℂ
+      (affineCoordinateRing hi (⊥ : PointedCone ℝ V))
+      (affineCoordinateRing hi σ)).inv ≫ affineToricSchemeAction hi σ =
+        Spec.map (CommRingCat.ofHom (affineCoordinateRingCoaction hi σ).toRingHom) := by
+  simp [affineToricSchemeAction]
+
+/-- For the zero cone, the affine action is multiplication of the dense torus scheme. -/
+theorem affineToricSchemeAction_bot :
+    affineToricSchemeAction hi (⊥ : PointedCone ℝ V) =
+      μ[((affineToricScheme hi (⊥ : PointedCone ℝ V)).asOver (Spec (.of ℂ)))].left := by
+  rw [affineToricSchemeAction, mul_spec_asOver_spec_left,
+    affineCoordinateRingCoaction_bot]
+  rfl
+
+private noncomputable def affineToricSchemeUnitRingMap :
+    affineCoordinateRing hi (⊥ : PointedCone ℝ V) ⊗[ℂ] affineCoordinateRing hi σ →ₐ[ℂ]
+      affineCoordinateRing hi σ :=
+  (Algebra.TensorProduct.lid ℂ (affineCoordinateRing hi σ)).toAlgHom.comp
+    (Algebra.TensorProduct.map
+      (Bialgebra.counitAlgHom ℂ
+        (affineCoordinateRing hi (⊥ : PointedCone ℝ V)))
+      (AlgHom.id ℂ (affineCoordinateRing hi σ)))
+
+/-- The unit of the dense torus, paired with the identity of the affine chart, defines a
+section of the torus-times-chart projection. -/
+noncomputable def affineToricSchemeUnitSection :
+    affineToricScheme hi σ ⟶
+      pullback
+        (Spec.map (CommRingCat.ofHom (algebraMap ℂ
+          (affineCoordinateRing hi (⊥ : PointedCone ℝ V)))))
+        (Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing hi σ)))) :=
+  Spec.map (CommRingCat.ofHom (affineToricSchemeUnitRingMap hi σ).toRingHom) ≫
+    (pullbackSpecIso ℂ
+      (affineCoordinateRing hi (⊥ : PointedCone ℝ V))
+      (affineCoordinateRing hi σ)).inv
+
+/-- The unit section has the identity as its projection to the affine chart. -/
+@[reassoc (attr := simp)]
+theorem affineToricSchemeUnitSection_comp_snd :
+    affineToricSchemeUnitSection hi σ ≫ pullback.snd _ _ = 𝟙 _ := by
+  rw [affineToricSchemeUnitSection, Category.assoc, pullbackSpecIso_inv_snd,
+    ← Spec.map_comp, ← CommRingCat.ofHom_comp]
+  change Spec.map (CommRingCat.ofHom
+    (((affineToricSchemeUnitRingMap hi σ).comp
+      (Algebra.TensorProduct.includeRight :
+        affineCoordinateRing hi σ →ₐ[ℂ]
+          affineCoordinateRing hi (⊥ : PointedCone ℝ V) ⊗[ℂ]
+            affineCoordinateRing hi σ)).toRingHom)) = 𝟙 _
+  have h : (affineToricSchemeUnitRingMap hi σ).comp
+      (Algebra.TensorProduct.includeRight :
+        affineCoordinateRing hi σ →ₐ[ℂ]
+          affineCoordinateRing hi (⊥ : PointedCone ℝ V) ⊗[ℂ]
+            affineCoordinateRing hi σ) = AlgHom.id ℂ (affineCoordinateRing hi σ) := by
+    ext x
+    simp [affineToricSchemeUnitRingMap]
+  rw [h]
+  simp
+
+/-- The projection of the unit section to the dense torus is the identity section after the
+structure map to `Spec ℂ`. -/
+@[reassoc (attr := simp)]
+theorem affineToricSchemeUnitSection_comp_fst :
+    affineToricSchemeUnitSection hi σ ≫ pullback.fst _ _ =
+      Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing hi σ))) ≫
+        Spec.map (CommRingCat.ofHom
+          (Bialgebra.counitAlgHom ℂ
+            (affineCoordinateRing hi (⊥ : PointedCone ℝ V))).toRingHom) := by
+  rw [affineToricSchemeUnitSection, Category.assoc, pullbackSpecIso_inv_fst,
+    ← Spec.map_comp, ← CommRingCat.ofHom_comp, ← Spec.map_comp,
+    ← CommRingCat.ofHom_comp]
+  congr 1
+  apply CommRingCat.hom_ext
+  apply RingHom.ext
+  intro x
+  simp [affineToricSchemeUnitRingMap, Algebra.smul_def,
+    MonoidAlgebra.coe_algebraMap]
+
+/-- The identity element of the dense torus acts trivially on an affine toric scheme. -/
+@[reassoc (attr := simp)]
+theorem affineToricSchemeUnitSection_comp_action :
+    affineToricSchemeUnitSection hi σ ≫ affineToricSchemeAction hi σ = 𝟙 _ := by
+  rw [affineToricSchemeUnitSection, affineToricSchemeAction]
+  simp only [Category.assoc, Iso.inv_hom_id_assoc]
+  rw [← Spec.map_comp, ← CommRingCat.ofHom_comp]
+  have h : (affineToricSchemeUnitRingMap hi σ).comp
+      (affineCoordinateRingCoaction hi σ) =
+        AlgHom.id ℂ (affineCoordinateRing hi σ) :=
+    affineCoordinateRingCoaction_counit hi σ
+  change Spec.map (CommRingCat.ofHom
+    (((affineToricSchemeUnitRingMap hi σ).comp
+      (affineCoordinateRingCoaction hi σ)).toRingHom)) = 𝟙 _
+  rw [h]
+  simp
+
+/-- Restricting an affine toric chart to a face induces the corresponding map on its product
+with the dense torus. On tensor-product coordinate rings it is the identity on the torus factor
+and face restriction on the chart factor. -/
+noncomputable def affineToricSchemeActionFaceMap {τ : PointedCone ℝ V}
+    (hτσ : τ.IsFaceOf σ) :
+    pullback
+      (Spec.map (CommRingCat.ofHom (algebraMap ℂ
+        (affineCoordinateRing hi (⊥ : PointedCone ℝ V)))))
+      (Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing hi τ)))) ⟶
+    pullback
+      (Spec.map (CommRingCat.ofHom (algebraMap ℂ
+        (affineCoordinateRing hi (⊥ : PointedCone ℝ V)))))
+      (Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing hi σ)))) :=
+  (pullbackSpecIso ℂ
+    (affineCoordinateRing hi (⊥ : PointedCone ℝ V))
+    (affineCoordinateRing hi τ)).hom ≫
+    Spec.map (CommRingCat.ofHom
+      (Algebra.TensorProduct.map
+        (AlgHom.id ℂ (affineCoordinateRing hi (⊥ : PointedCone ℝ V)))
+        (faceAffineCoordinateRingMap hi hτσ)).toRingHom) ≫
+    (pullbackSpecIso ℂ
+      (affineCoordinateRing hi (⊥ : PointedCone ℝ V))
+      (affineCoordinateRing hi σ)).inv
+
+/-- Face restriction leaves the dense-torus projection of the product unchanged. -/
+@[reassoc (attr := simp)]
+theorem affineToricSchemeActionFaceMap_comp_fst {τ : PointedCone ℝ V}
+    (hτσ : τ.IsFaceOf σ) :
+    affineToricSchemeActionFaceMap hi σ hτσ ≫ pullback.fst _ _ = pullback.fst _ _ := by
+  simp only [affineToricSchemeActionFaceMap, Category.assoc,
+    pullbackSpecIso_inv_fst, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
+  rw [← pullbackSpecIso_hom_fst]
+  congr 1
+  congr 1
+  exact congrArg (fun f => CommRingCat.ofHom f.toRingHom)
+    (Algebra.TensorProduct.map_comp_includeLeft
+      (AlgHom.id ℂ (affineCoordinateRing hi (⊥ : PointedCone ℝ V)))
+      (faceAffineCoordinateRingMap hi hτσ))
+
+/-- On the affine-chart projection, the product map is face restriction. -/
+@[reassoc (attr := simp)]
+theorem affineToricSchemeActionFaceMap_comp_snd {τ : PointedCone ℝ V}
+    (hτσ : τ.IsFaceOf σ) :
+    affineToricSchemeActionFaceMap hi σ hτσ ≫ pullback.snd _ _ =
+      pullback.snd _ _ ≫ faceAffineToricSchemeMap hi hτσ := by
+  simp only [affineToricSchemeActionFaceMap, Category.assoc,
+    pullbackSpecIso_inv_snd, faceAffineToricSchemeMap_def,
+    ← Spec.map_comp, ← CommRingCat.ofHom_comp]
+  rw [← pullbackSpecIso_hom_snd]
+  simp only [Category.assoc, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
+  congr 1
+
+/-- The affine torus action commutes with restriction to a face. This square is the scheme-level
+compatibility used to glue the affine actions across the fan's open overlaps. -/
+@[reassoc]
+theorem affineToricSchemeActionFaceMap_comp_action {τ : PointedCone ℝ V}
+    (hτσ : τ.IsFaceOf σ) :
+    affineToricSchemeActionFaceMap hi σ hτσ ≫ affineToricSchemeAction hi σ =
+      affineToricSchemeAction hi τ ≫ faceAffineToricSchemeMap hi hτσ := by
+  simp only [affineToricSchemeActionFaceMap, affineToricSchemeAction,
+    Category.assoc, Iso.inv_hom_id_assoc]
+  rw [← Spec.map_comp, ← CommRingCat.ofHom_comp]
+  rw [faceAffineToricSchemeMap_def, ← Spec.map_comp,
+    ← CommRingCat.ofHom_comp]
+  have h := affineCoordinateRingCoaction_comp_face hi hτσ
+  congr 1
+  congr 1
+  exact congrArg (fun f => CommRingCat.ofHom f.toRingHom) h.symm
+
+end TauCeti.Toric
