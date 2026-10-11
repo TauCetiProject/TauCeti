@@ -10,7 +10,6 @@ public import TauCeti.AlgebraicTopology.Singular.Empty
 public import TauCeti.AlgebraicTopology.Singular.Excision
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 public import TauCeti.AlgebraicTopology.Singular.Sphere
-public import TauCeti.Topology.Homotopy.PuncturedStarConvex
 public import TauCeti.Topology.Homotopy.StarConvexComplement
 
 /-!
@@ -443,8 +442,10 @@ inclusion `(M, M ∖ φ.symm '' K) ⟶ (M, M ∖ {x})` induces isomorphisms on r
 homology. By excision onto the source and the target of `φ`, this reduces to the inclusion
 `(E, E ∖ K) ⟶ (E, E ∖ {φ x})` (`TauCeti.isIso_singularHomologyMap_compl_of_starConvex`).
 
-All three conditions on `K` hold when `K` is compact and `M` is Hausdorff, for instance for a
-closed ball in a chart of a finite-dimensional manifold. -/
+When `K` is compact, it is closed and bounded, and if `M` is moreover Hausdorff then its image
+`φ.symm '' K` is compact and hence closed; star-convexity and `K ⊆ φ.target` remain separate
+hypotheses. For instance, all hypotheses hold for a closed ball about `φ x` contained in the
+target of a chart of a finite-dimensional Hausdorff manifold. -/
 theorem isIso_singularHomologyMap_compl_of_chart (hx : x ∈ φ.source) (hK : StarConvex ℝ (φ x) K)
     (hxK : φ x ∈ K) (hKb : Bornology.IsBounded K) (hKc : IsClosed K)
     (hLc : IsClosed (φ.symm '' K)) (hKφ : K ⊆ φ.target) (k : ℕ) :
