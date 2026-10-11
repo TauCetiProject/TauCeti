@@ -266,6 +266,10 @@ instance : TopologicalSpace (Fiber p b) :=
 def val (x : Fiber p b) : MooreReplacement p :=
   Subtype.val x
 
+/-- The underlying pair of a point of the fibre is its value as an element of the subtype. -/
+theorem val_eq_subtypeVal (x : Fiber p b) : x.val = Subtype.val x :=
+  (rfl)
+
 @[simp]
 theorem target_path_val (x : Fiber p b) : x.val.path.target = b :=
   x.2
