@@ -20,8 +20,8 @@ order divides `φ(ℓ ^ r) = ℓ ^ (r - 1) (ℓ - 1)`, so if `ℓ ^ j` did not d
 the number `ℓ ^ (j - 1) (ℓ - 1)`, which does not depend on `r`; then `ℓ ^ r` would divide the
 positive number `a ^ (ℓ ^ (j - 1) (ℓ - 1)) - 1` for every `r`, which is absurd.
 
-For the residue `a = 𝔑𝔭` of a prime `𝔭` of a number field, this order is the residue degree of
-`𝔭` in the cyclotomic extension of level `ℓ ^ r`, so the statement says that these residue
+For the residue `a = 𝔑𝔭` of a prime `𝔭 ∤ ℓ` of a number field, this order is the residue degree
+of `𝔭` in the cyclotomic extension of level `ℓ ^ r`, so the statement says that these residue
 degrees become divisible by any given power of `ℓ` along the cyclotomic tower.
 
 ## Main results
