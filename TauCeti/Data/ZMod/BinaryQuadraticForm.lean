@@ -29,6 +29,8 @@ quotient is `2c(s + t) + u`, which is a unit because `2` is nilpotent in `ℤ/2^
   when a diagonal coefficient is even.
 * `ZMod.BinaryQuadraticForm.exists_sq_add_mul_add_sq_of_odd`: the other normal form
   when both diagonal coefficients are odd.
+* `ZMod.BinaryQuadraticForm.isUnit_det_of_quadratic_identity`: a unit discriminant
+  in the target form forces the coordinate matrix to have unit determinant.
 * `ZMod.BinaryQuadraticForm.exists_basis`: a binary form with unit middle coefficient
   has one of the two standard normal forms in a basis of `(ℤ/2^{k+1})²`.
 -/
@@ -97,7 +99,7 @@ theorem exists_sq_add_mul_add_sq_of_odd (a' b' : ZMod (2 ^ (k + 1)))
 /-- If the binary form `am² + umn + bn²` becomes `Am² + Cmn + Bn²` under the
 coordinate change with matrix `!![e₁, f₁; e₂, f₂]`, and `4AB - C²` is a unit, then that matrix
 has unit determinant: the discriminants satisfy `4AB - C² = (e₁f₂ - f₁e₂)² (4ab - u²)`. -/
-private theorem isUnit_det_of_forall {a b u e₁ e₂ f₁ f₂ A B C : ZMod (2 ^ (k + 1))}
+theorem isUnit_det_of_quadratic_identity {a b u e₁ e₂ f₁ f₂ A B C : ZMod (2 ^ (k + 1))}
     (hdisc : IsUnit (4 * A * B - C ^ 2))
     (h : ∀ m n, a * (m * e₁ + n * f₁) ^ 2 + u * (m * e₁ + n * f₁) * (m * e₂ + n * f₂) +
       b * (m * e₂ + n * f₂) ^ 2 = A * m ^ 2 + C * m * n + B * n ^ 2) :
@@ -123,13 +125,14 @@ theorem exists_basis (a b : ZMod (2 ^ (k + 1))) {u : ZMod (2 ^ (k + 1))}
       (h : ∀ m n, a * (m * e₁ + n * f₁) ^ 2 + u * (m * e₁ + n * f₁) * (m * e₂ + n * f₂) +
         b * (m * e₂ + n * f₂) ^ 2 = m * n) :
       IsUnit (e₁ * f₂ - f₁ * e₂) :=
-    isUnit_det_of_forall (a := a) (b := b) (u := u) (A := 0) (B := 0) (C := 1) (by simp)
+    isUnit_det_of_quadratic_identity (a := a) (b := b) (u := u) (A := 0) (B := 0) (C := 1)
+      (by simp)
       fun m n ↦ by linear_combination h m n
   have hV {a b e₁ e₂ f₁ f₂ : ZMod (2 ^ (k + 1))}
       (h : ∀ m n, a * (m * e₁ + n * f₁) ^ 2 + u * (m * e₁ + n * f₁) * (m * e₂ + n * f₂) +
         b * (m * e₂ + n * f₂) ^ 2 = m ^ 2 + m * n + n ^ 2) :
       IsUnit (e₁ * f₂ - f₁ * e₂) :=
-    isUnit_det_of_forall (a := a) (b := b) (u := u) (A := 1) (B := 1) (C := 1)
+    isUnit_det_of_quadratic_identity (a := a) (b := b) (u := u) (A := 1) (B := 1) (C := 1)
       (by convert isUnit_two_mul_add (c := 1) isUnit_one using 1; ring)
       fun m n ↦ by linear_combination h m n
   obtain ⟨a', rfl⟩ | ⟨a', rfl⟩ := eq_two_mul_or_eq_two_mul_add_one a
