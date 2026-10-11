@@ -383,6 +383,22 @@ theorem isLowestDominant_monomial (hc : 0 < c) {a : R} (ha : a ≠ 0) (n : ℕ) 
   simp only [PowerSeries.coeff_monomial, hm.ne, ite_false, norm_zero, zero_mul]
   exact hf.gaussNorm_pos
 
+/-- A linear polynomial `X - b` whose root lies in the closed disc of radius `c > 0` is
+distinguished of degree `1` at `c`: its Gauss norm `max ‖b‖ c` is `c`, attained by the leading
+coefficient. -/
+theorem isDistinguished_X_sub_C [NormOneClass R] (hc : 0 < c) {b : R} (hb : ‖b‖ ≤ c) :
+    IsDistinguished c 1 (PowerSeries.X - PowerSeries.C b) := by
+  have hnorm : (PowerSeries.X - PowerSeries.C b).gaussNorm norm c = c := by
+    rw [gaussNorm_eq_of_forall_le (s := 1)]
+    · simp
+    · rintro (_ | _ | m)
+      · simpa using hb
+      · simp
+      · simp [PowerSeries.coeff_X, hc.le]
+  refine ⟨by simp [hnorm], fun m hm ↦ ?_⟩
+  have hm0 : m ≠ 0 := by omega
+  simp [hnorm, PowerSeries.coeff_X, PowerSeries.coeff_C, hm.ne', hm0, hc]
+
 section Truncation
 
 section
