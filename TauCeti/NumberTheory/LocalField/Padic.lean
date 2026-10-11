@@ -131,13 +131,11 @@ instance integerRingIsAdicComplete :
 instance integerRingCompactSpace : CompactSpace 𝒪[ℚ_[p]] := by
   have hcoe : Continuous (fun x : 𝒪[ℚ_[p]] =>
       ((integerRingEquiv p x : ℤ_[p]) : ℚ_[p])) := by
-    rw [show (fun x : 𝒪[ℚ_[p]] => ((integerRingEquiv p x : ℤ_[p]) : ℚ_[p])) =
-      (fun x : 𝒪[ℚ_[p]] => (x : ℚ_[p])) from funext (coe_integerRingEquiv_apply p)]
+    simp only [coe_integerRingEquiv_apply]
     exact continuous_subtype_val
   have hcoe' : Continuous (fun x : ℤ_[p] =>
       (((integerRingEquiv p).symm x : 𝒪[ℚ_[p]]) : ℚ_[p])) := by
-    rw [show (fun x : ℤ_[p] => (((integerRingEquiv p).symm x : 𝒪[ℚ_[p]]) : ℚ_[p])) =
-      (fun x : ℤ_[p] => (x : ℚ_[p])) from funext (coe_integerRingEquiv_symm_apply p)]
+    simp only [coe_integerRingEquiv_symm_apply]
     exact continuous_subtype_val
   let e : 𝒪[ℚ_[p]] ≃ₜ ℤ_[p] :=
     { toEquiv := (integerRingEquiv p).toEquiv
