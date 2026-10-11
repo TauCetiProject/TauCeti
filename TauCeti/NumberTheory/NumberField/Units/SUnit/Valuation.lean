@@ -168,6 +168,13 @@ def sUnitInclusion : ordinaryUnitRep K L ⟶ sUnitRep S :=
           Units.coe_map, MonoidHom.coe_ofClass, algebraMap_smul_eq_apply] }
 
 omit [Finite S] in
+/-- The underlying inclusion is the ordinary-unit inclusion transported to additive groups. -/
+theorem sUnitInclusion_hom_apply (u : Additive (𝓞 L)ˣ) :
+    (sUnitInclusion S).hom u =
+      Additive.ofMul (unitsToUnit (S : Set (HeightOneSpectrum (𝓞 L))) L u.toMul) :=
+  (rfl)
+
+omit [Finite S] in
 /-- The inclusion has the same underlying field element as the ring-of-integers embedding. -/
 @[simp]
 theorem sUnitInclusion_val (u : Additive (𝓞 L)ˣ) :
@@ -180,7 +187,8 @@ theorem sUnitInclusion_injective : Function.Injective (sUnitInclusion S).hom := 
   intro u v h
   apply Additive.toMul.injective
   exact unitsToUnit_injective (S : Set (HeightOneSpectrum (𝓞 L))) L
-    (congrArg Additive.toMul h)
+    (congrArg Additive.toMul
+      ((sUnitInclusion_hom_apply S u).symm.trans (h.trans (sUnitInclusion_hom_apply S v))))
 
 /-- The kernel of the S-unit valuation map is exactly the image of the ordinary units. -/
 theorem range_sUnitInclusion_eq_ker_sUnitValuation :
@@ -196,9 +204,10 @@ theorem range_sUnitInclusion_eq_ker_sUnitValuation :
   rw [hzero, ← range_unitsToUnit]
   constructor
   · rintro ⟨v, rfl⟩
-    exact ⟨v.toMul, rfl⟩
+    exact ⟨v.toMul, congrArg Additive.toMul (sUnitInclusion_hom_apply S v).symm⟩
   · rintro ⟨v, hv⟩
-    exact ⟨Additive.ofMul v, Additive.toMul.injective hv⟩
+    exact ⟨Additive.ofMul v,
+      (sUnitInclusion_hom_apply S (Additive.ofMul v)).trans (Additive.toMul.injective hv)⟩
 
 /-- The finite-prime valuation image has finite index in the permutation module. -/
 theorem finiteIndex_range_sUnitValuation :
