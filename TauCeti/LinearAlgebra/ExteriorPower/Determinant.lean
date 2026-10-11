@@ -15,9 +15,10 @@ import Mathlib.Algebra.MvPolynomial.Eval
 # Determinants of exterior-square actions in rank four
 
 An endomorphism of a free module of rank four acts on its exterior square with determinant
-the cube of its original determinant. This holds over every commutative ring: the wedge
-pairing gives the squared identity over the universal polynomial ring, evaluation at the
-identity fixes the sign, and specialization gives the result over arbitrary rings.
+the cube of its original determinant, over every commutative ring. In particular,
+determinant-one endomorphisms induce determinant-one exterior-square maps. This allows
+the exterior-square isometry action of `SL₄` on the wedge form to lift to its special
+isometry group.
 -/
 
 public section
