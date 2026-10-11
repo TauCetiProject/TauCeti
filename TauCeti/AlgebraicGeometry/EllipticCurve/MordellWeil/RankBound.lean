@@ -23,19 +23,28 @@ into the **Mordell–Weil rank bound**
 `2 ^ rank W(F) * #W(F)[2] ≤ #Sel₂(W/F)`. The bound becomes an explicit numerical bound on the
 rank only once the Selmer group has been computed; no such computation is made here.
 
-The finiteness argument is short. At every finite place `v`, the local descent image over the
-completion `F_v` is unramified away from the bad primes of the base-changed curve over
-`𝒪_v` (`range_μ_le_selmerGroupA`, applied over `F_v`), so a Selmer class localizes to an
-unramified class at every good place. By the semilocal comparison
-(`mem_selmerGroupA_of_forall_localRes`) it is then `S`-unramified globally, `S` the bad primes
-of `W` over `𝓞 F`. So the `2`-Selmer group lies in `A(S, 2)`, and `A(S, 2)` is finite by the
-class number theorem and Dirichlet's unit theorem for the field factors of the étale algebra
-(`finite_selmerGroupA`).
+The finiteness argument is short. At a finite place `v` at which `a₂`, `a₄` and `a₆` are
+integral and the discriminant `disc f` of the cubic is a unit, the local descent image over the
+completion `F_v` consists of unramified classes (`range_μ_le_selmerGroupA_empty`, which is Step 6
+`range_μ_le_selmerGroupA` applied over `F_v`), so a Selmer class localizes to an unramified class
+there. By the semilocal comparison (`mem_selmerGroupA_of_forall_localRes`) a Selmer class is then
+`S`-unramified globally, for any set `S` of places outside which these conditions hold. The bad
+primes of `W` over `𝓞 F` form such a set, so the `2`-Selmer group lies in `A(S, 2)` for that
+finite `S`, and `A(S, 2)` is finite by the class number theorem and Dirichlet's unit theorem for
+the field factors of the étale algebra (`finite_selmerGroupA`).
+
+No condition on the residue characteristic enters: since `Δ = 16 · disc f`, a place above `2` at
+which `f` has separable reduction can be left out of `S`, and the resulting smaller group
+`A(S, 2)` is a sharper bound on the `2`-Selmer group.
 
 ## Main results
 
+* `WeierstrassCurve.Affine.range_μ_le_selmerGroupA_empty`: at a finite place with integral
+  coefficients and `disc f` a unit, the local descent image is unramified, in every residue
+  characteristic.
 * `WeierstrassCurve.Affine.selmerGroup₂_le_selmerGroupA`: over a number field, every
-  `2`-Selmer class is unramified outside the bad primes, `Sel₂(W/F) ≤ A(S, 2)`.
+  `2`-Selmer class is unramified outside any set `S` of places outside which the coefficients are
+  integral and `disc f` is a unit, `Sel₂(W/F) ≤ A(S, 2)`.
 * `WeierstrassCurve.Affine.finite_selmerGroup₂`: the `2`-Selmer group of an elliptic curve
   over a number field is finite.
 * `WeierstrassCurve.Affine.pow_rank_le_card_selmerGroup₂`: the rank bound
@@ -50,7 +59,9 @@ places. The source deduces it from its reduction of the `2`-Selmer group to the 
 whose proof needs a count of the local descent image at every good place; here only the
 inclusion `Sel₂(W/F) ≤ A(S, 2)` is needed, and it follows directly from the semilocal comparison
 (adapted from the same source) together with Step 6 of weak Mordell–Weil applied over each
-completion.
+completion. `range_μ_le_selmerGroupA_empty` is the source's lemma of that name at its later
+revision `3bfe124`, `EllipticCurves/SelmerGroup.lean`, and the hypotheses of
+`selmerGroup₂_le_selmerGroupA` follow the same revision.
 
 ## References
 
@@ -67,15 +78,38 @@ variable {F : Type*} [Field F] [NumberField F] (W : Affine F) [W.IsElliptic] [W.
   {ι : Type*} (Loc : ι → Type*) [(i : ι) → Field (Loc i)] [(i : ι) → Algebra F (Loc i)]
 
 open scoped Classical in
-/-- **The 2-Selmer group is unramified outside the bad primes**: over a number field `F`, every
-class in the `2`-Selmer group lies in `A(S, 2)`, for `S` the bad primes of `W` over `𝓞 F`. Only
-the local conditions at the finite places are used, so this holds for every auxiliary family
-`Loc`. -/
-theorem selmerGroup₂_le_selmerGroupA :
-    W.selmerGroup₂ (𝓞 F) Loc ≤ W.selmerGroupA (𝓞 F) (W.badPrimes (𝓞 F)) :=
-  fun _ hm ↦ W.mem_selmerGroupA_of_forall_localRes fun v hv ↦ by
-    rw [← W.badPrimes_adicCompletionIntegers hv]
-    exact (W⁄(v.adicCompletion F)).toAffine.range_μ_le_selmerGroupA (v.adicCompletionIntegers F) <|
+/-- **Step 6 over a completion**: at a finite place `v` of `F` at which `a₂`, `a₄` and `a₆` are
+integral and `disc f` is a unit, the image of the local descent map over the completion `F_v`
+consists of unramified square classes. The residue characteristic is unrestricted, so this holds
+at a place above `2` as soon as the cubic `f` has separable reduction there. -/
+theorem range_μ_le_selmerGroupA_empty {v : HeightOneSpectrum (𝓞 F)}
+    (ha₂ : v.valuation F W.a₂ ≤ 1) (ha₄ : v.valuation F W.a₄ ≤ 1) (ha₆ : v.valuation F W.a₆ ≤ 1)
+    (hd : v.valuation F W.f.discr = 1) :
+    (μ (W := (W⁄(v.adicCompletion F)).toAffine)).range ≤
+      (W⁄(v.adicCompletion F)).toAffine.selmerGroupA (v.adicCompletionIntegers F) ∅ := by
+  have key (P : HeightOneSpectrum (v.adicCompletionIntegers F)) (z : F) :
+      P.valuation (v.adicCompletion F) (algebraMap F (v.adicCompletion F) z) = v.valuation F z :=
+    v.valuation_adicCompletion_algebraMap P z
+  refine (W⁄(v.adicCompletion F)).toAffine.range_μ_le_selmerGroupA (v.adicCompletionIntegers F)
+    (fun P _ ↦ ?_) (fun P _ ↦ ?_) (fun P _ ↦ ?_) fun P _ ↦ ?_
+  · simpa [toAffine, key] using ha₂
+  · simpa [toAffine, key] using ha₄
+  · simpa [toAffine, key] using ha₆
+  · rw [W.baseChange_discr_f, key]
+    exact hd
+
+open scoped Classical in
+/-- **The 2-Selmer group is unramified outside `S`**: over a number field `F`, every class in the
+`2`-Selmer group lies in `A(S, 2)`, for any set `S` of finite places outside which `a₂`, `a₄` and
+`a₆` are integral and `disc f` is a unit. The bad primes of `W` form such a set, but `S` need not
+contain the places above `2`. Only the local conditions at the finite places are used, so this
+holds for every auxiliary family `Loc`. -/
+theorem selmerGroup₂_le_selmerGroupA {S : Set (HeightOneSpectrum (𝓞 F))}
+    (ha₂ : ∀ v ∉ S, v.valuation F W.a₂ ≤ 1) (ha₄ : ∀ v ∉ S, v.valuation F W.a₄ ≤ 1)
+    (ha₆ : ∀ v ∉ S, v.valuation F W.a₆ ≤ 1) (hd : ∀ v ∉ S, v.valuation F W.f.discr = 1) :
+    W.selmerGroup₂ (𝓞 F) Loc ≤ W.selmerGroupA (𝓞 F) S :=
+  fun _ hm ↦ W.mem_selmerGroupA_of_forall_localRes fun v hv ↦
+    W.range_μ_le_selmerGroupA_empty (ha₂ v hv) (ha₄ v hv) (ha₆ v hv) (hd v hv) <|
       (W.mem_localCondition_iff _).mp (((W.mem_selmerGroup₂_iff (𝓞 F) Loc).mp hm).2.1 v)
 
 open scoped Classical in
@@ -83,7 +117,11 @@ open scoped Classical in
 auxiliary family `Loc` of local conditions beyond the finite places. -/
 theorem finite_selmerGroup₂ : Finite (W.selmerGroup₂ (𝓞 F) Loc) :=
   have := W.finite_selmerGroupA (𝓞 F) (W.finite_badPrimes (𝓞 F))
-  Finite.of_injective _ (Subgroup.inclusion_injective (W.selmerGroup₂_le_selmerGroupA Loc))
+  Finite.of_injective _ (Subgroup.inclusion_injective (W.selmerGroup₂_le_selmerGroupA Loc
+    (fun _ ↦ W.valuation_a₂_le_one_of_notMem_badPrimes _)
+    (fun _ ↦ W.valuation_a₄_le_one_of_notMem_badPrimes _)
+    (fun _ ↦ W.valuation_a₆_le_one_of_notMem_badPrimes _)
+    (fun _ ↦ W.valuation_discr_f_eq_one_of_notMem_badPrimes _)))
 
 open scoped Classical in
 /-- **The Mordell–Weil rank bound from the 2-Selmer group**: for an elliptic curve over a number
