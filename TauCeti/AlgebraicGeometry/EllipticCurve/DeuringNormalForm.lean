@@ -11,7 +11,6 @@ import Mathlib.FieldTheory.Galois.Basic
 import Mathlib.FieldTheory.SplittingField.Construction
 import TauCeti.Algebra.Polynomial.QuadraticDiscriminant
 import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Coprimality
-import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Discriminant
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.DivisionPolynomialSeparable
 
 /-!
@@ -24,7 +23,7 @@ For `a : R`, the Weierstrass curve in **Deuring normal form** is
 that is, `a₁ = a`, `a₃ = 1` and `a₂ = a₄ = a₆ = 0` (`WeierstrassCurve.deuringNormalForm`). Its
 invariants are
 
-  `c₄ = a (a³ - 24)`, `Δ = a³ - 27`, `j = a³ (a³ - 24)³ / (a³ - 27)`,
+  `c₄ = a (a³ - 24)`, `c₆ = -a⁶ + 36a³ - 216`, `Δ = a³ - 27`, `j = a³ (a³ - 24)³ / (a³ - 27)`,
 
 so it is elliptic exactly when `a³ - 27` is a unit. The point `(0, 0)` lies on it, with horizontal
 tangent `Y = 0` meeting the curve there to order three: `(0, 0)` is a flex, a point of order `3`,
@@ -119,6 +118,12 @@ theorem deuringNormalForm_c₄ : (deuringNormalForm a).c₄ = a * (a ^ 3 - 24) :
   rw [c₄, deuringNormalForm_b₂, deuringNormalForm_b₄]
   ring
 
+/-- The `c₆` of the Deuring normal form `Y² + aXY + Y = X³` is `-a⁶ + 36a³ - 216`. -/
+@[simp]
+theorem deuringNormalForm_c₆ : (deuringNormalForm a).c₆ = -a ^ 6 + 36 * a ^ 3 - 216 := by
+  rw [c₆, deuringNormalForm_b₂, deuringNormalForm_b₄, deuringNormalForm_b₆]
+  ring
+
 /-- The discriminant of the Deuring normal form `Y² + aXY + Y = X³` is `a³ - 27`. -/
 @[simp]
 theorem deuringNormalForm_Δ : (deuringNormalForm a).Δ = a ^ 3 - 27 := by
@@ -132,6 +137,7 @@ theorem isElliptic_deuringNormalForm_iff :
 
 /-- The `j`-invariant of the Deuring normal form `Y² + aXY + Y = X³` is
 `a³ (a³ - 24)³ / (a³ - 27)`. -/
+@[simp]
 theorem deuringNormalForm_j {F : Type*} [Field F] (a : F) [(deuringNormalForm a).IsElliptic] :
     (deuringNormalForm a).j = a ^ 3 * (a ^ 3 - 24) ^ 3 / (a ^ 3 - 27) := by
   rw [j_eq, deuringNormalForm_c₄, deuringNormalForm_Δ, div_eq_inv_mul, mul_pow]
@@ -187,15 +193,16 @@ theorem exists_variableChange_smul_eq_deuringNormalForm {x y : R} (h : W.toAffin
   · rw [variableChange_a₆, deuringNormalForm_a₆]
     linear_combination (-v ^ 6) * h
 
-/-- **Deuring normal form over a finite separable extension.** Away from characteristic `3`, an
-elliptic curve over `K` becomes isomorphic to a curve `Y² + aXY + Y = X³` over a finite separable
-extension `L` of `K`: one obtained by adjoining a root `x` of the `3`-division polynomial `Ψ₃`, a
-point `(x, y)` of the curve above it, and a cube root of `2y + a₁x + a₃`. -/
-theorem exists_variableChange_smul_baseChange_eq_deuringNormalForm {K : Type u} [Field K]
+/-- Away from characteristic `3`, an elliptic curve over `K` has a point `(x, y)` with `Ψ₃(x) = 0`
+and `ψ₂(x, y) = 2y + a₁x + a₃ ≠ 0` over a finite separable extension `L` of `K`: adjoin a root `x`
+of the separable polynomial `Ψ₃`, then a root `y` of the quadratic in `Y` cutting out the points
+above `x`, whose discriminant `Ψ₂Sq(x)` is nonzero because `Ψ₃` and `Ψ₂Sq` have no common root. -/
+private theorem exists_equation_eval_Ψ₃_eq_zero_baseChange {K : Type u} [Field K]
     (W : WeierstrassCurve K) [W.IsElliptic] (h3 : (3 : K) ≠ 0) :
     ∃ (L : Type u) (_ : Field L) (_ : Algebra K L) (_ : FiniteDimensional K L)
-      (_ : Algebra.IsSeparable K L) (C : VariableChange L) (a : L),
-      C • W.baseChange L = deuringNormalForm a := by
+      (_ : Algebra.IsSeparable K L) (x y : L), (W.baseChange L).toAffine.Equation x y ∧
+      (W.baseChange L).Ψ₃.eval x = 0 ∧
+      2 * y + (W.baseChange L).a₁ * x + (W.baseChange L).a₃ ≠ 0 := by
   -- a root `x₀` of the separable polynomial `Ψ₃`, in its splitting field `L₁`
   have hsep₁ : W.Ψ₃.Separable := by
     rw [← preΨ_three]
@@ -239,48 +246,55 @@ theorem exists_variableChange_smul_baseChange_eq_deuringNormalForm {K : Type u} 
     intro h0
     rw [h0, zero_pow two_ne_zero, eq_comm, map_eq_zero_iff ι ι.injective, ← hDq] at hw
     exact hD hw
-  -- a cube root `u` of `2y₀ + b`, in the splitting field `L₃` of `X³ - (2y₀ + b)`
-  have h3₂ : ((3 : ℕ) : L₂) ≠ 0 := by
-    rw [Nat.cast_ofNat, ← map_ofNat (algebraMap K L₂)]
-    exact (_root_.map_ne_zero _).mpr h3
-  let L₃ := SplittingField (X ^ 3 - C (2 * y₀ + ι b) : L₂[X])
-  have : IsGalois L₂ L₃ := IsGalois.of_separable_splitting_field (separable_X_pow_sub_C _ h3₂ hw0)
   have : Algebra.IsSeparable K L₂ := Algebra.IsSeparable.trans K L₁ L₂
-  have : Algebra.IsSeparable K L₃ := Algebra.IsSeparable.trans K L₂ L₃
   have : FiniteDimensional K L₂ := Module.Finite.trans L₁ L₂
-  have : FiniteDimensional K L₃ := Module.Finite.trans L₂ L₃
-  obtain ⟨u, hu⟩ := (SplittingField.splits (X ^ 3 - C (2 * y₀ + ι b) : L₂[X])).exists_eval_eq_zero
+  -- the point `(x₀, y₀)` of the base change `W₁.map ι` of `W` to `L₂`
+  have hW₂ : W₁.map ι = W.baseChange L₂ := map_baseChange W (IsScalarTower.toAlgHom K L₁ L₂)
+  refine ⟨L₂, _, _, ‹_›, ‹_›, ι x₀, y₀, ?_, ?_, ?_⟩ <;> rw [← hW₂]
+  · rw [Affine.equation_iff]
+    simp only [hb, hc, map_add, map_mul, map_pow] at hy
+    simp only [map_a₁, map_a₂, map_a₃, map_a₄, map_a₆]
+    linear_combination hy
+  · rw [map_Ψ₃, eval_map, eval₂_at_apply, hΨ₁, map_zero]
+  · rwa [map_a₁, map_a₃, add_assoc, ← map_mul, ← map_add, ← hb]
+
+/-- **Deuring normal form over a finite separable extension.** Away from characteristic `3`, an
+elliptic curve over `K` becomes isomorphic to a curve `Y² + aXY + Y = X³` over a finite separable
+extension `L` of `K`: one obtained by adjoining a root `x` of the `3`-division polynomial `Ψ₃`, a
+point `(x, y)` of the curve above it, and a cube root of `2y + a₁x + a₃`. -/
+theorem exists_variableChange_smul_baseChange_eq_deuringNormalForm {K : Type u} [Field K]
+    (W : WeierstrassCurve K) [W.IsElliptic] (h3 : (3 : K) ≠ 0) :
+    ∃ (L : Type u) (_ : Field L) (_ : Algebra K L) (_ : FiniteDimensional K L)
+      (_ : Algebra.IsSeparable K L) (C : VariableChange L) (a : L),
+      C • W.baseChange L = deuringNormalForm a := by
+  obtain ⟨L₁, _, _, _, _, x, y, hE, hΨ₃, hψ₂⟩ := exists_equation_eval_Ψ₃_eq_zero_baseChange W h3
+  set W₁ := W.baseChange L₁
+  -- a cube root `u` of `ψ₂(x, y)`, in the splitting field `L` of `X³ - ψ₂(x, y)`
+  have h3₁ : ((3 : ℕ) : L₁) ≠ 0 := by
+    rw [Nat.cast_ofNat, ← map_ofNat (algebraMap K L₁)]
+    exact (_root_.map_ne_zero _).mpr h3
+  let L := SplittingField (X ^ 3 - C (2 * y + W₁.a₁ * x + W₁.a₃) : L₁[X])
+  have : IsGalois L₁ L := IsGalois.of_separable_splitting_field (separable_X_pow_sub_C _ h3₁ hψ₂)
+  have : Algebra.IsSeparable K L := Algebra.IsSeparable.trans K L₁ L
+  have : FiniteDimensional K L := Module.Finite.trans L₁ L
+  obtain ⟨u, hu⟩ := (SplittingField.splits
+    (X ^ 3 - C (2 * y + W₁.a₁ * x + W₁.a₃) : L₁[X])).exists_eval_eq_zero
     (by rw [degree_map, degree_X_pow_sub_C (by norm_num)]; norm_num)
   simp only [Polynomial.map_sub, Polynomial.map_pow, map_X, map_C, eval_sub, eval_pow, eval_X,
     eval_C, sub_eq_zero] at hu
-  set κ := algebraMap L₂ L₃
+  set f := algebraMap L₁ L
   have hu0 : u ≠ 0 := by
     rintro rfl
-    rw [zero_pow three_ne_zero, eq_comm, map_eq_zero_iff κ κ.injective] at hu
-    exact hw0 hu
-  -- the point `(x₀, y₀)` of the base change to `L₃`, with `Ψ₃(x₀) = 0` and `ψ₂(x₀, y₀) = u³`
-  set f := algebraMap L₁ L₃
-  have hκι (z : L₁) : κ (ι z) = f z := (IsScalarTower.algebraMap_apply L₁ L₂ L₃ z).symm
-  have hf (z : K) : f (algebraMap K L₁ z) = algebraMap K L₃ z := by
-    rw [IsScalarTower.algebraMap_apply K L₂ L₃, IsScalarTower.algebraMap_apply K L₁ L₂, hκι]
-  have hb₃ : κ (ι b) = (W.baseChange L₃).a₁ * f x₀ + (W.baseChange L₃).a₃ := by
-    simp only [hκι, hb, hW₁, baseChange, map_a₁, map_a₃, map_add, map_mul, hf]
-  have hc₃ : κ (ι c) = f x₀ ^ 3 + (W.baseChange L₃).a₂ * f x₀ ^ 2 +
-      (W.baseChange L₃).a₄ * f x₀ + (W.baseChange L₃).a₆ := by
-    simp only [hκι, hc, hW₁, baseChange, map_a₂, map_a₄, map_a₆, map_add, map_mul, map_pow, hf]
-  have hE : (W.baseChange L₃).toAffine.Equation (f x₀) (κ y₀) := by
-    rw [Affine.equation_iff]
-    have h : κ (y₀ ^ 2 + ι b * y₀ - ι c) = 0 := by rw [hy, map_zero]
-    simp only [map_sub, map_add, map_mul, map_pow, hb₃, hc₃] at h
-    linear_combination h
-  have hΨ₃ : (W.baseChange L₃).Ψ₃.eval (f x₀) = 0 := by
-    have hf' : algebraMap K L₃ = f.comp (algebraMap K L₁) := RingHom.ext fun z ↦ (hf z).symm
-    rw [baseChange, map_Ψ₃, hf', ← Polynomial.map_map, eval_map, eval₂_at_apply, hx₀, map_zero]
-  have hu₃ : ((Units.mk0 u hu0 : L₃ˣ) : L₃) ^ 3 =
-      2 * κ y₀ + (W.baseChange L₃).a₁ * f x₀ + (W.baseChange L₃).a₃ := by
-    rw [Units.val_mk0, hu, map_add, map_mul, map_ofNat, hb₃, add_assoc]
-  obtain ⟨C, a, hC⟩ := exists_variableChange_smul_eq_deuringNormalForm hE hΨ₃ _ hu₃
-  exact ⟨L₃, _, _, ‹_›, ‹_›, C, a, hC⟩
+    rw [zero_pow three_ne_zero, eq_comm, map_eq_zero_iff f f.injective] at hu
+    exact hψ₂ hu
+  -- the point `(x, y)` of the base change `W₁.map f` of `W` to `L`, with `ψ₂(x, y) = u³`
+  have hW : W₁.map f = W.baseChange L := map_baseChange W (IsScalarTower.toAlgHom K L₁ L)
+  have hu₃ : ((Units.mk0 u hu0 : Lˣ) : L) ^ 3 = 2 * f y + (W₁.map f).a₁ * f x + (W₁.map f).a₃ := by
+    rw [Units.val_mk0, hu, map_a₁, map_a₃]
+    simp only [map_add, map_mul, map_ofNat]
+  obtain ⟨C, a, hC⟩ := exists_variableChange_smul_eq_deuringNormalForm (hE.map f)
+    (by rw [map_Ψ₃, eval_map, eval₂_at_apply, hΨ₃, map_zero]) _ hu₃
+  exact ⟨L, _, _, ‹_›, ‹_›, C, a, hW ▸ hC⟩
 
 end WeierstrassCurve
 
