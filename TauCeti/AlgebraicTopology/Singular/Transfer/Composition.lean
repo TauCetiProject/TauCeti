@@ -36,14 +36,38 @@ variable {E B X : TopCat.{w}} {p : E ⟶ B} {q : B ⟶ X}
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C]
 
+/-- The composite of maps with finite fibers has finite fibers. -/
+theorem finite_fibers_comp (hfinp : ∀ b, Finite ↥(p ⁻¹' {b}))
+    (hfinq : ∀ x, Finite ↥(q ⁻¹' {x})) :
+    ∀ x, Finite ↥((p ≫ q) ⁻¹' {x}) := by
+  intro x
+  let fq : Fintype ↥(q ⁻¹' {x}) :=
+    Classical.choice ((finite_iff_nonempty_fintype _).mp (hfinq x))
+  let fp : ∀ b : ↥(q ⁻¹' {x}), Fintype ↥(p ⁻¹' {b.1}) := fun b =>
+    Classical.choice ((finite_iff_nonempty_fintype _).mp (hfinp b.1))
+  let fs : Fintype (Σ b : ↥(q ⁻¹' {x}), ↥(p ⁻¹' {b.1})) :=
+    @Sigma.instFintype _ _ fp fq
+  apply @Finite.of_injective _ _ (Fintype.finite fs)
+    (fun e : ↥((p ≫ q) ⁻¹' {x}) =>
+      (⟨⟨p e, by
+          change q (p e) = x
+          have he := e.property
+          change (p ≫ q) e = x at he
+          simpa using he⟩,
+        ⟨e, by simp⟩⟩ : Σ b : ↥(q ⁻¹' {x}), ↥(p ⁻¹' {b.1})))
+  intro e e' h
+  apply Subtype.ext
+  exact congrArg (fun z : Σ b : ↥(q ⁻¹' {x}), ↥(p ⁻¹' {b.1}) => (z.2 : E)) h
+
 /-- **Transfer composes through a tower of finite coverings.** The sum over lifts through
 `p ≫ q` equals the iterated sum over lifts through `q` and then `p`. -/
 theorem singularTransfer_comp (hp : IsCoveringMap p) (hq : IsCoveringMap q)
     (hcomp : IsCoveringMap (p ≫ q))
     (hfinp : ∀ b, Finite ↥(p ⁻¹' {b})) (hfinq : ∀ x, Finite ↥(q ⁻¹' {x}))
-    (hfincomp : ∀ x, Finite ↥((p ≫ q) ⁻¹' {x})) (R : C) :
-    hcomp.singularTransfer hfincomp R =
+    (R : C) :
+    hcomp.singularTransfer (finite_fibers_comp hfinp hfinq) R =
       hq.singularTransfer hfinq R ≫ hp.singularTransfer hfinp R := by
+  let hfincomp := finite_fibers_comp hfinp hfinq
   classical
   ext n σ
   let sq := (hq.finite_preimage_singleton_toSSet_map_app hfinq σ).toFinset
@@ -86,11 +110,13 @@ theorem homologyMap_singularTransfer_comp [CategoryWithHomology C]
     (hp : IsCoveringMap p) (hq : IsCoveringMap q)
     (hcomp : IsCoveringMap (p ≫ q))
     (hfinp : ∀ b, Finite ↥(p ⁻¹' {b})) (hfinq : ∀ x, Finite ↥(q ⁻¹' {x}))
-    (hfincomp : ∀ x, Finite ↥((p ≫ q) ⁻¹' {x})) (R : C) (n : ℕ) :
-    HomologicalComplex.homologyMap (hcomp.singularTransfer hfincomp R) n =
+    (R : C) (n : ℕ) :
+    HomologicalComplex.homologyMap
+        (hcomp.singularTransfer (finite_fibers_comp hfinp hfinq) R) n =
       HomologicalComplex.homologyMap (hq.singularTransfer hfinq R) n ≫
         HomologicalComplex.homologyMap (hp.singularTransfer hfinp R) n := by
-  rw [singularTransfer_comp hp hq hcomp hfinp hfinq hfincomp,
+  let hfincomp := finite_fibers_comp hfinp hfinq
+  rw [singularTransfer_comp hp hq hcomp hfinp hfinq,
     HomologicalComplex.homologyMap_comp]
 
 end IsCoveringMap
