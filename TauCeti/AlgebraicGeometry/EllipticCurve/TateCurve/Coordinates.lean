@@ -63,6 +63,21 @@ private theorem yTerm_inv (x : K) (hx : x ≠ 0) :
     field_simp
     ring
 
+private theorem xTerm_zpow_neg (q u : Kˣ) (n : ℤ) :
+    xTerm ((q : K) ^ (-n) * (u : K)) = xTerm ((q : K) ^ n * (u : K)⁻¹) := by
+  rw [zpow_neg]
+  simpa only [mul_inv, inv_inv] using
+    xTerm_inv ((q : K) ^ n * (u : K)⁻¹)
+      (mul_ne_zero (zpow_ne_zero _ q.ne_zero) (inv_ne_zero u.ne_zero))
+
+private theorem yTerm_zpow_neg (q u : Kˣ) (n : ℤ) :
+    yTerm ((q : K) ^ (-n) * (u : K)) =
+      -yTerm ((q : K) ^ n * (u : K)⁻¹) - xTerm ((q : K) ^ n * (u : K)⁻¹) := by
+  rw [zpow_neg]
+  simpa only [mul_inv, inv_inv] using
+    yTerm_inv ((q : K) ^ n * (u : K)⁻¹)
+      (mul_ne_zero (zpow_ne_zero _ q.ne_zero) (inv_ne_zero u.ne_zero))
+
 variable [CompleteSpace K] [IsUltrametricDist K]
 
 private theorem summable_xTerm_nat (q : K) (hq : ‖q‖ < 1) (u : K) :
@@ -85,13 +100,12 @@ theorem summable_tateUniformizationX (q : Kˣ) (hq : ‖(q : K)‖ < 1) (u : Kˣ
     Summable (fun n : ℤ ↦ (q : K) ^ n * (u : K) / (1 - (q : K) ^ n * (u : K)) ^ 2) := by
   apply Summable.of_nat_of_neg_add_one
   · simpa [xTerm] using summable_xTerm_nat (q : K) hq (u : K)
-  · have h := (summable_xTerm_nat (q : K) hq (u : K)⁻¹).comp_injective
-      (fun a b h ↦ Nat.add_right_cancel h : Function.Injective (fun n : ℕ ↦ n + 1))
-    convert h using 1
-    funext n
-    simpa only [Function.comp_apply, xTerm, zpow_neg, mul_inv_rev, inv_inv,
-      ← Int.natCast_succ, zpow_natCast, mul_comm] using (xTerm_inv ((q : K) ^ (n + 1) * (u : K)⁻¹)
-        (mul_ne_zero (pow_ne_zero _ q.ne_zero) (inv_ne_zero u.ne_zero)))
+  · have hneg : Summable (fun n : ℕ ↦ xTerm ((q : K) ^ (-(n : ℤ)) * (u : K))) := by
+      simpa only [xTerm_zpow_neg, zpow_natCast] using summable_xTerm_nat (q : K) hq (u : K)⁻¹
+    have h := hneg.comp_injective Nat.succ_injective
+    dsimp only [Function.comp_def] at h
+    push_cast at h
+    simpa only [xTerm] using h
 
 /-- The bilateral series defining the second Tate coordinate converges for every unit `u`
 when `‖q‖ < 1`. -/
@@ -100,14 +114,14 @@ theorem summable_tateUniformizationY (q : Kˣ) (hq : ‖(q : K)‖ < 1) (u : Kˣ
       (1 - (q : K) ^ n * (u : K)) ^ 3) := by
   apply Summable.of_nat_of_neg_add_one
   · simpa [yTerm] using summable_yTerm_nat (q : K) hq (u : K)
-  · have h := ((summable_yTerm_nat (q : K) hq (u : K)⁻¹).neg.sub
-      (summable_xTerm_nat (q : K) hq (u : K)⁻¹)).comp_injective
-      (fun a b h ↦ Nat.add_right_cancel h : Function.Injective (fun n : ℕ ↦ n + 1))
-    convert h using 1
-    funext n
-    simpa only [Function.comp_apply, yTerm, xTerm, zpow_neg, mul_inv_rev, inv_inv,
-      ← Int.natCast_succ, zpow_natCast, mul_comm] using (yTerm_inv ((q : K) ^ (n + 1) * (u : K)⁻¹)
-        (mul_ne_zero (pow_ne_zero _ q.ne_zero) (inv_ne_zero u.ne_zero)))
+  · have hneg : Summable (fun n : ℕ ↦ yTerm ((q : K) ^ (-(n : ℤ)) * (u : K))) := by
+      simpa only [yTerm_zpow_neg, zpow_natCast] using
+        (summable_yTerm_nat (q : K) hq (u : K)⁻¹).neg.sub
+          (summable_xTerm_nat (q : K) hq (u : K)⁻¹)
+    have h := hneg.comp_injective Nat.succ_injective
+    dsimp only [Function.comp_def] at h
+    push_cast at h
+    simpa only [yTerm] using h
 
 omit [CompleteSpace K] [IsUltrametricDist K] in
 /-- The first Tate coordinate series, for a multiplicative parameter `u`.
@@ -163,16 +177,46 @@ theorem tateUniformizationY_zpow_mul (q u : Kˣ) (k : ℤ) :
 omit [CompleteSpace K] [IsUltrametricDist K] in
 /-- Multiplication of the parameter by `q` leaves the first Tate coordinate unchanged. -/
 @[simp]
-theorem tateUniformizationX_mul (q u : Kˣ) :
+theorem tateUniformizationX_self_mul (q u : Kˣ) :
     tateUniformizationX q (q * u) = tateUniformizationX q u := by
   simpa using tateUniformizationX_zpow_mul q u 1
 
 omit [CompleteSpace K] [IsUltrametricDist K] in
 /-- Multiplication of the parameter by `q` leaves the second Tate coordinate unchanged. -/
 @[simp]
-theorem tateUniformizationY_mul (q u : Kˣ) :
+theorem tateUniformizationY_self_mul (q u : Kˣ) :
     tateUniformizationY q (q * u) = tateUniformizationY q u := by
   simpa using tateUniformizationY_zpow_mul q u 1
+
+omit [CompleteSpace K] [IsUltrametricDist K] in
+/-- Multiplication of the parameter by a natural power of `q` leaves the first Tate
+coordinate unchanged. -/
+@[simp]
+theorem tateUniformizationX_pow_mul (q u : Kˣ) (n : ℕ) :
+    tateUniformizationX q (q ^ n * u) = tateUniformizationX q u := by
+  simpa only [zpow_natCast] using tateUniformizationX_zpow_mul q u n
+
+omit [CompleteSpace K] [IsUltrametricDist K] in
+/-- Multiplication of the parameter by a natural power of `q` leaves the second Tate
+coordinate unchanged. -/
+@[simp]
+theorem tateUniformizationY_pow_mul (q u : Kˣ) (n : ℕ) :
+    tateUniformizationY q (q ^ n * u) = tateUniformizationY q u := by
+  simpa only [zpow_natCast] using tateUniformizationY_zpow_mul q u n
+
+omit [CompleteSpace K] [IsUltrametricDist K] in
+/-- Multiplication of the parameter by `q⁻¹` leaves the first Tate coordinate unchanged. -/
+@[simp]
+theorem tateUniformizationX_inv_mul (q u : Kˣ) :
+    tateUniformizationX q (q⁻¹ * u) = tateUniformizationX q u := by
+  simpa only [zpow_neg_one] using tateUniformizationX_zpow_mul q u (-1)
+
+omit [CompleteSpace K] [IsUltrametricDist K] in
+/-- Multiplication of the parameter by `q⁻¹` leaves the second Tate coordinate unchanged. -/
+@[simp]
+theorem tateUniformizationY_inv_mul (q u : Kˣ) :
+    tateUniformizationY q (q⁻¹ * u) = tateUniformizationY q u := by
+  simpa only [zpow_neg_one] using tateUniformizationY_zpow_mul q u (-1)
 
 omit [CompleteSpace K] [IsUltrametricDist K] in
 /-- Inverting the multiplicative parameter leaves the first Tate coordinate unchanged. -/
@@ -183,13 +227,8 @@ theorem tateUniformizationX_inv (q u : Kˣ) :
   congr 1
   have h := (Equiv.neg ℤ).tsum_eq
     (fun n : ℤ ↦ xTerm ((q : K) ^ n * (u : K)))
-  have hinv (n : ℤ) : xTerm ((q : K) ^ (-n) * (u : K)) =
-      xTerm ((q : K) ^ n * (u : K)⁻¹) := by
-    simpa only [zpow_neg, mul_inv_rev, inv_inv, mul_comm] using
-      (xTerm_inv ((q : K) ^ n * (u : K)⁻¹)
-        (mul_ne_zero (zpow_ne_zero _ q.ne_zero) (inv_ne_zero u.ne_zero)))
   simp only [Equiv.neg_apply] at h
-  simp_rw [hinv] at h
+  simp_rw [xTerm_zpow_neg] at h
   simpa only [xTerm, Units.val_inv_eq_inv_val] using h
 
 /-- Inversion gives the negation formula of the Tate equation `y² + xy = x³ + a₄x + a₆`:
@@ -201,17 +240,12 @@ theorem tateUniformizationY_inv (q : Kˣ) (hq : ‖(q : K)‖ < 1) (u : Kˣ) :
   have hy := summable_tateUniformizationY q hq u
   have h := (Equiv.neg ℤ).tsum_eq
     (fun n : ℤ ↦ yTerm ((q : K) ^ n * (u⁻¹ : Kˣ)))
-  have hinv (n : ℤ) :
-      yTerm ((q : K) ^ (-n) * (u⁻¹ : Kˣ)) =
-        -yTerm ((q : K) ^ n * (u : K)) - xTerm ((q : K) ^ n * (u : K)) := by
-    simpa only [zpow_neg, mul_inv_rev, Units.val_inv_eq_inv_val, mul_comm] using
-      (yTerm_inv ((q : K) ^ n * (u : K))
-        (mul_ne_zero (zpow_ne_zero _ q.ne_zero) u.ne_zero))
   simp only [Equiv.neg_apply] at h
-  simp_rw [hinv] at h
+  simp_rw [yTerm_zpow_neg, Units.val_inv_eq_inv_val, inv_inv] at h
   have hys : Summable (fun n : ℤ ↦ -yTerm ((q : K) ^ n * (u : K))) := by
     simpa only [yTerm] using hy.neg
-  have hxs : Summable (fun n : ℤ ↦ xTerm ((q : K) ^ n * (u : K))) := hx
+  have hxs : Summable (fun n : ℤ ↦ xTerm ((q : K) ^ n * (u : K))) := by
+    simpa only [xTerm] using hx
   rw [hys.tsum_sub hxs, tsum_neg] at h
   simp only [tateUniformizationY_def, tateUniformizationX_def, yTerm, xTerm,
     Units.val_inv_eq_inv_val] at h ⊢
