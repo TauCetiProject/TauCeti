@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.Representation
+import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.SquareClass
 import Mathlib.LinearAlgebra.Determinant
 import Mathlib.Tactic.LinearCombination
 
@@ -46,8 +47,8 @@ represented value carries the whole content of the first theorem: every quadrati
   forced second coefficient present the same form.
 * `TauCeti.isSquare_mul_mul_of_equivalent_binary`: isometric binary forms have equal
   discriminants modulo squares.
-* `TauCeti.apply_mul_eq_of_equivalent_binary`: a multiplicative pairing constant on isometric
-  binary forms agrees on their discriminants.
+* `TauCeti.apply_mul_eq_of_equivalent_binary`: a pairing constant on isometric binary forms
+  agrees on their discriminants in its first argument.
 * `TauCeti.equivalent_binary_iff`: the binary equivalence criterion, Lam I.5.1.
 
 ## References
@@ -77,6 +78,19 @@ theorem represents_binary_left (a b : R) : Represents (weightedSumSquares R ![a,
 theorem mem_unitValueSet_binary_left (a : Rˣ) (b : R) :
     a ∈ unitValueSet (weightedSumSquares R ![(a : R), b]) :=
   mem_unitValueSet.mpr (represents_binary_left _ _)
+
+/-- The two spellings of the second coefficient of the binary normal form present the same form:
+`a * b * c` and `a * b * c⁻¹` differ by the square `c²`, so `⟨c, a b c⟩` and `⟨c, a b c⁻¹⟩` are
+isometric.
+
+Sources state the normal form both ways, the second because the square class of the second
+coefficient is forced to be that of the discriminant `a * b` divided by `c`. -/
+theorem equivalent_binaryNormalForm_inv (a b : R) (c : Rˣ) :
+    (weightedSumSquares R ![(c : R), a * b * c]).Equivalent
+      (weightedSumSquares R ![(c : R), a * b * (c⁻¹ : Rˣ)]) :=
+  ⟨QuadraticForm.isometryEquivWeightedSumSquaresWeightedSumSquares ![1, c] (by
+    intro i
+    fin_cases i <;> simp [pow_two, mul_assoc])⟩
 
 end CommSemiring
 
@@ -160,22 +174,6 @@ theorem mem_unitValueSet_binary_iff_equivalent (a b : R) (c : Rˣ) :
   rw [h.unitValueSet_eq]
   exact mem_unitValueSet_binary_left _ _
 
-/-- The two spellings of the second coefficient of the binary normal form present the same form:
-`a * b * c` and `a * b * c⁻¹` differ by the square `c²`, so `⟨c, a b c⟩` and `⟨c, a b c⁻¹⟩` are
-isometric.
-
-Sources state the normal form both ways, the second because the square class of the second
-coefficient is forced to be that of the discriminant `a * b` divided by `c`. -/
-theorem equivalent_binaryNormalForm_inv (a b : R) (c : Rˣ) :
-    (weightedSumSquares R ![(c : R), a * b * c]).Equivalent
-      (weightedSumSquares R ![(c : R), a * b * (c⁻¹ : Rˣ)]) :=
-  ⟨QuadraticForm.isometryEquivWeightedSumSquaresWeightedSumSquares ![1, c] (by
-    intro i
-    fin_cases i
-    · simp
-    · simp
-      linear_combination (a * b * (c : R)) * c.inv_mul)⟩
-
 /-- Two binary diagonal forms with unit coefficients that have the same discriminant modulo
 squares and represent a common unit are isometric. This is the substantial direction of
 Lam I.5.1, and it needs no assumption on the characteristic. -/
@@ -226,28 +224,27 @@ theorem isSquare_mul_mul_of_equivalent_binary [Invertible (2 : R)] {a b c d : R�
   simp only [Units.val_mul, LinearEquiv.coe_det]
   linear_combination ((c : R) * d) * hdisc
 
-/-- A pairing that is multiplicative in its first argument and constant on the coefficients of
-isometric binary forms takes the same values at the two discriminants of isometric binary forms. -/
-theorem apply_mul_eq_of_equivalent_binary [Invertible (2 : R)] {M : Type*} [CommMonoid M]
-    {F : Rˣ → Rˣ → M} (hmul : ∀ a b c, F (a * b) c = F a c * F b c)
+/-- A pairing constant on the coefficients of isometric binary forms takes the same values
+at their discriminants in its first argument. -/
+theorem apply_mul_eq_of_equivalent_binary [Invertible (2 : R)] {M : Type*}
+    {F : Rˣ → Rˣ → M}
     (hF : ∀ a b c d : Rˣ, (weightedSumSquares R ![(a : R), (b : R)]).Equivalent
       (weightedSumSquares R ![(c : R), (d : R)]) → F a b = F c d)
     {a b c d : Rˣ} (h : (weightedSumSquares R ![(a : R), (b : R)]).Equivalent
       (weightedSumSquares R ![(c : R), (d : R)])) (x : Rˣ) :
     F (a * b) x = F (c * d) x := by
-  -- Squares are invisible to `F` in the first argument, since `⟨1, x⟩ ≅ ⟨t², x⟩`.
-  have hsq (t : Rˣ) : F (t * t) x = F 1 x := by
-    refine hF (t * t) x 1 x
-      ⟨QuadraticForm.isometryEquivWeightedSumSquaresWeightedSumSquares ![t, 1] ?_⟩
-    refine Fin.forall_fin_two.mpr ⟨?_, ?_⟩ <;> simp [pow_two]
-  obtain ⟨s, hs⟩ := isSquare_mul_mul_of_equivalent_binary h
-  symm
-  calc F (c * d) x = F (c * d * 1) x := by rw [mul_one]
-    _ = F (c * d) x * F ((a * b) * (a * b)) x := by rw [hmul, hsq]
-    _ = F ((a * b * (c * d)) * (a * b)) x := by
-      rw [← hmul]
-      ac_rfl
-    _ = F (a * b) x := by rw [hs, hmul, hsq, ← hmul, one_mul]
+  apply hF
+  have hsq : ∀ i : Fin 2, IsSquare (![a * b, x] i / ![c * d, x] i) := by
+    intro i
+    fin_cases i
+    · simpa [pow_two] using
+        (isSquare_mul_mul_of_equivalent_binary h).div (IsSquare.sq (c * d))
+    · simp
+  have hcoe (u v : Rˣ) : (fun i => ((![u, v] i : Rˣ) : R)) = ![(u : R), (v : R)] := by
+    ext i
+    fin_cases i <;> rfl
+  simpa only [weightedSumSquares_units, hcoe] using
+    equivalent_weightedSumSquares_of_isSquare_div (R := R) hsq
 
 /-- **The binary equivalence criterion**, Lam I.5.1. Two binary diagonal forms with unit
 coefficients are isometric exactly when their discriminants agree modulo squares and they

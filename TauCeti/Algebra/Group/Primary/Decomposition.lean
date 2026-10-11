@@ -89,7 +89,9 @@ private noncomputable def primaryComponentMulEquivSylow
   right_inv x := rfl
   map_mul' x y := rfl
 
-private theorem natCard_primaryComponent (p : (Nat.card A).primeFactors) :
+/-- The order of a prime-primary component is the corresponding prime-power factor
+of the group order. -/
+theorem natCard_primaryComponent (p : (Nat.card A).primeFactors) :
     Nat.card (AddCommGroup.primaryComponent A p.1) =
       p.1 ^ (Nat.card A).factorization p.1 := by
   have : Fact p.1.Prime := ⟨Nat.prime_of_mem_primeFactors p.2⟩

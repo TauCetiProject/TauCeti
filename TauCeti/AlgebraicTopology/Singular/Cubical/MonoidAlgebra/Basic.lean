@@ -204,6 +204,7 @@ section MulOneClass
 variable {G : Type*} [MulOneClass G] [TopologicalSpace G] [ContinuousMul G]
 
 /-- **The unit is a left unit**, after the reindexing `0 + q = q`. -/
+@[simp]
 theorem one_mul {q : ℕ} (b : NormalizedCubicalChain G R q) :
     cast R (Nat.zero_add q) (mul G R 0 q (one G R) b) = b := by
   have h : (mulMap G).comp
@@ -224,6 +225,13 @@ theorem mul_one {p : ℕ} (a : NormalizedCubicalChain G R p) :
     simp
   rw [mul_def, one_def, ← map_cast, crossProduct_point_right, ← LinearMap.comp_apply, ← map_comp,
     h, map_id, LinearMap.id_apply]
+
+/-- The right unit law in simp normal form: since `p + 0` reduces to `p`, no reindexing is
+needed. -/
+@[simp]
+theorem mul_one_eq_self {p : ℕ} (a : NormalizedCubicalChain G R p) :
+    mul G R p 0 a (one G R) = a := by
+  simpa using mul_one a
 
 end MulOneClass
 

@@ -11,7 +11,7 @@ public import TauCeti.Analysis.Normed.Operator.Resolvent.Unbounded
 # Spectrum of a partial linear map
 
 The spectrum `LinearPMap.spectrum`, defined in
-`TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent`, is closed on Banach spaces.
+`TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Basic`, is closed on Banach spaces.
 For bounded, everywhere-defined operators it agrees with Mathlib's Banach-algebra spectrum.
 -/
 

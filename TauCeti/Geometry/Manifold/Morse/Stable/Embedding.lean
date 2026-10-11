@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Morse.StableManifold
+public import TauCeti.Geometry.Manifold.Morse.Stable.Manifold
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 import TauCeti.Analysis.SpecialFunctions.Log.ExpNegLogOneAdd
-import TauCeti.Geometry.Manifold.Immersion
+import TauCeti.Geometry.Manifold.Immersion.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 
 /-!

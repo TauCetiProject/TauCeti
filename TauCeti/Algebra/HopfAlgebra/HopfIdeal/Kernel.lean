@@ -105,16 +105,16 @@ end SemiringHopf
 section RingHopf
 
 variable {R : Type u} {H : Type v} {K : Type w}
-variable [CommRing R] [Ring H] [Ring K]
+variable [CommSemiring R] [Ring H] [Semiring K]
 variable [HopfAlgebra R H] [HopfAlgebra R K]
 
-/-- Over rings, the kernel Hopf ideal is bottom exactly when the morphism is injective. -/
+/-- When the domain is a ring, the kernel Hopf ideal is bottom exactly when the morphism
+is injective. -/
 @[simp]
 theorem kerOfComul_eq_bot_iff (f : H →ₐc[R] K) (hcomul) :
     f.kerOfComul hcomul = ⊥ ↔ Function.Injective f := by
-  rw [← le_bot_iff, ← toIdeal_le_toIdeal, bot_toIdeal, le_bot_iff, kerOfComul_toIdeal,
-    ← RingHom.injective_iff_ker_eq_bot]
-  simp only [BialgHom.coe_toAlgHom]
+  simpa only [SetLike.ext_iff, mem_kerOfComul, mem_bot] using
+    (injective_iff_map_eq_zero' f).symm
 
 end RingHopf
 

@@ -83,6 +83,9 @@ integral calculation reads off the low-degree evaluations
 * `TauCeti.TateCohomology.herbrandQuotient_eq_mul_of_shortExact`: **multiplicativity of the
   Herbrand quotient** in a short exact sequence whose outer terms have finite degree-`-1` Tate
   cohomology.
+* `TauCeti.TateCohomology.herbrandQuotient_eq_div_of_shortExact`: the Herbrand quotient of the
+  last term of a short exact sequence is the quotient of those of the other two, when the first
+  term has finite Tate cohomology and the middle term finite degree-`-1` Tate cohomology.
 * `TauCeti.TateCohomology.herbrandQuotient_eq_of_shortExact_of_finite_X₁` and
   `TauCeti.TateCohomology.herbrandQuotient_eq_of_shortExact_of_finite_X₃`: a finite outer term of
   a short exact sequence may be discarded.
@@ -441,6 +444,35 @@ theorem herbrandQuotient_eq_mul_of_shortExact {S : ShortComplex (Rep R G)} (hS :
   rw [herbrandQuotient_def, herbrandQuotient_def, herbrandQuotient_def]
   field_simp
   linear_combination -keyQ
+
+/-- For a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of representations of a finite cyclic
+group, if the degree-zero Tate cohomology of `X₁` and the degree `-1` Tate cohomology of `X₂` are
+finite, then so is the degree `-1` Tate cohomology of `X₃`. -/
+theorem finite_tateCohomology_negOne_X₃_of_shortExact {S : ShortComplex (Rep R G)}
+    (hS : S.ShortExact) [Finite (tateCohomology S.X₁ 0)] [Finite (tateCohomology S.X₂ (-1))] :
+    Finite (tateCohomology S.X₃ (-1)) := by
+  obtain ⟨r₁, r₂, s₁, s₂, t₁, t₂, h₁, -, -, h₄, -, h₆⟩ := exists_hexagon_natCard_of_isCyclic hS
+  have h1 : Nat.card (tateCohomology S.X₁ 0) ≠ 0 := Nat.card_ne_zero.mpr ⟨⟨0⟩, inferInstance⟩
+  have h2 : Nat.card (tateCohomology S.X₂ (-1)) ≠ 0 := Nat.card_ne_zero.mpr ⟨⟨0⟩, inferInstance⟩
+  rw [h₁] at h1
+  rw [h₆] at h2
+  refine Nat.finite_of_card_ne_zero ?_
+  rw [h₄]
+  exact mul_ne_zero (right_ne_zero_of_mul h1) (left_ne_zero_of_mul h2)
+
+/-- **The Herbrand quotient of a quotient.** For a short exact sequence
+`0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of representations of a finite cyclic group in which `X₁` has finite
+Tate cohomology and `X₂` has finite Tate cohomology in degree `-1`, the Herbrand quotient of `X₃`
+is the quotient of those of `X₂` and `X₁`. -/
+theorem herbrandQuotient_eq_div_of_shortExact {S : ShortComplex (Rep R G)} (hS : S.ShortExact)
+    [Finite (tateCohomology S.X₁ 0)] [Finite (tateCohomology S.X₁ (-1))]
+    [Finite (tateCohomology S.X₂ (-1))] :
+    herbrandQuotient S.X₃ = herbrandQuotient S.X₂ / herbrandQuotient S.X₁ := by
+  have := finite_tateCohomology_negOne_X₃_of_shortExact hS
+  have h₁ : herbrandQuotient S.X₁ ≠ 0 := by
+    rw [Ne, herbrandQuotient_eq_zero_iff, not_or, not_infinite_iff_finite, not_infinite_iff_finite]
+    exact ⟨inferInstance, inferInstance⟩
+  rw [herbrandQuotient_eq_mul_of_shortExact hS, mul_div_cancel_left₀ _ h₁]
 
 end Multiplicativity
 

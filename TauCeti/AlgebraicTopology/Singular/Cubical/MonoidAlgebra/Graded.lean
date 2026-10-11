@@ -120,8 +120,7 @@ instance gAlgebra : DirectSum.GAlgebra R fun n : ℕ ↦ NormalizedCubicalChain 
   map_mul r s := by
     refine congrArg (GradedMonoid.mk 0) ?_
     simp only [gMul_mul, LinearMap.toAddMonoidHom_coe, LinearMap.toSpanSingleton_apply]
-    have h1 : mul G R 0 0 (one G R) (one G R) = one G R := by
-      simpa using one_mul (one G R)
+    have h1 : mul G R 0 0 (one G R) (one G R) = one G R := mul_one_eq_self (one G R)
     rw [LinearMap.map_smul₂, map_smul, h1, mul_smul]
   commutes r := fun ⟨n, b⟩ ↦
     Sigma.ext ((Nat.zero_add n).trans (Nat.add_zero n).symm)

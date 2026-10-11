@@ -33,7 +33,7 @@ every such surjection is a projective cover.
   semiprimary ring, a projective module is indecomposable exactly when its top is simple.
 * `TauCeti.IsIndecomposableModule.isCoatom_jacobson_smul_top`: the radical of an
   indecomposable projective module is its unique maximal submodule, so it is the kernel of every
-  surjection onto a simple module (`TauCeti.ker_eq_jacobson_smul_top_of_surjective`).
+  surjection onto a simple module (`TauCeti.ker_eq_jacobson_smul_top_of_ne_zero`).
 * `TauCeti.IsIndecomposableModule.isProjectiveCover_of_surjective`: such a surjection is a
   projective cover.
 
@@ -117,8 +117,9 @@ theorem IsIndecomposableModule.isProjectiveCover_of_surjective [IsSemiprimaryRin
   projective := ‹_›
   surjective := hf
   isSuperfluous_ker :=
+    have := IsSimpleModule.nontrivial R M
     have := isIndecomposableModule_iff_isSimpleModule_quotient_jacobson_smul_top.mp h
-    ker_eq_jacobson_smul_top_of_surjective hf ▸
+    ker_eq_jacobson_smul_top_of_ne_zero (LinearMap.ne_zero_of_surjective hf) ▸
       isSuperfluous_smul_top_of_isNilpotent IsSemiprimaryRing.isNilpotent
 
 /-- A surjection from an indecomposable projective module `P` onto a simple module induces the
@@ -127,8 +128,10 @@ noncomputable def IsIndecomposableModule.quotientJacobsonEquivOfSurjective [IsSe
     (h : IsIndecomposableModule R P) (M : Type w) [AddCommGroup M] [Module R M]
     [IsSimpleModule R M] (f : P →ₗ[R] M) (hf : Function.Surjective f) :
     (P ⧸ Ring.jacobson R • (⊤ : Submodule R P)) ≃ₗ[R] M :=
+  have := IsSimpleModule.nontrivial R M
   have := isIndecomposableModule_iff_isSimpleModule_quotient_jacobson_smul_top.mp h
-  (Submodule.quotEquivOfEq _ _ (ker_eq_jacobson_smul_top_of_surjective hf).symm).trans
+  (Submodule.quotEquivOfEq _ _
+    (ker_eq_jacobson_smul_top_of_ne_zero (LinearMap.ne_zero_of_surjective hf)).symm).trans
     (f.quotKerEquivOfSurjective hf)
 
 @[simp]
