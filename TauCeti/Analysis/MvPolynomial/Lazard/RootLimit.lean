@@ -34,8 +34,6 @@ namespace TauCeti
 
 open MvPolynomial
 
-namespace MvPolynomial
-
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n : ℕ}
 
 /-- A finite limit of roots in `T` of the polynomial restricted to a monomial curve is a root
@@ -83,7 +81,5 @@ theorem isRoot_lazardEval_of_tendsto_monomialCurve
     tendsto_nhds_unique_of_eventuallyEq hlim' tendsto_const_nhds hzero
   have hcoeff := coeff_taylor_lazardExponent p (Polynomial.C ∘ a)
   simpa only [Polynomial.IsRoot, q, v, hcoeff] using hzero0
-
-end MvPolynomial
 
 end TauCeti
