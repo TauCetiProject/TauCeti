@@ -33,8 +33,8 @@ charts of the projective line, and this is the gluing from which the normalizati
 projective line in `F` is built. (When `x` is algebraic over `k`, `x` and `x⁻¹` are regular at
 every place, and the construction does not have this interpretation.)
 
-This file proves that the glued scheme is an integral scheme over `k`, covered by the two charts,
-and that for transcendental `x` its function field is `F` as a `k`-algebra.
+This file proves that the glued scheme is a quasi-compact integral scheme over `k`, covered by the
+two charts, and that for transcendental `x` its function field is `F` as a `k`-algebra.
 
 ## Main definitions
 
@@ -56,6 +56,7 @@ and that for transcendental `x` its function field is `F` as a `k`-algebra.
 * `TauCeti.AlgebraicGeometry.twoChartModel.range_ιFinite_union_range_ιInfinity`: the two charts
   cover the scheme.
 * the instance `IsIntegral (twoChartModel hF hx)`: the scheme is integral.
+* the instance `CompactSpace (twoChartModel hF hx)`: the scheme is quasi-compact.
 * `TauCeti.AlgebraicGeometry.twoChartModel.functionFieldEquiv_germToFunctionField`: the
   isomorphism `k(X) ≃ F` sends the germ of a function on the finite chart to that function.
 
@@ -250,6 +251,13 @@ instance : IrreducibleSpace (twoChartModel hF hx) := by
 /-- **`twoChartModel` is an integral scheme.** -/
 instance : IsIntegral (twoChartModel hF hx) :=
   isIntegral_of_irreducibleSpace_of_isReduced _
+
+/-- **`twoChartModel` is quasi-compact**, as the union of its two affine charts. -/
+instance : CompactSpace (twoChartModel hF hx) where
+  isCompact_univ := by
+    rw [← range_ιFinite_union_range_ιInfinity hF hx]
+    exact (isCompact_range (ιFinite hF hx).continuous).union
+      (isCompact_range (ιInfinity hF hx).continuous)
 
 /-! ### The structure morphism to `Spec k` -/
 
