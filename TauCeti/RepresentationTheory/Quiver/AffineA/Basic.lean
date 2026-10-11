@@ -52,12 +52,14 @@ theorem connected (n : ℕ) (hn : 2 ≤ n) : (affineADiagram n hn).Connected := 
   rw [affineADiagram_eq_cycleGraph n hn]
   exact SimpleGraph.cycleGraph_connected (n := n)
 
-/-- Adjacency in the cycle model for `Ãₙ` is characterized by neighboring vertices. -/
+/-- Adjacency in the affine `A` diagram is characterized by neighboring vertices. -/
 @[simp]
-theorem adj_iff (n : ℕ) (i j : Fin (n + 1)) :
-    (SimpleGraph.cycleGraph (n + 1)).Adj i j ↔
+theorem adj_iff (n : ℕ) (hn : 2 ≤ n) (i j : Fin (n + 1)) :
+    (affineADiagram n hn).Adj i j ↔
       (i - j).val = 1 ∨ (j - i).val = 1 :=
-  SimpleGraph.cycleGraph_adj'
+  by
+    rw [affineADiagram_eq_cycleGraph n hn]
+    exact SimpleGraph.cycleGraph_adj'
 
 end affineADiagram
 end TauCeti
