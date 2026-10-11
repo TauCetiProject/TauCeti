@@ -38,7 +38,9 @@ namespace TauCeti
 variable (k : Type) [Field k] [CharP k 2]
 
 /-- In characteristic two, the regular class is twice the class induced from any point
-stabilizer. This removes the two-part of that cyclic subgroup in modular Artin induction. -/
+stabilizer. This removes the two-part of that cyclic subgroup in modular Artin induction.
+
+For rewriting, pass the point `a` explicitly; it cannot be inferred from the regular class. -/
 theorem indK0_one_bot_eq_two_nsmul_stabilizer_fin_three (a : Fin 3) :
     indK0 k (⊥ : Subgroup (Equiv.Perm (Fin 3))) 1 =
       2 • indK0 k (MulAction.stabilizer (Equiv.Perm (Fin 3)) a) 1 := by
