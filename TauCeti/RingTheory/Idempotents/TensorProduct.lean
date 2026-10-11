@@ -46,7 +46,9 @@ private theorem coe_idealProjection (e : A) (a : A) :
     LinearMap.toSpanSingleton_apply, SetLike.val_smul, smul_eq_mul,
     coe_spanSingletonGenerator]
 
-private theorem tensor_idempotent (he : IsIdempotentElem e) (hf : IsIdempotentElem f) :
+variable {k} in
+/-- A pure tensor of idempotents is idempotent in the tensor algebra. -/
+theorem _root_.IsIdempotentElem.tmul (he : IsIdempotentElem e) (hf : IsIdempotentElem f) :
     IsIdempotentElem (e ⊗ₜ[k] f) := by
   rw [IsIdempotentElem, Algebra.TensorProduct.tmul_mul_tmul, he.eq, hf.eq]
 
@@ -59,7 +61,7 @@ private def idealTensorToSpan (he : IsIdempotentElem e) (hf : IsIdempotentElem f
     (Ideal.span {e} : Ideal A) ⊗[k] (Ideal.span {f} : Ideal B) →ₗ[k]
       (Ideal.span {e ⊗ₜ[k] f} : Ideal (A ⊗[k] B)) where
   toFun t := ⟨idealTensorInclude k t, by
-    apply (mem_span_singleton_iff_mul_eq_self (tensor_idempotent k he hf)).mpr
+    apply (mem_span_singleton_iff_mul_eq_self (he.tmul (k := k) hf)).mpr
     induction t using TensorProduct.inductionOn with
     | tmul x y =>
       simp only [idealTensorInclude, TensorProduct.map_tmul, LinearMap.restrictScalars_apply,
@@ -109,7 +111,7 @@ def spanSingletonTensorProductEquiv (he : IsIdempotentElem e) (hf : IsIdempotent
       simpa only [LinearMap.comp_apply, coe_idealTensorToSpan, spanToIdealTensor_apply,
         LinearMap.id_apply] using
           (LinearMap.congr_fun (idealTensorInclude_projection k) (x : A ⊗[k] B)).trans
-            ((mem_span_singleton_iff_mul_eq_self (tensor_idempotent k he hf)).mp x.2))
+            ((mem_span_singleton_iff_mul_eq_self (he.tmul (k := k) hf)).mp x.2))
     (by
       apply TensorProduct.ext'
       intro x y

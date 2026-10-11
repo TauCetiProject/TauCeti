@@ -43,7 +43,9 @@ local notation "R" => fun i : V ↦ (Ideal.span {op (e i)} : Ideal Zᵐᵒᵖ)
 private theorem vertexBimodule_eq_span (i : V) :
     (Ideal.span {e i ⊗ₜ[k] op (e i)} : Ideal E) = zigzagBraidBimodule k G i := by
   ext u
-  rw [mem_span_singleton_iff_mul_eq_self (isIdempotentElem_tmul_zigzagAlgebraBasis_inl i),
+  have he := isIdempotentElem_zigzagAlgebraBasis_inl k G i
+  rw [mem_span_singleton_iff_mul_eq_self
+    (he.tmul (k := k) (by rw [IsIdempotentElem, ← op_mul, he.eq])),
     mem_zigzagBraidBimodule_iff]
 
 /-- Identify the actual vertex bimodule with its left and right idempotent-ideal factors. -/
