@@ -7,13 +7,15 @@ module
 
 public import TauCeti.MeasureTheory.Function.MetricDerivative.Basic
 import Mathlib.Topology.Algebra.GroupWithZero
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Affine
 
 /-!
-# Affine reparameterization of metric derivatives
+# Affine reparameterization of metric curves
 
 An affine change of time multiplies the metric derivative by the absolute value of its slope.
 This pointwise chain rule uses the upper-limit definition of speed, so it requires neither
-differentiability nor absolute continuity of the curve.
+differentiability nor absolute continuity of the curve. Invertible affine changes of time
+preserve absolute continuity on pseudometric spaces, by the fundamental theorem for metric curves.
 
 ## References
 
@@ -23,8 +25,8 @@ differentiability nor absolute continuity of the curve.
 
 public section
 
-open Filter Topology
-open scoped ENNReal
+open Filter Topology MeasureTheory Set
+open scoped ENNReal Interval
 
 namespace TauCeti
 
@@ -50,11 +52,59 @@ theorem metricDerivative_comp_mul_add (γ : ℝ → X) (c d t : ℝ) :
     have h0 : ENNReal.ofReal |c| ≠ 0 := by simpa using hc
     rw [hdist, ← mul_div_assoc,
       ENNReal.mul_div_mul_left _ _ h0 ENNReal.ofReal_ne_top]
-  have he (s : ℝ) : e s = c * s + d := rfl
+  have he (s : ℝ) : e s = c * s + d := by
+    simp only [e, Homeomorph.trans_apply, Homeomorph.coe_mulLeft₀, Homeomorph.coe_addRight]
   have hmap := e.map_punctured_nhds_eq t
   rw [he] at hmap
   rw [metricDerivative_def, metricDerivative_def, ← ENNReal.limsup_const_mul_of_ne_top
     ENNReal.ofReal_ne_top, ← hmap, ← limsup_comp]
   exact congrArg (fun f : ℝ → ℝ≥0∞ ↦ limsup f (𝓝[≠] t)) (funext hq)
+
+section AbsolutelyContinuous
+
+variable {Y : Type*} [PseudoMetricSpace Y] {γ : ℝ → Y} {c d a b : ℝ}
+
+/-- Invertible affine changes of time preserve absolute continuity of metric-valued curves. -/
+theorem _root_.AbsolutelyContinuousOnInterval.comp_mul_add
+    (hγ : AbsolutelyContinuousOnInterval γ (c * a + d) (c * b + d)) (hc : c ≠ 0) :
+    AbsolutelyContinuousOnInterval (fun t ↦ γ (c * t + d)) a b := by
+  have hint (s u : ℝ) :
+      ∫⁻ t in Ι s u, metricDerivative (fun t ↦ γ (c * t + d)) t =
+        ∫⁻ t in Ι (c * s + d) (c * u + d), metricDerivative γ t := by
+    simp_rw [metricDerivative_comp_mul_add γ c]
+    rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
+      setLIntegral_comp_mul_add_uIoc (metricDerivative γ) hc d s u,
+      ← mul_assoc, abs_inv, ENNReal.ofReal_inv_of_pos (abs_pos.2 hc),
+      ENNReal.mul_inv_cancel (by simpa using hc) ENNReal.ofReal_ne_top, one_mul]
+  have hmem {t : ℝ} (ht : t ∈ uIcc a b) :
+      c * t + d ∈ uIcc (c * a + d) (c * b + d) := by
+    have hmul : c * t ∈ uIcc (c * a) (c * b) :=
+      image_const_mul_uIcc c a b ▸ mem_image_of_mem (c * ·) ht
+    have hadd := mem_image_of_mem (fun x : ℝ ↦ x + d) hmul
+    rwa [image_add_const_uIcc] at hadd
+  refine absolutelyContinuousOnInterval_of_edist_le_lintegral
+    (m := metricDerivative (fun t ↦ γ (c * t + d))) ?_ ?_
+  · rw [hint]
+    exact hγ.lintegral_metricDerivative_lt_top.ne
+  · intro s hs u hu
+    rw [hint]
+    exact hγ.edist_le_lintegral_metricDerivative (hmem hs) (hmem hu)
+
+/-- Absolute continuity on the transformed interval is equivalent to absolute continuity
+of the affinely reparameterized curve on the original interval. -/
+theorem absolutelyContinuousOnInterval_comp_mul_add_iff (γ : ℝ → Y) {c : ℝ} (hc : c ≠ 0)
+    (d a b : ℝ) :
+    AbsolutelyContinuousOnInterval (fun t ↦ γ (c * t + d)) a b ↔
+      AbsolutelyContinuousOnInterval γ (c * a + d) (c * b + d) := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.comp_mul_add hc⟩
+  have hinv (t : ℝ) : c * (c⁻¹ * t + -(c⁻¹ * d)) + d = t := by
+    field_simp
+    ring
+  have ha : c⁻¹ * (c * a + d) + -(c⁻¹ * d) = a := by field_simp; ring
+  have hb : c⁻¹ * (c * b + d) + -(c⁻¹ * d) = b := by field_simp; ring
+  have h' := (ha ▸ hb ▸ h).comp_mul_add (inv_ne_zero hc)
+  simpa only [hinv] using h'
+
+end AbsolutelyContinuous
 
 end TauCeti

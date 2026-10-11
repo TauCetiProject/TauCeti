@@ -10,16 +10,15 @@ public import TauCeti.MeasureTheory.Function.MetricDerivative.Reparameterization
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Affine
 
 /-!
-# Affine reparameterization of metric curves and their action
+# Affine reparameterization of curve action
 
-Changing time by `t ↦ c * t + d`, with `c ≠ 0`, preserves absolute continuity and multiplies
-`p`-action by `|c| ^ (p - 1)`. Thus one can normalize a nondegenerate time interval to `[0, 1]`
+Changing time by `t ↦ c * t + d`, with `c ≠ 0`, multiplies `p`-action by `|c| ^ (p - 1)`.
+Thus one can normalize a nondegenerate time interval to `[0, 1]`
 without losing finite action. Time reversal preserves action, and at `p = 1` every invertible
 affine change of time preserves action.
 
 The action formula is valid for arbitrary curves in extended pseudometric spaces, with infinite
-values retained and no measurability assumption on the curve. Absolute continuity is treated
-on pseudometric spaces, the regime of the fundamental theorem for metric curves.
+values retained and no measurability assumption on the curve.
 
 ## References
 
@@ -80,52 +79,9 @@ theorem curveAction_reverse (p : ℝ) (γ : ℝ → X) (a b : ℝ) :
 
 /-- Normalizing an interval to `[0, 1]` multiplies action by the interval length to the
 power `p - 1`. The two endpoints need not be in increasing order. -/
-theorem curveAction_comp_unitInterval (p : ℝ) (γ : ℝ → X) {a b : ℝ} (hab : a ≠ b) :
+theorem curveAction_comp_mul_add_zero_one (p : ℝ) (γ : ℝ → X) {a b : ℝ} (hab : a ≠ b) :
     curveAction p (fun t ↦ γ ((b - a) * t + a)) 0 1 =
       ENNReal.ofReal |b - a| ^ (p - 1) * curveAction p γ a b := by
   simpa using curveAction_comp_mul_add p γ (sub_ne_zero.2 hab.symm) a 0 1
-
-section AbsolutelyContinuous
-
-variable {Y : Type*} [PseudoMetricSpace Y] {γ : ℝ → Y} {c d a b : ℝ}
-
-/-- Invertible affine changes of time preserve absolute continuity of metric-valued curves. -/
-theorem _root_.AbsolutelyContinuousOnInterval.comp_mul_add
-    (hγ : AbsolutelyContinuousOnInterval γ (c * a + d) (c * b + d)) (hc : c ≠ 0) :
-    AbsolutelyContinuousOnInterval (fun t ↦ γ (c * t + d)) a b := by
-  have hint (s u : ℝ) :
-      ∫⁻ t in Ι s u, metricDerivative (fun t ↦ γ (c * t + d)) t =
-        ∫⁻ t in Ι (c * s + d) (c * u + d), metricDerivative γ t := by
-    simpa [curveAction_def] using curveAction_comp_mul_add 1 γ hc d s u
-  have hmem {t : ℝ} (ht : t ∈ uIcc a b) :
-      c * t + d ∈ uIcc (c * a + d) (c * b + d) := by
-    have hmul : c * t ∈ uIcc (c * a) (c * b) :=
-      image_const_mul_uIcc c a b ▸ mem_image_of_mem (c * ·) ht
-    have hadd := mem_image_of_mem (fun x : ℝ ↦ x + d) hmul
-    rwa [image_add_const_uIcc] at hadd
-  refine absolutelyContinuousOnInterval_of_edist_le_lintegral
-    (m := metricDerivative (fun t ↦ γ (c * t + d))) ?_ ?_
-  · rw [hint]
-    exact hγ.lintegral_metricDerivative_lt_top.ne
-  · intro s hs u hu
-    rw [hint]
-    exact hγ.edist_le_lintegral_metricDerivative (hmem hs) (hmem hu)
-
-/-- Absolute continuity on the transformed interval is equivalent to absolute continuity
-of the affinely reparameterized curve on the original interval. -/
-theorem absolutelyContinuousOnInterval_comp_mul_add_iff (γ : ℝ → Y) {c : ℝ} (hc : c ≠ 0)
-    (d a b : ℝ) :
-    AbsolutelyContinuousOnInterval (fun t ↦ γ (c * t + d)) a b ↔
-      AbsolutelyContinuousOnInterval γ (c * a + d) (c * b + d) := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h.comp_mul_add hc⟩
-  have hinv (t : ℝ) : c * (c⁻¹ * t + -(c⁻¹ * d)) + d = t := by
-    field_simp
-    ring
-  have ha : c⁻¹ * (c * a + d) + -(c⁻¹ * d) = a := by field_simp; ring
-  have hb : c⁻¹ * (c * b + d) + -(c⁻¹ * d) = b := by field_simp; ring
-  have h' := (ha ▸ hb ▸ h).comp_mul_add (inv_ne_zero hc)
-  simpa only [hinv] using h'
-
-end AbsolutelyContinuous
 
 end TauCeti

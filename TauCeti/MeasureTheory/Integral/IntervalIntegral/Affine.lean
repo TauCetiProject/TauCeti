@@ -13,7 +13,8 @@ import Mathlib.Algebra.Order.Group.Pointwise.Interval
 # Affine changes of variables in nonnegative interval integrals
 
 The lower integral over an unoriented interval transforms by the reciprocal absolute slope
-under an invertible affine change of variables. No measurability hypothesis on the integrand
+under an invertible affine change of variables. The underlying Lebesgue pushforward formula
+is also exposed for transporting measures. No measurability hypothesis on the integrand
 is needed: the change of variables is a measurable equivalence. This form also handles reversal
 of time and infinite integrals, as needed when integrating the speed of a metric curve.
 -/
@@ -25,6 +26,15 @@ open scoped ENNReal Interval
 
 namespace TauCeti
 
+/-- The pushforward of Lebesgue measure under an invertible affine map.
+Translation preserves volume, while scaling contributes the reciprocal absolute slope. -/
+theorem map_volume_mul_add {c : ℝ} (hc : c ≠ 0) (d : ℝ) :
+    volume.map (fun t ↦ c * t + d) = ENNReal.ofReal |c⁻¹| • volume := by
+  have hcomp : (fun t : ℝ ↦ c * t + d) = (fun t ↦ t + d) ∘ (fun t ↦ c * t) := rfl
+  rw [hcomp, ← Measure.map_map (measurable_add_const d) (measurable_const_mul c),
+    Real.map_volume_mul_left hc, Measure.map_smul, map_add_right_eq_self]
+  exact (measurable_add_const d).aemeasurable
+
 /-- An invertible affine change of variables in a lower integral over an unoriented interval.
 The integrand need not be measurable, and either integral may be infinite. -/
 theorem setLIntegral_comp_mul_add_uIoc (f : ℝ → ℝ≥0∞) {c : ℝ} (hc : c ≠ 0)
@@ -33,18 +43,21 @@ theorem setLIntegral_comp_mul_add_uIoc (f : ℝ → ℝ≥0∞) {c : ℝ} (hc : 
       ENNReal.ofReal |c⁻¹| * ∫⁻ t in Ι (c * a + d) (c * b + d), f t := by
   let e : ℝ ≃ᵐ ℝ :=
     ((Homeomorph.mulLeft₀ c hc).trans (Homeomorph.addRight d)).toMeasurableEquiv
-  have he (t : ℝ) : e t = c * t + d := rfl
-  have heq : (e : ℝ → ℝ) = (fun t ↦ t + d) ∘ (fun t ↦ c * t) := rfl
+  have heq : (e : ℝ → ℝ) = (fun t ↦ t + d) ∘ (fun t ↦ c * t) := by
+    funext t
+    simp only [e, Homeomorph.toMeasurableEquiv_coe, Homeomorph.trans_apply,
+      Homeomorph.coe_mulLeft₀, Homeomorph.coe_addRight, Function.comp_apply]
+  have he (t : ℝ) : e t = c * t + d := congrFun heq t
   have hmap : volume.map e = ENNReal.ofReal |c⁻¹| • volume := by
-    rw [heq, ← Measure.map_map (measurable_add_const d) (measurable_const_mul c),
-      Real.map_volume_mul_left hc, Measure.map_smul, map_add_right_eq_self]
-    exact (measurable_add_const d).aemeasurable
+    simpa only [heq, Function.comp_def] using map_volume_mul_add hc d
   have hpre : e ⁻¹' uIcc (c * a + d) (c * b + d) = uIcc a b := by
     rw [heq, preimage_comp, preimage_add_const_uIcc, preimage_const_mul_uIcc hc]
     simp [hc]
   have h := setLIntegral_comp_preimage_of_map_eq_smul hmap f
     (uIcc (c * a + d) (c * b + d))
   rw [hpre] at h
-  simpa only [he, uIoc, uIcc, restrict_Ioc_eq_restrict_Icc] using h
+  have hrestrict (u v : ℝ) : volume.restrict (Ι u v) = volume.restrict (uIcc u v) :=
+    restrict_Ioc_eq_restrict_Icc
+  simpa only [he, hrestrict] using h
 
 end TauCeti
