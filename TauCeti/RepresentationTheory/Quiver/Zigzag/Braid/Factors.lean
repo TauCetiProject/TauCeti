@@ -84,7 +84,8 @@ theorem zigzagBraidBimoduleFactorsEquiv_symm_map_smul (i : V) (a b : Z)
     LinearEquiv.restrictScalars_apply, map_smul]
 
 /-- The factor identification sends the enveloping action to the two factor actions. -/
-@[simp]
+-- This is an explicit action formula: the equivalence is `k`-linear, while the input uses
+-- enveloping-algebra scalars. Global simp search for scalar-preserving equivs is unsuitable here.
 theorem zigzagBraidBimoduleFactorsEquiv_tmul_smul (i : V) (a b : Z)
     (u : zigzagBraidBimodule k G i) :
     zigzagBraidBimoduleFactorsEquiv k G i ((a ⊗ₜ[k] op b) • u) =
