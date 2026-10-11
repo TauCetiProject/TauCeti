@@ -25,7 +25,8 @@ reversal preserves both factors and imposes determinant one in each.
 The canonical polarization of the hyperbolic space `splitEvenForm K 3` supplies such a model
 through `TauCeti.SpinPolarizationData.evenCliffordEquivProdMatrix`. Its matrix factors have size
 four. In particular, the even unitary group of three rational hyperbolic planes is `GL₄(ℚ)`.
-This file concerns the even unitary carrier, rather than identifying its Spin subgroup.
+This file concerns the even unitary carrier; its Spin subgroup is the subgroup of
+determinant-one matrices, by `TauCeti.hyperbolicSixSpinEquivSpecialLinear`.
 
 ## References
 
