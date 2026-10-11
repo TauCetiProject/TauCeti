@@ -142,6 +142,13 @@ def kummerIdeleClassSubgroup (S : Finset (HeightOneSpectrum (𝓞 K))) (n : ℕ)
     Subgroup (IdeleClassGroup (𝓞 K) K) :=
   (kummerIdeleSubgroup S n).map (QuotientGroup.mk' (IdeleGroup.principalSubgroup (𝓞 K) K))
 
+/-- The Kummer idele class subgroup is the image under the quotient by principal ideles. -/
+theorem kummerIdeleClassSubgroup_def (S : Finset (HeightOneSpectrum (𝓞 K))) (n : ℕ) :
+    kummerIdeleClassSubgroup S n =
+      (kummerIdeleSubgroup S n).map
+        (QuotientGroup.mk' (IdeleGroup.principalSubgroup (𝓞 K) K)) :=
+  (rfl)
+
 /-- An idele class lies in the Kummer idele class subgroup exactly when it has a Kummer idele
 representative. -/
 @[simp]
