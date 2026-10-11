@@ -204,20 +204,19 @@ theorem typeAGraphAutomorphism_apply_apply (r : ℕ) (g : GL (Fin (r + 1)) A)
           Matrix.GeneralLinearGroup.inverseTranspose g *
           permutationGL (k := A) Fin.revPerm : GL (Fin (r + 1)) A) :
             Matrix (Fin (r + 1)) (Fin (r + 1)) A) =
-        fun a b => ((g⁻¹ : GL (Fin (r + 1)) A) :
+        Matrix.of fun a b => ((g⁻¹ : GL (Fin (r + 1)) A) :
           Matrix (Fin (r + 1)) (Fin (r + 1)) A) b.rev a.rev := by
     ext a b
-    rw [coe_permutationGL_inv_mul_mul_permutationGL_apply]
-    rfl
+    rw [coe_permutationGL_inv_mul_mul_permutationGL_apply,
+      Matrix.GeneralLinearGroup.coe_inverseTranspose, Matrix.transpose_apply,
+      Fin.revPerm_apply, Fin.revPerm_apply, Matrix.of_apply]
   have hd : (diagGL (typeAGraphSign (A := A) : Fin (r + 1) → Aˣ))⁻¹ =
       diagGL (fun k => (typeAGraphSign (A := A) k)⁻¹) := by
     rw [← map_inv]
     rfl
   rw [hfactor, hd, Units.val_mul, Units.val_mul, hmiddle]
-  simp only [diagGL_coe, Matrix.mul_diagonal]
-  -- The reversed-entry lambda is a matrix, although its type prints as a function.
-  erw [Matrix.diagonal_mul]
-  simp [typeAGraphSign]
+  simp only [diagGL_coe, Matrix.mul_diagonal, Matrix.diagonal_mul]
+  simp [typeAGraphSign, Matrix.of_apply]
 
 private theorem inverseTranspose_diagGL_typeAGraphSign (r : ℕ) :
     Matrix.GeneralLinearGroup.inverseTranspose

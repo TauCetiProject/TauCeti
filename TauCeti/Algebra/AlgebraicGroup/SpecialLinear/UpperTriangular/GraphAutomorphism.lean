@@ -85,14 +85,18 @@ theorem comap_definingHopfIdeal_typeAGraphCoordinateIso :
         (SpecialLinear.typeAGraphCoordinateIso R r).hom.hom
         (ConcreteCategory.bijective_of_isIso (SpecialLinear.typeAGraphCoordinateIso R r).hom).2 =
       definingHopfIdeal R (r + 1) := by
-  ext x
-  rw [HopfIdeal.mem_comapOfSurjective]
-  refine ⟨fun hx => ?_, typeAGraphCoordinateIso_hom_mem R r x⟩
-  have hback := typeAGraphCoordinateIso_hom_mem R r _ hx
-  have hcancel := congrArg (fun f => f.hom x)
-    (SpecialLinear.typeAGraphCoordinateIso_hom_comp_self R r)
-  rw [CommHopfAlgCat.comp_apply, CommHopfAlgCat.id_apply] at hcancel
-  exact hcancel ▸ hback
+  have hhom : (definingHopfIdeal R (r + 1)).comapOfSurjective
+      (SpecialLinear.typeAGraphCoordinateIso R r).hom.hom
+      (ConcreteCategory.bijective_of_isIso (SpecialLinear.typeAGraphCoordinateIso R r).hom).2 ≤
+        definingHopfIdeal R (r + 1) := by
+    intro x hx
+    have hback := typeAGraphCoordinateIso_hom_mem R r _
+      (HopfIdeal.mem_comapOfSurjective.mp hx)
+    have hcancel := CommHopfAlgCat.inv_hom_apply (SpecialLinear.typeAGraphCoordinateIso R r) x
+    simp only [SpecialLinear.typeAGraphCoordinateIso_inv] at hcancel
+    exact hcancel ▸ hback
+  exact HopfIdeal.comapOfSurjective_eq_of_hom_le_of_inv_le _ _ hhom
+    (by simpa only [SpecialLinear.typeAGraphCoordinateIso_inv] using hhom)
 
 /-- The coordinate graph involution restricted to the upper-triangular subgroup of `SL_{r+1}`. -/
 noncomputable def typeAGraphCoordinateIso :
