@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback
-public import TauCeti.Analysis.Normed.Module.Alternating.Wedge
+public import TauCeti.Topology.Algebra.Module.Alternating.Wedge
 
 /-!
 # Wedge products of bundle-valued rough differential forms
@@ -42,49 +42,13 @@ variable {E H M E' H' M' : Type*}
   [∀ x, IsTopologicalAddGroup (V₃ x)] [∀ x, ContinuousSMul ℝ (V₃ x)]
   {k l : ℕ}
 
-private def pairingLinear (x : M) (μ : (x : M) → V₁ x →L[ℝ] V₂ x →L[ℝ] V₃ x) :
-    V₁ x ⊗[ℝ] V₂ x →ₗ[ℝ] V₃ x :=
-  TensorProduct.lift ((ContinuousLinearMap.coeLM ℝ).comp (μ x).toLinearMap)
-
-private def unalternated (x : M)
-    (μ : (x : M) → V₁ x →L[ℝ] V₂ x →L[ℝ] V₃ x)
-    (φ : RoughBundleForm I M V₁ k) (ψ : RoughBundleForm I M V₂ l) :
-    MultilinearMap ℝ (fun _ : Fin (k + l) => TangentSpace I x) (V₃ x) :=
-  (pairingLinear x μ).compMultilinearMap <|
-    (MultilinearMap.domCoprod (φ x).toAlternatingMap.toMultilinearMap
-      (ψ x).toAlternatingMap.toMultilinearMap).domDomCongr finSumFinEquiv
-
-private theorem unalternated_apply (x : M)
-    (μ : (x : M) → V₁ x →L[ℝ] V₂ x →L[ℝ] V₃ x)
-    (φ : RoughBundleForm I M V₁ k) (ψ : RoughBundleForm I M V₂ l)
-    (v : Fin (k + l) → TangentSpace I x) :
-    unalternated x μ φ ψ v =
-      μ x (φ x (fun i ↦ v (Fin.castAdd l i)))
-        (ψ x (fun j ↦ v (Fin.natAdd k j))) := by
-  simp [unalternated, pairingLinear]
-
-private def unalternatedContinuous (x : M)
-    (μ : (x : M) → V₁ x →L[ℝ] V₂ x →L[ℝ] V₃ x)
-    (hμ : ∀ x, Continuous (fun p : V₁ x × V₂ x ↦ μ x p.1 p.2))
-    (φ : RoughBundleForm I M V₁ k) (ψ : RoughBundleForm I M V₂ l) :
-    ContinuousMultilinearMap ℝ (fun _ : Fin (k + l) => TangentSpace I x) (V₃ x) :=
-  { toMultilinearMap := unalternated x μ φ ψ
-    cont := by
-      have hfun : (unalternated x μ φ ψ).toFun =
-        (fun v ↦ μ x (φ x (fun i ↦ v (Fin.castAdd l i)))
-          (ψ x (fun j ↦ v (Fin.natAdd k j)))) :=
-        funext (unalternated_apply x μ φ ψ)
-      rw [hfun]
-      fun_prop }
-
 /-- The paired wedge of rough bundle-valued forms, normalized so that one-forms multiply
 by the usual two-term alternating product. -/
 def bundleWedgeWith (μ : (x : M) → V₁ x →L[ℝ] V₂ x →L[ℝ] V₃ x)
     (hμ : ∀ x, Continuous (fun p : V₁ x × V₂ x ↦ μ x p.1 p.2))
     (φ : RoughBundleForm I M V₁ k) (ψ : RoughBundleForm I M V₂ l) :
     RoughBundleForm I M V₃ (k + l) :=
-  fun x ↦ (((k.factorial : ℝ) * (l.factorial : ℝ))⁻¹) •
-    (unalternatedContinuous x μ hμ φ ψ).alternatization
+  fun x ↦ ContinuousAlternatingMap.wedgeWith (μ x) (hμ x) (φ x) (ψ x)
 
 /-- The fibrewise paired wedge is the signed permutation sum. -/
 theorem bundleWedgeWith_apply (μ : (x : M) → V₁ x →L[ℝ] V₂ x →L[ℝ] V₃ x)
@@ -96,9 +60,8 @@ theorem bundleWedgeWith_apply (μ : (x : M) → V₁ x →L[ℝ] V₂ x →L[ℝ
         ∑ σ : Equiv.Perm (Fin (k + l)), Equiv.Perm.sign σ •
           μ x (φ x (fun i ↦ v (σ (Fin.castAdd l i))))
             (ψ x (fun j ↦ v (σ (Fin.natAdd k j)))) := by
-  simp only [bundleWedgeWith, ContinuousAlternatingMap.smul_apply,
-    ContinuousMultilinearMap.alternatization_apply_apply]
-  rfl
+  simpa only [bundleWedgeWith] using
+    (ContinuousAlternatingMap.wedgeWith_apply (μ x) (hμ x) (φ x) (ψ x) v)
 
 /-- On two one-forms, the fibrewise wedge is the usual alternating product. -/
 theorem bundleWedgeWith_apply_one_one
@@ -108,15 +71,20 @@ theorem bundleWedgeWith_apply_one_one
     (x : M) (v w : TangentSpace I x) :
     bundleWedgeWith μ hμ φ ψ x ![v, w] =
       μ x (φ x ![v]) (ψ x ![w]) - μ x (φ x ![w]) (ψ x ![v]) := by
-  rw [bundleWedgeWith_apply]
-  have hperm : (Finset.univ : Finset (Equiv.Perm (Fin 2))) =
-      {1, Equiv.swap 0 1} := by
-    ext e
-    simp only [Finset.mem_univ, Finset.mem_insert, Finset.mem_singleton, true_iff]
-    exact perm_fin_two_eq_one_or_swap e
-  rw [hperm, Finset.sum_insert (by decide), Finset.sum_singleton,
-    Equiv.Perm.sign_swap (by decide : (0 : Fin 2) ≠ 1)]
-  simp [Fin.fin_one_eq_zero, Matrix.cons_fin_one, sub_eq_add_neg]
+  simpa only [bundleWedgeWith] using
+    (ContinuousAlternatingMap.wedgeWith_apply_one_one (μ := μ x) (hμ x) (φ x) (ψ x) v w)
+
+/-- On a trivial value bundle, the bundle wedge is the pointwise topological wedge. -/
+theorem bundleWedgeWith_trivial {F₁ F₂ F₃ : Type*}
+    [SeminormedAddCommGroup F₁] [NormedSpace ℝ F₁]
+    [SeminormedAddCommGroup F₂] [NormedSpace ℝ F₂]
+    [SeminormedAddCommGroup F₃] [NormedSpace ℝ F₃]
+    (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₂ l) :
+    bundleWedgeWith (fun _ ↦ μ) (fun _ ↦ μ.continuous₂) φ ψ =
+      fun x ↦ ContinuousAlternatingMap.wedgeWith μ μ.continuous₂ (φ x) (ψ x) := by
+  funext x
+  rfl
 
 /-- Pullback of a paired wedge pulls back its fibrewise pairing as well as both forms. -/
 theorem bundleMpullback_wedgeWith (f : M' → M)
@@ -174,19 +142,75 @@ theorem wedgeWith_apply (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
             (ψ x (fun j ↦ v (σ (Fin.natAdd k j)))) :=
   bundleWedgeWith_apply _ _ φ ψ x v
 
-/-- Pullback preserves the paired wedge of fixed-coefficient rough forms. -/
-theorem bundleMpullback_wedgeWith (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
-    (f : M' → M) (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₂ l) :
-    bundleMpullback I' I f (φ.wedgeWith μ ψ) =
-      wedgeWith μ (bundleMpullback I' I f φ : RoughForm I' M' F₁ k)
-        (bundleMpullback I' I f ψ : RoughForm I' M' F₂ l) := by
+/-- Evaluation of the paired rough-form wedge on two one-forms. -/
+theorem wedgeWith_apply_one_one (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (φ : RoughForm I M F₁ 1) (ψ : RoughForm I M F₂ 1) (x : M)
+    (v w : TangentSpace I x) :
+    φ.wedgeWith μ ψ x ![v, w] = μ (φ x ![v]) (ψ x ![w]) - μ (φ x ![w]) (ψ x ![v]) := by
   simpa only [wedgeWith] using
-    (TauCeti.bundleMpullback_wedgeWith f (fun _ ↦ μ) (fun _ ↦ μ.continuous₂) φ ψ)
+    (bundleWedgeWith_apply_one_one (μ := fun _ ↦ μ) (fun _ ↦ μ.continuous₂) φ ψ x v w)
+
+/-- The paired rough-form wedge is additive in its first form. -/
+@[simp]
+theorem wedgeWith_add_left (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (φ φ' : RoughForm I M F₁ k) (ψ : RoughForm I M F₂ l) :
+    (φ + φ').wedgeWith μ ψ = φ.wedgeWith μ ψ + φ'.wedgeWith μ ψ := by
+  ext x v
+  change (ContinuousAlternatingMap.wedgeWith μ μ.continuous₂ (φ x + φ' x) (ψ x)) v =
+    (ContinuousAlternatingMap.wedgeWith μ μ.continuous₂ (φ x) (ψ x) +
+      ContinuousAlternatingMap.wedgeWith μ μ.continuous₂ (φ' x) (ψ x)) v
+  exact congrArg (fun α ↦ α v)
+    (ContinuousAlternatingMap.wedgeWith_add_left μ μ.continuous₂ (φ x) (φ' x) (ψ x))
+
+/-- The paired rough-form wedge is additive in its second form. -/
+@[simp]
+theorem wedgeWith_add_right (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (φ : RoughForm I M F₁ k) (ψ ψ' : RoughForm I M F₂ l) :
+    φ.wedgeWith μ (ψ + ψ') = φ.wedgeWith μ ψ + φ.wedgeWith μ ψ' := by
+  ext x v
+  change (ContinuousAlternatingMap.wedgeWith μ μ.continuous₂ (φ x) (ψ x + ψ' x)) v =
+    (ContinuousAlternatingMap.wedgeWith μ μ.continuous₂ (φ x) (ψ x) +
+      ContinuousAlternatingMap.wedgeWith μ μ.continuous₂ (φ x) (ψ' x)) v
+  exact congrArg (fun α ↦ α v)
+    (ContinuousAlternatingMap.wedgeWith_add_right μ μ.continuous₂ (φ x) (ψ x) (ψ' x))
+
+/-- The paired rough-form wedge respects scalar multiplication in its first form. -/
+@[simp]
+theorem wedgeWith_smul_left (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (c : ℝ)
+    (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₂ l) :
+    (c • φ).wedgeWith μ ψ = c • φ.wedgeWith μ ψ := by
+  ext x v
+  change (ContinuousAlternatingMap.wedgeWith μ μ.continuous₂ (c • φ x) (ψ x)) v =
+    (c • ContinuousAlternatingMap.wedgeWith μ μ.continuous₂ (φ x) (ψ x)) v
+  exact congrArg (fun α ↦ α v)
+    (ContinuousAlternatingMap.wedgeWith_smul_left μ μ.continuous₂ c (φ x) (ψ x))
+
+/-- The paired rough-form wedge respects scalar multiplication in its second form. -/
+@[simp]
+theorem wedgeWith_smul_right (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (c : ℝ)
+    (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₂ l) :
+    φ.wedgeWith μ (c • ψ) = c • φ.wedgeWith μ ψ := by
+  ext x v
+  change (ContinuousAlternatingMap.wedgeWith μ μ.continuous₂ (φ x) (c • ψ x)) v =
+    (c • ContinuousAlternatingMap.wedgeWith μ μ.continuous₂ (φ x) (ψ x)) v
+  exact congrArg (fun α ↦ α v)
+    (ContinuousAlternatingMap.wedgeWith_smul_right μ μ.continuous₂ c (φ x) (ψ x))
 
 /-- The real wedge of rough forms uses multiplication as its fibrewise pairing. -/
 def wedge (φ : RoughForm I M ℝ k) (ψ : RoughForm I M ℝ l) :
     RoughForm I M ℝ (k + l) :=
   φ.wedgeWith (ContinuousLinearMap.mul ℝ ℝ) ψ
+
+/-- Evaluation of the real-valued rough-form wedge in every degree. -/
+theorem wedge_apply (φ : RoughForm I M ℝ k) (ψ : RoughForm I M ℝ l)
+    (x : M) (v : Fin (k + l) → TangentSpace I x) :
+    φ.wedge ψ x v =
+      (((k.factorial : ℝ) * (l.factorial : ℝ))⁻¹) •
+        ∑ σ : Equiv.Perm (Fin (k + l)), Equiv.Perm.sign σ •
+          (φ x (fun i ↦ v (σ (Fin.castAdd l i))) *
+            ψ x (fun j ↦ v (σ (Fin.natAdd k j)))) := by
+  simpa [wedge, ContinuousLinearMap.mul_apply'] using
+    (wedgeWith_apply (ContinuousLinearMap.mul ℝ ℝ) φ ψ x v)
 
 /-- The wedge of real-valued one-forms has the determinant normalization. -/
 @[simp]
@@ -199,5 +223,33 @@ theorem wedge_apply_one_one (φ : RoughForm I M ℝ 1) (ψ : RoughForm I M ℝ 1
       (fun _ ↦ (ContinuousLinearMap.mul ℝ ℝ).continuous₂) φ ψ x v w)
 
 end RoughForm
+
+/-- Pullback preserves the paired wedge of fixed-coefficient rough forms. -/
+theorem bundleMpullback_roughFormWedgeWith (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (f : M' → M) (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₂ l) :
+    bundleMpullback I' I f (RoughForm.wedgeWith μ φ ψ) =
+      RoughForm.wedgeWith μ (bundleMpullback I' I f φ : RoughForm I' M' F₁ k)
+        (bundleMpullback I' I f ψ : RoughForm I' M' F₂ l) := by
+  simpa only [RoughForm.wedgeWith] using
+    (TauCeti.bundleMpullback_wedgeWith f (fun _ ↦ μ) (fun _ ↦ μ.continuous₂) φ ψ)
+
+/-- Within-set pullback preserves the paired wedge of fixed-coefficient rough forms. -/
+theorem bundleMpullbackWithin_roughFormWedgeWith (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (f : M' → M) (s : Set M') (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₂ l) :
+    bundleMpullbackWithin I' I f s (RoughForm.wedgeWith μ φ ψ) =
+      RoughForm.wedgeWith μ (bundleMpullbackWithin I' I f s φ : RoughForm I' M' F₁ k)
+        (bundleMpullbackWithin I' I f s ψ : RoughForm I' M' F₂ l) := by
+  simpa only [RoughForm.wedgeWith] using
+    (TauCeti.bundleMpullbackWithin_wedgeWith f s (fun _ ↦ μ)
+      (fun _ ↦ μ.continuous₂) φ ψ)
+
+/-- Pullback preserves the real-valued rough-form wedge. -/
+theorem bundleMpullback_roughFormWedge (f : M' → M)
+    (φ : RoughForm I M ℝ k) (ψ : RoughForm I M ℝ l) :
+    bundleMpullback I' I f (RoughForm.wedge φ ψ) =
+      RoughForm.wedge (bundleMpullback I' I f φ : RoughForm I' M' ℝ k)
+        (bundleMpullback I' I f ψ : RoughForm I' M' ℝ l) := by
+  simpa [RoughForm.wedge] using
+    (bundleMpullback_roughFormWedgeWith (ContinuousLinearMap.mul ℝ ℝ) f φ ψ)
 
 end TauCeti

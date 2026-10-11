@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Module.Alternating.Basic
 public import Mathlib.Analysis.Normed.Module.Alternating.Curry
 public import Mathlib.LinearAlgebra.Alternating.DomCoprod
 public import TauCeti.Data.Fin.Basic
+public import TauCeti.Topology.Algebra.Module.Alternating.Wedge
 import Mathlib.Analysis.Normed.Module.Alternating.Uncurry.Fin
 import TauCeti.GroupTheory.Perm.Basic
 import TauCeti.GroupTheory.Perm.Inversion
@@ -75,22 +76,16 @@ variable {E F₁ F₂ F₃ : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ 
   [SeminormedAddCommGroup F₂] [NormedSpace ℝ F₂]
   [SeminormedAddCommGroup F₃] [NormedSpace ℝ F₃]
 
-private noncomputable def pairingLinear (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃) :
-    F₁ ⊗[ℝ] F₂ →ₗ[ℝ] F₃ :=
-  TensorProduct.lift ((ContinuousLinearMap.coeLM ℝ).comp mu.toLinearMap)
-
 @[simp]
 private lemma pairingLinear_tmul (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (x : F₁) (y : F₂) :
-    pairingLinear mu (x ⊗ₜ[ℝ] y) = mu x y :=
+    ContinuousAlternatingMap.pairingLinear mu (x ⊗ₜ[ℝ] y) = mu x y :=
   rfl
 
 /-- The unalternated multilinear pairing underlying `wedgeWith`. -/
 noncomputable def wedgeWithUnalternated {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) :
     MultilinearMap ℝ (fun _ : Fin (k + l) => E) F₃ :=
-  (pairingLinear mu).compMultilinearMap <|
-    (MultilinearMap.domCoprod phi.toAlternatingMap.toMultilinearMap
-      psi.toAlternatingMap.toMultilinearMap).domDomCongr finSumFinEquiv
+  ContinuousAlternatingMap.wedgeWithUnalternated mu phi psi
 
 /-- The unalternated pairing evaluates `phi` on the first `k` vectors and `psi` on the last `l`. -/
 @[simp]
@@ -99,12 +94,12 @@ theorem wedgeWithUnalternated_apply {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[�
     (v : Fin (k + l) → E) :
     wedgeWithUnalternated mu phi psi v =
       mu (phi (fun i => v (Fin.castAdd l i))) (psi (fun j => v (Fin.natAdd k j))) := by
-  simp [wedgeWithUnalternated, pairingLinear]
+  exact ContinuousAlternatingMap.wedgeWithUnalternated_apply mu phi psi v
 
 private noncomputable def wedgeAlternating {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) :
     E [⋀^Fin (k + l)]→ₗ[ℝ] F₃ :=
-  (pairingLinear mu).compAlternatingMap <|
+  (ContinuousAlternatingMap.pairingLinear mu).compAlternatingMap <|
     (phi.toAlternatingMap.domCoprod psi.toAlternatingMap).domDomCongr finSumFinEquiv
 
 private lemma wedgeAlternating_eq_alternatization {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
@@ -127,6 +122,7 @@ private lemma wedgeAlternating_eq_alternatization {k l : ℕ} (mu : F₁ →L[�
     exact Fintype.sum_equiv finSumFinEquiv.permCongr _ _ fun sigma => by
       simp
   unfold wedgeAlternating wedgeWithUnalternated
+    ContinuousAlternatingMap.wedgeWithUnalternated
   rw [LinearMap.compMultilinearMap_alternatization,
     htransport,
     MultilinearMap.domCoprod_alternatization_eq]
@@ -201,12 +197,7 @@ private lemma wedgeAlternating_apply_one_one (mu : F₁ →L[ℝ] F₂ →L[ℝ]
       mu (phi ![v]) (psi ![w]) - mu (phi ![w]) (psi ![v]) := by
   classical
   rw [wedgeAlternating_apply]
-  have hperm : (Finset.univ : Finset (Equiv.Perm (Fin 2))) =
-      {1, Equiv.swap 0 1} := by
-    ext e
-    simp only [Finset.mem_univ, Finset.mem_insert, Finset.mem_singleton, true_iff]
-    exact perm_fin_two_eq_one_or_swap e
-  rw [hperm, Finset.sum_insert (by decide), Finset.sum_singleton,
+  rw [univ_perm_fin_two, Finset.sum_insert (by decide), Finset.sum_singleton,
     Equiv.Perm.sign_swap (by decide : (0 : Fin 2) ≠ 1)]
   simp [Fin.fin_one_eq_zero, Matrix.cons_fin_one, sub_eq_add_neg]
 
