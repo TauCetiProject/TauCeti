@@ -7,13 +7,18 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.RCLike
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
+public import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
 public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.MeasureTheory.Measure.GiryMonad
 public import TauCeti.MeasureTheory.Function.AbsolutelyContinuous
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.Deriv.Prod
+import Mathlib.MeasureTheory.Function.ConditionalExpectation.PullOut
+import Mathlib.MeasureTheory.Function.FactorsThrough
 import Mathlib.Probability.Kernel.MeasurableIntegral
+import TauCeti.Analysis.Calculus.FDeriv.Integrable
 import TauCeti.Analysis.Calculus.FDeriv.Measurable
+import TauCeti.MeasureTheory.Function.ConditionalExpectation
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import TauCeti.MeasureTheory.Measure.Measurability
 
@@ -43,6 +48,14 @@ positions at time `t` solve the continuity equation with velocity `v`
 the statement for a law on paths. A translating law, a stationary law and a Dirac mass moving along
 an absolutely continuous curve are special cases.
 
+The curves need not follow a common velocity field. If `γ_ω` has derivative `V ω t` at almost
+every time, with `V` jointly measurable and of finite expected length, then the laws `μₜ` solve the
+continuity equation with the *barycentric velocity* `v`: its value at the position `γ_ω t` is the
+conditional expectation of `V ω t` given the time `t` and the position `γ_ω t`, for the measure
+`dt ⊗ P` (`TauCeti.exists_isContinuityEquation_map`). By Jensen's inequality,
+`∫_a^b ∫ ‖vₜ‖ ^ p dμₜ dt ≤ ∫ ∫_a^b ‖V ω t‖ ^ p dt dP(ω)` for every `p ≥ 1`: the action of the
+velocity field is at most the expected action of the curves.
+
 ## Main definitions
 
 * `TauCeti.IsContinuityEquation μ v a b`: the family `μ` solves the continuity equation with
@@ -61,6 +74,9 @@ an absolutely continuous curve are special cases.
 * `TauCeti.isContinuityEquation_map`: the laws at time `t` of a measurable family of absolutely
   continuous curves following `v`, with finite expected length, solve the continuity equation with
   velocity `v`.
+* `TauCeti.exists_isContinuityEquation_map`: the laws at time `t` of a measurable family of
+  absolutely continuous curves with finite expected length solve the continuity equation with
+  their barycentric velocity, whose `p`-action is at most the expected `p`-action of the curves.
 * `TauCeti.isContinuityEquation_map_add_smul`: a law translating with constant velocity `w`
   solves the continuity equation with velocity field `w`.
 * `TauCeti.isContinuityEquation_const`: a stationary law solves it with velocity field `0`.
@@ -70,7 +86,8 @@ an absolutely continuous curve are special cases.
 ## References
 
 * L. Ambrosio, N. Gigli and G. Savaré, *Gradient Flows in Metric Spaces and in the Space of
-  Probability Measures*, Birkhäuser, 2nd ed. 2008, §8.1.
+  Probability Measures*, Birkhäuser, 2nd ed. 2008, §8.1, and §8.3 for the barycentric velocity of
+  a law on curves.
 * F. Santambrogio, *Optimal Transport for Applied Mathematicians*, Birkhäuser 2015, §4.1.
 -/
 
@@ -278,6 +295,39 @@ theorem integrableOn_integral_fderiv (h : IsContinuityEquation μ v a b) {φ : �
 
 end IsContinuityEquation
 
+omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
+/-- Along a curve `γ` absolutely continuous on `[a, b]` with derivative `V`, the integrand of the
+continuity equation integrates to zero over `(a, b)` for every `C¹` test function supported in
+`(a, b) × E`: it is the derivative of `t ↦ φ (t, γ t)`, which vanishes at both endpoints. -/
+private lemma integral_fderiv_eq_zero_of_hasDerivAt {φ : ℝ × E → ℝ} (hφ1 : ContDiff ℝ 1 φ)
+    (hφs : tsupport φ ⊆ Ioo a b ×ˢ univ) {γ V : ℝ → E}
+    (hγ : AbsolutelyContinuousOnInterval γ a b)
+    (hd : ∀ᵐ t, t ∈ Ioo a b → HasDerivAt γ (V t) t) :
+    ∫ t in Ioo a b, fderiv ℝ φ (t, γ t) (1, V t) = 0 := by
+  rcases lt_or_ge a b with hab | hab
+  swap
+  · simp [Ioo_eq_empty_of_le hab]
+  have hzero (s : ℝ) (hs : s ∉ Ioo a b) : φ (s, γ s) = 0 :=
+    image_eq_zero_of_notMem_tsupport fun h ↦ hs (hφs h).1
+  have hd' : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt (fun t ↦ (t, γ t)) (1, V t) t := by
+    rw [uIoc_of_le hab.le]
+    filter_upwards [hd, compl_mem_ae_iff.2 (measure_singleton b)] with t ht htb hmem
+    exact (hasDerivAt_id' t).prodMk (ht ⟨hmem.1, hmem.2.lt_of_ne htb⟩)
+  have := (LipschitzWith.id.lipschitzOnWith.absolutelyContinuousOnInterval.prodMk
+    hγ).integral_fderiv_apply_eq_sub hd' hφ1
+  simp only [id, hzero a (by simp), hzero b (by simp), sub_self] at this
+  rwa [intervalIntegral.integral_of_le hab.le, integral_Ioc_eq_integral_Ioo] at this
+
+omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
+/-- For a `C¹` compactly supported test function `φ`, the integrand of the continuity equation
+along a time and position `G` and a velocity `Y` is integrable against a finite measure whenever
+`Y` is: the space-time velocity `(1, Y)` is integrable. -/
+private lemma integrable_fderiv_apply_one {S : Type*} [MeasurableSpace S] {ν : Measure S}
+    [IsFiniteMeasure ν] {φ : ℝ × E → ℝ} (hφ1 : ContDiff ℝ 1 φ) (hφc : HasCompactSupport φ)
+    {G : S → ℝ × E} (hG : AEStronglyMeasurable G ν) {Y : S → E} (hY : Integrable Y ν) :
+    Integrable (fun q ↦ fderiv ℝ φ (G q) (1, Y q)) ν :=
+  integrable_fderiv_apply hφ1 hφc hG ((integrable_const 1).prodMk hY)
+
 /-- **Lagrangian solutions of the continuity equation.** Let `P` be a finite measure on a parameter
 space `Ω` and `γ : Ω → ℝ → E` a jointly measurable family of curves. If `P`-almost every curve is
 absolutely continuous on `[a, b]` and follows the velocity field `v`, in the sense that
@@ -310,8 +360,6 @@ theorem isContinuityEquation_map {Ω : Type*} [MeasurableSpace Ω] (P : Measure 
   have hφ1 : ContDiff ℝ 1 φ := hφ.of_le (by simp)
   have hF : Measurable fun q : ℝ × E ↦ fderiv ℝ φ q (1, v q.1 q.2) :=
     (measurable_fderiv_apply ℝ φ).comp (measurable_id.prodMk (measurable_const.prodMk hv))
-  obtain ⟨C, hC⟩ :=
-    (hφ1.continuous_fderiv one_ne_zero).bounded_above_of_compact_support (hφc.fderiv ℝ)
   have hpush (t : ℝ) : ∫ x, fderiv ℝ φ (t, x) (1, v t x) ∂P.map (γ · t) =
       ∫ ω, fderiv ℝ φ (t, γ ω t) (1, v t (γ ω t)) ∂P :=
     integral_map (hγt t).aemeasurable (hF.comp measurable_prodMk_left).aestronglyMeasurable
@@ -320,30 +368,145 @@ theorem isContinuityEquation_map {Ω : Type*} [MeasurableSpace Ω] (P : Measure 
   have : IsFiniteMeasure (volume.restrict (Ioo a b)) := ⟨by simp⟩
   have hInt : Integrable (uncurry fun t ω ↦ fderiv ℝ φ (t, γ ω t) (1, v t (γ ω t)))
       ((volume.restrict (Ioo a b)).prod P) := by
-    refine Integrable.mono' (g := fun q ↦ C * (1 + ‖v q.1 (γ q.2 q.1)‖)) ?_
-      (hF.comp (measurable_fst.prodMk hγ')).aestronglyMeasurable
-      (.of_forall fun q ↦ (fderiv ℝ φ _).le_of_opNorm_le_of_le (hC _) (by simp [Prod.norm_def]))
-    refine ((integrable_const 1).add ?_).const_mul C
-    refine ⟨(hv.comp (measurable_fst.prodMk hγ')).norm.aestronglyMeasurable, ?_⟩
+    refine integrable_fderiv_apply_one hφ1 hφc (measurable_fst.prodMk hγ').aestronglyMeasurable
+      ⟨(hv.comp (measurable_fst.prodMk hγ')).aestronglyMeasurable, ?_⟩
     rw [hasFiniteIntegral_iff_enorm]
-    simpa only [enorm_norm, lintegral_prod _ hvγ.aemeasurable] using hint'
+    simpa only [lintegral_prod _ hvγ.aemeasurable] using hint'
   rw [integral_integral_swap hInt]
   refine integral_eq_zero_of_ae ?_
   filter_upwards [hac, hderiv] with ω hω hω'
-  rcases lt_or_ge a b with hab | hab
-  swap
-  · simp [Ioo_eq_empty_of_le hab]
-  -- the integrand is the derivative of `t ↦ φ (t, γ ω t)`, which vanishes at both endpoints
-  have hzero (s : ℝ) (hs : s ∉ Ioo a b) : φ (s, γ ω s) = 0 :=
-    image_eq_zero_of_notMem_tsupport fun h ↦ hs (hφs h).1
-  have hd : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt (fun t ↦ (t, γ ω t)) (1, v t (γ ω t)) t := by
-    rw [uIoc_of_le hab.le]
-    filter_upwards [hω', compl_mem_ae_iff.2 (measure_singleton b)] with t ht htb hmem
-    exact (hasDerivAt_id' t).prodMk (ht ⟨hmem.1, hmem.2.lt_of_ne htb⟩)
-  have := (LipschitzWith.id.lipschitzOnWith.absolutelyContinuousOnInterval.prodMk
-    hω).integral_fderiv_apply_eq_sub hd hφ1
-  simp only [id, hzero a (by simp), hzero b (by simp), sub_self] at this
-  rwa [intervalIntegral.integral_of_le hab.le, integral_Ioc_eq_integral_Ioo] at this
+  exact integral_fderiv_eq_zero_of_hasDerivAt hφ1 hφs hω hω'
+
+/-- Let `G : S → ℝ × E` record a time and a position, and let `u ∘ G` be the conditional expectation
+of a velocity `W : S → E` given `G`, for a finite measure `ν` on `S`. Then `u ∘ G` can replace `W`
+in the integrand of the continuity equation, integrated against `ν`: the space derivative of a test
+function, evaluated at `G`, is a bounded `G`-measurable factor which the conditional expectation
+pulls out. -/
+private lemma integral_fderiv_apply_comp_eq_of_condExp {S : Type*}
+    [MeasurableSpace S] {ν : Measure S} [IsFiniteMeasure ν] {G : S → ℝ × E} (hG : Measurable G)
+    {W : S → E} (hWint : Integrable W ν) {u : ℝ × E → E}
+    (hcu : ν[W | MeasurableSpace.comap G inferInstance] = u ∘ G)
+    (hcint : Integrable (fun q ↦ u (G q)) ν) {φ : ℝ × E → ℝ} (hφ1 : ContDiff ℝ 1 φ)
+    (hφc : HasCompactSupport φ) :
+    ∫ q, fderiv ℝ φ (G q) (1, u (G q)) ∂ν = ∫ q, fderiv ℝ φ (G q) (1, W q) ∂ν := by
+  have hm : MeasurableSpace.comap G inferInstance ≤ (inferInstance : MeasurableSpace S) :=
+    hG.comap_le
+  have hDφ := hφ1.continuous_fderiv one_ne_zero
+  obtain ⟨C, hC⟩ := hDφ.bounded_above_of_compact_support (hφc.fderiv ℝ)
+  have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC 0)
+  -- the space derivative of `φ` along `G`, a bounded `G`-measurable field of linear forms
+  set L : S → E →L[ℝ] ℝ := fun q ↦ (fderiv ℝ φ (G q)).comp (ContinuousLinearMap.inr ℝ ℝ E)
+  have hLC (q : S) : ‖L q‖ ≤ C :=
+    ContinuousLinearMap.opNorm_le_bound _ hC0 fun w ↦
+      (fderiv ℝ φ (G q)).le_of_opNorm_le_of_le (hC _) (by simp [Prod.norm_def])
+  have hL : StronglyMeasurable[MeasurableSpace.comap G inferInstance] L :=
+    (hDφ.clm_comp continuous_const).stronglyMeasurable.comp_measurable (comap_measurable G)
+  have hL_apply (q : S) (w : E) : L q w = fderiv ℝ φ (G q) (0, w) := by simp [L]
+  -- the integrand splits into a time part and the space part `L q (Y q)`
+  have hsplit {Y : S → E} (hY : Integrable Y ν) :
+      ∫ q, fderiv ℝ φ (G q) (1, Y q) ∂ν =
+        ∫ q, fderiv ℝ φ (G q) (1, 0) ∂ν + ∫ q, L q (Y q) ∂ν := by
+    have hA : Integrable (fun q ↦ fderiv ℝ φ (G q) (1, 0)) ν :=
+      integrable_fderiv_apply_one hφ1 hφc hG.aestronglyMeasurable (integrable_zero S E ν)
+    have hLY : Integrable (fun q ↦ L q (Y q)) ν := by
+      refine ((integrable_fderiv_apply_one hφ1 hφc hG.aestronglyMeasurable hY).sub hA).congr
+        (.of_forall fun q ↦ ?_)
+      simp only [Pi.sub_apply, hL_apply, ← map_sub, Prod.mk_sub_mk, sub_self, sub_zero]
+    rw [← integral_add hA hLY]
+    congr 1 with q
+    rw [hL_apply, ← map_add, Prod.mk_add_mk, add_zero, zero_add]
+  rw [hsplit hcint, hsplit hWint]
+  congr 1
+  have := condExp_stronglyMeasurable_bilin_of_bound (ContinuousLinearMap.id ℝ (E →L[ℝ] ℝ)) hm
+    hL hWint C (.of_forall hLC)
+  simp only [ContinuousLinearMap.id_apply, hcu, Function.comp_apply] at this
+  rw [← integral_condExp hm (f := fun q ↦ L q (W q))]
+  exact (integral_congr_ae this).symm
+
+/-- **The barycentric velocity of a law on curves.** Let `P` be a finite measure on a parameter
+space `Ω` and `γ : Ω → ℝ → E` a jointly measurable family of curves, `P`-almost every one of which
+is absolutely continuous on `[a, b]` with derivative `V ω t` at almost every `t ∈ (a, b)`, where
+`V` is jointly measurable with finite expected length `∫ ∫_a^b ‖V ω t‖ dt dP(ω)`. Then the laws
+`μₜ = (γ · t)₊ P` of the positions at time `t` solve the continuity equation on `(a, b)` with a
+velocity field `v` whose value at the position `γ ω t` is the conditional expectation of the
+velocity `V ω t` given the time and the position, for the measure `dt ⊗ P` on `(a, b) × Ω`. By
+Jensen's inequality its action is at most the expected action of the curves:
+`∫_a^b ∫ ‖vₜ‖ ^ p dμₜ dt ≤ ∫ ∫_a^b ‖V ω t‖ ^ p dt dP(ω)` for every `p ≥ 1`.
+
+Unlike `TauCeti.isContinuityEquation_map`, the curves need not follow a common velocity field:
+curves crossing at the same position at the same time may have different velocities there, which
+the conditional expectation averages. -/
+theorem exists_isContinuityEquation_map {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
+    [IsFiniteMeasure P] {γ V : Ω → ℝ → E}
+    (hγ : Measurable (uncurry γ)) (hV : Measurable (uncurry V))
+    (hac : ∀ᵐ ω ∂P, AbsolutelyContinuousOnInterval (γ ω) a b)
+    (hderiv : ∀ᵐ ω ∂P, ∀ᵐ t, t ∈ Ioo a b → HasDerivAt (γ ω) (V ω t) t)
+    (hint : ∫⁻ ω, (∫⁻ t in Ioo a b, ‖V ω t‖ₑ) ∂P < ∞) :
+    ∃ v : ℝ → E → E, IsContinuityEquation (fun t ↦ P.map (γ · t)) v a b ∧
+      (fun q : ℝ × Ω ↦ v q.1 (γ q.2 q.1)) =
+        ((volume.restrict (Ioo a b)).prod P)[fun q ↦ V q.2 q.1 |
+          MeasurableSpace.comap (fun q : ℝ × Ω ↦ (q.1, γ q.2 q.1)) inferInstance] ∧
+      ∀ p : ℝ, 1 ≤ p → ∫⁻ t in Ioo a b, ∫⁻ x, ‖v t x‖ₑ ^ p ∂P.map (γ · t) ≤
+        ∫⁻ ω, (∫⁻ t in Ioo a b, ‖V ω t‖ₑ ^ p) ∂P := by
+  have : IsFiniteMeasure (volume.restrict (Ioo a b)) := ⟨by simp⟩
+  set ν := (volume.restrict (Ioo a b)).prod P with hν
+  -- the time and position `G`, and the velocity `W`, as functions on `(a, b) × Ω`
+  set G : ℝ × Ω → ℝ × E := fun q ↦ (q.1, γ q.2 q.1)
+  have hG : Measurable G := measurable_fst.prodMk (hγ.comp measurable_swap)
+  have hγt (t : ℝ) : Measurable (γ · t) := hγ.comp measurable_prodMk_right
+  set W : ℝ × Ω → E := fun q ↦ V q.2 q.1
+  have hW : Measurable W := hV.comp measurable_swap
+  have hWint : Integrable W ν := by
+    refine ⟨hW.aestronglyMeasurable, ?_⟩
+    rw [hasFiniteIntegral_iff_enorm, hν, lintegral_prod _ hW.enorm.aemeasurable,
+      lintegral_lintegral_swap (f := fun t ω ↦ ‖V ω t‖ₑ) hW.enorm.aemeasurable]
+    exact hint
+  -- the conditional expectation of the velocity is a function `u` of the time and the position
+  obtain ⟨u, hu, hcu⟩ := (stronglyMeasurable_condExp (μ := ν) (f := W)
+    (m := MeasurableSpace.comap G inferInstance)).exists_eq_measurable_comp
+  -- Jensen's inequality for the conditional expectation, read on the time slices
+  have hbound (p : ℝ) (hp : 1 ≤ p) : ∫⁻ t in Ioo a b, ∫⁻ x, ‖u (t, x)‖ₑ ^ p ∂P.map (γ · t) ≤
+      ∫⁻ ω, (∫⁻ t in Ioo a b, ‖V ω t‖ₑ ^ p) ∂P := by
+    have h := MeasureTheory.lintegral_enorm_condExp_rpow_le (μ := ν)
+      (m := MeasurableSpace.comap G inferInstance) hW.aestronglyMeasurable hp
+    rw [hcu] at h
+    have hmap (t : ℝ) : ∫⁻ x, ‖u (t, x)‖ₑ ^ p ∂P.map (γ · t) = ∫⁻ ω, ‖u (t, γ ω t)‖ₑ ^ p ∂P :=
+      lintegral_map ((hu.measurable.comp measurable_prodMk_left).enorm.pow_const _) (hγt t)
+    simp_rw [hmap]
+    rw [lintegral_lintegral_swap (f := fun ω t ↦ ‖V ω t‖ₑ ^ p)
+      (hV.enorm.pow_const _).aemeasurable]
+    rwa [hν, lintegral_prod _ ((hu.measurable.comp hG).enorm.pow_const _).aemeasurable,
+      lintegral_prod _ (hW.enorm.pow_const _).aemeasurable] at h
+  refine ⟨fun t x ↦ u (t, x), ⟨MeasureTheory.measurable_map_of_measurable_uncurry
+    (hγ.comp measurable_swap), hu.measurable, ?_, ?_, fun φ hφ hφc hφs ↦ ?_⟩, hcu.symm, hbound⟩
+  · simp only [Measure.map_apply (hγt _) MeasurableSet.univ, preimage_univ, setLIntegral_const]
+    exact ENNReal.mul_lt_top (measure_lt_top P univ) measure_Ioo_lt_top
+  · have h1 := hbound 1 le_rfl
+    simp only [ENNReal.rpow_one] at h1
+    exact h1.trans_lt hint
+  -- push the slices back to `(a, b) × Ω`, replace `u ∘ G` by `W`, and integrate along each curve
+  have hφ1 : ContDiff ℝ 1 φ := hφ.of_le (by simp)
+  have hcint : Integrable (fun q ↦ u (G q)) ν := by
+    rw [← Function.comp_def, ← hcu]
+    exact integrable_condExp
+  have hF : Measurable fun q : ℝ × E ↦ fderiv ℝ φ q (1, u q) :=
+    (measurable_fderiv_apply ℝ φ).comp
+      (measurable_id.prodMk (measurable_const.prodMk hu.measurable))
+  have hpush (t : ℝ) : ∫ x, fderiv ℝ φ (t, x) (1, u (t, x)) ∂P.map (γ · t) =
+      ∫ ω, fderiv ℝ φ (t, γ ω t) (1, u (t, γ ω t)) ∂P :=
+    integral_map (hγt t).aemeasurable (hF.comp measurable_prodMk_left).aestronglyMeasurable
+  simp_rw [hpush]
+  calc ∫ t in Ioo a b, ∫ ω, fderiv ℝ φ (t, γ ω t) (1, u (t, γ ω t)) ∂P
+      = ∫ q, fderiv ℝ φ (G q) (1, u (G q)) ∂ν :=
+      (integral_prod _ (integrable_fderiv_apply_one hφ1 hφc hG.aestronglyMeasurable hcint)).symm
+    _ = ∫ q, fderiv ℝ φ (G q) (1, W q) ∂ν :=
+      integral_fderiv_apply_comp_eq_of_condExp hG hWint hcu hcint hφ1 hφc
+    _ = ∫ ω, (∫ t in Ioo a b, fderiv ℝ φ (t, γ ω t) (1, V ω t)) ∂P :=
+      integral_prod_symm _ (integrable_fderiv_apply_one hφ1 hφc hG.aestronglyMeasurable hWint)
+    _ = 0 := by
+      refine integral_eq_zero_of_ae ?_
+      filter_upwards [hac, hderiv] with ω hω hω'
+      exact integral_fderiv_eq_zero_of_hasDerivAt hφ1 hφs hω hω'
 
 /-- **A translating law solves the continuity equation.** Translating a finite measure `μ` with
 constant velocity `w`, so that its law at time `t` is the pushforward of `μ` by `x ↦ x + t • w`,

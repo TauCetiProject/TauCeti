@@ -252,6 +252,7 @@ abbrev pointedCurve : WeierstrassCurve Universal.Field := baseChange curve Unive
 /-- The discriminant of `pointedCurve` is the image of `curve.Δ`. Rewrite with this in place of
 Mathlib's `map_Δ`, which `simp` and `rw` do not apply to `pointedCurve.Δ` on their own, since
 neither unfolds `baseChange`. -/
+@[simp]
 lemma pointedCurve_Δ : pointedCurve.Δ = algebraMap _ Universal.Field curve.Δ :=
   map_Δ curve (algebraMap _ Universal.Field)
 

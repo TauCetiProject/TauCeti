@@ -135,7 +135,7 @@ theorem action_naturality (Theta : PointRepresentation (R := R) (H := H) (V := V
   exact (ConcreteCategory.congr_hom h'.symm x)
 
 /-- Naturality determines the action of a transported point on the canonical copy of `V`. -/
-@[simp]
+@[simp↓]
 theorem action_mapPoints_one_tmul
     (Theta : PointRepresentation (R := R) (H := H) (V := V))
     {A B : CommAlgCat.{max u v w} R} (phi : A ⟶ B) (x : points (H := H) A) (v : V) :
@@ -224,7 +224,6 @@ noncomputable def ofComodule (rho : Comodule R H V) :
     rw [← Category.assoc, hraw]
     simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
 
-@[simp]
 private theorem action_ofComodule (rho : Comodule R H V)
     (A : CommAlgCat.{max u v w} R) :
     (ofComodule rho).action A = rawPointAction rho A := by
@@ -239,7 +238,7 @@ private theorem action_ofComodule (rho : Comodule R H V)
   rw [Category.assoc, eqToHom_trans, eqToHom_refl, Category.comp_id]
 
 /-- The action induced by a coaction, evaluated on a pure tensor. -/
-@[simp]
+@[simp↓]
 theorem ofComodule_action_tmul (rho : Comodule R H V)
     (A : CommAlgCat.{max u v w} R)
     (x : points (H := H) A) (a : A) (v : V) :
@@ -261,7 +260,7 @@ theorem ofComodule_action_val_eq_endOfPoint (rho : Comodule R H V)
   rw [ofComodule_action_tmul, Comodule.endOfPoint_tmul, LinearMap.lTensor_def]
 
 /-- At the universal point, the action induced by a coaction is the flipped coaction. -/
-@[simp]
+-- Not `@[simp]`: `ofComodule_action_tmul` already rewrites the left-hand side.
 theorem ofComodule_action_universal_one_tmul (rho : Comodule R H V) (v : V) :
     ((ofComodule rho).action (CommAlgCat.of R (ULift.{max u v w} H))
         (toConv ULift.algEquiv.symm.toAlgHom)).val (1 ⊗ₜ[R] v) =
