@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.ContractibleChains
+public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Contractible
 public import TauCeti.Topology.Homotopy.Cube.Basic
 public import TauCeti.AlgebraicTopology.Singular.Cubical.ChainComplex
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Cone
@@ -35,7 +35,7 @@ set.
   both functors are acyclic on families of contractible spaces.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -65,7 +65,7 @@ theorem singularCoord_simplexChain (X : TopCat.{u}) {n : ℕ} (σ : (TopCat.toSS
   exact congrArg (fun g ↦ g.hom a) h
 
 /-- **The simplicial singular chains are free on the topological simplices.** -/
-def singularModelPresentation : AcyclicModels.ModelPresentation (singularChains k) where
+@[expose] def singularModelPresentation : AcyclicModels.ModelPresentation (singularChains k) where
   model := simplexModel
   gen n := simplexChain (idSimplex n) 1
   coord := singularCoord k
@@ -98,6 +98,11 @@ def upCube (n : ℕ) : SingularCube (cubeModel.{u} n) n := ⟨ULift.up, continuo
 /-- A singular cube, as a map from the model. -/
 def cubeToHom {X : TopCat.{u}} {n : ℕ} (c : SingularCube X n) : cubeModel.{u} n ⟶ X :=
   TopCat.ofHom (c.comp ⟨ULift.down, continuous_uliftDown⟩)
+
+@[simp]
+theorem cubeToHom_apply {X : TopCat.{u}} {n : ℕ} (c : SingularCube X n) (x : cubeModel.{u} n) :
+    cubeToHom c x = c x.down :=
+  (rfl)
 
 @[simp]
 theorem cubeToHom_comp {X Y : TopCat.{u}} (f : X ⟶ Y) {n : ℕ} (c : SingularCube X n) :
@@ -144,7 +149,7 @@ theorem sum_cubicalCoord {X : TopCat.{u}} {n : ℕ} (x : NormalizedCubicalChain 
     exact NormalizedCubicalChain.sum_toCubicalChain k x
 
 /-- **The normalized cubical chains are free on the cubes**, through the normalization. -/
-def cubicalModelPresentation :
+@[expose] def cubicalModelPresentation :
     AcyclicModels.ModelPresentation (normalizedCubicalChainComplex.{u} k) where
   model := cubeModel
   gen n := NormalizedCubicalChain.ofCube (cubeModel n) k (upCube n)
@@ -152,9 +157,7 @@ def cubicalModelPresentation :
   coord_map f _ x := cubicalCoord_map f x
   sum_coord _ _ x := sum_cubicalCoord x
 
-instance (N : Type*) : ContractibleSpace (N → unitInterval) :=
-  (contractible_iff_id_nullhomotopic _).2 ⟨fun _ ↦ 0, ⟨(cubeContraction N).symm⟩⟩
-
+/-- The cube models are contractible. -/
 instance (n : ℕ) : ContractibleSpace (cubeModel.{u} n) :=
   (Homeomorph.ulift (X := Fin n → unitInterval)).contractibleSpace
 
@@ -212,5 +215,94 @@ theorem isAcyclicOn_normalizedCubicalChainComplex_cubicalModelPresentation :
     AcyclicModels.IsAcyclicOn (normalizedCubicalChainComplex k) (cubicalModelPresentation k).model
       (cubicalAugment k) :=
   isAcyclicOn_normalizedCubicalChainComplex cubeModel
+
+/-! ### Properties of the cubical augmentation -/
+
+/-- The augmentation of the normalized cubical chains is natural. -/
+theorem cubicalAugment_map {X Y : TopCat.{u}} (f : X ⟶ Y)
+    (x : ((normalizedCubicalChainComplex k).obj X).X 0) :
+    cubicalAugment k Y (((normalizedCubicalChainComplex k).map f).f 0 x) = cubicalAugment k X x :=
+  LinearMap.congr_fun (NormalizedCubicalChain.augment_map k f.hom) x
+
+/-- The augmentation of the normalized cubical chains vanishes on boundaries. -/
+theorem cubicalAugment_d (X : TopCat.{u}) (x : ((normalizedCubicalChainComplex k).obj X).X 1) :
+    cubicalAugment k X (((normalizedCubicalChainComplex k).obj X).d 1 0 x) = 0 :=
+  (congrArg (cubicalAugment k X) (normalizedCubicalChainComplex_obj_d_apply X 0 x)).trans
+    (LinearMap.congr_fun (NormalizedCubicalChain.augment_boundary k) x)
+
+/-! ### The degree-zero data of the comparison maps -/
+
+variable (k)
+
+/-- The point of the `0`-cube. -/
+def cubeModelPoint : cubeModel.{u} 0 := ULift.up fun i ↦ i.elim0
+
+/-- The `0`-simplex at the point of the `0`-cube: the value on the model of the comparison map
+from cubical to simplicial chains in degree zero. -/
+@[expose] def cubicalToSingularGen₀ :
+    ((singularChains k).obj ((cubicalModelPresentation.{u} k).model 0)).X 0 :=
+  simplexChain (TopCat.toSSetObj₀Equiv.symm cubeModelPoint) 1
+
+/-- The `0`-cube at the vertex of the `0`-simplex: the value on the model of the comparison map
+from simplicial to cubical chains in degree zero. -/
+@[expose] def singularToCubicalGen₀ :
+    ((normalizedCubicalChainComplex k).obj ((singularModelPresentation.{u} k).model 0)).X 0 :=
+  NormalizedCubicalChain.ofCube (simplexModel 0) k
+    (SingularCube.point (SimplexCategory.toTopInitialVertex ⦋0⦌))
+
+/-- The comparison map to simplicial chains in degree zero preserves augmentations. -/
+theorem singularAugment_extend_cubicalToSingularGen₀ (X : TopCat.{u})
+    (x : ((normalizedCubicalChainComplex k).obj X).X 0) :
+    singularAugment k X ((cubicalModelPresentation k).extend (cubicalToSingularGen₀ k) X x) =
+      cubicalAugment k X x :=
+  (cubicalModelPresentation k).augment_extend (fun f x ↦ cubicalAugment_map f x)
+    (fun f x ↦ singularAugment_map f x) _
+    ((singularAugment_simplexChain _ _ 1).trans (NormalizedCubicalChain.augment_ofCube k _).symm)
+    X x
+
+/-- The comparison map to cubical chains in degree zero preserves augmentations. -/
+theorem cubicalAugment_extend_singularToCubicalGen₀ (X : TopCat.{u})
+    (x : ((singularChains k).obj X).X 0) :
+    cubicalAugment k X ((singularModelPresentation k).extend (singularToCubicalGen₀ k) X x) =
+      singularAugment k X x :=
+  (singularModelPresentation k).augment_extend (fun f x ↦ singularAugment_map f x)
+    (fun f x ↦ cubicalAugment_map f x) _
+    ((NormalizedCubicalChain.augment_ofCube k _).trans (singularAugment_simplexChain _ _ 1).symm)
+    X x
+
+
+/-! ### The maps determined on the models, on generators -/
+
+variable {k}
+
+/-- On the chain of a simplex, the map determined by an element `t` on the simplicial model is
+the image of `t` under that simplex. -/
+theorem singularModelPresentation_extend_simplexChain
+    {G : TopCat.{u} ⥤ ChainComplex (ModuleCat.{u} k) ℕ}
+    {m n : ℕ} (t : (G.obj ((singularModelPresentation k).model n)).X m) {X : TopCat.{u}}
+    (σ : (TopCat.toSSet.obj X) _⦋n⦌) :
+    (singularModelPresentation k).extend t X (simplexChain σ 1) = (G.map σ.down).f m t := by
+  rw [AcyclicModels.ModelPresentation.extend_apply]
+  change (singularCoord k X n (simplexChain σ 1)).sum _ = _
+  rw [singularCoord_simplexChain]
+  exact (sum_single_index (by simp)).trans (one_smul _ _)
+
+/-- On the class of a point cube, the map determined by an element `t` on the `0`-cube is the
+image of `t` under the corresponding map from the `0`-cube. -/
+theorem cubicalModelPresentation_extend_ofCube_zero
+    {G : TopCat.{u} ⥤ ChainComplex (ModuleCat.{u} k) ℕ} {m : ℕ}
+    (t : (G.obj ((cubicalModelPresentation k).model 0)).X m) {X : TopCat.{u}}
+    (c : SingularCube X 0) :
+    (cubicalModelPresentation k).extend t X (NormalizedCubicalChain.ofCube X k c) =
+      (G.map (cubeToHom c)).f m t := by
+  refine (AcyclicModels.ModelPresentation.extend_apply _ t X _).trans ?_
+  change (cubicalCoord k X 0 (NormalizedCubicalChain.ofCube X k c)).sum _ = _
+  have : cubicalCoord k X 0 (NormalizedCubicalChain.ofCube X k c) = single (cubeToHom c) 1 := by
+    -- The only set of coordinates of the `0`-cube is `∅`, so normalization fixes the point cube.
+    have h0 : (default : Finset (Fin 0)) = ∅ := Subsingleton.elim _ _
+    simp [cubicalCoord, NormalizedCubicalChain.ofCube_def, Finset.univ_unique, mapDomain_single,
+      h0]
+  rw [this]
+  exact (sum_single_index (by simp)).trans (one_smul _ _)
 
 end TauCeti

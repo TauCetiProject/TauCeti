@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.AlgebraicTopology.Singular.Contractible
-public import TauCeti.AlgebraicTopology.Singular.ModuleChains
+public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic
 
 /-!
 # Acyclicity of the singular chains of a contractible space, on elements
