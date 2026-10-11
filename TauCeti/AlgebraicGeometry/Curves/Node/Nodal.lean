@@ -20,6 +20,13 @@ singular subscheme is locally of finite type over the base.
 The standard chart `xy = a` satisfies the criterion for every commutative ring and every
 smoothing parameter. In particular this includes the smooth charts where `a` is a unit.
 
+Smooth relative curves satisfy the same criterion: their singular subscheme is empty.
+
+## Main result
+
+* `AtWorstNodalOfRelativeDimensionOne.of_smooth`: smooth morphisms of relative dimension one
+  over an affine base are at worst nodal.
+
 ## References
 
 * [Stacks Project, Lemma 53.20.1, Tag 0C58](https://stacks.math.columbia.edu/tag/0C58).
@@ -116,6 +123,30 @@ theorem AtWorstNodalOfRelativeDimensionOne.of_isPullback
   have hs' := hs.flip.paste_vert H
   exact MorphismProperty.of_isPullback (P := @FormallyUnramified) hs'
     h.singular_formallyUnramified
+
+/-- A smooth morphism of relative dimension one over an affine base is at worst nodal. Its
+relative singular subscheme is empty, so the singular-locus condition in the nodal criterion
+holds automatically. -/
+private theorem smooth_singularLocus_formallyUnramified
+    [X.Over (Spec (.of R))]
+    [SmoothOfRelativeDimension 1 (X ↘ Spec (.of R))]
+    [SyntomicOfRelativeDimension 1 (X ↘ Spec (.of R))] :
+    FormallyUnramified
+      ((@Scheme.singularLocus R _ X inferInstance inferInstance inferInstance).subschemeι ≫
+        (X ↘ Spec (.of R))) := by
+  have hsing : X.singularLocus R = ⊤ := Scheme.singularLocus_eq_top R X
+  rw [hsing]
+  infer_instance
+
+/-- A smooth morphism of relative dimension one over an affine base is at worst nodal. Its
+relative singular subscheme is empty, so the singular-locus condition in the nodal criterion
+holds automatically. -/
+theorem AtWorstNodalOfRelativeDimensionOne.of_smooth
+    [X.Over (Spec (.of R))]
+    [SmoothOfRelativeDimension 1 (X ↘ Spec (.of R))] :
+    AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of R)) := by
+  refine ⟨inferInstance, ?_⟩
+  exact smooth_singularLocus_formallyUnramified (R := R) (X := X)
 
 /-- The local model `xy = a` is a nodal relative curve over `Spec R`. -/
 theorem _root_.TauCeti.NodeAlgebra.atWorstNodalOfRelativeDimensionOne (a : R) :
