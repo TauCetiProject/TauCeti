@@ -322,7 +322,7 @@ noncomputable def baseChangeFunctor (X : EllObj B) : Over X.base ⥤ EllObj B wh
   map_comp k l := hom_ext (by simp)
 
 /-- **An arrow of `Ell/B` is an isomorphism if and only if its morphism of bases is.** In
-particular, every arrow of `Ell/B` lying over the identity of its base is an automorphism, so the
+particular, every arrow of `Ell/B` lying over the identity of its base is an isomorphism, so the
 fibres of `Ell/B` are groupoids. -/
 theorem isIso_iff_isIso_base (f : X ⟶ Y) : IsIso f ↔ IsIso f.base := by
   constructor
