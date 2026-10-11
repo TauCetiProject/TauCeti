@@ -60,10 +60,24 @@ theorem signlessPreprojectiveIdeal_le_arrowIdeal_sq :
   refine sum_mem fun e _ => ?_
   exact Ideal.pow_le_pow_right (by simp) (ofPath_mem_arrowIdeal_pow _)
 
+/-- The signless relation ideal lies in the arrow ideal, so vertex coefficients descend
+to the signless preprojective algebra. -/
+theorem signlessPreprojectiveIdeal_le_arrowIdeal :
+    (signlessPreprojectiveIdeal k R).asIdeal ≤ arrowIdeal k R :=
+  (signlessPreprojectiveIdeal_le_arrowIdeal_sq k).trans (Ideal.pow_le_self two_ne_zero)
+
 /-- The augmentation of the signless preprojective algebra onto its vertex coefficients. -/
 noncomputable def signlessPreprojectiveAugmentation : Π →ₐ[k] (R → k) :=
-  quotientTrivialCoeff ((signlessPreprojectiveIdeal_le_arrowIdeal_sq k).trans
-    (Ideal.pow_le_self two_ne_zero))
+  quotientTrivialCoeff (signlessPreprojectiveIdeal_le_arrowIdeal k)
+
+/-- The augmentation kernel is the image of the arrow ideal in the signless algebra. -/
+theorem ker_signlessPreprojectiveAugmentation :
+    RingHom.ker (signlessPreprojectiveAugmentation (R := R) k) =
+      (arrowIdeal k R).map π := by
+  rw [signlessPreprojectiveAugmentation, ker_quotientTrivialCoeff]
+  congr 1
+  ext f
+  exact (signlessPreprojectiveMk_apply k R f).symm
 
 /-- On quotient representatives, the augmentation reads the trivial-path coefficients. -/
 @[simp]
@@ -80,8 +94,7 @@ theorem signlessPreprojectiveAugmentation_ofArrow {i j : R} (b : i ⟶ j) :
 /-- Every family of vertex coefficients occurs in the signless preprojective algebra. -/
 theorem signlessPreprojectiveAugmentation_surjective :
     Function.Surjective (signlessPreprojectiveAugmentation (R := R) k) :=
-  quotientTrivialCoeff_surjective ((signlessPreprojectiveIdeal_le_arrowIdeal_sq k).trans
-    (Ideal.pow_le_self two_ne_zero))
+  quotientTrivialCoeff_surjective (signlessPreprojectiveIdeal_le_arrowIdeal k)
 
 /-- On the right vertex projective `e_v Π`, only the coefficient at `v` can be nonzero. -/
 theorem signlessPreprojectiveAugmentation_eq_single [DecidableEq R] (v : R) {x : Π}
@@ -90,8 +103,7 @@ theorem signlessPreprojectiveAugmentation_eq_single [DecidableEq R] (v : R) {x :
       Pi.single v (signlessPreprojectiveAugmentation k x v) := by
   simpa only [signlessPreprojectiveAugmentation] using
     quotientTrivialCoeff_eq_single_of_vertexIdempotent_mul
-      ((signlessPreprojectiveIdeal_le_arrowIdeal_sq k).trans
-        (Ideal.pow_le_self two_ne_zero)) v
+      (signlessPreprojectiveIdeal_le_arrowIdeal k) v
       (by simpa only [signlessPreprojectiveMk_apply] using hx)
 
 /-- Exactness at the augmentation endpoint of the signless vertex Koszul complex:
@@ -106,8 +118,7 @@ theorem signlessPreprojectiveAugmentation_apply_eq_zero_iff_exists_eq_sum
           x = ∑ i, ∑ b : i ⟶ v, π (ofArrow b) * z i b := by
   simpa only [signlessPreprojectiveAugmentation, signlessPreprojectiveMk_apply] using
     quotientTrivialCoeff_apply_eq_zero_iff_exists_eq_sum
-      ((signlessPreprojectiveIdeal_le_arrowIdeal_sq k).trans
-        (Ideal.pow_le_self two_ne_zero)) v
+      (signlessPreprojectiveIdeal_le_arrowIdeal k) v
       (by simpa only [signlessPreprojectiveMk_apply] using hx)
 
 /-- Every scalar is the vertex coefficient of an element of the right vertex projective. -/
@@ -116,7 +127,6 @@ theorem exists_signlessPreprojectiveAugmentation_apply_eq (v : R) (c : k) :
       signlessPreprojectiveAugmentation k x v = c := by
   simpa only [signlessPreprojectiveAugmentation, signlessPreprojectiveMk_apply] using
     exists_quotientTrivialCoeff_apply_eq
-      ((signlessPreprojectiveIdeal_le_arrowIdeal_sq k).trans
-        (Ideal.pow_le_self two_ne_zero)) v c
+      (signlessPreprojectiveIdeal_le_arrowIdeal k) v c
 
 end TauCeti
