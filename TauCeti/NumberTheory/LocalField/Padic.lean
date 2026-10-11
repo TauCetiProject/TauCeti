@@ -57,17 +57,14 @@ variable (p : ℕ) [Fact p.Prime]
 
 namespace Padic
 
-/-- The metric uniformity on `ℚ_[p]` agrees with the uniformity induced by its additive
-topological-group structure. This makes completeness available when the additive-group
-uniformity is used explicitly. -/
+/-- The metric uniformity on `ℚ_[p]` agrees with the additive-group uniformity determined by its
+valuation topology. This identifies the uniformity used by the normed-field structure with the
+one used by additive topological-group completeness. -/
 theorem uniformSpace_eq_rightUniformSpace :
     (inferInstance : UniformSpace ℚ_[p]) =
-      IsTopologicalAddGroup.rightUniformSpace ℚ_[p] := by
-  refine IsUniformAddGroup.ext ?_ ?_ ?_
-  · infer_instance
-  · exact isUniformAddGroup_of_addCommGroup
-  -- Both uniformities induce the already fixed metric topology on `ℚ_[p]`.
-  · rfl
+      @IsTopologicalAddGroup.rightUniformSpace ℚ_[p] _
+        (Padic.mulValuation (p := p)).subgroups_basis.topology _ :=
+  (Padic.mulValuation (p := p)).toUniformSpace_eq
 
 /-- The zero-preserving normalized valuation on `ℚ_[p]` is the inverse of
 Mathlib's p-adic valuation. -/
