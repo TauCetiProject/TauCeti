@@ -16,9 +16,9 @@ shift of `TauCeti/CategoryTheory/Shift/Prod.lean`: a triangle is distinguished e
 images under the two projections are distinguished. Each axiom is checked coordinatewise, the
 rotation axiom through `CategoryTheory.Functor.mapTriangleRotateIso`.
 
-The projections, the two zero sections, and products of triangulated functors are triangulated
-functors. These are the functors through which triangulated Grothendieck groups of products are
-compared with those of the factors.
+The projections, the two zero sections, and products and pairings of triangulated functors are
+triangulated functors. These are the functors through which triangulated Grothendieck groups of
+products are compared with those of the factors.
 
 ## Main definitions
 
@@ -30,7 +30,8 @@ compared with those of the factors.
   of its projections are.
 * `CategoryTheory.Functor.IsTriangulated` instances for `CategoryTheory.Prod.fst C D`,
   `CategoryTheory.Prod.snd C D`, `CategoryTheory.Prod.sectL C 0`,
-  `CategoryTheory.Prod.sectR 0 D`, and `F.prod G` for triangulated functors `F` and `G`.
+  `CategoryTheory.Prod.sectR 0 D`, `F.prod G`, and `F.prod' G` for triangulated functors
+  `F` and `G`.
 
 ## Implementation notes
 
@@ -166,5 +167,33 @@ instance instIsTriangulatedFunctorProd : (F.prod G).IsTriangulated where
           𝟙 _ ≫ G.map (T.mor₃.2 ≫ 𝟙 _) ≫ (G.commShiftIso (1 : ℤ)).hom.app T.obj₁.2)
 
 end Functor
+
+section Pairing
+
+variable {C D} {B : Type*} [Category* B] [Preadditive B] [HasZeroObject B] [HasShift B ℤ]
+  [∀ n : ℤ, (shiftFunctor B n).Additive] [Pretriangulated B]
+  (F : B ⥤ C) (G : B ⥤ D) [F.CommShift ℤ] [G.CommShift ℤ]
+  [F.IsTriangulated] [G.IsTriangulated]
+
+/-- Pairing two triangle functors with a common source gives a triangle functor into the
+componentwise pretriangulated product. -/
+instance instIsTriangulatedFunctorProd' : (F.prod' G).IsTriangulated where
+  map_distinguished T hT := by
+    constructor
+    · refine isomorphic_distinguished _ (F.map_distinguished T hT) _
+        (Triangle.isoMk _ _ (Iso.refl _) (Iso.refl _) (Iso.refl _)
+          (by simp) (by simp) ?_)
+      -- The target product shift has componentwise maps; its projection comparison is identity.
+      exact (by simp : ((F.map T.mor₃ ≫ (F.commShiftIso (1 : ℤ)).hom.app T.obj₁) ≫
+        𝟙 _) ≫ (𝟙 (F.obj T.obj₁))⟦(1 : ℤ)⟧' =
+          𝟙 _ ≫ F.map T.mor₃ ≫ (F.commShiftIso (1 : ℤ)).hom.app T.obj₁)
+    · refine isomorphic_distinguished _ (G.map_distinguished T hT) _
+        (Triangle.isoMk _ _ (Iso.refl _) (Iso.refl _) (Iso.refl _)
+          (by simp) (by simp) ?_)
+      exact (by simp : ((G.map T.mor₃ ≫ (G.commShiftIso (1 : ℤ)).hom.app T.obj₁) ≫
+        𝟙 _) ≫ (𝟙 (G.obj T.obj₁))⟦(1 : ℤ)⟧' =
+          𝟙 _ ≫ G.map T.mor₃ ≫ (G.commShiftIso (1 : ℤ)).hom.app T.obj₁)
+
+end Pairing
 
 end TauCeti

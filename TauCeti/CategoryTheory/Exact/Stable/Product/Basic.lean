@@ -202,4 +202,14 @@ theorem projectiveStableProdFunctor_comp_snd (hE : E.IsFrobenius) (hE' : E'.IsFr
     StableConflationExact.stableFunctor_eq_map, MorphismIdeal.quotientFunctor_comp_map]
   rfl
 
+/-- The product comparison is the pairing of the two descended projection functors. -/
+theorem projectiveStableProdFunctor_eq_prod' (hE : E.IsFrobenius) (hE' : E'.IsFrobenius) :
+    projectiveStableProdFunctor E E' =
+      ((stableConflationExact_fst_prod E E').stableFunctor (hE.prod hE')).prod'
+        ((stableConflationExact_snd_prod E E').stableFunctor (hE.prod hE')) := by
+  rw [← projectiveStableProdFunctor_comp_fst E E' hE hE',
+    ← projectiveStableProdFunctor_comp_snd E E' hE hE']
+  -- The counit of the product/functor-category equivalence is pointwise product eta.
+  exact CategoryTheory.Functor.ext (fun _ => (Prod.eta _).symm) (fun _ => by simp)
+
 end TauCeti.ExactStructure
