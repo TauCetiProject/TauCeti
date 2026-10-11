@@ -20,8 +20,9 @@ import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 import Mathlib.MeasureTheory.Group.LIntegral
 -- Proof-only: `Ψ₂Sq` under a change of variables.
 import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Basic
--- Proof-only: `∫_{|x - c| ≤ R} |x - c|^(-1/2) < ∞`, with the antitone power in `ℝ≥0∞`.
+-- Proof-only: `1 / √d` as the power `d^(-1/2)`, and `∫_{|x| ≤ R} |x - e|^(-1/2) < ∞` for `e ∈ ℂ`.
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.MeasureTheory.Integral.NormRpow
 
 /-!
@@ -174,34 +175,6 @@ private theorem exists_norm_eval_Ψ₂Sq_eq [W.IsElliptic] :
   rw [Ψ₂Sq_eq, ← Complex.norm_real, hx]
   simp [twoTorsionPolynomial, mul_assoc]
 
-/-- `1 / √d = d^(-1/2)` for `d ≥ 0`. -/
-private theorem inv_sqrt_eq_rpow {d : ℝ} (hd : 0 ≤ d) : (√d)⁻¹ = d ^ (-2⁻¹ : ℝ) := by
-  rw [Real.sqrt_eq_rpow, Real.rpow_neg hd, one_div]
-
-/-- The integrand of the real period at `x` is at most `|Ψ₂Sq(x)|^(-1/2)`, as a value in `ℝ≥0∞`
-(where `0^(-1/2) = ∞`). -/
-private theorem ofReal_inv_sqrt_le (d : ℝ) : ENNReal.ofReal (√d)⁻¹ ≤ ‖d‖ₑ ^ (-2⁻¹ : ℝ) := by
-  rcases le_or_gt d 0 with hd | hd
-  · simp [Real.sqrt_eq_zero'.mpr hd]
-  rw [inv_sqrt_eq_rpow hd.le, ← ENNReal.ofReal_rpow_of_pos hd, Real.enorm_of_nonneg hd.le]
-
-/-- Near its pole, the singular factor `|x - e|^(-1/2)` is integrable over any bounded interval. -/
-private theorem setLIntegral_closedBall_enorm_sub_rpow_lt_top (e : ℂ) {R : ℝ} (hR : 0 ≤ R) :
-    ∫⁻ x in Metric.closedBall (0 : ℝ) R, ‖(x : ℂ) - e‖ₑ ^ (-2⁻¹ : ℝ) < ∞ := by
-  calc ∫⁻ x in Metric.closedBall (0 : ℝ) R, ‖(x : ℂ) - e‖ₑ ^ (-2⁻¹ : ℝ)
-      ≤ ∫⁻ x in Metric.closedBall e.re (R + |e.re|), ‖e.re - x‖ₑ ^ (-2⁻¹ : ℝ) := by
-        refine (lintegral_mono fun x ↦ ENNReal.rpow_le_rpow_of_nonpos ?_ (by norm_num)).trans
-          (lintegral_mono_set fun x hx ↦ ?_)
-        · rw [← ofReal_norm, ← ofReal_norm, Real.norm_eq_abs, abs_sub_comm]
-          refine ENNReal.ofReal_le_ofReal ?_
-          simpa using Complex.abs_re_le_norm ((x : ℂ) - e)
-        · rw [Metric.mem_closedBall, Real.dist_eq] at hx ⊢
-          calc |x - e.re| ≤ |x| + |e.re| := abs_sub _ _
-            _ ≤ R + |e.re| := by simpa using add_le_add_right hx |e.re|
-    _ < ∞ := by
-        rw [TauCeti.setLIntegral_closedBall_enorm_sub_rpow (by norm_num) (by positivity)]
-        exact ENNReal.ofReal_lt_top
-
 /-- Away from three distinct points `e₁, e₂, e₃ ∈ ℂ` at most one of the factors `|z - eᵢ|^(-1/2)` is
 large: the product of the three is at most a constant times their sum. -/
 private theorem exists_rpow_neg_half_mul_le {e₁ e₂ e₃ : ℂ} (h₁₂ : e₁ ≠ e₂) (h₁₃ : e₁ ≠ e₃)
@@ -257,7 +230,7 @@ private theorem ofReal_inv_sqrt_le_of_pow_three_le {d y : ℝ} (hy : 0 < y) (h :
   calc (√d)⁻¹ ≤ (√(y ^ 3 / 2))⁻¹ :=
         inv_anti₀ (Real.sqrt_pos.mpr hy3) (Real.sqrt_le_sqrt (by linarith))
     _ = √2 * (y ^ 3) ^ (-2⁻¹ : ℝ) := by
-        rw [Real.sqrt_div' _ zero_le_two, inv_div, div_eq_mul_inv, inv_sqrt_eq_rpow (by positivity)]
+        rw [Real.sqrt_div' _ zero_le_two, inv_div, div_eq_mul_inv, Real.inv_sqrt_eq_rpow]
     _ = √2 * y ^ (-(3 / 2 : ℝ)) := by
         rw [← Real.rpow_natCast_mul hy.le]; norm_num
 
@@ -266,14 +239,16 @@ private theorem ofReal_inv_sqrt_le_of_pow_three_le {d y : ℝ} (hy : 0 < y) (h :
 private theorem setLIntegral_closedBall_lt_top {e₁ e₂ e₃ : ℂ} (h₁₂ : e₁ ≠ e₂) (h₁₃ : e₁ ≠ e₃)
     (h₂₃ : e₂ ≠ e₃)
     (hfac : ∀ x : ℝ, ‖W.Ψ₂Sq.eval x‖ = 4 * (‖(x : ℂ) - e₁‖ * ‖(x : ℂ) - e₂‖ * ‖(x : ℂ) - e₃‖))
-    {R : ℝ} (hR : 0 ≤ R) :
+    (R : ℝ) :
     ∫⁻ x in Metric.closedBall 0 R, ENNReal.ofReal (√(W.Ψ₂Sq.eval x))⁻¹ < ∞ := by
   obtain ⟨K, hK, hle⟩ := exists_rpow_neg_half_mul_le h₁₂ h₁₃ h₂₃
   have hmeas (e : ℂ) : Measurable fun x : ℝ ↦ ‖(x : ℂ) - e‖ₑ ^ (-2⁻¹ : ℝ) := by fun_prop
+  have hfin (e : ℂ) := Complex.setLIntegral_closedBall_enorm_ofReal_sub_rpow_lt_top e
+    (s := -2⁻¹) (by norm_num) 0 R
   calc ∫⁻ x in Metric.closedBall 0 R, ENNReal.ofReal (√(W.Ψ₂Sq.eval x))⁻¹
       ≤ ∫⁻ x : ℝ in Metric.closedBall 0 R, K * (‖(x : ℂ) - e₁‖ₑ ^ (-2⁻¹ : ℝ) +
           ‖(x : ℂ) - e₂‖ₑ ^ (-2⁻¹ : ℝ) + ‖(x : ℂ) - e₃‖ₑ ^ (-2⁻¹ : ℝ)) := by
-        refine lintegral_mono fun x ↦ (ofReal_inv_sqrt_le _).trans ?_
+        refine lintegral_mono fun x ↦ (ENNReal.ofReal_inv_sqrt_le_enorm_rpow _).trans ?_
         refine (ENNReal.rpow_le_rpow_of_nonpos
           (x := ‖(x : ℂ) - e₁‖ₑ * ‖(x : ℂ) - e₂‖ₑ * ‖(x : ℂ) - e₃‖ₑ) ?_ (by norm_num)).trans ?_
         · have h0 : 0 ≤ ‖(x : ℂ) - e₁‖ * ‖(x : ℂ) - e₂‖ * ‖(x : ℂ) - e₃‖ := by positivity
@@ -290,9 +265,7 @@ private theorem setLIntegral_closedBall_lt_top {e₁ e₂ e₃ : ℂ} (h₁₂ :
           ‖(x : ℂ) - e₁‖ₑ ^ (-2⁻¹ : ℝ) + ‖(x : ℂ) - e₂‖ₑ ^ (-2⁻¹ : ℝ)) ((hmeas e₁).add (hmeas e₂)),
           lintegral_add_left (hmeas e₁)]
     _ < ∞ := ENNReal.mul_lt_top hK.lt_top <| ENNReal.add_lt_top.mpr
-        ⟨ENNReal.add_lt_top.mpr ⟨setLIntegral_closedBall_enorm_sub_rpow_lt_top e₁ hR,
-          setLIntegral_closedBall_enorm_sub_rpow_lt_top e₂ hR⟩,
-          setLIntegral_closedBall_enorm_sub_rpow_lt_top e₃ hR⟩
+        ⟨ENNReal.add_lt_top.mpr ⟨hfin e₁, hfin e₂⟩, hfin e₃⟩
 
 /-- Far from the roots of `Ψ₂Sq`, where each `|x - eᵢ|` is at least `(1 + |x|) / 2`, the integrand
 of the real period is at most `√2 (1 + |x|)^(-3/2)`, so its integral is finite. -/
@@ -330,7 +303,7 @@ theorem realPeriodLIntegral_lt_top [W.IsElliptic] : W.realPeriodLIntegral < ∞ 
   obtain ⟨e₁, e₂, e₃, h₁₂, h₁₃, h₂₃, hfac⟩ := W.exists_norm_eval_Ψ₂Sq_eq
   rw [realPeriodLIntegral_eq_lintegral, ← lintegral_add_compl _
     (Metric.isClosed_closedBall (x := (0 : ℝ)) (ε := 2 * (‖e₁‖ + ‖e₂‖ + ‖e₃‖) + 1)).measurableSet]
-  exact ENNReal.add_lt_top.mpr ⟨W.setLIntegral_closedBall_lt_top h₁₂ h₁₃ h₂₃ hfac (by positivity),
+  exact ENNReal.add_lt_top.mpr ⟨W.setLIntegral_closedBall_lt_top h₁₂ h₁₃ h₂₃ hfac _,
     W.setLIntegral_compl_closedBall_lt_top hfac⟩
 
 /-- On an elliptic curve, the real period is exactly twice the integral
