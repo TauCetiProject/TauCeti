@@ -15,22 +15,25 @@ public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 Let `F` and `G` be functors from a category `C` to chain complexes of modules over a ring `k`.
 Suppose that `F` is **free on models**: in each degree `n` there are a model `Mₙ : C` and a
 generator `uₙ ∈ Fₙ(Mₙ)`, and every element of `Fₙ(X)` is a combination of the images of `uₙ`
-under the maps `σ : Mₙ ⟶ X`, with coefficients chosen naturally in `X` (`ModelBasis`).  Suppose
-that `G` is **acyclic on the models**: its homology vanishes in positive degrees on every model,
-and in degree zero a chain of augmentation zero is a boundary (`IsAcyclicOn`).  Then:
+under the maps `σ : Mₙ ⟶ X`, with coefficients chosen naturally in `X`
+(`ModelPresentation`; the coefficients need not be unique, so this is a presentation rather than
+a basis).  Suppose that `G` is **acyclic on the models**: its homology vanishes in positive
+degrees on every model, and in degree zero a chain of augmentation zero is a boundary
+(`IsAcyclicOn`).  Then:
 
 * a natural chain map `F ⟶ G` exists as soon as it exists in degree zero compatibly with the
   augmentations, provided the augmentation of `F` vanishes on boundaries
-  (`ModelBasis.chainMap`);
+  (`ModelPresentation.chainMap`);
 * two natural chain maps `F ⟶ G` which agree after augmentation in degree zero are chain
-  homotopic (`ModelBasis.homotopy`).
+  homotopic (`ModelPresentation.homotopy`).
 
 Both are built degree by degree.  A natural map out of `Fₙ` is determined by its value on the
-generator `uₙ`, and every element `t ∈ Gₘ(Mₙ)` determines one, `ModelBasis.extend t`.  Its value
-on the generator need not be `t` itself, since the coefficients of `uₙ` need not be those of a
-single basis element; what matters is that the boundary of the extended map is controlled by the
-boundary of `t` (`ModelBasis.d_extend`).  So at each step it suffices to choose an element of
-`G(Mₙ)` whose boundary is a prescribed chain; that chain is a cycle by the previous step, hence a
+generator `uₙ`, and every element `t ∈ Gₘ(Mₙ)` determines one,
+`ModelPresentation.extend t`.  Its value on the generator need not be `t` itself, since the
+coefficients of `uₙ` need not be those of a single basis element; what matters is that the
+boundary of the extended map is controlled by the boundary of `t`
+(`ModelPresentation.d_extend`).  So at each step it suffices to choose an element of `G(Mₙ)`
+whose boundary is a prescribed chain; that chain is a cycle by the previous step, hence a
 boundary by acyclicity.  The chosen elements are internal to the construction.
 
 This is the form of the theorem of Eilenberg and Mac Lane used for the comparison of cubical and
@@ -39,11 +42,14 @@ chains are only a natural retract of the free modules on the cubes.
 
 ## Main definitions
 
-* `TauCeti.AcyclicModels.ModelBasis`: a functor free on models.
-* `TauCeti.AcyclicModels.ModelBasis.extend`: the natural map determined by an element on a model.
+* `TauCeti.AcyclicModels.ModelPresentation`: a functor free on models.
+* `TauCeti.AcyclicModels.ModelPresentation.extend`: the natural map determined by an element on a
+  model.
 * `TauCeti.AcyclicModels.IsAcyclicOn`: acyclicity of a functor on the models.
-* `TauCeti.AcyclicModels.ModelBasis.chainMap`: the natural chain map extending a degree-zero map.
-* `TauCeti.AcyclicModels.ModelBasis.homotopy`: the chain homotopy between two natural chain maps.
+* `TauCeti.AcyclicModels.ModelPresentation.chainMap`: the natural chain map extending a
+  degree-zero map.
+* `TauCeti.AcyclicModels.ModelPresentation.homotopy`: the chain homotopy between two natural
+  chain maps.
 
 ## References
 
@@ -68,7 +74,7 @@ variable {C : Type w} [Category.{v} C] {k : Type u} [Ring k]
 /-- A functor to chain complexes is **free on models** when, in each degree `n`, every element
 of `Fₙ(X)` is a combination `Σ aσ • F(σ)(uₙ)` of the images of a generator `uₙ ∈ Fₙ(Mₙ)` on a
 model `Mₙ`, with coefficients `σ ↦ aσ` depending linearly and naturally on the element. -/
-structure ModelBasis (F : C ⥤ ChainComplex (ModuleCat.{u} k) ℕ) where
+structure ModelPresentation (F : C ⥤ ChainComplex (ModuleCat.{u} k) ℕ) where
   /-- The model in degree `n`. -/
   model : ℕ → C
   /-- The generator in degree `n`, a chain of the model. -/
@@ -157,9 +163,9 @@ theorem _root_.HomologicalComplex.d_comp_d_apply {ι : Type*} {c : ComplexShape 
   rw [← ModuleCat.comp_apply, HomologicalComplex.d_comp_d]
   rfl
 
-namespace ModelBasis
+namespace ModelPresentation
 
-variable (B : ModelBasis F)
+variable (B : ModelPresentation F)
 
 /-- The natural map `Fₙ(X) → Gₘ(X)` determined by an element `t ∈ Gₘ(Mₙ)`:
 `Σ aσ • F(σ)(uₙ) ↦ Σ aσ • G(σ)(t)`. -/
@@ -223,7 +229,7 @@ variable {εF : ∀ X : C, (F.obj X).X 0 →ₗ[k] k} {εG : ∀ X : C, (G.obj X
 
 open Classical in
 /-- The elements of the models chosen degree by degree to define the components of the natural
-chain map extending `B.extend t₀` through `ModelBasis.extend`. -/
+chain map extending `B.extend t₀` through `ModelPresentation.extend`. -/
 private def chainMapGen (t₀ : (G.obj (B.model 0)).X 0) : (n : ℕ) → (G.obj (B.model n)).X n
   | 0 => t₀
   | n + 1 =>
@@ -285,7 +291,7 @@ variable {εG : ∀ X : C, (G.obj X).X 0 →ₗ[k] k} (hG : IsAcyclicOn G B.mode
 
 open Classical in
 /-- The elements of the models chosen degree by degree to define the components of the chain
-homotopy between two natural chain maps through `ModelBasis.extend`. -/
+homotopy between two natural chain maps through `ModelPresentation.extend`. -/
 private def homotopyGen : (n : ℕ) → (G.obj (B.model n)).X (n + 1)
   | 0 =>
     if h : ∃ b, (G.obj (B.model 0)).d 1 0 b =
@@ -363,7 +369,7 @@ private theorem homotopyHom_succ (X : C) (i : ℕ) :
 
 /-- **Uniqueness up to homotopy of natural chain maps**: two natural chain maps `F ⟶ G` which
 agree after augmentation in degree zero are chain homotopic, if `G` is acyclic on the models of
-`F`.  The homotopy is natural (`ModelBasis.homotopy_hom_naturality`). -/
+`F`.  The homotopy is natural (`ModelPresentation.homotopy_hom_naturality`). -/
 def homotopy (X : C) : Homotopy (f.app X) (g.app X) where
   hom := B.homotopyHom f g X
   zero i j hij := by
@@ -409,7 +415,7 @@ theorem homotopy_hom_naturality {X Y : C} (φ : X ⟶ Y) (i j : ℕ) :
 
 end Homotopy
 
-end ModelBasis
+end ModelPresentation
 
 end AcyclicModels
 
