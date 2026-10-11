@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Hom
-public import Mathlib.CategoryTheory.Limits.IsLimit
 
 /-!
 # Descent of morphisms along pre-adic gluing charts
