@@ -83,7 +83,7 @@ theorem powerXAugmentation_surjective (n i : ℕ) :
   Submodule.mkQ_surjective _
 
 /-- The augmentation is a cokernel of multiplication by `x^i`. -/
-def powerXAugmentation_isCokernel (n i : ℕ) :
+def powerXAugmentationIsCokernel (n i : ℕ) :
     IsColimit (CokernelCofork.ofπ (powerXAugmentation R n i)
       (rootPowHom_comp_powerXAugmentation R n i)) :=
   ModuleCat.isColimitCokernelCofork (rootPowHom R n i) (powerXAugmentation R n i)
@@ -91,7 +91,7 @@ def powerXAugmentation_isCokernel (n i : ℕ) :
     (powerXAugmentation_surjective R n i)
 
 /-- The categorical cokernel of multiplication by `x^i` is the cyclic quotient by `(x^i)`. -/
-def rootPowHom_cokernelIso (n i : ℕ) :
+def rootPowHomCokernelIso (n i : ℕ) :
     cokernel (rootPowHom R n i) ≅
       ModuleCat.of (AdjoinRoot (X ^ n : R[X]))
         (AdjoinRoot (X ^ n : R[X]) ⧸ Ideal.span {AdjoinRoot.root (X ^ n : R[X]) ^ i}) :=
@@ -101,10 +101,10 @@ def rootPowHom_cokernelIso (n i : ℕ) :
 /-- The canonical cokernel projection, followed by the identification with the cyclic module,
 is the augmentation. -/
 @[simp] theorem cokernel_π_comp_rootPowHom_cokernelIso_hom (n i : ℕ) :
-    cokernel.π (rootPowHom R n i) ≫ (rootPowHom_cokernelIso R n i).hom =
+    cokernel.π (rootPowHom R n i) ≫ (rootPowHomCokernelIso R n i).hom =
       powerXAugmentation R n i := by
   -- Expose the two canonical quotient isomorphisms to rewrite the cokernel projection.
-  dsimp [rootPowHom_cokernelIso]
+  dsimp [rootPowHomCokernelIso]
   rw [← Category.assoc, ModuleCat.cokernel_π_cokernelIsoRangeQuotient_hom]
   apply ModuleCat.hom_ext
   apply LinearMap.ext
