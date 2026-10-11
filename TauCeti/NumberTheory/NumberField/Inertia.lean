@@ -410,7 +410,7 @@ theorem exists_mem_inertia_apply_eq_neg {K : Type*} [Field K] [NumberField K] [I
     exact (NumberField.notMem_ramifiedPrimes_iff_forall_inertia_le (K := K)
       (F := IntermediateField.adjoin ℚ {x}) _ hpp).mpr hcon hp
   obtain ⟨σ, hσI, hσx⟩ := IsConcreteLE.not_le_iff_exists.mp hPx
-  rw [IntermediateField.fixingSubgroup_adjoin_simple, MulAction.mem_stabilizer_iff,
+  rw [TauCeti.IntermediateField.fixingSubgroup_coe_adjoin_simple, MulAction.mem_stabilizer_iff,
     AlgEquiv.smul_def] at hσx
   have hσneg : σ x = -x :=
     (AlgEquiv.apply_eq_or_eq_neg_of_sq_eq σ hx).resolve_left hσx

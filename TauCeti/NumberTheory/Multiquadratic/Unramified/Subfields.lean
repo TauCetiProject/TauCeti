@@ -162,7 +162,7 @@ theorem notMem_ramifiedPrimes_adjoin_mul {x y : M} {a b : ℚ}
       NumberField.ramifiedPrimes_rat] at hpx
     exact hpx
   intro σ hσ
-  rw [IntermediateField.fixingSubgroup_adjoin_simple, MulAction.mem_stabilizer_iff,
+  rw [TauCeti.IntermediateField.fixingSubgroup_coe_adjoin_simple, MulAction.mem_stabilizer_iff,
     AlgEquiv.smul_def]
   by_cases hσF : σ ∈ fixingSubgroup (M ≃ₐ[ℚ] M) ((adjoin ℚ {y} : IntermediateField ℚ M) : Set M)
   · rw [Subgroup.disjoint_def.mp hdisj hσ hσF]
@@ -180,7 +180,7 @@ theorem notMem_ramifiedPrimes_adjoin_mul {x y : M} {a b : ℚ}
   have hσy : σ y = -y :=
     (AlgEquiv.apply_eq_or_eq_neg_of_sq_eq σ hy).resolve_left fun hfix =>
     hσF (by
-      rw [IntermediateField.fixingSubgroup_adjoin_simple, MulAction.mem_stabilizer_iff,
+      rw [TauCeti.IntermediateField.fixingSubgroup_coe_adjoin_simple, MulAction.mem_stabilizer_iff,
         AlgEquiv.smul_def]
       exact hfix)
   rw [map_mul, map_mul, AlgEquiv.commutes, hσx, hσy, neg_mul_neg]

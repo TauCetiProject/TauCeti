@@ -293,7 +293,7 @@ theorem exists_sq_mem_range_apply_eq_self_iff_of_index_eq_two
   refine ⟨x, a, fun hx => hxbot (hx ▸ zero_mem _), hxa, fun σ => ?_⟩
   rw [← AlgEquiv.smul_def, ← MulAction.mem_stabilizer_iff,
     ← IntermediateField.fixingSubgroup_adjoin_simple (K := K),
-    ← IntermediateField.fixingSubgroup, hxadj,
+    hxadj,
     IntermediateField.fixingSubgroup_fixedField]
 
 

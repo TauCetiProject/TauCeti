@@ -51,7 +51,7 @@ private noncomputable def orbitStabilizerOrderIsoDualIic (x : L) :
       (Set.Iic (IsGaloisGroup.intermediateFieldEquivSubgroup G K L K⟮x⟯))ᵒᵈ :=
   let hstab : stabilizer G (⟨x, mem_orbit_self x⟩ : orbit G x) =
       fixingSubgroup G (K⟮x⟯ : Set L) := by
-    rw [IntermediateField.fixingSubgroup_adjoin_simple]
+    rw [TauCeti.IntermediateField.fixingSubgroup_coe_adjoin_simple]
     ext g
     rw [mem_stabilizer_iff, Subtype.ext_iff, orbit.coe_smul, mem_stabilizer_iff]
   { toFun := fun H ↦ OrderDual.toDual ⟨OrderDual.toDual H.1, hstab.symm.trans_le H.2⟩
@@ -166,7 +166,7 @@ theorem isPreprimitive_orbit_iff_isAtom_adjoin_simple (x : L) (hx : K⟮x⟯ ≠
       intro g _
       exact hs (mem_orbit _ _) (mem_orbit_self _)
     have hfix : fixingSubgroup G (K⟮x⟯ : Set L) = ⊤ := by
-      rw [IntermediateField.fixingSubgroup_adjoin_simple, hstab]
+      rw [TauCeti.IntermediateField.fixingSubgroup_coe_adjoin_simple, hstab]
     apply hx
     apply (IsGaloisGroup.intermediateFieldEquivSubgroup G K L).injective
     simp [IsGaloisGroup.intermediateFieldEquivSubgroup_apply, hfix]
