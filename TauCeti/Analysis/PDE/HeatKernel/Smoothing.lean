@@ -88,10 +88,7 @@ theorem eLpNorm_heatSemigroup_top_le [CompleteSpace F] {p : ℝ≥0∞} [Fact (1
         (-(Module.finrank ℝ E : ℝ) / (2 * p.toReal))) * eLpNorm f p volume := by
   rw [eLpNorm_exponent_top (Lp.aestronglyMeasurable _)]
   apply eLpNormEssSup_le_of_ae_enorm_bound
-  have hae := heatSemigroup_ae_eq_convolution hp ht (Lp.memLp f)
-  have he : (Lp.memLp f).toLp f = f := Lp.toLp_coeFn f (Lp.memLp f)
-  rw [he] at hae
-  filter_upwards [hae] with x hx
+  filter_upwards [heatSemigroup_ae_eq_convolution_coeFn hp ht f] with x hx
   rw [hx]
   exact enorm_heatKernel_convolution_le (by positivity) Fact.out (Lp.aestronglyMeasurable f) x
 
@@ -122,7 +119,6 @@ theorem exists_contDiff_ae_eq_heatSemigroup [CompleteSpace F] {p : ℝ≥0∞} [
     simpa only [hsum, Semigroups.ContractionSemigroup.toStronglyContinuousSemigroup_apply]
       using (heatSemigroup hp).toStronglyContinuousSemigroup.map_add_apply s s f
   rw [he]
-  have hae := heatSemigroup_ae_eq_convolution hp hs (Lp.memLp g)
-  rwa [Lp.toLp_coeFn g (Lp.memLp g)] at hae
+  exact heatSemigroup_ae_eq_convolution_coeFn hp hs g
 
 end TauCeti
