@@ -23,6 +23,7 @@ namespace TauCeti
 /-- The arm-coordinate labels on the affine `E₈` quiver, in the numbering of
 `zigzagAffineE8Graph`: the centre is `0`, and the short, medium, and long arms are numbered
 outwards. -/
+-- The exported evaluation lemmas below require this body to be exposed for reduction.
 @[expose]
 def affineE8VertexEquiv : Quiver.AffineE8 ≃ Fin 9 where
   toFun
