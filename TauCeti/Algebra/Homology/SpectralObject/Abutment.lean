@@ -28,7 +28,8 @@ small `q` (`isZero_abutmentFiltration`) and `H^n(q ≤ ⊤)` vanishes for large 
 
 * `CategoryTheory.Abelian.SpectralObject.abutment X n`: the object `H^n(⊥ ≤ ⊤)`.
 * `CategoryTheory.Abelian.SpectralObject.abutmentFiltration X q n`: the `q`th filtration piece.
-* `CategoryTheory.Abelian.SpectralObject.EInftyIsoCokernel X q n`: `E∞` is the graded piece.
+* `CategoryTheory.Abelian.SpectralObject.EInftyIsoCokernel X q n`: `E∞` is the graded piece
+  (characterized by `opcyclesToE_EInftyIsoCokernel_hom`).
 -/
 
 public section
@@ -52,6 +53,20 @@ noncomputable abbrev abutmentFiltration (q n : ℤ) : C :=
 /-- The embedding of the `q`th filtration piece into the abutment. -/
 noncomputable def abutmentFiltrationι (q n : ℤ) : X.abutmentFiltration q n ⟶ X.abutment n :=
   X.fromOpcycles _ _ _ (Subsingleton.elim _ _) n
+
+lemma abutmentFiltrationι_eq (q n : ℤ) :
+    X.abutmentFiltrationι q n = X.fromOpcycles (homOfLE (bot_le : (⊥ : EInt) ≤ q))
+      (homOfLE (le_top : (q : EInt) ≤ ⊤)) (homOfLE bot_le) (Subsingleton.elim _ _) n := by
+  rw [abutmentFiltrationι]
+
+/-- The embedding of the `q`th filtration piece is induced by the map `H^n(⊥ ≤ q) ⟶ H^n(⊥ ≤ ⊤)`. -/
+@[reassoc (attr := simp)]
+lemma pOpcycles_abutmentFiltrationι (q n : ℤ) :
+    X.pOpcycles (homOfLE (bot_le : (⊥ : EInt) ≤ q)) (homOfLE (le_top : (q : EInt) ≤ ⊤)) n ≫
+      X.abutmentFiltrationι q n =
+    (X.H n).map (twoδ₂Toδ₁ (homOfLE (bot_le : (⊥ : EInt) ≤ q))
+      (homOfLE (le_top : (q : EInt) ≤ ⊤)) (homOfLE bot_le) (Subsingleton.elim _ _)) := by
+  rw [abutmentFiltrationι_eq, p_fromOpcycles]
 
 instance (q n : ℤ) : Mono (X.abutmentFiltrationι q n) :=
   (ShortComplex.exact_iff_mono_cokernel_desc _).1
@@ -80,6 +95,19 @@ noncomputable def EInftyIsoCokernel (q n : ℤ) :
     (homOfLE (coe_le_coe_add_one q)) (homOfLE (le_top : ((q + 1 : ℤ) : EInt) ≤ ⊤))
     (homOfLE bot_le) (homOfLE le_top) (Subsingleton.elim _ _) (Subsingleton.elim _ _)
     (n - 1) n (n + 1)).gIsCokernel.coconePointUniqueUpToIso (colimit.isColimit _)
+
+/-- Through `EInftyIsoCokernel`, the canonical map `opZ^n(⊥ ≤ q + 1, q + 1 ≤ ⊤) ⟶ E∞` is the
+projection to the cokernel of `F_q H^n ⟶ F_{q+1} H^n`. -/
+@[reassoc (attr := simp)]
+lemma opcyclesToE_EInftyIsoCokernel_hom (q n : ℤ) :
+    X.opcyclesToE (homOfLE (bot_le : (⊥ : EInt) ≤ q)) (homOfLE (coe_le_coe_add_one q))
+        (homOfLE (le_top : ((q + 1 : ℤ) : EInt) ≤ ⊤)) (homOfLE bot_le) (Subsingleton.elim _ _)
+        (n - 1) n (n + 1) (sub_add_cancel n 1) rfl ≫ (X.EInftyIsoCokernel q n).hom =
+      cokernel.π (X.abutmentFiltrationMap q n) := by
+  rw [EInftyIsoCokernel]
+  exact IsColimit.comp_coconePointUniqueUpToIso_hom
+    (X.shortComplexOpcyclesThreeδ₂Toδ₁_shortExact ..).gIsCokernel (colimit.isColimit _)
+    WalkingParallelPair.one
 
 /-- The `q`th filtration piece vanishes when `H^n(⊥ ≤ q)` does: the filtration is bounded below
 in degree `n` when these vanish for small `q`. -/
