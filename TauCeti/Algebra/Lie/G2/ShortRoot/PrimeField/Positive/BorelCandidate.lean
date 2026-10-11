@@ -146,7 +146,7 @@ def positiveDefiningIdeal : HopfIdeal (ZMod 3) carrierAlgebra :=
 
 /-- A carrier coordinate lies in the positive ideal exactly when it vanishes on the positive
 subgroup. -/
-@[simp]
+@[simp↓]
 theorem mem_positiveDefiningIdeal (x : carrierAlgebra) :
     x ∈ positiveDefiningIdeal ↔ positiveRestriction.hom x = 0 :=
   HopfIdeal.mem_kerOfSurjective _ _
