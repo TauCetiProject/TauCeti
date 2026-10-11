@@ -61,25 +61,6 @@ namespace PDE
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
-/-- The exponent condition for the John–Nirenberg step: if `|p| ≤ A / (C + 1) · λ/Λ`, then
-`|p| C Λ/λ ≤ A`. -/
-private theorem abs_mul_mul_div_le {A C lam Lam p : ℝ} (hA : 0 ≤ A) (hC : 0 ≤ C)
-    (hlam : 0 < lam) (hLam : 0 ≤ Lam) (hp : |p| ≤ A / (C + 1) * (lam / Lam)) :
-    |p| * (C * (Lam / lam)) ≤ A := by
-  have hratio : lam / Lam * (Lam / lam) ≤ 1 := by
-    rw [div_mul_div_comm, mul_comm lam]
-    exact div_self_le_one _
-  have hX0 : 0 ≤ lam / Lam * (Lam / lam) :=
-    mul_nonneg (div_nonneg hlam.le hLam) (div_nonneg hLam hlam.le)
-  calc |p| * (C * (Lam / lam))
-      ≤ A / (C + 1) * (lam / Lam) * (C * (Lam / lam)) := by gcongr
-    _ = A * (C / (C + 1)) * (lam / Lam * (Lam / lam)) := by
-        field_simp
-    _ ≤ A * 1 * 1 :=
-        mul_le_mul (mul_le_mul_of_nonneg_left
-          (div_le_one_of_le₀ (by linarith) (by linarith)) hA) hratio hX0 (by positivity)
-    _ = A := by rw [mul_one, mul_one]
-
 /-- **Moser's crossover estimate.** There are constants `c > 0` and `K`, depending only on the
 dimension `n ≥ 1`, with the following property. Let `a` be measurable and uniformly elliptic on
 `Ω` with constants `0 < λ ≤ Λ`, and let `u ∈ H¹(Ω)` be a weak supersolution of
@@ -153,7 +134,18 @@ theorem exists_setAverage_rpow_mul_setAverage_rpow_neg_le [Nonempty ι] :
   -- For `|p| ≤ c λ/Λ` the John–Nirenberg crossover estimate applies to `log u` with `σ = p`.
   have hσ : |p| * M ≤ A := by
     rw [hMc]
-    exact abs_mul_mul_div_le hA.le hC₀ hlam h.upper_nonneg hp
+    have hLam := h.upper_nonneg
+    have hratio : lam / Lam * (Lam / lam) ≤ 1 := by
+      rw [div_mul_div_comm, mul_comm lam]
+      exact div_self_le_one _
+    calc |p| * (C₀ * (Lam / lam))
+        ≤ A / (C₀ + 1) * (lam / Lam) * (C₀ * (Lam / lam)) := by gcongr
+      _ = A * (C₀ / (C₀ + 1)) * (lam / Lam * (Lam / lam)) := by field_simp
+      _ ≤ A * 1 * 1 :=
+          mul_le_mul (mul_le_mul_of_nonneg_left
+            (div_le_one_of_le₀ (by linarith) (by linarith)) hA.le) hratio (by positivity)
+            (by positivity)
+      _ = A := by rw [mul_one, mul_one]
   have hJ := hJN (hint _ ((ball_subset_ball (by linarith)).trans hball')
     measure_ball_lt_top.ne) hM hσ
   rw [hRr] at hJ

@@ -153,9 +153,8 @@ theorem closedBall_subset_closedBall_iff (hr : 0 ≤ r) :
     · have hpos : 0 < ‖x - y‖ := norm_pos_iff.2 (sub_ne_zero.2 hxy)
       refine ⟨(r / ‖x - y‖) • (x - y), ?_, ?_⟩
       · rw [norm_smul, Real.norm_of_nonneg (by positivity), div_mul_cancel₀ _ hpos.ne']
-      · rw [show x - y + (r / ‖x - y‖) • (x - y) = (1 + r / ‖x - y‖) • (x - y) by
-          rw [add_smul, one_smul],
-          norm_smul, Real.norm_of_nonneg (by positivity)]
+      · nth_rw 1 [← one_smul ℝ (x - y)]
+        rw [← add_smul, norm_smul, Real.norm_of_nonneg (by positivity)]
         field_simp
   have hmem := h (Metric.mem_closedBall.2 (by rw [dist_eq_norm, add_sub_cancel_left, hv]))
   rw [Metric.mem_closedBall, dist_eq_norm, add_sub_right_comm, hxyv] at hmem
