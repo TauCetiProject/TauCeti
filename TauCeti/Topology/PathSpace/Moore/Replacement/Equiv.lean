@@ -28,7 +28,8 @@ Moore-path replacement of the inclusion `A → X`, up to a homeomorphism over `X
 
 ## Main definitions
 
-* `TauCeti.MooreReplacement.retraction`: the inverse `E' → E` over `B`, for a Hurewicz fibration.
+* `TauCeti.MooreReplacement.homotopyInverse`: the homotopy inverse `E' → E` over `B`, for a
+  Hurewicz fibration.
 * `TauCeti.MooreReplacement.fiberHomotopyEquiv`: the fibre homotopy equivalence `E → E'`.
 * `TauCeti.MooreReplacement.homeomorphPathsFrom`: `P_{A→X} X` as the replacement of `A → X`.
 
@@ -95,18 +96,18 @@ theorem liftedHomotopy_zero {p : C(E, B)} (hp : IsHurewiczFibration.{max u v} p)
 
 /-- For a Hurewicz fibration `p`, the inverse `E' → E` over `B` of the inclusion: the end of the
 lift of the path of each pair. -/
-def retraction {p : C(E, B)} (hp : IsHurewiczFibration.{max u v} p) :
+def homotopyInverse {p : C(E, B)} (hp : IsHurewiczFibration.{max u v} p) :
     C(MooreReplacement p, E) :=
   (liftedHomotopy hp).comp ⟨fun x ↦ (1, x), by fun_prop⟩
 
-theorem retraction_apply {p : C(E, B)} (hp : IsHurewiczFibration.{max u v} p)
-    (x : MooreReplacement p) : retraction hp x = liftedHomotopy hp (1, x) :=
+theorem homotopyInverse_apply {p : C(E, B)} (hp : IsHurewiczFibration.{max u v} p)
+    (x : MooreReplacement p) : homotopyInverse hp x = liftedHomotopy hp (1, x) :=
   (rfl)
 
 @[simp]
-theorem apply_retraction {p : C(E, B)} (hp : IsHurewiczFibration.{max u v} p)
-    (x : MooreReplacement p) : p (retraction hp x) = x.path.target := by
-  rw [retraction_apply, apply_liftedHomotopy, pathHomotopy_apply, toNNReal_one, one_mul,
+theorem apply_homotopyInverse {p : C(E, B)} (hp : IsHurewiczFibration.{max u v} p)
+    (x : MooreReplacement p) : p (homotopyInverse hp x) = x.path.target := by
+  rw [homotopyInverse_apply, apply_liftedHomotopy, pathHomotopy_apply, toNNReal_one, one_mul,
     MoorePath.target_def]
 
 theorem source_drop_pathHomotopy {p : C(E, B)} (hp : IsHurewiczFibration.{max u v} p)
@@ -114,10 +115,10 @@ theorem source_drop_pathHomotopy {p : C(E, B)} (hp : IsHurewiczFibration.{max u 
     (y.2.path.drop (toNNReal y.1 * y.2.path.length)).source = p (liftedHomotopy hp y) := by
   rw [MoorePath.source_drop, apply_liftedHomotopy, pathHomotopy_apply]
 
-/-- The vertical homotopy on `E` from the identity to `retraction ∘ incl`:
+/-- The vertical homotopy on `E` from the identity to `homotopyInverse ∘ incl`:
 `(s, e) ↦ G (s, (e, const))`. -/
 def leftHomotopy {p : C(E, B)} (hp : IsHurewiczFibration.{max u v} p) :
-    HomotopyWith (.id E) ((retraction hp).comp (incl p)) fun f ↦ p.comp f = p where
+    HomotopyWith (.id E) ((homotopyInverse hp).comp (incl p)) fun f ↦ p.comp f = p where
   toFun y := liftedHomotopy hp (y.1, incl p y.2)
   continuous_toFun := (liftedHomotopy hp).continuous.comp
     (continuous_fst.prodMk ((incl p).continuous.comp continuous_snd))
@@ -126,10 +127,10 @@ def leftHomotopy {p : C(E, B)} (hp : IsHurewiczFibration.{max u v} p) :
   prop' s := ContinuousMap.ext fun e ↦ by
     simp [apply_liftedHomotopy, pathHomotopy_apply]
 
-/-- The vertical homotopy on `E'` from the identity to `incl ∘ retraction`:
+/-- The vertical homotopy on `E'` from the identity to `incl ∘ homotopyInverse`:
 `(s, (e, γ)) ↦ (G (s, (e, γ)), γ|[s · γ.length, γ.length])`. -/
 def rightHomotopy {p : C(E, B)} (hp : IsHurewiczFibration.{max u v} p) :
-    HomotopyWith (.id (MooreReplacement p)) ((incl p).comp (retraction hp))
+    HomotopyWith (.id (MooreReplacement p)) ((incl p).comp (homotopyInverse hp))
       fun f ↦ (endpoint p).comp f = endpoint p where
   toFun y := mk (liftedHomotopy hp y) (y.2.path.drop (toNNReal y.1 * y.2.path.length))
     (source_drop_pathHomotopy hp y)
@@ -138,19 +139,29 @@ def rightHomotopy {p : C(E, B)} (hp : IsHurewiczFibration.{max u v} p) :
       continuous_fst).mul (MoorePath.continuous_length.comp (continuous_path.comp
         continuous_snd)))) _
   map_zero_left x := ext (by simpa using liftedHomotopy_zero hp x) (by simp)
-  map_one_left x := ext (by simp [retraction_apply]) (by simp)
+  map_one_left x := ext (by simp [homotopyInverse_apply]) (by simp)
   prop' s := ContinuousMap.ext fun x ↦ by simp
 
 /-- **The inclusion of a Hurewicz fibration into its Moore-path replacement is a fibre homotopy
-equivalence** over `B`, with inverse `retraction`. -/
+equivalence** over `B`, with inverse `homotopyInverse`. -/
 def fiberHomotopyEquiv {p : C(E, B)} (hp : IsHurewiczFibration.{max u v} p) :
     FiberHomotopyEquiv p (endpoint p) where
   toFun := incl p
-  invFun := retraction hp
+  invFun := homotopyInverse hp
   comp_toFun := ContinuousMap.ext fun e ↦ by simp
   comp_invFun := ContinuousMap.ext fun x ↦ by simp
   left_inv := ⟨(leftHomotopy hp).symm⟩
   right_inv := ⟨(rightHomotopy hp).symm⟩
+
+@[simp]
+theorem fiberHomotopyEquiv_toFun {p : C(E, B)} (hp : IsHurewiczFibration.{max u v} p) :
+    (fiberHomotopyEquiv hp).toFun = incl p :=
+  (rfl)
+
+@[simp]
+theorem fiberHomotopyEquiv_invFun {p : C(E, B)} (hp : IsHurewiczFibration.{max u v} p) :
+    (fiberHomotopyEquiv hp).invFun = homotopyInverse hp :=
+  (rfl)
 
 /-- For a Hurewicz fibration, the fibre over `b` is homotopy equivalent to the fibre `F'` of the
 Moore-path replacement, by `f ↦ (f, const)`. -/
@@ -159,6 +170,23 @@ def fiberHomotopyEquivFiber {p : C(E, B)} (hp : IsHurewiczFibration.{max u v} p)
   ((fiberHomotopyEquiv hp).fiber b).trans
     ((Homeomorph.refl (MooreReplacement p)).subtype fun x ↦ by
       rw [endpoint_apply, Homeomorph.refl_apply, id_eq]).toHomotopyEquiv
+
+@[simp]
+theorem val_fiberHomotopyEquivFiber_apply {p : C(E, B)} (hp : IsHurewiczFibration.{max u v} p)
+    (b : B) (f : {e // p e = b}) : (fiberHomotopyEquivFiber hp b f).val = incl p f := by
+  rw [Fiber.val_eq_subtypeVal, fiberHomotopyEquivFiber]
+  erw [HomotopyEquiv.trans_apply, Homeomorph.coe_toHomotopyEquiv]
+  exact (FiberHomotopyEquiv.coe_fiber_apply _ b f).trans (by rw [fiberHomotopyEquiv_toFun])
+
+@[simp]
+theorem coe_fiberHomotopyEquivFiber_symm_apply {p : C(E, B)}
+    (hp : IsHurewiczFibration.{max u v} p) (b : B) (x : Fiber p b) :
+    ((fiberHomotopyEquivFiber hp b).symm x : E) = homotopyInverse hp x.val := by
+  rw [Fiber.val_eq_subtypeVal, fiberHomotopyEquivFiber]
+  erw [HomotopyEquiv.symm_trans, HomotopyEquiv.trans_apply, ← Homeomorph.symm_toHomotopyEquiv,
+    Homeomorph.coe_toHomotopyEquiv]
+  exact (FiberHomotopyEquiv.coe_fiber_symm_apply _ b _).trans
+    (by rw [fiberHomotopyEquiv_invFun]; rfl)
 
 /-! ### The endpoint evaluation -/
 

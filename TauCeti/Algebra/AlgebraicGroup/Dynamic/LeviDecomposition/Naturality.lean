@@ -81,6 +81,7 @@ commutative value algebra `A`. -/
 noncomputable def limitToLeviNatTrans : parabolicFunctor l ⟶ leviFunctor l where
   app A := GrpCat.ofHom (limitToLevi A l)
   naturality {A B} φ := by
+    rw [parabolicFunctor_map, leviFunctor_map]
     apply GrpCat.hom_ext
     apply MonoidHom.ext
     intro g
@@ -118,6 +119,7 @@ algebra `A`. -/
 noncomputable def leviToParabolicNatTrans : leviFunctor l ⟶ parabolicFunctor l where
   app A := GrpCat.ofHom (leviToParabolic A l)
   naturality {A B} φ := by
+    rw [leviFunctor_map, parabolicFunctor_map]
     apply GrpCat.hom_ext
     apply MonoidHom.ext
     intro g
@@ -203,6 +205,7 @@ unipotent and Levi subgroup functors is naturally isomorphic to the dynamic para
 noncomputable def leviDecompositionNatIso :
     leviSemidirectFunctor l ≅ parabolicFunctor l :=
   NatIso.ofComponents (fun A ↦ (leviDecompositionMulEquiv A l).toGrpIso) fun {A B} φ ↦ by
+    rw [parabolicFunctor_map]
     apply GrpCat.hom_ext
     apply MonoidHom.ext
     intro g

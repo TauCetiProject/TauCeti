@@ -188,22 +188,10 @@ private theorem add_sigPos_le_sigPos_prod (Q : _root_.QuadraticForm K M)
   obtain ⟨U, hUrank, hUpos⟩ := exists_finrank_eq_sigPos_and_posDef Q
   obtain ⟨W, hWrank, hWpos⟩ := exists_finrank_eq_sigPos_and_posDef Q'
   have hprod : ((Q.prod Q').restrict (U.prod W)).PosDef := by
-    intro p hp
-    let u : U := ⟨p.1.1, p.2.1⟩
-    let w : W := ⟨p.1.2, p.2.2⟩
-    have hp' : u ≠ 0 ∨ w ≠ 0 := by
-      contrapose! hp
-      apply Subtype.ext
-      exact Prod.ext (congrArg Subtype.val hp.1) (congrArg Subtype.val hp.2)
-    rcases hp' with hp' | hp'
-    · have hpos := hUpos u hp'
-      have hnonneg := hWpos.nonneg w
-      simpa only [QuadraticMap.restrict_apply, QuadraticMap.prod_apply] using
-        add_pos_of_pos_of_nonneg hpos hnonneg
-    · have hnonneg := hUpos.nonneg u
-      have hpos := hWpos w hp'
-      simpa only [QuadraticMap.restrict_apply, QuadraticMap.prod_apply] using
-        add_pos_of_nonneg_of_pos hnonneg hpos
+    rintro ⟨⟨u, w⟩, hu, hw⟩ hp
+    simpa only [QuadraticMap.restrict_apply, QuadraticMap.prod_apply] using
+      (hUpos.prod hWpos) (⟨u, hu⟩, ⟨w, hw⟩)
+        (by simpa only [ne_eq, Subtype.ext_iff, Prod.mk_eq_zero, Submodule.coe_zero] using hp)
   calc
     sigPos Q + sigPos Q' = Module.finrank K U + Module.finrank K W := by
       rw [hUrank, hWrank]

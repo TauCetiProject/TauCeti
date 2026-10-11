@@ -56,6 +56,8 @@ from the decomposition group.
   `Aut(L_w/K_v)`.
 * `NumberField.InfinitePlace.card_stabilizer_eq_finrank_completion`: for `L/K` Galois the
   decomposition group has `[L_w : K_v]` elements.
+* `NumberField.InfinitePlace.finrank_completion_eq_ite`: for `L/K` Galois, `[L_w : K_v]` is `1`
+  or `2` according as `v` is unramified in `L` or not.
 * `NumberField.InfinitePlace.decompositionHom_surjective`: for `L/K` Galois every
   `K_v`-automorphism of `L_w` comes from the decomposition group.
 
@@ -255,6 +257,15 @@ theorem card_stabilizer_eq_finrank_completion :
   split_ifs with hw
   · exact (IsUnramified.finrank_eq_one v hw).symm
   · exact (IsRamified.finrank_eq_two v hw).symm
+
+/-- **The local degree at an infinite place.** For `L/K` Galois, `[L_w : K_v]` is `1` when `v` is
+unramified in `L` and `2` otherwise. -/
+theorem finrank_completion_eq_ite [Decidable (v.IsUnramifiedIn L)] :
+    finrank v.Completion w.Completion = if v.IsUnramifiedIn L then 1 else 2 := by
+  have hv : v.IsUnramifiedIn L ↔ w.IsUnramified K := LiesOver.comap_eq w v ▸ isUnramifiedIn_comap
+  split_ifs with h
+  · exact IsUnramified.finrank_eq_one v (hv.mp h)
+  · exact IsRamified.finrank_eq_two v (mt hv.mpr h)
 
 /-- **The decomposition group of `w` exhausts `Aut(L_w/K_v)`.** For `L/K` Galois every
 `K_v`-algebra automorphism of `L_w` is the continuous extension of an automorphism of `L/K`

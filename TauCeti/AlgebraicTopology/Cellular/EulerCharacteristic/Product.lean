@@ -36,11 +36,11 @@ public section
 
 open Topology Topology.RelCWComplex
 
-universe w
+universe u v
 
 namespace TauCeti
 
-variable {X Y : Type w} [TopologicalSpace X] [TopologicalSpace Y]
+variable {X : Type u} {Y : Type v} [TopologicalSpace X] [TopologicalSpace Y]
 
 /-- **Multiplicativity of the Euler characteristic** for finite CW complexes: the alternating cell
 count of the product CW complex `C ×ˢ D` is the product of the alternating cell counts of `C` and
@@ -87,10 +87,10 @@ theorem eulerChar_prod [hX : FiniteCWType X] [hY : FiniteCWType Y] :
 
 /-- **Multiplicativity of the Euler characteristic** for finite products of spaces of finite CW
 type: `χ(∏ᵢ Xᵢ) = ∏ᵢ χ(Xᵢ)`.  The empty product is a point, of Euler characteristic one. -/
-theorem eulerChar_pi {ι : Type w} [Fintype ι] (X : ι → Type w) [∀ i, TopologicalSpace (X i)]
+theorem eulerChar_pi {ι : Type v} [Fintype ι] (X : ι → Type u) [∀ i, TopologicalSpace (X i)]
     [∀ i, FiniteCWType (X i)] : eulerChar (∀ i, X i) = ∏ i, eulerChar (X i) := by
   revert X
-  refine Fintype.induction_empty_option (P := fun ι _ ↦ ∀ (X : ι → Type w)
+  refine Fintype.induction_empty_option (P := fun ι _ ↦ ∀ (X : ι → Type u)
     [∀ i, TopologicalSpace (X i)] [∀ i, FiniteCWType (X i)],
     eulerChar (∀ i, X i) = ∏ i, eulerChar (X i)) ?_ ?_ ?_ ι
   · intro α β _ e ih X _ _

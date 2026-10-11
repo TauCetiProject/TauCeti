@@ -88,6 +88,27 @@ namespace GridPentagonRectangleDecomposition
 
 variable {n : ℕ} {a s : Fin n} {x z : GridState n}
 
+/-- The turn row lies outside the following rectangle when two empty pieces share their
+initial side and have distinct terminal sides. -/
+theorem turn_notMem_cIco_rectangle_of_left_eq_left
+    (E : GridPentagonRectangleDecomposition a s x z)
+    (hcommon : E.pentagon.left = E.rectangle.left)
+    (hother : E.pentagon.right ≠ E.rectangle.right)
+    (hp : E.pentagon.IsEmpty) (hr : E.rectangle.IsEmpty) :
+    s ∉ Grid.cIco E.rectangle.bottom E.rectangle.top := by
+  have hrow := (E.toRectangleDecomposition.cyclicOrder_of_isEmpty_of_left_eq_left
+    (by simpa using hcommon) (by simpa using hother)
+    (E.underlying_first_isEmpty hp) (E.underlying_second_isEmpty hr)).2
+  have hb := E.toRectangleDecomposition.second_bottom_eq_first_top_of_left_eq_left
+    (by simpa using hcommon)
+  simp only [GridRectangleBetween.bottom_def, GridRectangleBetween.top_def,
+    toRectangleDecomposition_first_left, toRectangleDecomposition_first_right,
+    toRectangleDecomposition_second_left, toRectangleDecomposition_second_right,
+    toRectangleDecomposition_middle] at hrow hb
+  rw [GridRectangleBetween.bottom_def, GridRectangleBetween.top_def, hb]
+  exact fun hs => Finset.disjoint_left.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hrow)
+    E.pentagon.turn_mem hs
+
 /-- A recut into a pentagon followed by a rectangle has an empty pentagon. -/
 theorem isEmpty_pentagon_of_isRecut (E : GridPentagonRectangleDecomposition a s x z)
     {D : GridRectangleDecomposition x z}

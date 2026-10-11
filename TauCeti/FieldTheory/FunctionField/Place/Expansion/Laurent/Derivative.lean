@@ -154,6 +154,16 @@ theorem derivativeOfSeparating_sub_zsmul_mem_filtration {m : ℤ} {z : F}
   exact (P.mem_filtration_iff).mp hz
 
 include hP ht in
+/-- Differentiation with respect to a separating uniformizer preserves the valuation ring
+at a rational place, in every characteristic. -/
+theorem derivativeOfSeparating_mem_integers {z : F} (hz : z ∈ P.integers) :
+    derivativeOfSeparating htr z ∈ P.integers := by
+  have hz' : z ∈ P.filtration 0 := by
+    simpa [P.mem_filtration_iff, P.mem_integers_iff] using hz
+  have h := P.derivativeOfSeparating_sub_zsmul_mem_filtration hP ht htr hz'
+  simpa [P.mem_filtration_iff, P.mem_integers_iff] using h
+
+include hP ht in
 /-- Differentiation with respect to a prime element lowers the order at `P` by at most one. -/
 theorem derivativeOfSeparating_mem_filtration {m : ℤ} {z : F} (hz : z ∈ P.filtration m) :
     derivativeOfSeparating htr z ∈ P.filtration (m - 1) := by

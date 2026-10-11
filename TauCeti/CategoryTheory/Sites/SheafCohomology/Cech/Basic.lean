@@ -71,6 +71,8 @@ be added or removed.
 * `TauCeti.CategoryTheory.isIso_cechComplexMap`: a morphism of families that is the identity on
   indices induces an isomorphism of Čech complexes when `P` inverts the induced maps of products.
 * `TauCeti.CategoryTheory.cechAugmentation_naturality`: the augmentation is natural in `P`.
+* `TauCeti.CategoryTheory.quasiIso_cechAugmentation_iff_of_iso`: acyclicity of a family is
+  invariant under isomorphisms of presheaves.
 
 ## References
 
@@ -198,6 +200,25 @@ private def unopAlternatingFaceMapComplexIso :
   HomologicalComplex.Hom.isoOfComponents (fun _ ↦ Iso.refl _) fun i _ h ↦
     h ▸ (Category.id_comp _).trans
       ((unop_d_eq_cechComplexFunctor_obj_d U P i).symm.trans (Category.comp_id _).symm)
+
+/-! ### The differential -/
+
+/-- The differential of the Čech complex is the alternating sum of the restrictions along the
+coface maps: the factor of `((cechComplexFunctor U).obj P).d n (n + 1)` indexed by
+`k : Fin (n + 2) → ι` is the alternating sum over `m` of the factor indexed by `k ∘ m.succAbove`,
+restricted along the projection `U (k 0) × ⋯ × U (k (n + 1)) ⟶ ∏ⱼ U (k (m.succAbove j))`. -/
+@[reassoc]
+theorem cechComplexFunctor_obj_d_comp_π (n : ℕ) (k : Fin (n + 2) → ι) :
+    ((cechComplexFunctor U).obj P).d n (n + 1) ≫ Pi.π _ k =
+      ∑ m : Fin (n + 2), (-1 : ℤ) ^ (m : ℕ) • (Pi.π _ (k ∘ m.succAbove) ≫
+        P.map (Pi.lift fun x ↦ Pi.π (fun j ↦ U (k j)) (m.succAbove x)).op) := by
+  have h : ((cechComplexFunctor U).obj P).d n (n + 1) = AlternatingCofaceMapComplex.objD
+      ((FormalCoproduct.cosimplicialObjectFunctor (FormalCoproduct.mk _ U).cech).obj P) n :=
+    (CochainComplex.of_d _ (AlternatingCofaceMapComplex.objD _) n).trans rfl
+  rw [h, AlternatingCofaceMapComplex.objD]
+  refine (Preadditive.sum_comp _ _ _).trans (Finset.sum_congr rfl fun m _ ↦ ?_)
+  -- the coface map `δ m` unfolds to a `Pi.lift`
+  exact (Preadditive.zsmul_comp _ _ _).trans <| congrArg _ <| Pi.lift_comp_π _ _
 
 /-! ### Maps of presheaves -/
 
@@ -570,5 +591,12 @@ theorem quasiIso_cechAugmentation_congr (φ : FormalCoproduct.mk _ U ⟶ FormalC
   exact quasiIso_iff_comp_right _ _
 
 end Map
+
+/-- **Acyclicity of a family is invariant under isomorphisms of presheaves.** If `P ≅ Q`, then the
+augmented Čech complex of `P` for `U` is exact if and only if the one for `Q` is. -/
+theorem quasiIso_cechAugmentation_iff_of_iso {Q : Cᵒᵖ ⥤ A} (e : P ≅ Q) :
+    QuasiIso (cechAugmentation U hT P) ↔ QuasiIso (cechAugmentation U hT Q) := by
+  rw [← quasiIso_iff_comp_right _ ((cechComplexFunctor U).map e.hom), cechAugmentation_naturality]
+  exact quasiIso_iff_comp_left _ _
 
 end TauCeti.CategoryTheory

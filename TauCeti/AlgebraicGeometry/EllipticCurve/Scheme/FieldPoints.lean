@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.OfWeierstrass
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.IsSepClosed
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Torsion.Structure
 
 /-!
 # Field points of the elliptic curve of a Weierstrass equation
@@ -24,10 +25,18 @@ finitely many of them for `n ≠ 0`, and exactly `n.natAbs ^ 2` of them over a s
 in which `n` is invertible. When `W` has infinitely many points over `K`, as over a separably
 closed field, `[n]` is not the zero endomorphism for `n ≠ 0`, since the `n`-torsion is finite.
 
+The same dictionary identifies the field points of the scheme-theoretic `n`-torsion `E[n]`
+(`EllipticCurveGeom.torsion`) with the `n`-torsion subgroup of `W.toAffine.Point`. Over a separably
+closed field in which `N` is invertible, the group of field points of `E[N]` is therefore
+isomorphic to `(ℤ/Nℤ)²`.
+
 ## Main definitions
 
 * `WeierstrassCurve.toEllipticCurveGeomPointsMulEquiv W`: the isomorphism between the group of
   points of `toEllipticCurveGeom W` with values in `Spec K` and `Multiplicative W.toAffine.Point`.
+* `WeierstrassCurve.toEllipticCurveGeomTorsionPointsMulEquiv W n`: the isomorphism between the
+  group of points of the `n`-torsion of `toEllipticCurveGeom W` with values in `Spec K` and the
+  `n`-torsion subgroup of `W.toAffine.Point`.
 
 ## Main results
 
@@ -44,6 +53,11 @@ closed field, `[n]` is not the zero endomorphism for `n ≠ 0`, since the `n`-to
   invertible, `n.natAbs ^ 2` points are killed by `[n]`.
 * `WeierstrassCurve.toEllipticCurveGeom_mulBy_ne_one`: when `W` has infinitely many points over
   `K`, for instance over a separably closed field, `[n]` is not the zero endomorphism for `n ≠ 0`.
+* `WeierstrassCurve.natCard_toEllipticCurveGeom_torsion`: over a separably closed field in which
+  `n` is invertible, `E[n]` has `n.natAbs ^ 2` points with values in `Spec K`.
+* `WeierstrassCurve.nonempty_toEllipticCurveGeom_torsion_mulEquiv_prod`: over a separably closed
+  field in which `N` is invertible, the group of points of `E[N]` with values in `Spec K` is
+  isomorphic to `(ℤ/Nℤ)²`.
 
 ## References
 
@@ -172,5 +186,57 @@ theorem toEllipticCurveGeom_mulBy_ne_one [Infinite W.toAffine.Point] {n : ℤ} (
   have : Finite W.toAffine.Point :=
     .of_equiv _ (W.toEllipticCurveGeomPointsMulEquiv.toEquiv.trans Multiplicative.toAdd)
   exact not_finite W.toAffine.Point
+
+/-! ### The field points of `E[n]` -/
+
+/-- **The field points of `E[n]`.** For an elliptic Weierstrass curve `W` over a field `K`, the
+points of the `n`-torsion `E[n]` of `toEllipticCurveGeom W` with values in the base `Spec K` form a
+group isomorphic to the `n`-torsion subgroup of `W.toAffine.Point`. A point `y` of `E[n]` is sent
+to the point of `W` corresponding to its image in `toEllipticCurveGeom W`
+(`toAdd_toEllipticCurveGeomTorsionPointsMulEquiv`). -/
+noncomputable def toEllipticCurveGeomTorsionPointsMulEquiv [DecidableEq K] (n : ℤ) :
+    (𝟙_ (Over (Spec (.of K))) ⟶ ((toEllipticCurveGeom W).torsion n).X) ≃*
+      Multiplicative (AddSubgroup.torsionBy W.toAffine.Point n) where
+  toFun y := .ofAdd ⟨(W.toEllipticCurveGeomPointsMulEquiv
+    (y ≫ (toEllipticCurveGeom W).torsionι n)).toAdd, (W.comp_mulBy_eq_one_iff _ n).1 (by simp)⟩
+  invFun P := EllipticCurveGeom.torsionLift
+    (W.toEllipticCurveGeomPointsMulEquiv.symm (.ofAdd P.toAdd.1))
+    ((W.comp_mulBy_eq_one_iff _ n).2 (by simp))
+  left_inv y := EllipticCurveGeom.torsion_hom_ext <|
+    (EllipticCurveGeom.torsionLift_torsionι _ _).trans <| by
+      simp only [toAdd_ofAdd, ofAdd_toAdd, MulEquiv.symm_apply_apply]
+  right_inv P := by simp
+  map_mul' y y' := Multiplicative.toAdd.injective (Subtype.ext (by simp [MonObj.mul_comp]))
+
+/-- The point of `W` corresponding to a point `y` of `E[n]` over `Spec K` is the point
+corresponding to its image in `toEllipticCurveGeom W`. -/
+@[simp]
+theorem toAdd_toEllipticCurveGeomTorsionPointsMulEquiv [DecidableEq K] (n : ℤ)
+    (y : 𝟙_ (Over (Spec (.of K))) ⟶ ((toEllipticCurveGeom W).torsion n).X) :
+    ((W.toEllipticCurveGeomTorsionPointsMulEquiv n y).toAdd : W.toAffine.Point) =
+      (W.toEllipticCurveGeomPointsMulEquiv (y ≫ (toEllipticCurveGeom W).torsionι n)).toAdd :=
+  (rfl)
+
+/-- **The number of field points of `E[n]`.** Over a separably closed field `K` in which the
+integer `n` is invertible, the `n`-torsion `E[n]` of `toEllipticCurveGeom W` has exactly
+`n.natAbs ^ 2` points with values in `Spec K`. -/
+theorem natCard_toEllipticCurveGeom_torsion [IsSepClosed K] {n : ℤ} (hn : (n : K) ≠ 0) :
+    Nat.card (𝟙_ (Over (Spec (.of K))) ⟶ ((toEllipticCurveGeom W).torsion n).X) =
+      n.natAbs ^ 2 := by
+  rw [← W.natCard_comp_mulBy_eq_one hn]
+  exact Nat.card_congr (((toEllipticCurveGeom W).torsionPointsMulEquiv n _).toEquiv.trans
+    (Equiv.subtypeEquivRight fun _ ↦ MonoidHom.mem_ker))
+
+/-- **`E[N](K) ≅ (ℤ/Nℤ)²`.** Over a separably closed field `K` in which the natural number `N` is
+invertible, the group of points of the `N`-torsion `E[N]` of `toEllipticCurveGeom W` with values
+in `Spec K` is isomorphic to `(ℤ/Nℤ)²`. The isomorphism is noncanonical, so the result asserts its
+existence. -/
+theorem nonempty_toEllipticCurveGeom_torsion_mulEquiv_prod [IsSepClosed K] (N : ℕ) [NeZero N]
+    (hN : (N : K) ≠ 0) :
+    Nonempty ((𝟙_ (Over (Spec (.of K))) ⟶ ((toEllipticCurveGeom W).torsion N).X) ≃*
+      Multiplicative (ZMod N × ZMod N)) := by
+  classical
+  obtain ⟨e⟩ := W.torsion_addEquiv_prod N hN
+  exact ⟨(W.toEllipticCurveGeomTorsionPointsMulEquiv N).trans (AddEquiv.toMultiplicative e)⟩
 
 end WeierstrassCurve
