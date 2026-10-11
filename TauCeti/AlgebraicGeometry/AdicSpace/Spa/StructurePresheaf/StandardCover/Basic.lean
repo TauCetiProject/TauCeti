@@ -230,8 +230,7 @@ theorem isSheafFor_ofArrows_inf_spaBasicOpen_of_subset_laurentPiece_of_isSheafFo
   -- the generators of sign `≥` on the Laurent piece
   let TJ : Finset A := T.filter fun a ↦ ∃ h : a ∈ T, (⟨a, h⟩ : T) ∈ J
   have hmemTJ {a : A} : a ∈ TJ ↔ ∃ h : a ∈ T, (⟨a, h⟩ : T) ∈ J := by
-    simp only [TJ, Finset.mem_filter]
-    exact ⟨fun h ↦ h.2, fun h ↦ ⟨h.1, h⟩⟩
+    simp [TJ]
   -- the pieces of sign `≤` are empty on `V`
   have hempty (t : T) (ht : t ∉ J) : V ⊓ spaBasicOpen Aplus T t = ⊥ :=
     inf_spaBasicOpen_eq_bot_of_subset_laurentPiece hϖ hVJ ht
@@ -243,17 +242,14 @@ theorem isSheafFor_ofArrows_inf_spaBasicOpen_of_subset_laurentPiece_of_isSheafFo
   rcases TJ.eq_empty_or_nonempty with hTJ | hTJ
   · -- no generator has sign `≥`, so `V` is empty and the cover is trivial
     obtain ⟨t₀, ht₀⟩ := hT
-    have hJ : J = ∅ := Set.eq_empty_iff_forall_notMem.mpr fun t ht ↦ by
-      simpa [hTJ] using hmemTJ.mpr ⟨t.2, ht⟩
-    have hV : V = ⊥ := eq_bot_of_subset_laurentPiece_empty hϖ (hJ ▸ hVJ)
+    have hV : V = ⊥ :=
+      eq_bot_of_subset_laurentPiece_of_eq_empty hϖ (fun _ ↦ hmemTJ) hVJ hTJ
     have hV₀ : V ≤ V ⊓ spaBasicOpen Aplus T t₀ := by simp [hV]
     rw [(Sieve.id_mem_iff_eq_top (S := Sieve.generate _)).mp
       ⟨_, homOfLE hV₀, _, Presieve.ofArrows.mk (⟨t₀, ht₀⟩ : T), rfl⟩]
     exact Presieve.isSheafFor_top _
   · -- otherwise the pieces of `T` and of `TJ` generate the same sieve on `V`
-    have h := hstandard hTJ fun a ha v hv hsupp ↦ by
-      obtain ⟨haT, haJ⟩ := hmemTJ.mp ha
-      exact not_vle_zero_of_mem_laurentPiece_inv_mul ϖ haJ (hVJ hv) ((mem_supp_iff _ _).mp hsupp)
+    have h := hstandard hTJ (notMem_supp_of_subset_laurentPiece (fun _ ↦ hmemTJ) hVJ)
     rw [Presieve.isSheafFor_iff_generate] at h
     refine (congrArg (fun S : Sieve V ↦ S.arrows.IsSheafFor _) (Sieve.ext fun U g ↦ ?_)).mp h
     simp only [Sieve.mem_ofArrows_iff]
