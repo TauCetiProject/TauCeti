@@ -134,6 +134,15 @@ lemma δ_one_simplex₁ (g : C(I, X)) :
     (TopCat.toSSet.obj X).δ 1 (simplex₁ g) = TopCat.toSSetObj₀Equiv.symm (g 0) :=
   δ_simplex₁ g 1 0 StdSimplex.homeomorphI_map_succAbove_one
 
+/-- The map of singular simplicial sets induced by a continuous map sends the singular
+`1`-simplex of a map from the unit interval to that of its composite. -/
+@[simp]
+lemma toSSet_map_app_simplex₁ {Y : TopCat.{u}} (f : X ⟶ Y) (g : C(I, X)) :
+    (TopCat.toSSet.map f).app _ (simplex₁ g) = simplex₁ ((ConcreteCategory.hom f).comp g) := by
+  apply (Y.toSSetObjEquiv _).injective
+  rw [toSSetObjEquiv_toSSet_map_app, toSSetObjEquiv_simplex₁, toSSetObjEquiv_simplex₁,
+    ContinuousMap.comp_assoc]
+
 /-- The first vertex of a singular `1`-simplex. -/
 abbrev source₁ (s : (TopCat.toSSet.obj X) _⦋1⦌) : X := X.toSSetObjEquiv _ s (StdSimplex.single 0)
 
