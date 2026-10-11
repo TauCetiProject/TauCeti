@@ -415,10 +415,12 @@ noncomputable def baseChangeFunctorIso {X Y : EllObj B} (f : X ⟶ Y) :
       asIso (baseChangeFunctorIsoApp f T))
     (baseChangeFunctorIsoApp_naturality f)
 
+@[simp]
 theorem baseChangeFunctorIso_hom_app_base {X Y : EllObj B} (f : X ⟶ Y) (T : Over X.base) :
     ((baseChangeFunctorIso f).hom.app T).base = 𝟙 T.left :=
   (rfl)
 
+@[reassoc (attr := simp)]
 theorem baseChangeFunctorIso_hom_app_comp {X Y : EllObj B} (f : X ⟶ Y) (T : Over X.base) :
     (baseChangeFunctorIso f).hom.app T ≫ Y.baseChangeFunctorHom ((Over.map f.base).obj T) =
       X.baseChangeFunctorHom T ≫ f :=

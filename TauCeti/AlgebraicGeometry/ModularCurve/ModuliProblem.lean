@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Monoidal.Cartesian.FunctorCategory
 public import TauCeti.AlgebraicGeometry.ModularCurve.Ell
 
 /-!
@@ -27,7 +28,7 @@ Relative representability is a condition on each elliptic curve separately: unli
 category of a fixed functor, the representing objects here are schemes over the varying bases `S`.
 Because every arrow of `Ell/B` is cartesian, these representing schemes are automatically
 compatible with base change (`RelRepData.isPullback`), so any base-change-stable property of the
-representing morphisms propagates along arrows of `Ell/B` (`RelRepData.prop_rep_of_hom`), and
+representing morphisms propagates along arrows of `Ell/B` (`RelRepData.rep_mem_of_hom`), and
 `RelRepData.HasProperty` does not depend on the choice of representing schemes
 (`RelRepData.hasProperty_congr`).
 
@@ -145,7 +146,7 @@ theorem isPullback (f : X ⟶ Y) :
 /-- A property of morphisms of schemes which is stable under base change propagates from the
 representing morphism over `Y` to the representing morphism over `X`, along any arrow
 `X ⟶ Y` of `Ell/B`. -/
-theorem prop_rep_of_hom {W : MorphismProperty Scheme.{u}} [W.IsStableUnderBaseChange]
+theorem rep_mem_of_hom {W : MorphismProperty Scheme.{u}} [W.IsStableUnderBaseChange]
     (f : X ⟶ Y) (h : W (D.rep Y).hom) : W (D.rep X).hom :=
   W.of_isPullback (D.isPullback f) h
 
@@ -154,10 +155,6 @@ over `Ell/B` (for instance is affine, finite, flat or étale over `Ell/B`) when 
 morphism `𝒫_{E/S} ⟶ S` has `W`. -/
 def HasProperty (W : MorphismProperty Scheme.{u}) : Prop :=
   ∀ X : EllObj B, W (D.rep X).hom
-
-theorem hasProperty_iff {W : MorphismProperty Scheme.{u}} :
-    D.HasProperty W ↔ ∀ X : EllObj B, W (D.rep X).hom :=
-  Iff.rfl
 
 /-- For a property `W` respecting isomorphisms, `HasProperty W` does not depend on the choice of
 representing schemes. -/
@@ -196,15 +193,7 @@ by the fibre product `𝒫_{E/S} ×_S 𝒬_{E/S}` of the two representing scheme
 noncomputable def tensor (D : P.RelRepData) (D' : Q.RelRepData) : (P ⊗ Q).RelRepData where
   rep X := D.rep X ⊗ D'.rep X
   representableBy X :=
-    { homEquiv := homEquivToProd.trans
-        ((D.representableBy X).homEquiv.prodCongr (D'.representableBy X).homEquiv)
-      -- the two components of `homEquiv` are `homEquiv (_ ≫ fst _ _)` and `homEquiv (_ ≫ snd _ _)`
-      -- up to unfolding `homEquivToProd` and the tensor product of maps of types
-      homEquiv_comp g h := Prod.ext
-        ((congrArg (D.representableBy X).homEquiv (Category.assoc g h _)).trans
-          ((D.representableBy X).homEquiv_comp g _))
-        ((congrArg (D'.representableBy X).homEquiv (Category.assoc g h _)).trans
-          ((D'.representableBy X).homEquiv_comp g _)) }
+    Functor.Monoidal.RepresentableBy.tensorObj (D.representableBy X) (D'.representableBy X)
 
 @[simp]
 theorem tensor_rep (D : P.RelRepData) (D' : Q.RelRepData) (X : EllObj B) :
@@ -227,10 +216,6 @@ structure `α ∈ 𝒫(X)` is the identity. -/
 def IsRigid : Prop :=
   ∀ ⦃X : EllObj B⦄ (σ : X ⟶ X), σ.base = 𝟙 X.base →
     ∀ α : P.obj (op X), P.map σ.op α = α → σ = 𝟙 X
-
-theorem isRigid_iff : P.IsRigid ↔ ∀ ⦃X : EllObj B⦄ (σ : X ⟶ X), σ.base = 𝟙 X.base →
-    ∀ α : P.obj (op X), P.map σ.op α = α → σ = 𝟙 X :=
-  Iff.rfl
 
 variable {P Q}
 
