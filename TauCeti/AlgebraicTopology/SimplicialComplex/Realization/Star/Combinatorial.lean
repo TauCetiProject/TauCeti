@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold.Realization
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.Ball
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.Ball.Basic
 
 /-!
 # Interior vertex charts from combinatorial links
@@ -17,7 +17,7 @@ without assuming a finite triangulation: the spherical link itself has finitely 
 which makes the closed star compact.
 
 The sphere identification comes from intrinsic stellar equivalence. The radial star
-homeomorphism of `Star.Ball` then extends it across the apex. Piecewise-linear compatibility
+homeomorphism of `Star.Ball.Basic` then extends it across the apex. Piecewise-linear compatibility
 of these charts is a separate property.
 
 ## References
