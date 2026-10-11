@@ -35,10 +35,6 @@ ring in `Type u`.
 ## Main declarations
 
 * `TauCeti.DiagonalizableGroup.groupScheme`: the affine group scheme `D(G) = Spec R[G]`.
-* `TauCeti.DiagonalizableGroup.groupScheme_one_left`,
-  `TauCeti.DiagonalizableGroup.groupScheme_mul_left`, and
-  `TauCeti.DiagonalizableGroup.groupScheme_inv_left`: the underlying scheme maps of its
-  group operations.
 * `TauCeti.DiagonalizableGroup.groupSchemeMap`: the contravariant group-scheme morphism
   induced by a homomorphism of finitely generated commutative groups.
 * `TauCeti.DiagonalizableGroup.schemeFunctor`: the functor `FGCommGrpCatᵒᵖ ⟶
@@ -107,60 +103,6 @@ lemma groupScheme_X_left (G : FGCommGrpCat.{u}) :
   simpa only [groupScheme] using
     hopfSpec_obj_X_left R (coordinateRing R G).obj
 
-/-- After identifying its source with `Spec R[G]`, the structural morphism of `D(G)` is
-induced by the group-algebra structure map. -/
-lemma groupScheme_X_hom (G : FGCommGrpCat.{u}) :
-    (groupScheme R G).X.hom =
-      eqToHom (groupScheme_X_left R G) ≫
-        Spec.map (CommRingCat.ofHom (algebraMap R (MonoidAlgebra R G))) := by
-  simpa only [groupScheme] using
-    hopfSpec_obj_X_hom R (coordinateRing R G).obj
-
-/-- The source scheme of multiplication on `D(G)` is the fibre product of two copies of
-`Spec R[G]` over `Spec R`. -/
-@[simp↓]
-lemma groupScheme_tensor_X_left (G : FGCommGrpCat.{u}) :
-    ((groupScheme R G).X ⊗ (groupScheme R G).X).left =
-      Limits.pullback
-        (Spec.map (CommRingCat.ofHom (algebraMap R (MonoidAlgebra R G))))
-        (Spec.map (CommRingCat.ofHom (algebraMap R (MonoidAlgebra R G)))) := by
-  simpa only [groupScheme] using
-    hopfSpec_obj_tensor_X_left R (coordinateRing R G).obj
-
-/-- The unit of `D(G)` is induced by the counit of the group algebra. -/
-@[simp]
-lemma groupScheme_one_left (G : FGCommGrpCat.{u}) :
-    η[(groupScheme R G).X].left =
-      Spec.map (CommRingCat.ofHom
-        (Bialgebra.counitAlgHom R (MonoidAlgebra R G))) ≫
-      eqToHom (groupScheme_X_left R G).symm := by
-  unfold groupScheme
-  convert hopfSpec_obj_one_left R (coordinateRing R G).obj using 1
-
-/-- Multiplication on `D(G)` is induced by the comultiplication of the group algebra. The
-first transport identifies its opaque product source with the standard affine fibre product. -/
-@[simp]
-lemma groupScheme_mul_left (G : FGCommGrpCat.{u}) :
-    μ[(groupScheme R G).X].left =
-      eqToHom (groupScheme_tensor_X_left R G) ≫
-        (pullbackSpecIso R (MonoidAlgebra R G) (MonoidAlgebra R G)).hom ≫
-        Spec.map (CommRingCat.ofHom
-          (Bialgebra.comulAlgHom R (MonoidAlgebra R G))) ≫
-        eqToHom (groupScheme_X_left R G).symm := by
-  unfold groupScheme
-  convert hopfSpec_obj_mul_left R (coordinateRing R G).obj using 1
-
-/-- Inversion on `D(G)` is induced by the antipode of the group algebra. -/
-@[simp]
-lemma groupScheme_inv_left (G : FGCommGrpCat.{u}) :
-    ι[(groupScheme R G).X].left =
-      eqToHom (groupScheme_X_left R G) ≫
-      Spec.map (CommRingCat.ofHom
-        (HopfAlgebra.antipodeAlgHom R (MonoidAlgebra R G))) ≫
-      eqToHom (groupScheme_X_left R G).symm := by
-  unfold groupScheme
-  convert hopfSpec_obj_inv_left R (coordinateRing R G).obj using 1
-
 /-- A homomorphism `G ⟶ H` induces the contravariant group-scheme morphism
 `D(H) ⟶ D(G)`. -/
 noncomputable def groupSchemeMap {G H : FGCommGrpCat.{u}} (f : G ⟶ H) :
@@ -178,28 +120,6 @@ theorem groupSchemeMap_def {G H : FGCommGrpCat.{u}} (f : G ⟶ H) :
     (groupScheme_def R H) (groupScheme_def R G)).2
   unfold groupSchemeMap
   rfl
-
-/-- Under the identifications of its source and target with spectra, the scheme morphism
-underlying `groupSchemeMap f` is induced by the coordinate Hopf-algebra morphism
-`R[G] ⟶ R[H]`. -/
-@[simp]
-lemma groupSchemeMap_hom_left {G H : FGCommGrpCat.{u}} (f : G ⟶ H) :
-    (groupSchemeMap R f).hom.hom.left =
-      eqToHom (groupScheme_X_left R H) ≫
-        Spec.map (CommRingCat.ofHom
-          (FiniteTypeCommHopfAlgCat.toBialgHom (coordinateMap R f)).toAlgHom) ≫
-        eqToHom (groupScheme_X_left R G).symm := by
-  apply (conj_eqToHom_iff_heq _ _
-    (groupScheme_X_left R H) (groupScheme_X_left R G)).2
-  unfold groupSchemeMap
-  -- `hopfSpec` is `(commHopfAlgCatEquivCogrpCommAlgCat R).functor.leftOp ⋙ (algSpec R).mapGrp`,
-  -- so these two computation lemmas reduce the morphism to an `algSpec` image. Identifying that
-  -- image with the coordinate algebra morphism is definitional: unlike its bialgebra counterpart
-  -- `commBialgCatEquivComonCommAlgCat_functor_map_unop_hom`, the Hopf-algebra equivalence has no
-  -- computation lemma for its morphism component.
-  rw [Functor.comp_map, Functor.mapGrp_map_hom_hom]
-  exact heq_of_eq (algSpec_map_left_ofAlgHom R
-    (FiniteTypeCommHopfAlgCat.toBialgHom (coordinateMap R f)).toAlgHom)
 
 /-- The group-scheme morphism induced by the identity homomorphism is the identity. -/
 @[simp]

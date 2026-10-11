@@ -156,6 +156,7 @@ theorem singularToCubical_app_f_zero_simplexChain {X : TopCat.{u}}
   refine (AcyclicModels.ModelPresentation.chainMap_app_f_zero_apply _ _ _ _ _ X _).trans ?_
   refine (singularModelPresentation_extend_simplexChain
     (G := normalizedCubicalChainComplex k) (singularToCubicalGen₀ k) σ).trans ?_
+  rw [singularToCubicalGen₀_eq]
   refine (normalizedCubicalChainComplex_map_f_apply σ.down 0 _).trans ?_
   refine (NormalizedCubicalChain.map_ofCube k σ.down.hom _).trans ?_
   exact congrArg _ (ContinuousMap.ext fun t ↦ by
@@ -171,6 +172,7 @@ theorem cubicalToSingular_app_f_zero_ofCube {X : TopCat.{u}} (x : X) :
   refine (AcyclicModels.ModelPresentation.chainMap_app_f_zero_apply _ _ _ _ _ X _).trans ?_
   refine (cubicalModelPresentation_extend_ofCube_zero (G := singularChains k)
     (cubicalToSingularGen₀ k) _).trans ?_
+  rw [cubicalToSingularGen₀_eq]
   refine (singularChains_map_f_simplexChain (k := k) _ _ 1).trans ?_
   refine congrArg (simplexChain · 1) ((TopCat.toSSet_map_app_toSSetObj₀Equiv_symm
     (cubeToHom (SingularCube.point x)) (cubeModelPoint.{u})).trans ?_)

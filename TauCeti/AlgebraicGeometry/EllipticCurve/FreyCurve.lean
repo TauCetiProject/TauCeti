@@ -57,6 +57,7 @@ the odd entries if necessary puts it in the `a` position. Then `A = aᵖ ≡ -1 
 * `TauCeti.isElliptic_freyCurve_iff` and `TauCeti.isElliptic_freyCurve_iff_ne_zero`: the curve is
   elliptic exactly when `2`, `A`, `B` and `A + B` are units, respectively, over a field of
   characteristic not `2`, nonzero.
+* `TauCeti.freyCurve_j`: its `j`-invariant is `256 (A² + A B + B²)³ / (A² B² (A + B)²)`.
 * `TauCeti.smul_freyCurve_eq_freyCurveModel`: the change of variables `x = 4 x'`,
   `y = 8 y' + 4 x'` carries `freyCurve (4 α - 1) (16 β)` to `freyCurveModel α β`.
 * `TauCeti.isGlobalMinimal_baseChange_freyCurveModel`: for coprime `A` and `B`, this model is
@@ -238,6 +239,19 @@ and `A + B` are nonzero.** -/
 theorem isElliptic_freyCurve_iff_ne_zero (h2 : (2 : F) ≠ 0) (A B : F) :
     (freyCurve A B).IsElliptic ↔ A ≠ 0 ∧ B ≠ 0 ∧ A + B ≠ 0 := by
   simp [isElliptic_freyCurve_iff, h2]
+
+/-- The `j`-invariant of the Frey curve is `256 (A² + A B + B²)³ / (A² B² (A + B)²)`. -/
+@[simp]
+theorem freyCurve_j (A B : F) [(freyCurve A B).IsElliptic] :
+    (freyCurve A B).j = 256 * (A ^ 2 + A * B + B ^ 2) ^ 3 / (A ^ 2 * B ^ 2 * (A + B) ^ 2) := by
+  obtain ⟨h2, hA, hB, hAB⟩ := (isElliptic_freyCurve_iff A B).mp ‹_›
+  have := h2.ne_zero
+  have := hA.ne_zero
+  have := hB.ne_zero
+  have := hAB.ne_zero
+  rw [j_eq, freyCurve_Δ, freyCurve_c₄]
+  field_simp
+  ring
 
 /-- **The change of variables `x = 4 x'`, `y = 8 y' + 4 x'` carries `freyCurve (4 α - 1) (16 β)`
 to `freyCurveModel α β`.** -/
