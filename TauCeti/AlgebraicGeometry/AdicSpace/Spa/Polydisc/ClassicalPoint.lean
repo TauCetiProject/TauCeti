@@ -212,13 +212,7 @@ theorem supp_ne_bot_iff_exists_eq_classicalPoint [IsAlgClosed K] (v : closedPoly
   refine ⟨fun hv ↦ ?_, ?_⟩
   · obtain ⟨a, ha, hmem⟩ := exists_weightedX_sub_weightedC_mem_supp v hv
     -- a point of `Spa (K, K°)`: the pullback of `v` along the constant embedding
-    have hx : comap (weightedC (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight) v.1 ∈
-        spa (powerBoundedSubring K) :=
-      comap_mem_spa (continuous_weightedC isWeightFamily_one_weight)
-        (fun _ hb ↦ mem_powerBoundedSubring.mpr
-          (isPowerBounded_weightedC _ (mem_powerBoundedSubring.mp hb)))
-        (closedPolydisc_def 1 K ▸ v.2)
-    exact ⟨⟨_, hx⟩, fun _ ↦ a, fun _ ↦ isPowerBounded_iff_norm_le_one.mpr ha,
+    exact ⟨⟨_, comap_weightedC_mem_spa v⟩, fun _ ↦ a, fun _ ↦ isPowerBounded_iff_norm_le_one.mpr ha,
       eq_classicalPoint_of_mem_supp_one v _ _ hmem _⟩
   · rintro ⟨x, a, ha, rfl⟩ h
     exact ne_classicalPoint_of_supp_eq_bot _ h x a ha rfl
