@@ -632,11 +632,7 @@ private noncomputable def dyadicTernaryCyclicIsometryVOfCoefficients
   have hsource : ((dyadicV k).prod (dyadicCyclic k (2 * θ + η))).IsNondegenerate :=
     (isNondegenerate_prod _ _).mpr
       ⟨isNondegenerate_dyadicV k, (isNondegenerate_dyadicCyclic_iff _ _).mpr hα⟩
-  have hinj : Function.Injective g := fun x y hxy ↦
-    FiniteBilinearModule.Hom.injective g.toFiniteBilinearModule hsource
-      ((Hom.toFiniteBilinearModule_apply g x).trans
-        (hxy.trans (Hom.toFiniteBilinearModule_apply g y).symm))
-  exact (g.toIsometry ((Nat.bijective_iff_injective_and_card g).mpr ⟨hinj, rfl⟩)).symm
+  exact (g.toIsometryOfNondegenerate hsource rfl).symm
 
 private noncomputable def dyadicTernaryCyclicIsometryUOfCoefficients
     (k : ℕ) [NeZero k] (θ η r a b c d : ℤ) (hη : Odd η)
@@ -657,11 +653,7 @@ private noncomputable def dyadicTernaryCyclicIsometryUOfCoefficients
   have hsource : ((dyadicU k).prod (dyadicCyclic k (2 * θ + η))).IsNondegenerate :=
     (isNondegenerate_prod _ _).mpr
       ⟨isNondegenerate_dyadicU k, (isNondegenerate_dyadicCyclic_iff _ _).mpr hα⟩
-  have hinj : Function.Injective g := fun x y hxy ↦
-    FiniteBilinearModule.Hom.injective g.toFiniteBilinearModule hsource
-      ((Hom.toFiniteBilinearModule_apply g x).trans
-        (hxy.trans (Hom.toFiniteBilinearModule_apply g y).symm))
-  exact (g.toIsometry ((Nat.bijective_iff_injective_and_card g).mpr ⟨hinj, rfl⟩)).symm
+  exact (g.toIsometryOfNondegenerate hsource rfl).symm
 
 /-- Nikulin's ternary cyclic relation 1.8.2(d) in the half-norm convention:
 when `θ` is congruent to `η` modulo four, two copies of `q_θ(2^k)` and `q_η(2^k)`
