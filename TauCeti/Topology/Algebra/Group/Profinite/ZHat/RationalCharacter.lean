@@ -32,13 +32,10 @@ namespace TauCeti.zHat
 universe u
 
 /-- The rational circle with the discrete topology, as a continuous cohomology coefficient. -/
-abbrev DiscreteRatCircle := Additive (Multiplicative (AddCircle (1 : ℚ)))
+abbrev DiscreteRatCircle := WithDiscreteTopology (AddCircle (1 : ℚ))
 
-instance : TopologicalSpace DiscreteRatCircle := ⊥
-instance : DiscreteTopology DiscreteRatCircle := ⟨rfl⟩
-instance : IsTopologicalAddGroup DiscreteRatCircle where
-  continuous_add := continuous_of_discreteTopology
-  continuous_neg := continuous_of_discreteTopology
+instance : AddCommGroup DiscreteRatCircle :=
+  (WithTopology.equiv (AddCircle (1 : ℚ)) ⊥).addCommGroup
 
 /-- The trivial action of the profinite integers on the discrete rational circle. -/
 instance : DistribMulAction zHat.{u} DiscreteRatCircle where
@@ -52,8 +49,8 @@ instance : ContinuousSMul zHat.{u} DiscreteRatCircle := ⟨continuous_snd⟩
 
 /-- Forget the discrete topology on the rational circle. -/
 def discreteRatCircleEquiv : DiscreteRatCircle ≃+ AddCircle (1 : ℚ) :=
-  { toFun := fun x ↦ Multiplicative.toAdd (Additive.toMul x)
-    invFun := fun x ↦ Additive.ofMul (Multiplicative.ofAdd x)
+  { toFun := WithTopology.ofTopology
+    invFun := WithTopology.toTopology ⊥
     left_inv := fun _ ↦ rfl
     right_inv := fun _ ↦ rfl
     map_add' := fun _ _ ↦ rfl }
