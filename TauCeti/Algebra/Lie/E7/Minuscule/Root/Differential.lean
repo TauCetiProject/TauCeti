@@ -120,8 +120,7 @@ def rootVector (k : Fin 7 ⊕ Fin 7) :
     ((AdditiveGroup.gaTangentLinearEquiv (R := R) (B := R)).symm 1)
 
 /-- The normalized root vector is the differential of the existing root parametrization
-on the unit additive tangent vector. This is a rewriting rule, not a simp rule, so that
-`tangentMatrix_rootVector` can still match the named vector. -/
+on the unit additive tangent vector. -/
 theorem rootVector_def (k : Fin 7 ⊕ Fin 7) :
     rootVector R k =
       derivationComp (B := R) (rootSubgroupToBaseChangeCoordinateMap R k).hom
