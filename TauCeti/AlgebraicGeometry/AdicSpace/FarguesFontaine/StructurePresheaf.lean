@@ -120,6 +120,10 @@ variable [IsTopologicalRing (WittVector p R)]
 /-- **The structure presheaf `𝒪_𝒴` of `𝒴`**: the restriction to the open subset `𝒴` of the
 presentation-limit structure presheaf of `Spa(𝕎 R, 𝕎 R)` for the pair of definition `P`. Its
 sections over an open `V ⊆ 𝒴` are those of `Spa(𝕎 R, 𝕎 R)` over `V`. -/
+-- The body is exposed: it is the presheaf of the restriction of the pre-adic space
+-- `Spa(𝕎 R, 𝕎 R)` to `𝒴`, `TauCeti.FarguesFontaine.spaYPreAdicSpace`, and morphisms of presheafed
+-- spaces out of that restriction are built from maps out of `spaYPresheaf`.
+@[expose]
 def spaYPresheaf (P : PairOfDefinition (WittVector p R)) (ϖ : R) :
     (TopCat.of (spaY p ϖ)).Presheaf CompleteSeparatedTopCommRingCat.{v} :=
   (isOpenEmbedding_spaYInclusion p ϖ).functor.op ⋙

@@ -40,6 +40,8 @@ a curve in characteristic-≠-2 normal form.
   `sψ₂ = a₄ + 2a₂x - a₁y + 3x²`, where `ψ₂ = 2y + a₁x + a₃`, then
   `(a₂ - sa₁ + 3x - s²) ψ₂² = Ψ₃(x)`. The factor `a₂ - sa₁ + 3x - s²` is the coefficient `a₂` of
   `W` after the change of variables `(1, x, s, y)`.
+* `WeierstrassCurve.eval_variableChange_Ψ₂Sq`: after a change of variables `C`, the polynomial
+  `Ψ₂Sq` becomes `u⁻⁶ Ψ₂Sq(u²x + r)`.
 
 Everything here holds over an arbitrary commutative ring, with no ellipticity and no division. Of
 the first three, the first has no hypothesis at all; the second's is an equation between ring
@@ -52,6 +54,10 @@ The last three evaluate `Ψ₃` and `ψ₂` at a point and are what reduces a We
 normal form (`TauCeti/AlgebraicGeometry/EllipticCurve/TateNormalForm.lean`): once the point is
 moved to `(0, 0)` with horizontal tangent, `b₈ = a₂a₃²`, so the normalisation `a₂ = a₃` is read off
 `Ψ₃`. Only `a₂_mul_ψ₂_sq_eq_eval_Ψ₃` asks that the point lie on the curve.
+
+The change-of-variables formula for `Ψ₂Sq` is what the real period of a Weierstrass curve over `ℝ`,
+an integral of `Ψ₂Sq(x)^(-1/2)`, needs in order to scale by `|u|` under a change of variables
+(`TauCeti/AlgebraicGeometry/EllipticCurve/RealPeriod.lean`).
 
 Declarations here are stated in the root
 `WeierstrassCurve` namespace, not under `TauCeti`, because they extend Mathlib's own
@@ -165,5 +171,17 @@ theorem a₂_mul_ψ₂_sq_eq_eval_Ψ₃ {W : WeierstrassCurve R} {x y : R} (h : 
   rw [eval_Ψ₃, b₂, b₄, b₆, b₈]
   linear_combination (-W.a₁ * (2 * y + W.a₁ * x + W.a₃) - (s * (2 * y + W.a₁ * x + W.a₃) +
     (W.a₄ + 2 * x * W.a₂ - y * W.a₁ + 3 * x ^ 2))) * hs + (W.a₁ ^ 2 + 4 * W.a₂ + 12 * x) * h
+
+/-- After a change of variables `C`, the polynomial `Ψ₂Sq`, which agrees with `(2y + a₁x + a₃)²`
+on the curve, transforms as `Ψ₂Sq'(x) = u⁻⁶ Ψ₂Sq(u²x + r)`. -/
+theorem eval_variableChange_Ψ₂Sq (C : VariableChange R) (x : R) :
+    (C • W).Ψ₂Sq.eval x = C.u⁻¹ ^ 6 * W.Ψ₂Sq.eval (C.u ^ 2 * x + C.r) := by
+  -- write `x` as `u⁻² (u² x)`, after which both sides are the same polynomial in `u² x`
+  have hx : x = ((C.u⁻¹ : Rˣ) : R) ^ 2 * (C.u ^ 2 * x) := by
+    linear_combination (-(x * ((C.u⁻¹ : Rˣ) : R) * C.u) - x) * C.u.inv_mul
+  conv_lhs => rw [hx]
+  simp only [Ψ₂Sq, eval_add, eval_mul, eval_pow, eval_C, eval_X, variableChange_b₂,
+    variableChange_b₄, variableChange_b₆]
+  ring
 
 end WeierstrassCurve
