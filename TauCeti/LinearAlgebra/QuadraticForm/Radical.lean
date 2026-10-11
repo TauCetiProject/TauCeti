@@ -273,7 +273,7 @@ class. -/
 theorem IsometryEquiv.prodRadicalLiftOfIsCompl_mkQ_apply (Q : QuadraticMap R M P)
     (W : Submodule R M) (hW : IsCompl Q.radical W)
     (x : Q.radical × M ⧸ Q.radical) :
-    Submodule.mkQ Q.radical (IsometryEquiv.prodRadicalLiftOfIsCompl Q W hW x) = x.2 := by
+    Submodule.Quotient.mk (IsometryEquiv.prodRadicalLiftOfIsCompl Q W hW x) = x.2 := by
   change Submodule.mkQ Q.radical (W.prodEquivOfIsCompl Q.radical hW.symm
     (Q.radical.quotientEquivOfIsCompl W hW x.2, x.1)) = x.2
   rw [Submodule.coe_prodEquivOfIsCompl']
@@ -302,9 +302,8 @@ theorem IsometryEquiv.prodRadicalLift_apply_radical (Q : QuadraticForm K V)
 @[simp]
 theorem IsometryEquiv.prodRadicalLift_mkQ_apply (Q : QuadraticForm K V)
     (x : Q.radical × V ⧸ Q.radical) :
-    Submodule.mkQ Q.radical (IsometryEquiv.prodRadicalLift Q x) = x.2 := by
-  simpa [IsometryEquiv.prodRadicalLift] using
-    IsometryEquiv.prodRadicalLiftOfIsCompl_mkQ_apply Q _ _ x
+    Submodule.Quotient.mk (IsometryEquiv.prodRadicalLift Q x) = x.2 := by
+  simp [IsometryEquiv.prodRadicalLift]
 
 end QuotientByRadical
 
