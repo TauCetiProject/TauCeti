@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Linear
 public import TauCeti.Algebra.Module.Torsion.PrimaryComponent
+import TauCeti.CategoryTheory.Preadditive.NSMul
 import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 
 /-!
@@ -39,8 +40,7 @@ theorem tateCohomology_nsmul_bijective (A : Rep.{u} k G) (p : ℕ)
       change Function.Bijective (fun x : A.V ↦ p • x)
       exact hp)
   have hiH : IsIso (p • (𝟙 (tateCohomology A n))) := by
-    simpa [Functor.map_nsmul] using
-      (inferInstance : IsIso ((tateCohomologyFunctor n).map (p • (𝟙 A))))
+    exact (tateCohomologyFunctor n).isIso_nsmul_id_obj p A
   exact (ConcreteCategory.isIso_iff_bijective _).mp hiH
 
 /-- The `p`-primary component of Tate cohomology vanishes when multiplication by `p` is
