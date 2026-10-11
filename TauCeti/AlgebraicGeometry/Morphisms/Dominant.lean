@@ -14,9 +14,10 @@ public import Mathlib.AlgebraicGeometry.Stalk
 A morphism `f : X ⟶ Y` of schemes is dominant (`AlgebraicGeometry.IsDominant`) when its image is
 dense. Between irreducible schemes this says exactly that `f` sends the generic point of `X` to the
 generic point of `Y`. The map of stalks at the generic point is then a homomorphism
-`f^* : K(Y) ⟶ K(X)` of function fields, the pullback of rational functions along `f`. It is the
-homomorphism through which `f` acts on the generic point: the canonical morphism
-`Spec K(X) ⟶ X` followed by `f` is `Spec f^*` followed by the canonical morphism
+`f^* : K(Y) ⟶ K(X)` of generic stalks, the pullback of rational functions along `f`. (The generic
+stalk `K(X)` of an irreducible scheme is a local ring; it is the function field, a field, when `X`
+is integral.) It is the homomorphism through which `f` acts on the generic point: the canonical
+morphism `Spec K(X) ⟶ X` followed by `f` is `Spec f^*` followed by the canonical morphism
 `Spec K(Y) ⟶ Y`, and `f^*` is the only homomorphism with this property.
 
 This is how a dominant morphism of integral curves is compared with a homomorphism of function
@@ -35,12 +36,12 @@ the generic point.
 * `AlgebraicGeometry.isDominant_iff_genericPoint_eq`: conversely, a morphism of irreducible
   schemes sending the generic point to the generic point is dominant.
 * `AlgebraicGeometry.Scheme.Hom.isDominant_of_SpecMap_fromSpecStalk`: a morphism of irreducible
-  schemes whose action on the generic point is given by a local homomorphism of function fields is
+  schemes whose action on the generic point is given by a local homomorphism of generic stalks is
   dominant.
 * `AlgebraicGeometry.Scheme.Hom.SpecMap_functionFieldMap_fromSpecStalk`: `Spec f^*` followed by
   `Spec K(Y) ⟶ Y` is `Spec K(X) ⟶ X` followed by `f`.
 * `AlgebraicGeometry.Scheme.Hom.eq_functionFieldMap_iff`: `f^*` is the only homomorphism of
-  function fields with this property.
+  generic stalks with this property.
 * `AlgebraicGeometry.Scheme.Hom.germToFunctionField_functionFieldMap`: `f^*` sends the germ of a
   section `s` over an open `U` to the germ of its pullback `f^* s` over `f⁻¹ U`.
 * `AlgebraicGeometry.Scheme.Hom.functionFieldMap_id` and
@@ -85,8 +86,9 @@ namespace Scheme.Hom
 
 /-- A morphism `f : X ⟶ Y` of irreducible schemes is dominant when the canonical morphism
 `Spec K(X) ⟶ X` followed by `f` factors as `Spec φ` followed by the canonical morphism
-`Spec K(Y) ⟶ Y`, for a local homomorphism `φ : K(Y) ⟶ K(X)`. The homomorphism `φ` is then the
-pullback of rational functions along `f` (`Scheme.Hom.eq_functionFieldMap_iff`). -/
+`Spec K(Y) ⟶ Y`, for a local homomorphism `φ : K(Y) ⟶ K(X)` of generic stalks (function fields
+when `X` and `Y` are integral). The homomorphism `φ` is then the pullback of rational functions
+along `f` (`Scheme.Hom.eq_functionFieldMap_iff`). -/
 theorem isDominant_of_SpecMap_fromSpecStalk (f : X ⟶ Y) (φ : Y.functionField ⟶ X.functionField)
     [IsLocalHom φ.hom]
     (h : Spec.map φ ≫ Y.fromSpecStalk (genericPoint Y) = X.fromSpecStalk (genericPoint X) ≫ f) :
@@ -130,10 +132,10 @@ theorem SpecMap_functionFieldMap_fromSpecStalk (f : X ⟶ Y) [IsDominant f] :
   rw [functionFieldMap, Spec.map_comp_assoc, SpecMap_stalkSpecializes_fromSpecStalk,
     SpecMap_stalkMap_fromSpecStalk]
 
-/-- **The pullback of rational functions is unique**: a homomorphism `φ : K(Y) ⟶ K(X)` is the
-pullback `f^*` along a dominant morphism `f : X ⟶ Y` of irreducible schemes exactly when
-`Spec φ` followed by the canonical morphism `Spec K(Y) ⟶ Y` is the canonical morphism
-`Spec K(X) ⟶ X` followed by `f`. -/
+/-- **The pullback of rational functions is unique**: a homomorphism `φ : K(Y) ⟶ K(X)` of generic
+stalks (function fields when `X` and `Y` are integral) is the pullback `f^*` along a dominant
+morphism `f : X ⟶ Y` of irreducible schemes exactly when `Spec φ` followed by the canonical
+morphism `Spec K(Y) ⟶ Y` is the canonical morphism `Spec K(X) ⟶ X` followed by `f`. -/
 theorem eq_functionFieldMap_iff (f : X ⟶ Y) [IsDominant f]
     (φ : Y.functionField ⟶ X.functionField) :
     φ = f.functionFieldMap ↔
