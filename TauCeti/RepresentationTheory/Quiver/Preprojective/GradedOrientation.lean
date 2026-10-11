@@ -55,7 +55,7 @@ theorem reorientDoubledEquiv_mem_grade {n : ℕ}
     have h : (reorientDoubledEquiv k σ).symm (reorientDoubledEquiv k σ x) ∈
         PathAlgebra.grade k (Symmetrify (Reorient Q σ)) n := by
       rw [← PathAlgebra.gradeBy_const_one] at hx ⊢
-      rw [reorientDoubledEquiv, PathAlgebra.mapAlgEquiv_symm_apply]
+      rw [reorientDoubledEquiv_symm_apply]
       exact PathAlgebra.mapAlgHom_mem_gradeBy k (reorientSymmetrifyInv σ)
         ((reorientSymmetrifyInv σ).obj_bijective_of_comp_eq_id (reorientSymmetrify σ)
           (reorientSymmetrifyInv_comp_reorientSymmetrify σ)
@@ -63,7 +63,7 @@ theorem reorientDoubledEquiv_mem_grade {n : ℕ}
     simpa only [AlgEquiv.symm_apply_apply] using h
   · intro hx
     rw [← PathAlgebra.gradeBy_const_one] at hx ⊢
-    rw [reorientDoubledEquiv, PathAlgebra.mapAlgEquiv_apply]
+    rw [reorientDoubledEquiv_apply]
     exact PathAlgebra.mapAlgHom_mem_gradeBy k (reorientSymmetrify σ)
       ((reorientSymmetrify σ).obj_bijective_of_comp_eq_id (reorientSymmetrifyInv σ)
         (reorientSymmetrify_comp_reorientSymmetrifyInv σ)
@@ -77,6 +77,7 @@ variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v} Q] [Fintype Q]
 
 /-- **The orientation comparison identifies the path-length grading.** A quotient class has
 degree `n` exactly when its image in the original orientation has degree `n`. -/
+@[simp]
 theorem reorientPreprojectiveAlgebraEquiv_mem_preprojectiveGrade {n : ℕ}
     {x : preprojectiveAlgebra k (Reorient Q σ)} :
     reorientPreprojectiveAlgebraEquiv k σ x ∈ preprojectiveGrade k Q n ↔
@@ -91,11 +92,10 @@ theorem reorientPreprojectiveAlgebraEquiv_mem_preprojectiveGrade {n : ℕ}
       simpa only [z, AlgEquiv.apply_symm_apply] using PathAlgebra.rescale_mem_grade c hy
     have hzz : preprojectiveMk k (Reorient Q σ) z = x := by
       apply (reorientPreprojectiveAlgebraEquiv k σ).injective
+      have hmap : reorientDoubledEquiv k σ z = rescale c y := by
+        exact AlgEquiv.apply_symm_apply _ _
       rw [reorientPreprojectiveAlgebraEquiv_preprojectiveMk]
-      change preprojectiveMk k Q
-        (rescale c (reorientDoubledEquiv k σ z)) = reorientPreprojectiveAlgebraEquiv k σ x
-      rw [show reorientDoubledEquiv k σ z = rescale c y from
-        AlgEquiv.apply_symm_apply _ _,
+      rw [hmap,
         rescale_doubledLabelling_rescale_doubledLabelling k _ _ (fun _ _ a => by
           by_cases ha : σ a
           · rw [reorientSign_of_true k ha]

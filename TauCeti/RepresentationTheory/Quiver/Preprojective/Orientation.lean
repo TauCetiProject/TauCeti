@@ -149,11 +149,31 @@ variable (k : Type w) {Q : Type u} [CommSemiring k] [Quiver.{v} Q] [Finite Q]
 /-- **The isomorphism of doubled path algebras attached to a reorientation**: the path algebra of
 `Symmetrify (Reorient Q σ)` and the path algebra of `Symmetrify Q` are identified along the
 comparison of doubled quivers, which is the identity on vertices. -/
-@[expose] noncomputable def reorientDoubledEquiv :
+noncomputable def reorientDoubledEquiv :
     pathAlgebra k (Symmetrify (Reorient Q σ)) ≃ₐ[k] pathAlgebra k (Symmetrify Q) :=
   mapAlgEquiv k (reorientSymmetrify σ) (reorientSymmetrifyInv σ)
     (reorientSymmetrify_comp_reorientSymmetrifyInv σ)
     (reorientSymmetrifyInv_comp_reorientSymmetrify σ)
+
+/-- The doubled path-algebra comparison acts by the homomorphism induced by the reorientation
+comparison of quivers. -/
+theorem reorientDoubledEquiv_apply (x : pathAlgebra k (Symmetrify (Reorient Q σ))) :
+    reorientDoubledEquiv k σ x =
+      mapAlgHom k (reorientSymmetrify σ)
+        ((reorientSymmetrify σ).obj_bijective_of_comp_eq_id (reorientSymmetrifyInv σ)
+          (reorientSymmetrify_comp_reorientSymmetrifyInv σ)
+          (reorientSymmetrifyInv_comp_reorientSymmetrify σ)) x := by
+  rw [reorientDoubledEquiv, mapAlgEquiv_apply]
+
+/-- The inverse doubled path-algebra comparison acts by the homomorphism induced by the inverse
+reorientation comparison of quivers. -/
+theorem reorientDoubledEquiv_symm_apply (x : pathAlgebra k (Symmetrify Q)) :
+    (reorientDoubledEquiv k σ).symm x =
+      mapAlgHom k (reorientSymmetrifyInv σ)
+        ((reorientSymmetrifyInv σ).obj_bijective_of_comp_eq_id (reorientSymmetrify σ)
+          (reorientSymmetrifyInv_comp_reorientSymmetrify σ)
+          (reorientSymmetrify_comp_reorientSymmetrifyInv σ)) x := by
+  rw [reorientDoubledEquiv, mapAlgEquiv_symm_apply]
 
 /-- The doubled path-algebra comparison maps a path of two arrows by mapping each arrow. -/
 private theorem reorientDoubledEquiv_ofArrowComp {i j l : Symmetrify (Reorient Q σ)} (a : i ⟶ j)
