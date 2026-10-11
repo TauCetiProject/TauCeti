@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.ComplexShape.Signs
 public import Mathlib.Algebra.Homology.Bifunctor
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 
@@ -25,17 +26,6 @@ noncomputable section
 
 open CategoryTheory CategoryTheory.Limits
 
-namespace ComplexShape
-
-/-- The additive total-complex shape sends a pair of indices to their sum. -/
-@[simp]
-theorem π_eq_add {I : Type*} [AddMonoid I] (c : ComplexShape I) [c.TensorSigns]
-    (p q : I) : π c c c (p, q) = p + q := by
-  -- This is the index component of the additive total-complex-shape instance.
-  rfl
-
-end ComplexShape
-
 namespace HomologicalComplex
 
 variable {C₁ C₂ D I₁ I₂ J : Type*} [Category* C₁] [Category* C₂] [Category* D]
@@ -45,10 +35,11 @@ variable {C₁ C₂ D I₁ I₂ J : Type*} [Category* C₁] [Category* C₂] [Ca
   (F : C₁ ⥤ C₂ ⥤ D) [F.PreservesZeroMorphisms]
   [∀ X₁, (F.obj X₁).PreservesZeroMorphisms]
   (c : ComplexShape J) [TotalComplexShape c₁ c₂ c]
-  [HasMapBifunctor K₁ K₂ F c] [DecidableEq I₁] [DecidableEq I₂] [DecidableEq J]
+  [HasMapBifunctor K₁ K₂ F c] [DecidableEq J]
 
 private def singleSummandMap (p₀ : I₁) (q₀ : I₂) (p : I₁) (q : I₂) :
     (F.obj (K₁.X p)).obj (K₂.X q) ⟶ (F.obj (K₁.X p₀)).obj (K₂.X q₀) := by
+  classical
   by_cases h : p = p₀ ∧ q = q₀
   · rcases h with ⟨rfl, rfl⟩
     exact 𝟙 _
@@ -57,6 +48,7 @@ private def singleSummandMap (p₀ : I₁) (q₀ : I₂) (p : I₁) (q : I₂) :
 omit [F.PreservesZeroMorphisms] [∀ X₁, (F.obj X₁).PreservesZeroMorphisms] in
 private theorem singleSummandMap_eq (p₀ : I₁) (q₀ : I₂) :
     singleSummandMap K₁ K₂ F p₀ q₀ p₀ q₀ = 𝟙 _ := by
+  classical
   simp [singleSummandMap]
 
 /-- A totalization term with only one potentially nonzero summand is that summand. -/
@@ -68,6 +60,7 @@ def mapBifunctorSingleSummandIso (p₀ : I₁) (q₀ : I₂) (j : J)
   hom := mapBifunctorDesc (fun p q _ ↦ singleSummandMap K₁ K₂ F p₀ q₀ p q)
   inv := ιMapBifunctor K₁ K₂ F c p₀ q₀ j h
   hom_inv_id := by
+    classical
     apply mapBifunctor.hom_ext
     intro p q hpq
     by_cases h₀ : p = p₀ ∧ q = q₀
@@ -106,6 +99,7 @@ private def twoSummandMap (p₀ : I₁) (q₀ : I₂) (p₁ : I₁) (q₁ : I₂
     (p : I₁) (q : I₂) :
     (F.obj (K₁.X p)).obj (K₂.X q) ⟶
       (F.obj (K₁.X p₀)).obj (K₂.X q₀) ⊞ (F.obj (K₁.X p₁)).obj (K₂.X q₁) := by
+  classical
   by_cases h₀ : p = p₀ ∧ q = q₀
   · rcases h₀ with ⟨rfl, rfl⟩
     exact biprod.inl
@@ -119,6 +113,7 @@ private theorem twoSummandMap_left (p₀ : I₁) (q₀ : I₂) (p₁ : I₁) (q�
     [HasBinaryBiproduct ((F.obj (K₁.X p₀)).obj (K₂.X q₀))
       ((F.obj (K₁.X p₁)).obj (K₂.X q₁))] :
     twoSummandMap K₁ K₂ F p₀ q₀ p₁ q₁ p₀ q₀ = biprod.inl := by
+  classical
   simp [twoSummandMap]
 
 omit [F.PreservesZeroMorphisms] [∀ X₁, (F.obj X₁).PreservesZeroMorphisms] in
@@ -127,6 +122,7 @@ private theorem twoSummandMap_right (p₀ : I₁) (q₀ : I₂) (p₁ : I₁) (q
       ((F.obj (K₁.X p₁)).obj (K₂.X q₁))]
     (hne : (p₁, q₁) ≠ (p₀, q₀)) :
     twoSummandMap K₁ K₂ F p₀ q₀ p₁ q₁ p₁ q₁ = biprod.inr := by
+  classical
   have h : ¬ (p₁ = p₀ ∧ q₁ = q₀) := by
     rintro ⟨hp, hq⟩
     exact hne (Prod.ext hp hq)
@@ -147,6 +143,7 @@ def mapBifunctorTwoSummandIso (p₀ : I₁) (q₀ : I₂) (p₁ : I₁) (q₁ : 
   inv := biprod.desc (ιMapBifunctor K₁ K₂ F c p₀ q₀ j h₀)
     (ιMapBifunctor K₁ K₂ F c p₁ q₁ j h₁)
   hom_inv_id := by
+    classical
     apply mapBifunctor.hom_ext
     intro p q hpq
     by_cases h₀' : p = p₀ ∧ q = q₀

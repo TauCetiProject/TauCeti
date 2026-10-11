@@ -59,6 +59,39 @@ private def tensorPairRightIso (i j : V) :
     ((F).obj Z).mapIso (zigzagBraidComplexXIso₀ k G j) ≪≫
       zigzagBimoduleLeftUnitor k G (U j)
 
+private theorem tensorPairZeroIso_hom (i j : V) :
+    (tensorPairZeroIso k G i j).hom =
+      ((((F).flip.obj ((B j).X 0)).mapIso (zigzagBraidComplexXIso₁ k G i) ≪≫
+        ((F).obj Z).mapIso (zigzagBraidComplexXIso₁ k G j)) ≪≫
+          zigzagBimoduleLeftUnitor k G Z).hom := by
+  simpa only [tensorPairZeroIso] using congrArg Iso.hom
+    (Iso.trans_assoc
+      (((F).flip.obj ((B j).X 0)).mapIso (zigzagBraidComplexXIso₁ k G i))
+      (((F).obj Z).mapIso (zigzagBraidComplexXIso₁ k G j))
+      (zigzagBimoduleLeftUnitor k G Z)).symm
+
+private theorem tensorPairLeftIso_hom (i j : V) :
+    (tensorPairLeftIso k G i j).hom =
+      ((((F).flip.obj ((B j).X 0)).mapIso (zigzagBraidComplexXIso₀ k G i) ≪≫
+        ((F).obj (U i)).mapIso (zigzagBraidComplexXIso₁ k G j)) ≪≫
+          zigzagBimoduleRightUnitor k G (U i)).hom := by
+  simpa only [tensorPairLeftIso] using congrArg Iso.hom
+    (Iso.trans_assoc
+      (((F).flip.obj ((B j).X 0)).mapIso (zigzagBraidComplexXIso₀ k G i))
+      (((F).obj (U i)).mapIso (zigzagBraidComplexXIso₁ k G j))
+      (zigzagBimoduleRightUnitor k G (U i))).symm
+
+private theorem tensorPairRightIso_hom (i j : V) :
+    (tensorPairRightIso k G i j).hom =
+      ((((F).flip.obj ((B j).X (-1))).mapIso (zigzagBraidComplexXIso₁ k G i) ≪≫
+        ((F).obj Z).mapIso (zigzagBraidComplexXIso₀ k G j)) ≪≫
+          zigzagBimoduleLeftUnitor k G (U j)).hom := by
+  simpa only [tensorPairRightIso] using congrArg Iso.hom
+    (Iso.trans_assoc
+      (((F).flip.obj ((B j).X (-1))).mapIso (zigzagBraidComplexXIso₁ k G i))
+      (((F).obj Z).mapIso (zigzagBraidComplexXIso₀ k G j))
+      (zigzagBimoduleLeftUnitor k G (U j))).symm
+
 /-- The degree-zero term of the actual braid tensor product is the regular bimodule. -/
 def zigzagBraidComplexTensorXZeroIso (i j : V) : (T i j).X 0 ≅ Z :=
   HomologicalComplex.mapBifunctorSingleSummandIso (B i) (B j) F c 0 0 0 (by simp) (by
@@ -77,8 +110,7 @@ theorem ιMapBifunctor_zigzagBraidComplexTensorXZeroIso_hom (i j : V) :
           zigzagBimoduleLeftUnitor k G Z).hom := by
   simp only [zigzagBraidComplexTensorXZeroIso, Iso.trans_hom,
     HomologicalComplex.ι_mapBifunctorSingleSummandIso_hom_assoc]
-  -- Semireducible rewriting aligns the functor object with the unitor's tensor object.
-  erw [tensorPairZeroIso, Iso.trans_assoc]
+  rw [tensorPairZeroIso_hom]
 
 /-- The degree-minus-one term is the biproduct of the two actual vertex bimodules. -/
 def zigzagBraidComplexTensorXMinusOneIso (i j : V) : (T i j).X (-1) ≅ U i ⊞ U j :=
@@ -100,8 +132,7 @@ theorem ιMapBifunctor_zigzagBraidComplexTensorXMinusOneIso_hom_left (i j : V) :
   simp only [zigzagBraidComplexTensorXMinusOneIso, Iso.trans_hom,
     HomologicalComplex.ι_mapBifunctorTwoSummandIso_hom_left_assoc, biprod.mapIso_hom,
     biprod.inl_map]
-  -- Semireducible rewriting aligns the functor object with the unitor's tensor object.
-  erw [tensorPairLeftIso, Iso.trans_assoc]
+  rw [tensorPairLeftIso_hom]
 
 /-- The `(0,-1)` summand identifies with the second vertex summand via the left unitor. -/
 @[reassoc (attr := simp)]
@@ -114,8 +145,7 @@ theorem ιMapBifunctor_zigzagBraidComplexTensorXMinusOneIso_hom_right (i j : V) 
   simp only [zigzagBraidComplexTensorXMinusOneIso, Iso.trans_hom,
     HomologicalComplex.ι_mapBifunctorTwoSummandIso_hom_right_assoc, biprod.mapIso_hom,
     biprod.inr_map]
-  -- Semireducible rewriting aligns the functor object with the unitor's tensor object.
-  erw [tensorPairRightIso, Iso.trans_assoc]
+  rw [tensorPairRightIso_hom]
 
 private theorem tensorPairLeft_d (i j : V) :
     (((F).map ((B i).d (-1) 0)).app ((B j).X 0)) ≫ (tensorPairZeroIso k G i j).hom =
