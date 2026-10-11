@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Convex.Cone.ErrorBound
+public import TauCeti.Geometry.Toric.Algebraic.Examples.Point
 public import TauCeti.Geometry.Toric.Analytic.Fan.Compact
 public import TauCeti.Geometry.Toric.Analytic.Fan.Map.Orbit
 public import Mathlib.Topology.Maps.Proper.CompactlyGenerated
@@ -232,3 +233,25 @@ theorem isProperMap_analyticMap_iff (hΦ0 : Nonempty Φ.cones) :
     f.isProperMap_analyticMap_of_preimage_realMap_subset hΦ hΨ fun τ ↦ (h τ).subset⟩
 
 end TauCeti.Toric.FanHom
+
+namespace TauCeti.Toric.Fan
+
+variable {N V : Type} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
+  {i : N →+ V} (Φ : TauCeti.Toric.Fan i)
+
+/-- A complete regular fan maps properly to the fan of a point. Completeness supplies the
+cone-by-cone support condition for the zero real-linear map. -/
+theorem isProperMap_analyticMap_toPoint_of_isComplete (hΦ : Φ.IsRegular)
+    (hc : Φ.IsComplete) :
+    IsProperMap ((Φ.toPoint).analyticMap hΦ TauCeti.Toric.isRegular_pointFan) := by
+  apply (Φ.toPoint).isProperMap_analyticMap_of_preimage_realMap_subset hΦ
+    TauCeti.Toric.isRegular_pointFan
+  intro τ x hx
+  have hτ : (τ.1 : PointedCone ℝ (Fin 0 → ℝ)) = ⊥ := Subsingleton.elim _ _
+  rw [TauCeti.Toric.Fan.toPoint_realMap, hτ] at hx
+  obtain ⟨σ, hσ, hxσ⟩ := Φ.isComplete_iff.mp hc x
+  refine Set.mem_iUnion.2 ⟨⟨σ, hσ⟩, Set.mem_iUnion.2 ⟨?_, hxσ⟩⟩
+  rw [TauCeti.Toric.Fan.toPoint_realMap, hτ]
+  exact le_of_eq (Subsingleton.elim _ _)
+
+end TauCeti.Toric.Fan

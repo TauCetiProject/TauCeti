@@ -26,63 +26,13 @@ public section
 
 namespace TauCeti.Toric
 
-/-- The fan of a point, on the zero-dimensional lattice. -/
-abbrev toricPointFan : Fan ((Int.castAddHom ℝ).compLeft (Fin 0)) :=
-  Fan.ofCone (isIntegralLattice_intCast 0)
-    (isToricCone_bot ((Int.castAddHom ℝ).compLeft (Fin 0)))
-
-/-- The fan of a point is regular. -/
-theorem isRegular_toricPointFan : toricPointFan.IsRegular :=
-  Fan.isRegular_ofCone (isIntegralLattice_intCast 0)
-    (isRegularCone_bot (isIntegralLattice_intCast 0))
-
-/-- The morphism from the projective-line fan to the fan of a point. -/
-noncomputable def projectiveLineFanToPoint :
-    FanHom projectiveLineFan toricPointFan :=
-  FanHom.ofLatticeMap projectiveLineFan toricPointFan
-    (0 : (Fin 1 → ℤ) →+ (Fin 0 → ℤ)) <| by
-      intro σ hσ
-      refine ⟨⊥, ?_, ?_⟩
-      · exact (Fan.mem_ofCone_cones (isIntegralLattice_intCast 0)
-          (isToricCone_bot ((Int.castAddHom ℝ).compLeft (Fin 0)))).2
-          (PointedCone.IsFaceOf.refl _)
-      · have hzero : projectiveLineFan.lattice.extend
-            ((Int.castAddHom ℝ).compLeft (Fin 0))
-            (0 : (Fin 1 → ℤ) →+ (Fin 0 → ℤ)) = 0 := by
-          symm
-          apply projectiveLineFan.lattice.eq_extend
-          intro n
-          exact Subsingleton.elim _ _
-        rw [hzero]
-        simp
-
 /-- The toric map from the projective-line fan to a point is proper. -/
-theorem isProperMap_projectiveLineFanToPoint :
+theorem isProperMap_projectiveLineFanToPointFan :
     IsProperMap
-      (projectiveLineFanToPoint.analyticMap isRegular_projectiveLineFan
-        isRegular_toricPointFan) := by
-  apply (projectiveLineFanToPoint.isProperMap_analyticMap_iff
-    isRegular_projectiveLineFan isRegular_toricPointFan ⟨affineRayCone,
-      affineRayCone_mem_projectiveLineFan⟩).2
-  intro τ
-  have hτ : (τ.1 : PointedCone ℝ (Fin 0 → ℝ)) = ⊥ := Subsingleton.elim _ _
-  rw [hτ]
-  have hreal : projectiveLineFanToPoint.realMap = 0 := by
-    rw [projectiveLineFanToPoint, FanHom.ofLatticeMap_realMap]
-    symm
-    apply projectiveLineFan.lattice.eq_extend
-    intro n
-    exact Subsingleton.elim _ _
-  ext x
-  rw [hreal]
-  constructor
-  · intro _
-    obtain ⟨σ, hσ, hx⟩ :=
-      (projectiveLineFan.isComplete_iff.mp isComplete_projectiveLineFan) x
-    refine Set.mem_iUnion.2 ⟨⟨σ, hσ⟩, Set.mem_iUnion.2 ⟨?_, hx⟩⟩
-    simp
-  · intro _
-    simp
+      (projectiveLineFan.toPoint.analyticMap isRegular_projectiveLineFan
+        isRegular_pointFan) :=
+  projectiveLineFan.isProperMap_analyticMap_toPoint_of_isComplete isRegular_projectiveLineFan
+    isComplete_projectiveLineFan
 
 /-- The analytic realization of the standard complete rank-one fan is compact. -/
 theorem compactSpace_projectiveLineFan_analyticRealization :

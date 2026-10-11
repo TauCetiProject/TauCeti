@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Toric.Algebraic.Examples.AffineRay
+public import TauCeti.Geometry.Toric.Algebraic.Examples.Point
 public import TauCeti.Geometry.Toric.Algebraic.Fan.Basic
 
 /-!
