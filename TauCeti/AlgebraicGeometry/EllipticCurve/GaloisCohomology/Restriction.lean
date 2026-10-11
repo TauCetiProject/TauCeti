@@ -216,7 +216,6 @@ variable [DecidableEq K] [DecidableEq L] [W.IsElliptic] {m} (hm : IsUnit (m : K)
 
 /-- **Restriction carries Kummer classes to Kummer classes**: the restriction to `L` of the Kummer
 class of `P ∈ E(K)` is the Kummer class of the image of `P` in `E(L)`. -/
-@[simp]
 theorem torsionRes_kummerMap (P : W.toAffine.Point) :
     W.torsionRes τ m (W.kummerMap m hm P) =
       (W⁄L).kummerMap m (by simpa using hm.map (algebraMap K L)) (W.toAffine.pointMap L P) := by
