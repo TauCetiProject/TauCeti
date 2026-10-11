@@ -8,12 +8,11 @@ module
 public import TauCeti.Geometry.RealAlgebraic.Stack.Order
 public import TauCeti.Geometry.RealAlgebraic.OrderInvariant
 public import TauCeti.Topology.Algebra.MvPolynomial.OrderAt
-public import TauCeti.RingTheory.MvPolynomial.IrreducibleBasis.Basic
 
 /-!
 # Ambient order in a McCallum family stack
 
-Suppose an irreducible basis has a common delineation over a connected base. If the ambient
+Suppose an irreducible basis has a common delineation over a preconnected base. If the ambient
 order of the product of the basis members is constant on every root section, then the ambient
 order of each basis member is constant there as well. This is a topological consequence of
 product order constancy: a factor's order can only jump upwards, and the sum of all factor
@@ -47,7 +46,7 @@ cell. Content order is required to be constant on the base, and basis fibers mus
 nonzero. The product order need only be controlled on sections: on sectors, every basis
 member has ambient order zero. -/
 theorem orderAt_eq_of_prod_delineation (hB : F.IsIrreducibleBasis B)
-    (hS : IsConnected S)
+    (hS : IsPreconnected S)
     (D : TauCeti.Delineation fun (b : B) (x : S) ↦ b.1.map (MvPolynomial.eval x.1))
     (hfiber : ∀ b ∈ B, ∀ x ∈ S, b.map (MvPolynomial.eval x) ≠ 0)
     (hcontent : ∀ f ∈ F, ∀ x ∈ S, ∀ y ∈ S,
@@ -63,6 +62,7 @@ theorem orderAt_eq_of_prod_delineation (hB : F.IsIrreducibleBasis B)
       TauCeti.SignInvariant
         (fun a ↦ MvPolynomial.eval a ((finSuccEquiv ℝ n).symm f)) E := by
   classical
+  have : PreconnectedSpace S := isPreconnected_iff_preconnectedSpace.mp hS
   have hnonzero : (∏ b ∈ B, ((finSuccEquiv ℝ n).symm b)) ≠ 0 := by
     apply Finset.prod_ne_zero_iff.mpr
     intro b hb hz
@@ -77,17 +77,19 @@ theorem orderAt_eq_of_prod_delineation (hB : F.IsIrreducibleBasis B)
       apply hB.orderAt_eq hf (hcontent f hf _ (TauCeti.mem_image_cylinder.mp ha).1
         _ (TauCeti.mem_image_cylinder.mp ha').1)
       intro b hb
-      have hEi : TauCeti.cylinder S '' TauCeti.sectionSet D.root i ∈
-          TauCeti.stackCells S D.root := TauCeti.mem_stackCells.mpr (Or.inl ⟨i, rfl⟩)
-      exact (TauCeti.isConnected_of_mem_stackCells hS D.continuous_root
-        D.strictMono_root hEi).isPreconnected.orderAt_eq_of_prod
+      exact ((TauCeti.isPreconnected_sectionSet (D.continuous_root i)).image _
+        TauCeti.continuous_cylinder.continuousOn).orderAt_eq_of_prod
         (fun b ↦ ((finSuccEquiv ℝ n).symm b)) B hnonzero continuous_id.continuousOn
         (hprod i) hb ha ha'
     · intro a ha a' ha'
       exact hB.orderAt_eq_of_mem_sectorSet D hf (hcontent f hf) hfiber ha ha'
   refine ⟨horder, ?_⟩
-  have hconn := TauCeti.isConnected_of_mem_stackCells hS D.continuous_root
-    D.strictMono_root hE
-  exact hconn.isPreconnected.signInvariant_eval_of_orderAt_eq horder
+  have hpreconn : IsPreconnected E := by
+    rcases TauCeti.mem_stackCells.mp hE with ⟨i, rfl⟩ | ⟨j, rfl⟩
+    · exact (TauCeti.isPreconnected_sectionSet (D.continuous_root i)).image _
+        TauCeti.continuous_cylinder.continuousOn
+    · exact (TauCeti.isPreconnected_sectorSet D.continuous_root D.strictMono_root j).image _
+        TauCeti.continuous_cylinder.continuousOn
+  exact hpreconn.signInvariant_eval_of_orderAt_eq horder
 
 end Finset.IsIrreducibleBasis
