@@ -216,6 +216,21 @@ theorem _root_.HeckeRing.GL2.Newform.atkinLehnerTransform_eq_iff (f g : Newform 
   rw [atkinLehner_newform_eq f h.pos h.dvd _ hW]
   exact atkinLehner_newform_eq_iff f g h.pos h.dvd hW
 
+/-- Atkin–Lehner transport at the exact divisor `1` fixes every newform. -/
+@[simp]
+theorem _root_.HeckeRing.GL2.Newform.atkinLehnerTransform_one (f : Newform N k)
+    (h : 1 ∥ N) : f.atkinLehnerTransform h = f := by
+  have hW : IsAtkinLehnerMatrix N 1 (1 : Matrix (Fin 2) (Fin 2) ℤ) :=
+    (isAtkinLehnerMatrix_one_iff_mem_Gamma0 (1 : SL(2, ℤ))).mpr (one_mem _)
+  apply (f.atkinLehnerTransform_eq_iff f h hW).mpr
+  refine ⟨1, ?_⟩
+  have hGL : atkinLehnerGL h.pos hW = 1 := by
+    apply Units.ext
+    simp [coe_atkinLehnerGL]
+  rw [one_smul]
+  apply DFunLike.coe_injective
+  rw [coe_atkinLehnerOperatorGamma1Cusp, hGL, SlashAction.slash_one]
+
 /-- At a good prime `p`, transport multiplies the Fourier coefficient by the inverse of
 `f.χ` at the CRT unit with components `p` modulo `Q` and `1` modulo `N / Q`. -/
 theorem _root_.HeckeRing.GL2.Newform.qExpansion_coeff_prime_atkinLehnerTransform
