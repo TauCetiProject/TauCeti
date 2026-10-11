@@ -97,6 +97,17 @@ theorem quotientTrivialCoeff_apply_eq_zero_iff_exists_eq_sum
     rw [quotientTrivialCoeff_eq_single_of_vertexIdempotent_mul hI v hx, h, Pi.single_zero]
   · intro h; exact congrFun h v
 
+/-- Every scalar is the vertex coefficient of an element of the right vertex projective
+of a relation quotient whose ideal lies in the arrow ideal. -/
+theorem exists_quotientTrivialCoeff_apply_eq (hI : I ≤ arrowIdeal k Q) (v : Q) (c : k) :
+    ∃ x : pathAlgebra k Q ⧸ I, Ideal.Quotient.mk I (vertexIdempotent k v) * x = x ∧
+      quotientTrivialCoeff hI x v = c := by
+  classical
+  refine ⟨c • Ideal.Quotient.mk I (vertexIdempotent k v), ?_, ?_⟩
+  · rw [mul_smul_comm, ← map_mul, vertexIdempotent_mul_self]
+  · simp only [map_smul, quotientTrivialCoeff_mk, trivialCoeff_vertexIdempotent,
+      Pi.smul_apply, Pi.single_eq_same, smul_eq_mul, mul_one]
+
 end Quotient
 
 end TauCeti.PathAlgebra
