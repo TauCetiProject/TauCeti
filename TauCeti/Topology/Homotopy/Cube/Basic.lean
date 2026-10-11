@@ -57,6 +57,8 @@ at `0` while releasing the first.
 * `TauCeti.piOptionEquivProdHomeomorph_symm_mem_boundary`: a point of `I × I^N` whose first
   coordinate is `0` or `1`, or whose second lies on the boundary of `I^N`, is sent to the boundary
   of `I^(Option N)`.
+* `TauCeti.Cube.prodBoundary`: the boundary of the cube `I × I^N`, matching the boundary of
+  `I^(Option N)` by `TauCeti.piOptionEquivProdHomeomorph_mem_prodBoundary_iff`.
 -/
 
 public section
@@ -100,6 +102,30 @@ theorem piOptionEquivProdHomeomorph_symm_mem_boundary {s : I} {t : I^N}
     (h : (s = 0 ∨ s = 1) ∨ t ∈ Cube.boundary N) :
     (piOptionEquivProdHomeomorph fun _ : Option N => I).symm (s, t) ∈ Cube.boundary (Option N) :=
   Cube.boundary_option_iff.2 (by simpa using h)
+
+/-- The boundary of the cube `I × I^N`: the points whose first coordinate is `0` or `1`, or whose
+second coordinate lies on the boundary of `I^N`. -/
+def Cube.prodBoundary (N : Type*) : Set (I × I^N) :=
+  {y | (y.1 = 0 ∨ y.1 = 1) ∨ y.2 ∈ Cube.boundary N}
+
+@[simp]
+theorem Cube.mem_prodBoundary_iff {y : I × I^N} :
+    y ∈ Cube.prodBoundary N ↔ (y.1 = 0 ∨ y.1 = 1) ∨ y.2 ∈ Cube.boundary N :=
+  Iff.rfl
+
+theorem Cube.mk_zero_mem_prodBoundary (t : I^N) : ((0, t) : I × I^N) ∈ Cube.prodBoundary N :=
+  .inl (.inl rfl)
+
+theorem Cube.mk_mem_prodBoundary {s : I} {t : I^N} (h : s = 1 ∨ t ∈ Cube.boundary N) :
+    ((s, t) : I × I^N) ∈ Cube.prodBoundary N :=
+  h.elim (fun hs => .inl (.inr hs)) .inr
+
+/-- `TauCeti.piOptionEquivProdHomeomorph` identifies the boundary of `I^(Option N)` with the
+boundary of `I × I^N`. -/
+theorem piOptionEquivProdHomeomorph_mem_prodBoundary_iff {y : I^(Option N)} :
+    piOptionEquivProdHomeomorph (fun _ => I) y ∈ Cube.prodBoundary N ↔
+      y ∈ Cube.boundary (Option N) := by
+  simp [Cube.boundary_option_iff]
 
 /-- The straight-line path in the unit interval `I` from `a` to `0`, given by `t ↦ a * σ t`
 where `σ` is the interval symmetry `t ↦ 1 - t`. -/

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.Basic
+public import TauCeti.Topology.Homotopy.Cube.Basic
 
 /-!
 # The compression criterion
@@ -68,30 +69,24 @@ namespace RelGenLoop
 /-- Relative cubes that are homotopic relative to the boundary of the cube `I × I^N` are
 homotopic through relative cubes. -/
 theorem Homotopic.of_homotopicRel {p q : RelGenLoop N X}
-    (h : (p : C(I × (I^N), X.pair.fst)).HomotopicRel q
-      {y | (y.1 = 0 ∨ y.1 = 1) ∨ y.2 ∈ Cube.boundary N}) :
+    (h : (p : C(I × (I^N), X.pair.fst)).HomotopicRel q (Cube.prodBoundary N)) :
     Homotopic p q :=
   homotopic_iff.2 <| Nonempty.map (fun F =>
     { toHomotopy := F.toHomotopy
       prop' r := by
         refine mem_iff.2 ⟨fun t => ?_, fun s t hst => ?_⟩
-        · have hy : ((0, t) : I × (I^N)) ∈ {y : I × (I^N) | (y.1 = 0 ∨ y.1 = 1) ∨
-              y.2 ∈ Cube.boundary N} := Or.inl (Or.inl rfl)
-          simpa [F.eq_fst r hy] using apply_zero_mem_range p t
-        · have hy : ((s, t) : I × (I^N)) ∈ {y : I × (I^N) | (y.1 = 0 ∨ y.1 = 1) ∨
-              y.2 ∈ Cube.boundary N} := hst.elim (fun hs => Or.inl (Or.inr hs)) Or.inr
-          simpa [F.eq_fst r hy] using (mem_iff.1 p.2).2 s t hst }) h
+        · simpa [F.eq_fst r (Cube.mk_zero_mem_prodBoundary t)] using apply_zero_mem_range p t
+        · simpa [F.eq_fst r (Cube.mk_mem_prodBoundary hst)] using (mem_iff.1 p.2).2 s t hst }) h
 
 /-- A relative cube that is homotopic, relative to the boundary of the cube `I × I^N`, to a map
 with values in `A` is homotopic through relative cubes to the constant cube. -/
 theorem homotopic_const_of_homotopicRel {p : RelGenLoop N X} {q : C(I × (I^N), X.pair.fst)}
-    (h : (p : C(I × (I^N), X.pair.fst)).HomotopicRel q
-      {y | (y.1 = 0 ∨ y.1 = 1) ∨ y.2 ∈ Cube.boundary N})
+    (h : (p : C(I × (I^N), X.pair.fst)).HomotopicRel q (Cube.prodBoundary N))
     (hq : ∀ y, q y ∈ range X.pair.map) :
     Homotopic p const := by
   obtain ⟨q', rfl⟩ : ∃ q' : RelGenLoop N X, (q' : C(I × (I^N), X.pair.fst)) = q :=
     ⟨mk q (fun _ => hq _) fun s t hst =>
-      (h.fst_eq_snd (hst.elim (fun hs => Or.inl (Or.inr hs)) Or.inr)).symm.trans
+      (h.fst_eq_snd (Cube.mk_mem_prodBoundary hst)).symm.trans
         ((mem_iff.1 p.2).2 s t hst), coe_mk _ _ _⟩
   exact (Homotopic.of_homotopicRel h).trans (homotopic_const_of_mem_range q' hq)
 
@@ -137,8 +132,7 @@ private theorem sweep_apply_one (w : I) : (sweep w 1).1 = 1 ∨ (sweep w 1).2 = 
 /-- Sweeping the path of `F` is a homotopy relative to the boundary of the cube from `p` to the
 face swept out in `A`. -/
 private theorem homotopicRel_sweepFace :
-    (p : C(I × (I^N), X.pair.fst)).HomotopicRel (sweepFace F)
-      {y | (y.1 = 0 ∨ y.1 = 1) ∨ y.2 ∈ Cube.boundary N} := by
+    (p : C(I × (I^N), X.pair.fst)).HomotopicRel (sweepFace F) (Cube.prodBoundary N) := by
   have hs : Continuous fun y : I × (I × (I^N)) => sweep y.1 y.2.1 :=
     continuous_sweep.comp (f := fun y : I × (I × (I^N)) => (y.1, y.2.1)) (by fun_prop)
   refine ⟨{ toFun y := F ((sweep y.1 y.2.1).1, ((sweep y.1 y.2.1).2, y.2.2))
@@ -150,6 +144,7 @@ private theorem homotopicRel_sweepFace :
   obtain ⟨s, t⟩ := y
   rw [ContinuousMap.coe_mk, coe_coe]
   dsimp only
+  simp only [Cube.mem_prodBoundary_iff] at hy
   rcases hy with (rfl | rfl) | ht
   · rw [sweep_apply_zero, F.apply_zero, coe_coe]
   · rw [apply_one p]
@@ -166,8 +161,7 @@ end Sweep
 relative to the boundary of the cube `I × I^N`, to a map with values in `A`. -/
 theorem exists_homotopicRel_of_homotopic_const {p : RelGenLoop N X} (h : Homotopic p const) :
     ∃ q : C(I × (I^N), X.pair.fst),
-      (p : C(I × (I^N), X.pair.fst)).HomotopicRel q
-        {y | (y.1 = 0 ∨ y.1 = 1) ∨ y.2 ∈ Cube.boundary N} ∧
+      (p : C(I × (I^N), X.pair.fst)).HomotopicRel q (Cube.prodBoundary N) ∧
       ∀ y, q y ∈ range X.pair.map :=
   let ⟨F⟩ := homotopic_iff.1 h
   ⟨sweepFace F, homotopicRel_sweepFace F, sweepFace_mem_range F⟩
@@ -182,8 +176,7 @@ of the cube `I × I^N`, to a map with values in `A`. -/
 theorem mk_eq_default_iff {p : RelGenLoop N X} :
     mk p = default ↔
       ∃ q : C(I × (I^N), X.pair.fst),
-        (p : C(I × (I^N), X.pair.fst)).HomotopicRel q
-          {y | (y.1 = 0 ∨ y.1 = 1) ∨ y.2 ∈ Cube.boundary N} ∧
+        (p : C(I × (I^N), X.pair.fst)).HomotopicRel q (Cube.prodBoundary N) ∧
         ∀ y, q y ∈ range X.pair.map := by
   rw [default_eq, mk_eq_mk]
   exact ⟨RelGenLoop.exists_homotopicRel_of_homotopic_const,
@@ -194,8 +187,7 @@ homotopic, relative to the boundary of the cube `I × I^N`, to a map with values
 theorem subsingleton_iff :
     Subsingleton (RelHomotopyGroup N X) ↔
       ∀ p : RelGenLoop N X, ∃ q : C(I × (I^N), X.pair.fst),
-        (p : C(I × (I^N), X.pair.fst)).HomotopicRel q
-          {y | (y.1 = 0 ∨ y.1 = 1) ∨ y.2 ∈ Cube.boundary N} ∧
+        (p : C(I × (I^N), X.pair.fst)).HomotopicRel q (Cube.prodBoundary N) ∧
         ∀ y, q y ∈ range X.pair.map := by
   refine ⟨fun _ p => mk_eq_default_iff.1 (Subsingleton.elim _ _), fun h => ⟨fun a b => ?_⟩⟩
   obtain ⟨p, rfl⟩ := mk_surjective a

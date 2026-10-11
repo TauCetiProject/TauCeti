@@ -262,13 +262,12 @@ theorem exists_homotopic_map_of_homotopic_const
     ∃ α : Ω^ (Option N) X.pair.snd X.basepoint,
       GenLoop.Homotopic γ (GenLoop.map X.pair.map.hom rfl α) := by
   obtain ⟨q, ⟨H⟩, hq⟩ := exists_homotopicRel_of_homotopic_const h
-  let e : C(I^(Option N), I × (I^N)) := ⟨fun y => (y none, fun k => y (some k)), by fun_prop⟩
-  have he (y : I^(Option N)) : e y = (y none, fun k => y (some k)) := (rfl)
-  have hb {y : I^(Option N)} (hy : y ∈ Cube.boundary (Option N)) :
-      e y ∈ {y : I × (I^N) | (y.1 = 0 ∨ y.1 = 1) ∨ y.2 ∈ Cube.boundary N} := by
-    simpa [he] using Cube.boundary_option_iff.1 hy
+  let e : C(I^(Option N), I × (I^N)) := piOptionEquivProdHomeomorph fun _ : Option N => I
+  have hb {y : I^(Option N)} (hy : y ∈ Cube.boundary (Option N)) : e y ∈ Cube.prodBoundary N :=
+    piOptionEquivProdHomeomorph_mem_prodBoundary_iff.2 hy
   have hγ (y : I^(Option N)) : ofGenLoop γ (e y) = γ y := by
-    rw [ofGenLoop_apply, he, ← piOptionEquivProdHomeomorph_apply, Homeomorph.symm_apply_apply]
+    rw [ofGenLoop_apply]
+    exact congrArg γ (Homeomorph.symm_apply_apply _ y)
   refine ⟨⟨X.pair.liftSnd (q.comp e) fun y => hq _, fun y hy => ?_⟩, ⟨?_⟩⟩
   · rw [TopPair.liftSnd_apply_eq_iff, ContinuousMap.comp_apply, ← H.fst_eq_snd (hb hy), coe_coe,
       hγ]
