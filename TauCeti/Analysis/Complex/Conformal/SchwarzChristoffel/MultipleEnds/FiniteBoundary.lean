@@ -49,6 +49,27 @@ theorem mem_schwarzChristoffelFiniteBoundary (a e : ι → ℝ) (z₀ : UpperHal
         (∑ i, e i < -1 ∧ w = schwarzChristoffelVertexAtInfinity a e z₀) := by
   simp [schwarzChristoffelFiniteBoundary]
 
+/-- Changing the base point translates every finite boundary value by the same constant. -/
+theorem schwarzChristoffelFiniteBoundary_change_base (a e : ι → ℝ)
+    (b c : UpperHalfPlane) :
+    schwarzChristoffelFiniteBoundary a e b =
+      (fun w : ℂ => w - schwarzChristoffelPrimitive a e c b) ''
+        schwarzChristoffelFiniteBoundary a e c := by
+  ext w
+  simp only [mem_schwarzChristoffelFiniteBoundary, Set.mem_image]
+  constructor
+  · rintro (⟨p, hp, rfl⟩ | ⟨hsum, rfl⟩)
+    · refine ⟨schwarzChristoffelBoundary a e c p, ?_, ?_⟩
+      · exact Or.inl ⟨p, hp, rfl⟩
+      · rw [← schwarzChristoffelBoundary_change_base a e b c p hp]
+    · refine ⟨schwarzChristoffelVertexAtInfinity a e c, ?_, ?_⟩
+      · exact Or.inr ⟨hsum, rfl⟩
+      · rw [← schwarzChristoffelVertexAtInfinity_change_base a e b c hsum]
+  · rintro ⟨u, (⟨p, hp, rfl⟩ | ⟨hsum, rfl⟩), rfl⟩
+    · exact Or.inl ⟨p, hp, schwarzChristoffelBoundary_change_base a e b c p hp⟩
+    · exact Or.inr ⟨hsum,
+        (schwarzChristoffelVertexAtInfinity_change_base a e b c hsum).symm⟩
+
 /-- The finite trace is exactly the preimage in `ℂ` of the sphere-valued boundary range.
 Logarithmic prevertices contribute no finite value. -/
 theorem schwarzChristoffelFiniteBoundary_eq_preimage_range (a e : ι → ℝ)
