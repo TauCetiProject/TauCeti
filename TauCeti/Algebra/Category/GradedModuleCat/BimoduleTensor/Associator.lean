@@ -24,8 +24,6 @@ all three factors packages the comparison as an isomorphism of trifunctors,
 ready for Mathlib's totalization associator. No internal Koszul sign is
 introduced; cohomological signs belong to the complex totalization.
 
-This is a prerequisite for the adjacent zigzag braid relation and the Artin
-action. It does not assert either relation or construct the action.
 -/
 
 public section
@@ -69,41 +67,19 @@ private local instance assocComm {S T : Type*} [Ring S] [Ring T]
   TauCeti.Algebra.TensorProduct.moduleSMulCommClass (k := k) (A := S) (B := Tᵐᵒᵖ) X
 
 attribute [local instance 100] BalancedTensorProduct.leftModule BalancedTensorProduct.rightModule
+  BalancedTensorProduct.leftSMulCommClass BalancedTensorProduct.rightSMulCommClass
+  BalancedTensorProduct.outerSMulCommClass
 
 local notation "MN" => bimoduleTensorObj Γ Δ Θ M N
 local notation "NP" => bimoduleTensorObj Δ Θ Ψ N P
 local notation "L" => bimoduleTensorObj Γ Θ Ψ MN P
 local notation "R" => bimoduleTensorObj Γ Δ Ψ M NP
 
-private theorem underlying_right (c : Cᵐᵒᵖ) (x : MN) :
-    bimoduleTensorUnderlyingEquiv Γ Δ Θ M N (c • x) =
-      c • bimoduleTensorUnderlyingEquiv Γ Δ Θ M N x := by
-  induction x using bimoduleTensor_induction_on Γ Δ Θ M N with
-  | ht m n =>
-    rw [TauCeti.Algebra.TensorProduct.smul_moduleRight,
-      tmul_smul_bimoduleTensorTmul, bimoduleTensorUnderlyingEquiv_tmul]
-    simp only [← Algebra.TensorProduct.one_def, one_smul, bimoduleTensorUnderlyingEquiv_tmul,
-      BalancedTensorProduct.smul_tmul_right,
-      TauCeti.Algebra.TensorProduct.smul_moduleRight]
-  | ha x y hx hy => simp only [smul_add, map_add, hx, hy]
-
-private theorem underlying_left (b : B) (x : NP) :
-    bimoduleTensorUnderlyingEquiv Δ Θ Ψ N P (b • x) =
-      b • bimoduleTensorUnderlyingEquiv Δ Θ Ψ N P x := by
-  induction x using bimoduleTensor_induction_on Δ Θ Ψ N P with
-  | ht n p =>
-    rw [TauCeti.Algebra.TensorProduct.smul_moduleLeft,
-      tmul_smul_bimoduleTensorTmul, bimoduleTensorUnderlyingEquiv_tmul]
-    simp only [← Algebra.TensorProduct.one_def, one_smul, bimoduleTensorUnderlyingEquiv_tmul,
-      BalancedTensorProduct.smul_tmul_left,
-      TauCeti.Algebra.TensorProduct.smul_moduleLeft]
-  | ha x y hx hy => simp only [smul_add, map_add, hx, hy]
-
 private def leftUnderlying : L ≃ₗ[k]
     BalancedTensorProduct k C (BalancedTensorProduct k B M N) P :=
   (bimoduleTensorUnderlyingEquiv Γ Θ Ψ MN P).trans
     (BalancedTensorProduct.congr (bimoduleTensorUnderlyingEquiv Γ Δ Θ M N)
-      (LinearEquiv.refl k P) (fun c x ↦ underlying_right Γ Δ Θ M N (op c) x)
+      (LinearEquiv.refl k P) (fun c x ↦ bimoduleTensorUnderlyingEquiv_smul_right Γ Δ Θ M N (op c) x)
       (fun _ _ ↦ rfl))
 
 private def rightUnderlying : R ≃ₗ[k]
@@ -111,7 +87,7 @@ private def rightUnderlying : R ≃ₗ[k]
   (bimoduleTensorUnderlyingEquiv Γ Δ Ψ M NP).trans
     (BalancedTensorProduct.congr (LinearEquiv.refl k M)
       (bimoduleTensorUnderlyingEquiv Δ Θ Ψ N P)
-      (fun _ _ ↦ rfl) (fun b x ↦ underlying_left Δ Θ Ψ N P b x))
+      (fun _ _ ↦ rfl) (fun b x ↦ bimoduleTensorUnderlyingEquiv_smul_left Δ Θ Ψ N P b x))
 
 private def assocCarrier : L ≃ₗ[k] R :=
   (leftUnderlying Γ Δ Θ Ψ M N P).trans
@@ -125,7 +101,7 @@ private theorem leftUnderlying_tmul (m : M) (n : N) (p : P) :
   rw [LinearEquiv.trans_apply, bimoduleTensorUnderlyingEquiv_tmul]
   have h := BalancedTensorProduct.congr_tmul
     (bimoduleTensorUnderlyingEquiv Γ Δ Θ M N) (LinearEquiv.refl k P)
-    (fun c x ↦ underlying_right Γ Δ Θ M N (op c) x) (fun _ _ ↦ rfl)
+    (fun c x ↦ bimoduleTensorUnderlyingEquiv_smul_right Γ Δ Θ M N (op c) x) (fun _ _ ↦ rfl)
     (bimoduleTensorTmul Γ Δ Θ M N m n) p
   simpa only [bimoduleTensorUnderlyingEquiv_tmul, LinearEquiv.refl_apply] using h
 
@@ -137,7 +113,7 @@ private theorem rightUnderlying_tmul (m : M) (n : N) (p : P) :
   rw [LinearEquiv.trans_apply, bimoduleTensorUnderlyingEquiv_tmul]
   have h := BalancedTensorProduct.congr_tmul (LinearEquiv.refl k M)
     (bimoduleTensorUnderlyingEquiv Δ Θ Ψ N P) (fun _ _ ↦ rfl)
-    (fun b x ↦ underlying_left Δ Θ Ψ N P b x)
+    (fun b x ↦ bimoduleTensorUnderlyingEquiv_smul_left Δ Θ Ψ N P b x)
     m (bimoduleTensorTmul Δ Θ Ψ N P n p)
   simpa only [bimoduleTensorUnderlyingEquiv_tmul, LinearEquiv.refl_apply] using h
 
@@ -149,35 +125,71 @@ private theorem assocCarrier_tmul (m : M) (n : N) (p : P) :
   simp only [assocCarrier, LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply]
   rw [leftUnderlying_tmul, rightUnderlying_tmul, BalancedTensorProduct.assoc_tmul]
 
+private theorem leftUnderlying_smul_left (a : A) (x : L) :
+    leftUnderlying Γ Δ Θ Ψ M N P (a • x) = a • leftUnderlying Γ Δ Θ Ψ M N P x := by
+  simp only [leftUnderlying, LinearEquiv.trans_apply,
+    bimoduleTensorUnderlyingEquiv_smul_left]
+  -- Match the reflexive factor equivalence in the transported congruence.
+  erw [BalancedTensorProduct.congr_apply, BalancedTensorProduct.congr_apply]
+  exact BalancedTensorProduct.map_smul_left A
+    (bimoduleTensorUnderlyingEquiv Γ Δ Θ M N).toLinearMap (LinearEquiv.refl k P).toLinearMap
+    (fun c y ↦ bimoduleTensorUnderlyingEquiv_smul_right Γ Δ Θ M N (op c) y)
+    (fun _ _ ↦ rfl) (fun a y ↦ bimoduleTensorUnderlyingEquiv_smul_left Γ Δ Θ M N a y) a _
+
+private theorem leftUnderlying_smul_right (d : Dᵐᵒᵖ) (x : L) :
+    leftUnderlying Γ Δ Θ Ψ M N P (d • x) = d • leftUnderlying Γ Δ Θ Ψ M N P x := by
+  simp only [leftUnderlying, LinearEquiv.trans_apply,
+    bimoduleTensorUnderlyingEquiv_smul_right]
+  -- Match the reflexive factor equivalence in the transported congruence.
+  erw [BalancedTensorProduct.congr_apply, BalancedTensorProduct.congr_apply]
+  exact BalancedTensorProduct.map_smul_right Dᵐᵒᵖ
+    (bimoduleTensorUnderlyingEquiv Γ Δ Θ M N).toLinearMap (LinearEquiv.refl k P).toLinearMap
+    (fun c y ↦ bimoduleTensorUnderlyingEquiv_smul_right Γ Δ Θ M N (op c) y)
+    (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) d _
+
+private theorem rightUnderlying_smul_left (a : A) (x : R) :
+    rightUnderlying Γ Δ Θ Ψ M N P (a • x) = a • rightUnderlying Γ Δ Θ Ψ M N P x := by
+  simp only [rightUnderlying, LinearEquiv.trans_apply,
+    bimoduleTensorUnderlyingEquiv_smul_left]
+  -- Match the reflexive factor equivalence in the transported congruence.
+  erw [BalancedTensorProduct.congr_apply, BalancedTensorProduct.congr_apply]
+  exact BalancedTensorProduct.map_smul_left A
+    (LinearEquiv.refl k M).toLinearMap (bimoduleTensorUnderlyingEquiv Δ Θ Ψ N P).toLinearMap
+    (fun _ _ ↦ rfl) (fun b y ↦ bimoduleTensorUnderlyingEquiv_smul_left Δ Θ Ψ N P b y)
+    (fun _ _ ↦ rfl) a _
+
+private theorem rightUnderlying_smul_right (d : Dᵐᵒᵖ) (x : R) :
+    rightUnderlying Γ Δ Θ Ψ M N P (d • x) = d • rightUnderlying Γ Δ Θ Ψ M N P x := by
+  simp only [rightUnderlying, LinearEquiv.trans_apply,
+    bimoduleTensorUnderlyingEquiv_smul_right]
+  -- Match the reflexive factor equivalence in the transported congruence.
+  erw [BalancedTensorProduct.congr_apply, BalancedTensorProduct.congr_apply]
+  exact BalancedTensorProduct.map_smul_right Dᵐᵒᵖ
+    (LinearEquiv.refl k M).toLinearMap (bimoduleTensorUnderlyingEquiv Δ Θ Ψ N P).toLinearMap
+    (fun _ _ ↦ rfl) (fun b y ↦ bimoduleTensorUnderlyingEquiv_smul_left Δ Θ Ψ N P b y)
+    (fun d y ↦ bimoduleTensorUnderlyingEquiv_smul_right Δ Θ Ψ N P d y) d _
+
 private theorem assocCarrier_left (a : A) (x : L) :
     assocCarrier Γ Δ Θ Ψ M N P ((a ⊗ₜ[k] (1 : Dᵐᵒᵖ)) • x) =
       (a ⊗ₜ[k] (1 : Dᵐᵒᵖ)) • assocCarrier Γ Δ Θ Ψ M N P x := by
-  induction x using bimoduleTensor_induction_on Γ Θ Ψ MN P with
-  | ht y p =>
-    induction y using bimoduleTensor_induction_on Γ Δ Θ M N with
-    | ht m n =>
-      simp only [tmul_smul_bimoduleTensorTmul, ← Algebra.TensorProduct.one_def,
-        one_smul, assocCarrier_tmul]
-    | ha y z hy hz =>
-      simp only [tmul_smul_bimoduleTensorTmul, ← Algebra.TensorProduct.one_def,
-        one_smul] at hy hz ⊢
-      simp only [smul_add, bimoduleTensorTmul_add_left, map_add, hy, hz]
-  | ha x y hx hy => simp only [smul_add, map_add, hx, hy]
+  rw [← TauCeti.Algebra.TensorProduct.smul_moduleLeft,
+    ← TauCeti.Algebra.TensorProduct.smul_moduleLeft]
+  apply (rightUnderlying Γ Δ Θ Ψ M N P).injective
+  rw [rightUnderlying_smul_left]
+  simp only [assocCarrier, LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply]
+  rw [leftUnderlying_smul_left]
+  exact BalancedTensorProduct.assoc_smul_left A a (leftUnderlying Γ Δ Θ Ψ M N P x)
 
 private theorem assocCarrier_right (d : Dᵐᵒᵖ) (x : L) :
     assocCarrier Γ Δ Θ Ψ M N P (((1 : A) ⊗ₜ[k] d) • x) =
       ((1 : A) ⊗ₜ[k] d) • assocCarrier Γ Δ Θ Ψ M N P x := by
-  induction x using bimoduleTensor_induction_on Γ Θ Ψ MN P with
-  | ht y p =>
-    induction y using bimoduleTensor_induction_on Γ Δ Θ M N with
-    | ht m n =>
-      simp only [tmul_smul_bimoduleTensorTmul, ← Algebra.TensorProduct.one_def,
-        one_smul, assocCarrier_tmul]
-    | ha y z hy hz =>
-      simp only [tmul_smul_bimoduleTensorTmul, ← Algebra.TensorProduct.one_def,
-        one_smul] at hy hz ⊢
-      simp only [bimoduleTensorTmul_add_left, map_add, smul_add, hy, hz]
-  | ha x y hx hy => simp only [smul_add, map_add, hx, hy]
+  rw [← TauCeti.Algebra.TensorProduct.smul_moduleRight,
+    ← TauCeti.Algebra.TensorProduct.smul_moduleRight]
+  apply (rightUnderlying Γ Δ Θ Ψ M N P).injective
+  rw [rightUnderlying_smul_right]
+  simp only [assocCarrier, LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply]
+  rw [leftUnderlying_smul_right]
+  exact BalancedTensorProduct.assoc_smul_right Dᵐᵒᵖ d (leftUnderlying Γ Δ Θ Ψ M N P x)
 
 private def assocLinear : L →ₗ[A ⊗[k] Dᵐᵒᵖ] R :=
   TauCeti.Algebra.TensorProduct.linearMapOfFactors L
@@ -186,8 +198,7 @@ private def assocLinear : L →ₗ[A ⊗[k] Dᵐᵒᵖ] R :=
 
 private theorem assocLinear_apply (x : L) :
     assocLinear Γ Δ Θ Ψ M N P x = assocCarrier Γ Δ Θ Ψ M N P x := by
-  rw [assocLinear, TauCeti.Algebra.TensorProduct.linearMapOfFactors_apply]
-  rfl
+  rw [assocLinear, TauCeti.Algebra.TensorProduct.linearMapOfFactors_apply, LinearEquiv.coe_coe]
 
 private def assocEnvelopeEquiv : L ≃ₗ[A ⊗[k] Dᵐᵒᵖ] R :=
   LinearEquiv.ofBijective (assocLinear Γ Δ Θ Ψ M N P)
@@ -201,31 +212,17 @@ private theorem assocEnvelopeEquiv_apply (x : L) :
     assocEnvelopeEquiv Γ Δ Θ Ψ M N P x = assocCarrier Γ Δ Θ Ψ M N P x := by
   simp only [assocEnvelopeEquiv, LinearEquiv.ofBijective_apply, assocLinear_apply]
 
-private theorem tensorLinear_mem {Q : Type*} [AddCommGroup Q] [Module k Q]
-    (H : InternalGrading k Q) (f : MN →ₗ[k] Q) (s : ℤ)
-    (hf : ∀ {p q : ℤ} {m : M} {n : N},
-      m ∈ M.grading.piece p → n ∈ N.grading.piece q →
-        f (bimoduleTensorTmul Γ Δ Θ M N m n) ∈ H.piece (p + q + s))
-    {p : ℤ} {z : MN} (hz : z ∈ (MN).grading.piece p) : f z ∈ H.piece (p + s) := by
-  obtain ⟨x, hx, rfl⟩ := (mem_bimoduleTensorObj_piece_iff Γ Δ Θ M N).1 hz
-  rw [InternalGrading.tensorProduct_piece_eq_iSup] at hx
-  refine (iSup_le fun q ↦ Submodule.map₂_le.mpr fun m hm n hn ↦ ?_ :
-    _ ≤ (H.piece (p + s)).comap (f.comp (bimoduleTensorMkQ Γ Δ Θ M N))) hx
-  rw [Submodule.mem_comap, TensorProduct.mk_apply, LinearMap.comp_apply,
-    bimoduleTensorMkQ_tmul]
-  simpa only [show q + (p - q) = p by omega] using hf hm hn
-
 private theorem assocCarrier_mem {r : ℤ} {x : L} (hx : x ∈ (L).grading.piece r) :
     assocCarrier Γ Δ Θ Ψ M N P x ∈ (R).grading.piece r := by
   -- Apply the public quotient grading's span description at both tensor stages.
-  have h := tensorLinear_mem Γ Θ Ψ MN P (R).grading
+  have h := bimoduleTensorObj_map_mem_of_tmul Γ Θ Ψ MN P (R).grading
     (assocCarrier Γ Δ Θ Ψ M N P).toLinearMap 0 (by
       intro s t y p hy hp
       let f : MN →ₗ[k] R :=
         { toFun y := assocCarrier Γ Δ Θ Ψ M N P (bimoduleTensorTmul Γ Θ Ψ MN P y p)
           map_add' y z := by simp only [bimoduleTensorTmul_add_left, map_add]
           map_smul' a y := by simp only [bimoduleTensorTmul_smul_left, map_smul, RingHom.id_apply] }
-      have hinner := tensorLinear_mem Γ Δ Θ M N (R).grading f t (by
+      have hinner := bimoduleTensorObj_map_mem_of_tmul Γ Δ Θ M N (R).grading f t (by
         intro a b m n hm hn
         dsimp only [f, LinearMap.coe_mk, AddHom.coe_mk]
         rw [assocCarrier_tmul]
@@ -302,8 +299,10 @@ def bimoduleTensorAssociatorNatIso :
     NatIso.ofComponents (fun P ↦ bimoduleTensorAssociator Γ Δ Θ Ψ M N P)
       (by
         intro P P' h
-        dsimp only [bifunctorComp₁₂, bifunctorComp₁₂Obj, bifunctorComp₂₃,
-          bifunctorComp₂₃Obj, bimoduleTensor]
+        simp only [bifunctorComp₁₂_obj, bifunctorComp₁₂Obj_obj_obj, bifunctorComp₁₂Obj_obj_map,
+          bifunctorComp₂₃_obj, bifunctorComp₂₃Obj_obj_obj, bifunctorComp₂₃Obj_obj_map,
+          bimoduleTensor_obj_map,
+          bimoduleTensor_obj_obj]
         simpa only [bimoduleTensorMap_id] using
           bimoduleTensorAssociator_naturality Γ Δ Θ Ψ M N P (𝟙 M) (𝟙 N) h))
     (by
@@ -311,8 +310,9 @@ def bimoduleTensorAssociatorNatIso :
       apply NatTrans.ext
       funext P
       simp only [NatTrans.comp_app]
-      dsimp only [bifunctorComp₁₂, bifunctorComp₁₂Obj, bifunctorComp₂₃,
-        bifunctorComp₂₃Obj, bimoduleTensor, NatIso.ofComponents]
+      simp only [bifunctorComp₁₂_obj, bifunctorComp₁₂Obj_map_app,
+        bifunctorComp₂₃_obj, bifunctorComp₂₃Obj_map_app, bimoduleTensor_obj_map,
+        bimoduleTensor_map_app, bimoduleTensor_obj_obj]
       exact bimoduleTensorAssociator_naturality Γ Δ Θ Ψ M N P (𝟙 M) g (𝟙 P)))
     (by
       intro M M' f
@@ -322,8 +322,10 @@ def bimoduleTensorAssociatorNatIso :
       apply NatTrans.ext
       funext P
       simp only [NatTrans.comp_app, NatIso.ofComponents_hom_app]
-      dsimp only [bifunctorComp₁₂, bifunctorComp₁₂Obj, bifunctorComp₂₃,
-        bifunctorComp₂₃Obj, bimoduleTensor, NatIso.ofComponents]
+      simp only [bifunctorComp₁₂_obj, bifunctorComp₁₂Obj_obj_obj,
+        bifunctorComp₂₃_obj, bifunctorComp₂₃Obj_obj_obj,
+        bifunctorComp₁₂_map_app_app, bifunctorComp₂₃_map_app_app,
+        bimoduleTensor_map_app, bimoduleTensor_obj_obj]
       simpa only [bimoduleTensorMap_id] using
         bimoduleTensorAssociator_naturality Γ Δ Θ Ψ M N P f (𝟙 N) (𝟙 P))
 
@@ -332,15 +334,13 @@ def bimoduleTensorAssociatorNatIso :
 theorem bimoduleTensorAssociatorNatIso_hom_app :
     (((bimoduleTensorAssociatorNatIso.{vM, vN, vP} Γ Δ Θ Ψ).hom.app M).app N).app P =
       (bimoduleTensorAssociator Γ Δ Θ Ψ M N P).hom := by
-  rw [bimoduleTensorAssociatorNatIso]
-  rfl
+  simp only [bimoduleTensorAssociatorNatIso, NatIso.ofComponents_hom_app]
 
 /-- The reverse trifunctor comparison has the inverse graded associator as each component. -/
 @[simp]
 theorem bimoduleTensorAssociatorNatIso_inv_app :
     (((bimoduleTensorAssociatorNatIso.{vM, vN, vP} Γ Δ Θ Ψ).inv.app M).app N).app P =
       (bimoduleTensorAssociator Γ Δ Θ Ψ M N P).inv := by
-  rw [bimoduleTensorAssociatorNatIso]
-  rfl
+  simp only [bimoduleTensorAssociatorNatIso, NatIso.ofComponents_inv_app]
 
 end TauCeti.GradedModuleCat
