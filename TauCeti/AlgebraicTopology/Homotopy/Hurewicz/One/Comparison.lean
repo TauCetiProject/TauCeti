@@ -106,13 +106,13 @@ section Integer
 variable {X : Type} [TopologicalSpace X] {x : X}
 
 /-- The singular `1`-simplex traced by a generalized loop is the singular `1`-simplex of the
-corresponding loop (`TauCeti.HurewiczOne.simplex₁`). -/
+corresponding loop (`TauCeti.TauCeti.TopCat.simplex₁`). -/
 lemma simplex₁_eq (p : Ω^ (Fin 1) X x) :
-    simplex₁ p = HurewiczOne.simplex₁ (genLoopEquivOfUnique (Fin 1) p).toContinuousMap := by
+    simplex₁ p = TauCeti.TopCat.simplex₁ (genLoopEquivOfUnique (Fin 1) p).toContinuousMap := by
   apply ((TopCat.of X).toSSetObjEquiv _).injective
   refine ((TopCat.toSSetObjEquiv_toSSet_map_app
     (TopPair.Hom.fst (toCubeBoundaryPairHom.{0} p)) cubeSimplex).trans ?_).trans
-      (HurewiczOne.toSSetObjEquiv_simplex₁ _).symm
+      (TauCeti.TopCat.toSSetObjEquiv_simplex₁ _).symm
   ext a
   rw [ContinuousMap.comp_apply, toSSetObjEquiv_cubeSimplex_apply]
   exact (toCubeBoundaryPairHom_fst_apply p _).trans (congrArg p (cubePoint_down _))
@@ -177,13 +177,8 @@ theorem hurewiczHom_hom_one_eq_neg_hurewiczHomologyAddEquiv [PathConnectedSpace 
     (hurewiczHom (ModuleCat.of ℤ ℤ) 0 a).hom 1 =
       -hurewiczHomologyAddEquiv (X := TopCat.of X) x (Additive.ofMul (Abelianization.of
         (homotopyGroupOfUniqueMulEquivFundamentalGroup (Fin 1) a.toMul))) := by
-  induction a using Additive.rec with | ofMul a =>
-  induction a using Quotient.inductionOn with | h p =>
-  refine (congrArg (fun f ↦ ModuleCat.Hom.hom f 1)
-    ((hurewiczHom_apply _ 0 _).trans (hurewicz_mk _ 0 p))).trans
-      ((GenLoop.hurewicz_hom_one_eq_neg_loopClass p).trans (congrArg Neg.neg ?_))
-  exact (congrArg (H₁AddEquivHomology (TopCat.of X))
-    (hurewiczAb_ofMul_of x (genLoopEquivOfUnique (Fin 1) p)).symm).trans
-      (hurewiczHomologyAddEquiv_apply _).symm
+  refine (hurewiczHom_hom_one_eq_neg_hurewicz₁ a).trans (congrArg Neg.neg ?_)
+  exact (congrArg (H₁AddEquivHomology (TopCat.of X)) (hurewiczAb_ofMul_of_eq x _).symm).trans
+    (hurewiczHomologyAddEquiv_apply _).symm
 
 end HomotopyGroup
