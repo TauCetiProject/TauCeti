@@ -164,13 +164,13 @@ lemma homologyMap_comp_homologyIsoSc'_hom :
     homologyMap f j ≫ (L.homologyIsoSc' i j k hi hk).hom =
       (K.homologyIsoSc' i j k hi hk).hom ≫
         ShortComplex.homologyMap ((shortComplexFunctor' C c i j k).map f) := by
-  -- `homologyMap f j` and `homologyIsoSc'` are homology maps of morphisms of short complexes
-  change ShortComplex.homologyMap ((shortComplexFunctor C c j).map f) ≫
-      ShortComplex.homologyMap ((natIsoSc' C c i j k hi hk).hom.app L) =
-    ShortComplex.homologyMap ((natIsoSc' C c i j k hi hk).hom.app K) ≫
-      ShortComplex.homologyMap ((shortComplexFunctor' C c i j k).map f)
-  rw [← ShortComplex.homologyMap_comp, ← ShortComplex.homologyMap_comp,
-    (natIsoSc' C c i j k hi hk).hom.naturality f]
+  rw [homologyIsoSc', homologyIsoSc', ShortComplex.homologyMapIso_hom,
+    ShortComplex.homologyMapIso_hom, homologyMap]
+  -- the source of `homologyMap f j` is `K.homology j`, which is `(K.sc j).homology` only up to
+  -- unfolding `HomologicalComplex.homology`, so the generic `homologyMap_comp` needs `erw`
+  erw [← ShortComplex.homologyMap_comp, ← ShortComplex.homologyMap_comp]
+  congr 1
+  exact (natIsoSc' C c i j k hi hk).hom.naturality f
 
 end HomologyIsoSc'
 
