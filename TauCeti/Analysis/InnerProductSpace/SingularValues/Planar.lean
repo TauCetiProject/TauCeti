@@ -23,7 +23,7 @@ singular-value sequence, is recovered from these two numbers.
 For an orthonormal basis `(e₀, e₁)` of a two-dimensional space and the operators whose matrices in
 that basis are `diag(d₀, d₁)` and `[[0, b], [c, 0]]`, the singular values are listed explicitly.
 The symmetric off-diagonal matrix `[[0, r], [r, 0]]` has singular values `(‖r‖, ‖r‖)`, while the
-one-sided triangular matrix `[[0, 0], [r, 0]]` has the single nonzero singular value `‖r‖`.
+one-sided triangular matrix `[[0, 0], [r, 0]]` has singular values `(‖r‖, 0, 0, …)`.
 
 ## Main declarations
 
