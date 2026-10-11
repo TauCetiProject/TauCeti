@@ -33,30 +33,32 @@ variable {C : Type*} [Category* C] [HasZeroMorphisms C] [HasZeroObject C]
   {A B M : C} (f : A ⟶ B) (g : B ⟶ M) (w : f ≫ g = 0)
   (h : IsColimit (CokernelCofork.ofπ g w)) (N : C)
 
+/-- Precomposition reverses a zero composite into a zero composite of internal Hom maps. -/
+theorem pre_app_comp_pre_app_eq_zero (w : f ≫ g = 0) (N : C) :
+    (pre g).app N ≫ (pre f).app N = 0 := by
+  rw [← NatTrans.comp_app, ← pre_map, w]
+  exact (internalHom.flip.obj N).map_zero _ _
+
 /-- Internal Hom turns a cokernel presentation into a kernel presentation, by precomposition.
 No projectivity or finiteness condition is needed. -/
-def ihomIsKernelOfIsCokernel :
+def isLimitKernelForkPreOfIsColimit :
     IsLimit (KernelFork.ofι ((pre g).app N)
-      (f := (pre f).app N) (by
-        let F := internalHom.flip.obj N
-        exact (F.map_comp g.op f.op).symm.trans
-          ((congrArg F.map (by simpa using congrArg Quiver.Hom.op w)).trans
-            (F.map_zero _ _)))) := by
+      (f := (pre f).app N) (pre_app_comp_pre_app_eq_zero f g w N)) := by
   let F := internalHom.flip.obj N
   exact KernelFork.mapIsLimit _ (CokernelCofork.IsColimit.ofπOp g w h) F
 
 /-- The internal Hom from the cokernel term of a presentation is canonically the kernel of
 precomposition with its relation map. -/
-def ihomIsoKernelOfIsCokernel [HasKernel ((pre f).app N)] :
+def ihomIsoKernelOfIsColimit [HasKernel ((pre f).app N)] :
     (ihom M).obj N ≅ kernel ((pre f).app N) :=
-  (ihomIsKernelOfIsCokernel f g w h N).conePointUniqueUpToIso (limit.isLimit _)
+  (isLimitKernelForkPreOfIsColimit f g w h N).conePointUniqueUpToIso (limit.isLimit _)
 
 /-- The kernel inclusion is precomposition with the presentation's quotient map. -/
 @[reassoc (attr := simp)]
-theorem ihomIsoKernelOfIsCokernel_hom_ι [HasKernel ((pre f).app N)] :
-    (ihomIsoKernelOfIsCokernel f g w h N).hom ≫ kernel.ι ((pre f).app N) =
+theorem ihomIsoKernelOfIsColimit_hom_ι [HasKernel ((pre f).app N)] :
+    (ihomIsoKernelOfIsColimit f g w h N).hom ≫ kernel.ι ((pre f).app N) =
       (pre g).app N :=
-  (ihomIsKernelOfIsCokernel f g w h N).conePointUniqueUpToIso_hom_comp
+  (isLimitKernelForkPreOfIsColimit f g w h N).conePointUniqueUpToIso_hom_comp
     (limit.isLimit _) WalkingParallelPair.zero
 
 end

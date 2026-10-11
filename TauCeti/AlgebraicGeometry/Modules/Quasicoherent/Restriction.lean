@@ -33,7 +33,7 @@ noncomputable section
 
 /-- The open-subscheme equivalence sends a quasicoherent module on the slice site to a
 quasicoherent module on the open subscheme. -/
-theorem isQuasicoherent_overEquiv_functor {X : Scheme.{u}} (U : X.Opens)
+instance isQuasicoherent_overEquiv_functor {X : Scheme.{u}} (U : X.Opens)
     (M : SheafOfModules.{u} (X.ringCatSheaf.over U)) [hM : M.IsQuasicoherent] :
     ((Scheme.Modules.overEquiv U).functor.obj M).IsQuasicoherent := by
   let G := U.overEquivalence.inverse
@@ -44,13 +44,15 @@ theorem isQuasicoherent_overEquiv_functor {X : Scheme.{u}} (U : X.Opens)
       ((CoverPreserving.of_isContinuous G _ _).overPost V)
   let ψ := (U.overPullbackSheafEquivOver.app X.ringCatSheaf).inv
   have hψ : IsIso ψ := by dsimp [ψ]; infer_instance
+  -- Pass the instances explicitly: the scheme and sheaf categories have different
+  -- instance heads, although their carriers agree.
   exact @SheafOfModules.isQuasicoherent_pushforward_of_isLeftAdjoint.{u}
     _ _ _ _ _ _ _ _ _ _ _ _ _ G _ _ ψ
     (U.sheafOfModulesEquivOverUnit X.ringCatSheaf) _ hψ hcont _ _ M hM
 
 /-- The inverse open-subscheme equivalence sends quasicoherent modules to quasicoherent
 modules on the slice site. -/
-theorem isQuasicoherent_overEquiv_inverse {X : Scheme.{u}} (U : X.Opens)
+instance isQuasicoherent_overEquiv_inverse {X : Scheme.{u}} (U : X.Opens)
     (M : U.toScheme.Modules) [hM : M.IsQuasicoherent] :
     ((Scheme.Modules.overEquiv U).inverse.obj M).IsQuasicoherent := by
   let G := U.overEquivalence.functor
@@ -61,6 +63,8 @@ theorem isQuasicoherent_overEquiv_inverse {X : Scheme.{u}} (U : X.Opens)
       ((CoverPreserving.of_isContinuous G _ _).overPost V)
   let ψ := (U.sheafRestrictSheafEquivOver.app X.ringCatSheaf).inv
   have hψ : IsIso ψ := by dsimp [ψ]; infer_instance
+  -- Pass the instances explicitly: the scheme and sheaf categories have different
+  -- instance heads, although their carriers agree.
   exact @SheafOfModules.isQuasicoherent_pushforward_of_isLeftAdjoint.{u}
     _ _ _ _ _ _ _ _ _ _ _ _ _ G _ _ ψ
     (U.sheafOfModulesEquivOverInverseUnit X.ringCatSheaf) _ hψ hcont _ _ M hM

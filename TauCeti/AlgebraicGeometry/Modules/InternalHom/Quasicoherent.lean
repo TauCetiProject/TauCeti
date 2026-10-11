@@ -24,6 +24,7 @@ charts then gives the result by descent.
 ## References
 
 * The Stacks Project, Section 26.24 (Tag 01LA), item (10).
+* The Stacks Project, Lemma 17.22.6 (Tag 01CQ), internal Hom via a local presentation.
 -/
 
 public section
@@ -60,7 +61,7 @@ local instance monoidalClosedSheafOfModulesOver :
 
 /-- A finite presentation on the slice site of an open gives quasicoherent internal Hom
 into any quasicoherent target on that site. -/
-theorem isQuasicoherent_ihom_of_presentation_over
+private theorem isQuasicoherent_ihom_of_presentation_over
     (M N : SheafOfModules.{u} (X.ringCatSheaf.over U))
     (P : M.Presentation) [P.IsFinite] [hN : N.IsQuasicoherent] :
     ((ihom M).obj N).IsQuasicoherent := by
@@ -80,11 +81,9 @@ theorem isQuasicoherent_ihom_of_presentation_over
       hN
   have := hfree P.generators.I
   have := hfree P.relations.I
-  have hker := isQuasicoherent_kernel_over U ((pre f).app N)
-    (M := (ihom (SheafOfModules.free P.generators.I)).obj N)
-    (N := (ihom (SheafOfModules.free P.relations.I)).obj N)
   exact (SheafOfModules.isQuasicoherent (X.ringCatSheaf.over U)).prop_of_iso
-    (ihomIsoKernelOfIsCokernel f P.generators.π (by simp [f]) P.isColimit N).symm hker
+    (ihomIsoKernelOfIsColimit f P.generators.π (by simp [f]) P.isColimit N).symm
+    inferInstance
 
 variable (M N : X.Modules)
 

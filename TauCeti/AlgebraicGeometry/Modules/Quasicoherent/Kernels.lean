@@ -74,12 +74,10 @@ instance _root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_kernel
 
 /-- Kernels of quasicoherent modules on the slice site of an open subscheme are
 quasicoherent. This is the open-subscheme kernel criterion transported by `overEquiv`. -/
-theorem isQuasicoherent_kernel_over {X : Scheme.{u}} (U : X.Opens)
+instance isQuasicoherent_kernel_over {X : Scheme.{u}} (U : X.Opens)
     {M N : SheafOfModules.{u} (X.ringCatSheaf.over U)} (f : M ⟶ N)
     [M.IsQuasicoherent] [N.IsQuasicoherent] : (kernel f).IsQuasicoherent := by
   let e := Scheme.Modules.overEquiv U
-  have : (e.functor.obj M).IsQuasicoherent := isQuasicoherent_overEquiv_functor U M
-  have : (e.functor.obj N).IsQuasicoherent := isQuasicoherent_overEquiv_functor U N
   have : (e.functor.obj (kernel f)).IsQuasicoherent :=
     (SheafOfModules.isQuasicoherent U.toScheme.ringCatSheaf).prop_of_iso
       (PreservesKernel.iso e.functor f).symm
