@@ -305,7 +305,6 @@ noncomputable def IsometryEquiv.prodRadicalLiftOfIsCompl (Q : QuadraticMap R M P
     (IsometryEquiv.restrictProdRadicalOfIsCompl Q W hW)
 
 /-- The decomposition maps a pair to its complement representative plus its radical component. -/
-@[simp]
 theorem IsometryEquiv.prodRadicalLiftOfIsCompl_apply (Q : QuadraticMap R M P)
     (W : Submodule R M) (hW : IsCompl Q.radical W) (x : Q.radical × M ⧸ Q.radical) :
     IsometryEquiv.prodRadicalLiftOfIsCompl Q W hW x =
