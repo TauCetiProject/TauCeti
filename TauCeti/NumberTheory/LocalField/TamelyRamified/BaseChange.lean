@@ -39,6 +39,8 @@ base change is a tower of two such radical extensions.
 * `TauCeti.IsTamelyRamified.of_fieldRange_sup_fieldRange_eq_top`: **composita**; if `M` is the
   compositum of the images of two tamely ramified extensions of `K`, then `M/K` is tamely
   ramified.
+* `TauCeti.isTamelyRamified_sup_iff`: an intermediate-field compositum is tame exactly when
+  both factors are tame, without a Galois hypothesis.
 
 ## References
 
@@ -229,5 +231,47 @@ theorem IsTamelyRamified.of_fieldRange_sup_fieldRange_eq_top (h₁ : IsTamelyRam
   exact (isTamelyRamified_tower_iff (K := K) (L := L₂) M).2 ⟨h₂, hM⟩
 
 end Compositum
+
+section IntermediateField
+
+variable {K Ω : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] [Field Ω] [Algebra K Ω]
+  {L M : IntermediateField K Ω}
+  [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
+  [ValuativeExtension K L]
+  [ValuativeRel M] [TopologicalSpace M] [IsNonarchimedeanLocalField M]
+  [ValuativeExtension K M]
+  [ValuativeRel ↥(L ⊔ M)] [TopologicalSpace ↥(L ⊔ M)]
+  [IsNonarchimedeanLocalField ↥(L ⊔ M)] [ValuativeExtension K ↥(L ⊔ M)]
+
+/-- A compositum of finite local-field extensions is tamely ramified exactly when both factors
+are tamely ramified. No Galois hypothesis or local-field structure on the ambient field is
+needed. -/
+@[simp]
+theorem isTamelyRamified_sup_iff :
+    IsTamelyRamified K ↥(L ⊔ M) ↔ IsTamelyRamified K L ∧ IsTamelyRamified K M := by
+  have := finite_of_valuativeExtension K ↥(L ⊔ M)
+  have := finite_of_valuativeExtension K L
+  have := finite_of_valuativeExtension K M
+  let _ := (IntermediateField.inclusion (le_sup_left : L ≤ L ⊔ M)).toAlgebra
+  let _ := (IntermediateField.inclusion (le_sup_right : M ≤ L ⊔ M)).toAlgebra
+  have : IsScalarTower K L ↥(L ⊔ M) := .of_algebraMap_eq fun _ ↦ rfl
+  have : IsScalarTower K M ↥(L ⊔ M) := .of_algebraMap_eq fun _ ↦ rfl
+  have : ValuativeExtension L ↥(L ⊔ M) :=
+    (IntermediateField.inclusion le_sup_left).valuativeExtension
+  have : ValuativeExtension M ↥(L ⊔ M) :=
+    (IntermediateField.inclusion le_sup_right).valuativeExtension
+  refine ⟨fun h ↦ ⟨((isTamelyRamified_tower_iff (K := K) (L := L) ↥(L ⊔ M)).1 h).1,
+    ((isTamelyRamified_tower_iff (K := K) (L := M) ↥(L ⊔ M)).1 h).1⟩, fun ⟨hL, hM⟩ ↦ ?_⟩
+  refine hL.of_fieldRange_sup_fieldRange_eq_top hM
+    (IntermediateField.inclusion le_sup_left) (IntermediateField.inclusion le_sup_right) ?_
+  apply IntermediateField.lift_injective
+  have hLrange : lift (IntermediateField.inclusion (le_sup_left : L ≤ L ⊔ M)).fieldRange = L :=
+    IntermediateField.lift_restrict _
+  have hMrange : lift (IntermediateField.inclusion (le_sup_right : M ≤ L ⊔ M)).fieldRange = M :=
+    IntermediateField.lift_restrict _
+  simp only [IntermediateField.lift_sup, hLrange, hMrange, IntermediateField.lift_top]
+
+end IntermediateField
 
 end TauCeti
