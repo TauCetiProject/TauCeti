@@ -84,28 +84,30 @@ theorem exists_analyticOnNhd_nonmonic_laurent
   obtain ⟨r, g, hra, hg, hr⟩ := exists_analyticOnNhd_nonmonic_powerSubstitution
     hU hR' d.factorial_ne_zero hfit (dvd_refl _) hF hdeg hdiscr hu hu0
     (fun b hb ↦ hlead b ⟨hb.1, hb.2.1⟩)
+  obtain ⟨s, hsa, hscale, hnorm⟩ :=
+    exists_analyticOnNhd_integralNormalization_eq_prod_X_sub_C_powerSubstitution
+      d.factorial_ne_zero hfit hdeg hu (fun b hb ↦ hu0 b ⟨hb.1, hb.2.1⟩)
+      (fun b hb ↦ hlead b ⟨hb.1, hb.2.1⟩) hg (fun b hb ↦ (hr b hb).2)
   refine ⟨R', hR', hfit, r, g, hra, hg, hr, ?_⟩
   intro x hx
   by_cases hd : d = 0
   · subst d
     exact ⟨Fin.elim0, Fin.elim0, by simp, by simp, by simp, by simp⟩
   let q : E × ℂ → E × ℂ := fun b ↦ (b.1, b.2 ^ d.factorial)
-  have hq : AnalyticAt ℂ q (x, 0) := analyticAt_fst.prod (analyticAt_snd.pow _)
-  have hq0 : q (x, 0) = (x, 0) := by simp [q, d.factorial_ne_zero]
-  have hqmem : MapsTo q (U ×ˢ ball 0 R') (U ×ˢ ball 0 R) := by
-    intro b hb
-    refine ⟨hb.1, ?_⟩
-    rw [mem_ball_zero_iff, norm_pow]
-    exact (pow_lt_pow_left₀ (mem_ball_zero_iff.mp hb.2) (norm_nonneg _)
-      d.factorial_ne_zero).trans_le hfit
+  have hq : AnalyticOnNhd ℂ q (U ×ˢ ball 0 R') := fun _ _ ↦
+    analyticAt_fst.prod (analyticAt_snd.pow d.factorial)
+  have hqmem : MapsTo q (U ×ˢ ball 0 R') (U ×ˢ ball 0 R) :=
+    (mapsTo_id U).prodMap (mapsTo_pow_ball_zero d.factorial_ne_zero hfit)
   have hx' : (x, (0 : ℂ)) ∈ U ×ˢ ball 0 R' := ⟨hx, mem_ball_self hR'⟩
   have hxR : (x, (0 : ℂ)) ∈ U ×ˢ ball 0 R := ⟨hx, mem_ball_self hR⟩
-  -- Multiplying the pole-removed branches by the leading-coefficient unit gives
-  -- analytic roots of integral normalization, even at a degree drop.
-  let s : Fin d → E × ℂ → ℂ := fun i b ↦ g i b * u (q b)
-  have huq : AnalyticAt ℂ (u ∘ q) (x, 0) := (hq0 ▸ hu _ hxR).comp hq
-  have hvq : AnalyticAt ℂ (v ∘ q) (x, 0) := (hq0 ▸ hv _ hxR).comp hq
-  have hs : ∀ i, AnalyticAt ℂ (s i) (x, 0) := fun i ↦ ((hg i).1 _ hx').mul huq
+  have hscale' : ∀ᶠ b in 𝓝 (x, (0 : ℂ)), b.2 ≠ 0 → ∀ i,
+      (F (q b)).coeff d * r i b = s i b := by
+    filter_upwards [(hU.prod isOpen_ball).mem_nhds hx'] with b hb hb0
+    exact hscale b ⟨hb.1, hb.2, hb0⟩
+  have hnorm' : ∀ᶠ b in 𝓝 (x, (0 : ℂ)), b.2 ≠ 0 →
+      (F (q b)).integralNormalization = ∏ i, (X - C (s i b)) := by
+    filter_upwards [(hU.prod isOpen_ball).mem_nhds hx'] with b hb hb0
+    exact hnorm b ⟨hb.1, hb.2, hb0⟩
   have hleadq : ∀ᶠ b in 𝓝 (x, (0 : ℂ)),
       (F (q b)).coeff d = b.2 ^ (d.factorial * a) * u (q b) := by
     filter_upwards [(hU.prod isOpen_ball).mem_nhds hx'] with b hb
@@ -114,32 +116,16 @@ theorem exists_analyticOnNhd_nonmonic_laurent
       (F (q b)).coeff 0 = b.2 ^ (d.factorial * c) * v (q b) := by
     filter_upwards [(hU.prod isOpen_ball).mem_nhds hx'] with b hb
     simpa only [q, ← pow_mul] using hconst _ (hqmem hb)
-  have hscale : ∀ᶠ b in 𝓝 (x, (0 : ℂ)), b.2 ≠ 0 →
-      ∀ i, (F (q b)).coeff d * r i b = s i b := by
-    filter_upwards [(hU.prod isOpen_ball).mem_nhds hx', hleadq] with b hb hl hb0 i
-    have hgb : g i b = b.2 ^ (d.factorial * a) * r i b :=
-      (hg i).2 ⟨hb.1, hb.2, hb0⟩
-    simp only [s, hgb, hl, mul_right_comm]
-  have hnorm : ∀ᶠ b in 𝓝 (x, (0 : ℂ)), b.2 ≠ 0 →
-      (F (q b)).integralNormalization = ∏ i, (X - C (s i b)) := by
-    filter_upwards [(hU.prod isOpen_ball).mem_nhds hx', hscale] with b hb hsb hb0
-    have hbq : q b ∈ U ×ˢ (ball 0 R \ {0}) :=
-      ⟨(hqmem hb).1, (hqmem hb).2, pow_ne_zero _ hb0⟩
-    have hlc : (F (q b)).coeff d = (F (q b)).leadingCoeff := by
-      rw [← hdeg _ hbq, coeff_natDegree]
-    have hne : F (q b) ≠ 0 :=
-      ne_zero_of_natDegree_gt ((hdeg _ hbq).symm ▸ Nat.pos_of_ne_zero hd)
-    rw [(F (q b)).integralNormalization_eq_prod_X_sub_C (fun i ↦ r i b) hne
-      (by simpa only [q, hlc] using (hr b ⟨hb.1, hb.2, hb0⟩).2)]
-    simp only [← hlc, mul_comm _ ((F (q b)).coeff d), hsb hb0]
   -- The trailing coefficient forces each normalized root to have constant finite
   -- order. Dividing by the leading coefficient gives the Laurent exponent and bound.
   obtain ⟨m, w, hw, hw0, hform⟩ := TauCeti.exists_root_eq_zpow_mul_unit
-    (Nat.pos_of_ne_zero hd) hs hvq (by simpa only [comp_apply, hq0] using hv0 _ hxR)
-    huq (by simpa only [comp_apply, hq0] using hu0 _ hxR) hnorm
+    (Nat.pos_of_ne_zero hd) (fun i ↦ hsa i _ hx') ((hv.comp hq hqmem) _ hx')
+    (by simpa only [comp_apply, q, zero_pow d.factorial_ne_zero] using hv0 _ hxR)
+    ((hu.comp hq hqmem) _ hx')
+    (by simpa only [comp_apply, q, zero_pow d.factorial_ne_zero] using hu0 _ hxR) hnorm'
     (by simpa only [sub_zero, comp_apply] using hleadq)
     (by simpa only [sub_zero, comp_apply] using hconstq)
-    hscale
+    hscale'
   refine ⟨fun i ↦ (m i : ℤ) - (d.factorial * a : ℕ), w, ?_, hw, hw0, ?_⟩
   · intro i
     push_cast

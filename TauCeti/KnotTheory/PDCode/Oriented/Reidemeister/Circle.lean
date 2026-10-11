@@ -17,7 +17,7 @@ over-strand. The first Reidemeister move relates this diagram to `D.adjoinCircle
 The new crossing has sign `+1` for `b = true` and `-1` for `b = false`, independently of
 `o`. Its writhe correction cancels the Kauffman bracket factor. Thus adjoining an oriented
 kink and adjoining a crossing-free circle give the same normalized bracket, even when `D`
-is empty. The resulting Jones polynomial equality is in `TauCeti.KnotTheory.PDCode.Jones`.
+is empty. The resulting Jones polynomial equality is in `TauCeti.KnotTheory.PDCode.Jones.Basic`.
 The construction commutes with reflection and with reversing all component orientations.
 
 ## References

@@ -56,6 +56,8 @@ general ring there is no such valuation, and the Laurent expansion takes its pla
   expansion of `g` vanishes below `z^(-n)` exactly when `g` is a linear combination of the
   monomials `xⁱyʲ` with `2i + 3j ≤ n`.
 * `WeierstrassCurve.laurentExpansion_injective`: the Laurent expansion is injective.
+* `WeierstrassCurve.exists_eq_algebraMap_of_coeff_laurentExpansion_eq_zero_of_neg`: a function
+  without a pole at infinity is a constant.
 * `WeierstrassCurve.exists_eq_of_coeff_laurentExpansion_eq_zero_of_lt_neg_two` and
   `WeierstrassCurve.exists_eq_of_coeff_laurentExpansion_eq_zero_of_lt_neg_three`: a function with
   a pole of order at most `2` (resp. `3`) at infinity is `αx + β` (resp. `γy + δx + β`), where
@@ -350,5 +352,16 @@ theorem exists_eq_of_coeff_laurentExpansion_eq_zero_of_lt_neg_three
   rw [hc, Finset.sum_insert (by decide), Finset.sum_pair (by decide)]
   simp [Algebra.smul_def]
   ring
+
+/-- **A function with no pole at infinity is constant.** If the Laurent expansion of `g` has no
+negative powers of `z`, then `g` is a constant `β`. -/
+theorem exists_eq_algebraMap_of_coeff_laurentExpansion_eq_zero_of_neg
+    {g : W.toAffine.CoordinateRing} (h : ∀ m : ℤ, m < 0 → (W.laurentExpansion g).coeff m = 0) :
+    ∃ β : R, g = algebraMap R _ β := by
+  -- `g = αx + β` with `α` the coefficient of `z⁻²`, which vanishes
+  obtain ⟨β, hβ⟩ := W.exists_eq_of_coeff_laurentExpansion_eq_zero_of_lt_neg_two
+    fun m hm ↦ h m (by omega)
+  rw [h (-2) (by norm_num), map_zero, zero_mul, zero_add] at hβ
+  exact ⟨β, hβ⟩
 
 end WeierstrassCurve

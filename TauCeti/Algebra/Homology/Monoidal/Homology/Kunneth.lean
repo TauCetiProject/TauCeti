@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.BifunctorHomotopy
+public import TauCeti.Algebra.Homology.Bifunctor.Homotopy
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Cross
 public import TauCeti.Algebra.Homology.Semisimple
 
