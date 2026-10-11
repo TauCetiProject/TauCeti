@@ -242,6 +242,16 @@ theorem coe_quotientGeneratorIdealHomEquiv_apply {T : Type w} [CommRing T] [Alge
       HomAlgebra.homEquiv R H _ T (g.comp (Ideal.Quotient.mkₐ R _)) :=
   congrArg (HomAlgebra.homEquiv R H _ T) (coe_quotientFullSetIdealHomEquiv_apply _ g)
 
+/-- The map out of the scheme of `A`-generators attached to an `A`-generating homomorphism `g` is
+the map induced on the quotient by the `R`-algebra map classifying `g`. -/
+@[simp]
+theorem quotientGeneratorIdealHomEquiv_symm_apply_mk {T : Type w} [CommRing T] [Algebra R T]
+    (g : {g : T ⊗[R] H →ₐc[T] T ⊗[R] coordinateRing R A // IsAGenerator (pointsOfBialgHom H g)})
+    (x : HomAlgebra R H (coordinateRing R A)) :
+    (quotientGeneratorIdealHomEquiv R H A T).symm g (Ideal.Quotient.mk _ x) =
+      (HomAlgebra.homEquiv R H _ T).symm g.1 x :=
+  quotientFullSetIdealHomEquiv_symm_apply_mk _ _ x
+
 end Locus
 
 end TauCeti
