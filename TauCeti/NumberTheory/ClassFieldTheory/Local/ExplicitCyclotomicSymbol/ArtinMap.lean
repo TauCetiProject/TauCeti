@@ -32,19 +32,11 @@ local class field theory, with the arithmetic Frobenius convention. On the roots
 which act there through `u⁻¹` as well (`TauCeti.unitsMap_cyclotomicSymbol_primePow`), so the
 product formula for those explicit symbols becomes a statement about Artin symbols.
 
-The comparison uses no Lubin–Tate theory. Fix `u ∈ ℤ_pˣ` and `n`, put `f = φ(pⁿ)`,
-`N = p ^ f - 1` and `E = ℚ_p(μ_{pⁿN})`, and let `g` represent the Artin symbol of the
-uniformizer `p u`. Then `g` acts on `μ_N` as arithmetic Frobenius `ζ ↦ ζ ^ p`, and `p u` is a
-norm from the fixed field `M` of `g` in `E` by finite local reciprocity. Some `ρ ∈ G_{ℚ_p}` has
-cyclotomic character `u⁻¹` and also acts on `μ_N` by `ζ ↦ ζ ^ p`; it acts on `μ_{pⁿN}` through
-`cyclotomicSymbol (pⁿN) p (p u)`, so it fixes `M` (`TauCeti.cyclotomicSymbol_norm_fixes`), and on
-`E` it is a power `g ^ k`. Comparing the actions on `μ_N`, where `p` has order exactly `f`,
-gives `k ≡ 1 mod f`; since the action of `g` on `μ_{pⁿ}` has order dividing `f`, `g` and `ρ`
-agree on `μ_{pⁿ}`. Finally the Artin symbol of `p` fixes every root of unity of `p`-power order
-(`TauCeti.ClassFieldTheory.localCyclotomicCharacter_artinMap_padic_uniformizer`), and norm
-functoriality of the Artin map
-(`TauCeti.ClassFieldTheory.abelianizedLocalCyclotomicCharacter_artinMap_norm`) passes from `ℚ_p`
-to its finite extensions.
+The proof uses no Lubin–Tate theory. It compares, at each finite level `pⁿ`, a representative of
+the Artin symbol of a uniformizer `p u` with an automorphism acting through the explicit symbol
+`cyclotomicSymbol`, inside a cyclotomic extension of `ℚ_p` on which local reciprocity forces the
+two to agree on the roots of unity of order `pⁿ`. Norm functoriality of the Artin map then passes
+from `ℚ_p` to its finite extensions.
 
 ## Main results
 
@@ -70,33 +62,6 @@ namespace TauCeti.ClassFieldTheory
 
 variable (p : ℕ) [Fact p.Prime]
 
-/-- If `g ∈ G_{ℚ_p}` represents the Artin symbol of `x` and fixes a finite Galois extension `M` of
-`ℚ_p`, then `x` is a norm from `M`. -/
-private theorem mem_normGroup_of_mk_eq_artinMap_of_fixes {x : ℚ_[p]ˣ}
-    (g : Field.absoluteGaloisGroup ℚ_[p])
-    (hg : (g : Field.absoluteGaloisGroupAbelianization ℚ_[p]) = artinMap ℚ_[p] x)
-    (M : IntermediateField ℚ_[p] (AlgebraicClosure ℚ_[p])) [FiniteDimensional ℚ_[p] M]
-    [IsGalois ℚ_[p] M]
-    (hgM : ∀ z : M, DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) g
-      (z : AlgebraicClosure ℚ_[p]) = z) :
-    x ∈ normGroup ℚ_[p] M := by
-  have : Algebra.IsSeparable ℚ_[p] (AlgebraicClosure ℚ_[p]) :=
-    Algebra.IsAlgebraic.isSeparable_of_perfectField
-  let ι : M →ₐ[ℚ_[p]] SeparableClosure ℚ_[p] :=
-    M.val.codRestrict (separableClosure ℚ_[p] (AlgebraicClosure ℚ_[p])).toSubalgebra
-      fun _ ↦ mem_separableClosure_iff.2 (Algebra.IsSeparable.isSeparable ℚ_[p] _)
-  have h1 : ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv ℚ_[p] g) = 1 := by
-    refine AlgEquiv.ext fun y ↦ ι.injective <|
-      (ι.restrictNormalHom_commutes _ y).trans (Subtype.ext ?_)
-    rw [AlgEquiv.one_apply]
-    refine (coe_absoluteGaloisGroupRestrictEquiv_apply ℚ_[p] g (ι y)).trans ?_
-    have hιy : ((ι y : SeparableClosure ℚ_[p]) : AlgebraicClosure ℚ_[p]) = y :=
-      AlgHom.coe_codRestrict _ _ _ y
-    rw [hιy, hgM y]
-    exact hιy.symm
-  rw [← localArtinMap_eq_zero_iff ℚ_[p] M ι, artinMap_restrict ℚ_[p] M ι x g hg, h1, map_one,
-    ofMul_one]
-
 /-- Let `g ∈ G_{ℚ_p}` represent the Artin symbol of `x`, and let `ρ ∈ G_{ℚ_p}` act on the `m`-th
 roots of unity through the explicit symbol `cyclotomicSymbol m p x`. Then `ρ` fixes every finite
 Galois extension of `ℚ_p` inside `ℚ_p(μ_m)` that `g` fixes. -/
@@ -112,9 +77,18 @@ private theorem apply_eq_self_of_mk_eq_artinMap_of_fixes {x : ℚ_[p]ˣ}
     (hgM : ∀ z : M, DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) g
       (z : AlgebraicClosure ℚ_[p]) = z) (z : M) :
     ρ.toRingEquiv (z : AlgebraicClosure ℚ_[p]) = z := by
-  obtain ⟨y, hy⟩ := mem_normGroup_iff.1 (mem_normGroup_of_mk_eq_artinMap_of_fixes p g hg M hgM)
+  obtain ⟨y, hy⟩ := mem_normGroup_iff.1 (mem_normGroup_of_mk_eq_artinMap_of_fixes ℚ_[p] g hg M hgM)
   obtain rfl : Units.map (Algebra.norm ℚ_[p] : M →* ℚ_[p]) y = x := Units.ext hy
   exact cyclotomicSymbol_norm_fixes p m M hM y ρ hρ z
+
+/- Proof sketch. Fix `u ∈ ℤ_pˣ` and `n`, put `f = φ(pⁿ)`, `N = p ^ f - 1` and `E = ℚ_p(μ_{pⁿN})`,
+and let `g` represent the Artin symbol of the uniformizer `p u`. Then `g` acts on `μ_N` as
+arithmetic Frobenius `ζ ↦ ζ ^ p`, and `p u` is a norm from the fixed field `M` of `g` in `E` by
+finite local reciprocity. Some `ρ ∈ G_{ℚ_p}` has cyclotomic character `u⁻¹` and also acts on `μ_N`
+by `ζ ↦ ζ ^ p`; it acts on `μ_{pⁿN}` through `cyclotomicSymbol (pⁿN) p (p u)`, so it fixes `M`
+(`TauCeti.cyclotomicSymbol_norm_fixes`), and on `E` it is a power `g ^ k`. Comparing the actions
+on `μ_N`, where `p` has order exactly `f`, gives `k ≡ 1 mod f`; since the action of `g` on `μ_{pⁿ}`
+has order dividing `f`, `g` and `ρ` agree on `μ_{pⁿ}`. -/
 
 /-- **The comparison at a finite level.** If `g ∈ G_{ℚ_p}` represents the Artin symbol of `p u`,
 `u ∈ ℤ_pˣ`, then `g` acts on the roots of unity of order `pⁿ` through `u⁻¹`. -/
@@ -197,8 +171,11 @@ private theorem toZModPow_localCyclotomicCharacter_of_mk_eq_artinMap {u : ℤ_[p
       rw [hρN', ← ZMod.unitsMap_val hdN,
         unitsMap_cyclotomicSymbol_of_coprime m p hdN hpN x 1 u (by rw [hx, zpow_one]), zpow_one,
         ZMod.coe_unitOfCoprime]
-    exact (ZMod.chineseRemainder hcop).injective <| Prod.ext
-      (by simpa [ZMod.chineseRemainder] using h₁) (by simpa [ZMod.chineseRemainder] using h₂)
+    -- The value of the difference is divisible by both factors, hence by `m`.
+    rw [← sub_eq_zero, ← ZMod.natCast_zmod_val (_ - _), ZMod.natCast_eq_zero_iff]
+    refine hcop.mul_dvd_of_dvd_of_dvd ?_ ?_ <;>
+      rw [← ZMod.natCast_eq_zero_iff, ZMod.natCast_val, ZMod.cast_sub ‹_›, sub_eq_zero]
+    exacts [h₁, h₂]
   have hρm (z : AlgebraicClosure ℚ_[p]) (hz : z ^ m = 1) :
       ρ.toRingEquiv z = z ^ ((cyclotomicSymbol m p x : ZMod m).val) := by
     have hρζ :
@@ -244,8 +221,9 @@ private theorem toZModPow_localCyclotomicCharacter_of_mk_eq_artinMap {u : ℤ_[p
       orderOf_dvd_iff_zpow_eq_one, zpow_sub_one, mul_inv_eq_one]
     convert (hqN'.symm.trans (by rw [hra, map_zpow, hqN])).symm
   -- Modulo `pⁿ`, the class of `g` has order dividing `f = φ(pⁿ)`, so `r` and `a` agree there.
+  have hkj : k = f * j + 1 := by omega
   have hP : ZMod.unitsMap hdP r = ZMod.unitsMap hdP a := by
-    rw [hra, map_zpow, show k = f * j + 1 by omega, zpow_add_one, zpow_mul, zpow_natCast,
+    rw [hra, map_zpow, hkj, zpow_add_one, zpow_mul, zpow_natCast,
       ZMod.pow_totient, one_zpow, one_mul]
   rw [← hgP, ← hρP, ← ZMod.unitsMap_val hdP, ← ZMod.unitsMap_val hdP, hP]
 

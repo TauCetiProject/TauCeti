@@ -9,6 +9,7 @@ public import Mathlib.Data.ZMod.Basic
 public import Mathlib.RingTheory.Coprime.Basic
 import Mathlib.Algebra.EuclideanDomain.Int
 public import Mathlib.Data.ZMod.Units
+public import TauCeti.Data.Nat.GCD
 
 /-!
 # Units and coprimality over `ZMod d`
@@ -38,9 +39,10 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
 * `ZMod.zmultiples_coe_unit_eq_top` — a unit of `ZMod d` generates `ZMod d` additively, so that
   translation by it is a single cycle; its consumer is the genus-one Heegaard diagram of a lens
   space in `TauCeti/LowDimTopology/Heegaard/LensSpace.lean`.
-* `Nat.coprime_pow_sub_one` and `TauCeti.ZMod.orderOf_unitOfCoprime_pow_sub_one` — for `q > 1`
-  and `N > 0`, `q` is coprime to `q ^ N - 1` and its class in `(ZMod (q ^ N - 1))ˣ` has exact
-  order `N`. Their consumers are the cyclotomic input to global class field theory in
+* `TauCeti.ZMod.orderOf_unitOfCoprime_pow_sub_one` — for `q > 1` and `N > 0`, the class of `q`
+  in `(ZMod (q ^ N - 1))ˣ` has exact order `N`; the coprimality it needs is
+  `Nat.coprime_pow_sub_one` from `TauCeti/Data/Nat/GCD.lean`. Its consumers are the cyclotomic
+  input to global class field theory in
   `TauCeti/NumberTheory/ClassFieldTheory/Global/Cyclotomic/Input.lean` and the cyclotomic
   normalization of the local Artin map in
   `TauCeti/NumberTheory/ClassFieldTheory/Local/ExplicitCyclotomicSymbol/ArtinMap.lean`.
@@ -152,18 +154,6 @@ theorem ZMod.zmultiples_coe_unit_eq_top (u : (ZMod d)ˣ) :
   refine (AddSubgroup.eq_top_iff' _).mpr fun y => ?_
   obtain ⟨k, hk⟩ := ZMod.intCast_surjective (y * ((u⁻¹ : (ZMod d)ˣ) : ZMod d))
   exact AddSubgroup.mem_zmultiples_iff.mpr ⟨k, by rw [zsmul_eq_mul, hk, Units.inv_mul_cancel_right]⟩
-
-namespace Nat
-
-/-- If `q > 1` and `N > 0`, then `q` is coprime to `q ^ N - 1`. -/
-theorem coprime_pow_sub_one (q N : ℕ) (hq : 1 < q) (hN : N ≠ 0) :
-    q.Coprime (q ^ N - 1) := by
-  have hpow : 1 ≤ q ^ N := Nat.one_le_iff_ne_zero.mpr
-    (pow_ne_zero N (Nat.ne_zero_of_lt hq))
-  apply Nat.Coprime.of_dvd_left (dvd_pow_self q hN)
-  exact (Nat.coprime_self_sub_right hpow).2 (Nat.coprime_one_right _)
-
-end Nat
 
 namespace TauCeti
 
