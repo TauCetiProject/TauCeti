@@ -164,13 +164,14 @@ instance isLocalization [Finite G] :
   · -- A fixed fraction `a / s` equals `t a / (s t)` with `t ∈ M` and `t a` invariant.
     rintro ⟨z, hz⟩
     obtain ⟨⟨a, _, ⟨s, hs, rfl⟩⟩, ha⟩ := IsLocalization.surj (Algebra.algebraMapSubmonoid A M) z
-    replace ha : z * algebraMap A _ (s : A) = algebraMap A _ a := ha
+    replace ha : z * algebraMap A _ (s : A) = algebraMap A _ a := by
+      simpa only [Algebra.algebraMap_ofSubsemiring_apply] using ha
     have hfix (g : G) : ∃ t ∈ M, (t : A) * a = t * (g • a) := by
       have h := congrArg (g • ·) ha
       simp only [smul_mul', hz g, smul_algebraMap_localization, s.2 g] at h
       obtain ⟨⟨_, t, ht, rfl⟩, htg⟩ :=
         IsLocalization.exists_of_eq (M := Algebra.algebraMapSubmonoid A M) (ha.symm.trans h)
-      exact ⟨t, ht, htg⟩
+      exact ⟨t, ht, by simpa only [Algebra.algebraMap_ofSubsemiring_apply] using htg⟩
     choose t ht htg using hfix
     have := Fintype.ofFinite G
     set T := ∏ g, t g
@@ -186,9 +187,13 @@ instance isLocalization [Finite G] :
     rw [← ha]
     ring
   · intro x y hxy
+    have hxy' : algebraMap A (Localization (Algebra.algebraMapSubmonoid A M)) x =
+        algebraMap A _ y := by
+      simpa only [coe_algebraMap_localization] using congrArg Subtype.val hxy
     obtain ⟨⟨_, t, ht, rfl⟩, htxy⟩ := IsLocalization.exists_of_eq
-      (M := Algebra.algebraMapSubmonoid A M) (congrArg Subtype.val hxy)
-    exact ⟨⟨t, ht⟩, Subtype.ext htxy⟩
+      (M := Algebra.algebraMapSubmonoid A M) hxy'
+    refine ⟨⟨t, ht⟩, Subtype.ext ?_⟩
+    simpa only [Subring.coe_mul, Algebra.algebraMap_ofSubsemiring_apply] using htxy
 
 end Localization
 
