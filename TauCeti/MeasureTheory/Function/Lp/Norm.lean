@@ -21,6 +21,8 @@ bounds.
   two-term linear combination.
 * `MeasureTheory.Lp.integral_norm_sq_eq_norm_sq`: the integral of the squared pointwise
   norm of an `L²` function is its squared `L²` norm.
+* `MeasureTheory.Lp.integral_norm_mul_norm_le`: Cauchy–Schwarz for the pointwise norms of two
+  `L²` functions.
 -/
 
 public section
@@ -81,5 +83,19 @@ theorem Lp.integral_norm_sq_eq_norm_sq {alpha F : Type*} [MeasurableSpace alpha]
   have h_nonneg : 0 ≤ ∫ x, ‖f x‖ ^ 2 ∂m := integral_nonneg fun x => sq_nonneg _
   rw [h_norm, h_lp, ← Real.rpow_two, ← Real.rpow_mul h_nonneg, inv_mul_cancel₀ (by norm_num),
     Real.rpow_one]
+
+/-- **Cauchy–Schwarz for `L²` functions.** The integral of the product of the pointwise norms of
+two `L²` functions, possibly with different targets, is at most the product of their `L²`
+norms. -/
+theorem Lp.integral_norm_mul_norm_le {alpha F G : Type*} [MeasurableSpace alpha]
+    {m : Measure alpha} [NormedAddCommGroup F] [NormedAddCommGroup G] (f : Lp F 2 m)
+    (g : Lp G 2 m) :
+    ∫ x, ‖f x‖ * ‖g x‖ ∂m ≤ ‖f‖ * ‖g‖ := by
+  have hf : MemLp (fun x => ‖f x‖) (ENNReal.ofReal 2) m := by simpa using (Lp.memLp f).norm
+  have hg : MemLp (fun x => ‖g x‖) (ENNReal.ofReal 2) m := by simpa using (Lp.memLp g).norm
+  have key := integral_mul_norm_le_Lp_mul_Lq Real.HolderConjugate.two_two hf hg
+  simp only [norm_norm, Real.rpow_two, Lp.integral_norm_sq_eq_norm_sq] at key
+  rwa [← Real.sqrt_eq_rpow, ← Real.sqrt_eq_rpow, Real.sqrt_sq (norm_nonneg _),
+    Real.sqrt_sq (norm_nonneg _)] at key
 
 end MeasureTheory

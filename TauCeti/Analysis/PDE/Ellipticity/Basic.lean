@@ -196,6 +196,13 @@ lemma matrixBilinearFormLinear_apply (A : Matrix n n ℝ) :
     ext η ξ
     simp [matrixBilinearFormLinear]
 
+/-- A coefficient matrix is recovered from its bilinear form: its entries are the values of the
+form on the standard basis. -/
+@[simp]
+lemma matrixBilinearForm_single_single [DecidableEq n] (A : Matrix n n ℝ) (i j : n) :
+    matrixBilinearForm A (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) = A i j := by
+  simp [Matrix.mulVec, dotProduct]
+
 /-- The principal coefficient-to-bilinear-form map is continuous. -/
 lemma continuous_matrixBilinearForm :
     Continuous (fun A : Matrix n n ℝ => matrixBilinearForm A) :=
@@ -225,6 +232,19 @@ lemma matrixBilinearForm {s : Set X} {a : X → Matrix n n ℝ} (ha : Continuous
   continuous_matrixBilinearForm.comp_continuousOn ha
 
 end ContinuousOn
+
+/-- A principal coefficient field is continuous exactly when its field of bilinear forms is,
+since the entries of each matrix are the values of its form on the standard basis. -/
+lemma continuous_matrixBilinearForm_comp_iff {a : X → Matrix n n ℝ} :
+    Continuous (fun x => matrixBilinearForm (a x)) ↔ Continuous a := by
+  classical
+  refine ⟨fun h => continuous_pi fun i => continuous_pi fun j => ?_,
+    continuous_matrixBilinearForm.comp⟩
+  have hentry : (fun x => a x i j) = fun x =>
+      matrixBilinearForm (a x) (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) :=
+    funext fun x => (matrixBilinearForm_single_single (a x) i j).symm
+  rw [hentry]
+  exact (h.clm_apply continuous_const).clm_apply continuous_const
 
 end Continuity
 
@@ -775,6 +795,15 @@ lemma uniformlyEllipticOn_const_smul_one (Ω : Set X) {c lam Lam : ℝ} (hlam : 
     UniformlyEllipticOn Ω (fun _ => c • (1 : Matrix n n ℝ)) lam Lam :=
   uniformlyEllipticOn_smul_one Ω (fun _ => c) hlam (hlamc.trans hcLam)
     (fun {_} _ => ⟨hlamc, hcLam⟩)
+
+/-- A constant coefficient matrix whose quadratic form is bounded below by `λ‖ξ‖²` is uniformly
+elliptic, with upper constant the larger of `λ` and the operator norm of its bilinear form. -/
+lemma uniformlyEllipticOn_const_of_lower_bound (Ω : Set X) {A : Matrix n n ℝ} {lam : ℝ}
+    (hlam : 0 < lam) (hA : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ) :
+    UniformlyEllipticOn Ω (fun _ => A) lam (max lam ‖matrixBilinearForm A‖) :=
+  UniformlyEllipticOn.of_bounds hlam (le_max_left _ _) (fun {_} _ => hA) fun {_} _ η ξ => by
+    rw [← matrixBilinearForm_apply, ← Real.norm_eq_abs]
+    exact ((matrixBilinearForm A).le_opNorm₂ η ξ).trans (by gcongr; exact le_max_right _ _)
 
 /-! ### Gradient calculus and orthonormal expansion -/
 

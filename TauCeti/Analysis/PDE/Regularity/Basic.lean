@@ -10,41 +10,46 @@ public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 public import TauCeti.Analysis.Sobolev.W1p.DifferenceQuotient
 import TauCeti.Analysis.Sobolev.DifferenceQuotient
 import TauCeti.Analysis.Sobolev.W1p.Density
+import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.Topology.Instances.Matrix
 
 /-!
 # `H²` regularity of whole-space weak solutions
 
-Let `A` be a constant, uniformly elliptic coefficient matrix and let `u ∈ H¹(ℝⁿ)` be a weak
-solution of the divergence-form equation
+Let `a` be a uniformly elliptic coefficient field on `ℝⁿ`, with constants `0 < λ ≤ Λ`, whose
+bilinear forms `x ↦ ⟨·, a(x) ·⟩` are `K`-Lipschitz in operator norm, and let `u ∈ H¹(ℝⁿ)` be a
+weak solution of the divergence-form equation
 
-`-∂ⱼ(Aⁱʲ ∂ᵢu) = f` on `ℝⁿ`, with `f ∈ L²(ℝⁿ)`,
+`-∂ⱼ(aⁱʲ ∂ᵢu) = f` on `ℝⁿ`, with `f ∈ L²(ℝⁿ)`,
 
-meaning `∫ ⟨A ∇u, ∇v⟩ = ∫ f v` for every `v ∈ H¹(ℝⁿ)`. This file proves that `u` then has
+meaning `∫ ⟨a ∇u, ∇v⟩ = ∫ f v` for every `v ∈ H¹(ℝⁿ)`. This file proves that `u` then has
 second-order weak derivatives in `L²(ℝⁿ)`, that is `u ∈ H²(ℝⁿ)`, with the estimate
 
-`‖∂_w ∂_y u‖_{L²} ≤ ‖y‖ ‖w‖ ‖f‖_{L²} / λ`
+`‖∂_w ∂_y u‖_{L²} ≤ ‖y‖ ‖w‖ (‖f‖_{L²} + K ‖∇u‖_{L²}) / λ`
 
-in every pair of directions, where `λ` is the ellipticity constant. No smoothness of `f` and no
-regularity of `u` beyond `H¹` is assumed: constancy of the coefficient matrix, together with
-ellipticity, upgrades one weak derivative to two.
+in every pair of directions. No smoothness of `f` and no regularity of `u` beyond `H¹` is
+assumed. For a constant coefficient matrix `K = 0`, and the estimate reads
+`‖∂_w ∂_y u‖_{L²} ≤ ‖y‖ ‖w‖ ‖f‖_{L²} / λ`.
 
 ## The difference-quotient method
 
 The proof is the classical difference-quotient argument. For a direction `w` and a step `t`, the
-difference quotient `Dᵗ u = t⁻¹ (u(· + t w) - u)` again lies in `H¹(ℝⁿ)`, and because `A` is
-constant the energy form is *anti-adjoint* for it,
+difference quotient `Dᵗ u = t⁻¹ (u(· + t w) - u)` again lies in `H¹(ℝⁿ)`. Writing `aₜ = a(· + t w)`
+for the translated coefficients, the discrete product rule `Dᵗ(a ∇u) = aₜ Dᵗ∇u + (Dᵗ a) ∇u`
+integrates to
 
-`a(Dᵗ u, v) = -a(u, D⁻ᵗ v)`
+`aₜ(Dᵗ u, v) = -a(u, D⁻ᵗ v) - t⁻¹ (aₜ(u, v) - a(u, v))`
 
-(`TauCeti.PDE.energyFormH1_differenceQuotient_eq_neg`), which is the integrated form of the
-discrete integration-by-parts identity `∫ (Dᵗ g) h = -∫ g (D⁻ᵗ h)`. Testing the equation against
-`Dᵗ u` itself and using ellipticity on the left and the difference-quotient bound
-`‖D⁻ᵗ g‖_{L²} ≤ ‖w‖ ‖∇g‖_{L²}` on the right gives
+(`TauCeti.PDE.energyFormH1_differenceQuotient_eq_neg_sub`), the energy-form version of the
+discrete integration by parts `∫ (Dᵗ g) h = -∫ g (D⁻ᵗ h)`. The last term is a commutator: it
+vanishes for constant coefficients, and the Lipschitz bound makes it at most
+`K ‖w‖ ‖∇u‖_{L²} ‖∇v‖_{L²}`. Testing the equation against `D⁻ᵗ(Dᵗ u)`, using ellipticity of `aₜ`
+on the left and the difference-quotient bound `‖D⁻ᵗ g‖_{L²} ≤ ‖w‖ ‖∇g‖_{L²}` on the right, gives
 
-`λ ‖∇Dᵗ u‖²_{L²} ≤ a(Dᵗ u, Dᵗ u) = -∫ f · D⁻ᵗ(Dᵗ u) ≤ ‖f‖_{L²} ‖w‖ ‖∇Dᵗ u‖_{L²}`,
+`λ ‖∇Dᵗ u‖²_{L²} ≤ ‖w‖ (‖f‖_{L²} + K ‖∇u‖_{L²}) ‖∇Dᵗ u‖_{L²}`,
 
-so `‖Dᵗ ∇u‖_{L²} ≤ ‖w‖ ‖f‖_{L²} / λ` **uniformly in `t`**
-(`TauCeti.PDE.UniformlyEllipticOn.norm_gradient_differenceQuotient_le`). The
+so `‖Dᵗ ∇u‖_{L²} ≤ ‖w‖ (‖f‖_{L²} + K ‖∇u‖_{L²}) / λ` **uniformly in `t`**
+(`TauCeti.PDE.UniformlyEllipticOn.norm_gradient_differenceQuotient_le_of_lipschitzWith`). The
 difference-quotient criterion
 `TauCeti.exists_norm_le_hasWeakLineDerivOn_of_frequently_eLpNorm_inv_mul_sub_le` converts that
 uniform bound into a weak derivative of `∇u` in `L²`, and assembling the directions of an
@@ -56,20 +61,27 @@ is involved, `H¹₀(ℝⁿ) = H¹(ℝⁿ)` (`TauCeti.w1p0Submodule_top_eq_top`)
 quotient is a legitimate test function. For a constant principal coefficient and bounded
 measurable lower-order coefficients, interior `H²` regularity on a general domain follows by
 absorbing the lower-order terms into the forcing and localizing with a cutoff
-(`TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_restrictL`); allowing variable Lipschitz
-coefficients needs the difference-quotient estimate itself to be localized.
+(`TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_restrictL`). For variable Lipschitz
+coefficients a cutoff also produces a forcing term in divergence form, while the estimate here
+is for an `L²` forcing term.
 
 ## Main declarations
 
-* `TauCeti.PDE.energyFormH1_translate`: a translation moves from one argument of the
-  constant-coefficient energy form to the other.
-* `TauCeti.PDE.energyFormH1_differenceQuotient_eq_neg`: the discrete integration-by-parts
-  identity for the constant-coefficient energy form.
-* `TauCeti.PDE.UniformlyEllipticOn.norm_gradient_differenceQuotient_le`: the uniform bound on
-  the difference quotients of the gradient of a weak solution.
-* `TauCeti.PDE.UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient`: the second-order
-  weak directional derivatives of a weak solution, with the `H²` estimate.
-* `TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq`: a weak solution lies in `H²(ℝⁿ)`.
+* `TauCeti.PDE.energyFormH1_translate`: a translation moves from one argument of the energy
+  form to the other, translating the coefficients with it.
+* `TauCeti.PDE.energyFormH1_differenceQuotient_eq_neg_sub`: the discrete integration-by-parts
+  identity for the energy form, with its commutator term.
+* `TauCeti.PDE.norm_inv_mul_energyFormH1_comp_add_sub_le`: the commutator term is bounded by the
+  Lipschitz constant of the coefficients.
+* `TauCeti.PDE.UniformlyEllipticOn.norm_gradient_differenceQuotient_le_of_lipschitzWith`: the
+  uniform bound on the difference quotients of the gradient of a weak solution.
+* `TauCeti.PDE.UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient_of_lipschitzWith`:
+  the second-order weak directional derivatives of a weak solution, with the `H²` estimate.
+* `TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_of_lipschitzWith`: a weak solution lies
+  in `H²(ℝⁿ)`.
+* `TauCeti.PDE.UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient`,
+  `TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq`: the constant-coefficient case, which
+  needs only the lower ellipticity bound.
 
 ## References
 
@@ -83,25 +95,26 @@ public section
 noncomputable section
 
 open MeasureTheory Set TopologicalSpace
-open scoped ENNReal InnerProductSpace
+open scoped ENNReal NNReal InnerProductSpace
 
 namespace TauCeti
 
 namespace PDE
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
-  [mu.IsAddHaarMeasure] {A : Matrix ι ι ℝ} {lam : ℝ}
+  [mu.IsAddHaarMeasure] {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {A : Matrix ι ι ℝ}
+  {lam Lam : ℝ} {K : ℝ≥0}
 
 omit [DecidableEq ι] in
-/-- **Translation moves across the constant-coefficient energy form.** For opposite vectors
-`h` and `k`, translating the first argument by `h` is the same as translating the second by
-`k`. This is the integrated form of the substitution `x ↦ x - h`, and it is where constancy of
-the coefficient matrix is used. -/
-theorem energyFormH1_translate (A : Matrix ι ι ℝ) {h k : EuclideanSpace ℝ ι} (hk : h + k = 0)
-    (u v : W1p mu ⊤ 2) :
-    energyFormH1 (fun _ => A) 0 0 (W1p.translate (Set.mapsTo_univ (· + h) _) u) v
-      = energyFormH1 (fun _ => A) 0 0 u (W1p.translate (Set.mapsTo_univ (· + k) _) v) := by
-  rw [energyFormH1_const_eq_setIntegral, energyFormH1_const_eq_setIntegral]
+/-- **Translation moves across the energy form.** For opposite vectors `h` and `k`, translating
+the first argument of the energy form with coefficients `a(· + h)` by `h` is the same as
+translating the second argument of the energy form with coefficients `a` by `k`. This is the
+integrated form of the substitution `x ↦ x - h`. -/
+theorem energyFormH1_translate (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
+    {h k : EuclideanSpace ℝ ι} (hk : h + k = 0) (u v : W1p mu ⊤ 2) :
+    energyFormH1 (fun x => a (x + h)) 0 0 (W1p.translate (Set.mapsTo_univ (· + h) _) u) v
+      = energyFormH1 a 0 0 u (W1p.translate (Set.mapsTo_univ (· + k) _) v) := by
+  rw [energyFormH1_zero_zero_eq_setIntegral, energyFormH1_zero_zero_eq_setIntegral]
   -- Translation invariance of the Haar measure, on an arbitrary integrand.
   have hinv : ∀ F : EuclideanSpace ℝ ι → ℝ,
       ∫ x in ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)), F (x + h) ∂mu
@@ -112,74 +125,153 @@ theorem energyFormH1_translate (A : Matrix ι ι ℝ) {h k : EuclideanSpace ℝ 
   have hcancel : ∀ x : EuclideanSpace ℝ ι, x + h + k = x := fun x => by
     rw [add_assoc, hk, add_zero]
   calc ∫ x in ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)),
-        matrixBilinearForm A (W1p.gradient v x)
+        matrixBilinearForm (a (x + h)) (W1p.gradient v x)
           (W1p.gradient (W1p.translate (Set.mapsTo_univ (· + h) _) u) x) ∂mu
       = ∫ x in ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)),
-          matrixBilinearForm A (W1p.gradient v (x + h + k))
+          matrixBilinearForm (a (x + h)) (W1p.gradient v (x + h + k))
             (W1p.gradient u (x + h)) ∂mu := by
         refine integral_congr_ae ?_
         filter_upwards [W1p.gradient_translate_ae (Set.mapsTo_univ (· + h) _) u] with x hx
         rw [hx, hcancel]
     _ = ∫ x in ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)),
-          matrixBilinearForm A (W1p.gradient v (x + k)) (W1p.gradient u x) ∂mu :=
-        hinv fun y => matrixBilinearForm A (W1p.gradient v (y + k)) (W1p.gradient u y)
+          matrixBilinearForm (a x) (W1p.gradient v (x + k)) (W1p.gradient u x) ∂mu :=
+        hinv fun y => matrixBilinearForm (a y) (W1p.gradient v (y + k)) (W1p.gradient u y)
     _ = ∫ x in ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)),
-          matrixBilinearForm A (W1p.gradient (W1p.translate (Set.mapsTo_univ (· + k) _) v) x)
+          matrixBilinearForm (a x)
+            (W1p.gradient (W1p.translate (Set.mapsTo_univ (· + k) _) v) x)
             (W1p.gradient u x) ∂mu := by
         refine integral_congr_ae ?_
         filter_upwards [W1p.gradient_translate_ae (Set.mapsTo_univ (· + k) _) v] with x hx
         rw [hx]
 
 omit [DecidableEq ι] in
-/-- **Discrete integration by parts for the constant-coefficient energy form.** Testing the
-difference quotient of `u` against `v` is the same, up to sign, as testing `u` against the
-difference quotient of `v` with the opposite step:
-
-`a(Dᵗ u, v) = -a(u, D⁻ᵗ v)`.
-
-This is the integrated form of `∫ (Dᵗ g) h = -∫ g (D⁻ᵗ h)`, and it is what lets a
-difference-quotient argument move the extra derivative onto the test function. -/
-theorem energyFormH1_differenceQuotient_eq_neg (A : Matrix ι ι ℝ) (w : EuclideanSpace ℝ ι)
-    (t : ℝ) (u v : W1p mu ⊤ 2) :
-    energyFormH1 (fun _ => A) 0 0
-        (W1p.differenceQuotient le_rfl w t (Set.mapsTo_univ (· + t • w) _) u) v
-      = -energyFormH1 (fun _ => A) 0 0 u
-        (W1p.differenceQuotient le_rfl w (-t) (Set.mapsTo_univ (· + (-t) • w) _) v) := by
-  have hcoeff : MemLp (fun x => energyIntegrand ((fun _ => A) x)
-      ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x) ((0 : EuclideanSpace ℝ ι → ℝ) x)) ⊤
+/-- Essential boundedness of the drift- and mass-free energy densities is invariant under
+translating the coefficients, by translation invariance of the Haar measure. -/
+private theorem memLp_energyIntegrand_comp_add_right
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤
+      (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))))
+    (h : EuclideanSpace ℝ ι) :
+    MemLp (fun x => energyIntegrand (a (x + h)) 0 0) ⊤
       (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))) := by
-    simpa using memLp_top_const (α := EuclideanSpace ℝ ι)
-      (μ := mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)))
-      (energyIntegrand A 0 0)
+  -- Name the normed structure on bilinear forms so that `MemLp` can be transported.
+  let : NormedAddCommGroup
+      ((ℝ × EuclideanSpace ℝ ι) →L[ℝ] (ℝ × EuclideanSpace ℝ ι) →L[ℝ] ℝ) := inferInstance
+  simp only [Opens.coe_top, Measure.restrict_univ] at hcoeff ⊢
+  exact hcoeff.comp_measurePreserving (measurePreserving_add_right mu h)
+
+omit [DecidableEq ι] in
+/-- **Discrete integration by parts for the energy form.** Testing the difference quotient of
+`u` against `v` with the translated coefficients `aₜ = a(· + t w)` is, up to sign, testing `u`
+against the difference quotient of `v` with the opposite step, plus a commutator term:
+
+`aₜ(Dᵗ u, v) = -a(u, D⁻ᵗ v) - t⁻¹ (aₜ(u, v) - a(u, v))`.
+
+This is the integrated form of the discrete product rule `Dᵗ(a ∇u) = aₜ Dᵗ∇u + (Dᵗ a) ∇u`. For
+constant coefficients the commutator vanishes and the identity reads `a(Dᵗ u, v) = -a(u, D⁻ᵗ v)`.
+The hypothesis on the coefficients makes the energy form bilinear and continuous on `H¹(ℝⁿ)`. -/
+theorem energyFormH1_differenceQuotient_eq_neg_sub
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤
+      (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))))
+    (w : EuclideanSpace ℝ ι) (t : ℝ) (u v : W1p mu ⊤ 2) :
+    energyFormH1 (fun x => a (x + t • w)) 0 0
+        (W1p.differenceQuotient le_rfl w t (Set.mapsTo_univ (· + t • w) _) u) v
+      = -energyFormH1 a 0 0 u
+          (W1p.differenceQuotient le_rfl w (-t) (Set.mapsTo_univ (· + (-t) • w) _) v)
+        - t⁻¹ * (energyFormH1 (fun x => a (x + t • w)) 0 0 u v - energyFormH1 a 0 0 u v) := by
+  have hcoeff' := memLp_energyIntegrand_comp_add_right hcoeff (t • w)
   -- Both arguments of the energy form are linear, being those of the bundled bilinear map
-  -- `energyFormH1L hcoeff`, so a difference quotient splits.
-  have hleft : ∀ (s : ℝ) (hs : MapsTo (· + s • w)
-      ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))
-      ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))) (x y : W1p mu ⊤ 2),
-      energyFormH1 (fun _ => A) 0 0 (W1p.differenceQuotient le_rfl w s hs x) y
-        = s⁻¹ * (energyFormH1 (fun _ => A) 0 0 (W1p.translate hs x) y
-            - energyFormH1 (fun _ => A) 0 0 x y) := by
-    intro s hs x y
-    rw [W1p.differenceQuotient_def, W1p.restrictL_self, ← energyFormH1L_apply hcoeff]
-    simp only [map_smul, map_sub, smul_apply, sub_apply, energyFormH1L_apply, smul_eq_mul]
-  have hright : ∀ (s : ℝ) (hs : MapsTo (· + s • w)
-      ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))
-      ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))) (x y : W1p mu ⊤ 2),
-      energyFormH1 (fun _ => A) 0 0 x (W1p.differenceQuotient le_rfl w s hs y)
-        = s⁻¹ * (energyFormH1 (fun _ => A) 0 0 x (W1p.translate hs y)
-            - energyFormH1 (fun _ => A) 0 0 x y) := by
-    intro s hs x y
-    rw [W1p.differenceQuotient_def, W1p.restrictL_self, ← energyFormH1L_apply hcoeff]
+  -- `energyFormH1L`, so a difference quotient splits.
+  have hleft : ∀ (x y : W1p mu ⊤ 2),
+      energyFormH1 (fun x => a (x + t • w)) 0 0
+          (W1p.differenceQuotient le_rfl w t (Set.mapsTo_univ (· + t • w) _) x) y
+        = t⁻¹ * (energyFormH1 (fun x => a (x + t • w)) 0 0
+            (W1p.translate (Set.mapsTo_univ (· + t • w) _) x) y
+            - energyFormH1 (fun x => a (x + t • w)) 0 0 x y) := by
+    intro x y
+    rw [W1p.differenceQuotient_def, W1p.restrictL_self,
+      ← energyFormH1L_apply (b := 0) (c := 0) hcoeff']
+    simp only [map_smul, map_sub, smul_apply, sub_apply, energyFormH1L_apply,
+      smul_eq_mul]
+  have hright : ∀ (x y : W1p mu ⊤ 2),
+      energyFormH1 a 0 0 x
+          (W1p.differenceQuotient le_rfl w (-t) (Set.mapsTo_univ (· + (-t) • w) _) y)
+        = (-t)⁻¹ * (energyFormH1 a 0 0 x (W1p.translate (Set.mapsTo_univ (· + (-t) • w) _) y)
+            - energyFormH1 a 0 0 x y) := by
+    intro x y
+    rw [W1p.differenceQuotient_def, W1p.restrictL_self,
+      ← energyFormH1L_apply (b := 0) (c := 0) hcoeff]
     simp only [map_smul, map_sub, energyFormH1L_apply, smul_eq_mul]
   have hk : t • w + (-t) • w = 0 := by rw [← add_smul]; simp
-  rw [hleft, hright, energyFormH1_translate A hk, inv_neg]
+  rw [hleft, hright, energyFormH1_translate a hk, inv_neg]
   ring
 
 omit [DecidableEq ι] in
-/-- **The difference quotients of the gradient of a weak solution are uniformly bounded.** For a
-constant, uniformly elliptic `A` and a weak solution `u ∈ H¹(ℝⁿ)` of `-∂ⱼ(Aⁱʲ ∂ᵢu) = f`,
+/-- **The commutator of the energy form with a translation.** If the bilinear forms of the
+coefficient field are `K`-Lipschitz in operator norm, then translating the coefficients by `t w`
+changes the energy form by at most `K |t| ‖w‖ ‖∇u‖_{L²} ‖∇v‖_{L²}`:
 
-`‖∇Dᵗ u‖_{L²} ≤ ‖w‖ ‖f‖_{L²} / λ`
+`|t⁻¹ (aₜ(u, v) - a(u, v))| ≤ K ‖w‖ ‖∇v‖_{L²} ‖∇u‖_{L²}`, where `aₜ = a(· + t w)`.
+
+This bounds the commutator term of `TauCeti.PDE.energyFormH1_differenceQuotient_eq_neg_sub`
+uniformly in `t`. The hypothesis on the coefficients makes both energy densities integrable. -/
+theorem norm_inv_mul_energyFormH1_comp_add_sub_le
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤
+      (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))))
+    (hLip : LipschitzWith K fun x => matrixBilinearForm (a x)) (w : EuclideanSpace ℝ ι) (t : ℝ)
+    (u v : W1p mu ⊤ 2) :
+    ‖t⁻¹ * (energyFormH1 (fun x => a (x + t • w)) 0 0 u v - energyFormH1 a 0 0 u v)‖
+      ≤ K * ‖w‖ * (‖W1p.gradient v‖ * ‖W1p.gradient u‖) := by
+  have hint : ∀ b : EuclideanSpace ℝ ι → Matrix ι ι ℝ,
+      MemLp (fun x => energyIntegrand (b x) 0 0) ⊤
+        (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))) →
+      Integrable (fun x => matrixBilinearForm (b x) (W1p.gradient v x) (W1p.gradient u x))
+        (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))) :=
+    fun b hb => by simpa using integrable_energyIntegrand_jetField hb u v
+  rw [energyFormH1_zero_zero_eq_setIntegral, energyFormH1_zero_zero_eq_setIntegral,
+    ← integral_sub (hint _ (memLp_energyIntegrand_comp_add_right hcoeff (t • w))) (hint _ hcoeff),
+    ← integral_const_mul]
+  -- Pointwise, `|t⁻¹ (aₜ(x) - a(x))(η, ξ)| ≤ K ‖w‖ ‖η‖ ‖ξ‖` by the Lipschitz bound.
+  have hpoint : ∀ x, ‖t⁻¹ * (matrixBilinearForm (a (x + t • w)) (W1p.gradient v x)
+        (W1p.gradient u x) - matrixBilinearForm (a x) (W1p.gradient v x) (W1p.gradient u x))‖
+      ≤ K * ‖w‖ * (‖W1p.gradient v x‖ * ‖W1p.gradient u x‖) := by
+    intro x
+    have hdist : ‖matrixBilinearForm (a (x + t • w)) - matrixBilinearForm (a x)‖
+        ≤ K * (|t| * ‖w‖) := by
+      have := hLip.dist_le_mul (x + t • w) x
+      rwa [dist_eq_norm, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_eq_abs] at this
+    have hop := (matrixBilinearForm (a (x + t • w)) - matrixBilinearForm (a x)).le_opNorm₂
+      (W1p.gradient v x) (W1p.gradient u x)
+    rw [sub_apply, sub_apply] at hop
+    rw [norm_mul, norm_inv, Real.norm_eq_abs]
+    rcases eq_or_ne t 0 with rfl | ht
+    · simp only [abs_zero, inv_zero, zero_mul]
+      positivity
+    calc |t|⁻¹ * ‖matrixBilinearForm (a (x + t • w)) (W1p.gradient v x) (W1p.gradient u x)
+          - matrixBilinearForm (a x) (W1p.gradient v x) (W1p.gradient u x)‖
+        ≤ |t|⁻¹ * (K * (|t| * ‖w‖) * ‖W1p.gradient v x‖ * ‖W1p.gradient u x‖) := by
+          gcongr
+          exact hop.trans (by gcongr)
+      _ = K * ‖w‖ * (‖W1p.gradient v x‖ * ‖W1p.gradient u x‖) := by
+          field_simp [abs_ne_zero.mpr ht]
+  calc ‖∫ x in ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)),
+        t⁻¹ * (matrixBilinearForm (a (x + t • w)) (W1p.gradient v x) (W1p.gradient u x)
+          - matrixBilinearForm (a x) (W1p.gradient v x) (W1p.gradient u x)) ∂mu‖
+      ≤ ∫ x in ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)),
+          K * ‖w‖ * (‖W1p.gradient v x‖ * ‖W1p.gradient u x‖) ∂mu :=
+        norm_integral_le_of_norm_le
+          (((Lp.memLp (W1p.gradient v)).norm.integrable_mul
+            (Lp.memLp (W1p.gradient u)).norm).const_mul _)
+          (Filter.Eventually.of_forall hpoint)
+    _ ≤ K * ‖w‖ * (‖W1p.gradient v‖ * ‖W1p.gradient u‖) := by
+        rw [integral_const_mul]
+        gcongr
+        exact Lp.integral_norm_mul_norm_le (W1p.gradient v) (W1p.gradient u)
+
+/-- **The difference quotients of the gradient of a weak solution are uniformly bounded.** Let
+`a` be uniformly elliptic on `ℝⁿ` with constants `λ ≤ Λ`, with `K`-Lipschitz bilinear forms, and
+let `u ∈ H¹(ℝⁿ)` be a weak solution of `-∂ⱼ(aⁱʲ ∂ᵢu) = f`. Then
+
+`‖∇Dᵗ u‖_{L²} ≤ ‖w‖ (‖f‖_{L²} + K ‖∇u‖_{L²}) / λ`
 
 for every direction `w` and every step `t`, the bound being independent of `t`. Since
 `∇Dᵗ u = Dᵗ ∇u`, this is the uniform difference-quotient bound on the gradient that the
@@ -187,79 +279,82 @@ difference-quotient criterion turns into a second weak derivative.
 
 On the whole space `H¹₀(ℝⁿ) = H¹(ℝⁿ)`, so the hypothesis imposes no boundary condition; it is
 exactly the weak equation tested against every `H¹(ℝⁿ)` function. -/
-theorem UniformlyEllipticOn.norm_gradient_differenceQuotient_le
-    (hlam : 0 < lam)
-    (hA : ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ dotProduct ξ (Matrix.mulVec A ξ))
+theorem UniformlyEllipticOn.norm_gradient_differenceQuotient_le_of_lipschitzWith
+    (h : UniformlyEllipticOn (univ : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (hLip : LipschitzWith K fun x => matrixBilinearForm (a x))
     {f : Lp ℝ 2 (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)))}
-    {u : W1p0 mu ⊤ 2} (hu : IsWeakSolutionDirichlet (fun _ => A) 0 0 f u)
+    {u : W1p0 mu ⊤ 2} (hu : IsWeakSolutionDirichlet a 0 0 f u)
     (w : EuclideanSpace ℝ ι) (t : ℝ) :
     ‖W1p.gradient (W1p.differenceQuotient le_rfl w t (Set.mapsTo_univ (· + t • w) _)
-      (u : W1p mu ⊤ 2))‖ ≤ ‖w‖ * ‖f‖ / lam := by
-  classical
+      (u : W1p mu ⊤ 2))‖ ≤ ‖w‖ * (‖f‖ + K * ‖W1p.gradient (u : W1p mu ⊤ 2)‖) / lam := by
+  have hlam := h.pos
+  have hcont : Continuous a := continuous_matrixBilinearForm_comp_iff.mp hLip.continuous
+  have hcont' : Continuous fun x => a (x + t • w) := hcont.comp (continuous_id.add continuous_const)
+  -- The translated coefficients `aₜ = a(· + t w)` are again uniformly elliptic.
+  have h' : UniformlyEllipticOn ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))
+      (fun x => a (x + t • w)) lam Lam :=
+    UniformlyEllipticOn.of_bounds h.pos h.le (fun {_} _ ξ => h.lower_bound (mem_univ _) ξ)
+      fun {_} _ η ξ => h.upper_bound (mem_univ _) η ξ
+  have ha : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤
+      (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))) :=
+    memLp_energyIntegrand_of_bounds (beta := 0) (gamma := 0) h.upper_nonneg
+      hcont.aestronglyMeasurable aestronglyMeasurable_const aestronglyMeasurable_const
+      (fun _ _ η ξ => h.upper_bound (mem_univ _) η ξ) (by simp) (by simp)
   -- The discrete integration-by-parts identity, before naming the difference quotients.
-  have hDQ := energyFormH1_differenceQuotient_eq_neg A w t (u : W1p mu ⊤ 2)
+  have hDQ := energyFormH1_differenceQuotient_eq_neg_sub ha w t (u : W1p mu ⊤ 2)
     (W1p.differenceQuotient le_rfl w t (Set.mapsTo_univ (· + t • w) _) (u : W1p mu ⊤ 2))
   set g := W1p.differenceQuotient le_rfl w t (Set.mapsTo_univ (· + t • w) _) (u : W1p mu ⊤ 2)
   set v := W1p.differenceQuotient le_rfl w (-t) (Set.mapsTo_univ (· + (-t) • w) _) g
-  -- Ellipticity bounds the Dirichlet energy of the difference quotient from below.
-  have hcoeff : MemLp (fun x => energyIntegrand ((fun _ => A) x)
-      ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x) ((0 : EuclideanSpace ℝ ι → ℝ) x)) ⊤
-      (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))) := by
-    simpa using memLp_top_const (α := EuclideanSpace ℝ ι)
-      (μ := mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)))
-      (energyIntegrand A 0 0)
-  have hlow : lam * ‖W1p.gradient g‖ ^ 2 ≤ energyFormH1 (fun _ => A) 0 0 g g := by
-    have key := integral_mul_norm_snd_sq_le_energyFormIntegral_zero_drift_self
-      (μ := mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)))
-      (a := fun _ => A) (c := fun _ => 0) (U := jetField g)
-      (Filter.Eventually.of_forall fun _ ξ => by
-        simpa [Matrix.toQuadraticForm'_apply] using hA ξ)
-      (by simp) ((integrable_norm_jetField_snd_sq g).const_mul lam)
-      (TauCeti.PDE.integrable_energyIntegrand_jetField hcoeff g g)
-    rw [← integral_norm_jetField_snd_sq_eq_norm_gradient_sq g, ← integral_const_mul,
-      energyFormH1_def]
-    rw [energyFormIntegral_def] at key
-    exact key
+  -- Ellipticity of the translated coefficients bounds the energy of `Dᵗ u` from below.
+  have hlow : lam * ‖W1p.gradient g‖ ^ 2 ≤ energyFormH1 (fun x => a (x + t • w)) 0 0 g g :=
+    h'.mul_norm_gradient_sq_le_energyFormH1_self_of_zero_drift (gamma := 0)
+      hcont'.aestronglyMeasurable aestronglyMeasurable_const
+      (fun _ _ => rfl) (by simp) (fun _ _ => le_rfl) g
   -- The weak equation, tested against the reverse difference quotient of `Dᵗ u`.
   have hv0 : v ∈ w1p0Submodule mu ⊤ 2 := W1p.mem_w1p0Submodule_top (by norm_num) v
-  have hsol : energyFormH1 (fun _ => A) 0 0 (u : W1p mu ⊤ 2) v = ⟪f, W1p.value v⟫_ℝ := by
+  have hsol : energyFormH1 a 0 0 (u : W1p mu ⊤ 2) v = ⟪f, W1p.value v⟫_ℝ := by
     have h1 := (isWeakSolutionDirichlet_iff f u).mp hu ⟨v, hv0⟩
     rw [← dirichletForcing_apply_eq_setIntegral, dirichletForcing_apply] at h1
     exact h1
   rw [hsol] at hDQ
+  -- The commutator term, bounded by the Lipschitz constant.
+  have hcomm := norm_inv_mul_energyFormH1_comp_add_sub_le ha hLip w t (u : W1p mu ⊤ 2) g
   -- Cauchy--Schwarz and the difference-quotient bound on the value.
   have hdq : ‖W1p.value v‖ ≤ ‖w‖ * ‖W1p.gradient g‖ :=
     W1p.norm_value_differenceQuotient_le (by norm_num) w (-t) g
-  have hkey : lam * ‖W1p.gradient g‖ ^ 2 ≤ ‖f‖ * (‖w‖ * ‖W1p.gradient g‖) := by
+  have hkey : lam * ‖W1p.gradient g‖ ^ 2
+      ≤ ‖w‖ * (‖f‖ + K * ‖W1p.gradient (u : W1p mu ⊤ 2)‖) * ‖W1p.gradient g‖ := by
     refine hlow.trans (hDQ.le.trans ?_)
-    refine ((neg_le_abs _).trans (abs_real_inner_le_norm f _)).trans ?_
-    gcongr
+    have hf : -⟪f, W1p.value v⟫_ℝ ≤ ‖f‖ * (‖w‖ * ‖W1p.gradient g‖) :=
+      ((neg_le_abs _).trans (abs_real_inner_le_norm f _)).trans (by gcongr)
+    have hc := (neg_le_abs _).trans (Real.norm_eq_abs _ ▸ hcomm)
+    nlinarith
   rcases eq_or_lt_of_le (norm_nonneg (W1p.gradient g)) with hzero | hpos
   · rw [← hzero]
     exact div_nonneg (by positivity) hlam.le
   · rw [le_div_iff₀ hlam]
     nlinarith
 
-omit [DecidableEq ι] in
-/-- **The second-order weak directional derivatives of a whole-space weak solution.** For a
-constant, uniformly elliptic `A` and a weak solution `u ∈ H¹(ℝⁿ)` of `-∂ⱼ(Aⁱʲ ∂ᵢu) = f`, the
-derivative `∂_y u = ⟪∇u, y⟫` is again weakly differentiable in every direction `w`, with
+/-- **The second-order weak directional derivatives of a whole-space weak solution.** Let `a` be
+uniformly elliptic on `ℝⁿ` with constants `λ ≤ Λ`, with `K`-Lipschitz bilinear forms, and let
+`u ∈ H¹(ℝⁿ)` be a weak solution of `-∂ⱼ(aⁱʲ ∂ᵢu) = f`. Then the derivative `∂_y u = ⟪∇u, y⟫` is
+again weakly differentiable in every direction `w`, with
 
-`‖∂_w ∂_y u‖_{L²} ≤ ‖y‖ ‖w‖ ‖f‖_{L²} / λ`.
+`‖∂_w ∂_y u‖_{L²} ≤ ‖y‖ ‖w‖ (‖f‖_{L²} + K ‖∇u‖_{L²}) / λ`.
 
-This is the `H²` estimate in quantitative, direction-by-direction form; `λ` is the ellipticity
-constant and no other feature of `A` enters the bound. -/
-theorem UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient
-    (hlam : 0 < lam)
-    (hA : ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ dotProduct ξ (Matrix.mulVec A ξ))
+This is the `H²` estimate in quantitative, direction-by-direction form; the upper ellipticity
+constant `Λ` does not enter the bound. -/
+theorem UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient_of_lipschitzWith
+    (h : UniformlyEllipticOn (univ : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (hLip : LipschitzWith K fun x => matrixBilinearForm (a x))
     {f : Lp ℝ 2 (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)))}
-    {u : W1p0 mu ⊤ 2} (hu : IsWeakSolutionDirichlet (fun _ => A) 0 0 f u)
+    {u : W1p0 mu ⊤ 2} (hu : IsWeakSolutionDirichlet a 0 0 f u)
     (y w : EuclideanSpace ℝ ι) :
     ∃ G : Lp ℝ 2 (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))),
-      ‖G‖ ≤ ‖y‖ * (‖w‖ * ‖f‖ / lam) ∧
+      ‖G‖ ≤ ‖y‖ * (‖w‖ * (‖f‖ + K * ‖W1p.gradient (u : W1p mu ⊤ 2)‖) / lam) ∧
         HasWeakLineDerivOn mu ⊤
           (fun x => ⟪W1p.gradient (u : W1p mu ⊤ 2) x, y⟫_ℝ) G w := by
-  classical
+  have hlam := h.pos
   have hloc : LocallyIntegrableOn
       (fun x => ⟪W1p.gradient (u : W1p mu ⊤ 2) x, y⟫_ℝ)
       ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)) mu := by
@@ -270,7 +365,8 @@ theorem UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient
       (fun x => t⁻¹ * (⟪W1p.gradient (u : W1p mu ⊤ 2) (x + t • w), y⟫_ℝ
         - ⟪W1p.gradient (u : W1p mu ⊤ 2) x, y⟫_ℝ)) 2
       (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)))
-      ≤ ENNReal.ofReal (‖y‖ * (‖w‖ * ‖f‖ / lam)) := by
+      ≤ ENNReal.ofReal
+        (‖y‖ * (‖w‖ * (‖f‖ + K * ‖W1p.gradient (u : W1p mu ⊤ 2)‖) / lam)) := by
     intro t
     set g := W1p.differenceQuotient le_rfl w t (Set.mapsTo_univ (· + t • w) _) (u : W1p mu ⊤ 2)
     have hae : (fun x => t⁻¹ * (⟪W1p.gradient (u : W1p mu ⊤ 2) (x + t • w), y⟫_ℝ
@@ -297,22 +393,64 @@ theorem UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient
           rw [eLpNorm_const_smul, enorm_norm]
       _ = ‖y‖ₑ * ENNReal.ofReal ‖W1p.gradient g‖ := by
           rw [Lp.norm_def, ENNReal.ofReal_toReal (Lp.eLpNorm_ne_top _)]
-      _ ≤ ‖y‖ₑ * ENNReal.ofReal (‖w‖ * ‖f‖ / lam) := by
+      _ ≤ ‖y‖ₑ * ENNReal.ofReal
+            (‖w‖ * (‖f‖ + K * ‖W1p.gradient (u : W1p mu ⊤ 2)‖) / lam) := by
           gcongr
-          exact UniformlyEllipticOn.norm_gradient_differenceQuotient_le hlam hA hu w t
-      _ = ENNReal.ofReal (‖y‖ * (‖w‖ * ‖f‖ / lam)) := by
+          exact h.norm_gradient_differenceQuotient_le_of_lipschitzWith hLip hu w t
+      _ = ENNReal.ofReal
+            (‖y‖ * (‖w‖ * (‖f‖ + K * ‖W1p.gradient (u : W1p mu ⊤ 2)‖) / lam)) := by
           rw [← ofReal_norm, ← ENNReal.ofReal_mul (norm_nonneg y)]
   refine exists_norm_le_hasWeakLineDerivOn_of_frequently_eLpNorm_inv_mul_sub_le hloc w
-    (by positivity) fun K hK _ => Filter.Eventually.frequently ?_
+    (by positivity) fun S hS _ => Filter.Eventually.frequently ?_
   filter_upwards with t
-  exact le_trans (eLpNorm_mono_measure _ (Measure.restrict_mono hK le_rfl)) (hglobal t)
+  exact le_trans (eLpNorm_mono_measure _ (Measure.restrict_mono hS le_rfl)) (hglobal t)
+
+/-- **A whole-space weak solution lies in `H²(ℝⁿ)`.** Let `a` be uniformly elliptic on `ℝⁿ`, with
+Lipschitz bilinear forms. Then a weak solution `u ∈ H¹(ℝⁿ)` of `-∂ⱼ(aⁱʲ ∂ᵢu) = f` with
+`f ∈ L²(ℝⁿ)` is the first-order part of an element of `W^{2,2}(ℝⁿ)`: its weak gradient is again
+weakly differentiable, with `L²` derivative. The quantitative form of the statement is
+`TauCeti.PDE.UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient_of_lipschitzWith`. -/
+theorem UniformlyEllipticOn.exists_lowerOrder_eq_of_lipschitzWith
+    (h : UniformlyEllipticOn (univ : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (hLip : LipschitzWith K fun x => matrixBilinearForm (a x))
+    {f : Lp ℝ 2 (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)))}
+    {u : W1p0 mu ⊤ 2} (hu : IsWeakSolutionDirichlet a 0 0 f u) :
+    ∃ U : Wkp mu ⊤ 2 2, Wkp.lowerOrder 1 U = (u : W1p mu ⊤ 2) :=
+  W1p.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn _ (EuclideanSpace.basisFun ι ℝ)
+    fun i j => by
+      obtain ⟨G, -, hG⟩ := h.exists_norm_le_hasWeakLineDerivOn_gradient_of_lipschitzWith hLip hu
+        (EuclideanSpace.basisFun ι ℝ j) (EuclideanSpace.basisFun ι ℝ i)
+      exact ⟨G, hG⟩
 
 omit [DecidableEq ι] in
-/-- **A whole-space weak solution lies in `H²(ℝⁿ)`.** For a constant, uniformly elliptic `A`, a
-weak solution `u ∈ H¹(ℝⁿ)` of `-∂ⱼ(Aⁱʲ ∂ᵢu) = f` with `f ∈ L²(ℝⁿ)` is the first-order part of an
-element of `W^{2,2}(ℝⁿ)`: its weak gradient is again weakly differentiable, with `L²` derivative.
-The quantitative form of the statement, with the ellipticity constant made explicit, is
-`TauCeti.PDE.UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient`. -/
+/-- **The `H²` estimate for a constant coefficient matrix.** For a constant `A` with
+`λ‖ξ‖² ≤ ⟨ξ, A ξ⟩` and a weak solution `u ∈ H¹(ℝⁿ)` of `-∂ⱼ(Aⁱʲ ∂ᵢu) = f`, the derivative
+`∂_y u = ⟪∇u, y⟫` is weakly differentiable in every direction `w`, with
+
+`‖∂_w ∂_y u‖_{L²} ≤ ‖y‖ ‖w‖ ‖f‖_{L²} / λ`.
+
+Only the lower ellipticity bound is needed: a constant matrix is automatically bounded and
+Lipschitz with constant `0`. -/
+theorem UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient
+    (hlam : 0 < lam)
+    (hA : ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ dotProduct ξ (Matrix.mulVec A ξ))
+    {f : Lp ℝ 2 (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)))}
+    {u : W1p0 mu ⊤ 2} (hu : IsWeakSolutionDirichlet (fun _ => A) 0 0 f u)
+    (y w : EuclideanSpace ℝ ι) :
+    ∃ G : Lp ℝ 2 (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))),
+      ‖G‖ ≤ ‖y‖ * (‖w‖ * ‖f‖ / lam) ∧
+        HasWeakLineDerivOn mu ⊤
+          (fun x => ⟪W1p.gradient (u : W1p mu ⊤ 2) x, y⟫_ℝ) G w := by
+  classical
+  have hell := uniformlyEllipticOn_const_of_lower_bound (univ : Set (EuclideanSpace ℝ ι)) hlam
+    fun ξ => by simpa [Matrix.toQuadraticForm'_apply] using hA ξ
+  simpa using hell.exists_norm_le_hasWeakLineDerivOn_gradient_of_lipschitzWith
+    (LipschitzWith.const (matrixBilinearForm A)) hu y w
+
+omit [DecidableEq ι] in
+/-- **A whole-space weak solution with a constant coefficient matrix lies in `H²(ℝⁿ)`.** For a
+constant `A` with `λ‖ξ‖² ≤ ⟨ξ, A ξ⟩`, a weak solution `u ∈ H¹(ℝⁿ)` of `-∂ⱼ(Aⁱʲ ∂ᵢu) = f` with
+`f ∈ L²(ℝⁿ)` is the first-order part of an element of `W^{2,2}(ℝⁿ)`. -/
 theorem UniformlyEllipticOn.exists_lowerOrder_eq
     (hlam : 0 < lam)
     (hA : ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ dotProduct ξ (Matrix.mulVec A ξ))
@@ -320,12 +458,9 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq
     {u : W1p0 mu ⊤ 2} (hu : IsWeakSolutionDirichlet (fun _ => A) 0 0 f u) :
     ∃ U : Wkp mu ⊤ 2 2, Wkp.lowerOrder 1 U = (u : W1p mu ⊤ 2) := by
   classical
-  exact W1p.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn _ (EuclideanSpace.basisFun ι ℝ)
-    fun i j => by
-      obtain ⟨G, -, hG⟩ := UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient
-        hlam hA hu
-        (EuclideanSpace.basisFun ι ℝ j) (EuclideanSpace.basisFun ι ℝ i)
-      exact ⟨G, hG⟩
+  have hell := uniformlyEllipticOn_const_of_lower_bound (univ : Set (EuclideanSpace ℝ ι)) hlam
+    fun ξ => by simpa [Matrix.toQuadraticForm'_apply] using hA ξ
+  exact hell.exists_lowerOrder_eq_of_lipschitzWith (LipschitzWith.const (matrixBilinearForm A)) hu
 
 end PDE
 
