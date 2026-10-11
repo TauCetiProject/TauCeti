@@ -142,9 +142,8 @@ pulled back along the stalk identification. -/
 theorem stalkValuation_restrict (x : X.restrict h) :
     (X.restrict h).stalkValuation x =
       ValuationSpectrum.comap (X.restrictStalkIso h x).hom.hom (X.stalkValuation (f x)) := by
-  rw [stalkValuation_def, stalkValuation_def, valuation_restrict,
-    ← Function.comp_apply (f := ValuationSpectrum.comap _), ← ValuationSpectrum.comap_comp,
-    IsLocalRing.ResidueField.map_comp_residue, ValuationSpectrum.comap_comp, Function.comp_apply]
+  rw [stalkValuation_def, stalkValuation_def, valuation_restrict]
+  exact ValuationSpectrum.comap_residue_comap_residueFieldMap _ _
 
 -- The canonical morphism is exposed, as Mathlib's `LocallyRingedSpace.ofRestrict` is, so that
 -- its base map unfolds to `f`: the stalk map of `X.ofRestrict h` at `x` is typed at the point

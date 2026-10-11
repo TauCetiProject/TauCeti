@@ -30,6 +30,10 @@ The same dictionary identifies the field points of the scheme-theoretic `n`-tors
 closed field in which `N` is invertible, the group of field points of `E[N]` is therefore
 isomorphic to `(ℤ/Nℤ)²`.
 
+Every elliptic curve over `Spec K` is the curve of a Weierstrass equation
+(`EllipticCurveGeom.exists_iso_toEllipticCurveGeom`), so the finiteness of its `n`-torsion points
+holds for every elliptic curve over a field.
+
 ## Main definitions
 
 * `WeierstrassCurve.toEllipticCurveGeomPointsMulEquiv W`: the isomorphism between the group of
@@ -58,6 +62,8 @@ isomorphic to `(ℤ/Nℤ)²`.
 * `WeierstrassCurve.nonempty_toEllipticCurveGeom_torsion_mulEquiv_prod`: over a separably closed
   field in which `N` is invertible, the group of points of `E[N]` with values in `Spec K` is
   isomorphic to `(ℤ/Nℤ)²`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.finite_comp_mulBy_eq_one`: for `n ≠ 0`, finitely
+  many points of any elliptic curve over `Spec K` are killed by `[n]`.
 
 ## References
 
@@ -240,3 +246,38 @@ theorem nonempty_toEllipticCurveGeom_torsion_mulEquiv_prod [IsSepClosed K] (N : 
   exact ⟨(W.toEllipticCurveGeomTorsionPointsMulEquiv N).trans (AddEquiv.toMultiplicative e)⟩
 
 end WeierstrassCurve
+
+/-! ### Elliptic curves over a field -/
+
+namespace TauCeti.AlgebraicGeometry.EllipticCurveGeom
+
+variable {K : Type u} [Field K] (E : EllipticCurveGeom (Spec (.of K)))
+
+/-- **An elliptic curve over a field has finitely many `n`-torsion points.** For an elliptic curve
+`E` over `Spec K` and a nonzero integer `n`, only finitely many points of `E` with values in
+`Spec K` are killed by multiplication by `n`. -/
+theorem finite_comp_mulBy_eq_one {n : ℤ} (hn : n ≠ 0) :
+    Finite {x : 𝟙_ (Over (Spec (.of K))) ⟶ Over.mk E.structureMap // x ≫ E.mulBy n = 1} := by
+  -- `E` is the curve of a Weierstrass equation `W`, through an isomorphism `e` over `Spec K`
+  obtain ⟨W, _, e, he, h0⟩ := E.exists_iso_toEllipticCurveGeom
+  have := W.finite_comp_mulBy_eq_one hn
+  have hmul : (W.toEllipticCurveGeom.mulBy n).left ≫ e.hom = e.hom ≫ (E.mulBy n).left :=
+    mulBy_left_comp_of_isPullback (f := 𝟙 _) (IsPullback.of_horiz_isIso ⟨by simp [he]⟩)
+      (by simp [h0]) n
+  let e' : Over.mk E.structureMap ⟶ Over.mk W.toEllipticCurveGeom.structureMap :=
+    Over.homMk e.inv (by simp [Iso.inv_comp_eq, he])
+  -- composing with `e⁻¹` sends the points of `E` killed by `[n]` injectively to those of `W`
+  refine .of_injective (β := {x : 𝟙_ (Over (Spec (.of K))) ⟶
+    Over.mk W.toEllipticCurveGeom.structureMap // x ≫ W.toEllipticCurveGeom.mulBy n = 1})
+    (fun x ↦ ⟨x.1 ≫ e', ?_⟩) fun x y hxy ↦ ?_
+  · ext1
+    have hx := congrArg CommaMorphism.left x.2
+    simp only [Over.comp_left, hom_one_left] at hx ⊢
+    have hmul' : e.inv ≫ (W.toEllipticCurveGeom.mulBy n).left = (E.mulBy n).left ≫ e.inv := by
+      rw [Iso.inv_comp_eq, ← reassoc_of% hmul, Iso.hom_inv_id, Category.comp_id]
+    have h0' : E.zero ≫ e.inv = W.toEllipticCurveGeom.zero := by
+      rw [← h0, Category.assoc, Iso.hom_inv_id, Category.comp_id]
+    simp [e', hmul', reassoc_of% hx, h0']
+  · exact Subtype.ext ((cancel_mono e').mp (congrArg Subtype.val hxy))
+
+end TauCeti.AlgebraicGeometry.EllipticCurveGeom
