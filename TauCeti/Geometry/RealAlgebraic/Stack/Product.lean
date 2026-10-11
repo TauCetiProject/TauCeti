@@ -53,16 +53,11 @@ theorem rootMultiplicity_eq_of_prod
     (k : ι) (i : Fin D.count) (x y : X) :
     (P k x).rootMultiplicity (D.root i x) =
       (P k y).rootMultiplicity (D.root i y) := by
-  have hl : IsLocallyConstant fun x ↦ (P k x).rootMultiplicity (D.root i x) := by
-    refine (IsLocallyConstant.iff_eventually_eq _).mpr fun x₀ ↦ ?_
-    exact (eventually_rootMultiplicity_eq_of_prod Finset.univ
-      (d := fun k ↦ (P k x₀).natDegree)
-      (fun k _ j _ ↦ (hc k j).continuousAt)
-      (fun k _ ↦ .of_forall fun x ↦ (hd k x x₀).le)
-      (D.continuous_root i).continuousAt (fun k _ ↦ hn k x₀)
-      (.of_forall fun x ↦ (D.rootMultiplicity_root () i x).trans
-        (D.rootMultiplicity_root () i x₀).symm)).mono fun x hx ↦ hx k (Finset.mem_univ k)
-  exact hl.apply_eq_of_preconnectedSpace x y
+  exact TauCeti.Polynomial.rootMultiplicity_eq_of_prod Finset.univ
+    (d := fun k ↦ (P k x).natDegree) (fun k _ j _ ↦ hc k j)
+    (fun k _ y ↦ (hd k y x).le) (D.continuous_root i) (fun k _ ↦ hn k)
+    (fun x y ↦ (D.rootMultiplicity_root () i x).trans
+      (D.rootMultiplicity_root () i y).symm) k (Finset.mem_univ k) x y
 
 variable [Nonempty X]
 
@@ -84,32 +79,13 @@ noncomputable def ofProd
       ∃ i, D.root i x = t := by
     apply D.exists_root_eq () x (Finset.prod_ne_zero_iff.mpr fun k _ ↦ hn k x) t
     exact (Polynomial.isRoot_prod _ _ t).mpr ⟨k, Finset.mem_univ k, ht⟩
-  have hP (k : ι) : Continuous fun z : X × ℝ ↦ (P k z.1).eval z.2 :=
-    continuous_eval_of_continuous_coeff (fun j _ ↦ hc k j) fun x ↦ (hd k x x₀).le
-  refine {
-    count := D.count
-    root := D.root
-    continuous_root := D.continuous_root
-    strictMono_root := D.strictMono_root
-    multiplicity := m
-    rootMultiplicity_root := hm
-    exists_root_eq := fun k x _ ↦ hroots k x
-    exists_multiplicity_pos := fun i ↦ ?_
-    eq_zero_or_ne_zero := fun k ↦ .inr (hn k)
-    natDegree_eq := hd
-    signInvariant_sectionSet := fun k i ↦ ?_
-    signInvariant_sectorSet := fun k j ↦ ?_ }
-  · -- A product root belongs to at least one factor, even if several factors share it.
-    obtain ⟨u, hu⟩ := D.exists_multiplicity_pos i
-    obtain ⟨k, _, hk⟩ := (Polynomial.isRoot_prod _ _ _).mp
-      ((D.multiplicity_pos_iff x₀).mp hu).2
-    exact ⟨k, (rootMultiplicity_pos (hn k x₀)).mpr hk⟩
-  · exact signInvariant_eval_sectionSet (I := {i | 0 < m k i}) (hP k)
-      (D.continuous_root i) (fun x ↦ (D.strictMono_root x).injective) (.inr (hn k))
-      fun x _ t ↦ (isRoot_iff_of_rootMultiplicity (fun i ↦ hm k i x)
-        (hroots k x) (hn k x) t).trans (by simp only [mem_ofPred_eq, and_comm])
-  · exact signInvariant_eval_sectorSet (hP k) D.continuous_root D.strictMono_root
-      (.inr (hn k)) fun x _ ↦ hroots k x
+  refine Delineation.ofRoots hc (fun k ↦ .inr (hn k)) hd D.continuous_root
+    D.strictMono_root hm (fun k x _ ↦ hroots k x) fun i ↦ ?_
+  -- A product root belongs to at least one factor, even if several factors share it.
+  obtain ⟨u, hu⟩ := D.exists_multiplicity_pos i
+  obtain ⟨k, _, hk⟩ := (Polynomial.isRoot_prod _ _ _).mp
+    ((D.multiplicity_pos_iff x₀).mp hu).2
+  exact ⟨k, (rootMultiplicity_pos (hn k x₀)).mpr hk⟩
 
 variable (hc : ∀ k j, Continuous fun x ↦ (P k x).coeff j)
   (hn : ∀ k x, P k x ≠ 0)
@@ -117,11 +93,35 @@ variable (hc : ∀ k j, Continuous fun x ↦ (P k x).coeff j)
 
 /-- Passing from a product to its factors preserves the number of root sections. -/
 @[simp]
-theorem ofProd_count : (D.ofProd hc hn hd).count = D.count := (rfl)
+theorem ofProd_count : (D.ofProd hc hn hd).count = D.count := by
+  simp only [ofProd, ofRoots_count]
 
 /-- Passing from a product to its factors preserves the ordered root functions. -/
 @[simp]
 theorem ofProd_root (i : Fin (D.ofProd hc hn hd).count) (x : X) :
-    (D.ofProd hc hn hd).root i x = D.root (Fin.cast (D.ofProd_count hc hn hd) i) x := (rfl)
+    (D.ofProd hc hn hd).root i x = D.root (Fin.cast (D.ofProd_count hc hn hd) i) x := by
+  unfold ofProd at i ⊢
+  exact ofRoots_root _ _ _ _ _ _ _ _ i x
+
+/-- A factor's multiplicity in the recovered delineation is its root multiplicity
+along the corresponding product section, at any point of the base. -/
+theorem ofProd_multiplicity (k : ι) (i : Fin (D.ofProd hc hn hd).count) (x : X) :
+    (D.ofProd hc hn hd).multiplicity k i =
+      (P k x).rootMultiplicity (D.root (Fin.cast (D.ofProd_count hc hn hd) i) x) := by
+  rw [← (D.ofProd hc hn hd).rootMultiplicity_root k i x, D.ofProd_root hc hn hd]
+
+/-- The multiplicity of a product section is the sum of the multiplicities of that
+section in the factors, including when factors share roots. -/
+theorem multiplicity_eq_sum_ofProd (i : Fin D.count) :
+    D.multiplicity () i = ∑ k, (D.ofProd hc hn hd).multiplicity k
+      (Fin.cast (D.ofProd_count hc hn hd).symm i) := by
+  let x : X := Classical.choice ‹Nonempty X›
+  rw [← D.rootMultiplicity_root () i x, ← count_roots,
+    roots_prod _ _ (Finset.prod_ne_zero_iff.mpr fun k _ ↦ hn k x), Multiset.count_bind]
+  simp only [count_roots, Finset.sum_map_val]
+  apply Finset.sum_congr rfl
+  intro k _
+  simpa only [Fin.cast_cast, Fin.cast_refl, id_eq] using
+    (D.ofProd_multiplicity hc hn hd k (Fin.cast (D.ofProd_count hc hn hd).symm i) x).symm
 
 end TauCeti.Delineation
