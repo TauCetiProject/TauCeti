@@ -6,12 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Cyclotomic
-import TauCeti.NumberTheory.ClassFieldTheory.Global.Cyclotomic.Input
+import TauCeti.Data.ZMod.Units
 import TauCeti.NumberTheory.ClassFieldTheory.Local.ExplicitCyclotomicSymbol.Norm
 import TauCeti.NumberTheory.ClassFieldTheory.Local.Unramified
 import TauCeti.NumberTheory.LocalField.Norm.Basic
 import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Basic
 import TauCeti.NumberTheory.Padics.PadicIntegers
+import TauCeti.NumberTheory.Padics.RingHoms
 import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
 
 /-!
@@ -24,11 +25,12 @@ inverse of the unit part:
 χ_cyc (Art_{ℚ_p} (pᵏ u)) = u⁻¹        (u ∈ ℤ_pˣ),
 ```
 
-and for a finite extension `F/ℚ_p` the Artin symbol of a unit `u` of `F` has cyclotomic character
-`N_{F/ℚ_p}(u)⁻¹`. This is the cyclotomic normalization of local class field theory, with the
-arithmetic Frobenius convention. It identifies the Artin map with the explicit local symbols
-`cyclotomicSymbol` on the cyclotomic extensions of `ℚ_p`, so the product formula for those
-explicit symbols becomes a statement about Artin symbols.
+and for a finite extension `F/ℚ_p` the Artin symbol of a unit `u` of the valuation ring of `F`
+(`v(u) = 1`) has cyclotomic character `N_{F/ℚ_p}(u)⁻¹`. This is the cyclotomic normalization of
+local class field theory, with the arithmetic Frobenius convention. On the roots of unity of
+`p`-power order it identifies the Artin map with the explicit local symbols `cyclotomicSymbol`,
+which act there through `u⁻¹` as well (`TauCeti.unitsMap_cyclotomicSymbol_primePow`), so the
+product formula for those explicit symbols becomes a statement about Artin symbols.
 
 The comparison uses no Lubin–Tate theory. Fix `u ∈ ℤ_pˣ` and `n`, put `f = φ(pⁿ)`,
 `N = p ^ f - 1` and `E = ℚ_p(μ_{pⁿN})`, and let `g` represent the Artin symbol of the
@@ -51,7 +53,8 @@ to its finite extensions.
 * `TauCeti.ClassFieldTheory.cyclotomicCharacter_artinMap_padic`: a representative of the Artin
   symbol of a unit `u ∈ ℤ_pˣ` has cyclotomic character `u⁻¹`.
 * `TauCeti.ClassFieldTheory.cyclotomicCharacter_artinMap`: for `F/ℚ_p` finite, a representative
-  of the Artin symbol of a unit `u` of `F` has cyclotomic character `N_{F/ℚ_p}(u)⁻¹`.
+  of the Artin symbol of a unit `u` of the valuation ring of `F` has cyclotomic character
+  `N_{F/ℚ_p}(u)⁻¹`.
 
 ## References
 
@@ -66,6 +69,52 @@ noncomputable section
 namespace TauCeti.ClassFieldTheory
 
 variable (p : ℕ) [Fact p.Prime]
+
+/-- If `g ∈ G_{ℚ_p}` represents the Artin symbol of `x` and fixes a finite Galois extension `M` of
+`ℚ_p`, then `x` is a norm from `M`. -/
+private theorem mem_normGroup_of_mk_eq_artinMap_of_fixes {x : ℚ_[p]ˣ}
+    (g : Field.absoluteGaloisGroup ℚ_[p])
+    (hg : (g : Field.absoluteGaloisGroupAbelianization ℚ_[p]) = artinMap ℚ_[p] x)
+    (M : IntermediateField ℚ_[p] (AlgebraicClosure ℚ_[p])) [FiniteDimensional ℚ_[p] M]
+    [IsGalois ℚ_[p] M]
+    (hgM : ∀ z : M, DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) g
+      (z : AlgebraicClosure ℚ_[p]) = z) :
+    x ∈ normGroup ℚ_[p] M := by
+  have : Algebra.IsSeparable ℚ_[p] (AlgebraicClosure ℚ_[p]) :=
+    Algebra.IsAlgebraic.isSeparable_of_perfectField
+  let ι : M →ₐ[ℚ_[p]] SeparableClosure ℚ_[p] :=
+    M.val.codRestrict (separableClosure ℚ_[p] (AlgebraicClosure ℚ_[p])).toSubalgebra
+      fun _ ↦ mem_separableClosure_iff.2 (Algebra.IsSeparable.isSeparable ℚ_[p] _)
+  have h1 : ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv ℚ_[p] g) = 1 := by
+    refine AlgEquiv.ext fun y ↦ ι.injective <|
+      (ι.restrictNormalHom_commutes _ y).trans (Subtype.ext ?_)
+    rw [AlgEquiv.one_apply]
+    refine (coe_absoluteGaloisGroupRestrictEquiv_apply ℚ_[p] g (ι y)).trans ?_
+    have hιy : ((ι y : SeparableClosure ℚ_[p]) : AlgebraicClosure ℚ_[p]) = y :=
+      AlgHom.coe_codRestrict _ _ _ y
+    rw [hιy, hgM y]
+    exact hιy.symm
+  rw [← localArtinMap_eq_zero_iff ℚ_[p] M ι, artinMap_restrict ℚ_[p] M ι x g hg, h1, map_one,
+    ofMul_one]
+
+/-- Let `g ∈ G_{ℚ_p}` represent the Artin symbol of `x`, and let `ρ ∈ G_{ℚ_p}` act on the `m`-th
+roots of unity through the explicit symbol `cyclotomicSymbol m p x`. Then `ρ` fixes every finite
+Galois extension of `ℚ_p` inside `ℚ_p(μ_m)` that `g` fixes. -/
+private theorem apply_eq_self_of_mk_eq_artinMap_of_fixes {x : ℚ_[p]ˣ}
+    (g : Field.absoluteGaloisGroup ℚ_[p])
+    (hg : (g : Field.absoluteGaloisGroupAbelianization ℚ_[p]) = artinMap ℚ_[p] x)
+    (m : ℕ) [NeZero m] (ρ : Field.absoluteGaloisGroup ℚ_[p])
+    (hρ : ∀ z : AlgebraicClosure ℚ_[p], z ^ m = 1 →
+      ρ.toRingEquiv z = z ^ ((cyclotomicSymbol m p x : ZMod m).val))
+    (M : IntermediateField ℚ_[p] (AlgebraicClosure ℚ_[p])) [FiniteDimensional ℚ_[p] M]
+    [IsGalois ℚ_[p] M]
+    (hM : M ≤ IntermediateField.adjoin ℚ_[p] {z : AlgebraicClosure ℚ_[p] | z ^ m = 1})
+    (hgM : ∀ z : M, DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) g
+      (z : AlgebraicClosure ℚ_[p]) = z) (z : M) :
+    ρ.toRingEquiv (z : AlgebraicClosure ℚ_[p]) = z := by
+  obtain ⟨y, hy⟩ := mem_normGroup_iff.1 (mem_normGroup_of_mk_eq_artinMap_of_fixes p g hg M hgM)
+  obtain rfl : Units.map (Algebra.norm ℚ_[p] : M →* ℚ_[p]) y = x := Units.ext hy
+  exact cyclotomicSymbol_norm_fixes p m M hM y ρ hρ z
 
 /-- **The comparison at a finite level.** If `g ∈ G_{ℚ_p}` represents the Artin symbol of `p u`,
 `u ∈ ℤ_pˣ`, then `g` acts on the roots of unity of order `pⁿ` through `u⁻¹`. -/
@@ -95,10 +144,7 @@ private theorem toZModPow_localCyclotomicCharacter_of_mk_eq_artinMap {u : ℤ_[p
     rw [_root_.Padic.toAdd_normalizedValuation_eq_valuation, hx, toAdd_ofAdd,
       Padic.valuation_mul (by simp [hp.ne_zero]) (by simp), Padic.valuation_p,
       PadicInt.valuation_coe, add_eq_left, Nat.cast_eq_zero]
-    -- The valuations of `u` and `u⁻¹` are natural numbers adding up to `0`.
-    have h := PadicInt.valuation_mul u.ne_zero (u⁻¹).ne_zero
-    rw [Units.mul_inv, PadicInt.valuation_one] at h
-    omega
+    exact PadicInt.valuation_eq_zero_of_isUnit u.isUnit
   have hgF := isArithFrobeniusLift_of_mk_eq_artinMap_uniformizer ℚ_[p] hπ g hg
   have hgN (t : AlgebraicClosure ℚ_[p]) (ht : t ^ N = 1) :
       DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) g t = t ^ p := by
@@ -139,27 +185,6 @@ private theorem toZModPow_localCyclotomicCharacter_of_mk_eq_artinMap {u : ℤ_[p
       ZMod.natCast_zmod_val, ← hρχ, localCyclotomicCharacter_apply]
   have hgN' : ((hζ'.autToPow ℚ_[p] gE : ZMod m).cast : ZMod N) = p := hcast hdN g hgN
   have hρN' : ((hζ'.autToPow ℚ_[p] ρE : ZMod m).cast : ZMod N) = p := hcast hdN ρ hρN
-  -- The fixed field `M` of `g` in `E`. By local reciprocity, `p u` is a norm from `M`.
-  let M : IntermediateField ℚ_[p] E := IntermediateField.fixedField (Subgroup.zpowers gE)
-  have : IsGalois ℚ_[p] M := IsGalois.of_fixedField_normal_subgroup _
-  have hnorm : x ∈ normGroup ℚ_[p] M := by
-    have : Algebra.IsSeparable ℚ_[p] (AlgebraicClosure ℚ_[p]) :=
-      Algebra.IsAlgebraic.isSeparable_of_perfectField
-    let ι : M →ₐ[ℚ_[p]] SeparableClosure ℚ_[p] :=
-      (E.val.comp M.val).codRestrict (separableClosure ℚ_[p] (AlgebraicClosure ℚ_[p])).toSubalgebra
-        fun _ ↦ mem_separableClosure_iff.2 (Algebra.IsSeparable.isSeparable ℚ_[p] _)
-    have h1 : ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv ℚ_[p] g) = 1 := by
-      refine AlgEquiv.ext fun y ↦ ι.injective <|
-        (ι.restrictNormalHom_commutes _ y).trans (Subtype.ext ?_)
-      rw [AlgEquiv.one_apply]
-      refine (coe_absoluteGaloisGroupRestrictEquiv_apply ℚ_[p] g (ι y)).trans ?_
-      have hιy : ((ι y : SeparableClosure ℚ_[p]) : AlgebraicClosure ℚ_[p]) = (y : E) :=
-        AlgHom.coe_codRestrict _ _ _ y
-      rw [hιy, ← AlgEquiv.restrictNormalHom_apply E g,
-        (IntermediateField.mem_fixedField_iff _ _).1 y.2 gE (Subgroup.mem_zpowers gE)]
-      exact hιy.symm
-    rw [← localArtinMap_eq_zero_iff ℚ_[p] M ι, artinMap_restrict ℚ_[p] M ι x g hg, h1, map_one,
-      ofMul_one]
   -- `ρ` acts on the `m`-th roots of unity through the explicit symbol of `p u`.
   set r := hζ'.autToPow ℚ_[p] ρE
   have hrs : (r : ZMod m) = cyclotomicSymbol m p x := by
@@ -172,9 +197,8 @@ private theorem toZModPow_localCyclotomicCharacter_of_mk_eq_artinMap {u : ℤ_[p
       rw [hρN', ← ZMod.unitsMap_val hdN,
         unitsMap_cyclotomicSymbol_of_coprime m p hdN hpN x 1 u (by rw [hx, zpow_one]), zpow_one,
         ZMod.coe_unitOfCoprime]
-    rw [ZMod.cast_eq_val, ZMod.cast_eq_val, ZMod.natCast_eq_natCast_iff] at h₁ h₂
-    rw [← ZMod.natCast_zmod_val (r : ZMod m), (ZMod.natCast_eq_natCast_iff _ _ _).2
-      ((Nat.modEq_and_modEq_iff_modEq_mul hcop).1 ⟨h₁, h₂⟩), ZMod.natCast_zmod_val]
+    exact (ZMod.chineseRemainder hcop).injective <| Prod.ext
+      (by simpa [ZMod.chineseRemainder] using h₁) (by simpa [ZMod.chineseRemainder] using h₂)
   have hρm (z : AlgebraicClosure ℚ_[p]) (hz : z ^ m = 1) :
       ρ.toRingEquiv z = z ^ ((cyclotomicSymbol m p x : ZMod m).val) := by
     have hρζ :
@@ -182,23 +206,31 @@ private theorem toZModPow_localCyclotomicCharacter_of_mk_eq_artinMap {u : ℤ_[p
       rw [← AlgEquiv.restrictNormalHom_apply E ρ ζ', ← hζ'.autToPow_spec ℚ_[p],
         IntermediateField.coe_pow]
     exact hrs ▸ hζ.map_eq_pow (ρ.toRingEquiv : AlgebraicClosure ℚ_[p] →+* _) hρζ hz
-  -- Hence `ρ` fixes `M`, so its restriction to `E` is a power of that of `g`.
-  obtain ⟨y, hy⟩ := mem_normGroup_iff.1 hnorm
-  let e := M.equivMap E.val
-  have : FiniteDimensional ℚ_[p] (M.map E.val) := e.toLinearEquiv.finiteDimensional
+  -- The fixed field `M` of `g` in `E`. By local reciprocity `p u` is a norm from `M`, so `ρ` fixes
+  -- `M` and its restriction to `E` is a power of that of `g`.
+  let M : IntermediateField ℚ_[p] E := IntermediateField.fixedField (Subgroup.zpowers gE)
+  have : IsGalois ℚ_[p] M := IsGalois.of_fixedField_normal_subgroup _
+  have : FiniteDimensional ℚ_[p] (M.map E.val) :=
+    (M.equivMap E.val).toLinearEquiv.finiteDimensional
+  have : IsGalois ℚ_[p] (M.map E.val) := IsGalois.of_algEquiv (M.equivMap E.val)
   have hME : M.map E.val ≤ IntermediateField.adjoin ℚ_[p] {z | z ^ m = 1} := by
     rintro _ ⟨z, -, rfl⟩
     exact IntermediateField.adjoin.mono ℚ_[p] {ζ} {z | z ^ m = 1}
       (Set.singleton_subset_iff.2 hζ.pow_eq_one) (z : E).2
-  have hyx : Units.map (Algebra.norm ℚ_[p] : M.map E.val →* ℚ_[p]) (Units.map (e : M →* _) y) =
-      x := Units.ext (by simp [Algebra.norm_eq_of_algEquiv, hy])
-  have hfix := cyclotomicSymbol_norm_fixes p m (M.map E.val) hME (Units.map (e : M →* _) y) ρ
-    (by rw [hyx]; exact hρm)
+  have hgM :
+      ∀ z : M.map E.val, DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) g
+        (z : AlgebraicClosure ℚ_[p]) = z := by
+    rintro ⟨_, z, hz, rfl⟩
+    exact (AlgEquiv.restrictNormalHom_apply E g z).symm.trans
+      (congrArg Subtype.val ((IntermediateField.mem_fixedField_iff _ _).1 hz gE
+        (Subgroup.mem_zpowers gE)))
   have hρE : ρE ∈ Subgroup.zpowers gE := by
     rw [← IntermediateField.fixingSubgroup_fixedField (Subgroup.zpowers gE),
       IntermediateField.mem_fixingSubgroup_iff]
     intro z hz
-    exact Subtype.ext ((AlgEquiv.restrictNormalHom_apply E ρ z).trans (hfix ⟨z, z, hz, rfl⟩))
+    exact Subtype.ext ((AlgEquiv.restrictNormalHom_apply E ρ z).trans
+      (apply_eq_self_of_mk_eq_artinMap_of_fixes p g hg m ρ hρm (M.map E.val) hME hgM
+        ⟨z, z, hz, rfl⟩))
   obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.1 hρE
   set a := hζ'.autToPow ℚ_[p] gE
   have hra : r = a ^ k := by simp only [r, a, ← hk, map_zpow]
@@ -256,8 +288,9 @@ theorem cyclotomicCharacter_artinMap_padic (u : ℤ_[p]ˣ) (σ : Field.absoluteG
   exact abelianizedLocalCyclotomicCharacter_artinMap_padic p (k := 0) (by simp)
 
 /-- **The cyclotomic normalization of the local Artin map of a finite extension of `ℚ_p`.** Let
-`F/ℚ_p` be finite. If `σ ∈ G_F` represents the absolute Artin symbol of a unit `u` of `F`, then the
-`p`-adic cyclotomic character of `σ` is the inverse of the norm of `u`:
+`F/ℚ_p` be finite. If `σ ∈ G_F` represents the absolute Artin symbol of a unit `u` of the valuation
+ring of `F` (`v(u) = 1`), then the `p`-adic cyclotomic character of `σ` is the inverse of the norm
+of `u`:
 
 ```text
 χ_cyc (Art_F u) = N_{F/ℚ_p}(u)⁻¹.
