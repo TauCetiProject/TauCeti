@@ -66,7 +66,6 @@ abbrev openCoverSingularBicomplex : HomologicalComplex₂ C (ComplexShape.down �
 omit [HasCoproducts.{0} C] [HasZeroObject C] in
 /-- The column in Čech degree `p` is the singular chain complex of the `p`-th term of
 the cover's Čech nerve. -/
-@[simp]
 theorem openCoverSingularBicomplex_X (p : ℕ) :
     (openCoverSingularBicomplex U R).X p =
       ((singularChainComplexFunctor.{u} C).obj R).obj
@@ -76,7 +75,6 @@ theorem openCoverSingularBicomplex_X (p : ℕ) :
 omit [HasCoproducts.{0} C] [HasZeroObject C] in
 /-- The vertical differential in each column is the singular boundary of the corresponding
 Čech-nerve space. -/
-@[simp]
 theorem openCoverSingularBicomplex_vertical (p q : ℕ) :
     ((openCoverSingularBicomplex U R).X p).d (q + 1) q =
       (((singularChainComplexFunctor.{u} C).obj R).obj
@@ -85,7 +83,6 @@ theorem openCoverSingularBicomplex_vertical (p q : ℕ) :
 
 omit [HasCoproducts.{0} C] [HasZeroObject C] in
 /-- A Čech face acts on each column by the induced singular-chain map. -/
-@[simp]
 theorem openCoverSingularNerve_δ (p : ℕ) (j : Fin (p + 2)) :
     (openCoverSingularNerve U R).δ j =
       ((singularChainComplexFunctor.{u} C).obj R).map ((openCoverArrow U).cechNerve.δ j) :=
