@@ -39,6 +39,13 @@ def IsLocalOrientation {M : Type w} [TopologicalSpace M] (x : M) (d : ℕ)
       ({x} : Set M) d) : Prop :=
   ∀ y, ∃ c : ℤ, c • z = y
 
+/-- An element of local homology is a local orientation exactly when every class is an integral
+multiple of it. -/
+theorem isLocalOrientation_iff {M : Type w} [TopologicalSpace M] (x : M) (d : ℕ)
+    (z : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ))
+      ({x} : Set M) d) :
+    IsLocalOrientation x d z ↔ ∀ y, ∃ c : ℤ, c • z = y := Iff.rfl
+
 /-- The integral local homology group at `x` in degree `d`, with its local orientations. -/
 abbrev LocalOrientation (M : Type w) [TopologicalSpace M] (x : M) (d : ℕ) :=
   {z : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ))
