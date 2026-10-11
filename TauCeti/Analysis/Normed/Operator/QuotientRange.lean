@@ -61,18 +61,24 @@ theorem ContinuousAt.exists_isInvertible_coprod_subtypeL
 
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
 
+/-- Complementary coordinate operators are continuous at a parameter where the operator
+family is continuous and the fixed complement is valid. -/
+theorem ContinuousAt.quotientRangeCoordinate [TopologicalSpace X] [CompleteSpace (E × G)]
+    {A : X → E →L[𝕜] F} {x : X} (hA : ContinuousAt A x) (B : G →L[𝕜] F)
+    (h : ((A x).coprod B).IsInvertible) :
+    ContinuousAt (fun y => (A y).quotientRangeCoordinate B) x := by
+  have hcop : ContinuousAt (fun y => (A y).coprod B) x :=
+    hA.continuousLinearMapCoprod continuousAt_const
+  have hi : ContinuousAt (fun y => ((A y).coprod B).inverse) x :=
+    (h.contDiffAt_map_inverse (n := 0)).continuousAt.comp
+      (f := fun y => (A y).coprod B) hcop
+  simpa only [ContinuousLinearMap.quotientRangeCoordinate_def] using
+    (continuousAt_const (y := ContinuousLinearMap.snd 𝕜 E G)).clm_comp hi
+
 /-- A continuous operator family with a fixed valid complement has continuous
 complementary coordinate operators. The parameter space need only be topological. -/
 theorem Continuous.quotientRangeCoordinate [TopologicalSpace X] [CompleteSpace (E × G)]
     {A : X → E →L[𝕜] F} (hA : Continuous A) (B : G →L[𝕜] F)
     (h : ∀ x, ((A x).coprod B).IsInvertible) :
-    Continuous (fun x => (A x).quotientRangeCoordinate B) := by
-  apply continuous_iff_continuousAt.mpr
-  intro x
-  have hcop : ContinuousAt (fun y => (A y).coprod B) x :=
-    (hA.continuousAt.continuousLinearMapCoprod continuousAt_const)
-  have hi : ContinuousAt (fun y => ((A y).coprod B).inverse) x :=
-    ((h x).contDiffAt_map_inverse (n := 0)).continuousAt.comp
-      (f := fun y => (A y).coprod B) hcop
-  simpa only [ContinuousLinearMap.quotientRangeCoordinate_def] using
-    (continuousAt_const (y := ContinuousLinearMap.snd 𝕜 E G)).clm_comp hi
+    Continuous (fun x => (A x).quotientRangeCoordinate B) :=
+  continuous_iff_continuousAt.mpr fun x => hA.continuousAt.quotientRangeCoordinate B (h x)

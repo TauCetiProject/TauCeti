@@ -91,7 +91,7 @@ open TauCeti
 
 variable {R X E F G : Type*} [Ring R] [TopologicalSpace X]
   [TopologicalSpace E] [AddCommGroup E] [Module R E]
-  [TopologicalSpace F] [AddCommGroup F] [Module R F] [IsTopologicalAddGroup F]
+  [TopologicalSpace F] [AddCommGroup F] [Module R F] [ContinuousSub F]
   {A : X → E →L[R] F}
   [TopologicalSpace (TotalSpace G (fun x => F ⧸ (A x).range))]
 
