@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
+import Mathlib.Analysis.Calculus.Gradient.Basic
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 
@@ -42,6 +43,8 @@ function is compactly supported in `Ω`, and no regularity of `∂Ω` is used.
   locally integrable gradient `K'` in the integration-by-parts sense, `∫ Δf · K = -∫ K' · ∇f`
   for `C²` functions `f` with compact support. This is the first half of the computation of the
   distributional Laplacian of a fundamental solution.
+* `TauCeti.HasWeakFDerivOn.integral_laplacian_smul_eq_neg_integral_inner`: for `u` with weak
+  gradient `g` on `Ω`, `∫ Δφ • u = -∫ ⟪∇φ, g⟫` for every test function `φ` on `Ω`.
 * `TestFunction.laplacianCLM_apply`: the test-function Laplacian agrees pointwise with the
   classical Laplacian.
 -/
@@ -51,7 +54,7 @@ public section
 namespace TauCeti
 
 open InnerProductSpace Laplacian MeasureTheory TopologicalSpace
-open scoped Distributions
+open scoped Distributions Gradient
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
@@ -199,6 +202,59 @@ theorem integral_laplacian_mul_eq_neg_integral_sum {K : E → ℝ} {K' : E → E
   · simpa [mul_comm] using hK.integrable_smul_right_of_hasCompactSupport
       (((hgi i).continuous_fderiv one_ne_zero).clm_apply continuous_const)
       (((hci i).fderiv ℝ).comp_left (g := fun L : E →L[ℝ] ℝ ↦ L (b i)) rfl)
+
+omit [μ.IsAddHaarMeasure] in
+/-- **The distributional Laplacian of a weakly differentiable function.** If `u` has weak gradient
+`g` on `Ω`, then for every test function `φ` on `Ω`, `∫ Δφ • u ∂μ = -∫ ⟪∇φ, g⟫ ∂μ`. So `u` is
+weakly harmonic on `Ω` exactly when its weak gradient is orthogonal to the gradients of all test
+functions, which is the form in which the weak formulation of `Δu = 0` is stated. -/
+theorem HasWeakFDerivOn.integral_laplacian_smul_eq_neg_integral_inner {u : E → ℝ} {g : E → E}
+    (h : HasWeakFDerivOn μ Ω u fun x ↦ innerSL ℝ (g x)) (φ : 𝓓(Ω, ℝ)) :
+    ∫ x, Δ (φ : E → ℝ) x • u x ∂μ = -∫ x, ⟪∇ (φ : E → ℝ) x, g x⟫_ℝ ∂μ := by
+  set b := stdOrthonormalBasis ℝ E
+  have hφ1 : ContDiff ℝ 1 (fderiv ℝ (φ : E → ℝ)) := φ.contDiff.fderiv_right (by simp)
+  have hline : ∀ y v, lineDeriv ℝ (φ : E → ℝ) y v = fderiv ℝ (φ : E → ℝ) y v := fun y v ↦
+    (φ.contDiff.differentiable (by simp) y).lineDeriv_eq_fderiv
+  -- The Laplacian as a sum of iterated directional derivatives over an orthonormal basis.
+  have hΔφ : ∀ x, Δ (φ : E → ℝ) x =
+      ∑ i, fderiv ℝ (fun y ↦ fderiv ℝ (φ : E → ℝ) y (b i)) x (b i) := fun x ↦
+    laplacian_eq_sum_fderiv_fderiv_apply b (hφ1.differentiable one_ne_zero x)
+  -- In each direction, the weak derivative identity against the test function `∂ᵢφ`.
+  have hdir : ∀ i, ∫ x, fderiv ℝ (fun y ↦ fderiv ℝ (φ : E → ℝ) y (b i)) x (b i) • u x ∂μ =
+      -∫ x, fderiv ℝ (φ : E → ℝ) x (b i) • ⟪g x, b i⟫_ℝ ∂μ := fun i ↦ by
+    have e := (h.hasWeakLineDerivOn (b i)).integral_lineDeriv_smul_eq_neg_integral_smul
+      (TestFunction.lineDerivCLM ℝ (b i) φ)
+    rw [coe_lineDerivCLM] at e
+    simp_rw [lineDeriv_lineDeriv_testFunction, hline, innerSL_apply_apply] at e
+    exact e
+  have hint₁ : ∀ i,
+      Integrable (fun x ↦ fderiv ℝ (fun y ↦ fderiv ℝ (φ : E → ℝ) y (b i)) x (b i) • u x) μ := by
+    intro i
+    have := integrable_lineDeriv_smul_of_locallyIntegrableOn h.locallyIntegrableOn
+      (TestFunction.lineDerivCLM ℝ (b i) φ) (b i)
+    rw [coe_lineDerivCLM] at this
+    simpa only [lineDeriv_lineDeriv_testFunction] using this
+  have hint₂ : ∀ i,
+      Integrable (fun x ↦ fderiv ℝ (φ : E → ℝ) x (b i) • ⟪g x, b i⟫_ℝ) μ := by
+    intro i
+    have := integrable_smul_of_locallyIntegrableOn
+      (h.hasWeakLineDerivOn (b i)).locallyIntegrableOn_deriv (TestFunction.lineDerivCLM ℝ (b i) φ)
+    rw [coe_lineDerivCLM] at this
+    simpa only [hline, innerSL_apply_apply] using this
+  calc ∫ x, Δ (φ : E → ℝ) x • u x ∂μ
+      = ∑ i, ∫ x, fderiv ℝ (fun y ↦ fderiv ℝ (φ : E → ℝ) y (b i)) x (b i) • u x ∂μ := by
+        simp_rw [hΔφ, Finset.sum_smul]
+        exact integral_finsetSum _ fun i _ ↦ hint₁ i
+    _ = -∑ i, ∫ x, fderiv ℝ (φ : E → ℝ) x (b i) • ⟪g x, b i⟫_ℝ ∂μ := by
+        rw [← Finset.sum_neg_distrib]
+        exact Finset.sum_congr rfl fun i _ ↦ hdir i
+    _ = -∫ x, ⟪∇ (φ : E → ℝ) x, g x⟫_ℝ ∂μ := by
+        rw [← integral_finsetSum _ fun i _ ↦ hint₂ i]
+        congr 1
+        refine integral_congr_ae (ae_of_all _ fun x ↦ ?_)
+        simp only [smul_eq_mul, ← toDual_gradient, toDual_apply_apply]
+        rw [← b.sum_inner_mul_inner]
+        exact Finset.sum_congr rfl fun i _ ↦ by rw [real_inner_comm (g x)]
 
 omit [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] in
 /-- Applying the test-function Laplacian operator agrees pointwise with the classical
