@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.D4.Tripled.BlockIntertwiners
 public import TauCeti.Algebra.Lie.D4.Tripled.VectorBlock
 public import TauCeti.RepresentationTheory.Spin.HalfSpin.D4Tripled
 
@@ -23,11 +22,11 @@ Cartan Chevalley generators after applying the pinned order-three permutation to
 
 ## Main declarations
 
-* `TauCeti.D4Tripled.vectorBlockEquiv`: the signed coordinate equivalence from the standard
-  vector module to the natural block of the tripled table.
 * `SpinPolarizationData.d4VectorToSpinMinusEquiv`,
   `SpinPolarizationData.d4SpinMinusToSpinPlusEquiv`, and
   `SpinPolarizationData.d4SpinPlusToVectorEquiv`: the concrete triality cycle.
+* The three `d4TrialityCycle_*apply_apply_apply` theorems: the cycle is the identity from each
+  starting module.
 * The corresponding `_serreE`, `_serreF`, and `_serreH` theorems: compatibility with all
   Chevalley generators.
 
@@ -40,189 +39,6 @@ Cartan Chevalley generators after applying the pinned order-three permutation to
 open scoped Matrix
 
 public section
-
-namespace TauCeti.D4Tripled
-
-open TauCeti.DynkinType
-
-/-! ## The signed vector-block equivalence -/
-
-/-- The standard split vector coordinates, identified with the natural block of the tripled
-type-`D₄` table. -/
-noncomputable def vectorBlockIndexEquiv : (Fin 4 ⊕ Fin 4) ≃ Block 0 :=
-  Equiv.ofBijective
-    (fun a => ⟨vectorIndex a, d4TripledSummand_vectorIndex a⟩)
-    ⟨fun _ _ h => vectorIndex_injective (congrArg Subtype.val h), fun a => by
-      have ha : a.1 ∈ Set.range vectorIndex := by
-        rw [range_vectorIndex]
-        exact a.2
-      obtain ⟨x, hx⟩ := ha
-      exact ⟨x, Subtype.ext hx⟩⟩
-
-/-- The underlying table coordinate of `vectorBlockIndexEquiv` is `vectorIndex`. -/
-@[simp]
-theorem coe_vectorBlockIndexEquiv (a : Fin 4 ⊕ Fin 4) :
-    (vectorBlockIndexEquiv a).1 = vectorIndex a := by
-  exact congrArg Subtype.val (Equiv.ofBijective_apply _ _ a)
-
-private noncomputable def vectorSignEquiv :
-    (Fin 4 ⊕ Fin 4 → ℚ) ≃ₗ[ℚ] (Fin 4 ⊕ Fin 4 → ℚ) where
-  toFun v a := vectorBasisSign a * v a
-  invFun v a := vectorBasisSign a * v a
-  left_inv v := by
-    funext a
-    dsimp
-    rw [← mul_assoc, ← Int.cast_mul, vectorBasisSign_mul_self]
-    simp
-  right_inv v := by
-    funext a
-    dsimp
-    rw [← mul_assoc, ← Int.cast_mul, vectorBasisSign_mul_self]
-    simp
-  map_add' x y := by
-    funext a
-    simp only [Pi.add_apply]
-    ring
-  map_smul' c x := by
-    funext a
-    simp only [Pi.smul_apply, smul_eq_mul, RingHom.id_apply]
-    ring
-
-/-- The standard split vector module, written in the signed coordinates of the natural block of
-the tripled type-`D₄` table. -/
-noncomputable def vectorBlockEquiv :
-    (Fin 4 ⊕ Fin 4 → ℚ) ≃ₗ[ℚ] (Block 0 → ℚ) :=
-  vectorSignEquiv.trans
-    (LinearEquiv.piCongrLeft' ℚ (fun _ => ℚ) vectorBlockIndexEquiv)
-
-/-- Evaluation of the vector-block equivalence on a standard coordinate. -/
-@[simp]
-theorem vectorBlockEquiv_apply_apply (v : Fin 4 ⊕ Fin 4 → ℚ)
-    (a : Fin 4 ⊕ Fin 4) :
-    vectorBlockEquiv v (vectorBlockIndexEquiv a) = vectorBasisSign a * v a := by
-  simp [vectorBlockEquiv, vectorSignEquiv]
-
-private theorem cast_typeDStd_raisingMatrix (i : Fin 4) (a b : Fin 4 ⊕ Fin 4) :
-    (TypeDStd.raisingMatrix (K := ℤ) 4 (by omega) i a b : ℚ) =
-      TypeDStd.raisingMatrix (K := ℚ) 4 (by omega) i a b := by
-  by_cases hi : (i : ℕ) + 1 < 4
-  · rw [TypeDStd.raisingMatrix_of_chain 4 (by omega) hi,
-      TypeDStd.raisingMatrix_of_chain 4 (by omega) hi]
-    rcases a with a | a <;> rcases b with b | b <;>
-      simp [Matrix.fromBlocks, Matrix.single_apply]
-  · rw [TypeDStd.raisingMatrix_of_fork 4 (by omega) hi,
-      TypeDStd.raisingMatrix_of_fork 4 (by omega) hi]
-    rcases a with a | a <;> rcases b with b | b <;>
-      simp [Matrix.fromBlocks, Matrix.single_apply]
-
-private theorem cast_typeDStd_loweringMatrix (i : Fin 4) (a b : Fin 4 ⊕ Fin 4) :
-    (TypeDStd.loweringMatrix (K := ℤ) 4 (by omega) i a b : ℚ) =
-      TypeDStd.loweringMatrix (K := ℚ) 4 (by omega) i a b := by
-  by_cases hi : (i : ℕ) + 1 < 4
-  · rw [TypeDStd.loweringMatrix_of_chain 4 (by omega) hi,
-      TypeDStd.loweringMatrix_of_chain 4 (by omega) hi]
-    rcases a with a | a <;> rcases b with b | b <;>
-      simp [Matrix.fromBlocks, Matrix.single_apply]
-  · rw [TypeDStd.loweringMatrix_of_fork 4 (by omega) hi,
-      TypeDStd.loweringMatrix_of_fork 4 (by omega) hi]
-    rcases a with a | a <;> rcases b with b | b <;>
-      simp [Matrix.fromBlocks, Matrix.single_apply]
-
-private theorem cast_typeDStd_cartanGenerator (i : Fin 4) (a b : Fin 4 ⊕ Fin 4) :
-    (((TypeDStd.cartanGenerator (K := ℤ) 4 (by omega) i :
-        LieAlgebra.Orthogonal.typeD (Fin 4) ℤ) :
-          Matrix (Fin 4 ⊕ Fin 4) (Fin 4 ⊕ Fin 4) ℤ) a b : ℚ) =
-      ((TypeDStd.cartanGenerator (K := ℚ) 4 (by omega) i :
-        LieAlgebra.Orthogonal.typeD (Fin 4) ℚ) :
-          Matrix (Fin 4 ⊕ Fin 4) (Fin 4 ⊕ Fin 4) ℚ) a b := by
-  rw [TypeDStd.val_cartanGenerator, TypeDStd.val_cartanGenerator]
-  rcases a with a | a <;> rcases b with b | b <;>
-    simp [typeDDiagonalMatrix_apply]
-
-private theorem vectorBlockEquiv_mulVec
-    (A : Matrix (Fin 4 ⊕ Fin 4) (Fin 4 ⊕ Fin 4) ℚ)
-    (B : Matrix (Block 0) (Block 0) ℚ)
-    (h : ∀ a b, (vectorBasisSign a : ℚ) * A a b =
-      B (vectorBlockIndexEquiv a) (vectorBlockIndexEquiv b) * vectorBasisSign b)
-    (v : Fin 4 ⊕ Fin 4 → ℚ) :
-    vectorBlockEquiv (A *ᵥ v) = B *ᵥ vectorBlockEquiv v := by
-  funext a
-  obtain ⟨a, rfl⟩ := vectorBlockIndexEquiv.surjective a
-  simp only [vectorBlockEquiv_apply_apply, Matrix.mulVec, dotProduct]
-  rw [Finset.mul_sum]
-  refine Fintype.sum_equiv vectorBlockIndexEquiv (fun b =>
-    (vectorBasisSign a : ℚ) * (A a b * v b))
-    (fun b => B (vectorBlockIndexEquiv a) b * vectorBlockEquiv v b) ?_
-  intro b
-  rw [vectorBlockEquiv_apply_apply]
-  calc
-    (vectorBasisSign a : ℚ) * (A a b * v b) =
-        ((vectorBasisSign a : ℚ) * A a b) * v b := by ring
-    _ = (B (vectorBlockIndexEquiv a) (vectorBlockIndexEquiv b) *
-          (vectorBasisSign b : ℚ)) * v b := by rw [h]
-    _ = _ := by ring
-
-/-- The signed vector-block equivalence intertwines every positive simple-root operator with the
-raising matrix on the natural block. -/
-@[simp]
-theorem vectorBlockEquiv_raising_mulVec (i : Fin 4) (v : Fin 4 ⊕ Fin 4 → ℚ) :
-    vectorBlockEquiv (TypeDStd.raisingMatrix (K := ℚ) 4 (by omega) i *ᵥ v) =
-      blockRaisingMatrix ℚ 0 i *ᵥ vectorBlockEquiv v := by
-  apply vectorBlockEquiv_mulVec
-  intro a b
-  simp only [blockRaisingMatrix_apply, coe_vectorBlockIndexEquiv]
-  have h := congrArg (Int.castRingHom ℚ) (raisingMatrix_vectorIndex i a b)
-  simp only [map_mul] at h
-  change (raisingMatrix i (vectorIndex a) (vectorIndex b) : ℚ) *
-      (vectorBasisSign b : ℚ) =
-    (vectorBasisSign a : ℚ) *
-      (TypeDStd.raisingMatrix (K := ℤ) 4 (by omega) i a b : ℚ) at h
-  rw [cast_typeDStd_raisingMatrix] at h
-  exact h.symm
-
-/-- The signed vector-block equivalence intertwines every negative simple-root operator with the
-lowering matrix on the natural block. -/
-@[simp]
-theorem vectorBlockEquiv_lowering_mulVec (i : Fin 4) (v : Fin 4 ⊕ Fin 4 → ℚ) :
-    vectorBlockEquiv (TypeDStd.loweringMatrix (K := ℚ) 4 (by omega) i *ᵥ v) =
-      blockLoweringMatrix ℚ 0 i *ᵥ vectorBlockEquiv v := by
-  apply vectorBlockEquiv_mulVec
-  intro a b
-  simp only [blockLoweringMatrix_apply, coe_vectorBlockIndexEquiv]
-  have h := congrArg (Int.castRingHom ℚ) (loweringMatrix_vectorIndex i a b)
-  simp only [map_mul] at h
-  change (loweringMatrix i (vectorIndex a) (vectorIndex b) : ℚ) *
-      (vectorBasisSign b : ℚ) =
-    (vectorBasisSign a : ℚ) *
-      (TypeDStd.loweringMatrix (K := ℤ) 4 (by omega) i a b : ℚ) at h
-  rw [cast_typeDStd_loweringMatrix] at h
-  exact h.symm
-
-/-- The signed vector-block equivalence intertwines every Cartan generator with the diagonal
-weight matrix on the natural block. -/
-@[simp]
-theorem vectorBlockEquiv_cartanGenerator_mulVec (i : Fin 4)
-    (v : Fin 4 ⊕ Fin 4 → ℚ) :
-    vectorBlockEquiv
-        (typeDDiagonalMatrix (fun j =>
-          (typeDSimpleRoot 4 (by omega) i j : ℚ)) *ᵥ v) =
-      blockCartanGeneratorMatrix ℚ 0 i *ᵥ vectorBlockEquiv v := by
-  apply vectorBlockEquiv_mulVec
-  intro a b
-  simp only [blockCartanGeneratorMatrix_apply, coe_vectorBlockIndexEquiv]
-  have h := congrArg (Int.castRingHom ℚ) (cartanGeneratorMatrix_vectorIndex i a b)
-  simp only [map_mul] at h
-  change (cartanGeneratorMatrix i (vectorIndex a) (vectorIndex b) : ℚ) *
-      (vectorBasisSign b : ℚ) =
-    (vectorBasisSign a : ℚ) *
-      ((((TypeDStd.cartanGenerator (K := ℤ) 4 (by omega) i :
-        LieAlgebra.Orthogonal.typeD (Fin 4) ℤ) :
-          Matrix (Fin 4 ⊕ Fin 4) (Fin 4 ⊕ Fin 4) ℤ) a b : ℚ)) at h
-  rw [cast_typeDStd_cartanGenerator] at h
-  rw [TypeDStd.val_cartanGenerator] at h
-  exact h.symm
-
-end TauCeti.D4Tripled
 
 namespace TauCeti.SpinPolarizationData
 
@@ -483,9 +299,27 @@ theorem d4TrialityCycle_apply_apply_apply (v : Fin 4 ⊕ Fin 4 → ℚ) :
     d4BlockZeroToOneIndexEquiv, d4BlockOneToTwoIndexEquiv,
     d4BlockTwoToZeroIndexEquiv, LinearEquiv.piCongrLeft'_apply]
 
+/-- Three successive concrete triality intertwiners return every odd spinor to itself. -/
+@[simp]
+theorem d4TrialityCycle_spinMinus_apply_apply_apply (x : spinMinus Q P) :
+    P.d4VectorToSpinMinusEquiv b
+        (P.d4SpinPlusToVectorEquiv b (P.d4SpinMinusToSpinPlusEquiv b x)) = x := by
+  apply (P.d4SpinMinusToSpinPlusEquiv b).injective
+  apply (P.d4SpinPlusToVectorEquiv b).injective
+  exact P.d4TrialityCycle_apply_apply_apply b
+    (P.d4SpinPlusToVectorEquiv b (P.d4SpinMinusToSpinPlusEquiv b x))
+
+/-- Three successive concrete triality intertwiners return every even spinor to itself. -/
+@[simp]
+theorem d4TrialityCycle_spinPlus_apply_apply_apply (x : spinPlus Q P) :
+    P.d4SpinMinusToSpinPlusEquiv b
+        (P.d4VectorToSpinMinusEquiv b (P.d4SpinPlusToVectorEquiv b x)) = x := by
+  apply (P.d4SpinPlusToVectorEquiv b).injective
+  exact P.d4TrialityCycle_apply_apply_apply b (P.d4SpinPlusToVectorEquiv b x)
+
 /-- The vector-to-odd-spin equivalence intertwines positive generators after applying triality
 to the Dynkin node. -/
-@[simp]
+@[simp ←]
 theorem d4VectorToSpinMinusEquiv_serreE (hline : P.line = ⊥) (i : Fin 4)
     (v : Fin 4 ⊕ Fin 4 → ℚ) :
     P.d4VectorToSpinMinusEquiv b
@@ -545,7 +379,7 @@ theorem d4SpinPlusToVectorEquiv_serreE (hline : P.line = ⊥) (i : Fin 4)
 
 /-- The vector-to-odd-spin equivalence intertwines negative generators after applying triality
 to the Dynkin node. -/
-@[simp]
+@[simp ←]
 theorem d4VectorToSpinMinusEquiv_serreF (hline : P.line = ⊥) (i : Fin 4)
     (v : Fin 4 ⊕ Fin 4 → ℚ) :
     P.d4VectorToSpinMinusEquiv b
@@ -603,7 +437,7 @@ theorem d4SpinPlusToVectorEquiv_serreF (hline : P.line = ⊥) (i : Fin 4)
 
 /-- The vector-to-odd-spin equivalence intertwines Cartan generators after applying triality to
 the Dynkin node. -/
-@[simp]
+@[simp ←]
 theorem d4VectorToSpinMinusEquiv_serreH (hline : P.line = ⊥) (i : Fin 4)
     (v : Fin 4 ⊕ Fin 4 → ℚ) :
     P.d4VectorToSpinMinusEquiv b
