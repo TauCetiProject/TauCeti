@@ -210,9 +210,8 @@ theorem e8Plumbing_isNegativeDefinite : e8Plumbing.IsNegativeDefinite := by
     nlinarith
   exact hx (eq_zero_of_e8SquareTerm_sum_eq_zero x hR)
 
-/-- In the canonical spin^c structure, the `E₈` characteristic weight vanishes only at the zero
-lattice point. This identifies the unique bottom lattice point that generates the canonical
-`U`-tower in lattice homology. -/
+/-- In the canonical spin^c structure, the `E₈` characteristic weight vanishes exactly at the zero
+lattice point. -/
 @[simp]
 theorem e8Plumbing_characteristicWeight_canonical_eq_zero_iff (x : Fin 8 → ℤ) :
     e8Plumbing.characteristicWeight
@@ -221,8 +220,8 @@ theorem e8Plumbing_characteristicWeight_canonical_eq_zero_iff (x : Fin 8 → ℤ
   exact PlumbingGraph.characteristicWeight_canonical_eq_zero_iff_of_weight_eq_neg_two
     e8Plumbing e8Plumbing_isNegativeDefinite e8Plumbing_weight x
 
-/-- The minimum canonical characteristic weight of the negative-definite `E₈` plumbing is zero.
-Its unique minimizer is the origin, so the canonical free tower starts at this lattice point. -/
+/-- The infimum of the canonical characteristic weight of the negative-definite `E₈` plumbing is
+zero. -/
 @[simp]
 theorem e8Plumbing_sInfCharacteristicWeight_canonical_eq_zero :
     e8Plumbing.sInfCharacteristicWeight
