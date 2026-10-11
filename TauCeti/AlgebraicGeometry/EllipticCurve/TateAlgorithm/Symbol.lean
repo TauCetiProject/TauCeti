@@ -51,7 +51,7 @@ variable {R K : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
 
 /-- **The output of Tate's good-reduction branch** is `I₀`. -/
 def goodReductionSymbol (_W : WeierstrassCurve K)
-    [WeierstrassCurve.HasGoodReduction R _W] :
+    [_hgood : WeierstrassCurve.HasGoodReduction R _W] :
     TauCeti.ReductionSymbol :=
   TauCeti.ReductionSymbol.I 0
 
@@ -74,7 +74,7 @@ private theorem not_hasGoodReduction_minimal_of_hasMultiplicativeReduction
 symbol `Iₙ`, where `n = v(Δ_min)`. The local minimal-discriminant valuation makes the symbol
 independent of the chosen integral equation. -/
 noncomputable def multiplicativeReductionSymbol (W : WeierstrassCurve K) [W.IsElliptic]
-    [WeierstrassCurve.HasMultiplicativeReduction R W] : TauCeti.ReductionSymbol :=
+    [_hmult : WeierstrassCurve.HasMultiplicativeReduction R W] : TauCeti.ReductionSymbol :=
   TauCeti.ReductionSymbol.I (W.localMinimalDiscriminantValuation R)
 
 /-- The index in the multiplicative reduction symbol is the minimal discriminant valuation. -/
