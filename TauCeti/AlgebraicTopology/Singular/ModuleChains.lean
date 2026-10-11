@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import TauCeti.AlgebraicTopology.Singular.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
 public import TauCeti.AlgebraicTopology.TopologicalSimplex
@@ -36,7 +35,7 @@ and vanishing on boundaries.
   vanishes on boundaries.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -51,12 +50,6 @@ variable (k : Type u) [Ring k]
 /-- The **simplicial singular chain complex** functor with coefficients in the ring `k`. -/
 abbrev singularChains : TopCat.{u} ⥤ ChainComplex (ModuleCat.{u} k) ℕ :=
   (singularChainComplexFunctor (ModuleCat.{u} k)).obj (ModuleCat.of k k)
-
-/-- The topological `n`-simplex, the model of the simplicial singular chains in degree `n`. -/
-abbrev simplexModel (n : ℕ) : TopCat.{u} := SimplexCategory.toTop.{u}.obj ⦋n⦌
-
-/-- The identity singular simplex of the topological simplex. -/
-def idSimplex (n : ℕ) : (TopCat.toSSet.obj (simplexModel.{u} n)) _⦋n⦌ := ULift.up (𝟙 _)
 
 section Singular
 
@@ -76,11 +69,16 @@ theorem singularChains_linearMap_ext {X : TopCat.{u}} {n : ℕ} {V : Type u} [Ad
     exact h σ
   exact congrArg ModuleCat.Hom.hom this
 
+/-- The chain of a simplex with coefficient `a` is `a` times the chain of the simplex. -/
 theorem simplexChain_eq_smul {X : TopCat.{u}} {n : ℕ} (σ : (TopCat.toSSet.obj X) _⦋n⦌) (a : k) :
     simplexChain σ a = a • simplexChain σ 1 := by
   calc simplexChain σ a = simplexChain σ (a • (1 : k)) := by rw [smul_eq_mul, mul_one]
     _ = a • simplexChain σ 1 := map_smul _ a 1
 
+/-- Pushing the chain of a simplex forward along a continuous map gives the chain of the
+pushed-forward simplex, with the same coefficient. -/
+-- Not a simp lemma: `TauCeti.singularChainComplexFunctor_obj_map` rewrites the chain map inside
+-- the left-hand side first, so the `simpNF` linter rejects it.
 theorem singularChains_map_f_simplexChain {X Y : TopCat.{u}} (f : X ⟶ Y) {n : ℕ}
     (σ : (TopCat.toSSet.obj X) _⦋n⦌) (a : k) :
     ((singularChains k).map f).f n (simplexChain σ a) =
@@ -92,20 +90,6 @@ theorem singularChains_map_f_simplexChain {X Y : TopCat.{u}} (f : X ⟶ Y) {n : 
       (TopCat.toSSet.obj Y).ιChainComplex (R := ModuleCat.of k k) _ a
   rw [← ModuleCat.comp_apply, SSet.ι_chainComplexMap_f]
 
-/-- The underlying morphism of a pushed-forward singular simplex. -/
-@[simp]
-theorem toSSet_map_app_down {X Y : TopCat.{u}} (f : X ⟶ Y) {n : ℕ}
-    (σ : (TopCat.toSSet.obj X) _⦋n⦌) : ((TopCat.toSSet.map f).app _ σ).down = σ.down ≫ f := by
-  have := TauCeti.TopCat.simplexMap_app f σ
-  refine TopCat.ext fun x ↦ ?_
-  exact congrArg (fun g ↦ g x) this
-
-/-- A singular simplex is the push-forward of the identity simplex along itself. -/
-theorem toSSet_map_down_idSimplex {X : TopCat.{u}} {n : ℕ} (σ : (TopCat.toSSet.obj X) _⦋n⦌) :
-    (TopCat.toSSet.map σ.down).app _ (idSimplex n) = σ := by
-  refine ULift.ext ?_
-  rw [toSSet_map_app_down, idSimplex, Category.id_comp]
-
 end Singular
 
 /-- The augmentation of the simplicial singular chains: the sum of the coefficients. -/
@@ -114,6 +98,7 @@ def singularAugment (X : TopCat.{u}) : ((singularChains k).obj X).X 0 →ₗ[k] 
     (fun _ ↦ 𝟙 (ModuleCat.of k k))).hom
 
 variable {k} in
+/-- The augmentation of the chain of a `0`-simplex with coefficient `a` is `a`. -/
 @[simp]
 theorem singularAugment_simplexChain (X : TopCat.{u}) (σ : (TopCat.toSSet.obj X) _⦋0⦌)
     (a : k) : singularAugment k X (simplexChain σ a) = a := by
@@ -125,6 +110,8 @@ theorem singularAugment_simplexChain (X : TopCat.{u}) (σ : (TopCat.toSSet.obj X
 variable {k}
 
 /-- The augmentation of the simplicial singular chains is natural. -/
+-- Not a simp lemma: `TauCeti.singularChainComplexFunctor_obj_map` rewrites the chain map inside
+-- the left-hand side first, so the `simpNF` linter rejects it.
 theorem singularAugment_map {X Y : TopCat.{u}} (f : X ⟶ Y) (x : ((singularChains k).obj X).X 0) :
     singularAugment k Y (((singularChains k).map f).f 0 x) = singularAugment k X x := by
   have := singularChains_linearMap_ext
@@ -135,17 +122,19 @@ theorem singularAugment_map {X Y : TopCat.{u}} (f : X ⟶ Y) (x : ((singularChai
   exact LinearMap.congr_fun this x
 
 /-- The boundary of a singular simplex is the alternating sum of its faces. -/
+@[simp]
 theorem singularChains_d_simplexChain {X : TopCat.{u}} {n : ℕ}
-    (σ : (TopCat.toSSet.obj X) _⦋n + 1⦌) :
-    ((singularChains k).obj X).d (n + 1) n (simplexChain σ 1) =
-      ∑ i : Fin (n + 2), ((-1 : ℤ) ^ (i : ℕ)) • simplexChain ((TopCat.toSSet.obj X).δ i σ) 1 := by
-  have h := congrArg (fun g ↦ g.hom (1 : k))
+    (σ : (TopCat.toSSet.obj X) _⦋n + 1⦌) (a : k) :
+    ((singularChains k).obj X).d (n + 1) n (simplexChain σ a) =
+      ∑ i : Fin (n + 2), ((-1 : ℤ) ^ (i : ℕ)) • simplexChain ((TopCat.toSSet.obj X).δ i σ) a := by
+  have h := congrArg (fun g ↦ g.hom a)
     (SSet.ιChainComplex_d (R := ModuleCat.of k k) (TopCat.toSSet.obj X) (n := n) σ)
   simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_sum, ModuleCat.hom_zsmul,
     LinearMap.sum_apply, LinearMap.smul_apply] at h
   exact h
 
 /-- The augmentation of the simplicial singular chains vanishes on boundaries. -/
+@[simp]
 theorem singularAugment_d (X : TopCat.{u}) (x : ((singularChains k).obj X).X 1) :
     singularAugment k X (((singularChains k).obj X).d 1 0 x) = 0 := by
   have := singularChains_linearMap_ext
