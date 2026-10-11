@@ -19,6 +19,8 @@ underlying vector space needs to be chosen. The criterion includes the zero-dime
 The criteria are `QuadraticForm.isCompact_orthogonalGroup_iff_posDef_or_negDef` and, for a
 nondegenerate form,
 `TauCeti.QuadraticMap.isCompact_specialOrthogonalGroup_iff_posDef_or_negDef`.
+Open `TauCeti` to use the special orthogonal criterion as
+`Q.isCompact_specialOrthogonalGroup_iff_posDef_or_negDef hQ`, where `hQ : Q.Nondegenerate`.
 -/
 
 public section
