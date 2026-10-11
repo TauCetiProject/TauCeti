@@ -47,7 +47,7 @@ after the gluing, `ι₁ - ι₀` becomes `f_* - id` for the gluing map `f`.
   excision (Theorem 2.20).
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -103,6 +103,13 @@ variable {X} in
 lemma cylinderBoundaryPairMap_fst_apply {Y : TopCat.{w}} (g : X ⟶ Y) (p : X × I) :
     TopPair.Hom.fst (cylinderBoundaryPairMap g) p = (g p.1, p.2) :=
   TopPair.ofSubsetMap_fst_apply (X := TopCat.of (X × I)) _ _ p
+
+variable {X} in
+@[simp]
+lemma cylinderBoundaryPairMap_snd_apply {Y : TopCat.{w}} (g : X ⟶ Y)
+    (p : (cylinderBoundaryPair X).snd) :
+    (TopPair.Hom.snd (cylinderBoundaryPairMap g) p).1 = (g p.1.1, p.1.2) :=
+  TopPair.ofSubsetMap_snd_apply _ _ _
 
 @[simp]
 lemma cylinderBoundaryPairMap_id : cylinderBoundaryPairMap (𝟙 X) = 𝟙 (cylinderBoundaryPair X) :=
@@ -267,7 +274,6 @@ theorem isZero_singularHomology_cylinderBoundaryPair_zero :
 /-- **The homology of a cylinder modulo its ends**: `Hₙ₊₁(X × I, X × ∂I) ≅ Hₙ(X)`.  It is the
 connecting morphism of the triple `(X × I, X × ∂I, X × {0})` followed by the inverse of the map
 `Hₙ(X) ⟶ Hₙ(X × ∂I, X × {0})` induced by the top end. -/
-@[no_expose]
 def singularHomologyCylinderBoundaryPairIso (n : ℕ) :
     (cylinderBoundaryPair X).singularHomology R (n + 1) ≅
       ((singularHomologyFunctor A n).obj R).obj X :=
@@ -278,9 +284,8 @@ private lemma singularHomologyCylinderBoundaryPairIso_hom_comp (n : ℕ) :
     (singularHomologyCylinderBoundaryPairIso X R n).hom ≫ cylinderTopComparison X R n =
       (cylinderBoundaryPair X).singularHomologyδ R (n + 1) n ≫
         (TopTriple.innerPair.obj (cylinderTriple X)).singularHomologyπ R n := by
-  rw [singularHomologyCylinderBoundaryPairIso, Iso.trans_hom, Category.assoc, Iso.symm_hom,
-    asIso_inv, IsIso.inv_hom_id, Category.comp_id, asIso_hom]
-  exact (cylinderTriple X).singularHomologyδ_eq_comp_singularHomologyπ R (n + 1) n
+  refine Eq.trans ?_ ((cylinderTriple X).singularHomologyδ_eq_comp_singularHomologyπ R (n + 1) n)
+  simp [singularHomologyCylinderBoundaryPairIso]
 
 /-- **The connecting morphism of the cylinder pair.**  Under
 `Hₙ₊₁(X × I, X × ∂I) ≅ Hₙ(X)`, the connecting morphism to `Hₙ(X × ∂I)` is the difference of the
