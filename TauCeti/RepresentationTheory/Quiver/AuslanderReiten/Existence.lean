@@ -21,9 +21,9 @@ subcategory. Its source is finite-dimensional: assemble bases of the radical spa
 one representative of every indecomposable class. Krull–Schmidt then gives factorization
 for every finite-dimensional source.
 
-The lifting property is stated in the finite-dimensional full subcategory. No claim is made
-about infinite-dimensional sources, or about right minimality. Removing redundant summands
-and taking a kernel are the further steps needed to construct an almost-split sequence.
+The lifting property is stated in the finite-dimensional full subcategory, and the result below
+also gives a right-minimal morphism. No claim is made about infinite-dimensional sources. This
+file does not construct a kernel or an almost-split sequence.
 
 ## References
 
@@ -94,10 +94,8 @@ theorem exists_isRightAlmostSplit (h : IsFiniteRepType.{u, v, w, t} k Q)
       F, ObjectProperty.homMk_hom, Category.assoc, hdesc, Iso.hom_inv_id_assoc]
 
 /-- Over a quiver of finite representation type, every finite-dimensional indecomposable admits
-a right minimal right almost-split morphism in the finite-dimensional full subcategory. The
-finite-dimensional source is obtained by removing redundant direct summands from the source of a
-right almost-split morphism. This is the form used to construct an almost-split sequence by taking
-the kernel of its final map. -/
+a right almost-split morphism in the finite-dimensional full subcategory such that every
+endomorphism of its source fixing the morphism is an isomorphism. -/
 theorem exists_right_minimal_isRightAlmostSplit
     (h : IsFiniteRepType.{u, v, w, t} k Q)
     (Y : ObjectProperty.FullSubcategory (IsFinDim.{u, v, w, t} k Q))
