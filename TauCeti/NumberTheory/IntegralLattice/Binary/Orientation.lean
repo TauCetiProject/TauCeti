@@ -97,13 +97,13 @@ theorem binaryProperClass_eq_mk (hV : Module.finrank ℚ V = 2)
     (hb.trans (Basis.orientation_adjustToOrientation _ o).symm)
 
 /-- Reversing the second basis vector negates precisely the middle coefficient of the norm form. -/
-theorem binaryNormForm_unitsSMul_neg :
+@[simp] theorem binaryNormForm_unitsSMul_neg :
     L.binaryNormForm (b.unitsSMul (Function.update 1 (1 : Fin 2) (-1))) =
       ⟨(L.binaryNormForm b).a, -(L.binaryNormForm b).b, (L.binaryNormForm b).c⟩ := by
   ext <;> simp [gramMatrix_apply, Basis.unitsSMul_apply, Units.smul_def]
 
 /-- Reversing the second basis vector also negates precisely the primitive middle coefficient. -/
-theorem primPart_binaryNormForm_unitsSMul_neg :
+@[simp↓] theorem primPart_binaryNormForm_unitsSMul_neg :
     (L.binaryNormForm (b.unitsSMul (Function.update 1 (1 : Fin 2) (-1)))).primPart =
       ⟨(L.binaryNormForm b).primPart.a, -(L.binaryNormForm b).primPart.b,
         (L.binaryNormForm b).primPart.c⟩ := by
