@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Basic
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.One.Basic
-public import TauCeti.AlgebraicTopology.Singular.OneSimplex.IntervalGenerator
+public import TauCeti.AlgebraicTopology.Singular.IntervalGenerator
 
 /-!
 # Comparison of the two Hurewicz maps in degree one
@@ -23,14 +23,14 @@ Two Hurewicz maps are defined in degree one:
 They differ by a **sign**: the generator of `H₁(I¹, ∂I¹; R)`, transported from the generator
 `[-e₀] - [e₀]` of reduced `H₀(S⁰)`, is minus the class of the standard simplex `t ↦ t`
 (`TauCeti.singularHomologyCubeBoundaryPairIso_one_inv`). Hence the Hurewicz class of a loop is
-minus the class of the simplex it traces (`GenLoop.hurewicz_eq_neg_absClass₁`), and with integer
+minus the class of the simplex it traces (`GenLoop.hurewicz_eq_neg_ιHomology₁`), and with integer
 coefficients `HomotopyGroup.hurewiczHom ℤ 0`, evaluated at `1`, is `-hurewicz₁` under the
 identification `TauCeti.HurewiczOne.H₁AddEquivHomology` of `1`-cycles modulo boundaries with the
 homology of the singular chain complex.
 
 ## Main results
 
-* `GenLoop.hurewicz_eq_neg_absClass₁`: the Hurewicz class of a loop `p : I¹ → X` is minus the
+* `GenLoop.hurewicz_eq_neg_ιHomology₁`: the Hurewicz class of a loop `p : I¹ → X` is minus the
   class of the singular `1`-simplex `GenLoop.simplex₁ p` it traces, for any coefficients.
 * `HomotopyGroup.hurewiczHom_hom_one_eq_neg_hurewicz₁`: with integer coefficients,
   `hurewiczHom ℤ 0 a` evaluated at `1` is `-hurewicz₁ a`.
@@ -82,22 +82,22 @@ class of the singular `1`-simplex it traces: the generator of `H₁(I¹, ∂I¹;
 of the standard simplex (`TauCeti.singularHomologyCubeBoundaryPairIso_one_inv`). -/
 lemma hurewicz_comp_singularHomologyIsoOfSubsetSingleton_hom_eq_neg (p : Ω^ (Fin 1) X x) :
     hurewicz R p ≫ (singularHomologyIsoOfSubsetSingleton R 0 x).hom =
-      -(SSetPair.absClass₁ R (pairSSet x) (simplex₁ p) (δ_simplex₁ p) ≫
+      -(TauCeti.SSet.ιHomology₁ R (pairSSet x) (simplex₁ p) (δ_simplex₁ p) ≫
         (TopPair.ofSubset ({x} : Set (TopCat.of X))).singularHomologyπ R 1) := by
   rw [hurewicz_comp_singularHomologyIsoOfSubsetSingleton_hom,
     singularHomologyCubeBoundaryPairIso_one_inv, Preadditive.neg_comp,
     cubeRelClass_singularHomologyMap]
   congr 1
-  exact (SSetPair.absClass₁_homologyπ R _ _ _ _ _ _ _).symm
+  exact (SSetPair.ιHomology₁_homologyπ R _ _ _ _ _ _ _).symm
 
 /-- **The Hurewicz class of a loop in degree one** is minus the homology class of the singular
 `1`-simplex it traces. -/
-theorem hurewicz_eq_neg_absClass₁ (p : Ω^ (Fin 1) X x) :
+theorem hurewicz_eq_neg_ιHomology₁ (p : Ω^ (Fin 1) X x) :
     hurewicz R p =
-      -SSetPair.absClass₁ R (pairSSet x) (simplex₁ p) (δ_simplex₁ p) :=
+      -TauCeti.SSet.ιHomology₁ R (pairSSet x) (simplex₁ p) (δ_simplex₁ p) :=
   (cancel_mono (singularHomologyIsoOfSubsetSingleton R 0 x).hom).1
     ((hurewicz_comp_singularHomologyIsoOfSubsetSingleton_hom_eq_neg R p).trans
-      ((Preadditive.neg_comp _ _).symm.trans (congrArg (fun g ↦ (-SSetPair.absClass₁ R
+      ((Preadditive.neg_comp _ _).symm.trans (congrArg (fun g ↦ (-TauCeti.SSet.ιHomology₁ R
         (pairSSet x) (simplex₁ p) (δ_simplex₁ p)) ≫ g)
           (singularHomologyIsoOfSubsetSingleton_hom R 0 x).symm)))
 
@@ -119,11 +119,11 @@ lemma simplex₁_eq (p : Ω^ (Fin 1) X x) :
 
 /-- With integer coefficients, the class of the singular `1`-simplex traced by a generalized loop is
 the homology class of the corresponding loop. -/
-lemma absClass₁_hom_one (p : Ω^ (Fin 1) X x) :
-    (SSetPair.absClass₁ (ModuleCat.of ℤ ℤ) (pairSSet x) (simplex₁ p) (δ_simplex₁ p)).hom 1 =
+lemma ιHomology₁_hom_one (p : Ω^ (Fin 1) X x) :
+    (TauCeti.SSet.ιHomology₁ (ModuleCat.of ℤ ℤ) (pairSSet x) (simplex₁ p) (δ_simplex₁ p)).hom 1 =
       HurewiczOne.H₁AddEquivHomology (TopCat.of X)
         (HurewiczOne.loopClass (genLoopEquivOfUnique (Fin 1) p)) := by
-  rw [SSetPair.absClass₁_eq, HurewiczOne.loopClass_def]
+  rw [TauCeti.SSet.ιHomology₁_eq, HurewiczOne.loopClass_def]
   refine (HurewiczOne.H₁AddEquivHomology_mk _ _ ?_).symm
   refine (congr($(HomologicalComplex.liftCycles_i
     ((pairSSet x).chainComplex (ModuleCat.of ℤ ℤ)) ((pairSSet x).ιChainComplex (simplex₁ p)) 0
@@ -138,8 +138,8 @@ theorem hurewicz_hom_one_eq_neg_loopClass (p : Ω^ (Fin 1) X x) :
       -HurewiczOne.H₁AddEquivHomology (TopCat.of X)
         (HurewiczOne.loopClass (genLoopEquivOfUnique (Fin 1) p)) :=
   (congrArg (fun f ↦ ModuleCat.Hom.hom f 1)
-    (hurewicz_eq_neg_absClass₁ (ModuleCat.of ℤ ℤ) p)).trans
-      (congrArg Neg.neg (absClass₁_hom_one p))
+    (hurewicz_eq_neg_ιHomology₁ (ModuleCat.of ℤ ℤ) p)).trans
+      (congrArg Neg.neg (ιHomology₁_hom_one p))
 
 end Integer
 
