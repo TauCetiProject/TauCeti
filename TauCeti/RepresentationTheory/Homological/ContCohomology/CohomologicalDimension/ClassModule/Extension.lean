@@ -21,6 +21,11 @@ The inclusion identifies the kernel with the existing pro-p class module, and th
 induces its existing conjugation action. This realizes the class-module kernel as the kernel
 of a profinite extension, so coefficient maps can be used in the extension lifting theorem.
 
+For prime `p` and a finite group presented by a free profinite group on finitely many generators,
+take `G` to be the free group and `V` its presentation kernel. Lyndon's isomorphism
+`TauCeti.freeProfiniteGroup.abelianizationProPEquivRelationModule` identifies the resulting
+coefficient group, written additively, with the relation module.
+
 ## References
 
 * J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, 2nd ed.,
