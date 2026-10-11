@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Plus
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Plus.Basic
 public import TauCeti.Topology.Category.TopCommRingCat.CompleteSeparated.Limits
 public import Mathlib.Topology.Sheaves.SheafCondition.UniqueGluing
 
@@ -52,19 +52,11 @@ theorem mem_presentationLimitPlusSubring_of_forall_restrict {ι : Type*}
     (Opens.leSupr U i) x hxi f]
   exact hi
 
-/-- When the structure presheaf of `Spa(A,A⁺)` is a sheaf of complete separated rings, its
-integral sections form a sheaf of rings as well. -/
-theorem isSheaf_presentationLimitPlusPresheaf
-    (hFtop : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Aplus))
-      (presentationLimitPresheaf P Aplus)) :
+/-- If the structure presheaf of `Spa(A,A⁺)` is a sheaf of commutative rings, then its integral
+sections form a sheaf of commutative rings as well. -/
+theorem isSheaf_presentationLimitPlusPresheaf_of_isSheaf
+    (hF : (presentationLimitPresheafInCommRingCat P Aplus).IsSheaf) :
     (presentationLimitPlusPresheaf hAplus hP).IsSheaf := by
-  have hF : (presentationLimitPresheafInCommRingCat P Aplus).IsSheaf := by
-    rw [presentationLimitPresheafInCommRingCat_def]
-    exact Presheaf.isSheaf_comp_of_isSheaf (Opens.grothendieckTopology _)
-      (presentationLimitPresheaf P Aplus ⋙ TopCommRingCat.isCompleteSeparated.ι)
-      (forget₂ TopCommRingCat CommRingCat)
-      (Presheaf.isSheaf_comp_of_isSheaf (Opens.grothendieckTopology _)
-        (presentationLimitPresheaf P Aplus) TopCommRingCat.isCompleteSeparated.ι hFtop)
   let F := presentationLimitPresheafInCommRingCat P Aplus
   let G := presentationLimitPlusPresheaf hAplus hP
   apply (TopCat.Presheaf.isSheaf_iff_isSheafUniqueGluing G).2
@@ -92,17 +84,19 @@ theorem isSheaf_presentationLimitPlusPresheaf
   have hsplus : s ∈ presentationLimitPlusSubring hAplus hP (iSup U) := by
     apply mem_presentationLimitPlusSubring_of_forall_restrict hAplus hP U s
     intro i
+    -- The goal uses the local name `F`; expose the underlying presheaf map
+    -- for the membership lemma.
     change F.map (Opens.leSupr U i).op s ∈ _
     rw [hs i]
     exact (sec (U i) (sf i)).2
   let t : G.obj (op (iSup U)) := (e (iSup U)).symm ⟨s, hsplus⟩
   have htval : (sec (iSup U) t).1 = s := by
-    change ((e (iSup U)) ((e (iSup U)).symm ⟨s, hsplus⟩)).1 = s
-    rw [Equiv.apply_symm_apply]
+    simp only [sec, t, Equiv.apply_symm_apply]
   refine ⟨t, ?_, ?_⟩
   · intro i
     apply sec_injective
     apply Subtype.ext
+    -- Unfold `sfF` only to expose the ambient section used by `sec_map`.
     change (sec (U i) (G.map (Opens.leSupr U i).op t)).1 = sfF i
     rw [sec_map]
     rw [htval]
@@ -116,6 +110,21 @@ theorem isSheaf_presentationLimitPlusPresheaf
     have h := congrArg (fun z ↦ (sec (U i) z).1) (ht i)
     rw [sec_map] at h
     exact h
+
+/-- When the structure presheaf of `Spa(A,A⁺)` is a sheaf of complete separated rings, its
+integral sections form a sheaf of rings as well. -/
+theorem isSheaf_presentationLimitPlusPresheaf
+    (hFtop : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Aplus))
+      (presentationLimitPresheaf P Aplus)) :
+    (presentationLimitPlusPresheaf hAplus hP).IsSheaf := by
+  have hF : (presentationLimitPresheafInCommRingCat P Aplus).IsSheaf := by
+    rw [presentationLimitPresheafInCommRingCat_def]
+    exact Presheaf.isSheaf_comp_of_isSheaf (Opens.grothendieckTopology _)
+      (presentationLimitPresheaf P Aplus ⋙ TopCommRingCat.isCompleteSeparated.ι)
+      (forget₂ TopCommRingCat CommRingCat)
+      (Presheaf.isSheaf_comp_of_isSheaf (Opens.grothendieckTopology _)
+        (presentationLimitPresheaf P Aplus) TopCommRingCat.isCompleteSeparated.ι hFtop)
+  exact isSheaf_presentationLimitPlusPresheaf_of_isSheaf hAplus hP hF
 
 end TauCeti.ValuationSpectrum
 
