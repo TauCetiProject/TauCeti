@@ -39,7 +39,7 @@ universe u
 
 variable (k : Type u) [Field k]
 
-private theorem geometricallyConnected_generatorCoordinateAlgebra :
+theorem geometricallyConnected_generatorCoordinateAlgebra :
     ∀ j, geometricallyConnectedCommHopfAlgProperty k (generatorCoordinateAlgebra k j) := by
   intro j
   cases j with
