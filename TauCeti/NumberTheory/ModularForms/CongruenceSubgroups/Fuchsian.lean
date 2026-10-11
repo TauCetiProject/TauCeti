@@ -33,34 +33,34 @@ variable (N : ℕ) [NeZero N]
 /-- The effective image of the principal congruence subgroup is cofinite. -/
 theorem isCofinite_Gamma :
     ((Gamma N).map sl2zToPSL2R).IsCofinite :=
-  TauCeti.Subgroup.isCofinite_map_sl2zToPSL2R (Gamma N)
+  Subgroup.isCofinite_map_sl2zToPSL2R (Gamma N)
 
 /-- The effective image of `Γ₀(N)` is cofinite. -/
 theorem isCofinite_Gamma0 :
     ((Gamma0 N).map sl2zToPSL2R).IsCofinite :=
-  TauCeti.Subgroup.isCofinite_map_sl2zToPSL2R (Gamma0 N)
+  Subgroup.isCofinite_map_sl2zToPSL2R (Gamma0 N)
 
 /-- The effective image of `Γ₁(N)` is cofinite. -/
 theorem isCofinite_Gamma1 :
     ((Gamma1 N).map sl2zToPSL2R).IsCofinite :=
-  TauCeti.Subgroup.isCofinite_map_sl2zToPSL2R (Gamma1 N)
+  Subgroup.isCofinite_map_sl2zToPSL2R (Gamma1 N)
 
 /-- A boundary point is a cusp of `Γ(N)` exactly when it is rational. -/
 theorem isCuspPoint_Gamma_iff_rat (c : OnePoint ℝ) :
     ((Gamma N).map sl2zToPSL2R).IsCuspPoint c ↔
       c ∈ Set.range (OnePoint.map Rat.cast) :=
-  TauCeti.Subgroup.isCuspPoint_map_sl2zToPSL2R_iff_rat (Gamma N) c
+  Subgroup.isCuspPoint_map_sl2zToPSL2R_iff_rat (Gamma N) c
 
 /-- A boundary point is a cusp of `Γ₀(N)` exactly when it is rational. -/
 theorem isCuspPoint_Gamma0_iff_rat (c : OnePoint ℝ) :
     ((Gamma0 N).map sl2zToPSL2R).IsCuspPoint c ↔
       c ∈ Set.range (OnePoint.map Rat.cast) :=
-  TauCeti.Subgroup.isCuspPoint_map_sl2zToPSL2R_iff_rat (Gamma0 N) c
+  Subgroup.isCuspPoint_map_sl2zToPSL2R_iff_rat (Gamma0 N) c
 
 /-- A boundary point is a cusp of `Γ₁(N)` exactly when it is rational. -/
 theorem isCuspPoint_Gamma1_iff_rat (c : OnePoint ℝ) :
     ((Gamma1 N).map sl2zToPSL2R).IsCuspPoint c ↔
       c ∈ Set.range (OnePoint.map Rat.cast) :=
-  TauCeti.Subgroup.isCuspPoint_map_sl2zToPSL2R_iff_rat (Gamma1 N) c
+  Subgroup.isCuspPoint_map_sl2zToPSL2R_iff_rat (Gamma1 N) c
 
 end TauCeti
