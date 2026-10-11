@@ -117,7 +117,7 @@ theorem actionCoverHomeomorphOfSubsingleton_apply (z : ActionCover x₀ A) :
 
 /-- The inverse one-point-cover homeomorphism sends an endpoint to the class of any lift with
 that endpoint, paired with any label. -/
-theorem actionCoverHomeomorphOfSubsingleton_symm_proj (e : UniversalCover x₀) (a : A) :
+theorem actionCoverHomeomorphOfSubsingleton_symm_apply_proj (e : UniversalCover x₀) (a : A) :
     (actionCoverHomeomorphOfSubsingleton x₀ A).symm (proj e) =
       BalancedProduct.mk (FundamentalGroup X x₀) e a := by
   rw [Homeomorph.symm_apply_eq, actionCoverHomeomorphOfSubsingleton_apply, actionCoverProj_mk]
