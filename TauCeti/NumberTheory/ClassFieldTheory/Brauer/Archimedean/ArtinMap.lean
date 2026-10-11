@@ -49,9 +49,9 @@ real cyclotomic symbol `realCyclotomicSymbol` (`infiniteArtinAt_rootsOfUnity_of_
 nontrivial automorphism of `K_w(i)/K_w` sends `a + b i` to `a - b i`, so `ζ σ(ζ) = a² + b²` is a
 nonnegative root of unity in `K_w ≅ ℝ`. In particular the `p`-adic cyclotomic character of the
 Artin symbol of a negative element is `-1`
-(`abelianizedLocalCyclotomicCharacter_infiniteArtinAt_of_neg`). Finally, the archimedean Artin
-maps are functorial for the norm of a finite extension (`infiniteArtinAt_norm`), the archimedean
-analogue of `artinMap_norm`.
+(`abelianizedLocalCyclotomicCharacter_infiniteArtinAt_eq_neg_one_of_neg`). Finally, the
+archimedean Artin maps are functorial for the norm of a finite extension
+(`infiniteArtinAt_norm`), the archimedean analogue of `artinMap_norm`.
 
 ## Main definitions
 
@@ -70,8 +70,8 @@ analogue of `artinMap_norm`.
   the Artin map is the group of positive elements.
 * `TauCeti.ClassFieldTheory.infiniteArtinAt_rootsOfUnity_of_isReal`: at a real place the Artin
   symbol acts on the `m`-th roots of unity through `realCyclotomicSymbol m`.
-* `TauCeti.ClassFieldTheory.abelianizedLocalCyclotomicCharacter_infiniteArtinAt_of_neg`: at a real
-  place the cyclotomic character of the Artin symbol of a negative element is `-1`.
+* `TauCeti.ClassFieldTheory.abelianizedLocalCyclotomicCharacter_infiniteArtinAt_eq_neg_one_of_neg`:
+  at a real place the cyclotomic character of the Artin symbol of a negative element is `-1`.
 * `TauCeti.ClassFieldTheory.infiniteArtinAt_norm`: norm functoriality of the archimedean Artin
   maps.
 
@@ -270,8 +270,9 @@ theorem infiniteArtinAt_rootsOfUnity_of_isReal (m : ℕ) [NeZero m] (x : w.Compl
 /-- **The cyclotomic character of the real Artin symbol of a negative element.** At a real place,
 the `p`-adic cyclotomic character of `Art_w(x)` is `-1` for `x < 0`: a lift of the symbol inverts
 every root of unity. -/
-theorem abelianizedLocalCyclotomicCharacter_infiniteArtinAt_of_neg (p : ℕ) [Fact p.Prime]
-    {x : w.Completionˣ} (hx : Completion.extensionEmbeddingOfIsReal hw (x : w.Completion) < 0) :
+theorem abelianizedLocalCyclotomicCharacter_infiniteArtinAt_eq_neg_one_of_neg (p : ℕ)
+    [Fact p.Prime] {x : w.Completionˣ}
+    (hx : Completion.extensionEmbeddingOfIsReal hw (x : w.Completion) < 0) :
     abelianizedLocalCyclotomicCharacter p w.Completion (infiniteArtinAt w x) = -1 := by
   have : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
   have : CharZero w.Completion := (Completion.extensionEmbedding w).charZero

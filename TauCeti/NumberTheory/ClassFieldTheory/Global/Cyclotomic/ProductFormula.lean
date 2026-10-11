@@ -34,12 +34,12 @@ The local factors are explicit over `ℚ`. At a prime `ℓ ≠ p` the Artin symb
 cyclotomic character `ℓ ^ v_ℓ(a)` (`abelianizedLocalCyclotomicCharacter_artinMap`, the residue
 field of `ℚ_ℓ` having `ℓ` elements), at `p` it is `u⁻¹` for `a = pᵏ u` with `u ∈ ℤ_pˣ`
 (`abelianizedLocalCyclotomicCharacter_artinMap_padic`), and at the real place it is the sign of
-`a` (`abelianizedLocalCyclotomicCharacter_infiniteArtinAt_of_neg`). The finite places of `ℚ` are
-read in `ℚ_ℓ` through `Padic.adicCompletionEquiv` and the naturality of the cyclotomic character
-of Artin symbols (`abelianizedLocalCyclotomicCharacter_artinMap_congr`). Modulo `pⁿ` the local
-factors are exactly the explicit cyclotomic symbols `cyclotomicSymbol (pⁿ) ℓ` and
-`realCyclotomicSymbol (pⁿ)` of `ℚ(μ_{pⁿ})/ℚ`, so the product formula over `ℚ` is, level by level,
-the product formula for the explicit symbols (`prod_cyclotomicSymbol_of_subset`). The norm
+`a` (`abelianizedLocalCyclotomicCharacter_infiniteArtinAt_eq_neg_one_of_neg`). The finite
+places of `ℚ` are read in `ℚ_ℓ` through `Padic.adicCompletionEquiv` and the naturality of the
+cyclotomic character of Artin symbols (`abelianizedLocalCyclotomicCharacter_artinMap_congr`).
+Modulo `pⁿ` the local factors are exactly the explicit cyclotomic symbols `cyclotomicSymbol (pⁿ) ℓ`
+and `realCyclotomicSymbol (pⁿ)` of `ℚ(μ_{pⁿ})/ℚ`, so the product formula over `ℚ` is, level by
+level, the product formula for the explicit symbols (`prod_cyclotomicSymbol_of_subset`). The norm
 functoriality of the local Artin symbols
 (`finprod_abelianizedLocalCyclotomicCharacter_artinMap_normUnits` and
 `prod_abelianizedLocalCyclotomicCharacter_infiniteArtinAt_normUnits`) then carries the formula
@@ -132,7 +132,7 @@ private theorem abelianizedLocalCyclotomicCharacter_infiniteArtinAt_rat (w : Inf
     rw [hx, map_ratCast]
   split_ifs with ha
   · rw [(infiniteArtinAt_eq_one_iff_of_isReal w hw _).2 (by rw [he]; exact_mod_cast ha), map_one]
-  · refine abelianizedLocalCyclotomicCharacter_infiniteArtinAt_of_neg w hw p ?_
+  · refine abelianizedLocalCyclotomicCharacter_infiniteArtinAt_eq_neg_one_of_neg w hw p ?_
     rw [he]
     exact_mod_cast lt_of_le_of_ne (not_lt.1 ha) a.ne_zero
 
@@ -180,13 +180,12 @@ private theorem finprod_ratLocalFactor_mul_eq_one (a : ℚˣ) :
       · rw [map_one, realCyclotomicSymbol_of_pos _ _ (by simpa using ha)]
       · rw [RingHom.toMonoidHom_eq_coe, Units.map_neg_one, realCyclotomicSymbol_of_neg _ _ (by
           simpa using lt_of_le_of_ne (not_lt.1 ha) a.ne_zero)]
-    have key := congrArg Units.val (show Units.map
-        (PadicInt.toZModPow n : ℤ_[p] →+* ZMod (p ^ n)).toMonoidHom
-          ((∏ ℓ ∈ T.attach, ratLocalFactor p (ι ℓ) a) * (if 0 < (a : ℚ) then 1 else -1)) = 1 by
+    have hunits : Units.map (PadicInt.toZModPow n : ℤ_[p] →+* ZMod (p ^ n)).toMonoidHom
+        ((∏ ℓ ∈ T.attach, ratLocalFactor p (ι ℓ) a) * (if 0 < (a : ℚ) then 1 else -1)) = 1 := by
       rw [map_mul, map_prod, hsign, mul_comm, ← h]
       exact congrArg _ (Finset.prod_congr rfl fun ℓ _ ↦
-        unitsMap_toZModPow_ratLocalFactor p n (ι ℓ) a))
-    simpa using key
+        unitsMap_toZModPow_ratLocalFactor p n (ι ℓ) a)
+    simpa using congrArg Units.val hunits
   · by_contra h
     have hℓT : ¬ (ℓ : ℕ) ∣ p * (a : ℚ).num.natAbs * (a : ℚ).den := fun hd ↦
       h (Finset.mem_coe.2 (Finset.mem_map.2
