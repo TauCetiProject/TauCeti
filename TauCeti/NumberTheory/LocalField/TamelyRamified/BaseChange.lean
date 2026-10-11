@@ -282,8 +282,8 @@ theorem isTamelyRamified_sup_iff :
     (IntermediateField.inclusion le_sup_left).valuativeExtension
   have : ValuativeExtension M ↥(L ⊔ M) :=
     (IntermediateField.inclusion le_sup_right).valuativeExtension
-  refine ⟨fun h ↦ ⟨((isTamelyRamified_tower_iff (K := K) (L := L) ↥(L ⊔ M)).1 h).1,
-    ((isTamelyRamified_tower_iff (K := K) (L := M) ↥(L ⊔ M)).1 h).1⟩, fun ⟨hL, hM⟩ ↦ ?_⟩
+  refine ⟨fun h ↦ ⟨h.of_isScalarTower (L := L), h.of_isScalarTower (L := M)⟩,
+    fun ⟨hL, hM⟩ ↦ ?_⟩
   refine hL.of_fieldRange_sup_fieldRange_eq_top hM
     (IntermediateField.inclusion le_sup_left) (IntermediateField.inclusion le_sup_right) ?_
   apply IntermediateField.lift_injective
