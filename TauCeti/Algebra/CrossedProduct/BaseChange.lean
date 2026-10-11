@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.BrauerGroup.TwoTorsionBaseChange
 public import TauCeti.Algebra.CrossedProduct.CupProduct
 public import TauCeti.Algebra.Quaternion.BaseChange
 public import TauCeti.FieldTheory.GaloisCohomology.MuTwo.Transfer
@@ -31,26 +32,6 @@ namespace TauCeti
 variable {K L : Type} [Field K] [Field L] [Algebra K L]
   [Invertible (2 : K)] [Invertible (2 : L)] [FiniteDimensional K L]
   (σ : L →ₐ[K] SeparableClosure K)
-
-namespace BrauerGroup
-
-/-- The restriction of Brauer base change to the `2`-torsion subgroups. -/
-def twoTorsionBaseChange (K L : Type) [Field K] [Field L] [Algebra K L] :
-    twoTorsion K →* twoTorsion L where
-  toFun x := ⟨baseChange K L x, mem_twoTorsion.2 (by
-    rw [← map_pow, mem_twoTorsion.mp x.property, map_one])⟩
-  map_one' := Subtype.ext (map_one (baseChange K L))
-  map_mul' x y := Subtype.ext (map_mul (baseChange K L)
-    (x : BrauerGroup K) (y : BrauerGroup K))
-
-/-- Coercing the restricted base-change homomorphism to the Brauer group gives ordinary base
-change. -/
-@[simp]
-theorem coe_twoTorsionBaseChange (K L : Type) [Field K] [Field L] [Algebra K L]
-    (x : twoTorsion K) :
-    ((twoTorsionBaseChange K L x : twoTorsion L) : BrauerGroup L) = baseChange K L x := (rfl)
-
-end BrauerGroup
 
 /-- **Base-change naturality of `ι` on quaternion symbols**: extending a quaternion Brauer class
 and then applying `ι` gives the same class as restricting its Kummer cup product to `L`. -/
