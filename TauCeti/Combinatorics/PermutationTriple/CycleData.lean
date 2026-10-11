@@ -121,7 +121,7 @@ theorem cycleData_smul (τ : Perm (Fin n)) (t : PermutationTriple n) :
   simp [Prod.ext_iff]
 
 /-- Simultaneous relabeling leaves the unordered full cycle partitions unchanged. -/
-@[simp]
+@[simp 1100]
 theorem unorderedCycleData_smul (τ : Perm (Fin n)) (t : PermutationTriple n) :
     unorderedCycleData (τ • t) = unorderedCycleData t := by
   simp only [unorderedCycleData_def, cycleData_smul]
