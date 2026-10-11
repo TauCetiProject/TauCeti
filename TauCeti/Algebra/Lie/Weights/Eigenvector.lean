@@ -24,12 +24,20 @@ Cartan subalgebra of a Lie algebra with non-degenerate Killing form, where the e
 is a root, is the case the weight theory uses, and
 `TauCeti.lie_pow_toEnd_eq_smul_of_mem_rootSpace` records it.
 
+For an arbitrary family of elements of `L`, the bracket adds simultaneous adjoint eigenvalues.
+Consequently, the sum of the simultaneous eigenspaces with integral eigenvalues is closed under
+the bracket.
+
 Dually, a linear functional on which an element acts by a scalar detects weights: over an
 integral domain it can be nonzero on a generalized weight vector only if that scalar is the value
 of the weight. This is how a weight is read off a coordinate of a vector in an explicit model.
 
 ## Main results
 
+* `TauCeti.lie_mem_iInf_eigenspace_ad`: the bracket adds eigenvalues for any family of adjoint
+  operators.
+* `TauCeti.lie_mem_iSup_iInf_eigenspace_ad`: the sum of simultaneous eigenspaces with integral
+  eigenvalues is closed under the bracket.
 * `TauCeti.mem_genWeightSpace_of_forall_lie_eq_smul`: a simultaneous eigenvector of `H` lies in the
   generalized weight space of its eigenvalue, at nilpotency index one.
 * `TauCeti.lie_mem_weightSpace_of_mem_weightSpace`: if `H` acts on `f` by `psi` under the adjoint
@@ -59,6 +67,39 @@ namespace TauCeti
 open LieAlgebra LieModule Module
 
 universe u v w
+
+section AdjointFamily
+
+variable {B R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] {H : B → L}
+
+/-- The bracket of a simultaneous eigenvector of the `ad Hᵢ` of eigenvalues `χ` with one of
+eigenvalues `ψ` is a simultaneous eigenvector of eigenvalues `χ + ψ`, by the Leibniz rule. -/
+theorem lie_mem_iInf_eigenspace_ad {χ ψ : B → R} {x y : L}
+    (hx : x ∈ ⨅ i, (ad R L (H i)).eigenspace (χ i))
+    (hy : y ∈ ⨅ i, (ad R L (H i)).eigenspace (ψ i)) :
+    ⁅x, y⁆ ∈ ⨅ i, (ad R L (H i)).eigenspace (χ i + ψ i) := by
+  simp only [Submodule.mem_iInf, Module.End.mem_eigenspace_iff, ad_apply] at hx hy ⊢
+  intro i
+  rw [leibniz_lie, hx i, hy i, smul_lie, lie_smul, add_smul]
+
+/-- The sum of the simultaneous eigenspaces of the `ad Hᵢ` with integral eigenvalues is closed
+under the bracket, since the bracket adds eigenvalues. -/
+theorem lie_mem_iSup_iInf_eigenspace_ad {x y : L}
+    (hx : x ∈ ⨆ χ : B → ℤ, ⨅ i, (ad R L (H i)).eigenspace (χ i : R))
+    (hy : y ∈ ⨆ χ : B → ℤ, ⨅ i, (ad R L (H i)).eigenspace (χ i : R)) :
+    ⁅x, y⁆ ∈ ⨆ χ : B → ℤ, ⨅ i, (ad R L (H i)).eigenspace (χ i : R) := by
+  induction hx using Submodule.iSup_induction' with
+  | mem χ x hx =>
+    induction hy using Submodule.iSup_induction' with
+    | mem ψ y hy =>
+      refine Submodule.mem_iSup_of_mem (χ + ψ) ?_
+      simpa only [Pi.add_apply, Int.cast_add] using lie_mem_iInf_eigenspace_ad hx hy
+    | zero => simp
+    | add y₁ y₂ _ _ h₁ h₂ => rw [lie_add]; exact add_mem h₁ h₂
+  | zero => simp
+  | add x₁ x₂ _ _ h₁ h₂ => rw [add_lie]; exact add_mem h₁ h₂
+
+end AdjointFamily
 
 section CommRing
 

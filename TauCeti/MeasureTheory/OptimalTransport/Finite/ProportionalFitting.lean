@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Data.Matrix.Sinkhorn
+public import TauCeti.Data.Matrix.Sinkhorn.Basic
 public import TauCeti.MeasureTheory.Measure.Prod
 public import TauCeti.MeasureTheory.OptimalTransport.ProportionalFitting
 
@@ -18,7 +18,7 @@ as a matrix `K i j = R.real {(i, j)}` and two vectors `a i = μ.real {i}` and `b
 This file identifies the measure-theoretic iterative proportional fitting
 `MeasureTheory.Measure.proportionalFitting R μ ν`, which alternately reweights `R` along each
 coordinate by a Radon–Nikodym derivative, with the matrix Sinkhorn iteration of
-`TauCeti.Data.Matrix.Sinkhorn`, which alternately rescales the rows and the columns of `K`.
+`TauCeti.Data.Matrix.Sinkhorn.Basic`, which alternately rescales the rows and the columns of `K`.
 
 The reweighting of a measure along the first coordinate towards `μ` multiplies the mass of the
 point `(i, j)` by `a i` divided by the mass of the row `i`. On a diagonal scaling

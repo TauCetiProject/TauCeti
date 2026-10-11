@@ -63,21 +63,6 @@ namespace TauCeti.GridRectangleInitialPentagonDecomposition
 
 variable {n : ℕ} {a s : Fin n} {x z : GridState n}
 
-/-- A mixed overlap whose rectangle initial side is the pentagon terminal side has exactly one
-common side column. -/
-theorem hasOneCommonSide_of_left_eq_right
-    (D : GridRectangleInitialPentagonDecomposition a s x z)
-    (hcommon : D.first.left = D.second.right)
-    (hother : D.first.right ≠ D.second.left) : D.HasOneCommonSide := by
-  apply D.hasOneCommonSide_iff_existsUnique.mpr
-  refine ⟨D.first.left, ?_, ?_⟩
-  · simp [GridRectangleBetween.mem_sideColumns, hcommon]
-  · intro c hc
-    simp only [GridRectangleBetween.mem_sideColumns, hcommon] at hc
-    have hfirst := D.first.left_ne_right
-    have hsecond := D.second.left_ne_right
-    grind
-
 private theorem underlying_first_isEmpty
     (D : GridRectangleInitialPentagonDecomposition a s x z) (h : D.first.IsEmpty) :
     D.toGridRectangleDecomposition.first.IsEmpty :=

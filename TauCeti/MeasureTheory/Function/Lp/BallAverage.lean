@@ -412,11 +412,11 @@ theorem eLpNorm_ballAverage_le (hp : 1 ≤ p) (hp' : p ≠ ∞) (hf : AEStrongly
     (hr : 0 < r) : eLpNorm (ballAverage mu r f) p mu ≤ eLpNorm f p mu := by
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
   have hq : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp' hp
-  have hq0 : (0 : ℝ) < p.toReal := one_pos.trans_le hq
+  have _ : (0 : ℝ) < p.toReal := one_pos.trans_le hq
   have hV0 : mu (ball (0 : E) r) ≠ 0 := (measure_ball_pos mu 0 hr).ne'
   have hVt : mu (ball (0 : E) r) ≠ ∞ := measure_ball_lt_top.ne
   rw [ballAverage_congr_ae hf.ae_eq_mk, eLpNorm_congr_ae hf.ae_eq_mk]
-  set g := hf.mk f with hg
+  set g := hf.mk f with _
   have hgm : StronglyMeasurable g := hf.stronglyMeasurable_mk
   have hcore := lintegral_enorm_setAverage_rpow_le (mu := mu) (q := p.toReal) hq
     (G := fun x e => g (x + e)) (hgm.comp_measurable (measurable_fst.add measurable_snd)) hr

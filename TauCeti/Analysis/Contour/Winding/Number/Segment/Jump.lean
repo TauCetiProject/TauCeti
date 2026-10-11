@@ -141,7 +141,7 @@ theorem tendsto_windingNumber_segment_sub (hv : v ≠ 0) (hs : s ∈ Ioo a b) :
   have h := (tendsto_windingNumber_segment_add_mul_I (z₀ := z₀) hv hs).sub
     (tendsto_windingNumber_segment_sub_mul_I (z₀ := z₀) hv hs)
   convert h using 2
-  have hπ : 2 * (Real.pi : ℂ) * I ≠ 0 := by simp [Real.pi_ne_zero, I_ne_zero]
+  have _ : 2 * (Real.pi : ℂ) * I ≠ 0 := by simp [Real.pi_ne_zero, I_ne_zero]
   field_simp
   ring
 

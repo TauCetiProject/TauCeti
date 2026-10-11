@@ -236,6 +236,15 @@ end CommSemiring
 
 end QuadraticMap
 
+/-- Negating a quadratic map does not change its orthogonal group. -/
+@[simp]
+theorem orthogonalGroup_neg {R : Type u} {M : Type v} {N : Type w} [CommRing R]
+    [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+    {Q : QuadraticMap R M N} :
+    QuadraticMap.orthogonalGroup (-Q) = QuadraticMap.orthogonalGroup Q := by
+  ext g
+  simp
+
 @[simp]
 theorem toLinearEquiv_orthogonalGroupEquivIsometryEquiv {R : Type u} {M : Type v} {N : Type w}
     [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
@@ -808,7 +817,7 @@ theorem coe_specialOrthogonalToGeneralLinear
 
 /-- A special orthogonal transformation acts on coordinate vectors through its general-linear
 matrix. -/
-theorem _root_.TauCeti.QuadraticMap.specialOrthogonalToGeneralLinear_mulVec
+theorem specialOrthogonalToGeneralLinear_mulVec
     (Q : QuadraticMap R (n → R) N)
     (g : specialOrthogonalGroup Q) (v : n → R) :
     (((specialOrthogonalToGeneralLinear Q g : Matrix.GeneralLinearGroup n R) :

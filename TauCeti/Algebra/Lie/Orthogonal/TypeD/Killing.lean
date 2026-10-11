@@ -222,7 +222,7 @@ private theorem exists_lieBasis_e_mem_of_ne_bot
       apply hrestr
       rw [hdecomp, hcart, hbot]
       simp
-    have hex : ∃ alpha : LieModule.Weight K H L, ∃ hα : alpha.IsNonZero,
+    have hex : ∃ alpha : LieModule.Weight K H L, ∃ _ : alpha.IsNonZero,
         I.restr H ⊓ LieAlgebra.rootSpace H alpha ≠ ⊥ := by
       by_contra hnone
       simp only [not_exists] at hnone

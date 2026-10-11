@@ -7,14 +7,19 @@ module
 
 public import Mathlib.Topology.Category.TopCat.Limits.Pullbacks
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Defs
+public import TauCeti.Topology.Category.TopCat.Fiber
 
 /-!
-# Recognizing pullbacks from an embedded range
+# Pullbacks in `TopCat`
 
 A commutative square of topological spaces whose top horizontal map is an embedding and whose
 bottom horizontal map is injective is a pullback when the range of the top map is the preimage of
 the range of the bottom one. This range criterion is useful for geometric constructions presented
 as embedded open subspaces.
+
+The base change `TopCat.pullbackFst g p` of a morphism `p : E ⟶ B` along `g : B' ⟶ B` has the
+same fibres as `p`: its fibre over `b'` is the fibre of `p` over `g b'`
+(`TopCat.Hom.fiberPullbackFstIso`).
 -/
 
 public section
@@ -58,3 +63,43 @@ theorem isPullback_of_isEmbedding_of_range_eq_preimage
   exact CategoryTheory.congr_fun (hm.trans (lift_fst s).symm) x
 
 end TauCeti.TopCat
+
+namespace TopCat.Hom
+
+universe u
+
+variable {E B B' : TopCat.{u}}
+
+/-- The fibre of the base change of `p` along `g : B' ⟶ B` over `b'` is the fibre of `p` over
+`g b'`. -/
+def fiberPullbackFstIso (p : E ⟶ B) (g : B' ⟶ B) (b' : B') :
+    (TopCat.pullbackFst g p).fiber b' ≅ p.fiber (g b') :=
+  TopCat.isoOfHomeo
+    { toFun x := ⟨x.1.1.2, by
+        rw [Set.mem_preimage, Set.mem_singleton_iff, ← x.1.2]
+        exact congrArg g x.2⟩
+      invFun e := ⟨⟨(b', e.1), e.2.symm⟩, rfl⟩
+      left_inv x := Subtype.ext (Subtype.ext (Prod.ext x.2.symm rfl))
+      right_inv _ := rfl
+      continuous_toFun := by fun_prop
+      continuous_invFun := by fun_prop }
+
+@[reassoc (attr := simp)]
+lemma fiberPullbackFstIso_hom_comp_fiberι (p : E ⟶ B) (g : B' ⟶ B) (b' : B') :
+    (p.fiberPullbackFstIso g b').hom ≫ p.fiberι (g b') =
+      (TopCat.pullbackFst g p).fiberι b' ≫ TopCat.pullbackSnd g p := by
+  ext x
+  rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, fiberι_apply, fiberι_apply]
+  rfl
+
+-- Not `@[simp]`: the reducible `TopCat.pullbackFst` in the fibre's type is unfolded when
+-- indexing, so `simp` never matches the left-hand sides of these two lemmas; use `rw` instead.
+lemma fiberPullbackFstIso_hom_apply_coe (p : E ⟶ B) (g : B' ⟶ B) (b' : B')
+    (x : (TopCat.pullbackFst g p).fiber b') :
+    ((p.fiberPullbackFstIso g b').hom x : E) = x.1.1.2 := (rfl)
+
+lemma fiberPullbackFstIso_inv_apply_coe (p : E ⟶ B) (g : B' ⟶ B) (b' : B') (x : p.fiber (g b')) :
+    ((p.fiberPullbackFstIso g b').inv x : ↑(TopCat.of { q : B' × E // g q.1 = p q.2 })) =
+      ⟨(b', x.1), x.2.symm⟩ := (rfl)
+
+end TopCat.Hom

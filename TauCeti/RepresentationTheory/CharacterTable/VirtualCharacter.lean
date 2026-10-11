@@ -192,8 +192,8 @@ theorem mul_mem_virtualCharacters {f g : G → k} (hf : f ∈ virtualCharacters 
     obtain ⟨W, rfl⟩ := hy
     rw [← FDRep.char_tensor]
     exact AddSubgroup.subset_closure ⟨V ⊗ W, rfl⟩
-  | zero_left x hx => simp
-  | zero_right x hx => simp
+  | zero_left x _ => simp
+  | zero_right x _ => simp
   | add_left x y z hx hy hz ihx ihy => rw [add_mul]; exact AddSubgroup.add_mem _ ihx ihy
   | add_right y z x hy hz hx ihy ihz => rw [mul_add]; exact AddSubgroup.add_mem _ ihy ihz
   | neg_left x y hx hy ih => rw [neg_mul]; exact AddSubgroup.neg_mem _ ih
@@ -277,8 +277,8 @@ theorem conj_apply_of_mem_virtualCharacters {f : G → ℂ} (hf : f ∈ virtualC
       obtain ⟨V, rfl⟩ := hx
       exact FDRep.conj_char V g
     | zero => simp
-    | neg x hx ih => simp [ih]
-    | add x y hx hy ihx ihy => simp [ihx, ihy]
+    | neg x _ ih => simp [ih]
+    | add x y _ _ ihx ihy => simp [ihx, ihy]
   exact key f hf
 
 end Complex
@@ -513,7 +513,7 @@ theorem exists_eq_irreducibleCharacter_or_neg {f : ClassFunction k G}
   have hzero : ∑ i ∈ Finset.univ.erase i₀, c i * c i = 0 := by omega
   have hrest : ∀ i ∈ Finset.univ.erase i₀, c i = 0 := fun i hi =>
     mul_self_eq_zero.mp
-      ((Finset.sum_eq_zero_iff_of_nonneg fun j hj => hnn j (Finset.mem_univ j)).mp hzero i hi)
+      ((Finset.sum_eq_zero_iff_of_nonneg fun j _ => hnn j (Finset.mem_univ j)).mp hzero i hi)
   have hval : (f : G → k) = (c i₀ : k) • irreducibleCharacter k i₀ := by
     rw [hc, ← Finset.sum_erase_add Finset.univ _ (Finset.mem_univ i₀),
       Finset.sum_eq_zero fun i hi => by rw [hrest i hi]; simp, zero_add]

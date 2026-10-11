@@ -93,7 +93,6 @@ theorem exists_mem_Gamma1_descendMatrix_mul_left_eq (hp : p.Prime) (hpN : p ∣ 
     ∃ ε ∈ Gamma1 N, descendMatrix p (l * N) w = mapGL ℝ ε * descendMatrix p N v := by
   have : NeZero p := ⟨hp.ne_zero⟩
   have hpsq : ¬ p ^ 2 ∣ N := fun h ↦ by
-    have h1 := v.isLt
     have h2 := descendMatrixCount_of_sq_dvd h
     omega
   obtain ⟨ε, hε, hεmul⟩ := exists_mem_Gamma1_upperTriRep_mul_of_mem_Gamma (p := p) hpN

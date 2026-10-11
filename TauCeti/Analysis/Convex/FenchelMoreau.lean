@@ -145,7 +145,7 @@ theorem exists_affine_le_of_lt (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2})
     obtain ⟨ℓ, c, hle, hlt⟩ := h
     refine ⟨ℓ, t - ℓ x₀, fun x => le_trans ?_ (hle x), by ring⟩
     exact EReal.coe_le_coe_iff.2 (by linarith)
-  rcases ne_or_eq (f x₀) ⊤ with htop | htop
+  rcases ne_or_eq (f x₀) ⊤ with htop | _
   · exact exists_lt_of_lt_of_ne_top hf hlsc hbot ht htop
   by_cases hdom : ∀ x, f x = ⊤
   · exact ⟨0, t + 1, fun x => by simp [hdom x], by simp⟩

@@ -209,7 +209,7 @@ theorem lintegral_enorm_derivWithin_le_eVariationOn {f : ℝ → F} {a b : ℝ}
         have hpx : p x = b := by simp [p, Set.projIcc_of_right_le hab.le hbx]
         simp [g, hpa, hpx]
   have hinterval : ∀ {c d : ℝ}, c ≤ d → ∫ t in c..d, D t = g d - g c := by
-    intro c d hcd
+    intro c d _
     have hac := intervalIntegral.integral_add_adjacent_intervals
       hD_int.intervalIntegrable hD_int.intervalIntegrable (a := a) (b := c) (c := d)
     rw [hprimitive c, hprimitive d] at hac

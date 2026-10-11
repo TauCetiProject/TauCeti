@@ -239,7 +239,7 @@ isomorphic exactly when their dimension vectors agree.** The forward direction i
 `TauCeti.dimVector_eq_of_iso` and needs none of the hypotheses; the converse is
 `TauCeti.nonempty_iso_of_dimVector_eq_of_indecomposable_of_isAcyclic`. -/
 theorem nonempty_iso_iff_dimVector_eq_of_indecomposable
-    [q : _root_.Quiver.{w} V] [hq : ∀ a b : V, Fintype (a ⟶ b)] (hac : Quiver.IsAcyclic V)
+    [_root_.Quiver.{w} V] [∀ a b : V, Fintype (a ⟶ b)] (hac : Quiver.IsAcyclic V)
     (hpd : (titsForm V).PosDef) (M N : QuiverRep.{u, v, w, max v w x} k V)
     (hM : Indecomposable M) (hN : Indecomposable N)
     (hfdM : IsFinDim.{u, v, w, max v w x} k V M) (hfdN : IsFinDim.{u, v, w, max v w x} k V N) :

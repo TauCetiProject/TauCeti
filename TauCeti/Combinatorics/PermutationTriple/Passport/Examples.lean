@@ -96,8 +96,6 @@ theorem passportSize_formula_s3Triple :
     have hnormal : P.G.Normal := hG.symm ▸ (inferInstance : (⊤ : Subgroup (Perm (Fin 3))).Normal)
     rw [@Subgroup.normalizer_eq_top _ _ P.G hnormal, Subgroup.card_top, Nat.card_perm, Nat.card_fin]
     norm_num
-  have hpassport : P.passportSize = 1 := by
-    simpa only [P, t] using passportSize_passportOf_s3Triple
   -- Compute the raw passport fiber independently of the normalizer formula.
   let F := passportTriples (Finset.univ : Finset (Perm (Fin 3))) P.lam0 P.lam1 P.laminf
   have hF : F.card = 6 := by

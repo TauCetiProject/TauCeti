@@ -232,7 +232,7 @@ theorem existsUnique_forall_mkQ_eq_toQuotientEnd (x : completedGroupAlgebra R Γ
   -- compatible family is the level action there, pushed forward to `M ⧸ N`.
   have hcore : ∀ N : Submodule R M, ∀ γ : Γ, ∀ x ∈ N.invariantCore Γ, γ • x ∈ N.invariantCore Γ :=
     fun _ γ _ hx ↦ Submodule.smul_mem_invariantCore γ hx
-  let K : ∀ N : {N : Submodule R M // IsOpen (N : Set M)}, OpenNormalSubgroup Γ := fun N ↦
+  let K : ∀ _ : {N : Submodule R M // IsOpen (N : Set M)}, OpenNormalSubgroup Γ := fun N ↦
     Submodule.quotientActionKernel (hcore N.1) (N.1.isOpen_invariantCore Γ N.2)
   have hK : ∀ N, (K N).toSubgroup ≤ (Submodule.quotientToModuleEnd (hcore N.1)).ker := fun N ↦
     (Submodule.quotientActionKernel_toSubgroup _ _).le

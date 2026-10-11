@@ -134,7 +134,7 @@ private theorem IsAlt.iSup_comap_orthogonal_span_pair_eq_top {ι : Type*} {W : �
     (horth : ∀ i j, j ≠ σ i → ∀ v ∈ W i, ∀ w ∈ W j, B v w = 0)
     {i : ι} (he : e ∈ W i) (hf : f ∈ W (σ i)) :
     ⨆ j, (W j).comap (B.orthogonal (span R {e, f})).subtype = ⊤ := by
-  set Z := B.orthogonal (span R {e, f}) with hZ
+  set Z := B.orthogonal (span R {e, f})
   set p : M →ₗ[R] M := LinearMap.id - (B f).smulRight e + (B e).smulRight f with hp_def
   have hpu : ∀ u, p u = u - B f u • e + B e u • f := fun u => by simp [hp_def]
   have hpZ : ∀ u, p u ∈ Z := fun u => by
@@ -263,7 +263,7 @@ private theorem exists_basis_apply_eq_J_of_iSup_eq_top_aux (n : ℕ) :
   have hf : f ∈ W (σ i) := smul_mem _ _ hw
   have hfe : B f e = 1 := by rw [hf_def]; simp [inv_mul_cancel₀ hwe]
   -- Apply the induction hypothesis to the orthogonal complement of `span {e, f}`.
-  set Z := B.orthogonal (span K {e, f}) with hZ
+  set Z := B.orthogonal (span K {e, f})
   have hZn : finrank K Z + 2 = n := hn ▸ hB.finrank_orthogonal_span_pair_add_two hnd hfe
   obtain ⟨m, c, hc, hcW⟩ := ih (finrank K Z) (by omega) Z rfl (B.restrict Z)
     (fun z => hB.self_eq_zero z) (hB.restrict_nondegenerate_orthogonal_span_pair hfe hnd)

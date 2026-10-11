@@ -8,7 +8,7 @@ module
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Operations
 public import TauCeti.LinearAlgebra.IntegralLattice.Orthogonal.UnitNorm
 public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.GaussSum
-public import TauCeti.LinearAlgebra.IntegralLattice.RankOne
+public import TauCeti.LinearAlgebra.IntegralLattice.RankOne.Discriminant
 public import TauCeti.LinearAlgebra.IntegralLattice.Unimodular
 import TauCeti.NumberTheory.ModularForms.JacobiTheta.GaussSum
 
@@ -72,19 +72,19 @@ variable (m : ℤ) [NeZero m]
 
 /-- For `0 < m`, the Gauss sum of the discriminant form of `⟨2m⟩` is `(1 + i) √m`. -/
 private theorem gaussSum_rankOne_of_pos (hm : 0 < m) :
-    ((rankOne m).discriminantQuadraticModule (isEven_rankOne m)).gaussSum =
+    ((rankOne (2 * m)).discriminantQuadraticModule (isEven_rankOne_two_mul m)).gaussSum =
       (1 + I) * √(m : ℝ) := by
   obtain ⟨M, rfl⟩ : ∃ M : ℕ, m = M := ⟨m.toNat, (Int.toNat_of_nonneg hm.le).symm⟩
   have hn : (2 * (M : ℤ)).natAbs = 2 * M := by omega
   -- `k ↦ k • g` enumerates the discriminant group, which is cyclic of order `2M`.
-  let φ : Fin (2 * M) → (rankOne (M : ℤ)).DiscriminantGroup :=
-    fun k ↦ ((k : ℕ) : ℤ) • rankOneClass (M : ℤ)
+  let φ : Fin (2 * M) → (rankOne (2 * (M : ℤ))).DiscriminantGroup :=
+    fun k ↦ ((k : ℕ) : ℤ) • rankOneClass (2 * (M : ℤ))
   -- The carrier of the exposed `discriminantQuadraticModule` is the discriminant group, so one
   -- `Fintype` instance serves both the Gauss sum and the enumeration `φ`.
-  let inst : Fintype (rankOne (M : ℤ)).DiscriminantGroup := Fintype.ofFinite _
+  let inst : Fintype (rankOne (2 * (M : ℤ))).DiscriminantGroup := Fintype.ofFinite _
   have hφ : Function.Bijective φ := by
     refine (Fintype.bijective_iff_injective_and_card φ).mpr ⟨fun k l hkl ↦ ?_, ?_⟩
-    · have h := congrArg (rankOneDiscriminantEquiv (M : ℤ)) hkl
+    · have h := congrArg (rankOneDiscriminantEquiv (2 * (M : ℤ))) hkl
       simp only [φ, rankOneDiscriminantEquiv_zsmul_rankOneClass, Int.cast_natCast] at h
       have h' := (ZMod.natCast_eq_natCast_iff' _ _ _).mp h
       rw [hn, Nat.mod_eq_of_lt k.2, Nat.mod_eq_of_lt l.2] at h'
@@ -93,7 +93,8 @@ private theorem gaussSum_rankOne_of_pos (hm : 0 < m) :
   rw [@FiniteQuadraticModule.gaussSum_eq_sum _ inst, Int.cast_natCast,
     ← sum_range_two_mul_cexp_two_pi_I_sq_div_four_mul M, ← Fin.sum_univ_eq_sum_range]
   refine (Fintype.sum_bijective φ hφ _ _ fun k ↦ ?_).symm
-  rw [discriminantQuadraticModule_quadratic, discriminantQuadraticMap_zsmul_rankOneClass,
+  rw [discriminantQuadraticModule_quadratic,
+    discriminantQuadraticMap_zsmul_rankOneClass _ (even_two_mul _),
     expCircle_coe]
   push_cast
   ring_nf
@@ -117,11 +118,11 @@ private theorem sqrt_two_mul_expCircle_toRatAddCircle_eight_one :
 /-- For `0 < m`, the discriminant form of `⟨2m⟩` has Gauss-sum invariant `1`:
 `(1 + i) √m = √(2m) · e^{2πi/8}`. -/
 private theorem gaussSign_rankOne_of_pos (hm : 0 < m) :
-    ((rankOne m).discriminantQuadraticModule (isEven_rankOne m)).gaussSign = 1 := by
+    ((rankOne (2 * m)).discriminantQuadraticModule (isEven_rankOne_two_mul m)).gaussSign = 1 := by
   refine FiniteQuadraticModule.gaussSign_eq_of_gaussSum_eq _ ?_
-  have hcard : Nat.card ((rankOne m).discriminantQuadraticModule (isEven_rankOne m)) =
+  have hcard : Nat.card ((rankOne (2 * m)).discriminantQuadraticModule (isEven_rankOne_two_mul m)) =
       (2 * m).natAbs :=
-    natCard_rankOne_discriminantGroup m
+    natCard_rankOne_discriminantGroup (2 * m)
   obtain ⟨M, rfl⟩ : ∃ M : ℕ, m = M := ⟨m.toNat, (Int.toNat_of_nonneg hm.le).symm⟩
   rw [gaussSum_rankOne_of_pos _ hm, hcard, show (2 * (M : ℤ)).natAbs = 2 * M by omega,
     Nat.cast_mul, Nat.cast_ofNat, Real.sqrt_mul zero_le_two, Int.cast_natCast,
@@ -132,12 +133,15 @@ private theorem gaussSign_rankOne_of_pos (hm : 0 < m) :
 /-- **Milgram's theorem for `⟨2m⟩`**: the discriminant form of the rank-one lattice `⟨2m⟩` has
 Gauss-sum invariant the sign of `m`. -/
 theorem gaussSign_discriminantQuadraticModule_rankOne :
-    ((rankOne m).discriminantQuadraticModule (isEven_rankOne m)).gaussSign = Int.sign m := by
+    ((rankOne (2 * m)).discriminantQuadraticModule (isEven_rankOne_two_mul m)).gaussSign =
+      Int.sign m := by
   rcases (NeZero.ne m).lt_or_gt with hm | hm
   · have : NeZero (-m) := ⟨neg_ne_zero.mpr (NeZero.ne m)⟩
-    let e := Isometry.ofEq (rankOne_eq_neg_rankOne_neg m)
-    rw [(e.discriminantQuadraticIsometry (isEven_rankOne m)).gaussSign_eq,
-      ((rankOne (-m)).discriminantQuadraticIsometryNeg (isEven_rankOne (-m))).gaussSign_eq,
+    let e := Isometry.ofEq (show rankOne (2 * m) = -rankOne (2 * (-m)) from by
+      simpa only [mul_neg] using rankOne_eq_neg_rankOne_neg (2 * m))
+    rw [(e.discriminantQuadraticIsometry (isEven_rankOne_two_mul m)).gaussSign_eq,
+      ((rankOne (2 * (-m))).discriminantQuadraticIsometryNeg
+        (isEven_rankOne_two_mul (-m))).gaussSign_eq,
       FiniteQuadraticModule.gaussSign_neg, gaussSign_rankOne_of_pos _ (by omega),
       Int.sign_eq_neg_one_of_neg hm]
     simp
@@ -146,13 +150,13 @@ theorem gaussSign_discriminantQuadraticModule_rankOne :
 omit [NeZero m] in
 /-- The signature difference of `⟨2m⟩` is the sign of `m`. -/
 private theorem sigPos_sub_sigNeg_rankOne (hm : m ≠ 0) :
-    ((rankOne m).sigPos : ZMod 8) - (rankOne m).sigNeg = Int.sign m := by
+    ((rankOne (2 * m)).sigPos : ZMod 8) - (rankOne (2 * m)).sigNeg = Int.sign m := by
   rcases hm.lt_or_gt with hm | hm
-  · have h := rankOne_signature_of_neg hm
+  · have h := rankOne_signature_of_neg (show 2 * m < 0 by omega)
     simp only [signature, Prod.mk.injEq] at h
     rw [h.1, h.2.2, Int.sign_eq_neg_one_of_neg hm]
     simp
-  · have h := rankOne_signature_of_pos hm
+  · have h := rankOne_signature_of_pos (show 0 < 2 * m by omega)
     simp only [signature, Prod.mk.injEq] at h
     rw [h.1, h.2.2, Int.sign_eq_one_of_pos hm]
     simp
@@ -291,8 +295,8 @@ private theorem integralForm_splitVector {m : ℤ} (hm : L.norm x = 2 * m) :
 
 /-- For `x` of norm `2m`, the sublattice `ℤx + (x^⊥ ∩ L)` is isometric to `⟨2m⟩ ⊥ (x^⊥ ∩ L)`. -/
 private noncomputable def splitIsometry (m : ℤ) [NeZero m] (hm : L.norm x = 2 * m) :
-    Isometry ((rankOne m).orthogonalSum (splitComplement L x hx)) (splitLattice L x hx) :=
-  (((Isometry.ofEq (ofGramMatrix_singleton_eq_rankOne m (integralForm_splitVector L x hx hm)
+    Isometry ((rankOne (2 * m)).orthogonalSum (splitComplement L x hx)) (splitLattice L x hx) :=
+  (((Isometry.ofEq (ofGramMatrix_singleton_eq_rankOne (2 * m) (integralForm_splitVector L x hx hm)
       (by ext; rfl))).symm.trans
     ((splitLattice L x hx).spanSingletonIsometry _ fun h ↦ NeZero.ne m <| by
       have hxK := integralForm_splitVector L x hx hm
@@ -329,12 +333,12 @@ theorem gaussSign_discriminantQuadraticModule_eq_sigPos_sub_sigNeg [L.IsNondegen
     set T := (splitLattice L x hx).integralForm.orthogonal (ℤ ∙ splitVector L x hx)
     set B := splitComplement L x hx
     let e := splitIsometry L x hx m hm
-    have hS : ((rankOne m).orthogonalSum B).IsEven :=
+    have hS : ((rankOne (2 * m)).orthogonalSum B).IsEven :=
       e.isEven_iff.mpr (isEven_splitLattice L x hx hL)
     have hB : B.IsEven := ((isEven_orthogonalSum_iff _ _).mp hS).2
-    have : ((rankOne m).orthogonalSum B).IsNondegenerate := e.symm.isNondegenerate
+    have : ((rankOne (2 * m)).orthogonalSum B).IsNondegenerate := e.symm.isNondegenerate
     have : B.IsNondegenerate :=
-      ⟨(((rankOne m).nondegenerate_orthogonalSum_iff B).mp (form_nondegenerate _)).2⟩
+      ⟨(((rankOne (2 * m)).nondegenerate_orthogonalSum_iff B).mp (form_nondegenerate _)).2⟩
     -- The complement has rank `n`, so the induction hypothesis applies to it.
     have hfin : finrank ℚ (ℚ ⊗[ℤ] T) = n := by
       have := B.finiteDimensional
@@ -342,14 +346,14 @@ theorem gaussSign_discriminantQuadraticModule_eq_sigPos_sub_sigNeg [L.IsNondegen
       rw [finrank_prod, finrank_self, hn, add_comm n] at h
       exact Nat.add_left_cancel h
     -- Both invariants are additive over `⟨2m⟩ ⊥ B`, and neither changes on the sublattice.
-    have hpos : L.sigPos = (rankOne m).sigPos + B.sigPos := by
+    have hpos : L.sigPos = (rankOne (2 * m)).sigPos + B.sigPos := by
       rw [← sigPos_orthogonalSum, e.sigPos_eq]
       simp only [sigPos, splitLattice_form]
-    have hneg : L.sigNeg = (rankOne m).sigNeg + B.sigNeg := by
+    have hneg : L.sigNeg = (rankOne (2 * m)).sigNeg + B.sigNeg := by
       rw [← sigNeg_orthogonalSum, e.sigNeg_eq]
       simp only [sigNeg, splitLattice_form]
     rw [← gaussSign_splitLattice L x hx hL, ← (e.discriminantQuadraticIsometry hS).gaussSign_eq,
-      ((rankOne m).discriminantQuadraticIsometryOrthogonalSum B (isEven_rankOne m)
+      ((rankOne (2 * m)).discriminantQuadraticIsometryOrthogonalSum B (isEven_rankOne_two_mul m)
         hB).gaussSign_eq,
       FiniteQuadraticModule.gaussSign_prod (isNondegenerate_discriminantQuadraticModule _ _)
         (isNondegenerate_discriminantQuadraticModule _ _),

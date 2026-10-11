@@ -635,8 +635,8 @@ theorem RowExchangeable.measure_setOf_forall_mem_eq_lintegral_prod [IsFiniteMeas
   -- A horizon past every column the cells occupy, and the cells' columns inside it.
   have hcm : ∀ t : Fin r, (c t).2 < (Finset.univ.sup fun t : Fin r => (c t).2) + 1 := fun t =>
     Nat.lt_succ_of_le (Finset.le_sup (f := fun t : Fin r => (c t).2) (Finset.mem_univ t))
-  set m : ℕ := (Finset.univ.sup fun t : Fin r => (c t).2) + 1 with hm_def
-  set g : Fin r → Fin m := fun t => ⟨(c t).2, hcm t⟩ with hg_def
+  set m : ℕ := (Finset.univ.sup fun t : Fin r => (c t).2) + 1
+  set g : Fin r → Fin m := fun t => ⟨(c t).2, hcm t⟩
   have hcell : ∀ t : Fin r, ((c t).1, ((g t : ℕ))) = c t := fun t => Prod.mk.eta
   have hd : Function.Injective fun t : Fin r => ((c t).1, g t) := by
     intro s t hst

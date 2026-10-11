@@ -257,7 +257,6 @@ consecutive or wrap around the whole cycle. This is the arithmetic behind
 `TauCeti.AffineDynkinType.graph_A_adj`. -/
 private lemma sub_val_eq_one_iff {n : ℕ} (hn : 1 ≤ n) (u v : Fin (n + 1)) :
     ((u - v : Fin (n + 1)) : ℕ) = 1 ↔ (v : ℕ) + 1 = (u : ℕ) ∨ ((u : ℕ) = 0 ∧ (v : ℕ) = n) := by
-  have hu : (u : ℕ) < n + 1 := u.isLt
   have hv : (v : ℕ) < n + 1 := v.isLt
   rcases le_or_gt v u with h | h
   · rw [Fin.coe_sub_iff_le.2 h]
@@ -573,57 +572,32 @@ private lemma sum_dMarks_neighborFinset {n : ℕ} (hn : 4 ≤ n) (i : Fin (n + 1
   rcases eq_or_lt_of_le hn with rfl | hn5
   · revert i; decide
   have hi : (i : ℕ) < n + 1 := i.isLt
-  by_cases c0 : (i : ℕ) = 0
-  · rw [sum_dMarks_of_adj_iff i [⟨1, by omega⟩] (by simp) fun j ↦ by
-      rw [← graph_D, graph_D_adj hn]
-      simp only [List.mem_cons, List.not_mem_nil, or_false, Fin.ext_iff]
-      omega]
-    simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, dMarks]
-    split_ifs <;> omega
-  by_cases c1 : (i : ℕ) = 1
-  · rw [sum_dMarks_of_adj_iff i [⟨0, by omega⟩, ⟨2, by omega⟩, ⟨n - 1, by omega⟩]
-      (by simp [Fin.ext_iff]; omega) fun j ↦ by
-      rw [← graph_D, graph_D_adj hn]
-      simp only [List.mem_cons, List.not_mem_nil, or_false, Fin.ext_iff]
-      omega]
-    simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, dMarks]
-    split_ifs <;> omega
-  by_cases c2 : (i : ℕ) ≤ n - 4
-  · rw [sum_dMarks_of_adj_iff i [⟨(i : ℕ) - 1, by omega⟩, ⟨(i : ℕ) + 1, by omega⟩]
-      (by simp [Fin.ext_iff]) fun j ↦ by
-      rw [← graph_D, graph_D_adj hn]
-      simp only [List.mem_cons, List.not_mem_nil, or_false, Fin.ext_iff]
-      omega]
-    simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, dMarks]
-    split_ifs <;> omega
-  by_cases c3 : (i : ℕ) = n - 3
-  · rw [sum_dMarks_of_adj_iff i [⟨n - 4, by omega⟩, ⟨n - 2, by omega⟩, ⟨n, by omega⟩]
-      (by simp [Fin.ext_iff]; omega) fun j ↦ by
-      rw [← graph_D, graph_D_adj hn]
-      simp only [List.mem_cons, List.not_mem_nil, or_false, Fin.ext_iff]
-      omega]
-    simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, dMarks]
-    split_ifs <;> omega
-  by_cases c4 : (i : ℕ) = n - 2
-  · rw [sum_dMarks_of_adj_iff i [⟨n - 3, by omega⟩] (by simp) fun j ↦ by
-      rw [← graph_D, graph_D_adj hn]
-      simp only [List.mem_cons, List.not_mem_nil, or_false, Fin.ext_iff]
-      omega]
-    simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, dMarks]
-    split_ifs <;> omega
-  by_cases c5 : (i : ℕ) = n - 1
-  · rw [sum_dMarks_of_adj_iff i [⟨1, by omega⟩] (by simp) fun j ↦ by
-      rw [← graph_D, graph_D_adj hn]
-      simp only [List.mem_cons, List.not_mem_nil, or_false, Fin.ext_iff]
-      omega]
-    simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, dMarks]
-    split_ifs <;> omega
-  · rw [sum_dMarks_of_adj_iff i [⟨n - 3, by omega⟩] (by simp) fun j ↦ by
-      rw [← graph_D, graph_D_adj hn]
-      simp only [List.mem_cons, List.not_mem_nil, or_false, Fin.ext_iff]
-      omega]
-    simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, dMarks]
-    split_ifs <;> omega
+  have balance_of_neighbor_list (l : List (Fin (n + 1))) (hl : l.Nodup)
+      (hs : ∀ j, (SimpleGraph.fromRel (dRel n)).Adj i j ↔ j ∈ l)
+      (h2 : (l.map (dMarks n)).sum = 2 * dMarks n i) :
+      ∑ j ∈ (SimpleGraph.fromRel (dRel n)).neighborFinset i, dMarks n j = 2 * dMarks n i :=
+    (sum_dMarks_of_adj_iff i l hl hs).trans h2
+  -- The node roles, in order: the leaf `0`, the branch node `1`, an interior path node, the
+  -- branch node `n - 3`, and the leaves `n - 2`, `n - 1` and `n`; each supplies its neighbours.
+  rcases (by omega : (i : ℕ) = 0 ∨ (i : ℕ) = 1 ∨ (2 ≤ (i : ℕ) ∧ (i : ℕ) ≤ n - 4) ∨
+      (i : ℕ) = n - 3 ∨ (i : ℕ) = n - 2 ∨ (i : ℕ) = n - 1 ∨ (i : ℕ) = n) with
+    h | h | h | h | h | h | h <;>
+  [refine balance_of_neighbor_list [⟨1, by omega⟩] ?_ ?_ ?_;
+    refine balance_of_neighbor_list [⟨0, by omega⟩, ⟨2, by omega⟩, ⟨n - 1, by omega⟩] ?_ ?_ ?_;
+    refine balance_of_neighbor_list [⟨(i : ℕ) - 1, by omega⟩, ⟨(i : ℕ) + 1, by omega⟩] ?_ ?_ ?_;
+    refine balance_of_neighbor_list [⟨n - 4, by omega⟩, ⟨n - 2, by omega⟩, ⟨n, by omega⟩] ?_ ?_ ?_;
+    refine balance_of_neighbor_list [⟨n - 3, by omega⟩] ?_ ?_ ?_;
+    refine balance_of_neighbor_list [⟨1, by omega⟩] ?_ ?_ ?_;
+    refine balance_of_neighbor_list [⟨n - 3, by omega⟩] ?_ ?_ ?_]
+  -- The three side goals of each role: its adjacency, the sum of the marks, the list is `Nodup`.
+  all_goals first
+    | (intro j
+       rw [← graph_D, graph_D_adj hn]
+       simp only [List.mem_cons, List.not_mem_nil, or_false, Fin.ext_iff]
+       omega)
+    | (simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, dMarks]
+       split_ifs <;> omega)
+    | (simp [Fin.ext_iff] <;> omega)
 
 /-- The local balance condition for `Aₙ`: every node of a cycle on at least three nodes has two
 neighbours, and every mark of `Aₙ` is `1`. -/

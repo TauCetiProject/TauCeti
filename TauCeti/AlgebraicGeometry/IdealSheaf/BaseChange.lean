@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.IdealSheaf.Functorial
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
+public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 public import Mathlib.AlgebraicGeometry.Pullbacks
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Comap
 public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
@@ -17,10 +18,10 @@ public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.SplitEpi
 
 This file identifies the closed subscheme of an ideal sheaf pulled back along a fibre-product
 projection with the corresponding base change. It also records the resulting preservation of
-flatness for the closed subscheme, and the affine-local form of that flatness: over affine opens
-`W ⊆ S` and `U ⊆ f⁻¹ W`, the quotient `Γ(X, U) ⧸ I(U)` is flat over `Γ(S, W)`
-(`flat_appLE_comp_ofHom_quotient_mk`). Conversely, flatness of that quotient is exactly flatness
-of the restricted subscheme morphism (`TauCeti.flat_resLE_subschemeι_iff`).
+flatness and fibre rank for the closed subscheme, and the affine-local form of that flatness: over
+affine opens `W ⊆ S` and `U ⊆ f⁻¹ W`, the quotient `Γ(X, U) ⧸ I(U)` is flat over `Γ(S, W)`
+(`flat_appLE_comp_ofHom_quotient_mk`). Conversely, flatness of that quotient is exactly flatness of
+the restricted subscheme morphism (`TauCeti.flat_resLE_subschemeι_iff`).
 
 The ideal sheaf of a closed immersion pulled back along any pullback square is the inverse image
 of its ideal sheaf (`AlgebraicGeometry.Scheme.IdealSheafData.ker_eq_comap_of_isPullback`). In
@@ -99,6 +100,25 @@ the inverse image of the ideal sheaf of `i`. -/
 theorem ker_eq_comap_of_isPullback {P Y Z : Scheme.{u}} {i' : P ⟶ X} {g : P ⟶ Z} {f : X ⟶ Y}
     (i : Z ⟶ Y) [IsClosedImmersion i] (h : IsPullback i' g f i) : i'.ker = i.ker.comap f := by
   rw [← h.isoPullback_hom_fst, Scheme.Hom.ker_comp_of_isIso, ker_fst_of_isClosedImmersion]
+
+/-- The degree of a finite flat closed subscheme is preserved by base change. More precisely, if
+`X' ⟶ X` is the base change of `X ⟶ S` along `S' ⟶ S`, then the closed subscheme cut out by
+the inverse-image ideal sheaf has rank at `s'` equal to the original closed subscheme's rank at
+its image in `S`.
+
+The hypothesis that the original closed subscheme is finite and flat is exactly what is needed
+for the two rank functions. -/
+theorem finrank_comap_of_isPullback {X' S' : Scheme.{u}} (I : X.IdealSheafData) (f : X ⟶ S)
+    (g : X' ⟶ X) (f' : X' ⟶ S') (h : S' ⟶ S)
+    (H : IsPullback g f' f h) [Flat (I.subschemeι ≫ f)] [IsFinite (I.subschemeι ≫ f)]
+    (s : S') :
+    ((I.comap g).subschemeι ≫ f').finrank s = (I.subschemeι ≫ f).finrank (h s) := by
+  let α := subschemeMap (I.comap g) I g (I.le_map_comap g)
+  have hI : IsPullback (I.comap g).subschemeι α g I.subschemeι :=
+    isPullback_of_isClosedImmersion _ _ _ _ (by simp [α]) (by simp)
+  have h' : IsPullback α ((I.comap g).subschemeι ≫ f') (I.subschemeι ≫ f) h := by
+    simpa [Category.assoc] using (hI.paste_horiz H.flip).flip
+  exact Scheme.Hom.finrank_of_isPullback _ _ _ _ h' s
 
 /-- **The ideal sheaf of a section commutes with base change.** For a section `h.section_` of
 `f : X ⟶ S` which is a closed immersion, as it is when `f` is separated, the ideal sheaf of its

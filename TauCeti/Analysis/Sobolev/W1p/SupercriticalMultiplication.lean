@@ -152,7 +152,7 @@ theorem W1p.hasWeakFDerivOn_mul_morreyRepresentative
         W1p.morreyRepresentative v hp x • W1p.gradient u x)) := by
   have hpTop : (p : ℝ≥0∞) ≠ ∞ := ENNReal.coe_ne_top
   apply hasWeakFDerivOn_iff_forall_isCompact_closure.2
-  intro V hVc hVtop
+  intro V hVc _
   have hVle : V ≤ (⊤ : Opens E) := le_top
   have hfin : IsFiniteMeasure (mu.restrict (V : Set E)) :=
     ⟨by

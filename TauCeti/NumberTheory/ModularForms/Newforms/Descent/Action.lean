@@ -209,7 +209,7 @@ def descendIndexEquiv (p N : ℕ) [NeZero p] (hpsq : ¬ p ^ 2 ∣ N) :
     {v : Fin (descendMatrixCount p N)} (hv : p ≤ v.val) :
     descendIndexEquiv p N hpsq v = ∞ := by
   have hcast : Fin.cast (descendMatrixCount_of_not_sq_dvd hpsq) v = Fin.last p := by
-    have hlt := v.isLt
+    have _ := v.isLt
     have hcount := descendMatrixCount_of_not_sq_dvd (p := p) hpsq
     exact Fin.ext (by rw [Fin.val_cast, Fin.val_last]; omega)
   rw [descendIndexEquiv]

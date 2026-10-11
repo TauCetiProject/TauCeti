@@ -218,7 +218,7 @@ theorem eq_three_of_fdBoundary_eq_rho (hH : H ≠ Real.sqrt 3 / 2) (ht : t ∈ I
       have hsin : Real.sin ((t - 3) * (Real.pi / 12)) = 0 :=
         abs_eq_zero.mp (by linarith)
       have habs : |t - 3| ≤ 2 := abs_le.mpr ⟨by linarith, by linarith⟩
-      obtain ⟨hb1, hb2⟩ := abs_le.mp habs
+      obtain ⟨_, _⟩ := abs_le.mp habs
       have harg : (t - 3) * (Real.pi / 12) = 0 :=
         (Real.sin_eq_zero_iff_of_lt_of_lt (by nlinarith [Real.pi_pos])
           (by nlinarith [Real.pi_pos])).mp hsin

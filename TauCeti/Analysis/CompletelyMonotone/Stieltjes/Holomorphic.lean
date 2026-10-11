@@ -78,7 +78,6 @@ theorem integrable_inv_add_of_mem_slitPlane (hμ : Integrable stieltjesWeight μ
     (hz : z ∈ slitPlane) : Integrable (fun x : ℝ≥0 => (z + ((x : ℝ) : ℂ))⁻¹) μ := by
   obtain ⟨c, hc, hbound⟩ := exists_pos_forall_mem_ball_mul_one_add_le_norm_add hz
   refine (hμ.const_mul c⁻¹).mono' (by fun_prop) (ae_of_all _ fun x => ?_)
-  have h1x : 0 < 1 + (x : ℝ) := by positivity
   rw [norm_inv, stieltjesWeight_apply, ← mul_inv]
   exact inv_anti₀ (by positivity) (hbound z (Metric.mem_ball_self hc) x)
 

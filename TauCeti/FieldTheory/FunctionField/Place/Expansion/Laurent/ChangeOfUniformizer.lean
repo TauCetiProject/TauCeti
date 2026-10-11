@@ -18,9 +18,10 @@ residue of a function `z` with respect to `s` can be computed from Laurent expan
 where `z(T)` and `s(T)` are the Laurent expansions of `z` and `s` in `t` and `s'(T)` is the
 formal derivative. This is the expansion-level form of Stichtenoth's transformation formula
 `res_{P,s}(z) = res_{P,t}(z · ds/dt)` (Proposition 4.2.9). As a corollary, whenever a function
-`w` has expansion `s'(T)` in `t`, `res_{P,s}(z) = res_{P,t}(z * w)`. This file does not identify
-the expansion of the function-field derivative `ds/dt` with `s'(T)`; that identification is a
-hypothesis of the corollary.
+`w` has expansion `s'(T)` in `t`, `res_{P,s}(z) = res_{P,t}(z * w)`. The function-field derivative
+`ds/dt` is such a `w` when `t` is separating
+(`TauCeti.Place.laurentSeriesExpansion_derivativeOfSeparating`), which gives the formula in
+Stichtenoth's form (`TauCeti.Place.residue_eq_residue_mul_derivativeOfSeparating`).
 
 The formula holds in every characteristic. Both sides are `k`-linear in `z` and vanish on
 functions integral at `P`, so it suffices to compare them on the negative powers `s ^ j`. There

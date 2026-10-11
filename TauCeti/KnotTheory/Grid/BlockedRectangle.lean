@@ -117,7 +117,7 @@ theorem exists_swapColumns_of_fullyBlockedRectangleCount_ne_zero
     intro hc
     rw [hc] at h
     simp at h
-  obtain ⟨R, hR⟩ := Finset.card_ne_zero.mp hcard
+  obtain ⟨R, _⟩ := Finset.card_ne_zero.mp hcard
   exact ⟨R.left, R.right, R.left_ne_right, R.target_eq_swapColumns⟩
 
 /-- The set of fully blocked rectangles from a grid state to itself is empty. -/

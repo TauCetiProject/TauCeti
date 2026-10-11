@@ -293,6 +293,21 @@ theorem HasWeakFDerivOn.mono {U : E → E →L[ℝ] F} {Ω' : Opens E} (h : HasW
 theorem HasWeakFDerivOn.hasWeakLineDerivOn {U : E → E →L[ℝ] F} (h : HasWeakFDerivOn μ Ω u U)
     (v : E) : HasWeakLineDerivOn μ Ω u (fun x => U x v) v := h v
 
+/-- Integration by parts on the whole space against every `C¹` function with compact support
+makes `U` a weak derivative of `u` on every open set. This is how a function with an integrable
+singularity, such as a fundamental solution, is shown to be weakly differentiable. -/
+theorem hasWeakFDerivOn_of_forall_integral_fderiv_smul [CompleteSpace F] {U : E → E →L[ℝ] F}
+    (hu : LocallyIntegrable u μ) (hU : LocallyIntegrable U μ)
+    (h : ∀ g : E → ℝ, ContDiff ℝ 1 g → HasCompactSupport g → ∀ v,
+      ∫ x, fderiv ℝ g x v • u x ∂μ = -∫ x, g x • U x v ∂μ) (Ω : Opens E) :
+    HasWeakFDerivOn μ Ω u U := by
+  refine fun v ↦ ⟨inferInstance, hu.locallyIntegrableOn _, ?_, fun φ ↦ ?_⟩
+  · simpa [Function.comp_def] using (ContinuousLinearMap.apply ℝ F v).locallyIntegrableOn_comp
+      (hU.locallyIntegrableOn Ω)
+  have hφ : ContDiff ℝ 1 (φ : E → ℝ) := φ.contDiff.of_le (by simp)
+  simp_rw [((hφ.differentiable one_ne_zero) _).lineDeriv_eq_fderiv]
+  exact h φ hφ φ.hasCompactSupport v
+
 /-- The zero function has weak derivative `0` in every direction, for every `μ`: no translation
 invariance is needed, since both sides of the defining identity vanish. Completeness of `F` is
 assumed because it is part of `TauCeti.HasWeakLineDerivOn`. This is the zero of the vector space

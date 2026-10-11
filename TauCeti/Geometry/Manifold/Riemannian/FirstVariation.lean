@@ -254,7 +254,7 @@ theorem hasDerivAt_energy {a b : ℝ}
     rw [energy_def]
     congr 1
     exact intervalIntegral.integral_congr fun t ht ↦ (hGeq hs (hV ht)).symm
-  obtain ⟨hG'int, hGderiv⟩ := TauCeti.hasDerivAt_intervalIntegral_of_contDiffOn hUVo hG
+  obtain ⟨_, hGderiv⟩ := TauCeti.hasDerivAt_intervalIntegral_of_contDiffOn hUVo hG
     (prod_mono (singleton_subset_iff.mpr h0U) hV)
   have hmain : HasDerivAt (fun s ↦ energy I (F s) a b)
       ((∫ t in a..b, fderiv ℝ G (0, t) (1, 0)) / 2) 0 :=

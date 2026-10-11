@@ -155,10 +155,8 @@ private theorem orbit_eq_preimage_rootSet_minpoly_aux {L : Type w} [Field L] [Al
     MulAction.orbit p.Gal x = Subtype.val ⁻¹' (minpoly F (x : L)).rootSet L := by
   have hint : IsIntegral F (x : L) := (isAlgebraic_of_mem_rootSet x.2).isIntegral
   ext y
-  rw [Set.mem_preimage, mem_rootSet, horbit y x]
-  refine ⟨fun h => ⟨minpoly.ne_zero hint, h ▸ minpoly.aeval F (y : L)⟩, fun h => ?_⟩
-  exact (minpoly.eq_of_irreducible_of_monic (minpoly.irreducible hint) h.2
-    (minpoly.monic hint)).symm
+  rw [Set.mem_preimage, (minpoly.monic hint).mem_rootSet, horbit y x, eq_comm,
+    minpoly.eq_iff_aeval_minpoly_eq_zero hint]
 
 -- The image description, from the preimage one and `minpoly F x ∣ p`.
 private theorem image_val_orbit_eq_rootSet_minpoly_aux {L : Type w} [Field L] [Algebra F L]
@@ -318,10 +316,8 @@ distinct type with its own action, so the instance is restated here; it is what 
 `IsGaloisGroup` form of the Galois correspondence, and the fixed-field lemmas that come with it,
 apply to the polynomial Galois group. -/
 instance galIsGaloisGroup [IsGalois F p.SplittingField] :
-    IsGaloisGroup p.Gal F p.SplittingField where
-  faithful := ⟨fun {σ τ} h ↦ @Gal.ext F _ p σ τ fun y _ ↦ h y⟩
-  commutes := inferInstance
-  isInvariant := ⟨fun y hy ↦ (IsGalois.mem_range_algebraMap_iff_fixed y).2 fun σ ↦ hy σ⟩
+    IsGaloisGroup p.Gal F p.SplittingField :=
+  inferInstanceAs (IsGaloisGroup (p.SplittingField ≃ₐ[F] p.SplittingField) F p.SplittingField)
 
 /-- The Galois action on the roots in the splitting field is the action by evaluation. -/
 @[simp]

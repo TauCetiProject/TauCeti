@@ -356,7 +356,7 @@ Every finite acyclic quiver has such an ordering, by
 `TauCeti.Quiver.IsAcyclic.exists_isSinkAdmissible`; the ordering is an argument rather than a
 choice, since the Coxeter transformation it realizes on dimension vectors,
 `TauCeti.vertexPreReflectionList`, depends on it. -/
-noncomputable def coxeterFunctor (k : Type u) {V : Type v} [fld : Field k] [fV : Fintype V]
+noncomputable def coxeterFunctor (k : Type u) {V : Type v} [fld : Field k] [Fintype V]
     (q : _root_.Quiver.{w} V) (hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b))
     {l : List V} (hnd : l.Nodup) (hall : ∀ v : V, v ∈ l)
     (hl : Quiver.IsSinkAdmissible q l) :

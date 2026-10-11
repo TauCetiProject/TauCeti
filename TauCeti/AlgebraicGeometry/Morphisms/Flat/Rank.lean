@@ -9,7 +9,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 public import TauCeti.RingTheory.Flat.Rank
 
 /-!
-# The rank of finite flat morphisms under composition
+# The rank of finite flat morphisms
 
 The rank `Scheme.Hom.finrank` of a finite flat morphism is invariant under isomorphisms over its
 base. This packages Mathlib's `Scheme.Hom.finrank_comp_left_of_isIso` for objects of `Over S`.
@@ -26,6 +26,9 @@ since the points of `Y` over a given point of `S` can carry different ranks of `
 affine base this is `TauCeti.Module.rankAtStalk_eq_mul_of_rankAtStalk_eq`, and the general case
 reduces to it because the rank is computed after base change to affine opens of `S`.
 
+The rank is at least `1` at the points of the image (Mathlib's `Scheme.Hom.one_le_finrank_map`)
+and is `0` at every other point (`AlgebraicGeometry.Scheme.Hom.finrank_eq_zero_iff_notMem_range`).
+
 ## Main results
 
 * `TauCeti.finrank_eq_of_nonempty_iso_over`: isomorphic schemes over `S` have the same rank.
@@ -33,6 +36,8 @@ reduces to it because the rank is computed after base change to affine opens of 
   rank of `f` at `y`, for an isomorphism `e`.
 * `AlgebraicGeometry.Scheme.Hom.finrank_comp`: the rank of a composite whose first factor has
   constant rank.
+* `AlgebraicGeometry.Scheme.Hom.finrank_eq_zero_iff_notMem_range`: the rank vanishes exactly at
+  the points outside the image.
 
 ## Usage
 
@@ -75,6 +80,30 @@ rank of `f ≫ e` at `e y` is the rank of `f` at `y`. -/
 theorem Scheme.Hom.finrank_comp_right_of_isIso (f : X ⟶ Y) (e : Y ⟶ S) [IsIso e] [Flat f]
     [IsFinite f] (y : Y) : (f ≫ e).finrank (e y) = f.finrank y :=
   (finrank_of_isPullback (𝟙 X) f (f ≫ e) e (.of_horiz_isIso ⟨by simp⟩) y).symm
+
+/-- **The rank vanishes exactly off the image.** A finite flat morphism `f : X ⟶ Y` has rank `0`
+at `y` if and only if `y` is not in the image of `f`. -/
+theorem Scheme.Hom.finrank_eq_zero_iff_notMem_range (f : X ⟶ Y) [Flat f] [IsFinite f] (y : Y) :
+    f.finrank y = 0 ↔ y ∉ Set.range f := by
+  refine ⟨fun h ⟨x, hx⟩ ↦ by simpa [hx, h] using f.one_le_finrank_map x, fun hy ↦ ?_⟩
+  -- Reduce to an affine target, then to an affine source, as for `one_le_finrank_map`.
+  wlog hY : ∃ R, Y = Spec R generalizing X Y
+  · obtain ⟨R, g, _, z, rfl⟩ := Y.exists_Spec_apply_eq y
+    rw [← finrank_pullback_snd]
+    refine this _ z (fun ⟨w, hw⟩ ↦ hy ⟨pullback.fst f g w, ?_⟩) ⟨R, rfl⟩
+    rw [← Scheme.Hom.comp_apply, pullback.condition, Scheme.Hom.comp_apply, hw]
+  obtain ⟨R, rfl⟩ := hY
+  wlog hX : ∃ A, X = Spec A generalizing X with H
+  · have : IsAffine X := isAffine_of_isAffineHom f
+    rw [← finrank_comp_left_of_isIso X.isoSpec.inv]
+    exact H _ (fun ⟨x, hx⟩ ↦ hy ⟨X.isoSpec.inv x, hx⟩) ⟨_, rfl⟩
+  obtain ⟨A, rfl⟩ := hX
+  obtain ⟨φ, rfl⟩ := Spec.map_surjective f
+  simp only [IsFinite.SpecMap_iff, Flat.SpecMap_iff] at *
+  rw [finrank_SpecMap_eq_finrank ‹_› ‹_›]
+  algebraize [φ.hom]
+  rw [← RingHom.algebraMap_toAlgebra φ.hom, RingHom.finrank_algebraMap, ← Nat.le_zero, ← not_lt]
+  exact fun h ↦ hy ((PrimeSpectrum.rankAtStalk_pos_iff_mem_range_comap _).mp h)
 
 /-- **The rank is multiplicative in towers.** If `f : X ⟶ Y` and `g : Y ⟶ S` are finite and flat
 and `f` has constant rank `n`, then the rank of `f ≫ g` is `n` times the rank of `g`. -/

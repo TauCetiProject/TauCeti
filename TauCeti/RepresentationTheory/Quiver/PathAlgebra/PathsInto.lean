@@ -285,7 +285,7 @@ theorem exists_eq_sum_ofArrow_mul [Fintype R] [∀ a b : R, Fintype (a ⟶ b)] {
         fun i b' => ?_, ?_⟩
       · dsimp only
         split_ifs with h
-        · obtain ⟨rfl, h⟩ := Sigma.mk.inj h
+        · obtain ⟨rfl, _⟩ := Sigma.mk.inj h
           exact ofPath_mem_pathsInto_of_length q hp
         · exact zero_mem _
       · dsimp only

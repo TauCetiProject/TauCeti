@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.AdjointAction.Frobenius
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Augmentation
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Augmentation.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Functoriality
 public import TauCeti.LinearAlgebra.Finsupp.LinearCombination
 

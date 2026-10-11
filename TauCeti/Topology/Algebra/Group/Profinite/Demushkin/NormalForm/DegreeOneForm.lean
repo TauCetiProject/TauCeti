@@ -201,7 +201,6 @@ private theorem interleave_bijective {m : ℕ} (hn : n = 2 * m) :
 private theorem J_interleave {m : ℕ} (hn : n = 2 * m) {i j : Fin n} (hij : i < j) :
     Matrix.J (Fin m) (ZMod p) (interleave hn i) (interleave hn j) =
       if (i : ℕ) % 2 = 0 ∧ (j : ℕ) = i + 1 then 1 else 0 := by
-  have hij' : (i : ℕ) < j := hij
   unfold interleave
   split_ifs with hi hj hj h h h h <;>
     simp [Matrix.J, Matrix.fromBlocks, Matrix.one_apply, Fin.ext_iff] <;> omega

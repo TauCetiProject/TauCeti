@@ -126,14 +126,7 @@ theorem mem_initialPentagonInitialSelfPairs_of_left_eq_right
   -- Recutting the recut returns `D`, which does not start on the replaced line; this fixes the
   -- column order of the recut.
   have hEcol : E.first.right ∈ Grid.cIoo E.second.left E.second.right := by
-    have hdata : E.IsRecutOfLeftEqLeft D.toGridRectangleDecomposition := by
-      rcases hback.orientation with h | h | h | h
-      · exact h
-      · refine absurd ?_ (E.sideColumns_ne_of_hasOneCommonSide hEone)
-        rw [GridRectangleBetween.sideColumns, GridRectangleBetween.sideColumns, hEcommon,
-          h.side_eq]
-      · exact absurd (hEcommon.symm.trans h.side_eq) E.second.left_ne_right
-      · exact absurd (h.side_eq.trans hEcommon.symm) E.first.left_ne_right.symm
+    have hdata := hback.isRecutOfLeftEqLeft hEone hEcommon
     rcases hdata.recut_branch with ⟨hcol, -⟩ | ⟨-, -, hleft, -⟩
     · rwa [← hEcommon]
     · exact absurd (hcommon.symm.trans (hleft.trans hEfirstLeft)) D.second.left_ne_right.symm

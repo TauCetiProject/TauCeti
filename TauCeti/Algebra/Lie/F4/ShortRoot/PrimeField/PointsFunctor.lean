@@ -79,7 +79,7 @@ theorem points_eq_hopfIdealPointsSubgroup (A : Type v) [CommRing A] [Algebra (ZM
 
 /-- A matrix is a point of the carrier over `𝔽₂` exactly when its associated convolution point
 kills the carrier's defining Hopf ideal. -/
-@[simp]
+-- Not `@[simp]`: rewriting membership into this raw condition defeats the membership lemmas.
 theorem mem_points_iff (A : Type v) [CommRing A] [Algebra (ZMod 2) A]
     (g : _root_.Matrix.GeneralLinearGroup (Fin 26) A) :
     g ∈ points A ↔ ∀ x ∈ definingIdeal,
@@ -302,9 +302,9 @@ theorem pointsMap_rootSubgroupPoints {A : Type v} {B : Type w}
       Multiplicative.ofAdd (f (Multiplicative.toAdd u)) := rfl
   rw [← hparam]
   simpa only [coe_pointsMap, coe_rootSubgroupPoints, AlgHom.toRingHom_eq_coe,
-    _root_.TauCeti.F4ShortRoot.coe_pointsMap] using
+    ↓_root_.TauCeti.GeneralLinear.IntegralPointsPresentation.coe_map] using
     congrArg Subtype.val
-      (_root_.TauCeti.F4ShortRoot.pointsMap_rootSubgroupPoints f.toRingHom k u)
+      (_root_.TauCeti.F4ShortRoot.map_rootSubgroupPoints f.toRingHom k u)
 
 /-- The induced map carries a weight-torus point coordinatewise along the algebra homomorphism. -/
 @[simp]
@@ -318,9 +318,9 @@ theorem pointsMap_weightTorusPoints {A : Type v} {B : Type w}
       fun i ↦ Units.map (f : A →* B) (s i) := rfl
   rw [← hparam]
   simpa only [coe_pointsMap, coe_weightTorusPoints, AlgHom.toRingHom_eq_coe,
-    _root_.TauCeti.F4ShortRoot.coe_pointsMap] using
+    ↓_root_.TauCeti.GeneralLinear.IntegralPointsPresentation.coe_map] using
     congrArg Subtype.val
-      (_root_.TauCeti.F4ShortRoot.pointsMap_weightTorusPoints f.toRingHom s)
+      (_root_.TauCeti.F4ShortRoot.map_weightTorusPoints f.toRingHom s)
 
 local notation "𝔽₂" => ZMod 2
 local notation "H₂₆" => GeneralLinear.coordinateHopfAlgebra 𝔽₂ 26

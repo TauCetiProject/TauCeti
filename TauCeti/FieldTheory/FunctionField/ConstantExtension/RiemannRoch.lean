@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Algebraic
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.IntegralBasis
 public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Conorm
 
@@ -32,6 +33,9 @@ genus, the Riemann–Roch theorem and its consequences between `F / k` and `F' /
 * `TauCeti.riemannRochSpace_conorm_eq_span`: `L(Con D)` is the `k'`-span of the image of `L(D)`.
 * `TauCeti.riemannRochSpaceConormBasis`: a `k`-basis of `L(D)` as a `k'`-basis of `L(Con D)`.
 * `TauCeti.Divisor.dim_conorm`: `ℓ(Con D) = ℓ(D)`.
+* `TauCeti.Divisor.finrank_mul_dim_le_finrank_mul_dim_conorm`: for an arbitrary finite constant
+  field extension, separable or not and over any constant field, the inequality
+  `[F' : F] · ℓ(D) ≤ [k' : k] · ℓ(Con D)`.
 
 ## Reference
 
@@ -163,5 +167,34 @@ theorem Divisor.dim_conorm (hex : IsIntegrallyClosedIn k F) (h : constantComposi
     Module.finrank_eq_nat_card_basis
       (riemannRochSpaceConormBasis hex h hF' D (Basis.ofVectorSpace k (riemannRochSpace D))),
     Module.finrank_eq_nat_card_basis (Basis.ofVectorSpace k (riemannRochSpace D))]
+
+/-! ### Arbitrary finite constant field extensions -/
+
+omit [Algebra.IsSeparable k k'] in
+/-- **`ℓ(D)` against `ℓ(Con D)` for an arbitrary finite constant field extension**: if
+`F' = F · k'` for a finite extension `k' / k`, then `[F' : F] · ℓ(D) ≤ [k' : k] · ℓ(Con D)` for
+every divisor `D` of `F / k`.  Neither exactness of `k` in `F` nor separability of `k' / k` is
+assumed.
+
+For a separable `k' / k` over an exact constant field, `[F' : F] = [k' : k]` and the sharper
+`TauCeti.Divisor.dim_conorm` gives `ℓ(Con D) = ℓ(D)`. -/
+theorem Divisor.finrank_mul_dim_le_finrank_mul_dim_conorm [FiniteDimensional k k']
+    (hF : IsFunctionField k F) (h : constantCompositum F k' F' = ⊤) (D : Divisor k F) :
+    Module.finrank F F' * D.dim ≤ Module.finrank k k' * (Divisor.conorm k' F' D).dim := by
+  have hF' : IsFunctionField k' F' := hF.of_constantCompositum_eq_top h
+  -- constants `c j` forming an `F`-basis of `F'`, extracted from the image of a basis of `k'`
+  let b := Module.finBasis k k'
+  obtain ⟨κ, a, ha, hspan, hc⟩ := exists_linearIndependent' F (algebraMap k' F' ∘ b)
+  have : Finite κ := Finite.of_injective a ha
+  let : Fintype κ := Fintype.ofFinite κ
+  have hκ : Fintype.card κ = Module.finrank F F' := by
+    rw [← finrank_span_eq_card hc, hspan,
+      span_range_algebraMap_comp_of_constantCompositum_eq_top h b, finrank_top]
+  -- constants have no poles
+  have hc0 (j : κ) : (algebraMap k' F' ∘ b ∘ a) j ∈ riemannRochSpace (0 : Divisor k' F') := by
+    rw [Function.comp_apply, Algebra.algebraMap_eq_smul_one]
+    exact Submodule.smul_mem _ _ (mem_riemannRochSpace_iff.2 fun P ↦ by simp)
+  have hdim := Divisor.card_mul_dim_le_finrank_mul_dim_conorm_add hF' hc hc0 D
+  rwa [add_zero, hκ] at hdim
 
 end TauCeti

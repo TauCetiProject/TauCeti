@@ -36,7 +36,7 @@ theorem exists_isOpen_inter_eq_of_notMem_closure {X : Type*} [TopologicalSpace X
   refine ⟨V \ closure (Z \ K), hV.sdiff isClosed_closure,
     fun x hx => ⟨hKV hx, hK x hx⟩, Set.sdiff_subset, ?_⟩
   refine Set.Subset.antisymm ?_ fun z hz => ⟨⟨hKV hz.1, hK z hz.1⟩, hz.2⟩
-  rintro z ⟨⟨hzV, hznc⟩, hzZ⟩
+  rintro z ⟨⟨_, hznc⟩, hzZ⟩
   refine ⟨?_, hzZ⟩
   by_contra hzK
   exact hznc (subset_closure ⟨hzZ, hzK⟩)

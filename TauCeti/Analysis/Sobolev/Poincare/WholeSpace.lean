@@ -111,7 +111,7 @@ theorem not_exists_eLpNorm_le_const_mul_eLpNorm_fderiv {p : ℝ≥0∞} (hp₀ :
   rintro ⟨C, hC⟩
   -- Fix one bump function; every dilate of it is an admissible test function.
   set φ : ContDiffBump (0 : E) := ⟨1, 2, one_pos, one_lt_two⟩
-  set D := eLpNorm (fderiv ℝ (φ : E → ℝ)) p μ with hD_def
+  set D := eLpNorm (fderiv ℝ (φ : E → ℝ)) p μ with _
   -- Its derivative is continuous with compact support, hence of finite seminorm.
   have hD : D ≠ ∞ :=
     (((φ.contDiff (n := 2)).continuous_fderiv (by norm_num)).memLp_of_hasCompactSupport

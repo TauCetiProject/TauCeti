@@ -108,7 +108,7 @@ theorem integral_empiricalMeasureOfFintype [NormedAddCommGroup E] [NormedSpace �
     congr 1
     rw [ENNReal.toReal_inv]
     norm_cast
-  · intro i hi
+  · intro i _
     exact (integrable_dirac' hf (by simp)).smul_measure (by simp)
 
 /-- The Lebesgue integral against a finite empirical population is the average of the values. -/
@@ -159,9 +159,9 @@ theorem empiricalMeasure_apply_toReal {x : ℕ → α} {n : ℕ} {s : Set α} (h
   · rw [ENNReal.toReal_natCast, ENNReal.toReal_sum]
     · congr 1
       apply Finset.sum_congr rfl
-      intro i hi
+      intro i _
       by_cases hxi : x i ∈ s <;> simp [hxi]
-    · intro i hi
+    · intro i _
       by_cases hxi : x i ∈ s <;> simp [hxi]
 
 omit [MeasurableSpace Ω] in
@@ -173,7 +173,7 @@ theorem empiricalMeasure_process_apply_toReal {X : ℕ → Ω → α} {ω : Ω} 
   rw [empiricalMeasure_apply_toReal hs]
   refine congrArg (fun z : ℝ => ((n + 1 : ℕ) : ℝ)⁻¹ * z) ?_
   apply Finset.sum_congr rfl
-  intro i hi
+  intro i _
   by_cases hxi : X i ω ∈ s <;> simp [hxi]
 
 /-- Integrating against an empirical measure is averaging over the sampled values. -/
@@ -187,7 +187,7 @@ theorem integral_empiricalMeasure [NormedAddCommGroup E] [NormedSpace ℝ E] [Co
     congr 1
     rw [ENNReal.toReal_inv]
     norm_cast
-  · intro i hi
+  · intro i _
     exact (integrable_dirac' hf (by simp)).smul_measure (by simp)
 
 /-- The Lebesgue integral against an empirical measure is the average of the sampled values. -/
