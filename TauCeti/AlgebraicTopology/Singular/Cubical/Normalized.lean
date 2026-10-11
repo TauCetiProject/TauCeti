@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Quotient.Basic
+public import Mathlib.LinearAlgebra.Finsupp.Supported
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Chains
 
 /-!
@@ -20,7 +21,8 @@ unnormalized cubical chains.  They form a subcomplex: on a cube `c` degenerate a
 Massey, *Singular Homology Theory*, Chapter II.
 
 Degenerate cubes are preserved by composition with a continuous map, so the push-forward descends
-to the quotient and the normalized chains are functorial.
+to the quotient and the normalized chains are functorial. An injective continuous map also
+reflects degeneracy, so its push-forward on normalized chains is injective.
 
 ## Main definitions
 
@@ -38,6 +40,8 @@ to the quotient and the normalized chains are functorial.
 * `TauCeti.CubicalChain.degenerate_zero`: there are no degenerate `0`-chains.
 * `TauCeti.NormalizedCubicalChain.boundary_boundary`: `∂ ∘ ∂ = 0` on normalized chains.
 * `TauCeti.NormalizedCubicalChain.map_boundary`: the boundary is natural.
+* `TauCeti.NormalizedCubicalChain.map_injective`: injective continuous maps induce injective
+  push-forwards, including all subspace inclusions.
 
 ## References
 
@@ -72,6 +76,21 @@ variable (X) in
 theorem degenerate_def (n : ℕ) : degenerate X R n =
     Submodule.span R {f | ∃ c : SingularCube X n, IsDegenerate c ∧ f = single c 1} :=
   (rfl)
+
+/-- Degenerate chains are precisely the chains supported on degenerate cubes. -/
+theorem degenerate_eq_supported (n : ℕ) :
+    degenerate X R n = Finsupp.supported R R {c : SingularCube X n | IsDegenerate c} := by
+  rw [degenerate_def, Finsupp.supported_eq_span_single]
+  congr 1
+  ext g
+  simp only [Set.mem_ofPred_eq, Set.mem_image, eq_comm]
+
+/-- A chain is degenerate exactly when its coefficient at every nondegenerate cube vanishes. -/
+@[simp]
+theorem mem_degenerate_iff {n : ℕ} (g : CubicalChain X R n) :
+    g ∈ degenerate X R n ↔ ∀ c, ¬ IsDegenerate c → g c = 0 := by
+  rw [degenerate_eq_supported, Finsupp.mem_supported']
+  rfl
 
 /-- **Induction on degenerate chains**: a property of chains which holds for `0` and for the chain
 of each degenerate cube, and is stable under sums and scalar multiples, holds for every degenerate
@@ -112,6 +131,17 @@ theorem map_mem_degenerate (f : C(X, Y)) {n : ℕ} {g : CubicalChain X R n}
   | zero => simp
   | add g h _ _ hg hh => rw [map_add]; exact Submodule.add_mem _ hg hh
   | smul a g _ hg => rw [map_smul]; exact Submodule.smul_mem _ a hg
+
+/-- Pushing forward along an injective continuous map reflects degenerate chains. -/
+theorem map_mem_degenerate_iff_of_injective (f : C(X, Y)) (hf : Function.Injective f)
+    {n : ℕ} (g : CubicalChain X R n) :
+    map R f n g ∈ degenerate Y R n ↔ g ∈ degenerate X R n := by
+  refine ⟨fun hg ↦ ?_, map_mem_degenerate R f⟩
+  rw [mem_degenerate_iff] at hg ⊢
+  intro c hc
+  have hzero := hg (f.comp c) (by
+    rwa [isDegenerate_comp_iff_of_injective f hf])
+  rwa [map_apply_comp_of_injective R f hf] at hzero
 
 private theorem degenerate_le_comap_map (f : C(X, Y)) (n : ℕ) :
     degenerate X R n ≤ (degenerate Y R n).comap (map R f n) :=
@@ -240,6 +270,16 @@ theorem map_comp (g : C(Y, Z)) (f : C(X, Y)) (n : ℕ) :
   exact Submodule.mapQ_comp _ _ _ _ _ (degenerate_le_comap_map R f n)
     (degenerate_le_comap_map R g n)
 
+/-- Normalization preserves injectivity of a map of spaces. No embedding hypothesis is needed. -/
+theorem map_injective (f : C(X, Y)) (hf : Function.Injective f) (n : ℕ) :
+    Function.Injective (map R f n) := by
+  rw [← LinearMap.ker_eq_bot, map, Submodule.ker_mapQ]
+  have hcomap : (CubicalChain.degenerate Y R n).comap (CubicalChain.map R f n) =
+      CubicalChain.degenerate X R n := by
+    ext g
+    exact CubicalChain.map_mem_degenerate_iff_of_injective R f hf g
+  rw [hcomap, Submodule.mkQ_map_self]
+
 /-- The boundary is natural. -/
 theorem map_boundary (f : C(X, Y)) (n : ℕ) :
     map R f n ∘ₗ boundary X R n = boundary Y R n ∘ₗ map R f (n + 1) := by
@@ -293,6 +333,23 @@ theorem heq_of_cast_eq {n m : ℕ} (h : n = m) {x : NormalizedCubicalChain X R n
   subst h
   rw [cast_rfl] at hxy
   exact heq_of_eq hxy
+
+/-- A constant map induces zero on positive-dimensional normalized cubical chains. -/
+@[simp]
+theorem map_const_succ (y : Y) (n : ℕ) :
+    map (X := X) R (ContinuousMap.const X y) (n + 1) = 0 := by
+  refine LinearMap.ext fun c ↦ ?_
+  induction c using Submodule.Quotient.induction_on with
+  | H c =>
+    induction c using Finsupp.induction_linear with
+    | zero => simp
+    | add a b ha hb => simpa using congrArg₂ (· + ·) ha hb
+    | single c a =>
+      rw [map_mk, CubicalChain.map_single, LinearMap.zero_apply, Submodule.Quotient.mk_eq_zero]
+      apply CubicalChain.single_mem_degenerate
+      refine SingularCube.isDegenerate_iff.2 ⟨0, ?_⟩
+      rw [SingularCube.isDegenerateAt_iff]
+      simp
 
 end NormalizedCubicalChain
 

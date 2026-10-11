@@ -342,10 +342,10 @@ theorem symplecticDefiningHopfIdeal_le_definingIdeal :
     Symplectic.definingHopfIdeal ℤ (n + 1) ≤ definingIdeal n := by
   rw [definingIdeal_def, TauCeti.UniversalEnvelopingAlgebra.le_kostantToralDefiningIdeal_iff]
   refine ⟨fun k => ?_, ?_⟩
-  · exact ConstantForm.definingHopfIdeal_toIdeal_le_ker_of_map_genericMatrix_mul_mul_transpose
-      ℤ _ _ _ (rootCoordinateMap_symplectic n k)
-  · exact ConstantForm.definingHopfIdeal_toIdeal_le_ker_of_map_genericMatrix_mul_mul_transpose
-      ℤ _ _ _ (torusCoordinateMap_symplectic n)
+  · exact (ConstantForm.definingHopfIdeal_toIdeal_le_ker_iff ℤ _ _ _).2
+      (rootCoordinateMap_symplectic n k)
+  · exact (ConstantForm.definingHopfIdeal_toIdeal_le_ker_iff ℤ _ _ _).2
+      (torusCoordinateMap_symplectic n)
 
 /-- Every matrix-valued point of the full-weight type `C_(n+1)` carrier preserves the standard
 alternating form. -/

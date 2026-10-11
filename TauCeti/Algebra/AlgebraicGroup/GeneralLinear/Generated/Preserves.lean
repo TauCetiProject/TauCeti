@@ -116,9 +116,7 @@ theorem constantFormDefiningHopfIdeal_le_commonKernelHopfIdeal
         C.map (algebraMap R (K i))) :
     ConstantForm.definingHopfIdeal R n C ≤ CommHopfAlgCat.commonKernelHopfIdeal f := by
   rw [CommHopfAlgCat.le_commonKernelHopfIdeal_iff]
-  exact fun i =>
-    ConstantForm.definingHopfIdeal_toIdeal_le_ker_of_map_genericMatrix_mul_mul_transpose
-      R n C _ (hf i)
+  exact fun i => (ConstantForm.definingHopfIdeal_toIdeal_le_ker_iff R n C _).2 (hf i)
 
 /-- **Every matrix point of a generated subgroup scheme fixes by congruence a form fixed by the
 generic matrices of its generators.** -/

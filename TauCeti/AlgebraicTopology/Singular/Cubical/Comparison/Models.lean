@@ -5,15 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.SingularHomology.Basic
-public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
-public import TauCeti.AlgebraicTopology.Singular.Basic
-public import TauCeti.AlgebraicTopology.Singular.Contractible
-public import TauCeti.AlgebraicTopology.TopologicalSimplex
+public import TauCeti.AlgebraicTopology.Singular.ContractibleChains
 public import TauCeti.AlgebraicTopology.Singular.Cubical.ChainComplex
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Cone
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Normalization
-public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.AcyclicModels
+public import TauCeti.Algebra.Homology.AcyclicModels
 
 /-!
 # The models of the cubical–simplicial comparison
@@ -29,11 +25,8 @@ set.
 
 ## Main definitions
 
-* `TauCeti.singularChains k`: the simplicial singular chain complex functor with coefficients in
-  the ring `k`.
 * `TauCeti.singularModelBasis k`, `TauCeti.cubicalModelBasis k`: the two functors are free on
   models.
-* `TauCeti.singularAugment`: the augmentation of the simplicial singular chains.
 
 ## Main results
 
@@ -52,64 +45,6 @@ universe u
 namespace TauCeti
 
 variable (k : Type u) [Ring k]
-
-/-- The **simplicial singular chain complex** functor with coefficients in the ring `k`. -/
-abbrev singularChains : TopCat.{u} ⥤ ChainComplex (ModuleCat.{u} k) ℕ :=
-  (singularChainComplexFunctor (ModuleCat.{u} k)).obj (ModuleCat.of k k)
-
-/-- The topological `n`-simplex, the model of the simplicial singular chains in degree `n`. -/
-abbrev simplexModel (n : ℕ) : TopCat.{u} := SimplexCategory.toTop.{u}.obj ⦋n⦌
-
-/-- The identity singular simplex of the topological simplex. -/
-def idSimplex (n : ℕ) : (TopCat.toSSet.obj (simplexModel.{u} n)) _⦋n⦌ := ULift.up (𝟙 _)
-
-section Singular
-
-variable {k}
-
-/-- The chain of a singular simplex, with coefficient `a`. -/
-abbrev simplexChain {X : TopCat.{u}} {n : ℕ} (σ : (TopCat.toSSet.obj X) _⦋n⦌) (a : k) :
-    ((singularChains k).obj X).X n :=
-  (TopCat.toSSet.obj X).ιChainComplex (R := ModuleCat.of k k) σ a
-
-/-- Linear maps out of simplicial singular chains agree when they agree on simplices. -/
-theorem singularChains_linearMap_ext {X : TopCat.{u}} {n : ℕ} {V : Type u} [AddCommGroup V]
-    [Module k V] {L L' : ((singularChains k).obj X).X n →ₗ[k] V}
-    (h : ∀ σ, L (simplexChain σ 1) = L' (simplexChain σ 1)) : L = L' := by
-  have : ModuleCat.ofHom L = ModuleCat.ofHom L' := by
-    refine SSet.chainComplex_hom_ext fun σ ↦ ModuleCat.hom_ext (LinearMap.ext_ring ?_)
-    exact h σ
-  exact congrArg ModuleCat.Hom.hom this
-
-theorem simplexChain_eq_smul {X : TopCat.{u}} {n : ℕ} (σ : (TopCat.toSSet.obj X) _⦋n⦌) (a : k) :
-    simplexChain σ a = a • simplexChain σ 1 := by
-  calc simplexChain σ a = simplexChain σ (a • (1 : k)) := by rw [smul_eq_mul, mul_one]
-    _ = a • simplexChain σ 1 := map_smul _ a 1
-
-theorem singularChains_map_f_simplexChain {X Y : TopCat.{u}} (f : X ⟶ Y) {n : ℕ}
-    (σ : (TopCat.toSSet.obj X) _⦋n⦌) (a : k) :
-    ((singularChains k).map f).f n (simplexChain σ a) =
-      simplexChain ((TopCat.toSSet.map f).app _ σ) a := by
-  change (SSet.chainComplexMap (TopCat.toSSet.map f) (ModuleCat.of k k)).f n
-    ((TopCat.toSSet.obj X).ιChainComplex (R := ModuleCat.of k k) σ a) =
-      (TopCat.toSSet.obj Y).ιChainComplex (R := ModuleCat.of k k) _ a
-  rw [← ModuleCat.comp_apply, SSet.ι_chainComplexMap_f]
-
-/-- The underlying morphism of a pushed-forward singular simplex. -/
-@[simp]
-theorem toSSet_map_app_down {X Y : TopCat.{u}} (f : X ⟶ Y) {n : ℕ}
-    (σ : (TopCat.toSSet.obj X) _⦋n⦌) : ((TopCat.toSSet.map f).app _ σ).down = σ.down ≫ f := by
-  have := TauCeti.TopCat.simplexMap_app f σ
-  refine TopCat.ext fun x ↦ ?_
-  exact congrArg (fun g ↦ g x) this
-
-/-- A singular simplex is the push-forward of the identity simplex along itself. -/
-theorem toSSet_map_down_idSimplex {X : TopCat.{u}} {n : ℕ} (σ : (TopCat.toSSet.obj X) _⦋n⦌) :
-    (TopCat.toSSet.map σ.down).app _ (idSimplex n) = σ := by
-  refine ULift.ext ?_
-  rw [toSSet_map_app_down, idSimplex, Category.id_comp]
-
-end Singular
 
 /-- The coefficients of a simplicial singular chain on the maps from the topological simplex. -/
 def singularCoord (X : TopCat.{u}) (n : ℕ) :
@@ -231,20 +166,6 @@ instance (n : ℕ) : ContractibleSpace (cubeModel.{u} n) :=
 
 /-! ### Augmentations and acyclicity -/
 
-/-- The augmentation of the simplicial singular chains: the sum of the coefficients. -/
-def singularAugment (X : TopCat.{u}) : ((singularChains k).obj X).X 0 →ₗ[k] k :=
-  (Cofan.IsColimit.desc ((TopCat.toSSet.obj X).isColimitChainComplexXCofan (ModuleCat.of k k) 0)
-    (fun _ ↦ 𝟙 (ModuleCat.of k k))).hom
-
-variable {k} in
-@[simp]
-theorem singularAugment_simplexChain (X : TopCat.{u}) (σ : (TopCat.toSSet.obj X) _⦋0⦌)
-    (a : k) : singularAugment k X (simplexChain σ a) = a := by
-  have h := Cofan.IsColimit.fac ((TopCat.toSSet.obj X).isColimitChainComplexXCofan
-    (ModuleCat.of k k) 0) (fun _ ↦ 𝟙 (ModuleCat.of k k)) σ
-  simp only [SSet.chainComplexXCofan, Cofan.inj, Cofan.mk_ι_app] at h
-  exact congrArg (fun g ↦ g.hom a) h
-
 /-- The augmentation of the normalized cubical chains. -/
 abbrev cubicalAugment (X : TopCat.{u}) : ((normalizedCubicalChainComplex k).obj X).X 0 →ₗ[k] k :=
   NormalizedCubicalChain.augment X k
@@ -264,64 +185,36 @@ theorem isAcyclicOn_normalizedCubicalChainComplex (M : ℕ → TopCat.{u})
     obtain ⟨g, hg⟩ := NormalizedCubicalChain.exists_boundary_eq_of_augment_eq_zero k hz
     exact ⟨g, (normalizedCubicalChainComplex_obj_d_apply _ _ g).trans hg⟩
 
-/-- The positive-degree cycles of the simplicial singular chains of a contractible space are
-boundaries. -/
-theorem singularChains_exists_d_eq_of_d_eq_zero (X : TopCat.{u}) [ContractibleSpace X] (q : ℕ)
-    (z : ((singularChains k).obj X).X (q + 1))
-    (hz : ((singularChains k).obj X).d (q + 1) q z = 0) :
-    ∃ b, ((singularChains k).obj X).d (q + 2) (q + 1) b = z := by
-  have hzero := isZero_singularHomologyFunctor_of_contractibleSpace (C := ModuleCat.{u} k)
-    (ModuleCat.of k k) X (n := q + 1) (Nat.succ_ne_zero q)
-  have hexact : ((singularChains k).obj X).ExactAt (q + 1) :=
-    (HomologicalComplex.exactAt_iff_isZero_homology _ _).2 hzero
-  rw [HomologicalComplex.exactAt_iff' _ (q + 2) (q + 1) q (by simp) (by simp),
-    ShortComplex.moduleCat_exact_iff] at hexact
-  exact hexact z hz
-
-/-- In a connected simplicial set, the map from `0`-chains to the coproduct over the path
-components followed by the codiagonal is the augmentation, and the codiagonal is injective. -/
-private theorem singularAugment_eq_zero {X : TopCat.{u}} [PathConnectedSpace X]
-    {z : ((TopCat.toSSet.obj X).chainComplex (ModuleCat.of k k)).X 0}
-    (hz : singularAugment k X z = 0) :
-    SSet.π₀.fromChainComplexXZero (TopCat.toSSet.obj X) (ModuleCat.of k k) z = 0 := by
-  let D : (∐ fun _ : (TopCat.toSSet.obj X).π₀ ↦ ModuleCat.of k k) ⟶ ModuleCat.of k k :=
-    Sigma.desc fun _ ↦ 𝟙 _
-  have hD : SSet.π₀.fromChainComplexXZero (TopCat.toSSet.obj X) (ModuleCat.of k k) ≫ D =
-      ModuleCat.ofHom (singularAugment k X) := by
-    refine SSet.chainComplex_hom_ext fun σ ↦ ModuleCat.hom_ext (LinearMap.ext_ring ?_)
-    simp only [SSet.π₀.comp_fromChainComplexXZero_assoc, Sigma.ι_comp_desc, D]
-    exact (singularAugment_simplexChain X σ 1).symm
-  obtain ⟨c⟩ : Nonempty (TopCat.toSSet.obj X).π₀ := inferInstance
-  let ιc : ModuleCat.of k k ⟶ ∐ fun _ : (TopCat.toSSet.obj X).π₀ ↦ ModuleCat.of k k :=
-    Sigma.ι (fun _ : (TopCat.toSSet.obj X).π₀ ↦ ModuleCat.of k k) c
-  have hsec : D ≫ ιc = 𝟙 _ := by
-    refine Sigma.hom_ext _ _ fun c' ↦ ?_
-    obtain rfl : c = c' := Subsingleton.elim _ _
-    simp [D, ιc]
-  set w := SSet.π₀.fromChainComplexXZero (TopCat.toSSet.obj X) (ModuleCat.of k k) z
-  have h1 : D w = 0 := by
-    have := congrArg (fun g ↦ g.hom z) hD
-    simp only [ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply] at this
-    exact this.trans hz
-  calc w = (D ≫ ιc) w := by rw [hsec]; rfl
-    _ = 0 := by rw [ModuleCat.comp_apply, h1, map_zero]
-
-/-- A `0`-chain of augmentation zero of the simplicial singular chains of a path-connected space
-is a boundary. -/
-theorem singularChains_exists_d_eq_of_augment_eq_zero (X : TopCat.{u}) [PathConnectedSpace X]
-    (z : ((singularChains k).obj X).X 0) (hz : singularAugment k X z = 0) :
-    ∃ b, ((singularChains k).obj X).d 1 0 b = z := by
-  have hexact := ShortComplex.exact_of_g_is_cokernel
-    (ShortComplex.mk _ _ (SSet.π₀.d_fromChainComplexXZero (TopCat.toSSet.obj X)
-      (ModuleCat.of k k) 1))
-    (SSet.isColimitCokernelCoforkChainComplexDOneZero _ _)
-  rw [ShortComplex.moduleCat_exact_iff] at hexact
-  exact hexact z (singularAugment_eq_zero hz)
-
 /-- **The simplicial singular chains are acyclic on contractible models.** -/
 theorem isAcyclicOn_singularChains (M : ℕ → TopCat.{u}) [∀ n, ContractibleSpace (M n)] :
     AcyclicModels.IsAcyclicOn (singularChains k) M (singularAugment k) where
   exists_d_eq_of_d_eq_zero n q z hz := singularChains_exists_d_eq_of_d_eq_zero (M n) q z hz
   exists_d_eq_of_augment_eq_zero n z hz := singularChains_exists_d_eq_of_augment_eq_zero (M n) z hz
+
+variable (k) in
+/-- The simplicial singular chains are acyclic on the models of the normalized cubical chains. -/
+theorem isAcyclicOn_singularChains_cubicalModelBasis :
+    AcyclicModels.IsAcyclicOn (singularChains k) (cubicalModelBasis k).model (singularAugment k) :=
+  isAcyclicOn_singularChains cubeModel
+
+variable (k) in
+/-- The normalized cubical chains are acyclic on the models of the simplicial singular chains. -/
+theorem isAcyclicOn_normalizedCubicalChainComplex_singularModelBasis :
+    AcyclicModels.IsAcyclicOn (normalizedCubicalChainComplex k) (singularModelBasis k).model
+      (cubicalAugment k) :=
+  isAcyclicOn_normalizedCubicalChainComplex simplexModel
+
+variable (k) in
+/-- The simplicial singular chains are acyclic on their own models. -/
+theorem isAcyclicOn_singularChains_singularModelBasis :
+    AcyclicModels.IsAcyclicOn (singularChains k) (singularModelBasis k).model (singularAugment k) :=
+  isAcyclicOn_singularChains simplexModel
+
+variable (k) in
+/-- The normalized cubical chains are acyclic on their own models. -/
+theorem isAcyclicOn_normalizedCubicalChainComplex_cubicalModelBasis :
+    AcyclicModels.IsAcyclicOn (normalizedCubicalChainComplex k) (cubicalModelBasis k).model
+      (cubicalAugment k) :=
+  isAcyclicOn_normalizedCubicalChainComplex cubeModel
 
 end TauCeti

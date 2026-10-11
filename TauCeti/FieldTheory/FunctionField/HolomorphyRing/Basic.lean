@@ -56,7 +56,8 @@ None of it needs an exactness hypothesis on the constant field.
   functions of `𝒪_S` are all regular at `P` exactly when `P ∈ S`, so `S` is recovered from
   `𝒪_S` and the two constructions are mutually inverse.
 * `TauCeti.isFractionRing_holomorphyRing`: `F` is the field of fractions of `𝒪_S` as soon as
-  some place lies outside `S`.
+  some place lies outside `S`; in particular (`TauCeti.isFractionRing_holomorphyRing_setOf_mem`)
+  of the ring of functions regular wherever a transcendental `x` is.
 * `TauCeti.exists_pow_mul_mem_holomorphyRing`: a function regular at every place of `S` at which
   `x⁻¹` is regular, for some `x ∈ 𝒪_S`, is made regular on all of `S` by a power of `x`.
 * `TauCeti.dvd_holomorphyRing_iff_forall_ord_le`: divisibility in `𝒪_S` is the pointwise
@@ -213,6 +214,16 @@ theorem isFractionRing_holomorphyRing (hF : IsFunctionField k F) {S : Set (Place
     · exact congrArg Subtype.val h
     · exact mul_comm z y
   exists_of_eq h := ⟨1, by simpa using Subtype.ext h⟩
+
+/-- **`F` is the field of fractions of `𝒪_x`**, the ring of functions regular wherever `x` is, for
+`x` transcendental over `k`: `x` has a pole, which lies outside the places at which `x` is
+regular. -/
+theorem isFractionRing_holomorphyRing_setOf_mem (hF : IsFunctionField k F) {x : F}
+    (hx : Transcendental k x) :
+    IsFractionRing ↥(holomorphyRing {P : Place k F | x ∈ P.integers}) F := by
+  obtain ⟨P, hP⟩ := Place.exists_ord_neg hF hx
+  exact isFractionRing_holomorphyRing hF
+    ⟨P, fun h ↦ (P.mem_integers_iff_ord_nonneg.mp h).not_gt hP⟩
 
 /-! ### Clearing poles by a power of a function -/
 

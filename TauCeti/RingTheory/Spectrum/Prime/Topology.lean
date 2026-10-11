@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
 
 /-!
-# Dominance, injectivity and density on prime spectra
+# Dominance, injectivity, density and the Jacobson radical on prime spectra
 
 An injective homomorphism of commutative semirings induces a dense map on prime spectra.
 For a reduced source ring, the converse holds. These facts supply the coordinate-ring criterion for
@@ -17,6 +17,12 @@ dominance used in dominant affine group quotients.
 A subset of the prime spectrum containing every minimal prime is dense. This is how
 generic properties, such as freeness of a module at the minimal primes of a reduced ring, are
 turned into dense subsets of the spectrum.
+
+An open subset of the prime spectrum of a commutative ring containing the zero locus of an ideal
+contained in the Jacobson radical is the whole spectrum: every prime ideal is contained in a
+maximal ideal, which is a point of that zero locus, and an open set contains every point that
+specializes to one of its points. For the maximal ideal of a local ring, whose zero locus is the
+closed point, this is Mathlib's `IsLocalRing.closedPoint_mem_iff`.
 -/
 
 public section
@@ -54,5 +60,23 @@ theorem dense_of_forall_mem_minimalPrimes {s : Set (PrimeSpectrum R)}
   obtain ⟨q, hq, hqx⟩ := Ideal.exists_minimalPrimes_le (J := x.asIdeal) bot_le
   have hspec : (⟨q, hq.1.1⟩ : PrimeSpectrum R) ⤳ x := (le_iff_specializes _ _).mp hqx
   exact ⟨_, hspec.mem_open hU hx, hs q hq⟩
+
+/-- For an ideal `I` of a commutative ring `S` contained in the Jacobson radical of `S`, an open
+subset of the prime spectrum of `S` contains the zero locus of `I` exactly when it is the whole
+spectrum. -/
+theorem zeroLocus_subset_iff_eq_top_of_le_jacobson_bot {S : Type*} [CommRing S] {I : Ideal S}
+    (hI : I ≤ Ideal.jacobson ⊥) {U : TopologicalSpace.Opens (PrimeSpectrum S)} :
+    zeroLocus (I : Set S) ⊆ U ↔ U = ⊤ := by
+  refine ⟨fun hU ↦ TopologicalSpace.Opens.coe_eq_univ.mp (Set.eq_univ_of_forall fun x ↦ ?_),
+    fun hU ↦ ?_⟩
+  · -- `x` specializes to a closed point: a maximal ideal `m` containing the prime ideal `x`
+    obtain ⟨m, hm, hxm⟩ := x.asIdeal.exists_le_maximal x.isPrime.ne_top
+    refine ((le_iff_specializes x ⟨m, hm.isPrime⟩).mp ((asIdeal_le_asIdeal _ _).mp hxm)).mem_open
+      U.isOpen (hU ?_)
+    -- a maximal ideal contains the Jacobson radical, so `m` is a point of `V(I)`
+    rw [mem_zeroLocus, SetLike.coe_subset_coe]
+    exact hI.trans (Ideal.jacobson_bot.trans_le (Ring.jacobson_le_of_isMaximal m))
+  · rw [hU, TopologicalSpace.Opens.coe_top]
+    exact Set.subset_univ _
 
 end PrimeSpectrum
