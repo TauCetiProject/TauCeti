@@ -91,6 +91,9 @@ def zigzagBraidInverseTensorXMinusOneIso (i : V) : (T i).X (-1) ≅ U i where
   hom_inv_id := by
     apply HomologicalComplex.mapBifunctor.hom_ext
     intro p q hpq
+    -- `mapBifunctor.hom_ext` states the component index using the tensor complex's
+    -- `ComplexShape` predicate; unfold that predicate to its degree-sum equation before
+    -- solving for the supported bidegrees. Rewriting cannot use the sum until this reduction.
     change p + q = -1 at hpq
     by_cases hp : p = -1
     · subst p
@@ -144,6 +147,8 @@ def zigzagBraidInverseTensorXOneIso (i : V) : (T i).X 1 ≅
   hom_inv_id := by
     apply HomologicalComplex.mapBifunctor.hom_ext
     intro p q hpq
+    -- As above, reduce the tensor complex's `ComplexShape` predicate to its degree sum so
+    -- arithmetic can identify the supported bidegrees.
     change p + q = 1 at hpq
     by_cases hp : p = 0
     · subst p
@@ -177,6 +182,8 @@ theorem ιMapBifunctor_zigzagBraidInverseTensorXMinusOneIso_hom (i : V) :
       ((((F).flip.obj ((B' i).X 0)).mapIso (zigzagBraidComplexXIso₀ k G i) ≪≫
         ((F).obj (U i)).mapIso (zigzagBraidInverseComplexXIso₀ k G i)) ≪≫
           zigzagBimoduleRightUnitor k G (U i)).hom := by
+  -- The iso field in the conclusion is definitionally the descended map. Expose that field
+  -- and the private hom abbreviation; a rewrite cannot match through these reducible wrappers.
   change HomologicalComplex.ιMapBifunctor (B i) (B' i) F c (-1) 0 (-1) (by simp) ≫
       inverseTensorLeftHom k G i = (inverseTensorLeftIso k G i).hom
   simp only [inverseTensorLeftHom, HomologicalComplex.ι_mapBifunctorDesc,
@@ -190,6 +197,8 @@ theorem ιMapBifunctor_zigzagBraidInverseTensorXOneIso_hom (i : V) :
       ((((F).flip.obj ((B' i).X 1)).mapIso (zigzagBraidComplexXIso₁ k G i) ≪≫
         ((F).obj Z).mapIso (zigzagBraidInverseComplexXIso₁ k G i)) ≪≫
           zigzagBimoduleLeftUnitor k G ((GradedModuleCat.shiftFunctor (-2)).obj (U i))).hom := by
+  -- Reduce the iso field and private hom abbreviation so the supported component equation
+  -- can be discharged by the following simplification.
   change HomologicalComplex.ιMapBifunctor (B i) (B' i) F c 0 1 1 (by simp) ≫
       inverseTensorRightHom k G i = (inverseTensorRightIso k G i).hom
   simp only [inverseTensorRightHom, HomologicalComplex.ι_mapBifunctorDesc,
