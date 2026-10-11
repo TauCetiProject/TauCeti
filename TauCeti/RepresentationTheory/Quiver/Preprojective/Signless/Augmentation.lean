@@ -98,18 +98,12 @@ theorem signlessPreprojectiveAugmentation_eq_single [DecidableEq R] (v : R) {x :
 `x ∈ e_v Π` has vertex coefficient zero exactly when `x = ∑ b z_b` with `z_b ∈ e_i Π`.
 This holds without a non-backtracking choice or a bipartiteness hypothesis. -/
 theorem signlessPreprojectiveAugmentation_apply_eq_zero_iff_exists_eq_sum
-    [Fintype R] (v : R) {x : Π}
+    [Fintype R] (v : R) [∀ i : R, Fintype (i ⟶ v)] {x : Π}
     (hx : π (vertexIdempotent k v) * x = x) :
-    letI (i : R) : Fintype (i ⟶ v) :=
-      Fintype.ofInjective (fun e : i ⟶ v => (Quiver.Star.mk e : Quiver.Star i))
-        sigma_mk_injective
     signlessPreprojectiveAugmentation k x v = 0 ↔
       ∃ z : (i : R) → (i ⟶ v) → Π,
         (∀ i b, π (vertexIdempotent k i) * z i b = z i b) ∧
           x = ∑ i, ∑ b : i ⟶ v, π (ofArrow b) * z i b := by
-  let (i : R) : Fintype (i ⟶ v) :=
-    Fintype.ofInjective (fun e : i ⟶ v => (Quiver.Star.mk e : Quiver.Star i))
-      sigma_mk_injective
   simpa only [signlessPreprojectiveAugmentation, signlessPreprojectiveMk_apply] using
     quotientTrivialCoeff_apply_eq_zero_iff_exists_eq_sum
       ((signlessPreprojectiveIdeal_le_arrowIdeal_sq k).trans
