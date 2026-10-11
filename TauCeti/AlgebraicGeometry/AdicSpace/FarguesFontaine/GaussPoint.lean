@@ -133,31 +133,31 @@ theorem isRadiusUpperBound_gaussPoint_iff (hv : v.Integers O) (hρ : ρ < 1) (ϖ
 
 /-- **The lower radius bound on a Gauss point is a real ratio inequality.** When the coefficient
 norm of `ϖ` is positive and the Gauss radius lies in `(0, 1)`, the order-theoretic condition
-`q ≤ κ(η_ρ)` is equivalent to `q.num / q.den ≤ log(v(ϖ)) / log(ρ)`. This is the real-valued
+`q ≤ κ(η_ρ)` is equivalent to `(q : ℝ) ≤ log(v(ϖ)) / log(ρ)`. This is the real-valued
 form of the radius dictionary used for interval rings. -/
-@[simp]
 theorem isRadiusLowerBound_gaussPoint_iff_log (hv : v.Integers O) (hρ₀ : 0 < ρ) (hρ : ρ < 1)
     (ϖ : O) (hϖ₀ : 0 < v (algebraMap O K ϖ)) (q : ℚ≥0) :
     IsRadiusLowerBound p ϖ q (gaussPoint p hv ρ hρ) ↔
-      (q.num : ℝ) / q.den ≤ Real.log (v (algebraMap O K ϖ)) / Real.log (ρ : ℝ) := by
+      (q : ℝ) ≤ Real.log (v (algebraMap O K ϖ)) / Real.log (ρ : ℝ) := by
   rw [isRadiusLowerBound_gaussPoint_iff hv hρ ϖ q]
   rw [← NNReal.coe_le_coe]
   push_cast
-  exact Real.pow_le_pow_iff_log_ratio (by exact_mod_cast hϖ₀) (by exact_mod_cast hρ₀)
-    (by exact_mod_cast hρ) q.num q.den q.den_pos
+  simpa only [NNRat.cast_def] using
+    Real.pow_le_pow_iff_log_ratio (by exact_mod_cast hϖ₀) (by exact_mod_cast hρ₀)
+      (by exact_mod_cast hρ) q.num q.den q.den_pos
 
 /-- **The upper radius bound on a Gauss point is a real ratio inequality.** Under the same
 positivity hypotheses, `κ(η_ρ) ≤ q` is equivalent to
-`log(v(ϖ)) / log(ρ) ≤ q.num / q.den`. -/
-@[simp]
+`log(v(ϖ)) / log(ρ) ≤ (q : ℝ)`. -/
 theorem isRadiusUpperBound_gaussPoint_iff_log (hv : v.Integers O) (hρ₀ : 0 < ρ) (hρ : ρ < 1)
     (ϖ : O) (hϖ₀ : 0 < v (algebraMap O K ϖ)) (q : ℚ≥0) :
     IsRadiusUpperBound p ϖ q (gaussPoint p hv ρ hρ) ↔
-      Real.log (v (algebraMap O K ϖ)) / Real.log (ρ : ℝ) ≤ (q.num : ℝ) / q.den := by
+      Real.log (v (algebraMap O K ϖ)) / Real.log (ρ : ℝ) ≤ (q : ℝ) := by
   rw [isRadiusUpperBound_gaussPoint_iff hv hρ ϖ q]
   rw [← NNReal.coe_le_coe]
   push_cast
-  exact Real.pow_ge_pow_iff_log_ratio (by exact_mod_cast hϖ₀) (by exact_mod_cast hρ₀)
-    (by exact_mod_cast hρ) q.num q.den q.den_pos
+  simpa only [NNRat.cast_def] using
+    Real.pow_ge_pow_iff_log_ratio (by exact_mod_cast hϖ₀) (by exact_mod_cast hρ₀)
+      (by exact_mod_cast hρ) q.num q.den q.den_pos
 
 end TauCeti.FarguesFontaine
