@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Semigroups.Multiplication.Lp.Basic
 import TauCeti.Analysis.Semigroups.Generator.ExponentialShift
-import TauCeti.Analysis.Normed.Operator.Resolvent.Shift
+import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Shift
 import TauCeti.LinearAlgebra.LinearPMap.Basic
 
 /-!

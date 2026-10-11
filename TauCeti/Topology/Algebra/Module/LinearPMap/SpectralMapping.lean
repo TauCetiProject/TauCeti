@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent
+public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Basic
 public import Mathlib.Tactic.Module
 
 /-!
