@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Modules.Pullback.Monoidal
+public import TauCeti.AlgebraicGeometry.Modules.Pullback.Monoidal.Basic
 
 /-!
 # Pullback of internal Hom from a quasicoherent sheaf
