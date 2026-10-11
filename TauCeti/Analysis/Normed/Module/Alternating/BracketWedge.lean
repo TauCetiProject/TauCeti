@@ -11,9 +11,9 @@ import TauCeti.GroupTheory.Perm.Inversion
 /-!
 # Bracket wedges of continuous alternating maps
 
-This file specializes the paired wedge to a continuous skew-symmetric bracket. It provides the
-bracket-valued product, its graded skew-symmetry and its graded Jacobi identity, the algebraic
-laws of Lie-algebra-valued differential forms.
+This file specializes the paired wedge to a continuous bilinear bracket. It provides the
+bracket-valued product, its graded skew-symmetry when the bracket is skew-symmetric, and its
+graded Jacobi identity, the algebraic laws of Lie-algebra-valued differential forms.
 
 The bracket wedge is neither associative nor graded commutative. Its graded Jacobi identity
 `(-1)^{km} [[φ ∧ ψ] ∧ χ] + (-1)^{kl} [[ψ ∧ χ] ∧ φ] + (-1)^{lm} [[χ ∧ φ] ∧ ψ] = 0`

@@ -8,12 +8,13 @@ module
 public import Mathlib.GroupTheory.Perm.Fin
 
 /-!
-# The sign of a permutation of `Fin n` as the parity of its inversions
+# Signs of permutations, inversions, and signed-sum reindexing
 
 An *inversion* of `σ : Equiv.Perm (Fin n)` is a pair of indices `i < j` with `σ j < σ i`. The
 sign of `σ` is `(-1)` raised to the number of inversions. Mathlib exposes the sign as the product
 `Equiv.Perm.sign_eq_prod_prod_Ioi`; this file turns that product into the cardinality of the
-finite set of inversions, which is the form met by combinatorial permutation counts.
+finite set of inversions, which is the form met by combinatorial permutation counts. It also uses
+the sign of a block swap to reindex signed sums over permutations when rotating index blocks.
 
 ## Main results
 
@@ -21,6 +22,8 @@ finite set of inversions, which is the form met by combinatorial permutation cou
   `(-1)` to the number of its inversions.
 * `TauCeti.sign_finAddFlip_trans_finCongr`: the block swap of `Fin (m + n)`, which exchanges the
   first `m` indices with the last `n`, has sign `(-1) ^ (m * n)`.
+* `TauCeti.sum_sign_smul_permCongr_mul`: reindexing a signed sum over permutations along an
+  equivalence followed by right multiplication.
 * `TauCeti.sum_sign_smul_rotate_blocks`: reindexing a signed sum over permutations along a
   block swap moves the last block of `k` indices in front of the other `l + m` at the cost of
   the sign `(-1) ^ (k * (l + m))`; graded identities for iterated wedge products reorder their
@@ -112,6 +115,20 @@ preserving the order within each block, has sign `(-1) ^ (m * n)`: its inversion
 theorem sign_finAddFlip_trans_finCongr (m n : ℕ) :
     Equiv.Perm.sign (finAddFlip.trans (finCongr (add_comm n m))) = (-1) ^ (m * n) := by
   rw [sign_eq_neg_one_pow_card_inversion, card_inversion_finAddFlip_trans_finCongr]
+
+/-- Reindexing a signed sum over permutations by `τ ↦ c.permCongr τ * B` contributes the sign of
+`B`. -/
+theorem sum_sign_smul_permCongr_mul {a b : ℕ} {M : Type*} [AddCommGroup M]
+    (c : Fin a ≃ Fin b) (B : Equiv.Perm (Fin b)) (f : Equiv.Perm (Fin b) → M) :
+    ∑ τ : Equiv.Perm (Fin a), Equiv.Perm.sign τ • f (c.permCongr τ * B) =
+      Equiv.Perm.sign B • ∑ σ : Equiv.Perm (Fin b), Equiv.Perm.sign σ • f σ := by
+  rw [Finset.smul_sum]
+  refine Fintype.sum_equiv (c.permCongr.trans (Equiv.mulRight B)) _ _ fun τ => ?_
+  have hsign : Equiv.Perm.sign τ =
+      Equiv.Perm.sign B * Equiv.Perm.sign (c.permCongr τ * B) := by
+    rw [Equiv.Perm.sign_mul, Equiv.Perm.sign_permCongr, mul_comm, mul_assoc, ← sq]
+    simp [Int.units_sq]
+  simp only [Equiv.trans_apply, Equiv.coe_mulRight, hsign, mul_smul]
 
 open Equiv in
 /-- Rotating three blocks of indices in a signed sum over permutations: a summand reading its three
