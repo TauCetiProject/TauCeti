@@ -28,7 +28,7 @@ On a compact connected complex manifold, the constant-section map is an algebra
 isomorphism `ℂ ≃ₐ[ℂ] H⁰(X, 𝒪)`. The inverse is evaluation at any point, independently of
 which point is chosen. In particular, the space of global sections has dimension one.
 
-The function coercions and algebra instance use the object identification lemmas.
+The function coercions and algebra instance use the bundled analytic-map representation.
 Pointwise computation is provided by section evaluation lemmas.
 The sheaf of modules has exactly the same underlying presheaf of functions.
 Evaluation of germs gives a surjective ring homomorphism from each stalk to `ℂ`.
@@ -76,21 +76,19 @@ theorem obj_eq (U : (Opens (TopCat.of X))ᵒᵖ) :
     (holomorphicStructureSheaf I X).obj.obj U =
       CommRingCat.of C^ω⟮I, (unop U : Opens X); ℂ⟯ := (rfl)
 
--- Keep the transport behind a function so simp indexes section evaluation uniformly.
+-- Keep a named function so simp indexes section evaluation uniformly.
 /-- The function underlying a section of the structure sheaf. -/
-def toFun (U : (Opens (TopCat.of X))ᵒᵖ)
-    (f : (holomorphicStructureSheaf I X).obj.obj U) : ↥(unop U) → ℂ :=
-  (cast (congrArg (fun R : CommRingCat ↦ (R : Type _)) (obj_eq I X U)) f :
-    C^ω⟮I, (unop U : Opens X); ℂ⟯)
+def toFun (U : (Opens (TopCat.of X))ᵒᵖ) :
+    (holomorphicStructureSheaf I X).obj.obj U → ↥(unop U) → ℂ :=
+  (DFunLike.coe : C^ω⟮I, (unop U : Opens X); ℂ⟯ → ↥(unop U) → ℂ)
 
 instance (U : (Opens (TopCat.of X))ᵒᵖ) :
     CoeFun ((holomorphicStructureSheaf I X).obj.obj U) (fun _ ↦ ↥(unop U) → ℂ) where
   coe := toFun I X U
 
 instance (U : (Opens (TopCat.of X))ᵒᵖ) :
-    Algebra ℂ ((holomorphicStructureSheaf I X).obj.obj U) := by
-  rw [obj_eq]
-  infer_instance
+    Algebra ℂ ((holomorphicStructureSheaf I X).obj.obj U) :=
+  inferInstanceAs (Algebra ℂ C^ω⟮I, (unop U : Opens X); ℂ⟯)
 
 variable {I X}
 
@@ -152,22 +150,16 @@ theorem mdifferentiable {U : (Opens (TopCat.of X))ᵒᵖ}
     (f : (holomorphicStructureSheaf I X).obj.obj U) : MDifferentiable I 𝓘(ℂ) f :=
   (contMDiff f).mdifferentiable (by simp)
 
--- Concrete opens must use the section instances too, as they do in importing modules.
-attribute [local irreducible] holomorphicStructureSheaf
-
 /-- Complex analytic functions give sections of the structure sheaf for any complex model. -/
 def ofContMDiff {U : Opens X} (f : U → ℂ)
     (hf : ContMDiff I 𝓘(ℂ) ω f) :
-    (holomorphicStructureSheaf I X).obj.obj (op (α := Opens X) U) := by
-  unfold holomorphicStructureSheaf
-  exact ⟨f, hf⟩
+    (holomorphicStructureSheaf I X).obj.obj (op (α := Opens X) U) :=
+  (⟨f, hf⟩ : C^ω⟮I, U; ℂ⟯)
 
 @[simp]
 theorem ofContMDiff_apply {U : Opens X} (f : U → ℂ)
     (hf : ContMDiff I 𝓘(ℂ) ω f) (x : U) :
-    ofContMDiff f hf x = f x := by
-  -- Reduce the object transport while keeping the statement's section coercion.
-  with_unfolding_all rfl
+    ofContMDiff f hf x = f x := (rfl)
 
 /-- Holomorphic functions on a complex curve give sections of its structure sheaf. -/
 def ofMDifferentiable {X : Type} [TopologicalSpace X] [ChartedSpace ℂ X]
@@ -180,9 +172,6 @@ theorem ofMDifferentiable_apply {X : Type} [TopologicalSpace X] [ChartedSpace �
     [IsManifold 𝓘(ℂ) 1 X] {U : Opens X} (f : U → ℂ)
     (hf : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f) (x : U) :
     ofMDifferentiable f hf x = f x := ofContMDiff_apply f hf.contMDiff x
-
--- Allow the categorical constructions below to compute with section operations locally.
-attribute [local semireducible] holomorphicStructureSheaf
 
 open CategoryTheory.Limits
 
@@ -197,16 +186,10 @@ def evalAt (x : X) (U : OpenNhds (X := TopCat.of X) x) :
       map_zero' := zero_apply _
       map_add' := fun f g ↦ add_apply f g _ }
 
--- Keep computation lemmas on the public coercions, as in the constructors above.
-attribute [local irreducible] holomorphicStructureSheaf evalAt
-
 @[simp]
 theorem evalAt_apply (x : X) (U : OpenNhds (X := TopCat.of X) x)
     (f : (holomorphicStructureSheaf I X).obj.obj (op (α := Opens X) U.1)) :
-    evalAt I X x U f = toFun I X (op (α := Opens X) U.1) f ⟨x, U.2⟩ := (by
-  with_unfolding_all rfl)
-
-attribute [local semireducible] holomorphicStructureSheaf
+    evalAt I X x U f = toFun I X (op (α := Opens X) U.1) f ⟨x, U.2⟩ := (rfl)
 
 /-- Evaluation of germs at their base point, as a morphism of commutative rings. -/
 def evalHom (x : X) : (holomorphicStructureSheaf I X).presheaf.stalk x ⟶ CommRingCat.of ℂ :=
@@ -219,14 +202,22 @@ def evalHom (x : X) : (holomorphicStructureSheaf I X).presheaf.stalk x ⟶ CommR
             apply CommRingCat.hom_ext
             apply RingHom.ext
             intro f
-            -- Restriction and evaluation use the same point of the neighbourhood.
-            with_unfolding_all rfl } }
+            -- Both categorical composites evaluate the restriction at the base point.
+            exact map_apply (I := I) (X := X)
+              (U := op (α := Opens X) (unop U).1)
+              (V := op (α := Opens X) (unop V).1)
+              ((OpenNhds.inclusion (X := TopCat.of X) x).map h.unop).op f ⟨x, (unop V).2⟩ } }
 
 /-- The ring homomorphism evaluating a holomorphic germ at its base point. -/
 def eval (x : X) : (holomorphicStructureSheaf I X).presheaf.stalk x →+* ℂ :=
   (evalHom I X x).hom
 
-attribute [local irreducible] holomorphicStructureSheaf evalHom eval
+/-- Evaluation after the germ map is evaluation on the original section. -/
+@[simp, reassoc]
+theorem germ_evalHom (U : Opens X) (x : X) (hx : x ∈ U) :
+    (holomorphicStructureSheaf I X).presheaf.germ U x hx ≫ evalHom I X x =
+      CommRingCat.ofHom (evalAt I X x ⟨U, hx⟩) :=
+  colimit.ι_desc _ _
 
 /-- Evaluation of a germ, in the categorical form of the stalk evaluation map. -/
 theorem evalHom_germ (U : Opens X) (x : X) (hx : x ∈ U)
@@ -235,14 +226,8 @@ theorem evalHom_germ (U : Opens X) (x : X) (hx : x ∈ U)
       (no_index (ConcreteCategory.hom
         ((holomorphicStructureSheaf I X).presheaf.germ U x hx) f)) =
       toFun I X (op (α := Opens X) U) f ⟨x, hx⟩ := (by
-  have h : (holomorphicStructureSheaf I X).presheaf.germ U x hx ≫ evalHom I X x =
-      CommRingCat.ofHom (evalAt I X x ⟨U, hx⟩) := by
-    unfold evalHom
-    exact colimit.ι_desc _ _
-  rw [← ConcreteCategory.comp_apply]
-  exact (congrArg (fun a : (holomorphicStructureSheaf I X).obj.obj (op (α := Opens X) U) ⟶
-    CommRingCat.of ℂ ↦ ConcreteCategory.hom a f) h).trans (by
-      simpa only [ConcreteCategory.hom_ofHom] using evalAt_apply I X x ⟨U, hx⟩ f))
+  rw [← ConcreteCategory.comp_apply, germ_evalHom]
+  exact evalAt_apply I X x ⟨U, hx⟩ f)
 
 -- Avoid indexing on carrier projections that normalize differently after import.
 /-- Evaluating the germ of a section returns its value at the base point. -/
@@ -269,8 +254,6 @@ variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E']
   {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℂ E' H'}
   {Y : Type} [TopologicalSpace Y] [ChartedSpace H' Y]
 
-attribute [local semireducible] holomorphicStructureSheaf
-
 /-- Precomposition by a complex analytic map, on the rings of holomorphic sections. -/
 def precomp (f : X → Y) (hf : ContMDiff I J ω f) (U : (Opens Y)ᵒᵖ) :
     (holomorphicStructureSheaf J Y).obj.obj U →+*
@@ -286,8 +269,6 @@ def precomp (f : X → Y) (hf : ContMDiff I J ω f) (U : (Opens Y)ᵒᵖ) :
       map_zero' := rfl
       map_add' := fun _ _ ↦ rfl }
 
-attribute [local irreducible] holomorphicStructureSheaf precomp
-
 -- Index on evaluation rather than the categorical preimage and carrier projections.
 @[simp]
 theorem precomp_apply (f : X → Y) (hf : ContMDiff I J ω f) (U : (Opens Y)ᵒᵖ)
@@ -295,10 +276,7 @@ theorem precomp_apply (f : X → Y) (hf : ContMDiff I J ω f) (U : (Opens Y)ᵒ�
     (x : ↥((Opens.map (TopCat.ofHom ⟨f, hf.continuous⟩)).obj (unop U))) :
     toFun I X (no_index (op (α := Opens X)
       ((Opens.map (TopCat.ofHom ⟨f, hf.continuous⟩)).obj (unop U))))
-      (no_index (precomp I X f hf U g)) x = toFun J Y U g ⟨f x.1, x.2⟩ := (by
-  with_unfolding_all rfl)
-
-attribute [local semireducible] holomorphicStructureSheaf
+      (no_index (precomp I X f hf U g)) x = toFun J Y U g ⟨f x.1, x.2⟩ := (rfl)
 
 /-- A complex analytic map induces a morphism `𝒪_Y ⟶ f_*𝒪_X` by precomposition. -/
 def homOfContMDiff (f : X → Y) (hf : ContMDiff I J ω f) :
@@ -313,15 +291,16 @@ def homOfContMDiff (f : X → Y) (hf : ContMDiff I J ω f) :
     intro g
     apply holomorphicStructureSheaf.ext
     intro x
-    -- Restriction and precomposition both evaluate the original section at `f x`.
-    with_unfolding_all rfl
-
-attribute [local irreducible] holomorphicStructureSheaf homOfContMDiff
+    -- Expose composition and pushforward so the section simp rules match directly.
+    change precomp I X f hf V ((holomorphicStructureSheaf J Y).obj.map h g) x =
+      (holomorphicStructureSheaf I X).obj.map
+        ((Opens.map (TopCat.ofHom ⟨f, hf.continuous⟩)).map h.unop).op
+        (precomp I X f hf U g) x
+    simp only [precomp_apply, map_apply]
 
 @[simp]
 theorem homOfContMDiff_app (f : X → Y) (hf : ContMDiff I J ω f) (U : (Opens Y)ᵒᵖ) :
-    (homOfContMDiff I X f hf).hom.app U = CommRingCat.ofHom (precomp I X f hf U) := (by
-  with_unfolding_all rfl)
+    (homOfContMDiff I X f hf).hom.app U = CommRingCat.ofHom (precomp I X f hf U) := (rfl)
 
 /-- A holomorphic map between complex curves induces a morphism of structure sheaves. -/
 def homOfMDifferentiable {X Y : Type} [TopologicalSpace X] [TopologicalSpace Y]
@@ -331,8 +310,6 @@ def homOfMDifferentiable {X Y : Type} [TopologicalSpace X] [TopologicalSpace Y]
       (TopCat.Sheaf.pushforward CommRingCat (TopCat.ofHom ⟨f, hf.continuous⟩)).obj
         (holomorphicStructureSheaf 𝓘(ℂ) X) :=
   homOfContMDiff 𝓘(ℂ) X f hf.contMDiff
-
-attribute [local irreducible] homOfMDifferentiable
 
 @[simp]
 theorem homOfMDifferentiable_app {X Y : Type} [TopologicalSpace X] [TopologicalSpace Y]
@@ -368,17 +345,15 @@ theorem obj_eq (U : (Opens (TopCat.of X))ᵒᵖ) :
       ModuleCat.of ℂ ((holomorphicStructureSheaf I X).obj.obj U) := (rfl)
 
 instance (U : (Opens (TopCat.of X))ᵒᵖ) :
-    CoeFun ((holomorphicStructureSheafModules I X).obj.obj U) (fun _ ↦ ↥(unop U) → ℂ) where
-  -- Transport through the object API so the module sheaf's body can remain hidden.
-  coe f := (cast (congrArg (fun M : ModuleCat ℂ ↦ (M : Type _)) (obj_eq I X U)) f :
-    (holomorphicStructureSheaf I X).obj.obj U)
+    CoeFun ((holomorphicStructureSheafModules I X).obj.obj U) (fun _ ↦ ↥(unop U) → ℂ) :=
+  inferInstanceAs (CoeFun ((holomorphicStructureSheaf I X).obj.obj U)
+    (fun _ ↦ ↥(unop U) → ℂ))
 
 /-- Ring sections and module sections have the same complex vector space structure. -/
 def sectionsLinearEquiv (U : (Opens (TopCat.of X))ᵒᵖ) :
     (holomorphicStructureSheafModules I X).obj.obj U ≃ₗ[ℂ]
-      (holomorphicStructureSheaf I X).obj.obj U := by
-  rw [obj_eq]
-  exact LinearEquiv.refl ℂ _
+      (holomorphicStructureSheaf I X).obj.obj U :=
+  LinearEquiv.refl ℂ _
 
 @[simp]
 theorem sectionsLinearEquiv_apply (U : (Opens (TopCat.of X))ᵒᵖ)
@@ -403,8 +378,6 @@ theorem mdifferentiable {U : (Opens (TopCat.of X))ᵒᵖ}
     (f : (holomorphicStructureSheafModules I X).obj.obj U) : MDifferentiable I 𝓘(ℂ) f :=
   (contMDiff f).mdifferentiable (by simp)
 
-attribute [local irreducible] holomorphicStructureSheafModules holomorphicStructureSheaf
-
 /-- Complex analytic functions give sections of the module sheaf for any complex model. -/
 def ofContMDiff {U : Opens X} (f : U → ℂ) (hf : ContMDiff I 𝓘(ℂ) ω f) :
     (holomorphicStructureSheafModules I X).obj.obj (op (α := Opens X) U) :=
@@ -416,8 +389,6 @@ theorem ofContMDiff_apply {U : Opens X} (f : U → ℂ)
     (hf : ContMDiff I 𝓘(ℂ) ω f) (x : U) :
     ofContMDiff f hf x = f x := by
   rw [ofContMDiff, sectionsLinearEquiv_symm_apply, holomorphicStructureSheaf.ofContMDiff_apply]
-
-attribute [local semireducible] holomorphicStructureSheafModules holomorphicStructureSheaf
 
 @[simp]
 theorem zero_apply {U : (Opens (TopCat.of X))ᵒᵖ} (x : ↥(unop U)) :
@@ -476,14 +447,16 @@ theorem algebraMap_bijective :
     Function.Bijective (algebraMap ℂ ((holomorphicStructureSheaf I X).obj.obj (op ⊤))) := by
   constructor
   · intro c d h
-    exact congrArg (fun f ↦ f ⟨Classical.arbitrary X, trivial⟩) h
+    simpa only [algebraMap_apply] using
+      congrArg (fun f ↦ f ⟨Classical.arbitrary X, trivial⟩) h
   · intro f
     have hf : ContMDiff I 𝓘(ℂ) ∞ (fun x : X ↦ f ⟨x, trivial⟩) := by
       apply ((contMDiff f).of_le le_top).comp (I' := I)
       apply (ContMDiff.subtypeVal_comp_iff (I := I) (I' := I) ⊤ _).1
       exact contMDiff_id
     obtain ⟨c, hc⟩ := (hf.mdifferentiable (by simp)).exists_eq_const_of_compactSpace
-    refine ⟨c, ContMDiffMap.ext fun x ↦ ?_⟩
+    refine ⟨c, holomorphicStructureSheaf.ext fun x ↦ ?_⟩
+    rw [algebraMap_apply]
     exact (congrFun hc x).symm
 
 /-- Constants identify the global sections of the holomorphic structure sheaf with `ℂ`. -/
@@ -523,9 +496,6 @@ namespace holomorphicStructureSheafModules
 
 variable [I.Boundaryless] [IsManifold I 1 X] [CompactSpace X] [PreconnectedSpace X]
   [Nonempty X]
-
--- Keep the dimension rule on the public module carrier after import.
-attribute [local irreducible] holomorphicStructureSheafModules holomorphicStructureSheaf
 
 instance : FiniteDimensional ℂ
     ((holomorphicStructureSheafModules I X).obj.obj (op (α := Opens X) ⊤)) :=
