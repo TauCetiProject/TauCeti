@@ -140,16 +140,13 @@ private theorem trace_toMatrix_pow_eq_frobeniusPowTrace (hN : (N : K) ≠ 0)
   have hdet : (M ^ n).det = (Nat.card F : ZMod N) ^ n := by
     rw [Matrix.det_pow, LinearMap.det_toMatrix,
       det_torsionLinearMap_ofIsogeny_baseChangeFrobenius W hN]
-  -- `1 - π ^ n` is zero or a nonzero morphism, of determinant its degree.
+  -- the determinant of `1 - π ^ n` is its degree
   have hdetOneSub : (1 - M ^ n).det = ((1 - π ^ n).degree : ZMod N) := by
     have hM : 1 - M ^ n = LinearMap.toMatrix b b ((1 - π ^ n).torsionLinearMap N) := by
       rw [← torsionRepresentation_apply, _root_.map_sub, _root_.map_one, _root_.map_pow,
         torsionRepresentation_apply, _root_.map_sub, LinearMap.toMatrix_one,
         ← LinearMap.toMatrix_pow]
-    rcases Nat.eq_zero_or_pos n with rfl | hn
-    · simp
-    rw [hM, LinearMap.det_toMatrix,
-      det_torsionLinearMap hN (one_sub_pow_ofIsogeny_baseChangeFrobenius_ne_zero W n hn)]
+    rw [hM, LinearMap.det_toMatrix, det_torsionLinearMap hN]
   -- `trace A = 1 + det A - det (1 - A)` for a `2 × 2` matrix `A`
   have h := TauCeti.Matrix.det_smul_sub_smul_one_fin_two (M ^ n) (-1) (-1)
   rw [neg_one_smul, neg_one_smul, neg_sub_neg, hdetOneSub, hdet] at h
