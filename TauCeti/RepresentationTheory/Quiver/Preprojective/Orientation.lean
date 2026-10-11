@@ -149,25 +149,11 @@ variable (k : Type w) {Q : Type u} [CommSemiring k] [Quiver.{v} Q] [Finite Q]
 /-- **The isomorphism of doubled path algebras attached to a reorientation**: the path algebra of
 `Symmetrify (Reorient Q σ)` and the path algebra of `Symmetrify Q` are identified along the
 comparison of doubled quivers, which is the identity on vertices. -/
-noncomputable def reorientDoubledEquiv :
+@[expose] noncomputable def reorientDoubledEquiv :
     pathAlgebra k (Symmetrify (Reorient Q σ)) ≃ₐ[k] pathAlgebra k (Symmetrify Q) :=
   mapAlgEquiv k (reorientSymmetrify σ) (reorientSymmetrifyInv σ)
     (reorientSymmetrify_comp_reorientSymmetrifyInv σ)
     (reorientSymmetrifyInv_comp_reorientSymmetrify σ)
-
-/-- **The doubled-quiver comparison preserves path length.** Its prefunctor maps every arrow to
-one arrow, so the induced path-algebra isomorphism preserves each homogeneous path-length piece. -/
-theorem reorientDoubledEquiv_mem_grade {n : ℕ}
-    {x : pathAlgebra k (Symmetrify (Reorient Q σ))}
-    (hx : x ∈ PathAlgebra.grade k (Symmetrify (Reorient Q σ)) n) :
-    reorientDoubledEquiv k σ x ∈ PathAlgebra.grade k (Symmetrify Q) n := by
-  rw [← PathAlgebra.gradeBy_const_one] at hx ⊢
-  have hφ : Function.Bijective (reorientSymmetrify σ).obj := by
-    change Function.Bijective (fun x : Symmetrify Q => x)
-    exact ⟨fun _ _ h => h, fun y => ⟨y, rfl⟩⟩
-  rw [reorientDoubledEquiv, PathAlgebra.mapAlgEquiv_apply]
-  exact PathAlgebra.mapAlgHom_mem_gradeBy k (reorientSymmetrify σ) hφ
-    (fun {_ _} _ => (1 : ℕ)) hx
 
 /-- The doubled path-algebra comparison maps a path of two arrows by mapping each arrow. -/
 private theorem reorientDoubledEquiv_ofArrowComp {i j l : Symmetrify (Reorient Q σ)} (a : i ⟶ j)
