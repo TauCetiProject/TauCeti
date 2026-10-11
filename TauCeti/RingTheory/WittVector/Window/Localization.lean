@@ -65,8 +65,6 @@ multiplication by the unit `[ϖ] ^ n`.
   presentation is the window subring.
 * `TauCeti.WittVector.hasDenominatorPower_windowNumerators` : the presentation satisfies the
   standing hypothesis of the localisation topology, for every pair of definition.
-* `TauCeti.WittVector.continuous_algebraMap_intervalLocalization` : the map
-  `𝕎 O → 𝕎 O[1/(p [ϖ])]` is continuous for the interval norm.
 * `TauCeti.WittVector.locTopology_windowNumerators` : the localisation topology of the window is
   the interval-norm topology.
 * `TauCeti.WittVector.locUniformSpace_windowNumerators` : the same for the uniformities.
@@ -227,32 +225,6 @@ variable {K : Type*} [Field K] [Algebra O K] {v : Valuation K ℝ≥0} [CharP O 
 
 local notation "L" => IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂
 
-/-- **The map `𝕎 O → 𝕎 O[1/(p [ϖ])]` is continuous for the interval norm**, when `𝕎 O` carries the
-`(p, [ϖ])`-adic topology: the Gauss valuations `λ_{ρ₁}` and `λ_{ρ₂}` are continuous valuations, so
-`λ_I = max(λ_{ρ₁}, λ_{ρ₂})` is small on a neighbourhood of `0`. -/
-theorem continuous_algebraMap_intervalLocalization [TopologicalSpace (𝕎 O)]
-    [IsTopologicalRing (𝕎 O)] (hI : IsAdic (Ideal.span {(p : 𝕎 O), teichmuller p ϖ})) :
-    Continuous (algebraMap (𝕎 O) L) := by
-  refine continuous_of_continuousAt_zero (algebraMap (𝕎 O) L) ?_
-  rw [ContinuousAt, map_zero, Metric.nhds_basis_ball.tendsto_right_iff]
-  intro ε hε
-  -- `λ_I(p ^ N) = max(ρ₁, ρ₂) ^ N` is below `ε` for some `N`
-  obtain ⟨N, hN⟩ := exists_pow_lt_of_lt_one hε
-    (IntervalLocalization.norm_natCast_lt_one p hv hϖ hϖ' hρ₁ hρ₂)
-  have hopen {ρ : ℝ≥0} (hρ : ρ ∈ Set.Ioo 0 1) :
-      {x : 𝕎 O | gaussValuation p hv ρ hρ.2 x < ρ ^ N} ∈ 𝓝 (0 : 𝕎 O) := by
-    have h := Valuation.isContinuous_def.mp (isContinuous_gaussValuation hI hv hρ.2 hϖ')
-      ((p : 𝕎 O) ^ N)
-    rw [map_pow, gaussValuation_p] at h
-    exact h.mem_nhds (by simpa using pow_pos hρ.1 N)
-  filter_upwards [hopen hρ₁, hopen hρ₂] with x hx₁ hx₂
-  rw [Metric.mem_ball, dist_zero_right, IntervalLocalization.norm_algebraMap]
-  refine lt_of_lt_of_le ?_ ((IntervalLocalization.norm_natCast p hv hϖ hϖ' hρ₁ hρ₂ ▸ hN).le)
-  rw [max_lt_iff]
-  constructor
-  · exact (NNReal.coe_lt_coe.mpr hx₁).trans_le (by push_cast; gcongr; exact le_max_left _ _)
-  · exact (NNReal.coe_lt_coe.mpr hx₂).trans_le (by push_cast; gcongr; exact le_max_right _ _)
-
 /-- The `n`-th basic neighbourhood `(p, [ϖ]) ^ n D` of the localisation topology of the window is a
 neighbourhood of `0` for the interval norm: it contains `[ϖ] ^ n D`, and `D` is open. -/
 private theorem locIdealImage_mem_nhds [TopologicalSpace (𝕎 O)]
@@ -315,7 +287,7 @@ theorem locTopology_windowNumerators [TopologicalSpace (𝕎 O)] [IsTopologicalR
     refine continuous_id_iff_le.mp ?_
     rw [← RingHom.coe_id]
     refine P₀.continuous_of_continuous_algebraMap_of_isPowerBounded _ _ L hden₀ (RingHom.id L)
-      (continuous_algebraMap_intervalLocalization hv hϖ hϖ' hρ₁ hρ₂ hI) fun t ht ↦ ?_
+      (continuous_algebraMap_intervalLocalization p hv hϖ hϖ' hρ₁ hρ₂ hI) fun t ht ↦ ?_
     refine (isBounded_windowSubring hv hϖ hϖ' hρ₁ hρ₂ h₁.ge (h₁ ▸ pow_le_pow_left₀ zero_le h₁₂ _)
       (h₂ ▸ pow_le_pow_left₀ zero_le h₁₂ _) h₂.le).isPowerBounded_of_mem ?_
     exact hD ▸ P₀.divBy_mem_locSubring _ _ L ht

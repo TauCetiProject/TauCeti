@@ -31,7 +31,7 @@ subset `𝒴 ⊆ Spa(𝕎 O, 𝕎 O)` whose quotient by Frobenius is the adic Fa
 particular `𝒴` is nonempty. Its support is trivial, and its radius `κ(η_ρ)` is
 `log v(ϖ) / log ρ`, in the order-theoretic sense of `TauCeti.FarguesFontaine.IsRadiusLowerBound`:
 `q = a / b ≤ κ(η_ρ)` exactly when `v(ϖ) ^ b ≤ ρ ^ a`. For `q ≠ 0` this says
-`v(ϖ) ^ (1 / q) ≤ ρ`, so the Gauss points with `q ≤ κ ≤ q'` are those of radius
+`v(ϖ) ^ (1 / q) ≤ ρ`, so for `q, q' ≠ 0` the Gauss points with `q ≤ κ ≤ q'` are those of radius
 `ρ ∈ [v(ϖ) ^ (1 / q), v(ϖ) ^ (1 / q')]`: the radius `κ` and the Gauss radius `ρ` are related
 reciprocally.
 
@@ -163,8 +163,9 @@ theorem isRadiusUpperBound_gaussPoint_iff_logb_le (hv : v.Integers O) (hρ₀ : 
   exact Real.pow_le_pow_iff_logb_le_div_of_base_lt_one hρ₀ hρ hϖ₀ q.den_pos
 
 /-- **The reciprocal radius dictionary, from below.** For `q ≠ 0`, the bound `q ≤ κ(η_ρ)` holds
-exactly when `v(ϖ) ^ (1 / q) ≤ ρ`. So the Gauss points with `q ≤ κ ≤ q'` are those of radius
-`ρ ∈ [v(ϖ) ^ (1 / q), v(ϖ) ^ (1 / q')]` (`isRadiusUpperBound_gaussPoint_iff_rpow`). -/
+exactly when `v(ϖ) ^ (1 / q) ≤ ρ`. So for `q' ≠ 0` too, the Gauss points with `q ≤ κ ≤ q'` are
+those of radius `ρ ∈ [v(ϖ) ^ (1 / q), v(ϖ) ^ (1 / q')]` (`isRadiusUpperBound_gaussPoint_iff_rpow`).
+-/
 theorem isRadiusLowerBound_gaussPoint_iff_rpow (hv : v.Integers O) (hρ : ρ < 1) (ϖ : O)
     {q : ℚ≥0} (hq : q ≠ 0) :
     IsRadiusLowerBound p ϖ q (gaussPoint p hv ρ hρ) ↔

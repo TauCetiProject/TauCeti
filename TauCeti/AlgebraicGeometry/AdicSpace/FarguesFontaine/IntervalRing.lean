@@ -27,8 +27,9 @@ This file compares `B^I` with the Frobenius windows of `𝒴 ⊆ Spa(𝕎 O, �
 `w([ϖ] ^ b) ≤ w(p ^ a)`, that is, `q ≤ κ(w)`; likewise for upper bounds. Hence if both Gauss
 points lie in a radius band `{v ∈ 𝒴 : q ≤ κ(v) ≤ q'}`, such as a window `U_n` or `V_n`, so does
 the whole image of `Spa(B^I, B^{I,+})`. By
-`TauCeti.FarguesFontaine.isRadiusLowerBound_gaussPoint_iff_rpow` this happens exactly when
-both radii lie in `[v(ϖ) ^ (1 / q), v(ϖ) ^ (1 / q')]`.
+`TauCeti.FarguesFontaine.isRadiusLowerBound_gaussPoint_iff_rpow` and its upper analogue, when
+`q ≠ 0` and `q' ≠ 0` this happens exactly when both radii lie in
+`[v(ϖ) ^ (1 / q), v(ϖ) ^ (1 / q')]`.
 
 Wedhorn's Lemma 8.1,
 `TauCeti.ValuationSpectrum.existsUnique_continuous_ringHom_of_forall_comap_mem_rationalSubset`,

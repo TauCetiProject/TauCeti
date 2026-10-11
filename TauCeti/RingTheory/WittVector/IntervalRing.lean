@@ -66,8 +66,9 @@ extension to `B^I`. Hence the power-bounded elements of `B^I` are exactly its un
   is its unit ball `B^{I,+}`; `TauCeti.WittVector.IntervalLocalization.coe_powerBoundedSubring` is
   the same statement on `𝕎 O[1/(p [ϖ])]`.
 * `TauCeti.WittVector.isUniform_intervalRing` : `B^I` is uniform.
-* `TauCeti.WittVector.continuous_algebraMap_intervalRing` : `𝕎 O → B^I` is continuous for the
-  `(p, [ϖ])`-adic topology on `𝕎 O`.
+* `TauCeti.WittVector.continuous_algebraMap_intervalLocalization` and
+  `TauCeti.WittVector.continuous_algebraMap_intervalRing` : `𝕎 O → 𝕎 O[1/(p [ϖ])]` and
+  `𝕎 O → B^I` are continuous for the `(p, [ϖ])`-adic topology on `𝕎 O`.
 * `TauCeti.WittVector.exists_norm_le_one_algebraMap_eq_mul_intervalRing` : if `λ_ρ(x) ≤ λ_ρ(y)` at
   both radii and `y` is a unit of `𝕎 O[1/(p [ϖ])]`, then `x / y` lies in the unit ball of `B^I`.
 * `TauCeti.WittVector.IntervalLocalization.instIsTateRing` : `𝕎 O[1/(p [ϖ])]` with the interval
@@ -377,30 +378,41 @@ instance isUniform_intervalRing : IsUniform (IntervalRing p hv hϖ hϖ' hρ₁ h
   IsUniform.of_isPowMul (isPseudoUniformizer_natCast_intervalRing p hv hϖ hϖ' hρ₁ hρ₂)
     (isPowMul_norm_intervalRing p hv hϖ hϖ' hρ₁ hρ₂)
 
-/-- **The map `𝕎 O → B^I` is continuous** for the `(p, [ϖ])`-adic topology on `𝕎 O`: both Gauss
-valuations are continuous (`isContinuous_gaussValuation`), so near `0` each `λ_{ρᵢ}` is below
-`λ_{ρᵢ}(p ^ n) = ρᵢ ^ n`, and hence the interval norm is below `max(ρ₁, ρ₂) ^ n`. -/
+/-- **The map `𝕎 O → 𝕎 O[1/(p [ϖ])]` is continuous for the interval norm**, when `𝕎 O` carries the
+`(p, [ϖ])`-adic topology: the Gauss valuations `λ_{ρ₁}` and `λ_{ρ₂}` are continuous valuations, so
+`λ_I = max(λ_{ρ₁}, λ_{ρ₂})` is small on a neighbourhood of `0`. -/
+theorem continuous_algebraMap_intervalLocalization [TopologicalSpace (𝕎 O)]
+    [IsTopologicalRing (𝕎 O)] (hI : IsAdic (Ideal.span {(p : 𝕎 O), teichmuller p ϖ})) :
+    Continuous (algebraMap (𝕎 O) (IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂)) := by
+  refine continuous_of_continuousAt_zero _ ?_
+  rw [ContinuousAt, map_zero, Metric.nhds_basis_ball.tendsto_right_iff]
+  intro ε hε
+  -- `λ_I(p ^ N) = max(ρ₁, ρ₂) ^ N` is below `ε` for some `N`
+  obtain ⟨N, hN⟩ := exists_pow_lt_of_lt_one hε
+    (IntervalLocalization.norm_natCast_lt_one p hv hϖ hϖ' hρ₁ hρ₂)
+  have hopen {ρ : ℝ≥0} (hρ : ρ ∈ Set.Ioo 0 1) :
+      {x : 𝕎 O | gaussValuation p hv ρ hρ.2 x < ρ ^ N} ∈ nhds (0 : 𝕎 O) := by
+    have h := Valuation.isContinuous_def.mp (isContinuous_gaussValuation hI hv hρ.2 hϖ')
+      ((p : 𝕎 O) ^ N)
+    rw [map_pow, gaussValuation_p] at h
+    exact h.mem_nhds (by simpa using pow_pos hρ.1 N)
+  filter_upwards [hopen hρ₁, hopen hρ₂] with x hx₁ hx₂
+  rw [Metric.mem_ball, dist_zero_right, IntervalLocalization.norm_algebraMap]
+  refine lt_of_lt_of_le ?_ ((IntervalLocalization.norm_natCast p hv hϖ hϖ' hρ₁ hρ₂ ▸ hN).le)
+  rw [max_lt_iff]
+  constructor
+  · exact (NNReal.coe_lt_coe.mpr hx₁).trans_le (by push_cast; gcongr; exact le_max_left _ _)
+  · exact (NNReal.coe_lt_coe.mpr hx₂).trans_le (by push_cast; gcongr; exact le_max_right _ _)
+
+/-- **The map `𝕎 O → B^I` is continuous** for the `(p, [ϖ])`-adic topology on `𝕎 O`: it is the
+continuous map `𝕎 O → 𝕎 O[1/(p [ϖ])]` (`continuous_algebraMap_intervalLocalization`) followed
+by the completion map. -/
 theorem continuous_algebraMap_intervalRing [TopologicalSpace (𝕎 O)]
     (hI : IsAdic (Ideal.span {(p : 𝕎 O), teichmuller p ϖ})) :
     Continuous (algebraMap (𝕎 O) (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)) := by
   have : IsTopologicalRing (𝕎 O) := hI ▸ (Ideal.span _).nonarchimedean.toIsTopologicalRing
-  have hnhds {ρ : ℝ≥0} (hρ : ρ ∈ Set.Ioo 0 1) (n : ℕ) :
-      {a : 𝕎 O | gaussValuation p hv ρ hρ.2 a < ρ ^ n} ∈ nhds 0 := by
-    have h := Valuation.isContinuous_def.mp (isContinuous_gaussValuation hI hv hρ.2 hϖ')
-      ((p : 𝕎 O) ^ n)
-    rw [map_pow, gaussValuation_p] at h
-    exact h.mem_nhds (by simpa using pow_pos hρ.1 n)
-  refine continuous_of_continuousAt_zero _ ?_
-  rw [ContinuousAt, map_zero, Metric.nhds_basis_ball.tendsto_right_iff]
-  intro ε hε
-  have hc : max (ρ₁ : ℝ) ρ₂ < 1 := max_lt (mod_cast hρ₁.2) (mod_cast hρ₂.2)
-  obtain ⟨n, hn⟩ := exists_pow_lt_of_lt_one hε hc
-  filter_upwards [hnhds hρ₁ n, hnhds hρ₂ n] with a h₁ h₂
-  rw [mem_ball_zero_iff, norm_algebraMap_intervalRing]
-  have hlt {ρ x : ℝ≥0} (hρ : (ρ : ℝ) ≤ max (ρ₁ : ℝ) ρ₂) (hx : x < ρ ^ n) : (x : ℝ) < ε := by
-    have hx' : (x : ℝ) < ρ ^ n := mod_cast hx
-    exact hx'.trans_le ((pow_le_pow_left₀ ρ.2 hρ n).trans hn.le)
-  exact max_lt (hlt (le_max_left _ _) h₁) (hlt (le_max_right _ _) h₂)
+  exact Completion.continuous_coe _ |>.comp
+    (continuous_algebraMap_intervalLocalization p hv hϖ hϖ' hρ₁ hρ₂ hI)
 
 /-- **Division by a unit of `𝕎 O[1/(p [ϖ])]` within the unit ball.** If `y ∈ 𝕎 O` becomes a unit
 of `𝕎 O[1/(p [ϖ])]` and `λ_ρ(x) ≤ λ_ρ(y)` at both radii, then `x = z y` in `B^I` for some `z` in

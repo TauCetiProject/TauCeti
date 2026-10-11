@@ -11,9 +11,9 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
 # Nonnegative real powers with nonnegative rational exponents
 
 Writing a nonnegative rational `q` as the reduced fraction `q.num / q.den`, the real power
-`x ^ (1 / q)` of `x : ℝ≥0` is `(x ^ q.den) ^ (1 / q.num)`. This turns an inequality against
-`x ^ (1 / q)` into one between natural-number powers, via `NNReal.rpow_inv_le_iff` and
-`NNReal.le_rpow_inv_iff`.
+`x ^ (1 / q)` of `x : ℝ≥0` is `(x ^ q.den) ^ (1 / q.num)`. For `q ≠ 0`, so that `q.num > 0`, this
+turns an inequality against `x ^ (1 / q)` into one between natural-number powers, via
+`NNReal.rpow_inv_le_iff` and `NNReal.le_rpow_inv_iff`.
 
 ## Main results
 
