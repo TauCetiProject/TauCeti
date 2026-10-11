@@ -39,9 +39,10 @@ variable {C : Type*} [Category* C] [Abelian C] (X : SpectralObject C EInt)
 lemma coe_le_coe_add_one (q : ℤ) : (q : EInt) ≤ ((q + 1 : ℤ) : EInt) := by
   simp
 
-/-- The object `E^n(⊥ ≤ q ≤ q + 1 ≤ ⊤)` of a spectral object indexed by `EInt`: the object at
-`(n - q, q)` on the pages of its spectral sequence, once they have stabilized. -/
-noncomputable def EInfty (q n : ℤ) : C :=
+/-- The object `E^n(⊥ ≤ q ≤ q + 1 ≤ ⊤)` of a spectral object indexed by `EInt`. Under the vanishing
+conditions of `spectralSequencePageXIsoEInfty`, it is isomorphic to the object at `(n - q, q)` on
+the `r`th page of the spectral sequence. -/
+noncomputable abbrev EInfty (q n : ℤ) : C :=
   X.E (homOfLE (bot_le : (⊥ : EInt) ≤ q)) (homOfLE (coe_le_coe_add_one q))
     (homOfLE (le_top : ((q + 1 : ℤ) : EInt) ≤ ⊤)) (n - 1) n (n + 1)
 

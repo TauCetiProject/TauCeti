@@ -14,8 +14,7 @@ public import TauCeti.Algebra.Homology.SpectralObject.Stabilization
 Let `F : ℤ → Subobject K` be an increasing filtration of a cochain complex `K`. On the spectral
 sequence of `CochainComplex.filtrationFunctor F hF`, the object at `(p, q)` on page `r` is
 isomorphic to the limit object `E^{p+q}(⊥ ≤ q ≤ q + 1 ≤ ⊤)` as soon as
-`H^{p+q+1}(F_{q-r+2}) = 0` (the filtration is bounded below at that degree) and
-`H^{p+q-1}(K / F_{q+r-1}) = 0` (it is exhaustive at that degree)
+`H^{p+q+1}(F_{q-r+2}) = 0` and `H^{p+q-1}(K / F_{q+r-1}) = 0`
 (`CochainComplex.filtrationSpectralSequencePageXIsoEInfty`). For a finite filtration,
 `F_a = ⊥` and `F_b = ⊤`, this holds on every page `r` with `q - r + 2 ≤ a` and
 `b ≤ q + r - 1` (`CochainComplex.filtrationSpectralSequencePageXIsoEInftyOfFinite`).
@@ -25,7 +24,8 @@ isomorphic to the limit object `E^{p+q}(⊥ ≤ q ≤ q + 1 ≤ ⊤)` as soon as
 * `CochainComplex.isZero_spectralObject_H_bot`, `CochainComplex.isZero_spectralObject_H_top`: the
   vanishing of `H^m(⊥ ≤ a)` and `H^m(b ≤ ⊤)` for the spectral object of a filtration, from the
   vanishing of `H^m(F_a)` and `H^m(K / F_b)`.
-* `CochainComplex.filtrationSpectralSequencePageXIsoEInfty`: stabilization of the pages.
+* `CochainComplex.filtrationSpectralSequencePageXIsoEInfty`: identification of the page objects
+  with `EInfty` under the two vanishing conditions.
 * `CochainComplex.filtrationSpectralSequencePageXIsoEInftyOfFinite`: the case of a finite
   filtration.
 -/
