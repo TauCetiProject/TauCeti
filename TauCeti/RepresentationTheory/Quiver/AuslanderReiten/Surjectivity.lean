@@ -39,12 +39,6 @@ universe u v w t
 variable (k : Type u) (Q : Type v) [Field k] [Quiver.{w} Q]
   [Finite (Quiver.TotalPath Q)]
 
-private local instance : Finite Q :=
-  Finite.of_injective (fun q : Q ↦ (⟨q, q, Quiver.Path.nil⟩ : Quiver.TotalPath Q))
-    (fun _ _ h ↦ congrArg Sigma.fst h)
-
-private local instance : Module.Finite k (pathAlgebra k Q) := module_finite_pathAlgebra k Q
-
 /-- Every finite-dimensional non-injective indecomposable representation is the translate
 of a finite-dimensional non-projective indecomposable representation. -/
 theorem exists_nonempty_iso_arTranslate
