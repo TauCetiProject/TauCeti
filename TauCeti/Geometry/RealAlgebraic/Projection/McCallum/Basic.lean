@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
-public import TauCeti.RingTheory.Polynomial.IrreducibleBasis
+public import TauCeti.RingTheory.Polynomial.IrreducibleBasis.Basic
 public import TauCeti.RingTheory.MvPolynomial.Discriminant
 import TauCeti.Algebra.Polynomial.Degree.Map
 

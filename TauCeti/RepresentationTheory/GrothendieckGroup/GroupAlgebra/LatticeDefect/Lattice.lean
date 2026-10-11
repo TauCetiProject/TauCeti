@@ -19,7 +19,8 @@ is finitely generated and has no `ℓ`-torsion, such as a `G`-stable lattice, th
 reduction of the quotient map `V → V ⧸ ℓV` is an isomorphism `k ⊗_ℤ V ≅ k ⊗_ℤ (V ⧸ ℓV)`.
 
 For the permutation lattice `ℤ[X] = X →₀ ℤ` of a finite `G`-set `X`, whose reduction is the
-permutation representation `k[X]` (`TauCeti.baseChangeComapEquiv`), this gives
+permutation representation `k[X]` (`TauCeti.baseChangeComapEquiv`), so its reduction class is the
+permutation class (`TauCeti.reductionK0_finsupp_int`), and this gives
 `latticeDefect ℤ[X] = [k[X]]` (`TauCeti.latticeDefect_finsupp_int`).
 
 Two lattices `V` and `W` with equivalent rationalizations `ℚ ⊗_ℤ V ≅ ℚ ⊗_ℤ W` have the same
@@ -38,6 +39,8 @@ finite cokernel, so the two lattices have the same lattice defect
 ## Main results
 
 * `TauCeti.latticeDefect_eq_reductionK0`: the defect of a lattice is its reduction class.
+* `TauCeti.reductionK0_finsupp_int`: the reduction class of the permutation lattice `ℤ[X]` is the
+  permutation class `[k[X]]`.
 * `TauCeti.latticeDefect_finsupp_int`: the defect of the permutation lattice `ℤ[X]` is the
   permutation class `[k[X]]`.
 * `TauCeti.reductionK0_eq_of_nonempty_equiv_baseChange_rat_of_charP` and
@@ -55,10 +58,9 @@ finite cokernel, so the two lattices have the same lattice defect
 
 public section
 
-namespace TauCeti
+open scoped TensorProduct
 
-open Function TensorProduct
-open scoped Pointwise
+namespace TauCeti
 
 attribute [local instance high] Submodule.module Submodule.Quotient.module TensorProduct.instModule
 
@@ -68,39 +70,18 @@ section CommRing
 
 variable (k G : Type u) [CommRing k] [Monoid G] (ℓ : ℕ)
 
-/-- **The lattice defect of a lattice is its reduction class**: in characteristic `ℓ`, a finitely
-generated `G`-module `V` without `ℓ`-torsion has defect `[k ⊗_ℤ V]`. Since `ℓ = 0` in `k`, the
-reduction `k ⊗_ℤ V → k ⊗_ℤ (V ⧸ ℓV)` of the quotient map is bijective. -/
+/-- **The lattice defect of a lattice is its reduction class**: in characteristic `ℓ`, a `G`-module
+`V` with `V ⧸ ℓV` finite and without `ℓ`-torsion has defect `[k ⊗_ℤ V]`. Since `ℓ = 0` in `k`, the
+reduction of `V ⧸ ℓV` is that of `V` (`TauCeti.reductionK0_quotSMulTop`). -/
 theorem latticeDefect_eq_reductionK0 [CharP k ℓ] (V : Type u) [AddCommGroup V]
-    [DistribMulAction G V] [Module.Finite ℤ V] [Finite (QuotSMulTop (ℓ : ℤ) V)]
+    [DistribMulAction G V] [Finite (QuotSMulTop (ℓ : ℤ) V)]
     [Subsingleton (Submodule.torsionBy ℤ V ℓ)] :
+    haveI := finite_baseChange_of_finite_quotSMulTop k ℓ V
     latticeDefect k G ℓ V = reductionK0 k (Representation.ofDistribMulAction ℤ G V) := by
   have := AddMonoid.FG.to_moduleFinite_int (G := QuotSMulTop (ℓ : ℤ) V)
   let ρ := Representation.ofDistribMulAction ℤ G V
-  -- the quotient map `V → V ⧸ ℓV` is equivariant, and becomes bijective after `k ⊗_ℤ -`
-  let q : Representation.IntertwiningMap ρ (ρ.quotSMulTop ℓ) :=
-    { toLinearMap := ((ℓ : ℤ) • ⊤ : Submodule ℤ V).mkQ
-      isIntertwining' g := LinearMap.ext fun x ↦ (ρ.quotSMulTop_apply_mk ℓ g x).symm }
-  have hq : Bijective (q.baseChange k) := by
-    have hcoe : ⇑(q.baseChange k) = ⇑(q.toLinearMap.lTensor k) := by
-      -- an intertwining map coerces to a function through its linear map
-      change ⇑(q.baseChange k).toLinearMap = _
-      rw [Representation.IntertwiningMap.toLinearMap_baseChange, LinearMap.baseChange_eq_ltensor]
-    have hsurj := Submodule.mkQ_surjective ((ℓ : ℤ) • ⊤ : Submodule ℤ V)
-    rw [hcoe]
-    refine ⟨(injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_, LinearMap.lTensor_surjective k hsurj⟩
-    obtain ⟨y, rfl⟩ := (lTensor_exact k (LinearMap.exact_subtype_mkQ _) hsurj x).mp hx
-    -- every `a ⊗ ℓv` vanishes, since `ℓ = 0` in `k`
-    clear hx
-    induction y using TensorProduct.inductionOn with
-    | tmul a v =>
-      obtain ⟨w, -, hw⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp v.2
-      rw [LinearMap.lTensor_tmul, Submodule.subtype_apply, ← hw, tmul_smul, smul_tmul',
-        zsmul_eq_mul, Int.cast_natCast, CharP.cast_eq_zero, zero_mul, zero_tmul]
-    | add y z hy hz => rw [map_add, hy, hz, add_zero]
-  let e := ((q.baseChange k).ofBijective hq).symm
-  rw [latticeDefect_def, reductionK0_eq_zero_of_subsingleton k (ρ.torsionBy ℓ), sub_zero]
-  exact reductionK0_congr_baseChange k e
+  rw [latticeDefect_def, reductionK0_eq_zero_of_subsingleton k (ρ.torsionBy ℓ), sub_zero,
+    reductionK0_quotSMulTop k ℓ]
 
 /-- **Lattices with equivalent rationalizations have the same reduction class** in
 characteristic `ℓ`: for finitely generated torsion-free `G`-modules `V` and `W` with
@@ -129,13 +110,18 @@ section Permutation
 attribute [local instance] Finsupp.comapSMul Finsupp.comapMulAction Finsupp.comapDistribMulAction
   comapSMulCommClass
 
+/-- **The reduction class of a permutation lattice** `ℤ[X] = X →₀ ℤ`, on which `G` acts by
+pushing the support forward (`Finsupp.comapDistribMulAction`), is the permutation class `[k[X]]`. -/
+theorem reductionK0_finsupp_int (X : Type u) [MulAction G X] [Finite X] :
+    reductionK0 k (Representation.ofDistribMulAction ℤ G (X →₀ ℤ)) = permK0 k G X := by
+  rw [reductionK0_def, permK0_eq_of_equiv k X _ (baseChangeComapEquiv ℤ k G X).symm]
+
 /-- **The lattice defect of a permutation lattice** `ℤ[X] = X →₀ ℤ`, on which `G` acts by pushing
 the support forward (`Finsupp.comapDistribMulAction`), is the permutation class `[k[X]]` in
 characteristic `ℓ ≠ 0`. -/
 theorem latticeDefect_finsupp_int [CharP k ℓ] [NeZero ℓ] (X : Type u) [MulAction G X] [Finite X] :
     latticeDefect k G ℓ (X →₀ ℤ) = permK0 k G X := by
-  rw [latticeDefect_eq_reductionK0, reductionK0_def,
-    permK0_eq_of_equiv k X _ (baseChangeComapEquiv ℤ k G X).symm]
+  rw [latticeDefect_eq_reductionK0, reductionK0_finsupp_int]
 
 end Permutation
 

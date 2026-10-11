@@ -185,7 +185,7 @@ matrix upper triangular with unit diagonal. -/
 private lemma simpleCorootsA_vecMul_injective (n : ℕ) :
     Function.Injective (simpleCorootsA n).vecMul := by
   refine vecMul_injective_of_submatrix_isUpperTriangular Fin.castSucc (fun i j hji ↦ ?_) fun i ↦ ?_
-  · have hji' : j.val < i.val := hji
+  · have _ : j.val < i.val := hji
     simp only [simpleCorootsA, twoTermRows_apply, Fin.ext_iff, Fin.val_castSucc, Fin.val_succ]
     rw [ite_eq_right (by omega), ite_eq_right (by omega), add_zero]
   · simp [simpleCorootsA, Fin.ext_iff, Fin.val_castSucc, Fin.val_succ]
@@ -239,7 +239,7 @@ diagonal `(1, …, 1, 2)`. -/
 private lemma simpleCorootsB_vecMul_injective (n : ℕ) :
     Function.Injective (simpleCorootsB n).vecMul := by
   refine vecMul_injective_of_submatrix_isUpperTriangular id (fun i j hji ↦ ?_) fun i ↦ ?_
-  · have hji' : j.val < i.val := hji
+  · have _ : j.val < i.val := hji
     have hle := Order.le_succ i
     simp only [simpleCorootsB, twoTermRows_apply, id_eq, Fin.ext_iff]
     rw [ite_eq_right (by omega), ite_eq_right (by omega), add_zero]
@@ -331,16 +331,16 @@ private lemma simpleCorootsD_vecMul_injective (k : ℕ) :
   -- The chain rows are triangular on the first `k + 1` coordinates.
   have hblock : Function.Injective (M.submatrix Fin.castSucc Fin.castSucc).vecMul := by
     refine vecMul_injective_of_submatrix_isUpperTriangular id (fun i j hji ↦ ?_) fun i ↦ ?_
-    · have hji' : j.val < i.val := hji
-      have hci : ((i.castSucc : Fin (k + 2)) : ℕ) = (i : ℕ) := rfl
+    · have _ : j.val < i.val := hji
+      have _ : ((i.castSucc : Fin (k + 2)) : ℕ) = (i : ℕ) := rfl
       have hcj : ((j.castSucc : Fin (k + 2)) : ℕ) = (j : ℕ) := rfl
-      have hik := i.isLt
-      have hjk := j.isLt
+      have _ := i.isLt
+      have _ := j.isLt
       simp only [Matrix.submatrix_apply, id_eq, hM, simpleCorootsD, twoTermRows_apply,
         Fin.ext_iff, forkIndex_val, Fin.orderSucc_castSucc, Fin.val_castSucc, Fin.val_succ]
       split_ifs <;> first | (exfalso; omega) | norm_num
-    · have hci : ((i.castSucc : Fin (k + 2)) : ℕ) = (i : ℕ) := rfl
-      have hik := i.isLt
+    · have _ : ((i.castSucc : Fin (k + 2)) : ℕ) = (i : ℕ) := rfl
+      have _ := i.isLt
       simp only [Matrix.submatrix_apply, id_eq, hM, simpleCorootsD, twoTermRows_apply,
         Fin.ext_iff, forkIndex_val, Fin.orderSucc_castSucc, Fin.val_castSucc, Fin.val_succ]
       split_ifs <;> first | (exfalso; omega) | norm_num

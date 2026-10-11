@@ -71,6 +71,8 @@ the pseudo-eigenvalue is the Fricke sign.
 * `HeckeRing.GL2.Newform.frickePseudoEigenvalue`: the Fricke pseudo-eigenvalue `λ_N(f)`, with
   its equation `𝒲_N f = λ_N(f) • f_ρ`, its uniqueness, and
   `HeckeRing.GL2.Newform.norm_frickePseudoEigenvalue`: `|λ_N(f)| = 1`.
+* `HeckeRing.GL2.Newform.frickePseudoEigenvalue_conj`: the pseudo-eigenvalue of `f_ρ` is
+  `(-1) ^ k · conj λ_N(f)`.
 * `HeckeRing.GL2.Newform.frickePseudoEigenvalue_eq_frickeSign`: for trivial nebentypus the
   pseudo-eigenvalue is the Fricke sign.
 
@@ -316,6 +318,26 @@ theorem Newform.norm_frickePseudoEigenvalue (f : Newform N k) :
   have hsq : ‖f.frickePseudoEigenvalue‖ ^ 2 = 1 := by
     exact_mod_cast mul_right_cancel₀ hP (h.trans (one_mul _).symm)
   exact (pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero).mp hsq
+
+/-- **The pseudo-eigenvalues of a newform and of its conjugate multiply to `(-1) ^ k`**:
+`λ_N(f) λ_N(f_ρ) = (-1) ^ k`, because `𝒲_N f = λ_N(f) • f_ρ`, `𝒲_N f_ρ = λ_N(f_ρ) • f` and
+`𝒲_N ∘ 𝒲_N = (-1) ^ k`. -/
+theorem Newform.frickePseudoEigenvalue_mul_frickePseudoEigenvalue_conj (f : Newform N k) :
+    f.frickePseudoEigenvalue * f.conj.frickePseudoEigenvalue = (-1 : ℂ) ^ k := by
+  have h := normalizedFrickeOperatorCusp_normalizedFrickeOperatorCusp_apply k f.toCuspForm
+  rw [f.normalizedFrickeOperatorCusp_eq_frickePseudoEigenvalue_smul, map_smul,
+    f.conj.normalizedFrickeOperatorCusp_eq_frickePseudoEigenvalue_smul, conj_conj,
+    smul_smul] at h
+  exact smul_left_injective ℂ f.ne_zero h
+
+/-- **The pseudo-eigenvalue of the conjugate newform**: `λ_N(f_ρ) = (-1) ^ k · conj λ_N(f)`. Since
+`|λ_N(f)| = 1`, its inverse is its complex conjugate. -/
+theorem Newform.frickePseudoEigenvalue_conj (f : Newform N k) :
+    f.conj.frickePseudoEigenvalue = (-1 : ℂ) ^ k * starRingEnd ℂ f.frickePseudoEigenvalue := by
+  have hnorm : starRingEnd ℂ f.frickePseudoEigenvalue * f.frickePseudoEigenvalue = 1 := by
+    rw [mul_comm, Complex.mul_conj', f.norm_frickePseudoEigenvalue, Complex.ofReal_one, one_pow]
+  linear_combination (-f.conj.frickePseudoEigenvalue) * hnorm + starRingEnd ℂ
+    f.frickePseudoEigenvalue * f.frickePseudoEigenvalue_mul_frickePseudoEigenvalue_conj
 
 /-- **For trivial nebentypus the pseudo-eigenvalue is the Fricke sign**: such a newform is its own
 conjugate (`HeckeRing.GL2.Newform.conj_eq_self_of_χ_eq_one`), so `𝒲_N f = λ_N(f) • f`. -/

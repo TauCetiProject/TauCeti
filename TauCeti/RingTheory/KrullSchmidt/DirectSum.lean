@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.KrullSchmidt.Existence
 public import TauCeti.RingTheory.KrullSchmidt.Uniqueness
+import Mathlib.RingTheory.LocalRing.RingHom.Basic
 
 /-!
 # The Krull-Schmidt theorem for external direct sums
@@ -177,7 +178,7 @@ theorem exists_equiv_linearEquiv_of_directSum_of_isLocalRing_end
   obtain ⟨P, hPi, hPt, hPe⟩ := exists_iSupIndep_linearEquiv_of_directSum eN
   obtain ⟨R, hRi, hRt, hRe⟩ := exists_iSupIndep_linearEquiv_of_directSum eQ
   obtain ⟨e, he⟩ := exists_equiv_linearEquiv_of_isLocalRing_end hPi hPt
-    (fun i ↦ have := hN i; IsLocalRing.of_ringEquiv (hPe i).some.conjRingEquiv) hRi hRt
+    (fun i ↦ have := hN i; (hPe i).some.conjRingEquiv.isLocalRing) hRi hRt
     (fun j ↦ (hQ j).of_linearEquiv (hRe j).some)
   exact ⟨e, fun i ↦ ⟨(hPe i).some ≪≫ₗ (he i).some ≪≫ₗ (hRe (e i)).some.symm⟩⟩
 

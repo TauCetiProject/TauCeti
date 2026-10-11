@@ -12,6 +12,7 @@ public import Mathlib.Order.Filter.AtTopBot.Finset
 public import Mathlib.Order.Northcott
 public import Mathlib.Topology.Algebra.Order.Floor
 public import Mathlib.Topology.UniformSpace.Real
+import Mathlib.Algebra.BigOperators.Group.Finset.Indicator
 
 /-!
 # Finite real-cutoff carriers for Northcott functions
@@ -117,6 +118,16 @@ theorem summatory_zero {M : Type*} [AddCommMonoid M] (x : ℝ) :
 theorem summatory_add {M : Type*} [AddCommMonoid M] (w₁ w₂ : ι → M) (x : ℝ) :
     summatory N (w₁ + w₂) x = summatory N w₁ x + summatory N w₂ x := by
   simp [summatory, Finset.sum_add_distrib]
+
+/-- An indicator-weighted summatory function is additive along a finite pairwise disjoint family
+of supports. -/
+theorem summatory_indicator_biUnion_finset {κ M : Type*} [AddCommMonoid M]
+    (s : Finset κ) (f : κ → Set ι) (hdisj : (s : Set κ).PairwiseDisjoint f)
+    (w : ι → M) (x : ℝ) :
+    summatory N ((⋃ i ∈ s, f i).indicator w) x =
+      ∑ i ∈ s, summatory N ((f i).indicator w) x := by
+  simp_rw [summatory_apply, Finset.indicator_biUnion_apply s f hdisj]
+  exact Finset.sum_comm
 
 /-- Summation distributes over pointwise subtraction of weights. -/
 theorem summatory_sub {M : Type*} [SubtractionCommMonoid M] (w₁ w₂ : ι → M) (x : ℝ) :

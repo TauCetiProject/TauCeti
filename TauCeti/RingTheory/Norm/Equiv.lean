@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Norm.Units
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
+public import Mathlib.FieldTheory.Normal.Defs
 import Mathlib.RingTheory.Norm.Basic
 
 /-!
@@ -17,6 +18,10 @@ This permits norm-index calculations in a model extension to be used for any iso
 extension. The proof uses Mathlib's `Algebra.norm_eq_of_algEquiv`.
 The identity extension has the full norm group, as does every finite extension of an
 algebraically closed field, since its algebra map is an isomorphism.
+
+For a tower `L/F/K` with `F/K` normal, the norm `N_{L/F}` is equivariant for `Aut(L/K)`: the
+norm of `σ x` is the restriction of `σ` to `F` applied to the norm of `x`, on elements and on
+units. The proof uses Mathlib's `Algebra.norm_eq_of_equiv_equiv`.
 -/
 
 public section
@@ -49,5 +54,27 @@ theorem normGroup_eq_top_of_isAlgClosed (K L : Type*) [Field K] [Field L] [Algeb
   let e := AlgEquiv.ofBijective (Algebra.ofId K L)
     (IsAlgClosed.algebraMap_bijective_of_isIntegral (k := K))
   rw [e.symm.normGroup_eq, normGroup_self]
+
+/-- **The norm is Galois-equivariant.** For a tower `L/F/K` with `F/K` normal and an automorphism
+`σ` of `L/K`, the restriction of `σ` to `F` carries the norm `N_{L/F}(x)` to `N_{L/F}(σ x)`. -/
+@[simp]
+theorem _root_.AlgEquiv.restrictNormal_norm {K F L : Type*} [Field K] [Field F] [Field L]
+    [Algebra K F] [Algebra K L] [Algebra F L] [IsScalarTower K F L] [Normal K F]
+    (σ : L ≃ₐ[K] L) (x : L) :
+    σ.restrictNormal F (Algebra.norm F x) = Algebra.norm F (σ x) := by
+  rw [Algebra.norm_eq_of_equiv_equiv (σ.restrictNormal F).toRingEquiv σ.toRingEquiv
+    (RingHom.ext (σ.restrictNormal_commutes F)) x]
+  exact (σ.restrictNormal F).toRingEquiv.apply_symm_apply _
+
+/-- **The norm on units is Galois-equivariant.** For a tower `L/F/K` with `F/K` normal and an
+automorphism `σ` of `L/K`, the restriction of `σ` to `F` carries `N_{L/F}(z)` to `N_{L/F}(σ z)`
+for every unit `z` of `L`. -/
+theorem _root_.AlgEquiv.restrictNormal_smul_normUnits {K F L : Type*} [Field K] [Field F]
+    [Field L] [Algebra K F] [Algebra K L] [Algebra F L] [IsScalarTower K F L] [Normal K F]
+    (σ : L ≃ₐ[K] L) (z : Lˣ) :
+    σ.restrictNormal F • Algebra.normUnits F z = Algebra.normUnits F (σ • z) :=
+  Units.ext (by
+    simpa only [AlgEquiv.smul_units_def, Units.coe_map, MonoidHom.coe_ofClass,
+      Algebra.coe_normUnits] using σ.restrictNormal_norm (F := F) (z : L))
 
 end TauCeti

@@ -35,7 +35,8 @@ No Huber-ring hypotheses are needed. The bundled version for morphisms of Huber 
 * `TauCeti.ValuationSpectrum.mem_spa_map_iff`: a continuous point lies over the image plus ring
   exactly when its pullback lies over the original one.
 * `TauCeti.ValuationSpectrum.continuous_spaComap`: `spaComap` is continuous.
-* `TauCeti.ValuationSpectrum.spaComap_id`, `spaComap_comp`: contravariant functoriality.
+* `TauCeti.ValuationSpectrum.spaComap_id`, `spaComap_comp`, `spaComapTopHom_id`,
+  `spaComapTopHom_comp`: contravariant functoriality.
 * `TauCeti.ValuationSpectrum.comap_preimage_rationalSubset_inter_spa`,
   `spaComap_preimage_rationalSubset`, `map_spaComapTopHom_obj_spaBasicOpen`: preimages of
   rational subsets.
@@ -214,6 +215,41 @@ theorem map_spaComapTopHom_obj_spaBasicOpen (T : Finset A) (s : A) :
     (TopologicalSpace.Opens.mem_map.trans mem_spaBasicOpen).trans <|
       (Set.ext_iff.mp (spaComap_preimage_rationalSubset φ hφ Aplus Bplus hplus T s) w).trans
         mem_spaBasicOpen.symm
+
+open CategoryTheory in
+/-- `spaComapTopHom` of the identity homomorphism is the identity morphism. -/
+@[simp]
+theorem spaComapTopHom_id :
+    spaComapTopHom (RingHom.id A) continuous_id (Aplus := Aplus) (fun _ ha ↦ ha) =
+      𝟙 (TopCat.of ↥(spa Aplus)) :=
+  TopCat.ext fun x ↦ congrFun (spaComap_id Aplus) x
+
+open CategoryTheory in
+/-- `spaComapTopHom` is contravariantly functorial: the map induced by `ψ ∘ φ` is the map induced
+by `ψ` followed by the map induced by `φ`. -/
+@[simp]
+theorem spaComapTopHom_comp {C : Type v} [CommRing C] [TopologicalSpace C] {Cplus : Subring C}
+    {ψ : B →+* C} (hψ : Continuous ψ) (hplus' : ∀ b ∈ Bplus, ψ b ∈ Cplus) :
+    spaComapTopHom (ψ.comp φ) (hψ.comp hφ) (fun a ha ↦ hplus' (φ a) (hplus a ha)) =
+      spaComapTopHom ψ hψ hplus' ≫ spaComapTopHom φ hφ hplus :=
+  TopCat.ext fun x ↦ congrFun (spaComap_comp hφ hψ Aplus Bplus Cplus hplus hplus') x
+
+/-- The preimage of an open under the map induced by the identity is the open itself. -/
+theorem map_spaComapTopHom_id_obj (U : TopologicalSpace.Opens ↥(spa Aplus)) :
+    (TopologicalSpace.Opens.map
+      (spaComapTopHom (RingHom.id A) continuous_id (Aplus := Aplus) fun _ ha ↦ ha)).obj U = U := by
+  rw [spaComapTopHom_id, TopologicalSpace.Opens.map_id_obj]
+
+/-- The preimage of an open under the map induced by `ψ ∘ φ` is its preimage under the map
+induced by `φ` followed by the preimage under the map induced by `ψ`. -/
+theorem map_spaComapTopHom_comp_obj {C : Type v} [CommRing C] [TopologicalSpace C]
+    {Cplus : Subring C} {ψ : B →+* C} (hψ : Continuous ψ) (hplus' : ∀ b ∈ Bplus, ψ b ∈ Cplus)
+    (U : TopologicalSpace.Opens ↥(spa Aplus)) :
+    (TopologicalSpace.Opens.map
+        (spaComapTopHom (ψ.comp φ) (hψ.comp hφ) fun a ha ↦ hplus' (φ a) (hplus a ha))).obj U =
+      (TopologicalSpace.Opens.map (spaComapTopHom ψ hψ hplus')).obj
+        ((TopologicalSpace.Opens.map (spaComapTopHom φ hφ hplus)).obj U) := by
+  rw [spaComapTopHom_comp, TopologicalSpace.Opens.map_comp_obj]
 
 end TopCat
 

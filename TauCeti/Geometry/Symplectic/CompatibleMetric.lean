@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Defs
+public import Mathlib.Analysis.InnerProductSpace.Basic
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 
 /-!
@@ -41,6 +41,8 @@ against exactly this metric.
   nondegenerate.
 * `TauCeti.SymplecticForm.Compatible.innerProductCore`: the metric of a compatible pair as an
   `InnerProductSpace.Core ℝ V`.
+* `TauCeti.SymplecticForm.abs_apply_le_norm_mul_norm`: when the inner product of `V` is the
+  metric `ω(·, J ·)`, the symplectic form is bounded by it, `|ω(v, w)| ≤ ‖v‖ ‖w‖`.
 
 The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Section 2.1: a compatible pair `(ω, J)` determines a metric `g(v, w) = ω(v, J w)`.
@@ -196,6 +198,32 @@ lemma innerProductCore_inner (h : ω.Compatible J) (v w : V) :
   rfl
 
 end Compatible
+
+section InnerProductSpace
+
+open scoped RealInnerProductSpace
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+  {ω : SymplecticForm V} {J : AlmostComplexStructure V}
+
+/-- If the inner product of `V` is the metric `ω(·, J ·)` of a symplectic form and an almost
+complex structure, then `ω` is bounded by the inner product norm: `|ω(v, w)| ≤ ‖v‖ ‖w‖`. -/
+theorem abs_apply_le_norm_mul_norm (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (v w : V) :
+    |ω v w| ≤ ‖v‖ * ‖w‖ := by
+  -- `ω(v, w) = -⟪v, J w⟫`, and `J` is an isometry.
+  have hω : ω v w = -⟪v, J w⟫ := by
+    rw [← hg, J.apply_apply]
+    simp
+  have hJ : ‖J w‖ = ‖w‖ := by
+    have hskew := ω.neg_eq (J w) w
+    rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), ← real_inner_self_eq_norm_sq,
+      ← real_inner_self_eq_norm_sq, ← hg, ← hg, J.apply_apply]
+    simp only [map_neg] at hskew ⊢
+    linarith
+  rw [hω, abs_neg, ← hJ]
+  exact abs_real_inner_le_norm v (J w)
+
+end InnerProductSpace
 
 end SymplecticForm
 

@@ -26,6 +26,9 @@ arbitrary exact constant field.
 * `TauCeti.Divisor.exists_degree_eq_genus_dim_eq_one`: **nonspecial divisors of degree `g`**
   supported on any prescribed set of at least `g` rational places (Stichtenoth,
   Proposition 1.6.12).
+* `TauCeti.Divisor.exists_mem_riemannRochSpace_add_ofPoint_ord_neg`: for an effective `B` with
+  `deg B = g` and `ℓ(B) = 1`, and a rational place `Q`, some function of `L(B + Q)` has a pole
+  at `Q`.
 
 ## References
 
@@ -102,6 +105,29 @@ theorem exists_degree_eq_genus_dim_eq_one (hF : IsFunctionField k F)
   have hdim : dim B = 1 := by omega
   refine ⟨B, hB0, fun P hP ↦ hST (hSfin.mem_toFinset.mp (hBS hP)), hBdeg, hdim, ?_⟩
   rw [indexOfSpecialty_def, hdim, hBdeg]
+  omega
+
+/-- For an effective divisor `B` of `F` with `deg B = g(F)` and `ℓ(B) = 1`, and a rational place
+`Q`, some function of `L(B + Q)` has a pole at `Q`: Riemann's theorem gives `ℓ(B + Q) ≥ 2`. -/
+theorem exists_mem_riemannRochSpace_add_ofPoint_ord_neg (hF : IsFunctionField k F)
+    {B : Divisor k F} (hB : 0 ≤ B) (hBdeg : degree B = genus k F)
+    (hBdim : dim B = 1) {Q : Place k F} (hQ : Q.degree = 1) :
+    ∃ z ∈ riemannRochSpace (B + WeilDivisor.ofPoint Q), Q.ord z < 0 := by
+  have := finiteDimensional_riemannRochSpace hF (B + WeilDivisor.ofPoint Q)
+  have hdim := degree_add_one_sub_genus_le_dim hF (B + WeilDivisor.ofPoint Q)
+  rw [degree_add, degree_ofPoint, hBdeg, hQ] at hdim
+  have hlt : riemannRochSpace B < riemannRochSpace (B + WeilDivisor.ofPoint Q) := by
+    refine Submodule.lt_of_le_of_finrank_lt_finrank (riemannRochSpace_mono ?_) ?_
+    · exact WeilDivisor.le_add_ofPoint B Q
+    · rw [← dim_def, ← dim_def, hBdim]
+      push_cast at hdim
+      omega
+  obtain ⟨z, hz, hzB⟩ := IsConcreteLE.exists_of_lt hlt
+  refine ⟨z, hz, ?_⟩
+  have h := ord_eq_neg_coeff_of_not_mem_sub_ofPoint hz (by rwa [add_sub_cancel_right])
+  rw [h, WeilDivisor.coeff_add, WeilDivisor.coeff_ofPoint_self]
+  have := WeilDivisor.coeff_le_coeff hB Q
+  rw [WeilDivisor.coeff_zero] at this
   omega
 
 end Divisor

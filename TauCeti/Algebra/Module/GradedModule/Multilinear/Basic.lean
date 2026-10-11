@@ -99,6 +99,20 @@ theorem multilinearFromPieces_comp_subtype (f : MultilinearMap R M N) :
   intro d x hx
   exact multilinearFromPieces_apply G _ d (fun i ↦ ⟨x i, hx i⟩)
 
+/-- A multilinear map on total modules takes its values in a submodule as soon as it does on
+homogeneous tuples.  The modules and gradings may depend on the input slot. -/
+theorem multilinearMap_apply_mem {f : MultilinearMap R M N} {S : Submodule R N}
+    (h : ∀ (d : ι → ℤ) (x : ∀ i, M i), (∀ i, x i ∈ (G i).piece (d i)) → f x ∈ S)
+    (x : ∀ i, M i) : f x ∈ S := by
+  classical
+  have := Fintype.ofFinite ι
+  have hx : x = fun i ↦ ∑ p ∈ (DirectSum.decompose (G i).piece (x i)).support,
+      (DirectSum.decompose (G i).piece (x i) p : M i) :=
+    funext fun i ↦ (DirectSum.sum_support_decompose (G i).piece (x i)).symm
+  rw [hx, MultilinearMap.map_sum_finset]
+  exact Submodule.sum_mem _ fun r _ ↦
+    h r _ fun i ↦ (DirectSum.decompose (G i).piece (x i) (r i)).property
+
 end Finite
 
 variable [Fintype ι]

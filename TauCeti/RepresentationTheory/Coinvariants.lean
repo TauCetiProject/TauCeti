@@ -99,11 +99,13 @@ variable {k G V : Type*} [CommRing k] [Monoid G] [AddCommGroup V] [Module k V]
   (ρ : Representation k G V)
 
 /-- An intertwining linear map carries the augmentation submodule into the augmentation
-submodule. Only the compatibility of the actions is used, so `e` need not be a homomorphism. -/
-theorem coinvariantsKer_map_le {G' V' : Type*} [Monoid G'] [AddCommGroup V'] [Module k V']
-    {ρ' : Representation k G' V'} (e : G → G') (φ : V →ₗ[k] V')
+submodule, allowing an extension of the coefficient ring. Only the compatibility of the actions
+is used, so `e` need not be a homomorphism. -/
+theorem coinvariantsKer_map_le {K G' V' : Type*} [CommRing K] [Algebra k K]
+    [Monoid G'] [AddCommGroup V'] [Module k V'] [Module K V'] [IsScalarTower k K V']
+    {ρ' : Representation K G' V'} (e : G → G') (φ : V →ₗ[k] V')
     (hφ : ∀ g x, φ (ρ g x) = ρ' (e g) (φ x)) :
-    (Coinvariants.ker ρ).map φ ≤ Coinvariants.ker ρ' := by
+    (Coinvariants.ker ρ).map φ ≤ (Coinvariants.ker ρ').restrictScalars k := by
   rw [Coinvariants.ker, Submodule.map_span_le]
   rintro _ ⟨⟨g, x⟩, rfl⟩
   rw [map_sub, hφ]

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LocalField.Herbrand.HasseArf
+public import TauCeti.NumberTheory.LocalField.Herbrand.HasseArf.PrimeDegree
 public import TauCeti.NumberTheory.LocalField.Norm.Surjectivity
 public import TauCeti.NumberTheory.LocalField.Norm.Unramified.Basic
 

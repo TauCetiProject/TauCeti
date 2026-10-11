@@ -60,7 +60,7 @@ theorem le_chord_of_midpoint {g : ℝ → ℝ} (hg : ContinuousOn g (Icc 0 1))
   obtain ⟨v, hv, hmax⟩ := isCompact_Icc.exists_isMaxOn ⟨u, hu⟩ hc
   rw [isMaxOn_iff] at hmax
   -- The leftmost maximizer `t₀` of `c` on `[0, 1]`.
-  set S := Icc (0 : ℝ) 1 ∩ c ⁻¹' {c v} with hS_def
+  set S := Icc (0 : ℝ) 1 ∩ c ⁻¹' {c v} with _
   have hS : IsCompact S :=
     isCompact_Icc.of_isClosed_subset
       (hc.preimage_isClosed_of_isClosed isClosed_Icc isClosed_singleton) inter_subset_left

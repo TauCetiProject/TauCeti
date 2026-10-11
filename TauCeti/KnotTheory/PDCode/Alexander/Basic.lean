@@ -237,7 +237,7 @@ theorem apply_crossing_add_two_of_two_of_one {M : Type*} [AddCommGroup M]
       rw [h, one_smul, sub_self, zero_smul, add_zero] at h₁
       rw [w₃, h₁]
       module
-  · rcases D.alexanderWeight_zero_eq_one_or_three_eq_one i with h | h
+  · rcases D.alexanderWeight_zero_eq_one_or_three_eq_one i with h | _
     · rw [h, mul_one] at w₂
       rw [h, one_smul, sub_self, zero_smul, add_zero] at h₂
       rw [w₂, h₂]

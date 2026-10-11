@@ -386,7 +386,7 @@ def smallSingularRetraction :
     (TopCat.toSSet.obj X).chainComplex R ⟶
       (X.smallSingularSubcomplex U : SSet).chainComplex R where
   f := smallSingularRetractionX R U hU hcov
-  comm' i j hij := by
+  comm' i j _ := by
     apply (cancel_mono ((SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R).f j)).1
     rw [Category.assoc, ← HomologicalComplex.Hom.comm, ← Category.assoc,
       smallSingularRetractionX_comp_ι, Category.assoc, smallSingularRetractionX_comp_ι,
@@ -427,6 +427,13 @@ def smallSingularChainHomotopyEquiv :
   homotopyHomInvId := Homotopy.ofEq (ι_comp_smallSingularRetraction R U hU hcov)
   homotopyInvHomId := (Homotopy.ofEq (smallSingularRetraction_comp_ι R U hU hcov)).trans
     (singularSmallApproxHomotopy R U).symm
+
+/-- The forward map of the small-chain homotopy equivalence is the inclusion of the chains
+subordinate to the cover. -/
+@[simp]
+lemma smallSingularChainHomotopyEquiv_hom :
+    (smallSingularChainHomotopyEquiv R U hU hcov).hom =
+      SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R := (rfl)
 
 /-- The isomorphism on homology induced by the inclusion of the chains subordinate to an open
 cover.  Since the inclusion is natural in the covered space, so is this isomorphism, whereas the

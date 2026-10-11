@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Polynomial.Puiseux.RootDifference
+public import TauCeti.Analysis.Polynomial.Puiseux.RootDifference.Basic
 
 /-!
 # Root collisions and multiplicities on the Puiseux hyperplane

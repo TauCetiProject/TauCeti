@@ -381,7 +381,6 @@ theorem memLp_id_gammaMeasure (ha : 0 < a) (hr : 0 < r) :
 /-- At or above the rate of a gamma law, its exponential moments do not exist. -/
 theorem not_integrable_exp_mul_id_gammaMeasure (ha : 0 < a) (hr : 0 < r) {t : ℝ} (ht : r ≤ t) :
     ¬ Integrable (fun x ↦ exp (t * x)) (gammaMeasure a r) := by
-  have hGa := Real.Gamma_pos_of_pos ha
   have hC : (0 : ℝ) < r ^ a / Real.Gamma a := by positivity
   rw [integrable_gammaMeasure_iff_integrableOn_Ioi ha hr]
   intro h
@@ -392,7 +391,6 @@ theorem not_integrable_exp_mul_id_gammaMeasure (ha : 0 < a) (hr : 0 < r) {t : �
     refine Integrable.mono h1 (by fun_prop) ?_
     filter_upwards [ae_restrict_mem measurableSet_Ioi] with x hx
     have hx1 : (1 : ℝ) < x := hx
-    have hxa : (0 : ℝ) < x ^ (a - 1) := Real.rpow_pos_of_pos (by linarith) _
     have hexp : (1 : ℝ) ≤ exp (-(r * x)) * exp (t * x) := by
       rw [← Real.exp_add]
       simpa using Real.exp_le_exp.mpr (by nlinarith : (0 : ℝ) ≤ -(r * x) + t * x)

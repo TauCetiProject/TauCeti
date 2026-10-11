@@ -34,6 +34,8 @@ modulo `p ^ k` each generator has at most two nontrivial factors, which cancel:
 * `TauCeti.prod_cyclotomicSymbol`: the product formula.
 * `TauCeti.prod_cyclotomicSymbol_of_subset`: the product formula over any finite set of primes
   containing the primes dividing `m · a`.
+* `TauCeti.cyclotomicSymbol_mem_of_forall_mem`: for positive `a`, a subgroup containing the
+  symbols of `a` at every prime other than `p` contains its symbol at `p`.
 
 ## References
 
@@ -191,5 +193,32 @@ theorem prod_cyclotomicSymbol (a : ℚˣ) :
     (Nat.primeFactors_mono ((dvd_mul_right m _).mul_right _) hS) a
     (Nat.primeFactors_mono ((dvd_mul_left _ m).mul_right _) hS)
     (Nat.primeFactors_mono (dvd_mul_left _ _) hS)
+
+/-- **The product formula isolates the symbol at `p`.** For `a ∈ ℚˣ` positive, if the symbols of
+`a` at the primes `ℓ ≠ p` dividing `m` are trivial and those at the primes not dividing `m` lie in a
+subgroup `H`, then so does the symbol of `a` at `p`. -/
+theorem cyclotomicSymbol_mem_of_forall_mem (p : ℕ) [Fact p.Prime] (H : Subgroup (ZMod m)ˣ)
+    (a : ℚˣ) (ha : 0 < (a : ℚ))
+    (hdvd : ∀ (ℓ : ℕ) [Fact ℓ.Prime], ℓ ∣ m → ℓ ≠ p →
+      cyclotomicSymbol m ℓ (Units.map (algebraMap ℚ ℚ_[ℓ]).toMonoidHom a) = 1)
+    (hcop : ∀ (ℓ : ℕ) [Fact ℓ.Prime], ¬ ℓ ∣ m →
+      cyclotomicSymbol m ℓ (Units.map (algebraMap ℚ ℚ_[ℓ]).toMonoidHom a) ∈ H) :
+    cyclotomicSymbol m p (Units.map (algebraMap ℚ ℚ_[p]).toMonoidHom a) ∈ H := by
+  by_cases hpm : p ∣ m
+  swap
+  · exact hcop p hpm
+  have h := prod_cyclotomicSymbol m a
+  rw [realCyclotomicSymbol_of_pos _ _ (by simpa using ha), one_mul] at h
+  have hpP : p ∈ (m * (a : ℚ).num.natAbs * (a : ℚ).den).primeFactors :=
+    Nat.mem_primeFactors.mpr ⟨Fact.out, dvd_mul_of_dvd_left (dvd_mul_of_dvd_left hpm _) _,
+      by simp [NeZero.ne m, a.ne_zero, (a : ℚ).den_ne_zero]⟩
+  rw [← Finset.mul_prod_erase _ _ (Finset.mem_attach _ ⟨p, hpP⟩)] at h
+  rw [eq_inv_of_mul_eq_one_left h]
+  refine inv_mem (prod_mem fun ℓ hℓ ↦ ?_)
+  have : Fact ℓ.1.Prime := ⟨Nat.prime_of_mem_primeFactors ℓ.2⟩
+  have hne : ℓ.1 ≠ p := fun h ↦ Finset.ne_of_mem_erase hℓ (Subtype.ext h)
+  by_cases hℓm : ℓ.1 ∣ m
+  · exact (hdvd ℓ.1 hℓm hne).symm ▸ one_mem H
+  · exact hcop ℓ.1 hℓm
 
 end TauCeti

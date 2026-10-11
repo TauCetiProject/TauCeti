@@ -82,6 +82,8 @@ commutative ring is the base change of that curve.
 * `WeierstrassCurve.exists_map_eq_of_isElliptic`: an elliptic Weierstrass curve over a commutative
   ring in `Type u` is the base change of an elliptic Weierstrass curve over a Noetherian integral
   domain in `Type u`.
+* `WeierstrassCurve.exists_map_eq_and_map_eq_of_isElliptic`: the same holds for an elliptic
+  Weierstrass curve together with a change of variables.
 
 ## Implementation notes
 
@@ -684,6 +686,40 @@ theorem exists_map_eq_of_isElliptic :
     W.specializeElliptic.comp ULift.ringEquiv.toRingHom, by
       rw [map_map, RingHom.comp_assoc, RingEquiv.toRingHom_comp_symm_toRingHom, RingHom.comp_id,
         map_specializeElliptic]⟩
+
+variable (C : VariableChange R)
+
+/-- Every pair of an elliptic Weierstrass curve `W` and a change of variables `C` over a
+commutative ring `R` in `Type u` is the base change `(W₁.map g, C₁.map g)` of such a pair over a
+Noetherian integral domain `R₁` in the same universe `Type u`, along a ring homomorphism
+`g : R₁ →+* R`. The ring `R₁` is `R₀[u, r, s, t][u⁻¹]`, for the ring `R₀` of
+`exists_map_eq_of_isElliptic`, and `C₁` is the change of variables `(u, r, s, t)`. -/
+theorem exists_map_eq_and_map_eq_of_isElliptic :
+    ∃ (R₁ : Type u) (_ : CommRing R₁) (_ : IsDomain R₁) (_ : IsNoetherianRing R₁)
+      (W₁ : WeierstrassCurve R₁) (_ : W₁.IsElliptic) (C₁ : VariableChange R₁) (g : R₁ →+* R),
+      W₁.map g = W ∧ C₁.map g = C := by
+  obtain ⟨R₀, _, _, _, W₀, _, f, rfl⟩ := W.exists_map_eq_of_isElliptic
+  -- the ring `R₀[u, r, s, t][u⁻¹]`, a Noetherian integral domain
+  set x : MvPolynomial (Fin 4) R₀ := MvPolynomial.X 0
+  have : IsDomain (Localization.Away x) := IsLocalization.isDomain_localization
+    (powers_le_nonZeroDivisors_of_noZeroDivisors (MvPolynomial.X_ne_zero 0))
+  have : IsNoetherianRing (Localization.Away x) :=
+    IsLocalization.isNoetherianRing (Submonoid.powers x) _ inferInstance
+  -- the specialization `u, r, s, t ↦ C.u, C.r, C.s, C.t`
+  set φ : MvPolynomial (Fin 4) R₀ →+* R :=
+    MvPolynomial.eval₂Hom f ![(C.u : R), C.r, C.s, C.t]
+  have hφ : IsUnit (φ x) := by simp [φ, x]
+  refine ⟨Localization.Away x, inferInstance, inferInstance, inferInstance,
+    W₀.map (algebraMap R₀ (Localization.Away x)), inferInstance,
+    ⟨(IsLocalization.Away.algebraMap_isUnit x).unit,
+      algebraMap (MvPolynomial (Fin 4) R₀) _ (.X 1), algebraMap (MvPolynomial (Fin 4) R₀) _ (.X 2),
+      algebraMap (MvPolynomial (Fin 4) R₀) _ (.X 3)⟩,
+    IsLocalization.Away.lift x hφ, ?_, ?_⟩
+  · rw [map_map]
+    congr 1
+    ext r
+    simp [IsScalarTower.algebraMap_apply R₀ (MvPolynomial (Fin 4) R₀) (Localization.Away x), φ]
+  · ext <;> simp [VariableChange.map, φ, x]
 
 end Universe
 

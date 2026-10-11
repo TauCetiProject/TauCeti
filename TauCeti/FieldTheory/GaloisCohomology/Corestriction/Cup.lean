@@ -65,14 +65,8 @@ theorem galoisCor_cup
               (trivialF2ResMap (AbsoluteGaloisGroup K) U 1 x)) y) =
         (trivialF2TopPairing U).cup 1 1
           (trivialF2ResMap (AbsoluteGaloisGroup K) U 1 x)
-          ((galoisF2Iso K L σ 1).inv y) := by
-    have h := trivialF2Map_cup
-      (ContinuousMonoidHom.toContinuousMonoidHom (galoisSubgroupEquiv K L σ).symm)
-      1 1 ((galoisF2Iso K L σ 1).hom
-        (trivialF2ResMap (AbsoluteGaloisGroup K) U 1 x)) y
-    rw [← galoisF2Iso_inv K L σ, ← galoisF2Iso_inv K L σ,
-      Iso.hom_inv_id_apply] at h
-    simpa using h
+          ((galoisF2Iso K L σ 1).inv y) :=
+    (galoisF2Iso_inv_cup K L σ 1 1 _ _).trans (by rw [Iso.hom_inv_id_apply])
   simp only [galoisCor_def, galoisRes_def, ConcreteCategory.comp_apply]
   rw [htransport]
   exact trivialF2CorMap_cup_one_one (AbsoluteGaloisGroup K) U

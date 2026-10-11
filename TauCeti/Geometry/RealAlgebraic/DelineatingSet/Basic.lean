@@ -186,9 +186,10 @@ theorem exists_forall_eval_eq_zero_orderAt_ne :
       omega
   refine ⟨X 1 * X 0 + X 2 ^ 2, fun t ↦ by simp, heq ?_ ?_, fun t ht ↦ heq ?_ ?_⟩
   · -- the polynomial and its first partial derivatives vanish at the origin
-    rw [succ_le_orderAt_iff]
+    norm_num only
+    rw [← one_add_one_eq_two (R := ℕ∞), succ_le_orderAt_iff]
     refine ⟨by simp, fun i ↦ ?_⟩
-    rw [Nat.cast_one, Order.one_le_iff_pos, orderAt_pos_iff]
+    rw [Order.one_le_iff_pos, orderAt_pos_iff]
     fin_cases i <;> simp [h0, h1, h2]
   · -- the mixed partial derivative along `X 0` and `X 1` is `1`
     rw [le_orderAt_iff_eval_foldl_pderiv]

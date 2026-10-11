@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Realization
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Equivalence
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Finite
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Relabel
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Relabel.Basic
 import all TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Equivalence
 import Mathlib.Topology.Algebra.Ring.Real
 

@@ -500,9 +500,10 @@ def _root_.SheafOfModules.LocalGeneratorsData.pullback {M : Y.Modules}
 /-- Carrying local generators along a morphism of schemes preserves finiteness. -/
 instance {M : Y.Modules} (q : SheafOfModules.LocalGeneratorsData.{w} (R := Y.ringCatSheaf) M)
     [q.IsFiniteType] (f : X ⟶ Y) : (q.pullback f).IsFiniteType where
-  isFiniteType i := SheafOfModules.GeneratingSections.isFiniteType_mapIso (q.generators i)
-    (pullbackOver f (q.X i)) (pullbackOverUnitIso f _) (pullbackOverObjIso f _ M)
-    (hσ := SheafOfModules.LocalGeneratorsData.IsFiniteType.isFiniteType (p := q) i)
+  isFiniteType i :=
+    let _ := SheafOfModules.LocalGeneratorsData.IsFiniteType.isFiniteType (p := q) i
+    SheafOfModules.GeneratingSections.isFiniteType_mapIso (q.generators i)
+      (pullbackOver f (q.X i)) (pullbackOverUnitIso f _) (pullbackOverObjIso f _ M)
 
 /-- Carrying locally free data along a morphism of schemes gives locally free data. -/
 instance {M : Y.Modules} (q : SheafOfModules.LocalGeneratorsData.{w} (R := Y.ringCatSheaf) M)

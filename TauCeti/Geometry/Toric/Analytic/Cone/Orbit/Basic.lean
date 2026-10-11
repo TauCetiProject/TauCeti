@@ -164,7 +164,7 @@ private theorem nonempty_affineConeOrbit_of_basis (hi : IsIntegralLattice i)
   apply (mem_affineConeOrbit_iff_coneChartEquiv hi hσ hb F _).2
   rw [Equiv.apply_symm_apply]
   intro ρ
-  by_cases hρ : ρ ∈ hσ.faceOrderIso hi F <;> simp
+  simp
 
 /-- Every face-indexed affine-cone orbit is nonempty. -/
 theorem nonempty_affineConeOrbit (hi : IsIntegralLattice i) (hσ : IsRegularCone i σ)

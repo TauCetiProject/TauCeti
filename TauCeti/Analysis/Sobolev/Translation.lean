@@ -258,7 +258,7 @@ theorem Sobolev1JetLp.value_translateLp (h : E) (J : Sobolev1JetLp mu ⊤ p) :
       (mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h (Sobolev1JetLp.value J) := by
   rw [← Sobolev1JetLp.valueL_apply, ← Sobolev1JetLp.valueL_apply,
     Sobolev1JetLp.valueL_eq_compLpL]
-  exact Measure.compLpL_translateLp _ h J
+  exact (WithLp.fstL 2 ℝ ℝ E).compLpL_translateLp h J
 
 omit [FiniteDimensional ℝ E] in
 /-- The gradient component of a translated whole-space jet is the translate of its gradient
@@ -268,7 +268,7 @@ theorem Sobolev1JetLp.gradient_translateLp (h : E) (J : Sobolev1JetLp mu ⊤ p) 
       (mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h (Sobolev1JetLp.gradient J) := by
   rw [← Sobolev1JetLp.gradientL_apply, ← Sobolev1JetLp.gradientL_apply,
     Sobolev1JetLp.gradientL_eq_compLpL]
-  exact Measure.compLpL_translateLp _ h J
+  exact (WithLp.sndL 2 ℝ ℝ E).compLpL_translateLp h J
 
 omit [FiniteDimensional ℝ E] in
 /-- **Translation preserves `W^{1,p}(ℝⁿ)`.**  On the whole space the weak-derivative identities

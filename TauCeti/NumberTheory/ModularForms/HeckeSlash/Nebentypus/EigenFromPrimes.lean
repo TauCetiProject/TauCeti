@@ -117,7 +117,7 @@ theorem exists_smul_heckeTCompositeGamma0_of_forall_prime_of_coprime
     exact exists_smul_heckeTGeneratorRecGamma0 hp hpN (h p hp hpN) v
   | zero => exact ⟨1, by rw [heckeTCompositeGamma0_zero, map_one, Module.End.one_apply, one_smul]⟩
   | one => exact ⟨1, by rw [heckeTCompositeGamma0_one, map_one, Module.End.one_apply, one_smul]⟩
-  | coprime a b ha hb hab iha ihb =>
+  | coprime a b _ _ hab iha ihb =>
     rw [heckeTCompositeGamma0_mul_of_coprime N hab]
     rw [Nat.coprime_mul_iff_left] at hnN
     exact exists_smul_mul (iha hnN.1) (ihb hnN.2)

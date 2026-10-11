@@ -52,7 +52,7 @@ theorem enorm_le_add_eLpNorm (hg : HolderWith C α g) (hp : 1 ≤ p) (hp' : p �
     refine (mul_le_mul le_rfl (enorm_integral_le_lintegral_enorm _) bot_le bot_le).trans ?_
     calc
       _ ≤ ‖(mu.real (ball (0 : E) 1))⁻¹‖ₑ *
-          ∫⁻ e in ball (0 : E) 1, (C : ℝ≥0∞) ∂mu := by
+          ∫⁻ _ in ball (0 : E) 1, (C : ℝ≥0∞) ∂mu := by
         refine mul_le_mul le_rfl (lintegral_mono_ae ?_) bot_le bot_le
         filter_upwards [ae_restrict_mem measurableSet_ball] with e he
         rw [← edist_eq_enorm_sub]

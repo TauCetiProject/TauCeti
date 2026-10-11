@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.LocallyFinite
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.VertexSector
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Ideal
+import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.IdealVertexStabilizer
 import Mathlib.Algebra.Order.ToIntervalMod
 import Mathlib.Order.Interval.Set.Union
 import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Translation
@@ -28,8 +30,20 @@ Poincaré's polygon theorem, whose hypothesis at ideal cycles is exactly that th
 transformations are parabolic. Neither discreteness nor a fundamental-domain hypothesis is
 assumed.
 
-## Main result
+Since the strips move strictly in one direction, an ideal cycle transformation is never the
+identity. It fixes a boundary point, so it is parabolic or hyperbolic. If a group containing it
+has locally finite translates of `P`, then it is parabolic
+(`ConvexPolygon.isParabolic_of_smul_eq_self_of_locallyFinite`). So the parabolic cycle condition
+holds at every ideal vertex of a locally finite fundamental polygon.
 
+## Main results
+
+* `ConvexPolygon.SidePairing.strictAnti_re_toComplex_smul_vertex_sub_one`: in a coordinate
+  moving an ideal vertex to `∞`, the strips of its cycle move strictly to the left.
+* `ConvexPolygon.SidePairing.cycleMap_ne_one_of_vertex_eq_inr`: an ideal cycle transformation is
+  not the identity.
+* `ConvexPolygon.SidePairing.isParabolic_cycleMap_of_locallyFinite`: an ideal cycle
+  transformation is parabolic when a group containing it has locally finite translates of `P`.
 * `ConvexPolygon.SidePairing.exists_setOf_lt_im_smul_subset_iUnion_smul_carrier`: at an ideal
   vertex with parabolic cycle transformation, the tiles of the cycle and their translates by
   powers of the cycle transformation cover a horodisc.
@@ -50,6 +64,44 @@ open scoped MatrixGroups Pointwise OnePoint
 namespace TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing
 
 variable {n : ℕ} [NeZero n] {P : ConvexPolygon n} (σ : P.SidePairing)
+
+/-- **The strips of an ideal cycle move strictly to the left.** Let `vertex j = ξ` be ideal and
+let `g` carry `ξ` to `∞`. In the coordinate `g`, the tile `(partialCycleMap j m)⁻¹ • P` is near
+`∞` the vertical strip ending on the right at the vertex before `next^[m] j`. The real part of
+that vertex strictly decreases with `m`. -/
+theorem strictAnti_re_toComplex_smul_vertex_sub_one {j : Fin n} {ξ : OnePoint ℝ}
+    (hj : P.vertex j = .inr ξ) {g : PSL(2, ℝ)} (hg : g • ξ = ∞) :
+    StrictAnti fun m : ℕ ↦
+      (toComplex ((g * (σ.partialCycleMap j m)⁻¹) • P.vertex (σ.next^[m] j - 1))).re := by
+  refine strictAnti_nat_of_succ_lt fun m ↦ ?_
+  -- the right edge of the strip of tile `m + 1` is the left edge of the strip of tile `m`
+  have hQ : ((g * (σ.partialCycleMap j m)⁻¹) • P).vertex (σ.next^[m] j) = .inr ∞ := by
+    rw [vertex_smul, mul_smul, ← σ.partialCycleMap_smul_vertex, inv_smul_smul, hj, Sum.smul_inr,
+      hg]
+  simpa only [mul_smul, σ.inv_partialCycleMap_succ_smul_vertex_sub_one, vertex_smul] using
+    ((g * (σ.partialCycleMap j m)⁻¹) • P).re_toComplex_vertex_add_one_lt_of_vertex_eq_inr_infty hQ
+
+/-- **An ideal cycle transformation is not the identity**: going once around the cycle moves the
+strips of its tiles strictly to the left. -/
+theorem cycleMap_ne_one_of_vertex_eq_inr {j : Fin n} {ξ : OnePoint ℝ}
+    (hj : P.vertex j = .inr ξ) : σ.cycleMap j ≠ 1 := by
+  intro h
+  obtain ⟨g, hg⟩ := MulAction.exists_smul_eq PSL(2, ℝ) ξ (∞ : OnePoint ℝ)
+  have hlt := σ.strictAnti_re_toComplex_smul_vertex_sub_one hj hg (σ.cycleLength_pos j)
+  beta_reduce at hlt
+  rw [← cycleMap_def, h, σ.next_iterate_cycleLength, partialCycleMap_zero,
+    Function.iterate_zero_apply] at hlt
+  exact lt_irrefl _ hlt
+
+/-- **Ideal cycle transformations of a locally finite tessellation are parabolic.** If a subgroup
+`Γ` of `PSL(2, ℝ)` contains the cycle transformation at the ideal vertex `vertex j` and its
+translates of `P` form a locally finite family, then this cycle transformation is parabolic. -/
+theorem isParabolic_cycleMap_of_locallyFinite {j : Fin n} {ξ : OnePoint ℝ}
+    (hj : P.vertex j = .inr ξ) {Γ : Subgroup PSL(2, ℝ)} (hT : σ.cycleMap j ∈ Γ)
+    (hlf : LocallyFinite fun γ : Γ ↦ (γ : PSL(2, ℝ)) • P.carrier) :
+    IsParabolic (σ.cycleMap j) :=
+  P.isParabolic_of_smul_eq_self_of_locallyFinite hj hlf hT
+    (σ.cycleMap_smul_eq_self_of_vertex_eq_inr hj) (σ.cycleMap_ne_one_of_vertex_eq_inr hj)
 
 /-- **The local tiling at a parabolic ideal vertex.** Let `vertex j = ξ` be ideal with parabolic
 cycle transformation `T`, and let `g` carry `ξ` to `∞`. Then above some height in the coordinate
@@ -74,7 +126,6 @@ theorem exists_setOf_lt_im_smul_subset_iUnion_smul_carrier {j : Fin n} {ξ : One
       hg]
   let u (m : ℕ) : ℝ := (toComplex ((Q m).vertex (σ.next^[m] j + 1))).re
   let v (m : ℕ) : ℝ := (toComplex ((Q m).vertex (σ.next^[m] j - 1))).re
-  have huv (m : ℕ) : u m < v m := (Q m).re_toComplex_vertex_add_one_lt_of_vertex_eq_inr_infty (hQ m)
   have hvu (m : ℕ) : v (m + 1) = u m := by
     simp only [v, u, Q, vertex_smul, mul_smul, σ.inv_partialCycleMap_succ_smul_vertex_sub_one]
   -- after a full cycle the strip has moved by `-x`
@@ -89,7 +140,8 @@ theorem exists_setOf_lt_im_smul_subset_iUnion_smul_carrier {j : Fin n} {ξ : One
     rw [hQr, σ.next_iterate_cycleLength, Function.iterate_zero_apply, partialCycleMap_zero,
       inv_one, mul_one, vertex_smul, vertex_smul, mul_smul, toComplex_upperRightHom_smul _ hne,
       Complex.add_re, Complex.ofReal_re]
-  have hanti : StrictAnti v := strictAnti_nat_of_succ_lt fun m ↦ (hvu m).trans_lt (huv m)
+  have hanti : StrictAnti v := by
+    simpa only [v, Q, vertex_smul] using σ.strictAnti_re_toComplex_smul_vertex_sub_one hj hg
   have hx0 : 0 < x := by
     have := hanti (σ.cycleLength_pos j)
     linarith

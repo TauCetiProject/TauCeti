@@ -68,10 +68,12 @@ recording: a nonzero ideal has absolute norm at least `1`, and a height-one prim
 `TauCeti.idealsLE_one` isolates the unit ideal and `TauCeti.primesLE_eq_empty_of_lt_two` empties the
 prime carrier below `2`.
 
-Modifying a weight on a finite set, or a prime set on a finite symmetric difference, changes a
-summatory function by a quantity that is eventually the *constant* total discrepancy; this is
-`TauCeti.eventually_summatory_sub_eq` and its two prime specializations. Layer 7 uses these to
-show that finite changes do not affect a density. In the same spirit,
+The counts are additive over a finite pairwise disjoint family of prime sets, as recorded by
+`TauCeti.primeTheta_biUnion_finset` and `TauCeti.primeCount_biUnion_finset`. Modifying a weight on a
+finite set, or a prime set on a finite symmetric difference, changes a summatory function by a
+quantity that is eventually the *constant* total discrepancy; this is
+`TauCeti.eventually_summatory_sub_eq` and its two prime specializations. These results show that
+finite changes do not affect a density. In the same spirit,
 `TauCeti.primeTheta_isLittleO_of_finite` records that a finite set of primes contributes an
 eventually constant amount to `ϑ_K`, hence `o(x)`: an exceptional set can be discarded from a
 counting argument outright, not merely from a density. Its `ψ` companion is
@@ -838,6 +840,21 @@ theorem primeCount_union (hST : Disjoint S T) (x : ℝ) :
     primeCount K (S ∪ T) x = primeCount K S x + primeCount K T x := by
   rw [primeCount, Set.indicator_union_of_disjoint hST]
   exact summatory_add _ _ _ x
+
+/-- The logarithmically weighted prime count is additive along a finite pairwise disjoint family
+of prime sets. -/
+theorem primeTheta_biUnion_finset {ι : Type*} (s : Finset ι)
+    (f : ι → Set (HeightOneSpectrum (𝓞 K))) (hdisj : (s : Set ι).PairwiseDisjoint f) (x : ℝ) :
+    primeTheta K (⋃ i ∈ s, f i) x = ∑ i ∈ s, primeTheta K (f i) x := by
+  simp only [primeTheta]
+  exact summatory_indicator_biUnion_finset _ s f hdisj _ x
+
+/-- The unweighted prime count is additive along a finite pairwise disjoint family of prime sets. -/
+theorem primeCount_biUnion_finset {ι : Type*} (s : Finset ι)
+    (f : ι → Set (HeightOneSpectrum (𝓞 K))) (hdisj : (s : Set ι).PairwiseDisjoint f) (x : ℝ) :
+    primeCount K (⋃ i ∈ s, f i) x = ∑ i ∈ s, primeCount K (f i) x := by
+  simp only [primeCount]
+  exact summatory_indicator_biUnion_finset _ s f hdisj _ x
 
 /-- The logarithmically weighted count of `S` exceeds that of `T` by at most the weighted count
 of their symmetric difference. -/

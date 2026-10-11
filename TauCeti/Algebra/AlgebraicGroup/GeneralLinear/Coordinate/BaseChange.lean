@@ -336,6 +336,19 @@ theorem coordinateHopfAlgebraBaseChangeIso_hom_apply
     CategoryTheory.Iso.symm_hom, CommHopfAlgCat.ofIsoSelf_inv]
   exact coordinateHopfAlgebraBaseChangeBialgEquiv_tmul_coordinateRingMap R K n s p
 
+/-- The categorical base-change isomorphism sends the scalar extension of a generic matrix
+entry to the corresponding entry over the new base. -/
+theorem coordinateHopfAlgebraBaseChangeIso_hom_one_tmul_X
+    (R : Type u) (K : Type max u v) [CommRing R] [CommRing K] [Algebra R K]
+    (n : ℕ) (i j : Fin n) :
+    (coordinateHopfAlgebraBaseChangeIso R K n).hom.hom
+        (1 ⊗ₜ[R] coordinateHopfAlgebraAlgEquiv R n
+          (coordinateRingMap R n (MvPolynomial.X (i, j)))) =
+      coordinateHopfAlgebraAlgEquiv K n
+        (coordinateRingMap K n (MvPolynomial.X (i, j))) := by
+  simpa only [one_smul, MvPolynomial.map_X] using
+    coordinateHopfAlgebraBaseChangeIso_hom_apply.{u, v} R K n 1 (MvPolynomial.X (i, j))
+
 /-- The general-linear base-change isomorphism sends the scalar extension of the generic
 determinant to the generic determinant over the new base. -/
 theorem coordinateHopfAlgebraBaseChangeIso_hom_determinantGroupLike

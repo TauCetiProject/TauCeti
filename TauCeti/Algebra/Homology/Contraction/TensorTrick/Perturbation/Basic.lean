@@ -284,9 +284,6 @@ theorem isCoalgHom_reducedTensorWords_perturb_proj (hδ : IsGradedCoderivation G
     have e := T.perturb_proj_comp_one_add_mul δ hsq hU
     rwa [hTp, hTh, Module.End.mul_eq_comp, LinearMap.comp_add, Module.End.one_eq_id,
       LinearMap.comp_id] at e
-  have hp' : p' = p - p ∘ₗ X ∘ₗ h := by
-    rw [← hTp, ← hTh]
-    exact T.perturb_proj δ hsq hU
   -- The side conditions of the perturbed projection against `h`, `τ h` and `π = i p`.
   have hp'h : p' ∘ₗ h = 0 := by
     have e := T.perturb_proj_comp_homotopy δ hsq hU

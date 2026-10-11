@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.CentralSimple.Centralizer.Basic
 public import TauCeti.Algebra.Subalgebra.Center
+public import TauCeti.Algebra.Subalgebra.Centralizer
 
 /-!
 # Centralizers of simple subalgebras
@@ -65,5 +66,17 @@ theorem map_center_centralizer_val :
   rw [map_center_val, map_center_val]
   simpa only [coe_centralizer, centralizer_centralizer_of_isSimpleRing] using
     inf_comm (centralizer K (B : Set A)) B
+
+open scoped IsMulCommutative in
+/-- The centralizer of a commutative simple subalgebra is central over that subalgebra,
+with its canonical action by inclusion. In particular, this applies to subfields. -/
+theorem isCentral_centralizer [IsMulCommutative B] :
+    Algebra.IsCentral B (centralizer K (B : Set A)) := by
+  refine ⟨fun x hx ↦ ?_⟩
+  have hxB : (x : A) ∈ centralizer K (Set.centralizer (B : Set A)) :=
+    (mem_centralizer_iff K).mpr fun y hy ↦
+      congrArg Subtype.val ((mem_center_iff.mp hx) ⟨y, hy⟩)
+  rw [centralizer_centralizer_of_isSimpleRing] at hxB
+  exact Algebra.mem_bot.mpr ⟨⟨x, hxB⟩, Subtype.ext (by simp)⟩
 
 end Subalgebra

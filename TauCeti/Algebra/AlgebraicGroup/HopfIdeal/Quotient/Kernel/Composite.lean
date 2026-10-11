@@ -44,8 +44,8 @@ noncomputable def kernelCompositeMap (f : H ⟶ K) (g : K ⟶ L) :
   liftQuotient (kernelHopfIdeal f) (g ≫ mkQuotient L (kernelHopfIdeal (f ≫ g))) (by
     intro x hx
     apply (mkQuotient_eq_zero_iff L (kernelHopfIdeal (f ≫ g)) (g.hom x)).mpr
-    rw [kernelHopfIdeal_comp, HopfIdeal.map_toIdeal]
-    exact Ideal.mem_map_of_mem g.hom.toAlgHom.toRingHom hx)
+    rw [kernelHopfIdeal_comp]
+    exact HopfIdeal.mem_map_of_mem g.hom (HopfIdeal.mem_toIdeal.mp hx))
 
 /-- The restriction on kernels sends a quotient representative to the class of its image. -/
 @[simp]

@@ -101,7 +101,7 @@ theorem coordinateHopfAlgebraBaseChangeIso_hom_relationMatrix (i j : Fin (m + m)
 
 /-- The general-linear base-change isomorphism carries the base-changed symplectic defining Hopf
 ideal onto the symplectic defining Hopf ideal over the new base. -/
-private theorem map_baseChangeHopfIdeal_definingHopfIdeal :
+theorem map_baseChangeHopfIdeal_definingHopfIdeal :
     (CommHopfAlgCat.baseChangeHopfIdeal (K := K) (definingHopfIdeal R m)).map
         (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K (m + m)).hom.hom =
       definingHopfIdeal K m := by
@@ -149,6 +149,21 @@ theorem baseChangeMap_coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_hom 
     (definingHopfIdeal R m) (definingHopfIdeal K m)
     (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K (m + m))
     (map_baseChangeHopfIdeal_definingHopfIdeal R K m)
+
+/-- On a pure tensor of a restricted general-linear function, the symplectic base-change
+isomorphism is the general-linear isomorphism followed by restriction. -/
+theorem coordinateHopfAlgebraBaseChangeIso_hom_tmul_coordinateMap
+    (s : K) (x : GeneralLinear.coordinateHopfAlgebra R (m + m)) :
+    (coordinateHopfAlgebraBaseChangeIso R K m).hom.hom
+        (s ⊗ₜ[R] (coordinateMap R m).hom x) =
+      (coordinateMap K m).hom
+        ((GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K (m + m)).hom.hom
+          (s ⊗ₜ[R] x)) := by
+  have h := congrArg (fun f ↦ f.hom (s ⊗ₜ[R] x))
+    (baseChangeMap_coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_hom R K m)
+  rw [_root_.CommHopfAlgCat.comp_apply, _root_.CommHopfAlgCat.comp_apply,
+    CommHopfAlgCat.baseChangeMap_apply_tmul] at h
+  exact h
 
 /-- The finite-type coordinate Hopf algebra of `Sp₂ₘ` commutes with base change. -/
 noncomputable def finiteTypeCoordinateHopfAlgebraBaseChangeIso :

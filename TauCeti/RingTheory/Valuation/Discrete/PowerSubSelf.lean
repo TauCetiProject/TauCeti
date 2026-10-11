@@ -44,7 +44,7 @@ theorem ord_pow_sub_self_of_ord_neg {n : ℕ} (hn : 1 < n) {y : F}
     rintro rfl
     simp at hy
   have hlt : (n : ℤ) * v.ord y < v.ord y := by
-    have hn' : (1 : ℤ) < n := by exact_mod_cast hn
+    have _ : (1 : ℤ) < n := by exact_mod_cast hn
     nlinarith
   rw [sub_eq_add_neg, ord_add_eq_min_of_ord_ne v (pow_ne_zero _ hy0) (neg_ne_zero.mpr hy0)
     (by rw [ord_pow, ord_neg]; omega), ord_pow, ord_neg, min_eq_left hlt.le]

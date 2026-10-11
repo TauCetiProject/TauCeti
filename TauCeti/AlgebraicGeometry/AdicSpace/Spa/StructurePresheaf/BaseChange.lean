@@ -25,6 +25,17 @@ compatible with the structure maps. This file packages that homomorphism as a mo
 principle for morphisms out of `A⟨p⟩` and the compatibility of the structure maps with the
 restriction and comparison morphisms between completed rational localisations.
 
+More generally, if the rational subset `R(q)` lies in the inverse image of `R(p)`, Wedhorn's
+geometric universal property gives a canonical base-change morphism
+
+```text
+A⟨p⟩ → B⟨q⟩.
+```
+
+This is `Presentation.mapHomOfSubset`. Unlike `Presentation.mapHom`, it does not require the
+denominator of `q` to be `φ(s)` or the numerators of `q` to contain `φ(T)`; this is what permits
+pullback maps to be assembled from arbitrary rational opens of the target.
+
 When `φ` carries open ideals to open ideals and `A⁺` into `B⁺`, the preimage of the rational
 subset `R(T/s)` of `Spa(A, A⁺)` under the induced map `Spa(B, B⁺) → Spa(A, A⁺)` is the rational
 subset `R(φ(T)/φ(s))` of `Spa(B, B⁺)` (Wedhorn, Lemma 7.46(3)). `PresentationIndex.map` records
@@ -41,6 +52,8 @@ general `φ` with sheafy target.
 * `TauCeti.Huber.PairOfDefinition.Presentation.toCompletionLocTopHom`: the structure map
   `A → A⟨p⟩` as a morphism of `TopCommRingCat`.
 * `TauCeti.Huber.PairOfDefinition.Presentation.mapHom`: the base change `A⟨p⟩ ⟶ B⟨q⟩` of `φ`.
+* `TauCeti.Huber.PairOfDefinition.Presentation.mapHomOfSubset`: the same base change under the
+  geometric condition `R(q) ⊆ Spa(φ)⁻¹(R(p))`.
 * `TauCeti.ValuationSpectrum.PresentationIndex.map`: the index of `Spa(B, B⁺)` induced by an
   index of `Spa(A, A⁺)`.
 
@@ -50,6 +63,10 @@ general `φ` with sheafy target.
   their composites with the structure map.
 * `TauCeti.Huber.PairOfDefinition.Presentation.toCompletionLocTopHom_comp_mapHom`: the base change
   is compatible with the structure maps.
+* `TauCeti.Huber.PairOfDefinition.Presentation.toCompletionLocTopHom_comp_mapHomOfSubset`: the
+  geometric base change is compatible with the structure maps.
+* `TauCeti.Huber.PairOfDefinition.Presentation.mapHomOfSubset_comp_homOfRationalSubsetSubset`:
+  geometric base change commutes with restriction to a smaller rational subset of the target.
 * `TauCeti.ValuationSpectrum.spaBasicOpen_map_pres`: the rational open presented by the induced
   index is the preimage of the rational open presented by the original index.
 * `TauCeti.ValuationSpectrum.presentationLimitπToPresentation_comp_eq`: two projections of a
@@ -209,6 +226,101 @@ theorem Presentation.toCompletionLocTopHom_comp_mapHom (φ : A →+* B) (hφ : C
   apply eq_whisker
   exact Subtype.ext (existsUnique_continuous_ringHom_comp_eq φ hφ p q hden hnum).choose_spec.1.2
 
+/-! ### Geometric base change -/
+
+/-- The continuous ring homomorphism underlying `Presentation.mapHomOfSubset` exists uniquely.
+This is Wedhorn's Lemma 8.1 applied to the structure map `B → B⟨q⟩`: its adic spectrum lands in
+`R(q)`, and the subset hypothesis then carries it into `R(p)` after pullback along `φ`. -/
+private theorem existsUnique_continuous_ringHom_of_comap_rationalSubset_subset
+    (φ : A →+* B) (hφ : Continuous φ) (Aplus : Subring A) (Bplus : Subring B)
+    (hBplus : ∀ ⦃b⦄, b ∈ Bplus → IsPowerBounded b) (p : Presentation P)
+    (q : Presentation P')
+    (hsub : ValuationSpectrum.rationalSubset Bplus q.num q.den ⊆
+      ValuationSpectrum.comap φ ⁻¹'
+        ValuationSpectrum.rationalSubset Aplus p.num p.den) :
+    letI := locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := locUniformSpace P' q.num q.den _ q.hasDenominatorPower
+    letI := isUniformAddGroup_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
+    letI := isTopologicalRing_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
+    ∃! g : UniformSpace.Completion (Localization.Away p.den) →+*
+        UniformSpace.Completion (Localization.Away q.den),
+      Continuous g ∧ g.comp (toCompletionLoc P p.num p.den _ p.hasDenominatorPower) =
+        (toCompletionLoc P' q.num q.den _ q.hasDenominatorPower).comp φ := by
+  let _ := locUniformSpace P' q.num q.den _ q.hasDenominatorPower
+  have _ := isUniformAddGroup_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
+  have _ := isTopologicalRing_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
+  have _ := isHuberRing_completion_locTopology P' q.num q.den _ q.hasDenominatorPower
+  refine ValuationSpectrum.existsUnique_continuous_ringHom_of_forall_comap_mem_rationalSubset
+    P Aplus p.num p.den _ p.hasDenominatorPower
+    (powerBoundedSubring (UniformSpace.Completion (Localization.Away q.den)))
+    ⟨isOpen_powerBoundedSubring _, inferInstance, le_rfl⟩
+    ((continuous_toCompletionLoc P' q.num q.den _ q.hasDenominatorPower).comp hφ).continuousAt
+    fun w hw ↦ ?_
+  have hle := completedPlusSubring_le_powerBoundedSubring
+    P' Bplus hBplus q.num q.den _ q.hasDenominatorPower
+  have hq := ValuationSpectrum.spaComapLoc_mem_rationalSubset
+    P' Bplus q.num q.den _ q.hasDenominatorPower ⟨w, ValuationSpectrum.spa_antitone hle hw⟩
+  simpa only [ValuationSpectrum.spaComapLoc_val, ValuationSpectrum.comap_comp,
+    Function.comp_apply, Set.mem_preimage] using hsub hq
+
+/-- **Geometric base change of completed rational localisations.** If `R(q)` is contained in
+the inverse image of `R(p)` under `Spa(B, B⁺) → Spa(A, A⁺)`, a continuous homomorphism
+`φ : A → B` induces a canonical morphism `A⟨p⟩ → B⟨q⟩` of complete separated topological rings.
+
+In contrast to `Presentation.mapHom`, the denominator of `q` need not be `φ(p.den)` and its
+numerators need not contain `φ(p.num)`. -/
+noncomputable def Presentation.mapHomOfSubset (φ : A →+* B) (hφ : Continuous φ)
+    (Aplus : Subring A) (Bplus : Subring B)
+    (hBplus : ∀ ⦃b⦄, b ∈ Bplus → IsPowerBounded b) (p : Presentation P)
+    (q : Presentation P')
+    (hsub : ValuationSpectrum.rationalSubset Bplus q.num q.den ⊆
+      ValuationSpectrum.comap φ ⁻¹'
+        ValuationSpectrum.rationalSubset Aplus p.num p.den) :
+    p.completionLocObj ⟶ q.completionLocObj := by
+  let _ := locUniformSpace P p.num p.den _ p.hasDenominatorPower
+  have _ := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+  have _ := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+  let _ := locUniformSpace P' q.num q.den _ q.hasDenominatorPower
+  have _ := isUniformAddGroup_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
+  have _ := isTopologicalRing_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
+  have hg := existsUnique_continuous_ringHom_of_comap_rationalSubset_subset
+    φ hφ Aplus Bplus hBplus p q hsub
+  exact InducedCategory.homMk (eqToHom (completionLocObj_obj P p.num p.den _ _) ≫
+    (⟨hg.choose, hg.choose_spec.1.1⟩ :
+      TopCommRingCat.of (UniformSpace.Completion (Localization.Away p.den)) ⟶
+        TopCommRingCat.of (UniformSpace.Completion (Localization.Away q.den))) ≫
+      eqToHom (completionLocObj_obj P' q.num q.den _ _).symm)
+
+/-- Geometric base change carries the structure map of `p` to the structure map of `q` after
+`φ`. This characterizes `Presentation.mapHomOfSubset`. -/
+@[reassoc]
+theorem Presentation.toCompletionLocTopHom_comp_mapHomOfSubset
+    (φ : A →+* B) (hφ : Continuous φ) (Aplus : Subring A) (Bplus : Subring B)
+    (hBplus : ∀ ⦃b⦄, b ∈ Bplus → IsPowerBounded b) (p : Presentation P)
+    (q : Presentation P')
+    (hsub : ValuationSpectrum.rationalSubset Bplus q.num q.den ⊆
+      ValuationSpectrum.comap φ ⁻¹'
+        ValuationSpectrum.rationalSubset Aplus p.num p.den) :
+    p.toCompletionLocTopHom ≫ (p.mapHomOfSubset φ hφ Aplus Bplus hBplus q hsub).hom =
+      (⟨φ, hφ⟩ : TopCommRingCat.of A ⟶ TopCommRingCat.of B) ≫
+        q.toCompletionLocTopHom := by
+  let _ := locUniformSpace P p.num p.den _ p.hasDenominatorPower
+  have _ := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+  have _ := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+  let _ := locUniformSpace P' q.num q.den _ q.hasDenominatorPower
+  have _ := isUniformAddGroup_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
+  have _ := isTopologicalRing_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
+  simp only [Presentation.toCompletionLocTopHom, Presentation.mapHomOfSubset,
+    InducedCategory.homMk_hom, Category.assoc, eqToHom_trans_assoc, eqToHom_refl,
+    Category.id_comp]
+  simp only [← Category.assoc]
+  apply eq_whisker
+  exact Subtype.ext
+    (existsUnique_continuous_ringHom_of_comap_rationalSubset_subset
+      φ hφ Aplus Bplus hBplus p q hsub).choose_spec.1.2
+
 end TauCeti.Huber.PairOfDefinition
 
 namespace TauCeti.ValuationSpectrum
@@ -326,6 +438,28 @@ theorem toCompletionLocTopHom_comp_homOfRationalSubsetSubset
     ← Presentation.toCompletionLocTopHom_comp_restrictionHom hqk, Category.assoc,
     ← ObjectProperty.FullSubcategory.comp_hom, e₂, ObjectProperty.FullSubcategory.id_hom,
     Category.comp_id]
+
+/-- Geometric base change commutes with restriction to a smaller rational subset of the target. -/
+@[reassoc]
+theorem
+    _root_.TauCeti.Huber.PairOfDefinition.Presentation.mapHomOfSubset_comp_homOfRationalSubsetSubset
+    (φ : A →+* B) (hφ : Continuous φ) (Aplus : Subring A) (Bplus : Subring B)
+    (hBplus : ∀ ⦃b⦄, b ∈ Bplus → IsPowerBounded b) (p : Presentation P)
+    {q r : Presentation P'}
+    (hsub : rationalSubset Bplus q.num q.den ⊆
+      comap φ ⁻¹' rationalSubset Aplus p.num p.den)
+    (hr : rationalSubset Bplus r.num r.den ⊆ rationalSubset Bplus q.num q.den) :
+    p.mapHomOfSubset φ hφ Aplus Bplus hBplus q hsub ≫
+        homOfRationalSubsetSubset Bplus hBplus hr =
+      p.mapHomOfSubset φ hφ Aplus Bplus hBplus r (fun _ hw ↦ hsub (hr hw)) := by
+  apply p.hom_ext
+  rw [ObjectProperty.FullSubcategory.comp_hom]
+  simp only [← Category.assoc]
+  rw [Presentation.toCompletionLocTopHom_comp_mapHomOfSubset]
+  simp only [Category.assoc]
+  rw [toCompletionLocTopHom_comp_homOfRationalSubsetSubset]
+  exact (Presentation.toCompletionLocTopHom_comp_mapHomOfSubset
+    φ hφ Aplus Bplus hBplus p r (fun _ hw ↦ hsub (hr hw))).symm
 
 /-- Two projections of `presentationLimit` followed by maps agreeing on `A` agree, when the
 rational subset of the first index lies in that of the second and `A⁺` consists of power-bounded

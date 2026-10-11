@@ -81,7 +81,7 @@ series together with the swap-invariance block — declarations `slopeSeries`, `
 `constantCoeff_interceptSeries`, `thirdRootSeries`, `constantCoeff_thirdRootSeries`,
 `rename_swap_slopeSeries`, `rename_swap_interceptSeries` and `rename_swap_thirdRootSeries`.
 The source's `rename_swap_invOfUnit` is not ported: it is the general
-`MvPowerSeries.ringHom_invOfUnit` specialised to `rename Sum.swap`, and is used as such.
+`MvPowerSeries.map_invOfUnit` specialised to `rename Sum.swap`, and is used as such.
 
 The source's `wSeries` and `vSeries` are `formalW` and `formalU`, so neither is re-ported and
 everything here is stated over the existing `w`-expansion API. Where
@@ -268,7 +268,7 @@ theorem rename_swap_formalThirdRoot :
   rw [formalThirdRoot_def]
   simp only [map_sub, map_neg, map_add, map_mul, map_pow, map_one, map_ofNat, rename_X,
     rename_C, rename_swap_formalSlope, rename_swap_formalIntercept,
-    MvPowerSeries.ringHom_invOfUnit (u := 1) (v := 1) (rename Sum.swap) hD hD']
+    MvPowerSeries.map_invOfUnit (u := 1) (v := 1) (rename Sum.swap) hD hD']
   simp only [show Sum.swap (Sum.inl () : Unit ⊕ Unit) = Sum.inr () from rfl,
     show Sum.swap (Sum.inr () : Unit ⊕ Unit) = Sum.inl () from rfl]
   ring
@@ -405,7 +405,7 @@ theorem map_formalIntercept :
 @[simp]
 theorem map_formalThirdRoot :
     formalThirdRoot (W.map φ) = MvPowerSeries.map φ (formalThirdRoot W) := by
-  have hinv := MvPowerSeries.ringHom_invOfUnit (σ := Unit ⊕ Unit) (τ := Unit ⊕ Unit)
+  have hinv := MvPowerSeries.map_invOfUnit (σ := Unit ⊕ Unit) (τ := Unit ⊕ Unit)
     (MvPowerSeries.map φ)
     (D := 1 + C W.a₂ * formalSlope W + C W.a₄ * formalSlope W ^ 2 + C W.a₆ * formalSlope W ^ 3)
     (u := 1) (v := 1) (constantCoeff_formalThirdRootDenom W)

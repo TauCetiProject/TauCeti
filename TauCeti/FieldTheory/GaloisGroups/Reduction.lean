@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import Mathlib.GroupTheory.GroupAction.Jordan
+public import TauCeti.FieldTheory.GaloisGroups.CycleTypes
 public import TauCeti.NumberTheory.NumberField.Frobenius.CycleType
 import Mathlib.Algebra.Polynomial.Eval.Irreducible
 import Mathlib.Tactic.ComputeDegree
@@ -51,6 +52,8 @@ three reductions are prescribed modulo `2`, `3` and `5`.
 * `TauCeti.exists_mem_range_galActionHom_fullCycleType_eq_factorDegrees`: the factor degrees of
   `f` modulo a prime not dividing `disc f` are the full cycle type of an element of the Galois
   image.
+* `TauCeti.factorDegrees_mem_cycleTypes`: those factor degrees belong to the intrinsic set of
+  Galois cycle types, independently of a splitting extension or root numbering.
 * `TauCeti.lcm_factorDegrees_dvd_natCard_gal`: the least common multiple of the factor degrees
   of `f` modulo a prime not dividing `disc f` divides the order of the Galois group.
 * `TauCeti.exists_isCycle_mem_range_galActionHom_of_irreducible_map`: an irreducible reduction
@@ -124,6 +127,14 @@ theorem exists_mem_range_galActionHom_fullCycleType_eq_factorDegrees (hf : f.Mon
   obtain ⟨σ, hσ⟩ := NumberField.exists_gal_fullCycleType_eq_factorizationType f hf p hp
   exact ⟨_, ⟨σ, rfl⟩, hσ⟩
 
+/-- At a good prime, the factor degrees belong to the intrinsic set of Galois cycle types of
+the polynomial over `ℚ`. This covers reducible monic polynomials as well. -/
+theorem factorDegrees_mem_cycleTypes (hf : f.Monic) (p : ℕ) [Fact p.Prime]
+    (hp : ¬ (p : ℤ) ∣ f.discr) :
+    f.factorDegrees p ∈ Gal.cycleTypes (f.map (Int.castRingHom ℚ)) := by
+  rw [Gal.mem_cycleTypes_iff_exists_mem_range _ ℂ]
+  exact exists_mem_range_galActionHom_fullCycleType_eq_factorDegrees hf p hp
+
 open scoped Classical in
 /-- **Factorization types bound the order of the Galois group from below.** Let `f` be a monic
 integral polynomial and `p` a prime not dividing `disc f`. The least common multiple of the
@@ -136,9 +147,7 @@ proper subgroup. -/
 theorem lcm_factorDegrees_dvd_natCard_gal (hf : f.Monic) (p : ℕ) [Fact p.Prime]
     (hp : ¬ (p : ℤ) ∣ f.discr) :
     (f.factorDegrees p).lcm ∣ Nat.card (f.map (Int.castRingHom ℚ)).Gal := by
-  obtain ⟨σ, hσ, htype⟩ := exists_mem_range_galActionHom_fullCycleType_eq_factorDegrees hf p hp
-  rw [← htype, fullCycleType_def, lcm_parts_partition, ← natCard_galActionHom_range _ ℂ]
-  exact Subgroup.orderOf_dvd_natCard _ hσ
+  exact Gal.lcm_dvd_natCard_of_mem_cycleTypes _ (factorDegrees_mem_cycleTypes hf p hp)
 
 open scoped Classical in
 /-- **An irreducible reduction exhibits a full cycle.** If a monic integral polynomial `f` of

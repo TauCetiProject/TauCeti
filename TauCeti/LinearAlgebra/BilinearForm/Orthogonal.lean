@@ -42,6 +42,8 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
   a non-zero-divisor dividing all its pairings splits off.
 * `LinearMap.BilinForm.isCompl_span_singleton_orthogonal_of_isUnit`: a vector with unit
   self-pairing splits off.
+* `LinearMap.BilinForm.IsAlt.sup_span_singleton_le_orthogonal`: adjoining an orthogonal vector
+  to an isotropic submodule preserves isotropy for an alternating form.
 -/
 
 public section
@@ -118,6 +120,22 @@ namespace LinearMap.BilinForm
 open Module
 
 variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- Adjoining an orthogonal vector to an isotropic submodule preserves isotropy for an
+alternating form. No nondegeneracy or characteristic assumption is needed. -/
+theorem IsAlt.sup_span_singleton_le_orthogonal {B : LinearMap.BilinForm R M} (hB : B.IsAlt)
+    {W : Submodule R M} (hW : W ≤ B.orthogonal W) {v : M} (hv : v ∈ B.orthogonal W) :
+    W ⊔ R ∙ v ≤ B.orthogonal (W ⊔ R ∙ v) := by
+  have hspan : R ∙ v ≤ B.orthogonal W := Submodule.span_le.mpr (by simpa using hv)
+  rw [orthogonal, Submodule.orthogonalBilin_sup]
+  refine sup_le (le_inf hW ?_) (le_inf hspan ?_)
+  · intro w hw
+    rw [Submodule.mem_orthogonalBilin_span]
+    intro x hx
+    obtain rfl := Set.mem_singleton_iff.mp hx
+    exact hB.isRefl.eq_zero ((mem_orthogonal_iff.mp hv) w hw)
+  · apply Submodule.span_le.mpr
+    simpa [Submodule.mem_orthogonalBilin_span] using hB v
 
 /-- A submodule with perfect flipped restricted pairing is complementary to its right orthogonal
 complement. -/

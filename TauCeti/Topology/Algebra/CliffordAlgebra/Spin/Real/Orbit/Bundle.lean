@@ -24,6 +24,8 @@ fiber. Transitivity moves this chart over every point of the unit level.
 
 * `CliffordAlgebra.realCliffordSpinLastUnit` is the last coordinate unit vector in the compact
   unit level.
+* `CliffordAlgebra.exists_realCliffordSpinOrbitTrivialization` gives a chart whose base is the
+  complement of the antipode of a prescribed unit vector.
 * `CliffordAlgebra.isFiberBundle_realCliffordSpinOrbitMap` gives a local trivialization of the
   compact Spin orbit map around every base point.
 
@@ -69,20 +71,10 @@ private theorem stabilizer_realCliffordSpinLastUnit (n : ℕ) :
     simpa only [coe_realCliffordSpinLastUnit, SubMulAction.val_smul,
       spinGroup_smul_apply] using hs
 
-private theorem realCliffordSpinLastUnit_mem_neighborhood (n : ℕ) :
-    realCliffordUnitLevelHomeomorphSubtype (n + 1) (realCliffordSpinLastUnit n) ∈
-      realCliffordSpinLastUnitNeighborhood n := by
-  rw [mem_realCliffordSpinLastUnitNeighborhood]
-  intro h
-  have hlast := congrFun h (Fin.last n)
-  simp only [coe_realCliffordUnitLevelHomeomorphSubtype_apply,
-    coe_realCliffordSpinLastUnit, Pi.single_eq_same, Pi.neg_apply] at hlast
-  norm_num at hlast
-
 private noncomputable def realCliffordSpinBaseTrivializationData (n : ℕ) [NeZero n] :
     {e : Bundle.Trivialization (realCliffordSpinGroupZero n)
         (realCliffordSpinOrbitMap (n + 1) (realCliffordSpinLastUnit n)) //
-      realCliffordSpinLastUnit n ∈ e.baseSet} := by
+      e.baseSet = {realCliffordUnitLevelAntipode (realCliffordSpinLastUnit n)}ᶜ} := by
   have hn0 : n ≠ 0 := NeZero.ne n
   have hn : 2 ≤ n + 1 := by omega
   let H := MulAction.stabilizer (realCliffordSpinGroupZero (n + 1))
@@ -139,20 +131,21 @@ private noncomputable def realCliffordSpinBaseTrivializationData (n : ℕ) [NeZe
   rw [← hproj]
   refine ⟨e', ?_⟩
   rw [he'_baseSet]
+  ext y
   dsimp only [U]
-  simpa only [hCarrier, Set.mem_preimage, Function.comp_apply,
-    Homeomorph.apply_symm_apply] using
-    realCliffordSpinLastUnit_mem_neighborhood n
+  simp only [Set.mem_preimage, Function.comp_apply, Homeomorph.apply_symm_apply,
+    Set.mem_compl_iff, Set.mem_singleton_iff, hCarrier,
+    mem_realCliffordSpinLastUnitNeighborhood,
+    coe_realCliffordUnitLevelHomeomorphSubtype_apply,
+    coe_realCliffordUnitLevelAntipode, coe_realCliffordSpinLastUnit, Subtype.ext_iff]
 
-/-- For positive `n`, the orbit map `Spin(n + 1) → Sⁿ` through the last coordinate unit vector is
-locally trivial with fiber `Spin(n)`. Here the sphere is represented by the unit level of the
-positive-definite real Clifford form. -/
-theorem isFiberBundle_realCliffordSpinOrbitMap (n : ℕ) [NeZero n] :
-    ∀ y : realCliffordUnitLevel (n + 1),
-      ∃ e : Bundle.Trivialization (realCliffordSpinGroupZero n)
+/-- A compact Spin orbit chart centred at `y`, with base exactly the unit level minus the antipode
+of `y`. Its source is therefore the preimage of this punctured unit level under the orbit map. -/
+theorem exists_realCliffordSpinOrbitTrivialization (n : ℕ) [NeZero n]
+    (y : realCliffordUnitLevel (n + 1)) :
+    ∃ e : Bundle.Trivialization (realCliffordSpinGroupZero n)
         (realCliffordSpinOrbitMap (n + 1) (realCliffordSpinLastUnit n)),
-        y ∈ e.baseSet := by
-  intro y
+      e.baseSet = {realCliffordUnitLevelAntipode y}ᶜ := by
   have hn0 : n ≠ 0 := NeZero.ne n
   have hn : 2 ≤ n + 1 := by omega
   let _ : MulAction.IsPretransitive (realCliffordSpinGroupZero (n + 1))
@@ -172,16 +165,41 @@ theorem isFiberBundle_realCliffordSpinOrbitMap (n : ℕ) [NeZero n] :
       realCliffordSpinOrbitMap (n + 1) (realCliffordSpinLastUnit n) := by
     funext s
     simp only [Function.comp_apply, Homeomorph.coe_mulLeft,
-      realCliffordSpinOrbitMap_apply, hBase,
-      Homeomorph.smul_apply, smul_smul]
+      realCliffordSpinOrbitMap_apply, hBase, Homeomorph.smul_apply, smul_smul]
     rw [← mul_assoc, mul_inv_cancel, one_mul]
   rw [← hproj]
   refine ⟨e₁, ?_⟩
   dsimp only [e₁, Bundle.Trivialization.homeomorphComp,
     Bundle.Trivialization.compHomeomorph]
-  rw [← Homeomorph.smul_apply g (realCliffordSpinLastUnit n)]
-  simpa only [hBase, e₀, Set.mem_preimage, Homeomorph.symm_apply_apply] using
-    (realCliffordSpinBaseTrivializationData n).2
+  rw [(realCliffordSpinBaseTrivializationData n).2]
+  ext x
+  simp only [Set.mem_preimage, Set.mem_compl_iff, Set.mem_singleton_iff, hBase,
+    Homeomorph.smul_symm_apply]
+  constructor
+  · intro hx h
+    apply hx
+    apply (Homeomorph.smul g).injective
+    simpa only [Homeomorph.smul_apply, smul_smul, mul_inv_cancel, one_smul,
+      smul_realCliffordUnitLevelAntipode] using h
+  · intro hx h
+    apply hx
+    apply (Homeomorph.smul g⁻¹).injective
+    simpa only [Homeomorph.smul_apply, smul_smul, inv_mul_cancel, one_smul,
+      smul_realCliffordUnitLevelAntipode] using h
+
+/-- For positive `n`, the orbit map `Spin(n + 1) → Sⁿ` through the last coordinate unit vector is
+locally trivial with fiber `Spin(n)`. Here the sphere is represented by the unit level of the
+positive-definite real Clifford form. -/
+theorem isFiberBundle_realCliffordSpinOrbitMap (n : ℕ) [NeZero n] :
+    ∀ y : realCliffordUnitLevel (n + 1),
+      ∃ e : Bundle.Trivialization (realCliffordSpinGroupZero n)
+        (realCliffordSpinOrbitMap (n + 1) (realCliffordSpinLastUnit n)),
+        y ∈ e.baseSet := by
+  intro y
+  obtain ⟨e, he⟩ := exists_realCliffordSpinOrbitTrivialization n y
+  refine ⟨e, ?_⟩
+  rw [he, Set.mem_compl_iff, Set.mem_singleton_iff]
+  exact ne_realCliffordUnitLevelAntipode y
 
 end
 

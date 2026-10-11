@@ -142,7 +142,7 @@ theorem ker_le_range_of_matching {ι α : Type*} [LT α] (d : (ι →₀ S) →�
   -- The terms of `d` on a source other than the matching term have lower weight.
   have hsrc_low : ∀ k, src k → d (Finsupp.single k 1) -
       Finsupp.single (p k) (d (Finsupp.single k 1) (p k)) ∈ supported S S {j | w j < w k} := by
-    intro k hk
+    intro k _
     refine (mem_supported S _).2 fun j hj ↦ ?_
     rw [Finset.mem_coe, Finsupp.mem_support_iff, Finsupp.sub_apply] at hj
     by_cases hjk : j = p k

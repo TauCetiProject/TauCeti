@@ -26,8 +26,10 @@ take `C := ModuleCat k` and `R := k`: then `Cₙ(X; k)` is the free `k`-module o
 
 ## Main declarations
 
+* `SSet.cochainComplexMap`: the cochain map induced by a map of simplicial sets.
 * `TopCat.singularCochainComplex`: the singular cochain complex of a space.
-* `TopCat.singularCochainComplexMap`: the cochain map induced by a continuous map.
+* `TopCat.singularCochainComplexMap`: the cochain map induced by a continuous map, that of its
+  singular simplicial map.
 * `TopCat.singularCohomology` and `TopCat.singularCohomologyMap`: singular cohomology and the
   maps induced on it by continuous maps, with `TauCeti.singularCohomologyFunctor` the resulting
   functor `TopCatᵒᵖ ⥤ ModuleCat k`.
@@ -50,6 +52,38 @@ open CategoryTheory Limits Opposite Simplicial
 
 universe w v u
 
+namespace SSet
+
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C]
+  {R : C} {k : Type*} [Ring k] [Linear k C] {M : C}
+
+/-- The map of cochain complexes `Hom(C(Y; R), M) ⟶ Hom(C(X; R), M)` induced by a map
+`f : X ⟶ Y` of simplicial sets: precomposition with the chain map induced by `f`. -/
+abbrev cochainComplexMap {X Y : SSet.{w}} (f : X ⟶ Y) :
+    (Y.chainComplex R).linearYonedaObj k M ⟶ (X.chainComplex R).linearYonedaObj k M :=
+  (TauCeti.ChainComplex.linearYonedaFunctor k M).map (chainComplexMap f R).op
+
+/-- The degree-`n` component of the cochain map induced by `f` acts by precomposition with the
+degree-`n` component of the induced chain map. -/
+@[simp]
+lemma cochainComplexMap_f_apply {X Y : SSet.{w}} (f : X ⟶ Y) (n : ℕ)
+    (g : ((Y.chainComplex R).linearYonedaObj k M).X n) :
+    (cochainComplexMap (R := R) (k := k) (M := M) f).f n g = (chainComplexMap f R).f n ≫ g :=
+  rfl
+
+@[simp]
+lemma cochainComplexMap_id (X : SSet.{w}) :
+    cochainComplexMap (R := R) (k := k) (M := M) (𝟙 X) = 𝟙 _ := by
+  simp [cochainComplexMap]
+
+@[reassoc]
+lemma cochainComplexMap_comp {X Y Z : SSet.{w}} (f : X ⟶ Y) (g : Y ⟶ Z) :
+    cochainComplexMap (R := R) (k := k) (M := M) (f ≫ g) =
+      cochainComplexMap g ≫ cochainComplexMap f := by
+  simp [cochainComplexMap]
+
+end SSet
+
 namespace TopCat
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C]
@@ -62,11 +96,11 @@ abbrev singularCochainComplex (X : TopCat.{w}) : CochainComplex (ModuleCat.{v} k
 
 variable {R k M}
 
-/-- The cochain map on singular cochains induced by a continuous map `f : X ⟶ Y`: precomposition
-with the chain map induced by `f`. -/
+/-- The cochain map on singular cochains induced by a continuous map `f : X ⟶ Y`: the cochain map
+induced by its singular simplicial map, precomposition with the chain map induced by `f`. -/
 abbrev singularCochainComplexMap {X Y : TopCat.{w}} (f : X ⟶ Y) :
     Y.singularCochainComplex R k M ⟶ X.singularCochainComplex R k M :=
-  (TauCeti.ChainComplex.linearYonedaFunctor k M).map (SSet.chainComplexMap (toSSet.map f) R).op
+  SSet.cochainComplexMap (toSSet.map f)
 
 /-- The degree-`n` component of the cochain map induced by `f` acts by precomposition with the
 degree-`n` component of the induced singular chain map. -/
@@ -74,18 +108,19 @@ degree-`n` component of the induced singular chain map. -/
 lemma singularCochainComplexMap_f_apply {X Y : TopCat.{w}} (f : X ⟶ Y) (n : ℕ)
     (g : (Y.singularCochainComplex R k M).X n) :
     (singularCochainComplexMap (R := R) (k := k) (M := M) f).f n g =
-      (SSet.chainComplexMap (toSSet.map f) R).f n ≫ g := rfl
+      (SSet.chainComplexMap (toSSet.map f) R).f n ≫ g :=
+  SSet.cochainComplexMap_f_apply _ n g
 
 @[simp]
 lemma singularCochainComplexMap_id (X : TopCat.{w}) :
     singularCochainComplexMap (R := R) (k := k) (M := M) (𝟙 X) = 𝟙 _ := by
-  simp [singularCochainComplexMap, SSet.chainComplexMap]
+  simp [singularCochainComplexMap]
 
 @[reassoc]
 lemma singularCochainComplexMap_comp {X Y Z : TopCat.{w}} (f : X ⟶ Y) (g : Y ⟶ Z) :
     singularCochainComplexMap (R := R) (k := k) (M := M) (f ≫ g) =
       singularCochainComplexMap g ≫ singularCochainComplexMap f := by
-  simp [singularCochainComplexMap, SSet.chainComplexMap]
+  simp [singularCochainComplexMap, SSet.cochainComplexMap_comp]
 
 variable (R k M)
 

@@ -20,6 +20,7 @@ the subgroup.
 Because the order of a subgroup divides the order of the group -- with the index as cofactor --
 invertibility of the order of a finite group in a semiring passes to every subgroup.
 
+If `Γ` normalises `N`, then `Γ` has the same relative index in `Γ ⊔ N` as in `N`.
 Adjoining a two-element subgroup `N ⊄ Γ` normalised by `Γ` is also quantified: `Γ` then has
 relative index exactly `2` in `Γ ⊔ N`, so `Γ.index = 2 * (Γ ⊔ N).index`. Taking `N` to be the
 centre gives the `Γ.withCenter` readings.
@@ -32,6 +33,8 @@ centre gives the `Γ.withCenter` readings.
 * `Subgroup.withCenter_le_iff`: the universal property — containing `Γ·Z(G)` is containing both.
 * `Subgroup.withCenter_eq_self_iff`: adjoining the centre changes nothing exactly when the
   centre already lies inside `Γ`.
+* `Subgroup.relIndex_sup_of_le_normalizer`: if `H` normalises `N`, the relative index of `H` in
+  `H ⊔ N` is that in `N`.
 * `Subgroup.relIndex_sup_eq_two`, `Subgroup.index_eq_two_mul_index_sup`: the relative index `2`
   and the index doubling, for an `N` normalised by `Γ` whose elements are `1` and `a ∉ Γ`.
 * `Subgroup.instCountableQuotient`: a coset space of a countable group is countable.
@@ -280,6 +283,31 @@ instance instFiniteIndexWithCenter {G : Type*} [Group G] (Γ : Subgroup G)
   Subgroup.finiteIndex_of_le Γ.le_withCenter
 
 variable {G : Type*} [Group G] {Γ : Subgroup G} {a : G}
+
+/-- **Relative index across a join with a normalised subgroup.** If `H` normalises `N`, then `H`
+has the same relative index in `H ⊔ N` as in `N`, that is `[H ⊔ N : H] = [N : H ⊓ N]`.
+
+This is the counterpart of Mathlib's `Subgroup.relIndex_sup_right`, which measures the index of the
+normal factor instead. -/
+theorem relIndex_sup_of_le_normalizer {H N : Subgroup G} (hH : H ≤ normalizer N) :
+    H.relIndex (H ⊔ N) = H.relIndex N := by
+  -- The inclusion `N → H ⊔ N` induces a bijection on cosets of `H`.
+  have hle : N ≤ H ⊔ N := le_sup_right
+  have key (x y : N) : QuotientGroup.leftRel (H.subgroupOf N) x y ↔
+      QuotientGroup.leftRel (H.subgroupOf (H ⊔ N)) (inclusion hle x) (inclusion hle y) := by
+    simp [QuotientGroup.leftRel_apply, mem_subgroupOf]
+  refine (Nat.card_congr (Equiv.ofBijective
+    (Quotient.map' (inclusion hle) fun x y ↦ (key x y).1) ⟨?_, ?_⟩)).symm
+  · refine Quotient.ind' fun x ↦ Quotient.ind' fun y h ↦ ?_
+    exact Quotient.sound' ((key x y).2 (Quotient.exact' h))
+  · -- Write `g = h * n` with `h ∈ H` and `n ∈ N`: then `g` lies in the coset of `h * n * h⁻¹ ∈ N`.
+    rintro ⟨g, hg⟩
+    rw [← SetLike.mem_coe, coe_mul_of_left_le_normalizer_right H N hH] at hg
+    obtain ⟨h, hh, n, hn, rfl⟩ := hg
+    refine ⟨Quotient.mk'' ⟨h * n * h⁻¹, (mem_normalizer_iff.1 (hH hh) n).1 hn⟩,
+      Quotient.sound' ?_⟩
+    rw [QuotientGroup.leftRel_apply, mem_subgroupOf]
+    simpa [mul_assoc] using hh
 
 /-- **A two-element subgroup normalised by `Γ` and not already inside it has relative index
 `2`.** If every element of `N` is `1` or `a`, and `a ∉ Γ`, then `Γ ⊔ N` splits into the two

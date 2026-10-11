@@ -160,7 +160,6 @@ theorem explicitDelta1_explicitCup01_left [ContinuousMul G] (x : H0 G A'') (y : 
       SA.exists_continuous_incl_comp_eq (continuous_d0_apply (G := G) a)
         (DiscreteShortExact.proj_d0_eq_zero hamem)
     have hαi' : ∀ g : G, SA.incl (α g) = g • a - a := fun g => (hαi g).trans (d0_apply a g)
-    have hα : α ∈ Z1 G A' := SA.mem_Z1_of_incl_comp_eq_d0 hαi'
     have hβ1 : groupCohomology.IsCocycle₁ (β : G → B) := (mem_Z1_iff.1 β.2).2
     have hecont : Continuous fun g : G => μ a ((β : G → B) g) :=
       hμ.comp (continuous_const.prodMk (mem_Z1_iff.1 β.2).1)
@@ -171,15 +170,13 @@ theorem explicitDelta1_explicitCup01_left [ContinuousMul G] (x : H0 G A'') (y : 
       rw [← hincl, hαi' g, map_sub, AddMonoidHom.sub_apply, hequiv g a ((β : G → B) h),
         hβ1 g h, map_add]
       abel
-    have hcupZ : (fun q : G × G => μ' (α q.1) (q.1 • (β : G → B) q.2)) ∈ Z2 G C' :=
-      cup11_mem_Z2 G A' B C' μ' hμ' hequiv' hα β.2
     have he : ∀ g : G, SC.proj (μ a ((β : G → B) g)) = μ'' (x : A'') ((β : G → B) g) :=
       fun g => by rw [← hproj, ha]
     have hleft := SC.explicitDelta1_apply
       (⟨fun g => μ'' (x : A'') ((β : G → B) g),
         cup01_mem_Z1 G A'' B C'' μ'' hμ'' hequiv'' x β.2⟩ : Z1 G C'')
-      hecont he hcupZ hcup
-    have hright := SA.explicitDelta0_apply x ha hα hαi'
+      hecont he (a := fun q : G × G => μ' (α q.1) (q.1 • (β : G → B) q.2)) hcup
+    have hright := SA.explicitDelta0_apply x ha hαi'
     simp only [QuotientAddGroup.mk'_apply] at hleft hright
     rw [explicitCup01_mk, hleft, hright, explicitCup11_mk]
 
@@ -361,15 +358,13 @@ theorem explicitCup10_explicitDelta0_eq_neg_explicitCup01_explicitDelta0
     SA.exists_continuous_incl_comp_eq (continuous_d0_apply (G := G) a)
       (DiscreteShortExact.proj_d0_eq_zero (ha ▸ x.2))
   have hαi' : ∀ g : G, SA.incl (α g) = g • a - a := fun g => (hαi g).trans (d0_apply a g)
-  have hα : α ∈ Z1 G A₁ := SA.mem_Z1_of_incl_comp_eq_d0 hαi'
   obtain ⟨b, hb⟩ := SB.proj_surjective (y : B₁)
   obtain ⟨β, -, hβi⟩ :=
     SB.exists_continuous_incl_comp_eq (continuous_d0_apply (G := G) b)
       (DiscreteShortExact.proj_d0_eq_zero (hb ▸ y.2))
   have hβi' : ∀ g : G, SB.incl (β g) = g • b - b := fun g => (hβi g).trans (d0_apply b g)
-  have hβ : β ∈ Z1 G B₂ := SB.mem_Z1_of_incl_comp_eq_d0 hβi'
-  have hx := SA.explicitDelta0_apply x ha hα hαi'
-  have hy := SB.explicitDelta0_apply y hb hβ hβi'
+  have hx := SA.explicitDelta0_apply x ha hαi'
+  have hy := SB.explicitDelta0_apply y hb hβi'
   simp only [QuotientAddGroup.mk'_apply] at hx hy
   rw [hx, hy, explicitCup10_mk, explicitCup01_mk, ← QuotientAddGroup.mk_neg, H1pi_eq_iff,
     mem_B1_iff]
@@ -396,16 +391,14 @@ theorem explicitCup11_explicitDelta0_eq_neg_explicitCup02_explicitDelta1 [Contin
       SA.exists_continuous_incl_comp_eq (continuous_d0_apply (G := G) a)
         (DiscreteShortExact.proj_d0_eq_zero (ha ▸ x.2))
     have hαi' : ∀ g : G, SA.incl (α g) = g • a - a := fun g => (hαi g).trans (d0_apply a g)
-    have hα : α ∈ Z1 G A₁ := SA.mem_Z1_of_incl_comp_eq_d0 hαi'
     obtain ⟨hβc, hβ1⟩ := mem_Z1_iff.1 β.2
     obtain ⟨e, hec, he⟩ := exists_continuous_lift SB.proj_surjective hβc
     obtain ⟨b, -, hbi⟩ :=
       SB.exists_continuous_incl_comp_eq (continuous_d1_apply hec) (SB.proj_d1_eq_zero he hβ1)
     have hbi' : ∀ g h : G, SB.incl (b (g, h)) = g • e h - e (g * h) + e g :=
       fun g h => (hbi (g, h)).trans (d1_apply e g h)
-    have hb : b ∈ Z2 G B₂ := SB.mem_Z2_of_incl_comp_eq_d1 hec hbi'
-    have hx := SA.explicitDelta0_apply x ha hα hαi'
-    have hy := SB.explicitDelta1_apply β hec he hb hbi'
+    have hx := SA.explicitDelta0_apply x ha hαi'
+    have hy := SB.explicitDelta1_apply β hec he hbi'
     simp only [QuotientAddGroup.mk'_apply] at hx hy
     rw [hx, hy, explicitCup11_mk, explicitCup02_mk, ← QuotientAddGroup.mk_neg, H2pi_eq_iff,
       mem_B2_iff']
@@ -435,15 +428,13 @@ theorem explicitCup20_explicitDelta1_eq_explicitCup11_explicitDelta0 [Continuous
       SA.exists_continuous_incl_comp_eq (continuous_d1_apply hec) (SA.proj_d1_eq_zero he hα1)
     have hai' : ∀ g h : G, SA.incl (a (g, h)) = g • e h - e (g * h) + e g :=
       fun g h => (hai (g, h)).trans (d1_apply e g h)
-    have ha : a ∈ Z2 G A₁ := SA.mem_Z2_of_incl_comp_eq_d1 hec hai'
     obtain ⟨b, hb⟩ := SB.proj_surjective (y : B₁)
     obtain ⟨β, -, hβi⟩ :=
       SB.exists_continuous_incl_comp_eq (continuous_d0_apply (G := G) b)
         (DiscreteShortExact.proj_d0_eq_zero (hb ▸ y.2))
     have hβi' : ∀ g : G, SB.incl (β g) = g • b - b := fun g => (hβi g).trans (d0_apply b g)
-    have hβ : β ∈ Z1 G B₂ := SB.mem_Z1_of_incl_comp_eq_d0 hβi'
-    have hx := SA.explicitDelta1_apply α hec he ha hai'
-    have hy := SB.explicitDelta0_apply y hb hβ hβi'
+    have hx := SA.explicitDelta1_apply α hec he hai'
+    have hy := SB.explicitDelta0_apply y hb hβi'
     simp only [QuotientAddGroup.mk'_apply] at hx hy
     rw [hx, hy, explicitCup20_mk, explicitCup11_mk, H2pi_eq_iff, mem_B2_iff']
     -- The difference of the two cup cochains is `d¹` of the paired lifts `g ↦ μ (e g) (g • b)`.

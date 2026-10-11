@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
-public import TauCeti.NumberTheory.LocalField.Herbrand.HasseArf
+public import TauCeti.NumberTheory.LocalField.Herbrand.HasseArf.PrimeDegree
 public import TauCeti.NumberTheory.LocalField.Herbrand.UpperQuotient
 public import Mathlib.FieldTheory.Galois.Abelian
 import TauCeti.GroupTheory.FiniteAbelian.Quotient
@@ -144,11 +144,8 @@ theorem UpperJump.exists_eq_intCast_of_exponent_prime {u : RamificationIndexDoma
   have hne : Module.finrank K F ≠ 1 := by
     intro hone
     have hcard : Nat.card (F ≃ₐ[K] F) = 1 := (IsGalois.card_aut_eq_finrank K F).trans hone
-    have : Subsingleton (F ≃ₐ[K] F) := (Nat.card_eq_one_iff_unique.1 hcard).1
-    have hdrop := (upperJump_iff K F u).1 hF
-      ⟨(u : ℝ) + 1, u.property.trans (by linarith)⟩
-      (Subtype.mk_lt_mk.2 (by linarith))
-    exact hdrop.ne (Subsingleton.elim _ _)
+    have := hF.nontrivial K F
+    exact (Finite.one_lt_card : 1 < Nat.card (F ≃ₐ[K] F)).ne' hcard
   have hdegree : (Module.finrank K F).Prime :=
     (hp.eq_one_or_self_of_dvd _ hdvd).resolve_left hne ▸ hp
   exact hF.exists_eq_intCast_of_finrank_prime hdegree

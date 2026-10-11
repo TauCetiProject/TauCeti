@@ -149,6 +149,36 @@ theorem nondegenerate_of_ker_polarBilin_eq_bot {Q : QuadraticMap R M P}
   nontriviality R
   simp only [rank_subsingleton', zero_le]
 
+/-- **The quotient by the radical is nondegenerate.** When two is invertible, the form induced
+on `M ⧸ Q.radical` has no radical: a class orthogonal to every class is represented by a vector
+in `Q.radical`, hence is zero. This is the regular quotient used in the Witt decomposition of a
+possibly degenerate form. -/
+theorem nondegenerate_lift_radical [Invertible (2 : R)] (Q : QuadraticForm R M) :
+    (Q.lift Q.radical le_rfl).Nondegenerate := by
+  rw [nondegenerate_iff_radical_eq_bot]
+  ext x
+  obtain ⟨v, rfl⟩ := Submodule.Quotient.mk_surjective Q.radical x
+  rw [Submodule.mem_bot]
+  constructor
+  · intro hx
+    have hxker : Submodule.Quotient.mk v ∈
+        (Q.lift Q.radical le_rfl).polarBilin.ker := by
+      rw [← radical_eq_ker_polarBilin]
+      exact hx
+    have hvker : v ∈ Q.polarBilin.ker := by
+      rw [LinearMap.mem_ker]
+      ext w
+      have h := congrArg (fun f => f (Submodule.Quotient.mk w))
+        (LinearMap.mem_ker.mp hxker)
+      simpa [QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar, lift_mk,
+        ← Submodule.Quotient.mk_add] using h
+    have hv : v ∈ Q.radical := by
+      rw [radical_eq_ker_polarBilin]
+      exact hvker
+    exact (Submodule.Quotient.mk_eq_zero _).2 hv
+  · intro hzero
+    simp [hzero]
+
 /-- **An isometry out of a quadratic map with trivial radical is injective.** Its kernel lies in the
 radical: an element `x` killed by `f` has `Q₁ x = Q₂ 0 = 0` and `Q₁ (x + n) = Q₂ (f n) = Q₁ n`. -/
 theorem Isometry.injective_of_radical_eq_bot {Q₁ : QuadraticMap R M P} {Q₂ : QuadraticMap R M' P}

@@ -28,6 +28,8 @@ formation whose invariant maps are zero. This is the class formation used at a c
 
 * `TauCeti.ClassFieldTheory.NormalLayer.subsingleton_gal_of_top_eq_ground`: the Galois group of a
   trivial layer is a subsingleton.
+* `TauCeti.ClassFieldTheory.NormalLayer.subsingleton_H_succ_of_top_eq_ground`: the
+  positive-degree cohomology of a trivial layer vanishes.
 * `TauCeti.ClassFieldTheory.NormalLayer.top_eq_ground_of_subsingleton`: every layer over a
   subsingleton group is trivial.
 * `TauCeti.ClassFieldTheory.ClassFormation.ofSubsingleton`: the canonical class formation over a
@@ -76,6 +78,12 @@ theorem degree_eq_one_of_top_eq_ground (hL : L.top = L.ground) : L.degree = 1 :=
 
 variable (F : Formation G)
 
+/-- The positive-degree cohomology of a layer whose top and ground subgroups agree vanishes. -/
+theorem subsingleton_H_succ_of_top_eq_ground (hL : L.top = L.ground) (n : ℕ) :
+    Subsingleton (L.H F (n + 1)) := by
+  let _ : Subsingleton L.Gal := L.subsingleton_gal_of_top_eq_ground hL
+  exact ModuleCat.subsingleton_of_isZero (isZero_groupCohomology_succ_of_subsingleton (L.rep F) n)
+
 /-- The norm of a trivial layer is the identity after reading both levels in the ambient
 representation. -/
 theorem norm_apply_coe_of_top_eq_ground (hL : L.top = L.ground) (x : F.level L.top) :
@@ -117,16 +125,10 @@ variable {F : Formation G}
 is trivial, its positive-degree cohomology vanishes, and its invariant map is consequently zero. -/
 def ofSubsingleton (F : Formation G) [Subsingleton G] : ClassFormation F where
   subsingleton_h1 L := by
-    let _ : Subsingleton L.Gal :=
-      L.subsingleton_gal_of_top_eq_ground L.top_eq_ground_of_subsingleton
-    exact ModuleCat.subsingleton_of_isZero
-      (isZero_groupCohomology_succ_of_subsingleton (L.rep F) 0)
+    simpa using L.subsingleton_H_succ_of_top_eq_ground F L.top_eq_ground_of_subsingleton 0
   inv _ := 0
   inv_injective L := by
-    let _ : Subsingleton L.Gal :=
-      L.subsingleton_gal_of_top_eq_ground L.top_eq_ground_of_subsingleton
-    let _ : Subsingleton (L.H F 2) := ModuleCat.subsingleton_of_isZero
-      (isZero_groupCohomology_succ_of_subsingleton (L.rep F) 1)
+    let _ := L.subsingleton_H_succ_of_top_eq_ground F L.top_eq_ground_of_subsingleton 1
     exact fun _ _ _ ↦ Subsingleton.elim _ _
   range_inv L := by
     rw [L.degree_eq_one_of_top_eq_ground L.top_eq_ground_of_subsingleton]

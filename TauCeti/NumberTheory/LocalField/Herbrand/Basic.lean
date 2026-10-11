@@ -482,7 +482,6 @@ private theorem inverseHerbrand_natCast_eq_floor (n : ℕ) :
     eq_div_iff (by exact_mod_cast Nat.card_pos.ne')] at hφ
   set g : ℤ → ℕ := fun i ↦ Nat.card (lowerRamificationGroup K L i)
   -- `hφ` restated through the abbreviation `g`.
-  have hφ' : (n : ℝ) * g 0 = ∑ i ∈ Finset.Icc 1 m, (g i : ℝ) + (u - m) * g (m + 1 : ℕ) := hφ
   -- `#G_{m+1}` divides `n #G_0 - (#G_1 + ⋯ + #G_m)`.
   have hdvd : ∀ i : ℤ, i ≤ (m + 1 : ℕ) → g (m + 1 : ℕ) ∣ g i := fun i hi ↦
     Subgroup.card_dvd_of_le (lowerRamificationGroup_antitone K L hi)
@@ -620,5 +619,14 @@ theorem psiNat_eq_add_card_mul_sub {t v : ℕ}
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hv
   simp only [Nat.add_sub_cancel_left]
   ring
+
+/-- At a natural number `n`, the upper ramification group is the lower ramification group at the
+natural number `ψℕ_{L/K}(n)`: `G^n = G_{ψ(n)}`. -/
+@[simp]
+theorem upperRamificationGroup_natCast (n : ℕ) :
+    upperRamificationGroup K L ⟨n, Nat.cast_mem_ramificationIndexDomain n⟩ =
+      lowerRamificationGroup K L (psiNat K L n) := by
+  rw [upperRamificationGroup_def, ← coe_psiNat, ← Int.cast_natCast,
+    lowerRamificationGroupReal_intCast]
 
 end TauCeti.LocalFieldsRamification

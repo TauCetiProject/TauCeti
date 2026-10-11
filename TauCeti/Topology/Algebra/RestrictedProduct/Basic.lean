@@ -102,6 +102,39 @@ theorem mem_integralSubgroup (U : ∀ i, Subgroup (G i))
     x ∈ integralSubgroup U ↔ ∀ i, x i ∈ U i := by
   simp [integralSubgroup, mem_integralSubgroupOf]
 
+/-- Cutting the reference family out by itself gives the everywhere-integral subgroup. This is the
+definition of `integralSubgroup`; it is not a `simp` lemma, since `simp [integralSubgroup]` would
+then loop. -/
+@[to_additive]
+theorem integralSubgroupOf_self (U : ∀ i, Subgroup (G i)) :
+    integralSubgroupOf U U = integralSubgroup U :=
+  (rfl)
+
+/-- Inside a fixed restricted product, the subgroup cut out by a family `V` is contained in the
+one cut out by `V'` exactly when `V i ≤ V' i` at every index: the single-coordinate elements
+detect every `V i`. -/
+@[to_additive]
+theorem integralSubgroupOf_le_integralSubgroupOf_iff (U V V' : ∀ i, Subgroup (G i)) :
+    integralSubgroupOf U V ≤ integralSubgroupOf U V' ↔ ∀ i, V i ≤ V' i := by
+  classical
+  refine ⟨fun h i g hg ↦ ?_, fun h x hx ↦ ?_⟩
+  · have hx : RestrictedProduct.mulSingle U i g ∈ integralSubgroupOf U V := by
+      refine (mem_integralSubgroupOf U V _).mpr fun j ↦ ?_
+      rcases eq_or_ne j i with rfl | hj
+      · rwa [RestrictedProduct.mulSingle_eq_same]
+      · rw [RestrictedProduct.mulSingle_eq_of_ne _ _ hj]
+        exact one_mem _
+    simpa using (mem_integralSubgroupOf U V' _).mp (h hx) i
+  · rw [mem_integralSubgroupOf] at hx ⊢
+    exact fun i ↦ h i (hx i)
+
+/-- The subgroup cut out by a family `V` lies in the everywhere-integral subgroup exactly when
+`V i ≤ U i` at every index. -/
+@[to_additive]
+theorem integralSubgroupOf_le_integralSubgroup_iff (U V : ∀ i, Subgroup (G i)) :
+    integralSubgroupOf U V ≤ integralSubgroup U ↔ ∀ i, V i ≤ U i :=
+  integralSubgroupOf_le_integralSubgroupOf_iff U V U
+
 variable [∀ i, TopologicalSpace (G i)]
 
 /-- Openness when the second family agrees with the reference family eventually. -/
@@ -112,7 +145,7 @@ theorem isOpen_forall_mem_of_eventually_eq (U V : ∀ i, Subgroup (G i))
     IsOpen (integralSubgroupOf U V : Set (Πʳ i, [G i, (U i : Set (G i))])) := by
   classical
   let S : Set ι := {i | U i = V i}
-  have hS : cofinite ≤ 𝓟 S := le_principal_iff.mpr hUV
+  have _ : cofinite ≤ 𝓟 S := le_principal_iff.mpr hUV
   have hopenU : IsOpen {x : Πʳ i, [G i, (U i : Set (G i))] |
       ∀ i, i ∈ S → x i ∈ U i} := by
     simp_rw +instances [RestrictedProduct.topologicalSpace_eq_iSup cofinite,
@@ -152,7 +185,7 @@ theorem isOpen_forall_mem_of_eventually_eq (U V : ∀ i, Subgroup (G i))
     have hx' := (mem_integralSubgroupOf U V x).mp hx
     constructor
     · exact fun i hi ↦ hi ▸ hx' i
-    · exact fun i hi ↦ hx' i
+    · exact fun i _ ↦ hx' i
   · rintro ⟨hxS, hxSc⟩
     apply (mem_integralSubgroupOf U V x).mpr
     intro i

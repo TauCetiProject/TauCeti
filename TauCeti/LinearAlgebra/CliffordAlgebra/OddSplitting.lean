@@ -462,7 +462,7 @@ theorem nonempty_algEquiv_even_prod_of_isSepClosed {K V : Type*} [Field K] [IsSe
   have _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
   set c : K := (-1 : K) ^ l.length.choose 2 * (l.map Q).prod
   have hcne : c ≠ 0 := neg_one_pow_choose_two_mul_prod_map_ne_zero hQ
-  obtain ⟨s, hsz⟩ := IsSepClosed.exists_eq_mul_self (k := K) c⁻¹
+  obtain ⟨s, hsz⟩ := IsSepClosed.isSquare (k := K) c⁻¹
   exact ⟨equivEvenProdOfOddLength hl hlen hspan
     (s := s) (by rw [← hsz, inv_mul_cancel₀ hcne])⟩
 

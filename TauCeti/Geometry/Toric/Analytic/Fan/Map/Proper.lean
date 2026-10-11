@@ -170,7 +170,7 @@ private theorem exists_isCompact_preimage_analyticMap_subset (hΦ0 : Nonempty Φ
     (IsRegularCone.mem_iff_forall_realCharacter_nonneg_of_closure_range_eq_top Ψ.lattice
       ((Fan.isRegular_iff.mp hΨ) τ.1 τ.2) g.spans).2 fun j ↦ by
       simpa only [LinearMap.comp_apply] using hw' j
-  obtain ⟨σ, hστ, hw'σ⟩ := mem_iUnion₂.1 (h τ hw'τ)
+  obtain ⟨σ, _, hw'σ⟩ := mem_iUnion₂.1 (h τ hw'τ)
   -- Hence the generators of the dual semigroup of `σ` are bounded at `t`.
   refine mem_iUnion.2 ⟨σ, t • (default : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1)),
     fun k ↦ ?_, (Φ.analyticTorusι_eq_analyticAffineChartι hΦ hΦ0 σ t).symm⟩

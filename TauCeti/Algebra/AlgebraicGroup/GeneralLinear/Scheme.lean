@@ -26,6 +26,9 @@ multiplication, and inversion are induced contravariantly by the algebra structu
 comultiplication, and antipode, respectively. The multiplication source is identified with the
 spectrum of the tensor square of the raw coordinate ring.
 
+A Hopf ideal of the coordinate Hopf algebra cuts out a closed subgroup of the group scheme, and
+the file records its inclusion.
+
 For a same-universe commutative `R`-algebra `A`, Mathlib's spectrum-points equivalence followed by
 `GeneralLinear.pointsMulEquiv` identifies scheme-valued points with invertible matrices over `A`.
 The resulting identification computes entries by evaluation on the bundled matrix coordinates and
@@ -38,9 +41,11 @@ lie in the same universe, so this file uses that same-universe setting.
 ## Main declarations
 
 * `TauCeti.GeneralLinear.groupScheme`: the general linear group scheme over `Spec R`.
-* `TauCeti.GeneralLinear.hopfIdealInclusion`: the generic closed immersion into `GL_n`
-  cut out by a Hopf ideal.
-* `TauCeti.GeneralLinear.groupSchemeSpecIso`: its canonical raw-coordinate presentation.
+* `TauCeti.GeneralLinear.hopfIdealInclusion`: the inclusion into `GL_n` of the subgroup cut out
+  by a Hopf ideal, a closed immersion by
+  `TauCeti.GeneralLinear.isClosedImmersion_hopfIdealInclusion`.
+* `TauCeti.GeneralLinear.groupSchemeSpecIso`: the canonical raw-coordinate presentation of the
+  group scheme.
 * `TauCeti.GeneralLinear.groupSchemeMulSourceIso`: the tensor-coordinate presentation of the
   multiplication source.
 * `TauCeti.GeneralLinear.groupScheme_one_left`,
@@ -82,7 +87,7 @@ universe u
 
 namespace GeneralLinear
 
-open AlgebraicGeometry MonObj MonoidalCategory WithConv
+open AlgebraicGeometry MonObj MonoidalCategory
 
 variable (R : Type u) [CommRing R] (n : ℕ)
 
@@ -333,8 +338,8 @@ lemma groupScheme_inv_left :
     (coordinateHopfAlgebra_antipodeAlgHom R n)
 
 /-- The general linear group scheme is affine. -/
-instance isAffine_groupScheme : IsAffine (groupScheme R n).X.left := by
-  exact .of_isIso (groupSchemeSpecIso R n).hom
+instance isAffine_groupScheme : IsAffine (groupScheme R n).X.left :=
+  .of_isIso (groupSchemeSpecIso R n).hom
 
 /-- The structural morphism of the general linear group scheme is locally of finite type. -/
 instance locallyOfFiniteType_groupScheme :
@@ -395,8 +400,8 @@ lemma schemePointsMulEquiv_apply
   rw [schemePointsMulEquiv, MulEquiv.trans_apply, pointsMulEquiv_apply,
     pointToGeneralLinear_apply]
 
-/-- Evaluating the scheme-points equivalence on a point presented by `groupSchemePointMulEquiv`
-recovers the canonical algebra point. -/
+/-- A scheme point presented by an algebra point corresponds to the invertible matrix of that
+algebra point under `schemePointsMulEquiv`. -/
 @[simp]
 theorem schemePointsMulEquiv_groupSchemePointMulEquiv
     (q : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) :

@@ -93,7 +93,6 @@ theorem exists_isCompleteBernsteinFunction_eqOn_of_eq_integral_reflected_nevanli
       calc ∫ y : ℝ≥0, (t * y - 1) / (t + y) ∂ν
           = ∫ y : ℝ≥0, (t - (1 + t ^ 2) * (t + (y : ℝ))⁻¹) ∂ν := by
             refine integral_congr_ae (.of_forall fun y => ?_)
-            have hty : (0 : ℝ) < t + y := by positivity
             field_simp
             ring
         _ = (∫ _y : ℝ≥0, t ∂ν) - (1 + t ^ 2) * ∫ y : ℝ≥0, (t + (y : ℝ))⁻¹ ∂ν := by
@@ -165,7 +164,6 @@ theorem exists_isCompleteBernsteinFunction_eqOn_of_eq_integral_reflected_nevanli
         (.of_forall fun y => by simp only [NNReal.smul_def, smul_eq_mul])
     refine (hyint.add (integrable_const (1 : ℝ))).mono' hsm ?_
     filter_upwards [hane] with y hy
-    have hY : (0 : ℝ) < y := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hy)
     have hsub : ((y : ℝ))⁻¹ + 1 - (1 + (y : ℝ) ^ 2) / (y : ℝ) * (1 + (y : ℝ))⁻¹
         = 2 / (1 + (y : ℝ)) := by
       field_simp

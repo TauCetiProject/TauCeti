@@ -470,7 +470,8 @@ section CommRing
 variable (k : Type*) [CommRing k]
 
 /-- **Every path of length at least `24` vanishes in the signless algebra of `E₆`.** -/
-@[simp]
+-- Not `@[simp]`: plain `simp` first rewrites the diagram's rank inside the left-hand side's
+-- types, after which the lemma no longer matches; use it with `exact`.
 theorem signlessPreprojectiveMk_E6_ofPath_eq_zero_of_le
     (x : Quiver.TotalPath (DoubledQuiver (diagramGraph DynkinType.E6.cartanMatrix)))
     (hx : 24 ≤ x.2.2.length) :
@@ -488,7 +489,8 @@ variable (o : Orientation (diagramGraph DynkinType.E6.cartanMatrix))
 
 /-- **Every path of length at least `24` vanishes in the preprojective algebra of `E₆`**, for
 every orientation of the `E₆` graph. -/
-@[simp]
+-- Not `@[simp]`: plain `simp` first rewrites the diagram's rank inside the left-hand side's
+-- types, after which the lemma no longer matches; use it with `exact`.
 theorem preprojectiveMk_E6_ofPath_eq_zero_of_le
     (x : Quiver.TotalPath
       (Symmetrify (OrientedQuiver (diagramGraph DynkinType.E6.cartanMatrix) o)))
@@ -660,7 +662,7 @@ instance instFiniteDimensionalPreprojectiveAlgebraE7
       (preprojectiveAlgebra k (OrientedQuiver (diagramGraph DynkinType.E7.cartanMatrix) o)) := by
   let c := fun i : OrientedQuiver (diagramGraph DynkinType.E7.cartanMatrix) o =>
     e7Coloring ((OrientedQuiver.vertexEquiv _ o).symm i)
-  have hc : ∀ ⦃i j⦄ (a : i ⟶ j), c i ≠ c j := fun _ _ a => e7Coloring.valid a.1
+  have hc : ∀ ⦃i j⦄ (_ : i ⟶ j), c i ≠ c j := fun _ _ a => e7Coloring.valid a.1
   exact ((orientationSignlessPreprojectiveAlgebraEquiv o k).trans
     (symmetrifySignlessPreprojectiveAlgebraEquiv k hc)).toLinearEquiv.finiteDimensional
 

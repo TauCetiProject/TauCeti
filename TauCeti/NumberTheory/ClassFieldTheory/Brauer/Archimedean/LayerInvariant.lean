@@ -26,8 +26,7 @@ formation on layers whose ground subgroup is the whole absolute Galois group. Th
 * E. Artin and J. Tate, *Class Field Theory*, Chapter XIV, §§1–3.
 * J.-P. Serre, *Local Fields*, Chapter XIII, §1.
 
-The construction uses `brInfl` and `infiniteInvMap`. The real Galois-group comparison follows
-the field-isomorphism transport in `brCongr` and `realBrEquivRelative`.
+The construction uses `brInfl` and `infiniteInvMap`.
 -/
 
 public noncomputable section
@@ -37,33 +36,6 @@ open NumberField NumberField.InfinitePlace
 open TauCeti TauCeti.ClassFieldTheory
 
 namespace NumberField.InfinitePlace
-
-/-- The absolute Galois group of a real infinite completion has order two. -/
-theorem natCard_absoluteGaloisGroup_of_isReal {K : Type*} [Field K]
-    (w : InfinitePlace K) (hw : w.IsReal) :
-    Nat.card (AbsoluteGaloisGroup w.Completion) = 2 := by
-  let e := Completion.ringEquivRealOfIsReal hw
-  let _ : Algebra w.Completion ℝ := e.toRingHom.toAlgebra
-  let eA : w.Completion ≃ₐ[w.Completion] ℝ := { e with commutes' := fun _ => rfl }
-  let σ : ℝ →ₐ[w.Completion] SeparableClosure w.Completion :=
-    (Algebra.ofId w.Completion (SeparableClosure w.Completion)).comp eA.symm.toAlgHom
-  have hrange : σ.fieldRange = ⊥ := by
-    ext x
-    constructor
-    · rintro ⟨y, rfl⟩
-      exact IntermediateField.mem_bot.mpr ⟨e.symm y, rfl⟩
-    · intro hx
-      obtain ⟨y, rfl⟩ := IntermediateField.mem_bot.mp hx
-      exact ⟨e y, congrArg (algebraMap w.Completion (SeparableClosure w.Completion))
-        (eA.symm_apply_apply y)⟩
-  have htop : σ.fieldRange.fixingSubgroup = ⊤ := by simp [hrange]
-  have hcard := Nat.card_congr
-    (absoluteGaloisGroupEquivFixingSubgroup w.Completion ℝ σ).toEquiv
-  rw [htop, Subgroup.card_top] at hcard
-  rw [← hcard]
-  let _ : IsAlgClosure ℝ ℂ := ⟨inferInstance, inferInstance⟩
-  rw [Nat.card_congr (IsSepClosure.equiv ℝ (SeparableClosure ℝ) ℂ).autCongr.toEquiv,
-    IsGalois.card_aut_eq_finrank, Complex.finrank_real_complex]
 
 variable {K : Type} [Field K]
 

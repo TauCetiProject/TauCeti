@@ -295,7 +295,7 @@ theorem finsetSup_WQ (s : Finset (RationalHodgeSubstructure hℚ hs)) :
   classical
   induction s using Finset.induction with
   | empty => simp
-  | insert a s ha ih => simp [ih]
+  | insert a s _ ih => simp [ih]
 
 /-- Passing to the underlying rational subspace is strictly monotone. -/
 theorem WQ_strictMono :

@@ -56,6 +56,8 @@ The Taylor shift itself preserves the degree in each variable (`MvPolynomial.deg
 * `MvPolynomial.orderAt_eq_of_forall_eval_foldl_pderiv_eq_zero_iff`: the order at a point is
   determined by which iterated partial derivatives, up to the total degree, vanish there.
 * `MvPolynomial.orderAt_le_orderAt_aeval`: substitution does not decrease the order.
+* `MvPolynomial.orderAt_taylor`, `MvPolynomial.orderAt_map`: the order is unchanged by Taylor
+  shifts, after translating the point, and by injective coefficient maps.
 * `MvPolynomial.orderAt_rename`: renaming along an injective map preserves the order.
 * `MvPolynomial.finSuccEquiv_taylor`, `MvPolynomial.coeff_taylor_cons`: singling out the
   variable `X₀` turns the Taylor shift at `a` into the univariate Taylor shift at `a₀` followed by
@@ -370,6 +372,20 @@ theorem le_orderAt_mul (p q : MvPolynomial σ R) (a : σ → R) :
     p.orderAt a + q.orderAt a ≤ (p * q).orderAt a := by
   simpa [orderAt_def] using MvPowerSeries.le_order_mul
 
+/-- The order of the Taylor shift of `p` at `a` is the order of `p` at the translated point. -/
+@[simp]
+theorem orderAt_taylor (a b : σ → R) (p : MvPolynomial σ R) :
+    (taylor a p).orderAt b = p.orderAt (b + a) := by
+  rw [orderAt_def, orderAt_def, taylor_taylor]
+
+/-- Mapping the coefficients along an injective ring homomorphism does not change the order, at
+the image of the point. -/
+theorem orderAt_map {S : Type*} [CommSemiring S] {f : R →+* S} (hf : Function.Injective f)
+    (p : MvPolynomial σ R) (a : σ → R) :
+    (map f p).orderAt (fun i ↦ f (a i)) = p.orderAt a := by
+  refine eq_of_forall_le_iff fun n ↦ ?_
+  simp only [le_orderAt_iff, ← map_taylor, coeff_map, map_eq_zero_iff f hf]
+
 end CommSemiring
 
 section CommRing
@@ -461,11 +477,11 @@ section Derivative
 
 variable [CommRing R] [IsAddTorsionFree R] {p : MvPolynomial σ R} {a : σ → R}
 
-/-- Over a ring without additive torsion, `p` has order at least `n + 1` at `a` if and only if
-`p` vanishes at `a` and every partial derivative of `p` has order at least `n` at `a`. -/
-theorem succ_le_orderAt_iff {n : ℕ} :
-    ((n + 1 : ℕ) : ℕ∞) ≤ p.orderAt a ↔
-      eval a p = 0 ∧ ∀ i, (n : ℕ∞) ≤ (pderiv i p).orderAt a := by
+/-- Over a ring without additive torsion, `p` has order at least `n + 1` at `a`, for `n : ℕ∞`,
+if and only if `p` vanishes at `a` and every partial derivative has order at least `n` there. -/
+theorem succ_le_orderAt_iff {n : ℕ∞} :
+    n + 1 ≤ p.orderAt a ↔
+      eval a p = 0 ∧ ∀ i, n ≤ (pderiv i p).orderAt a := by
   rw [orderAt_def, MvPowerSeries.succ_le_order_iff, constantCoeff_coe, constantCoeff_taylor]
   simp only [orderAt_def, MvPowerSeries.pderiv_coe, pderiv_taylor]
 
@@ -478,7 +494,7 @@ theorem orderAt_eq_one_of_eval_pderiv_ne_zero (hp : eval a p = 0) {i : σ}
     intro h
     have hder := (succ_le_orderAt_iff (n := 1)).mp h
     have hpos := hder.2 i
-    rw [Nat.cast_one, Order.one_le_iff_pos, orderAt_pos_iff] at hpos
+    rw [Order.one_le_iff_pos, orderAt_pos_iff] at hpos
     exact hi hpos
   · simpa only [Order.one_le_iff_pos, orderAt_pos_iff] using hp
 
@@ -509,7 +525,7 @@ theorem le_orderAt_iff_eval_foldl_pderiv {n : ℕ} :
   induction n generalizing p with
   | zero => simp
   | succ n ih =>
-    simp only [succ_le_orderAt_iff, ih]
+    simp only [Nat.cast_add, Nat.cast_one, succ_le_orderAt_iff, ih]
     refine ⟨fun ⟨h0, h⟩ l hl ↦ ?_, fun h ↦ ⟨h [] (by simp), fun i l hl ↦
       h (i :: l) (by simpa using hl)⟩⟩
     cases l with

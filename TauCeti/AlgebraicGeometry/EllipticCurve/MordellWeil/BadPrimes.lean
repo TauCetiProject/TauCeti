@@ -497,7 +497,6 @@ private lemma even_valuationOfNeZero_sub_root_of_le_one
   set A₂ := algebraMap K L W.a₂ with hA₂def
   set A := algebraMap K L W.a₄ with hAdef
   have ht : ν t ≤ 1 := W.valuation_root_le_one R p hw
-  have hderiv : ν (3 * t ^ 2 + 2 * A₂ * t + A) = 1 := W.valuation_deriv_root_eq_one R p hw
   -- `y ² = (x - θ) * (x ² + θ x + θ ² + a₂ (x + θ) + a₄)` over `L`
   have heqL : (algebraMap K L y) ^ 2 = algebraMap K L x ^ 3 + A₂ * algebraMap K L x ^ 2 +
       A * algebraMap K L x + algebraMap K L W.a₆ := by

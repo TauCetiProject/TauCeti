@@ -217,11 +217,12 @@ noncomputable def toEnd : pathAlgebra k Q →ₐ[k] Module.End k (DirectSum Q (v
 theorem toEnd_ofPath (x : Quiver.TotalPath Q) : toEnd k Q M (ofPath x) = pathEnd k Q M x := by
   rw [toEnd, PathAlgebra.liftAlgHom_ofPath]
 
-/-- A loop at `v` acts on `⨁_u M_u` through the summand `M_v` only. -/
-theorem toEnd_ofPath_loop {v : Q} (p : _root_.Quiver.Path v v) :
-    toEnd k Q M (ofPath ⟨v, v, p⟩) =
-      DirectSum.lof k Q (vertexSpace k Q M) v ∘ₗ mapₗ k Q M p ∘ₗ
-        DirectSum.component k Q (vertexSpace k Q M) v := by
+/-- The basis element of a path `p` from `a` to `b` acts on `⨁_u M_u` by reading off the
+`a`-component, applying the structure map of `p`, and including the result in the `b`-summand. -/
+theorem toEnd_ofPath_mk {a b : Q} (p : _root_.Quiver.Path a b) :
+    toEnd k Q M (ofPath ⟨a, b, p⟩) =
+      DirectSum.lof k Q (vertexSpace k Q M) b ∘ₗ mapₗ k Q M p ∘ₗ
+        DirectSum.component k Q (vertexSpace k Q M) a := by
   rw [toEnd_ofPath]
   exact LinearMap.ext fun z => pathEnd_mk_apply k Q M p z
 
@@ -466,11 +467,8 @@ variable (M : QuiverRep.{u, v, w, t} k Q)
 /-- **The module carried by a representation is no larger than the representation**: over a finite
 vertex set the direct sum `⨁ᵥ Mᵥ` is a finite product of the vertex spaces, so it has a model in
 their universe even though it is indexed by a vertex type that may live in a larger one. -/
-instance small_asModule : Small.{t} (asModule k Q M) := by
-  classical
-  have : Fintype Q := Fintype.ofFinite Q
-  have : Small.{t} Q := small_map (Finite.equivFin Q)
-  exact small_map (α := asModule k Q M) (DFinsupp.equivFunOnFintype (β := vertexSpace k Q M))
+instance small_asModule : Small.{t} (asModule k Q M) :=
+  inferInstanceAs (Small.{t} (Π₀ i, vertexSpace k Q M i))
 
 /-- **The module carried by a representation, in the universe of the representation**: a model of
 `TauCeti.QuiverRep.asModule` in `Type t`, as an object of `ModuleCat (kQ)`.  It is bundled as an

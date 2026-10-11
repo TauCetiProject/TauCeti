@@ -370,7 +370,7 @@ private lemma irreducibleSpace_of_connected_of_open_components {α : Type*} [Top
     have hSU : x ∈ ⋃₀ irreducibleComponents α := by
       rw [sUnion_irreducibleComponents]
       exact mem_univ x
-    obtain ⟨c, hc_in, hx⟩ := hSU
+    obtain ⟨c, hc_in, _⟩ := hSU
     exact ⟨⟨c, hc_in⟩⟩
   obtain ⟨c⟩ := hNonempty
   have hcClopen : IsClopen (c : Set α) :=

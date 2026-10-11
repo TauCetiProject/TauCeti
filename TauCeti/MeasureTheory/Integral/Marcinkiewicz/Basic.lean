@@ -185,7 +185,6 @@ private theorem lintegral_rpow_le_of_mul_meas_ofReal_lt_le_of_measurable
     ∫⁻ y, u y ^ p ∂ν ≤
       ENNReal.ofReal (p * c ^ (1 - p) / (p - 1)) * A * ∫⁻ x, f x ^ p ∂μ := by
   have hp0 : (0 : ℝ) < p := by linarith
-  have hp1 : (0 : ℝ) < p - 1 := by linarith
   have hK : (0 : ℝ) < p * c ^ (1 - p) / (p - 1) := by positivity
   rcases eq_or_ne A 0 with hA | hA
   · -- With `A = 0` the hypothesis holds over the zero measure as well, and there it already
@@ -285,7 +284,7 @@ theorem mul_meas_ofReal_lt_le_setLIntegral
   have hdt : 0 ≤ d * t := (mul_pos hd ht).le
   have hbct : 0 ≤ b * (c * t) := mul_nonneg hb hct
   have hdinv : 0 ≤ d⁻¹ := inv_nonneg.2 hd.le
-  set g : α → G := hv.mk v with hgdef
+  set g : α → G := hv.mk v with _
   have hvg : v =ᵐ[μ] g := hv.ae_eq_mk
   have hgmeas : Measurable g := hv.measurable_mk
   set S : Set α := {x | ENNReal.ofReal (c * t) < ‖g x‖ₑ} with hSdef

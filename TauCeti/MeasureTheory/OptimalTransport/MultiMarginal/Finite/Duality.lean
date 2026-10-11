@@ -243,7 +243,7 @@ private def FiniteMultiCoupling.ofRealFun {f : (∀ i, X i) → ℝ}
   refine ⟨π, fun i ↦ ?_⟩
   ext a
   simp only [π, PMF.map_ofFintype, PMF.ofFintype_apply]
-  rw [← ENNReal.ofReal_sum_of_nonneg fun x hx ↦ hf.1 x,
+  rw [← ENNReal.ofReal_sum_of_nonneg fun x _ ↦ hf.1 x,
     hf.2.2 i a, ENNReal.ofReal_toReal ((μ i).apply_ne_top a)]
 
 private theorem FiniteMultiCoupling.toRealFun_ofRealFun {f : (∀ i, X i) → ℝ}
@@ -396,7 +396,7 @@ private theorem exists_bounded_of_normalized {c : (∀ i, X i) → ℝ} {M B : �
     Nat.one_le_cast.2 (Fintype.card_pos_iff.2 ‹Nonempty ι›)
   have hcard1 : (0 : ℝ) ≤ ((Fintype.card ι : ℝ) + 1) * M := mul_nonneg (by linarith) hM0
   have hMB : M ≤ B := by nlinarith
-  have hB0 : 0 ≤ B := hM0.trans hMB
+  have _ : 0 ≤ B := hM0.trans hMB
   -- Each marginal contributes at most `M` to the dual value, so it contributes at least
   -- `-((card ι) * M + M)` as well.
   let E : ι → ℝ := fun i ↦ ∑ x, ((μ i) x).toReal * ψ i x
@@ -411,7 +411,7 @@ private theorem exists_bounded_of_normalized {c : (∀ i, X i) → ℝ} {M B : �
   have hE_lower : ∀ i, -((Fintype.card ι : ℝ) * M + M) ≤ E i := by
     intro i
     have hrest : ∑ j ∈ Finset.univ.erase i, E j ≤ (Fintype.card ι : ℝ) * M := calc
-      ∑ j ∈ Finset.univ.erase i, E j ≤ ∑ j ∈ Finset.univ.erase i, M :=
+      ∑ j ∈ Finset.univ.erase i, E j ≤ ∑ _ ∈ Finset.univ.erase i, M :=
         Finset.sum_le_sum fun j _ ↦ hE_le j
       _ ≤ ∑ _j : ι, M := by
         gcongr
@@ -476,7 +476,7 @@ private theorem exists_bounded_of_normalized {c : (∀ i, X i) → ℝ} {M B : �
     by_cases hz : ∃ i, ((μ i) (z i)).toReal = 0
     · obtain ⟨i, hi⟩ := hz
       have hrest : ∑ j ∈ Finset.univ.erase i, χ j (z j) ≤ (Fintype.card ι : ℝ) * M := calc
-        ∑ j ∈ Finset.univ.erase i, χ j (z j) ≤ ∑ j ∈ Finset.univ.erase i, M :=
+        ∑ j ∈ Finset.univ.erase i, χ j (z j) ≤ ∑ _ ∈ Finset.univ.erase i, M :=
           Finset.sum_le_sum fun j _ ↦ hχ_le j (z j)
         _ ≤ ∑ _j : ι, M := by
           gcongr
@@ -505,7 +505,7 @@ theorem exists_forall_finiteMultiDualValue_le (c : (∀ i, X i) → ℝ)
   obtain ⟨i₀⟩ := ‹Nonempty ι›
   have : Nonempty (∀ i, X i) := ⟨fun i ↦ Classical.choice (hX i)⟩
   obtain ⟨z₀, hz₀⟩ := Finite.exists_max fun z : ∀ i, X i ↦ |c z|
-  set M := |c z₀| with hMdef
+  set M := |c z₀|
   have hM : ∀ z, |c z| ≤ M := hz₀
   have hM0 : 0 ≤ M := abs_nonneg _
   -- A box radius dominating `(card ι + 2) * M` and its quotients by the positive weights.
@@ -515,7 +515,7 @@ theorem exists_forall_finiteMultiDualValue_le (c : (∀ i, X i) → ℝ)
         else (Fintype.card ι + 2 : ℝ) * M / ((μ q.1) q.2).toReal)
   have : Nonempty (Σ i, X i) := ⟨⟨i₀, Classical.choice (hX i₀)⟩⟩
   obtain ⟨q₀, hq₀⟩ := Finite.exists_max boundTerm
-  set B := boundTerm q₀ with hBdef
+  set B := boundTerm q₀
   have hB : ∀ q, boundTerm q ≤ B := hq₀
   have hD : (Fintype.card ι + 2 : ℝ) * M ≤ B := by
     obtain ⟨x⟩ := hX i₀
@@ -534,7 +534,7 @@ theorem exists_forall_finiteMultiDualValue_le (c : (∀ i, X i) → ℝ)
   -- The normalised feasible families of value at least `-M` form a compact set.
   set K : Set (∀ i, X i → ℝ) :=
     {φ | FiniteMultiDualFeasible c φ ∧ -M ≤ finiteMultiDualValue μ φ ∧
-      ∀ i x, |φ i x| ≤ B} with hKdef
+      ∀ i x, |φ i x| ≤ B}
   have hKclosed : IsClosed K := by
     have hfeas : IsClosed {φ : ∀ i, X i → ℝ | FiniteMultiDualFeasible c φ} := by
       simp only [FiniteMultiDualFeasible, Set.ofPred_forall]

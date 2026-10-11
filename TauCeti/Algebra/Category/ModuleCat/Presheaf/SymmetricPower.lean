@@ -104,7 +104,7 @@ lemma symmetricPowerObjMap_naturality {M N : PresheafOfModulesOfCommRing.{u} R} 
         (M.map f))) =
       (SymmetricAlgebra.mapₛₗ ((ModuleCat.semilinearMapAddEquiv (R.map f).hom _ _).symm
         (N.map f))).comp (SymmetricAlgebra.map (R.obj X) (φ.app' X).hom : _ →+* _) :=
-    SymmetricAlgebra.ringHom_ext (fun r ↦ by simp) (fun m ↦ by
+    SymmetricAlgebra.ringHom_ext (by ext r; simp) (fun m ↦ by
       simp only [RingHom.coe_coe, SymmetricAlgebra.map_apply_ι, SymmetricAlgebra.mapₛₗ_ι,
         RingHom.comp_apply]
       exact congrArg (SymmetricAlgebra.ι _ _) (naturality_apply φ f m))

@@ -255,7 +255,6 @@ private lemma hasSum_normalizedDerivOfComplex_eichlerIntegral (hh : 0 < h)
     (n : ℕ) (τ : ℍ) :
     HasSum (fun m : ℕ ↦ (m / h) * ((h : ℂ) / m) ^ n * (qExpansion h f).coeff m * 𝕢 h τ ^ m)
       (D (eichlerIntegral h n f) τ) := by
-  have h2πI : (2 * π * I : ℂ) ≠ 0 := by simp [Real.pi_ne_zero, I_ne_zero]
   rw [Derivative.normalizedDerivOfComplex,
     (eichlerIntegral_comp_ofComplex_eventuallyEq n τ).deriv_eq]
   convert (eichlerSeries_hasSum_deriv hh hfper hfhol hfbdd n τ.im_pos).2.mul_left

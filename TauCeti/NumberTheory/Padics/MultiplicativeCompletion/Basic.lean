@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Basic
-public import TauCeti.Algebra.MonoidAlgebra.Exactness
+public import TauCeti.Algebra.MonoidAlgebra.Augmentation
 public import TauCeti.GroupTheory.QuotientGroup.Map
 public import TauCeti.GroupTheory.QuotientGroup.PowMonoidHom
 public import TauCeti.NumberTheory.Padics.RingHoms

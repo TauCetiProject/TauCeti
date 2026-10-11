@@ -18,8 +18,10 @@ places. For a number field, its restriction agrees with the normalization in
 idele norm.
 
 `NumberField.InfinitePlace.Completion.norm_algebraMap` compares the completion norm with the place
-absolute value on the dense base field. The normalized value is continuous and takes every
-nonnegative real value.
+absolute value on the dense base field, and
+`NumberField.InfinitePlace.Completion.funext_of_continuous` says that continuous maps out of the
+completion are determined by their values on it. The normalized value is continuous and takes
+every nonnegative real value.
 
 Archimedean completions are nontrivially normed fields, and the diagonal embeddings form scalar
 towers over any commutative semiring base.
@@ -69,6 +71,16 @@ theorem Completion.norm_algebraMap (w : InfinitePlace K) (x : K) :
     ‖algebraMap K w.Completion x‖ = w x := by
   rw [Completion.algebraMap_apply]
   exact Completion.norm_coe w (WithAbs.toAbs w.1 x)
+
+/-- Two continuous maps out of an archimedean completion `K_w` into a Hausdorff space agree once
+they agree on `K`. -/
+theorem Completion.funext_of_continuous {w : InfinitePlace K} {B : Type*} [TopologicalSpace B]
+    [T2Space B] {f g : w.Completion → B} (hf : Continuous f) (hg : Continuous g)
+    (h : ∀ x : K, f (algebraMap K w.Completion x) = g (algebraMap K w.Completion x)) : f = g := by
+  funext a
+  induction a using Completion.induction_on with
+  | hp => exact isClosed_eq hf hg
+  | ih a => exact h a.ofAbs
 
 /-- On the dense copy of `K`, the infinite completion value is the normalized
 infinite-place value. -/

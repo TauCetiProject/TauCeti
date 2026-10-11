@@ -55,6 +55,8 @@ function.
   they are built from.
 * `TauCeti.neg_mem_posRoots_of_mem_negRoots` and `TauCeti.neg_mem_negRoots_of_mem_posRoots` say
   that negation exchanges negative and positive roots.
+* `TauCeti.sum_root_eq_sum_posRootsFinset` splits a sum over all roots into its positive-root
+  terms and their negatives.
 * `TauCeti.borelSubalgebra_eq_sup`: the Borel subalgebra is the join `H ⊔ n⁺`.
 * `TauCeti.le_borelSubalgebra` and `TauCeti.positiveNilradical_le_borelSubalgebra` are the two
   inclusions `H ≤ 𝔟` and `n⁺ ≤ 𝔟`.
@@ -228,6 +230,30 @@ theorem neg_mem_negRoots_of_mem_posRoots {i : H.root}
   rw [← IsKilling.rootSystem_reflectionPerm_self_eq_neg i]
   exact (reflectionPerm_self_mem_negRoots_iff_mem_posRoots
     (IsKilling.rootSystem H) b i).mpr hi
+
+/-- A sum over all roots is the sum, over the positive roots, of the terms at each root and its
+negative. -/
+theorem sum_root_eq_sum_posRootsFinset {A : Type*} [AddCommMonoid A] (f : H.root → A) :
+    ∑ a, f a = ∑ i ∈ posRootsFinset (IsKilling.rootSystem H) b, (f i + f (-i)) := by
+  classical
+  have hunion : posRootsFinset (IsKilling.rootSystem H) b ∪
+      negRootsFinset (IsKilling.rootSystem H) b = Finset.univ := by
+    ext i
+    simp only [Finset.mem_union, mem_posRootsFinset, mem_negRootsFinset, mem_posRoots,
+      mem_negRoots, Finset.mem_univ, iff_true]
+    exact em _
+  have hdisj : Disjoint (posRootsFinset (IsKilling.rootSystem H) b)
+      (negRootsFinset (IsKilling.rootSystem H) b) :=
+    Finset.disjoint_left.mpr fun i hi hi' ↦
+      (mem_negRoots _ b i).mp ((mem_negRootsFinset _ b i).mp hi')
+        ((mem_posRoots _ b i).mp ((mem_posRootsFinset _ b i).mp hi))
+  have hswap : ∑ i ∈ negRootsFinset (IsKilling.rootSystem H) b, f i =
+      ∑ i ∈ posRootsFinset (IsKilling.rootSystem H) b, f (-i) := by
+    refine Finset.sum_equiv (Equiv.neg H.root) (fun i ↦ ?_) (fun i _ ↦ by simp)
+    simp only [Equiv.neg_apply, mem_negRootsFinset, mem_posRootsFinset]
+    exact ⟨fun hi ↦ neg_mem_posRoots_of_mem_negRoots b hi,
+      fun hi ↦ by simpa using neg_mem_negRoots_of_mem_posRoots b hi⟩
+  rw [← hunion, Finset.sum_union hdisj, hswap, Finset.sum_add_distrib]
 
 /-- The positive roots are a special closed set of roots: heights add, and a positive root never
 has a positive negative. -/

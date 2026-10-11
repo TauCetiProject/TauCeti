@@ -238,7 +238,7 @@ closed point, by `TauCeti.exists_nat_length_quotient_span_pair`. The hypothesis 
 is not met there, `k[[x, y]] ⧸ (x * y)` being not a domain, so additivity over the components of
 such a curve is not reached by this route: it would need a theory of the associated primes of a
 module of infinite length, which this file does not have. -/
-theorem length_quotient_span_pair_mul_eq_add {f g h : R} (hfprime : (Ideal.span {f}).IsPrime)
+theorem length_quotient_span_pair_mul_eq_add {f g h : R} (_ : (Ideal.span {f}).IsPrime)
     (hh : h ∉ Ideal.span {f}) :
     Module.length R (R ⧸ Ideal.span {f, g * h})
       = Module.length R (R ⧸ Ideal.span {f, g}) + Module.length R (R ⧸ Ideal.span {f, h}) :=

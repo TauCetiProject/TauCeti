@@ -16,8 +16,8 @@ The ring of profinite integers `Additive zHat` (see
 `TauCeti.Topology.Algebra.Group.Profinite.ZHat.Ring`) projects onto every finite quotient
 `ZMod n` of `ℤ`, and is determined by these projections: it is the inverse limit of the rings
 `ZMod n` along the reduction maps `ZMod.castHom`. This file builds the projections and proves
-that limit property, in the form of a universal property for ring homomorphisms into
-`Additive zHat`.
+that limit property, in the form of a universal property for additive and for ring
+homomorphisms into `Additive zHat`.
 
 The projection `zHat.toZMod n` is the continuous homomorphism `zHat.lift (ofAdd 1)` into the
 finite discrete group `Multiplicative (ZMod n)`, read additively; it is a ring homomorphism for
@@ -27,10 +27,13 @@ projection (`zHat.exists_monoidHom_mk_eq_toZMod`), so two profinite integers wit
 projections are equal (`zHat.ext_of_toZMod`), a map into the profinite integers is continuous as
 soon as its projections are (`zHat.continuous_iff_forall_continuous_toZMod`), and a compatible
 family of residues is realized by a unique profinite integer
-(`zHat.existsUnique_forall_toZMod_eq`). The last statement assembles a compatible family of ring
-homomorphisms `R →+* ZMod n` into a unique ring homomorphism
-`zHat.ringLift f : R →+* Additive zHat`, continuous when every member of the family is. The
-integers embed into the profinite integers: `Additive zHat` has characteristic zero.
+(`zHat.existsUnique_forall_toZMod_eq`). The last statement assembles a compatible family of
+additive homomorphisms `A →+ ZMod n` into a unique additive homomorphism
+`zHat.addLift f : A →+ Additive zHat`, continuous when every member of the family is. A compatible
+family of ring homomorphisms `R →+* ZMod n` assembles in the same way into a unique ring
+homomorphism `zHat.ringLift f : R →+* Additive zHat`, whose underlying additive homomorphism is the
+additive lift of the family. The integers embed into the profinite integers: `Additive zHat` has
+characteristic zero.
 
 The index `n` of the finite levels runs over `ℕ+`: for `n = 0` the group `Multiplicative (ZMod 0)`
 is `ℤ`, which is not profinite, and no lift exists.
@@ -39,6 +42,8 @@ is `ℤ`, which is not profinite, and no lift exists.
 
 * `TauCeti.zHat.toZMod`: reduction of a profinite integer modulo `n`, a continuous ring
   homomorphism `Additive zHat →+* ZMod n`.
+* `TauCeti.zHat.addLift`: the additive homomorphism into `Additive zHat` assembled from a
+  compatible family of additive homomorphisms into the `ZMod n`.
 * `TauCeti.zHat.ringLift`: the ring homomorphism into `Additive zHat` assembled from a compatible
   family of ring homomorphisms into the `ZMod n`.
 
@@ -49,9 +54,13 @@ is `ℤ`, which is not profinite, and no lift exists.
 * `TauCeti.zHat.ext_of_toZMod`, `TauCeti.zHat.ext_iff_toZMod`,
   `TauCeti.zHat.existsUnique_forall_toZMod_eq`: a profinite integer is determined by its
   projections, and every compatible family of residues comes from one.
+* `TauCeti.zHat.toZMod_addLift`, `TauCeti.zHat.addLift_unique`,
+  `TauCeti.zHat.continuous_addLift`: the universal property of `Additive zHat` as the inverse
+  limit of the groups `ZMod n`.
 * `TauCeti.zHat.toZMod_ringLift`, `TauCeti.zHat.ringLift_unique`,
   `TauCeti.zHat.continuous_ringLift`: the universal property of `Additive zHat` as the inverse
-  limit of the `ZMod n`.
+  limit of the rings `ZMod n`; `TauCeti.zHat.coe_addMonoidHom_ringLift` compares it with the
+  additive one.
 * `TauCeti.zHat.continuous_iff_forall_continuous_toZMod`: continuity into `Additive zHat` is
   detected by the projections.
 * The `CharZero (Additive zHat)` instance and `TauCeti.zHat.ofInt_injective`: the integers embed
@@ -259,6 +268,71 @@ theorem existsUnique_forall_toZMod_eq (x : ∀ n : ℕ+, ZMod n)
 
 end ToZMod
 
+section AddLift
+
+variable {A : Type v} [AddZeroClass A] (f : ∀ n : ℕ+, A →+ ZMod n)
+  (hf : ∀ (m n : ℕ+) (h : (m : ℕ) ∣ n), (ZMod.castHom h (ZMod m) : ZMod n →+ ZMod m).comp (f n) =
+    f m)
+
+/-- **The universal property of `ℤ̂` as an inverse limit, for additive maps.** A family of additive
+homomorphisms `f n : A →+ ZMod n`, compatible along the reduction maps, assembles into the additive
+homomorphism `A →+ Additive zHat` whose reduction modulo `n` is `f n` (`zHat.toZMod_addLift`); it is
+the only one (`zHat.addLift_unique`). -/
+noncomputable def addLift : A →+ Additive zHat.{u} :=
+  let g : A → Additive zHat.{u} := fun a ↦
+    (existsUnique_forall_toZMod_eq (fun n ↦ f n a)
+      fun m n h ↦ DFunLike.congr_fun (hf m n h) a).exists.choose
+  have hg : ∀ a n, toZMod n (g a) = f n a := fun a ↦
+    (existsUnique_forall_toZMod_eq (fun n ↦ f n a)
+      fun m n h ↦ DFunLike.congr_fun (hf m n h) a).exists.choose_spec
+  { toFun := g
+    -- The additivity axioms are checked level by level, through `ext_of_toZMod`.
+    map_zero' := ext_of_toZMod fun n ↦ by rw [hg, map_zero, map_zero]
+    map_add' a b := ext_of_toZMod fun n ↦ by rw [hg, map_add, map_add, hg, hg] }
+
+/-- The reduction modulo `n` of the assembled additive homomorphism is the `n`-th member of the
+family. -/
+@[simp]
+theorem toZMod_addLift (n : ℕ+) (a : A) : toZMod n (addLift f hf a) = f n a :=
+  (existsUnique_forall_toZMod_eq (fun n ↦ f n a)
+    fun m n h ↦ DFunLike.congr_fun (hf m n h) a).exists.choose_spec n
+
+/-- The reduction modulo `n` of the assembled additive homomorphism is the `n`-th member of the
+family, as an equality of additive homomorphisms. -/
+theorem toZMod_comp_addLift (n : ℕ+) :
+    (toZMod n : Additive zHat.{u} →+ ZMod n).comp (addLift f hf) = f n :=
+  AddMonoidHom.ext (toZMod_addLift f hf n)
+
+/-- An additive homomorphism into `ℤ̂` whose reductions are the members of the family is the
+assembled additive homomorphism. -/
+theorem addLift_unique (g : A →+ Additive zHat.{u})
+    (hg : ∀ n, (toZMod n : Additive zHat.{u} →+ ZMod n).comp g = f n) :
+    g = addLift f hf :=
+  AddMonoidHom.ext fun a ↦ ext_of_toZMod fun n ↦ by
+    rw [toZMod_addLift, ← hg n, AddMonoidHom.comp_apply, AddMonoidHom.coe_ofClass]
+
+/-- **Naturality of the additive universal property in `A`.** Precomposing the assembled additive
+homomorphism with `g : B →+ A` assembles the precomposed family. -/
+theorem addLift_comp {B : Type*} [AddZeroClass B] (g : B →+ A) :
+    (addLift f hf).comp g =
+      addLift (fun n ↦ (f n).comp g) fun m n h ↦ by rw [← AddMonoidHom.comp_assoc, hf m n h] :=
+  addLift_unique _ _ _ fun n ↦ by rw [← AddMonoidHom.comp_assoc, toZMod_comp_addLift]
+
+/-- The assembled additive homomorphism is continuous as soon as every member of the family is. -/
+theorem continuous_addLift [TopologicalSpace A]
+    (hcont : ∀ n : ℕ+, Continuous (f n : A → ZMod n)) : Continuous (addLift f hf) :=
+  continuous_iff_forall_continuous_toZMod.mpr fun n ↦ by
+    simpa only [toZMod_addLift] using hcont n
+
+/-- Assembling the projections themselves gives the identity of `ℤ̂`. -/
+theorem addLift_toZMod :
+    addLift (fun n ↦ (toZMod n : Additive zHat.{u} →+ ZMod n))
+      (fun _ _ h ↦ congrArg RingHom.toAddMonoidHom (castHom_comp_toZMod h)) =
+        AddMonoidHom.id (Additive zHat.{u}) :=
+  (addLift_unique _ _ _ fun _ ↦ AddMonoidHom.comp_id _).symm
+
+end AddLift
+
 section RingLift
 
 variable {R : Type v} [NonAssocSemiring R] (f : ∀ n : ℕ+, R →+* ZMod n)
@@ -267,27 +341,32 @@ variable {R : Type v} [NonAssocSemiring R] (f : ∀ n : ℕ+, R →+* ZMod n)
 /-- **The universal property of `ℤ̂` as an inverse limit.** A family of ring homomorphisms
 `f n : R →+* ZMod n`, compatible along the reduction maps, assembles into the ring homomorphism
 `R →+* Additive zHat` whose reduction modulo `n` is `f n` (`zHat.toZMod_ringLift`); it is the
-only one (`zHat.ringLift_unique`). -/
+only one (`zHat.ringLift_unique`). Its underlying additive homomorphism is the additive lift
+`zHat.addLift` of the same family (`zHat.coe_addMonoidHom_ringLift`). -/
 noncomputable def ringLift : R →+* Additive zHat.{u} :=
-  let g : R → Additive zHat.{u} := fun r ↦
-    (existsUnique_forall_toZMod_eq (fun n ↦ f n r)
-      fun m n h ↦ RingHom.congr_fun (hf m n h) r).exists.choose
-  have hg : ∀ r n, toZMod n (g r) = f n r := fun r ↦
-    (existsUnique_forall_toZMod_eq (fun n ↦ f n r)
-      fun m n h ↦ RingHom.congr_fun (hf m n h) r).exists.choose_spec
-  { toFun := g
-    -- Every ring axiom is checked level by level, through `ext_of_toZMod`.
-    map_one' := ext_of_toZMod fun n ↦ by rw [hg, map_one, map_one]
-    map_mul' r s := ext_of_toZMod fun n ↦ by rw [hg, map_mul, map_mul, hg, hg]
-    map_zero' := ext_of_toZMod fun n ↦ by rw [hg, map_zero, map_zero]
-    map_add' r s := ext_of_toZMod fun n ↦ by rw [hg, map_add, map_add, hg, hg] }
+  { addLift (fun n ↦ (f n : R →+ ZMod n))
+      (fun m n h ↦ congrArg RingHom.toAddMonoidHom (hf m n h)) with
+    -- The multiplicative axioms are checked level by level, through `ext_of_toZMod`.
+    map_one' := ext_of_toZMod fun n ↦ by
+      rw [AddMonoidHom.toFun_eq_coe, toZMod_addLift, AddMonoidHom.coe_ofClass, map_one, map_one]
+    map_mul' r s := ext_of_toZMod fun n ↦ by
+      simp only [AddMonoidHom.toFun_eq_coe, map_mul, toZMod_addLift, AddMonoidHom.coe_ofClass] }
 
 /-- The reduction modulo `n` of the assembled ring homomorphism is the `n`-th member of the
 family. -/
 @[simp]
 theorem toZMod_ringLift (n : ℕ+) (r : R) : toZMod n (ringLift f hf r) = f n r :=
-  (existsUnique_forall_toZMod_eq (fun n ↦ f n r)
-    fun m n h ↦ RingHom.congr_fun (hf m n h) r).exists.choose_spec n
+  toZMod_addLift (fun n ↦ (f n : R →+ ZMod n))
+    (fun m n h ↦ congrArg RingHom.toAddMonoidHom (hf m n h)) n r
+
+/-- The ring homomorphism assembled from a compatible family is, as an additive homomorphism, the
+additive lift of the same family. -/
+@[simp]
+theorem coe_addMonoidHom_ringLift :
+    (ringLift f hf : R →+ Additive zHat.{u}) =
+      addLift (fun n ↦ (f n : R →+ ZMod n))
+        (fun m n h ↦ congrArg RingHom.toAddMonoidHom (hf m n h)) :=
+  addLift_unique _ _ _ fun n ↦ AddMonoidHom.ext (toZMod_ringLift f hf n)
 
 /-- The reduction modulo `n` of the assembled ring homomorphism is the `n`-th member of the
 family, as an equality of ring homomorphisms. -/

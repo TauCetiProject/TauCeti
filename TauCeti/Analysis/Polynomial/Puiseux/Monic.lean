@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Polynomial.Puiseux.Branches
 public import TauCeti.Analysis.Polynomial.Puiseux.Extension
-public import TauCeti.Analysis.Polynomial.Puiseux.RootDifference
+public import TauCeti.Analysis.Polynomial.Puiseux.RootDifference.Basic
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 
 /-!

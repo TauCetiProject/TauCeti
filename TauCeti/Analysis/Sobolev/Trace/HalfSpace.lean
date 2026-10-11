@@ -20,8 +20,10 @@ local boundary charts of strips.
 
 The Euclidean product norm is represented by `WithLp 2`. The estimate is first proved on
 test functions using the one-sided fundamental-theorem-of-calculus estimate, then extended
-by whole-space Sobolev density. This file does not construct an extension operator or a
-trace for arbitrary half-space Sobolev functions.
+by whole-space Sobolev density. This one-sided estimate bounds the trace
+`TauCeti.W1p.halfSpaceTrace` of arbitrary half-space Sobolev functions, which is in
+`TauCeti.Analysis.Sobolev.Trace.Extension` together with the reflection extension operator
+`TauCeti.W1p.extendByReflectionL`.
 
 The argument follows L. C. Evans, *Partial Differential Equations*, Chapter 5, §5.5.
 -/

@@ -81,8 +81,6 @@ theorem integrable_exp_neg_mul_of_integrable_stieltjesWeight
     Integrable (fun x : ℝ≥0 => Real.exp (-(t * (x : ℝ)))) ν := by
   refine (hν.const_mul (min 1 t)⁻¹).mono' (by fun_prop) (.of_forall fun x => ?_)
   have hx : (0 : ℝ) ≤ (x : ℝ) := x.coe_nonneg
-  have hm : (0 : ℝ) < min 1 t := lt_min one_pos ht
-  have h1x : (0 : ℝ) < 1 + (x : ℝ) := by positivity
   have hkey : min 1 t * (1 + (x : ℝ)) ≤ Real.exp (t * (x : ℝ)) := by
     have h1 : min 1 t ≤ 1 := min_le_left 1 t
     have h2 : min 1 t * (x : ℝ) ≤ t * (x : ℝ) :=
@@ -170,7 +168,7 @@ theorem isStieltjesFunction_const_add_integral_exp_neg_mul (b : ℝ≥0)
     refine (hker 1 one_pos).congr (.of_forall fun x => ?_)
     simp
   -- Split off the atom at the origin: it is exactly the singular coefficient.
-  have hzero : ν {0} ≠ ∞ := by
+  have _ : ν {0} ≠ ∞ := by
     refine ne_top_of_le_ne_top ((hker 1 one_pos).measure_ge_lt_top one_pos).ne ?_
     refine measure_mono fun x hx => ?_
     rw [mem_singleton_iff] at hx

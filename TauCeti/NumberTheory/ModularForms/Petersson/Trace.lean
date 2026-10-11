@@ -278,8 +278,8 @@ theorem peterssonInnerCosets_trace_translate {Γ₁ Γ₂ : Subgroup SL(2, ℤ)}
     (g := CuspForm.ofLe (h₃'.trans_le inf_le_left) (CuspForm.translate g (TauCeti.adjugateGL α)))
     (F := CuspForm.ofLe (h₃.trans_le inf_le_left) (CuspForm.translate f α))
     (G := d • CuspForm.ofLe (h₃.trans_le inf_le_right) g)
-    (by rw [CuspForm.coe_ofLe, CuspForm.coe_translate_gl, CuspForm.coe_ofLe])
-    (by rw [CuspForm.coe_ofLe, CuspForm.coe_translate_gl, ← SlashAction.slash_mul, hscal,
+    (by rw [CuspForm.coe_ofLe, CuspForm.coe_translate, CuspForm.coe_ofLe])
+    (by rw [CuspForm.coe_ofLe, CuspForm.coe_translate, ← SlashAction.slash_mul, hscal,
       ModularForm.slash_scalar, FunLike.coe_smul, CuspForm.coe_ofLe,
       Matrix.GeneralLinearGroup.val_det_apply])
   rw [peterssonInnerCosets_smul_right] at hC

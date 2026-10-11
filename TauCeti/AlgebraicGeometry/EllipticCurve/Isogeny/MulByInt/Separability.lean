@@ -32,8 +32,9 @@ degree `n ²`.
 * `TauCeti.Isogeny.separableDegree_mulByIntIsogeny`: in that case its separable degree is `n ²`.
 * `TauCeti.Isogeny.dvd_inseparableDegree_mulByIntIsogeny`: when `n` vanishes in the base field,
   the characteristic divides the inseparable degree of `[n]`.
-* `TauCeti.Isogeny.inseparableDegree_mulByIntIsogenyOfNeZero_pow`: the inseparable degree of
-  `[n ^ k]` is the `k`-th power of that of `[n]`.
+* `TauCeti.Isogeny.inseparableDegree_mulByIntIsogenyOfNeZero_pow` and
+  `TauCeti.Isogeny.separableDegree_mulByIntIsogenyOfNeZero_pow`: the inseparable and separable
+  degrees of `[n ^ k]` are the `k`-th powers of those of `[n]`.
 
 ## References
 
@@ -87,24 +88,50 @@ theorem dvd_inseparableDegree_mulByIntIsogeny [W.IsElliptic] (p : ℕ) [ExpChar 
   rw [hr] at hne ⊢
   exact dvd_pow_self p fun h ↦ hne (by rw [h, pow_zero])
 
+/-- `[n ^ 0]` is the identity. -/
+private theorem mulByIntIsogenyOfNeZero_pow_zero [W.IsElliptic] {n : ℤ} (hn : n ≠ 0) :
+    mulByIntIsogenyOfNeZero W (pow_ne_zero 0 hn) = Isogeny.id W :=
+  have h₁ : psiFunctionField W 1 ≠ 0 :=
+    psiFunctionField_ne_zero_of_Δ_ne_zero W W.isUnit_Δ.ne_zero one_ne_zero
+  ((mulByIntIsogeny_inj W _ h₁).2 (pow_zero n)).trans (mulByIntIsogeny_one W h₁)
+
+/-- `[n ^ (k + 1)] = [n ^ k] ∘ [n]`. -/
+private theorem mulByIntIsogenyOfNeZero_pow_succ [W.IsElliptic] {n : ℤ} (hn : n ≠ 0) (k : ℕ) :
+    mulByIntIsogenyOfNeZero W (pow_ne_zero (k + 1) hn) =
+      (mulByIntIsogenyOfNeZero W (pow_ne_zero k hn)).comp (mulByIntIsogenyOfNeZero W hn) := by
+  rw [mulByIntIsogenyOfNeZero_comp_mulByIntIsogenyOfNeZero]
+  exact (mulByIntIsogeny_inj W _ _).2 (pow_succ n k)
+
 /-- **The inseparable degree of `[n ^ k]` is the `k`-th power of that of `[n]`.** -/
 theorem inseparableDegree_mulByIntIsogenyOfNeZero_pow [W.IsElliptic] {n : ℤ} (hn : n ≠ 0)
     (k : ℕ) :
     (mulByIntIsogenyOfNeZero W (pow_ne_zero k hn)).inseparableDegree =
       (mulByIntIsogenyOfNeZero W hn).inseparableDegree ^ k := by
   induction k with
-  | zero =>
-    have h₁ : psiFunctionField W 1 ≠ 0 :=
-      psiFunctionField_ne_zero_of_Δ_ne_zero W W.isUnit_Δ.ne_zero one_ne_zero
-    have e : mulByIntIsogenyOfNeZero W (pow_ne_zero 0 hn) = Isogeny.id W :=
-      ((mulByIntIsogeny_inj W _ h₁).2 (pow_zero n)).trans (mulByIntIsogeny_one W h₁)
-    rw [e, inseparableDegree_id, pow_zero]
-  | succ k ih =>
-    have e : mulByIntIsogenyOfNeZero W (pow_ne_zero (k + 1) hn) =
-        mulByIntIsogenyOfNeZero W (mul_ne_zero (pow_ne_zero k hn) hn) :=
-      (mulByIntIsogeny_inj W _ _).2 (pow_succ n k)
-    rw [e, ← mulByIntIsogenyOfNeZero_comp_mulByIntIsogenyOfNeZero W (pow_ne_zero k hn) hn,
-      inseparableDegree_comp, ih, pow_succ]
+  | zero => rw [mulByIntIsogenyOfNeZero_pow_zero W hn, inseparableDegree_id, pow_zero]
+  | succ k ih => rw [mulByIntIsogenyOfNeZero_pow_succ W hn, inseparableDegree_comp, ih, pow_succ]
+
+/-- **In exponential characteristic `p`, `p ^ k` divides the inseparable degree of `[p ^ k]`**,
+since `[p]` is inseparable when `p > 1`. -/
+theorem pow_dvd_inseparableDegree_mulByIntIsogenyOfNeZero_pow [W.IsElliptic] (p : ℕ) [ExpChar F p]
+    (k : ℕ) :
+    p ^ k ∣ (mulByIntIsogenyOfNeZero W
+      (pow_ne_zero k (mod_cast expChar_ne_zero F p : (p : ℤ) ≠ 0))).inseparableDegree := by
+  rcases ‹ExpChar F p› with _ | ⟨hp⟩
+  · -- in characteristic zero, `p ^ k = 1`
+    rw [one_pow]
+    exact one_dvd _
+  · rw [inseparableDegree_mulByIntIsogenyOfNeZero_pow W (mod_cast hp.ne_zero) k]
+    exact pow_dvd_pow_of_dvd (dvd_inseparableDegree_mulByIntIsogeny W p _ (by simp)) k
+
+/-- **The separable degree of `[n ^ k]` is the `k`-th power of that of `[n]`.** -/
+theorem separableDegree_mulByIntIsogenyOfNeZero_pow [W.IsElliptic] {n : ℤ} (hn : n ≠ 0)
+    (k : ℕ) :
+    (mulByIntIsogenyOfNeZero W (pow_ne_zero k hn)).separableDegree =
+      (mulByIntIsogenyOfNeZero W hn).separableDegree ^ k := by
+  induction k with
+  | zero => rw [mulByIntIsogenyOfNeZero_pow_zero W hn, separableDegree_id, pow_zero]
+  | succ k ih => rw [mulByIntIsogenyOfNeZero_pow_succ W hn, separableDegree_comp, ih, pow_succ]
 
 end TauCeti.Isogeny
 

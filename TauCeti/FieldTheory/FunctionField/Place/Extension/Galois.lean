@@ -285,7 +285,7 @@ theorem exists_smul_eq_of_restrict_eq {P Q : Place k F'} (h : P.restrict k F = Q
   have hcon' : ∀ σ : F' ≃ₐ[F] F', σ • P ≠ Q := fun σ hσ ↦ hcon ⟨σ, hσ⟩
   set s : Finset (Place k F') :=
     (Finset.univ.image fun σ : F' ≃ₐ[F] F' ↦ σ • P) ∪
-      (Finset.univ.image fun σ : F' ≃ₐ[F] F' ↦ σ • Q) with hs
+      (Finset.univ.image fun σ : F' ≃ₐ[F] F' ↦ σ • Q)
   obtain ⟨z, hz⟩ := exists_forall_mem_ord_eq s fun X ↦ if X = Q then 1 else 0
   have hQmem : Q ∈ s :=
     Finset.mem_union_right _ (Finset.mem_image.mpr ⟨1, Finset.mem_univ _, one_smul _ Q⟩)

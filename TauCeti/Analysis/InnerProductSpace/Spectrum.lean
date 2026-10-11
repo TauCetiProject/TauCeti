@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Positive
 public import Mathlib.Analysis.InnerProductSpace.Spectrum
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
 import Mathlib.LinearAlgebra.Eigenspace.ContinuousLinearMap
@@ -29,7 +30,9 @@ into a Hilbert basis of `E`.
 In finite dimensions, this file also packages Mathlib's ordered eigenbasis into the spans of
 any chosen set of its eigenvectors. In particular, the negative and positive spectral subspaces,
 spanned by the eigenvectors with negative and with positive eigenvalue, are disjoint, invariant
-under the operator, and together span the whole space when the operator is injective.
+under the operator, and together span the whole space when the operator is injective. Writing
+the determinant as the product of the eigenvalues shows that a positive operator has nonnegative
+determinant.
 
 No separability is assumed anywhere: the basis is indexed by a set of vectors of `E`, exactly as
 in Mathlib's `exists_hilbertBasis`, and the eigenvalue `0` may well carry an infinite-dimensional
@@ -46,17 +49,29 @@ nonzero eigenvalue, which is the form the eigenvalue problem of an elliptic oper
   symmetric operator, every vector of that basis has a nonzero eigenvalue.
 * `ContinuousLinearMap.hasSum_smul_repr_of_apply_eq_smul`: an operator diagonal in a Hilbert
   basis is the sum of its eigencomponents, the spectral expansion such a basis is for.
+* `LinearMap.IsSymmetric.inner_sub_apply_of_apply_eq_smul_of_apply_eq_smul`: the cross term of
+  the difference of two operators on eigenvectors is the eigenvalue difference times their inner
+  product.
 * `LinearMap.IsSymmetric.eigenvectorSpan`: the span of the eigenvectors of the ordered
   eigenbasis whose indices lie in a specified set.
 * `LinearMap.IsSymmetric.negativeSpectralSubspace` and
   `LinearMap.IsSymmetric.positiveSpectralSubspace`: the negative and positive halves of the
   finite-dimensional spectral splitting.
+* `LinearMap.IsPositive.det_nonneg`: a positive operator on a finite-dimensional space has
+  nonnegative determinant, the product of its eigenvalues.
 
 ## References
 
 H. Brezis, *Functional Analysis, Sobolev Spaces and Partial Differential Equations*,
 Theorem 6.11 (the Hilbert--Schmidt spectral decomposition); L. C. Evans, *Partial Differential
 Equations*, Appendix D.6.
+
+The eigenvector cross-term identity
+`LinearMap.IsSymmetric.inner_sub_apply_of_apply_eq_smul_of_apply_eq_smul` is adapted from the
+corresponding eigenvector identity of the
+[AIQ-Kitware DKPS formalization](https://github.com/AIQ-Kitware/aiq-dkps-formalization)
+(Kitware, Inc.; Apache-2.0), generalized here to `RCLike` scalars and a non-symmetric second
+operator.
 -/
 
 public section
@@ -165,6 +180,27 @@ theorem hasSum_smul_repr_of_apply_eq_smul (T : E →L[𝕜] E) {iota : Type*}
 end ContinuousLinearMap
 
 namespace LinearMap.IsSymmetric
+
+/-! ### Eigenvector identities -/
+
+/-- The cross term of an operator difference on eigenvectors is the eigenvalue difference times
+their inner product.
+
+Only the operator acting on the first eigenvector needs to be symmetric, and the eigenvalues may
+be arbitrary scalars: the eigenvalue of a symmetric operator at a nonzero eigenvector is real.
+In particular, this applies when both operators are symmetric, as in eigenvalue perturbation
+arguments. -/
+theorem inner_sub_apply_of_apply_eq_smul_of_apply_eq_smul {T S : E →ₗ[𝕜] E}
+    (hT : T.IsSymmetric) {x y : E} {lam mu : 𝕜} (hx : T x = lam • x) (hy : S y = mu • y) :
+    ⟪x, (S - T) y⟫_𝕜 = (mu - lam) * ⟪x, y⟫_𝕜 := by
+  rcases eq_or_ne x 0 with rfl | hx0
+  · simp
+  have hlam : starRingEnd 𝕜 lam = lam :=
+    hT.conj_eigenvalue_eq_self (hasEigenvalue_of_hasEigenvector ⟨mem_eigenspace_iff.mpr hx, hx0⟩)
+  calc ⟪x, (S - T) y⟫_𝕜 = ⟪x, S y⟫_𝕜 - ⟪T x, y⟫_𝕜 := by
+        rw [LinearMap.sub_apply, inner_sub_right, hT x y]
+    _ = (mu - lam) * ⟪x, y⟫_𝕜 := by
+        rw [hx, hy, inner_smul_right, inner_smul_left, hlam, sub_mul]
 
 variable {n : ℕ} [FiniteDimensional 𝕜 E] {T : E →ₗ[𝕜] E}
 
@@ -354,3 +390,17 @@ theorem isCompl_negativeSpectralSubspace_positiveSpectralSubspace_of_ker_eq_bot
   rw [hindices, hT.eigenvectorSpan_univ hn]
 
 end LinearMap.IsSymmetric
+
+namespace LinearMap.IsPositive
+
+open scoped ComplexOrder
+
+variable [FiniteDimensional 𝕜 E] {T : E →ₗ[𝕜] E}
+
+/-- A positive operator on a finite-dimensional inner product space has nonnegative determinant:
+the determinant is the product of the eigenvalues, which are nonnegative. -/
+theorem det_nonneg (hT : T.IsPositive) : 0 ≤ T.det := by
+  rw [hT.isSymmetric.det_eq_prod_eigenvalues rfl, ← RCLike.ofReal_prod]
+  exact RCLike.ofReal_nonneg.2 (Finset.prod_nonneg fun i _ => hT.nonneg_eigenvalues rfl i)
+
+end LinearMap.IsPositive

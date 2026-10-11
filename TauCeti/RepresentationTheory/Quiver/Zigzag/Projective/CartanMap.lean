@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.IdempotentCoordinate
+public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Head
+public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Projective
+public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Matrix
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Admissible
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Projective.Graded
+import TauCeti.CategoryTheory.Preadditive.Indecomposable
 
 /-!
 # The graded Cartan map of a zigzag algebra
@@ -36,13 +39,33 @@ are the classes `[P_j]` themselves in `K₀^gr(proj Z)`. This holds for every fi
 including graphs with isolated vertices, where the corner at an isolated vertex is spanned by its
 idempotent.
 
+Every finite graded indecomposable projective is a shift of a vertex projective: the complete
+vertex idempotents split the regular module, and each vertex projective has a one-dimensional
+degree-zero endomorphism space. The classes `[P_j]` therefore form a basis of `K₀^gr(proj Z)`.
+
+The path-length grading of `Z` is nonnegative, and its degree-zero piece is spanned by the
+complete orthogonal family of vertex idempotents. The graded simple `S_i`, the quotient of `P_i`
+by its paths of positive length, is therefore simple, every simple finite graded `Z`-module is a
+shift `S_i{d}`, and the classes `[S_i]` form a basis of `G₀^gr(mod Z)` over `ℤ[q,q⁻¹]` whose
+coordinates are the idempotent coordinates (`TauCeti.gradedIdempotentHeadBasis`). In this basis
+the image of `[P_j]` is the `j`th column of the graded Cartan matrix:
+
+```text
+c^gr [P_j] = ∑ᵢ C_G(q)_{ij} [S_i].
+```
+
 These statements concern the relation quotient. On a component with an edge it is the ordinary
 zigzag algebra; singleton components of the public algebra `TauCeti.zigzagAlgebra` instead use
 the dual numbers.
 
 ## Main definitions
 
+* `TauCeti.zigzagGradedProjectiveClassBasis`: the vertex-projective class basis of the actual
+  Laurent Grothendieck group of finite graded projectives.
+
 * `TauCeti.zigzagGradedProjectiveClass`: the class `[P_j]` in `K₀^gr(proj Z)`.
+* `TauCeti.zigzagGradedSimple`: the graded vertex simple `S_i`.
+* `TauCeti.zigzagGradedSimpleClassBasis`: the basis `[S_i]` of `G₀^gr(mod Z)`.
 
 ## Main results
 
@@ -58,6 +81,19 @@ the dual numbers.
   `TauCeti.linearIndependent_zigzagGradedProjectiveClass`: the images of the vertex-projective
   classes in `G₀^gr(mod Z)`, and the classes themselves in `K₀^gr(proj Z)`, are linearly
   independent over `ℤ[q,q⁻¹]`.
+* `TauCeti.simple_zigzagGradedSimple` and
+  `TauCeti.isExhaustiveGradedSimpleFamily_zigzagGradedSimple`: the `S_i` are simple, and every
+  simple finite graded module is a shift of one of them.
+* `TauCeti.gradedCartanMap_zigzagGradedProjectiveClass_eq_sum`: the image of `[P_j]` is
+  `∑ᵢ C_G(q)_{ij} [S_i]`.
+* `TauCeti.zigzagGradedSimpleClassBasis_repr_gradedCartanMap_zigzagGradedProjectiveClass`: its
+  `[S_i]`-coordinate is `(1 + q²) δᵢⱼ + q A_{ij}` when no vertex is isolated.
+* `TauCeti.isExhaustiveGradedIndecomposableProjectiveFamily_zigzagGradedProjective`: every
+  finite graded indecomposable projective is an internal shift of a vertex projective.
+* `TauCeti.indecomposable_zigzagGradedProjective`: each vertex projective is indecomposable
+  in the category of finite graded projectives.
+* `TauCeti.gradedCartanMatrix_zigzag`: the graded Cartan matrix is the matrix of the graded
+  Cartan map in the vertex-projective and vertex-simple class bases.
 
 ## References
 
@@ -240,5 +276,242 @@ theorem linearIndependent_gradedCartanMap_zigzagGradedProjectiveClass :
 theorem linearIndependent_zigzagGradedProjectiveClass :
     LinearIndependent (LaurentPolynomial ℤ) (zigzagGradedProjectiveClass k G) :=
   (linearIndependent_gradedCartanMap_zigzagGradedProjectiveClass k G).of_comp _
+
+/-! ### The graded simples and the simple-class basis -/
+
+/-- The degree-zero piece of the path-length grading is spanned by the vertex idempotents. -/
+private theorem zigzagIntegerGrade_zero_le_span :
+    zigzagIntegerGrade k G 0 ≤ Submodule.span k (Set.range (zigzagVertexIdempotent k G)) := by
+  have h0 : zigzagIntegerGrade k G 0 = zigzagGrade k G 0 := by
+    simpa only [Nat.cast_zero] using zigzagIntegerGrade_ofNat k G 0
+  rw [h0]
+  exact (zigzagGrade_zero_eq_span_range_vertexIdempotent k G).le
+
+/-- **The graded simple module `S_i`** at a vertex: the head of the graded vertex projective
+`P_i = Z e_i`, its quotient by the span of the paths of positive length starting at `i`. -/
+noncomputable def zigzagGradedSimple (i : V) :
+    GradedModuleCat.{max u w} (zigzagIntegerGrade k G) :=
+  let _ := zigzagIntegerGradedAlgebra k G
+  gradedPositiveMulQuotient (zigzagIntegerGrade k G)
+    (zigzagVertexIdempotent_mem_zigzagIntegerGrade_zero k G i)
+
+/-- A graded vertex simple is the generic graded head of its vertex idempotent. -/
+theorem zigzagGradedSimple_def (i : V) :
+    zigzagGradedSimple k G i =
+      let _ := zigzagIntegerGradedAlgebra k G
+      gradedPositiveMulQuotient (zigzagIntegerGrade k G)
+        (zigzagVertexIdempotent_mem_zigzagIntegerGrade_zero k G i) := by
+  rw [zigzagGradedSimple]
+
+/-- The class of a vertex-projective element in its graded simple head. -/
+noncomputable def zigzagGradedSimpleMk (i : V) :
+    (Ideal.span {zigzagVertexIdempotent k G i} : Ideal (nonisolatedZigzagQuotient k G)) →ₗ[
+      nonisolatedZigzagQuotient k G]
+      zigzagGradedSimple k G i :=
+  let _ := zigzagIntegerGradedAlgebra k G
+  (eqToHom (zigzagGradedSimple_def k G i).symm).hom ∘ₗ
+    gradedPositiveMulQuotientMk (zigzagVertexIdempotent_mem_zigzagIntegerGrade_zero k G i)
+
+/-- The head projection is the generic quotient map, transported to the graded vertex simple. -/
+theorem zigzagGradedSimpleMk_def (i : V) :
+    zigzagGradedSimpleMk k G i =
+      let _ := zigzagIntegerGradedAlgebra k G
+      (eqToHom (zigzagGradedSimple_def k G i).symm).hom ∘ₗ
+        gradedPositiveMulQuotientMk
+          (zigzagVertexIdempotent_mem_zigzagIntegerGrade_zero k G i) :=
+  (rfl)
+
+/-- Every element of the graded simple head has a vertex-projective representative. -/
+theorem zigzagGradedSimpleMk_surjective (i : V) :
+    Function.Surjective (zigzagGradedSimpleMk k G i) := by
+  let _ := zigzagIntegerGradedAlgebra k G
+  have hs : Function.Surjective (eqToHom (zigzagGradedSimple_def k G i).symm).hom :=
+    (GradedModuleCat.epi_iff_surjective _).1 inferInstance
+  exact hs.comp (gradedPositiveMulQuotientMk_surjective _)
+
+/-- A representative vanishes in the graded head exactly when it lies in the
+positive-degree ideal of its vertex projective. -/
+@[simp]
+theorem zigzagGradedSimpleMk_eq_zero_iff (i : V)
+    (x : (Ideal.span {zigzagVertexIdempotent k G i} : Ideal (nonisolatedZigzagQuotient k G))) :
+    zigzagGradedSimpleMk k G i x = 0 ↔
+      (x : nonisolatedZigzagQuotient k G) ∈
+        gradedPositiveMulIdeal (zigzagIntegerGrade k G) (zigzagVertexIdempotent k G i) := by
+  let _ := zigzagIntegerGradedAlgebra k G
+  have hi : Function.Injective (eqToHom (zigzagGradedSimple_def k G i).symm).hom :=
+    (GradedModuleCat.mono_iff_injective _).1 inferInstance
+  rw [zigzagGradedSimpleMk_def, LinearMap.comp_apply,
+    LinearMap.map_eq_zero_iff _ hi, gradedPositiveMulQuotientMk_eq_zero_iff]
+
+/-- A graded vertex simple is a finite graded module. -/
+theorem gradedFiniteModules_zigzagGradedSimple (i : V) :
+    gradedFiniteModules (zigzagIntegerGrade k G) (zigzagGradedSimple k G i) :=
+  let _ := zigzagIntegerGradedAlgebra k G
+  gradedFiniteModules_gradedPositiveMulQuotient _ _
+
+/-- **The graded vertex simples are simple graded modules.** -/
+theorem simple_zigzagGradedSimple (i : V) : Simple (zigzagGradedSimple k G i) :=
+  let _ := zigzagIntegerGradedAlgebra k G
+  let _ := Fintype.ofFinite V
+  simple_gradedIdempotentHead (fun _ => zigzagIntegerGrade_eq_bot_of_neg k G)
+    (completeOrthogonalIdempotents_zigzagVertexIdempotent k G).toOrthogonalIdempotents
+    (zigzagVertexIdempotent_mem_zigzagIntegerGrade_zero k G)
+    (zigzagIntegerGrade_zero_le_span k G) i (zigzagVertexIdempotent_ne_zero k G i)
+
+/-- **Every simple finite graded `Z`-module is a shift `S_i{d}` of a graded vertex simple.** -/
+theorem isExhaustiveGradedSimpleFamily_zigzagGradedSimple :
+    IsExhaustiveGradedSimpleFamily fun i : V =>
+      (⟨zigzagGradedSimple k G i, gradedFiniteModules_zigzagGradedSimple k G i⟩ :
+        (gradedFiniteModules (zigzagIntegerGrade k G)).FullSubcategory) :=
+  let _ := zigzagIntegerGradedAlgebra k G
+  let _ := Fintype.ofFinite V
+  isExhaustiveGradedSimpleFamily_gradedIdempotentHead
+    (hcomplete := completeOrthogonalIdempotents_zigzagVertexIdempotent k G)
+    (fun _ => zigzagIntegerGrade_eq_bot_of_neg k G)
+    (zigzagVertexIdempotent_mem_zigzagIntegerGrade_zero k G)
+    (zigzagIntegerGrade_zero_le_span k G)
+
+/-- **The simple-class basis of `G₀^gr(mod Z)`** over `ℤ[q,q⁻¹]`: its vector at `i` is the class
+`[S_i]` of the graded vertex simple. -/
+noncomputable def zigzagGradedSimpleClassBasis :
+    Module.Basis V (LaurentPolynomial ℤ)
+      (LaurentK0.{max u w} (gradedFiniteModulesExactStructure (zigzagIntegerGrade k G))) :=
+  let _ := zigzagIntegerGradedAlgebra k G
+  let _ := Fintype.ofFinite V
+  gradedIdempotentHeadBasis (fun _ => zigzagIntegerGrade_eq_bot_of_neg k G)
+    (completeOrthogonalIdempotents_zigzagVertexIdempotent k G)
+    (zigzagVertexIdempotent_mem_zigzagIntegerGrade_zero k G)
+    (zigzagIntegerGrade_zero_le_span k G) (zigzagVertexIdempotent_ne_zero k G)
+
+/-- The basis vector of `TauCeti.zigzagGradedSimpleClassBasis` at `i` is the class `[S_i]`. -/
+@[simp]
+theorem zigzagGradedSimpleClassBasis_apply (i : V) :
+    zigzagGradedSimpleClassBasis k G i =
+      LaurentK0.of _ ⟨zigzagGradedSimple k G i, gradedFiniteModules_zigzagGradedSimple k G i⟩ :=
+  let _ := zigzagIntegerGradedAlgebra k G
+  let _ := Fintype.ofFinite V
+  gradedIdempotentHeadBasis_apply _ _ _ _ _ i
+
+/-- The coordinates in the basis `[S_i]` are the idempotent coordinates of the vertex
+idempotents: the `i`th coordinate of `[M]` is `∑ₚ dim_k(e_i • Mₚ) qᵖ`. -/
+@[simp]
+theorem zigzagGradedSimpleClassBasis_repr_apply
+    (x : LaurentK0.{max u w} (gradedFiniteModulesExactStructure (zigzagIntegerGrade k G)))
+    (i : V) :
+    (zigzagGradedSimpleClassBasis k G).repr x i =
+      gradedIdempotentCoordinate (isIdempotentElem_zigzagVertexIdempotent k G i)
+        (zigzagVertexIdempotent_mem_zigzagIntegerGrade_zero k G i) x :=
+  let _ := zigzagIntegerGradedAlgebra k G
+  let _ := Fintype.ofFinite V
+  gradedIdempotentHeadBasis_repr_apply _ _ _ _ _ x i
+
+/-! ### The graded Cartan map in the simple basis -/
+
+/-- **The graded Cartan matrix records the composition factors of the vertex projectives.** The
+`[S_i]`-coordinate of the image of `[P_j]` in `G₀^gr(mod Z)` is the graded Cartan entry
+`C_G(q)_{ij}`. -/
+theorem zigzagGradedSimpleClassBasis_repr_gradedCartanMap_zigzagGradedProjectiveClass_eq_toLaurent
+    (i j : V) :
+    (zigzagGradedSimpleClassBasis k G).repr
+        (gradedCartanMap (zigzagIntegerGrade k G) (zigzagGradedProjectiveClass k G j)) i =
+      Polynomial.toLaurent (zigzagGradedCartanMatrix k G i j) := by
+  rw [zigzagGradedSimpleClassBasis_repr_apply,
+    gradedIdempotentCoordinate_gradedCartanMap_zigzagGradedProjectiveClass_eq_toLaurent]
+
+/-- **The image of `[P_j]` under the graded Cartan map** is `∑ᵢ C_G(q)_{ij} [S_i]` in
+`G₀^gr(mod Z)`: the `j`th column of the graded Cartan matrix in the simple basis. -/
+theorem gradedCartanMap_zigzagGradedProjectiveClass_eq_sum [Fintype V] (j : V) :
+    gradedCartanMap (zigzagIntegerGrade k G) (zigzagGradedProjectiveClass k G j) =
+      ∑ i, Polynomial.toLaurent (zigzagGradedCartanMatrix k G i j) •
+        zigzagGradedSimpleClassBasis k G i := by
+  conv_lhs => rw [← (zigzagGradedSimpleClassBasis k G).sum_repr
+    (gradedCartanMap (zigzagIntegerGrade k G) (zigzagGradedProjectiveClass k G j))]
+  simp only [
+    zigzagGradedSimpleClassBasis_repr_gradedCartanMap_zigzagGradedProjectiveClass_eq_toLaurent]
+
+/-- **The graded Cartan matrix `(1 + q²) I + q A_G` in the simple basis**, for a graph without
+isolated vertices: the `[S_i]`-coordinate of the image of `[P_j]` is `1 + q²` for `i = j`, `q` on
+an edge and zero otherwise. -/
+theorem zigzagGradedSimpleClassBasis_repr_gradedCartanMap_zigzagGradedProjectiveClass
+    [DecidableEq V] [DecidableRel G.Adj] (hns : ∀ i : V, ∃ j, G.Adj i j) (i j : V) :
+    (zigzagGradedSimpleClassBasis k G).repr
+        (gradedCartanMap (zigzagIntegerGrade k G) (zigzagGradedProjectiveClass k G j)) i =
+      (if i = j then 1 + T 2 else 0) + if G.Adj i j then T 1 else 0 := by
+  rw [zigzagGradedSimpleClassBasis_repr_apply,
+    gradedIdempotentCoordinate_gradedCartanMap_zigzagGradedProjectiveClass k G hns]
+
+/-! ### The projective-class basis and the categorical Cartan matrix -/
+
+/-- A zigzag vertex projective is indecomposable as a finite graded projective: its
+degree-zero endomorphism space is one-dimensional, including at an isolated vertex. -/
+theorem indecomposable_zigzagGradedProjective (i : V) :
+    Indecomposable (⟨zigzagGradedProjective k G i,
+      gradedFiniteProjectiveModules_zigzagGradedProjective k G i⟩ :
+        (gradedFiniteProjectiveModules (zigzagIntegerGrade k G)).FullSubcategory) := by
+  let P := zigzagGradedProjective k G i
+  let hzero : P ≅ P.shiftObj 0 := GradedModuleCat.isoMk (LinearEquiv.refl _ _) fun p x => by
+    simp only [InternalGrading.shift_piece, neg_zero, add_zero, LinearEquiv.refl_apply]
+  let Q : (gradedFiniteProjectiveModules (zigzagIntegerGrade k G)).FullSubcategory :=
+    ⟨P, gradedFiniteProjectiveModules_zigzagGradedProjective k G i⟩
+  apply indecomposable_of_finrank_end_eq_one (k := k)
+  calc
+    Module.finrank k (Q ⟶ Q) = Module.finrank k (P ⟶ P) :=
+      (InducedCategory.homLinearEquiv (R := k) (X := Q) (Y := Q)).finrank_eq
+    _ = Module.finrank k (P ⟶ P.shiftObj 0) :=
+      (Linear.homCongr k (Iso.refl P) hzero).finrank_eq
+    _ = 1 := by
+      rw [finrank_zigzagGradedProjective_hom, finrank_zigzagProjectiveTargetShiftHom]
+      -- Present integer zero as a natural cast for the extension-by-zero corner equation.
+      rw [show (-(0 : ℤ)) = (0 : ℕ) from rfl, zigzagIntegerGradedCorner_ofNat]
+      exact finrank_zigzagGradedCorner_zero_self k G i
+
+/-- Every finite graded indecomposable projective of the zigzag relation quotient is an
+internal shift of a vertex projective. This includes graphs with isolated vertices. -/
+theorem isExhaustiveGradedIndecomposableProjectiveFamily_zigzagGradedProjective :
+    IsExhaustiveGradedIndecomposableProjectiveFamily (fun i =>
+      ⟨zigzagGradedProjective k G i,
+        gradedFiniteProjectiveModules_zigzagGradedProjective k G i⟩) := by
+  let _ := zigzagIntegerGradedAlgebra k G
+  let _ := Fintype.ofFinite V
+  have hI (i : V) : (Ideal.span {zigzagVertexIdempotent k G i} :
+      Ideal (nonisolatedZigzagQuotient k G)).IsHomogeneous (zigzagIntegerGrade k G) := by
+    rw [← zigzagProjective_def]
+    exact isHomogeneous_zigzagProjective k G i
+  simpa only [zigzagGradedProjective, zigzagProjective_def] using
+    isExhaustiveGradedIndecomposableProjectiveFamily_of_completeOrthogonalIdempotents
+      (completeOrthogonalIdempotents_zigzagVertexIdempotent k G)
+      (zigzagVertexIdempotent_mem_zigzagIntegerGrade_zero k G) hI
+      (fun i => by
+        simpa only [zigzagGradedProjective, zigzagProjective_def] using
+          indecomposable_zigzagGradedProjective k G i)
+
+/-- The vertex-projective classes form a basis of the actual graded projective Grothendieck
+group over `ℤ[q,q⁻¹]`. Internal shifts are represented by Laurent scalar multiplication. -/
+noncomputable def zigzagGradedProjectiveClassBasis :
+    Module.Basis V (LaurentPolynomial ℤ)
+      (LaurentK0.{max u w}
+        (gradedFiniteProjectiveModulesExactStructure (zigzagIntegerGrade k G))) :=
+  Module.Basis.mk (linearIndependent_zigzagGradedProjectiveClass k G)
+    (span_range_laurentK0_projective_of_eq_top _
+      (isExhaustiveGradedIndecomposableProjectiveFamily_zigzagGradedProjective k G)).ge
+
+/-- The basis vector at `i` is the class of the graded vertex projective `Z e_i`. -/
+@[simp]
+theorem zigzagGradedProjectiveClassBasis_apply (i : V) :
+    zigzagGradedProjectiveClassBasis k G i = zigzagGradedProjectiveClass k G i :=
+  Module.Basis.mk_apply _ _ i
+
+/-- The combinatorial graded Cartan matrix is the matrix of the categorical graded Cartan
+map in the vertex-projective and vertex-simple class bases. -/
+theorem gradedCartanMatrix_zigzag [Fintype V] :
+    gradedCartanMatrix (zigzagIntegerGrade k G) (zigzagGradedProjectiveClassBasis k G)
+        (zigzagGradedSimpleClassBasis k G) =
+      (zigzagGradedCartanMatrix k G).map Polynomial.toLaurent := by
+  apply Matrix.ext
+  intro i j
+  rw [gradedCartanMatrix_apply, zigzagGradedProjectiveClassBasis_apply]
+  exact
+    zigzagGradedSimpleClassBasis_repr_gradedCartanMap_zigzagGradedProjectiveClass_eq_toLaurent
+      k G i j
 
 end TauCeti

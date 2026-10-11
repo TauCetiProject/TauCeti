@@ -88,12 +88,15 @@ modulo `⁅P_K, P_K⁆` already generates `G_K`.
   finite Galois subextension `L` is the first lower ramification group `G_1` of `L/K`.
 * `TauCeti.le_maximalTameExtension_iff`: a finite Galois subextension `L` lies in `K^{t}` exactly
   when `L/K` is tamely ramified.
+* `TauCeti.isTamelyRamified_sup_iff`: a finite Galois compositum is tamely ramified exactly when
+  both factors are tamely ramified, by the maximal-tame-extension criterion.
 * `TauCeti.mem_wildInertiaSubgroup_iff_of_isUniformizer`: `σ ∈ P_K` exactly when `σ ∈ I_K` and `σ`
   fixes every `m`-th root of a given uniformizer, for `p ∤ m`.
 
 ## References
 
 * [J.-P. Serre, *Corps Locaux*][serre1968], Chapter IV, §2.
+* J. Neukirch, *Algebraic Number Theory*, Chapter II, §7.
 * J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, (3.9.1) and Chapter VII,
   §5.
 -/
@@ -666,5 +669,25 @@ theorem le_maximalTameExtension_iff :
   have hT : T ≤ separableClosure K (AlgebraicClosure K) := le_separableClosure _ _ T
   rw [← lift_restrict hT, ← fixedField_fixingSubgroup_lift_inf_separableClosure, lift_restrict]
   exact le_inf ((le_iff_le _ _).2 h) (le_separableClosure _ _ L)
+
+section Compositum
+
+variable {L}
+variable {M : IntermediateField K (AlgebraicClosure K)} [Module.Finite K M] [IsGalois K M]
+  [ValuativeRel M] [TopologicalSpace M] [IsNonarchimedeanLocalField M]
+  [ValuativeExtension K M]
+  [ValuativeRel ↥(L ⊔ M)] [TopologicalSpace ↥(L ⊔ M)]
+  [IsNonarchimedeanLocalField ↥(L ⊔ M)] [ValuativeExtension K ↥(L ⊔ M)]
+
+/-- The compositum of two finite Galois subextensions of the algebraic closure of a
+nonarchimedean local field is tamely ramified exactly when both factors are tamely ramified.
+The valuation and topology on each finite field may be any compatible local-field structures. -/
+@[simp]
+theorem isTamelyRamified_sup_iff :
+    IsTamelyRamified K ↥(L ⊔ M) ↔ IsTamelyRamified K L ∧ IsTamelyRamified K M := by
+  rw [← le_maximalTameExtension_iff (L ⊔ M), sup_le_iff,
+    le_maximalTameExtension_iff L, le_maximalTameExtension_iff M]
+
+end Compositum
 
 end TauCeti

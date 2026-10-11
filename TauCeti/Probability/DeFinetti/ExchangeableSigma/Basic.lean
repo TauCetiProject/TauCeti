@@ -8,7 +8,6 @@ module
 public import TauCeti.Probability.Exchangeability.ConditionallyIID.ExchangeableSigma
 public import TauCeti.Probability.DeFinetti.ViaKoopman.Theorem
 public import TauCeti.Probability.DeFinetti.ViaL2.ConditionallyIID
-public import TauCeti.Probability.Exchangeability.PathSpace.Invariant.Tail
 -- Non-public: the generic comparison of conditional expectations on σ-algebras that agree up to
 -- null sets is used only inside proofs.
 import TauCeti.MeasureTheory.Function.ConditionalExpectation

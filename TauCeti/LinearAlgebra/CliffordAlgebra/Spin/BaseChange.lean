@@ -7,18 +7,24 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.BaseChange
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.BaseChange
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.EvenUnitary
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Map
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Transvection
 public import TauCeti.LinearAlgebra.QuadraticForm.Transvection.ParameterBaseChange
 
 /-!
-# Extension of scalars for Spin groups
+# Extension of scalars for Spin groups and even unitary groups
 
 Mathlib's `CliffordAlgebra.ofBaseChangeAux` is the canonical map from a Clifford algebra to the
 Clifford algebra of a scalar extension; it preserves the even part and Clifford conjugation, as
 recorded in `TauCeti.LinearAlgebra.CliffordAlgebra.BaseChange`. It therefore restricts to a
 homomorphism of Spin groups. For the canonical lift of an Eichler transvection, this homomorphism
 sends `1 + ι w * ι u` to the lift determined by the pure tensors `1 ⊗ u` and `1 ⊗ w`.
+
+The same map restricts to the even unitary carriers `U(C₀, σ)`, compatibly with the inclusion of
+Spin. Over a field `K`, this is how `U(C₀, σ)` is read as a twisted form: after extension to a
+field `L` splitting the even Clifford algebra, the image lands in the unitary group of a matrix
+algebra with involution.
 
 ## Main results
 
@@ -34,6 +40,13 @@ sends `1 + ι w * ι u` to the lift determined by the pure tensors `1 ⊗ u` and
 * `TauCeti.CliffordAlgebra.spinGroupBaseChange_comp_spinTransvectionHom` transports the entire
   quotient root-subgroup homomorphism.
 * `CliffordAlgebra.spinGroupBaseChange_baseChange` identifies direct and successive scalar
+  extension.
+* `CliffordAlgebra.evenUnitaryGroupBaseChange` extends the scalars of an even unitary unit, and
+  `CliffordAlgebra.evenUnitaryGroupBaseChange_injective` proves injectivity for faithful flat
+  extensions.
+* `CliffordAlgebra.evenUnitaryGroupBaseChange_spinGroupToEvenUnitary` gives the commuting square
+  with the inclusion of Spin into the even unitary carrier.
+* `CliffordAlgebra.evenUnitaryGroupBaseChange_baseChange` identifies direct and successive scalar
   extension.
 -/
 
@@ -184,6 +197,78 @@ theorem spinGroupBaseChange_baseChange (z : spinGroup Q) :
   rw [QuadraticMap.Isometry.coe_spinGroupMap_apply,
     coe_spinGroupBaseChange_apply, coe_spinGroupBaseChange_apply,
     coe_spinGroupBaseChange_apply]
+  exact ofBaseChangeAux_baseChange Q _
+
+end ScalarTower
+
+/-! ### The even unitary carrier -/
+
+/-- The homomorphism of even unitary carriers `U(C₀, σ) → U(C₀ ⊗ A, σ)` induced by extension of
+scalars. -/
+def evenUnitaryGroupBaseChange (Q : QuadraticForm R M) :
+    evenUnitaryGroup Q →* evenUnitaryGroup (Q.baseChange A) :=
+  ((Units.map (ofBaseChangeAux A Q : CliffordAlgebra Q →* CliffordAlgebra (Q.baseChange A))).comp
+      (evenUnitaryGroup Q).subtype).codRestrict _ fun x ↦ by
+    have hx := (evenUnitaryGroup.mem_iff Q).mp x.2
+    rw [evenUnitaryGroup.mem_iff, MonoidHom.comp_apply, Units.coe_map, Unitary.mem_iff]
+    refine ⟨ofBaseChangeAux_mem_even Q hx.1, ?_, ?_⟩ <;>
+      rw [MonoidHom.coe_ofClass, ← ofBaseChangeAux_star, ← map_mul] <;>
+      simp [Unitary.star_mul_self_of_mem hx.2, Unitary.mul_star_self_of_mem hx.2]
+
+/-- The Clifford value of a scalar-extended even unitary unit is obtained from the canonical
+Clifford map. -/
+@[simp]
+theorem coe_evenUnitaryGroupBaseChange_apply (Q : QuadraticForm R M) (x : evenUnitaryGroup Q) :
+    (((evenUnitaryGroupBaseChange (A := A) Q x : evenUnitaryGroup (Q.baseChange A)) :
+        (CliffordAlgebra (Q.baseChange A))ˣ) : CliffordAlgebra (Q.baseChange A)) =
+      ofBaseChangeAux A Q ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) :=
+  (rfl)
+
+/-- Extension of scalars of even unitary carriers is injective when the extension is faithful and
+the Clifford algebra is flat; in particular, for every extension of fields. -/
+theorem evenUnitaryGroupBaseChange_injective [FaithfulSMul R A] (Q : QuadraticForm R M)
+    [Module.Flat R (CliffordAlgebra Q)] :
+    Function.Injective (evenUnitaryGroupBaseChange (A := A) Q) := fun x y hxy ↦
+  Subtype.ext <| Units.ext <| ofBaseChangeAux_injective Q <| by
+    simpa only [coe_evenUnitaryGroupBaseChange_apply] using
+      congrArg (fun z : evenUnitaryGroup (Q.baseChange A) ↦
+        ((z : (CliffordAlgebra (Q.baseChange A))ˣ) : CliffordAlgebra (Q.baseChange A))) hxy
+
+/-- Extension of scalars commutes with the inclusion of Spin into the even unitary carrier. -/
+@[simp]
+theorem evenUnitaryGroupBaseChange_spinGroupToEvenUnitary (Q : QuadraticForm R M)
+    (x : spinGroup Q) :
+    evenUnitaryGroupBaseChange (A := A) Q (spinGroupToEvenUnitary Q x) =
+      spinGroupToEvenUnitary (Q.baseChange A) (spinGroupBaseChange (A := A) Q x) :=
+  Subtype.ext <| Units.ext <| by
+    rw [coe_evenUnitaryGroupBaseChange_apply, coe_spinGroupToEvenUnitary_apply,
+      coe_spinGroupToEvenUnitary_apply]
+    -- Mathlib states no coercion lemma for `spinGroup.toUnits`, whose value field is the
+    -- underlying Clifford element, so both sides are `ofBaseChangeAux A Q x` by definition.
+    exact (coe_spinGroupBaseChange_apply Q x).symm
+
+section ScalarTower
+
+variable {B : Type x} [CommRing B] [Algebra A B] [Algebra R B] [IsScalarTower R A B]
+variable (Q : QuadraticForm R M)
+
+/-- Direct and successive scalar extension of an even unitary unit agree after transport along
+the canonical scalar-tower isometry. -/
+@[simp]
+theorem evenUnitaryGroupBaseChange_baseChange (z : evenUnitaryGroup Q) :
+    letI : Invertible (2 : A) :=
+      (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
+    (QuadraticForm.baseChangeBaseChange (A := A) (B := B) Q).toIsometry.evenUnitaryGroupMap
+        (evenUnitaryGroupBaseChange (A := B) Q z) =
+      evenUnitaryGroupBaseChange (A := B) (Q.baseChange A)
+        (evenUnitaryGroupBaseChange (A := A) Q z) := by
+  let : Invertible (2 : A) :=
+    (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
+  apply Subtype.ext
+  apply Units.ext
+  rw [QuadraticMap.Isometry.coe_evenUnitaryGroupMap_apply, Units.coe_map,
+    coe_evenUnitaryGroupBaseChange_apply, coe_evenUnitaryGroupBaseChange_apply,
+    coe_evenUnitaryGroupBaseChange_apply]
   exact ofBaseChangeAux_baseChange Q _
 
 end ScalarTower

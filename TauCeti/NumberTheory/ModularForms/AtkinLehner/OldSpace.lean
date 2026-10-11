@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.ModularForms.AtkinLehner.Gamma1
 public import TauCeti.NumberTheory.ModularForms.AtkinLehner.LevelRaise
 public import TauCeti.NumberTheory.ModularForms.Newforms.Basic
 import TauCeti.NumberTheory.ModularForms.TrivialNebentypus
@@ -33,12 +34,18 @@ operator `𝒲_Q` (`TauCeti/NumberTheory/ModularForms/Petersson/AtkinLehner.lean
 makes the new subspace of trivial nebentypus stable under `𝒲_Q`, the input to the Atkin–Lehner
 signs of newforms.
 
+On `S_k(Γ₁(N))`, where an Atkin–Lehner operator depends on the choice of matrix, the same
+level-raise factorization applies directly. It shows that every such choice preserves the full
+old subspace, without imposing a nebentypus condition.
+
 ## Main results
 
 * `TauCeti.Nat.IsExactDivisor.ofLe_atkinLehnerOperatorCusp_mem_cuspFormsOld`,
   `TauCeti.Nat.IsExactDivisor.ofLe_normalizedAtkinLehnerOperatorCusp_mem_cuspFormsOld`: for a cusp
   form on `Γ₀(N)` that is old at level `Γ₁(N)`, its image under `W_Q` (resp. `𝒲_Q`) is again
   old.
+* `TauCeti.atkinLehnerOperatorGamma1Cusp_mem_cuspFormsOld`: for an arbitrary cusp form on
+  `Γ₁(N)`, its image under any choice of the operator `W_Q` is old whenever it is old.
 
 ## References
 
@@ -171,6 +178,102 @@ theorem Nat.IsExactDivisor.ofLe_normalizedAtkinLehnerOperatorCusp_mem_cuspFormsO
   rw [h.normalizedAtkinLehnerOperatorCusp_def, LinearMap.smul_apply, ← CuspForm.ofLeₗ_apply,
     map_smul, CuspForm.ofLeₗ_apply]
   exact Submodule.smul_mem _ _ (h.ofLe_atkinLehnerOperatorCusp_mem_cuspFormsOld hf)
+
+/-! ### Stability on `Γ₁(N)` -/
+
+/-- An Atkin–Lehner operator carries a level-raise to an old form, under the factorization used
+by `IsAtkinLehnerMatrix.exists_scaleGL_mul_atkinLehnerGL`. This is the `Γ₁` counterpart of
+the calculation above for trivial nebentypus. -/
+private lemma atkinLehnerOperatorGamma1Cusp_levelRaise_mem_cuspFormsOld [NeZero N] [NeZero d]
+    {W : Matrix (Fin 2) (Fin 2) ℤ} {Q₁ M' d₁ e₁ d₂ e₂ : ℕ}
+    (h : Q ∥ N) (h₁ : Q₁ ∥ M) (hW : IsAtkinLehnerMatrix N Q W)
+    (hQ : Q = d₁ * e₁ * Q₁) (hN : N = Q * (d₂ * e₂ * M'))
+    (hM : M = Q₁ * M') (hd : d = d₁ * d₂) (hMN : M ≠ N) (hdM : d * M ∣ N)
+    (g : CuspForm ((Gamma1 M).map (mapGL ℝ)) k) :
+    atkinLehnerOperatorGamma1Cusp h.pos h.dvd hW k
+        (CuspForm.levelRaise d (Gamma1_map_le_conjAct_scaleGL_of_dvd hdM) g) ∈
+      cuspFormsOld N k := by
+  subst d
+  subst M
+  have heM : e₁ * d₂ * (Q₁ * M') ∣ N := ⟨d₁ * e₂, by rw [hN, hQ]; ring⟩
+  have : NeZero (e₁ * d₂) := NeZero.of_dvd (dvd_of_mul_right_dvd heM)
+  have hd₁ : NeZero d₁ :=
+    ⟨fun hd₁0 ↦ h.ne_zero (by rw [hQ, hd₁0]; simp)⟩
+  have he₁ : NeZero e₁ :=
+    ⟨fun he₁0 ↦ h.ne_zero (by rw [hQ, he₁0]; simp)⟩
+  have hd₂ : NeZero d₂ :=
+    ⟨fun hd₂0 ↦ NeZero.ne (e₁ * d₂) (by rw [hd₂0, mul_zero])⟩
+  let _ := hd₁
+  let _ := he₁
+  let _ := hd₂
+  obtain ⟨W', hW', hmul⟩ :=
+    hW.exists_scaleGL_mul_atkinLehnerGL h.pos h₁.pos hQ hN
+  have hop :
+      atkinLehnerOperatorGamma1Cusp h.pos h.dvd hW k
+          (CuspForm.levelRaise (d₁ * d₂) (Gamma1_map_le_conjAct_scaleGL_of_dvd hdM) g) =
+        ((d₁ : ℂ)⁻¹ * (e₁ : ℂ) ^ (k - 1)) •
+          CuspForm.levelRaise (e₁ * d₂) (Gamma1_map_le_conjAct_scaleGL_of_dvd heM)
+            (atkinLehnerOperatorGamma1Cusp h₁.pos h₁.dvd hW' k g) := by
+    refine DFunLike.coe_injective ?_
+    rw [coe_atkinLehnerOperatorGamma1Cusp, CuspForm.coe_levelRaise, FunLike.coe_smul,
+      CuspForm.coe_levelRaise, coe_atkinLehnerOperatorGamma1Cusp]
+    exact hW.smul_slash_scaleGL_slash_atkinLehnerGL h.pos h₁.pos hW' hmul _
+  rw [hop]
+  exact Submodule.smul_mem _ _ (levelRaise_mem_cuspFormsOld heM hMN k _)
+
+/-- **An Atkin–Lehner operator on `S_k(Γ₁(N))` preserves the old subspace.** This holds for
+every Atkin–Lehner matrix `W` of every exact divisor `Q ∥ N`; no nebentypus hypothesis is
+needed. -/
+theorem atkinLehnerOperatorGamma1Cusp_mem_cuspFormsOld [NeZero N]
+    {W : Matrix (Fin 2) (Fin 2) ℤ} (hQ : 0 < Q) (hQN : Q ∣ N)
+    (hW : IsAtkinLehnerMatrix N Q W) {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
+    (hf : f ∈ cuspFormsOld N k) :
+    atkinLehnerOperatorGamma1Cusp hQ hQN hW k f ∈ cuspFormsOld N k := by
+  let h : Q ∥ N := hW.isExactDivisor hQ.ne' hQN
+  let T := atkinLehnerOperatorGamma1Cusp hQ hQN hW k
+  suffices hT : cuspFormsOld N k ≤ (cuspFormsOld N k).comap T by
+    exact hT hf
+  refine cuspFormsOld_le_of_prime fun p M hp hpM d hd g ↦ ?_
+  have hMN : M ∣ N := Dvd.intro_left p hpM
+  have : NeZero M := NeZero.of_dvd hMN
+  have hMne : M ≠ N := fun h' ↦ hp.one_lt.ne' (Nat.eq_of_mul_eq_mul_right
+    (Nat.pos_of_ne_zero (NeZero.ne M)) (by rw [hpM, h', one_mul]))
+  obtain ⟨R, hR⟩ := h.dvd
+  have hQR : Nat.Coprime Q R := by
+    simpa [hR, Nat.mul_div_cancel_left R h.pos] using h.coprime
+  have hdvd : d * M ∣ N := by
+    rcases hd with rfl | rfl
+    exacts [⟨p, by rw [← hpM]; ring⟩, ⟨1, by rw [← hpM, mul_one]⟩]
+  have : NeZero d := NeZero.of_dvd (dvd_of_mul_right_dvd hdvd)
+  rw [Submodule.mem_comap]
+  by_cases hpQ : p ∣ Q
+  · obtain ⟨Q₁, hQ₁⟩ := hpQ
+    have hM : M = Q₁ * R := Nat.eq_of_mul_eq_mul_left hp.pos (by rw [hpM, hR, hQ₁]; ring)
+    have hQ₁0 : 0 < Q₁ := Nat.pos_of_ne_zero fun h0 ↦ h.ne_zero (by rw [hQ₁, h0, mul_zero])
+    have h₁ : Q₁ ∥ M := ⟨⟨R, hM⟩, by
+      rw [hM, Nat.mul_div_cancel_left R hQ₁0]
+      exact Nat.Coprime.coprime_dvd_left ⟨p, by rw [hQ₁, mul_comm]⟩ hQR⟩
+    rcases hd with hd | hd
+    · exact atkinLehnerOperatorGamma1Cusp_levelRaise_mem_cuspFormsOld
+        (d₁ := 1) (e₁ := p) (d₂ := 1) (e₂ := 1) h h₁ hW (by rw [hQ₁]; ring)
+        (by rw [hR]; ring) hM (by rw [hd]) hMne hdvd g
+    · exact atkinLehnerOperatorGamma1Cusp_levelRaise_mem_cuspFormsOld
+        (d₁ := p) (e₁ := 1) (d₂ := 1) (e₂ := 1) h h₁ hW (by rw [hQ₁]; ring)
+        (by rw [hR]; ring) hM (by rw [hd, mul_one]) hMne hdvd g
+  · obtain ⟨R', hR'⟩ : Q ∣ M := Nat.Coprime.dvd_of_dvd_mul_left
+      ((Nat.Prime.coprime_iff_not_dvd hp).2 hpQ).symm (hpM ▸ h.dvd)
+    have hN : N = Q * (p * R') := by rw [← hpM, hR']; ring
+    have h₁ : Q ∥ M := ⟨⟨R', hR'⟩, by
+      rw [hR', Nat.mul_div_cancel_left R' h.pos]
+      refine Nat.Coprime.coprime_dvd_right (Dvd.intro_left p rfl) ?_
+      simpa [hN, Nat.mul_div_cancel_left _ h.pos] using h.coprime⟩
+    rcases hd with hd | hd
+    · exact atkinLehnerOperatorGamma1Cusp_levelRaise_mem_cuspFormsOld
+        (d₁ := 1) (e₁ := 1) (d₂ := 1) (e₂ := p) h h₁ hW (by ring)
+        (by rw [hN]; ring) hR' (by rw [hd]) hMne hdvd g
+    · exact atkinLehnerOperatorGamma1Cusp_levelRaise_mem_cuspFormsOld
+        (d₁ := 1) (e₁ := 1) (d₂ := p) (e₂ := 1) h h₁ hW (by ring)
+        (by rw [hN]; ring) hR' (by rw [hd, one_mul]) hMne hdvd g
 
 end OldSpace
 

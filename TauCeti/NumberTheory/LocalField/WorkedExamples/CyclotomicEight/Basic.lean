@@ -383,6 +383,14 @@ theorem lowerRamificationGroup_eq (i : ℤ) :
     simp only [ite_eq_right hσ, ite_eq_right h5]
     split_ifs <;> simp_all [mem_zpowers_sigmaFive_iff]
 
+/-- The real lower filtration is constant on `(-∞, 1]`, `(1, 3]`, and `(3, ∞)`. -/
+@[simp]
+theorem lowerRamificationGroupReal_eq (u : ℝ) :
+    LocalFieldsRamification.lowerRamificationGroupReal ℚ_[2] DyadicCyclotomicEight u =
+      if u ≤ 1 then ⊤ else if u ≤ 3 then Subgroup.zpowers sigmaFive else ⊥ := by
+  rw [LocalFieldsRamification.lowerRamificationGroupReal_def, lowerRamificationGroup_eq]
+  simp only [Int.ceil_le, Int.cast_one, Int.cast_ofNat]
+
 /-- The different exponent of `ℚ₂(ζ₈)/ℚ₂` is eight. -/
 @[simp]
 theorem differentExponent_eq_eight : differentExponent ℚ_[2] DyadicCyclotomicEight = 8 := by

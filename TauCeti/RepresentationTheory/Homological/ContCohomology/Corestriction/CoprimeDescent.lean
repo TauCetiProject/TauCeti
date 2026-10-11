@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Group.Exponent
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.FiveTerm
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.H1.ZMod
 
 /-!
 # Descent along a normal subgroup of index prime to the coefficients
@@ -54,6 +55,8 @@ invariants is bijective (`explicitResConj1_bijective_of_coprime`).
 * `TauCeti.ContCohomology.explicitResConj1_bijective_of_coprime`: restriction
   `H¹(G, M) → H¹(N, M)^{G/N}` is bijective for an open normal subgroup of index prime to an
   exponent of `M`.
+* `TauCeti.h1CoprimeDescentEquiv`: for `ZMod n`-module coefficients, the same restriction is a
+  linear equivalence.
 
 ## References
 
@@ -197,3 +200,57 @@ theorem explicitResConj1_bijective_of_coprime (N : Subgroup G) [N.Normal] [N.Fin
 end Cohomology
 
 end TauCeti.ContCohomology
+
+namespace TauCeti
+
+open ContCohomology
+
+universe u v
+
+variable {n : ℕ} {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  {N : Subgroup G} [N.Normal]
+  {A : Type v} [AddCommGroup A] [Module (ZMod n) A] [TopologicalSpace A]
+  [IsTopologicalAddGroup A] [DistribMulAction G A] [ContinuousSMul G A]
+
+/-- **Coprime restriction as a linear equivalence onto the conjugation invariants.** If `N` is
+open and normal of finite index prime to `n`, restriction identifies `H¹(G, A)` with the
+`G/N`-invariant part of `H¹(N, A)`. -/
+noncomputable def h1CoprimeDescentEquiv [N.FiniteIndex] (hopen : IsOpen (N : Set G))
+    (hcop : N.index.Coprime n) :
+    H1 G A ≃ₗ[ZMod n] AddSubgroup.toZModSubmodule n (H1ConjInvariants G A N) :=
+  let f : H1 G A →ₗ[ZMod n]
+      AddSubgroup.toZModSubmodule n (H1ConjInvariants G A N) :=
+    LinearMap.codRestrict (AddSubgroup.toZModSubmodule n (H1ConjInvariants G A N))
+      (AddMonoidHom.toZModLinearMap n (explicitRes1 G A N)) fun x ↦
+        (AddSubgroup.mem_toZModSubmodule n).2 (explicitRes1_mem_conjInvariants G A N x)
+  let hf : Function.Bijective f := by
+    have hb := explicitResConj1_bijective_of_coprime N hopen
+      (fun y : A ↦ ZModModule.char_nsmul_eq_zero n y) hcop
+    constructor
+    · intro x y hxy
+      apply hb.injective
+      apply Subtype.ext
+      rw [coe_explicitResConj1, coe_explicitResConj1]
+      simpa only [f, LinearMap.codRestrict_apply, AddMonoidHom.coe_toZModLinearMap] using
+        congrArg Subtype.val hxy
+    · intro y
+      let z : H1ConjInvariants G A N :=
+        ⟨y, (AddSubgroup.mem_toZModSubmodule n).1 y.2⟩
+      obtain ⟨x, hx⟩ := hb.surjective z
+      refine ⟨x, Subtype.ext ?_⟩
+      have hx' := congrArg Subtype.val hx
+      rw [coe_explicitResConj1] at hx'
+      simpa only [f, LinearMap.codRestrict_apply, AddMonoidHom.coe_toZModLinearMap, z] using hx'
+  LinearEquiv.ofBijective f hf
+
+/-- The forward map of `h1CoprimeDescentEquiv` is restriction to the conjugation invariants. -/
+@[simp]
+theorem h1CoprimeDescentEquiv_apply [N.FiniteIndex] (hopen : IsOpen (N : Set G))
+    (hcop : N.index.Coprime n) (x : H1 G A) :
+    (h1CoprimeDescentEquiv hopen hcop x : H1 N A) =
+      (explicitResConj1 G A N x : H1 N A) := by
+  rw [h1CoprimeDescentEquiv]
+  refine (congrArg Subtype.val (LinearEquiv.ofBijective_apply _ x)).trans ?_
+  rw [LinearMap.codRestrict_apply, AddMonoidHom.coe_toZModLinearMap, coe_explicitResConj1]
+
+end TauCeti

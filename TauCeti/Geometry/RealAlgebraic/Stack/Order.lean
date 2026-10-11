@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.RealAlgebraic.Stack.Delineation
-public import TauCeti.RingTheory.MvPolynomial.IrreducibleBasis
+public import TauCeti.RingTheory.MvPolynomial.IrreducibleBasis.Basic
 
 /-!
 # Ambient polynomial orders on sectors

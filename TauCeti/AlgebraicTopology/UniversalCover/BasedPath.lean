@@ -265,7 +265,7 @@ private theorem exists_deformTerminal_mapsTo [LocallyPathConnectedSpace X] (γ :
   have ha : 0 ≤ ((a₀ : ℝ) + 1) / 2 := by linarith [a₀.2.1]
   have hab : ((a₀ : ℝ) + 1) / 2 < (((a₀ : ℝ) + 1) / 2 + 1) / 2 := by linarith
   have hb : (((a₀ : ℝ) + 1) / 2 + 1) / 2 < 1 := by linarith
-  refine ⟨W, hW_open, hW, hW_pc, _, _, ha, hab, hb, fun v hv δ hδ K U hKU t ht ↦ ?_⟩
+  refine ⟨W, hW_open, hW, hW_pc, _, _, ha, hab, hb, fun v _ δ hδ K U hKU t ht ↦ ?_⟩
   by_cases hta : (t : ℝ) ≤ ((a₀ : ℝ) + 1) / 2
   · rw [deformTerminal_apply_of_le γ δ ha hab hb hta]
     exact (hS K U hKU).2.2 ht

@@ -8,6 +8,9 @@ module
 public import TauCeti.FieldTheory.FunctionField.Different.Divisor
 public import TauCeti.RingTheory.DedekindDomain.Different
 import Mathlib.RingTheory.Finiteness.Quotient
+-- Non-public: `TauCeti.Place.isIntegral_integers_algebraMap` puts the constants into the local
+-- model, in a proof below only.
+import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 -- Non-public: `Algebra.HasSeparableResidueFieldsAt.isSeparable_quotient` supplies the separability
 -- half of tameness over a perfect residue field, in the proof below only.
 import Mathlib.RingTheory.LocalRing.ResidueField.Separable
@@ -45,6 +48,8 @@ the statement.
 * `TauCeti.Place.IsTame` and `TauCeti.Place.IsWild`: tame and wild places, with
   `TauCeti.Place.isTame_iff` and `TauCeti.Place.isWild_iff` unfolding the two predicates into
   their defining residue conditions.
+* `TauCeti.Place.isTame_iff_isSeparable_residueField`: tameness read on the residue fields of
+  the two places rather than on the local model.
 * `TauCeti.Place.ramificationIdx_eq_differentExponent_add_one_iff`: **Dedekind's different theorem,
   second part** (Stichtenoth, Theorem 3.5.1(b)), in the subtraction-free form
   `e(P' ∣ P) = d(P' ∣ P) + 1`, holding exactly at the tame places.
@@ -116,6 +121,51 @@ theorem isTame_iff :
           ((P'.restrict k F).integers) ⧸ IsLocalRing.maximalIdeal ((P'.restrict k F).integers)) ≠
           0 :=
   Iff.rfl
+
+/-- **Tameness read on residue fields**: a place `P'` of `F' / k` is tame over `F` exactly when
+the residue extension `F'_{P'} / F_P` of the two places is separable and `e(P' ∣ P)` is nonzero in
+`F_P`. -/
+theorem isTame_iff_isSeparable_residueField (P' : Place k F') :
+    IsTame k F P' ↔ Algebra.IsSeparable (P'.restrict k F).ResidueField P'.ResidueField ∧
+      ((ramificationIdx F P' : ℕ) : (P'.restrict k F).ResidueField) ≠ 0 := by
+  have hS := algebraMap_mem_integers_of_mem_integralClosure k F P'
+  have hconstants : ∀ c : k, algebraMap k F' c ∈
+      integralClosure (P'.restrict k F).integers F' := fun c ↦
+    isIntegral_integers_algebraMap (F' := F') (P'.restrict k F) c
+  let _ : Algebra k (integralClosure (P'.restrict k F).integers F') :=
+    ((algebraMap k F').codRestrict _ hconstants).toAlgebra
+  let _ : IsScalarTower k (integralClosure (P'.restrict k F).integers F') F' :=
+    .of_algebraMap_eq fun _ ↦ rfl
+  have : (centerIntegralClosure k F P').asIdeal.IsMaximal :=
+    (centerIntegralClosure k F P').isPrime.isMaximal (centerIntegralClosure k F P').ne_bot
+  let _ : Field ((P'.restrict k F).integers ⧸
+      IsLocalRing.maximalIdeal (P'.restrict k F).integers) := Ideal.Quotient.field _
+  let _ : Field (integralClosure (P'.restrict k F).integers F' ⧸
+      (centerIntegralClosure k F P').asIdeal) := Ideal.Quotient.field _
+  -- The residue ring of `𝒪_P` is by definition the residue field of `P`.
+  let e₀ : ((P'.restrict k F).integers ⧸ IsLocalRing.maximalIdeal (P'.restrict k F).integers) ≃+*
+      (P'.restrict k F).ResidueField := RingEquiv.refl _
+  let e : (integralClosure (P'.restrict k F).integers F' ⧸
+      (centerIntegralClosure k F P').asIdeal) ≃+* P'.ResidueField :=
+    (Ideal.quotEquivOfEq (by rw [centerIntegralClosure_def])).trans
+      (P'.quotientAlgEquivResidueField hS).toRingEquiv
+  have he : (algebraMap (P'.restrict k F).ResidueField P'.ResidueField).comp e₀.toRingHom =
+      e.toRingHom.comp (algebraMap ((P'.restrict k F).integers ⧸
+        IsLocalRing.maximalIdeal (P'.restrict k F).integers) _) := by
+    refine Ideal.Quotient.ringHom_ext (RingHom.ext fun r ↦ ?_)
+    simp only [RingHom.coe_comp, Function.comp_apply, Ideal.Quotient.algebraMap_mk_of_liesOver,
+      e, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, RingEquiv.trans_apply,
+      Ideal.quotEquivOfEq_mk, AlgEquiv.coe_toRingEquiv, quotientAlgEquivResidueField_mk,
+      residueHom_apply]
+    -- `e₀` is the identity and `Ideal.Quotient.mk` of the maximal ideal is the residue map, but
+    -- only after unfolding `IsLocalRing.ResidueField` to the quotient: `e₀` expects an argument
+    -- of the quotient type, so rewriting with `IsLocalRing.residue_def` under it gives an
+    -- ill-typed motive. `change` restates the left side at the residue-field type instead.
+    change algebraMap _ _ (IsLocalRing.residue _ r) = _
+    rw [IsLocalRing.ResidueField.algebraMap_residue]
+    exact congrArg _ (Subtype.ext (by simp [IsScalarTower.algebraMap_apply _ F F']))
+  rw [isTame_iff]
+  exact and_congr (Algebra.IsSeparable.iff_of_equiv_equiv e₀ e he) Iff.rfl
 
 /-- A place `P'` of `F'` is **wild** over `F` (Stichtenoth, Definition 3.5.4) when it is not tame:
 the residue extension of its local model is inseparable or its ramification index vanishes in the

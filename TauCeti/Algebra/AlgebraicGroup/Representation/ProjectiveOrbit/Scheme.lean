@@ -148,6 +148,16 @@ theorem toProjectiveOrbit_projectiveOrbitToSpec (m : M) (hm : Module.IsUnimodula
       Spec.map (CommRingCat.ofHom (algebraMap k H)) := by
   simp [projectiveOrbitToSpec_def, ← Category.assoc]
 
+/-- The map from an affine group to its projective orbit scheme is affine, including
+when the group is nonreduced. -/
+instance instIsAffineHomToProjectiveOrbit (m : M) (hm : Module.IsUnimodular k m) :
+    IsAffineHom (toProjectiveOrbit (H := H) m hm) := by
+  have : IsSeparated (projectiveOrbitToSpec (H := H) m hm) := by
+    rw [projectiveOrbitToSpec_def]
+    infer_instance
+  exact IsAffineHom.of_comp (toProjectiveOrbit (H := H) m hm)
+    (projectiveOrbitToSpec (H := H) m hm)
+
 /-- The projective orbit scheme is locally of finite type over its base field. -/
 instance instLocallyOfFiniteTypeProjectiveOrbitToSpec
     (m : M) (hm : Module.IsUnimodular k m) :

@@ -104,6 +104,13 @@ theorem rootSign_eq_one_iff {r : SeparableClosure K} {g : AbsoluteGaloisGroup K}
 theorem rootSign_one (r : SeparableClosure K) : rootSign r 1 = 0 :=
   rootSign_of_apply_eq rfl
 
+/-- An element sending `r` to `±r` acts on `r` by the sign `(-1) ^ rootSign r g`. -/
+theorem apply_eq_neg_one_pow_rootSign_mul {r : SeparableClosure K} {g : AbsoluteGaloisGroup K}
+    (hg : g r = r ∨ g r = -r) : g r = (-1) ^ (rootSign r g).val * r := by
+  by_cases h : g r = r
+  · simp [h]
+  · rw [rootSign_of_apply_ne h, ZMod.val_one, pow_one, neg_one_mul, hg.resolve_left h]
+
 /-- **The sign of a root is additive** on the elements that send `r` to `±r`. -/
 theorem rootSign_mul {r : SeparableClosure K} {g h : AbsoluteGaloisGroup K}
     (hg : g r = r ∨ g r = -r) (hh : h r = r ∨ h r = -r) :
@@ -204,6 +211,16 @@ theorem apply_eq_or_eq_neg_of_sq_eq_galoisSubgroup (σ : L →ₐ[K] SeparableCl
   sq_eq_sq_iff_eq_or_eq_neg.1 <| by
     rw [← map_pow, hr]
     exact (mem_galoisSubgroup_iff K L σ).1 γ.2 a
+
+/-- An element of `G_L = galoisSubgroup K L σ` acts on the Kummer coordinate `σ(y) r` through the
+sign of `r`, for a square root `r` of `σ a`. -/
+theorem apply_mul_eq_neg_one_pow_rootSign_mul (σ : L →ₐ[K] SeparableClosure K) {a : L}
+    {r : SeparableClosure K} (hr : r ^ 2 = σ a) (y : L) {q : AbsoluteGaloisGroup K}
+    (hq : q ∈ galoisSubgroup K L σ) :
+    q (σ y * r) = (-1) ^ (rootSign r q).val * (σ y * r) := by
+  rw [map_mul, (mem_galoisSubgroup_iff K L σ).1 hq y,
+    apply_eq_neg_one_pow_rootSign_mul (apply_eq_or_eq_neg_of_sq_eq_galoisSubgroup σ hr ⟨q, hq⟩)]
+  ring
 
 /-- **The Kummer character of `a ∈ Lˣ` on `G_L = galoisSubgroup K L σ`**, `γ ↦ rootSign r γ` for a
 square root `r` of `σ a`: every `γ` in `G_L` fixes `σ L`, hence `r²`, so `γ r = ±r`. -/

@@ -189,14 +189,12 @@ theorem typeBSpinWeight_univ_apply {n : ℕ} (i : Fin n) :
 /-- **The all-positive type-`B` spin weight is the terminal fundamental weight.** In
 fundamental-weight coordinates it has value one at the terminal short node and zero at every
 other node. -/
-theorem typeBSpinWeight_univ_eq_single {n : ℕ} (hn : 1 ≤ n) :
-    typeBSpinWeight (Finset.univ : Finset (Fin n)) =
-      Pi.single (⟨n - 1, by omega⟩ : Fin n) 1 := by
+theorem typeBSpinWeight_univ_eq_single {n : ℕ} :
+    typeBSpinWeight (Finset.univ : Finset (Fin (n + 1))) = Pi.single (Fin.last n) 1 := by
   funext i
   rw [typeBSpinWeight_univ_apply, Pi.single_apply]
   refine if_congr ?_ rfl rfl
-  rw [Fin.ext_iff]
-  dsimp only
+  rw [Fin.ext_iff, Fin.val_last]
   omega
 
 /-- The cut weight has a `1` at the cut, a `-1` at a later terminal node, and zero in every
@@ -460,7 +458,6 @@ private theorem typeBSpinWeight_typeBSpinReflection_apply_of_succ_of_last {n : �
     (hij : (j : ℕ) = (i : ℕ) + 1) (hjlt : ¬(j : ℕ) + 1 < n) (s : Finset (Fin n)) :
     typeBSpinWeight (typeBSpinReflection i s) j =
       typeBSpinWeight s j + 2 * typeBSpinWeight s i := by
-  have hjv := j.isLt
   have hilt : (i : ℕ) + 1 < n := by omega
   have hsucci : ((Order.succ i : Fin n) : ℕ) = (i : ℕ) + 1 := Fin.val_orderSucc_of_lt hilt
   have hjsucci : j = (Order.succ i : Fin n) := Fin.ext (by omega)

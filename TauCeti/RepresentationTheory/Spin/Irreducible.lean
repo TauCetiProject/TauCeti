@@ -511,14 +511,14 @@ closed field for polarization data without a line remainder. -/
 theorem isIrreducible_spinPlusSubrep [IsSepClosed K] (hline : P.line = ⊥) :
     (spinPlusSubrep P hline).toRepresentation.IsIrreducible :=
   isIrreducible_spinPlusSubrep_of_isSquare P
-    (fun v w _ _ ↦ IsSepClosed.exists_eq_mul_self ((Q v)⁻¹ * (Q w)⁻¹)) hline
+    (fun v w _ _ ↦ IsSepClosed.isSquare ((Q v)⁻¹ * (Q w)⁻¹)) hline
 
 /-- **The odd half-spin representation of the Spin group is irreducible** over a separably closed
 field when the odd summand is nonzero. -/
 theorem isIrreducible_spinMinusSubrep [IsSepClosed K] (hline : P.line = ⊥)
     (hW : P.W ≠ ⊥) : (spinMinusSubrep P hline).toRepresentation.IsIrreducible :=
   isIrreducible_spinMinusSubrep_of_isSquare P
-    (fun v w _ _ ↦ IsSepClosed.exists_eq_mul_self ((Q v)⁻¹ * (Q w)⁻¹)) hline hW
+    (fun v w _ _ ↦ IsSepClosed.isSquare ((Q v)⁻¹ * (Q w)⁻¹)) hline hW
 
 /-- **The two half-spin representations of the Spin group are inequivalent** over a separably
 closed field. -/
@@ -527,7 +527,7 @@ theorem isEmpty_equiv_spinPlusSubrep_spinMinusSubrep [IsSepClosed K]
     IsEmpty ((spinPlusSubrep P hline).toRepresentation.Equiv
       (spinMinusSubrep P hline).toRepresentation) :=
   isEmpty_equiv_spinPlusSubrep_spinMinusSubrep_of_isSquare P
-    (fun v w _ _ ↦ IsSepClosed.exists_eq_mul_self ((Q v)⁻¹ * (Q w)⁻¹)) hline
+    (fun v w _ _ ↦ IsSepClosed.isSquare ((Q v)⁻¹ * (Q w)⁻¹)) hline
 
 end SpinGroup
 
@@ -637,7 +637,7 @@ itself is reducible unless it is the zero-dimensional quadratic space. -/
 theorem spinRep_isIrreducible_of_odd (l : ℕ) (hV : finrank K V = 2 * l + 1) :
     (spinRep Q P).IsIrreducible :=
   isIrreducible_spinRep_of_isSquare P
-    (fun v w _ _ ↦ IsSepClosed.exists_eq_mul_self ((Q v)⁻¹ * (Q w)⁻¹)) ⟨l, hV⟩
+    (fun v w _ _ ↦ IsSepClosed.isSquare ((Q v)⁻¹ * (Q w)⁻¹)) ⟨l, hV⟩
 
 /-- **In odd dimension the spinor module does not split along exterior parity.** The
 separably closed specialization of

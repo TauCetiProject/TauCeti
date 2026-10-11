@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Exchangeability.ConditionallyIID.Construct
-public import TauCeti.Probability.Exchangeability.JointPathLaw
+public import TauCeti.Probability.Process.PathLaw.Joint
 -- Non-public: mixing-law uniqueness is used only inside the proof of
 -- `ConditionallyIIDWith.jointPathLaw_eq_of_pathLaw_eq`.
 import TauCeti.Probability.Exchangeability.MixedIID.Mixture

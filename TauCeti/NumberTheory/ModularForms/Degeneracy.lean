@@ -393,7 +393,7 @@ lemma coe_levelRaise [𝒢'.HasDetOne] [NeZero d]
     (h : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (f : CuspForm 𝒢 k) :
     ⇑(levelRaise d h f) = (d : ℂ) ^ (1 - k) • (⇑f ∣[k] scaleGL d) := by
   unfold levelRaise
-  rw [FunLike.coe_smul, _root_.CuspForm.coe_ofLe, _root_.CuspForm.coe_translate_gl]
+  rw [FunLike.coe_smul, _root_.CuspForm.coe_ofLe, _root_.CuspForm.coe_translate]
 
 /-- **The defining formula for `V_d` on cusp forms**: `(V_d f) τ = f (d τ)`, with no stray
 power of `d`. -/
@@ -642,7 +642,7 @@ theorem exists_eq_T_zpow_mul_conjScale_mul_T_zpow (l N : ℕ) [NeZero l] (hlN : 
     (ZMod.coe_int_isUnit_iff_isCoprime _ _).mpr (isCoprime_comm.mp hi)
   obtain ⟨j₀, k, hk⟩ :=
     ZMod.exists_dvd_sub_val_mul l (γ' 0 1 - i * γ' 1 1) (γ' 0 0 - i * γ' 1 0) hunit
-  set j : ℤ := (j₀.val : ℤ) with hj
+  set j : ℤ := (j₀.val : ℤ) with _
   have hdetM : (!![γ' 0 0 - i * γ' 1 0, k; (l : ℤ) * γ' 1 0, γ' 1 1 - γ' 1 0 * j]).det = 1 := by
     rw [Matrix.det_fin_two_of]
     linear_combination hdet + γ' 1 0 * hk

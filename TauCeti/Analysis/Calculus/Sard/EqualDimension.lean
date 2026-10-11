@@ -11,7 +11,7 @@ public import Mathlib.MeasureTheory.Group.Measure
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.MeasureTheory.Function.Jacobian
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
-import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Measure.Haar.Unique
 
 /-!
 # Sard's lemma in equal dimensions
@@ -85,7 +85,8 @@ theorem addHaar_image_eq_zero_of_not_surjective_fderivWithin
   have hnull : (addHaar : Measure E) (g '' s) = 0 :=
     addHaar_image_eq_zero_of_det_fderivWithin_eq_zero addHaar hg' hdet
   have hpreimage : ν (e ⁻¹' (g '' s)) = 0 :=
-    (ContinuousLinearEquiv.quasiMeasurePreserving_addHaar e ν addHaar).preimage_null hnull
+    by simpa only [ContinuousLinearEquiv.toContinuousAddEquiv_coe] using
+      (e.toContinuousAddEquiv.quasiMeasurePreserving_addHaar ν addHaar).preimage_null hnull
   have himage : g '' s = e '' (f '' s) := by
     rw [image_image]
   rw [himage, Set.preimage_image_eq _ e.injective] at hpreimage

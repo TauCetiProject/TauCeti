@@ -84,7 +84,15 @@ lemma j_eq_1728_iff [IsReduced R] : E.j = 1728 ↔ E.c₆ = 0 := by
 
 section BaseChange
 
-variable {A : Type*} [CommRing A] [Algebra R A] (hRA : Function.Injective (algebraMap R A))
+variable {A : Type*} [CommRing A] [Algebra R A]
+
+/-- **Base change preserves ellipticity.** Mathlib's instance is stated for
+`WeierstrassCurve.map`, which instance search does not see through the plain `def`
+`WeierstrassCurve.baseChange`. -/
+instance isElliptic_baseChange : (E.baseChange A).IsElliptic :=
+  inferInstanceAs (E.map _).IsElliptic
+
+variable (hRA : Function.Injective (algebraMap R A))
 
 include hRA
 

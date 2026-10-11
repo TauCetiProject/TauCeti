@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.GradedAlgebra.Homogeneous.Ideal
-public import TauCeti.Algebra.Category.GradedModuleCat.IdempotentGradedDimension
+public import TauCeti.Algebra.Category.GradedModuleCat.Idempotent.GradedDimension
 public import TauCeti.Algebra.Category.GradedModuleCat.Projective
 public import TauCeti.Algebra.Module.GradedModule.Quotient
 public import TauCeti.RingTheory.Idempotents.Corner

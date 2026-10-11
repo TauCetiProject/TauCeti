@@ -183,7 +183,6 @@ theorem indexTwoShortExact_explicitDelta0 (hU : U.index = 2) (hUo : IsOpen (U : 
   exact (indexTwoShortExact G U M hU hUo hM).explicitDelta0_apply c
     (b := single G U M hUo 1 (c : M))
     (by rw [indexTwoShortExact_proj]; exact (trace_single hUo 1 (c : M)).trans (by simp))
-    (indexTwoConnectingCocycle hU hUo c (hM c)).2
     (unit_indicator_eq_smul_single_sub hU hUo hM c)
 
 /-- For a trivial action the connecting map is injective: an invariant coefficient has

@@ -35,6 +35,9 @@ is strict unless the supporting lines coincide
   points of `ℍ ∪ ∂ℍ`.
 * `TauCeti.UpperHalfPlane.extGeodesicSegment_comm`,
   `TauCeti.UpperHalfPlane.smul_extGeodesicSegment`: symmetry and equivariance.
+* `TauCeti.UpperHalfPlane.geodesicLine_image_Ici` and
+  `TauCeti.UpperHalfPlane.geodesicLine_image_Iic`: half-lines in a geodesic parametrization are
+  the canonical extended geodesic segments with one ideal endpoint.
 * `TauCeti.UpperHalfPlane.extGeodesicSegment_subset_closure_leftHalfPlane`: closed
   half-planes are convex.
 
@@ -150,6 +153,54 @@ theorem extGeodesicSegment_subset_range_geodesicLine {g : PSL(2, ℝ)} {p q : �
   · have hξη : ξ ≠ η := fun h ↦ hg.ne (congrArg _ h)
     rw [extGeodesicSegment_inr_inr hξη,
       (isGeodesicFromTo_geodesicFromTo (Sum.inr_injective.ne hξη)).range_geodesicLine_eq hg]
+
+/-- The forward half of a parametrized geodesic line is the extended geodesic segment from its
+finite endpoint to its forward ideal endpoint. -/
+theorem geodesicLine_image_Ici (g : PSL(2, ℝ)) (a : ℝ) :
+    geodesicLine g '' Set.Ici a =
+      extGeodesicSegment (.inl (geodesicLine g a)) (.inr (g • (∞ : OnePoint ℝ))) := by
+  have hray : rayToward (geodesicLine g a) (.inr (g • (∞ : OnePoint ℝ))) =
+      g * ↑(Matrix.SpecialLinearGroup.dilation a) := by
+    apply eq_of_geodesicLine_zero_eq_of_smul_infty_eq
+    · rw [geodesicLine_rayToward_zero, geodesicLine_mul_dilation, add_zero]
+    · rw [rayToward_inr_smul_infty, mul_smul, dilation_smul_infty]
+  rw [extGeodesicSegment_inl_inr, hray]
+  ext z
+  constructor
+  · rintro ⟨t, ht, rfl⟩
+    refine ⟨t - a, sub_nonneg.mpr ht, ?_⟩
+    rw [geodesicLine_mul_dilation, add_sub_cancel]
+  · rintro ⟨t, ht, rfl⟩
+    refine ⟨a + t, le_add_of_nonneg_right ht, ?_⟩
+    rw [geodesicLine_mul_dilation]
+
+/-- The backward half of a parametrized geodesic line is the extended geodesic segment from its
+backward ideal endpoint to its finite endpoint. -/
+theorem geodesicLine_image_Iic (g : PSL(2, ℝ)) (a : ℝ) :
+    geodesicLine g '' Set.Iic a =
+      extGeodesicSegment (.inr (g • ((0 : ℝ) : OnePoint ℝ))) (.inl (geodesicLine g a)) := by
+  rw [extGeodesicSegment_comm]
+  have h := geodesicLine_image_Ici (g * pslS) (-a)
+  rw [geodesicLine_mul_pslS, neg_neg, mul_smul, pslS_smul_infty] at h
+  rw [← h]
+  ext z
+  constructor
+  · rintro ⟨t, ht, rfl⟩
+    exact ⟨-t, by simpa using neg_le_neg ht, by simp⟩
+  · rintro ⟨t, ht, rfl⟩
+    exact ⟨-t, by simpa using neg_le_neg ht, by simp⟩
+
+/-- A complete parametrized geodesic line is the extended geodesic segment between its two
+distinct ideal endpoints. -/
+theorem range_geodesicLine_eq_extGeodesicSegment (g : PSL(2, ℝ)) :
+    Set.range (geodesicLine g) =
+      extGeodesicSegment (.inr (g • ((0 : ℝ) : OnePoint ℝ)))
+        (.inr (g • (∞ : OnePoint ℝ))) := by
+  have hne : g • ((0 : ℝ) : OnePoint ℝ) ≠ g • (∞ : OnePoint ℝ) :=
+    (MulAction.injective g).ne (OnePoint.coe_ne_infty (0 : ℝ))
+  rw [extGeodesicSegment_inr_inr hne]
+  exact ((isGeodesicFromTo_geodesicFromTo (Sum.inr_injective.ne hne)).range_geodesicLine_eq
+    (isGeodesicFromTo_inr_inr.mpr ⟨rfl, rfl⟩))
 
 /-- Translating a ray from a point of `ℍ` towards an ideal point gives the ray between the
 translated points. -/

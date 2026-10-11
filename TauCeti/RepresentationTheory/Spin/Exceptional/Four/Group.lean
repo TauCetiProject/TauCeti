@@ -79,7 +79,7 @@ theorem nonempty_spinGroup_mulEquiv_specialLinearGroup_prod_of_finrank_eq_four
   apply
     nonempty_spinGroup_mulEquiv_specialLinearGroup_prod_of_finrank_eq_four_of_forall_isSquare
       (Q := Q) (fun x ↦ ?_) hQ hV
-  obtain ⟨s, hs⟩ := IsSepClosed.exists_eq_mul_self x
+  obtain ⟨s, hs⟩ := IsSepClosed.isSquare x
   exact ⟨s, by simpa [pow_two] using hs⟩
 
 end TauCeti

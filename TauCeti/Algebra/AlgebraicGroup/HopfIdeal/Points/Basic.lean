@@ -39,12 +39,11 @@ the point factors uniquely through the quotient algebra.
 * `CommHopfAlgCat.mapDomainMulEquiv_mem_quotientPointsSubgroup_comapOfSurjective_iff`: transport of
   quotient-subgroup membership along a bialgebra equivalence.
 
-## References
+## Implementation notes
 
-This is a Layer 3 prerequisite for `TauCetiRoadmap/ReductiveGroups/README.md`, "Hopf ideals ↔
-closed subgroup schemes". It builds on the quotient Hopf algebra API in
-`TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Basic` and Mathlib's algebra quotient universal
-property `Ideal.Quotient.liftₐ`.
+The file builds on the quotient Hopf algebra API in
+`TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Basic` and on Mathlib's algebra quotient
+universal property `Ideal.Quotient.liftₐ`.
 -/
 
 public section
@@ -145,15 +144,16 @@ lemma quotientPointsHom_liftQuotientPoint (H : _root_.CommHopfAlgCat.{v} R)
 the commutator of the original ambient points on its representative. -/
 @[simp↓]
 theorem commutator_liftQuotientPoint_apply_mkQuotient
-    {A : _root_.CommHopfAlgCat.{v} R}
-    (I : HopfIdeal R A) (B : CommAlgCat R) (g h : WithConv (A →ₐ[R] B))
-    (hg : ∀ x ∈ I, g.ofConv x = 0) (hh : ∀ x ∈ I, h.ofConv x = 0) (x : A) :
-    (⁅liftQuotientPoint A I B g hg, liftQuotientPoint A I B h hh⁆).ofConv
-      ((mkQuotient A I).hom x) = ⁅g, h⁆.ofConv x := by
-  have heval := quotientPointsHom_apply_apply A I B
-    ⁅liftQuotientPoint A I B g hg, liftQuotientPoint A I B h hh⁆ x
+    {H : _root_.CommHopfAlgCat.{v} R}
+    (I : HopfIdeal R H) (A : CommAlgCat.{w} R) (g h : WithConv (H →ₐ[R] A))
+    (hg : ∀ x ∈ I, g.ofConv x = 0) (hh : ∀ x ∈ I, h.ofConv x = 0) (x : H) :
+    (⁅liftQuotientPoint H I A g hg, liftQuotientPoint H I A h hh⁆).ofConv
+      ((mkQuotient H I).hom x) = ⁅g, h⁆.ofConv x := by
+  have heval := quotientPointsHom_apply_apply H I A
+    ⁅liftQuotientPoint H I A g hg, liftQuotientPoint H I A h hh⁆ x
   rw [map_commutatorElement, quotientPointsHom_liftQuotientPoint,
     quotientPointsHom_liftQuotientPoint] at heval
+  rw [mkQuotient_apply]
   exact heval.symm
 
 /-- A point of the ambient Hopf algebra lies in the image of quotient points if and only if it

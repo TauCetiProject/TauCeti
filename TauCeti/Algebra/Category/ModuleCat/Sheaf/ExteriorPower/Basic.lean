@@ -148,7 +148,8 @@ theorem exteriorPowerOneIso_hom_app (M : SheafOfModules.{u} (ringCatSheaf R)) :
 section Pushforward
 
 open TauCeti.SheafOfModules (pushforwardCommRing pushforwardModule pushforwardRingIso
-  pushforwardSheafificationIso pushforwardSheafificationIso_inv_naturality)
+  pushforwardSheafificationIso pushforwardSheafificationNatIso
+  pushforwardSheafificationNatIso_hom_app)
 
 variable {D : Type u₂} [Category.{v₂} D] {K : GrothendieckTopology D}
   [K.HasSheafCompose (forget₂ CommRingCat RingCat.{u})]
@@ -239,17 +240,6 @@ theorem pushforwardExteriorPowerIso_hom (n : ℕ) (M : SheafOfModules.{u} (ringC
   -- sheaves of the middle isomorphisms agree with the outer ones only up to unfolding
   (rfl)
 
-/-- `pushforwardSheafificationIso`, as a natural isomorphism of functors on presheaves of
-modules. -/
-private def pushforwardSheafificationNatIso :
-    PresheafOfModules.sheafification (R₀ := (ringCatSheaf R).obj) (R := ringCatSheaf R) (𝟙 _) ⋙
-        pushforwardModule (J := K) F R ≅
-      PresheafOfModules.pushforward (F := F) (pushforwardRingIso (J := K) F (ringCatSheaf R)).inv ⋙
-        PresheafOfModules.sheafification
-          (R := (F.sheafPushforwardContinuous RingCat K J).obj (ringCatSheaf R)) (𝟙 _) :=
-  (NatIso.ofComponents (fun P ↦ (pushforwardSheafificationIso F (ringCatSheaf R) P).symm)
-    (fun f ↦ pushforwardSheafificationIso_inv_naturality F (ringCatSheaf R) f)).symm
-
 /-- `pushforwardExteriorPowerIso`, assembled as a natural isomorphism from the natural
 sheafification--pushforward comparison and the sheafified `presheafPushforwardExteriorPowerIso`.
 Its components are `pushforwardExteriorPowerIso` (`pushforwardExteriorPowerIso_hom_eq`). -/
@@ -258,7 +248,7 @@ private def pushforwardExteriorPowerNatIso (n : ℕ) :
       pushforwardModule (J := K) F R ⋙ exteriorPower (pushforwardCommRing (J := K) F R) n :=
   Functor.isoWhiskerLeft (SheafOfModules.forget (ringCatSheaf R) ⋙
       PresheafOfModulesOfCommRing.exteriorPower (R := R.obj) n)
-      (pushforwardSheafificationNatIso F) ≪≫
+      (pushforwardSheafificationNatIso F (ringCatSheaf R)) ≪≫
     Functor.isoWhiskerRight (Functor.isoWhiskerLeft (SheafOfModules.forget (ringCatSheaf R))
       (presheafPushforwardExteriorPowerIso (K := K) F n))
       (PresheafOfModules.sheafification
@@ -269,7 +259,13 @@ private theorem pushforwardExteriorPowerIso_hom_eq (n : ℕ)
     (M : SheafOfModules.{u} (ringCatSheaf R)) :
     (pushforwardExteriorPowerIso F n M).hom =
       (pushforwardExteriorPowerNatIso (K := K) F n).hom.app M :=
-  (rfl)
+  -- the remaining factors agree definitionally (`exteriorPowerIso` is `Iso.refl`), so only the
+  -- component of the sheafification--pushforward comparison needs its component lemma
+  (congrArg (· ≫ (PresheafOfModules.sheafification
+      (𝟙 (ringCatSheaf (pushforwardCommRing (J := K) F R)).obj)).map
+        ((presheafPushforwardExteriorPowerIso (K := K) F n).hom.app M.val))
+    (pushforwardSheafificationNatIso_hom_app F (ringCatSheaf R)
+      ((PresheafOfModulesOfCommRing.exteriorPower (R := R.obj) n).obj M.val))).symm
 
 /-- `pushforwardExteriorPowerIso` is natural in the sheaf of modules. -/
 @[reassoc]

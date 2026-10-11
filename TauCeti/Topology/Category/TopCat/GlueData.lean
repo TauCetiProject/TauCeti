@@ -63,7 +63,6 @@ theorem isOpenQuotientMap_sigma_ι :
 every pair of charts is closed in the product of those charts. -/
 theorem t2Space_iff_isClosed_chartRel :
     T2Space D.toGlueData.glued ↔ ∀ i j, IsClosed (D.chartRel i j) := by
-  let π : (Σ i, D.U i) → D.toGlueData.glued := fun x ↦ D.toGlueData.ι x.1 x.2
   rw [t2Space_iff_of_isOpenQuotientMap D.isOpenQuotientMap_sigma_ι]
   rw [forall_comm]
   let e₁ : ((Σ i, D.U i) × (Σ i, D.U i)) ≃ₜ Σ i, D.U i × (Σ i, D.U i) :=

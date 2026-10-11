@@ -65,7 +65,6 @@ private lemma prod_erase_reflection_weylDenominator [DecidableEq ι] {i : ι}
         (1 - AddMonoidAlgebra.single (-(P.reflection i) (P.root j)) (1 : ℤ)) =
       ∏ j ∈ (posRootsFinset P b).erase i,
         (1 - AddMonoidAlgebra.single (-P.root j) (1 : ℤ)) := by
-  let s := (posRootsFinset P b).erase i
   let e := P.reflectionPerm i
   refine Finset.prod_bij (fun j _ ↦ e j) ?_ ?_ ?_ ?_
   · intro j hj

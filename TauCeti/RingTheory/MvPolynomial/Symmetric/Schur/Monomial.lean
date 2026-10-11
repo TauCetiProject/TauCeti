@@ -184,7 +184,6 @@ private theorem map_univ_val_partWeight (ν : n.Partition)
     Multiset.map (partWeight σ ν) univ.val
       = ν.parts + Multiset.replicate (Fintype.card σ - ν.parts.card) 0 := by
   have hlen : (ν.parts.sort (· ≥ ·)).length = ν.parts.card := Multiset.length_sort _
-  have hle : (ν.parts.sort (· ≥ ·)).length ≤ Fintype.card σ := hlen.trans_le hν
   -- The alphabet is indexed by `Fin (Fintype.card σ)`, hence by `List.range (Fintype.card σ)`.
   have hval : Multiset.map (Fin.val : Fin (Fintype.card σ) → ℕ) (univ : Finset _).val
       = Multiset.range (Fintype.card σ) := by
