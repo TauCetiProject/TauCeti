@@ -221,8 +221,7 @@ private noncomputable def locImageFunctor (W : Opens ↥(spa Aplus)) :
 /-- The image functor of `j` sends a finite product of opens contained in `j⁻¹(W)` into the image
 of their product: the image of an intersection is the intersection of the images, `j` being
 injective. -/
-private theorem nonempty_pi_locImageFunctor_obj_hom {W : Opens ↥(spa Aplus)}
-    (hWT : W ≤ spaBasicOpen Aplus T s) {m : ℕ} :
+private theorem nonempty_pi_locImageFunctor_obj_hom {W : Opens ↥(spa Aplus)} {m : ℕ} :
     letI := locUniformSpace P T s S hden
     letI := isUniformAddGroup_locUniformSpace P T s S hden
     letI := isTopologicalRing_locUniformSpace P T s S hden
@@ -234,20 +233,18 @@ private theorem nonempty_pi_locImageFunctor_obj_hom {W : Opens ↥(spa Aplus)}
   have _ := isTopologicalRing_locUniformSpace P T s S hden
   intro V
   let G := locImageFunctor P T s S hden hP W
-  let Z := ∏ᶜ fun j ↦ G.obj (V j)
-  -- the pullback of `Z` lies in every `V j`, hence in their product
-  have hZ : (⟨locOpensComap P Aplus T s S hden Z.1,
-      Set.mem_Iic.2 (locOpensComap_mono P Aplus T s S hden Z.2)⟩ :
-        Set.Iic (locOpensComap P Aplus T s S hden W)) ⟶ ∏ᶜ V :=
-    Pi.lift fun j ↦ homOfLE <| Subtype.mk_le_mk.2 <|
-      (locOpensComap_mono P Aplus T s S hden
-        (Subtype.coe_le_coe.2 (leOfHom (Pi.π (fun j ↦ G.obj (V j)) j)))).trans
-        (locOpensComap_spaComapLoc_functor_obj P Aplus hP T s S hden _).le
-  -- and `Z`, which lies in `R(T/s)`, is the image of its pullback
-  have hZ' := leOfHom hZ
-  exact ⟨homOfLE (Subtype.mk_le_mk.2
-    ((spaComapLoc_functor_obj_locOpensComap P Aplus hP T s S hden (Z.2.trans hWT)).ge.trans
-      (spaComapLoc_functor_obj_mono P Aplus hP T s S hden (Subtype.coe_le_coe.2 hZ'))))⟩
+  -- the intersection of the `V j` lies in every `V j`, hence in their product
+  have hV : (⟨⨅ j, (V j).1, Set.mem_Iic.2 ((iInf_le _ 0).trans (V 0).2)⟩ :
+      Set.Iic (locOpensComap P Aplus T s S hden W)) ≤ ∏ᶜ V :=
+    leOfHom <| Pi.lift fun j ↦ homOfLE (Subtype.mk_le_mk.2 (iInf_le _ j))
+  let hj := isOpenEmbedding_spaComapLocHom P Aplus hP T s S hden
+  -- the product of the `G.obj (V j)` lies in every `j(V j)`
+  have hZ : (∏ᶜ fun j ↦ G.obj (V j)).1 ≤ ⨅ i, hj.functor.obj (V i).1 :=
+    le_iInf fun i ↦ (Pi.π (fun j ↦ G.obj (V j)) i).le
+  -- and the image of an intersection is the intersection of the images, `j` being injective
+  rw [← hj.functor_obj_iInf] at hZ
+  exact ⟨homOfLE <| Subtype.mk_le_mk.2 <|
+    hZ.trans (spaComapLoc_functor_obj_mono P Aplus hP T s S hden (Subtype.coe_le_coe.2 hV))⟩
 
 /-- Wedhorn's Remark 8.4 at an open `V` of `Spa(A⟨T/s⟩, A_U⁺)`: the component of
 `presentationLimitPresheafLocIso` at `V`, read as an isomorphism `𝒪_X(j(V)) ≅ 𝒪_U(V)` of
@@ -353,7 +350,7 @@ theorem quasiIso_cechAugmentation_iff_locOpensComap [HasProducts.{w} AddCommGrpC
   -- the image functor sends `j⁻¹(W)` to `W`
   have hGT : IsTerminal (G.obj ⊤) := isTerminalTop.ofIso (eqToIso (Subtype.ext (himage ⊤)).symm)
   rw [quasiIso_cechAugmentation_op_comp_iff G _ _
-    (fun _ _ ↦ nonempty_pi_locImageFunctor_obj_hom P T s S hden hP hWT _) isTerminalTop hGT]
+    (fun _ _ ↦ nonempty_pi_locImageFunctor_obj_hom P T s S hden hP _) isTerminalTop hGT]
   -- the images of the pullbacks of the members are the members
   have hU : (fun i ↦ G.obj ⟨locOpensComap P Aplus T s S hden (U i).1,
       Set.mem_Iic.2 (locOpensComap_mono P Aplus T s S hden (U i).2)⟩) = U :=
