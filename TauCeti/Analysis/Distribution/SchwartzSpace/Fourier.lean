@@ -33,8 +33,8 @@ for the Laplacian on `ℝⁿ`.
 * `SchwartzMap.fourier_lineDerivOp_lineDerivOp_apply`: the Fourier transform of a second
   directional derivative.
 * `SchwartzMap.fourier_laplacian_apply`: the Fourier transform of the Laplacian.
-* `SchwartzMap.sum_sum_norm_toLp_lineDerivOp_lineDerivOp_sq`: the `L²` norms of the second
-  derivatives along an orthonormal basis add up to the `L²` norm of the Laplacian.
+* `SchwartzMap.sum_sum_norm_toLp_lineDerivOp_lineDerivOp_sq`: the squared `L²` norms of the
+  second derivatives along an orthonormal basis sum to the squared `L²` norm of the Laplacian.
 
 ## References
 

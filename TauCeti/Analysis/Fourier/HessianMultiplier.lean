@@ -17,9 +17,10 @@ with symbol
 
 `m_{v,w}(ξ) = ⟪ξ, v⟫ ⟪ξ, w⟫ / ‖ξ‖²` (`TauCeti.hessianSymbol`),
 
-which is bounded by `‖v‖ ‖w‖` but not continuous at the origin. It lies in `L^∞`
-(`TauCeti.hessianSymbolLp`), so the `L²` multiplier `MeasureTheory.Lp.fourierMultiplierCLM`
-defines `T_{m_{v,w}}` as a bounded operator on `L²(E, F)`, and for every Schwartz function `u`
+which is bounded by `‖v‖ ‖w‖` but, for nonzero `v` and `w`, not continuous at the origin. It lies
+in `L^∞` (`TauCeti.hessianSymbolLp`), so the `L²` multiplier
+`MeasureTheory.Lp.fourierMultiplierCLM` defines `T_{m_{v,w}}` as a bounded operator on `L²(E, F)`,
+and for every Schwartz function `u`
 
 `∂_v ∂_w u = T_{m_{v,w}} (Δ u)` in `L²`
 (`SchwartzMap.toLp_lineDerivOp_lineDerivOp_eq_fourierMultiplierCLM`).
