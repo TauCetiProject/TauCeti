@@ -48,7 +48,6 @@ theorem pairingLinear_tmul (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (x : F₁) 
   simp [pairingLinear]
 
 /-- The unalternated multilinear pairing underlying the paired wedge. -/
-@[expose]
 noncomputable def wedgeWithUnalternated {k l : ℕ} (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (φ : E [⋀^Fin k]→L[ℝ] F₁) (ψ : E [⋀^Fin l]→L[ℝ] F₂) :
     MultilinearMap ℝ (fun _ : Fin (k + l) => E) F₃ :=
@@ -65,7 +64,7 @@ theorem wedgeWithUnalternated_def {k l : ℕ} (μ : F₁ →L[ℝ] F₂ →L[ℝ
     wedgeWithUnalternated μ φ ψ =
       (pairingLinear μ).compMultilinearMap
         ((MultilinearMap.domCoprod φ.toAlternatingMap.toMultilinearMap
-          ψ.toAlternatingMap.toMultilinearMap).domDomCongr finSumFinEquiv) := rfl
+          ψ.toAlternatingMap.toMultilinearMap).domDomCongr finSumFinEquiv) := (rfl)
 
 omit [IsTopologicalAddGroup F₁] [ContinuousSMul ℝ F₁]
   [IsTopologicalAddGroup F₂] [ContinuousSMul ℝ F₂]
