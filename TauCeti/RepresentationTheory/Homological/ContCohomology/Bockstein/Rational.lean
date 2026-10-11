@@ -80,6 +80,8 @@ def rationalIntegralShortExact : DiscreteShortExact G (ULift.{u} ℤ) (ULift.{u}
       ModuleCat.ratAddCircleShortComplex_shortExact.exact x.down
     constructor
     · intro hx
+      -- Unfold the projection's composite: first unlift the rational value, then reduce
+      -- modulo one and transport it to C through e.symm.
       have hx' : e.symm (x.down : AddCircle (1 : ℚ)) = 0 := hx
       obtain ⟨n, hn⟩ := hex.mp (e.symm.injective (hx'.trans e.symm.map_zero.symm))
       exact ⟨ULift.up n, ULift.ext hn⟩
@@ -146,7 +148,7 @@ variable [ContinuousSMul G C]
 
 /-- Integral second continuous cohomology of a compact group is the additive group of
 continuous rational-circle characters. -/
-noncomputable def integralH2EquivContinuousCharacters :
+noncomputable def continuousCohomologyTwoIntEquivContinuousCharacters :
     continuousCohomology 2 (ofDiscreteModule ℤ G (ULift.{u} ℤ)) ≃+
       Additive (G →ₜ* Multiplicative C) :=
   (rationalIntegralDeltaIso G C e hℤ hℚ hC 0).symm.toContinuousLinearEquiv.toAddEquiv.trans
@@ -155,14 +157,18 @@ noncomputable def integralH2EquivContinuousCharacters :
 /-- The inverse character identification takes the explicit class of the character to
 canonical cohomology and then applies the connecting map. -/
 @[simp]
-theorem integralH2EquivContinuousCharacters_symm_apply
+theorem continuousCohomologyTwoIntEquivContinuousCharacters_symm_apply
     (χ : Additive (G →ₜ* Multiplicative C)) :
-    (integralH2EquivContinuousCharacters G C e hℤ hℚ hC).symm χ =
+    (continuousCohomologyTwoIntEquivContinuousCharacters G C e hℤ hℚ hC).symm χ =
       (rationalIntegralShortExact G C e hℤ hℚ hC).delta 1
         (explicitH1AddEquivContinuousCohomology G C
           ((H1EquivOfSmulEqSelf hC).symm χ)) := by
-  change (rationalIntegralDeltaIso G C e hℤ hℚ hC 0).symm.inv _ = _
+  rw [continuousCohomologyTwoIntEquivContinuousCharacters, AddEquiv.symm_trans_apply,
+    AddEquiv.symm_trans_apply, AddEquiv.symm_symm]
+  -- Iso.toContinuousLinearEquiv has no inverse-application lemma: its defining invFun
+  -- is the inverse morphism. Expose just that conversion after rewriting the composites.
+  change (rationalIntegralDeltaIso G C e hℤ hℚ hC 0).symm.inv
+    (explicitH1AddEquivContinuousCohomology G C ((H1EquivOfSmulEqSelf hC).symm χ)) = _
   rw [Iso.symm_inv, rationalIntegralDeltaIso_hom]
-  rfl
 
 end TauCeti.ContCohomology
