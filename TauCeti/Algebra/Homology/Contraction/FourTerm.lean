@@ -398,66 +398,37 @@ private theorem source_upper_contract :
         source_d2_eq h, Preadditive.comp_add, Preadditive.add_comp, Category.assoc]
     _ = 𝟙 _ := by rw [upper_contract, Iso.conj_id]
 
-private def homotopyCochain : Cochain K K (-1) := Cochain.mk fun i j hij ↦ by
-  by_cases h₂ : i = -2
-  · subst i
-    have hj : j = -3 := by omega
-    subst j
-    exact s2 h
-  · by_cases h₁ : i = -1
-    · subst i
-      have hj : j = -2 := by omega
-      subst j
-      exact s1 h
-    · exact 0
-
-@[simp]
-private theorem homotopyCochain_v_minusTwo :
-    (homotopyCochain h).v (-2) (-3) (by decide) = s2 h := by
-  simp [homotopyCochain]
-
-@[simp]
-private theorem homotopyCochain_v_minusOne :
-    (homotopyCochain h).v (-1) (-2) (by decide) = s1 h := by
-  simp [homotopyCochain]
-
-@[simp]
-private theorem homotopyCochain_v_eq_zero (i j : ℤ) (hij : i + (-1) = j)
-    (h₂ : i ≠ -2) (h₁ : i ≠ -1) : (homotopyCochain h).v i j hij = 0 := by
-  simp [homotopyCochain, h₂, h₁]
-
-private theorem δ_homotopyCochain :
-    δ (-1) 0 (homotopyCochain h) = Cochain.ofHom (𝟙 K - projection h ≫ inclusion h) := by
-  rw [Cochain.ofHom_sub]
-  apply Cochain.ext
-  intro i j hij
-  have hindex : i = j := by omega
-  cases hindex
-  rw [δ_v (-1) 0 (by decide) _ i i (by omega) (i - 1) (i + 1) rfl rfl]
-  simp only [Int.negOnePow_zero, one_smul, Cochain.sub_v, Cochain.ofHom_v,
-    HomologicalComplex.id_f, HomologicalComplex.comp_f,
+private theorem δ_singles :
+    δ (-1) 0 (Cochain.single (s2 h) (-1) + Cochain.single (s1 h) (-1)) =
+      Cochain.ofHom (𝟙 K - projection h ≫ inclusion h) := by
+  ext p
+  rw [δ_v (-1) 0 (by norm_num) _ p p (by omega) (p - 1) (p + 1) (by omega) rfl,
+    Cochain.ofHom_v]
+  simp only [Cochain.add_v, Preadditive.add_comp, Preadditive.comp_add,
+    HomologicalComplex.sub_f_apply, HomologicalComplex.id_f, HomologicalComplex.comp_f,
     projection, inclusion]
-  by_cases h₃ : i = -3
-  · subst i
-    simpa using source_bottom_contract h
-  · by_cases h₂ : i = -2
-    · subst i
-      simpa [add_comm] using (eq_sub_iff_add_eq.2 (source_lower_contract h))
-    · by_cases h₁ : i = -1
-      · subst i
-        simpa using (eq_sub_iff_add_eq.2 (source_upper_contract h))
-      · by_cases h₀ : i = 0
-        · subst i
-          simp [projectionZero, inclusionZero]
-        · exact (h.vanish i h₃ h₂ h₁ h₀).eq_of_src _ _
+  by_cases h₃ : p = -3
+  · subst p
+    simpa [Cochain.single_v_eq_zero] using source_bottom_contract h
+  · by_cases h₂ : p = -2
+    · subst p
+      simpa [Cochain.single_v_eq_zero, add_comm] using
+        eq_sub_iff_add_eq.2 (source_lower_contract h)
+    · by_cases h₁ : p = -1
+      · subst p
+        simpa [Cochain.single_v_eq_zero] using eq_sub_iff_add_eq.2 (source_upper_contract h)
+      · by_cases h₀ : p = 0
+        · subst p
+          simp [Cochain.single_v_eq_zero, projectionZero, inclusionZero]
+        · exact (h.vanish p h₃ h₂ h₁ h₀).eq_of_src _ _
 
 /-- Cancel the two negative identity blocks and retract onto the surviving three-term complex. -/
 def toContraction : TauCeti.Contraction K L where
   proj := projection h
   incl := inclusion h
   incl_comp_proj := inclusion_projection h
-  homotopy := homotopyCochain h
-  δ_homotopy := δ_homotopyCochain h
+  homotopy := Cochain.single (s2 h) (-1) + Cochain.single (s1 h) (-1)
+  δ_homotopy := δ_singles h
 
 /-- The lowest projection includes the correction through the eliminated `Q`. -/
 @[reassoc (attr := simp)]
@@ -501,20 +472,20 @@ theorem toContraction_incl_f_zero :
 theorem toContraction_homotopy_v_minusTwo :
     h.toContraction.homotopy.v (-2) (-3) (by decide) ≫ h.minusThreeIso.hom =
       h.minusTwoIso.hom ≫ (-(biprod.snd ≫ biprod.snd)) := by
-  simp [toContraction, s2, pQ, Category.assoc]
+  simp [toContraction, Cochain.single_v_eq_zero, s2, pQ, Category.assoc]
 
 /-- The upper homotopy sends the second `U` to minus its first copy. -/
 @[reassoc (attr := simp)]
 theorem toContraction_homotopy_v_minusOne :
     h.toContraction.homotopy.v (-1) (-2) (by decide) ≫ h.minusTwoIso.hom =
       h.minusOneIso.hom ≫ (-(biprod.fst ≫ biprod.inl ≫ biprod.inr)) := by
-  simp [toContraction, s1, iU, Category.assoc]
+  simp [toContraction, Cochain.single_v_eq_zero, s1, iU, Category.assoc]
 
 /-- All homotopy components outside the two cancelled pairs vanish. -/
 @[simp]
 theorem toContraction_homotopy_v_eq_zero (i j : ℤ) (hij : i + (-1) = j)
     (h₂ : i ≠ -2) (h₁ : i ≠ -1) : h.toContraction.homotopy.v i j hij = 0 := by
-  simp [toContraction, h₂, h₁]
+  simp [toContraction, Cochain.single_v_eq_zero, h₂, h₁]
 
 end FourTermCancellationData
 end TauCeti.Contraction

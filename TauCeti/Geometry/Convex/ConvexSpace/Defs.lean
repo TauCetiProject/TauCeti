@@ -13,7 +13,8 @@ public import Mathlib.Geometry.Convex.ConvexSpace.Defs
 Complements to Mathlib's `Convexity.StdSimplex` about the maps `StdSimplex.map f` along injective
 maps `f`, which embed a standard simplex as a face of a larger one.  Such a map keeps the weights
 of a point, so it is injective.  For `f = j.succAbove` its image is the facet on which the `j`-th
-weight vanishes.  Two facets, opposite `j < k`, meet in the codimension-two face opposite both:
+weight vanishes, so a function taking a constant value on every facet takes that value wherever
+some weight vanishes.  Two facets, opposite `j < k`, meet in the codimension-two face opposite both:
 a common point of the two facets comes from that face through both composites of face maps, the
 two sides of the simplicial identity `SimplexCategory.δ_comp_δ`.
 -/
@@ -46,6 +47,14 @@ theorem mem_range_map_succAbove_iff {n : ℕ} (j : Fin (n + 1)) (x : StdSimplex 
 theorem weights_map_succAbove_self {n : ℕ} (j : Fin (n + 1)) (x : StdSimplex R (Fin n)) :
     (x.map j.succAbove).weights j = 0 :=
   (mem_range_map_succAbove_iff j _).1 ⟨x, rfl⟩
+
+/-- A function on a standard simplex which takes the value `z` on every facet takes the value `z`
+at every point with a vanishing weight. -/
+theorem apply_eq_of_weights_eq_zero {n : ℕ} {Z : Type*} {φ : StdSimplex R (Fin (n + 1)) → Z}
+    {z : Z} (hφ : ∀ (i : Fin (n + 1)) (w : StdSimplex R (Fin n)), φ (w.map i.succAbove) = z)
+    {b : StdSimplex R (Fin (n + 1))} {k : Fin (n + 1)} (hb : b.weights k = 0) : φ b = z := by
+  obtain ⟨w, rfl⟩ := (mem_range_map_succAbove_iff k b).2 hb
+  exact hφ k w
 
 /-- The facets of a standard simplex opposite `j < k` meet in the codimension-two face opposite
 both: a common point is the image of a point `w` of that face, and the corresponding points of
