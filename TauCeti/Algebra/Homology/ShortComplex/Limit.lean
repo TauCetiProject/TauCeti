@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.HomologicalComplexLimits
+public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.Algebra.Homology.ShortComplex.FunctorEquivalence
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Homology.ShortComplex.Limits
@@ -16,7 +17,8 @@ public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Basic
 # Homology and exact limits
 
 This file proves that homology of short complexes, and hence homology of homological complexes,
-commutes with limits of every shape whose limits are exact.
+commutes with limits of every shape whose limits are exact. Consequently a product of
+quasi-isomorphisms is a quasi-isomorphism when products of that shape are exact.
 
 ## Main results
 
@@ -26,6 +28,8 @@ commutes with limits of every shape whose limits are exact.
   associated to a homological complex preserves all existing limits.
 * `TauCeti.homologicalComplexHomologyFunctor_preservesLimitsOfShape`: homology of homological
   complexes preserves limits of any exact shape.
+* `TauCeti.quasiIso_pi_map`: a product of quasi-isomorphisms of homological complexes is a
+  quasi-isomorphism when products of that shape are exact.
 
 ## Implementation notes
 
@@ -252,5 +256,29 @@ instance homologicalComplexHomologyFunctor_preservesLimitsOfShape :
       (HomologicalComplex.homologyFunctor C c q) := by
   exact preservesLimitsOfShape_of_natIso
     (HomologicalComplex.homologyFunctorIso C c q).symm
+
+variable {c} in
+omit [HasLimitsOfShape J C] [HasExactLimitsOfShape J C] in
+/-- **Products of quasi-isomorphisms.** If products indexed by `β` are exact, the product of a
+family of quasi-isomorphisms of homological complexes is a quasi-isomorphism: homology commutes
+with these products. -/
+theorem quasiIso_pi_map {β : Type w} [HasLimitsOfShape (Discrete β) C]
+    [HasExactLimitsOfShape (Discrete β) C] {K L : β → HomologicalComplex C c}
+    (φ : ∀ b, K b ⟶ L b) (hφ : ∀ b, QuasiIso (φ b)) : QuasiIso (Limits.Pi.map φ) := by
+  rw [quasiIso_iff]
+  intro q
+  rw [quasiIsoAt_iff_isIso_homologyMap]
+  let H := HomologicalComplex.homologyFunctor C c q
+  -- `H` commutes with the products, through the comparison isomorphisms `piComparison`
+  have h : H.map (Limits.Pi.map φ) ≫ piComparison H L =
+      piComparison H K ≫ Limits.Pi.map fun b ↦ H.map (φ b) := by
+    ext b
+    simp [← Functor.map_comp]
+  have (b : β) : IsIso (H.map (φ b)) :=
+    (quasiIsoAt_iff_isIso_homologyMap (φ b) q).mp ((hφ b).quasiIsoAt q)
+  have : IsIso (H.map (Limits.Pi.map φ) ≫ piComparison H L) := by
+    rw [h]
+    infer_instance
+  exact IsIso.of_isIso_comp_right (H.map (Limits.Pi.map φ)) (piComparison H L)
 
 end TauCeti
