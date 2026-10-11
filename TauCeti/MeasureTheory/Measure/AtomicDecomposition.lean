@@ -105,7 +105,6 @@ theorem atomicPart_apply (μ : Measure X) (s : Set X) (hs : MeasurableSet s) :
   rw [atomicPart, restrict_apply hs]
 
 /-- The atomic part preserves the mass of every singleton. -/
-@[simp]
 theorem atomicPart_apply_singleton (μ : Measure X) (x : X) :
     atomicPart μ {x} = μ {x} := by
   rw [atomicPart, restrict_apply (measurableSet_singleton x)]
