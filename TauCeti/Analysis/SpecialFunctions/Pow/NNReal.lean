@@ -8,17 +8,23 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
 
 /-!
-# Cancelling a real power in `ℝ≥0∞`
+# Real powers in `ℝ≥0∞`
 
 If `X ^ r ≤ C * X ^ (r - 1)` for a finite `X`, then `X ≤ C`: the factor `X ^ (r - 1)` cancels,
 since it is neither `0` nor `∞` unless `X = 0`, in which case the conclusion is trivial. This is
 the last step of every norming argument for `Lᵖ` norms, where `X` is a norm and `X ^ r` is its
 pairing with the extremal function.
 
+A nonpositive real power is antitone on `ℝ≥0∞`. Because `0 ^ z = ∞` for `z < 0`, no positivity
+hypothesis is needed, unlike its `ℝ≥0` counterpart `NNReal.rpow_le_rpow_of_nonpos`; this is what
+makes `ℝ≥0∞`-valued bounds on weakly singular integrands such as `|x - c| ^ (-1/2)` hold
+everywhere, the pole included.
+
 ## Main declarations
 
 * `ENNReal.le_of_rpow_le_mul_rpow_sub_one`: `X ^ r ≤ C * X ^ (r - 1)` gives `X ≤ C` for a finite
   `X`.
+* `ENNReal.rpow_le_rpow_of_nonpos`: `x ≤ y` gives `y ^ z ≤ x ^ z` for `z ≤ 0`.
 -/
 
 public section
@@ -38,5 +44,12 @@ theorem le_of_rpow_le_mul_rpow_sub_one {X C : ℝ≥0∞} {r : ℝ} (hX : X ≠ 
   have hpow0 : X ^ (r - 1) ≠ 0 := by simp [rpow_eq_zero_iff, hX0, hX]
   rw [hXr, mul_comm C] at h
   exact (ENNReal.mul_le_mul_iff_right hpow0 (rpow_ne_top_of_ne_zero hX0 hX)).1 h
+
+/-- A nonpositive real power is antitone on `ℝ≥0∞`: `x ≤ y` gives `y ^ z ≤ x ^ z` for `z ≤ 0`. -/
+theorem rpow_le_rpow_of_nonpos {x y : ℝ≥0∞} {z : ℝ} (hxy : x ≤ y) (hz : z ≤ 0) :
+    y ^ z ≤ x ^ z := by
+  obtain ⟨w, hw, rfl⟩ : ∃ w, 0 ≤ w ∧ z = -w := ⟨-z, neg_nonneg.mpr hz, (neg_neg z).symm⟩
+  rw [rpow_neg, rpow_neg]
+  exact ENNReal.inv_le_inv.mpr (rpow_le_rpow hxy hw)
 
 end ENNReal
