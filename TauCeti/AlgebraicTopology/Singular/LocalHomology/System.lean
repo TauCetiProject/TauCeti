@@ -34,8 +34,8 @@ compatibility with composition characterizes the transport
 * `TauCeti.localHomology R S k`: the relative singular homology `Hₖ(M, M ∖ S)`.
 * `TauCeti.localHomologyRestriction`: for `S ⊆ T`, the map `Hₖ(M, M ∖ T) ⟶ Hₖ(M, M ∖ S)`
   induced by the identity of `M`.
-* `TauCeti.isIso_localHomologyRestriction_symm_image`: the restriction from a compact convex
-  set in a chart to one of its points is an isomorphism.
+* `TauCeti.isIso_localHomologyRestriction_symm_image`: the restriction from a compact set in a
+  chart, star-convex about one of its points, to that point is an isomorphism.
 * `TauCeti.localHomologyTransport`: the transport of local homology along a path class.
 * `TauCeti.localHomologySystem`: the local homology groups as a functor out of the fundamental
   groupoid, with these transport maps.
@@ -86,6 +86,12 @@ def localHomologyRestriction {S T : Set M} (h : S ⊆ T) (k : ℕ) :
     localHomology R T k ⟶ localHomology R S k :=
   TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 (TopCat.of M)) (compl_subset_compl.2 h)) R k
 
+lemma localHomologyRestriction_def {S T : Set M} (h : S ⊆ T) (k : ℕ) :
+    localHomologyRestriction R h k =
+      TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 (TopCat.of M))
+        (compl_subset_compl.2 h)) R k :=
+  (rfl)
+
 @[simp]
 lemma localHomologyRestriction_refl (S : Set M) (k : ℕ) :
     localHomologyRestriction R (subset_refl S) k = 𝟙 _ :=
@@ -127,16 +133,15 @@ section Chart
 
 variable {M : Type w} [TopologicalSpace M] {E : Type w} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- **Local homology is constant along a compact convex set in a chart.** If `K ⊆ φ.target` is
-compact and convex and `φ x ∈ K`, then the restriction `Hₖ(M, M ∖ φ.symm '' K) ⟶ Hₖ(M, M ∖ {x})`
-is an isomorphism. -/
+/-- **Local homology is constant along a compact star-convex set in a chart.** If
+`K ⊆ φ.target` is compact and star-convex about `φ x ∈ K`, then the restriction
+`Hₖ(M, M ∖ φ.symm '' K) ⟶ Hₖ(M, M ∖ {x})` is an isomorphism. -/
 theorem isIso_localHomologyRestriction_symm_image [T2Space M] (φ : OpenPartialHomeomorph M E)
-    {K : Set E}
-    (hK : Convex ℝ K) (hKc : IsCompact K) (hKφ : K ⊆ φ.target) {x : M} (hx : x ∈ φ.source)
-    (hxK : φ x ∈ K) (k : ℕ) :
+    {K : Set E} {x : M} (hK : StarConvex ℝ (φ x) K) (hKc : IsCompact K) (hKφ : K ⊆ φ.target)
+    (hx : x ∈ φ.source) (hxK : φ x ∈ K) (k : ℕ) :
     IsIso (localHomologyRestriction R
       (singleton_subset_iff.2 ⟨φ x, hxK, φ.left_inv hx⟩ : {x} ⊆ φ.symm '' K) k) :=
-  isIso_singularHomologyMap_compl_of_chart R φ hx (hK.starConvex hxK) hxK hKc.isBounded
+  isIso_singularHomologyMap_compl_of_chart R φ hx hK hxK hKc.isBounded
     hKc.isClosed (hKc.image_of_continuousOn (φ.continuousOn_symm.mono hKφ)).isClosed hKφ k
 
 /-- An open, bounded, convex subset of the target of a chart whose closure also lies in the
@@ -166,21 +171,35 @@ private lemma Patch.singleton_subset_closedImage (P : Patch M E) {x : M} (hx : x
 private lemma Patch.domain_subset_closedImage (P : Patch M E) : P.domain ⊆ P.closedImage :=
   fun _ hx ↦ P.singleton_subset_closedImage hx rfl
 
+omit [NormedSpace ℝ E] in
+private lemma closure_ball_half_subset_ball (c : E) {ε : ℝ} (hε : 0 < ε) :
+    closure (ball c (ε / 2)) ⊆ ball c ε :=
+  closure_ball_subset_closedBall.trans (closedBall_subset_ball (by linarith))
+
+/-- The patch of `φ` given by the ball of radius `ε / 2` about `c`, where the ball of radius `ε`
+lies in the target of `φ`. -/
+private def Patch.ofBall (φ : OpenPartialHomeomorph M E) (c : E) {ε : ℝ} (hε : 0 < ε)
+    (h : ball c ε ⊆ φ.target) : Patch M E where
+  chart := φ
+  set := ball c (ε / 2)
+  isOpen := isOpen_ball
+  convex := convex_ball _ _
+  isBounded := isBounded_ball
+  closure_subset := (closure_ball_half_subset_ball c hε).trans h
+
+private lemma Patch.mem_domain_ofBall (φ : OpenPartialHomeomorph M E) {x : M}
+    (hx : x ∈ φ.source) {ε : ℝ} (hε : 0 < ε) (h : ball (φ x) ε ⊆ φ.target) :
+    x ∈ (Patch.ofBall φ (φ x) hε h).domain :=
+  ⟨hx, mem_ball_self (by linarith)⟩
+
 /-- Every point of `M` lies in the domain of a patch of a chart at that point. -/
 private lemma Patch.exists_domain_mem_nhds [ChartedSpace E M] (x : M) :
     ∃ P : Patch M E, P.domain ∈ 𝓝 x := by
   let φ := chartAt E x
   obtain ⟨ε, hε, hεφ⟩ := Metric.isOpen_iff.1 φ.open_target (φ x) (φ.map_source
     (mem_chart_source E x))
-  let P : Patch M E :=
-    { chart := φ
-      set := ball (φ x) (ε / 2)
-      isOpen := isOpen_ball
-      convex := convex_ball _ _
-      isBounded := isBounded_ball
-      closure_subset := closure_ball_subset_closedBall.trans <|
-        (closedBall_subset_ball (by linarith)).trans hεφ }
-  exact ⟨P, P.isOpen_domain.mem_nhds ⟨mem_chart_source E x, mem_ball_self (by linarith)⟩⟩
+  let P := Patch.ofBall φ (φ x) hε hεφ
+  exact ⟨P, P.isOpen_domain.mem_nhds (Patch.mem_domain_ofBall φ (mem_chart_source E x) hε hεφ)⟩
 
 /-- Near a point `z` of the domain of `P` lying in an open set `U`, there is a patch of the same
 chart whose closed image lies in `U`. -/
@@ -191,33 +210,40 @@ private lemma Patch.exists_closedImage_subset (P : Patch M E) {z : M} (hz : z �
     P.chart.isOpen_inter_preimage_symm hU
   obtain ⟨ε, hε, hεU⟩ := Metric.isOpen_iff.1 hopen (P.chart z)
     ⟨P.chart.map_source hz.1, by rwa [Set.mem_preimage, P.chart.left_inv hz.1]⟩
-  let Q : Patch M E :=
-    { chart := P.chart
-      set := ball (P.chart z) (ε / 2)
-      isOpen := isOpen_ball
-      convex := convex_ball _ _
-      isBounded := isBounded_ball
-      closure_subset := closure_ball_subset_closedBall.trans <|
-        ((closedBall_subset_ball (by linarith)).trans hεU).trans inter_subset_left }
-  refine ⟨Q, ⟨hz.1, mem_ball_self (by linarith)⟩, ?_⟩
+  have hεφ := hεU.trans inter_subset_left
+  refine ⟨Patch.ofBall P.chart (P.chart z) hε hεφ, Patch.mem_domain_ofBall _ hz.1 hε hεφ, ?_⟩
   rintro _ ⟨y, hy, rfl⟩
-  exact (hεU (closedBall_subset_ball (by linarith) (closure_ball_subset_closedBall hy))).2
+  exact (hεU (closure_ball_half_subset_ball _ hε hy)).2
 
-variable [T2Space M] [FiniteDimensional ℝ E]
+variable [FiniteDimensional ℝ E]
+
+private lemma Patch.isCompact_closure (P : Patch M E) : IsCompact (closure P.set) :=
+  isCompact_of_isClosed_isBounded isClosed_closure P.isBounded.closure
+
+variable [T2Space M]
+
+private lemma Patch.isIso_localHomologyRestriction (P : Patch M E) {x : M}
+    (hx : x ∈ P.domain) (k : ℕ) :
+    IsIso (localHomologyRestriction R (P.singleton_subset_closedImage hx) k) :=
+  isIso_localHomologyRestriction_symm_image R P.chart
+    (P.convex.closure.starConvex (subset_closure hx.2)) P.isCompact_closure P.closure_subset
+    hx.1 (subset_closure hx.2) k
 
 /-- The restriction from the closed image of a patch to a point of its domain, as an
 isomorphism. -/
 private def Patch.iso (P : Patch M E) {x : M} (hx : x ∈ P.domain) (k : ℕ) :
     localHomology R P.closedImage k ≅ localHomology R {x} k :=
-  haveI : IsIso (localHomologyRestriction R (P.singleton_subset_closedImage hx) k) :=
-    isIso_localHomologyRestriction_symm_image R P.chart P.convex.closure
-      (isCompact_of_isClosed_isBounded isClosed_closure P.isBounded.closure) P.closure_subset
-      hx.1 (subset_closure hx.2) k
+  haveI := P.isIso_localHomologyRestriction R hx k
   asIso (localHomologyRestriction R (P.singleton_subset_closedImage hx) k)
 
 private lemma Patch.iso_hom (P : Patch M E) {x : M} (hx : x ∈ P.domain) (k : ℕ) :
     (P.iso R hx k).hom = localHomologyRestriction R (P.singleton_subset_closedImage hx) k :=
   rfl
+
+private lemma Patch.iso_inv (P : Patch M E) {x : M} (hx : x ∈ P.domain) (k : ℕ)
+    [IsIso (localHomologyRestriction R (P.singleton_subset_closedImage hx) k)] :
+    (P.iso R hx k).inv = inv (localHomologyRestriction R (P.singleton_subset_closedImage hx) k) :=
+  asIso_inv _
 
 /-- The functor on the fundamental groupoid of the domain of a patch: a path is sent to the
 comparison of the local homology groups at its endpoints through `Hₖ(M, M ∖ P.closedImage)`. -/
@@ -239,7 +265,7 @@ private lemma Patch.iso_inv_comp_iso_hom (P S : Patch M E) {x y : M} (hxP : x �
       (Set.Subset.trans (S.singleton_subset_closedImage hxS) hSP) k) :=
     (P.iso R hxP k).isIso_hom
   rw [Iso.eq_inv_comp]
-  -- `Patch.iso` is `asIso` of the restriction, whose inverse is `inv` of the restriction.
+  simp only [Patch.iso_hom, Patch.iso_inv]
   exact localHomologyRestriction_comp_inv_comp R hSP (S.singleton_subset_closedImage hxS)
     (S.singleton_subset_closedImage hyS) k
 
@@ -366,12 +392,13 @@ theorem localHomologyRestriction_comp_localHomologyTransport (φ : OpenPartialHo
   obtain ⟨z, hz, hzx⟩ := γ.source ▸ hγ 0
   have : IsIso (localHomologyRestriction R (singleton_subset_iff.2 (γ.source ▸ hγ 0)) k) := by
     subst hzx
-    exact isIso_localHomologyRestriction_symm_image R φ hK hKc hKφ (φ.map_target (hKφ hz))
+    exact isIso_localHomologyRestriction_symm_image R φ
+      (hK.starConvex ((φ.right_inv (hKφ hz)).symm ▸ hz)) hKc hKφ (φ.map_target (hKφ hz))
       ((φ.right_inv (hKφ hz)).symm ▸ hz) k
   have : IsIso (localHomologyRestriction R
       (Set.Subset.trans (singleton_subset_iff.2 (γ.source ▸ hγ 0)) hKP) k) :=
     (P.iso R (γ.source ▸ hγP 0) k).isIso_hom
-  -- `Patch.iso` is `asIso` of the restriction, whose inverse is `inv` of the restriction.
+  rw [Patch.iso_inv, Patch.iso_hom]
   exact localHomologyRestriction_comp_inv_comp R hKP _ _ k
 
 /-- **Uniqueness of the transport.** A family of maps `Hₖ(M, M ∖ {x}) ⟶ Hₖ(M, M ∖ {y})` indexed by
@@ -394,8 +421,7 @@ theorem eq_localHomologyTransport (k : ℕ)
       t (Path.Homotopic.Quotient.mk γ : FundamentalGroupoid.mk a ⟶ FundamentalGroupoid.mk b) =
         (P.iso R (γ.source ▸ hγ 0) k).inv ≫ (P.iso R (γ.target ▸ hγ 1) k).hom := by
     rw [Iso.eq_inv_comp, Patch.iso_hom, Patch.iso_hom]
-    exact hchart P.chart P.convex.closure
-      (isCompact_of_isClosed_isBounded isClosed_closure P.isBounded.closure) P.closure_subset γ
+    exact hchart P.chart P.convex.closure P.isCompact_closure P.closure_subset γ
       fun s ↦ P.domain_subset_closedImage (hγ s)
   -- The maps `t` form a functor, which agrees with the local homology system on every patch.
   let G : FundamentalGroupoid M ⥤ A :=
