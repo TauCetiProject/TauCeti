@@ -109,7 +109,7 @@ theorem Lp.integral_norm_le_mul_norm {alpha F : Type*} [MeasurableSpace alpha]
     (ENNReal.rpow_ne_top_of_nonneg hexp (measure_ne_top m _))) h
 
 /-- On a finite measure space, a function dominated pointwise by `K ‖f‖` for an `Lᵖ` function
-`f`, `1 ≤ p`, has integral of norm at most `K μ(univ)^{1 - 1/p} ‖f‖`. -/
+`f`, `1 ≤ p`, has norm of its integral at most `K μ(univ)^{1 - 1/p} ‖f‖`. -/
 theorem Lp.norm_integral_le_of_ae_norm_le_mul {alpha F G : Type*} [MeasurableSpace alpha]
     {m : Measure alpha} [IsFiniteMeasure m] [NormedAddCommGroup F] [NormedAddCommGroup G]
     [NormedSpace ℝ G] {p : ℝ≥0∞} [Fact (1 ≤ p)] (f : Lp F p m) {g : alpha → G} {K : ℝ}
