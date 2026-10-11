@@ -50,7 +50,6 @@ lemma liouvilleFormCLM_apply (B : V →L[𝕜] V →L[𝕜] F) (x : V) (v : Fin 
 
 /-- The exterior derivative of the radial one-form of `B` is one half of the alternatization of
 `B`: `dλₓ(v, w) = (B(v, w) - B(w, v)) / 2`. -/
-@[simp]
 lemma extDeriv_liouvilleFormCLM (B : V →L[𝕜] V →L[𝕜] F) (x : V) :
     extDeriv (liouvilleFormCLM B) x =
       (2⁻¹ : 𝕜) • TauCeti.ContinuousAlternatingMap.alternatizeBilinCLM 𝕜 V F B := by
