@@ -34,6 +34,7 @@ promoted to `𝒱^pre` by `TauCeti.PreAdicSpace.Hom.ofFac`.
   have isomorphic sources.
 * `TauCeti.PreAdicSpace.IsOpenImmersion.isoRestrict`: an open immersion identifies its source
   with the restriction of its target to its image.
+* `TauCeti.PreAdicSpace.Hom.restrictPreimage`: a morphism restricted over an open of its target.
 
 The design follows `AlgebraicGeometry.LocallyRingedSpace.IsOpenImmersion`.
 
@@ -178,6 +179,36 @@ theorem isoRestrict_inv_comp : (isoRestrict f).inv ≫ f = Y.ofRestrict f.isOpen
 end IsoRestrict
 
 end IsOpenImmersion
+
+namespace Hom
+
+variable (f : X ⟶ Y) (V : Opens Y)
+
+/-- Restrict a morphism over an open of its target: `f⁻¹(V) → V`, with the restricted pre-adic
+structures. It is the unique morphism commuting with the inclusions into `X` and `Y`. -/
+noncomputable def restrictPreimage :
+    X.restrict ((Opens.map f.base).obj V).isOpenEmbedding ⟶ Y.restrict V.isOpenEmbedding :=
+  IsOpenImmersion.lift (Y.ofRestrict V.isOpenEmbedding)
+    (X.ofRestrict ((Opens.map f.base).obj V).isOpenEmbedding ≫ f)
+    (by rintro _ ⟨x, rfl⟩; exact ⟨⟨f.base x.1, Opens.mem_map.mp x.2⟩, rfl⟩)
+
+/-- The restriction of a morphism commutes with the inclusions of the open subspaces. -/
+@[reassoc (attr := simp)]
+theorem restrictPreimage_ofRestrict :
+    f.restrictPreimage V ≫ Y.ofRestrict V.isOpenEmbedding =
+      X.ofRestrict ((Opens.map f.base).obj V).isOpenEmbedding ≫ f := by
+  unfold restrictPreimage
+  exact IsOpenImmersion.lift_fac _ _ _
+
+/-- On points, the restricted morphism is the original map with codomain restricted to `V`. -/
+@[simp]
+theorem restrictPreimage_base_apply
+    (x : X.restrict ((Opens.map f.base).obj V).isOpenEmbedding) :
+    (f.restrictPreimage V).base x = ⟨f.base x.1, Opens.mem_map.mp x.2⟩ := by
+  apply Subtype.ext
+  exact congrArg (fun g ↦ g.base x) (f.restrictPreimage_ofRestrict V)
+
+end Hom
 
 end PreAdicSpace
 
