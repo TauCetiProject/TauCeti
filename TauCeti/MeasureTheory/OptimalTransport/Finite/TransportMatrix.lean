@@ -66,6 +66,18 @@ abbrev RealPlans (μ : PMF ι) (ν : PMF κ) : Set (ι × κ → ℝ) :=
 
 attribute [simp] TransportMatrix.row_sum TransportMatrix.col_sum
 
+/-- An entry of a real plan is at most the mass of its row. -/
+theorem le_toReal_fst_of_mem_realPlans {μ : PMF ι} {ν : PMF κ} {f : ι × κ → ℝ}
+    (hf : f ∈ RealPlans μ ν) (q : ι × κ) : f q ≤ (μ q.1).toReal := by
+  rw [← hf.2.1 q.1]
+  exact Finset.single_le_sum (fun j _ ↦ hf.1 (q.1, j)) (Finset.mem_univ q.2)
+
+/-- An entry of a real plan is at most the mass of its column. -/
+theorem le_toReal_snd_of_mem_realPlans {μ : PMF ι} {ν : PMF κ} {f : ι × κ → ℝ}
+    (hf : f ∈ RealPlans μ ν) (q : ι × κ) : f q ≤ (ν q.2).toReal := by
+  rw [← hf.2.2 q.2]
+  exact Finset.single_le_sum (fun i _ ↦ hf.1 (i, q.2)) (Finset.mem_univ q.1)
+
 namespace TransportMatrix
 
 variable {μ : PMF ι} {ν : PMF κ}

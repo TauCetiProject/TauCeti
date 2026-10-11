@@ -150,6 +150,8 @@ weaken them for no gain.
   on `Ω` are weak derivatives.
 * `TauCeti.hasWeakLineDerivOn_const`: against a Haar measure, a constant has weak derivative `0`;
   equivalently, `TestFunction.integral_lineDeriv_eq_zero`, `∫ ∂_w φ = 0` for a test function `φ`.
+* `TauCeti.hasWeakFDerivOn_gradient_of_contDiffOn`: a `C¹` function on `Ω` has weak derivative
+  the linear functional represented by its gradient.
 * `TauCeti.hasWeakFDerivOn_testFunction`: a test function has weak derivative the linear
   functional represented by its gradient.
 * `TestFunction.setIntegral_inner_gradient_eq_integral_inner_gradient`: the gradient of a test
@@ -723,11 +725,11 @@ theorem hasWeakFDerivOn_of_differentiableOn (hu : LocallyIntegrableOn u Ω μ)
 
 end Classical
 
-/-! ### Test functions are weakly differentiable
+/-! ### `C¹` functions and test functions are weakly differentiable
 
-A test function is the basic example: it is smooth, so its classical derivative is also a weak
-one. On an inner product space the derivative is recorded through its Riesz representative, the
-gradient, which is the form in which the Sobolev spaces consume it. -/
+A function of class `C¹` on `Ω`, and in particular a test function, has its classical derivative
+as a weak one. On an inner product space the derivative is recorded through its Riesz
+representative, the gradient, which is the form in which the Sobolev spaces consume it. -/
 
 section TestFunction
 
@@ -736,19 +738,27 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
 
 open scoped Gradient InnerProductSpace
 
+/-- **A `C¹` function is weakly differentiable**, with weak derivative the continuous linear
+functional represented by its classical gradient. Only differentiability inside the open set `Ω`
+is used. -/
+theorem hasWeakFDerivOn_gradient_of_contDiffOn {u : E → ℝ} (hu : ContDiffOn ℝ 1 u Ω) :
+    HasWeakFDerivOn μ Ω u fun x => innerSL ℝ (∇ u x) := by
+  have hcoe : (fun x => innerSL ℝ (∇ u x)) = fderiv ℝ u := by
+    funext x
+    ext y
+    simp [inner_gradient_left (𝕜 := ℝ) (f := u) (x := x) (y := y)]
+  rw [hcoe]
+  exact hasWeakFDerivOn_of_differentiableOn
+    (hu.continuousOn.locallyIntegrableOn Ω.isOpen.measurableSet)
+    ((hu.continuousOn_fderiv_of_isOpen Ω.isOpen le_rfl).locallyIntegrableOn
+      Ω.isOpen.measurableSet)
+    fun x hx => (hu.differentiableOn one_ne_zero).differentiableAt (Ω.isOpen.mem_nhds hx)
+
 /-- **A test function is weakly differentiable**, with weak derivative the continuous linear
 functional represented by its gradient. -/
 theorem hasWeakFDerivOn_testFunction (φ : 𝓓(Ω, ℝ)) :
-    HasWeakFDerivOn μ Ω (φ : E → ℝ) fun x => innerSL ℝ (∇ (φ : E → ℝ) x) := by
-  have hcoe : (fun x => innerSL ℝ (∇ (φ : E → ℝ) x)) = fderiv ℝ (φ : E → ℝ) := by
-    funext x
-    ext y
-    simp [inner_gradient_left (𝕜 := ℝ) (f := (φ : E → ℝ)) (x := x) (y := y)]
-  rw [hcoe]
-  refine hasWeakFDerivOn_of_differentiableOn ?_ ?_ fun x _ =>
-    (φ.contDiff.differentiable (by simp)) x
-  · exact φ.continuous.locallyIntegrable.locallyIntegrableOn _
-  · exact (φ.contDiff.continuous_fderiv (by simp)).locallyIntegrable.locallyIntegrableOn _
+    HasWeakFDerivOn μ Ω (φ : E → ℝ) fun x => innerSL ℝ (∇ (φ : E → ℝ) x) :=
+  hasWeakFDerivOn_gradient_of_contDiffOn (φ.contDiff.of_le (by simp)).contDiffOn
 
 omit [BorelSpace E] [μ.IsAddHaarMeasure] in
 /-- The gradient of a test function vanishes off its support, so pairing a field `g` with it

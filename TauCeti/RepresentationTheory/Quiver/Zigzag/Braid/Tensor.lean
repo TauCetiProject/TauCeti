@@ -41,9 +41,7 @@ universe u w
 
 variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V) [Finite V]
 
-/-- Use the signed path-length grading for bimodule tensor composition. -/
-local instance : GradedAlgebra (zigzagAlgebraInternalGrading k G).piece :=
-  zigzagAlgebraIntegerGradedAlgebra k G
+attribute [local instance] zigzagAlgebraIntegerGradedAlgebra
 
 /-- Balanced tensor composition in the category of the actual graded zigzag bimodules. -/
 -- Its category indices and object assignment must compute for totalization and tensor maps.
