@@ -77,7 +77,8 @@ theorem sinkhornErrorBound_eq_zero_of_sinkhornStep_eq {K : Matrix ι κ ℝ} {a 
 
 /-- **A posteriori row-factor error.** The distance to any positive fixed point is controlled by
 one observed Sinkhorn step. No normalization of the scaling factors is required. -/
-theorem hilbertProjectiveDist_le_div_sinkhornStep {K : Matrix ι κ ℝ}
+theorem hilbertProjectiveDist_le_hilbertProjectiveDist_sinkhornStep_div_of_sinkhornStep_eq
+    {K : Matrix ι κ ℝ}
     (hK : ∀ i j, 0 < K i j) {a : ι → ℝ} (ha : ∀ i, a i ≠ 0)
     {b : κ → ℝ} (hb : ∀ j, 0 < b j) {u uStar : ι → ℝ}
     (hu : ∀ i, 0 < u i) (huStar : ∀ i, 0 < uStar i)
@@ -117,8 +118,8 @@ theorem hilbertProjectiveDist_sinkhornUpdate_le_sinkhornErrorBound {K : Matrix �
     hilbertProjectiveDist (Kᵀ.sinkhornUpdate b u) vStar ≤ sinkhornErrorBound K a b u := by
   rcases isEmpty_or_nonempty κ with hκ | hκ
   · simpa [hilbertProjectiveDist_def] using sinkhornErrorBound_nonneg K a b u
-  have herr := hilbertProjectiveDist_le_div_sinkhornStep hK (fun i ↦ (ha i).ne') hb hu
-    huStar (hP.sinkhornStep_eq hPm hK huStar hvStar)
+  have herr := hilbertProjectiveDist_le_hilbertProjectiveDist_sinkhornStep_div_of_sinkhornStep_eq
+    hK (fun i ↦ (ha i).ne') hb hu huStar (hP.sinkhornStep_eq hPm hK huStar hvStar)
   have hcol := hP.hilbertProjectiveDist_sinkhornUpdate_iterate_le hPm hK ha hb huStar
     hvStar hu 0
   simp only [Function.iterate_zero, id_eq, Nat.mul_zero, zero_add, pow_one] at hcol
