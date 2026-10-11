@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Semigroups.Resolvent.Identity
 public import TauCeti.LinearAlgebra.LinearPMap.SmulSub
-public import TauCeti.Analysis.Normed.Operator.LinearPMap.SmulSub
+public import TauCeti.Analysis.Normed.Operator.Resolvent.LowerBound
 
 /-!
 # Dissipative operators
@@ -309,24 +309,11 @@ private theorem IsMDissipative.exists_isResolventAt_norm_le {A : X →ₗ.[ℝ] 
     (hA : IsMDissipative A)
     {lambda : ℝ} (hlambda : 0 < lambda) :
     ∃ R : X →L[ℝ] X, LinearPMap.IsResolventAt A lambda R ∧ ‖R‖ ≤ lambda⁻¹ := by
-  obtain ⟨g, R, hRnorm, hgR, hright⟩ := hA.isDissipative.exists_bounded_rightInverse hlambda
-    (hA.smul_sub_surjective hlambda)
-  have hleft : ∀ x : A.domain, R (lambda • (x : X) - A x) = (x : X) := by
-    intro x
-    rw [← hgR]
-    exact congrArg Subtype.val (hA.isDissipative.smul_sub_injective hlambda (hright _))
-  have hmem : ∀ y : X, R y ∈ A.domain := by
-    intro y
-    rw [← hgR]
-    exact (g y).property
-  have hrightR : ∀ y : X, lambda • R y - A ⟨R y, hmem y⟩ = y := by
-    intro y
-    have hsubtype : (⟨R y, hmem y⟩ : A.domain) = g y := Subtype.ext (hgR y).symm
-    calc
-      lambda • R y - A ⟨R y, hmem y⟩ = lambda • (g y : X) - A (g y) :=
-        congrArg₂ (fun u v : X => lambda • u - v) (hgR y).symm (congrArg A hsubtype)
-      _ = y := hright y
-  exact ⟨R, ⟨hmem, hrightR, hleft⟩, hRnorm⟩
+  have hmem := LinearPMap.mem_resolventSet_of_surjective_of_norm_le
+    (hA.smul_sub_surjective hlambda) hlambda (hA.isDissipative lambda hlambda)
+  have hR := LinearPMap.isResolventAt_resolvent hmem
+  exact ⟨LinearPMap.resolvent A lambda, hR,
+    hR.norm_le_inv hlambda (hA.isDissipative lambda hlambda)⟩
 
 /-- Every positive real lies in the resolvent set of an m-dissipative operator. -/
 theorem IsMDissipative.mem_resolventSet {A : X →ₗ.[ℝ] X} (hA : IsMDissipative A)

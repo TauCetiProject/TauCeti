@@ -10,9 +10,9 @@ public import TauCeti.Analysis.Normed.Operator.Resolvent.Unbounded
 /-!
 # Spectrum of a partial linear map
 
-The spectrum `LinearPMap.spectrum` of a partial linear map is the complement of its
-continuous-inverse resolvent set. On Banach spaces it is closed. For bounded, everywhere-defined
-operators this spectrum agrees with Mathlib's Banach-algebra spectrum.
+The spectrum `LinearPMap.spectrum`, defined in
+`TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent`, is closed on Banach spaces.
+For bounded, everywhere-defined operators it agrees with Mathlib's Banach-algebra spectrum.
 -/
 
 public section
@@ -21,27 +21,17 @@ namespace TauCeti
 
 open _root_.LinearPMap
 
-section Topological
-
-variable {𝕜 E : Type*} [Ring 𝕜] [AddCommGroup E] [TopologicalSpace E] [Module 𝕜 E]
-
-/-- The spectrum of a partial linear map consists of the scalars whose shifts do not admit
-continuous linear two-sided inverses. -/
-def _root_.LinearPMap.spectrum (A : E →ₗ.[𝕜] E) : Set 𝕜 := A.resolventSetᶜ
-
-/-- Membership in the partial-operator spectrum is failure of resolvent membership. -/
-@[simp]
-theorem _root_.LinearPMap.mem_spectrum_iff (A : E →ₗ.[𝕜] E) (z : 𝕜) :
-    z ∈ A.spectrum ↔ z ∉ A.resolventSet := (Iff.rfl)
-
-end Topological
-
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
 
 /-- The spectrum of a partial linear map on a Banach space is closed. -/
 theorem _root_.LinearPMap.isClosed_spectrum [CompleteSpace E] (A : E →ₗ.[𝕜] E) :
-    IsClosed A.spectrum := A.isOpen_resolventSet.isClosed_compl
+    IsClosed A.spectrum := by
+  have h : A.spectrum = A.resolventSetᶜ := by
+    ext z
+    simp only [mem_spectrum_iff, Set.mem_compl_iff]
+  rw [h]
+  exact A.isOpen_resolventSet.isClosed_compl
 
 /-- For a bounded operator on the full domain, the partial-operator spectrum agrees with
 Mathlib's Banach-algebra spectrum. -/
