@@ -8,8 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.Scheme.CodimensionOnePoint
 public import TauCeti.RingTheory.RegularLocalRing.Basic
 public import Mathlib.RingTheory.DedekindDomain.Dvr
--- Proof-only: the local rings of the integral scheme `Spec R` are domains.
-import Mathlib.AlgebraicGeometry.FunctionField
+-- Proof-only: the local rings of the spectrum of a Dedekind domain are regular.
+import TauCeti.AlgebraicGeometry.Scheme.RegularLocalRing
 
 /-!
 # Regularity and valuation rings at codimension-one points
@@ -69,19 +69,8 @@ theorem isDiscreteValuationRing_stalk_of_isDedekindDomain {X : Scheme.{u}}
     {R : CommRingCat.{u}} [IsDedekindDomain R] (f : Spec R ⟶ X) [IsOpenImmersion f] (q : Spec R)
     [IsDomain (X.presheaf.stalk (f q))] (hq : coheight (f q) = 1) :
     IsDiscreteValuationRing (X.presheaf.stalk (f q)) := by
-  rw [coheight_eq_of_isOpenImmersion, ← idealHeight_eq_coheight] at hq
-  have hq0 : q.asIdeal ≠ ⊥ := by
-    rintro h
-    rw [h, Ideal.height_bot] at hq
-    exact zero_ne_one hq
-  have := q.isPrime
-  let : Algebra R ((Spec R).presheaf.stalk q) := StructureSheaf.stalkAlgebra R q
-  have : IsLocalization.AtPrime ((Spec R).presheaf.stalk q) q.asIdeal :=
-    StructureSheaf.IsLocalization.to_stalk R q
-  have := IsLocalization.AtPrime.isDiscreteValuationRing_of_dedekind_domain R hq0
-    ((Spec R).presheaf.stalk q)
-  exact IsDiscreteValuationRing.RingEquivClass.isDiscreteValuationRing
-    (asIso (f.stalkMap q)).commRingCatIsoToRingEquiv.symm
+  have := (isRegularLocalRing_stalk_iff_of_isOpenImmersion f q).mpr inferInstance
+  exact CodimensionOnePoint.isDiscreteValuationRing_stalk ⟨f q, hq⟩
 
 end AlgebraicGeometry
 
