@@ -44,7 +44,7 @@ def zigzagAdjacentBalancedTensorEquiv {i j : V} (h : G.Adj j i) :
   (spanSingletonBalancedTensorProductEquivCorner k
     (isIdempotentElem_zigzagAlgebraBasis_inl k G i)
     (isIdempotentElem_zigzagAlgebraBasis_inl k G j)).trans
-      (zigzagAdjacentCornerEquiv k G h)
+      (zigzagAlgebraAdjacentCornerEquiv k G h)
 
 /-- On pure tensors, the adjacent middle-factor coordinate is the arrow coordinate
 of the product in the zigzag algebra. -/
@@ -56,7 +56,7 @@ theorem zigzagAdjacentBalancedTensorEquiv_tmul {i j : V} (h : G.Adj j i)
       (zigzagAlgebraBasis k G).repr (unop (m : Zᵐᵒᵖ) * (n : Z))
         (.inr (.inl (⟨(j, i), h⟩ : G.Dart))) := by
   rw [zigzagAdjacentBalancedTensorEquiv, LinearEquiv.trans_apply,
-    zigzagAdjacentCornerEquiv_apply,
+    zigzagAlgebraAdjacentCornerEquiv_apply,
     coe_spanSingletonBalancedTensorProductEquivCorner_tmul]
 
 /-- The inverse adjacent middle-factor coordinate inserts the right-ideal generator and
@@ -67,10 +67,10 @@ theorem zigzagAdjacentBalancedTensorEquiv_symm_apply {i j : V} (h : G.Adj j i)
     (zigzagAdjacentBalancedTensorEquiv k G h).symm a =
       BalancedTensorProduct.tmul k Z
         (spanSingletonGenerator (op (e i)))
-        ⟨((zigzagAdjacentCornerEquiv k G h).symm a : Z),
+        ⟨((zigzagAlgebraAdjacentCornerEquiv k G h).symm a : Z),
           mem_span_singleton_of_mem_cornerSubmodule
             (isIdempotentElem_zigzagAlgebraBasis_inl k G j)
-            ((zigzagAdjacentCornerEquiv k G h).symm a).property⟩ := by
+            ((zigzagAlgebraAdjacentCornerEquiv k G h).symm a).property⟩ := by
   rw [zigzagAdjacentBalancedTensorEquiv, LinearEquiv.symm_trans_apply,
     spanSingletonBalancedTensorProductEquivCorner_symm_apply]
 

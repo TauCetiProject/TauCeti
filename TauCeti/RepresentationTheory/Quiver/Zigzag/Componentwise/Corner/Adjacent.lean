@@ -96,7 +96,7 @@ local notation "e" => fun v : V ↦ zigzagAlgebraBasis k G (Sum.inl v)
 
 /-- The adjacent corner `e_i Z e_j` is free on the arrow from `j` to `i`.
 Its coordinate equivalence works over every commutative coefficient ring. -/
-noncomputable def zigzagAdjacentCornerEquiv {i j : V} (h : G.Adj j i) :
+noncomputable def zigzagAlgebraAdjacentCornerEquiv {i j : V} (h : G.Adj j i) :
     cornerSubmodule k (e i) (e j) ≃ₗ[k] k where
   toFun x := (zigzagAlgebraBasis k G).repr x (.inr (.inl (⟨(j, i), h⟩ : G.Dart)))
   invFun a := ⟨a • zigzagAlgebraBasis k G (.inr (.inl (⟨(j, i), h⟩ : G.Dart))), by
@@ -125,18 +125,18 @@ noncomputable def zigzagAdjacentCornerEquiv {i j : V} (h : G.Adj j i) :
 
 /-- The coordinate of an adjacent corner element is its coefficient at the arrow. -/
 @[simp]
-theorem zigzagAdjacentCornerEquiv_apply {i j : V} (h : G.Adj j i)
+theorem zigzagAlgebraAdjacentCornerEquiv_apply {i j : V} (h : G.Adj j i)
     (x : cornerSubmodule k (e i) (e j)) :
-    zigzagAdjacentCornerEquiv k G h x =
+    zigzagAlgebraAdjacentCornerEquiv k G h x =
       (zigzagAlgebraBasis k G).repr x (.inr (.inl (⟨(j, i), h⟩ : G.Dart))) :=
-  by simp [zigzagAdjacentCornerEquiv]
+  by simp [zigzagAlgebraAdjacentCornerEquiv]
 
 /-- The inverse arrow coordinate sends a scalar to its multiple of the adjacent arrow. -/
 @[simp]
-theorem coe_zigzagAdjacentCornerEquiv_symm_apply {i j : V} (h : G.Adj j i) (a : k) :
-    ((zigzagAdjacentCornerEquiv k G h).symm a : Z) =
+theorem coe_zigzagAlgebraAdjacentCornerEquiv_symm_apply {i j : V} (h : G.Adj j i) (a : k) :
+    ((zigzagAlgebraAdjacentCornerEquiv k G h).symm a : Z) =
       a • zigzagAlgebraBasis k G (.inr (.inl (⟨(j, i), h⟩ : G.Dart))) :=
-  by simp [zigzagAdjacentCornerEquiv]
+  by simp [zigzagAlgebraAdjacentCornerEquiv]
 
 end CommRing
 
