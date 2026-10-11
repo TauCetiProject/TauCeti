@@ -13,11 +13,22 @@ public import Mathlib.LinearAlgebra.Charpoly.BaseChange
 /-!
 # Norm and trace under scalar extension
 
-This file records the compatibility of algebra norms and traces with scalar extension on pure
-tensors.
+This file records the compatibility of algebra norms and traces with scalar extension.
+
+## Main results
+
+* `TauCeti.Algebra.norm_baseChange_tmul`, `TauCeti.Algebra.trace_baseChange_tmul`: the norm and
+  trace of `1 ⊗ x ∈ A ⊗[K] B` over `A` are the images of those of `x`.
+* `TauCeti.Algebra.leftMulMatrix_rTensor`, `TauCeti.Algebra.norm_rTensor`: for a free `K`-algebra
+  `B` of finite rank, the matrix of multiplication and the norm of `P ⊗[K] B` over `P` are
+  compatible with every `K`-algebra map `φ : P →ₐ[K] T`. Taking `P` to be a polynomial ring and `φ`
+  an evaluation map, the norm on every base change `T ⊗[K] B` is a specialization of the generic
+  norm form.
 -/
 
 public section
+
+open scoped TensorProduct
 
 namespace TauCeti
 
@@ -44,6 +55,35 @@ theorem Algebra.norm_baseChange_tmul (x : B) :
       LinearMap.det_baseChange (R := K) (M := B) (f := Algebra.lmul K B x) (A := A)
     _ = algebraMap K A (Algebra.norm K x) := by
       rw [Algebra.norm_apply]
+
+variable {P T : Type*} [CommRing P] [Algebra K P] [CommRing T] [Algebra K T]
+
+omit [Module.Free K B] [Module.Finite K B] in
+/-- The matrix of multiplication on `P ⊗[K] B`, in the basis induced by a basis of `B`, maps
+entrywise along a `K`-algebra map `φ : P →ₐ[K] T` to that of the corresponding element of
+`T ⊗[K] B`. -/
+theorem Algebra.leftMulMatrix_rTensor {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι K B) (φ : P →ₐ[K] T) (x : P ⊗[K] B) :
+    Algebra.leftMulMatrix (Algebra.TensorProduct.basis T b)
+        (Algebra.TensorProduct.rTensor B φ x) =
+      φ.mapMatrix (Algebra.leftMulMatrix (Algebra.TensorProduct.basis P b) x) := by
+  have key (y : P ⊗[K] B) (i : ι) : (Algebra.TensorProduct.basis T b).repr
+      (Algebra.TensorProduct.rTensor B φ y) i = φ ((Algebra.TensorProduct.basis P b).repr y i) := by
+    induction y using TensorProduct.inductionOn with
+    | tmul p m => simp
+    | add y z hy hz => simp [hy, hz]
+  ext i j
+  simp [Algebra.leftMulMatrix_eq_repr_mul, ← key]
+
+/-- The norm of `P ⊗[K] B` over `P` commutes with base change along a `K`-algebra map
+`φ : P →ₐ[K] T`. -/
+theorem Algebra.norm_rTensor (φ : P →ₐ[K] T) (x : P ⊗[K] B) :
+    Algebra.norm T (Algebra.TensorProduct.rTensor B φ x) = φ (Algebra.norm P x) := by
+  classical
+  let b := Module.Free.chooseBasis K B
+  rw [Algebra.norm_eq_matrix_det (Algebra.TensorProduct.basis T b),
+    Algebra.norm_eq_matrix_det (Algebra.TensorProduct.basis P b), φ.map_det,
+    Algebra.leftMulMatrix_rTensor]
 
 end Norm
 
