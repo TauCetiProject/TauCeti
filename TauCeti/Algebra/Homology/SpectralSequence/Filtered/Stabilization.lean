@@ -61,13 +61,17 @@ lemma isZero_spectralObject_H_top (b m : ℤ)
     IsZero (((spectralObject (filtrationFunctor F hF)).H m).obj
       (mk₁ (homOfLE (le_top : (b : EInt) ≤ ⊤)))) := by
   refine IsZero.of_iso ?_ (spectralObjectHIsoCokernel _ _ m)
-  rw [filtrationFunctor_map]
   have : IsIso (filtrationEInt F ⊤).arrow := by
     rw [filtrationEInt_top]
     infer_instance
+  -- The transition map to `⊤` followed by the inclusion `K ≅ ⊤ ⟶ K` is the inclusion of `F_b`.
+  have e : (filtrationFunctor F hF).map (homOfLE (le_top : (b : EInt) ≤ ⊤)) ≫
+      (filtrationFunctorObjIso F hF ⊤).hom ≫ (filtrationEInt F ⊤).arrow =
+      (filtrationFunctorObjIso F hF b).hom ≫ (filtrationEInt F b).arrow := by
+    rw [reassoc_of% filtrationFunctor_map_comp_objIso_hom, Subobject.ofLE_arrow]
   refine IsZero.of_iso ?_ ((HomologicalComplex.homologyFunctor C _ m).mapIso
-    ((cokernelCompIsIso _ (filtrationEInt F ⊤).arrow).symm ≪≫
-      cokernelIsoOfEq (Subobject.ofLE_arrow _)))
+    ((cokernelCompIsIso _ ((filtrationFunctorObjIso F hF ⊤).hom ≫
+      (filtrationEInt F ⊤).arrow)).symm ≪≫ cokernelIsoOfEq e ≪≫ cokernelEpiComp _ _))
   have key (S T : Subobject K) (hST : S = T) (hT : IsZero ((cokernel T.arrow).homology m)) :
       IsZero ((cokernel S.arrow).homology m) := by
     subst hST
