@@ -110,19 +110,13 @@ private theorem rational_separable (hchar : (q : K) = 0) :
     let := ratFuncAlgebraOfTranscendental h.transcendental_y
     Algebra.IsSeparable (RatFunc K) F := by
   let := ratFuncAlgebraOfTranscendental h.transcendental_y
-  let a := algebraMap K[X] (RatFunc K) (X ^ q + X)
-  have ha : a ≠ 0 := RatFunc.algebraMap_ne_zero (radicand_squarefree hchar).ne_zero
   have hn : ((q + 1 : ℕ) : RatFunc K) ≠ 0 := by
     have hc := congrArg (algebraMap K (RatFunc K)) hchar
     simp only [map_natCast, map_zero] at hc
     simp [Nat.cast_add, hc]
-  have he : aeval x (X ^ (q + 1) - C a) = 0 := by
-    simpa [a] using sub_eq_zero.mpr h.rational_equation
-  have hs : IsSeparable (RatFunc K) x :=
-    (separable_X_pow_sub_C a hn ha).of_dvd (minpoly.dvd _ _ he)
-  have := (IntermediateField.isSeparable_adjoin_simple_iff_isSeparable _ _).mpr hs
-  rw [h.rational_adjoin_eq_top] at this
-  exact AlgEquiv.Algebra.isSeparable IntermediateField.topEquiv
+  exact isSeparable_of_pow_eq_of_adjoin_eq_top hn
+    (RatFunc.algebraMap_ne_zero (radicand_squarefree hchar).ne_zero) h.rational_equation
+    h.rational_adjoin_eq_top
 
 /-- A Hermitian equation with `q = 0` in `K` acquires no new constants. -/
 theorem isIntegrallyClosedIn (hq : 1 < q) (hchar : (q : K) = 0) : IsIntegrallyClosedIn K F := by
