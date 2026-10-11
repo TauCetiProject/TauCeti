@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Tessellation
 import TauCeti.Analysis.Complex.UpperHalfPlane.Stabilizer
+import TauCeti.Topology.Algebra.ConstMulAction
 
 /-!
 # Elliptic points on the sides of a fundamental polygon
@@ -16,7 +17,7 @@ point has trivial stabilizer. At a side point other than its finite endpoints, o
 adjacent tiles can occur. Its stabilizer is therefore trivial unless the side is self-paired
 and the pairing map fixes that point; in that case it is cyclic of order two.
 
-If the translates are locally finite, every elliptic orbit has a representative at a finite
+If the translates cover the upper half-plane, every elliptic orbit has a representative at a finite
 vertex or at such a fixed point of a self-paired side. This supplies the side-point case needed
 in addition to vertex cycles when extracting elliptic orbits from a fundamental polygon. No
 claim that all elliptic points are represented by vertices is made.
@@ -35,17 +36,6 @@ open scoped MatrixGroups Pointwise
 namespace TauCeti.UpperHalfPlane.ConvexPolygon
 
 variable {n : ℕ} [NeZero n] {P : ConvexPolygon n} {Γ : Subgroup PSL(2, ℝ)}
-
-/-- Interior points of a polygon with disjoint translated interiors have trivial stabilizer. -/
-theorem stabilizer_eq_bot_of_mem_interior
-    (hdisj : ∀ γ : Γ, γ ≠ 1 →
-      Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier))
-    {z : ℍ} (hz : z ∈ interior P.carrier) : stabilizer Γ z = ⊥ := by
-  apply (Subgroup.eq_bot_iff_forall _).mpr
-  intro g hg
-  have hgz := mem_stabilizer_iff.mp hg
-  by_contra hne
-  exact disjoint_left.mp (hdisj g hne) (hgz ▸ smul_mem_smul_set hz) hz
 
 namespace SidePairing
 
@@ -150,10 +140,8 @@ theorem existsUnique_mem_side_map_smul_eq_self_of_pair_eq_self {i : Fin n}
         le_max_left t (-(s + t)), le_max_right t (-(s + t))]
   have hz : z ∈ P.side i := by
     rw [← P.carrier_inter_range_sideGeodesic]
-    refine ⟨(P.mem_carrier_iff z).mpr fun j ↦ ?_, mem_range_self _⟩
-    exact geodesicSegment_subset_closure_leftHalfPlane
-      (P.carrier_subset_closure_leftHalfPlane j (P.side_subset_carrier i hv))
-      (P.carrier_subset_closure_leftHalfPlane j (P.side_subset_carrier i hv')) hzseg
+    exact ⟨P.geodesicSegment_subset_carrier
+      (P.side_subset_carrier i hv) (P.side_subset_carrier i hv') hzseg, mem_range_self _⟩
   have hzp : P.vertex i ≠ .inl z := by
     intro hp
     apply P.vertex_ne_vertex_add_one i
@@ -241,12 +229,13 @@ theorem mem_orbit_iff_eq_of_mem_side_map_smul_eq_self
       exact hfix.symm
     exact (MulAction.injective g) (hgz.trans hgw.symm)
 
-/-- In a locally finite fundamental polygon, every point with nontrivial stabilizer is
-represented either by a finite vertex or by a nonendpoint fixed point of a self-paired side.
+/-- In a fundamental polygon whose translates cover the upper half-plane, every point with
+nontrivial stabilizer is represented either by a finite vertex or by a nonendpoint fixed point
+of a self-paired side.
 In the latter case its representative has stabilizer order two. -/
 theorem exists_vertex_or_self_paired_side_of_stabilizer_ne_bot
     (hmap : ∀ i, σ.map i ∈ Γ)
-    (hlf : LocallyFinite fun γ : Γ ↦ (γ : PSL(2, ℝ)) • P.carrier)
+    (hcover : ⋃ γ : Γ, (γ : PSL(2, ℝ)) • P.carrier = univ)
     (hdisj : ∀ γ : Γ, γ ≠ 1 →
       Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier))
     {z : ℍ} (hz : stabilizer Γ z ≠ ⊥) :
@@ -254,7 +243,7 @@ theorem exists_vertex_or_self_paired_side_of_stabilizer_ne_bot
       (∃ i, P.vertex i = .inl w) ∨
         ∃ i, w ∈ P.side i ∧ P.vertex i ≠ .inl w ∧ P.vertex (i + 1) ≠ .inl w ∧
           σ.pair i = i ∧ σ.map i • w = w ∧ Nat.card (stabilizer Γ w) = 2 := by
-  obtain ⟨γ, hγ⟩ := mem_iUnion.mp (σ.iUnion_smul_carrier_eq_univ hmap hlf ▸ mem_univ z)
+  obtain ⟨γ, hγ⟩ := mem_iUnion.mp (hcover ▸ mem_univ z)
   obtain ⟨w, hw, hwz⟩ := mem_smul_set.mp hγ
   rw [← Subgroup.smul_def γ] at hwz
   have hworb : w ∈ orbit Γ z := mem_orbit_iff.mpr ⟨γ⁻¹, by rw [← hwz, inv_smul_smul]⟩
@@ -266,7 +255,7 @@ theorem exists_vertex_or_self_paired_side_of_stabilizer_ne_bot
   by_cases hv : ∃ i, P.vertex i = .inl w
   · exact Or.inl hv
   · have hwi : w ∉ interior P.carrier := fun h ↦
-      hwne (P.stabilizer_eq_bot_of_mem_interior hdisj h)
+      hwne (stabilizer_eq_bot_of_disjoint_smul hdisj h)
     have hwf : w ∈ frontier P.carrier := ⟨subset_closure hw, hwi⟩
     obtain ⟨i, hi⟩ := mem_iUnion.mp (P.frontier_carrier ▸ hwf)
     have hv' : ∀ i, P.vertex i ≠ .inl w := not_exists.mp hv
