@@ -79,6 +79,7 @@ theorem _root_.ContinuousLinearMap.isInvertible_of_surjective
 
 /-- Contraction with a bilinear form on a finite-dimensional space is an invertible
 continuous linear map to the continuous dual exactly when the form is left-separating. -/
+@[simp low]
 theorem isInvertible_toContinuousBilinearMap_iff_separatingLeft
     {b : LinearMap.BilinForm 𝕜 E} :
     b.toContinuousBilinearMap.IsInvertible ↔ b.SeparatingLeft := by
