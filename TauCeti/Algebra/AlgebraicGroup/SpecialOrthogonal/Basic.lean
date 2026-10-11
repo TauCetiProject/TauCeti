@@ -217,7 +217,7 @@ variable {A : Type w} [CommRing A] [Algebra R A]
 
 /-- An ambient point belongs to the subgroup cut out by the special orthogonal Hopf ideal
 exactly when its matrix is orthogonal of determinant one. -/
-@[simp]
+@[simp↓]
 theorem mem_definingPointsSubgroup_iff
     (g : HopfAlgebra.points (R := R)
       (H := GeneralLinear.coordinateHopfAlgebra R n) (CommAlgCat.of R A)) :

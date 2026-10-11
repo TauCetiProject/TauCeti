@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.Exact
-public import TauCeti.Topology.Homotopy.HomotopicWith
+public import TauCeti.Topology.Homotopy.Homotopic.With
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Homotopy
 
 /-!

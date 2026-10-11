@@ -34,7 +34,6 @@ of square classes whose image in `(W⁄L).M` lies in the image of the local desc
 * `WeierstrassCurve.Affine.mapA`: the base-change homomorphism `K[X]⧸⟨f⟩ →+* L[X]⧸⟨f⟩` of étale
   algebras.
 * `WeierstrassCurve.Affine.localRes`: the induced map `W.M →* (W⁄L).M` on square classes.
-* `WeierstrassCurve.Affine.pointMap`: the base-change homomorphism `W(K) →+ W(L)` on points.
 * `WeierstrassCurve.Affine.localCondition`: the local `2`-descent condition at `L`.
 
 ## Main statements
@@ -62,9 +61,8 @@ which is not a Mathlib declaration and which TauCeti deliberately does not carry
 repository has a single spelling of square classes. Accordingly `localRes` is built from
 `QuotientGroup.map` rather than from the source's `Units.modPow.map`.
 
-`pointMap` is Mathlib's `WeierstrassCurve.Affine.Point.map` and is not a new construction: the
-only content is the alignment of `W` with `W⁄K`, which `baseChange_self` supplies and
-Mathlib's `AddEquiv.cast` transports along.
+The base change of points is `WeierstrassCurve.Affine.pointMap`, from
+`TauCeti/AlgebraicGeometry/EllipticCurve/Affine/BaseChange.lean`.
 
 ## Provenance
 
@@ -197,33 +195,6 @@ lemma localRes_injective_of_surjective_algebraMap (h : Function.Surjective (alge
   obtain ⟨w', rfl⟩ := (Units.map_bijective hb).2 w
   exact (QuotientGroup.eq_one_iff _).mpr ⟨w', (Units.map_bijective hb).1
     (by simpa only [powMonoidHom_apply, map_pow] using hw)⟩
-
-section PointMap
-
-open scoped Classical in
-/-- The base-change homomorphism on points, `W(K) →+ W(L)`: Mathlib's
-`WeierstrassCurve.Affine.Point.map`, aligned with the plain base change `W⁄L` via
-`baseChange_self`. -/
-noncomputable def pointMap : W.Point →+ (W⁄L).toAffine.Point :=
-  (Point.map (W' := W) (Algebra.ofId K L)).comp
-    (AddEquiv.cast (M := fun W' : Affine K => W'.Point) W.baseChange_self.symm).toAddMonoidHom
-
-open scoped Classical in
-/-- The base-change map on an affine point carries its coordinates along `algebraMap K L`. -/
-@[simp]
-lemma pointMap_some {x y : K} (h : W.Nonsingular x y) : W.pointMap L (Point.some x y h) =
-      Point.some (W' := (W⁄L).toAffine) (algebraMap K L x) (algebraMap K L y)
-        (show (W⁄L).toAffine.Nonsingular (algebraMap K L x) (algebraMap K L y) from
-          (W.map_nonsingular (algebraMap K L).injective x y).mpr h) := by
-  -- The type ascription above is load-bearing: `map_nonsingular` produces the nonsingularity
-  -- proof at `W.map (algebraMap K L)`, and although `W⁄L` is a reducible abbreviation for
-  -- exactly that, the elaborator does not unfold it at `instances` transparency, so the two
-  -- identically-printing types do not unify without being told the target.
-  rw [pointMap, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, AddEquiv.cast_apply,
-    Point.cast_some W.baseChange_self.symm, Point.map_some]
-  rfl
-
-end PointMap
 
 variable [W.IsElliptic] [W.IsCharNeTwoNF]
 

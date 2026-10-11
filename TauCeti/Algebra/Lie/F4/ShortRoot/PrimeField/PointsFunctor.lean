@@ -302,9 +302,9 @@ theorem pointsMap_rootSubgroupPoints {A : Type v} {B : Type w}
       Multiplicative.ofAdd (f (Multiplicative.toAdd u)) := rfl
   rw [← hparam]
   simpa only [coe_pointsMap, coe_rootSubgroupPoints, AlgHom.toRingHom_eq_coe,
-    _root_.TauCeti.F4ShortRoot.coe_pointsMap] using
+    ↓_root_.TauCeti.GeneralLinear.IntegralPointsPresentation.coe_map] using
     congrArg Subtype.val
-      (_root_.TauCeti.F4ShortRoot.pointsMap_rootSubgroupPoints f.toRingHom k u)
+      (_root_.TauCeti.F4ShortRoot.map_rootSubgroupPoints f.toRingHom k u)
 
 /-- The induced map carries a weight-torus point coordinatewise along the algebra homomorphism. -/
 @[simp]
@@ -318,9 +318,9 @@ theorem pointsMap_weightTorusPoints {A : Type v} {B : Type w}
       fun i ↦ Units.map (f : A →* B) (s i) := rfl
   rw [← hparam]
   simpa only [coe_pointsMap, coe_weightTorusPoints, AlgHom.toRingHom_eq_coe,
-    _root_.TauCeti.F4ShortRoot.coe_pointsMap] using
+    ↓_root_.TauCeti.GeneralLinear.IntegralPointsPresentation.coe_map] using
     congrArg Subtype.val
-      (_root_.TauCeti.F4ShortRoot.pointsMap_weightTorusPoints f.toRingHom s)
+      (_root_.TauCeti.F4ShortRoot.map_weightTorusPoints f.toRingHom s)
 
 local notation "𝔽₂" => ZMod 2
 local notation "H₂₆" => GeneralLinear.coordinateHopfAlgebra 𝔽₂ 26

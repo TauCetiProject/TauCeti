@@ -791,8 +791,7 @@ theorem gradedPow_add_zero_of_two (hp : p = 2) (x y : gradedPiece p G 0) :
   -- Since `gr_1(G)` is killed by `2`, `[y, x] = -[x, y] = [x, y]`.
   have h := gradedCast_gradedBracket_swap x y
   rw [gradedCast_rfl] at h
-  rw [h, neg_eq_iff_add_eq_zero]
-  exact (two_nsmul _).symm.trans (nsmul_gradedPiece_eq_zero _)
+  rw [h, ZModModule.neg_eq_self]
 
 /-- **`π` against the bracket on the left**, away from degree zero: `π [x, y] = [π x, y]` for
 `x ∈ gr_j(G)` with `j ≥ 1`. The correction term `⁅x, ⁅x, y⁆⁆` has degree `2j + k + 2`, which is
@@ -891,7 +890,8 @@ theorem gradedMap_id (k : ℕ) :
 
 /-- The graded map induced by a composite is the composite of the graded maps: `gr_k` is a
 functor. -/
-@[simp]
+-- Not `@[simp]`: on the left-hand side `hg` and `hf` occur only inside the proof `hg.comp hf`,
+-- so `simp` cannot instantiate them.
 theorem gradedMap_comp (g : H →* K) (hg : Continuous g) (f : G →* H) (hf : Continuous f) (k : ℕ) :
     gradedMap p (g.comp f) (hg.comp hf) k = (gradedMap p g hg k).comp (gradedMap p f hf k) := by
   refine AddMonoidHom.ext fun x => ?_

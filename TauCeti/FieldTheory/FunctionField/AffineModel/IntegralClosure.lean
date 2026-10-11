@@ -8,6 +8,8 @@ module
 public import TauCeti.FieldTheory.FunctionField.AffineModel.Prime
 -- Proof-only: Dedekind integral closures without separability.
 import TauCeti.RingTheory.DedekindDomain.IntegralClosure
+-- Proof-only: finiteness of the normalization of `k[x]` without separability.
+import TauCeti.RingTheory.IntegralClosure.MvPolynomial
 
 /-!
 # The affine model `R_x`: the integral closure of `k[x]`
@@ -23,7 +25,7 @@ file shows that `R_x` has every property the affine-model API of
 `TauCeti/FieldTheory/FunctionField/AffineModel/` asks of a model, with no separability hypothesis
 on `F / k(x)`:
 
-* `R_x` is a Dedekind domain with fraction field `F`;
+* `R_x` is a Dedekind domain with fraction field `F`, and a finitely generated `k`-algebra;
 * its functions are exactly those whose poles are among the poles of `x`, that is, `R_x` is the
   holomorphy ring of the places at which `x` is regular;
 * hence its finite chart consists of the places at which `x` has no pole, and those places are in
@@ -37,6 +39,11 @@ The places missing from the finite chart are the poles of `x`, of which there ar
 * `TauCeti.isDedekindDomain_integralClosure_adjoin` and
   `TauCeti.isFractionRing_integralClosure_adjoin`: `R_x` is a Dedekind domain with fraction field
   `F`.
+* `TauCeti.finiteType_integralClosure_adjoin`: `R_x` is a finitely generated `k`-algebra.
+* `TauCeti.isDedekindDomain_holomorphyRing_setOf_mem` and
+  `TauCeti.finiteType_holomorphyRing_setOf_mem`: the same two properties for `R_x` presented as
+  the holomorphy ring of the places at which `x` is regular, the form in which it is a chart of
+  the scheme of `F` in `TauCeti/AlgebraicGeometry/Curves/TwoChartModel/`.
 * `TauCeti.restrictScalars_integralClosure_adjoin_eq_holomorphyRing` and
   `TauCeti.mem_integralClosure_adjoin_iff`: a function lies in `R_x` exactly when it is regular at
   every place at which `x` is regular.
@@ -131,6 +138,34 @@ theorem isFractionRing_integralClosure_adjoin (hF : IsFunctionField k F)
     (hx : Transcendental k x) : IsFractionRing (integralClosure (Algebra.adjoin k {x}) F) F := by
   have : FiniteDimensional k⟮x⟯ F := hF.finiteDimensional_adjoin hx
   exact integralClosure.isFractionRing_of_finite_extension k⟮x⟯ F
+
+/-- **`R_x` is a finitely generated `k`-algebra**: for `x` transcendental over `k` and `F` finite
+over `k(x)`, for instance an algebraic function field, the integral closure of `k[x]` in `F` is a
+finite `k[x]`-module. No separability of `F / k(x)` is assumed. -/
+theorem finiteType_integralClosure_adjoin [FiniteDimensional k⟮x⟯ F] (hx : Transcendental k x) :
+    Algebra.FiniteType k (integralClosure (Algebra.adjoin k {x}) F) := by
+  have : Module.Finite (Algebra.adjoin k {x}) (integralClosure (Algebra.adjoin k {x}) F) :=
+    IsIntegralClosure.finite_adjoin_of_transcendental k hx F _
+  have : Algebra.FiniteType k (Algebra.adjoin k {x}) :=
+    .adjoin_of_finite (Set.finite_singleton x)
+  exact .trans (S := Algebra.adjoin k {x}) inferInstance inferInstance
+
+/-- **The functions regular wherever `x` is form a Dedekind domain**, for `x` transcendental over
+`k`: this holomorphy ring is `R_x`. -/
+theorem isDedekindDomain_holomorphyRing_setOf_mem (hF : IsFunctionField k F)
+    (hx : Transcendental k x) :
+    IsDedekindDomain (holomorphyRing {P : Place k F | x ∈ P.integers}) := by
+  rw [← restrictScalars_integralClosure_adjoin_eq_holomorphyRing hF x]
+  exact isDedekindDomain_integralClosure_adjoin hF hx
+
+/-- **The functions regular wherever `x` is form a finitely generated `k`-algebra**, for `x`
+transcendental over `k`: this holomorphy ring is `R_x`. -/
+theorem finiteType_holomorphyRing_setOf_mem (hF : IsFunctionField k F)
+    (hx : Transcendental k x) :
+    Algebra.FiniteType k (holomorphyRing {P : Place k F | x ∈ P.integers}) := by
+  have : FiniteDimensional k⟮x⟯ F := hF.finiteDimensional_adjoin hx
+  rw [← restrictScalars_integralClosure_adjoin_eq_holomorphyRing hF x]
+  exact finiteType_integralClosure_adjoin hx
 
 end Model
 
