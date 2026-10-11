@@ -27,7 +27,8 @@ the additive form of the quadratic Hilbert symbol `(a, b)_v`.
 The finite invariant is bilinear and symmetric in `a` and `b`, and vanishes at every finite place
 `v` not above `2` at which `a` and `b` are both units: there `K_v(√b)` is unramified, so every
 unit is a norm from it. Only finitely many places are excluded, so the finite invariants of a fixed
-pair have finite support, the finite set `finiteHilbertSupport K a b`. The sum of the invariants over that set,
+pair have finite support, the finite set `finiteHilbertSupport K a b`. The sum of the invariants
+over that set,
 together with the archimedean invariants, is the left-hand side of Hilbert's reciprocity law.
 The comparison `finiteInvAt_kummerBrauerClass` identifies every finite term with the localization
 of the global Kummer-cup Brauer class, so this sum can be read in the global Brauer sequence.
