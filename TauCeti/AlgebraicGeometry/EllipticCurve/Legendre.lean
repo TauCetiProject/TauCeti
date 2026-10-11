@@ -33,7 +33,8 @@ is separable because the `2`-division polynomial has nonzero discriminant `16 Δ
 Since `j` is an explicit rational function of `λ`, the Legendre form ties the reduction of an
 elliptic curve to its `j`-invariant: this is how the criterion
 `WeierstrassCurve.hasPotentialGoodReduction_of_isInteger_j` for potential good reduction is
-proved.
+proved away from residue characteristic `2`. In residue characteristic `2` the Deuring normal form
+of `TauCeti/AlgebraicGeometry/EllipticCurve/DeuringNormalForm.lean` takes its place.
 
 ## Main results
 
