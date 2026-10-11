@@ -894,6 +894,14 @@ morphism. -/
     (X : SmoothDiscreteTopRep.{u, v, w} R G) :
     (discreteRepEquivSmoothTopRep R G).counitIso.inv.app X = 𝟙 X := (rfl)
 
+/-- `toSmoothDiscrete` is an equivalence of categories, with inverse `ofSmoothDiscrete`. -/
+instance isEquivalence_toSmoothDiscrete : (toSmoothDiscrete.{u, v, w} R G).IsEquivalence :=
+  (discreteRepEquivSmoothTopRep R G).isEquivalence_functor
+
+/-- `ofSmoothDiscrete` is an equivalence of categories, with inverse `toSmoothDiscrete`. -/
+instance isEquivalence_ofSmoothDiscrete : (ofSmoothDiscrete.{u, v, w} R G).IsEquivalence :=
+  (discreteRepEquivSmoothTopRep R G).isEquivalence_inverse
+
 end CoefficientEquivalence
 
 /-! ### The smooth discrete subcategory is proper -/

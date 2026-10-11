@@ -7,8 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Basic
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
--- Proof-only: `Point.cast_some`, the coordinates of a point transported along `AddEquiv.cast`.
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
 
 /-!
 # Base change of affine elliptic curves
@@ -18,6 +17,7 @@ for the canonical affine base-change spelling `W⁄A`, so consumers of the point
 base-change APIs do not have to unfold that abbreviation. It also records that base change along
 the identity algebra map returns the original curve, together with the resulting identification
 `WeierstrassCurve.Affine.Point.equivBaseChangeSelf` of the point groups of `W` and `W⁄F`, the
+Weierstrass equation of `W⁄A` written with the coefficients of `W` mapped along `algebraMap`, the
 base-change homomorphism `WeierstrassCurve.Affine.pointMap : W(K) →+ W(L)` on points along a
 field extension `L/K`, and a coordinate descent lemma for points whose abscissa is already
 rational.
@@ -59,6 +59,18 @@ lemma baseChange_self : (W⁄R).toAffine = W := by
   rw [show algebraMap R R = RingHom.id R from Algebra.algebraMap_self]
   exact W.map_id
 
+variable {A : Type*} [CommRing A] [Algebra R A]
+
+/-- **The Weierstrass equation of a base change**, with the coefficients of `W` mapped into `A`
+along `algebraMap`. -/
+lemma equation_baseChange_iff (x y : A) :
+    (W⁄A).Equation x y ↔
+      y ^ 2 + algebraMap R A W.a₁ * x * y + algebraMap R A W.a₃ * y =
+        x ^ 3 + algebraMap R A W.a₂ * x ^ 2 + algebraMap R A W.a₄ * x + algebraMap R A W.a₆ := by
+  rw [equation_iff]
+  simp only [WeierstrassCurve.baseChange, WeierstrassCurve.map_a₁, WeierstrassCurve.map_a₂,
+    WeierstrassCurve.map_a₃, WeierstrassCurve.map_a₄, WeierstrassCurve.map_a₆]
+
 end WeierstrassCurve.Affine
 
 namespace WeierstrassCurve.Affine.Point
@@ -77,6 +89,34 @@ theorem equivBaseChangeSelf_some {x y : F} (h : W.Nonsingular x y) :
     equivBaseChangeSelf W (.some x y h) = .some x y (W.baseChange_self.symm ▸ h) := by
   rw [equivBaseChangeSelf, AddEquiv.cast_apply]
   exact Point.cast_some W.baseChange_self.symm h
+
+/-- **`equivBaseChangeSelf` keeps the `x`-coordinate of a point.** -/
+@[simp]
+theorem xCoord_equivBaseChangeSelf (P : W.Point) :
+    xCoord (equivBaseChangeSelf W P) = xCoord P := by
+  rcases P with _ | ⟨x, y, h⟩
+  · simp [← zero_def]
+  · rw [equivBaseChangeSelf_some, xCoord_some, xCoord_some]
+
+/-- **`equivBaseChangeSelf` keeps the `y`-coordinate of a point.** -/
+@[simp]
+theorem yCoord_equivBaseChangeSelf (P : W.Point) :
+    yCoord (equivBaseChangeSelf W P) = yCoord P := by
+  rcases P with _ | ⟨x, y, h⟩
+  · simp [← zero_def]
+  · rw [equivBaseChangeSelf_some, yCoord_some, yCoord_some]
+
+/-- **`equivBaseChangeSelf.symm` keeps the `x`-coordinate of a point.** -/
+@[simp]
+theorem xCoord_equivBaseChangeSelf_symm (P : (W⁄F).toAffine.Point) :
+    xCoord ((equivBaseChangeSelf W).symm P) = xCoord P := by
+  rw [← xCoord_equivBaseChangeSelf, AddEquiv.apply_symm_apply]
+
+/-- **`equivBaseChangeSelf.symm` keeps the `y`-coordinate of a point.** -/
+@[simp]
+theorem yCoord_equivBaseChangeSelf_symm (P : (W⁄F).toAffine.Point) :
+    yCoord ((equivBaseChangeSelf W).symm P) = yCoord P := by
+  rw [← yCoord_equivBaseChangeSelf, AddEquiv.apply_symm_apply]
 
 end WeierstrassCurve.Affine.Point
 

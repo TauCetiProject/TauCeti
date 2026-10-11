@@ -292,7 +292,8 @@ theorem exists_sq_mem_range_apply_eq_self_iff_of_index_eq_two
     exists_sq_mem_range_adjoin_simple_eq_of_finrank_eq_two hE
   refine ⟨x, a, fun hx => hxbot (hx ▸ zero_mem _), hxa, fun σ => ?_⟩
   rw [← AlgEquiv.smul_def, ← MulAction.mem_stabilizer_iff,
-    ← IntermediateField.fixingSubgroup_adjoin_simple, hxadj,
+    ← IntermediateField.fixingSubgroup_adjoin_simple (K := K),
+    hxadj,
     IntermediateField.fixingSubgroup_fixedField]
 
 

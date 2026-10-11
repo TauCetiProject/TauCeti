@@ -9,7 +9,7 @@ public import TauCeti.RingTheory.Huber.RingOfDefinition
 public import TauCeti.RingTheory.WittVector.IntervalRing
 
 /-!
-# The window subring of `𝕎 O[1/(p [ϖ])]` is a ring of definition for the interval norm
+# The window subring of `𝕎 O[1/(p [ϖ])]` and the interval norm
 
 Let `O` be the ring of integers of a valuation `v : Valuation K ℝ≥0` on a field `K`, perfect of
 characteristic `p`, and let `ϖ ∈ O` be a pseudouniformiser, `0 < v(ϖ) < 1`. In a localisation `B`
@@ -46,6 +46,14 @@ bounded for `λ_I`, hence a ring of definition of `𝕎 O[1/(p [ϖ])]` with the 
 Lemma 6.2). This is the analytic input for identifying `B^I` with the completed coordinate ring of
 the window.
 
+For the same radii, the integral closure of the window subring in `𝕎 O[1/(p [ϖ])]` is the unit
+ball of `λ_I`, and so the closure of its image in `B^I` is the unit ball `B^{I,+}`. The plus ring
+`A_U⁺` of a rational localisation is the closure of the image of the integral closure of
+`A⁺[T / s]` (`TauCeti.Huber.PairOfDefinition.completedPlusSubring`). With `A⁺ = 𝕎 O`, this
+equality is the analytic input for identifying the plus ring of the window with `B^{I,+}`; that
+identification still requires transport along the isomorphism between the coordinate ring of the
+window and `B^I`.
+
 ## Proof outline
 
 Boundedness holds because both fractions have interval norm at most `1`. Openness comes from the
@@ -71,17 +79,25 @@ terms with `n ≥ m`, which carry a negative power of `[ϖ]` and are reached thr
 * `TauCeti.WittVector.algebraMap_teichmuller_pow_mul_mem_windowSubring_of_norm_le_one` : the
   unit ball of `λ_I` lies in `[ϖ] ^ -(b + b')` times the window subring.
 * `TauCeti.WittVector.isOpen_windowSubring` : the window subring is open for `λ_I`.
-* `TauCeti.WittVector.isBounded_windowSubring` : the window subring is bounded for `λ_I`.
+* `TauCeti.WittVector.windowSubring_le_powerBoundedSubring` and
+  `TauCeti.WittVector.isBounded_windowSubring` : the window subring lies in the unit ball of `λ_I`,
+  so it is bounded.
 * `TauCeti.WittVector.exists_pairOfDefinition_ringOfDefinition_eq_windowSubring` : for the radii
   of the window, the window subring is a ring of definition of `𝕎 O[1/(p [ϖ])]` with the interval
   norm.
+* `TauCeti.WittVector.isIntegral_windowSubring_of_norm_le_one` : the unit ball of `λ_I` is
+  integral over the window subring.
+* `TauCeti.WittVector.integralClosure_windowSubring_eq_powerBoundedSubring` : for the radii of the
+  window, the integral closure of the window subring is the unit ball of `λ_I`.
+* `TauCeti.WittVector.topologicalClosure_map_coeRingHom_integralClosure_windowSubring` : for the
+  radii of the window, the closure in `B^I` of the image of that integral closure is `B^{I,+}`.
 
 ## References
 
 * K. S. Kedlaya, *Sheaves, stacks, and shtukas*, lecture notes, Arizona Winter School 2017,
   §3.1, for the interval rings `B^I` and the windows.
 * [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Lemma 6.2 and
-  Proposition and Definition 5.51.
+  Proposition and Definition 5.51, and §8.1 for the plus ring of a rational localisation.
 -/
 
 public section
@@ -278,6 +294,25 @@ private theorem mono_mul_algebraMap_mul_mono_mul_mono (N : ℕ) (u : 𝕎 O) (γ
       algebraMap (𝕎 O) B u * mono p ϖ B (N + γ - m) (δ - m) := by
   rw [mul_left_comm, mul_assoc, ← mono_add, ← mono_add]
   congr 2 <;> ring
+
+/-- The `N`-th power of a term `[c] pⁱ / (p [ϖ]) ^ m` is `[c ^ N] [ϖ] ^ (-N m) p ^ (N i - N m)`. -/
+private theorem pow_algebraMap_teichmuller_mul_pow_mul_mono (c : O) (i m N : ℕ) :
+    (algebraMap (𝕎 O) B (teichmuller p c * (p : 𝕎 O) ^ i) * mono p ϖ B (-m) (-m)) ^ N =
+      algebraMap (𝕎 O) B (teichmuller p (c ^ N)) * mono p ϖ B (-(N * m)) (N * i - N * m) := by
+  rw [map_mul, ← mono_natCast_zero_left (ϖ := ϖ), mul_pow, mul_pow, ← map_pow, ← map_pow,
+    mono_pow, mono_pow, mul_assoc, ← mono_add]
+  congr 2 <;> ring
+
+/-- If `ϖ ^ e` divides `c ϖ ^ d` in `O`, then `[c] [ϖ] ^ α p ^ β` lies in the window subring as
+soon as `(α + e - d, β)` is `i (b, -a) + j (-b', a') + (k, l)` with `i, j, k, l ≥ 0`. -/
+private theorem algebraMap_teichmuller_mul_mono_mem_windowSubring {c : O} {e d : ℕ}
+    (h : ϖ ^ e ∣ c * ϖ ^ d) (i j k l : ℕ) {α β : ℤ}
+    (hα : α + e - d = i * q.den - j * q'.den + k) (hβ : β = -(i * q.num) + j * q'.num + l) :
+    algebraMap (𝕎 O) B (teichmuller p c) * mono p ϖ B α β ∈ windowSubring p ϖ B q q' := by
+  obtain ⟨u, hu⟩ := exists_algebraMap_teichmuller_eq (p := p) (B := B) h
+  rw [hu, mul_assoc, ← mono_add]
+  exact algebraMap_mul_mono_mem_windowSubring _ i j k l (by linear_combination hα)
+    (by simpa using hβ)
 
 end Away
 
@@ -501,24 +536,18 @@ private theorem norm_le_one_of_mul_algebraMap_eq {x : L} {y y' : 𝕎 O}
   rw [IntervalLocalization.norm_def]
   exact max_le (by exact_mod_cast hlam hρ₁ hy₁) (by exact_mod_cast hlam hρ₂ hy₂)
 
-/-- **The window subring is bounded for the interval norm**, if `v(ϖ) ^ b ≤ ρᵢ ^ a` and
-`ρᵢ ^ a' ≤ v(ϖ) ^ b'` at both radii, for `q = a / b` and `q' = a' / b'` in lowest terms: then both
-fractions, and so the whole window subring, lie in the unit ball of `λ_I`. -/
-theorem isBounded_windowSubring (hf₁ : v (algebraMap O K ϖ) ^ q.den ≤ ρ₁ ^ q.num)
+/-- **The window subring consists of power-bounded elements**, if `v(ϖ) ^ b ≤ ρᵢ ^ a` and
+`ρᵢ ^ a' ≤ v(ϖ) ^ b'` at both radii, for `q = a / b` and `q' = a' / b'` in lowest terms: both
+fractions, and so the whole window subring, lie in the unit ball of `λ_I`, which is the
+power-bounded subring of `𝕎 O[1/(p [ϖ])]`. -/
+theorem windowSubring_le_powerBoundedSubring (hf₁ : v (algebraMap O K ϖ) ^ q.den ≤ ρ₁ ^ q.num)
     (hf₂ : v (algebraMap O K ϖ) ^ q.den ≤ ρ₂ ^ q.num)
     (hg₁ : ρ₁ ^ q'.num ≤ v (algebraMap O K ϖ) ^ q'.den)
     (hg₂ : ρ₂ ^ q'.num ≤ v (algebraMap O K ϖ) ^ q'.den) :
-    IsBounded (windowSubring p ϖ L q q' : Set L) := by
-  -- the unit ball of `λ_I` is the power-bounded subring, since `λ_I` is power-multiplicative
-  have hball : (powerBoundedSubring L : Set L) = Metric.closedBall 0 1 :=
-    IsPseudoUniformizer.coe_powerBoundedSubring_eq_closedBall
-      (IsPseudoUniformizer.of_norm_lt_one (IntervalLocalization.isUnit_natCast p hv hϖ hϖ' hρ₁ hρ₂)
-        (IntervalLocalization.norm_natCast_lt_one p hv hϖ hϖ' hρ₁ hρ₂))
-      (IntervalLocalization.isPowMul_norm p hv hϖ hϖ' hρ₁ hρ₂)
+    windowSubring p ϖ L q q' ≤ powerBoundedSubring L := by
   have hmem {x : L} (hx : ‖x‖ ≤ 1) : x ∈ powerBoundedSubring L := by
-    rw [← SetLike.mem_coe, hball, mem_closedBall_zero_iff]
+    rw [← SetLike.mem_coe, IntervalLocalization.coe_powerBoundedSubring, mem_closedBall_zero_iff]
     exact hx
-  refine (isBounded_closedBall_zero 1).subset (hball ▸ ?_)
   refine windowSubring_le_iff.mpr ⟨fun x ↦ hmem ?_, hmem ?_, hmem ?_⟩
   · rw [IntervalLocalization.norm_algebraMap]
     exact max_le (by exact_mod_cast gaussValuation_le_one hv hρ₁.2 x)
@@ -533,6 +562,17 @@ theorem isBounded_windowSubring (hf₁ : v (algebraMap O K ϖ) ^ q.den ≤ ρ₁
     · simpa using hg₁
     · simpa using hg₂
     · simpa [map_eq_zero_iff _ hv.hom_inj, hϖ] using congrArg (gaussValuation p hv ρ₁ hρ₁.2) h
+
+/-- **The window subring is bounded for the interval norm**, if `v(ϖ) ^ b ≤ ρᵢ ^ a` and
+`ρᵢ ^ a' ≤ v(ϖ) ^ b'` at both radii, for `q = a / b` and `q' = a' / b'` in lowest terms: it lies in
+the unit ball of `λ_I` by `TauCeti.WittVector.windowSubring_le_powerBoundedSubring`. -/
+theorem isBounded_windowSubring (hf₁ : v (algebraMap O K ϖ) ^ q.den ≤ ρ₁ ^ q.num)
+    (hf₂ : v (algebraMap O K ϖ) ^ q.den ≤ ρ₂ ^ q.num)
+    (hg₁ : ρ₁ ^ q'.num ≤ v (algebraMap O K ϖ) ^ q'.den)
+    (hg₂ : ρ₂ ^ q'.num ≤ v (algebraMap O K ϖ) ^ q'.den) :
+    IsBounded (windowSubring p ϖ L q q' : Set L) :=
+  (isBounded_closedBall_zero 1).subset <| IntervalLocalization.coe_powerBoundedSubring p hv hϖ hϖ'
+    hρ₁ hρ₂ ▸ windowSubring_le_powerBoundedSubring hv hϖ hϖ' hρ₁ hρ₂ hf₁ hf₂ hg₁ hg₂
 
 /-- **The window subring is a ring of definition for the interval norm.** If the radii are those
 of the window `{q ≤ κ ≤ q'}`, that is `ρ₁ ^ a = v(ϖ) ^ b`, `ρ₂ ^ a' = v(ϖ) ^ b'` and `ρ₁ ≤ ρ₂` for
@@ -551,6 +591,156 @@ theorem exists_pairOfDefinition_ringOfDefinition_eq_windowSubring
     (isOpen_windowSubring hv hϖ hϖ' hρ₁ hρ₂ h₁.le h₂.ge hq')
     (isBounded_windowSubring hv hϖ hϖ' hρ₁ hρ₂ h₁.ge (h₁ ▸ pow_le_pow_left₀ zero_le h₁₂ _)
       (h₂ ▸ pow_le_pow_left₀ zero_le h₁₂ _) h₂.le)
+
+/-! ### The integral closure of the window subring -/
+
+omit [CharP O p] [PerfectRing O p] in
+include hv hρ₁ in
+/-- **A power of a term with a negative power of `p` lies in the window subring.** If `i < m`,
+say `m = i + k`, and `v(c) ρ₁ ^ i ≤ (ρ₁ v(ϖ)) ^ m`, then `ϖ ^ (a m + b k)` divides `c ^ a`, and the
+`a`-th power of `[c] pⁱ / (p [ϖ]) ^ m` is `[c ^ a / ϖ ^ (a m + b k)] ([ϖ] ^ b / p ^ a) ^ k`. -/
+private theorem pow_algebraMap_teichmuller_mul_pow_mul_mono_mem_windowSubring_of_lt {B : Type*}
+    [CommRing B] [Algebra (𝕎 O) B] [IsLocalization.Away ((p : 𝕎 O) * teichmuller p ϖ) B]
+    (h₁ : ρ₁ ^ q.num ≤ v (algebraMap O K ϖ) ^ q.den) {c : O} {i m : ℕ} (hi : i < m)
+    (hb₁ : v (algebraMap O K c) * ρ₁ ^ i ≤ (ρ₁ * v (algebraMap O K ϖ)) ^ m) :
+    (algebraMap (𝕎 O) B (teichmuller p c * (p : 𝕎 O) ^ i) * mono p ϖ B (-m) (-m)) ^ q.num ∈
+      windowSubring p ϖ B q q' := by
+  obtain ⟨k, rfl⟩ : ∃ k, m = i + k := ⟨m - i, by omega⟩
+  have hc : v (algebraMap O K c) ≤ ρ₁ ^ k * v (algebraMap O K ϖ) ^ (i + k) := by
+    refine le_of_mul_le_mul_right ?_ (pow_pos hρ₁.1 i)
+    calc _ ≤ _ := hb₁
+      _ = _ := by rw [mul_pow, pow_add ρ₁]; ring
+  have hle : v (algebraMap O K (c ^ q.num * ϖ ^ 0)) ≤
+      v (algebraMap O K (ϖ ^ (q.num * (i + k) + q.den * k))) := by
+    calc v (algebraMap O K (c ^ q.num * ϖ ^ 0)) = v (algebraMap O K c) ^ q.num := by simp
+      _ ≤ (ρ₁ ^ k * v (algebraMap O K ϖ) ^ (i + k)) ^ q.num := by gcongr
+      _ = (ρ₁ ^ q.num) ^ k * v (algebraMap O K ϖ) ^ (q.num * (i + k)) := by ring
+      _ ≤ (v (algebraMap O K ϖ) ^ q.den) ^ k * v (algebraMap O K ϖ) ^ (q.num * (i + k)) := by
+          gcongr
+      _ = _ := by simp only [map_pow]; ring
+  rw [pow_algebraMap_teichmuller_mul_pow_mul_mono]
+  refine algebraMap_teichmuller_mul_mono_mem_windowSubring (hv.dvd_of_le hle) k 0 0 0 ?_ ?_
+  · push_cast; ring
+  · push_cast; ring
+
+omit [CharP O p] [PerfectRing O p] in
+include hv hρ₂ in
+/-- **A power of a term with a nonnegative power of `p` lies in the window subring.** If
+`m ≤ i`, say `i = m + k`, and `v(c) ρ₂ ^ i ≤ (ρ₂ v(ϖ)) ^ m`, then `ϖ ^ (a' m)` divides
+`c ^ a' ϖ ^ (b' k)`, and the `a'`-th power of `[c] pⁱ / (p [ϖ]) ^ m` is
+`[c ^ a' ϖ ^ (b' k) / ϖ ^ (a' m)] (p ^ a' / [ϖ] ^ b') ^ k`. -/
+private theorem pow_algebraMap_teichmuller_mul_pow_mul_mono_mem_windowSubring_of_le {B : Type*}
+    [CommRing B] [Algebra (𝕎 O) B] [IsLocalization.Away ((p : 𝕎 O) * teichmuller p ϖ) B]
+    (h₂ : v (algebraMap O K ϖ) ^ q'.den ≤ ρ₂ ^ q'.num) {c : O} {i m : ℕ} (hi : m ≤ i)
+    (hb₂ : v (algebraMap O K c) * ρ₂ ^ i ≤ (ρ₂ * v (algebraMap O K ϖ)) ^ m) :
+    (algebraMap (𝕎 O) B (teichmuller p c * (p : 𝕎 O) ^ i) * mono p ϖ B (-m) (-m)) ^ q'.num ∈
+      windowSubring p ϖ B q q' := by
+  obtain ⟨k, rfl⟩ : ∃ k, i = m + k := ⟨i - m, by omega⟩
+  have hc : v (algebraMap O K c) * ρ₂ ^ k ≤ v (algebraMap O K ϖ) ^ m := by
+    refine le_of_mul_le_mul_right ?_ (pow_pos hρ₂.1 m)
+    calc _ = v (algebraMap O K c) * ρ₂ ^ (m + k) := by ring
+      _ ≤ _ := hb₂
+      _ = _ := by rw [mul_pow]; ring
+  have hle : v (algebraMap O K (c ^ q'.num * ϖ ^ (q'.den * k))) ≤
+      v (algebraMap O K (ϖ ^ (q'.num * m))) := by
+    calc v (algebraMap O K (c ^ q'.num * ϖ ^ (q'.den * k)))
+        = v (algebraMap O K c) ^ q'.num * (v (algebraMap O K ϖ) ^ q'.den) ^ k := by
+          simp only [map_mul, map_pow]; ring
+      _ ≤ v (algebraMap O K c) ^ q'.num * (ρ₂ ^ q'.num) ^ k := by gcongr
+      _ = (v (algebraMap O K c) * ρ₂ ^ k) ^ q'.num := by ring
+      _ ≤ (v (algebraMap O K ϖ) ^ m) ^ q'.num := by gcongr
+      _ = _ := by simp only [map_pow]; ring
+  rw [pow_algebraMap_teichmuller_mul_pow_mul_mono]
+  refine algebraMap_teichmuller_mul_mono_mem_windowSubring (hv.dvd_of_le hle) 0 k 0 0 ?_ ?_
+  · push_cast; ring
+  · push_cast; ring
+
+/-- **The unit ball of the interval norm is integral over the window subring.** If
+`ρ₁ ^ a ≤ v(ϖ) ^ b` and `v(ϖ) ^ b' ≤ ρ₂ ^ a'` for `q = a / b` and `q' = a' / b' ≠ 0` in lowest
+terms, then every `x ∈ 𝕎 O[1/(p [ϖ])]` with `λ_I(x) ≤ 1` is integral over
+`𝕎 O[[ϖ] ^ b / p ^ a, p ^ a' / [ϖ] ^ b']`. -/
+theorem isIntegral_windowSubring_of_norm_le_one
+    (h₁ : ρ₁ ^ q.num ≤ v (algebraMap O K ϖ) ^ q.den)
+    (h₂ : v (algebraMap O K ϖ) ^ q'.den ≤ ρ₂ ^ q'.num) (hq' : q' ≠ 0) {x : L} (hx : ‖x‖ ≤ 1) :
+    IsIntegral (windowSubring p ϖ L q q') x := by
+  have ha : 0 < q.num := by
+    refine Nat.pos_of_ne_zero fun h ↦ ?_
+    rw [h, pow_zero] at h₁
+    exact (pow_lt_one₀ zero_le hϖ' q.den_ne_zero).not_ge h₁
+  have ha' : 0 < q'.num := NNRat.num_pos.mpr (pos_iff_ne_zero.mpr hq')
+  have hmem {w : L} (hw : w ∈ windowSubring p ϖ L q q') :
+      IsIntegral (windowSubring p ϖ L q q') w :=
+    by simpa only [Algebra.algebraMap_ofSubsemiring_apply] using
+      isIntegral_algebraMap (R := windowSubring p ϖ L q q') (A := L) (x := ⟨w, hw⟩)
+  -- the two Gauss valuations of `x` are at most `1`
+  rw [IntervalLocalization.norm_def] at hx
+  have hx₁ : gaussValuationAway p hv hϖ ρ₁ hρ₁ L x ≤ 1 := by
+    exact_mod_cast (le_max_left _ _).trans hx
+  have hx₂ : gaussValuationAway p hv hϖ ρ₂ hρ₂ L x ≤ 1 := by
+    exact_mod_cast (le_max_right _ _).trans hx
+  obtain ⟨m, y, hy, rfl⟩ := exists_eq_algebraMap_mul_mono (p := p) (ϖ := ϖ) x
+  -- the Teichmüller expansion `y = ∑_{i ≤ M} [yᵢ] pⁱ + p ^ (M + 1) z`, with `M = m a' + m`
+  obtain ⟨z, hz⟩ := pow_dvd_sub_sum_teichmullerCoeff y (m * q'.num + m)
+  have hy' : y = ∑ i ≤ m * q'.num + m, teichmuller p (y.teichmullerCoeff i) * (p : 𝕎 O) ^ i +
+      (p : 𝕎 O) ^ (m * q'.num + m + 1) * z := by
+    rw [← hz]; ring
+  rw [hy', map_add, map_sum, add_mul, Finset.sum_mul]
+  refine (IsIntegral.sum _ fun i _ ↦ ?_).add (hmem ?_)
+  · rcases lt_or_ge i m with hi | hi
+    · exact IsIntegral.of_pow ha (hmem
+        (pow_algebraMap_teichmuller_mul_pow_mul_mono_mem_windowSubring_of_lt hv hρ₁ h₁ hi
+          (valuation_teichmullerCoeff_mul_pow_le hv hϖ hρ₁ hx₁ hy i)))
+    · exact IsIntegral.of_pow ha' (hmem
+        (pow_algebraMap_teichmuller_mul_pow_mul_mono_mem_windowSubring_of_le hv hρ₂ h₂ hi
+          (valuation_teichmullerCoeff_mul_pow_le hv hϖ hρ₂ hx₂ hy i)))
+  · -- the tail `p ^ (M + 1) z / (p [ϖ]) ^ m` is `z (p ^ a' / [ϖ] ^ b') ^ m [ϖ] ^ (m (b' - 1)) p`
+    have htail : algebraMap (𝕎 O) L ((p : 𝕎 O) ^ (m * q'.num + m + 1) * z) =
+        algebraMap (𝕎 O) L z * mono p ϖ L 0 (m * q'.num + m + 1 : ℕ) := by
+      rw [mono_natCast_zero_left, ← map_mul, mul_comm]
+    rw [htail, mul_assoc, ← mono_add]
+    refine algebraMap_mul_mono_mem_windowSubring _ 0 m (m * (q'.den - 1)) 1 ?_ ?_
+    · push_cast [Nat.cast_sub q'.den_pos]; ring
+    · push_cast; ring
+
+/-- **The integral closure of the window subring is the unit ball of the interval norm.** If the
+radii are those of the window `{q ≤ κ ≤ q'}`, that is `ρ₁ ^ a = v(ϖ) ^ b`, `ρ₂ ^ a' = v(ϖ) ^ b'`
+and `ρ₁ ≤ ρ₂` for `q = a / b` and `q' = a' / b'` in lowest terms, then the integral closure of
+`𝕎 O[[ϖ] ^ b / p ^ a, p ^ a' / [ϖ] ^ b']` in `𝕎 O[1/(p [ϖ])]` is the power-bounded subring, the
+set of `x` with `λ_I(x) ≤ 1` (`TauCeti.WittVector.IntervalLocalization.coe_powerBoundedSubring`). -/
+theorem integralClosure_windowSubring_eq_powerBoundedSubring
+    (h₁ : ρ₁ ^ q.num = v (algebraMap O K ϖ) ^ q.den)
+    (h₂ : ρ₂ ^ q'.num = v (algebraMap O K ϖ) ^ q'.den) (h₁₂ : ρ₁ ≤ ρ₂) :
+    (integralClosure (windowSubring p ϖ L q q') L).toSubring = powerBoundedSubring L := by
+  have hq' : q' ≠ 0 := by
+    rintro rfl
+    simp only [NNRat.num_zero, pow_zero, NNRat.den_zero, pow_one] at h₂
+    exact hϖ'.ne' h₂
+  refine le_antisymm (Subring.integralClosure_subring_le_iff.mpr
+    (windowSubring_le_powerBoundedSubring hv hϖ hϖ' hρ₁ hρ₂ h₁.ge
+      (h₁ ▸ pow_le_pow_left₀ zero_le h₁₂ _) (h₂ ▸ pow_le_pow_left₀ zero_le h₁₂ _) h₂.le))
+    fun x hx ↦ ?_
+  rw [← SetLike.mem_coe, IntervalLocalization.coe_powerBoundedSubring,
+    mem_closedBall_zero_iff] at hx
+  exact isIntegral_windowSubring_of_norm_le_one hv hϖ hϖ' hρ₁ hρ₂ h₁.le h₂.ge hq' hx
+
+/-- **`B^{I,+}` is the closure of the integral closure of the window subring.** If the radii are
+those of the window `{q ≤ κ ≤ q'}`, as in
+`TauCeti.WittVector.integralClosure_windowSubring_eq_powerBoundedSubring`, then the closure in
+`B^I` of the image of the integral closure of `𝕎 O[[ϖ] ^ b / p ^ a, p ^ a' / [ϖ] ^ b']` in
+`𝕎 O[1/(p [ϖ])]` is the power-bounded subring of `B^I`, its unit ball `B^{I,+}`
+(`TauCeti.WittVector.coe_powerBoundedSubring_intervalRing`). The left-hand side has the shape of
+the plus ring `A_U⁺` of a rational localisation
+(`TauCeti.Huber.PairOfDefinition.completedPlusSubring`), with `A⁺ = 𝕎 O` and `A⁺[T/s]` the window
+subring. -/
+theorem topologicalClosure_map_coeRingHom_integralClosure_windowSubring
+    (h₁ : ρ₁ ^ q.num = v (algebraMap O K ϖ) ^ q.den)
+    (h₂ : ρ₂ ^ q'.num = v (algebraMap O K ϖ) ^ q'.den) (h₁₂ : ρ₁ ≤ ρ₂) :
+    ((integralClosure (windowSubring p ϖ L q q') L).toSubring.map
+        (UniformSpace.Completion.coeRingHom :
+          L →+* IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)).topologicalClosure =
+      powerBoundedSubring (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) := by
+  rw [integralClosure_windowSubring_eq_powerBoundedSubring hv hϖ hϖ' hρ₁ hρ₂ h₁ h₂ h₁₂,
+    topologicalClosure_map_coeRingHom_powerBoundedSubring]
 
 end Interval
 
