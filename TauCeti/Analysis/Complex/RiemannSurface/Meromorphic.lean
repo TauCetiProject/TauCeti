@@ -35,6 +35,10 @@ order is multiplied by the local multiplicity of `φ`:
 (`TauCeti.RiemannSurface.meromorphicOrderAt_comp`). This is the formula relating orders of a
 function upstairs and downstairs along a branched covering.
 
+Orders also obey the local arithmetic used to bound poles: products add their orders, while the
+order of a sum is at least the minimum of the two orders. Thus sums preserve a fixed divisor bound,
+and products add the two divisor bounds.
+
 ## Main declarations
 
 * `TauCeti.RiemannSurface.MeromorphicAt`: a function on a Riemann surface is meromorphic at `x`.
@@ -45,11 +49,17 @@ function upstairs and downstairs along a branched covering.
   is meromorphic.
 * `TauCeti.RiemannSurface.MeromorphicAt.comp` and `TauCeti.RiemannSurface.meromorphicOrderAt_comp`:
   pullback along a holomorphic map, with the order formula.
+* `TauCeti.RiemannSurface.MeromorphicAt.add`, `TauCeti.RiemannSurface.MeromorphicAt.mul`,
+  `TauCeti.RiemannSurface.meromorphicOrderAt_add` and
+  `TauCeti.RiemannSurface.meromorphicOrderAt_mul`: arithmetic of local meromorphic sections and
+  their orders.
 
 ## References
 
 * Otto Forster, *Lectures on Riemann Surfaces*, Graduate Texts in Mathematics 81, Springer, 1981,
   §1 (meromorphic functions) and §16 (divisors).
+* Mathlib's `meromorphicOrderAt_mul` and `meromorphicOrderAt_add` in
+  `Mathlib/Analysis/Meromorphic/Order.lean`, transferred through the Riemann-surface charts.
 * Rick Miranda, *Algebraic Curves and Riemann Surfaces*, Graduate Studies in Mathematics 5,
   American Mathematical Society, 1995, Chapter II §§1 and 4.
 -/
@@ -201,5 +211,77 @@ theorem meromorphicOrderAt_comp (hF : MeromorphicAt F (φ x))
   simp [meromorphicOrderAt, (chartAt ℂ x).left_inv hcx, ← hmult]
 
 end Comp
+
+/-! ### Arithmetic of meromorphic orders -/
+
+section Arithmetic
+
+section Additive
+
+variable {f g : X → E}
+
+omit [IsManifold 𝓘(ℂ) 1 X] in
+/-- The sum of functions meromorphic at a point of a Riemann surface is meromorphic there. -/
+theorem MeromorphicAt.add (hf : MeromorphicAt f x) (hg : MeromorphicAt g x) :
+    MeromorphicAt (f + g) x := by
+  rw [meromorphicAt_def] at hf hg ⊢
+  have hadd : (f + g) ∘ (chartAt ℂ x).symm =
+      (f ∘ (chartAt ℂ x).symm) + (g ∘ (chartAt ℂ x).symm) := by
+    funext z
+    rfl
+  rw [hadd]
+  exact hf.add hg
+
+omit [IsManifold 𝓘(ℂ) 1 X] in
+/-- The order of a sum of meromorphic functions on a Riemann surface is at least the minimum of
+their orders. -/
+theorem meromorphicOrderAt_add
+    (hf : MeromorphicAt f x) (hg : MeromorphicAt g x) :
+    min (meromorphicOrderAt f x) (meromorphicOrderAt g x) ≤
+      meromorphicOrderAt (f + g) x := by
+  rw [meromorphicAt_def] at hf hg
+  have hadd : (f + g) ∘ (chartAt ℂ x).symm =
+      (f ∘ (chartAt ℂ x).symm) + (g ∘ (chartAt ℂ x).symm) := by
+    funext z
+    rfl
+  simp only [meromorphicOrderAt_def, hadd]
+  exact _root_.meromorphicOrderAt_add hf hg
+
+end Additive
+
+section Multiplicative
+
+variable {f g : X → ℂ}
+
+omit [IsManifold 𝓘(ℂ) 1 X] in
+/-- The product of functions meromorphic at a point of a Riemann surface is meromorphic there. -/
+theorem MeromorphicAt.mul (hf : MeromorphicAt f x) (hg : MeromorphicAt g x) :
+    MeromorphicAt (f * g) x := by
+  rw [meromorphicAt_def] at hf hg ⊢
+  have hmul : (f * g) ∘ (chartAt ℂ x).symm =
+      (f ∘ (chartAt ℂ x).symm) * (g ∘ (chartAt ℂ x).symm) := by
+    funext z
+    rfl
+  rw [hmul]
+  exact hf.mul hg
+
+omit [IsManifold 𝓘(ℂ) 1 X] in
+/-- The order of a product of meromorphic functions on a Riemann surface is the sum of their
+orders. -/
+@[to_fun]
+theorem meromorphicOrderAt_mul (hf : MeromorphicAt f x) (hg : MeromorphicAt g x) :
+    meromorphicOrderAt (f * g) x =
+      meromorphicOrderAt f x + meromorphicOrderAt g x := by
+  rw [meromorphicAt_def] at hf hg
+  have hmul : (f * g) ∘ (chartAt ℂ x).symm =
+      (f ∘ (chartAt ℂ x).symm) * (g ∘ (chartAt ℂ x).symm) := by
+    funext z
+    rfl
+  simp only [meromorphicOrderAt_def, hmul]
+  exact _root_.meromorphicOrderAt_mul hf hg
+
+end Multiplicative
+
+end Arithmetic
 
 end TauCeti.RiemannSurface
