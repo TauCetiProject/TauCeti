@@ -206,45 +206,69 @@ open NormalizedCubicalChain
 
 section Carrier
 
-/-- The **DG right module of cubical chains** of a space `Y` with a right action of `G`:
-`⨁ n, C^□_n(Y; R)`, acted on by the chains of `G`.  It is a type synonym of
-`normalizedCubicalChainAlgebra Y R`, recording the acting monoid `G`.  It is exposed so that
-linear maps out of it can be built from its homogeneous parts. -/
-@[expose, nolint unusedArguments]
-def cubicalChainModule (Y : Type*) [TopologicalSpace Y] (_G : Type*) (R : Type*) [CommRing R] :
-    Type _ :=
-  normalizedCubicalChainAlgebra Y R
+/-- The **DG right module of cubical chains** of a space `Y` with a right action of `G`: the direct
+sum `⨁ n, C^□_n(Y; R)`, acted on by the chains of `G`.  It is a one-field wrapper around
+`normalizedCubicalChainAlgebra Y R` rather than that type itself: for `Y = G` acting on itself the
+algebra already acts on itself, and the wrapper keeps the two actions apart.  The monoid `G` is a
+phantom parameter, recording which action is meant. -/
+structure cubicalChainModule (Y : Type*) [TopologicalSpace Y] (_G : Type*) (R : Type*)
+    [CommRing R] where
+  /-- The element of the module given by a chain of the direct sum. -/
+  ofSum ::
+  /-- The underlying chain of the direct sum. -/
+  toSum : normalizedCubicalChainAlgebra Y R
 
 variable (Y G : Type*) [TopologicalSpace Y] (R : Type*) [CommRing R]
 
 instance : AddCommGroup (cubicalChainModule Y G R) :=
-  inferInstanceAs (AddCommGroup (normalizedCubicalChainAlgebra Y R))
+  fast_instance% (⟨cubicalChainModule.toSum, cubicalChainModule.ofSum, fun _ ↦ rfl, fun _ ↦ rfl⟩ :
+    cubicalChainModule Y G R ≃ normalizedCubicalChainAlgebra Y R).addCommGroup
 
 instance : Module R (cubicalChainModule Y G R) :=
-  inferInstanceAs (Module R (normalizedCubicalChainAlgebra Y R))
+  (⟨⟨cubicalChainModule.toSum, cubicalChainModule.ofSum, fun _ ↦ rfl, fun _ ↦ rfl⟩,
+    fun _ _ ↦ rfl⟩ : cubicalChainModule Y G R ≃+ normalizedCubicalChainAlgebra Y R).module R
+
+/-- The module is linearly equivalent to the direct sum of the normalized cubical chains. -/
+def cubicalChainModuleEquiv : cubicalChainModule Y G R ≃ₗ[R] normalizedCubicalChainAlgebra Y R where
+  toFun := cubicalChainModule.toSum
+  invFun := cubicalChainModule.ofSum
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  left_inv _ := rfl
+  right_inv _ := rfl
 
 /-- The inclusion of the chains of dimension `n` into the module. -/
 def cubicalChainModuleLof (n : ℕ) :
     NormalizedCubicalChain Y R n →ₗ[R] cubicalChainModule Y G R :=
-  cubicalChainLof Y R n
+  (cubicalChainModuleEquiv Y G R).symm.toLinearMap ∘ₗ cubicalChainLof Y R n
 
 /-- The grading of the module, with `C^□_n` in cohomological degree `-n`. -/
 def cubicalChainModuleGrading (i : ℤ) : Submodule R (cubicalChainModule Y G R) :=
-  cubicalChainGrading Y R i
-
-instance : DirectSum.Decomposition (cubicalChainModuleGrading Y G R) :=
-  inferInstanceAs (DirectSum.Decomposition (cubicalChainGrading Y R))
+  (cubicalChainGrading Y R i).comap (cubicalChainModuleEquiv Y G R).toLinearMap
 
 /-- The differential of the module: the boundary. -/
 def cubicalChainModuleDifferential : cubicalChainModule Y G R →ₗ[R] cubicalChainModule Y G R :=
-  cubicalChainDifferential Y R
+  (cubicalChainModuleEquiv Y G R).symm.toLinearMap ∘ₗ cubicalChainDifferential Y R ∘ₗ
+    (cubicalChainModuleEquiv Y G R).toLinearMap
 
 variable {Y G R}
 
+/-- The linear map out of the module given by linear maps out of its homogeneous parts. -/
+def cubicalChainModuleDesc {N : Type*} [AddCommMonoid N] [Module R N]
+    (φ : ∀ n, NormalizedCubicalChain Y R n →ₗ[R] N) : cubicalChainModule Y G R →ₗ[R] N :=
+  DirectSum.toModule R ℕ N φ ∘ₗ (cubicalChainModuleEquiv Y G R).toLinearMap
+
+/-- The equivalence with the direct sum sends a homogeneous chain to itself. -/
+@[simp]
+theorem cubicalChainModuleEquiv_lof {n : ℕ} (c : NormalizedCubicalChain Y R n) :
+    cubicalChainModuleEquiv Y G R (cubicalChainModuleLof Y G R n c) = cubicalChainLof Y R n c :=
+  (rfl)
+
 /-- Reindexing a chain does not change its image in the module. -/
 theorem cubicalChainModuleLof_cast {n m : ℕ} (h : n = m) (x : NormalizedCubicalChain Y R n) :
-    cubicalChainModuleLof Y G R m (cast R h x) = cubicalChainModuleLof Y G R n x :=
-  cubicalChainLof_cast Y R h x
+    cubicalChainModuleLof Y G R m (cast R h x) = cubicalChainModuleLof Y G R n x := by
+  rw [cubicalChainModuleLof, LinearMap.comp_apply, cubicalChainLof_cast]
+  rfl
 
 /-- Induction on the module: a property holds for every element once it holds for `0`, for the
 homogeneous chains and is closed under sums. -/
@@ -252,14 +276,12 @@ homogeneous chains and is closed under sums. -/
 theorem cubicalChainModule.induction_on {motive : cubicalChainModule Y G R → Prop}
     (m : cubicalChainModule Y G R) (zero : motive 0)
     (lof : ∀ (n : ℕ) (c : NormalizedCubicalChain Y R n), motive (cubicalChainModuleLof Y G R n c))
-    (add : ∀ m m', motive m → motive m' → motive (m + m')) : motive m :=
-  DirectSum.induction_on (β := fun n ↦ NormalizedCubicalChain Y R n) (motive := motive) m zero
-    (fun n c ↦ lof n c) add
-
-/-- The linear map out of the module given by linear maps out of its homogeneous parts. -/
-def cubicalChainModuleDesc {N : Type*} [AddCommMonoid N] [Module R N]
-    (φ : ∀ n, NormalizedCubicalChain Y R n →ₗ[R] N) : cubicalChainModule Y G R →ₗ[R] N :=
-  DirectSum.toModule R ℕ N φ
+    (add : ∀ m m', motive m → motive m' → motive (m + m')) : motive m := by
+  obtain ⟨s⟩ := m
+  induction s using DirectSum.induction_on with
+  | zero => exact zero
+  | of n c => exact lof n c
+  | add a b ha hb => exact add _ _ ha hb
 
 /-- The linear map given by homogeneous parts, on a homogeneous chain. -/
 @[simp]
@@ -273,32 +295,75 @@ theorem cubicalChainModule_linearMap_ext {N : Type*} [AddCommMonoid N] [Module R
     {f g : cubicalChainModule Y G R →ₗ[R] N}
     (h : ∀ (n : ℕ) (c : NormalizedCubicalChain Y R n),
       f (cubicalChainModuleLof Y G R n c) = g (cubicalChainModuleLof Y G R n c)) : f = g :=
-  DirectSum.linearMap_ext R fun n ↦ LinearMap.ext (h n)
+  LinearMap.ext fun m ↦ by
+    induction m using cubicalChainModule.induction_on with
+    | zero => rw [map_zero, map_zero]
+    | lof n c => exact h n c
+    | add m m' hm hm' => rw [map_add, map_add, hm, hm']
 
 /-- Membership in a graded piece of the module: zero, or a chain of dimension `-i`. -/
 theorem mem_cubicalChainModuleGrading_iff {i : ℤ} {m : cubicalChainModule Y G R} :
     m ∈ cubicalChainModuleGrading Y G R i ↔
       m = 0 ∨ ∃ (n : ℕ) (c : NormalizedCubicalChain Y R n), (n : ℤ) = -i ∧
-        cubicalChainModuleLof Y G R n c = m :=
-  mem_cubicalChainGrading_iff Y R
+        cubicalChainModuleLof Y G R n c = m := by
+  rw [cubicalChainModuleGrading, Submodule.mem_comap, LinearEquiv.coe_coe,
+    mem_cubicalChainGrading_iff, ← (cubicalChainModuleEquiv Y G R).map_eq_zero_iff]
+  refine or_congr Iff.rfl (exists_congr fun n ↦ exists_congr fun c ↦ and_congr Iff.rfl ?_)
+  rw [← cubicalChainModuleEquiv_lof (G := G), (cubicalChainModuleEquiv Y G R).injective.eq_iff]
+
+/-- A chain of dimension `n` lies in cohomological degree `-n`. -/
+theorem cubicalChainModuleLof_mem {n : ℕ} (c : NormalizedCubicalChain Y R n) :
+    cubicalChainModuleLof Y G R n c ∈ cubicalChainModuleGrading Y G R (-(n : ℤ)) :=
+  mem_cubicalChainModuleGrading_iff.2 (Or.inr ⟨n, c, by simp, rfl⟩)
+
+variable (Y G R) in
+/-- The decomposition of the module along its grading. -/
+def cubicalChainModuleDecompose :
+    cubicalChainModule Y G R →ₗ[R] ⨁ i : ℤ, cubicalChainModuleGrading Y G R i :=
+  cubicalChainModuleDesc (G := G) fun n ↦
+    (DirectSum.lof R ℤ (fun i ↦ cubicalChainModuleGrading Y G R i) (-(n : ℤ))).comp
+      ((cubicalChainModuleLof Y G R n).codRestrict _ cubicalChainModuleLof_mem)
+
+instance : DirectSum.Decomposition (cubicalChainModuleGrading Y G R) :=
+  DirectSum.Decomposition.ofLinearMap _ (cubicalChainModuleDecompose Y G R)
+    (cubicalChainModule_linearMap_ext fun n c ↦ by
+      simp [cubicalChainModuleDecompose])
+    (DirectSum.linearMap_ext R fun i ↦ LinearMap.ext fun x ↦ by
+      obtain ⟨x, hx⟩ := x
+      rcases mem_cubicalChainModuleGrading_iff.1 hx with rfl | ⟨n, c, hn, rfl⟩
+      · simp only [LinearMap.comp_apply, DirectSum.coeLinearMap_lof, map_zero,
+          LinearMap.id_apply]
+        exact (map_zero (DirectSum.lof R ℤ (fun i ↦ cubicalChainModuleGrading Y G R i) i)).symm
+      · obtain rfl : i = -(n : ℤ) := by omega
+        simp [cubicalChainModuleDecompose]
+        rfl)
 
 /-- The differential vanishes on `0`-chains. -/
 @[simp]
 theorem cubicalChainModuleDifferential_lof_zero (c : NormalizedCubicalChain Y R 0) :
-    cubicalChainModuleDifferential Y G R (cubicalChainModuleLof Y G R 0 c) = 0 :=
-  cubicalChainDifferential_lof_zero Y R c
+    cubicalChainModuleDifferential Y G R (cubicalChainModuleLof Y G R 0 c) = 0 := by
+  simp [cubicalChainModuleDifferential]
 
 /-- The differential on `(k + 1)`-chains is the boundary. -/
 @[simp]
 theorem cubicalChainModuleDifferential_lof_succ (k : ℕ) (c : NormalizedCubicalChain Y R (k + 1)) :
     cubicalChainModuleDifferential Y G R (cubicalChainModuleLof Y G R (k + 1) c) =
-      cubicalChainModuleLof Y G R k (boundary Y R k c) :=
-  cubicalChainDifferential_lof_succ Y R k c
+      cubicalChainModuleLof Y G R k (boundary Y R k c) := by
+  simp [cubicalChainModuleDifferential, cubicalChainModuleLof]
+
+/-- The differential of the module is the boundary, read through the equivalence with the direct
+sum. -/
+theorem cubicalChainModuleEquiv_differential (m : cubicalChainModule Y G R) :
+    cubicalChainModuleEquiv Y G R (cubicalChainModuleDifferential Y G R m) =
+      cubicalChainDifferential Y R (cubicalChainModuleEquiv Y G R m) := by
+  simp [cubicalChainModuleDifferential]
 
 /-- The sign `(-1) ^ (-n)` acts on the module as `(-1) ^ n ∈ R`. -/
 theorem negOnePow_neg_natCast_smul_cubicalChainModule (n : ℕ) (m : cubicalChainModule Y G R) :
     (-(n : ℤ)).negOnePow • m = (-1 : R) ^ n • m :=
-  negOnePow_neg_natCast_smul Y R n m
+  (cubicalChainModuleEquiv Y G R).injective (by
+    rw [map_zsmul_unit, map_smul]
+    exact negOnePow_neg_natCast_smul Y R n _)
 
 end Carrier
 
@@ -318,7 +383,7 @@ def cubicalChainActLof (p q : ℕ) :
 def cubicalChainActBilin :
     cubicalChainModule Y G R →ₗ[R] normalizedCubicalChainAlgebra G R →ₗ[R]
       cubicalChainModule Y G R :=
-  DirectSum.toModule R ℕ _ fun p ↦
+  cubicalChainModuleDesc fun p ↦
     (DirectSum.toModule R ℕ (NormalizedCubicalChain Y R p →ₗ[R] cubicalChainModule Y G R)
       fun q ↦ (cubicalChainActLof Y G R p q).flip).flip
 
@@ -331,9 +396,8 @@ theorem cubicalChainActBilin_lof_lof {p q : ℕ} (c : NormalizedCubicalChain Y R
     (a : NormalizedCubicalChain G R q) :
     cubicalChainActBilin Y G R (cubicalChainModuleLof Y G R p c) (cubicalChainLof G R q a) =
       cubicalChainModuleLof Y G R (p + q) (act Y G R p q c a) := by
-  rw [cubicalChainActBilin]
-  erw [DirectSum.toModule_lof]
-  rw [LinearMap.flip_apply, DirectSum.toModule_lof]
+  rw [cubicalChainActBilin, cubicalChainModuleDesc_lof, LinearMap.flip_apply,
+    DirectSum.toModule_lof]
   rfl
 
 omit [ContinuousMul G] in
@@ -474,9 +538,14 @@ differential graded right module** over the DG algebra of cubical chains of `G`.
 theorem cubicalChainModule_isDGRightModule :
     IsDGRightModule (cubicalChain_isDGAlgebra G R) (cubicalChainModuleGrading Y G R)
       (cubicalChainModuleDifferential Y G R) where
-  isHomogeneous :=
-    LinearMap.isHomogeneous_def.mpr fun _ _ hx ↦ cubicalChainDifferential_mem Y R hx
-  sq_zero := cubicalChainDifferential_cubicalChainDifferential Y R
+  isHomogeneous := LinearMap.isHomogeneous_def.mpr fun i x hx ↦ by
+    change cubicalChainModuleEquiv Y G R (cubicalChainModuleDifferential Y G R x) ∈
+      cubicalChainGrading Y R (i + 1)
+    rw [cubicalChainModuleEquiv_differential]
+    exact cubicalChainDifferential_mem Y R hx
+  sq_zero x := (cubicalChainModuleEquiv Y G R).injective (by
+    rw [cubicalChainModuleEquiv_differential, cubicalChainModuleEquiv_differential,
+      cubicalChainDifferential_cubicalChainDifferential, map_zero])
   leibniz := fun {q} {x} hx a ↦ by
     rcases mem_cubicalChainModuleGrading_iff.1 hx with rfl | ⟨m, c, hm, rfl⟩
     · simp
@@ -513,7 +582,7 @@ variable {Y Y' Y'' : Type u} {G : Type*} [TopologicalSpace Y] [TopologicalSpace 
 dimension. -/
 def cubicalChainModuleLinearMap (f : C(Y, Y')) :
     cubicalChainModule Y G R →ₗ[R] cubicalChainModule Y' G R :=
-  DirectSum.lmap fun n ↦ map R f n
+  cubicalChainModuleDesc fun n ↦ (cubicalChainModuleLof Y' G R n).comp (map R f n)
 
 variable {R}
 
@@ -524,7 +593,7 @@ omit [Monoid G] [TopologicalSpace G] [ContinuousMul G] [MulAction Gᵐᵒᵖ Y]
 theorem cubicalChainModuleLinearMap_lof (f : C(Y, Y')) {n : ℕ} (c : NormalizedCubicalChain Y R n) :
     cubicalChainModuleLinearMap (G := G) R f (cubicalChainModuleLof Y G R n c) =
       cubicalChainModuleLof Y' G R n (map R f n c) :=
-  DirectSum.lmap_of _ n c
+  cubicalChainModuleDesc_lof _ c
 
 /-- The induced map of an equivariant map commutes with the action. -/
 theorem cubicalChainModuleLinearMap_op_smul (f : C(Y, Y'))
