@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.Subspace
-public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.Congruence
+public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.Projection
 import TauCeti.Data.ZMod.Divisibility
 
 /-!
@@ -215,17 +215,7 @@ cusp forms of the same nebentypus, in weight at least three. -/
 theorem disjoint_eisensteinSubspace_range_cuspToModFormCharSpace (hk : 3 ≤ (k : ℤ)) :
     Disjoint (eisensteinSubspace χ hk)
       (LinearMap.range (cuspToModFormCharSpace (k : ℤ) χ)) := by
-  rw [Submodule.disjoint_def]
-  intro f hfE hfS
-  apply Subtype.ext
-  have hfCE := eisensteinSubspace_le_congruenceEisensteinSubspace χ hk hfE
-  have hfC : (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) (k : ℤ)) ∈
-      cuspFormSubmodule ((Gamma1 N).map (mapGL ℝ)) (k : ℤ) := by
-    obtain ⟨g, hg⟩ := hfS
-    rw [← hg, coe_cuspToModFormCharSpace]
-    exact CuspForm.isCuspForm_toModularFormₗ g.1
-  exact (Submodule.disjoint_def.mp
-    (disjoint_congruenceEisensteinSubspace_cuspFormSubmodule (Gamma_le_Gamma1 N) hk)) _
-      hfCE hfC
+  exact (isCompl_congruenceEisensteinSubspace_charSpace_range_cuspToModFormCharSpace
+    hk χ).disjoint.mono_left (eisensteinSubspace_le_congruenceEisensteinSubspace χ hk)
 
 end TauCeti

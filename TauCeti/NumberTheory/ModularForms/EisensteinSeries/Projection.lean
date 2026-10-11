@@ -24,10 +24,11 @@ primitive-character Eisenstein series is a separate spanning statement.
 
 ## Main results
 
-* `congruenceEisensteinProjection`: projection to the congruence Eisenstein subspace.
+* `congruenceEisensteinProjection`: projection to the congruence Eisenstein subspace, with
+  range, kernel and idempotence characterizations.
 * `constantTerms_congruenceEisensteinProjection`: projection preserves all cusp constant terms.
 * `congruenceEisensteinProjection_eq_iff_constantTerms_eq`: its constant-term characterization.
-* `congruenceEisensteinProjection_commute_diamondOp`: diamond equivariance.
+* `congruenceEisensteinProjection_diamondOp`: pointwise equivariance under diamond operators.
 * `isCompl_congruenceEisensteinSubspace_charSpace_range_cuspToModFormCharSpace`: the
   complementary decomposition with fixed nebentypus.
 
@@ -60,6 +61,28 @@ theorem congruenceEisensteinProjection_def (hΓ : Gamma N ≤ Γ) (hk : 3 ≤ k)
       (congruenceEisensteinSubspace hΓ hk).projection
         (cuspFormSubmodule (Γ.map (mapGL ℝ)) k)
         (isCompl_congruenceEisensteinSubspace_cuspFormSubmodule hΓ hk) := (rfl)
+
+/-- The range of the Eisenstein projection is the congruence Eisenstein subspace. -/
+@[simp]
+theorem range_congruenceEisensteinProjection (hΓ : Gamma N ≤ Γ) (hk : 3 ≤ k) :
+    LinearMap.range (congruenceEisensteinProjection hΓ hk) =
+      congruenceEisensteinSubspace hΓ hk := by
+  rw [congruenceEisensteinProjection_def]
+  exact Submodule.range_projection _
+
+/-- The kernel of the Eisenstein projection is the cusp-form submodule. -/
+@[simp]
+theorem ker_congruenceEisensteinProjection (hΓ : Gamma N ≤ Γ) (hk : 3 ≤ k) :
+    LinearMap.ker (congruenceEisensteinProjection hΓ hk) =
+      cuspFormSubmodule (Γ.map (mapGL ℝ)) k := by
+  rw [congruenceEisensteinProjection_def]
+  exact Submodule.ker_projection _
+
+/-- The Eisenstein projection is an idempotent endomorphism. -/
+theorem isIdempotentElem_congruenceEisensteinProjection (hΓ : Gamma N ≤ Γ) (hk : 3 ≤ k) :
+    IsIdempotentElem (congruenceEisensteinProjection hΓ hk) := by
+  rw [congruenceEisensteinProjection_def]
+  exact Submodule.isIdempotentElem_projection _
 
 /-- The Eisenstein component belongs to the congruence Eisenstein subspace. -/
 @[simp]
@@ -144,39 +167,32 @@ theorem diamondOp_mem_congruenceEisensteinSubspace (hk : 3 ≤ k) (d : (ZMod N)�
     {f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k}
     (hf : f ∈ congruenceEisensteinSubspace (Gamma_le_Gamma1 N) hk) :
     diamondOp k d f ∈ congruenceEisensteinSubspace (Gamma_le_Gamma1 N) hk := by
-  classical
   obtain ⟨g, hg⟩ := Gamma0Map_toHomUnits_surjective (N := N) d
-  obtain ⟨c, hc⟩ := (mem_primitiveEisensteinSubspace_iff hk _).mp
-    ((mem_congruenceEisensteinSubspace_iff (Gamma_le_Gamma1 N) hk f).mp hf)
-  have hcoe : ⇑f = ∑ a, c a • eisensteinSeries a k := by
-    simpa only [FunLike.coe_sum, FunLike.coe_smul, coe_eisensteinSeriesMF,
-      ModularForm.coe_ofLe] using (congrArg DFunLike.coe hc).symm
-  have hsum : ModularForm.ofLe (Subgroup.map_mono (Gamma_le_Gamma1 N)) (diamondOp k d f) =
-      ∑ a, c a • eisensteinSeriesMF hk
-        (a ᵥ* SpecialLinearGroup.map (Int.castRingHom (ZMod N)) (g : SL(2, ℤ))) := by
+  let T : Module.End ℂ (ModularForm ((Gamma N).map (mapGL ℝ)) k) :=
+    (ModularForm.ofLeₗ (Gamma_map_inv_conjAct_eq N (g : SL(2, ℤ))).ge).comp
+      (ModularForm.translateₗ (mapGL ℝ (g : SL(2, ℤ))) (by simp))
+  have hle : primitiveEisensteinSubspace N hk ≤ (primitiveEisensteinSubspace N hk).comap T := by
+    apply primitiveEisensteinSubspace_le hk
+    intro a
+    rw [Submodule.mem_comap]
+    dsimp only [T]
+    rw [translateₗ_eisensteinSeriesMF]
+    exact mem_primitiveEisensteinSubspace hk _
+  have hrestriction : ModularForm.ofLe (Subgroup.map_mono (Gamma_le_Gamma1 N))
+      (diamondOp k d f) = T (ModularForm.ofLe (Subgroup.map_mono (Gamma_le_Gamma1 N)) f) := by
     apply DFunLike.coe_injective
-    rw [ModularForm.coe_ofLe, coe_diamondOp k d g hg, hcoe, SlashAction.sum_slash]
-    simp only [FunLike.coe_sum, FunLike.coe_smul, coe_eisensteinSeriesMF,
-      ModularForm.smul_slash, σ_mapGL_real_eq_refl,
-      ContinuousAlgEquiv.refl_apply]
-    congr 1
-    ext a z
-    have hslash : eisensteinSeries a k ∣[k] mapGL ℝ (g : SL(2, ℤ)) =
-        eisensteinSeries a k ∣[k] (g : SL(2, ℤ)) :=
-      (ModularForm.SL_slash (eisensteinSeries a k) (g : SL(2, ℤ))).symm
-    exact congrFun (congrArg (fun F : UpperHalfPlane → ℂ ↦ c a • F)
-      (hslash.trans (eisensteinSeries_slash_apply a k (g : SL(2, ℤ))))) z
-  rw [mem_congruenceEisensteinSubspace_iff, hsum]
-  exact Submodule.sum_mem _ fun a _ ↦ Submodule.smul_mem _ _
-    (mem_primitiveEisensteinSubspace hk _)
+    simp only [T, LinearMap.comp_apply, ModularForm.ofLeₗ_apply, ModularForm.coe_ofLe,
+      ModularForm.translateₗ_apply, ModularForm.coe_translate]
+    exact coe_diamondOp k d g hg f
+  rw [mem_congruenceEisensteinSubspace_iff, hrestriction]
+  exact hle ((mem_congruenceEisensteinSubspace_iff (Gamma_le_Gamma1 N) hk f).mp hf)
 
 /-- The Eisenstein projection on `Γ₁(N)` commutes with every diamond operator. -/
 theorem congruenceEisensteinProjection_commute_diamondOp (hk : 3 ≤ k) (d : (ZMod N)ˣ) :
     Commute (congruenceEisensteinProjection (Gamma_le_Gamma1 N) hk) (diamondOp k d) := by
-  rw [congruenceEisensteinProjection_def]
   apply (LinearMap.IsIdempotentElem.commute_iff
-    (Submodule.isIdempotentElem_projection _)).mpr
-  rw [Submodule.range_projection, Submodule.ker_projection]
+    (isIdempotentElem_congruenceEisensteinProjection (Gamma_le_Gamma1 N) hk)).mpr
+  rw [range_congruenceEisensteinProjection, ker_congruenceEisensteinProjection]
   constructor
   · exact (Module.End.mem_invtSubmodule_iff_forall_mem_of_mem _).mpr
       (fun f hf ↦ diamondOp_mem_congruenceEisensteinSubspace hk d hf)
@@ -184,6 +200,14 @@ theorem congruenceEisensteinProjection_commute_diamondOp (hk : 3 ≤ k) (d : (ZM
     rintro f ⟨s, rfl⟩
     rw [CuspForm.toModularFormₗ_eq_coe, diamondOp_coe_cuspForm]
     exact CuspForm.isCuspForm_toModularFormₗ _
+
+/-- Projecting the diamond translate of a form agrees with translating its Eisenstein
+component. -/
+theorem congruenceEisensteinProjection_diamondOp (hk : 3 ≤ k) (d : (ZMod N)ˣ)
+    (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) :
+    congruenceEisensteinProjection (Gamma_le_Gamma1 N) hk (diamondOp k d f) =
+      diamondOp k d (congruenceEisensteinProjection (Gamma_le_Gamma1 N) hk f) := by
+  exact LinearMap.congr_fun (congruenceEisensteinProjection_commute_diamondOp hk d).eq f
 
 /-- The Eisenstein component preserves the prescribed nebentypus of a modular form. -/
 theorem congruenceEisensteinProjection_mem_modFormCharSpace (hk : 3 ≤ k)
@@ -193,11 +217,8 @@ theorem congruenceEisensteinProjection_mem_modFormCharSpace (hk : 3 ≤ k)
   rw [mem_modFormCharSpace_iff]
   intro d
   rw [diamondOpHom_apply]
-  have hc := (congruenceEisensteinProjection_commute_diamondOp hk d).eq
-  have h := LinearMap.congr_fun hc f
-  rw [Module.End.mul_apply, Module.End.mul_apply,
-    diamondOp_apply_of_mem_modFormCharSpace k χ d hf, map_smul] at h
-  exact h.symm
+  rw [← congruenceEisensteinProjection_diamondOp,
+    diamondOp_apply_of_mem_modFormCharSpace k χ d hf, map_smul]
 
 /-- In weight at least three, the restriction of the congruence Eisenstein subspace to a
 nebentypus space is complementary to the cusp forms of that same nebentypus. -/
