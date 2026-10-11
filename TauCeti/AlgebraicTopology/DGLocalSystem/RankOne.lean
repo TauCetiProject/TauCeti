@@ -64,6 +64,23 @@ namespace TauCeti
 
 universe uM
 
+section Generic
+
+variable {R A B M : Type*} [CommRing R] [Ring A] [Ring B] [Algebra R A] [Algebra R B]
+  {𝒜 : ℤ → Submodule R A} {ℬ : ℤ → Submodule R B} [GradedAlgebra 𝒜] [GradedAlgebra ℬ]
+  {dA : A →ₗ[R] A} {dB : B →ₗ[R] B} {hA : IsDGAlgebra 𝒜 dA} {hB : IsDGAlgebra ℬ dB}
+  [AddCommGroup M] [Module R M] [Module Bᵐᵒᵖ M]
+  {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
+  [SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece ℳ]
+
+/-- The restricted action of a DG algebra morphism respects degrees, as a named statement. -/
+theorem gradedSMul_restrictScalarsGrading (f : DGAlgHom hA hB) :
+    SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece
+      (IsDGRightModule.restrictScalarsGrading (ℳ := ℳ) f) :=
+  inferInstance
+
+end Generic
+
 variable (B : Type*) [TopologicalSpace B] (b : B) (R : Type*) [CommRing R]
 
 /-- A **rank-one local system** on the pointed space `(B, b)`: a character of the Moore loops at
@@ -195,14 +212,14 @@ variable {M : Type uM} [AddCommGroup M] [Module R M] [Module (loopChainAlgebra B
   {dM : M →ₗ[R] M}
 
 /- The generic instance for a restricted grading needs the `Algebra` structure of the chain algebra
-of the loop space while unifying, one pending-synthesis level deeper than the default allows. -/
-set_option maxSynthPendingDepth 2 in
+of the loop space while unifying, one pending-synthesis level deeper than instance search reaches,
+so it is supplied from `gradedSMul_restrictScalarsGrading`. -/
 /-- The action of `C_*(Ω_b B)` on a module restricted along `Φ^L` respects degrees. -/
 instance (f : DGAlgHom (loopChain_isDGAlgebra B b R) (loopChain_isDGAlgebra B b R)) :
     SetLike.GradedSMul
       (InternalGrading.ofDecomposition (cubicalChainGrading (MooreLoopSpace B b) R)).opposite.piece
       (IsDGRightModule.restrictScalarsGrading (ℳ := ℳ) f) :=
-  inferInstance
+  gradedSMul_restrictScalarsGrading f
 
 /-- **The twisted complex of `𝓕 ⊗ L`** with a twisting cocycle `m` is isomorphic to the twisted
 complex of `𝓕` with the twisted cocycle `m^L` (the source's Proposition `prop:FotimesL-mL`).
