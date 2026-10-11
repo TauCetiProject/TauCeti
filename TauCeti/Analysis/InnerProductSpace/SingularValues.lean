@@ -50,6 +50,9 @@ that `uᵢ = 0` when `σᵢ = 0`. The singular relations hold at every index, wh
 of `A` run over the whole basis without splitting off the kernel.
 
 * `LinearMap.adjoint_comp_self_rightSingularBasis`: `A† A vᵢ = σᵢ² vᵢ`.
+* `LinearMap.singularValues_mul_norm_le_norm_apply`,
+  `LinearMap.norm_apply_le_singularValues_mul_norm`: `σₙ ‖x‖ ≤ ‖A x‖` on the span of the `vᵢ`
+  with `i ≤ n`, and `‖A x‖ ≤ σₙ ‖x‖` on the span of the `vᵢ` with `n ≤ i`.
 * `LinearMap.apply_rightSingularBasis`: `A vᵢ = σᵢ uᵢ`.
 * `LinearMap.adjoint_leftSingularVector`: `A† uᵢ = σᵢ vᵢ`.
 * `LinearMap.self_comp_adjoint_leftSingularVector`: `A A† uᵢ = σᵢ² uᵢ`.
@@ -250,6 +253,30 @@ vanishes. -/
 theorem apply_rightSingularBasis_eq_zero_iff {i : Fin (finrank 𝕜 E)} :
     A (A.rightSingularBasis i) = 0 ↔ A.singularValues i = 0 := by
   rw [← norm_eq_zero, norm_apply_rightSingularBasis]
+
+/-- On the span of the right singular vectors `vᵢ` with `i ≤ n`, `A` stretches every vector by at
+least the `n`-th singular value: `σₙ ‖x‖ ≤ ‖A x‖`. -/
+theorem singularValues_mul_norm_le_norm_apply {n : ℕ} {x : E}
+    (hx : x ∈ A.rightSingularBasis.spanIndices {i | (i : ℕ) ≤ n}) :
+    A.singularValues n * ‖x‖ ≤ ‖A x‖ := by
+  have h := A.isSymmetric_adjoint_comp_self.le_re_inner_of_eigenbasis A.rightSingularBasis
+    A.adjoint_comp_self_rightSingularBasis (c := A.singularValues n ^ 2)
+    (fun i hi ↦ pow_le_pow_left₀ (A.singularValues_nonneg n) (A.singularValues_antitone hi) 2) hx
+  rw [comp_apply, adjoint_inner_left, inner_self_eq_norm_sq, ← mul_pow] at h
+  exact (pow_le_pow_iff_left₀ (mul_nonneg (A.singularValues_nonneg n) (norm_nonneg x))
+    (norm_nonneg _) two_ne_zero).mp h
+
+/-- On the span of the right singular vectors `vᵢ` with `n ≤ i`, `A` stretches every vector by at
+most the `n`-th singular value: `‖A x‖ ≤ σₙ ‖x‖`. -/
+theorem norm_apply_le_singularValues_mul_norm {n : ℕ} {x : E}
+    (hx : x ∈ A.rightSingularBasis.spanIndices {i | n ≤ (i : ℕ)}) :
+    ‖A x‖ ≤ A.singularValues n * ‖x‖ := by
+  have h := A.isSymmetric_adjoint_comp_self.re_inner_le_of_eigenbasis A.rightSingularBasis
+    A.adjoint_comp_self_rightSingularBasis (c := A.singularValues n ^ 2)
+    (fun i hi ↦ pow_le_pow_left₀ (A.singularValues_nonneg _) (A.singularValues_antitone hi) 2) hx
+  rw [comp_apply, adjoint_inner_left, inner_self_eq_norm_sq, ← mul_pow] at h
+  exact (pow_le_pow_iff_left₀ (norm_nonneg _)
+    (mul_nonneg (A.singularValues_nonneg n) (norm_nonneg x)) two_ne_zero).mp h
 
 /-- A right singular vector with singular value zero lies in the kernel, so `A vᵢ` is fixed by
 the scalar `σᵢ⁻² σᵢ²` (with total field inversion) even when `σᵢ = 0`. -/
