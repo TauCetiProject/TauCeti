@@ -76,10 +76,10 @@ the cut norm along that coupling is at most the sum of the two input cut norms. 
 private theorem exists_isCoupling_cutNorm_overlayDiff_le_of_glue
     (U : Graphon Ω₁ μ₁) (W : Graphon Ω₂ μ₂) (X : Graphon Ω₃ μ₃)
     {π₁₂ : Measure (Ω₁ × Ω₂)} {π₂₃ : Measure (Ω₂ × Ω₃)}
-    (hπ₁₂ : IsCoupling μ₁ μ₂ π₁₂) (hπ₂₃ : IsCoupling μ₂ μ₃ π₂₃)
+    (hπ₁₂ : IsCoupling π₁₂ μ₁ μ₂) (hπ₂₃ : IsCoupling π₂₃ μ₂ μ₃)
     {γ : Measure (Ω₁ × Ω₂ × Ω₃)}
     (hleft : γ.map (Prod.map id Prod.fst) = π₁₂) (hright : γ.snd = π₂₃) :
-    ∃ (π₁₃ : Measure (Ω₁ × Ω₃)) (hπ₁₃ : IsCoupling μ₁ μ₃ π₁₃),
+    ∃ (π₁₃ : Measure (Ω₁ × Ω₃)) (hπ₁₃ : IsCoupling π₁₃ μ₁ μ₃),
       @cutNorm _ _ π₁₃ hπ₁₃.isFiniteMeasure (overlayDiff U X π₁₃) ≤
         @cutNorm _ _ π₁₂ hπ₁₂.isFiniteMeasure (overlayDiff U W π₁₂) +
           @cutNorm _ _ π₂₃ hπ₂₃.isFiniteMeasure (overlayDiff W X π₂₃) := by
@@ -90,8 +90,8 @@ private theorem exists_isCoupling_cutNorm_overlayDiff_le_of_glue
   let _ : IsProbabilityMeasure γ :=
     Measure.isProbabilityMeasure_of_map (measurable_id.prodMap measurable_fst).aemeasurable
   let π₁₃ : Measure (Ω₁ × Ω₃) := γ.map (Prod.map id Prod.snd)
-  have hπ₁₃ : IsCoupling μ₁ μ₃ π₁₃ := isCoupling_iff.2
-    <| ⟨(TauCeti.Measure.fst_map_prodMap_id_snd hleft).trans hπ₁₂.fst_eq,
+  have hπ₁₃ : IsCoupling π₁₃ μ₁ μ₃ :=
+    ⟨(TauCeti.Measure.fst_map_prodMap_id_snd hleft).trans hπ₁₂.fst_eq,
       (TauCeti.Measure.snd_map_prodMap_id_snd hright).trans hπ₂₃.snd_eq⟩
   let _ := hπ₁₃.isProbabilityMeasure
   have hmp12 : MeasurePreserving (fun p : Ω₁ × Ω₂ × Ω₃ => (p.1, p.2.1)) γ π₁₂ :=

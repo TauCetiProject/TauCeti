@@ -34,12 +34,7 @@ namespace TauCeti.NumberField
 variable {K : Type*} [Field K] [NumberField K]
 
 -- Source. Both declarations are recovered from the retired PR #5538, at commit
--- 70421db267d9bd6252256f873d27e99e739a931c. They are specified by the Chebotarev roadmap:
--- `TauCetiRoadmap/Chebotarev/README.md` §7.2 step 1 asks that `ℚ(ζ_q)/ℚ`, being totally ramified
--- at `q`, have "every subfield of `ℚ(ζ_q)` other than `ℚ` ramified at `q`" — which is
--- `Ideal.finrank_eq_one_of_ramificationIdx_eq_finrank` with `E` that subfield, and the bound
--- `Ideal.ramificationIdx_le_finrank_of_numberField` is what makes the ramification index reach the
--- degree there.
+-- 70421db267d9bd6252256f873d27e99e739a931c.
 
 /-- **A relative ramification index is at most the degree of the extension.** For a prime `𝔔` of
 `𝓞 F` in an extension `F / K` of number fields, `e(𝔔 / 𝓞 K) ≤ [F : K]`.

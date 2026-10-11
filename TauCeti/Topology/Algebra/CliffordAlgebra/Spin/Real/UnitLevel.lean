@@ -20,6 +20,8 @@ two.
 
 ## Main declarations
 
+* `CliffordAlgebra.realCliffordUnitLevelAntipode` is negation on the compact unit level and is
+  equivariant for the Spin action.
 * `CliffordAlgebra.realCliffordUnitLevelHomeomorphSubtype` identifies the action carrier with the
   same unit level viewed as a raw quadratic-form subtype.
 * `CliffordAlgebra.realCliffordUnitLevelHomeomorphSphere` identifies the unit level with the
@@ -36,6 +38,47 @@ namespace CliffordAlgebra
 open Metric TauCeti
 
 noncomputable section
+
+/-- The antipode of a point in the compact real Clifford unit level. -/
+def realCliffordUnitLevelAntipode {n : ℕ} (x : realCliffordUnitLevel n) :
+    realCliffordUnitLevel n :=
+  ⟨-x, by
+    apply (mem_realCliffordUnitLevel n _).2
+    rw [QuadraticMap.map_neg]
+    exact (mem_realCliffordUnitLevel n _).1 x.2⟩
+
+/-- The compact real Clifford unit-level antipode is negation on the underlying vector. -/
+@[simp]
+theorem coe_realCliffordUnitLevelAntipode {n : ℕ} (x : realCliffordUnitLevel n) :
+    (realCliffordUnitLevelAntipode x : Fin n → ℝ) = -x :=
+  (rfl)
+
+/-- The compact real Clifford unit-level antipode is an involution. -/
+@[simp]
+theorem realCliffordUnitLevelAntipode_antipode {n : ℕ} (x : realCliffordUnitLevel n) :
+    realCliffordUnitLevelAntipode (realCliffordUnitLevelAntipode x) = x := by
+  apply Subtype.ext
+  simp only [coe_realCliffordUnitLevelAntipode, neg_neg]
+
+/-- A point of the compact real Clifford unit level differs from its antipode. -/
+@[simp]
+theorem ne_realCliffordUnitLevelAntipode {n : ℕ} (x : realCliffordUnitLevel n) :
+    x ≠ realCliffordUnitLevelAntipode x := by
+  intro h
+  have hx : (x : Fin n → ℝ) = -x := congrArg Subtype.val h
+  have hx0 : (x : Fin n → ℝ) = 0 := self_eq_neg.mp hx
+  have hxone := (mem_realCliffordUnitLevel n _).1 x.2
+  rw [hx0, map_zero] at hxone
+  exact zero_ne_one hxone
+
+/-- The compact Spin action commutes with the unit-level antipode. -/
+@[simp]
+theorem smul_realCliffordUnitLevelAntipode {n : ℕ} (g : realCliffordSpinGroupZero n)
+    (x : realCliffordUnitLevel n) :
+    g • realCliffordUnitLevelAntipode x = realCliffordUnitLevelAntipode (g • x) := by
+  apply Subtype.ext
+  simp only [SubMulAction.val_smul, spinGroup_smul_apply,
+    coe_realCliffordUnitLevelAntipode, map_neg]
 
 /-- The compact real Spin unit level is homeomorphic to the Euclidean unit sphere. -/
 def realCliffordUnitLevelHomeomorphSphere (n : ℕ) :

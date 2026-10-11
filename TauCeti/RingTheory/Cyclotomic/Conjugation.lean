@@ -39,9 +39,8 @@ Burnside--Dixon--Schneider character-table solver.
 
 ## References
 
-This supplies the exact conjugation needed by Layer 6, “The assembled solver”, of the character
-theory roadmap: the exact checker must verify the Hermitian row-orthogonality relation in
-`Cyclotomic e` before embedding its output into `ℂ`.
+* I. M. Isaacs, *Character Theory of Finite Groups*, Chapter 2, Corollary 2.14 and Lemma 2.15(d),
+  for row orthogonality and complex conjugation of character values.
 -/
 
 public section
@@ -151,7 +150,7 @@ theorem reduce_star (p : ℕ) (r : ZMod p)
     (hr : (Polynomial.cyclotomic e ℤ).eval₂ (Int.castRingHom (ZMod p)) r = 0)
     (x : Cyclotomic e) :
     reduce p r (star x) = reduce p (r ^ (e - 1)) x := by
-  rw [reduce, evalCoeffs_eq_eval₂, ← evalRingHom_apply _ _ hr, evalRingHom_star, reduce]
+  rw [reduce, ← evalRingHom_eq_evalCoeffs _ _ hr, evalRingHom_star, reduce]
 
 /-! The exact operation reduces in the kernel. -/
 

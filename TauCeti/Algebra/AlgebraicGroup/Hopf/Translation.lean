@@ -140,6 +140,13 @@ theorem rightTranslationAlgEquiv_toAlgHom (g : WithConv (H →ₐ[k] k)) :
     (rightTranslationAlgEquiv g).toAlgHom = rightTranslationAlgHom g :=
   AlgEquiv.toAlgHom_ofBijective _ _
 
+/-- The coordinate map of right translation is convolution of the universal point
+with the constant translating point. -/
+theorem toConv_rightTranslationAlgEquiv (g : WithConv (H →ₐ[k] k)) :
+    WithConv.toConv (rightTranslationAlgEquiv g).toAlgHom =
+      WithConv.toConv (AlgHom.id k H) * AlgHom.mapValue (Algebra.ofId k H) g := by
+  rw [rightTranslationAlgEquiv_toAlgHom, rightTranslationAlgHom, AlgHom.mapValue_apply]
+
 private theorem rightTranslationAlgEquiv_toLinearEquiv
     (g : WithConv (H →ₐ[k] k)) :
     (rightTranslationAlgEquiv g).toLinearEquiv = rightTranslationLinearEquiv g := by

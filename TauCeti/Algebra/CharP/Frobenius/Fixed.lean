@@ -47,9 +47,9 @@ and the subfield ones about an arbitrary field of exponential characteristic `p`
 
 ## References
 
-This is a prerequisite of the "points over an algebraically closed field, functorially in the
-field" target of Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`, whose first requested
-field endomorphism is the `q`-power Frobenius.
+Mathlib's `Mathlib/Algebra/CharP/Frobenius.lean` supplies the Frobenius endomorphisms and their
+iteration and naturality laws. The fixed subring and subfield use Mathlib's `RingHom.eqLocus` and
+`RingHom.eqLocusField` equalizer constructions.
 -/
 
 public section

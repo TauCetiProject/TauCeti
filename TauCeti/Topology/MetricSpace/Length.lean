@@ -217,6 +217,38 @@ theorem IsGeodesicSegment.lipschitzOnWith (h : IsGeodesicSegment γ x y) :
   LipschitzOnWith.of_dist_le_mul fun s hs t ht => by
     rw [h.dist_eq s hs t ht, Real.coe_toNNReal _ dist_nonneg, Real.dist_eq, mul_comm]
 
+/-- The point at time `t` of a geodesic segment from `x` to `y` is at distance `t * dist x y`
+from `x`. -/
+theorem IsGeodesicSegment.dist_source_apply (h : IsGeodesicSegment γ x y) {t : ℝ}
+    (ht : t ∈ Icc (0 : ℝ) 1) : dist x (γ t) = t * dist x y := by
+  have := h.dist_eq 0 (left_mem_Icc.2 zero_le_one) t ht
+  rwa [h.source, zero_sub, abs_neg, abs_of_nonneg ht.1] at this
+
+/-- The point at time `t` of a geodesic segment from `x` to `y` is at distance
+`(1 - t) * dist x y` from `y`. -/
+theorem IsGeodesicSegment.dist_apply_target (h : IsGeodesicSegment γ x y) {t : ℝ}
+    (ht : t ∈ Icc (0 : ℝ) 1) : dist (γ t) y = (1 - t) * dist x y := by
+  have := h.dist_eq t ht 1 (right_mem_Icc.2 zero_le_one)
+  rwa [h.target, abs_sub_comm, abs_of_nonneg (sub_nonneg.2 ht.2)] at this
+
+open Filter Topology in
+/-- A geodesic segment between two points at positive distance leaves its source immediately: as
+`t → 0⁺`, its point at time `t` tends to `x` without being `x`. -/
+theorem IsGeodesicSegment.tendsto_nhdsGT_zero (h : IsGeodesicSegment γ x y)
+    (hxy : 0 < dist x y) : Tendsto γ (𝓝[>] 0) (𝓝[≠] x) := by
+  have hmem : ∀ᶠ t in 𝓝[>] (0 : ℝ), t ∈ Ioo (0 : ℝ) 1 := Ioo_mem_nhdsGT one_pos
+  refine tendsto_nhdsWithin_iff.2 ⟨tendsto_iff_dist_tendsto_zero.2 ?_, ?_⟩
+  · have h0 : Tendsto (fun t : ℝ ↦ t * dist x y) (𝓝[>] 0) (𝓝 0) := by
+      simpa using (Continuous.tendsto (f := fun t : ℝ ↦ t * dist x y) (by fun_prop) 0).mono_left
+        (nhdsWithin_le_nhds (a := (0 : ℝ)) (s := Ioi 0))
+    refine h0.congr' ?_
+    filter_upwards [hmem] with t ht
+    rw [dist_comm (γ t) x, h.dist_source_apply ⟨ht.1.le, ht.2.le⟩]
+  · filter_upwards [hmem] with t ht (hγt : γ t = x)
+    have := h.dist_source_apply ⟨ht.1.le, ht.2.le⟩
+    rw [hγt, dist_self] at this
+    exact (mul_pos ht.1 hxy).ne' this.symm
+
 theorem IsGeodesicSegment.continuousOn (h : IsGeodesicSegment γ x y) :
     ContinuousOn γ (Icc 0 1) :=
   h.lipschitzOnWith.continuousOn

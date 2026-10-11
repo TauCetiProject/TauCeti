@@ -202,12 +202,7 @@ type. -/
 instance locallyOfFiniteType_groupScheme :
     AlgebraicGeometry.LocallyOfFiniteType (groupScheme R n).X.hom := by
   unfold groupScheme
-  exact FiniteTypeCommHopfAlgCat.locallyOfFiniteType_quotientSpec
-    (⟨GeneralLinear.coordinateHopfAlgebra R n, by
-        rw [← GeneralLinear.finiteTypeCoordinateHopfAlgebra_obj]
-        exact (GeneralLinear.finiteTypeCoordinateHopfAlgebra R n).property⟩ :
-      FiniteTypeCommHopfAlgCat R)
-    (definingHopfIdeal R n)
+  infer_instance
 
 /-! ### Algebra-valued points -/
 
@@ -222,7 +217,7 @@ variable {A : Type w} [CommRing A] [Algebra R A]
 
 /-- An ambient point belongs to the subgroup cut out by the special orthogonal Hopf ideal
 exactly when its matrix is orthogonal of determinant one. -/
-@[simp]
+@[simp↓]
 theorem mem_definingPointsSubgroup_iff
     (g : HopfAlgebra.points (R := R)
       (H := GeneralLinear.coordinateHopfAlgebra R n) (CommAlgCat.of R A)) :

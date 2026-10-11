@@ -201,7 +201,6 @@ theorem e8Plumbing_isNegativeDefinite : e8Plumbing.IsNegativeDefinite := by
   intro x hx
   have hid := e8Plumbing_neg_intersectionForm x
   by_contra hneg
-  have hform : 0 ≤ e8Plumbing.intersectionForm x x := le_of_not_gt hneg
   have hR : ∑ i, e8SquareTerm x i = 0 := by
     have : 0 ≤ ∑ i, e8SquareTerm x i :=
       Finset.sum_nonneg fun i _ => e8SquareTerm_nonneg x i

@@ -47,6 +47,8 @@ of coefficients.
   product over the pairs of coefficients of a diagonalization.
 * `QuadraticForm.isAdmissible_globalInvariants_iff`: the system is admissible exactly when the rank
   is positive and the Hasse product is one.
+* `TauCeti.NumberField.QuadraticForm.globalInvariants_weightedSumSquares_one_self_neg`: the system
+  of `⟨1, a, -a⟩` does not depend on `a`.
 
 ## References
 
@@ -204,3 +206,53 @@ theorem globalInvariants_eq {Q : _root_.QuadraticForm K V} {R : _root_.Quadratic
     exact funext h.realPositiveIndex_eq
 
 end QuadraticMap.Equivalent
+
+section OneSelfNeg
+
+open QuadraticMap
+
+namespace TauCeti.NumberField.QuadraticForm
+
+/-- **The local invariants of `⟨1⟩ ⊥ ⟨a, -a⟩`.** Over a number field the system of local
+invariants of `⟨1, a, -a⟩` does not depend on `a`: rank `3`, discriminant the class of `-1`,
+trivial Hasse sign at every finite place, and positive index `2` at every real place. -/
+theorem globalInvariants_weightedSumSquares_one_self_neg {K : Type*} [Field K] [NumberField K]
+    (a : Kˣ) (h : (weightedSumSquares K ![1, (a : K), -(a : K)]).Nondegenerate) :
+    _root_.QuadraticForm.globalInvariants (weightedSumSquares K ![1, (a : K), -(a : K)]) h =
+      { rank := 3, discr := squareClass (-1), finiteHasse := 1,
+        realPositiveIndex := fun _ => 2 } := by
+  have he : (weightedSumSquares K ![1, (a : K), -(a : K)]).Equivalent
+      (weightedSumSquares K fun i => ((![1, a, -a] : Fin 3 → Kˣ) i : K)) := by
+    have hcoeff : (fun i => ((![1, a, -a] : Fin 3 → Kˣ) i : K)) = ![1, (a : K), -(a : K)] := by
+      funext i
+      fin_cases i <;> simp
+    rw [hcoeff]
+  refine GlobalFormInvariants.ext ?_ ?_ ?_ ?_
+  · simp
+  · rw [_root_.QuadraticForm.globalInvariants_discr, discr_formClass _ _ ⟨3, ![1, a, -a]⟩
+      (by rwa [presentedForm_eq_weightedSumSquares_coe]), Fin.prod_univ_three,
+      squareClass_eq_iff_isSquare_mul]
+    exact ⟨a, by simp⟩
+  · funext v
+    have hneg : v.unitAtFinitePlace (-a) = -v.unitAtFinitePlace a := Units.ext (by simp)
+    rw [_root_.QuadraticForm.globalInvariants_finiteHasse,
+      _root_.QuadraticForm.finiteHasse_eq_prod_hilbertSymbol _ _ he v]
+    simp [Fin.prod_univ_three, show Finset.Ioi (1 : Fin 3) = {2} by decide,
+      show Finset.Ioi (2 : Fin 3) = ∅ by decide, hneg]
+  · funext w
+    rw [_root_.QuadraticForm.globalInvariants_realPositiveIndex,
+      _root_.QuadraticForm.realPositiveIndex_weightedSumSquares]
+    dsimp only
+    -- Exactly one of `a` and `-a` is positive at `w`.
+    rcases (map_ne_zero (InfinitePlace.embedding_of_isReal w.2)).mpr a.ne_zero |>.lt_or_gt with
+      ha | ha
+    · convert Set.ncard_pair (a := (0 : Fin 3)) (b := 2) (by decide)
+      ext i
+      fin_cases i <;> simp [ha, ha.not_gt]
+    · convert Set.ncard_pair (a := (0 : Fin 3)) (b := 1) (by decide)
+      ext i
+      fin_cases i <;> simp [ha, ha.not_gt]
+
+end TauCeti.NumberField.QuadraticForm
+
+end OneSelfNeg

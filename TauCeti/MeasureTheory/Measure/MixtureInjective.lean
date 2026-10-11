@@ -80,8 +80,8 @@ private theorem lintegral_prod_pow_eq_of_bind_eq
   -- index the repeated family by `Σ j, Fin (m j)`, transported to `Fin n`
   set S := Σ j : Fin k, Fin (m j) with hS
   have hcard : Fintype.card S = ∑ j, m j := by simp [hS]
-  set e : S ≃ Fin (∑ j, m j) := Fintype.equivFinOfCardEq hcard with he
-  set B' : Fin (∑ j, m j) → Set α := fun i => B (e.symm i).1 with hB'
+  set e : S ≃ Fin (∑ j, m j) := Fintype.equivFinOfCardEq hcard
+  set B' : Fin (∑ j, m j) → Set α := fun i => B (e.symm i).1
   have hB'm : ∀ i, MeasurableSet (B' i) := fun i => hB _
   have hprod : ∀ P : ProbabilityMeasure α,
       ∏ i, (P : Measure α) (B' i) = ∏ j, ((P : Measure α) (B j)) ^ m j := by

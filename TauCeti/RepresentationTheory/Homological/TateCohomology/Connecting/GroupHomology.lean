@@ -196,7 +196,7 @@ theorem HNegOneπ_comp_toGroupHomology (M : Rep R G) :
       (congrArg (· ≫ _) (toExtendChainsApp_f M 0)).trans (Iso.inv_hom_id _)
     rw [e₁]
     exact (congrArg (_ ≫ ·) (Category.comp_id _)).trans (HNegOneCyclesIso_inv_comp_iCycles M)
-  rw [HNegOneπ_eq_cyclesIso_inv_comp_homologyπ]
+  rw [HNegOneπ_eq_HNegOneCyclesIso_inv_comp_homologyπ]
   exact (Category.assoc _ _ _).trans key
 
 /-- The comparison with group homology is natural in the coefficient representation. -/

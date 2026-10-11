@@ -23,6 +23,8 @@ a given half-plane or its closure is an interval
 their closures are convex: they contain the segment between any two of their points
 (`geodesicSegment_subset_rightHalfPlane`, …, `geodesicSegment_subset_closure_leftHalfPlane`).
 Convexity is what makes the triangles and polygons bounded by such half-planes convex.
+An interior point of an interval in a closed half-plane lies in the open half-plane unless the
+supporting lines coincide (`geodesicLine_mem_leftHalfPlane_of_mem_closure`).
 
 Source: Walkden, *Hyperbolic geometry* (MATH32051 lecture notes, Manchester 2019), §7.1 (the
 segment `[z, w]`) and Solution 14.1 (half-planes are convex); Katok, *Fuchsian groups,
@@ -102,6 +104,23 @@ theorem isClosed_geodesicSegment (z w : ℍ) : IsClosed (geodesicSegment z w) :=
 end UpperHalfPlane
 
 namespace TauCeti.UpperHalfPlane
+
+/-- The segment between two points of a unit-speed geodesic is the image of the interval
+between their parameters. The parameters may be given in either order. -/
+@[simp]
+theorem geodesicSegment_geodesicLine {g : PSL(2, ℝ)} {s t : ℝ} :
+    geodesicSegment (geodesicLine g s) (geodesicLine g t) = geodesicLine g '' uIcc s t := by
+  wlog hst : s ≤ t generalizing s t
+  · rw [← geodesicSegment_comm, uIcc_comm]
+    exact this (s := t) (t := s) (le_of_not_ge hst)
+  rcases hst.eq_or_lt with rfl | hst
+  · simp
+  rw [geodesicSegment_def, geodesicBetween_geodesicLine_of_lt g hst,
+    dist_geodesicLine, abs_sub_comm, abs_of_pos (sub_pos.mpr hst), uIcc_of_le hst.le]
+  have h : geodesicLine (g * ↑(Matrix.SpecialLinearGroup.dilation s)) =
+      geodesicLine g ∘ (fun u ↦ s + u) :=
+    funext (geodesicLine_mul_dilation g s)
+  rw [h, image_comp, image_const_add_Icc, add_zero, add_sub_cancel]
 
 /-- Segments transform naturally under the action. -/
 @[simp]
@@ -194,6 +213,37 @@ theorem ordConnected_preimage_geodesicLine_closure_leftHalfPlane (g k : PSL(2, �
     (geodesicLine g ⁻¹' closure (leftHalfPlane k)).OrdConnected := by
   simpa only [preimage, mem_closure_leftHalfPlane_iff, smul_geodesicLine, mem_Iic] using
     ordConnected_preimage_re_geodesicLine (k⁻¹ * g) ordConnected_Iic
+
+/-- An interior point of a geodesic interval in a closed half-plane is strictly in that
+half-plane unless the two supporting geodesic lines coincide. -/
+theorem geodesicLine_mem_leftHalfPlane_of_mem_closure {g k : PSL(2, ℝ)} {s u t : ℝ}
+    (hsu : s < u) (hut : u < t)
+    (hs : geodesicLine g s ∈ closure (leftHalfPlane k))
+    (ht : geodesicLine g t ∈ closure (leftHalfPlane k))
+    (hne : Set.range (geodesicLine g) ≠ Set.range (geodesicLine k)) :
+    geodesicLine g u ∈ leftHalfPlane k := by
+  have hu : geodesicLine g u ∈ closure (leftHalfPlane k) :=
+    (ordConnected_preimage_geodesicLine_closure_leftHalfPlane g k).out hs ht ⟨hsu.le, hut.le⟩
+  rw [mem_closure_leftHalfPlane_iff] at hs ht hu
+  rw [mem_leftHalfPlane_iff]
+  by_contra h
+  have hu0 := le_antisymm hu (le_of_not_gt h)
+  -- A second common point would identify the supporting lines. Monotonicity forces such
+  -- a point if the interior parameter lies on the boundary.
+  have unique {v : ℝ} (hvu : v ≠ u) (hv : (k⁻¹ • geodesicLine g v : ℍ).re = 0) : False := by
+    have hvk := (mem_range_geodesicLine_iff k _).2 hv
+    have huk := (mem_range_geodesicLine_iff k _).2 hu0
+    have hpoints := (geodesicLine_injective g).ne hvu
+    exact hne ((range_geodesicLine_geodesicBetween_of_mem
+      (g := g) ⟨v, rfl⟩ ⟨u, rfl⟩ hpoints).symm.trans
+      (range_geodesicLine_geodesicBetween_of_mem hvk huk hpoints))
+  rcases monotone_re_geodesicLine_or_antitone (k⁻¹ * g) with hm | hm
+  · have hle := hm hut.le
+    simp only [← smul_geodesicLine] at hle
+    exact unique hut.ne' (le_antisymm ht (hu0 ▸ hle))
+  · have hle := hm hsu.le
+    simp only [← smul_geodesicLine] at hle
+    exact unique hsu.ne (le_antisymm hs (hu0 ▸ hle))
 
 /-! ### Half-planes are convex -/
 

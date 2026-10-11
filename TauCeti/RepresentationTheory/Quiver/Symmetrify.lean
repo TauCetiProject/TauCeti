@@ -12,16 +12,16 @@ public import Mathlib.Data.Fintype.Sum
 /-!
 # Symmetrified quivers
 
-This file supplies general infrastructure for Mathlib's `Quiver.Symmetrify` construction.
+Mathlib's `Quiver.Symmetrify` doubles a quiver by adjoining a formal reverse to every arrow,
+with the same vertices as the original quiver. This file transfers finiteness and decidable
+equality to the doubled vertex type, supplies finite arrow types from those of the original
+quiver, and records that the inclusion is bijective on vertices. These facts let path-algebra
+constructions on the doubled quiver reuse the original finite vertex and arrow data.
 
 ## Main results
 
 * `TauCeti.symmetrify_of_obj`: the doubling inclusion is the identity on vertices.
-
-## References
-
-This file supplies a prerequisite for Layer 4 of
-`TauCetiRoadmap/ZigzagPreprojective/README.md`.
+* `TauCeti.symmetrify_of_obj_bijective`: the doubling inclusion is bijective on vertices.
 -/
 
 public section
@@ -50,6 +50,15 @@ instance instFintypeSymmetrifyHom (Q : Type u) [Quiver.{v} Q] [∀ i j : Q, Fint
     (x y : Symmetrify Q) : Fintype (x ⟶ y) :=
   inferInstanceAs (Fintype (((show Q from x) ⟶ (show Q from y)) ⊕
     ((show Q from y) ⟶ (show Q from x))))
+
+/-- The arrows of the doubled quiver from `i` to `j` are the arrows of `Q` from `i` to `j` together
+with the formal reverses of the arrows of `Q` from `j` to `i`. -/
+theorem card_symmetrify_hom (Q : Type u) [Quiver.{v} Q] [∀ i j : Q, Fintype (i ⟶ j)] (i j : Q) :
+    Fintype.card (Symmetrify.of.obj i ⟶ Symmetrify.of.obj j) =
+      Fintype.card (i ⟶ j) + Fintype.card (j ⟶ i) :=
+  -- Mathlib defines the arrows of `Symmetrify Q` as this sum, and `instFintypeSymmetrifyHom`
+  -- is the sum instance.
+  Fintype.card_sum (α := i ⟶ j) (β := j ⟶ i)
 
 /-- The inclusion `Quiver.Symmetrify.of` of a quiver in its doubled quiver is the identity on
 vertices.  Deliberately not a `simp` lemma: the two vertex types are definitionally equal, so

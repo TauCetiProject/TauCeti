@@ -45,6 +45,8 @@ the normalized adic place of the maximal ideal `(X - x, Y - y)`.
   exactly when `x` has no pole there.
 * `TauCeti.Place.eq_infinity_or_existsUnique_eq_ofPrime`: every place is either the place at
   infinity or the place of a unique height-one prime of the coordinate ring.
+* `TauCeti.Place.valuation_algebraMap_le_one_of_ne_infinity`: the coordinate ring is regular at
+  every place other than the place at infinity, for an arbitrary Weierstrass curve.
 * `TauCeti.Place.exists_one_lt_valuation_algebraMap_iff_eq_infinity`: a place is infinite on the
   coordinate ring exactly when it is the place at infinity.
 * `TauCeti.Place.degree_infinity`: the place at infinity has degree one.
@@ -167,6 +169,15 @@ theorem eq_infinity_or_existsUnique_eq_ofPrime [IsDedekindDomain W.CoordinateRin
     obtain ⟨𝔭, h𝔭⟩ := (exists_eq_ofPrime_iff_valuation_X_le_one P).mpr hx
     refine ⟨𝔭, h𝔭, fun 𝔮 h𝔮 ↦ ?_⟩
     exact ofPrime_injective F W.FunctionField (h𝔮.trans h𝔭.symm)
+
+/-- **A function of the coordinate ring is regular at every place other than the place at
+infinity**: `x` has a pole only at infinity, and the coordinate ring is integral over the
+polynomials in `x`. No hypothesis on `W` is needed. -/
+theorem valuation_algebraMap_le_one_of_ne_infinity {Q : Place F W.FunctionField}
+    (hQ : Q ≠ infinity W) (r : W.CoordinateRing) :
+    Q.valuation (algebraMap W.CoordinateRing W.FunctionField r) ≤ 1 :=
+  Q.valuation.algebraMap_coordinateRing_le_one (le_of_not_gt fun hx ↦
+    hQ (Q.eq_of_isEquiv (W.isEquiv_infinityPlace_of_one_lt (v := Q.valuation) hx))) r
 
 /-- **A place is infinite on the coordinate ring exactly when it is the place at infinity.** -/
 -- Forwards, a place that is not the place at infinity is the place of a height-one prime, and

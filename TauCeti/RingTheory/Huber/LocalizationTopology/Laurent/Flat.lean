@@ -9,7 +9,6 @@ public import TauCeti.RingTheory.Huber.LocalizationTopology.Quotient
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Laurent.Presentation
 public import TauCeti.RingTheory.Huber.Restricted.Laurent
 public import TauCeti.RingTheory.Huber.StronglyNoetherian
-public import TauCeti.Topology.Algebra.Nonarchimedean.Completion.RingHom
 
 import TauCeti.RingTheory.Huber.ClosedSubmodule
 import TauCeti.RingTheory.Huber.LocalizationTopology.Iterated

@@ -270,12 +270,12 @@ theorem relatorEval_explicitCup11 (r : R) (a b : H1 G (ZMod p)) :
     rw [cocyclesMap1_apply, hef, AddSubgroup.coe_subtype, coe_descendZ1_apply_mk, hpull, hφf]
   have hpair : ∀ (m x : FixedPoints.addSubgroup R (ZMod p)),
       (FixedPoints.addSubgroup R (ZMod p)).subtype
-          (fixedPointsPairing R AddMonoidHom.mul
+          (Subgroup.fixedPointsPairing R AddMonoidHom.mul
             (fun n ↦ smul_mul_smul_of_smul_eq_self htrivF (n : freeProP p X)) m x) =
         AddMonoidHom.mul ((FixedPoints.addSubgroup R (ZMod p)).subtype m)
           ((FixedPoints.addSubgroup R (ZMod p)).subtype x) := fun m x ↦ by
     simp only [AddSubgroup.coe_subtype]
-    exact coe_fixedPointsPairing R AddMonoidHom.mul _ m x
+    exact Subgroup.coe_fixedPointsPairing R AddMonoidHom.mul _ m x
   -- The transgression formula, read on `G`.
   have key : explicitCup11 G (ZMod p) (ZMod p) (ZMod p) AddMonoidHom.mul continuous_mul
       (smul_mul_smul_of_smul_eq_self htriv) (c : H1 G (ZMod p)) (d : H1 G (ZMod p)) =

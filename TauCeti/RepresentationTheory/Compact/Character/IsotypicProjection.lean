@@ -68,6 +68,8 @@ Daniel Bump, *Lie Groups*, second edition, Chapter 2, and T. Bröcker and T. tom
 
 public section
 
+open _root_.ContRepresentation
+
 open MeasureTheory TauCeti TauCeti.ContRepresentation
 open scoped InnerProductSpace MonoidAlgebra
 
@@ -242,7 +244,7 @@ theorem isotypicProjector_apply_subtype_of_equiv (hunitary : IsUnitary rho)
   let rhoTau := subrepresentation rho tau.toSubmodule hTauInv
   let hTau : Continuous rhoTau := continuous_subrepresentation hrho
   have hTauRep : rhoTau.toRepresentation = tau.toRepresentation :=
-    toRepresentation_subrepresentation_toSubmodule tau hTauInv
+    tau.toRepresentation_subrepresentation_toSubmodule
   have hirrTau : Representation.IsIrreducible rhoTau.toRepresentation := by
     rw [hTauRep]
     exact Representation.isIrreducible_toRepresentation_of_isAtom htau
@@ -327,7 +329,7 @@ private theorem isotypicProjector_apply_subtype_of_not_equiv_of_isUnitary
   let rhoTau := subrepresentation rho tau.toSubmodule hTauInv
   let hTau : Continuous rhoTau := continuous_subrepresentation hrho
   have hTauRep : rhoTau.toRepresentation = tau.toRepresentation :=
-    toRepresentation_subrepresentation_toSubmodule tau hTauInv
+    tau.toRepresentation_subrepresentation_toSubmodule
   have hirrTau : Representation.IsIrreducible rhoTau.toRepresentation := by
     rw [hTauRep]
     exact Representation.isIrreducible_toRepresentation_of_isAtom htau
@@ -370,14 +372,14 @@ theorem isotypicProjector_apply_subtype_of_not_equiv
   obtain ⟨estd⟩ := FiniteDimensional.nonempty_continuousLinearEquiv_of_finrank_eq
     (𝕜 := k) (E := W) (F := EuclideanSpace k (Fin (Module.finrank k W)))
     finrank_euclideanSpace_fin.symm
-  let sigmaStd := TauCeti.ContRepresentation.congr estd sigma
-  let hsigmaStd : Continuous sigmaStd := TauCeti.ContRepresentation.continuous_congr estd hsigma
-  obtain ⟨e, hunitary⟩ := TauCeti.ContRepresentation.exists_isUnitary_congr sigmaStd hsigmaStd
-  let sigma' := TauCeti.ContRepresentation.congr e sigmaStd
-  let hsigma' : Continuous sigma' := TauCeti.ContRepresentation.continuous_congr e hsigmaStd
+  let sigmaStd := ContinuousLinearEquiv.congr estd sigma
+  let hsigmaStd : Continuous sigmaStd := ContinuousLinearEquiv.continuous_congr estd hsigma
+  obtain ⟨e, hunitary⟩ := sigmaStd.exists_isUnitary_congr hsigmaStd
+  let sigma' := ContinuousLinearEquiv.congr e sigmaStd
+  let hsigma' : Continuous sigma' := ContinuousLinearEquiv.continuous_congr e hsigmaStd
   have hirr' : Representation.IsIrreducible sigma'.toRepresentation :=
-    TauCeti.ContRepresentation.isIrreducible_congr e
-      (TauCeti.ContRepresentation.isIrreducible_congr estd hirr)
+    ContinuousLinearEquiv.isIrreducible_congr e
+      (ContinuousLinearEquiv.isIrreducible_congr estd hirr)
   have hequiv : sigma.toRepresentation.Equiv sigma'.toRepresentation :=
     ((ContRepresentation.nonempty_equiv_iff.mp
         ⟨_root_.ContRepresentation.congrEquiv sigma estd⟩).some).trans

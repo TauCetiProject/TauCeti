@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Exact.Functor
-public import TauCeti.CategoryTheory.Exact.Opposite
-public import Mathlib.CategoryTheory.ObjectProperty.Equivalence
 
 /-!
 # The category of conflations
@@ -202,7 +200,7 @@ section Opposite
 
 /-- Taking opposites gives an equivalence from the opposite of the category of conflations to the
 category of conflations of the opposite conflation class. -/
-noncomputable def opEquivalence (E : ConflationClass C) :
+def opEquivalence (E : ConflationClass C) :
     E.ConflationCategoryᵒᵖ ≌ E.op.ConflationCategory :=
   (ObjectProperty.opEquivalence E.Conflation).symm.trans
     ((ShortComplex.opEquiv C).congrFullSubcategory E.op_conflation_inverseImage)
@@ -310,7 +308,7 @@ end Opposite
 section Functor
 
 variable {D : Type u₂} [Category.{v₂} D] [Preadditive D]
-variable {E' : ConflationClass D} {F G : Functor C D}
+variable {E' : ConflationClass D}
 
 /-- A functor preserving zero morphisms and conflations induces a functor between the corresponding
 categories of conflations. -/
@@ -411,7 +409,7 @@ def mapIdIso : map (E := E) (E' := E) (Functor.id C) (fun hS ↦ hS) ≅
     Functor.id E.ConflationCategory := Iso.refl _
 
 /-- The mapped underlying short complex for the identity functor is the original short complex. -/
-theorem mapId_obj_obj (S : E.ConflationCategory) :
+theorem map_id_obj_obj (S : E.ConflationCategory) :
     ((map (E := E) (E' := E) (Functor.id C) (fun hS ↦ hS)).obj S).obj = S.obj := by
   rfl
 
@@ -419,14 +417,14 @@ theorem mapId_obj_obj (S : E.ConflationCategory) :
 @[simp]
 theorem mapIdIso_hom_app_hom (S : E.ConflationCategory) :
     ((mapIdIso (E := E)).hom.app S).hom =
-      eqToHom (mapId_obj_obj S) := by
+      eqToHom (map_id_obj_obj S) := by
   rfl
 
 /-- The inverse component of `mapIdIso` is the reverse equality transport. -/
 @[simp]
 theorem mapIdIso_inv_app_hom (S : E.ConflationCategory) :
     ((mapIdIso (E := E)).inv.app S).hom =
-      eqToHom (mapId_obj_obj S).symm := by
+      eqToHom (map_id_obj_obj S).symm := by
   rfl
 
 /-- Mapping conflations by a composite is naturally isomorphic to mapping successively. -/
@@ -438,7 +436,7 @@ def mapCompIso {K : Type*} [Category* K] [Preadditive K]
     map (F ⋙ H) (fun hS ↦ hH (hF hS)) ≅ map F hF ⋙ map H hH := Iso.refl _
 
 /-- Mapping an underlying short complex by a composite agrees with mapping it successively. -/
-theorem mapComp_obj_obj {K : Type*} [Category* K] [Preadditive K]
+theorem map_comp_obj_obj {K : Type*} [Category* K] [Preadditive K]
     {E'' : ConflationClass K} (F : Functor C D) (H : Functor D K)
     [F.PreservesZeroMorphisms] [H.PreservesZeroMorphisms]
     (hF : ∀ {S : ShortComplex C}, E.Conflation S → E'.Conflation (S.map F))
@@ -457,7 +455,7 @@ theorem mapCompIso_hom_app_hom {K : Type*} [Category* K] [Preadditive K]
     (hF : ∀ {S : ShortComplex C}, E.Conflation S → E'.Conflation (S.map F))
     (hH : ∀ {S : ShortComplex D}, E'.Conflation S → E''.Conflation (S.map H))
     (S : E.ConflationCategory) : ((mapCompIso F H hF hH).hom.app S).hom =
-      eqToHom (mapComp_obj_obj F H hF hH S) := by
+      eqToHom (map_comp_obj_obj F H hF hH S) := by
   rfl
 
 /-- The inverse component of `mapCompIso` is the reverse equality transport. -/
@@ -468,7 +466,7 @@ theorem mapCompIso_inv_app_hom {K : Type*} [Category* K] [Preadditive K]
     (hF : ∀ {S : ShortComplex C}, E.Conflation S → E'.Conflation (S.map F))
     (hH : ∀ {S : ShortComplex D}, E'.Conflation S → E''.Conflation (S.map H))
     (S : E.ConflationCategory) : ((mapCompIso F H hF hH).inv.app S).hom =
-      eqToHom (mapComp_obj_obj F H hF hH S).symm := by
+      eqToHom (map_comp_obj_obj F H hF hH S).symm := by
   rfl
 
 /-- A natural isomorphism between functors preserving conflations induces a natural isomorphism
@@ -608,8 +606,8 @@ abbrev mapIdIso : map (ExactStructure.IsConflationExact.id (E := E)) ≅
 /-- Mapping conflations by a composite is naturally isomorphic to mapping successively. -/
 abbrev mapCompIso {K : Type*} [Category* K] [Preadditive K] [HasZeroObject K]
     [HasBinaryBiproducts K] {E'' : ExactStructure K} {H : D ⥤ K} [F.Additive] [H.Additive]
-    (hF : E.IsConflationExact E' F) (hH : E'.IsConflationExact E'' H)
-    : map (hF.comp hH) ≅ map hF ⋙ map hH :=
+    (hF : E.IsConflationExact E' F) (hH : E'.IsConflationExact E'' H) :
+    map (hF.comp hH) ≅ map hF ⋙ map hH :=
   ConflationClass.ConflationCategory.mapCompIso F H hF.map_conflation hH.map_conflation
 
 /-- A natural isomorphism between conflation-exact functors induces a natural isomorphism between

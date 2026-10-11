@@ -28,11 +28,7 @@ local notation "𝔽₂" => ZMod 2
 local notation "T₄" => MonoidAlgebra 𝔽₂ (SplitTorus.characterGroup (Fin 4))
 local notation "Gₐ" => AdditiveGroup.coordinateHopfAlgebra 𝔽₂
 
-/-- Local adjoint comodule used for the prime-field generator checks. -/
-local instance : Comodule 𝔽₂ (GeneralLinear.coordinateHopfAlgebra 𝔽₂ 26)
-    f4ShortRootCotangentDual :=
-  Derivation.adjointComodule
-    (R := 𝔽₂) (H := GeneralLinear.coordinateHopfAlgebra 𝔽₂ 26)
+attribute [local instance] f4ShortRootCotangentAdjointComodule
 
 /-- The weight-torus member of the prime-field generating family acts block triangularly on the
 adapted represented flag. -/

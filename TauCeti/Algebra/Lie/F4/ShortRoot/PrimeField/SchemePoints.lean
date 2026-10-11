@@ -60,7 +60,7 @@ matrix point under the scheme-point equivalence. -/
   simp only [schemePointsMulEquiv, MulEquiv.trans_apply, MulEquiv.symm_apply_apply]
 
 /-- The inverse comparison presents a matrix point as a quotient-coordinate scheme point. -/
-@[simp] theorem schemePointsMulEquiv_symm_apply (A : Type) [CommRing A] [Algebra 𝔽₂ A]
+theorem schemePointsMulEquiv_symm_apply (A : Type) [CommRing A] [Algebra 𝔽₂ A]
     (g : points A) :
     (schemePointsMulEquiv A).symm g =
       groupSchemePointMulEquiv A ((coordinatePointsEquiv A).symm g) := by
@@ -74,19 +74,11 @@ theorem schemePointsMulEquiv_mapValue {A B : Type} [CommRing A] [CommRing B]
         ((Spec.map (CommRingCat.ofHom φ.toRingHom)).asOver
           (Spec (CommRingCat.of 𝔽₂)) ≫ p) =
       pointsMap φ (schemePointsMulEquiv A p) := by
-  let q : HopfAlgebra.points (H := Q) (CommAlgCat.of 𝔽₂ A) :=
-    (groupSchemePointMulEquiv A).symm p
-  have hpre :
-      (groupSchemePointMulEquiv B).symm
-          ((Spec.map (CommRingCat.ofHom φ.toRingHom)).asOver
-            (Spec (CommRingCat.of 𝔽₂)) ≫ p) =
-        HopfAlgebra.mapPoints (H := Q) (CommAlgCat.ofHom φ) q := by
-    simpa only [q, groupSchemePointMulEquiv] using
-      CommHopfAlgCat.mapMulEquivOfPresentation_mapValue Q φ
-        (GeneralLinear.generatedGroupScheme_def 26 generator) p
-  simp only [schemePointsMulEquiv, MulEquiv.trans_apply]
-  rw [hpre, HopfAlgebra.mapPoints_apply]
-  exact coordinatePointsEquiv_mapPoints φ q
+  unfold schemePointsMulEquiv groupSchemePointMulEquiv
+  exact CommHopfAlgCat.mapMulEquivOfPresentation_symm_trans_mapValue Q φ
+    (GeneralLinear.generatedGroupScheme_def 26 generator) _ _ (pointsMap φ)
+    (fun q ↦ (congrArg _ (AlgHom.mapValue_apply φ q)).trans
+      (coordinatePointsEquiv_mapPoints φ q)) p
 
 /-- A coordinate endomorphism acts on scheme-valued points by precomposition. -/
 theorem groupSchemePointMulEquiv_comp_coordinateMap

@@ -19,6 +19,8 @@ as an equality of subalgebras, and that are needed whenever a structure theorem 
 up to an algebra equivalence, together with the criterion for a commutative algebra to be central
 and the ring of scalars a central subalgebra provides.
 
+* `Subalgebra.map_center_val` identifies the center of a subalgebra with its intersection
+  with its centralizer in the ambient algebra.
 * `TauCeti.centerCongr` transports the center along an algebra equivalence. It is the
   `Subalgebra` counterpart of Mathlib's `Subring.centerCongr`, which sees only the ring
   structure and therefore cannot record `R`-linearity.
@@ -37,6 +39,10 @@ and the ring of scalars a central subalgebra provides.
   `Subalgebra.isScalarTower_centralSubalgebraAlgebra` records that the base ring, the subalgebra
   and the ambient algebra form a scalar tower.
 * `Subalgebra.centerAlgebra` gives the whole center its canonical scalar action by inclusion.
+  `Subalgebra.isScalarTower_centerAlgebra` records compatibility with the original base action,
+  and `Subalgebra.centerAlgebraIsCentral` records that the resulting algebra is central.
+  `Subalgebra.finite_centerAlgebra_of_finite` transfers module finiteness from the original base
+  ring to the center.
   `Subalgebra.finite_over_center_of_finite` transfers module finiteness from a central
   subalgebra to the center. `Subalgebra.finite_center_of_isNoetherian` makes the center finite
   over that subalgebra when the ambient algebra is Noetherian as a module; together with
@@ -49,6 +55,22 @@ public section
 namespace Subalgebra
 
 variable {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+
+/-- The center of a subalgebra, included in the ambient algebra, consists of its elements
+which centralize the whole subalgebra. -/
+@[simp]
+theorem map_center_val (B : Subalgebra R A) :
+    (center R B).map B.val = B ⊓ centralizer R (B : Set A) := by
+  ext x
+  constructor
+  · rintro ⟨z, hz, rfl⟩
+    refine ⟨z.property, (mem_centralizer_iff R).mpr ?_⟩
+    intro b hb
+    exact congrArg Subtype.val ((mem_center_iff.mp hz) ⟨b, hb⟩)
+  · rintro ⟨hx, hcomm⟩
+    refine mem_map.mpr ⟨⟨x, hx⟩, mem_center_iff.mpr ?_, rfl⟩
+    intro b
+    exact Subtype.ext ((mem_centralizer_iff R).mp hcomm b b.property)
 
 /-- The center of an algebra acts on the algebra by its inclusion. -/
 instance centerAlgebra : Algebra (center R A) A :=
@@ -65,6 +87,22 @@ theorem centerAlgebra_algebraMap :
     algebraMap (center R A) A = (center R A).val.toRingHom := by
   ext z
   rfl
+
+/-- The original base ring, the center, and the ambient algebra form a scalar tower for the
+canonical action of the center by inclusion. -/
+theorem isScalarTower_centerAlgebra : IsScalarTower R (center R A) A := by
+  exact IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
+
+/-- Every algebra is central when regarded as an algebra over its full center. -/
+instance centerAlgebraIsCentral : Algebra.IsCentral (center R A) A := by
+  refine ⟨fun x hx ↦ Algebra.mem_bot.mpr ?_⟩
+  exact ⟨⟨x, hx⟩, rfl⟩
+
+/-- An algebra finite as a module over its original base ring remains finite as a module over its
+center. -/
+theorem finite_centerAlgebra_of_finite [Module.Finite R A] : Module.Finite (center R A) A := by
+  let _ : IsScalarTower R (center R A) A := isScalarTower_centerAlgebra
+  exact Module.Finite.of_restrictScalars_finite R (center R A) A
 
 variable (S : Subalgebra R (Subalgebra.center R A))
 
@@ -100,11 +138,7 @@ theorem isScalarTower_centralSubalgebraAlgebra :
 
 section FiniteOverCenter
 
-/-- The local algebra structure on the ambient algebra for the finiteness transfer. -/
-local instance finiteOverCenterAlgebra : Algebra S A := centralSubalgebraAlgebra S
-/-- The local algebra structure on the center for the finiteness transfer. -/
-local instance finiteOverCenterCenterAlgebra : Algebra S (center R A) :=
-  S.val.toRingHom.toAlgebra
+attribute [local instance] centralSubalgebraAlgebra
 
 /-- Finiteness over a central subalgebra implies finiteness over the whole center. -/
 theorem finite_over_center_of_finite [Module.Finite S A] :
@@ -122,11 +156,7 @@ section FiniteOverCentralSubalgebra
 variable {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
   (S : Subalgebra R (center R A))
 
-/-- The local algebra structure on the ambient algebra for the Noetherian transfer. -/
-local instance finiteOverCentralSubalgebraAlgebra : Algebra S A := centralSubalgebraAlgebra S
-/-- The local algebra structure on the center for the Noetherian transfer. -/
-local instance finiteOverCentralSubalgebraCenterAlgebra : Algebra S (center R A) :=
-  S.val.toRingHom.toAlgebra
+attribute [local instance] centralSubalgebraAlgebra
 
 /-- The center, regarded as a submodule over a central subalgebra. -/
 private def centerSubmodule : Submodule S A where
@@ -176,11 +206,7 @@ section NoetherianCenter
 variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A]
   (S : Subalgebra R (center R A))
 
-/-- The local algebra structure on the ambient algebra for the Noetherian-center theorem. -/
-local instance noetherianCenterAlgebra : Algebra S A := centralSubalgebraAlgebra S
-/-- The local algebra structure on the center for the Noetherian-center theorem. -/
-local instance noetherianCenterCenterAlgebra : Algebra S (center R A) :=
-  S.val.toRingHom.toAlgebra
+attribute [local instance] centralSubalgebraAlgebra
 
 /-- A finite algebra over a Noetherian central subalgebra has Noetherian center. -/
 theorem isNoetherianRing_center_of_finite [IsNoetherianRing S] [Module.Finite S A] :
@@ -197,30 +223,10 @@ namespace TauCeti
 
 variable {R A B : Type*} [CommSemiring R] [Semiring A] [Semiring B] [Algebra R A] [Algebra R B]
 
-/-- An algebra equivalence carries the center onto the center. -/
-theorem map_center_eq_center (e : A ≃ₐ[R] B) :
-    (Subalgebra.center R A).map (e : A →ₐ[R] B) = Subalgebra.center R B := by
-  refine le_antisymm ?_ ?_
-  · rintro _ hx
-    obtain ⟨a, ha, rfl⟩ := Subalgebra.mem_map.mp hx
-    rw [Subalgebra.mem_center_iff] at ha ⊢
-    intro b'
-    obtain ⟨a', rfl⟩ := e.surjective b'
-    simp only [AlgEquiv.coe_toAlgHom]
-    rw [← map_mul, ← map_mul, ha a']
-  · intro b hb
-    rw [Subalgebra.mem_center_iff] at hb
-    refine Subalgebra.mem_map.mpr ⟨e.symm b, ?_, e.apply_symm_apply b⟩
-    rw [Subalgebra.mem_center_iff]
-    intro a
-    apply e.injective
-    rw [map_mul, map_mul, e.apply_symm_apply]
-    exact hb (e a)
-
 /-- The center of an algebra, transported along an algebra equivalence. -/
 def centerCongr (e : A ≃ₐ[R] B) :
     Subalgebra.center R A ≃ₐ[R] Subalgebra.center R B :=
-  (e.subalgebraMap _).trans (Subalgebra.equivOfEq _ _ (map_center_eq_center e))
+  (e.subalgebraMap _).trans (Subalgebra.equivOfEq _ _ (Subalgebra.map_center_eq e))
 
 @[simp]
 theorem centerCongr_apply_coe (e : A ≃ₐ[R] B) (x : Subalgebra.center R A) :

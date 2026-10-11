@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.Index
+public import Mathlib.GroupTheory.Perm.Cycle.Basic
 
 /-!
 # Transitive actions
@@ -41,6 +42,8 @@ assumed.
   transitive action of a group with as many elements as the finite set acted on is regular, so
   only the identity fixes a point.
 * `TauCeti.isPretransitive_prod_left`: a product with a subsingleton stays pretransitive.
+* `MonoidHom.isCycleOn_apply_of_zpowers_eq_top`: the image of a generator under a transitive
+  permutation representation of a cyclic group is one cycle on the whole set.
 
 ## Implementation notes
 
@@ -133,6 +136,19 @@ namespace MonoidHom
 open Equiv
 
 variable {G X : Type*} [Group G]
+
+/-- **A generator of a cyclic group acts as one cycle in every transitive permutation
+representation.** If `g` generates `G` and the image of `ρ : G →* Perm X` acts transitively,
+then `ρ g` is a cycle on all of `X`. This includes singleton `X`, where `ρ g` is the identity
+and `IsCycleOn univ` is the appropriate nondegenerate-free formulation. -/
+theorem isCycleOn_apply_of_zpowers_eq_top (ρ : G →* Perm X)
+    (hρ : IsPretransitive ρ.range X) {g : G} (hg : Subgroup.zpowers g = ⊤) :
+    (ρ g).IsCycleOn Set.univ := by
+  refine ⟨(ρ g).bijective.bijOn_univ, fun x _ y _ => ?_⟩
+  obtain ⟨⟨_, a, rfl⟩, ha⟩ := hρ.exists_smul_eq x y
+  obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.mp (hg.symm ▸ Subgroup.mem_top a)
+  have ha' : ρ a x = y := by simpa [Subgroup.smul_def] using ha
+  exact ⟨k, by simpa [← map_zpow, hk] using ha'⟩
 
 /-- **Orbit-stabiliser for a transitive permutation representation** `ρ : G →* Perm X`: the coset
 space of the point stabiliser `ρ⁻¹ (stabilizer x)` is `X`, the coset of `g` corresponding to

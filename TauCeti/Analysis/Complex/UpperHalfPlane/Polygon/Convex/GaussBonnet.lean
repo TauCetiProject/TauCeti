@@ -76,17 +76,19 @@ theorem sum_interiorAngle_eq_of_vertex_zero (h₀ : P.vertex 0 = .inr ∞) :
     rw [sub_eq_iff_eq_add, ← Nat.cast_add_one, Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.2 hk)]
   have hN : N + 3 - 1 = N + 2 := by omega
   have hsum : ∑ i, P.interiorAngle i =
-      ∑ k ∈ Finset.range (N + 3), P.interiorAngle (k : Fin (N + 3)) := by
-    rw [← Fin.sum_univ_eq_sum_range]
-    simp only [Fin.cast_val_eq_self]
-  rw [hsum, Finset.sum_range_eq_sum_Ico_add
+      ∑ k ∈ Finset.Ico 1 (N + 3), P.interiorAngle (k : Fin (N + 3)) := calc
+    _ = ∑ k ∈ Finset.range (N + 3), P.interiorAngle (k : Fin (N + 3)) := by
+      rw [← Fin.sum_univ_eq_sum_range]
+      simp only [Fin.cast_val_eq_self]
+    _ = _ := by
+      rw [Finset.sum_range_eq_add_Ico _ (by omega), Nat.cast_zero,
+        P.interiorAngle_eq_zero_of_vertex_eq_inr h₀, zero_add]
+  rw [hsum, Finset.sum_Ico_eq_sum_Ico_add (m := 1) (n := N + 2) (by omega)
     (β := fun k : ℕ ↦ vertexAngle (P.vertex k) (.inr ∞) (P.vertex (k + 1)))
     (γ := fun k : ℕ ↦ vertexAngle (P.vertex k) (P.vertex (k - 1)) (.inr ∞))]
   · rw [hN]
     refine Finset.sum_congr rfl fun k _ ↦ ?_
     rw [Nat.cast_add_one, add_sub_cancel_right]
-  · rw [Nat.cast_zero]
-    exact P.interiorAngle_eq_zero_of_vertex_eq_inr h₀
   · -- at `vertex 1`, the previous vertex is `∞`
     rw [interiorAngle_def, Nat.cast_one, sub_self, h₀]
   · intro k hk

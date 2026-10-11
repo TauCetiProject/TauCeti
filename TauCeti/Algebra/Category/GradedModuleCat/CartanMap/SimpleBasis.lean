@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Length
-public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.IdempotentCoordinate
-public import TauCeti.CategoryTheory.Simple
+public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Coordinate
+public import TauCeti.Algebra.Category.GradedModuleCat.SimpleFamily
 
 /-!
 # Simple classes in the graded Grothendieck group of finite graded modules
@@ -62,30 +62,6 @@ namespace TauCeti
 open CategoryTheory CategoryTheory.Limits LaurentPolynomial
 
 universe uk uA uI
-
-/-! ### Exhaustive families of graded simples -/
-
-section Exhaustive
-
-variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
-  {𝒜 : ℤ → Submodule k A} {I : Type uI}
-
-/-- A family of finite graded modules is an **exhaustive family of graded simples up to shift** if
-every finite graded module which is a simple object of the graded module category is isomorphic to
-an internal shift `(S i){d}` of a member of the family. -/
-def IsExhaustiveGradedSimpleFamily (S : I → (gradedFiniteModules 𝒜).FullSubcategory) : Prop :=
-  ∀ M : (gradedFiniteModules 𝒜).FullSubcategory, Simple M.obj →
-    ∃ i d, Nonempty (M.obj ≅ (S i).obj.shiftObj d)
-
-/-- Characterization of `IsExhaustiveGradedSimpleFamily`, for importing modules, to which the body
-of the definition is not exposed. -/
-theorem isExhaustiveGradedSimpleFamily_iff (S : I → (gradedFiniteModules 𝒜).FullSubcategory) :
-    IsExhaustiveGradedSimpleFamily S ↔
-      ∀ M : (gradedFiniteModules 𝒜).FullSubcategory, Simple M.obj →
-        ∃ i d, Nonempty (M.obj ≅ (S i).obj.shiftObj d) :=
-  Iff.rfl
-
-end Exhaustive
 
 /-! ### Spanning -/
 
@@ -175,7 +151,7 @@ private theorem laurentK0_of_mem_span (hS : IsExhaustiveGradedSimpleFamily S)
   have : Nontrivial M.obj := Module.nontrivial_of_finrank_pos (by rw [hn]; omega)
   -- A simple module is a shift `Sᵢ{d}`, with class `qᵈ [Sᵢ]`.
   by_cases hs : Simple M.obj
-  · obtain ⟨i, d, ⟨e⟩⟩ := hS M hs
+  · obtain ⟨i, d, ⟨e⟩⟩ := (isExhaustiveGradedSimpleFamily_iff S).mp hS M hs
     rw [LaurentK0.of_congr.{uA} _ (ObjectProperty.isoMk _ e :
         M ≅ ⟨(S i).obj.shiftObj d, gradedFiniteModules_shiftObj (S i).property d⟩),
       laurentK0_of_shiftObj]

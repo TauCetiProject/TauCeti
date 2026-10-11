@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
-public import TauCeti.AlgebraicTopology.UniversalCover.Classification.ActionCover
+public import TauCeti.AlgebraicTopology.UniversalCover.Classification.ActionCover.Basic
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Reconstruction
 public import TauCeti.CategoryTheory.Groupoid.ConnectedFunctor
 public import TauCeti.Topology.Covering.Monodromy.Transitive
@@ -45,7 +45,8 @@ types. Full faithfulness is again the lifting criterion, already packaged in
 `TauCeti.Topology.Covering.Monodromy.Basic` and `…Monodromy.Full`, and essential surjectivity is
 again reconstruction at `x₀` followed by transport, but the cover reconstructed from an arbitrary
 `π₁(X, x₀)`-set is the balanced product of
-`TauCeti.AlgebraicTopology.UniversalCover.Classification.ActionCover` rather than a quotient of
+`TauCeti.AlgebraicTopology.UniversalCover.Classification.ActionCover.Basic`
+rather than a quotient of
 the universal cover by a stabiliser: the latter is connected, so it can only realise a transitive
 action, while the former realises the disjoint union of one such quotient per orbit in one step.
 
@@ -72,7 +73,7 @@ adapted from Kim Morrison's
 [mathlib4#38292](https://github.com/leanprover-community/mathlib4/pull/38292), the
 stabiliser-cover reconstruction of
 `TauCeti.AlgebraicTopology.UniversalCover.Classification.Reconstruction`, and the balanced-product
-cover of `TauCeti.AlgebraicTopology.UniversalCover.Classification.ActionCover`.
+cover of `TauCeti.AlgebraicTopology.UniversalCover.Classification.ActionCover.Basic`.
 -/
 
 public section

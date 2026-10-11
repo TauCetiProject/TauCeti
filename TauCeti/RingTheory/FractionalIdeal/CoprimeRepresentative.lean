@@ -11,14 +11,13 @@ import Mathlib.RingTheory.Ideal.Quotient.Operations
 /-!
 # Coprime integral multiples of invertible fractional ideals
 
-Let `R` be a commutative ring with fraction field `K`, and let `𝔞` be an ideal of `R` contained in
-only finitely many maximal ideals, for instance an ideal with finite quotient ring
+Let `R` be a nontrivial commutative ring with total fraction ring `K`, and let `𝔞` be an ideal of
+`R` contained in only finitely many maximal ideals, for instance an ideal with finite quotient ring
 (`Ideal.finite_setOfPred_isMaximal_and_le`). Every invertible fractional ideal `J` of `R` then has
 a nonzero multiple `a J` which is an integral ideal of `R` coprime to `𝔞`.
 
-No Dedekind hypothesis is made: `R` need not be integrally closed, and its non-invertible ideals
-play no role. The motivating case is a non-maximal order `O` in a number field and the conductor
-of `O`.
+No domain or Dedekind hypothesis is made, and non-invertible ideals play no role. The motivating
+case is a non-maximal order `O` in a number field and the conductor of `O`.
 
 The element `a` is built by the Chinese remainder theorem. At each maximal ideal `P ⊇ 𝔞`, the
 equation `J⁻¹ J = R` provides `y_P ∈ J⁻¹` and `x_P ∈ J` with `y_P x_P ∉ P`. Choosing `e_P ∈ R`
@@ -45,10 +44,10 @@ public section
 
 namespace FractionalIdeal
 
-variable {R K : Type*} [CommRing R] [Field K] [Algebra R K] [IsFractionRing R K]
+variable {R K : Type*} [CommRing R] [CommRing K] [Algebra R K] [IsFractionRing R K]
 
-/-- Since `J⁻¹ * J = 1`, some product `y * x` with `y ∈ J⁻¹` and `x ∈ J` is an element of `R`
-outside a given proper ideal `P`. -/
+/-- For an invertible fractional ideal `J`, some product `y * x` with `y ∈ J⁻¹` and `x ∈ J` is
+an element of `R` outside a given proper ideal `P`. -/
 theorem exists_mem_inv_exists_mem_mul_notMem (J : (FractionalIdeal R⁰ K)ˣ)
     {P : Ideal R} (hP : P ≠ ⊤) :
     ∃ y ∈ (↑J⁻¹ : FractionalIdeal R⁰ K), ∃ x ∈ (J : FractionalIdeal R⁰ K),
@@ -58,13 +57,13 @@ theorem exists_mem_inv_exists_mem_mul_notMem (J : (FractionalIdeal R⁰ K)ˣ)
     refine mul_le.mpr fun y hy x hx => ?_
     obtain ⟨r, hr⟩ := (mem_one_iff R⁰).mp (J.inv_mul ▸ mul_mem_mul hy hx)
     exact (mem_coeIdeal R⁰).mpr ⟨r, h y hy x hx r hr, hr⟩
-  obtain ⟨r, hr, hr1⟩ := (mem_coeIdeal R⁰).mp ((J.inv_mul ▸ hle) (one_mem_one R⁰))
-  rw [← map_one (algebraMap R K), (IsFractionRing.injective R K).eq_iff] at hr1
-  exact hP ((Ideal.eq_top_iff_one P).mpr (hr1 ▸ hr))
+  exact hP (top_le_iff.mp ((coeIdeal_le_coeIdeal K).mp (by simpa using hle)))
 
-/-- **Coprime representatives.** Let `J` be an invertible fractional ideal of `R`, and let `𝔞` be
-an ideal of `R` contained in only finitely many maximal ideals. Then `J` has a nonzero multiple
-`a J` which is an integral ideal of `R` coprime to `𝔞`. -/
+variable [Nontrivial K]
+
+/-- **Coprime representatives.** Let `J` be an invertible fractional ideal of a nontrivial ring
+`R`, and let `𝔞` be an ideal of `R` contained in only finitely many maximal ideals. Then `J` has a
+nonzero multiple `a J` which is an integral ideal of `R` coprime to `𝔞`. -/
 theorem exists_coeIdeal_eq_spanSingleton_mul_and_sup_eq_top (J : (FractionalIdeal R⁰ K)ˣ)
     {𝔞 : Ideal R} (h𝔞 : {P : Ideal R | P.IsMaximal ∧ 𝔞 ≤ P}.Finite) :
     ∃ a : K, a ≠ 0 ∧ ∃ I : Ideal R,
@@ -76,11 +75,14 @@ theorem exists_coeIdeal_eq_spanSingleton_mul_and_sup_eq_top (J : (FractionalIdea
     le_one_iff_exists_coeIdeal.mp <| J.inv_mul ▸ mul_le_mul_left
       (spanSingleton_le_iff_mem.mpr ha) _
   by_cases htop : 𝔞 = ⊤
-  · obtain ⟨a, ha, ha0⟩ : ∃ a ∈ (↑J⁻¹ : FractionalIdeal R⁰ K), a ≠ 0 := by
-      by_contra! h
-      exact (J⁻¹).ne_zero (eq_zero_iff.mpr h)
+  -- A product outside the zero ideal gives a nonzero element of `J⁻¹`.
+  · have : Nontrivial R := Module.nontrivial R K
+    obtain ⟨a, ha, x, _, r, hr, hr0⟩ := exists_mem_inv_exists_mem_mul_notMem J
+      (P := ⊥) bot_ne_top
     obtain ⟨I, hI⟩ := hint ha
-    exact ⟨a, ha0, I, hI, by rw [htop, sup_top_eq]⟩
+    refine ⟨a, fun ha0 => ?_, I, hI, by rw [htop, sup_top_eq]⟩
+    rw [ha0, zero_mul, ← map_zero (algebraMap R K)] at hr
+    exact hr0 (IsFractionRing.injective R K hr ▸ Ideal.zero_mem _)
   -- Index by the finitely many maximal ideals `P ⊇ 𝔞`, and choose `y P ∈ J⁻¹`, `x P ∈ J` with
   -- `y P * x P = r P ∉ P`.
   let ι := {P : Ideal R // P.IsMaximal ∧ 𝔞 ≤ P}

@@ -221,12 +221,6 @@ theorem solvableRadicalSpecMapOfCandidate_comp_solvableRadicalSpecι
   CommHopfAlgCat.quotientSpecMapOfLe_comp_quotientSpecι H.obj
     (solvableRadicalDefiningIdeal_le H I hI)
 
-/-- The inclusion of the solvable radical is a closed immersion. -/
-instance isClosedImmersion_solvableRadicalSpecι
-    (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
-    IsClosedImmersion (solvableRadicalSpecι H).hom.hom.left :=
-  inferInstance
-
 end FiniteTypeCommHopfAlgCat
 
 end

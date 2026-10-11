@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.AEEqFun.Basic
 public import Mathlib.MeasureTheory.Constructions.UnitInterval
-import TauCeti.Combinatorics.DenseGraphLimits.GraphonSpace.Basic
+public import TauCeti.Combinatorics.DenseGraphLimits.GraphonSpace.Basic
 import TauCeti.Combinatorics.DenseGraphLimits.StepGraphon.FiniteGraph.Basic
 
 /-!
@@ -30,9 +30,18 @@ neither can the constant function `2` on a point mass. These checks distinguish 
 constraints from constraints that could accidentally ignore positive-mass exceptional sets.
 
 The examples use the strict-representative construction `Graphon.clampSymm` and the bridges
-`exists_graphon_repr` and `exists_graphon_repr_iff`. The auxiliary functions are private; the
-exported theorem `Graphon.toAEEqFun_not_injective_unitInterval` records why strict equality cannot
-be recovered.
+`exists_graphon_repr` and `exists_graphon_repr_iff`. The corrupted and repaired representatives on
+the unit interval live in the namespace `NullLineExample`, so the round trip can be cited by name;
+the exported theorem `Graphon.toAEEqFun_not_injective_unitInterval` records why strict equality
+cannot be recovered.
+
+## Main results
+
+* `NullLineExample.exists_graphon_toAEEqFun_eq_mk_corrupted` — the corrupted class is represented
+  by a strict graphon with the same graphon-space point;
+* `NullLineExample.toAEEqFun_repaired`, `NullLineExample.graphonSpace_mk_repaired` — repairing
+  preserves the class and the graphon-space point;
+* `Graphon.toAEEqFun_not_injective_unitInterval` — the class map is not injective.
 
 ## References
 
@@ -49,17 +58,27 @@ open scoped unitInterval
 
 namespace TauCeti.DenseGraphLimits
 
-/-- A representative corrupted on two null coordinate lines. -/
-private def corrupted (W : Graphon I (volume : Measure I)) (x y : I) : ℝ :=
+namespace NullLineExample
+
+/-- A representative of `W` corrupted on the two null coordinate lines `x = 0` and `y = 0`, with
+the asymmetric, out-of-range values `4` and `-6`. -/
+def corrupted (W : Graphon I (volume : Measure I)) (x y : I) : ℝ :=
   if x = 0 then 4 else if y = 0 then -6 else W x y
 
-private theorem measurable_corrupted (W : Graphon I (volume : Measure I)) :
+/-- The corrupted representative has the exceptional row and column values, and agrees with
+`W` elsewhere. -/
+@[simp] theorem corrupted_apply (W : Graphon I (volume : Measure I)) (x y : I) :
+    corrupted W x y = if x = 0 then 4 else if y = 0 then -6 else W x y := (rfl)
+
+/-- The corrupted representative is jointly measurable. -/
+theorem measurable_corrupted (W : Graphon I (volume : Measure I)) :
     Measurable (Function.uncurry (corrupted W)) := by
   exact Measurable.ite (measurableSet_eq_fun measurable_fst measurable_const) measurable_const
     (Measurable.ite (measurableSet_eq_fun measurable_snd measurable_const) measurable_const
       W.measurable)
 
-private theorem corrupted_ae (W : Graphon I (volume : Measure I)) :
+/-- The corrupted representative agrees with `W` almost everywhere. -/
+theorem corrupted_ae (W : Graphon I (volume : Measure I)) :
     (fun p : I × I ↦ corrupted W p.1 p.2) =ᵐ[volume.prod volume]
       fun p ↦ W p.1 p.2 := by
   have hfst := (measurePreserving_fst (μ := (volume : Measure I))
@@ -69,11 +88,13 @@ private theorem corrupted_ae (W : Graphon I (volume : Measure I)) :
   filter_upwards [hfst, hsnd] with p hx hy
   simp [corrupted, hx, hy]
 
-/-- The repaired strict graphon, retaining the nontrivial exceptional values. -/
-private def repaired (W : Graphon I (volume : Measure I)) : Graphon I (volume : Measure I) :=
+/-- The strict graphon obtained from `corrupted W` by averaging and clamping
+(`Graphon.clampSymm`); it retains nontrivial values on the exceptional lines. -/
+def repaired (W : Graphon I (volume : Measure I)) : Graphon I (volume : Measure I) :=
   Graphon.clampSymm volume (corrupted W) (measurable_corrupted W)
 
-private theorem repaired_ae (W : Graphon I (volume : Measure I)) :
+/-- The repaired graphon agrees with `W` almost everywhere. -/
+theorem repaired_ae (W : Graphon I (volume : Measure I)) :
     (fun p : I × I ↦ repaired W p.1 p.2) =ᵐ[volume.prod volume]
       fun p ↦ W p.1 p.2 := by
   have hswap := (Measure.measurePreserving_swap (μ := (volume : Measure I))
@@ -91,13 +112,27 @@ example (W : Graphon I (volume : Measure I)) :
     corrupted W 0 1 = 4 ∧ corrupted W 1 0 = -6 := by
   norm_num [corrupted]
 
-example (W : Graphon I (volume : Measure I)) :
-    repaired W 0 0 = 1 ∧ repaired W 0 1 = 0 ∧ repaired W 1 0 = 0 := by
-  norm_num [repaired, Graphon.clampSymm_apply, corrupted]
+/-- Repairing clamps the value at the origin to `1`. -/
+@[simp] theorem repaired_apply_zero_zero (W : Graphon I (volume : Measure I)) :
+    repaired W 0 0 = 1 := by
+  norm_num [repaired, Graphon.clampSymm_apply]
 
--- Checking the class of the original, invalid representative avoids silently replacing
--- the contract with one that only accepts functions satisfying the constraints everywhere.
-example (W : Graphon I (volume : Measure I)) :
+/-- Repairing clamps the value at `(0, 1)` to `0`. -/
+@[simp] theorem repaired_apply_zero_one (W : Graphon I (volume : Measure I)) :
+    repaired W 0 1 = 0 := by
+  norm_num [repaired, Graphon.clampSymm_apply]
+
+/-- Repairing clamps the value at `(1, 0)` to `0`. -/
+@[simp] theorem repaired_apply_one_zero (W : Graphon I (volume : Measure I)) :
+    repaired W 1 0 = 0 := by
+  norm_num [repaired, Graphon.clampSymm_apply]
+
+/-- **The corrupted-representative round trip.** The almost-everywhere class of the invalid
+representative `corrupted W` (neither symmetric nor range-bounded everywhere) is represented by a
+strict graphon `V` (`exists_graphon_repr`), and `V` gives the same graphon-space point as `W`.
+Checking the class of the invalid representative itself avoids silently replacing the contract with
+one that only accepts functions satisfying the constraints everywhere. -/
+theorem exists_graphon_toAEEqFun_eq_mk_corrupted (W : Graphon I (volume : Measure I)) :
     ∃ V : Graphon I (volume : Measure I),
       Graphon.toAEEqFun V = AEEqFun.mk (Function.uncurry (corrupted W))
         (measurable_corrupted W).aestronglyMeasurable ∧
@@ -112,13 +147,19 @@ example (W : Graphon I (volume : Measure I)) :
   refine ⟨V, hV, (graphonSpace_mk_eq_mk_iff _ _).2 ?_⟩
   exact cutDist_eq_zero_of_aeEq (Graphon.toAEEqFun_eq_iff.1 (hV.trans hclass.symm))
 
-example (W : Graphon I (volume : Measure I)) :
+/-- Repairing preserves the almost-everywhere class. -/
+@[simp] theorem toAEEqFun_repaired (W : Graphon I (volume : Measure I)) :
     Graphon.toAEEqFun (repaired W) = Graphon.toAEEqFun W :=
   Graphon.toAEEqFun_eq_iff.2 (repaired_ae W)
 
-example (W : Graphon I (volume : Measure I)) :
+/-- Repairing preserves the graphon-space point. -/
+@[simp] theorem graphonSpace_mk_repaired (W : Graphon I (volume : Measure I)) :
     (⟦repaired W⟧ : GraphonSpaceI) = ⟦W⟧ := by
   exact (graphonSpace_mk_eq_mk_iff _ _).2 (cutDist_eq_zero_of_aeEq (repaired_ae W))
+
+end NullLineExample
+
+open NullLineExample
 
 /-- Passing to the almost-everywhere class loses strict equality, already on the unit interval.
 A null-set modification of the constant graphon `1/2` gives a different strict graphon with the

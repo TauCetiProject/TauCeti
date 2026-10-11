@@ -23,7 +23,7 @@ standardizes the invariant form
 (`TauCeti.exists_continuousLinearEquiv_inner_map_map`, morally `A = S ^ (-1 / 2)`) conjugates `π`
 into a representation that *is* unitary for the given inner product:
 
-`TauCeti.ContRepresentation.exists_isUnitary_congr` produces `e : V ≃L[𝕜] V` with
+`ContRepresentation.exists_isUnitary_congr` produces `e : V ≃L[𝕜] V` with
 `IsUnitary (congr e π)`.
 
 What this buys is a replacement of `π` by an equivalent representation, not by `π` itself, so a
@@ -36,9 +36,9 @@ finite-dimensional continuous representations alone.
 
 ## Main statements
 
-* `TauCeti.ContRepresentation.exists_isUnitary_congr`: a finite-dimensional continuous
+* `ContRepresentation.exists_isUnitary_congr`: a finite-dimensional continuous
   representation of a compact group is conjugate to a unitary one.
-* `TauCeti.ContRepresentation.exists_isUnitary_matrixCoeff_eq`: its matrix coefficients are matrix
+* `ContRepresentation.exists_isUnitary_matrixCoeff_eq`: its matrix coefficients are matrix
   coefficients of a unitary representation.
 * `TauCeti.isRepresentative_iff_exists_isUnitary`: a representative function is a matrix
   coefficient of a unitary representation on a standard model.
@@ -53,21 +53,17 @@ produces is unique up to a unitary equivalence anyway.
 Finite dimensionality enters only through that standardization, which is proved by the spectral
 theorem; the Gram operator itself is built for an arbitrary Hilbert-space carrier.
 
-This finishes Layer 1 of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md),
-whose statement of the unitarian trick asks that "downstream results may assume `IsUnitary` without
-loss of generality". The Layer 5 (Peter-Weyl) completeness argument is the intended consumer: the
-matrix coefficients that have to be expanded in the coefficients of a family of irreducible
-*unitary* representations are, a priori, coefficients of arbitrary ones. The mathematical
-development follows Daniel Bump, *Lie Groups*, second edition, Chapter 2.
+Unitarization allows the matrix coefficients of arbitrary representations to be expanded in those
+of unitary irreducible representations. The mathematical development follows Daniel Bump,
+*Lie Groups*, second edition, Chapter 2.
 -/
 
 public section
 
-open MeasureTheory RCLike
-open scoped InnerProductSpace
+open _root_.ContRepresentation
 
-namespace TauCeti
+open MeasureTheory RCLike TauCeti TauCeti.ContRepresentation
+open scoped InnerProductSpace
 
 namespace ContRepresentation
 
@@ -75,33 +71,35 @@ section Unitarization
 
 variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
-  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [NormedSpace ℝ V] [SMulCommClass ℝ 𝕜 V]
+  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
   [FiniteDimensional 𝕜 V]
 
-local instance instCompleteSpaceUnitaryModel : CompleteSpace V :=
+private local instance instCompleteSpaceUnitaryModel : CompleteSpace V :=
   FiniteDimensional.complete 𝕜 V
 
 /-- **A finite-dimensional continuous representation of a compact group is conjugate to a unitary
 one.** There is a continuous linear automorphism `e` of the carrier for which the transported
-representation `TauCeti.ContRepresentation.congr e π` preserves the inner product.
+representation `ContinuousLinearEquiv.congr e π` preserves the inner product.
 
 This is the unitarian trick in its usable form. Haar averaging supplies the invariant
 positive-definite form `⟪S ·, ·⟫`; the automorphism `A` carrying the standard inner product to
 that form (`TauCeti.exists_continuousLinearEquiv_inner_map_map`) conjugates the invariance of the
 form into unitarity of `A⁻¹ ∘ π · ∘ A`. -/
 theorem exists_isUnitary_congr (π : ContRepresentation 𝕜 G V) (hπ : Continuous π) :
-    ∃ e : V ≃L[𝕜] V, IsUnitary (congr e π) := by
-  obtain ⟨A, hA⟩ := exists_continuousLinearEquiv_inner_map_map (gramOperator π hπ)
-    (isSymmetric_gramOperator π hπ) fun _ hv ↦ re_inner_gramOperator_self_pos π hπ hv
+    ∃ e : V ≃L[𝕜] V, IsUnitary (ContinuousLinearEquiv.congr e π) := by
+  obtain ⟨A, hA⟩ := exists_continuousLinearEquiv_inner_map_map (π.gramOperator hπ)
+    (π.isSymmetric_gramOperator hπ) fun _ hv ↦ π.re_inner_gramOperator_self_pos hπ hv
   -- The same standardization with the Gram operator on the second argument, which is the side
   -- `inner_gramOperator_map_map` states invariance of the averaged form on.
-  have hA' : ∀ x y : V, ⟪A x, gramOperator π hπ (A y)⟫_𝕜 = ⟪x, y⟫_𝕜 := fun x y ↦ by
+  have hA' : ∀ x y : V, ⟪A x, π.gramOperator hπ (A y)⟫_𝕜 = ⟪x, y⟫_𝕜 := fun x y ↦ by
     rw [← inner_conj_symm, hA, inner_conj_symm]
-  have hunitary : ∀ (g : G) (x y : V), ⟪congr A.symm π g x, congr A.symm π g y⟫_𝕜 = ⟪x, y⟫_𝕜 := by
+  have hunitary : ∀ (g : G) (x y : V), ⟪ContinuousLinearEquiv.congr A.symm π g x,
+      ContinuousLinearEquiv.congr A.symm π g y⟫_𝕜 = ⟪x, y⟫_𝕜 := by
     intro g x y
-    rw [congr_apply, congr_apply, ContinuousLinearEquiv.symm_symm,
+    rw [ContinuousLinearEquiv.congr_apply, ContinuousLinearEquiv.congr_apply,
+        ContinuousLinearEquiv.symm_symm,
       ← hA' (A.symm (π g (A x))) (A.symm (π g (A y))), ContinuousLinearEquiv.apply_symm_apply,
-      ContinuousLinearEquiv.apply_symm_apply, inner_gramOperator_map_map, hA']
+      ContinuousLinearEquiv.apply_symm_apply, π.inner_gramOperator_map_map hπ, hA']
   exact ⟨A.symm, (isUnitary_iff_norm_map _).mpr fun g ↦
     (LinearMap.norm_map_iff_inner_map_map _).mpr (hunitary g)⟩
 
@@ -109,20 +107,24 @@ theorem exists_isUnitary_congr (π : ContRepresentation 𝕜 G V) (hπ : Continu
 a matrix coefficient of a unitary one**, on the same carrier and at suitably moved vectors.
 
 Matrix coefficients depend only on the equivalence class of a representation
-(`TauCeti.ContRepresentation.matrixCoeff_congr_adjoint`), so the conjugate unitary model produced
-by `TauCeti.ContRepresentation.exists_isUnitary_congr` produces every matrix coefficient of the
+(`ContinuousLinearEquiv.matrixCoeff_congr_adjoint`), so the conjugate unitary model produced
+by `ContRepresentation.exists_isUnitary_congr` produces every matrix coefficient of the
 original. -/
 theorem exists_isUnitary_matrixCoeff_eq (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
     (v w : V) :
     ∃ (ρ : ContRepresentation 𝕜 G V) (hρ : Continuous ρ), IsUnitary ρ ∧
       ∃ v' w' : V, matrixCoeff π hπ v w = matrixCoeff ρ hρ v' w' :=
   let ⟨e, he⟩ := exists_isUnitary_congr π hπ
-  ⟨congr e π, continuous_congr e hπ, he, e v, ContinuousLinearMap.adjoint (e.symm : V →L[𝕜] V) w,
-    (matrixCoeff_congr_adjoint e (continuous_congr e hπ) v w).symm⟩
+  ⟨ContinuousLinearEquiv.congr e π, ContinuousLinearEquiv.continuous_congr e hπ, he, e v,
+      ContinuousLinearMap.adjoint (e.symm : V →L[𝕜] V) w,
+    (ContinuousLinearEquiv.matrixCoeff_congr_adjoint e (ContinuousLinearEquiv.continuous_congr e
+        hπ) v w).symm⟩
 
 end Unitarization
 
 end ContRepresentation
+
+namespace TauCeti
 
 section Representative
 
@@ -145,7 +147,7 @@ theorem isRepresentative_iff_exists_isUnitary {f : C(G, 𝕜)} :
   constructor
   · rintro ⟨n, π, hπ, v, w, rfl⟩
     obtain ⟨ρ, hρ, hunitary, v', w', hvw⟩ :=
-      ContRepresentation.exists_isUnitary_matrixCoeff_eq π hπ v w
+      π.exists_isUnitary_matrixCoeff_eq hπ v w
     exact ⟨n, ρ, hρ, hunitary, v', w', hvw⟩
   · rintro ⟨n, π, hπ, -, v, w, rfl⟩
     exact ⟨n, π, hπ, v, w, rfl⟩

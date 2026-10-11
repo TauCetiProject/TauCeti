@@ -13,7 +13,7 @@ renames, or binary files.
 Styled to sit on the dark navy Tau Ceti site (see web/static_files/style.css).
 """
 
-import subprocess, sys, argparse, datetime as dt, html, math
+import subprocess, sys, argparse, datetime as dt, html, math, json
 
 from chart_style import base_css, card_rect
 
@@ -218,10 +218,14 @@ if __name__ == "__main__":
     ap.add_argument("--title", required=True)
     ap.add_argument("--accent", default="#ff9d4d")
     ap.add_argument("--out", required=True)
+    ap.add_argument("--dump-data", help="also write daily (date, line-count) pairs as JSON")
     ap.add_argument("pathspecs", nargs="+")
     a = ap.parse_args()
     data = series(a.repo, a.pathspecs, a.ref)
     if not data:
         sys.exit("no commits matched pathspecs on a day that has finished")
     render(data, a.title, a.accent, a.out)
+    if a.dump_data:
+        with open(a.dump_data, "w") as f:
+            json.dump(data, f)
     print(f"wrote {a.out}: {len(data)} points, latest {data[-1][1]:,}")

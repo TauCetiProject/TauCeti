@@ -1,0 +1,399 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Points
+import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Chart.BaseChange
+-- Proof-only: the body of `projModelVariableChangeIso` is not exposed.
+import all TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.ProjModel
+
+/-!
+# Base change of the projective Weierstrass model
+
+Let `W` be a Weierstrass curve over a commutative ring `R` and `f : R →+* R'` a ring
+homomorphism. Extending the coefficients of homogeneous polynomials along `f` is a graded ring
+homomorphism from the homogeneous coordinate ring of `W` to that of `W.map f`; its `Proj` is a
+morphism `projModel (W.map f) ⟶ projModel W` of projective Weierstrass models. This file shows
+that it lies over `Spec f : Spec R' ⟶ Spec R`, that the resulting square is cartesian, so that
+`projModel (W.map f)` is the base change of `projModel W` along `Spec f`, that it carries the
+zero section to the zero section, and that it sends the point with homogeneous coordinates `P` to
+the point with the same homogeneous coordinates. No ellipticity or flatness hypothesis is needed.
+
+Base change along the identity is the identity, and base change along a composite is the composite
+of the base changes, up to `W.map (RingHom.id R) = W` and `W.map (g.comp f) = (W.map f).map g`.
+Base change carries the isomorphism `projModel (C • W) ≅ projModel W` induced by a change of
+variables `C` to the one induced by `C.map f`.
+Along a ring isomorphism `φ : R ≃+* R'` the base change morphism is an isomorphism
+`projModel (W.map φ) ≅ projModel W`, since `Spec φ` is one.
+
+## Main definitions
+
+* `WeierstrassCurve.projModelBaseChange W f`: the morphism `projModel (W.map f) ⟶ projModel W`
+  induced by extending coefficients along `f`.
+* `WeierstrassCurve.projModelMapIso W φ`: for a ring isomorphism `φ : R ≃+* R'`, the base change
+  morphism along `φ` as an isomorphism `projModel (W.map φ) ≅ projModel W`.
+
+## Main results
+
+* `WeierstrassCurve.projModelBaseChange_projModelOver`: the base change morphism lies over
+  `Spec f`.
+* `WeierstrassCurve.isPullback_projModelBaseChange`: the square formed by the base change
+  morphism, the structure morphisms and `Spec f` is a pullback square.
+* `WeierstrassCurve.projModelZero_projModelBaseChange`: the base change morphism carries the zero
+  section to the zero section.
+* `WeierstrassCurve.isPullback_projModelZero_projModelBaseChange`: the zero section of
+  `projModel (W.map f)` is the base change of the zero section of `projModel W` along `Spec f`.
+* `WeierstrassCurve.projModelPoint_projModelBaseChange`: the base change morphism sends the point
+  with homogeneous coordinates `P`, over `g : R' →+* S`, to the point with the same homogeneous
+  coordinates, over `g.comp f`.
+* `WeierstrassCurve.projModelBaseChange_id` and `WeierstrassCurve.projModelBaseChange_comp`: base
+  change is compatible with the identity and with composition of ring homomorphisms.
+* `WeierstrassCurve.projModelVariableChangeIso_hom_projModelBaseChange`: base change is compatible
+  with the isomorphisms induced by changes of variables.
+* `WeierstrassCurve.isIso_projModelBaseChange`: base change along a ring isomorphism is an
+  isomorphism.
+* `WeierstrassCurve.inv_projModelBaseChange_projModelOver` and
+  `WeierstrassCurve.projModelZero_inv_projModelBaseChange`: the inverse of the base change
+  morphism along a ring isomorphism `φ` lies over `Spec φ.symm` and carries the zero section to the
+  zero section.
+* `WeierstrassCurve.projModelMapIso_refl` and `WeierstrassCurve.projModelMapIso_trans`: the
+  isomorphisms induced by ring isomorphisms are compatible with the identity and with composition.
+
+## References
+
+* N. M. Katz and B. Mazur, *Arithmetic Moduli of Elliptic Curves*, 2.2.
+* [The Stacks Project, Lemma 27.11.6](https://stacks.math.columbia.edu/tag/01N2)
+
+## Provenance
+
+`projModelBaseChange`, `isPullback_projModelBaseChange` and `projModelZero_projModelBaseChange`
+are adapted from AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0) at commit
+`c3415f32a313e19ace43e05479aeaa0d56ca287a`, file
+`projects/ModularCurves/ModularCurves/EllipticCurve/WeierstrassModel.lean`, sections
+`BaseChangeGraded` and `TensorComparison` (declarations `mvMapGraded`, `baseChangeGradedHom`,
+`projModelBaseChange`, `projModelBaseChange_π`, `sChartTensorEquiv`, `isPullback_sChart_spec`,
+`isPullback_projModelBaseChange_chart`, `projModelBaseChangeLift_isIso` and
+`isPullback_projModelBaseChange`) and the zero-section compatibility `projModelZero_baseChange`.
+AINTLIB states the cartesian square for an `R`-algebra `R'`; here `f` is an arbitrary ring
+homomorphism and the model is the `Proj` of `WeierstrassCurve.Projective.CoordinateRing`.
+`projModelPoint_projModelBaseChange` is the counterpart of `chartι_map_comp_projModelBaseChange`
+and `specMap_chartι_comp_baseChange` in the file `AdditionSpecPoints.lean` of the same directory,
+which push a point of a chart of `projModel (W.map f)` through the base change morphism, up to an
+`eqToHom` between two descriptions of that chart; its statement, on the points
+`WeierstrassCurve.projModelPoint` given by homogeneous coordinates, and its proof are new.
+-/
+
+public section
+
+open CategoryTheory AlgebraicGeometry HomogeneousLocalization MvPolynomial
+
+universe u
+
+namespace WeierstrassCurve
+
+variable {R R' : Type u} [CommRing R] [CommRing R'] (W : WeierstrassCurve R) (f : R →+* R')
+
+-- The Weierstrass polynomial of `W` maps into the ideal generated by that of `W.map f`.
+private theorem span_polynomial_le_comap : Ideal.span {W.toProjective.polynomial} ≤
+    (Ideal.span {(W.map f).toProjective.polynomial}).comap (MvPolynomial.map f) := by simp
+
+-- Coefficient extension on homogeneous coordinate rings, as a graded ring homomorphism.
+private noncomputable def baseChangeGradedHom :
+    W.toProjective.grading →+*ᵍ (W.map f).toProjective.grading where
+  __ := Ideal.quotientMap _ (MvPolynomial.map f) (W.span_polynomial_le_comap f)
+  map_mem hx := by
+    obtain ⟨p, hp, rfl⟩ := W.toProjective.mem_grading_iff.mp hx
+    simpa using (W.map f).toProjective.mk_mem_grading (hp.map f)
+
+private theorem baseChangeGradedHom_mk (p : MvPolynomial (Fin 3) R) :
+    W.baseChangeGradedHom f (Ideal.Quotient.mk _ p) =
+      Ideal.Quotient.mk _ (MvPolynomial.map f p) := by
+  simp [baseChangeGradedHom]
+
+private theorem baseChangeGradedHom_coord (i : Fin 3) :
+    W.baseChangeGradedHom f (W.toProjective.coord i) = (W.map f).toProjective.coord i := by
+  rw [baseChangeGradedHom_mk, map_X]
+
+-- Evaluation at `[0 : 1 : 0]` commutes with coefficient extension.
+private theorem evalZero_baseChangeGradedHom (x : W.toProjective.CoordinateRing) :
+    (W.map f).toProjective.evalZero (W.baseChangeGradedHom f x) =
+      f (W.toProjective.evalZero x) := by
+  obtain ⟨p, rfl⟩ := Ideal.Quotient.mk_surjective x
+  simp [baseChangeGradedHom_mk, map_eval, Projective.comp_fin3]
+
+-- The coordinates of `W.map f` are images of those of `W`, so they lie in the image of the
+-- irrelevant ideal.
+private theorem irrelevant_le_map_baseChangeGradedHom :
+    HomogeneousIdeal.irrelevant (W.map f).toProjective.grading ≤
+      (HomogeneousIdeal.irrelevant W.toProjective.grading).map (W.baseChangeGradedHom f) := by
+  rw [← toIdeal_le_toIdeal_iff, HomogeneousIdeal.toIdeal_map]
+  refine (W.map f).toProjective.irrelevant_le_span_range_coord.trans ?_
+  rw [← funext (W.baseChangeGradedHom_coord f), Set.range_comp', ← Ideal.map_span]
+  exact Ideal.map_mono <| Ideal.span_le.mpr <| Set.range_subset_iff.mpr fun i ↦
+    HomogeneousIdeal.mem_irrelevant_of_mem _ one_pos (W.toProjective.coord_mem_grading i)
+
+/-- The **base change morphism** `projModel (W.map f) ⟶ projModel W` of projective Weierstrass
+models along a ring homomorphism `f : R →+* R'`: `Proj` of the graded ring homomorphism of
+homogeneous coordinate rings induced by `MvPolynomial.map f`. It exhibits `projModel (W.map f)`
+as the base change of `projModel W` along `Spec f` (`isPullback_projModelBaseChange`). -/
+noncomputable def projModelBaseChange : (W.map f).projModel ⟶ W.projModel :=
+  Proj.map (W.baseChangeGradedHom f) (W.irrelevant_le_map_baseChangeGradedHom f)
+
+/-! ### The cartesian square -/
+
+-- Coefficient extension on the coordinate ring of a standard affine chart is a pushout of rings.
+private theorem isPushout_chartRingMap (i : Fin 3) :
+    IsPushout (CommRingCat.ofHom (algebraMap R (W.toProjective.ChartRing i))) (CommRingCat.ofHom f)
+      (CommRingCat.ofHom (W.toProjective.chartRingMap i f))
+      (CommRingCat.ofHom (algebraMap R' ((W.map f).toProjective.ChartRing i))) := by
+  let _ : Algebra R R' := f.toAlgebra
+  refine (CommRingCat.isPushout_tensorProduct R R' (W.toProjective.ChartRing i)).flip.of_iso
+    (Iso.refl _) (Iso.refl _) (Iso.refl _)
+    (W.toProjective.chartRingBaseChangeEquiv i).toRingEquiv.toCommRingCatIso (by simp) (by simp)
+    ?_ ?_
+  · refine CommRingCat.hom_ext (RingHom.ext fun x ↦ ?_)
+    exact (W.toProjective.chartRingBaseChangeEquiv_tmul i 1 x).trans (one_smul _ _)
+  · refine CommRingCat.hom_ext (RingHom.ext fun r ↦ ?_)
+    exact (W.toProjective.chartRingBaseChangeEquiv_tmul i r 1).trans <| by
+      simp [Algebra.algebraMap_eq_smul_one]
+
+-- Coefficient extension sends the fraction `p / Xᵢⁿ` to the fraction `(f p) / Xᵢⁿ`, read in the
+-- chart of `W.map f` away from its own `Xᵢ` (`Away.map_mk` lands away from the image of `Xᵢ`).
+private theorem map_awayMk (i : Fin 3) (h : Submonoid.powers (W.toProjective.coord i) ≤
+    (Submonoid.powers ((W.map f).toProjective.coord i)).comap (W.baseChangeGradedHom f)) {n : ℕ}
+    {p : MvPolynomial (Fin 3) R} (hp : Ideal.Quotient.mk _ p ∈ W.toProjective.grading (n • 1)) :
+    HomogeneousLocalization.map (W.baseChangeGradedHom f) h
+        (Away.mk _ (W.toProjective.coord_mem_grading i) n _ hp) =
+      Away.mk _ ((W.map f).toProjective.coord_mem_grading i) n
+        (Ideal.Quotient.mk _ (MvPolynomial.map f p))
+        (by simpa only [baseChangeGradedHom_mk] using
+          GradedFunLike.map_mem (W.baseChangeGradedHom f) hp) := by
+  simp [Away.mk, HomogeneousLocalization.map_mk, baseChangeGradedHom_mk]
+
+-- On the standard affine chart `D₊(Xᵢ)`, coefficient extension is a pushout of rings. The chart
+-- of `W.map f` may be taken away from any `s` equal to `Xᵢ`, such as the image of `Xᵢ` under
+-- coefficient extension.
+private theorem isPushout_map (i : Fin 3) {s : (W.map f).toProjective.CoordinateRing}
+    (hs : s = (W.map f).toProjective.coord i) (h : Submonoid.powers (W.toProjective.coord i) ≤
+      (Submonoid.powers s).comap (W.baseChangeGradedHom f)) :
+    IsPushout (CommRingCat.ofHom ((fromZeroRingHom W.toProjective.grading _).comp
+        (algebraMap R (W.toProjective.grading 0)))) (CommRingCat.ofHom f)
+      (CommRingCat.ofHom (HomogeneousLocalization.map (W.baseChangeGradedHom f) h))
+      (CommRingCat.ofHom ((fromZeroRingHom (W.map f).toProjective.grading (.powers s)).comp
+        (algebraMap R' ((W.map f).toProjective.grading 0)))) := by
+  subst hs
+  refine (W.isPushout_chartRingMap f i).of_iso' (Iso.refl _)
+    (W.toProjective.awayEquivChartRing i).toCommRingCatIso (Iso.refl _)
+    ((W.map f).toProjective.awayEquivChartRing i).toCommRingCatIso ?_ ?_ ?_ ?_ <;> ext z
+  · simp [← Projective.awayEquivChartRing_symm_comp_algebraMap]
+  · simp
+  · -- `awayEquivChartRing` intertwines the two coefficient extensions: check on `p / Xᵢⁿ`
+    obtain ⟨n, a, ha, rfl⟩ := Away.mk_surjective _ (W.toProjective.coord_mem_grading i) z
+    obtain ⟨p, rfl⟩ := Ideal.Quotient.mk_surjective a
+    simp [map_awayMk]
+  · simp [← Projective.awayEquivChartRing_symm_comp_algebraMap]
+
+-- On the standard affine chart `D₊(Xᵢ)`, the base change square of the structure morphisms is a
+-- pullback of affine schemes.
+private theorem isPullback_SpecMap_awayMap (i : Fin 3) :
+    IsPullback
+      (Spec.map (CommRingCat.ofHom (Away.map (W.baseChangeGradedHom f) (W.toProjective.coord i))))
+      (Spec.map (CommRingCat.ofHom ((fromZeroRingHom (W.map f).toProjective.grading _).comp
+        (algebraMap R' ((W.map f).toProjective.grading 0)))))
+      (Spec.map (CommRingCat.ofHom ((fromZeroRingHom W.toProjective.grading
+        (.powers (W.toProjective.coord i))).comp (algebraMap R (W.toProjective.grading 0)))))
+      (Spec.map (CommRingCat.ofHom f)) := by
+  rw [Away.map]
+  exact isPullback_SpecMap_of_isPushout _ _ _ _
+    (W.isPushout_map f i (W.baseChangeGradedHom_coord f i) _)
+
+-- The chart `D₊(Xᵢ)` of `projModel (W.map f)` is the preimage of the chart `D₊(Xᵢ)` of
+-- `projModel W` under the base change morphism.
+private theorem isPullback_awayι (i : Fin 3) :
+    IsPullback
+      (Spec.map (CommRingCat.ofHom (Away.map (W.baseChangeGradedHom f) (W.toProjective.coord i))))
+      (Proj.awayι _ _ (GradedFunLike.map_mem _ (W.toProjective.coord_mem_grading i)) one_pos)
+      (Proj.awayι _ _ (W.toProjective.coord_mem_grading i) one_pos) (W.projModelBaseChange f) := by
+  rw [projModelBaseChange]
+  refine IsOpenImmersion.isPullback _ _ _ _ (Proj.awayι_comp_map ..) ?_
+  rw [Proj.opensRange_awayι, Proj.opensRange_awayι, Proj.map_preimage_basicOpen]
+
+/-- The projective Weierstrass model of `W.map f` is the base change of the projective Weierstrass
+model of `W` along `Spec f : Spec R' ⟶ Spec R`: the square formed by the base change morphism,
+the two structure morphisms and `Spec f` is a pullback square. -/
+theorem isPullback_projModelBaseChange :
+    IsPullback (W.projModelBaseChange f) (W.map f).projModelOver W.projModelOver
+      (Spec.map (CommRingCat.ofHom f)) := by
+  -- it suffices to check over the standard affine charts `D₊(Xᵢ)`, which cover `projModel W`
+  let 𝒰 := (Proj.affineOpenCoverOfIrrelevantLESpan W.toProjective.grading W.toProjective.coord
+    W.toProjective.coord_mem_grading (fun _ ↦ one_pos)
+    W.toProjective.irrelevant_le_span_range_coord).openCover
+  refine Scheme.isPullback_of_openCover _ _ _ _ 𝒰 fun i ↦ ?_
+  -- the maps of the cover are the chart embeddings `Proj.awayι`, and those of its pullback along
+  -- the base change morphism are the projections `pullback.fst` and `pullback.snd`
+  dsimp only [𝒰, Scheme.AffineOpenCover.openCover, Scheme.AffineCover.cover,
+    Proj.affineOpenCoverOfIrrelevantLESpan, Scheme.Cover.pullbackHom,
+    Precoverage.ZeroHypercover.pullback₁, PreZeroHypercover.pullback₁]
+  refine (W.isPullback_SpecMap_awayMap f i).of_iso (W.isPullback_awayι f i).flip.isoPullback
+    (Iso.refl _) (Iso.refl _) (Iso.refl _) ?_ ?_ ?_ ?_ <;> simp [awayι_projModelOver]
+
+/-- The base change morphism lies over `Spec f : Spec R' ⟶ Spec R`. -/
+@[reassoc (attr := simp)]
+theorem projModelBaseChange_projModelOver :
+    W.projModelBaseChange f ≫ W.projModelOver =
+      (W.map f).projModelOver ≫ Spec.map (CommRingCat.ofHom f) :=
+  (W.isPullback_projModelBaseChange f).w
+
+/-! ### The zero section -/
+
+/-- The base change morphism carries the zero section `[0 : 1 : 0]` of `projModel (W.map f)` to
+the zero section of `projModel W`. -/
+@[reassoc (attr := simp)]
+theorem projModelZero_projModelBaseChange :
+    (W.map f).projModelZero ≫ W.projModelBaseChange f =
+      Spec.map (CommRingCat.ofHom f) ≫ W.projModelZero := by
+  rw [projModelBaseChange]
+  exact W.projModelZero_map _ _ f 1 fun _ _ _ ↦ by simp [evalZero_baseChangeGradedHom]
+
+/-- The zero section of `projModel (W.map f)` is the base change of the zero section of
+`projModel W` along `Spec f : Spec R' ⟶ Spec R`: the square formed by the two zero sections, the
+base change morphism and `Spec f` is a pullback square. -/
+theorem isPullback_projModelZero_projModelBaseChange :
+    IsPullback (W.map f).projModelZero (Spec.map (CommRingCat.ofHom f))
+      (W.projModelBaseChange f) W.projModelZero :=
+  .of_right
+    (by simpa only [W.projModelZero_projModelOver, (W.map f).projModelZero_projModelOver]
+      using IsPullback.id_horiz (Spec.map (CommRingCat.ofHom f)))
+    (W.projModelZero_projModelBaseChange f)
+    (W.isPullback_projModelBaseChange f).flip
+
+/-! ### Points -/
+
+/-- The base change morphism sends the point of `projModel (W.map f)` with homogeneous coordinates
+`P`, over a ring homomorphism `g : R' →+* S`, to the point of `projModel W` with the same
+homogeneous coordinates `P`, over the composite `g.comp f`. -/
+@[reassoc (attr := simp)]
+theorem projModelPoint_projModelBaseChange {S : Type u} [CommRing S] {g : R' →+* S} {P : Fin 3 → S}
+    {hP : ((W.map f).toProjective.map g).Equation P} {i : Fin 3} (hi : IsUnit (P i)) :
+    (W.map f).projModelPoint g hP hi ≫ W.projModelBaseChange f =
+      W.projModelPoint (g.comp f) (by simpa only [← WeierstrassCurve.map_map] using hP) hi := by
+  rw [projModelBaseChange]
+  -- evaluation at `P` after extending coefficients along `f` is evaluation at `P` along `g.comp f`
+  refine projModelPoint_map _ _ 1 (fun n a ha ↦ ?_) hi hi
+  obtain ⟨p, -, rfl⟩ := W.toProjective.mem_grading_iff.mp ha
+  simp only [Units.val_one, one_pow, one_mul, baseChangeGradedHom_mk, Projective.evalHom_mk,
+    eval₂_map]
+
+/-! ### Identity and composition -/
+
+/-- Base change along the identity of `R` is the identity of the projective Weierstrass model, up
+to `W.map (RingHom.id R) = W`. -/
+@[simp]
+theorem projModelBaseChange_id :
+    W.projModelBaseChange (RingHom.id R) = eqToHom (congrArg projModel W.map_id) := by
+  rw [projModelBaseChange, ProjMap_eq_eqToHom_comp_ProjMap W W.map_id _ (.id _) id
+      (fun p ↦ by rw [baseChangeGradedHom_mk, MvPolynomial.map_id]; rfl) (fun _ ↦ rfl) _ (by simp),
+    Proj.map_id, Category.comp_id]
+
+/-- Base change along a composite `g.comp f` is base change along `g` followed by base change
+along `f`, up to `W.map (g.comp f) = (W.map f).map g`. -/
+@[simp]
+theorem projModelBaseChange_comp {R'' : Type u} [CommRing R''] (g : R' →+* R'') :
+    W.projModelBaseChange (g.comp f) = eqToHom (congrArg projModel (W.map_map f g).symm) ≫
+      (W.map f).projModelBaseChange g ≫ W.projModelBaseChange f := by
+  rw [projModelBaseChange, projModelBaseChange, projModelBaseChange, ← Proj.map_comp]
+  exact ProjMap_eq_eqToHom_comp_ProjMap W (W.map_map f g).symm _ _ (MvPolynomial.map (g.comp f))
+    (W.baseChangeGradedHom_mk _)
+    (fun p ↦ by rw [GradedRingHom.comp_apply, baseChangeGradedHom_mk, baseChangeGradedHom_mk,
+      MvPolynomial.map_map]) _ _
+
+/-! ### Changes of variables -/
+
+/-- Base change carries the isomorphism induced by the change of variables `C` to the one induced
+by `C.map f`: the square formed by the two isomorphisms and the base change morphisms of `W` and
+`C • W` commutes, up to `C.map f • W.map f = (C • W).map f`. -/
+@[reassoc]
+theorem projModelVariableChangeIso_hom_projModelBaseChange (C : VariableChange R) :
+    ((W.map f).projModelVariableChangeIso (C.map f)).hom ≫ W.projModelBaseChange f =
+      eqToHom (congrArg projModel (map_variableChange W C f)) ≫ (C • W).projModelBaseChange f ≫
+        (W.projModelVariableChangeIso C).hom := by
+  rw [projModelVariableChangeIso, projModelVariableChangeIso, Proj.mapIso_hom, Proj.mapIso_hom,
+    projModelBaseChange, projModelBaseChange, ← Proj.map_comp, ← Proj.map_comp]
+  -- both send the class of `p` to the class of `p` with coefficients mapped along `f` and
+  -- substituted along `(C.map f).toMatrix`
+  exact ProjMap_eq_eqToHom_comp_ProjMap W (map_variableChange W C f) _ _
+    (fun p ↦ linearSubst (C.map f).toMatrix (MvPolynomial.map f p))
+    (fun p ↦ by simp [variableChangeGradedHom_apply, baseChangeGradedHom_mk])
+    (fun p ↦ by simp [variableChangeGradedHom_apply, baseChangeGradedHom_mk, map_linearSubst]) _ _
+
+/-! ### Base change along a ring isomorphism -/
+
+section RingEquiv
+
+variable (φ : R ≃+* R')
+
+/-- Base change along a ring isomorphism is an isomorphism of projective Weierstrass models: it is
+the base change of `Spec φ`, an isomorphism, in the pullback square
+`isPullback_projModelBaseChange`. -/
+instance isIso_projModelBaseChange : IsIso (W.projModelBaseChange (φ : R →+* R')) :=
+  have : IsIso (CommRingCat.ofHom (φ : R →+* R')) := φ.toCommRingCatIso.isIso_hom
+  (W.isPullback_projModelBaseChange (φ : R →+* R')).isIso_fst_of_isIso
+
+/-- The isomorphism `projModel (W.map φ) ≅ projModel W` of projective Weierstrass models induced by
+a ring isomorphism `φ : R ≃+* R'`: the base change morphism along `φ`. -/
+noncomputable def projModelMapIso : (W.map (φ : R →+* R')).projModel ≅ W.projModel :=
+  asIso (W.projModelBaseChange (φ : R →+* R'))
+
+/-- The forward map of `projModelMapIso W φ` is the base change morphism along `φ`. -/
+@[simp]
+theorem projModelMapIso_hom : (W.projModelMapIso φ).hom = W.projModelBaseChange (φ : R →+* R') :=
+  (rfl)
+
+/-- The inverse of `projModelMapIso W φ` is the inverse of the base change morphism along `φ`. -/
+@[simp]
+theorem projModelMapIso_inv :
+    (W.projModelMapIso φ).inv = inv (W.projModelBaseChange (φ : R →+* R')) :=
+  (rfl)
+
+/-- The inverse of the base change morphism along a ring isomorphism `φ : R ≃+* R'` lies over
+`Spec φ.symm : Spec R ⟶ Spec R'`. -/
+@[reassoc (attr := simp)]
+theorem inv_projModelBaseChange_projModelOver :
+    inv (W.projModelBaseChange (φ : R →+* R')) ≫ (W.map (φ : R →+* R')).projModelOver =
+      W.projModelOver ≫ Spec.map (CommRingCat.ofHom (φ.symm : R' →+* R)) := by
+  rw [IsIso.inv_comp_eq, projModelBaseChange_projModelOver_assoc, ← Spec.map_comp,
+    ← CommRingCat.ofHom_comp]
+  simp
+
+/-- The inverse of the base change morphism along a ring isomorphism `φ : R ≃+* R'` carries the
+zero section to the zero section, over `Spec φ.symm : Spec R ⟶ Spec R'`. -/
+@[reassoc (attr := simp)]
+theorem projModelZero_inv_projModelBaseChange :
+    W.projModelZero ≫ inv (W.projModelBaseChange (φ : R →+* R')) =
+      Spec.map (CommRingCat.ofHom (φ.symm : R' →+* R)) ≫ (W.map (φ : R →+* R')).projModelZero := by
+  rw [IsIso.comp_inv_eq, Category.assoc, projModelZero_projModelBaseChange, ← Spec.map_comp_assoc,
+    ← CommRingCat.ofHom_comp]
+  simp
+
+/-- The identity ring isomorphism induces the identity of the projective Weierstrass model, up to
+`W.map (RingHom.id R) = W`. -/
+@[simp]
+theorem projModelMapIso_refl :
+    W.projModelMapIso (RingEquiv.refl R) = eqToIso (congrArg projModel W.map_id) :=
+  Iso.ext W.projModelBaseChange_id
+
+/-- The isomorphism induced by a composite `φ.trans ψ` is the isomorphism induced by `ψ` followed by
+the one induced by `φ`, up to `W.map (ψ.comp φ) = (W.map φ).map ψ`. -/
+@[simp]
+theorem projModelMapIso_trans {R'' : Type u} [CommRing R''] (ψ : R' ≃+* R'') :
+    W.projModelMapIso (φ.trans ψ) =
+      eqToIso (congrArg projModel (W.map_map (φ : R →+* R') (ψ : R' →+* R'')).symm) ≪≫
+        (W.map (φ : R →+* R')).projModelMapIso ψ ≪≫ W.projModelMapIso φ :=
+  Iso.ext (W.projModelBaseChange_comp (φ : R →+* R') (ψ : R' →+* R''))
+
+end RingEquiv
+
+end WeierstrassCurve

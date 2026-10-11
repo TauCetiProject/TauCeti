@@ -45,10 +45,7 @@ namespace TauCeti.CliffordAlgebra
 
 open _root_.CliffordAlgebra
 
-/-- The operator-norm topology used by the general linear Lie group of real matrices. -/
-local instance differentialMatrixOperatorTopologicalSpace (n : Type*) [Fintype n] :
-    TopologicalSpace (Matrix n n ℝ) :=
-  Matrix.linftyOpTopologicalSpace n n ℝ
+attribute [local instance] Matrix.linftyOpTopologicalSpace
 
 local notation "SpinUnitsRange(" n ")" =>
   MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0))
@@ -176,7 +173,7 @@ private theorem coordinate_exp_mulVec_eq_conjugation (n : ℕ)
     change (((QuadraticMap.specialOrthogonalToGeneralLinear Q
       (spinToSpecialOrthogonal Q s) : Matrix.GeneralLinearGroup (Fin n) ℝ) :
         Matrix (Fin n) (Fin n) ℝ) *ᵥ v) = _
-    rw [TauCeti.QuadraticMap.specialOrthogonalToGeneralLinear_mulVec,
+    rw [QuadraticMap.specialOrthogonalToGeneralLinear_mulVec,
       coe_spinToSpecialOrthogonal_apply]
   have hstar : star (x : CliffordAlgebra Q) = -(x : CliffordAlgebra Q) := by
     have hreverse := reverse_eq_neg_of_mem_quadraticLieSubalgebra Q x.property

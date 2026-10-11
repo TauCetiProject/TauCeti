@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Lie.AutomaticSmoothness
 public import TauCeti.Geometry.Lie.Functor
 public import TauCeti.Geometry.Manifold.Instances.UniversalCover
+public import TauCeti.AlgebraicTopology.UniversalCover.Descent
 
 /-!
 # The Lie algebra of the universal covering group

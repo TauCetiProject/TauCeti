@@ -22,8 +22,8 @@ Mathlib's `MulAction`s to `DistribMulAction`s on `FixedPoints.addSubmonoid H M`,
 coercion lemmas that characterise the two actions on the `AddSubgroup` carrier, computes the fixed
 points of `⊥` and `⊤`, and supplies the inclusion and map API for additive fixed points.
 
-Nothing here is specific to a topology or to cohomology; the continuous-cohomology use is in
-`TauCeti/RepresentationTheory/Homological/ContCohomology/Invariants.lean`.
+Nothing here is specific to topology or cohomology. The topology of these actions and pairings is
+developed in `TauCeti/Topology/Algebra/GroupAction/FixedPoints.lean`.
 
 ## Main results
 
@@ -37,12 +37,14 @@ Nothing here is specific to a topology or to cohomology; the continuous-cohomolo
   `TauCeti.coe_quotient_smul_fixedPoints_addSubgroup`; a trivial `G`-action on `M` gives a trivial
   `G ⧸ H`-action on `M ^ H` (`TauCeti.quotient_smul_fixedPoints_addSubgroup_eq_of_smul_eq`).
 * `TauCeti.fixedPointsInclusion`, `TauCeti.fixedPointsDistribMulActionInclusion`, and
-  `TauCeti.fixedPointsDistribMulActionSubtype`: the additive and equivariant inclusions between
+  `Subgroup.fixedPointsDistribMulActionSubtype`: the additive and equivariant inclusions between
   fixed points and into the ambient additive monoid, with their functoriality laws.
-* `TauCeti.fixedPointsMap` and `TauCeti.fixedPointsQuotientMap`: functoriality of fixed points in
-  the additive monoid, additively and as a quotient-equivariant map.
-* `TauCeti.fixedPointsPairing`: the pairing induced on the fixed points of an equivariant
-  biadditive pairing.
+* `DistribMulActionHom.fixedPointsMap` and `DistribMulActionHom.fixedPointsQuotientMap`:
+  functoriality of fixed points in the additive monoid, additively and as a quotient-equivariant
+  map.
+* `Subgroup.fixedPointsAddSubmonoidPairing` and `Subgroup.fixedPointsPairing`: the pairings induced
+  on the fixed points of an equivariant biadditive pairing, with a commutative target, for additive
+  monoids and additive groups respectively.
 -/
 
 public section
@@ -211,24 +213,12 @@ def fixedPointsDistribMulActionInclusion [H.Normal] [K.Normal] (h : K ≤ H) :
   toAddMonoidHom := fixedPointsInclusion h
   map_smul' := fixedPointsInclusion_smul h
 
-/-- The `G`-equivariant inclusion of the fixed points of a normal subgroup into `M`. -/
-def fixedPointsDistribMulActionSubtype (H : Subgroup G) [H.Normal] :
-    FixedPoints.addSubmonoid H M →+[G] M where
-  toAddMonoidHom := AddSubmonoid.subtype _
-  map_smul' _ _ := rfl
-
 /-- The equivariant fixed-point inclusion does not move an element of `M`. -/
 @[simp]
 theorem coe_fixedPointsDistribMulActionInclusion [H.Normal] [K.Normal] (h : K ≤ H)
     (m : FixedPoints.addSubmonoid H M) :
     (fixedPointsDistribMulActionInclusion h m : M) = (m : M) :=
   coe_fixedPointsInclusion h m
-
-/-- The equivariant fixed-point subtype map does not move an element of `M`. -/
-@[simp]
-theorem fixedPointsDistribMulActionSubtype_apply (H : Subgroup G) [H.Normal]
-    (m : FixedPoints.addSubmonoid H M) : fixedPointsDistribMulActionSubtype H m = (m : M) :=
-  congrFun (AddSubmonoid.coe_subtype (FixedPoints.addSubmonoid H M)) m
 
 /-- The fixed-point inclusion is equivariant along Mathlib's canonical quotient homomorphism
 `G ⧸ K →* G ⧸ H`. -/
@@ -256,8 +246,16 @@ theorem fixedPointsInclusion_comp_fixedPointsInclusion {L : Subgroup G} (h : K �
       fixedPointsInclusion (h'.trans h) :=
   AddMonoidHom.ext fun _ ↦ Subtype.ext <| by simp
 
-section Map
+end Functoriality
 
+end TauCeti
+
+namespace DistribMulActionHom
+
+open TauCeti
+
+variable {G : Type*} [Group G] {M : Type*} [AddMonoid M] [DistribMulAction G M]
+variable {H K : Subgroup G}
 variable {N : Type*} [AddMonoid N] [DistribMulAction G N]
 
 /-- A `G`-equivariant additive map restricts to the fixed points of any subgroup. -/
@@ -273,12 +271,6 @@ theorem coe_fixedPointsMap (f : M →+[G] N) (H : Subgroup G)
     (m : FixedPoints.addSubmonoid H M) :
     (fixedPointsMap f H m : N) = f (m : M) := by
   rfl
-
-/-- Restriction to fixed points preserves the identity map. -/
-@[simp]
-theorem fixedPointsMap_id (H : Subgroup G) :
-    fixedPointsMap (DistribMulActionHom.id G : M →+[G] M) H = AddMonoidHom.id _ :=
-  AddMonoidHom.ext fun _ ↦ Subtype.ext <| by simp
 
 /-- Restriction to fixed points preserves composition. -/
 @[simp]
@@ -315,13 +307,6 @@ theorem coe_fixedPointsQuotientMap (f : M →+[G] N) (H : Subgroup G) [H.Normal]
     (fixedPointsQuotientMap f H m : N) = f (m : M) := by
   rfl
 
-/-- Quotient-equivariant restriction to fixed points preserves the identity map. -/
-@[simp]
-theorem fixedPointsQuotientMap_id (H : Subgroup G) [H.Normal] :
-    fixedPointsQuotientMap (DistribMulActionHom.id G : M →+[G] M) H =
-      DistribMulActionHom.id (G ⧸ H) :=
-  DistribMulActionHom.ext fun _ ↦ Subtype.ext <| by simp
-
 /-- Quotient-equivariant restriction to fixed points preserves composition. -/
 @[simp]
 theorem fixedPointsQuotientMap_comp_fixedPointsQuotientMap {P : Type*} [AddMonoid P]
@@ -337,32 +322,66 @@ theorem fixedPointsMap_comp_fixedPointsInclusion (f : M →+[G] N) (h : K ≤ H)
       (fixedPointsInclusion h).comp (fixedPointsMap f H) :=
   AddMonoidHom.ext fun _ ↦ Subtype.ext <| by simp
 
-end Map
+end DistribMulActionHom
 
-end Functoriality
+namespace Subgroup
+
+open TauCeti
+
+section Maps
+
+variable {G : Type*} [Group G] {M : Type*} [AddMonoid M] [DistribMulAction G M]
+
+/-- The `G`-equivariant inclusion of the fixed points of a normal subgroup into `M`. -/
+def fixedPointsDistribMulActionSubtype (H : Subgroup G) [H.Normal] :
+    FixedPoints.addSubmonoid H M →+[G] M where
+  toAddMonoidHom := AddSubmonoid.subtype _
+  map_smul' _ _ := rfl
+
+/-- The equivariant fixed-point subtype map does not move an element of `M`. -/
+@[simp]
+theorem fixedPointsDistribMulActionSubtype_apply (H : Subgroup G) [H.Normal]
+    (m : FixedPoints.addSubmonoid H M) : fixedPointsDistribMulActionSubtype H m = (m : M) :=
+  congrFun (AddSubmonoid.coe_subtype (FixedPoints.addSubmonoid H M)) m
+
+/-- Restriction to fixed points preserves the identity map. -/
+@[simp]
+theorem fixedPointsMap_id (H : Subgroup G) :
+    (DistribMulActionHom.id G : M →+[G] M).fixedPointsMap H = AddMonoidHom.id _ :=
+  AddMonoidHom.ext fun _ ↦ Subtype.ext <| by simp
+
+/-- Quotient-equivariant restriction to fixed points preserves the identity map. -/
+@[simp]
+theorem fixedPointsQuotientMap_id (H : Subgroup G) [H.Normal] :
+    (DistribMulActionHom.id G : M →+[G] M).fixedPointsQuotientMap H =
+      DistribMulActionHom.id (G ⧸ H) :=
+  DistribMulActionHom.ext fun _ ↦ Subtype.ext <| by simp
+
+end Maps
 
 section Pairing
 
 variable {G : Type*} [Group G]
-  {M : Type*} [AddCommGroup M] [DistribMulAction G M]
-  {N : Type*} [AddCommGroup N] [DistribMulAction G N]
-  {P : Type*} [AddCommGroup P] [DistribMulAction G P]
+  {M : Type*} [AddMonoid M] [DistribMulAction G M]
+  {N : Type*} [AddMonoid N] [DistribMulAction G N]
+  {P : Type*} [AddCommMonoid P] [DistribMulAction G P]
 
-/-- An `H`-equivariant biadditive pairing restricts to the fixed points of `H`. -/
-def fixedPointsPairing (H : Subgroup G) (μ : M →+ N →+ P)
+/-- An `H`-equivariant biadditive pairing of additive monoids restricts to the fixed points of
+`H`. -/
+def fixedPointsAddSubmonoidPairing (H : Subgroup G) (μ : M →+ N →+ P)
     (hequiv : ∀ (h : H) (m : M) (n : N),
       μ ((h : G) • m) ((h : G) • n) = (h : G) • μ m n) :
-    FixedPoints.addSubgroup H M →+ FixedPoints.addSubgroup H N →+
-      FixedPoints.addSubgroup H P where
+    FixedPoints.addSubmonoid H M →+ FixedPoints.addSubmonoid H N →+
+      FixedPoints.addSubmonoid H P where
   toFun m :=
     { toFun := fun n =>
-        ⟨μ (m : M) (n : N), (FixedPoints.mem_addSubgroup H P _).2 fun h => by
+        ⟨μ (m : M) (n : N), (FixedPoints.mem_addSubmonoid H P _).2 fun h => by
           have hm : (h : G) • (m : M) = m := by
             simpa only [Subgroup.smul_def] using
-              (FixedPoints.mem_addSubgroup H M _).1 m.2 h
+              (FixedPoints.mem_addSubmonoid H M _).1 m.2 h
           have hn : (h : G) • (n : N) = n := by
             simpa only [Subgroup.smul_def] using
-              (FixedPoints.mem_addSubgroup H N _).1 n.2 h
+              (FixedPoints.mem_addSubmonoid H N _).1 n.2 h
           simpa only [Subgroup.smul_def, hm, hn] using
             (hequiv h (m : M) (n : N)).symm⟩
       map_zero' := Subtype.ext (map_zero (μ (m : M)))
@@ -372,20 +391,21 @@ def fixedPointsPairing (H : Subgroup G) (μ : M →+ N →+ P)
 
 /-- The pairing on fixed points is the original pairing on underlying elements. -/
 @[simp]
-theorem coe_fixedPointsPairing (H : Subgroup G) (μ : M →+ N →+ P)
+theorem coe_fixedPointsAddSubmonoidPairing (H : Subgroup G) (μ : M →+ N →+ P)
     (hequiv : ∀ (h : H) (m : M) (n : N),
       μ ((h : G) • m) ((h : G) • n) = (h : G) • μ m n)
-    (m : FixedPoints.addSubgroup H M) (n : FixedPoints.addSubgroup H N) :
-    (fixedPointsPairing H μ hequiv m n : P) = μ (m : M) (n : N) :=
-  by simp [fixedPointsPairing]
+    (m : FixedPoints.addSubmonoid H M) (n : FixedPoints.addSubmonoid H N) :
+    (fixedPointsAddSubmonoidPairing H μ hequiv m n : P) = μ (m : M) (n : N) :=
+  by simp [fixedPointsAddSubmonoidPairing]
 
 /-- For a normal subgroup, the pairing on fixed points is equivariant for the quotient action. -/
 @[simp]
-theorem fixedPointsPairing_quotient_smul (H : Subgroup G) [H.Normal] (μ : M →+ N →+ P)
+theorem fixedPointsAddSubmonoidPairing_quotient_smul (H : Subgroup G) [H.Normal]
+    (μ : M →+ N →+ P)
     (hequiv : ∀ (g : G) (m : M) (n : N), μ (g • m) (g • n) = g • μ m n)
-    (q : G ⧸ H) (m : FixedPoints.addSubgroup H M) (n : FixedPoints.addSubgroup H N) :
-    fixedPointsPairing H μ (fun h => hequiv (h : G)) (q • m) (q • n) =
-      q • fixedPointsPairing H μ (fun h => hequiv (h : G)) m n := by
+    (q : G ⧸ H) (m : FixedPoints.addSubmonoid H M) (n : FixedPoints.addSubmonoid H N) :
+    fixedPointsAddSubmonoidPairing H μ (fun h => hequiv (h : G)) (q • m) (q • n) =
+      q • fixedPointsAddSubmonoidPairing H μ (fun h => hequiv (h : G)) m n := by
   induction q using QuotientGroup.induction_on with
   | H g =>
       apply Subtype.ext
@@ -393,4 +413,40 @@ theorem fixedPointsPairing_quotient_smul (H : Subgroup G) [H.Normal] (μ : M →
 
 end Pairing
 
-end TauCeti
+section PairingAddGroup
+
+variable {G : Type*} [Group G]
+  {M : Type*} [AddGroup M] [DistribMulAction G M]
+  {N : Type*} [AddGroup N] [DistribMulAction G N]
+  {P : Type*} [AddCommGroup P] [DistribMulAction G P]
+
+/-- An `H`-equivariant biadditive pairing restricts to the fixed-point additive subgroups.
+The subgroup carrier retains the additive inverses of the coefficients. -/
+def fixedPointsPairing (H : Subgroup G) (μ : M →+ N →+ P)
+    (hequiv : ∀ (h : H) (m : M) (n : N),
+      μ ((h : G) • m) ((h : G) • n) = (h : G) • μ m n) :
+    FixedPoints.addSubgroup H M →+ FixedPoints.addSubgroup H N →+
+      FixedPoints.addSubgroup H P :=
+  fixedPointsAddSubmonoidPairing H μ hequiv
+
+/-- The pairing on fixed-point additive subgroups preserves the underlying coefficients. -/
+@[simp]
+theorem coe_fixedPointsPairing (H : Subgroup G) (μ : M →+ N →+ P)
+    (hequiv : ∀ (h : H) (m : M) (n : N),
+      μ ((h : G) • m) ((h : G) • n) = (h : G) • μ m n)
+    (m : FixedPoints.addSubgroup H M) (n : FixedPoints.addSubgroup H N) :
+    (fixedPointsPairing H μ hequiv m n : P) = μ (m : M) (n : N) := by
+  exact coe_fixedPointsAddSubmonoidPairing H μ hequiv m n
+
+/-- For a normal subgroup, the pairing on fixed-point additive subgroups is quotient-equivariant. -/
+@[simp]
+theorem fixedPointsPairing_quotient_smul (H : Subgroup G) [H.Normal] (μ : M →+ N →+ P)
+    (hequiv : ∀ (g : G) (m : M) (n : N), μ (g • m) (g • n) = g • μ m n)
+    (q : G ⧸ H) (m : FixedPoints.addSubgroup H M) (n : FixedPoints.addSubgroup H N) :
+    fixedPointsPairing H μ (fun h => hequiv (h : G)) (q • m) (q • n) =
+      q • fixedPointsPairing H μ (fun h => hequiv (h : G)) m n :=
+  fixedPointsAddSubmonoidPairing_quotient_smul H μ hequiv q m n
+
+end PairingAddGroup
+
+end Subgroup

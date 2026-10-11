@@ -53,6 +53,8 @@ infrastructure independent of the diamond operators.
 * `CongruenceSubgroup.mem_Gamma0_iff_dvd`: `Γ₀(N)` membership read as the integer divisibility
   `(N : ℤ) ∣ A 1 0` rather than as a `ZMod N` congruence, for a proof that wants to name the
   quotient. Valid at every level, `N = 0` included.
+* `CongruenceSubgroup.exists_eq_mul_mul_of_mem_Gamma0`: a matrix in `Γ₀(L)` has lower-left
+  entry `M²c`, with `N ∣ Mc`, whenever `NM ∣ L` and `M² ∣ L`.
 * `CongruenceSubgroup.mem_Gamma1_iff`: `Γ₁(N)` is cut out inside `Γ₀(N)` by the
   single congruence `d ≡ 1`.
 * `CongruenceSubgroup.mem_Gamma1_iff_dvd_lowerRow`: `Γ₁(N)` membership read as the two integer
@@ -66,6 +68,8 @@ infrastructure independent of the diamond operators.
   `CongruenceSubgroup.isUnit_intCast_apply_zero_zero_add_natCast_mul_apply_one_zero_of_mem_Gamma0`:
   shearing the first column by a natural-number multiple of the lower-left entry changes nothing
   modulo the level, so the sheared entry is a unit too.
+* `CongruenceSubgroup.mem_Gamma1_iff_toHomUnits_eq_one`: inside `Γ₀(N)`, `Γ₁(N)` is the kernel of
+  the unit-valued lower-right entry.
 * `CongruenceSubgroup.Gamma0_normalizes_Gamma1` and
   `CongruenceSubgroup.Gamma0_le_normalizer_Gamma1`: conjugation by `Γ₀(N)` preserves `Γ₁(N)`.
 * `CongruenceSubgroup.Gamma1_map_le_Gamma0_map`: the inclusion `Γ₁(N) ≤ Γ₀(N)` after mapping to
@@ -164,6 +168,25 @@ as a congruence in `ZMod N`; this is the same fact with the congruence already d
 It holds at every level, `N = 0` included, where both sides say `A 1 0 = 0`. -/
 theorem mem_Gamma0_iff_dvd {N : ℕ} {A : SL(2, ℤ)} : A ∈ Gamma0 N ↔ (N : ℤ) ∣ A 1 0 :=
   Gamma0_mem.trans (ZMod.intCast_zmod_eq_zero_iff_dvd _ N)
+
+/-- A matrix of `Γ₀(L)`, for `N * M ∣ L` and `M * M ∣ L`, has lower-left entry `M * M * c` with
+`N ∣ M * c`.
+
+It holds for every `M`, `M = 0` included, where `M * M ∣ L` forces `L = 0`. -/
+theorem exists_eq_mul_mul_of_mem_Gamma0 {M N L : ℕ} (hNL : N * M ∣ L)
+    (hML : M * M ∣ L) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 L) :
+    ∃ c : ℤ, γ 1 0 = M * M * c ∧ (N : ℤ) ∣ M * c := by
+  obtain ⟨x, hx⟩ := (ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mp (Gamma0_mem.mp hγ)
+  obtain ⟨y, rfl⟩ := hML
+  refine ⟨y * x, by rw [hx]; push_cast; ring, ?_⟩
+  have hNy : N ∣ M * y := by
+    rcases Nat.eq_zero_or_pos M with rfl | hM
+    · simp
+    have : M * N ∣ M * (M * y) := by simpa [mul_comm N M, mul_assoc] using hNL
+    exact (Nat.mul_dvd_mul_iff_left hM).mp this
+  have := (Int.natCast_dvd_natCast.mpr hNy).mul_right x
+  push_cast at this
+  simpa [mul_assoc] using this
 
 /-- `Γ₀` is antitone in the level: if `M ∣ N` then `Γ₀(N) ≤ Γ₀(M)`. -/
 theorem Gamma0_le_Gamma0_of_dvd {M N : ℕ} (h : M ∣ N) : Gamma0 N ≤ Gamma0 M := by
@@ -271,6 +294,13 @@ theorem Gamma1_map_le_Gamma1_map_of_dvd {M N : ℕ} (h : M ∣ N) :
     (Gamma1 N).map (mapGL ℝ) ≤ (Gamma1 M).map (mapGL ℝ) :=
   Subgroup.map_mono (Gamma1_le_Gamma1_of_dvd h)
 
+/-- A finite-index subgroup of `SL(2, ℤ)` has finite index in every subgroup of `SL(2, ℤ)` after
+mapping to `GL₂(ℝ)`, so the trace between the two images is defined. This covers, for instance,
+`Γ(N)` in `Γ₁(N)` and `Γ₁(N)` in `Γ₀(N)`. -/
+instance instIsFiniteRelIndexMapMapGL (H K : Subgroup SL(2, ℤ)) [H.FiniteIndex] :
+    (H.map (mapGL ℝ)).IsFiniteRelIndex (K.map (mapGL ℝ)) :=
+  Subgroup.IsFiniteRelIndex.map (mapGL ℝ) Subgroup.isFiniteRelIndex_of_finiteIndex
+
 /-- **`Γ₀(N)` normalizes `Γ₁(N)` after mapping to `GL₂(S)`**, for any commutative ring `S`.
 This is `Gamma0_normalizes_Gamma1` transported along the monoid homomorphism `mapGL S`: the
 conjugate of an integral witness is again one.
@@ -337,6 +367,13 @@ definitional step out of the `simp` sets that consume it, and gives downstream f
 rewrite with instead of unfolding the definition. -/
 theorem Gamma0Map_apply (g : ↥(Gamma0 N)) :
     Gamma0Map N g = (((g : Matrix (Fin 2) (Fin 2) ℤ) 1 1 : ℤ) : ZMod N) := (rfl)
+
+/-- **An element of `Γ₀(N)` lies in `Γ₁(N)` exactly when its diamond label is `1`**:
+`mem_Gamma1_iff` read through the unit-valued lower-right entry `(Gamma0Map N).toHomUnits`. -/
+theorem mem_Gamma1_iff_toHomUnits_eq_one (g : ↥(Gamma0 N)) :
+    (g : SL(2, ℤ)) ∈ Gamma1 N ↔ (Gamma0Map N).toHomUnits g = 1 := by
+  rw [mem_Gamma1_iff, Units.ext_iff, MonoidHom.coe_toHomUnits, Gamma0Map_apply, Units.val_one]
+  exact and_iff_right g.2
 
 /-- `(Gamma0Map N).toHomUnits` is surjective: every unit `u ∈ (ZMod N)ˣ` is realized as the
 lower-right entry of some `g ∈ Gamma0 N`, by strong approximation for `SL₂`. -/

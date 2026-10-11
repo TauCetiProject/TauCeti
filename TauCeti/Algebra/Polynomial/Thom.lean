@@ -13,9 +13,11 @@ public import Mathlib.Basic.Sign.Defs
 
 /-! # Thom sign conditions from polynomial Rolle
 
-Sign conditions on all formal derivatives are order-convex. Consequently the
-signs of the positive-order derivatives distinguish roots of a nonzero
-polynomial, including multiple roots. No squarefreeness assumption is needed.
+Sign conditions on all formal derivatives are order-convex. Consequently a
+nonzero polynomial has no root between two distinct points at which all its
+derivatives have the same signs, and the signs of the positive-order derivatives
+distinguish roots of a nonzero polynomial, including multiple roots. No
+squarefreeness assumption is needed.
 The finite Thom encoding records derivatives 1 through `natDegree`. The last
 differing derivative sign and the next common sign determine the order of two points.
 The only extra premise on the ordered field is polynomial Rolle, supplied by
@@ -280,6 +282,23 @@ theorem ordConnected_preimage_thomEncoding (p : R[X]) (hrolle : PolynomialRolle 
   exact derivativeSign_eq_on_Icc p hrolle hx
     (fun j hj => (thomEncoding_eq_iff p a b).mp (ha.trans hb.symm) j (hk.trans_le hj))
 
+/-- A nonzero polynomial whose derivatives of every order, including order zero, have the same
+signs at two distinct points has no root between them. -/
+theorem eval_ne_zero_of_derivativeSign_eq (p : R[X]) (hrolle : PolynomialRolle R) (hp : p ≠ 0)
+    {a b x : R} (hab : a ≠ b) (h : ∀ k, derivativeSign p a k = derivativeSign p b k)
+    (hx : x ∈ uIcc a b) : p.eval x ≠ 0 := by
+  wlog hlt : a < b generalizing a b
+  · exact this hab.symm (fun k ↦ (h k).symm) (uIcc_comm a b ▸ hx)
+      (lt_of_le_of_ne (not_lt.1 hlt) hab.symm)
+  rw [uIcc_of_le hlt.le] at hx
+  have hsign {y : R} (hy : y ∈ Icc a b) : sign (p.eval y) = sign (p.eval a) := by
+    simpa using derivativeSign_eq_on_Icc p hrolle hy (k := 0) fun j _ ↦ h j
+  intro hx0
+  apply hp
+  refine p.eq_zero_of_infinite_isRoot ((Icc_infinite hlt).mono fun y hy ↦ ?_)
+  have hy := (hsign hy).trans (hsign hx).symm
+  rwa [hx0, sign_zero, sign_eq_zero_iff] at hy
+
 /-- Roots with equal signs of every positive-order derivative are equal.
 The polynomial need not be squarefree. -/
 theorem eq_of_derivativeSign_eq (p : R[X]) (hrolle : PolynomialRolle R) (hp : p ≠ 0) {a b : R}
@@ -289,18 +308,8 @@ theorem eq_of_derivativeSign_eq (p : R[X]) (hrolle : PolynomialRolle R) (hp : p 
     cases k with
     | zero => simp [derivativeSign_def, ha, hb]
     | succ k => exact hs _ (Nat.succ_pos _)
-  have no_lt {u v : R} (hu : p.eval u = 0)
-      (hσ : ∀ k, derivativeSign p u k = derivativeSign p v k) (huv : u < v) : False := by
-    apply hp
-    apply p.eq_zero_of_infinite_isRoot
-    apply (Ioo_infinite huv).mono
-    intro x hx
-    apply sign_eq_zero_iff.mp
-    simpa only [hu, sign_zero] using sign_between p hrolle ⟨hx.1.le, hx.2.le⟩ hσ
-  rcases lt_trichotomy a b with hab | hab | hba
-  · exact (no_lt ha h hab).elim
-  · exact hab
-  · exact (no_lt hb (fun k => (h k).symm) hba).elim
+  by_contra hab
+  exact eval_ne_zero_of_derivativeSign_eq p hrolle hp hab h left_mem_uIcc ha
 
 /-- A finite Thom encoding uniquely identifies a root of a nonzero polynomial. -/
 theorem thomEncoding_injOn (p : R[X]) (hrolle : PolynomialRolle R) (hp : p ≠ 0) :

@@ -57,7 +57,9 @@ rather than under `TauCeti`, so that dot notation on the Mathlib types they exte
 
 public section
 
-open CategoryTheory TauCeti.ContRepresentation
+open _root_.ContRepresentation
+
+open CategoryTheory
 
 namespace AddSubgroup
 
@@ -191,7 +193,7 @@ counterpart of `Representation.quotientToInvariants_lift`. -/
 
 -- `simp` reduces the carriers of the `abbrev`s `TopRep.quotientToInvariants` and `TopRep.res`, and
 -- the `abbrev` functor `TopRep.resFunctor`, in implicit type arguments before it looks a term up,
--- so the `simp` lemmas below state their left-hand sides through `dsimp% only`, as in #8315.
+-- so the `simp` lemmas below state their left-hand sides through `dsimp% only`.
 /-- The inclusion of the `S`-invariants into the ambient object sends an invariant vector to
 itself. -/
 @[simp]

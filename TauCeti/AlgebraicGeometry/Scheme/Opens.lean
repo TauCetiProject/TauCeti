@@ -18,6 +18,8 @@ This file records general-purpose facts about open subsets of schemes.
   subset of any nonempty scheme.
 * `AlgebraicGeometry.IsAffineOpen.presheaf_map_fromSpec_appIso_hom` identifies restriction of
   structure-sheaf sections along the affine chart `Spec Γ(X, U)`.
+* `AlgebraicGeometry.Scheme.Hom.appLE_eq_id_of_eq_id` identifies the restriction maps of a scheme
+  endomorphism equal to the identity.
 -/
 
 open TopologicalSpace AlgebraicGeometry
@@ -35,6 +37,14 @@ open CategoryTheory Opposite
 noncomputable section
 
 variable {X : Scheme.{u}} {U : X.Opens}
+
+/-- If an endomorphism `f` of `X` equals the identity, then so does each of its restriction maps
+`Γ(X, U) ⟶ Γ(X, U)`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.appLE_eq_id_of_eq_id {f : X ⟶ X}
+    (hf : f = 𝟙 X) (U : X.Opens) (e : U ≤ f ⁻¹ᵁ U) : f.appLE U U e = 𝟙 _ := by
+  subst hf
+  rw [Scheme.Hom.appLE, Scheme.Hom.id_app]
+  exact (Category.id_comp _).trans (X.presheaf.map_id _)
 
 /-- Along the open immersion `hU.fromSpec : Spec Γ(X, U) ⟶ X` onto an affine open `U`,
 restricting a section of `𝒪_X` from `U` to the image of an open `V` and transporting it to `V`

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Action.Sigma
 public import Mathlib.Algebra.Group.Action.Sum
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.GroupAction.Transitive
@@ -52,6 +53,10 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   action is free, then the descended `N(H) / H` action on the `H`-orbit quotient is free.
 * `TauCeti.MulAction.orbitRelQuotientCongr`: an equivalence carrying one action to another along
   a group isomorphism induces an equivalence of orbit spaces.
+* `TauCeti.MulAction.stabilizer_sigma_mk`: the stabilizer of a sigma point is its fibre
+  stabilizer.
+* `TauCeti.MulAction.orbitRelQuotientSigmaEquiv`: the orbit space of a componentwise sigma
+  action is the sigma type of the fibre orbit spaces.
 * `TauCeti.MulAction.orbitRelQuotientSumEquiv`: the orbit space of an action on `X ⊕ Y` is the
   sum of the orbit spaces of `X` and `Y`.
 * `TauCeti.MulAction.equivSubgroupOrbitsQuotientGroup_symm_mk` and
@@ -687,5 +692,50 @@ theorem MulAction.orbitRelQuotientSumEquiv_symm_inr_mk (y : Y) :
   (rfl)
 
 end Sum
+
+section Sigma
+
+variable {ι : Type*} {Y : ι → Type*} [∀ i, MulAction G (Y i)]
+
+/-- The stabilizer of a point in a sigma type is its stabilizer in its fibre. -/
+@[simp]
+theorem MulAction.stabilizer_sigma_mk (i : ι) (y : Y i) :
+    MulAction.stabilizer G (Sigma.mk i y) = MulAction.stabilizer G y := by
+  ext g
+  simp
+
+/-- The orbit space of a componentwise sigma action is the sigma type of the fibre orbit
+spaces. No transitivity or nonemptiness hypotheses are needed. -/
+def MulAction.orbitRelQuotientSigmaEquiv :
+    MulAction.orbitRel.Quotient G (Σ i, Y i) ≃ Σ i, MulAction.orbitRel.Quotient G (Y i) where
+  toFun := Quotient.lift (fun y ↦ Sigma.mk y.1 (Quotient.mk'' y.2)) <| by
+    rintro ⟨i, y⟩ ⟨j, z⟩ ⟨g, hg⟩
+    cases congrArg Sigma.fst hg
+    exact congrArg (Sigma.mk i) (Quotient.sound ⟨g, by simpa using hg⟩)
+  invFun q := Quotient.map' (s₁ := MulAction.orbitRel G (Y q.1))
+    (s₂ := MulAction.orbitRel G (Σ i, Y i)) (Sigma.mk q.1)
+    (fun _ _ ⟨g, hg⟩ ↦ ⟨g, by simp only [Sigma.smul_mk, hg]⟩) q.2
+  left_inv := by rintro ⟨i, y⟩; rfl
+  right_inv := by
+    rintro ⟨i, q⟩
+    induction q using Quotient.inductionOn'
+    rfl
+
+/-- The sigma orbit equivalence sends a point to its fibre index and its fibre orbit. -/
+@[simp]
+theorem MulAction.orbitRelQuotientSigmaEquiv_mk (y : Σ i, Y i) :
+    MulAction.orbitRelQuotientSigmaEquiv
+        (Quotient.mk'' y : MulAction.orbitRel.Quotient G (Σ i, Y i)) =
+      Sigma.mk y.1 (Quotient.mk'' y.2) :=
+  (rfl)
+
+/-- The inverse sends a fibre orbit to the orbit of the corresponding sigma point. -/
+@[simp]
+theorem MulAction.orbitRelQuotientSigmaEquiv_symm_mk (i : ι) (y : Y i) :
+    (MulAction.orbitRelQuotientSigmaEquiv (G := G) (Y := Y)).symm
+        ⟨i, Quotient.mk'' y⟩ = Quotient.mk'' (Sigma.mk i y) :=
+  (rfl)
+
+end Sigma
 
 end TauCeti

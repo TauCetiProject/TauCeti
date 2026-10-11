@@ -34,7 +34,7 @@ by a permutation of them.
 The two orthogonality relations become statements about the table: its rows are orthonormal for the
 character pairing, and its columns are orthogonal with the class sizes as weights. Over `ℂ` both
 take their familiar Hermitian form, because inversion conjugates character values
-(`TauCeti.Representation.conj_char`).
+(`Representation.conj_char`).
 
 ## Main definitions
 
@@ -281,7 +281,8 @@ theorem irreducibleCharacter_apply_mem_of_forall_pow_eq_one_mem {A : Subring k}
     (hA : ∀ x : k, x ^ Nat.card G = 1 → x ∈ A) (i : Fin (Nat.card (ConjClasses G))) (g : G) :
     irreducibleCharacter k i g ∈ A := by
   rw [← character_irreducibleRepresentation k i]
-  exact Representation.char_mem_of_forall_pow_eq_one_mem _ (pow_card_eq_one' (x := g)) hA
+  exact Representation.char_mem_of_forall_pow_eq_one_mem _ (IsAlgClosed.splits _)
+    (pow_card_eq_one' (x := g)) hA
 
 /-- **The degree of an irreducible character is positive**: an irreducible representation is
 nonzero, so the space affording the character has positive dimension. -/

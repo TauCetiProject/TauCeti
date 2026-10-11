@@ -39,6 +39,8 @@ topological ring, the closed lower central series of the Heisenberg group stops 
   continuous.
 * `TauCeti.HeisenbergGroup.continuous_iff`: a map into the Heisenberg group is continuous exactly
   when its three coordinates are.
+* `TauCeti.HeisenbergGroup.continuous_map`: a continuous ring homomorphism induces a continuous
+  homomorphism of Heisenberg groups.
 * The instances `IsTopologicalGroup`, `CompactSpace`, `T2Space`, `DiscreteTopology` and
   `TotallyDisconnectedSpace` on `HeisenbergGroup R`, inherited from `R`.
 * `TauCeti.HeisenbergGroup.isClosed_zAxis`: over a Hausdorff ring the `z`-axis is closed.
@@ -102,6 +104,14 @@ theorem continuous_iff {X : Type*} [TopologicalSpace X] {f : X → HeisenbergGro
   exact homeomorphProd.isInducing.continuous_iff.mpr
     ((hx.prodMk (hy.prodMk hz)).congr fun _ ↦ by
       simp only [Function.comp_apply, homeomorphProd_apply])
+
+/-- The homomorphism of Heisenberg groups induced by a continuous ring homomorphism is
+continuous. -/
+theorem continuous_map {S : Type*} [Ring R] [Ring S] [TopologicalSpace S] (f : R →+* S)
+    (hf : Continuous f) : Continuous (map f) :=
+  continuous_iff.mpr <| by
+    simp only [map_apply]
+    exact ⟨hf.comp continuous_x, hf.comp continuous_y, hf.comp continuous_z⟩
 
 instance [CompactSpace R] : CompactSpace (HeisenbergGroup R) :=
   homeomorphProd.symm.compactSpace

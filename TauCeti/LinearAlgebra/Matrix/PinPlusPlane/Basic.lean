@@ -60,6 +60,7 @@ his Théorème 1′ computes the Evens norm of a Kummer class, at `n = 2`.
   `TauCeti.pinVec_mul_self`: the Clifford relations.
 * `TauCeti.isPinLift_pinVec`: a unit vector lifts its own reflection.
 * `TauCeti.isPinLift_iff`: a lift is checked on the generators `e₁` and `e₂`.
+* `TauCeti.wreathSignedPerm_mem_orthogonalGroup`: the signed permutations are orthogonal.
 * `TauCeti.IsPinLift.mul`, `TauCeti.IsPinLift.inv`, `TauCeti.IsPinLift.map`: lifts multiply,
   invert, and are natural in the coefficient ring.
 * `TauCeti.IsPinLift.unique`, `TauCeti.IsPinLift.eq_or_eq_neg`: a lift determines what it lifts,
@@ -256,6 +257,17 @@ theorem pinVec_mul_add_pinVec_mul (y z : Fin 2 → R) :
 theorem pinVec_transpose (y : Fin 2 → R) : (pinVec y)ᵀ = pinVec y := by
   rw [pinVec_eq]
   ext i j; fin_cases i <;> fin_cases j <;> rfl
+
+/-- **The signed permutations are orthogonal:** `diag((−1)^a, (−1)^b) · e₂^c` has orthonormal
+rows. -/
+theorem wreathSignedPerm_mem_orthogonalGroup (g : WreathC2) :
+    (wreathSignedPerm g : Matrix (Fin 2) (Fin 2) R) ∈ orthogonalGroup (Fin 2) R := by
+  rw [mem_orthogonalGroup_iff, wreathSignedPerm_apply]
+  generalize coordA g = a, coordB g = b, coordC g = c
+  have hZ : ∀ x : ZMod 2, x = 0 ∨ x = 1 := by decide
+  rcases hZ a with rfl | rfl <;> rcases hZ b with rfl | rfl <;> rcases hZ c with rfl | rfl <;>
+    ext i j <;> fin_cases i <;> fin_cases j <;>
+    simp [pinE2, ZMod.val_one, Matrix.mul_apply, Fin.sum_univ_two]
 
 /-- The determinant of the vector `y` is `−q(y) = −(y₀² + y₁²)`. -/
 @[simp]

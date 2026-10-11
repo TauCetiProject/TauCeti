@@ -8,10 +8,13 @@ module
 public import Mathlib.Algebra.Ring.Invertible
 public import Mathlib.LinearAlgebra.ExteriorPower.Pairing
 public import Mathlib.LinearAlgebra.TensorPower.Basic
+public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 public import TauCeti.LinearAlgebra.PiTensorProduct.TwoStrand
-public import TauCeti.LinearAlgebra.SymmetricPower.Basic
+public import TauCeti.LinearAlgebra.SymmetricPower.Basis
 public import TauCeti.LinearAlgebra.TensorProduct.Symmetric
+public import TauCeti.LinearAlgebra.Trace.Exact
 
+import Mathlib.LinearAlgebra.PiTensorProduct.Basis
 import Mathlib.Tactic.FinCases
 import TauCeti.Data.Fin.Basic
 
@@ -24,7 +27,9 @@ alternating parts. This file constructs the natural equivalence
 `⨂[R]^2 M ≃ₗ[R] Sym[R]^2 M × ⋀[R]^2 M`
 
 using the half-symmetrizer and half-antisymmetrizer. No freeness or finite-generation hypothesis
-is needed.
+is needed. Before that splitting, it proves the characteristic-free exactness of
+`⋀²M → M ⊗ M → Sym²M` and the resulting trace sum and difference identities for finite free
+modules over any commutative ring.
 
 It then transfers the decomposition to the **binary** tensor square `M ⊗[R] M`, where the two
 summands are the eigenspaces `TauCeti.symmetricTensors` and `TauCeti.antisymmetricTensors` of the
@@ -51,14 +56,24 @@ comparisons are what let a statement proved there be read as a statement about `
 
 ## Main results
 
+* `exteriorPower.range_toTensorPower_two_eq_ker_symmetricPower_mk`: antisymmetrization and
+  the symmetric quotient are exact without an assumption on `2`.
+* `exteriorPower.exact_toTensorPower_two_symmetricPower_mk`: the same exactness in the
+  `Function.Exact` API.
+* `LinearMap.trace_piTensorProduct_map_two` and
+  `LinearMap.trace_symmetricPower_sub_trace_exteriorPower`: the trace sum and difference
+  identities on the symmetric and exterior squares of a finite free module over a
+  commutative ring, valid in every characteristic.
+* `LinearMap.trace_piTensorProduct_map_comp_tensorSwap`: the trace of the diagonal action
+  composed with the swap is the trace of the square of the endomorphism.
 * `TauCeti.tensorProductEquivTensorSquare_comm` and
   `TauCeti.tensorProductEquivTensorSquare_comp_map`: the bridge carries the flip to the swap and
   `f ⊗ f` to the diagonal `PiTensorProduct.map`.
 * `SymmetricPower.toTensorSquare_comp_mk` and
   `exteriorPower.toTensorSquare_comp_lift_ιMulti`: the two embeddings compose with their
   projections to the symmetrizer `⅟2 • (1 + swap)` and the antisymmetrizer `⅟2 • (1 - swap)`.
-* `TauCeti.symmetricTensorsEquivSymmetricPower_symmetricTensorsRestrict` and
-  `TauCeti.antisymmetricTensorsEquivExteriorPower_antisymmetricTensorsRestrict`: both
+* `LinearMap.symmetricTensorsEquivSymmetricPower_symmetricTensorsRestrict` and
+  `LinearMap.antisymmetricTensorsEquivExteriorPower_antisymmetricTensorsRestrict`: both
   comparisons turn the restriction of `f ⊗ f` into `SymmetricPower.map f` and
   `exteriorPower.map 2 f`.
 
@@ -174,6 +189,257 @@ end Swap
 
 end TauCeti
 
+
+namespace exteriorPower
+
+/-- Antisymmetrizing a pure exterior square is the difference of its two tensor orders. -/
+@[simp high]
+theorem toTensorPower_ιMulti_two {R : Type} {M : Type*}
+    [CommRing R] [AddCommGroup M] [Module R M] (f : Fin 2 → M) :
+    exteriorPower.toTensorPower R M 2 (exteriorPower.ιMulti R 2 f) =
+      PiTensorProduct.tprod R f -
+        PiTensorProduct.tprod R (fun i ↦ f (Equiv.swap 0 1 i)) := by
+  classical
+  have hperm : (Finset.univ : Finset (Equiv.Perm (Fin 2))) =
+      {1, Equiv.swap 0 1} := by
+    ext e
+    simp only [Finset.mem_univ, Finset.mem_insert, Finset.mem_singleton, true_iff]
+    exact TauCeti.perm_fin_two_eq_one_or_swap e
+  rw [exteriorPower.toTensorPower_apply_ιMulti, hperm,
+    Finset.sum_insert (by decide), Finset.sum_singleton]
+  rw [Equiv.Perm.sign_swap (by decide : (0 : Fin 2) ≠ 1)]
+  simp [sub_eq_add_neg]
+
+end exteriorPower
+
+namespace SymmetricPower
+
+/-- The symmetric quotient kills antisymmetrization of an exterior square. -/
+theorem mk_comp_exteriorPower_toTensorPower {R : Type} {M : Type*}
+    [CommRing R] [AddCommGroup M] [Module R M] : (SymmetricPower.mk R (Fin 2) M).comp
+      (exteriorPower.toTensorPower R M 2) = 0 := by
+  classical
+  apply exteriorPower.linearMap_ext
+  apply AlternatingMap.ext
+  intro f
+  -- `SymmetricPower.tprod` is `SymmetricPower.mk` of a pure tensor power, so `tprod_equiv`
+  -- says the two orders have the same symmetric class once that definition is unfolded.
+  have hswap : SymmetricPower.mk R (Fin 2) M (PiTensorProduct.tprod R f) =
+      SymmetricPower.mk R (Fin 2) M
+        (PiTensorProduct.tprod R fun i ↦ f (Equiv.swap 0 1 i)) := by
+    simpa only [SymmetricPower.tprod, LinearMap.compMultilinearMap_apply] using
+      (SymmetricPower.tprod_equiv (Equiv.swap (0 : Fin 2) 1) f).symm
+  rw [LinearMap.compAlternatingMap_apply, LinearMap.comp_apply,
+    exteriorPower.toTensorPower_ιMulti_two, map_sub, hswap, sub_self]
+  simp
+
+/-- The symmetric quotient kills every antisymmetrized exterior square. -/
+@[simp]
+theorem mk_exteriorPower_toTensorPower {R : Type} {M : Type*}
+    [CommRing R] [AddCommGroup M] [Module R M] (x : ⋀[R]^2 M) :
+    mk R (Fin 2) M (exteriorPower.toTensorPower R M 2 x) = 0 := by
+  simpa only [LinearMap.comp_apply, LinearMap.zero_apply] using
+    LinearMap.congr_fun (mk_comp_exteriorPower_toTensorPower (R := R) (M := M)) x
+
+end SymmetricPower
+
+namespace TauCeti.TensorSquare
+
+private theorem symToAlternatingQuotient_rel {R : Type} {M : Type*}
+    [CommRing R] [AddCommGroup M] [Module R M] :
+    addConGen (SymmetricPower.Rel R (Fin 2) M) ≤
+      AddCon.ker (Submodule.mkQ (LinearMap.range
+        (exteriorPower.toTensorPower R M 2))).toAddMonoidHom := by
+  apply AddCon.addConGen_le.2
+  intro x y h
+  cases h with
+  | perm e f =>
+    apply (AddCon.ker_rel _).2
+    apply (Submodule.Quotient.eq _).2
+    rcases TauCeti.perm_fin_two_eq_one_or_swap e with rfl | rfl
+    · simp
+    · exact ⟨exteriorPower.ιMulti R 2 f, exteriorPower.toTensorPower_ιMulti_two f⟩
+
+/-- The symmetric-square map to the quotient of the tensor square by alternating tensors. -/
+private noncomputable def symToAlternatingQuotient {R : Type} {M : Type*}
+    [CommRing R] [AddCommGroup M] [Module R M] :
+    Sym[R]^2 M →ₗ[R]
+      (⨂[R]^2 M) ⧸ LinearMap.range (exteriorPower.toTensorPower R M 2) where
+  toFun :=
+    (addConGen (SymmetricPower.Rel R (Fin 2) M)).lift
+      (LinearMap.toAddMonoidHom
+        (Submodule.mkQ (LinearMap.range (exteriorPower.toTensorPower R M 2))))
+      symToAlternatingQuotient_rel
+  map_add' := map_add _
+  map_smul' r x := AddCon.induction_on x fun x ↦ by
+    exact congrArg
+      (Submodule.Quotient.mk
+        (p := LinearMap.range (exteriorPower.toTensorPower R M 2)))
+      ((LinearMap.id.map_smul r x))
+
+private theorem symToAlternatingQuotient_mk {R : Type} {M : Type*}
+    [CommRing R] [AddCommGroup M] [Module R M] (x : ⨂[R]^2 M) :
+    symToAlternatingQuotient (R := R) (M := M)
+        (SymmetricPower.mk R (Fin 2) M x) =
+      Submodule.Quotient.mk x := by
+  -- `SymmetricPower.mk` and the linear lift wrap the two additive quotient maps, so their
+  -- computation is `AddCon.lift_mk'`, followed by the submodule quotient's computation law.
+  exact (AddCon.lift_mk' symToAlternatingQuotient_rel x).trans
+    (Submodule.mkQ_apply _ x)
+
+end TauCeti.TensorSquare
+
+namespace exteriorPower
+
+/-- Antisymmetrization and the symmetric quotient form the characteristic-free exact sequence
+`⋀²M → M ⊗ M → Sym²M`. -/
+theorem range_toTensorPower_two_eq_ker_symmetricPower_mk {R : Type} {M : Type*}
+    [CommRing R] [AddCommGroup M] [Module R M] :
+    LinearMap.range (exteriorPower.toTensorPower R M 2) =
+      LinearMap.ker (SymmetricPower.mk R (Fin 2) M) := by
+  apply le_antisymm
+  · rintro _ ⟨x, rfl⟩
+    rw [LinearMap.mem_ker]
+    exact SymmetricPower.mk_exteriorPower_toTensorPower x
+  · intro x hx
+    rw [LinearMap.mem_ker] at hx
+    apply (Submodule.Quotient.mk_eq_zero
+      (LinearMap.range (exteriorPower.toTensorPower R M 2))).mp
+    rw [← TauCeti.TensorSquare.symToAlternatingQuotient_mk x, hx, map_zero]
+
+/-- The antisymmetrization into the tensor square and its symmetric quotient are exact over
+every commutative ring. -/
+theorem exact_toTensorPower_two_symmetricPower_mk {R : Type} {M : Type*}
+    [CommRing R] [AddCommGroup M] [Module R M] :
+    Function.Exact (toTensorPower R M 2) (SymmetricPower.mk R (Fin 2) M) :=
+  LinearMap.exact_iff.mpr range_toTensorPower_two_eq_ker_symmetricPower_mk.symm
+
+end exteriorPower
+
+namespace TauCeti
+
+/-- The swap acts as `-1` on the alternating part: it exchanges the two pure tensors whose
+difference is the image of a wedge. -/
+theorem tensorSwap_comp_exteriorPower_toTensorPower {R : Type} {M : Type*}
+    [CommRing R] [AddCommGroup M] [Module R M] :
+    (TauCeti.tensorSwap R M).toLinearMap.comp (exteriorPower.toTensorPower R M 2)
+      = -exteriorPower.toTensorPower R M 2 := by
+  apply exteriorPower.linearMap_ext
+  apply AlternatingMap.ext
+  intro v
+  simp only [LinearMap.compAlternatingMap_apply, LinearMap.comp_apply, LinearMap.neg_apply,
+    LinearEquiv.coe_coe]
+  rw [exteriorPower.toTensorPower_ιMulti_two, map_sub, tensorSwap_tprod, tensorSwap_tprod]
+  simp only [Equiv.swap_apply_self, neg_sub]
+
+/-- Swapping an antisymmetrized exterior square negates it. -/
+@[simp]
+theorem tensorSwap_exteriorPower_toTensorPower {R : Type} {M : Type*}
+    [CommRing R] [AddCommGroup M] [Module R M] (x : ⋀[R]^2 M) :
+    tensorSwap R M (exteriorPower.toTensorPower R M 2 x) =
+      -exteriorPower.toTensorPower R M 2 x := by
+  simpa only [LinearMap.comp_apply, LinearMap.neg_apply, LinearEquiv.coe_coe] using
+    LinearMap.congr_fun (tensorSwap_comp_exteriorPower_toTensorPower (R := R) (M := M)) x
+
+end TauCeti
+
+namespace SymmetricPower
+
+/-- The swap acts as `+1` on the symmetric part: that is exactly the relation defining `Sym²`. -/
+theorem mk_comp_tensorSwap {R : Type} {M : Type*}
+    [CommSemiring R] [AddCommMonoid M] [Module R M] :
+    (SymmetricPower.mk R (Fin 2) M).comp (TauCeti.tensorSwap R M).toLinearMap
+      = SymmetricPower.mk R (Fin 2) M := by
+  apply LinearMap.ext_on (PiTensorProduct.span_tprod_eq_top (R := R))
+  rintro _ ⟨v, rfl⟩
+  rw [LinearMap.comp_apply, LinearEquiv.coe_coe, TauCeti.tensorSwap_tprod]
+  simpa only [SymmetricPower.tprod, LinearMap.compMultilinearMap_apply] using
+    SymmetricPower.tprod_equiv (Equiv.swap (0 : Fin 2) 1) v
+
+/-- Swapping any tensor square preserves its symmetric class. -/
+@[simp]
+theorem mk_tensorSwap {R : Type} {M : Type*}
+    [CommSemiring R] [AddCommMonoid M] [Module R M] (x : ⨂[R]^2 M) :
+    mk R (Fin 2) M (TauCeti.tensorSwap R M x) = mk R (Fin 2) M x := by
+  simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe] using
+    LinearMap.congr_fun (mk_comp_tensorSwap (R := R) (M := M)) x
+
+end SymmetricPower
+
+namespace LinearMap
+
+/-- The trace of the diagonal tensor-square map composed with the swap is the trace of
+the square of the endomorphism. -/
+theorem trace_piTensorProduct_map_comp_tensorSwap {R : Type} {M : Type*}
+    [CommSemiring R] [AddCommMonoid M] [Module R M] [Module.Free R M] [Module.Finite R M]
+    (f : M →ₗ[R] M) :
+    trace R (⨂[R]^2 M)
+        ((PiTensorProduct.map fun _ : Fin 2 ↦ f) ∘ₗ (TauCeti.tensorSwap R M).toLinearMap)
+      = trace R M (f ∘ₗ f) := by
+  classical
+  let b := Module.Free.chooseBasis R M
+  let B := Basis.piTensorProduct fun _ : Fin 2 ↦ b
+  refine b.trace_eq_trace_comp_self_of_toMatrix_diag B
+    (finTwoArrowEquiv _) f _ fun p ↦ ?_
+  simp [B, Module.Basis.toMatrix_apply, Basis.piTensorProduct_apply,
+    TauCeti.tensorSwap_tprod, PiTensorProduct.map_tprod,
+    Basis.piTensorProduct_repr_tprod_apply, Fin.prod_univ_two]
+
+/-- The trace of the diagonal tensor-square map of a finite free module over a commutative
+ring is the sum of the traces on its symmetric and exterior squares. -/
+theorem trace_piTensorProduct_map_two {R : Type} {M : Type*}
+    [CommRing R] [AddCommGroup M] [Module R M] [Module.Free R M] [Module.Finite R M]
+    (f : M →ₗ[R] M) :
+    trace R (⨂[R]^2 M) (PiTensorProduct.map fun _ : Fin 2 ↦ f) =
+      trace R (Sym[R]^2 M) (SymmetricPower.map (ι := Fin 2) f) +
+        trace R (⋀[R]^2 M) (exteriorPower.map 2 f) := by
+  have hq : (SymmetricPower.mk R (Fin 2) M) ∘ₗ (PiTensorProduct.map fun _ : Fin 2 ↦ f)
+      = (SymmetricPower.map (ι := Fin 2) f) ∘ₗ (SymmetricPower.mk R (Fin 2) M) :=
+    LinearMap.ext fun x ↦ (SymmetricPower.map_mk f x).symm
+  have h := trace_eq_add_of_exact
+    exteriorPower.toTensorPower_injective_of_free
+    (LinearMap.range_eq_top.mp (SymmetricPower.range_mk R (Fin 2) M))
+    exteriorPower.exact_toTensorPower_two_symmetricPower_mk
+    (exteriorPower.toTensorPower_comp_map 2 f).symm hq
+  simpa only [add_comm] using h
+
+/-- **The trace form of the two square characters.** For a finite free module over a
+commutative ring, the traces of an endomorphism on the symmetric and exterior squares differ
+by the trace of its own square. -/
+theorem trace_symmetricPower_sub_trace_exteriorPower {R : Type} {M : Type*}
+    [CommRing R] [AddCommGroup M] [Module R M] [Module.Free R M] [Module.Finite R M]
+    (f : M →ₗ[R] M) :
+    LinearMap.trace R (Sym[R]^2 M) (SymmetricPower.map (ι := Fin 2) f)
+        - LinearMap.trace R (⋀[R]^2 M) (exteriorPower.map 2 f)
+      = LinearMap.trace R M (f.comp f) := by
+  -- Read the exact sequence `⋀²M → M ⊗ M → Sym²M` against `(f ⊗ f) ∘ swap`, which covers
+  -- `-⋀²f` on the alternating part and `Sym²f` on the symmetric quotient.
+  have hfi :
+      ((PiTensorProduct.map fun _ : Fin 2 ↦ f).comp
+            (TauCeti.tensorSwap R M).toLinearMap).comp (exteriorPower.toTensorPower R M 2)
+        = (exteriorPower.toTensorPower R M 2).comp (-exteriorPower.map 2 f) := by
+    rw [LinearMap.comp_assoc, TauCeti.tensorSwap_comp_exteriorPower_toTensorPower,
+      LinearMap.comp_neg, LinearMap.comp_neg,
+      ← exteriorPower.toTensorPower_comp_map 2 f]
+  have hfq :
+      (SymmetricPower.mk R (Fin 2) M).comp
+          ((PiTensorProduct.map fun _ : Fin 2 ↦ f).comp (TauCeti.tensorSwap R M).toLinearMap)
+        = (SymmetricPower.map (ι := Fin 2) f).comp (SymmetricPower.mk R (Fin 2) M) := by
+    exact LinearMap.ext fun x ↦ by simp [← SymmetricPower.map_mk]
+  have h := LinearMap.trace_eq_add_of_exact
+    exteriorPower.toTensorPower_injective_of_free
+    (LinearMap.range_eq_top.mp (SymmetricPower.range_mk R (Fin 2) M))
+    exteriorPower.exact_toTensorPower_two_symmetricPower_mk
+    hfi hfq
+  have hneg : LinearMap.trace R (⋀[R]^2 M) (-exteriorPower.map 2 f)
+      = -LinearMap.trace R (⋀[R]^2 M) (exteriorPower.map 2 f) :=
+    map_neg (LinearMap.trace R (⋀[R]^2 M)) (exteriorPower.map 2 f)
+  rw [trace_piTensorProduct_map_comp_tensorSwap, hneg] at h
+  rw [h]
+  ring
+
+end LinearMap
+
 variable [CommRing R] [Invertible (2 : R)] [AddCommGroup M] [Module R M]
 
 namespace TauCeti
@@ -239,19 +505,7 @@ theorem toTensorSquare_ιMulti (f : Fin 2 → M) :
       (⅟ (2 : R)) •
         (PiTensorProduct.tprod R f -
           PiTensorProduct.tprod R (fun i ↦ f (Equiv.swap 0 1 i))) := by
-  have hperm : (Finset.univ : Finset (Equiv.Perm (Fin 2))) =
-      {1, Equiv.swap 0 1} := by
-    ext e
-    simp only [Finset.mem_univ, Finset.mem_insert, Finset.mem_singleton, true_iff]
-    exact TauCeti.perm_fin_two_eq_one_or_swap e
-  rw [toTensorSquare, LinearMap.smul_apply,
-    exteriorPower.toTensorPower_apply_ιMulti, hperm]
-  rw [Finset.sum_insert (by decide), Finset.sum_singleton]
-  rw [smul_sub]
-  rw [Equiv.Perm.sign_swap (by decide : (0 : Fin 2) ≠ 1)]
-  simp only [Equiv.Perm.sign_one, Equiv.Perm.coe_one, id_eq, one_smul, Fin.isValue,
-    Units.neg_smul, smul_add, smul_neg]
-  rw [← sub_eq_add_neg]
+  rw [toTensorSquare, LinearMap.smul_apply, toTensorPower_ιMulti_two]
 
 end exteriorPower
 
@@ -333,16 +587,8 @@ namespace SymmetricPower
 /-- The symmetric projection vanishes on the exterior-square embedding. -/
 theorem mk_comp_exteriorPower_toTensorSquare : (SymmetricPower.mk R (Fin 2) M).comp
         (exteriorPower.toTensorSquare R M) = 0 := by
-  apply exteriorPower.linearMap_ext
-  apply AlternatingMap.ext
-  intro f
-  simp only [LinearMap.compAlternatingMap_apply, LinearMap.comp_apply,
-    exteriorPower.toTensorSquare_ιMulti, map_smul, map_sub, LinearMap.zero_apply]
-  -- `SymmetricPower.mk` sends each tensor-power generator to its symmetric class.
-  change (⅟ (2 : R)) •
-    ((⨂ₛ[R] i, f i) - (⨂ₛ[R] i, f (Equiv.swap 0 1 i))) = 0
-  rw [SymmetricPower.tprod_equiv (Equiv.swap 0 1) f]
-  simp
+  rw [exteriorPower.toTensorSquare, LinearMap.comp_smul,
+    mk_comp_exteriorPower_toTensorPower, smul_zero]
 
 /-- The symmetric projection of an element embedded from the exterior square vanishes. -/
 @[simp]
@@ -473,13 +719,8 @@ theorem tensorSwap_comp_symmetricPower_toTensorSquare :
 theorem tensorSwap_comp_exteriorPower_toTensorSquare :
     (tensorSwap R M).toLinearMap ∘ₗ exteriorPower.toTensorSquare R M =
       -exteriorPower.toTensorSquare R M := by
-  apply exteriorPower.linearMap_ext
-  apply AlternatingMap.ext
-  intro f
-  simp only [LinearMap.compAlternatingMap_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    exteriorPower.toTensorSquare_ιMulti, map_smul, map_sub, tensorSwap_tprod,
-    Equiv.swap_apply_self, LinearMap.neg_apply]
-  rw [← smul_neg, neg_sub]
+  rw [exteriorPower.toTensorSquare, LinearMap.comp_smul,
+    tensorSwap_comp_exteriorPower_toTensorPower, smul_neg]
 
 end TauCeti
 
@@ -744,15 +985,21 @@ theorem lift_ιMulti_comp_piTensorProduct_map {N : Type w} [AddCommGroup N] [Mod
 
 end exteriorPower
 
-namespace TauCeti
+namespace LinearMap
+
+open TauCeti
+
+variable {R M}
 
 /-- **The symmetric comparison is equivariant**: the restriction of `f ⊗ f` to the symmetric
 tensors is `SymmetricPower.map f`. With `TauCeti.symmetricTensorsEquivSymmetricPower` this is
 what makes the symmetric tensors a *symmetric square* of representations, not only of
 modules. -/
+-- Prefer these naturality rules to expanding the comparison maps.
+@[simp high]
 theorem symmetricTensorsEquivSymmetricPower_symmetricTensorsRestrict (f : M →ₗ[R] M)
     (z : symmetricTensors R M) :
-    symmetricTensorsEquivSymmetricPower R M (symmetricTensorsRestrict f z) =
+    symmetricTensorsEquivSymmetricPower R M (f.symmetricTensorsRestrict z) =
       SymmetricPower.map f (symmetricTensorsEquivSymmetricPower R M z) := by
   have h : tensorProductEquivTensorSquare R M (TensorProduct.map f f (z : M ⊗[R] M)) =
       PiTensorProduct.map (fun _ : Fin 2 ↦ f)
@@ -760,13 +1007,14 @@ theorem symmetricTensorsEquivSymmetricPower_symmetricTensorsRestrict (f : M →�
     simpa using
       DFunLike.congr_fun (tensorProductEquivTensorSquare_comp_map R M f) (z : M ⊗[R] M)
   rw [symmetricTensorsEquivSymmetricPower_apply, symmetricTensorsEquivSymmetricPower_apply,
-    coe_symmetricTensorsRestrict_apply, SymmetricPower.map_mk, h]
+    LinearMap.coe_symmetricTensorsRestrict_apply, SymmetricPower.map_mk, h]
 
 /-- **The exterior comparison is equivariant**: the restriction of `f ⊗ f` to the antisymmetric
 tensors is `exteriorPower.map 2 f`. -/
+@[simp high]
 theorem antisymmetricTensorsEquivExteriorPower_antisymmetricTensorsRestrict (f : M →ₗ[R] M)
     (z : antisymmetricTensors R M) :
-    antisymmetricTensorsEquivExteriorPower R M (antisymmetricTensorsRestrict f z) =
+    antisymmetricTensorsEquivExteriorPower R M (f.antisymmetricTensorsRestrict z) =
       exteriorPower.map 2 f (antisymmetricTensorsEquivExteriorPower R M z) := by
   have h : tensorProductEquivTensorSquare R M (TensorProduct.map f f (z : M ⊗[R] M)) =
       PiTensorProduct.map (fun _ : Fin 2 ↦ f)
@@ -776,7 +1024,8 @@ theorem antisymmetricTensorsEquivExteriorPower_antisymmetricTensorsRestrict (f :
   have hnat := DFunLike.congr_fun (exteriorPower.lift_ιMulti_comp_piTensorProduct_map R M f)
     (tensorProductEquivTensorSquare R M (z : M ⊗[R] M))
   rw [antisymmetricTensorsEquivExteriorPower_apply,
-    antisymmetricTensorsEquivExteriorPower_apply, coe_antisymmetricTensorsRestrict_apply, h]
+    antisymmetricTensorsEquivExteriorPower_apply,
+    LinearMap.coe_antisymmetricTensorsRestrict_apply, h]
   simpa using hnat
 
-end TauCeti
+end LinearMap

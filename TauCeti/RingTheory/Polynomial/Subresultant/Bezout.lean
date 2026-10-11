@@ -92,7 +92,7 @@ theorem exists_mul_add_mul_eq_subresultant {p q : R[X]} {m n j : ℕ}
       simpa [Pi.smul_apply, Pi.single_apply, eq_comm] using congrFun h i
     refine ⟨A, B, hA, hB, ?_⟩
     ext k
-    rw [subresultant_coeff]
+    rw [coeff_subresultant]
     by_cases hk : k ≤ j
     · rw [ite_eq_left ⟨hj, hk⟩]
       exact (subresultantCoeff_eq_coeff_adjugate hm hn j k i₀ rfl).symm

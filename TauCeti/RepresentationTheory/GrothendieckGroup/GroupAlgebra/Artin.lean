@@ -5,38 +5,41 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Induction
+public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Projection
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Permutation.FixedPointCount
 public import TauCeti.RepresentationTheory.Induction.Artin.PermutationIdentity
 
 /-!
-# Artin's identity in the exact Grothendieck group in characteristic zero
+# Artin's identity in the exact Grothendieck ring
 
 For a finite group `G`, let `a_C = C.artinCoeff * |C|`.  The two actual `G`-sets
 `TauCeti.ArtinPositiveSet G` and `TauCeti.ArtinNegativeSet G` split the positive and negative
-parts of the coefficients `a_C`.  Their fixed-point counts agree.  Over a characteristic-zero
-field, this identifies their permutation representations and hence their classes in `G₀(k[G])`.
+parts of the coefficients `a_C`. Their fixed-point counts agree, so the permutation-class
+comparison identifies their classes in `G₀(k[G])` over every field, including when the
+characteristic divides `|G|`.
 Expanding the two disjoint unions and recombining the positive and negative parts gives
 
 `|G| [k] = ∑ᶠ C, a_C [k[G/C]]`.
 
-The final theorem rewrites each coset class as the induction of the trivial class from `C`.
+Rewriting the coset classes as induced units gives Artin's identity in the Grothendieck ring.
+The projection formula then gives the identity for every virtual class by multiplication.
 
 ## Main results
 
 * `TauCeti.permK0_artinPositiveSet` and `TauCeti.permK0_artinNegativeSet`: expansion of the two
   Artin permutation classes.
-* `TauCeti.permK0_artinPositiveSet_eq_artinNegativeSet`: their classes agree in characteristic
-  zero.
+* `TauCeti.permK0_artinPositiveSet_eq_artinNegativeSet`: their classes agree over every field.
 * `TauCeti.natCard_nsmul_permK0_quotient_top_eq_sum_artinCoeff`: the signed permutation-class
   identity.
-* `TauCeti.natCard_nsmul_trivialK0_eq_sum_artinCoeff_indK0`: Artin's identity written with
+* `TauCeti.natCard_nsmul_one_eq_sum_artinCoeff_indK0`: Artin's identity written with
   induction from subgroups.
+* `TauCeti.natCard_nsmul_eq_sum_artinCoeff_indK0_resK0`: the identity for every virtual class.
 
 ## References
 
 * J.-P. Serre, *Linear Representations of Finite Groups*, Part II, §9.2.
-* J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, second edition, VII.3.
+* J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, second edition,
+  VII.3, (7.3.3)–(7.3.4).
 -/
 
 public section
@@ -76,19 +79,17 @@ theorem permK0_artinNegativeSet :
 
 end Expansion
 
-section CharacteristicZero
+section Field
 
-variable (k G : Type u) [Field k] [CharZero k] [Group G] [Finite G]
+variable (k G : Type u) [Field k] [Group G] [Finite G]
 
-/-- The positive and negative Artin sets have equal permutation classes over a
-characteristic-zero field. -/
+/-- The positive and negative Artin sets have equal permutation classes over every field. -/
 theorem permK0_artinPositiveSet_eq_artinNegativeSet :
     permK0 k G (ArtinPositiveSet G) = permK0 k G (ArtinNegativeSet G) :=
   permK0_eq_of_forall_natCard_fixedBy_eq k
     card_fixedBy_artinPositiveSet_eq_card_fixedBy_artinNegativeSet
 
-/-- **Artin's signed permutation identity in the exact Grothendieck group in characteristic
-zero.** -/
+/-- **Artin's signed permutation identity in the exact Grothendieck group over every field.** -/
 theorem natCard_nsmul_permK0_quotient_top_eq_sum_artinCoeff :
     Nat.card G • permK0 k G (G ⧸ (⊤ : Subgroup G)) =
       ∑ᶠ C : Subgroup G,
@@ -117,23 +118,27 @@ theorem natCard_nsmul_permK0_quotient_top_eq_sum_artinCoeff :
       rw [← natCast_zsmul, ← natCast_zsmul, sub_eq_add_neg, ← sub_zsmul,
         Int.toNat_sub_toNat_neg]
 
-/-- **Artin's identity in characteristic-zero `G₀`, written as induction from subgroups.** -/
-theorem natCard_nsmul_trivialK0_eq_sum_artinCoeff_indK0 :
-    letI : Module.Finite k[G] (Representation.trivial k G k).asModule :=
-      Module.Finite.of_restrictScalars_finite k k[G] _
-    Nat.card G •
-        (ExactK0.of (FGModuleCat.of k[G] (Representation.trivial k G k).asModule) :
-          ExactK0 (finiteModulesExactStructure k[G])) =
-      ∑ᶠ C : Subgroup G,
-        (C.artinCoeff * (Nat.card C : ℤ)) •
-          (letI : Module.Finite k[C] (Representation.trivial k C k).asModule :=
-            Module.Finite.of_restrictScalars_finite k k[C] _
-          indK0 k C
-            (ExactK0.of (FGModuleCat.of k[C] (Representation.trivial k C k).asModule))) := by
+/-- **Artin's identity in `G₀(k[G])` over every field**, written as induction of the unit
+from subgroups. No division by the group order is required. -/
+theorem natCard_nsmul_one_eq_sum_artinCoeff_indK0 :
+    Nat.card G • (1 : ExactK0 (finiteModulesExactStructure k[G])) =
+      ∑ᶠ C : Subgroup G, (C.artinCoeff * (Nat.card C : ℤ)) • indK0 k C 1 := by
   let : Subsingleton (G ⧸ (⊤ : Subgroup G)) := QuotientGroup.subsingleton_quotient_top
-  simpa only [permK0_of_subsingleton, indK0_of_trivial] using
+  simpa only [permK0_of_subsingleton, ← exactK0_one_eq_of_trivial, indK0_one] using
     natCard_nsmul_permK0_quotient_top_eq_sum_artinCoeff k G
 
-end CharacteristicZero
+/-- **Artin's induction identity for every virtual class over every field.** Multiplying by
+`|G|` expresses a class as the Artin-coefficient sum of its induced restrictions. -/
+theorem natCard_nsmul_eq_sum_artinCoeff_indK0_resK0
+    (x : ExactK0 (finiteModulesExactStructure k[G])) :
+    Nat.card G • x = ∑ᶠ C : Subgroup G,
+      (C.artinCoeff * (Nat.card C : ℤ)) • indK0 k C (resK0 k C.subtype x) := by
+  classical
+  let := Fintype.ofFinite (Subgroup G)
+  have h := congrArg (· * x) (natCard_nsmul_one_eq_sum_artinCoeff_indK0 k G)
+  simpa only [finsum_eq_sum_of_fintype, Finset.sum_mul, smul_mul_assoc, one_mul,
+    ← indK0_mul_resK0] using h
+
+end Field
 
 end TauCeti

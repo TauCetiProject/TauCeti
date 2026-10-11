@@ -26,6 +26,11 @@ This is the character interpretation of integral degree-two cohomology used to s
 corestriction and the transfer. All coefficients are lifted to the universe of `G`, and
 all cohomology groups are Mathlib's canonical continuous cohomology.
 
+In every degree, the `p`-primary part of `Hⁱ⁺¹(G, ℤ)` vanishes as soon as `Hⁱ⁺¹(G, ℤ/pᵐ) = 0`
+and `pᵐ` kills every `Hⁱ(G, ℤ/pᵏ)` (`TauCeti.primaryComponent_continuousCohomology_int_eq_bot`):
+this is how the integral cohomology in the criterion for the strict cohomological dimension is
+computed from finite coefficients.
+
 The formal construction uses `TauCeti.ContCohomology.DiscreteShortExact.delta` and its long
 exact sequence, and the character identification uses
 `TauCeti.ContCohomology.explicitH1AddEquivContinuousCohomology`.
@@ -233,6 +238,34 @@ theorem mem_primaryComponent_iff_exists_integralBockstein (p : ℕ) [NeZero p]
     exact ⟨k, y, hy⟩
   · rintro ⟨k, y, rfl⟩
     exact ⟨k, (mem_range_integralBockstein_iff G (p ^ k) 1 _).1 ⟨y, rfl⟩⟩
+
+/-- **Vanishing of the `p`-primary part of integral cohomology.** Let `G` be a compact, locally
+compact group, all coefficients carrying the trivial action. If `Hⁱ⁺¹(G, ℤ/pᵐ)` vanishes and `pᵐ`
+kills `Hⁱ(G, ℤ/pᵏ)` for every `k`, then the `p`-primary component of `Hⁱ⁺¹(G, ℤ)` vanishes. -/
+theorem primaryComponent_continuousCohomology_int_eq_bot [LocallyCompactSpace G] (p : ℕ) [NeZero p]
+    (m i : ℕ)
+    [Subsingleton (continuousCohomology (i + 1)
+      (ofDiscreteModule ℤ G (ULift.{u} (ZMod (p ^ m)))))]
+    (h : ∀ (k : ℕ) (y : continuousCohomology i (ofDiscreteModule ℤ G (ULift.{u} (ZMod (p ^ k))))),
+      p ^ m • y = 0) :
+    AddCommGroup.primaryComponent
+      (continuousCohomology (i + 1) (ofDiscreteModule ℤ G (ULift.{u} ℤ))) p = ⊥ := by
+  -- every `p`-primary class is an integral Bockstein, hence killed by `pᵐ`
+  have hkill : ∀ x ∈ AddCommGroup.primaryComponent
+      (continuousCohomology (i + 1) (ofDiscreteModule ℤ G (ULift.{u} ℤ))) p, p ^ m • x = 0 := by
+    rintro x ⟨k, hk⟩
+    obtain ⟨y, rfl⟩ := (exists_integralBockstein_eq_iff G (p ^ k) i x).2 hk
+    rw [← map_nsmul, h k y, _root_.map_zero]
+  refine (AddSubgroup.eq_bot_iff_forall _).2 fun x hx ↦ ?_
+  -- `x` reduces to zero in `Hⁱ⁺¹(G, ℤ/pᵐ) = 0`, so it is `pᵐ` times a class `x'`, which is again
+  -- `p`-primary and hence killed by `pᵐ`
+  obtain ⟨x', hx'⟩ :=
+    ((integralBocksteinShortExact G (p ^ m)).longExact_exact₂ (i + 1) x).1 (Subsingleton.elim _ _)
+  simp only [coeffMap_integralBocksteinShortExact_incl, TopModuleCat.hom_nsmul, smul_apply,
+    TopModuleCat.hom_id, ContinuousLinearMap.id_apply] at hx'
+  obtain ⟨k, hk⟩ := hx
+  rw [← hx']
+  exact hkill x' ⟨k + m, by rw [pow_add, mul_smul, hx', hk]⟩
 
 /-- For modulus one the integral Bockstein vanishes, in every degree. -/
 @[simp]

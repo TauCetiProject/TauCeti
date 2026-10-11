@@ -24,7 +24,7 @@ lines in a finite locally free representation `V`, use `M = V∨`.
 `SymmetricAlgebra.projToSpec` is the structural morphism over `R`. Its properness and
 quasi-compactness instances require only `Module.Finite R M`; its Noetherianity instance
 also requires `IsNoetherianRing R`. The chart formula describes this morphism on the
-standard affine charts.
+standard affine charts. Its source is Jacobson whenever `Spec R` is Jacobson.
 
 ## References
 
@@ -99,5 +99,10 @@ instance instIsNoetherianProj [Module.Finite R M] [IsNoetherianRing R] :
     IsNoetherian (Proj (homogeneousSubmodule R M)) where
   toIsLocallyNoetherian := LocallyOfFiniteType.isLocallyNoetherian (projToSpec R M)
   toCompactSpace := inferInstance
+
+/-- The projective spectrum of a finite module over a Jacobson spectrum is Jacobson. -/
+instance instJacobsonSpaceProj [Module.Finite R M] [JacobsonSpace (Spec (.of R))] :
+    JacobsonSpace (Proj (homogeneousSubmodule R M)) :=
+  LocallyOfFiniteType.jacobsonSpace (projToSpec R M)
 
 end TauCeti.SymmetricAlgebra

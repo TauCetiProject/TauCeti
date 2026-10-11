@@ -11,7 +11,7 @@ public import TauCeti.Probability.Exchangeability.Arrays.Tail
 -- Non-public: the zero-one law for a self-independent event is used only inside a proof.
 import Mathlib.Probability.Independence.ZeroOne
 import TauCeti.Probability.Martingale.Convergence
-import TauCeti.Probability.Exchangeability.PermutationExtension
+import TauCeti.Data.Finset.Basic
 
 /-!
 # Joint dissociation and the corner tail of an array
@@ -221,8 +221,8 @@ private theorem measure_inter_eq_mul_of_cylinders
     ext ω
     simp [Set.mem_pi]
   -- the index sets touched by the two cylinders are finite and disjoint
-  set I : Finset ℕ := tA.image Prod.fst ∪ tA.image Prod.snd with hI
-  set J : Finset ℕ := tB.image Prod.fst ∪ tB.image Prod.snd with hJ
+  set I : Finset ℕ := tA.image Prod.fst ∪ tA.image Prod.snd
+  set J : Finset ℕ := tB.image Prod.fst ∪ tB.image Prod.snd
   have hI_e : ∀ i ∈ I, i ∈ Set.range e := by
     intro i hi
     simp only [I, Finset.mem_union, Finset.mem_image] at hi

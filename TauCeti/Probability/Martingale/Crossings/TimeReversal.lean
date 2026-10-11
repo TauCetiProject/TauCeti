@@ -80,8 +80,8 @@ private lemma upperCrossingTime_neg_revProcess_succ_le
     stoppedValue_lowerCrossingTime (Nat.ne_of_lt hτ_lt_N)
   have h_lct_ge : upperCrossingTime a b X N (i + 1) ω ≤ lowerCrossingTime a b X N (i + 1) ω :=
     upperCrossingTime_le_lowerCrossingTime
-  set σ := upperCrossingTime a b X N (i + 1) ω with hσ_def
-  set τ := lowerCrossingTime a b X N i ω with hτ_def
+  set σ := upperCrossingTime a b X N (i + 1) ω
+  set τ := lowerCrossingTime a b X N i ω
   -- The reflected process `Y` mirrors these levels at the reflected times `N - σ` and `N - τ`.
   have hY_Nσ_le_negb : Y (N - σ) ω ≤ -b := by
     have hrev : revProcess X N (N - σ) ω = X σ ω := by

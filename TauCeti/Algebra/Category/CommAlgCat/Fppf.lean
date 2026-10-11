@@ -25,6 +25,8 @@ The induced affine topology is subcanonical by full faithfulness of the relative
 
 * `TauCeti.CommAlgCat.fppfTopology`: the fppf topology on opposite commutative `R`-algebras.
 * `TauCeti.CommAlgCat.fppfTopology_subcanonical`: affine representable functors are fppf sheaves.
+* `TauCeti.CommAlgCat.isContinuous_algSpec`: fppf sheaves on schemes over `Spec R` restrict to
+  affine fppf sheaves; in particular every scheme over `Spec R` has an fppf sheaf of points.
 * `TauCeti.CommAlgCat.isCoverDense_algSpec`: relative spectra of `R`-algebras are cover-dense
   among schemes over `Spec R`, so a sieve is an affine fppf cover exactly when its image is.
 * `TauCeti.CommAlgCat.generate_singleton_op_mem_fppfTopology`: a faithfully flat, finitely
@@ -74,6 +76,14 @@ noncomputable instance fppfTopology_subcanonical (R : Type u) [CommRing R] :
   exact GrothendieckTopology.subcanonical_of_full_of_faithful
     (AlgebraicGeometry.algSpec (CommRingCat.of R)) _
       (Scheme.fppfTopology.over (Spec (CommRingCat.of R)))
+
+/-- The relative spectrum functor is continuous for the affine fppf topology: restricting an fppf
+sheaf on schemes over `Spec R` to affine schemes gives an affine fppf sheaf. -/
+instance isContinuous_algSpec (R : Type u) [CommRing R] :
+    (AlgebraicGeometry.algSpec (CommRingCat.of R)).IsContinuous (fppfTopology R)
+      (Scheme.fppfTopology.over (Spec (CommRingCat.of R))) := by
+  rw [fppfTopology_def]
+  infer_instance
 
 /-- Every scheme over `Spec R` is covered by affine opens, and an affine open, with the
 `R`-algebra structure induced by its structure morphism, is the relative spectrum of an

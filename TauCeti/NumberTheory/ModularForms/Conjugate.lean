@@ -40,6 +40,7 @@ Atkin–Li pseudo-eigenvalue.
   coefficients; `ModularForm.qExpansion_conj` and `CuspForm.qExpansion_conj`
   are its forms for `f_ρ`.
 * `ModularForm.conj_conj`: `f ↦ f_ρ` is an involution.
+* `CuspForm.conj_levelRaise`: `f ↦ f_ρ` commutes with the level-raising operators `V_d`.
 * `TauCeti.Gamma0_map_le_conjAct_inv_J`, `TauCeti.Gamma1_map_le_conjAct_inv_J`: conjugation by
   `J` preserves `Γ₀(N)` and `Γ₁(N)`.
 * `ModularForm.conj_mem_modFormCharSpace`, `CuspForm.conj_mem_cuspFormCharSpace`:
@@ -93,6 +94,16 @@ open UpperHalfPlane
 lemma mem_conjAct_inv_J_iff {g : GL (Fin 2) ℝ} :
     g ∈ ConjAct.toConjAct J⁻¹ • 𝒢 ↔ J * g * J ∈ 𝒢 := by
   rw [map_inv, 𝒢.mem_inv_pointwise_smul_iff, ConjAct.toConjAct_smul, J_inv]
+
+/-- A subgroup contained in its conjugate `J⁻¹ 𝒢 J` by the involution `J` is equal to it. -/
+lemma conjAct_inv_J_smul_eq_of_le (hJ : 𝒢 ≤ ConjAct.toConjAct J⁻¹ • 𝒢) :
+    ConjAct.toConjAct J⁻¹ • 𝒢 = 𝒢 := by
+  refine le_antisymm (fun g hg ↦ ?_) hJ
+  have h := hJ (mem_conjAct_inv_J_iff.mp hg)
+  rw [mem_conjAct_inv_J_iff] at h
+  have hJJ : (J : GL (Fin 2) ℝ) * J = 1 := by rw [← sq, J_sq]
+  have hg : J * (J * g * J) * J = (J * J) * g * (J * J) := by group
+  rwa [hg, hJJ, one_mul, mul_one] at h
 
 /-- A strict period of `𝒢` is a strict period of `J⁻¹ 𝒢 J`: conjugating `!![1, h; 0, 1]` by `J`
 gives its inverse `!![1, -h; 0, 1]`. -/
@@ -361,6 +372,19 @@ theorem qExpansion_conj {h : ℝ} (hh : 0 < h) (hΓ : h ∈ 𝒢.strictPeriods)
     (hJ : 𝒢' ≤ ConjAct.toConjAct J⁻¹ • 𝒢) (f : CuspForm 𝒢 k) :
     qExpansion h (conj hJ f) = PowerSeries.map (starRingEnd ℂ) (qExpansion h f) := by
   rw [coe_conj, qExpansion_slash_J f hh hΓ]
+
+/-- **Conjugation commutes with the level-raising operators**: `(V_d f)_ρ = V_d (f_ρ)`, since
+the reflection `τ ↦ -conj τ` commutes with `τ ↦ d τ`. -/
+theorem conj_levelRaise {𝒢₁ 𝒢₁' : Subgroup (GL (Fin 2) ℝ)} [𝒢'.HasDetOne] [𝒢₁'.HasDetOne]
+    {d : ℕ} [NeZero d] (h : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢)
+    (hJ : 𝒢₁' ≤ ConjAct.toConjAct J⁻¹ • 𝒢') (hJ' : 𝒢₁ ≤ ConjAct.toConjAct J⁻¹ • 𝒢)
+    (h' : 𝒢₁' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢₁) (f : CuspForm 𝒢 k) :
+    conj hJ (TauCeti.CuspForm.levelRaise d h f) =
+      TauCeti.CuspForm.levelRaise d h' (conj hJ' f) := by
+  ext τ
+  have hτ : J • scaleGL d • τ = scaleGL d • J • τ :=
+    UpperHalfPlane.ext <| by simp only [coe_J_smul, coe_scaleGL_smul, map_mul, map_natCast]; ring
+  simp [hτ]
 
 /-! ### Nebentypus and Hecke operators -/
 

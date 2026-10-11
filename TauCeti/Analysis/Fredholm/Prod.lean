@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Fredholm.Index
+public import TauCeti.Analysis.Fredholm.Basic
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 public import TauCeti.LinearAlgebra.Quotient.Prod
 public import TauCeti.LinearAlgebra.Submodule.Prod
 

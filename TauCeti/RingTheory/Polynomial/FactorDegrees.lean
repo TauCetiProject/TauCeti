@@ -7,7 +7,9 @@ module
 
 public import TauCeti.RingTheory.Polynomial.Factors
 public import Mathlib.Algebra.Field.ZMod
+public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 import Mathlib.RingTheory.Polynomial.UniqueFactorization
+import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 
 /-!
 # Degrees of polynomial factors modulo a prime
@@ -36,6 +38,16 @@ and its relationship with irreducibility. Worked examples for `X ^ 5 - X - 1` ar
   reduction is irreducible of degree `n`.
 * `Polynomial.squarefree_map_of_nodup_factorDegrees`: pairwise distinct factor degrees force the
   reduction to be squarefree.
+* `Polynomial.nodup_normalizedFactors_map_of_not_dvd_discr`: at a prime dividing neither the
+  leading coefficient nor the discriminant, every irreducible factor of the reduction occurs once,
+  so the factor degrees are the degrees of the distinct factors.
+* `Polynomial.count_one_factorDegrees_eq_card_roots`, `Polynomial.count_one_factorDegrees_le`: at
+  such a prime the number of linear factors is the number of distinct roots of the reduction in
+  `ZMod p`, hence at most `p`.
+
+Away from such primes nothing of this kind holds: a factor of the reduction can repeat, and when
+`p` divides the leading coefficient the degree drops. Worked instances of both are in
+`TauCeti/FieldTheory/GaloisGroups/FactorDegrees.lean`.
 
 ## References
 
@@ -170,5 +182,36 @@ theorem _root_.Polynomial.squarefree_map_of_nodup_factorDegrees {f : ℤ[X]} {p 
     (h : (f.factorDegrees p).Nodup) : Squarefree (f.map (Int.castRingHom (ZMod p))) := by
   rw [factorDegrees_def] at h
   exact (squarefree_iff_nodup_normalizedFactors hf).mpr (h.of_map _)
+
+/-! ### Multiplicity one at primes not dividing the discriminant -/
+
+/-- **Multiplicity one.** If the prime `p` divides neither the leading coefficient nor the
+discriminant of `f`, then each normalized irreducible factor of the reduction of `f` modulo `p`
+occurs exactly once: the factor degrees are the degrees of the distinct irreducible factors of
+the reduction. -/
+theorem _root_.Polynomial.nodup_normalizedFactors_map_of_not_dvd_discr {f : ℤ[X]} {p : ℕ}
+    [Fact p.Prime] (hlc : ¬ (p : ℤ) ∣ f.leadingCoeff) (hd : ¬ (p : ℤ) ∣ f.discr) :
+    (normalizedFactors (f.map (Int.castRingHom (ZMod p)))).Nodup := by
+  have hsep := (f.separable_map_zmod_iff_not_dvd_discr p hlc).mpr hd
+  exact (squarefree_iff_nodup_normalizedFactors hsep.ne_zero).mp hsep.squarefree
+
+/-- If the prime `p` divides neither the leading coefficient nor the discriminant of `f`, the
+number of factor degrees equal to `1` is the number of distinct roots of the reduction of `f` in
+`ZMod p`. -/
+theorem _root_.Polynomial.count_one_factorDegrees_eq_card_roots {f : ℤ[X]} {p : ℕ}
+    [Fact p.Prime] (hlc : ¬ (p : ℤ) ∣ f.leadingCoeff) (hd : ¬ (p : ℤ) ∣ f.discr) :
+    (f.factorDegrees p).count 1 = (f.map (Int.castRingHom (ZMod p))).roots.toFinset.card := by
+  have hsep := (f.separable_map_zmod_iff_not_dvd_discr p hlc).mpr hd
+  rw [factorDegrees_def, count_one_map_natDegree_normalizedFactors hsep.ne_zero hsep.squarefree]
+
+/-- If the prime `p` divides neither the leading coefficient nor the discriminant of `f`, then at
+most `p` factor degrees equal `1`: the reduction is squarefree, so its linear factors are distinct
+and each has its own root in `ZMod p`. For instance, no monic integral cubic with odd discriminant
+has three linear factors modulo `2`. -/
+theorem _root_.Polynomial.count_one_factorDegrees_le {f : ℤ[X]} {p : ℕ} [Fact p.Prime]
+    (hlc : ¬ (p : ℤ) ∣ f.leadingCoeff) (hd : ¬ (p : ℤ) ∣ f.discr) :
+    (f.factorDegrees p).count 1 ≤ p := by
+  rw [count_one_factorDegrees_eq_card_roots hlc hd]
+  exact (Finset.card_le_univ _).trans (ZMod.card p).le
 
 end TauCeti

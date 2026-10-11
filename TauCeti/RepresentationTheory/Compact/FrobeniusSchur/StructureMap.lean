@@ -68,6 +68,8 @@ other by `⟨_, _⟩`.
 
 public section
 
+open _root_.ContRepresentation
+
 open scoped ComplexOrder InnerProductSpace
 
 open TauCeti TauCeti.ContRepresentation

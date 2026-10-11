@@ -123,7 +123,6 @@ private theorem card_filter_youngColouring [DecidableEq σ] (ν : n.Partition)
     intro j _ hj
     rw [youngColouring, Function.comp_apply, Function.comp_apply, Equiv.symm_apply_eq,
       Fin.ext_iff, Fin.val_castLE] at hj
-    have hlt := (youngBlock ν j).2
     omega
 
 /-! ### The coefficients of a power-sum product -/

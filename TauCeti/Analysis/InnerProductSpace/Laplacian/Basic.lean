@@ -61,6 +61,8 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
   `AffineMap.homothety a c`.
 * `TauCeti.laplacian_comp_smul_right`: the origin-centered homothety special case.
 * `TauCeti.laplacian_eq_traceL`: the Laplacian as the trace of the second Fréchet derivative.
+* `TauCeti.laplacian_eq_sum_fderiv_fderiv_apply`: the Laplacian as the sum of the second
+  directional derivatives along an orthonormal basis.
 * `TauCeti.laplacian_norm_sq`: `Δ (fun x => ‖x‖ ^ 2) x = 2 * dim E`, the Laplacian of the
   squared norm.
 * `ContDiff.laplacian_comp_norm_sq`: the Laplacian of a radial function `x ↦ ρ (‖x‖ ^ 2)` is
@@ -91,6 +93,16 @@ theorem laplacian_eq_traceL (f : E → F) (x : E) :
       (ContinuousLinearMap.apply ℝ (E →L[ℝ] F) (stdOrthonormalBasis ℝ E i)))
         (fderiv ℝ (fderiv ℝ f) x) := by
   simp [laplacian_eq_iteratedFDeriv_stdOrthonormalBasis, iteratedFDeriv_two_apply]
+
+/-- The Laplacian is the sum of the second directional derivatives along an orthonormal basis:
+if `fderiv ℝ f` is differentiable at `x`, then `Δ f x = ∑ᵢ ∂ᵥᵢ (∂ᵥᵢ f) x`. -/
+theorem laplacian_eq_sum_fderiv_fderiv_apply {ι : Type*} [Fintype ι]
+    (v : OrthonormalBasis ι ℝ E) {f : E → F} {x : E} (hf : DifferentiableAt ℝ (fderiv ℝ f) x) :
+    Δ f x = ∑ i, fderiv ℝ (fun y => fderiv ℝ f y (v i)) x (v i) := by
+  rw [laplacian_eq_iteratedFDeriv_orthonormalBasis f v]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [iteratedFDeriv_two_apply, fderiv_clm_apply hf (differentiableAt_const _)]
+  simp
 
 omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [NormedSpace ℝ F] in
 /-- Scalar dilation as a continuous linear equivalence. -/

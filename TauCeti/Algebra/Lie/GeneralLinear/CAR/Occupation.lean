@@ -259,12 +259,12 @@ theorem sum_glCliffordHom_single_self_eq_cut_occupation (s : Finset n) :
     (∑ i ∈ s, glCliffordHom (K := K) (n := n) (Matrix.single i i 1)) =
         ∑ i ∈ s, ∑ j : n, carOccupationElement (K := K) i j := by
       apply Finset.sum_congr rfl
-      intro i hi
+      intro i _
       exact glCliffordHom_single_self_eq_sum_occupation i
     _ = ∑ i ∈ s, ((∑ j ∈ s, carOccupationElement (K := K) i j) +
           ∑ j ∈ Finset.univ \ s, carOccupationElement (K := K) i j) := by
       apply Finset.sum_congr rfl
-      intro i hi
+      intro i _
       rw [← Finset.sum_sdiff (Finset.subset_univ s), add_comm]
     _ = (∑ i ∈ s, ∑ j ∈ s, carOccupationElement (K := K) i j) +
           ∑ i ∈ s, ∑ j ∈ Finset.univ \ s,

@@ -7,8 +7,9 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Basic
 public import TauCeti.FieldTheory.FunctionField.Different.Derivative
+public import TauCeti.FieldTheory.FunctionField.Place.Extension.Eisenstein
 
-import Mathlib.FieldTheory.PrimitiveElement
+import TauCeti.FieldTheory.FunctionField.Place.Extension.Tower
 
 /-!
 # Unramified constant field extensions
@@ -33,10 +34,11 @@ Separability is inherited by scalar extension, which is
 unit at every place of `F'`. The derivative criterion for the different therefore makes every
 different exponent vanish.
 
-Read backwards, unramifiedness detects new constants.  If `F' / F` has prime degree and `k` is
-exact in `F`, a constant of `F'` outside `k` generates, together with `F`, all of `F'`; so as soon
-as a single place of `F` ramifies in `F'`, the constant field of `F'` is still `k`.  This is how
-the exactness of the constants of a Kummer cover such as `y ^ 2 = f(x)` is established.
+Read backwards, unramifiedness detects new constants.  If `k` is exact in `F`, a finite separable
+extension with a totally ramified place has no new constants: any finite separable extension of
+constants is unramified, and multiplicativity of ramification indices prevents it from occurring
+inside a totally ramified extension.  This is how the exactness of the constants of Kummer covers
+is established.
 
 ## Main results
 
@@ -46,8 +48,8 @@ the exactness of the constants of a Kummer cover such as `y ^ 2 = f(x)` is estab
   unramified.
 * `TauCeti.Place.ramificationIdx_eq_one_of_constantCompositum_eq_top`: every place has
   ramification index one.
-* `TauCeti.isIntegrallyClosedIn_of_finrank_prime_of_ramificationIdx_ne_one`: conversely, an
-  extension of prime degree in which some place ramifies has no new constants.
+* `TauCeti.isIntegrallyClosedIn_of_isTotallyRamified`: a finite separable extension with a
+  totally ramified place acquires no new constants.
 
 ## Reference
 
@@ -150,42 +152,69 @@ end Place
 
 section Ramified
 
-/-- **A ramified extension of prime degree acquires no new constants** (the argument of
-Stichtenoth, Proposition 3.7.3(c)): if `F' / F` is finite separable of prime degree, `k` is the
-exact constant field of `F`, and some place of `F'` is ramified over `F`, then `k` is the exact
-constant field of `F'`. -/
-theorem isIntegrallyClosedIn_of_finrank_prime_of_ramificationIdx_ne_one
-    [Algebra.IsSeparable F F'] (hex : IsIntegrallyClosedIn k F)
-    (hp : (Module.finrank F F').Prime) {P' : Place k F'}
-    (hP' : Place.ramificationIdx F P' ≠ 1) :
-    IsIntegrallyClosedIn k F' := by
-  have : FiniteDimensional F F' := Module.finite_of_finrank_pos hp.pos
+/-- **A finite separable extension with a totally ramified place acquires no new constants**:
+if `k` is the exact constant field of `F` and some place of `F'` is totally ramified over `F`,
+then `k` is also the exact constant field of `F'`.
+
+This is the exact-constant-field criterion used for Kummer extensions
+(Stichtenoth, Proposition 3.7.3(c)). -/
+theorem isIntegrallyClosedIn_of_isTotallyRamified [FiniteDimensional F F']
+    [Algebra.IsSeparable F F'] (hex : IsIntegrallyClosedIn k F) {P' : Place k F'}
+    (hP' : P'.IsTotallyRamified F) : IsIntegrallyClosedIn k F' := by
+  -- Adjoining a constant `c : F'` algebraic over `k` gives a finite separable constant extension
+  -- `E = F(c)` of `F`, so the restriction of the totally ramified place to `E` is unramified.
+  -- Multiplicativity of ramification indices and degrees then forces `E = F`, after which
+  -- exactness of `k` in `F` gives `c ∈ k`.
   refine isIntegrallyClosedIn_iff_forall_isAlgebraic.2 fun c hc ↦ ?_
   have hci : IsIntegral k c := hc.isIntegral
-  have : FiniteDimensional k k⟮c⟯ := IntermediateField.adjoin.finiteDimensional hci
-  -- `c` is separable over `k`: over `F` its minimal polynomial is still that over `k`
-  have : Algebra.IsSeparable k k⟮c⟯ := by
+  let K := k⟮c⟯
+  let E := constantCompositum F K F'
+  let : FiniteDimensional k K := IntermediateField.adjoin.finiteDimensional hci
+  let : Algebra.IsSeparable k K := by
     rw [IntermediateField.isSeparable_adjoin_simple_iff_isSeparable, IsSeparable,
       ← Polynomial.separable_map (algebraMap k F),
       minpoly.map_algebraMap_of_isIntegrallyClosedIn hex hci]
     exact Algebra.IsSeparable.isSeparable F c
-  -- by primality, `F · k(c)` is `F` or `F'`
-  have hcmem : c ∈ constantCompositum F k⟮c⟯ F' :=
-    algebraMap_mem_constantCompositum F k⟮c⟯ F' ⟨c, IntermediateField.mem_adjoin_simple_self k c⟩
-  rcases (IntermediateField.isSimpleOrder_of_finrank_prime F F' hp).eq_bot_or_eq_top
-    (constantCompositum F k⟮c⟯ F') with h | h
-  · -- `F · k(c) = F`: then `c` lies in `F`, where `k` is exact
-    rw [h, IntermediateField.mem_bot] at hcmem
-    obtain ⟨a, rfl⟩ := hcmem
-    have := hex
-    obtain ⟨b, rfl⟩ := IsIntegrallyClosedIn.isIntegral_iff.mp (isIntegral_algebraMap_iff.mp hci)
-    exact ⟨b, IsScalarTower.algebraMap_apply k F F' b⟩
-  · -- `F · k(c) = F'`: a constant field extension, in which no place ramifies
-    refine absurd ?_ hP'
-    have := Place.ramificationIdx_eq_one_of_constantCompositum_eq_top (k := k) h
-      (Place.constantsEquiv k k⟮c⟯ F' P')
-    rwa [Place.ramificationIdx_def, Place.valuation_constantsEquiv,
-      ← Place.ramificationIdx_def] at this
+  let : Algebra K E := ((algebraMap K F').codRestrict E fun a ↦
+    algebraMap_mem_constantCompositum F K F' a).toAlgebra
+  let : Algebra k E := ((algebraMap k F').codRestrict E fun a ↦ by
+    rw [IsScalarTower.algebraMap_apply k F F']
+    exact IntermediateField.algebraMap_mem E (algebraMap k F a)).toAlgebra
+  let : IsScalarTower k F E := .of_algebraMap_eq fun a ↦ by
+    apply Subtype.ext
+    exact IsScalarTower.algebraMap_apply k F F' a
+  let : IsScalarTower k K E := .of_algebraMap_eq fun a ↦ by
+    apply Subtype.ext
+    exact IsScalarTower.algebraMap_apply k K F' a
+  let : IsScalarTower k E F' := .of_algebraMap_eq fun a ↦ by
+    rw [IsScalarTower.algebraMap_apply k F E, ← IsScalarTower.algebraMap_apply F E F',
+      ← IsScalarTower.algebraMap_apply k F F']
+  let : IsScalarTower K E F' := .of_algebraMap_eq fun a ↦
+    (RingHom.codRestrict_apply (algebraMap K F') E
+      (algebraMap_mem_constantCompositum F K F') a).symm
+  let Q : Place K E := Place.constantsEquiv k K E (P'.restrict k E)
+  have hQ : Q.ramificationIdx F = 1 := Place.ramificationIdx_eq_one_of_constantCompositum_eq_top
+    (k := k) ((constantCompositum_eq_top_iff F K F' E).2 rfl) Q
+  have hQ' : (P'.restrict k E).ramificationIdx F = 1 := by
+    simpa only [Q, Place.ramificationIdx_def, Place.valuation_constantsEquiv] using hQ
+  have htower := Place.ramificationIdx_restrict_mul (k₁ := k) (F₀ := F)
+    (F₁ := E) P'
+  have hle : Module.finrank F F' ≤ Module.finrank E F' := by
+    calc
+      Module.finrank F F' = Place.ramificationIdx F P' :=
+        ((Place.isTotallyRamified_iff F).mp hP').symm
+      _ = Place.ramificationIdx E P' * (P'.restrict k E).ramificationIdx F := htower
+      _ = Place.ramificationIdx E P' := by rw [hQ', mul_one]
+      _ ≤ Module.finrank E F' := Place.ramificationIdx_le_finrank E P'
+  have hEbot : E = ⊥ := (IntermediateField.eq_of_le_of_finrank_le' bot_le <| by
+    rwa [IntermediateField.finrank_bot']).symm
+  have hcmem : c ∈ E := algebraMap_mem_constantCompositum F K F'
+    ⟨c, IntermediateField.mem_adjoin_simple_self k c⟩
+  rw [hEbot, IntermediateField.mem_bot] at hcmem
+  obtain ⟨a, rfl⟩ := hcmem
+  obtain ⟨b, rfl⟩ := IsIntegrallyClosedIn.isIntegral_iff.mp
+    (isIntegral_algebraMap_iff.mp hci)
+  exact ⟨b, IsScalarTower.algebraMap_apply k F F' b⟩
 
 end Ramified
 

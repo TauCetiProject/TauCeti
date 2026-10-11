@@ -43,6 +43,12 @@ For `a = b` the pair degenerates to a single refresh because the second update o
 first. The distinctness hypothesis records the two-slot factorisation needed by consumers of this
 construction.
 
+**Three and four coordinates.** Mathlib identifies `Fin 2 → β` with `β × β`
+(`MeasurableEquiv.finTwoArrow`, `measurePreserving_finTwoArrow`). `finThreeArrow`
+and `finFourArrow` are the next two cases, identifying `Fin 3 → β` and `Fin 4 → β`
+with the right-nested products `β × β × β` and `β × β × β × β`; under them the product measure
+`Measure.pi fun _ => μ` becomes the iterated product of `μ`.
+
 ## Main statements
 
 * `TauCeti.measurePreserving_pi_comp_embedding` — restricting a product assignment along an
@@ -52,7 +58,11 @@ construction.
 * `TauCeti.measurePreserving_piSplitAt` — separating the coordinate `i₀` from the rest is
   measure preserving;
 * `TauCeti.measurePreserving_update_update` — the two-coordinate refresh is measure
-  preserving.
+  preserving;
+* `TauCeti.finThreeArrow` and `TauCeti.finFourArrow`, with
+  `TauCeti.measurePreserving_finThreeArrow` and `TauCeti.measurePreserving_finFourArrow` — functions
+  on `Fin 3` and `Fin 4` as iterated products, carrying `Measure.pi` to the iterated product
+  measure.
 
 ## Implementation
 
@@ -241,5 +251,61 @@ theorem measurePreserving_update_update (μ : ∀ i, Measure (α i))
         dite_false]
       rw [splitEquiv_snd_apply]
       rw [update_of_ne hib, update_of_ne hia]
+
+section FinArrow
+
+variable {β : Type*} [MeasurableSpace β]
+
+/-- Functions on `Fin 3` are triples, reading off the three coordinates. Mathlib has the
+two-coordinate version, `MeasurableEquiv.finTwoArrow`. -/
+def finThreeArrow : (Fin 3 → β) ≃ᵐ β × β × β :=
+  (MeasurableEquiv.piFinSuccAbove (fun _ : Fin 3 => β) 0).trans
+    (MeasurableEquiv.prodCongr (MeasurableEquiv.refl β) MeasurableEquiv.finTwoArrow)
+
+/-- `finThreeArrow` reads off the three coordinates. -/
+@[simp]
+theorem finThreeArrow_apply (x : Fin 3 → β) :
+    finThreeArrow x = (x 0, x 1, x 2) := (rfl)
+
+/-- The inverse of `finThreeArrow` sends a triple to the corresponding vector. -/
+@[simp]
+theorem finThreeArrow_symm_apply (a b c : β) :
+    finThreeArrow.symm (a, b, c) = ![a, b, c] :=
+  finThreeArrow.symm_apply_eq.2 (by simp)
+
+/-- Under `finThreeArrow` the product measure on `Fin 3 → β` is the iterated
+product `μ ⊗ (μ ⊗ μ)`. -/
+theorem measurePreserving_finThreeArrow (μ : Measure β) [SigmaFinite μ] :
+    MeasurePreserving (finThreeArrow (β := β)) (Measure.pi fun _ : Fin 3 => μ)
+      (μ.prod (μ.prod μ)) :=
+  ((MeasurePreserving.id μ).prod (measurePreserving_finTwoArrow μ)).comp
+    (measurePreserving_piFinSuccAbove (fun _ : Fin 3 => μ) 0)
+
+/-- Functions on `Fin 4` are quadruples, reading off the four coordinates. -/
+def finFourArrow : (Fin 4 → β) ≃ᵐ β × β × β × β :=
+  (MeasurableEquiv.piFinSuccAbove (fun _ : Fin 4 => β) 0).trans
+    (MeasurableEquiv.prodCongr (MeasurableEquiv.refl β) finThreeArrow)
+
+/-- `finFourArrow` reads off the four coordinates. -/
+@[simp]
+theorem finFourArrow_apply (x : Fin 4 → β) :
+    finFourArrow x = (x 0, x 1, x 2, x 3) := (rfl)
+
+/-- The inverse of `finFourArrow` sends a quadruple to the corresponding
+vector. -/
+@[simp]
+theorem finFourArrow_symm_apply (a b c d : β) :
+    finFourArrow.symm (a, b, c, d) = ![a, b, c, d] :=
+  finFourArrow.symm_apply_eq.2 (by simp)
+
+/-- Under `finFourArrow` the product measure on `Fin 4 → β` is the iterated
+product `μ ⊗ (μ ⊗ (μ ⊗ μ))`. -/
+theorem measurePreserving_finFourArrow (μ : Measure β) [SigmaFinite μ] :
+    MeasurePreserving (finFourArrow (β := β)) (Measure.pi fun _ : Fin 4 => μ)
+      (μ.prod (μ.prod (μ.prod μ))) :=
+  ((MeasurePreserving.id μ).prod (measurePreserving_finThreeArrow μ)).comp
+    (measurePreserving_piFinSuccAbove (fun _ : Fin 4 => μ) 0)
+
+end FinArrow
 
 end TauCeti

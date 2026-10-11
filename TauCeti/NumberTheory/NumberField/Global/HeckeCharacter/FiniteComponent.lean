@@ -365,7 +365,10 @@ theorem finitePart_eq_one_of_forall_mem_unitFiltration (χ : HeckeCharacter K)
     apply IdeleGroup.ext
     · intro w
       simp [y, z]
-    · simp
+    · intro v
+      apply Units.ext
+      simp only [HeightOneSpectrum.coe_ideleFiniteCoord, IdeleGroup.coe_ofFiniteIdele,
+        IdeleGroup.coe_toFiniteIdele]
   rw [hyfin] at hyχ
   dsimp only [y] at hyχ
   rw [QuotientGroup.mk_mul, QuotientGroup.mk_inv, map_mul, map_inv, hzχ,

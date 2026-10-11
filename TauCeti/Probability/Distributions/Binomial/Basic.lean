@@ -63,7 +63,7 @@ theorem pgf_binomial (n : ℕ) (p : unitInterval) (t : ℝ) :
   rw [pgf_def, integral_binomial, ← Nat.range_succ_eq_Iic, hbase, add_pow]
   simp only [smul_eq_mul, id_eq]
   apply Finset.sum_congr rfl
-  intro k hk
+  intro k _
   ring
 
 /-- The moment generating function of the real-valued binomial law. -/
@@ -84,7 +84,7 @@ private theorem charFun_map_cast_binomial_aux (n : ℕ) (p : unitInterval) (t : 
   rw [charFun_apply, integral_map_cast_binomial]
   simp only [Real.inner_apply]
   apply Finset.sum_congr rfl
-  intro k hk
+  intro k _
   rw [Complex.real_smul]
   push_cast
   ring
@@ -98,7 +98,7 @@ theorem charFun_map_cast_binomial (n : ℕ) (p : unitInterval) (t : ℝ) :
     _ = ∑ k ∈ Finset.range (n + 1), (n.choose k : ℂ) *
         ((p : ℂ) * Complex.exp (Complex.I * t)) ^ k * (1 - p : ℂ) ^ (n - k) := by
       apply Finset.sum_congr rfl
-      intro k hk
+      intro k _
       have hexp : Complex.exp (((k : ℝ) * t) * Complex.I) =
           Complex.exp (Complex.I * t) ^ k := by
         rw [← Complex.exp_nat_mul]
@@ -157,7 +157,7 @@ theorem iIndepFun.hasLaw_sum_bernoulli {ι : Type*} [Fintype ι] {p : unitInterv
           (1 - (p : ℂ) + (p : ℂ) * Complex.exp (Complex.I * t)) := by
         rw [Fintype.prod_apply]
         apply Finset.prod_congr rfl
-        intro i hi
+        intro i _
         rw [(hcast i).map_eq, charFun_map_cast_binomial]
         simp
       _ = (1 - (p : ℂ) + (p : ℂ) * Complex.exp (Complex.I * t)) ^ Fintype.card ι := by simp

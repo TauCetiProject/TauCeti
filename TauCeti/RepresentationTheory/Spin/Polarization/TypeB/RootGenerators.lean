@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Orthogonal.TypeB.RootGenerators
+public import TauCeti.Algebra.Lie.Orthogonal.TypeB.Root.Generators
 public import TauCeti.RepresentationTheory.Spin.IntegralLattice
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.Basic
 
@@ -15,7 +15,7 @@ public import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.Basic
 `TauCeti.SpinPolarizationData.typeBQuadraticEquiv` identifies the split type-`B` matrix algebra
 `LieAlgebra.Orthogonal.typeB ι K` with the quadratic elements of the Clifford algebra of an odd
 polarization. This file evaluates that identification on the Bourbaki-numbered root and coroot
-matrices of `TauCeti/Algebra/Lie/Orthogonal/TypeB/RootGenerators.lean`, and reads off what the
+matrices of `TauCeti/Algebra/Lie/Orthogonal/TypeB/Root/Generators.lean`, and reads off what the
 resulting Clifford elements do to the coordinate integral lattice of the spinor module.
 
 Each of the three numbered root vectors is a single Clifford bivector of two vectors of the odd

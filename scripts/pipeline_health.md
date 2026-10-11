@@ -165,7 +165,7 @@ thousands of requests and takes tens of minutes, so:
 - **the Pages workflow** fetches once, writes the charts, and derives
   `pipeline-health.json` from that snapshot plus a fresh readiness audit;
 - **anything else** should read the published
-  `https://taucetiproject.github.io/TauCeti/static/pipeline-health.json`
+  `https://taucetiproject.org/static/pipeline-health.json`
   rather than repeat the walk.
 
 To work offline, dump a snapshot once and replay it:

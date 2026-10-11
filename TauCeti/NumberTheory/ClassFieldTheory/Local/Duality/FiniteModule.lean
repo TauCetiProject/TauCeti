@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Data.ZMod.TrivialAction
-public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.KummerCorestriction
+public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Kummer.Corestriction
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Duality.TrivialZMod
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Duality.DimensionShifting
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Duality.OpenSubgroup

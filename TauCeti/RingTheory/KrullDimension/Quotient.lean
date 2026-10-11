@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Ideal.Height
 public import Mathlib.RingTheory.KrullDimension.NonZeroDivisors
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
+public import TauCeti.Topology.PureDimension
 
 /-!
 # Krull dimension and heights under quotients
@@ -18,10 +19,16 @@ dimension of `V(I)` is the Krull dimension of `R ⧸ I`.
 Quotienting by the nilradical preserves the entire prime spectrum, hence its Krull dimension and
 the height of each prime ideal.
 
+The spectrum of a ring is pure-dimensional of dimension `d` exactly when every quotient by a
+minimal prime has Krull dimension `d`: the irreducible components are the closed subsets `V(P)`
+for minimal primes `P`. This gives a componentwise criterion using only quotient dimensions.
+
 ## Main results
 
 * `Ideal.topologicalKrullDim_zeroLocus`: the closed subset `V(I)` of `Spec R` has the Krull
   dimension of `R ⧸ I`.
+* `TauCeti.isPureDimensional_primeSpectrum_iff`: the spectrum is pure-dimensional exactly when
+  every minimal-prime quotient has the prescribed dimension.
 * `TauCeti.ringKrullDim_quotient_nilradical`: reduction preserves Krull dimension.
 * `Ideal.height_map_quotientMk_nilradical`: reduction preserves the height of a prime ideal.
 -/
@@ -50,7 +57,16 @@ end Ideal
 
 namespace TauCeti
 
-variable (R : Type*) [CommRing R]
+variable {R : Type*} [CommRing R]
+
+/-- The spectrum of a ring `R` is pure-dimensional of dimension `d` if and only if `R ⧸ P` has
+Krull dimension `d` for every minimal prime `P` of `R`. -/
+theorem isPureDimensional_primeSpectrum_iff {d : ℕ} :
+    IsPureDimensional d (PrimeSpectrum R) ↔ ∀ P ∈ minimalPrimes R, ringKrullDim (R ⧸ P) = d := by
+  simp_rw [isPureDimensional_iff, ← PrimeSpectrum.zeroLocus_minimalPrimes, Set.forall_mem_image,
+    Function.comp_apply, Ideal.topologicalKrullDim_zeroLocus]
+
+variable (R)
 
 /-- Passing to the quotient by the nilradical preserves Krull dimension. -/
 @[simp]

@@ -8,6 +8,7 @@ module
 public import TauCeti.CategoryTheory.GrothendieckGroup.ObjectCodeMonoid
 public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
 public import Mathlib.CategoryTheory.Adjunction.Limits
+public import Mathlib.Data.Fintype.BigOperators
 public import Mathlib.GroupTheory.MonoidLocalization.GrothendieckGroup
 
 /-!
@@ -365,7 +366,7 @@ end Functoriality
 
 section FiniteBiproducts
 
-variable {C : Type u} [Category.{v} C] [Preadditive C] [HasBinaryBiproducts C]
+variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] [HasBinaryBiproducts C]
   {G : Type*} [AddCommGroup G] (v : SplitK0.AdditiveInvariant C G)
 
 namespace SplitK0.AdditiveInvariant

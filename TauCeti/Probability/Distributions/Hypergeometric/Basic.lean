@@ -296,7 +296,7 @@ private theorem sum_hypergeometricWeight_toReal_mul {N K n : ℕ} (hK : K ≤ N)
       push_cast
       rw [Finset.sum_div]
       apply Finset.sum_congr rfl
-      intro k hk
+      intro k _
       ring
     _ = ((K * (N - 1).choose (n - 1) : ℕ) : ℝ) / (N.choose n : ℝ) := by
       rw [sum_range_mul_choose_mul_choose hK hnpos]
@@ -403,7 +403,7 @@ private theorem integral_sq_id_map_cast_hypergeometricMeasure {N K n : ℕ}
           ((hypergeometricWeight N K n k).toReal * (k : ℝ) * ((k : ℝ) - 1) +
             (hypergeometricWeight N K n k).toReal * (k : ℝ)) := by
       apply Finset.sum_congr rfl
-      intro k hk
+      intro k _
       ring
     _ = (∑ k ∈ Finset.range (n + 1),
           (hypergeometricWeight N K n k).toReal * (k : ℝ) * ((k : ℝ) - 1)) +

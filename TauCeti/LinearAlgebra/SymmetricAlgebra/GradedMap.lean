@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Functoriality
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Grading
 public import Mathlib.RingTheory.GradedAlgebra.RingHom
+import TauCeti.LinearAlgebra.SymmetricAlgebra.Semilinear
 
 /-!
 # Graded functoriality of symmetric algebras
@@ -30,23 +31,11 @@ variable {M : Type v} {N : Type w} {P : Type x}
 variable [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
 variable [AddCommMonoid P] [Module R P]
 
-/-- A symmetric-algebra map preserves each homogeneous degree. -/
-theorem map_mem_homogeneousSubmodule (f : M →ₗ[R] N) {n : ℕ}
-    {a : SymmetricAlgebra R M} (ha : a ∈ homogeneousSubmodule R M n) :
-    map R f a ∈ homogeneousSubmodule R N n := by
-  induction ha using Submodule.pow_induction_on_left' with
-  | algebraMap r => simp
-  | add a b n ha hb iha ihb => simpa using Submodule.add_mem _ iha ihb
-  | mem_mul m hm n a ha ih =>
-      obtain ⟨m, rfl⟩ := hm
-      simpa [Nat.add_comm] using
-        SetLike.mul_mem_graded (ι_mem_homogeneousSubmodule R N (f m)) ih
-
 /-- The degree-preserving ring map of symmetric algebras induced by a linear map. -/
 noncomputable def gradedMap (f : M →ₗ[R] N) :
     homogeneousSubmodule R M →+*ᵍ homogeneousSubmodule R N where
   __ := (map R f).toRingHom
-  map_mem := map_mem_homogeneousSubmodule R f
+  map_mem := TauCeti.SymmetricAlgebra.map_mem_homogeneousSubmodule f
 
 /-- The underlying ring homomorphism is the ordinary symmetric-algebra map. -/
 @[simp]

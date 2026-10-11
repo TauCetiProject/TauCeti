@@ -51,6 +51,7 @@ it, and two such cocycles have the same class exactly when they differ by a homo
   objects is the `cast` of reading the untransported cocycle.
 * `TopRep.eqToHom_π_eq_cochainClass`: the transport of a class along an equality of coefficient
   objects is the class of the transported cocycle.
+* `TopRep.cochainClass_add`: the class map is additive.
 * `TopRep.cochainClass_eq_cochainClass_iff`: two homogeneous cocycles of positive degree have the
   same class exactly when their difference is a coboundary, and `TopRep.cochainClass_eq_of_sub_eq_d`
   is the direction that compares two explicit representatives.
@@ -174,6 +175,20 @@ theorem cochainClass_iCycles (z : ContinuousCohomology.cocycles X n) :
   congr 1
   apply (homogeneousCochains X).iCycles_injective n
   rw [HomologicalComplex.iCycles_cyclesMkOfEq]
+
+/-- **The class map is additive**: the class of a sum of homogeneous cocycles is the sum of their
+classes. -/
+@[simp]
+theorem cochainClass_add (a b : (homogeneousCochains X).X n)
+    (ha : ((homogeneousCochains X).d n (n + 1)).hom a = 0)
+    (hb : ((homogeneousCochains X).d n (n + 1)).hom b = 0) :
+    X.cochainClass n (a + b) (by rw [map_add, ha, hb, add_zero]) =
+      X.cochainClass n a ha + X.cochainClass n b hb := by
+  rw [cochainClass_def, cochainClass_def, cochainClass_def, ← map_add]
+  congr 1
+  apply (homogeneousCochains X).iCycles_injective n
+  rw [map_add, HomologicalComplex.iCycles_cyclesMkOfEq, HomologicalComplex.iCycles_cyclesMkOfEq,
+    HomologicalComplex.iCycles_cyclesMkOfEq]
 
 /-- Any reading `ev` of homogeneous cochains, applied to a cocycle transported along an equality
 `X = Y` of coefficient objects, is the `cast` of its reading of the untransported cocycle. Once the

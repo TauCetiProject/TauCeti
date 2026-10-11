@@ -388,15 +388,8 @@ instance _root_.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_kernel_spe
     Module.finitePresentation_of_finite R _
   have : Module.FinitePresentation R (kernel g : ModuleCat R) :=
     Module.FinitePresentation.of_equiv (ModuleCat.kernelIsoKer g).symm.toLinearEquiv
-  let eM := @asIso _ _ _ _ M.fromTildeΓ
-    (isIso_fromTildeΓ_of_isQuasicoherent (R := R) M)
-  let eN := @asIso _ _ _ _ N.fromTildeΓ
-    (isIso_fromTildeΓ_of_isQuasicoherent (R := R) N)
-  let e : tilde (kernel g) ≅ kernel f :=
-    PreservesKernel.iso (tilde.functor R) g ≪≫
-      kernel.mapIso _ _ eM eN ((tilde.adjunction (R := R)).counit.naturality f)
-  exact (SheafOfModules.isFinitePresentation (Spec R).ringCatSheaf).prop_of_iso e
-    (isFinitePresentation_tilde (kernel g))
+  exact (SheafOfModules.isFinitePresentation (Spec R).ringCatSheaf).prop_of_iso
+    (tildeKernelIso f) (isFinitePresentation_tilde (kernel g))
 
 end
 

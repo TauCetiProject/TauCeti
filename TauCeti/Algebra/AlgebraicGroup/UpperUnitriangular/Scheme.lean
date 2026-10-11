@@ -347,7 +347,6 @@ theorem schemePointsMulEquiv_apply
 
 /-- The inverse scheme-points equivalence presents an upper-unitriangular matrix as the
 corresponding spectrum point. -/
-@[simp]
 theorem schemePointsMulEquiv_symm_apply (g : upperUnitriangularGroup m A) :
     (schemePointsMulEquiv m A).symm g =
       groupSchemePointMulEquiv m A ((pointsMulEquiv R m).symm g) := by
@@ -365,20 +364,10 @@ theorem schemePointsMulEquiv_mapValue (φ : A →ₐ[R] B)
         ((AlgebraicGeometry.Spec.map (CommRingCat.ofHom φ.toRingHom)).asOver
             (AlgebraicGeometry.Spec (CommRingCat.of R)) ≫ p) =
       UpperUnitriangularGroup.map φ.toRingHom (schemePointsMulEquiv m A p) := by
-  let q : WithConv (coordinateHopfAlgebra R m →ₐ[R] A) :=
-    (groupSchemePointMulEquiv m A).symm p
-  have hpre :
-      (groupSchemePointMulEquiv m B).symm
-          ((AlgebraicGeometry.Spec.map (CommRingCat.ofHom φ.toRingHom)).asOver
-            (AlgebraicGeometry.Spec (CommRingCat.of R)) ≫ p) =
-        HopfAlgebra.mapPoints (H := coordinateHopfAlgebra R m)
-          (CommAlgCat.ofHom φ) q := by
-    simpa only [q, groupSchemePointMulEquiv] using
-      CommHopfAlgCat.mapMulEquivOfPresentation_mapValue
-        (coordinateHopfAlgebra R m) φ (groupScheme_def R m) p
-  simp only [schemePointsMulEquiv, MulEquiv.trans_apply]
-  rw [hpre, HopfAlgebra.mapPoints_apply, ← AlgHom.mapValue_apply]
-  exact pointsMulEquiv_mapValue (R := R) m φ q
+  unfold schemePointsMulEquiv groupSchemePointMulEquiv
+  exact CommHopfAlgCat.mapMulEquivOfPresentation_symm_trans_mapValue
+    (coordinateHopfAlgebra R m) φ (groupScheme_def R m) _ _ _
+    (pointsMulEquiv_mapValue (R := R) m φ) p
 
 end
 

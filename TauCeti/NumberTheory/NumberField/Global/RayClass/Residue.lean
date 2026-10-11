@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Basic
 public import Mathlib.LinearAlgebra.FreeModule.IdealQuotient
 
+import TauCeti.RingTheory.Ideal.Quotient.DedekindDomain
 import TauCeti.RingTheory.Ideal.Quotient.Representative
 
 /-!
@@ -51,12 +52,13 @@ class.
   functorial in finite-part divisibility.
 * `TauCeti.GlobalNumberFields.finiteUnitsMap_residueHom`: reduction commutes with changing the
   modulus.
+* `TauCeti.GlobalNumberFields.finiteUnitsMap_surjective`: every residue unit lifts to a larger
+  finite modulus.
 
 ## References
 
 * J. Neukirch, *Algebraic Number Theory*, Chapter VI, §1.
 * S. Lang, *Algebraic Number Theory*, Chapter VI, §1.
-* `TauCetiRoadmap/GlobalNumberFields/Suggested.lean` (`GlobalNumberFields.finiteUnitsMap`).
 -/
 
 public section
@@ -85,7 +87,7 @@ theorem exists_algebraMap_eq_mul_of_mem_primeToSubgroup {𝔪 : Modulus K} {x : 
   have hd0 : (d : 𝓞 K) ≠ 0 := nonZeroDivisors.ne_zero d.2
   set D : Ideal (𝓞 K) := Ideal.span {(d : 𝓞 K)} with hD
   set C : Ideal (𝓞 K) := Ideal.span {c} with hCdef
-  set G : Ideal (𝓞 K) := C ⊔ D with hG
+  set G : Ideal (𝓞 K) := C ⊔ D with _
   have hD0 : D ≠ ⊥ := by
     simpa only [hD, ne_eq, Ideal.span_singleton_eq_bot] using hd0
   obtain ⟨L, hL⟩ : G ∣ D := Ideal.dvd_iff_le.mpr le_sup_right
@@ -95,7 +97,7 @@ theorem exists_algebraMap_eq_mul_of_mem_primeToSubgroup {𝔪 : Modulus K} {x : 
   have hLcop : L ⊔ 𝔪.finitePart = ⊤ := by
     refine (Modulus.isCoprimeTo_iff_sup_eq_top.mp
       (Modulus.isCoprimeTo_iff.mpr ⟨hL0, fun v hv hdiv ↦ ?_⟩)).2
-    set n : ℕ := (Associates.mk v.asIdeal).count (Associates.mk D).factors with hn
+    set n : ℕ := (Associates.mk v.asIdeal).count (Associates.mk D).factors with _
     -- The denominator lies in `vⁿ`, and so does the numerator, since `x` is a unit at `v`.
     have hDn : D ≤ v.asIdeal ^ n := (le_count_associates_iff_le_pow v hD0 n).mp le_rfl
     have hxv : v.valuation K (x : K) = 1 :=
@@ -349,6 +351,12 @@ theorem coe_finiteUnitsMap {𝔪 𝔫 : Modulus K} (h : 𝔪.finitePart ∣ 𝔫
       Ideal.Quotient.factor (Ideal.le_of_dvd h)
         (x : (𝓞 K) ⧸ 𝔫.finitePart) := by
   rfl
+
+/-- Every residue unit modulo the smaller finite part lifts to a residue unit modulo the larger
+finite part. The lift need not be the reduction of a global integer unit. -/
+theorem finiteUnitsMap_surjective {𝔪 𝔫 : Modulus K} (h : 𝔪.finitePart ∣ 𝔫.finitePart) :
+    Function.Surjective (finiteUnitsMap h) :=
+  units_map_quotient_factor_surjective (Ideal.le_of_dvd h) 𝔫.finitePart_ne_bot
 
 /-- Changing the finite part along reflexivity gives the identity map. -/
 @[simp]

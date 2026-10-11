@@ -18,16 +18,16 @@ that the Weyl group permutes them **simply transitively**.
 Two facts drive everything. A weight interior to the dominant chamber is moved by every
 nontrivial Weyl-group element, indeed out of the closed dominant chamber
 (`TauCeti.eq_one_of_smul_mem_dominantChamber`); and every weight is Weyl-conjugate into the closed
-dominant chamber (`TauCeti.exists_mem_dominantChamber`). The first says an open chamber meets the
-closed chamber of no other Weyl-group element, so the labelling `w ↦ w • openDominantChamber` is
+dominant chamber (`RootPairing.exists_mem_dominantChamber`). The first says an open chamber meets
+the closed chamber of no other Weyl-group element, so the labelling `w ↦ w • openDominantChamber` is
 injective as soon as the open dominant chamber has a point to distinguish two labels by; the set of
 open chambers is by definition the range of that labelling, so surjectivity is free, and the two
 together make it a bijection from the Weyl group onto the set of open chambers, which is what simple
 transitivity means here. The second fact is what covers the weights: it is how every *regular*
 weight is shown to lie in an open chamber.
 
-The weights lying in an open chamber are exactly the **regular** ones (`TauCeti.IsRegularWeight`,
-defined with the dominant chamber), those killed by no coroot functional. That is the sense in
+The weights lying in an open chamber are exactly the **regular** ones
+(`RootPairing.IsRegularWeight`), those killed by no coroot functional. That is the sense in
 which the open chambers are the complement of the walls:
 `TauCeti.iUnion_openWeylChamber_eq_setOf_isRegularWeight` identifies their union with the regular
 weights, and `TauCeti.existsUnique_mem_openWeylChamber` puts each regular weight in exactly one of
@@ -73,16 +73,13 @@ the type `TauCeti.openWeylChambers P b`.
 The covering statements are proved as `..._of_finite_weylGroup`, which asks only that the Weyl
 group be finite, and the root-system forms are read off from those using
 `RootPairing.finite_weylGroup`; this follows the shape of
-`TauCeti.exists_mem_dominantChamber_of_finite_weylGroup`, which is what they consume.
+`RootPairing.exists_mem_dominantChamber_of_finite_weylGroup`, which is what they consume.
+
+Existence of a dominant representative is `RootPairing.exists_mem_dominantChamber`; for an
+interior dominant weight, `TauCeti.eq_one_of_smul_mem_dominantChamber` gives uniqueness and a
+trivial stabilizer. Together these yield simple transitivity on the nonempty open chambers.
 
 ## References
-
-This file implements the remaining chamber items of Layer 4 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`: that "the general chambers are the
-`W`-translates of the dominant chamber", and that the closed dominant chamber being a strict
-fundamental domain is the Weyl group "acting **simply transitively on the open chambers**". The
-existence and the uniqueness of the dominant representative are `TauCeti.exists_mem_dominantChamber`
-and `TauCeti.eq_one_of_smul_mem_dominantChamber`, proved elsewhere.
 
 The argument is the one in J. E. Humphreys, *Introduction to Lie Algebras and Representation
 Theory*, GTM 9, Ch. III, §10.3, and N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4-6*,
@@ -94,6 +91,8 @@ public section
 open Pointwise Set
 
 namespace TauCeti
+
+open RootPairing
 
 variable {ι R M N : Type*}
   [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]

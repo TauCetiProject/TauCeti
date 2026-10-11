@@ -48,6 +48,8 @@ normalized trace maps with the Hilbert-sum decomposition of Peter-Weyl blocks.
 ## Main definitions
 
 * `ContRepresentation.traceCoeffLp`: the trace coefficient as a linear map into `L²(G)`.
+* `ContRepresentation.matrixCoeffLpIntertwiner`: the matrix-coefficient map in its second vector
+  as an intertwiner into the left regular representation.
 * `TauCeti.peterWeylBlockRep`: a Peter-Weyl block as a `G × G`-subrepresentation of `L²(G)` under
   the biregular action.
 * `TauCeti.traceCoeffBlock`: the trace coefficient of a model, corestricted to its block.
@@ -100,6 +102,8 @@ Peter-Weyl theorem, isotypic decomposition, biregular representation, compact gr
 
 public section
 
+open _root_.ContRepresentation
+
 open MeasureTheory
 open scoped InnerProductSpace
 
@@ -118,7 +122,7 @@ variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopo
 `L²(G)` for normalized Haar measure.
 
 A trace coefficient is continuous and `G` is compact, so `ContinuousMap.toLp` applies, exactly as
-for `TauCeti.ContRepresentation.matrixCoeffLp`. -/
+for `ContRepresentation.matrixCoeffLp`. -/
 noncomputable def traceCoeffLp (π : ContRepresentation 𝕜 G V) (hπ : Continuous π) :
     (V →L[𝕜] V) →ₗ[𝕜] Lp 𝕜 2 (haarProb G) :=
   (ContinuousMap.toLp 2 (haarProb G) 𝕜 : C(G, 𝕜) →L[𝕜] Lp 𝕜 2 (haarProb G)).toLinearMap ∘ₗ
@@ -197,6 +201,39 @@ theorem rightRegularLp_traceCoeffLp (h : G) (T : V →L[𝕜] V) :
   rw [← biRegularLp_apply_one_mk, biRegularLp_traceCoeffLp, biLinHom_apply_one_mk]
 
 end Bitranslation
+
+section MatrixCoeffIntertwiner
+
+variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
+  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [FiniteDimensional 𝕜 V]
+  (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
+
+/-- Left translation of a matrix coefficient acts on its second vector. -/
+theorem leftRegularLp_matrixCoeffLp (hunitary : IsUnitary π) (g : G) (v w : V) :
+    leftRegularLp 𝕜 G g (matrixCoeffLp π hπ v w) = matrixCoeffLp π hπ v (π g w) := by
+  rw [← traceCoeffLp_rankOne π hπ hunitary v w, leftRegularLp_traceCoeffLp,
+    InnerProductSpace.comp_rankOne, traceCoeffLp_rankOne π hπ hunitary]
+
+/-- The matrix-coefficient map in its second vector, intertwining a finite-dimensional
+unitary representation with left translation on `L²(G)`. -/
+noncomputable def matrixCoeffLpIntertwiner (hunitary : IsUnitary π) (v : V) :
+    ContIntertwiningMap π (leftRegularLp 𝕜 G) where
+  __ := LinearMap.toContinuousLinearMap (matrixCoeffLpₛₗ π hπ v)
+  isIntertwining' g := by
+    apply ContinuousLinearMap.ext
+    intro w
+    simp only [ContinuousLinearMap.comp_apply, LinearMap.coe_toContinuousLinearMap',
+      matrixCoeffLpₛₗ_apply_apply]
+    exact (leftRegularLp_matrixCoeffLp π hπ hunitary g v w).symm
+
+/-- Applying the coefficient intertwiner gives the corresponding matrix coefficient. -/
+@[simp]
+theorem matrixCoeffLpIntertwiner_apply (hunitary : IsUnitary π) (v w : V) :
+    matrixCoeffLpIntertwiner π hπ hunitary v w = matrixCoeffLp π hπ v w :=
+  matrixCoeffLpₛₗ_apply_apply π hπ v w
+
+end MatrixCoeffIntertwiner
 
 end ContRepresentation
 
@@ -285,7 +322,7 @@ theorem coe_peterWeylBlockRep_apply (model : IrrepModel 𝕜 G) (p : G × G)
   ContRepresentation.coe_subrepresentation_apply p f
 
 /-- **A Peter-Weyl block has a continuous operator-valued action.** This is not
-`TauCeti.ContRepresentation.continuous_subrepresentation`: the ambient biregular representation of
+`ContRepresentation.continuous_subrepresentation`: the ambient biregular representation of
 `L²(G)` is only *strongly* continuous (`TauCeti.continuous_biRegularLp_apply`), and for an infinite
 compact group it is not continuous in the operator norm. The block, however, is finite-dimensional,
 so the surjection `TauCeti.traceCoeffBlock` onto it has a continuous linear section `s`, and the

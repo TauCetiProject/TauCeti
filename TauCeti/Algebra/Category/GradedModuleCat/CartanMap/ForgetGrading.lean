@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Basic
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
 -- Identify the induced structures locally while keeping their bodies hidden from consumers.
-import all TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Basic
 import all TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
 
 /-!
@@ -110,12 +109,13 @@ theorem isConflationExact_gradedFiniteModulesForget :
   simpa only [gradedFiniteModulesExactStructure, finiteModulesExactStructure,
     gradedFiniteModulesForget] using GradedExactStructure.isConflationExact_lift
     (F := GradedModuleCat.toModuleCat (𝒜 := 𝒜))
-    (gradedModuleExactStructure 𝒜) (gradedFiniteModules 𝒜)
-    (isExtensionClosed_gradedFiniteModules' (𝒜 := 𝒜))
-    (gradedFiniteModules_shift' (𝒜 := 𝒜))
+    (gradedModuleCanonicalExactStructure 𝒜) (gradedFiniteModules 𝒜)
+    (isExtensionClosed_gradedFiniteModules_gradedAbelian (𝒜 := 𝒜))
+    (gradedFiniteModules_gradedAbelian_shift (𝒜 := 𝒜))
     (fun M => (ModuleCat.isFG_iff _).2 (inferInstanceAs (Module.Finite A M.obj)))
     (isExtensionClosed_finiteModules A)
-    (by simpa only [gradedModuleExactStructure, GradedExactStructure.abelian_toExactStructure]
+    (by simpa only [gradedModuleCanonicalExactStructure,
+        GradedExactStructure.abelian_toExactStructure]
       using (ExactStructure.isConflationExact_abelian
         (GradedModuleCat.toModuleCat.{uA} (𝒜 := 𝒜))))
 
@@ -127,15 +127,16 @@ theorem isConflationExact_gradedFiniteProjectiveModulesForget :
     gradedFiniteProjectiveModulesForget]
     using GradedExactStructure.isConflationExact_lift
     (F := GradedModuleCat.toModuleCat (𝒜 := 𝒜))
-    (gradedModuleExactStructure 𝒜)
+    (gradedModuleCanonicalExactStructure 𝒜)
     (gradedFiniteProjectiveModules 𝒜)
-    (isExtensionClosed_gradedFiniteProjectiveModules' (𝒜 := 𝒜))
-    (gradedFiniteProjectiveModules_shift' (𝒜 := 𝒜))
+    (isExtensionClosed_gradedFiniteProjectiveModules_gradedAbelian (𝒜 := 𝒜))
+    (gradedFiniteProjectiveModules_gradedAbelian_shift (𝒜 := 𝒜))
     (fun M => finiteProjectiveModules_iff.2
       ⟨inferInstanceAs (Module.Finite A M.obj), inferInstanceAs (Module.Projective A M.obj)⟩)
     (ExactStructure.isExtensionClosed_of_le_isProjective
       (finiteProjectiveModules_le_isProjective A))
-    (by simpa only [gradedModuleExactStructure, GradedExactStructure.abelian_toExactStructure]
+    (by simpa only [gradedModuleCanonicalExactStructure,
+        GradedExactStructure.abelian_toExactStructure]
       using (ExactStructure.isConflationExact_abelian
         (GradedModuleCat.toModuleCat.{uA} (𝒜 := 𝒜))))
 
@@ -148,11 +149,11 @@ def gradedFiniteModulesForgetShiftIso :
   simpa only [gradedFiniteModulesExactStructure, gradedFiniteModulesForget] using
     GradedExactStructure.liftCommShift
     (F := GradedModuleCat.toModuleCat (𝒜 := 𝒜))
-    (gradedModuleExactStructure 𝒜) (gradedFiniteModules 𝒜)
-    (isExtensionClosed_gradedFiniteModules' (𝒜 := 𝒜))
-    (gradedFiniteModules_shift' (𝒜 := 𝒜))
+    (gradedModuleCanonicalExactStructure 𝒜) (gradedFiniteModules 𝒜)
+    (isExtensionClosed_gradedFiniteModules_gradedAbelian (𝒜 := 𝒜))
+    (gradedFiniteModules_gradedAbelian_shift (𝒜 := 𝒜))
     (fun M => (ModuleCat.isFG_iff _).2 (inferInstanceAs (Module.Finite A M.obj)))
-    (by simpa only [gradedModuleExactStructure, GradedExactStructure.abelian_shift,
+    (by simpa only [gradedModuleCanonicalExactStructure, GradedExactStructure.abelian_shift,
       GradedModuleCat.shift] using GradedModuleCat.shiftFunctorCompToModuleCatIso (𝒜 := 𝒜) 1)
 
 /-- Forgetting the shift of a finite graded projective gives the same underlying projective. -/
@@ -163,13 +164,13 @@ def gradedFiniteProjectiveModulesForgetShiftIso :
   simpa only [gradedFiniteProjectiveModulesExactStructure,
     gradedFiniteProjectiveModulesForget] using GradedExactStructure.liftCommShift
     (F := GradedModuleCat.toModuleCat (𝒜 := 𝒜))
-    (gradedModuleExactStructure 𝒜)
+    (gradedModuleCanonicalExactStructure 𝒜)
     (gradedFiniteProjectiveModules 𝒜)
-    (isExtensionClosed_gradedFiniteProjectiveModules' (𝒜 := 𝒜))
-    (gradedFiniteProjectiveModules_shift' (𝒜 := 𝒜))
+    (isExtensionClosed_gradedFiniteProjectiveModules_gradedAbelian (𝒜 := 𝒜))
+    (gradedFiniteProjectiveModules_gradedAbelian_shift (𝒜 := 𝒜))
     (fun M => finiteProjectiveModules_iff.2
       ⟨inferInstanceAs (Module.Finite A M.obj), inferInstanceAs (Module.Projective A M.obj)⟩)
-    (by simpa only [gradedModuleExactStructure, GradedExactStructure.abelian_shift,
+    (by simpa only [gradedModuleCanonicalExactStructure, GradedExactStructure.abelian_shift,
       GradedModuleCat.shift] using GradedModuleCat.shiftFunctorCompToModuleCatIso (𝒜 := 𝒜) 1)
 
 /-- The map from specialized graded `G₀` to ungraded `G₀`, induced by forgetting grading. -/

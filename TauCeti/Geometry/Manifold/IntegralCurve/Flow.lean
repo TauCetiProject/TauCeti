@@ -27,7 +27,8 @@ be false. The results below always carry the precise membership hypotheses.
   restarting at `t` is exactly the translate by `-t` of the original interval.
 * `maximalIntegralCurve_add`: the domain-aware flow law
   `φ x (t + s) = φ (φ x t) s`.
-* `maximalIntegralCurveFlowDomain`: the natural domain of the maximal flow.
+* `maximalIntegralCurveFlowDomain`: the natural domain of the maximal flow, which is everything
+  for a complete field (`maximalIntegralCurveFlowDomain_eq_univ`).
 * `isOpen_maximalIntegralCurveFlowDomain`: the natural domain is open.
 * `contMDiffOn_maximalIntegralCurve`: the maximal flow of a `C^n` vector field (`1 ≤ n ≤ ∞`) is
   `C^n` on its natural domain.
@@ -89,7 +90,7 @@ private theorem sub_mem_maximalIntegralCurveInterval
     (ht : t ∈ maximalIntegralCurveInterval v x)
     (hs : s ∈ maximalIntegralCurveInterval v x) :
     s - t ∈ maximalIntegralCurveInterval v (maximalIntegralCurve v x t) := by
-  obtain ⟨a, b, h0, ht', hs', hγ⟩ :=
+  obtain ⟨a, b, _, ht', hs', hγ⟩ :=
     exists_common_Ioo_maximalIntegralCurveInterval hv ht hs
   have hshift : IsMIntegralCurveOn (maximalIntegralCurve v x ∘ (· + t)) v
       (Ioo (a - t) (b - t)) := by
@@ -109,7 +110,7 @@ theorem maximalIntegralCurve_add
     (hts : t + s ∈ maximalIntegralCurveInterval v x) :
     maximalIntegralCurve v x (t + s) =
       maximalIntegralCurve v (maximalIntegralCurve v x t) s := by
-  obtain ⟨a, b, h0, ht', hst', hγ⟩ :=
+  obtain ⟨a, b, _, ht', hst', hγ⟩ :=
     exists_common_Ioo_maximalIntegralCurveInterval hv ht hts
   have hshift : IsMIntegralCurveOn (maximalIntegralCurve v x ∘ (· + t)) v
       (Ioo (a - t) (b - t)) := by
@@ -173,6 +174,15 @@ omit [T2Space M] [IsManifold I 1 M] [BoundarylessManifold I M] in
 @[simp] theorem mem_maximalIntegralCurveFlowDomain {p : M × ℝ} :
     p ∈ maximalIntegralCurveFlowDomain v ↔ p.2 ∈ maximalIntegralCurveInterval v p.1 :=
   Iff.rfl
+
+omit [T2Space M] [IsManifold I 1 M] [BoundarylessManifold I M] in
+/-- For a complete vector field, whose maximal integral curves are all defined for all time, the
+natural domain of the maximal flow is everything. -/
+theorem maximalIntegralCurveFlowDomain_eq_univ
+    (h : ∀ x, maximalIntegralCurveInterval v x = univ) :
+    maximalIntegralCurveFlowDomain v = univ := by
+  ext p
+  simp [h]
 
 /-- A point is good for the order-`n + 1` maximal flow if the natural domain is a neighbourhood
 of that point and the total, junk-extended flow is `C^(n+1)` there. -/

@@ -21,7 +21,9 @@ vanishes the induced map is surjective in degree `n` and injective in degree `n 
 conversely surjectivity in degree `n` together with injectivity in degree `n + 1` forces
 `Ĥⁿ(G, X₃)` to vanish. These are the two halves of the argument that a morphism of
 representations inducing isomorphisms in three consecutive degrees on every subgroup induces
-isomorphisms in every degree.
+isomorphisms in every degree. Likewise, vanishing of the Tate cohomology of two of the three terms,
+in the degrees the long exact sequence connects, forces it for the third, and vanishing of the
+Tate cohomology of `X₂` in two consecutive degrees makes the connecting map bijective.
 
 Finally, for a `3 × 3` diagram of representations with short exact rows and columns, the two
 composites of connecting maps between opposite corners differ by a sign. This is the sign rule
@@ -35,6 +37,10 @@ relating the compatibility of the cup product with connecting maps in its two va
   makes the map induced by `X₁ ⟶ X₂` surjective in that degree and injective in the next.
 * `TauCeti.TateCohomology.isZero_X₃_of_surjective_of_injective`: the converse, from two
   consecutive degrees.
+* `TauCeti.TateCohomology.isZero_X₂_of_isZero_X₁_of_isZero_X₃`,
+  `TauCeti.TateCohomology.isZero_X₃_of_isZero_X₂_of_isZero_X₁`,
+  `TauCeti.TateCohomology.isZero_X₁_of_isZero_X₃_of_isZero_X₂`: two-out-of-three for the
+  vanishing of Tate cohomology along a short exact sequence.
 * `TauCeti.TateCohomology.δ_comp_δ_eq_neg`: the connecting maps of a `3 × 3` diagram of
   representations with short exact rows and columns anticommute.
 -/
@@ -86,6 +92,35 @@ theorem isZero_X₃_of_surjective_of_injective (m n : ℤ) (hmn : m + 1 = n)
   -- `hj : (ComplexShape.up ℤ).Rel m j`, which is `m + 1 = j`.
   obtain rfl : m + 1 = j := hj
   exact (ModuleCat.mono_iff_injective _).2 hinj
+
+/-- If `Ĥⁿ(G, X₁) = 0` and `Ĥⁿ(G, X₃) = 0`, then `Ĥⁿ(G, X₂) = 0`. -/
+theorem isZero_X₂_of_isZero_X₁_of_isZero_X₃ (n : ℤ) (h₁ : IsZero (tateCohomology S.X₁ n))
+    (h₃ : IsZero (tateCohomology S.X₃ n)) : IsZero (tateCohomology S.X₂ n) :=
+  (_root_.TateCohomology.exact₂ hS n).isZero_of_both_isZero h₁ h₃
+
+/-- If `Ĥᵐ(G, X₂) = 0` and `Ĥⁿ(G, X₁) = 0` in the next degree `n = m + 1`, then
+`Ĥᵐ(G, X₃) = 0`. -/
+theorem isZero_X₃_of_isZero_X₂_of_isZero_X₁ (m n : ℤ) (hmn : m + 1 = n)
+    (h₂ : IsZero (tateCohomology S.X₂ m)) (h₁ : IsZero (tateCohomology S.X₁ n)) :
+    IsZero (tateCohomology S.X₃ m) := by
+  subst hmn
+  exact (_root_.TateCohomology.exact₃ hS m).isZero_of_both_isZero h₂ h₁
+
+/-- If `Ĥᵐ(G, X₃) = 0` and `Ĥⁿ(G, X₂) = 0` in the next degree `n = m + 1`, then
+`Ĥⁿ(G, X₁) = 0`. -/
+theorem isZero_X₁_of_isZero_X₃_of_isZero_X₂ (m n : ℤ) (hmn : m + 1 = n)
+    (h₃ : IsZero (tateCohomology S.X₃ m)) (h₂ : IsZero (tateCohomology S.X₂ n)) :
+    IsZero (tateCohomology S.X₁ n) := by
+  subst hmn
+  exact (_root_.TateCohomology.exact₁ hS m).isZero_of_both_isZero h₃ h₂
+
+/-- If `Ĥⁿ(G, X₂) = 0` and `Ĥⁿ⁺¹(G, X₂) = 0`, the connecting map
+`Ĥⁿ(G, X₃) ⟶ Ĥⁿ⁺¹(G, X₁)` is bijective. -/
+theorem δ_bijective_of_isZero_X₂ (n : ℤ) (h₀ : IsZero (tateCohomology S.X₂ n))
+    (h₁ : IsZero (tateCohomology S.X₂ (n + 1))) :
+    Function.Bijective (_root_.TateCohomology.δ hS n) :=
+  ConcreteCategory.bijective_of_isIso
+    ((_root_.TateCohomology.map_tateComplexFunctor_shortExact hS).δIso n (n + 1) rfl h₀ h₁).hom
 
 omit hS
 

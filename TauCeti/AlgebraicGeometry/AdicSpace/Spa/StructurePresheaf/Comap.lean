@@ -45,6 +45,9 @@ here.
   rational opens `R(T/s) ⊆ U`.
 * `TauCeti.ValuationSpectrum.presentationLimitMap_comp_presentationLimitComap`: the components are
   natural in `U`.
+* `TauCeti.ValuationSpectrum.presentationLimitComap_id`,
+  `TauCeti.ValuationSpectrum.presentationLimitComap_comp`: the components are contravariantly
+  functorial in `φ`.
 
 ## References
 
@@ -399,6 +402,137 @@ theorem presentationLimitPresheafComap_app (U : (Opens ↥(spa Aplus))ᵒᵖ) :
         presentationLimitComap φ hφ hopen hplus hBplus hsheaf U.unop ≫
         eqToHom (presentationLimitPresheaf_obj P' Bplus _).symm :=
   (rfl)
+
+/-! ### Functoriality -/
+
+variable (U) in
+/-- **The identity induces the identity**: for `φ` the identity of `A`, the component at `U` is
+the restriction along the equality `id⁻¹U = U`. -/
+theorem presentationLimitComap_id (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
+    (hsheafA : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Aplus))
+      (presentationLimitPresheaf P Aplus)) :
+    presentationLimitComap (P := P) (P' := P) (RingHom.id A) continuous_id
+        (fun J hJ ↦ by rwa [Ideal.map_id]) (fun _ ha ↦ ha) hAplus hsheafA U =
+      presentationLimitMap (P := P) (map_spaComapTopHom_id_obj U).le := by
+  classical
+  refine presentationLimit_hom_ext_of_isSheaf (P := P) (RingHom.id A) continuous_id
+    (fun J hJ ↦ by rwa [Ideal.map_id]) (fun _ ha ↦ ha) hsheafA fun i ↦ ?_
+  refine presentationLimit_hom_ext_toPresentation fun m ↦ ?_
+  rw [Category.assoc, presentationLimitComap_comp_map_comp_π, presentationLimitMap_comp,
+    presentationLimitMap_comp_πToPresentation]
+  -- both sides are a projection followed by the structure map `A → A⟨m⟩`
+  refine (presentationLimitπToPresentation_comp_eq_of_subset hAplus ?_ ?_).symm
+  · rw [presentationIndexRestrict_obj_pres]
+    simpa using m.rationalSubset_subset le_rfl
+  · rw [Presentation.toCompletionLocTopHom_comp_eqToHom_hom
+        (presentationIndexRestrict_obj_pres _ m), ObjectProperty.FullSubcategory.comp_hom,
+      Presentation.toCompletionLocTopHom_comp_mapHom_assoc,
+      toCompletionLocTopHom_comp_homOfRationalSubsetSubset]
+    -- `⟨RingHom.id A, _⟩` is the identity of `TopCommRingCat.of A`
+    rfl
+
+/-- **The identity induces the identity morphism of structure presheaves**, up to the transport
+along `spaComapTopHom_id`. -/
+theorem presentationLimitPresheafComap_id (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
+    (hsheafA : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Aplus))
+      (presentationLimitPresheaf P Aplus)) :
+    presentationLimitPresheafComap (P := P) (P' := P) (RingHom.id A) continuous_id
+        (fun J hJ ↦ by rwa [Ideal.map_id]) (fun _ ha ↦ ha) hAplus hsheafA ≫
+      Functor.whiskerRight (eqToHom (congrArg (fun f ↦ (Opens.map f).op) spaComapTopHom_id))
+        (presentationLimitPresheaf P Aplus) =
+      𝟙 _ := by
+  refine NatTrans.ext (funext fun U ↦ ?_)
+  simp only [NatTrans.comp_app, presentationLimitPresheafComap_app, Functor.whiskerRight_app,
+    eqToHom_app, presentationLimitPresheaf_map, presentationLimitComap_id, NatTrans.id_app]
+  simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
+    reassoc_of% presentationLimitMap_comp]
+  -- the remaining restriction is along `𝟙⁻¹U = U`, a transport
+  have e := (congrArg unop (Opens.op_map_id_obj (X := TopCat.of ↥(spa Aplus)) U)).symm
+  rw [← eqToHom_presentationLimit e (congrArg _ e)]
+  simp only [eqToHom_trans]
+  -- `𝟙⁻¹U` is definitionally `U`
+  exact eqToHom_refl _ _
+
+section Comp
+
+variable {C : Type v} [CommRing C] [TopologicalSpace C] [IsTopologicalRing C]
+  {P'' : PairOfDefinition C} {Cplus : Subring C} (ψ : B →+* C) (hψ : Continuous ψ)
+  (hopen' : ∀ ⦃J : Ideal B⦄, IsOpen (J : Set B) → IsOpen (J.map ψ : Set C))
+  (hplus' : ∀ b ∈ Bplus, ψ b ∈ Cplus) (hCplus : ∀ ⦃c⦄, c ∈ Cplus → IsPowerBounded c)
+  (hsheaf' : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Cplus))
+    (presentationLimitPresheaf P'' Cplus))
+
+variable (U) in
+/-- **The morphisms are contravariantly functorial**: the component at `U` of the morphism induced
+by `ψ ∘ φ` is the component at `U` of the morphism induced by `φ`, followed by the component at
+`φ⁻¹U` of the morphism induced by `ψ` and the restriction along `(ψ ∘ φ)⁻¹U = ψ⁻¹(φ⁻¹U)`. -/
+theorem presentationLimitComap_comp :
+    presentationLimitComap (P := P) (P' := P'') (ψ.comp φ) (hψ.comp hφ)
+        (fun J hJ ↦ by rw [← Ideal.map_map]; exact hopen' (hopen hJ))
+        (fun a ha ↦ hplus' (φ a) (hplus a ha)) hCplus hsheaf' U =
+      presentationLimitComap (P := P) (P' := P') φ hφ hopen hplus hBplus hsheaf U ≫
+        presentationLimitComap (P := P') (P' := P'') ψ hψ hopen' hplus' hCplus hsheaf' _ ≫
+        presentationLimitMap (P := P'')
+          (map_spaComapTopHom_comp_obj φ hφ hplus hψ hplus' U).le := by
+  classical
+  refine presentationLimit_hom_ext_of_isSheaf (P := P) (ψ.comp φ) (hψ.comp hφ)
+    (fun J hJ ↦ by rw [← Ideal.map_map]; exact hopen' (hopen hJ))
+    (fun a ha ↦ hplus' (φ a) (hplus a ha)) hsheaf' fun i ↦ ?_
+  refine presentationLimit_hom_ext_toPresentation fun m ↦ ?_
+  rw [Category.assoc, presentationLimitComap_comp_map_comp_π]
+  simp only [Category.assoc, reassoc_of% presentationLimitMap_comp]
+  -- the rational open `R((ψ ∘ φ)(i))` is presented by the index `ψ(φ(i))` of `ψ⁻¹(φ⁻¹U)`
+  have hm : rationalSubset Cplus m.pres.num m.pres.den ⊆ rationalSubset Cplus
+      ((i.comap (P' := P') φ hφ hopen hplus).comap (P' := P'') ψ hψ hopen' hplus').pres.num
+      ((i.comap (P' := P') φ hφ hopen hplus).comap (P' := P'') ψ hψ hopen' hplus').pres.den := by
+    simpa [Finset.image_image] using m.rationalSubset_subset le_rfl
+  rw [presentationLimitComap_comp_map_comp_π_of_le ψ hψ hopen' hplus' hCplus hsheaf'
+    (i.comap (P' := P') φ hφ hopen hplus) _ m hm]
+  -- the projection at `φ(i)` after the morphism induced by `φ` is the base change along `φ`
+  have hi := presentationLimitComap_comp_map_comp_π_of_le φ hφ hopen hplus hBplus hsheaf i le_rfl
+    (i.comap (P' := P') φ hφ hopen hplus) subset_rfl
+  rw [presentationLimitMap_refl, Category.id_comp] at hi
+  rw [reassoc_of% hi]
+  -- both sides are the structure map `A → C⟨m⟩` through `ψ ∘ φ`
+  refine congrArg (presentationLimitπToPresentation Aplus U i ≫ ·) (i.pres.hom_ext ?_)
+  simp only [ObjectProperty.FullSubcategory.comp_hom,
+    Presentation.toCompletionLocTopHom_comp_mapHom_assoc,
+    toCompletionLocTopHom_comp_homOfRationalSubsetSubset_assoc,
+    toCompletionLocTopHom_comp_homOfRationalSubsetSubset]
+  -- `⟨ψ.comp φ, _⟩` is the composite of `⟨φ, hφ⟩` and `⟨ψ, hψ⟩` in `TopCommRingCat`
+  rfl
+
+/-- **The morphisms of structure presheaves are contravariantly functorial**: the morphism induced
+by `ψ ∘ φ` is the morphism induced by `φ` followed by the pushforward of the morphism induced by
+`ψ`, up to the transport along `spaComapTopHom_comp`. -/
+theorem presentationLimitPresheafComap_comp :
+    presentationLimitPresheafComap (P := P) (P' := P'') (ψ.comp φ) (hψ.comp hφ)
+        (fun J hJ ↦ by rw [← Ideal.map_map]; exact hopen' (hopen hJ))
+        (fun a ha ↦ hplus' (φ a) (hplus a ha)) hCplus hsheaf' ≫
+      Functor.whiskerRight (eqToHom (congrArg (fun f ↦ (Opens.map f).op)
+        (spaComapTopHom_comp φ hφ hplus hψ hplus'))) (presentationLimitPresheaf P'' Cplus) =
+      presentationLimitPresheafComap (P := P) (P' := P') φ hφ hopen hplus hBplus hsheaf ≫
+        (TopCat.Presheaf.pushforward _ (spaComapTopHom φ hφ hplus)).map
+          (presentationLimitPresheafComap (P := P') (P' := P'') ψ hψ hopen' hplus' hCplus
+            hsheaf') := by
+  refine NatTrans.ext (funext fun U ↦ ?_)
+  simp only [NatTrans.comp_app, presentationLimitPresheafComap_app, Functor.whiskerRight_app,
+    eqToHom_app, presentationLimitPresheaf_map, TopCat.Presheaf.pushforward_map_app']
+  rw [presentationLimitComap_comp φ hφ hopen hplus hBplus hsheaf (unop U) ψ hψ hopen' hplus' hCplus
+    hsheaf']
+  simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
+    reassoc_of% presentationLimitMap_comp]
+  -- the remaining restriction is along `ψ⁻¹(φ⁻¹U) = (ψ ≫ φ)⁻¹U`, a transport
+  have e : (Opens.map (spaComapTopHom ψ hψ hplus')).obj
+      ((Opens.map (spaComapTopHom φ hφ hplus)).obj U.unop) =
+      ((Opens.map (spaComapTopHom ψ hψ hplus' ≫ spaComapTopHom φ hφ hplus)).op.obj U).unop :=
+    (rfl)
+  rw [← eqToHom_presentationLimit e (congrArg _ e)]
+  simp only [eqToHom_trans]
+  -- both final transports have the same source and target, up to `unop_op`
+  rfl
+
+end Comp
 
 end TauCeti.ValuationSpectrum
 

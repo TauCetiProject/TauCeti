@@ -10,14 +10,14 @@ public import Mathlib.GroupTheory.Perm.Sign
 public import Mathlib.NumberTheory.EllipticDivisibilitySequence
 import Mathlib.Algebra.Module.Basic
 import Mathlib.Tactic.FinCases
-import Mathlib.Tactic.Ring
 
 /-!
 # The elliptic relator is sign-equivariant in its four indices
 
 For an odd sequence `W : ℤ → R`, Mathlib's `IsEllipticNet.atomRel W a b c d` changes sign under a
-transposition of its four arguments. This file proves that for the three adjacent transpositions
-and then, by inducting over the generators of `Equiv.Perm (Fin 4)`, for an arbitrary permutation:
+transposition of its four arguments. Mathlib proves that for the three adjacent transpositions
+(`IsEllipticNet.neg_atomRel₁₂`, `neg_atomRel₂₃`, `neg_atomRel₃₄`); this file extends it, by
+inducting over the generators of `Equiv.Perm (Fin 4)`, to an arbitrary permutation:
 `atomRelFin4 W (t ∘ σ) = sign σ • atomRelFin4 W t`.
 
 This is **skew-symmetry, not alternation**, and the distinction is not pedantic here. `R` is an
@@ -39,8 +39,6 @@ discharged — Mathlib's `atomRel_same` family with `W 0 = 0`.
 
 ## Main results
 
-* `IsEllipticNet.atomRel_swap₁₂`, `atomRel_swap₂₃`, `atomRel_swap₃₄`: the three adjacent
-  transpositions each negate `atomRel`.
 * `IsEllipticNet.atomRelFin4_perm`: `atomRelFin4 W (t ∘ σ) = sign σ • atomRelFin4 W t` for every
   `σ : Equiv.Perm (Fin 4)`. Note this is sign-equivariance, not alternation — see the header. The
   sign-cancelled orientation is one `rw [atomRelFin4_perm odd, ← mul_smul, Int.units_mul_self,
@@ -49,21 +47,24 @@ discharged — Mathlib's `atomRel_same` family with `W 0 = 0`.
 
 ## Implementation notes
 
-The three transpositions are the generators `Mathlib`'s `Equiv.Perm.mclosure_swap_castSucc_succ`
-gives for `Perm (Fin 4)`, which is what makes the induction in `atomRelFin4_perm` go through with
-exactly these three lemmas as its base cases.
+The three adjacent transpositions are the generators `Mathlib`'s
+`Equiv.Perm.mclosure_swap_castSucc_succ` gives for `Perm (Fin 4)`, which is what makes the
+induction in `atomRelFin4_perm` go through with exactly Mathlib's three `neg_atomRel` lemmas as its
+base cases, each read through `neg_eq_iff_eq_neg`.
 
-Each transposition rests on `IsEllipticNet.neg_atom`, `-atom W a b = atom W b a`, which is where the
+Those lemmas rest on `IsEllipticNet.neg_atom`, `-atom W a b = atom W b a`, which is where the
 oddness of `W` enters; nothing else here needs a hypothesis on `W`.
 
 ## Provenance
 
 Ported from D. K. Angdinata's `LutzNagell/EllipticDivisibilitySequence.lean` in AINTLIB
 (`github.com/CBirkbeck/AINTLIB`, Apache-2.0, `main` at `1c1c74664e40071c2c2165bc55ca2616a67ccd6b`),
-declarations `rel₄_swap₀₁`, `rel₄_swap₁₂`, `rel₄_swap₂₃`, `relFin4` and `relFin4_perm`. The
-source's `relFin4_perm'` — the sign-cancelled orientation — was **considered and not ported**: it
-has no consumer until the descent slice, and lands there beside `rel₄_of_oddRec_evenRec`, the proof
-that uses it. That file's header reads `Authors: David Kurniadi Angdinata`; following this
+declarations `relFin4` and `relFin4_perm`. The source's transpositions `rel₄_swap₀₁`,
+`rel₄_swap₁₂`, `rel₄_swap₂₃` are not ported: Mathlib has them as `neg_atomRel₁₂`,
+`neg_atomRel₂₃`, `neg_atomRel₃₄`, with the negation moved to the other side. The source's
+`relFin4_perm'` — the sign-cancelled orientation — was **considered and not ported**: it has no
+consumer until the descent slice, and lands there beside `rel₄_of_oddRec_evenRec`, the proof that
+uses it. That file's header reads `Authors: David Kurniadi Angdinata`; following this
 repository's convention for adapted material the upstream authorship is credited here rather than
 in the copyright header. J. Xu is acknowledged for the surrounding LutzNagell development — he
 authors `Universal.lean` and co-authors `DivisionPolynomialOmega.lean` at the same revision — as
@@ -71,8 +72,8 @@ context for this port, not as an author of the declarations above.
 
 Restated over Mathlib's names for this API: the source's `rel₄` is `IsEllipticNet.atomRel` and its
 `addMulSub` is `IsEllipticNet.atom`, and the source's standing `neg : ∀ k, W (-k) = -W k` hypothesis
-is Mathlib's `W.Odd`. The transpositions are numbered from one, as Mathlib numbers its
-`atomRel_same₁₂ … atomRel_same₃₄` family, rather than from zero as the source does.
+is Mathlib's `W.Odd`. Mathlib numbers the transpositions from one rather than from zero as the
+source does, so the source's `rel₄_swap₀₁` is `neg_atomRel₁₂`, and so on.
 -/
 
 public section
@@ -82,24 +83,6 @@ open Equiv
 namespace IsEllipticNet
 
 variable {R : Type*} [CommRing R] {W : ℤ → R}
-
-/-- Transposing the first two indices negates the relator. -/
-theorem atomRel_swap₁₂ (odd : W.Odd) (a b c d : ℤ) :
-    atomRel W a b c d = -atomRel W b a c d := by
-  simp_rw [atomRel, ← neg_atom odd a b]
-  ring
-
-/-- Transposing the middle two indices negates the relator. -/
-theorem atomRel_swap₂₃ (odd : W.Odd) (a b c d : ℤ) :
-    atomRel W a b c d = -atomRel W a c b d := by
-  simp_rw [atomRel, ← neg_atom odd b c]
-  ring
-
-/-- Transposing the last two indices negates the relator. -/
-theorem atomRel_swap₃₄ (odd : W.Odd) (a b c d : ℤ) :
-    atomRel W a b c d = -atomRel W a b d c := by
-  simp_rw [atomRel, ← neg_atom odd c d]
-  ring
 
 variable (W) in
 /-- The relator with its four indices packaged as a tuple, the form a permutation acts on. -/
@@ -133,6 +116,8 @@ theorem atomRelFin4_perm (odd : W.Odd) (σ : Perm (Fin 4)) :
     fin_cases i <;>
       simp only [Perm.sign_swap Fin.castSucc_lt_succ.ne, Units.neg_smul, one_smul, atomRelFin4_def,
         Function.comp_apply, Fin.isValue]
-    exacts [atomRel_swap₁₂ odd _ _ _ _, atomRel_swap₂₃ odd _ _ _ _, atomRel_swap₃₄ odd _ _ _ _]
+    exacts [neg_eq_iff_eq_neg.mp (neg_atomRel₁₂ odd _ _ _ _),
+      neg_eq_iff_eq_neg.mp (neg_atomRel₂₃ odd _ _ _ _),
+      neg_eq_iff_eq_neg.mp (neg_atomRel₃₄ odd _ _ _ _)]
 
 end IsEllipticNet

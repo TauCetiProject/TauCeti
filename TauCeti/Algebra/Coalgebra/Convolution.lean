@@ -25,6 +25,11 @@ law. This file proves that for an **algebra map**
 (`AlgHom.toConv_toLinearMap_comp_mul'`); the Leibniz-rule counterpart for counit-valued
 derivations is in `TauCeti/Algebra/AlgebraicGroup/Tangent/Basic.lean`.
 
+Finally, the file records how convolution algebras change with their coefficients. An algebra
+map `g : B →ₐ[R] B'` induces an algebra map of convolution algebras by post-composition, and when
+`B'` is a `B`-algebra with a basis over `B`, taking coordinates identifies the convolution
+algebra with coefficients in `B'` with a free module over the one with coefficients in `B`.
+
 ## Main declarations
 
 * `TauCeti.Coalgebra.comul_eq_convMul_includeLeft_includeRight`: comultiplication as the
@@ -37,6 +42,11 @@ derivations is in `TauCeti/Algebra/AlgebraicGroup/Tangent/Basic.lean`.
   normalization rules and `TauCeti.LinearMap.mulTensor_convMul`.
 * `TauCeti.AlgHom.toConv_toLinearMap_comp_mul'`: an algebra map composed with
   multiplication is its own exterior square.
+* `AlgHom.convCompLeft`: post-composition with an algebra map, as an algebra map of convolution
+  algebras.
+* `Module.Basis.convCoordEquiv`: the coordinates of a convolution-algebra element in a basis of
+  the coefficients, with `Module.Basis.convCoordEquiv_convCompLeft_mul` recording that they are
+  linear over the convolution algebra of the smaller coefficient ring.
 -/
 
 public section
@@ -266,5 +276,97 @@ lemma mulTensor_convMul
 end LinearMap
 
 end ExteriorConvolution
+
+section CoefficientChange
+
+open WithConv
+
+/-- Post-composition with an algebra homomorphism `g : B →ₐ[R] B'` of coefficient algebras, as an
+algebra homomorphism between the convolution algebras of linear maps out of a coalgebra `C`. -/
+noncomputable def _root_.AlgHom.convCompLeft {R B B' : Type*} [CommSemiring R] [Semiring B]
+    [Algebra R B] [Semiring B'] [Algebra R B'] (g : B →ₐ[R] B') (C : Type*) [AddCommMonoid C]
+    [Module R C] [_root_.Coalgebra R C] :
+    WithConv (C →ₗ[R] B) →ₐ[R] WithConv (C →ₗ[R] B') where
+  toFun f := toConv (g.toLinearMap ∘ₗ f.ofConv)
+  map_one' := by ext; simp
+  map_mul' f f' := ofConv_injective (_root_.LinearMap.algHom_comp_convMul_distrib g f f')
+  map_zero' := by ext; simp
+  map_add' f f' := by ext; simp
+  commutes' r := by ext; simp
+
+/-- `g.convCompLeft C` post-composes with `g`. -/
+@[simp]
+theorem _root_.AlgHom.convCompLeft_apply {R B B' C : Type*} [CommSemiring R] [Semiring B]
+    [Algebra R B] [Semiring B'] [Algebra R B'] [AddCommMonoid C] [Module R C]
+    [_root_.Coalgebra R C] (g : B →ₐ[R] B') (f : WithConv (C →ₗ[R] B)) :
+    g.convCompLeft C f = toConv (g.toLinearMap ∘ₗ f.ofConv) :=
+  (rfl)
+
+/-- A basis of `B'` over `B` identifies linear maps `C → B'` with families of linear maps
+`C → B`, by taking coordinates. -/
+noncomputable def _root_.Module.Basis.convCoordEquiv {ι B B' : Type*} [Finite ι]
+    [Semiring B] [AddCommMonoid B'] [Module B B'] (b : Module.Basis ι B B') (R : Type*)
+    [CommSemiring R] [Algebra R B] [Module R B'] [IsScalarTower R B B'] (C : Type*)
+    [AddCommMonoid C] [Module R C] :
+    WithConv (C →ₗ[R] B') ≃ₗ[R] (ι → WithConv (C →ₗ[R] B)) where
+  toFun φ i := toConv ((b.coord i).restrictScalars R ∘ₗ φ.ofConv)
+  invFun v := toConv ((b.equivFun.symm.toLinearMap.restrictScalars R) ∘ₗ
+    _root_.LinearMap.pi fun i => (v i).ofConv)
+  map_add' φ ψ := by ext; simp
+  map_smul' r φ := by ext; simp
+  left_inv φ := by
+    ext c
+    simp [LinearEquiv.symm_apply_eq, funext_iff]
+  right_inv v := by
+    ext i c
+    simp [← Module.Basis.equivFun_apply]
+
+section Basis
+
+variable {ι B B' R C : Type*} [Finite ι] [CommSemiring R] [AddCommMonoid C] [Module R C]
+
+section Module
+
+variable [Semiring B] [AddCommMonoid B'] [Module B B'] [Algebra R B] [Module R B']
+  [IsScalarTower R B B']
+
+/-- The `i`-th component of `b.convCoordEquiv R C φ` is the `i`-th coordinate of `φ`. -/
+@[simp]
+theorem _root_.Module.Basis.convCoordEquiv_apply (b : Module.Basis ι B B')
+    (φ : WithConv (C →ₗ[R] B')) (i : ι) :
+    b.convCoordEquiv R C φ i = toConv ((b.coord i).restrictScalars R ∘ₗ φ.ofConv) :=
+  (rfl)
+
+/-- The inverse of `b.convCoordEquiv R C` reassembles a family of coordinate maps. -/
+@[simp]
+theorem _root_.Module.Basis.convCoordEquiv_symm_apply (b : Module.Basis ι B B')
+    (v : ι → WithConv (C →ₗ[R] B)) :
+    (b.convCoordEquiv R C).symm v =
+      toConv ((b.equivFun.symm.toLinearMap.restrictScalars R) ∘ₗ
+        _root_.LinearMap.pi fun i => (v i).ofConv) :=
+  (rfl)
+
+end Module
+
+variable [CommSemiring B] [Semiring B'] [Algebra B B'] [Algebra R B] [Algebra R B']
+  [IsScalarTower R B B']
+
+/-- Taking coordinates in a basis of `B'` over `B` is linear over the convolution algebra with
+coefficients in `B`, which acts on maps into `B'` through post-composition with
+`algebraMap B B'`. -/
+theorem _root_.Module.Basis.convCoordEquiv_convCompLeft_mul [_root_.Coalgebra R C]
+    (b : Module.Basis ι B B') (f : WithConv (C →ₗ[R] B)) (φ : WithConv (C →ₗ[R] B')) (i : ι) :
+    b.convCoordEquiv R C ((IsScalarTower.toAlgHom R B B').convCompLeft C f * φ) i =
+      f * b.convCoordEquiv R C φ i := by
+  ext c
+  simp only [Module.Basis.convCoordEquiv_apply, AlgHom.convCompLeft_apply,
+    _root_.LinearMap.convMul_apply, _root_.LinearMap.comp_apply, ofConv_toConv]
+  induction (CoalgebraStruct.comul c : C ⊗[R] C) with
+  | tmul x y => simp [← Algebra.smul_def]
+  | add x y hx hy => simp_all [map_add]
+
+end Basis
+
+end CoefficientChange
 
 end TauCeti

@@ -32,9 +32,10 @@ that an isomorphism `e : K ≃+* L` leaves every norm coefficient unchanged.
 
 Regrouping loses information as soon as a norm fibre has more than one element:
 `TauCeti.exists_forall_normCoeff_nonneg_not_forall_nonneg` produces a nonzero ideal arithmetic
-function, with a negative value, whose norm coefficients all vanish.  This is the rejection test
-that forbids weakening the nonnegativity hypothesis of the converse regrouping theorem to
-nonnegativity of the coefficients themselves.
+function, with a negative value, whose norm coefficients all vanish.  The explicit witness, `-1`
+and `1` at two distinct ideals of the same norm, is `TauCeti.normCoeff_ite_eq_zero`.  This is the
+rejection test that forbids weakening the nonnegativity hypothesis of the converse regrouping
+theorem to nonnegativity of the coefficients themselves.
 
 ## Roadmap role
 
@@ -205,39 +206,41 @@ theorem norm_normCoeff_eq_sum_norm_of_nonneg (f : IdealArithmeticFunction K) (hf
 
 /-! ### The cancellation rejection test -/
 
+/-- **The two-summand witness `-1 + 1 = 0`.** If two distinct nonzero integral ideals `A` and `B`
+share an absolute norm, the ideal arithmetic function taking the value `-1` at `A`, `1` at `B` and
+`0` elsewhere regroups to the zero arithmetic function: the only nonzero fibre sum is
+`-1 + 1 = 0`. -/
+theorem normCoeff_ite_eq_zero {A B : (Ideal (𝓞 K))⁰} (hAB : A ≠ B)
+    (hN : Ideal.absNorm (A : Ideal (𝓞 K)) = Ideal.absNorm (B : Ideal (𝓞 K))) :
+    normCoeff K (fun I ↦ if I = A then -1 else if I = B then 1 else 0) = 0 := by
+  ext n
+  rw [normCoeff_eq_sum_normFiber, ArithmeticFunction.zero_apply]
+  have hf0 : ∀ I, I ≠ A → I ≠ B →
+      (if I = A then (-1 : ℂ) else if I = B then 1 else 0) = 0 := by
+    intro I h₁ h₂
+    simp [h₁, h₂]
+  by_cases hn : Ideal.absNorm (A : Ideal (𝓞 K)) = n
+  · rw [Finset.sum_eq_add_of_mem A B ((mem_normFiber K).mpr hn)
+      ((mem_normFiber K).mpr (hN ▸ hn)) hAB fun I _ hI ↦ hf0 I hI.1 hI.2]
+    simp [Ne.symm hAB]
+  · refine Finset.sum_eq_zero fun I hI ↦ hf0 I ?_ ?_
+    · exact fun h ↦ hn (h ▸ (mem_normFiber K).mp hI)
+    · exact fun h ↦ hn (hN.trans (h ▸ (mem_normFiber K).mp hI))
+
 /-- **Rejection test.** A nonnegative sum over an absolute-norm fibre does not force the individual
 ideal summands to be nonnegative. As soon as two distinct nonzero integral ideals share an absolute
-norm — for instance the two primes above `5` in `ℚ(i)` — the two-summand witness `-1 + 1 = 0`
-produces a nonzero ideal arithmetic function with a negative value whose regrouping is the zero
-arithmetic function, hence has nonnegative coefficients.
+norm — for instance the two primes above `5` in `ℚ(i)` — the two-summand witness `-1 + 1 = 0` of
+`TauCeti.normCoeff_ite_eq_zero` is a nonzero ideal arithmetic function with a negative value
+whose regrouping is the zero arithmetic function, hence has nonnegative coefficients.
 
 So the hypothesis of `TauCeti.summable_idealTerm_of_nonneg` cannot be weakened to nonnegativity of
 `TauCeti.normCoeff f`, and `TauCeti.normCoeff` is not injective. -/
 theorem exists_forall_normCoeff_nonneg_not_forall_nonneg {A B : (Ideal (𝓞 K))⁰} (hAB : A ≠ B)
     (hN : Ideal.absNorm (A : Ideal (𝓞 K)) = Ideal.absNorm (B : Ideal (𝓞 K))) :
     ∃ f : IdealArithmeticFunction K, f ≠ 0 ∧ normCoeff K f = 0 ∧ ¬ ∀ I, 0 ≤ f I := by
-  classical
-  set f : IdealArithmeticFunction K := fun I ↦ if I = A then -1 else if I = B then 1 else 0
-    with hfdef
-  have hfA : f A = -1 := by simp [hfdef]
-  have hfB : f B = 1 := by simp [hfdef, Ne.symm hAB]
-  have hf0 : ∀ I, I ≠ A → I ≠ B → f I = 0 := by
-    intro I h₁ h₂
-    simp [hfdef, h₁, h₂]
-  refine ⟨f, fun h ↦ ?_, ?_, fun h ↦ ?_⟩
-  · rw [h] at hfA
-    norm_num at hfA
-  · ext n
-    rw [normCoeff_eq_sum_normFiber, ArithmeticFunction.zero_apply]
-    by_cases hn : Ideal.absNorm (A : Ideal (𝓞 K)) = n
-    · rw [Finset.sum_eq_add_of_mem A B ((mem_normFiber K).mpr hn)
-        ((mem_normFiber K).mpr (hN ▸ hn)) hAB fun I _ hI ↦ hf0 I hI.1 hI.2, hfA, hfB]
-      ring
-    · refine Finset.sum_eq_zero fun I hI ↦ hf0 I ?_ ?_
-      · exact fun h ↦ hn (h ▸ (mem_normFiber K).mp hI)
-      · exact fun h ↦ hn (hN.trans (h ▸ (mem_normFiber K).mp hI))
-  · have := (Complex.le_def.mp (h A)).1
-    rw [hfA] at this
-    norm_num at this
+  refine ⟨_, fun h ↦ ?_, normCoeff_ite_eq_zero K hAB hN, fun h ↦ ?_⟩
+  · simpa using congrFun h A
+  · have := h A
+    norm_num [Complex.le_def] at this
 
 end TauCeti

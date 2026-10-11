@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.StdBasis
 public import Mathlib.RingTheory.Finiteness.Defs
 import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
 # The algebra homomorphisms out of a finite power of the base ring
@@ -26,12 +27,20 @@ makes the equivalence useful for counting: a split commutative algebra has exact
 characters as it has factors. The Burnside--Dixon--Schneider algorithm consumes it in that form, to
 count the central characters of a group algebra whose centre has been split into coordinates.
 
+For any algebra over a field, `AlgHom.surjective_pi_of_injective` supplies finite
+interpolation at distinct augmentations, without commutativity or finite generation. It follows
+from Mathlib's `linearIndependent_monoidHom` (Dedekind independence) and
+`span_flip_eq_top_iff_linearIndependent` (finite duality). This supplies polynomial interpolation
+on finite Weyl orbits for the Harish-Chandra central-character theorem.
+
 For a finite-dimensional algebra over a field, `TauCeti.AlgHom.pi_bijective_of_injective`
 identifies evaluation at a finite family of distinct characters with the function algebra,
 provided those characters separate elements.
 
 ## Main definitions
 
+* `AlgHom.surjective_pi_of_injective`: distinct finitely many augmentations admit arbitrary
+  simultaneous values.
 * `Pi.evalAlgHom_injective`: distinct coordinates give distinct evaluation homomorphisms.
 * `Pi.evalAlgHomEquiv`: the coordinates of `ι → R` are exactly the `R`-algebra homomorphisms
   `(ι → R) →ₐ[R] R`.
@@ -72,6 +81,24 @@ theorem evalAlgHomEquiv_apply (s : ι) :
 
 end Pi
 
+namespace AlgHom
+
+/-- Distinct finitely many augmentations to the ground field admit arbitrary simultaneous
+values: their product algebra homomorphism is surjective. -/
+theorem surjective_pi_of_injective {K A ι : Type*} [Field K] [Semiring A] [Algebra K A]
+    [_root_.Finite ι] (f : ι → A →ₐ[K] K) (hf : Function.Injective f) :
+    Function.Surjective (AlgHom.pi f) := by
+  have hli : LinearIndependent K (fun i : ι ↦ (f i : A → K)) :=
+    (linearIndependent_monoidHom A K).comp
+      (fun i ↦ (f i).toRingHom.toMonoidHom)
+      (fun i j hij ↦ hf <| AlgHom.ext fun x ↦ congrArg (fun m : A →* K ↦ m x) hij)
+  have hspan : Submodule.span K (Set.range (AlgHom.pi f).toLinearMap) = ⊤ :=
+    span_flip_eq_top_iff_linearIndependent.mpr hli
+  have hr : LinearMap.range (AlgHom.pi f).toLinearMap = ⊤ := by
+    simpa only [← LinearMap.coe_range, Submodule.span_eq] using hspan
+  exact LinearMap.range_eq_top.mp hr
+
+end AlgHom
 
 namespace TauCeti
 

@@ -98,8 +98,8 @@ theorem natCard_linearMap_quotient_eq_of_tensorRat (P : Type v) [AddCommGroup P]
   -- `Hom(P, M)` and `Hom(P, N)` are free of finite rank over `ℤ_p` and embed in each other.
   have : Module.Finite ℤ_[p] M := .trans A M
   have : Module.Finite ℤ_[p] N := .trans A N
-  have : Module.Finite ℤ_[p] (P →ₗ[A] M) := .linearMap_of_isNoetherianRing
-  have : Module.Finite ℤ_[p] (P →ₗ[A] N) := .linearMap_of_isNoetherianRing
+  have : Module.Finite ℤ_[p] (P →ₗ[A] M) := .linearMap_of_isNoetherian
+  have : Module.Finite ℤ_[p] (P →ₗ[A] N) := .linearMap_of_isNoetherian
   have hfP : Function.Injective (LinearMap.compRight (M := P) ℤ_[p] f) := fun a b hab ↦
     LinearMap.ext fun x ↦ hf (LinearMap.congr_fun hab x)
   have hgP : Function.Injective (LinearMap.compRight (M := P) ℤ_[p] g) := fun a b hab ↦

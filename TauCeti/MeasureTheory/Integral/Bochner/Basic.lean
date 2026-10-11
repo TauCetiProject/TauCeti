@@ -23,6 +23,11 @@ for set and probability integrals.
 * `ofReal_integral_le_lintegral_ofReal` bounds the positive part of a real-valued
   function's integral by the integral of its pointwise positive part.
 
+## Exponentials
+
+* `integrable_exp_neg_of_ae_nonneg` shows that the negative exponential of an almost-everywhere
+  nonnegative function is integrable on a finite measure space.
+
 ## Set and probability integrals
 
 * `sq_setIntegral_le_measureReal_mul_setIntegral_sq` is Cauchy--Schwarz for a real-valued set
@@ -94,6 +99,15 @@ open scoped ENNReal Function Topology
 namespace TauCeti
 
 namespace MeasureTheory
+
+/-- The negative exponential of an almost-everywhere nonnegative, almost-everywhere measurable
+function is integrable on a finite measure space. -/
+theorem integrable_exp_neg_of_ae_nonneg {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    [IsFiniteMeasure μ] {f : Ω → ℝ} (hf : AEMeasurable f μ) (hf0 : 0 ≤ᵐ[μ] f) :
+    Integrable (fun x ↦ Real.exp (-f x)) μ :=
+  (integrable_const 1).mono' hf.neg.exp.aestronglyMeasurable <| by
+    filter_upwards [hf0] with x hx
+    simpa [Real.abs_exp] using hx
 
 /-- An even function obtained by composing with absolute value is integrable on the whole real
 line whenever the original function is integrable on the positive half-line. -/

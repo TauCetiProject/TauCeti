@@ -205,18 +205,22 @@ private theorem forkDown_mul_forkUp_mem_forkSpan :
   rw [eq_neg_of_add_eq_zero_left (forkDown_mul_forkUp_add_forkTurn k hn hG)]
   exact neg_mem (add_mem (Submodule.subset_span (by simp)) (Submodule.subset_span (by simp)))
 
-/-- **Every product of `c + 2` backtracks into the leaves vanishes.** -/
-private theorem forkSpan_pow_eq_bot {t : ℕ} (ht : c + 2 ≤ t) : forkSpan k G c ^ t = ⊥ := by
+/-- The sum of the two leaf backtracks has vanishing `(c + 1)`-st power. -/
+private theorem forkTurn_add_pow_eq_zero :
+    (forkTurn k G c (c + 1) + forkTurn k G c (c + 2)) ^ (c + 1) = 0 := by
   -- The backtrack into the long arm is nilpotent, since the long arm has `c` rungs.
   have hq : (forkDown k G c 0 * forkUp k G c 0) ^ (c + 1) = 0 := by
     refine pow_d_mul_u_eq_zero (forkDown_mul_forkUp_add k hn hG) ?_
     exact signlessArrow_fork_eq_zero k hG (by omega)
-  have hsum : (forkTurn k G c (c + 1) + forkTurn k G c (c + 2)) ^ (c + 1) = 0 := by
-    rw [← neg_eq_of_add_eq_zero_right (forkDown_mul_forkUp_add_forkTurn k hn hG), neg_pow, hq,
-      mul_zero]
+  rw [← neg_eq_of_add_eq_zero_right (forkDown_mul_forkUp_add_forkTurn k hn hG), neg_pow, hq,
+    mul_zero]
+
+/-- **Every product of `c + 2` backtracks into the leaves vanishes.** -/
+private theorem forkSpan_pow_eq_bot {t : ℕ} (ht : c + 2 ≤ t) : forkSpan k G c ^ t = ⊥ := by
   obtain ⟨e, rfl⟩ := Nat.exists_eq_add_of_le ht
   rw [pow_add, forkSpan, span_pair_pow_succ_eq_bot (forkTurn_mul_self k hn hG (by omega) (by omega))
-    (forkTurn_mul_self k hn hG (by omega) (by omega)) hsum, Submodule.bot_mul]
+    (forkTurn_mul_self k hn hG (by omega) (by omega))
+    (forkTurn_add_pow_eq_zero k hn hG), Submodule.bot_mul]
 
 /-! ### Normal forms of paths -/
 
@@ -436,7 +440,8 @@ section CommRing
 variable (k : Type*) [CommRing k] {n : ℕ}
 
 /-- **Every path of length at least `4 n` vanishes in the signless algebra of `Dₙ`.** -/
-@[simp]
+-- Not `@[simp]`: plain `simp` first rewrites the diagram's rank inside the left-hand side's
+-- types, after which the lemma no longer matches; use it with `exact`.
 theorem signlessPreprojectiveMk_D_ofPath_eq_zero_of_le
     (x : Quiver.TotalPath (DoubledQuiver (diagramGraph (DynkinType.D n).cartanMatrix)))
     (hx : 4 * n ≤ x.2.2.length) :
@@ -457,7 +462,8 @@ variable (o : Orientation (diagramGraph (DynkinType.D n).cartanMatrix))
 
 /-- **Every path of length at least `4 n` vanishes in the preprojective algebra of `Dₙ`**, for
 every orientation of the `Dₙ` graph. -/
-@[simp]
+-- Not `@[simp]`: plain `simp` first rewrites the diagram's rank inside the left-hand side's
+-- types, after which the lemma no longer matches; use it with `exact`.
 theorem preprojectiveMk_D_ofPath_eq_zero_of_le
     (x : Quiver.TotalPath
       (Symmetrify (OrientedQuiver (diagramGraph (DynkinType.D n).cartanMatrix) o)))

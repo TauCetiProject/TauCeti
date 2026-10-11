@@ -301,18 +301,17 @@ private theorem transpose_mul_symplecticBasisChange :
     symplecticBasisChangeᵀ * symplecticBasisChange = 1 := by
   decide
 
-private theorem next_zero : SpStd.next 1 0 (by decide) = 1 :=
-  Fin.ext (by rw [SpStd.val_next]; rfl)
-
 private theorem rootIntMatrix_eq_submatrix :
     ∀ k : Fin (1 + 1) ⊕ Fin (1 + 1), SpStd.rootIntMatrix 1 k =
       (symplecticRootTable k).submatrix finSumFinEquiv.symm finSumFinEquiv.symm
   | .inl 0 => by
-    rw [SpStd.rootIntMatrix_inl_of_ne_last 1 0 (by decide), next_zero]
+    rw [SpStd.rootIntMatrix_inl_of_ne_last 1 0 (by decide),
+      (by simpa using Fin.orderSucc_castSucc (0 : Fin 1) : Order.succ (0 : Fin (1 + 1)) = 1)]
     simp [symplecticRootTable, submatrix_sub]
   | .inl 1 => (SpStd.rootIntMatrix_inl_last 1).trans (by simp [symplecticRootTable])
   | .inr 0 => by
-    rw [SpStd.rootIntMatrix_inr_of_ne_last 1 0 (by decide), next_zero]
+    rw [SpStd.rootIntMatrix_inr_of_ne_last 1 0 (by decide),
+      (by simpa using Fin.orderSucc_castSucc (0 : Fin 1) : Order.succ (0 : Fin (1 + 1)) = 1)]
     simp [symplecticRootTable, submatrix_sub]
   | .inr 1 => (SpStd.rootIntMatrix_inr_last 1).trans (by simp [symplecticRootTable])
 

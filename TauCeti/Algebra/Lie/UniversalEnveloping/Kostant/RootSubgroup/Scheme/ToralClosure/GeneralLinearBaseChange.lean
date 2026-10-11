@@ -53,6 +53,9 @@ torus maps lies in the base change of the integral toral carrier; equality is no
 * `kostantRootSubgroupBaseChangePresentationCoordinateMap` and
   `kostantRootSubgroupToralBaseChangePresentationCoordinateMap`: the transported base change of a
   root subgroup and its factorization through the transported toral carrier.
+* `kostantRootSubgroupBaseChangePresentationCoordinateMap_baseChange`: base change of the
+  transported root subgroup along a further extension `A → B` is the transported root subgroup
+  over `B`.
 * `kostantWeightTorusToralBaseChangePresentationCoordinateMap`: the factorization of the
   transported weight-torus coordinate map through the transported carrier.
 * `kostantToralBaseChangePresentationIdeal_le_commonKernelHopfIdeal`: the generated-over-`A`
@@ -100,7 +103,7 @@ open CategoryTheory
 
 namespace TauCeti.UniversalEnvelopingAlgebra
 
-universe u w x
+universe u w x y z
 
 -- Match tensor products to the `ℤ`-algebra structure used by scalar extension.
 attribute [local instance high] Algebra.toModule
@@ -220,6 +223,23 @@ theorem kostantRootSubgroupBaseChangePresentationCoordinateMap_def (i : I) :
         (AdditiveGroup.coordinateHopfAlgebraBaseChangeIso ℤ A).hom := by
   unfold kostantRootSubgroupBaseChangePresentationCoordinateMap
   rfl
+
+omit [Finite κ] in
+/-- **The transported root subgroups are compatible with towers.** For a ring map `A → B`, scalar
+extension of the root subgroup transported to `A` is the root subgroup transported to `B`, once
+the scalar extensions to `B` of the coordinate Hopf algebras of `GLₙ` and `𝔾ₐ` over `A` are
+identified with those over `B`. -/
+theorem kostantRootSubgroupBaseChangePresentationCoordinateMap_baseChange
+    (A : Type y) (B : Type max y z) [CommRing A] [CommRing B] [Algebra A B] (i : I) :
+    (GeneralLinear.coordinateHopfAlgebraBaseChangeIso A B n).inv ≫
+        CommHopfAlgCat.baseChangeMap
+          (kostantRootSubgroupBaseChangePresentationCoordinateMap e h ρ M hM hnil b A i) ≫
+        (AdditiveGroup.coordinateHopfAlgebraBaseChangeIso A B).hom =
+      kostantRootSubgroupBaseChangePresentationCoordinateMap e h ρ M hM hnil b B i := by
+  rw [kostantRootSubgroupBaseChangePresentationCoordinateMap_def,
+    kostantRootSubgroupBaseChangePresentationCoordinateMap_def]
+  exact GeneralLinear.coordinateHopfAlgebraBaseChangeIso_inv_comp_baseChangeMap_tower ℤ A B n
+    _ _ _ _ AdditiveGroup.gaScalarTensorBialgEquiv_one_tmul_gaScalarTensorBialgEquiv_one_tmul
 
 /-- The transported base change of the `i`th root-subgroup coordinate map, factored through the
 transported toral carrier. -/

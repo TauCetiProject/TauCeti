@@ -48,18 +48,9 @@ theorem IsPreconnected.signInvariant_eval_of_orderAt_eq {σ R : Type*} [CommRing
     [LinearOrder R] [TopologicalSpace R] [OrderTopology R] [IsTopologicalSemiring R]
     {p : MvPolynomial σ R} {S : Set (σ → R)} (hS : IsPreconnected S)
     (h : ∀ x ∈ S, ∀ y ∈ S, p.orderAt x = p.orderAt y) :
-    TauCeti.SignInvariant (fun x ↦ eval x p) S := by
-  rcases S.eq_empty_or_nonempty with rfl | ⟨x₀, hx₀⟩
-  · exact TauCeti.signInvariant_empty
-  by_cases h₀ : p.orderAt x₀ = 0
-  · -- Order zero everywhere: `p` has no zero on `S`.
-    refine hS.signInvariant (continuous_eval p).continuousOn fun x hx ↦ ?_
-    rw [← orderAt_eq_zero_iff, h x hx x₀ hx₀, h₀]
-  · -- Positive order everywhere: `p` vanishes on `S`.
-    have hzero : ∀ x ∈ S, eval x p = 0 := fun x hx ↦ by
-      rw [← orderAt_pos_iff, h x hx x₀ hx₀]
-      exact pos_iff_ne_zero.mpr h₀
-    exact TauCeti.signInvariant_iff_exists.mpr ⟨0, fun x hx ↦ by simp [hzero x hx]⟩
+    TauCeti.SignInvariant (fun x ↦ eval x p) S :=
+  hS.signInvariant_of_eq_zero_iff (continuous_eval p).continuousOn fun x hx y hy ↦ by
+    rw [← orderAt_pos_iff, ← orderAt_pos_iff, h x hx y hy]
 
 namespace TauCeti
 

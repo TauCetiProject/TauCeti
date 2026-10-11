@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Basic
 public import Mathlib.Combinatorics.SimpleGraph.CycleGraph
 import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Constructions.Pi
 
 /-!
 # Homomorphism densities of the smallest graphs
@@ -34,13 +35,10 @@ general statement.  A further entry in this catalogue — a single edge on three
 empty graph — costs only that substitution.
 
 **Where the transports come from.**  For two vertices it is Mathlib's `MeasurableEquiv.finTwoArrow`
-with `measurePreserving_finTwoArrow`.  Mathlib supplies no `(Fin 3 → Ω) ≃ᵐ Ω × Ω × Ω`, so the
-three-vertex one is composed here as `finThreeArrow`, out of `MeasurableEquiv.piFinSuccAbove` and
-`finTwoArrow`, with measure preservation assembled from the corresponding two Mathlib lemmas.  It
-sends `x` to `(x 0, x 1, x 2)` definitionally; `finThreeArrow_apply` records that by `rfl` so the
-coordinate matching in the proofs is an explicit rewrite rather than a silent unfolding.  The
-four-vertex transport similarly pairs the coordinates as `((x 0, x 2), (x 1, x 3))` for the
-four-cycle formulas.
+with `measurePreserving_finTwoArrow`; for three vertices it is `finThreeArrow` with
+`measurePreserving_finThreeArrow`, from `TauCeti.MeasureTheory.Constructions.Pi`.  The four-vertex
+transport composes `finFourArrow` with a reordering of the coordinates, pairing them
+as `((x 0, x 2), (x 1, x 3))` for the four-cycle formulas.
 
 ## Main results
 
@@ -78,23 +76,6 @@ namespace DenseGraphLimits
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
 
-/-- The transport from three independent coordinates to a triple product.  Mathlib has the
-two-coordinate version (`MeasurableEquiv.finTwoArrow`) but not this one. -/
-private def finThreeArrow (Ω : Type*) [MeasurableSpace Ω] : (Fin 3 → Ω) ≃ᵐ Ω × Ω × Ω :=
-  (MeasurableEquiv.piFinSuccAbove (fun _ : Fin 3 => Ω) 0).trans
-    (MeasurableEquiv.prodCongr (MeasurableEquiv.refl Ω) MeasurableEquiv.finTwoArrow)
-
-/-- `finThreeArrow` reads off the three coordinates.  This holds by `rfl`, and is stated so that the
-proofs below rewrite with it instead of relying on the definitional unfolding of
-`Fin.succAbove`. -/
-@[simp]
-private theorem finThreeArrow_apply (x : Fin 3 → Ω) : finThreeArrow Ω x = (x 0, x 1, x 2) := (rfl)
-
-private theorem measurePreserving_finThreeArrow (μ : Measure Ω) [SigmaFinite μ] :
-    MeasurePreserving (finThreeArrow Ω) (Measure.pi fun _ : Fin 3 => μ) (μ.prod (μ.prod μ)) :=
-  ((MeasurePreserving.id μ).prod (measurePreserving_finTwoArrow μ)).comp
-    (measurePreserving_piFinSuccAbove (fun _ : Fin 3 => μ) 0)
-
 /-- **The two-vertex transport.**  For any graph on `Fin 2`, the homomorphism density is an integral
 over `Ω × Ω`.  This is independent of the graph; the concrete values below only substitute an edge
 set into it. -/
@@ -125,7 +106,7 @@ theorem homDensity_fin_three (F : SimpleGraph (Fin 3)) [DecidableRel F.Adj] (W :
     have hx : ![x 0, x 1, x 2] = x := FinVec.etaExpand_eq x
     rw [hx]
   rw [homDensity_def, ← (measurePreserving_finThreeArrow μ).integral_comp
-    (finThreeArrow Ω).measurableEmbedding
+    finThreeArrow.measurableEmbedding
     (fun p : Ω × Ω × Ω => ∏ e ∈ F.edgeFinset, edgeFactor W ![p.1, p.2.1, p.2.2] e)]
   simp only [finThreeArrow_apply]
   exact integral_congr_ae (ae_of_all _ fun x => key x)
@@ -149,19 +130,11 @@ theorem integrable_prod_edgeFactor_fin_three (F : SimpleGraph (Fin 3)) [Decidabl
     Integrable (fun p : Ω × Ω × Ω => ∏ e ∈ F.edgeFinset, edgeFactor W ![p.1, p.2.1, p.2.2] e)
       (μ.prod (μ.prod μ)) := by
   refine ((measurePreserving_finThreeArrow μ).integrable_comp_emb
-    (finThreeArrow Ω).measurableEmbedding).mp ?_
+    finThreeArrow.measurableEmbedding).mp ?_
   refine (integrable_homDensity_integrand F W).congr (ae_of_all _ fun x => ?_)
   simp only [Function.comp_apply, finThreeArrow_apply]
   have hx : ![x 0, x 1, x 2] = x := FinVec.etaExpand_eq x
   rw [hx]
-
-private def finFourArrowRight (Ω : Type*) [MeasurableSpace Ω] :
-    (Fin 4 → Ω) ≃ᵐ Ω × Ω × Ω × Ω :=
-  (MeasurableEquiv.piFinSuccAbove (fun _ : Fin 4 => Ω) 0).trans
-    (MeasurableEquiv.prodCongr (MeasurableEquiv.refl Ω)
-      ((MeasurableEquiv.piFinSuccAbove (fun _ : Fin 3 => Ω) 0).trans
-        (MeasurableEquiv.prodCongr (MeasurableEquiv.refl Ω)
-          MeasurableEquiv.finTwoArrow)))
 
 private def middleSwap (Ω : Type*) [MeasurableSpace Ω] :
     (Ω × Ω × Ω) ≃ᵐ Ω × Ω × Ω :=
@@ -176,17 +149,23 @@ private def reorderFour (Ω : Type*) [MeasurableSpace Ω] :
 
 private def finFourArrowPairPair (Ω : Type*) [MeasurableSpace Ω] :
     (Fin 4 → Ω) ≃ᵐ (Ω × Ω) × (Ω × Ω) :=
-  (finFourArrowRight Ω).trans (reorderFour Ω) |>.trans
+  (finFourArrow (β := Ω)).trans (reorderFour Ω) |>.trans
     ((MeasurableEquiv.prodAssoc : ((Ω × Ω) × (Ω × Ω)) ≃ᵐ Ω × Ω × (Ω × Ω)).symm)
 
 private theorem middleSwap_apply (p : Ω × Ω × Ω) :
     middleSwap Ω p = (p.2.1, p.1, p.2.2) := by
   rfl
 
+/-- The reordering behind the four-cycle transport sends `(a, b, c, d)` to `((a, c), (b, d))`. -/
+private theorem prodAssoc_symm_reorderFour_apply (p : Ω × Ω × Ω × Ω) :
+    (MeasurableEquiv.prodAssoc : ((Ω × Ω) × (Ω × Ω)) ≃ᵐ Ω × Ω × (Ω × Ω)).symm (reorderFour Ω p) =
+      ((p.1, p.2.2.1), (p.2.1, p.2.2.2)) := (rfl)
+
 @[simp]
 private theorem finFourArrowPairPair_apply (x : Fin 4 → Ω) :
     finFourArrowPairPair Ω x = ((x 0, x 2), (x 1, x 3)) := by
-  rfl
+  rw [finFourArrowPairPair, MeasurableEquiv.trans_apply, MeasurableEquiv.trans_apply,
+    finFourArrow_apply, prodAssoc_symm_reorderFour_apply]
 
 private theorem measurePreserving_middleSwap (μ : Measure Ω) [SigmaFinite μ] :
     MeasurePreserving (middleSwap Ω) (μ.prod (μ.prod μ)) (μ.prod (μ.prod μ)) := by
@@ -203,12 +182,7 @@ private theorem measurePreserving_middleSwap (μ : Measure Ω) [SigmaFinite μ] 
 private theorem measurePreserving_finFourArrowPairPair (μ : Measure Ω) [SigmaFinite μ] :
     MeasurePreserving (finFourArrowPairPair Ω) (Measure.pi fun _ : Fin 4 => μ)
       ((μ.prod μ).prod (μ.prod μ)) := by
-  have hright : MeasurePreserving (finFourArrowRight Ω) (Measure.pi fun _ : Fin 4 => μ)
-      (μ.prod (μ.prod (μ.prod μ))) :=
-    ((MeasurePreserving.id μ).prod
-      (((MeasurePreserving.id μ).prod (measurePreserving_finTwoArrow μ)).comp
-        (measurePreserving_piFinSuccAbove (fun _ : Fin 3 => μ) 0))).comp
-      (measurePreserving_piFinSuccAbove (fun _ : Fin 4 => μ) 0)
+  have hright := measurePreserving_finFourArrow μ
   have hswap : MeasurePreserving (reorderFour Ω)
       (μ.prod (μ.prod (μ.prod μ))) (μ.prod (μ.prod (μ.prod μ))) :=
     (MeasurePreserving.id μ).prod (measurePreserving_middleSwap μ)
@@ -218,7 +192,8 @@ private theorem measurePreserving_finFourArrowPairPair (μ : Measure Ω) [SigmaF
     (measurePreserving_prodAssoc μ μ (μ.prod μ)).symm
   convert hassoc.comp (hswap.comp hright) using 1
   funext x
-  exact finFourArrowPairPair_apply x
+  rw [finFourArrowPairPair_apply, Function.comp_apply, Function.comp_apply,
+    finFourArrow_apply, prodAssoc_symm_reorderFour_apply]
 
 /-- **The four-vertex transport.**  For any graph on `Fin 4`, the homomorphism density is an
 integral over two copies of `Ω × Ω`, with the coordinates paired for the four-cycle formulas. -/

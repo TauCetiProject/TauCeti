@@ -63,8 +63,8 @@ lemma twistedChainComplexConstantIso_hom_pair_naturality (f : P ⟶ Q) :
         (LocalCoefficientSystem.twistedChainComplexConstantIso P.fst M).hom ≫
         (((AlgebraicTopology.singularChainComplexFunctor (ModuleCat.{max v w} R)).obj M).map
           (Hom.fst f) ≫ Q.singularChainComplexπ M)) :=
-      (reassoc_of% LocalCoefficientSystem.twistedChainComplexConstantIso_hom_space_naturality
-        (Hom.fst f) M) (Q.singularChainComplexπ M)
+      LocalCoefficientSystem.twistedChainComplexConstantIso_hom_space_naturality_assoc
+        (Hom.fst f) M (Q.singularChainComplexπ M)
     _ = _ := by
       erw [TauCeti.singularChainComplexFunctor_obj_map, singularChainComplexπ_pair_naturality]
       erw [Category.assoc]
@@ -103,8 +103,8 @@ lemma twistedChainComplexConstantIso_hom_naturality
     _ = (LocalCoefficientSystem.twistedChainComplexConstantIso P.fst M).hom ≫
         ((AlgebraicTopology.singularChainComplexFunctor (ModuleCat.{max v w} R)).map φ).app
           P.fst ≫ P.singularChainComplexπ N :=
-      (reassoc_of% LocalCoefficientSystem.twistedChainComplexConstantIso_hom_naturality
-        P.fst φ) (P.singularChainComplexπ N)
+      LocalCoefficientSystem.twistedChainComplexConstantIso_hom_naturality_assoc
+        P.fst φ (P.singularChainComplexπ N)
     _ = _ := by
       rw [singularChainComplexπ_coefficient_naturality]
       erw [Category.assoc]

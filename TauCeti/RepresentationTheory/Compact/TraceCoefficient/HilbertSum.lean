@@ -89,7 +89,7 @@ two-sided matrix action, as characterized by `peterWeylTraceRep_apply`. -/
 noncomputable def peterWeylTraceRep (h : IsIrrepSkeleton models) :
     ContRepresentation 𝕜 (G × G)
       (lp (fun i => EuclideanSpace 𝕜 (Fin (models i).dim × Fin (models i).dim)) 2) :=
-  ContRepresentation.congr (peterWeylTraceEquiv h).toContinuousLinearEquiv (biRegularLp 𝕜 G)
+  ContinuousLinearEquiv.congr (peterWeylTraceEquiv h).toContinuousLinearEquiv (biRegularLp 𝕜 G)
 
 /-- The Peter-Weyl Hilbert-sum action preserves the Hilbert-space inner product. -/
 theorem isUnitary_peterWeylTraceRep (h : IsIrrepSkeleton models) :
@@ -100,7 +100,7 @@ theorem isUnitary_peterWeylTraceRep (h : IsIrrepSkeleton models) :
 theorem continuous_peterWeylTraceRep_apply (h : IsIrrepSkeleton models)
     (a : lp (fun i => EuclideanSpace 𝕜 (Fin (models i).dim × Fin (models i).dim)) 2) :
     Continuous (fun p => peterWeylTraceRep h p a) := by
-  simp only [peterWeylTraceRep, ContRepresentation.congr_apply]
+  simp only [peterWeylTraceRep, ContinuousLinearEquiv.congr_apply]
   exact (peterWeylTraceEquiv h).continuous.comp
     (continuous_biRegularLp_apply ((peterWeylTraceEquiv h).symm a))
 
@@ -121,7 +121,7 @@ theorem peterWeylTraceRep_apply (h : IsIrrepSkeleton models) (p : G × G)
     · funext i
       exact (traceCoeffBlockIsometry_intertwines (models i) p (a i)).symm
     · rw [peterWeylTraceEquiv]
-  rw [peterWeylTraceRep, ContRepresentation.congr_apply,
+  rw [peterWeylTraceRep, ContinuousLinearEquiv.congr_apply,
     LinearIsometryEquiv.coe_toContinuousLinearEquiv,
     LinearIsometryEquiv.coe_symm_toContinuousLinearEquiv, hab,
     LinearIsometryEquiv.apply_symm_apply]
@@ -134,7 +134,7 @@ theorem peterWeylTraceEquiv_biRegularLp (h : IsIrrepSkeleton models) (p : G × G
     peterWeylTraceEquiv h (biRegularLp 𝕜 G p f) i =
       peterWeylMatrixRep (models i) p (peterWeylTraceEquiv h f i) := by
   have hmap := peterWeylTraceRep_apply h p (peterWeylTraceEquiv h f) i
-  rw [peterWeylTraceRep, ContRepresentation.congr_apply,
+  rw [peterWeylTraceRep, ContinuousLinearEquiv.congr_apply,
     LinearIsometryEquiv.coe_toContinuousLinearEquiv,
     LinearIsometryEquiv.coe_symm_toContinuousLinearEquiv,
     LinearIsometryEquiv.symm_apply_apply] at hmap

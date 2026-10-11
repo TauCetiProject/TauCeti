@@ -72,15 +72,14 @@ applies verbatim.
 
 The declarations here live in the root `ContRepresentation` namespace, so that `π.haarAverageMap hπ`
 elaborates, rather than in `TauCeti.ContRepresentation` alongside the integrated operator they are
-built from; the older namespace is opened to reach that operator and the character.
+built from; the older namespace is opened to reach that operator. The character and its formulas
+are methods in `ContRepresentation`.
 
 ## References
 
-This is the projection promised, and left unbuilt, by
-`TauCeti/RepresentationTheory/Compact/Character/Projection.lean`, specialized to the trivial
-isotypic component. It supplies the multiplicity counting that Layer 6b of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md)
-needs for the Frobenius-Schur indicator `∫ g, χ_π (g * g)`, whose trichotomy reads that integral as
+This projection is the trivial-isotypic case of the character-weighted projections in
+`TauCeti/RepresentationTheory/Compact/Character/Projection.lean`. Its multiplicity count is used
+for the Frobenius-Schur indicator `∫ g, χ_π (g * g)`, whose trichotomy reads that integral as
 the difference of the dimensions of the invariants of the symmetric and exterior squares. The
 mathematical development follows Daniel Bump, *Lie Groups*, second edition, Chapter 2, and
 T. Bröcker and T. tom Dieck, *Representations of Compact Lie Groups*, Springer GTM 98 (1985),

@@ -5,10 +5,8 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Topology.Constructible
+public import TauCeti.Topology.Constructible.Jacobson
 public import Mathlib.Topology.Algebra.ConstMulAction
-public import Mathlib.Topology.LocallyClosed
-public import Mathlib.Topology.NoetherianSpace
 
 /-!
 # Constructible orbits are locally closed
@@ -17,6 +15,10 @@ For an action by homeomorphisms, local closedness of an orbit at one of its poin
 local closedness everywhere on that orbit. If the orbit is constructible inside its closure,
 its relative interior is dense and hence nonempty, supplying such a point. In particular,
 constructible orbits in a Noetherian space are locally closed.
+
+In a Noetherian Jacobson space it suffices for an invariant constructible set to be
+homogeneous on its closed points. Such a set need not be a single orbit on all points:
+this form applies to the full topological image of an algebraic orbit morphism.
 
 This is the topological step in realizing homogeneous spaces as locally closed orbits: once
 constructibility of an orbit has been established, the orbit is open in its closure. Only
@@ -89,5 +91,25 @@ theorem isLocallyClosed_orbit_of_isConstructible [NoetherianSpace X] (x : X)
   apply isLocallyClosed_orbit_of_isConstructible_preimage_val_closure x
   exact h.preimage_of_isClosedEmbedding isClosed_closure.isClosedEmbedding_subtypeVal
     (NoetherianSpace.isCompact _)
+
+/-- An invariant constructible set in a Noetherian Jacobson space is locally closed if
+the action is transitive on its closed points. No transitivity on nonclosed points is needed. -/
+theorem isLocallyClosed_of_isConstructible_of_closedPoints_transitive
+    [NoetherianSpace X] [JacobsonSpace X] {s : Set X} (hs : IsConstructible s)
+    (hinvariant : ∀ g : G, (fun x : X ↦ g • x) ⁻¹' s = s)
+    (htransitive : ∀ x ∈ s ∩ closedPoints X, ∀ y ∈ s ∩ closedPoints X,
+      ∃ g : G, g • x = y) : IsLocallyClosed s := by
+  obtain rfl | hne := s.eq_empty_or_nonempty
+  · exact isClosed_empty.isLocallyClosed
+  obtain ⟨x, hx, hlocal⟩ := hs.exists_isLocallyClosedAt_mem_closedPoints hne
+  apply hs.isLocallyClosed_iff_forall_mem_closedPoints.mpr
+  intro y hy
+  obtain ⟨g, hg⟩ := htransitive x hx y hy
+  have hlocal' : IsLocallyClosedAt s (g⁻¹ • y) := by
+    rw [← hg, inv_smul_smul]
+    exact hlocal
+  have hpreimage := hlocal'.preimage (continuous_const_smul g⁻¹)
+  rw [hinvariant g⁻¹] at hpreimage
+  exact hpreimage
 
 end TauCeti

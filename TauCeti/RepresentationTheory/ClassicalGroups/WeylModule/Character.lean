@@ -39,6 +39,9 @@ its character is a complete homogeneous, respectively an elementary, symmetric p
 * `TauCeti.char_weylRepOfShape_diagramOf_diagonal` and its bundled form
   `TauCeti.char_weylFDRepOfShape_diagramOf_diagonal`: **the character of the Weyl module of a
   partition `μ` is the Schur polynomial `s_μ`** on the diagonal torus.
+* `TauCeti.char_weylRepOfShape_diagonal_eq_eval_diagramSchurPoly` and
+  `TauCeti.char_weylFDRepOfShape_diagonal_eq_eval_diagramSchurPoly`:
+  the same formula for every Young diagram, expressed using `TauCeti.diagramSchurPoly`.
 * `TauCeti.finrank_weylModuleOfShape`: **the dimension of the Weyl module of a Young diagram is
   the number of semistandard tableaux of its shape in the `n`-letter alphabet**, the value of its
   Schur polynomial at one.
@@ -151,6 +154,25 @@ theorem char_weylFDRepOfShape_diagramOf_diagonal {d : ℕ} (μ : d.Partition) (t
     (weylFDRepOfShape k n (diagramOf μ)).character (diagGL t) =
       eval (fun i => (t i : k)) (schurPoly (Fin n) k μ) :=
   char_weylRepOfShape_diagramOf_diagonal k n μ t
+
+/-- The character of the Weyl module of any Young diagram is its Schur polynomial,
+evaluated at the diagonal entries. -/
+theorem char_weylRepOfShape_diagonal_eq_eval_diagramSchurPoly
+    (μ : YoungDiagram) (t : Fin n → kˣ) :
+    Representation.character (V := ↥(weylModuleOfShape k n μ).toSubmodule)
+        (weylRepOfShape k n μ) (diagGL t) =
+      eval (fun i => (t i : k)) (diagramSchurPoly n k μ) := by
+  have h := char_weylRepOfShape_diagramOf_diagonal k n (shapePartition μ) t
+  rw [diagramOf_shapePartition, schurPoly_fin_shapePartition] at h
+  exact h
+
+/-- The character of the bundled Weyl module of any Young diagram is its Schur polynomial,
+evaluated at the diagonal entries. -/
+theorem char_weylFDRepOfShape_diagonal_eq_eval_diagramSchurPoly
+    (μ : YoungDiagram) (t : Fin n → kˣ) :
+    (weylFDRepOfShape k n μ).character (diagGL t) =
+      eval (fun i => (t i : k)) (diagramSchurPoly n k μ) :=
+  char_weylRepOfShape_diagonal_eq_eval_diagramSchurPoly k n μ t
 
 /-- **The dimension of the Weyl module of a Young diagram** `μ` is the number of semistandard
 tableaux of shape `μ` in the alphabet `{0, …, n - 1}`: the character at the identity is the

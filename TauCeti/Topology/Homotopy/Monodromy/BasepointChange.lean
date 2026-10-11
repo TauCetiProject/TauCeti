@@ -39,6 +39,28 @@ namespace TauCeti
 variable {E X : Type*} [TopologicalSpace E] [TopologicalSpace X]
   {p : E → X} {x₀ x₁ : X}
 
+/-- **Monodromy after basepoint change.** Monodromy along the transport back along `γ` of a loop
+class `g` at `x₁` is monodromy along `g`, conjugated by monodromy along `γ`: lift `γ`, then go
+around `g`, then return along `γ`. -/
+theorem _root_.IsCoveringMap.monodromy_fundamentalGroupMulEquivOfPath_symm_apply
+    (hp : IsCoveringMap p) (γ : Path x₀ x₁) (g : FundamentalGroup X x₁) (e₀ : p ⁻¹' {x₀}) :
+    hp.monodromy ((FundamentalGroup.fundamentalGroupMulEquivOfPath γ).symm g) e₀ =
+      (coveringFiberEquiv hp (.mk γ)).symm (hp.monodromy g (hp.monodromy (.mk γ) e₀)) := by
+  rw [FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply, hp.monodromy_trans_apply,
+    hp.monodromy_trans_apply, coveringFiberEquiv_symm_apply]
+
+/-- The monodromy permutation of the transport back along `γ` of a loop class `g` is the monodromy
+permutation of `g`, transported from the fibre over `x₁` to the fibre over `x₀` by monodromy along
+`γ`. -/
+theorem _root_.IsCoveringMap.monodromyPerm_fundamentalGroupMulEquivOfPath_symm
+    (hp : IsCoveringMap p) (γ : Path x₀ x₁) (g : FundamentalGroup X x₁) :
+    hp.monodromyPerm x₀ ((FundamentalGroup.fundamentalGroupMulEquivOfPath γ).symm g) =
+      (coveringFiberEquiv hp (.mk γ)).symm.permCongr (hp.monodromyPerm x₁ g) := by
+  ext e₀
+  rw [Equiv.permCongr_apply, Equiv.symm_symm, coveringFiberEquiv_apply,
+    IsCoveringMap.coe_monodromyPerm, IsCoveringMap.coe_monodromyPerm,
+    hp.monodromy_fundamentalGroupMulEquivOfPath_symm_apply]
+
 /-- **Conjugation law for monodromy along a path.** A class `g` at `x₁` fixes the endpoint
 `hp.monodromy ⟦γ⟧ e₀` of the lift of `γ` exactly when its transport back along `γ` fixes the
 starting point `e₀`. This is the path-level statement behind
@@ -50,44 +72,10 @@ theorem _root_.IsCoveringMap.monodromy_eq_self_iff_fundamentalGroupMulEquivOfPat
     hp.monodromy g (hp.monodromy ⟦γ⟧ e₀) = hp.monodromy ⟦γ⟧ e₀ ↔
       hp.monodromy
         ((FundamentalGroup.fundamentalGroupMulEquivOfPath γ).symm g) e₀ = e₀ := by
-  let γq : Path.Homotopic.Quotient x₀ x₁ := Path.Homotopic.Quotient.mk γ
-  let f := FundamentalGroup.fundamentalGroupMulEquivOfPath γ
-  -- Expose the local names so that the path-lifting composition laws apply directly.
-  change hp.monodromy g (hp.monodromy γq e₀) = hp.monodromy γq e₀ ↔
-    hp.monodromy (f.symm g) e₀ = e₀
-  have htrans :
-      hp.monodromy (Path.Homotopic.Quotient.trans γq g) e₀ =
-        hp.monodromy g (hp.monodromy γq e₀) :=
-    hp.monodromy_trans_apply γq g e₀
-  have hf :
-      f.symm g = Path.Homotopic.Quotient.trans γq
-        (Path.Homotopic.Quotient.trans g γq.symm) := by
-    simpa only [f, γq] using
-      FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply γ g
-  rw [← htrans]
-  rw [hf]
-  have hback : hp.monodromy γq.symm (hp.monodromy γq e₀) = e₀ := by
-    rw [← hp.monodromy_trans_apply]
-    rw [Path.Homotopic.Quotient.trans_symm, hp.monodromy_refl]
-    rfl
-  have hforward {z : p ⁻¹' {x₁}} :
-      hp.monodromy γq (hp.monodromy γq.symm z) = z := by
-    rw [← hp.monodromy_trans_apply]
-    rw [Path.Homotopic.Quotient.symm_trans, hp.monodromy_refl]
-    rfl
-  have hcomp :
-      hp.monodromy (Path.Homotopic.Quotient.trans γq
-        (Path.Homotopic.Quotient.trans g γq.symm)) e₀ =
-        hp.monodromy γq.symm (hp.monodromy (Path.Homotopic.Quotient.trans γq g) e₀) := by
-    rw [← Path.Homotopic.Quotient.trans_assoc]
-    exact hp.monodromy_trans_apply _ _ _
-  rw [hcomp]
-  constructor
-  · intro h
-    rw [h, hback]
-  · intro h
-    have := congrArg (hp.monodromy γq) h
-    simpa only [hforward]
+  rw [hp.monodromy_fundamentalGroupMulEquivOfPath_symm_apply, Equiv.symm_apply_eq,
+    coveringFiberEquiv_apply]
+  -- `⟦γ⟧` and `.mk γ` are the same class of `γ`, written with two spellings of the quotient map.
+  exact Iff.rfl
 
 /-- The subgroup recovered at the endpoint of a lifted path is the basepoint transport of the
 subgroup recovered at its starting point. -/

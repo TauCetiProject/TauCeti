@@ -371,12 +371,11 @@ theorem inertiaDeg_eq_one_iff_mem_inertia_of_isArithFrobAt (Q : Ideal (𝓞 L)) 
 
 /-! ### Conjugation along the fibre -/
 
-/-- **Frobenius elements are conjugated by the Galois action on primes.** At an unramified prime
-`Q` with arithmetic Frobenius `σ`, an element of `Gal(L/K)` is an arithmetic Frobenius at the
+omit [NumberField K] [IsGalois K L] in
+/-- **Frobenius elements are conjugated by the automorphism action on primes.** At an unramified
+prime `Q` with arithmetic Frobenius `σ`, an element of `Gal(L/K)` is an arithmetic Frobenius at the
 translated prime `τ • Q` exactly when it is the conjugate `τ σ τ⁻¹`.
-
-Mathlib's `IsArithFrobAt.conj` gives that `τ σ τ⁻¹` is one; uniqueness at `τ • Q`, which is
-unramified by `Ideal.isUnramifiedAt_pointwise_smul_iff`, gives that it is the only one. -/
+The extension need not be normal. -/
 theorem isArithFrobAt_pointwise_smul_iff_eq_conj (Q : Ideal (𝓞 L)) [Q.IsPrime]
     [Algebra.IsUnramifiedAt (𝓞 K) Q] {σ : L ≃ₐ[K] L} (hσ : IsArithFrobAt (𝓞 K) σ Q)
     (τ ρ : L ≃ₐ[K] L) :

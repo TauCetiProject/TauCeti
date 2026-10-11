@@ -12,7 +12,7 @@ public import TauCeti.RingTheory.Ideal.PrimesOver
 
 import TauCeti.NumberTheory.NumberField.Global.Places.Semilocal
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Tower
-import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.NormTrace
+import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Norm.Trace
 import TauCeti.RingTheory.DedekindDomain.PrimesAbove
 import Mathlib.RingTheory.Norm.Transitivity
 

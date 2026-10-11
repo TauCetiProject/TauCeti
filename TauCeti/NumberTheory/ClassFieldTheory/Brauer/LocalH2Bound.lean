@@ -9,8 +9,7 @@ public import TauCeti.FieldTheory.GaloisCohomology.Cyclic
 public import TauCeti.FieldTheory.GaloisCohomology.Solvable
 public import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
 public import TauCeti.NumberTheory.LocalField.Solvable
-public import TauCeti.NumberTheory.LocalField.UnitFiltration.TateCohomology
-public import TauCeti.NumberTheory.LocalField.UnitFiltration.ValuationSequence
+public import TauCeti.NumberTheory.LocalField.UnitFiltration.HerbrandQuotient
 
 /-!
 # The local second-cohomology bound
@@ -63,8 +62,7 @@ local fields, `H²(Gal(L/K), Lˣ)` has order `[L : K]`. -/
 theorem natCard_H2_units_eq_finrank [IsCyclic (L ≃ₐ[K] L)] :
     Nat.card (groupCohomology (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ) 2) = finrank K L := by
   have h := natCard_H2_units_eq_herbrandQuotient (K := K) (L := L)
-  rw [herbrandQuotient_units_eq_finrank_mul, TateCohomology.herbrandQuotient_unitFiltration_zero,
-    mul_one] at h
+  rw [herbrandQuotient_units_eq_finrank] at h
   exact_mod_cast h
 
 /-- **The cyclic norm index.** For a cyclic extension `L/K` of nonarchimedean local fields, the

@@ -8,6 +8,8 @@ module
 public import Mathlib.RingTheory.Extension.Presentation.Basic
 public import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 public import TauCeti.RingTheory.KrullDimension.FiniteType
+public import TauCeti.RingTheory.KrullDimension.Quotient
+import TauCeti.RingTheory.Ideal.MinimalPrime.Finite
 
 /-!
 # Dimension of finitely presented algebras over a field
@@ -24,12 +26,19 @@ ideal avoids `g`, and its height is preserved by the localization. This is the a
 the stability of relative global complete intersections, and hence of standard syntomic algebras,
 under localization on the source.
 
+Such an `A` is moreover equidimensional: for every minimal prime `Q`, the quotient `A ⧸ Q` has
+dimension `m - c`. Choose `g ∉ Q` lying in every other minimal prime. Then every prime of `A[1/g]`
+contains `Q`, so `dim A[1/g] ≤ dim (A ⧸ Q)`, while `A[1/g]` is nonzero and so has dimension `m - c`.
+
 ## Main results
 
 * `Algebra.Presentation.dimension_le_height_of_isMaximal`: every maximal ideal of a finitely
   presented algebra over a field has height at least the dimension `m - c` of the presentation.
 * `Algebra.Presentation.ringKrullDim_eq_of_isLocalization_away`: if `dim A ≤ m - c`, every nonzero
   localization `A[1/g]` has Krull dimension `m - c`.
+* `Algebra.Presentation.ringKrullDim_quotient_of_mem_minimalPrimes` and
+  `Algebra.Presentation.isPureDimensional_primeSpectrum`: if `dim A ≤ m - c`, every irreducible
+  component of `Spec A` has dimension `m - c`.
 
 ## References
 
@@ -112,5 +121,43 @@ theorem ringKrullDim_eq_of_isLocalization_away (hA : ringKrullDim A ≤ P.dimens
       _ = (m.map (algebraMap A B)).height := by
         rw [IsLocalization.height_map_of_disjoint (.powers g) m hdisj]
       _ ≤ ringKrullDim B := Ideal.height_le_ringKrullDim_of_isPrime
+
+/-- Let `A` be an algebra over a field with a finite presentation by `m` generators and `c`
+relations, such that `dim A ≤ m - c`. Then for every minimal prime `Q` of `A`, the quotient `A ⧸ Q`
+has Krull dimension exactly `m - c`. -/
+theorem ringKrullDim_quotient_of_mem_minimalPrimes (hA : ringKrullDim A ≤ P.dimension)
+    {Q : Ideal A} (hQ : Q ∈ minimalPrimes A) : ringKrullDim (A ⧸ Q) = P.dimension := by
+  have := P.finitePresentation_of_isFinite
+  have : IsNoetherianRing A := Algebra.FiniteType.isNoetherianRing k A
+  have hQp : Q.IsPrime := hQ.1.1
+  refine le_antisymm ((ringKrullDim_quotient_le Q).trans hA) ?_
+  -- Some `g ∉ Q` lies in every other minimal prime, so every prime of `A[1/g]` contains `Q`.
+  obtain ⟨g, hgQ, hg⟩ := (⊥ : Ideal A).exists_notMem_forall_le_of_mem_minimalPrimes
+    (minimalPrimes.finite_of_isNoetherianRing A) hQ
+  let B := Localization.Away g
+  have hdisj : Disjoint (Submonoid.powers g : Set A) Q :=
+    (Ideal.disjoint_powers_iff_notMem g hQp.isRadical).mpr hgQ
+  have hQB : (Q.map (algebraMap A B)).IsPrime :=
+    IsLocalization.isPrime_of_isPrime_disjoint _ B Q hQp hdisj
+  have : Nontrivial B := by
+    obtain _ | _ := subsingleton_or_nontrivial B
+    · exact absurd (Subsingleton.elim _ _) hQB.ne_top
+    · assumption
+  rw [← P.ringKrullDim_eq_of_isLocalization_away hA g B, ringKrullDim_quotient]
+  -- Contracting primes of `A[1/g]` is a strictly monotone map into `V(Q)`.
+  have hmono : Monotone (PrimeSpectrum.comap (algebraMap A B)) := fun _ _ h ↦ Ideal.comap_mono h
+  refine Order.krullDim_le_of_strictMono
+    (fun q ↦ ⟨PrimeSpectrum.comap (algebraMap A B) q, hg _ inferInstance bot_le fun h ↦ ?_⟩)
+    fun _ _ h ↦ hmono.strictMono_of_injective
+      (PrimeSpectrum.localization_comap_injective B (.powers g)) h
+  -- The image of `g` is a unit of `A[1/g]`, so it lies in no prime.
+  exact q.2.ne_top (Ideal.eq_top_of_isUnit_mem _ h (IsLocalization.Away.algebraMap_isUnit g))
+
+/-- Let `A` be an algebra over a field with a finite presentation by `m` generators and `c`
+relations, such that `dim A ≤ m - c`. Then `Spec A` is pure-dimensional of dimension `m - c`. -/
+theorem isPureDimensional_primeSpectrum (hA : ringKrullDim A ≤ P.dimension) :
+    TauCeti.IsPureDimensional P.dimension (PrimeSpectrum A) :=
+  TauCeti.isPureDimensional_primeSpectrum_iff.mpr fun _ hQ ↦
+    P.ringKrullDim_quotient_of_mem_minimalPrimes hA hQ
 
 end Algebra.Presentation

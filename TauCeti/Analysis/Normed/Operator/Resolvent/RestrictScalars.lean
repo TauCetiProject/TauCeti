@@ -31,7 +31,7 @@ statement about the genuinely complex resolvent set.
 
 ## Main results
 
-* `TauCeti.LinearPMap.IsResolventAt.restrictScalars`: restricting scalars in an inverse of
+* `LinearPMap.IsResolventAt.restrictScalars`: restricting scalars in an inverse of
   `lambda • I - A`.
 * `TauCeti.LinearPMap.map_smul_of_isResolventAt_restrictScalars`: a bounded inverse over `𝕜` is
   `𝕜'`-homogeneous.
@@ -47,6 +47,10 @@ public section
 noncomputable section
 
 namespace TauCeti.LinearPMap
+
+open _root_.LinearPMap (
+  IsResolventAt isResolventAt_iff_forall_mem_graph isResolventAt_resolvent
+  mem_resolventSet_iff resolvent_eq_of_isResolventAt)
 
 section Algebra
 
@@ -74,7 +78,8 @@ variable {𝕜 𝕜' X : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNorm
 
 /-- An inverse of `algebraMap 𝕜 𝕜' mu • I - A` restricts to an inverse of `mu • I - A` for the
 restriction of scalars. -/
-theorem IsResolventAt.restrictScalars (h : IsResolventAt A (algebraMap 𝕜 𝕜' mu) R) :
+theorem _root_.LinearPMap.IsResolventAt.restrictScalars
+    (h : IsResolventAt A (algebraMap 𝕜 𝕜' mu) R) :
     IsResolventAt (A.restrictScalars 𝕜) mu (R.restrictScalars 𝕜) := by
   simpa only [isResolventAt_iff_forall_mem_graph, ContinuousLinearMap.coe_restrictScalars',
     LinearPMap.restrictScalars_graph, Submodule.restrictScalars_mem, algebraMap_smul 𝕜'] using h
@@ -97,7 +102,7 @@ theorem exists_isResolventAt_of_isResolventAt_restrictScalars
 smaller field. -/
 @[simp]
 theorem mem_resolventSet_restrictScalars_iff :
-    mu ∈ resolventSet (A.restrictScalars 𝕜) ↔ algebraMap 𝕜 𝕜' mu ∈ resolventSet A := by
+    mu ∈ (A.restrictScalars 𝕜).resolventSet ↔ algebraMap 𝕜 𝕜' mu ∈ A.resolventSet := by
   rw [mem_resolventSet_iff, mem_resolventSet_iff]
   constructor
   · rintro ⟨R₀, hR₀⟩
@@ -108,8 +113,8 @@ theorem mem_resolventSet_restrictScalars_iff :
 
 /-- The resolvent of the restriction of scalars is the restriction of scalars of the resolvent. -/
 @[simp]
-theorem restrictScalars_resolvent (h : mu ∈ resolventSet (A.restrictScalars 𝕜)) :
-    (resolvent A (algebraMap 𝕜 𝕜' mu)).restrictScalars 𝕜 = resolvent (A.restrictScalars 𝕜) mu :=
+theorem restrictScalars_resolvent (h : mu ∈ (A.restrictScalars 𝕜).resolventSet) :
+    (A.resolvent (algebraMap 𝕜 𝕜' mu)).restrictScalars 𝕜 = (A.restrictScalars 𝕜).resolvent mu :=
   (resolvent_eq_of_isResolventAt
     (IsResolventAt.restrictScalars
       (isResolventAt_resolvent (mem_resolventSet_restrictScalars_iff.mp h)))).symm

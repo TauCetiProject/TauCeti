@@ -10,7 +10,9 @@ public import Mathlib.Topology.Connected.LocallyConnected
 public import Mathlib.Topology.Irreducible
 public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.Topology.PathComponent
+public import Mathlib.Topology.Order.OrderClosed
 import Mathlib.Topology.Homeomorph.Lemmas
+import Mathlib.Topology.Order.IntermediateValue
 
 /-!
 # Connected components
@@ -24,6 +26,8 @@ space by them.
   the connected component of the image point.
 * `TauCeti.frontier_connectedComponentIn_subset_compl`: in a locally connected space, a connected
   component of an open set has its frontier in the complement of that set.
+* `TauCeti.connectedComponentIn_eq_of_lt`: a preconnected set on which a function stays on one
+  side of a value it never takes is a connected component.
 * `TauCeti.isPreconnected_compl_of_isPreconnected_frontier`: in a preconnected, locally connected
   space, an open set with preconnected frontier has preconnected complement.
 * `TauCeti.instT1SpaceConnectedComponents`: the connected-components quotient of any topological
@@ -70,6 +74,27 @@ theorem frontier_connectedComponentIn_subset_compl [LocallyConnectedSpace X] {F 
     rw [connectedComponentIn_eq hzx, ← connectedComponentIn_eq hzy]
     exact mem_connectedComponentIn hyF
   exact hy.2 (by rwa [hC.interior_eq])
+
+/-- **A strict superlevel set cuts out a connected component.** Let `φ` be continuous on `D` and
+never equal to `c` there. A preconnected subset `H ⊆ D` containing every point of `D` where `φ`
+exceeds `c` is the connected component in `D` of any of its points `z` with `c < φ z`: by the
+intermediate value theorem, that component cannot reach a point where `φ` is below `c`. -/
+theorem connectedComponentIn_eq_of_lt {α : Type*} [LinearOrder α] [TopologicalSpace α]
+    [OrderClosedTopology α] {D H : Set X} {z : X} {φ : X → α} {c : α} (hH : IsPreconnected H)
+    (hHD : H ⊆ D) (hz : z ∈ H) (hzc : c < φ z) (hφ : ContinuousOn φ D)
+    (hDne : ∀ q ∈ D, φ q ≠ c) (hmem : ∀ q ∈ D, c < φ q → q ∈ H) :
+    connectedComponentIn D z = H := by
+  apply Subset.antisymm
+  · intro q hq
+    have hqD : q ∈ D := connectedComponentIn_subset D z hq
+    apply hmem q hqD
+    rcases lt_or_gt_of_ne (hDne q hqD) with hqlt | hqgt
+    · have hzC : z ∈ connectedComponentIn D z := mem_connectedComponentIn (hHD hz)
+      obtain ⟨p, hpC, hpc⟩ := isPreconnected_connectedComponentIn.intermediate_value hq hzC
+        (hφ.mono (connectedComponentIn_subset D z)) ⟨hqlt.le, hzc.le⟩
+      exact (hDne p (connectedComponentIn_subset D z hpC) hpc).elim
+    · exact hqgt
+  · exact hH.subset_connectedComponentIn hz hHD
 
 /-- **An open set with preconnected frontier has preconnected complement**, in a preconnected,
 locally connected space.

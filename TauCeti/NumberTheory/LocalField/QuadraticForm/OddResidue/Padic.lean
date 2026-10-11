@@ -50,13 +50,9 @@ theorem hilbertSymbol_neg_one_eq_neg_one_of_mod_four_eq_three (hp : p % 4 = 3) :
   have hu : (normalizedValuation ℚ_[p] (-1 : ℚ_[p]ˣ)).toAdd = 0 := by
     rw [toAdd_normalizedValuation_eq_valuation]
     simpa [padicValInt] using valuation_intCast (p := p) (-1)
-  have hπ : IsUniformizer ℚ_[p]
-      (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero)) := by
-    rw [isUniformizer_def]
-    apply Multiplicative.toAdd.injective
-    rw [toAdd_normalizedValuation_eq_valuation, Units.val_mk0, valuation_p, toAdd_ofAdd]
   rcases Int.units_eq_one_or (hilbertSymbol (-1 : ℚ_[p]ˣ) _) with h | h
-  · have hsq := (hilbertSymbol_eq_one_iff_isSquare_of_valuation_zero_of_isUniformizer h2 hu hπ).mp h
+  · have hsq := (hilbertSymbol_eq_one_iff_isSquare_of_valuation_zero_of_isUniformizer h2 hu
+      (TauCeti.Padic.isUniformizer_natCast_self p)).mp h
     exact absurd (isSquare_units_val_iff.mpr hsq)
       (by simpa using not_isSquare_neg_one_of_mod_four_eq_three p hp)
   · exact h

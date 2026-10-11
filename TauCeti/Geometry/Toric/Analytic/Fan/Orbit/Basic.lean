@@ -169,6 +169,13 @@ theorem analyticConeOrbit_eq_orbit (σ : Φ.cones) :
     exact ⟨t • distinguishedPoint Φ.lattice (⊤ : σ.1.Face), ⟨t, rfl⟩,
       (Φ.smul_analyticAffineChartι hΦ t σ (distinguishedPoint Φ.lattice (⊤ : σ.1.Face))).symm⟩
 
+/-- The torus preserves the orbit of every cone. -/
+theorem smul_mem_analyticConeOrbit {σ : Φ.cones} (T : ComplexTorus N)
+    {x : Φ.analyticRealization hΦ} (hx : x ∈ Φ.analyticConeOrbit hΦ σ) :
+    T • x ∈ Φ.analyticConeOrbit hΦ σ := by
+  rw [analyticConeOrbit_eq_orbit] at hx ⊢
+  exact MulAction.mem_orbit_of_mem_orbit T hx
+
 /-- The distinguished point of a cone lies in its orbit. -/
 theorem analyticDistinguishedPoint_mem_analyticConeOrbit (σ : Φ.cones) :
     Φ.analyticDistinguishedPoint hΦ σ ∈ Φ.analyticConeOrbit hΦ σ := by

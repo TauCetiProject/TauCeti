@@ -88,7 +88,7 @@ theorem prodRight_baseChangeExp
       simp only [map_sum, LinearEquiv.baseChange_tmul, TensorProduct.prodRight_tmul]
       -- The two carrier projections reduce the integral operators to their ambient values.
       apply Prod.ext <;> simp only [Prod.fst_sum, Prod.snd_sum] <;>
-        apply Finset.sum_congr rfl <;> intro k hk <;>
+        apply Finset.sum_congr rfl <;> intro k _ <;>
         congr 1 <;> apply Subtype.ext <;>
         simp only [AddEquiv.coe_toIntLinearEquiv, hfst, hsnd,
           coe_integralDividedPower_apply, dividedPower_prodMap,

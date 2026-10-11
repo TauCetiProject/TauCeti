@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.ProjectiveDimension
+public import TauCeti.Algebra.Category.ModuleCat.Projective.Dimension
 public import TauCeti.RepresentationTheory.Quiver.Representation.VertexSimpleModule
 import Mathlib.Algebra.Category.ModuleCat.ProjectiveDimension
 import Mathlib.RingTheory.Finiteness.Small

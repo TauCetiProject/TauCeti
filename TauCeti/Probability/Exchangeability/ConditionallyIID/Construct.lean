@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Exchangeability.ConditionallyIID.Basic
-public import TauCeti.Probability.Exchangeability.FiniteMarginals
+public import TauCeti.Probability.Process.PathLaw.FiniteMarginals
 -- Public: `iIndepFun` appears in the hypothesis of the degeneracy theorem.
 public import Mathlib.Probability.Independence.Basic
 -- Non-public: the mixture representation and its uniqueness are used only inside the
@@ -175,7 +175,7 @@ theorem conditionallyIIDWith_iidMixtureLaw (hP : Measurable P) :
     (hP.comp measurable_fst) fun m k hk => ?_
   -- the joint kernel `Q ↦ δ_Q ⊗ Q^{⊗ Fin m}`, through which both sides factor
   set g : ProbabilityMeasure α → Measure (ProbabilityMeasure α × (Fin m → α)) := fun Q =>
-    (Measure.dirac Q).prod (ProbabilityMeasure.pi fun _ : Fin m => Q).toMeasure with hg
+    (Measure.dirac Q).prod (ProbabilityMeasure.pi fun _ : Fin m => Q).toMeasure
   have hgmeas : Measurable g :=
     TauCeti.MeasureTheory.measurable_dirac_prod_probabilityMeasure_pi_const_toMeasure
       (fun Q : ProbabilityMeasure α => Q) measurable_id

@@ -13,7 +13,7 @@ public import Mathlib.Topology.Spectral.Basic
 /-!
 # A basis criterion for spectral maps, and transport of spectrality along an embedding
 
-Two utilities for spectral spaces and maps. A continuous map is spectral as soon as the preimage
+Utilities for spectral spaces and maps. A continuous map is spectral as soon as the preimage
 of every member of some topological **basis** of the target is compact; and spectrality transports
 from the preimage of a set to the set itself along an embedding whose range contains it.
 
@@ -34,6 +34,8 @@ but no criterion that tests spectrality on a basis; this supplies the missing en
 
 * `TauCeti.isSpectralMap_of_isTopologicalBasis` : a continuous map whose preimages of basis
   members are compact is a spectral map.
+* `TauCeti.isSpectralMap_eval`: a coordinate projection is spectral when every other factor
+  is quasi-compact.
 * `TauCeti.spectralSpace_of_isEmbedding` : a subset of the range of an embedding is spectral as
   soon as its preimage is — the transport step of any "prove it on a subspace" argument.
 
@@ -47,7 +49,7 @@ public section
 
 namespace TauCeti
 
-open TopologicalSpace
+open Set TopologicalSpace
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 
@@ -71,6 +73,22 @@ theorem isSpectralMap_of_isTopologicalBasis {f : X → Y} {B : Set (Set Y)}
     exact Set.subset_sUnion_of_mem b.2
   rw [heq, Set.preimage_iUnion₂]
   exact t.isCompact_biUnion fun b _ ↦ hpre b (hSB b.2)
+
+/-- Evaluation at a coordinate `i` is a spectral map as soon as every *other* factor is
+quasi-compact: the preimage of a quasi-compact open is a box with that set in the `i`-th slot and
+the whole space elsewhere, so only those other slots need a compactness hypothesis. -/
+theorem isSpectralMap_eval {ι : Type*} {Z : ι → Type*} [∀ i, TopologicalSpace (Z i)] (i : ι)
+    (hZ : ∀ j, j ≠ i → IsCompact (univ : Set (Z j))) :
+    IsSpectralMap (fun f : ∀ i, Z i ↦ f i) where
+  toContinuous := continuous_apply i
+  isCompact_preimage_of_isOpen := fun U _ hUc ↦ by
+    classical
+    rw [Set.eval_preimage]
+    refine isCompact_univ_pi fun j ↦ ?_
+    rcases eq_or_ne j i with rfl | hj
+    · simpa using hUc
+    · rw [Function.update_of_ne hj]
+      exact hZ j hj
 
 /-- **Spectrality transports from a trace along an embedding.** A subset of the target contained
 in the range of an embedding is spectral as soon as its preimage is: the embedding restricts to a

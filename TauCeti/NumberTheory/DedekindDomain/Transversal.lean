@@ -88,7 +88,7 @@ private theorem disjoint_image_mul_asIdeal {p q : IsDedekindDomain.HeightOneSpec
     Disjoint (G'.image (· * p.asIdeal)) (G'.image (· * q.asIdeal)) := by
   rw [Finset.disjoint_left]
   rintro A hAp hAq
-  obtain ⟨a, ha, rfl⟩ := Finset.mem_image.mp hAp
+  obtain ⟨a, _, rfl⟩ := Finset.mem_image.mp hAp
   obtain ⟨b, hb, hab⟩ := Finset.mem_image.mp hAq
   -- `a * p = b * q` forces `p ∣ b`, but no member of `G'` is divisible by `p`.
   have hpdvd : p.asIdeal ∣ b := by

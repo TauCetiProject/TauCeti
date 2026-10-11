@@ -5,7 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Action.Sigma
+public import Mathlib.Algebra.Group.Action.TransferInstance
 public import Mathlib.NumberTheory.RamificationInertia.Galois
+public import TauCeti.NumberTheory.NumberField.AutomorphismAction
+public import TauCeti.RingTheory.Ideal.PrimesOver
 import TauCeti.RingTheory.Unramified.AlgEquiv
 
 /-!
@@ -27,7 +31,21 @@ normal (for instance when the Galois group is commutative) they all share that i
 That uniformity is what lets a statement about ramification in an intermediate field be tested at
 a single prime upstairs.
 
+The number-field specialization also compares the `galRestrict` action on primes over a
+base ideal with the pointwise ideal action on the ring of integers, including stabilizers and
+transitivity.
+
 ## Main results
+
+* `TauCeti.coe_galRestrict_eq_toRingHom`: restriction agrees with the canonical action.
+* `TauCeti.coe_smul_primesOver_ringOfIntegers` and
+  `TauCeti.stabilizer_primesOver_ringOfIntegers`: the primes-over action and its stabilizers
+  agree with those on the underlying ideals.
+* `TauCeti.isPretransitive_primesOver_ringOfIntegers`: transitivity for Galois extensions.
+* `TauCeti.primesAboveRingOfIntegersMulAction` and
+  `TauCeti.sigmaPrimesOverEquivPrimesAbove_smul`: the canonical primes-above action and its
+  equivariant comparison with the fibre indexing.
+* `TauCeti.asIdeal_smul_primesAbove_ringOfIntegers`: the induced action on underlying ideals.
 
 * `Ideal.ncard_primesOver_eq_natCard_iff_of_isGaloisGroup`: the domain/flat Galois counting
   criterion.
@@ -195,3 +213,82 @@ theorem inertia_eq_of_liesOver {A B : Type*} [CommRing A] [CommRing B] [Algebra 
   exact (inertia_pointwise_smul σ P).symm
 
 end Ideal
+
+namespace TauCeti
+
+open NumberField
+open scoped NumberField Pointwise
+
+section PrimesOver
+
+variable (K L : Type*) [Field K] [Field L] [NumberField K] [NumberField L]
+  [Algebra K L]
+
+/-- Restriction to rings of integers agrees with the canonical Galois action. -/
+theorem coe_galRestrict_eq_toRingHom (σ : L ≃ₐ[K] L) :
+    (galRestrict (𝓞 K) K L (𝓞 L) σ : 𝓞 L →+* 𝓞 L) =
+      MulSemiringAction.toRingHom (L ≃ₐ[K] L) (𝓞 L) σ := by
+  ext1 z
+  apply RingOfIntegers.ext
+  exact (algebraMap_galRestrict_apply (𝓞 K) σ z).trans
+    (algebraMap_smul_eq_apply σ z).symm
+
+/-- The action on primes above a base ideal agrees with the action on their underlying ideals. -/
+@[simp]
+theorem coe_smul_primesOver_ringOfIntegers {p : Ideal (𝓞 K)}
+    (σ : L ≃ₐ[K] L) (P : p.primesOver (𝓞 L)) :
+    (σ • P).1 = σ • P.1 := by
+  rw [Ideal.coe_smul_primesOver_eq_map_galRestrict, Ideal.pointwise_smul_def,
+    ← Ideal.map_coe, coe_galRestrict_eq_toRingHom]
+
+/-- A prime above a base ideal has the same stabilizer as its underlying ideal. -/
+@[simp]
+theorem stabilizer_primesOver_ringOfIntegers {p : Ideal (𝓞 K)} (P : p.primesOver (𝓞 L)) :
+    MulAction.stabilizer (L ≃ₐ[K] L) P =
+      MulAction.stabilizer (L ≃ₐ[K] L) (P : Ideal (𝓞 L)) := by
+  ext σ
+  simp only [MulAction.mem_stabilizer_iff, ← Subtype.val_inj,
+    coe_smul_primesOver_ringOfIntegers]
+
+/-- The Galois group acts transitively on primes above any fixed base ideal. -/
+instance isPretransitive_primesOver_ringOfIntegers [IsGalois K L] {p : Ideal (𝓞 K)} :
+    MulAction.IsPretransitive (L ≃ₐ[K] L) (p.primesOver (𝓞 L)) where
+  exists_smul_eq P Q := by
+    obtain ⟨σ, hσ⟩ := Ideal.exists_smul_eq_of_isGaloisGroup p P.1 Q.1 (L ≃ₐ[K] L)
+    exact ⟨σ, Subtype.ext ((coe_smul_primesOver_ringOfIntegers K L σ P).trans hσ)⟩
+
+/-- The automorphism action on primes above a set, transported from the primes-over fibres. -/
+noncomputable instance primesAboveRingOfIntegersMulAction
+    (S : Set (IsDedekindDomain.HeightOneSpectrum (𝓞 K))) :
+    MulAction (L ≃ₐ[K] L)
+      ↥(IsDedekindDomain.HeightOneSpectrum.primesAbove (𝓞 K) (𝓞 L) S) :=
+  (sigmaPrimesOverEquivPrimesAbove (𝓞 K) (𝓞 L) S).symm.mulAction (L ≃ₐ[K] L)
+
+/-- The canonical primes-above carrier and its fibre reindexing are equivariantly equivalent. -/
+@[simp]
+theorem sigmaPrimesOverEquivPrimesAbove_smul
+    (S : Set (IsDedekindDomain.HeightOneSpectrum (𝓞 K))) (σ : L ≃ₐ[K] L)
+    (p : Σ v : S, v.1.asIdeal.primesOver (𝓞 L)) :
+    sigmaPrimesOverEquivPrimesAbove (𝓞 K) (𝓞 L) S (σ • p) =
+      σ • sigmaPrimesOverEquivPrimesAbove (𝓞 K) (𝓞 L) S p := by
+  -- The transported action applies the inverse reindexing, the fibre action, then reindexing.
+  change _ = sigmaPrimesOverEquivPrimesAbove (𝓞 K) (𝓞 L) S
+    (σ • (sigmaPrimesOverEquivPrimesAbove (𝓞 K) (𝓞 L) S).symm
+      (sigmaPrimesOverEquivPrimesAbove (𝓞 K) (𝓞 L) S p))
+  rw [Equiv.symm_apply_apply]
+
+/-- On underlying ideals, the primes-above action is the canonical pointwise ideal action. -/
+@[simp]
+theorem asIdeal_smul_primesAbove_ringOfIntegers
+    (S : Set (IsDedekindDomain.HeightOneSpectrum (𝓞 K))) (σ : L ≃ₐ[K] L)
+    (w : ↥(IsDedekindDomain.HeightOneSpectrum.primesAbove (𝓞 K) (𝓞 L) S)) :
+    (σ • w).1.asIdeal = σ • w.1.asIdeal := by
+  obtain ⟨p, rfl⟩ := (sigmaPrimesOverEquivPrimesAbove (𝓞 K) (𝓞 L) S).surjective w
+  rw [← sigmaPrimesOverEquivPrimesAbove_smul]
+  rcases p with ⟨v, P⟩
+  simp only [sigmaPrimesOverEquivPrimesAbove_apply_asIdeal, Sigma.smul_mk,
+    coe_smul_primesOver_ringOfIntegers]
+
+end PrimesOver
+
+end TauCeti

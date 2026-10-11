@@ -33,6 +33,8 @@ The grading is induced from the grading of `R[X, Y, Z]` by total degree, using
 * `WeierstrassCurve.Projective.gradingZeroEquiv W'`: the degree-zero part of the coordinate ring
   is the base ring `R`.
 * `WeierstrassCurve.Projective.evalZero W'`: evaluation at the point `[0 : 1 : 0]`.
+* `WeierstrassCurve.Projective.evalHom W' g hP`: evaluation at a solution `P` of the projective
+  equation of `W'.map g`, for a ring homomorphism `g`.
 * `WeierstrassCurve.Projective.coord W' i`: the class of the homogeneous coordinate `Xᵢ`, of
   degree one.
 
@@ -44,6 +46,12 @@ The grading is induced from the grading of `R[X, Y, Z]` by total degree, using
   homogeneous coordinate ring is `R`; hence `Proj` of it lies over `Spec R`.
 * `WeierstrassCurve.Projective.irrelevant_le_span_range_coord`: the three coordinates generate the
   irrelevant ideal, so the standard charts `D₊(Xᵢ)` cover `Proj` of the coordinate ring.
+* `WeierstrassCurve.Projective.equation_coord`: the classes of the coordinates are a solution of the
+  equation over the coordinate ring, nonzero over a nontrivial ring (`coord_ne_zero`).
+* `WeierstrassCurve.Projective.eq_evalHom` and `WeierstrassCurve.Projective.ringHom_ext`: a ring
+  homomorphism out of the coordinate ring is determined by its values on `R` and on the
+  coordinates; `evalHom` is the one with prescribed values (`evalHom_comp_algebraMap`,
+  `evalHom_comp_coord`).
 
 ## References
 
@@ -179,5 +187,76 @@ noncomputable def evalZero : W'.CoordinateRing →ₐ[R] R :=
 theorem evalZero_mk (p : MvPolynomial (Fin 3) R) :
     W'.evalZero (Ideal.Quotient.mk _ p) = eval ![0, 1, 0] p := by
   simp [evalZero]
+
+/-- The base ring acts faithfully on the homogeneous coordinate ring, as on the affine coordinate
+ring `WeierstrassCurve.Affine.CoordinateRing`. -/
+instance : FaithfulSMul R W'.CoordinateRing :=
+  -- evaluation at `[0 : 1 : 0]` is a retraction of the structure map
+  (faithfulSMul_iff_algebraMap_injective R _).mpr <|
+    Function.LeftInverse.injective W'.evalZero.commutes
+
+section Eval
+
+variable {S : Type*} [CommRing S] (g : R →+* S) {P : Fin 3 → S} (hP : (W'.map g).Equation P)
+
+/-- Evaluation of the homogeneous coordinate ring at a solution `P` of the projective Weierstrass
+equation of `W'.map g`, for a ring homomorphism `g : R →+* S`: the ring homomorphism
+`R[X₀, X₁, X₂] ⧸ (W'(X₀, X₁, X₂)) →+* S` that is `g` on `R` and sends the class of `Xᵢ` to
+`Pᵢ`. -/
+noncomputable def evalHom : W'.CoordinateRing →+* S :=
+  Ideal.Quotient.lift _ (eval₂Hom g P) <| (RingHom.ker _).span_singleton_le_iff_mem.mpr <| by
+    simpa [Equation] using hP
+
+/-- `evalHom` sends the class of a polynomial `p` to its value `p(P)`, the coefficients of `p`
+being mapped to `S` by `g`. -/
+@[simp]
+theorem evalHom_mk (p : MvPolynomial (Fin 3) R) :
+    W'.evalHom g hP (Ideal.Quotient.mk _ p) = eval₂ g P p :=
+  Ideal.Quotient.lift_mk _ _ _
+
+/-- `evalHom` restricts to `g` on the base ring `R`. -/
+theorem evalHom_comp_algebraMap : (W'.evalHom g hP).comp (algebraMap R W'.CoordinateRing) = g :=
+  -- `algebraMap R W'.CoordinateRing r` is the class of the constant polynomial `C r`
+  RingHom.ext fun r ↦ (W'.evalHom_mk g hP (C r)).trans (eval₂_C g P r)
+
+/-- `evalHom` sends the class of each coordinate `Xᵢ` to `Pᵢ`. -/
+theorem evalHom_comp_coord : W'.evalHom g hP ∘ W'.coord = P :=
+  funext fun i ↦ (W'.evalHom_mk g hP (X i)).trans (eval₂_X g P i)
+
+/-- Pushing the curve over the homogeneous coordinate ring forward along `evalHom` gives the curve
+`W'.map g`. -/
+theorem map_evalHom :
+    (W'.map (algebraMap R W'.CoordinateRing)).map (W'.evalHom g hP) = W'.map g :=
+  (W'.map_map _ _).trans (congrArg W'.map (W'.evalHom_comp_algebraMap g hP))
+
+/-- Two ring homomorphisms out of the homogeneous coordinate ring are equal when they agree on the
+base ring and on the classes of the coordinates. -/
+theorem ringHom_ext {f₁ f₂ : W'.CoordinateRing →+* S}
+    (h₁ : f₁.comp (algebraMap R W'.CoordinateRing) = f₂.comp (algebraMap R W'.CoordinateRing))
+    (h₂ : f₁ ∘ W'.coord = f₂ ∘ W'.coord) : f₁ = f₂ :=
+  Ideal.Quotient.ringHom_ext <|
+    MvPolynomial.ringHom_ext (fun r ↦ RingHom.congr_fun h₁ r) (fun i ↦ congrFun h₂ i)
+
+/-- `evalHom` is the only ring homomorphism out of the homogeneous coordinate ring that restricts to
+`g` on `R` and sends the class of each coordinate `Xᵢ` to `Pᵢ`. -/
+theorem eq_evalHom {f : W'.CoordinateRing →+* S} (h₁ : f.comp (algebraMap R W'.CoordinateRing) = g)
+    (h₂ : f ∘ W'.coord = P) : f = W'.evalHom g hP :=
+  W'.ringHom_ext (h₁.trans (W'.evalHom_comp_algebraMap g hP).symm)
+    (h₂.trans (W'.evalHom_comp_coord g hP).symm)
+
+end Eval
+
+/-- The classes of the homogeneous coordinates form a solution of the Weierstrass equation over the
+homogeneous coordinate ring. -/
+theorem equation_coord : (W'.map (algebraMap R W'.CoordinateRing)).Equation W'.coord := by
+  -- `coord` is the quotient map on the variables, so evaluating there is the quotient map
+  change (W'.map _).Equation (Ideal.Quotient.mkₐ R _ ∘ X)
+  rw [Equation, map_polynomial, eval_map, ← aeval_def, ← aeval_unique, Ideal.Quotient.mkₐ_eq_mk,
+    Ideal.Quotient.mk_singleton_self]
+
+/-- Over a nontrivial ring, the solution given by the classes of the homogeneous coordinates is
+nonzero. -/
+theorem coord_ne_zero [Nontrivial R] : W'.coord ≠ 0 :=
+  fun h ↦ by simpa using congrArg W'.evalZero (congrFun h 1)
 
 end WeierstrassCurve.Projective

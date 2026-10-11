@@ -739,7 +739,6 @@ theorem deconcatenation_comp_reducedInclusion :
   rw [reducedInclusion_of, of_tprod_eq_subword R x,
     ReducedTensorWords.of_tprod_eq_subword R n.2 x, deconcatenation_subword R x,
     ReducedTensorWords.deconcatenation_subword R x, map_sum]
-  have hn := n.2
   have hsplit : Finset.range (n.1 + 1) = insert 0 (insert n.1 (Finset.Ioo 0 n.1)) := by
     ext c
     simp only [Finset.mem_range, Finset.mem_insert, Finset.mem_Ioo]

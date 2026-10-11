@@ -56,6 +56,12 @@ theorem splitEvenForm_apply (K : Type u) [CommRing K] (n : ℕ)
     (x : SplitEvenSpace K n) : splitEvenForm K n x = x.1 x.2 := by
   simp [splitEvenForm]
 
+/-- The standard split quadratic form is nondegenerate over every commutative ring. -/
+theorem nondegenerate_splitEvenForm (K : Type u) [CommRing K] (n : ℕ) :
+    (splitEvenForm K n).Nondegenerate := by
+  rw [splitEvenForm]
+  exact nondegenerate_dualProd (Module.eval_apply_injective K)
+
 /-- Polarization formula for the standard split quadratic form. -/
 @[simp]
 theorem polar_splitEvenForm (K : Type u) [CommRing K] (n : ℕ)

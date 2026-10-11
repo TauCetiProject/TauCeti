@@ -1,12 +1,13 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
 public import Mathlib.LinearAlgebra.FreeModule.PID
 public import TauCeti.LinearAlgebra.IntegralLattice.Even
+public import TauCeti.LinearAlgebra.IntegralLattice.Ideals
 public import TauCeti.LinearAlgebra.IntegralLattice.Rationalization
 public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
@@ -40,7 +41,8 @@ The rationalization uses `IntegralLattice.ofIntegralForm` and Mathlib's
   `restrictMap_injective`, `range_restrictMap`, `form_restrictMap`, and
   `map_restrictMap_restrict_carrier`.
 * `TauCeti.IntegralLattice.restrictFull`: restriction to a full ambient submodule contained in the
-  original carrier, retaining the original rational ambient space.
+  original carrier, retaining the original rational ambient space; it inherits nondegeneracy and,
+  by `isEven_restrictFull`, evenness.
 * `TauCeti.IntegralLattice.restrictFullIsometry`: the canonical comparison of the two restrictions
   when the embedded submodule is full.
 
@@ -108,6 +110,28 @@ theorem integralNorm_restrictCarrierEquiv (L : IntegralLattice V) (S : Submodule
     (L.restrict S).integralNorm (L.restrictCarrierEquiv S s) = L.integralNorm s := by
   rw [integralNorm_apply, integralForm_restrictCarrierEquiv, integralNorm_apply]
 
+/-- Restriction to any carrier submodule gives containment of scale ideals. -/
+theorem scaleIdeal_restrict_le (L : IntegralLattice V) (S : Submodule ℤ L) :
+    (L.restrict S).scaleIdeal ≤ L.scaleIdeal := by
+  apply (L.restrict S).scaleIdeal_le_of_integralForm_eq
+    (S.subtype.comp (L.restrictCarrierEquiv S).symm.toLinearMap)
+  intro x y
+  simpa only [LinearEquiv.apply_symm_apply, LinearMap.comp_apply,
+    LinearEquiv.coe_toLinearMap, Submodule.subtype_apply] using
+    L.integralForm_restrictCarrierEquiv S
+      ((L.restrictCarrierEquiv S).symm x) ((L.restrictCarrierEquiv S).symm y)
+
+/-- Restriction to any carrier submodule gives containment of norm ideals. -/
+theorem normIdeal_restrict_le (L : IntegralLattice V) (S : Submodule ℤ L) :
+    (L.restrict S).normIdeal ≤ L.normIdeal := by
+  apply (L.restrict S).normIdeal_le_of_integralForm_eq
+    (S.subtype.comp (L.restrictCarrierEquiv S).symm.toLinearMap)
+  intro x y
+  simpa only [LinearEquiv.apply_symm_apply, LinearMap.comp_apply,
+    LinearEquiv.coe_toLinearMap, Submodule.subtype_apply] using
+    L.integralForm_restrictCarrierEquiv S
+      ((L.restrictCarrierEquiv S).symm x) ((L.restrictCarrierEquiv S).symm y)
+
 /-- A restricted lattice is even exactly when the original integral norm is even on the
 submodule. In particular restriction preserves evenness. -/
 theorem isEven_restrict_iff (L : IntegralLattice V) (S : Submodule ℤ L) :
@@ -131,7 +155,7 @@ theorem restrictMap_tmul (L : IntegralLattice V) (S : Submodule ℤ L) (q : ℚ)
 form is needed. -/
 theorem restrictMap_injective (L : IntegralLattice V) (S : Submodule ℤ L) :
     Function.Injective (L.restrictMap S) :=
-  (L.carrier.subtype.comp S.subtype).liftBaseChange_injective (K := ℚ)
+  (L.carrier.subtype.comp S.subtype).liftBaseChange_injective (K := ℚ) (nonZeroDivisors ℤ)
     (L.carrier.injective_subtype.comp S.injective_subtype)
 
 /-- The range of the rational inclusion is exactly the rational span of the embedded submodule. -/
@@ -185,6 +209,21 @@ theorem restrictFull_carrier (L : IntegralLattice V) (N : Submodule ℤ V) (hN :
 theorem restrictFull_form (L : IntegralLattice V) (N : Submodule ℤ V) (hN : N ≤ L.carrier)
     [N.IsLattice ℚ] : (L.restrictFull N hN).form = L.form :=
   ofSubmodule_form _ _ _ _
+
+/-- Full restriction of a nondegenerate lattice is nondegenerate, since the form is unchanged. -/
+instance instIsNondegenerateRestrictFull (L : IntegralLattice V) [L.IsNondegenerate]
+    (N : Submodule ℤ V) (hN : N ≤ L.carrier) [N.IsLattice ℚ] :
+    (L.restrictFull N hN).IsNondegenerate :=
+  ⟨by rw [restrictFull_form]; exact L.form_nondegenerate⟩
+
+/-- Full restriction of an even lattice is even. -/
+theorem isEven_restrictFull {L : IntegralLattice V} (hL : L.IsEven) (N : Submodule ℤ V)
+    (hN : N ≤ L.carrier) [N.IsLattice ℚ] : (L.restrictFull N hN).IsEven := by
+  rw [isEven_iff_forall_norm]
+  rintro ⟨x, hx⟩
+  rw [restrictFull_carrier] at hx
+  obtain ⟨z, hz⟩ := hL.exists_norm_eq_two_mul ⟨x, hN hx⟩
+  exact ⟨z, by rwa [norm_apply, restrictFull_form, ← norm_apply]⟩
 
 /-- Fullness supplies the surjectivity needed to bundle the comparison as an isometry. -/
 private theorem restrictMap_bijective (L : IntegralLattice V) (S : Submodule ℤ L)

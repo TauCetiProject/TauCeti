@@ -10,7 +10,9 @@ public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 /-!
 # Compact operators and bounded sequences
 
-This file records sequential consequences of compactness for bounded sequences in normed spaces.
+This file records sequential consequences of compactness for bounded sequences in seminormed
+spaces. These give the subsequence and separation arguments used in Riesz theory for compact
+perturbations of the identity.
 
 ## Main declarations
 
@@ -22,25 +24,19 @@ This file records sequential consequences of compactness for bounded sequences i
 
 public section
 
-namespace TauCeti
+namespace IsCompactOperator
 
 open Filter
 open scoped Topology
 
 variable {𝕜 X Y : Type*} [NontriviallyNormedField 𝕜]
-variable [NormedAddCommGroup X] [NormedSpace 𝕜 X]
-variable [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
-variable {K : X →L[𝕜] Y}
-
-section
-
-section Separation
-
+variable [SeminormedAddCommGroup X] [NormedSpace 𝕜 X]
+variable [SeminormedAddCommGroup Y] [NormedSpace 𝕜 Y]
+variable {K : X →ₗ[𝕜] Y}
 variable {R : ℝ} {u : ℕ → X}
 
 /-- A compact operator sends a bounded sequence to a sequence with a convergent subsequence. -/
-theorem _root_.IsCompactOperator.exists_subseq_tendsto (hK : IsCompactOperator K) (hu : ∀ n,
-    ‖u n‖ ≤ R) :
+theorem exists_subseq_tendsto (hK : IsCompactOperator K) (hu : ∀ n, ‖u n‖ ≤ R) :
     ∃ (y : Y) (ψ : ℕ → ℕ), StrictMono ψ ∧ Tendsto (fun k => K (u (ψ k))) atTop (𝓝 y) := by
   obtain ⟨S, hS, hSsub⟩ := hK.image_closedBall_subset_compact R
   obtain ⟨y, -, ψ, hψ, hψy⟩ :=
@@ -49,19 +45,14 @@ theorem _root_.IsCompactOperator.exists_subseq_tendsto (hK : IsCompactOperator K
 
 /-- A compact operator cannot keep the images of a bounded sequence pairwise separated: two
 distinct indices always have images within any prescribed positive distance. -/
-theorem _root_.IsCompactOperator.exists_dist_lt_of_norm_le (hK : IsCompactOperator K) (hu : ∀ n,
-    ‖u n‖ ≤ R) {ε : ℝ}
+theorem exists_dist_lt_of_norm_le (hK : IsCompactOperator K) (hu : ∀ n, ‖u n‖ ≤ R) {ε : ℝ}
     (hε : 0 < ε) : ∃ m n, m ≠ n ∧ dist (K (u m)) (K (u n)) < ε := by
-  obtain ⟨y, ψ, hψ, hψy⟩ := IsCompactOperator.exists_subseq_tendsto hK hu
+  obtain ⟨y, ψ, hψ, hψy⟩ := hK.exists_subseq_tendsto hu
   have hcauchy := hψy.cauchySeq
   rw [Metric.cauchySeq_iff'] at hcauchy
   obtain ⟨N, hN⟩ := hcauchy ε hε
   exact ⟨ψ (N + 1), ψ N, by simp [hψ.injective.eq_iff], hN (N + 1) (Nat.le_succ N)⟩
 
-end Separation
-
-end
-
-end TauCeti
+end IsCompactOperator
 
 end

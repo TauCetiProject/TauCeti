@@ -52,7 +52,7 @@ theorem isFundamentalDiscriminant_neg_eighty_four : IsFundamentalDiscriminant (-
     isEvenPrimeDiscriminant_neg_four (s := ({3, 7} : Finset ℕ)) (p := id)
     (by intro i hi; fin_cases hi <;> norm_num)
     (by intro i hi; fin_cases hi <;> exact Nat.odd_iff.mpr rfl)
-    (by intro i hi j hj hij; simpa using hij)
+    (by intro i _ j _ hij; simpa using hij)
   have h3 : oddPrimeDiscriminant 3 = -3 := oddPrimeDiscriminant_of_mod_four_eq_three (by norm_num)
   have h7 : oddPrimeDiscriminant 7 = -7 := oddPrimeDiscriminant_of_mod_four_eq_three (by norm_num)
   have hval : (-4 : ℤ) * ∏ i ∈ ({3, 7} : Finset ℕ), oddPrimeDiscriminant (id i) = -84 := by

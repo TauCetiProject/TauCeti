@@ -29,7 +29,7 @@ sum pins the difference to `1`, `0` or `-1`.
 The argument is Schur's lemma applied through a contraction. An orthonormal basis `e` carries the
 bilinear form `B(v, w) = ⟪J v, w⟫` and the contraction
 `TauCeti.tensorSquareEquivEnd e : V ⊗[𝕜] V ≃ₗ[𝕜] (V →ₗ[𝕜] V)`; unitarity of `π` makes `B` invariant
-for the pair `(π, {}^J π)`, where `{}^J π = TauCeti.ContRepresentation.conjugate e π` is the
+for the pair `(π, {}^J π)`, where `{}^J π = OrthonormalBasis.conjugate e π` is the
 conjugate representation, so an **invariant** tensor contracts to an intertwiner `{}^J π ⟶ π`.
 Schur's lemma makes a nonzero such intertwiner surjective, hence bijective, and then every other
 one is a scalar multiple of it, because the two composed through the inverse commute with `π`.
@@ -67,9 +67,7 @@ statement about its irreducibility or its character.
 
 ## References
 
-This is the linear-algebra half of the Frobenius-Schur reality trichotomy of Layer 6b of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md);
-the trichotomy itself is in
+The Frobenius-Schur reality trichotomy itself is in
 `TauCeti/RepresentationTheory/Compact/FrobeniusSchur/Trichotomy.lean`. The mathematical development
 follows Daniel Bump, *Lie Groups*, second edition, Chapter 2, and T. Bröcker and T. tom Dieck,
 *Representations of Compact Lie Groups*, Springer GTM 98 (1985), Chapter II.
@@ -77,7 +75,9 @@ follows Daniel Bump, *Lie Groups*, second edition, Chapter 2, and T. Bröcker an
 
 public section
 
-open Module TauCeti TauCeti.ContRepresentation
+open _root_.ContRepresentation
+
+open Module TauCeti
 
 open scoped InnerProductSpace TensorProduct
 
@@ -121,11 +121,12 @@ theorem tensorSquareEquivEnd_conjCLM_of_mem_invariants (hπ : IsUnitary π) {t :
 /-- The intertwiner `{}^J π ⟶ π` that an invariant tensor contracts to. -/
 noncomputable def invariantTensorIntertwiner (hπ : IsUnitary π) {t : V ⊗[𝕜] V}
     (ht : t ∈ (tprod π π).invariants) :
-    Representation.IntertwiningMap (conjugate e π).toRepresentation π.toRepresentation :=
+    Representation.IntertwiningMap (OrthonormalBasis.conjugate e π).toRepresentation
+        π.toRepresentation :=
   (tensorSquareEquivEnd e t).intertwiningMap_of_isIntertwiningMap
-    (conjugate e π).toRepresentation π.toRepresentation fun g u ↦ by
+    (OrthonormalBasis.conjugate e π).toRepresentation π.toRepresentation fun g u ↦ by
       have h := tensorSquareEquivEnd_conjCLM_of_mem_invariants e π hπ ht g u
-      rw [← conjugate_apply e π g] at h
+      rw [← OrthonormalBasis.conjugate_apply e π g] at h
       exact h
 
 @[simp]
@@ -154,7 +155,7 @@ theorem tensorSquareEquivEnd_bijective_of_mem_invariants (hπ : IsUnitary π)
     intro h
     refine ht0 ((tensorSquareEquivEnd e).map_eq_zero_iff.mp (LinearMap.ext fun u ↦ ?_))
     have hu : invariantTensorIntertwiner e π hπ ht u
-        = (0 : Representation.IntertwiningMap (conjugate e π).toRepresentation
+        = (0 : Representation.IntertwiningMap (OrthonormalBasis.conjugate e π).toRepresentation
             π.toRepresentation) u := by rw [h]
     simpa using hu
   have hsurj : Function.Surjective (tensorSquareEquivEnd e t) :=

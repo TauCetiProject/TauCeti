@@ -51,6 +51,9 @@ coordinate algebra.
   precomposition by the corresponding spectrum morphism.
 * `TauCeti.CommHopfAlgCat.mapMulEquivOfPresentation_mapValue`: the same covariance after
   transport across a named presentation.
+* `TauCeti.CommHopfAlgCat.mapMulEquivOfPresentation_symm_trans_mapValue`: covariance in the
+  value algebra of a points equivalence read through a named presentation, from its covariance
+  on algebra points.
 * `TauCeti.CommHopfAlgCat.mapMulEquiv_mapDomain`: a coordinate bialgebra morphism
   becomes postcomposition by the induced relative spectrum morphism `Spec K ⟶ Spec H`.
 * `TauCeti.CommHopfAlgCat.pointMulEquivOfPresentation_mapDomain`: contravariance for arbitrary
@@ -398,6 +401,26 @@ theorem mapMulEquivOfPresentation_mapValue
     simp only [Over.comp_left, OverClass.asOverHom_left, mapMulEquiv_left] at hmapLeft
     exact hmapLeft
   simpa only [q] using hq
+
+/-- Naturality in the value algebra of a points equivalence read through a named presentation.
+If `eA` and `eB` identify the convolution points of `H` over `A` and `B` with `M` and `N` and
+intertwine `AlgHom.mapValue φ` with `m : M → N`, then the composites with the transported
+spectrum-points equivalence intertwine precomposition by `Spec B ⟶ Spec A` with `m`. -/
+theorem mapMulEquivOfPresentation_symm_trans_mapValue
+    (H : _root_.CommHopfAlgCat.{u} R)
+    {A B : Type u} [CommRing A] [CommRing B] [Algebra R A] [Algebra R B]
+    (φ : A →ₐ[R] B) {G : Grp (Over (Spec (CommRingCat.of R)))}
+    (hG : G = (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj (Opposite.op H))
+    {M N : Type*} [Mul M] [Mul N]
+    (eA : WithConv (H →ₐ[R] A) ≃* M) (eB : WithConv (H →ₐ[R] B) ≃* N) (m : M → N)
+    (h : ∀ q, eB (AlgHom.mapValue φ q) = m (eA q))
+    (p : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of R)) ⟶ G.X) :
+    ((mapMulEquivOfPresentation H B hG).symm.trans eB)
+        ((Spec.map (CommRingCat.ofHom φ.toRingHom)).asOver (Spec (CommRingCat.of R)) ≫ p) =
+      m (((mapMulEquivOfPresentation H A hG).symm.trans eA) p) := by
+  rw [MulEquiv.trans_apply, MulEquiv.trans_apply, mapMulEquivOfPresentation_mapValue,
+    HopfAlgebra.mapPoints_apply, ← AlgHom.mapValue_apply]
+  exact h _
 
 private lemma transportedHopfSpecMap_left
     {H K : _root_.CommHopfAlgCat.{u} R}

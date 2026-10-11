@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Exchangeability.FiniteMarginals
+public import TauCeti.Probability.Process.PathLaw.FiniteMarginals
 public import TauCeti.Probability.Exchangeability.PathSpace.Law.Basic
+import TauCeti.Data.Fin.StrictMono
 
 /-!
 # Contractable laws on path space
@@ -87,7 +88,7 @@ theorem ContractableLaw.map_prefixProj_of_strictMono {ρ : Measure (ℕ → α)}
     (hρ : ContractableLaw ρ) {n : ℕ} {k : Fin n → ℕ} (hk : StrictMono k) :
     ρ.map (fun x : ℕ → α => fun i : Fin n => x (k i)) =
       ρ.map (prefixProj α n) := by
-  obtain ⟨φ, hφ, hφ_eq⟩ := exists_strictMono_nat_extending_fin hk
+  obtain ⟨φ, hφ, hφ_eq⟩ := hk.exists_strictMono_nat_extending_fin
   have hmap := congrArg (fun ν : Measure (ℕ → α) => ν.map (prefixProj α n))
     (hρ.map_reindex hφ)
   rw [map_reindex_prefixProj] at hmap

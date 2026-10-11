@@ -10,11 +10,9 @@ public import TauCeti.GroupTheory.Presentation.Coxeter
 /-!
 # A transcribed presentation of the second Fischer group
 
-This file carries the `Fi₂₃` row of the sporadic presentation data required by milestone S1 of
-`TauCetiRoadmap/CFSGStatement/README.md`. It records presentation `GPLTable.Fi23.1` from Roderik
-Lindenbergh's Group Presentations Library as a `TauCeti.GroupPresentation`, together with the exact
-source, generator convention, transcription notes, expected counts, and decidable checks on the
-transcription.
+This file records presentation `GPLTable.Fi23.1` from Roderik Lindenbergh's Group Presentations
+Library as a `TauCeti.GroupPresentation`, together with the exact source, generator convention,
+transcription notes, expected counts, and decidable checks on the transcription.
 
 The presentation uses the Coxeter graph
 
@@ -69,8 +67,7 @@ df,dg,di,dj, eg,eh,ei,ej, fh,fi,fj, gh,gi, hj,ij.
 Entries 56 and 57 are `(dcbdefdhi)¹⁰` and `(abcdefh)⁹`. Translating source letters to zero-based
 generator indices gives exactly `fi23Presentation_relatorLetters`: there is no change to any word
 or exponent and no dropped or duplicated relation, only the presentation-irrelevant regrouping by
-kind just described. This closes the row's S1 source-to-Lean read-through. The separate
-`FiniteSimpleGroups` comparison does not apply because that development does not cover `Fi₂₃`.
+kind just described.
 
 The row publishes an equation for each of its fields: the transcribed relator expressions with
 their generator indices written out, and the provenance a manifest row exists to record. Together

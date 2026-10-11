@@ -12,6 +12,7 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.GroupCohom
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Coinduced
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.LongExactSequence
 import TauCeti.RepresentationTheory.Rep.TensorShortExact
+import TauCeti.RepresentationTheory.Coinduced
 
 /-!
 # Continuous cohomology of a finite discrete group in every degree
@@ -90,7 +91,7 @@ private def coindBotToCoindQuotient :
           map_add' := fun _ _ => DiscreteCoind.ext fun _ => by simp }
       isIntertwining' := fun g => LinearMap.ext fun f =>
         (congrArg (CoindQuotient.mk G ⊥ M) (DiscreteCoind.ext fun x => by
-          simpa using Rep.coindBot_ρ_apply_coe (k := ℤ) M g f x)).trans
+          simpa using Representation.coind_apply_coe_apply _ _ f g x)).trans
           (CoindQuotient.mk_smul g _) }
 
 /-- The projection reads a function `f : G → M` as the class of `f` in `Coind_1^G M ⧸ M`. -/

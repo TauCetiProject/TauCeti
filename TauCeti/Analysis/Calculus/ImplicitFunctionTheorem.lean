@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.Implicit
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
+public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 /-!
@@ -59,6 +60,9 @@ Mathlib's lemma.
   inverse homeomorphism is `C^n` at every point of the target coming from that neighbourhood.
 * `HasStrictFDerivAt.surjective_of_mem_implicitCoordSource`: the derivative of the equation stays
   surjective on that neighbourhood.
+* `HasStrictFDerivAt.exists_isSliceChart_preimage_zero`: near a point where a `C^n` map has
+  surjective derivative with complemented kernel, a `C^n` ambient chart flattens its zero set onto
+  that kernel.
 -/
 
 public section
@@ -271,6 +275,46 @@ theorem eventually_implicitFunctionOfComplemented_eq (hf : HasStrictFDerivAt f f
   simp only [Set.mem_preimage, Set.mem_ofPred_eq] at hkey
   rw [hright, hfst] at hkey
   exact hkey
+
+/-- **A regular zero set is flattened by an ambient chart.** If `f` is `C^n` (`n ≠ 0`) on an open
+set `U` around `a`, with surjective strict derivative `f'` at `a` whose kernel is complemented,
+then a `C^n` chart of `E` with `C^n` inverse, defined around `a` with source inside `U`, flattens
+the zero set of `f` onto `ker f'`. -/
+theorem exists_isSliceChart_preimage_zero {n : ℕ∞ω} (hn : n ≠ 0) (hf : HasStrictFDerivAt f f' a)
+    (hf' : f'.range = ⊤) (hker : f'.ker.ClosedComplemented) {U : Set E} (hU : IsOpen U)
+    (haU : a ∈ U) (hC : ∀ z ∈ U, ContDiffAt K n f z) :
+    ∃ e : OpenPartialHomeomorph E E, a ∈ e.source ∧ e.source ⊆ U ∧
+      (∀ z ∈ e.source, ContDiffAt K n e z) ∧
+      (∀ z ∈ e.target, ContDiffAt K n e.symm z) ∧
+      TauCeti.IsSliceChart e (f'.ker : Set E) (f ⁻¹' {0}) := by
+  have : CompleteSpace f'.ker := hker.isClosed.completeSpace_coe
+  -- Straighten `f` with the implicit-function chart `x ↦ (f x, P (x - a))`, then return to `E`
+  -- through its derivative `J`, which carries `{0} × ker f'` onto `ker f'`.
+  set Φ := hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker
+  set J := f'.implicitCoordEquiv hf' hker
+  have hJ (p : F × f'.ker) : f' (J.symm p) = p.1 := by
+    have := congrArg Prod.fst (J.apply_symm_apply p)
+    rwa [← ContinuousLinearEquiv.coe_coe, ContinuousLinearMap.coe_implicitCoordEquiv] at this
+  set W := U ∩ hf.implicitCoordSource hf' hker
+  have hW : IsOpen W := hU.inter (hf.isOpen_implicitCoordSource hf' hker)
+  set e := (Φ.restrOpen W hW).transHomeomorph J.symm.toHomeomorph
+  -- The inverse chart first applies `J`, then the inverse implicit-function homeomorphism.
+  have he_symm : ⇑e.symm = Φ.symm ∘ J := rfl
+  refine ⟨e, ⟨hf.mem_implicitToOpenPartialHomeomorphOfComplemented_source hf' hker, haU,
+      hf.mem_implicitCoordSource hf' hker⟩, fun z hz ↦ hz.2.1, fun z hz ↦ ?_, fun w hw ↦ ?_,
+    TauCeti.isSliceChart_iff.2 fun z _ ↦ ?_⟩
+  · exact J.symm.contDiff.contDiffAt.comp z
+      (hf.contDiffAt_implicitToOpenPartialHomeomorphOfComplemented (hC z hz.2.1) hf' hker)
+  · obtain ⟨hwt, hwW⟩ := hw
+    have hCw := hC _ hwW.1
+    rw [he_symm]
+    exact (hf.contDiffAt_implicitToOpenPartialHomeomorphOfComplemented_symm_of_mem hf' hker hwt
+      hwW.2 ((hCw.differentiableAt hn).hasFDerivAt) hCw).comp w J.contDiff.contDiffAt
+  · simp only [e, OpenPartialHomeomorph.transHomeomorph_apply, Function.comp_apply,
+      ContinuousLinearEquiv.coe_toHomeomorph, SetLike.mem_coe, LinearMap.mem_ker,
+      ContinuousLinearMap.coe_coe, hJ, OpenPartialHomeomorph.coe_restrOpen, Φ,
+      HasStrictFDerivAt.implicitToOpenPartialHomeomorphOfComplemented_fst, mem_preimage,
+      mem_singleton_iff]
 
 end HasStrictFDerivAt
 

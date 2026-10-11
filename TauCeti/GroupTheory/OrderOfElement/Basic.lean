@@ -24,6 +24,9 @@ In a finite additive group with one, the cardinality casts to `0`, as Mathlib's
 By Euler's theorem, raising an `n`-th root of unity to the power `q ^ φ(n)`, for `q` prime to `n`,
 does nothing.
 
+An element squaring to `1` only sees the parity of its exponent, so identities between products
+of powers of such elements reduce to congruences modulo `2` between the exponents.
+
 If conjugation by `s` raises an element `t` of finite order to a power `q`, then `q` is
 prime to the order of `t`, since conjugation preserves orders, and so `s` normalizes the cyclic
 subgroup `⟨t⟩`. This is the finite shadow of a relation `s t s⁻¹ = t ^ q`, such as the one between
@@ -37,6 +40,8 @@ Frobenius and tame inertia.
   cardinality `q`, the cast of `q - 1` is `-1`, a companion of Mathlib's `Nat.cast_card_eq_zero`.
 * `TauCeti.pow_pow_totient_eq_self`: `x ^ q ^ φ(n) = x` whenever `x ^ n = 1` and `q` is prime to
   `n`.
+* `TauCeti.mul_pow_eq_of_sq_eq_one`: in a commutative monoid, exponents of elements squaring to
+  `1` only matter modulo `2`.
 * `TauCeti.coprime_orderOf_of_mul_mul_inv_eq_pow`,
   `TauCeti.mem_normalizer_zpowers_of_mul_mul_inv_eq_pow`: if `s * t * s⁻¹ = t ^ q` with `t` of
   finite order, then `q` is prime to the order of `t` and `s` normalizes `⟨t⟩`.
@@ -88,6 +93,20 @@ theorem natCast_natCard_sub_one_eq_neg_one (R : Type*) [AddGroupWithOne R] [Fini
 theorem pow_pow_totient_eq_self {M : Type*} [Monoid M] {q n : ℕ} (hq : q.Coprime n) {x : M}
     (hx : x ^ n = 1) : x ^ q ^ n.totient = x := by
   rw [pow_eq_pow_mod _ hx, Nat.ModEq.pow_totient hq, ← pow_eq_pow_mod _ hx, pow_one]
+
+/-- **Only parities matter for `2`-torsion exponents.** In a commutative monoid whose elements
+`u, v, w, z` square to `1`, an identity between products of their powers holds as soon as the
+exponents agree modulo `2`: here `S * (u * v) ^ A * (w * z) ^ B * w ^ C * u ^ D` regroups as
+`S * z * (v * w) ^ E * u ^ F`. This is the sign bookkeeping behind induction steps on products
+of quaternion symbols with binomial exponents. -/
+theorem mul_pow_eq_of_sq_eq_one {G : Type*} [CommMonoid G] {S u v w z : G}
+    (hu : u ^ 2 = 1) (hv : v ^ 2 = 1) (hw : w ^ 2 = 1) (hz : z ^ 2 = 1) {A B C D E F : ℕ}
+    (hF : F ≡ A + D [MOD 2]) (hE : E ≡ A [MOD 2]) (hBC : E ≡ B + C [MOD 2]) (hB : 1 ≡ B [MOD 2]) :
+    S * (u * v) ^ A * (w * z) ^ B * w ^ C * u ^ D = S * z * (v * w) ^ E * u ^ F := by
+  conv_rhs => rw [pow_eq_pow_of_modEq hF hu, mul_pow, pow_eq_pow_of_modEq hE hv,
+    pow_eq_pow_of_modEq hBC hw, ← pow_one z, pow_eq_pow_of_modEq hB hz]
+  simp only [mul_pow, pow_add]
+  ac_rfl
 
 section Conj
 

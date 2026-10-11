@@ -9,7 +9,7 @@ public import Mathlib.GroupTheory.FreeGroup.IsFreeGroup
 public import TauCeti.AlgebraicTopology.FundamentalGroup.CoverGeneration
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.PuncturedHalfPlanes
 
-import TauCeti.AlgebraicTopology.FundamentalGroup.VanKampen
+import TauCeti.AlgebraicTopology.FundamentalGroup.VanKampen.Basic
 
 /-!
 # The fundamental group of the thrice-punctured sphere

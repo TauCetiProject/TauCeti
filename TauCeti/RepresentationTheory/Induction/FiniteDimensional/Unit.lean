@@ -53,7 +53,7 @@ variable {k G : Type u} [Field k] [Group G] {S : Subgroup G} [S.FiniteIndex]
 /-- The unit of induction--restriction on finite-dimensional representations: the unit of
 Mathlib's adjunction `Rep.indResAdjunction`, transported to the small carrier of `indFDRep`
 along `indFDRepForgetIso`.  Under that comparison it sends `a` to the generator `⟦1 ⊗ a⟧`. -/
-noncomputable def indFDRepUnit (A : FDRep k S) : A ⟶ resFDRep S (indFDRep A) :=
+noncomputable def indFDRepUnit (A : FDRep k S) : A ⟶ Subgroup.resFDRep S (indFDRep A) :=
   -- The universes of `Rep.indResAdjunction` are pinned: left to unification, the constraint
   -- `max u u ?w = u` makes elaborating this composite cost most of a second (see #8353).
   (forget₂ (FDRep k S) (Rep k S)).preimage <|
@@ -81,7 +81,8 @@ theorem indFDRepUnit_naturality {A B : FDRep k S} (f : A ⟶ B) :
   -- `forget₂_map_indFDRepUnit` puts Mathlib's adjunction unit into the goal, and its domain and
   -- codomain are `(𝟭 (Rep k S)).obj ((forget₂ (FDRep k S) (Rep k S)).obj A)` and
   -- `(Rep.resFunctor S.subtype).obj ((forget₂ (FDRep k G) (Rep k G)).obj (indFDRep A))`, which
-  -- match the goal's `(forget₂ (FDRep k S) (Rep k S)).obj A` and its `resFDRep S (indFDRep A)`
+  -- match the goal's `(forget₂ (FDRep k S) (Rep k S)).obj A` and its `Subgroup.resFDRep S (indFDRep
+  -- A)`
   -- counterpart only definitionally.  The rewritten composite is therefore not type-correct at
   -- `implicit` transparency, so `rw [Category.assoc]` fails to find `(?f ≫ ?g) ≫ ?h` in it; no
   -- rewrite can repair a wrapper mismatch in the *type* of a morphism, and restating the goal
@@ -93,7 +94,8 @@ theorem indFDRepUnit_naturality {A B : FDRep k S} (f : A ⟶ B) :
         (Rep.resFunctor S.subtype).map (indFDRepForgetIso B).inv = _
   rw [Category.assoc, Iso.inv_hom_id_map_assoc]
   -- `rw` performs this last rewrite as well, but the two sides then still differ in the instance
-  -- paths behind the `resFDRep` and `Rep.resFunctor` wrappers, which its closing reducible `rfl`
+  -- paths behind the `Subgroup.resFDRep` and `Rep.resFunctor` wrappers, which its closing reducible
+  -- `rfl`
   -- does not see; `erw` finishes up to those.
   erw [Adjunction.unit_naturality_assoc]
 
@@ -107,7 +109,8 @@ theorem indFDRepUnit_apply (A : FDRep k S) (a : A) :
   change (indFDRepForgetIso A).hom.hom
     (((forget₂ (FDRep k S) (Rep k S)).map (indFDRepUnit A)).hom a) = _
   rw [forget₂_map_indFDRepUnit]
-  -- The composite's codomain is `Rep.resFunctor`'s restriction while the goal's is `resFDRep`'s,
+  -- The composite's codomain is `Rep.resFunctor`'s restriction while the goal's is
+  -- `Subgroup.resFDRep`'s,
   -- so the `Semiring k` instance paths differ and `rw` cannot match these lemmas; `erw` can.
   erw [Rep.hom_comp, Representation.IntertwiningMap.comp_apply, Rep.resMap_hom_apply S.subtype,
     Rep.hom_inv_apply]

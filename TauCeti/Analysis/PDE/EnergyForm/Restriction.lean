@@ -15,7 +15,8 @@ public import TauCeti.Analysis.Sobolev.W1p.Restriction
 Let `U ⊆ Ω` be open sets. Testing the restriction `u|_U ∈ H¹(U)` of `u ∈ H¹(Ω)` against
 `v ∈ H¹₀(U)` is the same as testing `u` against the zero extension of `v` to `Ω`: both jets of
 the extension vanish off `U`, and on `U` the jets of `u` and `u|_U` agree. Consequently a weak
-subsolution on `Ω` restricts to a weak subsolution on `U`. This lets local estimates for weak
+subsolution on `Ω` restricts to a weak subsolution on `U`, and a weak solution of `L u = f` on `Ω`
+restricts to a weak solution of `L u = f` on `U`. This lets local estimates for weak
 subsolutions be proved on a ball, which has finite measure, without global integrability
 hypotheses on `Ω`.
 
@@ -24,6 +25,7 @@ hypotheses on `Ω`.
 * `TauCeti.PDE.energyFormH1_restrictL`: `a(u|_U, v) = a(u, v₀)` for `v ∈ H¹₀(U)` with zero
   extension `v₀ ∈ H¹₀(Ω)`.
 * `TauCeti.PDE.energyFormH1_restrictL_nonpos`: weak subsolutions restrict to weak subsolutions.
+* `TauCeti.PDE.energyFormH1_restrictL_eq_setIntegral`: weak solutions restrict to weak solutions.
 -/
 
 public section
@@ -103,6 +105,32 @@ theorem energyFormH1_restrictL_nonpos {a : EuclideanSpace ℝ ι → Matrix ι �
   · rw [indicator_of_mem hxU]
     exact hxv hxU
   · rw [indicator_of_notMem hxU]
+
+/-- **Weak solutions restrict to weak solutions.** If `u ∈ H¹(Ω)` satisfies
+`a(u, v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`, then for every open `U ⊆ Ω` its restriction `u|_U`
+satisfies `a(u|_U, v) = ∫_U f v` for every `v ∈ H¹₀(U)`. -/
+theorem energyFormH1_restrictL_eq_setIntegral {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ} (hU : U ≤ Omega)
+    {u : W1p mu Omega 2} {f : EuclideanSpace ℝ ι → ℝ}
+    (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) =
+      ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu)
+    (v : W1p0 mu U 2) :
+    energyFormH1 a b c (W1p.restrictL hU u) (v : W1p mu U 2) =
+      ∫ x in U, f x * W1p.value (v : W1p mu U 2) x ∂mu := by
+  have hUm := U.isOpen.measurableSet
+  have hUO : (U : Set (EuclideanSpace ℝ ι)) ⊆ Omega := SetLike.coe_subset_coe.mpr hU
+  rw [energyFormH1_restrictL, hu, W1p0.value_extendByZeroL]
+  calc ∫ x in Omega, f x * extendByZeroLpₗᵢ ℝ mu hUm hUO (W1p.value (v : W1p mu U 2)) x ∂mu
+      = ∫ x in Omega, (U : Set (EuclideanSpace ℝ ι)).indicator
+          (fun x => f x * W1p.value (v : W1p mu U 2) x) x ∂mu := by
+        refine integral_congr_ae ?_
+        filter_upwards [coeFn_extendByZeroLpₗᵢ ℝ hUm hUO (W1p.value (v : W1p mu U 2))] with x hx
+        rw [hx]
+        by_cases hxU : x ∈ (U : Set (EuclideanSpace ℝ ι))
+        · rw [indicator_of_mem hxU, indicator_of_mem hxU]
+        · rw [indicator_of_notMem hxU, indicator_of_notMem hxU, mul_zero]
+    _ = ∫ x in U, f x * W1p.value (v : W1p mu U 2) x ∂mu := by
+        rw [integral_indicator hUm, Measure.restrict_restrict hUm, inter_eq_left.2 hUO]
 
 end PDE
 

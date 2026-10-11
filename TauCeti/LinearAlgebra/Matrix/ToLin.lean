@@ -33,6 +33,8 @@ computation every matrix model of a Lie algebra performs on its root vectors.
   vector to a single coordinate.
 * `TauCeti.matrixGeneralLinearEquiv`: matrix `GL` and the linear automorphisms of coordinate
   vectors are equivalent over a commutative semiring.
+* `TauCeti.toMatrixAlgEquiv_eq_single_of_apply_basis`: an endomorphism with one matrix-unit
+  coordinate action has the corresponding single-entry matrix.
 
 The first is used to turn the Azumaya isomorphism of a finite-dimensional central simple algebra
 into a matrix algebra in `TauCeti/Algebra/CentralSimple/Opposite.lean`.
@@ -70,6 +72,21 @@ theorem toLinAlgEquiv_single_apply_basis {R : Type*} [CommSemiring R] {M : Type*
       (if q = c then v else 0) • bas p := by
   rw [Matrix.toLinAlgEquiv_self]
   simp [Matrix.single_apply, ite_and, ite_smul]
+
+/-- **An endomorphism with a matrix-unit action has a single-entry matrix.** If an endomorphism
+sends the basis vector indexed by `q` to `v • bas p` and every other basis vector to zero, its
+matrix in `bas` is `Matrix.single p q v`. -/
+theorem toMatrixAlgEquiv_eq_single_of_apply_basis {R : Type*} [CommSemiring R] {M : Type*}
+    [AddCommMonoid M] [Module R M] {n : Type*} [Fintype n] [DecidableEq n]
+    (bas : Module.Basis n R M) (f : Module.End R M) (p q : n) (v : R)
+    (h : ∀ c, f (bas c) = (if q = c then v else 0) • bas p) :
+    LinearMap.toMatrixAlgEquiv bas f = Matrix.single p q v := by
+  apply (Matrix.toLinAlgEquiv bas).injective
+  rw [Matrix.toLinAlgEquiv_toMatrixAlgEquiv]
+  apply bas.ext
+  intro c
+  rw [toLinAlgEquiv_single_apply_basis]
+  exact h c
 
 namespace Algebra
 

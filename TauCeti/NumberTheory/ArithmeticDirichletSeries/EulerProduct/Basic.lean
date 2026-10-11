@@ -57,7 +57,7 @@ convolution survives at each ideal. The multiplicativity of `f` over a prime-pow
 `TauCeti.IdealArithmeticFunction.IsMultiplicative.map_prod_pow`, likewise lives with the predicate
 it elaborates, in `TauCeti/NumberTheory/ArithmeticDirichletSeries/Basic.lean`.
 
-`TauCeti.MultiplicativeIdealWeight.restrict` is the opposite regime and is not a substitute:
+`TauCeti.MultiplicativeIdealWeight.restrictAway` is the opposite regime and is not a substitute:
 it restricts *away from* a **finite** set of primes and stays inside the bundled weight carrier. A
 finite Euler product needs support on a *finite* set of primes, so all but finitely many primes are
 bad; such a function is never a `MultiplicativeIdealWeight`, whose zero support is finite by

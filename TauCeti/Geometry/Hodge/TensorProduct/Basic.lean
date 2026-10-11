@@ -133,7 +133,7 @@ noncomputable def tensorProduct (hs₁ : HodgeStructureOn W₁ ω₁ n₁)
       by_cases hq : q < a₁
       · rw [hs₁.piece_eq_bot_of_F_eq_top ha₁ hq]
         simp
-      · have hq' : a₁ ≤ q := le_of_not_gt hq
+      · have _ : a₁ ≤ q := le_of_not_gt hq
         have hpq : p - q < a₂ := by omega
         rw [hs₂.piece_eq_bot_of_F_eq_top ha₂ hpq]
         simp }

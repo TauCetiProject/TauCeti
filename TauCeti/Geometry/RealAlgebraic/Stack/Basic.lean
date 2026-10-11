@@ -254,6 +254,16 @@ section Topology
 
 variable [TopologicalSpace X] {θ : Fin k → X → α}
 
+/-- A sector bounded by finitely many continuous functions is open in the cylinder.
+The functions need not be ordered. -/
+theorem isOpen_sectorSet [TopologicalSpace α] [LinearOrder α] [OrderClosedTopology α]
+    (hc : ∀ i, Continuous (θ i)) (j : Fin (k + 1)) : IsOpen (sectorSet θ j) := by
+  simp only [sectorSet, ofPred_and, ofPred_forall]
+  refine (isOpen_iInter_of_finite fun i ↦ isOpen_iInter_of_finite fun _ ↦ ?_).inter
+    (isOpen_iInter_of_finite fun i ↦ isOpen_iInter_of_finite fun _ ↦ ?_)
+  · exact isOpen_lt ((hc i).comp continuous_fst) continuous_snd
+  · exact isOpen_lt continuous_snd ((hc i).comp continuous_fst)
+
 /-- Over a preconnected base, the section of a continuous function is preconnected. -/
 theorem isPreconnected_sectionSet [TopologicalSpace α] [PreconnectedSpace X] {i : Fin k}
     (hθ : Continuous (θ i)) : IsPreconnected (sectionSet θ i) := by
@@ -267,9 +277,9 @@ theorem isConnected_sectionSet [TopologicalSpace α] [ConnectedSpace X] {i : Fin
   exact isConnected_range (by fun_prop)
 
 /-- Every sector of a stack of continuous, pointwise strictly ordered functions with values in
-an ordered topological field contains the graph of a continuous function. -/
+an ordered semitopological field contains the graph of a continuous function. -/
 theorem exists_continuous_forall_mem_sectorSet [Field α] [LinearOrder α] [IsStrictOrderedRing α]
-    [TopologicalSpace α] [IsTopologicalRing α] (hc : ∀ i, Continuous (θ i))
+    [TopologicalSpace α] [IsSemitopologicalRing α] (hc : ∀ i, Continuous (θ i))
     (hθ : ∀ x, StrictMono fun i ↦ θ i x) (j : Fin (k + 1)) :
     ∃ σ : X → α, Continuous σ ∧ ∀ x, (x, σ x) ∈ sectorSet θ j := by
   cases k with

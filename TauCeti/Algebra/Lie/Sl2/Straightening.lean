@@ -74,7 +74,6 @@ private theorem weighted_straightening_coefficient (r : A) (m j : ℕ) (hj : j �
         (r + (m + 1 - j : ℕ)) * Ring.choose (r - 1) (j - 1) =
       (m + 1) • Ring.choose r j := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (Nat.ne_of_gt hj0)
-  have hk : k ≤ m := by omega
   have h := TauCeti.Ring.mul_weighted_choose_add_mul_choose
     r (m - k : ℕ) (R := A) k
   have hc : m + 1 - (k + 1) = m - k := by omega

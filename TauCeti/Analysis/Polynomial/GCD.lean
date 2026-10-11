@@ -69,7 +69,7 @@ theorem continuousAt_coeff_subresultant
     (hF : ∀ i ≤ m, ContinuousAt (fun x => (F x).coeff i) x₀)
     (hG : ∀ i ≤ n, ContinuousAt (fun x => (G x).coeff i) x₀) (j k : ℕ) :
     ContinuousAt (fun x => (subresultant (F x) (G x) m n j).coeff k) x₀ := by
-  simp only [subresultant_coeff]
+  simp only [coeff_subresultant]
   split_ifs
   · exact continuousAt_subresultantCoeff hF hG j k
   · exact continuousAt_const
@@ -136,7 +136,7 @@ theorem continuousAt_coeff_normalize_gcd
         (natDegree_eq_of_degree_eq_some hdegF.self_of_nhds)
         (natDegree_eq_of_degree_eq_some hdegG.self_of_nhds).le
     have hcont : ContinuousAt (fun x => psc (F x) (G x) m n j) x₀ := by
-      simpa only [subresultantCoeff_index] using continuousAt_subresultantCoeff hF hG j j
+      simpa only [subresultantCoeff_self] using continuousAt_subresultantCoeff hF hG j j
     apply ((hcont.inv₀ hc).mul (continuousAt_coeff_subresultant hF hG j k)).congr
     filter_upwards [hdegF, hdegG, hgcd] with x hf hg hx
     have hm := natDegree_eq_of_degree_eq_some hf

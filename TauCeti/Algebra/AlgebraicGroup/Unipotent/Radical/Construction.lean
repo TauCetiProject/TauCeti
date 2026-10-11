@@ -202,12 +202,6 @@ theorem unipotentRadicalSpecMapOfCandidate_comp_unipotentRadicalSpecι
   CommHopfAlgCat.quotientSpecMapOfLe_comp_quotientSpecι H.obj
     (unipotentRadicalDefiningIdeal_le H I hI)
 
-/-- The inclusion of the unipotent radical is a closed immersion. -/
-instance isClosedImmersion_unipotentRadicalSpecι
-    (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
-    IsClosedImmersion (unipotentRadicalSpecι H).hom.hom.left :=
-  inferInstance
-
 end FiniteTypeCommHopfAlgCat
 
 end

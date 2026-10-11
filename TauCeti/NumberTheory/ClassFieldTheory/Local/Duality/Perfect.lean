@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Local.Duality.Explicit
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Duality.FiniteModule
 
 import TauCeti.Algebra.Group.Hom.Instances
+import TauCeti.NumberTheory.ClassFieldTheory.FiniteCohomology.DegreeTwo
 
 /-!
 # Local Tate duality for the named evaluation pairing
@@ -27,6 +28,11 @@ followed by an identification `tr` of `H²(G_F, μₙ)` with `ZMod n`) induces b
 homomorphism `Hⁱ(G_F, A') → ZMod n` is pairing with a class of `Hʲ(G_F, A)`
 (`TauCeti.ClassFieldTheory.tateDualityPairing_flip_perfect`).
 
+Finiteness of the complementary cohomology group makes the converse adjoint perfect as well:
+`TauCeti.ClassFieldTheory.tateDualityPairing_perfect` separates the classes of `Hⁱ(G_F, A')`
+and represents every character of `Hʲ(G_F, A)`. Its mixed-characteristic specialization is
+`TauCeti.ClassFieldTheory.tateDualityPairing_perfect_mixed`.
+
 These are Tate's duality maps `αⱼ : Hʲ(G_F, A) → Hom(Hⁱ(G_F, A'), H²(G_F, μₙ))` on explicit
 cocycles, which are bijective (`TauCeti.ClassFieldTheory.dualityMap0_kummerCoeff_bijective` and
 its companions), read through the identification of the pairing with the explicit evaluation cup
@@ -36,6 +42,9 @@ its companions), read through the identification of the pairing with the explici
 
 * `TauCeti.ClassFieldTheory.tateDualityPairing_flip_perfect`: for `n` invertible in `F`, the
   Tate-duality pairing identifies `Hʲ(G_F, A)` with the `ZMod n`-dual of `Hⁱ(G_F, A')`.
+* `TauCeti.ClassFieldTheory.tateDualityPairing_perfect` and
+  `tateDualityPairing_perfect_mixed`: the converse adjoint is perfect, generally when `n` is
+  invertible and in particular for every nonzero `n` in mixed characteristic.
 
 ## References
 
@@ -221,5 +230,62 @@ theorem tateDualityPairing_flip_perfect {F : Type} [Field F] [ValuativeRel F]
   · exact flip_perfect_zero_two tr hn A hij
   · exact flip_perfect_one_one tr hn A hij
   · exact flip_perfect_two_zero tr hn A hij
+
+/-- **Perfect local Tate duality for the named evaluation pairing.** Let `F` be a
+nonarchimedean local field, `n` invertible in `F`, and `A` a finite smooth discrete
+`ZMod n`-representation of `G_F`. In complementary degrees, the Tate-duality pairing separates
+the classes of the Tate dual and represents every `ZMod n`-valued character of the cohomology of
+`A`. -/
+theorem tateDualityPairing_perfect {F : Type} [Field F] [ValuativeRel F]
+    [TopologicalSpace F] [IsNonarchimedeanLocalField F] (hn : IsUnit (n : F)) (A : GalRep n F)
+    [DiscreteTopology A.V] [Finite A.V] [Fact (IsSmoothDiscrete (ZMod n) A)]
+    (tr : continuousCohomology 2 (muNRep n F) ≃+ ZMod n) (i j : ℕ) (hij : i + j = 2) :
+    (∀ x : continuousCohomology i (tateDual A),
+        (∀ y : continuousCohomology j A, tateDualityPairing A tr i j hij x y = 0) → x = 0) ∧
+      ∀ φ : continuousCohomology j A →+ ZMod n,
+        ∃ x : continuousCohomology i (tateDual A),
+          ∀ y : continuousCohomology j A, tateDualityPairing A tr i j hij x y = φ y := by
+  let _ : NeZero n := NeZero.of_neZero_natCast F (h := ⟨hn.ne_zero⟩)
+  let Φ : continuousCohomology i (tateDual A) →+
+      continuousCohomology j A →+ ZMod n :=
+    { toFun := fun x =>
+        { toFun := fun y => tateDualityPairing A tr i j hij x y
+          map_zero' := tateDualityPairing_zero_right A tr i j hij x
+          map_add' := tateDualityPairing_add_right A tr i j hij x }
+      map_zero' := AddMonoidHom.ext fun y => tateDualityPairing_zero_left A tr i j hij y
+      map_add' := fun x x' =>
+        AddMonoidHom.ext fun y => tateDualityPairing_add_left A tr i j hij x x' y }
+  let _ : Finite (continuousCohomology i (tateDual A)) :=
+    finite_H hn.ne_zero (tateDual A) (Fact.out) (by omega)
+  have hflip := tateDualityPairing_flip_perfect hn A tr i j hij
+  have hΦ : Function.Bijective Φ.flip := by
+    constructor
+    · rw [injective_iff_map_eq_zero]
+      intro y hy
+      apply hflip.1 y
+      intro x
+      exact DFunLike.congr_fun hy x
+    · intro ψ
+      obtain ⟨y, hy⟩ := hflip.2 ψ
+      exact ⟨y, AddMonoidHom.ext hy⟩
+  exact forall_eq_zero_and_exists_eq_of_bijective_flip
+    (fun x => ZModModule.char_nsmul_eq_zero n x) Φ hΦ
+
+/-- **Perfect local Tate duality in mixed characteristic.** For a characteristic-zero
+nonarchimedean local field `F`, every finite smooth discrete `ZMod n`-representation has a perfect
+local Tate-duality pairing in complementary degrees. -/
+theorem tateDualityPairing_perfect_mixed (F : Type) [Field F] [CharZero F] [ValuativeRel F]
+    [TopologicalSpace F] [IsNonarchimedeanLocalField F]
+    (n : ℕ) (hn : n ≠ 0) (A : GalRep n F)
+    (tr : continuousCohomology 2 (muNRep n F) ≃+ ZMod n) (hA : Finite A.V)
+    [DiscreteTopology A.V] [Fact (IsSmoothDiscrete (ZMod n) A)]
+    (i j : ℕ) (hij : i + j = 2) :
+    (∀ x : continuousCohomology i (tateDual A),
+        (∀ y : continuousCohomology j A, tateDualityPairing A tr i j hij x y = 0) → x = 0) ∧
+      ∀ φ : continuousCohomology j A →+ ZMod n,
+        ∃ x : continuousCohomology i (tateDual A),
+          ∀ y : continuousCohomology j A, tateDualityPairing A tr i j hij x y = φ y := by
+  let _ := hA
+  exact tateDualityPairing_perfect (Nat.cast_ne_zero.mpr hn).isUnit A tr i j hij
 
 end TauCeti.ClassFieldTheory

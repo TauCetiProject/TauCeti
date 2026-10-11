@@ -503,13 +503,29 @@ theorem finrank_center_nonisolatedZigzagQuotient [Nontrivial k] [Fintype V] [Non
 -- for `TrivSqZeroExt` in Mathlib, so that definitional identification is the only route to the
 -- dual-number dimension; stating the equivalence directly for the component factor confines the
 -- dependence on Mathlib's representation of `TrivSqZeroExt` to this one declaration.
-private noncomputable def centerZigzagComponentAlgebraSubsingletonLinearEquiv
+/-- The center of a singleton component, in the scalar and infinitesimal coordinates of
+its dual-number presentation. -/
+noncomputable def centerZigzagComponentAlgebraSubsingletonLinearEquiv
     (C : G.ConnectedComponent) [Subsingleton C] :
     Subalgebra.center k (zigzagComponentAlgebra k G C) ≃ₗ[k] ULift.{u} (k × k) :=
   ((centerCongr (zigzagComponentAlgebraEquivULiftDualNumber k G C)).trans
     ((Subalgebra.equivOfEq _ _
       (Subalgebra.center_eq_top (R := k) (ULift.{u} (DualNumber k)))).trans
         Subalgebra.topEquiv)).toLinearEquiv
+
+@[simp]
+theorem centerZigzagComponentAlgebraSubsingletonLinearEquiv_apply
+    (C : G.ConnectedComponent) [Subsingleton C]
+    (x : Subalgebra.center k (zigzagComponentAlgebra k G C)) :
+    centerZigzagComponentAlgebraSubsingletonLinearEquiv k G C x =
+      zigzagComponentAlgebraEquivULiftDualNumber k G C x := by
+  -- Compute in the dual-number carrier before identifying it with its coordinate pair.
+  have h : (((centerCongr (zigzagComponentAlgebraEquivULiftDualNumber k G C)).trans
+      ((Subalgebra.equivOfEq _ _
+        (Subalgebra.center_eq_top (R := k) (ULift.{u} (DualNumber k)))).trans
+          Subalgebra.topEquiv)) x : ULift.{u} (DualNumber k)) =
+      zigzagComponentAlgebraEquivULiftDualNumber k G C x := by simp
+  exact h
 
 /-- The centre of a component factor of the zigzag algebra is free over the coefficient ring. -/
 instance instFreeCenterZigzagComponentAlgebra (C : G.ConnectedComponent) :

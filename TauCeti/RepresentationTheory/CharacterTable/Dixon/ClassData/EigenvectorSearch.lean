@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.JointEigenvalueSearch
+public import TauCeti.LinearAlgebra.Matrix.JointEigenvalueSearch.Refinement
 public import TauCeti.RepresentationTheory.CharacterTable.ClassSum.Eigenrow
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.Basic
 
@@ -24,9 +24,10 @@ other eigenvector equations in the identity coordinate shows that every returned
 is the unique normalization of its common eigenvector.
 
 This is the bridge between the generic finite-field search in
-`TauCeti.LinearAlgebra.Matrix.JointEigenvalueSearch` and the reduced central-character table in the
-Dixon--Schneider pipeline. Nothing here counts the output. Under a general splitting hypothesis the
-count is `TauCeti.ClassData.card_centralCharacterSearch`; its good-prime specialization is
+`TauCeti.LinearAlgebra.Matrix.JointEigenvalueSearch.Refinement` and the reduced central-character
+table in the Dixon--Schneider pipeline. Nothing here counts the output. Under a general splitting
+hypothesis the count is `TauCeti.ClassData.card_centralCharacterSearch`; its good-prime
+specialization is
 `TauCeti.ClassData.card_centralCharacterSearch_of_isGoodDixonPrime`.
 
 ## Main definitions

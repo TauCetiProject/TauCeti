@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Cohomology
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution
 
 /-!
 # Graded commutativity of the cup product

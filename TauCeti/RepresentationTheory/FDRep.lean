@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.FGModuleCat.Abelian
 public import Mathlib.RingTheory.Finiteness.Small
 public import Mathlib.RepresentationTheory.Character
+public import Mathlib.RepresentationTheory.Rep.Res
 public import TauCeti.RepresentationTheory.Subrepresentation
 
 /-!
@@ -19,6 +20,9 @@ finrank and characters. These facts let results proved for representation carrie
 same spirit it records that rebundling the representation an object carries returns that object,
 which is the identification a construction phrased as `FDRep.of ρ` needs in order to be read as a
 statement about the object it started from.
+
+`FDRep.forget₂Rep` supplies the canonical forgetful functor over any ring, extending Mathlib's
+commutative-ring instance with the same underlying construction.
 
 It also records the character of a trivial representation, the constant `finrank`, in both the
 `Representation` and the `FDRep.of` spellings in which consumers meet it.
@@ -57,9 +61,12 @@ subgroup.
   subrepresentations.
 * `FDRep.character_eq_zero_of_finrank_intertwiningMap_eq_zero`: a representation without nonzero
   equivariant endomorphisms has character zero.
+* `FDRep.forget₂Rep`: forgetting finite generation over any coefficient ring.
 * `FDRep.moduleFinite_forget₂_obj`: the forgotten carrier is module-finite.
 * `FDRep.finrank_forget₂_obj`: forgetting does not change finrank.
 * `FDRep.character_forget₂_obj`: forgetting does not change the character.
+* `MonoidHom.forget₂_map_actionRes`: restriction of intertwiners commutes with forgetting
+  finite-dimensionality.
 * `FDRep.character_actionRes`: restricting an action along a monoid homomorphism pulls back its
   character.
 * `FDRep.character_of`: bundling a representation with `FDRep.of` does not change its character.
@@ -127,6 +134,15 @@ namespace FDRep
 
 open CategoryTheory
 
+/-- Forgetting finite generation of a representation over any ring.
+
+This uses the same construction as Mathlib's `FDRep` forgetful instance, whose coefficient
+assumption is currently `CommRing`. The lower priority keeps that instance selected over
+commutative rings; the two functors agree definitionally. -/
+instance (priority := 100) forget₂Rep {R : Type u} [Ring R] {G : Type v} [Monoid G] :
+    HasForget₂ (FDRep R G) (Rep R G) where
+  forget₂ := (forget₂ (FGModuleCat R) (ModuleCat R)).mapAction G ⋙ Rep.ActionToRep R G
+
 /-- **The character of the trivial one-dimensional representation is constantly `1`**, that
 dimension being `1`. This is the form in which the trivial character enters a pairing or a
 Frobenius reciprocity computation, both of which are phrased for objects of `FDRep k G`. -/
@@ -145,10 +161,18 @@ theorem character_actionRes {k : Type u} {G : Type v} {H : Type w} [Field k] [Mo
     FDRep.character ((Action.res (FGModuleCat k) phi).obj V) h = V.character (phi h) :=
   (rfl)
 
-/-- Forgetting finite-dimensionality keeps the finite-generation instance on the carrier. -/
-instance moduleFinite_forget₂_obj {R : Type u} {G : Type v} [CommRing R] [Monoid G]
+/-- Restriction of an intertwiner commutes with forgetting finite generation. -/
+theorem _root_.MonoidHom.forget₂_map_actionRes {k : Type u} [Ring k]
+    {H : Type v} {K : Type w} [Monoid H] [Monoid K]
+    (f : H →* K) {A B : FDRep k K} (g : A ⟶ B) :
+    (forget₂ (FDRep k H) (Rep k H)).map ((Action.res (FGModuleCat k) f).map g) =
+      (Rep.resFunctor f).map ((forget₂ (FDRep k K) (Rep k K)).map g) :=
+  rfl
+
+/-- Forgetting finite generation keeps the finite-generation instance on the carrier. -/
+instance moduleFinite_forget₂_obj {R : Type u} {G : Type v} [Ring R] [Monoid G]
     (A : FDRep R G) : Module.Finite R ((forget₂ (FDRep R G) (Rep R G)).obj A) :=
-  inferInstanceAs (Module.Finite R A)
+  inferInstanceAs (Module.Finite R A.V)
 
 /-- Forgetting finite-dimensionality does not change the dimension of the carrier. -/
 @[simp]

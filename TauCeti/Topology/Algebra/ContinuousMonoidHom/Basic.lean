@@ -21,6 +21,8 @@ Mathlib's `Subgroup.subtype` and `QuotientGroup.mk'` are bare `MonoidHom`s, and 
 packages those maps for a topological group and the subspace and quotient topologies. It also
 provides inverse conjugation `n ↦ g⁻¹ * n * g` on a normal subgroup, together with its evaluation,
 identity, and composition laws, and the continuous lift through a quotient by a normal subgroup.
+Named compatibility proofs describe subgroup inclusions and composition of scalar/coefficient maps
+for pullbacks of cochains; composition uses Mathlib's semiconjugacy API.
 A homomorphism from a topological group with open kernel is also continuous, for every topology
 on the target. The projections of a product of topological monoids onto its factors are
 packaged as `ContinuousMonoidHom.proj`, next to Mathlib's `ContinuousMonoidHom.fst` and
@@ -138,6 +140,20 @@ theorem _root_.MonoidHom.isClosed_range_of_continuous [CompactSpace G] {H : Type
 
 namespace ContinuousMonoidHom
 
+/-- Compatible coefficient maps compose along continuous scalar homomorphisms. This supplies the
+compatibility hypothesis of the composite pair `(φ.comp ψ, q.comp f)` in cochain pullbacks. -/
+theorem _root_.ContinuousMonoidHom.comp_map_smul
+    {A B C M N P : Type*} [Monoid A] [Monoid B] [Monoid C]
+    [TopologicalSpace A] [TopologicalSpace B] [TopologicalSpace C]
+    [AddZero M] [AddZero N] [AddZero P]
+    [SMul A M] [SMul B N] [SMul C P]
+    (φ : B →ₜ* A) (ψ : C →ₜ* B) (f : M →+ N) (q : N →+ P)
+    (hf : ∀ b m, f (φ b • m) = b • f m)
+    (hq : ∀ c n, q (ψ c • n) = c • q n) (c : C) (m : M) :
+    (q.comp f) ((φ.comp ψ) c • m) = c • (q.comp f) m := by
+  simpa only [AddMonoidHom.comp_apply, ContinuousMonoidHom.coe_comp, Function.comp_apply]
+    using Function.Semiconj.trans (hf (ψ c)) (hq c) m
+
 /-- Evaluating a continuous homomorphism assembled from a homomorphism and a continuity proof. -/
 @[simp]
 theorem _root_.ContinuousMonoidHom.coe_mk {A B : Type*} [Monoid A] [TopologicalSpace A] [Monoid B]
@@ -228,6 +244,12 @@ theorem coe_subgroupSubtype (S : Subgroup G) : (subgroupSubtype S : S →* G) = 
 @[simp]
 theorem subgroupSubtype_apply (S : Subgroup G) (s : S) : subgroupSubtype S s = (s : G) :=
   (rfl)
+
+/-- The identity coefficient map is compatible with the continuous inclusion of a subgroup. -/
+theorem id_subgroupSubtype_smul (M : Type*) [AddZero M] [SMul G M]
+    (S : Subgroup G) (s : S) (m : M) :
+    (AddMonoidHom.id M) (subgroupSubtype S s • m) = s • (AddMonoidHom.id M) m :=
+  rfl
 
 /-- The inclusion of a subgroup into a larger subgroup, both carrying the subspace topology, as a
 continuous homomorphism. -/

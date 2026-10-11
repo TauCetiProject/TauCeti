@@ -46,6 +46,8 @@ over a field.
   of `PGLₙ` are exactly the matrices of algebra automorphisms.
 * `TauCeti.ProjectiveGeneralLinear.pointsMulEquiv`: the points of `PGLₙ` with values in `A` are
   the group of `A`-algebra automorphisms of `Mₙ(A)`.
+* `TauCeti.ProjectiveGeneralLinear.pointsMulEquiv_mapPoints`: this identification is natural in
+  `A`: mapping a point along `A ⟶ B` extends its automorphism to `Mₙ(B)`.
 
 ## References
 
@@ -248,6 +250,44 @@ theorem autToGeneralLinear_pointsMulEquiv (A : CommAlgCat.{w} R)
   rw [pointsMulEquiv, MulEquiv.trans_apply, MulEquiv.trans_apply,
     MonoidHom.apply_ofInjective_symm, MulEquiv.subgroupCongr_apply,
     GeneralLinear.coe_hopfIdealPointsSubgroupMulEquiv_apply]
+
+/-- **Naturality of the automorphisms attached to points of `PGLₙ`**: the automorphism of `Mₙ(B)`
+attached to the image of a point along `φ : A ⟶ B` extends the automorphism of `Mₙ(A)` attached to
+the point, `e' (x.map φ) = (e x).map φ`. -/
+theorem pointsMulEquiv_mapPoints {A B : CommAlgCat.{w} R} (φ : A ⟶ B)
+    (q : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra n R) A)
+    (x : Matrix (Fin n) (Fin n) A) :
+    pointsMulEquiv n R B (HopfAlgebra.mapPoints φ q) (x.map φ) =
+      (pointsMulEquiv n R A q x).map φ := by
+  have hM : LinearMap.toMatrix (matrixUnitBasis n B) (matrixUnitBasis n B)
+        (pointsMulEquiv n R B (HopfAlgebra.mapPoints φ q)).toLinearMap =
+      (LinearMap.toMatrix (matrixUnitBasis n A) (matrixUnitBasis n A)
+        (pointsMulEquiv n R A q).toLinearMap).map φ := by
+    rw [← coe_autToGeneralLinear, ← coe_autToGeneralLinear, autToGeneralLinear_pointsMulEquiv,
+      autToGeneralLinear_pointsMulEquiv]
+    have hq : CommHopfAlgCat.quotientPointsHom _ (definingHopfIdeal n R) B
+        (HopfAlgebra.mapPoints φ q) =
+        AlgHom.mapValue (H := GeneralLinear.coordinateHopfAlgebra R (n * n)) φ.hom
+          (CommHopfAlgCat.quotientPointsHom _ (definingHopfIdeal n R) A q) := by
+      rw [CommHopfAlgCat.quotientPointsHom_apply, CommHopfAlgCat.quotientPointsHom_apply,
+        AlgHom.mapValue_apply, HopfAlgebra.mapPoints_apply, ofConv_toConv, ofConv_toConv,
+        AlgHom.comp_assoc]
+    rw [hq, GeneralLinear.pointsMulEquiv_apply, GeneralLinear.pointsMulEquiv_apply,
+      GeneralLinear.pointToGeneralLinear_mapValue]
+    ext a c
+    exact Matrix.GeneralLinearGroup.map_apply _ a c _
+  ext i j
+  have key := congrFun (LinearMap.toMatrix_mulVec_repr (matrixUnitBasis n B)
+    (matrixUnitBasis n B) (pointsMulEquiv n R B (HopfAlgebra.mapPoints φ q)).toLinearMap
+    (x.map φ)) (finProdFinEquiv (i, j))
+  have key' := congrFun (LinearMap.toMatrix_mulVec_repr (matrixUnitBasis n A)
+    (matrixUnitBasis n A) (pointsMulEquiv n R A q).toLinearMap x) (finProdFinEquiv (i, j))
+  rw [hM] at key
+  simp only [matrixUnitBasis_repr_apply, Equiv.symm_apply_apply, AlgEquiv.toLinearMap_apply]
+    at key key'
+  rw [← key, Matrix.map_apply, ← key', Matrix.mulVec, Matrix.mulVec, dotProduct, dotProduct,
+    map_sum]
+  simp
 
 end Points
 

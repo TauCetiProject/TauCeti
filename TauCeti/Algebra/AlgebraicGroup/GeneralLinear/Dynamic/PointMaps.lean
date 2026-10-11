@@ -35,7 +35,7 @@ theorem pointsMulEquiv_ofPolyPoint
       Matrix.GeneralLinearGroup.map
         (Polynomial.toLaurentAlg.restrictScalars R :
           Polynomial A →ₐ[R] LaurentPolynomial A) (pointsMulEquiv N F) := by
-  rw [Cocharacter.ofPolyPoint_apply, ← AlgHom.mapValue_apply, pointsMulEquiv_mapValue]
+  simp [Cocharacter.ofPolyPoint_apply]
 
 /-- Evaluating a polynomial-valued general-linear point at zero evaluates every matrix entry
 at zero. -/
@@ -45,6 +45,6 @@ theorem pointsMulEquiv_evalZeroPoint
       Matrix.GeneralLinearGroup.map
         ((Polynomial.aeval (0 : A)).restrictScalars R : Polynomial A →ₐ[R] A)
         (pointsMulEquiv N F) := by
-  rw [Cocharacter.evalZeroPoint_apply, ← AlgHom.mapValue_apply, pointsMulEquiv_mapValue]
+  simp [Cocharacter.evalZeroPoint_apply]
 
 end TauCeti.GeneralLinear.Dynamic

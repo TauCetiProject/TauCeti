@@ -166,14 +166,14 @@ theorem coe_explicitCor0Transversal_of_smul_eq_self
 theorem map_explicitCor0Transversal {N : Type w} [AddCommGroup N]
     [DistribMulAction G N] (f : M →+[G] N) (m : H0 U M) :
     explicitCoeff0 G M f (explicitCor0Transversal G M U t ht m) =
-      explicitCor0Transversal G N U t ht (fixedPointsMap f U m) := by
+      explicitCor0Transversal G N U t ht (f.fixedPointsMap U m) := by
   apply Subtype.ext
   rw [coe_explicitCoeff0, coe_explicitCor0Transversal]
-  -- `fixedPointsMap` is bundled on `addSubmonoid`, whereas `H0` uses `addSubgroup`;
+  -- `DistribMulActionHom.fixedPointsMap` uses `addSubmonoid`, whereas `H0` uses `addSubgroup`;
   -- expose the underlying coefficient after Lean inserts the carrier-preserving coercions.
   change f (∑ u : G ⧸ U, t u • (m : M)) =
-    ∑ u : G ⧸ U, t u • (fixedPointsMap f U m : N)
-  have hfm : (fixedPointsMap f U m : N) = f (m : M) := coe_fixedPointsMap f U m
+    ∑ u : G ⧸ U, t u • (f.fixedPointsMap U m : N)
+  have hfm : (f.fixedPointsMap U m : N) = f (m : M) := f.coe_fixedPointsMap U m
   rw [hfm]
   simp [map_sum]
 
@@ -231,7 +231,7 @@ theorem explicitCor0_eq_transversal (t : G ⧸ U → G)
 theorem map_explicitCor0 {N : Type w} [AddCommGroup N] [DistribMulAction G N]
     (f : M →+[G] N) (m : H0 U M) :
     explicitCoeff0 G M f (explicitCor0 G M U m) =
-      explicitCor0 G N U (fixedPointsMap f U m) :=
+      explicitCor0 G N U (f.fixedPointsMap U m) :=
   map_explicitCor0Transversal G M U Quotient.out Quotient.out_eq f m
 
 /-- **`cor⁰ ∘ res⁰ = (G : U) • id`** on `H⁰(G, M)`. -/

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.ShortComplex.Exact
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.RepresentationTheory.Rep.Res
+public import TauCeti.Algebra.MonoidAlgebra.Augmentation
 
 /-!
 # The augmentation ideal and the augmentation sequence
@@ -62,6 +63,15 @@ variable (k G : Type u) [CommRing k] [Group G]
 the sum of its coefficients; it is the map out of the left regular representation attached to
 `1 : k`. -/
 abbrev augmentation : leftRegular k G ⟶ trivial k G k := leftRegularHom (trivial k G k) 1
+
+/-- The augmentation of representations is the coefficient sum
+`TauCeti.MonoidAlgebra.augmentation`. -/
+theorem augmentation_hom_apply (w : MonoidAlgebra k G) :
+    (augmentation k G).hom w = TauCeti.MonoidAlgebra.augmentation k G w := by
+  induction w using MonoidAlgebra.induction_linear with
+  | zero => simp
+  | add x y hx hy => rw [map_add, map_add, hx, hy]
+  | single g r => simp [TauCeti.MonoidAlgebra.augmentation_single]
 
 /-- The augmentation is surjective. -/
 instance augmentation_epi : Epi (augmentation k G) :=

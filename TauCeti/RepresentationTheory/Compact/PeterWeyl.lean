@@ -38,7 +38,7 @@ such a family says nothing about which functions the basis consists of. Both are
   representation on a standard model space is carried onto some `models i` by a linear isometry
   equivalence. Exhaustion is asked for in unitary form, which is no restriction: between
   irreducible unitary representations Schur's lemma makes every intertwining isomorphism a scalar
-  multiple of an isometry (`TauCeti.ContRepresentation.exists_linearIsometryEquiv_congr_eq`).
+  multiple of an isometry (`ContRepresentation.exists_linearIsometryEquiv_congr_eq`).
 * `TauCeti.peterWeylBasis` is a `HilbertBasis`, defined outright rather than existentially, and
   `TauCeti.coe_peterWeylBasis` identifies its elements as the normalized matrix coefficients
   `TauCeti.peterWeylFamily`. The element-level content is therefore available on the nose.
@@ -60,10 +60,10 @@ the span `TauCeti.modelSubmodule` of the matrix coefficients of the models insid
 1. *Irreducible representations.* A continuous unitary irreducible representation on any
    finite-dimensional inner product space is carried to a standard model by
    `stdOrthonormalBasis`, hence onto some `models i` by exhaustion, and matrix coefficients are
-   unchanged along an isometry (`TauCeti.ContRepresentation.matrixCoeff_congr`).
+   unchanged along an isometry (`LinearIsometryEquiv.matrixCoeff_congr`).
 2. *Unitary representations.* An arbitrary continuous unitary representation splits as an
    orthogonal direct sum of irreducible subrepresentations
-   (`TauCeti.ContRepresentation.IsUnitary.exists_orthogonal_irreducible_decomposition`), and for
+   (`ContRepresentation.IsUnitary.exists_orthogonal_irreducible_decomposition`), and for
    a vector `v` in one block the functional `⟪·, w⟫` only sees the orthogonal projection of `w`
    onto that block, so every matrix coefficient reduces to matrix coefficients of the blocks.
 3. *Density.* The analytic core of Peter-Weyl
@@ -116,11 +116,6 @@ the span `TauCeti.modelSubmodule` of the matrix coefficients of the models insid
 
 ## References
 
-This is the summit `peterWeylBasis` of Layer 5 of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md),
-including its `IrrepModel` and `IsIrrepSkeleton` packaging and the requirement that the
-element-level content of the basis be stated rather than left inside an existential.
-
 * D. Bump, *Lie Groups*, 2nd ed., Springer GTM 225 (2013), Chapter 2.
 * G. B. Folland, *A Course in Abstract Harmonic Analysis*, 2nd ed., CRC (2016), §5.2.
 * T. Bröcker, T. tom Dieck, *Representations of Compact Lie Groups*, Springer GTM 98 (1985),
@@ -154,6 +149,12 @@ structure IrrepModel (𝕜 G : Type*) [RCLike 𝕜] [Group G] [TopologicalSpace 
 namespace IrrepModel
 
 variable {𝕜 G : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G]
+
+open scoped MonoidAlgebra in
+/-- The group-algebra module of an irreducible model is simple. -/
+instance isSimpleModule_asModule (m : IrrepModel 𝕜 G) :
+    IsSimpleModule 𝕜[G] m.rep.toRepresentation.asModule :=
+  (Representation.irreducible_iff_isSimpleModule_asModule _).mp m.isIrreducible
 
 /-- The canonical linear isometry from the scalar field to the standard one-dimensional carrier of
 an `IrrepModel`. It matches the standard orthonormal bases on the two spaces. -/
@@ -208,7 +209,7 @@ on a standard model space is carried onto some `models i` by a linear isometry e
 
 Exhaustion in *unitary* form is no restriction. Between finite-dimensional irreducible unitary
 representations Schur's lemma makes any intertwining isomorphism a scalar multiple of a unitary
-one (`TauCeti.ContRepresentation.exists_linearIsometryEquiv_congr_eq`), so a family exhaustive up
+one (`ContRepresentation.exists_linearIsometryEquiv_congr_eq`), so a family exhaustive up
 to isomorphism is exhaustive up to unitary isomorphism. -/
 structure IsIrrepSkeleton (models : ι → IrrepModel 𝕜 G) : Prop where
   /-- Distinct members of the family are inequivalent. -/
@@ -220,7 +221,7 @@ structure IsIrrepSkeleton (models : ι → IrrepModel 𝕜 G) : Prop where
     (hπ : Continuous π) (hu : ContRepresentation.IsUnitary π)
     (hirr : π.toRepresentation.IsIrreducible) :
     ∃ (i : ι) (e : EuclideanSpace 𝕜 (Fin n) ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 (Fin (models i).dim)),
-      ContRepresentation.congr e.toContinuousLinearEquiv π = (models i).rep
+      ContinuousLinearEquiv.congr e.toContinuousLinearEquiv π = (models i).rep
 
 namespace IsIrrepSkeleton
 
@@ -237,13 +238,14 @@ theorem matrixCoeff_mem_of_isIrreducible (h : IsIrrepSkeleton models) {V : Type*
     (hirr : π.toRepresentation.IsIrreducible) (v w : V) :
     ContRepresentation.matrixCoeff π hπ v w ∈ modelSubmodule models := by
   set e := (stdOrthonormalBasis 𝕜 V).repr
-  obtain ⟨i, e', hi⟩ := h.exists_congr_eq _ (ContRepresentation.congr e.toContinuousLinearEquiv π)
-    (ContRepresentation.continuous_congr _ hπ) (hu.congr e)
-    (ContRepresentation.isIrreducible_congr _ hirr)
+  obtain ⟨i, e', hi⟩ := h.exists_congr_eq _ (ContinuousLinearEquiv.congr e.toContinuousLinearEquiv
+      π)
+    (ContinuousLinearEquiv.continuous_congr _ hπ) (hu.congr e)
+    (ContinuousLinearEquiv.isIrreducible_congr _ hirr)
   refine Submodule.subset_span ⟨i, e' (e v), e' (e w), ?_⟩
   ext g
-  have hg : (models i).rep g = ContRepresentation.congr e'.toContinuousLinearEquiv
-      (ContRepresentation.congr e.toContinuousLinearEquiv π) g := by rw [hi]
+  have hg : (models i).rep g = ContinuousLinearEquiv.congr e'.toContinuousLinearEquiv
+      (ContinuousLinearEquiv.congr e.toContinuousLinearEquiv π) g := by rw [hi]
   rw [ContRepresentation.matrixCoeff_apply, ContRepresentation.matrixCoeff_apply, hg]
   simp
 
@@ -336,11 +338,11 @@ theorem convolutionCLM_mem_modelSubmodule (h : IsIrrepSkeleton models) (k : C(G,
     refine Submodule.smul_mem _ _ ?_
     -- the conjugate of a matrix coefficient is a matrix coefficient of the conjugate
     -- representation, which is again unitary
-    rw [ContRepresentation.star_matrixCoeff_eq_matrixCoeff_conjugate
+    rw [OrthonormalBasis.star_matrixCoeff_eq_matrixCoeff_conjugate
       (stdOrthonormalBasis 𝕜 (Module.End.eigenspace
         (convolutionOperator (G := G) k).toLinearMap μ))]
     exact h.matrixCoeff_mem _
-      (ContRepresentation.IsUnitary.conjugate _
+      (OrthonormalBasis.isUnitary_conjugate _
         (isUnitary_convolutionEigenspaceRepresentation k μ)) _ _
   · rw [map_add]
     exact add_mem hx hy
@@ -638,7 +640,7 @@ variable (𝕜 G : Type*) [RCLike 𝕜] [Group G] [TopologicalSpace G]
 
 /-- **Unitary equivalence of models.** Two models are equivalent when some linear isometry
 equivalence of their carriers transports one representation onto the other; by
-`TauCeti.ContRepresentation.congr_refl` and `TauCeti.ContRepresentation.congr_congr` this is an
+`ContRepresentation.congr_refl` and `ContinuousLinearEquiv.congr_congr` this is an
 equivalence relation.
 
 Asking the carriers to be the standard spaces is what makes this a relation on a *type*, so that
@@ -646,7 +648,7 @@ one representative per class may be chosen; on "all irreducible unitary represen
 inner product spaces" there is no such type to quotient. -/
 instance IrrepModel.instSetoid : Setoid (IrrepModel 𝕜 G) where
   r m m' := ∃ e : EuclideanSpace 𝕜 (Fin m.dim) ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 (Fin m'.dim),
-    ContRepresentation.congr e.toContinuousLinearEquiv m.rep = m'.rep
+    ContinuousLinearEquiv.congr e.toContinuousLinearEquiv m.rep = m'.rep
   iseqv :=
     { refl m := by
         refine ⟨LinearIsometryEquiv.refl 𝕜 _, ?_⟩
@@ -659,7 +661,7 @@ instance IrrepModel.instSetoid : Setoid (IrrepModel 𝕜 G) where
       trans := by
         rintro m m' m'' ⟨e, he⟩ ⟨f, hf⟩
         refine ⟨e.trans f, ?_⟩
-        rw [LinearIsometryEquiv.toContinuousLinearEquiv_trans, ← ContRepresentation.congr_congr,
+        rw [LinearIsometryEquiv.toContinuousLinearEquiv_trans, ← ContinuousLinearEquiv.congr_congr,
           he, hf] }
 
 /-- **The unitary dual of `G` in its standard models**: the models of finite-dimensional
@@ -680,7 +682,7 @@ variable (𝕜 G)
 equivalence classes form one.
 
 Pairwise inequivalence is the substance. Distinct classes are inequivalent *unitarily* by
-construction, and `TauCeti.ContRepresentation.exists_linearIsometryEquiv_congr_eq` upgrades that
+construction, and `ContRepresentation.exists_linearIsometryEquiv_congr_eq` upgrades that
 to inequivalence outright, since between irreducible unitary representations every intertwining
 isomorphism can be rescaled to an isometry. Exhaustion is then the tautology that every model
 lies in its own class. -/

@@ -31,8 +31,8 @@ parameters.
 at `exp m` (`logNormalMeasure_zero_var`). That law is singular with respect to Lebesgue measure,
 which is why the density and cdf theorems carry `v ≠ 0`, and its exponential-integrability domain
 is all of `ℝ` rather than `Set.Iic 0`; the boundary cdf, mgf, cgf and characteristic function are
-recorded separately. The moment formula, and hence the mean and the variance, need no hypothesis
-on `v` at all.
+recorded separately, and the boundary mean and variance get named lemmas. The moment formula, and
+hence the general mean and variance, need no hypothesis on `v` at all.
 
 ## Main definitions
 
@@ -50,6 +50,8 @@ on `v` at all.
   `exp (m + v / 2)` and the variance `(exp v - 1) * exp (2 * m + v)`;
 * `integrableExpSet_id_logNormalMeasure` — the exponential moments exist exactly for `t ≤ 0`, with
   `not_integrable_exp_mul_logNormalMeasure` the matching non-integrability for `t > 0`;
+* `integral_id_logNormalMeasure_zero_var` and `variance_id_logNormalMeasure_zero_var` — the
+  boundary mean `exp m` and variance `0`;
 * `mgf_id_logNormalMeasure_zero_var`, `cgf_id_logNormalMeasure_zero_var` and
   `charFun_logNormalMeasure_zero_var` — the boundary transforms;
 * `measurable_logNormalMeasure` — the family is measurable in its parameters, so it can be used as
@@ -330,6 +332,16 @@ theorem variance_id_logNormalMeasure (m : ℝ) (v : ℝ≥0) :
   rw [h₂, h₁, ← Real.exp_nat_mul (m + (v : ℝ) / 2) 2, hMeanExponent, hSecondExponent,
     Real.exp_add]
   ring
+
+/-- The mean at the singular boundary `v = 0` is `exp m`, the point carrying the Dirac mass. -/
+theorem integral_id_logNormalMeasure_zero_var (m : ℝ) :
+    ∫ x, x ∂logNormalMeasure m 0 = Real.exp m := by
+  rw [logNormalMeasure_zero_var, integral_dirac]
+
+/-- The variance at the singular boundary `v = 0` is `0`. -/
+theorem variance_id_logNormalMeasure_zero_var (m : ℝ) :
+    Var[id; logNormalMeasure m 0] = 0 := by
+  rw [logNormalMeasure_zero_var, variance_dirac]
 
 /-! ### Exponential moments -/
 

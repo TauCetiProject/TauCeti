@@ -167,11 +167,8 @@ noncomputable abbrev kostantToralBaseChangeGroupScheme :
 instance locallyOfFiniteType_kostantToralBaseChangeGroupScheme :
     LocallyOfFiniteType
       (kostantToralBaseChangeGroupScheme e h ρ M hM hnil b wt A).X.hom :=
-  FiniteTypeCommHopfAlgCat.locallyOfFiniteType_quotientSpec
-    (⟨CommHopfAlgCat.baseChange (K := A) (GeneralLinear.coordinateHopfAlgebra ℤ n),
-      inferInstanceAs (Algebra.FiniteType A
-        (CommHopfAlgCat.baseChange (K := A) (GeneralLinear.coordinateHopfAlgebra ℤ n)))⟩ :
-      FiniteTypeCommHopfAlgCat A)
+  CommHopfAlgCat.locallyOfFiniteType_quotientSpec
+    (CommHopfAlgCat.baseChange (K := A) (GeneralLinear.coordinateHopfAlgebra ℤ n))
     (kostantToralBaseChangeIdeal e h ρ M hM hnil b wt A)
 
 /-- The closed-subgroup inclusion of the specialized toral carrier into the base-changed

@@ -146,8 +146,6 @@ private theorem some_add_some_formalAddEval_of_X_ne {I : Ideal O} (hI : IsAdic I
     Affine.Point.some _ _ hn₁ + Affine.Point.some _ _ hn₂ = Affine.Point.some _ _ hnF := by
   have hE₁ : PowerSeries.HasEval t₁ := hI.isTopologicallyNilpotent_of_mem h₁
   have hE₂ : PowerSeries.HasEval t₂ := hI.isTopologicallyNilpotent_of_mem h₂
-  have hET : PowerSeries.HasEval (W.formalThirdRootEval t₁ t₂) :=
-    W.hasEval_formalThirdRootEval hE₁ hE₂
   have hne : ∀ {s : O}, s ≠ 0 → algebraMap O K s ≠ 0 := fun hs0 ↦ by simpa using hs0
   have hTmem : W.formalThirdRootEval t₁ t₂ ∈ I := by
     simpa using W.formalThirdRootEval_mem hI (k := 1) (by simpa using h₁) (by simpa using h₂)

@@ -11,7 +11,7 @@ import TauCeti.CategoryTheory.Preadditive.Indecomposable
 import TauCeti.RepresentationTheory.Quiver.FiniteRepType.Embedding
 import TauCeti.RepresentationTheory.Quiver.Representation.DimensionVector
 import TauCeti.RingTheory.AdjoinRoot.Basic
-import TauCeti.RingTheory.Polynomial.Truncated
+import TauCeti.RingTheory.Polynomial.Truncated.Basic
 
 /-!
 # Cycles in the underlying graph obstruct finite representation type

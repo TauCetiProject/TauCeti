@@ -152,21 +152,15 @@ theorem nullHomotopicMap_cone_isIso (f : X ⟶ Y) [IsIso f] :
     nullHomotopicMap (X := cone f) (Y := cone f)
       (biprod.snd ≫ (inv f).f₀ ≫ biprod.inl)
       (biprod.snd ≫ (inv f).f₁ ≫ biprod.inl) = 𝟙 (cone f) := by
-  have h₀ : f.f₀ ≫ (inv f).f₀ = 𝟙 X.X₀ := by
-    simpa only [comp_f₀, id_f₀] using congrArg Hom.f₀ (IsIso.hom_inv_id f)
-  have h₁ : f.f₁ ≫ (inv f).f₁ = 𝟙 X.X₁ := by
-    simpa only [comp_f₁, id_f₁] using congrArg Hom.f₁ (IsIso.hom_inv_id f)
-  have h₀' : (inv f).f₀ ≫ f.f₀ = 𝟙 Y.X₀ := by
-    simpa only [comp_f₀, id_f₀] using congrArg Hom.f₀ (IsIso.inv_hom_id f)
-  have h₁' : (inv f).f₁ ≫ f.f₁ = 𝟙 Y.X₁ := by
-    simpa only [comp_f₁, id_f₁] using congrArg Hom.f₁ (IsIso.inv_hom_id f)
+  have hd₀ : inv f.f₀ ≫ X.d₀ = Y.d₀ ≫ inv f.f₁ := by
+    simpa only [inv_f₀, inv_f₁] using (inv f).comm₀
+  have hd₁ : inv f.f₁ ≫ X.d₁ = Y.d₁ ≫ inv f.f₀ := by
+    simpa only [inv_f₀, inv_f₁] using (inv f).comm₁
   ext
   · simp [cone, coneD₀, coneD₁, ofComponents_eq_desc_lift, biprod.lift_eq, biprod.desc_eq,
-      Preadditive.add_comp, Preadditive.comp_add, Category.assoc]
-    simp [← Category.assoc, ← (inv f).comm₀, h₁, h₀']
+      Preadditive.add_comp, Preadditive.comp_add, Category.assoc, reassoc_of% hd₀]
   · simp [cone, coneD₀, coneD₁, ofComponents_eq_desc_lift, biprod.lift_eq, biprod.desc_eq,
-      Preadditive.add_comp, Preadditive.comp_add, Category.assoc]
-    simp [← Category.assoc, ← (inv f).comm₁, h₀, h₁']
+      Preadditive.add_comp, Preadditive.comp_add, Category.assoc, reassoc_of% hd₁]
 
 /-- The cone of an isomorphism becomes a zero object in the homotopy category. -/
 theorem isZero_quotientFunctor_obj_cone_isIso (f : X ⟶ Y) [IsIso f] :

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.EpiMono
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.HasPullback
+public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 
 /-!
 # Pullbacks of split epimorphisms
@@ -20,9 +21,11 @@ T ⟶ X ×[S] T
 ```
 
 whose projections are `g ≫ s` and `𝟙 T`. The construction is packaged as
-`CategoryTheory.SplitEpi.pullback`; its projection formulas characterize it uniquely.
-The file also records naturality in both the split epimorphism and the base-change
-morphism, and supplies the corresponding low-priority `IsSplitEpi` instance.
+`CategoryTheory.SplitEpi.pullback`; its projection formulas characterize it uniquely, and
+together with the original section it forms a pullback square
+(`CategoryTheory.SplitEpi.isPullback_pullback_section`). The file also records naturality in
+both the split epimorphism and the base-change morphism, and supplies the corresponding
+low-priority `IsSplitEpi` instance.
 
 For a scheme over a field, a rational point is precisely such a chosen section of the
 structure morphism. Thus this construction supplies base change of rational points, as
@@ -66,6 +69,14 @@ the base-change morphism. -/
 lemma pullback_section_fst (h : SplitEpi f) {T : C} (g : T ⟶ S) [HasPullback f g] :
     (h.pullback g).section_ ≫ Limits.pullback.fst f g = g ≫ h.section_ := by
   simp only [pullback_section_def, Limits.pullback.lift_fst]
+
+/-- A pulled-back section is the base change of the original section: the square formed by
+`(h.pullback g).section_`, `g`, the first projection and `h.section_` is a pullback square. -/
+lemma isPullback_pullback_section (h : SplitEpi f) {T : C} (g : T ⟶ S) [HasPullback f g] :
+    IsPullback (h.pullback g).section_ g (Limits.pullback.fst f g) h.section_ :=
+  -- Paste with the pullback square of `f` and `g`; both horizontal composites are identities.
+  .of_right (by simpa only [(h.pullback g).id, h.id] using IsPullback.id_horiz g)
+    (h.pullback_section_fst g) (IsPullback.of_hasPullback f g).flip
 
 /-- The two projection formulas uniquely determine the pulled-back section. -/
 lemma eq_pullback_section (h : SplitEpi f) {T : C} (g : T ⟶ S) [HasPullback f g]

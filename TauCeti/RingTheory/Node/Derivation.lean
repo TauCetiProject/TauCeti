@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.Derivation
-public import Mathlib.RingTheory.Kaehler.Basic
 public import TauCeti.RingTheory.Node.Basic
 
 /-!
@@ -38,13 +37,12 @@ variable {M : Type*} [AddCommMonoid M] [Module (NodeAlgebra R a) M]
 
 private abbrev polynomialRing := MvPolynomial (Fin 2) R
 
-private local instance : Algebra (polynomialRing (R := R)) (NodeAlgebra R a) :=
-  (mk a).toRingHom.toAlgebra
-
 private abbrev polynomialModule : Module (polynomialRing (R := R)) M :=
   Module.compHom M (mk a).toRingHom
 
-private theorem polynomialScalarTower :
+private theorem polynomialScalarTower
+    {M : Type*} [AddCommMonoid M] [Module (NodeAlgebra R a) M]
+    [SMul R M] [IsScalarTower R (NodeAlgebra R a) M] :
     letI := polynomialModule (M := M) a
     IsScalarTower R (polynomialRing (R := R)) M := by
   let _ := polynomialModule (M := M) a
@@ -53,17 +51,6 @@ private theorem polynomialScalarTower :
   -- The polynomial action on `M` is the action of its image under `mk`.
   change ((mk a) (r • p)) • m = r • ((mk a) p • m)
   rw [map_smul, smul_assoc]
-
-omit [Module R M] [IsScalarTower R (NodeAlgebra R a) M] in
-private theorem polynomialNodeScalarTower :
-    letI := polynomialModule (M := M) a
-    IsScalarTower (polynomialRing (R := R)) (NodeAlgebra R a) M := by
-  let _ := polynomialModule (M := M) a
-  constructor
-  intro p b m
-  -- The polynomial action factors through the nodal algebra action.
-  change ((mk a) p * b) • m = (mk a p) • (b • m)
-  exact smul_assoc (mk a p) b m
 
 /-- The pairs of possible values in `M` of an `R`-derivation on the two coordinates of
 `xy=a`. -/
@@ -85,14 +72,20 @@ lemma mem_derivationValues_iff (u : (Fin 2) → M) :
     u ∈ DerivationValues a ↔ coord a 1 • u 0 + coord a 0 • u 1 = 0 :=
   Iff.rfl
 
+omit [IsScalarTower R (NodeAlgebra R a) M] in
+variable {a} in
+/-- The coordinate values of any derivation satisfy the Jacobian relation of `xy = a`. -/
+@[simp]
+theorem _root_.Derivation.coord_one_smul_apply_coord_zero_add_coord_zero_smul_apply_coord_one
+    (D : Derivation R (NodeAlgebra R a) M) :
+    coord a 1 • D (coord a 0) + coord a 0 • D (coord a 1) = 0 := by
+  have h := congrArg D (coord_zero_mul_coord_one a)
+  simpa only [Derivation.leibniz, Derivation.map_algebraMap, add_comm] using h
+
 private def derivationValues (D : Derivation R (NodeAlgebra R a) M) :
-    DerivationValues (M := M) a := by
-  refine ⟨fun i ↦ D (coord a i), ?_⟩
-  apply (mem_derivationValues_iff a _).2
-  calc
-    _ = D (coord a 0 * coord a 1) := by rw [Derivation.leibniz]; abel
-    _ = D (algebraMap R (NodeAlgebra R a) a) := congrArg D (coord_zero_mul_coord_one a)
-    _ = 0 := D.map_algebraMap a
+    DerivationValues (M := M) a :=
+  ⟨fun i ↦ D (coord a i), (mem_derivationValues_iff a _).2
+    D.coord_one_smul_apply_coord_zero_add_coord_zero_smul_apply_coord_one⟩
 
 private def polynomialDerivation (u : DerivationValues (M := M) a) :
     letI := polynomialModule (M := M) a
@@ -135,22 +128,16 @@ private def descendedLinearMap (u : DerivationValues (M := M) a) :
   letI := polynomialModule (M := M) a
   let d := polynomialDerivation a u
   let _ : AddCommGroup M := Module.addCommMonoidToAddCommGroup (NodeAlgebra R a)
-  let g := (mk a).toLinearMap
-  let e := g.quotKerEquivOfSurjective (mk_surjective a)
-  exact ((LinearMap.ker g).liftQ d.toLinearMap (by
+  exact (mk a).toLinearMap.liftOfSurjective (mk_surjective a) ⟨d.toLinearMap, by
     intro p hp
     apply LinearMap.mem_ker.mpr
-    exact polynomialDerivation_ker a u p (LinearMap.mem_ker.mp hp))).comp e.symm.toLinearMap
+    exact polynomialDerivation_ker a u p (LinearMap.mem_ker.mp hp)⟩
 
 private lemma descendedLinearMap_mk (u : DerivationValues (M := M) a)
     (p : polynomialRing (R := R)) :
     descendedLinearMap a u (mk a p) = polynomialDerivation a u p := by
-  have h : ((mk a).toLinearMap.quotKerEquivOfSurjective (mk_surjective a)).symm
-      (mk a p) = Submodule.Quotient.mk p := by
-    exact (mk a).toLinearMap.quotKerEquivOfSurjective_symm_apply (mk_surjective a) p
-  simp only [descendedLinearMap, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
-    h, Submodule.liftQ_apply]
-  rfl
+  let _ : AddCommGroup M := Module.addCommMonoidToAddCommGroup (NodeAlgebra R a)
+  exact LinearMap.equivOfSurjective_apply (mk_surjective a) _
 
 private def derivationOfValues (u : DerivationValues (M := M) a) :
     Derivation R (NodeAlgebra R a) M := by
@@ -180,22 +167,9 @@ coordinates. -/
 @[ext]
 theorem derivation_ext {D E : Derivation R (NodeAlgebra R a) M}
     (h : ∀ i, D (coord a i) = E (coord a i)) : D = E := by
-  let _ := polynomialModule (M := M) a
-  let _ := polynomialNodeScalarTower (M := M) a
-  apply Derivation.ext
-  intro b
-  obtain ⟨p, rfl⟩ := mk_surjective a b
-  have hpoly : D.compAlgebraMap (polynomialRing (R := R)) =
-      E.compAlgebraMap (polynomialRing (R := R)) := by
-    apply MvPolynomial.derivation_ext
-    intro i
-    simp only [Derivation.compAlgebraMap_apply, RingHom.algebraMap_toAlgebra,
-      AlgHom.toRingHom_eq_coe]
-    -- The locally chosen polynomial-algebra structure is induced by `mk`.
-    change D (mk a (X i)) = E (mk a (X i))
-    rw [mk_X]
-    exact h i
-  exact Derivation.congr_fun hpoly p
+  apply Derivation.ext_of_adjoin_eq_top _ (adjoin_range_coord a)
+  rintro _ ⟨i, rfl⟩
+  exact h i
 
 /-- Derivations of `R[x,y]/(xy-a)` into any module are linearly equivalent to pairs of
 values satisfying `y • u + x • v = 0`. -/
@@ -222,15 +196,5 @@ lemma derivationEquivValues_apply (D : Derivation R (NodeAlgebra R a) M)
 lemma derivationEquivValues_symm_apply (u : DerivationValues (M := M) a) (i : Fin 2) :
     ((derivationEquivValues a).symm u) (coord a i) = u.1 i :=
   derivationOfValues_coord a u i
-
-/-- The universal Kähler differentials of the two coordinates satisfy the Jacobian
-relation of the nodal equation. -/
-@[simp]
-theorem coord_one_smul_D_coord_zero_add_coord_zero_smul_D_coord_one :
-    coord a 1 • KaehlerDifferential.D R (NodeAlgebra R a) (coord a 0) +
-      coord a 0 • KaehlerDifferential.D R (NodeAlgebra R a) (coord a 1) = 0 := by
-  have h := congrArg (KaehlerDifferential.D R (NodeAlgebra R a))
-    (coord_zero_mul_coord_one a)
-  simpa only [Derivation.leibniz, Derivation.map_algebraMap, add_comm] using h
 
 end TauCeti.NodeAlgebra

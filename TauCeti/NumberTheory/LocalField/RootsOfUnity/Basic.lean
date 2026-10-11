@@ -178,8 +178,6 @@ theorem finite_pPowerRootsOfUnity (hpK : (p : K) ≠ 0) :
       _ ≤ (p - 1) * (natCastValuation K p hpK + 1) :=
         Nat.mul_le_mul_right _ (by omega)
   have hdisjoint := disjoint_pPowerRootsOfUnity_unitFiltration hpK hi
-  have hle : unitFiltration K i ≤ unitFiltration K 0 :=
-    unitFiltration_antitone (Nat.zero_le _)
   have hindex : (unitFiltration K i).IsFiniteRelIndex (unitFiltration K 0) := inferInstance
   have hfinite : Finite (unitFiltration K 0 ⧸ (unitFiltration K i).subgroupOf
       (unitFiltration K 0)) := by

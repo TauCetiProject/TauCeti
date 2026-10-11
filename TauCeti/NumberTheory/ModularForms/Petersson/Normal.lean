@@ -128,7 +128,7 @@ theorem commute_peterssonAdjoint_heckeTCuspNat (hn : n.Coprime N) :
     Commute (diamondOpCusp (N := N) k (ZMod.unitOfCoprime n hn)⁻¹ *
         heckeTCuspNat (N := N) k n)
       (heckeTCuspNat (N := N) k n) :=
-  (commute_heckeTCuspNat_diamondOpCusp_inv k hn).symm.mul_left
+  (commute_heckeTCuspNat_diamondOpCusp k hn (ZMod.unitOfCoprime n hn)⁻¹).symm.mul_left
     (Commute.refl (heckeTCuspNat (N := N) k n))
 
 /-! ### Normality on a fixed nebentypus space -/

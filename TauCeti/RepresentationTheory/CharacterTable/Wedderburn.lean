@@ -37,19 +37,12 @@ blocks are in bijection with the isomorphism classes of simple `k[G]`-modules, a
 of degrees does not depend on the chosen presentation. What this file supplies is the numerical
 half, which is what the dimension arguments can see. Both are proved downstream, in
 `TauCeti/RepresentationTheory/CharacterTable/IrreducibleClassification.lean`, as
-`TauCeti.nonempty_equiv_index_simpleSubmoduleClasses` and `TauCeti.natCard_degree_fiber_eq`,
+`AlgEquiv.nonempty_equiv_index_simpleSubmoduleClasses` and `TauCeti.natCard_degree_fiber_eq`,
 on top of the block representations of
 `TauCeti/RepresentationTheory/CharacterTable/BlockRepresentation.lean` and the exhaustion
 `TauCeti.ClassFunction.exists_nonempty_equiv` of
 `TauCeti/RepresentationTheory/CharacterTable/Completeness.lean`.
 
-## References
-
-This implements the Layer 2 targets `exists_algEquiv_pi_matrix`, `sum_sq_dim_eq_card`,
-`center_algEquiv_pi`, and `card_irreps_eq_card_conjClasses` of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md)
-and its
-[suggested declarations](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/Suggested.lean).
 -/
 
 public section

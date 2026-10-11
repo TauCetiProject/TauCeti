@@ -57,7 +57,8 @@ Frobenius corresponding to `1`.
   intermediate field lies in `K^{ur}` exactly when it is unramified over `K`.
 * `TauCeti.maximalUnramifiedFrobenius_apply_of_pow_natCard_pow_eq_self`,
   `TauCeti.eq_maximalUnramifiedFrobenius_iff`: Frobenius is the unique automorphism raising the
-  roots of the polynomials `X^{q^f} − X` to the `q`-th power.
+  roots of the polynomials `X^{q^f} − X` to the `q`-th power; its `n`-th power raises them to the
+  `q^n`-th power (`TauCeti.maximalUnramifiedFrobenius_pow_apply_of_pow_natCard_pow_eq_self`).
 * `TauCeti.coe_maximalUnramifiedFrobenius_apply_of_mem`,
   `TauCeti.coe_maximalUnramifiedFrobenius_zpow_apply_of_mem`: it and its integral powers restrict
   to the arithmetic Frobenius of each `K_f` and its powers.
@@ -341,6 +342,22 @@ theorem maximalUnramifiedFrobenius_apply_of_pow_natCard_pow_eq_self
   refine Subtype.ext ?_
   rw [SubmonoidClass.coe_pow, ← maximalUnramifiedFrobeniusAux_apply K Ω hg hx]
   exact AlgHom.restrictNormal_commutes (maximalUnramifiedFrobeniusAux K Ω) _ x
+
+variable {K Ω} in
+/-- **The equation of the powers of Frobenius on `K^{ur}`.** The `n`-th power of arithmetic
+Frobenius raises every root of `X^{q^g} − X` in `K^{ur}`, for `g ≠ 0`, to the `q^n`-th power. -/
+theorem maximalUnramifiedFrobenius_pow_apply_of_pow_natCard_pow_eq_self
+    {x : maximalUnramifiedExtension K Ω} {g : ℕ} (hg : g ≠ 0) (hx : x ^ Nat.card 𝓀[K] ^ g = x)
+    (n : ℕ) : (maximalUnramifiedFrobenius K Ω ^ n) x = x ^ Nat.card 𝓀[K] ^ n := by
+  induction n generalizing x with
+  | zero => simp
+  | succ n ih =>
+    -- `x ^ q` is again a root of `X^{q^g} − X`.
+    have hxq : (x ^ Nat.card 𝓀[K]) ^ Nat.card 𝓀[K] ^ g = x ^ Nat.card 𝓀[K] := by
+      rw [← pow_mul, mul_comm, pow_mul, hx]
+    rw [pow_succ, AlgEquiv.mul_apply,
+      maximalUnramifiedFrobenius_apply_of_pow_natCard_pow_eq_self hg hx, ih hxq, ← pow_mul,
+      ← pow_succ']
 
 variable {K Ω} in
 /-- **Uniqueness of Frobenius on `K^{ur}`.** An automorphism of `K^{ur} / K` is the arithmetic

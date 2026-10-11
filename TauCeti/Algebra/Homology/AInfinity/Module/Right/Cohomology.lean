@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Components
+public import TauCeti.Algebra.Homology.GradedCochainComplex
 
 /-!
 # Cohomology of a right A-infinity module
@@ -21,6 +22,7 @@ arity-two identity will subsequently equip it with a right action of the cohomol
 ## Main definitions
 
 * `TauCeti.AInfinityRightModule.differential`: the unary module operation as a linear map.
+* `TauCeti.AInfinityRightModule.cochainComplex`: the underlying cochain complex of the module.
 * `TauCeti.AInfinityRightModule.cycles` and `TauCeti.AInfinityRightModule.boundaries`: its kernel
   and range.
 * `TauCeti.AInfinityRightModule.Cohomology`: unary cycles modulo unary boundaries.
@@ -64,6 +66,28 @@ theorem differential_comp_self_eq_zero (MM : AInfinityRightModule AA M) :
   ext x
   simp only [LinearMap.comp_apply, differential_apply, LinearMap.zero_apply]
   exact MM.stasheff_arity_one x _ _
+
+/-- The Taylor map on the empty algebra word is the differential. -/
+theorem taylor_tmul_one_eq_differential (MM : AInfinityRightModule AA M) (x : M) :
+    MM.taylor (x ⊗ₜ[R] (1 : TensorWords R A)) = MM.differential x := by
+  rw [differential_apply, taylor_tmul_one]
+
+/-- The differential of a right `A∞` module raises the degree by one. -/
+theorem differential_mem_piece (MM : AInfinityRightModule AA M) {p : ℤ} {x : M}
+    (hx : x ∈ MM.grading.piece p) : MM.differential x ∈ MM.grading.piece (p + 1) := by
+  rw [differential_apply]
+  simpa using MM.m_mem_piece 0 hx (fun i ↦ i.elim0) (fun i ↦ i.elim0) (fun i ↦ i.elim0)
+
+/-- The differential of a right `A∞` module is homogeneous of degree one. -/
+theorem isHomogeneous_differential (MM : AInfinityRightModule AA M) :
+    LinearMap.IsHomogeneous MM.differential MM.grading.piece MM.grading.piece 1 :=
+  LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ MM.differential_mem_piece hx
+
+/-- The underlying cochain complex of a right `A∞` module: its degree-`p` term is the degree-`p`
+part of the module and its differential is the unary operation. -/
+abbrev cochainComplex (MM : AInfinityRightModule AA M) : CochainComplex (ModuleCat R) ℤ :=
+  gradedCochainComplex MM.grading.piece MM.differential MM.isHomogeneous_differential
+    fun _ x ↦ LinearMap.congr_fun MM.differential_comp_self_eq_zero x
 
 /-- The cycles of a right `A∞` module are the kernel of its unary operation. -/
 def cycles (MM : AInfinityRightModule AA M) : Submodule R M :=

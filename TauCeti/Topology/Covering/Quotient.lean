@@ -29,13 +29,16 @@ application is `TauCeti.UniversalCover.isCoveringMap_subgroupQuotientProj`.
 
 The file also records that a surjective covering map is an open quotient map: the companion,
 for a covering map with no group acting, of Mathlib's `IsQuotientCoveringMap.isOpenQuotientMap`
-that the rest of the file consumes.
+that the rest of the file consumes. Finally, the quotient covering map of a finite group has
+finite fibres, which is what makes it a finite covering with a transfer on singular chains.
 
 ## Main results
 
 * `IsCoveringMap.isOpenQuotientMap`: a surjective covering map is an open quotient map.
 * `IsQuotientCoveringMap.isCoveringMap_of_comp`: the map from the quotient by a subgroup down to
   the quotient by the whole group is a covering map.
+* `IsQuotientCoveringMap.finite_fiber`: the quotient covering map of a finite group has finite
+  fibres.
 
 ## Implementation notes
 
@@ -194,5 +197,12 @@ theorem _root_.IsQuotientCoveringMap.isCoveringMap_of_comp (hq : IsQuotientCover
     (Set.inter_subset_inter (Set.image_mono interior_subset) interior_subset) hg
 
 end IsQuotientCoveringMap
+
+/-- The fibres of the quotient covering map of a finite group are finite, each being an orbit of
+the free action. -/
+theorem _root_.IsQuotientCoveringMap.finite_fiber [Finite G] (hq : IsQuotientCoveringMap q G)
+    (x : X) : Finite ↥(q ⁻¹' {x}) := by
+  obtain ⟨e, rfl⟩ := hq.surjective x
+  exact Finite.of_equiv G (hq.fiberEquivGroup ⟨e, rfl⟩).symm
 
 end TauCeti

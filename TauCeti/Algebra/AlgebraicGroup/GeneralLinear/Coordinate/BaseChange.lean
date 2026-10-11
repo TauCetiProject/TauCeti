@@ -44,6 +44,9 @@ Chevalley--Demazure construction in Layer 9 of the ReductiveGroups roadmap.
   isomorphism of finite-type commutative Hopf algebras.
 * `TauCeti.GeneralLinear.coordinateHopfAlgebraBaseChangeMap_X`: the value on a generic matrix
   entry after transporting the base change of any coordinate morphism.
+* `TauCeti.GeneralLinear.coordinateHopfAlgebraBaseChangeIso_inv_comp_baseChangeMap_tower`:
+  transporting base change along a tower `R → A → B` in two steps agrees with transporting it in
+  one step.
 * `TauCeti.GeneralLinear.pointToGeneralLinear_baseChangeMap`: scalar extension of a coordinate
   morphism preserves the matrix read from a point.
 
@@ -65,7 +68,7 @@ open scoped TensorProduct
 
 namespace TauCeti.GeneralLinear
 
-universe u v
+universe u v w
 
 variable (R : Type u) (K : Type v) [CommRing R] [CommRing K] [Algebra R K]
 variable (n : ℕ)
@@ -333,6 +336,19 @@ theorem coordinateHopfAlgebraBaseChangeIso_hom_apply
     CategoryTheory.Iso.symm_hom, CommHopfAlgCat.ofIsoSelf_inv]
   exact coordinateHopfAlgebraBaseChangeBialgEquiv_tmul_coordinateRingMap R K n s p
 
+/-- The categorical base-change isomorphism sends the scalar extension of a generic matrix
+entry to the corresponding entry over the new base. -/
+theorem coordinateHopfAlgebraBaseChangeIso_hom_one_tmul_X
+    (R : Type u) (K : Type max u v) [CommRing R] [CommRing K] [Algebra R K]
+    (n : ℕ) (i j : Fin n) :
+    (coordinateHopfAlgebraBaseChangeIso R K n).hom.hom
+        (1 ⊗ₜ[R] coordinateHopfAlgebraAlgEquiv R n
+          (coordinateRingMap R n (MvPolynomial.X (i, j)))) =
+      coordinateHopfAlgebraAlgEquiv K n
+        (coordinateRingMap K n (MvPolynomial.X (i, j))) := by
+  simpa only [one_smul, MvPolynomial.map_X] using
+    coordinateHopfAlgebraBaseChangeIso_hom_apply.{u, v} R K n 1 (MvPolynomial.X (i, j))
+
 /-- The general-linear base-change isomorphism sends the scalar extension of the generic
 determinant to the generic determinant over the new base. -/
 theorem coordinateHopfAlgebraBaseChangeIso_hom_determinantGroupLike
@@ -432,6 +448,43 @@ theorem coordinateHopfAlgebraBaseChangeMap_X
   rw [_root_.CommHopfAlgCat.hom_comp, _root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp,
     Function.comp_apply, BialgHom.coe_comp, Function.comp_apply,
     coordinateHopfAlgebraBaseChangeIso_inv_X, CommHopfAlgCat.baseChangeMap_apply_tmul]
+
+/-- **Transported base change composes in stages.** Let `f : O(GLₙ/R) ⟶ H` be a coordinate
+morphism, and let `dA`, `dB` and `c` be morphisms out of the scalar extensions of `H` to `A` and
+`B`, and of the target `HA` of `dA` to `B`. If `c ∘ (B ⊗ dA)` and `dB` agree on the elements
+`1 ⊗ y` coming from `H`, then transporting `f` to `GLₙ` over `A` and then over `B` agrees with
+transporting it to `GLₙ` over `B` in one step.
+
+This is how a coordinate morphism defined over every ring by base change from `R`, such as a
+root subgroup of an explicit Chevalley carrier, is compared across a ring extension `A → B`. -/
+theorem coordinateHopfAlgebraBaseChangeIso_inv_comp_baseChangeMap_tower
+    (R : Type u) (A : Type max u v) (B : Type max u v w) [CommRing R] [CommRing A]
+    [CommRing B] [Algebra R A] [Algebra A B] [Algebra R B] (n : ℕ)
+    {H : CommHopfAlgCat.{u} R} {HA : CommHopfAlgCat.{max u v} A}
+    {HB : CommHopfAlgCat.{max u v w} B}
+    (f : coordinateHopfAlgebra R n ⟶ H)
+    (dA : CommHopfAlgCat.baseChange (K := A) H ⟶ HA)
+    (dB : CommHopfAlgCat.baseChange (K := B) H ⟶ HB)
+    (c : CommHopfAlgCat.baseChange (K := B) HA ⟶ HB)
+    (hc : ∀ y : H, c.hom (1 ⊗ₜ[A] dA.hom (1 ⊗ₜ[R] y)) = dB.hom (1 ⊗ₜ[R] y)) :
+    (coordinateHopfAlgebraBaseChangeIso.{max u v, w} A B n).inv ≫
+        CommHopfAlgCat.baseChangeMap
+          ((coordinateHopfAlgebraBaseChangeIso.{u, v} R A n).inv ≫
+            CommHopfAlgCat.baseChangeMap f ≫ dA) ≫
+        c =
+      (coordinateHopfAlgebraBaseChangeIso.{u, max v w} R B n).inv ≫
+        CommHopfAlgCat.baseChangeMap f ≫ dB := by
+  ext : 1
+  apply coordinateHopfAlgebra_bialgHom_ext B n
+  intro i j
+  -- `coordinateHopfAlgebraBaseChangeIso_inv_X` and `baseChangeMap_apply_tmul` are stated for the
+  -- coerced morphisms, which `simp` does not match here, so they are used by `rw`. Both sides
+  -- reduce to the hypothesis `hc` at `y = f (Xᵢⱼ)`.
+  simp only [_root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp, Function.comp_apply]
+  rw [coordinateHopfAlgebraBaseChangeIso_inv_X, coordinateHopfAlgebraBaseChangeIso_inv_X,
+    CommHopfAlgCat.baseChangeMap_apply_tmul, CommHopfAlgCat.baseChangeMap_apply_tmul]
+  simp only [_root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp, Function.comp_apply]
+  rw [coordinateHopfAlgebraBaseChangeIso_inv_X, CommHopfAlgCat.baseChangeMap_apply_tmul, hc]
 
 /-- Transporting a scalar-extended coordinate morphism to `O(GLₙ/K)` and reading its matrix
 agrees with reading the matrix of the original morphism on the restricted point. -/

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Noetherian
 public import Mathlib.AlgebraicGeometry.ProjectiveSpectrum.Proper
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.VariableChange
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
@@ -42,10 +43,16 @@ homogeneous coordinate rings `WeierstrassCurve.Projective.variableChangeEquiv W 
 
 * `WeierstrassCurve.isProper_projModelOver`: the projective Weierstrass model is proper over the
   base.
+* `WeierstrassCurve.compactSpace_projModel`: the projective Weierstrass model is quasi-compact.
+* `WeierstrassCurve.isNoetherian_projModel`: over a Noetherian ring, the projective Weierstrass
+  model is a Noetherian scheme.
 * `WeierstrassCurve.projModelZero_projModelOver`: the zero section is a section of the structure
   morphism.
 * `WeierstrassCurve.awayι_projModelOver`: on a standard affine chart, the structure morphism is
   `Spec` of the structure map of the chart.
+* `WeierstrassCurve.projModelZero_map`: `Proj.map F` of a graded ring homomorphism `F` of
+  homogeneous coordinate rings carries the zero section to the zero section, over `Spec φ`, when
+  evaluating `F a` at `[0 : 1 : 0]` gives `cⁿ` times `φ` of the value of `a` for `a` of degree `n`.
 * `WeierstrassCurve.projModelVariableChangeIso_one` and
   `WeierstrassCurve.projModelVariableChangeIso_mul`: the isomorphisms induced by changes of
   variables are compatible with the identity and with products.
@@ -57,6 +64,17 @@ homogeneous coordinate rings `WeierstrassCurve.Projective.variableChangeEquiv W 
 
 * N. M. Katz and B. Mazur, *Arithmetic Moduli of Elliptic Curves*, 2.2.
 * P. Deligne and M. Rapoport, *Les schémas de modules de courbes elliptiques*, II.1.
+
+## Provenance
+
+`isNoetherian_projModel` is adapted from AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0) at
+commit `c3415f32a313e19ace43e05479aeaa0d56ca287a`, directory
+`projects/ModularCurves/ModularCurves/EllipticCurve/`: the unnamed instance
+`IsLocallyNoetherian universalCurve` in `PointsDictionary.lean` and its universe-polymorphic
+counterpart `IsLocallyNoetherian (projModel universalWeierstrassLocU)` in `GroupLawAxioms.lean`.
+The source proves that the universal Weierstrass curve over `ℤ[a₁, a₂, a₃, a₄, a₆][Δ⁻¹]` is
+locally Noetherian. Here every Weierstrass curve over every Noetherian ring is treated, and the
+model is shown to be a Noetherian scheme: it is also quasi-compact, by `compactSpace_projModel`.
 -/
 
 public section
@@ -85,6 +103,15 @@ noncomputable def projModelOver : W.projModel ⟶ Spec (.of R) :=
 instance isProper_projModelOver : IsProper W.projModelOver := by
   unfold projModelOver
   infer_instance
+
+/-- The projective Weierstrass model is quasi-compact. -/
+instance compactSpace_projModel : CompactSpace W.projModel :=
+  QuasiCompact.compactSpace_of_compactSpace W.projModelOver
+
+/-- Over a Noetherian ring, the projective Weierstrass model is a Noetherian scheme. -/
+instance isNoetherian_projModel [IsNoetherianRing R] : IsNoetherian W.projModel where
+  toIsLocallyNoetherian := LocallyOfFiniteType.isLocallyNoetherian W.projModelOver
+  toCompactSpace := inferInstance
 
 /-- On a standard affine chart `D₊(f)`, the structure morphism of the projective model is `Spec` of
 the structure map `R → A_(f)`, through the degree-zero part of the homogeneous coordinate ring. -/
@@ -121,6 +148,32 @@ theorem projModelZero_projModelOver : W.projModelZero ≫ W.projModelOver = 𝟙
   congr 1
   ext r
   simp [awayYEvalZero, ← HomogeneousLocalization.algebraMap_eq]
+
+/-- Let `F` be a graded ring homomorphism from the homogeneous coordinate ring of `W` over `R` to
+that of `W'` over `R'`, and `φ : R →+* R'`. If, for a unit `c` of `R'` and every homogeneous `a`
+of degree `n`, the value of `F a` at `[0 : 1 : 0]` is `cⁿ` times `φ` of the value of `a` there,
+then `Proj.map F` carries the zero section of `projModel W'` to the zero section of `projModel W`,
+over `Spec φ : Spec R' ⟶ Spec R`. -/
+@[reassoc]
+theorem projModelZero_map {R' : Type u} [CommRing R'] {W' : WeierstrassCurve R'}
+    (F : W.toProjective.grading →+*ᵍ W'.toProjective.grading)
+    (hF : HomogeneousIdeal.irrelevant W'.toProjective.grading ≤
+      (HomogeneousIdeal.irrelevant W.toProjective.grading).map F)
+    (φ : R →+* R') (c : R'ˣ) (h : ∀ n, ∀ a ∈ W.toProjective.grading n,
+      W'.toProjective.evalZero (F a) = c ^ n * φ (W.toProjective.evalZero a)) :
+    W'.projModelZero ≫ Proj.map F hF = Spec.map (CommRingCat.ofHom φ) ≫ W.projModelZero := by
+  have hY := W.toProjective.coord_mem_grading 1
+  have hFY : IsUnit (W'.toProjective.evalZero.toRingHom (F (W.toProjective.coord 1))) := by
+    simp [h _ _ hY]
+  -- both zero sections are read on the charts `D₊(Y)`, and `Proj.map F` carries `D₊(F Y)` into
+  -- `D₊(Y)`
+  rw [projModelZero, projModelZero, awayYEvalZero, awayYEvalZero,
+    Proj.SpecMap_awayLift_awayι_eq _ _ one_pos (GradedFunLike.map_mem F hY) one_pos _ hFY,
+    Category.assoc, Proj.awayι_comp_map _ _ one_pos _ hY]
+  simp only [← Spec.map_comp_assoc, ← CommRingCat.ofHom_comp,
+    HomogeneousLocalization.Away.lift_comp_map, RingHom.comp_homogeneousLocalizationAwayLift]
+  congr 3
+  exact HomogeneousLocalization.Away.lift_eq_of_forall_mem _ _ c h hY _ _
 
 section VariableChange
 
@@ -161,12 +214,14 @@ noncomputable def projModelVariableChangeIso : (C • W).projModel ≅ W.projMod
   Proj.mapIso (variableChangeGradedHom W C) (variableChangeGradedHomSymm W C)
     (rightInverse_variableChangeGradedHomSymm W C) (leftInverse_variableChangeGradedHomSymm W C)
 
-/-- `Proj.map` of graded ring homomorphisms into the homogeneous coordinate rings of equal
-Weierstrass curves `W₁ = W₂` which agree on representatives differ by `eqToHom`. -/
-private theorem map_eq_eqToHom_comp_map {W₁ W₂ : WeierstrassCurve R} (h : W₁ = W₂)
-    (g₁ : W.toProjective.grading →+*ᵍ W₁.toProjective.grading)
+/-- Let `g₁` and `g₂` be graded ring homomorphisms from the homogeneous coordinate ring of `W` to
+those of equal Weierstrass curves `W₁ = W₂` over `S`. If both send the class of each polynomial `p`
+to the class of the same polynomial `q p`, then `Proj.map g₁` is `Proj.map g₂` preceded by the
+`eqToHom` identifying the projective models of `W₁` and `W₂`. -/
+theorem ProjMap_eq_eqToHom_comp_ProjMap {S : Type u} [CommRing S] {W₁ W₂ : WeierstrassCurve S}
+    (h : W₁ = W₂) (g₁ : W.toProjective.grading →+*ᵍ W₁.toProjective.grading)
     (g₂ : W.toProjective.grading →+*ᵍ W₂.toProjective.grading)
-    (q : MvPolynomial (Fin 3) R → MvPolynomial (Fin 3) R)
+    (q : MvPolynomial (Fin 3) R → MvPolynomial (Fin 3) S)
     (hg₁ : ∀ p, g₁ (Ideal.Quotient.mk _ p) = Ideal.Quotient.mk _ (q p))
     (hg₂ : ∀ p, g₂ (Ideal.Quotient.mk _ p) = Ideal.Quotient.mk _ (q p)) (hf₁ hf₂) :
     Proj.map g₁ hf₁ = eqToHom (congrArg projModel h) ≫ Proj.map g₂ hf₂ := by
@@ -183,7 +238,7 @@ theorem projModelVariableChangeIso_one :
     W.projModelVariableChangeIso 1 = eqToIso (congrArg projModel (one_smul _ W)) := by
   refine Iso.ext ?_
   rw [projModelVariableChangeIso, Proj.mapIso_hom, eqToIso.hom,
-    map_eq_eqToHom_comp_map W (one_smul _ W) _ (.id _) id
+    ProjMap_eq_eqToHom_comp_ProjMap W (one_smul _ W) _ (.id _) id
       (fun p ↦ by simp [variableChangeGradedHom_apply]) (fun _ ↦ rfl) _ (by simp),
     Proj.map_id, Category.comp_id]
 
@@ -197,7 +252,7 @@ theorem projModelVariableChangeIso_mul (C' : VariableChange R) :
   rw [Iso.trans_hom, Iso.trans_hom, eqToIso.hom, projModelVariableChangeIso,
     projModelVariableChangeIso, projModelVariableChangeIso, Proj.mapIso_hom, Proj.mapIso_hom,
     Proj.mapIso_hom, ← Proj.map_comp]
-  exact map_eq_eqToHom_comp_map W (mul_smul C C' W) _ _ (linearSubst (C * C').toMatrix)
+  exact ProjMap_eq_eqToHom_comp_ProjMap W (mul_smul C C' W) _ _ (linearSubst (C * C').toMatrix)
     (fun p ↦ by simp [variableChangeGradedHom_apply, linearSubst_mul_apply])
     (fun p ↦ by simp [variableChangeGradedHom_apply, linearSubst_mul_apply]) _ _
 
@@ -216,25 +271,11 @@ section: `[0 : 1 : 0] ↦ [0 : u³ : 0] = [0 : 1 : 0]`. -/
 @[reassoc (attr := simp)]
 theorem projModelZero_projModelVariableChangeIso_hom :
     (C • W).projModelZero ≫ (W.projModelVariableChangeIso C).hom = W.projModelZero := by
-  have hY : W.toProjective.coord 1 ∈ W.toProjective.grading 1 :=
-    W.toProjective.coord_mem_grading 1
-  -- the image `u²sX + u³Y + tZ` of `Y` under the change of variables is `u³` at `[0 : 1 : 0]`
-  have hFY :
-      IsUnit ((C • W).toProjective.evalZero.toRingHom
-        (variableChangeGradedHom W C (W.toProjective.coord 1))) := by
-    rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, variableChangeGradedHom_apply,
-      Projective.evalZero_variableChangeEquiv W C hY]
-    simp
-  rw [projModelVariableChangeIso, Proj.mapIso_hom, projModelZero, projModelZero, awayYEvalZero,
-    awayYEvalZero, Proj.SpecMap_awayLift_awayι_eq _ _ one_pos
-      (GradedFunLike.map_mem (variableChangeGradedHom W C) hY) one_pos _ hFY,
-    Category.assoc, Proj.awayι_comp_map _ _ one_pos _ hY, ← Category.assoc, ← Spec.map_comp,
-    ← CommRingCat.ofHom_comp, HomogeneousLocalization.Away.lift_comp_map]
-  congr 3
-  exact HomogeneousLocalization.Away.lift_eq_of_forall_mem _ _ (C.u ^ 3)
-    (fun n a ha ↦ by
-      rw [Units.val_pow_eq_pow_val]
-      exact Projective.evalZero_variableChangeEquiv W C ha) hY _ _
+  -- in degree `n`, the change of variables multiplies the value at `[0 : 1 : 0]` by `(u³)ⁿ`
+  rw [projModelVariableChangeIso, Proj.mapIso_hom, projModelZero_map W _ _ (.id R) (C.u ^ 3)
+    fun _ _ ha ↦ by
+      simpa [variableChangeGradedHom_apply] using Projective.evalZero_variableChangeEquiv W C ha]
+  simp
 
 end VariableChange
 

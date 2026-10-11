@@ -42,9 +42,8 @@ and its Euler and Tits forms, with the twelve positive roots they cut out, in
 
 ## References
 
-This file supplies the vertex and arrow data of the “`D₄` quiver” worked example of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, alongside the generalized
-Kronecker quiver of `TauCeti.RepresentationTheory.Quiver.Kronecker.Basic`. See Derksen--Weyman,
+The orientation used here is `outer i ⟶ center`, with all three arrows pointing into the central
+sink. For background on Dynkin quivers, see Derksen--Weyman,
 *An Introduction to Quiver Representations*, and Assem--Simson--Skowroński, *Elements of the
 Representation Theory of Associative Algebras I*, Ch. II.
 -/

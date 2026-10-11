@@ -161,7 +161,7 @@ theorem degree_divisorPullback (f : FiniteHolomorphicMap X Y)
   classical
   induction D using Finsupp.induction with
   | zero => simp
-  | @single_add y n D hy hn ih =>
+  | @single_add y n D _ _ ih =>
       simp only [map_add, ih, WeilDivisor.single_eq_zsmul_ofPoint, map_zsmul,
         degree_divisorPullback_ofPoint, WeilDivisor.degree_ofPoint]
       ring

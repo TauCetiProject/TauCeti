@@ -109,11 +109,6 @@ noncomputable abbrev derivedGroupSchemeι (H : _root_.CommHopfAlgCat.{u} R) :
       (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj (Opposite.op H) :=
   quotientSpecι H (derivedDefiningIdeal H)
 
-/-- The inclusion of the derived group scheme is a closed immersion. -/
-instance isClosedImmersion_derivedGroupSchemeι (H : _root_.CommHopfAlgCat.{u} R) :
-    AlgebraicGeometry.IsClosedImmersion (derivedGroupSchemeι H).hom.hom.left :=
-  inferInstance
-
 /-- Every commutator of algebra-valued points lies in the derived subgroup. -/
 theorem commutator_mem_derivedPointsSubgroup (H : _root_.CommHopfAlgCat.{v} R)
     (A : CommAlgCat.{w} R) (g h : HopfAlgebra.points (R := R) (H := H) A) :
@@ -235,13 +230,8 @@ theorem derivedDefiningIdeal_eq_augmentation_iff_isCocomm :
       apply WithConv.ofConv_injective
       apply AlgHom.ext
       intro x
-      have hx : x - algebraMap R H (Coalgebra.counit (R := R) x) ∈
-          HopfIdeal.augmentation R H := by
-        rw [HopfIdeal.mem_augmentation]
-        simp
-      have hxzero := hker ((HopfIdeal.mem_toIdeal).mpr hx)
-      rw [RingHom.mem_ker, map_sub, sub_eq_zero] at hxzero
-      simpa [AlgHom.convOne_apply] using hxzero
+      exact (AlgHom.apply_eq_counit_of_augmentation_le_ker _ hker x).trans
+        (AlgHom.convOne_apply x).symm
     rw [HopfAlgebra.toConv_commutatorAlgHom] at hcommutator
     simp only [Bialgebra.TensorProduct.includeLeft_toAlgHom,
       Bialgebra.TensorProduct.includeRight_toAlgHom] at hcommutator

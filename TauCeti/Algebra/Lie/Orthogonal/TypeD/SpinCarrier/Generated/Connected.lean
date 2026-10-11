@@ -38,7 +38,7 @@ universe v
 variable (n : ℕ) (hn : 4 ≤ n) (k : Type v) [Field k]
 
 -- The argument follows the sibling connectedness proofs for the other explicit Chevalley
--- carriers, such as `TauCeti.Algebra.Lie.D4.Tripled.GeneratedConnected`.
+-- carriers, such as `TauCeti.Algebra.Lie.D4.Tripled.Generated.Connected`.
 private theorem connectedSpace_generatorCoordinateAlgebra :
     ∀ j, ConnectedSpace (PrimeSpectrum (generatorCoordinateAlgebra n k j)) := by
   intro j

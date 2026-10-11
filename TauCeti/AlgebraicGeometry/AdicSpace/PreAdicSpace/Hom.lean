@@ -61,9 +61,14 @@ namespace PreAdicSpace
 variable {X Y Z : PreAdicSpace.{u}}
 
 /-- The morphism of presheafed spaces of rings obtained from a morphism of presheafed spaces of
-complete separated topological rings by forgetting the topology on sections. -/
-noncomputable abbrev toRingPresheafedSpaceHom (f : X.toPresheafedSpace ⟶ Y.toPresheafedSpace) :
-    X.toRingPresheafedSpace ⟶ Y.toRingPresheafedSpace :=
+complete separated topological rings by forgetting the topology on sections. The target is any
+presheafed space; when it is the presheafed space of a pre-adic space `Y`, the codomain is
+`Y.toRingPresheafedSpace`. -/
+noncomputable abbrev toRingPresheafedSpaceHom
+    {W : PresheafedSpace CompleteSeparatedTopCommRingCat.{u}} (f : X.toPresheafedSpace ⟶ W) :
+    X.toRingPresheafedSpace ⟶
+      (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).mapPresheaf.obj
+        W :=
   (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).mapPresheaf.map f
 
 /-- A morphism of pre-adic spaces is a morphism of presheafed spaces of complete separated

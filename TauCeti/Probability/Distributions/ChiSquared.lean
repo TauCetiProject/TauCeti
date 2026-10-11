@@ -59,6 +59,10 @@ formulas rather than a density.
   `0 ≤ k`;
 * `TauCeti.Probability.charFun_chiSquaredMeasure` — the characteristic function is
   `(1 - 2 * I * t) ^ (-k / 2)`, for every real `t`;
+* `TauCeti.Probability.integral_id_chiSquaredMeasure_zero`,
+  `TauCeti.Probability.variance_id_chiSquaredMeasure_zero` and
+  `TauCeti.Probability.charFun_chiSquaredMeasure_zero` — at the Dirac boundary `k = 0` the mean
+  and variance vanish and the characteristic function is identically `1`;
 * `TauCeti.Probability.chiSquaredMeasure_conv_chiSquaredMeasure` — degrees of freedom add under
   convolution;
 * `TauCeti.Probability.chiSquaredMeasure_two` — two degrees of freedom give the exponential law of
@@ -274,12 +278,20 @@ theorem cdf_chiSquaredMeasure_zero (x : ℝ) :
 
 /-! ### Moments -/
 
+/-- At zero degrees of freedom the mean is `0`. -/
+theorem integral_id_chiSquaredMeasure_zero : ∫ x, x ∂chiSquaredMeasure 0 = 0 := by
+  rw [chiSquaredMeasure_zero, integral_dirac]
+
+/-- At zero degrees of freedom the variance is `0`. -/
+theorem variance_id_chiSquaredMeasure_zero : variance id (chiSquaredMeasure 0) = 0 := by
+  rw [chiSquaredMeasure_zero, variance_dirac]
+
 /-- The mean of a chi-squared law with nonnegative degrees of freedom is its number of degrees of
 freedom. -/
 @[simp]
 theorem integral_id_chiSquaredMeasure (hk : 0 ≤ k) : ∫ x, x ∂chiSquaredMeasure k = k := by
   rcases hk.eq_or_lt' with rfl | hk
-  · rw [chiSquaredMeasure_zero, integral_dirac]
+  · exact integral_id_chiSquaredMeasure_zero
   · rw [chiSquaredMeasure_eq_gammaMeasure hk,
       integral_id_gammaMeasure (by positivity) one_half_pos]
     ring
@@ -290,8 +302,7 @@ degrees of freedom. -/
 theorem variance_id_chiSquaredMeasure (hk : 0 ≤ k) :
     variance id (chiSquaredMeasure k) = 2 * k := by
   rcases hk.eq_or_lt' with rfl | hk
-  · rw [chiSquaredMeasure_zero]
-    simpa only [mul_zero] using variance_dirac 0
+  · rw [variance_id_chiSquaredMeasure_zero, mul_zero]
   · rw [chiSquaredMeasure_eq_gammaMeasure hk,
       variance_id_gammaMeasure (by positivity) one_half_pos]
     ring
@@ -333,13 +344,18 @@ theorem cgf_id_chiSquaredMeasure (hk : 0 ≤ k) {t : ℝ} (ht : t < 2⁻¹) :
     congr 2
     all_goals ring
 
+/-- At zero degrees of freedom the characteristic function is identically `1`. -/
+theorem charFun_chiSquaredMeasure_zero (t : ℝ) : charFun (chiSquaredMeasure 0) t = 1 := by
+  rw [chiSquaredMeasure_zero, charFun_dirac]
+  simp
+
 /-- The characteristic function of a chi-squared law with nonnegative degrees of freedom, at every
 real `t`. The base has real part `1`, so the principal power does not meet the branch cut. -/
 @[simp]
 theorem charFun_chiSquaredMeasure (hk : 0 ≤ k) (t : ℝ) :
     charFun (chiSquaredMeasure k) t = (1 - 2 * Complex.I * t) ^ (-(k : ℂ) / 2) := by
   rcases hk.eq_or_lt' with rfl | hk
-  · rw [chiSquaredMeasure_zero, charFun_dirac]
+  · rw [charFun_chiSquaredMeasure_zero]
     simp
   · rw [chiSquaredMeasure_eq_gammaMeasure hk, charFun_gammaMeasure (by positivity) one_half_pos]
     push_cast

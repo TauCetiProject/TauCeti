@@ -64,7 +64,7 @@ endomorphism ring is `(r)`-adically complete, every idempotent endomorphism of `
 reduction of an idempotent endomorphism of `N`.
 
 The completeness hypothesis holds when `R` is Noetherian and `(r)`-adically complete and `N` is
-finitely generated over `R`, by `Module.Finite.linearMap_of_isNoetherianRing` and
+finitely generated over `R`, by `Module.Finite.linearMap_of_isNoetherian` and
 `IsAdicComplete.of_finite`. -/
 theorem exists_isIdempotentElem_endMapQ_eq
     {e : Module.End A (N ⧸ Ideal.span {algebraMap R A r} • (⊤ : Submodule A N))}

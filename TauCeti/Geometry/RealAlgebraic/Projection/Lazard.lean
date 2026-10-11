@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.RealAlgebraic.Projection.McCallum
+public import TauCeti.Geometry.RealAlgebraic.Projection.McCallum.Basic
 
 /-!
 # The Lazard projection set

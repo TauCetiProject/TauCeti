@@ -58,10 +58,7 @@ universe u
 
 variable {k : Type u} [Field k] [IsAlgClosed k]
 
-/-- Locally expose the group structure carried by the bundled rational component group. -/
-noncomputable local instance componentGroupPointsGroupForTransfer
-    (H : FiniteTypeCommHopfAlgCat.{u, u} k) : Group (componentGroupPoints H) :=
-  (componentGroupPoints H).str
+attribute [local instance] componentGroupPointsGroup
 
 /-- The group structure on the connected components of the spectrum of a finite-type affine
 group. It is characterized by the requirement that the canonical bijection from

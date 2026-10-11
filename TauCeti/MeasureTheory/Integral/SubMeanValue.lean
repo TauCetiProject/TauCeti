@@ -6,14 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.Average
-public import Mathlib.MeasureTheory.Measure.Haar.Basic
-import Mathlib.Analysis.Convex.Integral
-import Mathlib.Analysis.Normed.Module.FiniteDimension
+public import Mathlib.MeasureTheory.Measure.OpenPos
+import Mathlib.Analysis.Normed.Module.RCLike.Real
+import Mathlib.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # The maximum principle for the sub-mean-value property
 
-Let `E` be a nontrivial finite-dimensional real normed space with an additive Haar measure `μ`.
+Let `E` be a nontrivial real normed space with a measure `μ` that is positive on nonempty open
+sets and finite on compact sets.
 This file proves that a function `u`, continuous on a compact set `K`, with
 `u x ≤ ⨍ y in ball x r, u y ∂μ` for arbitrarily small `r > 0` at every interior point `x` of `K`,
 attains its maximum over `K` on `frontier K`. No differentiability is assumed, so this applies to
@@ -24,17 +25,19 @@ continuous function with the mean-value property and a harmonic function.
 
 Among the points where the maximum `M` is attained, take one, `z`, farthest from a fixed maximum
 point. If `z` were interior, then on a small ball about `z` contained in `K` the continuous
-function `u ≤ M` would have average at least `M`, so by the equality case of Jensen's inequality
-(`StrictConvex.ae_eq_const_or_average_mem_interior`) it would equal `M` on the whole ball, which
+function `u ≤ M` would have average at least `M`. Equality in monotonicity of the integral
+(`MeasureTheory.integral_eq_iff_of_ae_le`) implies that it equals `M` almost everywhere on the
+ball, hence everywhere by continuity and positivity of the measure on open sets. The ball
 contains maximum points farther away than `z`.
 
 ## Main declarations
 
-* `TauCeti.exists_mem_frontier_isMaxOn_of_le_setAverage_ball`: a continuous function with the
+* `IsCompact.exists_mem_frontier_isMaxOn_of_le_setAverage_ball`: a continuous function with the
   sub-mean-value property on balls at the interior points of a compact set attains its maximum
   on the frontier.
-* `TauCeti.le_of_le_setAverage_ball_le_frontier`, `TauCeti.ge_of_setAverage_ball_le_ge_frontier`:
-  the weak maximum and minimum principles for the sub- and super-mean-value properties.
+* `IsCompact.le_of_le_setAverage_ball_le_frontier`,
+  `IsCompact.ge_of_setAverage_ball_le_ge_frontier`: the weak maximum and minimum principles for
+  the sub- and super-mean-value properties.
 
 ## References
 
@@ -45,12 +48,13 @@ contains maximum points farther away than `z`.
 
 public section
 
-namespace TauCeti
+namespace IsCompact
 
 open MeasureTheory Metric Set Filter Topology
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] [Nontrivial E] {μ : Measure E} [μ.IsAddHaarMeasure]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [MeasurableSpace E] [OpensMeasurableSpace E] [Nontrivial E] {μ : Measure E}
+  [μ.IsOpenPosMeasure] [IsFiniteMeasureOnCompacts μ]
   {u : E → ℝ}
 
 /-- **Maximum principle for the sub-mean-value property.** Let `K` be a nonempty compact set
@@ -67,36 +71,44 @@ theorem exists_mem_frontier_isMaxOn_of_le_setAverage_ball {K : Set E} (hK : IsCo
     hK.of_isClosed_subset (hu.preimage_isClosed_of_isClosed hK.isClosed isClosed_singleton)
       inter_subset_left
   obtain ⟨z, ⟨hzK, hzM⟩, hzfar⟩ :=
-    hA.exists_isMaxOn ⟨z₀, hz₀K, rfl⟩ (continuous_id.dist continuous_const).continuousOn
-  refine ⟨z, ?_, fun y hy ↦ (hzM ▸ hz₀ hy :)⟩
+    hA.exists_isMaxOn (f := fun y ↦ dist y z₀) ⟨z₀, hz₀K, rfl⟩
+      (continuous_id.dist continuous_const).continuousOn
+  simp only [mem_preimage, mem_singleton_iff] at hzM
+  refine ⟨z, ?_, fun y hy ↦ by rw [hzM]; exact hz₀ hy⟩
   rw [hK.isClosed.frontier_eq]
   refine ⟨hzK, fun hzint ↦ ?_⟩
   -- If `z` were interior, the sub-mean-value property would hold on a ball `ball z r ⊆ K`.
   obtain ⟨ε, hε, hεK⟩ := nhds_basis_closedBall.mem_iff.1 (mem_interior_iff_mem_nhds.1 hzint)
   obtain ⟨r, hmean, hr, hrε⟩ := ((hsub z hzint).and_eventually (Ioo_mem_nhdsGT hε)).exists
   have hrK : closedBall z r ⊆ K := (closedBall_subset_closedBall hrε.le).trans hεK
-  have hle : ∀ y ∈ ball z r, u y ≤ u z := fun y hy ↦ hzM ▸ hz₀ (hrK (ball_subset_closedBall hy))
-  -- By the equality case of Jensen's inequality, `u` is constant on that ball, since it is
-  -- bounded above by `u z` there and its average is at least `u z`.
+  have hballK : ball z r ⊆ K := ball_subset_closedBall.trans hrK
+  have hle : u ≤ᵐ[μ.restrict (ball z r)] fun _ ↦ u z :=
+    (ae_restrict_iff' measurableSet_ball).2 (ae_of_all _ fun y hy ↦ by
+      rw [hzM]
+      exact hz₀ (hballK hy))
+  -- Compactness of `K` supplies finite measure and integrability on the smaller ball.
+  have hμfin : μ (ball z r) ≠ ⊤ :=
+    ne_top_of_le_ne_top hK.measure_ne_top (measure_mono hballK)
   have : IsFiniteMeasure (μ.restrict (ball z r)) :=
-    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  have hcont : ContinuousOn u (ball z r) := hu.mono (ball_subset_closedBall.trans hrK)
-  obtain hae | havg := (strictConvex_Iic (u z)).ae_eq_const_or_average_mem_interior isClosed_Iic
-    ((ae_restrict_iff' measurableSet_ball).2 (ae_of_all _ hle))
-    (((hu.mono hrK).integrableOn_compact (μ := μ) (isCompact_closedBall z r)).mono_set
-      ball_subset_closedBall)
-  swap
-  · rw [interior_Iic] at havg
-    exact (not_le.2 havg hmean).elim
-  have hball := Measure.eqOn_open_of_ae_eq hae isOpen_ball hcont continuousOn_const
+    isFiniteMeasure_restrict.2 hμfin
+  have hi : IntegrableOn u (ball z r) μ := (hu.integrableOn_compact hK).mono_set hballK
+  have hc : Integrable (fun _ : E ↦ u z) (μ.restrict (ball z r)) := integrable_const _
+  -- Equality in integral monotonicity makes `u` constant almost everywhere on the ball.
+  have hmean' : ∫ _ in ball z r, u z ∂μ ≤ ∫ y in ball z r, u y ∂μ := by
+    rw [setIntegral_const, ← measure_smul_setAverage u hμfin]
+    simp only [smul_eq_mul]
+    exact mul_le_mul_of_nonneg_left hmean ENNReal.toReal_nonneg
+  have hae := (integral_eq_iff_of_ae_le hi hc hle).1
+    (le_antisymm (integral_mono_ae hi hc hle) hmean')
+  have hball := Measure.eqOn_open_of_ae_eq hae isOpen_ball (hu.mono hballK) continuousOn_const
   -- That ball contains maximum points farther from `z₀` than `z`, a contradiction.
   have hfr : z ∈ frontier (closedBall z₀ (dist z z₀))ᶜ := by
     rw [frontier_compl, frontier_closedBall' z₀ (dist z z₀)]
     exact mem_sphere.2 rfl
   obtain ⟨y, hy, hyz⟩ := Metric.mem_closure_iff.1 (frontier_subset_closure hfr) r hr
   have hyr : y ∈ ball z r := mem_ball'.2 hyz
-  have hyM : u y = u z₀ := hzM ▸ le_antisymm (hle y hyr) (hmean.trans (hball hyr).ge)
-  exact hy (mem_closedBall.2 (hzfar ⟨hrK (ball_subset_closedBall hyr), hyM⟩))
+  have hyM : u y = u z₀ := (hball hyr).trans hzM
+  exact hy (mem_closedBall.2 (hzfar ⟨hballK hyr, hyM⟩))
 
 /-- **Weak maximum principle for the sub-mean-value property.** Let `K` be compact and let `u` be
 continuous on `K`. If at every interior point `x` of `K` the value `u x` is at most the average of
@@ -124,4 +136,4 @@ theorem ge_of_setAverage_ball_le_ge_frontier {K : Set E} (hK : IsCompact K) {m :
     (fun y hy ↦ neg_le_neg (hbdry hy)) hx
   simpa using h
 
-end TauCeti
+end IsCompact

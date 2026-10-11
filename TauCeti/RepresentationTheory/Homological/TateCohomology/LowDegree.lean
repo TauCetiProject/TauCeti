@@ -17,8 +17,9 @@ of a finite group, degree zero is the quotient of the invariant submodule by the
 norm, and degree `-1` is the kernel of the norm modulo the augmentation submodule `I_G M`. For a
 trivial representation `A`, the comparison with first group homology identifies degree `-2` with
 `Gᵃᵇ ⊗[ℤ] A`, and hence, for the trivial integral representation, with the additive form of the
-abelianization. For the trivial integral representation the same descriptions evaluate degree
-zero as `ZMod |G|` and make degree `-1` trivial.
+abelianization. For the trivial representation `R` the same descriptions evaluate degree zero as
+`R ⧸ |G|R`, hence as `ZMod |G|` for the trivial integral representation, whose degree `-1` they
+make trivial.
 
 The degree-zero and degree-`-1` constructions are adapted from
 `ClassFieldTheory/Cohomology/TateCohomology.lean` and
@@ -36,6 +37,8 @@ homology, `groupHomology.H1AddEquivOfIsTrivial`, and the tensor-product right un
   `Ĥ⁻²(G, A) ≃+ Gᵃᵇ ⊗[ℤ] A` for a trivial representation `A`.
 * `TauCeti.TateCohomology.HNegTwoAddEquivAbelianization`:
   `Ĥ⁻²(G, ℤ) ≃+ Additive (Gᵃᵇ)`.
+* `TauCeti.TateCohomology.H0LinearEquivTrivial`: for the trivial representation `R`, degree zero
+  is `R ⧸ |G|R`.
 * `TauCeti.TateCohomology.H0LinearEquivTrivialIntZModCard`: for the trivial integral
   representation, degree zero is `ZMod |G|`.
 
@@ -56,12 +59,19 @@ public noncomputable section
 
 universe u
 
-open CategoryTheory Limits groupCohomology groupHomology LinearMap Rep
+open CategoryTheory groupCohomology groupHomology LinearMap Rep
 open scoped TensorProduct
 
 namespace TauCeti.TateCohomology
 
+section General
+
 variable {R G : Type u} [CommRing R] [Group G] [Fintype G]
+
+/-- The norm square shared by the degree-zero and degree `-1` short complexes. -/
+private theorem chainsIso₀_hom_comp_norm (M : Rep R G) :
+    (chainsIso₀ M).hom ≫ M.norm.toModuleCatHom = M.tateNorm ≫ (cochainsIso₀ M).hom := by
+  simp only [Rep.tateNorm, Category.assoc, Iso.inv_hom_id, Category.comp_id]
 
 namespace Zero
 
@@ -72,18 +82,14 @@ private def shortComplex : ShortComplex (ModuleCat R) :=
   .mk M.norm.toModuleCatHom (d₀₁ M) (norm_comp_d_eq_zero M)
 
 /-- The degree-zero part of the Tate complex is the norm-to-coboundary short complex. -/
-private def isoShortComplex' : (tateComplex M).sc' (-1) 0 1 ≅ shortComplex M := by
-  have hnorm :
-      (chainsIso₀ M).hom ≫ M.norm.toModuleCatHom = M.tateNorm ≫ (cochainsIso₀ M).hom := by
-    simp only [Rep.tateNorm, Category.assoc, Iso.inv_hom_id, Category.comp_id]
-  exact ShortComplex.isoMk (by exact chainsIso₀ M) (cochainsIso₀ M) (cochainsIso₁ M)
-    hnorm (comp_d₀₁_eq M)
+private def isoShortComplex' : (tateComplex M).sc' (-1) 0 1 ≅ shortComplex M :=
+  ShortComplex.isoMk (chainsIso₀ M) (cochainsIso₀ M) (cochainsIso₁ M)
+    (chainsIso₀_hom_comp_norm M) (comp_d₀₁_eq M)
 
 private def cyclesIso : (tateComplex M).cycles 0 ≅ (shortComplex M).cycles :=
   (tateComplex M).cyclesIsoSc' (-1) 0 1 (by simp) (by simp) ≪≫
     ShortComplex.cyclesMapIso (isoShortComplex' M)
 
-@[reassoc]
 private theorem cyclesIso_hom_comp_iCycles :
     (cyclesIso M).hom ≫ (shortComplex M).iCycles =
       (tateComplex M).iCycles 0 ≫ (cochainsIso₀ M).hom := by
@@ -96,7 +102,6 @@ private def cyclesIsoInvariants :
   (shortComplex M).moduleCatCyclesIso ≪≫ eqToIso (by rfl) ≪≫
       (LinearEquiv.ofEq _ _ (d₀₁_ker_eq_invariants M)).toModuleIso
 
-@[reassoc]
 private theorem cyclesIsoInvariants_hom_comp_subtype :
     (cyclesIsoInvariants M).hom ≫ ModuleCat.ofHom M.ρ.invariants.subtype =
       (shortComplex M).iCycles := by
@@ -184,7 +189,7 @@ def H0π (M : Rep R G) : ModuleCat.of R M.ρ.invariants ⟶ tateCohomology M 0 :
 
 /-- The representative map to degree-zero Tate cohomology is the canonical projection from
 degree-zero cycles to homology, after identifying those cycles with the invariants. -/
-theorem H0π_eq_cyclesIso_inv_comp_homologyπ (M : Rep R G) :
+theorem H0π_eq_H0CyclesIso_inv_comp_homologyπ (M : Rep R G) :
     H0π M = (H0CyclesIso M).inv ≫ (tateComplex M).homologyπ 0 := by
   refine (cancel_mono (H0IsoNormQuotient M).hom).1 ?_
   rw [H0π, Category.assoc, Iso.inv_hom_id, Category.comp_id]
@@ -199,7 +204,7 @@ projection from degree-zero cycles to homology. -/
 @[reassoc]
 theorem H0CyclesIso_hom_comp_H0π (M : Rep R G) :
     (H0CyclesIso M).hom ≫ H0π M = (tateComplex M).homologyπ 0 := by
-  rw [H0π_eq_cyclesIso_inv_comp_homologyπ]
+  rw [H0π_eq_H0CyclesIso_inv_comp_homologyπ]
   exact Iso.hom_inv_id_assoc _ _
 
 /-- The quotient map from invariant representatives onto degree-zero Tate cohomology is an
@@ -249,12 +254,8 @@ classes follows from the property of the classes of invariants. -/
 @[elab_as_elim]
 theorem H0_induction_on {M : Rep R G} {C : tateCohomology M 0 → Prop} (x : tateCohomology M 0)
     (h : ∀ y : M.ρ.invariants, C (H0π M y)) : C x := by
-  obtain ⟨y, hy⟩ := Submodule.mkQ_surjective ((range M.ρ.norm).submoduleOf M.ρ.invariants)
-    ((H0IsoNormQuotient M).hom x)
-  have hx : H0π M y = x := by
-    rw [← mkQ_comp_H0IsoNormQuotient_inv_apply, ← Submodule.mkQ_apply, hy,
-      Iso.hom_inv_id_apply]
-  exact hx ▸ h y
+  obtain ⟨y, rfl⟩ := (ModuleCat.epi_iff_surjective (H0π M)).1 inferInstance x
+  exact h y
 
 namespace NegOne
 
@@ -265,19 +266,14 @@ private def shortComplex : ShortComplex (ModuleCat R) :=
   .mk (d₁₀ M) M.norm.toModuleCatHom (Rep.comp_eq_zero M)
 
 /-- The degree `-1` part of the Tate complex is the augmentation-to-norm short complex. -/
-private def isoShortComplex : (tateComplex M).sc (-1) ≅ shortComplex M := by
-  have hnorm :
-      (chainsIso₀ M).hom ≫ M.norm.toModuleCatHom =
-        M.tateNorm ≫ (cochainsIso₀ M).hom := by
-    simp only [Rep.tateNorm, Category.assoc, Iso.inv_hom_id, Category.comp_id]
-  exact (tateComplex M).isoSc' (-2) (-1) 0 (by simp) (by simp) ≪≫
+private def isoShortComplex : (tateComplex M).sc (-1) ≅ shortComplex M :=
+  (tateComplex M).isoSc' (-2) (-1) 0 (by simp) (by simp) ≪≫
     ShortComplex.isoMk (chainsIso₁ M) (chainsIso₀ M) (cochainsIso₀ M)
-      (comp_d₁₀_eq M) hnorm
+      (comp_d₁₀_eq M) (chainsIso₀_hom_comp_norm M)
 
 private def cyclesIso : (tateComplex M).cycles (-1) ≅ (shortComplex M).cycles :=
   ShortComplex.cyclesMapIso (isoShortComplex M)
 
-@[reassoc]
 private theorem cyclesIso_inv_comp_homologyπ_comp_homologyMapIso_hom :
     (cyclesIso M).inv ≫ (tateComplex M).homologyπ (-1) ≫
         (ShortComplex.homologyMapIso (isoShortComplex M)).hom =
@@ -353,14 +349,8 @@ of all classes follows from the property of the classes of norm-zero elements. -
 @[elab_as_elim]
 theorem HNegOne_induction_on {M : Rep R G} {C : tateCohomology M (-1) → Prop}
     (x : tateCohomology M (-1)) (h : ∀ y : ker M.ρ.norm, C (HNegOneπ M y)) : C x := by
-  obtain ⟨y, hy⟩ := Submodule.mkQ_surjective
-    ((Representation.Coinvariants.ker M.ρ).submoduleOf (ker M.ρ.norm))
-    ((HNegOneIsoNormKernelQuotient M).hom x)
-  have hx : HNegOneπ M y = x := by
-    apply (ModuleCat.mono_iff_injective (HNegOneIsoNormKernelQuotient M).hom).1 inferInstance
-    rw [HNegOneπ_comp_HNegOneIsoNormKernelQuotient_hom_apply]
-    simpa only [Submodule.mkQ_apply] using hy
-  exact hx ▸ h y
+  obtain ⟨y, rfl⟩ := (ModuleCat.epi_iff_surjective (HNegOneπ M)).1 inferInstance x
+  exact h y
 
 /-- The cycles in degree `-1` of the Tate complex are the kernel of the norm. -/
 def HNegOneCyclesIso (M : Rep R G) :
@@ -388,7 +378,7 @@ theorem HNegOneCyclesIso_inv_comp_iCycles (M : Rep R G) :
 
 /-- The representative map to degree `-1` Tate cohomology is the canonical projection from
 degree `-1` cycles to homology, after identifying those cycles with the kernel of the norm. -/
-theorem HNegOneπ_eq_cyclesIso_inv_comp_homologyπ (M : Rep R G) :
+theorem HNegOneπ_eq_HNegOneCyclesIso_inv_comp_homologyπ (M : Rep R G) :
     HNegOneπ M = (HNegOneCyclesIso M).inv ≫ (tateComplex M).homologyπ (-1) := by
   let S := NegOne.shortComplex M
   let e := ShortComplex.homologyMapIso (NegOne.isoShortComplex M)
@@ -449,6 +439,43 @@ theorem HNegTwoAddEquivTensorOfIsTrivial_symm_tmul (g : G) (a : A) :
         (H1π A ((cycles₁IsoOfIsTrivial A).inv (Finsupp.single g a))) := by
   simp [AddEquiv.symm_apply_eq]
 
+variable (R G) in
+/-- Degree-zero Tate cohomology of the trivial representation `R` is `R ⧸ |G|R`. -/
+def H0LinearEquivTrivial :
+    tateCohomology (Rep.trivial R G R) 0 ≃ₗ[R] R ⧸ Ideal.span {(Nat.card G : R)} := by
+  -- A trivial representation is its own invariant submodule, so the inclusion of the invariants
+  -- is an equivalence onto `R`.
+  let e : (Rep.trivial R G R).ρ.invariants ≃ₗ[R] R :=
+    LinearEquiv.ofTop _ (Representation.invariants_eq_top _)
+  have he : (e : (Rep.trivial R G R).ρ.invariants →ₗ[R] R) =
+      (Rep.trivial R G R).ρ.invariants.subtype := by
+    ext x
+    simp [e]
+  have hsurjective : Function.Surjective
+      ⇑(Rep.trivial R G R).ρ.invariants.subtype :=
+    LinearMap.range_eq_top.mp <| by
+      rw [Submodule.range_subtype, Representation.invariants_eq_top]
+  refine (H0IsoNormQuotient (Rep.trivial R G R)).toLinearEquiv ≪≫ₗ
+    Submodule.Quotient.equiv _ _ e ?_
+  rw [he, Submodule.submoduleOf, Submodule.map_comap_eq_of_surjective hsurjective,
+    Representation.range_norm_trivial]
+
+-- `dsimp% only` on the left-hand side: see the comment on `H0π_eq_zero_iff`.
+/-- The degree-zero equivalence for the trivial representation sends an invariant representative
+to its residue class modulo the order of the group. -/
+@[simp]
+theorem H0LinearEquivTrivial_H0π (x : (Rep.trivial R G R).ρ.invariants) :
+    (dsimp% only (H0LinearEquivTrivial R G (H0π (Rep.trivial R G R) x))) =
+      Ideal.Quotient.mk _ (x : R) := by
+  simp only [H0LinearEquivTrivial, LinearEquiv.trans_apply]
+  rw [Iso.toLinearEquiv_apply, H0π_comp_H0IsoNormQuotient_hom_apply,
+    Submodule.Quotient.equiv_apply, Submodule.mapQ_apply]
+  rfl
+
+end General
+
+section Abelianization
+
 variable {G : Type} [Group G] [Fintype G]
 
 /-- The degree-`-2` Tate cohomology of the trivial integral representation is the additive
@@ -491,32 +518,18 @@ theorem HNegTwoAddEquivAbelianization_symm_of (g : G) :
           ((cycles₁IsoOfIsTrivial (Rep.trivial ℤ G ℤ)).inv (Finsupp.single g 1))) := by
   simp [AddEquiv.symm_apply_eq]
 
+end Abelianization
+
 section TrivialInt
 
 -- Mathlib's Tate cohomology takes its coefficient ring and its group in a single universe, so
 -- with integral coefficients the group is confined to `Type`.
 variable (H : Type) [Group H] [Fintype H]
 
-/-- Degree-zero Tate cohomology with trivial integral coefficients is `ZMod |G|`. -/
+/-- Degree-zero Tate cohomology with trivial integral coefficients is `ZMod |H|`. -/
 def H0LinearEquivTrivialIntZModCard :
-    tateCohomology (Rep.trivial ℤ H ℤ) 0 ≃ₗ[ℤ] ZMod (Nat.card H) := by
-  -- A trivial representation is its own invariant submodule, so the inclusion of the invariants
-  -- is an equivalence onto `ℤ`.
-  let e : (Rep.trivial ℤ H ℤ).ρ.invariants ≃ₗ[ℤ] ℤ :=
-    LinearEquiv.ofTop _ (Representation.invariants_eq_top _)
-  have he : (e : (Rep.trivial ℤ H ℤ).ρ.invariants →ₗ[ℤ] ℤ) =
-      (Rep.trivial ℤ H ℤ).ρ.invariants.subtype := by
-    ext x
-    simp [e]
-  have hsurjective : Function.Surjective
-      ⇑(Rep.trivial ℤ H ℤ).ρ.invariants.subtype :=
-    LinearMap.range_eq_top.mp <| by
-      rw [Submodule.range_subtype, Representation.invariants_eq_top]
-  refine (H0IsoNormQuotient (Rep.trivial ℤ H ℤ)).toLinearEquiv ≪≫ₗ
-    Submodule.Quotient.equiv _ _ e ?_ ≪≫ₗ
-      (Int.quotientSpanNatEquivZMod _).toIntLinearEquiv
-  rw [he, Submodule.submoduleOf, Submodule.map_comap_eq_of_surjective hsurjective,
-    Representation.range_norm_trivial]
+    tateCohomology (Rep.trivial ℤ H ℤ) 0 ≃ₗ[ℤ] ZMod (Nat.card H) :=
+  H0LinearEquivTrivial ℤ H ≪≫ₗ (Int.quotientSpanNatEquivZMod _).toIntLinearEquiv
 
 -- `dsimp% only` on the left-hand side: see the comment on `H0π_eq_zero_iff`.
 /-- The degree-zero equivalence sends an invariant representative to its residue class modulo the
@@ -524,9 +537,7 @@ order of the group. -/
 @[simp]
 theorem H0LinearEquivTrivialIntZModCard_H0π (x : (Rep.trivial ℤ H ℤ).ρ.invariants) :
     (dsimp% only (H0LinearEquivTrivialIntZModCard H (H0π (Rep.trivial ℤ H ℤ) x))) = (x : ℤ) := by
-  simp only [H0LinearEquivTrivialIntZModCard, LinearEquiv.trans_apply]
-  rw [Iso.toLinearEquiv_apply, H0π_comp_H0IsoNormQuotient_hom_apply,
-    Submodule.Quotient.equiv_apply, Submodule.mapQ_apply]
+  rw [H0LinearEquivTrivialIntZModCard, LinearEquiv.trans_apply, H0LinearEquivTrivial_H0π]
   rfl
 
 /-- The class of `1 ∈ ℤ` in degree-zero Tate cohomology with trivial integral coefficients. -/
@@ -563,19 +574,10 @@ instance finite_tateCohomology_zero_trivial_int :
 /-- Degree `-1` Tate cohomology with trivial integral coefficients is trivial. -/
 instance subsingleton_tateCohomology_negOne_trivial_int :
     Subsingleton (tateCohomology (Rep.trivial ℤ H ℤ) (-1)) := by
-  let Q := ker (Rep.trivial ℤ H ℤ).ρ.norm ⧸
-    (Representation.Coinvariants.ker (Rep.trivial ℤ H ℤ).ρ).submoduleOf
-      (ker (Rep.trivial ℤ H ℤ).ρ.norm)
   have hker : ker (Rep.trivial ℤ H ℤ).ρ.norm = ⊥ := by
     ext x
     simp [Representation.norm]
-  have hQ : Subsingleton Q := by
-    have hkerSubsingleton : Subsingleton (ker (Rep.trivial ℤ H ℤ).ρ.norm) := by
-      rw [hker]
-      infer_instance
-    let _ : Subsingleton (ker (Rep.trivial ℤ H ℤ).ρ.norm) := hkerSubsingleton
-    infer_instance
-  let _ : Subsingleton Q := hQ
+  have : Subsingleton (ker (Rep.trivial ℤ H ℤ).ρ.norm) := hker ▸ inferInstance
   exact Function.Injective.subsingleton (HNegOneIsoNormKernelQuotient
     (Rep.trivial ℤ H ℤ)).toLinearEquiv.injective
 

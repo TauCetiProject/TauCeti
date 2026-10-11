@@ -218,7 +218,7 @@ theorem exists_representatives (hf : IsAnalyticContinuationAlong f γ s) (hs : I
       (∀ t ∈ s, ∀ᶠ u in 𝓝[s] t, EqOn (F u) (F t) (ball (γ t) ρ)) := by
   rcases s.eq_empty_or_nonempty with rfl | hsne
   · exact ⟨1, one_pos, 0, by simp, by simp, by simp⟩
-  obtain ⟨ρ, hρpos, i, R, hmem, hR, hra, key, hloc⟩ := exists_uniform_sampling hf hs hsne
+  obtain ⟨ρ, hρpos, i, R, _, hR, hra, key, hloc⟩ := exists_uniform_sampling hf hs hsne
   refine ⟨ρ, hρpos, fun t ↦ f (i t), fun t ht ↦ ?_, fun t ht ↦ (key t ht).1.symm,
     fun t ht ↦ ?_⟩
   · refine (hra t ht).mono (ball_subset_ball' ?_)

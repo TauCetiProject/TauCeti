@@ -55,6 +55,8 @@ homomorphism to `ℝ≥0ˣ`.
   an idele class, extended from `K` is its `[L : K]`-th power.
 * `TauCeti.GlobalNumberFields.ideleNormMap_comp`,
   `TauCeti.GlobalNumberFields.ideleClassNormMap_comp`: norm maps compose in towers.
+* `TauCeti.GlobalNumberFields.range_ideleClassNormMap_eq_of_algEquiv`: `K`-isomorphic extensions
+  have the same idele-class norm group.
 
 ## References
 
@@ -122,7 +124,7 @@ theorem ideleNormMap_ofCompletion (v : InfinitePlace K) (w : InfinitePlace L) [w
     (u : w.Completionˣ) :
     ideleNormMap K L (IdeleGroup.ofCompletion (𝓞 L) L w u) =
       IdeleGroup.ofCompletion (𝓞 K) K v (Algebra.normUnits v.Completion u) := by
-  refine IdeleGroup.ext (fun v' ↦ ?_) ?_
+  refine IdeleGroup.ext (fun v' ↦ ?_) (fun v' ↦ ?_)
   · rw [ideleInfiniteCoord_ideleNormMap]
     by_cases hv : v' = v
     · subst hv
@@ -139,11 +141,8 @@ theorem ideleNormMap_ofCompletion (v : InfinitePlace K) (w : InfinitePlace L) [w
         apply hv
         rw [← LiesOver.comap_eq w'.1 v', ← LiesOver.comap_eq w v, h]
       rw [InfinitePlace.ideleInfiniteCoord_ofCompletion_of_ne w'.1 hne, map_one]
-  · rw [IdeleGroup.toFiniteIdele_ofCompletion]
-    apply Units.ext
-    have h := congrArg Units.val (IdeleGroup.toFiniteIdele_ofCompletion (𝓞 L) L w u)
-    rw [IdeleGroup.coe_toFiniteIdele] at h ⊢
-    rw [coe_ideleNormMap, adeleNorm_snd, h, Units.val_one, map_one, Units.val_one]
+  · simp only [ideleFiniteCoord_ideleNormMap,
+      HeightOneSpectrum.ideleFiniteCoord_ofCompletion, map_one, finprod_one]
 
 /-- The norm of a principal idele is the principal idele of the norm of `L / K`. -/
 @[simp]
@@ -207,6 +206,15 @@ theorem ideleClassNormMap_ofCompletion (v : InfinitePlace K) (w : InfinitePlace 
   rw [IdeleClassGroup.ofCompletion_apply, ideleClassNormMap_mk, ideleNormMap_ofCompletion v w,
     ← IdeleClassGroup.ofCompletion_apply]
 
+/-- The idele-class norm group `N_{L/K}(C_L)` is normal in `C_K`, which is commutative, so the
+norm quotient `C_K / N_{L/K}(C_L)` is a group. -/
+instance normal_range_ideleClassNormMap :
+    (ideleClassNormMap K L : IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K).range.Normal :=
+  -- `IdeleClassGroup` is an abbreviation whose commutativity `IsMulCommutative` search does not
+  -- find through the quotient, so it is supplied here.
+  have : IsMulCommutative (IdeleClassGroup (𝓞 K) K) := ⟨⟨fun a b ↦ mul_comm a b⟩⟩
+  Subgroup.normal_of_isMulCommutative _
+
 /-- The relative norm on idele classes is continuous for the quotient topology. -/
 @[continuity, fun_prop]
 theorem continuous_ideleClassNormMap : Continuous (ideleClassNormMap K L) :=
@@ -231,5 +239,25 @@ theorem ideleClassNormMap_comp (M : Type*) [Field M] [NumberField M] [Algebra L 
     simpa only [ContinuousMonoidHom.coe_comp, Function.comp_apply, ideleClassNormMap_mk] using
       congrArg (fun y : IdeleGroup (𝓞 K) K ↦ (y : IdeleClassGroup (𝓞 K) K))
         (DFunLike.congr_fun (ideleNormMap_comp K L M) x)
+
+variable {K L} in
+/-- **`K`-isomorphic extensions have the same idele-class norm group**: if `e : L ≃ₐ[K] M`, then
+`N_{L/K}(C_L) = N_{M/K}(C_M)`. Through `e⁻¹`, `L` is an extension of `M` of degree one, whose
+idele-class norm `N_{L/M}` is onto, and `N_{L/K} = N_{M/K} ∘ N_{L/M}`. -/
+theorem range_ideleClassNormMap_eq_of_algEquiv {M : Type*} [Field M] [NumberField M]
+    [Algebra K M] (e : L ≃ₐ[K] M) :
+    (ideleClassNormMap K L : IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K).range =
+      (ideleClassNormMap K M : IdeleClassGroup (𝓞 M) M →* IdeleClassGroup (𝓞 K) K).range := by
+  let _ : Algebra M L := e.symm.toRingHom.toAlgebra
+  have : IsScalarTower K M L := IsScalarTower.of_algebraMap_eq fun x ↦ (e.symm.commutes x).symm
+  have hcomp (y : IdeleClassGroup (𝓞 L) L) :
+      ideleClassNormMap K M (ideleClassNormMap M L y) = ideleClassNormMap K L y :=
+    DFunLike.congr_fun (ideleClassNormMap_comp K M L) y
+  ext c
+  simp only [MonoidHom.mem_range, MonoidHom.coe_ofClass]
+  refine ⟨fun ⟨y, hy⟩ ↦ ⟨ideleClassNormMap M L y, (hcomp y).trans hy⟩,
+    fun ⟨y, hy⟩ ↦ ⟨ideleClassExtension M L y, ?_⟩⟩
+  rw [← hcomp, ideleClassNormMap_ideleClassExtension,
+    Module.finrank_of_bijective_algebraMap e.symm.bijective, pow_one, hy]
 
 end TauCeti.GlobalNumberFields

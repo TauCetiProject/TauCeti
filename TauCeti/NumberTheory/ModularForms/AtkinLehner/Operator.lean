@@ -49,6 +49,8 @@ alone, with no matrix to supply — is the interface to use.
   the chosen Atkin–Lehner matrix.
 * `TauCeti.atkinLehnerOperator_coe_cuspForm`: the two operators agree under the coercion
   `S_k(Γ₀(N)) → M_k(Γ₀(N))`.
+* `TauCeti.slash_atkinLehnerGL_slash_atkinLehnerGL_of_mul_self_eq`: for `W * W = Q • γ`, slashing
+  twice by `W` is `Q ^ (k - 2)` times slashing by `γ`, for any function.
 * `TauCeti.atkinLehnerOperator_atkinLehnerOperator`,
   `TauCeti.atkinLehnerOperatorCusp_atkinLehnerOperatorCusp` and their
   `TauCeti.Nat.IsExactDivisor` counterparts: the square is `Q ^ (k - 2)`.
@@ -234,15 +236,14 @@ theorem atkinLehnerOperatorCusp_congr (hQ : 0 < Q) (hQN : Q ∣ N)
   refine DFunLike.coe_injective ?_
   simpa only [ModularFormClass.coe_modularForm] using congrArg DFunLike.coe hcongr
 
-/-- **Slashing twice by `W` multiplies by `Q ^ (k - 2)`.** The square `W ^ 2` is `Q` times an
-element of `Γ₀(N)`; the scalar matrix contributes `Q ^ (k - 2)` and the `Γ₀(N)` factor is
-absorbed. This is the identity the normalization `(√Q) ^ (2 - k)` turns into an involution in
-even weight. -/
-theorem slash_atkinLehnerGL_slash_atkinLehnerGL (hQ : 0 < Q) (hQN : Q ∣ N)
-    (h : IsAtkinLehnerMatrix N Q M) (f : ℍ → ℂ)
-    (hf : ∀ γ ∈ (Gamma0 N).map (mapGL ℝ), f ∣[k] γ = f) :
-    (f ∣[k] atkinLehnerGL hQ h) ∣[k] atkinLehnerGL hQ h = (Q : ℂ) ^ (k - 2) • f := by
-  obtain ⟨γ, hγ, hsq⟩ := h.exists_mem_Gamma0_mul_self hQ.ne' hQN
+/-- **Slashing twice by `W` is `Q ^ (k - 2)` times slashing by `W ^ 2 / Q`**: if `W * W = Q • γ`
+with `γ ∈ SL(2, ℤ)`, the scalar matrix `Q` contributes the constant `Q ^ (k - 2)` and what is left
+is the slash by `γ`. No invariance of `f` is assumed. -/
+theorem slash_atkinLehnerGL_slash_atkinLehnerGL_of_mul_self_eq (hQ : 0 < Q)
+    (h : IsAtkinLehnerMatrix N Q M) {γ : SL(2, ℤ)}
+    (hsq : M * M = (Q : ℤ) • (γ : Matrix (Fin 2) (Fin 2) ℤ)) (f : ℍ → ℂ) :
+    (f ∣[k] atkinLehnerGL hQ h) ∣[k] atkinLehnerGL hQ h =
+      (Q : ℂ) ^ (k - 2) • (f ∣[k] mapGL ℝ γ) := by
   have hQR : (Q : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hQ.ne'
   have hGL : atkinLehnerGL hQ h * atkinLehnerGL hQ h =
       Matrix.GeneralLinearGroup.scalar (Fin 2) (Units.mk0 (Q : ℝ) hQR) * mapGL ℝ γ := by
@@ -262,8 +263,20 @@ theorem slash_atkinLehnerGL_slash_atkinLehnerGL (hQ : 0 < Q) (hQN : Q ∣ N)
   have hdet : (0 : ℝ) < ((mapGL ℝ γ : GL (Fin 2) ℝ) : Matrix (Fin 2) (Fin 2) ℝ).det :=
     det_pos_of_mem_slGL ⟨γ, rfl⟩
   rw [← SlashAction.slash_mul, hGL, SlashAction.slash_mul, ModularForm.slash_scalar,
-    ModularForm.smul_slash_of_det_pos k hdet, hf _ (Subgroup.mem_map_of_mem _ hγ)]
+    ModularForm.smul_slash_of_det_pos k hdet]
   simp
+
+/-- **Slashing twice by `W` multiplies by `Q ^ (k - 2)`.** The square `W ^ 2` is `Q` times an
+element of `Γ₀(N)`; the scalar matrix contributes `Q ^ (k - 2)` and the `Γ₀(N)` factor is
+absorbed. This is the identity the normalization `(√Q) ^ (2 - k)` turns into an involution in
+even weight. -/
+theorem slash_atkinLehnerGL_slash_atkinLehnerGL (hQ : 0 < Q) (hQN : Q ∣ N)
+    (h : IsAtkinLehnerMatrix N Q M) (f : ℍ → ℂ)
+    (hf : ∀ γ ∈ (Gamma0 N).map (mapGL ℝ), f ∣[k] γ = f) :
+    (f ∣[k] atkinLehnerGL hQ h) ∣[k] atkinLehnerGL hQ h = (Q : ℂ) ^ (k - 2) • f := by
+  obtain ⟨γ, hγ, hsq⟩ := h.exists_mem_Gamma0_mul_self hQ.ne' hQN
+  rw [slash_atkinLehnerGL_slash_atkinLehnerGL_of_mul_self_eq hQ h hsq,
+    hf _ (Subgroup.mem_map_of_mem _ hγ)]
 
 /-- **The Atkin–Lehner operator squares to `Q ^ (k - 2)`** on `M_k(Γ₀(N))`. -/
 theorem atkinLehnerOperator_atkinLehnerOperator (hQ : 0 < Q) (hQN : Q ∣ N)

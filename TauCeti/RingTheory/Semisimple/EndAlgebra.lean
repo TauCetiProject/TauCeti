@@ -49,7 +49,7 @@ and pins `s = m * d`; substituting turns the first into the displayed formula, i
 
 Applied to `R = B ⊗[K] Aᵐᵒᵖ` acting on a simple algebra `A` containing a central simple subalgebra
 `B`, whose endomorphism algebra is the centralizer of `B`, this is the engine of the centralizer
-theorem in `TauCeti/Algebra/CentralSimple/Centralizer.lean`.
+theorem in `TauCeti/Algebra/CentralSimple/Centralizer/Basic.lean`.
 
 ## Main results
 

@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.CentralSimple.Degree
 public import TauCeti.LinearAlgebra.CliffordAlgebra.CentralSimple.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
 import Mathlib.RingTheory.SimpleRing.Congr
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Scaling
 import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Basic
@@ -27,6 +28,8 @@ root or extension of the base field is needed for this reduction.
 
 ## Main results
 
+* `TauCeti.CliffordAlgebra.exists_reversalEquiv_even_of_finrank_pos`: the dimension-reduction
+  equivalence carries reversal to Clifford conjugation.
 * `TauCeti.CliffordAlgebra.exists_nonempty_algEquiv_even_of_finrank_pos`: in positive dimension,
   the even algebra is isomorphic to the Clifford algebra of a regular form in one lower dimension.
 * `TauCeti.CliffordAlgebra.exists_nonempty_algEquiv_even_of_odd_finrank`: the even algebra is
@@ -53,6 +56,31 @@ open Module _root_.QuadraticMap
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
   [FiniteDimensional K V] [NeZero (2 : K)] {Q : QuadraticForm K V}
 
+/-- In positive dimension, dimension reduction carries the even Clifford algebra to a regular
+full Clifford algebra in one lower dimension and carries reversal to Clifford conjugation. -/
+theorem exists_reversalEquiv_even_of_finrank_pos (hQ : Q.Nondegenerate)
+    (hV : 0 < finrank K V) :
+    ∃ (n : ℕ) (P : QuadraticForm K (Fin n → K)), P.Nondegenerate ∧
+      n + 1 = finrank K V ∧ ∃ e : even Q ≃ₐ[K] CliffordAlgebra P,
+        ∀ x, e (reverseEven Q x) = star (e x) := by
+  let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
+  obtain ⟨⟨n, w⟩, ⟨e⟩⟩ := exists_presentedForm_equivalent Q hQ
+  have he : finrank K V = n := by simpa using e.toLinearEquiv.finrank_eq
+  cases n with
+  | zero => omega
+  | succ n =>
+    let P := presentedForm (⟨n, fun i ↦ w i.succ⟩ : RegularFormPresentation K)
+    let a : Kˣ := -(w 0)⁻¹
+    have hP : ((a : K) • P).Nondegenerate :=
+      (nondegenerate_smul_iff a.isUnit P).mpr (nondegenerate_presentedForm _)
+    have en := e.trans (presentedFormConsIsometryEquiv w).symm
+    have ec := en.trans (QuadraticMap.IsometryEquiv.prodComm _ P)
+    let f := (evenEquivOfIsometry ec).trans (evenProdSMulSqEquiv P (w 0))
+    refine ⟨n, _, hP, he.symm, f, ?_⟩
+    intro x
+    simp only [f, AlgEquiv.trans_apply, evenEquivOfIsometry_reverseEven,
+      evenProdSMulSqEquiv_reverseEven]
+
 /-- In positive dimension, the even Clifford algebra of a regular quadratic space is isomorphic
 to the full Clifford algebra of a regular form in one lower dimension: splitting off a line `⟨a⟩`
 from `Q ≅ ⟨a⟩ ⊥ P` gives `even Q ≃ₐ[K] CliffordAlgebra (-a⁻¹ • P)`. The new form lives on
@@ -61,20 +89,8 @@ theorem exists_nonempty_algEquiv_even_of_finrank_pos (hQ : Q.Nondegenerate)
     (hV : 0 < finrank K V) :
     ∃ (n : ℕ) (P : QuadraticForm K (Fin n → K)), P.Nondegenerate ∧ n + 1 = finrank K V ∧
       Nonempty (even Q ≃ₐ[K] CliffordAlgebra P) := by
-  let : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
-  obtain ⟨⟨n, w⟩, ⟨e⟩⟩ := exists_presentedForm_equivalent Q hQ
-  have he : finrank K V = n := by simpa using e.toLinearEquiv.finrank_eq
-  cases n with
-  | zero => omega
-  | succ n =>
-    let P := presentedForm (⟨n, fun i => w i.succ⟩ : RegularFormPresentation K)
-    let a : Kˣ := -(w 0)⁻¹
-    -- By `Units.val_neg` (`rfl`), `↑a` is definitionally `-↑(w 0)⁻¹`, as in `e` below.
-    have hP : ((a : K) • P).Nondegenerate :=
-      (nondegenerate_smul_iff a.isUnit P).mpr (nondegenerate_presentedForm _)
-    have en := e.trans (presentedFormConsIsometryEquiv w).symm
-    have ec := en.trans (QuadraticMap.IsometryEquiv.prodComm _ P)
-    exact ⟨n, _, hP, he.symm, ⟨(evenEquivOfIsometry ec).trans (evenProdSMulSqEquiv P (w 0))⟩⟩
+  obtain ⟨n, P, hP, hn, e, _⟩ := exists_reversalEquiv_even_of_finrank_pos hQ hV
+  exact ⟨n, P, hP, hn, ⟨e⟩⟩
 
 /-- The even Clifford algebra of a regular odd-dimensional quadratic space is isomorphic to the
 full Clifford algebra of a regular form in one lower, hence even, dimension; this is

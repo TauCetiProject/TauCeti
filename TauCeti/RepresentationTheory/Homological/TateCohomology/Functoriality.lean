@@ -344,7 +344,7 @@ compatible coefficient map. -/
 theorem H0π_comp_map {e : G ≃* H} {φ : M.V →ₗ[R] N.V}
     (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ) :
     H0π M ≫ map hφ 0 = ModuleCat.ofHom (mapInvariants hφ) ≫ H0π N := by
-  rw [H0π_eq_cyclesIso_inv_comp_homologyπ, H0π_eq_cyclesIso_inv_comp_homologyπ, map_def]
+  rw [H0π_eq_H0CyclesIso_inv_comp_homologyπ, H0π_eq_H0CyclesIso_inv_comp_homologyπ, map_def]
   -- `H0π` lands in `tateCohomology M 0`, which is `(tateComplex M).homology 0` only by unfolding
   -- the semireducible `tateCohomologyFunctor`. `rw` cannot match across that unfolding, not even
   -- `Category.assoc`, so the squares are composed, and reassociated, as terms.
@@ -412,8 +412,8 @@ under the compatible coefficient map. -/
 theorem HNegOneπ_comp_map {e : G ≃* H} {φ : M.V →ₗ[R] N.V}
     (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ) :
     HNegOneπ M ≫ map hφ (-1) = ModuleCat.ofHom (mapKerNorm hφ) ≫ HNegOneπ N := by
-  rw [HNegOneπ_eq_cyclesIso_inv_comp_homologyπ, HNegOneπ_eq_cyclesIso_inv_comp_homologyπ,
-    map_def]
+  rw [HNegOneπ_eq_HNegOneCyclesIso_inv_comp_homologyπ,
+    HNegOneπ_eq_HNegOneCyclesIso_inv_comp_homologyπ, map_def]
   -- `HNegOneπ` lands in `tateCohomology M (-1)`, which is `(tateComplex M).homology (-1)` only by
   -- unfolding the semireducible `tateCohomologyFunctor`. `rw` cannot match across that unfolding,
   -- not even `Category.assoc`, so the squares are composed, and reassociated, as terms.

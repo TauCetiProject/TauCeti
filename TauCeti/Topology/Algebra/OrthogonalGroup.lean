@@ -5,21 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.UnitaryGroup
-public import Mathlib.Topology.Algebra.Star.Unitary
-public import Mathlib.Topology.Algebra.Group.Matrix
 public import TauCeti.Topology.Algebra.UnitaryGroup
 
 /-!
-# Closedness of the matrix special orthogonal group
+# Closedness of matrix orthogonal groups
 
-The matrix special orthogonal group is the closed carrier used when a concrete orthogonal matrix
-group is given its Lie-group structure.  Its defining equations are the transpose-isometry
-equation and the determinant-one equation; both are closed in the entrywise matrix topology.
+The matrix orthogonal and special orthogonal groups are closed in the entrywise matrix topology.
+The orthogonal group is cut out by the transpose-inverse equations, and the special orthogonal
+group adds the determinant-one equation. Mathlib defines these groups as the unitary and special
+unitary groups for the trivial scalar star operation, so their closedness follows from the
+corresponding unitary results.
 
 ## Main result
 
-* `Matrix.isClosed_orthogonalGroup` and `Matrix.isClosed_specialOrthogonalGroup`:
+* `TauCeti.Matrix.isClosed_orthogonalGroup` and `TauCeti.Matrix.isClosed_specialOrthogonalGroup`:
   the matrix orthogonal and special orthogonal groups are closed over any `T₁` topological
   commutative ring.
 
@@ -29,16 +28,15 @@ constructions of Lie-group structures and continuity arguments on the correspond
 
 public section
 
-open Matrix Set
-
-namespace Matrix
+namespace TauCeti.Matrix
 
 variable {n R : Type*} [Fintype n] [DecidableEq n]
   [CommRing R] [TopologicalSpace R] [IsTopologicalRing R]
 
 attribute [local instance] starRingOfComm
 
-local instance instContinuousStar : ContinuousStar R := ⟨continuous_id⟩
+local instance instContinuousStar {R : Type*} [CommSemiring R] [TopologicalSpace R] :
+    ContinuousStar R := ⟨continuous_id⟩
 
 /-- The matrix orthogonal group is closed in the entrywise matrix topology. -/
 theorem isClosed_orthogonalGroup [T1Space R] :
@@ -52,4 +50,4 @@ theorem isClosed_specialOrthogonalGroup [T1Space R] :
   simpa only [Matrix.specialOrthogonalGroup] using
     (TauCeti.Matrix.isClosed_specialUnitaryGroup (n := n) (𝕜 := R))
 
-end Matrix
+end TauCeti.Matrix

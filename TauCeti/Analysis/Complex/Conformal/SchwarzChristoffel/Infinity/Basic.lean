@@ -135,7 +135,7 @@ private theorem norm_schwarzChristoffelPrimitive_sub_le_vertical (a e : ι → �
     ‖schwarzChristoffelPrimitive a e z₀ ((z.re : ℂ) + (T : ℂ) * Complex.I) -
         schwarzChristoffelPrimitive a e z₀ z‖
       ≤ C * 2 ^ (-∑ i, e i) / (-(∑ i, e i + 1)) * ‖z‖ ^ (∑ i, e i + 1) := by
-  set S : ℝ := ∑ i, e i with hSdef
+  set S : ℝ := ∑ i, e i
   have hS1 : S + 1 < 0 := by linarith
   have hzim : 0 < z.im := hz
   have hz0 : (0 : ℝ) < ‖z‖ := lt_of_lt_of_le hzim (le_trans (le_abs_self _) (abs_im_le_norm z))
@@ -232,7 +232,7 @@ private theorem norm_schwarzChristoffelPrimitive_sub_le_horizontal (a e : ι →
     ‖schwarzChristoffelPrimitive a e z₀ ((y : ℂ) + (T : ℂ) * Complex.I) -
         schwarzChristoffelPrimitive a e z₀ ((x : ℂ) + (T : ℂ) * Complex.I)‖
       ≤ C * T ^ (∑ i, e i) * |y - x| := by
-  set S : ℝ := ∑ i, e i with hSdef
+  set S : ℝ := ∑ i, e i
   set c : ℂ := (x : ℂ) + (T : ℂ) * Complex.I with hcdef
   set v : ℂ := ((y - x : ℝ) : ℂ) with hvdef
   have him : ∀ s : ℝ, (c + (s : ℂ) * v).im = T := by
@@ -279,7 +279,7 @@ private theorem exists_tendsto_schwarzChristoffelPrimitive_atInfinity (a e : ι 
     ∃ v : ℂ, Tendsto (schwarzChristoffelPrimitive a e z₀)
       (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 v) := by
   obtain ⟨C, hC, R, hR, hbd⟩ := exists_norm_schwarzChristoffelIntegrand_le_of_le_norm a e
-  set S : ℝ := ∑ i, e i with hSdef
+  set S : ℝ := ∑ i, e i
   have hS1 : S + 1 < 0 := by linarith
   set D : ℝ := C * 2 ^ (-S) / (-(S + 1)) with hDdef
   have hD : 0 < D := by

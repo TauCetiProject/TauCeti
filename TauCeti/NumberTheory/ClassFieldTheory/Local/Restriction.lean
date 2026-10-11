@@ -36,7 +36,7 @@ corresponding restriction inside the formation of `K` is `N_{E/K}`
 The comparison is first made for the local invariant `TauCeti.ClassFieldTheory.subgroupInvMap` of
 an open subgroup `U ≤ G_E` and its image `U' ≤ G_K`
 (`subgroupInvMap_explicitMap2_localFormationHomInv`), and for inflation from a layer to its ground
-subgroup (`layerInfl_localFormationLayerEquiv`).
+subgroup (`explicitInfl2_localFormationLayerEquiv`).
 
 ## Main results
 
@@ -94,13 +94,13 @@ theorem localFormationCoeffEquiv_symm_apply (y : UnitsCoeff E) :
   Additive.toMul.injective (by
     rw [toMul_localFormationCoeffEquiv_symm_apply, toMul_unitsCoeffMapSymm])
 
--- The cocycle computation parallels `layerCocycle_mapCocycles₂` in
+-- The cocycle computation parallels `inflCocycle2_mapCocycles₂` in
 -- `TauCeti.NumberTheory.ClassFieldTheory.Brauer.LayerInvariant`, the conjugation case.
 /-- The inflated cocycle of the image of a layer cocycle under a layer isomorphism from a layer
 `V ◁ U` over `E` to a layer `V' ◁ U'` over `K`, whose Galois-group map is induced by the embedding
 `U' → U` inverse to `G_E → G_K` and whose coefficient map is induced by `(Eˢ)ˣ ≃ (Kˢ)ˣ`, is the
 inflated cocycle pulled back along `U' → U` and pushed into `(Kˢ)ˣ`. -/
-private theorem layerCocycle_of_localFormation (L : NormalLayer (AbsoluteGaloisGroup E))
+private theorem inflCocycle2_of_localFormation (L : NormalLayer (AbsoluteGaloisGroup E))
     {L' : NormalLayer (AbsoluteGaloisGroup K)}
     (h : L'.ground.toSubgroup ≤ L.ground.toSubgroup.map (localFormationHom K E iota))
     (e : LayerEquiv (unitsFormation E) L (unitsFormation K) L')
@@ -112,33 +112,37 @@ private theorem layerCocycle_of_localFormation (L : NormalLayer (AbsoluteGaloisG
           ((unitsCoeffEquivUnitsFormation E).symm (x : (unitsFormation E).toRep.V)))
     (c : cocycles₂ (L.rep (unitsFormation E))) (c' : cocycles₂ (L'.rep (unitsFormation K)))
     (hc' : ∀ γ δ : L'.Gal, c' (γ, δ) = e.coeffEquiv (c (e.galEquiv.symm γ, e.galEquiv.symm δ))) :
-    layerCocycle L' c' =
+    L'.inflCocycle2 (unitsCoeffEquivUnitsFormation K) (unitsCoeffEquivUnitsFormation_smul K) c' =
       cocyclesMap2 L.ground.toSubgroup (UnitsCoeff E) L'.ground.toSubgroup (UnitsCoeff K)
         (localFormationHomInv K E iota h) (unitsCoeffMapSymm K E iota)
         continuous_of_discreteTopology (unitsCoeffMapSymm_localFormationHomInv_smul K E iota h)
-        (layerCocycle L c) := by
+        (L.inflCocycle2 (unitsCoeffEquivUnitsFormation E) (unitsCoeffEquivUnitsFormation_smul E)
+          c) := by
   refine Subtype.ext (funext fun p => ?_)
   obtain ⟨u, v⟩ := p
-  rw [cocyclesMap2_apply, layerCocycle_apply, layerCocycle_apply, hc',
+  rw [cocyclesMap2_apply, NormalLayer.inflCocycle2_apply, NormalLayer.inflCocycle2_apply, hc',
     (MulEquiv.symm_apply_eq _).2 (hgal u).symm, (MulEquiv.symm_apply_eq _).2 (hgal v).symm]
   exact hcoeff _
 
 /-- **Inflation commutes with the layer isomorphism `localFormationLayerEquiv`**: inflating the
 image of a class of a layer `V ◁ U` over `E` to the ground subgroup `U'` of the corresponding layer
 over `K` is transporting its inflation to `U` along `U' ≃ U` and `(Eˢ)ˣ ≃ (Kˢ)ˣ`. -/
-theorem layerInfl_localFormationLayerEquiv (L : NormalLayer (AbsoluteGaloisGroup E))
+theorem explicitInfl2_localFormationLayerEquiv (L : NormalLayer (AbsoluteGaloisGroup E))
     (x : L.H (unitsFormation E) 2) :
-    layerInfl (L.localFormationMap K E iota)
+    (L.localFormationMap K E iota).explicitInfl2 (unitsCoeffEquivUnitsFormation K)
+        (unitsCoeffEquivUnitsFormation_smul K)
         (((localFormationLayerEquiv K E iota L).cohomologyIso 2).hom x) =
       explicitMap2 L.ground.toSubgroup (UnitsCoeff E)
         (L.localFormationMap K E iota).ground.toSubgroup (UnitsCoeff K)
         (localFormationHomInv K E iota (L.localFormationMap_ground_toSubgroup K E iota).le)
         (unitsCoeffMapSymm K E iota) continuous_of_discreteTopology
-        (unitsCoeffMapSymm_localFormationHomInv_smul K E iota _) (layerInfl L x) := by
-  refine layerInfl_eq_explicitMap2_layerInfl L _ _ _
+        (unitsCoeffMapSymm_localFormationHomInv_smul K E iota _)
+        (L.explicitInfl2 (unitsCoeffEquivUnitsFormation E) (unitsCoeffEquivUnitsFormation_smul E)
+          x) := by
+  refine L.explicitInfl2_eq_explicitMap2_explicitInfl2 _ _ _ _ _ _ _
     (fun y => ((localFormationLayerEquiv K E iota L).cohomologyIso 2).hom y) (fun c => ?_) x
   obtain ⟨c', hc, hc'⟩ := (localFormationLayerEquiv K E iota L).exists_cohomologyIso_hom_H2π c
-  exact ⟨c', hc, layerCocycle_of_localFormation K E iota L _ _
+  exact ⟨c', hc, inflCocycle2_of_localFormation K E iota L _ _
     (fun u => localFormationLayerEquiv_galEquiv_mk K E iota L _ u
       (localFormationHom_localFormationHomInv K E iota _ u).symm)
     (fun y => (localFormationLayerEquiv_coeffEquiv_apply K E iota L y).trans
@@ -231,7 +235,7 @@ theorem subgroupInvMap_explicitMap2_localFormationHomInv {U : Subgroup (Absolute
         (unitsCoeffMapSymm_localFormationHomInv_smul K E iota (le_refl _))).comp
         (explicitMap2 (AbsoluteGaloisGroup E) (UnitsCoeff E) U (UnitsCoeff E)
           (ContinuousMonoidHom.subgroupSubtype U) (AddMonoidHom.id _) continuous_id
-          (id_subgroupSubtype_smul _ _ U)) =
+          (ContinuousMonoidHom.id_subgroupSubtype_smul _ U)) =
       (explicitMap2 iota.fieldRange.fixingSubgroup (UnitsCoeff K)
         (U.map (localFormationHom K E iota)) (UnitsCoeff K)
         (ContinuousMonoidHom.subgroupInclusion hle) (AddMonoidHom.id _) continuous_id
@@ -241,7 +245,9 @@ theorem subgroupInvMap_explicitMap2_localFormationHomInv {U : Subgroup (Absolute
             ↥iota.fieldRange.fixingSubgroup →ₜ* AbsoluteGaloisGroup E)
           (unitsCoeffMapSymm K E iota) continuous_of_discreteTopology
           (unitsCoeffMapSymm_smul K E iota)) := by
-    rw [← explicitMap2_comp]
+    rw [← explicitMap2_comp (G := AbsoluteGaloisGroup E) (M := UnitsCoeff E)
+      (H := U) (N := UnitsCoeff E) (K := U.map (localFormationHom K E iota))
+      (P := UnitsCoeff K)]
     exact (explicitMap2_congr_of_eq _ _ _ _ _ _ _
       ((AddMonoidHom.id _).comp (unitsCoeffMapSymm K E iota)) hgrp
       (AddMonoidHom.ext fun _ => rfl)).trans
@@ -266,7 +272,7 @@ theorem localClassFormation_inv_localFormationLayerEquiv (L : NormalLayer (Absol
         (((localFormationLayerEquiv K E iota L).cohomologyIso 2).hom x) =
       (localClassFormation E).inv L x := by
   rw [localClassFormation_inv_apply, localClassFormation_inv_apply, layerInv_apply, layerInv_apply,
-    layerInfl_localFormationLayerEquiv]
+    explicitInfl2_localFormationLayerEquiv]
   exact subgroupInvMap_explicitMap2_localFormationHomInv K E iota L.ground.isOpen
     (L.localFormationMap K E iota).ground.isOpen
     (L.localFormationMap_ground_toSubgroup K E iota).symm _

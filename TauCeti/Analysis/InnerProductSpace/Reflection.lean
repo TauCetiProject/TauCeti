@@ -9,9 +9,12 @@ public import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 
 /-!
-# Reflection across the orthogonal complement of a line
+# Reflections in inner product spaces
 
-These lemmas describe reflection across the hyperplane perpendicular to a vector in a real
+For a submodule `K` admitting an orthogonal projection, `Submodule.coe_reflection` expresses the
+reflection across `K`, as a bounded operator, as `2 P_K - 1`.
+
+The remaining lemmas describe reflection across the hyperplane perpendicular to a vector in a real
 inner product space. They supply the reflection identities used by the half-space Green kernel.
 
 In dimension at least two, composing the reflections in the hyperplanes orthogonal to a nonzero
@@ -22,6 +25,18 @@ sending `v` to `-v` (`TauCeti.exists_det_eq_one_apply_eq_neg`).
 public section
 
 noncomputable section
+
+namespace Submodule
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
+/-- The reflection across `K`, as a bounded operator, is `2 P_K - 1`. -/
+theorem coe_reflection (K : Submodule 𝕜 E) [K.HasOrthogonalProjection] :
+    (K.reflection : E →L[𝕜] E) = 2 • K.starProjection - 1 := by
+  ext x
+  simp [reflection_apply]
+
+end Submodule
 
 namespace TauCeti
 

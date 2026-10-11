@@ -46,7 +46,7 @@ equations in `k` to equations of natural numbers, it keeps a form from being sym
 alternating at once, and it supplies `Invertible (Nat.card G : k)` in the statements that do not
 assume it.  Averaging characters produces identities in `k` and nothing more, so the two
 counting identities are stated first in that form, needing only an invertible `|G|`
-(`TauCeti.Representation.finrank_invariants_dual_cast` and
+(`TauCeti.Representation.finrank_invariantForms_eq_finrank_invariants_tprod_self_cast` and
 `TauCeti.Representation.finrank_invariantForms_cast`); in characteristic `p` they are identities
 of residues, and it is the injectivity of `ℕ → k` that turns them into equalities of dimensions.
 
@@ -178,8 +178,7 @@ variable [Invertible (Nat.card G : k)]
 `k`: the invariant forms are the intertwiners `ρ → ρ.dual`, and the character sum counting those is
 the character sum counting the invariants of `ρ ⊗ ρ`, read along `g⁻¹` instead of `g`.
 
-As with `TauCeti.Representation.finrank_invariants_dual_cast`, in characteristic `p` this is an
-identity of residues only. -/
+In characteristic `p` this is an identity of residues only. -/
 theorem finrank_invariantForms_eq_finrank_invariants_tprod_self_cast (ρ : Representation k G V) :
     (finrank k (invariantForms ρ) : k) =
       (finrank k (Representation.tprod ρ ρ).invariants : k) := by
@@ -195,9 +194,8 @@ theorem finrank_invariantForms_eq_finrank_invariants_tprod_self_cast (ρ : Repre
 identity in `k`: they are as many as the invariants of the tensor square, and
 `TauCeti.Representation.finrank_invariants_tprod_self_cast` splits that count in two.
 
-As with `TauCeti.Representation.finrank_invariants_dual_cast`, in characteristic `p` this is an
-identity of residues only; see `TauCeti.Representation.finrank_invariantForms` for the
-characteristic-zero form. -/
+In characteristic `p` this is an identity of residues only; see
+`TauCeti.Representation.finrank_invariantForms` for the characteristic-zero form. -/
 theorem finrank_invariantForms_cast (ρ : Representation k G V) :
     (finrank k (invariantForms ρ) : k) =
       (finrank k (ρ.symmetricPower 2).invariants : k) +
@@ -229,10 +227,13 @@ private theorem map_ofSymmetricSquareDual_le (ρ : Representation k G V) :
   rintro _ ⟨ψ, hψ, rfl⟩
   exact ofSymmetricSquareDual_mem_symmetricInvariantForms ρ hψ
 
+omit [FiniteDimensional k V] in
 private theorem finrank_map_ofSymmetricSquareDual (ρ : Representation k G V) :
     finrank k (Submodule.map (BilinForm.ofSymmetricSquareDual (k := k) (V := V))
         ((ρ.symmetricPower 2).dual).invariants) =
       finrank k (ρ.symmetricPower 2).invariants := by
+  have : Invertible (Nat.card G : k) :=
+    invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
   rw [← (Submodule.equivMapOfInjective (BilinForm.ofSymmetricSquareDual (k := k) (V := V))
     BilinForm.ofSymmetricSquareDual_injective
     ((ρ.symmetricPower 2).dual).invariants).finrank_eq, finrank_invariants_dual]
@@ -244,10 +245,13 @@ private theorem map_ofExteriorSquareDual_le (ρ : Representation k G V) :
   rintro _ ⟨ψ, hψ, rfl⟩
   exact ofExteriorSquareDual_mem_alternatingInvariantForms ρ hψ
 
+omit [FiniteDimensional k V] in
 private theorem finrank_map_ofExteriorSquareDual (ρ : Representation k G V) :
     finrank k (Submodule.map (BilinForm.ofExteriorSquareDual (k := k) (V := V))
         ((ρ.exteriorPower 2).dual).invariants) =
       finrank k (ρ.exteriorPower 2).invariants := by
+  have : Invertible (Nat.card G : k) :=
+    invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
   rw [← (Submodule.equivMapOfInjective (BilinForm.ofExteriorSquareDual (k := k) (V := V))
     BilinForm.ofExteriorSquareDual_injective
     ((ρ.exteriorPower 2).dual).invariants).finrank_eq, finrank_invariants_dual]

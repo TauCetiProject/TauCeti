@@ -509,6 +509,15 @@ theorem suspendedStasheffSum_eq_zero_iff (n : ℕ) :
     suspendedStasheffSum m d x n = 0 ↔ stasheffSum m d x n = 0 := by
   rw [suspendedStasheffSum_eq_smul, negOnePowCast_smul_eq_zero_iff]
 
+/-- **Naturality of the Stasheff sums.** A linear map which intertwines two families of
+operations intertwines their Stasheff sums. -/
+theorem map_stasheffSum {B : Type*} [AddCommMonoid B] [Module R B] (f : A →ₗ[R] B)
+    (m' : ∀ k : ℕ, MultilinearMap R (fun _ : Fin k ↦ B) B)
+    (hf : ∀ (k : ℕ) (y : Fin k → A), f (m k y) = m' k fun i ↦ f (y i)) (n : ℕ) :
+    f (stasheffSum m d x n) = stasheffSum m' d (fun i ↦ f (x i)) n := by
+  simp only [stasheffSum_def, stasheffTerm_def, _root_.map_sum, map_smul, evalNat_def, hf,
+    apply_replaceBlock f]
+
 end Stasheff
 
 /-! ### The identities in arities one to four -/

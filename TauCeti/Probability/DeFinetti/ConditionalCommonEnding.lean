@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Exchangeability.ConditionallyIID.Basic
-public import TauCeti.Probability.Exchangeability.Cylinder
+public import TauCeti.Probability.Process.Cylinder
 
 /-!
 # The conditional rectangle common ending for de Finetti
@@ -112,7 +112,7 @@ naturally produce, since a block argument reads disjoint windows in increasing o
 
 This theorem is, alone among the rectangle endings, stated for a sequence. The obstruction is
 inherited rather than intrinsic: the statement is phrased with `blockCylinder`, which
-`Exchangeability/Cylinder.lean` defines only for `X : ℕ → Ω → α`, and the sorting reduction needs a
+`Process/Cylinder.lean` defines only for `X : ℕ → Ω → α`, and the sorting reduction needs a
 linear order on the index — hence `ℕ`. The others quantify over an arbitrary index type.
 
 This is a reusable seam: nothing here mentions how `ν` was built, so a route supplies only its own

@@ -188,6 +188,23 @@ theorem exists_brInfl_eq (x : Br K) :
   obtain ⟨V, y, rfl⟩ := exists_brLevelInfl_eq x
   exact ⟨V, (layerBrLevelEquiv V).symm y, by rw [brInfl_apply, AddEquiv.apply_symm_apply]⟩
 
+variable {V} in
+/-- If the trivial subgroup is open, its layer contains every Brauer class. -/
+theorem brInfl_surjective_of_toSubgroup_eq_bot
+    (hV : V.toSubgroup = ⊥) : Function.Surjective (brInfl V) := by
+  intro x
+  obtain ⟨U, y, hy⟩ := exists_brLevelInfl_eq x
+  have hVU : V ≤ U := by
+    intro g hg
+    have hg' : g ∈ V.toSubgroup := hg
+    have hg1 : g = 1 := by simpa [hV] using hg'
+    rw [hg1]
+    exact one_mem U
+  refine ⟨(layerBrLevelEquiv V).symm
+    (explicitFiniteQuotientTransition2 _ (UnitsCoeff K) U V hVU y), ?_⟩
+  rw [brInfl_apply, AddEquiv.apply_symm_apply,
+    brLevelInfl_explicitFiniteQuotientTransition2 hVU, hy]
+
 end Inflation
 
 end TauCeti.ClassFieldTheory

@@ -162,7 +162,8 @@ private theorem finrank_eq_wittIndex_of_maximal_aux [Invertible (2 : K)] (n : �
   -- both the dimension of `W` and the Witt index drop by one on the orthogonal complement `U`.
   obtain ⟨w, hwW, hw0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hbot
   have hwQ : Q w = 0 := hW.prop.apply_eq_zero hwW
-  obtain ⟨f, hfQ, hwf⟩ := hQ.exists_isotropic_polar_eq_one hw0 hwQ
+  obtain ⟨f, hfQ, hwf⟩ :=
+    exists_isotropic_polar_eq_one_of_radical_eq_bot hQ.radical_eq_bot hw0 hwQ
   set U := LinearMap.BilinForm.orthogonal Q.polarBilin (Submodule.span K {w, f})
   have hequiv := Q.equivalent_hyperbolicPlane_prod_restrict_orthogonal hwQ hfQ hwf
   have hU := hQ.nondegenerate_restrict_orthogonal_span_pair hwQ hfQ hwf

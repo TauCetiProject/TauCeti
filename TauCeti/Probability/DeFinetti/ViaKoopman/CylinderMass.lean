@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.DeFinetti.ViaKoopman.BlockFactorization
-public import TauCeti.Probability.Exchangeability.Cylinder
+public import TauCeti.Probability.Process.Cylinder
 import TauCeti.Probability.Exchangeability.PathSpace.Invariant.BlockTransport
 import TauCeti.MeasureTheory.Integral.ENNRealProd
 

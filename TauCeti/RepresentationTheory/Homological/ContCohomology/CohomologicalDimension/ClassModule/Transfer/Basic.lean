@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClassModule.Basic
 public import TauCeti.Topology.Algebra.Group.Transfer
-import TauCeti.Topology.Algebra.Group.TopologicalAbelianization.Lift
+import TauCeti.Topology.Algebra.Group.TopologicalAbelianization.MaximalProP
 
 /-!
 # Transfer to the pro-p class module
@@ -80,12 +80,8 @@ theorem abelianizationProPTransfer_eq_one_of_mk_eq_one [CompactSpace G]
   have : CompactSpace V := isCompact_iff_compactSpace.mp (V.isClosed_of_isOpen hV).isCompact
   let Ver : G →ₜ* abelianizationProP p G V :=
     ⟨abelianizationProPTransfer p G V, continuous_abelianizationProPTransfer p G V hV⟩
-  let Verab := TopologicalAbelianization.lift Ver
-  have hVer := congrArg (maximalProPQuotient.lift
-    (isProP_maximalProPQuotient (p := p) (G := TopologicalAbelianization V)) Verab.toMonoidHom
-    Verab.continuous) hg
-  rw [maximalProPQuotient.mk_apply, maximalProPQuotient.lift_mk, map_one] at hVer
-  exact (TopologicalAbelianization.lift_mk Ver g).symm.trans hVer
+  exact eq_one_of_maximalProPQuotient_mk_eq_one
+    (isProP_maximalProPQuotient (p := p) (G := TopologicalAbelianization V)) Ver hg
 
 variable [V.Normal]
 

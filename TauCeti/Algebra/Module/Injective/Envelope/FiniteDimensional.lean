@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import TauCeti.Algebra.Module.Injective.Envelope.FiniteLength
 import TauCeti.Algebra.Module.Injective.Dual
 public import TauCeti.LinearAlgebra.Dual.Cogenerator
+import TauCeti.LinearAlgebra.Dual.RightAction
 
 /-!
 # Finite-dimensional injective envelopes

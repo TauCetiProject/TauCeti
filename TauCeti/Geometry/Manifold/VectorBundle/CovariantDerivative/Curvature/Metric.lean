@@ -176,6 +176,17 @@ def IsConstantCurvatureTensor
   g.toRiemannianMetric.IsConstantCurvatureTensor
     (CovariantDerivative.leviCivitaConnection I M) inferInstance κ
 
+/-- A smooth metric has constant-curvature tensor precisely when its Levi-Civita
+connection satisfies the constant-curvature equation on every tangent triple. -/
+theorem isConstantCurvatureTensor_iff
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (κ : ℝ) :
+    g.IsConstantCurvatureTensor κ ↔
+      letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+      ∀ (x : M) (w u v : TangentSpace I x),
+        (CovariantDerivative.leviCivitaConnection I M).curvatureTensor x w u v =
+          κ • (Inner.inner ℝ u v • w - Inner.inner ℝ w v • u) :=
+  (Iff.rfl)
+
 /-- The pointwise curvature equation carried by the smooth metric predicate `h`. -/
 theorem IsConstantCurvatureTensor.curvatureTensor_eq
     (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (κ : ℝ)

@@ -204,6 +204,10 @@ def semilocalEquiv :
     (show Function.Bijective (semilocalHom L v) from
       ⟨semilocalHom_injective L v, semilocalHom_surjective L v⟩)
 
+/-- The semi-local decomposition is the semi-local map. -/
+theorem coe_semilocalEquiv : ⇑(semilocalEquiv L v) = semilocalHom L v := by
+  rw [semilocalEquiv, AlgEquiv.coe_ofBijective]
+
 variable {L v}
 
 /-- **The semi-local decomposition on a pure tensor**, the formula that determines it. -/

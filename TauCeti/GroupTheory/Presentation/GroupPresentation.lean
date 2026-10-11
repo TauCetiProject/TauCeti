@@ -35,6 +35,7 @@ relations, regarded as a set, defines `TauCeti.GroupPresentation.Group` using Ma
   word is cyclically reduced.
 * `TauCeti.GroupPresentation.relatorSet`: the relations as free-group elements.
 * `TauCeti.GroupPresentation.Group`: the group defined by the presentation.
+* `TauCeti.GroupPresentation.homEquiv`: homomorphisms specified by satisfying generator assignments.
 * `TauCeti.GroupPresentation.matchesMetadata`: the decidable generator and relator count check.
 
 ## Main results
@@ -200,6 +201,47 @@ theorem relatorSet_eq_relatorSet_transcribed (P : GroupPresentation) :
 /-- The group defined by the generators and compiled relations of a presentation. -/
 abbrev Group (P : GroupPresentation) : Type :=
   PresentedGroup P.relatorSet
+
+/-- Homomorphisms from a finite presentation correspond to generator assignments satisfying
+its transcribed relators. No generation or injectivity condition is imposed on the assignment. -/
+def homEquiv (P : GroupPresentation) {G : Type*} [_root_.Group G] :
+    (P.Group →* G) ≃
+      {f : Fin P.generatorCount → G //
+        ∀ t ∈ P.transcribed, FreeGroup.lift f t.toFreeGroup = 1} where
+  toFun φ := ⟨fun i ↦ φ (PresentedGroup.of i), by
+    intro t ht
+    calc
+      FreeGroup.lift (fun i ↦ φ (PresentedGroup.of i)) t.toFreeGroup =
+          φ (PresentedGroup.mk P.relatorSet t.toFreeGroup) :=
+        (FreeGroup.lift_unique (φ.comp (PresentedGroup.mk P.relatorSet)) fun _ ↦ rfl).symm
+      _ = 1 := by
+        rw [PresentedGroup.one_of_mem ((P.mem_relatorSet_iff _).mpr ⟨t, ht, rfl⟩), map_one]⟩
+  invFun f := PresentedGroup.toGroup (f := f.1) fun r hr ↦ by
+    obtain ⟨t, ht, rfl⟩ := (P.mem_relatorSet_iff r).mp hr
+    exact f.2 t ht
+  left_inv φ := by
+    apply PresentedGroup.ext
+    intro i
+    exact PresentedGroup.toGroup.of _
+  right_inv f := by
+    apply Subtype.ext
+    funext i
+    exact PresentedGroup.toGroup.of _
+
+/-- The assignment associated to a homomorphism consists of its values on the generators. -/
+@[simp]
+theorem homEquiv_apply (P : GroupPresentation) {G : Type*} [_root_.Group G]
+    (φ : P.Group →* G) :
+    (P.homEquiv φ).1 = fun i ↦ φ (PresentedGroup.of i) := by
+  rfl
+
+/-- Extending a satisfying assignment sends each generator to its assigned value. -/
+@[simp]
+theorem homEquiv_symm_apply_of (P : GroupPresentation) {G : Type*} [_root_.Group G]
+    (f : {f : Fin P.generatorCount → G //
+      ∀ t ∈ P.transcribed, FreeGroup.lift f t.toFreeGroup = 1}) (i : Fin P.generatorCount) :
+    P.homEquiv.symm f (PresentedGroup.of i) = f.1 i := by
+  simp [homEquiv]
 
 /-- The recorded generator and relator counts agree with the transcribed data.
 

@@ -14,7 +14,7 @@ This file extends Mathlib's algebraic `LinearMap.index` API with its invariance 
 with a linear equivalence.
 
 These composition lemmas are absent from `Mathlib.Algebra.Module.LinearMap.Index` and support the
-continuous-linear-map results in `TauCeti.Analysis.Fredholm.Index`.
+continuous-linear-map results in `TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index`.
 -/
 
 public section

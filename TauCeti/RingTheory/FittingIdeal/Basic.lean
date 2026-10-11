@@ -8,10 +8,9 @@ module
 public import Mathlib.Algebra.Module.Projective
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
-public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.RingTheory.Finiteness.Cardinality
 public import Mathlib.RingTheory.Finiteness.Prod
-public import TauCeti.LinearAlgebra.Multilinear.Span
+public import TauCeti.LinearAlgebra.Determinant
 
 /-!
 # Fitting ideals
@@ -197,15 +196,7 @@ private theorem minorsIdeal_prod_top_succ (N : Submodule R F) (p : ℕ) :
       rw [hsplit]
       exact add_mem (subset_span (Set.mem_insert_of_mem _ ⟨_, hvi, rfl⟩))
         (smul_mem _ _ (subset_span (Set.mem_insert _ _)))
-    let μ : MultilinearMap R (fun _ : Fin (p + 1) ↦ F × R) R :=
-      Matrix.detRowAlternating.toMultilinearMap.compLinearMap fun _ ↦ LinearMap.pi f
-    have hμ (w : Fin (p + 1) → F × R) : μ w = (Matrix.of fun i j ↦ f j (w i)).det := by
-      simp only [μ, MultilinearMap.compLinearMap_apply, Matrix.det]
-      congr 1
-    rw [← hμ]
-    refine span_le.2 ?_ (μ.map_mem_span_image_pi (fun _ ↦ T) hT)
-    rintro _ ⟨w, hw, rfl⟩
-    exact det_mem_minorsIdeal_of_mem_insert N f fun i ↦ hw i trivial
+    exact TauCeti.det_mem_of_mem_span f hT fun _ hw ↦ det_mem_minorsIdeal_of_mem_insert N f hw
   · -- Border the matrix by the row `(0, 1)` and the functional `snd`.
     convert det_mem_minorsIdeal (N := N.prod ⊤)
       (Fin.cons (LinearMap.snd R F R) fun j ↦ f j ∘ₗ LinearMap.fst R F R)

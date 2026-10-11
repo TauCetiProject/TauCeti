@@ -19,9 +19,10 @@ rescalings compose by multiplying labellings, and the constant labelling `1` res
 identity, so a labelling by units rescales by an algebra automorphism, inverted by the labelling
 by inverses.
 
-These rescalings are the gauge transformations of a quiver with relations: each fixes every vertex
-idempotent and multiplies each arrow by its label, so it carries a relation to the correspondingly
-rescaled relation.
+For a quiver with relations, rescaling by invertible labels gives gauge transformations: each
+fixes every vertex idempotent and multiplies each arrow by its label, so it carries a relation to
+the correspondingly rescaled relation. On a doubled quiver, sign changes and unit rescalings
+give the gauge changes used to compare preprojective presentations.
 
 ## Implementation notes
 
@@ -44,13 +45,6 @@ the metavariable cannot be applied to an arrow before the definition is unfolded
 * `TauCeti.PathAlgebra.rescale_congr`: pointwise equal labellings give equal rescalings.
 * `TauCeti.PathAlgebra.rescale_mem_gradeBy` and `TauCeti.PathAlgebra.rescale_mem_grade`: rescaling
   preserves the grading by any arrow weight, in particular the path-length grading.
-
-## References
-
-This is infrastructure for the gauge-change clause of Layer 4 of
-`TauCetiRoadmap/ZigzagPreprojective/README.md`, which asks for the algebra isomorphisms rescaling
-the arrows of a doubled quiver by signs, and for their generalization to an arbitrary
-antisymmetric scalar labelling.
 -/
 
 public section

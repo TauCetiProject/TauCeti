@@ -41,7 +41,7 @@ for some unit `w`. Read in `ℚ_2`, a unit of `ℤ_2` is a square of `ℚ_2` exa
 * `TauCeti.serreEps_eq_one_iff`, `TauCeti.serreOmega_eq_one_iff` (and the `_eq_zero_iff`
   variants): the values of `ε` and `ω` in terms of `u mod 8`.
 * `TauCeti.serreEps_mul`, `TauCeti.serreOmega_mul`: `ε` and `ω` are homomorphisms to the
-  additive group `ZMod 2`.
+  additive group `ZMod 2`; `TauCeti.serreEps_pow`, `TauCeti.serreOmega_pow` are the power forms.
 * `TauCeti.coe_neg_one_uzpow_serreEps`, `TauCeti.coe_neg_one_uzpow_serreOmega`: `(-1) ^ ε(u)` is
   `χ₄(u mod 4)` and `(-1) ^ ω(u)` is `χ₈(u mod 8)`.
 * `TauCeti.serreEps_eq_zero_and_serreOmega_eq_zero_iff`: `ε(u) = ω(u) = 0` exactly when
@@ -125,6 +125,11 @@ theorem serreOmega_eq_zero_iff (u : ℤ_[2]ˣ) :
     decide
   exact key _ (exists_toZModPow_three_mul_eq_one u)
 
+/-- `5` is a unit of `ℤ_2`. -/
+theorem isUnit_five_padicInt : IsUnit (5 : ℤ_[2]) := by
+  rw [PadicInt.isUnit_iff]
+  exact_mod_cast PadicInt.norm_natCast_eq_one_iff.mpr (by norm_num)
+
 /-- `ε(5) = 0`, for the unit `5` of `ℤ_2`. -/
 theorem serreEps_eq_zero_of_coe_eq_five {u : ℤ_[2]ˣ} (hu : (u : ℤ_[2]) = 5) :
     serreEps u = 0 := by
@@ -147,6 +152,18 @@ theorem serreEps_one : serreEps 1 = 0 := by
 theorem serreOmega_one : serreOmega 1 = 0 := by
   have h : ¬((1 : ZMod (2 ^ 3)) = 3 ∨ (1 : ZMod (2 ^ 3)) = 5) := by decide
   simp [serreOmega, h]
+
+/-- `ε(u ^ n) = n ε(u)`. -/
+theorem serreEps_pow (u : ℤ_[2]ˣ) (n : ℕ) : serreEps (u ^ n) = n • serreEps u := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [pow_succ, serreEps_mul, ih, succ_nsmul]
+
+/-- `ω(u ^ n) = n ω(u)`. -/
+theorem serreOmega_pow (u : ℤ_[2]ˣ) (n : ℕ) : serreOmega (u ^ n) = n • serreOmega u := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [pow_succ, serreOmega_mul, ih, succ_nsmul]
 
 /-- `ε(-1) = 1`. -/
 @[simp]
@@ -193,11 +210,8 @@ theorem serreEps_eq_zero_and_serreOmega_eq_zero_iff (u : ℤ_[2]ˣ) :
 the square of a unit. -/
 theorem exists_eq_neg_one_pow_mul_five_pow_mul_sq (u : ℤ_[2]ˣ) :
     ∃ w : ℤ_[2]ˣ, (u : ℤ_[2]) = (-1) ^ (serreEps u).val * 5 ^ (serreOmega u).val * w ^ 2 := by
-  have h5 : IsUnit (5 : ℤ_[2]) := by
-    rw [PadicInt.isUnit_iff]
-    exact_mod_cast PadicInt.norm_natCast_eq_one_iff.mpr (by norm_num)
   set r : ℤ_[2] := (-1) ^ (serreEps u).val * 5 ^ (serreOmega u).val
-  have hr : IsUnit r := ((isUnit_neg_one.pow _).mul (h5.pow _))
+  have hr : IsUnit r := ((isUnit_neg_one.pow _).mul (isUnit_five_padicInt.pow _))
   have key : ∀ x : ZMod (2 ^ 3), (∃ y, x * y = 1) →
       x = (-1) ^ (if x = 3 ∨ x = 7 then (1 : ZMod 2) else 0).val *
         5 ^ (if x = 3 ∨ x = 5 then (1 : ZMod 2) else 0).val := by

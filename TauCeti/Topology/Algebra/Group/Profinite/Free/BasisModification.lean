@@ -1120,7 +1120,7 @@ private theorem range_basisModificationDelta_eq_top_of_forall_smul_gradedPow_add
           rw [map_sub, ← gradedBracketLinear_apply y₀ (φ u • y₀), map_smul,
             gradedBracketLinear_apply, gradedBracket_self, smul_zero, sub_zero]
         rw [← gradedPow_gradedBracket_left_zero_of_odd hp, hswap, ← e,
-          gradedPow_neg_of_one_le le_rfl, gradedPow_gradedBracket_left_zero_of_odd hp]
+          gradedPow_neg, gradedPow_gradedBracket_left_zero_of_odd hp]
         exact neg_mem (hker 1 le_rfl _ (hsplit u))
       have hππ (u : gradedPiece p (freeProP p X) 0) :
           gradedPow p (freeProP p X) 1 (gradedPow p (freeProP p X) 0 u) ∈
@@ -1341,7 +1341,7 @@ theorem range_basisModificationDelta_sup_gradedPowIterSpan_compl_eq_top_two (hm 
             (gradedMkZero 2 (freeProP 2 X) (of k))
           rw [gradedCast_rfl] at hswap
           rw [← neg_neg (gradedBracket 2 (freeProP 2 X) 0 0 _ _), ← hswap,
-            gradedPow_neg_of_one_le le_rfl]
+            gradedPow_neg]
           exact neg_mem (hgen k hk _)
         · exact hgen j hj _
     | succ m hm ih =>

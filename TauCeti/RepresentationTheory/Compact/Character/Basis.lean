@@ -33,7 +33,7 @@ Schur's lemma over an algebraically closed field collapses `T` to a scalar, so
 the *trace* direction of each Peter-Weyl block. Taking `v = w` over an orthonormal basis and
 summing identifies `c · dim V` with the pairing of `f` against the sum of the diagonal matrix
 coefficients, which is the **conjugate** of the character, not the character. Inversion
-`g ↦ g⁻¹` exchanges the two (`TauCeti.ContRepresentation.invLpₗᵢ_characterLp`), and it is an
+`g ↦ g⁻¹` exchanges the two (`ContRepresentation.invLpₗᵢ_characterLp`), and it is an
 isometry preserving the class functions, so running the argument on the inverse-translate of `f`
 is what turns orthogonality to every character into the vanishing of every Peter-Weyl coefficient.
 
@@ -57,10 +57,8 @@ is what turns orthogonality to every character into the vanishing of every Peter
 
 ## References
 
-This is the item "characters span the class functions" of Layer 6 of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md),
-whose first half — the closed subspace of class functions and the membership of the characters in
-it — is `TauCeti/RepresentationTheory/Compact/ClassFunctionLp.lean`. The `[Finite G]` shadow of the
+The closed subspace of class functions and the membership of the characters in it are developed
+in `TauCeti/RepresentationTheory/Compact/ClassFunctionLp.lean`. The `[Finite G]` shadow of the
 statement is that the irreducible characters of a finite group are a basis of its class functions.
 
 * D. Bump, *Lie Groups*, 2nd ed., Springer GTM 225 (2013), Chapter 2.
@@ -68,6 +66,8 @@ statement is that the irreducible characters of a finite group are a basis of it
 -/
 
 public section
+
+open _root_.ContRepresentation
 
 open MeasureTheory
 open scoped InnerProductSpace
@@ -180,10 +180,11 @@ variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopo
 /-- **Inverting the argument turns the character into the sum of the diagonal matrix
 coefficients.**  The character of a unitary representation satisfies `χ g⁻¹ = conj (χ g)`, and the
 conjugate of a character is the sum of its diagonal matrix coefficients
-(`TauCeti.ContRepresentation.star_character`). This is the identity that lets a statement about
+(`ContRepresentation.star_character`). This is the identity that lets a statement about
 the characters be read off the Peter-Weyl basis, whose blocks are spanned by the matrix
 coefficients themselves. -/
-theorem invLpₗᵢ_characterLp {π : ContRepresentation 𝕜 G V} (hπ : Continuous π)
+theorem _root_.ContRepresentation.invLpₗᵢ_characterLp (π : ContRepresentation 𝕜 G V)
+    (hπ : Continuous π)
     (hunitary : IsUnitary π) {ι : Type*} [Fintype ι] (e : OrthonormalBasis ι 𝕜 V) :
     invLpₗᵢ 𝕜 (characterLp π hπ) = ∑ a, matrixCoeffLp π hπ (e a) (e a) := by
   have hcomp : (character π hπ).comp ⟨Inv.inv, continuous_inv⟩ = star (character π hπ) :=
@@ -222,7 +223,7 @@ theorem inner_matrixCoeffLp_inv_eq_zero_of_inner_characterLp_eq_zero (m : IrrepM
   have hone : ∀ a, ⟪m.basis a, m.basis a⟫_𝕜 = 1 := fun a ↦ by simp
   have hchar : ∑ a, ⟪matrixCoeffLp m.rep m.continuous_rep (m.basis a) (m.basis a),
       invLpₗᵢ 𝕜 f⟫_𝕜 = ⟪characterLp m.rep m.continuous_rep, f⟫_𝕜 := by
-    rw [← sum_inner, ← invLpₗᵢ_characterLp m.continuous_rep m.isUnitary m.basis]
+    rw [← sum_inner, ← invLpₗᵢ_characterLp m.rep m.continuous_rep m.isUnitary m.basis]
     exact (invLpₗᵢ (E := 𝕜) (p := 2) (μ := haarProb G) 𝕜).toLinearIsometry.inner_map_map _ _
   have hsum : c * (m.dim : 𝕜) = 0 := by
     rw [← horth, ← hchar]
@@ -290,7 +291,7 @@ variable {𝕜 G ι : Type*} [RCLike 𝕜] [IsAlgClosed 𝕜] [Group G] [Topolog
   [IsTopologicalGroup G] [CompactSpace G] [T2Space G] [MeasurableSpace G] [BorelSpace G]
 
 /-- **The characters of a family of models, inside the class functions.**  A character is a class
-function (`TauCeti.ContRepresentation.characterLp_mem_classFunctionLp`), so it is an element of
+function (`ContRepresentation.characterLp_mem_classFunctionLp`), so it is an element of
 `classFunctionLp` and not merely of `L²(G)`; the class-function completeness below is a statement
 about this family. -/
 noncomputable def characterFamily (models : ι → IrrepModel 𝕜 G) (i : ι) :
@@ -309,14 +310,14 @@ variable {models : ι → IrrepModel 𝕜 G}
 
 omit [T2Space G] in
 /-- **The characters of a pairwise inequivalent family are orthonormal in the class functions.**
-This is the character orthogonality of `TauCeti.ContRepresentation.orthonormal_characterLp`, read
+This is the character orthogonality of `ContRepresentation.orthonormal_characterLp`, read
 inside the subspace, where the inner product is the restriction of the one on `L²(G)`.  Only
 inequivalence is used; exhaustivity of a skeleton is what the completeness below needs. -/
 theorem orthonormal_characterFamily
     (hne : Pairwise fun i j ↦
       IsEmpty (_root_.ContRepresentation.Equiv (models i).rep (models j).rep)) :
     Orthonormal 𝕜 (characterFamily models) := by
-  have hL2 := ContRepresentation.orthonormal_characterLp (fun i ↦ (models i).rep)
+  have hL2 := _root_.ContRepresentation.orthonormal_characterLp (fun i ↦ (models i).rep)
     (fun i ↦ (models i).continuous_rep) (fun i ↦ (models i).isUnitary)
     (fun i ↦ (models i).isIrreducible) hne
   exact hL2.codRestrict _ fun i ↦ ContRepresentation.characterLp_mem_classFunctionLp _ _

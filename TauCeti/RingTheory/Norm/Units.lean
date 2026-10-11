@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Norm.Defs
+public import Mathlib.RingTheory.Norm.Transitivity
 public import Mathlib.Algebra.Group.Subgroup.Defs
 
 /-!
@@ -27,6 +28,10 @@ finiteness where the value is computed.
 
 * `TauCeti.Algebra.normUnits`: the algebra norm read as a homomorphism `Sˣ →* Rˣ`.
 * `TauCeti.normGroup`: the image of the norm on units in a finite field extension.
+
+## Main results
+
+* `AlgHom.normGroup_le_normGroup`: a larger extension has a smaller norm group.
 -/
 
 public section
@@ -61,6 +66,18 @@ variable {K L} in
 theorem mem_normGroup_iff [Module.Finite K L] {x : Kˣ} :
     x ∈ normGroup K L ↔ ∃ y : Lˣ, Algebra.norm K (y : L) = x := by
   simp [normGroup, Units.ext_iff]
+
+variable {K L} in
+/-- **A larger extension has a smaller norm group.** A `K`-algebra map `f : M →ₐ[K] L` of finite
+extensions makes `L` an extension of `M`, and by transitivity of the norm every norm from `L` is
+a norm from `M`. -/
+theorem _root_.AlgHom.normGroup_le_normGroup {M : Type*} [Field M] [Algebra K M] [Module.Finite K L]
+    [Module.Finite K M] (f : M →ₐ[K] L) : normGroup K L ≤ normGroup K M := by
+  let _ : Algebra M L := f.toRingHom.toAlgebra
+  have : IsScalarTower K M L := .of_algebraMap_eq fun x ↦ (f.commutes x).symm
+  have : Module.Finite M L := .of_restrictScalars_finite K M L
+  rintro _ ⟨y, rfl⟩
+  exact ⟨Algebra.normUnits M y, Units.ext (by simp [Algebra.norm_norm])⟩
 
 end NormGroup
 

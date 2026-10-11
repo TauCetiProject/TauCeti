@@ -75,17 +75,14 @@ theorems name.
 
 ## References
 
-This discharges the `frobeniusSchurIndicator_eq_one_iff` and
-`frobeniusSchurIndicator_eq_neg_one_iff` targets of Layer 6b of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md),
-the invariant-form dictionary its
-[`Suggested.lean`](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/Suggested.lean)
-pins on top of the trichotomy. The mathematical development follows Daniel Bump, *Lie Groups*,
+The mathematical development follows Daniel Bump, *Lie Groups*,
 second edition, Chapter 2, and T. Bröcker and T. tom Dieck, *Representations of Compact Lie
 Groups*, Springer GTM 98 (1985), Chapter II.
 -/
 
 public section
+
+open _root_.ContRepresentation
 
 open LinearMap (BilinForm)
 

@@ -409,7 +409,7 @@ private theorem rayFamily_smul_apply_one {g : E × F → E →L[ℝ] F} {K : ℝ
     rw [norm_smul, Real.norm_of_nonneg ht.1]
     exact (mul_le_of_le_one_left (norm_nonneg z) ht.2).trans_lt hz
   -- Both curves solve the system with parameter `t • z`, whose field is globally Lipschitz.
-  have hLip (q₀ : ℝ) : LipschitzWith (K * ‖t • z‖₊) (fun q : E × F ↦ (t • z, g q (t • z))) := by
+  have hLip (_ : ℝ) : LipschitzWith (K * ‖t • z‖₊) (fun q : E × F ↦ (t • z, g q (t • z))) := by
     refine LipschitzWith.of_dist_le_mul fun q q' ↦ ?_
     rw [Prod.dist_eq, dist_self, max_eq_right dist_nonneg, dist_eq_norm, ← sub_apply]
     push_cast
