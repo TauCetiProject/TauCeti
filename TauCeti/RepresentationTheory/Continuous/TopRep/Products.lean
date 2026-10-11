@@ -55,8 +55,15 @@ theorem pi_ρ_apply {ι : Type w} (X : ι → TopRep R G) (g : G) (x : ∀ i, (X
     (pi X).ρ g x i = (X i).ρ g (x i) := by
   rfl
 
+/-- The product representation has a discrete underlying topology when the index type is finite
+and each factor has a discrete underlying topology. -/
+theorem pi_discreteTopology {ι : Type w} [Finite ι] (X : ι → TopRep R G)
+    (h : ∀ i, DiscreteTopology (X i).V) : DiscreteTopology (pi X).V := by
+  change DiscreteTopology (∀ i, (X i).V)
+  exact @Pi.discreteTopology _ _ _ _ h
+
 /-- The projection from a product representation to one of its factors. -/
-@[expose] def piπ {ι : Type w} (X : ι → TopRep R G) (i : ι) : pi X ⟶ X i :=
+def piπ {ι : Type w} (X : ι → TopRep R G) (i : ι) : pi X ⟶ X i :=
   TopRep.ofHom {
     toContinuousLinearMap := ContinuousLinearMap.proj i
     isIntertwining' g := by
@@ -66,11 +73,11 @@ theorem pi_ρ_apply {ι : Type w} (X : ι → TopRep R G) (g : G) (x : ∀ i, (X
 
 /-- Evaluation of a product projection. -/
 @[simp] theorem piπ_hom_apply {ι : Type w} (X : ι → TopRep R G) (i : ι)
-    (x : (pi X).V) : (piπ X i).hom x = x i := rfl
+    (x : (pi X).V) : (piπ X i).hom x = x i := by rfl
 
 /-- The morphism into a product representation whose components are a given family of
 equivariant continuous linear maps. -/
-@[expose] def piLift {ι : Type w} {A : TopRep R G} (X : ι → TopRep R G)
+def piLift {ι : Type w} {A : TopRep R G} (X : ι → TopRep R G)
     (f : ∀ i, A ⟶ X i) : A ⟶ pi X :=
   TopRep.ofHom {
     toContinuousLinearMap := ContinuousLinearMap.pi fun i => (f i).hom.toContinuousLinearMap
@@ -82,7 +89,7 @@ equivariant continuous linear maps. -/
 /-- Evaluation of a map into a product. -/
 @[simp] theorem piLift_hom_apply {ι : Type w} {A : TopRep R G}
     (X : ι → TopRep R G) (f : ∀ i, A ⟶ X i) (a : A.V) (i : ι) :
-    (piLift X f).hom a i = (f i).hom a := rfl
+    (piLift X f).hom a i = (f i).hom a := by rfl
 
 /-- The component of `piLift` at any factor is the specified map. -/
 @[simp]
@@ -99,15 +106,15 @@ theorem piLift_comp_piπ {ι : Type w} {A : TopRep R G} (X : ι → TopRep R G)
   exact congrArg (fun q : A ⟶ X i => q.hom x) (h i)
 
 /-- The fan of projections from the pointwise product. -/
-@[expose] def piFan {ι : Type w} (X : ι → TopRep R G) : Fan X :=
+abbrev piFan {ι : Type w} (X : ι → TopRep R G) : Fan X :=
   Fan.mk (pi X) (piπ X)
 
 /-- The cone point of the pointwise product fan is the pointwise product representation. -/
-@[simp] theorem piFan_pt {ι : Type w} (X : ι → TopRep R G) : (piFan X).pt = pi X := rfl
+@[simp] theorem piFan_pt {ι : Type w} (X : ι → TopRep R G) : (piFan X).pt = pi X := by rfl
 
 /-- The projections of the pointwise product fan are the product projections. -/
 @[simp] theorem piFan_proj {ι : Type w} (X : ι → TopRep R G) (i : ι) :
-    (piFan X).proj i = piπ X i := rfl
+    (piFan X).proj i = piπ X i := by rfl
 
 /-- The pointwise product fan is a limit. -/
 def piFanIsLimit {ι : Type w} (X : ι → TopRep R G) : IsLimit (piFan X) :=
@@ -123,25 +130,6 @@ instance : HasLimits (TopRep.{w} R G) :=
 
 /-- The categorical product is isomorphic to the pointwise product representation. -/
 noncomputable def piIsoPi {ι : Type w} (X : ι → TopRep R G) : ∏ᶜ X ≅ pi X :=
-  { hom := piLift X fun i => Pi.π X i
-    inv := Pi.lift (piπ X)
-    hom_inv_id := by
-      apply Pi.hom_ext
-      intro i
-      simp
-    inv_hom_id := by
-      apply pi_hom_ext
-      intro i
-      simp }
-
-/-- The comparison from the categorical product commutes with each pointwise projection. -/
-@[simp] theorem piIsoPi_hom_piπ {ι : Type w} (X : ι → TopRep R G) (i : ι) :
-    (piIsoPi X).hom ≫ piπ X i = Pi.π X i := by
-  simp [piIsoPi]
-
-/-- The inverse comparison commutes with each categorical product projection. -/
-@[simp] theorem piIsoPi_inv_π {ι : Type w} (X : ι → TopRep R G) (i : ι) :
-    (piIsoPi X).inv ≫ Pi.π X i = piπ X i := by
-  simp [piIsoPi]
+  limit.isoLimitCone ⟨piFan X, piFanIsLimit X⟩
 
 end TopRep

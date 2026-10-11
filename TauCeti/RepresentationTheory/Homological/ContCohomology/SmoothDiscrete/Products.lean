@@ -29,35 +29,30 @@ attribute [local instance] TopRep.distribMulAction
 variable {R : Type u} [Ring R] [TopologicalSpace R]
 variable {G : Type v} [Monoid G] [TopologicalSpace G]
 
+omit [TopologicalSpace G] in
+/-- The stabilizer of a point in a pointwise product is the intersection of its coordinate
+stabilizers. -/
+theorem pi_stabilizer_eq_iInter {ι : Type w} (X : ι → TopRep R G)
+    (x : (TopRep.pi X).V) :
+    {g : G | (TopRep.pi X).ρ g x = x} = ⋂ i, {g : G | (X i).ρ g (x i) = x i} := by
+  ext g
+  simp only [Set.mem_ofPred_eq, Set.mem_iInter]
+  constructor
+  · intro hg i
+    exact (TopRep.pi_ρ_apply X g x i).symm.trans (congrFun hg i)
+  · intro hg
+    funext i
+    exact (TopRep.pi_ρ_apply X g x i).trans (hg i)
+
 /-- Finite pointwise products preserve smooth discreteness over a topological monoid. -/
 lemma _root_.TauCeti.IsSmoothDiscrete.pi {ι : Type w} [Finite ι]
     (X : ι → TopRep R G) (h : ∀ i, IsSmoothDiscrete R (X i)) :
     IsSmoothDiscrete R (TopRep.pi X) := by
   have hdisc : ∀ i, DiscreteTopology (X i).V := fun i => (h i).discreteTopology
   refine ⟨?_, fun x => ?_⟩
-  · change DiscreteTopology (∀ i, (X i).V)
-    exact @Pi.discreteTopology _ _ _ _ hdisc
-  rw [show {g : G | (TopRep.pi X).ρ g x = x} =
-      ⋂ i, {g : G | (X i).ρ g (x i) = x i} by
-        ext g
-        simp only [Set.mem_ofPred_eq, Set.mem_iInter]
-        constructor
-        · intro hg i
-          exact (TopRep.pi_ρ_apply X g x i).symm.trans (congrFun hg i)
-        · intro hg
-          funext i
-          exact (TopRep.pi_ρ_apply X g x i).trans (hg i)]
+  · exact TopRep.pi_discreteTopology X hdisc
+  rw [pi_stabilizer_eq_iInter X x]
   exact isOpen_iInter_of_finite (fun i => (h i).stabilizer_isOpen (x i))
-
-/-- The finite pointwise product of smooth discrete representations. -/
-@[expose] def pi {ι : Type w} [Finite ι] (X : ι → SmoothDiscreteTopRep R G) :
-    SmoothDiscreteTopRep R G :=
-  ⟨TopRep.pi fun i => (X i).obj, IsSmoothDiscrete.pi _ (fun i => (X i).property)⟩
-
-/-- The underlying topological representation of the finite product. -/
-@[simp] theorem pi_obj {ι : Type w} [Finite ι]
-    (X : ι → SmoothDiscreteTopRep R G) :
-    (pi X).obj = TopRep.pi (fun i => (X i).obj) := rfl
 
 /-- Smooth discreteness is closed under finite products. -/
 instance : ObjectProperty.IsClosedUnderFiniteProducts
