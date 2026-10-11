@@ -12,10 +12,10 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import Mathlib.Data.Int.Interval
 
 /-!
-# Positive definite quadratic forms
+# Positive definite quadratic maps
 
-Multiplication by a positive scalar preserves positive-definiteness over a linearly ordered
-commutative ring.
+Multiplication by a positive scalar preserves and reflects positive-definiteness when the scalar
+action preserves and reflects strict inequalities on values.
 
 A positive definite quadratic form on a finitely generated free `ℤ`-module takes each of its values
 only finitely often: the sets `{x | q x ≤ n}` and `{x | q x = n}` are finite. This is the
@@ -24,7 +24,7 @@ the one that turns an orbit lying in a level set into a periodic orbit.
 
 ## Main results
 
-* `QuadraticForm.posDef_smul_iff_of_pos`: a quadratic form is positive definite if and only if
+* `QuadraticMap.posDef_smul_iff_of_pos`: a quadratic map is positive definite if and only if
   its multiple by a positive scalar is positive definite.
 * `QuadraticMap.PosDef.finite_setOf_apply_le`: a positive definite quadratic form on a
   finitely generated free `ℤ`-module has only finitely many vectors of value at most `n`.
@@ -52,24 +52,20 @@ uses.
 
 public section
 
-namespace QuadraticForm
+namespace QuadraticMap
 
-variable {R M : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
-  [AddCommGroup M] [Module R M]
+variable {R M N : Type*} [CommSemiring R] [Preorder R]
+  [AddCommMonoid M] [Module R M] [AddCommMonoid N] [PartialOrder N] [Module R N]
+  [PosSMulStrictMono R N] [PosSMulReflectLT R N]
 
-/-- Multiplication by a positive scalar preserves positive-definiteness. Thus a quadratic form is
-positive-definite if and only if its positive scalar multiple is. -/
+/-- Multiplication by a positive scalar preserves and reflects positive-definiteness when the
+scalar action preserves and reflects strict inequalities on values. -/
 @[simp]
-theorem posDef_smul_iff_of_pos (Q : _root_.QuadraticForm R M) {a : R} (ha : 0 < a) :
-    (a • Q).PosDef ↔ Q.PosDef := by
-  constructor
-  · intro hQ x hx
-    have h := hQ x hx
-    simp only [smul_apply, smul_eq_mul] at h
-    exact pos_of_mul_pos_right h ha.le
-  · exact fun hQ ↦ hQ.smul ha
+theorem posDef_smul_iff_of_pos (Q : QuadraticMap R M N) {a : R} (ha : 0 < a) :
+    (a • Q).PosDef ↔ Q.PosDef :=
+  forall₂_congr fun _ _ ↦ smul_pos_iff_of_pos_left ha
 
-end QuadraticForm
+end QuadraticMap
 
 namespace TauCeti
 
