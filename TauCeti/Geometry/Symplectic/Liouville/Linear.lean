@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
+public import TauCeti.Analysis.Normed.Module.Alternating.Bilinear
 
 /-!
 # The radial primitive of a constant two-form
@@ -28,6 +29,21 @@ noncomputable section
 
 namespace ContinuousLinearMap
 
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {n : ℕ}
+
+/-- The exterior derivative of a continuous linear differential form is its alternatization. -/
+@[simp]
+lemma extDeriv_eq (ω : E →L[𝕜] E [⋀^Fin n]→L[𝕜] F) (x : E) :
+    extDeriv ω x = ContinuousAlternatingMap.alternatizeUncurryFin ω := by
+  simp [extDeriv]
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearMap
+
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
 /-- The radial one-form associated to a continuous bilinear form `B`, given by
@@ -35,41 +51,33 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 def liouvilleFormCLM (B : V →L[ℝ] V →L[ℝ] ℝ) :
     V →L[ℝ] V [⋀^Fin 1]→L[ℝ] ℝ :=
   (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := V) (F := ℝ)
-    (0 : Fin 1)).toContinuousLinearEquiv.toContinuousLinearMap.comp ((1 / 2 : ℝ) • B)
+    (0 : Fin 1)).toContinuousLinearEquiv.toContinuousLinearMap.comp ((2⁻¹ : ℝ) • B)
 
 /-- The radial one-form evaluates by `λₓ(v) = B(x, v) / 2`. -/
 @[simp]
 lemma liouvilleFormCLM_apply (B : V →L[ℝ] V →L[ℝ] ℝ) (x : V) (v : Fin 1 → V) :
-    liouvilleFormCLM B x v = (1 / 2 : ℝ) * B x (v 0) := by
+    liouvilleFormCLM B x v = (2⁻¹ : ℝ) * B x (v 0) := by
   simp [liouvilleFormCLM]
-
-private lemma hasFDerivAt_liouvilleFormCLM_apply (B : V →L[ℝ] V →L[ℝ] ℝ)
-    (v : Fin 1 → V) (x : V) :
-    HasFDerivAt (fun y ↦ liouvilleFormCLM B y v)
-      ((ContinuousLinearMap.apply ℝ ℝ (v 0)).comp ((1 / 2 : ℝ) • B)) x := by
-  let L := (ContinuousLinearMap.apply ℝ ℝ (v 0)).comp ((1 / 2 : ℝ) • B)
-  have hfun : (fun y ↦ liouvilleFormCLM B y v) = L := by
-    funext y
-    simp [L, liouvilleFormCLM_apply]
-  rw [hfun]
-  exact L.hasFDerivAt
 
 /-- The exterior derivative of the radial one-form of `B` is one half of the alternatization of
 `B`: `dλₓ(v, w) = (B(v, w) - B(w, v)) / 2`. -/
 @[simp]
+lemma extDeriv_liouvilleFormCLM (B : V →L[ℝ] V →L[ℝ] ℝ) (x : V) :
+    extDeriv (liouvilleFormCLM B) x =
+      (2⁻¹ : ℝ) • TauCeti.ContinuousAlternatingMap.alternatizeBilinCLM ℝ V ℝ B := by
+  rw [ContinuousLinearMap.extDeriv_eq]
+  ext v
+  simp [liouvilleFormCLM, ContinuousAlternatingMap.alternatizeUncurryFin_apply, Fin.sum_univ_two,
+    Fin.removeNth, Fin.succAbove, sub_eq_add_neg]
+
+/-- The exterior derivative of the radial one-form of `B` evaluates by
+`dλₓ(v, w) = (B(v, w) - B(w, v)) / 2`. -/
 lemma extDeriv_liouvilleFormCLM_apply (B : V →L[ℝ] V →L[ℝ] ℝ) (x : V)
     (v : Fin 2 → V) :
     extDeriv (liouvilleFormCLM B) x v =
-      (1 / 2 : ℝ) * (B (v 0) (v 1) - B (v 1) (v 0)) := by
-  rw [extDeriv_apply]
-  · rw [Fin.sum_univ_two]
-    simp only [Fin.isValue, Fin.val_zero, pow_zero, one_smul,
-      Fin.val_one, pow_one, neg_smul, one_smul]
-    rw [(hasFDerivAt_liouvilleFormCLM_apply B (Fin.removeNth 0 v) x).fderiv,
-      (hasFDerivAt_liouvilleFormCLM_apply B (Fin.removeNth 1 v) x).fderiv]
-    simp [Fin.removeNth]
-    ring
-  · exact (ContinuousLinearMap.liouvilleFormCLM B).differentiableAt
+      (2⁻¹ : ℝ) * (B (v 0) (v 1) - B (v 1) (v 0)) := by
+  rw [extDeriv_liouvilleFormCLM]
+  simp [TauCeti.ContinuousAlternatingMap.alternatizeBilinCLM_apply]
 
 /-- If `B` is skew-symmetric, the radial one-form `λₓ(v) = B(x, v) / 2` is a primitive of the
 constant two-form `B`. -/

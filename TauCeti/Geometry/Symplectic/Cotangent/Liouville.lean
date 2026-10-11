@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 public import TauCeti.Geometry.Symplectic.Cotangent.StrongDual
 public import TauCeti.LinearAlgebra.BilinearForm.Multilinear
+public import TauCeti.Geometry.Symplectic.Liouville.Linear
 
 /-!
 # The Liouville form on a linear cotangent space
@@ -105,22 +106,6 @@ lemma differentiableAt_cotangentLiouvilleForm (x : V × StrongDual ℝ V) :
     DifferentiableAt ℝ (cotangentLiouvilleForm (V := V)) x :=
   differentiable_cotangentLiouvilleForm x
 
-/-- The scalar coefficient obtained by evaluating the Liouville form on a fixed vector has the
-expected derivative: only the covector coordinate of the base point varies. -/
-private lemma hasFDerivAt_cotangentLiouvilleForm_apply
-    (v : Fin 1 → V × StrongDual ℝ V)
-    (x : V × StrongDual ℝ V) :
-    HasFDerivAt (fun y ↦ cotangentLiouvilleForm y v)
-      ((ContinuousLinearMap.apply ℝ ℝ (v 0).1).comp
-        (ContinuousLinearMap.snd ℝ V (StrongDual ℝ V))) x := by
-  let L := (ContinuousLinearMap.apply ℝ ℝ (v 0).1).comp
-    (ContinuousLinearMap.snd ℝ V (StrongDual ℝ V))
-  have hfun : (fun y ↦ cotangentLiouvilleForm y v) = L := by
-    funext y
-    simp [L]
-  rw [hfun]
-  exact L.hasFDerivAt
-
 /-- Coordinate formula for the exterior derivative of the Liouville form, evaluated on two
 tangent vectors: `dλ_x(v, w) = δp_v(δq_w) - δp_w(δq_v)`. -/
 @[simp]
@@ -128,14 +113,9 @@ lemma extDeriv_cotangentLiouvilleForm_apply (x : V × StrongDual ℝ V)
     (v : Fin 2 → V × StrongDual ℝ V) :
     extDeriv cotangentLiouvilleForm x v =
       (v 0).2 (v 1).1 - (v 1).2 (v 0).1 := by
-  rw [extDeriv_apply]
-  · rw [Fin.sum_univ_two]
-    simp only [Fin.isValue, Fin.val_zero, pow_zero, one_smul,
-      Fin.val_one, pow_one, neg_smul, one_smul]
-    rw [(hasFDerivAt_cotangentLiouvilleForm_apply (Fin.removeNth 0 v) x).fderiv,
-      (hasFDerivAt_cotangentLiouvilleForm_apply (Fin.removeNth 1 v) x).fderiv]
-    simp [Fin.removeNth, sub_eq_add_neg]
-  · exact differentiableAt_cotangentLiouvilleForm x
+  rw [cotangentLiouvilleForm_eq_coe, ContinuousLinearMap.extDeriv_eq]
+  simp [cotangentLiouvilleFormCLM, ContinuousAlternatingMap.alternatizeUncurryFin_apply,
+    Fin.sum_univ_two, Fin.removeNth, sub_eq_add_neg]
 
 /-- The canonical cotangent symplectic form is minus the exterior derivative of the Liouville
 form, with the identity stated in the direction of the convention `ω = -dλ`. -/
