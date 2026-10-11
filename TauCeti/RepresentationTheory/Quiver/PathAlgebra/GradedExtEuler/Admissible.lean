@@ -36,7 +36,9 @@ variable (k : Type w) (Q : Type u) [Field k] [Quiver.{v} Q] [Finite Q]
   [∀ a b : Q, Finite (a ⟶ b)]
   [HasExt.{t} (GradedModuleCat.{max u v w} (integerGrade k Q))]
 
-private theorem isGradedEulerAdmissible_gradedArrowSum (i : Q)
+/-- The shifted projective sum in the first-arrow resolution is Euler-admissible against
+every finite-dimensional graded target. -/
+theorem isGradedEulerAdmissible_gradedArrowSum (i : Q)
     (Y : GradedModuleCat.{max u v w} (integerGrade k Q)) [Module.Finite k Y] :
     IsGradedEulerAdmissible.{t} k (GradedModuleCat.shift (integerGrade k Q))
       (gradedArrowSum k Q i) Y := by
@@ -57,7 +59,9 @@ private theorem isGradedEulerAdmissible_gradedArrowSum (i : Q)
       fun j ↦ (GradedModuleCat.homShiftPowEquiv (integerGrade k Q) _ Y j).symm)
 
 omit [∀ a b : Q, Finite (a ⟶ b)] in
-private theorem isGradedEulerAdmissible_gradedVertexProjective (i : Q)
+/-- A graded vertex projective is Euler-admissible against every finite-dimensional
+graded target, even when the path algebra itself is infinite-dimensional. -/
+theorem isGradedEulerAdmissible_gradedVertexProjective (i : Q)
     (Y : GradedModuleCat.{max u v w} (integerGrade k Q)) [Module.Finite k Y] :
     IsGradedEulerAdmissible.{t} k (GradedModuleCat.shift (integerGrade k Q))
       (gradedVertexProjective k Q i) Y := by
