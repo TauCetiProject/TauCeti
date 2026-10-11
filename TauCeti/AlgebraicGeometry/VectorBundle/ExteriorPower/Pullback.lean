@@ -9,12 +9,13 @@ public import Mathlib.Algebra.Category.ModuleCat.Sheaf.PullbackFree
 public import TauCeti.AlgebraicGeometry.VectorBundle.ExteriorPower.Basic
 
 /-!
-# Pullback of exterior powers of free sheaves
+# A basis-dependent isomorphism for pullbacks of exterior powers
 
 The exterior power of a finite free sheaf is free on the finite subsets of its basis. Pullback
-preserves this description: pulling back the exterior power of a free sheaf agrees with taking the
-exterior power after pulling back the free sheaf. This is the chart comparison used to establish
-pullback compatibility for exterior powers of finite locally free sheaves.
+preserves this description, giving an isomorphism between the two resulting free sheaves. The
+isomorphism below is constructed through chosen bases and an order on the index type; it is an
+objectwise identification for free sheaves, not the canonical pullback comparison needed to glue
+comparisons for finite locally free sheaves.
 -/
 
 public section
@@ -29,8 +30,9 @@ open _root_.AlgebraicGeometry
 
 variable {X Y : _root_.AlgebraicGeometry.Scheme.{u}} (f : X ⟶ Y)
 
-/-- Pullback commutes with exterior powers of a finite free sheaf, with both sides identified with
-the free sheaf on the subsets indexing the exterior-power basis. -/
+/-- The pullback of the exterior power of a finite free sheaf is isomorphic to the exterior power
+of its pullback. This objectwise isomorphism is constructed through the chosen free bases; it does
+not assert compatibility with maps between free sheaves. -/
 noncomputable def pullbackExteriorPowerFreeIso (I : Type u) [Finite I] (n : ℕ) :
       (pullback f).obj ((exteriorPower Y n).obj (free Y I)) ≅
       (exteriorPower X n).obj ((pullback f).obj (free Y I)) := by
