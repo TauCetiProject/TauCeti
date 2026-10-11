@@ -35,21 +35,6 @@ noncomputable def localCarrierDilationEquiv (n : ℤ) (hn : n ≠ 0) :
     L.LocalCarrier p ≃ₗ[ℤ_[p]] (L.carrierDilation n hn).LocalCarrier p :=
   LinearEquiv.baseChange ℤ ℤ_[p] _ _ (L.carrierDilationEquiv n hn)
 
-/-- The localized carrier equivalence on pure tensors. -/
-@[simp]
-theorem localCarrierDilationEquiv_tmul (n : ℤ) (hn : n ≠ 0) (a : ℤ_[p]) (x : L) :
-    L.localCarrierDilationEquiv p n hn (a ⊗ₜ x) =
-      a ⊗ₜ (L.carrierDilationEquiv n hn x) := by
-  simp [localCarrierDilationEquiv]
-
-/-- The inverse localized carrier equivalence on pure tensors. -/
-@[simp]
-theorem localCarrierDilationEquiv_symm_tmul (n : ℤ) (hn : n ≠ 0) (a : ℤ_[p])
-    (x : L.carrierDilation n hn) :
-    (L.localCarrierDilationEquiv p n hn).symm (a ⊗ₜ x) =
-      a ⊗ₜ (L.carrierDilationEquiv n hn).symm x := by
-  simp [localCarrierDilationEquiv]
-
 /-- The local integral pairing scales by the square of the carrier dilation. -/
 theorem localIntegralForm_carrierDilationEquiv (n : ℤ) (hn : n ≠ 0)
     (x y : L.LocalCarrier p) :
@@ -63,7 +48,8 @@ theorem localIntegralForm_carrierDilationEquiv (n : ℤ) (hn : n ≠ 0)
     induction y using TensorProduct.inductionOn with
     | add y₁ y₂ h₁ h₂ => simp only [map_add, h₁, h₂, mul_add]
     | tmul b y =>
-      simp only [localCarrierDilationEquiv_tmul, localIntegralForm_tmul,
+      simp only [localCarrierDilationEquiv, LinearEquiv.baseChange_tmul,
+        localIntegralForm_tmul,
         integralForm_carrierDilationEquiv, Int.cast_mul, Int.cast_pow]
       ring
 
@@ -77,7 +63,8 @@ theorem localizationToCompletion_carrierDilation (n : ℤ) (hn : n ≠ 0)
   induction x using TensorProduct.inductionOn with
   | add x y hx hy => simp only [map_add, hx, hy, smul_add]
   | tmul a x =>
-    simp only [localCarrierDilationEquiv_tmul, localizationToCompletion_tmul,
+    simp only [localCarrierDilationEquiv, LinearEquiv.baseChange_tmul,
+      localizationToCompletion_tmul,
       coe_carrierDilationEquiv_apply]
     simp [TensorProduct.tmul_smul, TensorProduct.smul_tmul', Algebra.smul_def, mul_comm]
 
