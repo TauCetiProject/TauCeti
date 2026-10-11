@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Commuting
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.PairTerms
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 
 
@@ -67,17 +67,6 @@ theorem isZero_zigzagBraidComplexTriple_X (i j l : V) (n : ℤ) (h : n < -3 ∨ 
   rw [ComplexShape.π_eq_add] at hpq
   exact (triplePairOutside k G i j l p q (by omega)).eq_of_src _ _
 
-/-- The degree-minus-two term of a braid tensor product is the tensor of the vertex bimodules. -/
-def zigzagBraidComplexTensorXMinusTwoIso (i j : V) :
-    (T i j).X (-2) ≅ ((F).obj (U i)).obj (U j) :=
-  HomologicalComplex.mapBifunctorSingleSummandIso (B i) (B j) F c (-1) (-1) (-2) (by norm_num)
-      (by
-        intro p q hpq h
-        rw [ComplexShape.π_eq_add] at hpq
-        exact isZero_zigzagBraidComplexTensor_pair k G i j p q (by omega)) ≪≫
-    ((F).flip.obj ((B j).X (-1))).mapIso (zigzagBraidComplexXIso₀ k G i) ≪≫
-      ((F).obj (U i)).mapIso (zigzagBraidComplexXIso₀ k G j)
-
 /-- The lowest triple term is the left-associated tensor of the three vertex bimodules. -/
 def zigzagBraidComplexTripleXMinusThreeIso (i j l : V) :
     (zigzagBraidComplexTriple k G i j l).X (-3) ≅ ((F).obj (((F).obj (U i)).obj (U j))).obj (U l) :=
@@ -136,16 +125,6 @@ def zigzagBraidComplexTripleXMinusOneIso (i j l : V) :
       (((F).flip.obj ((B l).X (-1))).mapIso (zigzagBraidComplexTensorXZeroIso k G i j) ≪≫
         ((F).obj Z).mapIso (zigzagBraidComplexXIso₀ k G l) ≪≫
           zigzagBimoduleLeftUnitor k G (U l))
-
-/-- The lowest pair summand is identified by the two existing vertex component maps. -/
-@[reassoc (attr := simp)]
-theorem ιMapBifunctor_zigzagBraidComplexTensorXMinusTwoIso_hom (i j : V) :
-    HomologicalComplex.ιMapBifunctor (B i) (B j) F c (-1) (-1) (-2) (by simp) ≫
-        (zigzagBraidComplexTensorXMinusTwoIso k G i j).hom =
-      ((F).flip.obj ((B j).X (-1))).map (zigzagBraidComplexXIso₀ k G i).hom ≫
-        ((F).obj (U i)).map (zigzagBraidComplexXIso₀ k G j).hom := by
-  simp only [zigzagBraidComplexTensorXMinusTwoIso, Iso.trans_hom,
-    HomologicalComplex.ι_mapBifunctorSingleSummandIso_hom_assoc, Functor.mapIso_hom]
 
 /-- The lowest triple summand uses the pair comparison followed by the third vertex map. -/
 @[reassoc (attr := simp)]

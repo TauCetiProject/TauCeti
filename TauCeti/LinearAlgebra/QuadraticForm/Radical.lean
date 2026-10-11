@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.CharP.Invertible
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.Dimension.Constructions
+public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.LinearAlgebra.QuadraticForm.Prod
 import Mathlib.LinearAlgebra.Isomorphisms
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
@@ -192,6 +193,35 @@ theorem Isometry.injective_of_radical_eq_bot {Q₁ : QuadraticMap R M P} {Q₂ :
     ⟨by rw [← f.map_app, hx, map_zero], fun n => by rw [← f.map_app, ← f.map_app, map_add, hx,
       zero_add]⟩
   simpa [h] using hmem
+
+section QuotientRadicalIsometry
+
+variable {K : Type*} [Field K] {V W : Type*} [AddCommGroup V] [Module K V]
+  [AddCommGroup W] [Module K W] {Q : QuadraticForm K V} {S : QuadraticForm K W}
+
+/-- An isometry of quadratic forms descends to an isometry of their quotients by the radical. -/
+noncomputable def IsometryEquiv.quotientRadical (e : Q.IsometryEquiv S) :
+    (Q.lift Q.radical le_rfl).IsometryEquiv (S.lift S.radical le_rfl) where
+  __ := Submodule.Quotient.equiv Q.radical S.radical e.toLinearEquiv e.map_radical
+  map_app' x := by
+    induction x using Submodule.Quotient.induction_on with
+    | _ x => simp [Submodule.Quotient.equiv_apply, QuadraticMap.lift_mk]
+
+/-- The quotient isometry sends the class of a vector to the class of its image. -/
+@[simp]
+theorem IsometryEquiv.quotientRadical_mk (e : Q.IsometryEquiv S) (x : V) :
+    e.quotientRadical (Submodule.Quotient.mk x : V ⧸ Q.radical) =
+      (Submodule.Quotient.mk (e x) : W ⧸ S.radical) := by
+  dsimp [IsometryEquiv.quotientRadical]
+  rfl
+
+/-- Equivalent quadratic forms have equivalent quotients by their radicals. -/
+theorem Equivalent.lift_radical (h : Q.Equivalent S) :
+    (Q.lift Q.radical le_rfl).Equivalent (S.lift S.radical le_rfl) := by
+  obtain ⟨e⟩ := h
+  exact ⟨e.quotientRadical⟩
+
+end QuotientRadicalIsometry
 
 /-- A nonzero quadratic form over a semifield has a vector of unit norm. -/
 theorem exists_isUnit_of_ne_zero {K V : Type*} [Semifield K] [AddCommMonoid V] [Module K V]
