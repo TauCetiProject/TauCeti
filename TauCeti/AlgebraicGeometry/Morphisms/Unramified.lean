@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Morphisms.FiniteType
-public import Mathlib.AlgebraicGeometry.Morphisms.FormallyUnramified
+public import Mathlib.AlgebraicGeometry.Morphisms.Etale
+public import Mathlib.AlgebraicGeometry.Morphisms.Immersion
 
 /-!
 # Unramified morphisms
@@ -18,33 +18,74 @@ unramifiedness condition directly.
 
 ## Main definition
 
-* `AlgebraicGeometry.Unramified f`: `f` is locally of finite type and formally unramified.
+* `TauCeti.AlgebraicGeometry.Unramified f`: `f` is locally of finite type and formally
+  unramified.
 -/
 
 public section
 
-open CategoryTheory
+open CategoryTheory AlgebraicGeometry
 
 universe u
 
-namespace AlgebraicGeometry
+variable {X Y : Scheme.{u}}
+
+namespace TauCeti.AlgebraicGeometry
 
 /-- A morphism of schemes is unramified if it is locally of finite type and formally
 unramified. -/
-def Unramified : MorphismProperty Scheme := @LocallyOfFiniteType ⊓ @FormallyUnramified
+@[mk_iff]
+class Unramified (f : X ⟶ Y) : Prop extends LocallyOfFiniteType f, FormallyUnramified f
 
-instance : MorphismProperty.IsStableUnderComposition @Unramified where
-  comp_mem f g hf hg :=
-    ⟨MorphismProperty.comp_mem _ f g hf.1 hg.1,
-      MorphismProperty.comp_mem _ f g hf.2 hg.2⟩
+lemma unramified_eq : @Unramified =
+    (@LocallyOfFiniteType ⊓ @FormallyUnramified : MorphismProperty Scheme) := by
+  ext X Y f
+  rw [unramified_iff]
+  rfl
 
-instance : MorphismProperty.IsStableUnderBaseChange @Unramified where
-  of_isPullback sq hf :=
-    ⟨MorphismProperty.of_isPullback (P := @LocallyOfFiniteType) sq hf.1,
-      MorphismProperty.of_isPullback (P := @FormallyUnramified) sq hf.2⟩
+namespace Unramified
 
-/-- The two conditions in the definition of an unramified morphism. -/
-theorem unramified_iff {X Y : Scheme.{u}} (f : X ⟶ Y) :
-    Unramified f ↔ LocallyOfFiniteType f ∧ FormallyUnramified f := Iff.rfl
+lemma of_locallyOfFiniteType {X Y : Scheme} (f : X ⟶ Y) [LocallyOfFiniteType f]
+    [FormallyUnramified f] : Unramified f := by
+  constructor
 
-end AlgebraicGeometry
+set_option backward.isDefEq.respectTransparency.types false in
+instance : MorphismProperty.IsStableUnderComposition @Unramified := by
+  rw [unramified_eq]
+  infer_instance
+
+set_option backward.isDefEq.respectTransparency.types false in
+instance : MorphismProperty.IsStableUnderBaseChange @Unramified := by
+  rw [unramified_eq]
+  infer_instance
+
+set_option backward.isDefEq.respectTransparency.types false in
+instance : MorphismProperty.IsMultiplicative @Unramified := by
+  rw [unramified_eq]
+  infer_instance
+
+set_option backward.isDefEq.respectTransparency.types false in
+instance : IsZariskiLocalAtSource @Unramified := by
+  rw [unramified_eq]
+  infer_instance
+
+set_option backward.isDefEq.respectTransparency.types false in
+instance : IsZariskiLocalAtTarget @Unramified := by
+  rw [unramified_eq]
+  infer_instance
+
+instance (priority := 900) {X Y : Scheme} (f : X ⟶ Y) [IsClosedImmersion f] :
+    Unramified f := by
+  apply of_locallyOfFiniteType
+
+instance (priority := 900) {X Y : Scheme} (f : X ⟶ Y)
+    [AlgebraicGeometry.IsImmersion f] :
+    Unramified f := by
+  apply of_locallyOfFiniteType
+
+instance (priority := 900) {X Y : Scheme} (f : X ⟶ Y) [Etale f] : Unramified f := by
+  apply of_locallyOfFiniteType
+
+end Unramified
+
+end TauCeti.AlgebraicGeometry

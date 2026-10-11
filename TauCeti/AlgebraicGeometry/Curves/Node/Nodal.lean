@@ -137,7 +137,7 @@ private theorem smooth_singularLocus_unramified
         (X ↘ Spec (.of R))) := by
   have hsing : X.singularLocus R = ⊤ := Scheme.singularLocus_eq_top R X
   rw [hsing]
-  exact (unramified_iff _).2 ⟨inferInstance, inferInstance⟩
+  exact Unramified.of_locallyOfFiniteType _
 
 /-- A smooth morphism of relative dimension one over an affine base is at worst nodal. Its
 relative singular subscheme is empty, so the singular-locus condition in the nodal criterion
@@ -157,6 +157,6 @@ theorem _root_.TauCeti.NodeAlgebra.atWorstNodalOfRelativeDimensionOne (a : R) :
     Spec.map (CommRingCat.ofHom (algebraMap R (NodeAlgebra R a)))
   refine ⟨inferInstance, ?_⟩
   have : IsClosedImmersion _ := NodeAlgebra.isClosedImmersion_singularLocus a
-  exact (unramified_iff _).2 ⟨inferInstance, inferInstance⟩
+  exact Unramified.of_locallyOfFiniteType _
 
 end TauCeti.AlgebraicGeometry
