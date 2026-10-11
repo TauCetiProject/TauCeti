@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.ComplexShape.Signs
 public import Mathlib.Algebra.Homology.Bifunctor
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 

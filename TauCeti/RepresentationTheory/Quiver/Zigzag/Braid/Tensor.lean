@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Category.GradedModuleCat.Coproducts
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Basic
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Corner.Basic
 public import TauCeti.Algebra.Homology.Bifunctor.Support
+public import TauCeti.Algebra.Homology.ComplexShape.Signs
 
 /-!
 # Tensor composition of zigzag braid bimodules and complexes
@@ -186,22 +187,13 @@ theorem isZero_zigzagBraidComplexTensor_X_of_ne_of_not_adj
   rw [ComplexShape.π_eq_add] at hpq
   have hz : Limits.IsZero (((zigzagBimoduleTensor k G).obj
       ((zigzagBraidComplex k G i).X p)).obj ((zigzagBraidComplex k G j).X q)) := by
-    by_cases hp : p = -1
-    · subst p
-      by_cases hq : q = -1
-      · subst q
-        exact (isZero_zigzagBimoduleTensor_of_ne_of_not_adj (k := k) hij hadj).of_iso
-          (((zigzagBimoduleTensor k G).flip.obj ((zigzagBraidComplex k G j).X (-1))).mapIso
-              (zigzagBraidComplexXIso₀ k G i) ≪≫
-            ((zigzagBimoduleTensor k G).obj (U i)).mapIso (zigzagBraidComplexXIso₀ k G j))
-      · exact ((zigzagBimoduleTensor k G).obj ((zigzagBraidComplex k G i).X (-1))).map_isZero
-          (isZero_zigzagBraidComplex_X j hq (by omega))
-    · by_cases hp' : p = 0
-      · subst p
-        exact ((zigzagBimoduleTensor k G).obj ((zigzagBraidComplex k G i).X 0)).map_isZero
-          (isZero_zigzagBraidComplex_X j (by omega) (by omega))
-      · exact ((zigzagBimoduleTensor k G).flip.obj ((zigzagBraidComplex k G j).X q)).map_isZero
-          (isZero_zigzagBraidComplex_X i hp hp')
+    by_cases h : p = -1 ∧ q = -1
+    · obtain ⟨rfl, rfl⟩ := h
+      exact (isZero_zigzagBimoduleTensor_of_ne_of_not_adj (k := k) hij hadj).of_iso
+        (((zigzagBimoduleTensor k G).flip.obj ((zigzagBraidComplex k G j).X (-1))).mapIso
+            (zigzagBraidComplexXIso₀ k G i) ≪≫
+          ((zigzagBimoduleTensor k G).obj (U i)).mapIso (zigzagBraidComplexXIso₀ k G j))
+    · exact isZero_zigzagBraidComplexTensor_pair k G i j p q (by omega)
   exact hz.eq_of_src _ _
 
 end Nonadjacent
