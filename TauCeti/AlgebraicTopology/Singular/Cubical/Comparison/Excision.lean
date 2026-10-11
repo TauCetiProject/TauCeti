@@ -34,9 +34,15 @@ of `TauCeti.AlgebraicTopology.Singular.Excision`.
   morphisms with the comparison.
 * `TopPair.isIso_homologyMap_cubicalChainComplexMap_excisionMap`,
   `TopPair.isIso_homologyMap_cubicalChainComplexMap_excisionMap_compl`: excision.
+
+## References
+
+* S. Eilenberg and N. Steenrod, *Foundations of Algebraic Topology*, Princeton, 1952,
+  Chapters I–III and VII.
+* W. S. Massey, *Singular Homology Theory*, GTM 70, Springer, 1980, Chapter VII.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -52,7 +58,7 @@ variable (k : Type u) [Ring k] (P : TopPair.{u})
 
 /-- The **connecting morphism** `Hₙ(X, A) ⟶ Hₘ(A)` of the long exact sequence of a pair in cubical
 homology, for `m + 1 = n`. -/
-def cubicalHomologyδ (n m : ℕ) (h : m + 1 = n := by lia) :
+@[expose] def cubicalHomologyδ (n m : ℕ) (h : m + 1 = n := by lia) :
     (P.cubicalChainComplex k).homology n ⟶
       ((normalizedCubicalChainComplex k).obj P.snd).homology m :=
   (shortExact_cubicalChainComplexShortComplex k P).δ n m h
