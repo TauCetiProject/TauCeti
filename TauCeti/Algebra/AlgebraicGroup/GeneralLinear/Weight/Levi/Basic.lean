@@ -124,7 +124,7 @@ instance isClosedImmersion_weightLeviInclusion (w : Fin N → ℤ) :
 
 /-- The subgroup cut out by the weight-Levi ideal consists exactly of matrices preserving every
 weight space: entries between distinct weights vanish. -/
-@[simp]
+@[simp↓]
 theorem mem_weightLeviDefiningPointsSubgroup_iff_apply_eq_zero (w : Fin N → ℤ)
     {A : Type*} [CommRing A] [Algebra R A]
     (g : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R N)
