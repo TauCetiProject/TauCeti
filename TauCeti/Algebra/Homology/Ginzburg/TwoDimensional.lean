@@ -43,7 +43,7 @@ inductive Ginzburg2Quiver (Q : Type u)
 
 namespace Ginzburg2Quiver
 
-/-- The canonical equivalence from the vertex type to the original quiver. -/
+/-- The canonical equivalence from the original quiver to the Ginzburg vertex type. -/
 def vertexEquiv : Q ≃ Ginzburg2Quiver Q where
   toFun := vertex
   invFun := fun x => by cases x with | vertex i => exact i
@@ -62,6 +62,7 @@ instance : Fintype (Ginzburg2Quiver Q) := Fintype.ofEquiv Q Ginzburg2Quiver.vert
 
 instance (i j : Q) : Fintype (Ginzburg2DoubledHom i j) := by
   letI := Quiver.symmetrifyQuiver Q
+  -- Expose the symmetrified hom as the sum of arrows in both directions.
   change Fintype ((i ⟶ j) ⊕ (j ⟶ i))
   infer_instance
 
@@ -77,7 +78,6 @@ instance : Quiver (Ginzburg2Quiver Q) where
 
 instance [DecidableEq Q] (i j : Ginzburg2Quiver Q) : Fintype (Ginzburg2Arrow Q i j) := by
   letI := Quiver.symmetrifyQuiver Q
-  change Fintype (Ginzburg2DoubledHom _ _ ⊕ PLift (i = j))
   infer_instance
 
 /-- Regard a doubled-quiver arrow as an arrow of the 2-dimensional Ginzburg quiver. -/
@@ -183,6 +183,45 @@ noncomputable def ginzburg2DifferentialGenerator
   match a with
   | .inl _ => 0
   | .inr _ => ginzburg2Relator k (Ginzburg2Quiver.vertexEquiv.symm i)
+
+omit [DecidableEq Q] in
+@[simp]
+theorem ginzburg2DifferentialGenerator_doubledMap {i j : Q}
+    (a : Ginzburg2DoubledHom i j) :
+    ginzburg2DifferentialGenerator k (Ginzburg2Arrow.doubledMap a) = 0 := by
+  simp [ginzburg2DifferentialGenerator, Ginzburg2Arrow.doubledMap]
+
+omit [DecidableEq Q] in
+@[simp]
+theorem ginzburg2DifferentialGenerator_loopMap (i : Q) :
+    ginzburg2DifferentialGenerator k (Ginzburg2Arrow.loopMap i) = ginzburg2Relator k i := by
+  simp [ginzburg2DifferentialGenerator, Ginzburg2Arrow.loopMap,
+    Ginzburg2Quiver.vertexEquiv_symm_vertex]
+
+omit [Fintype Q] [∀ i j : Q, Fintype (i ⟶ j)] [DecidableEq Q] in
+@[simp]
+theorem ginzburg2CohomologicalWeight_doubledMap {i j : Q}
+    (a : Ginzburg2DoubledHom i j) :
+    ginzburg2CohomologicalWeight (Ginzburg2Arrow.doubledMap a) = 0 := by
+  simp [ginzburg2CohomologicalWeight, Ginzburg2Arrow.doubledMap]
+
+omit [Fintype Q] [∀ i j : Q, Fintype (i ⟶ j)] [DecidableEq Q] in
+@[simp]
+theorem ginzburg2CohomologicalWeight_loopMap (i : Q) :
+    ginzburg2CohomologicalWeight (Ginzburg2Arrow.loopMap i) = -1 := by
+  simp [ginzburg2CohomologicalWeight, Ginzburg2Arrow.loopMap]
+
+omit [Fintype Q] [∀ i j : Q, Fintype (i ⟶ j)] [DecidableEq Q] in
+@[simp]
+theorem ginzburg2AdamsWeight_doubledMap {i j : Q} (a : Ginzburg2DoubledHom i j) :
+    ginzburg2AdamsWeight (Ginzburg2Arrow.doubledMap a) = 1 := by
+  simp [ginzburg2AdamsWeight, Ginzburg2Arrow.doubledMap]
+
+omit [Fintype Q] [∀ i j : Q, Fintype (i ⟶ j)] [DecidableEq Q] in
+@[simp]
+theorem ginzburg2AdamsWeight_loopMap (i : Q) :
+    ginzburg2AdamsWeight (Ginzburg2Arrow.loopMap i) = 2 := by
+  simp [ginzburg2AdamsWeight, Ginzburg2Arrow.loopMap]
 
 omit [DecidableEq Q] in
 /-- The generator assignment has cohomological degree one. -/
