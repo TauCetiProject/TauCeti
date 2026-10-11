@@ -626,7 +626,6 @@ theorem gaussDegree_mul (hv : v.Integers O) (hρ₀ : 0 < ρ) (hρ : ρ < 1) {x 
   ring
 
 /-- The degree of `[a] p ^ m` is `m`, for `a ≠ 0`. -/
-@[simp]
 theorem gaussDegree_teichmuller_mul_pow (hv : v.Integers O) (hρ₀ : 0 < ρ) (hρ : ρ < 1) {a : O}
     (ha : a ≠ 0) (m : ℕ) : gaussDegree p hv ρ hρ (teichmuller p a * (p : 𝕎 O) ^ m) = m := by
   have hne : teichmuller p a * (p : 𝕎 O) ^ m ≠ 0 := fun h ↦ by
