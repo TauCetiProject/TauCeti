@@ -33,28 +33,6 @@ namespace TauCeti.ClassFieldTheory
 
 variable {K : Type*} [Field K] [NumberField K]
 
-/-- The principal ideles lying in the `S`-ideles are precisely the principal `S`-units. -/
-@[simp]
-theorem comap_unitEmbedding_kummerIdeleSubgroup_one (S : Finset (HeightOneSpectrum (𝓞 K))) :
-    (kummerIdeleSubgroup S 1).comap (IdeleGroup.unitEmbedding (𝓞 K) K) =
-      (S : Set (HeightOneSpectrum (𝓞 K))).unit K := by
-  ext a
-  exact (mem_kummerIdeleSubgroup_one_iff S _).trans
-    (IdeleGroup.forall_valued_ideleFiniteCoord_unitEmbedding_eq_one_iff a)
-
-/-- If the classes of the primes in `S` generate the ideal class group, every idele class has
-an `S`-idele representative. -/
-@[simp]
-theorem kummerIdeleClassSubgroup_one_eq_top (S : Finset (HeightOneSpectrum (𝓞 K)))
-    (hS : Subgroup.closure
-      (HeightOneSpectrum.classGroupMk (R := 𝓞 K) '' (S : Set (HeightOneSpectrum (𝓞 K)))) = ⊤) :
-    kummerIdeleClassSubgroup S 1 = ⊤ := by
-  apply top_unique
-  intro c _
-  obtain ⟨x, hx, hc⟩ := IdeleClassGroup.exists_valued_ideleFiniteCoord_eq_one_and_mk_eq hS c
-  exact (mem_kummerIdeleClassSubgroup_iff S 1 c).2
-    ⟨x, (mem_kummerIdeleSubgroup_one_iff S x).2 hx, hc⟩
-
 /-- **The exact Kummer idele-class index formula.** If the primes in `S` generate the ideal
 class group, the idele-class index multiplied by the relative index of the principal `S`-units
 satisfying the local power conditions equals the product of local power-class counts.
@@ -90,8 +68,18 @@ theorem index_kummerIdeleClassSubgroup_mul_relIndex (S : Finset (HeightOneSpectr
     dsimp only [E, Subgroup.subgroupOf]
     rw [Subgroup.relIndex_comap, hker, ← comap_unitEmbedding_kummerIdeleSubgroup_one,
       Subgroup.relIndex_comap, Subgroup.map_comap_eq, inf_comm]
-  have hmul := E.index_map_mul_relIndex_ker f hf
+  have hmul := TauCeti.Subgroup.index_map_mul_relIndex_ker E f hf
   rw [hmap, hprincipal] at hmul
   exact hmul.trans (relIndex_kummerIdeleSubgroup S n)
+
+/-- If the classes of `S` generate the ideal class group, the index of the Kummer idele class
+subgroup divides the product of the local power-class counts. -/
+theorem index_kummerIdeleClassSubgroup_dvd (S : Finset (HeightOneSpectrum (𝓞 K))) (n : ℕ)
+    (hS : Subgroup.closure
+      (HeightOneSpectrum.classGroupMk (R := 𝓞 K) '' (S : Set (HeightOneSpectrum (𝓞 K)))) = ⊤) :
+    (kummerIdeleClassSubgroup S n).index ∣
+      (∏ v : S, Nat.card ((v.1.adicCompletion K)ˣ ⧸ (powMonoidHom n).range)) *
+        ∏ w : InfinitePlace K, Nat.card (w.Completionˣ ⧸ (powMonoidHom n).range) :=
+  Dvd.intro _ (index_kummerIdeleClassSubgroup_mul_relIndex S n hS)
 
 end TauCeti.ClassFieldTheory

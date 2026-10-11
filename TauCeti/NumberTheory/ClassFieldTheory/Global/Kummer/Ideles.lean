@@ -69,6 +69,15 @@ theorem kummerIdeleSubgroup_le_one (S : Finset (HeightOneSpectrum (𝓞 K))) (n 
   exact (mem_kummerIdeleSubgroup_one_iff S x).mpr
     ((mem_kummerIdeleSubgroup_iff S n x).mp hx).2.2
 
+/-- The principal ideles lying in the `S`-ideles are precisely the principal `S`-units. -/
+@[simp]
+theorem comap_unitEmbedding_kummerIdeleSubgroup_one (S : Finset (HeightOneSpectrum (𝓞 K))) :
+    (kummerIdeleSubgroup S 1).comap (IdeleGroup.unitEmbedding (𝓞 K) K) =
+      (S : Set (HeightOneSpectrum (𝓞 K))).unit K := by
+  ext a
+  exact (mem_kummerIdeleSubgroup_one_iff S _).trans
+    (IdeleGroup.forall_valued_ideleFiniteCoord_unitEmbedding_eq_one_iff a)
+
 private abbrev LocalPowerClasses (S : Finset (HeightOneSpectrum (𝓞 K))) (n : ℕ) :=
   (∀ v : S, (v.1.adicCompletion K)ˣ ⧸ (powMonoidHom n).range) ×
     (∀ w : InfinitePlace K, w.Completionˣ ⧸ (powMonoidHom n).range)
@@ -158,27 +167,17 @@ theorem mem_kummerIdeleClassSubgroup_iff (S : Finset (HeightOneSpectrum (𝓞 K)
       ∃ x ∈ kummerIdeleSubgroup S n, (x : IdeleClassGroup (𝓞 K) K) = c :=
   (Iff.rfl)
 
-/-- If the classes of `S` generate the ideal class group, the index of the Kummer idele class
-subgroup divides the product of the local power-class counts. -/
-theorem index_kummerIdeleClassSubgroup_dvd (S : Finset (HeightOneSpectrum (𝓞 K))) (n : ℕ)
+/-- If the classes of the primes in `S` generate the ideal class group, every idele class has
+an `S`-idele representative. -/
+@[simp]
+theorem kummerIdeleClassSubgroup_one_eq_top (S : Finset (HeightOneSpectrum (𝓞 K)))
     (hS : Subgroup.closure
       (HeightOneSpectrum.classGroupMk (R := 𝓞 K) '' (S : Set (HeightOneSpectrum (𝓞 K)))) = ⊤) :
-    (kummerIdeleClassSubgroup S n).index ∣
-      (∏ v : S, Nat.card ((v.1.adicCompletion K)ˣ ⧸ (powMonoidHom n).range)) *
-        ∏ w : InfinitePlace K, Nat.card (w.Completionˣ ⧸ (powMonoidHom n).range) := by
-  let f : kummerIdeleSubgroup S 1 →* IdeleClassGroup (𝓞 K) K :=
-    (QuotientGroup.mk' (IdeleGroup.principalSubgroup (𝓞 K) K)).comp
-      (kummerIdeleSubgroup S 1).subtype
-  have hf : Function.Surjective f := by
-    intro c
-    obtain ⟨x, hx, hc⟩ := IdeleClassGroup.exists_valued_ideleFiniteCoord_eq_one_and_mk_eq hS c
-    exact ⟨⟨x, (mem_kummerIdeleSubgroup_one_iff S x).mpr hx⟩, hc⟩
-  have hmap : ((kummerIdeleSubgroup S n).subgroupOf (kummerIdeleSubgroup S 1)).map f =
-      kummerIdeleClassSubgroup S n := by
-    dsimp only [f]
-    rw [kummerIdeleClassSubgroup, ← Subgroup.map_map, Subgroup.subgroupOf_map_subtype]
-    exact congrArg (Subgroup.map _) (inf_eq_left.mpr (kummerIdeleSubgroup_le_one S n))
-  rw [← relIndex_kummerIdeleSubgroup, Subgroup.relIndex, ← hmap]
-  exact Subgroup.index_map_dvd _ hf
+    kummerIdeleClassSubgroup S 1 = ⊤ := by
+  apply top_unique
+  intro c _
+  obtain ⟨x, hx, hc⟩ := IdeleClassGroup.exists_valued_ideleFiniteCoord_eq_one_and_mk_eq hS c
+  exact (mem_kummerIdeleClassSubgroup_iff S 1 c).2
+    ⟨x, (mem_kummerIdeleSubgroup_one_iff S x).2 hx, hc⟩
 
 end TauCeti.ClassFieldTheory

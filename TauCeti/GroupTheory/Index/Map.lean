@@ -6,31 +6,34 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Index
+import TauCeti.GroupTheory.Index.Basic
 
 /-!
-# Index of the image of a normal subgroup
+# Index of the image of a subgroup
 
-Under a surjective homomorphism, the index of a normal subgroup factors into the index of its
+Under a surjective homomorphism, the index of a subgroup factors into the index of its
 image and its relative index in the kernel. This counts the contribution lost on passing to a
 quotient, for instance the contribution of principal ideles to an idele-class index.
 -/
 
 public section
 
-namespace Subgroup
+namespace TauCeti.Subgroup
 
 variable {G G' : Type*} [Group G] [Group G']
 
-/-- The index of a normal subgroup under a surjection factors into the image index and the
+/-- The index of a subgroup under a surjection factors into the image index and the
 relative index in the kernel. Infinite indices have the usual value zero. -/
-@[to_additive index_map_mul_relIndex_ker /-- The index of a normal additive subgroup under a
-surjection factors into the
-image index and the relative index in the kernel. Infinite indices have the usual value zero. -/]
-theorem index_map_mul_relIndex_ker (H : Subgroup G) [H.Normal] (f : G →* G')
+@[to_additive TauCeti.AddSubgroup.index_map_mul_relIndex_ker
+  /-- The index of an additive subgroup under a surjection factors into the image index and the
+  relative index in the kernel. Infinite indices have the usual value zero. -/]
+theorem index_map_mul_relIndex_ker (H : Subgroup G) (f : G →* G')
     (hf : Function.Surjective f) :
     (H.map f).index * H.relIndex f.ker = H.index := by
-  rw [index_map, f.range_eq_top_of_surjective hf, index_top, mul_one,
-    ← relIndex_sup_left f.ker H, mul_comm]
-  exact relIndex_mul_index (H := H) (K := H ⊔ f.ker) le_sup_left
+  rw [_root_.Subgroup.index_map, f.range_eq_top_of_surjective hf,
+    _root_.Subgroup.index_top, mul_one,
+    ← _root_.Subgroup.relIndex_sup_of_le_normalizer
+      (H := H) (N := f.ker) _root_.Subgroup.le_normalizer_of_normal, mul_comm]
+  exact _root_.Subgroup.relIndex_mul_index (H := H) (K := H ⊔ f.ker) le_sup_left
 
-end Subgroup
+end TauCeti.Subgroup
