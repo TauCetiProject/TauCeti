@@ -74,8 +74,7 @@ theorem different_ratFunc_eq_zeros_add_of_sq_eq_of_odd (h2 : (2 : k) ≠ 0)
     have hmod := Nat.odd_iff.mp hodd
     have hnot : ¬(2 : ℤ) ∣ -(f.natDegree : ℤ) := by omega
     rw [hQP] at hord
-    norm_num [hnot]
-    norm_num at hord
+    simp only [Nat.cast_ofNat, ite_eq_right hnot]
     omega
   · have hQP : Q ≠ P := fun h ↦ Place.adicOfIrreducible_ne_infty hq
       (hQ.symm.trans ((congrArg (fun R : Place k F ↦ R.restrict k (RatFunc k)) h).trans hP))
@@ -84,11 +83,43 @@ theorem different_ratFunc_eq_zeros_add_of_sq_eq_of_odd (h2 : (2 : k) ≠ 0)
     rw [hQ, Place.ord_adicOfIrreducible_algebraMap_of_squarefree hq hf] at he hord ⊢
     rw [WeilDivisor.coeff_ofPoint_of_ne hQP]
     by_cases hqf : q ∣ f
-    · have he2 : Place.ramificationIdx (RatFunc k) Q = 2 := by simpa [hqf] using he
-      simp [hqf, he2] at hord ⊢
+    · have hnot : ¬(2 : ℤ) ∣ 1 := by omega
+      have he2 : Place.ramificationIdx (RatFunc k) Q = 2 := by
+        simpa only [ite_eq_left hqf, Nat.cast_ofNat, ite_eq_right hnot] using he
+      simp only [ite_eq_left hqf, he2, Nat.cast_ofNat, ite_eq_right hnot, mul_one,
+        add_zero] at hord ⊢
       omega
-    · simp [hqf] at hord ⊢
+    · simp only [ite_eq_right hqf, dvd_zero, ite_true, mul_zero, add_zero] at hord ⊢
       omega
+
+/-- Every zero of `y` in an odd-degree squarefree polynomial model has multiplicity one,
+away from characteristic two. -/
+theorem Divisor.coeff_zeros_eq_one_of_sq_eq_of_odd (h2 : (2 : k) ≠ 0)
+    {f : k[X]} (hf : Squarefree f) (hodd : Odd f.natDegree) {y : Fˣ}
+    (hgen : (RatFunc k)⟮(y : F)⟯ = ⊤)
+    (hy : (y : F) ^ 2 = algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) f))
+    {Q : Place k F}
+    (hQ : Q ∈ (zeros (isFunctionField_iff_functionField.mpr inferInstance) y).support) :
+    (zeros (isFunctionField_iff_functionField.mpr inferInstance) y).coeff Q = 1 := by
+  let hF : IsFunctionField k F := isFunctionField_iff_functionField.mpr inferInstance
+  obtain ⟨P, hP, -, -⟩ := Place.existsUnique_restrict_eq_infty_of_sq_eq_of_odd hodd hgen hy
+  have hc := congrArg (fun D : Divisor k F ↦ D.coeff Q)
+    (different_ratFunc_eq_zeros_add_of_sq_eq_of_odd h2 hf hodd hgen hy hP)
+  rw [coeff_different, WeilDivisor.coeff_add, coeff_zeros] at hc
+  have hd := Place.differentExponent_eq_of_pow_eq_of_prime k (RatFunc k) (P' := Q)
+    Nat.prime_two hgen hy (by exact_mod_cast h2) (RatFunc.algebraMap_ne_zero hf.ne_zero)
+  have hdle : Place.differentExponent k (RatFunc k) Q ≤ 1 := by
+    rw [hd]
+    split_ifs <;> omega
+  have hpnonneg : 0 ≤ (WeilDivisor.ofPoint P).coeff Q := by
+    by_cases hQP : Q = P
+    · subst Q
+      rw [WeilDivisor.coeff_ofPoint_self]
+      omega
+    · rw [WeilDivisor.coeff_ofPoint_of_ne hQP]
+  have hpos := (mem_support_zeros_iff hF).mp hQ
+  rw [coeff_zeros]
+  omega
 
 /-- **The different as the divisor of distinct closed points**: the zeros of `y` in an odd-degree
 squarefree polynomial model each contribute once, together with the unique place at infinity.
@@ -111,23 +142,7 @@ theorem different_ratFunc_eq_ofFinset_add_of_sq_eq_of_odd (h2 : (2 : k) ≠ 0)
   rw [WeilDivisor.coeff_ofFinset]
   by_cases hQ : Q ∈ (Divisor.zeros hF y).support
   · rw [ite_eq_left hQ]
-    have hc := congrArg (fun D : Divisor k F ↦ D.coeff Q) hdiff
-    rw [Divisor.coeff_different, WeilDivisor.coeff_add, Divisor.coeff_zeros] at hc
-    have hd := Place.differentExponent_eq_of_pow_eq_of_prime k (RatFunc k) (P' := Q)
-      Nat.prime_two hgen hy (by exact_mod_cast h2) (RatFunc.algebraMap_ne_zero hf.ne_zero)
-    have hdle : Place.differentExponent k (RatFunc k) Q ≤ 1 := by
-      rw [hd]
-      split_ifs <;> omega
-    have hpnonneg : 0 ≤ (WeilDivisor.ofPoint P).coeff Q := by
-      by_cases hQP : Q = P
-      · subst Q
-        simp
-      · simp [WeilDivisor.coeff_ofPoint_of_ne hQP]
-    have hpos := (Divisor.mem_support_zeros_iff hF).mp hQ
-    have hcoeff : (Divisor.zeros hF y).coeff Q = 1 := by
-      rw [Divisor.coeff_zeros]
-      omega
-    exact hcoeff
+    exact Divisor.coeff_zeros_eq_one_of_sq_eq_of_odd h2 hf hodd hgen hy hQ
   · rw [ite_eq_right hQ]
     exact Finsupp.notMem_support_iff.mp hQ
 
