@@ -153,7 +153,7 @@ variable {A : Type v} [CommRing A] [Algebra R A]
 
 /-- A parabolic point belongs to the subgroup cut out by the relative Levi Hopf ideal exactly
 when its ambient general linear point belongs to the weight-Levi subgroup. -/
-@[simp]
+@[simp↓]
 theorem mem_weightLeviInParabolicPointsSubgroup_iff (w : Fin N → ℤ)
     (f : HopfAlgebra.points (R := R) (H := weightParabolicCoordinateHopfAlgebra R w)
       (CommAlgCat.of R A)) :
@@ -186,7 +186,7 @@ theorem mem_weightLeviInParabolicPointsSubgroup_iff (w : Fin N → ℤ)
 
 /-- A parabolic point belongs to the subgroup cut out by the relative unipotent Hopf ideal
 exactly when its ambient general linear point belongs to the weight-unipotent subgroup. -/
-@[simp]
+@[simp↓]
 theorem mem_weightUnipotentInParabolicPointsSubgroup_iff (w : Fin N → ℤ)
     (f : HopfAlgebra.points (R := R) (H := weightParabolicCoordinateHopfAlgebra R w)
       (CommAlgCat.of R A)) :

@@ -526,6 +526,30 @@ theorem baseChangeHopfIdeal_commonKernelHopfIdeal [Module.Free k K] (f : ∀ i, 
 
 end FreeBaseChange
 
+section CommonKernelIso
+
+variable {ι : Type y} {N : ι → _root_.CommHopfAlgCat.{v} k}
+
+/-- An ambient base-change isomorphism carries the base change of a common-kernel Hopf ideal to
+the common kernel of a target family, when each target map is obtained from the base-changed
+generator by an isomorphism of its codomain. -/
+theorem map_baseChangeHopfIdeal_commonKernelHopfIdeal [Module.Free k K]
+    {H' : _root_.CommHopfAlgCat.{max w v} K} {N' : ι → _root_.CommHopfAlgCat.{max w v} K}
+    (f : ∀ i, H ⟶ N i) (ambient : baseChange (K := K) H ≅ H')
+    (e : ∀ i, baseChange (K := K) (N i) ≅ N' i) (g : ∀ i, H' ⟶ N' i)
+    (h : ∀ i, (ambient.inv ≫ baseChangeMap (K := K) (f i)) ≫ (e i).hom = g i) :
+    (baseChangeHopfIdeal (K := K) (commonKernelHopfIdeal f)).map ambient.hom.hom =
+      commonKernelHopfIdeal g := by
+  rw [baseChangeHopfIdeal_commonKernelHopfIdeal, map_commonKernelHopfIdeal]
+  rw [← commonKernelHopfIdeal_comp_of_injective
+    (fun i ↦ ambient.inv ≫ baseChangeMap (K := K) (f i)) (fun i ↦ (e i).hom)
+    fun i ↦ (ConcreteCategory.bijective_of_isIso (e i).hom).1]
+  congr 1
+  funext i
+  exact h i
+
+end CommonKernelIso
+
 /-- The quotient of a base change by a base-changed Hopf ideal is the base change of the
 quotient: `(K ⊗[k] H) ⧸ J_K ≅ K ⊗[k] (H ⧸ J)`.
 

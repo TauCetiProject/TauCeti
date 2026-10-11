@@ -13,6 +13,7 @@ public import Mathlib.RingTheory.Valuation.ExtendToLocalization
 public import Mathlib.Topology.Order
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
 public import Mathlib.Algebra.Category.Ring.Basic
+public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 
 /-!
 # The valuation spectrum of a ring
@@ -284,7 +285,24 @@ theorem comap_hom_comap_hom {X Y Z : CommRingCat} (φ : X ⟶ Y) (ψ : Y ⟶ Z) 
     comap φ.hom (comap ψ.hom w) = comap (φ ≫ ψ).hom w := by
   rw [CommRingCat.hom_comp, comap_comp, Function.comp_apply]
 
+/-- Pulling a valuation back along the identification `eqToHom` of the rings at two equal indices
+is transporting it along the equality: the two valuations are heterogeneously equal. -/
+theorem comap_eqToHom_eq_iff_heq {ι : Type*} (S : ι → CommRingCat) {a b : ι} (h : a = b)
+    (u : Spv (S a)) (u' : Spv (S b)) :
+    u = comap (eqToHom (congrArg S h)).hom u' ↔ HEq u u' := by
+  subst h
+  rw [eqToHom_refl, CommRingCat.hom_id, comap_id, heq_iff_eq, id]
 
+/-- Pulling a valuation on the residue field of `B` back to `A`, along the map of residue fields
+induced by a local homomorphism `f : A → B` and then the residue map of `A`, is pulling it back to
+`B` and then along `f`. -/
+theorem comap_residue_comap_residueFieldMap {A B : Type*} [CommRing A] [CommRing B]
+    [IsLocalRing A] [IsLocalRing B] (f : A →+* B) [IsLocalHom f]
+    (w : Spv (IsLocalRing.ResidueField B)) :
+    comap (IsLocalRing.residue A) (comap (IsLocalRing.ResidueField.map f) w) =
+      comap f (comap (IsLocalRing.residue B) w) := by
+  rw [← Function.comp_apply (f := comap _), ← comap_comp,
+    IsLocalRing.ResidueField.map_comp_residue, comap_comp, Function.comp_apply]
 
 /-- The support ideal `{a ∈ A | v(a) = 0}` of a point `v : Spv A`. -/
 def supp (v : Spv A) : Ideal A :=

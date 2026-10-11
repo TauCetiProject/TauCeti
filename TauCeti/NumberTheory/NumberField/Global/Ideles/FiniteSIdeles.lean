@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.NumberField.Global.Ideles.GaloisAction
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.FiniteAdele
 public import TauCeti.RepresentationTheory.Pi
 
@@ -43,6 +44,8 @@ computed one place at a time, through Shapiro's lemma for each semi-local factor
 
 * `TauCeti.mem_finiteSIdeles_iff_valued_eq_one`: a finite idele is an `S`-idele exactly when its
   components at the places not above `S` have valuation one.
+* `TauCeti.toFiniteIdele_mem_finiteSIdeles_iff`: an idele is an `S`-idele exactly when its finite
+  part is a finite `S`-idele.
 
 ## References
 
@@ -98,6 +101,13 @@ theorem mem_finiteSIdeles_iff_valued_eq_one {a : (FiniteAdeleRing (𝒪 L) L)ˣ}
     semilocalEquiv_finiteIdeleSemilocalHom]
   refine ⟨fun h w hw ↦ h _ hw ⟨w, inferInstance⟩, fun h v hv w ↦ h w.1 ?_⟩
   rwa [under_eq_of_liesOver w.2]
+
+/-- **An idele is an `S`-idele exactly when its finite part is a finite `S`-idele.** -/
+theorem toFiniteIdele_mem_finiteSIdeles_iff {x : NumberField.IdeleGroup (𝒪 L) L} :
+    NumberField.IdeleGroup.toFiniteIdele (𝒪 L) L x ∈ finiteSIdeles L S ↔
+      x ∈ GlobalNumberFields.sIdeles L (S : Set (HeightOneSpectrum (𝒪 K))) := by
+  simp only [mem_finiteSIdeles_iff_valued_eq_one, GlobalNumberFields.mem_sIdeles_iff,
+    Finset.mem_coe, NumberField.IdeleGroup.coe_toFiniteIdele, coe_ideleFiniteCoord]
 
 /-- The Galois action on finite ideles preserves the finite `S`-ideles. -/
 theorem map_finiteAdeleGaloisAction_mem_finiteSIdeles (σ : L ≃ₐ[K] L)

@@ -48,14 +48,8 @@ attribute [local instance] HasBinaryBiproducts.of_hasBinaryCoproducts
 /-- A biproduct of finitely generated projective modules is projective. -/
 theorem _root_.FGModuleCat.projective_biprod
     (X Y : FGModuleCat.{v} R) [Module.Projective R X] [Module.Projective R Y] :
-    Module.Projective R ((X ⊞ Y : FGModuleCat.{v} R) : Type v) := by
-  let F := forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)
-  let _ : PreservesBinaryBiproduct X Y F :=
-    preservesBinaryBiproduct_of_preservesBinaryCoproduct F
-  let e : F.obj (X ⊞ Y) ≅ ModuleCat.of R (X × Y) :=
-    F.mapBiprod X Y ≪≫ ModuleCat.biprodIsoProd X.obj Y.obj
-  let e' : (X ⊞ Y : FGModuleCat.{v} R) ≅ FGModuleCat.of R (X × Y) := F.preimageIso e
-  exact Module.Projective.of_equiv' (FGModuleCat.isoToLinearEquiv e').symm
+    Module.Projective R ((X ⊞ Y : FGModuleCat.{v} R) : Type v) :=
+  Module.Projective.of_equiv' (FGModuleCat.isoToLinearEquiv (FGModuleCat.biprodIsoProd X Y)).symm
 
 open MonoidalCategory in
 /-- A tensor product of finitely generated projective modules is projective. -/

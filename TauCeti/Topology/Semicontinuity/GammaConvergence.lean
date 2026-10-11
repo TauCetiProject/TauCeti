@@ -25,9 +25,9 @@ This is the notion of convergence of functionals under which minimization passes
 on every topological space, cluster points of minimizers of `F n` minimize `f`; on a
 first-countable space, under equicoercivity (`TauCeti.Equicoercive`: every sublevel `{F n ≤ t}`
 lies in a compact set independent of `n`) the infima of `F n` converge to the infimum of `f`, which
-is attained when the space is nonempty. Γ-convergence is stable under continuous perturbations,
-which is how it is applied to penalized functionals such as `F n + d(·, x)² / (2τ)` in the
-stability theory of resolvents and minimizing movements.
+is attained when the space is nonempty. Γ-convergence is stable under continuously converging
+perturbations, which is how it is applied to penalized functionals such as
+`F n + d(·, x n)² / (2τ)` in the stability theory of resolvents and minimizing movements.
 
 The *lower and upper Γ-limits* are defined through neighbourhoods,
 
@@ -53,8 +53,9 @@ subsequences on every topological space.
 * `TauCeti.TendstoGamma.lowerSemicontinuous`: on a first-countable space, a Γ-limit is lower
   semicontinuous.
 * `TauCeti.TendstoGamma.comp`: Γ-convergence passes to subsequences, on every topological space.
-* `TauCeti.TendstoGamma.add_continuous`: Γ-convergence is stable under adding a continuous real
-  function.
+* `TauCeti.TendstoGamma.add_tendsto` and `TauCeti.TendstoGamma.add_continuous`: Γ-convergence is
+  stable under adding continuously converging real functions, in particular a fixed continuous
+  one.
 * `TauCeti.TendstoGamma.isMinOn_of_tendsto`: cluster points of minimizers are minimizers, on
   every topological space.
 * `TauCeti.TendstoGamma.tendsto_iInf` and `TauCeti.TendstoGamma.exists_isMinOn`: the
@@ -301,28 +302,37 @@ theorem comp (h : TendstoGamma F f) {φ : ℕ → ℕ} (hφ : Tendsto φ atTop a
     obtain ⟨u, hu, hle⟩ := h.exists_tendsto_limsup_le x
     exact ⟨u ∘ φ, hu.comp hφ, (hφ.limsup_comp_le_limsup (u := fun n ↦ F n (u n))).trans hle⟩
 
-/-- Γ-convergence is stable under adding a continuous real function. -/
-theorem add_continuous (h : TendstoGamma F f) {g : X → ℝ} (hg : Continuous g) :
-    TendstoGamma (fun n x ↦ F n x + g x) (fun x ↦ f x + g x) := by
+/-- Γ-convergence is stable under adding real functions `g n` that converge continuously to `g₀`:
+`g n (u n) → g₀ x` whenever `u n → x`. For instance `g n = d(·, x n)² / (2τ)` with `x n → x₀`
+converges continuously to `d(·, x₀)² / (2τ)`. -/
+theorem add_tendsto (h : TendstoGamma F f) {g : ℕ → X → ℝ} {g₀ : X → ℝ}
+    (hg : ∀ ⦃x : X⦄ ⦃u : ℕ → X⦄, Tendsto u atTop (𝓝 x) →
+      Tendsto (fun n ↦ g n (u n)) atTop (𝓝 (g₀ x))) :
+    TendstoGamma (fun n x ↦ F n x + g n x) (fun x ↦ f x + g₀ x) := by
   have hlim {x : X} {u : ℕ → X} (hu : Tendsto u atTop (𝓝 x)) :
-      Tendsto (fun n ↦ (g (u n) : EReal)) atTop (𝓝 (g x : EReal)) :=
-    (continuous_coe_real_ereal.tendsto _).comp ((hg.tendsto x).comp hu)
+      Tendsto (fun n ↦ (g n (u n) : EReal)) atTop (𝓝 (g₀ x : EReal)) :=
+    (continuous_coe_real_ereal.tendsto _).comp (hg hu)
   refine ⟨fun x u hu ↦ ?_, fun x ↦ ?_⟩
-  · calc f x + g x
-        ≤ liminf (fun n ↦ F n (u n)) atTop + liminf (fun n ↦ (g (u n) : EReal)) atTop := by
+  · calc f x + g₀ x
+        ≤ liminf (fun n ↦ F n (u n)) atTop + liminf (fun n ↦ (g n (u n) : EReal)) atTop := by
           rw [(hlim hu).liminf_eq]
           gcongr
           exact h.le_liminf hu
-      _ ≤ liminf (fun n ↦ F n (u n) + g (u n)) atTop := EReal.le_liminf_add
+      _ ≤ liminf (fun n ↦ F n (u n) + g n (u n)) atTop := EReal.le_liminf_add
   · obtain ⟨u, hu, hle⟩ := h.exists_tendsto_limsup_le x
     refine ⟨u, hu, ?_⟩
-    calc limsup (fun n ↦ F n (u n) + g (u n)) atTop
-        ≤ limsup (fun n ↦ F n (u n)) atTop + limsup (fun n ↦ (g (u n) : EReal)) atTop :=
+    calc limsup (fun n ↦ F n (u n) + g n (u n)) atTop
+        ≤ limsup (fun n ↦ F n (u n)) atTop + limsup (fun n ↦ (g n (u n) : EReal)) atTop :=
           EReal.limsup_add_le (.inr (by simp [(hlim hu).limsup_eq]))
             (.inr (by simp [(hlim hu).limsup_eq]))
-      _ ≤ f x + g x := by
+      _ ≤ f x + g₀ x := by
           rw [(hlim hu).limsup_eq]
           gcongr
+
+/-- Γ-convergence is stable under adding a continuous real function. -/
+theorem add_continuous (h : TendstoGamma F f) {g : X → ℝ} (hg : Continuous g) :
+    TendstoGamma (fun n x ↦ F n x + g x) (fun x ↦ f x + g x) :=
+  h.add_tendsto (g := fun _ ↦ g) fun x _ hu ↦ (hg.tendsto x).comp hu
 
 /-- A constant sequence of lower semicontinuous functionals Γ-converges to its value. -/
 theorem _root_.LowerSemicontinuous.tendstoGamma_const {g : X → EReal}

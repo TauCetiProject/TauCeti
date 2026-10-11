@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Homotopy.HomotopyGroup
 public import Mathlib.Topology.Connected.PathConnected
+public import Mathlib.Topology.Homotopy.Contractible
 public import TauCeti.Topology.PiCurry
 
 /-!
@@ -45,7 +46,8 @@ at `0` while releasing the first.
 ## Main declarations
 
 * `TauCeti.pathTowardZero`: the straight-line path in `I` from `a` to `0`.
-* `TauCeti.cubeContraction`: the straight-line homotopy from the corner `0` to the identity.
+* `TauCeti.cubeContraction`: the straight-line homotopy from the corner `0` to the identity; so
+  the cube is contractible.
 * `TauCeti.isPathConnected_cube`: `I^N` is path connected.
 * `TauCeti.zero_mem_cubeBoundary`: the corner `0` lies on the boundary.
 * `TauCeti.isPathConnected_cubeBoundary`: for `[Nontrivial N]`, `Cube.boundary N` is path
@@ -130,6 +132,10 @@ def cubeContraction (N : Type*) :
 theorem cubeContraction_apply (N : Type*) (t : I) (x : N → I) (i : N) :
     cubeContraction N (t, x) i = Set.Icc.convexComb 0 (x i) t :=
   (rfl)
+
+/-- The cube `I^N` is contractible, by the straight-line contraction onto its corner `0`. -/
+instance (N : Type*) : ContractibleSpace (N → I) :=
+  (contractible_iff_id_nullhomotopic _).2 ⟨fun _ ↦ 0, ⟨(cubeContraction N).symm⟩⟩
 
 /-- The cube `I^N` is path connected: every point is joined to the corner `0` by the pointwise
 product of the coordinate paths `pathTowardZero`. -/
