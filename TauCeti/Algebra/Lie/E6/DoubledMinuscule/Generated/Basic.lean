@@ -190,11 +190,12 @@ theorem map_baseChangeHopfIdeal_generatedDefiningIdeal [Module.Free k K] :
     (CommHopfAlgCat.baseChangeHopfIdeal (K := K) (generatedDefiningIdeal k)).map
         (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K 54).hom.hom =
       generatedDefiningIdeal K := by
-  rw [generatedDefiningIdeal_def, generatedDefiningIdeal_def,
-    CommHopfAlgCat.baseChangeHopfIdeal_commonKernelHopfIdeal,
-    CommHopfAlgCat.map_commonKernelHopfIdeal, ← funext (generatorCoordinateMap_baseChange k K),
-    CommHopfAlgCat.commonKernelHopfIdeal_comp_of_injective _ _ fun j ↦
-      (ConcreteCategory.bijective_of_isIso (generatorCoordinateAlgebraBaseChangeIso k K j).hom).1]
+  rw [generatedDefiningIdeal_def, generatedDefiningIdeal_def]
+  exact CommHopfAlgCat.map_baseChangeHopfIdeal_commonKernelHopfIdeal
+    (generatorCoordinateMap k)
+    (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K 54)
+    (generatorCoordinateAlgebraBaseChangeIso k K) (generatorCoordinateMap K)
+    (generatorCoordinateMap_baseChange k K)
 
 -- In this module `generatedCoordinateHopfAlgebra` and `generatedCoordinateMap` unfold to the
 -- quotient by `generatedDefiningIdeal` and its quotient map, so the generic quotient base-change
