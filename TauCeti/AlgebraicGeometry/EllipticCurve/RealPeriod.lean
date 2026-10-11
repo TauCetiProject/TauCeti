@@ -20,9 +20,9 @@ import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 import Mathlib.MeasureTheory.Group.LIntegral
 -- Proof-only: `Ψ₂Sq` under a change of variables.
 import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Basic
--- Proof-only: `1 / √d` as the power `d^(-1/2)`, and `∫_{|x| ≤ R} |x - e|^(-1/2) < ∞` for `e ∈ ℂ`.
+-- Proof-only: bounds on `1 / √d` and on `∏ᵢ |z - eᵢ|^(-1/2)`, and `∫_{|x| ≤ R} |x - e|^(-1/2) < ∞`
+-- for `e ∈ ℂ`.
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
-import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.MeasureTheory.Integral.NormRpow
 
 /-!
@@ -175,65 +175,6 @@ private theorem exists_norm_eval_Ψ₂Sq_eq [W.IsElliptic] :
   rw [Ψ₂Sq_eq, ← Complex.norm_real, hx]
   simp [twoTorsionPolynomial, mul_assoc]
 
-/-- Away from three distinct points `e₁, e₂, e₃ ∈ ℂ` at most one of the factors `|z - eᵢ|^(-1/2)` is
-large: the product of the three is at most a constant times their sum. -/
-private theorem exists_rpow_neg_half_mul_le {e₁ e₂ e₃ : ℂ} (h₁₂ : e₁ ≠ e₂) (h₁₃ : e₁ ≠ e₃)
-    (h₂₃ : e₂ ≠ e₃) : ∃ K : ℝ≥0∞, K ≠ ∞ ∧ ∀ z : ℂ,
-      ‖z - e₁‖ₑ ^ (-2⁻¹ : ℝ) * ‖z - e₂‖ₑ ^ (-2⁻¹ : ℝ) * ‖z - e₃‖ₑ ^ (-2⁻¹ : ℝ) ≤
-        K * (‖z - e₁‖ₑ ^ (-2⁻¹ : ℝ) + ‖z - e₂‖ₑ ^ (-2⁻¹ : ℝ) + ‖z - e₃‖ₑ ^ (-2⁻¹ : ℝ)) := by
-  set δ := min (min ‖e₁ - e₂‖ ‖e₁ - e₃‖) ‖e₂ - e₃‖
-  have hδ : 0 < δ := lt_min (lt_min (norm_sub_pos_iff.mpr h₁₂) (norm_sub_pos_iff.mpr h₁₃))
-    (norm_sub_pos_iff.mpr h₂₃)
-  set k := ENNReal.ofReal (δ / 2) ^ (-2⁻¹ : ℝ)
-  have hk : k ≠ ∞ := by simp [k, ENNReal.rpow_eq_top_iff, hδ]
-  -- a point at distance at least `δ / 2` contributes a factor at most `k`
-  have far {z e : ℂ} (h : δ / 2 ≤ ‖z - e‖) : ‖z - e‖ₑ ^ (-2⁻¹ : ℝ) ≤ k :=
-    ENNReal.rpow_le_rpow_of_nonpos (by rw [← ofReal_norm]; exact ENNReal.ofReal_le_ofReal h)
-      (by norm_num)
-  -- no point is within `δ / 2` of two of the `eᵢ`
-  have near {z a b : ℂ} (hab : δ ≤ ‖a - b‖) : δ / 2 ≤ ‖z - a‖ ∨ δ / 2 ≤ ‖z - b‖ := by
-    by_contra! h
-    have := norm_sub_le_norm_sub_add_norm_sub a z b
-    rw [norm_sub_rev a z] at this
-    linarith
-  refine ⟨k * k, ENNReal.mul_ne_top hk hk, fun z ↦ ?_⟩
-  set h₁ := ‖z - e₁‖ₑ ^ (-2⁻¹ : ℝ)
-  set h₂ := ‖z - e₂‖ₑ ^ (-2⁻¹ : ℝ)
-  set h₃ := ‖z - e₃‖ₑ ^ (-2⁻¹ : ℝ)
-  have hδ₁₂ : δ ≤ ‖e₁ - e₂‖ := (min_le_left _ _).trans (min_le_left _ _)
-  have hδ₁₃ : δ ≤ ‖e₁ - e₃‖ := (min_le_left _ _).trans (min_le_right _ _)
-  have hδ₂₃ : δ ≤ ‖e₂ - e₃‖ := min_le_right _ _
-  by_cases f₁ : δ / 2 ≤ ‖z - e₁‖
-  · by_cases f₂ : δ / 2 ≤ ‖z - e₂‖
-    · calc h₁ * h₂ * h₃ ≤ k * k * h₃ := by gcongr <;> exact far ‹_›
-        _ ≤ k * k * (h₁ + h₂ + h₃) := by gcongr; exact le_add_self
-    · have f₃ := (near hδ₂₃).resolve_left f₂
-      calc h₁ * h₂ * h₃ ≤ k * h₂ * k := by gcongr <;> exact far ‹_›
-        _ = k * k * h₂ := by ring
-        _ ≤ k * k * (h₁ + h₂ + h₃) := by gcongr; exact le_add_self.trans le_self_add
-  · have f₂ := (near hδ₁₂).resolve_left f₁
-    have f₃ := (near hδ₁₃).resolve_left f₁
-    calc h₁ * h₂ * h₃ ≤ h₁ * k * k := by gcongr <;> exact far ‹_›
-      _ = k * k * h₁ := by ring
-      _ ≤ k * k * (h₁ + h₂ + h₃) := by gcongr; exact le_self_add.trans le_self_add
-
-/-- If `y > 0` and `y³ ≤ 2 |d|`, then `1 / √d ≤ √2 y^(-3/2)`. This is the decay of the integrand of
-the real period at infinity, with `y = 1 + |x|`. -/
-private theorem ofReal_inv_sqrt_le_of_pow_three_le {d y : ℝ} (hy : 0 < y) (h : y ^ 3 ≤ 2 * |d|) :
-    ENNReal.ofReal (√d)⁻¹ ≤ ENNReal.ofReal √2 * ENNReal.ofReal (y ^ (-(3 / 2 : ℝ))) := by
-  rcases le_or_gt d 0 with hd | hd
-  · simp [Real.sqrt_eq_zero'.mpr hd]
-  rw [abs_of_pos hd] at h
-  rw [← ENNReal.ofReal_mul (Real.sqrt_nonneg 2)]
-  refine ENNReal.ofReal_le_ofReal ?_
-  have hy3 : 0 < y ^ 3 / 2 := by positivity
-  calc (√d)⁻¹ ≤ (√(y ^ 3 / 2))⁻¹ :=
-        inv_anti₀ (Real.sqrt_pos.mpr hy3) (Real.sqrt_le_sqrt (by linarith))
-    _ = √2 * (y ^ 3) ^ (-2⁻¹ : ℝ) := by
-        rw [Real.sqrt_div' _ zero_le_two, inv_div, div_eq_mul_inv, Real.inv_sqrt_eq_rpow]
-    _ = √2 * y ^ (-(3 / 2 : ℝ)) := by
-        rw [← Real.rpow_natCast_mul hy.le]; norm_num
-
 /-- Near the roots of `Ψ₂Sq`, the integrand of the real period is at most a constant times
 `∑ᵢ |x - eᵢ|^(-1/2)`, so its integral over a bounded interval is finite. -/
 private theorem setLIntegral_closedBall_lt_top {e₁ e₂ e₃ : ℂ} (h₁₂ : e₁ ≠ e₂) (h₁₃ : e₁ ≠ e₃)
@@ -241,7 +182,7 @@ private theorem setLIntegral_closedBall_lt_top {e₁ e₂ e₃ : ℂ} (h₁₂ :
     (hfac : ∀ x : ℝ, ‖W.Ψ₂Sq.eval x‖ = 4 * (‖(x : ℂ) - e₁‖ * ‖(x : ℂ) - e₂‖ * ‖(x : ℂ) - e₃‖))
     (R : ℝ) :
     ∫⁻ x in Metric.closedBall 0 R, ENNReal.ofReal (√(W.Ψ₂Sq.eval x))⁻¹ < ∞ := by
-  obtain ⟨K, hK, hle⟩ := exists_rpow_neg_half_mul_le h₁₂ h₁₃ h₂₃
+  obtain ⟨K, hK, hle⟩ := ENNReal.exists_enorm_sub_rpow_neg_half_mul_le h₁₂ h₁₃ h₂₃
   have hmeas (e : ℂ) : Measurable fun x : ℝ ↦ ‖(x : ℂ) - e‖ₑ ^ (-2⁻¹ : ℝ) := by fun_prop
   have hfin (e : ℂ) := Complex.setLIntegral_closedBall_enorm_ofReal_sub_rpow_lt_top e
     (s := -2⁻¹) (by norm_num) 0 R
@@ -278,7 +219,7 @@ private theorem setLIntegral_compl_closedBall_lt_top {e₁ e₂ e₃ : ℂ}
   calc ∫⁻ x in (Metric.closedBall 0 R)ᶜ, ENNReal.ofReal (√(W.Ψ₂Sq.eval x))⁻¹
       ≤ ∫⁻ x in (Metric.closedBall 0 R)ᶜ, F x := by
         refine setLIntegral_mono_ae (by fun_prop) (ae_of_all _ fun x hx ↦ ?_)
-        refine ofReal_inv_sqrt_le_of_pow_three_le (by positivity) ?_
+        refine ENNReal.ofReal_inv_sqrt_le_of_pow_three_le (by positivity) ?_
         simp only [mem_compl_iff, Metric.mem_closedBall, dist_zero_right, not_le] at hx
         -- each `|x - eᵢ|` is at least `(1 + |x|) / 2`
         have hfar (e : ℂ) (he : 2 * ‖e‖ + 1 ≤ R) : (1 + ‖x‖) / 2 ≤ ‖(x : ℂ) - e‖ := by
