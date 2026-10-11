@@ -13,8 +13,7 @@ public import TauCeti.Geometry.Toric.Algebraic.Fan.Basic
 
 The positive and negative rays in the standard rank-one lattice, together with their common
 zero face, form a complete regular fan. Its two maximal affine charts are the standard affine
-lines used to construct the projective line. The fan and its completeness are independent of
-any choice of coordinates on its analytic realization.
+lines used to construct the projective line.
 
 ## References
 
@@ -34,18 +33,27 @@ def negativeRayCone : PointedCone ℝ (Fin 1 → ℝ) :=
 theorem negativeRayCone_def :
     negativeRayCone = PointedCone.hull ℝ {-(1 : Fin 1 → ℝ)} := (rfl)
 
+/-- Membership in the negative standard ray is nonpositivity of its sole coordinate. -/
+@[simp] theorem mem_negativeRayCone_iff (x : Fin 1 → ℝ) :
+    x ∈ negativeRayCone ↔ x 0 ≤ 0 := by
+  rw [negativeRayCone_def, PointedCone.mem_hull_singleton]
+  constructor
+  · rintro ⟨r, hr, rfl⟩
+    simpa using neg_nonpos.mpr hr
+  · intro hx
+    refine ⟨-(x 0), neg_nonneg.mpr hx, ?_⟩
+    ext j
+    simp [Subsingleton.elim j 0]
+
 /-- The negative standard ray is regular. -/
 theorem isRegularCone_negativeRayCone :
     IsRegularCone ((Int.castAddHom ℝ).compLeft (Fin 1)) negativeRayCone := by
   have hv : IsPrimitive (-(1 : Fin 1 → ℤ)) := by
-    have hb : Pi.basisFun ℤ (Fin 1) 0 = 1 := by
-      ext j
-      simp [Pi.basisFun_apply, Subsingleton.elim j 0]
-    simpa only [hb] using (Pi.basisFun ℤ (Fin 1)).isPrimitive 0 |>.neg
+    simpa only [basisFun_finOne_eq_one] using
+      (Pi.basisFun ℤ (Fin 1)).isPrimitive 0 |>.neg
   have hi : ((Int.castAddHom ℝ).compLeft (Fin 1)) (-(1 : Fin 1 → ℤ)) =
       -(1 : Fin 1 → ℝ) := by
-    ext j
-    simp
+    simp only [map_neg, intCast_finOne_one]
   simpa only [negativeRayCone, hi] using
     isRegularCone_hull_singleton (isIntegralLattice_intCast 1) hv
 
@@ -54,17 +62,43 @@ theorem affineRayCone_inf_negativeRayCone :
     affineRayCone ⊓ negativeRayCone = ⊥ := by
   apply le_antisymm _ bot_le
   intro x hx
-  obtain ⟨hpos, hneg⟩ := hx
-  rw [affineRayCone_def] at hpos
-  rw [negativeRayCone_def] at hneg
-  obtain ⟨r, hr, hxr⟩ := PointedCone.mem_hull_singleton.mp hpos
-  obtain ⟨s, hs, hxs⟩ := PointedCone.mem_hull_singleton.mp hneg
-  have h : r = 0 := by
-    have he := congrFun (hxr.trans hxs.symm) (0 : Fin 1)
-    simp at he
-    linarith
-  rw [h, zero_smul] at hxr
-  exact hxr.symm ▸ Submodule.zero_mem _
+  have hx0 : x 0 = 0 := le_antisymm (mem_negativeRayCone_iff x |>.mp hx.2)
+    (mem_affineRayCone_iff x |>.mp hx.1)
+  have h : x = 0 := by
+    ext j
+    simpa [Subsingleton.elim j 0] using hx0
+  exact h ▸ Submodule.zero_mem _
+
+private theorem inf_eq_bot_of_le_affineRayCone_of_le_negativeRayCone
+    {σ τ : PointedCone ℝ (Fin 1 → ℝ)} (hσ : σ ≤ affineRayCone)
+    (hτ : τ ≤ negativeRayCone) : σ ⊓ τ = ⊥ := by
+  apply le_antisymm _ bot_le
+  calc
+    σ ⊓ τ ≤ affineRayCone ⊓ negativeRayCone := inf_le_inf hσ hτ
+    _ = ⊥ := affineRayCone_inf_negativeRayCone
+
+private theorem face_hull_singleton_eq_bot_or_eq (v : Fin 1 → ℝ)
+    {σ : PointedCone ℝ (Fin 1 → ℝ)}
+    (hσ : σ.IsFaceOf (PointedCone.hull ℝ {v})) :
+    σ = ⊥ ∨ σ = PointedCone.hull ℝ {v} := by
+  by_cases hv : v ∈ σ
+  · right
+    apply le_antisymm hσ.le
+    intro x hx
+    obtain ⟨r, hr, rfl⟩ := PointedCone.mem_hull_singleton.mp hx
+    exact σ.smul_mem hr hv
+  · left
+    apply le_antisymm _ bot_le
+    intro x hx
+    obtain ⟨r, hr, hrx⟩ := PointedCone.mem_hull_singleton.mp (hσ.le hx)
+    by_cases hr0 : r = 0
+    · rw [hr0, zero_smul] at hrx
+      exact hrx.symm ▸ Submodule.zero_mem _
+    · have hrpos : 0 < r := lt_of_le_of_ne hr (Ne.symm hr0)
+      have hv' : v ∈ σ := hσ.mem_of_smul_add_mem
+        (PointedCone.subset_hull (Set.mem_singleton v)) (Submodule.zero_mem _) hrpos
+        (by simpa only [add_zero, hrx] using hx)
+      exact (hv hv').elim
 
 /-- The complete fan with the positive and negative standard rays. A cone belongs to this fan
 exactly when it is a face of one of the two rays. -/
@@ -99,29 +133,40 @@ def projectiveLineFan : Fan ((Int.castAddHom ℝ).compLeft (Fin 1)) where
     · rcases hτ with hτ | hτ
       · exact (PointedCone.IsFaceOf.isFaceOf_iff_le (hσ.inf_left hτ) hσ).2 inf_le_left
       · have hbot : σ ⊓ τ = ⊥ := by
-          apply le_antisymm _ bot_le
-          calc
-            σ ⊓ τ ≤ affineRayCone ⊓ negativeRayCone :=
-              inf_le_inf hσ.le hτ.le
-            _ = ⊥ := affineRayCone_inf_negativeRayCone
+          exact inf_eq_bot_of_le_affineRayCone_of_le_negativeRayCone hσ.le hτ.le
         rw [hbot]
         exact (isRegularCone_affineRayCone.toIsToricCone.of_isFaceOf hσ).salient.bot_isFaceOf
     · rcases hτ with hτ | hτ
       · have hbot : σ ⊓ τ = ⊥ := by
-          apply le_antisymm _ bot_le
-          calc
-            σ ⊓ τ ≤ negativeRayCone ⊓ affineRayCone := inf_le_inf hσ.le hτ.le
-            _ = ⊥ := by rw [inf_comm, affineRayCone_inf_negativeRayCone]
+          rw [inf_comm]
+          exact inf_eq_bot_of_le_affineRayCone_of_le_negativeRayCone hτ.le hσ.le
         rw [hbot]
         exact (isRegularCone_negativeRayCone.toIsToricCone.of_isFaceOf hσ).salient.bot_isFaceOf
       · exact (PointedCone.IsFaceOf.isFaceOf_iff_le (hσ.inf_left hτ) hσ).2 inf_le_left
 
-/-- A cone belongs to the projective-line fan precisely when it is a face of one of its two
-maximal rays. -/
+/-- The only cones of the projective-line fan are the origin and its two rays. -/
 @[simp]
 theorem mem_projectiveLineFan_cones (σ : PointedCone ℝ (Fin 1 → ℝ)) :
     σ ∈ projectiveLineFan.cones ↔
-      σ.IsFaceOf affineRayCone ∨ σ.IsFaceOf negativeRayCone := Iff.rfl
+      σ = ⊥ ∨ σ = affineRayCone ∨ σ = negativeRayCone := by
+  change (σ.IsFaceOf affineRayCone ∨ σ.IsFaceOf negativeRayCone) ↔ _
+  constructor
+  · rintro (h | h)
+    · rw [affineRayCone_def] at h
+      rcases face_hull_singleton_eq_bot_or_eq 1 h with h | h
+      · exact Or.inl h
+      · exact Or.inr (Or.inl (h.trans affineRayCone_def.symm))
+    · rw [negativeRayCone_def] at h
+      rcases face_hull_singleton_eq_bot_or_eq (-(1 : Fin 1 → ℝ)) h with h | h
+      · exact Or.inl h
+      · exact Or.inr (Or.inr (h.trans negativeRayCone_def.symm))
+  · rintro (h | h | h)
+    · subst σ
+      exact Or.inl isRegularCone_affineRayCone.toIsToricCone.salient.bot_isFaceOf
+    · subst σ
+      exact Or.inl (PointedCone.IsFaceOf.refl _)
+    · subst σ
+      exact Or.inr (PointedCone.IsFaceOf.refl _)
 
 /-- The positive affine-ray chart belongs to the projective-line fan. -/
 theorem affineRayCone_mem_projectiveLineFan : affineRayCone ∈ projectiveLineFan.cones :=
@@ -145,16 +190,8 @@ theorem isComplete_projectiveLineFan : projectiveLineFan.IsComplete := by
   intro x
   by_cases hx : 0 ≤ x 0
   · refine ⟨affineRayCone, affineRayCone_mem_projectiveLineFan, ?_⟩
-    rw [affineRayCone_def]
-    apply PointedCone.mem_hull_singleton.mpr
-    refine ⟨x 0, hx, ?_⟩
-    ext j
-    simp [Subsingleton.elim j 0]
+    exact (mem_affineRayCone_iff x).mpr hx
   · refine ⟨negativeRayCone, negativeRayCone_mem_projectiveLineFan, ?_⟩
-    unfold negativeRayCone
-    apply PointedCone.mem_hull_singleton.mpr
-    refine ⟨-(x 0), neg_nonneg.mpr (le_of_lt (lt_of_not_ge hx)), ?_⟩
-    ext j
-    simp [Subsingleton.elim j 0]
+    exact (mem_negativeRayCone_iff x).mpr (le_of_lt (lt_of_not_ge hx))
 
 end TauCeti.Toric
