@@ -94,7 +94,6 @@ theorem synthesisMap_apply (v : ι → E) (a : EuclideanSpace 𝕜 ι) :
     synthesisMap 𝕜 v a = ∑ i, a i • v i := by
   simp [synthesisMap, Fintype.linearCombination_apply]
 
-@[simp]
 theorem synthesisMap_single [DecidableEq ι] (v : ι → E) (i : ι) (c : 𝕜) :
     synthesisMap 𝕜 v (EuclideanSpace.single i c) = c • v i := by
   simp
