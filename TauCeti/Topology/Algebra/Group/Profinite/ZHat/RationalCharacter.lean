@@ -87,18 +87,20 @@ theorem exists_ratCharacter_gen (a : DiscreteRatCircle) :
   refine ⟨ratCharacterOfTorsion n b, ?_⟩
   rw [ratCharacterOfTorsion_gen, hb, discreteRatCircleEquiv.symm_apply_apply]
 
+/-- Evaluate a rational-circle character at the canonical generator. -/
+private def ratCharacterEvaluation :
+    Additive (zHat.{u} →ₜ* Multiplicative DiscreteRatCircle) →+
+      AddCircle (1 : ℚ) where
+  toFun χ := discreteRatCircleEquiv (Multiplicative.toAdd (Additive.toMul χ gen))
+  map_zero' := by simp
+  map_add' := by intros; simp
+
 /-- Evaluation at the generator identifies continuous rational-circle characters of `zHat`
 with `ℚ/ℤ`. The target carries the discrete topology. -/
 def ratCharacterEquiv :
     Additive (zHat.{u} →ₜ* Multiplicative DiscreteRatCircle) ≃+
-      AddCircle (1 : ℚ) := by
-  let f : Additive (zHat.{u} →ₜ* Multiplicative DiscreteRatCircle) →+
       AddCircle (1 : ℚ) :=
-    { toFun := fun χ ↦ discreteRatCircleEquiv
-        (Multiplicative.toAdd (Additive.toMul χ gen))
-      map_zero' := by simp
-      map_add' := by intros; simp }
-  exact AddEquiv.ofBijective f ⟨by
+  AddEquiv.ofBijective ratCharacterEvaluation ⟨by
       intro χ ψ h
       apply Additive.toMul.injective
       apply hom_ext
@@ -108,17 +110,16 @@ def ratCharacterEquiv :
       obtain ⟨χ, hχ⟩ := exists_ratCharacter_gen (discreteRatCircleEquiv.symm a)
       refine ⟨Additive.ofMul χ, ?_⟩
       change discreteRatCircleEquiv (Multiplicative.toAdd (χ gen)) = a
-      rw [hχ, toAdd_ofAdd]
-      exact discreteRatCircleEquiv.apply_symm_apply a⟩
+      rw [hχ, toAdd_ofAdd, discreteRatCircleEquiv.apply_symm_apply]⟩
 
 /-- A continuous rational-circle character is evaluated at the canonical generator. -/
 @[simp] theorem ratCharacterEquiv_apply
     (χ : Additive (zHat.{u} →ₜ* Multiplicative DiscreteRatCircle)) :
     ratCharacterEquiv χ = discreteRatCircleEquiv (Multiplicative.toAdd (Additive.toMul χ gen)) :=
-  by unfold ratCharacterEquiv; rfl
+  by change ratCharacterEvaluation χ = _; rfl
 
 /-- The unique character taking the value `a` at the generator is the inverse of evaluation. -/
-@[simp] theorem ratCharacterEquiv_symm_apply (a : AddCircle (1 : ℚ)) :
+@[simp] theorem ratCharacterEquiv_symm_apply_gen (a : AddCircle (1 : ℚ)) :
     discreteRatCircleEquiv (Multiplicative.toAdd
       (Additive.toMul (ratCharacterEquiv.{u}.symm a) gen)) = a := by
   rw [← ratCharacterEquiv_apply]
@@ -144,7 +145,7 @@ def h1EquivRatCircle :
     ContCohomology.Z1EquivOfSmulEqSelf_apply]
 
 /-- In particular, discrete `ℚ/ℤ` has nonzero first continuous cohomology over `zHat`. -/
-theorem nontrivial_h1RatCircle :
+theorem nontrivial_continuousCohomology_one_discreteRatCircle :
     Nontrivial (continuousCohomology 1
       (ofDiscreteModule ℤ zHat.{0} DiscreteRatCircle)) := by
   have h : (ZMod.toRatAddCircle 2 (1 : ZMod 2)) ≠ 0 := by
