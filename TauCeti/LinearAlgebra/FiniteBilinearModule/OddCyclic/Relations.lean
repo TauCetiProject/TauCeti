@@ -80,10 +80,6 @@ noncomputable def oddCyclicProdSelfIsometry (p k : ℕ) [Fact p.Prime] (hp : Odd
       (isNondegenerate_prod _ _).mpr
         ⟨(isNondegenerate_oddCyclic_iff _ _ _).mpr hη,
           (isNondegenerate_oddCyclic_iff _ _ _).mpr hη⟩
-    have hinj : Function.Injective g := fun x y hxy ↦
-      FiniteBilinearModule.Hom.injective g.toFiniteBilinearModule hsource
-        ((Hom.toFiniteBilinearModule_apply g x).trans
-          (hxy.trans (Hom.toFiniteBilinearModule_apply g y).symm))
-    exact ⟨(g.toIsometry ((Nat.bijective_iff_injective_and_card g).mpr ⟨hinj, rfl⟩)).symm⟩
+    exact ⟨(g.toIsometryOfNondegenerate hsource rfl).symm⟩
 
 end TauCeti.FiniteQuadraticModule
