@@ -63,7 +63,8 @@ theorem isHomogeneous_assoc :
       mk_apply, LinearEquiv.coe_coe, assoc_tmul]
     have ht := tmul_mem_grading (𝒜 := ℬ) G (grading (𝒜 := 𝒞) H I) hm
       (tmul_mem_grading (𝒜 := 𝒞) H I hn hy)
-    simpa only [show r + (q - r + (p - q)) = p by omega] using ht
+    have hdegree : r + (q - r + (p - q)) = p := by omega
+    simpa only [hdegree] using ht
   simpa only [Submodule.mem_comap, f, LinearMap.comp_apply, LinearMap.flip_apply,
     mk_apply, LinearEquiv.coe_coe] using hf hx
 

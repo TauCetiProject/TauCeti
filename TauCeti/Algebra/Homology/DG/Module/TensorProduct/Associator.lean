@@ -110,6 +110,13 @@ theorem assoc_symm_comp_differential :
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply]
   rw [assoc_differential hM hN hP, LinearEquiv.apply_symm_apply]
 
+/-- Inverse reassociation intertwines differentiation on individual tensors. -/
+@[simp]
+theorem assoc_symm_differential (x : BalancedTensorProduct R B M
+    (BalancedTensorProduct R C N P)) :
+    assoc.symm (DR x) = DL (assoc.symm x) :=
+  LinearMap.congr_fun (assoc_symm_comp_differential hM hN hP) x
+
 end Algebraic
 
 section Complex
@@ -167,6 +174,28 @@ private noncomputable def assocDegreeIso (p : ℤ) : (KL).X p ≅ (KR).X p :=
     (LinearEquiv.ofSubmodules assoc ((GL).piece p) ((GR).piece p)
       (assoc_map_piece p)).toModuleIso ≪≫ (eqToIso (cochainComplex_X _ _ p)).symm
 
+-- Cancel the degree-piece transports here, keeping their implementation out of the
+-- complex-level evaluation formulas.
+private theorem assocDegreeIso_hom_apply (p : ℤ) (x : (GL).piece p) :
+    (eqToHom (cochainComplex_X hM (isDGLeftModule_tensorProduct hN hP) p)
+      ((assocDegreeIso hM hN hP p).hom
+        ((eqToHom (cochainComplex_X (isDGRightModule_tensorProduct hM hN) hP p).symm) x)) :
+      BalancedTensorProduct R B M (BalancedTensorProduct R C N P)) = assoc x := by
+  simp only [assocDegreeIso, Iso.trans_hom, eqToIso.hom, Iso.symm_hom, eqToIso.inv,
+    ← CategoryTheory.comp_apply, Category.assoc, eqToHom_trans_assoc, eqToHom_trans,
+    eqToHom_refl, Category.id_comp, Category.comp_id, LinearEquiv.toModuleIso_hom,
+    ModuleCat.hom_ofHom, LinearEquiv.coe_coe, LinearEquiv.ofSubmodules_apply]
+
+private theorem assocDegreeIso_inv_apply (p : ℤ) (x : (GR).piece p) :
+    (eqToHom (cochainComplex_X (isDGRightModule_tensorProduct hM hN) hP p)
+      ((assocDegreeIso hM hN hP p).inv
+        ((eqToHom (cochainComplex_X hM (isDGLeftModule_tensorProduct hN hP) p).symm) x)) :
+      BalancedTensorProduct R C (BalancedTensorProduct R B M N) P) = assoc.symm x := by
+  simp only [assocDegreeIso, Iso.trans_inv, eqToIso.inv, Iso.symm_inv, eqToIso.hom,
+    ← CategoryTheory.comp_apply, Category.assoc, eqToHom_trans_assoc, eqToHom_trans,
+    eqToHom_refl, Category.id_comp, Category.comp_id, LinearEquiv.toModuleIso_inv,
+    ModuleCat.hom_ofHom, LinearEquiv.coe_coe, LinearEquiv.ofSubmodules_symm_apply]
+
 /-- The balanced associator identifies the two parenthesizations of the ordinary DG tensor
 product as cochain complexes. On every degree piece it is the carrier reassociation map. -/
 noncomputable def cochainComplexAssoc : KL ≅ KR :=
@@ -196,11 +225,8 @@ theorem cochainComplexAssoc_hom_f_apply (p : ℤ) (x : (GL).piece p) :
       ((cochainComplexAssoc hM hN hP).hom.f p
         ((eqToHom (cochainComplex_X (isDGRightModule_tensorProduct hM hN) hP p).symm) x)) :
       BalancedTensorProduct R B M (BalancedTensorProduct R C N P)) = assoc x := by
-  simp only [cochainComplexAssoc, HomologicalComplex.Hom.isoOfComponents_hom_f,
-    assocDegreeIso, Iso.trans_hom, eqToIso.hom, Iso.symm_hom, eqToIso.inv,
-    ← CategoryTheory.comp_apply, Category.assoc, eqToHom_trans_assoc, eqToHom_trans, eqToHom_refl,
-    Category.id_comp, Category.comp_id, LinearEquiv.toModuleIso_hom,
-    ModuleCat.hom_ofHom, LinearEquiv.coe_coe, LinearEquiv.ofSubmodules_apply]
+  simpa only [cochainComplexAssoc, HomologicalComplex.Hom.isoOfComponents_hom_f] using
+    assocDegreeIso_hom_apply hM hN hP p x
 
 /-- Under the canonical degree-piece identifications, inverse reassociation restores the
 original parentheses. -/
@@ -210,11 +236,8 @@ theorem cochainComplexAssoc_inv_f_apply (p : ℤ) (x : (GR).piece p) :
       ((cochainComplexAssoc hM hN hP).inv.f p
         ((eqToHom (cochainComplex_X hM (isDGLeftModule_tensorProduct hN hP) p).symm) x)) :
       BalancedTensorProduct R C (BalancedTensorProduct R B M N) P) = assoc.symm x := by
-  simp only [cochainComplexAssoc, HomologicalComplex.Hom.isoOfComponents_inv_f,
-    assocDegreeIso, Iso.trans_inv, eqToIso.inv, Iso.symm_inv, eqToIso.hom,
-    ← CategoryTheory.comp_apply, Category.assoc, eqToHom_trans_assoc, eqToHom_trans, eqToHom_refl,
-    Category.id_comp, Category.comp_id, LinearEquiv.toModuleIso_inv,
-    ModuleCat.hom_ofHom, LinearEquiv.coe_coe, LinearEquiv.ofSubmodules_symm_apply]
+  simpa only [cochainComplexAssoc, HomologicalComplex.Hom.isoOfComponents_inv_f] using
+    assocDegreeIso_inv_apply hM hN hP p x
 
 end Complex
 
