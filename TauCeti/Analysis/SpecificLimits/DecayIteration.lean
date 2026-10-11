@@ -32,11 +32,6 @@ coefficients on `B_r`, and `B r^β` comes from the data. With `γ = β` and `r =
 is a power bound `φ ρ ≤ C' ρ^β`, the kind of growth condition that Morrey's Dirichlet growth
 theorem and Campanato's characterization of Hölder continuity turn into Hölder estimates.
 
-The proof fixes a ratio `τ ∈ (0, 1)` with `2 A τ^α ≤ τ^γ'` for an exponent `γ'` strictly between
-`max β γ` and `α`, and takes `ε₀ = τ^α`. Then `φ (τ r) ≤ τ^γ' φ r + B r^β`, and iterating
-this along the radii `τᵏ r` bounds `φ (τᵏ r)` by `τ^{kγ'} φ r` plus a geometric series in
-`τ^{γ' - β} < 1`. An arbitrary `ρ` lies between two consecutive radii.
-
 ## Main declarations
 
 * `TauCeti.exists_le_mul_div_rpow_mul_add_mul_rpow_of_le_mul_add`: the iteration lemma.
@@ -117,6 +112,10 @@ theorem exists_le_mul_div_rpow_mul_add_mul_rpow_of_le_mul_add {A α β γ : ℝ}
       MonotoneOn φ (Ioc 0 R) → (∀ r ∈ Ioc 0 R, 0 ≤ φ r) →
       (∀ ρ r, 0 < ρ → ρ ≤ r → r ≤ R → φ ρ ≤ A * ((ρ / r) ^ α + ε) * φ r + B * r ^ β) →
       ∀ ρ r, 0 < ρ → ρ ≤ r → r ≤ R → φ ρ ≤ C * ((ρ / r) ^ γ * φ r + B * ρ ^ β) := by
+  -- Proof sketch: fix a ratio `τ ∈ (0, 1)` with `2 A τ^α ≤ τ^γ'` for an exponent `γ'` strictly
+  -- between `max β γ` and `α`, and take `ε₀ = τ^α`. Then `φ (τ s) ≤ τ^γ' φ s + B s^β`, and
+  -- iterating this along the radii `τᵏ r` bounds `φ (τᵏ r)` by `τ^{kγ'} φ r` plus a geometric
+  -- series in `τ^{γ' - β} < 1`. An arbitrary `ρ` lies between two consecutive radii.
   -- The working exponent `γ'` lies strictly between `max β γ` and `α`.
   set γ' := (max β γ + α) / 2
   have hβγ' : β < γ' := by have := le_max_left β γ; simp only [γ']; linarith
