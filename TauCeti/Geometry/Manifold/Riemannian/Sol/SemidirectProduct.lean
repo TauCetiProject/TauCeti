@@ -59,6 +59,7 @@ theorem dihedralMulAut_injective : Function.Injective dihedralMulAut := by
     simpa only [dihedralMulAut_apply] using DFunLike.congr_fun hgh p
 
 /-- Conjugating a translation by a dihedral isometry translates by the transformed point. -/
+@[simp]
 theorem dihedralToIsom_conj_toIsom (g : DihedralGroup 4) (p : Sol) :
     dihedralToIsom g * toIsom p * (dihedralToIsom g)⁻¹ = toIsom (dihedralMulAut g p) := by
   apply RiemannianIsometry.ext
