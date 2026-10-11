@@ -116,6 +116,16 @@ def diskBoundaryHomeomorph (n : ℕ) :
     (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ (Equiv.ulift.{u}.symm : Fin n ≃ ULift.{u} (Fin n)))
       |>.toHomeomorph.subtype fun x ↦ by simp
 
+/-- The coordinates of the point of the boundary sphere corresponding to a point of the unit sphere
+of `EuclideanSpace ℝ (ULift (Fin n))` under `TauCeti.diskBoundaryHomeomorph`. -/
+lemma diskBoundaryHomeomorph_symm_apply_down_apply {n : ℕ}
+    (v : Metric.sphere (0 : EuclideanSpace ℝ (ULift.{u} (Fin n))) 1) (i : Fin n) :
+    ((((diskBoundaryHomeomorph n).symm v : TopCat.diskBoundary.{u} n) :
+      ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1)).down :
+        EuclideanSpace ℝ (Fin n)) i = (v : EuclideanSpace ℝ (ULift.{u} (Fin n))) (ULift.up i) := by
+  rw [diskBoundaryHomeomorph]
+  rfl
+
 /-- The homeomorphism from the Euclidean closed unit disk `TopCat.disk n` onto the closed unit ball
 of the sup norm on `Fin n → ℝ`: the radial rescaling `ContinuousLinearEquiv.unitBallHomeomorph` of
 the coordinate identification `EuclideanSpace.equiv` (`TauCeti.coe_diskHomeomorphClosedBall_apply`).
@@ -191,6 +201,14 @@ def diskHomeomorphCube : TopCat.disk.{u} n ≃ₜ (I^(Fin n)) :=
   (diskHomeomorphClosedBall n).trans (cubeHomeomorphClosedBall (Fin n)).symm
 
 variable {n} in
+/-- `TauCeti.diskHomeomorphCube` is the radial rescaling of the disk onto the closed unit ball of
+the sup norm, followed by the inverse of the affine homeomorphism of the cube onto that ball. -/
+lemma diskHomeomorphCube_apply (z : TopCat.disk.{u} n) :
+    diskHomeomorphCube n z =
+      (cubeHomeomorphClosedBall (Fin n)).symm (diskHomeomorphClosedBall n z) := by
+  rw [diskHomeomorphCube, Homeomorph.trans_apply]
+
+variable {n} in
 /-- `TauCeti.diskHomeomorphCube` carries the boundary sphere of the disk onto the boundary of the
 cube. -/
 theorem diskHomeomorphCube_mem_boundary_iff (z : TopCat.disk.{u} n) :
@@ -212,6 +230,14 @@ def diskBoundaryPairToCube : diskBoundaryPair.{u} n ⟶ cubeBoundaryPair.{u} n :
       (continuous_uliftUp.comp ((diskHomeomorphCube n).continuous.comp
         (TopCat.diskBoundaryInclusion n).hom.continuous)).subtype_mk _⟩)
     (by ext; rfl)
+
+variable {n} in
+/-- On the boundary sphere, `TauCeti.diskBoundaryPairToCube` is `TauCeti.diskHomeomorphCube`. -/
+lemma diskBoundaryPairToCube_snd_apply_down (s : (diskBoundaryPair.{u} n).snd) :
+    (TopPair.Hom.snd (diskBoundaryPairToCube.{u} n) s).1.down =
+      diskHomeomorphCube n (TopCat.diskBoundaryInclusion n s) := by
+  rw [diskBoundaryPairToCube]
+  rfl
 
 private lemma surjective_snd_diskBoundaryPairToCube :
     Function.Surjective (TopPair.Hom.snd (diskBoundaryPairToCube.{u} n)) := by
