@@ -74,7 +74,8 @@ noncomputable def ofIdealOfPointsSubgroup (I : Ideal H)
     have hz := RingHom.mem_ker.mp ((hS (CommAlgCat.of R H) 1).mp
       ((S (CommAlgCat.of R H)).one_mem) hx)
     have hc := congrArg (Bialgebra.counitAlgHom R H) hz
-    simpa using hc
+    simpa only [AlgHom.convOne_apply, AlgHom.commutes, Algebra.algebraMap_self,
+      RingHom.id_apply, map_zero] using hc
   have hantipode {x : H} (hx : x ∈ I) : HopfAlgebra.antipode R x ∈ I := by
     have hg : toConv q ∈ S (CommAlgCat.of R Q) :=
       (hS _ _).mpr hq

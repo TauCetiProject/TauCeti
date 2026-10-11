@@ -31,7 +31,7 @@ variable [Algebra R A] [Algebra R H]
 @[simp]
 theorem exists_toLaurent_eq_iff {p : LaurentPolynomial A} :
     (∃ q : Polynomial A, q.toLaurent = p) ↔ ∀ n : ℤ, n < 0 → p.coeff n = 0 := by
-  change p ∈ Set.range Polynomial.toLaurent ↔ _
+  rw [← Set.mem_range]
   have hcast (n : ℤ) : n ∉ Set.range (Nat.cast : ℕ → ℤ) ↔ n < 0 := by
     constructor
     · intro hn
