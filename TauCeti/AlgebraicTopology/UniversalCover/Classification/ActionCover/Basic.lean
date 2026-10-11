@@ -97,6 +97,7 @@ theorem isOpenMap_actionCoverProj : IsOpenMap (actionCoverProj x₀ A) := by
   apply IsOpenMap.of_comp (f := Quotient.mk _) continuous_quotient_mk' Quotient.mk_surjective
   have hcomp : (fun p => actionCoverProj x₀ A (Quotient.mk _ p)) = proj ∘ Prod.fst :=
     funext fun p => actionCoverProj_mk x₀ A p.1 p.2
+  -- `of_comp` leaves the composite with `Quotient.mk`; expose it pointwise for `hcomp`.
   change IsOpenMap (fun p : UniversalCover x₀ × A => actionCoverProj x₀ A (Quotient.mk _ p))
   rw [hcomp]
   exact (isOpenMap_proj x₀).comp isOpenMap_fst
