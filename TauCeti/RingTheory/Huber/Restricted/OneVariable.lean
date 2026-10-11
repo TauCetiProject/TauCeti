@@ -133,6 +133,17 @@ theorem coe_weightedRestrictedSubringOneEquiv
       MvPowerSeries.renameEquiv R finOneEquiv (f : MvPowerSeries (Fin 1) R) := by
   simp [weightedRestrictedSubringOneEquiv]
 
+/-- The inverse trivially weighted one-variable equivalence renames the sole variable back from
+`Unit` to `Fin 1` on underlying power series. -/
+@[simp]
+theorem coe_weightedRestrictedSubringOneEquiv_symm
+    (f : PowerSeries.IsRestricted.subring (R := R) 1) :
+    ((weightedRestrictedSubringOneEquiv.symm f :
+        weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight) :
+        MvPowerSeries (Fin 1) R) =
+      MvPowerSeries.renameEquiv R finOneEquiv.symm (f : PowerSeries R) := by
+  simp [weightedRestrictedSubringOneEquiv]
+
 /-- The trivially weighted one-variable equivalence sends the constant `a` to the constant
 power series `a`. -/
 @[simp]
