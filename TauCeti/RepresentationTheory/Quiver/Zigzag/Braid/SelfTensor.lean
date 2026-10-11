@@ -350,11 +350,13 @@ def zigzagBraidSelfTensorIso (i : V) :
   haveI := isIso_insertDesc k G i
   exact (asIso (biprod.desc (zigzagBraidSelfTensorInl k G i) (zigzagBraidSelfTensorInr k G i))).symm
 
+/-- The inverse self-tensor isomorphism assembles the vertex and volume insertions. -/
 @[simp]
 theorem zigzagBraidSelfTensorIso_inv (i : V) :
     (zigzagBraidSelfTensorIso k G i).inv =
       biprod.desc (zigzagBraidSelfTensorInl k G i) (zigzagBraidSelfTensorInr k G i) := (rfl)
 
+/-- The forward self-tensor isomorphism sends the vertex insertion to the first summand. -/
 @[reassoc (attr := simp)]
 theorem zigzagBraidSelfTensorInl_iso_hom (i : V) :
     zigzagBraidSelfTensorInl k G i ≫ (zigzagBraidSelfTensorIso k G i).hom = biprod.inl := by
@@ -365,6 +367,7 @@ theorem zigzagBraidSelfTensorInl_iso_hom (i : V) :
       rw [zigzagBraidSelfTensorIso_inv, biprod.inl_desc]
     _ = biprod.inl := by simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
 
+/-- The forward self-tensor isomorphism sends the volume insertion to the second summand. -/
 @[reassoc (attr := simp)]
 theorem zigzagBraidSelfTensorInr_iso_hom (i : V) :
     zigzagBraidSelfTensorInr k G i ≫ (zigzagBraidSelfTensorIso k G i).hom = biprod.inr := by
