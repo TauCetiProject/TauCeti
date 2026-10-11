@@ -188,10 +188,10 @@ omit [Finite S] in
 theorem sUnitInclusion_injective : Function.Injective (sUnitInclusion S).hom := by
   intro u v h
   apply Additive.toMul.injective
-  apply (Set.unitEmptyEquivUnits (R := 𝓞 L) L).symm.injective
-  apply Subtype.ext
-  exact congrArg (fun x : Additive ((S : Set (HeightOneSpectrum (𝓞 L))).unit L) =>
-    x.toMul.val) h
+  apply Units.map_injective (IsFractionRing.injective (𝓞 L) L)
+  have hval := congrArg
+    (fun x : Additive ((S : Set (HeightOneSpectrum (𝓞 L))).unit L) => x.toMul.val) h
+  exact (sUnitInclusion_val S u).symm.trans (hval.trans (sUnitInclusion_val S v))
 
 /-- The kernel of the S-unit valuation map is exactly the image of the ordinary units. -/
 theorem range_sUnitInclusion_eq_ker_sUnitValuation :
@@ -211,14 +211,23 @@ theorem range_sUnitInclusion_eq_ker_sUnitValuation :
     (∅ : Set (HeightOneSpectrum (𝓞 L))).unit L
   constructor
   · rintro ⟨v, rfl⟩
+    rw [sUnitInclusion_val]
+    have hv : Units.map (algebraMap (𝓞 L) L) v.toMul =
+        ((Set.unitEmptyEquivUnits (R := 𝓞 L) L).symm v.toMul).val := by
+      apply Units.ext
+      simpa only [Units.coe_map, MonoidHom.coe_ofClass, MulEquiv.apply_symm_apply] using
+        Set.algebraMap_unitEmptyEquivUnits_apply L
+          ((Set.unitEmptyEquivUnits (R := 𝓞 L) L).symm v.toMul)
+    rw [hv]
     exact ((Set.unitEmptyEquivUnits (R := 𝓞 L) L).symm v.toMul).property
   · intro hu
     refine ⟨Additive.ofMul (Set.unitEmptyEquivUnits L ⟨u.toMul.val, hu⟩), ?_⟩
     apply Additive.toMul.injective
     apply Subtype.ext
-    exact congrArg
-      (fun x : (∅ : Set (HeightOneSpectrum (𝓞 L))).unit L => x.val)
-      ((Set.unitEmptyEquivUnits L).symm_apply_apply ⟨u.toMul.val, hu⟩)
+    rw [sUnitInclusion_val]
+    apply Units.ext
+    simpa only [Units.coe_map, MonoidHom.coe_ofClass, toMul_ofMul] using
+      Set.algebraMap_unitEmptyEquivUnits_apply L ⟨u.toMul.val, hu⟩
 
 /-- The finite-prime valuation image has finite index in the permutation module. -/
 theorem finiteIndex_range_sUnitValuation :

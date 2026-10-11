@@ -311,6 +311,7 @@ theorem asIdeal_smul_primesAbove_ringOfIntegers
     (S : Set (IsDedekindDomain.HeightOneSpectrum (𝓞 K))) (σ : L ≃ₐ[K] L)
     (w : ↥(IsDedekindDomain.HeightOneSpectrum.primesAbove (𝓞 K) (𝓞 L) S)) :
     (σ • w).1.asIdeal = σ • w.1.asIdeal := by
+  rw [SubMulAction.val_smul (p := primesAboveRingOfIntegersSubMulAction K L S)]
   exact heightOneSpectrum_asIdeal_smul σ w.1
 
 end PrimesOver
