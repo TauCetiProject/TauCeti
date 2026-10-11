@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Monoidal.Preadditive
-public import Mathlib.CategoryTheory.Limits.Shapes.ZeroObjects
 
 /-!
 # Integer multiples and the tensor product in a monoidal preadditive category
@@ -18,9 +17,6 @@ so does the tensor product of morphisms in each variable.  Mathlib's
 the compatibility with scalars of a chosen ring), but not the `ℤ`-multiples every preadditive
 category carries.  These are the signs of the simplicial boundary and of the Koszul rule, which
 have to be moved through tensor products of morphisms.
-
-It also records that tensoring with a zero object gives a zero object, since the whiskering of
-the zero identity morphism is zero (`CategoryTheory.isZero_tensorObj_of_isZero_right`).
 -/
 
 public section
@@ -44,12 +40,5 @@ lemma tensorHom_zsmul {W X Y Z : C} (m : ℤ) (f : W ⟶ X) (g : Y ⟶ Z) :
     f ⊗ₘ (m • g) = m • (f ⊗ₘ g) := by
   rw [tensorHom_def', tensorHom_def', ← Preadditive.zsmul_comp]
   exact congrArg (· ≫ f ▷ Z) ((tensorLeft W).map_zsmul (f := g) (r := m))
-
-/-- In a monoidal preadditive category, tensoring with a zero object on the right gives a zero
-object. -/
-lemma isZero_tensorObj_of_isZero_right (X : C) {Y : C} (hY : Limits.IsZero Y) :
-    Limits.IsZero (X ⊗ Y) := by
-  rw [Limits.IsZero.iff_id_eq_zero, ← whiskerLeft_id, hY.eq_of_src (𝟙 _) 0,
-    MonoidalPreadditive.whiskerLeft_zero]
 
 end CategoryTheory

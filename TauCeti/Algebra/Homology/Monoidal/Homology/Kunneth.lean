@@ -312,7 +312,7 @@ private lemma homologyKunneth_comp_δ (m : ℕ) :
         homologyKunneth K L.cyclesComplexShortComplex.X₁ m := by
   refine GradedObject.Monoidal.tensorObj_ext _ _ fun p q h ↦ ?_
   obtain _ | q := q
-  · exact (isZero_tensorObj_of_isZero_right _
+  · exact ((tensorLeft _).map_isZero
       L.isZero_homology_cyclesComplexShortComplex_X₃_zero).eq_of_src _ _
   · rw [ι_homologyKunneth_assoc, homologyCross_comp_δ K L.cyclesComplexShortComplex_shortExact
       _ (q' := q) (by simp) h (by omega : p + q = m)]
@@ -364,7 +364,7 @@ private lemma homologyMap_tensorHom_g_eq_zero (m : ℕ) :
     rw [IsZero.iff_id_eq_zero]
     refine GradedObject.Monoidal.tensorObj_ext _ _ fun p q h ↦ ?_
     obtain rfl : q = 0 := by omega
-    exact (isZero_tensorObj_of_isZero_right _
+    exact ((tensorLeft _).map_isZero
       L.isZero_homology_cyclesComplexShortComplex_X₃_zero).eq_of_src _ _
   | succ m =>
     have := mono_δ K L hK m

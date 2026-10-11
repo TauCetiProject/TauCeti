@@ -8,7 +8,6 @@ module
 public import Mathlib.CategoryTheory.Abelian.Basic
 public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Basic
 public import Mathlib.Data.Set.Finite.Basic
-public import TauCeti.CategoryTheory.Monoidal.Preadditive
 public import Mathlib.CategoryTheory.GradedObject.Monoidal
 public import Mathlib.CategoryTheory.Monoidal.Preadditive
 
@@ -93,7 +92,7 @@ def tensorObjSuccIso : tensorObj X (fun q ↦ Y (q + 1)) m ≅ tensorObj X Y (m 
   inv_hom_id := by
     ext p q h
     match q, h with
-    | 0, _ => exact (isZero_tensorObj_of_isZero_right _ hY).eq_of_src _ _
+    | 0, _ => exact ((tensorLeft _).map_isZero hY).eq_of_src _ _
     | q + 1, h => simp
 
 /-- `tensorObjSuccIso` sends the summand `X p ⊗ Y (q + 1)` of degree `m` to the same summand of
