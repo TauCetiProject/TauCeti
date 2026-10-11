@@ -5,10 +5,10 @@ Authors: Wentao Li
 -/
 module
 public import TauCeti.NumberTheory.QuadraticOrder.Basic
+public import TauCeti.NumberTheory.NumberField.QuadraticAlgebra
 public import TauCeti.NumberTheory.NumberField.Global.Orders.Discriminant
 import TauCeti.NumberTheory.NumberField.Discriminant.Stickelberger
 public import Mathlib.NumberTheory.FundamentalDiscriminant
-import Mathlib.Data.Rat.Lemmas
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Ring
 
@@ -34,14 +34,6 @@ public section
 open QuadraticAlgebra
 
 namespace TauCeti.QuadraticOrder
-
-/-- A nonsquare integer remains nonsquare in the rationals. -/
-instance instFactNotIsSquareRatCast (D : ℤ) [Fact (¬ IsSquare D)] :
-    Fact (¬ IsSquare (D : ℚ)) := ⟨Rat.isSquare_intCast_iff.not.mpr Fact.out⟩
-
-/-- The rational quadratic algebra of a nonsquare integer is a number field. -/
-instance instNumberField (D : ℤ) [Fact (¬ IsSquare D)] :
-    NumberField (QuadraticAlgebra ℚ (D : ℚ) 0) := NumberField.of_module_finite ℚ _
 
 /-- The integral quadratic order in the nonsquare number field. -/
 noncomputable def numberFieldOrder (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 1)
