@@ -32,14 +32,14 @@ open QuadraticAlgebra
 namespace TauCeti.QuadraticOrder
 
 /-- The integral generator `(D + √D)/2` in the rational quadratic algebra. -/
-@[expose] def generator (D : ℤ) : QuadraticAlgebra ℚ (D : ℚ) 0 :=
+def generator (D : ℤ) : QuadraticAlgebra ℚ (D : ℚ) 0 :=
   ⟨(D : ℚ) / 2, 1 / 2⟩
 
 /-- The rational coefficient of the half-integral generator. -/
-@[simp] theorem generator_re (D : ℤ) : (generator D).re = (D : ℚ) / 2 := rfl
+@[simp] theorem generator_re (D : ℤ) : (generator D).re = (D : ℚ) / 2 := (rfl)
 
 /-- The square-root coefficient of the half-integral generator. -/
-@[simp] theorem generator_im (D : ℤ) : (generator D).im = 1 / 2 := rfl
+@[simp] theorem generator_im (D : ℤ) : (generator D).im = 1 / 2 := (rfl)
 
 /-- The integral parameter has quadratic discriminant `D` for a valid discriminant. -/
 theorem parameter_discr (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 1) :
