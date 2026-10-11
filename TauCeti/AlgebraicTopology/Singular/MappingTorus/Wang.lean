@@ -145,17 +145,17 @@ lemma wangδ_comp_singularHomologyFiberPairIso_inv (n : ℕ) :
 @[reassoc (attr := simp)]
 lemma map_incl_comp_wangδ (n : ℕ) :
     ((singularHomologyFunctor A (n + 1)).obj R).map (TopCat.ofHom (incl φ)) ≫ wangδ φ R n = 0 := by
-  rw [← map_fiberPairIncl_comp_fiberPairι, wangδ, Category.assoc,
-    fiberPairι_comp_fiberPairπ_assoc, zero_comp, Limits.comp_zero]
+  rw [← map_fiberPairIncl_comp_fiberPairι]
+  simp [wangδ, fiberPairι_comp_fiberPairπ_assoc]
 
 /-- The Wang connecting morphism followed by `id - φ_*` vanishes. -/
 @[reassoc]
 lemma wangδ_comp_sub_monodromy (n : ℕ) :
     wangδ φ R n ≫ (𝟙 _ - ((singularHomologyFunctor A n).obj R).map
       (TopCat.ofHom (⟨φ, φ.continuous⟩ : C(F, F)))) = 0 := by
-  rw [← cancel_mono (((singularHomologyFunctor A n).obj R).map (fiberPairIncl φ)), zero_comp,
-    Category.assoc, ← singularHomologyFiberPairIso_inv_comp_fiberPairδ, wangδ, Category.assoc,
-    Iso.hom_inv_id_assoc, fiberPairπ_comp_fiberPairδ]
+  rw [← cancel_mono (((singularHomologyFunctor A n).obj R).map (fiberPairIncl φ)),
+    Category.assoc, ← singularHomologyFiberPairIso_inv_comp_fiberPairδ]
+  simp [wangδ, fiberPairπ_comp_fiberPairδ]
 
 /-- The endomorphism `id - φ_*` followed by the fibre inclusion vanishes. -/
 @[reassoc]
@@ -164,8 +164,8 @@ lemma sub_monodromy_comp_map_incl (n : ℕ) :
         (TopCat.ofHom (⟨φ, φ.continuous⟩ : C(F, F)))) ≫
       ((singularHomologyFunctor A n).obj R).map (TopCat.ofHom (incl φ)) = 0 := by
   rw [← map_fiberPairIncl_comp_fiberPairι, ← Category.assoc,
-    ← singularHomologyFiberPairIso_inv_comp_fiberPairδ, Category.assoc,
-    fiberPairδ_comp_fiberPairι, Limits.comp_zero]
+    ← singularHomologyFiberPairIso_inv_comp_fiberPairδ]
+  simp [fiberPairδ_comp_fiberPairι]
 
 /-- **Exactness of the Wang sequence at the target of `id - φ_*`**: the kernel of
 `i_* : Hₙ(F) ⟶ Hₙ(T)` is the image of `id - φ_*`. -/
@@ -231,8 +231,7 @@ lemma sub_monodromy_naturality (n : ℕ) :
   have hg : TopCat.ofHom (⟨φ, φ.continuous⟩ : C(F, F)) ≫ TopCat.ofHom g =
       TopCat.ofHom g ≫ TopCat.ofHom (⟨ψ, ψ.continuous⟩ : C(G, G)) :=
     TopCat.ext h
-  rw [Preadditive.sub_comp, Preadditive.comp_sub, Category.id_comp, Category.comp_id,
-    ← Functor.map_comp, ← Functor.map_comp, hg]
+  simp [← Functor.map_comp, hg]
 
 /-- **Naturality of the Wang connecting morphism** under a map `g` intertwining the
 monodromies: `Hₙ₊₁(T_φ) ⟶ Hₙ₊₁(T_ψ) ⟶ Hₙ(G)` agrees with `Hₙ₊₁(T_φ) ⟶ Hₙ(F) ⟶ Hₙ(G)`. -/
@@ -245,8 +244,7 @@ theorem wangδ_naturality (n : ℕ) :
         fiberPairπ φ R (n + 1) ≫ TopPair.singularHomologyMap (fiberPairMap φ ψ g h) R (n + 1) := by
     rw [← fiberPairMap_fst]
     exact SSetPair.homologyπ_naturality (TopPair.toSSetPair.map (fiberPairMap φ ψ g h)) R (n + 1)
-  rw [wangδ, wangδ, ← Category.assoc, hπ, Category.assoc,
-    singularHomologyFiberPairIso_hom_naturality, Category.assoc]
+  simp [wangδ, reassoc_of% hπ, singularHomologyFiberPairIso_hom_naturality]
 
 end Naturality
 

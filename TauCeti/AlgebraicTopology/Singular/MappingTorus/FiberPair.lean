@@ -648,12 +648,14 @@ theorem singularHomologyFiberPairIso_hom_naturality (n : ℕ) :
       (singularHomologyFiberPairIso φ R n).hom ≫
         ((singularHomologyFunctor A n).obj R).map (TopCat.ofHom g) := by
   have := isIso_singularHomologyMap_cylinderPairMap φ R (n + 1)
-  rw [← cancel_epi (TopPair.singularHomologyMap (cylinderPairMap φ) R (n + 1)),
-    singularHomologyMap_cylinderPairMap_comp_singularHomologyFiberPairIso_hom_assoc,
-    ← TopPair.singularHomologyMap_comp_assoc, cylinderPairMap_comp_fiberPairMap,
-    TopPair.singularHomologyMap_comp_assoc,
-    singularHomologyMap_cylinderPairMap_comp_singularHomologyFiberPairIso_hom,
-    singularHomologyCylinderBoundaryPairIso_hom_naturality]
+  have key : TopPair.singularHomologyMap (cylinderPairMap φ) R (n + 1) ≫
+      TopPair.singularHomologyMap (fiberPairMap φ ψ g h) R (n + 1) =
+        TopPair.singularHomologyMap (cylinderBoundaryPairMap (TopCat.ofHom g)) R (n + 1) ≫
+          TopPair.singularHomologyMap (cylinderPairMap ψ) R (n + 1) := by
+    rw [← TopPair.singularHomologyMap_comp, ← TopPair.singularHomologyMap_comp,
+      cylinderPairMap_comp_fiberPairMap]
+  rw [← cancel_epi (TopPair.singularHomologyMap (cylinderPairMap φ) R (n + 1))]
+  simp [reassoc_of% key, singularHomologyCylinderBoundaryPairIso_hom_naturality]
 
 end Naturality
 
