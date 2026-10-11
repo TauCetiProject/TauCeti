@@ -25,9 +25,10 @@ right module** over the DG algebra `⨁ n, C^□_n(G; R)` of
 
 An equivariant continuous map `Y → Y'` induces a morphism of these DG right modules, functorially.
 
-The module is the type synonym `TauCeti.cubicalChainModule Y G R` of
-`normalizedCubicalChainAlgebra Y R`: for `Y = G` acting on itself by right multiplication, the
-algebra already acts on itself, and the synonym keeps the two actions apart.
+The module `TauCeti.cubicalChainModule Y G R` is a one-field wrapper around
+`normalizedCubicalChainAlgebra Y R`, linearly equivalent to it
+(`TauCeti.cubicalChainModuleEquiv`): for `Y = G` acting on itself by right multiplication, the
+algebra already acts on itself, and the wrapper keeps the two actions apart.
 
 ## Main definitions
 
@@ -311,6 +312,13 @@ theorem mem_cubicalChainModuleGrading_iff {i : ℤ} {m : cubicalChainModule Y G 
   refine or_congr Iff.rfl (exists_congr fun n ↦ exists_congr fun c ↦ and_congr Iff.rfl ?_)
   rw [← cubicalChainModuleEquiv_lof (G := G), (cubicalChainModuleEquiv Y G R).injective.eq_iff]
 
+/-- Membership in a graded piece of the module is membership of the underlying chain of the direct
+sum. -/
+theorem mem_cubicalChainModuleGrading {i : ℤ} {m : cubicalChainModule Y G R} :
+    m ∈ cubicalChainModuleGrading Y G R i ↔
+      cubicalChainModuleEquiv Y G R m ∈ cubicalChainGrading Y R i :=
+  Iff.rfl
+
 /-- A chain of dimension `n` lies in cohomological degree `-n`. -/
 theorem cubicalChainModuleLof_mem {n : ℕ} (c : NormalizedCubicalChain Y R n) :
     cubicalChainModuleLof Y G R n c ∈ cubicalChainModuleGrading Y G R (-(n : ℤ)) :=
@@ -469,8 +477,8 @@ theorem op_lof_smul_cubicalChainModuleLof {p q : ℕ} (c : NormalizedCubicalChai
 
 instance : IsScalarTower R (normalizedCubicalChainAlgebra G R)ᵐᵒᵖ (cubicalChainModule Y G R) where
   smul_assoc r a m := by
-    change cubicalChainActBilin Y G R m (r • a).unop = r • cubicalChainActBilin Y G R m a.unop
-    rw [MulOpposite.unop_smul, map_smul]
+    rw [← op_unop a, ← MulOpposite.op_smul, op_smul_cubicalChainModule,
+      op_smul_cubicalChainModule, map_smul]
 
 instance : SetLike.GradedSMul
     (InternalGrading.ofDecomposition (cubicalChainGrading G R)).opposite.piece
@@ -538,11 +546,9 @@ differential graded right module** over the DG algebra of cubical chains of `G`.
 theorem cubicalChainModule_isDGRightModule :
     IsDGRightModule (cubicalChain_isDGAlgebra G R) (cubicalChainModuleGrading Y G R)
       (cubicalChainModuleDifferential Y G R) where
-  isHomogeneous := LinearMap.isHomogeneous_def.mpr fun i x hx ↦ by
-    change cubicalChainModuleEquiv Y G R (cubicalChainModuleDifferential Y G R x) ∈
-      cubicalChainGrading Y R (i + 1)
-    rw [cubicalChainModuleEquiv_differential]
-    exact cubicalChainDifferential_mem Y R hx
+  isHomogeneous := LinearMap.isHomogeneous_def.mpr fun _ _ hx ↦ by
+    rw [mem_cubicalChainModuleGrading, cubicalChainModuleEquiv_differential]
+    exact cubicalChainDifferential_mem Y R (mem_cubicalChainModuleGrading.1 hx)
   sq_zero x := (cubicalChainModuleEquiv Y G R).injective (by
     rw [cubicalChainModuleEquiv_differential, cubicalChainModuleEquiv_differential,
       cubicalChainDifferential_cubicalChainDifferential, map_zero])
