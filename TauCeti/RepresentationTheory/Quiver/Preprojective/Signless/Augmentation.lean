@@ -5,21 +5,32 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.RepresentationTheory.Quiver.PathAlgebra.PathsInto
+public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Augmentation
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.Grading
 
 /-!
-# The augmentation endpoint of the signless Koszul complex
+# The augmentation endpoint of the signless preprojective Koszul complex
 
-For a vertex `v` of a finite quiver with arrow reversal, the positive-degree part of the
-right ideal `e_v Π^s` consists exactly of sums `∑_b b z_b`, where `b` ranges over arrows into
-`v` and each `z_b` lies in `e_i Π^s` for the tail `i` of `b`. Thus the second differential of the
-signless Koszul complex has image equal to the kernel of the vertex augmentation. Together with
-middle exactness, this identifies its remaining obstruction to being a linear resolution as
-injectivity of the leftmost differential.
+The signless preprojective algebra augments onto the product of the coefficient rings at its
+vertices. In the right vertex projective `e_v Π`, the kernel of the vertex coefficient is
+exactly the image of the incoming-arrow map `(z_b) ↦ ∑ b z_b`. Every scalar occurs as a vertex
+coefficient, so the cokernel of this map is one copy of the coefficient ring, not an unspecified
+quotient. These statements complete the augmentation endpoint of the signless Koszul complex.
+The vertex kernel is also the positive path-degree part of the right vertex projective.
+They work over every commutative ring, also for non-bipartite doubled graphs and in
+characteristic two. Injectivity at the left endpoint still requires the non-backtracking
+hypothesis of `TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.KoszulComplex`.
 
-See Etingof--Eu, *Koszulity and the Hilbert series of preprojective algebras*, Sections 2--3, for
-the Koszul complex and its relation to the Hilbert series.
+For a connected simple graph with at least three vertices, the signless algebra is the
+quadratic dual of its zigzag algebra, whereas it need not be the signed preprojective algebra
+on a non-bipartite graph. No signed/signless comparison is used here.
+
+## References
+
+* S. Huerfano and M. Khovanov, *A category for the adjoint representation*, Section 3,
+  for the signless quadratic dual.
+* P. Etingof and C.-H. Eu, *Koszulity and the Hilbert series of preprojective algebras*,
+  Sections 2 and 3, for the vertex Koszul complex.
 -/
 
 public section
@@ -30,13 +41,100 @@ open _root_.Quiver PathAlgebra
 
 universe u v w
 
-variable (k : Type w) (R : Type u) [CommRing k] [Quiver.{v} R] [HasReverse R]
-  [Fintype R] [∀ x : R, Fintype (Quiver.Star x)] [∀ i j : R, Fintype (i ⟶ j)]
+variable (k : Type w) [CommRing k] {R : Type u} [Quiver.{v} R] [HasReverse R]
+  [Finite R] [∀ x : R, Fintype (Quiver.Star x)]
+
+local notation "Π" => signlessPreprojectiveAlgebra k R
+local notation "π" => signlessPreprojectiveMk k R
+
+/-- The signless relation ideal lies in the square of the arrow ideal, since each relator
+is a sum of length-two backtracks. In particular the vertex coefficients survive the quotient. -/
+theorem signlessPreprojectiveIdeal_le_arrowIdeal_sq :
+    (signlessPreprojectiveIdeal k R).asIdeal ≤ arrowIdeal k R ^ 2 := by
+  rw [← Ideal.asIdeal_toTwoSided (arrowIdeal k R ^ 2)]
+  refine TwoSidedIdeal.asIdeal.monotone ?_
+  rw [signlessPreprojectiveIdeal_eq_span, TwoSidedIdeal.span_le]
+  rintro _ ⟨v, rfl⟩
+  rw [SetLike.mem_coe, Ideal.mem_toTwoSided]
+  dsimp only
+  rw [signlessPreprojectiveRelator_def]
+  refine sum_mem fun e _ => ?_
+  exact Ideal.pow_le_pow_right (by simp) (ofPath_mem_arrowIdeal_pow _)
+
+/-- The signless relation ideal lies in the arrow ideal, so vertex coefficients descend
+to the signless preprojective algebra. -/
+theorem signlessPreprojectiveIdeal_le_arrowIdeal :
+    (signlessPreprojectiveIdeal k R).asIdeal ≤ arrowIdeal k R :=
+  (signlessPreprojectiveIdeal_le_arrowIdeal_sq k).trans (Ideal.pow_le_self two_ne_zero)
+
+/-- The augmentation of the signless preprojective algebra onto its vertex coefficients. -/
+noncomputable def signlessPreprojectiveAugmentation : Π →ₐ[k] (R → k) :=
+  quotientTrivialCoeff (signlessPreprojectiveIdeal_le_arrowIdeal k)
+
+/-- The augmentation kernel is the image of the arrow ideal in the signless algebra. -/
+theorem ker_signlessPreprojectiveAugmentation :
+    RingHom.ker (signlessPreprojectiveAugmentation (R := R) k) =
+      (arrowIdeal k R).map π := by
+  rw [signlessPreprojectiveAugmentation, ker_quotientTrivialCoeff]
+  congr 1
+  ext f
+  exact (signlessPreprojectiveMk_apply k R f).symm
+
+/-- On quotient representatives, the augmentation reads the trivial-path coefficients. -/
+@[simp]
+theorem signlessPreprojectiveAugmentation_mk (f : pathAlgebra k R) :
+    signlessPreprojectiveAugmentation k (π f) = trivialCoeff k R f := by
+  rw [signlessPreprojectiveAugmentation, signlessPreprojectiveMk_apply,
+    quotientTrivialCoeff_mk]
+
+/-- Every arrow has zero augmentation. -/
+theorem signlessPreprojectiveAugmentation_ofArrow {i j : R} (b : i ⟶ j) :
+    signlessPreprojectiveAugmentation k (π (ofArrow b)) = 0 := by
+  rw [signlessPreprojectiveAugmentation_mk, trivialCoeff_ofArrow]
+
+/-- Every family of vertex coefficients occurs in the signless preprojective algebra. -/
+theorem signlessPreprojectiveAugmentation_surjective :
+    Function.Surjective (signlessPreprojectiveAugmentation (R := R) k) :=
+  quotientTrivialCoeff_surjective (signlessPreprojectiveIdeal_le_arrowIdeal k)
+
+/-- On the right vertex projective `e_v Π`, only the coefficient at `v` can be nonzero. -/
+theorem signlessPreprojectiveAugmentation_eq_single [DecidableEq R] (v : R) {x : Π}
+    (hx : π (vertexIdempotent k v) * x = x) :
+    signlessPreprojectiveAugmentation k x =
+      Pi.single v (signlessPreprojectiveAugmentation k x v) := by
+  simpa only [signlessPreprojectiveAugmentation] using
+    quotientTrivialCoeff_eq_single_of_vertexIdempotent_mul
+      (signlessPreprojectiveIdeal_le_arrowIdeal k) v
+      (by simpa only [signlessPreprojectiveMk_apply] using hx)
+
+/-- Exactness at the augmentation endpoint of the signless vertex Koszul complex:
+`x ∈ e_v Π` has vertex coefficient zero exactly when `x = ∑ b z_b` with `z_b ∈ e_i Π`.
+This holds without a non-backtracking choice or a bipartiteness hypothesis. -/
+theorem signlessPreprojectiveAugmentation_apply_eq_zero_iff_exists_eq_sum
+    [Fintype R] (v : R) [∀ i : R, Fintype (i ⟶ v)] {x : Π}
+    (hx : π (vertexIdempotent k v) * x = x) :
+    signlessPreprojectiveAugmentation k x v = 0 ↔
+      ∃ z : (i : R) → (i ⟶ v) → Π,
+        (∀ i b, π (vertexIdempotent k i) * z i b = z i b) ∧
+          x = ∑ i, ∑ b : i ⟶ v, π (ofArrow b) * z i b := by
+  simpa only [signlessPreprojectiveAugmentation, signlessPreprojectiveMk_apply] using
+    quotientTrivialCoeff_apply_eq_zero_iff_exists_eq_sum
+      (signlessPreprojectiveIdeal_le_arrowIdeal k) v
+      (by simpa only [signlessPreprojectiveMk_apply] using hx)
+
+/-- Every scalar is the vertex coefficient of an element of the right vertex projective. -/
+theorem exists_signlessPreprojectiveAugmentation_apply_eq (v : R) (c : k) :
+    ∃ x : Π, π (vertexIdempotent k v) * x = x ∧
+      signlessPreprojectiveAugmentation k x v = c := by
+  simpa only [signlessPreprojectiveAugmentation, signlessPreprojectiveMk_apply] using
+    exists_quotientTrivialCoeff_apply_eq
+      (signlessPreprojectiveIdeal_le_arrowIdeal k) v c
 
 /-- Exactness of the signless Koszul complex at the vertex augmentation endpoint: a class in
 `e_v Π^s` has positive degree exactly when it is a sum of arrows into `v` multiplied by classes
 in the corresponding tail corners. -/
-theorem mem_iSup_signlessPreprojectiveGrade_add_one_iff_exists_eq_sum (v : R)
+theorem mem_iSup_signlessPreprojectiveGrade_add_one_iff_exists_eq_sum
+    [Fintype R] [∀ i j : R, Fintype (i ⟶ j)] (v : R)
     {x : signlessPreprojectiveAlgebra k R}
     (hx : signlessPreprojectiveMk k R (vertexIdempotent k v) * x = x) :
     x ∈ ⨆ n, signlessPreprojectiveGrade k R (n + 1) ↔
