@@ -14,7 +14,8 @@ public import TauCeti.LinearAlgebra.Matrix.ToLin
 This file constructs integral matrices for both signs of the Bourbaki simple roots in the standard
 split model `LieAlgebra.Orthogonal.typeB ι K`, together with the auxiliary difference-root family
 `εᵢ - εⱼ`. For a difference root, the matrices are the usual paired matrix units. For a short
-root `εᵢ`, the normalization forced by Mathlib's form matrix `diag(2, J)` is
+root `εᵢ`, Mathlib's form matrix `diag(2, J)` forces the ratio of the two coefficients in each root
+matrix; the integral normalization used here is
 
 ```text
 eᵢ = 2 Eᵢ₀ - E₀,-ᵢ,       fᵢ = E₀,ᵢ - 2 E-ᵢ,₀.

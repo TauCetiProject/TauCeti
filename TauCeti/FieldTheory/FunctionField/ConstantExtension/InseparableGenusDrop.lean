@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.GeometricDegree
-public import TauCeti.FieldTheory.FunctionField.Hyperelliptic.Genus
+public import TauCeti.FieldTheory.FunctionField.Hyperelliptic.Genus.Basic
 public import TauCeti.FieldTheory.FunctionField.RiemannRoch.RatFunc
 public import TauCeti.FieldTheory.RatFunc.PowerTower
 public import TauCeti.FieldTheory.RatFunc.Transcendental

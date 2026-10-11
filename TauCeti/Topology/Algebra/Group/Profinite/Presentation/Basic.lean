@@ -349,6 +349,21 @@ theorem congr_symm_mk (e : freeProfiniteGroup X ≃ₜ* freeProfiniteGroup Y)
     (y : freeProfiniteGroup Y) : (congr e h h').symm (mk rels' y) = mk rels (e.symm y) :=
   e.quotientCongr_symm_mk _ _ _ y
 
+/-- The induced isomorphism sends a canonical generator to the class of its image. -/
+@[simp]
+theorem congr_of (e : freeProfiniteGroup X ≃ₜ* freeProfiniteGroup Y)
+    (h : ∀ r ∈ rels, mk rels' (e r) = 1) (h' : ∀ r ∈ rels', mk rels (e.symm r) = 1) (x : X) :
+    congr e h h' (of rels x) = mk rels' (e (freeProfiniteGroup.of x)) := by
+  rw [← mk_of, congr_mk]
+
+/-- The inverse of the induced isomorphism sends a canonical generator to the class of its image
+under the inverse isomorphism. -/
+@[simp]
+theorem congr_symm_of (e : freeProfiniteGroup X ≃ₜ* freeProfiniteGroup Y)
+    (h : ∀ r ∈ rels, mk rels' (e r) = 1) (h' : ∀ r ∈ rels', mk rels (e.symm r) = 1) (y : Y) :
+    (congr e h h').symm (of rels' y) = mk rels (e.symm (freeProfiniteGroup.of y)) := by
+  rw [← mk_of, congr_symm_mk]
+
 end Map
 
 /-- **Two sets of relators with the same closed normal closure present the same profinite
