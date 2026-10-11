@@ -55,10 +55,8 @@ theorem algebraMap_residue_eq_pow_of_norm_one_add_mul_pow_eq_before_break
     {a : 𝒪[L]} {b : 𝒪[K]}
     (hab : Algebra.norm 𝒪[K] (1 + a * π ^ v) = 1 + b * Algebra.norm 𝒪[K] π ^ v) :
     algebraMap 𝓀[K] 𝓀[L] (residue 𝒪[K] b) = residue 𝒪[L] a ^ finrank K L := by
-  have h : IsTotallyRamified K L := (lowerRamificationGroup_zero_eq_top_iff K L).1 <|
-    top_le_iff.1 (hG ▸ lowerRamificationGroup_antitone K L (by omega))
-  have hπK : Irreducible (Algebra.norm 𝒪[K] π) :=
-    (irreducible_norm_iff_inertiaDegree_eq_one_of_irreducible hπ).2 h.inertiaDegree_eq_one
+  have h := isTotallyRamified_of_lowerRamificationGroup_eq_top (by omega) hG
+  have hπK := h.irreducible_norm hπ
   have hz : a * π ^ v ∈ 𝓂[L] ^ v := Ideal.mul_mem_left _ a <|
     Ideal.pow_mem_pow ((mem_maximalIdeal π).2 hπ.not_isUnit) v
   have hrem := norm_one_add_sub_one_sub_norm_mem_maximalIdeal_pow_succ hℓ hG hz
@@ -67,12 +65,9 @@ theorem algebraMap_residue_eq_pow_of_norm_one_add_mul_pow_eq_before_break
         (b - Algebra.norm 𝒪[K] a) * Algebra.norm 𝒪[K] π ^ v := by
     rw [hab, map_mul, map_pow]
     ring
-  rw [heq, (IsDiscreteValuationRing.irreducible_iff_uniformizer _).1 hπK,
-    Ideal.span_singleton_pow, Ideal.mem_span_singleton, pow_succ',
-    mul_dvd_mul_iff_right (pow_ne_zero v hπK.ne_zero)] at hrem
-  have hmem : b - Algebra.norm 𝒪[K] a ∈ 𝓂[K] := by
-    rwa [(IsDiscreteValuationRing.irreducible_iff_uniformizer _).1 hπK,
-      Ideal.mem_span_singleton]
+  rw [heq] at hrem
+  have hmem :=
+    IsDiscreteValuationRing.mem_maximalIdeal_of_mul_pow_mem_maximalIdeal_pow_succ hπK hrem
   rw [← residue_eq_zero_iff, map_sub, sub_eq_zero] at hmem
   rw [hmem, algebraMap_residue_norm_of_isTotallyRamified h]
 

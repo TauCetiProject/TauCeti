@@ -306,8 +306,7 @@ finite Galois extension `L/K` of nonarchimedean local fields is the whole Galois
 ramified of degree a power of the residue characteristic `p`, which is prime to `q - 1`. -/
 theorem normGradedMap_zero_bijective_of_lowerRamificationGroup_one_eq_top
     (hG : lowerRamificationGroup K L 1 = ⊤) : Function.Bijective (normGradedMap K L 0) := by
-  have h : IsTotallyRamified K L := (lowerRamificationGroup_zero_eq_top_iff K L).1 <|
-    top_le_iff.1 (hG ▸ lowerRamificationGroup_antitone K L zero_le_one)
+  have h := isTotallyRamified_of_lowerRamificationGroup_eq_top zero_le_one hG
   have hqKL : Nat.card 𝓀[K] = Nat.card 𝓀[L] := by
     rw [natCard_residueField K L, h.inertiaDegree_eq_one, pow_one]
   rw [normGradedMap_zero_bijective_iff h, hqKL]
@@ -439,10 +438,8 @@ private theorem exists_algebraMap_residue_eq_of_norm_one_add_mul_pow_eq
       Algebra.norm 𝒪[K] (1 + a * π ^ t) = 1 + b * Algebra.norm 𝒪[K] π ^ t →
       algebraMap 𝓀[K] 𝓀[L] (residue 𝒪[K] b) =
         residue 𝒪[L] a ^ finrank K L + β * residue 𝒪[L] a := by
-  have h : IsTotallyRamified K L := (lowerRamificationGroup_zero_eq_top_iff K L).1 <|
-    top_le_iff.1 (hG ▸ lowerRamificationGroup_antitone K L (by omega))
-  have hπK : Irreducible (Algebra.norm 𝒪[K] π) :=
-    (irreducible_norm_iff_inertiaDegree_eq_one_of_irreducible hπ).2 h.inertiaDegree_eq_one
+  have h := isTotallyRamified_of_lowerRamificationGroup_eq_top (by omega) hG
+  have hπK := h.irreducible_norm hπ
   have hspan (n : ℕ) : 𝓂[K] ^ n = Ideal.span {Algebra.norm 𝒪[K] π ^ n} := by
     rw [(IsDiscreteValuationRing.irreducible_iff_uniformizer _).1 hπK, Ideal.span_singleton_pow]
   have hπt : π ^ t ∈ 𝓂[L] ^ t :=
@@ -482,11 +479,8 @@ private theorem exists_algebraMap_residue_eq_of_norm_one_add_mul_pow_eq
     exact add_mem (trace_mem_maximalIdeal_pow_of_le hG le_rfl hd)
       (trace_mem_maximalIdeal_pow_of_le hG le_rfl
         (Ideal.pow_le_pow_right (show t + 1 ≤ 2 * t by omega) hw))
-  have hmem : b - a₀ * β₀ - Algebra.norm 𝒪[K] a ∈ 𝓂[K] := by
-    rw [hspan, Ideal.mem_span_singleton, pow_succ',
-      mul_dvd_mul_iff_right (pow_ne_zero t hπK.ne_zero)] at hrem
-    rwa [(IsDiscreteValuationRing.irreducible_iff_uniformizer _).1 hπK,
-      Ideal.mem_span_singleton]
+  have hmem :=
+    IsDiscreteValuationRing.mem_maximalIdeal_of_mul_pow_mem_maximalIdeal_pow_succ hπK hrem
   rw [← residue_eq_zero_iff, map_sub, map_sub, sub_sub, sub_eq_zero] at hmem
   rw [hmem, map_add, map_mul, map_mul, ha₀, algebraMap_residue_norm_of_isTotallyRamified h]
   ring
@@ -635,10 +629,8 @@ private theorem natCard_ker_normGradedMap_succ_eq (hℓ : (finrank K L).Prime) {
     (hγ : σ • π - π = γ * π ^ (t + 2)) :
     Nat.card (normGradedMap K L (t + 1)).ker = Nat.card {y : 𝓀[L] //
       y ^ finrank K L - residue 𝒪[L] γ ^ (finrank K L - 1) * y = 0} := by
-  have hπK : Irreducible (Algebra.norm 𝒪[K] π) :=
-    (irreducible_norm_iff_inertiaDegree_eq_one_of_irreducible hπ).2
-      ((lowerRamificationGroup_zero_eq_top_iff K L).1 <|
-        top_le_iff.1 (hG ▸ lowerRamificationGroup_antitone K L (by omega))).inertiaDegree_eq_one
+  have hπK :=
+    (isTotallyRamified_of_lowerRamificationGroup_eq_top (by omega) hG).irreducible_norm hπ
   let E : UnitFiltrationGraded L (psiNat K L (t + 1)) ≃ 𝓀[L] :=
     (unitFiltrationGradedCongr hψ).toEquiv.trans
       (Additive.ofMul.trans (unitFiltrationGradedSuccEquivResidueFieldOfUniformizer t π hπ).toEquiv)

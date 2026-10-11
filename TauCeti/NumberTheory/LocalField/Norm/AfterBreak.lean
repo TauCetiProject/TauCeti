@@ -49,7 +49,7 @@ private theorem trace_depth_after_break {t v : ℕ} (hvt : t < v)
     top_le_iff.1 (hG ▸ lowerRamificationGroup_antitone K L (Int.natCast_nonneg t))
   have he : ramificationIndex K L = finrank K L :=
     (isTotallyRamified_iff_ramificationIndex_eq_finrank K L).1
-      ((lowerRamificationGroup_zero_eq_top_iff K L).1 hG0)
+      (isTotallyRamified_of_lowerRamificationGroup_eq_top (Int.natCast_nonneg t) hG)
   have hψ : psiNat K L v = t + finrank K L * (v - t) := by
     rw [psiNat_eq_add_card_mul_sub K L (hG.trans hG0.symm) hG' hvt.le,
       hG0, Subgroup.card_top, IsGalois.card_aut_eq_finrank]
@@ -84,8 +84,7 @@ theorem norm_one_add_sub_one_sub_trace_mem_after_break (hℓ : (finrank K L).Pri
   have hG' := lowerRamificationGroup_natCast_add_one_eq_bot_of_upperJump K L hℓ ht
   obtain ⟨-, hm, htr⟩ := trace_depth_after_break hvt hG hG' hℓ.two_le
   obtain ⟨y, hy, hN⟩ := exists_norm_one_add_eq_of_mem_maximalIdeal_pow hℓ hx
-  have htotal : IsTotallyRamified K L := (lowerRamificationGroup_zero_eq_top_iff K L).1 <|
-    top_le_iff.1 (hG ▸ lowerRamificationGroup_antitone K L (Int.natCast_nonneg t))
+  have htotal := isTotallyRamified_of_lowerRamificationGroup_eq_top (Int.natCast_nonneg t) hG
   have htrace : Algebra.trace 𝒪[K] 𝒪[L] y ∈ 𝓂[K] ^ (v + 1) := by
     rw [← Algebra.intTrace_eq_trace]
     exact intTrace_mem_maximalIdeal_pow_of_mem hy htr
@@ -109,8 +108,7 @@ theorem normGradedMap_after_break (hℓ : (finrank K L).Prime) {t v : ℕ} (hvt 
   have hG := lowerRamificationGroup_natCast_eq_top_of_upperJump K L hℓ ht
   have hG' := lowerRamificationGroup_natCast_add_one_eq_bot_of_upperJump K L hℓ ht
   obtain ⟨hdiv, hm, -⟩ := trace_depth_after_break hvt hG hG' hℓ.two_le
-  have htotal : IsTotallyRamified K L := (lowerRamificationGroup_zero_eq_top_iff K L).1 <|
-    top_le_iff.1 (hG ▸ lowerRamificationGroup_antitone K L (Int.natCast_nonneg t))
+  have htotal := isTotallyRamified_of_lowerRamificationGroup_eq_top (Int.natCast_nonneg t) hG
   -- Surjectivity on the graded piece follows by lifting `u - 1` through the trace.
   have hsurj : Function.Surjective (normGradedMap K L v) := by
     intro c

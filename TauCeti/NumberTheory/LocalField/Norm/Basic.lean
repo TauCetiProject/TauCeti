@@ -380,6 +380,12 @@ theorem irreducible_norm_iff_inertiaDegree_eq_one_of_irreducible {ξ : 𝒪[L]}
   rwa [← hπnorm]
 
 omit [FiniteDimensional K L] in
+/-- In a totally ramified extension, the norm of a uniformizer is a uniformizer. -/
+theorem IsTotallyRamified.irreducible_norm (h : IsTotallyRamified K L) {π : 𝒪[L]}
+    (hπ : Irreducible π) : Irreducible (Algebra.norm 𝒪[K] π) :=
+  (irreducible_norm_iff_inertiaDegree_eq_one_of_irreducible hπ).2 h.inertiaDegree_eq_one
+
+omit [FiniteDimensional K L] in
 /-- **The valuation of a norm**: `v_K(N_{L/K}(z)) = f(L/K) v_L(z)` for every `z ∈ 𝒪[L]`, read on
 the additive valuations of the discrete valuation rings `𝒪[K]` and `𝒪[L]`. -/
 theorem addVal_norm (z : 𝒪[L]) :
