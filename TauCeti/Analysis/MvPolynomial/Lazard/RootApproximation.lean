@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Polynomial.ContinuityOfRoots.Approximation
 public import TauCeti.RingTheory.MvPolynomial.Lazard.Uniform
+public import Mathlib.Analysis.Normed.Field.Basic
+public import Mathlib.FieldTheory.IsAlgClosed.Basic
+public import Mathlib.Topology.MetricSpace.ProperSpace
+import TauCeti.Analysis.Polynomial.ContinuityOfRoots.Approximation
 import Mathlib.Algebra.Polynomial.Bivariate
-import Mathlib.Topology.Algebra.Polynomial
 
 /-!
 # Approximating Lazard roots by roots of monomial deformations
