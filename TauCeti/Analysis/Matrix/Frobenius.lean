@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Matrix.Normed
 
+public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frobenius
+
 /-!
 # The Frobenius inner product on real matrices
 
@@ -84,5 +86,30 @@ theorem frobenius_inner_eq_trace_transpose_mul (A B : Matrix m n ℝ) :
   exact Finset.sum_comm
 
 end lemmas
+
+section Operators
+
+open scoped InnerProductSpace Matrix.Norms.Frobenius
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+
+/-- The Frobenius norm of the matrix of a rectangular operator in any orthonormal domain and
+codomain bases equals its unitarily invariant Frobenius seminorm. -/
+theorem frobenius_norm_toMatrix [DecidableEq n] (A : E →ₗ[𝕜] F) (b : OrthonormalBasis n 𝕜 E)
+    (c : OrthonormalBasis m 𝕜 F) :
+    ‖A.toMatrix b.toBasis c.toBasis‖ = TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜 E F A := by
+  symm
+  rw [TauCeti.UnitarilyInvariantSeminorm.frobenius_apply b A,
+    Matrix.frobenius_norm_def, ← Real.sqrt_eq_rpow]
+  congr 1
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  simpa [LinearMap.toMatrix_apply, OrthonormalBasis.coe_toBasis_repr_apply,
+    OrthonormalBasis.repr_apply_apply, Real.rpow_two] using
+    (c.sum_sq_norm_inner_right (A (b i))).symm
+
+end Operators
 
 end Matrix
