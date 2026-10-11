@@ -240,13 +240,15 @@ constant term `3 u² + 1 ≠ 0`. -/
 private theorem finiteDimensional_and_isSeparable (hgen : k⟮x, y⟯ = ⊤)
     (h : x ^ 3 * y + y ^ 3 + x = 0) :
     FiniteDimensional (RatFunc k) F ∧ Algebra.IsSeparable (RatFunc k) F := by
-  have hmon := Polynomial.Bivariate.monic_equivMvPolynomial_symm le_rfl
-    (coeff_single_one_totalDegree_affineEquation (k := k))
-  have hmin := minpoly_ratFunc_eq_map_of_aeval_eq_zero irreducible_affineEquation hmon
-    (aeval_affineEquation hX h)
-  have hint : IsIntegral (RatFunc k) x := by
-    refine ⟨_, hmon.map (algebraMap (Polynomial k) (RatFunc k)), ?_⟩
-    rw [← Polynomial.aeval_def, ← hmin, minpoly.aeval]
+  have hfin : FiniteDimensional (RatFunc k) F := Module.finite_of_finrank_pos (by
+    rw [finrank_ratFunc_eq_totalDegree_of_aeval_eq_zero irreducible_affineEquation
+      coeff_single_one_totalDegree_affineEquation (adjoin_simple_eq_top hX hgen)
+      (aeval_affineEquation hX h), totalDegree_affineEquation]
+    norm_num)
+  have hmin := minpoly_ratFunc_eq_map_of_aeval_eq_zero irreducible_affineEquation
+    (Polynomial.Bivariate.monic_equivMvPolynomial_symm le_rfl
+      coeff_single_one_totalDegree_affineEquation) (aeval_affineEquation hX h)
+  have hint := IsIntegral.of_finite (RatFunc k) x
   have hsep : IsSeparable (RatFunc k) x := by
     rw [IsSeparable, Polynomial.separable_iff_derivative_ne_zero (minpoly.irreducible hint),
       hmin, Polynomial.derivative_map]
@@ -258,9 +260,8 @@ private theorem finiteDimensional_and_isSeparable (hgen : k⟮x, y⟯ = ⊤)
   let e : (RatFunc k)⟮x⟯ ≃ₐ[RatFunc k] F :=
     (IntermediateField.equivOfEq (adjoin_simple_eq_top hX hgen)).trans
       IntermediateField.topEquiv
-  have := IntermediateField.adjoin.finiteDimensional hint
   have := (IntermediateField.isSeparable_adjoin_simple_iff_isSeparable (RatFunc k) F).mpr hsep
-  exact ⟨e.toLinearEquiv.finiteDimensional, AlgEquiv.Algebra.isSeparable e⟩
+  exact ⟨hfin, AlgEquiv.Algebra.isSeparable e⟩
 
 end RatFunc
 
