@@ -30,6 +30,12 @@ otherwise (`TauCeti.internalEnergy`). For an absolutely continuous measure it is
 energy of `U(ρ)` against `m` (`TauCeti.internalEnergy_of_absolutelyContinuous`), and it does not
 depend on the chosen density (`TauCeti.internalEnergy_withDensity`).
 
+The formula needs a Lebesgue decomposition of `μ` whose density `ρ` is finite `m`-almost
+everywhere. Both hold when `μ` and `m` are σ-finite (`Measure.rnDeriv_ne_top`), in particular for
+finite measures against a finite reference or against Lebesgue measure, and this is the intended
+domain. For other measures Mathlib's `Measure.rnDeriv` and `Measure.singularPart` are junk values,
+and so is the internal energy.
+
 The *Boltzmann entropy* `Ent_m(μ)` is the internal energy for `U(r) = r log r`
 (`TauCeti.boltzmannEntropy`). Its recession constant is `⊤`, so the entropy is `⊤` as soon as `μ`
 is not absolutely continuous with respect to `m`, and otherwise it is `∫ ρ log ρ dm` with the
@@ -68,7 +74,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set InformationTheory
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 namespace TauCeti
 
@@ -81,7 +87,10 @@ measure `m`, where `μ = ρ m + μˢ` is the Lebesgue decomposition of `μ` with
 `U'(∞)` is the recession constant of `U`, as an extended real. The positive parts
 `∫ U(ρ)⁺ dm + (U'(∞))⁺ μˢ(X)` and the negative parts `∫ U(ρ)⁻ dm + (U'(∞))⁻ μˢ(X)` are summed
 separately; the energy is `⊤` when the positive sum is infinite, and otherwise the positive sum
-minus the negative one, which is `⊥` when only the latter is infinite. -/
+minus the negative one, which is `⊥` when only the latter is infinite.
+
+The intended domain is σ-finite `μ` and `m`, for which `ρ` is finite `m`-almost everywhere, so
+taking `ρ` through `ENNReal.toReal` changes it only on an `m`-null set. -/
 def internalEnergy (U : ℝ → ℝ) (m μ : Measure X) : EReal :=
   if ∫⁻ x, ENNReal.ofReal (U (μ.rnDeriv m x).toReal) ∂m
       + (recessionConstant U).toENNReal * μ.singularPart m univ = ∞ then ⊤
@@ -114,12 +123,14 @@ theorem internalEnergy_of_absolutelyContinuous (h : μ ≪ m) :
   internalEnergy_of_singularPart_eq_zero (Measure.singularPart_eq_zero_of_ac h)
 
 /-- The internal energy does not depend on the choice of density: for every almost everywhere
-measurable `f`, the internal energy of `f m` is the potential energy of `U ∘ f` against `m`. -/
-theorem internalEnergy_withDensity [SigmaFinite m] {f : X → ℝ≥0∞} (hf : AEMeasurable f m) :
-    internalEnergy U m (m.withDensity f) = potentialEnergy (fun x ↦ U (f x).toReal) m := by
-  rw [internalEnergy_of_absolutelyContinuous (withDensity_absolutelyContinuous m f)]
+measurable finite density `f`, the internal energy of `f m` is the potential energy of `U ∘ f`
+against `m`. -/
+theorem internalEnergy_withDensity [SigmaFinite m] {f : X → ℝ≥0} (hf : AEMeasurable f m) :
+    internalEnergy U m (m.withDensity fun x ↦ f x) = potentialEnergy (fun x ↦ U (f x)) m := by
+  rw [internalEnergy_of_absolutelyContinuous (withDensity_absolutelyContinuous _ _)]
   exact potentialEnergy_congr_ae <|
-    (Measure.rnDeriv_withDensity₀ m hf).mono fun x hx ↦ by simp only [hx]
+    (Measure.rnDeriv_withDensity₀ m hf.coe_nnreal_ennreal).mono fun x hx ↦ by simp only [hx,
+      ENNReal.coe_toReal]
 
 /-- If the recession constant of `U` is `⊤`, every measure with a nonzero singular part has
 internal energy `⊤`. -/
@@ -197,10 +208,11 @@ theorem boltzmannEntropy_of_not_absolutelyContinuous [μ.HaveLebesgueDecompositi
     (mt (Measure.singularPart_eq_zero μ m).1 h)
 
 /-- The Boltzmann entropy does not depend on the choice of density: for every almost everywhere
-measurable `f`, the entropy of `f m` is the potential energy of `f log f` against `m`. -/
-theorem boltzmannEntropy_withDensity [SigmaFinite m] {f : X → ℝ≥0∞} (hf : AEMeasurable f m) :
-    boltzmannEntropy m (m.withDensity f) =
-      potentialEnergy (fun x ↦ (f x).toReal * Real.log (f x).toReal) m :=
+measurable finite density `f`, the entropy of `f m` is the potential energy of `f log f` against
+`m`. -/
+theorem boltzmannEntropy_withDensity [SigmaFinite m] {f : X → ℝ≥0} (hf : AEMeasurable f m) :
+    boltzmannEntropy m (m.withDensity fun x ↦ f x) =
+      potentialEnergy (fun x ↦ (f x : ℝ) * Real.log (f x)) m :=
   internalEnergy_withDensity hf
 
 /-- The Boltzmann entropy is `⊤` exactly when `μ` is not absolutely continuous with respect to `m`,
