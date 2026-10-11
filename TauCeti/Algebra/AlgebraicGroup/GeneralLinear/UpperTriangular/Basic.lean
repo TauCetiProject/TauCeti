@@ -443,11 +443,10 @@ theorem pointsMulEquiv_rootSubgroupCoordinateMap (hij : i < j)
         (GeneralLinear.rootSubgroupPoints hij.ne f) := by
   rw [← pointsMulEquiv_coe, GeneralLinear.pointsMulEquiv_rootSubgroupPoints]
   ext a b
-  rw [GeneralLinear.pointToGeneralLinear_apply, CommHopfAlgCat.quotientPointsHom_apply_apply,
-    ofConv_toConv, AlgHom.comp_apply, BialgHom.coe_toAlgHom, ← coordinateMap_apply,
-    ← CommHopfAlgCat.comp_apply, coordinateMap_comp_rootSubgroupCoordinateMap,
-    GeneralLinear.rootSubgroupCoordinateMap_apply_X, coe_transvectionUnit,
-    AdditiveGroup.toAdd_gaPointsMulEquiv]
+  rw [GeneralLinear.pointToGeneralLinear_apply, CommHopfAlgCat.quotientPointsHom_apply_apply]
+  simp only [AlgHom.comp_apply, BialgHom.coe_toAlgHom]
+  rw [← coordinateMap_apply, ← CommHopfAlgCat.comp_apply,
+    coordinateMap_comp_rootSubgroupCoordinateMap, GeneralLinear.rootSubgroupCoordinateMap_apply_X]
   simp [Matrix.transvection, Matrix.one_apply, Matrix.single_apply, apply_ite f.ofConv]
 
 /-- The positive root subgroup `x_ij : 𝔾ₐ → B_n` inside the standard upper-triangular
