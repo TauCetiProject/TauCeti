@@ -4,70 +4,63 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Wentao Li
 -/
 module
-public import TauCeti.Algebra.QuadraticAlgebra.Split
 public import Mathlib.Algebra.QuadraticAlgebra.Discriminant
-public import Mathlib.RingTheory.Etale.Field
-import Mathlib.RingTheory.Etale.Pi
-import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
-import Mathlib.Algebra.Ring.Fin
+public import Mathlib.RingTheory.Etale.Basic
+import Mathlib.RingTheory.Etale.StandardEtale
+import Mathlib.Algebra.Polynomial.Degree.SmallDegree
 import Mathlib.Tactic.Ring
 
 /-!
-# Rational quadratic étale algebras
+# Quadratic étale algebras
 
-A rational quadratic algebra with nonzero discriminant is étale. In the form
-`ℚ[t]/(t² - D)` with `D ≠ 0`, it is a separable quadratic field for nonsquare `D`
-and a product of two copies of `ℚ` for square `D`.
-
-## References
-
-* D. A. Cox, *Primes of the Form x² + ny²*, §7.
+A quadratic algebra over any field is étale when its discriminant is nonzero.
+This criterion also applies in characteristic two.
 -/
 
 public section
 
+open Polynomial
+
 namespace QuadraticAlgebra
 
-private theorem etale_rat_prod : Algebra.Etale ℚ (ℚ × ℚ) := by
-  let e : (Fin 2 → ℚ) ≃ₐ[ℚ] ℚ × ℚ :=
-    { RingEquiv.piFinTwo (fun _ : Fin 2 ↦ ℚ) with commutes' := fun _ ↦ rfl }
-  exact Algebra.Etale.of_equiv e
+private noncomputable def quadraticEtalePair {K : Type*} [Field K]
+    (a b : K) (hd : discr a b ≠ 0) : StandardEtalePair K where
+  f := X ^ 2 - (C b * X + C a)
+  monic_f := monic_X_pow_sub degree_linear_lt
+  g := 1
+  cond := by
+    refine ⟨C ((discr a b)⁻¹) * (2 * X - C b), C (-4 * (discr a b)⁻¹), 0, ?_⟩
+    simp only [pow_zero, derivative_sub, derivative_pow, derivative_X, derivative_add,
+      derivative_mul, derivative_C, mul_one, zero_mul, zero_add, add_zero,
+      Nat.cast_ofNat]
+    calc
+      _ = C ((discr a b)⁻¹ * (b ^ 2 + 4 * a)) := by
+        simp only [map_mul, map_add, map_pow, map_neg, map_ofNat]
+        ring
+      _ = 1 := by rw [← discr_def, inv_mul_cancel₀ hd, map_one]
 
-private theorem etale_of_ne_zero (D : ℚ) (hD : D ≠ 0) :
-    Algebra.Etale ℚ (QuadraticAlgebra ℚ D 0) := by
-  let : Module.FinitePresentation ℚ (QuadraticAlgebra ℚ D 0) :=
-    Module.finitePresentation_of_finite ℚ _
-  by_cases hsq : IsSquare D
-  · obtain ⟨s, hs⟩ := hsq
-    have hs0 : s ≠ 0 := by
-      intro hz
-      rw [hz, mul_zero] at hs
-      exact hD hs
-    let u : ℚˣ := Units.mk0 s hs0
-    have hDQ : D = (u : ℚ) ^ 2 := by simpa only [u, Units.val_mk0, pow_two] using hs
-    let : Invertible (2 : ℚ) := invertibleOfNonzero (by decide)
-    let e := TauCeti.QuadraticAlgebra.algEquivProdOfSq u hDQ
-    let : Algebra.Etale ℚ (ℚ × ℚ) := etale_rat_prod
-    exact Algebra.Etale.of_equiv e.symm
-  · let : Fact (¬ IsSquare D) := ⟨hsq⟩
-    let : Algebra.FormallyEtale ℚ (QuadraticAlgebra ℚ D 0) :=
-      Algebra.FormallyEtale.of_isSeparable ℚ _
-    exact ⟨inferInstance, inferInstance⟩
-
-/-- A rational quadratic algebra with nonzero discriminant is étale. -/
-theorem etale_of_discr_ne_zero {a b : ℚ} (hd : discr a b ≠ 0) :
-    Algebra.Etale ℚ (QuadraticAlgebra ℚ a b) := by
-  let D : ℚ := a + b ^ 2 / 4
-  have hD : D ≠ 0 := by
-    intro h
-    apply hd
-    simp only [discr_def]
-    have h' : 4 * D = b ^ 2 + 4 * a := by dsimp [D]; ring
-    rw [← h', h, mul_zero]
-  let e : QuadraticAlgebra ℚ a b ≃ₐ[ℚ] QuadraticAlgebra ℚ D 0 :=
-    changeGeneratorEquiv D 0 1 (b / 2)
-      (by dsimp [D]; ring) (by simp; ring)
-  let : Algebra.Etale ℚ (QuadraticAlgebra ℚ D 0) := etale_of_ne_zero D hD
-  exact Algebra.Etale.of_equiv e.symm
+/-- A quadratic algebra over a field with nonzero discriminant is étale. -/
+theorem etale_of_discr_ne_zero {K : Type*} [Field K] {a b : K} (hd : discr a b ≠ 0) :
+    Algebra.Etale K (QuadraticAlgebra K a b) := by
+  let P := quadraticEtalePair a b hd
+  have hx : P.X * P.X = a • (1 : P.Ring) + b • P.X := by
+    have h := P.hasMap_X.1
+    change aeval P.X (X ^ 2 - (C b * X + C a)) = 0 at h
+    simpa [pow_two, Algebra.smul_def, sub_eq_zero, add_comm] using h
+  have hω : P.HasMap (ω : QuadraticAlgebra K a b) := by
+    constructor
+    · change aeval ω (X ^ 2 - (C b * X + C a)) = 0
+      simp [pow_two, omega_mul_omega_eq_add, Algebra.smul_def, add_comm]
+    · change IsUnit (aeval ω (1 : K[X]))
+      simp
+  let f : P.Ring →ₐ[K] QuadraticAlgebra K a b := P.lift ω hω
+  let g : QuadraticAlgebra K a b →ₐ[K] P.Ring := lift ⟨P.X, hx⟩
+  have hfg : f.comp g = AlgHom.id K (QuadraticAlgebra K a b) := by
+    apply algHom_ext
+    simp [f, g]
+  have hgf : g.comp f = AlgHom.id K P.Ring := by
+    apply P.hom_ext
+    simp [f, g]
+  exact Algebra.Etale.of_equiv (AlgEquiv.ofAlgHom f g hfg hgf)
 
 end QuadraticAlgebra
