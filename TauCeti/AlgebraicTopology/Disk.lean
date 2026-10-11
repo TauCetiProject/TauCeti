@@ -262,6 +262,72 @@ lemma diskBoundaryPairIsoCube_hom : (diskBoundaryPairIsoCube.{u} n).hom =
     diskBoundaryPairToCube n :=
   (rfl)
 
+/-- A point of the boundary of the `1`-disk is sent by the radial rescaling onto the sup-norm ball
+to a point of absolute value `1` with the sign of its coordinate. -/
+lemma diskHomeomorphClosedBall_one_apply_zero_of_mem (z : TopCat.disk.{u} 1)
+    (hz : z ∈ Set.range (TopCat.diskBoundaryInclusion.{u} 1)) :
+    ∃ r : ℝ, 0 ≤ r ∧ (diskHomeomorphClosedBall 1 z : Fin 1 → ℝ) 0 =
+      r * ((z : ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
+        EuclideanSpace ℝ (Fin 1)) 0 ∧ |(diskHomeomorphClosedBall 1 z : Fin 1 → ℝ) 0| = 1 := by
+  set x := ((z : ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
+    EuclideanSpace ℝ (Fin 1))
+  have hu : (diskHomeomorphClosedBall 1 z : Fin 1 → ℝ) =
+      gaugeRescale ((EuclideanSpace.equiv (Fin 1) ℝ) '' Metric.closedBall 0 1)
+        (Metric.closedBall 0 1) (EuclideanSpace.equiv (Fin 1) ℝ x) := by
+    rw [coe_diskHomeomorphClosedBall_apply, ContinuousLinearEquiv.unitBallHomeomorph_apply]
+  have h := (norm_diskHomeomorphClosedBall_eq_one_iff z).2 hz
+  refine ⟨gauge ((EuclideanSpace.equiv (Fin 1) ℝ) '' Metric.closedBall 0 1)
+      (EuclideanSpace.equiv (Fin 1) ℝ x) /
+    gauge (Metric.closedBall (0 : Fin 1 → ℝ) 1) (EuclideanSpace.equiv (Fin 1) ℝ x),
+    div_nonneg (gauge_nonneg _) (gauge_nonneg _), ?_, ?_⟩
+  · rw [hu, gaugeRescale_def, Pi.smul_apply, smul_eq_mul]
+    rfl
+  · rw [← Real.norm_eq_abs]
+    refine Eq.trans ?_ h
+    exact (norm_le_pi_norm _ 0).antisymm
+      ((pi_norm_le_iff_of_nonneg (norm_nonneg _)).2 fun i ↦ by rw [Subsingleton.elim i 0])
+
+/-- The homeomorphism of the `1`-disk onto the interval sends the boundary point with positive
+coordinate to `1`. -/
+lemma diskHomeomorphCube_one_of_pos (z : TopCat.disk.{u} 1)
+    (hz : z ∈ Set.range (TopCat.diskBoundaryInclusion.{u} 1))
+    (hpos : 0 < ((z : ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
+      EuclideanSpace ℝ (Fin 1)) 0) :
+    diskHomeomorphCube 1 z = fun _ ↦ 1 := by
+  obtain ⟨r, hr, hu, habs⟩ := diskHomeomorphClosedBall_one_apply_zero_of_mem z hz
+  have h1 : (diskHomeomorphClosedBall 1 z : Fin 1 → ℝ) 0 = 1 := by
+    rw [hu] at habs ⊢
+    rw [abs_of_nonneg (mul_nonneg hr hpos.le)] at habs
+    exact habs
+  funext i
+  rw [Subsingleton.elim i 0]
+  ext
+  rw [diskHomeomorphCube_apply, coe_cubeHomeomorphClosedBall_symm_apply, h1]
+  norm_num
+
+/-- The homeomorphism of the `1`-disk onto the interval sends the boundary point with negative
+coordinate to `0`. -/
+lemma diskHomeomorphCube_one_of_neg (z : TopCat.disk.{u} 1)
+    (hz : z ∈ Set.range (TopCat.diskBoundaryInclusion.{u} 1))
+    (hneg : ((z : ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
+      EuclideanSpace ℝ (Fin 1)) 0 < 0) :
+    diskHomeomorphCube 1 z = fun _ ↦ 0 := by
+  obtain ⟨r, hr, hu, habs⟩ := diskHomeomorphClosedBall_one_apply_zero_of_mem z hz
+  have h1 : (diskHomeomorphClosedBall 1 z : Fin 1 → ℝ) 0 = -1 := by
+    rw [hu] at habs ⊢
+    rw [abs_of_nonpos (mul_nonpos_of_nonneg_of_nonpos hr hneg.le)] at habs
+    linarith
+  funext i
+  rw [Subsingleton.elim i 0]
+  ext
+  rw [diskHomeomorphCube_apply, coe_cubeHomeomorphClosedBall_symm_apply, h1]
+  norm_num
+
+/-- The cube `Iⁿ` is contractible, being homeomorphic to the disk. -/
+instance contractibleSpace_cubeBoundaryPair_fst (n : ℕ) :
+    ContractibleSpace (cubeBoundaryPair.{u} n).fst :=
+  ((diskHomeomorphCube.{u} n).trans Homeomorph.ulift.symm).symm.contractibleSpace
+
 end CubePair
 
 end TauCeti

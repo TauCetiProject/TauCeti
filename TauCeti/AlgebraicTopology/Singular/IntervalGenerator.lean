@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.DiskSphere
-public import TauCeti.AlgebraicTopology.Singular.OneSimplex.RelativeClass
+public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.RelativeClass
 
 /-!
 # The generator of the relative homology of the interval modulo its endpoints
@@ -44,61 +44,6 @@ open CategoryTheory Limits Simplicial unitInterval
 universe w v u
 
 namespace TauCeti
-
-lemma diskHomeomorphClosedBall_one_apply_zero_of_mem (z : TopCat.disk.{w} 1)
-    (hz : z ∈ Set.range (TopCat.diskBoundaryInclusion.{w} 1)) :
-    ∃ r : ℝ, 0 ≤ r ∧ (diskHomeomorphClosedBall 1 z : Fin 1 → ℝ) 0 =
-      r * ((z : ULift.{w} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
-        EuclideanSpace ℝ (Fin 1)) 0 ∧ |(diskHomeomorphClosedBall 1 z : Fin 1 → ℝ) 0| = 1 := by
-  set x := ((z : ULift.{w} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
-    EuclideanSpace ℝ (Fin 1))
-  have hu : (diskHomeomorphClosedBall 1 z : Fin 1 → ℝ) =
-      gaugeRescale ((EuclideanSpace.equiv (Fin 1) ℝ) '' Metric.closedBall 0 1)
-        (Metric.closedBall 0 1) (EuclideanSpace.equiv (Fin 1) ℝ x) := by
-    rw [coe_diskHomeomorphClosedBall_apply, ContinuousLinearEquiv.unitBallHomeomorph_apply]
-  have h := (norm_diskHomeomorphClosedBall_eq_one_iff z).2 hz
-  refine ⟨gauge ((EuclideanSpace.equiv (Fin 1) ℝ) '' Metric.closedBall 0 1)
-      (EuclideanSpace.equiv (Fin 1) ℝ x) /
-    gauge (Metric.closedBall (0 : Fin 1 → ℝ) 1) (EuclideanSpace.equiv (Fin 1) ℝ x),
-    div_nonneg (gauge_nonneg _) (gauge_nonneg _), ?_, ?_⟩
-  · rw [hu, gaugeRescale_def, Pi.smul_apply, smul_eq_mul]
-    rfl
-  · rw [← Real.norm_eq_abs]
-    refine Eq.trans ?_ h
-    exact (norm_le_pi_norm _ 0).antisymm
-      ((pi_norm_le_iff_of_nonneg (norm_nonneg _)).2 fun i ↦ by rw [Subsingleton.elim i 0])
-
-lemma diskHomeomorphCube_one_of_pos (z : TopCat.disk.{w} 1)
-    (hz : z ∈ Set.range (TopCat.diskBoundaryInclusion.{w} 1))
-    (hpos : 0 < ((z : ULift.{w} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
-      EuclideanSpace ℝ (Fin 1)) 0) :
-    diskHomeomorphCube 1 z = fun _ ↦ 1 := by
-  obtain ⟨r, hr, hu, habs⟩ := diskHomeomorphClosedBall_one_apply_zero_of_mem z hz
-  have h1 : (diskHomeomorphClosedBall 1 z : Fin 1 → ℝ) 0 = 1 := by
-    rw [hu] at habs ⊢
-    rw [abs_of_nonneg (mul_nonneg hr hpos.le)] at habs
-    exact habs
-  funext i
-  rw [Subsingleton.elim i 0]
-  ext
-  rw [diskHomeomorphCube_apply, coe_cubeHomeomorphClosedBall_symm_apply, h1]
-  norm_num
-
-lemma diskHomeomorphCube_one_of_neg (z : TopCat.disk.{w} 1)
-    (hz : z ∈ Set.range (TopCat.diskBoundaryInclusion.{w} 1))
-    (hneg : ((z : ULift.{w} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
-      EuclideanSpace ℝ (Fin 1)) 0 < 0) :
-    diskHomeomorphCube 1 z = fun _ ↦ 0 := by
-  obtain ⟨r, hr, hu, habs⟩ := diskHomeomorphClosedBall_one_apply_zero_of_mem z hz
-  have h1 : (diskHomeomorphClosedBall 1 z : Fin 1 → ℝ) 0 = -1 := by
-    rw [hu] at habs ⊢
-    rw [abs_of_nonpos (mul_nonpos_of_nonneg_of_nonpos hr hneg.le)] at habs
-    linarith
-  funext i
-  rw [Subsingleton.elim i 0]
-  ext
-  rw [diskHomeomorphCube_apply, coe_cubeHomeomorphClosedBall_symm_apply, h1]
-  norm_num
 
 section Cube
 
@@ -138,6 +83,9 @@ lemma δ_one_cubeSimplex :
       (TopCat.toSSet.map (cubeBoundaryPair.{w} 1).map).app _ (cubeEndVertex 0 (Or.inl rfl)) := by
   apply ((cubeBoundaryPair.{w} 1).fst.toSSetObjEquiv _).injective
   ext a : 1
+  -- Both sides evaluate a singular simplex of the cube: the face of `cubeSimplex` is
+  -- `cubePoint` of the last weight of the face inclusion, and the vertex is `cubePoint` of the
+  -- endpoint, by `toSSetObjEquiv_δ_apply` and the definitions of `cubeSimplex`/`cubeEndVertex`.
   change cubePoint _ = cubePoint 0
   congr 1
   ext
@@ -150,9 +98,13 @@ lemma δ_zero_cubeSimplex :
       (TopCat.toSSet.map (cubeBoundaryPair.{w} 1).map).app _ (cubeEndVertex 1 (Or.inr rfl)) := by
   apply ((cubeBoundaryPair.{w} 1).fst.toSSetObjEquiv _).injective
   ext a : 1
+  -- Both sides evaluate a singular simplex of the cube: the face of `cubeSimplex` is
+  -- `cubePoint` of the last weight of the face inclusion, and the vertex is `cubePoint` of the
+  -- endpoint, by `toSSetObjEquiv_δ_apply` and the definitions of `cubeSimplex`/`cubeEndVertex`.
   change cubePoint _ = cubePoint 1
   congr 1
   ext
+  -- The coordinate is the weight at `1 = (0 : Fin 2).succAbove 0` of the face inclusion.
   change (Convexity.StdSimplex.map (Fin.succAbove 0) a).weights ((0 : Fin 2).succAbove 0) = 1
   rw [Convexity.StdSimplex.weights_map, Finsupp.mapDomain_apply_of_injective
     Fin.succAbove_right_injective]
@@ -241,6 +193,8 @@ lemma spherePlus_coord :
     (((TopCat.diskBoundaryInclusion.{w} 1 spherePlus) :
       ULift.{w} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
         EuclideanSpace ℝ (Fin 1)) 0 = 1 := by
+  -- `spherePlus`/`sphereMinus` are defined through `(diskBoundaryHomeomorph 1).symm`, and the
+  -- inclusion of the boundary sphere into the disk keeps the underlying vector.
   change ((((diskBoundaryHomeomorph 1).symm _ : TopCat.diskBoundary.{w} 1) :
     ULift.{w} (Metric.sphere (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
       EuclideanSpace ℝ (Fin 1)) 0 = 1
@@ -251,6 +205,8 @@ lemma sphereMinus_coord :
     (((TopCat.diskBoundaryInclusion.{w} 1 sphereMinus) :
       ULift.{w} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
         EuclideanSpace ℝ (Fin 1)) 0 = -1 := by
+  -- `spherePlus`/`sphereMinus` are defined through `(diskBoundaryHomeomorph 1).symm`, and the
+  -- inclusion of the boundary sphere into the disk keeps the underlying vector.
   change ((((diskBoundaryHomeomorph 1).symm _ : TopCat.diskBoundary.{w} 1) :
     ULift.{w} (Metric.sphere (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
       EuclideanSpace ℝ (Fin 1)) 0 = -1
@@ -276,10 +232,6 @@ end Sphere
 section Generator
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
-
-instance contractibleSpace_cubeBoundaryPair_fst (n : ℕ) :
-    ContractibleSpace (cubeBoundaryPair.{w} n).fst :=
-  ((diskHomeomorphCube.{w} n).trans Homeomorph.ulift.symm).symm.contractibleSpace
 
 /-- The connecting morphism of the cube pair `(I¹, ∂I¹)` is a monomorphism, since `I¹` is
 contractible. -/

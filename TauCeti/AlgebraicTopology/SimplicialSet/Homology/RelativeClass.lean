@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.Relative
-public import TauCeti.AlgebraicTopology.Singular.Reduced
+public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Relative
+public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Zero
 
 /-!
@@ -18,7 +18,8 @@ For a pair of simplicial sets `Q` (a monomorphism `Q.left ⟶ Q.right`), a `1`-s
 in `R`. This file computes its image under the connecting morphism, the difference
 `[v₁] - [v₀]` of the classes of its endpoints (`SSetPair.relClass₁_homologyδ`); proves that the
 class is natural in maps of pairs (`SSetPair.relClass₁_homologyMap`); and identifies it with the
-image of the absolute class when the two faces agree (`SSetPair.absClass₁_homologyπ`). The
+image of the absolute class `TauCeti.SSet.ιHomology₁` when the two faces agree
+(`SSetPair.ιHomology₁_homologyπ`). The
 computation of the connecting morphism is `ShortComplex.ShortExact.δ_eq` for the short exact
 sequence of chain complexes of the pair.
 
@@ -27,8 +28,8 @@ sequence of chain complexes of the pair.
 * `SSetPair.relClass₁`: the relative class of a `1`-simplex with faces in the subcomplex.
 * `SSetPair.relClass₁_homologyδ`: its image under the connecting morphism.
 * `SSetPair.relClass₁_homologyMap`: naturality in maps of pairs.
-* `SSetPair.absClass₁` and `SSetPair.absClass₁_homologyπ`: the absolute class of a `1`-simplex
-  with equal faces, and its image in relative homology.
+* `TauCeti.SSet.ιHomology₁` and `SSetPair.ιHomology₁_homologyπ`: the absolute class of a
+  `1`-simplex with equal faces, and its image in relative homology.
 -/
 
 public section
@@ -38,6 +39,25 @@ noncomputable section
 open CategoryTheory Limits Simplicial
 
 universe w v u
+
+namespace TauCeti.SSet
+
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
+
+/-- The homology class of a `1`-simplex whose two faces agree, a `1`-cycle. -/
+def ιHomology₁ (X : SSet.{w}) (s : X _⦋1⦌) (h : X.δ 0 s = X.δ 1 s) : R ⟶ X.homology R 1 :=
+  (X.chainComplex R).liftCycles (X.ιChainComplex s) 0 (by simp) (by
+    rw [SSet.ιChainComplex_d, Fin.sum_univ_two, h]
+    simp) ≫ (X.chainComplex R).homologyπ 1
+
+/-- The class of a `1`-simplex with equal faces is the homology class of the cycle it defines. -/
+lemma ιHomology₁_eq (X : SSet.{w}) (s : X _⦋1⦌) (h : X.δ 0 s = X.δ 1 s) :
+    ιHomology₁ R X s h = (X.chainComplex R).liftCycles (X.ιChainComplex s) 0 (by simp) (by
+      rw [SSet.ιChainComplex_d, Fin.sum_univ_two, h]
+      simp) ≫ (X.chainComplex R).homologyπ 1 := by
+  rw [ιHomology₁]
+
+end TauCeti.SSet
 
 namespace SSetPair
 
@@ -67,6 +87,13 @@ lie in the subcomplex. -/
 def relClass₁ : R ⟶ Q.homology R 1 :=
   (Q.chainComplex R).liftCycles (Q.right.ιChainComplex s ≫ (Q.chainComplexπ R).f 1) 0
     (by simp) (relClass₁_cycle R Q s v₀ v₁ h₀ h₁) ≫ (Q.chainComplex R).homologyπ 1
+
+/-- The relative class of a `1`-simplex is the homology class of the relative cycle it defines. -/
+lemma relClass₁_eq :
+    relClass₁ R Q s v₀ v₁ h₀ h₁ =
+      (Q.chainComplex R).liftCycles (Q.right.ιChainComplex s ≫ (Q.chainComplexπ R).f 1) 0
+        (by simp) (relClass₁_cycle R Q s v₀ v₁ h₀ h₁) ≫ (Q.chainComplex R).homologyπ 1 := by
+  rw [relClass₁]
 
 /-- **The connecting morphism on the relative class of a `1`-simplex** is the difference of the
 classes of its two vertices in the subcomplex. -/
@@ -120,23 +147,11 @@ lemma relClass₁_homologyMap {Q' : SSetPair.{w}} (f : Q ⟶ Q') :
   rw [Category.assoc, ← HomologicalComplex.comp_f, ← chainComplexπ_naturality,
     HomologicalComplex.comp_f, ← Category.assoc, SSet.ι_chainComplexMap_f]
 
-/-- The homology class of a `1`-simplex whose two faces agree. -/
-def absClass₁ (X : SSet.{w}) (s : X _⦋1⦌) (h : X.δ 0 s = X.δ 1 s) : R ⟶ X.homology R 1 :=
-  (X.chainComplex R).liftCycles (X.ιChainComplex s) 0 (by simp) (by
-    rw [SSet.ιChainComplex_d, Fin.sum_univ_two, h]
-    simp) ≫ (X.chainComplex R).homologyπ 1
-
-lemma absClass₁_eq (X : SSet.{w}) (s : X _⦋1⦌) (h : X.δ 0 s = X.δ 1 s) :
-    absClass₁ R X s h = (X.chainComplex R).liftCycles (X.ιChainComplex s) 0 (by simp) (by
-      rw [SSet.ιChainComplex_d, Fin.sum_univ_two, h]
-      simp) ≫ (X.chainComplex R).homologyπ 1 := by
-  rw [absClass₁]
-
 /-- The relative class of a `1`-simplex whose two faces agree is the image of its absolute
 class. -/
-lemma absClass₁_homologyπ (h : Q.right.δ 0 s = Q.right.δ 1 s) :
-    absClass₁ R Q.right s h ≫ Q.homologyπ R 1 = relClass₁ R Q s v₀ v₁ h₀ h₁ := by
-  rw [absClass₁, relClass₁, Category.assoc, SSetPair.homologyπ,
+lemma ιHomology₁_homologyπ (h : Q.right.δ 0 s = Q.right.δ 1 s) :
+    TauCeti.SSet.ιHomology₁ R Q.right s h ≫ Q.homologyπ R 1 = relClass₁ R Q s v₀ v₁ h₀ h₁ := by
+  rw [TauCeti.SSet.ιHomology₁_eq, relClass₁, Category.assoc, SSetPair.homologyπ,
     HomologicalComplex.homologyπ_naturality, ← Category.assoc,
     HomologicalComplex.liftCycles_comp_cyclesMap]
 
