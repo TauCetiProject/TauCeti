@@ -44,6 +44,16 @@ def relators : Set (FreeGroup (Fin n)) :=
     {w | ∃ (j : Fin n) (z : ℍ), P.vertex j = .inl z ∧
       w = σ.cycleWord j ^ orderOf (σ.cycleMap j)}
 
+/-- A word is a relator exactly when it is a side-identification word or a finite-vertex cycle
+power. -/
+@[simp]
+theorem mem_relators_iff {w : FreeGroup (Fin n)} :
+    w ∈ σ.relators ↔
+      (∃ i, σ.sideRelator i = w) ∨
+        (∃ (j : Fin n) (z : ℍ), P.vertex j = .inl z ∧
+          w = σ.cycleWord j ^ orderOf (σ.cycleMap j)) := by
+  simp [relators]
+
 /-- A side-identification word belongs to the relator set. -/
 theorem sideRelator_mem_relators (i : Fin n) : σ.sideRelator i ∈ σ.relators :=
   Or.inl ⟨i, rfl⟩
