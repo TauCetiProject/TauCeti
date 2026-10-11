@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
+public import TauCeti.RingTheory.MvPowerSeries.Basic
 public import Mathlib.RingTheory.MvPowerSeries.Substitution
 public import TauCeti.RingTheory.MvPolynomial.NormCoeff
 
@@ -30,9 +31,7 @@ here.
 ## Main results
 
 * `MvPowerSeries.hasSubst_coe`: polynomials without constant term in finitely many variables
-  form a substitutable family, and `MvPolynomial.coe_finsuppProd_pow`: the coercion to power
-  series commutes with the products of powers that appear in the coefficients of a
-  substitution.
+  form a substitutable family.
 * `MvPowerSeries.norm_coeff_subst_le`: each coefficient of a substitution is bounded by the
   supremum of the terms contributing to it, in any ultrametric seminormed commutative ring.
 * `MvPowerSeries.norm_coeff_subst_coe_le` and `MvPowerSeries.norm_coeff_subst_coe_sub_le`: for a
@@ -61,13 +60,6 @@ open scoped Topology
 section CommRing
 
 variable {σ τ R : Type*} [CommRing R]
-
-/-- The coercion of polynomials to power series commutes with products of powers. -/
-theorem _root_.MvPolynomial.coe_finsuppProd_pow (a : σ → MvPolynomial τ R) (d : σ →₀ ℕ) :
-    ((d.prod fun s n ↦ a s ^ n : MvPolynomial τ R) : MvPowerSeries τ R) =
-      d.prod fun s n ↦ (a s : MvPowerSeries τ R) ^ n := by
-  simp only [Finsupp.prod, ← MvPolynomial.coe_pow]
-  exact map_prod (MvPolynomial.coeToMvPowerSeries.ringHom (σ := τ) (R := R)) _ _
 
 /-- Polynomials without constant term form a substitutable family over finitely many
 variables. -/

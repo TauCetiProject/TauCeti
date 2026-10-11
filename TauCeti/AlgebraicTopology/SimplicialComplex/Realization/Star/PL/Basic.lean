@@ -14,8 +14,8 @@ public import TauCeti.Topology.PL.Cone
 A finite piecewise-affine coordinate formula for a map of geometric vertex links extends to
 such a formula for its radial map of closed stars, including at the apex. For compact links, a
 local PL formula suffices. Applying the construction to both
-directions of a link homeomorphism supplies PL formulas for the closed-star homeomorphism
-and its inverse. Restricting these formulas to open stars supplies local PL chart maps.
+directions of a link homeomorphism supplies PL formulas for the closed-star map and its inverse;
+the corresponding homeomorphism packaging is in `Star.PL.Homeomorph`.
 
 The formulas are on the ambient coordinate spaces and agree with the actual `closedStarMap`
 on its whole domain. The ambient complexes and the target vertex type may be infinite.

@@ -33,6 +33,9 @@ and isometries of products are in `TauCeti.Geometry.Manifold.Riemannian.Isometry
 
 * `TauCeti.Manifold.inner_tangentSpace_prod`: the inner product of the product metric is the sum
   of the inner products of the components.
+* `TauCeti.Manifold.inner_tangentSpace_prod_mk_zero` and
+  `TauCeti.Manifold.inner_tangentSpace_prod_zero_mk`: tangent vectors supported in one factor
+  have that factor's inner product.
 
 ## References
 
@@ -287,5 +290,29 @@ theorem inner_tangentSpace_prod (p : M × N) (v w : TangentSpace (I.prod J) p) :
       inner ℝ (tangentSpaceProdEquiv p v).1 (tangentSpaceProdEquiv p w).1 +
         inner ℝ (tangentSpaceProdEquiv p v).2 (tangentSpaceProdEquiv p w).2 :=
   (rfl)
+
+/-- Tangent vectors supported in the first factor have that factor's inner product. -/
+@[simp]
+theorem inner_tangentSpace_prod_mk_zero (p : M × N) (v w : TangentSpace I p.1) :
+    inner ℝ (E := TangentSpace (I.prod J) p)
+      ((v, 0) : TangentSpace I p.1 × TangentSpace J p.2)
+      ((w, 0) : TangentSpace I p.1 × TangentSpace J p.2) = inner ℝ v w := by
+  have h := inner_tangentSpace_prod p
+    ((tangentSpaceProdEquiv (I := I) (J := J) p).symm (v, 0))
+    ((tangentSpaceProdEquiv (I := I) (J := J) p).symm (w, 0))
+  simp only [ContinuousLinearEquiv.apply_symm_apply, inner_zero_left, add_zero] at h
+  simpa only [tangentSpaceProdEquiv_symm_apply] using h
+
+/-- Tangent vectors supported in the second factor have that factor's inner product. -/
+@[simp]
+theorem inner_tangentSpace_prod_zero_mk (p : M × N) (v w : TangentSpace J p.2) :
+    inner ℝ (E := TangentSpace (I.prod J) p)
+      ((0, v) : TangentSpace I p.1 × TangentSpace J p.2)
+      ((0, w) : TangentSpace I p.1 × TangentSpace J p.2) = inner ℝ v w := by
+  have h := inner_tangentSpace_prod p
+    ((tangentSpaceProdEquiv (I := I) (J := J) p).symm (0, v))
+    ((tangentSpaceProdEquiv (I := I) (J := J) p).symm (0, w))
+  simp only [ContinuousLinearEquiv.apply_symm_apply, inner_zero_left, zero_add] at h
+  simpa only [tangentSpaceProdEquiv_symm_apply] using h
 
 end TauCeti.Manifold
