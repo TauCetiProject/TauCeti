@@ -98,7 +98,7 @@ tangent chart and take its normal class. -/
 transition by applying the ambient tangent transition to the old complementary representative.
 Use this rule with `rw`; expanding a general transition during simplification can obscure
 the cancellation of a coordinate equivalence with its inverse. -/
-theorem normalSpaceEquivOfComplement_apply_symm
+theorem normalSpaceEquivOfComplement_apply_symm_eq_quotientRangeCoordinate_coordChangeL
     {P' : Type*} [TopologicalSpace P'] [AddCommGroup P'] [Module 𝕜 P']
     (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) {x₀ x₁ x : M}
     (hx₀ : x ∈ (chartAt H x₀).source) (hy₀ : f x ∈ (chartAt G (f x₀)).source)
@@ -135,7 +135,7 @@ variable [CompleteSpace F] {P : Type*} [NormedAddCommGroup P] [NormedSpace 𝕜 
 
 /-- For any valid fixed complement, the normal-coordinate operator is `C^m` at the chart
 centre when the embedding is `C^(m+1)` there. This includes smooth and analytic regularity. -/
-theorem contMDiffAt_normalSpaceComplementCoordinate
+theorem contMDiffAt_inTangentCoordinates_quotientRangeCoordinate
     (f : SmoothEmbedding I J n M N) {m : ℕ∞ω} (hm : m + 1 ≤ n) (x₀ : M)
     (B : P →L[𝕜] F)
     (hB : ((inTangentCoordinates I J _root_.id (f : M → N)
@@ -156,7 +156,7 @@ theorem contMDiffAt_normalSpaceComplementCoordinate
 normal fibres near each point. For every finite or analytic order `m` with `m + 1 ≤ n`, the
 complementary coordinate operators are `C^m` on one open neighbourhood contained in the
 source and ambient tangent-chart domains. No metric or finite-dimensionality is required. -/
-theorem exists_contMDiffOn_normalSpaceComplementCoordinate
+theorem exists_contMDiffOn_inTangentCoordinates_quotientRangeCoordinate
     {m : ℕ∞ω} [IsManifold I m M]
     (f : SmoothEmbedding I J n M N) (hm : m + 1 ≤ n) (hm' : m ≠ ∞)
     (x₀ : M) :
