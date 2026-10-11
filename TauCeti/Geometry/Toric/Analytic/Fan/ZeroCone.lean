@@ -125,7 +125,15 @@ theorem analyticZeroConeDiffeomorph_toHomeomorph (n : ℕ∞ω) :
 @[simp]
 theorem analyticZeroConeDiffeomorph_apply (n : ℕ∞ω) (t : ComplexTorus N) :
     analyticZeroConeDiffeomorph hi e n t =
-      (ofCone hi (isToricCone_bot i)).analyticTorusι h₀ ⟨z₀⟩ t :=
-  analyticZeroConeHomeomorph_apply hi t
+      (ofCone hi (isToricCone_bot i)).analyticTorusι h₀ ⟨z₀⟩ t := by
+  let _ := complexTorusChartedSpace e
+  let _ := (ofCone hi (isToricCone_bot i)).analyticChartedSpace h₀
+  calc
+    analyticZeroConeDiffeomorph hi e n t =
+        (analyticZeroConeDiffeomorph hi e n).toHomeomorph t := rfl
+    _ = analyticZeroConeHomeomorph hi t := by
+      rw [analyticZeroConeDiffeomorph_toHomeomorph]
+    _ = (ofCone hi (isToricCone_bot i)).analyticTorusι h₀ ⟨z₀⟩ t :=
+      analyticZeroConeHomeomorph_apply hi t
 
 end TauCeti.Toric.Fan
