@@ -15,6 +15,7 @@ If `j` and `i` are adjacent, the corner `e_i Z e_j` is the free rank-one module 
 the arrow from `j` to `i`. This supplies the middle corner in a tensor product of adjacent
 vertex braid bimodules. The statement uses the public componentwise zigzag algebra, so it also
 applies when the graph is disconnected or has isolated vertices elsewhere.
+The arrow coordinate gives an explicit equivalence with the coefficient ring.
 
 The calculation follows the vertex--arrow--volume multiplication table of Huerfano--Khovanov,
 *A category for the adjoint representation*, Section 3.
@@ -89,6 +90,53 @@ theorem cornerSubmodule_zigzagAlgebra_eq_span_of_adj {i j : V} (h : G.Adj j i) :
           zigzagAlgebraBasis k G (.inr (.inl (⟨(j, i), h⟩ : G.Dart))) := by
       simp [zigzagAlgebraBasis_mul]
     exact hmem ▸ mul_mul_mem_cornerSubmodule k _ _ _
+
+local notation "Z" => AlgCat.carrier (zigzagAlgebra k G)
+local notation "e" => fun v : V ↦ zigzagAlgebraBasis k G (Sum.inl v)
+
+/-- The adjacent corner `e_i Z e_j` is free on the arrow from `j` to `i`.
+Its coordinate equivalence works over every commutative coefficient ring. -/
+noncomputable def zigzagAlgebraAdjacentCornerEquiv {i j : V} (h : G.Adj j i) :
+    cornerSubmodule k (e i) (e j) ≃ₗ[k] k where
+  toFun x := (zigzagAlgebraBasis k G).repr x (.inr (.inl (⟨(j, i), h⟩ : G.Dart)))
+  invFun a := ⟨a • zigzagAlgebraBasis k G (.inr (.inl (⟨(j, i), h⟩ : G.Dart))), by
+    rw [cornerSubmodule_zigzagAlgebra_eq_span_of_adj k G h]
+    exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self _)⟩
+  map_add' x y := by simp
+  map_smul' a x := by simp
+  left_inv x := by
+    apply Subtype.ext
+    have hx : (x : Z) ∈ k ∙ zigzagAlgebraBasis k G
+        (.inr (.inl (⟨(j, i), h⟩ : G.Dart))) := by
+      rw [← cornerSubmodule_zigzagAlgebra_eq_span_of_adj k G h]
+      exact x.property
+    rcases Submodule.mem_span_singleton.mp hx with ⟨a, ha⟩
+    have hcoord : (zigzagAlgebraBasis k G).repr (x : Z)
+        (.inr (.inl (⟨(j, i), h⟩ : G.Dart))) = a := by
+      rw [← ha]
+      simp
+    -- Expose the inverse's subtype carrier to use the basis coordinate.
+    change (zigzagAlgebraBasis k G).repr (x : Z)
+      (.inr (.inl (⟨(j, i), h⟩ : G.Dart))) •
+        zigzagAlgebraBasis k G (.inr (.inl (⟨(j, i), h⟩ : G.Dart))) = (x : Z)
+    rw [hcoord]
+    exact ha
+  right_inv a := by simp
+
+/-- The coordinate of an adjacent corner element is its coefficient at the arrow. -/
+@[simp]
+theorem zigzagAlgebraAdjacentCornerEquiv_apply {i j : V} (h : G.Adj j i)
+    (x : cornerSubmodule k (e i) (e j)) :
+    zigzagAlgebraAdjacentCornerEquiv k G h x =
+      (zigzagAlgebraBasis k G).repr x (.inr (.inl (⟨(j, i), h⟩ : G.Dart))) :=
+  by simp [zigzagAlgebraAdjacentCornerEquiv]
+
+/-- The inverse arrow coordinate sends a scalar to its multiple of the adjacent arrow. -/
+@[simp]
+theorem coe_zigzagAlgebraAdjacentCornerEquiv_symm_apply {i j : V} (h : G.Adj j i) (a : k) :
+    ((zigzagAlgebraAdjacentCornerEquiv k G h).symm a : Z) =
+      a • zigzagAlgebraBasis k G (.inr (.inl (⟨(j, i), h⟩ : G.Dart))) :=
+  by simp [zigzagAlgebraAdjacentCornerEquiv]
 
 end CommRing
 

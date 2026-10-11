@@ -479,15 +479,22 @@ private lemma isIso_homologyZeroBiprod
     IsIso (homologyZeroBiprod V W hT P) := by
   have := isIso_homologyZeroRestr W hT P h₀
   have := isIso_homologyZeroRestr W hT P h₁
-  -- degree `0` cohomology commutes with the biproduct
+  -- degree `0` cohomology commutes with the biproduct, being an additive functor
   have : IsIso (biprod.desc (HomologicalComplex.homologyMap
       (biprod.inl : (cechComplexFunctor W).obj (restr P (V 0)) ⟶ _) 0)
       (HomologicalComplex.homologyMap
-        (biprod.inr : (cechComplexFunctor W).obj (restr P (V 1)) ⟶ _) 0)) :=
-    ⟨⟨biprod.lift (HomologicalComplex.homologyMap biprod.fst 0)
-        (HomologicalComplex.homologyMap biprod.snd 0),
-      by ext <;> simp [← HomologicalComplex.homologyMap_comp],
-      by simp [← HomologicalComplex.homologyMap_comp, ← HomologicalComplex.homologyMap_add]⟩⟩
+        (biprod.inr : (cechComplexFunctor W).obj (restr P (V 1)) ⟶ _) 0)) := by
+    have := preservesBinaryBiproducts_of_preservesBiproducts
+      (HomologicalComplex.homologyFunctor A (ComplexShape.up ℕ) 0)
+    -- `homologyFunctor A _ 0` sends a complex to its degree `0` homology and a map to its
+    -- `homologyMap` by definition (`HomologicalComplex.homologyFunctor_obj`,
+    -- `HomologicalComplex.homologyFunctor_map`); in that form the comparison map is the inverse of
+    -- `Functor.mapBiprod` (`Functor.mapBiprod_inv`).
+    change IsIso (biprod.desc
+      ((HomologicalComplex.homologyFunctor A (ComplexShape.up ℕ) 0).map biprod.inl)
+      ((HomologicalComplex.homologyFunctor A (ComplexShape.up ℕ) 0).map biprod.inr))
+    rw [← Functor.mapBiprod_inv]
+    infer_instance
   rw [homologyZeroBiprod_eq]
   have : IsIso (biprod.map (homologyZeroRestr W hT P (V 0)) (homologyZeroRestr W hT P (V 1))) :=
     (biprod.mapIso (asIso (homologyZeroRestr W hT P (V 0)))

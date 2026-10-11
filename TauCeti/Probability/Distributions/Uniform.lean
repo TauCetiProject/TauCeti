@@ -14,6 +14,7 @@ public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.MeasureTheory.Measure.Real
 
 /-!
 # The uniform distribution on an interval
@@ -445,23 +446,8 @@ Every uniform law is an affine image of the standard one on `Set.Ioc 0 1`. This 
 statement proved for `uniformMeasure 0 1` be transported to a general interval instead of reproved,
 and it is the scalar case of the change-of-variables pattern the later families reuse.
 
-The two supporting lemmas are `private`: both are generic facts about Lebesgue measure and affine
-maps with no uniform-distribution content, and exposing them from a distribution-specific module
-would put them in the wrong place. If a later target needs either publicly, relocating it to a
-general measure module is its own focused change. -/
-
-/-- The pushforward of Lebesgue measure under an affine map `x ↦ a + c * x`.
-
-Only `c ≠ 0` is needed; the translation is measure-preserving and the scaling contributes
-`|c|⁻¹`. -/
-private theorem map_volume_affine {a c : ℝ} (hc : c ≠ 0) :
-    Measure.map (fun x => a + c * x) volume = ENNReal.ofReal |c|⁻¹ • volume := by
-  have h : (fun x : ℝ => a + c * x) = (fun y => a + y) ∘ (fun x => c * x) := rfl
-  rw [h, ← Measure.map_map (by fun_prop) (by fun_prop),
-    Real.map_volume_mul_left hc, Measure.map_smul _ (by fun_prop),
-    Measure.IsAddLeftInvariant.map_add_left_eq_self]
-  congr 1
-  rw [abs_inv]
+The supporting interval-preimage lemma is private because it is a generic fact about affine
+maps. The Lebesgue pushforward computation uses `TauCeti.map_volume_mul_add`. -/
 
 /-- The affine map carries `Set.Ioc 0 1` onto `Set.Ioc a b`, stated as a preimage. -/
 private theorem preimage_affine_Ioc {a b : ℝ} (hab : a < b) :
@@ -481,8 +467,11 @@ theorem map_uniformMeasure_affine {a b : ℝ} (hab : a < b) :
   have hmeas : Measurable (fun x : ℝ => a + (b - a) * x) := by fun_prop
   have h01 : uniformMeasure 0 1 = volume.restrict (Set.Ioc (0 : ℝ) 1) := by
     rw [uniformMeasure_eq_smul]; norm_num
+  have hmap : Measure.map (fun x : ℝ => a + (b - a) * x) volume =
+      ENNReal.ofReal |b - a|⁻¹ • volume := by
+    simpa only [add_comm, abs_inv] using map_volume_mul_add (ne_of_gt hba) a
   rw [h01, ← preimage_affine_Ioc hab, ← Measure.restrict_map hmeas measurableSet_Ioc,
-    map_volume_affine (ne_of_gt hba), abs_of_pos hba, Measure.restrict_smul,
+    hmap, abs_of_pos hba, Measure.restrict_smul,
     uniformMeasure_eq_smul, ENNReal.ofReal_inv_of_pos hba]
 
 /-! ### Measurability in the endpoints -/

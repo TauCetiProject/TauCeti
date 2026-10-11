@@ -132,10 +132,8 @@ theorem typeBDifferenceRootMatrix_mem_typeB (i j : ι) (hij : i ≠ j) :
     LieAlgebra.Orthogonal.JB ι K * (-typeBDifferenceRootMatrix (K := K) i j hij)
   ext (a | (a | a)) (b | (b | b)) <;>
     simp [typeBDifferenceRootMatrix, LieAlgebra.Orthogonal.JB, LieAlgebra.Orthogonal.JD,
-      Matrix.mul_apply, Matrix.one_apply, Matrix.single_apply, eq_comm]
-  all_goals
-    by_cases hia : i = a <;> by_cases hja : j = a <;>
-      by_cases hib : i = b <;> by_cases hjb : j = b <;> simp_all <;> aesop
+      Matrix.mul_apply, Matrix.one_apply, Matrix.single_apply, eq_comm, ite_and]
+  all_goals grind
 
 /-- The root vector `e_{εᵢ-εⱼ}` in the split type-`B` Lie algebra. -/
 def typeBDifferenceRootGenerator (i j : ι) (hij : i ≠ j) :

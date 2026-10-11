@@ -69,21 +69,24 @@ theorem cycleData_σinf (t : PermutationTriple n) :
 /-- The multiset of full cycle partitions, forgetting the ordering of the branch points but
 retaining repeated partitions and fixed points. -/
 def unorderedCycleData (t : PermutationTriple n) : Multiset (Multiset ℕ) :=
-  (Sym.ofFn (fun i => (t.component i).partition.parts) : Multiset (Multiset ℕ))
+  {t.σ0.computedCycleType, t.σ1.computedCycleType, t.σinf.computedCycleType}
 
 /-- Read the unordered cycle data from the ordered cycle partitions. -/
+@[simp]
 theorem unorderedCycleData_def (t : PermutationTriple n) :
     t.unorderedCycleData = {t.cycleData.1, t.cycleData.2.1, t.cycleData.2.2} := by
-  simp only [unorderedCycleData, Sym.coe_ofFn, List.ofFn_succ, List.ofFn_zero,
-    Fin.succ_zero_eq_one, Fin.succ_one_eq_two, component_zero, component_one, component_two,
-    cycleData_σ0, cycleData_σ1, cycleData_σinf]
-  rfl
+  simp [unorderedCycleData, cycleData]
 
 /-- The unordered full cycle partitions are the symmetric-power image of the component
 partitions, viewed as a multiset. -/
 theorem unorderedCycleData_eq_coe_ofFn (t : PermutationTriple n) :
     t.unorderedCycleData =
-      (Sym.ofFn (fun i => (t.component i).partition.parts) : Multiset (Multiset ℕ)) := (rfl)
+      (Sym.ofFn (fun i => (t.component i).partition.parts) : Multiset (Multiset ℕ)) := by
+  rw [unorderedCycleData_def]
+  simp only [Sym.coe_ofFn, List.ofFn_succ, List.ofFn_zero,
+    Fin.succ_zero_eq_one, Fin.succ_one_eq_two, component_zero, component_one, component_two,
+    cycleData_σ0, cycleData_σ1, cycleData_σinf]
+  rfl
 
 /-- The ordered numbers of cycles of the three components, with fixed points included. -/
 noncomputable def cycleCounts (t : PermutationTriple n) : ℕ × ℕ × ℕ :=
@@ -118,7 +121,7 @@ theorem cycleData_smul (τ : Perm (Fin n)) (t : PermutationTriple n) :
   simp [Prod.ext_iff]
 
 /-- Simultaneous relabeling leaves the unordered full cycle partitions unchanged. -/
-@[simp]
+@[simp 1100]
 theorem unorderedCycleData_smul (τ : Perm (Fin n)) (t : PermutationTriple n) :
     unorderedCycleData (τ • t) = unorderedCycleData t := by
   simp only [unorderedCycleData_def, cycleData_smul]
