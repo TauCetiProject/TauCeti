@@ -32,6 +32,7 @@ matrix past `J`.
   `A * J + J * Aᵀ = 0`.
 * `Matrix.mem_symplecticLieAlgebra_iff`: the entrywise block criterion, with symmetric
   off-diagonal blocks and opposite transposed diagonal blocks.
+* `Matrix.J_mulVec`: the action of the standard symplectic matrix on a vector.
 * `LieAlgebra.Symplectic.trace_eq_zero_of_mem_sp`: symplectic Lie matrices have trace zero.
 -/
 
@@ -88,6 +89,10 @@ end LieAlgebra.Symplectic
 namespace Matrix
 
 variable {l : Type*} [DecidableEq l] [Fintype l] {R : Type*} [CommRing R]
+
+/-- The standard symplectic matrix acts on a vector as minus that vector multiplied on the left. -/
+theorem J_mulVec (v : l ⊕ l → R) : J l R *ᵥ v = -(v ᵥ* J l R) := by
+  rw [← mulVec_transpose, J_transpose, neg_mulVec, neg_neg]
 
 /-- A symplectic Lie matrix has symmetric off-diagonal blocks and diagonal blocks
 which are negatives of each other's transposes. This criterion includes characteristic two. -/

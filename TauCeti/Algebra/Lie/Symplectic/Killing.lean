@@ -57,10 +57,6 @@ standard alternating form. -/
 private def rankOneMatrix (a : l ⊕ l → R) : Matrix (l ⊕ l) (l ⊕ l) R :=
   vecMulVec a (a ᵥ* J l R)
 
-/-- `J` is skew-symmetric, so it acts on a vector as minus the vector multiplied on the left. -/
-private theorem J_mulVec (v : l ⊕ l → R) : J l R *ᵥ v = -(v ᵥ* J l R) := by
-  rw [← mulVec_transpose, J_transpose, neg_mulVec, neg_neg]
-
 private theorem rankOneMatrix_mem_sp (a : l ⊕ l → R) : rankOneMatrix a ∈ Symplectic.sp l R := by
   rw [Symplectic.mem_sp, rankOneMatrix]
   simp only [transpose_vecMulVec, vecMulVec_mul, mul_vecMulVec, J_mulVec, neg_vecMulVec, neg_neg]
