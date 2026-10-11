@@ -39,17 +39,17 @@ into the **variational formulation**
 `∫ₐᵇ (A(t) u(t) φ(t) - ⟪ι u(t), ι φ'(t)⟫) dt = ∫ₐᵇ f(t) φ(t) dt + ⟪u₀, ι φ(a)⟫`,
 
 in which neither the time derivative of `u` nor its value at `t = a` appears: the initial
-condition is carried by the boundary term `⟪u₀, ι φ(a)⟫`. Only the orthogonal projection of `u₀`
-onto the closure of the range of `ι` enters this term, so the formulation determines the initial
-value only up to `(range ι)ᗮ`; it encodes `u(a) = u₀` itself only when `ι` has dense range, as it
-does for a genuine Gelfand triple. This file proves that the variational formulation has a
+condition is carried by the boundary term `⟪u₀, ι φ(a)⟫`. This term does not change when `u₀` is
+modified by an element of `(range ι)ᗮ`, so the formulation determines the initial value only
+modulo `(range ι)ᗮ`; it encodes `u(a) = u₀` itself only when `ι` has dense range, as it does for a
+genuine Gelfand triple. This file proves that the variational formulation has a
 solution `u ∈ L²(a, b; V)` (`TauCeti.exists_memLp_forall_setIntegral_eq_add_inner`).
 
 That `u` is then a weak solution in the sense of
 `TauCeti.HasWeakLineDerivOn.ae_eq_of_gelfandDual`, with weak time derivative
-`u' = f - A u ∈ L²(a, b; V*)` and a continuous representative whose value at `t = a` is the
-orthogonal projection of `u₀` onto the closure of the range of `ι` (so `u₀` itself when `ι` has
-dense range), is not proved here.
+`u' = f - A u ∈ L²(a, b; V*)` and a continuous representative whose value at `t = a` agrees
+with `u₀` modulo `(range ι)ᗮ` (so equals `u₀` itself when `ι` has dense range), is not proved
+here.
 
 ## The proof
 
@@ -392,8 +392,8 @@ measurable in `t` (`t ↦ A(t) u v` measurable for all `u, v`), bounded by `Λ` 
 
 for every `C¹` function `φ : ℝ → V` with `φ(b) = 0`. This is the weak formulation of
 `u' + A(t) u = f` with initial value `u₀`, obtained by integrating `⟪u', φ⟫` by parts. Since `u₀`
-enters only through `⟪u₀, ι φ(a)⟫`, only its orthogonal projection onto the closure of the range of
-`ι` is seen; the condition is `u(a) = u₀` itself when `ι` has dense range. No sign is imposed on
+enters only through `⟪u₀, ι φ(a)⟫`, it is seen only modulo `(range ι)ᗮ`; the condition is
+`u(a) = u₀` itself when `ι` has dense range. No sign is imposed on
 `β`. -/
 theorem exists_memLp_forall_setIntegral_eq_add_inner [CompleteSpace V] {ι : V →L[ℝ] H}
     (hab : a ≤ b)
