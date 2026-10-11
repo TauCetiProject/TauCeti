@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.LocalizedModule.Basic
 public import Mathlib.RingTheory.Finiteness.Defs
 public import Mathlib.RingTheory.Ideal.Maps
+import Mathlib.RingTheory.Localization.Ideal
 
 /-!
 # Annihilators of finite modules commute with localization
@@ -28,6 +29,8 @@ quasi-coherent module of finite type glue to an ideal sheaf.
 
 * `IsLocalizedModule.map_annihilator_le`: `Ann_R(M) A ≤ Ann_A(M')` for an arbitrary module `M`.
 * `IsLocalizedModule.annihilator_eq_map`: `Ann_A(M') = Ann_R(M) A` for a finite module `M`.
+* `IsLocalization.map_annihilator_span_singleton`: the annihilator of an element `a` of `R`,
+  extended to `A`, is the annihilator of the image of `a`.
 
 ## References
 
@@ -89,3 +92,28 @@ theorem annihilator_eq_map [Module.Finite R M] :
   exact Ideal.mul_mem_right _ _ (Ideal.mem_map_of_mem _ hu)
 
 end IsLocalizedModule
+
+namespace IsLocalization
+
+include S in
+/-- **The annihilator of an element commutes with localization.** The ideal of elements of the
+localization `A` killing the image of `a` is the extension of the ideal of elements of `R` killing
+`a`. This is the cyclic case `M = R ∙ a` of `IsLocalizedModule.annihilator_eq_map`, stated for the
+principal ideal `(a)` of `R` and its image in `A` rather than for an abstract localized module. -/
+theorem map_annihilator_span_singleton (a : R) :
+    (Ideal.span {a}).annihilator.map (algebraMap R A) =
+      (Ideal.span {algebraMap R A a}).annihilator := by
+  refine le_antisymm (Ideal.map_le_iff_le_comap.mpr fun x hx ↦ ?_) fun y hy ↦ ?_
+  · rw [Ideal.span, mem_annihilator_span_singleton, smul_eq_mul] at hx
+    rw [Ideal.mem_comap, Ideal.span, mem_annihilator_span_singleton, smul_eq_mul, ← map_mul, hx,
+      map_zero]
+  · -- Write `y = x / s`; then `y * a = 0` means that `t * x * a = 0` for some `t ∈ S`.
+    obtain ⟨x, s, rfl⟩ := IsLocalization.exists_mk'_eq S y
+    rw [Ideal.span, mem_annihilator_span_singleton, smul_eq_mul, mul_comm,
+      IsLocalization.mul_mk'_eq_mk'_of_mul, IsLocalization.mk'_eq_zero_iff] at hy
+    obtain ⟨t, ht⟩ := hy
+    rw [IsLocalization.mk'_mem_map_algebraMap_iff]
+    refine ⟨t, t.2, ?_⟩
+    rw [Ideal.span, mem_annihilator_span_singleton, smul_eq_mul, mul_assoc, mul_comm x, ht]
+
+end IsLocalization
