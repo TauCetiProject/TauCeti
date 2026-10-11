@@ -252,6 +252,22 @@ example (k : ℕ) {K : Type u} [NontriviallyNormedField K] [IsUltrametricDist K]
     PreAdicSpace.isAdic (closedPolydiscPreAdicSpace k P) :=
   isAdic_closedPolydiscPreAdicSpace k P
 
+/- More generally, every quotient `K⟨X₁, …, Xₖ⟩ ⧸ 𝔞` of a Tate algebra is an affinoid `K`-algebra
+topologically of finite type (Wedhorn, Definition 7.56), with its quotient topology, and its adic
+spectrum `Spa(K⟨X₁, …, Xₖ⟩ ⧸ 𝔞, (K⟨X₁, …, Xₖ⟩ ⧸ 𝔞)°)` is an affinoid adic space. -/
+example (k : ℕ) {K : Type u} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
+    (𝔞 : Ideal (restrictedMvPowerSeriesCompletion k K))
+    (P : PairOfDefinition (restrictedMvPowerSeriesCompletion k K ⧸ 𝔞)) :
+    letI := IsTopologicalAddGroup.rightUniformSpace (restrictedMvPowerSeriesCompletion k K ⧸ 𝔞)
+    PreAdicSpace.isAdic (presentationLimitPreAdicSpace P (powerBoundedSubring _)
+      (fun _ ha ↦ mem_powerBoundedSubring.mp ha) P.le_powerBoundedSubring) :=
+  letI := IsTopologicalAddGroup.rightUniformSpace (restrictedMvPowerSeriesCompletion k K ⧸ 𝔞)
+  haveI : IsUniformAddGroup (restrictedMvPowerSeriesCompletion k K ⧸ 𝔞) :=
+    isUniformAddGroup_of_addCommGroup
+  isAdic_presentationLimitPreAdicSpace_of_isTopologicallyFiniteType P
+    (isStrictlyTopologicallyFiniteType_quotientMk_algebraMap k 𝔞).isTopologicallyFiniteType
+    P.le_powerBoundedSubring (fun _ ha ↦ mem_powerBoundedSubring.mp ha)
+
 end TauCeti.ValuationSpectrum
 
 end
