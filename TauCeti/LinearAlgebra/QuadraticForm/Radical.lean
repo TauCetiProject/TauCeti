@@ -291,6 +291,8 @@ noncomputable def IsometryEquiv.restrictProdRadicalOfIsCompl (Q : QuadraticMap R
 theorem IsometryEquiv.restrictProdRadicalOfIsCompl_apply (Q : QuadraticMap R M P)
     (W : Submodule R M) (hW : IsCompl Q.radical W) (x : W × Q.radical) :
     IsometryEquiv.restrictProdRadicalOfIsCompl Q W hW x = (x.1 : M) + x.2 := by
+  -- An `IsometryEquiv` coerces to its underlying `LinearEquiv`; expose that coercion to apply
+  -- the public sum formula for `prodEquivOfIsCompl`.
   change W.prodEquivOfIsCompl Q.radical hW.symm x = _
   exact Submodule.coe_prodEquivOfIsCompl' (p := W) (q := Q.radical) hW.symm x
 
@@ -300,6 +302,8 @@ theorem IsometryEquiv.restrictProdRadicalOfIsCompl_symm_apply (Q : QuadraticMap 
     (W : Submodule R M) (hW : IsCompl Q.radical W) (x : M) :
     (IsometryEquiv.restrictProdRadicalOfIsCompl Q W hW).symm x =
       (W.projectionOnto Q.radical hW.symm x, Q.radical.projectionOnto W hW x) := by
+  -- The inverse isometry coerces to the inverse of its underlying `LinearEquiv`, so apply the
+  -- public inverse formula for `prodEquivOfIsCompl` after exposing that coercion.
   change (W.prodEquivOfIsCompl Q.radical hW.symm).symm x = _
   exact Submodule.prodEquivOfIsCompl_symm_apply hW.symm x
 
@@ -320,6 +324,8 @@ theorem IsometryEquiv.prodRadicalLiftOfIsCompl_apply (Q : QuadraticMap R M P)
     (W : Submodule R M) (hW : IsCompl Q.radical W) (x : Q.radical × M ⧸ Q.radical) :
     IsometryEquiv.prodRadicalLiftOfIsCompl Q W hW x =
       (Q.radical.quotientEquivOfIsCompl W hW x.2 : M) + x.1 := by
+  -- Composition and product of isometries coerce to composition and product of their underlying
+  -- linear equivalences; expose this composite to use the application lemmas below.
   change IsometryEquiv.restrictProdRadicalOfIsCompl Q W hW
     ((IsometryEquiv.restrictComplementLiftRadical Q W hW).symm x.2, x.1) = _
   rw [IsometryEquiv.restrictProdRadicalOfIsCompl_apply,
