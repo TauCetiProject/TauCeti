@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Etale
+public import Mathlib.AlgebraicGeometry.Morphisms.FiniteType
+public import Mathlib.AlgebraicGeometry.Morphisms.FormallyUnramified
 public import Mathlib.AlgebraicGeometry.Morphisms.Immersion
 
 /-!
@@ -49,30 +51,41 @@ lemma of_locallyOfFiniteType {X Y : Scheme} (f : X ⟶ Y) [LocallyOfFiniteType f
     [FormallyUnramified f] : Unramified f := by
   constructor
 
-set_option backward.isDefEq.respectTransparency.types false in
 instance : MorphismProperty.IsStableUnderComposition @Unramified := by
   rw [unramified_eq]
-  infer_instance
+  exact MorphismProperty.IsStableUnderComposition.inf
 
-set_option backward.isDefEq.respectTransparency.types false in
 instance : MorphismProperty.IsStableUnderBaseChange @Unramified := by
   rw [unramified_eq]
-  infer_instance
+  exact MorphismProperty.IsStableUnderBaseChange.inf
 
-set_option backward.isDefEq.respectTransparency.types false in
 instance : MorphismProperty.IsMultiplicative @Unramified := by
   rw [unramified_eq]
-  infer_instance
+  exact MorphismProperty.IsMultiplicative.inf
 
-set_option backward.isDefEq.respectTransparency.types false in
 instance : IsZariskiLocalAtSource @Unramified := by
   rw [unramified_eq]
-  infer_instance
+  have h₁ : IsZariskiLocalAtSource @LocallyOfFiniteType := by
+    have h : HasRingHomProperty @LocallyOfFiniteType RingHom.FiniteType :=
+      AlgebraicGeometry.instHasRingHomPropertyLocallyOfFiniteTypeFiniteType
+    exact @HasRingHomProperty.instIsZariskiLocalAtSource _ _ h
+  have h₂ : IsZariskiLocalAtSource @FormallyUnramified := by
+    have h : HasRingHomProperty @FormallyUnramified RingHom.FormallyUnramified := inferInstance
+    exact @HasRingHomProperty.instIsZariskiLocalAtSource _ _ h
+  exact @CategoryTheory.MorphismProperty.IsLocalAtSource.inf Scheme inferInstance
+    _ @LocallyOfFiniteType @FormallyUnramified h₁ h₂
 
-set_option backward.isDefEq.respectTransparency.types false in
 instance : IsZariskiLocalAtTarget @Unramified := by
   rw [unramified_eq]
-  infer_instance
+  have h₁ : IsZariskiLocalAtTarget @LocallyOfFiniteType := by
+    have h : HasRingHomProperty @LocallyOfFiniteType RingHom.FiniteType :=
+      AlgebraicGeometry.instHasRingHomPropertyLocallyOfFiniteTypeFiniteType
+    exact @HasRingHomProperty.instIsZariskiLocalAtTarget _ _ h
+  have h₂ : IsZariskiLocalAtTarget @FormallyUnramified := by
+    have h : HasRingHomProperty @FormallyUnramified RingHom.FormallyUnramified := inferInstance
+    exact @HasRingHomProperty.instIsZariskiLocalAtTarget _ _ h
+  exact @CategoryTheory.MorphismProperty.IsLocalAtTarget.inf Scheme inferInstance
+    _ @LocallyOfFiniteType @FormallyUnramified h₁ h₂
 
 instance (priority := 900) {X Y : Scheme} (f : X ⟶ Y) [IsClosedImmersion f] :
     Unramified f := by
