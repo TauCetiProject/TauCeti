@@ -16,6 +16,7 @@ import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.PullOut
 import Mathlib.MeasureTheory.Function.FactorsThrough
 import Mathlib.Probability.Kernel.MeasurableIntegral
+import TauCeti.Analysis.Calculus.FDeriv.Integrable
 import TauCeti.Analysis.Calculus.FDeriv.Measurable
 import TauCeti.MeasureTheory.Function.ConditionalExpectation
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
@@ -320,17 +321,12 @@ private lemma integral_fderiv_eq_zero_of_hasDerivAt {φ : ℝ × E → ℝ} (hφ
 omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
 /-- For a `C¹` compactly supported test function `φ`, the integrand of the continuity equation
 along a time and position `G` and a velocity `Y` is integrable against a finite measure whenever
-`Y` is: it grows at most linearly in `‖Y‖`. -/
-private lemma integrable_fderiv_apply {S : Type*} [MeasurableSpace S] {ν : Measure S}
+`Y` is: the space-time velocity `(1, Y)` is integrable. -/
+private lemma integrable_fderiv_apply_one {S : Type*} [MeasurableSpace S] {ν : Measure S}
     [IsFiniteMeasure ν] {φ : ℝ × E → ℝ} (hφ1 : ContDiff ℝ 1 φ) (hφc : HasCompactSupport φ)
     {G : S → ℝ × E} (hG : AEStronglyMeasurable G ν) {Y : S → E} (hY : Integrable Y ν) :
-    Integrable (fun q ↦ fderiv ℝ φ (G q) (1, Y q)) ν := by
-  have hDφ := hφ1.continuous_fderiv one_ne_zero
-  obtain ⟨C, hC⟩ := hDφ.bounded_above_of_compact_support (hφc.fderiv ℝ)
-  exact (((integrable_const 1).add hY.norm).const_mul C).mono'
-    (Continuous.comp_aestronglyMeasurable₂ (g := fun (L : ℝ × E →L[ℝ] ℝ) w ↦ L w)
-      (by fun_prop) (hDφ.comp_aestronglyMeasurable hG) (aestronglyMeasurable_const.prodMk hY.1))
-    (.of_forall fun q ↦ (fderiv ℝ φ _).le_of_opNorm_le_of_le (hC _) (by simp [Prod.norm_def]))
+    Integrable (fun q ↦ fderiv ℝ φ (G q) (1, Y q)) ν :=
+  integrable_fderiv_apply hφ1 hφc hG ((integrable_const 1).prodMk hY)
 
 /-- **Lagrangian solutions of the continuity equation.** Let `P` be a finite measure on a parameter
 space `Ω` and `γ : Ω → ℝ → E` a jointly measurable family of curves. If `P`-almost every curve is
@@ -372,7 +368,7 @@ theorem isContinuityEquation_map {Ω : Type*} [MeasurableSpace Ω] (P : Measure 
   have : IsFiniteMeasure (volume.restrict (Ioo a b)) := ⟨by simp⟩
   have hInt : Integrable (uncurry fun t ω ↦ fderiv ℝ φ (t, γ ω t) (1, v t (γ ω t)))
       ((volume.restrict (Ioo a b)).prod P) := by
-    refine integrable_fderiv_apply hφ1 hφc (measurable_fst.prodMk hγ').aestronglyMeasurable
+    refine integrable_fderiv_apply_one hφ1 hφc (measurable_fst.prodMk hγ').aestronglyMeasurable
       ⟨(hv.comp (measurable_fst.prodMk hγ')).aestronglyMeasurable, ?_⟩
     rw [hasFiniteIntegral_iff_enorm]
     simpa only [lintegral_prod _ hvγ.aemeasurable] using hint'
@@ -411,9 +407,9 @@ private lemma integral_fderiv_apply_comp_eq_of_condExp {S : Type*}
       ∫ q, fderiv ℝ φ (G q) (1, Y q) ∂ν =
         ∫ q, fderiv ℝ φ (G q) (1, 0) ∂ν + ∫ q, L q (Y q) ∂ν := by
     have hA : Integrable (fun q ↦ fderiv ℝ φ (G q) (1, 0)) ν :=
-      integrable_fderiv_apply hφ1 hφc hG.aestronglyMeasurable (integrable_zero S E ν)
+      integrable_fderiv_apply_one hφ1 hφc hG.aestronglyMeasurable (integrable_zero S E ν)
     have hLY : Integrable (fun q ↦ L q (Y q)) ν := by
-      refine ((integrable_fderiv_apply hφ1 hφc hG.aestronglyMeasurable hY).sub hA).congr
+      refine ((integrable_fderiv_apply_one hφ1 hφc hG.aestronglyMeasurable hY).sub hA).congr
         (.of_forall fun q ↦ ?_)
       simp only [Pi.sub_apply, hL_apply, ← map_sub, Prod.mk_sub_mk, sub_self, sub_zero]
     rw [← integral_add hA hLY]
@@ -502,11 +498,11 @@ theorem exists_isContinuityEquation_map {Ω : Type*} [MeasurableSpace Ω] (P : M
   simp_rw [hpush]
   calc ∫ t in Ioo a b, ∫ ω, fderiv ℝ φ (t, γ ω t) (1, u (t, γ ω t)) ∂P
       = ∫ q, fderiv ℝ φ (G q) (1, u (G q)) ∂ν :=
-      (integral_prod _ (integrable_fderiv_apply hφ1 hφc hG.aestronglyMeasurable hcint)).symm
+      (integral_prod _ (integrable_fderiv_apply_one hφ1 hφc hG.aestronglyMeasurable hcint)).symm
     _ = ∫ q, fderiv ℝ φ (G q) (1, W q) ∂ν :=
       integral_fderiv_apply_comp_eq_of_condExp hG hWint hcu hcint hφ1 hφc
     _ = ∫ ω, (∫ t in Ioo a b, fderiv ℝ φ (t, γ ω t) (1, V ω t)) ∂P :=
-      integral_prod_symm _ (integrable_fderiv_apply hφ1 hφc hG.aestronglyMeasurable hWint)
+      integral_prod_symm _ (integrable_fderiv_apply_one hφ1 hφc hG.aestronglyMeasurable hWint)
     _ = 0 := by
       refine integral_eq_zero_of_ae ?_
       filter_upwards [hac, hderiv] with ω hω hω'
