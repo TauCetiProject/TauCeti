@@ -42,7 +42,7 @@ bounded domain are the Dirichlet problem with boundary values in `H¹(Ω)`,
   `λ ‖∇(u - w)‖ ≤ ‖G‖` for the replacement relative to a general elliptic `a`.
 * `TauCeti.PDE.exists_harmonicOnNhd_ae_eq_of_forall_energyFormH1_eq_zero`: a function of `H¹(Ω)`
   that solves `Δw = 0` weakly agrees almost everywhere with a harmonic function.
-* `TauCeti.PDE.exists_harmonicOnNhd_ae_eq_sub_mem_w1p0Submodule_of_subset_ball`: **harmonic
+* `TauCeti.PDE.exists_sub_mem_w1p0Submodule_harmonicOnNhd_ae_eq_of_subset_ball`: **harmonic
   replacement** on a bounded domain, with its harmonic representative and the energy estimate.
 
 ## References
@@ -88,8 +88,7 @@ theorem UniformlyEllipticOn.mul_norm_gradient_sub_le {a : EuclideanSpace ℝ ι 
   -- Test the equation for `u - w` against `u - w` itself.
   have henergy : energyFormH1 a 0 0 (u - w) (u - w) =
       ⟪G, W1p.gradient (u - w)⟫_ℝ := by
-    rw [← energyFormH1L_apply hcoeff, map_sub (energyFormH1L hcoeff) u w, sub_apply,
-      energyFormH1L_apply, energyFormH1L_apply]
+    rw [energyFormH1_sub_left hcoeff]
     have hu := hG ⟨u - w, hd⟩
     have hw := hw ⟨u - w, hd⟩
     simp only at hu hw
@@ -122,8 +121,8 @@ theorem exists_harmonicOnNhd_ae_eq_of_forall_energyFormH1_eq_zero {w : W1p mu Om
     ← setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => ?_]
   · refine integral_congr_ae ?_
     filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) 2 φ] with x hx
-    rw [W1p.gradient_ofTestFunctionₗ, hx, matrixBilinearForm_one_apply,
-      EuclideanSpace.inner_eq_star_dotProduct, star_trivial, dotProduct_comm]
+    rw [W1p.gradient_ofTestFunctionₗ, hx, matrixBilinearForm_one_apply]
+    exact (EuclideanSpace.inner_eq_star_dotProduct _ _).trans (dotProduct_comm _ _)
   · have hφ : fderiv ℝ (φ : EuclideanSpace ℝ ι → ℝ) x = 0 :=
       fderiv_of_notMem_tsupport ℝ fun hx' => hx (φ.tsupport_subset hx')
     simp [gradient, hφ]

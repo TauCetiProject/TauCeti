@@ -363,8 +363,7 @@ theorem existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq
         ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu) ↔
       ∀ v : W1p0 mu Omega 2, energyFormH1 a b c (u - g) (v : W1p mu Omega 2) = ℓ v := fun u => by
     refine forall_congr' fun v => ?_
-    rw [hℓ, ← energyFormH1L_apply hcoeff, ← energyFormH1L_apply hcoeff,
-      ← energyFormH1L_apply hcoeff, map_sub, sub_apply]
+    rw [hℓ, energyFormH1_sub_left hcoeff]
     constructor <;> intro h <;> linarith
   -- `u - g` is the Lax--Milgram solution for `ℓ`.
   obtain ⟨w, hw, hwuniq⟩ := hcoercive.existsUnique_forall_eq ℓ
