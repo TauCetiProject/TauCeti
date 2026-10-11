@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Unit
-public import Mathlib.Algebra.Homology.Bifunctor
 
 /-!
 # Endpoint terms of an inverse braid-complex product
