@@ -82,15 +82,7 @@ def computedCycleData (r : SmallDegreeRecord) := (r.degree, r.triple.1.cycleData
 
 /-- The cycle partitions with their branch-point order forgotten. -/
 def computedUnorderedCycleData (r : SmallDegreeRecord) : ℕ × Multiset (Multiset ℕ) :=
-  (r.degree, {r.triple.1.σ0.computedCycleType, r.triple.1.σ1.computedCycleType,
-    r.triple.1.σinf.computedCycleType})
-
-/-- Read the unordered cycle data of an LMFDB record from its connected triple. -/
-@[simp]
-theorem computedUnorderedCycleData_eq_unorderedCycleData (r : SmallDegreeRecord) :
-    computedUnorderedCycleData r = (r.degree, r.triple.1.unorderedCycleData) := by
-  simp [computedUnorderedCycleData, PermutationTriple.unorderedCycleData_def,
-    PermutationTriple.cycleData]
+  (r.degree, r.triple.1.unorderedCycleData)
 
 /-- The thirteen frozen records have pairwise distinct ordered cycle data, hence represent
 distinct connected-triple isomorphism classes in their respective degrees. -/
