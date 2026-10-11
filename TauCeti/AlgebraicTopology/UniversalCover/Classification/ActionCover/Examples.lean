@@ -66,7 +66,6 @@ theorem actionCoverPUnitHomeomorph_apply (z : ActionCover x₀ PUnit) :
   rfl
 
 /-- On quotient representatives, the singleton-cover homeomorphism is the endpoint projection. -/
-@[simp]
 theorem actionCoverPUnitHomeomorph_mk (e : UniversalCover x₀) (a : PUnit) :
     actionCoverPUnitHomeomorph x₀ (BalancedProduct.mk (FundamentalGroup X x₀) e a) = proj e := by
   rw [actionCoverPUnitHomeomorph_apply, actionCoverProj_mk]
