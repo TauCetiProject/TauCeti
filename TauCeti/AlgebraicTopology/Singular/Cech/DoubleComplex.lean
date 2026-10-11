@@ -150,8 +150,7 @@ theorem openCoverSingularBicomplexMap_id :
     openCoverSingularBicomplexMap U R U (𝟙 X) id
       (fun i => by
         intro x hx
-        change (𝟙 X) x ∈ U i
-        simpa using hx) = 𝟙 _ := by
+        exact hx) = 𝟙 _ := by
   simp [openCoverSingularBicomplexMap, openCoverSingularBicomplex,
     openCoverArrowMap_id,
     Arrow.mapCechNerve, SimplicialObject.cechNerve]
@@ -166,6 +165,8 @@ theorem openCoverSingularBicomplexMap_comp {Y Z : TopCat.{u}} {κ τ : Type u}
         (fun i _ hx => hg (r i) (hf i hx)) =
       openCoverSingularBicomplexMap U R V f r hf ≫
         openCoverSingularBicomplexMap V R W g s hg := by
+  -- Expose the composite of the two functor maps so `openCoverArrowMap_comp` can
+  -- rewrite its inner arrow before applying functoriality.
   change (alternatingFaceMapComplex (ChainComplex C ℕ)).map
       (((SimplicialObject.whiskering TopCat.{u} (ChainComplex C ℕ)).obj
         ((singularChainComplexFunctor.{u} C).obj R)).map
@@ -207,6 +208,8 @@ theorem openCoverSingularTotalInclusion_d (p q n : ℕ)
         (openCoverSingularTotal U R).d (n + 1) n =
       (openCoverSingularBicomplex U R).d₁ (ComplexShape.down ℕ) p q n +
       (openCoverSingularBicomplex U R).d₂ (ComplexShape.down ℕ) p q n := by
+  -- The total differential is defined as `D₁ + D₂`; expose its two terms to
+  -- apply the separate inclusion formulas `ι_D₁` and `ι_D₂`.
   change HomologicalComplex₂.ιTotal (openCoverSingularBicomplex U R)
       (ComplexShape.down ℕ) p q (n + 1) h ≫
       ((openCoverSingularBicomplex U R).D₁ (ComplexShape.down ℕ) (n + 1) n +
@@ -244,6 +247,7 @@ omit [HasZeroObject C] in
 @[simp]
 theorem openCoverSingularTotalMap_id :
     openCoverSingularTotalMap U R U (𝟙 X) id (fun _ _ h => h) = 𝟙 _ := by
+  -- Reveal the total functor map so `simp` can use the bicomplex identity law.
   change HomologicalComplex₂.total.map _ _ = 𝟙 _
   simp
 
@@ -257,6 +261,8 @@ theorem openCoverSingularTotalMap_comp {Y Z : TopCat.{u}} {κ τ : Type u}
         (fun i _ hx => hg (r i) (hf i hx)) =
       openCoverSingularTotalMap U R V f r hf ≫
         openCoverSingularTotalMap V R W g s hg := by
+  -- Reveal the total functor map so the bicomplex composition law can rewrite
+  -- its argument before applying `HomologicalComplex₂.total.map_comp`.
   change HomologicalComplex₂.total.map
       (openCoverSingularBicomplexMap U R W (f ≫ g) (s ∘ r)
         (fun i _ hx => hg (r i) (hf i hx))) (ComplexShape.down ℕ) = _
