@@ -217,29 +217,16 @@ private theorem relationMatrix_map_antipode :
           (A := GeneralLinear.coordinateHopfAlgebra R n)) =
       -((GeneralLinear.genericMatrix R n)⁻¹ * relationMatrix R n C *
         ((GeneralLinear.genericMatrix R n)⁻¹)ᵀ) := by
-  have ht : (GeneralLinear.genericMatrix R n)ᵀ * ((GeneralLinear.genericMatrix R n)⁻¹)ᵀ = 1 := by
-    rw [← Matrix.transpose_mul,
-      Matrix.nonsing_inv_mul _ (GeneralLinear.isUnit_det_genericMatrix R n),
-      Matrix.transpose_one]
   have hkey : (GeneralLinear.genericMatrix R n)⁻¹ * relationMatrix R n C *
       ((GeneralLinear.genericMatrix R n)⁻¹)ᵀ =
       C.map (algebraMap R (GeneralLinear.coordinateHopfAlgebra R n)) -
         (GeneralLinear.genericMatrix R n)⁻¹ *
           C.map (algebraMap R (GeneralLinear.coordinateHopfAlgebra R n)) *
           ((GeneralLinear.genericMatrix R n)⁻¹)ᵀ := by
+    have h := GeneralLinear.isUnit_det_genericMatrix R n
     rw [relationMatrix, Matrix.mul_sub, Matrix.sub_mul]
-    congr 1
-    calc (GeneralLinear.genericMatrix R n)⁻¹ *
-          (GeneralLinear.genericMatrix R n *
-            C.map (algebraMap R (GeneralLinear.coordinateHopfAlgebra R n)) *
-            (GeneralLinear.genericMatrix R n)ᵀ) * ((GeneralLinear.genericMatrix R n)⁻¹)ᵀ
-        = (GeneralLinear.genericMatrix R n)⁻¹ * GeneralLinear.genericMatrix R n *
-            C.map (algebraMap R (GeneralLinear.coordinateHopfAlgebra R n)) *
-            ((GeneralLinear.genericMatrix R n)ᵀ * ((GeneralLinear.genericMatrix R n)⁻¹)ᵀ) := by
-          simp only [Matrix.mul_assoc]
-      _ = C.map (algebraMap R (GeneralLinear.coordinateHopfAlgebra R n)) := by
-          rw [Matrix.nonsing_inv_mul _ (GeneralLinear.isUnit_det_genericMatrix R n), ht,
-            Matrix.one_mul, Matrix.mul_one]
+    simp only [Matrix.mul_assoc, ← Matrix.transpose_mul, Matrix.nonsing_inv_mul _ h,
+      Matrix.transpose_one, Matrix.mul_one, Matrix.nonsing_inv_mul_cancel_left _ _ h]
   rw [relationMatrix_map R n C, GeneralLinear.map_antipode_genericMatrix, hkey, neg_sub]
 
 /-- The antipode carries every defining relation into the span of the relations. -/
