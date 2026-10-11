@@ -206,16 +206,16 @@ private lemma fatTrans_apply_quarter (i : Fin n) (p q : RelGenLoop (Fin n) X) (s
     fatTrans i p q (s, Function.update t i (Set.projIcc 0 1 zero_le_one (t i / 4))) =
       p (s, t) := by
   have ht := (t i).2
-  have h₁ : (Set.projIcc 0 1 zero_le_one (t i / 4 : ℝ) : ℝ) = t i / 4 :=
-    congrArg Subtype.val (Set.projIcc_of_mem zero_le_one ⟨by linarith [ht.1], by linarith [ht.2]⟩)
-  have h₂ : (Set.projIcc 0 1 zero_le_one (2 * (t i / 4) : ℝ) : ℝ) = t i / 2 :=
-    (congrArg Subtype.val
-      (Set.projIcc_of_mem zero_le_one ⟨by linarith [ht.1], by linarith [ht.2]⟩)).trans (by ring)
-  have h₄ : Set.projIcc 0 1 zero_le_one (2 * (t i / 2) : ℝ) = t i := by
-    rw [mul_div_cancel₀ _ two_ne_zero, Set.projIcc_val]
-  rw [fatTrans, transAt_apply, Function.update_self, h₁, ite_eq_left (by linarith [ht.2]),
-    Function.update_idem, transAt_apply, Function.update_self, h₂,
-    ite_eq_left (by linarith [ht.2]), Function.update_idem, h₄, Function.update_eq_self]
+  -- The arithmetic: both reparametrisations stay in `[0, 1/2]` and compose to the identity.
+  have h₁ : (t i / 4 : ℝ) ∈ Set.Icc 0 1 := ⟨by linarith [ht.1], by linarith [ht.2]⟩
+  have h₂ : (2 * (t i / 4) : ℝ) ∈ Set.Icc 0 1 := ⟨by linarith [ht.1], by linarith [ht.2]⟩
+  have h₃ : (2 * (2 * (t i / 4)) : ℝ) = t i := by ring
+  have hc₁ : (t i / 4 : ℝ) ≤ 1 / 2 := by linarith [ht.2]
+  have hc₂ : (2 * (t i / 4) : ℝ) ≤ 1 / 2 := by linarith [ht.2]
+  -- Both concatenations take their first branch, and the coordinate updates collapse.
+  simp only [fatTrans, transAt_apply, Function.update_self, Function.update_idem,
+    Set.projIcc_of_mem _ h₁, Set.projIcc_of_mem _ h₂, h₃, Set.projIcc_val,
+    Function.update_eq_self, hc₁, hc₂, ↓reduceIte]
 
 /-- On the upper half, reparametrised by `tᵢ ↦ (tᵢ + 1) / 2`, the fat concatenation is `q`. -/
 private lemma fatTrans_apply_upperHalf (i : Fin n) (p q : RelGenLoop (Fin n) X) (s : I)
@@ -223,21 +223,21 @@ private lemma fatTrans_apply_upperHalf (i : Fin n) (p q : RelGenLoop (Fin n) X) 
     fatTrans i p q (s, Function.update t i (Set.projIcc 0 1 zero_le_one ((t i + 1) / 2))) =
       q (s, t) := by
   have ht := (t i).2
-  have h₁ : (Set.projIcc 0 1 zero_le_one ((t i + 1) / 2 : ℝ) : ℝ) = (t i + 1) / 2 :=
-    congrArg Subtype.val (Set.projIcc_of_mem zero_le_one ⟨by linarith [ht.1], by linarith [ht.2]⟩)
+  -- The arithmetic: `tᵢ ↦ (tᵢ + 1) / 2` stays in `[0, 1]` and `tᵢ ↦ 2 tᵢ - 1` inverts it.
+  have h₁ : ((t i + 1) / 2 : ℝ) ∈ Set.Icc 0 1 := ⟨by linarith [ht.1], by linarith [ht.2]⟩
+  have h₂ : (2 * ((t i + 1) / 2) : ℝ) = t i + 1 := by ring
+  simp only [fatTrans, transAt_apply, Function.update_self, Function.update_idem,
+    Set.projIcc_of_mem _ h₁, h₂, add_sub_cancel_right, Set.projIcc_val, Function.update_eq_self]
   rcases ht.1.eq_or_lt with h₀ | h₀
   · -- On the face `tᵢ = 0`, both sides are the base point.
     have hz : t i = 0 := Subtype.ext h₀.symm
-    rw [apply_of_mem_boundary q s ⟨i, Or.inl hz⟩, fatTrans, transAt_apply, Function.update_self,
-      h₁, ← h₀, ite_eq_left (by norm_num), Function.update_idem, transAt_apply,
-      Function.update_self, show (2 * ((0 + 1) / 2) : ℝ) = 1 by norm_num,
-      Set.projIcc_right (h := zero_le_one' ℝ),
-      ite_eq_right (by norm_num)]
+    have hc : ¬(1 : ℝ) ≤ 1 / 2 := by norm_num
+    simp only [hz, Set.Icc.coe_zero, zero_add, Set.projIcc_right, le_refl, hc,
+      ↓reduceIte, apply_of_mem_boundary q s ⟨i, Or.inl hz⟩]
     exact const_apply _
-  · have h₂ : Set.projIcc 0 1 zero_le_one (2 * ((t i + 1) / 2) - 1 : ℝ) = t i := by
-      rw [show (2 * ((t i + 1) / 2) - 1 : ℝ) = t i by ring, Set.projIcc_val]
-    rw [fatTrans, transAt_apply, Function.update_self, h₁, ite_eq_right (by linarith),
-      Function.update_idem, h₂, Function.update_eq_self]
+  · -- Otherwise the outer concatenation takes its second branch.
+    have hc : ¬((t i + 1) / 2 : ℝ) ≤ 1 / 2 := by linarith
+    simp only [hc, ↓reduceIte]
 
 /-- The relative Hurewicz class of the fat concatenation of `p` and `q` is the sum of their
 relative Hurewicz classes, by the pinch identity
