@@ -6,7 +6,6 @@ Authors: Claude
 module
 
 public import TauCeti.Probability.Independence.DisjointBlocks
-public import TauCeti.Probability.Process.Tail.Basic
 
 /-!
 # Corner tails of array processes

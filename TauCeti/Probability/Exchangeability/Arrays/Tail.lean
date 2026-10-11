@@ -6,6 +6,7 @@ Authors: Claude
 module
 
 public import TauCeti.Probability.Process.Array.Tail
+public import TauCeti.Probability.Process.Tail.Basic
 public import TauCeti.Probability.Exchangeability.Arrays.Basic
 
 /-!
