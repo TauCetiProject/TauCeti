@@ -99,6 +99,8 @@ works on a concrete signature, and a public characteristic lemma
   parameters are not a row of the spherical table gives an infinite triangle group.
 * `TauCeti.TriangleGroup.finite_iff_isSphericalParameterSignature`: a sorted positive signature
   gives a finite triangle group exactly when its parameters are a row of the spherical table.
+* `TauCeti.TriangleGroup.natCard_eq_two_div_orbifoldEulerChar`: an exact spherical signature
+  gives a triangle group of order `2 / χᵒʳᵇ`.
 * `TauCeti.PermutationTriple.geometryType_eq_spherical_iff_orbifoldEulerChar_pos` and its
   Euclidean and hyperbolic counterparts: the sign of the orbifold characteristic is the geometry
   type of a triple with exact orders `(a, b, c)`.
@@ -518,6 +520,27 @@ theorem finite_iff_isSphericalParameterSignature {a b c : ℕ} (h₁ : 1 ≤ a) 
       exact finite_two_three_four
     · obtain ⟨rfl, rfl, rfl⟩ := h
       exact finite_two_three_five
+
+/-- The order of a triangle group with an exact spherical signature is twice the reciprocal of
+its orbifold Euler characteristic. The exact-signature hypothesis includes the reduced cyclic row
+`(1, m, m)`; the formula need not hold for unreduced parameters `(1, b, c)` with `b ≠ c`. -/
+theorem natCard_eq_two_div_orbifoldEulerChar {a b c : ℕ}
+    (h : IsSphericalSignature a b c) :
+    (Nat.card (TriangleGroup a b c) : ℚ) = 2 / orbifoldEulerChar a b c := by
+  rcases (isSphericalSignature_rows_iff a b c).1 h with
+    ⟨h₁, h₂, h₃, ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | h | h | h⟩
+  · rw [natCard_one_self_self, orbifoldEulerChar_def]
+    norm_num
+    field_simp
+    ring_nf
+  · rw [natCard_two_two c h₃, orbifoldEulerChar_def]
+    norm_num
+  · obtain ⟨rfl, rfl, rfl⟩ := h
+    norm_num [natCard_two_three_three]
+  · obtain ⟨rfl, rfl, rfl⟩ := h
+    norm_num [natCard_two_three_four]
+  · obtain ⟨rfl, rfl, rfl⟩ := h
+    norm_num [natCard_two_three_five]
 
 end TriangleGroup
 
