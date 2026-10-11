@@ -92,6 +92,18 @@ noncomputable def generatedCoordinateMap :
     GeneralLinear.coordinateHopfAlgebra k 24 ⟶ generatedCoordinateHopfAlgebra k :=
   CommHopfAlgCat.mkQuotient _ _
 
+/-- The generated subgroup's immersion, followed by the defining quotient identification, is
+the quotient map for its defining ideal. -/
+@[reassoc (attr := simp)]
+theorem generatedCoordinateMap_comp_eqToIso_hom :
+    generatedCoordinateMap k ≫
+        (eqToIso (generatedCoordinateHopfAlgebra_def k)).hom =
+      CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra k 24)
+        (generatedDefiningIdeal k) := by
+  dsimp [generatedCoordinateMap]
+  cases generatedCoordinateHopfAlgebra_def k
+  rfl
+
 /-- The coordinate quotient of the generated subgroup is surjective. -/
 theorem generatedCoordinateMap_surjective :
     Function.Surjective (generatedCoordinateMap k).hom :=

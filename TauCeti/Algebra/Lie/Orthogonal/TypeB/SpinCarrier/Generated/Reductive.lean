@@ -65,22 +65,10 @@ theorem reductiveCommHopfAlgProperty_generatedCoordinateHopfAlgebra :
       (FiniteTypeCommHopfAlgCat.of k (generatedCoordinateHopfAlgebra n k)) := by
   let K := AlgebraicClosure k
   let e := generatedCoordinateHopfAlgebraBaseChangeIso.{u, u} n k K
-  have hsmooth : smoothCommHopfAlgProperty K
-      (CommHopfAlgCat.baseChange (K := K) (generatedCoordinateHopfAlgebra n k)) :=
-    (smoothCommHopfAlgProperty K).prop_of_iso e.symm
-      (smoothCommHopfAlgProperty_generatedCoordinateHopfAlgebra n K)
-  -- `baseChange` bundles the tensor product; `coe_of` identifies its underlying algebra.
-  let _ : Algebra.Smooth K (K ⊗[k] generatedCoordinateHopfAlgebra n k) := by
-    simpa only [CommHopfAlgCat.baseChange, _root_.CommHopfAlgCat.coe_of] using
-      (smoothCommHopfAlgProperty_iff _).mp hsmooth
-  exact reductiveCommHopfAlgProperty_of_geometricFiber_iso k _
+  exact reductiveCommHopfAlgProperty_of_geometricFiber_iso_of_smooth_connected k _
     (FiniteTypeCommHopfAlgCat.of K (generatedCoordinateHopfAlgebra n K))
-    (Algebra.Smooth.of_smooth_tensorProduct_of_faithfullyFlat
-      (R := k) (S := generatedCoordinateHopfAlgebra n k) K)
-    (geometricallyConnectedCommHopfAlgProperty.of_baseChange k K _
-      ((geometricallyConnectedCommHopfAlgProperty K).prop_of_iso e.symm
-        (geometricallyConnectedCommHopfAlgProperty_generatedCoordinateHopfAlgebra n K)))
-    (ObjectProperty.isoMk _ e)
+    (ObjectProperty.isoMk _ e) (smoothCommHopfAlgProperty_generatedCoordinateHopfAlgebra n K)
+    (geometricallyConnectedCommHopfAlgProperty_generatedCoordinateHopfAlgebra n K)
     (eq_augmentation_generated_of_isNormal_of_smoothUnipotent n K)
 
 end TauCeti.TypeBSpinCarrier
