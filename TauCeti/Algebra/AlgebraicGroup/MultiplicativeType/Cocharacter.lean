@@ -108,7 +108,7 @@ private theorem geometricCoordinateIso_hom_single (T : MultiplicativeTypeCommHop
         (baseChange_groupLike_span_eq_top T)
           (_root_.MonoidAlgebra.single x 1) = x.val
   rw [TauCeti.GroupLike.evaluationBialgEquiv_apply,
-    TauCeti.GroupLike.evaluationBialgHom_single, one_smul]
+    MonoidAlgebra.liftGroupLikeBialgHom_single, one_smul]
 
 @[simp]
 private theorem geometricCoordinateIso_hom_single' (T : MultiplicativeTypeCommHopfAlgCat k)
@@ -126,8 +126,8 @@ private noncomputable def geometricCharacterCoordinateMap (T : MultiplicativeTyp
         DiagonalizableGroup.multiplicativeCharacterGroup ⟶
       FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) T.obj :=
   FiniteTypeCommHopfAlgCat.ofHom <|
-    (TauCeti.GroupLike.evaluationBialgHom (AlgebraicClosure k)
-      (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) T.obj)).comp <|
+    (MonoidAlgebra.liftGroupLikeBialgHom (R := AlgebraicClosure k)
+      (A := FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) T.obj)).comp <|
         _root_.MonoidAlgebra.mapDomainBialgHom (AlgebraicClosure k)
           (DiagonalizableGroup.uliftZPowersMulEquiv
             (CommHopfAlgCat.geometricCharacterGroup T.obj.obj) x.toMul)
@@ -151,15 +151,15 @@ private theorem coordinateMap_comp_geometricCoordinateIso
           (DiagonalizableGroup.uliftZPowersMulEquiv (geometricCharacterFG T)
             (geometricCharacterFGEquiv T x.toMul)))).hom.hom
               (_root_.MonoidAlgebra.single z 1)) =
-    ((TauCeti.GroupLike.evaluationBialgHom (AlgebraicClosure k)
-      (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) T.obj)).comp
+    ((MonoidAlgebra.liftGroupLikeBialgHom (R := AlgebraicClosure k)
+      (A := FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) T.obj)).comp
         (_root_.MonoidAlgebra.mapDomainBialgHom (AlgebraicClosure k)
           (DiagonalizableGroup.uliftZPowersMulEquiv
             (CommHopfAlgCat.geometricCharacterGroup T.obj.obj) x.toMul)))
               (_root_.MonoidAlgebra.single z 1)
   rw [DiagonalizableGroup.coordinateMap_single, geometricCoordinateIso_hom_single',
     BialgHom.comp_apply, _root_.MonoidAlgebra.mapDomainBialgHom_single,
-    TauCeti.GroupLike.evaluationBialgHom_single, one_smul]
+    MonoidAlgebra.liftGroupLikeBialgHom_single, one_smul]
   rw [geometricCharacterFGEquiv]
   rfl
 
