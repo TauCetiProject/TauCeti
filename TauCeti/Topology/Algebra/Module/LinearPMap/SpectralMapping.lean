@@ -73,8 +73,7 @@ theorem isResolventAt_of_isUnit_one_sub_smul_resolvent (hz : z ∈ A.resolventSe
             module
       _ = (x : X) := hp.apply_smul_sub x
 
-/-- The exact invertibility criterion for changing a resolvent parameter.
-The inverse of `1 - (z - w) • R(z)` is `1 + (z - w) • R(w)`. -/
+/-- The exact invertibility criterion for changing a resolvent parameter. -/
 theorem mem_resolventSet_iff_isUnit_one_sub_smul_resolvent (hz : z ∈ A.resolventSet) :
     w ∈ A.resolventSet ↔ IsUnit (1 - (z - w) • A.resolvent z) := by
   constructor
