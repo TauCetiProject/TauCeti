@@ -46,7 +46,6 @@ theorem mem_productSubalgebra (s : ℤ) (z : ℤ × ℤ) :
     Ideal.Quotient.eq, Ideal.mem_span_singleton]
 
 /-- Evaluation of the integral model at the roots `s` and `0`. -/
-@[expose]
 def productLift (s : ℤ) : QuadraticAlgebra ℤ 0 s →ₐ[ℤ] ℤ × ℤ :=
   QuadraticAlgebra.lift ⟨(s, 0), by ext <;> simp [Algebra.smul_def]⟩
 
@@ -211,7 +210,6 @@ private theorem card_units_productSubalgebra_of_dvd_two (s : ℤ) (hs : s ∣ 2)
     let z : productSubalgebra s := ⟨u, hm⟩
     obtain ⟨v, hv⟩ := (isUnit_productSubalgebra_iff s z).mpr hu
     refine ⟨v, Units.ext ?_⟩
-    change (v.val : ℤ × ℤ) = u.val
     exact congrArg Subtype.val hv
   rw [Nat.card_congr (Equiv.ofBijective f ⟨hi, hf⟩),
     Nat.card_congr (MulEquiv.prodUnits (M := ℤ) (N := ℤ)).toEquiv, Nat.card_prod]
