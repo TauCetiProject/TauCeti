@@ -159,9 +159,8 @@ open CategoryTheory
 
 variable {C : Type u} [Category.{v} C]
 
-/-- Two right minimal right almost-split morphisms with the same target are isomorphic
-under that target. The factorization property gives comparison maps in both directions,
-and right minimality makes their composites invertible. -/
+/-- Two right minimal right almost-split morphisms `f : X ⟶ Y` and `g : X' ⟶ Y`
+have an isomorphism `e : X ≅ X'` satisfying `e.hom ≫ g = f`. -/
 theorem IsRightAlmostSplit.exists_iso_of_minimal {X X' Y : C}
     {f : X ⟶ Y} {g : X' ⟶ Y} (hf : IsRightAlmostSplit f) (hg : IsRightAlmostSplit g)
     (hminf : ∀ b : X ⟶ X, b ≫ f = f → IsIso b)
@@ -173,31 +172,11 @@ theorem IsRightAlmostSplit.exists_iso_of_minimal {X X' Y : C}
     rw [Category.assoc, hbf, hag]
   have hba : (b ≫ a) ≫ g = g := by
     rw [Category.assoc, hag, hbf]
-  let eab : X ≅ X :=
-    { hom := a ≫ b
-      inv := Classical.choose (hminf (a ≫ b) hab).out
-      hom_inv_id := (Classical.choose_spec (hminf (a ≫ b) hab).out).1
-      inv_hom_id := (Classical.choose_spec (hminf (a ≫ b) hab).out).2 }
-  let eba : X' ≅ X' :=
-    { hom := b ≫ a
-      inv := Classical.choose (hming (b ≫ a) hba).out
-      hom_inv_id := (Classical.choose_spec (hming (b ≫ a) hba).out).1
-      inv_hom_id := (Classical.choose_spec (hming (b ≫ a) hba).out).2 }
-  have hright : a ≫ (b ≫ eab.inv) = 𝟙 X := by
-    rw [← Category.assoc, eab.hom_inv_id]
-  have hleft : (eba.inv ≫ b) ≫ a = 𝟙 X' := by
-    rw [Category.assoc, eba.inv_hom_id]
-  let c := eba.inv ≫ b
-  let d := b ≫ eab.inv
-  have hc : c ≫ a = 𝟙 X' := hleft
-  have hd : a ≫ d = 𝟙 X := hright
-  have hcd : c = d := by
-    calc
-      c = c ≫ (a ≫ d) := by rw [hd]; simp
-      _ = (c ≫ a) ≫ d := by simp [Category.assoc]
-      _ = d := by rw [hc]; simp
-  have hinv : b ≫ eab.inv = eba.inv ≫ b := hcd.symm
-  refine ⟨⟨a, b ≫ eab.inv, hright, hinv.symm ▸ hleft⟩, ?_⟩
-  exact hag
+  have : IsIso (a ≫ b) := hminf (a ≫ b) hab
+  have : IsIso (b ≫ a) := hming (b ≫ a) hba
+  have : Mono a := mono_of_mono a b
+  have : IsSplitEpi a := IsSplitEpi.mk' ⟨inv (b ≫ a) ≫ b, by simp [Category.assoc]⟩
+  have : IsIso a := isIso_of_mono_of_isSplitEpi a
+  exact ⟨asIso a, hag⟩
 
 end TauCeti
