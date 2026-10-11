@@ -32,13 +32,15 @@ The embeddings are genuine data: restriction to `L i` is pullback along the homo
 `G_{L i} → G_K` that `τ i` induces, and there is no such homomorphism without a choice of
 embedding.
 
-The Selmer group is cut out by local conditions: a class lies in `Sel_m` exactly when its
-restriction to each `L i` lies in the image of the local Kummer map `E(L i) → H¹(G_{L i}, E[m])`
+These kernel-based definitions need no hypothesis on `m` or on `W`. When `W` is elliptic and `m`
+is invertible in `K`, the Selmer group is cut out by local Kummer conditions: a class lies in
+`Sel_m` exactly when its restriction to each `L i` lies in the image of the local Kummer map
+`E(L i) → H¹(G_{L i}, E[m])`
 (`WeierstrassCurve.mem_selmerGroup_iff_forall_torsionRes_mem_range_kummerMap`). This is the form
 in which local conditions are checked in practice, and it follows from the compatibility of
 restriction with the Kummer maps and from the local `m`-descent sequence.
 
-The main result is the **`m`-descent sequence** (Silverman X.4.2)
+Under the same hypotheses, the main result is the **`m`-descent sequence** (Silverman X.4.2)
 
 ```text
 0 ⟶ E(K) ⧸ m E(K) ⟶ Sel_m ⟶ Sha[m] ⟶ 0,
@@ -52,7 +54,8 @@ of `TauCeti/AlgebraicGeometry/EllipticCurve/GaloisCohomology/Descent.lean` to th
 * `WeierstrassCurve.shaSelmerStructure`: the Selmer structure on `E(Kˢ)` with zero local
   conditions.
 * `WeierstrassCurve.selmerStructure`: the Selmer structure on `E(Kˢ)[m]` whose local condition at
-  `L i` is the kernel of `H¹(G_{L i}, E[m]) → H¹(G_{L i}, E)`, the image of the local Kummer map.
+  `L i` is the kernel of `H¹(G_{L i}, E[m]) → H¹(G_{L i}, E)`; for `W` elliptic and `m` invertible
+  in `K`, this is the image of the local Kummer map.
 * `WeierstrassCurve.shafarevichTateGroup`: the classes in `H¹(G_K, E(Kˢ))` that restrict to zero
   over every `L i`.
 * `WeierstrassCurve.selmerGroup`: the classes in `H¹(G_K, E(Kˢ)[m])` whose image in

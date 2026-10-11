@@ -99,6 +99,7 @@ def selmerGroup : AddSubgroup (H1 G M) :=
 
 /-- A class is Selmer exactly when its localisation at every index satisfies the local
 condition. -/
+@[simp]
 theorem mem_selmerGroup_iff {c : H1 G M} :
     c ∈ 𝓕.selmerGroup ↔ ∀ i, 𝓕.localization i c ∈ 𝓕.localCondition i := by
   simp only [selmerGroup, AddSubgroup.mem_iInf, AddSubgroup.mem_comap]
