@@ -282,11 +282,11 @@ theorem wedgeWith_smul_pairing {k l : ℕ} (c : ℝ) (mu : F₁ →L[ℝ] F₂ �
     Finset.smul_sum, smul_comm _ c]
 
 /-- Negating the pairing negates the paired wedge. -/
+@[simp]
 theorem wedgeWith_neg_pairing {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) :
     wedgeWith (-mu) phi psi = -wedgeWith mu phi psi := by
-  rw [show -mu = (-1 : ℝ) • mu by exact (neg_one_smul ℝ mu).symm,
-    wedgeWith_smul_pairing]
+  rw [← neg_one_smul ℝ mu, wedgeWith_smul_pairing]
   simp
 
 /-- The paired wedge for the zero pairing is zero. -/
