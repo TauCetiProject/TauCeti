@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint
 public import TauCeti.Analysis.Normed.Operator.Resolvent.LowerBound
-public import TauCeti.Analysis.Normed.Operator.Resolvent.Spectrum
 
 /-!
 # Resolvents of self-adjoint partial linear maps

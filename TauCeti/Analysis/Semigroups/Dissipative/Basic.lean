@@ -202,31 +202,12 @@ private theorem IsDissipative.exists_bounded_rightInverse {A : X →ₗ.[ℝ] X}
     (hrange : Function.Surjective fun x : A.domain => lambda • (x : X) - A x) :
     ∃ (g : X → A.domain) (J : X →L[ℝ] X), ‖J‖ ≤ lambda⁻¹ ∧ (∀ y : X, (g y : X) = J y) ∧
       ∀ y : X, lambda • (g y : X) - A (g y) = y := by
-  -- `lambda • I - A`, packaged as a linear equivalence `D(A) ≃ₗ X`
-  have hbij : Function.Bijective (A.smulSub lambda) := by
-    constructor
-    · intro x y h
-      exact hA.smul_sub_injective hlambda (by simpa [A.smulSub_apply] using h)
-    · intro y
-      obtain ⟨x, hx⟩ := hrange y
-      exact ⟨x, by simpa [A.smulSub_apply] using hx⟩
-  let e : A.domain ≃ₗ[ℝ] X := LinearEquiv.ofBijective (A.smulSub lambda) hbij
-  have he : ∀ y : X, lambda • ((e.symm y : A.domain) : X) - A (e.symm y) = y := by
-    intro y
-    rw [← A.smulSub_apply]
-    exact e.apply_symm_apply y
-  -- its inverse, bounded by `1 / lambda` through dissipativity
-  set J : X →ₗ[ℝ] X := A.domain.subtype ∘ₗ (e.symm : X →ₗ[ℝ] A.domain) with hJ_def
-  have hJapp : ∀ y : X, J y = ((e.symm y : A.domain) : X) := fun y => by
-    rw [hJ_def, LinearMap.comp_apply, Submodule.subtype_apply, LinearEquiv.coe_coe]
-  have hJbound : ∀ y : X, ‖J y‖ ≤ lambda⁻¹ * ‖y‖ := by
-    intro y
-    rw [hJapp]
-    have := hA.norm_le_of_smul_sub_eq hlambda (x := e.symm y) (y := y) (he y)
-    rwa [div_eq_inv_mul] at this
-  refine ⟨fun y => e.symm y, J.mkContinuous lambda⁻¹ hJbound,
-    J.mkContinuous_norm_le (by positivity) hJbound, fun y => ?_, he⟩
-  rw [LinearMap.mkContinuous_apply, hJapp]
+  have hmem := LinearPMap.mem_resolventSet_of_surjective_of_norm_le
+    hrange hlambda (hA lambda hlambda)
+  have hR := LinearPMap.isResolventAt_resolvent hmem
+  exact ⟨fun y => ⟨A.resolvent lambda y, LinearPMap.resolvent_mem_domain hmem y⟩,
+    A.resolvent lambda, hR.norm_le_inv hlambda (hA lambda hlambda),
+    fun _ => rfl, hR.smul_sub_apply⟩
 
 section CompleteSpace
 
