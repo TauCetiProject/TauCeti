@@ -18,7 +18,6 @@ at the two roots `s` and `-s`, so it identifies the actual embedded orders.
 
 This transfers the congruence product order's unit count to the canonical order.
 At discriminant one the order is the full integer product, with four units.
-The rational product algebra is not a field.
 
 ## References
 
@@ -53,10 +52,9 @@ private theorem integralEquivProductModel_apply (s : ℤ)
   ext <;> simp [integralEquivProductModel, mul_comm]
 
 /-- The canonical order of nonzero square discriminant is the integer congruence product order. -/
-noncomputable def equivProductOfSq (s : ℤ) (hs : s ≠ 0)
-    (hD : s ^ 2 % 4 = 0 ∨ s ^ 2 % 4 = 1) :
-    toSubalgebra (s ^ 2) hD ≃ₐ[ℤ] productSubalgebra s :=
-  (equivToSubalgebra (s ^ 2) hD).symm.trans
+noncomputable def equivProductOfSq (s : ℤ) (hs : s ≠ 0) :
+    toSubalgebra (s ^ 2) (by rw [Int.sq_emod_four]; omega) ≃ₐ[ℤ] productSubalgebra s :=
+  (equivToSubalgebra (s ^ 2) (by rw [Int.sq_emod_four]; omega)).symm.trans
     ((integralEquivProductModel s).trans (equivProductSubalgebra s hs))
 
 /-- The rational quadratic algebra of a nonzero integer square splits at its two roots. -/
@@ -82,63 +80,73 @@ private theorem coe_shift (s : ℤ) :
 
 /-- The order isomorphism evaluates the shifted integral generator in both coordinates. -/
 @[simp] theorem coe_equivProductOfSq_apply (s : ℤ) (hs : s ≠ 0)
-    (hD : s ^ 2 % 4 = 0 ∨ s ^ 2 % 4 = 1)
     (z : QuadraticAlgebra ℤ ((s ^ 2 - (s ^ 2) ^ 2) / 4) (s ^ 2)) :
-    (equivProductOfSq s hs hD (equivToSubalgebra (s ^ 2) hD z) : ℤ × ℤ) =
+    (equivProductOfSq s hs
+      (equivToSubalgebra (s ^ 2) (by rw [Int.sq_emod_four]; omega) z) : ℤ × ℤ) =
       (z.re + (((s ^ 2 - s) / 2) + s) * z.im, z.re + ((s ^ 2 - s) / 2) * z.im) := by
   simp [equivProductOfSq, AlgEquiv.trans_apply, integralEquivProductModel_apply]
   ring
 
 /-- The order isomorphism agrees with the rational splitting on its embedded elements. -/
 theorem equivProductOfSq_commutes (s : ℤ) (hs : s ≠ 0)
-    (hD : s ^ 2 % 4 = 0 ∨ s ^ 2 % 4 = 1)
-    (z : toSubalgebra (s ^ 2) hD) :
+    (z : toSubalgebra (s ^ 2) (by rw [Int.sq_emod_four]; omega)) :
     algEquivProdOfIntSq s hs (z : QuadraticAlgebra ℚ ((s ^ 2 : ℤ) : ℚ) 0) =
-      (((equivProductOfSq s hs hD z : ℤ × ℤ).1 : ℚ),
-        ((equivProductOfSq s hs hD z : ℤ × ℤ).2 : ℚ)) := by
-  obtain ⟨w, rfl⟩ := (equivToSubalgebra (s ^ 2) hD).surjective z
+      (((equivProductOfSq s hs z : ℤ × ℤ).1 : ℚ),
+        ((equivProductOfSq s hs z : ℤ × ℤ).2 : ℚ)) := by
+  obtain ⟨w, rfl⟩ := (equivToSubalgebra (s ^ 2) (by rw [Int.sq_emod_four]; omega)).surjective z
   rw [coe_equivToSubalgebra_apply, lift_apply, coe_equivProductOfSq_apply]
   ext <;> simp [Algebra.smul_def, coe_shift]
   all_goals ring
 
 /-- The rational splitting identifies the embedded canonical order with the embedded congruence
 product order. -/
-theorem map_toSubalgebra_of_sq (s : ℤ) (hs : s ≠ 0)
-    (hD : s ^ 2 % 4 = 0 ∨ s ^ 2 % 4 = 1) :
-    (toSubalgebra (s ^ 2) hD).map ((algEquivProdOfIntSq s hs).toAlgHom.restrictScalars ℤ) =
+theorem map_toSubalgebra_of_sq (s : ℤ) (hs : s ≠ 0) :
+    (toSubalgebra (s ^ 2) (by rw [Int.sq_emod_four]; omega)).map
+      ((algEquivProdOfIntSq s hs).toAlgHom.restrictScalars ℤ) =
       (productSubalgebra s).map
         (AlgHom.prodMap (Algebra.ofId ℤ ℚ) (Algebra.ofId ℤ ℚ)) := by
   ext y
   rw [Subalgebra.mem_map, Subalgebra.mem_map]
   constructor
   · rintro ⟨x, hx, rfl⟩
-    let z : toSubalgebra (s ^ 2) hD := ⟨x, hx⟩
-    refine ⟨(equivProductOfSq s hs hD z : ℤ × ℤ),
-      (equivProductOfSq s hs hD z).property, ?_⟩
-    exact (equivProductOfSq_commutes s hs hD z).symm
+    let z : toSubalgebra (s ^ 2) (by rw [Int.sq_emod_four]; omega) := ⟨x, hx⟩
+    refine ⟨(equivProductOfSq s hs z : ℤ × ℤ),
+      (equivProductOfSq s hs z).property, ?_⟩
+    exact (equivProductOfSq_commutes s hs z).symm
   · rintro ⟨v, hv, rfl⟩
-    obtain ⟨z, hz⟩ := (equivProductOfSq s hs hD).surjective ⟨v, hv⟩
+    obtain ⟨z, hz⟩ := (equivProductOfSq s hs).surjective ⟨v, hv⟩
     refine ⟨z, z.property, ?_⟩
-    have hvz : (equivProductOfSq s hs hD z : ℤ × ℤ) = v := congrArg Subtype.val hz
+    have hvz : (equivProductOfSq s hs z : ℤ × ℤ) = v := congrArg Subtype.val hz
     rw [← hvz]
-    exact equivProductOfSq_commutes s hs hD z
+    exact equivProductOfSq_commutes s hs z
 
 /-- The units of the actual square-discriminant order are four for a modulus dividing two,
 and otherwise are the two diagonal signs. -/
-theorem card_units_toSubalgebra_sq (s : ℤ) (hs : s ≠ 0)
-    (hD : s ^ 2 % 4 = 0 ∨ s ^ 2 % 4 = 1) :
-    Nat.card (Units (toSubalgebra (s ^ 2) hD)) = if s ∣ 2 then 4 else 2 := by
-  rw [Nat.card_congr (Units.mapEquiv (equivProductOfSq s hs hD).toRingEquiv.toMulEquiv).toEquiv]
+theorem card_units_toSubalgebra_sq (s : ℤ) (hs : s ≠ 0) :
+    Nat.card (Units (toSubalgebra (s ^ 2) (by rw [Int.sq_emod_four]; omega))) =
+      if s ∣ 2 then 4 else 2 := by
+  rw [Nat.card_congr (Units.mapEquiv (equivProductOfSq s hs).toRingEquiv.toMulEquiv).toEquiv]
   exact card_units_productSubalgebra s
 
 /-- At discriminant one the canonical order is the full integer product. -/
 noncomputable def equivProdOfOne : toSubalgebra 1 (by decide) ≃ₐ[ℤ] ℤ × ℤ :=
-  (equivProductOfSq 1 (by decide) (by decide)).trans
+  (equivProductOfSq 1 (by decide)).trans
     ((Subalgebra.equivOfEq _ _ productSubalgebra_one).trans (Subalgebra.topEquiv))
+
+/-- The rational coordinates of the discriminant-one order equivalence evaluate at both roots. -/
+@[simp↓] theorem coe_equivProdOfOne_apply (z : toSubalgebra 1 (by decide)) :
+    (((equivProdOfOne z).1 : ℚ), ((equivProdOfOne z).2 : ℚ)) =
+      ((z : QuadraticAlgebra ℚ ((1 : ℤ) : ℚ) 0).re +
+        (z : QuadraticAlgebra ℚ ((1 : ℤ) : ℚ) 0).im,
+       (z : QuadraticAlgebra ℚ ((1 : ℤ) : ℚ) 0).re -
+        (z : QuadraticAlgebra ℚ ((1 : ℤ) : ℚ) 0).im) := by
+  have h := equivProductOfSq_commutes 1 (by decide)
+  simp only [algEquivProdOfIntSq_apply, Int.cast_one, one_mul] at h
+  exact (h z).symm
 
 /-- The discriminant-one order has four units. -/
 theorem card_units_toSubalgebra_one :
     Nat.card (Units (toSubalgebra 1 (by decide))) = 4 := by
-  simpa using card_units_toSubalgebra_sq 1 (by decide) (by decide)
+  simpa using card_units_toSubalgebra_sq 1 (by decide)
 
 end TauCeti.QuadraticOrder
