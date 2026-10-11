@@ -268,6 +268,25 @@ instance isIso_homologyKunneth_of_isSplitMono_of_isSplitEpi : IsIso (homologyKun
 
 end Split
 
+section EqToHom
+
+universe u
+
+variable {R : Type u} [CommRing R] (K : ChainComplex (ModuleCat.{u} R) ℕ)
+  {L L' : ChainComplex (ModuleCat.{u} R) ℕ}
+
+/-- The Künneth map is compatible with replacing the second complex by an equal one. -/
+@[reassoc]
+lemma homologyKunneth_comp_eqToHom (e : L' = L) (n : ℕ) :
+    homologyKunneth K L' n ≫ eqToHom (congrArg (fun M ↦ (tensorObj K M).homology n) e) =
+      GradedObject.Monoidal.tensorHom (𝟙 (fun p ↦ K.homology p))
+        (fun q ↦ eqToHom (congrArg (fun M ↦ M.homology q) e)) n ≫ homologyKunneth K L n := by
+  subst e
+  refine GradedObject.Monoidal.tensorObj_ext _ _ fun p q h ↦ ?_
+  simp
+
+end EqToHom
+
 section FlatZeroDifferential
 
 /-! ### One factor with zero differentials and flat terms -/

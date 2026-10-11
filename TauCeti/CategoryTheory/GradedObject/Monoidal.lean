@@ -19,6 +19,8 @@ The tensor product of two graded objects `X` and `Y` has the coproduct of the `X
 `i + j = n` in degree `n` (`CategoryTheory.GradedObject.Monoidal.tensorObj`).  This file records
 facts about these coproducts which are used to compare homology of tensor products of complexes.
 
+* The map of coproducts over the fibres of a map induced by a morphism of graded objects is a
+  map of colimits of discrete diagrams (`CategoryTheory.GradedObject.mapMap_eq_colimMap`).
 * A family of monomorphisms induces a monomorphism on coproducts over the fibres of a map, when
   these coproducts are exact (`CategoryTheory.GradedObject.mono_mapMap`), and likewise a family of
   short exact sequences induces a short exact sequence
@@ -48,9 +50,9 @@ variable {I J C : Type*} [Category* C]
 
 /-- The map of coproducts over the fibre of `p : I → J` over `j` induced by a morphism of graded
 objects is the map of colimits of the corresponding discrete diagrams. -/
-private lemma mapMap_eq_colimMap {X Y : GradedObject I C} (φ : X ⟶ Y) (p : I → J) [X.HasMap p]
+lemma mapMap_eq_colimMap {X Y : GradedObject I C} (φ : X ⟶ Y) (p : I → J) [X.HasMap p]
     [Y.HasMap p] (j : J) [HasColimitsOfShape (Discrete (p ⁻¹' {j})) C] :
-    mapMap φ p j = colim.map (Discrete.natTrans fun i ↦ φ i.as.1 :
+    mapMap φ p j = colimMap (Discrete.natTrans fun i ↦ φ i.as.1 :
       Discrete.functor (X.mapObjFun p j) ⟶ Discrete.functor (Y.mapObjFun p j)) := by
   refine mapObj_ext _ _ _ _ fun i hi ↦ ?_
   rw [ι_mapMap]
@@ -68,7 +70,7 @@ lemma mono_mapMap [Abelian C] {X Y : GradedObject I C} (φ : X ⟶ Y) (p : I →
     Discrete.natTrans fun i ↦ φ i.as.1
   have : ∀ i, Mono (α.app i) := fun i ↦ inferInstanceAs (Mono (φ i.as.1))
   have : Mono α := NatTrans.mono_of_mono_app _
-  rw [mapMap_eq_colimMap]
+  rw [mapMap_eq_colimMap, ← colim_map]
   exact Functor.map_mono colim α
 
 /-- A morphism of graded objects which is an epimorphism in each degree induces an epimorphism on
@@ -80,7 +82,7 @@ lemma epi_mapMap {X Y : GradedObject I C} (φ : X ⟶ Y) (p : I → J) [X.HasMap
     Discrete.natTrans fun i ↦ φ i.as.1
   have : ∀ i, Epi (α.app i) := fun i ↦ inferInstanceAs (Epi (φ i.as.1))
   have : Epi α := NatTrans.epi_of_epi_app _
-  rw [mapMap_eq_colimMap]
+  rw [mapMap_eq_colimMap, ← colim_map]
   exact Functor.map_epi colim α
 
 /-- A short complex of graded objects which is exact in each degree induces an exact sequence on

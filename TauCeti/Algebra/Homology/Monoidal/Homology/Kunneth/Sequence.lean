@@ -26,25 +26,13 @@ is exact (`HomologicalComplex.homologyKunnethShortComplex_shortExact`), where th
 the Künneth map `HomologicalComplex.homologyKunneth` assembled from the cross products, and `Tor₁`
 is Mathlib's `CategoryTheory.Tor`.  No hypothesis is imposed on `K`.
 
-The proof is Weibel's.  The sequence `0 ⟶ Z(L) ⟶ L ⟶ L / Z(L) ⟶ 0` is split in each degree, so it
-stays exact after tensoring with `K`.  Its outer terms have zero differentials and flat terms, so
-the Künneth maps of `K ⊗ Z(L)` and `K ⊗ (L / Z(L))` are isomorphisms
-(`HomologicalComplex.isIso_homologyKunneth_of_d_eq_zero_of_flat_right`).  Through them, the
-connecting morphisms of the long exact homology sequence of `K ⊗ Z(L) ⟶ K ⊗ L ⟶ K ⊗ (L / Z(L))`
-become, up to the sign `(-1)ᵖ`, the sums over `p + q = m` of the maps
-`Hₚ(K) ⊗ H_{q+1}(L / Z(L)) ⟶ Hₚ(K) ⊗ H_q(Z(L))` obtained by tensoring `Hₚ(K)` with
-the projective presentations
-
-`0 ⟶ H_{q+1}(L / Z(L)) ⟶ H_q(Z(L)) ⟶ H_q(L) ⟶ 0`
-
-(`HomologicalComplex.homologyPresentation`).  By right exactness the cokernel of such a map is
-`Hₚ(K) ⊗ H_q(L)`, which makes the Künneth map of `K` and `L` a monomorphism
-(`HomologicalComplex.mono_homologyKunneth`).  The kernel of each tensorized presentation map
-`Hₚ(K) ⊗ H_{q+1}(L / Z(L)) ⟶ Hₚ(K) ⊗ H_q(Z(L))` is `Tor₁(Hₚ(K), H_q(L))`
-(`CategoryTheory.ShortComplex.ShortExact.torOneIsoKernel`).  The map
-`Hₘ₊₁(K ⊗ L) ⟶ ⨁ Hₚ(K) ⊗ H_{q+1}(L / Z(L))` induced by `L ⟶ L / Z(L)` factors through the direct
-sum of these kernels, which defines `HomologicalComplex.homologyToTor`.  Sums over the finitely
-many pairs `(p, q)` preserve these exact sequences (`CategoryTheory.GradedObject.exact_mapMap`).
+The second map `HomologicalComplex.homologyToTor` is induced by the projection of `L` onto
+`L / Z(L)`, through the identification of `Tor₁(Hₚ(K), H_q(L))` given by the projective
+presentation `0 ⟶ H_{q+1}(L / Z(L)) ⟶ H_q(Z(L)) ⟶ H_q(L) ⟶ 0`
+(`HomologicalComplex.homologyPresentation`).  It is characterized by its composite with the
+monomorphism `HomologicalComplex.homologyTorToHomologyQuotient` into `Hₘ₊₁(K ⊗ (L / Z(L)))`
+(`HomologicalComplex.homologyToTor_comp_homologyTorToHomologyQuotient` and
+`HomologicalComplex.homologyToTor_unique`).
 
 ## Main definitions and results
 
@@ -53,6 +41,8 @@ many pairs `(p, q)` preserve these exact sequences (`CategoryTheory.GradedObject
   homology of `Z(L)` and `L / Z(L)`.
 * `HomologicalComplex.homologyTor`: the module `⨁_{p + q = m} Tor₁(Hₚ(K), H_q(L))`.
 * `HomologicalComplex.homologyToTor`: the map `Hₘ₊₁(K ⊗ L) ⟶ ⨁_{p + q = m} Tor₁(Hₚ(K), H_q(L))`.
+* `HomologicalComplex.homologyTorToHomologyQuotient`: the inclusion
+  `⨁_{p + q = m} Tor₁(Hₚ(K), H_q(L)) ⟶ Hₘ₊₁(K ⊗ (L / Z(L)))` characterizing `homologyToTor`.
 * `HomologicalComplex.homologyKunnethShortComplex`: the Künneth short complex.
 * `HomologicalComplex.mono_homologyKunneth`: the Künneth map is a monomorphism in every degree.
 * `HomologicalComplex.homologyKunnethShortComplex_shortExact`: **the Künneth short exact sequence**.
@@ -109,6 +99,28 @@ end Presentation
 section Kunneth
 
 variable (K L : ChainComplex (ModuleCat.{u} R) ℕ)
+
+/-
+The proof is Weibel's.  The sequence `0 ⟶ Z(L) ⟶ L ⟶ L / Z(L) ⟶ 0` is split in each degree, so it
+stays exact after tensoring with `K`.  Its outer terms have zero differentials and flat terms, so
+the Künneth maps of `K ⊗ Z(L)` and `K ⊗ (L / Z(L))` are isomorphisms
+(`HomologicalComplex.isIso_homologyKunneth_of_d_eq_zero_of_flat_right`).  Through them, the
+connecting morphisms of the long exact homology sequence of `K ⊗ Z(L) ⟶ K ⊗ L ⟶ K ⊗ (L / Z(L))`
+become, up to the sign `(-1)ᵖ`, the sums over `p + q = m` of the maps
+`Hₚ(K) ⊗ H_{q+1}(L / Z(L)) ⟶ Hₚ(K) ⊗ H_q(Z(L))` obtained by tensoring `Hₚ(K)` with
+the projective presentations
+
+`0 ⟶ H_{q+1}(L / Z(L)) ⟶ H_q(Z(L)) ⟶ H_q(L) ⟶ 0`
+
+(`HomologicalComplex.homologyPresentation`).  By right exactness the cokernel of such a map is
+`Hₚ(K) ⊗ H_q(L)`, which makes the Künneth map of `K` and `L` a monomorphism
+(`HomologicalComplex.mono_homologyKunneth`).  The kernel of each tensorized presentation map
+`Hₚ(K) ⊗ H_{q+1}(L / Z(L)) ⟶ Hₚ(K) ⊗ H_q(Z(L))` is `Tor₁(Hₚ(K), H_q(L))`
+(`CategoryTheory.ShortComplex.ShortExact.torOneIsoKernel`).  The map
+`Hₘ₊₁(K ⊗ L) ⟶ ⨁ Hₚ(K) ⊗ H_{q+1}(L / Z(L))` induced by `L ⟶ L / Z(L)` factors through the direct
+sum of these kernels, which defines `HomologicalComplex.homologyToTor`.  Sums over the finitely
+many pairs `(p, q)` preserve these exact sequences (`CategoryTheory.GradedObject.exact_mapMap`).
+-/
 
 /-- The module `⨁_{p + q = m} Tor₁(Hₚ(K), H_q(L))`, the third term of the Künneth short exact
 sequence (`HomologicalComplex.homologyKunnethShortComplex_shortExact`). -/
@@ -206,16 +218,6 @@ private lemma signHom_comp_signHom (m : ℕ) : signHom K L m ≫ signHom K L m =
 private instance (m : ℕ) : IsIso (signHom K L m) :=
   ⟨signHom K L m, signHom_comp_signHom K L m, signHom_comp_signHom K L m⟩
 
-/-- The Künneth map is compatible with replacing the second complex by an equal one. -/
-private lemma homologyKunneth_comp_eqToHom {L' : ChainComplex (ModuleCat.{u} R) ℕ} (e : L' = L)
-    (n : ℕ) :
-    homologyKunneth K L' n ≫ eqToHom (congrArg (fun M ↦ (tensorObj K M).homology n) e) =
-      GradedObject.Monoidal.tensorHom (𝟙 (fun p ↦ K.homology p))
-        (fun q ↦ eqToHom (congrArg (fun M ↦ M.homology q) e)) n ≫ homologyKunneth K L n := by
-  subst e
-  refine GradedObject.Monoidal.tensorObj_ext _ _ fun p q h ↦ ?_
-  simp
-
 /-- The identification of the middle term `K ⊗ L` of `K ⊗ Z(L) ⟶ K ⊗ L ⟶ K ⊗ (L / Z(L))`. -/
 private abbrev middleIso (n : ℕ) :
     (tensorObj K L.cyclesComplexShortComplex.X₂).homology n ≅ (tensorObj K L).homology n :=
@@ -241,7 +243,7 @@ private lemma tensorπ_comp_homologyKunneth (n : ℕ) :
           (fun q ↦ eqToHom (congrArg (fun M ↦ M.homology q) L.cyclesComplexShortComplex_X₂)) n := by
     refine GradedObject.Monoidal.tensorObj_ext _ _ fun p q h ↦ ?_
     simp
-  rw [h₂, Category.assoc, ← homologyKunneth_comp_eqToHom K L L.cyclesComplexShortComplex_X₂,
+  rw [h₂, Category.assoc, ← homologyKunneth_comp_eqToHom K L.cyclesComplexShortComplex_X₂,
     reassoc_of% h₁, eqToIso.hom]
 
 variable [∀ q, Projective (cokernel (L.iCycles q))]
@@ -425,6 +427,20 @@ private instance (m : ℕ) : Mono (torToTensor K L m) := by
     ((L.homologyPresentation_shortExact x.2).torOneIsoKernel (K.homology x.1)).hom (kernel.ι _)
   exact GradedObject.mono_mapMap _ _ m
 
+/-- The inclusion `⨁_{p + q = m} Tor₁(Hₚ(K), H_q(L)) ⟶ Hₘ₊₁(K ⊗ (L / Z(L)))` which characterizes
+`HomologicalComplex.homologyToTor`
+(`HomologicalComplex.homologyToTor_comp_homologyTorToHomologyQuotient`): the inclusion of
+`Tor₁(Hₚ(K), H_q(L))` into `Hₚ(K) ⊗ H_{q+1}(L / Z(L))` given by the projective presentation
+`HomologicalComplex.homologyPresentation`, followed by the sign `ε(p)` and the Künneth isomorphism
+of `K` and `L / Z(L)`. -/
+def homologyTorToHomologyQuotient (m : ℕ) :
+    homologyTor K L m ⟶ (tensorObj K L.cyclesComplexShortComplex.X₃).homology (m + 1) :=
+  torToTensor K L m ≫ (quotientIso K L m).inv
+
+instance (m : ℕ) : Mono (homologyTorToHomologyQuotient K L m) := by
+  rw [homologyTorToHomologyQuotient]
+  infer_instance
+
 /-- `⨁ Tor₁(Hₚ(K), H_q(L))` is the kernel of `tensorδ`, as a limit. -/
 private def torIsKernel (m : ℕ) :
     IsLimit (KernelFork.ofι (torToTensor K L m) (torToTensor_comp_tensorδ K L m)) :=
@@ -460,9 +476,33 @@ kernel is `⨁ Tor₁(Hₚ(K), H_q(L))` through the projective presentations
 def homologyToTor (m : ℕ) : (tensorObj K L).homology (m + 1) ⟶ homologyTor K L m :=
   (torIsKernel K L m).lift (KernelFork.ofι _ (toTensorQuotient_comp_tensorδ K L m))
 
+@[reassoc]
 private lemma homologyToTor_comp_torToTensor (m : ℕ) :
     homologyToTor K L m ≫ torToTensor K L m = toTensorQuotient K L m :=
   Fork.IsLimit.lift_ι (torIsKernel K L m)
+
+/-- `HomologicalComplex.homologyToTor` followed by the inclusion
+`HomologicalComplex.homologyTorToHomologyQuotient` is the map `Hₘ₊₁(K ⊗ L) ⟶ Hₘ₊₁(K ⊗ (L / Z(L)))`
+induced by the projection of `L` onto `L / Z(L)`. -/
+@[reassoc (attr := simp)]
+lemma homologyToTor_comp_homologyTorToHomologyQuotient (m : ℕ) :
+    homologyToTor K L m ≫ homologyTorToHomologyQuotient K L m =
+      eqToHom (congrArg (fun M ↦ (tensorObj K M).homology (m + 1))
+          L.cyclesComplexShortComplex_X₂.symm) ≫
+        homologyMap (tensorLeftShortComplex K L.cyclesComplexShortComplex).g (m + 1) := by
+  simp [homologyTorToHomologyQuotient, homologyToTor_comp_torToTensor_assoc, toTensorQuotient]
+
+/-- `HomologicalComplex.homologyToTor` is the unique morphism whose composite with
+`HomologicalComplex.homologyTorToHomologyQuotient` is the map induced by the projection of `L`
+onto `L / Z(L)`. -/
+lemma homologyToTor_unique {m : ℕ} (f : (tensorObj K L).homology (m + 1) ⟶ homologyTor K L m)
+    (hf : f ≫ homologyTorToHomologyQuotient K L m =
+      eqToHom (congrArg (fun M ↦ (tensorObj K M).homology (m + 1))
+          L.cyclesComplexShortComplex_X₂.symm) ≫
+        homologyMap (tensorLeftShortComplex K L.cyclesComplexShortComplex).g (m + 1)) :
+    f = homologyToTor K L m := by
+  rw [← cancel_mono (homologyTorToHomologyQuotient K L m), hf,
+    homologyToTor_comp_homologyTorToHomologyQuotient]
 
 /-- The Künneth map followed by the map to `⨁ Tor₁(Hₚ(K), H_q(L))` vanishes. -/
 @[reassoc (attr := simp)]
