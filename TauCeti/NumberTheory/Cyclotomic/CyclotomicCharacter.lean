@@ -25,7 +25,7 @@ the separable or algebraic closure, and across finite extensions of the ground f
 When `L` has all of these roots of unity, the character is characterized by that action: an
 automorphism raising every root of unity of `p`-power order to the `c`-th power has cyclotomic
 character `c`. This is how the character of an automorphism with a known action on roots of unity,
-such as a Frobenius lift or an element of inertia, is computed.
+such as a Frobenius lift, an element of inertia or a complex conjugation, is computed.
 
 ## Main results
 
@@ -37,6 +37,8 @@ such as a Frobenius lift or an element of inertia, is computed.
   injective ring homomorphism intertwining two automorphisms.
 * `TauCeti.coe_cyclotomicCharacter_eq_natCast`: an automorphism raising every root of unity of
   `p`-power order to the `c`-th power has cyclotomic character `c`.
+* `TauCeti.cyclotomicCharacter_eq_neg_one`: an automorphism inverting every root of unity of
+  `p`-power order has cyclotomic character `-1`.
 -/
 
 public section
@@ -116,5 +118,21 @@ theorem coe_cyclotomicCharacter_eq_natCast [∀ i, HasEnoughRootsOfUnity A (p ^ 
   have hp : (p ^ n : ℕ) ≠ 0 := pow_ne_zero _ (Fact.out : p.Prime).ne_zero
   rw [map_natCast, ← ZMod.natCast_zmod_val (PadicInt.toZModPow n _),
     hζ.pow_inj (ZMod.val_lt _) (Nat.mod_lt _ (Nat.pos_of_ne_zero hp)) h, ZMod.natCast_mod]
+
+/-- **The cyclotomic character of an automorphism inverting the roots of unity.** If a domain `A`
+contains all roots of unity of `p`-power order and `g` sends each of them to its inverse, then the
+cyclotomic character of `g` is `-1`. -/
+theorem cyclotomicCharacter_eq_neg_one [∀ i, HasEnoughRootsOfUnity A (p ^ i)] {g : A ≃+* A}
+    (hg : ∀ (n : ℕ) (t : A), t ^ p ^ n = 1 → g t * t = 1) :
+    cyclotomicCharacter A p g = -1 := by
+  have : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
+  refine Units.ext <| PadicInt.ext_of_toZModPow.1 fun n ↦ ?_
+  -- On a primitive `pⁿ`-th root of unity `ζ`, `ζ ^ (c + 1) = 1` for the residue `c` of the
+  -- character modulo `pⁿ`, so `c + 1 = 0` in `ZMod (p ^ n)`.
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot A (p ^ n)
+  have h := hg n ζ hζ.pow_eq_one
+  rw [cyclotomicCharacter.spec p g ζ hζ.pow_eq_one, ← pow_succ, hζ.pow_eq_one_iff_dvd,
+    ← ZMod.natCast_eq_zero_iff, Nat.cast_succ, ZMod.natCast_zmod_val] at h
+  rw [Units.val_neg, Units.val_one, map_neg, map_one, eq_neg_iff_add_eq_zero, h]
 
 end TauCeti
