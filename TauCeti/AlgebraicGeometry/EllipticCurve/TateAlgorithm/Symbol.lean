@@ -13,8 +13,8 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Valuation
 
 `ReductionSymbol` records the possible outputs of Tate's algorithm on a minimal Weierstrass
 equation. The multiplicative branch is classified by the valuation of the minimal discriminant:
-it has symbol `Iₙ`, where `n` is positive. This is the first branch-level interface for the
-algorithm; the additive branches and their component data are developed separately.
+it has symbol `Iₙ`, where `n` is positive. This type is the codomain for classifiers that state the
+output of an individual branch of the algorithm.
 
 The symbols and the multiplicative branch follow Tate's algorithm (J. Tate, *Algorithm for
 determining the type of a singular fibre in an elliptic pencil*, LNM 476, 1975).
@@ -55,21 +55,6 @@ def goodReductionSymbol (_W : WeierstrassCurve K)
     TauCeti.ReductionSymbol :=
   TauCeti.ReductionSymbol.I 0
 
-/-- The good-reduction branch returns the symbol `I₀`. -/
-theorem goodReductionSymbol_eq_I0 (W : WeierstrassCurve K)
-    [WeierstrassCurve.HasGoodReduction R W] :
-    W.goodReductionSymbol (R := R) = TauCeti.ReductionSymbol.I 0 := (rfl)
-attribute [simp] goodReductionSymbol_eq_I0
-
-private theorem not_hasGoodReduction_minimal_of_hasMultiplicativeReduction
-    (W : WeierstrassCurve K) [WeierstrassCurve.HasMultiplicativeReduction R W] :
-    ¬ (W.minimal R).HasGoodReduction R := by
-  obtain ⟨C, hC⟩ := W.exists_smul_eq_minimal R
-  have hval := W.valuation_Δ_eq_of_isMinimal_smul R C hC
-  intro hgood
-  exact (inferInstance : WeierstrassCurve.HasMultiplicativeReduction R W).badReduction.ne
-    (hval.symm.trans hgood.goodReduction)
-
 /-- **The output of Tate's multiplicative branch**: a curve with multiplicative reduction has
 symbol `Iₙ`, where `n = v(Δ_min)`. The local minimal-discriminant valuation makes the symbol
 independent of the chosen integral equation. -/
@@ -77,19 +62,14 @@ noncomputable def multiplicativeReductionSymbol (W : WeierstrassCurve K) [W.IsEl
     [_hmult : WeierstrassCurve.HasMultiplicativeReduction R W] : TauCeti.ReductionSymbol :=
   TauCeti.ReductionSymbol.I (W.localMinimalDiscriminantValuation R)
 
-/-- The index in the multiplicative reduction symbol is the minimal discriminant valuation. -/
-@[simp]
-theorem multiplicativeReductionSymbol_eq_I (W : WeierstrassCurve K) [W.IsElliptic]
-    [WeierstrassCurve.HasMultiplicativeReduction R W] :
-    W.multiplicativeReductionSymbol (R := R) =
-      TauCeti.ReductionSymbol.I (W.localMinimalDiscriminantValuation R) := (rfl)
-
-/-- In the multiplicative branch, the index `n` in `Iₙ` is positive. -/
-theorem multiplicativeReductionSymbol_index_pos (W : WeierstrassCurve K) [W.IsElliptic]
+/-- The local minimal-discriminant valuation is positive for a curve with multiplicative reduction,
+so its multiplicative symbol has positive index. -/
+theorem localMinimalDiscriminantValuation_pos_of_hasMultiplicativeReduction
+    (W : WeierstrassCurve K) [W.IsElliptic]
     [WeierstrassCurve.HasMultiplicativeReduction R W] :
     0 < W.localMinimalDiscriminantValuation R :=
   (W.localMinimalDiscriminantValuation_pos_iff R).2
-    (not_hasGoodReduction_minimal_of_hasMultiplicativeReduction W)
+    (WeierstrassCurve.HasMultiplicativeReduction.not_hasGoodReduction_minimal (R := R))
 
 end WeierstrassCurve
 
