@@ -37,9 +37,7 @@ variable {R : Type*} [CommRing R] [HenselianLocalRing R] {W : Affine R}
 
 /-- **Nonsingular points lift along a Henselian local ring.** Over a Henselian local ring `R`, every
 nonsingular point of the reduction of a Weierstrass curve `W` to the residue field is the residue
-of a nonsingular point of `W`. If `2y + a₁x + a₃` is nonzero at the point, Hensel's lemma lifts the
-`y`-coordinate as a simple root of the equation with `x` fixed; otherwise
-`a₁y − (3x² + 2a₂x + a₄)` is nonzero and the `x`-coordinate lifts with `y` fixed. -/
+of a nonsingular point of `W`. -/
 theorem exists_nonsingular_residue_eq {x₀ y₀ : R}
     (h : (W.map (residue R)).Nonsingular (residue R x₀) (residue R y₀)) :
     ∃ x y : R, W.Nonsingular x y ∧ residue R x = residue R x₀ ∧ residue R y = residue R y₀ := by
