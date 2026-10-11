@@ -26,8 +26,8 @@ public section
 
 namespace TauCeti.Toric
 
-/-- The toric map from the projective-line fan to a point is proper. -/
-theorem isProperMap_projectiveLineFanToPointFan :
+/-- The analytic map from the projective-line fan to a point is proper. -/
+theorem isProperMap_analyticMap_projectiveLineFan_toPoint :
     IsProperMap
       (projectiveLineFan.toPoint.analyticMap isRegular_projectiveLineFan
         isRegular_pointFan) :=

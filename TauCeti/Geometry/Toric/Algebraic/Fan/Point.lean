@@ -57,4 +57,21 @@ theorem Fan.toPoint_realMap (Φ : Fan i) : Φ.toPoint.realMap = 0 := by
   rw [Fan.toPoint, FanHom.ofLatticeMap_realMap]
   exact Subsingleton.elim _ _
 
+/-- The lattice map of `Fan.toPoint` is zero. -/
+@[simp]
+theorem Fan.toPoint_latticeMap (Φ : Fan i) : Φ.toPoint.latticeMap = 0 := by
+  rw [Fan.toPoint, FanHom.ofLatticeMap_latticeMap]
+
+/-- Every fan morphism to the fan of a point is the canonical one. -/
+theorem FanHom.eq_toPoint
+    (f : FanHom Φ (pointFan : Fan
+      ((Int.castAddHom ℝ).compLeft (Fin 0) : (Fin 0 → ℤ) →+ (Fin 0 → ℝ)))) :
+    f = Fan.toPoint (i := i) Φ := by
+  apply FanHom.ext (Φ := Φ) (Ψ := (pointFan : Fan
+    ((Int.castAddHom ℝ).compLeft (Fin 0) : (Fin 0 → ℤ) →+ (Fin 0 → ℝ))))
+  rw [Fan.toPoint_latticeMap]
+  apply AddMonoidHom.ext
+  intro n
+  exact Subsingleton.elim _ _
+
 end TauCeti.Toric
