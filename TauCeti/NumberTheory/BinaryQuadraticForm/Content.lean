@@ -46,6 +46,15 @@ def IsPrimitive (f : BinaryQuadraticForm ℤ) : Prop := f.content = 1
 /-- Primitivity is equivalent to content one. -/
 theorem isPrimitive_iff (f : BinaryQuadraticForm ℤ) : f.IsPrimitive ↔ f.content = 1 := Iff.rfl
 
+/-- The zero form is not primitive. -/
+@[simp] theorem not_isPrimitive_zero : ¬ (0 : BinaryQuadraticForm ℤ).IsPrimitive := by
+  simp [isPrimitive_iff]
+
+/-- A primitive integral form is nonzero. -/
+theorem IsPrimitive.ne_zero {f : BinaryQuadraticForm ℤ} (hf : f.IsPrimitive) : f ≠ 0 := by
+  rintro rfl
+  exact not_isPrimitive_zero hf
+
 /-- A natural number divides the content exactly when it divides all three coefficients. -/
 theorem dvd_content_iff (f : BinaryQuadraticForm ℤ) (n : ℕ) :
     n ∣ f.content ↔ (n : ℤ) ∣ f.a ∧ (n : ℤ) ∣ f.b ∧ (n : ℤ) ∣ f.c := by
@@ -115,6 +124,17 @@ def primPart (f : BinaryQuadraticForm ℤ) : BinaryQuadraticForm ℤ :=
   · simpa [smul_eq_mul, nsmul_eq_mul, mul_comm] using Int.ediv_mul_cancel f.content_dvd_a
   · simpa [smul_eq_mul, nsmul_eq_mul, mul_comm] using Int.ediv_mul_cancel f.content_dvd_b
   · simpa [smul_eq_mul, nsmul_eq_mul, mul_comm] using Int.ediv_mul_cancel f.content_dvd_c
+
+/-- A form has zero primitive part exactly when the form itself is zero. -/
+@[simp] theorem primPart_eq_zero_iff (f : BinaryQuadraticForm ℤ) :
+    f.primPart = 0 ↔ f = 0 := by
+  constructor
+  · intro h
+    have hf := f.content_smul_primPart
+    rw [h, smul_zero] at hf
+    exact hf.symm
+  · rintro rfl
+    exact primPart_zero
 
 /-- The primitive part of a nonzero form has content one. -/
 theorem isPrimitive_primPart (f : BinaryQuadraticForm ℤ) (hf : f ≠ 0) :

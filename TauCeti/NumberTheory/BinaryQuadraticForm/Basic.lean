@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Module.Prod
 public import Mathlib.Algebra.Module.Torsion.Prod
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 import Mathlib.Algebra.Module.TransferInstance
+import Mathlib.Tactic.Abel
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.QuadraticDiscriminant
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
@@ -149,7 +150,7 @@ instance instAddCommGroup {R : Type*} [AddCommGroup R] :
     (fun _ _ ↦ rfl) (fun _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
 
 /-- The additive coefficient equivalence used to transport the module structure. -/
-@[expose]
+@[expose, simps!]
 def addEquivProd {R : Type*} [AddCommMonoid R] :
     BinaryQuadraticForm R ≃+ R × R × R :=
   { equivProd with map_add' := fun _ _ ↦ rfl }
@@ -266,12 +267,58 @@ theorem eval_one_zero (f : BinaryQuadraticForm R) : f.eval 1 0 = f.a := by
 theorem eval_zero_one (f : BinaryQuadraticForm R) : f.eval 0 1 = f.c := by
   simp [eval_def]
 
+/-- The zero form represents only zero. -/
+@[simp] theorem eval_zero (x y : R) : (0 : BinaryQuadraticForm R).eval x y = 0 := by
+  simp [eval_def]
+
+/-- Evaluation respects addition of forms. -/
+@[simp] theorem eval_add (f g : BinaryQuadraticForm R) (x y : R) :
+    (f + g).eval x y = f.eval x y + g.eval x y := by
+  simp only [eval_def, add_a, add_b, add_c, add_mul]
+  abel
+
 /-- Scaling a form multiplies every represented value by the scalar. -/
 @[simp] theorem eval_smul' (r : R) (f : BinaryQuadraticForm R) (x y : R) :
     (r • f).eval x y = r * f.eval x y := by
   simp only [eval_def, smul_a', smul_b', smul_c', smul_eq_mul, mul_add, mul_assoc]
 
+/-- Evaluation at fixed coordinates is linear in the coefficients of the form. -/
+def evalLinearMap (x y : R) : BinaryQuadraticForm R →ₗ[R] R where
+  toFun f := f.eval x y
+  map_add' f g := eval_add f g x y
+  map_smul' r f := by simpa only [smul_eq_mul, RingHom.id_apply] using eval_smul' r f x y
+
+/-- The evaluation linear map evaluates the form at its fixed coordinates. -/
+@[simp] theorem evalLinearMap_apply (x y : R) (f : BinaryQuadraticForm R) :
+    evalLinearMap x y f = f.eval x y := (rfl)
+
+/-- Evaluation respects natural scalar multiplication. -/
+@[simp] theorem eval_nsmul (n : ℕ) (f : BinaryQuadraticForm R) (x y : R) :
+    (n • f).eval x y = n • f.eval x y :=
+  map_nsmul (evalLinearMap x y) n f
+
 end Semiring
+
+section Ring
+
+variable {R : Type*} [Ring R]
+
+/-- Evaluation respects negation of forms. -/
+@[simp] theorem eval_neg (f : BinaryQuadraticForm R) (x y : R) :
+    (-f).eval x y = -f.eval x y :=
+  map_neg (evalLinearMap x y) f
+
+/-- Evaluation respects subtraction of forms. -/
+@[simp] theorem eval_sub (f g : BinaryQuadraticForm R) (x y : R) :
+    (f - g).eval x y = f.eval x y - g.eval x y :=
+  map_sub (evalLinearMap x y) f g
+
+/-- Evaluation respects integer scalar multiplication. -/
+@[simp] theorem eval_zsmul (n : ℤ) (f : BinaryQuadraticForm R) (x y : R) :
+    (n • f).eval x y = n • f.eval x y :=
+  map_zsmul (evalLinearMap x y) n f
+
+end Ring
 
 variable {R : Type*} [CommRing R]
 
