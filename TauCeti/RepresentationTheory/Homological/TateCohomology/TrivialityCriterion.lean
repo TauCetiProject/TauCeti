@@ -10,6 +10,7 @@ public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Inflation
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Sylow
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.DimensionShift
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Periodic
+import TauCeti.RepresentationTheory.Homological.TateCohomology.Functoriality
 
 /-!
 # Tate's cohomological triviality criterion
@@ -46,6 +47,8 @@ positive degrees.
   positive degrees.
 * `TauCeti.TateCohomology.isZero_of_forall_isPGroup`: the criterion for Tate cohomology in all
   integer degrees.
+* `TauCeti.TateCohomology.isZero_of_forall_isZero_res`: vanishing on every subgroup includes
+  vanishing on `G` itself.
 
 ## References
 
@@ -198,5 +201,14 @@ theorem isZero_of_forall_isPGroup (A : Rep k G) {q : ℤ}
     (S : Subgroup G) [Fintype S] (n : ℤ) : IsZero (tateCohomology (res S.subtype A) n) :=
   isZero_of_forall_isPGroup_aux ((1 - q).toNat + (1 - n).toNat) A q n (by omega) (by omega)
     h₁ h₂ S
+
+omit [Finite G] in
+/-- Tate cohomology vanishing on every subgroup of `G` vanishes on `G` itself. -/
+theorem isZero_of_forall_isZero_res [Fintype G] (A : Rep k G)
+    (hA : ∀ (S : Subgroup G) [Fintype S] (n : ℤ), IsZero (tateCohomology (res S.subtype A) n))
+    (n : ℤ) : IsZero (tateCohomology A n) :=
+  have := Fintype.ofFinite (⊤ : Subgroup G)
+  -- `Subgroup.topEquiv` is `(⊤ : Subgroup G).subtype` by definition.
+  (hA ⊤ n).of_iso ((resIso (Subgroup.topEquiv : (⊤ : Subgroup G) ≃* G) n).app A).symm
 
 end TauCeti.TateCohomology
