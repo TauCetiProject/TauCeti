@@ -86,7 +86,7 @@ def atomicPart (μ : Measure X) : Measure X := μ.restrict (positiveSingletons �
 
 /-- The atomic part preserves the mass of every singleton. -/
 @[simp]
-theorem atomicPart_apply_singleton (μ : Measure X) [IsFiniteMeasure μ] (x : X) :
+theorem atomicPart_apply_singleton (μ : Measure X) (x : X) :
     atomicPart μ {x} = μ {x} := by
   rw [atomicPart, restrict_apply (measurableSet_singleton x)]
   by_cases hx : μ {x} = 0
@@ -104,7 +104,7 @@ theorem atomicPart_add_diffusePart (μ : Measure X) [IsFiniteMeasure μ] :
   rw [atomicPart, diffusePart, restrict_add_restrict_compl (measurableSet_positiveSingletons μ)]
 
 /-- The diffuse remainder has zero mass on every singleton. -/
-theorem diffusePart_nullSingletonClass (μ : Measure X) [IsFiniteMeasure μ] :
+theorem diffusePart_nullSingletonClass (μ : Measure X) :
     NullSingletonClass (diffusePart μ) := by
   refine ⟨fun x ↦ ?_⟩
   rw [diffusePart, restrict_apply (measurableSet_singleton x)]
