@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.GaloisGroups.Discriminant.Field
-import TauCeti.FieldTheory.Kummer.Extension
+import TauCeti.Algebra.Polynomial.XPowSubC
 
 /-!
 # Discriminant fields under base-field isomorphisms

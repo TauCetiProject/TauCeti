@@ -42,6 +42,7 @@ The formal invariants are those of the Tate curve as an elliptic curve over the 
 * `TauCeti.constantCoeff_tateCurve_a₄` and `TauCeti.constantCoeff_tateCurve_a₆`: at `q = 0` the
   Tate curve is the nodal cubic `y² + xy = x³`.
 * `TauCeti.tateCurve_c₄` and `TauCeti.tateCurve_c₆`: `c₄ = 1 + 240 s₃` and `c₆ = -1 + 504 s₅`.
+* `TauCeti.constantCoeff_tateCurve_c₄`: `c₄` is `1` at `q = 0`, so it is a unit of `ℤ⟦q⟧`.
 * `TauCeti.order_tateCurve_Δ` and `TauCeti.exists_tateCurve_Δ_eq_X_mul`: `Δ = q · u` with `u` a
   power series of constant coefficient `1`, and `Δ = q - 24 q² + ⋯`.
 * `TauCeti.exists_tateCurve_j_eq`: over `ℤ⸨q⸩` the Tate curve is elliptic and
@@ -152,6 +153,12 @@ theorem constantCoeff_tateCurve_a₆ : constantCoeff tateCurve.a₆ = 0 := by
   have h := twelve_mul_coeff_tateCurve_a₆ 0
   simp only [ArithmeticFunction.map_zero, coeff_zero_eq_constantCoeff_apply] at h
   omega
+
+-- Not a simp lemma: `simp` already proves it from `tateCurve_c₄` and
+-- `constantCoeff_divisorSumSeries`.
+/-- `c₄` is `1` at `q = 0`, so it is a unit of `ℤ⟦q⟧`. -/
+theorem constantCoeff_tateCurve_c₄ : constantCoeff tateCurve.c₄ = 1 := by
+  simp
 
 private theorem coeff_tateCurve_Δ :
     constantCoeff tateCurve.Δ = 0 ∧ coeff 1 tateCurve.Δ = 1 ∧ coeff 2 tateCurve.Δ = -24 := by

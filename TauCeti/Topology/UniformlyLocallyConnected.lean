@@ -64,7 +64,7 @@ it, and no Lebesgue-number consequence of this shape.
 * `TauCeti.IsUniformlyLocallyConnected.exists_isConnected_superset` — a small enough subset is
   enclosed in a small connected subset, at a rate independent of the subset.
 * `IsCompact.isUniformlyLocallyConnected_iff` — on a compact set the two notions agree.
-* `Convex.isUniformlyLocallyConnected` — a convex set in a real normed space is uniformly
+* `Convex.isUniformlyLocallyConnected` — a convex set in a real seminormed space is uniformly
   locally connected, with the joining segment as the connected set.
 * `TauCeti.isUniformlyLocallyConnected_image_of_isCompact` — a continuous image of a compact,
   locally connected set is uniformly locally connected.
@@ -187,14 +187,12 @@ theorem IsUniformlyLocallyConnected.exists_isConnected_superset
 theorem isUniformlyLocallyConnected_empty : IsUniformlyLocallyConnected (∅ : Set X) :=
   isUniformlyLocallyConnected_def.mpr fun ε hε => ⟨ε, hε, by simp⟩
 
-/-- **A convex set is uniformly locally connected**: two points at distance less than `ε / 2` are
-joined by the segment between them, which stays in the set by convexity and, by
-`segment_subset_closedBall_left`, inside the closed ball of radius `dist a b < ε / 2` about the
-first endpoint, so its points are pairwise within `ε`.
+/-- A convex set in a real seminormed space is uniformly locally connected.
 
-This is the basic example, and the one the closed disc supplies in the conformal application. -/
-protected theorem _root_.Convex.isUniformlyLocallyConnected {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] {t : Set E} (ht : Convex ℝ t) : IsUniformlyLocallyConnected t := by
+This applies in particular to the closed disc in the conformal application. -/
+protected theorem _root_.Convex.isUniformlyLocallyConnected {E : Type*}
+    [SeminormedAddCommGroup E] [NormedSpace ℝ E] {t : Set E} (ht : Convex ℝ t) :
+    IsUniformlyLocallyConnected t := by
   refine isUniformlyLocallyConnected_def.mpr fun ε hε => ⟨ε / 2, by linarith,
     fun a ha b hb hab => ⟨segment ℝ a b,
     ht.segment_subset ha hb, (convex_segment a b).isConnected ⟨a, left_mem_segment ℝ a b⟩,
