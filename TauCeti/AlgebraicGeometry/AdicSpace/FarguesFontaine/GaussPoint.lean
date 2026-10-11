@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.FarguesFontaine.Window
 public import TauCeti.RingTheory.WittVector.GaussValuation
-public import TauCeti.Analysis.SpecialFunctions.Log.PowerComparison
+public import Mathlib.Analysis.SpecialFunctions.Log.Base
 
 /-!
 # Gauss points of `𝒴 = D(p) ∩ D([ϖ])`
@@ -133,31 +133,43 @@ theorem isRadiusUpperBound_gaussPoint_iff (hv : v.Integers O) (hρ : ρ < 1) (ϖ
 
 /-- **The lower radius bound on a Gauss point is a real ratio inequality.** When the coefficient
 norm of `ϖ` is positive and the Gauss radius lies in `(0, 1)`, the order-theoretic condition
-`q ≤ κ(η_ρ)` is equivalent to `(q : ℝ) ≤ log(v(ϖ)) / log(ρ)`. This is the real-valued
+`q ≤ κ(η_ρ)` is equivalent to `(q : ℝ) ≤ Real.logb ρ (v(ϖ))`. This is the real-valued
 form of the radius dictionary used for interval rings. -/
 theorem isRadiusLowerBound_gaussPoint_iff_log (hv : v.Integers O) (hρ₀ : 0 < ρ) (hρ : ρ < 1)
     (ϖ : O) (hϖ₀ : 0 < v (algebraMap O K ϖ)) (q : ℚ≥0) :
     IsRadiusLowerBound p ϖ q (gaussPoint p hv ρ hρ) ↔
-      (q : ℝ) ≤ Real.log (v (algebraMap O K ϖ)) / Real.log (ρ : ℝ) := by
+      (q : ℝ) ≤ Real.logb (ρ : ℝ) (v (algebraMap O K ϖ)) := by
   rw [isRadiusLowerBound_gaussPoint_iff hv hρ ϖ q]
   rw [← NNReal.coe_le_coe]
   push_cast
-  simpa only [NNRat.cast_def] using
-    Real.pow_le_pow_iff_log_ratio (by exact_mod_cast hϖ₀) (by exact_mod_cast hρ₀)
-      (by exact_mod_cast hρ) q.num q.den q.den_pos
+  have hself : Real.logb (ρ : ℝ) (ρ : ℝ) = 1 := by
+    simpa using Real.logb_rpow (by exact_mod_cast hρ₀) (by exact_mod_cast (ne_of_lt hρ)) (x := 1)
+  rw [← Real.logb_le_logb_of_base_lt_one (by exact_mod_cast hρ₀) (by exact_mod_cast hρ)
+    (pow_pos (by exact_mod_cast hρ₀) _) (pow_pos (by exact_mod_cast hϖ₀) _)]
+  rw [Real.logb_pow, Real.logb_pow]
+  simp only [NNReal.val_eq_coe, hself, mul_one]
+  have hq : (q : ℝ) = (q.num : ℝ) / q.den := by simp only [NNRat.cast_def]
+  rw [hq, div_le_iff₀ (Nat.cast_pos.mpr q.den_pos)]
+  simp [mul_comm]
 
 /-- **The upper radius bound on a Gauss point is a real ratio inequality.** Under the same
 positivity hypotheses, `κ(η_ρ) ≤ q` is equivalent to
-`log(v(ϖ)) / log(ρ) ≤ (q : ℝ)`. -/
+`Real.logb ρ (v(ϖ)) ≤ (q : ℝ)`. -/
 theorem isRadiusUpperBound_gaussPoint_iff_log (hv : v.Integers O) (hρ₀ : 0 < ρ) (hρ : ρ < 1)
     (ϖ : O) (hϖ₀ : 0 < v (algebraMap O K ϖ)) (q : ℚ≥0) :
     IsRadiusUpperBound p ϖ q (gaussPoint p hv ρ hρ) ↔
-      Real.log (v (algebraMap O K ϖ)) / Real.log (ρ : ℝ) ≤ (q : ℝ) := by
+      Real.logb (ρ : ℝ) (v (algebraMap O K ϖ)) ≤ (q : ℝ) := by
   rw [isRadiusUpperBound_gaussPoint_iff hv hρ ϖ q]
   rw [← NNReal.coe_le_coe]
   push_cast
-  simpa only [NNRat.cast_def] using
-    Real.pow_ge_pow_iff_log_ratio (by exact_mod_cast hϖ₀) (by exact_mod_cast hρ₀)
-      (by exact_mod_cast hρ) q.num q.den q.den_pos
+  have hself : Real.logb (ρ : ℝ) (ρ : ℝ) = 1 := by
+    simpa using Real.logb_rpow (by exact_mod_cast hρ₀) (by exact_mod_cast (ne_of_lt hρ)) (x := 1)
+  rw [← Real.logb_le_logb_of_base_lt_one (by exact_mod_cast hρ₀) (by exact_mod_cast hρ)
+    (pow_pos (by exact_mod_cast hϖ₀) _) (pow_pos (by exact_mod_cast hρ₀) _)]
+  rw [Real.logb_pow, Real.logb_pow]
+  simp only [NNReal.val_eq_coe, hself, mul_one]
+  have hq : (q : ℝ) = (q.num : ℝ) / q.den := by simp only [NNRat.cast_def]
+  rw [hq, le_div_iff₀ (Nat.cast_pos.mpr q.den_pos)]
+  simp [mul_comm]
 
 end TauCeti.FarguesFontaine
