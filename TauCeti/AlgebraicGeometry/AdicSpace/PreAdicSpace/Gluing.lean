@@ -21,6 +21,10 @@ underlying cocone of presheafed spaces is a colimit. This supplies the universal
 gluing spaces with local stalks and residue-field valuations; it
 does not construct the valuations on the glued object.
 
+The descent argument takes place in the category of pre-adic spaces. For gluing adic spaces,
+sheafiness and local affinoidness of the glued object are separate steps from this universal
+property.
+
 ## Main results
 
 * `TauCeti.PreAdicSpace.Hom.ofCover`: lift a presheafed-space morphism from its chartwise
