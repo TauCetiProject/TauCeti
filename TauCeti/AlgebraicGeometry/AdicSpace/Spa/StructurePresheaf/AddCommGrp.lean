@@ -47,7 +47,7 @@ public section
 
 open CategoryTheory Limits TopologicalSpace Opposite TauCeti.Huber TauCeti.CategoryTheory
 
-universe v
+universe v w
 
 namespace TauCeti.ValuationSpectrum
 
@@ -138,7 +138,8 @@ family of opens contained in `W`. The augmented Čech complex of the structure p
 to `Y`, the presheaf `V ↦ 𝒪(Y ∩ V)` on the opens contained in `W`, for `U` is exact if and only if
 the augmented Čech complex of the structure presheaf on the opens contained in `Y` for the family
 `Y ∩ U i` is. -/
-theorem quasiIso_cechAugmentation_prod_iff (Y : Set.Iic W) {ι : Type} (U : ι → Set.Iic W) :
+theorem quasiIso_cechAugmentation_prod_iff [HasProducts.{w} AddCommGrpCat.{v}] (Y : Set.Iic W)
+    {ι : Type w} (U : ι → Set.Iic W) :
     QuasiIso (cechAugmentation U isTerminalTop
         ((prod.functor.obj Y).op ⋙ presentationLimitAddCommGrpPresheaf P Aplus W)) ↔
       QuasiIso (cechAugmentation

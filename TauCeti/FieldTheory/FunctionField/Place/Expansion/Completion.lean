@@ -54,42 +54,6 @@ private theorem expansionPartialSum_sub_mem (f : PowerSeries k) {n m : ℕ} (hnm
     (P.completionPlace.mem_filtration_zero_iff.mpr
       (P.completionPlace.algebraMap_mem_integers _)) hpow
 
-include ht in
-private theorem expansionPartialSum_cauchy (f : PowerSeries k) :
-    CauchySeq (P.expansionPartialSum (t := t) f) := by
-  apply (Valued.hasBasis_uniformity P.Completion ℤᵐ⁰).cauchySeq_iff.mpr
-  intro γ _
-  obtain ⟨n, hn⟩ := WithZero.exists_exp_neg_natCast_lt
-    (MonoidWithZeroHom.ValueGroup₀.embedding_unit_ne_zero γ)
-  refine ⟨n, fun m hm l hl ↦ ?_⟩
-  have hdiff : P.expansionPartialSum (t := t) f l -
-      P.expansionPartialSum (t := t) f m ∈ P.completionPlace.filtration n := by
-    have hm' := P.expansionPartialSum_sub_mem ht f hm
-    have hl' := P.expansionPartialSum_sub_mem ht f hl
-    convert (P.completionPlace.filtration n).sub_mem hl' hm' using 1
-    ring
-  simp only [Set.mem_ofPred_eq]
-  rw [Valuation.restrict_lt_iff_lt_embedding]
-  simpa only [completionPlace_valuation] using
-    ((P.completionPlace.mem_filtration_iff.mp hdiff)).trans_lt hn
-
-private theorem isClosed_expansionCongruence (f : PowerSeries k) (n : ℕ) :
-    IsClosed {x : P.Completion | x - P.expansionPartialSum (t := t) f n ∈
-      P.completionPlace.filtration n} := by
-  obtain ⟨s, hs0, hs⟩ := P.exists_ne_zero_ord_eq (n : ℤ)
-  have hball := Valued.isClosed_closedBall P.Completion
-    (Valued.v.restrict (P.completionEmbedding s))
-  have heq : {x : P.Completion | x - P.expansionPartialSum (t := t) f n ∈
-      P.completionPlace.filtration n} =
-      (fun x : P.Completion ↦ x - P.expansionPartialSum (t := t) f n) ⁻¹'
-        {x | Valued.v.restrict x ≤ Valued.v.restrict (P.completionEmbedding s)} := by
-    ext x
-    simp only [Set.mem_ofPred_eq, Set.mem_preimage, mem_filtration_iff,
-      completionPlace_valuation, Valuation.restrict_le_iff, valuation_completionEmbedding,
-      P.valuation_eq_exp_neg_ord hs0, hs]
-  rw [heq]
-  exact hball.preimage (continuous_id.sub continuous_const)
-
 /-- Every power series over the constants is the uniformizer expansion of an element of
 the completed valuation ring at a rational place. -/
 theorem completionPlace_powerSeriesExpansion_surjective :
@@ -97,12 +61,8 @@ theorem completionPlace_powerSeriesExpansion_surjective :
       (by simpa using hP) (by simpa using ht :
         P.completionPlace.ord (P.completionEmbedding t) = 1)) := by
   intro f
-  obtain ⟨x, hx⟩ := cauchySeq_tendsto_of_complete (P.expansionPartialSum_cauchy ht f)
-  have hrem (n : ℕ) : x - P.expansionPartialSum (t := t) f n ∈
-      P.completionPlace.filtration n := by
-    apply (P.isClosed_expansionCongruence (t := t) f n).mem_of_tendsto hx
-    filter_upwards [eventually_ge_atTop n] with m hm
-    exact P.expansionPartialSum_sub_mem ht f hm
+  obtain ⟨x, hrem⟩ := P.exists_forall_sub_mem_completionPlace_filtration
+    fun _ _ hmn ↦ P.expansionPartialSum_sub_mem ht f hmn
   have hxint : x ∈ P.completionPlace.integers := by
     simpa [expansionPartialSum, mem_filtration_zero_iff] using hrem 0
   refine ⟨⟨x, hxint⟩, ?_⟩
