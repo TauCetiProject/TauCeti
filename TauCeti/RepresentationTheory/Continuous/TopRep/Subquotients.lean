@@ -81,7 +81,6 @@ theorem subrepresentationLift_apply (X : TopRep R G) (W : Submodule R X.V)
     (hW : ∀ g x, x ∈ W → X.ρ g x ∈ W) (f : Y ⟶ X)
     (hf : ∀ y, f.hom y ∈ W) (y : Y) :
     (subrepresentationLift X W hW f hf).hom y = ⟨f.hom y, hf y⟩ := by
-  change f.hom.toContinuousLinearMap.codRestrict W hf y = _
   rfl
 
 /-- Composing the subrepresentation factorization with the inclusion recovers the morphism. -/
@@ -91,6 +90,7 @@ theorem subrepresentationLift_comp_ι (X : TopRep R G) (W : Submodule R X.V)
     (hf : ∀ y, f.hom y ∈ W) :
     subrepresentationLift X W hW f hf ≫ subrepresentationι X W hW = f := by
   ext y
+  -- `ext` exposes categorical composition through the representation morphism's `hom` field.
   change (subrepresentationι X W hW).hom ((subrepresentationLift X W hW f hf).hom y) =
     f.hom y
   rw [subrepresentationLift_apply, subrepresentationι_apply]
@@ -103,11 +103,11 @@ theorem subrepresentationLift_unique (X : TopRep R G) (W : Submodule R X.V)
   g = subrepresentationLift X W hW f hf := by
   ext y
   have hy := congrArg (fun q : Y ⟶ X => q y) hg
-  have hy' := hy
-  rw [TopRep.comp_apply, subrepresentationι_apply] at hy'
+  rw [TopRep.comp_apply, subrepresentationι_apply] at hy
+  -- The morphism equality is in the ambient representation, while the goal is a subtype value.
   change (g.hom y : X) = (subrepresentationLift X W hW f hf).hom y
   rw [subrepresentationLift_apply]
-  exact hy'
+  exact hy
 
 /-- Descend a continuous representation to the quotient by an invariant submodule. -/
 abbrev quotient (X : TopRep R G) (W : Submodule R X.V)
@@ -135,6 +135,7 @@ def quotientπ (X : TopRep R G) (W : Submodule R X.V)
 theorem quotientπ_apply (X : TopRep R G) (W : Submodule R X.V)
     (hW : ∀ g x, x ∈ W → X.ρ g x ∈ W) (x : X) :
     (quotientπ X W hW).hom x = Submodule.Quotient.mk x := by
+  -- `ofHom` stores the quotient linear map as `mkQL`; expose that wrapper before evaluation.
   change W.mkQL x = _
   simp [Submodule.mkQL_apply, Submodule.mkQ_apply]
 
@@ -165,6 +166,7 @@ theorem quotientDesc_mk (X : TopRep R G) (W : Submodule R X.V)
     (hW : ∀ g x, x ∈ W → X.ρ g x ∈ W) (f : X ⟶ Y)
     (hf : ∀ x ∈ W, f.hom x = 0) (x : X) :
     (quotientDesc X W hW f hf).hom (Submodule.Quotient.mk x) = f.hom x := by
+  -- Unfold `ofHom` to expose the `liftQL` map and then its quotient representative.
   change W.liftQL f.hom.toContinuousLinearMap
     (fun x hx ↦ LinearMap.mem_ker.mpr (hf x hx)) (Submodule.Quotient.mk x) = _
   rw [Submodule.liftQL_apply, Submodule.liftQ_apply]
@@ -177,6 +179,7 @@ theorem quotientπ_comp_quotientDesc (X : TopRep R G) (W : Submodule R X.V)
     (hf : ∀ x ∈ W, f.hom x = 0) :
     quotientπ X W hW ≫ quotientDesc X W hW f hf = f := by
   ext x
+  -- `ext` leaves the bundled morphism application; evaluate composition explicitly.
   change (quotientDesc X W hW f hf).hom ((quotientπ X W hW).hom x) = f.hom x
   rw [quotientπ_apply, quotientDesc_mk]
 
@@ -190,9 +193,11 @@ theorem quotientDesc_unique (X : TopRep R G) (W : Submodule R X.V)
   obtain ⟨x, rfl⟩ := W.mkQ_surjective x
   have hx := congrArg (fun q : X ⟶ Y => q x) hg
   have hx' : g.hom (Submodule.Quotient.mk x) = f.hom x := by
+    -- `congrArg` evaluates the composite through `Hom.hom`, so expose that composition first.
     change g.hom ((quotientπ X W hW).hom x) = f.hom x at hx
     rw [quotientπ_apply] at hx
     exact hx
+  -- `mkQ_surjective` chooses a representative; unfold the RHS evaluation at that class.
   change g.hom (Submodule.Quotient.mk x) =
     (quotientDesc X W hW f hf).hom (Submodule.Quotient.mk x)
   rw [quotientDesc_mk]
