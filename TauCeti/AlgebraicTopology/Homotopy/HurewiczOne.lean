@@ -847,6 +847,12 @@ def hurewiczHomologyEquiv [PathConnectedSpace X] (x : X) :
     Additive (Abelianization (FundamentalGroup X x)) ≃+ ((singularChains ℤ).obj X).homology 1 :=
   (hurewiczEquiv x).trans (H₁AddEquivHomology X)
 
+lemma hurewiczHomologyEquiv_apply [PathConnectedSpace X] {x : X}
+    (a : Additive (Abelianization (FundamentalGroup X x))) :
+    hurewiczHomologyEquiv x a = H₁AddEquivHomology X (hurewiczAb x a) := by
+  rw [hurewiczHomologyEquiv, AddEquiv.trans_apply]
+  rfl
+
 lemma hurewiczHomologyEquiv_ofMul_of [PathConnectedSpace X] {x : X} (γ : Path x x) :
     hurewiczHomologyEquiv x (Additive.ofMul ((Abelianization.of : FundamentalGroup X x →* _)
       (Path.Homotopic.Quotient.mk γ))) = H₁AddEquivHomology X (loopClass γ) := by
