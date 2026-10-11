@@ -113,6 +113,19 @@ def cubicalToSingularCompHomotopy (X : TopCat.{u}) :
         NatTrans.id_app, HomologicalComplex.id_f, ModuleCat.id_apply]
       rw [cubicalAugment_singularToCubical, singularAugment_cubicalToSingular]) X
 
+/-- The homotopy `singularToCubicalCompHomotopy` is natural. -/
+theorem singularToCubicalCompHomotopy_hom_naturality {X Y : TopCat.{u}} (f : X ⟶ Y) (i j : ℕ) :
+    ((singularChains k).map f).f i ≫ (singularToCubicalCompHomotopy k Y).hom i j =
+      (singularToCubicalCompHomotopy k X).hom i j ≫ ((singularChains k).map f).f j :=
+  AcyclicModels.ModelPresentation.homotopy_hom_naturality _ _ _ _ _ f i j
+
+/-- The homotopy `cubicalToSingularCompHomotopy` is natural. -/
+theorem cubicalToSingularCompHomotopy_hom_naturality {X Y : TopCat.{u}} (f : X ⟶ Y) (i j : ℕ) :
+    ((normalizedCubicalChainComplex k).map f).f i ≫ (cubicalToSingularCompHomotopy k Y).hom i j =
+      (cubicalToSingularCompHomotopy k X).hom i j ≫
+        ((normalizedCubicalChainComplex k).map f).f j :=
+  AcyclicModels.ModelPresentation.homotopy_hom_naturality _ _ _ _ _ f i j
+
 /-- **Cubical and simplicial singular chains are naturally chain homotopy equivalent.** -/
 def cubicalSingularHomotopyEquiv (X : TopCat.{u}) :
     HomotopyEquiv ((singularChains k).obj X) ((normalizedCubicalChainComplex k).obj X) where
