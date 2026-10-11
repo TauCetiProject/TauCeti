@@ -28,9 +28,8 @@ outside `S` localizes to an unramified class at each place `v ∉ S`, and conver
 localizes to an unramified class at every place `v ∉ S` is unramified outside `S`. At a good place
 the curve over the completion has no bad primes (`badPrimes_adicCompletionIntegers`), so Step 6
 of weak Mordell–Weil over the completion puts the local descent image among the unramified
-classes. With `S` the bad primes, that is what makes the local conditions at the good finite
-places redundant — they are already implied by `A(S,2)` — so membership in the `2`-Selmer group
-reduces to the finitely many conditions at the bad and infinite places.
+classes. Combined with the local-to-global direction for `S` the bad primes, a class whose
+localization lies in the local descent image at every good finite place lies in `A(S,2)`.
 
 ## Main results
 
