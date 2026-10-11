@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.Unramified.Finite
 import Mathlib.LinearAlgebra.TensorProduct.Finiteness
 import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
+import TauCeti.RingTheory.Invariant.Basic
 
 /-!
 # Free actions of finite groups on rings
@@ -41,8 +42,9 @@ element of `A ⊗[R] A` whose components at `1` and at `g` are `1` and `0`, and 
 these elements over all `g ≠ 1` maps to the indicator function of `1`. Writing that product as
 `∑ i, xᵢ ⊗ yᵢ`, so that `∑ i, xᵢ * g • yᵢ` is `1` for `g = 1` and `0` otherwise, every `b : A` is
 `b = ∑ i, (∑ g, g • (yᵢ * b)) * xᵢ`, where each `∑ g, g • (yᵢ * b)` is invariant and so comes from
-`R`. This is a finite dual basis of `A` over `R`; it shows that `A` is finite and projective
-over `R`, and that `tensorToPi` is injective.
+`R`. This identity shows that `A` is a finite `R`-module and that `tensorToPi` is injective. When
+`R → A` is injective the coefficients `∑ g, g • (yᵢ * b)` have unique, hence `R`-linear,
+preimages in `R`, so the identity is a finite dual basis of `A` over `R` and `A` is projective.
 
 ## Main definitions
 
@@ -77,10 +79,10 @@ namespace TauCeti.MulSemiringAction
 variable (R A G : Type*) [CommRing R] [CommRing A] [Algebra R A] [Group G]
   [MulSemiringAction G A] [SMulCommClass G R A]
 
-/-- The `A`-algebra map `A ⊗[R] A → (G → A)` sending `a ⊗ b` to `g ↦ a * g • b`. On spectra it
-is the morphism from the disjoint union of `|G|` copies of `Spec A` to `Spec A ×_{Spec R} Spec A`
-whose `g`-th component is the identity on the first factor and the automorphism of `Spec A`
-induced by `g` on the second. -/
+/-- The `A`-algebra map `A ⊗[R] A → (G → A)` sending `a ⊗ b` to `g ↦ a * g • b`. When `G` is
+finite, on spectra it is the morphism from the disjoint union of `|G|` copies of `Spec A` to
+`Spec A ×_{Spec R} Spec A` whose `g`-th component is the identity on the first factor and the
+automorphism of `Spec A` induced by `g` on the second. -/
 noncomputable def tensorToPi : A ⊗[R] A →ₐ[A] (G → A) :=
   AlgHom.pi fun g ↦ Algebra.TensorProduct.lift (AlgHom.id A A)
     (MulSemiringAction.toAlgHom R A g) fun _ _ ↦ Commute.all _ _
@@ -180,13 +182,6 @@ theorem tensorToPi_surjective_iff [Finite G] :
   simp only [map_sum, map_smul, hw]
   ext g
   simp [Pi.single_apply]
-
-/-- The trace `∑ g, g • c` of an element under a finite group is invariant. -/
-private theorem smul_sum_smul [Fintype G] (h : G) (c : A) :
-    h • ∑ g : G, g • c = ∑ g : G, g • c := by
-  rw [Finset.smul_sum]
-  simp_rw [smul_smul]
-  exact Fintype.sum_equiv (Equiv.mulLeft h) _ _ fun _ ↦ rfl
 
 /-- The finite family attached to a preimage of the indicator function of `1` under
 `tensorToPi`. -/
