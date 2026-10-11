@@ -182,6 +182,13 @@ abbrev geckCoordinateHopfAlgebra : _root_.CommHopfAlgCat ℤ :=
   CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht))
     (t.geckDefiningIdeal ht)
 
+/-- The coordinate Hopf algebra is the quotient by the Geck defining ideal. -/
+theorem geckCoordinateHopfAlgebra_def :
+    t.geckCoordinateHopfAlgebra ht =
+      CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht))
+        (t.geckDefiningIdeal ht) :=
+  (rfl)
+
 /-- The Geck carrier is the Hopf spectrum of its coordinate Hopf algebra. -/
 theorem geckGroupScheme_eq_hopfSpec :
     t.geckGroupScheme ht =
