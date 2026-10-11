@@ -95,7 +95,9 @@ has exact order `N` when the closed subscheme of the divisor `[P] + [2P] + ⋯ +
 scheme of `E`: it carries a group-object structure in `Over S` for which its inclusion into `E` is
 a homomorphism. By the closed-subgroup criterion
 (`TauCeti.GroupScheme.exists_grpObj_isMonHom_iff_ker_le`), such a structure is unique when it
-exists. -/
+exists. The divisor is indexed by `1 ≤ a ≤ N`, not by residues modulo `N`, since `NP = 0` is a
+consequence (`IsOfExactOrder.pow_eq_one`) rather than an assumption. No rank condition is imposed:
+being a sum of `N` divisors of degree one, the divisor already has degree `N`. -/
 def IsOfExactOrder (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) (N : ℕ) : Prop :=
   ∃ _ : GrpObj (Over.mk ((E.multiplesDivisor P N).subschemeι ≫ E.structureMap)),
     IsMonHom (Over.homMk (E.multiplesDivisor P N).subschemeι :
