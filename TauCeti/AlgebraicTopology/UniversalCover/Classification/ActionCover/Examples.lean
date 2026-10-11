@@ -15,9 +15,10 @@ comparison sends `⟦u, g⟧` to `g⁻¹ • u`, and its inverse sends `u` to `�
 with the projections to the base, so this identifies the covers, not just their total spaces.
 The fundamental group carries the discrete topology as a label set.
 
-The balanced-product construction also applies to arbitrary actions, including the singleton
-action. In that case its associated cover is the identity cover of the base. This gives a concrete
-check that the construction recovers the trivial one-sheeted cover.
+The balanced-product construction also applies to arbitrary actions, including an action on a
+one-point set. In that case its projection is a homeomorphism onto the base, so the construction
+recovers the trivial one-sheeted cover. This needs only that the base is path connected and
+locally path connected.
 
 The construction for the regular action uses `TauCeti.BalancedProduct.homeomorphSelf`, without
 any freeness or covering assumption. In particular, the comparison exists for the based-path
@@ -30,8 +31,6 @@ space even when the base does not satisfy the hypotheses for a universal coverin
 
 public section
 noncomputable section
-
-open Topology
 
 universe u
 
@@ -81,48 +80,48 @@ theorem proj_actionCoverRegularHomeomorph
 
 end RegularAction
 
-/-- The projection of the singleton associated cover is injective. Its fibers are the
-universal-cover orbits, and the singleton label adds no further identifications. -/
-theorem actionCoverPUnitProj_injective :
-    Function.Injective (actionCoverProj x₀ PUnit) := by
-  intro a b hab
-  obtain ⟨p, rfl⟩ := Quotient.exists_rep a
-  obtain ⟨q, rfl⟩ := Quotient.exists_rep b
-  have hp : actionCoverProj x₀ PUnit (Quotient.mk _ p) = proj p.1 := by
-    simpa [BalancedProduct.mk] using actionCoverProj_mk x₀ PUnit p.1 p.2
-  have hq : actionCoverProj x₀ PUnit (Quotient.mk _ q) = proj q.1 := by
-    simpa [BalancedProduct.mk] using actionCoverProj_mk x₀ PUnit q.1 q.2
-  have hpq : proj p.1 = proj q.1 := by simpa only [hp, hq] using hab
-  obtain ⟨g, hg⟩ := (proj_eq_iff_mem_orbit (x₀ := x₀)).mp hpq
-  apply Quotient.sound
-  exact ⟨g, by simpa using Prod.ext hg (Subsingleton.elim (g • q.2) p.2)⟩
+section Subsingleton
 
-variable [LocallyPathConnectedSpace X] [PathConnectedSpace X]
-  [SemilocallySimplyConnectedSpace X]
+variable (A : Type u) [MulAction (FundamentalGroup X x₀) A]
 
-/-- The associated cover of the singleton action is homeomorphic to its base by the covering
+/-- The projection of the cover attached to a subsingleton action is injective. -/
+theorem actionCoverProj_injective [Subsingleton A] :
+    Function.Injective (actionCoverProj x₀ A) := by
+  intro z w hzw
+  induction z using Quotient.inductionOn with
+  | h p =>
+    induction w using Quotient.inductionOn with
+    | h q =>
+      rcases p with ⟨e, a⟩
+      rcases q with ⟨e', a'⟩
+      simp only [actionCoverProj_mk] at hzw
+      obtain ⟨g, hg⟩ := proj_eq_iff_mem_orbit.mp hzw
+      exact Quotient.sound ⟨g, Prod.ext hg (Subsingleton.elim _ _)⟩
+
+variable [TopologicalSpace A] [LocallyPathConnectedSpace X] [PathConnectedSpace X]
+  [Subsingleton A] [Nonempty A]
+
+/-- The cover attached to an action on a one-point set is homeomorphic to its base by its
 projection. -/
-abbrev actionCoverPUnitHomeomorph : ActionCover x₀ PUnit ≃ₜ X := by
-  have hsurj : Function.Surjective (actionCoverProj x₀ PUnit) := by
-    intro y
-    obtain ⟨e, he⟩ := (UniversalCover.proj_surjective (x₀ := x₀)) y
-    refine ⟨BalancedProduct.mk (FundamentalGroup X x₀) e PUnit.unit, ?_⟩
-    simp [he]
-  exact Equiv.toHomeomorphOfContinuousOpen
-    (Equiv.ofBijective (actionCoverProj x₀ PUnit)
-      ⟨actionCoverPUnitProj_injective x₀, hsurj⟩)
-    (continuous_actionCoverProj x₀ PUnit)
-    (isCoveringMap_actionCoverProj x₀ PUnit).isOpenMap
+def actionCoverHomeomorphOfSubsingleton : ActionCover x₀ A ≃ₜ X :=
+  Equiv.toHomeomorphOfContinuousOpen
+    (Equiv.ofBijective (actionCoverProj x₀ A)
+      ⟨actionCoverProj_injective x₀ A, actionCoverProj_surjective x₀ A⟩)
+    (continuous_actionCoverProj x₀ A) (isOpenMap_actionCoverProj x₀ A)
 
-/-- The singleton-cover homeomorphism is the projection of the associated cover. -/
+/-- The one-point-cover homeomorphism is the projection of the associated cover. -/
 @[simp]
-theorem actionCoverPUnitHomeomorph_apply (z : ActionCover x₀ PUnit) :
-    actionCoverPUnitHomeomorph x₀ z = actionCoverProj x₀ PUnit z :=
-  rfl
+theorem actionCoverHomeomorphOfSubsingleton_apply (z : ActionCover x₀ A) :
+    actionCoverHomeomorphOfSubsingleton x₀ A z = actionCoverProj x₀ A z :=
+  (rfl)
 
-/-- On quotient representatives, the singleton-cover homeomorphism is the endpoint projection. -/
-theorem actionCoverPUnitHomeomorph_mk (e : UniversalCover x₀) (a : PUnit) :
-    actionCoverPUnitHomeomorph x₀ (BalancedProduct.mk (FundamentalGroup X x₀) e a) = proj e := by
-  rw [actionCoverPUnitHomeomorph_apply, actionCoverProj_mk]
+/-- The inverse one-point-cover homeomorphism sends an endpoint to the class of any lift with
+that endpoint, paired with any label. -/
+theorem actionCoverHomeomorphOfSubsingleton_symm_proj (e : UniversalCover x₀) (a : A) :
+    (actionCoverHomeomorphOfSubsingleton x₀ A).symm (proj e) =
+      BalancedProduct.mk (FundamentalGroup X x₀) e a := by
+  rw [Homeomorph.symm_apply_eq, actionCoverHomeomorphOfSubsingleton_apply, actionCoverProj_mk]
+
+end Subsingleton
 
 end TauCeti.UniversalCover

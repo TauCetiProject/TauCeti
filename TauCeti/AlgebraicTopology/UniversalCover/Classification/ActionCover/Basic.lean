@@ -91,6 +91,25 @@ omit [LocallyPathConnectedSpace X] [PathConnectedSpace X] [SemilocallySimplyConn
 theorem continuous_actionCoverProj : Continuous (actionCoverProj x₀ A) :=
   BalancedProduct.continuous_proj A _ (continuous_proj x₀)
 
+omit [PathConnectedSpace X] [SemilocallySimplyConnectedSpace X] [DiscreteTopology A] in
+/-- The projection of the cover attached to `A` is an open map. -/
+theorem isOpenMap_actionCoverProj : IsOpenMap (actionCoverProj x₀ A) := by
+  intro U hU
+  rw [← Set.image_preimage_eq U Quotient.mk_surjective, Set.image_image]
+  have hcomp : (fun p => actionCoverProj x₀ A (Quotient.mk _ p)) = proj ∘ Prod.fst :=
+    funext fun p => actionCoverProj_mk x₀ A p.1 p.2
+  rw [hcomp, Set.image_comp]
+  exact isOpenMap_proj x₀ _ (isOpenMap_fst _ (hU.preimage continuous_quotient_mk'))
+
+omit [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X] [TopologicalSpace A]
+  [DiscreteTopology A] in
+/-- The projection of the cover attached to a nonempty `A` is surjective. -/
+theorem actionCoverProj_surjective [Nonempty A] : Function.Surjective (actionCoverProj x₀ A) :=
+  fun x ↦
+    let ⟨e, he⟩ := proj_surjective (x₀ := x₀) x
+    ⟨BalancedProduct.mk (FundamentalGroup X x₀) e (Classical.arbitrary A),
+      (actionCoverProj_mk x₀ A e _).trans he⟩
+
 /-- **The cover attached to a `π₁(X, x₀)`-set is a covering space of `X`.** -/
 theorem isCoveringMap_actionCoverProj : IsCoveringMap (actionCoverProj x₀ A) :=
   BalancedProduct.isCoveringMap_proj A _ isQuotientCoveringMap
