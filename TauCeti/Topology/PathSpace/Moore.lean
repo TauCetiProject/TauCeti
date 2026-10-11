@@ -401,6 +401,7 @@ theorem symm_constOfLength (x : X) (L : ℝ≥0) : (constOfLength x L).symm = co
   ext rfl fun _ ↦ rfl
 
 /-- Reversal exchanges the order of a concatenation. -/
+@[simp]
 theorem symm_trans (γ δ : MoorePath X) (h : γ.target = δ.source) :
     (γ.trans δ h).symm = δ.symm.trans γ.symm (by rw [target_symm, source_symm, h]) := by
   refine ext (add_comm _ _) fun t ↦ ?_
@@ -526,6 +527,7 @@ theorem map_trans (f : C(X, Y)) (γ δ : MoorePath X) (h : γ.target = δ.source
 theorem map_id (γ : MoorePath X) : γ.map (.id X) = γ :=
   (rfl)
 
+@[simp]
 theorem map_map (g : C(Y, Z)) (f : C(X, Y)) (γ : MoorePath X) :
     (γ.map f).map g = γ.map (g.comp f) :=
   (rfl)
@@ -759,7 +761,7 @@ theorem map_id :
 theorem map_comp {Z : Type*} [TopologicalSpace Z] {z : Z} (g : C(Y, Z)) (f : C(X, Y))
     (hg : g y = z) (hf : f x = y) :
     map (g.comp f) (by rw [ContinuousMap.comp_apply, hf, hg]) = (map g hg).comp (map f hf) :=
-  ContinuousMonoidHom.ext fun _ ↦ ext <| by simp [MoorePath.map_map]
+  ContinuousMonoidHom.ext fun _ ↦ ext <| by simp
 
 end MooreLoopSpace
 
