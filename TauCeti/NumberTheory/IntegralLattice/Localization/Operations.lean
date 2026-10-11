@@ -62,7 +62,7 @@ noncomputable def localOrthogonalSumIsometry :
         LinearMap.BilinForm.prod_apply, orthogonalSumFst_apply,
         orthogonalSumSnd_apply] using (L.integralForm_orthogonalSum M x y).symm⟩ :
       (L.orthogonalSum M).integralForm.IsometryEquiv (L.integralForm.prod M.integralForm))).trans
-    (BilinForm.IsometryEquiv.baseChangeProd ℤ_[p] L.integralForm M.integralForm)
+    (bilinFormBaseChangeProdIsometry ℤ_[p] L.integralForm M.integralForm)
 
 /-- The integral sum comparison on a pure tensor. -/
 @[simp]
@@ -73,7 +73,7 @@ theorem localOrthogonalSumIsometry_tmul (a : ℤ_[p]) (x : L.orthogonalSum M) :
   simp only [LinearMap.BilinForm.IsometryEquiv.trans, LinearEquiv.trans_apply,
     LinearMap.BilinForm.IsometryEquiv.coe_toLinearEquiv,
     LinearMap.BilinForm.IsometryEquiv.baseChange_tmul,
-    BilinForm.IsometryEquiv.baseChangeProd_tmul, orthogonalSumFst_apply,
+    bilinFormBaseChangeProdIsometry_tmul, orthogonalSumFst_apply,
     orthogonalSumSnd_apply]
   rfl
 
@@ -88,10 +88,10 @@ theorem localOrthogonalSumIsometry_symm_tmul (a : ℤ_[p]) (x : L) (y : M) :
     LinearMap.BilinForm.IsometryEquiv.trans, LinearEquiv.trans_symm,
     LinearEquiv.trans_apply]
   change (LinearMap.BilinForm.IsometryEquiv.baseChange ℤ_[p] _).symm
-    ((BilinForm.IsometryEquiv.baseChangeProd ℤ_[p] L.integralForm M.integralForm).symm
+    ((bilinFormBaseChangeProdIsometry ℤ_[p] L.integralForm M.integralForm).symm
       (a ⊗ₜ x, a ⊗ₜ y)) = _
-  rw [BilinForm.IsometryEquiv.baseChangeProd_symm_tmul,
-    BilinForm.IsometryEquiv.baseChange_symm_tmul]
+  rw [bilinFormBaseChangeProdIsometry_symm_tmul,
+    bilinFormIsometryEquiv_baseChange_symm_tmul]
   apply congrArg (fun z => a ⊗ₜ[ℤ] z)
   apply (L.orthogonalSumCarrierEquiv M).injective
   simp only [map_add, orthogonalSumCarrierEquiv_inl, orthogonalSumCarrierEquiv_inr,
@@ -118,7 +118,7 @@ theorem localOrthogonalSumIsometry_symm_zero_tmul (a : ℤ_[p]) (y : M) :
 noncomputable def completedOrthogonalSumIsometry :
     ((L.orthogonalSum M).completedRationalForm p).IsometryEquiv
       ((L.completedRationalForm p).prod (M.completedRationalForm p)) where
-  toLinearEquiv := (BilinForm.IsometryEquiv.baseChangeProd ℚ_[p] L.form M.form).toLinearEquiv
+  toLinearEquiv := (bilinFormBaseChangeProdIsometry ℚ_[p] L.form M.form).toLinearEquiv
   map_app' x y := by
     simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearEquiv.coe_coe,
       LinearMap.BilinForm.IsometryEquiv.coe_toLinearEquiv]
@@ -129,7 +129,7 @@ noncomputable def completedOrthogonalSumIsometry :
       intro y
       simp
     simpa only [completedRationalForm, orthogonalSum_form, hform] using
-      (BilinForm.IsometryEquiv.baseChangeProd ℚ_[p] L.form M.form).map_app y x
+      (bilinFormBaseChangeProdIsometry ℚ_[p] L.form M.form).map_app y x
 
 /-- The rational sum comparison on a pure tensor. -/
 @[simp]
@@ -137,7 +137,7 @@ theorem completedOrthogonalSumIsometry_tmul (a : ℚ_[p]) (x : V × W) :
     L.completedOrthogonalSumIsometry M p (a ⊗ₜ x) = (a ⊗ₜ x.1, a ⊗ₜ x.2) := by
   rw [← LinearMap.BilinForm.IsometryEquiv.coe_toLinearEquiv,
     completedOrthogonalSumIsometry, LinearMap.BilinForm.IsometryEquiv.coe_toLinearEquiv]
-  exact BilinForm.IsometryEquiv.baseChangeProd_tmul L.form M.form a x
+  exact bilinFormBaseChangeProdIsometry_tmul L.form M.form a x
 
 /-- The inverse rational sum comparison on a pair of pure tensors with a common scalar. -/
 @[simp]
@@ -146,8 +146,8 @@ theorem completedOrthogonalSumIsometry_symm_tmul (a : ℚ_[p]) (x : V) (y : W) :
       a ⊗ₜ (x, y) := by
   rw [← LinearMap.BilinForm.IsometryEquiv.coe_toLinearEquiv,
     LinearMap.BilinForm.IsometryEquiv.symm, completedOrthogonalSumIsometry]
-  change (BilinForm.IsometryEquiv.baseChangeProd ℚ_[p] L.form M.form).symm _ = _
-  exact BilinForm.IsometryEquiv.baseChangeProd_symm_tmul L.form M.form a x y
+  change (bilinFormBaseChangeProdIsometry ℚ_[p] L.form M.form).symm _ = _
+  exact bilinFormBaseChangeProdIsometry_symm_tmul L.form M.form a x y
 
 /-- The inverse rational sum comparison on a pure tensor in the first coordinate. -/
 @[simp]

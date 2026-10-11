@@ -46,7 +46,7 @@ base change acts entrywise on the Gram matrix of a basis and maps its determinan
   integral domains the implication is an equivalence.
 * `LinearMap.BilinForm.IsometryEquiv.baseChange`: an isometric equivalence of bilinear forms
   base-changes to an isometric equivalence of their base changes.
-* `TauCeti.BilinForm.IsometryEquiv.baseChangeProd`: base change commutes with products of
+* `TauCeti.bilinFormBaseChangeProdIsometry`: base change commutes with products of
   bilinear forms, via the canonical tensor-product equivalence.
 -/
 
@@ -192,11 +192,9 @@ theorem _root_.LinearMap.BilinForm.IsometryEquiv.baseChange_tmul (f : B₁.Isome
     (a : A) (m : M₁) : f.baseChange A (a ⊗ₜ m) = a ⊗ₜ f m :=
   LinearEquiv.baseChange_tmul R A M₁ M₂ (e := (f : M₁ ≃ₗ[R] M₂)) a m
 
-namespace BilinForm.IsometryEquiv
-
 /-- The inverse of a base-changed isometry applies the original inverse on pure tensors. -/
 @[simp]
-theorem baseChange_symm_tmul (f : B₁.IsometryEquiv B₂) (a : A) (m : M₂) :
+theorem bilinFormIsometryEquiv_baseChange_symm_tmul (f : B₁.IsometryEquiv B₂) (a : A) (m : M₂) :
     (f.baseChange A).symm (a ⊗ₜ m) = a ⊗ₜ f.symm m := by
   rw [← LinearMap.BilinForm.IsometryEquiv.coe_toLinearEquiv,
     LinearMap.BilinForm.IsometryEquiv.symm, LinearMap.BilinForm.IsometryEquiv.baseChange]
@@ -205,7 +203,8 @@ theorem baseChange_symm_tmul (f : B₁.IsometryEquiv B₂) (a : A) (m : M₂) :
 variable (A) in
 /-- Base change of a product of bilinear forms is isometric to the product of their base changes,
 via the canonical distribution of tensor products over products. -/
-def baseChangeProd (B₁ : LinearMap.BilinForm R M₁) (B₂ : LinearMap.BilinForm R M₂) :
+def bilinFormBaseChangeProdIsometry (B₁ : LinearMap.BilinForm R M₁)
+    (B₂ : LinearMap.BilinForm R M₂) :
     ((B₁.prod B₂).baseChange A).IsometryEquiv ((B₁.baseChange A).prod (B₂.baseChange A)) where
   toLinearEquiv := TensorProduct.prodRight R A A M₁ M₂
   map_app' x y := by
@@ -220,22 +219,20 @@ def baseChangeProd (B₁ : LinearMap.BilinForm R M₁) (B₂ : LinearMap.BilinFo
 
 /-- The product base-change isometry distributes a pure tensor over its two coordinates. -/
 @[simp]
-theorem baseChangeProd_tmul (B₁ : LinearMap.BilinForm R M₁)
+theorem bilinFormBaseChangeProdIsometry_tmul (B₁ : LinearMap.BilinForm R M₁)
     (B₂ : LinearMap.BilinForm R M₂) (a : A) (x : M₁ × M₂) :
-    baseChangeProd A B₁ B₂ (a ⊗ₜ x) = (a ⊗ₜ x.1, a ⊗ₜ x.2) := by
-  rw [← LinearMap.BilinForm.IsometryEquiv.coe_toLinearEquiv, baseChangeProd]
+    bilinFormBaseChangeProdIsometry A B₁ B₂ (a ⊗ₜ x) = (a ⊗ₜ x.1, a ⊗ₜ x.2) := by
+  rw [← LinearMap.BilinForm.IsometryEquiv.coe_toLinearEquiv, bilinFormBaseChangeProdIsometry]
   exact TensorProduct.prodRight_tmul R A A M₁ M₂ a x
 
 /-- The inverse product base-change isometry combines pure tensors with a common scalar. -/
 @[simp]
-theorem baseChangeProd_symm_tmul (B₁ : LinearMap.BilinForm R M₁)
+theorem bilinFormBaseChangeProdIsometry_symm_tmul (B₁ : LinearMap.BilinForm R M₁)
     (B₂ : LinearMap.BilinForm R M₂) (a : A) (x : M₁) (y : M₂) :
-    (baseChangeProd A B₁ B₂).symm (a ⊗ₜ x, a ⊗ₜ y) = a ⊗ₜ (x, y) := by
+    (bilinFormBaseChangeProdIsometry A B₁ B₂).symm (a ⊗ₜ x, a ⊗ₜ y) = a ⊗ₜ (x, y) := by
   rw [← LinearMap.BilinForm.IsometryEquiv.coe_toLinearEquiv,
-    LinearMap.BilinForm.IsometryEquiv.symm, baseChangeProd]
+    LinearMap.BilinForm.IsometryEquiv.symm, bilinFormBaseChangeProdIsometry]
   exact TensorProduct.prodRight_symm_tmul R A A M₁ M₂ a x y
-
-end BilinForm.IsometryEquiv
 
 end IsometryEquiv
 
