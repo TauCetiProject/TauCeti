@@ -6,8 +6,8 @@ Authors: Claude
 module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.FiniteGraph
-import Mathlib.Probability.Distributions.Bernoulli
-import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Pullback.Basic
+public import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Pullback.Basic
+public import Mathlib.Probability.Distributions.Bernoulli
 
 /-!
 # Atomic regressions for the map form of the cut distance
@@ -59,25 +59,26 @@ namespace TauCeti
 
 namespace DenseGraphLimits
 
--- Regression: both carriers are point masses, so the only coupling is a point mass. The map form
--- is still the distance of the two values, although no bijection relates either carrier to
--- `(I, volume)`.
-example (U : Graphon ℝ (Measure.dirac 0)) (W : Graphon ℝ (Measure.dirac 1)) :
+/-- The coupling and map cut distances agree on two point-mass carriers. This regression records
+that the map formulation handles atoms even when no measure-preserving bijection to `(I, volume)`
+exists. -/
+theorem cutDist_eq_cutDistPullback_dirac_dirac
+    (U : Graphon ℝ (Measure.dirac 0)) (W : Graphon ℝ (Measure.dirac 1)) :
     cutDistPullback U W = |U 0 0 - W 1 1| := by
   rw [← cutDist_eq_cutDistPullback, cutDist_dirac_dirac]
 
--- Regression: the uniform two-point carrier against a Bernoulli law, carried by at most two atoms
--- — an endpoint parameter collapses it to a point mass — so every coupling is finitely atomic, and
--- for an interior parameter there are infinitely many of them.
-example {p : I} :
+/-- The coupling and map cut distances agree between a uniform two-point graph and a graphon
+constant on a Bernoulli carrier. The endpoint parameters include the point-mass regression, while
+interior parameters test a nontrivial finite atomic law. -/
+theorem cutDist_eq_cutDistPullback_finiteGraphGraphonOnFin_top_two_bernoulli {p : I} :
     cutDistPullback (finiteGraphGraphonOnFin (⊤ : SimpleGraph (Fin 2)))
       (Graphon.const (bernoulliMeasure (0 : ℝ) 1 p) ⟨2⁻¹, by norm_num, by norm_num⟩) =
       1 / 8 := by
   rw [← cutDist_eq_cutDistPullback, cutDist_finiteGraphGraphonOnFin_top_two_const_half]
 
--- Regression: the uniform two-point carrier against `(I, volume)`, so a coupling has an atomic and
--- a continuous direction at once.
-example :
+/-- The coupling and map cut distances agree between a uniform two-point graph and the uniform
+unit-interval graphon. This mixed regression has one atomic carrier and one nonatomic carrier. -/
+theorem cutDist_eq_cutDistPullback_finiteGraphGraphonOnFin_top_two_const_half :
     cutDistPullback (finiteGraphGraphonOnFin (⊤ : SimpleGraph (Fin 2)))
       (Graphon.const (volume : Measure I) ⟨2⁻¹, by norm_num, by norm_num⟩) = 1 / 8 := by
   rw [← cutDist_eq_cutDistPullback, cutDist_finiteGraphGraphonOnFin_top_two_const_half]
