@@ -57,6 +57,14 @@ variable {k : Type u} [Ring k]
 
 namespace TauCeti
 
+instance (X : TopCat.{u}) : QuasiIso ((singularToCubical k).app X) := by
+  rw [← cubicalSingularHomotopyEquiv_hom]
+  infer_instance
+
+instance (X : TopCat.{u}) : QuasiIso ((cubicalToSingular k).app X) := by
+  rw [← cubicalSingularHomotopyEquiv_inv]
+  infer_instance
+
 variable (k) in
 /-- **Cubical singular homology is singular homology**: the isomorphism induced by the comparison
 of cubical and simplicial chains. -/
