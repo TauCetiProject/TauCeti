@@ -92,8 +92,8 @@ source carries its own `HeightOneSpectrum.below`; at our Mathlib pin that map is
 `HeightOneSpectrum.under`, which is used here instead. The source is written against Lean
 `v4.32.0`; this is a forward port.
 
-The per-prime hypotheses — integral `a₂`, `a₄`, `a₆` and a unit `disc f`, or a unit `f' θ`, resp.
-`f' x`, at the prime under `w`, in place of `w` not lying above a bad prime — and the Bézout
+The per-prime hypotheses (integral `a₂`, `a₄`, `a₆` and a unit `disc f`, or a unit `f' θ`, resp.
+`f' x`, at the prime under `w`, in place of `w` not lying above a bad prime) and the Bézout
 identity with `disc f` rather than `Δ` on the right follow the later revision `3bfe124` of the
 same project, same file and sections.
 -/
