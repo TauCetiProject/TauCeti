@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import Mathlib.Topology.Homeomorph.Quotient
 public import TauCeti.AlgebraicTopology.Disk
 public import TauCeti.Topology.Homotopy.Cube.Basic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
@@ -45,7 +46,7 @@ identification is natural in based maps (`GenLoop.toSphere_map`).
   `EuclideanSpace ℝ (Fin (n + 1))`.
 * `TauCeti.closedBallToSphere`: the closed unit ball of `ℝⁿ` modulo its boundary is the sphere,
   with `TauCeti.closedBallToSphere_eq_closedBallToSphere_iff` and
-  `TauCeti.surjective_closedBallToSphere`.
+  `TauCeti.closedBallToSphere_surjective`.
 * `TauCeti.cubeToSphere`: the same for the cube `I^n`, a quotient map in positive dimension
   (`TauCeti.isQuotientMap_cubeToSphere`) collapsing exactly the boundary
   (`TauCeti.cubeToSphere_eq_cubeToSphere_iff`, `TauCeti.cubeToSphere_eq_sphereNorthPole_iff`).
@@ -88,6 +89,34 @@ lemma coe_sphereNorthPole :
 
 variable {n}
 
+/-- A point of the unit sphere is the north pole exactly when its height is one. -/
+theorem eq_sphereNorthPole_iff {y : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1} :
+    y = sphereNorthPole n ↔ (y : EuclideanSpace ℝ (Fin (n + 1))) (Fin.last n) = 1 := by
+  refine ⟨fun h ↦ by simp [h], fun h ↦ ?_⟩
+  have hy1 : ‖(y : EuclideanSpace ℝ (Fin (n + 1)))‖ = 1 := by simp
+  -- The horizontal coordinates have vanishing sum of squares.
+  have hy2 : ∑ i : Fin n, (y : EuclideanSpace ℝ (Fin (n + 1))) i.castSucc ^ 2 = 0 := by
+    have := EuclideanSpace.real_norm_sq_eq (y : EuclideanSpace ℝ (Fin (n + 1)))
+    rw [Fin.sum_univ_castSucc, hy1, h] at this
+    linarith
+  have hzero (i : Fin n) : (y : EuclideanSpace ℝ (Fin (n + 1))) i.castSucc = 0 :=
+    pow_eq_zero_iff two_ne_zero |>.1 <|
+      (Finset.sum_eq_zero_iff_of_nonneg fun j _ ↦ sq_nonneg _).1 hy2 i (Finset.mem_univ _)
+  ext i
+  refine Fin.lastCases ?_ (fun i ↦ ?_) i
+  · simp [h]
+  · simp [hzero, Fin.castSucc_ne_last]
+
+/-- A point of the unit sphere has height less than one exactly when it is not the north pole. -/
+theorem apply_last_lt_one_iff_ne_sphereNorthPole
+    {y : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1} :
+    (y : EuclideanSpace ℝ (Fin (n + 1))) (Fin.last n) < 1 ↔ y ≠ sphereNorthPole n := by
+  have hle : (y : EuclideanSpace ℝ (Fin (n + 1))) (Fin.last n) ≤ 1 := by
+    have := PiLp.norm_apply_le (p := 2) (y : EuclideanSpace ℝ (Fin (n + 1))) (Fin.last n)
+    rw [norm_eq_of_mem_sphere, Real.norm_eq_abs] at this
+    exact (abs_le.1 this).2
+  rw [hle.lt_iff_ne, Ne, Ne, eq_sphereNorthPole_iff]
+
 /-- The vector underlying `TauCeti.closedBallToSphere`: `(2 √(1 - ‖x‖²) x, 2 ‖x‖² - 1)`. -/
 private def closedBallToSphereAux (x : EuclideanSpace ℝ (Fin n)) : EuclideanSpace ℝ (Fin (n + 1)) :=
   WithLp.toLp 2 (Fin.snoc (α := fun _ ↦ ℝ) (fun i ↦ 2 * √(1 - ‖x‖ ^ 2) * x i) (2 * ‖x‖ ^ 2 - 1))
@@ -115,7 +144,7 @@ of `ℝⁿ` to the unit sphere of `ℝⁿ⁺¹` sending `x` to `(2 √(1 - ‖x�
 coordinate being the height.  It sends the centre to the south pole, collapses the boundary sphere
 to the north pole (`TauCeti.closedBallToSphere_eq_sphereNorthPole_iff`), is injective on the open
 ball (`TauCeti.closedBallToSphere_eq_closedBallToSphere_iff`) and is surjective in positive
-dimension (`TauCeti.surjective_closedBallToSphere`). -/
+dimension (`TauCeti.closedBallToSphere_surjective`). -/
 def closedBallToSphere :
     C(closedBall (0 : EuclideanSpace ℝ (Fin n)) 1, sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)
     where
@@ -217,31 +246,14 @@ private lemma norm_sq_sphereToBallAux {y : EuclideanSpace ℝ (Fin (n + 1))} (hy
 /-- `TauCeti.closedBallToSphere` is surjective in positive dimension: the north pole is the image
 of the boundary sphere, which is nonempty, and every other point of the sphere has an explicit
 preimage in the open ball. -/
-theorem surjective_closedBallToSphere [NeZero n] : Function.Surjective (closedBallToSphere n) := by
+theorem closedBallToSphere_surjective [NeZero n] : Function.Surjective (closedBallToSphere n) := by
   intro y
   by_cases hy : y = sphereNorthPole n
   · subst hy
     refine ⟨⟨EuclideanSpace.single 0 1, by simp⟩, ?_⟩
     exact closedBallToSphere_eq_sphereNorthPole_iff.2 (by simp)
   have hy1 : ‖(y : EuclideanSpace ℝ (Fin (n + 1)))‖ = 1 := by simp
-  -- The height of `y` is less than one, since otherwise `y` would be the north pole.
-  have hlast : (y : EuclideanSpace ℝ (Fin (n + 1))) (Fin.last n) < 1 := by
-    have hle : (y : EuclideanSpace ℝ (Fin (n + 1))) (Fin.last n) ≤ 1 := by
-      have := PiLp.norm_apply_le (p := 2) (y : EuclideanSpace ℝ (Fin (n + 1))) (Fin.last n)
-      rw [hy1, Real.norm_eq_abs] at this
-      exact (abs_le.1 this).2
-    refine lt_of_le_of_ne hle fun h ↦ hy ?_
-    have hy2 : ∑ i : Fin n, (y : EuclideanSpace ℝ (Fin (n + 1))) i.castSucc ^ 2 = 0 := by
-      have := EuclideanSpace.real_norm_sq_eq (y : EuclideanSpace ℝ (Fin (n + 1)))
-      rw [Fin.sum_univ_castSucc, hy1, h] at this
-      linarith
-    have hzero (i : Fin n) : (y : EuclideanSpace ℝ (Fin (n + 1))) i.castSucc = 0 :=
-      pow_eq_zero_iff two_ne_zero |>.1 <|
-        (Finset.sum_eq_zero_iff_of_nonneg fun j _ ↦ sq_nonneg _).1 hy2 i (Finset.mem_univ _)
-    ext i
-    refine Fin.lastCases ?_ (fun i ↦ ?_) i
-    · simp [h]
-    · simp [hzero, Fin.castSucc_ne_last]
+  have hlast := apply_last_lt_one_iff_ne_sphereNorthPole.2 hy
   set x := sphereToBallAux (y : EuclideanSpace ℝ (Fin (n + 1)))
   have hx : ‖x‖ ^ 2 = (1 + (y : EuclideanSpace ℝ (Fin (n + 1))) (Fin.last n)) / 2 :=
     norm_sq_sphereToBallAux hy1 hlast
@@ -262,26 +274,13 @@ theorem surjective_closedBallToSphere [NeZero n] : Function.Surjective (closedBa
   · rw [closedBallToSphere_apply_castSucc]
     rw [Subtype.coe_mk, hsq]
     simp only [x, sphereToBallAux, PiLp.toLp_apply]
-    field_simp
-    exact mul_div_cancel_left₀ _ (Real.sqrt_pos.2 (by linarith)).ne'
+    exact mul_div_cancel₀ _ hpos.ne'
 
 end Ball
 
 section Cube
 
 variable {n : ℕ}
-
-/-- A point of the Euclidean disk `TopCat.disk n` lies on its boundary sphere exactly when it has
-norm one. -/
-private lemma mem_range_diskBoundaryInclusion_iff (z : TopCat.disk.{0} n) :
-    z ∈ Set.range (TopCat.diskBoundaryInclusion.{0} n) ↔
-      ‖((z : ULift.{0} (closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down :
-        EuclideanSpace ℝ (Fin n))‖ = 1 := by
-  refine ⟨?_, fun h ↦ ⟨ULift.up ⟨_, mem_sphere_zero_iff_norm.2 h⟩, rfl⟩⟩
-  rintro ⟨s, rfl⟩
-  -- The boundary inclusion keeps the underlying point of the sphere.
-  exact mem_sphere_zero_iff_norm.1
-    (s : ULift.{0} (sphere (0 : EuclideanSpace ℝ (Fin n)) 1)).down.2
 
 variable (n) in
 /-- **The cube modulo its boundary is the sphere.**  The map from the cube `I^n` to the unit sphere
@@ -302,15 +301,6 @@ lemma cubeToSphere_apply (y : I^(Fin n)) :
         ULift.{0} (closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down :=
   (rfl)
 
-/-- The point of the closed ball corresponding to a point of the cube has norm one exactly when the
-point lies on the boundary of the cube. -/
-private lemma norm_down_diskHomeomorphCube_symm_eq_one_iff (y : I^(Fin n)) :
-    ‖(((diskHomeomorphCube.{0} n).symm y :
-        ULift.{0} (closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down :
-          EuclideanSpace ℝ (Fin n))‖ = 1 ↔ y ∈ Cube.boundary (Fin n) := by
-  rw [← mem_range_diskBoundaryInclusion_iff, ← diskHomeomorphCube_mem_boundary_iff,
-    Homeomorph.apply_symm_apply]
-
 /-- `TauCeti.cubeToSphere` sends exactly the boundary of the cube to the north pole. -/
 theorem cubeToSphere_eq_sphereNorthPole_iff {y : I^(Fin n)} :
     cubeToSphere n y = sphereNorthPole n ↔ y ∈ Cube.boundary (Fin n) := by
@@ -328,8 +318,8 @@ theorem cubeToSphere_eq_cubeToSphere_iff {y z : I^(Fin n)} :
 
 variable (n) in
 /-- `TauCeti.cubeToSphere` is surjective in positive dimension. -/
-theorem surjective_cubeToSphere [NeZero n] : Function.Surjective (cubeToSphere n) :=
-  (surjective_closedBallToSphere).comp <|
+theorem cubeToSphere_surjective [NeZero n] : Function.Surjective (cubeToSphere n) :=
+  (closedBallToSphere_surjective).comp <|
     Homeomorph.ulift.surjective.comp (diskHomeomorphCube.{0} n).symm.surjective
 
 variable (n) in
@@ -337,40 +327,37 @@ variable (n) in
 from the compact cube onto the Hausdorff sphere. -/
 theorem isQuotientMap_cubeToSphere [NeZero n] : IsQuotientMap (cubeToSphere n) :=
   (cubeToSphere n).continuous.isClosedMap.isQuotientMap (cubeToSphere n).continuous
-    (surjective_cubeToSphere n)
-
-variable (N : Type*) in
-/-- The equivalence relation on the cube `I^N` identifying all points of its boundary with each
-other, and no other points.  The quotient is the cube modulo its boundary. -/
-def cubeBoundarySetoid : Setoid (I^N) where
-  r y z := y = z ∨ y ∈ Cube.boundary N ∧ z ∈ Cube.boundary N
-  iseqv :=
-    { refl := fun _ ↦ .inl rfl
-      symm := fun h ↦ h.elim (fun h ↦ .inl h.symm) fun h ↦ .inr h.symm
-      trans := by
-        rintro _ _ _ (rfl | ⟨hy, hz⟩) (rfl | ⟨hz', hw⟩)
-        exacts [.inl rfl, .inr ⟨hz', hw⟩, .inr ⟨hy, hz⟩, .inr ⟨hy, hw⟩] }
-
-lemma cubeBoundarySetoid_iff {N : Type*} {y z : I^N} :
-    cubeBoundarySetoid N y z ↔ y = z ∨ y ∈ Cube.boundary N ∧ z ∈ Cube.boundary N :=
-  Iff.rfl
+    (cubeToSphere_surjective n)
 
 variable (n) in
 /-- **The cube modulo its boundary is homeomorphic to the sphere**, by the map induced by
 `TauCeti.cubeToSphere`.  It is pointed: the class of the boundary goes to the north pole. -/
 def cubeQuotientHomeomorphSphere [NeZero n] :
     Quotient (cubeBoundarySetoid (Fin n)) ≃ₜ sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 :=
-  Continuous.homeoOfEquivCompactToT2
-    (f := Equiv.ofBijective (Quotient.lift (cubeToSphere n) fun _ _ h ↦
-        cubeToSphere_eq_cubeToSphere_iff.2 h)
-      ⟨Quotient.ind₂ fun _ _ h ↦ Quotient.sound (cubeToSphere_eq_cubeToSphere_iff.1 h),
-        fun s ↦ let ⟨y, hy⟩ := surjective_cubeToSphere n s; ⟨⟦y⟧, hy⟩⟩)
-    (continuous_quot_lift _ (cubeToSphere n).continuous)
+  (Homeomorph.Quotient.congrRight fun _ _ ↦
+    cubeBoundarySetoid_iff.trans cubeToSphere_eq_cubeToSphere_iff.symm).trans
+    (isQuotientMap_cubeToSphere n).homeomorph
 
 @[simp]
 lemma cubeQuotientHomeomorphSphere_mk [NeZero n] (y : I^(Fin n)) :
-    cubeQuotientHomeomorphSphere n ⟦y⟧ = cubeToSphere n y :=
-  (rfl)
+    cubeQuotientHomeomorphSphere n ⟦y⟧ = cubeToSphere n y := by
+  unfold cubeQuotientHomeomorphSphere
+  rfl
+
+/-- `TauCeti.cubeQuotientHomeomorphSphere` is pointed: it sends the class of the boundary of the
+cube to the north pole. -/
+lemma cubeQuotientHomeomorphSphere_mk_of_mem_boundary [NeZero n] {y : I^(Fin n)}
+    (hy : y ∈ Cube.boundary (Fin n)) :
+    cubeQuotientHomeomorphSphere n ⟦y⟧ = sphereNorthPole n :=
+  (cubeQuotientHomeomorphSphere_mk y).trans (cubeToSphere_eq_sphereNorthPole_iff.2 hy)
+
+/-- The inverse of `TauCeti.cubeQuotientHomeomorphSphere` sends the north pole to the class of the
+boundary of the cube, represented by its corner `0`. -/
+@[simp]
+lemma cubeQuotientHomeomorphSphere_symm_sphereNorthPole [NeZero n] :
+    (cubeQuotientHomeomorphSphere n).symm (sphereNorthPole n) = ⟦0⟧ :=
+  (Homeomorph.symm_apply_eq _).2
+    (cubeQuotientHomeomorphSphere_mk_of_mem_boundary zero_mem_cubeBoundary).symm
 
 end Cube
 
@@ -410,10 +397,11 @@ theorem toSphere_sphereNorthPole (p : Ω^ (Fin n) X x) : toSphere p (sphereNorth
 
 /-- The pointed map out of the sphere of the image of a generalized loop under a based map is the
 composite. -/
+@[simp]
 theorem toSphere_map (f : C(X, Y)) (hf : f x = y) (p : Ω^ (Fin n) X x) :
     toSphere (GenLoop.map f hf p) = f.comp (toSphere p) := by
   ext s
-  obtain ⟨z, rfl⟩ := surjective_cubeToSphere n s
+  obtain ⟨z, rfl⟩ := cubeToSphere_surjective n s
   simp
 
 variable (n X x) in
@@ -432,7 +420,7 @@ def sphereEquiv :
     exact toSphere_cubeToSphere p z
   right_inv f := by
     ext s
-    obtain ⟨z, rfl⟩ := surjective_cubeToSphere n s
+    obtain ⟨z, rfl⟩ := cubeToSphere_surjective n s
     exact toSphere_cubeToSphere _ z
 
 @[simp]
@@ -456,7 +444,7 @@ theorem homotopic_iff_toSphere {p q : Ω^ (Fin n) X x} :
     (ContinuousMap.id I).prodMap (cubeToSphere n)
   have hc : IsQuotientMap c :=
     c.continuous.isClosedMap.isQuotientMap c.continuous
-      (Function.surjective_id.prodMap (surjective_cubeToSphere n))
+      (Function.surjective_id.prodMap (cubeToSphere_surjective n))
   constructor
   · rintro ⟨H⟩
     have hH : Function.FactorsThrough H.toContinuousMap c := by
@@ -472,9 +460,9 @@ theorem homotopic_iff_toSphere {p q : Ω^ (Fin n) X x} :
         H (t, z) :=
       DFunLike.congr_fun (hc.lift_comp H.toContinuousMap hH) (t, z)
     refine ⟨⟨⟨hc.lift H.toContinuousMap hH, fun s ↦ ?_, fun s ↦ ?_⟩, fun t s hs ↦ ?_⟩⟩
-    · obtain ⟨z, rfl⟩ := surjective_cubeToSphere n s
+    · obtain ⟨z, rfl⟩ := cubeToSphere_surjective n s
       simpa using hlift 0 z
-    · obtain ⟨z, rfl⟩ := surjective_cubeToSphere n s
+    · obtain ⟨z, rfl⟩ := cubeToSphere_surjective n s
       simpa using hlift 1 z
     · obtain rfl := Set.mem_singleton_iff.1 hs
       rw [← cubeToSphere_eq_sphereNorthPole_iff.2 zero_mem_cubeBoundary]

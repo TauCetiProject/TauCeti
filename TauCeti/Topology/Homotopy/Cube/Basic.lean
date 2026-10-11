@@ -48,6 +48,8 @@ at `0` while releasing the first.
 * `TauCeti.cubeContraction`: the straight-line homotopy from the corner `0` to the identity.
 * `TauCeti.isPathConnected_cube`: `I^N` is path connected.
 * `TauCeti.zero_mem_cubeBoundary`: the corner `0` lies on the boundary.
+* `TauCeti.cubeBoundarySetoid`: the equivalence relation identifying all boundary points, whose
+  quotient is the cube modulo its boundary.
 * `TauCeti.isPathConnected_cubeBoundary`: for `[Nontrivial N]`, `Cube.boundary N` is path
   connected.
 * `Cube.boundary_option_iff`, `Cube.boundary_fin_succ_iff`: the boundaries of `I^(Option N)`
@@ -140,6 +142,22 @@ theorem isPathConnected_cube : IsPathConnected (Set.univ : Set (I^N)) :=
 /-- The corner `0` lies on the boundary of the cube (any coordinate is `0`). -/
 theorem zero_mem_cubeBoundary [Nonempty N] : (0 : I^N) ∈ Cube.boundary N :=
   ⟨Classical.arbitrary N, Or.inl rfl⟩
+
+variable (N) in
+/-- The equivalence relation on the cube `I^N` identifying all points of its boundary with each
+other, and no other points.  The quotient is the cube modulo its boundary. -/
+def cubeBoundarySetoid : Setoid (I^N) where
+  r y z := y = z ∨ y ∈ Cube.boundary N ∧ z ∈ Cube.boundary N
+  iseqv :=
+    { refl := fun _ ↦ .inl rfl
+      symm := fun h ↦ h.elim (fun h ↦ .inl h.symm) fun h ↦ .inr h.symm
+      trans := by
+        rintro _ _ _ (rfl | ⟨hy, hz⟩) (rfl | ⟨hz', hw⟩)
+        exacts [.inl rfl, .inr ⟨hz', hw⟩, .inr ⟨hy, hz⟩, .inr ⟨hy, hw⟩] }
+
+lemma cubeBoundarySetoid_iff {y z : I^N} :
+    cubeBoundarySetoid N y z ↔ y = z ∨ y ∈ Cube.boundary N ∧ z ∈ Cube.boundary N :=
+  Iff.rfl
 
 section Paths
 
