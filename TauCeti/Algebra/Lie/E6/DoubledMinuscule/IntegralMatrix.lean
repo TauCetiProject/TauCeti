@@ -70,12 +70,7 @@ theorem rootIntMatrix_eq_toMatrix (k : Fin 6 ⊕ Fin 6) :
         (TauCeti.serreRootGenerator (CartanMatrix.E 6)ᵀ)
         (TauCeti.serreH ℚ (CartanMatrix.E 6)ᵀ) rep lattice.toAddSubgroup
         rep_kostantForm_mem_lattice k) := by
-  ext a b
-  rw [rootIntMatrix, kostantRootGeneratorIntMatrix, Module.Basis.toMatrix_apply,
-    LinearMap.toMatrix_apply]
-  congr 2
-  apply Subtype.ext
-  rw [coe_kostantRootOperator_apply]
+  rw [rootIntMatrix, kostantRootGeneratorIntMatrix_eq_toMatrix]
 
 /-- A represented root operator acts on a lattice basis vector by its integral matrix column. -/
 theorem rep_rootGenerator_matrixBasis_eq_sum (j : Fin 6 ⊕ Fin 6) (s : Fin 54) :

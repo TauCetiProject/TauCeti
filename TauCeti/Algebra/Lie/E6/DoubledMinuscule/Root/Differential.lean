@@ -59,6 +59,8 @@ variable {B : Type v} [CommRing B]
 
 /-- The differential of a numbered integral root subgroup is its represented root operator
 multiplied by the additive tangent parameter, over every coefficient ring. -/
+-- Match before simplification changes the counit-indexed integer module structure.
+@[simp↓]
 theorem tangentMatrix_derivationComp_rootSubgroup (k : Fin 6 ⊕ Fin 6)
     (d : Derivation ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ)
       (Bialgebra.CounitAlgebra ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ) B)) :
@@ -110,20 +112,7 @@ theorem derivationComp_rootSubgroup_eq_smul_rootVector (k : Fin 6 ⊕ Fin 6)
       (Bialgebra.CounitAlgebra ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ) B)) :
     derivationComp (B := B) (rootSubgroupIntegralCoordinateMap k).hom d =
       AdditiveGroup.gaTangentLinearEquiv d • rootVector (B := B) k := by
-  have hd : d = AdditiveGroup.gaTangentLinearEquiv d •
-      (AdditiveGroup.gaTangentLinearEquiv (R := ℤ) (B := B)).symm 1 := by
-    calc
-      d = AdditiveGroup.gaTangentLinearEquiv.symm (AdditiveGroup.gaTangentLinearEquiv d) :=
-        (LinearEquiv.symm_apply_apply _ _).symm
-      _ = _ := by
-        rw [AdditiveGroup.gaTangentLinearEquiv_symm_eq_smul_mapValue,
-          AdditiveGroup.gaTangentLinearEquiv_symm_eq_smul_mapValue (1 : B), one_smul]
-  conv_lhs => rw [hd]
-  rw [rootVector]
-  ext a
-  simp only [derivationComp_apply, Derivation.smul_apply]
-  -- The two counit coefficient synonyms are copies of the same ring `B`.
-  rfl
+  exact AdditiveGroup.derivationComp_eq_smul _ d
 
 /-- Coefficient change preserves the normalized integral root vector. -/
 -- Match before simplification changes the counit-indexed integer module structure.
@@ -131,19 +120,7 @@ theorem derivationComp_rootSubgroup_eq_smul_rootVector (k : Fin 6 ⊕ Fin 6)
 theorem mapValue_rootVector {C : Type*} [CommRing C] (φ : B →ₐ[ℤ] C)
     (k : Fin 6 ⊕ Fin 6) :
     Derivation.mapValue φ (rootVector (B := B) k) = rootVector (B := C) k := by
-  have hga : Derivation.mapValue φ
-      ((AdditiveGroup.gaTangentLinearEquiv (R := ℤ) (B := B)).symm 1) =
-        (AdditiveGroup.gaTangentLinearEquiv (R := ℤ) (B := C)).symm 1 := by
-    apply (AdditiveGroup.gaTangentLinearEquiv (R := ℤ) (B := C)).injective
-    simp only [AdditiveGroup.gaTangentLinearEquiv_apply, Derivation.mapValue_apply,
-      AdditiveGroup.gaTangentLinearEquiv_symm_apply_ι, map_one]
-  rw [rootVector, rootVector]
-  ext a
-  simp only [Derivation.mapValue_apply, derivationComp_apply]
-  have ha := DFunLike.congr_fun hga ((rootSubgroupIntegralCoordinateMap k).hom a)
-  simp only [Derivation.mapValue_apply] at ha
-  -- Evaluation erases the counit-algebra indexing introduced by precomposition.
-  exact ha
+  exact AdditiveGroup.mapValue_derivationComp_gaUnit φ _
 
 /-- The image of each root-subgroup differential is precisely its normalized root line. -/
 theorem range_derivationCompLieHom_rootSubgroup_eq_span (k : Fin 6 ⊕ Fin 6) :
