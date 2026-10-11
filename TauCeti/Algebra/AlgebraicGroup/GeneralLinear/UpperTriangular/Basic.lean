@@ -441,42 +441,14 @@ theorem pointsMulEquiv_rootSubgroupCoordinateMap (hij : i < j)
       upperTriangularGroup (Fin n) A) : GL (Fin n) A) =
       GeneralLinear.pointsMulEquiv n
         (GeneralLinear.rootSubgroupPoints hij.ne f) := by
-  have hcoe := pointsMulEquiv_coe (R := R) (n := n) (A := A)
-    (toConv (f.ofConv.comp (rootSubgroupCoordinateMap R hij).hom))
-  rw [← hcoe, GeneralLinear.pointsMulEquiv_apply]
-  congr 1
-  rw [CommHopfAlgCat.quotientPointsHom_apply]
-  rw [ofConv_toConv, AlgHom.comp_assoc, ← coordinateMap_def R n,
-    ← BialgHom.comp_toAlgHom, ← CommHopfAlgCat.hom_comp,
-    coordinateMap_comp_rootSubgroupCoordinateMap]
-  let id_pt :
-      WithConv
-        (AdditiveGroup.coordinateHopfAlgebra R →ₐ[R]
-          AdditiveGroup.coordinateHopfAlgebra R) :=
-    toConv (AlgHom.id R (AdditiveGroup.coordinateHopfAlgebra R))
-  have hcomp_alg :
-      (GeneralLinear.rootSubgroupCoordinateMap hij.ne).hom.toAlgHom =
-        (GeneralLinear.rootSubgroupPoints hij.ne id_pt).ofConv := by
-    have hmap := GeneralLinear.mapPointsFunctor_rootSubgroupCoordinateMap_app (R := R)
-      hij.ne (CommAlgCat.of R (AdditiveGroup.coordinateHopfAlgebra R)) id_pt
-    rw [CommHopfAlgCat.mapPointsFunctor_app_apply] at hmap
-    exact congrArg WithConv.ofConv hmap
-  rw [hcomp_alg]
-  rw [← AlgHom.mapValue_apply]
-  have hid_pt : AlgHom.mapValue f.ofConv id_pt = f := by
-    rw [AlgHom.mapValue_apply]
-    dsimp only [id_pt]
-    rw [ofConv_toConv, AlgHom.comp_id, toConv_ofConv]
-  have hcoe_ring (x : AdditiveGroup.coordinateHopfAlgebra R) :
-      (f.ofConv : _ →+* _) x = f.ofConv x :=
-    congrFun (AlgHom.coe_toRingHom f.ofConv) x
-  apply (GeneralLinear.pointsMulEquiv (R := R) (A := A) n).injective
-  rw [GeneralLinear.pointsMulEquiv_mapValue,
-    GeneralLinear.pointsMulEquiv_rootSubgroupPoints, map_transvectionUnit,
-    hcoe_ring,
-    ← AdditiveGroup.toAdd_gaPointsMulEquiv_mapValue f.ofConv id_pt,
-    hid_pt,
-    GeneralLinear.pointsMulEquiv_rootSubgroupPoints]
+  rw [← pointsMulEquiv_coe, GeneralLinear.pointsMulEquiv_rootSubgroupPoints]
+  ext a b
+  rw [GeneralLinear.pointToGeneralLinear_apply, CommHopfAlgCat.quotientPointsHom_apply_apply,
+    ofConv_toConv, AlgHom.comp_apply, BialgHom.coe_toAlgHom, ← coordinateMap_apply,
+    ← CommHopfAlgCat.comp_apply, coordinateMap_comp_rootSubgroupCoordinateMap,
+    GeneralLinear.rootSubgroupCoordinateMap_apply_X, coe_transvectionUnit,
+    AdditiveGroup.toAdd_gaPointsMulEquiv]
+  simp [Matrix.transvection, Matrix.one_apply, Matrix.single_apply, apply_ite f.ofConv]
 
 /-- The positive root subgroup `x_ij : 𝔾ₐ → B_n` inside the standard upper-triangular
 subgroup scheme, for an ordered pair `i < j`. -/
