@@ -146,8 +146,9 @@ theorem powerSeriesExpansion_surjective
   have hg : ∀ ⦃m n : ℕ⦄, m ≤ n → g n - g m ∈ P.filtration m := by
     intro m n hmn
     rw [← Finset.sum_Ico_eq_sub _ hmn]
-    refine Submodule.sum_mem _ fun i hi ↦ P.filtration_antitone
-      (show (m : ℤ) ≤ i by exact_mod_cast (Finset.mem_Ico.mp hi).1) ?_
+    refine Submodule.sum_mem _ fun i hi ↦ ?_
+    have hmi : (m : ℤ) ≤ i := by exact_mod_cast (Finset.mem_Ico.mp hi).1
+    refine P.filtration_antitone hmi ?_
     have hpow := P.mem_filtration_ord (t ^ i)
     rw [ord_pow, ht, mul_one] at hpow
     simpa only [zero_add] using P.mul_mem_filtration

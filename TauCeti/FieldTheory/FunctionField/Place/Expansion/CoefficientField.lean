@@ -115,6 +115,23 @@ private theorem coe_integersEquivResidueFieldPlace (x : P.completionPlace.intege
 private theorem coe_integersEquivResidueFieldPlace_symm (x : P.residueFieldPlace.integers) :
     (P.integersEquivResidueFieldPlace.symm x : P.Completion) = x := (rfl)
 
+/-- Changing the constants to the coefficient field does not change when two integral functions
+have the same residue. -/
+private theorem residue_integersEquivResidueFieldPlace_eq_iff
+    {y z : P.completionPlace.integers} :
+    residue P.residueFieldPlace.integers (P.integersEquivResidueFieldPlace y) =
+        residue P.residueFieldPlace.integers (P.integersEquivResidueFieldPlace z) ↔
+      residue P.completionPlace.integers y = residue P.completionPlace.integers z := by
+  simp only [residue_eq_iff_sub_mem_filtration_one, coe_integersEquivResidueFieldPlace,
+    mem_residueFieldPlace_filtration_iff]
+
+/-- The coefficient field is the image of the constants of the completed place over `F_P`. -/
+private theorem integersEquivResidueFieldPlace_completionResidueFieldSection
+    (a : P.ResidueField) :
+    P.integersEquivResidueFieldPlace (P.completionResidueFieldSection a) =
+      algebraMap P.ResidueField P.residueFieldPlace.integers a :=
+  Subtype.ext (P.residueFieldPlace.coe_algebraMap_constants a).symm
+
 /-- Over its coefficient field, the completed place is rational: reduction of the coefficient
 field is the identification of `F_P` with the residue field of the completion. -/
 private theorem degree_residueFieldPlace : P.residueFieldPlace.degree = 1 := by
@@ -122,16 +139,13 @@ private theorem degree_residueFieldPlace : P.residueFieldPlace.degree = 1 := by
   obtain ⟨z, rfl⟩ := residue_surjective y
   let w := P.integersEquivResidueFieldPlace.symm z
   refine ⟨P.residueFieldEquivCompletion.symm (residue P.completionPlace.integers w), ?_⟩
-  have h : residue P.completionPlace.integers (P.completionResidueFieldSection
-      (P.residueFieldEquivCompletion.symm (residue P.completionPlace.integers w))) =
-      residue P.completionPlace.integers w := by
-    rw [residue_completionResidueFieldSection, AlgEquiv.apply_symm_apply]
-  rw [IsScalarTower.algebraMap_apply P.ResidueField P.residueFieldPlace.integers,
-    IsLocalRing.ResidueField.algebraMap_eq,
-    P.residueFieldPlace.residue_eq_iff_sub_mem_filtration_one, coe_algebraMap_constants,
-    mem_residueFieldPlace_filtration_iff, algebraMap_residueField_completion,
-    ← coe_integersEquivResidueFieldPlace_symm]
-  exact P.completionPlace.residue_eq_iff_sub_mem_filtration_one.mp h
+  have h := P.residue_integersEquivResidueFieldPlace_eq_iff.mpr
+    (P.residue_completionResidueFieldSection
+      (P.residueFieldEquivCompletion.symm (residue P.completionPlace.integers w)) |>.trans
+      (P.residueFieldEquivCompletion.apply_symm_apply _))
+  rwa [integersEquivResidueFieldPlace_completionResidueFieldSection,
+    RingEquiv.apply_symm_apply, ← IsLocalRing.ResidueField.algebraMap_eq,
+    ← IsScalarTower.algebraMap_apply] at h
 
 variable {t : P.Completion} (ht : P.completionPlace.ord t = 1)
 include ht
