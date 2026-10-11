@@ -305,9 +305,7 @@ theorem zigzagBraidNormalComplex_d_eq_zero₀ (i j : V) {a : ℤ} (b : ℤ)
       exact (isZero_zigzagBraidNormalComplex_X k G i j
         (by decide) (by decide) (by decide)).eq_of_tgt _ _
     · apply HomologicalComplex.shape
-      -- The shape definition gives the arithmetic relation needed to exclude this differential.
-      intro h
-      have h' : (0 : ℤ) + 1 = b := h
+      rw [ComplexShape.up_Rel]
       omega
   · exact (isZero_zigzagBraidNormalComplex_X k G i j ha₂ ha₁ ha₀).eq_of_src _ _
 
@@ -323,9 +321,7 @@ theorem zigzagBraidNormalComplex_d_eq_zero₁ (i j : V) (a : ℤ) {b : ℤ}
       exact (isZero_zigzagBraidNormalComplex_X k G i j
         (by decide) (by decide) (by decide)).eq_of_src _ _
     · apply HomologicalComplex.shape
-      -- The shape definition gives the arithmetic relation needed to exclude this differential.
-      intro h
-      have h' : a + 1 = (-2 : ℤ) := h
+      rw [ComplexShape.up_Rel]
       omega
   · exact (isZero_zigzagBraidNormalComplex_X k G i j hb₂ hb₁ hb₀).eq_of_tgt _ _
 
@@ -379,9 +375,7 @@ def zigzagBraidNormalSwapIso (i j : V) :
     zigzagBraidNormalComplex k G i j ≅ zigzagBraidNormalComplex k G j i :=
   HomologicalComplex.Hom.isoOfComponents (normalSwapComponentIso k G i j) (by
     intro p q hpq
-    -- The cochain shape relation is definitionally `p + 1 = q`; use its arithmetic form
-    -- to select the supported degree components. Mathlib supplies only the reverse constructor.
-    have hpq' : p + 1 = q := hpq
+    rw [ComplexShape.up_Rel] at hpq
     by_cases h₂ : p = -2
     · subst p
       have : q = -1 := by omega
