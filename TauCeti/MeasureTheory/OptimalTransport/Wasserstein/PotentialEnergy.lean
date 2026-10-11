@@ -156,6 +156,10 @@ theorem potentialEnergy_mono (h : V ≤ᵐ[μ] W) : potentialEnergy V μ ≤ pot
     (EReal.coe_ennreal_le_coe_ennreal_iff.2
       (lintegral_mono_ae (h.mono fun x hx ↦ ENNReal.ofReal_le_ofReal (neg_le_neg hx))))
 
+/-- The potential energy depends on the potential only up to `μ`-almost everywhere equality. -/
+theorem potentialEnergy_congr_ae (h : V =ᵐ[μ] W) : potentialEnergy V μ = potentialEnergy W μ :=
+  le_antisymm (potentialEnergy_mono h.le) (potentialEnergy_mono h.symm.le)
+
 /-- A potential bounded below by an integrable function has potential energy `≠ ⊥`. -/
 theorem potentialEnergy_ne_bot_of_le (hW : Integrable W μ) (h : W ≤ᵐ[μ] V) :
     potentialEnergy V μ ≠ ⊥ := fun hV ↦ by
