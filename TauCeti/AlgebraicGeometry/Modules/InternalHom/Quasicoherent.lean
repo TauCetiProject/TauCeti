@@ -85,6 +85,8 @@ private theorem isQuasicoherent_ihom_of_presentation_over
     (ihomIsoKernelOfIsColimit f P.generators.π (by simp [f]) P.isColimit N).symm
     inferInstance
 
+namespace Scheme.Modules
+
 variable (M N : X.Modules)
 
 /-- Internal Hom from a finitely presented module sheaf into a quasicoherent module sheaf
@@ -102,6 +104,8 @@ instance isQuasicoherent_ihom_of_isFinitePresentation
       ((M.overIhomIso X.sheaf (q.X i)).app N).symm h
   exact SheafOfModules.IsQuasicoherent.of_coversTop (R := X.ringCatSheaf)
     ((ihom (C := X.Modules) M).obj N) q.X q.coversTop
+
+end Scheme.Modules
 
 end
 

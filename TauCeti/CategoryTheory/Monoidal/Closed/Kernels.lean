@@ -34,6 +34,7 @@ variable {C : Type*} [Category* C] [HasZeroMorphisms C] [HasZeroObject C]
   (h : IsColimit (CokernelCofork.ofπ g w)) (N : C)
 
 /-- Precomposition reverses a zero composite into a zero composite of internal Hom maps. -/
+@[reassoc (attr := simp)]
 theorem pre_app_comp_pre_app_eq_zero (w : f ≫ g = 0) (N : C) :
     (pre g).app N ≫ (pre f).app N = 0 := by
   rw [← NatTrans.comp_app, ← pre_map, w]
