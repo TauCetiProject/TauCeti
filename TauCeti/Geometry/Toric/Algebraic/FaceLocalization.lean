@@ -135,6 +135,13 @@ theorem faceAffineToricSchemeMap_def (hi : IsIntegralLattice i) (hτσ : τ.IsFa
     exact affineToricSchemeMap_def hi hi (AddMonoidHom.id N) LinearMap.id (fun _ ↦ rfl)
       (fun _ hx ↦ hτσ.le hx)
 
+/-- Face inclusions are morphisms over `Spec ℂ`. -/
+instance faceAffineToricSchemeMap_isOver {N : Type} [AddCommGroup N] {i : N →+ V}
+    (hi : IsIntegralLattice i) (hτσ : τ.IsFaceOf σ) :
+    (faceAffineToricSchemeMap hi hτσ).IsOver (Spec (.of ℂ)) := by
+  rw [faceAffineToricSchemeMap_def]
+  infer_instance
+
 /-- The canonical face morphism is the affine toric scheme map induced by the identity on the
   lattice and real vector space. -/
 theorem faceAffineToricSchemeMap_eq_affineToricSchemeMap (hi : IsIntegralLattice i)

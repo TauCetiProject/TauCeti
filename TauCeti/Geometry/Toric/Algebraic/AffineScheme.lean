@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MonoidAlgebra.Basic
-public import Mathlib.AlgebraicGeometry.Scheme
+public import Mathlib.AlgebraicGeometry.Group.Affine
 public import TauCeti.Geometry.Toric.Algebraic.DualSemigroup.Basic
 
 /-!
@@ -143,6 +143,16 @@ theorem affineToricSchemeMap_def (hi : IsIntegralLattice i)
     affineToricSchemeMap hi hi' f g hfg hστ =
       Spec.map (CommRingCat.ofHom (affineCoordinateRingMap hi hi' f g hfg hστ).toRingHom) :=
   (rfl)
+
+/-- Affine toric maps are morphisms over `Spec ℂ`. -/
+instance affineToricSchemeMap_isOver
+    {N N' : Type} [AddCommGroup N] [AddCommGroup N'] {i : N →+ V} {i' : N' →+ V'}
+    (hi : IsIntegralLattice i) (hi' : IsIntegralLattice i')
+    (f : N →+ N') (g : V →ₗ[ℝ] V') (hfg : ∀ n, g (i n) = i' (f n))
+    (hστ : Set.MapsTo g σ τ) :
+    (affineToricSchemeMap hi hi' f g hfg hστ).IsOver (Spec (.of ℂ)) := by
+  rw [affineToricSchemeMap_def]
+  infer_instance
 
 /-- The identity map of a lattice cone induces the identity of its affine toric scheme. -/
 @[simp]
