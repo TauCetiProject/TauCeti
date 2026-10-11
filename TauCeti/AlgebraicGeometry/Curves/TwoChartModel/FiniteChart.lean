@@ -66,6 +66,12 @@ theorem polynomialChartMap_C (x : F) (c : k) :
     polynomialChartMap (k := k) x (Polynomial.C c) = algebraMap k _ c := by
   simp [polynomialChartMap]
 
+@[simp]
+theorem coe_polynomialChartMap (x : F) (p : Polynomial k) :
+    ((polynomialChartMap (k := k) x p :
+      holomorphyRing {P : Place k F | x ∈ P.integers}) : F) = Polynomial.aeval x p := by
+  simp [polynomialChartMap]
+
 /-- Evaluation into the normalization chart is injective when `x` is transcendental. -/
 theorem polynomialChartMap_injective {x : F} (hx : Transcendental k x) :
     Function.Injective (polynomialChartMap (k := k) x) := by
@@ -87,6 +93,8 @@ theorem polynomialChartMap_finite (hF : IsFunctionField k F) {x : F}
     let C := integralClosure (Algebra.adjoin k {x}) F
     have : FiniteDimensional k⟮x⟯ F := hF.finiteDimensional_adjoin hx
     have hfinC : (algebraMap (Algebra.adjoin k {x}) C).Finite := by
+      -- For this algebraMap, `RingHom.Finite` unfolds to `Module.Finite` for the
+      -- algebra-induced module structure on `C`, which is the structure used by the theorem.
       change Module.Finite (Algebra.adjoin k {x}) C
       exact IsIntegralClosure.finite_adjoin_of_transcendental k hx F C
     let e : C ≃+* A := (Subalgebra.equivOfEq _ _
