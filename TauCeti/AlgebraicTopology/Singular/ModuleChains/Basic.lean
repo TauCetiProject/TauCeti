@@ -122,14 +122,6 @@ theorem chainsDesc_simplexChain_one {X : TopCat.{u}} {n : ℕ} {V : Type u} [Add
     chainsDesc f (simplexChain s (1 : k)) = f s := by
   rw [chainsDesc_simplexChain, one_smul]
 
-/-- The underlying morphism of a pushed-forward singular simplex. -/
-@[simp]
-theorem toSSet_map_app_down {X Y : TopCat.{u}} (f : X ⟶ Y) {n : ℕ}
-    (σ : (TopCat.toSSet.obj X) _⦋n⦌) : ((TopCat.toSSet.map f).app _ σ).down = σ.down ≫ f := by
-  have := TauCeti.TopCat.simplexMap_app f σ
-  refine _root_.TopCat.ext fun x ↦ ?_
-  exact congrArg (fun g ↦ g x) this
-
 end Singular
 
 /-- An additive map out of a `ℤ`-module, as a `ℤ`-linear map for the given module structure.
