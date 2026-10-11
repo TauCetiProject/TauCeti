@@ -34,6 +34,8 @@ subsets of a Jacobson scheme, so they contain closed points.
   rings at closed points have dimension `n`;
 * `TauCeti.AlgebraicGeometry.smoothOfRelativeDimension_of_topologicalKrullDim_eq`: a smooth
   irreducible `k`-scheme of dimension `n` is smooth of relative dimension `n`;
+* `TauCeti.AlgebraicGeometry.topologicalKrullDim_eq_of_smoothOfRelativeDimension`: conversely,
+  an irreducible scheme smooth of relative dimension `n` over `k` has dimension `n`;
 * `TauCeti.AlgebraicGeometry.smoothOfRelativeDimension_one_of_isFunctionField`: a smooth curve is
   smooth of relative dimension one.
 
@@ -110,6 +112,16 @@ theorem smoothOfRelativeDimension_of_topologicalKrullDim_eq [Smooth f] [Irreduci
     {n : ℕ} (h : topologicalKrullDim X = n) : SmoothOfRelativeDimension n f :=
   (smoothOfRelativeDimension_iff_ringKrullDim_stalk_eq f n).mpr
     ⟨‹_›, fun _ hx ↦ (ringKrullDim_stalk_eq_topologicalKrullDim_of_isClosed f hx).trans h⟩
+
+/-- An irreducible scheme smooth of relative dimension `n` over a field has dimension `n`. -/
+theorem topologicalKrullDim_eq_of_smoothOfRelativeDimension [IrreducibleSpace X]
+    {n : ℕ} [SmoothOfRelativeDimension n f] : topologicalKrullDim X = n := by
+  have := SmoothOfRelativeDimension.smooth n f
+  have : JacobsonSpace X := LocallyOfFiniteType.jacobsonSpace f
+  obtain ⟨x, -, hx⟩ := nonempty_inter_closedPoints
+    (Set.univ_nonempty : (Set.univ : Set X).Nonempty) isOpen_univ.isLocallyClosed
+  exact (ringKrullDim_stalk_eq_topologicalKrullDim_of_isClosed f hx).symm.trans
+    (((smoothOfRelativeDimension_iff_ringKrullDim_stalk_eq f n).mp inferInstance).2 x hx)
 
 /-- A smooth curve over a field, an integral smooth scheme whose function field is an algebraic
 function field of one variable, is smooth of relative dimension one. -/
