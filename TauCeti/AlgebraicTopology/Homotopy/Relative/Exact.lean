@@ -83,9 +83,11 @@ def ofGenLoop (γ : Ω^ (Option N) X.pair.fst (X.pair.map X.basepoint)) : RelGen
   mk ((γ : C(I^(Option N), X.pair.fst)).comp
       ((piOptionEquivProdHomeomorph fun _ : Option N => I).symm : C(I × (I^N), I^(Option N))))
     (fun _ => mem_range.2 ⟨X.basepoint, by
-      simpa using (γ.2 _ (piOptionEquivProdHomeomorph_symm_mem_boundary (.inl (.inl rfl)))).symm⟩)
+      simpa using (γ.2 _ <| piOptionEquivProdHomeomorph_symm_mem_boundary <|
+        Cube.mk_zero_mem_prodBoundary _).symm⟩)
     (fun _ _ h => by
-      simpa using γ.2 _ (piOptionEquivProdHomeomorph_symm_mem_boundary (h.imp .inr id)))
+      simpa using
+        γ.2 _ (piOptionEquivProdHomeomorph_symm_mem_boundary (Cube.mk_mem_prodBoundary h)))
 
 @[simp]
 theorem ofGenLoop_apply (γ : Ω^ (Option N) X.pair.fst (X.pair.map X.basepoint)) (y : I × (I^N)) :
@@ -104,7 +106,7 @@ theorem boundary_ofGenLoop (γ : Ω^ (Option N) X.pair.fst (X.pair.map X.basepoi
     boundary (ofGenLoop γ) = GenLoop.const := by
   ext t
   rw [boundary_apply_eq_iff, ofGenLoop_apply, GenLoop.const_apply]
-  exact γ.2 _ (piOptionEquivProdHomeomorph_symm_mem_boundary (.inl (.inl rfl)))
+  exact γ.2 _ (piOptionEquivProdHomeomorph_symm_mem_boundary (Cube.mk_zero_mem_prodBoundary _))
 
 /-- Regarding absolute cubes as relative cubes commutes with the action of morphisms of based
 pairs. -/
@@ -124,11 +126,11 @@ theorem Homotopic.ofGenLoop {γ δ : Ω^ (Option N) X.pair.fst (X.pair.map X.bas
       map_one_left y := by simp
       prop' r := by
         have h₀ (t : I^N) :=
-          piOptionEquivProdHomeomorph_symm_mem_boundary (s := 0) (t := t) (.inl (.inl rfl))
+          piOptionEquivProdHomeomorph_symm_mem_boundary (Cube.mk_zero_mem_prodBoundary t)
         refine mem_iff.2
           ⟨fun t => ⟨X.basepoint, ((F.eq_fst r (h₀ t)).trans (γ.2 _ (h₀ t))).symm⟩,
             fun s t h => ?_⟩
-        have hb := piOptionEquivProdHomeomorph_symm_mem_boundary (h.imp .inr id)
+        have hb := piOptionEquivProdHomeomorph_symm_mem_boundary (Cube.mk_mem_prodBoundary h)
         exact (F.eq_fst r hb).trans (γ.2 _ hb) }) h
 
 /-! ### Exactness at `π_n(A)` -/

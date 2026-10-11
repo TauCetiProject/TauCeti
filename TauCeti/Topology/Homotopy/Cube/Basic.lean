@@ -96,13 +96,6 @@ open unitInterval
 
 variable {N : Type*}
 
-/-- A point `(s, t)` of `I × I^N` whose first coordinate is `0` or `1`, or whose second coordinate
-lies on the boundary of `I^N`, corresponds to a point on the boundary of `I^(Option N)`. -/
-theorem piOptionEquivProdHomeomorph_symm_mem_boundary {s : I} {t : I^N}
-    (h : (s = 0 ∨ s = 1) ∨ t ∈ Cube.boundary N) :
-    (piOptionEquivProdHomeomorph fun _ : Option N => I).symm (s, t) ∈ Cube.boundary (Option N) :=
-  Cube.boundary_option_iff.2 (by simpa using h)
-
 /-- The boundary of the cube `I × I^N`: the points whose first coordinate is `0` or `1`, or whose
 second coordinate lies on the boundary of `I^N`. -/
 def Cube.prodBoundary (N : Type*) : Set (I × I^N) :=
@@ -126,6 +119,13 @@ theorem piOptionEquivProdHomeomorph_mem_prodBoundary_iff {y : I^(Option N)} :
     piOptionEquivProdHomeomorph (fun _ => I) y ∈ Cube.prodBoundary N ↔
       y ∈ Cube.boundary (Option N) := by
   simp [Cube.boundary_option_iff]
+
+/-- A point on the boundary of `I × I^N` corresponds to a point on the boundary of
+`I^(Option N)`. -/
+theorem piOptionEquivProdHomeomorph_symm_mem_boundary {y : I × I^N}
+    (h : y ∈ Cube.prodBoundary N) :
+    (piOptionEquivProdHomeomorph fun _ : Option N => I).symm y ∈ Cube.boundary (Option N) :=
+  piOptionEquivProdHomeomorph_mem_prodBoundary_iff.1 (by rwa [Homeomorph.apply_symm_apply])
 
 /-- The straight-line path in the unit interval `I` from `a` to `0`, given by `t ↦ a * σ t`
 where `σ` is the interval symmetry `t ↦ 1 - t`. -/
