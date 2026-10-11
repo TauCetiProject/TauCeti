@@ -65,7 +65,7 @@ instance (i j : Q) : Fintype (Ginzburg2DoubledHom i j) := by
   change Fintype ((i ⟶ j) ⊕ (j ⟶ i))
   infer_instance
 
-/- The loop component records equality of the endpoints, so it contributes exactly one loop at
+/-- The loop component records equality of the endpoints, so it contributes exactly one loop at
 each vertex and none between distinct vertices. -/
 abbrev Ginzburg2Arrow (Q : Type u) [Quiver.{v} Q]
     (i j : Ginzburg2Quiver Q) :=
