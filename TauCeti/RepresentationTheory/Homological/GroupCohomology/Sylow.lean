@@ -23,6 +23,8 @@ cohomological triviality criterion.
 
 * `TauCeti.groupCohomology.eq_zero_of_pow_nsmul_eq_zero_of_map_sylow_eq_zero`: an element of
   `Hⁿ(G, A)` killed by a power of `p` and by restriction to a Sylow `p`-subgroup is zero.
+* `TauCeti.groupCohomology.eq_zero_of_map_sylow_eq_zero`: an element of `Hⁿ⁺¹(G, A)` whose
+  restriction to a Sylow `p`-subgroup vanishes for every prime `p` is zero.
 * `TauCeti.groupCohomology.isZero_of_isZero_sylow`: `Hⁿ⁺¹(G, A) = 0` if, for every prime `p`
   dividing the order of `G`, `Hⁿ⁺¹(P, A) = 0` for some Sylow `p`-subgroup `P`.
 
@@ -63,33 +65,44 @@ theorem eq_zero_of_pow_nsmul_eq_zero_of_map_sylow_eq_zero
     (Nat.Prime.coprime_iff_not_dvd ‹Fact p.Prime›.out).2 (Sylow.not_dvd_index P)).1
     ⟨hx, index_nsmul_eq_zero_of_map_eq_zero (P : Subgroup G) h⟩
 
+/-- **Restriction to the Sylow subgroups is jointly injective** (Milne II 1.33): an element of
+`Hⁿ⁺¹(G, A)` whose restriction vanishes, for every prime `p` dividing the order of `G`, on some
+Sylow `p`-subgroup is zero. -/
+theorem eq_zero_of_map_sylow_eq_zero {x : groupCohomology A (n + 1)}
+    (h : ∀ (p : ℕ) [Fact p.Prime], p ∣ Nat.card G → ∃ P : Sylow p G,
+      map (P : Subgroup G).subtype (𝟙 (res (P : Subgroup G).subtype A)) (n + 1) x = 0) :
+    x = 0 := by
+  suffices hsub : ∀ (m : ℕ) (y : groupCohomology A (n + 1)), m ∣ Nat.card G → 0 < m →
+      m • y = 0 → (∀ (p : ℕ) [Fact p.Prime], p ∣ Nat.card G → ∃ P : Sylow p G,
+        map (P : Subgroup G).subtype (𝟙 (res (P : Subgroup G).subtype A)) (n + 1) y = 0) →
+      y = 0 from
+    hsub _ x dvd_rfl Nat.card_pos (natCard_nsmul_eq_zero x) h
+  intro m
+  -- Peel the primes off `m`: an element killed by `p ^ m * a` with `p ∤ a` has `a • y` killed by
+  -- `p ^ m` and by restriction to a Sylow `p`-subgroup, hence `a • y = 0`.
+  induction m using Nat.recOnPrimePow with
+  | zero => exact fun _ _ h0 _ _ ↦ absurd h0 (lt_irrefl 0)
+  | one => exact fun y _ _ hy _ ↦ by simpa using hy
+  | prime_pow_mul a p m hp _ hm ih =>
+    intro y hdiv hpos hy hres
+    have : Fact p.Prime := ⟨hp⟩
+    have hpdiv : p ∣ Nat.card G :=
+      ((dvd_pow_self p hm.ne').trans (dvd_mul_right _ _)).trans hdiv
+    obtain ⟨P, hP⟩ := hres p hpdiv
+    exact ih y ((dvd_mul_left _ _).trans hdiv) (Nat.pos_of_mul_pos_left hpos)
+      (eq_zero_of_pow_nsmul_eq_zero_of_map_sylow_eq_zero A (n + 1) p P (j := m)
+        (by rw [← mul_smul, hy]) (by rw [map_nsmul, hP, smul_zero])) hres
+
 /-- **The Sylow reduction of Tate's triviality criterion** (Milne II 3.10, last paragraph): if,
 for every prime `p` dividing the order of `G`, `Hⁿ⁺¹(P, A) = 0` for some Sylow `p`-subgroup `P`,
 then `Hⁿ⁺¹(G, A) = 0`. -/
 theorem isZero_of_isZero_sylow (h : ∀ (p : ℕ) [Fact p.Prime], p ∣ Nat.card G →
       ∃ P : Sylow p G, IsZero (groupCohomology (res (P : Subgroup G).subtype A) (n + 1))) :
     IsZero (groupCohomology A (n + 1)) := by
-  suffices hsub : ∀ (m : ℕ) (x : groupCohomology A (n + 1)), m ∣ Nat.card G →
-      0 < m → m • x = 0 → x = 0 by
-    have : Subsingleton (groupCohomology A (n + 1)) :=
-      subsingleton_of_forall_eq 0 fun x ↦
-        hsub _ x dvd_rfl Nat.card_pos (natCard_nsmul_eq_zero x)
-    exact ModuleCat.isZero_of_subsingleton _
-  intro m
-  -- Peel the primes off `m`: an element killed by `p ^ m * a` with `p ∤ a` has `a • x` killed by
-  -- `p ^ m` and by restriction to a Sylow `p`-subgroup, hence `a • x = 0`.
-  induction m using Nat.recOnPrimePow with
-  | zero => exact fun _ _ h0 _ ↦ absurd h0 (lt_irrefl 0)
-  | one => exact fun x _ _ hx ↦ by simpa using hx
-  | prime_pow_mul a p m hp hpa hm ih =>
-    intro x hdiv hpos hx
-    have : Fact p.Prime := ⟨hp⟩
-    have hpdiv : p ∣ Nat.card G :=
-      ((dvd_pow_self p hm.ne').trans (dvd_mul_right _ _)).trans hdiv
-    obtain ⟨P, hP⟩ := h p hpdiv
-    exact ih x ((dvd_mul_left _ _).trans hdiv) (Nat.pos_of_mul_pos_left hpos)
-      (eq_zero_of_pow_nsmul_eq_zero_of_map_sylow_eq_zero A (n + 1) p P (j := m)
-        (by rw [← mul_smul, hx])
-        ((ModuleCat.subsingleton_of_isZero hP).allEq _ _))
+  have : Subsingleton (groupCohomology A (n + 1)) :=
+    subsingleton_of_forall_eq 0 fun x ↦ eq_zero_of_map_sylow_eq_zero A n fun p _ hp ↦
+      let ⟨P, hP⟩ := h p hp
+      ⟨P, (ModuleCat.subsingleton_of_isZero hP).allEq _ _⟩
+  exact ModuleCat.isZero_of_subsingleton _
 
 end TauCeti.groupCohomology

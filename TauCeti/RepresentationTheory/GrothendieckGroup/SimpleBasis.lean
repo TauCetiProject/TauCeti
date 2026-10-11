@@ -235,21 +235,7 @@ private theorem exactK0_of_type_mem_span_range_simple
       rw [ExactK0.of_congr e.toFGModuleCatIso]
       exact Submodule.subset_span (Set.mem_range_self i)
     have hNmem : ExactK0.of (FGModuleCat.of R N) ∈ G := ih inferInstance
-    let T : ShortComplex (FGModuleCat R) :=
-      ShortComplex.mk (FGModuleCat.ofHom N.subtype) (FGModuleCat.ofHom N.mkQ) (by
-        apply FGModuleCat.hom_ext
-        exact (LinearMap.exact_subtype_mkQ N).linearMap_comp_eq_zero)
-    have hconf : (finiteModulesExactStructure R).Conflation T :=
-      (finiteModulesExactStructure_conflation_iff R T).mpr <| by
-        apply ModuleCat.shortComplex_shortExact
-        · exact LinearMap.exact_subtype_mkQ N
-        · exact N.injective_subtype
-        · exact N.mkQ_surjective
-    have hrel :
-        (ExactK0.of (FGModuleCat.of R M) : ExactK0 (finiteModulesExactStructure R)) =
-          ExactK0.of (FGModuleCat.of R N) + ExactK0.of (FGModuleCat.of R Q) := by
-      simpa only [T, Q] using ExactK0.of_conflation hconf
-    rw [hrel]
+    rw [exactK0_of_eq_submodule_add_quotient R N]
     exact G.add_mem hNmem hQ
 
 omit hS in

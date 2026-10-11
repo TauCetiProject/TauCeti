@@ -19,6 +19,8 @@ an algebra structure on the coalgebra.
 
 * `TauCeti.Coalgebra.baseChange_comul_tmul`: the comultiplication of a scalar extension on
   pure tensors.
+* `TauCeti.Coalgebra.baseChange_comul`: the comultiplication of a scalar extension is the scalar
+  extension of the comultiplication, followed by `distribBaseChange`.
 * `TauCeti.Coalgebra.IsCocomm.of_baseChange`: cocommutativity descends along a faithfully flat
   commutative algebra.
 -/
@@ -49,6 +51,18 @@ theorem baseChange_comul_tmul (a : A) (h : H) :
       rw [TensorProduct.tmul_eq_smul_one_tmul a g,
         TensorProduct.tmul_eq_smul_one_tmul a k, TensorProduct.tmul_smul]
       exact TensorProduct.smul_tmul' a (1 ⊗ₜ[R] g) (1 ⊗ₜ[R] k)
+
+/-- The comultiplication of a base-changed coalgebra is the base change of the comultiplication,
+followed by `distribBaseChange`. -/
+theorem baseChange_comul :
+    Coalgebra.comul (R := A) (A := A ⊗[R] H) =
+      (TensorProduct.AlgebraTensorModule.distribBaseChange R A H H).toLinearMap ∘ₗ
+        (Coalgebra.comul (R := R) (A := H)).baseChange A := by
+  ext h
+  simp only [TensorProduct.AlgebraTensorModule.curry_apply, TensorProduct.curry_apply,
+    LinearMap.coe_restrictScalars, LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe,
+    LinearMap.baseChange_tmul]
+  exact baseChange_comul_tmul A 1 h
 
 end TauCeti.Coalgebra
 

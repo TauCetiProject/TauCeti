@@ -18,6 +18,11 @@ averages on the pieces of a partition, as in the Calderón–Zygmund decompositi
 Both hold without any integrability or finiteness assumption: when the average is not defined it
 is `0` by convention.
 
+Measuring the mean oscillation of a function about its own average rather than about a constant
+`c` costs at most a factor `2`: `⨍_s ‖f - f_s‖ ≤ 2 ⨍_s ‖f - c‖`. So a bound on the oscillation
+about any convenient constant gives one about the average, the form used by the John–Nirenberg
+inequality.
+
 The average of a function over a set `s` is also controlled by its average over a larger set
 `t ⊇ s`, at the cost of the ratio `μ t / μ s` of their measures.
 
@@ -32,6 +37,8 @@ equivalence `e` pushes `μ` forward to `a • ν` with `0 < a < ∞`, then the a
   the average of the extended norm over the set.
 * `TauCeti.measure_mul_enorm_setAverage_le`: the measure of a set times the extended norm of the
   average over it is at most the integral of the extended norm over it.
+* `TauCeti.setLAverage_enorm_sub_setAverage_le`: the mean oscillation of `f` about its
+  average is at most twice its mean oscillation about any constant.
 * `TauCeti.norm_setAverage_sub_le_of_subset`: the average over a subset `s ⊆ t`
   differs from a constant `c` by at most `μ t / μ s` times the average of `‖f - c‖` over `t`.
 * `TauCeti.setLIntegral_comp_preimage_of_map_eq_smul`,
@@ -75,6 +82,38 @@ theorem measure_mul_enorm_setAverage_le (μ : Measure α) (f : α → E) (s : Se
     exact enorm_setAverage_le_setLAverage μ f s
 
 end ENorm
+
+section Oscillation
+
+variable {X F : Type*} [MeasurableSpace X] {μ : Measure X} [NormedAddCommGroup F]
+  [NormedSpace ℝ F] [CompleteSpace F] {f : X → F} {s : Set X}
+
+/-- The mean oscillation of `f` on `s` about its own average is at most twice its mean oscillation
+about any constant `c`: `⨍_s ‖f - f_s‖ ≤ 2 ⨍_s ‖f - c‖`. -/
+theorem setLAverage_enorm_sub_setAverage_le (hf : IntegrableOn f s μ) (c : F) :
+    ⨍⁻ x in s, ‖f x - ⨍ y in s, f y ∂μ‖ₑ ∂μ ≤ 2 * ⨍⁻ x in s, ‖f x - c‖ₑ ∂μ := by
+  rcases eq_or_ne (μ s) 0 with h0 | h0
+  · simp [Measure.restrict_eq_zero.2 h0]
+  rcases eq_or_ne (μ s) ∞ with htop | htop
+  · simp [setLAverage_eq, htop]
+  have heq : (⨍ y in s, f y ∂μ) - c = ⨍ y in s, (f y - c) ∂μ := by
+    rw [setAverage_fun_sub hf (integrableOn_const htop), setAverage_const h0 htop]
+  calc ⨍⁻ x in s, ‖f x - ⨍ y in s, f y ∂μ‖ₑ ∂μ
+      ≤ ⨍⁻ x in s, (‖f x - c‖ₑ + ⨍⁻ y in s, ‖f y - c‖ₑ ∂μ) ∂μ := by
+        refine setLAverage_mono_ae s (.of_forall fun x => ?_)
+        calc ‖f x - ⨍ y in s, f y ∂μ‖ₑ = ‖(f x - c) - ((⨍ y in s, f y ∂μ) - c)‖ₑ := by
+              congr 1; abel
+          _ ≤ ‖f x - c‖ₑ + ‖(⨍ y in s, f y ∂μ) - c‖ₑ := enorm_sub_le
+          _ ≤ ‖f x - c‖ₑ + ⨍⁻ y in s, ‖f y - c‖ₑ ∂μ := by
+            rw [heq]
+            gcongr
+            exact enorm_setAverage_le_setLAverage μ _ s
+    _ = 2 * ⨍⁻ x in s, ‖f x - c‖ₑ ∂μ := by
+        rw [setLAverage_eq μ (fun x => ‖f x - c‖ₑ + ⨍⁻ y in s, ‖f y - c‖ₑ ∂μ) s,
+          lintegral_add_right _ measurable_const, setLIntegral_const,
+          ENNReal.add_div, ENNReal.mul_div_cancel_right h0 htop, ← setLAverage_eq, two_mul]
+
+end Oscillation
 
 section Subset
 

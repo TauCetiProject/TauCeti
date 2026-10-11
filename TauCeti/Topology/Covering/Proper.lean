@@ -59,7 +59,7 @@ theorem IsCoveringMap.isProperMap (hf : IsCoveringMap f) (hfin : ∀ x, Finite (
     IsProperMap f := by
   refine isProperMap_iff_isClosedMap_and_compact_fibers.mpr
     ⟨hf.continuous, ?_, fun x ↦ (toFinite _).isCompact⟩
-  choose hdisc U hxU hU hfU H hH using hf
+  choose hdisc U hxU hU _ H hH using hf
   -- Being a closed map is local on the target, so check it over each evenly covered `U x`.
   refine (TopologicalSpace.IsOpenCover.of_sets hU
     (eq_univ_of_forall fun x ↦ mem_iUnion.mpr ⟨x, hxU x⟩)).isClosedMap_iff_restrictPreimage.mpr

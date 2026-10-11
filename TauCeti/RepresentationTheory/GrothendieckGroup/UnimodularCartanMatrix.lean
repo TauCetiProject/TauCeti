@@ -103,8 +103,6 @@ theorem cartanMatrix_mul_inverseCartanMatrix
         (finiteProjectiveModules R)) :
     cartanMatrix P S hind hPnoniso hPexhaustive hSnoniso hSexhaustive *
       inverseCartanMatrix P S hind hPnoniso hPexhaustive hSnoniso hSexhaustive h = 1 := by
-  let bP := indecomposableProjectiveClassBasis P hind hPnoniso hPexhaustive
-  let bS := simpleClassBasis S hSnoniso hSexhaustive
   rw [cartanMatrix_eq_toMatrix_cartanEquiv P S hind hPnoniso hPexhaustive hSnoniso
     hSexhaustive h, inverseCartanMatrix, ← LinearMap.toMatrix_comp]
   have hcomp : (cartanEquiv R h).toIntLinearEquiv.toLinearMap.comp

@@ -75,7 +75,7 @@ private theorem basisProjection_mem_actionRange {n : ℕ} (b : Module.Basis (Fin
   rw [basisProjection]
   apply Submonoid.list_prod_mem
   intro f hf
-  obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hf
+  obtain ⟨i, _, rfl⟩ := List.mem_map.mp hf
   split_ifs
   · exact occupationProjection_mem_actionRange b i
   · exact vacancyProjection_mem_actionRange b i

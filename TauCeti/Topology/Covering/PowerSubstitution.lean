@@ -64,20 +64,26 @@ namespace TauCeti
 
 variable (U : Type*) [TopologicalSpace U] {E : Type*} [TopologicalSpace E] {n : ℕ} {R R' : ℝ}
 
-/-- The `n`-th power maps the punctured ball of radius `R'` into that of radius `R` when
-`R' ^ n ≤ R`. -/
-private theorem pow_mem_ball_zero_diff_singleton (hn : n ≠ 0) (hR : R' ^ n ≤ R) {t : ℂ}
-    (ht : t ∈ ball (0 : ℂ) R' \ {0}) : t ^ n ∈ ball (0 : ℂ) R \ {0} := by
-  refine ⟨?_, pow_ne_zero n ht.2⟩
+/-- The `n`-th power maps the ball of radius `R'` into that of radius `R` when
+`n ≠ 0` and `R' ^ n ≤ R`. -/
+theorem mapsTo_pow_ball_zero (hn : n ≠ 0) (hR : R' ^ n ≤ R) :
+    MapsTo (fun t : ℂ => t ^ n) (ball 0 R') (ball 0 R) := by
+  intro t ht
   rw [mem_ball_zero_iff, norm_pow]
-  exact (pow_lt_pow_left₀ (mem_ball_zero_iff.1 ht.1) (norm_nonneg _) hn).trans_le hR
+  exact (pow_lt_pow_left₀ (mem_ball_zero_iff.mp ht) (norm_nonneg _) hn).trans_le hR
+
+/-- The `n`-th power maps the punctured ball of radius `R'` into that of radius `R` when
+`n ≠ 0` and `R' ^ n ≤ R`. -/
+theorem mapsTo_pow_ball_zero_diff_singleton (hn : n ≠ 0) (hR : R' ^ n ≤ R) :
+    MapsTo (fun t : ℂ => t ^ n) (ball 0 R' \ {0}) (ball 0 R \ {0}) :=
+  fun _ ht => ⟨mapsTo_pow_ball_zero hn hR ht.1, pow_ne_zero n ht.2⟩
 
 /-- The **power substitution** `(w, s) ↦ (w, s ^ n)` from `U × (ball 0 R' \ {0})` to
 `U × (ball 0 R \ {0})`, for `n ≠ 0` and `R' ^ n ≤ R`. -/
 def powerSubstitution (hn : n ≠ 0) (hR : R' ^ n ≤ R) :
     C(U × ↥(ball (0 : ℂ) R' \ {0}), U × ↥(ball (0 : ℂ) R \ {0})) :=
   (ContinuousMap.id U).prodMap
-    ⟨fun s => ⟨(s : ℂ) ^ n, pow_mem_ball_zero_diff_singleton hn hR s.2⟩,
+    ⟨fun s => ⟨(s : ℂ) ^ n, mapsTo_pow_ball_zero_diff_singleton hn hR s.2⟩,
       Continuous.subtype_mk (by fun_prop) _⟩
 
 @[simp]

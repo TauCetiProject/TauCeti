@@ -6,14 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.ClassField
+public import TauCeti.NumberTheory.ClassFieldTheory.Formation.AbsoluteArtinMap
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Refinement
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Units
+public import TauCeti.NumberTheory.ClassFieldTheory.UnitsLayer
 public import TauCeti.NumberTheory.LocalField.Norm.Open
 
 import TauCeti.NumberTheory.ClassFieldTheory.Formation.NormLimitation
 import TauCeti.NumberTheory.ClassFieldTheory.Formation.TrivialLayer
 import TauCeti.NumberTheory.ClassFieldTheory.Local.ClassFormation
-import TauCeti.NumberTheory.ClassFieldTheory.UnitsLayer
 
 /-!
 # Local norm subgroups
@@ -120,6 +121,17 @@ theorem localGroundEquiv_apply_coe (V : OpenNormalSubgroup (AbsoluteGaloisGroup 
           K →* SeparableClosure K) x.toMul)) :=
   unitsLevelEquiv_apply_coe (Algebra.ofId K (SeparableClosure K))
     (fixedField_ground_ofOpenNormal K V) x
+
+/-- The unit `x ∈ Kˣ`, as an element of the ground level of the top layer, read in the ground level
+of the layer `V ◁ G_K`, is `localGroundEquiv K V x`. -/
+theorem groundEquivOfOpenNormal_unitsLevelEquiv
+    (V : OpenNormalSubgroup (AbsoluteGaloisGroup K)) (x : Kˣ) :
+    NormalLayer.groundEquivOfOpenNormal (unitsFormation K) V
+        (unitsLevelEquiv (Algebra.ofId K (SeparableClosure K))
+          (fixedField_toSubgroup_top_eq_fieldRange K)
+          (Additive.ofMul x)) =
+      localGroundEquiv K V (Additive.ofMul x) :=
+  Subtype.ext (by simp)
 
 /-- Under `localGroundEquiv`, the concrete local norm subgroup is the norm subgroup of the
 corresponding layer of the units formation. -/

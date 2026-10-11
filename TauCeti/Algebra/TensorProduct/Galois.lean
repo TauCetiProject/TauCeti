@@ -61,7 +61,7 @@ theorem tensorProduct_forall_map_eq_self_iff_exists_one_tmul_eq (x : L ⊗[k] A)
     simp only [TensorProduct.tmul_sum, TensorProduct.tmul_smul,
       Finsupp.linearCombination_apply, Finsupp.sum, Module.Basis.baseChange_apply]
     apply Finset.sum_congr rfl
-    intro i hi
+    intro i _
     rw [← hc i]
     simp [Algebra.algebraMap_eq_smul_one, TensorProduct.smul_tmul']
   · rintro ⟨a, rfl⟩ σ

@@ -153,8 +153,9 @@ instance {M : SheafOfModules.{u} R} (q : M.LocalGeneratorsData) [q.IsFiniteType]
     {I : Type w} (Y : I → C) (coversTop : J.CoversTop Y) (index : I → q.I)
     (map : ∀ i, Y i ⟶ q.X (index i)) :
     (q.ofRefinement Y coversTop index map).IsFiniteType where
-  isFiniteType i := GeneratingSections.isFiniteType_restrict _ _
-    (hG := LocalGeneratorsData.IsFiniteType.isFiniteType (index i))
+  isFiniteType i :=
+    let _ := LocalGeneratorsData.IsFiniteType.isFiniteType (index i)
+    GeneratingSections.isFiniteType_restrict _ _
 
 /-- Refining quasi-coherent data preserves presentations with an invertible generating
 morphism. -/

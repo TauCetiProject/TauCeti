@@ -326,12 +326,12 @@ private noncomputable def continuousZModDualTensorInv [Fact n.Prime] [DiscreteTo
     { toFun := fun f ↦ ∑ i, continuousZModHomCoord b f i ⊗ₜ[ZMod n] b i
       map_zero' := by
         apply Finset.sum_eq_zero
-        intro i hi
+        intro i _
         simp
       map_add' := fun f h ↦ by
         rw [← Finset.sum_add_distrib]
         apply Finset.sum_congr rfl
-        intro i hi
+        intro i _
         rw [continuousZModHomCoord_add]
         simp [TensorProduct.add_tmul] }
 
@@ -418,12 +418,12 @@ private theorem continuousZModDualTensorInv_map [Fact n.Prime] [DiscreteTopology
         _ = ∑ i, ((Module.finBasis (ZMod n) A).repr a i • x) ⊗ₜ[ZMod n]
               (Module.finBasis (ZMod n) A) i := by
             apply Finset.sum_congr rfl
-            intro i hi
+            intro i _
             rw [continuousZModHomCoord_tensorMap_tmul]
         _ = ∑ i, x ⊗ₜ[ZMod n] ((Module.finBasis (ZMod n) A).repr a i •
               (Module.finBasis (ZMod n) A) i) := by
             apply Finset.sum_congr rfl
-            intro i hi
+            intro i _
             rw [TensorProduct.smul_tmul]
         _ = x ⊗ₜ (∑ i, (Module.finBasis (ZMod n) A).repr a i •
               (Module.finBasis (ZMod n) A) i) := by
@@ -478,7 +478,7 @@ def continuousZModDualToDual :
         { toFun := fun w ↦ Multiplicative.toAdd (Additive.toMul x (Additive.toMul w))
           map_zero' := by simp
           map_add' := fun a b ↦ by simp [toMul_add] }
-      map_zero' := by ext w; simp
+      map_zero' := by ext _; simp
       map_add' := fun x y ↦ by ext w; simp }
 
 @[simp]

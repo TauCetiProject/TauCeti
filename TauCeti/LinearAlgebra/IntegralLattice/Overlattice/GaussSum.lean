@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Orthogonal.GaussSum
 public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.OrthogonalQuotient.Quadratic
 public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Index
+public import TauCeti.LinearAlgebra.IntegralLattice.Restriction
 
 /-!
 # Gauss sums of even overlattices
@@ -20,6 +21,8 @@ isotropic reduction to the canonical discriminant modules.
 
 The invariance permits comparisons of discriminant Gauss sums through even overlattices
 without changing the rational quadratic space, as needed when comparing them to signature.
+Read from the other side, it says that restricting an even lattice to a full sublattice
+(`TauCeti.IntegralLattice.restrictFull`) does not change the Gauss-sum invariant.
 No definiteness hypothesis is required.
 
 ## References
@@ -59,3 +62,34 @@ theorem gaussSign_discriminantQuadraticModule (hL : L.IsEven) (hM : IsEven M) :
     ((isEven_iff_isIsotropic_discriminantSubgroup hL M).mp hM)
 
 end TauCeti.IntegralLattice.IntermediateCarrier
+
+namespace TauCeti.IntegralLattice
+
+variable {V : Type*} [AddCommGroup V] [Module ℚ V]
+
+/-- Passing to a full sublattice preserves the Gauss-sum invariant of the discriminant quadratic
+form of an even nondegenerate lattice. -/
+@[simp]
+theorem gaussSign_discriminantQuadraticModule_restrictFull (L : IntegralLattice V)
+    [L.IsNondegenerate] (hL : L.IsEven) (N : Submodule ℤ V) (hN : N ≤ L.carrier)
+    [N.IsLattice ℚ] :
+    ((L.restrictFull N hN).discriminantQuadraticModule (isEven_restrictFull hL N hN)).gaussSign =
+      (L.discriminantQuadraticModule hL).gaussSign := by
+  set K := L.restrictFull N hN
+  have hle : K.carrier ≤ L.carrier := by rwa [restrictFull_carrier]
+  have hdual : L.carrier ≤ K.dualCarrier := fun x hx ↦ by
+    rw [dualCarrier, LinearMap.BilinForm.mem_dualSubmodule]
+    intro y hy
+    rw [restrictFull_form]
+    exact L.form_mem_one ⟨x, hx⟩ ⟨y, hle hy⟩
+  let M : K.IntermediateCarrier := ⟨L.carrier, hle, hdual⟩
+  have hM : IntermediateCarrier.IsEven M := IntermediateCarrier.isEven_def.mpr fun x hx ↦ by
+    obtain ⟨z, hz⟩ := hL.exists_norm_eq_two_mul ⟨x, hx⟩
+    exact ⟨z, by rwa [norm_apply, restrictFull_form, ← norm_apply]⟩
+  have hLM : hM.isIntegral.toIntegralLattice = L := IntegralLattice.ext
+    (IntermediateCarrier.IsIntegral.toIntegralLattice_carrier _)
+    ((IntermediateCarrier.IsIntegral.toIntegralLattice_form _).trans (restrictFull_form _ _ _))
+  rw [← IntermediateCarrier.gaussSign_discriminantQuadraticModule _ hM,
+    ((Isometry.ofEq hLM).discriminantQuadraticIsometry hM.isEven_toIntegralLattice).gaussSign_eq]
+
+end TauCeti.IntegralLattice

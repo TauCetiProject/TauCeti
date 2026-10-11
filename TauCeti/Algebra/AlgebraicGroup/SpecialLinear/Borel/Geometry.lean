@@ -5,46 +5,34 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
 public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.Basic
-public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Borel.Basic
-public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Smooth
-import TauCeti.Algebra.AlgebraicGroup.Solvable.Basic
 
 /-!
-# Geometry of the standard Borel subgroup of `SL₂`
+# The coordinate algebra of the standard Borel subgroup of `SL₂`
 
-The upper-triangular determinant-one subgroup of `SL₂` is smooth, geometrically connected, and
-geometrically solvable. Its coordinate algebra has the explicit presentation
+The coordinate algebra of the upper-triangular determinant-one subgroup of `SL₂` has the explicit
+presentation
 
 ```text
 R[T, T⁻¹][X],
 ```
 
-where `T` is the upper-left diagonal entry and `X` is the upper-right entry. This presentation
-also makes geometric connectedness transparent: after extending a field, the coordinate ring
-remains a polynomial ring over a Laurent polynomial domain.
-
-Smoothness is the rank-two case of smoothness of the upper-triangular subgroup of `SLₙ`, which
-follows from the infinitesimal lifting property for upper-triangular determinant-one matrices
-across nilpotent quotients.
+where `T` is the upper-left diagonal entry and `X` is the upper-right entry.
 
 The subgroup here is, by definition, the case `n = 2` of the upper-triangular subgroup of `SLₙ`
-(`TauCeti.SpecialLinear.Borel.definingHopfIdeal`). That it is a Borel subgroup, and that the Borel
-subgroups are its conjugates, is proved in every rank in
-`TauCeti.Algebra.AlgebraicGroup.SpecialLinear.UpperTriangular.Borel`.
+(`TauCeti.SpecialLinear.Borel.definingHopfIdeal`), so the results for every `n` apply to it: it is
+smooth, with solvable points (`TauCeti.Algebra.AlgebraicGroup.SpecialLinear.UpperTriangular.Basic`),
+geometrically connected (`TauCeti.Algebra.AlgebraicGroup.SpecialLinear.UpperTriangular.Connected`),
+and its coordinate algebra commutes with base change
+(`TauCeti.Algebra.AlgebraicGroup.SpecialLinear.UpperTriangular.BaseChange`). That it is a Borel
+subgroup, and that over an algebraically closed field the Borel subgroups are exactly its
+conjugates, is proved in `TauCeti.Algebra.AlgebraicGroup.SpecialLinear.UpperTriangular.Borel`.
 
 ## Main declarations
 
 * `TauCeti.SpecialLinear.Borel.coordinateAlgEquiv`: the presentation of the coordinate algebra as
   `R[T, T⁻¹][X]`.
-* `TauCeti.SpecialLinear.Borel.smoothCommHopfAlgProperty_coordinateHopfAlgebra`: smoothness.
-* `TauCeti.SpecialLinear.Borel.geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra`:
-  geometric connectedness.
-* `TauCeti.SpecialLinear.Borel.
-    geometricallySolvablePointsCommHopfAlgProperty_coordinateHopfAlgebra`: solvability of
-  geometric points.
 
 ## References
 
@@ -54,12 +42,12 @@ subgroups are its conjugates, is proved in every rank in
 
 public section
 
-open CategoryTheory WithConv
-open scoped LaurentPolynomial TensorProduct
+open WithConv
+open scoped LaurentPolynomial
 
 namespace TauCeti.SpecialLinear.Borel
 
-universe u v
+universe u
 
 noncomputable section
 
@@ -284,102 +272,6 @@ theorem coordinateAlgEquiv_symm_X :
     (coordinateAlgEquiv R).symm Polynomial.X = upperRightCoordinate R := by
   apply (coordinateAlgEquiv R).injective
   rw [AlgEquiv.apply_symm_apply, coordinateAlgEquiv_upperRightCoordinate]
-
-/-! ## Base change -/
-
-private theorem coordinateHopfAlgebraBaseChangeIso_hom_lowerLeftCoordinate
-    (K : Type max u v) [CommRing K] [Algebra R K] :
-    (SpecialLinear.coordinateHopfAlgebraBaseChangeIso R K 2).hom.hom
-        (1 ⊗ₜ[R] lowerLeftCoordinate R) = lowerLeftCoordinate K := by
-  have hcomp := baseChangeMap_coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_hom R K 2
-  have h := congrArg
-    (fun f ↦ f.hom (1 ⊗ₜ[R] GeneralLinear.Borel.lowerLeftCoordinate R)) hcomp
-  have hGL :
-      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K 2).hom
-          (1 ⊗ₜ[R] GeneralLinear.Borel.lowerLeftCoordinate R) =
-        GeneralLinear.Borel.lowerLeftCoordinate K := by
-    rw [GeneralLinear.Borel.lowerLeftCoordinate_def,
-      GeneralLinear.Borel.lowerLeftCoordinate_def]
-    simpa using GeneralLinear.coordinateHopfAlgebraBaseChangeIso_hom_apply.{u, v}
-      R K 2 1 (MvPolynomial.X ((1 : Fin 2), (0 : Fin 2)))
-  rw [_root_.CommHopfAlgCat.comp_apply, _root_.CommHopfAlgCat.comp_apply] at h
-  rw [CommHopfAlgCat.baseChangeMap_apply_tmul, hGL] at h
-  simpa only [lowerLeftCoordinate_def] using h
-
-private theorem map_baseChangeHopfIdeal_definingHopfIdeal
-    (K : Type max u v) [CommRing K] [Algebra R K] :
-    (CommHopfAlgCat.baseChangeHopfIdeal (K := K) (definingHopfIdeal R)).map
-        (SpecialLinear.coordinateHopfAlgebraBaseChangeIso R K 2).hom.hom =
-      definingHopfIdeal K := by
-  refine CommHopfAlgCat.map_baseChangeHopfIdeal_of_toIdeal_eq_span
-    (definingHopfIdeal R) (definingHopfIdeal K)
-    (SpecialLinear.coordinateHopfAlgebraBaseChangeIso R K 2)
-    (definingHopfIdeal_toIdeal R) (definingHopfIdeal_toIdeal K) ?_
-  simp only [Set.image_singleton]
-  congr 1
-  exact coordinateHopfAlgebraBaseChangeIso_hom_lowerLeftCoordinate R K
-
-/-- Base change of the standard `SL₂` Borel coordinate Hopf algebra is canonically the same
-coordinate Hopf algebra constructed over the new base. -/
-noncomputable def coordinateHopfAlgebraBaseChangeIso
-    (K : Type max u v) [CommRing K] [Algebra R K] :
-    CommHopfAlgCat.baseChange (K := K) (coordinateHopfAlgebra R) ≅
-      coordinateHopfAlgebra K := by
-  apply CommHopfAlgCat.quotientBaseChangeIsoOfMapEq
-    (definingHopfIdeal R) (definingHopfIdeal K)
-    (SpecialLinear.coordinateHopfAlgebraBaseChangeIso R K 2)
-  exact map_baseChangeHopfIdeal_definingHopfIdeal R K
-
-/-- The Borel base-change isomorphism commutes with the quotient coordinate morphisms from
-`O(SL₂)`. -/
-@[simp]
-theorem baseChangeMap_coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_hom
-    (K : Type max u v) [CommRing K] [Algebra R K] :
-    CommHopfAlgCat.baseChangeMap (K := K) (coordinateMap R) ≫
-        (coordinateHopfAlgebraBaseChangeIso R K).hom =
-      (SpecialLinear.coordinateHopfAlgebraBaseChangeIso R K 2).hom ≫ coordinateMap K := by
-  exact CommHopfAlgCat.baseChangeMap_mkQuotient_comp_quotientBaseChangeIsoOfMapEq_hom
-    (definingHopfIdeal R) (definingHopfIdeal K)
-    (SpecialLinear.coordinateHopfAlgebraBaseChangeIso R K 2)
-    (map_baseChangeHopfIdeal_definingHopfIdeal R K)
-
-private noncomputable def coordinateRingBaseChangeEquiv
-    (k : Type u) [Field k] (K : Type u) [Field K] [Algebra k K] :
-    coordinateHopfAlgebra k ⊗[k] K ≃+* Polynomial (LaurentPolynomial K) :=
-  (Algebra.TensorProduct.comm k _ K).toRingEquiv.trans
-    ((CommHopfAlgCat.ofIso (coordinateHopfAlgebraBaseChangeIso k K)).toAlgEquiv.toRingEquiv.trans
-      (coordinateAlgEquiv K).toRingEquiv)
-
-/-- **The standard `SL₂` Borel coordinate Hopf algebra is geometrically connected.** After
-every field extension its coordinate ring is a polynomial ring over a Laurent polynomial domain. -/
-theorem geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra
-    (k : Type u) [Field k] :
-    geometricallyConnectedCommHopfAlgProperty k (coordinateHopfAlgebra k) := by
-  rw [geometricallyConnectedCommHopfAlgProperty_iff]
-  intro K _ _
-  exact (PrimeSpectrum.homeomorphOfRingEquiv
-    (coordinateRingBaseChangeEquiv k K)).connectedSpace_iff.mpr inferInstance
-
-/-- The standard Borel coordinate algebra is smooth over a field. -/
-theorem smoothCommHopfAlgProperty_coordinateHopfAlgebra
-    (k : Type u) [Field k] :
-    smoothCommHopfAlgProperty k (coordinateHopfAlgebra k) := by
-  rw [smoothCommHopfAlgProperty_iff]
-  infer_instance
-
-/-- Every algebra-valued point group of the standard `SL₂` Borel is solvable. -/
-theorem isSolvable_points (A : Type*) [CommRing A] [Algebra R A] :
-    Group.IsSolvable
-      (HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R) (CommAlgCat.of R A)) := by
-  let e := pointsMulEquiv (R := R) (A := A)
-  exact Group.isSolvable_of_isSolvable_injective (f := e.toMonoidHom) e.injective
-
-/-- The standard `SL₂` Borel has a solvable group of geometric points. -/
-theorem geometricallySolvablePointsCommHopfAlgProperty_coordinateHopfAlgebra
-    (k : Type u) [Field k] :
-    geometricallySolvablePointsCommHopfAlgProperty k (coordinateHopfAlgebra k) := by
-  rw [geometricallySolvablePointsCommHopfAlgProperty_iff]
-  exact isSolvable_points k (AlgebraicClosure k)
 
 end
 

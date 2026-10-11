@@ -60,7 +60,7 @@ theorem integral_pi_eq_integral_integral_update {E : Type*} [NormedAddCommGroup 
       ∫ z, (∫ p : α a × α b, f (update (update z a p.1) b p.2) ∂(μ a).prod (μ b))
         ∂(Measure.pi μ) := by
   set g : ((∀ i, α i) × α a × α b) → (∀ i, α i) :=
-    fun w => update (update w.1 a w.2.1) b w.2.2 with hg
+    fun w => update (update w.1 a w.2.1) b w.2.2
   have hmp := measurePreserving_update_update μ hab
   have hcomp : Integrable (fun w => f (g w)) ((Measure.pi μ).prod ((μ a).prod (μ b))) :=
     hmp.integrable_comp_of_integrable hf

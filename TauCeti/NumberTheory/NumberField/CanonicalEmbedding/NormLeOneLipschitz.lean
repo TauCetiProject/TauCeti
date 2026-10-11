@@ -79,7 +79,7 @@ product of real powers of the positive reals `w (fundSystem ...)` in the others.
 theorem contDiff_expMapBasis {n : WithTop ℕ∞} : ContDiff ℝ n (⇑(expMapBasis (K := K))) := by
   classical
   simp_rw [funext expMapBasis_apply']
-  fun_prop (disch := exact fun x ↦ (InfinitePlace.pos_iff.mpr (by simp)).ne')
+  fun_prop (disch := exact fun _ ↦ (InfinitePlace.pos_iff.mpr (by simp)).ne')
 
 open scoped Classical in
 /-- The face of `paramSet K` on which the unbounded `w₀` coordinate sits at its finite endpoint

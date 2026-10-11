@@ -552,7 +552,7 @@ theorem fullCycleType_eq_sum_subtypePerm {ι : Type*} [Fintype ι]
     exact Finset.filter_congr_decidable _ _ _
   ext q
   simp only [Finset.mem_disjiUnion, Finset.mem_univ, true_and, Finset.mem_image]
-  exact ⟨fun ⟨x, hx⟩ => ⟨π x, ⟨x, rfl⟩, hx⟩, fun ⟨i, x, hx⟩ => ⟨x, hx⟩⟩
+  exact ⟨fun ⟨x, hx⟩ => ⟨π x, ⟨x, rfl⟩, hx⟩, fun ⟨_, x, hx⟩ => ⟨x, hx⟩⟩
 
 /-! ### Orbit sizes -/
 

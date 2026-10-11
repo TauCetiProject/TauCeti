@@ -257,7 +257,7 @@ theorem cyclicGroupThreeExactCharacterTable_lift_conjugateResidues
 
 /-- **The assembled cyclotomic Dixon--Schneider solver succeeds on the certified `C₃` data.** -/
 theorem isSome_dixonCyclotomicCharacterTable_cyclicGroupThree :
-    ((cyclicClassData 3).dixonCyclotomicCharacterTable? 3 (by simp)
+    ((cyclicClassData 3).dixonCyclotomicCharacterTable? 3
       cyclicGroupThreeDixonPrimeData).isSome = true := by
   apply (cyclicClassData 3).isSome_dixonCyclotomicCharacterTable_of_spec 3 (by simp)
     cyclicGroupThreeDixonPrimeData cyclicGroupThreeExactCharacterTable

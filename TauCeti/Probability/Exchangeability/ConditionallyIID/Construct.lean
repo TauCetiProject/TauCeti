@@ -175,7 +175,7 @@ theorem conditionallyIIDWith_iidMixtureLaw (hP : Measurable P) :
     (hP.comp measurable_fst) fun m k hk => ?_
   -- the joint kernel `Q ↦ δ_Q ⊗ Q^{⊗ Fin m}`, through which both sides factor
   set g : ProbabilityMeasure α → Measure (ProbabilityMeasure α × (Fin m → α)) := fun Q =>
-    (Measure.dirac Q).prod (ProbabilityMeasure.pi fun _ : Fin m => Q).toMeasure with hg
+    (Measure.dirac Q).prod (ProbabilityMeasure.pi fun _ : Fin m => Q).toMeasure
   have hgmeas : Measurable g :=
     TauCeti.MeasureTheory.measurable_dirac_prod_probabilityMeasure_pi_const_toMeasure
       (fun Q : ProbabilityMeasure α => Q) measurable_id

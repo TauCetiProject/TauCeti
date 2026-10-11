@@ -131,7 +131,7 @@ theorem eventually_mapOrientation_eq_of_eventually (hι : Fintype.card ι = finr
     (e.open_baseSet.inter e'.open_baseSet).mem_nhds ⟨hb, hb'⟩
   -- The determinant of the coordinate change is continuous at `b` and nonzero there, so its
   -- product with its value at `b` stays positive near `b`.
-  set d : B → ℝ := fun x ↦ (e.coordChangeL ℝ e' x : F →L[ℝ] F).det with hd
+  set d : B → ℝ := fun x ↦ (e.coordChangeL ℝ e' x : F →L[ℝ] F).det
   have hdc : ContinuousAt d b :=
     ContinuousLinearMap.continuous_det.continuousAt.comp
       ((continuousOn_coordChange ℝ e e').continuousAt hmem)

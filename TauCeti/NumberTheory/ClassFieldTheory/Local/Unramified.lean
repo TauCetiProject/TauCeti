@@ -295,7 +295,6 @@ private theorem layerArtinCharacterCup_eq_layerPeriodicClass
           (Additive.ofMul a))
         (layerFrobeniusCharacter K L ι) = layerPeriodicClass K L ι a := by
   let X := NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)
-  let F := unitsFormation K
   let _ : CommGroup X.Gal := layerCommGroup K L ι
   rw [← groundLevelEquiv_layerGroundInvariant, NormalLayer.artinCharacterCup_apply,
     NormalLayer.zeroTateClass_groundLevelEquiv, ← layerCharacterCupTate, layerCharacterCupTate_eq,

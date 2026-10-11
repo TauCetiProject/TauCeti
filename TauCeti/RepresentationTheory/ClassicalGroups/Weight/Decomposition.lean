@@ -63,6 +63,8 @@ weaker and flagged by the linter.
 * `TauCeti.IsRationalRep.iSup_weightSpace_eq_top` and
   `TauCeti.IsRationalRep.isInternal_weightSpace`: **a rational representation of `GL n ℂ` is the
   internal direct sum of its weight spaces.**
+* `TauCeti.IsRationalRep.exists_weightSpace_ne_bot`: a nonzero rational representation has a
+  weight.
 * `TauCeti.finite_setOf_weightSpace_ne_bot`: a finite-dimensional representation has only finitely
   many weights. This reads off the independence of the weight spaces alone, so it needs neither
   rationality nor an infinite field.
@@ -221,6 +223,15 @@ theorem IsRationalRep.iSup_weightSpace_eq_top (h : IsRationalRep ρ) :
   rw [hw]
   exact Submodule.sum_mem _ fun l hl ↦ Submodule.mem_iSup_of_mem l
     (apply_mem_weightSpace_of_forall_diagGL_eq_sum_smul hA hl w)
+
+/-- **A nonzero rational representation has a weight.** Its weight spaces span it, so they cannot
+all be zero. -/
+theorem IsRationalRep.exists_weightSpace_ne_bot [Nontrivial W] (h : IsRationalRep ρ) :
+    ∃ l : Fin n → ℤ, weightSpace ρ l ≠ ⊥ := by
+  by_contra! hbot
+  have htop := h.iSup_weightSpace_eq_top
+  simp only [hbot, iSup_bot] at htop
+  exact bot_ne_top htop
 
 /-- **The weight-space decomposition.** A rational representation of `GL n ℂ` is the internal
 direct sum of its weight spaces: the diagonal torus is simultaneously diagonalizable on it, and the

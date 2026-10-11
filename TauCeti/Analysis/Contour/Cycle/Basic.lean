@@ -382,7 +382,7 @@ theorem isNullHomologous_of_iff {γ : PiecewiseC1ClosedCurve} {Ω : Set ℂ} :
 @[simp]
 theorem IsNullHomologous.zero (Ω : Set ℂ) : IsNullHomologous (0 : Cycle) Ω := by
   rw [isNullHomologous_iff]
-  intro z hz
+  intro z _
   simp
 
 /-- A sum of null-homologous cycles is null-homologous. -/

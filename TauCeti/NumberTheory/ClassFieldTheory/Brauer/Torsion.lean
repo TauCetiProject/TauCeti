@@ -91,6 +91,15 @@ theorem h2MuToBr_muNRepH2Equiv
                 (AbsoluteGaloisGroup F) (KummerCoeff F n) x))) := by
   rw [h2MuToBr_apply, AddEquiv.symm_apply_apply]
 
+/-- On the explicit model, the Kummer-to-Brauer map is induced by the coefficient inclusion. -/
+theorem h2MuToBr_muNRepH2Equiv_eq_explicitCoeff2
+    (x : H2 (AbsoluteGaloisGroup F) (KummerCoeff F n)) :
+    h2MuToBr n F (muNRepH2Equiv n F x) =
+      unitsRepH2Equiv F
+        (explicitCoeff2 _ _ (kummerCoeffInclHom F n) continuous_of_discreteTopology x) := by
+  rw [h2MuToBr_muNRepH2Equiv, h2KummerToUnits_explicitH2AddEquivContinuousCohomology,
+    AddEquiv.symm_apply_apply]
+
 /-- **The map from roots-of-unity cohomology into the Brauer group is injective** when `n` is
 invertible in `F`. -/
 theorem h2MuToBr_injective (hn : IsUnit (n : F)) :

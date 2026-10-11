@@ -99,8 +99,8 @@ Nothing here needs `A` to be a division algebra: the classical statement is abou
 subfield of a central *division* algebra, but the argument only uses simplicity of `L ⊗[K] A`, so
 it is stated for every finite-dimensional central simple `A`. What a division algebra adds is the
 *existence* of a subfield attaining the bound, which is a separate question, settled by
-`TauCeti.Algebra.exists_subalgebra_isField_finrank_eq_deg` in
-`TauCeti/Algebra/CentralSimple/MaximalSubfield.lean`.
+`TauCeti.Algebra.exists_subalgebra_isField_isSeparable_finrank_eq_deg` in
+`TauCeti/Algebra/CentralSimple/MaximalSubfield/Separable.lean`.
 
 ## References
 

@@ -38,6 +38,8 @@ the integral norm on the carrier.
 * `TauCeti.IntegralLattice.integralNorm_apply`: evaluating the integral norm yields
   integral self-pairing.
 * `TauCeti.IntegralLattice.integralNorm_cast`: the integral norm recovers the rational norm in `ℚ`.
+* `TauCeti.IntegralLattice.exists_integralNorm_ne_zero`: a nondegenerate lattice in a nonzero
+  space has a vector of nonzero norm.
 * `TauCeti.IntegralLattice.Isometry.normIsometryEquiv`: the norm-form isometry induced by a lattice
   isometry.
 * `TauCeti.IntegralLattice.norm_add`: polarization identity for the rational norm.
@@ -255,6 +257,24 @@ theorem vectorsOfNorm_eq_empty_of_forall_ne_intCast (L : IntegralLattice V) {n :
   simp only [mem_vectorsOfNorm, Set.mem_empty_iff_false, iff_false]
   intro hx
   exact hn (L.integralNorm x) (hx.symm.trans (L.integralNorm_cast x).symm)
+
+/-- **A nondegenerate lattice in a nonzero space has a vector of nonzero norm.** -/
+theorem exists_integralNorm_ne_zero (L : IntegralLattice V) [L.IsNondegenerate] [Nontrivial V] :
+    ∃ x : L, L.integralNorm x ≠ 0 := by
+  by_contra! h
+  -- Otherwise the form vanishes on the lattice by polarization, hence on its rational span.
+  have hnorm (x : L) : L.norm x = 0 := by
+    rw [← integralNorm_cast, h x, Int.cast_zero]
+  have hform (x y : L) : L.form x y = 0 := by
+    have hxy := L.norm_add x y
+    rw [← Submodule.coe_add, hnorm, hnorm, hnorm] at hxy
+    linarith
+  have hzero : L.form = 0 := LinearMap.BilinForm.ext_basis L.rationalBasis fun i j ↦ by
+    rw [rationalBasis_apply, rationalBasis_apply, hform, LinearMap.zero_apply,
+      LinearMap.zero_apply]
+  obtain ⟨v, hv⟩ := exists_ne (0 : V)
+  exact hv (L.form_nondegenerate.1 v fun w ↦ by rw [hzero, LinearMap.zero_apply,
+    LinearMap.zero_apply])
 
 end IntegralLattice
 

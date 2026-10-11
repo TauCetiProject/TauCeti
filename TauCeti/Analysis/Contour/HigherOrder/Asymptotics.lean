@@ -229,7 +229,7 @@ private theorem norm_antiderivative_diff_at_tangent_target_le {w s L : ℂ} {k :
       (-(↑(k - 1) : ℂ)⁻¹ * (((s + (‖w - s‖ / ‖L‖ : ℝ) • L) - s) ^ (k - 1))⁻¹)‖ ≤
       (1 / (‖w - s‖ / 2) ^ k) * ‖w - (s + (‖w - s‖ / ‖L‖ : ℝ) • L)‖ := by
   have hd_pos : 0 < ‖w - s‖ := norm_pos_iff.mpr (sub_ne_zero.mpr hw_ne)
-  have hL_pos : 0 < ‖L‖ := norm_pos_iff.mpr hL
+  have _ : 0 < ‖L‖ := norm_pos_iff.mpr hL
   set d := ‖w - s‖
   set tgt := s + (d / ‖L‖ : ℝ) • L with htgt_def
   have h_tgt : ‖tgt - s‖ = d := by
@@ -299,7 +299,7 @@ theorem antiderivative_diff_at_tangent_target_tendsto_zero
       ‖γ t - s - (‖γ t - s‖ / ‖T‖ : ℝ) • T‖ ≤ ‖γ t - s‖ := by
     filter_upwards [h_chord.bound one_pos,
       h_d_to_zero.eventually (Iic_mem_nhds (by norm_num : (0 : ℝ) < 1)),
-      h_d_pos] with t hb hd hdp
+      h_d_pos] with t hb hd _
     calc ‖γ t - s - (‖γ t - s‖ / ‖T‖ : ℝ) • T‖
         ≤ ‖γ t - s‖ ^ n := by simpa using hb
       _ ≤ ‖γ t - s‖ ^ 1 := pow_le_pow_of_le_one (norm_nonneg _) hd (by omega : 1 ≤ n)

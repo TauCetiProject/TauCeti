@@ -24,8 +24,9 @@ is complete. This includes complete valued fields with nondiscrete valuations or
 characteristic.
 
 In a commutative target ring, `evalIntSeries` evaluates these series as a ring homomorphism.
-Evaluation has norm at most one, and multiplication by an evaluated formal unit preserves norms,
-even when the ring norm is only submultiplicative.
+Evaluation has norm at most one, at most the norm of the parameter for a series without constant
+term, and multiplication by an evaluated formal unit preserves norms, even when the ring norm is
+only submultiplicative.
 -/
 
 public section
@@ -120,6 +121,15 @@ theorem norm_evalIntSeries_le_one {K : Type*} [NormedCommRing K] [NormOneClass K
         (norm_nonneg (q ^ n))
     _ ≤ 1 * ‖q‖ ^ n := by simpa only [one_mul] using norm_pow_le q n
     _ ≤ 1 := by simpa only [one_mul] using pow_le_one₀ (norm_nonneg q) hq.le
+
+/-- An integral series without constant term evaluates inside the open unit ball to an element of
+norm at most that of the parameter. -/
+theorem norm_evalIntSeries_le_of_constantCoeff_eq_zero {K : Type*} [NormedCommRing K]
+    [NormOneClass K] [CompleteSpace K] [IsUltrametricDist K] (q : K) (hq : ‖q‖ < 1) {f : ℤ⟦X⟧}
+    (hf : constantCoeff f = 0) : ‖evalIntSeries q hq f‖ ≤ ‖q‖ := by
+  obtain ⟨g, rfl⟩ := X_dvd_iff.mpr hf
+  rw [map_mul, evalIntSeries_X]
+  exact (norm_mul_le_of_le le_rfl (norm_evalIntSeries_le_one q hq g)).trans_eq (mul_one _)
 
 /-- Multiplication by an integral formal unit evaluated inside the open unit ball preserves norms
 in a complete non-archimedean normed commutative ring with `‖1‖ = 1`. -/

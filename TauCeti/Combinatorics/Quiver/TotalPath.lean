@@ -15,9 +15,11 @@ such paths can be concatenated when the target of the second is the source of th
 partial operation `TauCeti.Quiver.TotalPath.mul?` records this condition with an `Option` result,
 using the later-factor-first order: `x.mul? y` traces `y` and then `x`.
 
-Concatenation adds path lengths and is associative as a partial operation. Trivial paths are left
-and right units at the appropriate endpoints. These operations supply the path index and
-multiplication of the path algebra, independently of any coefficient semiring.
+Concatenation adds path lengths and keeps the source of the factor written second — the one traced
+first — so it is the trivial path at a vertex exactly when both its factors are. It is associative
+as a partial operation, and trivial paths are left and right units at the appropriate endpoints.
+These operations supply the path index and multiplication of the path algebra, independently of any
+coefficient semiring.
 
 ## Main definitions
 
@@ -30,7 +32,11 @@ multiplication of the path algebra, independently of any coefficient semiring.
   there and has length zero.
 * `TauCeti.Quiver.TotalPath.mul?_eq_none_iff`: concatenation is undefined exactly when the
   endpoints do not meet.
-* `TauCeti.Quiver.TotalPath.length_eq_add_of_mul?_eq_some`: concatenation adds lengths.
+* `TauCeti.Quiver.TotalPath.length_eq_add_of_mul?_eq_some` and
+  `TauCeti.Quiver.TotalPath.fst_of_mul?_eq_some`: concatenation adds lengths and keeps the source
+  of the factor written second, which is traced first.
+* `TauCeti.Quiver.TotalPath.eq_nil_iff_of_mul?_eq_some`: a concatenation is the trivial path at a
+  vertex exactly when both its factors are.
 * `TauCeti.Quiver.TotalPath.mul?_nil_left`, `TauCeti.Quiver.TotalPath.mul?_nil_right`, and
   `TauCeti.Quiver.TotalPath.mul?_assoc`: trivial-path units and associativity.
 * `TauCeti.Quiver.TotalPath.mk_cons_eq_mk_cons_iff`: a path into a vertex is determined by its
@@ -109,6 +115,39 @@ theorem length_eq_add_of_mul?_eq_some {x y z : TotalPath Q} (h : mul? x y = some
     simp [Nat.add_comm]
   · rw [mul?_eq_none hda] at h
     exact absurd h.symm (Option.some_ne_none z)
+
+/-- **Concatenation keeps the source**: a path produced by `mul?` starts where the factor written
+second, which is traced first, starts. -/
+theorem fst_of_mul?_eq_some {x y z : TotalPath Q} (h : mul? x y = some z) : z.1 = y.1 := by
+  obtain ⟨a, b, p⟩ := x
+  obtain ⟨c, d, q⟩ := y
+  by_cases hda : d = a
+  · subst hda
+    rw [mul?_mk] at h
+    obtain rfl := Option.some.inj h
+    rfl
+  · rw [mul?_eq_none hda] at h
+    exact absurd h.symm (Option.some_ne_none z)
+
+/-- **A concatenation is the trivial path at `v` exactly when both its factors are.** Lengths add
+under `mul?`, so both factors have length zero, and the concatenation starts where the factor
+written second does, so that common endpoint is `v`. -/
+theorem eq_nil_iff_of_mul?_eq_some {v : Q} {x y z : TotalPath Q} (h : mul? x y = some z) :
+    z = ⟨v, v, _root_.Quiver.Path.nil⟩ ↔
+      x = ⟨v, v, _root_.Quiver.Path.nil⟩ ∧ y = ⟨v, v, _root_.Quiver.Path.nil⟩ := by
+  have hcomp : y.2.1 = x.1 := by
+    by_contra hne
+    rw [mul?_eq_none hne] at h
+    exact absurd h.symm (Option.some_ne_none z)
+  simp only [eq_nil_iff, fst_of_mul?_eq_some h, length_eq_add_of_mul?_eq_some h]
+  constructor
+  · rintro ⟨hy, hlen⟩
+    have hylen : y.2.2.length = 0 := by omega
+    refine ⟨⟨?_, by omega⟩, hy, hylen⟩
+    rw [← hcomp, ← y.2.2.eq_of_length_zero hylen]
+    exact hy
+  · rintro ⟨⟨-, hx⟩, hy, hy'⟩
+    exact ⟨hy, by omega⟩
 
 /-- The trivial path at the target of `x` is a left unit for `x`. -/
 @[simp]

@@ -68,7 +68,7 @@ theorem stellarSubdivision_join_inl {σ : Finset α} (hσ : σ.Nonempty) (v : α
   have hne : ∀ s : Finset α, s ∈ K → s.Nonempty := fun _ h => (K.isRelLowerSet_faces h).1
   have hσunion : ∀ s : Finset α, s ∪ σ ≠ ∅ := fun s => (hσ.mono subset_union_right).ne_empty
   have hvne : v ∈ τ.toLeft → τ.Nonempty := fun h => ⟨Sum.inl v, mem_toLeft.mp h⟩
-  have hτne : τ.toLeft ∈ K → τ.Nonempty := fun h => by
+  have : τ.toLeft ∈ K → τ.Nonempty := fun h => by
     obtain ⟨a, ha⟩ := hne _ h
     exact ⟨Sum.inl a, mem_toLeft.mp ha⟩
   have herase : v ∈ τ.toLeft → τ.toLeft ≠ ∅ := fun h => Finset.nonempty_iff_ne_empty.mp ⟨v, h⟩
@@ -113,7 +113,7 @@ theorem stellarSubdivision_join_inr {σ : Finset β} (hσ : σ.Nonempty) (v : β
       σ.map (Function.Embedding.inr : β ↪ α ⊕ β) := by
     simp only [Finset.map_eq_image, Finset.image_image]
     apply Finset.image_congr
-    intro x hx
+    intro x _
     simp only [Function.comp_apply, Function.Embedding.inl_apply, Sum.swap_inl,
       Function.Embedding.inr_apply]
   simpa only [map_stellarSubdivision Sum.swap (Equiv.sumComm β α).injective,

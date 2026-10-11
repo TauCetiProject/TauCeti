@@ -321,7 +321,7 @@ private theorem isBounded_intervalIntegrable_cauchyPV_of_interior_crossings
     fun t₀ ht₀ ↦ (hρ_lip_bdd t₀ ht₀).subset (Set.image_mono
       (Icc_subset_Icc le_rfl (by linarith [hρ_lip_pos t₀ ht₀])))
   -- Shrink the common window radius to also stay inside every crossing's bounded window.
-  set R' : ℝ → ℝ := fun t ↦ min (R t) (ρ_lip t) with hR'_def
+  set R' : ℝ → ℝ := fun t ↦ min (R t) (ρ_lip t)
   have hR'_pos : ∀ t ∈ T, 0 < R' t := fun t ht ↦ lt_min (hR_pos t ht) (hρ_lip_pos t ht)
   obtain ⟨ρ, hρ_pos, h_endpts, h_pair, hρ_le_R'⟩ := exists_common_window_radius_le h_Ioo R' hR'_pos
   have hρ_le_R : ∀ t ∈ T, ρ ≤ R t := fun t ht ↦ (hρ_le_R' t ht).trans (min_le_left _ _)
@@ -509,7 +509,6 @@ theorem windingNumber_eq_real_integral_of_closed_interior_crossings
     windingNumber_eq_of_hasCauchyPVAt hHCPV
   have hRe : L.re = 0 := by rw [hRe0, hclosed, sub_self]
   rw [hwind, ← Complex.re_add_im L, hRe, hIm]
-  have h2πI_ne : (2 * (Real.pi : ℂ) * Complex.I) ≠ 0 := Complex.two_pi_I_ne_zero
   push_cast
   field_simp
   ring

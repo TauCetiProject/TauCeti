@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.CharacterCarry
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.LayerInvariant
-import TauCeti.NumberTheory.ClassFieldTheory.Global.CyclotomicInput
+import TauCeti.NumberTheory.ClassFieldTheory.Global.Cyclotomic.Input
 import TauCeti.NumberTheory.LocalField.Unramified.Existence
 import TauCeti.NumberTheory.NumberField.FinitePlace
 import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Conjugation
@@ -250,24 +250,23 @@ private theorem exists_sumLocalInv_ideleLocalization_eq_aux {E : Ω}
     exact Units.ext ((hζv.coe_autToPow_eq_natCast hf).trans (ZMod.coe_unitOfCoprime _ _).symm)
   -- The carry class of `χ` and the idele concentrated at `v` with component `π`.
   let a := baseIdele hE (placeIdele w π)
-  refine ⟨characterCarryCocycle χ hχ a, ?_⟩
+  let x : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K) := characterCarryCocycle χ hχ a
+  refine ⟨x, ?_⟩
   -- Its localizations vanish away from `v`.
   have hS (v' : HeightOneSpectrum (𝓞 K)) (hv' : v' ∉ ({v} : Finset _)) :
-      (ideleLocalization K (characterCarryCocycle χ hχ a :
-        H2 (AbsoluteGaloisGroup K) (IdeleCoeff K))).1 v' = 0 := by
+      (ideleLocalization K x).1 v' = 0 := by
     obtain ⟨τ', hτ'⟩ := exists_ideleCoeffComponent_placeIdele_eq_zero (E := E) w π
       (Finset.notMem_singleton.1 hv')
     exact (ideleLocalization_fst_apply _ _).trans
       (ideleBrLocalization_characterCarryCocycle_eq_zero_of_component_eq_zero τ' χ hχ a hτ')
   have hinf (u : InfinitePlace K) :
-      infiniteInvMap u ((ideleLocalization K (characterCarryCocycle χ hχ a :
-        H2 (AbsoluteGaloisGroup K) (IdeleCoeff K))).2 u) = 0 := by
+      infiniteInvMap u ((ideleLocalization K x).2 u) = 0 := by
     rw [ideleLocalization_snd_apply,
       ideleInfiniteBrLocalization_characterCarryCocycle_eq_zero_of_component_eq_zero
         IsSepClosed.lift χ hχ a (ideleCoeffInfiniteComponent_placeIdele w π _), map_zero]
   -- At `v` the invariant is `v(π) · χ_v(Frob) = 1 / n`.
-  have hv : invMap (v.adicCompletion K) ((ideleLocalization K (characterCarryCocycle χ hχ a :
-      H2 (AbsoluteGaloisGroup K) (IdeleCoeff K))).1 v) = ((1 / n : ℚ) : AddCircle (1 : ℚ)) := by
+  have hv : invMap (v.adicCompletion K) ((ideleLocalization K x).1 v) =
+      ((1 / n : ℚ) : AddCircle (1 : ℚ)) := by
     rw [ideleLocalization_fst_apply,
       invMap_ideleBrLocalization_characterCarryCocycle τ Ev χ hχ χv a π hχv hτ, hfrob,
       (isUniformizer_def π).1 hπ, toAdd_ofAdd, one_smul]

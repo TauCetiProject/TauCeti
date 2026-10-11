@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Neg
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.BaseChange
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Points
+import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.VariableChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
 
 /-!
@@ -22,6 +23,12 @@ involution over `Spec R` fixing the zero section, which on points with homogeneo
 is Mathlib's negation `WeierstrassCurve.Projective.neg`,
 `[P₀ : P₁ : P₂] ↦ [P₀ : -P₁ - a₁P₀ - a₃P₂ : P₂]`, and it commutes with base change and with the
 isomorphisms induced by changes of variables. No ellipticity is needed.
+
+Since every pointed isomorphism of projective models over the same base is induced by a change of
+variables (`WeierstrassCurve.existsUnique_eq_eqToHom_comp_projModelVariableChangeIso_hom`), negation
+commutes with every morphism of projective models that carries the zero section to the zero
+section and is a base change square. This makes the negation of an elliptic curve over a scheme
+independent of the local Weierstrass equations used to define it.
 
 ## Main definitions
 
@@ -40,6 +47,10 @@ isomorphisms induced by changes of variables. No ellipticity is needed.
   morphism `projModel (W.map f) ⟶ projModel W`.
 * `WeierstrassCurve.projModelNeg_projModelVariableChangeIso_hom`: negation commutes with the
   isomorphism `projModel (C • W) ≅ projModel W` induced by a change of variables `C`.
+* `WeierstrassCurve.projModelNeg_comp_hom_of_iso`: negation commutes with every pointed isomorphism
+  of projective models over `Spec R`.
+* `WeierstrassCurve.projModelNeg_comp_of_isPullback`: negation commutes with every pointed
+  cartesian morphism of projective models.
 
 ## References
 
@@ -62,7 +73,7 @@ points matched with `W.toAffine.Point`.
 
 public section
 
-open CategoryTheory AlgebraicGeometry
+open CategoryTheory Limits AlgebraicGeometry
 
 universe u
 
@@ -176,5 +187,42 @@ theorem projModelNeg_projModelVariableChangeIso_hom (C : VariableChange R) :
     eqToHom_iso_hom_naturality_assoc (fun W' ↦ W'.projModelVariableChangeIso C)
       W.negVariableChange_smul_self.symm]
   simp
+
+/-- **Negation commutes with pointed isomorphisms.** An isomorphism
+`e : projModel W ≅ projModel W'` of projective Weierstrass models over `Spec R`, carrying the zero
+section to the zero section, carries the negation morphism of `W` to that of `W'`. -/
+theorem projModelNeg_comp_hom_of_iso {W W' : WeierstrassCurve R} (e : W.projModel ≅ W'.projModel)
+    (he : e.hom ≫ W'.projModelOver = W.projModelOver)
+    (h0 : W.projModelZero ≫ e.hom = W'.projModelZero) :
+    W.projModelNeg ≫ e.hom = e.hom ≫ W'.projModelNeg := by
+  -- `e` is induced by a change of variables `C` with `C • W' = W`
+  obtain ⟨C, rfl, hC⟩ :=
+    (existsUnique_eq_eqToHom_comp_projModelVariableChangeIso_hom e he h0).exists
+  rw [eqToHom_refl, Category.id_comp] at hC
+  rw [hC]
+  exact W'.projModelNeg_projModelVariableChangeIso_hom C
+
+/-- **Negation commutes with pointed cartesian morphisms.** Let `F : projModel W ⟶ projModel W'` be
+a morphism of projective Weierstrass models over `R` and `R'`, lying over `ψ : Spec R ⟶ Spec R'`,
+such that the square formed by `F`, the structure morphisms and `ψ` is a pullback square, and
+carrying the zero section to the zero section. Then `F` carries the negation morphism of `W` to
+that of `W'`. -/
+theorem projModelNeg_comp_of_isPullback {R R' : Type u} [CommRing R] [CommRing R']
+    {W : WeierstrassCurve R} {W' : WeierstrassCurve R'} {F : W.projModel ⟶ W'.projModel}
+    {ψ : Spec (.of R) ⟶ Spec (.of R')} (hF : IsPullback F W.projModelOver W'.projModelOver ψ)
+    (h0 : W.projModelZero ≫ F = ψ ≫ W'.projModelZero) :
+    W.projModelNeg ≫ F = F ≫ W'.projModelNeg := by
+  -- `ψ` is `Spec φ`, and `F` is the composite of an isomorphism `e` over `Spec R` with the base
+  -- change morphism along `φ`
+  obtain ⟨φ, rfl⟩ : ∃ φ : R' →+* R, Spec.map (CommRingCat.ofHom φ) = ψ :=
+    ⟨(Spec.preimage ψ).hom, by simp⟩
+  have hB := W'.isPullback_projModelBaseChange φ
+  let e := hF.isoIsPullback _ _ hB
+  have he : e.hom ≫ (W'.map φ).projModelOver = W.projModelOver := hF.isoIsPullback_hom_snd _ _ hB
+  have hF' : e.hom ≫ W'.projModelBaseChange φ = F := hF.isoIsPullback_hom_fst _ _ hB
+  have h0' : W.projModelZero ≫ e.hom = (W'.map φ).projModelZero :=
+    hB.hom_ext (by simp [hF', h0, projModelZero_projModelBaseChange]) (by simp [he])
+  rw [← hF', reassoc_of% projModelNeg_comp_hom_of_iso e he h0', projModelNeg_projModelBaseChange,
+    Category.assoc]
 
 end WeierstrassCurve

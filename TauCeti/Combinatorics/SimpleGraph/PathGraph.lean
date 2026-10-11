@@ -97,8 +97,8 @@ private lemma forall_mem_support_of_degree_le_two [Fintype V] [DecidableRel G.Ad
   -- A walk from the first vertex of `p` to `x` crosses out of the vertices of `p`.
   obtain ⟨d, -, ha, hb⟩ := ((hconn.preconnected u x).some).exists_boundary_dart
     {y | y ∈ p.support} (Walk.start_mem_support p) hx
-  set a := d.toProd.1 with hadef
-  set b := d.toProd.2 with hbdef
+  set a := d.toProd.1
+  set b := d.toProd.2
   have hab : G.Adj a b := d.adj
   obtain ⟨i, hi, hile⟩ := Walk.mem_support_iff_exists_getVert.mp ha
   rcases Nat.eq_zero_or_pos i with rfl | hipos

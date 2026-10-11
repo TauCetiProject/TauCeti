@@ -44,7 +44,7 @@ theorem sum_lt_sum_of_forall_lt (f : α → M) {U V : Finset α}
   | singleton u =>
     obtain ⟨v, rfl⟩ := Finset.card_eq_one.mp (by simpa using hcard)
     simpa using hlt u (by simp) v (by simp)
-  | cons u U hu hU ih =>
+  | cons u U hu _ ih =>
     -- pair `u` off against any label of `V`, and compare the two remaining sums
     obtain ⟨v, hv⟩ : V.Nonempty := Finset.card_pos.mp (by simp [hcard])
     have hcard' : (V.erase v).card = U.card := by

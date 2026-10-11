@@ -6,37 +6,33 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.Torsion.PrimaryComponent
+public import TauCeti.GroupTheory.Torsion
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.HomologySequence
+public import TauCeti.RepresentationTheory.Homological.TateCohomology.Linear
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.AllDegrees
 
 /-!
-# The `p`-primary components of Tate cohomology
+# Primary components of Tate cohomology
 
-Let `G` be a finite group and `A` a representation of `G` over a commutative ring `k`.
+The `p`-primary component of Tate cohomology vanishes when multiplication by `p` acts bijectively
+on the coefficient representation. Scalar multiplication on the coefficients induces the same
+scalar multiplication on Tate cohomology, so an invertible scalar acts injectively on every Tate
+group; this excludes nonzero elements killed by a power of `p`.
 
-**`p`-primary Tate cohomology sees only `p`.** If multiplication by a natural number `p` is
-bijective on `A`, it induces a bijection of every `Ĥⁿ(G, A)`, by functoriality, so the `p`-primary
-component `TauCeti.pPowerTorsion p k (tateCohomology A n)` of every Tate cohomology group of `A` is
-trivial (`TauCeti.TateCohomology.pPowerTorsion_tateCohomology_eq_bot`). Applied to the restriction
-of `A` to a subgroup `S`, on which multiplication by `p` is the same map, this is the vanishing of
-the `p`-primary component of `Ĥⁿ(S, A)` for every subgroup `S` and every `n ∈ ℤ`.
-
-With the long exact sequence, the `p`-primary components of Tate cohomology are therefore
-unchanged along a short exact sequence `0 → X₁ → X₂ → X₃ → 0` one of whose outer terms has
-bijective multiplication by a prime `p`. If `p` is bijective on `X₁`, the map
-`Ĥⁿ(G, X₂) → Ĥⁿ(G, X₃)` is a bijection of `p`-primary components
+With the long exact sequence, the `p`-primary components of Tate cohomology of a finite group `G`
+are therefore unchanged along a short exact sequence `0 → X₁ → X₂ → X₃ → 0` one of whose outer
+terms has bijective multiplication by a prime `p`. If `p` is bijective on `X₁`, the map
+`Ĥⁿ(G, X₂) → Ĥⁿ(G, X₃)` is a bijection of `p`-primary components
 (`TauCeti.TateCohomology.bijOn_pPowerTorsion_map_g`); if it is bijective on `X₃`, so is
-`Ĥⁿ(G, X₁) → Ĥⁿ(G, X₂)` (`TauCeti.TateCohomology.bijOn_pPowerTorsion_map_f`). The torsion
+`Ĥⁿ(G, X₁) → Ĥⁿ(G, X₂)` (`TauCeti.TateCohomology.bijOn_pPowerTorsion_map_f`). The torsion
 argument is `TauCeti.injOn_pPowerTorsion_of_exact` and `TauCeti.surjOn_pPowerTorsion_of_exact`,
 which use that all the groups involved are torsion, being killed by `|G|`
 (`TauCeti.TateCohomology.natCard_nsmul_eq_zero`).
 
 ## Main statements
 
-* `TauCeti.TateCohomology.nsmul_tateCohomology_bijective`: multiplication by `p` is bijective on
-  Tate cohomology when it is bijective on the representation.
-* `TauCeti.TateCohomology.pPowerTorsion_tateCohomology_eq_bot`: the `p`-primary component of the
-  Tate cohomology of such a representation is trivial.
+* `TauCeti.TateCohomology.primaryComponent_tateCohomology_eq_bot`: the `p`-primary component of
+  `Ĥⁿ(S, A)` is trivial when multiplication by `p` is bijective on `A`.
 * `TauCeti.TateCohomology.bijOn_pPowerTorsion_map_g`,
   `TauCeti.TateCohomology.bijOn_pPowerTorsion_map_f`: along a short exact sequence whose first,
   respectively last, term has bijective multiplication by a prime `p`, the induced maps are
@@ -50,45 +46,50 @@ which use that all the groups involved are torsion, being killed by `|G|`
 
 public section
 
-universe u
-
-open CategoryTheory Limits
+open CategoryTheory Limits Representation
 
 namespace TauCeti.TateCohomology
 
-variable {k G : Type u} [CommRing k] [Group G] [Fintype G]
+universe u
 
-/-- If multiplication by a natural number `p` is bijective on `A`, then it is bijective on every
-Tate cohomology group of `A`. -/
-theorem nsmul_tateCohomology_bijective {A : Rep k G} {p : ℕ}
-    (hp : Function.Bijective fun a : A.V ↦ p • a) (n : ℤ) :
-    Function.Bijective fun x : tateCohomology A n ↦ p • x := by
-  -- Multiplication by `p` on `Ĥⁿ(G, A)` is the map induced by the automorphism `p • 𝟙 A`.
-  have : IsIso ((forget (Rep k G)).map (p • 𝟙 A)) := (isIso_iff_bijective _).mpr hp
-  have : IsIso (p • 𝟙 A) := isIso_of_reflects_iso _ (forget (Rep k G))
-  convert ConcreteCategory.bijective_of_isIso ((tateCohomologyFunctor n).map (p • 𝟙 A)) using 1
-  ext x
-  simp
+variable {k G : Type u} [CommRing k] [Group G]
 
-/-- **`p`-primary Tate cohomology sees only `p`.** If multiplication by a natural number `p` is
-bijective on `A`, then the `p`-primary component of every Tate cohomology group of `A` is trivial.
-Applied to `Rep.res S.subtype A`, this holds for the Tate cohomology of every subgroup `S`. -/
-theorem pPowerTorsion_tateCohomology_eq_bot {A : Rep k G} {p : ℕ}
+/-- **An invertible scalar contributes no primary Tate cohomology.** If multiplication by a natural
+number `p` is bijective on a representation `A`, then the `p`-primary component of `Ĥⁿ(S, A)` is
+zero for every finite subgroup `S` and every integer degree `n`. -/
+theorem primaryComponent_tateCohomology_eq_bot (p : ℕ) (A : Rep k G)
+    (hA : Function.Bijective fun x : A.V => (p : k) • x) (S : Subgroup G) [Fintype S]
+    (n : ℤ) :
+    AddCommGroup.primaryComponent (tateCohomology (Rep.res S.subtype A) n) p = ⊥ := by
+  have hp : Function.Bijective fun x : tateCohomology (Rep.res S.subtype A) n =>
+      (p : k) • x :=
+    smul_bijective (p : k) (Rep.res S.subtype A) (by simpa using hA) n
+  apply TauCeti.primaryComponent_eq_bot_of_injective_nsmul
+  simpa only [Nat.cast_smul_eq_nsmul] using hp.1
+
+section ShortExact
+
+variable [Fintype G]
+
+/-- The `p`-power torsion of every Tate cohomology group of a representation of a finite group on
+which multiplication by `p` is bijective is trivial. -/
+private theorem pPowerTorsion_tateCohomology_eq_bot {A : Rep k G} {p : ℕ}
     (hp : Function.Bijective fun a : A.V ↦ p • a) (n : ℤ) :
     pPowerTorsion p k (tateCohomology A n) = ⊥ := by
-  have hinj := (nsmul_tateCohomology_bijective hp n).injective
+  have hinj : Function.Injective fun x : tateCohomology A n ↦ p • x := by
+    simpa only [Nat.cast_smul_eq_nsmul] using
+      (smul_bijective (p : k) A (by simpa only [Nat.cast_smul_eq_nsmul] using hp) n).1
+  have h := TauCeti.primaryComponent_eq_bot_of_injective_nsmul hinj
   refine (Submodule.eq_bot_iff _).mpr fun x hx ↦ ?_
-  obtain ⟨j, hj⟩ := mem_pPowerTorsion_iff.mp hx
-  clear hx
-  induction j generalizing x with
-  | zero => simpa using hj
-  | succ j ih => exact hinj ((ih (p • x) (by rwa [smul_smul, ← pow_succ])).trans (smul_zero p).symm)
+  have hx' : x ∈ AddCommGroup.primaryComponent (tateCohomology A n) p :=
+    AddCommGroup.mem_primaryComponent.mpr (mem_pPowerTorsion_iff.mp hx)
+  rwa [h, AddSubgroup.mem_bot] at hx'
 
 variable {S : ShortComplex (Rep k G)} (hS : S.ShortExact) {p : ℕ} [Fact p.Prime]
 include hS
 
 /-- Along a short exact sequence `0 → X₁ → X₂ → X₃ → 0` on whose first term multiplication by a
-prime `p` is bijective, the map `Ĥⁿ(G, X₂) → Ĥⁿ(G, X₃)` is a bijection of `p`-primary
+prime `p` is bijective, the map `Ĥⁿ(G, X₂) → Ĥⁿ(G, X₃)` is a bijection of `p`-primary
 components. -/
 theorem bijOn_pPowerTorsion_map_g (hp : Function.Bijective fun a : S.X₁.V ↦ p • a) (n : ℤ) :
     Set.BijOn ((tateCohomologyFunctor n).map S.g) (pPowerTorsion p k (tateCohomology S.X₂ n))
@@ -108,7 +109,7 @@ theorem bijOn_pPowerTorsion_map_g (hp : Function.Bijective fun a : S.X₁.V ↦ 
       (pPowerTorsion_tateCohomology_eq_bot hp (n + 1))
 
 /-- Along a short exact sequence `0 → X₁ → X₂ → X₃ → 0` on whose last term multiplication by a
-prime `p` is bijective, the map `Ĥⁿ(G, X₁) → Ĥⁿ(G, X₂)` is a bijection of `p`-primary
+prime `p` is bijective, the map `Ĥⁿ(G, X₁) → Ĥⁿ(G, X₂)` is a bijection of `p`-primary
 components. -/
 theorem bijOn_pPowerTorsion_map_f (hp : Function.Bijective fun a : S.X₃.V ↦ p • a) (n : ℤ) :
     Set.BijOn ((tateCohomologyFunctor n).map S.f) (pPowerTorsion p k (tateCohomology S.X₁ n))
@@ -127,5 +128,7 @@ theorem bijOn_pPowerTorsion_map_f (hp : Function.Bijective fun a : S.X₃.V ↦ 
         (_root_.TateCohomology.exact₂ hS n))
       (ExponentExists.isAddTorsion ⟨_, Nat.card_pos, natCard_nsmul_eq_zero⟩)
       (pPowerTorsion_tateCohomology_eq_bot hp n)
+
+end ShortExact
 
 end TauCeti.TateCohomology

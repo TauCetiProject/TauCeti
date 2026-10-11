@@ -322,9 +322,7 @@ theorem inBlock_recut_iff (hcut : IsCut T v cut) (i j : ℕ) :
 /-- Below the block, a recut changes no row count. -/
 theorem rowCountLt_recut_of_le (hcut : IsCut T v cut) (i : ℕ) (hx : x ≤ v) :
     rowCountLt (recut T v cut hcut) i x = rowCountLt T i x := by
-  refine congrArg Finset.card (Finset.filter_congr fun j hj => ?_)
-  have hcell : ((i, j) : ℕ × ℕ) ∈ μ :=
-    YoungDiagram.mem_iff_lt_rowLen.mpr (Finset.mem_range.mp hj)
+  refine congrArg Finset.card (Finset.filter_congr fun j _ => ?_)
   by_cases h : T.InBlock v i j
   · rw [recut_apply_of_inBlock hcut h]
     have := h.2
@@ -335,9 +333,7 @@ theorem rowCountLt_recut_of_le (hcut : IsCut T v cut) (i : ℕ) (hx : x ≤ v) :
 /-- Above the block, a recut changes no row count. -/
 theorem rowCountLt_recut_of_ge (hcut : IsCut T v cut) (i : ℕ) (hx : v + 2 ≤ x) :
     rowCountLt (recut T v cut hcut) i x = rowCountLt T i x := by
-  refine congrArg Finset.card (Finset.filter_congr fun j hj => ?_)
-  have hcell : ((i, j) : ℕ × ℕ) ∈ μ :=
-    YoungDiagram.mem_iff_lt_rowLen.mpr (Finset.mem_range.mp hj)
+  refine congrArg Finset.card (Finset.filter_congr fun j _ => ?_)
   by_cases h : T.InBlock v i j
   · rw [recut_apply_of_inBlock hcut h]
     have := h.2
@@ -577,7 +573,6 @@ private def bkCut (T : SemistandardYoungTableau μ) (v i : ℕ) : ℕ :=
 private theorem isCut_bkCut (T : SemistandardYoungTableau μ) (v : ℕ) :
     IsCut T v (bkCut T v) where
   le_cut i := by
-    have hlow := cutLower_le T v i
     have hhigh := le_cutUpper T v i
     have hstart : rowCountLt T i v ≤ cutLower T v i := le_max_left _ _
     unfold bkCut; omega
@@ -587,7 +582,6 @@ private theorem isCut_bkCut (T : SemistandardYoungTableau μ) (v : ℕ) :
     have hend : cutUpper T v i ≤ rowCountLt T i (v + 2) := min_le_left _ _
     unfold bkCut; omega
   succ_le_cut i := by
-    have hlow := cutLower_le T v i
     have hhigh := le_cutUpper T v i
     have hpair : rowCountLt T (i + 1) (v + 2) ≤ cutLower T v i := le_max_right _ _
     unfold bkCut; omega
@@ -681,7 +675,6 @@ private theorem bkCut_key (T : SemistandardYoungTableau μ) (v i : ℕ) :
     bkCut T v i - rowCountLt T i v + (rowCountLt T i (v + 2) - prevBlockStart T v i)
       = rowCountLt T (i + 1) (v + 2) - rowCountLt T i v
         + (rowCountLt T i (v + 2) - rowCountLt T i (v + 1)) := by
-  have h₁ := cutLower_le T v i
   have h₂ := le_cutUpper T v i
   unfold bkCut cutLower cutUpper at *
   omega

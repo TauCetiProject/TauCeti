@@ -306,7 +306,7 @@ theorem isClosed_iff_forall_extDerivWithin_inChartAt_self :
       ∀ x : M, extDerivWithin (form.inChartAt x) (range I) (extChartAt I x x) = 0 := by
   refine ⟨fun h x ↦ h x _ (mem_extChartAt_target x), fun h x₀ z hz ↦ ?_⟩
   rw [form.extDerivWithin_inChartAt_eq hz (mem_extChartAt_source ((extChartAt I x₀).symm z)), h]
-  ext v
+  ext _
   simp
 
 /-- Closedness of a smooth two-form, when the model has no boundary: the exterior derivative of
@@ -340,7 +340,7 @@ theorem isClosed_const {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
 /-- The zero two-form is closed. -/
 theorem isClosed_zero : (0 : SmoothTwoForm I M).IsClosed := by
-  intro x₀ z hz
+  intro x₀ z _
   rw [inChartAt_zero]
   exact ContinuousAlternatingMap.extDerivWithin_const 0 _ z
 

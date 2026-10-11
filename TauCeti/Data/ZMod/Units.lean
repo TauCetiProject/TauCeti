@@ -9,6 +9,7 @@ public import Mathlib.Data.ZMod.Basic
 public import Mathlib.RingTheory.Coprime.Basic
 import Mathlib.Algebra.EuclideanDomain.Int
 public import Mathlib.Data.ZMod.Units
+public import TauCeti.Data.Nat.GCD
 
 /-!
 # Units and coprimality over `ZMod d`
@@ -38,6 +39,17 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
 * `ZMod.zmultiples_coe_unit_eq_top` — a unit of `ZMod d` generates `ZMod d` additively, so that
   translation by it is a single cycle; its consumer is the genus-one Heegaard diagram of a lens
   space in `TauCeti/LowDimTopology/Heegaard/LensSpace.lean`.
+* `ZMod.eq_of_cast_eq_of_coprime` — the uniqueness half of the Chinese remainder theorem: two
+  residues modulo `a * b`, with `a` and `b` coprime, that agree modulo `a` and modulo `b` are
+  equal. Its consumer is the cyclotomic normalization of the local Artin map in
+  `TauCeti/NumberTheory/ClassFieldTheory/Local/ExplicitCyclotomicSymbol/ArtinMap.lean`.
+* `TauCeti.ZMod.orderOf_unitOfCoprime_pow_sub_one` — for `q > 1` and `N > 0`, the class of `q`
+  in `(ZMod (q ^ N - 1))ˣ` has exact order `N`; the coprimality it needs is
+  `Nat.coprime_pow_sub_one` from `TauCeti/Data/Nat/GCD.lean`. Its consumers are the cyclotomic
+  input to global class field theory in
+  `TauCeti/NumberTheory/ClassFieldTheory/Global/Cyclotomic/Input.lean` and the cyclotomic
+  normalization of the local Artin map in
+  `TauCeti/NumberTheory/ClassFieldTheory/Local/ExplicitCyclotomicSymbol/ArtinMap.lean`.
 -/
 
 public section
@@ -146,3 +158,67 @@ theorem ZMod.zmultiples_coe_unit_eq_top (u : (ZMod d)ˣ) :
   refine (AddSubgroup.eq_top_iff' _).mpr fun y => ?_
   obtain ⟨k, hk⟩ := ZMod.intCast_surjective (y * ((u⁻¹ : (ZMod d)ˣ) : ZMod d))
   exact AddSubgroup.mem_zmultiples_iff.mpr ⟨k, by rw [zsmul_eq_mul, hk, Units.inv_mul_cancel_right]⟩
+
+/-- **Chinese remainder uniqueness.** If `a` and `b` are coprime, two elements of `ZMod (a * b)`
+with the same reductions modulo `a` and modulo `b` are equal. -/
+theorem ZMod.eq_of_cast_eq_of_coprime {a b : ℕ} (h : a.Coprime b) {x y : ZMod (a * b)}
+    (ha : (x.cast : ZMod a) = y.cast) (hb : (x.cast : ZMod b) = y.cast) : x = y := by
+  obtain ⟨x, rfl⟩ := ZMod.intCast_surjective x
+  obtain ⟨y, rfl⟩ := ZMod.intCast_surjective y
+  rw [ZMod.cast_intCast (dvd_mul_right a b), ZMod.cast_intCast (dvd_mul_right a b),
+    ZMod.intCast_eq_intCast_iff_dvd_sub] at ha
+  rw [ZMod.cast_intCast (dvd_mul_left b a), ZMod.cast_intCast (dvd_mul_left b a),
+    ZMod.intCast_eq_intCast_iff_dvd_sub] at hb
+  rw [ZMod.intCast_eq_intCast_iff_dvd_sub, Nat.cast_mul]
+  exact h.isCoprime.mul_dvd ha hb
+
+namespace TauCeti
+
+namespace ZMod
+
+/-- **The order of the residue-cardinality class.** If `q > 1` and `N > 0`, the class of `q` in
+`(ZMod (q ^ N - 1))ˣ` has exact order `N`. This is the elementary arithmetic behind the choice of
+cyclotomic modulus in Milne's global existence argument. -/
+theorem orderOf_unitOfCoprime_pow_sub_one (q N : ℕ) (hq : 1 < q) (hN : N ≠ 0) :
+    orderOf (ZMod.unitOfCoprime q (Nat.coprime_pow_sub_one q N hq hN)) = N := by
+  let _ : NeZero (q ^ N - 1) := ⟨by
+    have : 1 < q ^ N := one_lt_pow₀ hq hN
+    omega⟩
+  let m := q ^ N - 1
+  let u := ZMod.unitOfCoprime q (Nat.coprime_pow_sub_one q N hq hN)
+  have hpow : 1 ≤ q ^ N := Nat.one_le_iff_ne_zero.mpr
+    (pow_ne_zero N (Nat.ne_zero_of_lt hq))
+  have huN : u ^ N = 1 := by
+    apply Units.ext
+    rw [Units.val_pow_eq_pow_val, ZMod.coe_unitOfCoprime, Units.val_one, ← Nat.cast_pow]
+    simpa only [Nat.cast_one] using
+      (ZMod.natCast_eq_natCast_iff (q ^ N) 1 m).2 (Nat.ModEq.symm <|
+        (Nat.modEq_iff_dvd' hpow).2 dvd_rfl)
+  have hdvd : orderOf u ∣ N := orderOf_dvd_of_pow_eq_one huN
+  apply Nat.dvd_antisymm hdvd
+  by_contra hnot
+  have hdle : orderOf u ≤ N := Nat.le_of_dvd (Nat.pos_of_ne_zero hN) hdvd
+  have hdlt : orderOf u < N := lt_of_le_of_ne hdle fun h ↦ hnot (h.symm ▸ dvd_rfl)
+  have hu := pow_orderOf_eq_one u
+  have hmod : q ^ orderOf u ≡ 1 [MOD m] := by
+    have hu' := congrArg Units.val hu
+    rw [Units.val_pow_eq_pow_val, ZMod.coe_unitOfCoprime, Units.val_one] at hu'
+    apply (ZMod.natCast_eq_natCast_iff (q ^ orderOf u) 1 m).1
+    rw [Nat.cast_pow]
+    simpa only [Nat.cast_one] using hu'
+  have hqpow : 1 ≤ q ^ orderOf u := Nat.one_le_iff_ne_zero.mpr
+    (pow_ne_zero _ (Nat.ne_zero_of_lt hq))
+  have hm_dvd : m ∣ q ^ orderOf u - 1 :=
+    (Nat.modEq_iff_dvd' hqpow).1 hmod.symm
+  have hsmall : q ^ orderOf u - 1 < m := by
+    dsimp [m]
+    have := Nat.pow_lt_pow_right hq hdlt
+    omega
+  exact (Nat.not_dvd_of_pos_of_lt (by
+    have hdpos := orderOf_pos u
+    have : 1 < q ^ orderOf u := one_lt_pow₀ hq hdpos.ne'
+    omega) hsmall) hm_dvd
+
+end ZMod
+
+end TauCeti

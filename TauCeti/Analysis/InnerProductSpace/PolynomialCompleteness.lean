@@ -117,7 +117,7 @@ theorem orthogonal_span_range_bareNormalizedLp_eq_bot_of_span_eq_top {μ : Measu
       fun n => memLp_two_bareNormalized (𝕜 := 𝕜) hexp p c n) :
     (Submodule.span 𝕜 (Set.range
       (bareNormalizedLp (𝕜 := 𝕜) (fun n x => (p n).eval x) w c hmem)))ᗮ = ⊥ := by
-  set ν : Measure ℝ := μ.withDensity (fun x => ENNReal.ofReal (w x)) with hνdef
+  set ν : Measure ℝ := μ.withDensity (fun x => ENNReal.ofReal (w x))
   rw [Submodule.eq_bot_iff]
   intro G hG
   -- Integrability of `q · G` for every polynomial `q`, by Cauchy–Schwarz.

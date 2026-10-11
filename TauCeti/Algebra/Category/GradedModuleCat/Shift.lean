@@ -33,7 +33,7 @@ variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
 
 /-- The internal shift by zero is naturally isomorphic to the identity functor. -/
 def shiftFunctorZeroIso : shiftFunctor (𝒜 := 𝒜) 0 ≅ 𝟭 (GradedModuleCat.{v} 𝒜) :=
-  NatIso.ofComponents (fun M ↦ isoMk (LinearEquiv.refl A M) fun p x ↦ by simp; rfl)
+  NatIso.ofComponents (fun M ↦ isoMk (LinearEquiv.refl A M) fun p x ↦ by simp)
     fun _ ↦ by ext; rfl
 
 @[simp]
@@ -51,7 +51,7 @@ linear maps. -/
 def shiftFunctorAddIso (a b : ℤ) :
     shiftFunctor (𝒜 := 𝒜) a ⋙ shiftFunctor b ≅ shiftFunctor (a + b) :=
   NatIso.ofComponents (fun M ↦ isoMk (LinearEquiv.refl A M) fun p x ↦ by
-    simp [add_comm]; rfl) fun _ ↦ by ext; rfl
+    simp [add_comm]) fun _ ↦ by ext; rfl
 
 @[simp]
 theorem hom_shiftFunctorAddIso_hom_app (a b : ℤ) (M : GradedModuleCat.{v} 𝒜) :

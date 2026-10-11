@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.FiniteAbelian.Basic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.FractionalIdealDivisor.NthRoot
 public import TauCeti.RingTheory.DedekindDomain.SInteger.ClassGroup
+import TauCeti.RingTheory.DedekindDomain.SInteger.Power
 public import TauCeti.RingTheory.DedekindDomain.SInteger.Unit
 
 /-!
@@ -176,9 +177,9 @@ lemma range_fromSUnitLift : (fromSUnitLift K S n).range = (fromSUnit K S n).rang
   | H y => exact ⟨y, (fromSUnitLift_mk K S n y).symm⟩
 
 /-- **Exactness on the left of the fundamental exact sequence.** The left-hand map is injective:
-an `S`-unit that becomes an `n`-th power in `K` is already the `n`-th power of an `S`-unit. What
-makes this work is that an `n`-th root `y` of an `S`-unit is again an `S`-unit: away from `S` the
-relation `n * ord_v(y) = ord_v(x) = 0` forces `ord_v(y) = 0`.
+an `S`-unit that becomes an `n`-th power in `K` is already the `n`-th power of an `S`-unit
+(`Set.range_powMonoidHom_subgroupOf_unit`), because an `n`-th root `y` of an `S`-unit is again an
+`S`-unit: away from `S` the relation `n * ord_v(y) = ord_v(x) = 0` forces `ord_v(y) = 0`.
 
 Like `ker_toClassGroup`, and unlike the exactness on the right, this needs no `n ≠ 0`: for `n = 0`
 both sides divide out the trivial subgroup and the claim degenerates to the injectivity of
@@ -189,23 +190,10 @@ theorem fromSUnitLift_injective : Function.Injective (fromSUnitLift K S n) := by
   induction c using QuotientGroup.induction_on with
   | H x =>
     intro hx
-    obtain ⟨y, hy⟩ := (QuotientGroup.eq_one_iff (x : Kˣ)).mp (congrArg Subtype.val hx)
-    rw [powMonoidHom_apply] at hy
-    rcases eq_or_ne n 0 with rfl | hn
-    · -- For `n = 0` the subgroup divided out is trivial, and `hy` already pins `x` down to `1`.
-      rw [pow_zero] at hy
-      have hx1 : x = 1 := Subtype.ext hy.symm
-      rw [hx1, QuotientGroup.mk_one]
-    · refine (QuotientGroup.eq_one_iff _).mpr ⟨⟨y, fun v hv ↦ ?_⟩, Subtype.ext ?_⟩
-      · refine (valuationOfNeZero_eq_one_iff v y).mp ?_
-        have h1 : v.valuationOfNeZero y ^ n = 1 := by
-          rw [← map_pow, hy]
-          exact (valuationOfNeZero_eq_one_iff v _).mpr (x.property v hv)
-        have h2 : Multiplicative.toAdd (v.valuationOfNeZero y) * (n : ℤ) = 0 := by
-          rw [← Int.toAdd_pow, h1, toAdd_one]
-        exact toAdd_eq_zero.mp <| (mul_eq_zero.mp h2).resolve_right (Nat.cast_ne_zero.mpr hn)
-      · rw [powMonoidHom_apply, SubmonoidClass.coe_pow]
-        exact hy
+    have hx' : x ∈ (powMonoidHom n : Kˣ →* Kˣ).range.subgroupOf (S.unit K) :=
+      (QuotientGroup.eq_one_iff (x : Kˣ)).mp (congrArg Subtype.val hx)
+    rw [Set.range_powMonoidHom_subgroupOf_unit] at hx'
+    exact (QuotientGroup.eq_one_iff x).mpr hx'
 
 /-! ### The surjection from the `n`-divisible units -/
 

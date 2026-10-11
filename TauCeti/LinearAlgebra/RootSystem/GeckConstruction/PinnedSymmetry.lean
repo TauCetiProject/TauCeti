@@ -102,7 +102,7 @@ Bourbaki-numbered Dynkin diagram. It acts by the node permutation on the base-su
 and by `TauCeti.DynkinType.diagramRootPerm` on the root coordinates. -/
 def geckDiagramIndexEquiv (hsigma : sigma ∈ t.diagramSymmetry) :
     t.GeckIndex ht ≃ t.GeckIndex ht :=
-  geckIndexEquiv (t.rationalDiagramAut ht hsigma) (t.geckDiagramBaseEquiv ht sigma)
+  (t.rationalDiagramAut ht hsigma).geckIndexEquiv (t.geckDiagramBaseEquiv ht sigma)
 
 /-- The diagram symmetry acts on a base-support coordinate by the transported node permutation. -/
 @[simp]
@@ -111,7 +111,7 @@ theorem geckDiagramIndexEquiv_apply_inl (hsigma : sigma ∈ t.diagramSymmetry)
     t.geckDiagramIndexEquiv ht hsigma (Sum.inl i) =
       Sum.inl (t.geckDiagramBaseEquiv ht sigma i) := by
   simpa only [geckDiagramIndexEquiv] using
-    geckIndexEquiv_apply_inl (t.rationalDiagramAut ht hsigma)
+    (t.rationalDiagramAut ht hsigma).geckIndexEquiv_apply_inl
       (t.geckDiagramBaseEquiv ht sigma) i
 
 /-- The diagram symmetry acts on a root coordinate by the induced root permutation. -/
@@ -121,14 +121,14 @@ theorem geckDiagramIndexEquiv_apply_inr (hsigma : sigma ∈ t.diagramSymmetry)
     t.geckDiagramIndexEquiv ht hsigma (Sum.inr i) =
       Sum.inr (t.diagramRootPerm ht hsigma i) := by
   simpa only [geckDiagramIndexEquiv, rationalDiagramAut_indexEquiv] using
-    geckIndexEquiv_apply_inr (t.rationalDiagramAut ht hsigma)
+    (t.rationalDiagramAut ht hsigma).geckIndexEquiv_apply_inr
       (t.geckDiagramBaseEquiv ht sigma) i
 
 /-- The rational linear equivalence of the pinned Geck module induced by a diagram symmetry. It is
 the permutation of coordinate functions along `TauCeti.DynkinType.geckDiagramIndexEquiv`. -/
 def geckDiagramModuleEquiv (hsigma : sigma ∈ t.diagramSymmetry) :
     (t.GeckIndex ht → ℚ) ≃ₗ[ℚ] (t.GeckIndex ht → ℚ) :=
-  geckModuleEquiv (t.rationalDiagramAut ht hsigma) (t.geckDiagramBaseEquiv ht sigma)
+  (t.rationalDiagramAut ht hsigma).geckModuleEquiv (t.geckDiagramBaseEquiv ht sigma)
 
 /-- The pinned Geck-module equivalence acts by precomposition with the inverse coordinate
 permutation. -/
@@ -138,7 +138,7 @@ theorem geckDiagramModuleEquiv_apply (hsigma : sigma ∈ t.diagramSymmetry)
     t.geckDiagramModuleEquiv ht hsigma v i =
       v ((t.geckDiagramIndexEquiv ht hsigma).symm i) := by
   simpa only [geckDiagramModuleEquiv, geckDiagramIndexEquiv] using
-    geckModuleEquiv_apply (t.rationalDiagramAut ht hsigma)
+    (t.rationalDiagramAut ht hsigma).geckModuleEquiv_apply
       (t.geckDiagramBaseEquiv ht sigma) v i
 
 /-- The pinned Geck-module equivalence sends a standard coordinate vector to the standard vector
@@ -149,7 +149,7 @@ theorem geckDiagramModuleEquiv_single (hsigma : sigma ∈ t.diagramSymmetry)
     t.geckDiagramModuleEquiv ht hsigma (Pi.single i r) =
       Pi.single (t.geckDiagramIndexEquiv ht hsigma i) r := by
   simpa only [geckDiagramModuleEquiv, geckDiagramIndexEquiv] using
-    geckModuleEquiv_single (t.rationalDiagramAut ht hsigma)
+    (t.rationalDiagramAut ht hsigma).geckModuleEquiv_single
       (t.geckDiagramBaseEquiv ht sigma) i r
 
 /-- **A diagram symmetry preserves the pinned integral Geck lattice.** Membership is equivalent in
@@ -352,7 +352,7 @@ theorem geckDiagramModuleEquiv_geckRepresentation_rootGenerator
         geckRepresentation_ι_apply, coe_lieBasis_e]
       simpa only [geckDiagramModuleEquiv, geckDiagramBaseEquiv, Equiv.permCongr_apply,
         Equiv.symm_apply_apply] using
-          geckModuleEquiv_mulVec_e (t.rationalDiagramAut ht hsigma)
+          (t.rationalDiagramAut ht hsigma).geckModuleEquiv_mulVec_e
             (t.geckDiagramBaseEquiv ht sigma)
             (coe_diagramBaseEquiv_eq_indexEquiv ht hsigma) (t.simpleSupportEquiv ht i) v
   | inr i =>
@@ -360,7 +360,7 @@ theorem geckDiagramModuleEquiv_geckRepresentation_rootGenerator
         geckRepresentation_ι_apply, coe_lieBasis_f]
       simpa only [geckDiagramModuleEquiv, geckDiagramBaseEquiv, Equiv.permCongr_apply,
         Equiv.symm_apply_apply] using
-          geckModuleEquiv_mulVec_f (t.rationalDiagramAut ht hsigma)
+          (t.rationalDiagramAut ht hsigma).geckModuleEquiv_mulVec_f
             (t.geckDiagramBaseEquiv ht sigma)
             (coe_diagramBaseEquiv_eq_indexEquiv ht hsigma) (t.simpleSupportEquiv ht i) v
 

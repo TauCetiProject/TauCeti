@@ -242,7 +242,7 @@ private theorem exists_pLowerCentralSeries_top_eq_bot_aux (m : ℕ) :
   · exact ⟨0, (Subgroup.eq_bot_iff_forall _).2 fun x _ ↦ Subsingleton.elim x 1⟩
   -- A nontrivial finite `p`-group has a central element `z` of order `p`.
   obtain ⟨z, hzc, hz⟩ := hG.exists_mem_center_orderOf_eq_prime
-  set Z : Subgroup G := Subgroup.zpowers z with hZ
+  set Z : Subgroup G := Subgroup.zpowers z
   have hZc : Z ≤ Subgroup.center G := Subgroup.zpowers_le.2 hzc
   have : Z.Normal := Subgroup.normal_of_le_center hZc
   have hz1 : z ≠ 1 := fun h ↦

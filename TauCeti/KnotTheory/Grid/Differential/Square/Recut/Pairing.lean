@@ -236,6 +236,20 @@ theorem IsRecut.orientation {D E : GridRectangleDecomposition x z} (h : D.IsRecu
       D.IsRecutOfLeftEqRight E ∨ D.IsRecutOfRightEqLeft E := by
   exact h.2.2.2.2
 
+/-- A recut of a decomposition with exactly one common side, initial for both rectangles,
+has the `left = left` side data. -/
+theorem IsRecut.isRecutOfLeftEqLeft {D E : GridRectangleDecomposition x z}
+    (h : D.IsRecut E) (hone : D.HasOneCommonSide)
+    (hcommon : D.first.left = D.second.left) : D.IsRecutOfLeftEqLeft E := by
+  rcases h.orientation with hdata | hdata | hdata | hdata
+  · exact hdata
+  · apply False.elim
+    apply D.sideColumns_ne_of_hasOneCommonSide hone
+    rw [GridRectangleBetween.sideColumns, GridRectangleBetween.sideColumns, hcommon,
+      hdata.side_eq]
+  · exact (D.second.left_ne_right (hcommon.symm.trans hdata.side_eq)).elim
+  · exact (D.first.left_ne_right (hcommon.trans hdata.side_eq.symm)).elim
+
 /-! ### Existence and uniqueness of the recut -/
 
 /-- A two-step decomposition by two empty rectangles sharing exactly one side column has exactly
@@ -609,16 +623,8 @@ theorem isRecut_recut (D : GridRectangleDecomposition x z) (hone : D.HasOneCommo
 theorem isRecutOfLeftEqLeft_recut (D : GridRectangleDecomposition x z)
     (hcommon : D.first.left = D.second.left) (hone : D.HasOneCommonSide)
     (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty) :
-    D.IsRecutOfLeftEqLeft (D.recut hone hfirst hsecond) := by
-  have hrecut := D.isRecut_recut hone hfirst hsecond
-  rcases hrecut.orientation with hdata | hdata | hdata | hdata
-  · exact hdata
-  · apply False.elim
-    apply D.sideColumns_ne_of_hasOneCommonSide hone
-    rw [GridRectangleBetween.sideColumns, GridRectangleBetween.sideColumns, hcommon,
-      hdata.side_eq]
-  · exact (D.second.left_ne_right (hcommon.symm.trans hdata.side_eq)).elim
-  · exact (D.first.left_ne_right (hcommon.trans hdata.side_eq.symm)).elim
+    D.IsRecutOfLeftEqLeft (D.recut hone hfirst hsecond) :=
+  (D.isRecut_recut hone hfirst hsecond).isRecutOfLeftEqLeft hone hcommon
 
 /-- When two empty rectangles share their initial side and the second ends strictly inside the
 first's column interval, the recut runs from the common side to the second rectangle's terminal

@@ -401,7 +401,7 @@ theorem exists_isUnit_det_toMatrix_compl (hi : IsIntegralLattice i)
         IsUnit ((b'.toMatrix b).submatrix (fun j : Fin l ↦ e' (Sum.inr j))
           (fun k : Fin l ↦ e (Sum.inr k))).det := by
   classical
-  have hcard : ∀ {m l : ℕ} (f : ToricRay σ ⊕ Fin l ≃ Fin m), Nat.card (ToricRay σ) + l = m := by
+  have hcard : ∀ {m l : ℕ} (_ : ToricRay σ ⊕ Fin l ≃ Fin m), Nat.card (ToricRay σ) + l = m := by
     intro m l f
     have _ : Finite (ToricRay σ) := Finite.of_injective _ (f.injective.comp Sum.inl_injective)
     simpa [Nat.card_sum] using (Nat.card_congr f)

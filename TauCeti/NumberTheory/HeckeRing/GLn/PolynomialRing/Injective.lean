@@ -367,7 +367,6 @@ private lemma T_mul_T_pp_pow_eval_at_one_zero (p : ℕ) (hp : 1 < p) (i k : ℕ)
   intro hdvd
   have hle : p ^ i ≤ 1 := Nat.le_of_dvd Nat.one_pos hdvd
   have hge : p ≤ p ^ i := Nat.le_self_pow (by omega) p
-  have hp2 : 2 ≤ p := hp
   omega
 
 /-- `diagElem ![p^i, p^j] = heckeTDiag(1, p^{j-i}) * heckeTScalar(p)^i` for `i ≤ j` with `p`
@@ -462,7 +461,7 @@ private lemma T_ad_one_p_mul_supp_ne_leading_eval_zero (p : ℕ) (hp : p.Prime) 
       (HeckeCoset.rep D₂)) (diagCoset (![1, p ^ (n + 1)] : Fin 2 → ℕ)) = 0 := by
   have hg_eq : (heckeTDiag 1 p) ^ n = (heckeGen 2 p 0) ^ n * (heckeGen 2 p 1) ^ 0 := by
     simp only [pow_zero, mul_one, heckeGen_zero_eq_heckeTDiag p hp.pos]
-  obtain ⟨a, hDa, ha_pos, ha_div, ha_det⟩ := T_gen_pow_support_qpower p hp.pos
+  obtain ⟨a, hDa, _, ha_div, ha_det⟩ := T_gen_pow_support_qpower p hp.pos
       ![n, 0] D₂ (hg_eq ▸ hD₂_ne_zero)
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one, mul_zero, add_zero] at ha_det
   have ha_prod : a 0 * a 1 = p ^ n := Fin.prod_univ_two a ▸ ha_det

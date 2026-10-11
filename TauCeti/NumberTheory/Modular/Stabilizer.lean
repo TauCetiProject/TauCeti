@@ -78,7 +78,7 @@ private theorem finite_stabilizer_of_subset (s : Finset SL(2, ℤ))
   (s.finite_toSet.subset fun g hg ↦ hs g hg).to_subtype
 
 private theorem finite_stabilizer_of_smul (g : SL(2, ℤ))
-    (h : Finite (stabilizer SL(2, ℤ) (g • z))) : Finite (stabilizer SL(2, ℤ) z) :=
+    (_ : Finite (stabilizer SL(2, ℤ) (g • z))) : Finite (stabilizer SL(2, ℤ) z) :=
   Finite.of_equiv _ (stabilizerEquivStabilizerOfOrbitRel
     (MulAction.orbitRel_apply.mpr (MulAction.mem_orbit z g))).toEquiv
 

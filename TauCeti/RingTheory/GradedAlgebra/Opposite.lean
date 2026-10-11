@@ -73,8 +73,8 @@ namespace GradedOpposite
 variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
 
 /-- Return an element of the graded opposite to the original algebra. -/
-def unop (G : InternalGrading R A) : GradedOpposite G → A
-  | op _ a => a
+def unop : (_G : InternalGrading R A) → GradedOpposite _G → A
+  | _, op _ a => a
 
 @[simp]
 theorem unop_op (G : InternalGrading R A) (a : A) : unop G (op G a) = a := by
