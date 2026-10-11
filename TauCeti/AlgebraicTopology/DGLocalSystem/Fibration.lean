@@ -119,7 +119,7 @@ def fibrationLocalSystemMap {p : C(E, B)} {p' : C(E', B)} {b : B} (h : C(E, E'))
 theorem fibrationLocalSystemMap_apply {p : C(E, B)} {p' : C(E', B)} {b : B} (h : C(E, E'))
     (hh : p'.comp h = p) (x : fibrationLocalSystem R p b) :
     fibrationLocalSystemMap R h hh x =
-      cubicalChainModuleLinearMap R (MooreReplacement.Fiber.map h hh) x :=
+      cubicalChainModuleLinearMap (G := MooreLoopSpace B b) R (MooreReplacement.Fiber.map h hh) x :=
   cubicalChainModuleMap_apply _ _ x
 
 /-- The identity induces the identity. -/
@@ -166,7 +166,8 @@ def transportLocalSystemHom {p : C(E, B)} {Φ : MooreLiftingFunction p} (hΦ : �
 /-- The morphism induced by transport is the push-forward of chains along transport. -/
 theorem transportLocalSystemHom_apply {p : C(E, B)} {Φ : MooreLiftingFunction p}
     (hΦ : Φ.IsTransitive) (b : B) (x : fibrationLocalSystem R p b) :
-    transportLocalSystemHom hΦ b x = cubicalChainModuleLinearMap R (Φ.transport b) x :=
+    transportLocalSystemHom hΦ b x =
+      cubicalChainModuleLinearMap (G := MooreLoopSpace B b) R (Φ.transport b) x :=
   letI := hΦ.mulAction b
   letI := hΦ.continuousSMul b
   cubicalChainModuleMap_apply (Φ.transport b) (fun ω x ↦ hΦ.transport_act b x ω) x
