@@ -21,6 +21,10 @@ The coefficient formula works in a linear monoidal category; its homology versio
 abelian category. For modules over a commutative ring, the tensor unit is the ring itself, so the
 last formula is `x ⌢ 1 = x`. It is the unit law for the cap product of A. Hatcher,
 *Algebraic Topology*, Section 3.3.
+
+For explicit rewriting, use `TauCeti.capChain_constCochain X` and
+`TauCeti.singularCap_constSingularCocycle X`, with the space as the first argument.
+Both coefficient formulas are also available to `simp`.
 -/
 
 public section
