@@ -253,6 +253,7 @@ theorem weight_def (k : Fin (r + 1)) (i : Fin r) :
 
 /-- Reversing both the standard-basis index and the fundamental-weight index
 negates a type-A standard weight. -/
+-- Not `@[simp]`: `weight_def` already simplifies the left-hand side, so `simpNF` rejects it.
 theorem weight_rev_rev (k : Fin (r + 1)) (i : Fin r) :
     weight r k.rev i.rev = -weight r k i := by
   rw [weight_def, weight_def]
