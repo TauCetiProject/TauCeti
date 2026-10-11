@@ -186,8 +186,7 @@ theorem mem_weightLeviInParabolicPointsSubgroup_iff (w : Fin N → ℤ)
 
 /-- A parabolic point belongs to the subgroup cut out by the relative unipotent Hopf ideal
 exactly when its ambient general linear point belongs to the weight-unipotent subgroup. -/
--- Not `@[simp]`: tagged either way, `simp` does not rewrite with it in importing modules;
--- use `rw` or `simp [↓mem_weightUnipotentInParabolicPointsSubgroup_iff]`.
+@[simp↓]
 theorem mem_weightUnipotentInParabolicPointsSubgroup_iff (w : Fin N → ℤ)
     (f : HopfAlgebra.points (R := R) (H := weightParabolicCoordinateHopfAlgebra R w)
       (CommAlgCat.of R A)) :
