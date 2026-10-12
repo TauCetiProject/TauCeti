@@ -110,6 +110,7 @@ theorem degree_pos (s : S) : 0 < degree f s := by
 `S` and a morphism `s : T ⟶ S`, the degree of the base change of `f` to `T` at `t` is the degree
 of `f` at `s t`: the kernel of the base change is the base change of the kernel
 (`kernelBaseChangeIso`). -/
+@[simp]
 theorem degree_pullback_mapGrp_map {T : Scheme.{u}} (s : T ⟶ S) (t : T) :
     degree ((Over.pullback s).mapGrp.map f) t = degree f (s t) := by
   -- The kernel of the base change is isomorphic over `T` to the base change `P` of the kernel,
@@ -142,6 +143,7 @@ theorem finrank_hom_hom_left (x : H.X.left) :
 /-- **The degree is multiplicative.** If `f : G ⟶ H` is finite, flat and surjective and
 `g : H ⟶ K` is finite and flat, the degree of `f ≫ g` at `s` is the product of the degrees of `f`
 and of `g` at `s`. -/
+@[simp]
 theorem degree_comp (g : H ⟶ K) [IsFinite g.hom.hom.left] [Flat g.hom.hom.left] (s : S) :
     degree (f ≫ g) s = degree f s * degree g s := by
   have hfg : (f ≫ g).hom.hom.left = f.hom.hom.left ≫ g.hom.hom.left := by simp
@@ -173,6 +175,7 @@ theorem isIso_iff_degree_eq_one : IsIso f ↔ degree f = 1 := by
 end FiniteFlat
 
 /-- An isomorphism of group schemes has degree `1`. -/
+@[simp]
 theorem degree_eq_one_of_isIso [IsIso f] : degree f = 1 :=
   have : IsIso f.hom.hom.left := inferInstanceAs (IsIso ((Over.forget S).map f.hom.hom))
   (isIso_iff_degree_eq_one f).mp ‹_›
