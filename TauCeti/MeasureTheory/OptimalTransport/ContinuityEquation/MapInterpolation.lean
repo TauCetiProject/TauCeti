@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.OptimalTransport.ContinuityEquation
+public import TauCeti.MeasureTheory.OptimalTransport.ContinuityEquation.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import TauCeti.MeasureTheory.Function.ConditionalExpectation
 
@@ -30,10 +30,10 @@ the conditional expectation of `T x - x` given `(t, Fₜ x)`, for the measure `d
 `(0, 1) × E`. Its `p`-action is at most the `p`-th moment of the displacement,
 `∫₀¹ ∫ ‖vₜ‖ ^ p dμₜ dt ≤ ∫ ‖T x - x‖ ^ p dμ` for every `p ≥ 1`.
 
-If moreover every `Fₜ` with `0 < t < 1` is injective on a measurable set carrying `μ`, then no two
-particles meet at the same time and place, so no averaging takes place: `vₜ (Fₜ x) = T x - x` for
-almost every `t ∈ (0, 1)` and `μ`-almost every `x`, and the `p`-action of `v` equals the `p`-th
-moment of the displacement for every exponent `p`.
+If moreover `Fₜ` is injective on a measurable set carrying `μ` for almost every `t ∈ (0, 1)`, then
+no two particles meet at the same time and place, so no averaging takes place:
+`vₜ (Fₜ x) = T x - x` for almost every `t ∈ (0, 1)` and `μ`-almost every `x`, and the `p`-action of
+`v` equals the `p`-th moment of the displacement for every exponent `p`.
 
 These curves are the map-induced competitors in the Benamou–Brenier formula: when the graph plan of
 `T` is optimal for the cost `‖x - y‖ ^ p`, the `p`-th moment of the displacement is
@@ -44,8 +44,8 @@ These curves are the map-induced competitors in the Benamou–Brenier formula: w
 * `TauCeti.exists_isContinuityEquation_map_smul_add_smul`: the linear interpolation of a map with
   displacement of finite first moment solves the continuity equation with its barycentric velocity,
   whose `p`-action is at most the `p`-th moment of the displacement.
-* `TauCeti.exists_isContinuityEquation_map_smul_add_smul_of_injOn`: when the interpolating maps are
-  injective on a set carrying `μ`, the velocity field is the displacement read along the
+* `TauCeti.exists_isContinuityEquation_map_smul_add_smul_of_injOn`: when almost every interpolating
+  map is injective on a set carrying `μ`, the velocity field is the displacement read along the
   interpolation, and its `p`-action equals the `p`-th moment of the displacement.
 
 ## References
@@ -98,16 +98,16 @@ theorem exists_isContinuityEquation_map_smul_add_smul (μ : Measure E) [IsFinite
 
 /-- **The velocity along an injective linear interpolation.** Let `μ` be a finite measure on `E` and
 `T` a measurable map whose displacement `T x - x` has finite first moment, and suppose that for
-every `0 < t < 1` the map `x ↦ (1 - t) • x + t • T x` is injective on a measurable set `S` carrying
-`μ`. Then the laws `μₜ` of `(1 - t) • x + t • T x` under `μ` solve the continuity equation on
-`(0, 1)` with a velocity field `v` equal to the displacement along the interpolation:
+almost every `t ∈ (0, 1)` the map `x ↦ (1 - t) • x + t • T x` is injective on a measurable set `S`
+carrying `μ`. Then the laws `μₜ` of `(1 - t) • x + t • T x` under `μ` solve the continuity equation
+on `(0, 1)` with a velocity field `v` equal to the displacement along the interpolation:
 `vₜ ((1 - t) • x + t • T x) = T x - x` for almost every `t ∈ (0, 1)` and `μ`-almost every `x`.
 Consequently, for every exponent `p` the `p`-action of `v` is the `p`-th moment of the
 displacement: `∫₀¹ ∫ ‖vₜ‖ ^ p dμₜ dt = ∫ ‖T x - x‖ ^ p dμ`. -/
 theorem exists_isContinuityEquation_map_smul_add_smul_of_injOn (μ : Measure E) [IsFiniteMeasure μ]
     (hT : Measurable T) (hint : ∫⁻ x, ‖T x - x‖ₑ ∂μ < ∞) {S : Set E} (hS : MeasurableSet S)
     (hSμ : ∀ᵐ x ∂μ, x ∈ S)
-    (hinj : ∀ t ∈ Ioo (0 : ℝ) 1, InjOn (fun x ↦ (1 - t) • x + t • T x) S) :
+    (hinj : ∀ᵐ t, t ∈ Ioo (0 : ℝ) 1 → InjOn (fun x ↦ (1 - t) • x + t • T x) S) :
     ∃ v : ℝ → E → E,
       IsContinuityEquation (fun t ↦ μ.map fun x ↦ (1 - t) • x + t • T x) v 0 1 ∧
       (∀ᵐ t, t ∈ Ioo 0 1 → ∀ᵐ x ∂μ, v t ((1 - t) • x + t • T x) = T x - x) ∧
@@ -115,20 +115,32 @@ theorem exists_isContinuityEquation_map_smul_add_smul_of_injOn (μ : Measure E) 
         ∫⁻ x, ‖T x - x‖ₑ ^ p ∂μ := by
   obtain ⟨v, hce, hv, -⟩ := exists_isContinuityEquation_map_smul_add_smul μ hT hint
   have : IsFiniteMeasure (volume.restrict (Ioo (0 : ℝ) 1)) := ⟨by simp⟩
-  -- the time and position map `G` is injective on `(0, 1) × S`, so conditioning on it is trivial
+  -- `U` is a measurable set of full measure in `(0, 1)` of times at which the interpolation is
+  -- injective on `S`
+  set N := toMeasurable volume {t | ¬(t ∈ Ioo (0 : ℝ) 1 → InjOn (fun x ↦ (1 - t) • x + t • T x) S)}
+  set U := Ioo (0 : ℝ) 1 \ N
+  have hU : MeasurableSet U := measurableSet_Ioo.diff (measurableSet_toMeasurable _ _)
+  have hUμ : ∀ᵐ t ∂volume.restrict (Ioo (0 : ℝ) 1), t ∈ U := by
+    filter_upwards [ae_restrict_mem measurableSet_Ioo,
+      ae_restrict_of_ae (measure_eq_zero_iff_ae_notMem.1
+        ((measure_toMeasurable _).trans (ae_iff.1 hinj)))] with t ht htN using ⟨ht, htN⟩
+  have hUinj (t : ℝ) (ht : t ∈ U) : InjOn (fun x ↦ (1 - t) • x + t • T x) S := by
+    by_contra h
+    exact ht.2 (subset_toMeasurable _ _ fun h' ↦ h (h' ht.1))
+  -- the time and position map `G` is injective on `U × S`, so conditioning on it is trivial
   set G : ℝ × E → ℝ × E := fun q ↦ (q.1, (1 - q.1) • q.2 + q.1 • T q.2)
   have hG : Measurable G := by fun_prop
-  have hGinj : InjOn G (Ioo 0 1 ×ˢ S) := by
+  have hGinj : InjOn G (U ×ˢ S) := by
     rintro ⟨t, x⟩ ⟨ht, hx⟩ ⟨t', x'⟩ ⟨-, hx'⟩ he
     obtain ⟨rfl, he⟩ := Prod.mk.inj he
-    exact Prod.ext rfl (hinj t ht hx hx' he)
+    exact Prod.ext rfl (hUinj t ht hx hx' he)
   have hW : Integrable (fun x ↦ T x - x) μ :=
     ⟨(hT.sub measurable_id).aestronglyMeasurable, hasFiniteIntegral_iff_enorm.2 hint⟩
   have hae : ∀ᵐ q ∂(volume.restrict (Ioo 0 1)).prod μ,
       v q.1 ((1 - q.1) • q.2 + q.1 • T q.2) = T q.2 - q.2 := by
-    filter_upwards [MeasureTheory.condExp_comap_ae_eq_of_injOn hG (measurableSet_Ioo.prod hS)
-      ((Measure.ae_prod_mem_iff_ae_ae_mem (measurableSet_Ioo.prod hS)).2
-        ((ae_restrict_mem measurableSet_Ioo).mono fun _ ht ↦ hSμ.mono fun _ hx ↦ ⟨ht, hx⟩)) hGinj
+    filter_upwards [MeasureTheory.condExp_comap_ae_eq_of_injOn hG (hU.prod hS)
+      ((Measure.ae_prod_mem_iff_ae_ae_mem (hU.prod hS)).2
+        (hUμ.mono fun _ ht ↦ hSμ.mono fun _ hx ↦ ⟨ht, hx⟩)) hGinj
       (hW.comp_snd (volume.restrict (Ioo 0 1)))] with q hq
     rw [← hq]
     exact congrFun hv q
