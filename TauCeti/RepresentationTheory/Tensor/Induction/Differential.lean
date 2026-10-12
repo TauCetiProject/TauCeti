@@ -123,9 +123,11 @@ theorem tensorInducedDifferential_comp_self [CharP R 2] (d : τ.IntertwiningMap 
     (s : U.LeftTransversal) [Fintype (G ⧸ U)] (hd : d.comp d = 0) :
     (tensorInducedDifferential d s).comp (tensorInducedDifferential d s) = 0 := by
   apply Representation.IntertwiningMap.ext
-  have h := congrArg Representation.IntertwiningMap.toLinearMap
-    (wreathTensorDifferential_comp_self d (G ⧸ U) hd)
-  exact h
+  simpa only [Representation.IntertwiningMap.comp_toLinearMap,
+    Representation.IntertwiningMap.zero_toLinearMap, tensorInducedDifferential_toLinearMap,
+    wreathTensorDifferential_toLinearMap] using
+    congrArg Representation.IntertwiningMap.toLinearMap
+      (wreathTensorDifferential_comp_self d (G ⧸ U) hd)
 
 end TauCeti
 
