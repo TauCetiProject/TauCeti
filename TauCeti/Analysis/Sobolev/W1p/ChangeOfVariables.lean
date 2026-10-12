@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.W1p.MeyersSerrin
+public import TauCeti.Analysis.Sobolev.Wkp.MeyersSerrin
 public import TauCeti.MeasureTheory.Function.Jacobian
 public import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 public import TauCeti.MeasureTheory.Measure.AbsolutelyContinuous
@@ -31,9 +31,9 @@ The Jacobian bound makes precomposition bounded on `Lᵖ`
 `(u ∘ Φ, DΦ* (∇u ∘ Φ))` is a bounded linear function of the value-gradient jet `(u, ∇u)`. For `u`
 smooth on `V` this pair is the classical value and gradient of `u ∘ Φ`, so it lies in
 `W^{1,p}(U)`. Since `W^{1,p}(U)` is closed in the space of jets and the smooth elements are dense
-in `W^{1,p}(V)` (Meyers–Serrin, `TauCeti.W1p.dense_contDiffOn_representatives`), the same holds
-for every `u ∈ W^{1,p}(V)`. Neither continuity of `DΦ` nor differentiability of the inverse map
-is needed.
+in `W^{1,p}(V)` (Meyers–Serrin, `TauCeti.Wkp.dense_contDiffOn_representatives` at order one),
+the same holds for every `u ∈ W^{1,p}(V)`. Neither continuity of `DΦ` nor differentiability of
+the inverse map is needed.
 
 Such changes of variables are the standard tool for flattening the boundary of a domain that is
 locally the region above a graph, which reduces trace and extension problems there to the
@@ -251,8 +251,9 @@ private theorem pullbackJetL_mem (hp : p ≠ ⊤) (hΦ : DifferentiableOn ℝ Φ
       pullbackJetL hm hmap hC hL (u : Sobolev1JetLp mu V p) ∈ w1pSubmodule mu U p} :=
     (w1pSubmodule mu U p).isClosed.preimage
       ((pullbackJetL hm hmap hC hL).continuous.comp continuous_subtype_val)
-  refine closure_minimal ?_ hclosed (W1p.dense_contDiffOn_representatives hp u)
-  rintro v ⟨f, hf, hv⟩
+  refine closure_minimal ?_ hclosed (Wkp.dense_contDiffOn_representatives hp 1 u)
+  rintro (v : Wkp mu V p 1) ⟨f, hf, hv⟩
+  rw [Wkp.value_one] at hv
   exact pullbackJetL_mem_of_contDiffOn hm hmap hC hL hΦ hmaps v (hf.of_le (by simp)) hv
 
 end Operator
