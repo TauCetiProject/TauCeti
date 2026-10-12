@@ -9,6 +9,7 @@ public import Mathlib.RepresentationTheory.Homological.GroupCohomology.FiniteCyc
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoriality
 public import TauCeti.GroupTheory.SpecificGroups.Cyclic.Log
 import TauCeti.Data.Nat.Carry
+import TauCeti.RepresentationTheory.Invariants
 import TauCeti.RepresentationTheory.Homological.GroupCohomology.Resolution
 import TauCeti.RepresentationTheory.Homological.Resolution
 
@@ -296,8 +297,7 @@ order `n`: the `2`-cocycle `(gⁱ, gʲ) ↦ a` if `i + j ≥ n` and `0` otherwis
 noncomputable def carryCocycle :
     LinearMap.ker (applyAsHom A g - 𝟙 A).hom.toLinearMap →ₗ[k] cocycles₂ A :=
   LinearMap.codRestrict (cocycles₂ A) ((carryCochain A g hg).comp (Submodule.subtype _))
-    fun x => carryCochain_mem_cocycles₂ A g hg x.1 (by
-      simpa [sub_hom, sub_eq_zero] using x.2)
+    fun x => carryCochain_mem_cocycles₂ A g hg x.1 (Rep.ρ_apply_of_mem_ker A g x)
 
 /-- The carry cocycle at an arbitrary pair, computed using their reduced exponents. -/
 @[simp low]
@@ -423,8 +423,7 @@ theorem map_groupCohomologyπEven_two {g' : G'} (hg' : ∀ x, x ∈ Subgroup.zpo
   rw [groupCohomologyπEven_two_apply, groupCohomologyπEven_two_apply,
     ← LinearMap.comp_apply (groupCohomology.map f φ 2).hom, ← ModuleCat.hom_comp, H2π_comp_map,
     ModuleCat.hom_comp, LinearMap.comp_apply, H2π_eq_iff]
-  have hy : B.ρ g' y.1 = y.1 := by
-    simpa [sub_hom, sub_eq_zero] using y.2
+  have hy := Rep.ρ_apply_of_mem_ker B g' y
   have hfix : ∀ x : G, A.ρ x (φ.hom y.1) = φ.hom y.1 := by
     intro x
     rw [← Rep.hom_comm_apply]
