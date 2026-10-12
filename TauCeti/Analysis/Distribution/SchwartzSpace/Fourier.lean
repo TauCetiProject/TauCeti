@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
 public import Mathlib.Analysis.Fourier.LpSpace
 
 /-!
-# Second derivatives of Schwartz functions on the Fourier side
+# Derivatives of Schwartz functions on the Fourier side
 
 The Fourier transform turns the directional derivative `∂_v` on Schwartz space into
 multiplication by `2πi ⟪ξ, v⟫` (Mathlib's `SchwartzMap.fourier_lineDerivOp_eq`). This file
@@ -28,11 +28,18 @@ so the Laplacian controls the whole Hessian of `u` in `L²`. This is the `p = 2`
 Calderón–Zygmund estimate `‖D²u‖_{Lᵖ} ≤ C ‖Δu‖_{Lᵖ}`, and the `L²` input to elliptic regularity
 for the Laplacian on `ℝⁿ`.
 
+For the inverse Fourier transform, iterating Mathlib's `SchwartzMap.fourierInv_lineDerivOp_eq`
+gives `𝓕⁻ (∂_m^N σ) x = (-2πi ⟪x, m⟫) ^ N 𝓕⁻ σ x`, and Mathlib's `norm_fourier_toL2_eq` gives
+Plancherel's theorem `‖𝓕⁻ f‖_{L²} = ‖f‖_{L²}`.
+
 ## Main declarations
 
 * `SchwartzMap.fourier_lineDerivOp_lineDerivOp_apply`: the Fourier transform of a second
   directional derivative.
 * `SchwartzMap.fourier_laplacian_apply`: the Fourier transform of the Laplacian.
+* `SchwartzMap.fourierInv_iterate_lineDerivOp_apply`: the inverse Fourier transform of an
+  iterated directional derivative, `𝓕⁻ (∂_m^N σ) x = (-2πi ⟪x, m⟫) ^ N 𝓕⁻ σ x`.
+* `SchwartzMap.norm_fourierInv_toL2_eq`: Plancherel's theorem for the inverse Fourier transform.
 * `SchwartzMap.sum_sum_norm_toLp_lineDerivOp_lineDerivOp_sq`: the squared `L²` norms of the
   second derivatives along an orthonormal basis sum to the squared `L²` norm of the Laplacian.
 
@@ -78,9 +85,27 @@ theorem fourier_laplacian_apply (u : 𝓢(E, F)) (ξ : E) :
   simp only [fourier_lineDerivOp_lineDerivOp_apply, ← Finset.sum_smul, ← Finset.mul_sum, ← sq,
     b.sum_sq_inner_left]
 
+/-- Differentiating `N` times along `m` multiplies the inverse Fourier transform by
+`(-2πi ⟪x, m⟫) ^ N`. -/
+theorem fourierInv_iterate_lineDerivOp_apply (σ : 𝓢(E, F)) (m : E) (N : ℕ) (x : E) :
+    𝓕⁻ ((∂_{m})^[N] σ) x = (-(2 * π * Complex.I) * ⟪x, m⟫) ^ N • 𝓕⁻ σ x := by
+  induction N with
+  | zero => simp
+  | succ N ih =>
+    have hm : (inner ℝ · m : E → ℝ).HasTemperateGrowth := by fun_prop
+    rw [Function.iterate_succ_apply', fourierInv_lineDerivOp_eq, smul_apply,
+      smulLeftCLM_apply_apply hm, ih, pow_succ, ← Complex.coe_smul, smul_smul, smul_smul]
+    congr 1
+    ring
+
 end normed
 
 variable [InnerProductSpace ℂ F] [CompleteSpace F]
+
+/-- **Plancherel's theorem** for the inverse Fourier transform of Schwartz functions. -/
+@[simp]
+theorem norm_fourierInv_toL2_eq (f : 𝓢(E, F)) : ‖(𝓕⁻ f).toLp 2‖ = ‖f.toLp 2‖ := by
+  rw [← norm_fourier_toL2_eq (𝓕⁻ f), FourierTransform.fourier_fourierInv_eq]
 
 /-- The Laplacian controls the Hessian in `L²`: for a Schwartz function `u` and an orthonormal
 basis `b`, `∑ᵢ ∑ⱼ ‖∂_{bᵢ} ∂_{bⱼ} u‖²_{L²} = ‖Δ u‖²_{L²}`. -/

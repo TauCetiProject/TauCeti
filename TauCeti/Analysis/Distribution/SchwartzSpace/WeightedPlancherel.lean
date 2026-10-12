@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
-public import Mathlib.Analysis.Fourier.LpSpace
+public import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import Mathlib.Algebra.Order.Chebyshev
 import Mathlib.MeasureTheory.Integral.MeanInequalities
+import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.Translation
 import TauCeti.MeasureTheory.Integral.DistRpow
@@ -27,7 +27,7 @@ Summing it along an orthonormal basis `b` controls `∫ ‖x‖ ^ (2N) ‖𝓕�
 weight `‖x‖ ^ (-2N)` is integrable away from the origin, and the Cauchy–Schwarz inequality turns
 the weighted `L²` bound into an `L¹` bound on the tail:
 
-`∫_{‖x‖ > R} ‖𝓕⁻ σ x‖ dx ≤ C R ^ (n/2 - N) ∑ᵢ ‖∂_{bᵢ}^N σ‖_{L²}`.
+`∫_{‖x‖ > R} ‖𝓕⁻ σ x‖ dx ≤ C R ^ (n/2 - N) (∑ᵢ ‖∂_{bᵢ}^N σ‖²_{L²}) ^ (1/2)`.
 
 On the ball `‖x‖ ≤ R`, Cauchy–Schwarz and Plancherel bound the integral by `C R ^ (n/2) ‖σ‖_{L²}`.
 Together these bound the `L¹` norm of the kernel `𝓕⁻ σ` by the `L²` norms of `σ` and of its
@@ -42,11 +42,10 @@ same `L¹` bound for the symbol `⟪ξ, h⟫ σ(ξ)`.
 
 ## Main declarations
 
-* `SchwartzMap.fourierInv_iterate_lineDerivOp_apply`: `𝓕⁻ (∂_m^N σ) x = (-2πi ⟪x, m⟫) ^ N 𝓕⁻ σ x`.
-* `SchwartzMap.norm_fourierInv_toL2_eq`: Plancherel's theorem for the inverse Fourier transform.
 * `SchwartzMap.integral_inner_pow_mul_norm_fourierInv_sq`: the weighted Plancherel identity.
 * `SchwartzMap.integral_norm_pow_mul_norm_fourierInv_sq_le`: its consequence for the weight
   `‖x‖ ^ (2N)`.
+* `SchwartzMap.setIntegral_closedBall_norm_fourierInv_le`: the `L¹` bound on `‖x‖ ≤ R`.
 * `SchwartzMap.exists_setIntegral_norm_fourierInv_le`: the `L¹` bound on `{‖x‖ > R}`.
 * `SchwartzMap.exists_integral_norm_fourierInv_le`: the `L¹` bound on `V`.
 * `SchwartzMap.integral_norm_fourierInv_add_sub_le`: the translation estimate.
@@ -65,42 +64,12 @@ open FourierTransform MeasureTheory Metric Module
 
 namespace SchwartzMap
 
-section Measure
-
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
-  [BorelSpace E] [SecondCountableTopology E] [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {μ : Measure E} [μ.HasTemperateGrowth]
-
-/-- For a Schwartz function `f`, the function `‖x‖ ^ k ‖f x‖²` is integrable. -/
-theorem integrable_norm_pow_mul_norm_sq (f : 𝓢(E, F)) (k : ℕ) :
-    Integrable (fun x ↦ ‖x‖ ^ k * ‖f x‖ ^ 2) μ := by
-  refine ((f.integrable_pow_mul μ k).const_mul (SchwartzMap.seminorm ℝ 0 0 f)).mono'
-    (by fun_prop) (.of_forall fun x ↦ ?_)
-  rw [Real.norm_of_nonneg (by positivity), sq, ← mul_assoc, mul_comm _ ‖f x‖]
-  gcongr
-  exact f.norm_le_seminorm ℝ x
-
-end Measure
-
 variable {V H : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   [MeasurableSpace V] [BorelSpace V]
 
 section Normed
 
 variable [NormedAddCommGroup H] [NormedSpace ℂ H]
-
-/-- Differentiating `N` times along `m` multiplies the inverse Fourier transform by
-`(-2πi ⟪x, m⟫) ^ N`. -/
-theorem fourierInv_iterate_lineDerivOp_apply (σ : 𝓢(V, H)) (m : V) (N : ℕ) (x : V) :
-    𝓕⁻ ((∂_{m})^[N] σ) x = (-(2 * π * Complex.I) * ⟪x, m⟫) ^ N • 𝓕⁻ σ x := by
-  induction N with
-  | zero => simp
-  | succ N ih =>
-    have hm : (inner ℝ · m : V → ℝ).HasTemperateGrowth := by fun_prop
-    rw [Function.iterate_succ_apply', fourierInv_lineDerivOp_eq, smul_apply,
-      smulLeftCLM_apply_apply hm, ih, pow_succ, ← Complex.coe_smul, smul_smul, smul_smul]
-    congr 1
-    ring
 
 private theorem norm_fourierInv_iterate_lineDerivOp_sq (σ : 𝓢(V, H)) (m : V) (N : ℕ) (x : V) :
     ‖𝓕⁻ ((∂_{m})^[N] σ) x‖ ^ 2 = (2 * π) ^ (2 * N) * (⟪x, m⟫ ^ (2 * N) * ‖𝓕⁻ σ x‖ ^ 2) := by
@@ -173,11 +142,6 @@ section Hilbert
 
 variable [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
 
-/-- **Plancherel's theorem** for the inverse Fourier transform of Schwartz functions. -/
-@[simp]
-theorem norm_fourierInv_toL2_eq (f : 𝓢(V, H)) : ‖(𝓕⁻ f).toLp 2‖ = ‖f.toLp 2‖ := by
-  rw [← norm_fourier_toL2_eq (𝓕⁻ f), FourierTransform.fourier_fourierInv_eq]
-
 /-- **The weighted Plancherel identity**: for a Schwartz function `σ`,
 
 `(2π) ^ (2N) ∫ ⟪x, m⟫ ^ (2N) ‖𝓕⁻ σ x‖² dx = ‖∂_m^N σ‖²_{L²}`. -/
@@ -219,7 +183,7 @@ theorem integral_norm_pow_mul_norm_fourierInv_sq_le {ι : Type*} [Fintype ι] (�
 
 /-- **The inverse Fourier transform on a ball in `L¹`**, by Cauchy–Schwarz and Plancherel:
 `∫_{‖x‖ ≤ R} ‖𝓕⁻ σ x‖ dx ≤ √(|B(0, 1)| Rⁿ) ‖σ‖_{L²}`. -/
-private theorem setIntegral_closedBall_norm_fourierInv_le (σ : 𝓢(V, H)) {R : ℝ} (hR : 0 < R) :
+theorem setIntegral_closedBall_norm_fourierInv_le (σ : 𝓢(V, H)) {R : ℝ} (hR : 0 < R) :
     ∫ x in closedBall (0 : V) R, ‖𝓕⁻ σ x‖ ≤
       √(volume.real (ball (0 : V) 1)) * R ^ ((finrank ℝ V : ℝ) / 2) * ‖σ.toLp 2‖ := by
   set A : ℝ := volume.real (ball (0 : V) 1)
@@ -254,15 +218,15 @@ private theorem setIntegral_closedBall_norm_fourierInv_le (σ : 𝓢(V, H)) {R :
   exact ENNReal.toReal_le_of_le_ofReal (by positivity) hle
 
 /-- **The tail of an inverse Fourier transform in `L¹`.** Let `b` be an orthonormal basis of the
-`n`-dimensional space `V` and `2N > n`. There is a constant `C` such that for every Schwartz
-function `σ` and every `R > 0`,
+`n`-dimensional space `V` and `2N > n`. There is a constant `C ≥ 0` such that for every
+Schwartz function `σ` and every `R > 0`,
 
-`∫_{‖x‖ > R} ‖𝓕⁻ σ x‖ dx ≤ C R ^ (n/2 - N) ∑ᵢ ‖∂_{bᵢ}^N σ‖_{L²}`. -/
+`∫_{‖x‖ > R} ‖𝓕⁻ σ x‖ dx ≤ C R ^ (n/2 - N) (∑ᵢ ‖∂_{bᵢ}^N σ‖²_{L²}) ^ (1/2)`. -/
 theorem exists_setIntegral_norm_fourierInv_le {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℝ V) {N : ℕ} (hN : finrank ℝ V < 2 * N) :
-    ∃ C, ∀ (σ : 𝓢(V, H)) (R : ℝ), 0 < R →
+    ∃ C, 0 ≤ C ∧ ∀ (σ : 𝓢(V, H)) (R : ℝ), 0 < R →
       ∫ x in {x | R < ‖x‖}, ‖𝓕⁻ σ x‖ ≤
-        C * R ^ ((finrank ℝ V : ℝ) / 2 - N) * ∑ i, ‖((∂_{b i})^[N] σ).toLp 2‖ := by
+        C * R ^ ((finrank ℝ V : ℝ) / 2 - N) * √(∑ i, ‖((∂_{b i})^[N] σ).toLp 2‖ ^ 2) := by
   set n : ℕ := finrank ℝ V
   have hN0 : N ≠ 0 := by omega
   have hns : (n : ℝ) < (2 * N : ℕ) := by exact_mod_cast hN
@@ -273,18 +237,17 @@ theorem exists_setIntegral_norm_fourierInv_le {ι : Type*} [Fintype ι]
   have hc : 0 ≤ c := div_nonneg (by positivity) (sub_nonneg.2
     (Real.rpow_le_one_of_one_le_of_nonpos one_le_two (by linarith)))
   have hD : 0 ≤ D := by positivity
-  refine ⟨√(A * c) * √D, fun σ R hR ↦ ?_⟩
+  refine ⟨√(A * c) * √D, by positivity, fun σ R hR ↦ ?_⟩
   set S : Set V := {x | R < ‖x‖}
-  set T : ℝ := ∑ i, ‖((∂_{b i})^[N] σ).toLp 2‖
-  have hT : 0 ≤ T := Finset.sum_nonneg fun _ _ ↦ norm_nonneg _
+  set T : ℝ := √(∑ i, ‖((∂_{b i})^[N] σ).toLp 2‖ ^ 2)
+  have hT : 0 ≤ T := Real.sqrt_nonneg _
   have hS : MeasurableSet S := measurableSet_lt measurable_const measurable_norm
   -- The weighted `L²` bound: `∫ ‖x‖ ^ (2N) ‖𝓕⁻ σ x‖² ≤ D T²`.
   have hW : ∫ x, ‖x‖ ^ (2 * N) * ‖𝓕⁻ σ x‖ ^ 2 ≤ D * T ^ 2 := by
     have h := integral_norm_pow_mul_norm_fourierInv_sq_le σ b hN0
-    have hsq : ∑ i, ‖((∂_{b i})^[N] σ).toLp 2‖ ^ 2 ≤ T ^ 2 :=
-      Finset.sum_sq_le_sq_sum_of_nonneg fun _ _ ↦ norm_nonneg _
-    rw [div_mul_eq_mul_div, le_div_iff₀ (by positivity), mul_comm]
-    exact h.trans (mul_le_mul_of_nonneg_left hsq (by positivity))
+    rw [Real.sq_sqrt (Finset.sum_nonneg fun _ _ ↦ by positivity), div_mul_eq_mul_div,
+      le_div_iff₀ (by positivity), mul_comm]
+    exact h
   -- Cauchy–Schwarz splits the tail integral into the tail of `‖x‖ ^ (-2N)`, which is
   -- `O(R ^ (n - 2N))`, and the weighted `L²` integral, which is at most `D T²`.
   have hCS := setLIntegral_enorm_fourierInv_le σ N hR
@@ -314,19 +277,19 @@ theorem exists_setIntegral_norm_fourierInv_le {ι : Type*} [Fintype ι]
   exact ENNReal.toReal_le_of_le_ofReal (by positivity) hle
 
 /-- **An inverse Fourier transform in `L¹`.** Let `b` be an orthonormal basis of the
-`n`-dimensional space `V` and `2N > n`. There is a constant `C` such that for every Schwartz
-function `σ` and every `R > 0`,
+`n`-dimensional space `V` and `2N > n`. There is a constant `C ≥ 0` such that for every
+Schwartz function `σ` and every `R > 0`,
 
-`∫ ‖𝓕⁻ σ x‖ dx ≤ C (R ^ (n/2) ‖σ‖_{L²} + R ^ (n/2 - N) ∑ᵢ ‖∂_{bᵢ}^N σ‖_{L²})`. -/
+`∫ ‖𝓕⁻ σ x‖ dx ≤ C (R ^ (n/2) ‖σ‖_{L²} + R ^ (n/2 - N) (∑ᵢ ‖∂_{bᵢ}^N σ‖²_{L²}) ^ (1/2))`. -/
 theorem exists_integral_norm_fourierInv_le {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℝ V) {N : ℕ} (hN : finrank ℝ V < 2 * N) :
-    ∃ C, ∀ (σ : 𝓢(V, H)) (R : ℝ), 0 < R →
+    ∃ C, 0 ≤ C ∧ ∀ (σ : 𝓢(V, H)) (R : ℝ), 0 < R →
       ∫ x, ‖𝓕⁻ σ x‖ ≤ C * (R ^ ((finrank ℝ V : ℝ) / 2) * ‖σ.toLp 2‖ +
-        R ^ ((finrank ℝ V : ℝ) / 2 - N) * ∑ i, ‖((∂_{b i})^[N] σ).toLp 2‖) := by
-  obtain ⟨C, hC⟩ := exists_setIntegral_norm_fourierInv_le (H := H) b hN
+        R ^ ((finrank ℝ V : ℝ) / 2 - N) * √(∑ i, ‖((∂_{b i})^[N] σ).toLp 2‖ ^ 2)) := by
+  obtain ⟨C, -, hC⟩ := exists_setIntegral_norm_fourierInv_le (H := H) b hN
   set A : ℝ := volume.real (ball (0 : V) 1)
   have hA : 0 ≤ A := measureReal_nonneg
-  refine ⟨max √A C, fun σ R hR ↦ ?_⟩
+  refine ⟨max √A C, (Real.sqrt_nonneg _).trans (le_max_left _ _), fun σ R hR ↦ ?_⟩
   set S : Set V := {x | R < ‖x‖}
   have hS : MeasurableSet S := measurableSet_lt measurable_const measurable_norm
   have hSc : Sᶜ = closedBall (0 : V) R := by
@@ -336,7 +299,6 @@ theorem exists_integral_norm_fourierInv_le {ι : Type*} [Fintype ι]
   rw [← hSc] at hnear
   have hint : Integrable fun x ↦ ‖𝓕⁻ σ x‖ := (𝓕⁻ σ).integrable.norm
   rw [← integral_add_compl hS hint, mul_add, add_comm]
-  have hT : 0 ≤ ∑ i, ‖((∂_{b i})^[N] σ).toLp 2‖ := Finset.sum_nonneg fun _ _ ↦ norm_nonneg _
   refine add_le_add (hnear.trans ?_) ((hC σ R hR).trans ?_) <;> rw [← mul_assoc] <;>
     gcongr
   exacts [le_max_left _ _, le_max_right _ _]
