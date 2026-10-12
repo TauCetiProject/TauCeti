@@ -13,7 +13,8 @@ public import Mathlib.Algebra.Group.ForwardDiff
 For functions from an additive commutative monoid to an additive commutative group, multiplying
 the `n`-th forward difference by the integer `(-1) ^ n` gives the alternating difference. These
 identities describe its successor step and its alternating binomial expansion, using Mathlib's
-forward-difference operator and integer scalar multiplication.
+forward-difference operator and integer scalar multiplication. For ring-valued functions, the same
+identities are stated using multiplication by the coefficients in the ring.
 
 ## Main declarations
 
@@ -21,6 +22,8 @@ forward-difference operator and integer scalar multiplication.
   alternating iterate by one step.
 * `TauCeti.neg_one_pow_smul_fwdDiff_iter_eq_alternating_sum`: the alternating iterate as a
   binomial sum of translates.
+* `TauCeti.neg_one_pow_mul_fwdDiff_iter_succ` and
+  `TauCeti.neg_one_pow_mul_fwdDiff_iter_eq_alternating_sum`: the ring-valued forms.
 -/
 
 public section
@@ -50,5 +53,28 @@ theorem neg_one_pow_smul_fwdDiff_iter_eq_alternating_sum (n : ℕ) (F : M → G)
     rw [← pow_add, hexp, pow_add, pow_mul]
     simp
   rw [smul_smul, ← mul_assoc, hsign]
+
+variable {R : Type*} [Ring R]
+
+/-- Differencing once advances the alternating iterated forward difference of a ring-valued
+function by one step. -/
+theorem neg_one_pow_mul_fwdDiff_iter_succ (n : ℕ) (F : M → R) (s : M) :
+    (fun x : M => (-1 : R) ^ n * Δ_[s]^[n] (-Δ_[s] F) x)
+      = fun x : M => (-1 : R) ^ (n + 1) * Δ_[s]^[n + 1] F x := by
+  funext x
+  have h := congrFun (neg_one_pow_smul_fwdDiff_iter_succ n F s) x
+  simp only [Pi.smul_apply, zsmul_eq_mul] at h
+  push_cast at h
+  exact h
+
+/-- The alternating iterated forward difference of a ring-valued function as an explicit
+alternating binomial sum. -/
+theorem neg_one_pow_mul_fwdDiff_iter_eq_alternating_sum (n : ℕ) (F : M → R) (s x : M) :
+    (-1 : R) ^ n * Δ_[s]^[n] F x
+      = ∑ k ∈ Finset.range (n + 1), (-1 : R) ^ k * n.choose k * F (x + k • s) := by
+  have h := neg_one_pow_smul_fwdDiff_iter_eq_alternating_sum n F s x
+  simp only [zsmul_eq_mul] at h
+  push_cast at h
+  exact h
 
 end TauCeti

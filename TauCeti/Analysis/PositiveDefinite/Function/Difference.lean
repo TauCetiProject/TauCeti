@@ -113,9 +113,7 @@ theorem neg_one_pow_mul_fwdDiff_iter (n : ℕ) (hF : IsPositiveDefinite F)
       have hneg : (fun x => F x - F (x + s)) = -Δ_[s] F := by
         funext x
         simp [fwdDiff]
-      have hsucc := neg_one_pow_smul_fwdDiff_iter_succ n F s
-      simp only [Pi.smul_def, zsmul_eq_mul, Int.cast_pow, Int.cast_neg, Int.cast_one] at hsucc
-      rwa [hneg, hsucc] at hG
+      rwa [hneg, neg_one_pow_mul_fwdDiff_iter_succ] at hG
 
 /-- The alternating iterated difference of a bounded positive-definite function is nonnegative at
 every "norm point" `a + star a`. -/
@@ -131,10 +129,8 @@ theorem alternating_sum (n : ℕ) (hF : IsPositiveDefinite F) (hbdd : ∀ a, ‖
     (hs : star s = s) :
     IsPositiveDefinite fun x : M =>
       ∑ k ∈ Finset.range (n + 1), (-1 : ℂ) ^ k * (n.choose k) * F (x + k • s) := by
-  have hexp (x : M) := neg_one_pow_smul_fwdDiff_iter_eq_alternating_sum n F s x
-  simp only [zsmul_eq_mul, Int.cast_mul, Int.cast_pow, Int.cast_neg, Int.cast_one,
-    Int.cast_natCast] at hexp
-  simpa only [hexp] using hF.neg_one_pow_mul_fwdDiff_iter n hbdd hs
+  simpa only [neg_one_pow_mul_fwdDiff_iter_eq_alternating_sum] using
+    hF.neg_one_pow_mul_fwdDiff_iter n hbdd hs
 
 /-- The alternating binomial sums of a bounded positive-definite function are nonnegative at every
 "norm point" `a + star a`: complete monotonicity in the finite-difference sense, along the
