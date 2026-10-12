@@ -51,7 +51,8 @@ form for `u^{p/2}`
 * `TauCeti.PDE.exists_eLpNorm_le_mul_rpow_mul_eLpNorm_of_inv_add_eq_inv`: Moser's estimate for
   small positive powers in dimension `n ≥ 3`.
 * `TauCeti.PDE.exists_setAverage_rpow_rpow_inv_le_mul_setAverage_rpow_rpow_inv`: its
-  scale-invariant form `(⨍_{B(x₀, R/2)} u^s)^{1/s} ≤ D (⨍_{B(x₀, R)} u^p)^{1/p}` for `p ≤ 2`.
+  scale-invariant form `(⨍_{B(x₀, R/2)} u^s)^{1/s} ≤ D (⨍_{B(x₀, R)} u^p)^{1/p}` for `p ≤ 2`,
+  together with the integrability of `u^s` on `B(x₀, R/2)`.
 
 ## References
 
@@ -427,8 +428,9 @@ measure `mu`, with the following property. Let `a` be measurable and uniformly e
 with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak supersolution of `-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0` with
 `u ≥ ε` almost everywhere for some `ε > 0`. Then on every ball `B(x₀, R) ⊆ Ω`,
 
-`(⨍_{B(x₀, R/2)} u^s)^{1/s} ≤ D (⨍_{B(x₀, R)} u^p)^{1/p}`.
+`(⨍_{B(x₀, R/2)} u^s)^{1/s} ≤ D (⨍_{B(x₀, R)} u^p)^{1/p}`,
 
+and `u^s` is integrable on `B(x₀, R/2)`, so the left side is a genuine average even for `s > 2`.
 The constant does not depend on `u`, `ε` or the ball. The bound `p ≤ 2` makes `u^p` integrable
 on `B(x₀, R)`, since `u ∈ L²(Ω)`. -/
 theorem exists_setAverage_rpow_rpow_inv_le_mul_setAverage_rpow_rpow_inv {pstar : ℝ≥0∞}
@@ -444,8 +446,9 @@ theorem exists_setAverage_rpow_rpow_inv_le_mul_setAverage_rpow_rpow_inv {pstar :
           0 ≤ energyFormH1 a 0 0 u (v : W1p mu Omega 2)) →
       0 < ε → (∀ᵐ x ∂mu.restrict Omega, ε ≤ W1p.value u x) →
       Metric.ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
-      (⨍ x in Metric.ball x₀ (R / 2), W1p.value u x ^ s ∂mu) ^ s⁻¹ ≤
-        D * (⨍ x in Metric.ball x₀ R, W1p.value u x ^ p ∂mu) ^ p⁻¹ := by
+      IntegrableOn (fun x => W1p.value u x ^ s) (Metric.ball x₀ (R / 2)) mu ∧
+        (⨍ x in Metric.ball x₀ (R / 2), W1p.value u x ^ s ∂mu) ^ s⁻¹ ≤
+          D * (⨍ x in Metric.ball x₀ R, W1p.value u x ^ p ∂mu) ^ p⁻¹ := by
   obtain ⟨D, hD, hiter⟩ := exists_eLpNorm_le_mul_rpow_mul_eLpNorm_of_inv_add_eq_inv
     (mu := mu) (lam := lam) (Lam := Lam) hpstar hexp hp hs hsχ
   set n : ℝ := (Fintype.card ι : ℝ)
@@ -454,8 +457,9 @@ theorem exists_setAverage_rpow_rpow_inv_le_mul_setAverage_rpow_rpow_inv {pstar :
   refine ⟨D * 2 ^ (n / s) * V ^ p⁻¹ * V⁻¹ ^ s⁻¹, by positivity, ?_⟩
   intro Omega a u ε x₀ R h ha hu hε hεu hball
   rcases le_or_gt R 0 with hR | hR
-  · simp only [Metric.ball_eq_empty.2 (by linarith : R / 2 ≤ 0), Metric.ball_eq_empty.2 hR,
-      Measure.restrict_empty, average_zero_measure, Real.zero_rpow (inv_ne_zero hs.ne'),
+  · rw [Metric.ball_eq_empty.2 (by linarith : R / 2 ≤ 0), Metric.ball_eq_empty.2 hR]
+    refine ⟨integrableOn_empty, ?_⟩
+    simp only [Measure.restrict_empty, average_zero_measure, Real.zero_rpow (inv_ne_zero hs.ne'),
       Real.zero_rpow (inv_ne_zero hp.ne'), mul_zero, le_refl]
   -- On a ball `B(x₀, t) ⊆ Ω`, `‖u‖_{L^q(B)} = (|B| ⨍_B u^q)^{1/q}`, since `u > 0` there.
   have hnorm : ∀ {t q : ℝ}, 0 < t → 0 < q →
@@ -482,10 +486,20 @@ theorem exists_setAverage_rpow_rpow_inv_le_mul_setAverage_rpow_rpow_inv {pstar :
     refine (((Lp.memLp (W1p.value u)).mono_measure
       (Measure.restrict_mono hball le_rfl)).mono_exponent ?_).eLpNorm_ne_top
     exact (ENNReal.ofReal_le_ofReal hp2).trans_eq (ENNReal.ofReal_ofNat 2)
-  have hreal := ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hfin)
-    (hiter h ha hu hε hεu hR hball)
-  rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity), hnorm (by positivity) hs
-    ((Metric.ball_subset_ball (by linarith)).trans hball), hnorm hR hp hball] at hreal
+  have hbound := hiter h ha hu hε hεu hR hball
+  have hhalf : Metric.ball x₀ (R / 2) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) :=
+    (Metric.ball_subset_ball (by linarith)).trans hball
+  -- The bound makes `u ∈ L^s(B(x₀, R/2))`, so `u^s` is integrable there.
+  have hint : IntegrableOn (fun x => W1p.value u x ^ s) (Metric.ball x₀ (R / 2)) mu := by
+    have hmem : MemLp (W1p.value u) (ENNReal.ofReal s) (mu.restrict (Metric.ball x₀ (R / 2))) :=
+      hbound.trans_lt (ENNReal.mul_lt_top ENNReal.ofReal_lt_top hfin.lt_top)
+    refine (hmem.integrable_norm_rpow (ENNReal.ofReal_pos.2 hs).ne' ENNReal.ofReal_ne_top).congr ?_
+    filter_upwards [ae_restrict_of_ae_restrict_of_subset hhalf hεu] with x hx
+    rw [ENNReal.toReal_ofReal hs.le, Real.norm_of_nonneg (hε.le.trans hx)]
+  refine ⟨hint, ?_⟩
+  have hreal := ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hfin) hbound
+  rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity), hnorm (by positivity) hs hhalf,
+    hnorm hR hp hball] at hreal
   -- Divide by `|B(x₀, R/2)|^{1/s}` and collect the powers of `R` and `V`.
   set As := (⨍ x in Metric.ball x₀ (R / 2), W1p.value u x ^ s ∂mu) ^ s⁻¹
   set Ap := (⨍ x in Metric.ball x₀ R, W1p.value u x ^ p ∂mu) ^ p⁻¹

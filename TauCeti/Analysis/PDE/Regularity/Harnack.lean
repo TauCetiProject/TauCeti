@@ -24,7 +24,8 @@ equation `-∂ⱼ(aⁱʲ ∂ᵢu) = 0`, with no regularity of the coefficients b
 
   `(⨍_{B(x₀, r)} u^s)^{1/s} ≤ C u(x)` for almost every `x ∈ B(x₀, r)`,
 
-  that is, the `L^s` average of `u` is controlled by its essential infimum.
+  that is, the `L^s` average of `u` is controlled by its essential infimum. In particular `u^s`
+  is integrable on `B(x₀, r)`, which is part of the conclusion.
 * The **Harnack inequality**: if `u` is a weak solution, `a(u, v) = 0` for every `v ∈ H¹₀(Ω)`,
   and `u ≥ 0` almost everywhere, then on every ball with `B(x₀, 24√n r) ⊆ Ω`,
 
@@ -177,7 +178,7 @@ theorem exists_pos_ae_setAverage_rpow_rpow_inv_le_mul_value [Nonempty ι] :
     _ = K' ^ p₀⁻¹ * D * V ^ p₀⁻¹ * W1p.value u x := by ring
 
 /-- Moser's weak Harnack inequality for supersolutions bounded below by a positive constant `ε`,
-with a constant independent of `ε`. -/
+with a constant independent of `ε`, together with the integrability of `u^s` on the ball. -/
 private theorem exists_ae_setAverage_rpow_rpow_inv_le_mul_value_of_pos {pstar : ℝ≥0∞}
     (hpstar : pstar ≠ (∞ : ℝ≥0∞)) (hexp : pstar⁻¹ + (Fintype.card ι : ℝ≥0∞)⁻¹ = 2⁻¹)
     {s : ℝ} (hs : 0 < s) (hsχ : s < pstar.toReal / 2) :
@@ -191,7 +192,7 @@ private theorem exists_ae_setAverage_rpow_rpow_inv_le_mul_value_of_pos {pstar : 
           0 ≤ energyFormH1 a 0 0 u (v : W1p mu Omega 2)) →
       0 < ε → (∀ᵐ x ∂mu.restrict Omega, ε ≤ W1p.value u x) →
       ball x₀ (12 * √(Fintype.card ι) * r) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
-      ∀ᵐ x ∂mu.restrict (ball x₀ r),
+      IntegrableOn (fun y => W1p.value u y ^ s) (ball x₀ r) mu ∧ ∀ᵐ x ∂mu.restrict (ball x₀ r),
         (⨍ y in ball x₀ r, W1p.value u y ^ s ∂mu) ^ s⁻¹ ≤ C * W1p.value u x := by
   have := Fintype.card_pos_iff.1 <| Nat.pos_of_ne_zero <| ne_zero_of_inv_add_inv_eq_inv hexp
   obtain ⟨p₀, hp₀, hp₀2, C₁, hC₁, hsmall⟩ :=
@@ -204,9 +205,10 @@ private theorem exists_ae_setAverage_rpow_rpow_inv_le_mul_value_of_pos {pstar : 
   · simp [ball_eq_empty.2 hr]
   have hsqrt : 1 ≤ √(Fintype.card ι : ℝ) := Real.one_le_sqrt.2 (Nat.one_le_cast.2 Fintype.card_pos)
   -- Moser's iteration passes from `L^{p₀}` on `B(x₀, 2r)` to `L^s` on `B(x₀, r)`.
-  have hiter' := hiter h ha hu hε hεu (x₀ := x₀) (R := 2 * r)
+  obtain ⟨hint, hiter'⟩ := hiter h ha hu hε hεu (x₀ := x₀) (R := 2 * r)
     ((ball_subset_ball (by nlinarith)).trans hball)
-  rw [mul_div_cancel_left₀ r two_ne_zero] at hiter'
+  rw [mul_div_cancel_left₀ r two_ne_zero] at hint hiter'
+  refine ⟨hint, ?_⟩
   filter_upwards [hsmall h ha hu hε hεu hball] with x hx
   calc (⨍ y in ball x₀ r, W1p.value u y ^ s ∂mu) ^ s⁻¹
       ≤ D * (⨍ y in ball x₀ (2 * r), W1p.value u y ^ p₀ ∂mu) ^ p₀⁻¹ := hiter'
@@ -221,8 +223,9 @@ measurable and uniformly elliptic on `Ω` with constants `λ, Λ`, and let `u �
 nonnegative weak supersolution of `-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative
 `v ∈ H¹₀(Ω)`. Then on every ball with `B(x₀, 12√n r) ⊆ Ω`,
 
-`(⨍_{B(x₀, r)} u^s)^{1/s} ≤ C u(x)` for almost every `x ∈ B(x₀, r)`.
+`(⨍_{B(x₀, r)} u^s)^{1/s} ≤ C u(x)` for almost every `x ∈ B(x₀, r)`,
 
+and `u^s` is integrable on `B(x₀, r)`, so the left side is a genuine average even for `s > 2`.
 The constant does not depend on `u` or the ball. The proof applies the estimate for supersolutions
 bounded below by `δ > 0` to `u + δ` on the bounded ball `B(x₀, 12√n r)` and lets `δ → 0`. -/
 theorem exists_ae_setAverage_rpow_rpow_inv_le_mul_value {pstar : ℝ≥0∞}
@@ -238,7 +241,7 @@ theorem exists_ae_setAverage_rpow_rpow_inv_le_mul_value {pstar : ℝ≥0∞}
           0 ≤ energyFormH1 a 0 0 u (v : W1p mu Omega 2)) →
       (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value u x) →
       ball x₀ (12 * √(Fintype.card ι) * r) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
-      ∀ᵐ x ∂mu.restrict (ball x₀ r),
+      IntegrableOn (fun y => W1p.value u y ^ s) (ball x₀ r) mu ∧ ∀ᵐ x ∂mu.restrict (ball x₀ r),
         (⨍ y in ball x₀ r, W1p.value u y ^ s ∂mu) ^ s⁻¹ ≤ C * W1p.value u x := by
   have := Fintype.card_pos_iff.1 <| Nat.pos_of_ne_zero <| ne_zero_of_inv_add_inv_eq_inv hexp
   obtain ⟨C, hC, hpos⟩ := exists_ae_setAverage_rpow_rpow_inv_le_mul_value_of_pos (mu := mu)
@@ -269,8 +272,8 @@ theorem exists_ae_setAverage_rpow_rpow_inv_le_mul_value {pstar : ℝ≥0∞}
   have hmeas : AEStronglyMeasurable (W1p.value u) (mu.restrict (ball x₀ r)) :=
     (Lp.aestronglyMeasurable _).mono_measure (Measure.restrict_mono (hrU.trans hball) le_rfl)
   -- For each `δ = 1/(k + 1)`, the estimate for the positive supersolution `u + δ` on `U`.
-  have hδ : ∀ k : ℕ, ∀ᵐ x ∂mu.restrict (ball x₀ r),
-      (⨍ y in ball x₀ r, W1p.value u y ^ s ∂mu) ^ s⁻¹ ≤
+  have hδ : ∀ k : ℕ, IntegrableOn (fun y => W1p.value u y ^ s) (ball x₀ r) mu ∧
+      ∀ᵐ x ∂mu.restrict (ball x₀ r), (⨍ y in ball x₀ r, W1p.value u y ^ s ∂mu) ^ s⁻¹ ≤
         C * (W1p.value u x + 1 / ((k : ℝ) + 1)) := by
     intro k
     set δ : ℝ := 1 / ((k : ℝ) + 1)
@@ -305,42 +308,34 @@ theorem exists_ae_setAverage_rpow_rpow_inv_le_mul_value {pstar : ℝ≥0∞}
       filter_upwards [hwv, ae_restrict_of_ae_restrict_of_subset hball hu0] with y h1 h2
       rw [h1]
       linarith
-    have hH := hpos (h.mono_set hball) (ha.mono_measure (Measure.restrict_mono hball le_rfl)) hw
-      hδ0 hδw (x₀ := x₀) (r := r) subset_rfl
+    obtain ⟨hHi, hH⟩ := hpos (h.mono_set hball)
+      (ha.mono_measure (Measure.restrict_mono hball le_rfl)) hw hδ0 hδw (x₀ := x₀) (r := r)
+      subset_rfl
     have hwvr := ae_restrict_of_ae_restrict_of_subset hrU hwv
     rw [setAverage_eq, integral_congr_ae (hwvr.mono fun y hy => by rw [hy])] at hH
     rw [setAverage_eq]
+    -- `0 ≤ u^s ≤ (u + δ)^s`, and `(u + δ)^s` is integrable on `B(x₀, r)`, hence so is `u^s`.
+    have hle : ∀ᵐ y ∂mu.restrict (ball x₀ r), W1p.value u y ^ s ≤ (W1p.value u y + δ) ^ s :=
+      hu0r.mono fun y hy => Real.rpow_le_rpow hy (by linarith) hs.le
+    have hint' : IntegrableOn (fun y => (W1p.value u y + δ) ^ s) (ball x₀ r) mu :=
+      hHi.congr (hwvr.mono fun y hy => by simp only [hy])
+    have hint : IntegrableOn (fun y => W1p.value u y ^ s) (ball x₀ r) mu := by
+      refine hint'.mono' (hmeas.aemeasurable.pow_const s).aestronglyMeasurable ?_
+      filter_upwards [hu0r, hle] with y hy hyle
+      rwa [Real.norm_of_nonneg (Real.rpow_nonneg hy _)]
+    refine ⟨hint, ?_⟩
     -- The average of `u^s` is at most that of `(u + δ)^s`.
     have hmono : (mu.real (ball x₀ r))⁻¹ • ∫ y in ball x₀ r, W1p.value u y ^ s ∂mu ≤
-        (mu.real (ball x₀ r))⁻¹ • ∫ y in ball x₀ r, (W1p.value u y + δ) ^ s ∂mu := by
-      by_cases hint : IntegrableOn (fun y => W1p.value u y ^ s) (ball x₀ r) mu
-      · have hint' : IntegrableOn (fun y => (W1p.value u y + δ) ^ s) (ball x₀ r) mu := by
-          refine Integrable.mono' ((hint.add (integrable_const (δ ^ s))).const_mul (2 ^ s))
-            ((hmeas.aemeasurable.add_const δ).pow_const s).aestronglyMeasurable ?_
-          filter_upwards [hu0r] with y hy
-          rw [Real.norm_of_nonneg (Real.rpow_nonneg (by linarith) _)]
-          have hys := Real.rpow_nonneg hy s
-          have hδs := Real.rpow_nonneg hδ0.le s
-          rcases le_total (W1p.value u y) δ with hyδ | hyδ
-          · calc (W1p.value u y + δ) ^ s ≤ (2 * δ) ^ s := by gcongr; linarith
-              _ = 2 ^ s * δ ^ s := Real.mul_rpow zero_le_two hδ0.le
-              _ ≤ 2 ^ s * (W1p.value u y ^ s + δ ^ s) := by gcongr; linarith
-          · calc (W1p.value u y + δ) ^ s ≤ (2 * W1p.value u y) ^ s := by gcongr; linarith
-              _ = 2 ^ s * W1p.value u y ^ s := Real.mul_rpow zero_le_two hy
-              _ ≤ 2 ^ s * (W1p.value u y ^ s + δ ^ s) := by gcongr; linarith
-        refine smul_le_smul_of_nonneg_left (integral_mono_ae hint hint' ?_) (by positivity)
-        filter_upwards [hu0r] with y hy
-        exact Real.rpow_le_rpow hy (by linarith) hs.le
-      · rw [integral_undef hint, smul_zero]
-        exact smul_nonneg (by positivity)
-          (integral_nonneg_of_ae (hu0r.mono fun y hy => Real.rpow_nonneg (by linarith) _))
+        (mu.real (ball x₀ r))⁻¹ • ∫ y in ball x₀ r, (W1p.value u y + δ) ^ s ∂mu :=
+      smul_le_smul_of_nonneg_left (integral_mono_ae hint hint' hle) (by positivity)
     filter_upwards [hH, hwvr] with x hx hwx
     rw [hwx] at hx
     refine (Real.rpow_le_rpow ?_ hmono (inv_nonneg.2 hs.le)).trans hx
     exact smul_nonneg (by positivity)
       (integral_nonneg_of_ae (hu0r.mono fun y hy => Real.rpow_nonneg hy _))
   -- Let `δ → 0`.
-  filter_upwards [ae_all_iff.2 hδ, hu0r] with x hx hx0
+  refine ⟨(hδ 0).1, ?_⟩
+  filter_upwards [ae_all_iff.2 fun k => (hδ k).2, hu0r] with x hx hx0
   refine le_of_forall_pos_lt_add fun ε hε => ?_
   obtain ⟨k, hk⟩ := exists_nat_one_div_lt (div_pos hε hC)
   calc (⨍ y in ball x₀ r, W1p.value u y ^ s ∂mu) ^ s⁻¹
@@ -391,8 +386,8 @@ theorem exists_ae_ae_value_le_mul_value {pstar : ℝ≥0∞}
     Real.one_le_sqrt.2 (Nat.one_le_cast.2 Fintype.card_pos)
   have h2Ω : ball x₀ (2 * r) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) :=
     (ball_subset_ball (by nlinarith)).trans hball
-  have hw := hweak h ha (fun v _ => (hu v).ge) hu0 (x₀ := x₀) (r := 2 * r)
-    ((ball_subset_ball (by nlinarith)).trans hball)
+  have hw := (hweak h ha (fun v _ => (hu v).ge) hu0 (x₀ := x₀) (r := 2 * r)
+    ((ball_subset_ball (by nlinarith)).trans hball)).2
   have hb := hbdd (k := 0) h ha (fun v _ => (hu v).le) h2Ω
   rw [mul_div_cancel_left₀ r two_ne_zero] at hb
   -- On `B(x₀, 2r)` the positive part of `u` is `u`, so `u ≤ D (2r)^{-n} ∫_{B(x₀, 2r)} u`.
