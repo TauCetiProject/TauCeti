@@ -412,10 +412,6 @@ theorem gradedDeviation_gradedBracket_zero_zero (x y : gradedPiece p G 0) :
       gradedBracket p G 0 0 (gradedDeviation θ hθc hθ 0 x) y -
         gradedBracket p G 0 0 (gradedDeviation θ hθc hθ 0 y) x +
         gradedBracket p G 0 0 (gradedDeviation θ hθc hθ 0 x) (gradedDeviation θ hθc hθ 0 y) := by
-  -- Naturality of the bracket, with the degree `0 + 0 + 1` read as `1`.
-  have hnat : gradedMap p θ hθc 1 (gradedBracket p G 0 0 x y) =
-      gradedBracket p G 0 0 (gradedMap p θ hθc 0 x) (gradedMap p θ hθc 0 y) :=
-    gradedMap_gradedBracket θ hθc x y
   -- Skew-symmetry in degree zero, with both sides in `gr_1(G)`.
   have hswap : gradedBracket p G 0 0 x (gradedDeviation θ hθc hθ 0 y) =
       -gradedBracket p G 0 0 (gradedDeviation θ hθc hθ 0 y) x := by
@@ -425,7 +421,7 @@ theorem gradedDeviation_gradedBracket_zero_zero (x y : gradedPiece p G 0) :
     rw [gradedDeviation_zero_eq_gradedMap_sub, add_sub_cancel]
   have hy : gradedMap p θ hθc 0 y = y + gradedDeviation θ hθc hθ 0 y := by
     rw [gradedDeviation_zero_eq_gradedMap_sub, add_sub_cancel]
-  rw [gradedDeviation_one_eq_gradedMap_sub, hnat, hx, hy]
+  rw [gradedDeviation_one_eq_gradedMap_sub, gradedMap_gradedBracket_zero_zero, hx, hy]
   simp only [map_add, AddMonoidHom.add_apply]
   rw [hswap]
   abel
