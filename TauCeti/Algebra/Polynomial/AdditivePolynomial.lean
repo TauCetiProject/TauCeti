@@ -175,8 +175,12 @@ theorem aeval_additivePolynomial_sub (x y : A) :
 
 /-- **The derivative of `a_V` is constant**: `a_V' = ∏_{c ∈ V, c ≠ 0} (-c)`. In particular it is
 a unit, which makes `a_V - u` separable for every `u`. -/
-theorem derivative_additivePolynomial [DecidableEq K] :
-    derivative V.additivePolynomial = C (∏ c ∈ (Finset.univ : Finset V).erase 0, -(c : K)) := by
+@[simp]
+theorem derivative_additivePolynomial :
+    derivative V.additivePolynomial = C (∏ᶠ c : {c : V // c ≠ 0}, -(c : K)) := by
+  classical
+  rw [finprod_eq_prod_of_fintype,
+    ← Finset.prod_subtype ((Finset.univ : Finset V).erase 0) (by simp) fun c : V ↦ -(c : K)]
   -- Both sides have degree less than `|V|`, so it suffices to compare them on `V`. At a node `c`
   -- the derivative of the nodal polynomial is `∏_{d ≠ c} (c - d)`, and `d ↦ d - c` reindexes this
   -- product as `∏_{e ≠ 0} (-e)`.

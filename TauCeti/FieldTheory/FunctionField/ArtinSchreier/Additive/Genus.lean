@@ -7,53 +7,40 @@ module
 
 public import TauCeti.AlgebraicGeometry.WeilDivisor.FiniteSum
 public import TauCeti.FieldTheory.ArtinSchreier.Additive
-public import TauCeti.FieldTheory.FunctionField.Basic
 public import TauCeti.FieldTheory.FunctionField.Different.Divisor
 public import TauCeti.FieldTheory.FunctionField.Divisor.Conorm
-public import TauCeti.FieldTheory.FunctionField.Place.Basic
 public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Genus
-import TauCeti.FieldTheory.FunctionField.ConstantExtension.Unramified
+import TauCeti.FieldTheory.FunctionField.ArtinSchreier.Additive.Basic
 import TauCeti.FieldTheory.FunctionField.Different.ArtinSchreier.Additive
 import TauCeti.FieldTheory.FunctionField.Different.Hurwitz
 import TauCeti.FieldTheory.FunctionField.Place.Extension.ArtinSchreier.Additive
-import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 
 /-!
-# Elementary abelian Artin–Schreier extensions of function fields
+# The genus of elementary abelian Artin–Schreier extensions of function fields
 
 Let `F / k` be an algebraic function field, `V` a finite additive subgroup of `F` consisting of
 constants, with additive polynomial `a_V = ∏_{c ∈ V} (X - c)`, and `F' = F(y)` with
-`a_V (y) = u`. In characteristic `p` every separable additive polynomial
-`a (T) = a_n T ^ (p ^ n) + ⋯ + a_0 T` with all its roots in the constant field is `a_n · a_V`
-for its group of roots `V`, so these are the extensions of Stichtenoth's Proposition 3.7.10.
-
-Suppose some place `P` of `F` has a representative `u - a_V (w)`, `w ∈ F`, with a pole of order
-prime to `|V|`; in characteristic `p` this means prime to `p`. Then:
-
-* `[F' : F] = |V|`, so `F' / F` is Galois with group `V`
-  (`TauCeti.finrank_eq_card_of_exists_reduced_additivePolynomial_pole`, with
-  `AddSubgroup.artinSchreierAutEquiv`). This is part (a) of Proposition 3.7.10.
-* If `k` is the exact constant field of `F`, it is also the exact constant field of `F'`
-  (`TauCeti.isIntegrallyClosedIn_of_exists_reduced_additivePolynomial_pole`). This is part (b).
-
-Both follow from the total ramification of the places above `P`
-(`TauCeti.Place.isTotallyRamified_of_exists_reduced_additivePolynomial_pole`). The reduced
-representative `w` is an explicit hypothesis of these results.
-
-Suppose moreover that reduced representatives are supplied at every place: at the places of a
-finite set `S` some `u - a_V (w)` has a pole of order `m P` prime to `|V|`, and at every other place
-some `u - a_V (w)` is regular. The local different exponents
+`a_V (y) = u`. Suppose that reduced representatives are supplied at every place: at the places of
+a finite set `S` some `u - a_V (w)` has a pole of order `m P` prime to `|V|`, and at every other
+place some `u - a_V (w)` is regular. The local different exponents
 (`TauCeti.FieldTheory.FunctionField.Different.ArtinSchreier.Additive`) give the different divisor
 
 `|V| • Diff(F' / F) = (|V| - 1) • Con (∑ P ∈ S, (m P + 1) P)`,
 
 and when `k` is the exact constant field of `F` and `S` is nonempty, the Hurwitz genus formula
-becomes the genus formula of part (e):
+becomes the genus formula of Stichtenoth's Proposition 3.7.10(e):
 
 `2 g' - 2 = |V| (2 g - 2) + (|V| - 1) ∑ P ∈ S, (m P + 1) deg P`.
 
-As in part (b), finiteness, separability and exactness of the constants of `F'` are derived from
-the equation and one pole, not assumed.
+As in `TauCeti.FieldTheory.FunctionField.ArtinSchreier.Additive.Basic`, finiteness, separability
+and exactness of the constants of `F'` are derived from the equation and one pole, not assumed.
+
+## Main results
+
+* `TauCeti.Divisor.nsmul_different_eq_zsmul_conorm_of_aeval_additivePolynomial_eq`: the different
+  divisor of `F' / F`.
+* `TauCeti.two_mul_genus_sub_two_eq_of_exists_reduced_additivePolynomial_poles`: the genus
+  formula.
 
 ## References
 
@@ -73,40 +60,6 @@ open AlgebraicGeometry
 variable {k : Type*} {F : Type*} {F' : Type*} [Field k] [Field F] [Field F']
 variable [Algebra k F] [Algebra k F'] [Algebra F F'] [IsScalarTower k F F']
 variable (V : AddSubgroup F) [Fintype V]
-
-/-- **The degree of an elementary abelian Artin–Schreier extension** (Stichtenoth,
-Proposition 3.7.10(a)). If `V` consists of constants and, at some place `P` of `F`, a
-representative `u - a_V (w)` has a pole of order prime to `|V|`, then `[F(y) : F] = |V|`; by
-`AddSubgroup.artinSchreierAutEquiv` the Galois group of `F(y) / F` is then `V`. -/
-theorem finrank_eq_card_of_exists_reduced_additivePolynomial_pole
-    (hF : IsFunctionField k F) (hV : ∀ c ∈ V, IsAlgebraic k c) {y : F'} {u : F}
-    (hgen : F⟮y⟯ = ⊤) (hy : aeval y V.additivePolynomial = algebraMap F F' u) (P : Place k F)
-    (hpole : ∃ w : F, P.ord (u - aeval w V.additivePolynomial) < 0 ∧
-      Int.gcd (Fintype.card V) (P.ord (u - aeval w V.additivePolynomial)) = 1) :
-    Module.finrank F F' = Fintype.card V := by
-  have := V.finiteDimensional_of_aeval_additivePolynomial_eq hy hgen
-  obtain ⟨P', rfl⟩ :=
-    Place.restrict_surjective_of_finiteDimensional (k' := k) (F' := F') hF hF.finite_extension P
-  exact Place.finrank_eq_card_of_exists_reduced_additivePolynomial_pole k F V hV hgen hy
-    (P' := P') hpole
-
-/-- **Exactness of the constants of an elementary abelian Artin–Schreier extension**
-(Stichtenoth, Proposition 3.7.10(b)). If `k` is the exact constant field of `F`, `V` consists of
-constants, and at some place a representative `u - a_V (w)` has a pole of order prime to `|V|`,
-then `k` is the exact constant field of `F(y)`. -/
-theorem isIntegrallyClosedIn_of_exists_reduced_additivePolynomial_pole
-    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) (hV : ∀ c ∈ V, IsAlgebraic k c)
-    {y : F'} {u : F} (hgen : F⟮y⟯ = ⊤) (hy : aeval y V.additivePolynomial = algebraMap F F' u)
-    (P : Place k F)
-    (hpole : ∃ w : F, P.ord (u - aeval w V.additivePolynomial) < 0 ∧
-      Int.gcd (Fintype.card V) (P.ord (u - aeval w V.additivePolynomial)) = 1) :
-    IsIntegrallyClosedIn k F' := by
-  have := V.finiteDimensional_of_aeval_additivePolynomial_eq hy hgen
-  have := V.isGalois_of_aeval_additivePolynomial_eq hy hgen
-  obtain ⟨P', rfl⟩ :=
-    Place.restrict_surjective_of_finiteDimensional (k' := k) (F' := F') hF hF.finite_extension P
-  exact isIntegrallyClosedIn_of_isTotallyRamified hex
-    (Place.isTotallyRamified_of_exists_reduced_additivePolynomial_pole k F V hV hgen hy hpole)
 
 /-- **The different divisor of an elementary abelian Artin–Schreier extension.** Let `V` consist
 of constants and `a_V (y) = u`. Suppose that at each place `P` of a finite set `S` some

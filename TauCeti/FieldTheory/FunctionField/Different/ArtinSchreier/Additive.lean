@@ -85,12 +85,12 @@ theorem differentExponent_eq_zero_of_aeval_additivePolynomial_eq_of_mem_integers
     exact Subtype.prop _
   have hder : P'.valuation (aeval y (derivative (V.additivePolynomial - C a))) = 1 := by
     rw [derivative_sub, derivative_C, sub_zero, V.derivative_additivePolynomial, aeval_C,
-      map_prod, map_prod]
-    refine Finset.prod_eq_one fun c hc ↦ ?_
+      finprod_eq_prod_of_fintype, map_prod, map_prod]
+    refine Finset.prod_eq_one fun c _ ↦ ?_
     have hc0 : algebraMap F F' c ≠ 0 :=
-      (_root_.map_ne_zero _).mpr (by simpa using (Finset.mem_erase.mp hc).1)
+      (_root_.map_ne_zero _).mpr (by simpa using c.2)
     rw [map_neg, Valuation.map_neg]
-    exact P'.valuation_eq_one_of_isAlgebraic (((hV c c.2).algebraMap (A := F')).tower_top k') hc0
+    exact P'.valuation_eq_one_of_isAlgebraic (((hV _ c.1.2).algebraMap (A := F')).tower_top k') hc0
   refine differentExponent_eq_zero_of_valuation_aeval_derivative_eq_one k F hgen
     (V.monic_additivePolynomial_sub_C a) (fun i ↦ ?_) (by rw [map_sub, hy, aeval_C, sub_self])
     hder

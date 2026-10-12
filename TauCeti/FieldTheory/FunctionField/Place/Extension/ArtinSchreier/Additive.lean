@@ -51,10 +51,9 @@ extension.
   `u` of order prime to `|V|`, `[F' : F] = |V|` and the place is totally ramified.
 * `TauCeti.Place.isTotallyRamified_of_exists_reduced_additivePolynomial_pole`: the same for a
   supplied representative `u - a_V (w)`.
-* `TauCeti.Place.exists_eq_zpow_mul_adjoin_eq_top_ord_eq_one_of_aeval_additivePolynomial_eq`:
-  the Bezout uniformizer `y ^ β · t ^ α` generates `F' / F`.
-* `TauCeti.Place.exists_uniformizer_ord_aut_sub_of_aeval_additivePolynomial_eq`: its displacement
-  by every nonidentity automorphism has order `1 - ord_P u`.
+* `TauCeti.Place.exists_uniformizer_ord_aut_sub_of_aeval_additivePolynomial_eq`: the Bezout
+  uniformizer `y ^ β · t ^ α` generates `F' / F`, and its displacement by every nonidentity
+  automorphism has order `1 - ord_P u`.
 
 ## References
 
@@ -259,7 +258,7 @@ theorem ramificationIdx_eq_card_of_exists_reduced_additivePolynomial_pole
 generates `F' / F`, a Bezout combination `z = y ^ β · t ^ α` of the generator and a uniformizer `t`
 of the place below, with `|V| α + ord_P u · β = 1`, is a uniformizer at `P'` that still generates
 `F' / F`. -/
-theorem exists_eq_zpow_mul_adjoin_eq_top_ord_eq_one_of_aeval_additivePolynomial_eq
+private theorem exists_eq_zpow_mul_adjoin_eq_top_ord_eq_one_of_aeval_additivePolynomial_eq
     (hV : ∀ c ∈ V, IsAlgebraic k c) {y : F'} {u : F} (hgen : F⟮y⟯ = ⊤)
     (hy : aeval y V.additivePolynomial = algebraMap F F' u)
     (hu : (P'.restrict k F).ord u < 0)
