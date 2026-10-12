@@ -22,10 +22,10 @@ abelian category. For modules over a commutative ring, the tensor unit is the ri
 last formula is `x ⌢ 1 = x`. It is the unit law for the cap product of A. Hatcher,
 *Algebraic Topology*, Section 3.3.
 
-For explicit rewriting, use `TauCeti.capChain_constCochain X` and
-`TauCeti.singularCap_constSingularCocycle X`, with the space as the first argument.
+For explicit rewriting, use `TauCeti.capChain_constCochain (X := X)` and
+`TauCeti.singularCap_constSingularCocycle (X := X)`. The space is otherwise inferred from the goal.
 Both coefficient formulas are available to `simp` without opening the `TauCeti` namespace.
-The direct unit identities are `TauCeti.capChain_unit X` and `TauCeti.singularCap_unit X`.
+The direct unit identities are `TauCeti.capChain_unit` and `TauCeti.singularCap_unit`.
 -/
 
 public section
@@ -50,7 +50,7 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C]
 morphism `u ≫ e ▷ S ≫ μ`. -/
 -- Simplify the application before `capChain_apply` unfolds the cap-chain map.
 @[simp↓]
-lemma capChain_constCochain (X : TopCat.{w}) (k : Type*) [Semiring k] [Linear k C]
+lemma capChain_constCochain {X : TopCat.{w}} (k : Type*) [Semiring k] [Linear k C]
     [MonoidalLinear k C] {R S T M P : C}
     [∀ J : Type w, PreservesColimitsOfShape (Discrete J) (tensorLeft M)]
     (u : T ⟶ R ⊗ S) (μ : M ⊗ S ⟶ P) (e : R ⟶ M) (n : ℕ) :
@@ -67,7 +67,7 @@ lemma capChain_constCochain (X : TopCat.{w}) (k : Type*) [Semiring k] [Linear k 
     Category.assoc]
 
 /-- Capping with the constant unit cochain is the identity, with arbitrary chain coefficients. -/
-lemma capChain_unit (X : TopCat.{w}) (k : Type*) [Semiring k] [Linear k C]
+lemma capChain_unit {X : TopCat.{w}} (k : Type*) [Semiring k] [Linear k C]
     [MonoidalLinear k C] (S : C) (n : ℕ) :
     ChainComplex.capChain k (X.alexanderWhitneyDiagonal (λ_ S).inv)
         ((TopCat.toSSet.obj X).chainComplexPairing (λ_ S).hom) 0 n n (Nat.zero_add n)
@@ -85,7 +85,7 @@ variable {C : Type u} [Category.{v} C] [Abelian C] [HasCoproducts.{w} C]
 /-- Capping with the class of a constant degree-zero cocycle is the map on singular homology
 induced by the coefficient morphism `u ≫ e ▷ S ≫ μ`. -/
 @[simp]
-lemma singularCap_constSingularCocycle (X : TopCat.{w}) (k : Type*) [Ring k] [Linear k C]
+lemma singularCap_constSingularCocycle {X : TopCat.{w}} (k : Type*) [Ring k] [Linear k C]
     [MonoidalLinear k C] {R S T M P : C}
     [∀ J : Type w, PreservesColimitsOfShape (Discrete J) (tensorLeft M)]
     (u : T ⟶ R ⊗ S) (μ : M ⊗ S ⟶ P) (e : R ⟶ M) (n : ℕ) :
@@ -108,7 +108,7 @@ lemma singularCap_constSingularCocycle (X : TopCat.{w}) (k : Type*) [Ring k] [Li
 
 /-- Capping with the class of the constant unit cocycle is the identity on singular homology,
 including degree zero, with arbitrary coefficients. -/
-lemma singularCap_unit (X : TopCat.{w}) (k : Type*) [Ring k] [Linear k C]
+lemma singularCap_unit {X : TopCat.{w}} (k : Type*) [Ring k] [Linear k C]
     [MonoidalLinear k C] (S : C) (n : ℕ) :
     X.singularCap k (λ_ S).inv (λ_ S).hom 0 n n (Nat.zero_add n)
         ((X.singularCochainComplex (𝟙_ C) k (𝟙_ C)).homologyπ 0
