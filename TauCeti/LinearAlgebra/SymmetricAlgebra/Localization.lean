@@ -21,6 +21,8 @@ semilinear map on each homogeneous piece is a localization map.
 The construction uses `TauCeti.SymmetricAlgebra.homogeneousSubmoduleEquivBaseChange` and
 `SymmetricAlgebra.map`. The localization argument follows the scalar-extension characterization
 in Mathlib's `isLocalizedModule_iff_isBaseChange`.
+The scalar-extension comparison, pure-tensor formula, and localization proof follow the proof
+pattern in `TauCeti/LinearAlgebra/ExteriorPower/Localization.lean`.
 -/
 
 public section
@@ -41,18 +43,18 @@ No flatness or finite-generation assumption is required. -/
 def symmetricPowerEquiv (h : IsBaseChange A f) (n : ℕ) :
     A ⊗[R] homogeneousSubmodule R M n ≃ₗ[A] homogeneousSubmodule A N n :=
   (homogeneousSubmoduleEquivBaseChange n).symm.trans
-    (LinearEquiv.ofLinearMap
-      ((SymmetricAlgebra.map A h.equiv.toLinearMap).toLinearMap.restrict
-        fun _ hx ↦ map_mem_homogeneousSubmodule h.equiv.toLinearMap hx)
-      ((SymmetricAlgebra.map A h.equiv.symm.toLinearMap).toLinearMap.restrict
-        fun _ hx ↦ map_mem_homogeneousSubmodule h.equiv.symm.toLinearMap hx)
-      (re₁₂ := RingHomInvPair.ids) (re₂₁ := RingHomInvPair.ids)
-      (by
-        ext x
-        exact SymmetricAlgebra.map_leftInverse A h.equiv.apply_symm_apply x.1)
-      (by
-        ext x
-        exact SymmetricAlgebra.map_leftInverse A h.equiv.symm_apply_apply x.1))
+    ((SymmetricAlgebra.mapEquiv A h.equiv).toLinearEquiv.ofSubmodules _ _ (by
+      apply le_antisymm
+      · rintro y ⟨x, hx, rfl⟩
+        simpa only [LinearEquiv.coe_coe, AlgEquiv.toLinearEquiv_apply,
+          SymmetricAlgebra.mapEquiv_apply, SetLike.mem_coe] using
+          map_mem_homogeneousSubmodule h.equiv.toLinearMap hx
+      · intro y hy
+        refine ⟨(SymmetricAlgebra.mapEquiv A h.equiv).symm y, ?_, ?_⟩
+        · simpa only [SymmetricAlgebra.mapEquiv_symm, SymmetricAlgebra.mapEquiv_apply,
+            SetLike.mem_coe] using
+            map_mem_homogeneousSubmodule h.equiv.symm.toLinearMap hy
+        · exact (SymmetricAlgebra.mapEquiv A h.equiv).apply_symm_apply y))
 
 /-- The symmetric-power comparison is the ambient scalar-extension comparison followed by
 the symmetric-algebra map of the scalar-extension equivalence. -/
@@ -63,7 +65,8 @@ theorem coe_symmetricPowerEquiv_apply (h : IsBaseChange A f) (n : ℕ)
       SymmetricAlgebra.map A h.equiv.toLinearMap
         (scalarTensorBialgEquiv (k := R) (K := A)
           ((homogeneousSubmodule R M n).subtype.baseChange A x)) := by
-  -- The restricted linear equivalence has the ambient algebra map as its forward function.
+  simp only [symmetricPowerEquiv, LinearEquiv.trans_apply, LinearEquiv.ofSubmodules_apply,
+    AlgEquiv.toLinearEquiv_apply, SymmetricAlgebra.mapEquiv_apply]
   exact congrArg (SymmetricAlgebra.map A h.equiv.toLinearMap)
     (coe_homogeneousSubmoduleEquivBaseChange_symm_apply n x)
 
