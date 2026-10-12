@@ -34,6 +34,7 @@ zero).
 
 * `TauCeti.loopChainDegreeZero_lof`, `TauCeti.loopChainDegreeZero_differential`: the values on
   homogeneous chains, and compatibility with the differential.
+* `TauCeti.loopChainDegreeZero_loopChainMap`: naturality in based maps.
 * `TauCeti.isDGRightModule_fiber`: the fiber is a DG right module, with the trivial grading and
   zero differential.
 * `TauCeti.classicalDGLocalSystemMap_injective`: on a path-connected space, a morphism of local
@@ -132,6 +133,32 @@ theorem loopChainDegreeZero_eq_zero_of_mem {i : ℤ} (hi : i ≠ 0) {a : loopCha
   · exact map_zero _
   · rw [loopChainDegreeZero_lof]
     exact zerothComponent_eq_zero (by omega) _
+
+/-- **Naturality of the degree-zero ring map**: it intertwines `C_*(Ωf)` with the map of group
+rings induced by `π₁(f)`. -/
+theorem loopChainDegreeZero_loopChainMap {B' : Type u} [TopologicalSpace B'] {b' : B'}
+    (f : C(B, B')) (hf : f b = b') (a : loopChainAlgebra B b R) :
+    loopChainDegreeZero B' b' R (loopChainMap R f hf a) =
+      MonoidAlgebra.mapDomainRingHom R (FundamentalGroup.mapOfEq f hf)
+        (loopChainDegreeZero B b R a) := by
+  induction a using DirectSum.induction_on with
+  | zero => simp
+  | of n y =>
+    have h : zerothComponent B' b' R n
+        (NormalizedCubicalChain.map R (MooreLoopSpace.map f hf : C(_, _)) n y) =
+        MonoidAlgebra.mapDomainRingHom R (FundamentalGroup.mapOfEq f hf)
+          (zerothComponent B b R n y) := by
+      cases n with
+      | zero =>
+        rw [zerothComponent_zero, zerothComponent_zero]
+        exact loopZeroChainToGroupAlgebra_map f hf y
+      | succ n =>
+        rw [zerothComponent_eq_zero n.succ_ne_zero, zerothComponent_eq_zero n.succ_ne_zero,
+          map_zero]
+    rw [← DirectSum.lof_eq_of R]
+    exact ((congrArg _ (loopChainMap_lof R f hf n y)).trans (loopChainDegreeZero_lof n _)).trans
+      (h.trans (congrArg _ (loopChainDegreeZero_lof n y)).symm)
+  | add x y hx hy => simp only [map_add, hx, hy]
 
 end DegreeZero
 
