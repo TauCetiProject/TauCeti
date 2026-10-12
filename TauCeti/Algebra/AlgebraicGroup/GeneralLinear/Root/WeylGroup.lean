@@ -12,11 +12,11 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalize
 /-!
 # The Weyl group of the diagonal torus in the general linear group
 
-For a commutative semiring domain `k` with a nontrivial unit group, the normalizer quotient of
-the diagonal torus in `GL_n(k)` is the permutation group of the coordinate lines. Independently, the
-Weyl group of the diagonal coordinate root datum is the permutation group of its universe-lifted
-coordinates. This file identifies those two groups and proves that the identification gives the
-same actions on the character lattice and on the roots.
+For a commutative semiring `k` with cancellation by nonzero elements and a nontrivial unit
+group, the normalizer quotient of the diagonal torus in `GL_n(k)` is the permutation group of
+the coordinate lines. Independently, the Weyl group of the diagonal coordinate root datum is the
+permutation group of its universe-lifted coordinates. This file identifies those two groups and
+proves that the identification gives the same actions on the character lattice and on the roots.
 
 Concretely, the class of a normalizing matrix `g` maps to the root-datum automorphism attached to
 `diagonalNormalizerPerm g`. The class of a permutation matrix for the transposition `(i j)` maps
@@ -46,7 +46,7 @@ universe u v
 
 noncomputable section
 
-variable {k : Type v} [CommSemiring k] [IsDomain k] [Nontrivial kˣ] {n : ℕ}
+variable {k : Type v} [CommSemiring k] [IsCancelMulZero k] [Nontrivial kˣ] {n : ℕ}
 
 /-- Transport Weyl groups along an equality of root data. -/
 private noncomputable def weylGroupMulEquivOfEq
@@ -141,7 +141,7 @@ private theorem diagonalWeylGroupMulEquivCoordinateWeylGroup_symm_ofIdx
 datum.** The intermediate permutation is transported from `Fin n` to the universe-lifted
 coordinate type used by `diagonalRootDatum`. -/
 noncomputable def diagonalNormalizerQuotientMulEquivWeylGroup (k : Type v) [CommSemiring k]
-    [IsDomain k] [Nontrivial kˣ] (n : ℕ) :
+    [IsCancelMulZero k] [Nontrivial kˣ] (n : ℕ) :
     Subgroup.normalizerQuotient (TauCeti.diagonalTorus k n) ≃*
       (diagonalRootDatum.{u} n).weylGroup :=
   ((diagonalNormalizerQuotientMulEquivPerm (k := k) (n := n)).trans <|

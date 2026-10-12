@@ -11,11 +11,11 @@ public import TauCeti.Algebra.Group.NormalizerQuotient.Basic
 /-!
 # The normalizer of the diagonal torus
 
-Over a commutative semiring domain with at least two units, an invertible matrix normalizes the
-diagonal torus exactly when it is monomial: it is a diagonal matrix followed by a permutation
-matrix. The permutation is unique, and multiplication of monomial matrices multiplies these
-permutations. Consequently the quotient of the normalizer by the diagonal torus is canonically
-the symmetric group.
+Over a commutative semiring with cancellation by nonzero elements and at least two units, an
+invertible matrix normalizes the diagonal torus exactly when it is monomial: it is a diagonal
+matrix followed by a permutation matrix. The permutation is unique, and multiplication of
+monomial matrices multiplies these permutations. Consequently the quotient of the normalizer by
+the diagonal torus is canonically the symmetric group.
 
 This is the group-of-points calculation behind the Weyl group of the diagonal maximal torus in
 `GL_n`.  It complements `TauCeti.SplitTorus.coordinatePermMulEquivWeylGroup`, which identifies the
@@ -140,11 +140,10 @@ theorem permutationGL_mem_normalizer (σ : Equiv.Perm (Fin n)) :
 
 end Permutation
 
-section Domain
+section IsCancelMulZero
 
-variable [CommSemiring k] [IsDomain k] [Nontrivial kˣ]
+variable [CommSemiring k] [IsCancelMulZero k]
 
-omit [Nontrivial kˣ] in
 /-- If conjugation by `g` sends the diagonal matrix `t` to a diagonal matrix, then `t` takes the
 same value at any two columns in which a row of `g` is nonzero. -/
 private theorem apply_eq_apply_of_conj_mem_diagonalTorus {g : GL (Fin n) k} {t : Fin n → kˣ}
@@ -164,7 +163,6 @@ private theorem apply_eq_apply_of_conj_mem_diagonalTorus {g : GL (Fin n) k} {t :
   have hl' : (t l : k) = s i := mul_left_cancel₀ hl (by rw [hentry l, mul_comm])
   exact Units.ext (hj'.trans hl'.symm)
 
-omit [Nontrivial kˣ] in
 /-- An invertible matrix is monomial, a diagonal matrix followed by a permutation matrix, as soon
 as conjugation by it keeps enough diagonal matrices diagonal to tell every two coordinates
 apart. -/
@@ -174,6 +172,10 @@ theorem exists_eq_diagGL_mul_permutationGL_of_forall_ne {g : GL (Fin n) k}
     ∃ d : Fin n → kˣ, ∃ σ : Equiv.Perm (Fin n),
       g = diagGL d * permutationGL (k := k) σ := by
   classical
+  by_cases hk : Subsingleton k
+  · let _ := hk
+    exact ⟨fun _ ↦ 1, 1, Subsingleton.elim _ _⟩
+  let _ : Nontrivial k := not_subsingleton_iff_nontrivial.mp hk
   let G : Matrix (Fin n) (Fin n) k := g
   let Ginv : Matrix (Fin n) (Fin n) k := (g⁻¹ : GL (Fin n) k)
   have hrow (i j l : Fin n) (hj : G i j ≠ 0) (hl : G i l ≠ 0) : j = l := by
@@ -231,6 +233,8 @@ theorem exists_eq_diagGL_mul_permutationGL_of_forall_ne {g : GL (Fin n) k}
       exact hj ((hf_iff i j).mp h)
     simpa [Equiv.Perm.permMatrix, PEquiv.toMatrix_apply, he, Ne.symm hj, G] using hzero
 
+variable [Nontrivial kˣ]
+
 /-- An invertible matrix normalizes the diagonal torus exactly when it is a diagonal matrix
 followed by a permutation matrix. -/
 theorem mem_normalizer_diagonalTorus_iff_exists {g : GL (Fin n) k} :
@@ -251,11 +255,12 @@ theorem mem_normalizer_diagonalTorus_iff_exists {g : GL (Fin n) k} :
         exact mem_diagonalTorus_iff_exists_diagGL.mpr ⟨d, rfl⟩))
       (permutationGL_mem_normalizer σ)
 
-omit [Nontrivial kˣ] in
+omit [IsCancelMulZero k] in
 private theorem permutation_eq_of_diagGL_mul_permutationGL_eq
     {d e : Fin n → kˣ} {σ τ : Equiv.Perm (Fin n)}
     (h : diagGL d * permutationGL (k := k) σ =
       diagGL e * permutationGL (k := k) τ) : σ = τ := by
+  let _ : Nontrivial k := Units.val_injective.nontrivial
   apply Equiv.ext
   intro j
   by_contra hj
@@ -455,7 +460,7 @@ theorem diagonalNormalizerQuotientMulEquivPerm_symm_apply (σ : Equiv.Perm (Fin 
   apply (diagonalNormalizerQuotientMulEquivPerm (k := k) (n := n)).injective
   simp
 
-end Domain
+end IsCancelMulZero
 
 end
 
