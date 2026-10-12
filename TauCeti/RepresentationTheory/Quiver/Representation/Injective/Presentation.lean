@@ -24,6 +24,12 @@ Auslander–Reiten duality.
 The construction transports `ModuleCat.exists_injectivePresentation_of_finite` along
 `quiverRepEquivalence`. No algebraic closedness assumption is needed.
 
+This construction dualizes the formalization in
+`TauCeti.RepresentationTheory.Quiver.Representation.Projective.Presentation`, specifically
+`TauCeti.QuiverRep.exists_projectivePresentation_of_isFinDim`,
+`TauCeti.QuiverRep.enoughProjectives_isFinDim`, and
+`CategoryTheory.ObjectProperty.FullSubcategory.projective_iff_projective_obj_of_finite_paths`.
+
 ## References
 
 * M. Auslander, I. Reiten, S. O. Smalø, *Representation Theory of Artin Algebras*,
