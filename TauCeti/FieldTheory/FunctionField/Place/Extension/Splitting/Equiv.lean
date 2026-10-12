@@ -9,13 +9,12 @@ public import TauCeti.FieldTheory.FunctionField.Place.Extension.Splitting.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.Equiv
 
 /-!
-# Complete splitting and ramification under field isomorphisms
+# Complete splitting under field isomorphisms
 
-Complete splitting and ramification indices depend on the extension, not on its presentation as
-a field carrier. Transporting the upstairs field over the downstairs field identifies the fibres of
-place restriction, preserves the extension degree, and preserves the ramification index of every
-place. This allows a compositum to be placed in a finite Galois overfield without changing its
-splitting or ramification behaviour.
+Complete splitting depends on the extension, not on its presentation as a field carrier.
+Transporting the upstairs field over the downstairs field identifies the fibres of place
+restriction and preserves the extension degree. This allows a compositum to be placed in a
+finite Galois overfield without changing its splitting behaviour.
 -/
 
 public section
@@ -26,21 +25,6 @@ variable {k F L L' : Type*} [Field k] [Field F] [Field L] [Field L']
 variable [Algebra k F] [Algebra k L] [Algebra k L'] [Algebra F L] [Algebra F L']
 variable [IsScalarTower k F L] [IsScalarTower k F L']
 variable [Algebra.IsIntegral F L] [Algebra.IsIntegral F L']
-
-omit [Algebra.IsIntegral F L] [Algebra.IsIntegral F L'] in
-/-- **The ramification index is invariant under an isomorphism of the upstairs field** over the
-base field: transporting a place of `L` along `e : L ≃ₐ[F] L'` does not change its ramification
-index over `F`. -/
-@[simp]
-theorem ramificationIdx_equivOfRingEquiv (e : L ≃ₐ[F] L') (Q : Place k L) :
-    ramificationIdx F (equivOfRingEquiv (RingEquiv.refl k) e.toRingEquiv
-      (fun c ↦ by simp [IsScalarTower.algebraMap_apply k F L,
-        IsScalarTower.algebraMap_apply k F L']) Q) = ramificationIdx F Q := by
-  rw [ramificationIdx_def, ramificationIdx_def]
-  congr 1
-  ext c
-  rw [Valuation.comap_apply, Valuation.comap_apply, valuation_equivOfRingEquiv]
-  exact congrArg Q.valuation (e.symm.commutes c)
 
 /-- Complete splitting is invariant under an isomorphism of the upstairs field over the
 base field. -/

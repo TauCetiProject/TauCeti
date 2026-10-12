@@ -177,7 +177,9 @@ theorem index_inf_eq_lcm_of_isCyclic_quotient (N : Subgroup G) [N.Normal] [IsCyc
     (index_dvd_of_le le_sup_right) (Nat.Coprime.coprime_dvd_left (hdvd B) hN)
   have hlcm : (Nat.lcm A.index (B ⊔ N).index).Coprime s :=
     Nat.Coprime.coprime_dvd_left (Nat.lcm_dvd_mul _ _) (Nat.Coprime.mul_left hs.symm hs'.symm)
-  rw [index_inf, ← relIndex_mul_index (le_sup_left : B ≤ B ⊔ N), mul_left_comm, hcyc,
-    ← hs'.lcm_eq_mul, mul_comm, ← hlcm.lcm_eq_mul, Nat.lcm_assoc, Nat.lcm_comm (B ⊔ N).index]
+  -- Hence multiplying `[G : B ⊔ N]` by `s` multiplies the least common multiple by `s`.
+  have hmul : Nat.lcm A.index (s * (B ⊔ N).index) = s * Nat.lcm A.index (B ⊔ N).index := by
+    rw [← hs'.lcm_eq_mul, Nat.lcm_comm s, ← Nat.lcm_assoc, hlcm.lcm_eq_mul, mul_comm]
+  rw [index_inf, ← relIndex_mul_index (le_sup_left : B ≤ B ⊔ N), hmul, ← hcyc, mul_left_comm]
 
 end Subgroup

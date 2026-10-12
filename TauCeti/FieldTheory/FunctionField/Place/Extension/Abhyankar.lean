@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.FieldTheory.FunctionField.Place.Extension.Equiv
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Inertia
-public import TauCeti.FieldTheory.FunctionField.Place.Extension.Splitting.Equiv
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.TameInertia
 import Mathlib.FieldTheory.Normal.Closure
 import TauCeti.GroupTheory.SpecificGroups.Cyclic.Index
@@ -37,12 +37,6 @@ intersection `A ⊓ B` is the least common multiple of the indices as soon as `[
 
 ## Main results
 
-* `TauCeti.Place.map_restrictScalarsHom_fixingSubgroup_inertiaField`: the inertia group of a place
-  over an intermediate field `E` is its inertia group over `F` intersected with the automorphisms
-  fixing `E`.
-* `TauCeti.Place.ramificationIdx_restrict_eq_relIndex`: in a finite Galois extension with
-  separable residue extension, the ramification index of the restriction of a place to `E` is the
-  relative index of the automorphisms fixing `E` in the inertia group.
 * `TauCeti.Place.ramificationIdx_restrict_sup_of_isGalois`: **Abhyankar's lemma** for
   intermediate fields of a finite Galois extension with separable residue extension.
 * `TauCeti.Place.ramificationIdx_restrict_sup`: **Abhyankar's lemma** for intermediate fields of
@@ -70,64 +64,7 @@ variable [IsScalarTower k F F']
 section Galois
 
 variable [FiniteDimensional F F'] [IsGalois F F'] (Q : Place k F')
-
-omit [IsGalois F F'] in
-/-- **The inertia group over an intermediate field** (Stichtenoth, Theorem 3.8.2): read as
-automorphisms over `F`, the inertia group of `Q` over an intermediate field `E` consists of the
-elements of the inertia group of `Q` over `F` that fix `E` pointwise. -/
-theorem map_restrictScalarsHom_fixingSubgroup_inertiaField (E : IntermediateField F F') :
-    (inertiaField E Q).fixingSubgroup.map (AlgEquiv.restrictScalarsHom F) =
-      E.fixingSubgroup ⊓ (inertiaField F Q).fixingSubgroup := by
-  -- An automorphism over `E` and its restriction of scalars to `F` act in the same way on `F'`,
-  -- hence on the valuation ring of `Q` and on its residue field.
-  have hdec (τ : F' ≃ₐ[E] F') :
-      τ ∈ Q.integers.decompositionSubgroup E ↔
-        τ.restrictScalars F ∈ Q.integers.decompositionSubgroup F := by
-    rw [← stabilizer_eq_decompositionSubgroup, ← stabilizer_eq_decompositionSubgroup,
-      MulAction.mem_stabilizer_iff, MulAction.mem_stabilizer_iff, restrictScalars_smul]
-  have hiner (τ : Q.integers.decompositionSubgroup E)
-      (σ : Q.integers.decompositionSubgroup F)
-      (hστ : (σ : F' ≃ₐ[F] F') = (τ : F' ≃ₐ[E] F').restrictScalars F) :
-      τ ∈ Q.integers.inertiaSubgroup E ↔ σ ∈ Q.integers.inertiaSubgroup F := by
-    have hx (x : Q.integers) : σ • x = τ • x := Subtype.ext <| by
-      rw [ValuationSubring.coe_decompositionSubgroup_smul,
-        ValuationSubring.coe_decompositionSubgroup_smul, hστ, AlgEquiv.restrictScalars_apply]
-    simp only [ValuationSubring.mem_inertiaSubgroup_iff, hx]
-  ext σ
-  simp only [fixingSubgroup_inertiaField, Subgroup.mem_map, Subgroup.mem_inf]
-  constructor
-  · rintro ⟨_, ⟨τ, hτ, rfl⟩, rfl⟩
-    refine ⟨(IntermediateField.mem_fixingSubgroup_iff _ _).mpr
-      fun x hx ↦ (τ : F' ≃ₐ[E] F').commutes ⟨x, hx⟩, ⟨_, (hdec τ).mp τ.2⟩, ?_, rfl⟩
-    exact (hiner τ ⟨_, (hdec τ).mp τ.2⟩ rfl).mp hτ
-  · rintro ⟨hE, σ', hσ', rfl⟩
-    let τ : F' ≃ₐ[E] F' := E.fixingSubgroupEquiv ⟨σ', hE⟩
-    have hτσ : τ.restrictScalars F = σ' := by
-      ext x
-      exact congrFun (IntermediateField.coe_fixingSubgroupEquiv_apply E ⟨σ', hE⟩) x
-    have hτ : τ ∈ Q.integers.decompositionSubgroup E := (hdec τ).mpr (hτσ ▸ σ'.2)
-    exact ⟨_, ⟨⟨τ, hτ⟩, (hiner ⟨τ, hτ⟩ σ' hτσ.symm).mpr hσ', rfl⟩, hτσ⟩
-
 variable [Algebra.IsSeparable (Q.restrict k F).ResidueField Q.ResidueField]
-
-/-- **The ramification index in an intermediate field is a relative index in the inertia group**
-(Stichtenoth, Theorem 3.8.2): when the residue extension of `Q` over `F` is separable, the
-ramification index over `F` of the restriction of `Q` to an intermediate field `E` is the index,
-in the inertia group of `Q`, of its elements fixing `E` pointwise. -/
-theorem ramificationIdx_restrict_eq_relIndex (E : IntermediateField F F') :
-    ramificationIdx F (Q.restrict k E) =
-      E.fixingSubgroup.relIndex (inertiaField F Q).fixingSubgroup := by
-  have := isSeparable_residueField_restrict_top k F (k₁ := k) (F₁ := E) Q
-  have h := E.fixingSubgroup.relIndex_mul_card (inertiaField F Q).fixingSubgroup
-  rw [← map_restrictScalarsHom_fixingSubgroup_inertiaField,
-    Subgroup.card_map_of_injective (AlgEquiv.restrictScalarsHom_injective F),
-    fixingSubgroup_inertiaField, fixingSubgroup_inertiaField,
-    Subgroup.card_map_of_injective (Subgroup.subtype_injective _),
-    Subgroup.card_map_of_injective (Subgroup.subtype_injective _), card_inertiaSubgroup,
-    card_inertiaSubgroup, ramificationIdx_restrict_mul (k₁ := k) (F₀ := F) (F₁ := E) Q,
-    mul_comm] at h
-  rw [fixingSubgroup_inertiaField]
-  exact (Nat.eq_of_mul_eq_mul_left (ramificationIdx_pos E Q) h).symm
 
 /-- **Abhyankar's lemma in a Galois extension** (Stichtenoth, Theorem 3.9.1). Let `E₁` and `E₂` be
 intermediate fields of a finite Galois extension `F' / F` and `Q` a place of `F'` whose residue
