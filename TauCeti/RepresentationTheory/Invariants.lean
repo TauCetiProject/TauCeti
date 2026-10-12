@@ -337,6 +337,7 @@ open CategoryTheory
 open scoped MonoidAlgebra
 
 /-- A vector in the kernel of `ρ(g) - 1` is fixed by `g`. -/
+@[simp]
 theorem ρ_apply_of_mem_ker {k G : Type*} [Semiring k] [CommMonoid G] (A : Rep k G) (g : G)
     (x : LinearMap.ker (applyAsHom A g - 𝟙 A).hom.toLinearMap) : A.ρ g x.1 = x.1 := by
   simpa [sub_hom, sub_eq_zero] using x.2
