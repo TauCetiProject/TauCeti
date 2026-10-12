@@ -139,12 +139,13 @@ end VertexAugmentation
 section PositiveDegree
 
 variable (k : Type w) (R : Type u) [CommRing k] [Quiver.{v} R] [HasReverse R]
-  [Fintype R] [∀ i j : R, Fintype (i ⟶ j)] [∀ x : R, Fintype (Quiver.Star x)]
+  [Fintype R] [∀ x : R, Fintype (Quiver.Star x)]
 
 /-- An element of the vertex corner has positive path degree exactly when it is a sum of
 incoming arrows times elements of their source corners. This is exactness at the augmentation
 endpoint of the signless Koszul complex. -/
 theorem mem_iSup_signlessPreprojectiveGrade_add_one_iff_exists_eq_sum (v : R)
+    [∀ i : R, Fintype (i ⟶ v)]
     {x : signlessPreprojectiveAlgebra k R}
     (hx : signlessPreprojectiveMk k R (vertexIdempotent k v) * x = x) :
     x ∈ ⨆ n, signlessPreprojectiveGrade k R (n + 1) ↔
