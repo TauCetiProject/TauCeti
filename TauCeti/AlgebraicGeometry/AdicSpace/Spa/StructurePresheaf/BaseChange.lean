@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Comap
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational.Basic
 
+import TauCeti.RingTheory.Huber.LocalizationTopology.BaseChange
+
 /-!
 # Base change of completed rational localisations along a ring homomorphism
 
@@ -176,19 +178,11 @@ private theorem existsUnique_continuous_ringHom_comp_eq (φ : A →+* B) (hφ : 
         UniformSpace.Completion (Localization.Away q.den),
       Continuous g ∧ g.comp (toCompletionLoc P p.num p.den _ p.hasDenominatorPower) =
         (toCompletionLoc P' q.num q.den _ q.hasDenominatorPower).comp φ := by
-  let _ := locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  have _ := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  have _ := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  let _ := locUniformSpace P' q.num q.den _ q.hasDenominatorPower
-  have _ := isUniformAddGroup_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
-  have _ := isTopologicalRing_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
-  have _ := isHuberRing_completion_locTopology P' q.num q.den _ q.hasDenominatorPower
-  have hq : q.den = φ p.den * 1 := by rw [hden, mul_one]
-  have hu := isUnit_toCompletionLoc_of_dvd P' q.num q.den _ q.hasDenominatorPower ⟨1, hq⟩
-  exact existsUnique_continuous_ringHom_completion_locTopology P p.num p.den _
-    p.hasDenominatorPower ((continuous_toCompletionLoc P' _ _ _ _).comp hφ).continuousAt hu
-    fun t ht ↦ isPowerBounded_toCompletionLoc_mul_unit_inv P' _ _ _ _ hq hu
-      ((mul_one (φ t)).symm ▸ hnum t ht)
+  -- `q.den` is a field of `q`, so destructuring `q` lets `hden` substitute `φ p.den` for it
+  obtain ⟨num, den, hq⟩ := q
+  subst hden
+  exact existsUnique_continuous_ringHom_comp_toCompletionLoc_eq P p.num p.den _
+    p.hasDenominatorPower P' φ hφ num _ hq hnum
 
 /-- The morphism `A⟨p⟩ ⟶ B⟨q⟩` of `existsUnique_continuous_ringHom_comp_eq`. -/
 noncomputable def Presentation.mapHom (φ : A →+* B) (hφ : Continuous φ) (p : Presentation P)

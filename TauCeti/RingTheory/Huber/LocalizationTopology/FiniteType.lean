@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.Huber.LocalizationTopology.BaseChange
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Evaluation
-public import TauCeti.RingTheory.Huber.LocalizationTopology.Pair
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Pair
+
+import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Cancel
+import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Comp
 
 /-!
 # Finite-type presentations of rational localisation pairs
@@ -24,10 +27,19 @@ closed. It contains the constants from `A⁺` and the fractions `T/s`, hence the
 the image of the integral closure of `A⁺[T/s]`, which is the localisation's plus ring.
 No completeness or separation assumption on `A` is needed.
 
+Base change along a rational localisation also preserves topological finite type: if
+`f : (A, A⁺) → (B, B⁺)` is topologically of finite type and `A` is Tate, then so is the base change
+`(A⟨T/s⟩, A_U⁺) → (B⟨T'/f(s)⟩, B_V⁺)` of
+`TauCeti.Huber.PairOfDefinition.completionLocPairMap`
+(`isTopologicallyFiniteType_completionLocPairMap`). For `T'` with underlying set `f(T)` this is
+the map of coordinate rings over a rational open `R(T/s)` of `Spa(A, A⁺)` and its preimage in
+`Spa(B, B⁺)`, which is what restricting a chart of a morphism locally of finite type
+(Wedhorn, Definition 8.48) to a rational open of its target needs.
+
 ## References
 
 * T. Wedhorn, *Adic Spaces*, arXiv:1910.05934v1, Example 6.38, Remark and Definition 8.41,
-  Definition 8.42, and Proposition 8.50.
+  Definition 8.42, Proposition 8.46, Definition 8.48, and Proposition 8.50.
 * The ring presentation is `TauCeti.Huber.PairOfDefinition.rationalEvalHom` from
   `TauCeti.RingTheory.Huber.LocalizationTopology.Evaluation`.
 -/
@@ -234,5 +246,58 @@ theorem isTopologicallyFiniteType_toCompletionLocHom
       rationalEvalPairHom_comp_weightedCompletionHom P U hP T s S hden t ht⟩
   apply isQuotientMapping_rationalEvalPairHom P U hP T s S hden t ht _ hTt
   rwa [hrange]
+
+end TauCeti.Huber.PairOfDefinition
+
+/-! ### Base change along a rational localisation -/
+
+namespace TauCeti.Huber.PairOfDefinition
+
+variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsTateRing A]
+  {B : Type*} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B]
+  (P : PairOfDefinition A) (U : Pair A) (hP : P.ringOfDefinition ≤ U.plus)
+  (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+  (hden : HasDenominatorPower P T s S)
+  (P' : PairOfDefinition B) (U' : Pair B) (hP' : P'.ringOfDefinition ≤ U'.plus)
+  (f : Pair.Hom U U') (T' : Finset B) (S' : Type*) [CommRing S'] [Algebra B S']
+  [IsLocalization.Away (f.toRingHom s) S'] (hden' : HasDenominatorPower P' T' (f.toRingHom s) S')
+  (hT : ∀ t ∈ T, f.toRingHom t ∈ T')
+
+/-- **Base change along a rational localisation preserves topological finite type**, over a Tate
+base: if `f : (A, A⁺) → (B, B⁺)` is topologically of finite type and `A` is Tate, then so is the
+base change `(A⟨T/s⟩, A_U⁺) → (B⟨T'/f(s)⟩, B_V⁺)`.
+
+The composite of `f` with the structure morphism `(B, B⁺) → (B⟨T'/f(s)⟩, B_V⁺)`, topologically of
+finite type by `isTopologicallyFiniteType_toCompletionLocHom`, is that of the structure morphism of
+`(A⟨T/s⟩, A_U⁺)` with the base change, and topological finite type cancels on the right
+(`TauCeti.Huber.Pair.Hom.IsTopologicallyFiniteType.of_comp`). The hypothesis on `T'` holds as soon
+as `T` and `s` generate the unit ideal of `A`, which for a rational subset of a Tate spectrum
+follows from openness of the numerator ideal. -/
+theorem isTopologicallyFiniteType_completionLocPairMap (hf : f.IsTopologicallyFiniteType)
+    (hspan : Ideal.span (insert (f.toRingHom s) (T' : Set B)) = ⊤) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := isHuberRing_completion_locTopology P T s S hden
+    letI := locUniformSpace P' T' (f.toRingHom s) S' hden'
+    letI := isUniformAddGroup_locUniformSpace P' T' (f.toRingHom s) S' hden'
+    letI := isTopologicalRing_locUniformSpace P' T' (f.toRingHom s) S' hden'
+    letI := isHuberRing_completion_locTopology P' T' (f.toRingHom s) S' hden'
+    (completionLocPairMap P U hP T s S hden P' U' hP' f T' S' hden'
+      hT).IsTopologicallyFiniteType := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  have _ := isHuberRing_completion_locTopology P T s S hden
+  let _ := locUniformSpace P' T' (f.toRingHom s) S' hden'
+  have _ := isUniformAddGroup_locUniformSpace P' T' (f.toRingHom s) S' hden'
+  have _ := isTopologicalRing_locUniformSpace P' T' (f.toRingHom s) S' hden'
+  have _ := isHuberRing_completion_locTopology P' T' (f.toRingHom s) S' hden'
+  have : IsTateRing B := IsTateRing.of_continuous f.continuous_toRingHom
+  have h := (isTopologicallyFiniteType_toCompletionLocHom P' U' hP' T' (f.toRingHom s) S' hden'
+    hspan).comp hf
+  rw [← completionLocPairMap_comp_toCompletionLocHom P U hP T s S hden P' U' hP' f T' S' hden'
+    hT] at h
+  exact h.of_comp
 
 end TauCeti.Huber.PairOfDefinition
