@@ -20,8 +20,8 @@ Let `M` be a module over a commutative ring `R`, and `A` a commutative `R`-algeb
 proves that the points of the Grassmannian functor `A ↦ G(k, A ⊗[R] M; A)` glue uniquely along
 a standard Zariski cover of `Spec A`: for elements `s ⊆ A` generating the unit ideal, a point
 `N ∈ G(k, A ⊗[R] M; A)` is determined by its base changes to the localizations `A[1/r]`,
-`r ∈ s`, and when `s` is finite, a family of points over the `A[1/r]` whose base changes to the
-overlaps `A[1/r] ⊗[A] A[1/r']` agree comes from a point over `A`. This is the sheaf property of
+`r ∈ s`, and a family of points over the `A[1/r]` whose base changes to the overlaps
+`A[1/r] ⊗[A] A[1/r']` agree comes from a point over `A`. This is the sheaf property of
 the Grassmannian functor for standard Zariski covers, the input needed to identify the points of
 the glued Grassmannian scheme with the points of the functor.
 
@@ -39,7 +39,7 @@ local–global principles for finite presentation and flatness.
 * `Module.Grassmannian.eq_of_isLocalized_span`: a point of `G(k, A ⊗[R] M; A)` is determined by
   its base changes to the localizations `A[1/r]` for `r` in a set generating the unit ideal.
 * `Module.Grassmannian.exists_map_eq_of_isLocalized_span`: points over the localizations `A[1/r]`
-  at a finite set generating the unit ideal, compatible on the overlaps `A[1/r] ⊗[A] A[1/r']`,
+  at a set generating the unit ideal, compatible on the overlaps `A[1/r] ⊗[A] A[1/r']`,
   glue to a point over `A`.
 
 ## References
@@ -134,55 +134,74 @@ private theorem mem_glueSubmodule_iff {x : A ⊗[R] M} :
   -- the coercion of `Algebra.linearMap A (B r)` to an `R`-linear map is the structure map
   rfl
 
+/-- The image of `a • x` in `B r ⊗[R] M` is `a •` the image of `x`. -/
+private theorem rTensor_smul (r : s) (a : A) (x : A ⊗[R] M) :
+    (IsScalarTower.toAlgHom R A (B r)).toLinearMap.rTensor M (a • x) =
+      a • (IsScalarTower.toAlgHom R A (B r)).toLinearMap.rTensor M x :=
+  (AlgebraTensorModule.rTensor R M (Algebra.linearMap A (B r))).map_smul a x
+
 variable [∀ r : s, IsLocalization.Away r.1 (B r)]
+
+/-- Under the compatibility hypothesis, if the image of `x` in `B r ⊗[R] M` lies in `N r`, then
+for every `r'` some power of `r` moves the image of `x` in `B r' ⊗[R] M` into `N r'`. -/
+private theorem exists_pow_smul_rTensor_mem
+    (hN : ∀ r r' : s, map (Algebra.TensorProduct.includeLeft : B r →ₐ[R] B r ⊗[A] B r') (N r) =
+      map ((Algebra.TensorProduct.includeRight : B r' →ₐ[A] B r ⊗[A] B r').restrictScalars R)
+        (N r'))
+    {r : s} {x : A ⊗[R] M}
+    (hx : (IsScalarTower.toAlgHom R A (B r)).toLinearMap.rTensor M x ∈ (N r).toSubmodule)
+    (r' : s) : ∃ n : ℕ, (IsScalarTower.toAlgHom R A (B r')).toLinearMap.rTensor M
+      (r.1 ^ n • x) ∈ (N r').toSubmodule := by
+  have hx' := rTensor_mem_map
+    ((Algebra.TensorProduct.includeRight : B r →ₐ[A] B r' ⊗[A] B r).restrictScalars R) hx
+  -- on the overlap `B r' ⊗[A] B r`, the two images of `x` agree
+  have hover : ((Algebra.TensorProduct.includeRight : B r →ₐ[A] B r' ⊗[A] B r).restrictScalars
+        R).toLinearMap.rTensor M ((IsScalarTower.toAlgHom R A (B r)).toLinearMap.rTensor M x) =
+      (Algebra.TensorProduct.includeLeft : B r' →ₐ[R] B r' ⊗[A] B r).toLinearMap.rTensor M
+        ((IsScalarTower.toAlgHom R A (B r')).toLinearMap.rTensor M x) := by
+    rw [← LinearMap.rTensor_comp_apply, ← LinearMap.rTensor_comp_apply]
+    congr 2
+    ext a
+    simp [Algebra.algebraMap_eq_smul_one, TensorProduct.smul_tmul]
+  -- `includeLeft` is the structure map of the `B r'`-algebra `B r' ⊗[A] B r`, so the base change
+  -- along it is described by `rTensor_mem_map_iff` for the localization of `B r'` at `r`
+  have hincl : (Algebra.TensorProduct.includeLeft : B r' →ₐ[R] B r' ⊗[A] B r) =
+      IsScalarTower.toAlgHom R (B r') (B r' ⊗[A] B r) :=
+    AlgHom.ext fun _ ↦ by simp
+  rw [hover, ← hN r' r, hincl,
+    rTensor_mem_map_iff (Algebra.algebraMapSubmonoid (B r') (.powers r.1))] at hx'
+  obtain ⟨_, ⟨_, ⟨n, rfl⟩, rfl⟩, hn⟩ := hx'
+  refine ⟨n, ?_⟩
+  rwa [rTensor_smul, ← algebraMap_smul (B r')]
 
 /-- Under the compatibility hypothesis, the image of `x` in `B r ⊗[R] M` lies in `N r` exactly
 when some power of `r` moves `x` into `glueSubmodule N`. -/
-private theorem rTensor_mem_iff_exists_pow_smul_mem [Finite s]
+private theorem rTensor_mem_iff_exists_pow_smul_mem (hs : Ideal.span s = ⊤)
     (hN : ∀ r r' : s, map (Algebra.TensorProduct.includeLeft : B r →ₐ[R] B r ⊗[A] B r') (N r) =
       map ((Algebra.TensorProduct.includeRight : B r' →ₐ[A] B r ⊗[A] B r').restrictScalars R)
         (N r'))
     (r : s) (x : A ⊗[R] M) :
     (IsScalarTower.toAlgHom R A (B r)).toLinearMap.rTensor M x ∈ (N r).toSubmodule ↔
       ∃ n : ℕ, r.1 ^ n • x ∈ glueSubmodule N := by
-  -- the image of `a • x` in `B r' ⊗[R] M` is `a •` the image of `x`
-  have hsmul (r' : s) (a : A) (x : A ⊗[R] M) :
-      (IsScalarTower.toAlgHom R A (B r')).toLinearMap.rTensor M (a • x) =
-        a • (IsScalarTower.toAlgHom R A (B r')).toLinearMap.rTensor M x :=
-    (AlgebraTensorModule.rTensor R M (Algebra.linearMap A (B r'))).map_smul a x
   refine ⟨fun hx ↦ ?_, fun ⟨n, hn⟩ ↦ ?_⟩
-  · -- for each `r'`, some power of `r` moves the image of `x` in `B r' ⊗[R] M` into `N r'`
-    have H (r' : s) : ∃ n : ℕ, (IsScalarTower.toAlgHom R A (B r')).toLinearMap.rTensor M
-        (r.1 ^ n • x) ∈ (N r').toSubmodule := by
-      have hx' := rTensor_mem_map
-        ((Algebra.TensorProduct.includeRight : B r →ₐ[A] B r' ⊗[A] B r).restrictScalars R) hx
-      -- on the overlap `B r' ⊗[A] B r`, the two images of `x` agree
-      have hover : ((Algebra.TensorProduct.includeRight : B r →ₐ[A] B r' ⊗[A] B r).restrictScalars
-            R).toLinearMap.rTensor M ((IsScalarTower.toAlgHom R A (B r)).toLinearMap.rTensor M x) =
-          (Algebra.TensorProduct.includeLeft : B r' →ₐ[R] B r' ⊗[A] B r).toLinearMap.rTensor M
-            ((IsScalarTower.toAlgHom R A (B r')).toLinearMap.rTensor M x) := by
-        rw [← LinearMap.rTensor_comp_apply, ← LinearMap.rTensor_comp_apply]
-        congr 2
-        ext a
-        simp [Algebra.algebraMap_eq_smul_one, TensorProduct.smul_tmul]
-      rw [hover, ← hN r' r,
-        show (Algebra.TensorProduct.includeLeft : B r' →ₐ[R] B r' ⊗[A] B r) =
-          IsScalarTower.toAlgHom R (B r') (B r' ⊗[A] B r) from AlgHom.ext fun _ ↦ rfl,
-        rTensor_mem_map_iff (Algebra.algebraMapSubmonoid (B r') (.powers r.1))] at hx'
-      obtain ⟨_, ⟨_, ⟨n, rfl⟩, rfl⟩, hn⟩ := hx'
-      refine ⟨n, ?_⟩
-      rwa [hsmul, ← algebraMap_smul (B r')]
-    choose n hn using H
+  · -- a single power of `r` works for every `r'` in a finite subcover `t ⊆ s`
+    obtain ⟨t, hts, ht⟩ := (Ideal.span_eq_top_iff_finite s).mp hs
+    choose n hn using fun r' : t ↦ exists_pow_smul_rTensor_mem N hN hx ⟨r'.1, hts r'.2⟩
     obtain ⟨n₀, hn₀⟩ := Finite.exists_le n
-    refine ⟨n₀, (mem_glueSubmodule_iff N).mpr fun r' ↦ ?_⟩
-    rw [← Nat.sub_add_cancel (hn₀ r'), pow_add, mul_smul, hsmul]
+    refine ⟨n₀, (mem_glueSubmodule_iff N).mpr fun r'' ↦ ?_⟩
+    -- and then for every `r'' ∈ s`, since the `r' ∈ t` generate the unit ideal
+    refine Submodule.mem_of_span_eq_top_of_smul_pow_mem
+      (((N r'').toSubmodule.restrictScalars A).comap
+        (AlgebraTensorModule.rTensor R M (Algebra.linearMap A (B r'')))) _ ht _ fun r' ↦ ?_
+    refine exists_pow_smul_rTensor_mem N hN (r := ⟨r'.1, hts r'.2⟩) ?_ r''
+    rw [← Nat.sub_add_cancel (hn₀ r'), pow_add, mul_smul, rTensor_smul]
     exact Submodule.smul_of_tower_mem _ _ (hn r')
   · have := (mem_glueSubmodule_iff N).mp hn r
-    rw [hsmul] at this
+    rw [rTensor_smul] at this
     exact (IsLocalization.smul_mem_iff (S := .powers r.1) (s := ⟨r.1 ^ n, n, rfl⟩)).mp this
 
 /-- Under the compatibility hypothesis, the base change of `glueSubmodule N` to `B r` is `N r`. -/
-private theorem ker_baseChangeMkQ_glueSubmodule [Finite s]
+private theorem ker_baseChangeMkQ_glueSubmodule (hs : Ideal.span s = ⊤)
     (hN : ∀ r r' : s, map (Algebra.TensorProduct.includeLeft : B r →ₐ[R] B r ⊗[A] B r') (N r) =
       map ((Algebra.TensorProduct.includeRight : B r' →ₐ[A] B r ⊗[A] B r').restrictScalars R)
         (N r'))
@@ -197,16 +216,16 @@ private theorem ker_baseChangeMkQ_glueSubmodule [Finite s]
       IsLocalizedModule.mk'_cancel']
   -- `g x` is the image of `x` in `B r ⊗[R] M` (`TensorProduct.AlgebraTensorModule.coe_rTensor`)
   rw [key, key, show g x = (IsScalarTower.toAlgHom R A (B r)).toLinearMap.rTensor M x from rfl,
-    rTensor_mem_ker_baseChangeMkQ_iff (.powers r.1), rTensor_mem_iff_exists_pow_smul_mem N hN]
+    rTensor_mem_ker_baseChangeMkQ_iff (.powers r.1), rTensor_mem_iff_exists_pow_smul_mem N hs hN]
   simp [Submonoid.mem_powers_iff]
 
 variable (s) in
-/-- **Points of the Grassmannian glue along a Zariski cover.** Let `s ⊆ A` be a finite set
-generating the unit ideal, and let `B r` be the localization `A[1/r]` for `r ∈ s`. Given points
+/-- **Points of the Grassmannian glue along a Zariski cover.** Let `s ⊆ A` generate the unit
+ideal, and let `B r` be the localization `A[1/r]` for `r ∈ s`. Given points
 `N r ∈ G(k, B r ⊗[R] M; B r)` whose base changes to every overlap `B r ⊗[A] B r'` agree, there is
 a point of `G(k, A ⊗[R] M; A)` whose base change to each `B r` is `N r`. By
 `Module.Grassmannian.eq_of_isLocalized_span` it is unique. -/
-theorem exists_map_eq_of_isLocalized_span [Finite s] (hs : Ideal.span s = ⊤)
+theorem exists_map_eq_of_isLocalized_span (hs : Ideal.span s = ⊤)
     (hN : ∀ r r' : s, map (Algebra.TensorProduct.includeLeft : B r →ₐ[R] B r ⊗[A] B r') (N r) =
       map ((Algebra.TensorProduct.includeRight : B r' →ₐ[A] B r ⊗[A] B r').restrictScalars R)
         (N r')) :
@@ -214,7 +233,7 @@ theorem exists_map_eq_of_isLocalized_span [Finite s] (hs : Ideal.span s = ⊤)
   let Q := (A ⊗[R] M) ⧸ glueSubmodule N
   -- the base change of the quotient `Q` to `B r` is the quotient of `B r ⊗[R] M` by `N r`
   let e (r : s) : ((B r ⊗[R] M) ⧸ (N r).toSubmodule) ≃ₗ[B r] B r ⊗[A] Q :=
-    Submodule.quotEquivOfEq _ _ (ker_baseChangeMkQ_glueSubmodule N hN r).symm ≪≫ₗ
+    Submodule.quotEquivOfEq _ _ (ker_baseChangeMkQ_glueSubmodule N hs hN r).symm ≪≫ₗ
       baseChangeMkQEquiv (glueSubmodule N)
   have hfin (r : s) : Module.Finite (B r) (B r ⊗[A] Q) := Module.Finite.equiv (e r)
   have hproj (r : s) : Module.Projective (B r) (B r ⊗[A] Q) := Module.Projective.of_equiv (e r)
@@ -246,7 +265,7 @@ theorem exists_map_eq_of_isLocalized_span [Finite s] (hs : Ideal.span s = ⊤)
     exact (N r).rankAtStalk_eq q
   · ext : 1
     rw [map_toAlgHom_toSubmodule]
-    exact ker_baseChangeMkQ_glueSubmodule N hN r
+    exact ker_baseChangeMkQ_glueSubmodule N hs hN r
 
 end Glue
 

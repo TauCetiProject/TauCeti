@@ -95,10 +95,8 @@ theorem baseChangeMkQ_rTensor [Algebra A B] [IsScalarTower R A B] (N : Submodule
       (1 : B) ⊗ₜ N.mkQ x := by
   induction x using TensorProduct.inductionOn with
   | tmul a m =>
-    rw [LinearMap.rTensor_tmul, baseChangeMkQ_tmul, AlgHom.toLinearMap_apply,
-      IsScalarTower.coe_toAlgHom', Algebra.algebraMap_eq_smul_one, TensorProduct.smul_tmul,
-      ← Submodule.Quotient.mk_smul, TensorProduct.smul_tmul', smul_eq_mul, mul_one,
-      Submodule.mkQ_apply]
+    simp [Algebra.algebraMap_eq_smul_one, TensorProduct.smul_tmul, ← Submodule.Quotient.mk_smul,
+      TensorProduct.smul_tmul']
   | add x y hx hy => rw [map_add, map_add, hx, hy, map_add, tmul_add]
 
 /-- With an algebra structure in place, the base change `map f N` along the structure map
@@ -119,8 +117,11 @@ theorem rTensor_mem_map (f : A →ₐ[R] B) {N : G(k, A ⊗[R] M; A)} {x : A ⊗
     (hx : x ∈ N.toSubmodule) : f.toLinearMap.rTensor M x ∈ (map f N).toSubmodule := by
   algebraize [f.toRingHom]
   rw [map_toSubmodule, LinearMap.mem_ker]
+  -- `algebraize` makes `f` the structure map of `B` as an `A`-algebra, so `f` is the map
+  -- `IsScalarTower.toAlgHom R A B` that appears in `baseChangeMkQ_rTensor`
+  have hf : IsScalarTower.toAlgHom R A B = f := AlgHom.ext fun _ ↦ rfl
   have := baseChangeMkQ_rTensor (B := B) N.toSubmodule x
-  rw [show (IsScalarTower.toAlgHom R A B) = f from AlgHom.ext fun _ ↦ rfl] at this
+  rw [hf] at this
   rw [this, Submodule.mkQ_apply, (Submodule.Quotient.mk_eq_zero _).mpr hx, tmul_zero]
 
 end BaseChange
