@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Presheaf.ExteriorPower.Basic
-public import TauCeti.Algebra.Category.ModuleCat.ExteriorPower.RestrictScalars
 public import Mathlib.CategoryTheory.Adjunction.Mates
 
 /-!
@@ -43,23 +42,6 @@ variable {C : Type v} [Category.{w} C] {D : Type v'} [Category.{w'} D]
   {F : C ⥤ D} {S : Cᵒᵖ ⥤ CommRingCat.{u}} {R : Dᵒᵖ ⥤ CommRingCat.{u}}
   (α : S ⟶ F.op ⋙ R)
 
-/-- Restriction in the exterior power of a pushforward restricts each wedge factor along `F`. -/
-theorem exteriorPower_pushforward_obj_map_mk (n : ℕ)
-    (M : PresheafOfModulesOfCommRing.{u} R) {U V : Cᵒᵖ} (f : U ⟶ V)
-    (m : Fin n → ((PresheafOfModulesOfCommRing.pushforward α).obj M).obj U) :
-    ((PresheafOfModulesOfCommRing.exteriorPower n).obj
-        ((PresheafOfModulesOfCommRing.pushforward α).obj M)).map f
-        (ModuleCat.exteriorPower.mk m) =
-      ModuleCat.exteriorPower.mk
-        (M := ((PresheafOfModulesOfCommRing.pushforward α).obj M).obj V)
-        (fun j ↦ M.map (F.op.map f) (m j)) := by
-  simp only [PresheafOfModulesOfCommRing.exteriorPower_obj_map_mk]
-  -- The pushforward formula uses `.hom`, whereas the goal uses `ConcreteCategory.hom`;
-  -- `simp` does not match these coercions, so apply it explicitly to each wedge factor.
-  exact congrArg (ModuleCat.exteriorPower.mk
-    (M := ((PresheafOfModulesOfCommRing.pushforward α).obj M).obj V))
-    (funext fun j ↦ PresheafOfModules.pushforward_obj_map_apply _ _ _ (m j))
-
 private def exteriorPowerPushforwardMap (n : ℕ)
     (M : PresheafOfModulesOfCommRing.{u} R) :
     (PresheafOfModulesOfCommRing.exteriorPower n).obj
@@ -78,9 +60,14 @@ private def exteriorPowerPushforwardMap (n : ℕ)
     refine ((congrArg
       ((ModuleCat.restrictScalarsExteriorPowerComparison (α.app V).hom n).app
         (M.obj (F.op.obj V)))
-      (exteriorPower_pushforward_obj_map_mk α n M f m)).trans
+      (PresheafOfModulesOfCommRing.exteriorPower_obj_map_mk n
+        ((PresheafOfModulesOfCommRing.pushforward α).obj M) f m)).trans
         (ModuleCat.restrictScalarsExteriorPowerComparison_app_mk (α.app V).hom n
           (M.obj (F.op.obj V)) _)).trans ?_
+    -- The pushforward formula uses `.hom` rather than `ConcreteCategory.hom`, so apply it
+    -- explicitly to identify the wedge factors before using the target restriction formula.
+    refine (congrArg (ModuleCat.exteriorPower.mk (M := M.obj (F.op.obj V)))
+      (funext fun j ↦ PresheafOfModules.pushforward_obj_map_apply _ _ _ (m j))).trans ?_
     exact ((congrArg
       (((PresheafOfModulesOfCommRing.pushforward α).obj
         ((PresheafOfModulesOfCommRing.exteriorPower n).obj M)).map f)
