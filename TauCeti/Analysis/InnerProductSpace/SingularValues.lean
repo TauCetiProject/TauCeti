@@ -49,6 +49,11 @@ singular vectors are `uᵢ = σᵢ⁻¹ A vᵢ = A.leftSingularVector i`, using 
 that `uᵢ = 0` when `σᵢ = 0`. The singular relations hold at every index, which lets the expansion
 of `A` run over the whole basis without splitting off the kernel.
 
+* `LinearMap.sq_singularValues_antitone`: the squared singular values are nonincreasing.
+* `LinearMap.sq_singularValues_eq_of_adjoint_comp_self_eigenbasis`: any sorted orthonormal
+  Gram eigenbasis recovers the squared singular values, with a zero tail.
+* `LinearMap.norm_apply_le_of_mem_spanIndices_of_adjoint_comp_self_eigenbasis`: an upper bound
+  for `‖A x‖` on a span of Gram eigenvectors with bounded eigenvalues.
 * `LinearMap.adjoint_comp_self_rightSingularBasis`: `A† A vᵢ = σᵢ² vᵢ`.
 * `LinearMap.singularValues_mul_norm_le_norm_apply`,
   `LinearMap.norm_apply_le_singularValues_mul_norm`: `σₙ ‖x‖ ≤ ‖A x‖` on the span of the `vᵢ`
@@ -67,7 +72,7 @@ of `A` run over the whole basis without splitting off the kernel.
 
 ## Comparison of singular values
 
-The last section compares the singular values of two maps with the same source through the
+The comparison section compares the singular values of two maps with the same source through the
 Courant–Fischer min–max principle for their source Gram operators.
 
 * `LinearMap.singularValues_le_mul_of_norm_apply_le`: if `‖B x‖ ≤ c ‖A x‖` for every `x`, then
@@ -87,10 +92,14 @@ eigenvectors and diagonal entries `dᵢ` is Mathlib's
 `Matrix.toLin e.toBasis e.toBasis (Matrix.diagonal d)`. Its additivity in `d`
 (`Matrix.diagonal_add`), its adjoint (`Matrix.toLin_conjTranspose` with
 `Matrix.diagonal_conjTranspose`) and its symmetry for real entries (`Matrix.isSymmetric_toLin_iff`)
-are in Mathlib. The last section computes its singular values and shows that every map is a
+are in Mathlib. The diagonal section computes its singular values and shows that every map is a
 diagonal map up to isometries on both sides.
 
 * `Matrix.toLin_diagonal_apply_self`: the diagonal operator sends `eᵢ` to `dᵢ eᵢ`.
+* `Matrix.adjoint_comp_self_toLin_diagonal_apply`: the Gram operator sends `eᵢ` to
+  `‖dᵢ‖² eᵢ`.
+* `OrthonormalBasis.adjoint_comp_self_toLin_diagonal_reindex_apply`: the same Gram relation
+  in a reordered diagonal basis.
 * `Matrix.singularValues_toLin_diagonal`: the singular values of the diagonal operator are the
   norms `‖dᵢ‖` listed in nonincreasing order.
 * `LinearMap.exists_linearIsometryEquiv_eq_comp_toLin_comp`: every map `A : E →ₗ[𝕜] F` is `U D V`
@@ -102,6 +111,15 @@ diagonal map up to isometries on both sides.
 * `LinearMap.exists_orthonormal_eq_sum_singularValues_smul_rankOne`: the compact singular value
   decomposition `A = ∑_{i < p} σᵢ wᵢ ⊗ vᵢ`, with `p = min (dim E) (dim F)` and both families
   orthonormal.
+
+## Orthogonal-tail bound for bounded maps
+
+The final section transfers the Gram-eigenbasis estimate to bounded maps, supplying the tail
+bound used in the Eckart–Young and attainment theorems.
+
+* `ContinuousLinearMap.norm_comp_orthogonal_spanIndices_le_of_adjoint_comp_self_eigenbasis`:
+  the norm on the orthogonal complement of the first `n` vectors of a sorted Gram eigenbasis
+  is at most the `n`-th singular value, including indices beyond the source dimension.
 
 ## Source
 
@@ -210,7 +228,7 @@ variable (A : E →ₗ[𝕜] F)
 local notation "⟪" x ", " y "⟫" => inner 𝕜 x y
 
 /-- The squared singular values are nonincreasing, including the zero tail. -/
-theorem antitone_sq_singularValues : Antitone fun i : ℕ ↦ A.singularValues i ^ 2 :=
+theorem sq_singularValues_antitone : Antitone fun i : ℕ ↦ A.singularValues i ^ 2 :=
   fun _ _ hij ↦ pow_le_pow_left₀ (A.singularValues_nonneg _)
     (A.singularValues_antitone hij) 2
 
@@ -266,7 +284,7 @@ theorem singularValues_mul_norm_le_norm_apply {n : ℕ} {x : E}
     A.singularValues n * ‖x‖ ≤ ‖A x‖ := by
   have h := A.isSymmetric_adjoint_comp_self.le_re_inner_of_eigenbasis A.rightSingularBasis
     A.adjoint_comp_self_rightSingularBasis (c := A.singularValues n ^ 2)
-    (fun i hi ↦ A.antitone_sq_singularValues hi) hx
+    (fun i hi ↦ A.sq_singularValues_antitone hi) hx
   rw [comp_apply, adjoint_inner_left, inner_self_eq_norm_sq, ← mul_pow] at h
   exact (pow_le_pow_iff_left₀ (mul_nonneg (A.singularValues_nonneg n) (norm_nonneg x))
     (norm_nonneg _) two_ne_zero).mp h
@@ -299,7 +317,7 @@ theorem norm_apply_le_singularValues_mul_norm {n : ℕ} {x : E}
     ‖A x‖ ≤ A.singularValues n * ‖x‖ := by
   exact A.norm_apply_le_of_mem_spanIndices_of_adjoint_comp_self_eigenbasis
     A.rightSingularBasis A.adjoint_comp_self_rightSingularBasis (A.singularValues_nonneg n)
-    (fun i hi ↦ A.antitone_sq_singularValues hi) hx
+    (fun i hi ↦ A.sq_singularValues_antitone hi) hx
 
 /-- A right singular vector with singular value zero lies in the kernel, so `A vᵢ` is fixed by
 the scalar `σᵢ⁻² σᵢ²` (with total field inversion) even when `σᵢ = 0`. -/

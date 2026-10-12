@@ -19,9 +19,16 @@ source is finite-dimensional: corestricting to the range supplies a finite-dimen
 For a supplied diagonal basis ordered by decreasing diagonal magnitudes, its first `n`
 vectors give a minimizing span in the original diagonal coordinates.
 
-The right singular basis and its tail estimate are supplied by
-`LinearMap.rightSingularBasis` and `LinearMap.norm_apply_le_singularValues_mul_norm`;
+The right singular basis is supplied by `LinearMap.rightSingularBasis`, with its Gram
+relation `LinearMap.adjoint_comp_self_rightSingularBasis`. The tail estimate is
+`ContinuousLinearMap.norm_comp_orthogonal_spanIndices_le_of_adjoint_comp_self_eigenbasis`;
 `ContinuousLinearMap.singularValue_eq_linearMap_singularValues` supplies Eckart–Young.
+Both the right-singular and diagonal minimizer formulas follow from
+`ContinuousLinearMap.nnnorm_comp_orthogonal_spanIndices_of_adjoint_comp_self_eigenbasis`.
+The explicit projection error is
+`ContinuousLinearMap.nnnorm_sub_comp_rightSingularBasis_starProjection`; its rank bound follows
+from `ContinuousLinearMap.rank_comp_starProjection_le` and
+`OrthonormalBasis.rank_spanIndices_val_lt_le`.
 
 ## References
 
@@ -65,9 +72,25 @@ theorem nnnorm_comp_orthogonal_rightSingularBasis_spanIndices (T : E →L[𝕜] 
     ‖T ∘L Vᗮ.subtypeL‖₊ = T.singularValue n := by
   exact T.nnnorm_comp_orthogonal_spanIndices_of_adjoint_comp_self_eigenbasis
     (T : E →ₗ[𝕜] F).rightSingularBasis
-    ((T : E →ₗ[𝕜] F).antitone_sq_singularValues.comp_monotone
+    ((T : E →ₗ[𝕜] F).sq_singularValues_antitone.comp_monotone
       (Fin.valOrderEmb _).monotone)
     (T : E →ₗ[𝕜] F).adjoint_comp_self_rightSingularBasis n
+
+/-- Composing with the projection onto the first `n` right singular vectors gives an
+approximation whose error is exactly the `n`-th approximation number, including the zero tail
+at and beyond the source dimension. Its rank is at most `n` by `rank_comp_starProjection_le`
+and `OrthonormalBasis.rank_spanIndices_val_lt_le`. -/
+@[simp]
+theorem nnnorm_sub_comp_rightSingularBasis_starProjection (T : E →L[𝕜] F) (n : ℕ) :
+    let V := (T : E →ₗ[𝕜] F).rightSingularBasis.spanIndices
+      ↑({i | (i : ℕ) < n} : Finset (Fin (finrank 𝕜 E)))
+    ‖T - T ∘L V.starProjection‖₊ = T.singularValue n := by
+  let v := (T : E →ₗ[𝕜] F).rightSingularBasis
+  let V := v.spanIndices ↑({i | (i : ℕ) < n} : Finset (Fin (finrank 𝕜 E)))
+  have hR := T.rank_comp_starProjection_le (v.rank_spanIndices_val_lt_le n)
+  refine le_antisymm ?_ (T.singularValue_le_nnnorm_sub hR)
+  exact (T.nnnorm_sub_comp_starProjection_le V).trans_eq
+    (T.nnnorm_comp_orthogonal_rightSingularBasis_spanIndices n)
 
 omit [FiniteDimensional 𝕜 F] in
 /-- For a finite-dimensional source, every approximation number is attained by a bounded map of rank
@@ -92,13 +115,13 @@ theorem exists_rank_le_nnnorm_sub_eq_singularValue (T : E →L[𝕜] F) (n : ℕ
   have hR := T.rank_comp_starProjection_le (v.rank_spanIndices_val_lt_le n)
   refine ⟨T ∘L V.starProjection, hR, le_antisymm ?_
     (T.singularValue_le_nnnorm_sub hR)⟩
-  refine (T.nnnorm_sub_comp_starProjection_le V).trans ?_
-  have hnorm : ‖T ∘L Vᗮ.subtypeL‖₊ = ‖T' ∘L Vᗮ.subtypeL‖₊ := by
+  have hnorm : ‖T - T ∘L V.starProjection‖₊ = ‖T' - T' ∘L V.starProjection‖₊ := by
     apply NNReal.coe_injective
     simp only [coe_nnnorm]
-    rw [← hT, ContinuousLinearMap.comp_assoc, ← Submodule.subtypeₗᵢ_toContinuousLinearMap]
+    rw [← hT, ContinuousLinearMap.comp_assoc, ← ContinuousLinearMap.comp_sub,
+      ← Submodule.subtypeₗᵢ_toContinuousLinearMap]
     exact W.subtypeₗᵢ.norm_toContinuousLinearMap_comp
-  rw [hnorm, T'.nnnorm_comp_orthogonal_rightSingularBasis_spanIndices n]
+  rw [hnorm, T'.nnnorm_sub_comp_rightSingularBasis_starProjection n]
   exact hle
 
 end ContinuousLinearMap
