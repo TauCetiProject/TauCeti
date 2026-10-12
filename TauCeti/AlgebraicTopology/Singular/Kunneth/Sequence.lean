@@ -40,13 +40,18 @@ classical sequence
 
 (`TopCat.singularHomologyKunnethUnitShortComplex_shortExact`).
 
-The naturality of `TopCat.singularHomologyToTor` in `X` and `Y`, and the splitting of the
-sequence, which cannot be chosen naturally, are not proved in this file.
+The map `TopCat.singularHomologyToTor` is natural in both spaces and in both coefficient modules
+(`TopCat.singularHomologyToTor_naturality` and
+`TopCat.singularHomologyToTor_coefficient_naturality`), as is the Künneth map, so the Künneth
+sequence is natural.  The splitting of the sequence, which cannot be chosen naturally, is not
+proved in this file.
 
 ## Main definitions and results
 
 * `TopCat.singularHomologyToTor`: the map
   `Hₘ₊₁(X × Y; M ⊗ N) ⟶ ⨁_{p + q = m} Tor₁(Hₚ(X; M), H_q(Y; N))`.
+* `TopCat.singularHomologyToTor_naturality` and
+  `TopCat.singularHomologyToTor_coefficient_naturality`: its naturality.
 * `TopCat.singularHomologyKunnethShortComplex` and
   `TopCat.singularHomologyKunnethShortComplex_shortExact`: **the Künneth short exact sequence**.
 * `TopCat.mono_singularHomologyKunneth`: the Künneth map is a monomorphism in every degree.
@@ -105,6 +110,69 @@ lemma singularHomologyKunneth_comp_singularHomologyToTor (m : ℕ) :
     singularHomologyKunneth X Y M N (m + 1) ≫ singularHomologyToTor X Y M N m = 0 :=
   (singularHomologyKunneth_comp_homologyMap_alexanderWhitney_assoc X Y M N (m + 1) _).trans
     (homologyKunneth_comp_homologyToTor _ _ m)
+
+variable {X Y} in
+/-- **Naturality of the Künneth short exact sequence** in both spaces: the map
+`TopCat.singularHomologyToTor` to `⨁_{p + q = m} Tor₁(Hₚ(X; M), H_q(Y; N))` commutes with the maps
+induced by continuous maps `f : X ⟶ X'` and `g : Y ⟶ Y'`.  Together with the naturality of the
+Künneth map (`TopCat.singularHomologyKunneth_naturality`), this makes the Künneth short exact
+sequence natural in `X` and `Y`. -/
+@[reassoc]
+theorem singularHomologyToTor_naturality {X' Y' : TopCat.{w}} (f : X ⟶ X') (g : Y ⟶ Y')
+    [∀ q, Projective (cokernel (((toSSet.obj Y').chainComplex N).iCycles q))]
+    [∀ q, Projective (((toSSet.obj Y').chainComplex N).cycles q)] (m : ℕ) :
+    ((singularHomologyFunctor _ (m + 1)).obj (M ⊗ N)).map (f ⊗ₘ g) ≫
+        singularHomologyToTor X' Y' M N m =
+      singularHomologyToTor X Y M N m ≫
+        GradedObject.mapBifunctorMapMap (Tor (ModuleCat.{w} k) 1) (fun x ↦ x.1 + x.2)
+          (fun p ↦ ((singularHomologyFunctor _ p).obj M).map f)
+          (fun q ↦ ((singularHomologyFunctor _ q).obj N).map g) m := by
+  -- `Hₙ(f)` is by definition the homology of the induced chain map, so the statement is the
+  -- naturality of the Alexander–Whitney map followed by that of the algebraic map.
+  have haw : homologyMap (SSet.chainComplexMap (toSSet.map (f ⊗ₘ g)) (M ⊗ N)) (m + 1) ≫
+      homologyMap (alexanderWhitney X' Y' M N) (m + 1) =
+        homologyMap (alexanderWhitney X Y M N) (m + 1) ≫
+          homologyMap (SSet.chainComplexMap (toSSet.map f) M ⊗ₘ
+            SSet.chainComplexMap (toSSet.map g) N) (m + 1) := by
+    rw [← homologyMap_comp, ← homologyMap_comp, alexanderWhitney_naturality]
+  rw [singularHomologyToTor_def, singularHomologyToTor_def]
+  -- The homology objects of `singularHomologyFunctor` and those of `homologyToTor` agree only up to
+  -- defeq of instances, so `rw` cannot reassociate the goal and the composites are matched by hand.
+  exact (Category.assoc _ _ _).symm.trans (((haw =≫ _).trans (Category.assoc _ _ _)).trans
+    ((homologyMap (alexanderWhitney X Y M N) (m + 1) ≫=
+      homologyToTor_naturality (SSet.chainComplexMap (toSSet.map f) M)
+        (SSet.chainComplexMap (toSSet.map g) N) m).trans (Category.assoc _ _ _).symm))
+
+variable {M N} in
+/-- **Naturality of the Künneth short exact sequence** in both coefficient modules: the map
+`TopCat.singularHomologyToTor` commutes with the maps induced by module maps `φ : M ⟶ M'` and
+`ψ : N ⟶ N'`. -/
+@[reassoc]
+theorem singularHomologyToTor_coefficient_naturality {M' N' : ModuleCat.{w} k} (φ : M ⟶ M')
+    (ψ : N ⟶ N') [∀ q, Projective (cokernel (((toSSet.obj Y).chainComplex N').iCycles q))]
+    [∀ q, Projective (((toSSet.obj Y).chainComplex N').cycles q)] (m : ℕ) :
+    ((singularHomologyFunctor _ (m + 1)).map (φ ⊗ₘ ψ)).app (X ⊗ Y) ≫
+        singularHomologyToTor X Y M' N' m =
+      singularHomologyToTor X Y M N m ≫
+        GradedObject.mapBifunctorMapMap (Tor (ModuleCat.{w} k) 1) (fun x ↦ x.1 + x.2)
+          (fun p ↦ ((singularHomologyFunctor _ p).map φ).app X)
+          (fun q ↦ ((singularHomologyFunctor _ q).map ψ).app Y) m := by
+  -- `Hₙ(-; φ)` is by definition the homology of the induced chain map, so the statement is the
+  -- naturality of the Alexander–Whitney map followed by that of the algebraic map.
+  have haw : homologyMap (((SSet.chainComplexFunctor _).map (φ ⊗ₘ ψ)).app (toSSet.obj (X ⊗ Y)))
+      (m + 1) ≫ homologyMap (alexanderWhitney X Y M' N') (m + 1) =
+        homologyMap (alexanderWhitney X Y M N) (m + 1) ≫
+          homologyMap (((SSet.chainComplexFunctor _).map φ).app (toSSet.obj X) ⊗ₘ
+            ((SSet.chainComplexFunctor _).map ψ).app (toSSet.obj Y)) (m + 1) := by
+    rw [← homologyMap_comp, ← homologyMap_comp, alexanderWhitney_coefficient_naturality]
+  rw [singularHomologyToTor_def, singularHomologyToTor_def]
+  -- The homology objects of `singularHomologyFunctor` and those of `homologyToTor` agree only up to
+  -- defeq of instances, so `rw` cannot reassociate the goal and the composites are matched by hand.
+  exact (Category.assoc _ _ _).symm.trans (((haw =≫ _).trans (Category.assoc _ _ _)).trans
+    ((homologyMap (alexanderWhitney X Y M N) (m + 1) ≫=
+      homologyToTor_naturality (((SSet.chainComplexFunctor _).map φ).app (toSSet.obj X))
+        (((SSet.chainComplexFunctor _).map ψ).app (toSSet.obj Y)) m).trans
+      (Category.assoc _ _ _).symm))
 
 /-- The Künneth short complex
 `⨁_{p + q = m + 1} Hₚ(X; M) ⊗ H_q(Y; N) ⟶ Hₘ₊₁(X × Y; M ⊗ N)`
