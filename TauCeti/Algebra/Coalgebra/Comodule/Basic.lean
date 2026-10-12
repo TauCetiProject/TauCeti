@@ -272,7 +272,7 @@ theorem map_coact_apply (f : Hom R C M N) (m : M) :
 
 variable (R C M) in
 /-- The identity morphism of a right comodule. -/
-@[expose, simps!] def id : Hom R C M M where
+@[expose, simps! -isSimp] def id : Hom R C M M where
   toLinearMap := LinearMap.id
   map_coact := by
     ext m
@@ -304,13 +304,15 @@ maps. -/
 theorem comp_toLinearMap (g : Hom R C N P) (f : Hom R C M N) :
     (g.comp f).toLinearMap = g.toLinearMap ∘ₗ f.toLinearMap := rfl
 
+/-- The identity morphism is a left identity for composition of comodule morphisms. -/
 theorem id_comp (f : Hom R C M N) : comp (id R C N) f = f := by
   ext m
-  simp
+  simp only [comp_apply, id_apply]
 
+/-- The identity morphism is a right identity for composition of comodule morphisms. -/
 theorem comp_id (f : Hom R C M N) : comp f (id R C M) = f := by
   ext m
-  simp
+  simp only [comp_apply, id_apply]
 
 @[simp]
 theorem comp_assoc (h : Hom R C P Q) (g : Hom R C N P) (f : Hom R C M N) :
