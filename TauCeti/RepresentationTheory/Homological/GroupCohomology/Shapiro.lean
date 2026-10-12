@@ -9,7 +9,6 @@ public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoria
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Shapiro
 public import TauCeti.RepresentationTheory.Homological.Resolution
 import TauCeti.RepresentationTheory.Homological.GroupCohomology.Resolution
-import TauCeti.RepresentationTheory.Homological.GroupCohomology.Functoriality
 
 public import TauCeti.RepresentationTheory.Coinduced
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.LongExactSequence

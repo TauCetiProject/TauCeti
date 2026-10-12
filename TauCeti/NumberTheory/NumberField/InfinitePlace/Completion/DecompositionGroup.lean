@@ -233,7 +233,8 @@ theorem decompositionHom_algebraMap (τ : MulAction.stabilizer (L ≃ₐ[K] L) w
   rw [decompositionHom_apply, completionCongr_algebraMap]
 
 /-- Restricting the action of an element of the decomposition group on `L_w` back to `L` recovers
-the element: `decompositionHom` is a section of restriction `Aut(L_w/K_v) → Aut(L/K)`. -/
+the element: composing `decompositionHom` with restriction `Aut(L_w/K_v) → Aut(L/K)` recovers the
+inclusion of the decomposition subgroup into `Aut(L/K)`. -/
 @[simp]
 theorem restrictNormalHom_restrictScalarsHom_decompositionHom [Normal K L]
     (τ : MulAction.stabilizer (L ≃ₐ[K] L) w) :
