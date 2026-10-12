@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Frobenius
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Range
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Ray.ClassQuotient
-public import TauCeti.NumberTheory.NumberField.LocalGlobal.DecompositionGroup
 import TauCeti.NumberTheory.LocalField.PowerSubgroup.Open
+import TauCeti.NumberTheory.NumberField.LocalGlobal.DecompositionGroup
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 
 /-!
@@ -240,8 +241,7 @@ theorem ideleClassNormMap_fixedField_surjective_of_stabilizer_le [IsGalois K L]
   have hu : u.asIdeal.LiesOver v.asIdeal := by
     rw [HeightOneSpectrum.under_asIdeal]
     infer_instance
-  exact ⟨⟨u, hu⟩, by
-    rw [finrank_adicCompletion_fixedField v w H u, Subgroup.relIndex_eq_one.mpr hle]⟩
+  exact ⟨⟨u, hu⟩, (finrank_adicCompletion_fixedField_eq_one_iff v w H u).mpr hle⟩
 
 /-- **Idele classes are norms from the fixed field of a group containing Frobenius elements.** Let
 `L/K` be Galois and `H` a subgroup of `Gal(L/K)`. If every finite place `v` of `K` outside a finite
