@@ -109,7 +109,7 @@ def adelicSpinorKernelCongr : U.adelicSpinorKernel hQ ≃* U'.adelicSpinorKernel
 /-- In each coordinate, adelic spinor-kernel transport is special orthogonal isometric
 transport. -/
 @[simp]
-theorem adelicSpinorKernelCongr_apply (g : U.adelicSpinorKernel hQ) (p : Nat.Primes) :
+theorem coe_adelicSpinorKernelCongr_apply (g : U.adelicSpinorKernel hQ) (p : Nat.Primes) :
     (U.adelicSpinorKernelCongr U' hQ e he g : U'.finiteAdelicSpecialOrthogonal) p =
       (e p).specialOrthogonalGroupCongr ((g : U.finiteAdelicSpecialOrthogonal) p) := by
   rw [adelicSpinorKernelCongr, TauCeti.Subgroup.coe_congrOfMapEq_apply,
@@ -118,7 +118,7 @@ theorem adelicSpinorKernelCongr_apply (g : U.adelicSpinorKernel hQ) (p : Nat.Pri
 /-- In each coordinate, inverse adelic spinor-kernel transport is inverse special orthogonal
 isometric transport. -/
 @[simp]
-theorem adelicSpinorKernelCongr_symm_apply (g : U'.adelicSpinorKernel hQ') (p : Nat.Primes) :
+theorem coe_adelicSpinorKernelCongr_symm_apply (g : U'.adelicSpinorKernel hQ') (p : Nat.Primes) :
     ((U.adelicSpinorKernelCongr U' hQ e he).symm g : U.finiteAdelicSpecialOrthogonal) p =
       (e p).specialOrthogonalGroupCongr.symm ((g : U'.finiteAdelicSpecialOrthogonal) p) := by
   rw [adelicSpinorKernelCongr, TauCeti.Subgroup.coe_congrOfMapEq_symm_apply,
@@ -135,7 +135,7 @@ theorem adelicSpinorKernelCongr_finiteAdelicSpinToSpinorKernel
         (restrictedProductCongrRight U.spin U'.spin (fun p ↦ (e p).spinGroupEquiv) hs x) := by
   apply Subtype.ext
   ext p : 1
-  simp only [adelicSpinorKernelCongr_apply, coe_finiteAdelicSpinToSpinorKernel_apply,
+  simp only [coe_adelicSpinorKernelCongr_apply, coe_finiteAdelicSpinToSpinorKernel_apply,
     finiteAdelicSpinToSpecialOrthogonal_apply, restrictedProductCongrRight_apply]
   exact (e p).specialOrthogonalGroupCongr_spinToSpecialOrthogonal (x p)
 
