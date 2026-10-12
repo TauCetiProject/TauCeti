@@ -373,15 +373,10 @@ is the resultant of `f` and `f'`, and since `f` is monic that resultant does not
 degree at which `f'` is read. -/
 lemma norm_mk_derivative_f :
     Algebra.norm K (AdjoinRoot.mk W.f (derivative W.f)) = -W.f.discr := by
-  have h := resultant_deriv (f := W.f) (by rw [degree_f]; norm_num)
-  rw [natDegree_f, W.monic_f.leadingCoeff] at h
-  have hd : (derivative W.f).natDegree ≤ 2 := by rw [derivative_f]; compute_degree
-  obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_le hd
-  have hcoeff : W.f.coeff 3 = 1 := by simp [f]
-  rw [AdjoinRoot.norm_mk_eq_resultant W.monic_f, natDegree_f, ← one_mul (resultant _ _ _ _),
-    ← one_pow k, ← hcoeff, ← resultant_add_right_deg _ _ _ _ _ le_rfl, ← hk]
-  norm_num at h
-  exact h
+  rw [AdjoinRoot.norm_mk_eq_resultant_of_natDegree_le W.monic_f (n := W.f.natDegree - 1)
+    (by rw [natDegree_f, derivative_f]; compute_degree),
+    resultant_deriv (by rw [degree_f]; norm_num), W.monic_f.leadingCoeff, natDegree_f]
+  norm_num
 
 /-- In characteristic `≠ 2` normal form the discriminant of `W` is `16` times that of the cubic
 `f`. The two differ by a unit at a prime not above `2`, but not at a prime above `2`: there, if

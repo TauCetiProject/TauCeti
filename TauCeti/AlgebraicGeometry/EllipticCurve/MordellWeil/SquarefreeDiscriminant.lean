@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.SelmerGroupA
+import TauCeti.Algebra.Order.GroupWithZero.WithZeroInt
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.FieldNorm
 import TauCeti.RingTheory.Polynomial.Resultant.AdjoinRoot
 import TauCeti.RingTheory.Valuation.RootMonic
@@ -57,7 +58,8 @@ The argument follows Michael Stoll's `EllipticCurves` project
 (`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0), revision `3bfe124`:
 `EllipticCurves/SelmerGroup.lean`, section `OddPlace` (the critical-factor parity argument, there
 over the completion of a number field at a place, with the unique prime of each local field factor)
-and section `WithZeroArith` (the value-group lemmas, whose statements are adapted here), and
+and section `WithZeroArith` (the value-group lemmas, adapted in
+`TauCeti.Algebra.Order.GroupWithZero.WithZeroInt`), and
 `EllipticCurves/WeakMordellWeil.lean`, section `DerivativeUnit`
 (`valuation_deriv_eval_eq_one_of_exp_neg_one_le`, there `valuation_deriv_eval_eq_one`). Here the
 statements are proved over a Dedekind domain, with the norm formula summed over all primes above
@@ -70,7 +72,7 @@ statements are proved over a Dedekind domain, with the norm formula summed over 
 
 public section
 
-open Polynomial IsDedekindDomain WithZero
+open Polynomial IsDedekindDomain WithZero TauCeti
 
 namespace WeierstrassCurve.Affine
 
@@ -82,84 +84,6 @@ of the root `T` of `f` in `𝕃 p`. -/
 local notation:max "𝕃" p:max => AdjoinRoot (p : K[X])
 local notation:max "ι" p:max => algebraMap K (AdjoinRoot (p : K[X]))
 local notation:max "θ" p:max => AdjoinRoot.root (p : K[X])
-
-section ValueGroup
-
-/-! Arithmetic in the value group `ℤᵐ⁰`: a weighted product of integral values that is at least
-`exp (-1)` has at most one nontrivial factor, entering with weight `1`, and in a weighted product
-equal to a square, a factor of weight `1` is a square once all the others are. -/
-
-private lemma le_exp_neg_one_of_le_one {t : ℤᵐ⁰} (h1 : t ≤ 1) (ht : t ≠ 1) : t ≤ exp (-1) := by
-  rcases eq_or_ne t 0 with rfl | h0
-  · exact zero_le
-  rw [← exp_log h0] at h1 ht ⊢
-  rw [← exp_zero, exp_le_exp] at h1
-  rw [Ne, exp_eq_one] at ht
-  rw [exp_le_exp]
-  lia
-
-private lemma exp_neg_one_lt_mul {s t : ℤᵐ⁰} (hs : s ≤ exp (-1)) (ht : t ≤ exp (-1)) :
-    s * t < exp (-1) :=
-  (mul_le_mul' hs ht).trans_lt <| by rw [← exp_add, exp_lt_exp]; norm_num
-
-/-- An integral value whose square is at least `exp (-1)` is `1`. -/
-private lemma eq_one_of_exp_neg_one_le_sq {t : ℤᵐ⁰} (h1 : t ≤ 1) (h2 : exp (-1) ≤ t ^ 2) :
-    t = 1 := by
-  by_contra ht
-  have h := le_exp_neg_one_of_le_one h1 ht
-  exact (exp_neg_one_lt_mul h h).not_ge (by rwa [← sq])
-
-variable {I : Type*} [Fintype I]
-
-/-- In a weighted product of integral values that is at least `exp (-1)`, a factor different from
-`1` has weight `1`, and all the other factors are `1`. -/
-private lemma eq_one_and_forall_eq_one_of_exp_neg_one_le_prod {t : I → ℤᵐ⁰} {e : I → ℕ}
-    (ht : ∀ i, t i ≤ 1) (he : ∀ i, 1 ≤ e i) (hprod : exp (-1) ≤ ∏ i, t i ^ e i) {i₀ : I}
-    (hi₀ : t i₀ ≠ 1) : e i₀ = 1 ∧ ∀ i ≠ i₀, t i = 1 := by
-  classical
-  have h₀ := le_exp_neg_one_of_le_one (ht i₀) hi₀
-  have hrest (s : Finset I) : ∏ i ∈ s, t i ^ e i ≤ 1 :=
-    Finset.prod_le_one fun i _ ↦ pow_le_one' (ht i) _
-  rw [← Finset.mul_prod_erase _ _ (Finset.mem_univ i₀)] at hprod
-  refine ⟨?_, fun j hj ↦ ?_⟩
-  · -- a weight of at least `2` would put the product below `t i₀ ^ 2 < exp (-1)`
-    by_contra hne
-    have h2 : t i₀ ^ e i₀ ≤ t i₀ ^ 2 := pow_le_pow_right_of_le_one' (ht i₀) (by have := he i₀; lia)
-    refine (exp_neg_one_lt_mul h₀ h₀).not_ge (hprod.trans ?_)
-    rw [← sq]
-    exact (mul_le_of_le_one_right' (hrest _)).trans h2
-  · -- a second nontrivial factor would put the product below `t i₀ * t j < exp (-1)`
-    by_contra hj'
-    rw [← Finset.mul_prod_erase _ _ (Finset.mem_erase.mpr ⟨hj, Finset.mem_univ j⟩)] at hprod
-    refine (exp_neg_one_lt_mul h₀ (le_exp_neg_one_of_le_one (ht j) hj')).not_ge (hprod.trans ?_)
-    refine mul_le_mul' ((pow_le_pow_right_of_le_one' (ht i₀) (he i₀)).trans_eq (pow_one _)) ?_
-    exact (mul_le_of_le_one_right' (hrest _)).trans
-      ((pow_le_pow_right_of_le_one' (ht j) (he j)).trans_eq (pow_one _))
-
-/-- In a weighted product of nonzero values equal to a square, a factor of weight `1` has even
-logarithm once all the other factors do. -/
-private lemma even_log_of_prod_eq_sq {s : I → ℤᵐ⁰} {e : I → ℕ} {c : ℤᵐ⁰} (hs : ∀ i, s i ≠ 0)
-    {i₀ : I} (he : e i₀ = 1) (hev : ∀ i ≠ i₀, (2 : ℤ) ∣ log (s i))
-    (hprod : ∏ i, s i ^ e i = c ^ 2) : (2 : ℤ) ∣ log (s i₀) := by
-  classical
-  -- the factors away from `i₀` are squares, so their product is a square `d ^ 2`
-  choose! k hk using hev
-  set d := ∏ i ∈ Finset.univ.erase i₀, exp (k i) ^ e i
-  have hd : ∏ i ∈ Finset.univ.erase i₀, s i ^ e i = d ^ 2 := by
-    rw [← Finset.prod_pow]
-    refine Finset.prod_congr rfl fun i hi ↦ ?_
-    rw [← pow_mul, mul_comm, pow_mul, ← exp_nsmul, ← exp_log (hs i),
-      hk i (Finset.ne_of_mem_erase hi), two_nsmul, ← two_mul]
-  have hd0 : d ≠ 0 := Finset.prod_ne_zero_iff.mpr fun _ _ ↦ pow_ne_zero _ exp_ne_zero
-  rw [← Finset.mul_prod_erase _ _ (Finset.mem_univ i₀), he, pow_one, hd,
-    ← eq_div_iff (pow_ne_zero 2 hd0), ← div_pow] at hprod
-  have hc : c / d ≠ 0 := by
-    rintro h
-    rw [h, zero_pow two_ne_zero] at hprod
-    exact hs i₀ hprod
-  exact ⟨log (c / d), by rw [hprod, log_pow, two_nsmul, two_mul]⟩
-
-end ValueGroup
 
 /-- At a root `x` of `f`, if `a₂`, `a₄` and `a₆` are `ν`-integral and `exp (-1) ≤ ν (disc f)`, then
 `f' x = 3x² + 2a₂x + a₄` is a `ν`-unit: `disc f` is the integral discriminant of the cofactor
@@ -226,6 +150,27 @@ private lemma valuation_norm_eq_prod (v : HeightOneSpectrum R) (a : W.A) :
   exact Finset.prod_congr rfl fun q _ ↦
     HeightOneSpectrum.valuation_norm (K := K) (L := 𝕃 q) (B := W.ringOfIntegersFactor R q) v _
 
+/-- Since `N(f'(T)) = -disc f`, the weighted product over the pairs `(q, w)` above `v` of the
+`w`-adic valuations of `f' θ` is `v (disc f)`. -/
+private lemma prod_valuation_deriv_root (v : HeightOneSpectrum R) :
+    ∏ i : W.PrimesAboveFactors R v, i.2.1.valuation (𝕃 i.1)
+      (3 * θ i.1 ^ 2 + 2 * ι i.1 W.a₂ * θ i.1 + ι i.1 W.a₄) ^ i.2.1.asIdeal.inertiaDeg R =
+      v.valuation K W.f.discr := by
+  rw [← Valuation.map_neg, ← W.norm_mk_derivative_f, W.valuation_norm_eq_prod R v]
+  refine Finset.prod_congr rfl fun i _ ↦ ?_
+  rw [AdjoinRoot.projFactor_mk, derivative_f]
+  simp [AdjoinRoot.mk_C, map_ofNat, ← AdjoinRoot.algebraMap_eq]
+
+/-- Since `N(x - T) = f x`, the weighted product over the pairs `(q, w)` above `v` of the `w`-adic
+valuations of `x - θ` is `v (f x)`. -/
+private lemma prod_valuation_algebraMap_sub_root (v : HeightOneSpectrum R) (x : K) :
+    ∏ i : W.PrimesAboveFactors R v,
+      i.2.1.valuation (𝕃 i.1) (ι i.1 x - θ i.1) ^ i.2.1.asIdeal.inertiaDeg R =
+      v.valuation K (W.f.eval x) := by
+  rw [← AdjoinRoot.norm_algebraMap_sub_root W.monic_f x, ← AdjoinRoot.mk_C, ← AdjoinRoot.mk_X,
+    ← map_sub, W.valuation_norm_eq_prod R v]
+  exact Finset.prod_congr rfl fun i _ ↦ by rw [W.projFactor_mk_C_sub_X]
+
 /-- **The arithmetic core of Step 6 where `disc f` has valuation at most `1`.** For `(x, y)` on `W`
 with `f x ≠ 0`, and `w` a prime of the ring of integers of the field factor `K[X] ⧸ (p)` such that
 `a₂`, `a₄` and `a₆` are integral and `exp (-1) ≤ v (disc f)` at the prime `v` under `w`, the
@@ -257,12 +202,8 @@ theorem even_valuationOfNeZero_sub_root_of_exp_neg_one_le (p : W.f.Factors) {x y
   obtain ⟨he₀, hrest⟩ := eq_one_and_forall_eq_one_of_exp_neg_one_le_prod (i₀ := i₀)
     (t := fun i : W.PrimesAboveFactors R v ↦ i.2.1.valuation (𝕃 i.1)
       (3 * θ i.1 ^ 2 + 2 * ι i.1 W.a₂ * θ i.1 + ι i.1 W.a₄))
-    (fun i ↦ W.valuation_deriv_root_le_one R i.1 (by rwa [hv]) (by rwa [hv]) (by rwa [hv])) he (by
-      have h' := W.valuation_norm_eq_prod R v (AdjoinRoot.mk W.f (derivative W.f))
-      rw [W.norm_mk_derivative_f, Valuation.map_neg] at h'
-      refine hd.trans_eq (h'.trans (Finset.prod_congr rfl fun i _ ↦ ?_))
-      rw [AdjoinRoot.projFactor_mk, derivative_f]
-      simp [AdjoinRoot.mk_C, map_ofNat, ← AdjoinRoot.algebraMap_eq]) hw
+    (fun i ↦ W.valuation_deriv_root_le_one R i.1 (by rwa [hv]) (by rwa [hv]) (by rwa [hv])) he
+    (hd.trans_eq (W.prod_valuation_deriv_root R v).symm) hw
   -- the valuations of `x - θ` are even away from `i₀`, with product `v(y)²`
   have hlog (i : W.PrimesAboveFactors R v) :
       log (i.2.1.valuation (𝕃 i.1) (ι i.1 x - θ i.1)) = Multiplicative.toAdd
@@ -270,7 +211,7 @@ theorem even_valuationOfNeZero_sub_root_of_exp_neg_one_le (p : W.f.Factors) {x y
     conv_lhs => rw [← IsUnit.unit_spec (W.isUnit_algebraMap_sub_root hx i.1)]
     rw [← HeightOneSpectrum.valuationOfNeZero_eq]
     rfl
-  have hev := even_log_of_prod_eq_sq (i₀ := i₀) (c := v.valuation K y)
+  have hev := two_dvd_log_of_prod_eq_sq (i₀ := i₀) (c := v.valuation K y)
     (s := fun i : W.PrimesAboveFactors R v ↦ i.2.1.valuation (𝕃 i.1) (ι i.1 x - θ i.1))
     (e := fun i : W.PrimesAboveFactors R v ↦ i.2.1.asIdeal.inertiaDeg R)
     (fun i ↦ (Valuation.ne_zero_iff _).mpr (W.isUnit_algebraMap_sub_root hx i.1).ne_zero) he₀
@@ -278,10 +219,8 @@ theorem even_valuationOfNeZero_sub_root_of_exp_neg_one_le (p : W.f.Factors) {x y
       rw [hlog]
       exact W.even_valuationOfNeZero_sub_root R i.1 h hx _ (IsUnit.unit_spec _) i.2.1
         (by rwa [hv]) (by rwa [hv]) (by rwa [hv]) (hrest i hi)) (by
-      rw [← map_pow, ← (equation_iff_eval_f_eq_sq W x y).mp h,
-        ← AdjoinRoot.norm_algebraMap_sub_root W.monic_f x, ← AdjoinRoot.mk_C, ← AdjoinRoot.mk_X,
-        ← map_sub, W.valuation_norm_eq_prod R v]
-      exact Finset.prod_congr rfl fun i _ ↦ by rw [W.projFactor_mk_C_sub_X])
+      rw [W.prod_valuation_algebraMap_sub_root R v, (equation_iff_eval_f_eq_sq W x y).mp h,
+        map_pow])
   rw [hlog] at hev
   have hu' : (W.isUnit_algebraMap_sub_root hx p).unit = u := Units.ext (by simp [hu])
   rwa [hu'] at hev
