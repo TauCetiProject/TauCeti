@@ -9,7 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.CompleteReducibility
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Basic
 public import Mathlib.Algebra.Lie.Killing
 import TauCeti.Algebra.AlgebraicGroup.Symplectic.Connected
-import TauCeti.Algebra.AlgebraicGroup.Symplectic.Tangent
+import TauCeti.Algebra.AlgebraicGroup.Symplectic.Tangent.Basic
 import TauCeti.Algebra.Lie.Symplectic.Killing
 
 /-!

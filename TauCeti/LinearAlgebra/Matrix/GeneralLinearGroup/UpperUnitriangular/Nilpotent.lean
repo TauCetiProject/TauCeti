@@ -40,9 +40,8 @@ nilpotent, and therefore solvable, over every ring.
 * T. A. Springer, *Linear Algebraic Groups*, §2.4.
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 
-This is the nilpotence input for Layer 5, "Lie--Kolchin; solvable groups", of the
-ReductiveGroups roadmap. Combined with the upper-unitriangular embedding characterization, it
-gives the implication from unipotence to solvability.
+Combined with the upper-unitriangular embedding characterization, this gives the implication
+from unipotence to solvability.
 -/
 
 public section
@@ -287,42 +286,6 @@ private instance finIsNilpotent : Group.IsNilpotent (upperUnitriangularGroup (Fi
   refine (lowerCentralSeries_le_superdiagonalSubgroup (R := R) n).trans ?_
   rw [superdiagonalSubgroup_eq_bot_of_le (R := R) (n := n) (Nat.le_add_right n 1)]
 
-private theorem isUpperUnitriangular_reindexOrderIso
-    {m m' : Type*} [Fintype m] [Fintype m'] [LinearOrder m] [LinearOrder m']
-    (e : m ≃o m') (g : Matrix.GeneralLinearGroup m R)
-    (hg : ((g : Matrix.GeneralLinearGroup m R) : Matrix m m R).IsUpperUnitriangular) :
-    (((Units.mapEquiv (Matrix.reindexRingEquiv R e.toEquiv).toMulEquiv g :
-      Matrix.GeneralLinearGroup m' R)) : Matrix m' m' R).IsUpperUnitriangular := by
-  rw [Matrix.isUpperUnitriangular_def]
-  constructor
-  · intro i j hji
-    simp only [Units.coe_mapEquiv]
-    exact hg.isUpperTriangular (e.symm.lt_iff_lt.2 hji)
-  · intro i
-    simp only [Units.coe_mapEquiv]
-    exact hg.apply_diag (e.symm i)
-
-/-- Order-preserving reindexing identifies the corresponding upper-unitriangular groups. -/
-private noncomputable def reindexOrderIsoMulEquiv
-    {m m' : Type*} [Fintype m] [Fintype m'] [LinearOrder m] [LinearOrder m']
-    (e : m ≃o m') : upperUnitriangularGroup m R ≃* upperUnitriangularGroup m' R := by
-  let reindexEquiv : Matrix.GeneralLinearGroup m R ≃* Matrix.GeneralLinearGroup m' R :=
-    Units.mapEquiv (Matrix.reindexRingEquiv R e.toEquiv).toMulEquiv
-  let inverseReindexEquiv : Matrix.GeneralLinearGroup m' R ≃* Matrix.GeneralLinearGroup m R :=
-    Units.mapEquiv (Matrix.reindexRingEquiv R e.symm.toEquiv).toMulEquiv
-  refine (MulEquiv.subgroupMap reindexEquiv (upperUnitriangularGroup m R)).trans
-    (MulEquiv.subgroupCongr ?_)
-  ext g
-  constructor
-  · rintro ⟨h, hh, rfl⟩
-    apply mem_iff.mpr
-    exact isUpperUnitriangular_reindexOrderIso (R := R) e h (mem_iff.mp hh)
-  · intro hg
-    refine ⟨inverseReindexEquiv g, ?_, ?_⟩
-    · exact mem_iff.mpr
-        (isUpperUnitriangular_reindexOrderIso (R := R) e.symm g (mem_iff.mp hg))
-    · exact inverseReindexEquiv.symm_apply_apply g
-
 /-- Upper-unitriangular matrices over every finite linearly ordered index type form a nilpotent
 group over every ring. -/
 instance instIsNilpotent {m : Type*} [Fintype m] [LinearOrder m] :
@@ -330,6 +293,6 @@ instance instIsNilpotent {m : Type*} [Fintype m] [LinearOrder m] :
   let e : Fin (Fintype.card m) ≃o m := Fintype.orderIsoFinOfCardEq m rfl
   let _ : Group.IsNilpotent (upperUnitriangularGroup (Fin (Fintype.card m)) R) :=
     finIsNilpotent
-  exact Group.nilpotent_of_mulEquiv (reindexOrderIsoMulEquiv (R := R) e)
+  exact Group.nilpotent_of_mulEquiv (e.reindexUpperUnitriangularGroup R)
 
 end TauCeti.UpperUnitriangularGroup

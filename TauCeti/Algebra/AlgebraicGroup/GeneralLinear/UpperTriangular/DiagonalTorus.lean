@@ -34,7 +34,7 @@ is the standard diagonal torus.
 
 public section
 
-open CategoryTheory WithConv
+open CategoryTheory
 
 namespace TauCeti.GeneralLinear.UpperTriangular
 

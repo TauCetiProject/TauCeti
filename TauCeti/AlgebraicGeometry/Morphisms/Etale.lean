@@ -48,7 +48,7 @@ theorem Scheme.Hom.etale_of_finrank_le_natCard {K : Type u} [Field K] {X : Schem
   have : IsAffine X := isAffine_of_isAffineHom f
   let := ((Scheme.ΓSpecIso (.of K)).inv ≫ f.appTop).hom.toAlgebra
   have hf : algebraMap K Γ(X, ⊤) = ((Scheme.ΓSpecIso (.of K)).inv ≫ f.appTop).hom := rfl
-  have : Module.Finite K Γ(X, ⊤) := f.finite_of_field hf
+  have : Module.Finite K Γ(X, ⊤) := f.moduleFinite_appTop hf
   -- a point `x` of `X` over `Spec K` is a section of `f`, so pulling back functions along it is a
   -- character of `Γ(X, ⊤)`
   let χ (x : 𝟙_ (Over (Spec (.of K))) ⟶ Over.mk f) : Γ(X, ⊤) →ₐ[K] K :=

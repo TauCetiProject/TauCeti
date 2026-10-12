@@ -265,7 +265,7 @@ private theorem taylor_comp_barMap (f : AInfinityStrictHom AA BB) :
   have hmaps :
       (BB.taylor ∘ₗ f.barMap) ∘ₗ ReducedTensorWords.of R A n =
         (f.toLinearMap ∘ₗ AA.taylor) ∘ₗ ReducedTensorWords.of R A n := by
-    apply AA.grading.piTensorProduct_ext
+    apply InternalGrading.piTensorProduct_ext (fun _ ↦ AA.grading)
     intro q
     let d : ℕ → ℤ := fun i ↦ if h : i < n.1 then (q ⟨i, h⟩).1 else 0
     let y : ℕ → A := fun i ↦ if h : i < n.1 then (q ⟨i, h⟩).2 else 0

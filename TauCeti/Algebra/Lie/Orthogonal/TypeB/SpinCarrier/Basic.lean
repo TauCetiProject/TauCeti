@@ -125,6 +125,7 @@ noncomputable def basisReflection (i : Fin (n + 1)) (a : Fin (dimension n)) :
   Fintype.equivFin (Finset (Fin (n + 1))) (DynkinType.typeBSpinReflection i (signSet n a))
 
 /-- Enumerating a reflected basis index recovers the reflected sign set. -/
+@[simp]
 theorem signSet_basisReflection (i : Fin (n + 1)) (a : Fin (dimension n)) :
     signSet n (basisReflection n i a) = DynkinType.typeBSpinReflection i (signSet n a) := by
   simp [basisReflection, signSet]
@@ -522,6 +523,15 @@ theorem points_def (A : Type v) [CommRing A] :
       TauCeti.GeneralLinear.hopfIdealPointsSubgroup (dimension n) (definingIdeal n) A := by
   rw [points, definingIdeal]
   exact kostantToralPointsSubgroup_def _ _ _ _ _ _ _ _ A
+
+/-- The carrier points are the points of the generic Kostant toral closure they are cut out from. -/
+theorem points_eq_kostantToralPointsSubgroup (A : Type v) [CommRing A] :
+    points n A =
+      kostantToralPointsSubgroup
+        (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
+        (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
+        (rep_kostantForm_mem_lattice n) (isNilpotent_rep_rootGenerator n)
+        (latticeBasis n) (basisWeight n) A := (rfl)
 
 /-- A matrix is a carrier point exactly when its associated convolution point kills the
 defining Hopf ideal. -/

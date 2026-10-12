@@ -29,9 +29,6 @@ ordinary functor of points.
 * `TauCeti.Bialgebra.CounitAlgebra.pointsMulEquiv_mapValue` and
   `TauCeti.Bialgebra.CounitAlgebra.mapValue_pointsMulEquiv_symm_apply`: the identification is
   natural in the coefficient algebra.
-
-This is coefficient bookkeeping for the adjoint action of Layer 2, "Lie algebra and the adjoint
-representation", of the ReductiveGroups roadmap.
 -/
 
 public section

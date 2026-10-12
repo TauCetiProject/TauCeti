@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.Basic
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
-import TauCeti.CategoryTheory.Comma.Over
 
 /-!
 # Weight-Levi subgroup schemes of the general linear group

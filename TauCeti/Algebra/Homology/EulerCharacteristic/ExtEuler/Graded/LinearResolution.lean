@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.GradedModuleCat.LinearResolution
+public import TauCeti.Algebra.Category.GradedModuleCat.LinearResolution.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.Shift
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Basic
 

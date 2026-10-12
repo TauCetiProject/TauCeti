@@ -35,11 +35,6 @@ points then promotes the pointwise isomorphism to an isomorphism of coordinate H
 
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 2.37.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Section 6.7.
-
-This is the component-group input for the Layer 6 theorem that the center of a semisimple affine
-group is finite. Applied to the reduced center, it turns the vanishing of that smooth group's
-identity component into finiteness; finiteness of the original center then follows by controlling
-its nilpotent thickening.
 -/
 
 public section

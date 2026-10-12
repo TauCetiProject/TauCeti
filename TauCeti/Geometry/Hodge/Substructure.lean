@@ -328,7 +328,7 @@ namespace IsMorphism
 /-- **A morphism of pure Hodge structures is graded**: it intertwines the Hodge projections of the
 source and of the target. -/
 theorem proj_comp (h : IsMorphism hs hs' g) (p : ℤ) : hs'.proj p ∘ₗ g = g ∘ₗ hs.proj p := by
-  refine hs.linearMap_ext_of_piece fun q x hx ↦ ?_
+  refine hs.addHom_ext_of_piece fun q x hx ↦ ?_
   have hgx : g x ∈ hs'.piece q := h.map_piece_le q ⟨x, hx, rfl⟩
   simp only [LinearMap.coe_comp, Function.comp_apply]
   rcases eq_or_ne q p with rfl | hqp
