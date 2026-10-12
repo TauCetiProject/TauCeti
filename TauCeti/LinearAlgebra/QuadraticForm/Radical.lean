@@ -33,7 +33,7 @@ its polar form is `2 • B`, and nondegeneracy passes from `B` to it as soon as 
 * `QuadraticMap.orthogonal_polarBilin_eq_radical_of_isCompl`: the polar orthogonal complement of
   a radical complement is the radical.
 * `QuadraticMap.nondegenerate_restrict_of_isCompl_radical`: a radical complement is regular.
-* `QuadraticForm.exists_equivalent_zero_radical_prod`: a finite-dimensional quadratic form splits
+* `QuadraticForm.exists_equivalent_zero_radical_prod`: a quadratic form splits
   as the zero form on its radical and a regular complement.
 * `QuadraticForm.finrank_radical_eq_of_equivalent_zero_prod` and
   `QuadraticForm.finrank_zeroPart_eq_of_equivalent_zero_prod`: the zero summand in a decomposition
@@ -475,13 +475,13 @@ universe u
 
 variable {K : Type u} [Field K] [Invertible (2 : K)]
 
-/-- Every finite-dimensional quadratic form is an orthogonal sum of the zero form on its radical
+/-- Every quadratic form is an orthogonal sum of the zero form on its radical
 and a nondegenerate restriction to a complementary subspace.
 
 The complement argument follows Lam, *Introduction to Quadratic Forms over Fields*, Chapter I,
 §4. -/
 theorem exists_equivalent_zero_radical_prod
-    {V : Type*} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+    {V : Type*} [AddCommGroup V] [Module K V]
     (Q : QuadraticForm K V) :
     ∃ C : Submodule K V, IsCompl Q.radical C ∧ (Q.restrict C).Nondegenerate ∧
       Q.Equivalent ((0 : QuadraticForm K Q.radical).prod (Q.restrict C)) := by
