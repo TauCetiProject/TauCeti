@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.RationalOpen
+public import TauCeti.RingTheory.Huber.LocalizationTopology.Pair
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Trivial
 
 /-!
@@ -91,15 +92,17 @@ theorem isAffinoid_iff_exists_complete (X : PreAdicSpace.{u}) : isAffinoid X ↔
     have _ := isTopologicalRing_locUniformSpace P {1} 1 B hden
     have _ := isHuberRing_completion_locTopology P {1} 1 B hden
     let S' : Pair (UniformSpace.Completion B) :=
-      ⟨completedPlusSubring P S.plus {1} 1 B hden,
-        isRingOfIntegralElements_completedPlusSubring P S.plus (fun a _ ↦ hP a.2)
-          S.isRingOfIntegralElements.isPowerBounded_of_mem {1} 1 B hden⟩
-    exact ⟨UniformSpace.Completion B, inferInstance, inferInstance, inferInstance,
+      rationalLocalizationPair P S hP {1} 1 B hden
+    have hP' : (completionLocalization P {1} 1 B hden).ringOfDefinition ≤ S'.plus := by
+      simpa only [S', rationalLocalizationPair_plus] using
+        completionLocalization_ringOfDefinition_le_completedPlusSubring P S.plus hP
+          {1} 1 B hden
+    refine ⟨UniformSpace.Completion B, inferInstance, inferInstance, inferInstance,
       inferInstance, inferInstance, inferInstance, inferInstance, S',
-      completionLocalization P {1} 1 B hden,
-      completionLocalization_ringOfDefinition_le_completedPlusSubring P S.plus hP {1} 1 B hden,
-      ⟨e ≪≫ presentationLimitPreAdicSpaceCompleteIso P S.plus
-        S.isRingOfIntegralElements.isPowerBounded_of_mem hP B hden⟩⟩
+      completionLocalization P {1} 1 B hden, hP', ⟨?_⟩⟩
+    simpa only [S', rationalLocalizationPair_plus] using
+      e ≪≫ presentationLimitPreAdicSpaceCompleteIso P S.plus
+        S.isRingOfIntegralElements.isPowerBounded_of_mem hP B hden
   · rintro ⟨A, _, _, _, _, _, _, _, S, P, hP, ⟨e⟩⟩
     exact (isAffinoid_iff X).mpr
       ⟨A, inferInstance, inferInstance, inferInstance, inferInstance, S, P, hP, ⟨e⟩⟩
