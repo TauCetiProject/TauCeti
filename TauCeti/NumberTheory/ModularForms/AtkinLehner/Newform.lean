@@ -166,7 +166,6 @@ def _root_.HeckeRing.GL2.Newform.atkinLehnerTransform (f : Newform N k)
   atkinLehner_newform f h.pos h.dvd (isAtkinLehnerMatrix_atkinLehnerMatrix h)
 
 /-- The cusp form underlying Atkin–Lehner transport is the canonical normalized slash. -/
-@[simp]
 theorem _root_.HeckeRing.GL2.Newform.toCuspForm_atkinLehnerTransform (f : Newform N k)
     (h : Q ∥ N) :
     (f.atkinLehnerTransform h).toCuspForm =
