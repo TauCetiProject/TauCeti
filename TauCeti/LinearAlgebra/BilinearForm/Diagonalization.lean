@@ -412,8 +412,7 @@ theorem IsSymm.exists_orthogonal_basis_of_isAlt_imp_eq_zero (hB : B.IsSymm)
       hB.exists_apply_self_ne_zero_and_restrict_orthogonal_isAlt_imp_eq_zero
         fun halt => hB₀ (h halt)
     have hd' : finrank K (B.orthogonal (K ∙ x)) = d := by
-      rw [← Submodule.finrank_add_eq_of_isCompl (isCompl_span_singleton_orthogonal hx).symm,
-        finrank_span_singleton (ne_zero_of_not_isOrtho_self x hx)] at hd
+      have hdim := B.finrank_orthogonal_span_singleton_add_one hx
       omega
     obtain ⟨v, hv⟩ := ih (hB.restrict _) hW hd'
     obtain ⟨b, hb, -, -⟩ := hB.isRefl.exists_orthogonal_basis_of_orthogonal_span_singleton

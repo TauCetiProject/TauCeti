@@ -307,8 +307,17 @@ namespace LinearMap.BilinForm
 
 open Module
 
-variable {K V : Type*} [Field K] [Invertible (2 : K)] [AddCommGroup V] [Module K V]
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
   [FiniteDimensional K V] {B : LinearMap.BilinForm K V}
+
+/-- The orthogonal complement of a vector with nonzero self-pairing has codimension one,
+without any symmetry or characteristic assumption on the bilinear form. -/
+theorem finrank_orthogonal_span_singleton_add_one (B : LinearMap.BilinForm K V) {x : V}
+    (hx : B x x ≠ 0) : finrank K (B.orthogonal (K ∙ x)) + 1 = finrank K V := by
+  simpa only [finrank_span_singleton (ne_zero_of_not_isOrtho_self x hx), add_comm] using
+    Submodule.finrank_add_eq_of_isCompl (B.isCompl_span_singleton_orthogonal hx)
+
+variable [Invertible (2 : K)]
 
 /-- A vector with nonzero self-pairing extends to an orthogonal basis of a symmetric bilinear
 space, with that vector in the first position. -/
@@ -316,8 +325,7 @@ theorem IsSymm.exists_orthogonal_basis_apply_zero_eq (hB : B.IsSymm) {x : V}
     (hx : B x x ≠ 0) {n : ℕ} (hdim : finrank K V = n + 1) :
     ∃ b : Basis (Fin (n + 1)) K V, B.IsOrthoᵢ b ∧ b 0 = x := by
   have hN : finrank K (B.orthogonal (K ∙ x)) = n := by
-    have h := Submodule.finrank_add_eq_of_isCompl (B.isCompl_span_singleton_orthogonal hx)
-    rw [finrank_span_singleton (ne_zero_of_not_isOrtho_self x hx), hdim] at h
+    have h := B.finrank_orthogonal_span_singleton_add_one hx
     omega
   obtain ⟨v, hv⟩ := exists_orthogonal_basis (isSymm_iff.mp (hB.restrict (B.orthogonal (K ∙ x))))
   let v' := v.reindex (finCongr hN)
@@ -338,8 +346,7 @@ theorem IsSymm.exists_orthogonal_basis_apply_zero_one_eq (hB : B.IsSymm) {x y : 
   let N := B.orthogonal (K ∙ x)
   let y' : N := ⟨y, (mem_orthogonal_span_singleton_iff B).mpr hxy⟩
   have hN : finrank K N = n + 1 := by
-    have h := Submodule.finrank_add_eq_of_isCompl (B.isCompl_span_singleton_orthogonal hx)
-    rw [finrank_span_singleton (ne_zero_of_not_isOrtho_self x hx), hdim] at h
+    have h := B.finrank_orthogonal_span_singleton_add_one hx
     dsimp only [N]
     omega
   obtain ⟨v, hv, hvzero⟩ := (hB.restrict N).exists_orthogonal_basis_apply_zero_eq
@@ -352,7 +359,7 @@ end LinearMap.BilinForm
 
 namespace LinearMap.BilinForm
 
-variable {K V : Type*} [CommRing K] [IsDomain K] [Invertible (2 : K)]
+variable {K V : Type*} [CommRing K] [IsDomain K] [NeZero (2 : K)]
   [AddCommGroup V] [Module K V]
 
 /-- Given three mutually orthogonal vectors with nonzero self-pairings, every vector is
