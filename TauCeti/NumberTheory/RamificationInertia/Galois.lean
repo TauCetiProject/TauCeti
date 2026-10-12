@@ -277,7 +277,7 @@ noncomputable abbrev primesAboveRingOfIntegersSubMulAction
 omit [NumberField K] [NumberField L] in
 /-- The stable subset of primes above a set has the canonical primes-above carrier. -/
 @[simp]
-theorem primesAboveRingOfIntegersSubMulAction_coe
+theorem coe_primesAboveRingOfIntegersSubMulAction
     (S : Set (IsDedekindDomain.HeightOneSpectrum (𝓞 K))) :
     (primesAboveRingOfIntegersSubMulAction K L S :
       Set (IsDedekindDomain.HeightOneSpectrum (𝓞 L))) =
