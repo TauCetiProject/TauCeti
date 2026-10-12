@@ -170,8 +170,7 @@ variables carries `E` to a minimal equation on which the algorithm stops at `s`,
 theorem IsTateTerminal.hasGoodReduction_minimal_iff {E : WeierstrassCurve K} (D : VariableChange K)
     (hD : D • E = W.baseChange K) (hϖ : Irreducible ϖ) (h : W.IsTateTerminal ϖ s) :
     (E.minimal R).HasGoodReduction R ↔ s = .I 0 := by
-  obtain ⟨C, hC⟩ := E.exists_smul_eq_minimal R
-  have hD' : (D * C⁻¹) • E.minimal R = W.baseChange K := by rw [mul_smul, ← hC, inv_smul_smul, hD]
+  obtain ⟨D', hD'⟩ := exists_smul_minimal_eq_of_smul_eq R D hD
   rw [WeierstrassCurve.hasGoodReduction_minimal_iff, ← valuation_Δ_eq_of_isMinimal_smul R _ hD',
     ← h.hasGoodReduction_iff (K := K) hϖ, WeierstrassCurve.hasGoodReduction_iff,
     and_iff_right ‹IsMinimal R (W.baseChange K)›]
@@ -184,7 +183,7 @@ theorem IsTateTerminal.hasAdditiveReduction_minimal_iff {E : WeierstrassCurve K}
     (h : W.IsTateTerminal ϖ s) : (E.minimal R).HasAdditiveReduction R ↔ ∀ n, s ≠ .I n := by
   obtain ⟨C, hC⟩ := E.exists_smul_eq_minimal R
   have : (E.minimal R).IsElliptic := hC ▸ inferInstance
-  have hD' : (D * C⁻¹) • E.minimal R = W.baseChange K := by rw [mul_smul, ← hC, inv_smul_smul, hD]
+  obtain ⟨D', hD'⟩ := exists_smul_minimal_eq_of_smul_eq R D hD
   rw [← hasAdditiveReduction_iff_of_isMinimal_smul R _ hD']
   exact h.hasAdditiveReduction_iff hϖ
 
@@ -215,6 +214,18 @@ when a change of variables over `R` carries it to an equation on which the algor
 
 variable {A : Type*} [CommRing A] [Algebra A K] {φ : A →+* R} {W₀ : WeierstrassCurve A}
 
+/-- A change of variables `C` over `R` applied to the image of `W₀` in `R` is, read over `K`, the
+change of variables `C` applied to `W₀` read over `K`, and the result stays minimal over `R`. -/
+private theorem isMinimal_baseChange_smul_map_and_smul_baseChange_eq
+    [IsMinimal R ((W₀.map φ).baseChange K)] (hφ : (algebraMap R K).comp φ = algebraMap A K)
+    (C : VariableChange R) :
+    IsMinimal R ((C • W₀.map φ).baseChange K) ∧
+      C.baseChange K • W₀.baseChange K = (C • W₀.map φ).baseChange K := by
+  have hC : C.baseChange K • (W₀.map φ).baseChange K = (C • W₀.map φ).baseChange K :=
+    map_variableChange ..
+  have hW₀ : W₀.baseChange K = (W₀.map φ).baseChange K := congrArg W₀.map hφ.symm
+  exact ⟨hC ▸ inferInstance, hW₀ ▸ hC⟩
+
 /-- **Tate's algorithm, run on an equation over a ring mapping into `R`, detects
 multiplicative reduction of its chosen minimal equation.** Let `W₀` be an equation over `A`,
 mapped into `R` by `φ` compatibly with `K`, and minimal over `R` once read over `K`. If a change
@@ -225,11 +236,8 @@ theorem IsTateTerminal.hasMultiplicativeReduction_minimal_baseChange_iff
     (hφ : (algebraMap R K).comp φ = algebraMap A K) (C : VariableChange R) (hϖ : Irreducible ϖ)
     (h : (C • W₀.map φ).IsTateTerminal ϖ s) :
     ((W₀.baseChange K).minimal R).HasMultiplicativeReduction R ↔ ∃ n, s = .I (n + 1) := by
-  have hC : C.baseChange K • (W₀.map φ).baseChange K = (C • W₀.map φ).baseChange K :=
-    map_variableChange ..
-  have : IsMinimal R ((C • W₀.map φ).baseChange K) := hC ▸ inferInstance
-  refine h.hasMultiplicativeReduction_minimal_iff (C.baseChange K) ?_ hϖ
-  rwa [baseChange, ← hφ, ← map_map]
+  obtain ⟨_, hD⟩ := isMinimal_baseChange_smul_map_and_smul_baseChange_eq (K := K) (W₀ := W₀) hφ C
+  exact h.hasMultiplicativeReduction_minimal_iff _ hD hϖ
 
 /-- **Tate's algorithm, run on an equation over a ring mapping into `R`, detects
 additive reduction of its chosen minimal equation.** Let `W₀` be an equation over `A`,
@@ -241,11 +249,8 @@ theorem IsTateTerminal.hasAdditiveReduction_minimal_baseChange_iff
     (hφ : (algebraMap R K).comp φ = algebraMap A K) (C : VariableChange R) (hϖ : Irreducible ϖ)
     (h : (C • W₀.map φ).IsTateTerminal ϖ s) :
     ((W₀.baseChange K).minimal R).HasAdditiveReduction R ↔ ∀ n, s ≠ .I n := by
-  have hC : C.baseChange K • (W₀.map φ).baseChange K = (C • W₀.map φ).baseChange K :=
-    map_variableChange ..
-  have : IsMinimal R ((C • W₀.map φ).baseChange K) := hC ▸ inferInstance
-  refine h.hasAdditiveReduction_minimal_iff (C.baseChange K) ?_ hϖ
-  rwa [baseChange, ← hφ, ← map_map]
+  obtain ⟨_, hD⟩ := isMinimal_baseChange_smul_map_and_smul_baseChange_eq (K := K) (W₀ := W₀) hφ C
+  exact h.hasAdditiveReduction_minimal_iff _ hD hϖ
 
 /-- **At `Iₙ`, the index is the valuation of the minimal discriminant.** -/
 theorem IsTateTerminal.localMinimalDiscriminantValuation_eq [(W.baseChange K).IsElliptic]
