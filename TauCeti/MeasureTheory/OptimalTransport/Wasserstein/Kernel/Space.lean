@@ -44,7 +44,17 @@ def comp (μ : WassersteinSpace p X) (κ : Kernel X Y) [IsMarkovKernel κ] (hp :
     (hκ₀ : ∃ x, HasFiniteMoment p (κ x)) : WassersteinSpace p Y :=
   mk (⟨κ ∘ₘ ((μ : ProbabilityMeasure X) : Measure X), inferInstance⟩ : ProbabilityMeasure Y) <| by
     obtain ⟨x, hx⟩ := hκ₀
-    exact μ.hasFiniteMoment.comp_kernel Fact.out hp (hκ x) hx
+    exact μ.hasFiniteMoment.comp_kernel Fact.out hp (.of_forall (hκ x)) hx
+
+/-- The probability measure underlying the Wasserstein-space action is the kernel mixture. -/
+@[simp]
+theorem coe_comp (μ : WassersteinSpace p X) (κ : Kernel X Y) [IsMarkovKernel κ]
+    (hp : p ≠ ∞) (hκ : ∀ x x', wassersteinEDist p (κ x) (κ x') ≤ L * edist x x')
+    (hκ₀ : ∃ x, HasFiniteMoment p (κ x)) :
+    (μ.comp κ hp hκ hκ₀ : ProbabilityMeasure Y) =
+      ⟨κ ∘ₘ ((μ : ProbabilityMeasure X) : Measure X), inferInstance⟩ := by
+  rw [comp]
+  exact coe_mk _ _
 
 /-- The measure underlying the Wasserstein-space action is the ordinary kernel mixture. -/
 @[simp]
@@ -53,11 +63,10 @@ theorem toMeasure_comp (μ : WassersteinSpace p X) (κ : Kernel X Y) [IsMarkovKe
     (hκ₀ : ∃ x, HasFiniteMoment p (κ x)) :
     ((μ.comp κ hp hκ hκ₀ : ProbabilityMeasure Y) : Measure Y) =
       κ ∘ₘ ((μ : ProbabilityMeasure X) : Measure X) := by
-  rw [comp]
-  exact (congrArg ProbabilityMeasure.toMeasure (coe_mk _ _)).trans
-    (ProbabilityMeasure.coe_mk _ _)
+  rw [coe_comp, ProbabilityMeasure.coe_mk]
 
-/-- Changing the bounds or their proofs leaves the kernel action unchanged. -/
+/-- Kernels agreeing almost everywhere under the input law induce the same action,
+independently of their chosen bounds and witness proofs. -/
 theorem comp_congr (μ : WassersteinSpace p X) {κ η : Kernel X Y}
     [IsMarkovKernel κ] [IsMarkovKernel η] (hp : p ≠ ∞) {M : ℝ≥0}
     (hκ : ∀ x x', wassersteinEDist p (κ x) (κ x') ≤ L * edist x x')

@@ -52,11 +52,12 @@ theorem hasFiniteMoment_comp_iff_memLp (hp0 : p ≠ 0) (hp : p ≠ ∞)
 variable [PseudoMetricSpace X] [OpensMeasurableSpace X] [StandardBorelSpace Y]
   [TopologicalSpace.SeparableSpace Y] [IsMarkovKernel κ]
 
-/-- A Markov kernel with a Wasserstein bound from one anchor sends finite-moment finite
-measures to finite-moment measures, provided the anchor law has finite moment. -/
+/-- A Markov kernel with a Wasserstein bound from one anchor almost everywhere under the source
+sends finite-moment finite measures to finite-moment measures, provided the anchor law has
+finite moment. -/
 theorem HasFiniteMoment.comp_kernel [IsFiniteMeasure μ] (hμ : HasFiniteMoment p μ)
     (hp1 : 1 ≤ p) (hp : p ≠ ∞) {L : ℝ≥0} {x₀ : X}
-    (hκ : ∀ x, wassersteinEDist p (κ x₀) (κ x) ≤ L * edist x₀ x)
+    (hκ : ∀ᵐ x ∂μ, wassersteinEDist p (κ x₀) (κ x) ≤ L * edist x₀ x)
     (hκ₀ : HasFiniteMoment p (κ x₀)) : HasFiniteMoment p (κ ∘ₘ μ) := by
   obtain ⟨y, hy⟩ := hasFiniteMoment_def.mp hκ₀
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp1).ne'
@@ -69,11 +70,11 @@ theorem HasFiniteMoment.comp_kernel [IsFiniteMeasure μ] (hμ : HasFiniteMoment 
   have hconst : MemLp (fun _ : X ↦ eLpNorm (fun z ↦ edist y z) p (κ x₀)) p μ :=
     memLp_const_enorm (by simpa only [enorm_eq_self] using hy.eLpNorm_ne_top)
   refine (hasFiniteMoment_comp_iff_memLp hp0 hp y).2
-    ((hconst.add hdist).of_le_enorm hrad.aestronglyMeasurable (.of_forall fun x ↦ ?_))
+    ((hconst.add hdist).of_le_enorm hrad.aestronglyMeasurable (hκ.mono fun x hx ↦ ?_))
   simp only [enorm_eq_self, Pi.add_apply]
   rw [← wassersteinEDist_dirac_left measurable_edist,
     ← wassersteinEDist_dirac_left measurable_edist]
   exact (wassersteinEDist_triangle measurable_edist hp1 (Measure.dirac y) (κ x₀) (κ x)).trans
-    (add_le_add le_rfl (hκ x))
+    (add_le_add le_rfl hx)
 
 end TauCeti
