@@ -45,6 +45,8 @@ a finite flat morphism is invariant under base change, so it is `n²` everywhere
   `n²` as a homomorphism of group schemes (`TauCeti.GroupScheme.degree`).
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.surjective_mulBy_left`: multiplication by a nonzero
   integer is surjective.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isogenyOfDegree_ofHom_mulBy`: for `n ≠ 0`, `[n]` is
+  an isogeny of degree `n²` (`TauCeti.GroupScheme.IsogenyOfDegree`).
 
 ## References
 
@@ -183,5 +185,13 @@ theorem surjective_mulBy_left {n : ℤ} (hn : n ≠ 0) : Surjective (E.mulBy n).
   refine (E.mulBy n).left.one_le_finrank_iff_surjective.mp fun x ↦ ?_
   rw [Pi.one_apply, E.finrank_mulBy_left hn]
   exact Nat.one_le_pow _ _ (Int.natAbs_pos.mpr hn)
+
+/-- **Multiplication by `n` is an isogeny of degree `n²`** (Katz–Mazur 2.3.1). For `n ≠ 0`, `[n]`
+is finite, flat and surjective, and its degree is `n²` at every point of `S`. -/
+theorem isogenyOfDegree_ofHom_mulBy {n : ℤ} (hn : n ≠ 0) :
+    GroupScheme.IsogenyOfDegree (Grp.ofHom (E.mulBy n)) (n.natAbs ^ 2) where
+  isIsogeny := (GroupScheme.isIsogeny_iff _).mpr
+    ⟨E.isFinite_mulBy_left hn, E.flat_mulBy_left hn, E.surjective_mulBy_left hn⟩
+  degree_eq := E.degree_ofHom_mulBy hn
 
 end TauCeti.AlgebraicGeometry.EllipticCurveGeom

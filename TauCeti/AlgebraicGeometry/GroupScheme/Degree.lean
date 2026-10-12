@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
+public import TauCeti.AlgebraicGeometry.GroupScheme.CentralIsogeny.Basic
 public import TauCeti.AlgebraicGeometry.GroupScheme.FiniteFlat
 public import TauCeti.AlgebraicGeometry.GroupScheme.Kernel
 import TauCeti.AlgebraicGeometry.GroupScheme.KilledByRank
@@ -37,11 +38,16 @@ constant degree `n` then its kernel is killed by `n`. For an isogeny of elliptic
 that its kernel lies in the `n`-torsion, which is what makes the dual isogeny of a degree-`n`
 isogeny constructible as a factorisation of multiplication by `n`.
 
+An isogeny (`TauCeti.GroupScheme.IsIsogeny`: finite, flat and surjective) whose degree is `n` at
+every point of `S` is an **isogeny of degree `n`** (`GroupScheme.IsogenyOfDegree f n`). Over a
+disconnected base this constant-degree case is the one in which a single integer degree makes sense.
+
 ## Main definitions
 
 * `TauCeti.GroupScheme.degree f`: the rank of the kernel of `f`, a function on the base.
 * `TauCeti.GroupScheme.finiteFlatKernel f`: the kernel of a finite locally free homomorphism out of
   a commutative group scheme, as a finite locally free commutative group scheme.
+* `TauCeti.GroupScheme.IsogenyOfDegree f n`: `f` is an isogeny of constant degree `n`.
 
 ## Main results
 
@@ -56,6 +62,10 @@ isogeny constructible as a factorisation of multiplication by `n`.
   (`TauCeti.GroupScheme.degree_eq_one_of_isIso`).
 * `TauCeti.GroupScheme.kernel_ι_pow_eq_one`: the kernel of a homomorphism of constant degree `n`
   out of a commutative group scheme is killed by `n`.
+* `TauCeti.GroupScheme.IsogenyOfDegree.comp`, `TauCeti.GroupScheme.isogenyOfDegree_one_iff`, and
+  `TauCeti.GroupScheme.IsogenyOfDegree.kernel_ι_pow_eq_one`: degrees of isogenies multiply, the
+  isogenies of degree `1` are the isomorphisms, and the kernel of an isogeny of degree `n` is killed
+  by `n`.
 
 ## References
 
@@ -223,5 +233,57 @@ theorem kernel_ι_pow_eq_one {n : ℕ} (hn : ∀ s, degree f s = n) :
   rw [← Category.id_comp (kernel.ι f).hom.hom, ← MonObj.pow_comp, h, MonObj.one_comp]
 
 end Commutative
+
+/-! ### Isogenies of constant degree -/
+
+/-- **An isogeny of degree `n`**: a homomorphism `f : G ⟶ H` of group schemes over `S` that is an
+isogeny (finite, flat and surjective) and whose degree is `n` at every point of `S`. Over a
+disconnected base the degree of an isogeny is only locally constant; this is the constant-degree
+case. -/
+structure IsogenyOfDegree (n : ℕ) : Prop where
+  /-- An isogeny of degree `n` is an isogeny. -/
+  isIsogeny : IsIsogeny f
+  /-- The degree of an isogeny of degree `n` is `n` at every point of the base. -/
+  degree_eq (s : S) : degree f s = n
+
+variable {f}
+
+namespace IsogenyOfDegree
+
+/-- **Degrees of isogenies multiply.** The composite of an isogeny of degree `m` and an isogeny of
+degree `n` is an isogeny of degree `m * n`. -/
+theorem comp {g : H ⟶ K} {m n : ℕ} (hf : IsogenyOfDegree f m) (hg : IsogenyOfDegree g n) :
+    IsogenyOfDegree (f ≫ g) (m * n) where
+  isIsogeny := hf.isIsogeny.comp hg.isIsogeny
+  degree_eq s := by
+    have := hf.isIsogeny.isFinite
+    have := hf.isIsogeny.flat
+    have := hf.isIsogeny.surjective
+    have := hg.isIsogeny.isFinite
+    have := hg.isIsogeny.flat
+    rw [degree_comp, hf.degree_eq, hg.degree_eq]
+
+/-- The kernel of an isogeny of degree `n` out of a commutative group scheme, locally of finite
+presentation, is killed by `n`. -/
+theorem kernel_ι_pow_eq_one [IsCommMonObj G.X] [LocallyOfFinitePresentation f.hom.hom.left]
+    {n : ℕ} (hf : IsogenyOfDegree f n) : (kernel.ι f).hom.hom ^ n = 1 :=
+  have := hf.isIsogeny.isFinite
+  have := hf.isIsogeny.flat
+  GroupScheme.kernel_ι_pow_eq_one f hf.degree_eq
+
+end IsogenyOfDegree
+
+/-- An isomorphism of group schemes is an isogeny of degree `1`. -/
+theorem isogenyOfDegree_one_of_isIso [IsIso f] : IsogenyOfDegree f 1 where
+  isIsogeny := isIsogeny_of_isIso f
+  degree_eq s := congrFun (degree_eq_one_of_isIso f) s
+
+/-- **The isogenies of degree `1` are the isomorphisms.** -/
+theorem isogenyOfDegree_one_iff : IsogenyOfDegree f 1 ↔ IsIso f := by
+  refine ⟨fun hf ↦ ?_, fun _ ↦ isogenyOfDegree_one_of_isIso⟩
+  have := hf.isIsogeny.isFinite
+  have := hf.isIsogeny.flat
+  have := hf.isIsogeny.surjective
+  exact (isIso_iff_degree_eq_one f).mpr (funext hf.degree_eq)
 
 end TauCeti.GroupScheme
