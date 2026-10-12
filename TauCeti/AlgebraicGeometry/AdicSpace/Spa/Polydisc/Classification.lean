@@ -17,11 +17,12 @@ import TauCeti.RingTheory.Huber.Restricted.OneVariable
 Let `K` be an algebraically closed complete nontrivially normed nonarchimedean field and
 `X = Spa (K⟨T⟩, K⟨T⟩°)` the closed unit disc. Wedhorn's Example 7.57 sorts the points of `X` into
 five types. The points of types (2) and (3) are the Gauss points `η_{a,r}` of the discs
-`D(a, r) = {y : ‖y - a‖ ≤ r}` (`TauCeti.ValuationSpectrum.discPoint`), and the points of type (5)
-are the rank-two points `η_{a,r⁺}` and `η_{a,r⁻}` next to them
-(`TauCeti.ValuationSpectrum.discPointAbove`, `TauCeti.ValuationSpectrum.discPointBelow`). This file
-characterises each of them among all points of `X` by the position of `x(T - a)` relative to the
-constants.
+`D(a, r) = {y : ‖y - a‖ ≤ r}` (`TauCeti.ValuationSpectrum.discPoint`). Next to each `η_{a,r}` sit
+the refined Gauss points `η_{a,r⁺}` and `η_{a,r⁻}` (`TauCeti.ValuationSpectrum.discPointAbove`,
+`TauCeti.ValuationSpectrum.discPointBelow`). For `r ∈ |Kˣ|` these are the rank-two points of
+type (5); for other radii they need not differ from `η_{a,r}`. This file characterises each of
+`η_{a,r}`, `η_{a,r⁺}` and `η_{a,r⁻}`, for every radius, among all points of `X` by the position of
+`x(T - a)` relative to the constants.
 
 A point `x` is `η_{a,r}` exactly when
 
