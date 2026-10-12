@@ -69,7 +69,8 @@ plan with `PMF` marginals is `TauCeti.TransportMatrix`.
 * `Matrix.HasMarginals.add_vecMulVec_of_sum_eq_zero`: the row and column sums of a matrix are
   preserved by an outer product of a row weight and a column weight, each of total sum `0`.
 * `Matrix.relEntropy_nonneg` and `Matrix.relEntropy_eq_zero_iff`: Gibbs' inequality for matrices
-  of equal total mass, with its equality case.
+  of equal total mass, with its equality case; `Matrix.relEntropy_nonneg_of_nonneg` allows a
+  reference with zero entries, on which the other matrix vanishes.
 * `Matrix.hasDerivAt_relEntropy_add_smul` and
   `Matrix.sum_sum_mul_log_sub_log_eq_zero_of_relEntropy_minOn`: the derivative of the relative
   entropy along a direction, and the first-order condition at a positive minimiser.
@@ -802,12 +803,29 @@ theorem sum_sum_sq_sqrt_sub_sqrt_le_relEntropy {P Q : Matrix ι κ ℝ} (hQ : �
   exact Finset.sum_le_sum fun i _ => Finset.sum_le_sum fun j _ =>
     TauCeti.sq_sqrt_sub_sqrt_le_mul_log_sub_mul_log_sub (hP i j) (hQ i j)
 
+/-- Gibbs' inequality against a reference with zero entries: the relative entropy of a nonnegative
+matrix `Q` against a nonnegative matrix `P` of the same total mass is nonnegative, provided `Q`
+vanishes wherever `P` does. -/
+theorem relEntropy_nonneg_of_nonneg {P Q : Matrix ι κ ℝ} (hQ : ∀ i j, 0 ≤ Q i j)
+    (hP : ∀ i j, 0 ≤ P i j) (hQP : ∀ i j, P i j = 0 → Q i j = 0)
+    (hmass : ∑ i, ∑ j, Q i j = ∑ i, ∑ j, P i j) : 0 ≤ relEntropy Q P := by
+  -- Each cell satisfies `Q - P ≤ Q * log Q - Q * log P`, and the left sides add up to `0`.
+  have hcell : ∀ i j, Q i j - P i j ≤ Q i j * Real.log (Q i j) - Q i j * Real.log (P i j) := by
+    intro i j
+    rcases (hP i j).eq_or_lt with h | h
+    · simp [hQP i j h.symm, ← h]
+    · linarith [Real.mul_log_sub_mul_log_ge (P i j) (Q i j) h (hQ i j)]
+  calc (0 : ℝ) = ∑ i, ∑ j, (Q i j - P i j) := by simp [Finset.sum_sub_distrib, hmass]
+    _ ≤ relEntropy Q P := by
+      rw [relEntropy_def]
+      exact Finset.sum_le_sum fun i _ => Finset.sum_le_sum fun j _ => hcell i j
+
 /-- Gibbs' inequality: the relative entropy of a nonnegative matrix `Q` against a strictly positive
 matrix `P` of the same total mass is nonnegative. -/
 theorem relEntropy_nonneg {P Q : Matrix ι κ ℝ} (hQ : ∀ i j, 0 ≤ Q i j) (hP : ∀ i j, 0 < P i j)
     (hmass : ∑ i, ∑ j, Q i j = ∑ i, ∑ j, P i j) : 0 ≤ relEntropy Q P :=
-  le_trans (Finset.sum_nonneg fun _ _ => Finset.sum_nonneg fun _ _ => sq_nonneg _)
-    (sum_sum_sq_sqrt_sub_sqrt_le_relEntropy hQ hP hmass)
+  relEntropy_nonneg_of_nonneg hQ (fun i j => (hP i j).le) (fun i j h => absurd h (hP i j).ne')
+    hmass
 
 /-- The equality case of Gibbs' inequality: the relative entropy of a nonnegative matrix `Q` against
 a strictly positive matrix `P` of the same total mass vanishes exactly when `Q = P`. -/

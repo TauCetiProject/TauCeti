@@ -50,28 +50,15 @@ open CategoryTheory unitInterval MulOpposite
 namespace TauCeti
 
 
-namespace NormalizedCubicalChain
-
-/-- Points in the same path component differ by a boundary. -/
-theorem ofCube_point_sub_mem_range_boundary {X : Type*} [TopologicalSpace X] {R : Type*} [Ring R]
-    {γ δ : X} (h : Joined γ δ) :
-    ofCube X R (SingularCube.point γ) - ofCube X R (SingularCube.point δ) ∈
-      LinearMap.range (boundary X R 0) := by
-  obtain ⟨P⟩ := h
-  refine ⟨ofCube X R (⟨fun t ↦ P (t 0), by fun_prop⟩ : SingularCube X 1), ?_⟩
-  rw [boundary_ofCube_one]
-  simp
-
-end NormalizedCubicalChain
-
 section Zeroth
 
-variable (B : Type*) [TopologicalSpace B] (b : B) (R : Type*) [CommRing R]
+variable (B : Type*) [TopologicalSpace B] (b : B) (R : Type*) [Ring R]
 
 /-- The class of `0`-cubes of the Moore loop space: the `0`-cube at `γ` goes to the class of
 `γ`, in the group ring of the opposite fundamental group. -/
-def zerothClassAux :
-    CubicalChain (MooreLoopSpace B b) R 0 →ₗ[R] MonoidAlgebra R (FundamentalGroup B b)ᵐᵒᵖ :=
+private def zerothClassAux :
+    CubicalChain (MooreLoopSpace B b) R 0 →ₗ[R]
+      MonoidAlgebra R (FundamentalGroup B b)ᵐᵒᵖ :=
   Finsupp.linearCombination R fun c ↦
     MonoidAlgebra.single (op (MooreLoopSpace.loopClass (c fun i ↦ i.elim0))) (1 : R)
 
@@ -84,13 +71,15 @@ def zerothClass :
 
 variable {B b R}
 
+@[simp]
 theorem zerothClass_ofCube_point (γ : MooreLoopSpace B b) :
     zerothClass B b R (NormalizedCubicalChain.ofCube _ R (SingularCube.point γ)) =
       MonoidAlgebra.single (op (MooreLoopSpace.loopClass γ)) 1 := by
   simp [zerothClass, zerothClassAux, NormalizedCubicalChain.ofCube_def]
 
 /-- The two end points of a `1`-cube of the Moore loop space have the same class. -/
-theorem loopClass_apply_zero_eq_loopClass_apply_one (c : SingularCube (MooreLoopSpace B b) 1) :
+private theorem loopClass_apply_zero_eq_loopClass_apply_one
+    (c : SingularCube (MooreLoopSpace B b) 1) :
     MooreLoopSpace.loopClass (c fun _ ↦ 0) = MooreLoopSpace.loopClass (c fun _ ↦ 1) := by
   refine MooreLoopSpace.loopClass_eq_iff.2 ⟨{ toFun := fun t ↦ c fun _ ↦ t
                                               continuous_toFun := by fun_prop
@@ -98,7 +87,7 @@ theorem loopClass_apply_zero_eq_loopClass_apply_one (c : SingularCube (MooreLoop
                                               target' := rfl }⟩
 
 /-- The boundary of a `1`-chain has class zero. -/
-theorem zerothClassAux_boundary (f : CubicalChain (MooreLoopSpace B b) R 1) :
+private theorem zerothClassAux_boundary (f : CubicalChain (MooreLoopSpace B b) R 1) :
     zerothClassAux B b R (CubicalChain.boundary _ R 0 f) = 0 := by
   induction f using Finsupp.induction_linear with
   | zero => simp
@@ -110,6 +99,7 @@ theorem zerothClassAux_boundary (f : CubicalChain (MooreLoopSpace B b) R 1) :
       Finsupp.linearCombination_single, SingularCube.face_zero_apply, h, sub_self]
 
 /-- The boundary of a `1`-chain of the normalized chains has class zero. -/
+@[simp]
 theorem zerothClass_boundary (y : NormalizedCubicalChain (MooreLoopSpace B b) R 1) :
     zerothClass B b R (NormalizedCubicalChain.boundary _ R 0 y) = 0 := by
   induction y using Submodule.Quotient.induction_on with
@@ -127,7 +117,7 @@ variable (B b R)
 
 /-- A section of `zerothClass` on homology: a class `g` goes to the class of a chosen Moore loop
 with class `g`. -/
-def zerothSection :
+private def zerothSection :
     MonoidAlgebra R (FundamentalGroup B b)ᵐᵒᵖ →ₗ[R]
       NormalizedCubicalChain (MooreLoopSpace B b) R 0 ⧸
         LinearMap.range (NormalizedCubicalChain.boundary (MooreLoopSpace B b) R 0) :=
@@ -138,14 +128,14 @@ def zerothSection :
 
 variable {B b R}
 
-theorem zerothSection_single (g : (FundamentalGroup B b)ᵐᵒᵖ) (r : R) :
+private theorem zerothSection_single (g : (FundamentalGroup B b)ᵐᵒᵖ) (r : R) :
     zerothSection B b R (MonoidAlgebra.single g r) =
       r • Submodule.Quotient.mk (NormalizedCubicalChain.ofCube _ R (SingularCube.point
         (Classical.choose (MooreLoopSpace.loopClass_surjective (unop g))))) := by
   simp [zerothSection]
 
 /-- The class of the chosen representative. -/
-theorem loopClass_choose (g : (FundamentalGroup B b)ᵐᵒᵖ) :
+private theorem loopClass_choose (g : (FundamentalGroup B b)ᵐᵒᵖ) :
     op (MooreLoopSpace.loopClass
       (Classical.choose (MooreLoopSpace.loopClass_surjective (unop g)))) = g := by
   rw [Classical.choose_spec (MooreLoopSpace.loopClass_surjective (unop g))]
@@ -185,7 +175,7 @@ def zerothHomologyEquiv :
             (Submodule.Quotient.mk (NormalizedCubicalChain.ofCube _ R (SingularCube.point γ)) :
               _ ⧸ LinearMap.range (NormalizedCubicalChain.boundary (MooreLoopSpace B b) R 0)) :=
           (Submodule.Quotient.eq _).2
-            (NormalizedCubicalChain.ofCube_point_sub_mem_range_boundary
+            (NormalizedCubicalChain.ofCube_point_sub_mem_range_boundary R
               (MooreLoopSpace.loopClass_eq_iff.1 hγ))
         simp only [LinearMap.comp_apply, Submodule.mkQ_apply, map_smul, Submodule.liftQ_apply,
           zerothClass_ofCube_point, zerothSection_single, unop_op, LinearMap.id_comp,
@@ -194,45 +184,17 @@ def zerothHomologyEquiv :
 
 variable (B b R) in
 /-- The class of the unit is the unit. -/
+@[simp]
 theorem zerothClass_one :
     zerothClass B b R (NormalizedCubicalChain.one (MooreLoopSpace B b) R) = 1 := by
   rw [NormalizedCubicalChain.one_def, zerothClass_ofCube_point, MooreLoopSpace.loopClass_one,
     MonoidAlgebra.one_def, op_one]
 
-/-- The product of two `0`-cubes at points is the `0`-cube at the product. -/
-theorem mul_ofCube_point (γ δ : MooreLoopSpace B b) :
-    NormalizedCubicalChain.mul (MooreLoopSpace B b) R 0 0
-        (NormalizedCubicalChain.ofCube _ R (SingularCube.point γ))
-        (NormalizedCubicalChain.ofCube _ R (SingularCube.point δ)) =
-      NormalizedCubicalChain.ofCube _ R (SingularCube.point (γ * δ)) := by
-  rw [NormalizedCubicalChain.mul_ofCube]
-  congr 1
-  exact ContinuousMap.ext fun x ↦ by
-    rw [ContinuousMap.comp_apply, SingularCube.crossProduct_apply]
-    simp [mulMap_apply]
-
-/-- **The class of a product of `0`-chains is the product of the classes**: the identification of
-`H₀` with the group ring of the opposite fundamental group is multiplicative. -/
-theorem zerothClass_mul (a c : NormalizedCubicalChain (MooreLoopSpace B b) R 0) :
-    zerothClass B b R (NormalizedCubicalChain.mul _ R 0 0 a c) =
-      zerothClass B b R a * zerothClass B b R c := by
-  induction a using NormalizedCubicalChain.induction_zero with
-  | zero => simp
-  | add x y hx hy => simp only [map_add, LinearMap.add_apply, hx, hy, add_mul]
-  | smul r γ =>
-    induction c using NormalizedCubicalChain.induction_zero with
-    | zero => simp
-    | add x y hx hy => simp only [map_add, mul_add, hx, hy]
-    | smul s δ =>
-      simp only [map_smul, LinearMap.smul_apply, mul_ofCube_point, zerothClass_ofCube_point,
-        MooreLoopSpace.loopClass_mul, op_mul, MonoidAlgebra.single_mul_single,
-        MonoidAlgebra.smul_single, mul_one, mul_smul_comm]
-
 variable (B b R) in
 @[simp]
 theorem zerothHomologyEquiv_mk (x : NormalizedCubicalChain (MooreLoopSpace B b) R 0) :
     zerothHomologyEquiv B b R (Submodule.Quotient.mk x) = zerothClass B b R x :=
-  (rfl)
+  by simp [zerothHomologyEquiv]
 
 /-- **A `0`-chain of the Moore loop space is a boundary if and only if its class in the group ring
 of the opposite fundamental group vanishes**: the kernel of `zerothClass` is the image of the
@@ -249,5 +211,41 @@ theorem zerothClass_surjective :
   exact ⟨x, by rw [← zerothHomologyEquiv_mk, hx, LinearEquiv.apply_symm_apply]⟩
 
 end Zeroth
+
+section Product
+
+variable {B : Type*} [TopologicalSpace B] {b : B} {R : Type*} [CommRing R]
+
+/-- The product of two `0`-cubes at points is the `0`-cube at the product. -/
+theorem mul_ofCube_point (γ δ : MooreLoopSpace B b) :
+    NormalizedCubicalChain.mul (MooreLoopSpace B b) R 0 0
+        (NormalizedCubicalChain.ofCube _ R (SingularCube.point γ))
+        (NormalizedCubicalChain.ofCube _ R (SingularCube.point δ)) =
+      NormalizedCubicalChain.ofCube _ R (SingularCube.point (γ * δ)) := by
+  rw [NormalizedCubicalChain.mul_ofCube]
+  congr 1
+  exact ContinuousMap.ext fun x ↦ by
+    rw [ContinuousMap.comp_apply, SingularCube.crossProduct_apply]
+    simp [mulMap_apply]
+
+/-- **The class of a product of `0`-chains is the product of the classes**: the identification of
+`H₀` with the group ring of the opposite fundamental group is multiplicative. -/
+@[simp]
+theorem zerothClass_mul (a c : NormalizedCubicalChain (MooreLoopSpace B b) R 0) :
+    zerothClass B b R (NormalizedCubicalChain.mul _ R 0 0 a c) =
+      zerothClass B b R a * zerothClass B b R c := by
+  induction a using NormalizedCubicalChain.induction_zero with
+  | zero => simp
+  | add x y hx hy => simp only [map_add, LinearMap.add_apply, hx, hy, add_mul]
+  | smul r γ =>
+    induction c using NormalizedCubicalChain.induction_zero with
+    | zero => simp
+    | add x y hx hy => simp only [map_add, mul_add, hx, hy]
+    | smul s δ =>
+      simp only [map_smul, LinearMap.smul_apply, mul_ofCube_point, zerothClass_ofCube_point,
+        MooreLoopSpace.loopClass_mul, op_mul, MonoidAlgebra.single_mul_single,
+        MonoidAlgebra.smul_single, mul_one, mul_smul_comm]
+
+end Product
 
 end TauCeti

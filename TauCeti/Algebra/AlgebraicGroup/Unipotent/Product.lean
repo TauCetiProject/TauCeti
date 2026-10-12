@@ -71,6 +71,7 @@ theorem isUnipotentPoint_pointsMulEquiv_iff
         IsUnipotentPoint (AffineGroup.Product.pointsMulEquiv g).2 := by
   constructor
   · intro hg
+    rw [AffineGroup.Product.pointsMulEquiv_apply]
     exact ⟨hg.mapDomain Bialgebra.TensorProduct.includeLeft,
       hg.mapDomain Bialgebra.TensorProduct.includeRight⟩
   · rintro ⟨hleft, hright⟩

@@ -307,7 +307,7 @@ theorem isClosedImmersion_geckWeightTorus
 /-- **The intrinsic pinning equation for the Geck carrier.** On points over a commutative ring,
 conjugation by a weight-torus point rescales the parameter of a numbered root subgroup by the
 corresponding root character. -/
-@[simp]
+-- Not `@[simp]`: `simp` does not rewrite with it, even on its own left-hand side.
 theorem geckWeightTorus_conj_geckRootSubgroup (i : Fin t.rank ⊕ Fin t.rank)
     (A : Type) [CommRing A]
     (s : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
@@ -485,6 +485,17 @@ theorem geckPoints_def (A : Type v) [CommRing A] :
     t.geckPoints ht A =
       GeneralLinear.hopfIdealPointsSubgroup (t.geckDim ht) (t.geckDefiningIdeal ht) A :=
   TauCeti.UniversalEnvelopingAlgebra.kostantToralPointsSubgroup_def _ _ _ _ _ _ _ _ A
+
+/-- The points of the Geck carrier are the points of the generic Kostant toral closure they are
+cut out from. -/
+theorem geckPoints_eq_kostantToralPointsSubgroup (A : Type v) [CommRing A] :
+    t.geckPoints ht A =
+      TauCeti.UniversalEnvelopingAlgebra.kostantToralPointsSubgroup
+        (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+        (t.geckCoordinateLattice ht).toAddSubgroup
+        (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+        (t.isNilpotent_geckRepresentation_rootGenerator ht)
+        (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) A := (rfl)
 
 /-- A matrix is a point of the Geck carrier exactly when the associated convolution point
 kills its defining Hopf ideal. -/

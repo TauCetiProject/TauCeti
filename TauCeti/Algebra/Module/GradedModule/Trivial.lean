@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Submodule.Lattice
+public import Mathlib.Algebra.DirectSum.Decomposition
 
 /-!
 # The trivial grading of a module
@@ -64,5 +65,24 @@ def toTrivialGradingZero : A →+ trivialGrading R A 0 where
 @[simp]
 theorem coe_toTrivialGradingZero (a : A) : (toTrivialGradingZero R A a : A) = a := (rfl)
 
+
+/-- The trivial grading of a module is an internal grading: an element is its own degree-zero
+component, and all other components vanish. -/
+instance instDecompositionTrivialGrading : DirectSum.Decomposition (trivialGrading R A) where
+  decompose' a := DirectSum.of (fun p ↦ trivialGrading R A p) 0 (toTrivialGradingZero R A a)
+  left_inv a := by simp
+  right_inv x := by
+    induction x using DirectSum.induction_on with
+    | zero => simp
+    | of p y =>
+      rw [DirectSum.coeAddMonoidHom_of]
+      by_cases hp : p = 0
+      · subst hp
+        exact congrArg _ (Subtype.ext (coe_toTrivialGradingZero R A y))
+      · have hy : y = 0 :=
+          Subtype.ext (((mem_trivialGrading_iff R A).mp y.2).resolve_left hp)
+        rw [hy]
+        simp
+    | add x y hx hy => simp only [map_add, hx, hy]
 
 end TauCeti

@@ -54,6 +54,7 @@ puts the group theory back and reads it as membership in a Selmer group.
   `disc f` is a unit.
 * `WeierstrassCurve.Affine.valuation_root_le_one`: if `a₂`, `a₄`, `a₆` are integral at the prime
   under `w`, the root `θ` is integral at `w`.
+* `WeierstrassCurve.Affine.valuation_deriv_root_le_one`: then `f' θ` is integral at `w` too.
 * `WeierstrassCurve.Affine.valuation_deriv_root_eq_one`: if moreover `disc f` is a unit there,
   `f' θ` is a `w`-unit.
 * `WeierstrassCurve.Affine.valuation_cofactor_eq_one`: if `f' θ` is a `w`-unit, `x` is integral
@@ -285,6 +286,17 @@ lemma valuation_algebraMap_eq_one {z : K}
     (hz : (HeightOneSpectrum.under R w).valuation K z = 1) :
     w.valuation (𝕃 p) (ι p z) = 1 := by
   rw [← W.valuation_algebraMap_eq R p w z, hz, one_pow]
+
+/-- If `a₂`, `a₄` and `a₆` are integral at the prime under `w`, then so is
+`f' θ = 3θ² + 2a₂θ + a₄`: it is a polynomial in `θ` and the coefficients. -/
+lemma valuation_deriv_root_le_one :
+    w.valuation (𝕃 p) (3 * θ p ^ 2 + 2 * ι p W.a₂ * θ p + ι p W.a₄) ≤ 1 := by
+  have h₂ := W.valuation_algebraMap_le_one R p w ha₂
+  have h₄ := W.valuation_algebraMap_le_one R p w ha₄
+  have hθ := W.valuation_root_le_one R p ha₂ ha₄ ha₆
+  have h₃ : (3 : 𝕃 p) ∈ (w.valuation (𝕃 p)).integer := ofNat_mem _ 3
+  have h₂' : (2 : 𝕃 p) ∈ (w.valuation (𝕃 p)).integer := ofNat_mem _ 2
+  exact add_mem (add_mem (mul_mem h₃ (pow_mem hθ 2)) (mul_mem (mul_mem h₂' h₂) hθ)) h₄
 
 /-- If `a₂`, `a₄` and `a₆` are integral and `disc f` is a unit at the prime under `w`, then
 `f' θ = 3θ² + 2a₂θ + a₄` is a unit at `w` (`Valuation.map_cubic_deriv_eq_one`). The hypothesis is

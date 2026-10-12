@@ -114,9 +114,6 @@ theorem integralSpinSubgroup_eq_top [Subsingleton V] : integralSpinSubgroup Q b 
 
 section Rational
 
-private noncomputable instance invertibleTwoRat : Invertible (2 : ℚ) :=
-  invertibleOfNonzero two_ne_zero
-
 variable {W : Type*} [AddCommGroup W] [Module ℚ W]
   (Q₀ : QuadraticForm ℚ W) (b₀ : Basis ι ℚ W)
 
