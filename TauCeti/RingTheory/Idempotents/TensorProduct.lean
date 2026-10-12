@@ -144,7 +144,10 @@ theorem spanSingletonTensorProductEquiv_symm_tmul_smul_generator
         (a • spanSingletonGenerator e) ⊗ₜ[k] (b • spanSingletonGenerator f) := by
   apply (spanSingletonTensorProductEquiv k he hf).injective
   apply Subtype.ext
-  simp
+  rw [LinearEquiv.apply_symm_apply]
+  simp only [coe_spanSingletonTensorProductEquiv_apply, TensorProduct.map_tmul,
+    LinearMap.restrictScalars_apply, Submodule.subtype_apply, SetLike.val_smul,
+    smul_eq_mul, coe_spanSingletonGenerator, Algebra.TensorProduct.tmul_mul_tmul]
 
 /-- The identification carries the two factor actions to the tensor-algebra action. -/
 @[simp]
