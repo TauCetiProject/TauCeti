@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
 public import Mathlib.LinearAlgebra.BilinearForm.TensorProduct
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.RingTheory.IsTensorProduct
+public import Mathlib.RingTheory.Localization.BaseChange
 import Mathlib.Algebra.Ring.Hom.InjSurj
 
 /-!
@@ -28,8 +29,19 @@ also preserves it. Those are `TauCeti.nondegenerate_of_nondegenerate_baseChange`
 `TauCeti.bilinForm_toMatrix_baseChange` and `TauCeti.bilinForm_det_toMatrix_baseChange`, say that
 base change acts entrywise on the Gram matrix of a basis and maps its determinant accordingly.
 
+When the scalar algebra is free over the original semiring, base change preserves left separation
+and nondegeneracy without any finiteness or freeness hypothesis on the module carrying the form.
+In particular, this applies to arbitrary extensions of fields, even in infinite dimension.
+Injective localizations also preserve separation and nondegeneracy without any condition on the
+module carrying the form.
+
 ## Main declarations
 
+* `LinearMap.SeparatingLeft.baseChange`: a free scalar extension preserves left separation.
+* `LinearMap.BilinForm.Nondegenerate.baseChange`: a free scalar extension preserves
+  nondegeneracy, without a finite-dimensionality assumption.
+* `LinearMap.BilinForm.Nondegenerate.baseChange_of_isLocalization`: an injective localization
+  preserves nondegeneracy, without a freeness or finiteness assumption on the module.
 * `LinearMap.BilinForm.liftBaseChange`: lifting a form-preserving map preserves the
   base-changed form, without assuming the map exhibits a base change.
 * `IsBaseChange.bilinForm_baseChange`: if a bilinear form restricts along a map to a
@@ -53,6 +65,101 @@ base change acts entrywise on the Gram matrix of a basis and maps its determinan
 public section
 
 open Module TensorProduct
+
+namespace LinearMap.BilinForm
+
+section Preservation
+
+variable {R A M : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
+  [AddCommMonoid M] [Module R M]
+
+/-- Scalar extension commutes with flipping a bilinear form. -/
+@[simp]
+theorem baseChange_flip (B : LinearMap.BilinForm R M) :
+    B.flip.baseChange A = (B.baseChange A).flip := by
+  ext x y
+  simp
+
+variable (A) in
+/-- A free scalar extension preserves left separation of a bilinear form, with no finiteness
+assumption on the module carrying the form. -/
+theorem _root_.LinearMap.SeparatingLeft.baseChange [Module.Free R A]
+    {B : LinearMap.BilinForm R M} (hB : B.SeparatingLeft) :
+    (B.baseChange A).SeparatingLeft := by
+  classical
+  let b := Module.Free.chooseBasis R A
+  let e := TensorProduct.equivFinsuppOfBasisLeft (N := M) b
+  intro x hx
+  apply e.injective
+  ext i
+  apply hB
+  intro w
+  -- Evaluating the extended form and then taking a scalar coordinate is the same as evaluating
+  -- the original form on the corresponding tensor coordinate.
+  have hcoord (z : A ⊗[R] M) : B (e z i) w = b.repr (B.baseChange A z (1 ⊗ₜ[R] w)) i := by
+    induction z with
+    | tmul a m => simp [e, mul_comm]
+    | add z z' hz hz' => simp [hz, hz']
+  simpa [hx] using hcoord x
+
+variable (A) in
+/-- A free scalar extension preserves right separation of a bilinear form, with no finiteness
+assumption on the module carrying the form. -/
+theorem _root_.LinearMap.SeparatingRight.baseChange [Module.Free R A]
+    {B : LinearMap.BilinForm R M} (hB : B.SeparatingRight) :
+    (B.baseChange A).SeparatingRight := by
+  have h := LinearMap.SeparatingLeft.baseChange A (B := B.flip) hB
+  rw [baseChange_flip] at h
+  exact h
+
+variable (A) in
+/-- A free scalar extension preserves nondegeneracy of a bilinear form, with no finiteness
+assumption on the module carrying the form. In particular, this applies to extensions of fields. -/
+theorem Nondegenerate.baseChange [Module.Free R A] {B : LinearMap.BilinForm R M}
+    (hB : B.Nondegenerate) : (B.baseChange A).Nondegenerate :=
+  ⟨hB.1.baseChange A, hB.2.baseChange A⟩
+
+variable (A) in
+/-- An injective localization preserves left separation of a bilinear form, without any freeness
+or finiteness assumption on the module carrying the form. -/
+theorem _root_.LinearMap.SeparatingLeft.baseChange_of_isLocalization (S : Submonoid R)
+    [IsLocalization S A] [FaithfulSMul R A] {B : LinearMap.BilinForm R M}
+    (hB : B.SeparatingLeft) : (B.baseChange A).SeparatingLeft := by
+  let f : M →ₗ[R] A ⊗[R] M := TensorProduct.mk R A M 1
+  have hf : IsLocalizedModule S f := by
+    rw [isLocalizedModule_iff_isBaseChange S A]
+    exact TensorProduct.isBaseChange R M A
+  intro x hx
+  obtain ⟨⟨v, s⟩, hs⟩ := hf.surj x
+  have hv : v = 0 := hB v fun w ↦ by
+    have h : B.baseChange A (s • x) (1 ⊗ₜ[R] w) = 0 := by simp [hx]
+    rw [hs] at h
+    apply FaithfulSMul.algebraMap_injective R A
+    simpa [f, Algebra.algebraMap_eq_smul_one] using h
+  rw [hv, map_zero] at hs
+  exact (IsLocalizedModule.smul_injective f s) (by simpa using hs)
+
+variable (A) in
+/-- An injective localization preserves right separation of a bilinear form, without any freeness
+or finiteness assumption on the module carrying the form. -/
+theorem _root_.LinearMap.SeparatingRight.baseChange_of_isLocalization (S : Submonoid R)
+    [IsLocalization S A] [FaithfulSMul R A] {B : LinearMap.BilinForm R M}
+    (hB : B.SeparatingRight) : (B.baseChange A).SeparatingRight := by
+  have h := LinearMap.SeparatingLeft.baseChange_of_isLocalization A S (B := B.flip) hB
+  rw [baseChange_flip] at h
+  exact h
+
+variable (A) in
+/-- An injective localization preserves nondegeneracy of a bilinear form, without any freeness
+or finiteness assumption on the module carrying the form. -/
+theorem Nondegenerate.baseChange_of_isLocalization (S : Submonoid R)
+    [IsLocalization S A] [FaithfulSMul R A] {B : LinearMap.BilinForm R M}
+    (hB : B.Nondegenerate) : (B.baseChange A).Nondegenerate :=
+  ⟨hB.1.baseChange_of_isLocalization A S, hB.2.baseChange_of_isLocalization A S⟩
+
+end Preservation
+
+end LinearMap.BilinForm
 
 namespace TauCeti
 
