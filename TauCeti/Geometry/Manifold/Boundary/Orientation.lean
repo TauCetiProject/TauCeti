@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Boundary.Charts
+public import TauCeti.Geometry.Manifold.VectorField.Regularity
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 
@@ -181,58 +182,24 @@ end IsOutwardPointingField
 /-- The constant negative normal field on the standard Euclidean half-space. -/
 noncomputable def standardOutwardVectorField (n : ℕ) :
     ∀ x : EuclideanHalfSpace (n + 1), TangentSpace (𝓡∂ (n + 1)) x :=
-  fun x ↦ ((tangentBundleModelSpaceHomeomorph (𝓡∂ (n + 1))).symm
-    (x, -EuclideanSpace.single 0 1)).2
+  fun _ ↦ -EuclideanSpace.single 0 1
 
 /-- The standard field has constant negative zeroth coordinate. -/
 @[simp]
 theorem standardOutwardVectorField_apply (n : ℕ)
     (x : EuclideanHalfSpace (n + 1)) :
     standardOutwardVectorField n x = -EuclideanSpace.single 0 1 := by
-  simp only [standardOutwardVectorField, tangentBundleModelSpaceHomeomorph_coe_symm,
-    TotalSpace.toProd]
   rfl
 
-private noncomputable instance standardPairChartedSpace (n : ℕ) :
-    ChartedSpace (ModelProd (EuclideanHalfSpace (n + 1))
-      (EuclideanSpace ℝ (Fin (n + 1))))
-      (ModelProd (EuclideanHalfSpace (n + 1))
-        (EuclideanSpace ℝ (Fin (n + 1)))) :=
-  chartedSpaceSelf _
-
-private theorem contMDiff_standardOutwardVectorField (n : ℕ) :
+/-- The standard negative normal field is smooth as a tangent-bundle section. -/
+theorem contMDiff_standardOutwardVectorField (n : ℕ) :
     ContMDiff (𝓡∂ (n + 1)) (𝓡∂ (n + 1)).tangent ∞
       (T% (standardOutwardVectorField n)) := by
-  let I := 𝓡∂ (n + 1)
-  let e : EuclideanSpace ℝ (Fin (n + 1)) := -EuclideanSpace.single 0 1
-  let pair : EuclideanHalfSpace (n + 1) →
-      ModelProd (EuclideanHalfSpace (n + 1))
-        (EuclideanSpace ℝ (Fin (n + 1))) := fun x ↦ (x, e)
-  have hpair : ContMDiff I I.tangent ∞
-      pair := by
-    rw [contMDiff_iff]
-    refine ⟨continuous_prodMk.2 ⟨continuous_id, continuous_const⟩, ?_⟩
-    intro x y
-    have hconst : ContDiffOn ℝ ∞
-        (fun _ : EuclideanSpace ℝ (Fin (n + 1)) ↦ e) Set.univ := contDiffOn_const
-    have hprod := contDiffOn_id.prodMk hconst
-    have hprod' := hprod.mono (Set.subset_univ (Set.range (↑I)))
-    simpa only [extChartAt_self_apply, mfld_simps] using
-      hprod'.congr (fun p hp ↦ by
-        rcases hp with ⟨z, rfl⟩
-        simp [pair, Function.comp_apply])
-  have hsection : ContMDiff I.tangent I.tangent ∞
-      ((tangentBundleModelSpaceHomeomorph I).symm :
-        ModelProd (EuclideanHalfSpace (n + 1))
-          (EuclideanSpace ℝ (Fin (n + 1))) → TangentBundle I _) :=
-    contMDiff_tangentBundleModelSpaceHomeomorph_symm
-  have h := hsection.comp hpair
+  have h := contMDiff_tangentBundleModelSpaceHomeomorph_symm_prodMk_const
+    (𝓡∂ (n + 1)) (-EuclideanSpace.single 0 1) ∞
   apply h.congr
   intro x
-  simp only [tangentBundleModelSpaceHomeomorph_coe_symm, TotalSpace.toProd, pair, e]
-  change (⟨x, -EuclideanSpace.single 0 1⟩ :
-      TangentBundle I (EuclideanHalfSpace (n + 1))) =
-    ⟨x, -EuclideanSpace.single 0 1⟩
+  simp only [tangentBundleModelSpaceHomeomorph_coe_symm, TotalSpace.toProd]
   rfl
 
 /-- The standard Euclidean half-space has a smooth outward-pointing field. -/
