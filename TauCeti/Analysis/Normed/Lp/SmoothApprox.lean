@@ -40,7 +40,7 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
 /-- A function in `Lᵖ`, `1 ≤ p < ∞`, vanishing almost everywhere off a closed set `s` is the
 `Lᵖ` limit of smooth compactly supported functions supported in `cthickening δ s`, for any
 `δ > 0`. -/
-theorem exists_contDiff_tsupport_subset_cthickening_eLpNorm_sub_le {p : ENNReal} (hp : p ≠ ⊤)
+theorem exist_contDiff_tsupport_subset_cthickening_eLpNorm_sub_le {p : ENNReal} (hp : p ≠ ⊤)
     (hp₁ : 1 ≤ p) {f : E → F} (hf : MemLp f p μ) {s : Set E} (hs : IsClosed s)
     (hfs : ∀ᵐ y ∂μ, y ∉ s → f y = 0) {δ ε : ℝ} (hδ : 0 < δ) (hε : 0 < ε) :
     ∃ g : E → F, HasCompactSupport g ∧ ContDiff ℝ ∞ g ∧ tsupport g ⊆ cthickening δ s ∧

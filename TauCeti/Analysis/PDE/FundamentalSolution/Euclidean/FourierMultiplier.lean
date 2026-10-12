@@ -48,7 +48,7 @@ kernel: `D²u(x)(v, w) = ∫ D²Gₙ(x - y)(v, w) φ(y) dy`
 (`TauCeti.iteratedFDeriv_two_newtonianKernel_convolution_apply_of_notMem_tsupport`). A general
 `f ∈ L²` vanishing off `s` is the `L²` limit of smooth functions supported in shrinking
 thickenings of `s`
-(`MeasureTheory.MemLp.exists_contDiff_tsupport_subset_cthickening_eLpNorm_sub_le`).
+(`MeasureTheory.MemLp.exist_contDiff_tsupport_subset_cthickening_eLpNorm_sub_le`).
 For `x ∉ s` the kernel is bounded on a fixed thickening of `s`, so the kernel integrals converge,
 while `T_{m_{v,w}}` of the approximations converges almost everywhere along a subsequence.
 
@@ -458,7 +458,7 @@ theorem ae_fourierMultiplierCLM_hessianSymbolLp_eq_neg_integral (hn : 3 ≤ n)
     · simp [h, hx h]
   have hf'L : MemLp f' 2 := (Lp.memLp f).ae_eq hff'
   choose φ hφc hφ hφs hφf using fun k : ℕ =>
-    hf'L.exists_contDiff_tsupport_subset_cthickening_eLpNorm_sub_le ENNReal.ofNat_ne_top
+    hf'L.exist_contDiff_tsupport_subset_cthickening_eLpNorm_sub_le ENNReal.ofNat_ne_top
       one_le_two hs.isClosed (ae_of_all _ hf'0) (Nat.one_div_pos_of_nat (n := k))
       (Nat.one_div_pos_of_nat (n := k))
   have hφL : ∀ k, MemLp (φ k) 2 := fun k =>
