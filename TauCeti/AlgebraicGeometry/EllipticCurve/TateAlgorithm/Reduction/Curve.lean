@@ -151,6 +151,7 @@ theorem reductionSymbol_smul (D : VariableChange K) (W : WeierstrassCurve K) [W.
 
 /-- **The reduction symbol detects additive reduction**: it is none of the `Iₙ` exactly when the
 minimal equation of `W` has additive reduction. -/
+@[simp]
 theorem forall_reductionSymbol_ne_I_iff (W : WeierstrassCurve K) [W.IsElliptic] :
     (∀ n, W.reductionSymbol R ≠ .I n) ↔ (W.minimal R).HasAdditiveReduction R := by
   obtain ⟨W', D, ϖ, hmin, hD, hϖ, h⟩ := W.exists_isTateTerminal_reductionSymbol R
@@ -186,6 +187,7 @@ theorem reductionSymbol_eq_I_zero_iff (W : WeierstrassCurve K) [W.IsElliptic] :
   exact ⟨And.right, fun h ↦ ⟨fun ha ↦ ha.not_hasGoodReduction R h, h⟩⟩
 
 /-- **The reduction symbol is `Iₙ` with `n ≥ 1` exactly at multiplicative reduction.** -/
+@[simp]
 theorem exists_reductionSymbol_eq_I_add_one_iff (W : WeierstrassCurve K) [W.IsElliptic] :
     (∃ n, W.reductionSymbol R = .I (n + 1)) ↔ (W.minimal R).HasMultiplicativeReduction R := by
   simp_rw [reductionSymbol_eq_I_iff]
