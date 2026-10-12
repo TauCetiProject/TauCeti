@@ -379,7 +379,7 @@ section IntegerRingEquiv
 
 variable {K M} [ValuativeRel M] [ValuativeExtension K M]
 variable {L : Type*} [Field L] [ValuativeRel L] [Algebra K L]
-  [ValuativeExtension K L] [Algebra.IsAlgebraic K L]
+  [ValuativeExtension K L]
 
 variable (K M) in
 /-- The ring of integers `𝒪[M]` of an algebraic extension `M` of a nonarchimedean local field `K`,
@@ -405,6 +405,7 @@ theorem coe_integerRingEquivIntegralClosure_symm_apply (x : integralClosure 𝒪
 
 /-- A base-field algebra equivalence restricts to an algebra equivalence of integer rings. -/
 def _root_.AlgEquiv.integerRingEquiv (e : L ≃ₐ[K] M) : 𝒪[L] ≃ₐ[𝒪[K]] 𝒪[M] :=
+  letI := e.symm.isAlgebraic
   ((integerRingEquivIntegralClosure K L).trans (e.restrictScalars 𝒪[K]).mapIntegralClosure).trans
     (integerRingEquivIntegralClosure K M).symm
 
@@ -472,6 +473,20 @@ def integerRingHom (ι : L →ₐ[K] M) : 𝒪[L] →ₐ[𝒪[K]] 𝒪[M] := by
 @[simp]
 theorem coe_integerRingHom_apply (ι : L →ₐ[K] M) (x : 𝒪[L]) :
     (ι.integerRingHom x : M) = ι (x : L) := (rfl)
+
+/-- Restricting a composite embedding to integer rings gives the composite restrictions. -/
+@[simp]
+theorem integerRingHom_comp {N : Type*} [Field N] [ValuativeRel N] [Algebra K N]
+    [ValuativeExtension K N] [Algebra.IsAlgebraic K M] (ι₂ : M →ₐ[K] N) (ι₁ : L →ₐ[K] M) :
+    (ι₂.comp ι₁).integerRingHom = ι₂.integerRingHom.comp ι₁.integerRingHom := by
+  ext x
+  simp
+
+/-- Restricting the identity embedding to integer rings gives the identity. -/
+@[simp]
+theorem integerRingHom_id : (AlgHom.id K L).integerRingHom = AlgHom.id 𝒪[K] 𝒪[L] := by
+  ext x
+  simp
 
 /-- A `K`-embedding from an algebraic extension of a nonarchimedean local field to a compatible
 valued field restricts to a local homomorphism of their rings of integers. -/
