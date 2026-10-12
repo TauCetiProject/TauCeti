@@ -35,11 +35,12 @@ open scoped Real Topology
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-/-- Angular integrals of a continuous density on a closed annulus depend continuously
+/-- Boundary density integrals of a continuous density on a closed annulus depend continuously
 on the radius. Continuity at the centre is not required. -/
-theorem ContinuousOn.integral_comp_circleMap [CompleteSpace F] {f : ℂ → F} {z₀ : ℂ} {a b : ℝ}
+theorem ContinuousOn.smul_integral_comp_circleMap [CompleteSpace F]
+    {f : ℂ → F} {z₀ : ℂ} {a b : ℝ}
     (hf : ContinuousOn f {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}) (ha : 0 ≤ a) :
-    ContinuousOn (fun r ↦ ∫ θ in -π..π, f (circleMap z₀ r θ)) (Icc a b) := by
+    ContinuousOn (fun r ↦ r • ∫ θ in -π..π, f (circleMap z₀ r θ)) (Icc a b) := by
   let A := {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}
   have hcompact : IsCompact A := (isCompact_closedBall z₀ b).of_isClosed_subset
     ((isClosed_le continuous_const (continuous_id.sub continuous_const).norm).inter
@@ -49,13 +50,29 @@ theorem ContinuousOn.integral_comp_circleMap [CompleteSpace F] {f : ℂ → F} {
   have hmem (r : ℝ) (hr : r ∈ Icc a b) (θ : ℝ) : circleMap z₀ r θ ∈ A := by
     simpa only [A, mem_ofPred_eq, circleMap_sub_center, norm_circleMap_zero,
       abs_of_nonneg (ha.trans hr.1)] using (mem_Icc.mp hr)
+  have hcont (r : ℝ) (hr : r ∈ Icc a b) :
+      ContinuousOn (fun θ ↦ f (circleMap z₀ r θ)) (Icc (-π) π) :=
+    hf.comp (by unfold circleMap; fun_prop : Continuous (circleMap z₀ r)).continuousOn
+      (fun θ _ ↦ hmem r hr θ)
+  have heq (r : ℝ) (hr : r ∈ Icc a b) :
+      (∫ θ in -π..π, r • f (circleMap z₀ r θ)) =
+        r • ∫ θ in -π..π, f (circleMap z₀ r θ) :=
+    (r • ContinuousLinearMap.id ℝ F).intervalIntegral_comp_comm
+      (by
+        apply ContinuousOn.intervalIntegrable
+        simpa only [uIcc_of_le (by linarith [Real.pi_pos] : -π ≤ π)] using hcont r hr)
+  refine ContinuousOn.congr ?_ (fun r hr ↦ (heq r hr).symm)
   simp_rw [intervalIntegral.integral_of_le (by linarith [Real.pi_pos] : -π ≤ π)]
-  refine continuousOn_of_dominated (bound := fun _ ↦ C) (fun r hr ↦ ?_)
-    (fun r hr ↦ ae_of_all _ fun θ ↦ hC _ (hmem r hr θ))
-    (integrableOn_const (by simp)) (ae_of_all _ fun θ ↦ ?_)
-  · exact (hf.comp (by unfold circleMap; fun_prop : Continuous (circleMap z₀ r)).continuousOn
-      (fun θ _ ↦ hmem r hr θ)).aestronglyMeasurable measurableSet_Ioc
-  · exact hf.comp (by simp only [circleMap]; fun_prop) (fun r hr ↦ hmem r hr θ)
+  refine continuousOn_of_dominated (bound := fun _ ↦ b * C) (fun r hr ↦ ?_)
+    (fun r hr ↦ ae_of_all _ fun θ ↦ ?_) (integrableOn_const (by simp))
+    (ae_of_all _ fun θ ↦ ?_)
+  · exact ((hcont r hr).mono Ioc_subset_Icc_self).aestronglyMeasurable
+      measurableSet_Ioc |>.const_smul r
+  · rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg (ha.trans hr.1)]
+    exact mul_le_mul hr.2 (hC _ (hmem r hr θ)) (norm_nonneg _)
+      (ha.trans (hr.1.trans hr.2))
+  · exact continuous_id.continuousOn.smul
+      (hf.comp (by simp only [circleMap]; fun_prop) (fun r hr ↦ hmem r hr θ))
 
 namespace TauCeti
 
@@ -84,7 +101,14 @@ theorem integral_annulus_eq_integral_circleMap [CompleteSpace F] {f : ℂ → F}
     simp [Complex.polarCoord_symm_apply, circleMap, Complex.exp_mul_I]
   simp_rw [hP_eq]
   rw [setIntegral_prod _ hint]
-  simp only [integral_smul, integral_Icc_eq_integral_Ioc]
+  have hsmul (r : ℝ) (hr : r ∈ Icc a b) :
+      (∫ θ in Icc (-π) π, r • f (circleMap z₀ r θ)) =
+        r • ∫ θ in Icc (-π) π, f (circleMap z₀ r θ) :=
+    (r • ContinuousLinearMap.id ℝ F).integral_comp_comm
+      ((hf.comp (by fun_prop) (fun θ hθ ↦ hmem (r, θ) ⟨hr, hθ⟩)).integrableOn_compact
+        isCompact_Icc)
+  rw [setIntegral_congr_fun measurableSet_Icc hsmul]
+  simp only [integral_Icc_eq_integral_Ioc]
   rw [← intervalIntegral.integral_of_le hab]
   simp_rw [intervalIntegral.integral_of_le (by linarith [Real.pi_pos] : -π ≤ π)]
 
@@ -118,7 +142,7 @@ theorem hasDerivAt_integral_ball {f : ℂ → F} {z₀ : ℂ} {R r : ℝ}
       linarith
   let G (t : ℝ) := t • ∫ θ in -π..π, f (circleMap z₀ t θ)
   have hG : ContinuousOn G (Icc a b) :=
-    continuous_id.continuousOn.smul ((hf.mono hsub).integral_comp_circleMap ha.le)
+    (hf.mono hsub).smul_integral_comp_circleMap ha.le
   have hGc : ContinuousAt G r := hG.continuousAt (Icc_mem_nhds har hrb)
   have hGmeas : AEStronglyMeasurable G (volume.restrict (Icc a b)) :=
     hG.aestronglyMeasurable measurableSet_Icc
