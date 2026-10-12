@@ -298,8 +298,8 @@ theorem IsGeodesicSegment.dist_apply_apply_midpoint (h : IsGeodesicSegment γ x 
     rw [midpoint_eq_smul_add, smul_eq_mul, invOf_eq_inv, ← div_eq_inv_mul]
   have hmI : midpoint ℝ s t ∈ Icc (0 : ℝ) 1 :=
     ⟨by rw [hm]; linarith [hs.1, ht.1], by rw [hm]; linarith [hs.2, ht.2]⟩
-  rw [h.dist_eq s hs _ hmI, h.dist_eq s hs t ht, hm,
-    show s - (s + t) / 2 = (s - t) / 2 by ring, abs_div, abs_two]
+  have hsub : s - (s + t) / 2 = (s - t) / 2 := by ring
+  rw [h.dist_eq s hs _ hmI, h.dist_eq s hs t ht, hm, hsub, abs_div, abs_two]
   ring
 
 /-- The point of a geodesic segment at the midpoint of two times `s` and `t` is at distance
