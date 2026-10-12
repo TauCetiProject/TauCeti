@@ -9,6 +9,7 @@ public import Mathlib.Algebra.GradedMulAction
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.Algebra.Module.GradedModule.Internal
 public import TauCeti.Algebra.DirectSum.Internal
+import TauCeti.Algebra.DirectSum.Module
 
 /-!
 # Direct sums of internally graded modules
@@ -133,41 +134,6 @@ private theorem sigmaSwapPieceEquiv_lof (G : ∀ i, InternalGrading R (M i)) (p 
   rw [DirectSum.lmap_lof]
   rfl
 
--- Mathlib defines `DirectSum.sigmaLcurryEquiv` as `DFinsupp.sigmaCurryLEquiv` and states no
--- application lemma for it, so its action cannot be rewritten through public API.  It is
--- nevertheless definitionally the additive currying map `DirectSum.sigmaCurry`, whose generator
--- behaviour Mathlib does expose (`DirectSum.sigmaCurry_apply`, `DirectSum.sigmaCurry_of`).
--- This private helper isolates that definitional identification, and a Mathlib refactor of
--- either definition will surface exactly here.
-private theorem sigmaLcurryEquiv_apply {ι κ : Type*} {δ : ι → κ → Type*}
-    [DecidableEq ι] [∀ i j, AddCommMonoid (δ i j)]
-    [∀ i j, Module R (δ i j)] (x : ⨁ z : Σ _ : ι, κ, δ z.1 z.2) :
-    DirectSum.sigmaLcurryEquiv R (δ := δ) x = DirectSum.sigmaCurry x := by
-  rfl
-
-private theorem sigmaLcurryEquiv_lof_lof {ι κ : Type*} {δ : ι → κ → Type*}
-    [DecidableEq ι] [DecidableEq κ] [∀ i j, AddCommMonoid (δ i j)]
-    [∀ i j, Module R (δ i j)] (i : ι) (j : κ) (x : δ i j) :
-    DirectSum.sigmaLcurryEquiv R (δ := δ)
-        (DirectSum.lof R (Σ _ : ι, κ) (fun z ↦ δ z.1 z.2) ⟨i, j⟩ x) =
-      DirectSum.lof R ι (fun i ↦ ⨁ j, δ i j) i
-        (DirectSum.lof R κ (fun j ↦ δ i j) j x) := by
-  rw [sigmaLcurryEquiv_apply]
-  rw [DirectSum.lof_eq_of R (Σ _ : ι, κ), DirectSum.lof_eq_of R ι,
-    DirectSum.lof_eq_of R κ]
-  exact DirectSum.sigmaCurry_of (δ := δ) ⟨i, j⟩ x
-
-private theorem sigmaLcurryEquiv_symm_lof_lof {ι κ : Type*} {δ : ι → κ → Type*}
-    [DecidableEq ι] [DecidableEq κ] [∀ i j, AddCommMonoid (δ i j)]
-    [∀ i j, Module R (δ i j)] (i : ι) (j : κ) (x : δ i j) :
-    (DirectSum.sigmaLcurryEquiv R (δ := δ)).symm
-        (DirectSum.lof R ι (fun i ↦ ⨁ j, δ i j) i
-          (DirectSum.lof R κ (fun j ↦ δ i j) j x)) =
-      DirectSum.lof R (Σ _ : ι, κ) (fun z ↦ δ z.1 z.2) ⟨i, j⟩ x := by
-  apply (DirectSum.sigmaLcurryEquiv R (δ := δ)).injective
-  rw [LinearEquiv.apply_symm_apply]
-  exact (sigmaLcurryEquiv_lof_lof i j x).symm
-
 private noncomputable def directSumRecomposeEquiv (G : ∀ i, InternalGrading R (M i))
     [DecidableEq ι] : (⨁ p, directSumPiece G p) ≃ₗ[R] ⨁ i, M i :=
   (DirectSum.congrLinearEquiv fun p ↦ (directSumPieceEquiv G p).symm).trans <|
@@ -198,13 +164,13 @@ private theorem directSumRecomposeEquiv_lof_lof (G : ∀ i, InternalGrading R (M
     congr 1
     exact (directSumPieceEquiv G p).symm_apply_apply _
   rw [hpieces]
-  rw [sigmaLcurryEquiv_symm_lof_lof]
+  rw [DirectSum.sigmaLcurryEquiv_symm_lof_lof]
   rw [DirectSum.lequivCongrLeft_lof
     (M := fun z : Σ _ : ℤ, ι ↦ (G z.2).piece z.1) R (e := sigmaSwap ι)
     (i := Sigma.mk p i) (k := Sigma.mk i p) rfl x x rfl]
   -- After swapping the indices, apply the second curry generator formula.
   rw [sigmaSwapPieceEquiv_lof]
-  rw [sigmaLcurryEquiv_lof_lof]
+  rw [DirectSum.sigmaLcurryEquiv_lof]
   -- The last congruence map acts componentwise on the single summand.
   rw [DirectSum.coe_congrLinearEquiv, DirectSum.lmap_lof]
   congr 1
