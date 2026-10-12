@@ -12,7 +12,8 @@ public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frob
 # The overlap operator of two finite families and their principal cosines
 
 For finite families `u : ι → E` and `v : κ → E` in an inner product space, the *overlap operator*
-is analysis by `u` after synthesis by `v`,
+`TauCeti.overlapOperator` (defined with the frame operators in
+`TauCeti.Analysis.InnerProductSpace.Frame`) is analysis by `u` after synthesis by `v`,
 
 `EuclideanSpace 𝕜 κ → EuclideanSpace 𝕜 ι`, `a ↦ (⟪uᵢ, ∑ⱼ aⱼ vⱼ⟫)ᵢ`,
 
@@ -34,10 +35,6 @@ principal cosines and the squared Frobenius sine are defined only for orthonorma
 
 ## Main declarations
 
-* `TauCeti.overlapOperator`: the overlap operator of two finite families.
-* `TauCeti.overlapOperator_eq_toEuclideanLin`: its matrix is `(⟪uᵢ, vⱼ⟫)ᵢⱼ`.
-* `TauCeti.adjoint_synthesisMap_comp_synthesisMap`: it is `S_u† S_v`.
-* `TauCeti.adjoint_overlapOperator`: swapping the families gives the adjoint.
 * `TauCeti.norm_overlapOperator_apply_le`: for orthonormal families it is a contraction.
 * `TauCeti.sum_sq_singularValues_overlapOperator`: `∑ₖ σₖ² = ∑ⱼ ∑ᵢ ‖⟪uᵢ, vⱼ⟫‖²`.
 * `TauCeti.cosPrincipalAngles`: the principal cosines of two orthonormal families, as singular
@@ -61,69 +58,10 @@ open scoped InnerProductSpace
 
 namespace TauCeti
 
-variable {𝕜 E ι κ : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [Fintype κ]
+variable {𝕜 E ι κ : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [Fintype ι]
+  [Fintype κ]
 
-/-! ### The overlap operator -/
-
-variable (𝕜) in
-/-- The overlap operator of finite families `u : ι → E` and `v : κ → E`: analysis by `u` after
-synthesis by `v`, with matrix `(⟪uᵢ, vⱼ⟫)ᵢⱼ` (`TauCeti.overlapOperator_eq_toEuclideanLin`). -/
-noncomputable def overlapOperator (u : ι → E) (v : κ → E) :
-    EuclideanSpace 𝕜 κ →ₗ[𝕜] EuclideanSpace 𝕜 ι :=
-  analysisMap 𝕜 u ∘ₗ synthesisMap 𝕜 v
-
-theorem overlapOperator_def (u : ι → E) (v : κ → E) :
-    overlapOperator 𝕜 u v = analysisMap 𝕜 u ∘ₗ synthesisMap 𝕜 v :=
-  (rfl)
-
-/-- The `i`-th coordinate of the overlap operator applied to `a` is `∑ⱼ ⟪uᵢ, vⱼ⟫ aⱼ`, the
-matrix `(⟪uᵢ, vⱼ⟫)ᵢⱼ` acting on the coefficients `a`. -/
-@[simp]
-theorem overlapOperator_apply (u : ι → E) (v : κ → E) (a : EuclideanSpace 𝕜 κ) (i : ι) :
-    overlapOperator 𝕜 u v a i = ∑ j, ⟪u i, v j⟫_𝕜 * a j := by
-  simp [overlapOperator_def, mul_comm]
-
-/-- The overlap operator sends the `j`-th coordinate vector, scaled by `c`, to `c` times the
-coefficients `(⟪uᵢ, vⱼ⟫)ᵢ` of `vⱼ`. -/
-@[simp]
-theorem overlapOperator_single [DecidableEq κ] (u : ι → E) (v : κ → E) (j : κ) (c : 𝕜) :
-    overlapOperator 𝕜 u v (EuclideanSpace.single j c) = c • analysisMap 𝕜 u (v j) := by
-  rw [overlapOperator_def, LinearMap.comp_apply, synthesisMap_single, map_smul]
-
-/-- The overlap operator is the matrix `(⟪uᵢ, vⱼ⟫)ᵢⱼ` acting on coefficient space. -/
-theorem overlapOperator_eq_toEuclideanLin [DecidableEq κ] (u : ι → E) (v : κ → E) :
-    overlapOperator 𝕜 u v = Matrix.toEuclideanLin (Matrix.of fun i j ↦ ⟪u i, v j⟫_𝕜) := by
-  ext a i
-  simp [Matrix.toLpLin_apply, Matrix.mulVec, dotProduct]
-
-variable [Fintype ι]
-
-/-- The overlap operator of a family with itself is its Gram operator. -/
-@[simp]
-theorem overlapOperator_self (v : ι → E) : overlapOperator 𝕜 v v = gramOperator 𝕜 v := by
-  rw [overlapOperator_def, gramOperator_def]
-
-/-- The overlap operators in the two orders are adjoint to each other:
-`⟪O_{v,u} b, a⟫ = ⟪b, O_{u,v} a⟫`. -/
-theorem inner_overlapOperator_left (u : ι → E) (v : κ → E) (b : EuclideanSpace 𝕜 ι)
-    (a : EuclideanSpace 𝕜 κ) :
-    ⟪overlapOperator 𝕜 v u b, a⟫_𝕜 = ⟪b, overlapOperator 𝕜 u v a⟫_𝕜 := by
-  rw [overlapOperator_def, overlapOperator_def, LinearMap.comp_apply, LinearMap.comp_apply,
-    ← inner_synthesisMap_left u b, ← inner_conj_symm (synthesisMap 𝕜 u b),
-    inner_synthesisMap_left v a, inner_conj_symm]
-
-/-- Swapping the two families gives the adjoint overlap operator. -/
-@[simp]
-theorem adjoint_overlapOperator (u : ι → E) (v : κ → E) :
-    LinearMap.adjoint (overlapOperator 𝕜 u v) = overlapOperator 𝕜 v u :=
-  ((LinearMap.eq_adjoint_iff _ _).mpr (inner_overlapOperator_left u v)).symm
-
-/-- In a finite-dimensional space the overlap operator is `S_u† S_v` for the synthesis maps `S_u`
-and `S_v`; for orthonormal families these are the coordinate isometries
-`Orthonormal.synthesisMapIsometry`. -/
-theorem adjoint_synthesisMap_comp_synthesisMap [FiniteDimensional 𝕜 E] (u : ι → E) (v : κ → E) :
-    LinearMap.adjoint (synthesisMap 𝕜 u) ∘ₗ synthesisMap 𝕜 v = overlapOperator 𝕜 u v := by
-  rw [adjoint_synthesisMap, overlapOperator_def]
+/-! ### Contraction and Frobenius identity -/
 
 /-- The overlap operator of two orthonormal families is a contraction. -/
 theorem norm_overlapOperator_apply_le {u : ι → E} {v : κ → E} (hu : Orthonormal 𝕜 u)
