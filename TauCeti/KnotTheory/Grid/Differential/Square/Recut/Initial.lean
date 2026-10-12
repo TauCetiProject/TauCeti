@@ -43,8 +43,7 @@ columns above it.
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.3, "The complexes and
-`∂² = 0`", specifically the overlapping case of its juxtaposition case analysis. The recut follows
+This is the overlapping case of the juxtaposition case analysis for `∂² = 0`. The recut follows
 Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 4.6.
 -/
 
