@@ -44,7 +44,7 @@ open _root_.Quiver PathAlgebra
 universe u v w
 
 /-- Arrow sets are finite because they inject into their source vertex stars. -/
-noncomputable local instance {R : Type u} [Quiver.{v} R]
+noncomputable local instance fintypeHomOfFiniteStar {R : Type u} [Quiver.{v} R]
     [∀ x : R, Fintype (Quiver.Star x)] (i j : R) : Fintype (i ⟶ j) := by
   letI : Finite (i ⟶ j) :=
     Finite.of_injective (fun e : i ⟶ j => (Quiver.Star.mk e : Quiver.Star i)) sigma_mk_injective
