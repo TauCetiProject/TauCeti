@@ -18,8 +18,9 @@ import Mathlib.Algebra.DirectSum.Module
 # Projective resolutions over the signless preprojective algebra
 
 For a finite quiver with involutive reversal, the signless Koszul maps give a complex of right
-vertex projectives. If every vertex has a chosen outgoing arrow and consecutive chosen arrows
-never backtrack, this complex is a length-two projective resolution of the vertex module.
+vertex projectives. When the left Koszul map at a vertex is injective, this complex is a
+length-two projective resolution of its vertex module. A non-backtracking outgoing-arrow choice
+at every vertex supplies this injectivity.
 The vertex module is the cokernel of the incoming-arrow map; its underlying coefficient module
 is one copy of the base ring, as detected by the vertex augmentation.
 
@@ -386,23 +387,22 @@ private theorem signlessPreprojectiveKoszulComplexπ_f_zero (v : R) :
   ChainComplex.toSingle₀Equiv_symm_apply_f_zero _ _
 
 private theorem range_signlessPreprojectiveKoszulDifferential_succ_eq_ker
-    {σ : ∀ v : R, Quiver.Star v}
-    (hσ : ∀ v, σ (σ v).1 ≠ Quiver.Star.mk (reverse (σ v).2)) (v : R) : ∀ n : ℕ,
+    (v : R) (hinj : Function.Injective (signlessPreprojectiveKoszulLeft k v)) : ∀ n : ℕ,
     LinearMap.range (signlessPreprojectiveKoszulDifferential k v (n + 1)).hom =
       LinearMap.ker (signlessPreprojectiveKoszulDifferential k v n).hom
   | 0 => range_signlessPreprojectiveKoszulLeft_eq_ker_right k v
   | 1 => by
     simp only [signlessPreprojectiveKoszulDifferential, ModuleCat.hom_zero, LinearMap.range_zero]
-    exact ((LinearMap.ker_eq_bot).2 (signlessPreprojectiveKoszulLeft_injective k hσ v)).symm
+    exact ((LinearMap.ker_eq_bot).2 hinj).symm
   | n + 2 => by
     ext x
     have hx : x = 0 := Subsingleton.elim x 0
     simp [signlessPreprojectiveKoszulDifferential, hx]
 
-/-- A non-backtracking outgoing-arrow choice gives a length-two projective resolution of
-each right vertex module of the signless preprojective algebra. -/
-noncomputable def signlessPreprojectiveKoszulProjectiveResolution {σ : ∀ v : R, Quiver.Star v}
-    (hσ : ∀ v, σ (σ v).1 ≠ Quiver.Star.mk (reverse (σ v).2)) (v : R) :
+/-- Injectivity of the left Koszul map gives a length-two projective resolution of the
+right vertex module of the signless preprojective algebra. -/
+noncomputable def signlessPreprojectiveKoszulProjectiveResolution (v : R)
+    (hinj : Function.Injective (signlessPreprojectiveKoszulLeft k v)) :
     ProjectiveResolution (ModuleCat.of Πᵐᵒᵖ (signlessPreprojectiveVertexModule k v)) where
   complex := signlessPreprojectiveKoszulComplex k v
   projective n := by
@@ -441,35 +441,33 @@ noncomputable def signlessPreprojectiveKoszulProjectiveResolution {σ : ∀ v : 
         (signlessPreprojectiveKoszulDifferential k v) (n + 1),
         ChainComplex.of_d (signlessPreprojectiveKoszulTerm k v)
           (signlessPreprojectiveKoszulDifferential k v) n]
-      exact range_signlessPreprojectiveKoszulDifferential_succ_eq_ker k hσ v n
+      exact range_signlessPreprojectiveKoszulDifferential_succ_eq_ker k v hinj n
 
 /-- The projective resolution uses the explicit signless Koszul complex. -/
 @[simp]
-theorem signlessPreprojectiveKoszulProjectiveResolution_complex {σ : ∀ v : R, Quiver.Star v}
-    (hσ : ∀ v, σ (σ v).1 ≠ Quiver.Star.mk (reverse (σ v).2)) (v : R) :
-    (signlessPreprojectiveKoszulProjectiveResolution k hσ v).complex =
+theorem signlessPreprojectiveKoszulProjectiveResolution_complex (v : R)
+    (hinj : Function.Injective (signlessPreprojectiveKoszulLeft k v)) :
+    (signlessPreprojectiveKoszulProjectiveResolution k v hinj).complex =
       signlessPreprojectiveKoszulComplex k v := (rfl)
 
 /-- The terms of the projective resolution identified with the explicit Koszul terms. -/
 noncomputable def signlessPreprojectiveKoszulProjectiveResolutionXIso
-    {σ : ∀ v : R, Quiver.Star v}
-    (hσ : ∀ v, σ (σ v).1 ≠ Quiver.Star.mk (reverse (σ v).2)) (v : R) (n : ℕ) :
-    (signlessPreprojectiveKoszulProjectiveResolution k hσ v).complex.X n ≅
+    (v : R) (hinj : Function.Injective (signlessPreprojectiveKoszulLeft k v)) (n : ℕ) :
+    (signlessPreprojectiveKoszulProjectiveResolution k v hinj).complex.X n ≅
       signlessPreprojectiveKoszulTerm k v n :=
   eqToIso (congrArg (fun C => C.X n)
-    (signlessPreprojectiveKoszulProjectiveResolution_complex k hσ v)) ≪≫
+    (signlessPreprojectiveKoszulProjectiveResolution_complex k v hinj)) ≪≫
       signlessPreprojectiveKoszulComplexXIso k v n
 
 /-- The differentials of the projective resolution are the explicit Koszul maps, using
 its term identifications. -/
 @[simp]
 theorem signlessPreprojectiveKoszulProjectiveResolution_d
-    {σ : ∀ v : R, Quiver.Star v}
-    (hσ : ∀ v, σ (σ v).1 ≠ Quiver.Star.mk (reverse (σ v).2)) (v : R) (n : ℕ) :
-    (signlessPreprojectiveKoszulProjectiveResolution k hσ v).complex.d (n + 1) n =
-      (signlessPreprojectiveKoszulProjectiveResolutionXIso k hσ v (n + 1)).hom ≫
+    (v : R) (hinj : Function.Injective (signlessPreprojectiveKoszulLeft k v)) (n : ℕ) :
+    (signlessPreprojectiveKoszulProjectiveResolution k v hinj).complex.d (n + 1) n =
+      (signlessPreprojectiveKoszulProjectiveResolutionXIso k v hinj (n + 1)).hom ≫
         signlessPreprojectiveKoszulDifferential k v n ≫
-          (signlessPreprojectiveKoszulProjectiveResolutionXIso k hσ v n).inv := by
+          (signlessPreprojectiveKoszulProjectiveResolutionXIso k v hinj n).inv := by
   -- The term identifications are identities after expanding the constructed resolution.
   dsimp only [signlessPreprojectiveKoszulProjectiveResolutionXIso,
     signlessPreprojectiveKoszulProjectiveResolution, eqToIso_refl, Iso.trans_refl]
@@ -478,10 +476,9 @@ theorem signlessPreprojectiveKoszulProjectiveResolution_d
 /-- The augmentation of the resolution is the vertex quotient map. -/
 @[simp]
 theorem signlessPreprojectiveKoszulProjectiveResolution_π_f_zero
-    {σ : ∀ v : R, Quiver.Star v}
-    (hσ : ∀ v, σ (σ v).1 ≠ Quiver.Star.mk (reverse (σ v).2)) (v : R) :
-    (signlessPreprojectiveKoszulProjectiveResolutionXIso k hσ v 0).inv ≫
-        (signlessPreprojectiveKoszulProjectiveResolution k hσ v).π.f 0 =
+    (v : R) (hinj : Function.Injective (signlessPreprojectiveKoszulLeft k v)) :
+    (signlessPreprojectiveKoszulProjectiveResolutionXIso k v hinj 0).inv ≫
+        (signlessPreprojectiveKoszulProjectiveResolution k v hinj).π.f 0 =
       ModuleCat.ofHom (signlessPreprojectiveVertexAugmentation k v) := by
   -- The resolution and term identifications reduce to identities by construction.
   dsimp only [signlessPreprojectiveKoszulProjectiveResolutionXIso,
