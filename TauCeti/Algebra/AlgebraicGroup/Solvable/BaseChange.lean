@@ -34,8 +34,7 @@ Solvability passes to subgroups, giving the result.
 * J. S. Milne, *Algebraic Groups* (2017), §§6.45--6.46.
 * A. Borel, *Linear Algebraic Groups*, §11.21.
 
-This supplies the two-way scalar-extension interface needed to compare solvable radicals in
-Layer 6, "Reductive and semisimple groups", of the ReductiveGroups roadmap.
+This supplies the two-way scalar-extension interface needed to compare solvable radicals.
 -/
 
 public section

@@ -49,6 +49,9 @@ is the usual Hilbert norm
 which is the space needed for energy methods in PDE.  No boundedness or
 boundary regularity of `Ω` is used.
 
+The ambient jet projections and component norm estimates only require `E` to be a real normed
+space. The inner product is needed to interpret the gradient as a weak derivative.
+
 ## Main declarations
 
 * `TauCeti.Sobolev1Jet`: the value-gradient fibre `ℝ × E` with its Euclidean product norm.
@@ -119,7 +122,9 @@ private theorem assembleSobolev1JetLp_apply_ae (u : Lp ℝ p (mu.restrict Omega)
       assembleSobolev1JetLp u g x = WithLp.toLp 2 (u x, g x) := by
   exact (memLp_assembleSobolev1Jet u g).coeFn_toLp
 
-variable [InnerProductSpace ℝ E] [Fact (1 <= p)]
+section NormedSpace
+
+variable [NormedSpace ℝ E] [Fact (1 <= p)]
 
 /-- The continuous linear projection from an `Lᵖ` Sobolev jet to its value component. -/
 def Sobolev1JetLp.valueL :
@@ -228,29 +233,20 @@ theorem Sobolev1JetLp.norm_le_norm_value_add_norm_gradient (J : Sobolev1JetLp mu
     exact WithLp.prod_norm_le_norm_fst_add_norm_snd (J x)
   simpa using Lp.norm_le_add_of_ae_norm_le zero_le_one zero_le_one hle
 
-/-- At exponent two, the Sobolev jet norm is the Hilbert graph norm of its components. -/
+/-- At exponent two, the squared Sobolev jet norm is the sum of the squared component norms. -/
 theorem Sobolev1JetLp.norm_sq_eq_norm_value_sq_add_norm_gradient_sq
     (J : Sobolev1JetLp mu Omega 2) :
     ‖J‖ ^ 2 = ‖Sobolev1JetLp.value J‖ ^ 2 + ‖Sobolev1JetLp.gradient J‖ ^ 2 := by
-  rw [← real_inner_self_eq_norm_sq J,
-    ← real_inner_self_eq_norm_sq (Sobolev1JetLp.value J),
-    ← real_inner_self_eq_norm_sq (Sobolev1JetLp.gradient J),
-    L2.inner_def, L2.inner_def, L2.inner_def,
-    ← integral_add (L2.integrable_inner (Sobolev1JetLp.value J) (Sobolev1JetLp.value J))
-      (L2.integrable_inner (Sobolev1JetLp.gradient J) (Sobolev1JetLp.gradient J))]
+  rw [← Lp.integral_norm_sq_eq_norm_sq J,
+    ← Lp.integral_norm_sq_eq_norm_sq (Sobolev1JetLp.value J),
+    ← Lp.integral_norm_sq_eq_norm_sq (Sobolev1JetLp.gradient J),
+    ← integral_add (Lp.memLp (Sobolev1JetLp.value J)).norm.integrable_sq
+      (Lp.memLp (Sobolev1JetLp.gradient J)).norm.integrable_sq]
   apply integral_congr_ae
   filter_upwards [Sobolev1JetLp.value_apply_ae J,
     Sobolev1JetLp.gradient_apply_ae J] with x hvalue hgradient
-  rw [WithLp.prod_inner_apply, WithLp.ofLp_fst, WithLp.ofLp_snd, ← hvalue, ← hgradient]
-
-/-- The candidate weak Fréchet derivative recorded by the gradient component of a Sobolev jet. -/
-def Sobolev1JetLp.candidateWeakFDeriv (J : Sobolev1JetLp mu Omega p) : E → E →L[ℝ] ℝ :=
-  fun x => innerSL ℝ (Sobolev1JetLp.gradient J x)
-
-@[simp]
-theorem Sobolev1JetLp.candidateWeakFDeriv_apply (J : Sobolev1JetLp mu Omega p) (x v : E) :
-    Sobolev1JetLp.candidateWeakFDeriv J x v = ⟪v, Sobolev1JetLp.gradient J x⟫_ℝ := by
-  rw [Sobolev1JetLp.candidateWeakFDeriv, innerSL_apply_apply, real_inner_comm]
+  rw [hvalue, hgradient]
+  exact WithLp.prod_norm_sq_eq_of_L2 _
 
 @[simp]
 private theorem value_assembleSobolev1JetLp (u : Lp ℝ p (mu.restrict Omega))
@@ -269,6 +265,19 @@ private theorem gradient_assembleSobolev1JetLp (u : Lp ℝ p (mu.restrict Omega)
   filter_upwards [Sobolev1JetLp.gradient_apply_ae (assembleSobolev1JetLp u g),
     assembleSobolev1JetLp_apply_ae u g] with x hgradient hassemble
   simpa only [hassemble, WithLp.toLp_snd] using hgradient
+
+end NormedSpace
+
+variable [InnerProductSpace ℝ E] [Fact (1 <= p)]
+
+/-- The candidate weak Fréchet derivative recorded by the gradient component of a Sobolev jet. -/
+def Sobolev1JetLp.candidateWeakFDeriv (J : Sobolev1JetLp mu Omega p) : E → E →L[ℝ] ℝ :=
+  fun x => innerSL ℝ (Sobolev1JetLp.gradient J x)
+
+@[simp]
+theorem Sobolev1JetLp.candidateWeakFDeriv_apply (J : Sobolev1JetLp mu Omega p) (x v : E) :
+    Sobolev1JetLp.candidateWeakFDeriv J x v = ⟪v, Sobolev1JetLp.gradient J x⟫_ℝ := by
+  rw [Sobolev1JetLp.candidateWeakFDeriv, innerSL_apply_apply, real_inner_comm]
 
 /-! ### The weak Sobolev space `W^{1,p}(Ω)` -/
 
@@ -401,6 +410,12 @@ theorem W1p.value_finsetSum_ae {ι : Type*} (s : Finset ι) (u : ι → W1p mu O
     simp only [← W1p.valueL_apply, map_sum]
   filter_upwards [Lp.coeFn_fun_finsetSum s fun j => W1p.value (u j)] with x hx
   rw [h, hx]
+
+/-- The value of the negation of a Sobolev function is almost everywhere the negation of its
+value. -/
+theorem W1p.value_neg_ae (u : W1p mu Omega p) :
+    ⇑(W1p.value (-u)) =ᵐ[mu.restrict Omega] -⇑(W1p.value u) := by
+  simpa only [← W1p.valueL_apply, map_neg] using Lp.coeFn_neg (W1p.value u)
 
 
 /-- As for `TauCeti.W1p.value_coe`: the Sobolev gradient component is the gradient component of

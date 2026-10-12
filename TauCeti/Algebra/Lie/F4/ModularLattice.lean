@@ -662,7 +662,7 @@ theorem integralDividedPower_f4RootAdjointDerivation_one_apply_eq_lie
       f4ChevalleyLieLattice 1 (f4RootAdjointDerivation_dividedPower_mem k 1)) y =
         ⁅f4IntegralRootVector (f4SignedSimpleRootIndex k), y⁆ := by
   apply Subtype.ext
-  rw [coe_integralDividedPower_apply, Associative.dividedPower_one,
+  rw [coe_integralDividedPower_one_apply,
     Module.End.smul_def, LieSubalgebra.coe_bracket, coe_f4IntegralRootVector,
     f4RootAdjointDerivation_toLinearMap, ad_apply]
 

@@ -22,7 +22,7 @@ For `V` the prime field of a field of characteristic `p` this is the Artin–Sch
 `TauCeti/FieldTheory/ArtinSchreier/Basic.lean`. For larger `V` the Galois group is elementary
 abelian; these are the extensions of Stichtenoth's Proposition 3.7.10, where the degree `|V|` is
 forced by a totally ramified place
-(`TauCeti/FieldTheory/FunctionField/ArtinSchreier/Additive.lean`).
+(`TauCeti/FieldTheory/FunctionField/ArtinSchreier/Additive/Basic.lean`).
 
 ## Main definitions
 

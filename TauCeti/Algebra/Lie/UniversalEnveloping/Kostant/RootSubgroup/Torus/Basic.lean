@@ -278,8 +278,7 @@ noncomputable def kostantRootOperator : Module.End ℤ M :=
 @[simp] theorem coe_kostantRootOperator_apply (v : M) :
     ((kostantRootOperator e h ρ M hM i v : M) : V) =
       ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (v : V) := by
-  rw [kostantRootOperator, coe_integralDividedPower_apply, Associative.dividedPower_one,
-    Module.End.smul_def]
+  rw [kostantRootOperator, coe_integralDividedPower_one_apply, Module.End.smul_def]
 
 include e hM in
 /-- The integral root operator raises weights by the root: it is the first divided power of a
