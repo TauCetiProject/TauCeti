@@ -24,32 +24,40 @@ open scoped InnerProductSpace
 namespace Orthonormal
 
 variable {𝕜 E ι : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-  [Fintype ι]
+  [Fintype ι] {v : ι → E}
 
 /-- The synthesis map of an orthonormal family is a linear isometry from Euclidean coefficient
 space into its ambient inner-product space. -/
-def synthesisMapIsometry (v : ι → E) (hv : Orthonormal 𝕜 v) :
+def synthesisMapIsometry (hv : Orthonormal 𝕜 v) :
     EuclideanSpace 𝕜 ι →ₗᵢ[𝕜] E :=
-  (TauCeti.synthesisMap 𝕜 v).isometryOfInner fun a b => by
+  (TauCeti.synthesisMap 𝕜 v).isometryOfOrthonormal
+    (v := (EuclideanSpace.basisFun ι 𝕜).toBasis)
+    (EuclideanSpace.basisFun ι 𝕜).orthonormal <| by
     classical
-    rw [TauCeti.synthesisMap_apply, TauCeti.synthesisMap_apply,
-      hv.inner_sum _ _ Finset.univ]
-    simp [PiLp.inner_apply, mul_comm]
+    simpa only [OrthonormalBasis.coe_toBasis, Function.comp_def,
+      EuclideanSpace.basisFun_apply, TauCeti.synthesisMap_single, one_smul] using hv
+
+/-- The underlying linear map of the coordinate isometry is the synthesis map. -/
+@[simp]
+theorem synthesisMapIsometry_toLinearMap (hv : Orthonormal 𝕜 v) :
+    hv.synthesisMapIsometry.toLinearMap = TauCeti.synthesisMap 𝕜 v :=
+  (rfl)
 
 /-- The coordinate isometry sends a coefficient vector to the corresponding linear combination
 of the orthonormal family. -/
 @[simp]
-theorem synthesisMapIsometry_apply (v : ι → E) (hv : Orthonormal 𝕜 v)
+theorem synthesisMapIsometry_apply (hv : Orthonormal 𝕜 v)
     (a : EuclideanSpace 𝕜 ι) :
-    synthesisMapIsometry v hv a = ∑ i, a i • v i := by
-  simp [synthesisMapIsometry, TauCeti.synthesisMap_apply]
+    hv.synthesisMapIsometry a = ∑ i, a i • v i := by
+  rw [← LinearIsometry.coe_toLinearMap, synthesisMapIsometry_toLinearMap,
+    TauCeti.synthesisMap_apply]
 
 open Classical in
-/-- The coordinate isometry sends each standard coordinate vector to the corresponding member of
-the orthonormal family. -/
+/-- The coordinate isometry sends the single-coordinate vector supported at `i` with coefficient
+`c` to `c • v i`. -/
 @[simp high]
-theorem synthesisMapIsometry_single (v : ι → E) (hv : Orthonormal 𝕜 v) (i : ι) (c : 𝕜) :
-    synthesisMapIsometry v hv (EuclideanSpace.single i c) = c • v i := by
+theorem synthesisMapIsometry_single (hv : Orthonormal 𝕜 v) (i : ι) (c : 𝕜) :
+    hv.synthesisMapIsometry (EuclideanSpace.single i c) = c • v i := by
   classical
   rw [synthesisMapIsometry_apply]
   simp
