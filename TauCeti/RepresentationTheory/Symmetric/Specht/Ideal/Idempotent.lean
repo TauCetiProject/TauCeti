@@ -166,7 +166,7 @@ theorem isIdempotentElem_smul_youngSymmetrizer (t : YoungTableau μ) :
 
 /-- **Essential idempotence over a `ℚ`-algebra.** The Young symmetrizer transported into `k[Sₙ]`
 squares to the same scalar `n! / dim ℚ[Sₙ] c_t` times itself, the scalar now read in `k`. -/
-theorem youngSymmetrizerOver_sq (k : Type*) [CommSemiring k] [Algebra ℚ k] (t : YoungTableau μ) :
+theorem youngSymmetrizerOver_sq (k : Type*) [Semiring k] [Algebra ℚ k] (t : YoungTableau μ) :
     youngSymmetrizerOver k t * youngSymmetrizerOver k t =
       algebraMap ℚ k ((μ.card.factorial : ℚ) / (finrank ℚ (spechtIdeal t) : ℚ)) •
         youngSymmetrizerOver k t := by
