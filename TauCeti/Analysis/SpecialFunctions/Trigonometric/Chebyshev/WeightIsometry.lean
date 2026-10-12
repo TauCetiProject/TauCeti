@@ -14,8 +14,8 @@ public import TauCeti.MeasureTheory.Function.WeightL2Isometry
 /-!
 # The two Chebyshev normalizations are images of one another
 
-Each orthogonal family comes in two normalizations: the bare polynomials as a basis of the *weighted
-measure*, and their `√w`-envelopes as a basis of the *reference measure*. For Chebyshev these are
+The Chebyshev polynomials come in two normalizations: the bare polynomials as a basis of the
+*weighted measure*, and their `√w`-envelopes as a basis of the *reference measure*. These are
 `TauCeti.chebyshevTHilbertBasis` on `Polynomial.Chebyshev.measureT` and
 `TauCeti.chebyshevTEnvelopeHilbertBasis` on `volume.restrict (Set.Ioc (-1) 1)`. Both are assembled
 from the same bridge.
@@ -116,8 +116,7 @@ theorem chebyshevWeightL2Isometry_normalizedChebyshevTLp (n : ℕ) :
 bare-polynomial basis of `L²(measureT)` across the weight-change isometry gives exactly the envelope
 basis of `L²((-1, 1]; dx)`.
 
-This is the Chebyshev instance of the principle that a family's weighted-measure and `√w`-envelope
-bases are `HilbertBasis.mapₗᵢ`-images of one another; unlike the Gaussian instance it needs no
+Unlike the Gaussian instance `TauCeti.weightL2Isometry_gaussianHermiteHilbertBasis`, this needs no
 dilation, so it is an equality of bases rather than of individual vectors up to a change of
 variables. -/
 @[simp]
