@@ -53,6 +53,8 @@ statement that the symmetric group sits inside the Brauer algebra as the diagram
 ## Main results
 
 * `TauCeti.orthogonalCap_comp_orthogonalCup`: the loop value, `cap ∘ cup = n`.
+* `TauCeti.orthogonalCup_injective`: the cup is injective as soon as `V ≠ 0`, so a cup may be
+  cancelled from the top of a diagram.
 * `TauCeti.orthogonalCupCap_mul_self`: `e * e = n • e`.
 * `TauCeti.permTensorAction_swap_mul_orthogonalCupCap` and
   `TauCeti.orthogonalCupCap_mul_permTensorAction_swap`: `s * e = e` and `e * s = e`.
@@ -138,6 +140,33 @@ theorem orthogonalCup_apply_one :
     orthogonalCup k n 1 =
       ∑ j : Fin n, PiTensorProduct.tprod k fun _ : Fin 2 => Pi.single j (1 : k) := by
   rw [orthogonalCup_apply, one_smul]
+
+/-- The product of the first coordinates of the two factors, as a linear functional on the tensor
+square. This is an implementation detail of `TauCeti.orthogonalCup_injective`, where it is the
+left inverse that reads a scalar back off its cup. -/
+private noncomputable def firstCoordProd [NeZero n] : (⨂[k]^2 (Fin n → k)) →ₗ[k] k :=
+  PiTensorProduct.lift
+    ((MultilinearMap.mkPiAlgebra k (Fin 2) k).compLinearMap fun _ : Fin 2 =>
+      LinearMap.proj (0 : Fin n))
+
+private theorem firstCoordProd_orthogonalCup [NeZero n] (c : k) :
+    firstCoordProd k n (orthogonalCup k n c) = c := by
+  have hterm : ∀ j : Fin n, firstCoordProd k n
+      (PiTensorProduct.tprod k fun _ : Fin 2 => Pi.single j (1 : k)) =
+      if (0 : Fin n) = j then 1 else 0 := by
+    intro j
+    rw [firstCoordProd, PiTensorProduct.lift.tprod]
+    simp [Pi.single_apply]
+  rw [orthogonalCup_apply, map_smul, map_sum]
+  simp [hterm]
+
+/-- **The cup is injective** as soon as `V ≠ 0`: the product of the first coordinates of the two
+factors takes the value `1` on `∑ⱼ eⱼ ⊗ eⱼ`, so it is a left inverse of the cup. A cup may
+therefore be cancelled from the top of a diagram, which is what turns the vanishing of the
+Brauer generator `e` into the vanishing of the cap. -/
+theorem orthogonalCup_injective [NeZero n] : Function.Injective (orthogonalCup k n) := by
+  intro a b hab
+  rw [← firstCoordProd_orthogonalCup k n a, ← firstCoordProd_orthogonalCup k n b, hab]
 
 end Cup
 

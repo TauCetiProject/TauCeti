@@ -17,9 +17,6 @@ where `T n` is group-like and the antipode sends `T n` to `T (-n)`. We package t
 `R`-points of `Spec R[T;T⁻¹]`: for every commutative `R`-algebra `A`, convolution points
 `R[T;T⁻¹] →ₐ[R] A` are multiplicatively equivalent to units of `A`.
 
-This is a worked-example check for the reductive-groups roadmap Layer 0 target "R-points as a
-group" and the listed example `𝔾_m`.
-
 ## Main declarations
 
 * `TauCeti.MultiplicativeGroup.point`: the point corresponding to a unit of `A`.
