@@ -283,7 +283,7 @@ noncomputable def coneHomotopyContraction :
   have hαx : α.1 x.1 ∈ M.grading p := by
     simpa [add_assoc] using dgRightModuleCochains.map_mem α hx.1
   have htx : t x.1 ∈ N.grading p := by
-    change closedHom f (α.1 x.1) - β.1 (closedHom f x.1) ∈ N.grading p
+    dsimp only [t, LinearMap.sub_apply, LinearMap.comp_apply]
     exact (N.grading p).sub_mem (closedHom_mem f hαx)
       (by simpa [add_assoc] using dgRightModuleCochains.map_mem β (closedHom_mem f hx.1))
   -- The block map is evaluated on the product carrier; its first output has degree `p`
@@ -557,7 +557,7 @@ theorem coneMapCompHomotopy_boundary
     _ = _ := by rw [h₁, h₂]; abel
 
 /-- Cone maps compose using the induced composite square homotopy. -/
-@[reassoc]
+@[reassoc (attr := simp), simp]
 theorem coneMap_comp
     (j : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M'' ⟶
       ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N'')

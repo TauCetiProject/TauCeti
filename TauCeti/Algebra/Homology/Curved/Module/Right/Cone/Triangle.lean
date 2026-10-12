@@ -65,12 +65,12 @@ theorem coneTriangle_rotate :
   rw [homotopyShiftFunctor_map_quotient]
 
 /-- The first and second arrows of the cone triangle compose to zero. -/
-@[reassoc]
+@[reassoc (attr := simp), simp]
 theorem coneTriangle_mor₁_comp_mor₂ : (coneTriangle f).mor₁ ≫ (coneTriangle f).mor₂ = 0 :=
   quotient_map_comp_coneInclusion f
 
 /-- The second and third arrows of the cone triangle compose to zero. -/
-@[reassoc]
+@[reassoc (attr := simp), simp]
 theorem coneTriangle_mor₂_comp_mor₃ : (coneTriangle f).mor₂ ≫ (coneTriangle f).mor₃ = 0 := by
   -- The triangle constructor stores the images of the closed inclusion and projection.
   change (dgClosedToHomotopy R).map (coneInclusion f) ≫
@@ -78,7 +78,7 @@ theorem coneTriangle_mor₂_comp_mor₃ : (coneTriangle f).mor₂ ≫ (coneTrian
   rw [← Functor.map_comp, coneInclusion_comp_coneProjection, Functor.map_zero]
 
 /-- The third arrow followed by the shift of the first arrow composes to zero. -/
-@[reassoc]
+@[reassoc (attr := simp), simp]
 theorem coneTriangle_mor₃_comp_shift_mor₁ :
     (coneTriangle f).mor₃ ≫ (coneTriangle f).mor₁⟦(1 : ℤ)⟧' = 0 := by
   -- Its shifted first arrow uses the existing homotopy shift, whose quotient formula applies.
