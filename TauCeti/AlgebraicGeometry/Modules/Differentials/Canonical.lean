@@ -125,7 +125,8 @@ private lemma range_differentialCoordinateHom_app (U : X.Opens)
   · let := hU
     rw [SchemeWeilDivisor.mem_sections_iff]
     simp_rw [hK]
-    rw [← smul_D_mem_range_rationalDifferential_iff_of_isAlgClosed hF ht U (fun y _ ↦ hdim y),
+    rw [← smul_D_mem_range_rationalDifferential_iff_of_isAlgClosed hF ht U (fun y _ ↦ hdim y)
+      (fun _ _ ↦ inferInstance),
       ← differentialCoordinateEquiv_symm_apply ht]
     constructor
     · rintro ⟨a, rfl⟩

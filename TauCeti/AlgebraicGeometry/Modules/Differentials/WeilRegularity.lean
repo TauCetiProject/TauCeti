@@ -152,14 +152,17 @@ theorem mem_range_rationalDifferential_iff_weilDifferentialOrder_nonneg_of_isAlg
   exact (X.toPlace (k := k) (y : X)).degree_eq_one_of_isAlgClosed_of_isFunctionField hF
 
 variable [IsLocallyNoetherian X]
-  [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
 
 /-- The rational differential `f dt` is regular on `U` exactly when `f` satisfies the
-order bounds of the divisor of the Weil differential `dt`. -/
+order bounds of the divisor of the Weil differential `dt`. Only codimension-one stalks
+on `U` are required to be discrete valuation rings. -/
 theorem smul_D_mem_range_rationalDifferential_iff_of_isAlgClosed (U : X.Opens) [Nonempty U]
-    (hU : ∀ y ∈ U, coheight y ≤ 1) (f : X.functionField) :
+    (hU : ∀ y ∈ U, coheight y ≤ 1)
+    (hDVR : ∀ y : CodimensionOnePoint X, (y : X) ∈ U →
+      IsDiscreteValuationRing (X.presheaf.stalk (y : X))) (f : X.functionField) :
     f • KaehlerDifferential.D k X.functionField t ∈ Set.range (rationalDifferential k U) ↔
-      f = 0 ∨ ∀ (y : CodimensionOnePoint X), (y : X) ∈ U →
+      f = 0 ∨ ∀ (y : CodimensionOnePoint X) (hy : (y : X) ∈ U),
+        letI := hDVR y hy;
         -weilDifferentialOrder hF isIntegrallyClosedIn_of_isAlgClosed
           (weilDifferentialOfSeparating hF ht).2
           (coe_weilDifferentialOfSeparating_ne_zero hF ht) (X.toPlace (k := k) (y : X)) ≤
@@ -178,12 +181,13 @@ theorem smul_D_mem_range_rationalDifferential_iff_of_isAlgClosed (U : X.Opens) [
       f • KaehlerDifferential.D k X.functionField t := by
     simp [ω]
   rw [← he, mem_range_rationalDifferential_iff_weilDifferentialOrder_nonneg_of_isAlgClosed
-    hF ht U hU (fun _ _ ↦ inferInstance) ω hω]
+    hF ht U hU hDVR ω hω]
   simp only [hf, false_or]
   apply forall_congr'
   intro y
   apply forall_congr'
   intro hy
+  let := hDVR y hy
   have hord := weilDifferentialOrder_repartitionDualMul hF isIntegrallyClosedIn_of_isAlgClosed
     (weilDifferentialOfSeparating hF ht).2
     (coe_weilDifferentialOfSeparating_ne_zero hF ht) (Units.mk0 f hf)
