@@ -28,7 +28,7 @@ limit of the orbits of the `u n` runs along the orbit of `y` into `x` and leaves
 of `W^u(x)`. Iterating it at the successive rest points is the core of the compactness theorem for
 spaces of Morse trajectories. The isolating hypotheses are stated for an arbitrary flow; for a
 negative gradient flow they follow from the absence of other critical points in the ball
-(`TauCeti.Analysis.Calculus.Morse.Breaking.Basic`).
+(`TauCeti.Analysis.Calculus.Morse.Breaking`).
 
 ## Main declarations
 
