@@ -10,7 +10,6 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy.Finite
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.MulBy
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Fiber
-import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation
 
 /-!
 # Multiplication by `n` is finite locally free of rank `n²`
@@ -34,14 +33,11 @@ a finite flat morphism is invariant under base change, so it is `n²` everywhere
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.locallyOfFinitePresentation_mulBy_left`:
-  multiplication by `n` is locally of finite presentation.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.flat_mulBy_left`: multiplication by a nonzero
   integer is flat.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.finrank_mulBy_left`: multiplication by a nonzero
   integer `n` has rank `n²` at every point.
-* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.locallyOfFinitePresentation_torsion_hom`,
-  `TauCeti.AlgebraicGeometry.EllipticCurveGeom.flat_torsion_hom` and
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.flat_torsion_hom` and
   `TauCeti.AlgebraicGeometry.EllipticCurveGeom.finrank_torsion_hom`: for `n ≠ 0`, the `n`-torsion
   is finite locally free of rank `n²` over `S`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.surjective_mulBy_left`: multiplication by a nonzero
@@ -98,16 +94,6 @@ end Field
 
 variable {S : Scheme.{u}} (E : EllipticCurveGeom S)
 
-/-- **Multiplication by `n` is locally of finite presentation**: it is a morphism over `S` between
-schemes smooth over `S`. -/
-instance locallyOfFinitePresentation_mulBy_left (n : ℤ) :
-    LocallyOfFinitePresentation (E.mulBy n).left :=
-  have : Smooth E.structureMap := SmoothOfRelativeDimension.smooth 1 _
-  have : LocallyOfFinitePresentation ((E.mulBy n).left ≫ E.structureMap) := by
-    rw [mulBy_left_structureMap]
-    infer_instance
-  locallyOfFinitePresentation_of_comp _ E.structureMap
-
 /-- **Multiplication by a nonzero integer is flat** (Katz–Mazur 2.3.1), over any base `S`. -/
 theorem flat_mulBy_left {n : ℤ} (hn : n ≠ 0) : Flat (E.mulBy n).left := by
   have := E.isFinite_mulBy_left hn
@@ -157,12 +143,6 @@ theorem finrank_mulBy_left {n : ℤ} (hn : n ≠ 0) (x : E.carrier) :
   rw [← hx', ← Scheme.Hom.finrank_of_isPullback _ _ _ _
     (isPullback_mulBy_left_of_isPullback hg (by simp [g, E']) n),
     E'.finrank_mulBy_left_of_field hn]
-
-/-- **The `n`-torsion is locally of finite presentation** over `S`: `E[n]` is the base change of
-`[n]` along the zero section. -/
-instance locallyOfFinitePresentation_torsion_hom (n : ℤ) :
-    LocallyOfFinitePresentation (E.torsion n).X.hom :=
-  MorphismProperty.of_isPullback (E.isPullback_torsion n) inferInstance
 
 /-- **The `n`-torsion is flat** over `S` for `n ≠ 0`: `E[n]` is the base change of the flat
 morphism `[n]` along the zero section. -/
