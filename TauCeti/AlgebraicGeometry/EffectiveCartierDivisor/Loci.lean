@@ -71,7 +71,8 @@ def relativeEffectiveCartierPairFst : relativeEffectiveCartierPairFunctor f ⟶
 @[simp]
 lemma relativeEffectiveCartierPairFst_app_apply {T : (Over S)ᵒᵖ}
     (p : (relativeEffectiveCartierPairFunctor f).obj T) :
-    (relativeEffectiveCartierPairFst f).app T p = p.1 := rfl
+    ConcreteCategory.hom (C := Type u) (Y := (relativeEffectiveCartierSubfunctor f).obj T)
+      ((relativeEffectiveCartierPairFst f).app T) p = p.1 := rfl
 
 /-- The second projection from the functor of pairs of relative effective Cartier divisors. -/
 @[expose]
@@ -84,7 +85,8 @@ def relativeEffectiveCartierPairSnd : relativeEffectiveCartierPairFunctor f ⟶
 @[simp]
 lemma relativeEffectiveCartierPairSnd_app_apply {T : (Over S)ᵒᵖ}
     (p : (relativeEffectiveCartierPairFunctor f).obj T) :
-    (relativeEffectiveCartierPairSnd f).app T p = p.2 := rfl
+    ConcreteCategory.hom (C := Type u) (Y := (relativeEffectiveCartierSubfunctor f).obj T)
+      ((relativeEffectiveCartierPairSnd f).app T) p = p.2 := rfl
 
 /-- The equality locus of pairs of relative effective Cartier divisors, constructed as the
 equalizer of the two projections from the pair functor. -/
