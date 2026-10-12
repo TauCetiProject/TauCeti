@@ -23,7 +23,8 @@ import Mathlib.Tactic.FinCases
 
 This file collects elementary facts about finite ordinal types, including the classification of
 permutations of `Fin 2`, sums of reversed indices, indicator sums indexed by `Fin n`, the final
-value of a partial product, and the cyclic index arithmetic of `Fin 3`.
+value of a partial product, sums of families vanishing beyond an index, and the cyclic index
+arithmetic of `Fin 3`.
 
 `Fintype.sum_ite_eq` evaluates a sum whose indicator compares two elements of the index type.
 When the comparison is instead between a natural number and the `Fin.val` of the index — as it is
@@ -36,6 +37,8 @@ range, so the value is a `dite` rather than a plain application.
   transposition.
 * `TauCeti.forall_cons_swap_eq_zero_iff`: vanishing of the final coordinates after swapping
   coordinate zero with coordinate `d` in a vector built with `Fin.cons`.
+* `Fin.sum_univ_eq_sum_castLE_add`: a sum over `Fin (n + 1)` of a family vanishing beyond `i`
+  splits as its sum over the first `i` indices plus its value at `i`.
 * `Fin.rev_finRotate_rev` and `Fin.rev_finRotate_symm`: reversal carries forward rotation to
   backward rotation and conversely.
 * `Fin.finRotate_rev_finRotate_rev`: negation modulo `n`, written as `i ↦ finRotate n i.rev`, is
@@ -154,6 +157,24 @@ theorem partialProd_last {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin n → M) 
     Fin.partialProd f (Fin.last n) = ∏ i, f i := by
   rw [Fin.partialProd, Fin.val_last]
   rw [(List.take_eq_self_iff _).mpr (by simp), Fin.prod_ofFn]
+
+/-- A product over `Fin (n + 1)` of a family equal to `1` beyond `i` is its product over the first
+`i` indices times its value at `i`. -/
+@[to_additive /-- A sum over `Fin (n + 1)` of a family vanishing beyond `i` is its sum over the
+first `i` indices plus its value at `i`. -/]
+theorem prod_univ_eq_prod_castLE_mul {M : Type*} [CommMonoid M] {n : ℕ} (i : Fin (n + 1))
+    (f : Fin (n + 1) → M) (hf : ∀ j, i < j → f j = 1) :
+    ∏ j, f j = (∏ j : Fin i, f (castLE i.is_lt.le j)) * f i := by
+  rw [Finset.prod_fin_eq_prod_range, Finset.prod_fin_eq_prod_range,
+    ← Finset.prod_range_mul_prod_Ico _ (by omega : (i : ℕ) + 1 ≤ n + 1),
+    Finset.prod_eq_one (s := Finset.Ico _ _) fun j hj => ?_, mul_one, Finset.prod_range_succ,
+    dite_eq_left i.is_lt]
+  · refine congrArg (· * _) (Finset.prod_congr rfl fun j hj => ?_)
+    rw [Finset.mem_range] at hj
+    rw [dite_eq_left hj, dite_eq_left (show j < n + 1 by omega), Fin.castLE_mk]
+  · rw [Finset.mem_Ico] at hj
+    rw [dite_eq_left (show j < n + 1 by omega)]
+    exact hf _ (Fin.mk_lt_mk.2 (by omega))
 
 /-- Conjugating forward rotation of a finite ordinal by reversal gives backward rotation. -/
 @[simp]
