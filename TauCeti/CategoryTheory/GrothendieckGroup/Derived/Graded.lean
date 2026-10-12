@@ -115,7 +115,7 @@ section Shift
 variable (e : A ≌ A) [e.functor.Additive]
 
 /-- The bounded-derived comparison intertwines the whole integer internal grading action. -/
-@[simp]
+@[simp↓]
 theorem boundedDerivedK0Equiv_shiftZPow (n : ℤ) (x : AbelianK0 A) :
     boundedDerivedK0Equiv A (shiftZPow e n x) =
       TriangulatedK0.shiftZPow e.mapBoundedDerivedCategory n (boundedDerivedK0Equiv A x) := by
@@ -129,7 +129,7 @@ theorem boundedDerivedK0Equiv_shiftZPow (n : ℤ) (x : AbelianK0 A) :
         TriangulatedK0.shiftZPow_sub_one_apply]
 
 /-- The alternating cohomology-class inverse comparison intertwines every integer grading shift. -/
-@[simp]
+@[simp↓]
 theorem boundedDerivedK0Equiv_symm_shiftZPow (n : ℤ)
     (x : TriangulatedK0 (DerivedCategory.Bounded A)) :
     (boundedDerivedK0Equiv A).symm (TriangulatedK0.shiftZPow e.mapBoundedDerivedCategory n x) =
