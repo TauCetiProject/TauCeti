@@ -172,10 +172,10 @@ RATE_LIMITED = re.compile(r"rate limit|secondary rate|was submitted too quickly"
 MAX_RATE_LIMIT_WAIT = 75 * 60
 
 
-def rate_limit_reset_wait() -> float | None:
-    """Seconds until the GraphQL budget refills, or None if that cannot be established."""
+def rate_limit_reset_wait(resource: str = "graphql") -> float | None:
+    """Seconds until the exhausted API budget refills, or None if unknown."""
     probe = subprocess.run(
-        ["gh", "api", "rate_limit", "--jq", ".resources.graphql.reset"],
+        ["gh", "api", "rate_limit", "--jq", f".resources.{resource}.reset"],
         text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
     )
     if probe.returncode != 0:
@@ -202,7 +202,8 @@ def run_gh(arguments: list[str], attempts: int = 3) -> str:
             return result.stdout
         last_error = result.stderr.strip() or f"gh exited {result.returncode}"
         if RATE_LIMITED.search(last_error):
-            wait = rate_limit_reset_wait()
+            resource = "graphql" if arguments[:2] == ["api", "graphql"] else "core"
+            wait = rate_limit_reset_wait(resource)
             if wait is None or waited + wait > MAX_RATE_LIMIT_WAIT:
                 raise RuntimeError(
                     f"GitHub rate limit exhausted and not waitable: {last_error}. "

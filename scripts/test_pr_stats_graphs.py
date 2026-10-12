@@ -321,6 +321,18 @@ class MetricsTest(unittest.TestCase):
         self.assertEqual(run.call_count, 2)
         sleep.assert_called_once_with(42.0)
 
+    def test_rate_limit_wait_uses_the_exhausted_api_budget(self):
+        limited = SimpleNamespace(returncode=1, stdout="", stderr="API rate limit exceeded")
+        success = SimpleNamespace(returncode=0, stdout="done", stderr="")
+        for arguments, resource in [(["api", "graphql"], "graphql"),
+                                    (["api", "--paginate", "repos/o/r/issues/comments"], "core")]:
+            with self.subTest(resource=resource):
+                with (patch.object(stats.subprocess, "run", side_effect=[limited, success]),
+                      patch.object(stats, "rate_limit_reset_wait", return_value=42.0) as reset,
+                      patch.object(stats.time, "sleep")):
+                    self.assertEqual(stats.run_gh(arguments), "done")
+                reset.assert_called_once_with(resource)
+
     def test_run_gh_gives_up_when_the_budget_will_not_refill(self):
         limited = SimpleNamespace(
             returncode=1, stdout="", stderr="gh: API rate limit already exceeded")

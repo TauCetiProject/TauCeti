@@ -49,7 +49,8 @@ It requires an authenticated `gh` CLI. In GitHub Actions, set `GH_TOKEN` to
   An editable title prefix, queued approval, staging success, or another account's
   comment is not evidence of a merge. Native merge timestamps take precedence and
   each PR counts once. This normalization feeds throughput, latency, contributor
-  totals, the category grids, roadmap activity, and pipeline health. The per-roadmap
+  totals, the category grids, and pipeline health. Roadmap activity uses it when
+  reading the shared snapshot. The per-roadmap
   line chart reads the same snapshot, including PR titles and diff sizes.
   The first run with an old cached snapshot scans the whole comment archive to
   backfill historical receipts and reconsider scoreboards from bors-only contributors.
