@@ -8,8 +8,8 @@ module
 public import Mathlib.NumberTheory.NumberField.Basic
 public import Mathlib.NumberTheory.RamificationInertia.Unramified
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation
-public import TauCeti.NumberTheory.NumberField.SplitsCompletely.GaloisClosure
-public import TauCeti.RingTheory.DedekindDomain.Different.Derivative
+import TauCeti.NumberTheory.NumberField.SplitsCompletely.GaloisClosure
+import TauCeti.RingTheory.DedekindDomain.Different.Derivative
 
 /-!
 # Radical extensions of number fields are unramified away from `n a`
