@@ -371,7 +371,7 @@ private lemma dropRowZero_f_succ (n : ℕ) :
 @[reassoc (attr := simp)]
 private lemma rowZeroι_dropRowZero : rowZeroι K ≫ dropRowZero K = 0 := by
   ext (_ | n)
-  · exact (isZero_extend_embeddingDownNatSucc_X_zero _).eq_of_tgt _ _
+  · exact (isZero_extend_X _ _ 0 fun _ ↦ by simp).eq_of_tgt _ _
   · simp [dropRowZero_f_succ]
 
 /-- The short complex `row 0 ⟶ Tot K ⟶ Tot (rowsSucc K)[1]`. It is an abbreviation so that its
@@ -429,7 +429,7 @@ private noncomputable def rowZeroShortComplexXSplitting (n : ℕ) :
     { r := rowZeroπX K 0
       s := 0
       f_r := by simp
-      s_g := (isZero_extend_embeddingDownNatSucc_X_zero _).eq_of_src _ _
+      s_g := (isZero_extend_X _ _ 0 fun _ ↦ by simp).eq_of_src _ _
       id := by
         refine total.hom_ext _ fun p q h ↦ ?_
         obtain ⟨rfl, rfl⟩ : p = 0 ∧ q = 0 := by simp at h; omega
@@ -478,7 +478,7 @@ private noncomputable def rowZeroShortComplexMap :
   comm₂₃ := by
     refine HomologicalComplex.hom_ext _ _ fun n ↦ ?_
     rcases n with _ | n
-    · exact (isZero_extend_embeddingDownNatSucc_X_zero _).eq_of_tgt _ _
+    · exact (isZero_extend_X _ _ 0 fun _ ↦ by simp).eq_of_tgt _ _
     · simp only [HomologicalComplex.comp_f, dropRowZero_f_succ,
         extendMap_f _ embeddingDownNatSucc (embeddingDownNatSucc_f n), Category.assoc,
         Iso.inv_hom_id_assoc]
@@ -499,7 +499,7 @@ private lemma total_map_aux (Q : ℕ) :
     refine ⟨fun m hm ↦ (Nat.not_lt_zero m hm).elim, ?_⟩
     exact epi_homologyMap_τ₂ (rowZeroShortComplexMap φ) (rowZeroShortComplex_shortExact K)
       (rowZeroShortComplex_shortExact L) 0 inferInstance
-      ((isZero_extend_embeddingDownNatSucc_homology_zero _).epi _) (fun k hk ↦ by simp at hk)
+      ((isZero_extend_homology_of_not_mem _ fun _ ↦ by simp).epi _) (fun k hk ↦ by simp at hk)
   | succ Q ih =>
     intro K L φ hφ
     have : QuasiIso (rowZeroShortComplexMap φ).τ₁ := hφ 0
@@ -517,7 +517,7 @@ private lemma total_map_aux (Q : ℕ) :
       · rintro i rfl
         exact (epi_homologyMap_extendMap_iff _ (embeddingDownNatSucc_f m)).2 (hepi m (by omega))
       · rcases m with _ | m
-        · exact isIso_homologyMap_extendMap_embeddingDownNatSucc_zero _
+        · exact isIso_homologyMap_extendMap_of_not_mem _ fun _ ↦ by simp
         · have := ih₁ m (by omega)
           rw [← quasiIsoAt_iff_isIso_homologyMap] at this ⊢
           exact (quasiIsoAt_extendMap_iff _ embeddingDownNatSucc (embeddingDownNatSucc_f m)).2 this
