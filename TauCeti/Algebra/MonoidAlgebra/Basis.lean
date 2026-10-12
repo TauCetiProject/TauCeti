@@ -21,19 +21,17 @@ It is all that is needed for the generic basis API -- `Module.Basis.coe_sumCoord
 
 ## Main statements
 
-* `TauCeti.MonoidAlgebra.basis_repr`: the coordinates of `k[X]` in the standard basis are the
+* `MonoidAlgebra.basis_repr`: the coordinates of `k[X]` in the standard basis are the
   coefficients.
-* `TauCeti.MonoidAlgebra.coeff_basis_toDualEquiv_symm_apply`: the coefficients under the
+* `MonoidAlgebra.coeff_basis_toDualEquiv_symm_apply`: the coefficients under the
   standard-basis dual equivalence are evaluations on basis vectors.
-* `TauCeti.MonoidAlgebra.sumCoords_basis_surjective`: the coefficient sum is surjective when the
+* `MonoidAlgebra.sumCoords_basis_surjective`: the coefficient sum is surjective when the
   index type is nonempty.
-* `TauCeti.MonoidAlgebra.ker_sumCoords_basis_eq_span`: its kernel is spanned by differences of
+* `MonoidAlgebra.ker_sumCoords_basis_eq_span`: its kernel is spanned by differences of
   basis vectors from a fixed one.
 -/
 
 public section
-
-namespace TauCeti
 
 /-- The coordinates of `k[X]` in the standard basis are the coefficients. -/
 @[simp]
@@ -95,5 +93,3 @@ theorem MonoidAlgebra.ker_sumCoords_basis_eq_span (x₀ : X) :
     simp
 
 end Span
-
-end TauCeti
