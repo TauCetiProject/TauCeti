@@ -34,6 +34,9 @@ families of variables with iterated restricted series
   `MvPowerSeries (σ ⊕ τ) R ≃ₐ[R] MvPowerSeries σ (MvPowerSeries τ R)`.
 * `MvPowerSeries.coeff_coeff_sumAlgEquiv` and
   `MvPowerSeries.coeff_sumAlgEquiv_symm`: its coefficients.
+* `MvPowerSeries.sumAlgEquiv_X_inl` and `MvPowerSeries.sumAlgEquiv_X_inr`: its action on the
+  variables, with inverses `MvPowerSeries.sumAlgEquiv_symm_X` and
+  `MvPowerSeries.sumAlgEquiv_symm_C_X`.
 
 ## Provenance
 
@@ -167,5 +170,40 @@ read off from its `σ` and `τ` parts. -/
 theorem coeff_sumAlgEquiv_symm (g : MvPowerSeries σ (MvPowerSeries τ R)) (a : σ →₀ ℕ)
     (b : τ →₀ ℕ) : coeff (a.sumElim b) ((sumAlgEquiv R σ τ).symm g) = coeff b (coeff a g) := by
   rw [← coeff_coeff_sumAlgEquiv, AlgEquiv.apply_symm_apply]
+
+private theorem sumElim_eq_iff {a a' : σ →₀ ℕ} {b b' : τ →₀ ℕ} :
+    a.sumElim b = a'.sumElim b' ↔ a = a' ∧ b = b' := by
+  simp [Finsupp.ext_iff, Sum.forall]
+
+/-- `sumAlgEquiv` sends a variable of the first family to the corresponding variable. -/
+@[simp]
+theorem sumAlgEquiv_X_inl (i : σ) : sumAlgEquiv R σ τ (X (.inl i)) = X i := by
+  classical
+  ext a b
+  rw [coeff_coeff_sumAlgEquiv, coeff_X, coeff_X, ← Finsupp.sumElim_single_zero]
+  simp only [sumElim_eq_iff]
+  by_cases ha : a = Finsupp.single i 1 <;> simp [ha, coeff_one]
+
+/-- `sumAlgEquiv` sends a variable of the second family to the corresponding variable, viewed as
+a constant coefficient. -/
+@[simp]
+theorem sumAlgEquiv_X_inr (j : τ) : sumAlgEquiv R σ τ (X (.inr j)) = C (X j) := by
+  classical
+  ext a b
+  rw [coeff_coeff_sumAlgEquiv, coeff_X, coeff_C, ← Finsupp.sumElim_zero_single]
+  simp only [sumElim_eq_iff]
+  by_cases ha : a = 0 <;> simp [ha, coeff_X]
+
+/-- The inverse of `sumAlgEquiv` sends a variable to the corresponding variable of the first
+family. -/
+@[simp]
+theorem sumAlgEquiv_symm_X (i : σ) : (sumAlgEquiv R σ τ).symm (X i) = X (.inl i) := by
+  rw [AlgEquiv.symm_apply_eq, sumAlgEquiv_X_inl]
+
+/-- The inverse of `sumAlgEquiv` sends a constant variable to the corresponding variable of the
+second family. -/
+@[simp]
+theorem sumAlgEquiv_symm_C_X (j : τ) : (sumAlgEquiv R σ τ).symm (C (X j)) = X (.inr j) := by
+  rw [AlgEquiv.symm_apply_eq, sumAlgEquiv_X_inr]
 
 end MvPowerSeries

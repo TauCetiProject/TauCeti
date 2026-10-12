@@ -60,10 +60,6 @@ open Filter
 
 variable {σ R S : Type*} [NormedRing R] [NormedRing S] {c : σ → ℝ}
 
-/-- The weights `∏ i, |c i| ^ t i` of the absolute polyradii are nonnegative. -/
-theorem prod_abs_pow_nonneg (t : σ →₀ ℕ) : 0 ≤ t.prod (|c| · ^ ·) :=
-  Finset.prod_nonneg fun _ _ ↦ pow_nonneg (abs_nonneg _) _
-
 /-- A bounded ring homomorphism `φ`, `‖φ r‖ ≤ C ‖r‖`, maps restricted series to restricted series
 coefficientwise. -/
 theorem IsRestricted.map {f : MvPowerSeries σ R} (hf : IsRestricted c f) (φ : R →+* S) {C : ℝ}
