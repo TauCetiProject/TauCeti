@@ -18,7 +18,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Colimits
 # Zeroth homology of the Moore loop algebra
 
 Normalized cubical zeroth homology of the Moore loop space is the group algebra of the
-fundamental group, over any coefficient ring. The identification uses the existing
+fundamental group, over any commutative coefficient ring. The identification uses the existing
 cubical/simplicial comparison and Mathlib's singular zeroth-homology computation, rather than a
 second classification of boundaries.
 
@@ -45,7 +45,7 @@ universe u
 
 namespace TauCeti
 
-variable (X : Type u) [TopologicalSpace X] (x : X) (R : Type u) [Ring R]
+variable (X : Type u) [TopologicalSpace X] (x : X) (R : Type u) [CommRing R]
 
 /-- Cubical homology of the Moore loop space in degree zero, with coefficients in `R`. -/
 abbrev loopHomologyZero : ModuleCat R :=
@@ -144,11 +144,15 @@ theorem loopZeroChainToGroupAlgebra_ofCube (c : SingularCube (MooreLoopSpace X x
   have hπ : (((TopCat.toSSet.obj T).homology₀Iso (ModuleCat.of R R)).hom)
       ((L.cycles₀Iso.inv ≫ L.homologyπ 0) (simplexChain σ 1)) =
       (Sigma.ι (fun _ : (TopCat.toSSet.obj T).π₀ ↦ ModuleCat.of R R) (.mk σ)) 1 := by
+    have vertex := SSet.ιHomology₀_homology₀Iso_hom (ModuleCat.of R R) σ
+    rw [SSet.ιHomology₀_eq] at vertex
+    change L.liftCycles ((TopCat.toSSet.obj T).ιChainComplex σ) 0
+      (by simp) (by simp) ≫ L.homologyπ 0 ≫
+        ((TopCat.toSSet.obj T).homology₀Iso (ModuleCat.of R R)).hom = _ at vertex
+    rw [← hv] at vertex
     have h := congrArg (fun f : ModuleCat.of R R ⟶
-        ∐ (fun _ : (TopCat.toSSet.obj T).π₀ ↦ ModuleCat.of R R) ↦ f.hom 1)
-      (SSet.ιHomology₀_homology₀Iso_hom (ModuleCat.of R R) σ)
-    simpa only [SSet.ιHomology₀_eq, ← hv, Category.assoc,
-      ModuleCat.hom_comp, LinearMap.comp_apply] using h
+        ∐ (fun _ : (TopCat.toSSet.obj T).π₀ ↦ ModuleCat.of R R) ↦ f.hom 1) vertex
+    simpa only [ModuleCat.hom_comp, LinearMap.comp_apply] using h
   -- Next reindex the component coproduct by fundamental-group classes and realize it
   -- as finitely supported coefficients, using the coproduct universal property.
   let e := (TopCat.zerothHomotopyEquiv (X := T)).symm.trans
@@ -222,12 +226,11 @@ theorem loopZeroChainToGroupAlgebra_boundary
       (NormalizedCubicalChain.boundary (MooreLoopSpace X x) R 0 a) = 0 := by
   simp [loopZeroChainToGroupAlgebra, loopHomologyZeroπ_boundary]
 
-omit [Ring R] in
 /-- Projection to the group algebra preserves the Pontryagin product of arbitrary zero chains.
 Thus the linear identification on actual homology identifies its induced product with the
 convolution product in the group algebra. -/
 @[simp]
-theorem loopZeroChainToGroupAlgebra_mul [CommRing R]
+theorem loopZeroChainToGroupAlgebra_mul
     (a b : NormalizedCubicalChain (MooreLoopSpace X x) R 0) :
     loopZeroChainToGroupAlgebra X x R
         (NormalizedCubicalChain.mul (MooreLoopSpace X x) R 0 0 a b) =
