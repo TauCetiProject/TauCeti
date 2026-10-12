@@ -34,7 +34,11 @@ and for a translation by `a : E`,
 
 `Δ (fun y ↦ f (y + a)) = fun y ↦ (Δ f) (y + a)`.
 
-All three identities hold with *no* differentiability hypothesis on `f`, because the underlying
+Under a general continuous linear equivalence `e : E ≃L[ℝ] E'` the Laplacian is no longer
+invariant: for an orthonormal basis `b` of `E`, `Δ (f ∘ e) x = ∑ᵢ D²f (e x) (e bᵢ, e bᵢ)`, a
+second-order operator with constant coefficients applied to `f`.
+
+All of these identities hold with *no* differentiability hypothesis on `f`, because the underlying
 `iteratedFDeriv` composition laws are unconditional (the iterated derivative is junk-valued off
 the smooth locus, yet still transforms correctly under a linear change of variable). The harmonic
 corollaries, where smoothness re-enters, live in the companion files
@@ -56,6 +60,8 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
   affine isometry equivalence `e`.
 * `TauCeti.laplacian_comp_linearIsometryEquiv_right`: `Δ (f ∘ l) = (Δ f) ∘ l` for an
   isometry `l`.
+* `TauCeti.laplacian_comp_continuousLinearEquiv_right_apply`: for a general continuous linear
+  equivalence `e`, `Δ (f ∘ e) x = ∑ᵢ D²f (e x) (e bᵢ, e bᵢ)` along an orthonormal basis `b`.
 * `TauCeti.laplacian_comp_add_right`: translation invariance of `Δ`.
 * `TauCeti.laplacian_comp_homothety_right`: `Δ` scales by `c ^ 2` under
   `AffineMap.homothety a c`.
@@ -126,18 +132,32 @@ private noncomputable abbrev smulLeftContinuousLinearEquiv (c : ℝ) (hc : c ≠
   ContinuousLinearEquiv.smulLeft (Units.mk0 c hc)
 
 omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] in
-/-- The iterated derivative transforms under a linear isometry equivalence on the right by
-pulling the directions through the isometry. This is the unconditional engine behind the
-geometric invariance of the Laplacian. -/
-private theorem iteratedFDeriv_comp_linearIsometryEquiv_apply (l : E ≃ₗᵢ[ℝ] E') (f : E' → F)
+/-- The iterated derivative transforms under a continuous linear equivalence on the right by
+pulling the directions through it. This is the unconditional engine behind the transformation of
+the Laplacian under linear changes of variable. -/
+private theorem iteratedFDeriv_comp_continuousLinearEquiv_apply (e : E ≃L[ℝ] E') (f : E' → F)
     (i : ℕ) (x : E) (m : Fin i → E) :
-    iteratedFDeriv ℝ i (f ∘ l) x m = iteratedFDeriv ℝ i f (l x) (fun j ↦ l (m j)) := by
-  have h := l.toContinuousLinearEquiv.iteratedFDerivWithin_comp_right f uniqueDiffOn_univ
-    (x := x) (Set.mem_univ _) i
+    iteratedFDeriv ℝ i (f ∘ e) x m = iteratedFDeriv ℝ i f (e x) (fun j ↦ e (m j)) := by
+  have h := e.iteratedFDerivWithin_comp_right f uniqueDiffOn_univ (x := x) (Set.mem_univ _) i
   rw [Set.preimage_univ, iteratedFDerivWithin_univ, iteratedFDerivWithin_univ] at h
-  rw [← LinearIsometryEquiv.coe_toContinuousLinearEquiv l]
   rw [h, ContinuousMultilinearMap.compContinuousLinearMap_apply]
   rfl
+
+omit [FiniteDimensional ℝ E'] in
+/-- **The Laplacian after a linear change of variables.** For a continuous linear equivalence
+`e : E ≃L[ℝ] E'` and an orthonormal basis `b` of `E`,
+`Δ (f ∘ e) x = ∑ᵢ D²f (e x) (e bᵢ, e bᵢ)`. No differentiability hypothesis is needed. When `e`
+is an isometry, `e b` is again an orthonormal basis and this is `(Δ f) (e x)`; in general it is a
+second-order operator with constant coefficients applied to `f`. -/
+theorem laplacian_comp_continuousLinearEquiv_right_apply {ι : Type*} [Fintype ι]
+    (e : E ≃L[ℝ] E') (b : OrthonormalBasis ι ℝ E) (f : E' → F) (x : E) :
+    Δ (f ∘ e) x = ∑ i, iteratedFDeriv ℝ 2 f (e x) ![e (b i), e (b i)] := by
+  rw [laplacian_eq_iteratedFDeriv_orthonormalBasis (f ∘ e) b]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [iteratedFDeriv_comp_continuousLinearEquiv_apply]
+  congr 1
+  funext j
+  fin_cases j <;> rfl
 
 /-- **Geometric invariance of the Laplacian under isometries.** For a linear isometry
 equivalence `l`, the Laplacian commutes with right composition by `l`:
@@ -145,14 +165,10 @@ equivalence `l`, the Laplacian commutes with right composition by `l`:
 theorem laplacian_comp_linearIsometryEquiv_right (l : E ≃ₗᵢ[ℝ] E') (f : E' → F) :
     Δ (f ∘ l) = (Δ f) ∘ l := by
   ext x
-  simp only [Function.comp_apply,
-    laplacian_eq_iteratedFDeriv_orthonormalBasis (f ∘ l) (stdOrthonormalBasis ℝ E),
+  rw [Function.comp_apply, ← LinearIsometryEquiv.coe_toContinuousLinearEquiv l,
+    laplacian_comp_continuousLinearEquiv_right_apply _ (stdOrthonormalBasis ℝ E),
     laplacian_eq_iteratedFDeriv_orthonormalBasis f ((stdOrthonormalBasis ℝ E).map l)]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [iteratedFDeriv_comp_linearIsometryEquiv_apply l f 2 x]
-  congr 1
-  funext j
-  fin_cases j <;> simp [OrthonormalBasis.map_apply]
+  simp [OrthonormalBasis.map_apply]
 
 /-- **Translation invariance of the Laplacian.** Shifting the argument by a constant `a`
 commutes with the Laplacian: `Δ (fun y ↦ f (y + a)) = fun y ↦ (Δ f) (y + a)`. No
