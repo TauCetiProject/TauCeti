@@ -53,7 +53,9 @@ private theorem modTransversal_finEquiv (n : ℕ+) (i : Fin n) :
       (Multiplicative.ofAdd (ZMod.finEquiv (n : ℕ) i))) = gen ^ (i : ℕ) := by
   rw [modTransversal_modQuotientEquiv_symm, toAdd_ofAdd, val_finEquiv]
 
-private theorem sum_modTransversal (n : ℕ+) {M : Type v} [AddCommMonoid M]
+/-- Summing over the cyclic transversal is summing over the generator powers with exponents
+from `0` to `n - 1`. -/
+theorem sum_modTransversal (n : ℕ+) {M : Type v} [AddCommMonoid M]
     (f : zHat.{u} → M) :
     ∑ x : zHat.{u} ⧸ (modSubgroup n).toSubgroup, f (modTransversal n x) =
       ∑ i ∈ Finset.range (n : ℕ), f (gen ^ i) := by
