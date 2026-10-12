@@ -36,7 +36,9 @@ of mass cannot lower such a transport cost by a fixed amount.
   feasible integrable pair bounds every partial value up to an error linear in the deficit plus
   an arbitrarily small slack;
 * `TauCeti.DualFeasible.ofReal_kantorovichDualValue_le_relaxedTransportCost` — **weak duality for
-  the relaxed value**;
+  the relaxed value**, with the finite real form
+  `TauCeti.DualFeasible.kantorovichDualValue_le_toReal_relaxedTransportCost` and the `EReal` form
+  `TauCeti.DualFeasible.kantorovichDualValue_le_relaxedTransportCost`;
 * `TauCeti.relaxedTransportCost_eq_transportCost_of_lowerSemicontinuous` — **relaxation is exact
   for lower semicontinuous costs** on Polish spaces.
 
@@ -64,7 +66,7 @@ constant `C` such that, for every permitted deficit `ε`, the positive part of t
 `(φ, ψ)` is at most the partial transport value with deficit `ε` plus `C * ε + η`. The constant
 depends only on the potentials, the marginals, and `η`. -/
 theorem DualFeasible.exists_ofReal_kantorovichDualValue_le_partialTransportCost_add
-    [IsFiniteMeasure μ] (hmass : μ univ = ν univ) (hfeas : DualFeasible (fun z ↦ (c z : EReal)) φ ψ)
+    [IsFiniteMeasure μ] (hfeas : DualFeasible (fun z ↦ (c z : EReal)) φ ψ) (hmass : μ univ = ν univ)
     (hφ : Integrable φ μ) (hψ : Integrable ψ ν) {η : ℝ≥0∞} (hη : 0 < η) :
     ∃ C : NNReal, ∀ ε : ℝ≥0∞,
       ENNReal.ofReal (kantorovichDualValue μ ν φ ψ) ≤ partialTransportCost c μ ν ε + C * ε + η := by
@@ -124,11 +126,34 @@ theorem DualFeasible.exists_ofReal_kantorovichDualValue_le_partialTransportCost_
 integrable pair `(φ, ψ)` satisfying `φ x + ψ y ≤ c (x, y)`, the positive part of the dual value
 is at most the relaxed transport value. No measurability or topology is assumed on the cost. -/
 theorem DualFeasible.ofReal_kantorovichDualValue_le_relaxedTransportCost [IsFiniteMeasure μ]
-    (hmass : μ univ = ν univ) (hfeas : DualFeasible (fun z ↦ (c z : EReal)) φ ψ)
+    (hfeas : DualFeasible (fun z ↦ (c z : EReal)) φ ψ) (hmass : μ univ = ν univ)
     (hφ : Integrable φ μ) (hψ : Integrable ψ ν) :
     ENNReal.ofReal (kantorovichDualValue μ ν φ ψ) ≤ relaxedTransportCost c μ ν :=
   le_relaxedTransportCost_of_forall_exists_le_add fun _ hη ↦
     hfeas.exists_ofReal_kantorovichDualValue_le_partialTransportCost_add hmass hφ hψ hη
+
+/-- **Weak duality for the relaxed transport value in finite real form.** If the relaxed value is
+finite, every integrable feasible dual value is at most its real representative. -/
+theorem DualFeasible.kantorovichDualValue_le_toReal_relaxedTransportCost [IsFiniteMeasure μ]
+    (hfeas : DualFeasible (fun z ↦ (c z : EReal)) φ ψ) (hmass : μ univ = ν univ)
+    (hne : relaxedTransportCost c μ ν ≠ ⊤) (hφ : Integrable φ μ) (hψ : Integrable ψ ν) :
+    kantorovichDualValue μ ν φ ψ ≤ (relaxedTransportCost c μ ν).toReal :=
+  (ENNReal.ofReal_le_iff_le_toReal hne).1
+    (hfeas.ofReal_kantorovichDualValue_le_relaxedTransportCost hmass hφ hψ)
+
+/-- **Weak duality for the relaxed transport value.** Every integrable feasible dual value is at
+most the relaxed transport value. The comparison in `EReal` remains meaningful when the relaxed
+value is `∞`. -/
+theorem DualFeasible.kantorovichDualValue_le_relaxedTransportCost [IsFiniteMeasure μ]
+    (hfeas : DualFeasible (fun z ↦ (c z : EReal)) φ ψ) (hmass : μ univ = ν univ)
+    (hφ : Integrable φ μ) (hψ : Integrable ψ ν) :
+    (kantorovichDualValue μ ν φ ψ : EReal) ≤ (relaxedTransportCost c μ ν : ℝ≥0∞) :=
+  calc (kantorovichDualValue μ ν φ ψ : EReal)
+      ≤ (ENNReal.ofReal (kantorovichDualValue μ ν φ ψ) : EReal) := by
+        rw [EReal.coe_ennreal_ofReal]
+        exact le_max_left (kantorovichDualValue μ ν φ ψ : EReal) 0
+    _ ≤ (relaxedTransportCost c μ ν : EReal) := EReal.coe_ennreal_le_coe_ennreal_iff.2 <|
+        hfeas.ofReal_kantorovichDualValue_le_relaxedTransportCost hmass hφ hψ
 
 section Polish
 
