@@ -58,9 +58,11 @@ def restrictScalarsExteriorPowerComparison (n : ℕ) :
     apply ModuleCat.exteriorPower.hom_ext
     apply ModuleCat.AlternatingMap.ext
     intro m
-    simp! only [ModuleCat.AlternatingMap.postcomp_apply, ModuleCat.comp_apply,
+    simp only [ModuleCat.AlternatingMap.postcomp_apply, ModuleCat.comp_apply,
       ModuleCat.restrictScalars.map_apply, ModuleCat.exteriorPower.map_mk,
       restrictScalarsExteriorPowerApp_mk, Function.comp_def]
+    -- Restriction of scalars gives the concrete-category coercions different bundled objects
+    -- with the same carriers, preventing `simp` from matching these two wedge formulas.
     exact (restrictScalarsExteriorPowerApp_mk f n N (φ ∘ m)).trans
       (ModuleCat.exteriorPower.map_mk φ m).symm
 
