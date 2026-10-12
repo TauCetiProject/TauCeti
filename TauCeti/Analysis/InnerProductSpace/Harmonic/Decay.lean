@@ -422,68 +422,7 @@ section LinearChange
 variable {E' : Type*} [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E']
   [MeasurableSpace E'] [BorelSpace E'] {e : E' ≃L[ℝ] E}
 
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [μ.IsAddHaarMeasure] [CompleteSpace F] in
-/-- Change of variables along `e` against the measure `μ.map e.symm`: integrating `g ∘ e` over
-`e ⁻¹' S` for this measure is integrating `g` over `S` for `μ`. -/
-private lemma setIntegral_comp_map_symm (e : E' ≃L[ℝ] E) (g : E → ℝ) (S : Set E) :
-    ∫ y in e ⁻¹' S, g (e y) ∂(μ.map e.symm) = ∫ x in S, g x ∂μ := by
-  have hm : MeasurableEmbedding e.symm := e.symm.toHomeomorph.measurableEmbedding
-  rw [hm.setIntegral_map]
-  congr 1
-  · ext x; simp
-  · ext x; simp
-
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [μ.IsAddHaarMeasure] [CompleteSpace F] in
-/-- Integrability is preserved by the change of variables of `setIntegral_comp_map_symm`. -/
-private lemma integrableOn_comp_map_symm_iff (e : E' ≃L[ℝ] E) {g : E → ℝ} {S : Set E} :
-    IntegrableOn (fun y ↦ g (e y)) (e ⁻¹' S) (μ.map e.symm) ↔ IntegrableOn g S μ := by
-  have hm : MeasurableEmbedding e.symm := e.symm.toHomeomorph.measurableEmbedding
-  rw [hm.integrableOn_map_iff]
-  have hS : e.symm ⁻¹' (e ⁻¹' S) = S := by ext x; simp
-  have hg : (fun y ↦ g (e y)) ∘ e.symm = g := by funext x; simp
-  rw [hS, hg]
-
 variable {a b : ℝ}
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E']
-  [MeasurableSpace E'] [BorelSpace E'] in
-/-- If `‖e.symm x‖ ≤ a ‖x‖`, then `e` maps no point outside `ball (e.symm x₀) (a ρ)` into
-`ball x₀ ρ`. -/
-private lemma preimage_ball_subset_ball (ha : 0 < a) (hae : ∀ x, ‖e.symm x‖ ≤ a * ‖x‖) (x₀ : E)
-    (ρ : ℝ) : e ⁻¹' ball x₀ ρ ⊆ ball (e.symm x₀) (a * ρ) := by
-  intro y hy
-  rw [mem_preimage, mem_ball, dist_eq_norm] at hy
-  rw [mem_ball, dist_eq_norm]
-  calc ‖y - e.symm x₀‖ = ‖e.symm (e y - x₀)‖ := by simp [map_sub]
-    _ ≤ a * ‖e y - x₀‖ := hae _
-    _ < a * ρ := by gcongr
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E']
-  [MeasurableSpace E'] [BorelSpace E'] in
-/-- If `‖e y‖ ≤ b ‖y‖`, then `e` maps `ball (e.symm x₀) (R / b)` into `ball x₀ R`. -/
-private lemma ball_subset_preimage_ball (hb : 0 < b) (hbe : ∀ y, ‖e y‖ ≤ b * ‖y‖) (x₀ : E)
-    (R : ℝ) : ball (e.symm x₀) (R / b) ⊆ e ⁻¹' ball x₀ R := by
-  intro y hy
-  rw [mem_ball, dist_eq_norm] at hy
-  rw [mem_preimage, mem_ball, dist_eq_norm]
-  calc ‖e y - x₀‖ = ‖e (y - e.symm x₀)‖ := by simp [map_sub]
-    _ ≤ b * ‖y - e.symm x₀‖ := hbe _
-    _ < b * (R / b) := by gcongr
-    _ = R := by field_simp
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E']
-  [MeasurableSpace E'] [BorelSpace E'] in
-/-- In a nontrivial space, the bounds `‖e.symm x‖ ≤ a ‖x‖` and `‖e y‖ ≤ b ‖y‖` force `a` and `b` to
-be positive. -/
-private lemma pos_of_norm_le [Nontrivial E] (hae : ∀ x, ‖e.symm x‖ ≤ a * ‖x‖)
-    (hbe : ∀ y, ‖e y‖ ≤ b * ‖y‖) : 0 < a ∧ 0 < b := by
-  obtain ⟨x, hx⟩ := exists_ne (0 : E)
-  have hx' : 0 < ‖x‖ := norm_pos_iff.2 hx
-  have hy : 0 < ‖e.symm x‖ := norm_pos_iff.2 fun h ↦ hx (by simpa using congrArg e h)
-  have h1 := hae x
-  have h2 := hbe (e.symm x)
-  rw [e.apply_symm_apply] at h2
-  exact ⟨pos_of_mul_pos_left (hy.trans_le h1) hx'.le, pos_of_mul_pos_left (hx'.trans_le h2) hy.le⟩
 
 omit [FiniteDimensional ℝ E] in
 /-- **Decay of the `L²` mass after a linear change of variables.** Let `e : E' ≃L[ℝ] E` be a
@@ -510,7 +449,12 @@ theorem setIntegral_ball_norm_sq_le_of_harmonicOnNhd_comp (e : E' ≃L[ℝ] E)
   rcases subsingleton_or_nontrivial E with hE | hE
   · -- In a zero-dimensional space all the powers are `1`.
     simpa [n, finrank_zero_of_subsingleton] using hmono
-  obtain ⟨ha, hb⟩ := pos_of_norm_le hae hbe
+  -- In a nontrivial space the two bounds force `a` and `b` to be positive.
+  obtain ⟨x, hx⟩ := exists_ne (0 : E)
+  have ha : 0 < a := pos_of_mul_pos_left
+    ((norm_pos_iff.2 (e.symm.map_ne_zero_iff.2 hx)).trans_le (hae x)) (norm_nonneg x)
+  have hb : 0 < b := pos_of_mul_pos_left
+    ((norm_pos_iff.2 hx).trans_le (by simpa using hbe (e.symm x))) (norm_nonneg _)
   rcases hρ.eq_or_lt with rfl | hρ
   · simp only [ball_zero, Measure.restrict_empty, integral_zero_measure]
     positivity
@@ -518,28 +462,38 @@ theorem setIntegral_ball_norm_sq_le_of_harmonicOnNhd_comp (e : E' ≃L[ℝ] E)
   rcases le_or_gt (a * ρ) (R / b) with hle | hlt
   · -- Pull the integrals back along `e` and apply the harmonic estimate for `μ.map e.symm`.
     set ν := μ.map e.symm
-    have hsub := ball_subset_preimage_ball hb hbe x₀ R
+    -- `e` carries `ν` to `μ`, so it transports integrals over preimages without a Jacobian.
+    have hmp : MeasurePreserving e ν μ := by
+      simpa using e.symm.toHomeomorph.toMeasurableEquiv.measurePreserving_symm μ
+    have hemb : MeasurableEmbedding e := e.toHomeomorph.measurableEmbedding
+    -- The bounds on `e` and `e.symm` make them Lipschitz, which compares the balls.
+    have hsub : ball (e.symm x₀) (R / b) ⊆ e ⁻¹' ball x₀ R := fun y hy ↦ by
+      simpa [Real.coe_toNNReal _ hb.le, mul_div_cancel₀ _ hb.ne'] using
+        (AddMonoidHomClass.lipschitz_of_bound e b hbe).mapsTo_ball (by simpa using hb) _ _ hy
+    have hsup : e ⁻¹' ball x₀ ρ ⊆ ball (e.symm x₀) (a * ρ) := fun y hy ↦ by
+      simpa [Real.coe_toNNReal _ ha.le] using
+        (AddMonoidHomClass.lipschitz_of_bound e.symm a hae).mapsTo_ball (by simpa using ha) _ _ hy
     have hint' : IntegrableOn (fun y ↦ ‖(u ∘ e) y‖ ^ 2) (e ⁻¹' ball x₀ R) ν :=
-      (integrableOn_comp_map_symm_iff e (g := fun x ↦ ‖u x‖ ^ 2)).2 hint
+      (hmp.integrableOn_comp_preimage hemb (f := fun x ↦ ‖u x‖ ^ 2)).2 hint
     have hdec := (hu.mono hsub).setIntegral_ball_norm_sq_le (μ := ν) (hint'.mono_set hsub)
       (by positivity) hle
     rw [e.toLinearEquiv.finrank_eq] at hdec
     calc ∫ x in ball x₀ ρ, ‖u x‖ ^ 2 ∂μ
         = ∫ y in e ⁻¹' ball x₀ ρ, ‖(u ∘ e) y‖ ^ 2 ∂ν :=
-          (setIntegral_comp_map_symm e (fun x ↦ ‖u x‖ ^ 2) _).symm
+          (hmp.setIntegral_preimage_emb hemb (fun x ↦ ‖u x‖ ^ 2) _).symm
       _ ≤ ∫ y in ball (e.symm x₀) (a * ρ), ‖(u ∘ e) y‖ ^ 2 ∂ν :=
           setIntegral_mono_set (hint'.mono_set ((ball_subset_ball hle).trans hsub))
-            (ae_of_all _ fun _ ↦ by positivity) (preimage_ball_subset_ball ha hae x₀ ρ).eventuallyLE
+            (ae_of_all _ fun _ ↦ by positivity) hsup.eventuallyLE
       _ ≤ 2 ^ n * (a * ρ / (R / b)) ^ n * ∫ y in ball (e.symm x₀) (R / b), ‖(u ∘ e) y‖ ^ 2 ∂ν :=
           hdec
       _ ≤ 2 ^ n * (a * ρ / (R / b)) ^ n * ∫ y in e ⁻¹' ball x₀ R, ‖(u ∘ e) y‖ ^ 2 ∂ν := by
           refine mul_le_mul_of_nonneg_left ?_ (by positivity)
           exact setIntegral_mono_set hint' (ae_of_all _ fun _ ↦ by positivity) hsub.eventuallyLE
       _ = _ := by
-          -- `setIntegral_comp_map_symm` matches the goal only after unfolding `ν` and `∘`, so
-          -- state the pullback of `I` in the form in which it appears here.
+          -- `MeasurePreserving.setIntegral_preimage_emb` matches the goal only after unfolding
+          -- `∘`, so state the pullback of `I` in the form in which it appears here.
           have hI' : ∫ y in e ⁻¹' ball x₀ R, ‖(u ∘ e) y‖ ^ 2 ∂ν = I :=
-            setIntegral_comp_map_symm e (fun x ↦ ‖u x‖ ^ 2) _
+            hmp.setIntegral_preimage_emb hemb (fun x ↦ ‖u x‖ ^ 2) _
           rw [hI']
           field_simp
           ring
@@ -614,7 +568,12 @@ theorem setIntegral_ball_norm_sub_setAverage_sq_le_of_harmonicOnNhd_comp (e : E'
     rw [hzero]
     simp only [hn, finrank_zero_of_subsingleton, zero_add]
     positivity
-  obtain ⟨ha, hb⟩ := pos_of_norm_le hae hbe
+  -- In a nontrivial space the two bounds force `a` and `b` to be positive.
+  obtain ⟨x, hx⟩ := exists_ne (0 : E)
+  have ha : 0 < a := pos_of_mul_pos_left
+    ((norm_pos_iff.2 (e.symm.map_ne_zero_iff.2 hx)).trans_le (hae x)) (norm_nonneg x)
+  have hb : 0 < b := pos_of_mul_pos_left
+    ((norm_pos_iff.2 hx).trans_le (by simpa using hbe (e.symm x))) (norm_nonneg _)
   rcases hρ.eq_or_lt with rfl | hρ
   · simp only [ball_zero, Measure.restrict_empty, integral_zero_measure]
     positivity
@@ -624,11 +583,21 @@ theorem setIntegral_ball_norm_sub_setAverage_sq_le_of_harmonicOnNhd_comp (e : E'
     -- pull the integrals back along `e`, and apply the harmonic estimate for that measure.
     set ν := μ.map e.symm
     set c' := ⨍ y in ball (e.symm x₀) (a * ρ), (u ∘ e) y ∂ν
-    have hsub := ball_subset_preimage_ball hb hbe x₀ R
+    -- `e` carries `ν` to `μ`, so it transports integrals over preimages without a Jacobian.
+    have hmp : MeasurePreserving e ν μ := by
+      simpa using e.symm.toHomeomorph.toMeasurableEquiv.measurePreserving_symm μ
+    have hemb : MeasurableEmbedding e := e.toHomeomorph.measurableEmbedding
+    -- The bounds on `e` and `e.symm` make them Lipschitz, which compares the balls.
+    have hsub : ball (e.symm x₀) (R / b) ⊆ e ⁻¹' ball x₀ R := fun y hy ↦ by
+      simpa [Real.coe_toNNReal _ hb.le, mul_div_cancel₀ _ hb.ne'] using
+        (AddMonoidHomClass.lipschitz_of_bound e b hbe).mapsTo_ball (by simpa using hb) _ _ hy
+    have hsup : e ⁻¹' ball x₀ ρ ⊆ ball (e.symm x₀) (a * ρ) := fun y hy ↦ by
+      simpa [Real.coe_toNNReal _ ha.le] using
+        (AddMonoidHomClass.lipschitz_of_bound e.symm a hae).mapsTo_ball (by simpa using ha) _ _ hy
     have hint' : IntegrableOn (fun y ↦ ‖(u ∘ e) y - c‖ ^ 2) (e ⁻¹' ball x₀ R) ν :=
-      (integrableOn_comp_map_symm_iff e (g := fun x ↦ ‖u x - c‖ ^ 2)).2 hint
+      (hmp.integrableOn_comp_preimage hemb (f := fun x ↦ ‖u x - c‖ ^ 2)).2 hint
     have hint'' : IntegrableOn (fun y ↦ ‖(u ∘ e) y - c'‖ ^ 2) (e ⁻¹' ball x₀ R) ν :=
-      (integrableOn_comp_map_symm_iff e (g := fun x ↦ ‖u x - c'‖ ^ 2)).2 (hint_c c')
+      (hmp.integrableOn_comp_preimage hemb (f := fun x ↦ ‖u x - c'‖ ^ 2)).2 (hint_c c')
     have hdec := (hu.mono hsub).setIntegral_ball_norm_sub_setAverage_sq_le (μ := ν)
       (hint'.mono_set hsub) (by positivity) hle
     rw [e.toLinearEquiv.finrank_eq] at hdec
@@ -637,11 +606,11 @@ theorem setIntegral_ball_norm_sub_setAverage_sq_le_of_harmonicOnNhd_comp (e : E'
           setIntegral_norm_sub_setAverage_sq_le measure_ball_lt_top.ne hiu
             ((hint_c c').mono_set (ball_subset_ball hρR))
       _ = 4 * ∫ y in e ⁻¹' ball x₀ ρ, ‖(u ∘ e) y - c'‖ ^ 2 ∂ν :=
-          congrArg (4 * ·) (setIntegral_comp_map_symm e (fun x ↦ ‖u x - c'‖ ^ 2) _).symm
+          congrArg (4 * ·) (hmp.setIntegral_preimage_emb hemb (fun x ↦ ‖u x - c'‖ ^ 2) _).symm
       _ ≤ 4 * ∫ y in ball (e.symm x₀) (a * ρ), ‖(u ∘ e) y - c'‖ ^ 2 ∂ν := by
           refine mul_le_mul_of_nonneg_left ?_ (by norm_num)
           exact setIntegral_mono_set (hint''.mono_set ((ball_subset_ball hle).trans hsub))
-            (ae_of_all _ fun _ ↦ by positivity) (preimage_ball_subset_ball ha hae x₀ ρ).eventuallyLE
+            (ae_of_all _ fun _ ↦ by positivity) hsup.eventuallyLE
       _ ≤ 4 * (2 ^ (3 * n + 8) * (n + 1) ^ 2 * (a * ρ / (R / b)) ^ (n + 2) *
             ∫ y in ball (e.symm x₀) (R / b), ‖(u ∘ e) y - c‖ ^ 2 ∂ν) := by
           gcongr
@@ -651,10 +620,10 @@ theorem setIntegral_ball_norm_sub_setAverage_sq_le_of_harmonicOnNhd_comp (e : E'
             (mul_le_mul_of_nonneg_left ?_ (by positivity)) (by norm_num)
           exact setIntegral_mono_set hint' (ae_of_all _ fun _ ↦ by positivity) hsub.eventuallyLE
       _ = _ := by
-          -- `setIntegral_comp_map_symm` matches the goal only after unfolding `ν` and `∘`, so
-          -- state the pullback of `I` in the form in which it appears here.
+          -- `MeasurePreserving.setIntegral_preimage_emb` matches the goal only after unfolding
+          -- `∘`, so state the pullback of `I` in the form in which it appears here.
           have hI' : ∫ y in e ⁻¹' ball x₀ R, ‖(u ∘ e) y - c‖ ^ 2 ∂ν = I :=
-            setIntegral_comp_map_symm e (fun x ↦ ‖u x - c‖ ^ 2) _
+            hmp.setIntegral_preimage_emb hemb (fun x ↦ ‖u x - c‖ ^ 2) _
           rw [hI']
           field_simp
           ring
