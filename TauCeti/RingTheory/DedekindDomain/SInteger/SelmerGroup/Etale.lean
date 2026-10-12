@@ -28,6 +28,8 @@ fields. The number-field case, where both finiteness hypotheses are theorems of 
 
 * `IsDedekindDomain.finite_selmerGroupPi` and `IsDedekindDomain.finite_selmerGroupOfEquiv`: both
   are finite, for finitely many factors each with finite class group and finitely generated units.
+* `IsDedekindDomain.card_selmerGroupOfEquiv`: the order of the Selmer group of `A` is the product
+  of the orders of the Selmer groups of its factors.
 
 ## Implementation notes
 
@@ -118,6 +120,21 @@ theorem finite_selmerGroupOfEquiv [Finite ι] [(i : ι) → Finite (ClassGroup (
   have := finite_selmerGroupPi L B S n hS
   exact .of_injective (fun x ↦ (⟨e x.1, x.2⟩ : selmerGroupPi L B S n))
     fun x y hxy ↦ Subtype.ext <| e.injective <| congrArg Subtype.val hxy
+
+/-- The order of the Selmer group of a finite etale algebra is the product of the orders of the
+Selmer groups of its factors. -/
+theorem card_selmerGroupOfEquiv [Fintype ι]
+    (e : Aˣ ⧸ (powMonoidHom n : Aˣ →* Aˣ).range ≃*
+      ((i : ι) → (L i)ˣ ⧸ (powMonoidHom n : (L i)ˣ →* (L i)ˣ).range)) :
+    Nat.card (selmerGroupOfEquiv L B S n e) =
+      ∏ i, Nat.card (selmerGroup (R := B i) (K := L i) (S := S i) (n := n)) := by
+  rw [← Nat.card_pi]
+  exact Nat.card_congr
+    { toFun x i := ⟨e x.1 i, (mem_selmerGroupOfEquiv_iff L B S n e x.1).mp x.2 i⟩
+      invFun y := ⟨e.symm fun i ↦ (y i).1,
+        (mem_selmerGroupOfEquiv_iff L B S n e _).mpr fun i ↦ by simp⟩
+      left_inv x := Subtype.ext (by simp)
+      right_inv y := funext fun i ↦ Subtype.ext (by simp) }
 
 end Etale
 
