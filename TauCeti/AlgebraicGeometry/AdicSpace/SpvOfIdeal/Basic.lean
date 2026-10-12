@@ -114,10 +114,9 @@ theorem mem_spvOfIdeal_iff_forall_cofinalValue_or_characteristicSubgroup_eq_top 
 group. The cofinal alternative of Lemma 7.4 cannot hold for the unit ideal, as `v(1) = 1` is not
 cofinal. -/
 theorem mem_spvOfIdeal_top_iff {hfg : ∃ J : Ideal A, J.FG ∧ (⊤ : Ideal A).radical = J.radical}
-    {v : Spv A} : v ∈ spvOfIdeal ⊤ hfg ↔ characteristicSubgroup v.valuation = ⊤ := by
-  refine mem_spvOfIdeal_iff_forall_cofinalValue_or_characteristicSubgroup_eq_top.trans
-    (or_iff_right fun h ↦ ?_)
-  obtain ⟨n, hn⟩ := cofinalValue_iff.mp (h 1 Submodule.mem_top) 1 zero_lt_one
-  simp at hn
+    {v : Spv A} : v ∈ spvOfIdeal ⊤ hfg ↔ characteristicSubgroup v.valuation = ⊤ :=
+  mem_spvOfIdeal_iff_forall_cofinalValue_or_characteristicSubgroup_eq_top.trans
+    (or_iff_right fun h ↦
+      not_cofinalValueFor_one _ ⊤ (cofinalValueFor_top_iff.mpr (h 1 Submodule.mem_top)))
 
 end TauCeti.ValuationSpectrum

@@ -211,8 +211,7 @@ theorem exists_span_eq_top_forall_rationalSubset_subset_of_isOpen_of_iUnion_eq_u
     (fun x ↦ (Ideal.eq_top_iff_one _).mpr (Ideal.subset_span (h1 x)))
     fun v hv ↦ Set.mem_iUnion_of_mem _ (hx ⟨v, hv⟩)
   refine ⟨S, hS, fun f hf ↦ (hsub f hf).imp' j fun x hx' y hy ↦ hWV x ?_⟩
-  have hy' := (mem_rationalSubset_iff _ _ _ _).mp (hx' hy)
-  exact (mem_rationalSubset_iff _ _ _ _).mpr ⟨hy'.1, (mem_basicOpenFinset_iff _ _ _).mp
-    (hT'T x ((mem_basicOpenFinset_iff _ _ _).mpr hy'.2))⟩
+  simp only [rationalSubset_def] at hx' hy ⊢
+  exact Set.inter_subset_inter_right _ (hT'T x) (hx' hy)
 
 end TauCeti.ValuationSpectrum
