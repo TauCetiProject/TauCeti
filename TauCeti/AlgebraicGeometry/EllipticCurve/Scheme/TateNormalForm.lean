@@ -97,6 +97,15 @@ private theorem exists_variableChange_of_iso {W' : WeierstrassCurve R}
 
 variable [W.IsElliptic]
 
+-- `2P` and `3P` miss the zero section everywhere exactly when `ψ₂(x, y)` and `Ψ₃(x)` are units,
+-- for `P` the point `[x : y : 1]`.
+private theorem isUnit_ψ₂_and_isUnit_Ψ₃_iff {x y : R} (h : W.toAffine.Equation x y) :
+    IsUnit (W.ψ₂.evalEval x y) ∧ IsUnit (W.Ψ₃.eval x) ↔
+      (∀ s, (W.projModelAffinePoint h ≫ W.projModelMulBy 2) s ≠ W.projModelZero s) ∧
+        ∀ s, (W.projModelAffinePoint h ≫ W.projModelMulBy 3) s ≠ W.projModelZero s := by
+  rw [← isUnit_evalEval_ψ_iff h 2, ← isUnit_evalEval_ψ_iff h 3, ψ_two, ψ_three,
+    Polynomial.evalEval_C]
+
 /-- **Tate normal form of a pointed projective Weierstrass model.** Let `W` be an elliptic
 Weierstrass curve over a commutative ring `R` and `P` a section of its projective model over
 `Spec R` such that none of `P`, `2P` and `3P` meets the zero section over any point of `Spec R`.
@@ -115,10 +124,7 @@ theorem existsUnique_tateNormalForm {P : Spec (.of R) ⟶ W.projModel}
           (equation_tateNormalForm_zero ab.1 ab.2) ≫ e.hom = P := by
   obtain ⟨x, y, h, rfl⟩ := W.exists_eq_projModelAffinePoint hP h₁
   -- `2P` and `3P` miss the zero section, so `ψ₂(x, y)` and `Ψ₃(x)` are units
-  have hψ₂ : IsUnit (W.ψ₂.evalEval x y) := by
-    simpa only [ψ_two] using (isUnit_evalEval_ψ_iff h 2).mpr h₂
-  have hΨ₃ : IsUnit (W.Ψ₃.eval x) := by
-    simpa only [ψ_three, Polynomial.evalEval_C] using (isUnit_evalEval_ψ_iff h 3).mpr h₃
+  obtain ⟨hψ₂, hΨ₃⟩ := (isUnit_ψ₂_and_isUnit_Ψ₃_iff h).mpr ⟨h₂, h₃⟩
   have hC := toTateNormalForm_smul hψ₂ hΨ₃ h
   obtain ⟨he, he₀, hrt, heP⟩ := projModelVariableChangeIso_eqToHom_spec _ hC
     (equation_tateNormalForm_zero _ _)
@@ -155,11 +161,8 @@ theorem exists_iso_tateNormalForm_iff {P : Spec (.of R) ⟶ W.projModel}
   rw [heC]
   obtain ⟨-, hψ₂, hΨ₃⟩ := (exists_variableChange_tateNormalForm_iff (W := W)).mp
     ⟨C, rfl, rfl, a, b, hC⟩
-  refine ⟨fun s ↦ (ne_projModelZero_iff_mem_basicOpen (by simp) s).mpr
-    (projModelAffinePoint_mem_basicOpen hrt s), (isUnit_evalEval_ψ_iff hrt 2).mp ?_,
-    (isUnit_evalEval_ψ_iff hrt 3).mp ?_⟩
-  · rwa [ψ_two]
-  · rwa [ψ_three, Polynomial.evalEval_C]
+  exact ⟨fun s ↦ (ne_projModelZero_iff_mem_basicOpen (by simp) s).mpr
+    (projModelAffinePoint_mem_basicOpen hrt s), (isUnit_ψ₂_and_isUnit_Ψ₃_iff hrt).mp ⟨hψ₂, hΨ₃⟩⟩
 
 /-- **Uniqueness of the isomorphism with a Tate normal form.** Two isomorphisms
 `projModel (tateNormalForm a b) ≅ projModel W` over `Spec R` which carry the zero section to the

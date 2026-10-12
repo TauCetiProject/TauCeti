@@ -513,7 +513,7 @@ theorem projModelAffinePoint_inj {x' y' : R} {h' : W.toAffine.Equation x' y'} :
   simp
 
 /-- Transport of the point `[x : y : 1]` along an equality of Weierstrass curves. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem projModelAffinePoint_eqToHom {W' : WeierstrassCurve R} (hW : W = W') :
     W.projModelAffinePoint h ≫ eqToHom (congrArg projModel hW) =
       W'.projModelAffinePoint (hW ▸ h) := by
@@ -523,7 +523,7 @@ theorem projModelAffinePoint_eqToHom {W' : WeierstrassCurve R} (hW : W = W') :
 /-- The isomorphism `projModel (C • W) ≅ projModel W` induced by a change of variables
 `C = (u, r, s, t)` sends the point `[x : y : 1]` to the point
 `[u²x + r : u³y + u²sx + t : 1]`. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem projModelAffinePoint_projModelVariableChangeIso_hom (C : VariableChange R)
     (h : (C • W).toAffine.Equation x y) :
     (C • W).projModelAffinePoint h ≫ (W.projModelVariableChangeIso C).hom =
@@ -532,8 +532,12 @@ theorem projModelAffinePoint_projModelVariableChangeIso_hom (C : VariableChange 
     projModelPoint_projModelVariableChangeIso_hom (j := 2) _ (by simp),
     projModelPoint_eq_projModelPoint_iff_of_apply_eq (by simp)]
   refine ⟨rfl, funext fun k ↦ ?_⟩
-  fin_cases k <;> simp [VariableChange.toMatrix_def, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
-  ring
+  fin_cases k
+  · simp [VariableChange.toMatrix_def, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
+  · -- the `y`-coordinate `u³y + u²sx + t`
+    simp [VariableChange.toMatrix_def, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
+    ring
+  · simp [VariableChange.toMatrix_def, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
 
 end AffinePoint
 
