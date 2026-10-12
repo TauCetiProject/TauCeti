@@ -152,15 +152,21 @@ theorem W1p.setLAverage_enorm_value_sub_setAverage_ball_le (hp : p = finrank ℝ
   have hpn : p.toReal = n := by rw [hp, ENNReal.toReal_natCast]
   have h0 : mu (ball (0 : E) 1) ≠ 0 := (measure_ball_pos mu 0 one_pos).ne'
   have htop : mu (ball (0 : E) 1) ≠ ∞ := measure_ball_lt_top.ne
+  -- The radius cancels: `r (rⁿ)^(-1/n) = 1`.
+  have hrad : ENNReal.ofReal r * ENNReal.ofReal (r ^ n) ^ (-(n : ℝ)⁻¹) = 1 := by
+    rw [ENNReal.ofReal_rpow_of_pos (by positivity), ← ENNReal.ofReal_mul hr.le,
+      Real.rpow_neg (by positivity), Real.pow_rpow_inv_natCast hr.le hn,
+      mul_inv_cancel₀ hr.ne', ENNReal.ofReal_one]
   -- The measure of the ball scales out: `r μ(B(x, r))^(-1/n) = ω^(-1/n)`.
   have hscale : ENNReal.ofReal (2 ^ (n + 1) * r) * mu (ball x r) ^ (-p.toReal⁻¹) =
       2 ^ (n + 1) * mu (ball (0 : E) 1) ^ (-(n : ℝ)⁻¹) := by
     rw [Measure.addHaar_ball_of_pos mu x hr, hpn,
-      ENNReal.mul_rpow_of_ne_top ENNReal.ofReal_ne_top htop,
-      ENNReal.ofReal_rpow_of_pos (by positivity), Real.rpow_neg (by positivity),
-      Real.pow_rpow_inv_natCast hr.le hn, ← mul_assoc, ← ENNReal.ofReal_mul (by positivity),
-      mul_assoc, mul_inv_cancel₀ hr.ne', mul_one, ENNReal.ofReal_pow zero_le_two,
-      ENNReal.ofReal_ofNat]
+      ENNReal.mul_rpow_of_ne_top ENNReal.ofReal_ne_top htop, ENNReal.ofReal_mul (by positivity)]
+    calc _ = ENNReal.ofReal (2 ^ (n + 1)) *
+          (ENNReal.ofReal r * ENNReal.ofReal (r ^ n) ^ (-(n : ℝ)⁻¹)) *
+          mu (ball (0 : E) 1) ^ (-(n : ℝ)⁻¹) := by ring
+      _ = 2 ^ (n + 1) * mu (ball (0 : E) 1) ^ (-(n : ℝ)⁻¹) := by
+        rw [hrad, mul_one, ENNReal.ofReal_pow zero_le_two, ENNReal.ofReal_ofNat]
   rw [← hscale]
   exact W1p.setLAverage_enorm_value_sub_setAverage_ball_le_mul_measure_rpow hball u
 
