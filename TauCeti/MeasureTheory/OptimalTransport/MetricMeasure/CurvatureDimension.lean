@@ -5,12 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Measure.Support
 public import Mathlib.Probability.ConditionalProbability
-public import TauCeti.Analysis.GradientFlow.GeodesicConvex
 public import TauCeti.MeasureTheory.OptimalTransport.MetricMeasure.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.InternalEnergy
-public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
 
 /-!
 # The curvature-dimension condition `CD(K, ∞)`
