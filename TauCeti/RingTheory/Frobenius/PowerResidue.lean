@@ -25,17 +25,6 @@ contains an element `ζ` that is a primitive `n`-th root of unity in `S`, with `
 power residue symbol: `φ x = ξ x` for the `n`-th root of unity `ξ ≡ a ^ ((q - 1) / n)`, and `ξ`
 is trivial exactly when `a` is an `n`-th power in the residue field.
 
-The proof has three steps.
-
-* `ζ` is fixed by `φ` and raised to its `q`-th power by it, so `n ∣ q - 1`
-  (`AlgHom.IsArithFrobAt.dvd_card_sub_one`).
-* `x ^ q = a ^ ((q - 1) / n) * x`, so `φ x ≡ a ^ ((q - 1) / n) * x (mod Q)`
-  (`AlgHom.IsArithFrobAt.sub_pow_mul_mem`).
-* `φ x` is an `n`-th root of `a`, hence `ζ ^ i * x` for some `i`. Two `n`-th roots of unity that
-  are congruent modulo `Q` are equal because `n ∉ Q`, so `φ x = x` exactly when
-  `a ^ ((q - 1) / n) ≡ 1`. By Euler's criterion in the finite field `R ⧸ Q ∩ R`
-  (`Ideal.exists_pow_eq_mk_iff_pow_sub_one_mem`), this says that `a` is an `n`-th power there.
-
 For a family of Frobenius elements `σ i` at primes `Q i`, the subgroup they generate fixes `x`
 exactly when `a` is an `n`-th power modulo every `Q i ∩ R`
 (`IsArithFrobAt.forall_mem_closure_smul_eq_self_iff`). This is the form in which Kummer theory
