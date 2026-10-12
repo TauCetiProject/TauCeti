@@ -40,8 +40,9 @@ essentially unbounded), which is null because the weak gradient vanishes almost 
 level sets. So `|Γₗ| → 0`, which is impossible if the essential supremum exceeds `k`.
 
 The Sobolev inequality is a hypothesis of
-`TauCeti.PDE.UniformlyEllipticOn.value_le_const_of_forall_eLpNorm_le`; on a set of finite measure
-it holds in every dimension
+`TauCeti.PDE.UniformlyEllipticOn.value_le_const_of_forall_eLpNorm_le`, which does not need `Ω` to
+have finite measure, since for `l > k ≥ 0` the sets `{u > l}` do. On a set of finite measure the
+Sobolev inequality holds in every dimension
 (`TauCeti.W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt`), which gives the
 unconditional form `TauCeti.PDE.UniformlyEllipticOn.value_le_const_of_measure_ne_top`.
 
@@ -243,12 +244,13 @@ private theorem UniformlyEllipticOn.ofReal_le_mul_measure_rpow_of_not_ae_value_l
   exact (ENNReal.mul_le_mul_iff_left (pow_ne_zero 2 hN) (ENNReal.pow_ne_top enorm_ne_top)).1 hcore
 
 /-- **The weak maximum principle with bounded drift**, under a Sobolev inequality. Let
-`Ω ⊆ ℝⁿ` be open with finite measure, and suppose `‖w‖_q ≤ S ‖∇w‖₂` on `H¹₀(Ω)` for some
-exponent `q > 2`. Let `L u = -∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u` have measurable, uniformly elliptic `a`
-with constants `λ, Λ`, measurable `b` with `‖b‖ ≤ β` and measurable `c` with `0 ≤ c ≤ γ`. If
-`u ∈ H¹(Ω)` is a weak subsolution, `a(u, v) ≤ 0` for every nonnegative `v ∈ H¹₀(Ω)`, and
-`(u - k)⁺ ∈ H¹₀(Ω)` for some `k ≥ 0`, then `u ≤ k` almost everywhere. There is no smallness
-condition on `β`. -/
+`Ω ⊆ ℝⁿ` be open, and suppose `‖w‖_q ≤ S ‖∇w‖₂` on `H¹₀(Ω)` for some exponent `q > 2`. Let
+`L u = -∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u` have measurable, uniformly elliptic `a` with constants
+`λ, Λ`, measurable `b` with `‖b‖ ≤ β` and measurable `c` with `0 ≤ c ≤ γ`. If `u ∈ H¹(Ω)` is a
+weak subsolution, `a(u, v) ≤ 0` for every nonnegative `v ∈ H¹₀(Ω)`, and `(u - k)⁺ ∈ H¹₀(Ω)` for
+some `k ≥ 0`, then `u ≤ k` almost everywhere. There is no smallness condition on `β`, and `Ω`
+need not have finite measure: the superlevel sets `{u > l}`, `l > k ≥ 0`, of `u ∈ L²` already
+do. -/
 theorem UniformlyEllipticOn.value_le_const_of_forall_eLpNorm_le
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (ha : AEStronglyMeasurable a (mu.restrict Omega))
@@ -257,7 +259,7 @@ theorem UniformlyEllipticOn.value_le_const_of_forall_eLpNorm_le
     (hb_bound : ∀ x ∈ Omega, ‖b x‖ ≤ beta)
     (hc_bound : ∀ x ∈ Omega, ‖c x‖ ≤ gamma)
     (hc_nonneg : ∀ x ∈ Omega, 0 ≤ c x)
-    (hOmega : mu Omega ≠ ∞) {q : ℝ≥0∞} (hq : 2 < q) {S : ℝ≥0}
+    {q : ℝ≥0∞} (hq : 2 < q) {S : ℝ≥0}
     (hsob : ∀ v ∈ w1p0Submodule mu Omega 2,
       eLpNorm (W1p.value v) q (mu.restrict Omega) ≤ S * ‖W1p.gradient v‖ₑ)
     {k : ℝ} (hk : 0 ≤ k) {u : W1p mu Omega 2}
@@ -275,11 +277,19 @@ theorem UniformlyEllipticOn.value_le_const_of_forall_eLpNorm_le
     · have h2 : (2 : ℝ) < q.toReal := by
         simpa using (ENNReal.toReal_lt_toReal ENNReal.ofNat_ne_top hqtop).2 hq
       exact sub_pos.2 (inv_strictAnti₀ two_pos h2)
+  -- Since `u ∈ L²` and `k ≥ 0`, the superlevel sets `{u > l}`, `l > k`, have finite measure.
+  have hfin : ∀ l, k < l → mu.restrict Omega {x | l < W1p.value u x} ≠ ∞ := by
+    intro l hkl
+    have hl : 0 < l := hk.trans_lt hkl
+    refine ne_top_of_le_ne_top ((Lp.memLp (W1p.value u)).meas_ge_lt_top (by norm_num)
+      (by norm_num) (Real.toNNReal_pos.2 hl).ne').ne (measure_mono fun x hx ↦ ?_)
+    rw [mem_ofPred_eq, Real.toNNReal_le_iff_le_coe, coe_nnnorm, Real.norm_eq_abs]
+    exact (le_of_lt hx).trans (le_abs_self _)
   -- Along suitable levels `lⱼ ≥ k`, each exceeded by `u` on a set of positive measure,
   -- the measure of `{u > lⱼ, ∇u ≠ 0}` tends to zero, so the level estimate fails for large `j`.
   by_contra hcon
   obtain ⟨l, hl, htend⟩ :=
-    W1p.exists_tendsto_measure_lt_value_and_gradient_ne_zero (by norm_num) hOmega u hcon
+    W1p.exists_tendsto_measure_lt_value_and_gradient_ne_zero (by norm_num) u hfin hcon
   have hlim : Tendsto (fun j ↦ ENNReal.ofReal beta * S * mu.restrict Omega
       {x | l j < W1p.value u x ∧ W1p.gradient u x ≠ 0} ^ θ) atTop (𝓝 0) := by
     have h0 : Tendsto (fun j ↦ mu.restrict Omega
@@ -335,7 +345,7 @@ theorem UniformlyEllipticOn.value_le_const_of_measure_ne_top [Nonempty ι]
     ((1 - δ) / (n⁻¹ - δ)) ^ (1 - δ)) * mu Omega ^ (n⁻¹ - δ)
   have hC : C ≠ ∞ := ENNReal.mul_ne_top ENNReal.ofReal_ne_top
     (ENNReal.rpow_ne_top_of_nonneg (by linarith) hOmega)
-  refine h.value_le_const_of_forall_eLpNorm_le ha hb hc hb_bound hc_bound hc_nonneg hOmega hq2
+  refine h.value_le_const_of_forall_eLpNorm_le ha hb hc hb_bound hc_bound hc_nonneg hq2
     (S := C.toNNReal) (fun v hv ↦ ?_) hk hboundary hu
   rw [ENNReal.coe_toNNReal hC]
   exact W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt (by norm_num) hOmega
