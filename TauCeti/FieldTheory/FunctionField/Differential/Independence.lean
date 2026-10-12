@@ -12,6 +12,7 @@ import TauCeti.FieldTheory.FunctionField.Differential.ConstantExtension
 import TauCeti.FieldTheory.FunctionField.Differential.LocalNonvanishing
 import TauCeti.FieldTheory.FunctionField.Different.Separating
 import TauCeti.FieldTheory.FunctionField.Place.Existence
+import TauCeti.FieldTheory.FunctionField.Place.Extension.PrimeElement
 
 /-!
 # The chain rule, independence of the Kähler–Weil comparison, and the residue theorem
