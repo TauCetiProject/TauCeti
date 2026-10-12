@@ -32,25 +32,6 @@ variable {K : Type*} [Field K] (W : WeierstrassCurve K) [W.IsElliptic]
 
 noncomputable section
 
-/-- The algebra structure on the projective function field transported from the affine
-function field. -/
-instance projModelFunctionFieldAlgebra : Algebra K W.projModel.functionField := by
-  let f : K →+* W.projModel.functionField :=
-    W.projModelFunctionFieldEquiv.symm.toRingHom.comp (algebraMap K W.toAffine.FunctionField)
-  exact f.toAlgebra
-
-/-- The function-field comparison between the projective model and the affine equation, as an
-equivalence of `K`-algebras. -/
-noncomputable def projModelFunctionFieldAlgEquiv :
-    W.projModel.functionField ≃ₐ[K] W.toAffine.FunctionField :=
-  AlgEquiv.ofRingEquiv (f := W.projModelFunctionFieldEquiv) (by
-    intro x
-    -- The transported algebra map is the affine algebra map followed by the inverse comparison.
-    -- Expose that composite so the ring equivalence and its inverse cancel by `simp`.
-    change W.projModelFunctionFieldEquiv
-      (W.projModelFunctionFieldEquiv.symm (algebraMap K W.toAffine.FunctionField x)) = _
-    simp)
-
 /-- Pullback along the projective scheme morphism `[n]`, expressed on the affine equation's
 function field and transported back to the projective function field. -/
 noncomputable def projModelMulByFunctionFieldAlgHom (n : ℤ) [NeZero n] :
@@ -66,7 +47,7 @@ theorem projModelMulByFunctionFieldAlgHom_toRingHom (n : ℤ) [NeZero n] :
     ↑(W.projModelMulByFunctionFieldAlgHom n) = W.mulByFunctionFieldPullback n := by
   ext x
   apply W.projModelFunctionFieldEquiv.injective
-  simp [projModelMulByFunctionFieldAlgHom, projModelFunctionFieldAlgEquiv,
+  simp [projModelMulByFunctionFieldAlgHom, ← AlgEquiv.coe_toRingEquiv,
     W.projModelFunctionFieldEquiv_mulByFunctionFieldPullback]
 
 /-- **The scheme-theoretic multiplication map acts on the invariant differential by `n`.**
