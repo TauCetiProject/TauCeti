@@ -448,6 +448,33 @@ theorem mem_initialPentagonRectangleDecompositions_of_val_add_val_eq {x z : Grid
   exact ⟨⟨hfirst, (Finset.disjoint_union_left.mp hX).1⟩, hsecond,
     (Finset.disjoint_union_left.mp hX).2⟩
 
+/-- A rectangle followed by an initial-side pentagon is counted when its underlying rectangles
+are empty and its composite domain agrees, with multiplicity, with a counted initial-side pentagon
+followed by a rectangle. Read the latter rectangle with the two commuted columns exchanged. -/
+theorem mem_rectangleInitialPentagonDecompositions_of_val_add_val_eq_initialPentagonRectangle
+    {x z : GridState n}
+    {D : GridRectangleInitialPentagonDecomposition C.column C.turnRow x z}
+    {E : GridInitialPentagonRectangleDecomposition C.column C.turnRow x z}
+    (hE : E ∈ G.initialPentagonRectangleDecompositions C x z)
+    (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty)
+    (h : D.first.toGridRectangle.coveredSquares.val + D.pentagon.coveredSquares.val =
+      E.pentagon.coveredSquares.val +
+        (E.second.toGridRectangle.coveredSquares.map
+          ((Equiv.swap C.column (finRotate n C.column)).prodCongr
+            (Equiv.refl (Fin n))).toEmbedding).val) :
+    D ∈ G.rectangleInitialPentagonDecompositions C x z := by
+  rw [mem_initialPentagonRectangleDecompositions, mem_initialPentagons,
+    (G.swapColumns C.column (finRotate n C.column)).mem_unblockedRectangles,
+    ← G.disjoint_map_swapColumns_XSet_iff] at hE
+  have hunion := congrArg Multiset.toFinset h
+  simp only [Multiset.toFinset_add, Finset.val_toFinset] at hunion
+  have hX := Finset.disjoint_union_left.mpr ⟨hE.1.2, hE.2.2⟩
+  rw [← hunion] at hX
+  rw [mem_rectangleInitialPentagonDecompositions, mem_unblockedRectangles, mem_initialPentagons,
+    GridRectangleInitialPentagonDecomposition.pentagon_toGridRectangleBetween]
+  exact ⟨⟨hfirst, (Finset.disjoint_union_left.mp hX).1⟩, hsecond,
+    (Finset.disjoint_union_left.mp hX).2⟩
+
 /-- An initial-side pentagon followed by a rectangle is counted when its underlying rectangles
 are empty and its composite domain agrees, with multiplicity, with a counted domain in the same
 order. Rectangles of the commuted diagram are read with the two commuted columns exchanged. -/
