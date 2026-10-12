@@ -284,7 +284,7 @@ theorem gaussianIntCMActionCurveX3AddX_bijective :
 
 /-- **`End(E) ≅ ℤ[i]` for `y² = x³ + x` over `𝔽₅`**: the action of the Gaussian integers, with `i`
 acting by `(x, y) ↦ (-x, 2y)`, as a ring isomorphism onto the endomorphism ring. -/
-@[expose] noncomputable def gaussianIntRingEquivCurveX3AddX :
+noncomputable def gaussianIntRingEquivCurveX3AddX :
     GaussianInt ≃+* Hom curveX3AddX.toAffine curveX3AddX.toAffine :=
   RingEquiv.ofBijective gaussianIntCMActionCurveX3AddX gaussianIntCMActionCurveX3AddX_bijective
 
@@ -292,7 +292,7 @@ acting by `(x, y) ↦ (-x, 2y)`, as a ring isomorphism onto the endomorphism rin
 @[simp]
 theorem coe_gaussianIntRingEquivCurveX3AddX :
     ⇑gaussianIntRingEquivCurveX3AddX = gaussianIntCMActionCurveX3AddX :=
-  rfl
+  RingEquiv.coe_ofBijective _ _
 
 /-- **`ℤ[π₅]` has index `2` in the endomorphism ring of `y² = x³ + x` over `𝔽₅`**: the
 endomorphism ring is `ℤ[i]` and `ℤ[π₅] = ℤ[2i]`. -/
