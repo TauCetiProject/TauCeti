@@ -893,16 +893,20 @@ jobs:
       # human-owned governance machinery in scripts/. So a `meta import` under TauCeti/ is
       # either an accident or the start of code that belongs elsewhere.
       #
-      # The verdict comes from Lean's own header parser. `lean --deps-json` runs the fast
-      # scanner Lake uses for dependencies, so the `meta` modifier is read exactly as the
-      # frontend reads it, through comments, nested block comments, strings and quoted module
-      # names, and an unparseable header fails instead of matching nothing. Trusted like the
-      # guards above: it reads candidate headers as data and elaborates nothing.
+      # The verdict comes from Lean's own header parser: gate/scripts/MetaImports.lean runs
+      # `Lean.Parser.parseHeader` and reads the written imports out of the resulting syntax,
+      # so the `meta` modifier is seen exactly as the frontend sees it, through comments,
+      # nested block comments, strings and quoted module names. Asking the syntax rather than
+      # the computed import list is what makes `meta import Init` visible at all; see that
+      # driver's module doc. Trusted like the guards above, and `lean --run` on a
+      # workflow-pinned driver needs no Lake environment: it reads candidate headers as data,
+      # elaborates nothing, and never imports a candidate module.
       #
       # Scoped to the change's files exactly when the environment lint is. A file it skips was
-      # checked by the PR that last touched it, main is clean, and every route onto main runs
+      # audited by the PR that last touched it, main is clean, and every route onto main runs
       # this workflow, so the invariant holds without rescanning the library. The unscoped
-      # fallback is affordable anyway: headers alone, one process, about 3 seconds at 13k files.
+      # fallback is affordable anyway: headers alone, one process, about 5 seconds at 13k
+      # files against 0.6 for a PR's files.
       - name: Meta-import guard (TauCeti/ and TauCeti.lean use no `meta import`)
         if: ${{ env.INFRA != '1' }}
         run: |

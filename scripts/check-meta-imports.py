@@ -1,30 +1,17 @@
 #!/usr/bin/env python3
 """Reject `meta import` in TauCeti sources.
 
-`meta import` exists to make a module's contents available to compile-time code:
-elaborators, macros, tactics, `deriving` handlers. TauCeti contains no
-metaprogramming at all -- the only Lean meta code in the repository is the
-human-owned governance machinery under `scripts/` -- so a `meta import` under
-`TauCeti/` is either a copy-paste accident or the start of meta code that does not
-belong in the AI-owned library. Either way it should fail before it lands.
+Chooses which sources to audit and reports the verdict; `scripts/MetaImports.lean`,
+run once under `lean --run`, is what actually reads the headers. That driver uses
+Lean's own `Lean.Parser.parseHeader` and takes the written imports straight out of
+the resulting syntax, so the `meta` modifier is seen exactly as the compiler sees
+it and never matched as text. See its module doc for why the syntax, rather than
+the computed import list, is the right thing to ask.
 
-The verdict comes from Lean's own header parser, never from a regex over the
-source. `lean --deps-json` runs `Lean.parseImports'`, the hand-written fast
-scanner in `Lean/Elab/ParseImportsFast.lean` that Lake itself uses to compute
-dependencies, and prints one JSON record per input file. So this check sees the
-`meta` modifier exactly as the frontend does -- through block comments, nested
-`/- -/`, string literals and guillemet-quoted module names -- and it reports a
-malformed header as a failure instead of quietly matching nothing.
-
-It is cheap enough to run on every PR. The scanner stops at the end of the
-header, a single `lean` process handles the whole file list, and nothing is
-elaborated or imported: the whole library takes about three seconds at 13k files,
-and an ordinary PR's changed-file list about a tenth of one.
-
-A non-`prelude` module header implicitly carries `import Init` and `meta import
-Init` -- `ParseImports.main` pushes both when `prelude` is absent -- so both
-appear in every record without being source text. Imports of `Init` are
-therefore skipped; no TauCeti file writes one.
+By default every TauCeti source is audited. `--changed` narrows that to the `.lean`
+library sources named by a NUL-separated changed-file list, which is what CI passes
+on a pull request. Nothing is elaborated, built or imported either way: the whole
+library costs a few seconds and a pull request's files a fraction of one.
 """
 
 from __future__ import annotations
@@ -39,8 +26,7 @@ import subprocess
 SOURCE_DIR = "TauCeti"
 ROOT_MODULE = "TauCeti.lean"
 
-# Implicitly added to every non-`prelude` module header, so never a source `meta import`.
-IMPLICIT_MODULE = "Init"
+DRIVER = "MetaImports.lean"
 
 
 def library_files(root: pathlib.Path) -> list[str]:
@@ -60,7 +46,7 @@ def changed_library_files(root: pathlib.Path, listing: pathlib.Path) -> list[str
 
     The list is produced by `scripts/lint_scope_files.py` from immutable Git
     objects and excludes deletions, so every name it carries must exist at the
-    head being checked. A missing one means the list and the checkout disagree,
+    head being audited. A missing one means the list and the checkout disagree,
     which is not something to interpret: fail closed and let a human look.
     """
     entries = [entry for entry in listing.read_bytes().split(b"\0") if entry]
@@ -77,9 +63,9 @@ def changed_library_files(root: pathlib.Path, listing: pathlib.Path) -> list[str
             raise ValueError(f"changed path escapes the checkout: {name}")
         if name != ROOT_MODULE and parts[:1] != (SOURCE_DIR,):
             continue
-        # `--deps-json --stdin` reads one file name per line, so a name containing a
-        # newline cannot be handed to the parser. No module-shaped name does; refusing
-        # is still better than checking one fewer file than the PR changed.
+        # The driver reads one path per line from stdin, so a name containing a newline
+        # cannot be handed to it. No module-shaped name does; refusing is still better
+        # than auditing one fewer file than the change touched.
         if "\n" in name or "\r" in name:
             raise ValueError(f"changed path cannot be passed to the header parser: {name!r}")
         if not (root / name).is_file():
@@ -88,44 +74,36 @@ def changed_library_files(root: pathlib.Path, listing: pathlib.Path) -> list[str
     return sorted(names)
 
 
-def parse_headers(lean: str, root: pathlib.Path, names: list[str]) -> list[dict]:
-    """Header records for `names`, straight from Lean's own header parser."""
-    listing = "".join(f"{root / name}\n" for name in names)
+def audit(lean: str, driver: pathlib.Path, root: pathlib.Path,
+          names: list[str]) -> list[tuple[str, str]]:
+    """Each (file, message) pair the Lean driver reports for `names`."""
+    paths = {str(root / name): name for name in names}
+    listing = "".join(f"{path}\n" for path in paths)
     try:
-        result = subprocess.run([lean, "--deps-json", "--stdin"], input=listing,
+        result = subprocess.run([lean, "--run", str(driver)], input=listing,
                                 capture_output=True, text=True, check=False)
     except OSError as error:
-        raise RuntimeError(f"cannot run `{lean} --deps-json`: {error}") from error
+        raise RuntimeError(f"cannot run `{lean} --run {driver}`: {error}") from error
     if result.returncode != 0:
-        detail = result.stderr.strip() or result.stdout.strip()
-        raise RuntimeError(f"`{lean} --deps-json` exited {result.returncode}: {detail}")
+        detail = (result.stderr.strip() or result.stdout.strip()).replace("\n", " ")
+        raise RuntimeError(f"`{lean} --run {driver}` exited {result.returncode}: {detail}")
     try:
-        records = json.loads(result.stdout)["imports"]
-    except (json.JSONDecodeError, KeyError, TypeError) as error:
-        raise RuntimeError(f"cannot read the header parser's output: {error}") from error
-    if not isinstance(records, list) or len(records) != len(names):
-        raise RuntimeError(f"the header parser returned {len(records)} record(s) "
-                           f"for {len(names)} file(s)")
-    return records
-
-
-def violations(names: list[str], records: list[dict]) -> list[tuple[str, str]]:
-    """Each (file, message) pair that must fail the check."""
+        reported = json.loads(result.stdout)
+    except json.JSONDecodeError as error:
+        raise RuntimeError(f"cannot read the audit driver's output: {error}") from error
+    if not isinstance(reported, list):
+        raise RuntimeError("the audit driver did not report a list of problems")
     found = []
-    for name, record in zip(names, records):
-        errors = record.get("errors") or []
-        for error in errors:
-            found.append((name, f"its header does not parse: {error}"))
-        result = record.get("result")
-        if result is None:
-            if not errors:
-                found.append((name, "the header parser returned neither a result nor an error"))
-            continue
-        for imported in result.get("imports") or []:
-            module = imported.get("module")
-            if imported.get("isMeta") and module != IMPLICIT_MODULE:
-                found.append((name, f"`meta import {module}` is not allowed: TauCeti/ holds "
-                                    "no metaprogramming, and meta code belongs in scripts/"))
+    for problem in reported:
+        try:
+            path, message = problem["file"], problem["message"]
+        except (KeyError, TypeError) as error:
+            raise RuntimeError(f"malformed problem from the audit driver: {error}") from error
+        # Only ever report a file that was asked about, so a driver that lost track of its
+        # input cannot be mistaken for a clean run of a different file list.
+        if path not in paths:
+            raise RuntimeError(f"the audit driver reported an unrequested file: {path}")
+        found.append((paths[path], message))
     return found
 
 
@@ -134,16 +112,23 @@ def main(argv: list[str] | None = None) -> int:
         description="Reject `meta import` in TauCeti sources.",
         epilog=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--root", type=pathlib.Path, default=pathlib.Path("."),
-                        help="checkout holding the sources to inspect (default: .)")
+                        help="checkout holding the sources to audit (default: .)")
     parser.add_argument("--changed", type=pathlib.Path,
                         help="NUL-separated list of repository-relative changed paths; "
-                             "omit to scan the whole library")
+                             "omit to audit the whole library")
     parser.add_argument("--lean", default="lean",
-                        help="the `lean` binary whose header parser decides (default: lean)")
+                        help="the `lean` binary to run the driver with (default: lean)")
+    parser.add_argument("--driver", type=pathlib.Path,
+                        default=pathlib.Path(__file__).resolve().with_name(DRIVER),
+                        help=f"the Lean driver that reads the headers (default: {DRIVER} "
+                             "beside this script)")
     args = parser.parse_args(argv)
 
     if shutil.which(args.lean) is None and not pathlib.Path(args.lean).is_file():
         print(f"::error::check-meta-imports: no `lean` binary at {args.lean}")
+        return 1
+    if not args.driver.is_file():
+        print(f"::error::check-meta-imports: no audit driver at {args.driver}")
         return 1
     try:
         names = (library_files(args.root) if args.changed is None
@@ -155,12 +140,11 @@ def main(argv: list[str] | None = None) -> int:
         print("check-meta-imports: no TauCeti sources in scope")
         return 0
     try:
-        records = parse_headers(args.lean, args.root, names)
+        found = audit(args.lean, args.driver, args.root, names)
     except RuntimeError as error:
         print(f"::error::check-meta-imports: {error}")
         return 1
 
-    found = violations(names, records)
     for name, message in found:
         print(f"::error file={name}::check-meta-imports: {name}: {message}")
     if found:

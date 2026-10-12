@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Regression tests for ``scripts/check-meta-imports.py``.
+"""Regression tests for ``scripts/check-meta-imports.py`` and its Lean driver.
 
-Every case runs the real `lean --deps-json`, because the point of the check is
-that the compiler's header parser decides and not a pattern over the text. The
-fixtures are headers only: nothing is elaborated, built or imported.
+Every case runs the real `scripts/MetaImports.lean` under `lean --run`, because
+the point of the audit is that the compiler's own header parser decides and not a
+pattern over the text. The fixtures are headers only: nothing is elaborated, built
+or imported.
 """
 
 from __future__ import annotations
@@ -34,7 +35,7 @@ import Mathlib.Tactic.Ring
 
 
 class MetaImportCheckTests(unittest.TestCase):
-    def run_check(self, sources, *, changed=None, root_module=None):
+    def run_check(self, sources, *, changed=None, root_module=None, raw=None):
         """Lay out `sources` under a temporary checkout and return (status, output)."""
         with tempfile.TemporaryDirectory(prefix="meta-imports-") as temporary:
             root = pathlib.Path(temporary)
@@ -42,6 +43,10 @@ class MetaImportCheckTests(unittest.TestCase):
                 path = root / name
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_text(text, encoding="utf-8")
+            for name, content in (raw or {}).items():
+                path = root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(content)
             if root_module is not None:
                 (root / "TauCeti.lean").write_text(root_module, encoding="utf-8")
             argv = ["--root", str(root), "--lean", LEAN]
@@ -81,6 +86,41 @@ class MetaImportCheckTests(unittest.TestCase):
             {"TauCeti/Bad.lean": "module\n\nmeta import all Lean\n"})
         self.assertEqual(status, 1, output)
         self.assertIn("`meta import Lean` is not allowed", output)
+
+    def test_an_explicit_meta_import_of_init_fails(self):
+        # Every non-`prelude` module implicitly gets `import Init` and `meta import Init`,
+        # so the computed import list cannot tell a written one from the synthetic pair.
+        # The driver reads the syntax instead, which carries only what the file wrote.
+        status, output = self.run_check(
+            {"TauCeti/Bad.lean": "module\n\nmeta import Init\n"})
+        self.assertEqual(status, 1, output)
+        self.assertIn("`meta import Init` is not allowed", output)
+
+    def test_an_imitation_of_the_synthetic_init_pair_fails(self):
+        # The one header whose computed import list is byte-identical to a clean `module`:
+        # `prelude` suppresses the synthetic pair and the file then writes it out by hand.
+        status, output = self.run_check({"TauCeti/Bad.lean":
+            "module\nprelude\npublic import Init\npublic meta import Init\n"})
+        self.assertEqual(status, 1, output)
+        self.assertIn("`meta import Init` is not allowed", output)
+
+    def test_a_byte_order_mark_fails_rather_than_reading_as_clean(self):
+        # A BOM stops the header parser at position 0, so no import is visible and the
+        # file would otherwise look clean. The absence of `module` is what catches it.
+        status, output = self.run_check(
+            {"TauCeti/Bad.lean": "\ufeffmodule\n\nmeta import Lean\n"})
+        self.assertEqual(status, 1, output)
+        self.assertIn("does not opt into the module system", output)
+
+    def test_an_empty_source_fails_because_it_is_not_a_module(self):
+        status, output = self.run_check({"TauCeti/Empty.lean": ""})
+        self.assertEqual(status, 1, output)
+        self.assertIn("does not opt into the module system", output)
+
+    def test_a_source_lean_cannot_read_fails(self):
+        status, output = self.run_check({}, raw={"TauCeti/Bad.lean": b"module\n\xff\xfe\n"})
+        self.assertEqual(status, 1, output)
+        self.assertIn("cannot be read", output)
 
     def test_a_quoted_module_name_fails(self):
         status, output = self.run_check(

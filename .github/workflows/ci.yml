@@ -368,7 +368,7 @@ jobs:
       # The meta-import guard's fixtures, plus the invariant itself over the whole checkout.
       # pr-build.yml runs the guard on a change's files only, so this post-merge pass is where
       # a `meta import` that reached main some other way would surface. Headers alone: nothing
-      # here builds or imports a TauCeti module, and the whole library costs about 3 seconds.
+      # here builds or imports a TauCeti module, and the whole library costs about 5 seconds.
       - name: Meta-import guard tests and whole-library invariant
         run: python3 scripts/test_check_meta_imports.py
 
