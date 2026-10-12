@@ -25,7 +25,7 @@ modulo `N`.
 
 * `eq_one_of_mem_Gamma1_of_smul_eq_self`: only the identity in `Γ₁(N)` fixes a point.
 * `stabilizer_Gamma1_eq_bot`: triviality of the integral point stabilizers.
-* `stabilizer_map_Gamma1_eq_bot`: triviality of the effective real point stabilizers.
+* `stabilizer_Gamma1_map_eq_bot`: triviality of the effective real point stabilizers.
 
 ## References
 
@@ -79,7 +79,7 @@ theorem stabilizer_Gamma1_eq_bot (hN : 4 ≤ N) (z : ℍ) :
 /-- The effective image of `Γ₁(N)` in `PSL(2, ℝ)` has no elliptic stabilizers
 at level `N ≥ 4`. -/
 @[simp]
-theorem stabilizer_map_Gamma1_eq_bot (hN : 4 ≤ N) (z : ℍ) :
+theorem stabilizer_Gamma1_map_eq_bot (hN : 4 ≤ N) (z : ℍ) :
     stabilizer ((Gamma1 N).map sl2zToPSL2R) z = ⊥ := by
   apply eq_bot_iff.mpr
   intro g hg
