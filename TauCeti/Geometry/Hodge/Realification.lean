@@ -33,7 +33,7 @@ them the values of its real scalar extension.
   conjugation.
 * `TauCeti.Hodge.exists_eq_realificationComplexEquiv_one_tmul`: every real point of the abstract
   complexification comes from the realification.
-* `IsBaseChange.bilinForm_realificationComplexEquiv_one_tmul`: on such points a
+* `TauCeti.Hodge.bilinForm_realificationComplexEquiv_one_tmul`: on such points a
   complexified integral form is the real scalar extension of that form.
 -/
 
@@ -157,7 +157,7 @@ The complexification of an integral bilinear form, evaluated on the images of tw
 under the realification comparison, is the real scalar extension of the form evaluated on those
 vectors. -/
 @[simp]
-theorem _root_.IsBaseChange.bilinForm_realificationComplexEquiv_one_tmul (hℂ : IsBaseChange ℂ ιℂ)
+theorem bilinForm_realificationComplexEquiv_one_tmul (hℂ : IsBaseChange ℂ ιℂ)
     (Q : LinearMap.BilinForm ℤ V) (x y : Realification V) :
     bilinForm hℂ Q (realificationComplexEquiv hℂ (1 ⊗ₜ[ℝ] x))
       (realificationComplexEquiv hℂ (1 ⊗ₜ[ℝ] y)) = (Q.baseChange ℝ x y : ℂ) := by

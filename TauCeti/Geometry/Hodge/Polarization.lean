@@ -108,7 +108,7 @@ theorem complex_symm_weight (h : IsPolarization hℂ hs Q) (x y : Vℂ) :
 /-- The complexification of a polarizing form is nondegenerate. -/
 theorem complex_nondegenerate (h : IsPolarization hℂ hs Q) :
     LinearMap.BilinForm.Nondegenerate (bilinForm hℂ Q) :=
-  nondegenerate_bilinForm hℂ h.nondegenerate
+  nondegenerate_bilinForm_complex hℂ h.nondegenerate
 
 /-- The first Hodge–Riemann relation transported to the conjugate filtration. -/
 theorem orthogonal_conjF (h : IsPolarization hℂ hs Q) (p : ℤ) {x y : Vℂ}
@@ -119,7 +119,7 @@ theorem orthogonal_conjF (h : IsPolarization hℂ hs Q) (p : ℤ) {x y : Vℂ}
   have hy' : latticeConj hℂ y ∈ hs.F (n + 1 - p) := by
     simpa using (hs.mem_conjF_iff (n + 1 - p) y).mp hy
   have hzero := h.orthogonal p _ hx' _ hy'
-  rw [bilinForm_conj] at hzero
+  rw [bilinForm_latticeConj] at hzero
   simpa using congrArg (starRingEnd ℂ) hzero
 
 /-- **Orthogonality of the Hodge components.** Two Hodge components pair to zero under a
@@ -204,7 +204,7 @@ theorem Q_def (P : Polarization hℂ hs) : P.Q = bilinForm hℂ P.Qint :=
 @[simp]
 theorem Q_conj (P : Polarization hℂ hs) (x y : Vℂ) :
     P.Q (latticeConj hℂ x) (latticeConj hℂ y) = starRingEnd ℂ (P.Q x y) :=
-  bilinForm_conj hℂ P.Qint x y
+  bilinForm_latticeConj hℂ P.Qint x y
 
 /-- Two polarizations of the same Hodge structure agree as soon as their integral forms do. -/
 @[ext]

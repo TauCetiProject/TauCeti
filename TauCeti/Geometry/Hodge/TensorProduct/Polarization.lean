@@ -137,7 +137,7 @@ theorem tensorProduct (h : IsPolarization hℂ hs Q) (h' : IsPolarization h'ℂ 
   set B : LinearMap.BilinForm ℤ (V ⊗[ℤ] V') := Q.tmul Q'
   have hBℂ : bilinForm (isBaseChange_tensorLatticeMap hℂ h'ℂ) B =
       (bilinForm hℂ Q).tmul (bilinForm h'ℂ Q') :=
-    bilinForm_tensorLatticeMap hℂ h'ℂ Q Q'
+    bilinForm_tmul hℂ h'ℂ Q Q'
   have hsymm : ∀ x y, B y x = ((n + n').negOnePow : ℤ) * B x y := by
     intro x y
     apply FaithfulSMul.algebraMap_injective ℤ ℂ
@@ -208,7 +208,7 @@ theorem Polarization.tensorProduct_Qint (P : Polarization hℂ hs) (P' : Polariz
 theorem Polarization.tensorProduct_Q (P : Polarization hℂ hs) (P' : Polarization h'ℂ hs') :
     (P.tensorProduct P').Q = P.Q.tmul P'.Q := by
   rw [Polarization.Q_def, Polarization.Q_def, Polarization.Q_def, Polarization.tensorProduct_Qint,
-    bilinForm_tensorLatticeMap]
+    bilinForm_tmul]
 
 /-- The Hodge form of a tensor product of polarizations is the product of their Hodge forms on
 pure tensors. -/

@@ -22,13 +22,13 @@ localization from `ℤ` to `ℚ` and then by scalar extension from `ℚ` to `ℂ
 
 ## Main declarations
 
-* `IsBaseChange.bilinForm_conj`: the complex extension commutes with lattice-induced
+* `TauCeti.Hodge.bilinForm_latticeConj`: the complex extension commutes with lattice-induced
   conjugation.
-* `IsBaseChange.nondegenerate_bilinForm`: the complex extension inherits
+* `TauCeti.Hodge.nondegenerate_bilinForm_complex`: the complex extension inherits
   nondegeneracy from the integral form.
-* `IsBaseChange.bilinForm_tensorLatticeMap`: complexification of the tensor product of two
+* `TauCeti.Hodge.bilinForm_tmul`: complexification of the tensor product of two
   integral forms is the tensor product of their complexifications.
-* `IsBaseChange.bilinForm_rationalToComplexLinearEquiv_one_tmul`: the complexified
+* `TauCeti.Hodge.bilinForm_rationalToComplexLinearEquiv_one_tmul`: the complexified
   form computes the rationalified one on purely rational vectors.
 -/
 
@@ -59,7 +59,7 @@ theorem integralMapToComplex_bilinForm (hℂ : IsBaseChange ℂ ιℂ)
 
 /-- Conjugating the second argument of a complexified integral form against an integral first
 argument conjugates its value. -/
-theorem _root_.IsBaseChange.bilinForm_conj_right (hℂ : IsBaseChange ℂ ιℂ)
+theorem bilinForm_apply_latticeConj (hℂ : IsBaseChange ℂ ιℂ)
     (Q : LinearMap.BilinForm ℤ V)
     (x : V) (y : Vℂ) :
     bilinForm hℂ Q (ιℂ x) (latticeConj hℂ y) =
@@ -72,17 +72,17 @@ theorem _root_.IsBaseChange.bilinForm_conj_right (hℂ : IsBaseChange ℂ ιℂ)
 /-- Conjugating both arguments of a complexified integral form conjugates its value: the form
 takes real values on the lattice. -/
 @[simp]
-theorem _root_.IsBaseChange.bilinForm_conj (hℂ : IsBaseChange ℂ ιℂ) (Q : LinearMap.BilinForm ℤ V)
+theorem bilinForm_latticeConj (hℂ : IsBaseChange ℂ ιℂ) (Q : LinearMap.BilinForm ℤ V)
     (x y : Vℂ) :
     bilinForm hℂ Q (latticeConj hℂ x) (latticeConj hℂ y) =
       starRingEnd ℂ (bilinForm hℂ Q x y) := by
   induction x using hℂ.inductionOn generalizing y with
-  | tmul v => simpa using bilinForm_conj_right hℂ Q v y
+  | tmul v => simpa using bilinForm_apply_latticeConj hℂ Q v y
   | smul z x hx => simp [hx]
   | add x₁ x₂ hx₁ hx₂ => simp [hx₁, hx₂]
 
 /-- Complexification preserves nondegeneracy of an integral bilinear form. -/
-theorem _root_.IsBaseChange.nondegenerate_bilinForm (hℂ : IsBaseChange ℂ ιℂ)
+theorem nondegenerate_bilinForm_complex (hℂ : IsBaseChange ℂ ιℂ)
     {Q : LinearMap.BilinForm ℤ V} (hQ : Q.Nondegenerate) :
     (bilinForm hℂ Q).Nondegenerate := by
   have hn : (Q.baseChange ℂ).Nondegenerate := by
@@ -118,7 +118,7 @@ private theorem bilinForm_rationalToComplexLinearEquiv_ι (hℚ : IsBaseChange �
 
 /-- The two scalar extensions of an integral form agree: on purely rational vectors of the
 complexification, the complexified form takes the values of the rationalified form. -/
-theorem _root_.IsBaseChange.bilinForm_rationalToComplexLinearEquiv_one_tmul (hℚ : IsBaseChange ℚ ιℚ)
+theorem bilinForm_rationalToComplexLinearEquiv_one_tmul (hℚ : IsBaseChange ℚ ιℚ)
     (hℂ : IsBaseChange ℂ ιℂ) (Q : LinearMap.BilinForm ℤ V) (x y : Vℚ) :
     bilinForm hℂ Q (rationalToComplexLinearEquiv hℚ hℂ (1 ⊗ₜ[ℚ] x))
         (rationalToComplexLinearEquiv hℚ hℂ (1 ⊗ₜ[ℚ] y)) =
@@ -142,7 +142,7 @@ variable {ι'ℂ : V' →ₗ[ℤ] V'ℂ}
 /-- The complexification of the tensor product of two integral forms, along the tensor product of
 two complexifications, is the tensor product of the two complexified forms. -/
 @[simp]
-theorem _root_.IsBaseChange.bilinForm_tensorLatticeMap (hℂ : IsBaseChange ℂ ιℂ)
+theorem bilinForm_tmul (hℂ : IsBaseChange ℂ ιℂ)
     (h'ℂ : IsBaseChange ℂ ι'ℂ)
     (Q : LinearMap.BilinForm ℤ V) (Q' : LinearMap.BilinForm ℤ V') :
     bilinForm (isBaseChange_tensorLatticeMap hℂ h'ℂ) (Q.tmul Q') =
