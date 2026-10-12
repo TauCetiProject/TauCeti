@@ -7,14 +7,11 @@ module
 
 -- Public: the types occurring in the exported statements. The isotypic components of the regular
 -- module and their isomorphism classes come from `RegularIsotypicComponent`, `IsSimpleRing` is a
--- hypothesis on the factors and a conclusion about endomorphism rings, and the matrix ring is the
--- shape of a Wedderburn presentation.
-public import Mathlib.Data.Matrix.Mul
+-- hypothesis on the factors.
 public import Mathlib.RingTheory.SimpleRing.Defs
 public import TauCeti.RingTheory.Semisimple.RegularIsotypicComponent
--- Non-public: used only inside proofs. Factor counts and simplicity of isotypic endomorphism
--- rings match the presentation with simple modules; matrix simplicity gives the specialization.
-import Mathlib.RingTheory.SimpleRing.Matrix
+-- Non-public: used only inside proofs. Factor matching and simplicity of isotypic endomorphism
+-- rings match the presentation with simple modules.
 import TauCeti.RingTheory.SimpleRing.Pi
 import TauCeti.RingTheory.Semisimple.IsotypicEnd
 
@@ -57,8 +54,6 @@ abstract simple module by a left ideal, turns the block count into a count of si
 * `RingEquiv.exists_simpleSubmodule_of_pi`: **the blocks enumerate the simple modules.**
   A presentation of `R` by simple rings indexed by `ι` yields a family of simple left ideals indexed
   by `ι`, pairwise non-isomorphic, with every simple left ideal isomorphic to one of them.
-* `RingEquiv.exists_simpleSubmodule_of_pi_matrix`: the same statement for a presentation by
-  matrix rings over simple rings, with arbitrary block indices and finite nonempty row indices.
 * `TauCeti.exists_nonempty_linearEquiv_of_forall_submodule`: such a family exhausts not only the
   simple left ideals but every simple `R`-module, because over a semisimple ring a simple module is
   realized by a left ideal.
@@ -72,9 +67,10 @@ an actual presentation by nontrivial simple rings to be finite. The general fact
 
 The results are stated for a presentation `R ≃+* ∏ᵢ Aᵢ` by arbitrary simple rings rather than by
 matrix algebras: simplicity of the factors is all the argument uses, and Artin--Wedderburn is what
-supplies such a presentation, not part of the statement. The nonemptiness hypotheses on the row
-indices in the matrix form enter only to make the matrix rings simple. For rows indexed by
-`Fin (d i)`, they follow from the positivity hypotheses `NeZero (d i)` in
+supplies such a presentation, not part of the statement. Apply
+`RingEquiv.exists_simpleSubmodule_of_pi` directly to matrix presentations: matrix rings over
+simple rings are simple when their row indices are finite and nonempty. For rows indexed by
+`Fin (d i)`, nonemptiness follows from the positivity hypotheses `NeZero (d i)` in
 `RingEquiv.card_blocks_eq`; an empty row index gives the trivial ring, and any presentation could
 be padded with such blocks.
 
@@ -166,26 +162,6 @@ theorem _root_.RingEquiv.exists_simpleSubmodule_of_pi (e : R ≃+* ∀ i, A i) :
   · have := hN (φ (φ.symm (SimpleSubmoduleClasses.mk I)))
     refine ⟨φ.symm (SimpleSubmoduleClasses.mk I), SimpleSubmoduleClasses.mk_eq_mk_iff.mp ?_⟩
     rw [hmk, Equiv.apply_symm_apply]
-
-/-- **Matrix blocks enumerate the simple modules.** A presentation of a semisimple ring as a
-product of matrix rings over simple rings gives one simple left ideal per block, pairwise
-non-isomorphic and exhausting the simple left ideals up to isomorphism.
-
-The row index of each block is finite and nonempty, which makes the matrix block simple.
-Wedderburn presentations are the special case of division rings and rows indexed by `Fin (d i)`
-with `NeZero (d i)`.
-
-The general statement it specializes is `RingEquiv.exists_simpleSubmodule_of_pi`. -/
-theorem _root_.RingEquiv.exists_simpleSubmodule_of_pi_matrix {D : ι → Type v}
-    [∀ i, Ring (D i)] [∀ i, IsSimpleRing (D i)]
-    {κ : ι → Type*} [∀ i, Fintype (κ i)] [∀ i, Nonempty (κ i)]
-    (e : R ≃+* ∀ i, Matrix (κ i) (κ i) (D i)) :
-    ∃ S : ι → Submodule R R,
-      (∀ i, IsSimpleModule R (S i)) ∧
-      (∀ i j, Nonempty (S i ≃ₗ[R] S j) → i = j) ∧
-      ∀ I : Submodule R R, IsSimpleModule R I → ∃ i, Nonempty (I ≃ₗ[R] S i) := by
-  classical
-  exact e.exists_simpleSubmodule_of_pi
 
 end Presentation
 
