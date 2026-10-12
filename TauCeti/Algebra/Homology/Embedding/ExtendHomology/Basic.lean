@@ -71,19 +71,13 @@ lemma epi_homologyMap_extendMap_iff {j : ι} {j' : ι'} (hj' : e.f j = j')
   (MorphismProperty.epimorphisms C).arrow_mk_iso_iff
     (Arrow.isoMk (K.extendHomologyIso e hj') (L.extendHomologyIso e hj') (by simp))
 
-variable (K) {e} in
-/-- The extension of a complex has zero homology in a degree `j'` outside the image of `e`. -/
-lemma isZero_extend_homology_of_not_mem {j' : ι'} (hj' : ∀ j, e.f j ≠ j')
-    [(K.extend e).HasHomology j'] : IsZero ((K.extend e).homology j') :=
-  (K.extend_exactAt e j' hj').isZero_homology
-
 variable {e} in
 /-- In a degree `j'` outside the image of `e`, the map induced in homology by the extension of `φ`
 is an isomorphism, between zero objects. -/
-lemma isIso_homologyMap_extendMap_of_not_mem {j' : ι'} (hj' : ∀ j, e.f j ≠ j')
+lemma isIso_homologyMap_extendMap_of_forall_ne {j' : ι'} (hj' : ∀ j, e.f j ≠ j')
     [(K.extend e).HasHomology j'] [(L.extend e).HasHomology j'] :
     IsIso (homologyMap (extendMap φ e) j') :=
-  ⟨0, (K.isZero_extend_homology_of_not_mem hj').eq_of_src _ _,
-    (L.isZero_extend_homology_of_not_mem hj').eq_of_src _ _⟩
+  ⟨0, (K.extend_exactAt e j' hj').isZero_homology.eq_of_src _ _,
+    (L.extend_exactAt e j' hj').isZero_homology.eq_of_src _ _⟩
 
 end HomologicalComplex

@@ -499,7 +499,7 @@ private lemma total_map_aux (Q : ℕ) :
     refine ⟨fun m hm ↦ (Nat.not_lt_zero m hm).elim, ?_⟩
     exact epi_homologyMap_τ₂ (rowZeroShortComplexMap φ) (rowZeroShortComplex_shortExact K)
       (rowZeroShortComplex_shortExact L) 0 inferInstance
-      ((isZero_extend_homology_of_not_mem _ fun _ ↦ by simp).epi _) (fun k hk ↦ by simp at hk)
+      ((extend_exactAt _ _ 0 fun _ ↦ by simp).isZero_homology.epi _) (fun k hk ↦ by simp at hk)
   | succ Q ih =>
     intro K L φ hφ
     have : QuasiIso (rowZeroShortComplexMap φ).τ₁ := hφ 0
@@ -517,7 +517,7 @@ private lemma total_map_aux (Q : ℕ) :
       · rintro i rfl
         exact (epi_homologyMap_extendMap_iff _ (embeddingDownNatSucc_f m)).2 (hepi m (by omega))
       · rcases m with _ | m
-        · exact isIso_homologyMap_extendMap_of_not_mem _ fun _ ↦ by simp
+        · exact isIso_homologyMap_extendMap_of_forall_ne _ fun _ ↦ by simp
         · have := ih₁ m (by omega)
           rw [← quasiIsoAt_iff_isIso_homologyMap] at this ⊢
           exact (quasiIsoAt_extendMap_iff _ embeddingDownNatSucc (embeddingDownNatSucc_f m)).2 this
