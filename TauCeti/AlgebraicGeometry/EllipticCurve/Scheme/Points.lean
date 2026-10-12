@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Unimodular
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Chart
 -- Proof-only: the body of the zero section `projModelZero` is not exposed.
@@ -39,6 +40,8 @@ zero section corresponding to the point at infinity.
 
 * `WeierstrassCurve.projModelPoint W g hP hi`: the point `Spec S ⟶ projModel W` with homogeneous
   coordinates `P`, through the chart `D₊(Xᵢ)`.
+* `WeierstrassCurve.projModelAffinePoint W h`: the point `[x : y : 1]` with values in `R` of a
+  solution `(x, y)` of the affine Weierstrass equation over `R`.
 * `WeierstrassCurve.chartRingEval W h`: evaluation at a solution `(x, y)` of the affine
   Weierstrass equation, the `R`-algebra map `R[X, Y, Z] ⧸ (W, Z - 1) → R` with `X ↦ x`, `Y ↦ y`
   and `Z ↦ 1` on the coordinate ring of the chart `D₊(Z)`.
@@ -72,6 +75,10 @@ zero section corresponding to the point at infinity.
 * `WeierstrassCurve.projModelPoint_projModelVariableChangeIso_hom`: the isomorphism
   `projModel (C • W) ≅ projModel W` induced by a change of variables `C` sends the point with
   homogeneous coordinates `P` to the point with homogeneous coordinates `(C.map g).toMatrix *ᵥ P`.
+* `WeierstrassCurve.projModelAffinePoint_inj` and
+  `WeierstrassCurve.projModelAffinePoint_projModelVariableChangeIso_hom`: the point `[x : y : 1]`
+  determines `x` and `y`, and a change of variables sends it to
+  `[u²x + r : u³y + u²sx + t : 1]`.
 * `WeierstrassCurve.projModelPointsEquivUnimodular_projModelPoint`: the section with homogeneous
   coordinates `P` corresponds to the class of `P`.
 * `WeierstrassCurve.projModelPointsEquivUnimodular_projModelZero`: the zero section corresponds to
@@ -459,6 +466,80 @@ private theorem exists_eq_awayEvalHom
   rw [hQ, awayEvalHom_mk_X hP, Units.eq_mul_inv_iff_mul_eq, IsUnit.unit_spec, hQi, mul_one]
 
 end Chart
+
+/-! ### The point `[x : y : 1]` with values in the base ring -/
+
+section AffinePoint
+
+variable {W} {x y : R} (h : W.toAffine.Equation x y)
+
+variable (W) in
+/-- The **point `[x : y : 1]`** of the projective model with values in `R`, for a solution
+`(x, y)` of the affine Weierstrass equation of `W` over `R`: the point with homogeneous coordinates
+`[x : y : 1]`, through the chart `D₊(Z)`. It is a section of the structure morphism
+(`projModelAffinePoint_projModelOver`), and every section missing the zero section at every point
+of `Spec R` is of this form (`exists_eq_projModelAffinePoint`). -/
+noncomputable def projModelAffinePoint : Spec (.of R) ⟶ W.projModel :=
+  W.projModelPoint (RingHom.id R) (P := ![x, y, 1])
+    ((Projective.equation_some (W' := W.toProjective.map (RingHom.id R)) x y).mpr h) (i := 2)
+    (by simp)
+
+/-- The point `[x : y : 1]` is the point with homogeneous coordinates `[x : y : 1]` along the
+identity of `R`, read on the chart `D₊(Z)`. -/
+theorem projModelAffinePoint_def :
+    W.projModelAffinePoint h = W.projModelPoint (RingHom.id R) (P := ![x, y, 1])
+      ((Projective.equation_some (W' := W.toProjective.map (RingHom.id R)) x y).mpr h) (i := 2)
+      (by simp) :=
+  (rfl)
+
+/-- The point `[x : y : 1]` is a section of the structure morphism of the projective model. -/
+@[reassoc (attr := simp)]
+theorem projModelAffinePoint_projModelOver : W.projModelAffinePoint h ≫ W.projModelOver = 𝟙 _ := by
+  rw [projModelAffinePoint_def, projModelPoint_projModelOver, CommRingCat.ofHom_id, Spec.map_id]
+
+/-- The point `[x : y : 1]` lies on the chart `D₊(Z)` over every point of `Spec R`. -/
+theorem projModelAffinePoint_mem_basicOpen (s : Spec (.of R)) :
+    W.projModelAffinePoint h s ∈
+      Proj.basicOpen W.toProjective.grading (W.toProjective.coord 2) := by
+  rw [projModelAffinePoint_def, projModelPoint_mem_basicOpen_iff]
+  simpa using s.isPrime.one_notMem
+
+/-- The point `[x : y : 1]` determines `x` and `y`. -/
+@[simp]
+theorem projModelAffinePoint_inj {x' y' : R} {h' : W.toAffine.Equation x' y'} :
+    W.projModelAffinePoint h = W.projModelAffinePoint h' ↔ x = x' ∧ y = y' := by
+  rw [projModelAffinePoint_def, projModelAffinePoint_def,
+    projModelPoint_eq_projModelPoint_iff_of_apply_eq (by simp)]
+  simp
+
+/-- Transport of the point `[x : y : 1]` along an equality of Weierstrass curves. -/
+@[reassoc (attr := simp)]
+theorem projModelAffinePoint_eqToHom {W' : WeierstrassCurve R} (hW : W = W') :
+    W.projModelAffinePoint h ≫ eqToHom (congrArg projModel hW) =
+      W'.projModelAffinePoint (hW ▸ h) := by
+  subst hW
+  simp
+
+/-- The isomorphism `projModel (C • W) ≅ projModel W` induced by a change of variables
+`C = (u, r, s, t)` sends the point `[x : y : 1]` to the point
+`[u²x + r : u³y + u²sx + t : 1]`. -/
+@[reassoc (attr := simp)]
+theorem projModelAffinePoint_projModelVariableChangeIso_hom (C : VariableChange R)
+    (h : (C • W).toAffine.Equation x y) :
+    (C • W).projModelAffinePoint h ≫ (W.projModelVariableChangeIso C).hom =
+      W.projModelAffinePoint ((Affine.variableChange_equation W C x y).mpr h) := by
+  rw [projModelAffinePoint_def, projModelAffinePoint_def,
+    projModelPoint_projModelVariableChangeIso_hom (j := 2) _ (by simp),
+    projModelPoint_eq_projModelPoint_iff_of_apply_eq (by simp)]
+  refine ⟨rfl, funext fun k ↦ ?_⟩
+  fin_cases k
+  · simp [VariableChange.toMatrix_def, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
+  · -- the `y`-coordinate `u³y + u²sx + t`
+    simp [VariableChange.toMatrix_def, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
+    ring
+  · simp [VariableChange.toMatrix_def, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
+
+end AffinePoint
 
 open Classical in
 -- The section with homogeneous coordinates `P`, read on any chart `D₊(Xᵢ)` with `Pᵢ` a unit; the

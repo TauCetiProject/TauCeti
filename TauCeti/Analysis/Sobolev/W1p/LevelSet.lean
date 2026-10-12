@@ -41,8 +41,7 @@ The level may be any real number, even when `Ω` has infinite measure. -/
 theorem W1p.gradient_ae_eq_zero_on_level_set (hp : p ≠ ∞) (u : W1p mu Omega p) (k : ℝ) :
     ∀ᵐ x ∂mu.restrict Omega, W1p.value u x = k → W1p.gradient u x = 0 := by
   classical
-  have hneg : ⇑(W1p.value (-u)) =ᵐ[mu.restrict Omega] -W1p.value u := by
-    simpa only [← W1p.valueL_apply, map_neg] using Lp.coeFn_neg (W1p.value u)
+  have hneg := W1p.value_neg_ae u
   have hconst : HasWeakFDerivOn mu Omega (fun _ : E => k) 0 :=
     hasWeakFDerivOn_iff.2 fun _ => hasWeakLineDerivOn_const k
   have hsplit := (W1p.hasWeakFDerivOn_posPartAbove hp k u).sub

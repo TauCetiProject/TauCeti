@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Star.Basic
 public import TauCeti.RingTheory.Cyclotomic.Basic
 
 /-!
@@ -100,28 +101,9 @@ theorem complexEmbedding_star (x : Cyclotomic e) :
     _ = star (complexEmbedding x) := by rw [complexEmbedding_eq_evalCoeffs]
 
 /-- Exact cyclotomic integers form a star ring under complex conjugation. -/
-instance instStarRing : StarRing (Cyclotomic e) where
-  star_involutive x := complexEmbedding_injective <| calc
-    complexEmbedding (star (star x)) = star (complexEmbedding (star x)) :=
-      complexEmbedding_star _
-    _ = star (star (complexEmbedding x)) := by rw [complexEmbedding_star]
-    _ = complexEmbedding x := star_star _
-  star_add x y := complexEmbedding_injective <| calc
-    complexEmbedding (star (x + y)) = star (complexEmbedding (x + y)) :=
-      complexEmbedding_star _
-    _ = star (complexEmbedding x + complexEmbedding y) := by rw [map_add]
-    _ = star (complexEmbedding x) + star (complexEmbedding y) := star_add _ _
-    _ = complexEmbedding (star x) + complexEmbedding (star y) := by
-      rw [complexEmbedding_star, complexEmbedding_star]
-    _ = complexEmbedding (star x + star y) := (map_add _ _ _).symm
-  star_mul x y := complexEmbedding_injective <| calc
-    complexEmbedding (star (x * y)) = star (complexEmbedding (x * y)) :=
-      complexEmbedding_star _
-    _ = star (complexEmbedding x * complexEmbedding y) := by rw [map_mul]
-    _ = star (complexEmbedding y) * star (complexEmbedding x) := star_mul _ _
-    _ = complexEmbedding (star y) * complexEmbedding (star x) := by
-      rw [complexEmbedding_star, complexEmbedding_star]
-    _ = complexEmbedding (star y * star x) := (map_mul _ _ _).symm
+instance instStarRing : StarRing (Cyclotomic e) := fast_instance%
+  complexEmbedding_injective.starRing complexEmbedding complexEmbedding_star
+    complexEmbedding.map_add complexEmbedding.map_mul
 
 /-- Conjugation sends the distinguished generator to `ζ_e ^ (e - 1)`. -/
 @[simp]

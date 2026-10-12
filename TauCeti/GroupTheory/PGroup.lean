@@ -107,12 +107,8 @@ theorem _root_.IsPGroup.of_subgroup_of_quotient {N : Subgroup G} [N.Normal]
 /-- A `p`-group meets a subgroup of order prime to `p` trivially. -/
 theorem disjoint_of_not_dvd_natCard_of_isPGroup [Fact p.Prime] {C Q : Subgroup G}
     (hC : ¬ p ∣ Nat.card C) (hQ : IsPGroup p Q) : Disjoint C Q := by
-  rw [Subgroup.disjoint_def]
-  intro g hg hgQ
-  by_contra hg1
-  refine hC ((?_ : p ∣ orderOf g).trans ?_)
-  · simpa [Subgroup.orderOf_mk] using hQ.dvd_orderOf (g := (⟨g, hgQ⟩ : Q)) (by simpa using hg1)
-  · simpa [Subgroup.orderOf_mk] using orderOf_dvd_natCard (⟨g, hg⟩ : C)
+  exact (hQ.disjoint_of_coprime (IsPGroup.card (G := C))
+    ((Fact.out : p.Prime).coprime_iff_not_dvd.mpr hC)).symm
 
 /-- A group that is a `p`-group and a `q`-group for coprime `p` and `q` is trivial. -/
 theorem _root_.IsPGroup.subsingleton_of_coprime {q : ℕ} (hp : IsPGroup p G) (hq : IsPGroup q G)

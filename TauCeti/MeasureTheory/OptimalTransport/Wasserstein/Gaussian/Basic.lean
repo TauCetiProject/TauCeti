@@ -175,15 +175,8 @@ theorem wassersteinEDist_two_multivariateGaussian_rpow_two
   have hcost : (fun z : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι ↦
       edist z.1 z.2 ^ (2 : ℝ≥0∞).toReal) = fun z ↦ (2 : ℝ≥0∞) * cHalf z := by
     funext z
-    dsimp only [cHalf]
-    rw [ENNReal.toReal_ofNat, edist_dist, dist_eq_norm, ENNReal.rpow_two,
-      ← ENNReal.ofReal_pow (norm_nonneg _)]
-    calc
-      ENNReal.ofReal (‖z.1 - z.2‖ ^ 2) =
-          ENNReal.ofReal (2 * (‖z.1 - z.2‖ ^ 2 / 2)) := by congr 1; ring
-      _ = ENNReal.ofReal 2 * ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2) :=
-        ENNReal.ofReal_mul (by norm_num)
-      _ = (2 : ℝ≥0∞) * ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2) := by norm_num
+    rw [ENNReal.toReal_ofNat]
+    exact edist_rpow_two_eq_two_mul_ofReal_norm_sub_sq_div_two z
   have hmem : MemLp (fun x ↦ x - T x) 2 (multivariateGaussian m₁ S₁) :=
     IsGaussian.memLp_two_id.sub (hopt.toHasLaw.memLp IsGaussian.memLp_two_id)
   have hint : Integrable (fun x ↦ ‖x - T x‖ ^ 2) (multivariateGaussian m₁ S₁) :=

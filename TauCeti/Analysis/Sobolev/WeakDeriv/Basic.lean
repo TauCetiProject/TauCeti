@@ -148,11 +148,15 @@ weaken them for no gain.
 * `TauCeti.hasWeakLineDerivOn_of_hasLineDerivAt` and
   `TauCeti.hasWeakFDerivOn_of_differentiableOn`: classical derivatives that are locally integrable
   on `Ω` are weak derivatives.
-* `TauCeti.hasWeakLineDerivOn_const`: against a Haar measure, a constant has weak derivative `0`.
+* `TauCeti.hasWeakLineDerivOn_const`: against a Haar measure, a constant has weak derivative `0`;
+  equivalently, `TestFunction.integral_lineDeriv_eq_zero`, `∫ ∂_w φ = 0` for a test function `φ`.
 * `TauCeti.hasWeakFDerivOn_gradient_of_contDiffOn`: a `C¹` function on `Ω` has weak derivative
   the linear functional represented by its gradient.
 * `TauCeti.hasWeakFDerivOn_testFunction`: a test function has weak derivative the linear
   functional represented by its gradient.
+* `TestFunction.setIntegral_inner_gradient_eq_integral_inner_gradient`: the gradient of a test
+  function vanishes off its support, so pairings with it may be integrated over any set
+  containing it.
 * `TauCeti.HasWeakLineDerivOn.ae_eq` and `TauCeti.HasWeakFDerivOn.ae_eq`: uniqueness almost
   everywhere on `Ω`.
 * `TauCeti.HasWeakLineDerivOn.ae_eq_lineDeriv` and `TauCeti.HasWeakFDerivOn.ae_eq_fderiv`: where
@@ -698,6 +702,14 @@ theorem hasWeakLineDerivOn_const (c : F) :
   hasWeakLineDerivOn_of_hasLineDerivAt (locallyIntegrableOn_const c) locallyIntegrableOn_zero
     fun x _ => (hasFDerivAt_const c x).hasLineDerivAt v
 
+omit [CompleteSpace F] in
+/-- The directional derivative of a test function has integral zero against an additive Haar
+measure: `∫ ∂_w φ = 0`. -/
+theorem _root_.TestFunction.integral_lineDeriv_eq_zero (φ : 𝓓(Ω, ℝ)) (w : E) :
+    ∫ x, lineDeriv ℝ (φ : E → ℝ) x w ∂μ = 0 := by
+  simpa using HasWeakLineDerivOn.integral_lineDeriv_smul_eq_neg_integral_smul
+    (hasWeakLineDerivOn_const (μ := μ) (Ω := Ω) (v := w) (1 : ℝ)) φ
+
 /-- **A classical Fréchet derivative is a weak one.** If `u` is differentiable at every point of
 the open set `Ω`, and both `u` and `fderiv ℝ u` are locally integrable on `Ω`, then `fderiv ℝ u`
 is a weak derivative of `u` on `Ω`. -/
@@ -747,6 +759,15 @@ functional represented by its gradient. -/
 theorem hasWeakFDerivOn_testFunction (φ : 𝓓(Ω, ℝ)) :
     HasWeakFDerivOn μ Ω (φ : E → ℝ) fun x => innerSL ℝ (∇ (φ : E → ℝ) x) :=
   hasWeakFDerivOn_gradient_of_contDiffOn (φ.contDiff.of_le (by simp)).contDiffOn
+
+omit [BorelSpace E] [μ.IsAddHaarMeasure] in
+/-- The gradient of a test function vanishes off its support, so pairing a field `g` with it
+over any set `s` containing that support is the same as over the whole space. -/
+theorem _root_.TestFunction.setIntegral_inner_gradient_eq_integral_inner_gradient
+    (φ : 𝓓(Ω, ℝ)) (g : E → E) {s : Set E} (hs : tsupport (φ : E → ℝ) ⊆ s) :
+    ∫ x in s, ⟪g x, ∇ (φ : E → ℝ) x⟫_ℝ ∂μ = ∫ x, ⟪g x, ∇ (φ : E → ℝ) x⟫_ℝ ∂μ :=
+  setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by
+    simp [gradient, fderiv_of_notMem_tsupport ℝ fun h => hx (hs h)]
 
 end TestFunction
 

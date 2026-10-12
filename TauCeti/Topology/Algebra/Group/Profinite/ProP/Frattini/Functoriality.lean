@@ -11,10 +11,10 @@ import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 /-!
 # Functoriality of the pro-`p` Frattini quotient
 
-For a prime `p`, every continuous homomorphism of profinite groups carries the pro-`p` Frattini
-subgroup into the pro-`p` Frattini subgroup. It therefore induces a continuous homomorphism on
-the Frattini quotients. Since these quotients are elementary abelian `p`-groups, the induced map
-is also canonically `ZMod p`-linear after switching to additive notation.
+For a prime `p`, every continuous homomorphism of groups equipped with topologies carries the
+pro-`p` Frattini subgroup into the pro-`p` Frattini subgroup. It therefore induces a continuous
+homomorphism on the Frattini quotients. Since these quotients are elementary abelian `p`-groups,
+the induced map is also canonically `ZMod p`-linear after switching to additive notation.
 
 The induced maps preserve identities and composition. A continuous surjection induces a
 surjection on Frattini quotients, expressing that the Frattini quotient construction commutes
@@ -23,7 +23,7 @@ with continuous quotients.
 ## Main definitions
 
 * `TauCeti.frattiniQuotientMap`: the continuous map on Frattini quotients induced by a continuous
-  homomorphism of profinite groups.
+  homomorphism of groups equipped with topologies.
 * `TauCeti.frattiniQuotientLinearMap`: the same map as a `ZMod p`-linear map.
 
 ## Main results
@@ -47,13 +47,12 @@ namespace TauCeti
 universe u v w
 
 variable {p : ℕ}
-variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [CompactSpace G] [TotallyDisconnectedSpace G]
-variable {H : Type v} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
-variable {K : Type w} [Group K] [TopologicalSpace K] [IsTopologicalGroup K]
+variable {G : Type u} [Group G] [TopologicalSpace G]
+variable {H : Type v} [Group H] [TopologicalSpace H]
+variable {K : Type w} [Group K] [TopologicalSpace K]
 
 /-- The continuous homomorphism on pro-`p` Frattini quotients induced by a continuous
-homomorphism from a profinite group. Its value on a class is given by
+homomorphism of groups equipped with topologies. Its value on a class is given by
 `TauCeti.frattiniQuotientMap_mk`. -/
 def frattiniQuotientMap (hp : p.Prime) (f : G →ₜ* H) :
     (G ⧸ proPFrattini p G) →ₜ* (H ⧸ proPFrattini p H) :=
@@ -89,7 +88,7 @@ theorem frattiniQuotientMap_id (hp : p.Prime) :
 /-- The map on pro-`p` Frattini quotients induced by a composite is the composite of the induced
 maps. -/
 @[simp]
-theorem frattiniQuotientMap_comp [CompactSpace H] [TotallyDisconnectedSpace H]
+theorem frattiniQuotientMap_comp
     (hp : p.Prime) (g : H →ₜ* K) (f : G →ₜ* H) :
     frattiniQuotientMap hp (g.comp f) =
       (frattiniQuotientMap hp g).comp (frattiniQuotientMap hp f) := by
@@ -97,7 +96,7 @@ theorem frattiniQuotientMap_comp [CompactSpace H] [TotallyDisconnectedSpace H]
   induction x using QuotientGroup.induction_on with
   | H x => simp
 
-/-- A continuous surjection of profinite groups induces a surjection on pro-`p` Frattini
+/-- A continuous surjective homomorphism induces a surjection on pro-`p` Frattini
 quotients. -/
 theorem frattiniQuotientMap_surjective (hp : p.Prime) (f : G →ₜ* H)
     (hf : Function.Surjective f) :
@@ -112,7 +111,7 @@ section Linear
 variable [Fact p.Prime]
 
 /-- The `ZMod p`-linear map on additive pro-`p` Frattini quotients induced by a continuous
-homomorphism of profinite groups. -/
+homomorphism of groups equipped with topologies. -/
 def frattiniQuotientLinearMap (f : G →ₜ* H) :
     Additive (G ⧸ proPFrattini p G) →ₗ[ZMod p]
       Additive (H ⧸ proPFrattini p H) :=
@@ -142,7 +141,7 @@ theorem frattiniQuotientLinearMap_id :
 /-- The linear map on additive pro-`p` Frattini quotients induced by a composite is the composite
 of the induced linear maps. -/
 @[simp]
-theorem frattiniQuotientLinearMap_comp [CompactSpace H] [TotallyDisconnectedSpace H]
+theorem frattiniQuotientLinearMap_comp
     (g : H →ₜ* K) (f : G →ₜ* H) :
     frattiniQuotientLinearMap (p := p) (g.comp f) =
       (frattiniQuotientLinearMap (p := p) g).comp
@@ -153,7 +152,7 @@ theorem frattiniQuotientLinearMap_comp [CompactSpace H] [TotallyDisconnectedSpac
     induction x using QuotientGroup.induction_on with
     | H x => simp
 
-/-- A continuous surjection of profinite groups induces a surjective linear map on their
+/-- A continuous surjective homomorphism induces a surjective linear map on the
 additive pro-`p` Frattini quotients. -/
 theorem frattiniQuotientLinearMap_surjective (f : G →ₜ* H) (hf : Function.Surjective f) :
     Function.Surjective (frattiniQuotientLinearMap (p := p) f) := by

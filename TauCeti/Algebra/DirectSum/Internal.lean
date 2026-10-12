@@ -18,10 +18,10 @@ describe their componentwise inclusion and range, while `DirectSum.isInternal_of
 criterion for proving that a family of submodules is an internal direct sum by identifying its
 summands with the components of a linear equivalence.
 
-A second group of declarations restricts a decomposition along a linear map.
-`DirectSum.map_decompose_shift` says that a map carrying each summand of one decomposition into a
-summand of another, along an injective reindexing of the degrees, commutes with the homogeneous
-projections, while `DirectSum.isInternal_comap` and
+A second group of declarations concerns maps between decompositions.
+`DirectSum.map_decompose_shift` says that an additive map carrying each summand of one
+decomposition into a summand of another, along an injective reindexing of the degrees, commutes
+with the homogeneous projections, while `DirectSum.isInternal_comap` and
 `DirectSum.Decomposition.restrict` transport a decomposition backwards along an injective linear
 map whose range contains the homogeneous projections of its elements, with
 `DirectSum.map_decompose_restrict` computing the projections of the restricted decomposition.
@@ -186,13 +186,19 @@ noncomputable def DirectSum.Decomposition.restrict {R ι M N : Type*} [Semiring 
     DirectSum.Decomposition 𝓝 :=
   (DirectSum.isInternal_comap ℳ 𝓝 f hf hmem hproj).chooseDecomposition
 
-/-- A linear map which carries the degree-`i` summand of one internal decomposition into the
+end TauCeti
+
+namespace DirectSum
+
+/-- An additive map which carries the degree-`i` summand of one internal decomposition into the
 degree-`σ i` summand of another, along an injective reindexing `σ` of the degrees, commutes with
-the homogeneous projections. -/
-theorem DirectSum.map_decompose_shift {R ι κ M N : Type*} [Semiring R]
-    [DecidableEq ι] [DecidableEq κ] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
-    (ℳ : ι → Submodule R M) [DirectSum.Decomposition ℳ] (𝓝 : κ → Submodule R N)
-    [DirectSum.Decomposition 𝓝] (f : M →ₗ[R] N) (σ : ι → κ) (hσ : Function.Injective σ)
+the homogeneous projections. The summands may be any additive subobjects, including submodules
+over unrelated scalar semirings. -/
+theorem map_decompose_shift {ι κ M N S T : Type*}
+    [DecidableEq ι] [DecidableEq κ] [AddCommMonoid M] [AddCommMonoid N]
+    [SetLike S M] [AddSubmonoidClass S M] [SetLike T N] [AddSubmonoidClass T N]
+    (ℳ : ι → S) [DirectSum.Decomposition ℳ] (𝓝 : κ → T)
+    [DirectSum.Decomposition 𝓝] (f : M →+ N) (σ : ι → κ) (hσ : Function.Injective σ)
     (hf : ∀ (i : ι) (x : M), x ∈ ℳ i → f x ∈ 𝓝 (σ i)) (i : ι) (x : M) :
     f (DirectSum.decompose ℳ x i : M) = (DirectSum.decompose 𝓝 (f x) (σ i) : N) := by
   induction x using DirectSum.Decomposition.inductionOn ℳ with
@@ -207,6 +213,10 @@ theorem DirectSum.map_decompose_shift {R ι κ M N : Type*} [Semiring R]
         DirectSum.decompose_of_mem_ne 𝓝 hxN fun hc ↦ Ne.symm hij (hσ hc)]
   | add x y hx hy => simp [hx, hy]
 
+end DirectSum
+
+namespace TauCeti
+
 /-- Homogeneous projection in a restricted decomposition agrees with projection in the ambient
 module. -/
 @[simp]
@@ -217,7 +227,7 @@ theorem DirectSum.map_decompose_restrict {R ι M N : Type*} [Semiring R]
     (i : ι) (x : N) :
     f (DirectSum.decompose 𝓝 x i : N) =
       (DirectSum.decompose ℳ (f x) i : M) :=
-  DirectSum.map_decompose_shift 𝓝 ℳ f id Function.injective_id
+  DirectSum.map_decompose_shift 𝓝 ℳ f.toAddMonoidHom id Function.injective_id
     (fun i x hx ↦ (hmem i x).mp hx) i x
 
 -- The inverse congruence is definitionally the direct sum of the componentwise inverses; this

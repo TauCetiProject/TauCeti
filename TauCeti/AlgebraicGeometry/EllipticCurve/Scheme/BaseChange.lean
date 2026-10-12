@@ -49,6 +49,8 @@ Along a ring isomorphism `φ : R ≃+* R'` the base change morphism is an isomor
 * `WeierstrassCurve.projModelPoint_projModelBaseChange`: the base change morphism sends the point
   with homogeneous coordinates `P`, over `g : R' →+* S`, to the point with the same homogeneous
   coordinates, over `g.comp f`.
+* `WeierstrassCurve.projModelAffinePoint_projModelBaseChange`: the base change morphism sends the
+  point `[f x : f y : 1]` to the pullback along `Spec f` of the point `[x : y : 1]`.
 * `WeierstrassCurve.projModelBaseChange_id` and `WeierstrassCurve.projModelBaseChange_comp`: base
   change is compatible with the identity and with composition of ring homomorphisms.
 * `WeierstrassCurve.projModelVariableChangeIso_hom_projModelBaseChange`: base change is compatible
@@ -286,6 +288,17 @@ theorem projModelPoint_projModelBaseChange {S : Type u} [CommRing S] {g : R' →
   obtain ⟨p, -, rfl⟩ := W.toProjective.mem_grading_iff.mp ha
   simp only [Units.val_one, one_pow, one_mul, baseChangeGradedHom_mk, Projective.evalHom_mk,
     eval₂_map]
+
+/-- The base change morphism sends the point `[f x : f y : 1]` of `projModel (W.map f)` to the
+point `[x : y : 1]` of `projModel W`, pulled back along `Spec f`. -/
+@[reassoc (attr := simp)]
+theorem projModelAffinePoint_projModelBaseChange {x y : R} (h : W.toAffine.Equation x y) :
+    (W.map f).projModelAffinePoint (h.map f) ≫ W.projModelBaseChange f =
+      Spec.map (CommRingCat.ofHom f) ≫ W.projModelAffinePoint h := by
+  rw [projModelAffinePoint_def, projModelAffinePoint_def, projModelPoint_projModelBaseChange,
+    SpecMap_projModelPoint, projModelPoint_eq_projModelPoint_iff_of_apply_eq (by simp)]
+  exact ⟨(RingHom.id_comp f).trans (RingHom.comp_id f).symm,
+    funext fun k ↦ by fin_cases k <;> simp⟩
 
 /-! ### Identity and composition -/
 
