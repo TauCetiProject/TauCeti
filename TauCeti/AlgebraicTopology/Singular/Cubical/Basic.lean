@@ -197,6 +197,22 @@ theorem isDegenerate_face_of_ne {n : ℕ} {c : SingularCube X (n + 1)} {i j : Fi
   refine ⟨k, fun x s ↦ ?_⟩
   rw [face_apply, face_apply, Fin.insertNth_update, hk, h]
 
+/-- The faces of a `1`-cube are the `0`-cubes at its end points. -/
+theorem face_zero_apply (c : SingularCube X 1) (t : I) :
+    face 0 t c (fun i ↦ i.elim0) = c fun _ ↦ t := by
+  rw [face_apply]
+  congr 1
+  ext j
+  obtain rfl : j = 0 := Fin.ext (by have := j.isLt; omega)
+  simp
+
+/-- A `0`-cube is the point at its value. -/
+theorem eq_point (c : SingularCube X 0) : c = point (c fun i ↦ i.elim0) :=
+  ContinuousMap.ext fun x ↦ by
+    rw [point_apply]
+    congr 1
+    exact funext fun i ↦ i.elim0
+
 end SingularCube
 
 end TauCeti

@@ -427,6 +427,20 @@ theorem unitHomotopy_apply_zero (γ : MooreLoopSpace X x) :
 theorem unitHomotopy_apply_one (γ : MooreLoopSpace X x) : unitHomotopy (1, γ) = γ :=
   (unitHomotopy (X := X) (x := x)).apply_one γ
 
+/-- The constant Moore loop, on the unit interval, is the constant loop. -/
+theorem toPath_one : (1 : MooreLoopSpace X x).toPath = Path.refl x := by
+  ext s
+  simp [toPath_apply]
+
+/-- A Moore loop is joined by a path of Moore loops to its reparametrization on the unit
+interval. -/
+theorem joined_toPath_toMooreLoop (γ : MooreLoopSpace X x) : Joined γ γ.toPath.toMooreLoop :=
+  ⟨{ toFun := fun s ↦ unitHomotopy (σ s, γ)
+     continuous_toFun := unitHomotopy.continuous.comp
+       (continuous_symm.prodMk continuous_const)
+     source' := by simp
+     target' := by simp }⟩
+
 /-- **The Moore loop space is homotopy equivalent to Mathlib's loop space** `Path x x` of loops
 parametrized by the unit interval, by `toPath` and `Path.toMooreLoop`. -/
 def homotopyEquivPath (x : X) : MooreLoopSpace X x ≃ₕ Path x x where
