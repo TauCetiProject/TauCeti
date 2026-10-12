@@ -38,6 +38,15 @@ noncomputable section
 
 variable {X Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
 
+private lemma pullbackComp_eqToHom (A : QuasicoherentSheaf Z) :
+    eqToHom (pullback_obj_obj f ((pullback g).obj A)) ≫
+        (Scheme.Modules.pullback f).map (eqToHom (pullback_obj_obj g A)) =
+      eqToHom (pullbackComp_obj_obj f g A) := by
+  -- Full-subcategory objects expose `SheafOfModules X.ringCatSheaf`, while the functor uses
+  -- `X.Modules`. Identifying these also unfolds `TopCat.Sheaf` to the sheaf category on
+  -- `Opens.grothendieckTopology`, beyond the transparency used by `rw` and `simp`.
+  erw [eqToHom_map, eqToHom_trans]
+
 /-- The inverse unit comparisons of successive pullbacks agree with the comparison for the
 composite morphism through the canonical composition isomorphism. -/
 @[reassoc (attr := simp↓)]
@@ -67,9 +76,7 @@ theorem pullback_comp_η :
     (eD.hom ≫ c.hom.app (𝟙_ Z.Modules) ≫ eC.inv) ≫
       (eC.hom ≫ (Scheme.Modules.pullbackObjUnitIso (f ≫ g)).hom) := by
     simp only [Category.assoc, Iso.inv_hom_id_assoc, Functor.map_comp]
-    have he : eS.hom ≫ H.map eG.hom = eD.hom := by
-      dsimp only [eS, eG, eD, eqToIso]
-      erw [eqToHom_map, eqToHom_trans]
+    have he : eS.hom ≫ H.map eG.hom = eD.hom := pullbackComp_eqToHom f g U
     rw [← Category.assoc, he]
     rw [cancel_epi eD.hom, ← cancel_epi (c.inv.app (𝟙_ Z.Modules))]
     simp only [Iso.inv_hom_id_app_assoc]
@@ -119,9 +126,8 @@ theorem pullback_comp_δ (E F : QuasicoherentSheaf Z) :
         (eC (E ⊗ F)).hom ≫ δ (Scheme.Modules.pullback (f ≫ g)) (M E) (M F) ≫
           ((eC E).inv ⊗ₘ (eC F).inv) := by
     simp only [Category.assoc, Iso.inv_hom_id_assoc, Functor.map_comp]
-    have he (A) : (eS A).hom ≫ H.map (eG A).hom = (eD A).hom := by
-      dsimp only [eS, eG, eD, eqToIso]
-      erw [eqToHom_map, eqToHom_trans]
+    have he (A) : (eS A).hom ≫ H.map (eG A).hom = (eD A).hom :=
+      pullbackComp_eqToHom f g A
     -- Naturality moves the inner object identifications through the outer tensorator;
     -- cancellation then leaves the existing module-pullback composition equation.
     rw [← Category.assoc, he,
