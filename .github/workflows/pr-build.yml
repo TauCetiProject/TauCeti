@@ -59,9 +59,9 @@ env:
   MATHLIB_CACHE_DEBUG_USE_LEGACY: ${{ vars.MATHLIB_CACHE_DEBUG_USE_LEGACY }}
 
 jobs:
-  # The merge queue and bors staging always build on Namespace: they are the path every PR must
-  # pass through to land, so they get the faster machine and never wait for a GitHub slot.
-  # Skipping the picker leaves its answer empty, which `sandboxed-build` reads as Namespace.
+  # Batch builds skip the PR slot picker and normally use Namespace. Bors main builds
+  # can explicitly use GitHub via BORS_CI_RUNNER=github during a Namespace outage.
+  # The native merge queue and bors pilot remain on Namespace.
   pick-runner:
     if: github.event_name != 'merge_group' && (github.event_name != 'repository_dispatch' || github.event.action != 'tauceti-bors-staging')
     uses: ./.github/workflows/pick-runner.yml
@@ -86,12 +86,12 @@ jobs:
     # runner name until it expires, taking the required builds with it. Before changing these
     # labels, confirm them in the organisation that will run the job.
     #
-    # The pick-runner job chooses between GitHub and Namespace; see pick-runner.yml. Anything but
-    # an explicit `true` from it, including a picker that failed, was skipped or never ran, means
-    # Namespace. The event check is redundant with the picker's own `if`, and keeps the merge
-    # queue and bors staging on Namespace should that ever change.
+    # Ordinary PRs use the picker; a skipped or failed picker defaults to Namespace.
+    # The explicit repository variable overrides only the trusted bors main dispatch.
+    # Clear BORS_CI_RUNNER to restore Namespace on the next dispatch; an existing run
+    # keeps its assigned runner. Candidate code, audits and sandbox are identical.
     runs-on: >-
-      ${{ github.event_name != 'merge_group' && (github.event_name != 'repository_dispatch' || github.event.action != 'tauceti-bors-staging') && needs.pick-runner.outputs.github == 'true' && 'ubuntu-24.04' || fromJSON('[
+      ${{ ((github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && github.event.client_payload.base_ref == 'main' && vars.BORS_CI_RUNNER == 'github') || (github.event_name != 'merge_group' && (github.event_name != 'repository_dispatch' || github.event.action != 'tauceti-bors-staging') && needs.pick-runner.outputs.github == 'true')) && 'ubuntu-24.04' || fromJSON('[
         "nscloud-ubuntu-24.04-amd64-8x16-with-features",
         "namespace-features:container.privileged=true"
       ]') }}
@@ -117,6 +117,12 @@ jobs:
       # sandbox then stages the fully audited root-package outputs for the isolated publisher.
       STAGE_LAKE_CACHE: ""
     steps:
+      - name: Report build runner selection
+        env:
+          RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          BORS_GITHUB_FALLBACK: ${{ github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && github.event.client_payload.base_ref == 'main' && vars.BORS_CI_RUNNER == 'github' }}
+        run: |
+          echo "::notice::Build runner environment: $RUNNER_ENVIRONMENT; bors GitHub fallback requested: $BORS_GITHUB_FALLBACK"
       # We expect the 262k default to be relevant at around 10m LOC, and this raised limit to be relevant at around 40m LOC.
       - name: Raise vm.max_map_count
         run: |
@@ -1311,7 +1317,7 @@ jobs:
 
       # Statistics for TauCetiCI (https://github.com/TauCetiProject/TauCetiCI): when each phase of
       # the sandboxed build started, how many modules were built or restored from the cache, the
-      # slowest, and the runner picker's decision. After the statuses so it can never delay them,
+      # slowest, and the actual runner environment. After the statuses so it can never delay them,
       # and continue-on-error so it can never fail the job. The phase and build files were written
       # inside the sandbox, so the record marks itself as statistics only.
       - name: Summarise CI telemetry (statistics only)
@@ -1324,7 +1330,7 @@ jobs:
           TESTED_BASE: ${{ steps.pr.outputs.base_sha }}
           BORS_BATCH: ${{ github.event.client_payload.batch_id }}
           BORS_MEMBERS: ${{ toJSON(github.event.client_payload.members) }}
-          PICKED: ${{ needs.pick-runner.outputs.github == 'true' && 'github' || 'namespace' }}
+          PICKED: ${{ runner.environment == 'github-hosted' && 'github' || 'namespace' }}
           PICKER_BUSY: ${{ needs.pick-runner.outputs.busy }}
           PICKER_BUDGET: ${{ needs.pick-runner.outputs.budget }}
         run: |
