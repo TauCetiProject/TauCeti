@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Convex.ConvexSpace.PathConnectedSpaceStdSimplex
-public import TauCeti.Geometry.Convex.ConvexSpace.Defs
 
 /-!
 # The parametrization of the standard `1`-simplex by the unit interval

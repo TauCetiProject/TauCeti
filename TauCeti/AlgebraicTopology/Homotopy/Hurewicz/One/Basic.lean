@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic
-public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 public import TauCeti.Topology.Homotopy.Path
 public import TauCeti.Algebra.Homology.ModuleCat
 public import TauCeti.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.Geometry.Convex.ConvexSpace.ContractibleSpaceStdSimplex
+public import TauCeti.Geometry.Convex.ConvexSpace.Defs
 public import TauCeti.GroupTheory.Abelianization.Basic
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
 

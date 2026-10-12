@@ -106,8 +106,8 @@ section Integer
 variable {X : Type} [TopologicalSpace X] {x : X}
 
 /-- The singular `1`-simplex traced by a generalized loop is the singular `1`-simplex of the
-corresponding loop (`TauCeti.TauCeti.TopCat.simplex₁`). -/
-lemma simplex₁_eq (p : Ω^ (Fin 1) X x) :
+corresponding loop (`TauCeti.TopCat.simplex₁`). -/
+lemma simplex₁_eq_topCatSimplex₁ (p : Ω^ (Fin 1) X x) :
     simplex₁ p = TauCeti.TopCat.simplex₁ (genLoopEquivOfUnique (Fin 1) p).toContinuousMap := by
   apply ((TopCat.of X).toSSetObjEquiv _).injective
   refine ((TopCat.toSSetObjEquiv_toSSet_map_app
@@ -119,7 +119,7 @@ lemma simplex₁_eq (p : Ω^ (Fin 1) X x) :
 
 /-- With integer coefficients, the class of the singular `1`-simplex traced by a generalized loop is
 the homology class of the corresponding loop. -/
-lemma ιHomology₁_hom_one (p : Ω^ (Fin 1) X x) :
+lemma ιHomology₁_hom_one_eq_H₁AddEquivHomology_loopClass (p : Ω^ (Fin 1) X x) :
     (TauCeti.SSet.ιHomology₁ (ModuleCat.of ℤ ℤ) (pairSSet x) (simplex₁ p) (δ_simplex₁ p)).hom 1 =
       HurewiczOne.H₁AddEquivHomology (TopCat.of X)
         (HurewiczOne.loopClass (genLoopEquivOfUnique (Fin 1) p)) := by
@@ -129,7 +129,7 @@ lemma ιHomology₁_hom_one (p : Ω^ (Fin 1) X x) :
     ((pairSSet x).chainComplex (ModuleCat.of ℤ ℤ)) ((pairSSet x).ιChainComplex (simplex₁ p)) 0
       (by simp) _).hom 1)).trans ?_
   exact congrArg (fun s ↦ ((TopCat.toSSet.obj (TopCat.of X)).ιChainComplex
-    (R := ModuleCat.of ℤ ℤ) s).hom 1) (simplex₁_eq p)
+    (R := ModuleCat.of ℤ ℤ) s).hom 1) (simplex₁_eq_topCatSimplex₁ p)
 
 /-- With integer coefficients, the Hurewicz class of a generalized loop, evaluated at `1`, is minus
 the homology class of the corresponding loop. -/
@@ -139,7 +139,7 @@ theorem hurewicz_hom_one_eq_neg_loopClass (p : Ω^ (Fin 1) X x) :
         (HurewiczOne.loopClass (genLoopEquivOfUnique (Fin 1) p)) :=
   (congrArg (fun f ↦ ModuleCat.Hom.hom f 1)
     (hurewicz_eq_neg_ιHomology₁ (ModuleCat.of ℤ ℤ) p)).trans
-      (congrArg Neg.neg (ιHomology₁_hom_one p))
+      (congrArg Neg.neg (ιHomology₁_hom_one_eq_H₁AddEquivHomology_loopClass p))
 
 end Integer
 
