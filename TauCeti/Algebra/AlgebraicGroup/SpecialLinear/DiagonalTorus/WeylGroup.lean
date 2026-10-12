@@ -17,8 +17,8 @@ The Weyl group of the diagonal root datum of `SL_{r+1}` is the symmetric group o
 faithfulness follows because the coroots span the cocharacter lattice. This realizes the
 identification integrally, including rank zero.
 
-Over a field whose determinant-one diagonal torus separates coordinates, composing with the
-matrix normalizer computation identifies the normalizer quotient with this Weyl group. The
+Over an integral domain whose determinant-one diagonal torus separates coordinates, composing
+with the matrix normalizer computation identifies the normalizer quotient with this Weyl group. The
 root-index and character-lattice formulas specify the identification; in particular a normalizer
 class with a transposition as its coordinate permutation gives the corresponding reflection.
 The separation assumption concerns the group of rational points and is essential over small
@@ -148,9 +148,9 @@ theorem diagonalPermMulEquivWeylGroup_smul_apply
   simpa [diagonalRootDatum_coroot_apply, coordinatePermRootIndex_coe,
     Pi.single_apply, mul_ite, Subgroup.smul_def] using h
 
-section Field
+section Domain
 
-variable {k : Type v} [Field k]
+variable {k : Type v} [CommRing k] [IsDomain k]
   (hsep : Matrix.SpecialLinearGroup.DiagonalTorusSeparatesCoordinates k (r + 1))
 
 /-- The normalizer quotient of the determinant-one diagonal torus is the Weyl group of the
@@ -207,7 +207,7 @@ theorem diagonalNormalizerQuotientMulEquivWeylGroup_eq_ofIdx_iff
   rw [← diagonalPermMulEquivWeylGroup_swap p.1.1 p.1.2 p.2]
   exact (diagonalPermMulEquivWeylGroup r).injective.eq_iff
 
-end Field
+end Domain
 
 end
 
