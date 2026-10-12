@@ -9,15 +9,17 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Over
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
+import TauCeti.AlgebraicGeometry.RationalPoint.Affine
 import TauCeti.RingTheory.TotallySplit
 
 /-!
 # Rational points of finite schemes over a field and étaleness
 
 Let `f : X ⟶ Spec R` be a morphism from an affine scheme to the spectrum of a commutative ring.
-Its points with values in `Spec R`, that is the sections of `f`, are the characters
-`Γ(X, ⊤) →ₐ[R] R` of its coordinate ring (`AlgebraicGeometry.Scheme.Hom.pointsEquivAlgHom`), and
-`f` is étale exactly when `Γ(X, ⊤)` is an étale `R`-algebra.
+Then `f` is étale exactly when `Γ(X, ⊤)` is an étale `R`-algebra. Its points with values in
+`Spec R` are the characters `Γ(X, ⊤) →ₐ[R] R` of its coordinate ring
+(`AlgebraicGeometry.Scheme.Hom.pointsEquivAlgHom`, in
+`TauCeti.AlgebraicGeometry.RationalPoint.Affine`).
 
 Now let `f : X ⟶ Spec K` be a finite morphism to the spectrum of a field. A finite-dimensional
 `K`-algebra has at most as many characters as its dimension, which is the rank of `f`
@@ -29,11 +31,6 @@ finite étale scheme over `Spec K` has exactly as many points over `Spec K` as i
 
 Points over `Spec K` are written as morphisms `𝟙_ (Over (Spec K)) ⟶ Over.mk f` of the cartesian
 monoidal category `Over (Spec K)`, as for the points of group schemes over `Spec K`.
-
-## Main definitions
-
-* `AlgebraicGeometry.Scheme.Hom.pointsEquivAlgHom`: for affine `X`, the points of `X` over
-  `Spec R` are the characters of `Γ(X, ⊤)`.
 
 ## Main results
 
@@ -54,64 +51,6 @@ universe u
 namespace AlgebraicGeometry
 
 variable {R : Type u} [CommRing R] {X : Scheme.{u}}
-
-/-- The global sections of the inverse of `X ≅ Spec Γ(X, ⊤)`, for an affine scheme `X`. -/
-theorem Scheme.isoSpec_inv_appTop (X : Scheme.{u}) [IsAffine X] :
-    X.isoSpec.inv.appTop = (Scheme.ΓSpecIso Γ(X, ⊤)).inv := by
-  have h : X.isoSpec.inv.appTop ≫ X.isoSpec.hom.appTop = 𝟙 _ := by
-    rw [← Scheme.Hom.comp_appTop, Iso.hom_inv_id, Scheme.Hom.id_appTop]
-  rw [← Iso.comp_hom_eq_id]
-  simpa [Scheme.isoSpec] using h
-
-/-- **The points of an affine scheme over `Spec R` are the characters of its coordinate ring.**
-Let `f : X ⟶ Spec R` be a morphism from an affine scheme, and give `Γ(X, ⊤)` the `R`-algebra
-structure of the map of global sections of `f` (the hypothesis `hf`). A point `x` of `X` over
-`Spec R`, that is a section of `f`, corresponds to the character of `Γ(X, ⊤)` given by pulling back
-functions along `x`. This is Mathlib's `AlgebraicGeometry.Spec.homEquivAlgHom`, read through
-`X ≅ Spec Γ(X, ⊤)`. -/
-noncomputable def Scheme.Hom.pointsEquivAlgHom (f : X ⟶ Spec (.of R)) [IsAffine X]
-    [Algebra R Γ(X, ⊤)]
-    (hf : algebraMap R Γ(X, ⊤) = ((Scheme.ΓSpecIso (.of R)).inv ≫ f.appTop).hom) :
-    (𝟙_ (Over (Spec (.of R))) ⟶ Over.mk f) ≃ (Γ(X, ⊤) →ₐ[R] R) :=
-  -- `f` is the spectrum of its map of global sections, read through `X ≅ Spec Γ(X, ⊤)`
-  have e : f = X.isoSpec.hom ≫ Spec.algebraMap R Γ(X, ⊤) := by
-    rw [Spec.algebraMap, hf, CommRingCat.ofHom_hom, Spec.map_comp, Scheme.isoSpec_hom,
-      ← Scheme.toSpecΓ_naturality_assoc, toSpecΓ_SpecMap_ΓSpecIso_inv, Category.comp_id]
-  have h1 : Spec.algebraMap R R = 𝟙 _ := by simp [Spec.algebraMap]
-  -- a point over `Spec R` is a section of `f`, which `X ≅ Spec Γ(X, ⊤)` turns into a section of
-  -- `Spec (algebraMap R Γ(X, ⊤))`
-  ({ toFun x := ⟨x.left ≫ X.isoSpec.hom, by simpa [h1, e] using Over.w x⟩
-     invFun g := Over.homMk (g.1 ≫ X.isoSpec.inv) (by simp [e, g.2, h1])
-     left_inv x := by ext1; simp
-     right_inv g := by ext1; simp } :
-    (𝟙_ (Over (Spec (.of R))) ⟶ Over.mk f) ≃ {g : Spec (.of R) ⟶ Spec Γ(X, ⊤) //
-      g ≫ Spec.algebraMap R Γ(X, ⊤) = Spec.algebraMap R R}).trans Spec.homEquivAlgHom
-
-/-- The character attached to a point `x` of `X` over `Spec R` pulls back functions along `x`. -/
-@[simp]
-theorem Scheme.Hom.pointsEquivAlgHom_apply (f : X ⟶ Spec (.of R)) [IsAffine X] [Algebra R Γ(X, ⊤)]
-    (hf : algebraMap R Γ(X, ⊤) = ((Scheme.ΓSpecIso (.of R)).inv ≫ f.appTop).hom)
-    (x : 𝟙_ (Over (Spec (.of R))) ⟶ Over.mk f) (c : Γ(X, ⊤)) :
-    f.pointsEquivAlgHom hf x c = (Scheme.ΓSpecIso (.of R)).hom (x.left.appTop c) := by
-  -- the character is the ring map `φ` with `Spec φ = x.left ≫ X.isoSpec.hom`
-  have h : x.left = Spec.map (Spec.preimage (x.left ≫ X.isoSpec.hom)) ≫ X.isoSpec.inv := by simp
-  have h2 : x.left.appTop ≫ (Scheme.ΓSpecIso (.of R)).hom =
-      Spec.preimage (x.left ≫ X.isoSpec.hom) := by
-    conv_lhs => rw [h]
-    rw [Scheme.Hom.comp_appTop, Category.assoc, Scheme.ΓSpecIso_naturality, X.isoSpec_inv_appTop]
-    exact Iso.inv_hom_id_assoc _ _
-  exact congr(CommRingCat.Hom.hom $h2 c).symm
-
-/-- The point attached to a character `φ` of `Γ(X, ⊤)` is `Spec φ`, read through
-`X ≅ Spec Γ(X, ⊤)`. -/
-@[simp]
-theorem Scheme.Hom.pointsEquivAlgHom_symm_apply_left (f : X ⟶ Spec (.of R)) [IsAffine X]
-    [Algebra R Γ(X, ⊤)]
-    (hf : algebraMap R Γ(X, ⊤) = ((Scheme.ΓSpecIso (.of R)).inv ≫ f.appTop).hom)
-    (φ : Γ(X, ⊤) →ₐ[R] R) :
-    ((f.pointsEquivAlgHom hf).symm φ).left =
-      Spec.map (CommRingCat.ofHom (φ : Γ(X, ⊤) →+* R)) ≫ X.isoSpec.inv :=
-  (rfl)
 
 /-- A morphism `f : X ⟶ Spec R` from an affine scheme is étale exactly when its coordinate ring
 `Γ(X, ⊤)` is an étale `R`-algebra, for the `R`-algebra structure given by the map of global
