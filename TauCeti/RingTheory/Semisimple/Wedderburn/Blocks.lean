@@ -57,8 +57,8 @@ abstract simple module by a left ideal, turns the block count into a count of si
 * `RingEquiv.exists_simpleSubmodule_of_pi`: **the blocks enumerate the simple modules.**
   A presentation of `R` by simple rings indexed by `ι` yields a family of simple left ideals indexed
   by `ι`, pairwise non-isomorphic, with every simple left ideal isomorphic to one of them.
-* `RingEquiv.exists_simpleSubmodule_of_pi_matrix`: the same statement for a Wedderburn presentation
-  `R ≃+* ∏ᵢ Matₙᵢ(Dᵢ)` indexed by `Fin n`.
+* `RingEquiv.exists_simpleSubmodule_of_pi_matrix`: the same statement for a presentation by
+  matrix rings over simple rings, with arbitrary block indices and finite nonempty row indices.
 * `TauCeti.exists_nonempty_linearEquiv_of_forall_submodule`: such a family exhausts not only the
   simple left ideals but every simple `R`-module, because over a semisimple ring a simple module is
   realized by a left ideal.
@@ -72,10 +72,11 @@ an actual presentation by nontrivial simple rings to be finite. The general fact
 
 The results are stated for a presentation `R ≃+* ∏ᵢ Aᵢ` by arbitrary simple rings rather than by
 matrix algebras: simplicity of the factors is all the argument uses, and Artin--Wedderburn is what
-supplies such a presentation, not part of the statement.  The positivity hypotheses `NeZero (d i)`
-of the matrix form enter only to make `Matₙᵢ(Dᵢ)` simple, exactly as in
-`RingEquiv.card_blocks_eq`; a block of size `0` is the trivial ring, and any presentation could be
-padded with such blocks.
+supplies such a presentation, not part of the statement. The nonemptiness hypotheses on the row
+indices in the matrix form enter only to make the matrix rings simple. For rows indexed by
+`Fin (d i)`, they follow from the positivity hypotheses `NeZero (d i)` in
+`RingEquiv.card_blocks_eq`; an empty row index gives the trivial ring, and any presentation could
+be padded with such blocks.
 
 The isomorphism classes are handled through `TauCeti.SimpleSubmoduleClasses R R`, the classes of
 simple *left ideals*, which unlike the classes of abstract simple modules form a type.  The
@@ -166,24 +167,24 @@ theorem _root_.RingEquiv.exists_simpleSubmodule_of_pi (e : R ≃+* ∀ i, A i) :
     refine ⟨φ.symm (SimpleSubmoduleClasses.mk I), SimpleSubmoduleClasses.mk_eq_mk_iff.mp ?_⟩
     rw [hmk, Equiv.apply_symm_apply]
 
-/-- **Blocks enumerate the simple modules**, for a Wedderburn presentation
-`R ≃+* ∏ᵢ Matₙᵢ(Dᵢ)`: the `n` blocks yield `n` pairwise non-isomorphic simple left ideals which
-exhaust the simple left ideals up to isomorphism.
+/-- **Matrix blocks enumerate the simple modules.** A presentation of a semisimple ring as a
+product of matrix rings over simple rings gives one simple left ideal per block, pairwise
+non-isomorphic and exhausting the simple left ideals up to isomorphism.
 
-The positivity hypotheses `NeZero (d i)` are what make the matrix blocks simple rings; they are the
-same hypotheses that `IsSemisimpleRing.exists_ringEquiv_pi_matrix_divisionRing` produces and that
-`RingEquiv.card_blocks_eq` needs.
+The row index of each block is finite and nonempty, which makes the matrix block simple.
+Wedderburn presentations are the special case of division rings and rows indexed by `Fin (d i)`
+with `NeZero (d i)`.
 
 The general statement it specializes is `RingEquiv.exists_simpleSubmodule_of_pi`. -/
-theorem _root_.RingEquiv.exists_simpleSubmodule_of_pi_matrix {n : ℕ} {D : Fin n → Type v}
-    [∀ i, DivisionRing (D i)]
-    {d : Fin n → ℕ} [∀ i, NeZero (d i)]
-    (e : R ≃+* ∀ i, Matrix (Fin (d i)) (Fin (d i)) (D i)) :
-    ∃ S : Fin n → Submodule R R,
+theorem _root_.RingEquiv.exists_simpleSubmodule_of_pi_matrix {D : ι → Type v}
+    [∀ i, Ring (D i)] [∀ i, IsSimpleRing (D i)]
+    {κ : ι → Type*} [∀ i, Fintype (κ i)] [∀ i, Nonempty (κ i)]
+    (e : R ≃+* ∀ i, Matrix (κ i) (κ i) (D i)) :
+    ∃ S : ι → Submodule R R,
       (∀ i, IsSimpleModule R (S i)) ∧
       (∀ i j, Nonempty (S i ≃ₗ[R] S j) → i = j) ∧
       ∀ I : Submodule R R, IsSimpleModule R I → ∃ i, Nonempty (I ≃ₗ[R] S i) := by
-  have : ∀ i, Nonempty (Fin (d i)) := fun i ↦ ⟨⟨0, Nat.pos_of_ne_zero (NeZero.ne (d i))⟩⟩
+  classical
   exact e.exists_simpleSubmodule_of_pi
 
 end Presentation
