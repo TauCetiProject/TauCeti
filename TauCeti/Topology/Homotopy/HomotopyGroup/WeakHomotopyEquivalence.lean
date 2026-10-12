@@ -79,7 +79,7 @@ theorem map_bijective (hf : f.IsWeakHomotopyEquivalence) (N : Type*) [Finite N] 
   have h : HomotopyGroup.map (N := N) f (rfl : f x = f x) =
       (HomotopyGroup.congrEquiv e).symm ∘ HomotopyGroup.map f rfl ∘ HomotopyGroup.congrEquiv e := by
     funext a
-    simp [HomotopyGroup.map_congrEquiv]
+    simp
   rw [h]
   exact (Equiv.bijective _).comp ((hf.bijective _ x).comp (Equiv.bijective _))
 

@@ -203,6 +203,7 @@ theorem map_comp_apply (g : C(Y, Z)) (hg : g y = z) (f : C(X, Y)) (hf : f x = y)
 
 /-- Composition law, as an equality of functions: the composite of the maps induced on homotopy
 classes is the map induced by the composite continuous map. -/
+@[simp]
 theorem map_comp_map (g : C(Y, Z)) (hg : g y = z) (f : C(X, Y)) (hf : f x = y) :
     map (N := N) g hg ∘ map f hf = map (g.comp f) (by simp [hf, hg]) :=
   funext (map_comp_apply g hg f hf)

@@ -162,6 +162,7 @@ theorem congrEquiv_symm_mk (e : M ≃ N) (q : Ω^ N X x) :
   by rw [congrEquiv.eq_1]; rfl
 
 /-- Reindexing the cube directions commutes with the maps induced by based continuous maps. -/
+@[simp]
 theorem map_congrEquiv {Y : Type*} [TopologicalSpace Y] {y : Y} (f : C(X, Y)) (hf : f x = y)
     (e : M ≃ N) (a : HomotopyGroup M X x) :
     map f hf (congrEquiv e a) = congrEquiv e (map f hf a) := by
