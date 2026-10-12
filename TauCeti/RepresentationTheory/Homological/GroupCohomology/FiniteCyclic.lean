@@ -299,13 +299,23 @@ noncomputable def carryCocycle :
   LinearMap.codRestrict (cocycles₂ A) ((carryCochain A g hg).comp (Submodule.subtype _))
     fun x => carryCochain_mem_cocycles₂ A g hg x.1 (Rep.ρ_apply_of_mem_ker A g x)
 
+/-- The underlying function of the carry cocycle is its defining carry cochain. -/
+private theorem coe_carryCocycle
+    (x : LinearMap.ker (applyAsHom A g - 𝟙 A).hom.toLinearMap) :
+    (carryCocycle A g hg x : G × G → A) = carryCochain A g hg x.1 := by
+  rw [← cocycles₂.val_eq_coe]
+  calc
+    (carryCocycle A g hg x).1 = ((carryCochain A g hg).comp (Submodule.subtype _)) x :=
+      LinearMap.codRestrict_apply _ _ x
+    _ = carryCochain A g hg x.1 := by rw [LinearMap.comp_apply, Submodule.subtype_apply]
+
 /-- The carry cocycle at an arbitrary pair, computed using their reduced exponents. -/
 @[simp low]
 theorem carryCocycle_apply (x : LinearMap.ker (applyAsHom A g - 𝟙 A).hom.toLinearMap)
     (p : G × G) :
     (carryCocycle A g hg x : G × G → A) p =
-      if orderOf g ≤ cyclicLog g hg p.1 + cyclicLog g hg p.2 then x.1 else 0 :=
-  carryCochain_apply A g hg x.1 p
+      if orderOf g ≤ cyclicLog g hg p.1 + cyclicLog g hg p.2 then x.1 else 0 := by
+  rw [coe_carryCocycle, carryCochain_apply]
 
 /-- The values of the carry cocycle: on `(gⁱ, gʲ)` with `i, j < n` it is `a` if `i + j ≥ n` and
 `0` otherwise. -/
