@@ -516,6 +516,15 @@ theorem points_def (A : Type v) [CommRing A] :
   rw [points, definingIdeal]
   exact kostantToralPointsSubgroup_def _ _ _ _ _ _ _ _ A
 
+/-- The carrier points are the points of the generic Kostant toral closure they are cut out from. -/
+theorem points_eq_kostantToralPointsSubgroup (A : Type v) [CommRing A] :
+    points n A =
+      kostantToralPointsSubgroup
+        (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
+        (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
+        (rep_kostantForm_mem_lattice n) (isNilpotent_rep_rootGenerator n)
+        (latticeBasis n) (basisWeight n) A := (rfl)
+
 /-- A matrix is a carrier point exactly when its associated convolution point kills the
 defining Hopf ideal. -/
 -- Not `@[simp]`: rewriting membership into this raw condition defeats the membership lemmas.
