@@ -171,29 +171,7 @@ theorem naiveLevelEquiv_gammaNaiveToGammaOneNaive_app_apply (X : EllObj B)
 
 section Points
 
-variable {B N}
-
-/-- The `S`-points of `E` killed by `N` are the `S`-points of `E[N]`. -/
-private noncomputable def torsionPointsEquiv {S : Scheme.{u}} (E : EllipticCurveGeom S) :
-    {x : 𝟙_ (Over S) ⟶ Over.mk E.structureMap // x ^ N = 1} ≃
-      (𝟙_ (Over S) ⟶ (E.torsion N).X) :=
-  (Equiv.subtypeEquivRight fun x ↦ by
-    rw [MonoidHom.mem_ker, IsMonHom.monoidHom_apply, EllipticCurveGeom.comp_mulBy,
-      zpow_natCast]).trans (E.torsionPointsMulEquiv N _).symm.toEquiv
-
-@[simp]
-private theorem torsionPointsEquiv_torsionι {S : Scheme.{u}} (E : EllipticCurveGeom S)
-    (x : {x : 𝟙_ (Over S) ⟶ Over.mk E.structureMap // x ^ N = 1}) :
-    torsionPointsEquiv E x ≫ E.torsionι N = x :=
-  E.torsionPointsMulEquiv_symm_apply_torsionι N _ _
-
-@[simp]
-private theorem coe_torsionPointsEquiv_symm {S : Scheme.{u}} (E : EllipticCurveGeom S)
-    (P : 𝟙_ (Over S) ⟶ (E.torsion N).X) :
-    ((torsionPointsEquiv E).symm P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) = P ≫ E.torsionι N :=
-  E.coe_torsionPointsMulEquiv_apply N _ P
-
-variable [NeZero N]
+variable {B N} [NeZero N]
 
 /-- **Naive `[Γ₁(N)]`-structures are points of `E[N]`.** For `N ≠ 0`, a naive
 `[Γ₁(N)]`-structure `φ` on `(E/S)` is determined by the `S`-point `P = φ 1` of `E[N]`, and the
@@ -204,7 +182,8 @@ noncomputable def gammaOneNaiveEquiv (X : EllObj B) :
       {P : 𝟙_ (Over X.base) ⟶ (X.curve.torsion N).X //
         ∀ k : ℕ, 0 < k → k < N → ∀ s, ((P ≫ X.curve.torsionι N) ^ k).left s ≠ X.curve.zero s} :=
   (naiveLevelEquiv X).trans <|
-    ((zmodMonoidHomEquiv N _).trans (torsionPointsEquiv X.curve)).subtypeEquiv fun φ ↦ by
+    ((zmodMonoidHomEquiv N _).trans <| (Equiv.subtypeEquivRight fun _ ↦ by
+      rw [zpow_natCast]).trans (X.curve.torsionPointsEquiv N _)).subtypeEquiv fun φ ↦ by
       rw [EllipticCurveGeom.isFiberwiseInjective_zmod_iff]
       simp
 
@@ -212,7 +191,7 @@ noncomputable def gammaOneNaiveEquiv (X : EllObj B) :
 @[simp]
 theorem gammaOneNaiveEquiv_apply_torsionι (X : EllObj B) (α : (gammaOneNaive B N).obj (op X)) :
     (gammaOneNaiveEquiv X α).1 ≫ X.curve.torsionι N = (naiveLevelEquiv X α).1 (.ofAdd 1) :=
-  (torsionPointsEquiv_torsionι _ _).trans (coe_zmodMonoidHomEquiv_apply _)
+  (X.curve.torsionPointsEquiv_apply_torsionι _ _ _).trans (coe_zmodMonoidHomEquiv_apply _)
 
 /-- The naive `[Γ₁(N)]`-structure of an `S`-point `P` of `E[N]` sends `a` to `aP`. -/
 @[simp]
@@ -245,8 +224,11 @@ noncomputable def gammaNaiveEquiv (X : EllObj B) :
           (𝟙_ (Over X.base) ⟶ (X.curve.torsion N).X) //
         ∀ a b : ZMod N, (a, b) ≠ 0 → ∀ s, ((PQ.1 ≫ X.curve.torsionι N) ^ a.val *
           (PQ.2 ≫ X.curve.torsionι N) ^ b.val).left s ≠ X.curve.zero s} :=
-  (naiveLevelEquiv X).trans <| ((zmodProdMonoidHomEquiv N _).trans
-    ((torsionPointsEquiv X.curve).prodCongr (torsionPointsEquiv X.curve))).subtypeEquiv fun φ ↦ by
+  (naiveLevelEquiv X).trans <| ((zmodProdMonoidHomEquiv N _).trans <|
+    ((Equiv.subtypeEquivRight fun _ ↦ by rw [zpow_natCast]).trans
+      (X.curve.torsionPointsEquiv N _)).prodCongr
+    ((Equiv.subtypeEquivRight fun _ ↦ by rw [zpow_natCast]).trans
+      (X.curve.torsionPointsEquiv N _))).subtypeEquiv fun φ ↦ by
       rw [EllipticCurveGeom.isFiberwiseInjective_zmod_prod_iff]
       simp
 
@@ -254,13 +236,13 @@ noncomputable def gammaNaiveEquiv (X : EllObj B) :
 @[simp]
 theorem gammaNaiveEquiv_apply_fst_torsionι (X : EllObj B) (α : (gammaNaive B N).obj (op X)) :
     (gammaNaiveEquiv X α).1.1 ≫ X.curve.torsionι N = (naiveLevelEquiv X α).1 (.ofAdd (1, 0)) :=
-  (torsionPointsEquiv_torsionι _ _).trans (coe_zmodProdMonoidHomEquiv_apply_fst _)
+  (X.curve.torsionPointsEquiv_apply_torsionι _ _ _).trans (coe_zmodProdMonoidHomEquiv_apply_fst _)
 
 /-- The second `S`-point `Q` of `E[N]` of a naive `[Γ(N)]`-structure `φ` is `φ (0, 1)`. -/
 @[simp]
 theorem gammaNaiveEquiv_apply_snd_torsionι (X : EllObj B) (α : (gammaNaive B N).obj (op X)) :
     (gammaNaiveEquiv X α).1.2 ≫ X.curve.torsionι N = (naiveLevelEquiv X α).1 (.ofAdd (0, 1)) :=
-  (torsionPointsEquiv_torsionι _ _).trans (coe_zmodProdMonoidHomEquiv_apply_snd _)
+  (X.curve.torsionPointsEquiv_apply_torsionι _ _ _).trans (coe_zmodProdMonoidHomEquiv_apply_snd _)
 
 /-- The naive `[Γ(N)]`-structure of a pair `(P, Q)` of `S`-points of `E[N]` sends `(a, b)` to
 `aP + bQ`. -/
