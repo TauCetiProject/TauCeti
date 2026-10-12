@@ -87,11 +87,17 @@ private def skewAdjointBaseChangeToMatrix :
           simp only [LieAlgebra.ExtendScalars.bracket_tmul]
           simp [Ring.lie_def, Matrix.map_sub, Matrix.map_mul, smul_sub, smul_smul, mul_comm s t] }
 
+private theorem skewAdjointBaseChangeToMatrix_apply
+    (x : S ⊗[R] skewAdjointMatricesLieSubalgebra J) :
+    skewAdjointBaseChangeToMatrix S J x = Algebra.matrixBaseChangeAlgEquiv R S n
+      (((skewAdjointMatricesLieSubalgebra J).incl :
+        skewAdjointMatricesLieSubalgebra J →ₗ[R] Matrix n n R).lTensor S x) :=
+  rfl
+
 private theorem skewAdjointBaseChangeToMatrix_tmul (s : S)
     (A : skewAdjointMatricesLieSubalgebra J) :
     skewAdjointBaseChangeToMatrix S J (s ⊗ₜ A) = s • (A : Matrix n n R).map (algebraMap R S) := by
-  change Algebra.matrixBaseChangeAlgEquiv R S n (s ⊗ₜ (A : Matrix n n R)) = _
-  simp
+  simp [skewAdjointBaseChangeToMatrix_apply]
 
 private theorem skewAdjointBaseChangeToMatrix_mem (x : S ⊗[R] skewAdjointMatricesLieSubalgebra J) :
     skewAdjointBaseChangeToMatrix S J x ∈
@@ -115,6 +121,12 @@ private def skewAdjointBaseChangeToSubalgebra :
   map_smul' c x := Subtype.ext (map_smul _ c x)
   map_lie' := Subtype.ext (LieHom.map_lie _ _ _)
 
+private theorem coe_skewAdjointBaseChangeToSubalgebra_apply
+    (x : S ⊗[R] skewAdjointMatricesLieSubalgebra J) :
+    (skewAdjointBaseChangeToSubalgebra S J x : Matrix n n S) =
+      skewAdjointBaseChangeToMatrix S J x :=
+  rfl
+
 variable [Module.Flat R S]
 
 private theorem skewAdjointBaseChangeToSubalgebra_bijective :
@@ -127,7 +139,9 @@ private theorem skewAdjointBaseChangeToSubalgebra_bijective :
     exact ⟨fun hy ↦ ⟨⟨y, hy⟩, rfl⟩, fun ⟨z, hz⟩ ↦ hz ▸ z.2⟩
   have hexactS := Module.Flat.lTensor_exact S hexact
   refine ⟨fun x y hxy ↦ ?_, fun z ↦ ?_⟩
-  · have h : e (ι.lTensor S x) = e (ι.lTensor S y) := congrArg Subtype.val hxy
+  · have h := congrArg Subtype.val hxy
+    simp only [coe_skewAdjointBaseChangeToSubalgebra_apply,
+      skewAdjointBaseChangeToMatrix_apply] at h
     exact Module.Flat.lTensor_preserves_injective_linearMap ι Subtype.val_injective (e.injective h)
   · obtain ⟨z, hz⟩ := z
     have hzero : (skewAdjointDefect J).lTensor S (e.symm z) = 0 := by
@@ -139,8 +153,8 @@ private theorem skewAdjointBaseChangeToSubalgebra_bijective :
       exact (mem_skewAdjointMatricesSubmodule_iff_skewAdjointDefect _ z).mp hz
     obtain ⟨w, hw⟩ := (hexactS (e.symm z)).mp hzero
     refine ⟨w, Subtype.ext ?_⟩
-    change e (ι.lTensor S w) = z
-    rw [hw, AlgEquiv.apply_symm_apply]
+    rw [coe_skewAdjointBaseChangeToSubalgebra_apply, skewAdjointBaseChangeToMatrix_apply]
+    exact (congrArg e hw).trans (e.apply_symm_apply z)
 
 /-- **Extension of scalars for skew-adjoint matrix Lie algebras.** Over a flat `R`-algebra `S`,
 `S ⊗[R] skewAdjointMatricesLieSubalgebra J` is the Lie algebra of matrices over `S` that are
