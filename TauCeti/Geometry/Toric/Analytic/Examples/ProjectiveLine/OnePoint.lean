@@ -47,6 +47,10 @@ local notation "ιp" => projectiveLineFan.analyticAffineChartι
 local notation "ιn" => projectiveLineFan.analyticAffineChartι
   isRegular_projectiveLineFan projectiveLineNegativeCone
 
+-- These instances equip the unbundled affine complex-point types with the topologies needed
+-- by the coordinate homeomorphisms and continuity proofs. Using the fan's own chart generators
+-- makes them definitionally equal to the corresponding `analyticAffineChartDiagram.obj`
+-- topologies, so they also match the domains of the chart inclusions.
 private noncomputable instance positiveTopology :
     TopologicalSpace (AffineSemigroupComplexPoint
       (dualSemigroup (isIntegralLattice_intCast 1) affineRayCone)) := affinePointTopology gp
