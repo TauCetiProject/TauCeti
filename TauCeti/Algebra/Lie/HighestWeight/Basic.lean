@@ -113,12 +113,16 @@ variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebr
 
 variable (b : (IsKilling.rootSystem H).Base)
 
+-- `[LieModule K L M]` is unused in the body, but dropping it leaves the section variable
+-- unused across this whole namespace, and dropping it from the variable line instead
+-- breaks instance synthesis further down the file.
 /-- A **highest weight vector** of weight `lam`, relative to the positive system determined by the
 base `b`: a nonzero vector on which the Cartan subalgebra acts through the linear form `lam` and
 which is annihilated by the positive nilradical `n⁺`.
 
 For a single positive root this is `IsSl2Triple.HasPrimitiveVectorWith`, and that is how the
 dominance theorem `TauCeti.IsHighestWeightVector.isDominantIntegral` below consumes it. -/
+@[nolint unusedArguments]
 def IsHighestWeightVector [LieModule K L M] (lam : Dual K H) (v : M) : Prop :=
   v ≠ 0 ∧ (∀ x : H, ⁅(x : L), v⁆ = lam x • v) ∧
     ∀ x ∈ positiveNilradical H b, ⁅x, v⁆ = 0

@@ -192,7 +192,9 @@ private theorem op_quotientMk_smul_eq_quotientMk_op_smul (hM : IsDGRightModule h
   rfl
 
 /-- The action on module cohomology is computed by acting with a cycle representative. -/
-@[simp]
+-- simpNF does not reach a verdict here: it fails with a typeclass heartbeat timeout
+-- synthesizing `SMul ↥h.cycles hM.Cohomology` while simplifying the left-hand side.
+@[simp, nolint simpNF]
 theorem op_quotientMk_smul (hM : IsDGRightModule h ℳ dM)
     (z : h.cycles) (x : hM.Cohomology) :
     op (Ideal.Quotient.mk h.boundaries.asIdeal z) • x = op z • x := by

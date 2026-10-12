@@ -1,0 +1,3 @@
+simpNF TauCeti.IsDGRightModule.op_quotientMk_smul
+unusedArguments TauCeti.IsFiniteType
+unusedArguments TauCeti.IsHighestWeightVector

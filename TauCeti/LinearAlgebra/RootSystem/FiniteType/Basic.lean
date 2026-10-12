@@ -111,6 +111,8 @@ namespace TauCeti
 
 variable {B : Type*} {A : Matrix B B ℤ}
 
+-- `[Fintype B]` is unused in the body, but dropping it leaves the section variable unused
+-- in about twenty results below, each of which would then need its own `omit`.
 /-- A finite square integer matrix is **of finite type** when it is a generalized Cartan matrix -
 diagonal entries `2`, nonpositive off-diagonal entries, and a symmetric vanishing pattern - which
 is symmetrizable with positive definite symmetrization: there is a positive rational vector `d`
@@ -118,6 +120,7 @@ making `fun i j ↦ d i * A i j` positive definite (in particular symmetric).
 
 The Cartan matrices of finite root systems are exactly the matrices of this kind, up to
 irreducibility; `TauCeti.isFiniteType_cartanMatrix` proves one direction. -/
+@[nolint unusedArguments]
 def IsFiniteType [Fintype B] (A : Matrix B B ℤ) : Prop :=
   (∀ i, A i i = 2) ∧ (∀ i j, i ≠ j → A i j ≤ 0) ∧ (∀ i j, A i j = 0 → A j i = 0) ∧
     ∃ d : B → ℚ, (∀ i, 0 < d i) ∧ (Matrix.of fun i j ↦ d i * (A i j : ℚ)).PosDef

@@ -35,7 +35,6 @@ simpNF TauCeti.FGComoduleCat.ofHom_id
 simpNF TauCeti.HopfIdeal.coefficientLinearEquiv_apply✝
 simpNF TauCeti.HopfIdeal.descendDerivation_mk✝
 simpNF TauCeti.IsComplexLinearMap.eq_zero_iff_apply_stdComplexLineReal
-simpNF TauCeti.IsDGRightModule.op_quotientMk_smul
 simpNF TauCeti.Multiquadratic.forall_legendreSym_neg_four_five_eq_one_iff
 simpNF TauCeti.Subcoalgebra.map_top_toSubmodule
 simpNF TauCeti.Subcomodule.comap_id
@@ -44,6 +43,4 @@ simpNF TauCeti.Subcomodule.map_top_toSubmodule
 simpNF TauCeti.integral_normalizedChebyshevT_mul_normalizedChebyshevT_measureT_eq_ite
 simpNF TauCeti.isComplexLinear_arrowCongr_iff
 simpNF TauCeti.reflectRepMapApp_of_ne✝
-unusedArguments TauCeti.IsFiniteType
-unusedArguments TauCeti.IsHighestWeightVector
 unusedArguments TauCeti.Semigroups.IsMildSolution
