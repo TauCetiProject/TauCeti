@@ -127,6 +127,15 @@ theorem typeAGraphConjugator_mul_self (r : ℕ) :
       omega
     _ = Matrix.GeneralLinearGroup.scalar (Fin (r + 1)) ((-1 : Aˣ) ^ r) := diagGL_const _
 
+/-- Entrywise base change carries the signed reversal matrix to the signed reversal matrix. -/
+@[simp]
+theorem map_typeAGraphConjugator {B : Type*} [Ring B] (f : A →+* B) (r : ℕ) :
+    Units.map (MonoidHom.ofClass (f.mapMatrix (m := Fin (r + 1)))) (typeAGraphConjugator r A) =
+      typeAGraphConjugator r B := by
+  apply Units.ext
+  ext i j
+  simp [typeAGraphConjugator, typeAGraphSign, Fin.rev_eq_iff]
+
 end Ring
 
 variable [CommRing A]
@@ -405,22 +414,14 @@ theorem typeAGraphAutomorphism_diagGL (r : ℕ) (d : Fin (r + 1) → Aˣ) :
       funext i
       simp [mul_assoc]
 
-/-- Entrywise base change carries the signed reversal matrix to the signed reversal matrix. -/
-@[simp]
-theorem map_typeAGraphConjugator {B : Type*} [CommRing B] (f : A →+* B) (r : ℕ) :
-    Matrix.GeneralLinearGroup.map f (typeAGraphConjugator r A) =
-      typeAGraphConjugator r B := by
-  apply Units.ext
-  ext i j
-  simp [typeAGraphConjugator, typeAGraphSign, Fin.rev_eq_iff]
-
 /-- The pinned type-`A` graph automorphism is natural in the coefficient ring. -/
 @[simp]
 theorem map_typeAGraphAutomorphism {B : Type*} [CommRing B] (f : A →+* B) (r : ℕ)
     (g : GL (Fin (r + 1)) A) :
     Matrix.GeneralLinearGroup.map f (typeAGraphAutomorphism r A g) =
       typeAGraphAutomorphism r B (Matrix.GeneralLinearGroup.map f g) := by
-  rw [typeAGraphAutomorphism_apply, typeAGraphAutomorphism_apply, map_mul, map_mul,
-    Matrix.GeneralLinearGroup.map_inverseTranspose, map_inv, map_typeAGraphConjugator]
+  rw [typeAGraphAutomorphism_apply, typeAGraphAutomorphism_apply]
+  simp only [Matrix.GeneralLinearGroup.map, RingHom.toMonoidHom_eq_coe, map_mul, map_inv,
+    Matrix.GeneralLinearGroup.map_inverseTranspose, map_typeAGraphConjugator]
 
 end TauCeti

@@ -30,6 +30,15 @@ part of the pinned type-`A` graph automorphism.
 * `TauCeti.inverseTranspose_diagGL`: action on diagonal matrices.
 * `TauCeti.inverseTranspose_permutationGL`: permutation matrices are fixed.
 * `TauCeti.inverseTranspose_transvectionUnit`: action on elementary transvections.
+
+## Formalization source
+
+The transpose-and-units composition is the construction of `HeckeRing.GLn.transposeGLEquiv` in
+`TauCeti.NumberTheory.HeckeRing.GLn.TransposeAntiInvolution`, whose source credits Chris Birkbeck's
+[AINTLIB](https://github.com/CBirkbeck/AINTLIB) `LeanModularForms` project, file
+`LeanModularForms/HeckeRIngs/GLn/TransposeAntiInvolution.lean`. Here it is composed with inversion
+and generalized from rational matrices with `Fin` indices to commutative semirings and finite
+index types.
 -/
 
 public section
@@ -50,8 +59,9 @@ def inverseTranspose : GL n A ≃* GL n A :=
 /-- The matrix underlying inverse transpose is `(g⁻¹)ᵀ`. -/
 @[simp]
 theorem coe_inverseTranspose (g : GL n A) :
-    (inverseTranspose g : Matrix n n A) = ((g⁻¹ : GL n A) : Matrix n n A).transpose :=
-  (rfl)
+    (inverseTranspose g : Matrix n n A) = ((g⁻¹ : GL n A) : Matrix n n A).transpose := by
+  simp [inverseTranspose, MulEquiv.inv', Units.mapEquiv, Units.opEquiv,
+    Matrix.transposeRingEquiv]
 
 /-- Inverse transpose is an involution. -/
 @[simp]
@@ -60,15 +70,15 @@ theorem inverseTranspose_inverseTranspose (g : GL n A) :
   apply Units.ext
   simp only [← map_inv, coe_inverseTranspose, inv_inv, Matrix.transpose_transpose]
 
-variable {R B : Type*} [CommRing R] [CommRing B]
+variable {B : Type*} [CommSemiring B]
 
-/-- Inverse transpose commutes with entrywise application of a ring homomorphism. -/
+/-- Inverse transpose commutes with entrywise application of a semiring homomorphism. -/
 @[simp]
-theorem map_inverseTranspose (f : R →+* B) (g : GL n R) :
-    map f (inverseTranspose g) = inverseTranspose (map f g) := by
+theorem map_inverseTranspose (f : A →+* B) (g : GL n A) :
+    Units.map (MonoidHom.ofClass (f.mapMatrix (m := n))) (inverseTranspose g) =
+      inverseTranspose (Units.map (MonoidHom.ofClass (f.mapMatrix (m := n))) g) := by
   apply Units.ext
-  ext i j
-  rfl
+  simp [coe_inverseTranspose, ← map_inv, Matrix.transpose_map]
 
 end Matrix.GeneralLinearGroup
 
