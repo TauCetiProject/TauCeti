@@ -58,9 +58,10 @@ theorem isBaseChange_monoidAlgebraScalarMap : IsBaseChange S (monoidAlgebraScala
 theorem sumCoords_monoidAlgebraScalarMap (v : MonoidAlgebra R X) :
     (MonoidAlgebra.basis X S).sumCoords (monoidAlgebraScalarMap R S X v) =
       algebraMap R S ((MonoidAlgebra.basis X R).sumCoords v) := by
-  induction v using MonoidAlgebra.induction_linear with
-  | zero => simp
-  | add v w hv hw => simp only [map_add, hv, hw]
-  | single x r => simp
+  simp only [Module.Basis.coe_sumCoords, MonoidAlgebra.basis_repr]
+  change (Finsupp.mapRange (algebraMap R S) (map_zero _) v.coeff).sum (fun _ => id) =
+    algebraMap R S (v.coeff.sum fun _ => id)
+  rw [Finsupp.sum_mapRange_index (fun _ => rfl)]
+  exact (map_finsuppSum (algebraMap R S) v.coeff (fun _ => id)).symm
 
 end TauCeti

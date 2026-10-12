@@ -569,20 +569,15 @@ theorem isConj_component_reindexBranchPoints (ρ : Perm (Fin 3)) (i : Fin 3) :
 /-- Permuting branch points leaves the unordered full cycle partitions unchanged. -/
 @[simp]
 theorem unorderedCycleData_reindexBranchPoints (ρ : Perm (Fin 3)) :
-    (t.reindexBranchPoints ρ).σ0.partition.parts ::ₘ
-      (t.reindexBranchPoints ρ).σ1.partition.parts ::ₘ
-        {(t.reindexBranchPoints ρ).σinf.partition.parts} = t.unorderedCycleData := by
-  have h : (t.reindexBranchPoints ρ).unorderedCycleData = t.unorderedCycleData := by
-    rw [unorderedCycleData_eq_coe_ofFn, unorderedCycleData_eq_coe_ofFn]
-    have hc : (fun i => ((t.reindexBranchPoints ρ).component i).partition.parts) =
-        (fun i => (t.component i).partition.parts) ∘ ρ := by
-      funext i
-      dsimp only [Function.comp_apply]
-      rw [Equiv.Perm.partition_eq_of_isConj.mp
-        (t.isConj_component_reindexBranchPoints ρ i)]
-    rw [hc, Sym.ofFn_comp_perm]
-  simpa only [unorderedCycleData_def, cycleData_σ0, cycleData_σ1, cycleData_σinf,
-    Multiset.insert_eq_cons] using h
+    (t.reindexBranchPoints ρ).unorderedCycleData = t.unorderedCycleData := by
+  rw [unorderedCycleData_eq_coe_ofFn, unorderedCycleData_eq_coe_ofFn]
+  have hc : (fun i => ((t.reindexBranchPoints ρ).component i).partition.parts) =
+      (fun i => (t.component i).partition.parts) ∘ ρ := by
+    funext i
+    dsimp only [Function.comp_apply]
+    rw [Equiv.Perm.partition_eq_of_isConj.mp
+      (t.isConj_component_reindexBranchPoints ρ i)]
+  rw [hc, Sym.ofFn_comp_perm]
 
 /-- Equality of unordered cycle data means equality of ordered cycle data after some
 branch-point permutation. This statement does not require connectedness or a degree bound. -/
@@ -606,10 +601,7 @@ theorem unorderedCycleData_eq_iff_exists_reindexBranchPoints (t' : PermutationTr
     have hh := And.intro (hc 0) (And.intro (hc 1) (hc 2))
     exact ⟨ρ, by simpa [Prod.ext_iff] using hh⟩
   · rintro ⟨ρ, hρ⟩
-    have h : (t.reindexBranchPoints ρ).unorderedCycleData = t.unorderedCycleData := by
-      simpa only [unorderedCycleData_def, cycleData_σ0, cycleData_σ1, cycleData_σinf,
-        Multiset.insert_eq_cons] using unorderedCycleData_reindexBranchPoints t ρ
-    rw [← h]
+    rw [← unorderedCycleData_reindexBranchPoints t ρ]
     simp only [unorderedCycleData_def, hρ]
 
 /-- Reordering the branch points commutes with relabeling the sheets. -/

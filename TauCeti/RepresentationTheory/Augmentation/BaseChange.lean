@@ -61,10 +61,15 @@ theorem augmentationScalarMap_action (g : G)
   apply Subtype.ext
   simp only [coe_augmentationScalarMap, Subrepresentation.toRepresentation_apply,
     LinearMap.restrict_apply]
-  induction (v : MonoidAlgebra R X) using MonoidAlgebra.induction_linear with
-  | zero => simp
-  | add v w hv hw => simp only [map_add, hv, hw]
-  | single x r => simp [Representation.ofMulAction_single]
+  apply MonoidAlgebra.coeff_injective
+  have hcoeff (w : MonoidAlgebra R X) :
+      (monoidAlgebraScalarMap R S X w).coeff =
+        Finsupp.mapRange (algebraMap R S) (map_zero _) w.coeff := by
+    ext x
+    simp
+  simpa [Representation.ofMulAction_def, hcoeff] using
+    (Finsupp.mapDomain_mapRange (g • ·) (v : MonoidAlgebra R X).coeff
+      (algebraMap R S) (map_zero _) (map_add _)).symm
 
 /-- Scalar extension commutes with the augmentation representation. No flatness, finiteness
 or nonemptiness assumption is required. -/
