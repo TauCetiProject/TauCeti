@@ -66,6 +66,14 @@ theorem bimoduleModuleTensorLeftUnitorHom_tmul (x : bimoduleUnit.{v} Γ) (n : N)
       (bimoduleUnitEquiv.{v} Γ).symm x • n :=
   bimoduleModuleTensorLift_tmul Γ Γ _ _ _ _ x n
 
+/-- Balancing transfers a module scalar to the regular bimodule's unit element. -/
+@[simp]
+theorem bimoduleModuleTensorTmul_unit_smul (a : A) (n : N) :
+    bimoduleModuleTensorTmul Γ Γ (bimoduleUnit.{v} Γ) N (bimoduleUnitEquiv.{v} Γ 1) (a • n) =
+      bimoduleModuleTensorTmul Γ Γ (bimoduleUnit.{v} Γ) N (bimoduleUnitEquiv.{v} Γ a) n := by
+  rw [← bimoduleModuleTensorTmul_balance Γ Γ (bimoduleUnit.{v} Γ) N a]
+  simp only [tmul_smul_bimoduleUnitEquiv, unop_op, one_mul]
+
 private def unitInsert :
     N →ₗ[k] bimoduleModuleTensorObj Γ Γ (bimoduleUnit.{v} Γ) N :=
   bimoduleModuleTensorMk Γ Γ (bimoduleUnit.{v} Γ) N (bimoduleUnitEquiv.{v} Γ 1)
@@ -76,9 +84,7 @@ private def unitInsertLinear :
   map_smul' a n := by
     simp only [unitInsert, LinearMap.toFun_eq_coe, RingHom.id_apply,
       bimoduleModuleTensorMk_apply, smul_bimoduleModuleTensorTmul,
-      tmul_smul_bimoduleUnitEquiv, unop_one, mul_one]
-    rw [← bimoduleModuleTensorTmul_balance Γ Γ (bimoduleUnit.{v} Γ) N a]
-    simp only [tmul_smul_bimoduleUnitEquiv, unop_op, one_mul]
+      tmul_smul_bimoduleUnitEquiv, unop_one, mul_one, bimoduleModuleTensorTmul_unit_smul]
 
 private theorem unitInsertLinear_apply (n : N) :
     unitInsertLinear.{v} Γ N n =
@@ -111,8 +117,8 @@ def bimoduleModuleTensorLeftUnitor :
     intro x n
     simp only [hom_comp, LinearMap.comp_apply, bimoduleModuleTensorLeftUnitorHom_tmul,
       bimoduleModuleTensorLeftUnitorInv_apply, hom_id, LinearMap.id_apply]
-    rw [← bimoduleModuleTensorTmul_balance Γ Γ (bimoduleUnit.{v} Γ) N]
-    simp only [tmul_smul_bimoduleUnitEquiv, unop_op, one_mul, LinearEquiv.apply_symm_apply]
+    rw [bimoduleModuleTensorTmul_unit_smul]
+    simp only [LinearEquiv.apply_symm_apply]
   inv_hom_id := by
     apply hom_ext
     ext n
@@ -130,7 +136,8 @@ theorem bimoduleModuleTensorLeftUnitor_inv :
     (bimoduleModuleTensorLeftUnitor.{v} Γ N).inv =
       bimoduleModuleTensorLeftUnitorInv.{v} Γ N := (rfl)
 
-@[reassoc]
+/-- Evaluation of a left unit commutes with every graded left-module map. -/
+@[reassoc (attr := simp)]
 theorem bimoduleModuleTensorLeftUnitorHom_naturality
     {N' : GradedModuleCat.{max v uA} Γ.piece} (f : N ⟶ N') :
     bimoduleModuleTensorMap Γ Γ (𝟙 (bimoduleUnit.{v} Γ)) f ≫
