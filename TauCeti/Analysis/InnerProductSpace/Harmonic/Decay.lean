@@ -60,7 +60,7 @@ the estimate follows from replacing the average `u_ρ` by `c`
 ## Linear changes of variables
 
 Both estimates survive a linear change of variables, with constants depending on its condition
-number. If `e` is a continuous linear automorphism of `E` with `‖e⁻¹ x‖ ≤ a ‖x‖` and
+number. If `e : E' ≃L[ℝ] E` is a continuous linear equivalence with `‖e⁻¹ x‖ ≤ a ‖x‖` and
 `‖e y‖ ≤ b ‖y‖`, and `u ∘ e` is harmonic on `e⁻¹(B_R)`, then `u` satisfies the two estimates with
 the factors `(a b)ⁿ` and `4 (a b)^(n + 2)` inserted. The ball `B_ρ` is pulled back into a ball of
 radius `a ρ` and a ball of radius `R / b` is pushed into `B_R`, and the harmonic estimates are
@@ -80,7 +80,7 @@ Laplacian after such a change of variables, so this is the decay estimate for it
   mean oscillation with exponent `n + 2`.
 * `TauCeti.setIntegral_ball_norm_sq_le_of_harmonicOnNhd_comp` and
   `TauCeti.setIntegral_ball_norm_sub_setAverage_sq_le_of_harmonicOnNhd_comp`: the two estimates
-  for `u` when `u ∘ e` is harmonic, `e` a continuous linear automorphism.
+  for `u` when `u ∘ e` is harmonic, `e` a continuous linear equivalence.
 
 ## References
 
@@ -419,12 +419,13 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.setIntegral_ball_norm_sub_setAver
 
 section LinearChange
 
-variable {e : E ≃L[ℝ] E}
+variable {E' : Type*} [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E']
+  [MeasurableSpace E'] [BorelSpace E'] {e : E' ≃L[ℝ] E}
 
-omit [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure] [CompleteSpace F] in
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [μ.IsAddHaarMeasure] [CompleteSpace F] in
 /-- Change of variables along `e` against the measure `μ.map e.symm`: integrating `g ∘ e` over
 `e ⁻¹' S` for this measure is integrating `g` over `S` for `μ`. -/
-private lemma setIntegral_comp_map_symm (e : E ≃L[ℝ] E) (g : E → ℝ) (S : Set E) :
+private lemma setIntegral_comp_map_symm (e : E' ≃L[ℝ] E) (g : E → ℝ) (S : Set E) :
     ∫ y in e ⁻¹' S, g (e y) ∂(μ.map e.symm) = ∫ x in S, g x ∂μ := by
   have hm : MeasurableEmbedding e.symm := e.symm.toHomeomorph.measurableEmbedding
   rw [hm.setIntegral_map]
@@ -432,9 +433,9 @@ private lemma setIntegral_comp_map_symm (e : E ≃L[ℝ] E) (g : E → ℝ) (S :
   · ext x; simp
   · ext x; simp
 
-omit [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure] [CompleteSpace F] in
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [μ.IsAddHaarMeasure] [CompleteSpace F] in
 /-- Integrability is preserved by the change of variables of `setIntegral_comp_map_symm`. -/
-private lemma integrableOn_comp_map_symm_iff (e : E ≃L[ℝ] E) {g : E → ℝ} {S : Set E} :
+private lemma integrableOn_comp_map_symm_iff (e : E' ≃L[ℝ] E) {g : E → ℝ} {S : Set E} :
     IntegrableOn (fun y ↦ g (e y)) (e ⁻¹' S) (μ.map e.symm) ↔ IntegrableOn g S μ := by
   have hm : MeasurableEmbedding e.symm := e.symm.toHomeomorph.measurableEmbedding
   rw [hm.integrableOn_map_iff]
@@ -444,7 +445,8 @@ private lemma integrableOn_comp_map_symm_iff (e : E ≃L[ℝ] E) {g : E → ℝ}
 
 variable {a b : ℝ}
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E']
+  [MeasurableSpace E'] [BorelSpace E'] in
 /-- If `‖e.symm x‖ ≤ a ‖x‖`, then `e` maps no point outside `ball (e.symm x₀) (a ρ)` into
 `ball x₀ ρ`. -/
 private lemma preimage_ball_subset_ball (ha : 0 < a) (hae : ∀ x, ‖e.symm x‖ ≤ a * ‖x‖) (x₀ : E)
@@ -456,7 +458,8 @@ private lemma preimage_ball_subset_ball (ha : 0 < a) (hae : ∀ x, ‖e.symm x�
     _ ≤ a * ‖e y - x₀‖ := hae _
     _ < a * ρ := by gcongr
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E']
+  [MeasurableSpace E'] [BorelSpace E'] in
 /-- If `‖e y‖ ≤ b ‖y‖`, then `e` maps `ball (e.symm x₀) (R / b)` into `ball x₀ R`. -/
 private lemma ball_subset_preimage_ball (hb : 0 < b) (hbe : ∀ y, ‖e y‖ ≤ b * ‖y‖) (x₀ : E)
     (R : ℝ) : ball (e.symm x₀) (R / b) ⊆ e ⁻¹' ball x₀ R := by
@@ -468,7 +471,8 @@ private lemma ball_subset_preimage_ball (hb : 0 < b) (hbe : ∀ y, ‖e y‖ ≤
     _ < b * (R / b) := by gcongr
     _ = R := by field_simp
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E']
+  [MeasurableSpace E'] [BorelSpace E'] in
 /-- In a nontrivial space, the bounds `‖e.symm x‖ ≤ a ‖x‖` and `‖e y‖ ≤ b ‖y‖` force `a` and `b` to
 be positive. -/
 private lemma pos_of_norm_le [Nontrivial E] (hae : ∀ x, ‖e.symm x‖ ≤ a * ‖x‖)
@@ -481,15 +485,16 @@ private lemma pos_of_norm_le [Nontrivial E] (hae : ∀ x, ‖e.symm x‖ ≤ a *
   rw [e.apply_symm_apply] at h2
   exact ⟨pos_of_mul_pos_left (hy.trans_le h1) hx'.le, pos_of_mul_pos_left (hx'.trans_le h2) hy.le⟩
 
-/-- **Decay of the `L²` mass after a linear change of variables.** Let `e` be a continuous linear
-automorphism of `E` with `‖e.symm x‖ ≤ a ‖x‖` and `‖e y‖ ≤ b ‖y‖`, and let `u ∘ e` be harmonic on
-`e ⁻¹' ball x₀ R`, with `‖u‖²` integrable on `ball x₀ R`. Then for every `0 ≤ ρ ≤ R`,
+omit [FiniteDimensional ℝ E] in
+/-- **Decay of the `L²` mass after a linear change of variables.** Let `e : E' ≃L[ℝ] E` be a
+continuous linear equivalence with `‖e.symm x‖ ≤ a ‖x‖` and `‖e y‖ ≤ b ‖y‖`, and let `u ∘ e`
+be harmonic on `e ⁻¹' ball x₀ R`, with `‖u‖²` integrable on `ball x₀ R`. Then for every `0 ≤ ρ ≤ R`,
 
 `∫_{ball x₀ ρ} ‖u‖² ≤ 2ⁿ (a b)ⁿ (ρ / R)ⁿ ∫_{ball x₀ R} ‖u‖²`,
 
 where `n` is the dimension of `E`. The constant depends on `e` only through the bound `a b` for
 its condition number. -/
-theorem setIntegral_ball_norm_sq_le_of_harmonicOnNhd_comp (e : E ≃L[ℝ] E)
+theorem setIntegral_ball_norm_sq_le_of_harmonicOnNhd_comp (e : E' ≃L[ℝ] E)
     (hae : ∀ x, ‖e.symm x‖ ≤ a * ‖x‖) (hbe : ∀ y, ‖e y‖ ≤ b * ‖y‖) {x₀ : E}
     {ρ R : ℝ} (hu : HarmonicOnNhd (u ∘ e) (e ⁻¹' ball x₀ R))
     (hint : IntegrableOn (fun x ↦ ‖u x‖ ^ 2) (ball x₀ R) μ) (hρ : 0 ≤ ρ) (hρR : ρ ≤ R) :
@@ -518,6 +523,7 @@ theorem setIntegral_ball_norm_sq_le_of_harmonicOnNhd_comp (e : E ≃L[ℝ] E)
       (integrableOn_comp_map_symm_iff e (g := fun x ↦ ‖u x‖ ^ 2)).2 hint
     have hdec := (hu.mono hsub).setIntegral_ball_norm_sq_le (μ := ν) (hint'.mono_set hsub)
       (by positivity) hle
+    rw [e.toLinearEquiv.finrank_eq] at hdec
     calc ∫ x in ball x₀ ρ, ‖u x‖ ^ 2 ∂μ
         = ∫ y in e ⁻¹' ball x₀ ρ, ‖(u ∘ e) y‖ ^ 2 ∂ν :=
           (setIntegral_comp_map_symm e (fun x ↦ ‖u x‖ ^ 2) _).symm
@@ -546,16 +552,16 @@ theorem setIntegral_ball_norm_sq_le_of_harmonicOnNhd_comp (e : E ≃L[ℝ] E)
       nlinarith
     exact hmono.trans (le_mul_of_one_le_left hI h1)
 
-/-- **Decay of the `L²` mean oscillation after a linear change of variables.** Let `e` be a
-continuous linear automorphism of `E` with `‖e.symm x‖ ≤ a ‖x‖` and `‖e y‖ ≤ b ‖y‖`, and let
-`u ∘ e` be harmonic on `e ⁻¹' ball x₀ R`, with `‖u - c‖²` integrable on `ball x₀ R` for some
-constant `c`. Then for every `0 ≤ ρ ≤ R`,
+/-- **Decay of the `L²` mean oscillation after a linear change of variables.** Let
+`e : E' ≃L[ℝ] E` be a continuous linear equivalence with `‖e.symm x‖ ≤ a ‖x‖` and
+`‖e y‖ ≤ b ‖y‖`, and let `u ∘ e` be harmonic on `e ⁻¹' ball x₀ R`, with `‖u - c‖²` integrable on
+`ball x₀ R` for some constant `c`. Then for every `0 ≤ ρ ≤ R`,
 
 `∫_{ball x₀ ρ} ‖u - u_ρ‖² ≤ C (a b)^(n + 2) (ρ / R)^(n + 2) ∫_{ball x₀ R} ‖u - c‖²`
 with `C = 2^(3n + 10) (n + 1)²`,
 
 where `u_ρ` is the average of `u` over `ball x₀ ρ` and `n` is the dimension of `E`. -/
-theorem setIntegral_ball_norm_sub_setAverage_sq_le_of_harmonicOnNhd_comp (e : E ≃L[ℝ] E)
+theorem setIntegral_ball_norm_sub_setAverage_sq_le_of_harmonicOnNhd_comp (e : E' ≃L[ℝ] E)
     (hae : ∀ x, ‖e.symm x‖ ≤ a * ‖x‖) (hbe : ∀ y, ‖e y‖ ≤ b * ‖y‖)
     {x₀ : E} {ρ R : ℝ} (hu : HarmonicOnNhd (u ∘ e) (e ⁻¹' ball x₀ R)) {c : F}
     (hint : IntegrableOn (fun x ↦ ‖u x - c‖ ^ 2) (ball x₀ R) μ) (hρ : 0 ≤ ρ) (hρR : ρ ≤ R) :
@@ -625,6 +631,7 @@ theorem setIntegral_ball_norm_sub_setAverage_sq_le_of_harmonicOnNhd_comp (e : E 
       (integrableOn_comp_map_symm_iff e (g := fun x ↦ ‖u x - c'‖ ^ 2)).2 (hint_c c')
     have hdec := (hu.mono hsub).setIntegral_ball_norm_sub_setAverage_sq_le (μ := ν)
       (hint'.mono_set hsub) (by positivity) hle
+    rw [e.toLinearEquiv.finrank_eq] at hdec
     calc ∫ x in ball x₀ ρ, ‖u x - ⨍ y in ball x₀ ρ, u y ∂μ‖ ^ 2 ∂μ
         ≤ 4 * ∫ x in ball x₀ ρ, ‖u x - c'‖ ^ 2 ∂μ :=
           setIntegral_norm_sub_setAverage_sq_le measure_ball_lt_top.ne hiu

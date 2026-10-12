@@ -44,20 +44,23 @@ matrix is an arbitrary elliptic matrix.
 
 Only the symmetric part `S` of `A` enters the operator, because the second derivative of `u` is
 symmetric. Let `T = √S`, the positive square root of the positive definite matrix `S`. By the
-chain rule `Δ (u ∘ T) = (∑ᵢⱼ (T Tᵀ)ᵢⱼ ∂ᵢ∂ⱼu) ∘ T` (`TauCeti.PDE.laplacian_comp_toEuclideanCLE`),
-and `T Tᵀ = S`, so `u` solves the equation exactly when `u ∘ T` is harmonic
-(`TauCeti.PDE.exists_continuousLinearEquiv_laplacian_comp_eq`). Since `‖T y‖² = yᵀ A y`, the map
-`T` stretches lengths by at most `√Λ` and its inverse by at most `1 / √λ`, and the decay estimates
-for harmonic functions after a linear change of variables
+chain rule `Δ (u ∘ T) = (∑ᵢⱼ (T Tᵀ)ᵢⱼ ∂ᵢ∂ⱼu) ∘ T`
+(`TauCeti.PDE.laplacian_comp_toEuclideanCLE_apply`), and `T Tᵀ = S`, so `u` solves the equation
+exactly when `u ∘ T` is harmonic (`TauCeti.PDE.exists_continuousLinearEquiv_laplacian_comp_eq`
+and `TauCeti.PDE.harmonicOnNhd_comp_of_sum_smul_fderiv_fderiv_eq_zero`). Since
+`‖T y‖² = yᵀ A y`, the map `T` stretches lengths by at most `√Λ` and its inverse by at most
+`1 / √λ`, and the decay estimates for harmonic functions after a linear change of variables
 (`TauCeti.setIntegral_ball_norm_sq_le_of_harmonicOnNhd_comp`) give the result with the bound
 `√(Λ / λ)` on the condition number of `T` in the constant.
 
 ## Main declarations
 
-* `TauCeti.PDE.laplacian_comp_toEuclideanCLE`: the Laplacian of `u ∘ T` is the
+* `TauCeti.PDE.laplacian_comp_toEuclideanCLE_apply`: the Laplacian of `u ∘ T` is the
   constant-coefficient operator with matrix `T Tᵀ` applied to `u`.
 * `TauCeti.PDE.exists_continuousLinearEquiv_laplacian_comp_eq`: an elliptic constant-coefficient
   operator is the Laplacian after a linear change of variables with controlled condition number.
+* `TauCeti.PDE.harmonicOnNhd_comp_of_sum_smul_fderiv_fderiv_eq_zero`: after such a change of
+  variables, a `C²` solution on an open set becomes a harmonic function.
 * `TauCeti.PDE.setIntegral_ball_norm_sq_le_of_sum_smul_fderiv_fderiv_eq_zero`: decay of the `L²`
   mass with exponent `n`.
 * `TauCeti.PDE.setIntegral_ball_norm_sub_setAverage_sq_le_of_sum_smul_fderiv_fderiv_eq_zero`:
@@ -89,7 +92,7 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {F : Type*} [NormedAddCommGr
 with nonzero determinant, `Δ (u ∘ T) y = ∑ᵢⱼ (T Tᵀ)ᵢⱼ ∂ᵢ∂ⱼu (T y)`: composing with `T` turns the
 Laplacian into the constant-coefficient operator with coefficient matrix `T Tᵀ`. No
 differentiability hypothesis is needed. -/
-theorem laplacian_comp_toEuclideanCLE (T : Matrix ι ι ℝ) (hT : T.det ≠ 0)
+theorem laplacian_comp_toEuclideanCLE_apply (T : Matrix ι ι ℝ) (hT : T.det ≠ 0)
     (u : EuclideanSpace ℝ ι → F) (y : EuclideanSpace ℝ ι) :
     Δ (u ∘ T.toEuclideanCLE hT) y = ∑ i, ∑ j, (T * Tᵀ) i j •
       fderiv ℝ (fderiv ℝ u) (T.toEuclideanCLE hT y) (EuclideanSpace.single i 1)
@@ -177,7 +180,7 @@ theorem exists_continuousLinearEquiv_laplacian_comp_eq {A : Matrix ι ι ℝ} {l
     exact Real.sqrt_le_sqrt (hA' y)
   · -- Only the symmetric part of `A` enters, because the second derivative is symmetric.
     have hsymm := hu.isSymmSndFDerivAt (by simp)
-    rw [laplacian_comp_toEuclideanCLE, hTt, hTT]
+    rw [laplacian_comp_toEuclideanCLE_apply, hTt, hTT]
     simp only [S, coefficientSymmetricPart_apply, div_eq_mul_inv, add_mul, add_smul,
       Finset.sum_add_distrib]
     set H := fderiv ℝ (fderiv ℝ u) (e y)
@@ -191,9 +194,11 @@ theorem exists_continuousLinearEquiv_laplacian_comp_eq {A : Matrix ι ι ℝ} {l
 
 variable {A : Matrix ι ι ℝ}
 
-/-- If `Δ (u ∘ e) = (∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu) ∘ e`, then a `C²` solution of `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu = 0` on an open
-set `s` becomes harmonic on `e ⁻¹' s`. -/
-private lemma harmonicOnNhd_comp_of_sum_smul_fderiv_fderiv_eq_zero
+/-- **Solutions become harmonic after the change of variables.** If `e` is a continuous linear
+automorphism with `Δ (u ∘ e) = (∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu) ∘ e` for every `u` that is `C²` at the relevant
+point, as provided by `exists_continuousLinearEquiv_laplacian_comp_eq`, then a `C²` solution of
+`∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu = 0` on an open set `s` becomes harmonic on `e ⁻¹' s`. -/
+theorem harmonicOnNhd_comp_of_sum_smul_fderiv_fderiv_eq_zero
     {e : EuclideanSpace ℝ ι ≃L[ℝ] EuclideanSpace ℝ ι}
     (he : ∀ (u : EuclideanSpace ℝ ι → F) (y : EuclideanSpace ℝ ι), ContDiffAt ℝ 2 u (e y) →
       Δ (u ∘ e) y = ∑ i, ∑ j, A i j •
