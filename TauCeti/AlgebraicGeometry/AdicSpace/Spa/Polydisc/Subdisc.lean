@@ -63,6 +63,8 @@ equal exactly when their radii agree and each centre lies in the other disc. If
   `TauCeti.ValuationSpectrum.closedSubdisc_eq_closedSubdisc_iff` and
   `TauCeti.ValuationSpectrum.disjoint_closedSubdisc`: inclusion, equality and disjointness of
   discs.
+* `TauCeti.ValuationSpectrum.valuation_weightedX_sub_weightedC_of_mem_closedSubdisc`: a point
+  of `D(a, |c|)` takes the value of the constant `a - b` on `T - b` for every `b` outside the disc.
 
 ## References
 
@@ -195,6 +197,19 @@ theorem disjoint_closedSubdisc {a b c d : K} (h : max ‖c‖ ‖d‖ < ‖a - b
     exact (h.trans_le hc).not_ge (le_max_left _ _)
   · rw [valuation_le_iff, closedPolydisc_vle_weightedC_iff] at hd
     exact (h.trans_le hd).not_ge (le_max_right _ _)
+
+/-- **A point of `D(a, |c|)` takes the value of the constant `a - b` on `T - b`** for every `b`
+outside the disc: there `T - b = (T - a) + (a - b)` with `x(T - a) ≤ x(c) < x(a - b)`. -/
+theorem valuation_weightedX_sub_weightedC_of_mem_closedSubdisc {x : closedPolydisc 1 K}
+    {a c : K} (hx : x ∈ closedSubdisc a c) {b : K} (hb : ‖c‖ < ‖b - a‖) :
+    x.1.valuation (T - C b) = x.1.valuation (C (a - b)) := by
+  have hsplit : T - C b = (T - C a) + C (a - b) := by
+    rw [map_sub]
+    ring
+  rw [hsplit, Valuation.map_add_eq_of_lt_right]
+  refine ((valuation_le_iff _ _ _).mpr ((mem_closedSubdisc a c x).mp hx).1).trans_lt ?_
+  rw [← not_le, closedPolydisc_valuation_weightedC_le_iff, norm_sub_rev]
+  exact hb.not_ge
 
 /-- **A classical point `x_b` lies in `D(a, |c|)` exactly when `‖b - a‖ ≤ ‖c‖` and `c ≠ 0`**,
 whichever point `x` of `Spa (K, K°)` it is built from. -/

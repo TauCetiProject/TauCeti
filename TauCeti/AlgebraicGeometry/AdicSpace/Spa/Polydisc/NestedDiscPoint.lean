@@ -373,20 +373,6 @@ theorem nestedDiscPoint_ne_gaussPointAbove (hempty : ∀ b : K, ∃ n, ‖c n‖
 
 /-! ### Recognising the point -/
 
-omit [CompleteSpace K] in
-/-- A point of `D(a, |c|)` takes the value of the constant `a - b` on `T - b` for every `b` outside
-the disc. -/
-private theorem valuation_weightedX_sub_weightedC_of_mem_closedSubdisc {x : closedPolydisc 1 K}
-    {a₀ c₀ : K} (hx : x ∈ closedSubdisc a₀ c₀) {b : K} (hb : ‖c₀‖ < ‖b - a₀‖) :
-    x.1.valuation (T - C b) = x.1.valuation (C (a₀ - b)) := by
-  have hsplit : T - C b = (T - C a₀) + C (a₀ - b) := by
-    rw [map_sub]
-    ring
-  rw [hsplit, Valuation.map_add_eq_of_lt_right]
-  refine ((valuation_le_iff _ _ _).mpr ((mem_closedSubdisc a₀ c₀ x).mp hx).1).trans_lt ?_
-  rw [← not_le, closedPolydisc_valuation_weightedC_le_iff, norm_sub_rev]
-  exact hb.not_ge
-
 /-- **With no common point of the discs in `K`, `b ↦ η(T - b)` attains no minimum**: if the disc
 `D(aₙ, |cₙ|)` avoids `a`, then `η(T - aₙ) ≤ ‖cₙ‖ < ‖aₙ - a‖ = η(T - a)`. -/
 theorem not_exists_forall_nestedDiscPoint_vle (hempty : ∀ b : K, ∃ n, ‖c n‖ < ‖b - a n‖) :
@@ -488,12 +474,18 @@ theorem eq_nestedDiscPoint_iff [IsAlgClosed K] (hempty : ∀ b : K, ∃ n, ‖c 
 /-! ### Points without a minimum on linear polynomials -/
 
 omit [IsUltrametricDist K] [CompleteSpace K] in
+/-- The constant `b₂ - b₁` is the difference `(T - b₁) - (T - b₂)`. -/
+private theorem weightedC_sub_eq_sub_sub (b₁ b₂ : K) :
+    (C (b₂ - b₁) : 𝒯 K) = (T - C b₁) - (T - C b₂) := by
+  rw [map_sub]
+  ring
+
+omit [IsUltrametricDist K] [CompleteSpace K] in
 /-- If `x(T - b₂) < x(T - b₁)`, then `x(T - b₁)` is the value of the constant `b₂ - b₁`. -/
 private theorem valuation_weightedX_sub_weightedC_eq_of_lt {x : closedPolydisc 1 K} {b₁ b₂ : K}
     (h : x.1.valuation (T - C b₂) < x.1.valuation (T - C b₁)) :
     x.1.valuation (T - C b₁) = x.1.valuation (C (b₂ - b₁)) := by
-  rw [show C (b₂ - b₁) = (T - C b₁) - (T - C b₂) by rw [map_sub]; ring,
-    x.1.valuation.map_sub_eq_of_lt_left h]
+  rw [weightedC_sub_eq_sub_sub, x.1.valuation.map_sub_eq_of_lt_left h]
 
 omit [IsUltrametricDist K] [CompleteSpace K] in
 /-- If `b ↦ x(T - b)` attains no minimum, then every value `x(T - b)` is the value of a nonzero
@@ -515,8 +507,7 @@ private theorem norm_sub_le_of_valuation_eq {x : closedPolydisc 1 K} {b₁ b₂ 
     (h₁ : x.1.valuation (T - C b₁) = x.1.valuation (C e₁))
     (h₂ : x.1.valuation (T - C b₂) = x.1.valuation (C e₂)) (he : ‖e₂‖ ≤ ‖e₁‖) :
     ‖b₂ - b₁‖ ≤ ‖e₁‖ := by
-  rw [← closedPolydisc_valuation_weightedC_le_iff x,
-    show C (b₂ - b₁) = (T - C b₁) - (T - C b₂) by rw [map_sub]; ring]
+  rw [← closedPolydisc_valuation_weightedC_le_iff x, weightedC_sub_eq_sub_sub]
   refine (Valuation.map_sub _ _ _).trans (max_le h₁.le ?_)
   rwa [h₂, closedPolydisc_valuation_weightedC_le_iff]
 
