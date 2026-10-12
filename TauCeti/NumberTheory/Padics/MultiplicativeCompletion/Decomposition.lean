@@ -236,13 +236,12 @@ Galois extension of `p`-adic fields, and let `σ, τ` generate its Galois group 
 prime to `p`. For every generating family `g` of size `[K : ℚ_p] + 2`, the relation module of `g`
 surjects onto the completed multiplicative group `A(L)`, with kernel isomorphic to `ℤ_p[G]`.
 
-This packages the projective resolution and exact sequence already carried by
-`LayerTateModule`, so the finite-quotient generator argument can apply the tame-layer result without
-reconstructing those data. -/
+The Tate module `Y` supplies the finite projective resolution and the extension
+`0 → A(L) → Y → I_G → 0` required by `TauCeti.exists_relationModule_surjective_of_tameFrame`. -/
 theorem LayerTateModule.exists_relationModule_surjective_of_tameFrame
     {L K : Type u} [Field L] [Field K] [Algebra K L]
     [Algebra ℚ_[p] L] [Module.Finite ℚ_[p] L] [Algebra ℚ_[p] K]
-    [IsScalarTower ℚ_[p] K L] [IsGalois K L] [Finite (L ≃ₐ[K] L)]
+    [IsScalarTower ℚ_[p] K L] [IsGalois K L]
     (Y : LayerTateModule p L K) (h : Finite (pPowerRootsOfUnity p L))
     (σ τ : L ≃ₐ[K] L)
     (hgen : Subgroup.closure {σ, τ} = ⊤) (hτ : ¬ p ∣ orderOf τ)
@@ -253,30 +252,15 @@ theorem LayerTateModule.exists_relationModule_surjective_of_tameFrame
       Function.Surjective β ∧
         Nonempty (LinearMap.ker β ≃ₗ[MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)]
           MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)) := by
+  have := Module.Finite.right ℚ_[p] K L
   obtain ⟨n, f, hf, hker⟩ := Y.projdim
   let P₀ := Fin n → MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)
   let P₁ := LinearMap.ker f
   let d : P₁ →ₗ[MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)] P₀ := P₁.subtype
   let ρ : P₀ →ₗ[MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)] Y.carrier := f
-  have hdρ : Function.Exact d ρ := by
-    intro x
-    change f x = 0 ↔ ∃ y : P₁, (P₁.subtype y : P₀) = x
-    constructor
-    · intro hx
-      exact ⟨⟨x, hx⟩, rfl⟩
-    · rintro ⟨y, rfl⟩
-      exact y.2
-  have : Module.Finite (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)) P₀ := inferInstance
-  have : Module.Projective (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)) P₀ := inferInstance
-  have : IsScalarTower ℤ_[p] (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)) P₀ := inferInstance
-  have : Fintype (L ≃ₐ[K] L) := Fintype.ofFinite _
-  have : Module.Finite ℤ_[p] (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)) :=
-    .of_basis (MonoidAlgebra.basis (L ≃ₐ[K] L) ℤ_[p])
-  have : Module.Finite ℤ_[p] P₀ := .trans
-    (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)) P₀
-  have : IsNoetherian ℤ_[p] P₀ := inferInstance
-  have : IsNoetherian (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)) P₀ :=
-    isNoetherian_of_tower ℤ_[p] inferInstance
+  have hdρ : Function.Exact d ρ := f.exact_subtype_ker_map
+  have : IsNoetherianRing (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)) :=
+    IsNoetherianRing.of_finite ℤ_[p] _
   have hP₁ : P₁.FG := IsNoetherian.noetherian P₁
   have : Module.Finite (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)) P₁ := .of_fg hP₁
   have : Module.Projective (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)) P₁ := hker
