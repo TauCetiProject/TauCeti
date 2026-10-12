@@ -110,7 +110,7 @@ jobs:
               export GH_TOKEN="$FALLBACK_TOKEN"
               API_RESERVE=0
               echo "Shared App quota reserve protected; checking capacity with the repository API budget." \
-                >> "$GITHUB_STEP_SUMMARY"
+                | tee -a "$GITHUB_STEP_SUMMARY"
               remaining=$(api rate_limit --jq .resources.core.remaining) || return 1
               case "$remaining" in ''|*[!0-9]*) return 1 ;; esac
             fi
