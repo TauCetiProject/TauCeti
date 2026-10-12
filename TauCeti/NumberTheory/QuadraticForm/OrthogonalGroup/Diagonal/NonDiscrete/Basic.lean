@@ -92,9 +92,9 @@ theorem tendsto_finiteAdelicSpecialOrthogonalDiagonal_transvection_factorial
     intro n
     exact (hEn n.factorial).trans (map_pow (φ p) g n.factorial).symm
   -- All powers are integral on the same cofinite set, so use one principal stage.
-  apply (tendsto_restrictedProduct_iff_of_forall_mem
+  apply (tendsto_restrictedProduct_iff_of_eventually_mem
     (le_principal_iff.mpr (U.eventually_specialOrthogonal g))
-    (fun n p hp ↦ by
+    (Eventually.of_forall fun n p hp ↦ by
       rw [finiteAdelicSpecialOrthogonalDiagonal_apply, map_pow]
       exact (U.specialOrthogonal p).pow_mem hp _)
     (fun p _ ↦ (U.specialOrthogonal p).one_mem)).mpr
@@ -152,11 +152,10 @@ theorem not_discreteTopology_range_finiteAdelicSpecialOrthogonalDiagonal
   exact U.not_discreteTopology_range_finiteAdelicSpecialOrthogonalDiagonal_of_transvection
     hu (by simpa only [LinearMap.mem_ker, polarBilin_apply_apply] using huw) hpolar hw
 
-/-- For a nondegenerate isotropic rational quadratic space of dimension at least three, the
-rational diagonal is not discrete in finite adelic `O`. -/
-theorem not_discreteTopology_range_finiteAdelicOrthogonalDiagonal
-    (hQ : Q.Nondegenerate) (hdim : 3 ≤ Module.finrank ℚ V)
-    (hiso : ∃ u : V, u ≠ 0 ∧ Q u = 0) :
+/-- Non-discreteness of the rational diagonal in finite adelic `SO` implies non-discreteness
+of the rational diagonal in finite adelic `O`. -/
+theorem not_discreteTopology_range_finiteAdelicOrthogonalDiagonal_of_specialOrthogonal
+    (hSO : ¬ DiscreteTopology U.finiteAdelicSpecialOrthogonalDiagonal.range) :
     ¬ DiscreteTopology U.finiteAdelicOrthogonalDiagonal.range := by
   intro hD
   let : DiscreteTopology U.finiteAdelicOrthogonalDiagonal.range := hD
@@ -174,8 +173,16 @@ theorem not_discreteTopology_range_finiteAdelicOrthogonalDiagonal
       continuous_subtype_val).subtype_mk _
   have hinj : Function.Injective f := fun g h hgh ↦ Subtype.ext
     (U.finiteAdelicSpecialOrthogonalToOrthogonal_injective (congrArg Subtype.val hgh))
-  exact U.not_discreteTopology_range_finiteAdelicSpecialOrthogonalDiagonal hQ hdim hiso
-    (DiscreteTopology.of_continuous_injective hf hinj)
+  exact hSO (DiscreteTopology.of_continuous_injective hf hinj)
+
+/-- For a nondegenerate isotropic rational quadratic space of dimension at least three, the
+rational diagonal is not discrete in finite adelic `O`. -/
+theorem not_discreteTopology_range_finiteAdelicOrthogonalDiagonal
+    (hQ : Q.Nondegenerate) (hdim : 3 ≤ Module.finrank ℚ V)
+    (hiso : ∃ u : V, u ≠ 0 ∧ Q u = 0) :
+    ¬ DiscreteTopology U.finiteAdelicOrthogonalDiagonal.range :=
+  U.not_discreteTopology_range_finiteAdelicOrthogonalDiagonal_of_specialOrthogonal
+    (U.not_discreteTopology_range_finiteAdelicSpecialOrthogonalDiagonal hQ hdim hiso)
 
 end
 

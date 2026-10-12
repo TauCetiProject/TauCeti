@@ -81,9 +81,9 @@ theorem tendsto_finiteAdelicSpinDiagonal_spinTransvection_factorial
     have ht := hE.continuousAt.tendsto.comp (tendsto_padic_natCast_factorial (p : ℕ))
     rw [hzero] at ht
     exact ht.congr fun n ↦ hEn n.factorial
-  apply (tendsto_restrictedProduct_iff_of_forall_mem
+  apply (tendsto_restrictedProduct_iff_of_eventually_mem
     (le_principal_iff.mpr (U.eventually_spin g))
-    (fun n p hp ↦ by
+    (Eventually.of_forall fun n p hp ↦ by
       rw [finiteAdelicSpinDiagonal_apply, map_pow]
       exact (U.spin p).pow_mem hp _)
     (fun p _ ↦ (U.spin p).one_mem)).mpr
