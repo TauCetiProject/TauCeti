@@ -8,6 +8,9 @@ module
 public import TauCeti.Algebra.Polynomial.AdditivePolynomial
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Eisenstein
 
+import TauCeti.FieldTheory.ArtinSchreier.Additive
+import TauCeti.RingTheory.Valuation.PowSubPow
+
 /-!
 # Total ramification at a reduced pole of an additive Artin–Schreier equation
 
@@ -31,6 +34,13 @@ characteristic `p`, `|V|` is a power of `p`, so the condition is that the pole o
 representative supplied as input. For `V` the prime field, `a_V = X ^ p - X` and this is the
 Artin–Schreier case of `TauCeti/FieldTheory/FunctionField/Place/Extension/ArtinSchreier/Basic.lean`.
 
+At such a pole the Bezout identity `|V| α + ord_P u · β = 1` gives a uniformizer
+`z = y ^ β · t ^ α`, with `t` a uniformizer of `P`, which generates `F' / F`. A nonidentity
+automorphism translates `y` by a nonzero constant `c ∈ V`, and `|V| = 0` in `F` forces `β ≠ 0` in
+`F'`, so the displacement `σ z - z = ((y + c) ^ β - y ^ β) · t ^ α` has order
+`ord z - ord y = 1 - ord_P u`. These displacements compute the different exponent of the
+extension.
+
 ## Main results
 
 * `TauCeti.Place.ord_aeval_additivePolynomial_of_ord_neg`: `ord (a_V (y)) = |V| · ord y` at a
@@ -41,6 +51,10 @@ Artin–Schreier case of `TauCeti/FieldTheory/FunctionField/Place/Extension/Arti
   `u` of order prime to `|V|`, `[F' : F] = |V|` and the place is totally ramified.
 * `TauCeti.Place.isTotallyRamified_of_exists_reduced_additivePolynomial_pole`: the same for a
   supplied representative `u - a_V (w)`.
+* `TauCeti.Place.exists_eq_zpow_mul_adjoin_eq_top_ord_eq_one_of_aeval_additivePolynomial_eq`:
+  the Bezout uniformizer `y ^ β · t ^ α` generates `F' / F`.
+* `TauCeti.Place.exists_uniformizer_ord_aut_sub_of_aeval_additivePolynomial_eq`: its displacement
+  by every nonidentity automorphism has order `1 - ord_P u`.
 
 ## References
 
@@ -240,5 +254,109 @@ theorem ramificationIdx_eq_card_of_exists_reduced_additivePolynomial_pole
       Int.gcd (Fintype.card V) ((P'.restrict k F).ord (u - aeval w V.additivePolynomial)) = 1) :
     ramificationIdx F P' = Fintype.card V :=
   (finrank_eq_card_and_ramificationIdx_eq_card_of_exists_reduced_pole k F V hV hgen hy hpole).2
+
+/-- At a pole of `u` of order prime to `|V|`, where `V` consists of constants and `a_V (y) = u`
+generates `F' / F`, a Bezout combination `z = y ^ β · t ^ α` of the generator and a uniformizer `t`
+of the place below, with `|V| α + ord_P u · β = 1`, is a uniformizer at `P'` that still generates
+`F' / F`. -/
+theorem exists_eq_zpow_mul_adjoin_eq_top_ord_eq_one_of_aeval_additivePolynomial_eq
+    (hV : ∀ c ∈ V, IsAlgebraic k c) {y : F'} {u : F} (hgen : F⟮y⟯ = ⊤)
+    (hy : aeval y V.additivePolynomial = algebraMap F F' u)
+    (hu : (P'.restrict k F).ord u < 0)
+    (hcop : Int.gcd (Fintype.card V) ((P'.restrict k F).ord u) = 1) :
+    ∃ (z : F') (t : F) (α β : ℤ),
+      (P'.restrict k F).ord t = 1 ∧
+      (Fintype.card V : ℤ) * α + (P'.restrict k F).ord u * β = 1 ∧
+      z = y ^ β * algebraMap F F' t ^ α ∧ F⟮z⟯ = ⊤ ∧ P'.ord z = 1 := by
+  have := V.finiteDimensional_of_aeval_additivePolynomial_eq hy hgen
+  set α := Int.gcdA (Fintype.card V) ((P'.restrict k F).ord u)
+  set β := Int.gcdB (Fintype.card V) ((P'.restrict k F).ord u)
+  have hab : (Fintype.card V : ℤ) * α + (P'.restrict k F).ord u * β = 1 := by
+    rw [← Int.gcd_eq_gcd_ab, hcop, Nat.cast_one]
+  obtain ⟨t, ht0, ht⟩ := (P'.restrict k F).exists_ne_zero_ord_eq 1
+  have hyo := ord_eq_of_aeval_additivePolynomial_eq_of_gcd_ord_eq_one k F V hV hgen hy hu hcop
+  have hy0 : y ≠ 0 := by
+    rintro rfl
+    rw [P'.ord_zero] at hyo
+    omega
+  have ht0' : algebraMap F F' t ≠ 0 := (_root_.map_ne_zero _).mpr ht0
+  have hzo : P'.ord (y ^ β * algebraMap F F' t ^ α) = 1 := by
+    rw [P'.ord_mul (zpow_ne_zero _ hy0) (zpow_ne_zero _ ht0'), P'.ord_zpow, P'.ord_zpow, hyo,
+      ord_algebraMap_restrict k F P', ht,
+      ramificationIdx_eq_card_of_aeval_additivePolynomial_eq_of_gcd_ord_eq_one k F V hV hgen hy hu
+        hcop]
+    linarith
+  exact ⟨_, t, α, β, ht, hab, rfl, adjoin_eq_top_of_isTotallyRamified_of_ord_eq_one F
+    (isTotallyRamified_of_aeval_additivePolynomial_eq_of_gcd_ord_eq_one k F V hV hgen hy hu hcop)
+    hzo, hzo⟩
+
+/-- **A generating uniformizer with constant Galois displacements** at a pole of `u` of order
+prime to `|V|`, where `V` consists of constants and `a_V (y) = u` generates `F' / F`: some
+uniformizer `z` at `P'` generates `F' / F`, and `ord_{P'} (σ z - z) = 1 - ord_P u` for every
+nonidentity `F`-automorphism `σ` of `F'`. No hypothesis on the residue field is needed. -/
+theorem exists_uniformizer_ord_aut_sub_of_aeval_additivePolynomial_eq
+    (hV : ∀ c ∈ V, IsAlgebraic k c) {y : F'} {u : F} (hgen : F⟮y⟯ = ⊤)
+    (hy : aeval y V.additivePolynomial = algebraMap F F' u)
+    (hu : (P'.restrict k F).ord u < 0)
+    (hcop : Int.gcd (Fintype.card V) ((P'.restrict k F).ord u) = 1) :
+    ∃ z : F', F⟮z⟯ = ⊤ ∧ P'.ord z = 1 ∧
+      ∀ σ : Gal(F'/F), σ ≠ 1 → P'.ord (σ z - z) = 1 - (P'.restrict k F).ord u := by
+  obtain ⟨z, t, α, β, -, hab, hz, hzg, hzo⟩ :=
+    exists_eq_zpow_mul_adjoin_eq_top_ord_eq_one_of_aeval_additivePolynomial_eq
+      k F V hV hgen hy hu hcop
+  have hyo := ord_eq_of_aeval_additivePolynomial_eq_of_gcd_ord_eq_one k F V hV hgen hy hu hcop
+  have hy0 : y ≠ 0 := by
+    rintro rfl
+    rw [P'.ord_zero] at hyo
+    omega
+  have hz0 : z ≠ 0 := by
+    rintro rfl
+    simp at hzo
+  refine ⟨z, hzg, hzo, fun σ hσ ↦ ?_⟩
+  -- A nonidentity automorphism translates `y` by a nonzero constant `c ∈ V`.
+  set c : V := (V.artinSchreierTranslationHom hy σ).toAdd with hc
+  have hc0 : c ≠ 0 := by
+    intro h
+    apply hσ
+    apply V.artinSchreierTranslationHom_injective hy hgen
+    apply Multiplicative.toAdd.injective
+    simpa [c] using h
+  have hcF : (c : F) ≠ 0 := by simpa using hc0
+  have hcF' : algebraMap F F' c ≠ 0 := (_root_.map_ne_zero _).mpr hcF
+  have hcval : P'.valuation (algebraMap F F' c) = 1 :=
+    P'.valuation_eq_one_of_isAlgebraic (((hV c c.2).algebraMap (A := F')).tower_top k') hcF'
+  -- `|V|` vanishes in `F`, so the Bezout identity forces `β ≠ 0` in `F'`.
+  have hcard : (Fintype.card V : F) = 0 := by
+    have h := congrArg ((↑) : V → F) (card_nsmul_eq_zero (x := c))
+    rw [AddSubgroup.coe_nsmul, nsmul_eq_mul, AddSubgroup.coe_zero] at h
+    exact (mul_eq_zero.mp h).resolve_right hcF
+  have hbcast : (β : F') ≠ 0 := by
+    have hq : (Fintype.card V : F') = 0 := by rw [← map_natCast (algebraMap F F'), hcard, map_zero]
+    have h := congrArg (fun a : ℤ ↦ (a : F')) hab
+    simp only [Int.cast_add, Int.cast_mul, Int.cast_natCast, Int.cast_one, hq, zero_mul,
+      zero_add] at h
+    intro hb
+    simp [hb] at h
+  have hbval : P'.valuation (β : F') = 1 :=
+    P'.valuation_eq_one_of_isAlgebraic (isAlgebraic_intCast β) hbcast
+  have hσz : σ z - z = (y + algebraMap F F' c) ^ β * algebraMap F F' t ^ α -
+      y ^ β * algebraMap F F' t ^ α := by
+    rw [hz, map_mul, map_zpow₀, map_zpow₀, AlgEquiv.commutes,
+      V.aut_apply_eq_add_artinSchreierTranslationHom hy σ]
+  have hygt : 1 < P'.valuation y := by
+    rw [P'.valuation_eq_exp_neg_ord hy0, ← WithZero.exp_zero, WithZero.exp_lt_exp]
+    omega
+  -- Translation lowers the power of the pole `y` by one; the factor `t ^ α` is fixed.
+  have hval : P'.valuation (σ z - z) = P'.valuation z / P'.valuation y := by
+    rw [hσz, ← sub_mul, P'.valuation.map_mul,
+      P'.valuation.map_add_zpow_sub_zpow (hcval.trans_lt hygt) β hbval, hcval, mul_one, hz,
+      P'.valuation.map_mul, map_zpow₀, map_zpow₀, zpow_sub₀ (P'.valuation.ne_zero_iff.mpr hy0),
+      zpow_one, div_mul_eq_mul_div]
+  calc
+    P'.ord (σ z - z) = P'.ord z - P'.ord y := by
+      rw [P'.ord_def, hval, WithZero.log_div (P'.valuation.ne_zero_iff.mpr hz0)
+        (P'.valuation.ne_zero_iff.mpr hy0), P'.ord_def, P'.ord_def]
+      ring
+    _ = 1 - (P'.restrict k F).ord u := by rw [hzo, hyo]
 
 end TauCeti.Place
