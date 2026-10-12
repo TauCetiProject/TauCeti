@@ -111,6 +111,19 @@ lemma cohomologyPushforwardNatIso_hom_app (hf : IsClosedEmbedding f)
       (cohomologyPushforwardIso f hf F n U).hom :=
   (rfl)
 
+/-- The cohomology comparison commutes with maps of coefficient sheaves. -/
+@[reassoc]
+lemma cohomologyPushforwardIso_naturality (hf : IsClosedEmbedding f)
+    {F G : X.Sheaf AddCommGrpCat.{u}} (α : F ⟶ G) (n : ℕ) (U : Opens Y) :
+    (TopCat.Sheaf.pushforward AddCommGrpCat.{u} f ⋙
+        _root_.CategoryTheory.Sheaf.cohomologyPresheafFunctor (Opens.grothendieckTopology Y) n ⋙
+          (evaluation (Opens Y)ᵒᵖ AddCommGrpCat.{u}).obj (op U)).map α ≫
+        (cohomologyPushforwardIso f hf G n U).hom =
+      (cohomologyPushforwardIso f hf F n U).hom ≫
+        (_root_.CategoryTheory.Sheaf.cohomologyPresheafFunctor (Opens.grothendieckTopology X) n ⋙
+          (evaluation (Opens X)ᵒᵖ AddCommGrpCat.{u}).obj (op ((Opens.map f).obj U))).map α :=
+  (cohomologyPushforwardNatIso f hf n U).hom.naturality α
+
 end
 
 end TauCeti.Topology

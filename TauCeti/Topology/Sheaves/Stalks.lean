@@ -72,15 +72,10 @@ theorem stalkPushforward_naturality (α : F ⟶ G) (x : X) :
       F.stalkPushforward C f x ≫ (TopCat.Presheaf.stalkFunctor C x).map α := by
   apply TopCat.Presheaf.stalk_hom_ext
   intro U hxU
-  refine (Category.assoc _ _ _).symm.trans (Eq.trans ?_ (Category.assoc _ _ _))
-  exact (congrArg (· ≫ G.stalkPushforward C f x)
-      (TopCat.Presheaf.stalkFunctor_map_germ U (f x) hxU
-        ((TopCat.Presheaf.pushforward C f).map α))).trans
-    ((Category.assoc _ _ _).trans
-      ((congrArg (((TopCat.Presheaf.pushforward C f).map α).app (op U) ≫ ·)
-        (TopCat.Presheaf.stalkPushforward_germ C f G U x hxU)).trans
-        ((TopCat.Presheaf.stalkFunctor_map_germ _ x hxU α).symm.trans
-          (congrArg (· ≫ (TopCat.Presheaf.stalkFunctor C x).map α)
-            (TopCat.Presheaf.stalkPushforward_germ C f F U x hxU).symm))))
+  erw [TopCat.Presheaf.stalkFunctor_map_germ_assoc,
+    TopCat.Presheaf.stalkPushforward_germ,
+    TopCat.Presheaf.stalkPushforward_germ_assoc,
+    TopCat.Presheaf.stalkFunctor_map_germ]
+  rfl
 
 end TauCeti.Topology
