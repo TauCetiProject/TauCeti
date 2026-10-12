@@ -438,19 +438,8 @@ theorem insertNth_append_natAdd {n m : ℕ} {β : Sort*} (i : Fin (m + 1)) (a : 
   refine ⟨by simp, ?_⟩
   funext k
   induction k using Fin.addCases with
-  | left k =>
-      have hk : (i.natAdd n).succAbove (k.castAdd m) = k.castAdd (m + 1) := by
-        apply Fin.ext
-        simp only [val_succAbove, val_castAdd, val_natAdd]
-        have := k.isLt
-        split_ifs <;> omega
-      simp [removeNth, hk]
-  | right k =>
-      have hk : (i.natAdd n).succAbove (k.natAdd n) = (i.succAbove k).natAdd n := by
-        apply Fin.ext
-        simp only [val_succAbove, val_natAdd]
-        split_ifs <;> omega
-      simp [removeNth, hk]
+  | left k => simp [removeNth, natAdd_succAbove_castAdd]
+  | right k => simp [removeNth, natAdd_succAbove_natAdd]
 
 /-! ### Inserting an entry into a tuple indexed by a sum of two blocks -/
 

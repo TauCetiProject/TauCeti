@@ -35,12 +35,12 @@ based maps (`TopCat.toSSetPiEquivHomotopyGroup`, `TopCat.toSSetPiEquivHomotopyGr
 
 The bijection sends the identity element to the identity element
 (`TopCat.toSSetPiEquivHomotopyGroup_one`), and it reverses products
-(`TopCat.toSSetPiEquivHomotopyGroup_mul`). A product `π.mk p * π.mk q` is witnessed by a map
-`Δⁿ⁺² → X` whose facets `n + 2`, `n + 1` and `n` are `p`, the product and `q`, so the product runs
-`p` before `q` in the last direction of the cube (`GenLoop.homotopic_simplexEquiv_transAt_last`),
-whereas Mathlib's product `⟦f⟧ * ⟦g⟧` runs `g` before `f`. In degrees at least two Mathlib's
-homotopy groups are commutative, so the bijection is a group isomorphism
-(`TopCat.toSSetPiMulEquivHomotopyGroup`).
+(`TopCat.toSSetPiEquivHomotopyGroup_mul_reverse`). A product `π.mk p * π.mk q` is witnessed by a
+map `Δⁿ⁺² → X` whose facets `n + 2`, `n + 1` and `n` are `p`, the product and `q`, so the product
+runs `p` before `q` in the last direction of the cube
+(`GenLoop.homotopic_simplexEquiv_transAt_last`), whereas Mathlib's product `⟦f⟧ * ⟦g⟧` runs `g`
+before `f`. In degrees at least two Mathlib's homotopy groups are commutative, so the bijection is
+a group isomorphism (`TopCat.toSSetPiMulEquivHomotopyGroup`).
 
 ## Main declarations
 
@@ -52,8 +52,8 @@ homotopy groups are commutative, so the bijection is a group isomorphism
   `SSet.KanComplex.π (n + 1) (TopCat.toSSet.obj X) x ≃ HomotopyGroup (Fin (n + 1)) X x`, with
   `TopCat.toSSetPiEquivHomotopyGroup_mk` its value on a pointed simplex and
   `TopCat.toSSetPiEquivHomotopyGroup_map` its naturality.
-* `TopCat.toSSetPiEquivHomotopyGroup_mul`, `TopCat.toSSetPiEquivHomotopyGroup_inv`: the bijection
-  reverses products and preserves inverses.
+* `TopCat.toSSetPiEquivHomotopyGroup_mul_reverse`, `TopCat.toSSetPiEquivHomotopyGroup_inv`: the
+  bijection reverses products and preserves inverses.
 * `TopCat.toSSetPiMulEquivHomotopyGroup`: the group isomorphism in degrees at least two.
 
 ## References
@@ -217,7 +217,7 @@ class of the facet `n + 1` of an `(n + 2)`-simplex whose facets `n + 2` and `n` 
 (`SSet.KanComplex.π.mul_mk_eq_iff`), which runs `p` before `q` in the last direction of the
 cube, whereas Mathlib's product `⟦f⟧ * ⟦g⟧` runs `g` before `f` (`HomotopyGroup.mul_spec`). -/
 @[simp]
-theorem toSSetPiEquivHomotopyGroup_mul
+theorem toSSetPiEquivHomotopyGroup_mul_reverse
     (a b : KanComplex.π (n + 1) (toSSet.obj X) (toSSetObj₀Equiv.symm x)) :
     toSSetPiEquivHomotopyGroup X x n (a * b) =
       toSSetPiEquivHomotopyGroup X x n b * toSSetPiEquivHomotopyGroup X x n a := by
@@ -251,8 +251,8 @@ lemma toSSetPiEquivHomotopyGroup_inv
   -- idempotent, hence the identity.
   have hidem : a * a⁻¹ * (a * a⁻¹) = a * a⁻¹ := by rw [mul_inv_cancel, mul_one]
   have he := congrArg (toSSetPiEquivHomotopyGroup X x n) hidem
-  rw [toSSetPiEquivHomotopyGroup_mul, mul_eq_left] at he
-  exact eq_inv_of_mul_eq_one_left (by rw [← toSSetPiEquivHomotopyGroup_mul, he])
+  rw [toSSetPiEquivHomotopyGroup_mul_reverse, mul_eq_left] at he
+  exact eq_inv_of_mul_eq_one_left (by rw [← toSSetPiEquivHomotopyGroup_mul_reverse, he])
 
 variable (X x n) in
 /-- In degrees at least two, where Mathlib's homotopy groups are commutative, the comparison of the
@@ -262,7 +262,7 @@ def toSSetPiMulEquivHomotopyGroup :
     KanComplex.π (n + 2) (toSSet.obj X) (toSSetObj₀Equiv.symm x) ≃*
       HomotopyGroup (Fin (n + 2)) X x where
   toEquiv := toSSetPiEquivHomotopyGroup X x (n + 1)
-  map_mul' a b := (toSSetPiEquivHomotopyGroup_mul a b).trans (mul_comm _ _)
+  map_mul' a b := (toSSetPiEquivHomotopyGroup_mul_reverse a b).trans (mul_comm _ _)
 
 @[simp]
 lemma coe_toSSetPiMulEquivHomotopyGroup :

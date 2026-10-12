@@ -354,36 +354,39 @@ lemma prism_eq_prism_iff {s s' : I} {w w' : StdSimplex ℝ (Fin (n + 1))} :
       · rfl
 
 /-- The map `Δⁿ × Δᵐ → Δⁿ⁺ᵐ` which splits the last vertex of `Δⁿ` into the vertices of `Δᵐ`: the
-barycentric coordinates of `splitLast c w` are `(c₀, …, cₙ₋₁, cₙ w₀, …, cₙ wₘ)`. -/
+barycentric coordinates of `splitLast c w` are `(c₀, …, cₙ₋₁, cₙ w₀, …, cₙ wₘ)`. It is the convex
+combination, with weights `c`, of the first `n` vertices of `Δⁿ⁺ᵐ` and of the copy of `w` on the
+last `m + 1` vertices. -/
 def splitLast {m : ℕ} (c : StdSimplex ℝ (Fin (n + 1))) (w : StdSimplex ℝ (Fin (m + 1))) :
-    StdSimplex ℝ (Fin (n + m + 1)) where
-  weights := Finsupp.equivFunOnFinite.symm
-    (Fin.append (m := n) (n := m + 1) (fun k => c.weights k.castSucc)
-      fun j => c.weights (Fin.last n) * w.weights j)
-  nonneg k := by
-    refine Fin.addCases (m := n) (n := m + 1) (fun k => ?_) (fun j => ?_) k
-    · simp
-    · simpa using mul_nonneg (weights_nonneg (w := c) _) (weights_nonneg (w := w) j)
-  total := by
-    rw [Finsupp.sum_fintype _ _ (by simp)]
-    have hc := c.total_of_fintype
-    rw [Fin.sum_univ_castSucc] at hc
-    simp only [Finsupp.equivFunOnFinite_symm_apply_apply]
-    refine (Fin.sum_univ_add (a := n) (b := m + 1) _).trans ?_
-    simp [← Finset.mul_sum, w.total_of_fintype, hc]
+    StdSimplex ℝ (Fin (n + m + 1)) :=
+  c.iConvexComb (Fin.lastCases (w.map (Fin.natAdd n)) fun k => .single (Fin.castAdd (m + 1) k))
 
 variable {m : ℕ}
+
+/-- The coordinates of `splitLast c w`, read off the convex combination defining it. -/
+private lemma splitLast_weights (c : StdSimplex ℝ (Fin (n + 1))) (w : StdSimplex ℝ (Fin (m + 1)))
+    (k : Fin (n + m + 1)) :
+    (splitLast c w).weights k = c.weights (Fin.last n) * (w.map (Fin.natAdd n)).weights k +
+      ∑ i : Fin n, if Fin.castAdd (m + 1) i = k then c.weights i.castSucc else 0 := by
+  rw [splitLast, iConvexComb, weights_sConvexComb, weights_map,
+    Finsupp.sum_mapDomain_index (by simp) (by simp [add_smul]),
+    Finsupp.sum_fintype _ _ (by simp), Finset.sum_apply', Fin.sum_univ_castSucc, add_comm]
+  simp [Finsupp.single_apply]
 
 @[simp]
 lemma splitLast_weights_castAdd (c : StdSimplex ℝ (Fin (n + 1))) (w : StdSimplex ℝ (Fin (m + 1)))
     (k : Fin n) : (splitLast c w).weights (Fin.castAdd (m + 1) k) = c.weights k.castSucc := by
-  simp [splitLast]
+  rw [splitLast_weights, weights_map, Finsupp.mapDomain_of_notMem_range]
+  · simp [Fin.castAdd_inj]
+  · rintro ⟨j, hj⟩
+    exact absurd congr(($hj : ℕ)) (by simp; omega)
 
 @[simp]
 lemma splitLast_weights_natAdd (c : StdSimplex ℝ (Fin (n + 1))) (w : StdSimplex ℝ (Fin (m + 1)))
     (j : Fin (m + 1)) :
     (splitLast c w).weights (Fin.natAdd n j) = c.weights (Fin.last n) * w.weights j := by
-  simp [splitLast]
+  rw [splitLast_weights, weights_map_apply_of_injective (Fin.natAdd_injective _ _)]
+  exact add_eq_left.2 <| Finset.sum_eq_zero fun i _ => by simp [Fin.ext_iff]; omega
 
 /-- `splitLast` is jointly continuous in the two simplices. -/
 @[fun_prop]
