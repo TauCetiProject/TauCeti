@@ -46,20 +46,38 @@ variable {X ι : Type*} [PseudoMetricSpace X] {l : Filter ι}
   [l.NeBot] [l.IsCountablyGenerated] {p q a b : ℝ}
   {u : ℝ → X} {us : ι → ℝ → X} {g : X → ℝ≥0∞} {gs : ι → X → ℝ≥0∞}
 
-/-- **Lower semicontinuity of dissipation.** Pointwise convergence of absolutely continuous
-curves and an almost-everywhere lower bound on the upper gradients give a lower bound on
-the limiting dissipation. No absolute continuity of the limit is assumed. -/
+/-- **Lower semicontinuity of dissipation.** Pointwise convergence of curves, eventually
+absolutely continuous, and an almost-everywhere lower bound on the upper gradients give a
+lower bound on the limiting dissipation. No absolute continuity of the limit is assumed. -/
 theorem dissipation_le_liminf (hp : 1 < p) (hq : 0 < q)
-    (hus : ∀ i, AbsolutelyContinuousOnInterval (us i) a b)
+    (hus : ∀ᶠ i in l, AbsolutelyContinuousOnInterval (us i) a b)
     (hu : ∀ t ∈ uIcc a b, Tendsto (fun i ↦ us i t) l (𝓝 (u t)))
-    (hgs : ∀ i, AEMeasurable (fun t ↦ gs i (us i t)) (volume.restrict (Ι a b)))
+    (hgs : ∀ᶠ i in l, AEMeasurable (fun t ↦ gs i (us i t)) (volume.restrict (Ι a b)))
     (hg : ∀ᵐ t ∂volume.restrict (Ι a b), g (u t) ≤ liminf (fun i ↦ gs i (us i t)) l) :
     dissipation p q g u a b ≤ liminf (fun i ↦ dissipation p q (gs i) (us i) a b) l := by
-  have hA := curveAction_le_liminf_of_one_lt hp (.of_forall hus) hu
+  classical
+  have hA := curveAction_le_liminf_of_one_lt hp hus hu
+  -- Replace the exceptional, possibly nonmeasurable integrands by zero for Fatou.
+  let fs : ι → ℝ → ℝ≥0∞ := fun i ↦
+    if AEMeasurable (fun t ↦ gs i (us i t)) (volume.restrict (Ι a b)) then
+      fun t ↦ gs i (us i t) ^ q else 0
+  have hfs : ∀ᶠ i in l, fs i = fun t ↦ gs i (us i t) ^ q :=
+    hgs.mono fun i hi ↦ by simp [fs, hi]
+  have hmeas i : AEMeasurable (fs i) (volume.restrict (Ι a b)) := by
+    dsimp [fs]
+    split_ifs with hi
+    · exact hi.pow_const q
+    · exact aemeasurable_const
+  have hFatou : (∫⁻ t in Ι a b, liminf (fun i ↦ gs i (us i t) ^ q) l) ≤
+      liminf (fun i ↦ ∫⁻ t in Ι a b, gs i (us i t) ^ q) l := by
+    calc
+      _ = ∫⁻ t in Ι a b, liminf (fun i ↦ fs i t) l :=
+        lintegral_congr fun t ↦ liminf_congr (hfs.mono fun i hi ↦ congrFun hi.symm t)
+      _ ≤ liminf (fun i ↦ ∫⁻ t in Ι a b, fs i t) l := lintegral_liminf_le' hmeas
+      _ = _ := liminf_congr (hfs.mono fun i hi ↦ by rw [hi])
   have hG : (∫⁻ t in Ι a b, g (u t) ^ q) ≤
       liminf (fun i ↦ ∫⁻ t in Ι a b, gs i (us i t) ^ q) l := by
-    refine (lintegral_mono_ae (hg.mono fun t ht ↦ ?_)).trans
-      (lintegral_liminf_le' fun i ↦ (hgs i).pow_const q)
+    refine (lintegral_mono_ae (hg.mono fun t ht ↦ ?_)).trans hFatou
     exact (ENNReal.rpow_le_rpow ht hq.le).trans_eq
       ((ENNReal.monotone_rpow_of_nonneg hq.le).map_liminf_of_continuousAt (F := l)
         (fun i ↦ gs i (us i t)) ENNReal.continuous_rpow_const.continuousAt)
@@ -89,25 +107,26 @@ theorem dissipation_le_liminf (hp : 1 < p) (hq : 0 < q)
           (u := fun i ↦ (↑(curveAction p (us i) a b / ENNReal.ofReal p) : EReal))
           (v := fun i ↦ (↑((∫⁻ t in Ι a b, gs i (us i t) ^ q) / ENNReal.ofReal q) : EReal)))
 
-/-- **The Sandier–Serfaty limit argument on a fixed carrier.** Let curves of maximal slope
-converge pointwise on `[a,b]`, with initial energies converging to the limiting initial
-energy, a lower bound on the terminal energy, and an almost-everywhere lower bound on the
-upper gradients. If the limiting upper gradient is strong, the limit is a curve of maximal
-slope. Absolute continuity of the limit follows from the dissipation bound. -/
+/-- **The Sandier–Serfaty limit argument on a fixed carrier.** Let the approximating curves
+eventually be curves of maximal slope and converge pointwise on `[a,b]`, with initial
+energies converging to the limiting initial energy, a lower bound on the terminal energy,
+and an almost-everywhere lower bound on the upper gradients. If the limiting upper gradient
+is strong, the limit is a curve of maximal slope. Absolute continuity of the limit follows
+from the dissipation bound. -/
 theorem isCurveOfMaximalSlope_of_tendsto {φ : X → EReal} {φs : ι → X → EReal}
     (hpq : p.HolderConjugate q) (hab : a ≤ b)
-    (hus : ∀ i, IsCurveOfMaximalSlope p q (φs i) (gs i) (us i) (Icc a b))
+    (hus : ∀ᶠ i in l, IsCurveOfMaximalSlope p q (φs i) (gs i) (us i) (Icc a b))
     (hu : ∀ t ∈ Icc a b, Tendsto (fun i ↦ us i t) l (𝓝 (u t)))
     (hinit : Tendsto (fun i ↦ φs i (us i a)) l (𝓝 (φ (u a))))
     (ha : φ (u a) ≠ ⊤) (hb : φ (u b) ≠ ⊥)
     (henergy : φ (u b) ≤ liminf (fun i ↦ φs i (us i b)) l)
-    (hgs : ∀ i, AEMeasurable (fun t ↦ gs i (us i t)) (volume.restrict (Ι a b)))
+    (hgs : ∀ᶠ i in l, AEMeasurable (fun t ↦ gs i (us i t)) (volume.restrict (Ι a b)))
     (hslope : ∀ᵐ t ∂volume.restrict (Ι a b),
       g (u t) ≤ liminf (fun i ↦ gs i (us i t)) l)
     (hg : IsStrongUpperGradient φ g) : IsCurveOfMaximalSlope p q φ g u (Icc a b) := by
   have haI : a ∈ Icc a b := ⟨le_rfl, hab⟩
   have hbI : b ∈ Icc a b := ⟨hab, le_rfl⟩
-  have hAC i := (hus i).absolutelyContinuousOnInterval haI hbI
+  have hAC := hus.mono fun i hi ↦ hi.absolutelyContinuousOnInterval haI hbI
   have hlim : ∀ t ∈ uIcc a b, Tendsto (fun i ↦ us i t) l (𝓝 (u t)) := by
     simpa only [uIcc_of_le hab] using hu
   set D := liminf (fun i ↦ dissipation p q (gs i) (us i) a b) l
@@ -122,7 +141,7 @@ theorem isCurveOfMaximalSlope_of_tendsto {φ : X → EReal} {φs : ι → X → 
         rw [hcoe]
         exact EReal.le_liminf_add
       _ ≤ liminf (fun i ↦ φs i (us i a)) l :=
-        liminf_le_liminf (.of_forall fun i ↦ (hus i).apply_add_dissipation_le haI hbI hab)
+        liminf_le_liminf (hus.mono fun i hi ↦ hi.apply_add_dissipation_le haI hbI hab)
       _ = _ := hinit.liminf_eq
   have hD : D ≠ ∞ := by
     intro h
@@ -145,7 +164,7 @@ theorem isCurveOfMaximalSlope_of_tendsto {φ : X → EReal} {φs : ι → X → 
     rw [h, ENNReal.top_div_of_ne_top ENNReal.ofReal_ne_top, top_le_iff] at hle
     exact hD hle
   have hACu := absolutelyContinuousOnInterval_of_tendsto_of_liminf_ne_top hpq.lt
-    (.of_forall hAC) hlim haction
+    hAC hlim haction
   refine (isCurveOfMaximalSlope_Icc_iff hg hpq hab hACu).2 ⟨ha, hb, ?_⟩
   refine le_trans ?_ hbound
   gcongr
@@ -155,13 +174,14 @@ theorem isCurveOfMaximalSlope_of_tendsto {φ : X → EReal} {φs : ι → X → 
 omit [l.IsCountablyGenerated] in
 /-- **Convergence of energy and dissipation.** For a limiting curve of maximal slope with
 a strong upper gradient, well-prepared initial energies and lower bounds on the terminal
-energy and dissipation force convergence of both quantities. This applies to any interval
-on which the limit argument has identified the limiting curve. -/
+energy and dissipation force convergence of both quantities, provided the approximating
+curves are eventually curves of maximal slope. This applies to any interval on which the
+limit argument has identified the limiting curve. -/
 theorem IsCurveOfMaximalSlope.tendsto_apply_and_dissipation
     {φ : X → EReal} {φs : ι → X → EReal}
     (h : IsCurveOfMaximalSlope p q φ g u (Icc a b))
     (hg : IsStrongUpperGradient φ g) (hpq : p.HolderConjugate q) (hab : a ≤ b)
-    (hus : ∀ i, IsCurveOfMaximalSlope p q (φs i) (gs i) (us i) (Icc a b))
+    (hus : ∀ᶠ i in l, IsCurveOfMaximalSlope p q (φs i) (gs i) (us i) (Icc a b))
     (hinit : Tendsto (fun i ↦ φs i (us i a)) l (𝓝 (φ (u a))))
     (henergy : φ (u b) ≤ liminf (fun i ↦ φs i (us i b)) l)
     (hdiss : dissipation p q g u a b ≤
@@ -194,7 +214,7 @@ theorem IsCurveOfMaximalSlope.tendsto_apply_and_dissipation
       _ ≤ limsup (fun i ↦ φs i (us i b) + dissipation p q (gs i) (us i) a b) l :=
         EReal.le_limsup_add
       _ ≤ limsup (fun i ↦ φs i (us i a)) l :=
-        limsup_le_limsup (.of_forall fun i ↦ (hus i).apply_add_dissipation_le haI hbI hab)
+        limsup_le_limsup (hus.mono fun i hi ↦ hi.apply_add_dissipation_le haI hbI hab)
       _ = _ := hinit.limsup_eq
   have hEtendsto : Tendsto (fun i ↦ φs i (us i b)) l (𝓝 (φ (u b))) := by
     rw [heq, ← EReal.coe_ennreal_toReal hD] at hupper
@@ -213,8 +233,8 @@ theorem IsCurveOfMaximalSlope.tendsto_apply_and_dissipation
         _ ≤ limsup (fun i ↦ (dissipation p q (gs i) (us i) a b : EReal) +
             φs i (us i b)) l := EReal.le_limsup_add
         _ ≤ limsup (fun i ↦ φs i (us i a)) l := by
-          exact limsup_le_limsup (.of_forall fun i ↦ by
-            simpa only [add_comm] using (hus i).apply_add_dissipation_le haI hbI hab)
+          exact limsup_le_limsup (hus.mono fun i hi ↦ by
+            simpa only [add_comm] using hi.apply_add_dissipation_le haI hbI hab)
         _ = _ := hinit.limsup_eq
     rw [heq, add_comm (φ (u b))] at hsum
     lift φ (u b) to ℝ using ⟨h.apply_ne_top hbI, h.apply_ne_bot hbI⟩ with eb
