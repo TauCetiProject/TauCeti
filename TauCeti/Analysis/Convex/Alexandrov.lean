@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Convex.SubgradientImage
 public import TauCeti.Analysis.Convex.Differentiability
 public import Mathlib.Analysis.InnerProductSpace.Positive
+import TauCeti.Analysis.Calculus.SecondOrderExpansion
 import TauCeti.Analysis.Calculus.Sard.EqualDimension
 import TauCeti.MeasureTheory.Measure.Haar.Lipschitz
 
@@ -54,8 +55,6 @@ second-order terms differ by a quadratic form that is `o(‖x' - x‖ ^ 2)`, hen
   subdifferential is a positive operator;
 * `TauCeti.eq_of_forall_mem_subdifferential_norm_sub_le` — the derivative of the subdifferential
   is unique;
-* `TauCeti.eq_of_isSymmetric_of_isLittleO` — the symmetric second-order term of a Taylor
-  expansion is unique;
 * `TauCeti.ae_existsUnique_isPositive_forall_mem_subdifferential_norm_sub_le` — **Alexandrov's
   theorem** for the subdifferential: it is differentiable, with a unique and positive derivative,
   almost everywhere on the effective domain;
@@ -328,39 +327,6 @@ theorem eq_of_forall_mem_subdifferential_norm_sub_le {x y : E} {A B : E →L[ℝ
     rwa [ContinuousLinearMap.comp_id] at h
   exact sub_eq_zero.1 (h₁.unique h₀)
 
-/-- **The symmetric second-order term of a Taylor expansion is unique.** If the real function `u`
-has the second-order expansions
-`u x' = u x + ⟪y, x' - x⟫ + ⟪A (x' - x), x' - x⟫ / 2 + o(‖x' - x‖ ^ 2)` and the same with `B`, and
-`A` and `B` are symmetric, then `A = B`. -/
-theorem eq_of_isSymmetric_of_isLittleO {u : E → ℝ} {x y : E} {A B : E →L[ℝ] E}
-    (hA : A.IsSymmetric) (hB : B.IsSymmetric)
-    (hTA : (fun x' => u x' - u x - ⟪y, x' - x⟫_ℝ - ⟪A (x' - x), x' - x⟫_ℝ / 2)
-      =o[𝓝 x] fun x' => ‖x' - x‖ ^ 2)
-    (hTB : (fun x' => u x' - u x - ⟪y, x' - x⟫_ℝ - ⟪B (x' - x), x' - x⟫_ℝ / 2)
-      =o[𝓝 x] fun x' => ‖x' - x‖ ^ 2) :
-    A = B := by
-  -- The quadratic form of `A - B` is `o(‖x' - x‖ ^ 2)`. Restricted to the line through `x` in a
-  -- direction `v` it is `t ^ 2 ⟪(A - B) v, v⟫`, so it vanishes, and a symmetric operator with
-  -- vanishing quadratic form is zero.
-  have hD : (fun x' => ⟪(A - B) (x' - x), x' - x⟫_ℝ) =o[𝓝 x] fun x' => ‖x' - x‖ ^ 2 := by
-    refine ((hTB.sub hTA).const_mul_left 2).congr_left fun x' => ?_
-    simp only [sub_apply, inner_sub_left]
-    ring
-  have hq : ∀ v, ⟪(A - B) v, v⟫_ℝ = 0 := fun v => by
-    have hlim : Tendsto (fun t : ℝ => x + t • v) (𝓝[≠] 0) (𝓝 x) :=
-      ((continuous_const.add (continuous_id.smul continuous_const)).tendsto' 0 x
-        (by simp)).mono_left nhdsWithin_le_nhds
-    have h := ((hD.comp_tendsto hlim).mul_isBigO (isBigO_refl (fun t : ℝ => (t ^ 2)⁻¹) _))
-    refine (isLittleO_const_const_iff (c := ‖v‖ ^ 2)).1 (h.congr' ?_ ?_)
-    all_goals
-      filter_upwards [self_mem_nhdsWithin] with t ht
-      have ht' : t ≠ 0 := ht
-      simp only [comp_apply, add_sub_cancel_left, map_smul, real_inner_smul_left,
-        real_inner_smul_right, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
-      field_simp
-  have h := (hA.sub hB).inner_map_self_eq_zero.1 (by simpa using hq)
-  exact sub_eq_zero.1 (ContinuousLinearMap.coe_injective (by simpa using h))
-
 /-- The expansion of the subdifferential at `x` obtained by inverting that of the resolvent. Let
 `g` agree with the resolvent, `g (x' + y') = x'` whenever `y' ∈ ∂f(x')`, let `y ∈ ∂f(x)`, and let
 `g` have the invertible derivative `L` at `x + y`. If the subgradients at points near `x` are close
@@ -440,7 +406,8 @@ epigraph, never `⊥`) on a finite-dimensional real inner product space with an 
 `μ`. At `μ`-almost every point `x` of the effective domain, the subdifferential of `f` is
 differentiable with a positive derivative `A`: every subgradient `y'` of `f` at a point `x'` near
 `x` satisfies `y' = ∇F x + A (x' - x) + o(‖x' - x‖)`, where `F x = (f x).toReal`. The operator `A`
-is the only one with this expansion. -/
+is the only positive operator with this expansion; uniqueness among all operators is
+`eq_of_forall_mem_subdifferential_norm_sub_le`. -/
 theorem ae_existsUnique_isPositive_forall_mem_subdifferential_norm_sub_le
     (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) (hbot : ∀ x, f x ≠ ⊥) :
     ∀ᵐ x ∂μ, f x ≠ ⊤ → ∃! A : E →L[ℝ] E, A.IsPositive ∧ ∀ ε > 0, ∀ᶠ x' in 𝓝 x,
