@@ -1152,6 +1152,16 @@ theorem reflection_sub_apply_eq_of_map_eq (x y : M) (hxy : Q x = Q y)
         ring
   rw [hpolar, invOf_mul_self, one_smul, sub_sub_cancel]
 
+/-- If `x` and `y` have the same quadratic value, reflecting `x` in `x + y` carries it to `-y`
+whenever `x + y` has invertible norm. -/
+theorem reflection_add_apply_eq_neg_of_map_eq (x y : M) (hxy : Q x = Q y)
+    [Invertible (Q (x + y))] :
+    reflection Q (x + y) x = -y := by
+  have key : ∀ (z : M) (_ : Invertible (Q z)), z = x - -y → reflection Q z x = -y := by
+    rintro z _ rfl
+    exact reflection_sub_apply_eq_of_map_eq Q x (-y) (hxy.trans (Q.map_neg y).symm)
+  exact key _ _ (sub_neg_eq_add x y).symm
+
 section Field
 
 variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
@@ -1190,7 +1200,8 @@ variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
 variable (Q : QuadraticForm K V) [NeZero (2 : K)]
 
 open TauCeti.QuadraticMap (isUnit_sub_or_add_of_map_eq orthogonalGroupEquivIsometryEquiv
-  reflectionOrthogonal reflection_sub_apply_eq_of_map_eq reflection)
+  reflectionOrthogonal reflection_add_apply_eq_neg_of_map_eq reflection_sub_apply_eq_of_map_eq
+  reflection)
 
 /-- A specified orthogonal transport between vectors of the same nonzero quadratic value.
 It is the reflection in `x - y` when that vector is anisotropic; otherwise it is the reflection
@@ -1243,11 +1254,7 @@ theorem reflectionTransport_apply (x y : V) (hxy : Q x = Q y) (hy : Q y ≠ 0) :
       (by simpa only [isUnit_iff_ne_zero] using hsub)
     let := hadd.invertible
     let := (isUnit_iff_ne_zero.mpr hy).invertible
-    let : Invertible (Q (x - -y)) := by simpa only [sub_neg_eq_add] using hadd.invertible
-    have hneg : reflection Q (x + y) x = -y := by
-      -- The public coefficient equation removes the dependent invertibility data before rewriting.
-      simpa only [TauCeti.QuadraticMap.reflection_apply_eq_sub_div, sub_neg_eq_add] using
-        reflection_sub_apply_eq_of_map_eq Q x (-y) (hxy.trans (Q.map_neg y).symm)
+    have hneg := reflection_add_apply_eq_neg_of_map_eq Q x y hxy
     simp [reflectionTransport_eq_reflection_mul_reflection Q x y hxy hy
       (not_ne_iff.mp hsub), hneg, map_neg]
 
@@ -1331,23 +1338,21 @@ theorem exists_reflectionOrthogonal_list_prod_mul_eqOn_sup_span_singleton
     · exact QuadraticMap.reflection_apply_of_polar_eq_zero Q _ (by
         rw [QuadraticMap.polar_sub_left, hgx w hw, (hx w hw).polar_eq_zero, sub_self])
     · exact QuadraticMap.reflection_sub_apply_eq_of_map_eq Q _ x hmap
-  · -- Two reflections: in `g x + x`, written `g x - -x`, and then in `x`.
-    let : Invertible (Q ((g : V ≃ₗ[K] V) x - -x)) := by
-      simpa only [sub_neg_eq_add] using haddUnit.invertible
+  · -- Two reflections: in `g x + x`, and then in `x`.
+    let : Invertible (Q ((g : V ≃ₗ[K] V) x + x)) := haddUnit.invertible
     refine ⟨[QuadraticMap.reflectionOrthogonal Q x,
-      QuadraticMap.reflectionOrthogonal Q ((g : V ≃ₗ[K] V) x - -x)], ?_, by simp, ?_⟩
+      QuadraticMap.reflectionOrthogonal Q ((g : V ≃ₗ[K] V) x + x)], ?_, by simp, ?_⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false]
       rintro r (rfl | rfl) <;> exact ⟨_, inferInstance, rfl⟩
     · rw [List.prod_cons, List.prod_singleton]
       refine key _ (fun w hw => ?_) ?_ <;>
         rw [Subgroup.coe_mul, LinearEquiv.mul_apply, QuadraticMap.coe_reflectionOrthogonal,
           QuadraticMap.coe_reflectionOrthogonal]
-      · rw [QuadraticMap.reflection_apply_of_polar_eq_zero Q ((g : V ≃ₗ[K] V) x - -x) (by
-            rw [QuadraticMap.polar_sub_left, QuadraticMap.polar_neg_left, hgx w hw,
-              (hx w hw).polar_eq_zero, neg_zero, sub_zero]),
+      · rw [QuadraticMap.reflection_apply_of_polar_eq_zero Q ((g : V ≃ₗ[K] V) x + x) (by
+            rw [QuadraticMap.polar_add_left, hgx w hw, (hx w hw).polar_eq_zero, add_zero]),
           QuadraticMap.reflection_apply_of_polar_eq_zero Q x (hx w hw).polar_eq_zero]
-      · rw [QuadraticMap.reflection_sub_apply_eq_of_map_eq Q _ (-x)
-          (hmap.trans (Q.map_neg x).symm), map_neg, QuadraticMap.reflection_apply_self, neg_neg]
+      · rw [QuadraticMap.reflection_add_apply_eq_neg_of_map_eq Q _ x hmap, map_neg,
+          QuadraticMap.reflection_apply_self, neg_neg]
 
 end FixedSubspace
 
