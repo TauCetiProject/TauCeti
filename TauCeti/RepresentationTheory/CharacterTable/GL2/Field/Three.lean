@@ -17,7 +17,7 @@ import TauCeti.FieldTheory.Quadratic
 -- Non-public: the canonical additive character is nontrivial.
 import TauCeti.NumberTheory.LegendreSymbol.Complex
 -- Non-public: multiplicative characters take the value `1` or `-1` at `-1`.
-import TauCeti.Algebra.Ring.Units
+import TauCeti.Algebra.Ring.Hom
 
 /-!
 # The character table of `GL₂(𝔽₃)`
