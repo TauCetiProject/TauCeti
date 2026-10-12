@@ -14,9 +14,10 @@ public import Mathlib.CategoryTheory.Adjunction.Mates
 Pushforward, including restriction of scalars, has a canonical comparison from the exterior
 power of a pushforward to the pushforward of the exterior power. On sections it sends a wedge
 over the source coefficient ring to the same wedge over the target coefficient ring.
-Its adjoint constructs a natural map `α* (⋀ⁿ M) ⟶ ⋀ⁿ (α* M)` for pullback of module
-presheaves. This supplies the sectionwise input to exterior-power pullback comparisons for
-sheaves. Unlike precomposition alone, restriction of scalars does not generally give an
+Taking its mate under the pullback--pushforward adjunction constructs a natural map
+`α* (⋀ⁿ M) ⟶ ⋀ⁿ (α* M)` for pullback of module presheaves. Only the adjunction is needed
+for this construction. This supplies the sectionwise input to exterior-power pullback comparisons
+for sheaves. Unlike precomposition alone, restriction of scalars does not generally give an
 isomorphism of exterior powers; no invertibility assertion is made here.
 
 The construction uses the module-level restriction-of-scalars comparison and Mathlib's
