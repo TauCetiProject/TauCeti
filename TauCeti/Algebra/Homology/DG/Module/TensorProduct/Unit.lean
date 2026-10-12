@@ -23,7 +23,7 @@ isomorphisms and require no flatness hypothesis.
 
 ## Main definitions
 
-* `cochainComplexLid`: tensoring a left DG module with the regular right module returns it.
+* `cochainComplexLid`: tensoring the regular right DG module with a left DG module returns it.
 * `cochainComplexRid`: tensoring a right DG module with the regular left module returns it.
 
 ## References

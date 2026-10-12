@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Grading.Basic
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Unit
 
 /-!
