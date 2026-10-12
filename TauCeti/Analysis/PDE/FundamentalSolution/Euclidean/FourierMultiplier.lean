@@ -106,7 +106,8 @@ private theorem exists_cutoff : ∃ C : ℝ, ∀ R : ℝ, 0 < R → ∃ χ : Euc
     refine b.zero_of_le_dist ?_
     rw [dist_zero_right, norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hR,
       le_inv_mul_iff₀ hR]
-    exact (show (2 : ℝ) * R < ‖y‖ from hy).le.trans_eq' (mul_comm _ _)
+    have hy' : 2 * R < ‖y‖ := hy
+    linarith
   · have h : HasFDerivAt (fun x => b (R⁻¹ • x)) _ x :=
       ((hb.differentiable (by simp)) (R⁻¹ • x)).hasFDerivAt.comp x
         ((hasFDerivAt_id x).const_smul R⁻¹)
@@ -182,10 +183,11 @@ private theorem norm_laplacian_smul_newtonianKernel_convolution_add_le [Complete
   rw [indicator_of_mem (mem_closedBall_zero_iff.2 hx2R),
     (hχ.contDiffAt.of_le (by simp)).laplacian_fun_smul (hu.contDiffAt.of_le (by simp)), hΔu,
     Pi.neg_apply, hφx x (by linarith), neg_zero, smul_zero, zero_add, add_zero]
+  have hR₀x : R₀ < ‖x‖ := by linarith
   have h₁ := norm_fderiv_newtonianKernel_convolution_apply_le hn (hφ.of_le (by simp)) hc
-    ((subset_tsupport φ).trans hR₀) (show R₀ < ‖x‖ by linarith) (∇ χ x)
+    ((subset_tsupport φ).trans hR₀) hR₀x (∇ χ x)
   have h₂ := norm_newtonianKernel_convolution_le hn (hφ.continuous.integrable_of_hasCompactSupport
-    hc) ((subset_tsupport φ).trans hR₀) (show R₀ < ‖x‖ by linarith)
+    hc) ((subset_tsupport φ).trans hR₀) hR₀x
   have hA₁ := integral_nonneg (μ := volume) (f := fun y => ‖fderiv ℝ φ y‖) fun y => norm_nonneg _
   have hA₀ := integral_nonneg (μ := volume) (f := fun y => ‖φ y‖) fun y => norm_nonneg _
   have hΔχ : ‖Δ χ x‖ ≤ C / R := (hχ'' x).trans (div_le_div_of_nonneg_left hC hR0
