@@ -63,7 +63,7 @@ quotients. -/
 theorem limitSubgroup_toSylow [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
     (hP : IsProPSylow p P) :
     limitSubgroup (fun U ↦ (hP.toSylow U : Subgroup (G ⧸ U.toSubgroup))) = P := by
-  simpa only [toSylow_coe] using limitSubgroup_map_mk' P hP.isClosed
+  simpa only [toSylow_coe] using P.limitSubgroup_map_mk' hP.isClosed
 
 end IsProPSylow
 

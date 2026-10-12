@@ -41,9 +41,11 @@ together with the archimedean places, with `S` containing the ramified primes, t
 
 ## Main definitions
 
-* `TauCeti.ClassFieldTheory.sUnitsRep L S`, `TauCeti.ClassFieldTheory.sIdelesRep L S` and
-  `TauCeti.ClassFieldTheory.ideleClassRep K L`: the `S`-units, the `S`-ideles and the idele classes
-  of `L` as integral representations of `Aut(L/K)`.
+* `TauCeti.ClassFieldTheory.sUnitsRep L S`, `TauCeti.ClassFieldTheory.sIdelesRep L S`,
+  `TauCeti.ClassFieldTheory.idelesRep K L` and `TauCeti.ClassFieldTheory.ideleClassRep K L`: the
+  `S`-units, the `S`-ideles, the ideles and the idele classes of `L` as integral representations of
+  `Aut(L/K)`.
+* `TauCeti.ClassFieldTheory.sIdelesToIdeles L S`: the inclusion `I_{L,S} → I_L`.
 * `TauCeti.ClassFieldTheory.sIdeleShortComplex L S`: the sequence `U_{L,S} → I_{L,S} → C_L`.
 
 ## Main results
@@ -73,7 +75,7 @@ open GlobalNumberFields
 variable {K : Type} [Field K] [NumberField K] (L : Type) [Field L] [NumberField L] [Algebra K L]
   (S : Set (HeightOneSpectrum (𝓞 K)))
 
-/-! ### The three representations -/
+/-! ### The representations -/
 
 /-- The `S`-units of `L`, the units at every finite place not above `S`, as an integral
 representation of `Aut(L/K)`. -/
@@ -84,6 +86,11 @@ abbrev sUnitsRep : Rep ℤ (L ≃ₐ[K] L) :=
 integral representation of `Aut(L/K)`. -/
 abbrev sIdelesRep : Rep ℤ (L ≃ₐ[K] L) :=
   Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (sIdeles L S)
+
+variable (K) in
+/-- The ideles of `L`, as an integral representation of `Aut(L/K)`. -/
+abbrev idelesRep : Rep ℤ (L ≃ₐ[K] L) :=
+  Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (IdeleGroup (𝓞 L) L)
 
 variable (K) in
 /-- The idele class group `C_L` of `L`, as an integral representation of `Aut(L/K)`. -/
@@ -117,6 +124,23 @@ theorem sUnitsToSIdeles_hom_apply (a : Additive ((primesAbove (𝓞 K) (𝓞 L) 
     (sUnitsToSIdeles L S).hom a = Additive.ofMul ⟨IdeleGroup.unitEmbedding (𝓞 L) L a.toMul,
       (unitEmbedding_mem_sIdeles_iff S _).2 a.toMul.2⟩ :=
   (rfl)
+
+/-- The inclusion `I_{L,S} → I_L` of the `S`-ideles, as a morphism of representations of
+`Aut(L/K)`. -/
+def sIdelesToIdeles : sIdelesRep L S ⟶ idelesRep K L :=
+  Rep.ofHom <| LinearMap.intertwiningMap_of_isIntertwiningMap _ _
+    (sIdeles L S).subtype.toAdditive.toIntLinearMap fun _ _ ↦ rfl
+
+/-- `sIdelesToIdeles` sends an `S`-idele to itself. -/
+@[simp]
+theorem sIdelesToIdeles_hom_apply (x : Additive (sIdeles L S)) :
+    (sIdelesToIdeles L S).hom x = Additive.ofMul (x.toMul : IdeleGroup (𝓞 L) L) :=
+  (rfl)
+
+/-- The inclusion of the `S`-ideles into the ideles is injective. -/
+theorem sIdelesToIdeles_hom_injective : Function.Injective (sIdelesToIdeles L S).hom :=
+  fun x y h ↦ Additive.toMul.injective <| Subtype.ext <| Additive.ofMul.injective <|
+    (sIdelesToIdeles_hom_apply L S x).symm.trans (h.trans (sIdelesToIdeles_hom_apply L S y))
 
 /-- The quotient map `I_{L,S} → C_L` sending an `S`-idele to its idele class, as a morphism of
 representations of `Aut(L/K)`. -/
