@@ -163,16 +163,9 @@ reflection.** It preserves each of the three blocks. -/
     ![0, 2, 1, 3, 4, 6, 5, 7, 8, 10, 9, 11, 12, 14, 13, 15, 16, 18, 17, 19, 20, 22, 21, 23],
     ![0, 1, 3, 2, 5, 4, 6, 7, 9, 8, 10, 11, 12, 13, 15, 14, 16, 17, 20, 21, 18, 19, 22, 23],
     ![0, 1, 4, 5, 2, 3, 6, 7, 8, 9, 12, 13, 10, 11, 14, 15, 17, 16, 18, 19, 20, 21, 23, 22]]
-  {
-    toFun := reflectionIndex i
-    invFun := reflectionIndex i
-    left_inv := by
-      intro a
-      fin_cases i <;> fin_cases a <;> decide
-    right_inv := by
-      intro a
-      fin_cases i <;> fin_cases a <;> decide
-  }
+  Function.Involutive.toPerm (reflectionIndex i) (by
+    intro a
+    fin_cases i <;> fin_cases a <;> decide)
 
 /-- Applying the same simple reflection twice fixes every index in the weight table. -/
 @[simp]
