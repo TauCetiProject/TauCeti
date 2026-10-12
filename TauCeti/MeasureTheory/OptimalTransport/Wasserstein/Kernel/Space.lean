@@ -57,7 +57,8 @@ theorem coe_comp (μ : WassersteinSpace p X) (κ : Kernel X Y) [IsMarkovKernel �
   exact coe_mk _ _
 
 /-- The measure underlying the Wasserstein-space action is the ordinary kernel mixture. -/
-@[simp]
+-- Simplify the outer coercion before `coe_comp` rewrites the inner probability measure.
+@[simp↓]
 theorem toMeasure_comp (μ : WassersteinSpace p X) (κ : Kernel X Y) [IsMarkovKernel κ]
     (hp : p ≠ ∞) (hκ : ∀ x x', wassersteinEDist p (κ x) (κ x') ≤ L * edist x x')
     (hκ₀ : ∃ x, HasFiniteMoment p (κ x)) :
