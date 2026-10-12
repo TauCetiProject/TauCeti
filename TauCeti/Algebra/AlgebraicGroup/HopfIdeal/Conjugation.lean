@@ -272,7 +272,7 @@ theorem mapDomain_pointConjugation_mem_conjugate_iff
     simpa only [BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_toBialgHom] using
       EquivLike.surjective (HopfAlgebra.pointConjugationBialgEquiv g)
   rw [HopfIdeal.conjugate_eq_comapOfSurjective]
-  exact mapDomain_mem_quotientPointsSubgroup_comapOfSurjective_iff _ hsurj I A x
+  exact BialgHom.mapDomain_mem_quotientPointsSubgroup_comapOfSurjective_iff _ hsurj I A x
 
 /-- In explicit pointwise terms, conjugating a point by `g` carries the points of `I` exactly
 onto the points of the conjugated ideal. -/
