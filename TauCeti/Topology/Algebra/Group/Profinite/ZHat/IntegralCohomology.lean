@@ -11,9 +11,10 @@ public import TauCeti.Topology.Algebra.Group.Profinite.ZHat.RationalCharacter
 /-!
 # Integral second cohomology of the profinite integers
 
-The connecting map of `0 → ℤ → ℚ → ℚ/ℤ → 0`, followed by evaluation of rational
-characters at the canonical generator, gives `H²(zHat, ℤ) ≃+ ℚ/ℤ`. Thus second
-integral cohomology is nonzero, although second cohomology with torsion coefficients vanishes.
+The inverse of the connecting isomorphism of `0 → ℤ → ℚ → ℚ/ℤ → 0`, followed by
+evaluation of rational characters at the canonical generator, gives `H²(zHat, ℤ) ≃+ ℚ/ℤ`.
+Thus second integral cohomology is nonzero, although second cohomology with torsion coefficients
+vanishes.
 
 The cohomology carrier is Mathlib's continuous cohomology. The integers and rationals are
 lifted to the universe of `zHat`, and the rational circle may be any discrete model in that
