@@ -6,6 +6,7 @@ Authors: Wentao Li
 module
 
 public import TauCeti.Algebra.Homology.Curved.Module.Right.DGCategory
+public import TauCeti.CategoryTheory.DG.Preadditive
 
 /-!
 # Closed morphisms of curved differential graded right modules
@@ -161,5 +162,15 @@ theorem closedHom_closedIsoOf_inv (e : M ≃ₗ[Aᵐᵒᵖ] N)
     (hd : ∀ x, N.differential (e x) = e (M.differential x)) :
     closedHom (closedIsoOf e he hd).inv = e.symm.toLinearMap := by
   simp only [closedIsoOf, closedHom_closedHomOf]
+
+/-- Scalar multiplication of closed morphisms acts on their underlying right-linear maps. -/
+@[simp]
+theorem closedHom_smul (r : R)
+    (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N) :
+    closedHom (r • f) = r • closedHom f := by
+  ext x
+  simp only [closedHom_eq, dgClosedHom_smul R r f, map_smul,
+    Submodule.coe_smul, LinearMap.smul_apply]
 
 end TauCeti.CurvedDGRightModuleCat
