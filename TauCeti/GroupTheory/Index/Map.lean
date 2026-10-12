@@ -14,6 +14,11 @@ import TauCeti.GroupTheory.Index.Basic
 Under a surjective homomorphism, the index of a subgroup factors into the index of its
 image and its relative index in the kernel. This counts the contribution lost on passing to a
 quotient, for instance the contribution of principal ideles to an idele-class index.
+
+## Main results
+
+* `TauCeti.subgroup_index_map_mul_relIndex_ker`: the image-index factorization for groups.
+* `TauCeti.addSubgroup_index_map_mul_relIndex_ker`: the same factorization for additive groups.
 -/
 
 public section
