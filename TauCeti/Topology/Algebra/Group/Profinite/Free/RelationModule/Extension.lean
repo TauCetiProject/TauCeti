@@ -113,10 +113,13 @@ theorem exists_presentationProfiniteExtension_comparison :
         ψ.toMonoidHom = (presentationProfiniteExtension p ha).toGroupExtension.rightHom := by
   let := presentationClassModuleAction p ha
   obtain ⟨ψ, hψ⟩ := exists_abelianizationProPExtension_comparison p W a
+  -- The profinite-extension abbreviations retain the canonical total groups, so `ψ` has
+  -- the required source and target without transporting its underlying homomorphism.
   refine ⟨ψ, MonoidHom.ext fun x ↦ ?_⟩
   induction x using QuotientGroup.induction_on with
   | H f =>
-    rw [MonoidHom.comp_apply, presentationProfiniteExtension_rightHom_mk]
+    rw [MonoidHom.comp_apply, abelianizationProPProfiniteExtension_toGroupExtension,
+      presentationProfiniteExtension_rightHom_mk]
     exact hψ f
 
 end Comparison

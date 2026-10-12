@@ -164,13 +164,15 @@ theorem exists_continuous_section [T2Space G] (hinl : Continuous S.inl)
   -- identify `G` with the quotient of `E` by the kernel of the projection
   set N := S.rightHom.ker
   let f : E →ₜ* G := ⟨S.rightHom, hrh⟩
+  -- Bundling continuity leaves the projection's values unchanged.
+  have hf : ∀ x, f x = S.rightHom x := fun _ => rfl
   let e := f.quotientKerEquivOfSurjective S.rightHom_surjective
   -- pull the continuous section of `E → E ⧸ N` back along that identification
   obtain ⟨s, hs, hsec, hs₁⟩ := TauCeti.exists_continuous_section N (isClosed_ker_rightHom hinl)
-  have hone : e.symm 1 = QuotientGroup.mk 1 := e.symm_apply_eq.2 (by simp [e, f])
+  have hone : e.symm 1 = QuotientGroup.mk 1 := by
+    rw [← S.rightHom.map_one, ← hf, f.quotientKerEquivOfSurjective_symm_apply]
   have hsec' : ∀ g : G, S.rightHom (s (e.symm g)) = g := fun g => by
-    change f (s (e.symm g)) = g
-    rw [← f.quotientKerEquivOfSurjective_apply_mk S.rightHom_surjective, hsec,
+    rw [← hf, ← f.quotientKerEquivOfSurjective_apply_mk S.rightHom_surjective, hsec,
       ContinuousMulEquiv.apply_symm_apply]
   have hone' : s (e.symm 1) = 1 := by rw [hone]; exact hs₁
   -- the coercion of a `GroupExtension.Section` is its underlying function, so `hone'` is the

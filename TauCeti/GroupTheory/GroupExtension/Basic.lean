@@ -102,6 +102,16 @@ theorem relabelQuotient_rightHom (S : GroupExtension N E G) {G' : Type*} [Group 
     (S.relabelQuotient e).rightHom = e.toMonoidHom.comp S.rightHom :=
   (rfl)
 
+/-- Relabelling the quotient does not change conjugation on the kernel. -/
+@[simp]
+theorem _root_.TauCeti.GroupExtension.relabelQuotient_conjAct {S : GroupExtension N E G}
+    {H : Type*} [Group H] (e : G ≃* H) :
+    (S.relabelQuotient e).conjAct = S.conjAct := by
+  ext x m
+  apply S.inl_injective
+  rw [← GroupExtension.relabelQuotient_inl S e, GroupExtension.inl_conjAct_comm,
+    GroupExtension.relabelQuotient_inl, GroupExtension.inl_conjAct_comm]
+
 section Hom
 
 variable {N' : Type*} {E' : Type*} [Group N'] [Group E'] {S : GroupExtension N E G}
