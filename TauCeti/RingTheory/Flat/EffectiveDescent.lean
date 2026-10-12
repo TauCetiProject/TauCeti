@@ -264,10 +264,8 @@ noncomputable def equivDescended [Module.FaithfullyFlat R S] {A : Type*} [Ring A
       fun a ↦ by simpa using he a)
     (by
       refine ⟨fun a a' h ↦ ?_, fun ⟨b, hb⟩ ↦ ?_⟩
-      · have h' : (1 : S) ⊗ₜ[R] (a - a') = 0 := by
-          rw [tmul_sub, sub_eq_zero]
-          exact e.injective congr($h.1)
-        simpa [sub_eq_zero] using h'
+      · refine Module.FaithfullyFlat.tensorProduct_mk_injective (A := R) (B := S) A ?_
+        simpa using e.injective congr($h.1)
       -- The coaction of `D` is the transport of the canonical coaction along `e`.
       have hcompat : ∀ x, D.coaction (e x) =
           Algebra.TensorProduct.map (AlgHom.id R S) (e.toAlgHom.restrictScalars R)
@@ -461,7 +459,7 @@ private theorem coe_equivDescendedBaseChange_apply [Module.FaithfullyFlat R S] (
     (equivDescendedBaseChange (R := R) (S := S) a : S ⊗[R] A) = 1 ⊗ₜ a :=
   (rfl)
 
-/-- **Descent of morphisms of affine schemes.** If `S` is faithfully flat over `R`, the
+/-- **Full faithfulness of base change.** If `S` is faithfully flat over `R`, the
 `R`-algebra maps `A → A'` are exactly the morphisms between the canonical descent data on
 `S ⊗[R] A` and `S ⊗[R] A'`, via `f ↦ id ⊗ f`. -/
 noncomputable def baseChangeHomEquiv [Module.FaithfullyFlat R S] :

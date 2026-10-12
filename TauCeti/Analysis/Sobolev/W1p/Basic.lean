@@ -272,26 +272,7 @@ private theorem gradient_assembleSobolev1JetLp (u : Lp ℝ p (mu.restrict Omega)
 
 /-! ### The weak Sobolev space `W^{1,p}(Ω)` -/
 
-variable [OpensMeasurableSpace E]
-
-private theorem testIntegral_eq_zero_iff
-    (f f' : E → ℝ) (hf : LocallyIntegrableOn f Omega mu)
-    (hf' : LocallyIntegrableOn f' Omega mu) (phi : 𝓓(Omega, ℝ)) (v : E) :
-    (∫ x in Omega,
-        lineDeriv ℝ (phi : E → ℝ) x v * f x + phi x * f' x ∂mu) = 0 ↔
-      (∫ x, lineDeriv ℝ (phi : E → ℝ) x v • f x ∂mu) =
-        -(∫ x, phi x • f' x ∂mu) := by
-  have hleft : Integrable (fun x => lineDeriv ℝ (phi : E → ℝ) x v * f x) mu := by
-    simpa only [smul_eq_mul] using integrable_lineDeriv_smul_of_locallyIntegrableOn hf phi v
-  have hright : Integrable (fun x => phi x * f' x) mu := by
-    simpa only [smul_eq_mul] using integrable_smul_of_locallyIntegrableOn hf' phi
-  rw [integral_add hleft.integrableOn hright.integrableOn]
-  simp only [← smul_eq_mul]
-  rw [setIntegral_lineDeriv_smul_eq_integral_lineDeriv_smul,
-    setIntegral_smul_eq_integral_smul]
-  constructor <;> intro h <;> linarith
-
-variable [mu.IsAddHaarMeasure]
+variable [OpensMeasurableSpace E] [mu.IsAddHaarMeasure]
 
 /-- A value-gradient jet as a jet of `TauCeti.weakDerivStepSubmodule` over `Lᵖ(Ω)`: the value is
 kept, and the `E`-valued gradient becomes the field of continuous linear functionals
@@ -526,30 +507,15 @@ theorem mem_w1pSubmodule_iff_hasWeakFDerivOn (J : Sobolev1JetLp mu Omega p) :
     J ∈ w1pSubmodule mu Omega p ↔
       HasWeakFDerivOn mu Omega (Sobolev1JetLp.value J)
         (Sobolev1JetLp.candidateWeakFDeriv J) := by
-  have hvalue : LocallyIntegrableOn (Sobolev1JetLp.value J) Omega mu :=
-    locallyIntegrableOn_of_locallyIntegrable_restrict
-      ((Lp.memLp (Sobolev1JetLp.value J)).locallyIntegrable Fact.out)
-  have hderiv (v : E) : LocallyIntegrableOn
-      (fun x => Sobolev1JetLp.candidateWeakFDeriv J x v) Omega mu := by
-    apply locallyIntegrableOn_of_locallyIntegrable_restrict
-    have hinner := (Lp.memLp (Sobolev1JetLp.gradient J)).const_inner (𝕜 := ℝ) v
-    exact (hinner.locallyIntegrable Fact.out).congr <| by
-      filter_upwards with x
-      simp only [Sobolev1JetLp.candidateWeakFDeriv_apply]
-  rw [mem_w1pSubmodule_iff]
-  constructor
-  · intro h
-    rw [hasWeakFDerivOn_iff]
-    intro v
-    rw [hasWeakLineDerivOn_iff_testFunction]
-    refine ⟨inferInstance, hvalue, hderiv v, fun phi => ?_⟩
-    exact (testIntegral_eq_zero_iff _ _ hvalue (hderiv v) phi v).mp (h phi v)
-  · intro h
-    rw [hasWeakFDerivOn_iff] at h
-    intro phi v
-    exact (testIntegral_eq_zero_iff _ _ (h v).locallyIntegrableOn
-      (h v).locallyIntegrableOn_deriv phi v).mpr
-        ((h v).integral_lineDeriv_smul_eq_neg_integral_smul phi)
+  rw [w1pSubmodule, ClosedSubmodule.mem_comap,
+    mem_weakDerivStepSubmodule_iff_hasWeakFDerivOn, fst_toWeakDerivStepJet,
+    ContinuousLinearMap.id_apply]
+  have hderiv : (WithLp.snd (toWeakDerivStepJet J) :
+      Lp (E →L[ℝ] ℝ) p (mu.restrict Omega)) =ᵐ[mu.restrict Omega]
+      Sobolev1JetLp.candidateWeakFDeriv J := by
+    rw [snd_toWeakDerivStepJet]
+    exact (innerSL ℝ (E := E)).coeFn_compLpL (Sobolev1JetLp.gradient J)
+  exact ⟨fun h => h.congr_ae_deriv hderiv, fun h => h.congr_ae_deriv hderiv.symm⟩
 
 /-- Construct a Sobolev function from its `Lᵖ` value and weak-gradient components. -/
 def W1p.mk (u : Lp ℝ p (mu.restrict Omega)) (g : Lp E p (mu.restrict Omega))

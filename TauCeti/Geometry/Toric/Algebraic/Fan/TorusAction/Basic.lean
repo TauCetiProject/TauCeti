@@ -46,7 +46,7 @@ affine toric open cover of `X_Φ` is locally directed, so its pullback along the
 
 public section
 
-open AlgebraicGeometry CategoryTheory Limits MonObj
+open AlgebraicGeometry CategoryTheory Limits MonoidalCategory MonObj
 
 namespace TauCeti.Toric.Fan
 
@@ -216,6 +216,30 @@ theorem algebraicRealizationAction_comp_algebraicRealizationStructureMap :
   refine algebraicRealizationActionChartMap_hom_ext fun σ ↦ ?_
   simp [affineToricChartι_comp_algebraicRealizationStructureMap,
     affineToricSchemeAction_comp_specMap_algebraMap]
+
+/-- The glued torus action as a morphism of schemes over `Spec ℂ`. -/
+noncomputable def algebraicRealizationActionOver :
+    (affineToricScheme Φ.lattice (⊥ : PointedCone ℝ V)).asOver (Spec (.of ℂ)) ⊗
+      Φ.algebraicRealization.asOver (Spec (.of ℂ)) ⟶
+        Φ.algebraicRealization.asOver (Spec (.of ℂ)) := by
+  let f : Over.mk (Spec.map (CommRingCat.ofHom (algebraMap ℂ
+      (affineCoordinateRing Φ.lattice (⊥ : PointedCone ℝ V))))) ⊗
+        Over.mk Φ.algebraicRealizationStructureMap ⟶
+          Over.mk Φ.algebraicRealizationStructureMap :=
+    Over.homMk Φ.algebraicRealizationAction
+      (Φ.algebraicRealizationAction_comp_algebraicRealizationStructureMap.trans
+        pullback.condition.symm)
+  simpa only [OverClass.asOver, algebraicRealization_over, specOverSpec_over] using f
+
+/-- Forgetting the base from the action over `Spec ℂ` gives the glued action morphism. -/
+theorem algebraicRealizationActionOver_left :
+    Φ.algebraicRealizationActionOver.left = Φ.algebraicRealizationAction := (rfl)
+
+/-- Tensoring a chart inclusion with the identity on the torus gives the product chart map. -/
+theorem whiskerLeft_affineToricChartι_asOver_left (σ : Φ.cones) :
+    ((affineToricScheme Φ.lattice (⊥ : PointedCone ℝ V)).asOver (Spec (.of ℂ)) ◁
+      (Φ.affineToricChartι σ).asOver (Spec (.of ℂ))).left =
+        algebraicRealizationActionChartMap σ := (rfl)
 
 /-- The section of the projection from the product of the dense torus with the toric scheme of a
 fan, given by the identity point of the dense torus. -/

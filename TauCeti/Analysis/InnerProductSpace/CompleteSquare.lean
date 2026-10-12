@@ -22,6 +22,10 @@ Specialized to the weights `1 - t` and `t` for `t ∈ [0, 1]`, it is the identit
 `d(x, (1 - t) a + t b) ^ 2 + t (1 - t) d(a, b) ^ 2 = (1 - t) d(x, a) ^ 2 + t d(x, b) ^ 2`,
 which we record in `ℝ≥0∞` for use in extended-valued integral estimates.
 
+The squared norm of `‖x‖ • y - ‖x‖⁻¹ • x` also has the polynomial expansion
+`‖x‖² ‖y‖² - 2 ⟪x, y⟫ + 1` when `‖x‖ ≠ 0`. This normalized reflection identity is used in
+spherical inversion.
+
 ## Main declarations
 
 * `TauCeti.mul_norm_sq_add_mul_norm_sub_sq`: the completed-square identity above.
@@ -30,6 +34,8 @@ which we record in `ℝ≥0∞` for use in extended-valued integral estimates.
   `‖·‖² / 2` at `x`.
 * `TauCeti.edist_smul_add_smul_sq_add`: the convex-combination form of the identity, for extended
   distances.
+* `TauCeti.norm_sq_norm_smul_sub_inv_norm_smul`: the squared norm of the normalized reflection
+  vector as a polynomial.
 -/
 
 public section
@@ -39,6 +45,15 @@ namespace TauCeti
 open scoped RealInnerProductSpace
 
 variable {F : Type*} [SeminormedAddCommGroup F] [InnerProductSpace ℝ F]
+
+/-- The squared seminorm of `‖x‖ • y - x / ‖x‖` expands to a polynomial in `x` and `y`.
+Its seminorm is `‖x‖ ‖y - x*‖` for the reflection `x* = x / ‖x‖²` of `x` through the unit
+sphere. The polynomial is defined at `x = 0` as well. -/
+theorem norm_sq_norm_smul_sub_inv_norm_smul {x : F} (hx : ‖x‖ ≠ 0) (y : F) :
+    ‖‖x‖ • y - ‖x‖⁻¹ • x‖ ^ 2 = ‖x‖ ^ 2 * ‖y‖ ^ 2 - 2 * ⟪x, y⟫ + 1 := by
+  rw [norm_sub_sq_real, real_inner_smul_left, real_inner_smul_right, real_inner_comm x y]
+  simp only [norm_smul, Real.norm_eq_abs, abs_norm, abs_inv, mul_pow, inv_pow]
+  field_simp
 
 /-- **Completing the square** for a weighted sum of squared distances: if `a + b ≠ 0`, then
 `a ‖y‖² + b ‖x - y‖² = (a + b) ‖y - (b / (a + b)) • x‖² + (a b / (a + b)) ‖x‖²`. -/

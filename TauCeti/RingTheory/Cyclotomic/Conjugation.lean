@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Star.Basic
 public import TauCeti.RingTheory.Cyclotomic.Basic
 
 /-!
@@ -90,28 +91,16 @@ theorem complexEmbedding_star [NeZero e] (x : Cyclotomic e) :
 
 /-- Computable conjugation makes exact cyclotomic integers a star ring, including the zero ring
 at conductor zero. -/
-instance instStarRing : StarRing (Cyclotomic e) where
-  star_involutive x := by
-    by_cases he : e = 0
-    · subst e
-      exact ext fun j => Fin.elim0 j
-    · have : NeZero e := ⟨he⟩
-      exact ((complexEmbedding_injective (e := e)).involutiveStar _
-        complexEmbedding_star).star_involutive x
-  star_add x y := by
-    by_cases he : e = 0
-    · subst e
-      exact ext fun j => Fin.elim0 j
-    · have : NeZero e := ⟨he⟩
-      exact ((complexEmbedding_injective (e := e)).starAddMonoid _
-        complexEmbedding_star complexEmbedding.map_add).star_add x y
-  star_mul x y := by
-    by_cases he : e = 0
-    · subst e
-      exact ext fun j => Fin.elim0 j
-    · have : NeZero e := ⟨he⟩
-      exact ((complexEmbedding_injective (e := e)).starMul _
-        complexEmbedding_star complexEmbedding.map_mul).star_mul x y
+instance instStarRing : StarRing (Cyclotomic e) := by
+  by_cases he : e = 0
+  · subst e
+    exact
+      { star_involutive := fun x => ext fun j => Fin.elim0 j
+        star_add := fun x y => ext fun j => Fin.elim0 j
+        star_mul := fun x y => ext fun j => Fin.elim0 j }
+  · let : NeZero e := ⟨he⟩
+    exact complexEmbedding_injective.starRing complexEmbedding complexEmbedding_star
+      complexEmbedding.map_add complexEmbedding.map_mul
 
 /-- Conjugation sends the distinguished generator to `ζ_e ^ (e - 1)`. -/
 @[simp]

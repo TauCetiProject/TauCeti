@@ -358,23 +358,25 @@ theorem wedgeWith_flip {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
       Equiv.Perm.sign B • ∑ sigma : Equiv.Perm (Fin (k + l)), Equiv.Perm.sign sigma •
         mu (phi (fun i => v (sigma (Fin.castAdd l i))))
           (psi (fun j => v (sigma (Fin.natAdd k j)))) := by
-    rw [Finset.smul_sum]
-    refine Fintype.sum_equiv (c.permCongr.trans (Equiv.mulRight B)) _ _ fun tau => ?_
-    have hsign : Equiv.Perm.sign tau =
-        Equiv.Perm.sign B * Equiv.Perm.sign (c.permCongr tau * B) := by
-      rw [Equiv.Perm.sign_mul, Equiv.Perm.sign_permCongr, mul_comm, mul_assoc, ← sq]
-      simp [Int.units_sq]
-    have hleft : (fun i => v ((c.permCongr tau * B) (Fin.castAdd l i))) =
-        fun j => v (Fin.cast (Nat.add_comm l k) (tau (Fin.natAdd l j))) := by
-      funext i
-      simp [B, c, finAddFlip_apply_castAdd]
-    have hright : (fun j => v ((c.permCongr tau * B) (Fin.natAdd k j))) =
-        fun i => v (Fin.cast (Nat.add_comm l k) (tau (Fin.castAdd k i))) := by
-      funext j
-      simp [B, c, finAddFlip_apply_natAdd]
-    simp only [Equiv.trans_apply, Equiv.coe_mulRight, Function.comp_apply, hsign, mul_smul,
-      ContinuousLinearMap.flip_apply]
-    rw [hleft, hright]
+    let f : Equiv.Perm (Fin (k + l)) → F₃ := fun sigma =>
+      mu (phi (fun i => v (sigma (Fin.castAdd l i))))
+        (psi (fun j => v (sigma (Fin.natAdd k j))))
+    calc
+      _ = ∑ tau : Equiv.Perm (Fin (l + k)), Equiv.Perm.sign tau •
+          f (c.permCongr tau * B) := by
+        apply Finset.sum_congr rfl
+        intro tau _
+        have hleft : (fun i => v ((c.permCongr tau * B) (Fin.castAdd l i))) =
+            fun j => v (Fin.cast (Nat.add_comm l k) (tau (Fin.natAdd l j))) := by
+          funext i
+          simp [B, c, finAddFlip_apply_castAdd]
+        have hright : (fun j => v ((c.permCongr tau * B) (Fin.natAdd k j))) =
+            fun i => v (Fin.cast (Nat.add_comm l k) (tau (Fin.castAdd k i))) := by
+          funext j
+          simp [B, c, finAddFlip_apply_natAdd]
+        simp only [f, Function.comp_apply, ContinuousLinearMap.flip_apply]
+        rw [← hright, ← hleft]
+      _ = _ := sum_sign_smul_permCongr_mul c B f
   rw [wedgeWith_apply, wedgeWith_apply, hsum, sign_finAddFlip_trans_finCongr]
   generalize (∑ sigma : Equiv.Perm (Fin (k + l)), (_ : F₃)) = S
   rw [Units.smul_def, ← Int.cast_smul_eq_zsmul ℝ]
