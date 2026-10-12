@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.GraphAutomorphism
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InverseTranspose
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.MkOfDetNeZero
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Basic
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection
