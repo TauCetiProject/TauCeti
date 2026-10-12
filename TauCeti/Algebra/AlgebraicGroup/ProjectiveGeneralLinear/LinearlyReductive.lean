@@ -15,9 +15,9 @@ import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.LinearlyReductive
 
 Over a field of characteristic zero, every finite-dimensional representation of `PGLₙ`, the
 automorphism group scheme of the matrix algebra `Mₙ`, is completely reducible, in every rank
-including `n = 0`. So the finite-dimensional representations of `PGLₙ`, such as its conjugation
-action on `Mₙ`, split into irreducible summands, and `PGLₙ`, the adjoint group of type `Aₙ₋₁`, is
-linearly reductive. In positive characteristic this fails as soon as `n ≥ 2`.
+including `n = 0`, that is, `PGLₙ` is linearly reductive. So its finite-dimensional
+representations, such as its conjugation action on `Mₙ`, split into irreducible summands. In
+positive characteristic this fails as soon as `n ≥ 2`.
 
 ## Main declaration
 
