@@ -53,11 +53,11 @@ open scoped BigOperators
 
 section Presentation
 
-variable {k G : Type*} [Field k] {ι : Type*} {d : ι → ℕ}
+variable {k G : Type*} {ι : Type*} {d : ι → ℕ}
 
 /-- **The sum of the squares of the matrix sizes is the order of the group**: both sides compute
 the dimension of `k[G]`. -/
-theorem sum_sq_eq_card_of_algEquiv_pi_matrix [Monoid G] [Finite G] [Fintype ι]
+theorem sum_sq_eq_card_of_algEquiv_pi_matrix [Field k] [Monoid G] [Finite G] [Fintype ι]
     (e : MonoidAlgebra k G ≃ₐ[k] Π i, Matrix (Fin (d i)) (Fin (d i)) k) :
     ∑ i, d i ^ 2 = Nat.card G :=
   calc ∑ i, d i ^ 2
@@ -67,7 +67,11 @@ theorem sum_sq_eq_card_of_algEquiv_pi_matrix [Monoid G] [Finite G] [Fintype ι]
         let := Fintype.ofFinite G
         rw [Module.finrank_eq_card_basis (MonoidAlgebra.basis G k), Fintype.card_eq_nat_card]
 
-/-- **The center of the group algebra splits**: a Wedderburn presentation of `k[G]` with blocks
+section Center
+
+variable [CommSemiring k]
+
+/-- **The center of the monoid algebra splits**: a Wedderburn presentation of `k[G]` with blocks
 indexed by `ι` identifies `Z(k[G])` with the algebra `ι → k` of functions on the blocks. -/
 noncomputable def centerMonoidAlgebraAlgEquivPi [Monoid G] [∀ i, NeZero (d i)]
     (e : MonoidAlgebra k G ≃ₐ[k] Π i, Matrix (Fin (d i)) (Fin (d i)) k) :
@@ -98,8 +102,9 @@ sides compute the dimension of `Z(k[G])`.
 
 This is the numerical half of the count `#irreducibles = #conjugacy classes`; identifying the blocks
 with the isomorphism classes of simple `k[G]`-modules is a separate statement. -/
-theorem card_eq_card_conjClasses_of_algEquiv_pi_matrix [Group G] [Finite G] [Fintype ι]
-    [∀ i, NeZero (d i)] (e : MonoidAlgebra k G ≃ₐ[k] Π i, Matrix (Fin (d i)) (Fin (d i)) k) :
+theorem card_eq_card_conjClasses_of_algEquiv_pi_matrix [StrongRankCondition k] [Group G]
+    [Finite G] [Fintype ι] [∀ i, NeZero (d i)]
+    (e : MonoidAlgebra k G ≃ₐ[k] Π i, Matrix (Fin (d i)) (Fin (d i)) k) :
     Fintype.card ι = Nat.card (ConjClasses G) :=
   calc Fintype.card ι
       = Module.finrank k (Subalgebra.center k (Π i, Matrix (Fin (d i)) (Fin (d i)) k)) :=
@@ -107,6 +112,8 @@ theorem card_eq_card_conjClasses_of_algEquiv_pi_matrix [Group G] [Finite G] [Fin
     _ = Module.finrank k (Subalgebra.center k (MonoidAlgebra k G)) :=
         (centerCongr e).toLinearEquiv.finrank_eq.symm
     _ = Nat.card (ConjClasses G) := finrank_center_monoidAlgebra k G
+
+end Center
 
 end Presentation
 
