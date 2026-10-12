@@ -1044,7 +1044,7 @@ theorem exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow_of_local_subsolutio
     [Nonempty ι] {p : ℝ} (hp : 0 < p) (hp2 : p ≤ 2) :
     ∃ D : ℝ, 0 < D ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
       {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2} {k : ℝ}
-      {x₀ : EuclideanSpace ℝ ι} {R : ℝ} (_ : 0 < R)
+      {x₀ : EuclideanSpace ℝ ι} {R : ℝ}
       (hball : Metric.ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι))),
       let U : Opens (EuclideanSpace ℝ ι) := ⟨Metric.ball x₀ R, Metric.isOpen_ball⟩
       let uU : W1p mu U 2 := W1p.restrictL hball u
@@ -1059,7 +1059,7 @@ theorem exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow_of_local_subsolutio
   obtain ⟨D, hD, hbound⟩ :=
     exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow (mu := mu)
       (lam := lam) (Lam := Lam) hp hp2
-  refine ⟨D, hD, fun {Omega a u k x₀ R} hR hball h ha hu => ?_⟩
+  refine ⟨D, hD, fun {Omega a u k x₀ R} hball h ha hu => ?_⟩
   let U : Opens (EuclideanSpace ℝ ι) := ⟨Metric.ball x₀ R, Metric.isOpen_ball⟩
   have hU : U ≤ Omega := hball
   let uU : W1p mu U 2 := W1p.restrictL hU u
@@ -1072,7 +1072,11 @@ theorem exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow_of_local_subsolutio
     filter_upwards [hvalue] with x hx
     rw [hx]
   have hhalf : Metric.ball x₀ (R / 2) ⊆ Metric.ball x₀ R :=
-    Metric.ball_subset_ball (by linarith)
+    by
+      by_cases hR : 0 ≤ R
+      · exact Metric.ball_subset_ball (by linarith)
+      · rw [Metric.ball_eq_empty.mpr (by linarith : R / 2 ≤ 0)]
+        exact Set.empty_subset _
   filter_upwards [hlocal, ae_restrict_of_ae_restrict_of_subset hhalf hvalue] with x hx hv
   simpa only [hv, hint] using hx
 
