@@ -318,8 +318,8 @@ theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints
     have hfiber : Prod.mk p₁ ⁻¹' A = pkg.obstructionSlice hT p₁ ''
         ({z | (p₁, z) ∈ V} ∩
           {z | ¬ Surjective (fderiv ℝ (pkg.obstructionSlice hT p₁) z)}) := by
-      ext z
-      rfl
+      rw [hAdef]
+      simp only [preimage_ofPred_eq, ofPred_mem_eq]
     rw [hfiber]
     have hUC : ∀ z ∈ {z : pkg.decDom.X₀ | (p₁, z) ∈ V},
         ContDiffAt ℝ (k : ℕ∞ω) (pkg.obstructionSlice hT p₁) z := by
