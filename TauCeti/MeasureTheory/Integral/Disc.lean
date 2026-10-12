@@ -7,7 +7,6 @@ module
 
 public import TauCeti.MeasureTheory.Integral.PolarCoord
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 
 /-!
@@ -18,7 +17,7 @@ its integral with respect to the radius is the boundary integral, parametrized b
 `circleMap`. The density may have an integrable singularity at the centre. In particular,
 this formula applies to finite energy on a punctured disc before an extension is known.
 
-The annular polar formula is `Complex.integral_comp_polarCoord_symm_Icc`; the derivative
+The annular polar formula is `TauCeti.integral_annulus_eq_integral_circleMap`; the derivative
 uses Mathlib's fundamental theorem of calculus on a compact annulus around the radius.
 The target may be any real Banach space.
 
@@ -73,46 +72,6 @@ theorem ContinuousOn.smul_integral_comp_circleMap [CompleteSpace F]
       (ha.trans (hr.1.trans hr.2))
   · exact continuous_id.continuousOn.smul
       (hf.comp (by simp only [circleMap]; fun_prop) (fun r hr ↦ hmem r hr θ))
-
-namespace TauCeti
-
-/-- Polar Fubini for a continuous Banach-space-valued density on a closed annulus, with
-the radial integral outermost and the angular variable running once around the circle. -/
-theorem integral_annulus_eq_integral_circleMap [CompleteSpace F] {f : ℂ → F} {z₀ : ℂ} {a b : ℝ}
-    (ha : 0 < a) (hab : a ≤ b)
-    (hf : ContinuousOn f {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}) :
-    (∫ z in {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, f z) =
-      ∫ r in a..b, r • ∫ θ in -π..π, f (circleMap z₀ r θ) := by
-  have hP : Continuous (fun p : ℝ × ℝ ↦ circleMap z₀ p.1 p.2) := by
-    simp only [circleMap]
-    fun_prop
-  have hmem (p : ℝ × ℝ) (hp : p ∈ Icc a b ×ˢ Icc (-π) π) :
-      circleMap z₀ p.1 p.2 ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} := by
-    simpa only [mem_ofPred_eq, circleMap_sub_center, norm_circleMap_zero,
-      abs_of_pos (ha.trans_le hp.1.1)] using (mem_Icc.mp hp.1)
-  have hint : IntegrableOn (fun p : ℝ × ℝ ↦ p.1 • f (circleMap z₀ p.1 p.2))
-      (Icc a b ×ˢ Icc (-π) π) :=
-    (continuous_fst.continuousOn.smul (hf.comp hP.continuousOn hmem)).integrableOn_compact
-      (isCompact_Icc.prod isCompact_Icc)
-  rw [← Complex.integral_comp_polarCoord_symm_Icc f z₀ ha, Icc_prod_eq,
-    Measure.volume_eq_prod]
-  have hP_eq (p : ℝ × ℝ) : z₀ + Complex.polarCoord.symm p =
-      circleMap z₀ p.1 p.2 := by
-    simp [Complex.polarCoord_symm_apply, circleMap, Complex.exp_mul_I]
-  simp_rw [hP_eq]
-  rw [setIntegral_prod _ hint]
-  have hsmul (r : ℝ) (hr : r ∈ Icc a b) :
-      (∫ θ in Icc (-π) π, r • f (circleMap z₀ r θ)) =
-        r • ∫ θ in Icc (-π) π, f (circleMap z₀ r θ) :=
-    (r • ContinuousLinearMap.id ℝ F).integral_comp_comm
-      ((hf.comp (by fun_prop) (fun θ hθ ↦ hmem (r, θ) ⟨hr, hθ⟩)).integrableOn_compact
-        isCompact_Icc)
-  rw [setIntegral_congr_fun measurableSet_Icc hsmul]
-  simp only [integral_Icc_eq_integral_Ioc]
-  rw [← intervalIntegral.integral_of_le hab]
-  simp_rw [intervalIntegral.integral_of_le (by linarith [Real.pi_pos] : -π ≤ π)]
-
-end TauCeti
 
 variable [CompleteSpace F]
 
