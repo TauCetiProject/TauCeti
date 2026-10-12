@@ -47,6 +47,8 @@ subspaces (`isPreAdic.isSheafy_iff`), the mechanism of Wedhorn's Remark 8.27.
   `TauCeti.PreAdicSpace.isAdic_restrict`: being locally affinoid, sheafy, or adic passes to
   restrictions to opens, and `TauCeti.PreAdicSpace.isAdic_of_isOpenImmersion`: to the source of
   an open immersion.
+* `TauCeti.PreAdicSpace.isSheafy_restrict_of_range_subset`: if the restriction of `X` to an open
+  is sheafy, so is its restriction to every smaller open.
 * `TauCeti.PreAdicSpace.isLocallyAffinoid_of_jointly_surjective`: an object covered by open
   immersions from locally affinoid objects is locally affinoid.
 * `TauCeti.PreAdicSpace.isPreAdic.isSheafy_iff`: a pre-adic space is sheafy exactly when its
@@ -136,6 +138,25 @@ theorem isSheafy_restrict (hX : isSheafy X) : isSheafy (X.restrict h) := by
   unfold isSheafy
   rw [restrict_toPresheafedSpace, PresheafedSpace.restrict_presheaf]
   exact TopCat.Presheaf.isSheaf_of_isOpenEmbedding h hX
+
+/-- If the restriction of `X` along an open embedding `g` is sheafy, then so is its restriction
+along every open embedding `f` whose image lies in the image of `g`: `X|_f` is the restriction of
+`X|_g` to the preimage of the image of `f`. -/
+theorem isSheafy_restrict_of_range_subset {V : TopCat.{u}} {g : V ⟶ X.toTopCat}
+    (hg : IsOpenEmbedding g) (hfg : Set.range f ⊆ Set.range g) (hX : isSheafy (X.restrict hg)) :
+    isSheafy (X.restrict h) := by
+  let W : Opens (X.restrict hg) := ⟨g ⁻¹' Set.range f, h.isOpenMap.isOpen_range.preimage g.hom.2⟩
+  -- the image of `W` in `X` is the image of `f`; the open `W` of the restriction is an open of
+  -- `V` only up to unfolding, so the image is compared pointwise rather than rewritten
+  have hW : Set.range (Opens.inclusion' (hg.isOpenMap.functor.obj W)) = Set.range f := by
+    rw [Opens.set_range_inclusion']
+    ext y
+    refine ⟨fun ⟨_, hv, hy⟩ ↦ hy ▸ hv, fun hy ↦ ?_⟩
+    obtain ⟨v, rfl⟩ := hfg hy
+    exact ⟨v, hy, rfl⟩
+  exact ObjectProperty.prop_of_iso isSheafy
+    (restrictRestrictIso X hg W ≪≫ X.restrictIsoOfRangeEq _ h hW)
+    (isSheafy_restrict W.isOpenEmbedding hX)
 
 /-- The source of an open immersion into a locally affinoid object is locally affinoid. -/
 theorem isLocallyAffinoid_of_isOpenImmersion {Y : PreAdicSpace.{u}} (hX : isLocallyAffinoid X)
