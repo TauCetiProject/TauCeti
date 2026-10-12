@@ -6,18 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Divisor.Different
--- Proof-only: the Hurwitz genus formula over a rational subfield and the genus of `K(x)`.
-import TauCeti.FieldTheory.FunctionField.Different.Hurwitz
+public import TauCeti.AlgebraicGeometry.EllipticCurve.CurveX3SubX
+-- Proof-only: the genus of `K(x)`.
+import TauCeti.FieldTheory.FunctionField.RiemannRoch.RatFunc
 
 /-!
 # A tame example: `y² = x³ - x`
 
-Let `W` be the Weierstrass curve `y² = x³ - x` over a field `K` of characteristic other than two,
-for instance `ℚ`, and let `K(W) = K(x, y)` be its function field, a quadratic extension of `K(x)`.
-Its discriminant is `64`, so `W` is an elliptic curve. This file computes the ramification of
-`K(W) / K(x)` and checks it against the Hurwitz genus formula. Every place is tame here, in
-contrast to `y² + y = x³` over `𝔽₂`, whose place at infinity is wild
-(`TauCeti.ArtinSchreier.isWild_infinity`).
+Let `W` be the Weierstrass curve `y² = x³ - x` (`TauCeti.CurveX3SubX.curve`) over a field `K` of
+characteristic other than two, for instance `ℚ`, and let `K(W) = K(x, y)` be its function field, a
+quadratic extension of `K(x)`. Its discriminant is `64`, so `W` is an elliptic curve. This file
+computes the ramification of `K(W) / K(x)` and checks it against the Hurwitz genus formula. Every
+ramified place is tame here, in contrast to `y² + y = x³` over `𝔽₂`, whose place at infinity is
+wild (`TauCeti.ArtinSchreier.isWild_infinity`).
 
 The points of order dividing two are the point at infinity `O` and the three points
 `T₀ = (0, 0)`, `T₁ = (1, 0)` and `T₋₁ = (-1, 0)` on the line `y = 0`, all rational over `K`.
@@ -30,16 +31,8 @@ The Hurwitz genus formula then reads `2 · 1 - 2 = 2 · (0 - 2) + 4`: the genus 
 left is computed from the Riemann–Roch spaces `L(n · O)`, while the right side uses only the
 degree `[K(W) : K(x)] = 2`, the genus `0` of `K(x)` and the four ramification indices.
 
-## Main definitions
-
-* `TauCeti.CurveX3SubX.curve`: the Weierstrass curve `y² = x³ - x`.
-* `TauCeti.CurveX3SubX.pointZero`, `TauCeti.CurveX3SubX.pointOne`,
-  `TauCeti.CurveX3SubX.pointNegOne`: its affine points of order two.
-
 ## Main results
 
-* `TauCeti.CurveX3SubX.neg_eq_self_iff`: the points of order dividing two are `O`, `T₀`, `T₁`
-  and `T₋₁`.
 * `TauCeti.CurveX3SubX.different_eq`: `Diff(K(W) / K(x)) = O + T₀ + T₁ + T₋₁`.
 * `TauCeti.CurveX3SubX.one_lt_ramificationIdx_iff`: the ramified places are the places of the
   four points of order dividing two.
@@ -64,77 +57,7 @@ namespace TauCeti.CurveX3SubX
 
 open AlgebraicGeometry
 
-variable (K : Type*) [Field K]
-
-/-- The Weierstrass curve `y² = x³ - x`. -/
-abbrev curve : WeierstrassCurve K := ⟨0, 0, 0, -1, 0⟩
-
-/-- The discriminant of `y² = x³ - x` is `64`. -/
-@[simp]
-theorem Δ_curve : (curve K).Δ = 64 := by
-  simp only [Δ, b₂, b₄, b₆, b₈]
-  ring
-
-/-- Away from characteristic two, `y² = x³ - x` is an elliptic curve: its discriminant
-`64 = 2⁶` is a unit. -/
-instance [NeZero (2 : K)] : (curve K).IsElliptic := by
-  rw [isElliptic_iff, Δ_curve, show (64 : K) = 2 ^ 6 by norm_num]
-  exact (Ne.isUnit (NeZero.ne 2)).pow 6
-
-variable {K}
-
-/-- The affine points of `y² = x³ - x` are the solutions of `y² = x³ - x`. -/
-theorem equation_iff (x y : K) : (curve K).toAffine.Equation x y ↔ y ^ 2 = x ^ 3 - x := by
-  rw [Affine.equation_iff]
-  constructor <;> intro h <;> linear_combination h
-
-variable [NeZero (2 : K)]
-
-/-- A root `a` of `x³ - x` gives the nonsingular point `(a, 0)` of `y² = x³ - x`. -/
-theorem nonsingular_of_pow_three_eq {a : K} (ha : a ^ 3 = a) :
-    (curve K).toAffine.Nonsingular a 0 :=
-  Affine.equation_iff_nonsingular.mp ((equation_iff a 0).mpr (by rw [ha]; ring))
-
-variable (K)
-
-/-- The point `T₀ = (0, 0)` of `y² = x³ - x`. -/
-def pointZero : (curve K).toAffine.Point :=
-  .some 0 0 (nonsingular_of_pow_three_eq (by ring))
-
-/-- The point `T₁ = (1, 0)` of `y² = x³ - x`. -/
-def pointOne : (curve K).toAffine.Point :=
-  .some 1 0 (nonsingular_of_pow_three_eq (by ring))
-
-/-- The point `T₋₁ = (-1, 0)` of `y² = x³ - x`. -/
-def pointNegOne : (curve K).toAffine.Point :=
-  .some (-1) 0 (nonsingular_of_pow_three_eq (by ring))
-
-variable {K}
-
-/-- **The points of order dividing two on `y² = x³ - x`** are the point at infinity and the three
-points `(0, 0)`, `(1, 0)` and `(-1, 0)` on the line `y = 0`. -/
-theorem neg_eq_self_iff (T : (curve K).toAffine.Point) :
-    -T = T ↔ T = 0 ∨ T = pointZero K ∨ T = pointOne K ∨ T = pointNegOne K := by
-  cases T with
-  | zero => exact ⟨fun _ ↦ Or.inl rfl, fun _ ↦ rfl⟩
-  | some x y h =>
-    simp only [Affine.Point.neg_some, Affine.Point.some.injEq, Affine.negY, pointZero, pointOne,
-      pointNegOne, reduceCtorEq, false_or, true_and]
-    constructor
-    · intro hy
-      -- `-y = y` forces `y = 0`, and then `x` is a root of `x³ - x = x (x - 1) (x + 1)`.
-      have hy0 : y = 0 := by
-        have : (2 : K) * y = 0 := by linear_combination -hy
-        simpa [NeZero.ne (2 : K)] using this
-      subst hy0
-      have hx := (equation_iff x 0).mp h.1
-      have hroots : x * ((x - 1) * (x + 1)) = 0 := by linear_combination -hx
-      rcases mul_eq_zero.mp hroots with hx | hx
-      · exact Or.inl ⟨hx, rfl⟩
-      rcases mul_eq_zero.mp hx with hx | hx
-      · exact Or.inr (Or.inl ⟨by linear_combination hx, rfl⟩)
-      · exact Or.inr (Or.inr ⟨by linear_combination hx, rfl⟩)
-    · rintro (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩) <;> ring
+variable {K : Type*} [Field K] [NeZero (2 : K)]
 
 /-- The three affine points of order two are pairwise distinct. -/
 private theorem pointZero_ne_pointOne_and :
@@ -219,8 +142,8 @@ theorem ramificationIdx_pointNegOne :
   classical
   exact ramificationIdx_place_of_mem (by simp)
 
-/-- **The Hurwitz genus formula for `y² = x³ - x`** over `K(x)`, in its tame form: every place
-is tame, so the different contributes `e - 1` at each of the four ramified places, and
+/-- **The Hurwitz genus formula for `y² = x³ - x`** over `K(x)`, in its tame form: every ramified
+place is tame, so the different contributes `e - 1` at each of the four ramified places, and
 
 `2 g - 2 = [K(W) : K(x)] (2 g(K(x)) - 2) + ∑ (e - 1)`,
 
