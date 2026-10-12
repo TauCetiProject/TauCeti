@@ -110,25 +110,6 @@ section Kernel
 
 variable {S : Scheme.{u}} {G H : Grp (Over S)} (f : G ⟶ H)
 
--- The square of underlying schemes exhibiting the kernel as the fibre of `f` over the identity.
-private theorem isPullback_kernel_left :
-    IsPullback (kernel.ι f).hom.hom.left (kernel f).X.hom f.hom.hom.left η[H.X].left :=
-  (isPullback_kernel_hom f).map (Over.forget S)
-
-/-- The kernel of a finite homomorphism of group schemes is finite over the base. -/
-instance isFinite_kernel_hom [IsFinite f.hom.hom.left] : IsFinite (kernel f).X.hom :=
-  MorphismProperty.of_isPullback (isPullback_kernel_left f) ‹_›
-
-/-- The kernel of a flat homomorphism of group schemes is flat over the base. -/
-instance flat_kernel_hom [Flat f.hom.hom.left] : Flat (kernel f).X.hom :=
-  MorphismProperty.of_isPullback (isPullback_kernel_left f) ‹_›
-
-/-- The kernel of a homomorphism of group schemes locally of finite presentation is locally of
-finite presentation over the base. -/
-instance locallyOfFinitePresentation_kernel_hom [LocallyOfFinitePresentation f.hom.hom.left] :
-    LocallyOfFinitePresentation (kernel f).X.hom :=
-  MorphismProperty.of_isPullback (isPullback_kernel_left f) ‹_›
-
 /-- **The rank of the kernel.** If `f : G ⟶ H` is a homomorphism of group schemes over `S` whose
 underlying morphism is finite and flat, the rank of its kernel over `S` at `s` is the rank of `f`
 at the identity `e_H(s)`: the kernel is the fibre of `f` over the identity section. -/
