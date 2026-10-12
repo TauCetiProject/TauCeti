@@ -39,9 +39,10 @@ contributes the local degrees (`herbrandQuotient_sUnitsRep`):
 h(U_{L,S}) = h(U_{L,∅}) · ∏_{v ∈ S} [L_w : K_v].
 ```
 
-This is the finite-place part of the Herbrand quotient of the `S`-units, an input to a future
-computation of `h(C_L) = [L : K]`. The quotient formula `h(C_L) = h(I_{L,S}) / h(U_{L,S})`, for `S`
-whose primes generate the class group of `L`, is `herbrandQuotient_ideleClassRep`.
+This is the finite-place part of the Herbrand quotient of the `S`-units, which enters the
+computation of the Herbrand quotient `h(C_L) = [L : K]` of the idele classes. The quotient formula
+`h(C_L) = h(I_{L,S}) / h(U_{L,S})`, for `S` whose primes generate the class group of `L`, is
+`herbrandQuotient_ideleClassRep`.
 
 ## Main results
 
