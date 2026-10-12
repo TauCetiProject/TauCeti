@@ -142,6 +142,7 @@ variable {m n : Type*} [Fintype m] [Fintype n]
 
 /-- The Frobenius norm of the matrix of a rectangular operator in any orthonormal domain and
 codomain bases equals its unitarily invariant Frobenius seminorm. -/
+@[simp]
 theorem frobenius_norm_toMatrix [DecidableEq n] (A : E →ₗ[𝕜] F) (b : OrthonormalBasis n 𝕜 E)
     (c : OrthonormalBasis m 𝕜 F) :
     ‖A.toMatrix b.toBasis c.toBasis‖ = TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜 E F A := by
