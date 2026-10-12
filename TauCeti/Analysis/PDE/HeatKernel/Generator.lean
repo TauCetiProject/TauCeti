@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Laplacian.Convolution
 public import TauCeti.Analysis.PDE.HeatKernel.HeatEquation
 public import TauCeti.Analysis.PDE.HeatKernel.Semigroup
 public import TauCeti.Analysis.Semigroups.Generator.Basic
@@ -26,16 +25,11 @@ support its generator is the Laplacian:
 so `φ` lies in the domain of the generator `A` and `A φ = Δ φ`. Here `Δ` is Mathlib's Laplacian,
 the sum of the pure second derivatives, so that `e^{tΔ}` solves `∂ₜu = Δu`.
 
-The proof is Duhamel's formula. For `C²` data with compact support the Laplacian commutes with
-convolution (`HasCompactSupport.laplacian_convolution_right`), so the heat equation reads
-`∂ₛ (K_s ⋆ φ) = K_s ⋆ Δ φ`, and integrating in `s` from `0`, where `K_s ⋆ φ → φ`, gives
-
-`(K_t ⋆ φ)(x) - φ(x) = ∫₀ᵗ (K_s ⋆ Δ φ)(x) ds`
-
-at every point `x`. Integrating over sets of finite measure and exchanging the two integrals
-lifts this to the identity `e^{tΔ} φ - φ = ∫₀ᵗ e^{sΔ} (Δ φ) ds` of `Lᵖ`-valued integrals. The
-average of the orbit of `Δ φ` over `(0, t]` tends to `Δ φ` by strong continuity
-(`TauCeti.Semigroups.StronglyContinuousSemigroup.tendsto_average_orbit_zero`).
+The proof is Duhamel's formula `(K_t ⋆ φ)(x) - φ(x) = ∫₀ᵗ (K_s ⋆ Δ φ)(x) ds` at every point `x`
+(`TauCeti.heatKernel_convolution_sub_eq_integral`). Integrating over sets of finite measure and
+exchanging the two integrals lifts this to the identity `e^{tΔ} φ - φ = ∫₀ᵗ e^{sΔ} (Δ φ) ds` of
+`Lᵖ`-valued integrals. The average of the orbit of `Δ φ` over `(0, t]` tends to `Δ φ` by strong
+continuity (`TauCeti.Semigroups.StronglyContinuousSemigroup.tendsto_average_orbit_zero`).
 
 This identifies the generator only on `C²` functions with compact support; its full domain is not
 determined here. For scalar-valued functions and `1 < p < ∞` that domain is the Sobolev space
@@ -44,11 +38,9 @@ larger than `W^{2,1}`.
 
 ## Main declarations
 
-* `TauCeti.hasDerivAt_heatKernel_convolution_of_hasCompactSupport`: the heat equation
-  `∂ₜ (K_t ⋆ φ) = K_t ⋆ Δ φ` for `C²` data with compact support.
-* `TauCeti.heatKernel_convolution_sub_eq_integral`: Duhamel's formula
-  `(K_t ⋆ φ)(x) - φ(x) = ∫₀ᵗ (K_s ⋆ Δ φ)(x) ds`.
-* `TauCeti.heatSemigroup_sub_eq_integral`: the same identity in `Lᵖ`,
+* `TauCeti.heatSemigroup_sub_eq_integral`: the identity
+  `e^{tΔ} φ - φ = ∫₀ᵗ e^{sΔ} (Δ φ) ds` in `Lᵖ`, lifting Duhamel's formula
+  `TauCeti.heatKernel_convolution_sub_eq_integral`,
   `e^{tΔ} φ - φ = ∫₀ᵗ e^{sΔ} (Δ φ) ds`.
 * `TauCeti.tendsto_heatSemigroup_sub`: `(e^{tΔ} φ - φ) / t → Δ φ` in `Lᵖ`.
 * `TauCeti.mem_domain_heatSemigroup` and `TauCeti.generator_heatSemigroup`: `φ` lies in the
@@ -72,56 +64,6 @@ open scoped Convolution ENNReal NNReal
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
   {p : ℝ≥0∞} [Fact (1 ≤ p)] {φ : E → F}
-
-/-- **The heat equation for `C²` data with compact support.** For `t > 0`, the function
-`s ↦ (K_s ⋆ φ)(x)` has derivative `(K_t ⋆ Δ φ)(x)` at `t`: the Laplacian of the solution is the
-heat convolution of the Laplacian of the datum. -/
-theorem hasDerivAt_heatKernel_convolution_of_hasCompactSupport (hφ : ContDiff ℝ 2 φ)
-    (hc : HasCompactSupport φ) {t : ℝ} (ht : 0 < t) (x : E) :
-    HasDerivAt (fun s => (heatKernel s ⋆ φ) x) ((heatKernel t ⋆ Δ φ) x) t := by
-  obtain ⟨C, hC⟩ := hφ.continuous.bounded_above_of_compact_support hc
-  have h := hasDerivAt_heatKernel_convolution ht hφ.continuous.aestronglyMeasurable
-    (ae_of_all _ hC) x
-  rwa [hc.laplacian_convolution_right _ (integrable_heatKernel ht).locallyIntegrable hφ] at h
-
-/-- **Duhamel's formula for the heat equation.** For `φ` of class `C²` with compact support and
-`t > 0`, `(K_t ⋆ φ)(x) - φ(x) = ∫₀ᵗ (K_s ⋆ Δ φ)(x) ds` at every point `x`. -/
-theorem heatKernel_convolution_sub_eq_integral (hφ : ContDiff ℝ 2 φ) (hc : HasCompactSupport φ)
-    {t : ℝ} (ht : 0 < t) (x : E) :
-    (heatKernel t ⋆ φ) x - φ x = ∫ s in 0..t, (heatKernel s ⋆ Δ φ) x := by
-  obtain ⟨C, hC⟩ := hφ.continuous.bounded_above_of_compact_support hc
-  obtain ⟨C₂, hC₂⟩ := hφ.continuous_laplacian.bounded_above_of_compact_support hc.laplacian
-  -- The integrand is continuous at positive times, being differentiable there, and bounded.
-  have hcont : ContinuousOn (fun s => (heatKernel s ⋆ Δ φ) x) (Ioi 0) := fun s hs =>
-    (hasDerivAt_heatKernel_convolution hs hφ.continuous_laplacian.aestronglyMeasurable
-      (ae_of_all _ hC₂) x).continuousAt.continuousWithinAt
-  have hint : IntervalIntegrable (fun s => (heatKernel s ⋆ Δ φ) x) volume 0 t := by
-    rw [intervalIntegrable_iff_integrableOn_Ioc_of_le ht.le]
-    refine (integrableOn_const (C := C₂) measure_Ioc_lt_top.ne).mono'
-      ((hcont.mono Ioc_subset_Ioi_self).aestronglyMeasurable measurableSet_Ioc) ?_
-    filter_upwards [ae_restrict_mem measurableSet_Ioc] with s hs
-    exact norm_heatKernel_convolution_le hs.1 (ae_of_all _ hC₂) x
-  refine (intervalIntegral.integral_eq_sub_of_hasDerivAt_of_tendsto ht
-    (fun s hs => hasDerivAt_heatKernel_convolution_of_hasCompactSupport hφ hc hs.1 x) hint
-    ?_ ?_).symm
-  · exact (tendsto_heatKernel_convolution hφ.continuous.aestronglyMeasurable (ae_of_all _ hC)
-      hφ.continuous.continuousAt).comp (tendsto_id.prodMk tendsto_const_nhds)
-  · exact (hasDerivAt_heatKernel_convolution_of_hasCompactSupport hφ hc ht x).continuousAt.tendsto
-      |>.mono_left nhdsWithin_le_nhds
-
-omit [CompleteSpace F] in
-/-- The heat convolution of a continuous function is jointly strongly measurable in time
-and space. -/
-private theorem stronglyMeasurable_heatKernel_convolution {g : E → F} (hg : Continuous g) :
-    StronglyMeasurable fun z : ℝ × E => (heatKernel z.1 ⋆ g) z.2 := by
-  have hK : Measurable fun q : ℝ × E => heatKernel q.1 q.2 := by
-    simp only [heatKernel_apply]
-    fun_prop
-  simp only [convolution_def, lsmul_apply]
-  refine StronglyMeasurable.integral_prod_right
-    (f := fun (z : ℝ × E) (y : E) => heatKernel z.1 y • g (z.2 - y)) ?_
-  exact (hK.comp (measurable_fst.fst.prodMk measurable_snd)).stronglyMeasurable.smul
-    (hg.comp (continuous_fst.snd.sub continuous_snd)).stronglyMeasurable
 
 /-- **Duhamel's formula for the heat semigroup.** Let `φ` be of class `C²` with compact support,
 and let `f, g ∈ Lᵖ` be the classes of `φ` and `Δ φ`. Then for `t > 0`,
