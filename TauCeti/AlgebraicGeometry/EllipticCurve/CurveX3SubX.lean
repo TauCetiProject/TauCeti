@@ -69,16 +69,31 @@ theorem nonsingular_of_pow_three_eq {a : K} (ha : a ^ 3 = a) :
 variable (K)
 
 /-- The point `T₀ = (0, 0)` of `y² = x³ - x`. -/
-@[expose] def pointZero : (curve K).toAffine.Point :=
+def pointZero : (curve K).toAffine.Point :=
   .some 0 0 (nonsingular_of_pow_three_eq (by ring))
 
+/-- `T₀` is the affine point `(0, 0)`. -/
+theorem pointZero_def :
+    pointZero K = .some 0 0 (nonsingular_of_pow_three_eq (by ring)) :=
+  (rfl)
+
 /-- The point `T₁ = (1, 0)` of `y² = x³ - x`. -/
-@[expose] def pointOne : (curve K).toAffine.Point :=
+def pointOne : (curve K).toAffine.Point :=
   .some 1 0 (nonsingular_of_pow_three_eq (by ring))
 
+/-- `T₁` is the affine point `(1, 0)`. -/
+theorem pointOne_def :
+    pointOne K = .some 1 0 (nonsingular_of_pow_three_eq (by ring)) :=
+  (rfl)
+
 /-- The point `T₋₁ = (-1, 0)` of `y² = x³ - x`. -/
-@[expose] def pointNegOne : (curve K).toAffine.Point :=
+def pointNegOne : (curve K).toAffine.Point :=
   .some (-1) 0 (nonsingular_of_pow_three_eq (by ring))
+
+/-- `T₋₁` is the affine point `(-1, 0)`. -/
+theorem pointNegOne_def :
+    pointNegOne K = .some (-1) 0 (nonsingular_of_pow_three_eq (by ring)) :=
+  (rfl)
 
 variable {K}
 
@@ -89,8 +104,8 @@ theorem neg_eq_self_iff (T : (curve K).toAffine.Point) :
   cases T with
   | zero => exact ⟨fun _ ↦ Or.inl rfl, fun _ ↦ rfl⟩
   | some x y h =>
-    simp only [Affine.Point.neg_some, Affine.Point.some.injEq, Affine.negY, pointZero, pointOne,
-      pointNegOne, reduceCtorEq, false_or, true_and]
+    simp only [Affine.Point.neg_some, Affine.Point.some.injEq, Affine.negY, pointZero_def,
+      pointOne_def, pointNegOne_def, reduceCtorEq, false_or, true_and]
     constructor
     · intro hy
       -- `-y = y` forces `y = 0`, and then `x` is a root of `x³ - x = x (x - 1) (x + 1)`.
