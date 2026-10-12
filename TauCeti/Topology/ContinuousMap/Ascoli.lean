@@ -16,13 +16,15 @@ uniform convergence on a family of compact sets
 (`ArzelaAscoli.isCompact_closure_of_isClosedEmbedding`).
 This file states it directly for subsets of the space `C(X, Y)` of continuous maps with its
 compact-open topology, which is the space of continuous curves when `X` is a compact interval,
-and adds the two companion statements used for compactness of families of curves.
+and adds companion statements used for compactness and finite approximation of families of curves.
 
 * An equicontinuous set `A ⊆ C(X, Y)` whose values at each point lie in a common compact set has
   compact closure.
 * If `Y` is complete, it is enough that the values are totally bounded at the points of a dense
   set `D ⊆ X`: equicontinuity spreads total boundedness from `D` to every point, and completeness
   turns it into compactness of the closure.
+* An equicontinuous family with pointwise relatively compact values has finite uniform
+  approximations on compact sets, with approximants drawn from the family itself.
 * Conversely, on a compact domain, a compact subset of `C(X, Y)` is equicontinuous.
 
 The pointwise hypothesis cannot be replaced by equicontinuity and a common starting point when `Y`
@@ -35,6 +37,8 @@ endpoints `eₙ` stay at distance at least `1` from each other
 
 * `ArzelaAscoli.isCompact_closure_of_equicontinuous`: equicontinuity and pointwise relative
   compactness give compact closure.
+* `EquicontinuousOn.exists_finite_approx_of_isCompact`: finite uniform approximation on a compact
+  set by members of the family.
 * `ContinuousMap.isClosedEmbedding_toUniformOnFunIsCompact`: `C(X, Y)` is a closed subspace of
   the space of functions with the topology of uniform convergence on compacts.
 * `Equicontinuous.totallyBounded_range_eval`: equicontinuity spreads total boundedness of the
@@ -76,15 +80,48 @@ compact sets (for instance a locally compact space), an equicontinuous set of co
 whose values at each point lie in a common compact set has compact closure in the compact-open
 topology. -/
 theorem isCompact_closure_of_equicontinuous [CompactlyCoherentSpace X] [UniformSpace Y]
-    [T2Space Y] {A : Set C(X, Y)} (hA : Equicontinuous fun f : A ↦ ⇑(f : C(X, Y)))
-    (hApt : ∀ x, ∃ Q, IsCompact Q ∧ ∀ f ∈ A, f x ∈ Q) : IsCompact (closure A) :=
-  ArzelaAscoli.isCompact_closure_of_isClosedEmbedding (fun _ hK ↦ hK)
-    -- `ContinuousMap.toUniformOnFunIsCompact` unfolds to the `UniformOnFun.ofFun 𝔖 ∘ F` form
-    -- that Mathlib's Arzelà–Ascoli asks for.
-    ContinuousMap.isClosedEmbedding_toUniformOnFunIsCompact (fun K _ ↦ hA.equicontinuousOn K)
-    fun _ _ x _ ↦ hApt x
+    {A : Set C(X, Y)} (hA : Equicontinuous fun f : A ↦ ⇑(f : C(X, Y)))
+    (hApt : ∀ x, ∃ Q, IsCompact Q ∧ ∀ f ∈ A, f x ∈ Q) : IsCompact (closure A) := by
+  rw [isCompact_iff_compactSpace]
+  refine ArzelaAscoli.compactSpace_of_isClosedEmbedding (fun _ hK ↦ hK)
+    (ContinuousMap.isClosedEmbedding_toUniformOnFunIsCompact.comp
+      isClosed_closure.isClosedEmbedding_subtypeVal)
+    (fun K _ ↦ (hA.closure' continuous_coeFun).equicontinuousOn K) ?_
+  intro _ _ x _
+  obtain ⟨Q, hQ, hAQ⟩ := hApt x
+  -- Closing the compact bounds keeps them compact in a uniform space, without Hausdorffness.
+  have hpoint : closure A ⊆ {f : C(X, Y) | f x ∈ closure Q} :=
+    closure_minimal (fun f hf ↦ subset_closure (hAQ f hf))
+      (isClosed_closure.preimage (continuous_eval_const x))
+  exact ⟨closure Q, hQ.closure, fun f ↦ hpoint f.2⟩
 
 end ArzelaAscoli
+
+/-- An equicontinuous family with pointwise relatively compact values has a finite uniform
+approximation on every compact set, with approximants drawn from the family itself. -/
+theorem EquicontinuousOn.exists_finite_approx_of_isCompact [UniformSpace Y]
+    {ι : Type*} {g : ι → X → Y} {K : Set X} (hequi : EquicontinuousOn g K)
+    (hK : IsCompact K) (hg : ∀ x ∈ K, ∃ Q, IsCompact Q ∧ ∀ i, g i x ∈ Q)
+    {U : Set (Y × Y)} (hU : U ∈ 𝓤 Y) :
+    ∃ t : Set ι, t.Finite ∧ ∀ i, ∃ j ∈ t, ∀ x ∈ K, (g i x, g j x) ∈ U := by
+  let _ : CompactSpace K := isCompact_iff_compactSpace.mp hK
+  let φ : ι → C(K, Y) := fun i ↦ ⟨K.domRestrict (g i), (hequi.continuousOn i).domRestrict⟩
+  have hφequi : Equicontinuous fun i ↦ ⇑(φ i) :=
+    (equicontinuous_restrict_iff _).2 hequi
+  have hrange : IsCompact (closure (range φ)) :=
+    ArzelaAscoli.isCompact_closure_of_equicontinuous (by
+      rw [← Set.comp_rangeSplitting φ]
+      exact hφequi.comp (Set.rangeSplitting φ)) fun x ↦ by
+        obtain ⟨Q, hQ, hgQ⟩ := hg x x.2
+        exact ⟨Q, hQ, fun _ ⟨i, hi⟩ ↦ hi ▸ hgQ i⟩
+  have htb : TotallyBounded (range φ) := hrange.totallyBounded.subset subset_closure
+  have hU' :=
+    (ContinuousMap.hasBasis_compactConvergenceUniformity_of_compact (α := K)).mem_of_mem hU
+  obtain ⟨t, -, htfin, htcover⟩ := (exists_subset_image_finite_and (f := φ) (s := univ)).mp
+    (by simpa only [image_univ] using htb.exists_subset hU')
+  refine ⟨t, htfin, fun i ↦ ?_⟩
+  obtain ⟨_, ⟨j, hj, rfl⟩, hij⟩ := mem_iUnion₂.mp (htcover (mem_range_self i))
+  exact ⟨j, hj, fun x hx ↦ hij ⟨x, hx⟩⟩
 
 /-- Equicontinuity spreads total boundedness of the values from a dense set of points to every
 point. -/
@@ -104,10 +141,10 @@ theorem Equicontinuous.totallyBounded_range_eval [UniformSpace Y] {ι : Type*} {
 namespace ArzelaAscoli
 
 /-- **The Arzelà–Ascoli theorem in `C(X, Y)`, with a dense set of points.** For a complete
-Hausdorff target `Y`, an equicontinuous set of continuous maps whose values are totally bounded at
+target `Y`, an equicontinuous set of continuous maps whose values are totally bounded at
 the points of a dense set `D ⊆ X` has compact closure in the compact-open topology. -/
 theorem isCompact_closure_of_equicontinuous_of_totallyBounded [CompactlyCoherentSpace X]
-    [UniformSpace Y] [T2Space Y] [CompleteSpace Y] {A : Set C(X, Y)} {D : Set X} (hD : Dense D)
+    [UniformSpace Y] [CompleteSpace Y] {A : Set C(X, Y)} {D : Set X} (hD : Dense D)
     (hA : Equicontinuous fun f : A ↦ ⇑(f : C(X, Y)))
     (hAD : ∀ x ∈ D, TotallyBounded ((fun f : C(X, Y) ↦ f x) '' A)) : IsCompact (closure A) :=
   isCompact_closure_of_equicontinuous hA fun x ↦
