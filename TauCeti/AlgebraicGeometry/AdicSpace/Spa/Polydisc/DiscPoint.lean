@@ -36,7 +36,7 @@ multiplicative ultrametric norm. In particular, at `r = 1` every centre gives th
 disc. Like the Gauss point about the origin, `η_{a,r}` has trivial support and so is not a
 classical point.
 
-The same translation recentres the rank-two points `η_{r⁺}` and `η_{r⁻}` next to `η_r`, giving
+The same translation recentres the refined points `η_{r⁺}` and `η_{r⁻}` next to `η_r`, giving
 points `η_{a,r⁺}` (for `r < 1`) and `η_{a,r⁻}` of the disc. When `K` is algebraically closed
 and `r ∈ |K^×|`, these are the points of type (5) in Wedhorn's Example 7.57, written there
 `a_{>r}` and `a_{<r}`. Both specialize from `η_{a,r}`, and for `r ∈ |K^×|` the three points are
@@ -49,9 +49,9 @@ The Gauss valuation just below `r` is invariant only under translation by `c` wi
 since translating `T` by an element of norm `r` moves the first degree attaining its Gauss norm
 from `1` to `0`. So `η_{a,r⁻}` depends exactly on the open disc `{y : ‖y - a‖ < r}`, and the open
 discs of radius `r` inside `D(a, r)` give pairwise distinct points next to `η_{a,r}`. All three
-invariance statements come from `TauCeti.ValuationSpectrum.valuation_taylorHom_le`: a continuous
-valuation that bounds every monomial of a series by the series, and the shifted variable `T + c`
-by `T`, does not increase under translation by `c`.
+invariance statements come from `TauCeti.ValuationSpectrum.valuation_taylorHom_eq`: a continuous
+valuation that bounds every monomial of a series by the series, and the shifted variables `T + c`
+and `T - c` by `T`, is invariant under translation by `c`.
 
 ## Main definitions
 
@@ -125,37 +125,24 @@ section NormedRing
 variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [NonarchimedeanRing R]
   [NormMulClass R] [NormOneClass R] [CompleteSpace R] {r : ℝ}
 
-omit [IsUltrametricDist R] [NormMulClass R] [NormOneClass R] in
-/-- A continuous valuation on `R⟨T⟩` that bounds every monomial of a series by the series itself
-is invariant under the translation `T ↦ T + c` as soon as it gives `T + c` and `T - c` at most the
-value of `T`. Here `c` is the sole entry `a 0` of the tuple `a`. -/
-private theorem valuation_taylorHom_eq {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
+omit [IsUltrametricDist R] [NormMulClass R] [NormOneClass R] [CompleteSpace R] in
+/-- In one variable every multi-index is `n • e₀`, so a valuation on `R⟨T⟩` bounding every monomial
+`fₙ Tⁿ` of a series by the series bounds every monomial `f_ν T^ν` in the form taken by
+`valuation_taylorHom_eq`. -/
+private theorem valuation_monomial_le_of_forall_pow {Γ₀ : Type*}
+    [LinearOrderedCommGroupWithZero Γ₀]
     {v : Valuation (weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set R))
-      isWeightFamily_one_weight) Γ₀} (hv : v.IsContinuous)
+      isWeightFamily_one_weight) Γ₀}
     (hmono : ∀ (f : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set R))
       isWeightFamily_one_weight) (n : ℕ), v (weightedC _ isWeightFamily_one_weight
         (MvPowerSeries.coeff (Finsupp.single 0 n) (f : MvPowerSeries (Fin 1) R)) *
       weightedX _ isWeightFamily_one_weight 0 ^ n) ≤ v f)
-    (a : Fin 1 → R) (ha : ∀ i, IsPowerBounded (a i))
-    (hX : v (weightedX _ isWeightFamily_one_weight 0 +
-      weightedC _ isWeightFamily_one_weight (a 0)) ≤ v (weightedX _ isWeightFamily_one_weight 0))
-    (hX' : v (weightedX _ isWeightFamily_one_weight 0 +
-      weightedC _ isWeightFamily_one_weight (-a 0)) ≤ v (weightedX _ isWeightFamily_one_weight 0))
-    (f : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight) :
-    v (taylorHom a ha f) = v f := by
-  have hle (b : Fin 1 → R) (hb : ∀ i, IsPowerBounded (b i))
-      (hXb : v (weightedX _ isWeightFamily_one_weight 0 +
-        weightedC _ isWeightFamily_one_weight (b 0)) ≤ v (weightedX _ isWeightFamily_one_weight 0))
-      (g : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight) :
-      v (taylorHom b hb g) ≤ v g :=
-    valuation_taylorHom_le b hb hv (fun i ↦ by rwa [Subsingleton.elim i 0]) fun ν ↦ by
-      -- in one variable every multi-index is `n • e₀`
-      obtain ⟨n, rfl⟩ : ∃ n, ν = Finsupp.single 0 n :=
-        ⟨ν 0, Finsupp.ext fun i ↦ by rw [Subsingleton.elim i 0, Finsupp.single_eq_same]⟩
-      simpa only [Fin.prod_univ_one, Finsupp.single_eq_same] using hmono g n
-  refine le_antisymm (hle a ha hX f) ?_
-  simpa only [taylorHom_neg_taylorHom] using
-    hle (-a) (fun i ↦ (ha i).neg) (by rwa [Pi.neg_apply]) (taylorHom a ha f)
+    (f : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight)
+    (ν : Fin 1 →₀ ℕ) : v (weightedC _ isWeightFamily_one_weight
+        (MvPowerSeries.coeff ν (f : MvPowerSeries (Fin 1) R)) *
+      ∏ i, weightedX _ isWeightFamily_one_weight i ^ ν i) ≤ v f := by
+  obtain ⟨n, rfl⟩ : ∃ n, ν = Finsupp.single 0 n := ⟨ν 0, Finsupp.unique_single ν⟩
+  simpa only [Fin.prod_univ_one, Finsupp.single_eq_same] using hmono f n
 
 /-- **The Gauss norm of radius `r` is invariant under translation by `c` with `‖c‖ ≤ r`**: the
 Gauss norms of `f(T)` and `f(T + c)` agree. Here `c` is the sole entry `a 0` of the tuple `a`. -/
@@ -171,8 +158,9 @@ theorem closedDiscGaussValuation_taylorHom (hr₀ : 0 < r) (hr₁ : r ≤ 1) (a 
     rw [← NNReal.coe_le_coe, NNReal.coe_max, coe_closedDiscGaussValuation_weightedX,
       closedDiscGaussValuation_weightedC, coe_nnnorm]
     exact max_le le_rfl hc
-  refine valuation_taylorHom_eq (isContinuous_closedDiscGaussValuation hr₀ hr₁) (fun g n ↦ ?_) a
-    ha (hX har) (hX (by rwa [norm_neg])) f
+  refine valuation_taylorHom_eq a ha (isContinuous_closedDiscGaussValuation hr₀ hr₁)
+    (Fin.forall_fin_one.2 (hX har)) (Fin.forall_fin_one.2 (hX (by rwa [norm_neg])))
+    (valuation_monomial_le_of_forall_pow fun g n ↦ ?_) f
   rw [← NNReal.coe_le_coe, map_mul, map_pow, NNReal.coe_mul, NNReal.coe_pow,
     closedDiscGaussValuation_weightedC, coe_closedDiscGaussValuation_weightedX, coe_nnnorm]
   exact norm_coeff_mul_pow_le_closedDiscGaussValuation hr₀ hr₁ g n
@@ -186,12 +174,13 @@ theorem closedDiscGaussValuationAbove_taylorHom (hr₀ : 0 < r) (hr₁ : r ≤ 1
     closedDiscGaussValuationAbove hr₀ hr₁ (taylorHom a ha f) =
       closedDiscGaussValuationAbove hr₀ hr₁ f :=
   valuation_taylorHom_eq (Γ₀ := WithZero (ℝ≥0ˣ ×ₗ Multiplicative ℤ))
-    (v := closedDiscGaussValuationAbove hr₀ hr₁)
+    (v := closedDiscGaussValuationAbove hr₀ hr₁) a ha
     (isContinuous_closedDiscGaussValuationAbove hr₀ hr₁)
-    (closedDiscGaussValuationAbove_weightedC_mul_weightedX_pow_le hr₀ hr₁) a ha
-    (closedDiscGaussValuationAbove_weightedX_add_weightedC hr₀ hr₁ har).le
-    (closedDiscGaussValuationAbove_weightedX_add_weightedC hr₀ hr₁ (c := -a 0)
-      (by rwa [norm_neg])).le f
+    (Fin.forall_fin_one.2 (closedDiscGaussValuationAbove_weightedX_add_weightedC hr₀ hr₁ har).le)
+    (Fin.forall_fin_one.2 (closedDiscGaussValuationAbove_weightedX_add_weightedC hr₀ hr₁
+      (c := -a 0) (by rwa [norm_neg])).le)
+    (valuation_monomial_le_of_forall_pow
+      (closedDiscGaussValuationAbove_weightedC_mul_weightedX_pow_le hr₀ hr₁)) f
 
 /-- **The Gauss valuation just below `r` is invariant under translation by `c` with
 `‖c‖ < r`**: `f(T)` and `f(T + c)` have the same Gauss norm of radius `r` and the same first degree
@@ -204,12 +193,13 @@ theorem closedDiscGaussValuationBelow_taylorHom (hr₀ : 0 < r) (hr₁ : r ≤ 1
     closedDiscGaussValuationBelow hr₀ hr₁ (taylorHom a ha f) =
       closedDiscGaussValuationBelow hr₀ hr₁ f :=
   valuation_taylorHom_eq (Γ₀ := WithZero (ℝ≥0ˣ ×ₗ Multiplicative ℤ))
-    (v := closedDiscGaussValuationBelow hr₀ hr₁)
+    (v := closedDiscGaussValuationBelow hr₀ hr₁) a ha
     (isContinuous_closedDiscGaussValuationBelow hr₀ hr₁)
-    (closedDiscGaussValuationBelow_weightedC_mul_weightedX_pow_le hr₀ hr₁) a ha
-    (closedDiscGaussValuationBelow_weightedX_add_weightedC hr₀ hr₁ har).le
-    (closedDiscGaussValuationBelow_weightedX_add_weightedC hr₀ hr₁ (c := -a 0)
-      (by rwa [norm_neg])).le f
+    (Fin.forall_fin_one.2 (closedDiscGaussValuationBelow_weightedX_add_weightedC hr₀ hr₁ har).le)
+    (Fin.forall_fin_one.2 (closedDiscGaussValuationBelow_weightedX_add_weightedC hr₀ hr₁
+      (c := -a 0) (by rwa [norm_neg])).le)
+    (valuation_monomial_le_of_forall_pow
+      (closedDiscGaussValuationBelow_weightedC_mul_weightedX_pow_le hr₀ hr₁)) f
 
 end NormedRing
 

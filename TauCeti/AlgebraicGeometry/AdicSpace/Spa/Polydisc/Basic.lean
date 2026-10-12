@@ -71,6 +71,8 @@ and `Polynomial.taylorEquiv` for the same substitution on polynomials, the trans
   monomials of `f`.
 * `TauCeti.ValuationSpectrum.valuation_taylorHom_le`: a continuous valuation that bounds every
   monomial of `f` by `f`, and each shifted variable `Tᵢ + aᵢ` by `Tᵢ`, bounds `f(T + a)` by `f`.
+* `TauCeti.ValuationSpectrum.valuation_taylorHom_eq`: if moreover each `Tᵢ - aᵢ` is bounded by
+  `Tᵢ`, the valuation is invariant under translation by `a`.
 * `TauCeti.ValuationSpectrum.taylorHom_comp_taylorHom`: translating by `b` and then by `a`
   is translating by `a + b`.
 * `TauCeti.ValuationSpectrum.taylorHom_mem_powerBoundedSubring`: translation preserves
@@ -382,6 +384,28 @@ theorem taylorHom_taylorHom_neg (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a
     (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
     taylorHom a ha (taylorHom (-a) (fun i ↦ (ha i).neg) f) = f := by
   simp
+
+/-- **A continuous valuation bounded on monomials is invariant under translation.** Let `v` be a
+continuous valuation on `A⟨T₁, …, Tₖ⟩` that bounds every monomial `fν Tν` of a series `f` by
+`v f`, with `v (Tᵢ + aᵢ) ≤ v (Tᵢ)` and `v (Tᵢ - aᵢ) ≤ v (Tᵢ)` for every `i`. Then
+`v (f(T + a)) = v f`: apply `valuation_taylorHom_le` to translation by `a` and by `-a`. -/
+theorem valuation_taylorHom_eq {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
+    (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i))
+    {v : Valuation (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
+      isWeightFamily_one_weight) Γ₀} (hv : v.IsContinuous)
+    (hX : ∀ i, v (weightedX _ isWeightFamily_one_weight i +
+      weightedC _ isWeightFamily_one_weight (a i)) ≤ v (weightedX _ isWeightFamily_one_weight i))
+    (hX' : ∀ i, v (weightedX _ isWeightFamily_one_weight i +
+      weightedC _ isWeightFamily_one_weight (-a i)) ≤ v (weightedX _ isWeightFamily_one_weight i))
+    (hmono : ∀ (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
+      isWeightFamily_one_weight) (ν : Fin k →₀ ℕ), v (weightedC _ isWeightFamily_one_weight
+        (MvPowerSeries.coeff ν (f : MvPowerSeries (Fin k) A)) *
+      ∏ i, weightedX _ isWeightFamily_one_weight i ^ ν i) ≤ v f)
+    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
+    v (taylorHom a ha f) = v f := by
+  refine le_antisymm (valuation_taylorHom_le a ha hv hX (hmono f)) ?_
+  simpa only [taylorHom_neg_taylorHom] using
+    valuation_taylorHom_le (-a) (fun i ↦ (ha i).neg) hv hX' (hmono (taylorHom a ha f))
 
 /-- **Translation by `a ∈ (A°)ᵏ` as a ring automorphism** of `A⟨T₁, …, Tₖ⟩`, with inverse the
 translation by `-a`. -/
