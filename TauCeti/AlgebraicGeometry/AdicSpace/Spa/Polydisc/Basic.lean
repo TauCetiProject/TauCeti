@@ -486,6 +486,29 @@ theorem closedPolydisc_vle_weightedC_iff {k : ℕ} (v : closedPolydisc k K) (x y
         (weightedC _ isWeightFamily_one_weight y) ↔ ‖x‖ ≤ ‖y‖ := by
   rw [← vle_iff_norm_le_of_mem_spa (comap_weightedC_mem_spa v), comap_vle]
 
+/-- The canonical valuation at a point of the closed polydisc compares constants by their
+norms. -/
+theorem closedPolydisc_valuation_weightedC_le_iff {k : ℕ} (v : closedPolydisc k K) (x y : K) :
+    v.1.valuation (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x) ≤
+        v.1.valuation (weightedC _ isWeightFamily_one_weight y) ↔ ‖x‖ ≤ ‖y‖ := by
+  rw [valuation_le_iff, closedPolydisc_vle_weightedC_iff]
+
+/-- The canonical valuation at a point of the closed polydisc strictly compares constants by
+their norms. -/
+theorem closedPolydisc_valuation_weightedC_lt_iff {k : ℕ} (v : closedPolydisc k K) (x y : K) :
+    v.1.valuation (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x) <
+        v.1.valuation (weightedC _ isWeightFamily_one_weight y) ↔ ‖x‖ < ‖y‖ := by
+  simp only [lt_iff_le_not_ge, closedPolydisc_valuation_weightedC_le_iff]
+
+/-- Constants of equal norm have equal canonical valuation at any point of the closed
+polydisc. -/
+theorem closedPolydisc_valuation_weightedC_eq_of_norm_eq {k : ℕ} (v : closedPolydisc k K)
+    {x y : K} (h : ‖x‖ = ‖y‖) :
+    v.1.valuation (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x) =
+      v.1.valuation (weightedC _ isWeightFamily_one_weight y) := by
+  exact le_antisymm ((closedPolydisc_valuation_weightedC_le_iff v x y).mpr h.le)
+    ((closedPolydisc_valuation_weightedC_le_iff v y x).mpr h.ge)
+
 end NormedField
 
 end TauCeti.ValuationSpectrum

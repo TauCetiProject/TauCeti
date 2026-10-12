@@ -92,11 +92,6 @@ private theorem valuation_weightedX_sub_weightedC_ne_zero {x : closedPolydisc 1 
 
 variable [IsUltrametricDist K]
 
-/-- A point of the closed unit disc compares constants by their norms. -/
-private theorem valuation_weightedC_le_iff (x : closedPolydisc 1 K) (c d : K) :
-    x.1.valuation (C c) ≤ x.1.valuation (C d) ↔ ‖c‖ ≤ ‖d‖ := by
-  rw [valuation_le_iff, closedPolydisc_vle_weightedC_iff]
-
 /-- Under the second condition, `x(T - a)^k` compares with `x(e)` as `r^k` compares with `‖e‖`:
 take a `k`-th root of `e` in `K`. -/
 private theorem pow_le_valuation_weightedC_iff_and_valuation_weightedC_le_pow_iff [IsAlgClosed K]
@@ -106,8 +101,8 @@ private theorem pow_le_valuation_weightedC_iff_and_valuation_weightedC_le_pow_if
     (x.1.valuation (T - C a) ^ k ≤ x.1.valuation (C e) ↔ r ^ k ≤ ‖e‖) ∧
       (x.1.valuation (C e) ≤ x.1.valuation (T - C a) ^ k ↔ ‖e‖ ≤ r ^ k) := by
   rcases Nat.eq_zero_or_pos k with rfl | hk
-  · exact ⟨by simpa using valuation_weightedC_le_iff x 1 e,
-      by simpa using valuation_weightedC_le_iff x e 1⟩
+  · exact ⟨by simpa using closedPolydisc_valuation_weightedC_le_iff x 1 e,
+      by simpa using closedPolydisc_valuation_weightedC_le_iff x e 1⟩
   obtain ⟨e, rfl⟩ := IsAlgClosed.exists_pow_nat_eq e hk
   simp only [map_pow, norm_pow, pow_le_pow_iff_left₀ zero_le zero_le hk.ne',
     pow_le_pow_iff_left₀ hr₀.le (norm_nonneg _) hk.ne',
@@ -130,7 +125,7 @@ private theorem valuation_mul_pow_le_iff_of_le [IsAlgClosed K] {x : closedPolydi
   have hx : 0 < x.1.valuation (C c) * γ ^ n := by
     refine zero_lt_iff.mpr (mul_ne_zero (fun h0 ↦ hc ?_)
       (pow_ne_zero n (valuation_weightedX_sub_weightedC_ne_zero hr₀ hle)))
-    simpa [h0] using valuation_weightedC_le_iff x c 0
+    simpa [h0] using closedPolydisc_valuation_weightedC_le_iff x c 0
   have h₁ : x.1.valuation (C c) * γ ^ (n + k) = x.1.valuation (C c) * γ ^ n * γ ^ k := by
     rw [pow_add, mul_assoc]
   have h₂ : x.1.valuation (C (e * c)) * γ ^ n = x.1.valuation (C c) * γ ^ n *
@@ -229,7 +224,7 @@ private theorem valuation_eq_zero_iff_of_conditions [IsAlgClosed K] {x : closedP
     at hb
   split_ifs at hb with hba
   · exact valuation_weightedX_sub_weightedC_ne_zero hr₀ hle hb
-  · have h0 := valuation_weightedC_le_iff x (b - a) 0
+  · have h0 := closedPolydisc_valuation_weightedC_le_iff x (b - a) 0
     rw [map_zero, map_zero, le_zero_iff, norm_zero] at h0
     exact hba ((h0.mp hb).trans hr₀.le)
 

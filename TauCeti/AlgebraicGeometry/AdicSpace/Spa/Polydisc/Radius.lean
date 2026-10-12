@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Basic
 
-import TauCeti.RingTheory.Valuation.Continuous.TopologicallyNilpotent
+import TauCeti.AlgebraicGeometry.AdicSpace.Cont.DominatingUnit
 
 /-!
 # Real radii of values at points of the closed polydisc
@@ -57,10 +57,6 @@ private theorem exists_radius_bounds (x : closedPolydisc k K) {f : 𝒯}
       (∀ c : K, ‖c‖ < r → x.1.valuation (C c) < x.1.valuation f) ∧
       (∀ c : K, r < ‖c‖ → x.1.valuation f < x.1.valuation (C c)) := by
   let S : Set ℝ := {s | ∃ c : K, ‖c‖ = s ∧ x.1.valuation f ≤ x.1.valuation (C c)}
-  have hconst (c d : K) : x.1.valuation (C c) ≤ x.1.valuation (C d) ↔ ‖c‖ ≤ ‖d‖ := by
-    rw [valuation_le_iff, closedPolydisc_vle_weightedC_iff]
-  have hconst_lt (c d : K) : x.1.valuation (C c) < x.1.valuation (C d) ↔ ‖c‖ < ‖d‖ := by
-    simp only [lt_iff_le_not_ge, hconst]
   have hS : (1 : ℝ) ∈ S := ⟨1, norm_one, by simpa using hle⟩
   have hneS : S.Nonempty := ⟨1, hS⟩
   have hbdd : BddBelow S := ⟨0, by rintro s ⟨c, rfl, _⟩; exact norm_nonneg c⟩
@@ -69,24 +65,23 @@ private theorem exists_radius_bounds (x : closedPolydisc k K) {f : 𝒯}
   have hdNil : IsTopologicallyNilpotent d := tendsto_pow_atTop_nhds_zero_of_norm_lt_one hd₁
   have hnil : IsTopologicallyNilpotent (C d) :=
     hdNil.map (continuous_weightedC isWeightFamily_one_weight)
-  have hcont : x.1.valuation.IsContinuous :=
-    (isContinuous_def x.1).mp (((mem_closedPolydisc_iff k K x.1).mp x.2).1)
-  obtain ⟨n, hn⟩ := Valuation.exists_pow_lt_of_isTopologicallyNilpotent
-    ((Valuation.isContinuous_def.mp hcont f).mem_nhds
-      (by rw [Set.mem_ofPred_eq, map_zero]; exact zero_lt_iff.mpr hne)) hnil
+  have hf : f ∉ x.1.supp := by
+    rwa [supp_eq_valuation_supp, Valuation.mem_supp_iff]
+  obtain ⟨n, hn⟩ := IsContinuous.exists_pow_vlt_of_isTopologicallyNilpotent
+    ((mem_closedPolydisc_iff k K x.1).mp x.2).1 hnil hf
   have he : x.1.valuation (C (d ^ n)) < x.1.valuation f := by
-    simpa using hn
+    simpa only [map_pow] using (valuation_lt_iff x.1 _ _).mpr hn
   have hpos : 0 < sInf S := (pow_pos hd₀ n).trans_le (by
     rw [← norm_pow]
     refine le_csInf hneS ?_
     rintro s ⟨c, rfl, hc⟩
-    exact ((hconst_lt _ _).mp (he.trans_le hc)).le)
+    exact ((closedPolydisc_valuation_weightedC_lt_iff x _ _).mp (he.trans_le hc)).le)
   refine ⟨sInf S, hpos, csInf_le hbdd hS, ?_, ?_⟩
   · intro c hc
     exact lt_of_not_ge fun h ↦ hc.not_ge (csInf_le hbdd ⟨c, rfl, h⟩)
   · intro c hc
     obtain ⟨s, ⟨d, rfl, hd⟩, hdc⟩ := exists_lt_of_csInf_lt hneS hc
-    exact hd.trans_lt ((hconst_lt d c).mpr hdc)
+    exact hd.trans_lt ((closedPolydisc_valuation_weightedC_lt_iff x d c).mpr hdc)
 
 /-- **Radius trichotomy at a point of the closed polydisc.** A value in `(0, 1]` compares
 with constants either at a real radius, strictly above its boundary constants, or strictly
@@ -112,24 +107,20 @@ theorem exists_radius_trichotomy (x : closedPolydisc k K) {f : 𝒯}
   obtain ⟨r, hr₀, hr₁, hlo, hhi⟩ := exists_radius_bounds x hle hne
   refine ⟨r, hr₀, hr₁, ?_⟩
   simp only [← valuation_le_iff]
-  have hconst (c d : K) (h : ‖c‖ = ‖d‖) : x.1.valuation (C c) = x.1.valuation (C d) := by
-    apply le_antisymm <;> rw [valuation_le_iff, closedPolydisc_vle_weightedC_iff]
-    · exact h.le
-    · exact h.ge
   -- An attained boundary value gives both non-strict comparison rules immediately.
   by_cases heq : ∃ d : K, ‖d‖ = r ∧ x.1.valuation f = x.1.valuation (C d)
   · obtain ⟨d, hd, hdf⟩ := heq
     refine Or.inl ⟨?_, ?_⟩
     · intro c
-      rw [hdf, valuation_le_iff, closedPolydisc_vle_weightedC_iff, hd]
+      rw [hdf, closedPolydisc_valuation_weightedC_le_iff, hd]
     · intro c
-      rw [hdf, valuation_le_iff, closedPolydisc_vle_weightedC_iff, hd]
+      rw [hdf, closedPolydisc_valuation_weightedC_le_iff, hd]
   -- Constants of the same norm have the same value, so one strict comparison settles
   -- every boundary constant. The bound `x(f) ≤ 1` excludes the above case at radius one.
   by_cases habove : ∃ d : K, ‖d‖ = r ∧ x.1.valuation (C d) < x.1.valuation f
   · obtain ⟨d, hd, hdf⟩ := habove
     have hboundary (c : K) (hc : ‖c‖ = r) : x.1.valuation (C c) < x.1.valuation f := by
-      rw [hconst c d (hc.trans hd.symm)]
+      rw [closedPolydisc_valuation_weightedC_eq_of_norm_eq x (hc.trans hd.symm)]
       exact hdf
     have hlt_one : r < 1 := by
       refine lt_of_le_of_ne hr₁ ?_
