@@ -258,10 +258,10 @@ theorem linearIndependent_of_isUnit_det {ι : Type*} [Fintype ι] [DecidableEq �
       map_zero, LinearMap.zero_apply] at this
     rw [Pi.zero_apply, mul_zero, ← this, vecMul, dotProduct, Finset.mul_sum]
     exact Finset.sum_congr rfl fun i _ ↦ by ring)
-  have : g = g ᵥ* G ᵥ* G⁻¹ := by
-    rw [vecMul_vecMul, mul_nonsing_inv _ hdet, vecMul_one]
+  have hg0 : g = 0 := Matrix.vecMul_injective_of_isUnit
+    (G.isUnit_iff_isUnit_det.mpr hdet) (hgG.trans (Matrix.zero_vecMul G).symm)
   intro i
-  rw [this, hgG, zero_vecMul, Pi.zero_apply]
+  simpa only [Pi.zero_apply] using congrFun hg0 i
 
 /-- **A Gram block of unit determinant spans a modular submodule.** If the Gram matrix of a finite
 family `v` is `a` times a matrix of unit determinant, with `a` a non-zero-divisor, then the
