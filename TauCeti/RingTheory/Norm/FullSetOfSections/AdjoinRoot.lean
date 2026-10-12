@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Norm.FullSetOfSections
+public import TauCeti.RingTheory.Norm.FullSetOfSections.Basic
 import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.RingTheory.Polynomial.Resultant.AdjoinRoot
 
@@ -75,8 +75,8 @@ theorem isFullSetOfSections_iff_eq_prod_X_sub_C {ι : Type*} [Fintype ι] (hg : 
     have : Module.Finite A (AdjoinRoot g) := .of_basis (powerBasis' hg).basis
     have hn := h.norm_eq A[X] ((algebraTensorAlgEquiv A[X] g).symm (mk _ (C X - X)))
     have hnorm : Algebra.norm A[X] (mk (g.map (algebraMap A A[X])) (C X - X)) = g := by
-      rw [show mk (g.map (algebraMap A A[X])) (C X - X) = of _ X - root _ by simp,
-        norm_algebraMap_sub_root (hg.map _), eval_map, Polynomial.algebraMap_eq, eval₂_C_X]
+      rw [map_sub, mk_C, mk_X, norm_algebraMap_sub_root (hg.map _), eval_map,
+        Polynomial.algebraMap_eq, eval₂_C_X]
     rw [Algebra.norm_eq_of_algEquiv, hnorm] at hn
     refine hn.trans (Finset.prod_congr rfl fun i _ ↦ ?_)
     rw [sectionBaseChange_algebraTensorAlgEquiv_symm_mk]

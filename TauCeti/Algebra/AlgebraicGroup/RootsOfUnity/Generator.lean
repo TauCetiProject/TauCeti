@@ -217,16 +217,14 @@ theorem not_isAGenerator_of_eq_root (p : ℕ) [Fact p.Prime]
     rw [← AdjoinRoot.mk_eq_zero, map_sum]
     simpa using hcoeff
   -- but `1 + X + ⋯ + X ^ (p - 1)` is nonzero of degree less than `p`
-  have hne : (∑ k ∈ Finset.range p, X ^ k : (ZMod p)[X]) ≠ 0 := by
-    intro h0
-    simpa [finsetSum_coeff, coeff_X_pow, hp.pos] using congrArg (coeff · 0) h0
-  have hdeg := (monic_X_pow_sub_one hp.ne_zero).natDegree_le_of_dvd hne hdvd
+  have hdeg := (monic_X_pow_sub_one hp.ne_zero).natDegree_le_of_dvd
+    (monic_geom_sum_X hp.ne_zero).ne_zero hdvd
   have hle : (∑ k ∈ Finset.range p, X ^ k : (ZMod p)[X]).natDegree ≤ p - 1 :=
     natDegree_sum_le_of_forall_le _ _ fun k hk ↦ by
       rw [natDegree_X_pow]
       have := Finset.mem_range.mp hk
       lia
-  rw [show (X ^ p - 1 : (ZMod p)[X]) = X ^ p - C 1 by simp, natDegree_X_pow_sub_C] at hdeg
+  rw [← C_1, natDegree_X_pow_sub_C] at hdeg
   have := hp.pos
   lia
 
