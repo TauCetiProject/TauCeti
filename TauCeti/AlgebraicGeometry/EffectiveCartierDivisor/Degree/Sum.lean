@@ -142,7 +142,7 @@ theorem IsEffectiveCartier.finrank_mul_subschemeι_comp_of_field {K : Type u} [F
     rw [← Category.assoc, inclusion_subschemeι]
   have hJ' : J.subschemeι ≫ f = iJ ≫ (I * J).subschemeι ≫ f := by
     rw [← Category.assoc, inclusion_subschemeι]
-  have : Module.Finite K Γ((I * J).subscheme, ⊤) := ((I * J).subschemeι ≫ f).finite_of_field rfl
+  have : Module.Finite K Γ((I * J).subscheme, ⊤) := ((I * J).subschemeι ≫ f).moduleFinite_appTop rfl
   rw [hI', hJ', ((I * J).subschemeι ≫ f).finrank_eq_finrank_of_field rfl s,
     (iI ≫ (I * J).subschemeι ≫ f).finrank_eq_finrank_of_field
       (by rw [Scheme.Hom.comp_appTop]; rfl) s,

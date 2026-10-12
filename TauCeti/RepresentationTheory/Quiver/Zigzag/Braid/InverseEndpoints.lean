@@ -12,11 +12,20 @@ public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Unit
 
 The cochain tensor product of the braid complex `Bᵢ` with its inverse `Bᵢ'` has one term in
 cohomological degree `-1` and one in degree `1`. The balanced tensor unitors identify them with
-the vertex bimodule `Pᵢ ⊗ₖ eᵢ Z` and its internal shift by `-2`. These identifications give the
-outer terms needed when the middle terms are cancelled to prove the inverse homotopy equivalence.
+the vertex bimodule `Pᵢ ⊗ₖ eᵢ Z` and its internal shift by `-2`. These identifications are the
+outer terms of `TauCeti.zigzagBraidComplexTensorInverseHomotopyEquiv`, which cancels the middle
+terms to show that `Bᵢ ⊗ Bᵢ'` is homotopy equivalent to the regular graded bimodule `Z` in
+degree zero.
 
 The calculation is valid for the public componentwise zigzag algebra, including isolated
 vertices.
+
+## References
+
+* M. Khovanov and P. Seidel, *Quivers, Floer cohomology, and braid group actions*, J. Amer. Math.
+  Soc. 15 (2002) (the complexes `R_i` and `R_i'` of the zigzag algebra `A_m`).
+* R. S. Huerfano and M. Khovanov, *A category for the adjoint representation*, J. Algebra 246
+  (2001) (zigzag algebras of arbitrary graphs and the same complexes).
 -/
 
 public section
@@ -41,7 +50,7 @@ local notation "B'" => zigzagBraidInverseComplex k G
 local notation "c" => ComplexShape.up ℤ
 
 /-- The cochain tensor product of the braid complex and its inverse at one vertex. -/
-noncomputable abbrev zigzagBraidInverseComplexTensor (i : V) :
+abbrev zigzagBraidInverseComplexTensor (i : V) :
     CochainComplex (GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece) ℤ :=
   HomologicalComplex.mapBifunctor (B i) (B' i) F c
 

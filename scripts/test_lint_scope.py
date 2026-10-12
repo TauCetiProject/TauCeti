@@ -113,7 +113,7 @@ class LintScopeTest(unittest.TestCase):
             github_env = d / "github_env"
             full_env = {**os.environ, "PATH": f"{gh.parent}:{os.environ['PATH']}",
                         "FAKE_GH_RESPONSES": str(d / "responses.json"),
-                        "GITHUB_ENV": str(github_env), "GH_TOKEN": "x", "REPO": "o/r",
+                        "GITHUB_ENV": str(github_env), "RUNNER_TEMP": str(d), "GH_TOKEN": "x", "REPO": "o/r",
                         "SCOPE_REPO": str(checkout), **env}
             command = ["bash", str(SCRIPT), str(d / "scope")]
             if policy:
@@ -124,6 +124,7 @@ class LintScopeTest(unittest.TestCase):
                 event = env.get("EVENT", "repository_dispatch")
                 run = (run.replace("${{ env.IS_BATCH }}", "true" if event in self.BATCH_EVENTS else "false")
                           .replace("${{ github.event_name }}", event)
+                          .replace("${{ github.event.action }}", "tauceti-bors-staging" if event == "repository_dispatch" else "")
                           .replace("${{ github.repository }}", "o/r")
                           .replace("${{ steps.pr.outputs.num }}", "12"))
                 (d / "gate").symlink_to(ROOT, target_is_directory=True)

@@ -482,27 +482,6 @@ private theorem symplecticChangeOfBasis_conj_weightTorusPoints (A : Type v) [Com
     -- set, which is `spinIndex j`.
     rfl
 
-/-- The rank-two spin carrier points, presented as the points of the Kostant toral closure. -/
-private theorem points_eq_kostantToralPointsSubgroup (A : Type v) [CommRing A] :
-    points 1 A = TauCeti.UniversalEnvelopingAlgebra.kostantToralPointsSubgroup
-      (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
-      (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep 1) (lattice 1).toAddSubgroup
-      (rep_kostantForm_mem_lattice 1) (isNilpotent_rep_rootGenerator 1)
-      (latticeBasis 1) (basisWeight 1) A := by
-  rw [points_def, TauCeti.UniversalEnvelopingAlgebra.kostantToralPointsSubgroup_def,
-    definingIdeal_def]
-
-/-- The rank-two symplectic carrier points, presented as the points of the Kostant toral
-closure. -/
-private theorem symplecticPoints_eq_kostantToralPointsSubgroup (A : Type v) [CommRing A] :
-    SpStd.points 1 A = TauCeti.UniversalEnvelopingAlgebra.kostantToralPointsSubgroup
-      (SpStd.rootGenerator 1) (SpStd.cartanGenerator 1) (SpStd.rep 1)
-      (SpStd.lattice 1).toAddSubgroup
-      (fun _ hu _ hv => SpStd.rep_kostantForm_mem_lattice 1 hu hv)
-      (SpStd.isNilpotent_rep_rootGenerator 1) (SpStd.latticeBasis 1) (SpStd.basisWeight 1) A := by
-  rw [SpStd.points_def, TauCeti.UniversalEnvelopingAlgebra.kostantToralPointsSubgroup_def,
-    SpStd.definingIdeal_def]
-
 private theorem symplecticChangeOfBasis_inv_conj (A : Type v) [CommRing A]
     (g : GL (Fin (dimension 1)) A) (x : GL (Fin (1 + 1 + (1 + 1))) A)
     (hx : Matrix.GeneralLinearGroup.map (algebraMap ℤ A) symplecticChangeOfBasis *
@@ -521,17 +500,17 @@ private theorem symplecticChangeOfBasis_inv_conj (A : Type v) [CommRing A]
 `TauCeti.TypeBSpinCarrier.groupScheme 1` with the points of `TauCeti.SpStd.groupScheme 1`. -/
 noncomputable def pointsMulEquivSymplecticPoints (A : Type v) [CommRing A] :
     points 1 A ≃* SpStd.points 1 A :=
-  (MulEquiv.subgroupCongr (points_eq_kostantToralPointsSubgroup A)).trans <|
+  (MulEquiv.subgroupCongr (points_eq_kostantToralPointsSubgroup 1 A)).trans <|
     (TauCeti.UniversalEnvelopingAlgebra.kostantToralPointsReindexConjMulEquiv
       _ _ _ _ _ _ _ _ _ _ _ _ _ _ dimension_one _ _ symplecticChangeOfBasis
       (fun B _ k q => by
         rw [← (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := B)).symm_apply_apply q,
           ← coe_rootSubgroupPoints, symplecticChangeOfBasis_conj_rootSubgroupPoints,
-          ← symplecticPoints_eq_kostantToralPointsSubgroup]
+          ← SpStd.points_eq_kostantToralPointsSubgroup]
         exact SetLike.coe_mem _)
       (fun B _ s => by
         rw [← coe_weightTorusPoints, symplecticChangeOfBasis_conj_weightTorusPoints,
-          ← symplecticPoints_eq_kostantToralPointsSubgroup]
+          ← SpStd.points_eq_kostantToralPointsSubgroup]
         exact SetLike.coe_mem _)
       (fun B _ k q => by
         rw [← (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := B)).symm_apply_apply q,
@@ -549,7 +528,7 @@ noncomputable def pointsMulEquivSymplecticPoints (A : Type v) [CommRing A] :
             (symplecticChangeOfBasis_conj_weightTorusPoints B _),
           ← points_eq_kostantToralPointsSubgroup]
         exact SetLike.coe_mem _) A).trans
-    (MulEquiv.subgroupCongr (symplecticPoints_eq_kostantToralPointsSubgroup A).symm)
+    (MulEquiv.subgroupCongr (SpStd.points_eq_kostantToralPointsSubgroup 1 A).symm)
 
 /-- The identification of the rank-two carriers reindexes and conjugates by
 `TauCeti.TypeBSpinCarrier.symplecticChangeOfBasis`. -/
