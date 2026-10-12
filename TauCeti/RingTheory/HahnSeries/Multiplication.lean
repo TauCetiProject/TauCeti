@@ -12,6 +12,9 @@ public import Mathlib.RingTheory.HahnSeries.Multiplication
 
 Over a domain, taking a power multiplies the order and raises the leading coefficient to that
 power. These formulas detect whether a leading pole term can be cancelled by a power.
+
+The formulas are `TauCeti.hahnSeries_leadingCoeff_pow f n` and
+`TauCeti.hahnSeries_orderTop_pow f n`; both are also simplification lemmas.
 -/
 
 public section
