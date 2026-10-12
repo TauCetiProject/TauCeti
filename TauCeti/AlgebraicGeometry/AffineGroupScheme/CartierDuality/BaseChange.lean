@@ -38,7 +38,7 @@ Everything is transported from the coordinate Hopf algebras, where the correspon
 ## References
 
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 2.
-* J. S. Milne, *Algebraic Groups* (2017), Section 12.e.
+* J. S. Milne, *Algebraic Groups* (2017), Section 11.c, with Aside 11.17 for a base ring.
 
 This advances Layer 4, "Cartier duality", of the ReductiveGroups roadmap.
 -/

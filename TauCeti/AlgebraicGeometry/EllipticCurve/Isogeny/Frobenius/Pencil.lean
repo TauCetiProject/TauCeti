@@ -17,7 +17,7 @@ Let `W` be an elliptic curve over a finite field `F`, and let `π` be its Froben
 extension `K`. The endomorphism `r • π - s • id` pulls the invariant differential back to
 `-s • ω`. Consequently it is nonzero and separable whenever `s` is nonzero in `K`.
 
-Over a separably closed algebraic extension, the degree of the pencil is the integral quadratic form
+Over a separably closed extension, the degree of the pencil is the integral quadratic form
 `#F * r² - (#F + 1 - deg (id - π)) * r * s + s²`, for all integers `r` and `s`. This is the
 degree-form input to the Hasse bound.
 
@@ -28,7 +28,7 @@ degree-form input to the Hasse bound.
 * `TauCeti.Isogeny.Hom.isSeparable_toIsogeny_zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id_iff`:
   a nonzero pencil is separable exactly when `s` is nonzero in the field.
 * `TauCeti.Isogeny.Hom.degree_zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id`:
-  the integral quadratic degree formula over a separably closed algebraic extension.
+  the integral quadratic degree formula over a separably closed extension.
 
 ## Provenance
 
@@ -76,9 +76,9 @@ theorem isSeparable_toIsogeny_zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id_i
   rw [pullbackDifferential_ofIsogeny,
     pullbackDifferential_baseChangeFrobenius_invariantDifferential]
 
-variable [IsSepClosed K] [Algebra.IsAlgebraic F K]
+variable [IsSepClosed K]
 
-/-- Over a separably closed algebraic extension of the finite base, the degree of `r π - s`
+/-- Over a separably closed extension of the finite base, the degree of `r π - s`
 is the integral quadratic form with middle coefficient `#F + 1 - deg (id - π)`. -/
 theorem degree_zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id (r s : ℤ) :
     ((r • ofIsogeny (baseChangeFrobenius K W) - s • id (W⁄K).toAffine).degree : ℤ) =
