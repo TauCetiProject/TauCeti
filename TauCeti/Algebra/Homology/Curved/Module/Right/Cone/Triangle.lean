@@ -6,7 +6,6 @@ Authors: Wentao Li
 module
 
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Cone.Basic
-public import Mathlib.CategoryTheory.Triangulated.Basic
 public import Mathlib.CategoryTheory.Triangulated.Rotate
 
 /-!
@@ -21,6 +20,8 @@ a morphism of cone triangles.
 ## References
 
 * L. Positselski, *Differential graded Koszul duality: an introductory survey*, Section 7.6.
+* The Tau Ceti contributors, `TauCeti.Algebra.Homology.Curved.Cone.Triangle`: the existing
+  curved-duplex cone-triangle interface is the formal precedent for this module.
 -/
 
 public section
@@ -98,6 +99,8 @@ variable {M' N' : CurvedDGRightModuleCat.{u, u, u} h}
     N'.differential (k.1 x) + k.1 (M.differential x))
 
 /-- A homotopy-commutative square gives a morphism of the canonical cone triangles. -/
+-- The generated public projections are reflexive equations; their export requires
+-- this constructor body to be exposed in the pinned Lean module system.
 @[expose, simps hom₁ hom₂ hom₃]
 noncomputable def coneTriangleMap : coneTriangle f ⟶ coneTriangle g where
   hom₁ := (dgClosedToHomotopy R).map a

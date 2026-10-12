@@ -25,6 +25,8 @@ closed maps, and the adjacent composites vanish in the existing homotopy categor
 
 * L. Positselski, *Differential graded Koszul duality: an introductory survey*, Sections 6.2
   and 7.6. His curvature is the negative of the right-module curvature stored here.
+* The Tau Ceti contributors, `TauCeti.Algebra.Homology.Curved.Cone.Basic`: the curved-duplex
+  cone formalization is the precedent for the cone, its maps and its contraction interface.
 -/
 
 public section
@@ -80,11 +82,15 @@ noncomputable def cone : CurvedDGRightModuleCat.{u, u, u} h := by
     simp only [P, prod_grading, shift_grading, Submodule.mem_prod] at hx
     simp only [coneDifferential_apply]
     apply Prod.ext
-    · change -M.differential (op a • x.1) =
+    · -- The cone inherits the product action, so its first component is the original
+      -- action on `M`; the shift changes the grading and differential only.
+      change -M.differential (op a • x.1) =
         op a • (-M.differential x.1) + p.negOnePow • (op (d a) • x.1)
       rw [M.isCurvedDGRightModule.leibniz hx.1 a, Int.negOnePow_add, Int.negOnePow_one]
       simp [add_comm]
-    · change closedHom f (op a • x.1) + N.differential (op a • x.2) =
+    · -- The second component inherits the action on `N`. This reduction aligns the
+      -- bundled cone's action with the componentwise right-linear and Leibniz formulas.
+      change closedHom f (op a • x.1) + N.differential (op a • x.2) =
         op a • (closedHom f x.1 + N.differential x.2) +
           p.negOnePow • (op (d a) • x.2)
       rw [map_smul, N.isCurvedDGRightModule.leibniz hx.2 a, smul_add]
@@ -93,6 +99,8 @@ noncomputable def cone : CurvedDGRightModuleCat.{u, u, u} h := by
     simp only [coneDifferential_apply, map_neg, map_add, differential_closedHom,
       M.isCurvedDGRightModule.sq_eq, N.isCurvedDGRightModule.sq_eq, neg_neg,
       neg_add_cancel_left]
+    -- The square is right multiplication by the same curvature in both components;
+    -- the inherited product action computes componentwise on the bundled cone.
     rfl
 
 /-- The degree-`p` part of the cone is `Mᵖ⁺¹ × Nᵖ`. -/
@@ -252,40 +260,167 @@ theorem coneContraction_apply [IsIso f] (x : M × N) :
     (coneContraction f).1 x = (closedHom (inv f) x.2, 0) :=
   (rfl)
 
-/-- The boundary of the contraction is the identity on the cone. -/
-theorem coneContraction_boundary [IsIso f] (x : M × N) :
-    (cone f).differential ((coneContraction f).1 x) +
-      (coneContraction f).1 ((cone f).differential x) = x := by
-  have hleft : closedHom (inv f) (closedHom f x.1) = x.1 := by
-    simpa only [closedHom_comp, closedHom_id, LinearMap.comp_apply, LinearMap.id_apply] using
-      congrArg (fun k ↦ closedHom k x.1) (IsIso.hom_inv_id f)
-  have hright : closedHom f (closedHom (inv f) x.2) = x.2 := by
-    simpa only [closedHom_comp, closedHom_id, LinearMap.comp_apply, LinearMap.id_apply] using
-      congrArg (fun k ↦ closedHom k x.2) (IsIso.inv_hom_id f)
-  simp only [coneContraction_apply, cone_differential_apply, map_zero, add_zero, map_add,
-    differential_closedHom]
-  apply Prod.ext
-  -- Product projections evaluate the inherited addition componentwise; inverse identities
-  -- then remove the two remaining diagonal terms.
-  · change -closedHom (inv f) (N.differential x.2) +
-      (closedHom (inv f) (closedHom f x.1) + closedHom (inv f) (N.differential x.2)) = x.1
-    rw [hleft]
-    abel
-  · change closedHom f (closedHom (inv f) x.2) + 0 = x.2
-    rw [hright, add_zero]
+variable
+  (g : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N ⟶
+    ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M)
+  (α : dgRightModuleCochains (R := R) (A := A) (ℳ := M.grading) (ℳN := M.grading) (-1))
+  (β : dgRightModuleCochains (R := R) (A := A) (ℳ := N.grading) (ℳN := N.grading) (-1))
 
-/-- The cone of an isomorphism is a zero object in the curved homotopy category. -/
-theorem isZero_homotopy_cone_isIso [IsIso f] :
+/-- The corrected contraction associated to an inverse and its two inverse homotopies.
+For `t = f ∘ α - β ∘ f`, its matrix is `(α - g ∘ t, g; β ∘ t, -β)`. -/
+noncomputable def coneHomotopyContraction :
+    dgRightModuleCochains (R := R) (A := A) (ℳ := (cone f).grading)
+      (ℳN := (cone f).grading) (-1) := by
+  let t : M →ₗ[Aᵐᵒᵖ] N := (closedHom f).comp α.1 - β.1.comp (closedHom f)
+  refine ⟨((α.1.comp (LinearMap.fst Aᵐᵒᵖ M N) -
+      (closedHom g).comp (t.comp (LinearMap.fst Aᵐᵒᵖ M N))) +
+      (closedHom g).comp (LinearMap.snd Aᵐᵒᵖ M N)).prod
+    (β.1.comp (t.comp (LinearMap.fst Aᵐᵒᵖ M N)) -
+      β.1.comp (LinearMap.snd Aᵐᵒᵖ M N)), dgRightModuleCochains.mem_iff.mpr ?_⟩
+  apply LinearMap.isHomogeneous_def.mpr
+  intro p x hx
+  rw [cone_grading] at hx ⊢
+  have hαx : α.1 x.1 ∈ M.grading p := by
+    simpa [add_assoc] using dgRightModuleCochains.map_mem α hx.1
+  have htx : t x.1 ∈ N.grading p := by
+    change closedHom f (α.1 x.1) - β.1 (closedHom f x.1) ∈ N.grading p
+    exact (N.grading p).sub_mem (closedHom_mem f hαx)
+      (by simpa [add_assoc] using dgRightModuleCochains.map_mem β (closedHom_mem f hx.1))
+  -- The block map is evaluated on the product carrier; its first output has degree `p`
+  -- in `M`, which is degree `p - 1` in the shifted domain component of the cone.
+  change (α.1 x.1 - closedHom g (t x.1) + closedHom g x.2,
+    β.1 (t x.1) - β.1 x.2) ∈
+      (M.grading ((p + -1) + 1)).prod (N.grading (p + -1))
+  simpa [add_assoc] using And.intro
+    ((M.grading p).add_mem ((M.grading p).sub_mem hαx (closedHom_mem g htx))
+      (closedHom_mem g hx.2))
+    ((N.grading (p + -1)).sub_mem (dgRightModuleCochains.map_mem β htx)
+      (dgRightModuleCochains.map_mem β hx.2))
+
+/-- The corrected contraction has the explicit block formula on the cone carrier. -/
+@[simp]
+theorem coneHomotopyContraction_apply (x : M × N) :
+    (coneHomotopyContraction f g α β).1 x =
+      (α.1 x.1 - closedHom g (closedHom f (α.1 x.1) - β.1 (closedHom f x.1)) +
+        closedHom g x.2,
+      β.1 (closedHom f (α.1 x.1) - β.1 (closedHom f x.1)) - β.1 x.2) := by
+  -- The cochain stores this product linear map; computing its two fields evaluates
+  -- the block formula without rewriting through the bundled cone’s module instances.
+  dsimp only [coneHomotopyContraction]
+  rfl
+
+variable
+  (hα : ∀ x : M, closedHom g (closedHom f x) - x =
+    M.differential (α.1 x) + α.1 (M.differential x))
+  (hβ : ∀ x : N, closedHom f (closedHom g x) - x =
+    N.differential (β.1 x) + β.1 (N.differential x))
+
+include hα hβ in
+/-- Inverse homotopies make the corrected contraction a boundary of the identity.
+The correction uses the closed odd map `t = f ∘ α - β ∘ f`, so no coherence between the
+chosen inverse homotopies, or zero-curvature hypothesis, is required. -/
+theorem coneHomotopyContraction_boundary (x : M × N) :
+    (cone f).differential ((coneHomotopyContraction f g α β).1 x) +
+      (coneHomotopyContraction f g α β).1 ((cone f).differential x) = x := by
+  let t : M →ₗ[Aᵐᵒᵖ] N := (closedHom f).comp α.1 - β.1.comp (closedHom f)
+  have ht (z : M) : N.differential (t z) + t (M.differential z) = 0 := by
+    have h₁ := congrArg (closedHom f) (hα z)
+    simp only [map_sub, map_add] at h₁
+    have h₂ := hβ (closedHom f z)
+    rw [differential_closedHom] at h₂
+    have heq := h₁.symm.trans h₂
+    dsimp only [t, LinearMap.sub_apply, LinearMap.comp_apply]
+    simp only [map_sub, differential_closedHom]
+    convert sub_eq_zero.mpr heq using 1
+    abel
+  have hK (z : M × N) : (coneHomotopyContraction f g α β).1 z =
+      (α.1 z.1 - closedHom g (t z.1) + closedHom g z.2,
+        β.1 (t z.1) - β.1 z.2) := by
+    simpa only [t, LinearMap.sub_apply, LinearMap.comp_apply] using
+      coneHomotopyContraction_apply f g α β z
+  simp only [hK, cone_differential_apply]
+  apply Prod.ext
+  · -- The cone retains product addition; evaluate its first component before the group identities.
+    change -M.differential (α.1 x.1 - closedHom g (t x.1) + closedHom g x.2) +
+      (α.1 (-M.differential x.1) - closedHom g (t (-M.differential x.1)) +
+        closedHom g (closedHom f x.1 + N.differential x.2)) = x.1
+    calc
+      _ = x.1 + closedHom g (N.differential (t x.1) + t (M.differential x.1)) := by
+        simp only [map_add, map_sub, map_neg, differential_closedHom]
+        rw [(sub_eq_iff_eq_add).mp (hα x.1)]
+        abel
+      _ = x.1 := by rw [ht, map_zero, add_zero]
+  · -- Its second component uses the same inherited product addition.
+    change closedHom f (α.1 x.1 - closedHom g (t x.1) + closedHom g x.2) +
+      N.differential (β.1 (t x.1) - β.1 x.2) +
+        (β.1 (t (-M.differential x.1)) -
+          β.1 (closedHom f x.1 + N.differential x.2)) = x.2
+    calc
+      _ = t x.1 - closedHom f (closedHom g (t x.1)) +
+          (N.differential (β.1 (t x.1)) + β.1 (N.differential (t x.1))) + x.2 -
+          β.1 (N.differential (t x.1) + t (M.differential x.1)) := by
+        simp only [map_add, map_sub, map_neg]
+        rw [(sub_eq_iff_eq_add).mp (hβ x.2)]
+        dsimp only [t, LinearMap.sub_apply, LinearMap.comp_apply]
+        abel
+      _ = x.2 := by rw [← hβ (t x.1), ht, map_zero]; abel
+
+/-- A closed map which becomes an isomorphism in the homotopy category has a contractible cone. -/
+theorem isZero_homotopy_cone_isIso [IsIso ((dgClosedToHomotopy R).map f)] :
     CategoryTheory.Limits.IsZero (DGHomotopyCategory.of R (cone f)) := by
+  obtain ⟨g, hg⟩ := (dgClosedToHomotopy R).map_surjective (inv ((dgClosedToHomotopy R).map f))
+  have hleft : (dgClosedToHomotopy R).map (f ≫ g) =
+      (dgClosedToHomotopy R).map (𝟙 (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M)) := by
+    rw [CategoryTheory.Functor.map_comp, hg, CategoryTheory.Functor.map_id]
+    exact IsIso.hom_inv_id _
+  have hright : (dgClosedToHomotopy R).map (g ≫ f) =
+      (dgClosedToHomotopy R).map (𝟙 (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N)) := by
+    rw [CategoryTheory.Functor.map_comp, hg, CategoryTheory.Functor.map_id]
+    exact IsIso.inv_hom_id _
+  obtain ⟨α, hα⟩ := (quotient_map_eq_iff_exists_homotopy _ _).mp hleft
+  obtain ⟨β, hβ⟩ := (quotient_map_eq_iff_exists_homotopy _ _).mp hright
+  have hα' (z : M) : closedHom g (closedHom f z) - z =
+      M.differential (α.1 z) + α.1 (M.differential z) := by
+    simpa only [closedHom_comp, closedHom_id, LinearMap.comp_apply, LinearMap.id_apply] using hα z
+  have hβ' (z : N) : closedHom f (closedHom g z) - z =
+      N.differential (β.1 z) + β.1 (N.differential z) := by
+    simpa only [closedHom_comp, closedHom_id, LinearMap.comp_apply, LinearMap.id_apply] using hβ z
   apply (CategoryTheory.Limits.IsZero.iff_id_eq_zero _).mpr
   have hz : (dgClosedToHomotopy R).map
       (𝟙 (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (cone f))) = 0 := by
     rw [dgClosedToHomotopy_map_eq_zero_iff, mem_dgBoundaries_iff]
-    refine ⟨coneContraction f, fun x ↦ ?_⟩
+    refine ⟨coneHomotopyContraction f g α β, fun z ↦ ?_⟩
     erw [← closedHom_eq, closedHom_id]
-    exact (coneContraction_boundary f x).symm
+    exact (coneHomotopyContraction_boundary f g α β hα' hβ' z).symm
   exact ((dgClosedToHomotopy (C := CurvedDGRightModuleCat.{u, u, u} h) R).map_id
     (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (cone f))).symm.trans hz
+
+/-- The strict inverse contraction is the zero-homotopy case of the corrected contraction. -/
+@[simp]
+theorem coneHomotopyContraction_inv_zero [IsIso f] :
+    coneHomotopyContraction f (inv f) 0 0 = coneContraction f := by
+  apply Subtype.ext
+  apply LinearMap.ext
+  intro x
+  simp [coneHomotopyContraction_apply, coneContraction_apply]
+
+/-- The strict contraction boundary follows from the general inverse-homotopy formula. -/
+theorem coneContraction_boundary [IsIso f] (x : M × N) :
+    (cone f).differential ((coneContraction f).1 x) +
+      (coneContraction f).1 ((cone f).differential x) = x := by
+  simpa only [coneHomotopyContraction_inv_zero] using
+    coneHomotopyContraction_boundary f (inv f) 0 0
+      (fun z ↦ by
+        simpa only [closedHom_comp, closedHom_id, LinearMap.comp_apply,
+          LinearMap.id_apply, Submodule.coe_zero, LinearMap.zero_apply, map_zero,
+          add_zero, sub_eq_zero] using
+          congrArg (fun k ↦ closedHom k z) (IsIso.hom_inv_id f))
+      (fun z ↦ by
+        simpa only [closedHom_comp, closedHom_id, LinearMap.comp_apply,
+          LinearMap.id_apply, Submodule.coe_zero, LinearMap.zero_apply, map_zero,
+          add_zero, sub_eq_zero] using
+          congrArg (fun k ↦ closedHom k z) (IsIso.inv_hom_id f)) x
+
 
 variable {M' N' : CurvedDGRightModuleCat.{u, u, u} h}
   (g : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M' ⟶
@@ -327,7 +462,6 @@ noncomputable def coneMap :
         abel_nf)
 
 /-- The underlying cone map has the homotopy as its lower-left entry. -/
-@[simp]
 theorem closedHom_coneMap :
     closedHom (coneMap f g a b k hsq) = (closedHom a).prodMap (closedHom b) +
       (LinearMap.inr Aᵐᵒᵖ M' N').comp (k.1.comp (LinearMap.fst Aᵐᵒᵖ M N)) := by
@@ -335,6 +469,7 @@ theorem closedHom_coneMap :
   exact closedHom_closedHomOf _ _ _
 
 /-- A cone map sends `(x, y)` to `(a x, b y + k x)`. -/
+@[simp]
 theorem closedHom_coneMap_apply (x : M × N) :
     closedHom (coneMap f g a b k hsq) x =
       (closedHom a x.1, closedHom b x.2 + k.1 x.1) := by
@@ -366,5 +501,91 @@ theorem coneMap_comp_coneProjection :
   -- The cone projection is the first projection, and the shifted map has the same carrier map.
   change (closedHom (coneMap f g a b k hsq) x).1 = closedHom a x.1
   rw [closedHom_coneMap_apply]
+
+variable {M'' N'' : CurvedDGRightModuleCat.{u, u, u} h}
+
+/-- The homotopy for a composite of two cone-map squares is `b' ∘ k + k' ∘ a`. -/
+noncomputable def coneMapCompHomotopy
+    (b' : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N' ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N'')
+    (k' : dgRightModuleCochains (R := R) (A := A)
+      (ℳ := M'.grading) (ℳN := N''.grading) (-1)) :
+    dgRightModuleCochains (R := R) (A := A)
+      (ℳ := M.grading) (ℳN := N''.grading) (-1) :=
+  dgRightModuleCochains.comp (dgClosedHomEquivZeroCocycles N' N'' b').1 k (by omega) +
+    dgRightModuleCochains.comp k' (dgClosedHomEquivZeroCocycles M M' a).1 (by omega)
+
+/-- The composite square homotopy evaluates by post- and precomposition. -/
+@[simp]
+theorem coneMapCompHomotopy_apply
+    (b' : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N' ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N'')
+    (k' : dgRightModuleCochains (R := R) (A := A)
+      (ℳ := M'.grading) (ℳN := N''.grading) (-1)) (x : M) :
+    (coneMapCompHomotopy a k b' k').1 x = closedHom b' (k.1 x) + k'.1 (closedHom a x) := by
+  simp only [coneMapCompHomotopy, dgRightModuleCochains.comp_apply,
+    Submodule.coe_add, LinearMap.add_apply, coe_dgClosedHomEquivZeroCocycles_apply,
+    ← closedHom_eq]
+
+include hsq in
+/-- The sum of the two square homotopies witnesses the composite square. -/
+theorem coneMapCompHomotopy_boundary
+    (j : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M'' ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N'')
+    (a' : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M' ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M'')
+    (b' : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N' ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N'')
+    (k' : dgRightModuleCochains (R := R) (A := A)
+      (ℳ := M'.grading) (ℳN := N''.grading) (-1))
+    (hsq' : ∀ x : M', closedHom b' (closedHom g x) - closedHom j (closedHom a' x) =
+      N''.differential (k'.1 x) + k'.1 (M'.differential x)) (x : M) :
+    closedHom (b ≫ b') (closedHom f x) - closedHom j (closedHom (a ≫ a') x) =
+      N''.differential ((coneMapCompHomotopy a k b' k').1 x) +
+        (coneMapCompHomotopy a k b' k').1 (M.differential x) := by
+  have h₁ := congrArg (closedHom b') (hsq x)
+  simp only [map_sub, map_add] at h₁
+  have h₂ := hsq' (closedHom a x)
+  rw [differential_closedHom] at h₂
+  simp only [closedHom_comp, LinearMap.comp_apply, coneMapCompHomotopy_apply,
+    map_add, differential_closedHom]
+  calc
+    _ = (closedHom b' (closedHom b (closedHom f x)) -
+        closedHom b' (closedHom g (closedHom a x))) +
+        (closedHom b' (closedHom g (closedHom a x)) -
+          closedHom j (closedHom a' (closedHom a x))) := by abel
+    _ = _ := by rw [h₁, h₂]; abel
+
+/-- Cone maps compose using the induced composite square homotopy. -/
+@[reassoc]
+theorem coneMap_comp
+    (j : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M'' ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N'')
+    (a' : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M' ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M'')
+    (b' : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N' ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N'')
+    (k' : dgRightModuleCochains (R := R) (A := A)
+      (ℳ := M'.grading) (ℳN := N''.grading) (-1))
+    (hsq' : ∀ x : M', closedHom b' (closedHom g x) - closedHom j (closedHom a' x) =
+      N''.differential (k'.1 x) + k'.1 (M'.differential x)) :
+    coneMap f g a b k hsq ≫ coneMap g j a' b' k' hsq' =
+      coneMap f j (a ≫ a') (b ≫ b') (coneMapCompHomotopy a k b' k')
+        (coneMapCompHomotopy_boundary f g a b k hsq j a' b' k' hsq') := by
+  apply closedHom_ext
+  intro x
+  simp only [closedHom_comp, LinearMap.comp_apply, closedHom_coneMap_apply,
+    coneMapCompHomotopy_apply, map_add, add_assoc]
+
+/-- The cone map of the identity square with zero homotopy is the identity. -/
+@[simp]
+theorem coneMap_id :
+    coneMap f f (𝟙 _) (𝟙 _) 0 (by intro x; simp) =
+      𝟙 (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (cone f)) := by
+  apply closedHom_ext
+  intro x
+  simp only [closedHom_coneMap_apply, closedHom_id, LinearMap.id_apply,
+    Submodule.coe_zero, LinearMap.zero_apply, add_zero]
+  exact Prod.mk.eta
 
 end TauCeti.CurvedDGRightModuleCat
