@@ -78,7 +78,7 @@ double coset contributes to the multiplicity-weighted composite `∑_D m(D₁, D
 
 public section
 
-open Matrix Matrix.SpecialLinearGroup UpperHalfPlane DoubleCoset HeckeRing.GLn
+open Matrix Matrix.SpecialLinearGroup UpperHalfPlane DoubleCoset
 
 open scoped MatrixGroups ModularForm Pointwise
 
@@ -123,7 +123,6 @@ theorem heckeSlashSum_eq_sum_of_rightCosets {ι : Type*} [Fintype ι] (a : ι �
     (hinj : Function.Injective fun i ↦ MulOpposite.op (a i) • (Γ₁ : Set (GL (Fin 2) ℚ)))
     (f : ℍ → ℂ) (hf : ∀ γ ∈ Γ₁, f ∣[k] γ = f) :
     heckeSlashSum k D f = ∑ i, f ∣[k] a i := by
-  classical
   obtain ⟨φ, hbij, hφ⟩ := exists_bijective_rightCosetRep_smul_eq D a hcover hinj
   rw [heckeSlashSum_def]
   exact (Fintype.sum_bijective φ hbij _ _ fun i ↦ slash_eq_of_rightCoset_eq k hf (hφ i)).symm
@@ -171,7 +170,7 @@ theorem sum_slash_eq_nsmul_heckeSlashSum {ι : Type*} [Fintype ι] (a : ι → G
   classical
   choose g hg using fun i ↦ exists_rightCosetRep_smul_eq D (hmem i)
   rw [heckeSlashSum_def, Finset.smul_sum,
-    ← Finset.sum_fiberwise_of_maps_to (fun i _ ↦ Finset.mem_univ (g i)) fun i ↦ f ∣[k] a i]
+    ← Finset.sum_fiberwise Finset.univ g fun i ↦ f ∣[k] a i]
   refine Finset.sum_congr rfl fun v _ ↦ ?_
   -- On the fibre of `v` every term is the slash by `v`'s representative, so the fibre
   -- contributes its cardinality times that one value.

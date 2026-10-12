@@ -486,6 +486,17 @@ theorem geckPoints_def (A : Type v) [CommRing A] :
       GeneralLinear.hopfIdealPointsSubgroup (t.geckDim ht) (t.geckDefiningIdeal ht) A :=
   TauCeti.UniversalEnvelopingAlgebra.kostantToralPointsSubgroup_def _ _ _ _ _ _ _ _ A
 
+/-- The points of the Geck carrier are the points of the generic Kostant toral closure they are
+cut out from. -/
+theorem geckPoints_eq_kostantToralPointsSubgroup (A : Type v) [CommRing A] :
+    t.geckPoints ht A =
+      TauCeti.UniversalEnvelopingAlgebra.kostantToralPointsSubgroup
+        (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+        (t.geckCoordinateLattice ht).toAddSubgroup
+        (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+        (t.isNilpotent_geckRepresentation_rootGenerator ht)
+        (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) A := (rfl)
+
 /-- A matrix is a point of the Geck carrier exactly when the associated convolution point
 kills its defining Hopf ideal. -/
 @[simp]

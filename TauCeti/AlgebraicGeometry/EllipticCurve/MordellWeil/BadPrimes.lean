@@ -54,6 +54,7 @@ puts the group theory back and reads it as membership in a Selmer group.
   `disc f` is a unit.
 * `WeierstrassCurve.Affine.valuation_root_le_one`: if `a₂`, `a₄`, `a₆` are integral at the prime
   under `w`, the root `θ` is integral at `w`.
+* `WeierstrassCurve.Affine.valuation_deriv_root_le_one`: then `f' θ` is integral at `w` too.
 * `WeierstrassCurve.Affine.valuation_deriv_root_eq_one`: if moreover `disc f` is a unit there,
   `f' θ` is a `w`-unit.
 * `WeierstrassCurve.Affine.valuation_cofactor_eq_one`: if `f' θ` is a `w`-unit, `x` is integral
@@ -201,23 +202,20 @@ end BadPrimes
 
 section RingOfIntegers
 
-variable (R : Type*) [CommRing R] [IsDedekindDomain R] [Algebra R K] [IsFractionRing R K]
+variable (R : Type*) [CommRing R] [Algebra R K]
 
 /-- The ring of integers of the field factor `K[X] ⧸ (p)` over `R`. -/
 noncomputable abbrev ringOfIntegersFactor (p : W.f.Factors) : Type _ :=
   integralClosure R (𝕃 p)
 
-/-- The ring of integers of a field factor is a Dedekind domain: it is the integral closure of
-`R` in a finite separable extension of the fraction field `K`. -/
-instance isDedekindDomain_ringOfIntegersFactor [W.IsElliptic] [W.IsCharNeTwoNF]
-    (p : W.f.Factors) : IsDedekindDomain (W.ringOfIntegersFactor R p) :=
-  have := AdjoinRoot.isSeparable_of_separable (separable_f W) p
-  IsIntegralClosure.isDedekindDomain R K (𝕃 p) _
+section
 
-/-- A field factor is the fraction field of its ring of integers. -/
-instance isFractionRing_ringOfIntegersFactor [W.IsElliptic] [W.IsCharNeTwoNF]
-    (p : W.f.Factors) : IsFractionRing (W.ringOfIntegersFactor R p) (𝕃 p) :=
-  have := AdjoinRoot.isSeparable_of_separable (separable_f W) p
+variable [IsDomain R] [IsFractionRing R K]
+
+/-- A field factor is the fraction field of its ring of integers over any domain `R` with
+fraction field `K`. The finite extension need not be separable. -/
+instance isFractionRing_ringOfIntegersFactor (p : W.f.Factors) :
+    IsFractionRing (W.ringOfIntegersFactor R p) (𝕃 p) :=
   IsIntegralClosure.isFractionRing_of_finite_extension R K (𝕃 p) _
 
 /-- The ring of integers of a field factor is torsion-free over `R`, as `R` embeds into it. -/
@@ -228,6 +226,17 @@ instance instIsTorsionFreeRingOfIntegersFactor (p : W.f.Factors) :
     rw [IsScalarTower.algebraMap_eq R K (𝕃 p)]
     exact (ι p).injective.comp (IsFractionRing.injective R K)
   exact fun a b hab ↦ hinj (congrArg Subtype.val hab)
+
+end
+
+variable [IsDedekindDomain R] [IsFractionRing R K]
+
+/-- The ring of integers of a field factor is a Dedekind domain: it is the integral closure of
+`R` in a finite separable extension of the fraction field `K`. -/
+instance isDedekindDomain_ringOfIntegersFactor [W.IsElliptic] [W.IsCharNeTwoNF]
+    (p : W.f.Factors) : IsDedekindDomain (W.ringOfIntegersFactor R p) :=
+  have := AdjoinRoot.isSeparable_of_separable (separable_f W) p
+  IsIntegralClosure.isDedekindDomain R K (𝕃 p) _
 
 /-- The `w`-adic valuation of an element of `K` is the valuation at the prime of `R` under `w`,
 raised to the ramification index. -/
@@ -285,6 +294,17 @@ lemma valuation_algebraMap_eq_one {z : K}
     (hz : (HeightOneSpectrum.under R w).valuation K z = 1) :
     w.valuation (𝕃 p) (ι p z) = 1 := by
   rw [← W.valuation_algebraMap_eq R p w z, hz, one_pow]
+
+/-- If `a₂`, `a₄` and `a₆` are integral at the prime under `w`, then so is
+`f' θ = 3θ² + 2a₂θ + a₄`: it is a polynomial in `θ` and the coefficients. -/
+lemma valuation_deriv_root_le_one :
+    w.valuation (𝕃 p) (3 * θ p ^ 2 + 2 * ι p W.a₂ * θ p + ι p W.a₄) ≤ 1 := by
+  have h₂ := W.valuation_algebraMap_le_one R p w ha₂
+  have h₄ := W.valuation_algebraMap_le_one R p w ha₄
+  have hθ := W.valuation_root_le_one R p ha₂ ha₄ ha₆
+  have h₃ : (3 : 𝕃 p) ∈ (w.valuation (𝕃 p)).integer := ofNat_mem _ 3
+  have h₂' : (2 : 𝕃 p) ∈ (w.valuation (𝕃 p)).integer := ofNat_mem _ 2
+  exact add_mem (add_mem (mul_mem h₃ (pow_mem hθ 2)) (mul_mem (mul_mem h₂' h₂) hθ)) h₄
 
 /-- If `a₂`, `a₄` and `a₆` are integral and `disc f` is a unit at the prime under `w`, then
 `f' θ = 3θ² + 2a₂θ + a₄` is a unit at `w` (`Valuation.map_cubic_deriv_eq_one`). The hypothesis is

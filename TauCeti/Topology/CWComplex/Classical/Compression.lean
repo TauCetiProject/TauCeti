@@ -30,8 +30,9 @@ The balls and spheres are those of the characteristic maps, the closed unit ball
 of `Fin n → ℝ` with the sup norm. For `n = 0` the sphere is empty and the ball is a point, so the
 hypothesis for `0`-cells says that every point of `Y` is joined by a path to a point of `B`. By
 Hatcher's compression criterion, the hypothesis in dimension `n ≥ 1` says that
-`πₙ(Y, B, y₀) = 0` for every `y₀ ∈ B`; the comparison with the cubical relative homotopy groups
-`TauCeti.RelHomotopyGroup` is not made here.
+`πₙ(Y, B, y₀) = 0` for every `y₀ ∈ B`; the version of the lemma with these hypotheses on the
+cubical relative homotopy groups `TauCeti.RelHomotopyGroup` is
+`TauCeti.exists_homotopicRel_range_subset_of_relHomotopyGroup`.
 
 ## Main results
 

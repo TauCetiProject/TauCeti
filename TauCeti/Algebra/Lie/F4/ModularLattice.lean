@@ -448,7 +448,7 @@ theorem f4Modular_lie_simpleCoroot_simpleCoroot_eq_zero (i j : Fin F4.rank) :
 
 /-- A root vector has zero coordinate at any different root label. -/
 @[simp] theorem f4ModularChevalleyBasis_repr_rootVector_inl_eq_zero
-    (ε γ : Fin 48) (hεγ : f4KillingRootLabel ε ≠ f4KillingRootLabel γ) :
+    (ε γ : Fin 48) (hεγ : ε ≠ γ) :
     f4ModularChevalleyBasis.repr (f4ModularRootVector ε)
       (Sum.inl (f4KillingRootLabel γ)) = 0 := by
   simp only [f4ModularRootVector_eq_basis, Basis.repr_self]
@@ -483,8 +483,8 @@ theorem f4_root_eq_add_of_repr_lie_rootVector_ne_zero
       Finsupp.zero_apply, ne_eq, not_true_eq_false] at hne
   obtain ⟨ε, hε⟩ := exists_f4_root_eq_add_of_rootSpace_ne_bot δ β hsum hbot
   obtain ⟨z, -, hlie⟩ := exists_f4Modular_lie_rootVector_eq_smul_of_add δ β ε hε
-  by_cases heq : f4KillingRootLabel ε = f4KillingRootLabel γ
-  · obtain rfl : ε = γ := f4KillingRoot_injective (congrArg Subtype.val heq)
+  by_cases heq : ε = γ
+  · subst heq
     exact hε
   simp only [hlie, map_smul, Finsupp.smul_apply,
     f4ModularChevalleyBasis_repr_rootVector_inl_eq_zero ε γ heq, smul_zero, ne_eq,
@@ -514,7 +514,7 @@ theorem f4_root_eq_add_of_repr_lie_rootVector_ne_zero
 
 /-- A simple-coroot bracket has no coordinate away from its root label. -/
 @[simp] theorem f4ModularChevalleyBasis_repr_lie_simpleCoroot_rootVector_eq_zero
-    (i : Fin F4.rank) (β γ : Fin 48) (hβγ : f4KillingRootLabel β ≠ f4KillingRootLabel γ) :
+    (i : Fin F4.rank) (β γ : Fin 48) (hβγ : β ≠ γ) :
     f4ModularChevalleyBasis.repr
       ⁅f4ModularSimpleCoroot i, f4ModularRootVector β⁆
         (Sum.inl (f4KillingRootLabel γ)) = 0 := by
@@ -529,7 +529,7 @@ theorem f4_root_eq_add_of_repr_lie_rootVector_ne_zero
         (Sum.inl (f4KillingRootLabel β)) = 0 := by
   apply f4ModularChevalleyBasis_repr_lie_rootVector_eq_zero
   intro h
-  exact f4KillingRootLabel_ne_of_root_eq_add δ β β
+  exact f4_ne_of_root_eq_add δ β β
     (by simpa only [f4SimplyConnectedRootDatum_root] using h) rfl
 
 /-! ## Integral root exponentials -/

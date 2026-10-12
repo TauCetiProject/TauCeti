@@ -96,6 +96,16 @@ def singularChainHomotopy :
   exact (show TopCat.Homotopy (f ≫ i) i from
     TauCeti.MappingTorus.monodromyHomotopy φ).singularChainComplexFunctorObjMap R
 
+/-- The components of the singular-chain homotopy are those induced by the cylinder homotopy. -/
+@[simp]
+lemma singularChainHomotopy_hom (i j : ℕ) :
+    (singularChainHomotopy φ R).hom i j =
+      (TopCat.Homotopy.singularChainComplexFunctorObjMap (monodromyHomotopy φ : TopCat.Homotopy
+        (TopCat.ofHom (⟨φ, φ.continuous⟩ : C(F, F)) ≫
+          TopCat.ofHom (TauCeti.MappingTorus.incl φ))
+        (TopCat.ofHom (TauCeti.MappingTorus.incl φ))) R).hom i j := by
+  simp [singularChainHomotopy, _root_.Homotopy.trans, _root_.Homotopy.ofEq]
+
 /-- On singular homology, the map induced by the fibre inclusion is unchanged after
 precomposition with the monodromy map. -/
 @[simp]

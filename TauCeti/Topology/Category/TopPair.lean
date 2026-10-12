@@ -52,6 +52,10 @@ abbrev ofInclusion {X : TopCat.{u}} {s t : Set X} (h : s ⊆ t) : TopPair.{u} :=
 variable {X Y Z : TopCat.{u}} (g : X ⟶ Y) (g' : Y ⟶ Z) {B : Set X} {B' : Set Y} {B'' : Set Z}
   (hB : Set.MapsTo g B B') (hB' : Set.MapsTo g' B' B'')
 
+/-- The embedding of the pair `(X, B)` has range `B`. -/
+lemma range_ofSubset_map : Set.range (ofSubset B).map = B :=
+  Subtype.range_coe
+
 /-- A continuous map `g : X ⟶ Y` carrying `B` into `B'` induces a map of pairs
 `(X, B) ⟶ (Y, B')`. -/
 def ofSubsetMap : ofSubset B ⟶ ofSubset B' :=

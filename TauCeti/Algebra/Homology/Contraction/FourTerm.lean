@@ -20,6 +20,10 @@ and `(zU, ε)`.
 
 The square-zero identity forces `qU = α ≫ f - β`, `qB = α ≫ g + β ≫ δ`,
 and `zU = δ ≫ ε`; these are conclusions rather than additional hypotheses.
+In `TauCeti.Contraction.FourTermCancellationData` the components `α`, `β`, `f`, `g`, `δ`,
+`qU`, `qB`, `zU` and `ε` are the fields `alpha`, `beta`, `first`, `second`, `delta`,
+`qFirst`, `qSecond`, `zFirst` and `epsilon`, and the three identities are its theorems
+`qFirst_eq`, `qSecond_eq` and `zFirst_eq`.
 
 The two negative identity blocks cancel, leaving the three-term complex
 `A ⟶ B ⟶ Z`, with differentials `f ≫ δ + g` and `ε`. The corrected projection
@@ -154,12 +158,7 @@ theorem zFirst_eq : h.zFirst = h.delta ≫ h.epsilon := by
     rw [raw_last_square_zero, comp_zero]
   have he : -h.zFirst + h.delta ≫ h.epsilon = 0 := by
     simpa [rawD2, rawD1, Category.assoc] using hz
-  have hs : h.delta ≫ h.epsilon - h.zFirst = 0 := by
-    -- The U-component is the sum of the negative direct map and the through-B map.
-    calc
-      h.delta ≫ h.epsilon - h.zFirst = -h.zFirst + h.delta ≫ h.epsilon := by abel
-      _ = 0 := he
-  exact (sub_eq_zero.mp hs).symm
+  exact (sub_eq_zero.mp ((neg_add_eq_sub _ _).symm.trans he)).symm
 
 private def d2 : A ⊞ (U ⊞ Q) ⟶ U ⊞ B :=
   biprod.desc (biprod.lift h.first h.second)
