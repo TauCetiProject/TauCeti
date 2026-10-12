@@ -89,10 +89,11 @@ theorem W1p.gradient_ae_eq_on_eq (hp : p ≠ ∞) (u v : W1p mu Omega p) :
 
 /-- Let `u ∈ W^{1,p}(Ω)`, `1 ≤ p < ∞`, on a set `Ω` of finite measure, and suppose `u > k` on a
 set of positive measure. Then there are levels `lⱼ ≥ k`, each exceeded by `u` on a set of positive
-measure, along which the measure of `{u > lⱼ, ∇u ≠ 0}` tends to zero. The levels increase to the
-essential supremum `M` of `u`, and the sets shrink to `{u = M, ∇u ≠ 0}`, which is null because
-the weak gradient vanishes almost everywhere on level sets, or to the empty set if `u` is
-essentially unbounded above. -/
+measure, along which the measure of `{u > lⱼ, ∇u ≠ 0}` tends to zero. The proof compares the
+levels with an increasing sequence approaching the essential supremum `M` of `u`; along it the
+sets shrink to `{u = M, ∇u ≠ 0}`, which is null because the weak gradient vanishes almost
+everywhere on level sets, or to the empty set if `u` is essentially unbounded above. The
+statement asserts neither monotonicity nor convergence of the levels. -/
 theorem W1p.exists_tendsto_measure_lt_value_and_gradient_ne_zero (hp : p ≠ ∞)
     (hOmega : mu Omega ≠ ∞) (u : W1p mu Omega p) {k : ℝ}
     (hk : ¬ ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ k) :

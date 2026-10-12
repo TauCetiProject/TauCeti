@@ -275,8 +275,8 @@ theorem UniformlyEllipticOn.value_le_const_of_forall_eLpNorm_le
     · have h2 : (2 : ℝ) < q.toReal := by
         simpa using (ENNReal.toReal_lt_toReal ENNReal.ofNat_ne_top hqtop).2 hq
       exact sub_pos.2 (inv_strictAnti₀ two_pos h2)
-  -- Along levels `lⱼ` increasing to the essential supremum of `u`, the measure of
-  -- `{u > lⱼ, ∇u ≠ 0}` tends to zero, so the level estimate fails for large `j`.
+  -- Along suitable levels `lⱼ ≥ k`, each exceeded by `u` on a set of positive measure,
+  -- the measure of `{u > lⱼ, ∇u ≠ 0}` tends to zero, so the level estimate fails for large `j`.
   by_contra hcon
   obtain ⟨l, hl, htend⟩ :=
     W1p.exists_tendsto_measure_lt_value_and_gradient_ne_zero (by norm_num) hOmega u hcon
