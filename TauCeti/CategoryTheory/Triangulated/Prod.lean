@@ -179,20 +179,12 @@ variable {C D} {B : Type*} [Category* B] [Preadditive B] [HasZeroObject B] [HasS
 componentwise pretriangulated product. -/
 instance instIsTriangulatedFunctorProd' : (F.prod' G).IsTriangulated where
   map_distinguished T hT := by
-    constructor
-    · refine isomorphic_distinguished _ (F.map_distinguished T hT) _
-        (Triangle.isoMk _ _ (Iso.refl _) (Iso.refl _) (Iso.refl _)
-          (by simp) (by simp) ?_)
-      -- The target product shift has componentwise maps; its projection comparison is identity.
-      exact (by simp : ((F.map T.mor₃ ≫ (F.commShiftIso (1 : ℤ)).hom.app T.obj₁) ≫
-        𝟙 _) ≫ (𝟙 (F.obj T.obj₁))⟦(1 : ℤ)⟧' =
-          𝟙 _ ≫ F.map T.mor₃ ≫ (F.commShiftIso (1 : ℤ)).hom.app T.obj₁)
-    · refine isomorphic_distinguished _ (G.map_distinguished T hT) _
-        (Triangle.isoMk _ _ (Iso.refl _) (Iso.refl _) (Iso.refl _)
-          (by simp) (by simp) ?_)
-      exact (by simp : ((G.map T.mor₃ ≫ (G.commShiftIso (1 : ℤ)).hom.app T.obj₁) ≫
-        𝟙 _) ≫ (𝟙 (G.obj T.obj₁))⟦(1 : ℤ)⟧' =
-          𝟙 _ ≫ G.map T.mor₃ ≫ (G.commShiftIso (1 : ℤ)).hom.app T.obj₁)
+    refine ⟨isomorphic_distinguished _ (F.map_distinguished T hT) _ ?_,
+      isomorphic_distinguished _ (G.map_distinguished T hT) _ ?_⟩
+    all_goals
+      refine Triangle.isoMk _ _ (Iso.refl _) (Iso.refl _) (Iso.refl _)
+        (by simp) (by simp) ?_
+      simp
 
 end Pairing
 
