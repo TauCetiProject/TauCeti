@@ -130,10 +130,12 @@ def id : dgBimoduleCochains (B := B) (𝒜 := 𝒜) (ℳ := ℳ) (𝒩 := ℳ) 0
 theorem id_val :
     (id (B := B) (𝒜 := 𝒜) (ℳ := ℳ)).1 = dgRightModuleCochains.id := (rfl)
 
+/-- The degree-zero identity bimodule cochain acts as the identity map. -/
 @[simp↓]
 theorem id_apply (x : M) : (id (B := B) (𝒜 := 𝒜) (ℳ := ℳ)).1.1 x = x := by
   rw [id_val, dgRightModuleCochains.id_apply]
 
+/-- Composing on the right with the identity bimodule cochain leaves the cochain unchanged. -/
 @[simp]
 theorem comp_id {p : ℤ}
     (f : dgBimoduleCochains (B := B) (𝒜 := 𝒜) (ℳ := ℳ) (𝒩 := 𝒩) p) :
@@ -142,6 +144,7 @@ theorem comp_id {p : ℤ}
   simp
 
 omit [IsScalarTower R A M] in
+/-- Composing on the left with the identity bimodule cochain leaves the cochain unchanged. -/
 @[simp]
 theorem id_comp {p : ℤ}
     (f : dgBimoduleCochains (B := B) (𝒜 := 𝒜) (ℳ := ℳ) (𝒩 := 𝒩) p) :
