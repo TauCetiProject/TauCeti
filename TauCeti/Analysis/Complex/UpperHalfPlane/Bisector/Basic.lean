@@ -21,6 +21,8 @@ region of `p` relative to `q`) are cut out by the weak inequality
 `q.im * |z - p|² ≤ p.im * |z - q|²` in the plane. This is the planar form of the defining
 inequalities of a Dirichlet domain.
 
+A height estimate also excludes low competing centres from a sufficiently high horizontal strip.
+
 These planar characterizations describe the equality and dominance regions that occur in
 Dirichlet domains.
 
@@ -30,6 +32,7 @@ Dirichlet domains.
   bisector.
 * `TauCeti.UpperHalfPlane.dist_le_dist_iff`: the planar inequality for the region of points at
   least as close to `p` as to `q`.
+* `UpperHalfPlane.dist_le_dist_of_im_le_half`: low centres impose no constraint high in a strip.
 
 ## References
 
@@ -70,3 +73,29 @@ theorem dist_le_dist_iff {z p q : ℍ} :
   constructor <;> intro h <;> nlinarith [h]
 
 end TauCeti.UpperHalfPlane
+
+namespace UpperHalfPlane
+
+/-- In a strip of horizontal half-width `r` about `p`, points above height `p.im + r` are
+at least as close to `p` as to any point whose height is at most `p.im / 2`. -/
+theorem dist_le_dist_of_im_le_half {z p q : ℍ} {r : ℝ}
+    (hzre : |z.re - p.re| ≤ r) (hzim : p.im + r ≤ z.im)
+    (hq : q.im ≤ p.im / 2) : dist z p ≤ dist z q := by
+  have hr : 0 ≤ r := (abs_nonneg _).trans hzre
+  have hsq : (z.re - p.re) ^ 2 ≤ r ^ 2 := (sq_le_sq).mpr (by simpa [abs_of_nonneg hr])
+  have hheight : p.im ^ 2 + r ^ 2 ≤ z.im ^ 2 := by
+    have h := pow_le_pow_left₀ (by positivity : 0 ≤ p.im + r) hzim 2
+    nlinarith [mul_nonneg p.im_pos.le hr]
+  have hnum : (z.re - p.re) ^ 2 + z.im ^ 2 + p.im ^ 2 ≤ 2 * z.im ^ 2 := by
+    linarith
+  have hc : Real.cosh (dist z p) ≤ Real.cosh (dist z q) := by
+    simp only [cosh_dist']
+    rw [div_le_div_iff₀ (by positivity) (by positivity)]
+    have h₁ := mul_le_mul_of_nonneg_left hnum q.im_pos.le
+    have h₂ := mul_le_mul_of_nonneg_right hq (sq_nonneg z.im)
+    have h₃ := mul_nonneg p.im_pos.le (sq_nonneg (z.re - q.re))
+    have h₄ := mul_nonneg p.im_pos.le (sq_nonneg q.im)
+    nlinarith [z.im_pos]
+  simpa only [Real.cosh_le_cosh, abs_of_nonneg dist_nonneg] using hc
+
+end UpperHalfPlane
