@@ -202,8 +202,11 @@ private theorem coordinateToPresentation_comp_presentationToCoordinate :
       (R := R) (A := presentationRing R)).injective
     rw [MultiplicativeGroup.pointEquiv_comp]
     have hunit : MultiplicativeGroup.unitOfPoint
-        (Polynomial.CAlgHom : LaurentPolynomial R →ₐ[R] presentationRing R) = presentationUnit R :=
-      (MultiplicativeGroup.map_genericUnit _ _).symm
+        (Polynomial.CAlgHom : LaurentPolynomial R →ₐ[R] presentationRing R) =
+          presentationUnit R := by
+      ext
+      simp only [MultiplicativeGroup.unitOfPoint_val, Polynomial.CAlgHom_apply,
+        presentationUnit_val]
     simpa only [presentationCoefficientToCoordinate,
       MultiplicativeGroup.pointsMulEquiv_symm_apply, WithConv.ofConv_toConv,
       MultiplicativeGroup.pointEquiv_apply, MultiplicativeGroup.unitOfPoint_point,
