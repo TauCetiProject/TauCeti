@@ -249,7 +249,9 @@ theorem exists_finiteDimensional_normal_splits_constantCompositum_eq_top (f : Po
       exact hr.2
     exact ⟨⟨r, hrF'⟩,
       algebraMap_mem_constantCompositum F k' F' ⟨_, IntermediateField.subset_adjoin k _ hroot⟩, rfl⟩
+  -- The preimage `w` of `x` under the inclusion `F · k' → F'` is `x` itself.
   obtain ⟨w, hw, hwx⟩ := hle x.2
-  rwa [show w = x from Subtype.ext hwx] at hw
+  obtain rfl : w = x := Subtype.ext hwx
+  exact hw
 
 end TauCeti

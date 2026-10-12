@@ -15,6 +15,7 @@ import Mathlib.FieldTheory.Normal.Basic
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.Degree
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.Genus
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.ResidueField
+import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 
 /-!
 # Castelnuovo's inequality
@@ -30,29 +31,30 @@ whose restrictions to `F₂` are pairwise distinct and rational, and `F₂` has 
 rational places. Over a perfect constant field, with `F / F₁` separable and `F = F₁ F₂`, the
 inequality then holds unconditionally. Write a primitive element `y` of `F / F₁` as `∑ cᵢ zᵢ` with
 `cᵢ ∈ F₁` and `zᵢ ∈ F₂`, and take a place `P₁` of `F₁` at which the minimal polynomial of `y` has
-separable reduction, the `cᵢ` are regular, and the `zᵢ` are regular at every place above. After a
-finite constant field extension `F · k'`, which changes neither the genera of `F`, `F₁ · k'` and
-`F₂ · k'` nor the degrees of `F · k'` over the last two, every place above `P₁` is rational and
-`F₂ · k'` has enough rational places. Kummer's theorem then gives `n₁` places over `P₁` at which
-`y` takes distinct constant values. The presentation of `y` computes each of these values from
-the restrictions of the place to `F₁` and to `F₂`, so the places have distinct restrictions to
-`F₂`. This finite extension replaces Stichtenoth's passage to an algebraic closure of `k`.
+separable reduction, the `cᵢ` are regular, and the `zᵢ` are regular at every place above. Pass to
+a finite constant field extension `F · k'`, over which `F · k'`, `F₁ · k'` and `F₂ · k'` have the
+genera of `F`, `F₁` and `F₂`, and `[F · k' : Fᵢ · k'] = [F : Fᵢ]`. There every place above `P₁` is
+rational and `F₂ · k'` has enough rational places. Kummer's theorem then gives `n₁` places over
+`P₁` at which `y` takes distinct constant values. The presentation of `y` computes each of these
+values from the restrictions of the place to `F₁` and to `F₂`, so the places have distinct
+restrictions to `F₂`. This finite extension replaces Stichtenoth's passage to an algebraic closure
+of `k`.
 
 The proof chooses an `F₁`-basis of `F` made of functions of `F₂` with few poles, and feeds it to
 the bound `g ≤ 1 + n₁ (g₁ - 1) + deg C` for a basis of `F / F₁` inside `L(C)`
 (`TauCeti.genus_le_one_add_finrank_mul_genus_sub_one_add_degree`). Let `P⁽⁰⁾, …, P⁽ⁿ¹⁻¹⁾` be the
 places of `F` over `P₁` and `Q⁽ⁱ⁾` their restrictions to `F₂`. Take a nonspecial effective
 divisor `B` of `F₂` of degree `g₂` away from the `Q⁽ⁱ⁾` (Stichtenoth, Proposition 1.6.12). For
-`i ≠ 0`, Riemann's theorem gives `ℓ(B + Q⁽ⁱ⁾) ≥ 2 > ℓ(B)`, so some `zᵢ ∈ L(B + Q⁽ⁱ⁾)` has a pole
-at `Q⁽ⁱ⁾` and none at the other `Q⁽ʲ⁾`; put `z₀ = 1`. In a relation `∑ cᵢ zᵢ = 0` with
-`cᵢ ∈ F₁`, the coefficients have the same order at every `P⁽ʲ⁾`, namely `e (P⁽ʲ⁾ ∣ P₁)` times
+`i ≠ 0`, Riemann's theorem gives `ℓ(B + Q⁽ⁱ⁾) ≥ 2 > ℓ(B)`, so some `wᵢ ∈ L(B + Q⁽ⁱ⁾)` has a pole
+at `Q⁽ⁱ⁾` and none at the other `Q⁽ʲ⁾`; put `w₀ = 1`. In a relation `∑ aᵢ wᵢ = 0` with
+`aᵢ ∈ F₁`, the coefficients have the same order at every `P⁽ʲ⁾`, namely `e (P⁽ʲ⁾ ∣ P₁)` times
 their order at `P₁`; looking at the place `P⁽ⁱ⁾` of a coefficient of least order shows that the
-`i`-th term has strictly least order there, which is impossible. So the `zᵢ` are a basis of
+`i`-th term has strictly least order there, which is impossible. So the `wᵢ` are a basis of
 `F / F₁` inside `L(A)`, `A = B + ∑_{i ≠ 0} Q⁽ⁱ⁾`, of degree `g₂ + n₁ - 1`, and the conorm of `A`
 to `F` has degree `n₂ (g₂ + n₁ - 1)`.
 
-The hypothesis `F = F₁ F₂` of the classical statement is not needed separately: the basis above
-consists of elements of `F₂`.
+The split-place form of the inequality does not assume `F = F₁ F₂`: the basis above consists of
+elements of `F₂`. The hypothesis enters the general theorem only through the presentation of `y`.
 
 ## Main results
 
@@ -61,8 +63,6 @@ consists of elements of `F₂`.
   splitting completely in `F` with distinct rational restrictions to `F₂`.
 * `TauCeti.genus_le_finrank_mul_genus_add_finrank_mul_genus_add`: **Castelnuovo's inequality**
   over a perfect field, for `F = F₁ F₂` with `F / F₁` separable.
-* `TauCeti.genus_le_finrank_mul_genus_add_finrank_mul_genus_add_of_isAlgClosed`: the same over an
-  algebraically closed field, where the constants are automatically exact.
 
 ## References
 
@@ -228,15 +228,8 @@ private theorem eq_of_valuation_sub_lt_one_of_restrict_eq {P₁ : Place k F₁} 
     · rw [map_mul]
       exact (mul_le_of_le_one_left' (R.mem_integers_iff.mp (R.algebraMap_mem_integers _))).trans_lt
         hz'
-  -- A constant to which `y` is congruent at a place is unique.
-  have hconst (R : Place k F) (a b : k) (ha : R.valuation (y - algebraMap k F a) < 1)
-      (hb : R.valuation (y - algebraMap k F b) < 1) : a = b := by
-    by_contra hne
-    have hsub := Valuation.map_sub R.valuation (y - algebraMap k F b) (y - algebraMap k F a)
-    rw [sub_sub_sub_cancel_left, ← map_sub,
-      R.isTrivialOn.eq_one _ (sub_ne_zero.mpr hne)] at hsub
-    exact (hsub.trans_lt (max_lt hb ha)).false
-  exact (hconst P _ _ ha (hval P hP rfl)).trans (hconst P' _ _ hb (hval P' hP' hPP'.symm)).symm
+  exact (P.eq_of_valuation_sub_lt_one ha (hval P hP rfl)).trans
+    (P'.eq_of_valuation_sub_lt_one hb (hval P' hP' hPP'.symm)).symm
 
 /-- Castelnuovo's inequality from a place `P₁` of `F₁` all of whose extensions to `F` are rational,
 at which a primitive element `y` of `F / F₁` has separable reduction, given a presentation
@@ -353,6 +346,37 @@ private theorem exists_place_separable_reduction (hF : IsFunctionField k F)
     fun i R hR ↦ R.mem_integers_iff_ord_nonneg.mpr
       (not_lt.mp fun h ↦ hz (Set.mem_iUnion.mpr ⟨i, R, h, hR⟩))⟩
 
+omit [Algebra k F₂] [Algebra F₂ F] [IsScalarTower k F₂ F] [FiniteDimensional F₂ F] in
+/-- A subfield `F₁` of `F` after a finite separable constant field extension `F' = F · k'`: the
+compositum `F₁ · k'` inside `F'` is the constant field extension of `F₁` by `k'`, so it is a
+function field over `k'` of the genus of `F₁`, finite over `F₁`, and `F'` is finite over it of
+degree `[F : F₁]`. -/
+private theorem constantCompositum_subfield {k' F' : Type*} [Field k'] [Field F'] [Algebra k k']
+    [Algebra k F'] [Algebra k' F'] [Algebra F F'] [IsScalarTower k k' F'] [IsScalarTower k F F']
+    [FiniteDimensional k k'] [Algebra.IsSeparable k k'] [Algebra F₁ F'] [IsScalarTower F₁ F F']
+    [IsScalarTower k F₁ F'] [Algebra k' (constantCompositum F₁ k' F')]
+    [IsScalarTower k' (constantCompositum F₁ k' F') F']
+    [IsScalarTower k k' (constantCompositum F₁ k' F')] (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) (h : constantCompositum F k' F' = ⊤) :
+    constantCompositum F₁ k' (constantCompositum F₁ k' F') = ⊤ ∧
+      IsFunctionField k' (constantCompositum F₁ k' F') ∧
+      FiniteDimensional F₁ (constantCompositum F₁ k' F') ∧
+      FiniteDimensional (constantCompositum F₁ k' F') F' ∧
+      Module.finrank (constantCompositum F₁ k' F') F' = Module.finrank F₁ F ∧
+      genus k' (constantCompositum F₁ k' F') = genus k F₁ := by
+  have : Algebra.IsAlgebraic F₁ F := Algebra.IsAlgebraic.of_finite F₁ F
+  have hF₁ : IsFunctionField k F₁ := hF.of_isAlgebraic_top
+  have hex₁ : IsIntegrallyClosedIn k F₁ :=
+    (IsScalarTower.toAlgHom k F₁ F).isIntegrallyClosedIn (algebraMap F₁ F).injective hex
+  have hcc : constantCompositum F₁ k' (constantCompositum F₁ k' F') = ⊤ :=
+    (constantCompositum_eq_top_iff F₁ k' F' _).mpr rfl
+  have : FiniteDimensional F₁ (constantCompositum F₁ k' F') :=
+    finiteDimensional_of_constantCompositum_eq_top (k := k) hcc
+  have hn := finrank_over_constantCompositum_eq_finrank_of_constantCompositum_eq_top (E := F₁) hex h
+  exact ⟨hcc, hF₁.of_constantCompositum_eq_top hcc, inferInstance,
+    Module.finite_of_finrank_pos (hn ▸ Module.finrank_pos), hn,
+    genus_eq_genus_of_constantCompositum_eq_top hF₁ hex₁ hcc⟩
+
 /-- Castelnuovo's inequality after a constant field extension. Let `F' = F · k'` for a finite normal
 extension `k' / k`, let `P₁` be a place of `F₁` at which a primitive element `y = ∑ cᵢ zᵢ` of
 `F / F₁` has separable reduction, with `cᵢ ∈ F₁` regular at `P₁` and `zᵢ ∈ F₂` regular above `P₁`.
@@ -382,8 +406,6 @@ private theorem genus_le_of_constantCompositum_eq_top [PerfectField k] {k' F' : 
   have : Algebra.IsAlgebraic F₂ F := Algebra.IsAlgebraic.of_finite F₂ F
   have hF₁ : IsFunctionField k F₁ := hF.of_isAlgebraic_top
   have hF₂ : IsFunctionField k F₂ := hF.of_isAlgebraic_top
-  have hex₁ : IsIntegrallyClosedIn k F₁ :=
-    (IsScalarTower.toAlgHom k F₁ F).isIntegrallyClosedIn (algebraMap F₁ F).injective hex
   have hex₂ : IsIntegrallyClosedIn k F₂ :=
     (IsScalarTower.toAlgHom k F₂ F).isIntegrallyClosedIn (algebraMap F₂ F).injective hex
   have : Algebra.IsSeparable k k' := Algebra.IsAlgebraic.isSeparable_of_perfectField
@@ -391,7 +413,7 @@ private theorem genus_le_of_constantCompositum_eq_top [PerfectField k] {k' F' : 
   have : FiniteDimensional F F' := finiteDimensional_of_constantCompositum_eq_top (k := k) h
   have hF' : IsFunctionField k' F' := hF.of_constantCompositum_eq_top h
   have hex' : IsIntegrallyClosedIn k' F' := isIntegrallyClosedIn_of_constantCompositum_eq_top hex h
-  -- The composita `F₁ · k'` and `F₂ · k'` inside `F'` have the genera and degrees of `F₁`, `F₂`.
+  -- The algebra structures making `F₁ ⊆ F₁ · k' ⊆ F'` and `F₂ ⊆ F₂ · k' ⊆ F'` towers over `k`.
   let : Algebra F₁ F' := ((algebraMap F F').comp (algebraMap F₁ F)).toAlgebra
   let : Algebra F₂ F' := ((algebraMap F F').comp (algebraMap F₂ F)).toAlgebra
   have : IsScalarTower F₁ F F' := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
@@ -414,23 +436,10 @@ private theorem genus_le_of_constantCompositum_eq_top [PerfectField k] {k' F' : 
     Subtype.ext (IsScalarTower.algebraMap_apply k k' F' c)
   have : IsScalarTower k k' F₂' := IsScalarTower.of_algebraMap_eq fun c ↦
     Subtype.ext (IsScalarTower.algebraMap_apply k k' F' c)
-  have hcc₁ : constantCompositum F₁ k' F₁' = ⊤ :=
-    (constantCompositum_eq_top_iff F₁ k' F' F₁').mpr rfl
-  have hcc₂ : constantCompositum F₂ k' F₂' = ⊤ :=
-    (constantCompositum_eq_top_iff F₂ k' F' F₂').mpr rfl
-  have hF₁' : IsFunctionField k' F₁' := hF₁.of_constantCompositum_eq_top hcc₁
-  have hF₂' : IsFunctionField k' F₂' := hF₂.of_constantCompositum_eq_top hcc₂
-  have : FiniteDimensional F₁ F₁' := finiteDimensional_of_constantCompositum_eq_top (k := k) hcc₁
-  have : FiniteDimensional F₂ F₂' := finiteDimensional_of_constantCompositum_eq_top (k := k) hcc₂
-  have hn₁ : Module.finrank F₁' F' = Module.finrank F₁ F :=
-    finrank_constantCompositum_eq_finrank_of_constantCompositum_eq_top hex h
-  have hn₂ : Module.finrank F₂' F' = Module.finrank F₂ F :=
-    finrank_constantCompositum_eq_finrank_of_constantCompositum_eq_top hex h
-  have : FiniteDimensional F₁' F' := Module.finite_of_finrank_pos (hn₁ ▸ Module.finrank_pos)
-  have : FiniteDimensional F₂' F' := Module.finite_of_finrank_pos (hn₂ ▸ Module.finrank_pos)
+  -- The composita `F₁ · k'` and `F₂ · k'` inside `F'` have the genera and degrees of `F₁`, `F₂`.
+  obtain ⟨-, hF₁', _, _, hn₁, hg₁⟩ := constantCompositum_subfield (F₁ := F₁) hF hex h
+  obtain ⟨hcc₂, hF₂', _, _, hn₂, hg₂⟩ := constantCompositum_subfield (F₁ := F₂) hF hex h
   have hg := genus_eq_genus_of_constantCompositum_eq_top hF hex h
-  have hg₁ := genus_eq_genus_of_constantCompositum_eq_top hF₁ hex₁ hcc₁
-  have hg₂ := genus_eq_genus_of_constantCompositum_eq_top hF₂ hex₂ hcc₂
   -- A place `P₁'` of `F₁ · k'` over `P₁`; every place of `F'` above it is rational.
   obtain ⟨P₁', rfl⟩ :=
     Place.restrict_surjective_of_finiteDimensional (k' := k') (F' := F₁') hF₁ hF₁' P₁
@@ -441,34 +450,14 @@ private theorem genus_le_of_constantCompositum_eq_top [PerfectField k] {k' F' : 
     obtain ⟨φR⟩ := hembR _ (hover R' hR')
     exact Place.degree_eq_one_of_constantCompositum_eq_top hF hex h R' φR
   -- `y` stays a primitive element over `F₁ · k'`, with the same minimal polynomial.
-  have hy' : F₁'⟮algebraMap F F' y⟯ = ⊤ := by
-    set L := F₁'⟮algebraMap F F' y⟯
-    have hFL (x : F) : algebraMap F F' x ∈ L := by
-      have hx : IsScalarTower.toAlgHom F₁ F F' x ∈ (F₁⟮y⟯).map (IsScalarTower.toAlgHom F₁ F F') :=
-        ⟨x, hy ▸ IntermediateField.mem_top, rfl⟩
-      rw [IntermediateField.adjoin_map, Set.image_singleton] at hx
-      have hle : F₁⟮IsScalarTower.toAlgHom F₁ F F' y⟯ ≤ L.restrictScalars F₁ :=
-        IntermediateField.adjoin_simple_le_iff.mpr (IntermediateField.mem_adjoin_simple_self F₁' _)
-      exact (IntermediateField.mem_restrictScalars F₁).mp (hle hx)
-    have hle := (constantCompositum_le_iff F k' F' (K := L.toSubfield.toIntermediateField hFL)).mpr
-      fun c ↦ L.algebraMap_mem (algebraMap k' F₁' c)
-    rw [h] at hle
-    exact top_le_iff.mp fun x _ ↦ hle IntermediateField.mem_top
   have hmin' : (φ.map (algebraMap (P₁'.restrict k F₁).integers P₁'.integers)).map
       (algebraMap P₁'.integers F₁') = minpoly F₁' (algebraMap F F' y) := by
     have hcomp : (algebraMap P₁'.integers F₁').comp
         (algebraMap (P₁'.restrict k F₁).integers P₁'.integers) =
         (algebraMap F₁ F₁').comp (algebraMap (P₁'.restrict k F₁).integers F₁) :=
-      RingHom.ext fun _ ↦ rfl
-    rw [Polynomial.map_map, hcomp, ← Polynomial.map_map, hmin]
-    refine (Polynomial.eq_of_monic_of_dvd_of_natDegree_le (minpoly.monic (IsIntegral.of_finite _ _))
-      ((minpoly.monic (IsIntegral.of_finite _ _)).map _)
-      (minpoly.dvd_map_of_isScalarTower' F₁ F₁' F' y) ?_)
-    rw [(minpoly.monic (IsIntegral.of_finite F₁ y)).natDegree_map,
-      ← IntermediateField.adjoin.finrank (IsIntegral.of_finite F₁ y), hy,
-      IntermediateField.finrank_top', ← hn₁,
-      ← IntermediateField.adjoin.finrank (IsIntegral.of_finite F₁' _), hy',
-      IntermediateField.finrank_top']
+      RingHom.ext fun x ↦ Subtype.ext (by simp [IsScalarTower.algebraMap_apply F₁ F F'])
+    rw [Polynomial.map_map, hcomp, ← Polynomial.map_map, hmin,
+      minpoly_algebraMap_eq_map_of_constantCompositum_eq_top hex h hy]
   have hsep' : ((φ.map (algebraMap (P₁'.restrict k F₁).integers P₁'.integers)).map
       (IsLocalRing.residue P₁'.integers)).Separable := by
     have hcomp : (IsLocalRing.residue P₁'.integers).comp
@@ -493,7 +482,8 @@ private theorem genus_le_of_constantCompositum_eq_top [PerfectField k] {k' F' : 
     refine Set.encard_le_encard ?_
     rintro _ ⟨Q, hQ, rfl⟩
     exact hdegQ (Q' Q) (by rw [hQ' Q]; exact hQ)
-  have key := genus_le_of_forall_degree_eq_one hF' hex' hdeg' hy' hmin' hsep'
+  have key := genus_le_of_forall_degree_eq_one hF' hex' hdeg'
+    (adjoin_simple_eq_top_of_constantCompositum_eq_top h hy) hmin' hsep'
     (fun i ↦ algebraMap F₁ F₁' (c i)) (fun i ↦ algebraMap F₂ F₂' (z i))
     (by
       rw [hyz, map_sum]
@@ -507,6 +497,16 @@ private theorem genus_le_of_constantCompositum_eq_top [PerfectField k] {k' F' : 
       exact (Place.mem_integers_restrict_iff k F R' _).mp (hz i _ (hover R' hR')))
     hrat
   rwa [hg, hg₁, hg₂, hn₁, hn₂] at key
+
+/-- A field `K` generated over `k` by an integral element `x` embeds into every extension `k'` of
+`k` over which some nonzero multiple of the minimal polynomial of `x` splits. -/
+private theorem nonempty_algHom_of_minpoly_dvd {K k' : Type*} [Field K] [Field k'] [Algebra k K]
+    [Algebra k k'] {x : K} (hx : k⟮x⟯ = ⊤) (hint : IsIntegral k x) {f : k[X]} (hf0 : f ≠ 0)
+    (hdvd : minpoly k x ∣ f) (hsplit : (f.map (algebraMap k k')).Splits) :
+    Nonempty (K →ₐ[k] k') := by
+  refine IntermediateField.nonempty_algHom_of_adjoin_splits (S := {x}) (fun s hs ↦ ?_) hx
+  rw [Set.mem_singleton_iff.mp hs]
+  exact ⟨hint, hsplit.of_dvd (Polynomial.map_ne_zero hf0) (Polynomial.map_dvd _ hdvd)⟩
 
 /-- **Castelnuovo's inequality** (Stichtenoth, Theorem 3.11.3). Let `F / k` be a function field
 over a perfect field `k`, with exact constant field `k`, and let `F₁`, `F₂` be subfields of `F`
@@ -526,16 +526,8 @@ theorem genus_le_finrank_mul_genus_add_finrank_mul_genus_add [PerfectField k]
   `F₂`, and a place `P₁` of `F₁` of separable reduction for `y`. -/
   obtain ⟨y, hy⟩ := Field.exists_primitive_element F₁ F
   have hspan : y ∈ Submodule.span F₁ (Set.range (algebraMap F₂ F)) := by
-    have hmem : y ∈ (IntermediateField.adjoin F₁ (Set.range (algebraMap F₂ F))).toSubalgebra := by
-      rw [htop]
-      exact IntermediateField.mem_top
-    rw [IntermediateField.adjoin_toSubalgebra_of_isAlgebraic
-      fun x _ ↦ Algebra.IsAlgebraic.isAlgebraic x] at hmem
-    have hclosure : (Submonoid.closure (Set.range (algebraMap F₂ F)) : Set F) =
-        Set.range (algebraMap F₂ F) := by
-      rw [← MonoidHom.coe_mrange, Submonoid.closure_eq]
-    rw [← Subalgebra.mem_toSubmodule, Algebra.adjoin_eq_span, hclosure] at hmem
-    exact hmem
+    rw [IntermediateField.span_range_eq_top_of_adjoin_range_eq_top htop]
+    exact Submodule.mem_top
   obtain ⟨n, c, z', hyz'⟩ := Submodule.mem_span_set'.mp hspan
   choose z hz using fun i ↦ (z' i).2
   have hyz : y = ∑ i, algebraMap F₁ F (c i) * algebraMap F₂ F (z i) := by
@@ -549,48 +541,24 @@ theorem genus_le_finrank_mul_genus_add_finrank_mul_genus_add [PerfectField k]
   have := Place.infinite hF₂
   obtain ⟨TQ, hTQ⟩ :=
     Infinite.exists_subset_card_eq (Place k F₂) (genus k F₂ + Module.finrank F₁ F)
-  choose α hα using fun R : Place k F ↦
+  choose α hα hαint using fun R : Place k F ↦
     letI := R.finiteDimensional_residueField hF
-    Field.exists_primitive_element k R.ResidueField
-  choose β hβ using fun Q : Place k F₂ ↦
+    ((Field.exists_primitive_element k R.ResidueField).imp fun a ha ↦ ⟨ha, .of_finite k a⟩ :
+      ∃ a : R.ResidueField, k⟮a⟯ = ⊤ ∧ IsIntegral k a)
+  choose β hβ hβint using fun Q : Place k F₂ ↦
     letI := Q.finiteDimensional_residueField hF₂
-    Field.exists_primitive_element k Q.ResidueField
-  have hαint (R : Place k F) : IsIntegral k (α R) :=
-    letI := R.finiteDimensional_residueField hF
-    IsIntegral.of_finite k _
-  have hβint (Q : Place k F₂) : IsIntegral k (β Q) :=
-    letI := Q.finiteDimensional_residueField hF₂
-    IsIntegral.of_finite k _
+    ((Field.exists_primitive_element k Q.ResidueField).imp fun b hb ↦ ⟨hb, .of_finite k b⟩ :
+      ∃ b : Q.ResidueField, k⟮b⟯ = ⊤ ∧ IsIntegral k b)
   set f : k[X] := (∏ R ∈ hSR.toFinset, minpoly k (α R)) * ∏ Q ∈ TQ, minpoly k (β Q)
   have hf0 : f ≠ 0 := mul_ne_zero (Finset.prod_ne_zero_iff.mpr fun R _ ↦ minpoly.ne_zero (hαint R))
     (Finset.prod_ne_zero_iff.mpr fun Q _ ↦ minpoly.ne_zero (hβint Q))
   obtain ⟨F', k', _, _, hsplit, h⟩ :=
     exists_finiteDimensional_normal_splits_constantCompositum_eq_top F f
-  /- The residue fields of the chosen places embed into `k'`, since the minimal polynomials of
-  their generators divide `f`, which splits in `k'`. -/
-  have hembR (R : Place k F) (hR : R.restrict k F₁ = P₁) : Nonempty (R.ResidueField →ₐ[k] k') := by
-    refine IntermediateField.nonempty_algHom_of_adjoin_splits (S := {α R}) (fun s hs ↦ ?_) (hα R)
-    rw [Set.mem_singleton_iff.mp hs]
-    refine ⟨hαint R, hsplit.of_dvd (Polynomial.map_ne_zero hf0) (Polynomial.map_dvd _ ?_)⟩
-    exact (Finset.dvd_prod_of_mem _ (hSR.mem_toFinset.mpr hR)).mul_right _
-  have hembQ (Q : Place k F₂) (hQ : Q ∈ TQ) : Nonempty (Q.ResidueField →ₐ[k] k') := by
-    refine IntermediateField.nonempty_algHom_of_adjoin_splits (S := {β Q}) (fun s hs ↦ ?_) (hβ Q)
-    rw [Set.mem_singleton_iff.mp hs]
-    refine ⟨hβint Q, hsplit.of_dvd (Polynomial.map_ne_zero hf0) (Polynomial.map_dvd _ ?_)⟩
-    exact (Finset.dvd_prod_of_mem _ hQ).mul_left _
-  exact genus_le_of_constantCompositum_eq_top hF hex h hy hmin hsep c z hyz hc hz' hembR hTQ hembQ
-
-/-- **Castelnuovo's inequality over an algebraically closed field** (Stichtenoth,
-Theorem 3.11.3). Let `F / k` be a function field over an algebraically closed field `k`, and let
-`F₁`, `F₂` be subfields of `F` containing `k` with `F = F₁ F₂`, `F` finite over both, and `F / F₁`
-separable. (The constants of `F` are automatically exact.) Then
-
-`g(F) ≤ [F : F₁] g(F₁) + [F : F₂] g(F₂) + ([F : F₁] - 1) ([F : F₂] - 1)`. -/
-theorem genus_le_finrank_mul_genus_add_finrank_mul_genus_add_of_isAlgClosed [IsAlgClosed k]
-    (hF : IsFunctionField k F) [Algebra.IsSeparable F₁ F]
-    (htop : IntermediateField.adjoin F₁ (Set.range (algebraMap F₂ F)) = ⊤) :
-    genus k F ≤ Module.finrank F₁ F * genus k F₁ + Module.finrank F₂ F * genus k F₂ +
-      (Module.finrank F₁ F - 1) * (Module.finrank F₂ F - 1) :=
-  genus_le_finrank_mul_genus_add_finrank_mul_genus_add hF isIntegrallyClosedIn_of_isAlgClosed htop
+  -- The residue fields of the chosen places embed into `k'`, since `f` splits in `k'`.
+  exact genus_le_of_constantCompositum_eq_top hF hex h hy hmin hsep c z hyz hc hz'
+    (fun R hR ↦ nonempty_algHom_of_minpoly_dvd (hα R) (hαint R) hf0
+      ((Finset.dvd_prod_of_mem _ (hSR.mem_toFinset.mpr hR)).mul_right _) hsplit) hTQ
+    (fun Q hQ ↦ nonempty_algHom_of_minpoly_dvd (hβ Q) (hβint Q) hf0
+      ((Finset.dvd_prod_of_mem _ hQ).mul_left _) hsplit)
 
 end TauCeti
