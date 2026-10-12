@@ -194,6 +194,24 @@ lemma cyclesComplexShortComplexMap_τ₃_f (i : ι) :
         eqToHom (by simp) :=
   (Category.comp_id _).symm.trans (Category.id_comp _).symm
 
+variable (K) in
+/-- The identity chain map induces the identity morphism of cycle sequences. -/
+@[simp]
+lemma cyclesComplexShortComplexMap_id :
+    cyclesComplexShortComplexMap (𝟙 K) = 𝟙 K.cyclesComplexShortComplex := by
+  ext <;> simp [cyclesComplexShortComplexMap, cyclesComplexShortComplex]
+
+/-- The morphism of cycle sequences induced by a composite of chain maps is the composite of the
+induced morphisms. -/
+@[simp, reassoc]
+lemma cyclesComplexShortComplexMap_comp {M : HomologicalComplex C c} (φ' : L ⟶ M) :
+    cyclesComplexShortComplexMap (φ ≫ φ') =
+      cyclesComplexShortComplexMap φ ≫ cyclesComplexShortComplexMap φ' := by
+  ext i
+  · exact cyclesMap_comp φ φ' i
+  · rfl
+  · exact coequalizer.hom_ext (by simp [cyclesComplexShortComplexMap, cyclesComplexShortComplex])
+
 end Map
 
 /-- For a chain complex indexed by `ℕ`, all of `K₀` consists of cycles, so the third term
