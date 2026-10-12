@@ -405,6 +405,14 @@ instance instDistribMulAction : DistribMulAction SL(2, R) (BinaryQuadraticForm R
 instance instSMulCommClass : SMulCommClass R SL(2, R) (BinaryQuadraticForm R) where
   smul_comm r γ f := by ext <;> simp [smul_eq_mul] <;> ring
 
+/-- A primitively represented value can be moved to the leading coefficient by a proper change. -/
+theorem exists_smul_a_eq_eval (f : BinaryQuadraticForm R) {x y : R} (hxy : IsCoprime x y) :
+    ∃ γ : SL(2, R), (γ • f).a = f.eval x y := by
+  obtain ⟨ρ, hρ₀, hρ₁⟩ := hxy.exists_SL2_col 0
+  refine ⟨ρ⁻¹, ?_⟩
+  rw [← eval_one_zero, eval_smul]
+  simp [SpecialLinearGroup.SL2_inv_expl, hρ₀, hρ₁]
+
 /-- The discriminant `b² - 4 a c` of a binary quadratic form is invariant under `SL(2, R)`. -/
 @[simp]
 theorem discrim_smul (γ : SL(2, R)) (f : BinaryQuadraticForm R) : (γ • f).discrim = f.discrim := by

@@ -307,7 +307,7 @@ theorem intervalIntegrable_logDeriv_fdBoundary_arc (H : ℝ) {a b : ℝ}
 
 /-- Substituting the reflection `t ↦ 4 - t` in a boundary contour integral. -/
 theorem intervalIntegral_comp_fdBoundary_four_sub {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℂ E] (H : ℝ) (φ : ℂ → E) {a b : ℝ} :
+    [NormedSpace ℝ E] [SMul ℂ E] (H : ℝ) (φ : ℂ → E) {a b : ℝ} :
     ∫ t in (4 - b : ℝ)..(4 - a), deriv (fdBoundary H) t • φ (fdBoundary H t) =
       ∫ u in a..b, deriv (fdBoundary H) (4 - u) • φ (fdBoundary H (4 - u)) :=
   (intervalIntegral.integral_comp_sub_left

@@ -423,6 +423,15 @@ form `∫_Ω ∇v · ∇u`. -/
   exact integral_congr_ae (Filter.Eventually.of_forall fun x => by
     simp)
 
+open scoped InnerProductSpace in
+/-- The energy form of the Laplacian model `-Δ` is the `L²` inner product of the gradients,
+`⟪∇u, ∇v⟫_{L²(Ω)}`. -/
+theorem energyFormH1_one_zero_zero_eq_inner [DecidableEq ι] (u v : W1p mu Omega 2) :
+    energyFormH1 (fun _ => 1) 0 0 u v = ⟪W1p.gradient u, W1p.gradient v⟫_ℝ := by
+  rw [energyFormH1_one_zero_zero_apply, L2.inner_def]
+  exact integral_congr_ae (Filter.Eventually.of_forall fun x => by
+    simp [EuclideanSpace.inner_eq_star_dotProduct])
+
 /-- The weak formulation of the Laplacian model `-Δ` is the classical one: `u ∈ H¹₀(Ω)` solves
 `-Δu = f` weakly exactly when `∫_Ω ∇v · ∇u = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`. -/
 theorem isWeakSolutionDirichlet_one_zero_zero_iff [DecidableEq ι]
