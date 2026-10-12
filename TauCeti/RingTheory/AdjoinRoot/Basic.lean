@@ -26,6 +26,8 @@ polynomial ring `R[X]/(X ^ n)`.
   this only in the specialised form `WeierstrassCurve.Affine.CoordinateRing.map_mk`. Marked
   `@[simp]`, like its neighbours `AdjoinRoot.map_of` and `AdjoinRoot.map_root`.
 * `AdjoinRoot.map_surjective`: the map is surjective when `f` is.
+* `AdjoinRoot.algHom_mk`: an algebra map out of `AdjoinRoot g` sends the class of `p` to the
+  evaluation of `p` at the image of the root.
 * `AdjoinRoot.exists_degree_lt_mk_eq`, `AdjoinRoot.mk_eq_mk_iff_of_degree_lt`: for a monic
   relator, every class is represented by a polynomial of degree less than that of the relator, and
   that representative is unique. Mathlib has division with remainder by a monic polynomial but
@@ -97,6 +99,13 @@ lemma map_surjective {f : R →+* S} (hf : Function.Surjective f) {p : R[X]} {q 
   obtain ⟨t, rfl⟩ := mk_surjective y
   obtain ⟨u, rfl⟩ := Polynomial.map_surjective f hf t
   exact ⟨mk p u, map_mk h u⟩
+
+/-- An algebra map out of `AdjoinRoot g` sends the class of `p` to the evaluation of `p` at the
+image of the root. -/
+theorem algHom_mk {g : R[X]} {B F : Type*} [Semiring B] [Algebra R B] [FunLike F (AdjoinRoot g) B]
+    [AlgHomClass F R (AdjoinRoot g) B] (φ : F) (p : R[X]) :
+    φ (mk g p) = aeval (φ (root g)) p := by
+  rw [← aeval_eq, aeval_algHom_apply]
 
 /-- **Every class in `AdjoinRoot g`, for `g` monic, is represented by a polynomial of degree
 less than `deg g`.** Division with remainder by a monic polynomial supplies the representative. -/
@@ -224,9 +233,8 @@ theorem algebraTensorAlgEquiv_one_tmul_mk (p : R[X]) :
     algebraTensorAlgEquiv T g (1 ⊗ₜ mk g p) =
       mk (g.map (algebraMap R T)) (p.map (algebraMap R T)) := by
   rw [← aeval_eq (p.map (algebraMap R T)), aeval_map_algebraMap]
-  simpa [aeval_eq] using (aeval_algHom_apply
-    (((algebraTensorAlgEquiv T g).toAlgHom.restrictScalars R).comp
-      Algebra.TensorProduct.includeRight) (root g) p).symm
+  exact (algHom_mk (((algebraTensorAlgEquiv T g).toAlgHom.restrictScalars R).comp
+    Algebra.TensorProduct.includeRight) p).trans (by simp)
 
 @[simp]
 theorem algebraTensorAlgEquiv_symm_root :

@@ -149,8 +149,7 @@ theorem isAGenerator_one_of_card_eq (p : ℕ) [ExpChar R p] {k : ℕ} (hA : Fint
     IsAGenerator (1 : A →* WithConv (MonoidAlgebra R (Multiplicative (ZMod (p ^ k))) →ₐ[R] R)) := by
   have : NeZero (p ^ k) := ⟨pow_ne_zero _ (expChar_pos R p).ne'⟩
   rw [isAGenerator_iff_X_pow_sub_one_eq_prod]
-  simp only [MonoidHom.one_apply, ← pointsMulEquiv_apply, map_one, OneMemClass.coe_one,
-    Units.val_one, Finset.prod_const, Finset.card_univ, hA, sub_pow_expChar_pow, one_pow]
+  simp [hA, sub_pow_expChar_pow]
 
 /-- **A generator of `μ_{p²}` with non-generator restriction** (Katz–Mazur 1.11.4). Over a ring of
 characteristic `p`, for every homomorphism `χ : ℤ/p → μ_{p²}(R)`, the homomorphism
@@ -169,8 +168,8 @@ theorem isAGenerator_comp_fst (p : ℕ) [Fact p.Prime] [CharP R p]
       (χ a).ofConv (MonoidAlgebra.single (generator (p ^ 2)) 1) ^ p = 1 := by
     have ha : a ^ p = 1 := by
       simpa [Fintype.card_multiplicative, ZMod.card] using pow_card_eq_one (x := a)
-    rw [← ofConv_pow_apply_single_generator, ← map_pow, ha, map_one, ← pointsMulEquiv_apply,
-      map_one, OneMemClass.coe_one, Units.val_one]
+    rw [← ofConv_pow_apply_single_generator, ← map_pow, ha, map_one]
+    simp
   simp only [hp, map_one, Finset.prod_const, Finset.card_univ, Fintype.card_multiplicative,
     ZMod.card, sub_pow_char, one_pow, ← pow_mul, sq]
 
@@ -239,19 +238,18 @@ theorem exists_not_isAGenerator (p : ℕ) [Fact p.Prime] :
   have : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
   let ζ : rootsOfUnity p (AdjoinRoot (X ^ p - 1 : (ZMod p)[X])) :=
     rootsOfUnity.mkOfPowEq _ (root_X_pow_sub_one_pow p)
-  -- the homomorphism `a ↦ ζ ^ a`, through `ZMod.lift` on additive groups
-  let ψ : Multiplicative (ZMod p) →* rootsOfUnity p (AdjoinRoot (X ^ p - 1 : (ZMod p)[X])) :=
-    AddMonoidHom.toMultiplicativeLeft (ZMod.lift p ⟨zmultiplesHom _ (Additive.ofMul ζ), by
-      rw [zmultiplesHom_apply, natCast_zsmul, ← ofMul_pow, ← ofMul_one]
-      congr 1
-      exact Subtype.ext ((mem_rootsOfUnity _ _).mp ζ.2)⟩)
+  -- the character `a ↦ ζ ^ a` of `ℤ/p`, whose values are `p`th roots of unity since `ℤ/p` is
+  -- killed by `p`
+  let ψ := ((characterMulEquivRootsOfUnity p).symm ζ).codRestrict (rootsOfUnity p _) fun a ↦ by
+    have ha : a ^ p = 1 := by
+      simpa [Fintype.card_multiplicative, ZMod.card] using pow_card_eq_one (x := a)
+    rw [mem_rootsOfUnity, ← map_pow, ha, map_one]
   let χ := (pointsMulEquiv (R := AdjoinRoot (X ^ p - 1 : (ZMod p)[X])) p).symm.toMonoidHom.comp ψ
   have hχ : (χ (generator p)).ofConv (MonoidAlgebra.single (generator p) 1) =
       AdjoinRoot.root _ := by
-    rw [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, pointsMulEquiv_symm_apply_single_generator]
-    simp only [ψ, ζ, generator, AddMonoidHom.toMultiplicativeLeft_apply_apply, toAdd_ofAdd]
-    rw [← Int.cast_one (R := ZMod p), ZMod.lift_coe, zmultiplesHom_apply, one_zsmul, toMul_ofMul,
-      rootsOfUnity.coe_mkOfPowEq]
+    rw [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, pointsMulEquiv_symm_apply_single_generator,
+      MonoidHom.codRestrict_apply, Subgroup.coe_mk,
+      characterMulEquivRootsOfUnity_symm_apply_generator, rootsOfUnity.coe_mkOfPowEq]
   exact ⟨χ, hχ, not_isAGenerator_of_eq_root p hχ⟩
 
 end Generator

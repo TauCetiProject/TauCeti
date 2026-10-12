@@ -25,6 +25,9 @@ coordinate ring `R[X]/(X^n - 1)` is separate quotient-polynomial infrastructure.
 
 * `TauCeti.RootsOfUnityGroup.generator_pow_val`: every element of `Multiplicative (ZMod n)` is
   the power of the standard generator given by its `ZMod.val`.
+* `TauCeti.RootsOfUnityGroup.characterMulEquivRootsOfUnity`: the multiplicative equivalence from
+  characters `Multiplicative (ZMod n) →* Aˣ` to `rootsOfUnity n A`, given by the value on the
+  standard generator.
 * `TauCeti.RootsOfUnityGroup.pointsMulEquiv`: the multiplicative equivalence from
   convolution points of `R[Multiplicative (ZMod n)]` to `rootsOfUnity n A`.
 * `TauCeti.RootsOfUnityGroup.pointsMulEquiv_apply`: the equivalence sends a point to its
@@ -44,7 +47,8 @@ calculation.
 ## References
 
 The diagonalizable-group points calculation is Tau Ceti's
-`DiagonalizableGroup.pointsMulEquiv`. The internal cyclic character group calculation uses Mathlib's
+`DiagonalizableGroup.pointsMulEquiv`. The cyclic character group calculation
+`characterMulEquivRootsOfUnity` uses Mathlib's
 `IsCyclic.monoidHomMulEquivRootsOfUnityOfGenerator`, from
 `Mathlib.RingTheory.RootsOfUnity.Basic`.
 -/
@@ -67,7 +71,9 @@ section Characters
 
 variable {A : Type v} [CommMonoid A]
 
-private noncomputable def characterMulEquivRootsOfUnity (n : ℕ) :
+/-- The characters of `ℤ/n` with values in `Aˣ` are the `n`th roots of unity in `A`, a character
+corresponding to its value on the standard generator. -/
+noncomputable def characterMulEquivRootsOfUnity (n : ℕ) :
     (Multiplicative (ZMod n) →* Aˣ) ≃* rootsOfUnity n A :=
   let hg : ∀ x : Multiplicative (ZMod n), x ∈ Subgroup.zpowers (generator n) := by
     intro x
@@ -87,16 +93,21 @@ private noncomputable def characterMulEquivRootsOfUnity (n : ℕ) :
       (MulEquiv.subgroupCongr (by rw [hcard]))).trans
     (rootsOfUnityUnitsMulEquiv A n)
 
--- The proof is `rfl`: each composed equivalence acts on the underlying unit by projection.
+/-- A character of `ℤ/n` corresponds to its value on the standard generator. -/
 @[simp]
-private lemma characterMulEquivRootsOfUnity_apply (n : ℕ)
+lemma characterMulEquivRootsOfUnity_apply (n : ℕ)
     (χ : Multiplicative (ZMod n) →* Aˣ) :
     ((characterMulEquivRootsOfUnity (A := A) n χ : Aˣ) : A) =
-      (χ (generator n) : A) :=
+      (χ (generator n) : A) := by
+  -- once unfolded, the statement is `rfl`: each composed equivalence acts on the underlying unit
+  -- by projection
+  unfold characterMulEquivRootsOfUnity
   rfl
 
+/-- The character of `ℤ/n` corresponding to an `n`th root of unity `ζ` takes the standard
+generator to `ζ`. -/
 @[simp]
-private lemma characterMulEquivRootsOfUnity_symm_apply_generator
+lemma characterMulEquivRootsOfUnity_symm_apply_generator
     (n : ℕ) (ζ : rootsOfUnity n A) :
     (((characterMulEquivRootsOfUnity (A := A) n).symm ζ (generator n) : Aˣ) : A) =
       ((ζ : Aˣ) : A) := by
