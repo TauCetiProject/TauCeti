@@ -92,7 +92,7 @@ Bochner integration in `X`.  Requiring the integral to lie in the domain makes t
 Stated without `[CompleteSpace X]`, which the Bochner integral does not need, so this and its
 projections apply verbatim on any normed space.  It is the intended notion only on a complete
 one: elsewhere `∫` returns its junk value `0`, and the condition collapses to `u` being
-constantly `x`.  Every result with analytic content below assumes completeness. -/
+constantly `x` on `[0, ∞)`.  Every result with analytic content below assumes completeness. -/
 def IsMildSolution (A : X →ₗ.[ℝ] X) (x : X) (u : ℝ → X) : Prop :=
   ContinuousOn u (Set.Ici 0) ∧ u 0 = x ∧
     ∀ t : ℝ, 0 ≤ t → ∃ hut : (∫ s in Set.Ioc 0 t, u s) ∈ A.domain,
