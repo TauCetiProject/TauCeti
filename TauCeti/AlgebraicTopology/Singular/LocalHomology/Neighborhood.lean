@@ -7,9 +7,10 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.DirectedUnion
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.System
+public import TauCeti.Order.Filter.Basic
 
 /-!
-# Local homology of a set as a limit over its neighbourhoods
+# Local homology of a set as a colimit over its neighbourhoods
 
 For a subset `S` of a space `M`, the relative singular homology `Hₖ(M, M ∖ S)`
 (`TauCeti.localHomology`) is approximated by the groups `Hₖ(M, M ∖ K)` of larger sets `K ⊇ S`,
@@ -126,23 +127,6 @@ end Family
 
 section Nhds
 
-/-- The neighbourhoods of `A`, ordered by reverse inclusion. -/
-private abbrev NhdsSetIndex (A : Set M) : Type w := {U : Set M // U ∈ 𝓝ˢ A}ᵒᵈ
-
-private lemma isDirected_nhdsSetIndex (A : Set M) : IsDirected (NhdsSetIndex A) (· ≤ ·) :=
-  ⟨fun U V ↦ ⟨OrderDual.toDual ⟨_, Filter.inter_mem (OrderDual.ofDual U).2
-    (OrderDual.ofDual V).2⟩, inter_subset_left, inter_subset_right⟩⟩
-
-private lemma nonempty_nhdsSetIndex (A : Set M) : Nonempty (NhdsSetIndex A) :=
-  ⟨OrderDual.toDual ⟨univ, Filter.univ_mem⟩⟩
-
-/-- In a Hausdorff space a compact set `T` is closed, so if it is disjoint from `A` then its
-complement is a neighbourhood of `A` missing `T`. -/
-private lemma exists_nhdsSetIndex_disjoint [T2Space M] {A T : Set M} (hT : IsCompact T)
-    (hTA : Disjoint T A) : ∃ U : NhdsSetIndex A, Disjoint T (OrderDual.ofDual U).1 :=
-  ⟨OrderDual.toDual ⟨Tᶜ, hT.isClosed.isOpen_compl.mem_nhdsSet.2 hTA.subset_compl_left⟩,
-    disjoint_compl_right⟩
-
 variable [T2Space M] {A : Set M}
 
 /-- **Local homology classes come from a neighbourhood.**  In a Hausdorff space, every class of
@@ -152,12 +136,11 @@ theorem exists_mem_nhdsSet_localHomologyRestriction_eq
     (x : (localHomology N A k : ModuleCat.{w} Λ)) :
     ∃ U, ∃ hU : U ∈ 𝓝ˢ A, ∃ y : (localHomology N U k : ModuleCat.{w} Λ),
       localHomologyRestriction N (subset_of_mem_nhdsSet hU) k y = x := by
-  have := isDirected_nhdsSetIndex A
-  have := nonempty_nhdsSetIndex A
   obtain ⟨U, y, hy⟩ := exists_localHomologyRestriction_eq N k
-    (K := fun U : NhdsSetIndex A ↦ (OrderDual.ofDual U).1) (fun _ _ h ↦ h)
+    (K := fun U : {U : Set M // U ∈ 𝓝ˢ A}ᵒᵈ ↦ (OrderDual.ofDual U).1) (fun _ _ h ↦ h)
     (fun U ↦ subset_of_mem_nhdsSet (OrderDual.ofDual U).2)
-    (fun _ hT hTA ↦ exists_nhdsSetIndex_disjoint hT hTA) x
+    (fun T hT hTA ↦ ⟨OrderDual.toDual ⟨Tᶜ,
+      hT.isClosed.isOpen_compl.mem_nhdsSet.2 hTA.subset_compl_left⟩, disjoint_compl_right⟩) x
   exact ⟨_, (OrderDual.ofDual U).2, y, hy⟩
 
 /-- **Vanishing of local homology classes is detected on a neighbourhood.**  In a Hausdorff
@@ -167,12 +150,12 @@ theorem exists_mem_nhdsSet_localHomologyRestriction_eq_zero {U : Set M} (hU : U 
     (y : (localHomology N U k : ModuleCat.{w} Λ))
     (hy : localHomologyRestriction N (subset_of_mem_nhdsSet hU) k y = 0) :
     ∃ V, ∃ _ : V ∈ 𝓝ˢ A, ∃ hVU : V ⊆ U, localHomologyRestriction N hVU k y = 0 := by
-  have := isDirected_nhdsSetIndex A
-  have := nonempty_nhdsSetIndex A
   obtain ⟨V, hUV, hV⟩ := exists_localHomologyRestriction_eq_zero N k
-    (K := fun U : NhdsSetIndex A ↦ (OrderDual.ofDual U).1) (fun _ _ h ↦ h)
+    (K := fun U : {U : Set M // U ∈ 𝓝ˢ A}ᵒᵈ ↦ (OrderDual.ofDual U).1) (fun _ _ h ↦ h)
     (fun U ↦ subset_of_mem_nhdsSet (OrderDual.ofDual U).2)
-    (fun _ hT hTA ↦ exists_nhdsSetIndex_disjoint hT hTA) (i := OrderDual.toDual ⟨U, hU⟩) y hy
+    (fun T hT hTA ↦ ⟨OrderDual.toDual ⟨Tᶜ,
+      hT.isClosed.isOpen_compl.mem_nhdsSet.2 hTA.subset_compl_left⟩, disjoint_compl_right⟩)
+    (i := OrderDual.toDual ⟨U, hU⟩) y hy
   exact ⟨_, (OrderDual.ofDual V).2, hUV, hV⟩
 
 end Nhds
