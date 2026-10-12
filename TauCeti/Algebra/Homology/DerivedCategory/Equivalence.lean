@@ -34,7 +34,7 @@ private noncomputable def derivedIso {F G : A ⥤ B}
     F.mapDerivedCategory ≅ G.mapDerivedCategory :=
   Localization.liftNatIso DerivedCategory.Q
     (HomologicalComplex.quasiIso A (ComplexShape.up ℤ)) _ _ _ _
-    (isoWhiskerRight (α.mapHomologicalComplex (ComplexShape.up ℤ)) DerivedCategory.Q)
+    (isoWhiskerRight (NatIso.mapHomologicalComplex α (ComplexShape.up ℤ)) DerivedCategory.Q)
 
 /-- An additive equivalence of abelian categories acts termwise on the derived categories. -/
 noncomputable def mapDerivedCategory : DerivedCategory A ≌ DerivedCategory B :=
