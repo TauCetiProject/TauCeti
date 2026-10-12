@@ -12,9 +12,10 @@ public import TauCeti.MeasureTheory.OptimalTransport.Duality.LowerSemicontinuous
 /-!
 # Weak duality for the relaxed transport value
 
-The relaxed transport value `TauCeti.relaxedTransportCost c μ ν` minimizes the cost after an
-arbitrarily small positive amount of mass has been discarded. It never exceeds the ordinary value
-`TauCeti.transportCost c μ ν`, and for extended-valued Borel costs it can be strictly smaller.
+The relaxed transport value `TauCeti.relaxedTransportCost c μ ν` minimizes the cost over partial
+plans whose discarded mass is at most an arbitrarily small positive bound. It never exceeds the
+ordinary value `TauCeti.transportCost c μ ν`, and for extended-valued Borel costs it can be
+strictly smaller.
 This file shows that it is still bounded below by every Kantorovich dual value: for finite
 measures of equal mass and integrable potentials `φ`, `ψ` with `φ x + ψ y ≤ c (x, y)`, the
 positive part of `∫ φ dμ + ∫ ψ dν` is at most the relaxed value. This is the easy half of the
@@ -148,12 +149,8 @@ theorem DualFeasible.kantorovichDualValue_le_relaxedTransportCost [IsFiniteMeasu
     (hfeas : DualFeasible (fun z ↦ (c z : EReal)) φ ψ) (hmass : μ univ = ν univ)
     (hφ : Integrable φ μ) (hψ : Integrable ψ ν) :
     (kantorovichDualValue μ ν φ ψ : EReal) ≤ (relaxedTransportCost c μ ν : ℝ≥0∞) :=
-  calc (kantorovichDualValue μ ν φ ψ : EReal)
-      ≤ (ENNReal.ofReal (kantorovichDualValue μ ν φ ψ) : EReal) := by
-        rw [EReal.coe_ennreal_ofReal]
-        exact le_max_left (kantorovichDualValue μ ν φ ψ : EReal) 0
-    _ ≤ (relaxedTransportCost c μ ν : EReal) := EReal.coe_ennreal_le_coe_ennreal_iff.2 <|
-        hfeas.ofReal_kantorovichDualValue_le_relaxedTransportCost hmass hφ hψ
+  real_coe_le_ennreal_coe_of_ofReal_le <|
+    hfeas.ofReal_kantorovichDualValue_le_relaxedTransportCost hmass hφ hψ
 
 section Polish
 

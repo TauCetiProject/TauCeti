@@ -201,7 +201,9 @@ theorem kantorovichDualValue_eq_integral (hπ : IsCoupling π μ ν) (hφ : Inte
 
 section WeakDuality
 
-private theorem real_coe_le_ennreal_coe_of_ofReal_le {x : ℝ} {a : ℝ≥0∞}
+/-- A real number whose positive part is at most `a : ℝ≥0∞` is at most `a` in `EReal`. This
+converts the extended-nonnegative forms of weak duality into their `EReal` forms. -/
+theorem real_coe_le_ennreal_coe_of_ofReal_le {x : ℝ} {a : ℝ≥0∞}
     (h : ENNReal.ofReal x ≤ a) : (x : EReal) ≤ (a : EReal) := by
   calc
     (x : EReal) ≤ (ENNReal.ofReal x : EReal) := by
