@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Fin.Rev
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Basic
 
 /-!
 # The pinned type-A graph automorphism on matrices
@@ -46,6 +47,9 @@ carrier.
 * `TauCeti.typeAGraphAutomorphism_transvectionUnit_of_ne`: the equation on the root subgroup of an
   arbitrary root `ε_i - ε_j`, where the parameter is rescaled by the sign `(-1) ^ (i + j + 1)`.
 * `TauCeti.typeAGraphAutomorphism_diagGL`: the automorphism reverses and inverts diagonal entries.
+* `TauCeti.typeAGraphAutomorphism_apply_apply`: the signed entrywise formula on the inverse matrix.
+* `TauCeti.typeAGraphAutomorphism_mem_upperTriangularGroup_iff`: preservation of
+  upper triangularity.
 * `TauCeti.typeAGraphAutomorphism_mul_self`: the automorphism has order dividing two.
 * `TauCeti.map_typeAGraphAutomorphism`: the construction is natural in the coefficient ring.
 
@@ -167,17 +171,58 @@ theorem typeAGraphAutomorphism_apply (r : ℕ) (g : GL (Fin (r + 1)) A) :
         (typeAGraphConjugator r A)⁻¹ :=
   (rfl)
 
+private theorem permutationGL_rev_inv (r : ℕ) :
+    (permutationGL (k := A) (Fin.revPerm : Equiv.Perm (Fin (r + 1))))⁻¹ =
+      permutationGL (k := A) Fin.revPerm := by
+  rw [← map_inv]
+  congr 1
+
+/-- The graph automorphism reverses the two indices of the inverse matrix and multiplies
+its entries by the alternating row and column signs. -/
+@[simp]
+theorem typeAGraphAutomorphism_apply_apply (r : ℕ) (g : GL (Fin (r + 1)) A)
+    (i j : Fin (r + 1)) :
+    (typeAGraphAutomorphism r A g : Matrix (Fin (r + 1)) (Fin (r + 1)) A) i j =
+      (-1 : A) ^ (i : ℕ) *
+        ((g⁻¹ : GL (Fin (r + 1)) A) : Matrix (Fin (r + 1)) (Fin (r + 1)) A) j.rev i.rev *
+        (-1 : A) ^ (j : ℕ) := by
+  rw [typeAGraphAutomorphism_apply, typeAGraphConjugator, _root_.mul_inv_rev]
+  have hfactor :
+      (diagGL (typeAGraphSign (A := A)) * permutationGL (k := A) Fin.revPerm) *
+          Matrix.GeneralLinearGroup.inverseTranspose g *
+          ((permutationGL (k := A) Fin.revPerm)⁻¹ *
+            (diagGL (typeAGraphSign (A := A)))⁻¹) =
+        diagGL (typeAGraphSign (A := A)) *
+          ((permutationGL (k := A) Fin.revPerm)⁻¹ *
+            Matrix.GeneralLinearGroup.inverseTranspose g *
+            permutationGL (k := A) Fin.revPerm) *
+          (diagGL (typeAGraphSign (A := A)))⁻¹ := by
+    rw [permutationGL_rev_inv]
+    group
+  have hmiddle :
+      (((permutationGL (k := A) Fin.revPerm)⁻¹ *
+          Matrix.GeneralLinearGroup.inverseTranspose g *
+          permutationGL (k := A) Fin.revPerm : GL (Fin (r + 1)) A) :
+            Matrix (Fin (r + 1)) (Fin (r + 1)) A) =
+        Matrix.of fun a b => ((g⁻¹ : GL (Fin (r + 1)) A) :
+          Matrix (Fin (r + 1)) (Fin (r + 1)) A) b.rev a.rev := by
+    ext a b
+    rw [coe_permutationGL_inv_mul_mul_permutationGL_apply,
+      Matrix.GeneralLinearGroup.coe_inverseTranspose, Matrix.transpose_apply,
+      Fin.revPerm_apply, Fin.revPerm_apply, Matrix.of_apply]
+  have hd : (diagGL (typeAGraphSign (A := A) : Fin (r + 1) → Aˣ))⁻¹ =
+      diagGL (fun k => (typeAGraphSign (A := A) k)⁻¹) := by
+    rw [← map_inv]
+    rfl
+  rw [hfactor, hd, Units.val_mul, Units.val_mul, hmiddle]
+  simp only [diagGL_coe, Matrix.mul_diagonal, Matrix.diagonal_mul]
+  simp [typeAGraphSign, Matrix.of_apply]
+
 private theorem inverseTranspose_diagGL_typeAGraphSign (r : ℕ) :
     Matrix.GeneralLinearGroup.inverseTranspose
         (diagGL (typeAGraphSign (A := A) : Fin (r + 1) → Aˣ)) =
       diagGL (typeAGraphSign (A := A)) := by
   rw [inverseTranspose_diagGL]
-  congr 1
-
-private theorem permutationGL_rev_inv (r : ℕ) :
-    (permutationGL (k := A) (Fin.revPerm : Equiv.Perm (Fin (r + 1))))⁻¹ =
-      permutationGL (k := A) Fin.revPerm := by
-  rw [← map_inv]
   congr 1
 
 private theorem inverseTranspose_permutationGL_rev (r : ℕ) :
@@ -319,6 +364,25 @@ theorem typeAGraphAutomorphism_typeAGraphAutomorphism (r : ℕ)
     _ = g := by
       rw [Matrix.GeneralLinearGroup.scalar_commute]
       group
+
+/-- Signed reverse inverse transpose preserves the upper-triangular subgroup over every
+commutative ring. -/
+@[simp↓]
+theorem typeAGraphAutomorphism_mem_upperTriangularGroup_iff (r : ℕ)
+    (g : GL (Fin (r + 1)) A) :
+    typeAGraphAutomorphism r A g ∈ upperTriangularGroup (Fin (r + 1)) A ↔
+      g ∈ upperTriangularGroup (Fin (r + 1)) A := by
+  have hpres (h : GL (Fin (r + 1)) A)
+      (hh : h ∈ upperTriangularGroup (Fin (r + 1)) A) :
+      typeAGraphAutomorphism r A h ∈ upperTriangularGroup (Fin (r + 1)) A := by
+    have hinv := (upperTriangularGroup (Fin (r + 1)) A).inv_mem hh
+    rw [UpperTriangularGroup.mem_iff] at hinv ⊢
+    intro i j hji
+    have hz := hinv (i := j.rev) (j := i.rev) (Fin.rev_lt_rev.mpr hji)
+    simp only [typeAGraphAutomorphism_apply_apply, hz, mul_zero, zero_mul]
+  refine ⟨fun h => ?_, hpres g⟩
+  simpa only [typeAGraphAutomorphism_typeAGraphAutomorphism] using
+    hpres (typeAGraphAutomorphism r A g) h
 
 /-- The pinned type-`A` graph automorphism has order dividing two. -/
 @[simp]

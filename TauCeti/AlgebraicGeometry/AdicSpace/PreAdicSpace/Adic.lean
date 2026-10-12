@@ -47,6 +47,8 @@ subspaces (`isPreAdic.isSheafy_iff`), the mechanism of Wedhorn's Remark 8.27.
   `TauCeti.PreAdicSpace.isAdic_restrict`: being locally affinoid, sheafy, or adic passes to
   restrictions to opens, and `TauCeti.PreAdicSpace.isAdic_of_isOpenImmersion`: to the source of
   an open immersion.
+* `TauCeti.PreAdicSpace.isLocallyAffinoid_of_jointly_surjective`: an object covered by open
+  immersions from locally affinoid objects is locally affinoid.
 * `TauCeti.PreAdicSpace.isPreAdic.isSheafy_iff`: a pre-adic space is sheafy exactly when its
   structure presheaf is a sheaf on its open affinoid subspaces.
 * `TauCeti.ValuationSpectrum.isAdic_presentationLimitPreAdicSpace`: `Spa(A, A⁺)` with a sheaf
@@ -140,6 +142,18 @@ theorem isLocallyAffinoid_of_isOpenImmersion {Y : PreAdicSpace.{u}} (hX : isLoca
     (f : Y ⟶ X) [IsOpenImmersion f] : isLocallyAffinoid Y :=
   ObjectProperty.prop_of_iso isLocallyAffinoid (IsOpenImmersion.isoRestrict f).symm
     (isLocallyAffinoid_restrict f.isOpenEmbedding hX)
+
+/-- **An object of `𝒱^pre` covered by open immersions from locally affinoid objects is locally
+affinoid.** A point `x = f i y` has an open affinoid neighbourhood in `U i`, which `f i` identifies
+with an open affinoid subspace of `X` containing `x`. -/
+theorem isLocallyAffinoid_of_jointly_surjective {ι : Type*} {U : ι → PreAdicSpace.{u}}
+    (f : ∀ i, U i ⟶ X) [∀ i, IsOpenImmersion (f i)] (hU : ∀ i, isLocallyAffinoid (U i))
+    (hf : ∀ x : X, ∃ (i : ι) (y : U i), (f i).base y = x) : isLocallyAffinoid X := by
+  intro x
+  obtain ⟨i, y, rfl⟩ := hf x
+  obtain ⟨V, hV, hyV⟩ := ObjectProperty.prop_of_iso isLocallyAffinoid
+    (IsOpenImmersion.isoRestrict (f i)) (hU i) y
+  exact ⟨_, (mem_affinoidOpens_restrict_iff X (f i).isOpenEmbedding V).mp hV, y, hyV, rfl⟩
 
 /-- The source of an open immersion into a sheafy object is sheafy. -/
 theorem isSheafy_of_isOpenImmersion {Y : PreAdicSpace.{u}} (hX : isSheafy X) (f : Y ⟶ X)

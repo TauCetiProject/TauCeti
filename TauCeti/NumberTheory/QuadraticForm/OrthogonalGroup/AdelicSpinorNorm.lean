@@ -55,8 +55,6 @@ open scoped TensorProduct
 
 noncomputable section
 
-private instance invertibleTwoRat : Invertible (2 : ℚ) := invertibleOfNonzero two_ne_zero
-
 variable {V : Type*} [AddCommGroup V] [Module ℚ V] [FiniteDimensional ℚ V]
   {Q : QuadraticForm ℚ V} (U : OrthogonalCompactOpens Q) (hQ : Q.Nondegenerate)
 
