@@ -9,6 +9,9 @@ public import TauCeti.Analysis.PDE.Caccioppoli.Power
 public import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Algebra.Order.Archimedean.Basic
 import TauCeti.Analysis.Sobolev.Embedding
+import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # Moser's iteration for small positive powers of a supersolution
@@ -47,6 +50,8 @@ form for `u^{p/2}`
   of the `L^{χp}` norm of `u` by its `L^p` norm.
 * `TauCeti.PDE.exists_eLpNorm_le_mul_rpow_mul_eLpNorm_of_inv_add_eq_inv`: Moser's estimate for
   small positive powers in dimension `n ≥ 3`.
+* `TauCeti.PDE.exists_setAverage_rpow_rpow_inv_le_mul_setAverage_rpow_rpow_inv`: its
+  scale-invariant form `(⨍_{B(x₀, R/2)} u^s)^{1/s} ≤ D (⨍_{B(x₀, R)} u^p)^{1/p}` for `p ≤ 2`.
 
 ## References
 
@@ -413,6 +418,86 @@ theorem exists_eLpNorm_le_mul_rpow_mul_eLpNorm_of_inv_add_eq_inv {pstar : ℝ≥
           eLpNorm (W1p.value u) (ENNReal.ofReal p) (mu.restrict (Metric.ball x₀ R)) := by
         gcongr
         linarith [le_abs_self D']
+
+/-- **Moser's iteration for small positive powers, averaged form (dimension `n ≥ 3`).** Let
+`2*` be the Sobolev exponent of `W^{1,2}` in dimension `n`, so that `1/2* + 1/n = 1/2` and
+`2* < ∞`, and let `χ = 2*/2 = n/(n - 2)`. For exponents `0 < p ≤ 2` and `0 < s < χ` there is
+`D > 0`, depending on `λ`, `Λ`, `p`, `s`, the dimension and the normalization of the additive Haar
+measure `mu`, with the following property. Let `a` be measurable and uniformly elliptic on `Ω`
+with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak supersolution of `-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0` with
+`u ≥ ε` almost everywhere for some `ε > 0`. Then on every ball `B(x₀, R) ⊆ Ω`,
+
+`(⨍_{B(x₀, R/2)} u^s)^{1/s} ≤ D (⨍_{B(x₀, R)} u^p)^{1/p}`.
+
+The constant does not depend on `u`, `ε` or the ball. The bound `p ≤ 2` makes `u^p` integrable
+on `B(x₀, R)`, since `u ∈ L²(Ω)`. -/
+theorem exists_setAverage_rpow_rpow_inv_le_mul_setAverage_rpow_rpow_inv {pstar : ℝ≥0∞}
+    (hpstar : pstar ≠ (∞ : ℝ≥0∞)) (hexp : pstar⁻¹ + (Fintype.card ι : ℝ≥0∞)⁻¹ = 2⁻¹)
+    {p s : ℝ} (hp : 0 < p) (hp2 : p ≤ 2) (hs : 0 < s) (hsχ : s < pstar.toReal / 2) :
+    ∃ D : ℝ, 0 < D ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
+      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2} {ε : ℝ}
+      {x₀ : EuclideanSpace ℝ ι} {R : ℝ},
+      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
+      AEStronglyMeasurable a (mu.restrict Omega) →
+      (∀ v : W1p0 mu Omega 2,
+        (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+          0 ≤ energyFormH1 a 0 0 u (v : W1p mu Omega 2)) →
+      0 < ε → (∀ᵐ x ∂mu.restrict Omega, ε ≤ W1p.value u x) →
+      Metric.ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      (⨍ x in Metric.ball x₀ (R / 2), W1p.value u x ^ s ∂mu) ^ s⁻¹ ≤
+        D * (⨍ x in Metric.ball x₀ R, W1p.value u x ^ p ∂mu) ^ p⁻¹ := by
+  obtain ⟨D, hD, hiter⟩ := exists_eLpNorm_le_mul_rpow_mul_eLpNorm_of_inv_add_eq_inv
+    (mu := mu) (lam := lam) (Lam := Lam) hpstar hexp hp hs hsχ
+  set n : ℝ := (Fintype.card ι : ℝ)
+  set V := mu.real (Metric.ball (0 : EuclideanSpace ℝ ι) 1)
+  have hV : 0 < V := Metric.measureReal_ball_pos mu 0 one_pos
+  refine ⟨D * 2 ^ (n / s) * V ^ p⁻¹ * V⁻¹ ^ s⁻¹, by positivity, ?_⟩
+  intro Omega a u ε x₀ R h ha hu hε hεu hball
+  rcases le_or_gt R 0 with hR | hR
+  · simp only [Metric.ball_eq_empty.2 (by linarith : R / 2 ≤ 0), Metric.ball_eq_empty.2 hR,
+      Measure.restrict_empty, average_zero_measure, Real.zero_rpow (inv_ne_zero hs.ne'),
+      Real.zero_rpow (inv_ne_zero hp.ne'), mul_zero, le_refl]
+  -- On a ball `B(x₀, t) ⊆ Ω`, `‖u‖_{L^q(B)} = (|B| ⨍_B u^q)^{1/q}`, since `u > 0` there.
+  have hnorm : ∀ {t q : ℝ}, 0 < t → 0 < q →
+      Metric.ball x₀ t ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      (eLpNorm (W1p.value u) (ENNReal.ofReal q) (mu.restrict (Metric.ball x₀ t))).toReal =
+        (t ^ n * V) ^ q⁻¹ * (⨍ x in Metric.ball x₀ t, W1p.value u x ^ q ∂mu) ^ q⁻¹ := by
+    intro t q ht hq hsub
+    have hpos : ∀ᵐ x ∂mu.restrict (Metric.ball x₀ t), 0 < W1p.value u x :=
+      (ae_restrict_of_ae_restrict_of_subset hsub hεu).mono fun x hx => hε.trans_le hx
+    have hvol : mu.real (Metric.ball x₀ t) = t ^ n * V := by
+      rw [Measure.addHaar_real_ball_of_pos mu x₀ ht, finrank_euclideanSpace, ← Real.rpow_natCast]
+    rw [toReal_eLpNorm, lpNorm_eq_integral_norm_rpow_toReal (by simpa using hq)
+      ENNReal.ofReal_ne_top
+      ((Lp.aestronglyMeasurable _).mono_measure (Measure.restrict_mono hsub le_rfl)),
+      ENNReal.toReal_ofReal hq.le, ← Real.mul_rpow (by positivity)
+        (average_nonneg_of_ae (hpos.mono fun x hx => (Real.rpow_pos_of_pos hx q).le)),
+      ← hvol, ← smul_eq_mul, measure_smul_setAverage _ measure_ball_lt_top.ne]
+    congr 1
+    refine integral_congr_ae (hpos.mono fun x hx => ?_)
+    simp only [Real.norm_eq_abs, abs_of_pos hx]
+  have hfin : eLpNorm (W1p.value u) (ENNReal.ofReal p) (mu.restrict (Metric.ball x₀ R)) ≠ ⊤ := by
+    have : IsFiniteMeasure (mu.restrict (Metric.ball x₀ R)) :=
+      isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
+    refine (((Lp.memLp (W1p.value u)).mono_measure
+      (Measure.restrict_mono hball le_rfl)).mono_exponent ?_).eLpNorm_ne_top
+    exact (ENNReal.ofReal_le_ofReal hp2).trans_eq (ENNReal.ofReal_ofNat 2)
+  have hreal := ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hfin)
+    (hiter h ha hu hε hεu hR hball)
+  rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity), hnorm (by positivity) hs
+    ((Metric.ball_subset_ball (by linarith)).trans hball), hnorm hR hp hball] at hreal
+  -- Divide by `|B(x₀, R/2)|^{1/s}` and collect the powers of `R` and `V`.
+  set As := (⨍ x in Metric.ball x₀ (R / 2), W1p.value u x ^ s ∂mu) ^ s⁻¹
+  set Ap := (⨍ x in Metric.ball x₀ R, W1p.value u x ^ p ∂mu) ^ p⁻¹
+  have hB : 0 < ((R / 2) ^ n * V) ^ s⁻¹ := by positivity
+  calc As = (((R / 2) ^ n * V) ^ s⁻¹)⁻¹ * (((R / 2) ^ n * V) ^ s⁻¹ * As) := by field_simp
+    _ ≤ (((R / 2) ^ n * V) ^ s⁻¹)⁻¹ * (D * R ^ (n / s - n / p) * ((R ^ n * V) ^ p⁻¹ * Ap)) := by
+        gcongr
+    _ = D * 2 ^ (n / s) * V ^ p⁻¹ * V⁻¹ ^ s⁻¹ * Ap := by
+        rw [Real.mul_rpow (by positivity) hV.le, Real.mul_rpow (by positivity) hV.le,
+          ← Real.rpow_mul (by positivity), ← Real.rpow_mul hR.le, Real.div_rpow hR.le zero_le_two,
+          Real.rpow_sub hR, Real.inv_rpow hV.le, ← div_eq_mul_inv n s, ← div_eq_mul_inv n p]
+        field_simp
 
 end Iteration
 
