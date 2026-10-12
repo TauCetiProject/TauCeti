@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Normed.Module.FilledHull
 public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
 import Mathlib.Analysis.Normed.Module.Ball.RadialEquiv
 import Mathlib.Analysis.SpecialFunctions.Exp
+import TauCeti.Analysis.Normed.Module.Ball
 
 /-!
 # The annulus conjecture

@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Module.Ball
 public import TauCeti.Analysis.Normed.Module.Convex
 public import TauCeti.Topology.FilledHull
 public import TauCeti.Analysis.Normed.Module.Ball.Exterior
 import Mathlib.Analysis.LocallyConvex.Separation
 import Mathlib.Analysis.Normed.Operator.NNNorm
+import TauCeti.Analysis.Normed.Module.Ball
 
 /-!
 # Boundedness and diameter of filled hulls
