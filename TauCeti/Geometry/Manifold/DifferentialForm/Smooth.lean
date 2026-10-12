@@ -20,10 +20,7 @@ provides the bundled carrier `SmoothBundleForm`; fixed coefficients are the `Smo
 specialization.  These carriers are the input for smooth wedge products and pullbacks.
 
 The degree-two adapters below evaluate smooth forms on ordered pairs and expose real-valued fibres
-as alternating bilinear forms.  Their names and laws are adapted from the corresponding
-`TauCeti.SmoothTwoForm.bilinFormAt`, `TauCeti.SmoothTwoForm.bilinFormAt_apply`, and
-`TauCeti.SmoothTwoForm.isAlt_bilinFormAt` declarations in
-`TauCeti.Geometry.Manifold.TwoForm.Basic`.
+as alternating bilinear forms.
 
 Smoothness is expressed through the total-space charts of the topological alternating bundle.  The
 module operations use Mathlib's smooth-section API, so this carrier does not require a chosen
@@ -151,7 +148,11 @@ namespace SmoothForm
 
 variable {I : ModelWithCorners ℝ E H} [IsManifold I 1 M]
 
-/-- Evaluate a degree-two smooth form on an ordered pair of tangent vectors. -/
+/-- Evaluate a degree-two smooth form on an ordered pair of tangent vectors.
+
+The adapter API follows the corresponding `TauCeti.SmoothTwoForm.bilinFormAt`,
+`TauCeti.SmoothTwoForm.bilinFormAt_apply`, and `TauCeti.SmoothTwoForm.isAlt_bilinFormAt`
+declarations in `TauCeti.Geometry.Manifold.TwoForm.Basic`. -/
 def eval₂ (φ : SmoothForm I M F 2) (x : M) (v w : TangentSpace I x) : F :=
   φ.1 x ![v, w]
 
@@ -177,17 +178,11 @@ theorem isAlt_bilinFormAt (φ : SmoothForm I M ℝ 2) (x : M) :
   intro v
   exact (φ.1 x).map_eq_zero_of_eq _ (by simp) Fin.zero_ne_one
 
-/-- The alternating value on the diagonal tuple vanishes. -/
-@[simp]
-theorem alternatingMap_self_apply (φ : SmoothForm I M F 2) (x : M) (v : TangentSpace I x) :
-    (φ.1 x) ![v, v] = 0 := by
-  exact (φ.1 x).map_eq_zero_of_eq _ (by simp) Fin.zero_ne_one
-
 /-- Evaluation on two equal tangent vectors vanishes by alternation. -/
 theorem eval₂_self (φ : SmoothForm I M F 2) (x : M) (v : TangentSpace I x) :
     φ.eval₂ x v v = 0 := by
-  rw [eval₂_apply]
-  exact alternatingMap_self_apply φ x v
+  change (φ.1 x) ![v, v] = 0
+  exact (φ.1 x).map_eq_zero_of_eq _ (by simp) Fin.zero_ne_one
 
 /-- Swapping the inputs of a degree-two smooth form negates its value. -/
 theorem eval₂_swap (φ : SmoothForm I M F 2) (x : M)
