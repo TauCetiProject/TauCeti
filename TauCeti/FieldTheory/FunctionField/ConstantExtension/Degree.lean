@@ -25,7 +25,8 @@ field. No function-field hypothesis is needed.
   `[F' : E · k'] = [F : E]` for every subfield `E` of `F` containing `k`.
 * `TauCeti.adjoin_simple_eq_top_of_constantCompositum_eq_top` and
   `TauCeti.minpoly_algebraMap_eq_map_of_constantCompositum_eq_top`: a primitive element `y` of
-  `F / E` stays primitive over `E · k'`, with the same minimal polynomial.
+  `F / E` stays primitive over `E · k'`; when `F / E` is finite, its minimal polynomial
+  is unchanged. Neither result requires the constant extension to be finite.
 
 ## Reference
 
@@ -64,28 +65,43 @@ theorem finrank_over_adjoin_simple_eq_of_constantCompositum_eq_top
   rwa [hrange, IntermediateField.adjoin_adjoin_right, ← Module.finrank_eq_nat_card_basis b]
     at hdegree
 
-/-- **A finite separable extension of an exact constant field preserves the degree over any
+/-- **A separable algebraic extension of an exact constant field preserves the degree over any
 subfield** (Stichtenoth, Proposition 3.6.1(c), for an arbitrary intermediate field): if `E` is a
-subfield of `F` containing `k`, then `[F · k' : E · k'] = [F : E]`. -/
+subfield of `F` containing `k`, then `[F · k' : E · k'] = [F : E]`. The extension of constants
+may be infinite. -/
 theorem finrank_over_constantCompositum_eq_finrank_of_constantCompositum_eq_top {E : Type*}
     [Field E] [Algebra k E] [Algebra E F] [IsScalarTower k E F] [Algebra E F']
-    [IsScalarTower E F F'] [FiniteDimensional k k'] [Algebra.IsSeparable k k']
+    [IsScalarTower E F F'] [Algebra.IsSeparable k k']
     (hex : IsIntegrallyClosedIn k F) (h : constantCompositum F k' F' = ⊤) :
     Module.finrank (constantCompositum E k' F') F' = Module.finrank E F := by
-  -- Both `[F · k' : F]` and `[E · k' : E]` are `[k' : k]`, the constants staying exact in `E`;
-  -- compare the towers `E ⊆ F ⊆ F · k'` and `E ⊆ E · k' ⊆ F · k'`.
   have : IsScalarTower k E F' := IsScalarTower.of_algebraMap_eq fun c ↦ by
     rw [IsScalarTower.algebraMap_apply E F F', ← IsScalarTower.algebraMap_apply k E F,
       ← IsScalarTower.algebraMap_apply k F F']
-  have hexE : IsIntegrallyClosedIn k E :=
-    (IsScalarTower.toAlgHom k E F).isIntegrallyClosedIn (algebraMap E F).injective hex
-  have hE := finrank_constantCompositum_eq_finrank_of_isSeparable E k' F' hexE
-  have hF := finrank_constantCompositum_eq_finrank_of_isSeparable F k' F' hex
-  rw [h, IntermediateField.finrank_top'] at hF
-  have htower := (Module.finrank_mul_finrank E F F').trans
-    (Module.finrank_mul_finrank E (constantCompositum E k' F') F').symm
-  rw [hE, hF, mul_comm] at htower
-  exact (Nat.eq_of_mul_eq_mul_left Module.finrank_pos htower).symm
+  -- Identify the external subfield with its image in `F` to apply the basis transport.
+  let f := IsScalarTower.toAlgHom k E F
+  let C := f.fieldRange
+  let e := f.equivFieldRange
+  let b := Module.Basis.ofVectorSpace E F
+  let bC := b.mapCoeffs e.toRingEquiv fun c x ↦ by
+    simp [Algebra.smul_def, e, f, AlgHom.equivFieldRange_apply_coe]
+  let C' := IntermediateField.adjoin k' (Set.range (algebraMap C F'))
+  have hrange : Set.range (algebraMap C F') = Set.range (algebraMap E F') := by
+    rw [← e.surjective.range_comp]
+    congr 1
+    ext c
+    -- The field-range equivalence sends `c` to its image in `F`.
+    change algebraMap F F' (algebraMap E F c) = algebraMap E F' c
+    exact (IsScalarTower.algebraMap_apply E F F' c).symm
+  -- Adjoining `C` to `k'` and adjoining `k'` to `E` give the same subfield of `F'`.
+  have hsubfield : C'.toSubfield = (constantCompositum E k' F').toSubfield := by
+    rw [constantCompositum_def, IntermediateField.adjoin_toSubfield,
+      IntermediateField.adjoin_toSubfield, hrange, Set.union_comm]
+  let b' := (constantExtensionBasis hex h C bC).mapCoeffs
+    (RingEquiv.subfieldCongr hsubfield) fun c x ↦ by
+      -- This congruence preserves the underlying elements, hence their actions on `F'`.
+      rfl
+  exact (Module.finrank_eq_nat_card_basis b').trans
+    (Module.finrank_eq_nat_card_basis b).symm
 
 section Subfield
 
@@ -114,7 +130,7 @@ theorem adjoin_simple_eq_top_of_constantCompositum_eq_top (h : constantCompositu
 `F` over a subfield `E` containing `k`, over which `F` is finite, the minimal polynomial of its
 image over `E · k'` is that of `y` over `E`. -/
 theorem minpoly_algebraMap_eq_map_of_constantCompositum_eq_top [Algebra k E] [IsScalarTower k E F]
-    [FiniteDimensional E F] [FiniteDimensional k k'] [Algebra.IsSeparable k k']
+    [FiniteDimensional E F] [Algebra.IsSeparable k k']
     (hex : IsIntegrallyClosedIn k F) (h : constantCompositum F k' F' = ⊤) {y : F} (hy : E⟮y⟯ = ⊤) :
     minpoly (constantCompositum E k' F') (algebraMap F F' y) =
       (minpoly E y).map (algebraMap E (constantCompositum E k' F')) := by
