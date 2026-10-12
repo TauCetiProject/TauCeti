@@ -82,9 +82,9 @@ section Generator
 variable {R : Type u} {H : Type v} [CommRing R] [CommRing H] [Bialgebra R H]
 variable {A : Type*} [Monoid A] [Fintype A]
 
-/-- A homomorphism `φ : A →* G(R)` from a finite group (only its monoid structure is used) to the
-points of `G = Spec H` is an *`A`-generator* of `G` (Katz–Mazur §1.10) if the points `φ a`, for
-`a ∈ A`, form a full set of sections of `G` over `R`. -/
+/-- A homomorphism `φ : A →* G(R)` from a finite monoid to the points of `G = Spec H` is an
+*`A`-generator* of `G` (Katz–Mazur §1.10) if the points `φ a`, for `a ∈ A`, form a full set of
+sections of `G` over `R`. -/
 def IsAGenerator (φ : A →* WithConv (H →ₐ[R] R)) : Prop :=
   IsFullSetOfSections fun a ↦ (φ a).ofConv
 
