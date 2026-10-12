@@ -22,8 +22,9 @@ representation.  It is used in Clifford theory to show that induction preserves 
 lying over a constituent.
 
 The scalar field and the group share one universe: `Rep.indResAdjunction` relates functors on a
-single `Rep` carrier universe, so its unit at the forgotten `A` lives in the same universe as `G`,
-exactly as for `TauCeti.indFDRepForgetIso` and `FDRep.finrank_hom_indFDRep`.
+single `Rep` carrier universe, as does the comparison `TauCeti.indFDRepForgetIso` used here.
+The dimension identities in `TauCeti.RepresentationTheory.Induction.FrobeniusReciprocity` instead
+use the adjunctions on `FDRep` and allow separate scalar and group universes.
 
 ## Main definitions
 
