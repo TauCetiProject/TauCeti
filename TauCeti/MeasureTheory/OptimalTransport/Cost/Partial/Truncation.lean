@@ -125,16 +125,14 @@ theorem tendsto_transportCost_min (hmass : μ univ = ν univ) (hc : Measurable c
     {ι : Type*} {l : Filter ι} {Cs : ι → ℝ≥0} (hCs : Tendsto Cs l atTop) :
     Tendsto (fun i ↦ transportCost (fun z ↦ min (c z) (Cs i)) μ ν)
       l (𝓝 (relaxedTransportCost c μ ν)) := by
-  refine tendsto_order.2 ⟨fun a ha ↦ ?_, fun a ha ↦ ?_⟩
-  · rw [relaxedTransportCost_eq_iSup_transportCost_min hmass hc] at ha
-    obtain ⟨n, hn⟩ := lt_iSup_iff.1 ha
-    filter_upwards [hCs.eventually (eventually_ge_atTop (n : ℝ≥0))] with i hi
-    exact hn.trans_le (transportCost_mono fun _ ↦ min_le_min_left _
-      (by simpa only [ENNReal.coe_natCast] using ENNReal.coe_le_coe.2 hi))
-  · refine Eventually.of_forall fun i ↦ ?_
-    have hbounded := relaxedTransportCost_eq_transportCost_of_bounded
-      (c := fun z ↦ min (c z) (Cs i)) hmass (Cs i) (fun _ ↦ min_le_right _ _)
-    rw [← hbounded]
-    exact (relaxedTransportCost_mono fun _ ↦ min_le_left _ _).trans_lt ha
+  let f : ℝ≥0 → ℝ≥0∞ := fun C ↦ transportCost (fun z ↦ min (c z) C) μ ν
+  have hf : Monotone f := fun _ _ h ↦
+    transportCost_mono fun _ ↦ min_le_min_left _ (ENNReal.coe_le_coe.2 h)
+  have hsup : relaxedTransportCost c μ ν = ⨆ C, f C := by
+    rw [relaxedTransportCost_eq_iSup_transportCost_min hmass hc]
+    simpa only [f, ENNReal.coe_natCast] using
+      hf.iSup_comp_tendsto_atTop (tendsto_natCast_atTop_atTop (R := ℝ≥0))
+  rw [hsup]
+  exact (tendsto_atTop_iSup hf).comp hCs
 
 end TauCeti
