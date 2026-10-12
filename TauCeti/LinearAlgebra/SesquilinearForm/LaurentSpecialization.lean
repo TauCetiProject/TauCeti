@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
 public import TauCeti.Algebra.Polynomial.Laurent.Specialization
 
@@ -25,6 +26,9 @@ of a graded category specializes.
 Specialization does not preserve nondegeneracy: over a nontrivial coefficient ring, the Laurent
 matrix with rows `(1, q)` and `(q, 1)` has determinant `1 - q²`, which is a non-zero-divisor,
 while its value at any `ε` with `ε⁻¹ = ε` has determinant zero.
+
+The concrete matrix `!![1, 1; 1, q]` over `ℤ[q,q⁻¹]` gives an explicit example at `q = 1`: its
+determinant is `q - 1`, while the specialization has nonzero kernel vector `(1, -1)`.
 
 ## Main definitions
 
@@ -142,5 +146,72 @@ theorem exists_nondegenerate_and_not_nondegenerate_map_laurentEval (R : Type*) [
       ext i
       fin_cases i <;> simp [Matrix.mulVec, dotProduct, Fin.sum_univ_two, hεε])
     simpa using congrFun h 1
+
+end TauCeti
+
+namespace TauCeti
+
+open LaurentPolynomial Matrix
+
+noncomputable section
+
+/-- A Laurent-polynomial matrix with nonzero determinant that becomes degenerate at `q = 1`. -/
+def specializationDegeneracyMatrix : Matrix (Fin 2) (Fin 2) (LaurentPolynomial ℤ) :=
+  !![1, 1; 1, T 1]
+
+/-- The determinant of the specialization example is `q - 1`. -/
+@[simp]
+theorem det_specializationDegeneracyMatrix :
+    specializationDegeneracyMatrix.det = T 1 - 1 := by
+  simp [specializationDegeneracyMatrix, Matrix.det_fin_two_of]
+
+/-- The determinant of the Laurent-polynomial matrix is nonzero before specialization. -/
+theorem det_specializationDegeneracyMatrix_ne_zero :
+    specializationDegeneracyMatrix.det ≠ 0 := by
+  rw [det_specializationDegeneracyMatrix]
+  intro h
+  have hc := congrArg (fun p : LaurentPolynomial ℤ => p.coeff 1) h
+  have hconst : (1 : LaurentPolynomial ℤ).coeff 1 = 0 := by
+    rw [← LaurentPolynomial.T_zero (R := ℤ), LaurentPolynomial.T_apply]
+    norm_num
+  simp [hconst] at hc
+
+/-- The matrix after evaluation at `q = 1`, with entries in `ℤ`. -/
+def specializationDegeneracyMatrixAtOne : Matrix (Fin 2) (Fin 2) ℤ :=
+  !![1, 1; 1, 1]
+
+/-- The specialized matrix is obtained by evaluating every entry of the Laurent matrix at `1`. -/
+theorem specializationDegeneracyMatrixAtOne_eq_map :
+    specializationDegeneracyMatrixAtOne =
+      specializationDegeneracyMatrix.map (laurentEval (R := ℤ) (1 : ℤˣ)).toRingHom := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [specializationDegeneracyMatrixAtOne, specializationDegeneracyMatrix, laurentEval_T]
+
+/-- The specialized matrix has zero determinant. -/
+@[simp]
+theorem det_specializationDegeneracyMatrixAtOne :
+    specializationDegeneracyMatrixAtOne.det = 0 := by
+  simp [specializationDegeneracyMatrixAtOne, Matrix.det_fin_two_of]
+
+/-- A nonzero kernel vector for the Laurent matrix specialized at `q = 1`. -/
+def specializationDegeneracyKernelVector : Fin 2 → ℤ :=
+  ![1, -1]
+
+/-- The vector `(1, -1)` witnesses degeneracy of the matrix at `q = 1`. -/
+theorem specializationDegeneracyMatrixAtOne_mulVec_eq_zero :
+    specializationDegeneracyMatrixAtOne *ᵥ specializationDegeneracyKernelVector = 0 := by
+  ext i
+  fin_cases i <;>
+    simp [specializationDegeneracyMatrixAtOne, specializationDegeneracyKernelVector, Matrix.mulVec]
+
+/-- The specialization kernel vector is nonzero. -/
+theorem specializationDegeneracyKernelVector_ne_zero :
+    specializationDegeneracyKernelVector ≠ 0 := by
+  intro h
+  have h0 := congrFun h 0
+  norm_num [specializationDegeneracyKernelVector] at h0
+
+end
 
 end TauCeti
