@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.GradedExtEuler.Admissible
-public import TauCeti.Algebra.Category.GradedModuleCat.Coproducts
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.ExtEuler
+
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # The q-Euler values of graded quiver vertex simples
@@ -18,9 +19,9 @@ For the path-length grading on a path algebra, the first-arrow resolution comput
 
 In particular, `χ_q(Sᵢ, Sⱼ) = δᵢⱼ - q⁻¹ # {a : i ⟶ j}`. The inverse power of `q`
 comes from the shift by one of the source projectives in the arrow kernel: the form is
-q-antilinear in its first variable. The calculation needs finite-dimensionality of the target,
-not of the path algebra. Finite-dimensionality of the algebra is used only for the final
-simple-pair specialization, through the graded-head dimension formula.
+q-antilinear in its first variable. The general formula needs a finite quiver with finitely many
+arrows and a finite-dimensional target. The simple-pair specialization uses finite-dimensionality
+of the path algebra to obtain finite arrow sets and finite-dimensional vertex simples.
 
 These are object-level values, computed with explicit Euler-admissibility witnesses. They
 supply the entries for comparing the graded categorical pairing with the graded quiver form.
@@ -86,40 +87,16 @@ theorem gradedExtEuler_gradedArrowSum (i : Q)
   classical
   let _ := integerGradedAlgebra k Q
   let hP (j : Q) := isGradedEulerAdmissible_gradedVertexProjective.{u, v, w, t} k Q j Y
-  let _ (j : Q) : Module.Projective (pathAlgebra k Q) (gradedVertexProjective k Q j) :=
-    (gradedFiniteProjectiveModules_iff.1
-      (gradedFiniteProjectiveModules_gradedVertexProjective k Q j)).2
-  let _ (j : Q) : Projective (gradedVertexProjective k Q j) :=
-    GradedModuleCat.projective_of_module_projective _
-  let _ (j : Q) : Projective ((gradedVertexProjective k Q j).shiftObj 1) :=
-    GradedModuleCat.projective_of_module_projective _
-  let _ (j : Q) : Projective
-      ((GradedModuleCat.shift (integerGrade k Q)).functor.obj (gradedVertexProjective k Q j)) := by
-    simpa only [GradedModuleCat.shift, GradedModuleCat.shiftFunctor_obj] using
-      (inferInstanceAs (Projective ((gradedVertexProjective k Q j).shiftObj 1)))
-  let _ : Projective (gradedArrowSum k Q i) :=
-    GradedModuleCat.projective_of_module_projective _
-  have hval (j : Q) :
-      gradedExtEuler k (GradedModuleCat.shift (integerGrade k Q)) (hP j).shiftSource =
-        T (-1) * Y.smulGradedDimension (vertexIdempotent k j) := by
-    rw [gradedExtEuler_shiftSource (hP j), gradedExtEuler_gradedVertexProjective k Q j Y (hP j)]
-  rw [Finset.mul_sum]
-  simp_rw [← hval]
-  rw [gradedExtEuler_projective]
-  ext p
-  rw [coeff_targetShiftGradedDimension]
-  let _ (a : (j : Q) × (i ⟶ j)) :
-      Module.Finite k ((gradedVertexProjective k Q a.1).shiftObj 1 ⟶
-        ((GradedModuleCat.shift (integerGrade k Q)) ^ (-p)).functor.obj Y) :=
-    (((hP a.1).shiftSource.internallyFinite.finiteLaurentSupport 0).of_equiv
-      fun _ ↦ CategoryTheory.Abelian.Ext.linearEquiv₀ (R := k)).finiteDimensional (-p)
-  rw [GradedModuleCat.finrank_hom_directSum, Nat.cast_sum]
-  rw [AddMonoidAlgebra.coeff_sum, Finsupp.finsetSum_apply]
+  have hshift (j : Q) : IsGradedEulerAdmissible.{t} k
+      (GradedModuleCat.shift (integerGrade k Q))
+      ((gradedVertexProjective k Q j).shiftObj 1) Y := by
+    simpa only [GradedModuleCat.shift_functor_obj] using (hP j).shiftSource
+  rw [gradedExtEuler_directSum _ _ Y h (fun a ↦ hshift a.1), Finset.mul_sum]
   apply Finset.sum_congr rfl
   intro a _
-  rw [gradedExtEuler_projective, coeff_targetShiftGradedDimension]
-  simp only [GradedModuleCat.shift, GradedModuleCat.shiftFunctor_obj]
-  rfl
+  have hval := gradedExtEuler_shiftSource (hP a.1)
+  rw [gradedExtEuler_gradedVertexProjective k Q a.1 Y (hP a.1)] at hval
+  simpa only [GradedModuleCat.shift_functor_obj] using hval
 
 /-- **The graded first-arrow Euler formula.** Pairing a vertex simple against a finite-dimensional
 graded module subtracts the shifted outgoing-arrow coordinates from its own vertex coordinate. -/
@@ -137,7 +114,7 @@ theorem gradedExtEuler_gradedVertexSimple (i : Q)
   have hadd := gradedExtEuler_shortExact₁ hs Y hA h
   have hval := gradedExtEuler_gradedVertexProjective k Q i Y (hA.of_shortExact₂' hs h)
   rw [gradedExtEuler_gradedArrowSum] at hadd
-  exact eq_sub_iff_add_eq.mpr (by simpa [add_comm] using hadd.symm.trans hval)
+  linear_combination hval - hadd
 
 end Values
 

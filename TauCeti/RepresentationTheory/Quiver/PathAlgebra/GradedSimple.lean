@@ -218,6 +218,11 @@ abbrev gradedArrowSum : GradedModuleCat.{max u v w} (integerGrade k Q) :=
   GradedModuleCat.directSumObj fun a : (j : Q) × (i ⟶ j) =>
     (gradedVertexProjective k Q a.1).shiftObj 1
 
+/-- The arrow kernel is projective in the graded module category. -/
+instance projective_gradedArrowSum : Projective (gradedArrowSum k Q i) :=
+  let _ := integerGradedAlgebra k Q
+  GradedModuleCat.projective_of_module_projective _
+
 variable [Finite ((j : Q) × (i ⟶ j))]
 
 /-- **The kernel of `kQ eᵢ ↠ Sᵢ` as a direct sum**: the graded map
@@ -329,13 +334,6 @@ projective resolution of length one. -/
 theorem hasProjectiveDimensionLT_two_gradedVertexSimple :
     HasProjectiveDimensionLT (gradedVertexSimple k Q i) 2 := by
   let _ := integerGradedAlgebra k Q
-  have hP (j : Q) : Module.Projective (pathAlgebra k Q) (gradedVertexProjective k Q j) :=
-    (gradedFiniteProjectiveModules_iff.1 (gradedFiniteProjectiveModules_gradedVertexProjective
-      k Q j)).2
-  have : Projective (gradedArrowSum k Q i) :=
-    GradedModuleCat.projective_of_module_projective _
-  have : Projective (gradedVertexProjective k Q i) :=
-    GradedModuleCat.projective_of_module_projective _
   exact (shortExact_gradedVertexSimpleResolution k Q i).hasProjectiveDimensionLT_X₃ 1
     (inferInstanceAs (HasProjectiveDimensionLT (gradedArrowSum k Q i) 1))
     (inferInstanceAs (HasProjectiveDimensionLT (gradedVertexProjective k Q i) 2))

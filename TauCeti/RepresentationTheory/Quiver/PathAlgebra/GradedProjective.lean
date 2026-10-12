@@ -140,6 +140,18 @@ theorem gradedFiniteProjectiveModules_gradedVertexProjective (i : Q) :
       vertexIdempotent_mul_self i)
     (isHomogeneous_span_vertexIdempotent k Q i)
 
+/-- The underlying module of a graded vertex projective is projective over the path algebra. -/
+instance moduleProjective_gradedVertexProjective (i : Q) :
+    Module.Projective (pathAlgebra k Q) (gradedVertexProjective k Q i) :=
+  (gradedFiniteProjectiveModules_iff.1
+    (gradedFiniteProjectiveModules_gradedVertexProjective k Q i)).2
+
+/-- A graded vertex projective is projective in the graded module category. -/
+instance projective_gradedVertexProjective (i : Q) :
+    Projective (gradedVertexProjective k Q i) :=
+  let _ := integerGradedAlgebra k Q
+  GradedModuleCat.projective_of_module_projective _
+
 /-- The class of the vertex projective `kQ e_i` in the Laurent Grothendieck group of finite
 graded projective modules. -/
 noncomputable def gradedVertexProjectiveClass (i : Q) :
