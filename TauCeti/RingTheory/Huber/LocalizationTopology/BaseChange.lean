@@ -266,17 +266,17 @@ variable (P : PairOfDefinition A) (T : Finset A) (s : A) (S : Type*) [CommRing S
 
 /-- **The base change of the identity is the identity.** -/
 @[simp]
-theorem completionLocMap_id (hf : ContinuousAt (RingHom.id A) 0) (hs : RingHom.id A s = s)
-    (hT : ∀ t ∈ T, RingHom.id A t ∈ T) :
+theorem completionLocMap_id :
     letI := locUniformSpace P T s S hden
     letI := isUniformAddGroup_locUniformSpace P T s S hden
     letI := isTopologicalRing_locUniformSpace P T s S hden
-    completionLocMap P T s S hden P (RingHom.id A) hf T s S hden hs hT = RingHom.id _ := by
+    completionLocMap P T s S hden P (RingHom.id A) continuous_id.continuousAt T s S hden rfl
+      (fun _ ht ↦ ht) = RingHom.id _ := by
   let _ := locUniformSpace P T s S hden
   have _ := isUniformAddGroup_locUniformSpace P T s S hden
   have _ := isTopologicalRing_locUniformSpace P T s S hden
-  exact (eq_completionLocMap P T s S hden P (RingHom.id A) hf T s S hden hs hT _ continuous_id
-    (by rw [RingHom.id_comp, RingHom.comp_id])).symm
+  exact (eq_completionLocMap P T s S hden P (RingHom.id A) continuous_id.continuousAt T s S hden
+    rfl (fun _ ht ↦ ht) _ continuous_id (by rw [RingHom.id_comp, RingHom.comp_id])).symm
 
 variable {C : Type*} [CommRing C] [TopologicalSpace C] [IsTopologicalRing C]
   (P' : PairOfDefinition B) (f : A →+* B) (hf : ContinuousAt f 0) (T' : Finset B) (s' : B)
@@ -413,14 +413,14 @@ theorem completionLocPairMap_comp_toCompletionLocHom :
 
 /-- **The base change of the identity morphism of Huber pairs is the identity.** -/
 @[simp]
-theorem completionLocPairMap_id (hs : (Pair.Hom.id U).toRingHom s = s)
-    (hT : ∀ t ∈ T, (Pair.Hom.id U).toRingHom t ∈ T) :
+theorem completionLocPairMap_id :
     letI := locUniformSpace P T s S hden
     letI := isUniformAddGroup_locUniformSpace P T s S hden
     letI := isTopologicalRing_locUniformSpace P T s S hden
     letI := isHuberRing_completion_locTopology P T s S hden
-    completionLocPairMap P U hP T s S hden P U hP (Pair.Hom.id U) T s S hden hs hT =
-      Pair.Hom.id _ := by
+    completionLocPairMap P U hP T s S hden P U hP (Pair.Hom.id U) T s S hden
+      (by rw [Pair.Hom.toRingHom_id, RingHom.id_apply])
+      (fun t ht ↦ by rwa [Pair.Hom.toRingHom_id, RingHom.id_apply]) = Pair.Hom.id _ := by
   let _ := locUniformSpace P T s S hden
   have _ := isUniformAddGroup_locUniformSpace P T s S hden
   have _ := isTopologicalRing_locUniformSpace P T s S hden
@@ -428,7 +428,7 @@ theorem completionLocPairMap_id (hs : (Pair.Hom.id U).toRingHom s = s)
   apply Pair.Hom.ext
   rw [toRingHom_completionLocPairMap]
   exact (eq_completionLocMap P T s S hden P (Pair.Hom.id U).toRingHom
-    (Pair.Hom.id U).continuous_toRingHom.continuousAt T s S hden hs hT _
+    (Pair.Hom.id U).continuous_toRingHom.continuousAt T s S hden _ _ _
     (Pair.Hom.id _).continuous_toRingHom
     (by simp only [Pair.Hom.toRingHom_id, RingHom.id_comp, RingHom.comp_id])).symm
 
