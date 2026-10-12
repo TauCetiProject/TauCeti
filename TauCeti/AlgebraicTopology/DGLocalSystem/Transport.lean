@@ -73,11 +73,38 @@ def liftingLocalSystemRoof {Φ₀ Φ₁ : MooreLiftingFunction p} (hΦ₀ : Φ�
   hs := (DGRightModuleCat.quasiIsos_iff _).2 (isQuasiIso_transportLocalSystemHom hΦ₀ b)
   f := transportLocalSystemHom hΦ₁ b
 
+/-- The apex of the zigzag is the DG local system `C_*(F')` of the Moore-path replacement. -/
+@[simp]
+theorem liftingLocalSystemRoof_X' {Φ₀ Φ₁ : MooreLiftingFunction p} (hΦ₀ : Φ₀.IsTransitive)
+    (hΦ₁ : Φ₁.IsTransitive) (b : B) :
+    (liftingLocalSystemRoof (R := R) hΦ₀ hΦ₁ b).X' = fibrationLocalSystem R p b :=
+  (rfl)
+
+/-- The left leg of the zigzag is the strict morphism of transport along `Φ₀`, up to the identity
+of the apex. -/
+@[simp]
+theorem liftingLocalSystemRoof_s {Φ₀ Φ₁ : MooreLiftingFunction p} (hΦ₀ : Φ₀.IsTransitive)
+    (hΦ₁ : Φ₁.IsTransitive) (b : B) :
+    (liftingLocalSystemRoof (R := R) hΦ₀ hΦ₁ b).s =
+      eqToHom (liftingLocalSystemRoof_X' hΦ₀ hΦ₁ b) ≫ transportLocalSystemHom hΦ₀ b := by
+  unfold liftingLocalSystemRoof
+  exact (Category.id_comp _).symm
+
+/-- The right leg of the zigzag is the strict morphism of transport along `Φ₁`, up to the identity
+of the apex. -/
+@[simp]
+theorem liftingLocalSystemRoof_f {Φ₀ Φ₁ : MooreLiftingFunction p} (hΦ₀ : Φ₀.IsTransitive)
+    (hΦ₁ : Φ₁.IsTransitive) (b : B) :
+    (liftingLocalSystemRoof (R := R) hΦ₀ hΦ₁ b).f =
+      eqToHom (liftingLocalSystemRoof_X' hΦ₀ hΦ₁ b) ≫ transportLocalSystemHom hΦ₁ b := by
+  unfold liftingLocalSystemRoof
+  exact (Category.id_comp _).symm
+
 /-- The second leg of the zigzag is a quasi-isomorphism too. -/
 theorem isQuasiIso_liftingLocalSystemRoof_f {Φ₀ Φ₁ : MooreLiftingFunction p}
     (hΦ₀ : Φ₀.IsTransitive) (hΦ₁ : Φ₁.IsTransitive) (b : B) :
-    DGRightModuleCat.IsQuasiIso (liftingLocalSystemRoof (R := R) hΦ₀ hΦ₁ b).f :=
-  isQuasiIso_transportLocalSystemHom hΦ₁ b
+    DGRightModuleCat.IsQuasiIso (liftingLocalSystemRoof (R := R) hΦ₀ hΦ₁ b).f := by
+  exact isQuasiIso_transportLocalSystemHom hΦ₁ b
 
 end Transport
 

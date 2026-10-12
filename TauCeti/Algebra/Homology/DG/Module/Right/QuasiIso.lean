@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 public import Mathlib.CategoryTheory.Localization.CalculusOfFractions
 public import TauCeti.Algebra.Homology.DG.Module.Right.Hom.Cohomology
 
@@ -153,16 +154,18 @@ abbrev IsQuasiIso {M N : DGRightModuleCat.{uR, uA, uM} h} (f : M ⟶ N) : Prop :
   DGRightModuleHom.IsQuasiIso f
 
 variable (h) in
-/-- The **quasi-isomorphisms** of DG right modules over `h`, as a morphism property.  A roof
-`M ← P → N` whose left leg is a quasi-isomorphism is a Mathlib right fraction
-`(quasiIsos h).RightFraction M N`. -/
+/-- The **quasi-isomorphisms** of DG right modules over `h`, as a morphism property: the morphisms
+sent to isomorphisms by the cohomology functor.  A roof `M ← P → N` whose left leg is a
+quasi-isomorphism is a Mathlib right fraction `(quasiIsos h).RightFraction M N`. -/
 def quasiIsos : MorphismProperty (DGRightModuleCat.{uR, uA, uM} h) :=
-  fun _ _ f ↦ IsQuasiIso f
+  (MorphismProperty.isomorphisms _).inverseImage cohomologyFunctor
 
 /-- A morphism is in `quasiIsos` exactly when it is a quasi-isomorphism. -/
 theorem quasiIsos_iff {M N : DGRightModuleCat.{uR, uA, uM} h} (f : M ⟶ N) :
-    quasiIsos h f ↔ IsQuasiIso f :=
-  Iff.rfl
+    quasiIsos h f ↔ IsQuasiIso f := by
+  rw [quasiIsos, MorphismProperty.inverseImage_iff, MorphismProperty.isomorphisms.iff,
+    CategoryTheory.ConcreteCategory.isIso_iff_bijective]
+  exact Iff.rfl
 
 end DGRightModuleCat
 
