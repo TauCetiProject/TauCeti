@@ -31,7 +31,7 @@ The condition `ζ ^ n = 1` cannot be dropped from the last item: over `ℚ[ε]/(
 `1 + ε` is a primitive first root of unity modulo the only prime ideal, but is not a root of
 `Φ_1 = X - 1`.
 
-Finally, `R[X]/(Φ_n)` is free of rank `φ(n)` over `R`
+Finally, `R[X]/(Φ_n)` is finite and free over `R`, of rank `φ(n)` when `R` is nontrivial
 (`Polynomial.finrank_adjoinRoot_cyclotomic`), and it is étale over `R` when `n` is a unit
 (`Polynomial.etale_adjoinRoot_cyclotomic`).
 -/
@@ -71,8 +71,7 @@ theorem isRoot_cyclotomic_of_isUnit_pow_sub_one (hn : n ≠ 0) {ζ : R} (h₁ : 
     refine isUnit_of_dvd_unit ?_ (h d hd)
     simpa using eval_dvd (x := ζ) (cyclotomic.dvd_X_pow_sub_one d R)
   have h₀ := congr(eval ζ $((eq_cyclotomic_iff (Nat.pos_of_ne_zero hn) (cyclotomic n R)).mp rfl))
-  rw [eval_mul, eval_sub, eval_pow, eval_X, eval_one, h₁, sub_self, hu.mul_left_eq_zero] at h₀
-  exact h₀
+  exact hu.mul_left_eq_zero.mp (by simpa [h₁] using h₀)
 
 /-- **Roots of `Φ_n` when `n` is invertible.** If `n` is a unit in `R`, then `ζ` is a root of
 `Φ_n` if and only if `ζ ^ n = 1` and `ζ ^ d - 1` is a unit for every proper divisor `d` of
@@ -86,8 +85,7 @@ theorem isRoot_cyclotomic_iff_isUnit_pow_sub_one (hn : IsUnit (n : R)) {ζ : R} 
   refine ⟨fun hζ ↦ ⟨?_, fun d hd ↦ ?_⟩, fun h ↦ isRoot_cyclotomic_of_isUnit_pow_sub_one hn₀ h.1 h.2⟩
   · have h₀ :=
       congr(eval ζ $((eq_cyclotomic_iff (Nat.pos_of_ne_zero hn₀) (cyclotomic n R)).mp rfl))
-    rw [eval_mul, hζ.eq_zero, zero_mul, eval_sub, eval_pow, eval_X, eval_one] at h₀
-    exact (sub_eq_zero.mp h₀.symm)
+    simpa [hζ.eq_zero, sub_eq_zero] using h₀.symm
   · -- `Ψ_n(ζ)` is a unit by coprimality, and `ζ ^ d - 1` divides it.
     obtain ⟨a, b, hab⟩ := isCoprime_cyclotomic_prod_properDivisors hn
     have hu : IsUnit ((∏ d ∈ n.properDivisors, cyclotomic d R).eval ζ) := by
@@ -115,8 +113,7 @@ theorem isRoot_cyclotomic_iff_forall_isPrimitiveRoot (hn : IsUnit (n : R)) {ζ :
     obtain ⟨m, hm, hmem⟩ := exists_max_ideal_of_mem_nonunits hu
     have hd' := Nat.mem_properDivisors.mp hd
     have hdvd := ((h m hm.isPrime).pow_eq_one_iff_dvd d).mp
-      (by rw [← map_pow, ← sub_eq_zero, ← map_one (Ideal.Quotient.mk m), ← map_sub,
-        Ideal.Quotient.eq_zero_iff_mem]; exact hmem)
+      (by simpa [sub_eq_zero] using Ideal.Quotient.eq_zero_iff_mem.mpr hmem)
     exact absurd (Nat.le_of_dvd (Nat.pos_of_mem_properDivisors hd) hdvd) (not_le.mpr hd'.2)
 
 instance : Module.Free R (AdjoinRoot (cyclotomic n R)) :=

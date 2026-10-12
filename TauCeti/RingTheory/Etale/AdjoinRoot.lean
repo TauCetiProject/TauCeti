@@ -19,6 +19,14 @@ Mathlib's `StandardEtalePair` with `g = 1`: the derivative of `f` is already inv
 
 Typical examples are `X ^ n - 1`, and its factors such as the cyclotomic polynomial `Φ_n`, over a
 ring in which `n` is invertible.
+
+## References
+
+* Mathlib's `Mathlib.RingTheory.Etale.StandardEtale`, for `StandardEtalePair` and its
+  universal mapping API.
+* Tau Ceti's `TauCeti.Algebra.QuadraticAlgebra.Etale`, whose `QuadraticAlgebra.quadraticEtalePair`
+  and the comparison of presentations in `QuadraticAlgebra.etale_of_isUnit_discr` are the pattern
+  generalised here from a quadratic to an arbitrary separable monic polynomial.
 -/
 
 public section
