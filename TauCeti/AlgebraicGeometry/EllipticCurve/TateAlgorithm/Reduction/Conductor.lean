@@ -139,7 +139,7 @@ theorem dvd_algorithmicConductor_iff (W : WeierstrassCurve K) [W.IsElliptic]
         (Localization.AtPrime v.asIdeal) := by
   have h := pow_dvd_algorithmicConductor_iff W v 1
   rw [pow_one] at h
-  rw [h, Nat.one_le_iff_ne_zero, ne_eq, algorithmicOggExponent_eq_zero_iff]
+  exact h.trans W.algorithmicOggExponent_pos_iff
 
 /-- **The algorithmic conductor and the minimal discriminant ideal have the same prime divisors**,
 the primes of bad reduction. -/

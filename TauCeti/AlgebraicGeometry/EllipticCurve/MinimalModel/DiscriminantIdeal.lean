@@ -217,9 +217,9 @@ theorem dvd_minimalDiscriminantIdeal_iff (W : WeierstrassCurve K) [W.IsElliptic]
       ¬ (W.minimal (Localization.AtPrime v.asIdeal)).HasGoodReduction
         (Localization.AtPrime v.asIdeal) := by
   have h := le_count_associates_iff_le_pow v (minimalDiscriminantIdeal_ne_bot O W) 1
-  rw [pow_one, count_minimalDiscriminantIdeal_eq_localMinimalDiscriminantValuation,
-    Nat.one_le_iff_ne_zero, ne_eq, localMinimalDiscriminantValuation_eq_zero_iff] at h
-  rw [Ideal.dvd_iff_le, h]
+  rw [pow_one, count_minimalDiscriminantIdeal_eq_localMinimalDiscriminantValuation] at h
+  rw [Ideal.dvd_iff_le, ← h]
+  exact W.localMinimalDiscriminantValuation_pos_iff (R := Localization.AtPrime v.asIdeal)
 
 /-- **The minimal discriminant ideal divides the discriminant ideal of every integral
 equation.** This is the global form of the primewise inequality between their exponents. -/
