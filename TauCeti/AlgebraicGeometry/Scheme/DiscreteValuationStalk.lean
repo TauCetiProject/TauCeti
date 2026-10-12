@@ -10,8 +10,6 @@ public import TauCeti.AlgebraicGeometry.Scheme.CodimensionOnePoint
 public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
 public import TauCeti.RingTheory.RegularLocalRing.Basic
 
-import TauCeti.Topology.KrullDimension
-
 /-!
 # Regularity and valuation rings at codimension-one points
 
@@ -63,11 +61,7 @@ theorem _root_.AlgebraicGeometry.Scheme.valuationRing_stalk_of_topologicalKrullD
   by_cases hx : x = genericPoint X
   · subst hx
     exact inferInstanceAs (ValuationRing X.functionField)
-  · have hle : coheight x ≤ 1 := by
-      exact_mod_cast (TauCeti.coheight_le_topologicalKrullDim x).trans hX
-    have h1 : coheight x = 1 := hle.antisymm <| Order.one_le_iff_pos.mpr <|
-      Order.coheight_pos.mpr fun h ↦ hx (Scheme.isMax_iff_eq_genericPoint.mp h)
-    have := hDVR ⟨x, h1⟩
+  · have := hDVR ⟨x, (Scheme.coheight_eq_one_iff_ne_genericPoint hX).mpr hx⟩
     infer_instance
 
 end AlgebraicGeometry

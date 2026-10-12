@@ -74,18 +74,6 @@ private noncomputable def functionFieldIso :
       X.functionField :=
   (twoChartModel.functionFieldEquiv hxt).toRingEquiv.toCommRingCatIso
 
-/-- Through the generic points, `Spec` of a map of function fields compatible with the
-`k`-algebra structures is compatible with the structure morphisms to `Spec k`. -/
-private theorem specMap_comp_fromSpecStalk_comp_over {Y Z : Scheme.{u}} [Y.Over (Spec (.of k))]
-    [Z.Over (Spec (.of k))] [IsIntegral Y] [IsIntegral Z] (f : Z.functionField ⟶ Y.functionField)
-    (hf : ∀ c : k, f (algebraMap k Z.functionField c) = algebraMap k Y.functionField c) :
-    (Spec.map f ≫ Z.fromSpecStalk _) ≫ Z ↘ Spec (.of k) = Y.fromSpecStalk _ ≫ Y ↘ Spec (.of k) := by
-  rw [Category.assoc, fromSpecStalk_genericPoint_comp_over (k := k),
-    fromSpecStalk_genericPoint_comp_over (k := k), ← Spec.map_comp]
-  congr 1
-  ext c
-  exact hf c
-
 variable [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
 
 /-- **A regular proper curve is the two-chart model of its function field**: for a curve `X` over
@@ -101,10 +89,10 @@ noncomputable def isoTwoChartModel :
   { hom := homOfFunctionField
       (valuationRing_stalk_of_topologicalKrullDim_le_one
         (IsCurveOver.topologicalKrullDim_eq_one k).le) _
-      (specMap_comp_fromSpecStalk_comp_over (functionFieldIso X hx hxt).hom
+      (specMap_comp_fromSpecStalk_genericPoint_comp_over k (functionFieldIso X hx hxt).hom
         (twoChartModel.functionFieldEquiv hxt).commutes)
     inv := homOfFunctionField (twoChartModel.valuationRing_stalk hxt) _
-      (specMap_comp_fromSpecStalk_comp_over (functionFieldIso X hx hxt).inv
+      (specMap_comp_fromSpecStalk_genericPoint_comp_over k (functionFieldIso X hx hxt).inv
         (twoChartModel.functionFieldEquiv hxt).symm.commutes)
     hom_inv_id := by
       refine ext_of_isDominant_of_isSeparated' (Spec (.of k))
