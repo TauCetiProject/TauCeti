@@ -15,7 +15,8 @@ public import Mathlib.SetTheory.Cardinal.Finite
 import TauCeti.Algebra.Algebra.Equiv
 import Mathlib.Algebra.Ring.Commute
 import Mathlib.Data.Fintype.Pi
-import Mathlib.FieldTheory.Galois.Basic
+import TauCeti.FieldTheory.Galois.Basic
+import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import Mathlib.GroupTheory.OrderOfElement
 import Mathlib.Tactic.IntervalCases
 
@@ -63,20 +64,12 @@ theorem exists_apply_eq_neg_of_sq_eq {K L : Type*} [Field K] [Field L] [Algebra 
     (hL : Module.finrank K L = 2) [Algebra.IsSeparable K L] {y : L} (hgen : K⟮y⟯ = ⊤) {c : K}
     (hy : y ^ 2 = algebraMap K L c) : ∃ σ : L ≃ₐ[K] L, σ y = -y := by
   have : Algebra.IsQuadraticExtension K L := ⟨hL⟩
-  have : FiniteDimensional K L := Module.finite_of_finrank_pos (by omega)
-  have hcard : Nat.card (L ≃ₐ[K] L) = 2 := by rw [IsGalois.card_aut_eq_finrank, hL]
-  obtain ⟨σ, hσ, -⟩ := (Nat.card_eq_two_iff' (1 : L ≃ₐ[K] L)).mp hcard
+  obtain ⟨σ, hσ⟩ := Algebra.IsQuadraticExtension.exists_algEquiv_ne_one K L
   refine ⟨σ, (σ.apply_eq_or_eq_neg_of_sq_eq hy).resolve_left fun h ↦ hσ ?_⟩
-  -- An automorphism fixing the generator `y` fixes every element of `K⟮y⟯ = L`.
-  refine AlgEquiv.ext fun z ↦ ?_
-  rw [AlgEquiv.one_apply]
-  have hz : z ∈ K⟮y⟯ := hgen ▸ IntermediateField.mem_top
-  induction hz using IntermediateField.adjoin_induction with
-  | mem x hx => rwa [Set.mem_singleton_iff.mp hx]
-  | algebraMap x => exact σ.commutes x
-  | add x x' _ _ hx hx' => rw [map_add, hx, hx']
-  | inv x _ hx => rw [map_inv₀, hx]
-  | mul x x' _ _ hx hx' => rw [map_mul, hx, hx']
+  apply TauCeti.IntermediateField.algEquiv_eq_one_of_adjoin_eq_top hgen
+  intro x hx
+  obtain rfl := Set.mem_singleton_iff.mp hx
+  exact h
 
 end AlgEquiv
 
