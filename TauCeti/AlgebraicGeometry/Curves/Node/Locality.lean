@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.Node.Nodal
-public import TauCeti.AlgebraicGeometry.Morphisms.FormallyUnramified
 
 /-!
 # Source locality of nodal relative curves
@@ -55,7 +54,10 @@ theorem AtWorstNodalOfRelativeDimensionOne.comp_of_isOpenImmersion
   have hi := MorphismProperty.of_isPullback (P := @IsOpenImmersion) H
     (inferInstanceAs (IsOpenImmersion i))
   rw [H.w_assoc]
-  exact IsZariskiLocalAtSource.comp h.singular_formallyUnramified _
+  -- Fix the morphism-property universe so instance search finds Mathlib's locality instance.
+  exact IsZariskiLocalAtSource.comp
+    (P := (show MorphismProperty Scheme.{u} from @FormallyUnramified.{u}))
+    h.singular_formallyUnramified _
 
 /-- The nodal-curve criterion over an affine base can be checked on an open cover of the
 source. -/
@@ -71,7 +73,9 @@ theorem AtWorstNodalOfRelativeDimensionOne.of_openCover
   -- The local `Over` instance has structure map `f`; its inferred flatness, finite
   -- presentation, and relative dimension proofs agree by proof irrelevance with those in `mk`.
   suffices hsing : FormallyUnramified ((Y.singularLocus R).subschemeι ≫ f) from hsing
+  -- Fix the morphism-property universe so instance search finds Mathlib's locality instance.
   refine IsZariskiLocalAtSource.of_openCover
+    (P := (show MorphismProperty Scheme.{u} from @FormallyUnramified.{u}))
     (𝒰.pullback₁ (Y.singularLocus R).subschemeι) fun j ↦ ?_
   have : IsOpenImmersion (𝒰.f j) := 𝒰.map_prop j
   let : (𝒰.X j).Over (Spec (.of R)) := ⟨𝒰.f j ≫ f⟩
@@ -79,7 +83,8 @@ theorem AtWorstNodalOfRelativeDimensionOne.of_openCover
   have : SyntomicOfRelativeDimension 1 ((𝒰.X j) ↘ Spec (.of R)) := (h j).syntomic
   have : MorphismProperty.RespectsIso @FormallyUnramified.{u} :=
     MorphismProperty.IsLocalAtSource.toRespects
-      (P := @FormallyUnramified.{u}) (K := Scheme.zariskiPrecoverage)
+      (P := (show MorphismProperty Scheme.{u} from @FormallyUnramified.{u}))
+      (K := Scheme.zariskiPrecoverage)
   have H := (Scheme.isPullback_singularLocus_of_isOpenImmersion
     (R := R) (𝒰.f j)).flip
   -- The cover index and the source of its map depend on these projections. The generated
