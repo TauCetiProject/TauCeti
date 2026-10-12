@@ -171,7 +171,8 @@ reflection.** It preserves each of the three blocks. -/
 @[simp]
 theorem d4TripledReflection_apply_apply (i : Fin 4) (a : Fin 24) :
     d4TripledReflection i (d4TripledReflection i a) = a := by
-  exact (d4TripledReflection i).left_inv a
+  revert i a
+  decide +kernel
 
 /-- **The coordinate equation for a simple reflection on the tripled weights.** Reflection in the
 `i`-th simple root subtracts the pairing with the `i`-th simple coroot times that root, the root
@@ -383,11 +384,6 @@ theorem d4TripledTrialityPerm_symm_apply_symm_apply_symm_apply (a : Fin 24) :
       a := by
   simp only [d4TripledTrialityPerm_symm_apply, d4TripledTrialityPerm_apply_apply_apply]
 
-private theorem d4TripledWeight_d4TripledTrialityPerm_d4TrialityNode_apply
-    (a : Fin 24) (i : Fin 4) :
-    d4TripledWeight (d4TripledTrialityPerm a) (d4TrialityNode i) = d4TripledWeight a i := by
-  decide +kernel +revert
-
 /-- **The tripled weight family is equivariant for triality**: the weight at the image index,
 read at the image node, is the weight at the original index read at the original node. This is
 the hypothesis `wt (π a) (σ k) = wt a k` under which a numbered permutation of the coordinates of a
@@ -396,7 +392,8 @@ Kostant toral-closure carrier extends to an automorphism of the carrier. -/
 theorem d4TripledWeight_d4TripledTrialityPerm_apply (a : Fin 24) (i : Fin 4) :
     d4TripledWeight (d4TripledTrialityPerm a) (trialityPermD4 i) = d4TripledWeight a i := by
   rw [trialityPermD4_apply_eq_d4TrialityNode]
-  exact d4TripledWeight_d4TripledTrialityPerm_d4TrialityNode_apply a i
+  revert a i
+  decide +kernel
 
 /-- The functional form of `d4TripledWeight_d4TripledTrialityPerm_apply`: triality carries the
 weight `μ` to `μ ∘ σ⁻¹`. -/
