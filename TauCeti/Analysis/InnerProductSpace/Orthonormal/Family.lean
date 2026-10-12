@@ -40,8 +40,9 @@ def synthesisMapIsometry (hv : Orthonormal 𝕜 v) :
 /-- The underlying linear map of the coordinate isometry is the synthesis map. -/
 @[simp]
 theorem synthesisMapIsometry_toLinearMap (hv : Orthonormal 𝕜 v) :
-    hv.synthesisMapIsometry.toLinearMap = TauCeti.synthesisMap 𝕜 v :=
-  (rfl)
+    hv.synthesisMapIsometry.toLinearMap = TauCeti.synthesisMap 𝕜 v := by
+  unfold synthesisMapIsometry
+  exact LinearMap.isometryOfOrthonormal_toLinearMap _ _ _
 
 /-- The coordinate isometry sends a coefficient vector to the corresponding linear combination
 of the orthonormal family. -/
