@@ -135,14 +135,14 @@ omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [NormedSpace ℝ F] in
 private noncomputable abbrev smulLeftContinuousLinearEquiv (c : ℝ) (hc : c ≠ 0) : E ≃L[ℝ] E :=
   ContinuousLinearEquiv.smulLeft (Units.mk0 c hc)
 
-omit [FiniteDimensional ℝ E'] in
+omit [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E'] in
 /-- **The Laplacian after a linear change of variables.** For a continuous linear equivalence
 `e : E ≃L[ℝ] E'` and an orthonormal basis `b` of `E`,
 `Δ (f ∘ e) x = ∑ᵢ D²f (e x) (e bᵢ, e bᵢ)`. No differentiability hypothesis is needed. When `e`
 is an isometry, `e b` is again an orthonormal basis and this is `(Δ f) (e x)`; in general it is a
 second-order operator with constant coefficients applied to `f`. -/
-theorem laplacian_comp_continuousLinearEquiv_right_apply {ι : Type*} [Fintype ι]
-    (e : E ≃L[ℝ] E') (b : OrthonormalBasis ι ℝ E) (f : E' → F) (x : E) :
+theorem laplacian_comp_continuousLinearEquiv_right_apply [NormedSpace ℝ E'] {ι : Type*}
+    [Fintype ι] (e : E ≃L[ℝ] E') (b : OrthonormalBasis ι ℝ E) (f : E' → F) (x : E) :
     Δ (f ∘ e) x = ∑ i, iteratedFDeriv ℝ 2 f (e x) ![e (b i), e (b i)] := by
   rw [laplacian_eq_iteratedFDeriv_orthonormalBasis (f ∘ e) b]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
