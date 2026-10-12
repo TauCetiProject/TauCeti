@@ -12,7 +12,7 @@ public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 public import Mathlib.RingTheory.LocalRing.Basic
 import Mathlib.LinearAlgebra.Matrix.Notation
 import TauCeti.LinearAlgebra.PerfectPairing.Basis
-import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
+import TauCeti.LinearAlgebra.BilinearForm.Ideals
 import TauCeti.LinearAlgebra.BilinearForm.LinearIndependent
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 
