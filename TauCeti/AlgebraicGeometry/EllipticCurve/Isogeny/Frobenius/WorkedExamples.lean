@@ -58,8 +58,10 @@ The point counts are computed by enumerating the solutions of the affine equatio
   endomorphism of `y² = x³ + x` is `1 + 2i`.
 * `TauCeti.WorkedExamples.gaussianIntCMActionCurveX3AddX_sqrtd_notMem_adjoin`: the endomorphism
   `i` of `y² = x³ + x` over `𝔽₅` does not lie in `ℤ[π₅]`.
-* `TauCeti.WorkedExamples.bijective_gaussianIntCMActionCurveX3AddX`: the endomorphism ring of
+* `TauCeti.WorkedExamples.gaussianIntCMActionCurveX3AddX_bijective`: the endomorphism ring of
   `y² = x³ + x` over `𝔽₅` is `ℤ[i]`.
+* `TauCeti.WorkedExamples.gaussianIntRingEquivCurveX3AddX`: the same, as a ring isomorphism
+  `ℤ[i] ≃+* End(E)`.
 * `TauCeti.WorkedExamples.index_adjoin_ofIsogeny_frobeniusIsogeny_curveX3AddX`: `ℤ[π₅]` has index
   `2` in it.
 
@@ -270,7 +272,7 @@ theorem gaussianIntCMActionCurveX3AddX_sqrtd_notMem_adjoin :
 
 /-- **The endomorphism ring of `y² = x³ + x` over `𝔽₅` is `ℤ[i]`**: the action of the Gaussian
 integers, with `i` acting by `(x, y) ↦ (-x, 2y)`, is a bijection onto the endomorphism ring. -/
-theorem bijective_gaussianIntCMActionCurveX3AddX :
+theorem gaussianIntCMActionCurveX3AddX_bijective :
     Function.Bijective gaussianIntCMActionCurveX3AddX := by
   refine ⟨gaussianIntCMActionCurveX3AddX.injective, fun f ↦ ?_⟩
   -- a nonzero multiple of `f` lies in `ℤ[π₅] = ℤ[2i]`, and `ℤ[i]` is integrally closed
@@ -280,6 +282,18 @@ theorem bijective_gaussianIntCMActionCurveX3AddX :
   exact Hom.mem_range_of_zsmul_mem_range (ι := gaussianIntCMActionCurveX3AddX.toRingHom)
     gaussianIntCMActionCurveX3AddX.injective hN ⟨z, hz⟩
 
+/-- **`End(E) ≅ ℤ[i]` for `y² = x³ + x` over `𝔽₅`**: the action of the Gaussian integers, with `i`
+acting by `(x, y) ↦ (-x, 2y)`, as a ring isomorphism onto the endomorphism ring. -/
+@[expose] noncomputable def gaussianIntRingEquivCurveX3AddX :
+    GaussianInt ≃+* Hom curveX3AddX.toAffine curveX3AddX.toAffine :=
+  RingEquiv.ofBijective gaussianIntCMActionCurveX3AddX gaussianIntCMActionCurveX3AddX_bijective
+
+/-- The isomorphism `ℤ[i] ≃+* End(E)` is the Gaussian-integer action. -/
+@[simp]
+theorem coe_gaussianIntRingEquivCurveX3AddX :
+    ⇑gaussianIntRingEquivCurveX3AddX = gaussianIntCMActionCurveX3AddX :=
+  rfl
+
 /-- **`ℤ[π₅]` has index `2` in the endomorphism ring of `y² = x³ + x` over `𝔽₅`**: the
 endomorphism ring is `ℤ[i]` and `ℤ[π₅] = ℤ[2i]`. -/
 theorem index_adjoin_ofIsogeny_frobeniusIsogeny_curveX3AddX :
@@ -287,7 +301,7 @@ theorem index_adjoin_ofIsogeny_frobeniusIsogeny_curveX3AddX :
       {Hom.ofIsogeny (frobeniusIsogeny curveX3AddX.toAffine)})).toAddSubgroup.index = 2 := by
   rw [AddSubgroup.index_eq_two_iff]
   refine ⟨gaussianIntCMActionCurveX3AddX Zsqrtd.sqrtd, fun f ↦ ?_⟩
-  obtain ⟨z, rfl⟩ := bijective_gaussianIntCMActionCurveX3AddX.2 f
+  obtain ⟨z, rfl⟩ := gaussianIntCMActionCurveX3AddX_bijective.2 f
   simp only [Submodule.mem_toAddSubgroup, Subalgebra.mem_toSubmodule, ← map_add,
     mem_adjoin_ofIsogeny_frobeniusIsogeny_curveX3AddX_iff,
     gaussianIntCMActionCurveX3AddX.injective.eq_iff, exists_eq_right, Zsqrtd.im_add,
