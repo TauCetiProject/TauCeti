@@ -36,6 +36,10 @@ the relevant pullbacks. `CutMetric.Pullback.Constant` computes the same values f
 of the map form, without the equivalence (`cutDistPullback_dirac_dirac`,
 `cutDistPullback_finiteGraphGraphonOnFin_top_two_const_half`).
 
+The checks are deliberately unnamed. Their statements are special cases of those two
+carrier-generic theorems, so downstream developments should cite `cutDistPullback_dirac_dirac` and
+`cutDistPullback_finiteGraphGraphonOnFin_top_two_const_half` rather than a regression here.
+
 ## Main results
 
 * The point-mass, finitely atomic, and mixed examples evaluate `cutDistPullback` using

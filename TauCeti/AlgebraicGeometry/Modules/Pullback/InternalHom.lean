@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Modules.Pullback.Monoidal
+public import TauCeti.AlgebraicGeometry.Modules.Pullback.Monoidal.Basic
 
 /-!
 # Pullback of internal Hom from a quasicoherent sheaf
@@ -16,7 +16,8 @@ It is invertible whenever `M` has a quasicoherent left dual. In particular, this
 finite locally free sources, without flatness of `f` or finiteness of the target.
 
 The comparison is the mate of the inverse tensor comparison with left factor `M`.
-It is characterized by evaluation and is natural in every target sheaf of modules.
+It is characterized by evaluation, is natural in every target sheaf of modules, and is
+natural in the quasicoherent source.
 Use `TauCeti.AlgebraicGeometry.pullbackIhomComparison M f` for the comparison.
 Invertibility follows by identifying internal Hom with tensoring by the dual, and using the
 tensor comparison with that quasicoherent dual as left factor. The proof uses
@@ -89,6 +90,25 @@ theorem pullbackIhomComparison_app_eq_curry (F : Y.Modules) :
         (Scheme.Modules.pullback f).map ((ihom.ev M).app F)) := by
   exact (curry_uncurry _).symm.trans
     (congrArg curry (whiskerLeft_pullbackIhomComparison_app_comp_ev M f F))
+
+/-- The base-change comparison is natural in the quasicoherent source: precomposition with
+`g : M₁ ⟶ M₂` corresponds to precomposition with its pullback. -/
+@[reassoc]
+theorem pullback_map_pre_app_comp_pullbackIhomComparison_app {M₁ M₂ : Y.Modules}
+    [M₁.IsQuasicoherent] [M₂.IsQuasicoherent] (g : M₁ ⟶ M₂) (F : Y.Modules) :
+    (Scheme.Modules.pullback f).map ((pre g).app F) ≫ (pullbackIhomComparison M₁ f).app F =
+      (pullbackIhomComparison M₂ f).app F ≫
+        (pre ((Scheme.Modules.pullback f).map g)).app ((Scheme.Modules.pullback f).obj F) := by
+  apply uncurry_injective
+  simp only [uncurry_eq, MonoidalCategory.whiskerLeft_comp, Category.assoc,
+    whiskerLeft_pullbackIhomComparison_app_comp_ev, id_tensor_pre_app_comp_ev]
+  -- Read the comparison's target as an internal Hom so that the whiskers can be exchanged.
+  dsimp only [Functor.comp_obj]
+  rw [whisker_exchange_assoc, whiskerLeft_pullbackIhomComparison_app_comp_ev,
+    ← cancel_epi (δ (Scheme.Modules.pullback f) M₁ ((ihom M₂).obj F)),
+    δ_natural_right_assoc, IsIso.hom_inv_id_assoc, ← Functor.map_comp,
+    id_tensor_pre_app_comp_ev, δ_natural_left_assoc, IsIso.hom_inv_id_assoc,
+    Functor.map_comp]
 
 /-- The canonical internal-Hom base-change comparison is invertible for every scheme morphism
 when its quasicoherent source has a quasicoherent left dual, without any condition on the target. -/

@@ -146,6 +146,25 @@ theorem pairedWedge_apply_one_one {μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃}
     Equiv.Perm.sign_swap (by decide : (0 : Fin 2) ≠ 1)]
   simp [Fin.fin_one_eq_zero, Matrix.cons_fin_one, sub_eq_add_neg]
 
+variable {E' : Type*} [AddCommGroup E'] [Module ℝ E'] [TopologicalSpace E']
+  [ContinuousAdd E'] [ContinuousSMul ℝ E']
+
+omit [ContinuousAdd E] [ContinuousSMul ℝ E] [IsTopologicalAddGroup F₁]
+  [ContinuousSMul ℝ F₁] [IsTopologicalAddGroup F₂] [ContinuousSMul ℝ F₂]
+  [ContinuousAdd E'] [ContinuousSMul ℝ E'] in
+/-- Precomposing both inputs of a paired wedge by a continuous linear map is the same as
+precomposing the resulting wedge. -/
+@[simp]
+theorem pairedWedge_compContinuousLinearMap {k l : ℕ} (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (hμ : Continuous (fun p : F₁ × F₂ ↦ μ p.1 p.2))
+    (φ : E [⋀^Fin k]→L[ℝ] F₁) (ψ : E [⋀^Fin l]→L[ℝ] F₂)
+    (f : E' →L[ℝ] E) :
+    (pairedWedge μ hμ φ ψ).compContinuousLinearMap f =
+      pairedWedge μ hμ (φ.compContinuousLinearMap f) (ψ.compContinuousLinearMap f) := by
+  ext v
+  simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply, pairedWedge_apply]
+  rfl
+
 omit [ContinuousAdd E] [ContinuousSMul ℝ E] [ContinuousSMul ℝ F₁]
   [IsTopologicalAddGroup F₂] [ContinuousSMul ℝ F₂] in
 /-- The paired wedge is additive in its first alternating map. -/

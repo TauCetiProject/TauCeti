@@ -125,7 +125,7 @@ theorem comp_conjugationAlgHom {A : Type w} [CommSemiring A] [Algebra R A]
           (phi.comp Algebra.TensorProduct.includeRight)).comp
             (conjugationAlgHom (R := R) (H := H)) :=
       congrArg (fun psi : H ⊗[R] H →ₐ[R] A ↦ psi.comp (conjugationAlgHom (R := R) (H := H)))
-        (AffineGroup.Product.productMap_restrict phi).symm
+        (_root_.AlgHom.productMap_comp_includeLeft_includeRight phi).symm
     _ = _ := by
       simpa only [ofConv_toConv] using
         productMap_comp_conjugationAlgHom (R := R) (H := H)

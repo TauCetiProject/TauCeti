@@ -23,6 +23,9 @@ differential into it, the identification of the homology with the cycles is natu
 (`HomologicalComplex.isoHomologyπ_inv_naturality`). The sequence
 `Zᵢ ⟶ Kᵢ ⟶ Zⱼ` of cycles is exact (`HomologicalComplex.exact_iCycles_toCycles`), so the cycles of
 a complex exact in degree `j` fit into short exact sequences `0 ⟶ Zᵢ ⟶ Kᵢ ⟶ Zⱼ ⟶ 0`.
+For chain complexes indexed by the natural numbers, the identification of zero chains with
+cycles is natural (`ChainComplex.cycles₀Iso_inv_naturality`). The isomorphisms `homologyIsoSc'`
+are natural (`HomologicalComplex.homologyMap_comp_homologyIsoSc'_hom`).
 -/
 
 public section
@@ -148,4 +151,43 @@ instance cyclesFunctor_additive [CategoryWithHomology C] (i : ι) :
     change cyclesMap (f + g) i = cyclesMap f i + cyclesMap g i
     exact cyclesMap_add f g i
 
+section HomologyIsoSc'
+
+variable {C : Type*} [Category* C] [HasZeroMorphisms C] {ι : Type*}
+  {c : ComplexShape ι} {K L : HomologicalComplex C c} (f : K ⟶ L) (i j k : ι)
+  (hi : c.prev j = i) (hk : c.next j = k) [K.HasHomology j] [L.HasHomology j]
+  [(K.sc' i j k).HasHomology] [(L.sc' i j k).HasHomology]
+
+/-- The isomorphisms `homologyIsoSc'` are natural (this is the naturality of Mathlib's
+`homologyFunctorIso'`, for complexes which only individually have homology). -/
+@[reassoc]
+lemma homologyMap_comp_homologyIsoSc'_hom :
+    homologyMap f j ≫ (L.homologyIsoSc' i j k hi hk).hom =
+      (K.homologyIsoSc' i j k hi hk).hom ≫
+        ShortComplex.homologyMap ((shortComplexFunctor' C c i j k).map f) := by
+  rw [homologyIsoSc', homologyIsoSc', ShortComplex.homologyMapIso_hom,
+    ShortComplex.homologyMapIso_hom, homologyMap]
+  -- the source of `homologyMap f j` is `K.homology j`, which is `(K.sc j).homology` only up to
+  -- unfolding `HomologicalComplex.homology`, so the generic `homologyMap_comp` needs `erw`
+  erw [← ShortComplex.homologyMap_comp, ← ShortComplex.homologyMap_comp]
+  congr 1
+  exact (natIsoSc' C c i j k hi hk).hom.naturality f
+
+end HomologyIsoSc'
+
 end HomologicalComplex
+
+namespace ChainComplex
+
+variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C]
+  {K L : ChainComplex C ℕ} [K.HasHomology 0] [L.HasHomology 0]
+
+/-- The identification of degree-zero chains with degree-zero cycles is natural. -/
+@[reassoc]
+lemma cycles₀Iso_inv_naturality (φ : K ⟶ L) :
+    K.cycles₀Iso.inv ≫ HomologicalComplex.cyclesMap φ 0 =
+      φ.f 0 ≫ L.cycles₀Iso.inv := by
+  apply (cancel_mono (L.iCycles 0)).1
+  simp
+
+end ChainComplex

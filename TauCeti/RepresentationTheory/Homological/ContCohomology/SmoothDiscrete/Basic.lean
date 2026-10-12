@@ -773,25 +773,12 @@ def smoothDiscreteResFunctor :
   map_id _ := rfl
   map_comp _ _ := rfl
 
-private theorem smoothDiscreteResFunctor_obj_impl (A : SmoothDiscreteTopRep.{u, v, w} R G) :
-    (smoothDiscreteResFunctor R G U).obj A =
-      ⟨TopRep.res (U.subtype : U →* G) A.obj, A.property.res continuous_subtype_val⟩ := rfl
-
 /-- Restriction along `U → G` restricts the underlying topological representation. -/
 @[simp]
 theorem smoothDiscreteResFunctor_obj (A : SmoothDiscreteTopRep.{u, v, w} R G) :
     (smoothDiscreteResFunctor R G U).obj A =
       ⟨TopRep.res (U.subtype : U →* G) A.obj, A.property.res continuous_subtype_val⟩ :=
-  smoothDiscreteResFunctor_obj_impl R G U A
-
-private theorem smoothDiscreteResFunctor_map_apply_impl
-    {A B : SmoothDiscreteTopRep.{u, v, w} R G} (f : A ⟶ B) (x : A.obj.V) :
-    (show B.obj.V from
-      (((eqToHom (congrArg (fun X : SmoothDiscreteTopRep.{u, v, w} R U => X.obj)
-          (smoothDiscreteResFunctor_obj R G U B))).hom.comp
-        ((smoothDiscreteResFunctor R G U).map f).hom.hom).comp
-          (eqToHom (congrArg (fun X : SmoothDiscreteTopRep.{u, v, w} R U => X.obj)
-            (smoothDiscreteResFunctor_obj R G U A).symm)).hom) x) = f.hom.hom x := rfl
+  (rfl)
 
 -- `dsimp% only` on the left-hand side: see the comment on `ofDiscreteModulePair_hom_apply`. Here
 -- `simp` also unfolds the `have` that `show … from` elaborates to, and the `.obj` of `⟨_, _⟩`.
@@ -806,7 +793,7 @@ theorem smoothDiscreteResFunctor_map_apply {A B : SmoothDiscreteTopRep.{u, v, w}
         ((smoothDiscreteResFunctor R G U).map f).hom.hom).comp
           (eqToHom (congrArg (fun X : SmoothDiscreteTopRep.{u, v, w} R U => X.obj)
             (smoothDiscreteResFunctor_obj R G U A).symm)).hom) x)) = f.hom.hom x :=
-  smoothDiscreteResFunctor_map_apply_impl R G U f x
+  (rfl)
 
 end Restriction
 

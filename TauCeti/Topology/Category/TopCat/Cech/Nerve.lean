@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.CechNerve
 public import Mathlib.Topology.Category.TopCat.Opens
+public import Mathlib.Topology.Connected.Clopen
 
 /-!
 # The Čech nerve of a family of open subsets
@@ -14,7 +15,8 @@ public import Mathlib.Topology.Category.TopCat.Opens
 The disjoint union of the members of a family of open subsets maps to the ambient space. This
 map is open, and it is an open quotient map when the family covers. Its Čech nerve packages the
 iterated intersections and all face and degeneracy maps in the topological category. Maps of
-covered spaces induce maps of the corresponding arrows.
+covered spaces induce maps of the corresponding arrows. A map from a connected space lifts to the
+disjoint union exactly when its image lies in one member of the family.
 -/
 
 public section
@@ -32,6 +34,29 @@ variable {X : TopCat.{u}} {ι : Type u} (U : ι → Opens X)
 /-- The map from the disjoint union of a family of open subsets to the ambient space. -/
 def openCoverMap : TopCat.of (Σ i, U i) ⟶ X :=
   TopCat.ofHom ⟨fun p => p.2.1, continuous_sigma fun _ => continuous_subtype_val⟩
+
+/-- The cover map sends a point of a member of the family to the same point of the ambient
+space. -/
+@[simp]
+theorem openCoverMap_apply (p : Σ i, U i) : openCoverMap U p = (p.2 : X) :=
+  (rfl)
+
+/-- A continuous map from a connected space lifts along the map from the disjoint union of a family
+of open subsets exactly when its image lies in one member of the family. -/
+theorem exists_openCoverMap_comp_eq_iff {Z : Type*} [TopologicalSpace Z] [ConnectedSpace Z]
+    (g : C(Z, X)) :
+    (∃ l : C(Z, Σ i, U i), (openCoverMap U).hom.comp l = g) ↔ ∃ i, Set.range g ⊆ U i := by
+  constructor
+  · rintro ⟨l, rfl⟩
+    obtain ⟨i, l', -, hl⟩ := l.continuous.exists_lift_sigma
+    refine ⟨i, ?_⟩
+    rintro _ ⟨z, rfl⟩
+    have hz : l z = ⟨i, l' z⟩ := congrFun hl z
+    rw [ContinuousMap.comp_apply, hz, openCoverMap_apply]
+    exact (l' z).2
+  · rintro ⟨i, hi⟩
+    exact ⟨⟨fun z ↦ ⟨i, ⟨g z, hi ⟨z, rfl⟩⟩⟩, continuous_sigmaMk.comp (g.continuous.subtype_mk _)⟩,
+      rfl⟩
 
 /-- The map of a family of opens, regarded as an arrow for its Čech nerve. -/
 abbrev openCoverArrow : Arrow TopCat.{u} :=

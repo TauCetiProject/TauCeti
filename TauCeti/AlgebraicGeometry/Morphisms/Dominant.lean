@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.FunctionField
+public import Mathlib.AlgebraicGeometry.Morphisms.Separated
 public import Mathlib.AlgebraicGeometry.Stalk
 
 /-!
@@ -22,7 +23,9 @@ morphism `Spec K(X) ⟶ X` followed by `f` is `Spec f^*` followed by the canonic
 
 This is how a dominant morphism of integral curves is compared with a homomorphism of function
 fields given by other means, for instance by explicit formulae: it suffices to compute the image of
-the generic point.
+the generic point. Into a separated target nothing more is needed: the generic point is dense in a
+reduced irreducible scheme, so a morphism into a separated scheme is determined by what it does to
+the generic point, and a dominant one by its pullback of rational functions.
 
 ## Main definitions
 
@@ -46,6 +49,11 @@ the generic point.
   section `s` over an open `U` to the germ of its pullback `f^* s` over `f⁻¹ U`.
 * `AlgebraicGeometry.Scheme.Hom.functionFieldMap_id` and
   `AlgebraicGeometry.Scheme.Hom.functionFieldMap_comp`: functoriality.
+* `AlgebraicGeometry.isDominant_fromSpecStalk_genericPoint`: the canonical morphism `Spec K(X) ⟶ X`
+  is dominant.
+* `AlgebraicGeometry.Scheme.Hom.ext_of_functionFieldMap_eq`: dominant morphisms from a reduced
+  irreducible scheme to a separated scheme agree as soon as their pullbacks of rational functions
+  agree.
 
 ## References
 
@@ -81,6 +89,14 @@ theorem isDominant_iff_genericPoint_eq {f : X ⟶ Y} :
   refine dense_iff_closure_eq.mpr (Set.eq_univ_of_univ_subset ?_)
   rw [← (genericPoint_spec Y).def]
   exact closure_mono (Set.singleton_subset_iff.mpr ⟨_, h⟩)
+
+/-- The canonical morphism `Spec K(X) ⟶ X` from the spectrum of the generic stalk of an
+irreducible scheme is dominant: its image is the generic point, which is dense. -/
+instance isDominant_fromSpecStalk_genericPoint : IsDominant (X.fromSpecStalk (genericPoint X)) := by
+  refine ⟨dense_iff_closure_eq.mpr (Set.eq_univ_of_univ_subset ?_)⟩
+  rw [← (genericPoint_spec X).def]
+  exact closure_mono (Set.singleton_subset_iff.mpr
+    ⟨IsLocalRing.closedPoint _, Scheme.fromSpecStalk_closedPoint⟩)
 
 namespace Scheme.Hom
 
@@ -165,6 +181,15 @@ theorem functionFieldMap_comp [IrreducibleSpace Z] (f : X ⟶ Y) (g : Y ⟶ Z) [
     (f ≫ g).functionFieldMap = g.functionFieldMap ≫ f.functionFieldMap := by
   rw [eq_comm, eq_functionFieldMap_iff, Spec.map_comp_assoc,
     SpecMap_functionFieldMap_fromSpecStalk, SpecMap_functionFieldMap_fromSpecStalk_assoc]
+
+/-- **A dominant morphism into a separated scheme is determined by its pullback of rational
+functions**: two dominant `S`-morphisms from a reduced irreducible scheme to an irreducible
+`S`-scheme separated over `S` with the same pullback `K(Y) ⟶ K(X)` are equal. -/
+theorem ext_of_functionFieldMap_eq (S : Scheme.{u}) [X.Over S] [Y.Over S] [IsReduced X]
+    [IsSeparated (Y ↘ S)] {f g : X ⟶ Y} [f.IsOver S] [g.IsOver S] [IsDominant f] [IsDominant g]
+    (h : f.functionFieldMap = g.functionFieldMap) : f = g := by
+  refine ext_of_isDominant_of_isSeparated' S (X.fromSpecStalk (genericPoint X)) ?_
+  rw [← SpecMap_functionFieldMap_fromSpecStalk, ← SpecMap_functionFieldMap_fromSpecStalk, h]
 
 end Scheme.Hom
 

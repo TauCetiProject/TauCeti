@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.LFunction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.SingularPointCount
+import TauCeti.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
 
 /-!
 # The Frobenius trace of a reduction, and the local polynomial
@@ -58,9 +59,8 @@ variable (R : Type*) [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
 below `1`. -/
 private theorem residue_eq_zero_iff_valuation_lt_one (r : R) :
     IsLocalRing.residue R r = 0 ↔ valuation K (maximalIdeal R) (algebraMap R K r) < 1 := by
-  rw [IsLocalRing.residue_eq_zero_iff, valuation_lt_one_iff_mem]
-  -- `(maximalIdeal R).asIdeal` is by definition `IsLocalRing.maximalIdeal R`
-  rfl
+  rw [IsLocalRing.residue_eq_zero_iff,
+    TauCeti.IsDiscreteValuationRing.valuation_algebraMap_lt_one_iff_mem]
 
 /-- **The reduction is singular exactly when it is bad.** -/
 theorem reduction_Δ_eq_zero_iff [IsMinimal R W] :

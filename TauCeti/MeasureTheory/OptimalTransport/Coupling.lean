@@ -103,6 +103,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set
+open scoped ENNReal
 
 namespace TauCeti
 
@@ -214,6 +215,20 @@ theorem integral_comp_snd (hπ : IsCoupling π μ ν) {f : Y → E}
     (hf : AEStronglyMeasurable f ν) : ∫ p, f p.2 ∂π = ∫ y, f y ∂ν := by
   rw [← hπ.measurePreserving_snd.map_eq] at hf ⊢
   exact (integral_map measurable_snd.aemeasurable hf).symm
+
+/-- A nonnegative a.e.-measurable function of the first coordinate has the same lower integral
+against a coupling as against its first marginal. -/
+theorem lintegral_comp_fst (hπ : IsCoupling π μ ν) {f : X → ℝ≥0∞}
+    (hf : AEMeasurable f μ) : ∫⁻ p, f p.1 ∂π = ∫⁻ x, f x ∂μ := by
+  rw [← hπ.measurePreserving_fst.map_eq] at hf ⊢
+  exact (lintegral_map' hf measurable_fst.aemeasurable).symm
+
+/-- A nonnegative a.e.-measurable function of the second coordinate has the same lower integral
+against a coupling as against its second marginal. -/
+theorem lintegral_comp_snd (hπ : IsCoupling π μ ν) {f : Y → ℝ≥0∞}
+    (hf : AEMeasurable f ν) : ∫⁻ p, f p.2 ∂π = ∫⁻ y, f y ∂ν := by
+  rw [← hπ.measurePreserving_snd.map_eq] at hf ⊢
+  exact (lintegral_map' hf measurable_snd.aemeasurable).symm
 
 /-- **Integrability from upper bounds and a nonnegative split sum.** Let `f` and `g` be bounded
 above almost everywhere by integrable functions of the two marginals. If `f x + g y ≥ 0` for

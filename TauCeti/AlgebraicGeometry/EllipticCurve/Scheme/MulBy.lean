@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Morphisms.Flat
+public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.MapsInfinity
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.FunctionField
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy
@@ -13,8 +13,10 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.OfWeierstrass
 public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Degree
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Addition.BaseChange
+import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy.Finite
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Integral
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Smooth
+import TauCeti.AlgebraicGeometry.Morphisms.Finite.FlatDegree
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Dominant
 import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.Smooth
 
@@ -42,7 +44,8 @@ identifies the extension of function fields induced by the scheme `[n]` with the
 smooth over the field. For a finite flat dominant morphism of integral schemes the rank at every
 point is the degree of the function-field extension
 (`AlgebraicGeometry.Scheme.Hom.finrank_eq_finrank_fieldRange_functionFieldMap`), so together with
-the finiteness of `[n]` these compute the rank of `[n]` over a field as `n²`.
+the finiteness of `[n]` these compute the rank of `[n]` over a field as `n²`: the fibre of `[n]`
+over every point is the spectrum of an algebra of dimension `n²` over its residue field.
 
 ## Main definitions
 
@@ -53,6 +56,7 @@ the finiteness of `[n]` these compute the rank of `[n]` over a field as `n²`.
 ## Main results
 
 * `WeierstrassCurve.projModelMulBy_eq`: it is multiplication by `n` on `toEllipticCurveGeom W`.
+* `WeierstrassCurve.isFinite_projModelMulBy`: for `n ≠ 0`, `[n]` is finite.
 * `WeierstrassCurve.projModelPointsEquiv_symm_projModelBaseChange_projModelMulBy`: `[n]` sends the
   point with values in a field `L` of a point `P` of `W` over `L` to that of `n • P`.
 * `WeierstrassCurve.isDominant_projModelMulBy`: over a field, for `n ≠ 0`, `[n]` is dominant.
@@ -62,6 +66,8 @@ the finiteness of `[n]` these compute the rank of `[n]` over a field as `n²`.
 * `WeierstrassCurve.flat_projModelMulBy`: over a field, for `n ≠ 0`, `[n]` is flat.
 * `WeierstrassCurve.finrank_fieldRange_mulByFunctionFieldPullback`: over a field, for `n ≠ 0`,
   `[K(E) : [n]^* K(E)] = n²`.
+* `WeierstrassCurve.finrank_projModelMulBy`: over a field, for `n ≠ 0`, `[n]` has rank `n²` at
+  every point.
 
 ## References
 
@@ -115,6 +121,14 @@ theorem projModelMulBy_eq (n : ℤ) :
       Category.comp_id]
   rw [← toEllipticCurveGeomOverIso_hom_left, ← Over.comp_left, h, Over.comp_left,
     toEllipticCurveGeomOverIso_hom_left, Iso.inv_hom_id_assoc, projModelMulBy]
+
+/-- Multiplication by a nonzero integer on the projective Weierstrass model is finite, being
+multiplication by `n` on the elliptic curve `toEllipticCurveGeom W`
+(`TauCeti.AlgebraicGeometry.EllipticCurveGeom.isFinite_mulBy_left`). -/
+instance isFinite_projModelMulBy (n : ℤ) [NeZero n] : IsFinite (W.projModelMulBy n) := by
+  have := (toEllipticCurveGeom W).isFinite_mulBy_left (NeZero.ne n)
+  rw [projModelMulBy_eq]
+  infer_instance
 
 end CommRing
 
@@ -303,6 +317,17 @@ theorem finrank_fieldRange_mulByFunctionFieldPullback (n : ℤ) [NeZero n] :
   -- both sides send `[n]^* f` to the image of `[n]^* f` under `projModelFunctionFieldEquiv`
   ext x
   simp [φ, ← projModelFunctionFieldEquiv_mulByFunctionFieldPullback, Subfield.algebraMap_ofSubfield]
+
+/-- **Multiplication by `n` has rank `n²`** (Katz–Mazur 2.3.1). Over a field, for `n ≠ 0`, the
+finite flat morphism `[n]` of the projective Weierstrass model has rank `n²` at every point `y`:
+the fibre of `[n]` over `y` is the spectrum of an algebra of dimension `n²` over the residue field
+of `y`. The rank of a finite flat dominant morphism of integral schemes is the degree of its
+function-field extension, here `n²` (`finrank_fieldRange_mulByFunctionFieldPullback`). -/
+@[simp]
+theorem finrank_projModelMulBy (n : ℤ) [NeZero n] (y : W.projModel) :
+    (W.projModelMulBy n).finrank y = n.natAbs ^ 2 := by
+  rw [(W.projModelMulBy n).finrank_eq_finrank_fieldRange_functionFieldMap y,
+    ← finrank_fieldRange_mulByFunctionFieldPullback W n, mulByFunctionFieldPullback]
 
 end GenericPoint
 
