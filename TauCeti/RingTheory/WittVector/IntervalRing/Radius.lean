@@ -66,17 +66,11 @@ private theorem gaussValuationAway_toIntervalLocalization_mk'
     gaussValuationAway p hv hϖ ρ hρ B₀
         (toIntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂ (IsLocalization.mk' A₀ x s)) =
       gaussValuation p hv ρ hρ.2 x * (gaussValuation p hv ρ hρ.2 s)⁻¹ := by
-  have hs : gaussValuation p hv ρ hρ.2 s ≠ 0 := by
-    obtain ⟨n, hn⟩ := s.property
-    rw [← hn, map_pow, gaussValuation_teichmuller]
-    exact pow_ne_zero _ (by simpa [map_eq_zero_iff _ hv.hom_inj] using hϖ)
-  apply mul_right_cancel₀ hs
-  rw [inv_mul_cancel_right₀ hs]
-  have h := congrArg (gaussValuationAway p hv hϖ ρ hρ B₀)
-    (congrArg (toIntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂)
-      (IsLocalization.mk'_spec A₀ x s))
-  simpa only [map_mul, AlgHom.commutes,
-    gaussValuationAway_algebraMap] using h
+  -- Normalize the coefficient homomorphism so the lift's unit proof has the expected type.
+  dsimp only [toIntervalLocalization, Algebra.ofId]
+  rw [IsLocalization.Away.liftAlgHom_apply, IsLocalization.Away.lift,
+    IsLocalization.lift_mk', map_mul, map_units_inv]
+  simp [IsUnit.coe_liftRight, gaussValuationAway_algebraMap]
 
 /-- For ordered radii, inverting `[ϖ]` preserves the radius norm in the interval norm. -/
 @[simp]
@@ -142,7 +136,7 @@ theorem isClosed_range_toIntervalRing (hρ : ρ₁ ≤ ρ₂) :
 
 /-- Every element of the uncompleted interval localisation becomes a coefficient after
 multiplication by a power of `p`. -/
-theorem exists_natCast_pow_mul_coe_eq_toIntervalRing (hρ : ρ₁ ≤ ρ₂) (x : B₀) :
+theorem exists_coe_mul_natCast_pow_eq_toIntervalRing (hρ : ρ₁ ≤ ρ₂) (x : B₀) :
     ∃ (n : ℕ) (a : A),
       (x : B) * (p : B) ^ n = toIntervalRing p hv hϖ hϖ' hρ₁ hρ₂ hρ a := by
   obtain ⟨⟨y, s⟩, hy⟩ := IsLocalization.surj
@@ -172,26 +166,34 @@ theorem exists_natCast_pow_mul_coe_eq_toIntervalRing (hρ : ρ₁ ≤ ρ₂) (x 
 /-- Adjoining `p⁻¹` to the image of the radius ring gives a dense subring of the interval
 ring. Equivalently, elements which become coefficients after multiplication by some power
 of `p` are dense. -/
-theorem dense_setOf_exists_natCast_pow_mul_eq_toIntervalRing (hρ : ρ₁ ≤ ρ₂) :
+theorem dense_setOf_exists_mul_natCast_pow_eq_toIntervalRing (hρ : ρ₁ ≤ ρ₂) :
     Dense {x : B | ∃ (n : ℕ) (a : A),
       x * (p : B) ^ n = toIntervalRing p hv hϖ hϖ' hρ₁ hρ₂ hρ a} := by
   apply Dense.mono _ (Completion.denseRange_coe (α := B₀))
   rintro _ ⟨x, rfl⟩
-  exact exists_natCast_pow_mul_coe_eq_toIntervalRing p hv hϖ hϖ' hρ₁ hρ₂ hρ x
+  exact exists_coe_mul_natCast_pow_eq_toIntervalRing p hv hϖ hϖ' hρ₁ hρ₂ hρ x
 
 open TauCeti.Huber in
 /-- Evaluation at `[ϖ]^n/p` gives a unique continuous map with dense image from the one-variable
 restricted series ring over the radius ring to the interval ring, whenever the variable
-has norm at most one at both endpoints. -/
-theorem existsUnique_continuous_denseRange_restrictedSeries_toIntervalRing (hρ : ρ₁ ≤ ρ₂)
+has norm at most one at both endpoints. Uniqueness requires only continuity and the
+coefficient and variable equations. -/
+theorem exists_continuous_denseRange_restrictedSeries_toIntervalRing (hρ : ρ₁ ≤ ρ₂)
     (n : ℕ) (hn : v (algebraMap O K ϖ) ^ n ≤ ρ₁) :
-    ∃! ψ : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set A))
+    ∃ ψ : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set A))
         isWeightFamily_one_weight →+* B,
       Continuous ψ ∧ DenseRange ψ ∧
       (∀ a, ψ (weightedC _ isWeightFamily_one_weight a) =
         toIntervalRing p hv hϖ hϖ' hρ₁ hρ₂ hρ a) ∧
       ψ (weightedX _ isWeightFamily_one_weight 0) * (p : B) =
-        algebraMap (𝕎 O) B (teichmuller p ϖ ^ n) := by
+        algebraMap (𝕎 O) B (teichmuller p ϖ ^ n) ∧
+      ∀ g : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set A))
+          isWeightFamily_one_weight →+* B,
+        Continuous g →
+        (∀ a, g (weightedC _ isWeightFamily_one_weight a) =
+          toIntervalRing p hv hϖ hϖ' hρ₁ hρ₂ hρ a) →
+        g (weightedX _ isWeightFamily_one_weight 0) * (p : B) =
+          algebraMap (𝕎 O) B (teichmuller p ϖ ^ n) → g = ψ := by
   let f := toIntervalRing p hv hϖ hϖ' hρ₁ hρ₂ hρ
   obtain ⟨z, hz, hzp⟩ := exists_norm_le_one_algebraMap_eq_mul_intervalRing p hv hϖ hϖ' hρ₁ hρ₂
     (y := (p : 𝕎 O)) (x := teichmuller p ϖ ^ n)
@@ -206,9 +208,9 @@ theorem existsUnique_continuous_denseRange_restrictedSeries_toIntervalRing (hρ 
       (fun _ ↦ hz'))
   have hzp' : z * (p : B) = algebraMap (𝕎 O) B (teichmuller p ϖ ^ n) := by
     simpa using hzp.symm
-  refine ⟨ψ, ⟨hψ, ?_, hC, (congrArg (fun x : B ↦ x * (p : B)) (hX 0)).trans hzp'⟩, ?_⟩
+  refine ⟨ψ, hψ, ?_, hC, (congrArg (fun x : B ↦ x * (p : B)) (hX 0)).trans hzp', ?_⟩
   · -- The image contains every coefficient divided by a power of `p`.
-    apply Dense.mono _ (dense_setOf_exists_natCast_pow_mul_eq_toIntervalRing
+    apply Dense.mono _ (dense_setOf_exists_mul_natCast_pow_eq_toIntervalRing
       p hv hϖ hϖ' hρ₁ hρ₂ hρ)
     rintro x ⟨m, a, ha⟩
     have hu : IsUnit (algebraMap (𝕎 O) A (teichmuller p ϖ ^ n)) := by
@@ -231,7 +233,7 @@ theorem existsUnique_continuous_denseRange_restrictedSeries_toIntervalRing (hρ 
       rw [mul_assoc, ← mul_pow]
       simp only [u, hu.val_inv_mul, one_pow, mul_one]
     simpa only [map_mul, map_pow] using congrArg f hc
-  · rintro g ⟨hg, -, hgC, hgX⟩
+  · intro g hg hgC hgX
     apply huniq g
     refine ⟨hg, hgC, fun i ↦ ?_⟩
     rw [Subsingleton.elim i 0]
