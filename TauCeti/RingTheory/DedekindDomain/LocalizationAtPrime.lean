@@ -50,6 +50,8 @@ valuation ring — is the `v`-adic valuation itself. Without that identification
   a `v`-adic uniformiser of `O` is irreducible in `Oᵥ`;
 * `IsDedekindDomain.HeightOneSpectrum.irreducible_algebraMap_localizationAtPrime_of_prime`:
   so is a prime element of `O` lying in `v`;
+* `IsDedekindDomain.HeightOneSpectrum.irreducible_natCast_localizationAtPrime`:
+  in particular, a prime number lying in a height-one prime `v` of `ℤ` is irreducible in `ℤ_(v)`;
 * `IsDedekindDomain.HeightOneSpectrum.valuation_maximalIdeal_localizationAtPrime`:
   the valuation of `Oᵥ` as a discrete valuation ring is the `v`-adic valuation.
 -/
@@ -162,6 +164,13 @@ theorem irreducible_algebraMap_localizationAtPrime_of_prime {ϖ : O} (hϖ : Prim
     ((Ideal.span_singleton_prime hϖ.ne_zero).2 hϖ).isMaximal (by simpa using hϖ.ne_zero)
   exact v.irreducible_algebraMap_localizationAtPrime (v.intValuation_singleton hϖ.ne_zero
     (hmax.eq_of_le v.isPrime.ne_top ((Ideal.span_singleton_le_iff_mem _).2 hv)).symm)
+
+/-- **A prime number lying in a height-one prime `v` of `ℤ` is irreducible in the localisation
+at `v`**, so it is a uniformiser of `ℤ_(v)`. -/
+theorem irreducible_natCast_localizationAtPrime (v : HeightOneSpectrum ℤ) {p : ℕ} (hp : p.Prime)
+    (hv : (p : ℤ) ∈ v.asIdeal) : Irreducible (p : Localization.AtPrime v.asIdeal) := by
+  simpa using v.irreducible_algebraMap_localizationAtPrime_of_prime
+    (Nat.prime_iff_prime_int.mp hp) hv
 
 /-- **The valuation of the discrete valuation ring `Oᵥ` is the `v`-adic valuation.** Mathlib's
 theory of minimal Weierstrass equations, like every other statement it makes over a discrete
