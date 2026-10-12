@@ -9,6 +9,7 @@ public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.DecompositionRestri
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.ArtinMap
 public import TauCeti.NumberTheory.NumberField.Ideal.ArtinMap
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.DecompositionGroup
+import TauCeti.Algebra.Group.Subgroup.Ker
 import TauCeti.NumberTheory.ClassFieldTheory.Local.Unramified
 import TauCeti.NumberTheory.NumberField.LocalGlobal.Frobenius
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.RamificationIndex
@@ -197,14 +198,17 @@ theorem range_localArtinAt :
   have hof : Function.Surjective
       (Abelianization.of (G := Gal(w.adicCompletion L/v.adicCompletion K))) :=
     QuotientGroup.mk_surjective
-  rw [h, MonoidHom.range_comp, MonoidHom.range_eq_top.2 (QuotientGroup.mk'_surjective _),
-    Subgroup.map_top, MonoidHom.range_comp, MonoidHom.range_eq_top.2 (normResidue _ _).surjective,
-    Subgroup.map_top, ← Subgroup.map_top, ← MonoidHom.range_eq_top.2 hof, ← MonoidHom.range_comp,
-    show (Abelianization.map φ).comp Abelianization.of = Abelianization.of.comp φ from
-      MonoidHom.ext (Abelianization.map_of φ),
-    MonoidHom.range_comp, MonoidHom.range_comp,
-    MonoidHom.range_eq_top.2 (HeightOneSpectrum.decompositionEquiv v w).symm.surjective,
-    Subgroup.map_top, Subgroup.range_subtype]
+  -- On `Gal(L_w/K_v)`, abelianizing after `φ` is the same as abelianizing before it.
+  have hmap : (Abelianization.map φ).comp Abelianization.of = Abelianization.of.comp φ :=
+    MonoidHom.ext (Abelianization.map_of φ)
+  calc (localArtinAt K L v).range = (Abelianization.map φ).range := by
+        rw [h, MonoidHom.range_comp_of_surjective _ _ (QuotientGroup.mk'_surjective _),
+          MonoidHom.range_comp_of_surjective _ _ (normResidue _ _).surjective]
+    _ = (Abelianization.of.comp φ).range := by
+        rw [← hmap, MonoidHom.range_comp_of_surjective _ _ hof]
+    _ = (MulAction.stabilizer Gal(L/K) w.asIdeal).map Abelianization.of := by
+        rw [MonoidHom.range_comp, MonoidHom.range_comp_of_surjective _ _
+          (HeightOneSpectrum.decompositionEquiv v w).symm.surjective, Subgroup.range_subtype]
 
 /-- **For an abelian extension, the kernel of the local Artin symbol is the local norm group.**
 If `Gal(L/K)` is commutative and `w` is a finite place of `L` above `v`, then `x ∈ K_vˣ` has
