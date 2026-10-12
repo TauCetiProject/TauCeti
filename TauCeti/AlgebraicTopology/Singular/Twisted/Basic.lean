@@ -49,7 +49,7 @@ twisted by the system pulled back along `f`.
   identity and composition laws and their naturality in the coefficient system.
 
 Families of maps that partition the singular simplices also decompose twisted chains
-in each degree (`isColimitCofanTwistedChainComplexX_of_bijective`). This criterion applies to
+in each degree (`isColimitCofanTwistedChainComplexXOfBijective`). This criterion applies to
 disjoint unions and uses Mathlib's `sigmaSigmaIso` and `Sigma.whiskerEquiv` to reindex the
 coefficient fibres.
 
@@ -837,7 +837,7 @@ private lemma ι_coproductTwistedChainsIso_hom (i : ι) :
 /-- If every singular `n`-simplex of `Y` comes from exactly one member of a family of maps,
 then twisted `n`-chains of `Y` are the coproduct of the twisted `n`-chains of that family,
 with coefficient systems pulled back along those maps. -/
-def isColimitCofanTwistedChainComplexX_of_bijective :
+def isColimitCofanTwistedChainComplexXOfBijective :
     IsColimit (Cofan.mk (L.twistedChainComplex.X n)
       (fun i ↦ (twistedChainComplexMap (f i) L).f n) :
       Cofan fun i ↦ (((pullback (f i).hom).obj L).twistedChainComplex).X n) :=

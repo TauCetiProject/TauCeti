@@ -54,7 +54,7 @@ def isColimitCofanTwistedChainComplex :
   intro n
   exact (isColimitMapCoconeCofanMkEquiv
     (HomologicalComplex.eval (ModuleCat.{max v w} R) (ComplexShape.down ℕ) n) _ _).symm
-      (isColimitCofanTwistedChainComplexX_of_bijective X (sigmaι X) L n
+      (isColimitCofanTwistedChainComplexXOfBijective X (sigmaι X) L n
         (toSSet_map_sigmaι_app_bijective X (Opposite.op ⦋n⦌)))
 
 end TauCeti.LocalCoefficientSystem
