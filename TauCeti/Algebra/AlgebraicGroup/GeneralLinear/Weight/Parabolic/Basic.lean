@@ -234,7 +234,7 @@ theorem weightParabolicInclusion_def (w : Fin N → ℤ) :
     weightParabolicInclusion R w =
       CommHopfAlgCat.quotientSpecι (coordinateHopfAlgebra R N)
           (weightParabolicDefiningHopfIdeal R w) ≫
-        (eqToIso (groupScheme_def R N).symm).hom := by
+        eqToHom (groupScheme_def R N).symm := by
   rw [weightParabolicInclusion, hopfIdealInclusion_def]
 
 /-- The coordinate morphism recovered from the weight-parabolic inclusion is the quotient
