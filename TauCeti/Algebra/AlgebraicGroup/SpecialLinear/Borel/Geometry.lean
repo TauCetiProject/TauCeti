@@ -204,9 +204,10 @@ private theorem coordinateToPresentation_comp_presentationToCoordinate :
     have hunit : MultiplicativeGroup.unitOfPoint
         (Polynomial.CAlgHom : LaurentPolynomial R →ₐ[R] presentationRing R) =
           presentationUnit R := by
-      ext
-      simp only [MultiplicativeGroup.unitOfPoint_val, Polynomial.CAlgHom_apply,
-        presentationUnit_val]
+      rw [← MultiplicativeGroup.map_genericUnit, presentationUnit]
+      -- Both sides are now `Units.map` of the generic unit; `Polynomial.CAlgHom` coerces to the
+      -- monoid hom `Polynomial.C.toMonoidHom` by definition.
+      rfl
     simpa only [presentationCoefficientToCoordinate,
       MultiplicativeGroup.pointsMulEquiv_symm_apply, WithConv.ofConv_toConv,
       MultiplicativeGroup.pointEquiv_apply, MultiplicativeGroup.unitOfPoint_point,
