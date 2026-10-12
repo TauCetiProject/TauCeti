@@ -86,6 +86,14 @@ valuations need not differ from `η_r`.
 * `TauCeti.ValuationSpectrum.gaussPoint_specializes_gaussPointAbove` and
   `TauCeti.ValuationSpectrum.gaussPoint_specializes_gaussPointBelow`: `η_{r⁺}` and `η_{r⁻}` lie in
   the closure of `η_r`.
+* `TauCeti.ValuationSpectrum.closedDiscGaussValuationAbove_weightedC_mul_weightedX_pow_le` and
+  its `Below` analogue: every monomial `aₙ Tⁿ` of a series is at most the series, just above and
+  just below `r`.
+* `TauCeti.ValuationSpectrum.closedDiscGaussValuationAbove_weightedX_add_weightedC` and
+  `TauCeti.ValuationSpectrum.closedDiscGaussValuationBelow_weightedX_add_weightedC`: the shifted
+  variable `T + c` has the value of `T` just above `r` when `‖c‖ ≤ r`, and just below `r` when
+  `‖c‖ < r`. With the monomial bounds these make the two valuations invariant under translation
+  (`TauCeti.ValuationSpectrum.closedDiscGaussValuationAbove_taylorHom`).
 
 ## References
 
@@ -147,6 +155,68 @@ private theorem toRestrictedSubring_weightedX (hr : |r| ≤ 1) :
   apply Subtype.ext
   rw [toRestrictedSubring, RingHom.comp_apply, Subring.coe_inclusion]
   exact coe_weightedRestrictedSubringOneEquiv_weightedX
+
+/-- The weighted coefficients of `f ∈ R⟨T⟩` are its coefficients as a restricted series. -/
+private theorem coeff_toRestrictedSubring (hr : |r| ≤ 1)
+    (f : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight)
+    (n : ℕ) :
+    (toRestrictedSubring hr f : PowerSeries R).coeff n =
+      MvPowerSeries.coeff (Finsupp.single 0 n) (f : MvPowerSeries (Fin 1) R) := by
+  simp only [coe_toRestrictedSubring, PowerSeries.coeff_rename,
+    Subsingleton.elim (finOneEquiv.symm ()) 0]
+
+private theorem coe_toRestrictedSubring_ne_zero (hr : |r| ≤ 1)
+    {f : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight}
+    (hf : f ≠ 0) : (toRestrictedSubring hr f : PowerSeries R) ≠ 0 := by
+  rw [Ne, ZeroMemClass.coe_eq_zero, map_eq_zero_iff _ (toRestrictedSubring_injective hr)]
+  exact hf
+
+private theorem coe_toRestrictedSubring_one (hr : |r| ≤ 1) :
+    ((toRestrictedSubring hr 1 :
+      PowerSeries.IsRestricted.subring (R := R) r) : PowerSeries R) = PowerSeries.monomial 0 1 := by
+  rw [map_one, OneMemClass.coe_one, PowerSeries.monomial_zero_eq_C_apply, map_one]
+
+private theorem coe_toRestrictedSubring_weightedX (hr : |r| ≤ 1) :
+    ((toRestrictedSubring hr
+      (weightedX (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight 0) :
+      PowerSeries.IsRestricted.subring (R := R) r) : PowerSeries R) =
+      PowerSeries.monomial 1 1 := by
+  rw [toRestrictedSubring_weightedX]
+  exact PowerSeries.X_eq
+
+private theorem coe_toRestrictedSubring_weightedC (hr : |r| ≤ 1) (a : R) :
+    ((toRestrictedSubring hr (weightedC (fun _ : Fin 1 ↦ ({1} : Set R))
+      isWeightFamily_one_weight a) : PowerSeries.IsRestricted.subring (R := R) r) :
+      PowerSeries R) = PowerSeries.monomial 0 a := by
+  rw [toRestrictedSubring_weightedC]
+  exact (PowerSeries.monomial_zero_eq_C_apply a).symm
+
+private theorem coe_toRestrictedSubring_weightedC_mul_weightedX_pow (hr : |r| ≤ 1) (a : R)
+    (n : ℕ) :
+    ((toRestrictedSubring hr
+      (weightedC (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight a *
+        weightedX _ isWeightFamily_one_weight 0 ^ n) :
+      PowerSeries.IsRestricted.subring (R := R) r) : PowerSeries R) =
+      PowerSeries.monomial n a := by
+  rw [map_mul, map_pow, Subring.coe_mul, Subring.coe_pow, coe_toRestrictedSubring_weightedC,
+    coe_toRestrictedSubring_weightedX, PowerSeries.monomial_pow, PowerSeries.monomial_mul_monomial]
+  simp
+
+private theorem coe_toRestrictedSubring_weightedX_add_weightedC (hr : |r| ≤ 1) (c : R) :
+    ((toRestrictedSubring hr
+      (weightedX (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight 0 +
+        weightedC _ isWeightFamily_one_weight c) :
+      PowerSeries.IsRestricted.subring (R := R) r) : PowerSeries R) =
+      PowerSeries.X - PowerSeries.C (-c) := by
+  rw [map_add, Subring.coe_add, toRestrictedSubring_weightedX, toRestrictedSubring_weightedC,
+    map_neg, sub_neg_eq_add]
+
+private theorem coe_toRestrictedSubring_weightedX' (hr : |r| ≤ 1) :
+    ((toRestrictedSubring hr
+      (weightedX (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight 0) :
+      PowerSeries.IsRestricted.subring (R := R) r) : PowerSeries R) =
+      PowerSeries.X - PowerSeries.C 0 := by
+  rw [toRestrictedSubring_weightedX, map_zero, sub_zero]
 
 variable [NormMulClass R] [NormOneClass R]
 
@@ -315,6 +385,104 @@ theorem isContinuous_closedDiscGaussValuationBelow (hr₀ : 0 < r) (hr₁ : r �
   (isContinuous_closedDiscGaussValuation hr₀ hr₁).of_lt_imp_lt
     (fun _ hb ↦ by simpa using hb) fun _ _ ↦ closedDiscGaussValuationBelow_lt_of_lt hr₀ hr₁
 
+/-! ### Monomials and the shifted variable -/
+
+/-- **Every monomial of `f` is at most `f` just above `r`.** A monomial `aₙ Tⁿ` of `f` has Gauss
+norm at most that of `f`, and if the two agree then `n` is at most the distinguished degree of
+`f`, the last degree in which `f` attains its Gauss norm. -/
+theorem closedDiscGaussValuationAbove_weightedC_mul_weightedX_pow_le (hr₀ : 0 < r) (hr₁ : r ≤ 1)
+    (f : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight)
+    (n : ℕ) :
+    closedDiscGaussValuationAbove hr₀ hr₁
+        (weightedC _ isWeightFamily_one_weight
+            (MvPowerSeries.coeff (Finsupp.single 0 n) (f : MvPowerSeries (Fin 1) R)) *
+          weightedX _ isWeightFamily_one_weight 0 ^ n) ≤
+      closedDiscGaussValuationAbove hr₀ hr₁ f := by
+  have hr : |r| ≤ 1 := (abs_of_pos hr₀).trans_le hr₁
+  -- the monomial `aₙ Tⁿ` of `f` is the monomial of degree `n` of the restricted series `f`
+  rw [closedDiscGaussValuationAbove, Valuation.comap_apply, Valuation.comap_apply]
+  refine (congrArg (TauCeti.PowerSeries.gaussValuationAbove hr₀) (Subtype.ext ?_)).trans_le
+    (TauCeti.PowerSeries.gaussValuationAbove_monomial_coeff_le hr₀
+      (f := toRestrictedSubring hr f) n)
+  rw [coe_toRestrictedSubring_weightedC_mul_weightedX_pow, coeff_toRestrictedSubring]
+
+/-- **Every monomial of `f` is at most `f` just below `r`.** A monomial `aₙ Tⁿ` of `f` has Gauss
+norm at most that of `f`, and if the two agree then `n` is at least the lowest dominant degree of
+`f`, the first degree in which `f` attains its Gauss norm. -/
+theorem closedDiscGaussValuationBelow_weightedC_mul_weightedX_pow_le (hr₀ : 0 < r) (hr₁ : r ≤ 1)
+    (f : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight)
+    (n : ℕ) :
+    closedDiscGaussValuationBelow hr₀ hr₁
+        (weightedC _ isWeightFamily_one_weight
+            (MvPowerSeries.coeff (Finsupp.single 0 n) (f : MvPowerSeries (Fin 1) R)) *
+          weightedX _ isWeightFamily_one_weight 0 ^ n) ≤
+      closedDiscGaussValuationBelow hr₀ hr₁ f := by
+  have hr : |r| ≤ 1 := (abs_of_pos hr₀).trans_le hr₁
+  -- the monomial `aₙ Tⁿ` of `f` is the monomial of degree `n` of the restricted series `f`
+  rw [closedDiscGaussValuationBelow, Valuation.comap_apply, Valuation.comap_apply]
+  refine (congrArg (TauCeti.PowerSeries.gaussValuationBelow hr₀) (Subtype.ext ?_)).trans_le
+    (TauCeti.PowerSeries.gaussValuationBelow_monomial_coeff_le hr₀
+      (f := toRestrictedSubring hr f) n)
+  rw [coe_toRestrictedSubring_weightedC_mul_weightedX_pow, coeff_toRestrictedSubring]
+
+/-- **Just above `r`, the shifted variable `T + c` with `‖c‖ ≤ r` has the value of `T`**: both
+have Gauss norm `r`, attained last in degree `1`. -/
+theorem closedDiscGaussValuationAbove_weightedX_add_weightedC (hr₀ : 0 < r) (hr₁ : r ≤ 1)
+    {c : R} (hc : ‖c‖ ≤ r) :
+    closedDiscGaussValuationAbove hr₀ hr₁
+        (weightedX (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight 0 +
+          weightedC _ isWeightFamily_one_weight c) =
+      closedDiscGaussValuationAbove hr₀ hr₁
+        (weightedX (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight 0) := by
+  have hr : |r| ≤ 1 := (abs_of_pos hr₀).trans_le hr₁
+  have h₁ := TauCeti.PowerSeries.isDistinguished_X_sub_C hr₀ (b := -c) (by rwa [norm_neg])
+  have h₂ := TauCeti.PowerSeries.isDistinguished_X_sub_C hr₀ (b := (0 : R)) (by simpa using hr₀.le)
+  rw [← coe_toRestrictedSubring_weightedX_add_weightedC hr] at h₁
+  rw [← coe_toRestrictedSubring_weightedX' hr] at h₂
+  -- both Gauss norms are the norm `r` of the leading coefficient in degree `1`
+  have heq : TauCeti.PowerSeries.gaussValuation hr₀ (toRestrictedSubring hr
+      (weightedX _ isWeightFamily_one_weight 0 + weightedC _ isWeightFamily_one_weight c)) =
+      TauCeti.PowerSeries.gaussValuation hr₀ (toRestrictedSubring hr
+        (weightedX (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight 0)) := by
+    rw [← NNReal.coe_inj, TauCeti.PowerSeries.coe_gaussValuation,
+      TauCeti.PowerSeries.coe_gaussValuation, ← h₁.norm_coeff_mul_pow_eq,
+      ← h₂.norm_coeff_mul_pow_eq, coe_toRestrictedSubring_weightedX_add_weightedC,
+      coe_toRestrictedSubring_weightedX']
+    simp
+  simp only [closedDiscGaussValuationAbove, Valuation.comap_apply]
+  exact le_antisymm
+    ((TauCeti.PowerSeries.gaussValuationAbove_le_iff hr₀ h₁ h₂).mpr (Or.inr ⟨heq, le_rfl⟩))
+    ((TauCeti.PowerSeries.gaussValuationAbove_le_iff hr₀ h₂ h₁).mpr (Or.inr ⟨heq.symm, le_rfl⟩))
+
+/-- **Just below `r`, the shifted variable `T + c` with `‖c‖ < r` has the value of `T`**: both
+have Gauss norm `r`, attained first in degree `1`. -/
+theorem closedDiscGaussValuationBelow_weightedX_add_weightedC (hr₀ : 0 < r) (hr₁ : r ≤ 1)
+    {c : R} (hc : ‖c‖ < r) :
+    closedDiscGaussValuationBelow hr₀ hr₁
+        (weightedX (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight 0 +
+          weightedC _ isWeightFamily_one_weight c) =
+      closedDiscGaussValuationBelow hr₀ hr₁
+        (weightedX (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight 0) := by
+  have hr : |r| ≤ 1 := (abs_of_pos hr₀).trans_le hr₁
+  have h₁ := TauCeti.PowerSeries.isLowestDominant_X_sub_C hr₀ (b := -c) (by rwa [norm_neg])
+  have h₂ := TauCeti.PowerSeries.isLowestDominant_X_sub_C hr₀ (b := (0 : R)) (by simpa using hr₀)
+  rw [← coe_toRestrictedSubring_weightedX_add_weightedC hr] at h₁
+  rw [← coe_toRestrictedSubring_weightedX' hr] at h₂
+  -- both Gauss norms are the norm `r` of the leading coefficient in degree `1`
+  have heq : TauCeti.PowerSeries.gaussValuation hr₀ (toRestrictedSubring hr
+      (weightedX _ isWeightFamily_one_weight 0 + weightedC _ isWeightFamily_one_weight c)) =
+      TauCeti.PowerSeries.gaussValuation hr₀ (toRestrictedSubring hr
+        (weightedX (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight 0)) := by
+    rw [← NNReal.coe_inj, TauCeti.PowerSeries.coe_gaussValuation,
+      TauCeti.PowerSeries.coe_gaussValuation, ← h₁.norm_coeff_mul_pow_eq,
+      ← h₂.norm_coeff_mul_pow_eq, coe_toRestrictedSubring_weightedX_add_weightedC,
+      coe_toRestrictedSubring_weightedX']
+    simp
+  simp only [closedDiscGaussValuationBelow, Valuation.comap_apply]
+  exact le_antisymm
+    ((TauCeti.PowerSeries.gaussValuationBelow_le_iff hr₀ h₁ h₂).mpr (Or.inr ⟨heq, le_rfl⟩))
+    ((TauCeti.PowerSeries.gaussValuationBelow_le_iff hr₀ h₂ h₁).mpr (Or.inr ⟨heq.symm, le_rfl⟩))
+
 end NormedRing
 
 section NontriviallyNormedField
@@ -407,41 +575,6 @@ theorem gaussPoint_inj {s : ℝ} (hr₀ : 0 < r) (hr₁ : r ≤ 1) (hs₀ : 0 < 
   exact (key.mp hrm).not_gt hcs
 
 /-! ### The points just above and just below a Gauss point -/
-
-/-- The weighted coefficients of `f ∈ K⟨T⟩` are its coefficients as a restricted series. -/
-private theorem coeff_toRestrictedSubring (hr : |r| ≤ 1)
-    (f : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight)
-    (n : ℕ) :
-    (toRestrictedSubring hr f : PowerSeries K).coeff n =
-      MvPowerSeries.coeff (Finsupp.single 0 n) (f : MvPowerSeries (Fin 1) K) := by
-  simp only [coe_toRestrictedSubring, PowerSeries.coeff_rename,
-    Subsingleton.elim (finOneEquiv.symm ()) 0]
-
-private theorem coe_toRestrictedSubring_ne_zero (hr : |r| ≤ 1)
-    {f : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight}
-    (hf : f ≠ 0) : (toRestrictedSubring hr f : PowerSeries K) ≠ 0 := by
-  rw [Ne, ZeroMemClass.coe_eq_zero, map_eq_zero_iff _ (toRestrictedSubring_injective hr)]
-  exact hf
-
-private theorem coe_toRestrictedSubring_one (hr : |r| ≤ 1) :
-    ((toRestrictedSubring hr 1 :
-      PowerSeries.IsRestricted.subring (R := K) r) : PowerSeries K) = PowerSeries.monomial 0 1 := by
-  rw [map_one, OneMemClass.coe_one, PowerSeries.monomial_zero_eq_C_apply, map_one]
-
-private theorem coe_toRestrictedSubring_weightedX (hr : |r| ≤ 1) :
-    ((toRestrictedSubring hr
-      (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0) :
-      PowerSeries.IsRestricted.subring (R := K) r) : PowerSeries K) =
-      PowerSeries.monomial 1 1 := by
-  rw [toRestrictedSubring_weightedX]
-  exact PowerSeries.X_eq
-
-private theorem coe_toRestrictedSubring_weightedC (hr : |r| ≤ 1) (a : K) :
-    ((toRestrictedSubring hr (weightedC (fun _ : Fin 1 ↦ ({1} : Set K))
-      isWeightFamily_one_weight a) : PowerSeries.IsRestricted.subring (R := K) r) :
-      PowerSeries K) = PowerSeries.monomial 0 a := by
-  rw [toRestrictedSubring_weightedC]
-  exact (PowerSeries.monomial_zero_eq_C_apply a).symm
 
 /-- **The Gauss valuation just above `r < 1` is at most one on power-bounded elements** of
 `K⟨T⟩`: a power-bounded series of Gauss norm `1` at radius `r < 1` attains that norm only in
