@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.GraphFlattening
 public import TauCeti.Analysis.Sobolev.Trace.Kernel
 public import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
-import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # Sobolev functions above the graph of a `C¹` function, and their trace
@@ -22,26 +22,24 @@ with `C¹` (or Lipschitz) boundary: near each boundary point such a domain is, a
 the region above the graph of a function. The half-space `TauCeti.normalHalfSpace 0` is the case
 `φ = 0`.
 
-The **shear** `TauCeti.normalShear φ : (t, y) ↦ (t + φ y, y)` is a measure-preserving homeomorphism
-of `ℝ × E` carrying the half-space `{0 < t}` onto the region above the graph, and its inverse is
-the shear by `-φ`. If `φ` is of class `C¹` with `‖fderiv ℝ φ‖ ≤ L`, the shear is `C¹` with
-derivative of norm at most `1 + L`, so by `TauCeti.W1p.compMeasurePreservingL` precomposition
-with the two shears is a pair of mutually inverse bounded operators between `W^{1,p}` of the
-region and `W^{1,p}` of the half-space (`TauCeti.W1p.normalEpigraphEquivL`), and for `p < ∞`
-both preserve zero boundary values.
+The graph-flattening homeomorphism `TauCeti.graphFlattening φ : (t, y) ↦ (t - φ y, y)` is
+measure-preserving and carries the region above the graph onto the half-space `{0 < t}`; its
+inverse adds `φ y` to the normal coordinate. If `φ` is of class `C¹` with `‖fderiv ℝ φ‖ ≤ L`,
+both maps are `C¹` with derivative of norm at most `1 + L`, so by
+`TauCeti.W1p.compMeasurePreservingL` precomposition with them is a pair of mutually inverse
+bounded operators between `W^{1,p}` of the region and `W^{1,p}` of the half-space
+(`TauCeti.W1p.normalEpigraphEquivL`), and for `p < ∞` both preserve zero boundary values.
 
 Composing with the half-space trace `TauCeti.W1p.halfSpaceTrace` gives the trace on the graph,
 `TauCeti.W1p.normalEpigraphTrace φ : H¹(normalEpigraph φ) →L[ℝ] L²(E)`, a bounded operator. The
-graph is parametrized by `y ↦ (φ y, y)`, the image under the shear of the boundary point `(0, y)`
-of the half-space, and the trace is measured by Lebesgue measure on `E` rather than by surface
-measure on the graph. Its kernel is exactly `H¹₀` of the region
+graph is parametrized by `y ↦ (φ y, y)`, the image under the inverse flattening of the boundary
+point `(0, y)` of the half-space, and the trace is measured by Lebesgue measure on `E` rather
+than by surface measure on the graph. Its kernel is exactly `H¹₀` of the region
 (`TauCeti.W1p.ker_normalEpigraphTrace`), the characterization of the homogeneous Dirichlet
 condition by the trace.
 
 ## Main declarations
 
-* `TauCeti.normalShear`, `TauCeti.measurePreserving_normalShear`,
-  `TauCeti.norm_fderiv_normalShear_le`: the shear.
 * `TauCeti.normalEpigraph`: the region above the graph.
 * `TauCeti.W1p.normalEpigraphEquivL`: `W^{1,p}` of the region is isomorphic to `W^{1,p}` of the
   half-space, with `TauCeti.W1p.normalEpigraphEquivL_mem_w1p0Submodule_iff`.
@@ -67,83 +65,6 @@ open scoped ENNReal
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
-/-! ### The shear -/
-
-/-- The **shear** `(t, y) ↦ (t + φ y, y)` of the Euclidean product `ℝ × E` by a continuous
-function `φ : E → ℝ`. It carries the half-space `{0 < t}` onto the region above the graph of
-`φ`. -/
-def normalShear (φ : C(E, ℝ)) : WithLp 2 (ℝ × E) ≃ₜ WithLp 2 (ℝ × E) where
-  toFun x := WithLp.toLp 2 (x.fst + φ x.snd, x.snd)
-  invFun x := WithLp.toLp 2 (x.fst - φ x.snd, x.snd)
-  left_inv x := (WithLp.ext_iff 2).2 (by simp; rfl)
-  right_inv x := (WithLp.ext_iff 2).2 (by simp; rfl)
-  continuous_toFun := by fun_prop
-  continuous_invFun := by fun_prop
-
-omit [InnerProductSpace ℝ E] in
-@[simp]
-theorem normalShear_apply (φ : C(E, ℝ)) (x : WithLp 2 (ℝ × E)) :
-    normalShear φ x = WithLp.toLp 2 (x.fst + φ x.snd, x.snd) :=
-  (rfl)
-
-omit [InnerProductSpace ℝ E] in
-/-- The inverse of the shear by `φ` is the shear by `-φ`. -/
-@[simp]
-theorem normalShear_symm (φ : C(E, ℝ)) : (normalShear φ).symm = normalShear (-φ) := by
-  ext x : 1
-  exact (WithLp.ext_iff 2).2 (by simp [normalShear, sub_eq_add_neg])
-
-/-- The embedding `t ↦ (t, 0)` of the normal line, of norm at most one. -/
-private def normalLineL (E : Type*) [NormedAddCommGroup E] [InnerProductSpace ℝ E] :
-    ℝ →L[ℝ] WithLp 2 (ℝ × E) :=
-  (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.toContinuousLinearMap.comp
-    (ContinuousLinearMap.inl ℝ ℝ E)
-
-private theorem norm_normalLineL_le : ‖normalLineL E‖ ≤ 1 :=
-  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun t => by simp [normalLineL]
-
-private theorem normalShear_eq_add (φ : C(E, ℝ)) :
-    ⇑(normalShear φ) = fun x => x + normalLineL E (φ (WithLp.sndL 2 ℝ ℝ E x)) := by
-  funext x
-  exact (WithLp.ext_iff 2).2 (Prod.ext (by simp [normalLineL]) (by simp [normalLineL]))
-
-/-- If `φ` is differentiable, so is the shear, with derivative
-`(s, z) ↦ (s + fderiv ℝ φ y z, z)` at `(t, y)`. -/
-private theorem hasFDerivAt_normalShear {φ : C(E, ℝ)} {x : WithLp 2 (ℝ × E)}
-    (hφ : DifferentiableAt ℝ φ x.snd) :
-    HasFDerivAt (normalShear φ) (ContinuousLinearMap.id ℝ _ + (normalLineL E).comp
-      ((fderiv ℝ φ x.snd).comp (WithLp.sndL 2 ℝ ℝ E))) x := by
-  rw [normalShear_eq_add]
-  exact (hasFDerivAt_id x).add ((normalLineL E).hasFDerivAt.comp x
-    (hφ.hasFDerivAt.comp x (WithLp.sndL 2 ℝ ℝ E).hasFDerivAt))
-
-/-- The shear by a `C^n` function is `C^n`. -/
-theorem contDiff_normalShear {φ : C(E, ℝ)} {n : WithTop ℕ∞} (hφ : ContDiff ℝ n φ) :
-    ContDiff ℝ n (normalShear φ) := by
-  rw [normalShear_eq_add]
-  exact contDiff_id.add ((normalLineL E).contDiff.comp (hφ.comp (WithLp.sndL 2 ℝ ℝ E).contDiff))
-
-/-- The derivative of the shear by `φ` exceeds the identity by at most `‖fderiv ℝ φ‖`. -/
-theorem norm_fderiv_normalShear_le {φ : C(E, ℝ)} {x : WithLp 2 (ℝ × E)}
-    (hφ : DifferentiableAt ℝ φ x.snd) :
-    ‖fderiv ℝ (normalShear φ) x‖ ≤ 1 + ‖fderiv ℝ φ x.snd‖ := by
-  have hsnd : ‖WithLp.sndL 2 ℝ ℝ E‖ ≤ 1 :=
-    ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x => by
-      simpa using WithLp.norm_snd_le ℝ x
-  rw [(hasFDerivAt_normalShear hφ).fderiv]
-  have hcomp : ‖(normalLineL E).comp ((fderiv ℝ φ x.snd).comp (WithLp.sndL 2 ℝ ℝ E))‖ ≤
-      ‖normalLineL E‖ * (‖fderiv ℝ φ x.snd‖ * ‖WithLp.sndL 2 ℝ ℝ E‖) :=
-    (ContinuousLinearMap.opNorm_comp_le _ _).trans
-      (mul_le_mul_of_nonneg_left (ContinuousLinearMap.opNorm_comp_le _ _) (norm_nonneg _))
-  calc _ ≤ ‖ContinuousLinearMap.id ℝ (WithLp 2 (ℝ × E))‖ +
-        ‖normalLineL E‖ * (‖fderiv ℝ φ x.snd‖ * ‖WithLp.sndL 2 ℝ ℝ E‖) :=
-        (norm_add_le (E := WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) _ _).trans
-          (add_le_add_right hcomp _)
-    _ ≤ 1 + 1 * (‖fderiv ℝ φ x.snd‖ * 1) :=
-        add_le_add ContinuousLinearMap.norm_id_le (mul_le_mul norm_normalLineL_le
-          (mul_le_mul_of_nonneg_left hsnd (norm_nonneg _)) (by positivity) zero_le_one)
-    _ = 1 + ‖fderiv ℝ φ x.snd‖ := by ring
-
 /-! ### The region above a graph -/
 
 omit [InnerProductSpace ℝ E] in
@@ -165,62 +86,47 @@ theorem normalEpigraph_zero : normalEpigraph (0 : C(E, ℝ)) = normalHalfSpace 0
   simp
 
 omit [InnerProductSpace ℝ E] in
-/-- The shear by `φ` carries the half-space `{0 < t}` onto the region above the graph of `φ`. -/
-theorem preimage_normalShear_normalEpigraph (φ : C(E, ℝ)) :
-    normalShear φ ⁻¹' normalEpigraph φ = normalHalfSpace (E := E) 0 := by
+/-- Inverse graph flattening carries the half-space `{0 < t}` onto the region above the graph
+of `φ`. -/
+theorem preimage_graphFlattening_symm_normalEpigraph (φ : C(E, ℝ)) :
+    (graphFlattening φ φ.continuous).symm ⁻¹' normalEpigraph φ = normalHalfSpace (E := E) 0 := by
   ext x
   simp
 
-/-- The derivative bound `‖fderiv ℝ (normalShear ψ)‖ ≤ 1 + L` for a `C¹` function `ψ` whose
-derivative is bounded by `L`. -/
-private theorem norm_fderiv_normalShear_le_of_forall {L : ℝ} {ψ : C(E, ℝ)} (hψ : ContDiff ℝ 1 ψ)
-    (hL : ∀ y, ‖fderiv ℝ ψ y‖ ≤ L) (x : WithLp 2 (ℝ × E)) :
-    ‖fderiv ℝ (normalShear ψ) x‖ ≤ 1 + L :=
-  (norm_fderiv_normalShear_le (hψ.differentiable one_ne_zero _)).trans (by linarith [hL x.snd])
+omit [InnerProductSpace ℝ E] in
+/-- Graph flattening carries the region above the graph of `φ` onto the half-space
+`{0 < t}`. -/
+theorem preimage_graphFlattening_normalHalfSpace (φ : C(E, ℝ)) :
+    graphFlattening φ φ.continuous ⁻¹' normalHalfSpace (E := E) 0 = normalEpigraph φ := by
+  ext x
+  simp [sub_pos]
 
-private theorem contDiff_neg_of_contDiff {φ : C(E, ℝ)} (hφ : ContDiff ℝ 1 φ) :
-    ContDiff ℝ 1 (-φ : C(E, ℝ)) := by
-  rw [ContinuousMap.coe_neg]
-  exact hφ.neg
+/-- The derivative bound `‖fderiv ℝ (graphFlattening ψ)‖ ≤ 1 + L` for a `C¹` function `ψ`
+whose derivative is bounded by `L`. -/
+private theorem norm_fderiv_graphFlattening_le_of_forall {L : ℝ} {ψ : E → ℝ}
+    (hψ : ContDiff ℝ 1 ψ) (hL : ∀ y, ‖fderiv ℝ ψ y‖ ≤ L) (x : WithLp 2 (ℝ × E)) :
+    ‖fderiv ℝ (graphFlattening ψ hψ.continuous) x‖ ≤ 1 + L := by
+  rw [fderiv_graphFlattening hψ.continuous (hψ.differentiable one_ne_zero _)]
+  exact (norm_graphFlatteningL_le _).trans (by linarith [hL x.snd])
 
-private theorem norm_fderiv_neg_le {φ : C(E, ℝ)} {L : ℝ} (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L) (y : E) :
-    ‖fderiv ℝ (-φ : C(E, ℝ)) y‖ ≤ L := by
-  simpa [fderiv_neg] using hL y
+/-- The same derivative bound for inverse graph flattening. -/
+private theorem norm_fderiv_graphFlattening_symm_le_of_forall {L : ℝ} {ψ : E → ℝ}
+    (hψ : ContDiff ℝ 1 ψ) (hL : ∀ y, ‖fderiv ℝ ψ y‖ ≤ L) (x : WithLp 2 (ℝ × E)) :
+    ‖fderiv ℝ (graphFlattening ψ hψ.continuous).symm x‖ ≤ 1 + L := by
+  rw [graphFlattening_symm]
+  exact norm_fderiv_graphFlattening_le_of_forall hψ.neg
+    (fun y => by simpa [fderiv_neg] using hL y) x
 
 private theorem one_le_one_add {φ : C(E, ℝ)} {L : ℝ} (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L) :
     (1 : ℝ) ≤ 1 + L := by
   linarith [norm_nonneg (fderiv ℝ φ 0), hL 0]
 
-omit [InnerProductSpace ℝ E] in
-private theorem preimage_normalShear_neg_normalHalfSpace (φ : C(E, ℝ)) :
-    normalShear (-φ) ⁻¹' normalHalfSpace (E := E) 0 = normalEpigraph φ := by
-  ext x
-  simp [sub_pos, ← sub_eq_add_neg]
-
-omit [InnerProductSpace ℝ E] in
-private theorem normalShear_normalShear_neg (φ : C(E, ℝ)) (x : WithLp 2 (ℝ × E)) :
-    normalShear φ (normalShear (-φ) x) = x := by
-  rw [← normalShear_symm, Homeomorph.apply_symm_apply]
-
-omit [InnerProductSpace ℝ E] in
-private theorem normalShear_neg_normalShear (φ : C(E, ℝ)) (x : WithLp 2 (ℝ × E)) :
-    normalShear (-φ) (normalShear φ x) = x := by
-  rw [← normalShear_symm, Homeomorph.symm_apply_apply]
-
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
-/-- The shear preserves Lebesgue measure: on each normal line it is a translation. -/
-theorem measurePreserving_normalShear (φ : C(E, ℝ)) : MeasurePreserving (normalShear φ) := by
-  -- On `E × ℝ`, the map `(y, t) ↦ (y, t + φ y)` is a skew product of translations.
-  have hskew : MeasurePreserving (fun w : E × ℝ => (w.1, w.2 + φ w.1)) :=
-    (MeasurePreserving.id volume).skew_product (g := fun y t => t + φ y) (by fun_prop)
-      (Filter.Eventually.of_forall fun y => map_add_right_eq_self volume (φ y))
-  have hswap : MeasurePreserving (Prod.swap : ℝ × E → E × ℝ) := Measure.measurePreserving_swap
-  have hswap' : MeasurePreserving (Prod.swap : E × ℝ → ℝ × E) := Measure.measurePreserving_swap
-  convert (WithLp.volume_preserving_toLp ℝ E).comp (hswap'.comp
-    (hskew.comp (hswap.comp (WithLp.volume_preserving_ofLp ℝ E)))) using 1
-  funext x
-  rfl
+private theorem measurePreserving_graphFlattening_symm (φ : C(E, ℝ)) :
+    MeasurePreserving (graphFlattening φ φ.continuous).symm := by
+  rw [graphFlattening_symm]
+  exact measurePreserving_graphFlattening _ _
 
 /-! ### Flattening `W^{1,p}` of the region above a `C¹` graph -/
 
@@ -228,21 +134,21 @@ section Flatten
 
 variable {φ : C(E, ℝ)} {L : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- Precomposition with the shear by `φ`, from the region above the graph to the half-space. -/
+/-- Precomposition with inverse graph flattening, from the region above the graph to the
+half-space. -/
 private def flattenL (hφ : ContDiff ℝ 1 φ) (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L) :
     W1p volume (normalEpigraph φ) p →L[ℝ] W1p volume (normalHalfSpace (E := E) 0) p :=
-  W1p.compMeasurePreservingL (measurePreserving_normalShear φ)
-    (preimage_normalShear_normalEpigraph φ).symm (contDiff_normalShear hφ).contDiffOn
-    fun x _ => norm_fderiv_normalShear_le_of_forall hφ hL x
+  W1p.compMeasurePreservingL (measurePreserving_graphFlattening_symm φ)
+    (preimage_graphFlattening_symm_normalEpigraph φ).symm
+    (contDiff_graphFlattening_symm hφ).contDiffOn
+    fun x _ => norm_fderiv_graphFlattening_symm_le_of_forall hφ hL x
 
-/-- Precomposition with the shear by `-φ`, from the half-space to the region above the graph. -/
+/-- Precomposition with graph flattening, from the half-space to the region above the graph. -/
 private def unflattenL (hφ : ContDiff ℝ 1 φ) (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L) :
     W1p volume (normalHalfSpace (E := E) 0) p →L[ℝ] W1p volume (normalEpigraph φ) p :=
-  W1p.compMeasurePreservingL (measurePreserving_normalShear (-φ))
-    (preimage_normalShear_neg_normalHalfSpace φ).symm
-    (contDiff_normalShear (contDiff_neg_of_contDiff hφ)).contDiffOn
-    fun x _ => norm_fderiv_normalShear_le_of_forall (contDiff_neg_of_contDiff hφ)
-      (norm_fderiv_neg_le hL) x
+  W1p.compMeasurePreservingL (measurePreserving_graphFlattening φ φ.continuous)
+    (preimage_graphFlattening_normalHalfSpace φ).symm (contDiff_graphFlattening hφ).contDiffOn
+    fun x _ => norm_fderiv_graphFlattening_le_of_forall hφ hL x
 
 private theorem norm_flattenL_le (hφ : ContDiff ℝ 1 φ) (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L) :
     ‖(flattenL hφ hL : W1p volume (normalEpigraph φ) p →L[ℝ] _)‖ ≤ 1 + L :=
@@ -255,18 +161,18 @@ private theorem norm_unflattenL_le (hφ : ContDiff ℝ 1 φ) (hL : ∀ y, ‖fde
 private theorem unflattenL_flattenL (hφ : ContDiff ℝ 1 φ) (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L) :
     Function.LeftInverse (unflattenL (p := p) hφ hL) (flattenL hφ hL) := fun u =>
   W1p.compMeasurePreservingL_compMeasurePreservingL _ _ _ _ _ _ _ _
-    (normalShear_normalShear_neg φ) u
+    (graphFlattening φ φ.continuous).symm_apply_apply u
 
 private theorem flattenL_unflattenL (hφ : ContDiff ℝ 1 φ) (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L) :
     Function.RightInverse (unflattenL (p := p) hφ hL) (flattenL hφ hL) := fun v =>
   W1p.compMeasurePreservingL_compMeasurePreservingL _ _ _ _ _ _ _ _
-    (normalShear_neg_normalShear φ) v
+    (graphFlattening φ φ.continuous).apply_symm_apply v
 
 /-- **Flattening the region above a `C¹` graph.** If `φ` is of class `C¹` with
-`‖fderiv ℝ φ‖ ≤ L`, precomposition with the shear by `φ` is an isomorphism from `W^{1,p}` of the
-region above the graph of `φ` onto `W^{1,p}` of the half-space `{0 < t}`, with inverse the
-precomposition with the shear by `-φ`. Both directions have norm at most `1 + L`
-(`TauCeti.W1p.norm_normalEpigraphEquivL_le`). -/
+`‖fderiv ℝ φ‖ ≤ L`, precomposition with inverse graph flattening is an isomorphism from
+`W^{1,p}` of the region above the graph of `φ` onto `W^{1,p}` of the half-space `{0 < t}`, with
+inverse the precomposition with `TauCeti.graphFlattening φ`. Both directions have norm at most
+`1 + L` (`TauCeti.W1p.norm_normalEpigraphEquivL_le`). -/
 def W1p.normalEpigraphEquivL (hφ : ContDiff ℝ 1 φ) (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L) :
     W1p volume (normalEpigraph φ) p ≃L[ℝ] W1p volume (normalHalfSpace (E := E) 0) p :=
   ContinuousLinearEquiv.equivOfInverse (flattenL hφ hL) (unflattenL hφ hL)
@@ -301,11 +207,11 @@ theorem W1p.norm_normalEpigraphEquivL_symm_le (hφ : ContDiff ℝ 1 φ)
   have h2 := norm_unflattenL_le (p := p) hφ hL
   exact h1.trans (mul_le_mul_of_nonneg_right h2 (norm_nonneg _))
 
-/-- The flattened function is `u ∘ normalShear φ`. -/
+/-- The flattened function is `u ∘ (graphFlattening φ).symm`. -/
 theorem W1p.value_normalEpigraphEquivL_ae (hφ : ContDiff ℝ 1 φ)
     (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L) (u : W1p volume (normalEpigraph φ) p) :
     W1p.value (W1p.normalEpigraphEquivL hφ hL u) =ᵐ[volume.restrict (normalHalfSpace (E := E) 0)]
-      fun x => W1p.value u (normalShear φ x) := by
+      fun x => W1p.value u ((graphFlattening φ φ.continuous).symm x) := by
   rw [normalEpigraphEquivL_apply_eq]
   exact W1p.value_compMeasurePreservingL_ae _ _ _ _ u
 
@@ -313,16 +219,16 @@ theorem W1p.value_normalEpigraphEquivL_ae (hφ : ContDiff ℝ 1 φ)
 theorem W1p.gradient_normalEpigraphEquivL_ae (hφ : ContDiff ℝ 1 φ)
     (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L) (u : W1p volume (normalEpigraph φ) p) :
     W1p.gradient (W1p.normalEpigraphEquivL hφ hL u) =ᵐ[volume.restrict (normalHalfSpace (E := E) 0)]
-      fun x => ContinuousLinearMap.adjoint (fderiv ℝ (normalShear φ) x)
-        (W1p.gradient u (normalShear φ x)) := by
+      fun x => ContinuousLinearMap.adjoint (fderiv ℝ (graphFlattening φ φ.continuous).symm x)
+        (W1p.gradient u ((graphFlattening φ φ.continuous).symm x)) := by
   rw [normalEpigraphEquivL_apply_eq]
   exact W1p.gradient_compMeasurePreservingL_ae _ _ _ _ u
 
-/-- The inverse of flattening is `v ∘ normalShear (-φ)`. -/
+/-- The inverse of flattening is `v ∘ graphFlattening φ`. -/
 theorem W1p.value_normalEpigraphEquivL_symm_ae (hφ : ContDiff ℝ 1 φ)
     (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L) (v : W1p volume (normalHalfSpace (E := E) 0) p) :
     W1p.value ((W1p.normalEpigraphEquivL hφ hL).symm v) =ᵐ[volume.restrict (normalEpigraph φ)]
-      fun x => W1p.value v (normalShear (-φ) x) := by
+      fun x => W1p.value v (graphFlattening φ φ.continuous x) := by
   rw [normalEpigraphEquivL_symm_apply_eq]
   exact W1p.value_compMeasurePreservingL_ae _ _ _ _ v
 
@@ -347,9 +253,9 @@ variable {φ : C(E, ℝ)} {L : ℝ}
 
 /-- **The trace on the graph of a `C¹` function.** For `φ` of class `C¹` with
 `‖fderiv ℝ φ‖ ≤ L`, the trace of `u ∈ H¹` of the region `{φ y < t}` above the graph is the
-half-space trace of the flattened function `u ∘ normalShear φ`. It is an element of `L²(E)`: the
-graph is parametrized by `y ↦ (φ y, y)`, the image under the shear of the boundary point
-`(0, y)` of the half-space. -/
+half-space trace of the flattened function `u ∘ (graphFlattening φ).symm`. It is an element of
+`L²(E)`: the graph is parametrized by `y ↦ (φ y, y)`, the image under inverse flattening of the
+boundary point `(0, y)` of the half-space. -/
 def W1p.normalEpigraphTrace (hφ : ContDiff ℝ 1 φ) (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L) :
     W1p volume (normalEpigraph φ) 2 →L[ℝ] Lp ℝ 2 (volume : Measure E) :=
   (W1p.halfSpaceTrace 0).comp (W1p.normalEpigraphEquivL hφ hL).toContinuousLinearMap
