@@ -83,17 +83,20 @@ theorem finrank_left_apply (x : G.left) :
       (f ▷ G).left.finrank p := by
     have := Scheme.Hom.finrank_comp_right_of_isIso (f ▷ G).left σH.hom.left p
     rwa [← hσ, Scheme.Hom.finrank_comp_left_of_isIso] at this
-  -- compare at the images of `x` under the sections `a ↦ (1, a)` and `a ↦ (f a, a)` of `H ⊗ G`,
-  -- the second being the translate of the first
+  -- the sections `a ↦ (1, a)` of `H ⊗ G` and its translate `a ↦ (f a, a)`, evaluated at `x` and
+  -- projected to `H`
   let e : G ⟶ H ⊗ G := lift 1 (𝟙 G)
-  have he : (e ≫ fst H G).left = G.hom ≫ η[H].left := by simp [e, Hom.one_def]
-  have hσe : (e ≫ σH.hom ≫ fst H G).left = f.left := by
-    rw [← Category.assoc]
+  have he : (fst H G).left (e.left x) = η[H].left (G.hom x) := by
+    rw [← Scheme.Hom.comp_apply, ← Over.comp_left]
+    simp [e, Hom.one_def]
+  have hσe : (fst H G).left (σH.hom.left (e.left x)) = f.left x := by
+    rw [← Scheme.Hom.comp_apply, ← Scheme.Hom.comp_apply, ← Over.comp_left, ← Over.comp_left,
+      ← Category.assoc]
     simp [e, σH]
+  -- by base change, these are the ranks of `f` at `f x` and at `e_H(s)`
   have h := hrank (e.left x)
   rwa [Scheme.Hom.finrank_of_isPullback _ _ _ _ hpb, Scheme.Hom.finrank_of_isPullback _ _ _ _ hpb,
-    ← Scheme.Hom.comp_apply, ← Scheme.Hom.comp_apply, ← Scheme.Hom.comp_apply, ← Over.comp_left,
-    ← Over.comp_left, ← Over.comp_left, hσe, he, Scheme.Hom.comp_apply] at h
+    hσe, he] at h
 
 /-- **The rank of a surjective homomorphism of group schemes is constant along fibres.** If
 `f : G ⟶ H` is a surjective homomorphism of group schemes over `S` whose underlying morphism is
