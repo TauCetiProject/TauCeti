@@ -162,26 +162,8 @@ theorem Presentation.toCompletionLocTopHom_comp_eqToHom_hom {p q : Presentation 
   subst e
   simp
 
-/-- **Base change of `A⟨T/s⟩`.** A continuous ring homomorphism `φ : A →+* B` extends uniquely to
-a continuous map `A⟨p⟩ → B⟨q⟩` compatible with the structure maps, when `q` has denominator
-`φ p.den` and contains the images of the numerators of `p`. -/
-private theorem existsUnique_continuous_ringHom_comp_eq (φ : A →+* B) (hφ : Continuous φ)
-    (p : Presentation P) (q : Presentation P') (hden : q.den = φ p.den)
-    (hnum : ∀ t ∈ p.num, φ t ∈ q.num) :
-    letI := locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    letI := locUniformSpace P' q.num q.den _ q.hasDenominatorPower
-    letI := isUniformAddGroup_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
-    letI := isTopologicalRing_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
-    ∃! g : UniformSpace.Completion (Localization.Away p.den) →+*
-        UniformSpace.Completion (Localization.Away q.den),
-      Continuous g ∧ g.comp (toCompletionLoc P p.num p.den _ p.hasDenominatorPower) =
-        (toCompletionLoc P' q.num q.den _ q.hasDenominatorPower).comp φ := by
-  exact existsUnique_continuous_ringHom_comp_toCompletionLoc_eq P p.num p.den _
-    p.hasDenominatorPower P' φ hφ.continuousAt q.num q.den _ q.hasDenominatorPower hden.symm hnum
-
-/-- The morphism `A⟨p⟩ ⟶ B⟨q⟩` of `existsUnique_continuous_ringHom_comp_eq`. -/
+/-- The morphism `A⟨p⟩ ⟶ B⟨q⟩` induced by `φ`: the base change `completionLocMap`, for `q` with
+denominator `φ p.den` containing the images of the numerators of `p`. -/
 noncomputable def Presentation.mapHom (φ : A →+* B) (hφ : Continuous φ) (p : Presentation P)
     (q : Presentation P') (hden : q.den = φ p.den) (hnum : ∀ t ∈ p.num, φ t ∈ q.num) :
     p.completionLocObj ⟶ q.completionLocObj := by
@@ -191,9 +173,11 @@ noncomputable def Presentation.mapHom (φ : A →+* B) (hφ : Continuous φ) (p 
   let _ := locUniformSpace P' q.num q.den _ q.hasDenominatorPower
   let _ := isUniformAddGroup_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
   let _ := isTopologicalRing_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
-  have hg := existsUnique_continuous_ringHom_comp_eq φ hφ p q hden hnum
   exact InducedCategory.homMk (eqToHom (completionLocObj_obj P p.num p.den _ _) ≫
-    (⟨hg.choose, hg.choose_spec.1.1⟩ :
+    (⟨completionLocMap P p.num p.den _ p.hasDenominatorPower P' φ hφ.continuousAt q.num q.den _
+        q.hasDenominatorPower hden.symm hnum,
+      continuous_completionLocMap P p.num p.den _ p.hasDenominatorPower P' φ hφ.continuousAt
+        q.num q.den _ q.hasDenominatorPower hden.symm hnum⟩ :
       TopCommRingCat.of (UniformSpace.Completion (Localization.Away p.den)) ⟶
         TopCommRingCat.of (UniformSpace.Completion (Localization.Away q.den))) ≫
       eqToHom (completionLocObj_obj P' q.num q.den _ _).symm)
@@ -215,7 +199,8 @@ theorem Presentation.toCompletionLocTopHom_comp_mapHom (φ : A →+* B) (hφ : C
     Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
   simp only [← Category.assoc]
   apply eq_whisker
-  exact Subtype.ext (existsUnique_continuous_ringHom_comp_eq φ hφ p q hden hnum).choose_spec.1.2
+  exact Subtype.ext (completionLocMap_comp_toCompletionLoc P p.num p.den _ p.hasDenominatorPower
+    P' φ hφ.continuousAt q.num q.den _ q.hasDenominatorPower hden.symm hnum)
 
 /-! ### Geometric base change -/
 

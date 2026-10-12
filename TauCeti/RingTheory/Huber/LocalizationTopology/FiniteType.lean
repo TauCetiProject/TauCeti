@@ -267,12 +267,9 @@ variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [Is
 base: if `f : (A, A⁺) → (B, B⁺)` is topologically of finite type and `A` is Tate, then so is the
 base change `(A⟨T/s⟩, A_U⁺) → (B⟨T'/f(s)⟩, B_V⁺)`.
 
-The composite of `f` with the structure morphism `(B, B⁺) → (B⟨T'/f(s)⟩, B_V⁺)`, topologically of
-finite type by `isTopologicallyFiniteType_toCompletionLocHom`, is that of the structure morphism of
-`(A⟨T/s⟩, A_U⁺)` with the base change, and topological finite type cancels on the right
-(`TauCeti.Huber.Pair.Hom.IsTopologicallyFiniteType.of_comp`). The hypothesis on `T'` holds as soon
-as `T` and `s` generate the unit ideal of `A`, which for a rational subset of a Tate spectrum
-follows from openness of the numerator ideal. -/
+The hypothesis `hspan`, that `T'` and `f(s)` generate the unit ideal of `B`, holds as soon as `T`
+and `s` generate the unit ideal of `A`, which for a rational subset of a Tate spectrum follows from
+openness of the numerator ideal. -/
 theorem isTopologicallyFiniteType_completionLocPairMap (hf : f.IsTopologicallyFiniteType)
     (hspan : Ideal.span (insert s' (T' : Set B)) = ⊤) :
     letI := locUniformSpace P T s S hden
