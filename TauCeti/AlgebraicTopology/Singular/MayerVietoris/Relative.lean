@@ -380,7 +380,6 @@ sequence is an epimorphism. -/
 lemma epi_relativeMayerVietorisFromBiprod_zero : Epi (relativeMayerVietorisFromBiprod R U V 0) := by
   have := isIso_homologyMap_smallPairToUnion R U V hU hV 0
   have := SSetPair.epi_mayerVietorisFromBiprod_zero R (isPushout_left U V) (isPushout_right U V)
-   
   rw [← mayerVietorisFromBiprod_comp_homologyMap_smallPairToUnion]
   exact epi_comp _ _
 
