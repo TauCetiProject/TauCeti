@@ -9,7 +9,7 @@ public import Mathlib.NumberTheory.NumberField.InfinitePlace.Ramification
 public import Mathlib.NumberTheory.NumberField.Units.DirichletTheorem
 public import Mathlib.RepresentationTheory.Subrepresentation
 public import TauCeti.RepresentationTheory.RestrictScalars
-import TauCeti.NumberTheory.NumberField.AutomorphismAction
+public import TauCeti.NumberTheory.NumberField.AutomorphismAction
 
 /-!
 # The Galois action on the logarithmic embedding of the units
@@ -124,19 +124,6 @@ theorem logSpaceExtend_logEmbedding (x : (𝓞 L)ˣ) :
   logSpaceExtend_eq_self (sum_mult_mul_log x)
 
 end Extend
-
-/-! ### The Galois action on the units -/
-
-section UnitsAction
-
-variable {K L : Type*} [Field K] [Field L] [Algebra K L]
-
-variable (K L) in
-/-- The Galois action of `Aut(L/K)` on the units of `𝓞 L`, through its action on `𝓞 L`. -/
-instance unitsMulDistribMulAction : MulDistribMulAction (L ≃ₐ[K] L) (𝓞 L)ˣ :=
-  Units.mulDistribMulActionRight
-
-end UnitsAction
 
 /-! ### The Galois representation -/
 
