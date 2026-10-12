@@ -8,6 +8,8 @@ module
 public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Topology.UniformSpace.Ascoli
 
+import Mathlib.Topology.UniformSpace.Completion
+
 /-!
 # The Arzelà–Ascoli theorem in `C(X, Y)`
 
@@ -23,7 +25,7 @@ and adds companion statements used for compactness and finite approximation of f
 * If `Y` is complete, it is enough that the values are totally bounded at the points of a dense
   set `D ⊆ X`: equicontinuity spreads total boundedness from `D` to every point, and completeness
   turns it into compactness of the closure.
-* An equicontinuous family with pointwise relatively compact values has finite uniform
+* An equicontinuous family with pointwise totally bounded values has finite uniform
   approximations on compact sets, with approximants drawn from the family itself.
 * Conversely, on a compact domain, a compact subset of `C(X, Y)` is equicontinuous.
 
@@ -97,31 +99,42 @@ theorem isCompact_closure_of_equicontinuous [CompactlyCoherentSpace X] [UniformS
 
 end ArzelaAscoli
 
-/-- An equicontinuous family with pointwise relatively compact values has a finite uniform
+/-- An equicontinuous family with pointwise totally bounded values has a finite uniform
 approximation on every compact set, with approximants drawn from the family itself. -/
 theorem EquicontinuousOn.exists_finite_approx_of_isCompact [UniformSpace Y]
     {ι : Type*} {g : ι → X → Y} {K : Set X} (hequi : EquicontinuousOn g K)
-    (hK : IsCompact K) (hg : ∀ x ∈ K, ∃ Q, IsCompact Q ∧ ∀ i, g i x ∈ Q)
+    (hK : IsCompact K) (hg : ∀ x ∈ K, TotallyBounded (range fun i ↦ g i x))
     {U : Set (Y × Y)} (hU : U ∈ 𝓤 Y) :
     ∃ t : Set ι, t.Finite ∧ ∀ i, ∃ j ∈ t, ∀ x ∈ K, (g i x, g j x) ∈ U := by
   let _ : CompactSpace K := isCompact_iff_compactSpace.mp hK
-  let φ : ι → C(K, Y) := fun i ↦ ⟨K.domRestrict (g i), (hequi.continuousOn i).domRestrict⟩
+  -- In the completion, pointwise total boundedness gives compact closures.
+  have hgequi :=
+    (UniformSpace.Completion.isUniformInducing_coe Y).equicontinuousOn_iff.mp hequi
+  let φ : ι → C(K, UniformSpace.Completion Y) := fun i ↦
+    ⟨K.domRestrict (fun x ↦ (g i x : UniformSpace.Completion Y)),
+      (hgequi.continuousOn i).domRestrict⟩
   have hφequi : Equicontinuous fun i ↦ ⇑(φ i) :=
-    (equicontinuous_restrict_iff _).2 hequi
+    (equicontinuous_restrict_iff _).2 hgequi
   have hrange : IsCompact (closure (range φ)) :=
     ArzelaAscoli.isCompact_closure_of_equicontinuous (by
       rw [← Set.comp_rangeSplitting φ]
       exact hφequi.comp (Set.rangeSplitting φ)) fun x ↦ by
-        obtain ⟨Q, hQ, hgQ⟩ := hg x x.2
-        exact ⟨Q, hQ, fun _ ⟨i, hi⟩ ↦ hi ▸ hgQ i⟩
+        have hpoint : TotallyBounded (range fun i ↦ (g i x : UniformSpace.Completion Y)) := by
+          simpa only [← range_comp, Function.comp_def] using
+            (hg x x.2).image (UniformSpace.Completion.uniformContinuous_coe Y)
+        exact ⟨closure (range fun i ↦ (g i x : UniformSpace.Completion Y)),
+          hpoint.closure.isCompact_of_isClosed isClosed_closure,
+          fun _ ⟨i, hi⟩ ↦ hi ▸ subset_closure (mem_range_self i)⟩
   have htb : TotallyBounded (range φ) := hrange.totallyBounded.subset subset_closure
-  have hU' :=
-    (ContinuousMap.hasBasis_compactConvergenceUniformity_of_compact (α := K)).mem_of_mem hU
+  obtain ⟨V, hV, hVU⟩ := ((UniformSpace.Completion.isUniformInducing_coe Y).basis_uniformity
+    (Filter.basis_sets _)).mem_iff.mp hU
+  have hV' :=
+    (ContinuousMap.hasBasis_compactConvergenceUniformity_of_compact (α := K)).mem_of_mem hV
   obtain ⟨t, -, htfin, htcover⟩ := (exists_subset_image_finite_and (f := φ) (s := univ)).mp
-    (by simpa only [image_univ] using htb.exists_subset hU')
+    (by simpa only [image_univ] using htb.exists_subset hV')
   refine ⟨t, htfin, fun i ↦ ?_⟩
   obtain ⟨_, ⟨j, hj, rfl⟩, hij⟩ := mem_iUnion₂.mp (htcover (mem_range_self i))
-  exact ⟨j, hj, fun x hx ↦ hij ⟨x, hx⟩⟩
+  exact ⟨j, hj, fun x hx ↦ hVU (hij ⟨x, hx⟩)⟩
 
 /-- Equicontinuity spreads total boundedness of the values from a dense set of points to every
 point. -/

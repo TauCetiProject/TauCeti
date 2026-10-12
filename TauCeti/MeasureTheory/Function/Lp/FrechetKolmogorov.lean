@@ -277,7 +277,8 @@ theorem totallyBounded_of_comp_add_sub_of_unifTight (hp' : p ≠ ∞)
   obtain ⟨t, htfin, ht⟩ :=
     (hequi.equicontinuous.equicontinuousOn K).exists_finite_approx_of_isCompact
       (isCompact_closedBall (0 : E) R)
-      (fun x _ ↦ ⟨closedBall (0 : F) Bₑ.toReal, isCompact_closedBall _ _, fun i ↦ hgB i x⟩)
+      (fun x _ ↦ (isCompact_closedBall (0 : F) Bₑ.toReal).totallyBounded.subset
+        (range_subset_iff.mpr fun i ↦ hgB i x))
       (dist_mem_uniformity hη)
   refine ⟨Subtype.val '' t, htfin.image (fun i : S => (i : Lp F p mu)), fun f hf => ?_⟩
   obtain ⟨j, hjt, hmid⟩ := ht ⟨f, hf⟩
