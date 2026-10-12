@@ -178,7 +178,7 @@ open TauCeti.Huber in
 restricted series ring over the radius ring to the interval ring, whenever the variable
 has norm at most one at both endpoints. Uniqueness requires only continuity and the
 coefficient and variable equations. -/
-theorem exists_continuous_denseRange_restrictedSeries_toIntervalRing (hρ : ρ₁ ≤ ρ₂)
+theorem existsUnique_continuous_denseRange_restrictedSeries_toIntervalRing (hρ : ρ₁ ≤ ρ₂)
     (n : ℕ) (hn : v (algebraMap O K ϖ) ^ n ≤ ρ₁) :
     ∃ ψ : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set A))
         isWeightFamily_one_weight →+* B,
