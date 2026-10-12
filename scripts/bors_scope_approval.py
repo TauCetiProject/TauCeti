@@ -34,7 +34,9 @@ def github(path):
 
 def observation(batch_id=None):
     url = OBSERVATION_URL + (f"&batch_id={batch_id}" if batch_id is not None else "")
-    request = urllib.request.Request(url, headers={"Cache-Control": "no-cache"})
+    request = urllib.request.Request(url, headers={
+        "Cache-Control": "no-cache", "User-Agent": "TauCetiScopeApproval/1.0"
+    })
     with urllib.request.urlopen(request, timeout=30) as response:
         return json.load(response)
 
