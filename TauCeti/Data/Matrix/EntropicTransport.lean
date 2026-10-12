@@ -62,9 +62,10 @@ Lipschitz constant `m / ε` of the plan does not depend on the sizes of `ι` and
 
 * `Matrix.entropicTransportObjective_eq_mul_relEntropy`: the objective is `ε` times the relative
   entropy against the Gibbs kernel `a i * b j * exp (-C i j / ε)`.
-* `Matrix.exists_isMinOn_entropicTransportObjective` and
-  `Matrix.pos_of_isMinOn_entropicTransportObjective`: an optimal plan exists, and every optimal
-  plan has strictly positive entries.
+* `Matrix.exists_isMinOn_entropicTransportObjective`: an optimal plan exists whenever the
+  transport polytope is nonempty, and `Matrix.pos_of_isMinOn_entropicTransportObjective`: for a
+  positive temperature and strictly positive marginals, every optimal plan has strictly positive
+  entries.
 * `Matrix.norm_sub_le_of_isMinOn_entropicTransportObjective`: the optimal plan is a
   `(∑ i, a i) / ε`-Lipschitz function of the cost, and
   `Matrix.eq_of_isMinOn_entropicTransportObjective`: it is unique.
@@ -184,18 +185,18 @@ private theorem relEntropy_le_of_isMinOn (hε : 0 < ε) (ha : ∀ i, 0 < a i) (h
     (fun i ↦ (ha i).ne') (fun j ↦ (hb j).ne')] at h
   exact le_of_mul_le_mul_left h hε
 
-/-- For a positive temperature and strictly positive marginals of equal total mass, the
-regularised transport problem has an optimal plan. -/
-theorem exists_isMinOn_entropicTransportObjective (C : Matrix ι κ ℝ) (hε : 0 < ε)
-    (ha : ∀ i, 0 < a i) (hb : ∀ j, 0 < b j) (hmass : ∑ i, a i = ∑ j, b j) :
+/-- The regularised transport problem has an optimal plan for every cost and every temperature, as
+soon as the transport polytope is nonempty: the polytope is compact and the objective is
+continuous. -/
+theorem exists_isMinOn_entropicTransportObjective (C : Matrix ι κ ℝ) (ε : ℝ)
+    (h : (transportPolytope a b).Nonempty) :
     ∃ P ∈ transportPolytope a b,
       IsMinOn (C.entropicTransportObjective ε a b) (transportPolytope a b) P := by
-  obtain ⟨P, hP0, hP, hmin⟩ :=
-    exists_relEntropy_minOn_of_pos (of fun i j ↦ a i * b j * exp (-C i j / ε)) a b ha hb hmass
-  refine ⟨P, ⟨hP0, hP⟩, isMinOn_iff.2 fun Q hQ ↦ ?_⟩
-  simp only [entropicTransportObjective_eq_mul_relEntropy C hε.ne'
-    (fun i ↦ (ha i).ne') (fun j ↦ (hb j).ne')]
-  exact mul_le_mul_of_nonneg_left (hmin Q hQ.1 hQ.2) hε.le
+  have hK := continuous_relEntropy (vecMulVec a b)
+  have hcont : Continuous (C.entropicTransportObjective ε a b) := by
+    rw [funext (entropicTransportObjective_def C ε a b)]
+    fun_prop
+  exact (isCompact_setOf_nonneg_hasMarginals a b).exists_isMinOn h hcont.continuousOn
 
 /-- For a positive temperature and strictly positive marginals, every optimal plan of the
 regularised transport problem has strictly positive entries. -/
@@ -328,11 +329,7 @@ theorem abs_entropicTransportValue_sub_sub_inner_le (C' : Matrix ι κ ℝ) (hε
     (hmin : IsMinOn (C.entropicTransportObjective ε a b) (transportPolytope a b) P) :
     |C'.entropicTransportValue ε a b - C.entropicTransportValue ε a b - ⟪P, C' - C⟫| ≤
       (∑ i, a i) / ε * ‖C' - C‖ ^ 2 := by
-  have hmass : ∑ i, a i = ∑ j, b j := by
-    obtain ⟨hPa, hPb⟩ := (hasMarginals_def P a b).1 hP.2
-    rw [← Finset.sum_congr rfl fun i _ ↦ hPa i, ← Finset.sum_congr rfl fun j _ ↦ hPb j,
-      Finset.sum_comm]
-  obtain ⟨Q, hQ, hQmin⟩ := exists_isMinOn_entropicTransportObjective C' hε ha hb hmass
+  obtain ⟨Q, hQ, hQmin⟩ := exists_isMinOn_entropicTransportObjective C' ε ⟨P, hP⟩
   have hlip := norm_sub_le_of_isMinOn_entropicTransportObjective hε ha hb hQ hQmin hP hmin
   rw [entropicTransportValue_eq_of_isMinOn hP hmin, entropicTransportValue_eq_of_isMinOn hQ hQmin]
   -- The value is a minimum of functions that are affine in the cost: testing the problem for `C'`
