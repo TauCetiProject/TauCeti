@@ -319,17 +319,16 @@ theorem integralModel_eq_of_baseChange_eq {R : Type*} [CommRing R] {K : Type*} [
 instance isIntegral_baseChange_of_isScalarTower {R S K : Type*} [CommRing R] [CommRing S]
     [Field K] [Algebra R S] [Algebra S K] [Algebra R K] [IsScalarTower R S K]
     (W : WeierstrassCurve R) : IsIntegral S (W.baseChange K) :=
-  ⟨W.map (algebraMap R S), by
-    rw [baseChange, baseChange, map_map, ← IsScalarTower.algebraMap_eq]⟩
+  ⟨W.map (algebraMap R S), (W.map_baseChange (Algebra.ofId S K)).symm⟩
 
 /-- The integral model over `S` of an equation base changed from `R` is its image under `R → S`.
 The map `S → K` is assumed injective, so the integral model is unique. -/
+@[simp 900]
 theorem integralModel_baseChange_eq_map {R S K : Type*} [CommRing R] [CommRing S] [Field K]
     [Algebra R S] [Algebra S K] [Algebra R K] [IsScalarTower R S K] [FaithfulSMul S K]
     (W : WeierstrassCurve R) :
     integralModel S (W.baseChange K) = W.map (algebraMap R S) :=
-  integralModel_eq_of_baseChange_eq (by
-    rw [baseChange, baseChange, map_map, ← IsScalarTower.algebraMap_eq])
+  integralModel_eq_of_baseChange_eq (W.map_baseChange (Algebra.ofId S K))
 
 /-- **The integral model of the base change of an equation over `R` is that equation.** -/
 @[simp]

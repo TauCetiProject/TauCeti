@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.InfiniteOrder
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.WorkedExamples.X3SubXAddOne.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralReduction
+import TauCeti.AlgebraicGeometry.EllipticCurve.PointCount
 
 /-!
 # The rational torsion of `y² = x³ - x + 1` is trivial

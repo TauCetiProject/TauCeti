@@ -127,12 +127,7 @@ private theorem nsmul_reductionHom_curve37a1Point {p : ℕ} [Fact p.Prime]
     refine (CharP.charP_iff_prime_eq_zero Fact.out).mpr ?_
     rwa [← map_natCast (residue (v.valuation ℚ).valuationSubring), residue_eq_zero_iff,
       ← map_natCast (algebraMap ℤ _), v.algebraMap_mem_maximalIdeal_valuationSubring_iff]
-  have hV : (integralModel (v.valuation ℚ).valuationSubring (curve37a1.baseChange ℚ)).map
-      (residue (v.valuation ℚ).valuationSubring) =
-        (curve37a1.map (Int.castRingHom (ZMod p))).map (ZMod.castHom dvd_rfl _) := by
-    rw [integralModel_baseChange_eq_map, map_map, map_map]
-    congr 1
-    exact RingHom.ext_int _ _
+  have hV := curve37a1.map_integralModel_baseChange_eq_map v (ZMod.castHom dvd_rfl _)
   have hval : v.valuation ℚ 0 ≤ 1 := by simp
   have h0 : residue (v.valuation ℚ).valuationSubring
       ⟨0, (Valuation.mem_valuationSubring_iff _ _).mpr hval⟩ = 0 :=

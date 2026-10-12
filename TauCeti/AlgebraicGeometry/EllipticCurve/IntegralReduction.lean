@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.GoodReduction
-public import TauCeti.AlgebraicGeometry.EllipticCurve.PointCount
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Basic
 public import Mathlib.Algebra.Field.ZMod
 import Mathlib.Data.ZMod.QuotientRing
@@ -37,6 +36,18 @@ theorem isElliptic_integralModel_baseChange {R K : Type*} [CommRing R] [IsDedeki
   rwa [integralModel_baseChange_eq_map, isElliptic_iff, map_Δ,
     ← notMem_maximalIdeal, v.algebraMap_mem_maximalIdeal_valuationSubring_iff]
 
+/-- Reducing the integral model of an equation over `ℤ` agrees with mapping its reduction over
+`ZMod p` along any homomorphism into the valuation residue field. -/
+theorem map_integralModel_baseChange_eq_map (E : WeierstrassCurve ℤ)
+    (v : HeightOneSpectrum ℤ) {p : ℕ}
+    (f : ZMod p →+* ResidueField (v.valuation ℚ).valuationSubring) :
+    (integralModel (v.valuation ℚ).valuationSubring (E.baseChange ℚ)).map
+        (residue (v.valuation ℚ).valuationSubring) =
+      (E.map (Int.castRingHom (ZMod p))).map f := by
+  rw [integralModel_baseChange_eq_map, map_map, map_map]
+  congr 1
+  exact RingHom.ext_int _ _
+
 section PrimeReduction
 
 variable (E : WeierstrassCurve ℤ) (v : HeightOneSpectrum ℤ) (p : ℕ) [Fact p.Prime]
@@ -50,34 +61,29 @@ local notation "V" => WeierstrassCurve.map (integralModel O W) (residue O)
 include hv in
 /-- At the prime `(p)`, the valuation reduction of an integral equation has as many points as
 its reduction over `ZMod p`. -/
-theorem card_point_reduction_baseChange [(E.map (Int.castRingHom (ZMod p))).IsElliptic] :
+theorem card_point_reduction_baseChange :
     Nat.card (V).toAffine.Point = Nat.card (E.map (Int.castRingHom (ZMod p))).toAffine.Point := by
   classical
   let e : ZMod p ≃+* k := (Int.quotientSpanNatEquivZMod p).symm.trans
     ((Ideal.quotEquivOfEq hv).symm.trans
       (IsLocalization.AtPrime.equivQuotMaximalIdeal v.asIdeal O).toRingEquiv)
-  have hV : V = (E.map (Int.castRingHom (ZMod p))).map e.toRingHom := by
-    rw [integralModel_baseChange_eq_map, map_map, map_map]
-    congr 1
-    exact RingHom.ext_int _ _
-  have : Finite (ℤ ⧸ v.asIdeal) := Finite.of_equiv (ZMod p)
-    ((Int.quotientSpanNatEquivZMod p).symm.trans (Ideal.quotEquivOfEq hv).symm).toEquiv
-  rw [hV]
-  rw [← pointCount_eq_card_point,
-    ← pointCount_eq_card_point (E.map (Int.castRingHom (ZMod p))),
-    pointCount_def, pointCount_def]
-  congr 1
+  rw [map_integralModel_baseChange_eq_map E v e.toRingHom,
+    Nat.card_congr
+      ((E.map (Int.castRingHom (ZMod p))).map e.toRingHom).toAffine.nonsingularPointEquiv,
+    Nat.card_congr (E.map (Int.castRingHom (ZMod p))).toAffine.nonsingularPointEquiv]
   exact (Nat.card_congr ((e.toEquiv.prodCongr e.toEquiv).subtypeEquiv fun xy ↦
-    (Affine.map_equation _ e.injective xy.1 xy.2).symm)).symm
+    (Affine.map_nonsingular _ e.injective xy.1 xy.2).symm).optionCongr).symm
 
 include hv in
 /-- At good reduction at `(p)`, the order of the point group over `ZMod p` annihilates the
 reduction of every rational point of an integral equation. -/
 theorem card_nsmul_reductionHom_baseChange [DecidableEq k] [(integralModel O W).IsElliptic]
-    [(E.map (Int.castRingHom (ZMod p))).IsElliptic] (P : (W).toAffine.Point) :
+    (P : (W).toAffine.Point) :
     Nat.card (E.map (Int.castRingHom (ZMod p))).toAffine.Point •
       Affine.Point.reductionHom (v.valuation ℚ) P = 0 := by
   classical
+  have : Finite (ℤ ⧸ v.asIdeal) := Finite.of_equiv (ZMod p)
+    ((Int.quotientSpanNatEquivZMod p).symm.trans (Ideal.quotEquivOfEq hv).symm).toEquiv
   rw [← card_point_reduction_baseChange E v p hv]
   exact card_nsmul_eq_zero'
 
