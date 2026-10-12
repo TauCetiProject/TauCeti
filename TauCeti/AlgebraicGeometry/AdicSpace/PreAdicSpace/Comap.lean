@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.PresentationLimit
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Hom
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Comap
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Transport
-import TauCeti.Topology.Algebra.Ring.Ideal
 
 /-!
 # Morphisms of presentation-limit pre-adic spaces
@@ -652,7 +651,9 @@ variable (φ : A →+* B) (hφ : Continuous φ) (hplus : ∀ a ∈ Aplus, φ a �
 change on rational opens. -/
 private theorem isBaseChangeOnRational_presentationLimitPresheafIsoPushforward :
     IsBaseChangeOnRational (P := P) (P' := P') φ hφ
-      (fun I ↦ I.isOpen_map_of_continuous_inverse hψ hψφ hφψ)
+      (fun I hI ↦ by
+        rw [Ideal.map_eq_image_of_surjective φ (Function.RightInverse.surjective hφψ)]
+        exact (IsOpenMap.of_inverse hψ hφψ hψφ) I hI)
       hplus hAplus hBplus
       (presentationLimitPresheafIsoPushforward φ hφ hplus ψ hψ hψφ hφψ hplus').hom :=
   fun p hp ↦ by
