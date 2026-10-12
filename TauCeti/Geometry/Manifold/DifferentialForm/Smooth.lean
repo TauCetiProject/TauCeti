@@ -19,6 +19,10 @@ that its graph is a smooth section of the alternating bundle.  The corresponding
 provides the bundled carrier `SmoothBundleForm`; fixed coefficients are the `SmoothForm`
 specialization.  These carriers are the input for smooth wedge products and pullbacks.
 
+The degree-two evaluation adapters below follow the evaluation API of
+`TauCeti.Geometry.Manifold.TwoForm.Basic`, in particular the corresponding `SmoothTwoForm`
+declarations, while exposing the same view for the generic `SmoothForm` carrier.
+
 Smoothness is expressed through the total-space charts of the topological alternating bundle.  The
 module operations use Mathlib's smooth-section API, so this carrier does not require a chosen
 trivialization or a global smooth alternating-bundle instance.
@@ -145,31 +149,19 @@ namespace SmoothForm
 
 variable {I : ModelWithCorners ℝ E H} [IsManifold I 1 M]
 
-/-- Evaluate a real degree-two smooth form on an ordered pair of tangent vectors.
-
-The generic carrier deliberately has no degree-specific function coercion.  This named adapter is
-the two-vector view used by the degree-two migration and keeps that view separate from the
-underlying alternating-map representation. -/
-def eval₂ (φ : SmoothForm I M ℝ 2) (x : M) (v w : TangentSpace I x) : ℝ :=
+/-- Evaluate a degree-two smooth form on an ordered pair of tangent vectors. -/
+def eval₂ (φ : SmoothForm I M F 2) (x : M) (v w : TangentSpace I x) : F :=
   φ.1 x ![v, w]
 
 @[simp]
-theorem eval₂_apply (φ : SmoothForm I M ℝ 2) (x : M) (v w : TangentSpace I x) :
+theorem eval₂_apply (φ : SmoothForm I M F 2) (x : M) (v w : TangentSpace I x) :
     φ.eval₂ x v w = φ.1 x ![v, w] := by
   simp [eval₂]
 
 /-- The algebraic bilinear form represented by the value of a real degree-two smooth form. -/
 def bilinFormAt (φ : SmoothForm I M ℝ 2) (x : M) :
     LinearMap.BilinForm ℝ (TangentSpace I x) :=
-  LinearMap.mk₂ ℝ (fun v w => φ.eval₂ x v w)
-    (by intro v₁ v₂ w
-        simpa [eval₂] using (φ.1 x).toContinuousMultilinearMap.cons_add ![w] v₁ v₂)
-    (by intro c v w
-        simpa [eval₂] using (φ.1 x).toContinuousMultilinearMap.cons_smul ![w] c v)
-    (by intro v w₁ w₂
-        simpa [eval₂] using (φ.1 x).toContinuousMultilinearMap.snoc_add ![v] w₁ w₂)
-    (by intro c v w
-        simpa [eval₂] using (φ.1 x).toContinuousMultilinearMap.snoc_smul ![v] c w)
+  MultilinearMap.toBilinForm (φ.1 x).toMultilinearMap
 
 @[simp]
 theorem bilinFormAt_apply (φ : SmoothForm I M ℝ 2) (x : M) (v w : TangentSpace I x) :
@@ -177,31 +169,36 @@ theorem bilinFormAt_apply (φ : SmoothForm I M ℝ 2) (x : M) (v w : TangentSpac
   by simp [bilinFormAt]
 
 /-- The bilinear form represented by a degree-two smooth form is alternating. -/
-theorem bilinFormAt_isAlt (φ : SmoothForm I M ℝ 2) (x : M) :
+theorem isAlt_bilinFormAt (φ : SmoothForm I M ℝ 2) (x : M) :
     (φ.bilinFormAt x).IsAlt := by
+  apply MultilinearMap.isAlt_toBilinForm
   intro v
-  rw [bilinFormAt_apply]
   exact (φ.1 x).map_eq_zero_of_eq _ (by simp) Fin.zero_ne_one
 
 /-- Evaluation on two equal tangent vectors vanishes by alternation. -/
-theorem eval₂_self (φ : SmoothForm I M ℝ 2) (x : M) (v : TangentSpace I x) :
+theorem eval₂_self (φ : SmoothForm I M F 2) (x : M) (v : TangentSpace I x) :
     φ.eval₂ x v v = 0 := by
-  rw [← bilinFormAt_apply]
-  exact (φ.bilinFormAt_isAlt x) v
+  change φ.1 x ![v, v] = 0
+  exact (φ.1 x).map_eq_zero_of_eq _ (by simp) Fin.zero_ne_one
 
 /-- Swapping the inputs of a degree-two smooth form negates its value. -/
-theorem eval₂_neg (φ : SmoothForm I M ℝ 2) (x : M)
+theorem eval₂_swap (φ : SmoothForm I M F 2) (x : M)
     (v w : TangentSpace I x) :
-    φ.eval₂ x v w = -φ.eval₂ x w v := by
-  have h := (φ.bilinFormAt_isAlt x).neg_eq v w
-  rw [bilinFormAt_apply, bilinFormAt_apply] at h
+  φ.eval₂ x v w = -φ.eval₂ x w v := by
+  have h := (φ.1 x).map_swap ![v, w] (i := 0) (j := 1) Fin.zero_ne_one
+  have htuple : ![v, w] ∘ Equiv.swap 0 1 = ![w, v] := by
+    funext i
+    fin_cases i <;> rfl
+  rw [htuple] at h
+  have h' : φ.eval₂ x w v = -φ.eval₂ x v w := by
+    simpa [eval₂] using h
   calc
     φ.eval₂ x v w = - -φ.eval₂ x v w := by simp
-    _ = -φ.eval₂ x w v := by rw [h]
+    _ = -φ.eval₂ x w v := by rw [h']
 
-/-- A real degree-two smooth form is determined by its values on ordered pairs. -/
+/-- A degree-two smooth form is determined by its values on ordered pairs. -/
 @[ext]
-theorem ext {φ ψ : SmoothForm I M ℝ 2}
+theorem ext {φ ψ : SmoothForm I M F 2}
     (h : ∀ x v w, φ.eval₂ x v w = ψ.eval₂ x v w) :
     φ = ψ := by
   apply Subtype.ext
