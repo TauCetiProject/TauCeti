@@ -473,6 +473,12 @@ private lemma smallPairToUnion_comp_ofSubsetMap :
   refine MorphismProperty.Arrow.Hom.ext ?_ ?_
   · rw [MorphismProperty.Comma.comp_left, MorphismProperty.Comma.comp_left,
       toSSetPair_map_ofSubsetMap_left_restrict]
+    -- After the rewrite, the composite's middle object is `toSSet.obj ↧(U ∪ V)` on one side but
+    -- `(TopPair.toSSetPair.obj (TopPair.ofSubset (U ∪ V))).left` on the other, which agree only
+    -- after unfolding `TopPair.toSSetPair`. The goal is thus not type-correct at the transparency
+    -- `rw` uses, so `dsimp`-unfolding the `SSetPair.homMk` components still leaves `rw` stuck;
+    -- `change` re-elaborates the goal with the `left` components of `smallPairToUnion` and
+    -- `smallPairMap` written out.
     change smallSubcomplexToUnion U V ≫ _ =
       X.smallSingularSubcomplexMap ![U, V] ![U', V'] f id _ ≫ smallSubcomplexToUnion U' V'
     rw [← cancel_mono (unionι U' V'), Category.assoc, Category.assoc, smallSubcomplexToUnion_comp,
