@@ -87,12 +87,12 @@ namespace TauCeti
 variable [MeasurableSpace X] [BorelSpace X] [OpensMeasurableSpace C(α, X)] {D : Set α}
 
 /-- **Tightness criterion for laws of curves.** Let `α` be a Lindelöf pseudometric space, `X` a
-complete metric space, and `D ⊆ α` dense. A set `S` of measures on `C(α, X)` is tight if its time
-marginals at the times of `D` are tight and it satisfies a uniform modulus of continuity in
+complete pseudometric space, and `D ⊆ α` dense. A set `S` of measures on `C(α, X)` is tight if its
+time marginals at the times of `D` are tight and it satisfies a uniform modulus of continuity in
 probability: for all `η, ε > 0` there is `δ > 0` such that, for every `P ∈ S`, the curves with two
 times closer than `δ` at which their values are at least `η` apart have `P`-measure at most `ε`. -/
 theorem isTightMeasureSet_of_map_eval_of_continuity_modulus [LindelofSpace α]
-    [CompleteSpace X] [T2Space X]
+    [CompleteSpace X]
     (hD : Dense D)
     (h_eval : ∀ t ∈ D, IsTightMeasureSet ((fun P : Measure C(α, X) ↦ P.map fun γ ↦ γ t) '' S))
     (h_mod : ∀ η > 0, ∀ ε > 0, ∃ δ > 0, ∀ P ∈ S,
