@@ -22,8 +22,9 @@ part of this file.
 
 The API here records the free-abelian-group operations: point divisors, effectivity, pushforward of
 formal sums along a map of point sets, and both the unweighted degree and the weighted degree used
-for curves over a field. It also packages the degree-zero subgroups, which receive the principal
-divisors and model the abstract `Pic⁰` kernel.
+for curves over a field. It also packages the degree-zero subgroups: when principal divisors have
+degree zero, they lie in these subgroups, and the resulting quotient identifies with the abstract
+`Pic⁰` kernel.
 
 For a curve over `k`, the intended weighted degree has weight
 `x ↦ [κ(x) : k]`; this file only supplies the formal finite-sum operation against an arbitrary
