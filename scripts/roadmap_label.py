@@ -330,8 +330,8 @@ def run_pr(api, args, areas, pr):
         if args.nudge and label == UNKNOWN_LABEL:
             nudge(api, args.repo, pr)
     if args.structure_nudge and info["state"] == "open":
-        import structure_nudge
         try:
+            import structure_nudge
             structure_nudge.run_pr(args.repo, pr, args.apply, api=api, snapshot=snapshot)
         except Deferred:
             # A recovery pass must not advance its watermark past an unapplied comment.
