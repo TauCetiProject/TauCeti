@@ -32,9 +32,8 @@ closed immersion.
 
 ## References
 
-This is the standard proof of the embedding theorem's finite-dimensional representation step;
-see J. S. Milne, *Algebraic Groups* (2017), Proposition 4.7 and Theorem 4.9. It advances Layer 1,
-"Embedding theorem (hard)", of the ReductiveGroups roadmap.
+This is the standard proof of the embedding theorem's finite-dimensional representation step; see
+J. S. Milne, *Algebraic Groups* (2017), Proposition 4.7 and Theorem 4.9.
 -/
 
 public section
