@@ -150,20 +150,21 @@ lemma mapBoundedDerivedCategory_inverse :
     mapDerivedCategory_inverse]
   rfl
 
-private noncomputable def boundedFunctorCompιIso :
+/-- Inclusion identifies the bounded equivalence functor with its termwise derived action. -/
+noncomputable def mapBoundedDerivedCategoryFunctorCompιIso :
     e.mapBoundedDerivedCategory.functor ⋙ DerivedCategory.Bounded.ι ≅
       DerivedCategory.Bounded.ι ⋙ e.functor.mapDerivedCategory :=
   isoWhiskerRight (eqToIso e.mapBoundedDerivedCategory_functor) _ ≪≫
     e.functor.mapBoundedDerivedCategoryCompιIso
 
 noncomputable instance : e.mapBoundedDerivedCategory.functor.CommShift ℤ :=
-  Functor.CommShift.ofComp (boundedFunctorCompιIso e) ℤ
+  Functor.CommShift.ofComp (e.mapBoundedDerivedCategoryFunctorCompιIso) ℤ
 
-noncomputable instance : NatTrans.CommShift (boundedFunctorCompιIso e).hom ℤ :=
+noncomputable instance : NatTrans.CommShift (e.mapBoundedDerivedCategoryFunctorCompιIso).hom ℤ :=
   Functor.CommShift.ofComp_compatibility _ _
 
 instance : e.mapBoundedDerivedCategory.functor.IsTriangulated := by
-  rw [Functor.isTriangulated_iff_comp_right (boundedFunctorCompιIso e)]
+  rw [Functor.isTriangulated_iff_comp_right (e.mapBoundedDerivedCategoryFunctorCompιIso)]
   infer_instance
 
 end CategoryTheory.Equivalence
