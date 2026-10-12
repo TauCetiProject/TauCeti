@@ -11,6 +11,7 @@ import TauCeti.LinearAlgebra.QuadraticForm.Transvection.Powers
 import TauCeti.Topology.Algebra.QuadraticForm.Transvection
 import TauCeti.NumberTheory.Padics.Factorial
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.Topology.Algebra.RestrictedProduct.ContinuousRng
 
 /-!
 # Rational transvections accumulate in the finite adeles
@@ -23,8 +24,9 @@ where coordinatewise convergence implies convergence in the restricted-product t
 
 If the transvection parameter is nonzero modulo the isotropic line and that line is not in the
 radical, none of these factorial powers is the identity. Consequently the rational diagonal
-in finite adelic `SO` is not discrete. This contrasts with the full adeles, where the real
-component prevents this sequence from converging to the identity.
+in finite adelic `SO` is not discrete. Its image under the continuous injective inclusion
+`SO → O` shows that the rational orthogonal diagonal is also not discrete. This contrasts with
+the full adeles, where the real component prevents this sequence from converging to the identity.
 
 ## References
 
@@ -56,16 +58,6 @@ theorem tendsto_finiteAdelicSpecialOrthogonalDiagonal_transvection_factorial
   let g : specialOrthogonalGroup Q :=
     ⟨transvection Q hu huw, transvection_mem_specialOrthogonalGroup hu huw⟩
   let φ (p : Nat.Primes) := specialOrthogonalGroupBaseChange (A := ℚ_[p]) Q
-  -- All powers are integral on the same cofinite set, so use one principal stage.
-  let S : Set Nat.Primes := {p | φ p g ∈ U.specialOrthogonal p}
-  have hS : cofinite ≤ 𝓟 S := le_principal_iff.mpr (U.eventually_specialOrthogonal g)
-  let f (n : ℕ) : Πʳ (p : Nat.Primes), [specialOrthogonalGroup (Q.baseChange ℚ_[p]),
-      (U.specialOrthogonal p : Set _)]_[𝓟 S] :=
-    ⟨fun p ↦ φ p (g ^ n.factorial), eventually_principal.mpr fun p hp ↦ by
-      -- Expose the beta-reduced coordinate and reference subgroup of the principal stage.
-      change φ p (g ^ n.factorial) ∈ U.specialOrthogonal p
-      rw [map_pow]
-      exact (U.specialOrthogonal p).pow_mem hp _⟩
   -- At each prime, the powers are a continuous transvection family with parameter `n! → 0`.
   have hlocal (p : Nat.Primes) : Tendsto (fun n : ℕ ↦ φ p (g ^ n.factorial))
       atTop (𝓝 1) := by
@@ -99,22 +91,15 @@ theorem tendsto_finiteAdelicSpecialOrthogonalDiagonal_transvection_factorial
     apply ht.congr
     intro n
     exact (hEn n.factorial).trans (map_pow (φ p) g n.factorial).symm
-  have hf : Tendsto f atTop (𝓝 1) := by
-    apply RestrictedProduct.isEmbedding_coe_of_principal.tendsto_nhds_iff.mpr
-    exact tendsto_pi_nhds.mpr hlocal
-  have hi := (RestrictedProduct.continuous_inclusion hS).continuousAt.tendsto.comp hf
-  have hfactor : (fun n ↦ U.finiteAdelicSpecialOrthogonalDiagonal (g ^ n.factorial)) =
-      RestrictedProduct.inclusion _ _ hS ∘ f := by
-    funext n
-    ext p : 1
-    exact (U.finiteAdelicSpecialOrthogonalDiagonal_apply _ p).trans
-      (RestrictedProduct.inclusion_apply _ _ hS (x := f n) p).symm
-  have hone : RestrictedProduct.inclusion _ _ hS (1 : _) =
-      (1 : U.finiteAdelicSpecialOrthogonal) := by
-    ext p : 1
-    exact RestrictedProduct.inclusion_apply _ _ hS (x := 1) p
-  rw [hone] at hi
-  exact hfactor.symm ▸ hi
+  -- All powers are integral on the same cofinite set, so use one principal stage.
+  apply (tendsto_restrictedProduct_iff_of_forall_mem
+    (le_principal_iff.mpr (U.eventually_specialOrthogonal g))
+    (fun n p hp ↦ by
+      rw [finiteAdelicSpecialOrthogonalDiagonal_apply, map_pow]
+      exact (U.specialOrthogonal p).pow_mem hp _)
+    (fun p _ ↦ (U.specialOrthogonal p).one_mem)).mpr
+  simpa only [finiteAdelicSpecialOrthogonalDiagonal_apply, RestrictedProduct.one_apply, g, φ]
+    using hlocal
 
 /-- A nontrivial rational Eichler root subgroup prevents the rational diagonal in finite adelic
 `SO` from being discrete. The hypotheses ensure that the parameter is nonzero modulo `ℚ ∙ u`. -/
@@ -166,6 +151,31 @@ theorem not_discreteTopology_range_finiteAdelicSpecialOrthogonalDiagonal
   obtain ⟨w, huw, hw⟩ := hex
   exact U.not_discreteTopology_range_finiteAdelicSpecialOrthogonalDiagonal_of_transvection
     hu (by simpa only [LinearMap.mem_ker, polarBilin_apply_apply] using huw) hpolar hw
+
+/-- For a nondegenerate isotropic rational quadratic space of dimension at least three, the
+rational diagonal is not discrete in finite adelic `O`. -/
+theorem not_discreteTopology_range_finiteAdelicOrthogonalDiagonal
+    (hQ : Q.Nondegenerate) (hdim : 3 ≤ Module.finrank ℚ V)
+    (hiso : ∃ u : V, u ≠ 0 ∧ Q u = 0) :
+    ¬ DiscreteTopology U.finiteAdelicOrthogonalDiagonal.range := by
+  intro hD
+  let : DiscreteTopology U.finiteAdelicOrthogonalDiagonal.range := hD
+  let f : U.finiteAdelicSpecialOrthogonalDiagonal.range →
+      U.finiteAdelicOrthogonalDiagonal.range := fun g ↦
+    ⟨U.finiteAdelicSpecialOrthogonalToOrthogonal g, by
+      obtain ⟨h, hh⟩ := g.2
+      rw [← hh]
+      exact ⟨specialOrthogonalToOrthogonal Q h,
+        (DFunLike.congr_fun
+          U.finiteAdelicSpecialOrthogonalToOrthogonal_comp_finiteAdelicSpecialOrthogonalDiagonal
+          h).symm⟩⟩
+  have hf : Continuous f :=
+    (U.continuous_finiteAdelicSpecialOrthogonalToOrthogonal.comp
+      continuous_subtype_val).subtype_mk _
+  have hinj : Function.Injective f := fun g h hgh ↦ Subtype.ext
+    (U.finiteAdelicSpecialOrthogonalToOrthogonal_injective (congrArg Subtype.val hgh))
+  exact U.not_discreteTopology_range_finiteAdelicSpecialOrthogonalDiagonal hQ hdim hiso
+    (DiscreteTopology.of_continuous_injective hf hinj)
 
 end
 
